@@ -1,0 +1,51 @@
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+config/local*.yml
+config/local*.yaml
+secrets/
+*.key
+*.pem
+
+# License private material and generated customer licenses
+developer-workbench/private/
+license/private/
+license/generated/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# Node / frontend
+node_modules/
+dist/
+.vite/
+coverage/
+
+# Runtime data
+data/
+logs/
+temp/
+tmp/
+*.log
+
+# Build and packaging output
+build/
+artifacts/
+wheelhouse/
+*.whl
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
