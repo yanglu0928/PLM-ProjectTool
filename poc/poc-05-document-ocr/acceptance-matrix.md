@@ -18,6 +18,8 @@
 |P05-A14|完全离线模型和运行制品复跑|PASS_LOCAL_ASSETS|PASS|NOT_RUN|网络隔离说明、manifest、执行结果|
 |P05-A15|真实方案库只读批量解析|PARTIAL_PASS|NOT_RUN|NOT_RUN|17/17 个受支持文件通过；1 个旧版 `.doc` 为 `UNSUPPORTED`|
 |P05-A16|真实方案库隐私与输入不变性|PASS|NOT_RUN|NOT_RUN|不提交文件名/正文/Hash；18/18 原件前后校验一致|
+|P05-A17|真实技术协议/合同批量解析|PARTIAL_PASS|NOT_RUN|NOT_RUN|9/9 个受支持文件通过；含 5 个扫描 PDF；9 个旧版 `.doc` 不支持|
+|P05-A18|真实扫描 PDF 技术链与输入不变性|PASS|NOT_RUN|NOT_RUN|5 个、105 页、45,145 个 OCR 行、Schema 0 错误；18/18 原件未改变|
 
 ## 当前验收阈值
 

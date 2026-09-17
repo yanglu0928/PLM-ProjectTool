@@ -40,6 +40,7 @@ tmp/
 
 # Local source corpus (may contain customer or project-confidential material)
 /方案库/
+/技术协议&合同/
 
 # Build and packaging output
 build/

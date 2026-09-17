@@ -7,7 +7,7 @@
 - Phase：Phase 0
 - 状态：IN_PROGRESS
 - 启动日期：2026-09-17
-- 当前任务：POC-04 已以 `PASS_WITH_EXCEPTION` 收口；Windows 11、Windows Server 2025 PASS，Debian 13 依据 `EXC-P0-003` 暂缓且保持未验证
+- 当前任务：POC-03 P0.09 Golden Dataset 候选准备；Windows 11 已生成 120 条候选记录，待人工确认后才能进入质量指标验证
 - 正式业务开发：BLOCKED
 
 ## 入口
@@ -16,6 +16,7 @@
 - [三平台环境矩阵](environment-matrix.md)
 - [POC-01 实施与结果](../../poc/poc-01-python-313-dependencies/README.md)
 - [POC-02 实施与结果](../../poc/poc-02-postgresql-18-pgvector/README.md)
+- [POC-03 实施与结果](../../poc/poc-03-plm-rag/README.md)
 - [POC-04 实施与结果](../../poc/poc-04-ai-gateway/README.md)
 - [POC-05 实施与结果](../../poc/poc-05-document-ocr/README.md)
 - [Phase 0 验证例外](phase-0-exceptions.md)

@@ -6,6 +6,8 @@
 
 - `poc-01-python-313-dependencies/`：Python 3.13 三平台依赖与离线安装验证。
 - `poc-02-postgresql-18-pgvector/`：PostgreSQL 18 + pgvector 离线部署与功能验证。
+- `poc-03-plm-rag/`：PLM RAG Golden Dataset、Hybrid Retrieval、Reranker 与引用质量验证。
+- `poc-04-ai-gateway/`：统一 AIService / ModelRouter / ProviderAdapter 与 DeepSeek 验证。
 - `poc-05-document-ocr/`：Document + OCR 六类输入统一解析验证。
 
 ## 证据要求

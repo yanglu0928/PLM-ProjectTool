@@ -344,6 +344,19 @@ def _extract_paddle_records(result_items: Iterable[Any]) -> list[tuple[str, floa
     return records
 
 
+def _tesseract_image_data(image_path: Path) -> dict[str, Any]:
+    import pytesseract
+    from pytesseract import Output
+
+    configured = os.environ.get("TESSERACT_EXE")
+    if configured:
+        pytesseract.pytesseract.tesseract_cmd = configured
+    with Image.open(image_path) as page_image:
+        return pytesseract.image_to_data(
+            page_image, lang="chi_sim+eng", output_type=Output.DICT
+        )
+
+
 def _ocr_pdf(path: Path, engine: str) -> ParsedDocument:
     builder = BlockBuilder()
     pages: list[Page] = []
@@ -382,15 +395,7 @@ def _ocr_pdf(path: Path, engine: str) -> ParsedDocument:
             if engine == "paddle":
                 records = _extract_paddle_records(paddle.predict(str(image_path)))
             else:
-                import pytesseract
-                from pytesseract import Output
-
-                configured = os.environ.get("TESSERACT_EXE")
-                if configured:
-                    pytesseract.pytesseract.tesseract_cmd = configured
-                data = pytesseract.image_to_data(
-                    Image.open(image_path), lang="chi_sim+eng", output_type=Output.DICT
-                )
+                data = _tesseract_image_data(image_path)
                 records = []
                 for index, text in enumerate(data["text"]):
                     clean = text.strip()

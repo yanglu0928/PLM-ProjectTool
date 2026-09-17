@@ -112,7 +112,11 @@ def main() -> int:
     )
     validator = Draft202012Validator(schema)
     files = sorted(
-        (path for path in input_dir.rglob("*") if path.is_file()),
+        (
+            path
+            for path in input_dir.rglob("*")
+            if path.is_file() and not path.name.startswith("._")
+        ),
         key=lambda path: path.relative_to(input_dir).as_posix().casefold(),
     )
 
