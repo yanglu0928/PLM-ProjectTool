@@ -3,7 +3,7 @@
     "gs": false,
     "gswin64c": false,
     "ocrmypdf": true,
-    "tesseract": false
+    "tesseract": true
   },
   "packages": {
     "PyMuPDF": "1.28.2",

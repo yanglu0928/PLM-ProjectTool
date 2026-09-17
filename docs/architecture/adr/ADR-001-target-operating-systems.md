@@ -28,12 +28,12 @@ Windows 11 是新增目标，不替换或降低 Windows Server 2025、Debian 13 
 
 ## 当前证据
 
-Windows 11 Home 10.0.26200 / Python 3.13.15 已完成 Python 包在线安装、109 个 wheel 的离线安装以及 15/15 项 import/最小功能检查。Tesseract、Ghostscript、真实 OCR 和完整安装流程尚未验证，因此 Windows 11 当前为部分通过，不代表平台 Gate 已通过。
+Windows 11 Home 10.0.26200 / Python 3.13.15 已完成 Python 包在线安装、109 个 wheel 的离线安装以及 15/15 项 import/最小功能检查。Tesseract 5.4、OCRmyPDF 17.12.1 和 `tessdata_best` 的中文扫描 PDF 主链也已通过，5/5 个预期术语命中。Ghostscript/PDF-A、deskew 编码兼容和完整发行安装仍未通过，因此不代表 Windows 11 Release Gate 已通过。
 
 Windows Server 2025 与 Debian 13 尚缺正式执行环境和验证证据。
 
 ## 后续要求
 
-- 补齐 Windows 11 系统级依赖和断网完整流程。
+- 补齐 Windows 11 Ghostscript/PDF-A、deskew 编码兼容和断网完整发行流程。
 - 在 Windows Server 2025 与 Debian 13 执行相同 POC-01 验证。
 - 后续 PoC、安装测试和 Release Gate 均按三平台登记结果。

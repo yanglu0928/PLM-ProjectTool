@@ -38,7 +38,17 @@ def package_version(name: str) -> str | None:
 def executable_available(name: str) -> bool:
     scripts_dir = Path(sys.executable).parent
     candidates = (name, f"{name}.exe") if platform.system() == "Windows" else (name,)
-    return bool(shutil.which(name)) or any((scripts_dir / candidate).is_file() for candidate in candidates)
+    standard_paths: tuple[Path, ...] = ()
+    if platform.system() == "Windows":
+        if name == "tesseract":
+            standard_paths = (Path("C:/Program Files/Tesseract-OCR/tesseract.exe"),)
+        elif name == "gswin64c":
+            standard_paths = tuple(Path("C:/Program Files/gs").glob("gs*/bin/gswin64c.exe"))
+    return (
+        bool(shutil.which(name))
+        or any((scripts_dir / candidate).is_file() for candidate in candidates)
+        or any(path.is_file() for path in standard_paths)
+    )
 
 
 def main() -> int:

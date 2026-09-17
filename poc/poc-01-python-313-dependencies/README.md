@@ -72,6 +72,8 @@ bash scripts/linux/run-offline-validation.sh <wheelhouse目录>
 |import / 最小功能|15/15 PASS|NOT_RUN|NOT_RUN|
 |wheelhouse 构建|PASS（109 文件）|NOT_RUN|NOT_RUN|
 |完全离线安装|PASS（本机 `--no-index` 预检）|NOT_RUN|NOT_RUN|
+|Tesseract `chi_sim+eng`|PASS|NOT_RUN|NOT_RUN|
+|OCRmyPDF 中文扫描 PDF 主链|PASS（5/5 术语）|NOT_RUN|NOT_RUN|
 
 执行结果写入 `evidence/<platform>/`，并将非敏感摘要回填本文件。
 
@@ -83,8 +85,9 @@ bash scripts/linux/run-offline-validation.sh <wheelhouse目录>
 |核心 import 成功率|100%|15/15|
 |最小功能检查通过率|100%|15/15|
 |断网安装网络请求数|0|本机使用 `--no-index`，0 次包索引请求|
-|目标平台覆盖率|3/3|Windows 11 Python 包子项通过；完整平台 0/3|
+|目标平台覆盖率|3/3|POC-01 为 1/3；Windows 11 PASS|
 |Windows wheelhouse 完整性|全部文件有 SHA-256|109/109|
+|Windows 11 OCR 术语召回率|100%|5/5|
 
 ## Logs
 
@@ -95,6 +98,10 @@ bash scripts/linux/run-offline-validation.sh <wheelhouse目录>
 - wheelhouse SHA-256：`evidence/windows-local/wheelhouse-sha256sums.txt`
 - 离线安装日志：`evidence/windows-local-offline/offline-install.txt`
 - 离线验证结果：`evidence/windows-local-offline/verification.json`
+- 中文 OCR 结果：`evidence/windows-11-ocr/result.json`
+- 中文 OCR 输入/输出：`evidence/windows-11-ocr/input-scanned.pdf`、`output-searchable.pdf`
+- 高精度语言模型 Hash：`evidence/windows-11-ocr/tessdata-best-sha256sums.txt`
+- Ghostscript 尝试及备选方案：`evidence/windows-11-ocr/ghostscript-install-attempt.md`
 
 日志必须去除用户名、主机名、路径中的个人信息和任何 Secret 后才能提交。
 
@@ -102,12 +109,13 @@ bash scripts/linux/run-offline-validation.sh <wheelhouse目录>
 
 1. Windows Server 2025 和 Debian 13 验收环境尚未提供。
 2. PaddlePaddle/PaddleOCR 在 Windows Server 2025 与 Debian 13 的 Python 3.13 wheel 可用性尚未验证；Windows 11 已通过。
-3. OCRmyPDF 依赖的 Tesseract、Ghostscript 等系统组件尚未验证。
-4. 当前验证只覆盖包安装、import 和不依赖外部程序的最小功能；OCR 真实样本质量属于 POC-05。
+3. OCRmyPDF `--deskew` 在中文 Windows 上因 Tesseract 本地编码输出触发 `UnicodeDecodeError`；关闭 deskew 后核心 OCR 通过。
+4. Ghostscript 静默安装未完成，PDF/A 与优化路径未验证，并存在闭源发行许可证评审要求。
+5. 当前 OCR 样本是合成基准；真实扫描件质量与准确率仍属于 POC-05。
 
 ## Conclusion
 
-POC-01 已完成 Windows 11 / Python 3.13.15 的 Python 包在线与 wheelhouse 离线验证，全部 15 项检查通过。正式结论仍为 `IN_PROGRESS`；Windows 11 系统依赖以及 Windows Server 2025、Debian 13 的制品准备、断网安装和最小功能验证全部完成前，不得标记 PASS。
+POC-01 的 Windows 11 子项已通过：Python 3.13.15 在线/离线依赖、15/15 项最小检查、Tesseract 中文语言和 OCRmyPDF searchable PDF 主链均 PASS。POC-01 总体仍为 `IN_PROGRESS`；Windows Server 2025 与 Debian 13 完成前不得标记整体 PASS。deskew、Ghostscript/PDF-A 和真实扫描质量作为 POC-05 待验证项，Ghostscript 发行许可证作为 POC-09 待验证项。
 
 ## PASS / FAIL
 

@@ -15,7 +15,7 @@
 
 |环境|操作系统|CPU 架构|资源|Python 3.13|资格|状态|
 |---|---|---|---|---|---|---|
-|本地开发机 / Windows 11 验收环境|Windows 11 Home 10.0.26200|x86-64|32 逻辑处理器 / 31.63 GB RAM / D盘约 441.76 GB 可用|3.13.15|Windows 11 正式目标；Python 包子项已验证|PARTIAL_PASS|
+|本地开发机 / Windows 11 验收环境|Windows 11 Home 10.0.26200|x86-64|32 逻辑处理器 / 31.63 GB RAM / D盘约 441.76 GB 可用|3.13.15|POC-01 依赖、离线 wheel、Tesseract/OCRmyPDF 主链已验证|POC01_PASS|
 |Windows 验收环境|Windows Server 2025|x86-64|最低 4C / 8 GB / 100 GB|未确认|正式验收|BLOCKED_ENVIRONMENT|
 |Linux 验收环境|Debian 13|x86-64|最低 4C / 8 GB / 100 GB|未确认|正式验收|BLOCKED_ENVIRONMENT|
 
@@ -29,8 +29,10 @@
 |Python 3.13|AVAILABLE|已安装 3.13.15；在线和 wheelhouse 离线预检通过|
 |Docker|NOT_AVAILABLE|不能用本机容器替代 Debian 13 验收|
 |WSL Debian 13|NOT_AVAILABLE|WSL 未安装发行版|
-|Tesseract|NOT_AVAILABLE|后续安装并验证|
-|OCRmyPDF Python 包/CLI|AVAILABLE_IN_POC_VENV|17.12.1 可安装并导入；完整执行仍缺 Tesseract/Ghostscript|
+|Tesseract|AVAILABLE|5.4.0.20240606；`chi_sim/eng/osd` 可用|
+|OCRmyPDF Python 包/CLI|PASS|17.12.1；普通 searchable PDF 中文 OCR 主链通过|
+|tessdata_best|PASS|`chi_sim/chi_sim_vert/eng/osd` 已准备并保存 SHA-256|
+|Ghostscript|INCOMPLETE|10.08.0 安装包 Hash 通过，但非交互静默安装停滞；PDF-A 未验证|
 |PostgreSQL client|NOT_AVAILABLE|属于 POC-02 准备项|
 
 ## 环境缺口
@@ -38,7 +40,7 @@
 1. 需要可重复使用的 Windows Server 2025 x86-64 环境。
 2. 需要可重复使用的 Debian 13 x86-64 环境。
 3. 三个平台均需具备断网验收窗口，以验证 wheel/deb/安装介质完整性。
-4. 当前 Windows 11 只完成 Python 包在线/离线子项；Tesseract、Ghostscript、完整 OCR 与安装流程仍待验证。
+4. Windows 11 的 Ghostscript/PDF-A、deskew 编码兼容和完整发行安装流程仍待验证。
 
 ## 本机预检摘要
 
@@ -50,3 +52,7 @@
 |Windows wheelhouse|109 个文件，256.74 MB，109 个 SHA-256|
 |使用 `--no-index` 的全新环境离线安装|PASS|
 |离线环境 15 项检查|15/15 PASS|
+|Tesseract 中文/英文语言|PASS|
+|中文扫描 PDF → searchable PDF|PASS|
+|预期术语召回率|5/5，100%|
+|Ghostscript / PDF-A|INCOMPLETE|

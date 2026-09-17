@@ -1,0 +1,4 @@
+Parsing 1 pages with HocrParser
+Postprocessing...
+Image optimization ratio: 1.00 savings: 0.0%
+Total file size ratio: 0.94 savings: -6.4%

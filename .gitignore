@@ -43,6 +43,8 @@ artifacts/
 wheelhouse/
 *.whl
 .poc-runtime/
+poc/**/evidence/**/ocrmypdf-stderr-attempt-*.txt
+poc/**/evidence/**/output-searchable-attempt-*.pdf
 
 # IDE / OS
 .idea/
