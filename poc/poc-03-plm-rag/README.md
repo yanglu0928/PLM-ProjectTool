@@ -37,7 +37,17 @@
 
 ## Result
 
-P0.09 候选准备链已通过：26 个 ParsedDocument 生成 655 个带 PROJECT/ProjectId 和来源定位的 Chunk，并轮询抽样 120 条候选记录，覆盖 26/26 个文档。旧 R1 曾导出 109 条记录，但覆盖审计仅有 1 个唯一查询、1 种来源类型和 1 种分类，已判定不可用于质量指标。当前 R2 使用完全本地规则生成 120 条不同查询及配套建议，全部重置为 `PENDING`；45 条合同可映射为 `CONTRACT`，75 条方案库记录因锁定枚举没有 `SOLUTION` 而留空待人工确认。P03-A04 使用百炼 `qwen3.7-text-embedding` 实测请求/返回 1024 维，索引 `v1` 绑定 PASS。
+P0.09 候选准备链已通过：26 个 ParsedDocument 生成 655 个带 PROJECT/ProjectId 和来源定位的 Chunk，并轮询抽样 120 条候选记录，覆盖 26/26 个文档。旧 R1 曾导出 109 条记录，但覆盖审计仅有 1 个唯一查询、1 种来源类型和 1 种分类，已判定不可用于质量指标。用户已填写 R2 的 120 行审核状态、审核人和日期；独立 Gate 复核显示 45 行字段完整，75 行仍缺锁定的来源类型，不能因填写 `APPROVED` 自动视为正式数据。R3 将其转换为人工确认待办交互原型：主表不再展示大段正文，提供 120 个本地证据定位链接和逐项维护提示，同时完整保留 R2 技术评审页。P03-A04 使用百炼 `qwen3.7-text-embedding` 实测请求/返回 1024 维，索引 `v1` 绑定 PASS。
+
+## Confirmation UX Prototype
+
+R3 是对用户体验的 Phase 0 验证，不是正式项目交接 `ActionItem` 模块。它验证“AI 发现 → 打开证据 → 人工确认/修改/退回”的交互方式：
+
+- 主清单只显示问题、风险、AI 建议、需确认事项和人工决定。
+- 每条记录可打开同目录本地证据页；PDF 携带页码，Office 文档显示精确段落、表格或幻灯片定位并可打开原文件。
+- 人工输入列明确标色并说明需要维护的内容。
+- 原 R2 数据只读保留在技术审计页，用户已填写内容不被覆盖。
+- 详细边界和正式模块建议见 `confirmation-ux-prototype.md`。
 
 ## Local Review Prefill
 
@@ -92,8 +102,9 @@ python scripts/audit_golden_dataset.py `
 |指标|目标|当前状态|
 |---|---|---|
 |候选评审记录|100~200 条|120 条，26/26 文档覆盖，PASS|
-|当前人工批准记录|100~200 条|R2 为 0 条 APPROVED、120 条 PENDING|
+|当前人工批准记录|100~200 条且字段完整|R2 人工填写 120 条 APPROVED；仅 45 条字段完整，75 条缺来源类型|
 |本地预填建议|辅助人工评审，不形成真值|120 条不同查询；45 条来源类型可映射，75 条待确认|
+|人工确认交互原型|证据可定位、输入有提示、原数据可追溯|R3 生成 120 个本地证据链接；45 条已确认、75 条待补充；PASS_FOR_UX_REVIEW|
 |Schema 合法数据集导出|100~200 条|当前 R2 未导出；旧 R1 的 109 条仅 Schema PASS、覆盖 FAIL|
 |Gold Set 质量覆盖|查询、四类来源、六类分类可评估|IN_PROGRESS：R2 尚未人工批准，不能审计为正式 Gold Set|
 |确定性 Chunk|可追溯且强制 PROJECT/ProjectId|655 个，PASS|
@@ -116,10 +127,11 @@ python scripts/audit_golden_dataset.py `
 2. 自动抽取只能形成候选集；没有人工批准的记录不得计入 Golden Dataset，也不得作为业务事实。
 3. 两个资料库共 10 个旧版二进制 `.doc` 尚不支持，不进入本轮候选池。
 4. Windows Server 2025 与 Debian 13 尚未执行本 PoC。
-5. 当前 R2 的 120 条记录全部为 `PENDING`；75 条 `SOLUTION` 来源在锁定枚举中无对应值，必须人工决定或补充合适语料，不能自动伪造映射。
-6. 旧 R1 的 109 条批准记录只有 1 个唯一查询，且全部为 `SURVEY` / `STANDARD_SATISFIED`，不满足 Gold Set 覆盖要求，保留为历史失败证据。
-7. P03-A04 已激活阿里云百炼 OpenAI-compatible `qwen3.7-text-embedding`、1024 维、索引 `v1` 的 PoC 绑定；它不代表正式架构冻结。
-8. DeepSeek 官方资料本轮未找到 Embedding 端点；不得把现有 DeepSeek Chat Key 假定为向量服务凭据。
+5. 当前 R2 的 120 条记录已由用户填写为 `APPROVED`，但 75 条 `SOLUTION` 来源在锁定枚举中无对应值，仍不满足正式导出 Gate；必须人工决定、修改正式枚举或补充合适语料，不能自动伪造映射。
+6. R3 是本地 UX 原型，不是正式交接待办；当前 Office 原件定位依赖“打开原文件 + 精确定位说明”，正式产品仍需内置证据查看器完成自动跳转与高亮。
+7. 旧 R1 的 109 条批准记录只有 1 个唯一查询，且全部为 `SURVEY` / `STANDARD_SATISFIED`，不满足 Gold Set 覆盖要求，保留为历史失败证据。
+8. P03-A04 已激活阿里云百炼 OpenAI-compatible `qwen3.7-text-embedding`、1024 维、索引 `v1` 的 PoC 绑定；它不代表正式架构冻结。
+9. DeepSeek 官方资料本轮未找到 Embedding 端点；不得把现有 DeepSeek Chat Key 假定为向量服务凭据。
 
 ## Conclusion
 

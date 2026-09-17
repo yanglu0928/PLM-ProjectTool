@@ -16,7 +16,7 @@
 |---|---|---|---|---|---|---|---|
 |POC-01|P0.01/P0.01S/P0.02/P0.03/P0.04|Python 3.13 三平台依赖及离线安装|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11、Windows Server 2025 PASS；Debian 13 经用户批准暂缓，不构成兼容性结论|`poc/poc-01-python-313-dependencies/`、`docs/poc/phase-0-exceptions.md`|
 |POC-02|P0.05/P0.06/P0.07/P0.08|PostgreSQL 18 + pgvector|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11 功能链 PASS；Windows Server 2025 完全断网功能链 PASS；Windows 11 断网重放与 Debian 13 经用户批准暂缓，不构成对应兼容性结论|`poc/poc-02-postgresql-18-pgvector/`、`docs/poc/phase-0-exceptions.md`|
-|POC-03|P0.09/P0.10/P0.12|PLM RAG|IN_PROGRESS|2026-09-17|-|Windows 11 已生成 655 个可追溯 Chunk、120 条候选和 R2 本地预填评审表；当前 120 条 PENDING、0 条 APPROVED、0 个一致性问题，正式集和质量指标未执行|`poc/poc-03-plm-rag/`|
+|POC-03|P0.09/P0.10/P0.12|PLM RAG|IN_PROGRESS|2026-09-17|-|Windows 11 已生成 655 个可追溯 Chunk 和 120 条候选；用户已填写 R2 的 120 条为 APPROVED，但严格 Gate 仅 45 条字段完整、75 条缺来源类型。R3 人工确认 UX 原型已生成 120 个证据定位链接，正式集和质量指标未执行|`poc/poc-03-plm-rag/`|
 |POC-04|P0.11|AI Gateway / DeepSeek|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11、Windows Server 2025 统一网关、11/11 确定性场景及真实文本/流式/结构化/401 PASS；Debian 13 经用户批准暂缓，不构成兼容性结论|`poc/poc-04-ai-gateway/`、`docs/poc/phase-0-exceptions.md`|
 |POC-05|P0.04/P0.12|Document + OCR|IN_PROGRESS|2026-09-17|-|Windows 11 六类输入和主辅 OCR 功能链 PASS；Windows Server 2025 完全断网 8/8 PASS；Windows 11 真实资料 26/26 个受支持文件通过并含 5 个扫描 PDF；Windows 11 断网、Debian 13 和真实扫描语义准确率待处理|`poc/poc-05-document-ocr/`|
 |POC-06|P0.16/P0.17|Word / PPT|NOT_STARTED|-|-|-|-|
@@ -66,3 +66,5 @@
 |2026-09-17|P03-A04 Windows 11 PASS：百炼 `qwen3.7-text-embedding` 使用固定非客户文本真实返回 1024 维，索引 `v1` 绑定激活；Key、输入和向量未提交。|
 |2026-09-17|109 条 APPROVED 记录完成 Schema 合法导出，但覆盖审计 FAIL：仅 1 个唯一查询、1 种来源类型和 1 种分类；P03-A02 保持 IN_PROGRESS，不进入质量指标计算。|
 |2026-09-17|生成 POC-03 R2 本地预填评审表：120 条不同查询、120 条引用预填，全部重置为 PENDING；45 条 CONTRACT 可明确映射，75 条 SOLUTION 因锁定枚举无对应类型保留待人工确认；未调用外部 AI 服务。|
+|2026-09-17|用户完成 R2 填写：120 行均为 APPROVED；独立 Gate 仅认定 45 行完整，75 行仍缺来源类型，状态值不绕过必填验证。|
+|2026-09-17|依据用户体验反馈生成 POC-03 R3 人工确认待办原型：主表移除大段正文，增加 120 个证据定位链接、明确维护提示和人工处理选项；R2 技术页原样保留。该原型不是正式项目交接 ActionItem 模块。|
