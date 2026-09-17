@@ -16,7 +16,7 @@
 |---|---|---|---|---|---|---|---|
 |POC-01|P0.01/P0.01S/P0.02/P0.03/P0.04|Python 3.13 三平台依赖及离线安装|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11、Windows Server 2025 PASS；Debian 13 经用户批准暂缓，不构成兼容性结论|`poc/poc-01-python-313-dependencies/`、`docs/poc/phase-0-exceptions.md`|
 |POC-02|P0.05/P0.06/P0.07/P0.08|PostgreSQL 18 + pgvector|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11 功能链 PASS；Windows Server 2025 完全断网功能链 PASS；Windows 11 断网重放与 Debian 13 经用户批准暂缓，不构成对应兼容性结论|`poc/poc-02-postgresql-18-pgvector/`、`docs/poc/phase-0-exceptions.md`|
-|POC-03|P0.09/P0.10/P0.12|PLM RAG|IN_PROGRESS|2026-09-17|-|P03-A02 因缺标准能力/调研语料 BLOCKED；P03-A04~A10、A14 已 PASS：单模型绑定、全量重建、隔离、FTS、HNSW、Hybrid、外部 Reranker 与 Context→AIService。真实质量指标未执行|`poc/poc-03-plm-rag/`|
+|POC-03|P0.09/P0.10/P0.12|PLM RAG|BLOCKED|2026-09-17|-|P03-A02 因缺至少 55 条合格来源且缺标准能力/调研语料 BLOCKED；其余可独立执行的 P03-A03~A10、A14、A15 均 PASS。P03-A11~A13 真实质量指标等待 Golden Dataset|`poc/poc-03-plm-rag/`|
 |POC-04|P0.11|AI Gateway / DeepSeek|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11、Windows Server 2025 统一网关、11/11 确定性场景及真实文本/流式/结构化/401 PASS；Debian 13 经用户批准暂缓，不构成兼容性结论|`poc/poc-04-ai-gateway/`、`docs/poc/phase-0-exceptions.md`|
 |POC-05|P0.04/P0.12|Document + OCR|IN_PROGRESS|2026-09-17|-|Windows 11 六类输入和主辅 OCR 功能链 PASS；Windows Server 2025 完全断网 8/8 PASS；Windows 11 真实资料 26/26 个受支持文件通过并含 5 个扫描 PDF；Windows 11 断网、Debian 13 和真实扫描语义准确率待处理|`poc/poc-05-document-ocr/`|
 |POC-06|P0.16/P0.17|Word / PPT|NOT_STARTED|-|-|-|-|
@@ -76,3 +76,4 @@
 |2026-09-17|P03-A09 Windows 11 PASS：Vector 0.6 + Full Text 0.4，加大每通道候选池并提高 HNSW 构建/搜索深度后，1,000 条合成记录、4 场景 Top-5 平均与最低 Recall 100%，执行计划同时命中 GIN/HNSW；参数待真实 Gold Set 校准。|
 |2026-09-17|P03-A10 Windows 11 PASS：百炼华北 2 `qwen3-rerank` 真实 5→3 重排通过，两个预期相关项位列前二；HTTP 429、超时和无效响应均按原候选顺序降级，证据未保存 Secret 或内容。|
 |2026-09-17|P03-A14 Windows 11 PASS：Context Builder 按相关度和字符预算生成可追溯上下文，实际调用统一 `AIService → ModelRouter → ProviderAdapter`，Prompt/Project/Chunk Trace 与结构化输出校验通过，RAG 未直连厂商。|
+|2026-09-17|P03-A15 Windows 11 PASS：DB 不可用、空结果、低可靠度、Reranker 不可用、AI 不可用及正常链路共 6 场景通过；空/低可靠度不调用 AI，错误证据保持脱敏。POC-03 转为等待 P03-A02 L3 决策。|

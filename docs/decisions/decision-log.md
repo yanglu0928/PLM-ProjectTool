@@ -107,3 +107,15 @@
 |Reason|落实统一 RAG 和 AI Gateway 边界，并确保每次回答可追溯 ProjectId、Prompt 版本与实际 Chunk 来源。|
 |Impact|Context 到统一 AIService 的确定性链路通过，结构化输出由 AIService 校验；该 PoC 不冻结正式 API Contract。|
 |Rollback|移除 Context Builder/Orchestrator PoC、测试和证据；不影响 POC-04 网关。|
+
+## DEC-20260917-010
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260917-010|
+|Date|2026-09-17|
+|WBS|P03-A15|
+|Decision|PoC 将最高检索分 0.5 设为“可进入 AI”的最低可靠度；空结果或低于阈值时禁止调用 AI。数据库失败直接停止，Reranker 失败 fail-open，AI 失败返回脱敏错误码和重试属性。|
+|Reason|无证据仍调用模型会产生不可追溯答案；Reranker 是增强步骤，可降级，而检索数据库和最终 AI 的失败语义不同，应分别处理。|
+|Impact|6 个成功/异常场景全部通过；0.5 只是合成 PoC 阈值，必须由真实 Golden Dataset 校准后才能成为正式配置。|
+|Rollback|移除异常编排 PoC、测试和证据；不改变 POC-04 或数据库。|

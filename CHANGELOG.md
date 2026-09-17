@@ -75,6 +75,7 @@
 - POC-03 P03-A09 完成 Hybrid Retrieval 验证：Vector 0.6 + Full Text 0.4、每通道 4 倍 Top-K 候选池，HNSW `m=32`/`ef_construction=200`/`ef_search=200`；1,000 条合成记录、4 场景 Top-5 平均与最低 Recall 100%，GIN/HNSW 均命中。
 - POC-03 P03-A10 完成外部可配置 Reranker：百炼华北 2 `qwen3-rerank` 真实 5→3 重排通过；新增响应完整性校验，以及 HTTP 429、超时、无效响应 fail-open 降级和脱敏记录。
 - POC-03 P03-A14 完成 Context Builder → AIService 验证：新增相关度排序、字符预算、Chunk/来源引用、Prompt/Project Trace，并通过 POC-04 `AIService → ModelRouter → ProviderAdapter` 完成结构化输出校验。
+- POC-03 P03-A15 完成异常与空结果验证：DB 不可用停止、空/低可靠度禁止 AI、Reranker fail-open、AI 错误脱敏与正常链路共 6 场景通过。
 
 ### 兼容性
 
@@ -103,6 +104,7 @@
 - POC-03 当前 49/49 单元测试通过；P03-A08 HNSW 与 P03-A09 Hybrid 的 4 组 Top-5 平均/最低 Recall 均为 100%。
 - POC-03 P03-A10 完成后 56/56 单元测试通过；Reranker 真实请求与三类降级场景均 PASS。
 - POC-03 P03-A14 完成后 62/62 单元测试通过；统一 AIService 调用链和禁止 RAG 直连厂商的边界检查 PASS。
+- POC-03 P03-A15 完成后 68/68 单元测试通过；除 P03-A02 及其阻塞的 P03-A11~A13 外，可独立执行的 Windows 11 验收项均已完成。
 
 ### 已知问题
 

@@ -16,7 +16,7 @@
 |P03-A12|分类准确率 ≥90%|NOT_RUN|NOT_RUN|NOT_RUN|六类允许结果的混淆统计|
 |P03-A13|来源引用准确率 ≥98%|NOT_RUN|NOT_RUN|NOT_RUN|引用与来源定位核对|
 |P03-A14|Context Builder → AIService|PASS|NOT_RUN|NOT_RUN|`RagAIOrchestrator → AIService → ModelRouter → ProviderAdapter` 实测 PASS；Context 保留 Chunk/来源引用和字符预算，PromptId/Version、ProjectId、ChunkIds 可追溯；RAG 模块无 HTTP 或厂商适配代码|
-|P03-A15|异常与空结果|NOT_RUN|NOT_RUN|NOT_RUN|AI/Reranker/DB 不可用及无可靠匹配|
+|P03-A15|异常与空结果|PASS|NOT_RUN|NOT_RUN|6 场景 PASS：DB 不可用停止且不调用 AI；空结果/最高分 <0.5 返回无可靠匹配且不调用 AI；Reranker 不可用按原顺序降级；AI 不可用返回脱敏可重试状态；正常链路保留引用 ID|
 
 ## 状态定义
 

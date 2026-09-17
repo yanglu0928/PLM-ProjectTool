@@ -94,6 +94,14 @@
 - 结构化结果由 POC-04 AIService 按 JSON Schema 校验；RAG Context 模块不含 HTTP、厂商 SDK 或具体 ProviderAdapter。
 - 提交证据不包含查询、上下文或 AI 输出正文。
 
+## Failure and Empty-result Handling
+
+- 数据库不可用：`RETRIEVAL_UNAVAILABLE`、可重试、AI 未调用。
+- 空结果或最高检索分低于 PoC 阈值 0.5：`NO_RELIABLE_MATCH`、AI 未调用，避免无依据生成。
+- Reranker 不可用：保留原检索顺序，标记 `RERANKER` 降级并继续统一 AI 链路。
+- AI 不可用：`AI_UNAVAILABLE`，保留引用 ID，只输出脱敏错误码和是否可重试。
+- 正常链路与上述 5 类异常/边界场景共 6 项全部 PASS；证据不含内容或异常原文。
+
 ## Dataset Export and Coverage
 
 - 109 条 APPROVED 记录已按 `poc-03.golden.v1` 完成 Schema 合法导出；数据集只保存在 Git 忽略的本地 `artifacts/`。
