@@ -40,3 +40,24 @@
 3. Debian 13 保持 `DEFERRED_BY_USER / 未验证`，不得据此声明 PostgreSQL 18 + pgvector 已兼容 Debian 13。
 4. 在声称 Windows 11 完全离线兼容、制作 Debian 发行包或通过相应 Release Gate 前，必须恢复并完成对应验证。
 5. 本例外仅允许 POC-02 阶段性收口，不改变三个正式目标环境，也不代表 Phase 0 整体完成。
+
+## EXC-P0-003：暂缓 POC-04 Debian 13 验证
+
+|字段|内容|
+|---|---|
+|状态|APPROVED|
+|批准日期|2026-09-17|
+|批准人|用户/项目负责人|
+|关联 PoC|POC-04|
+|例外内容|Debian 13 本轮暂不验证，跳过 POC-04 执行|
+|已完成范围|Windows 11、Windows Server 2025 的统一 AI Gateway、确定性协议场景及真实 DeepSeek 调用|
+|未验证范围|Debian 13 上的 Python 依赖、AI Gateway 协议行为及 DeepSeek 网络调用|
+|处理结果|POC-04 以 `PASS_WITH_EXCEPTION` 收口，可进入下一项 Phase 0 PoC|
+
+## EXC-P0-003 边界
+
+1. 本例外只调整当前 POC-04 的执行范围和顺序，不删除 Debian 13 正式兼容目标。
+2. Windows 11、Windows Server 2025 的结果不得外推为 Debian 13 兼容性证据；Debian 13 保持 `DEFERRED_BY_USER / 未验证`。
+3. 在声称 Debian 13 AI Gateway 兼容、制作 Debian 发行包或通过 Debian Release Gate 前，必须恢复并完成对应验证。
+4. 本例外不改变统一 `AIService → ModelRouter → ProviderAdapter` 基线，不允许业务模块直接调用厂商 SDK。
+5. 本例外不代表 Phase 0 整体完成；其他阻塞 PoC 仍须通过或取得独立例外。

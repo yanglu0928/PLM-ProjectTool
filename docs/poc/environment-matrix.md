@@ -17,7 +17,7 @@
 |---|---|---|---|---|---|---|
 |本地开发机 / Windows 11 验收环境|Windows 11 Home 10.0.26200|x86-64|32 逻辑处理器 / 31.63 GB RAM / D盘约 435.29 GB 可用|3.13.15|POC-01 已收口；POC-02 功能链已验证；POC-04 统一网关与真实 DeepSeek 已验证；POC-05 功能链与本地模型重放已验证|POC01_PASS / POC02_FUNCTIONAL_PASS / POC04_FUNCTIONAL_PASS / POC05_FUNCTIONAL_PASS|
 |VMware / Windows Server 2025 验收环境|Windows Server 2025 Datacenter 10.0.26100（Desktop Experience）|x86-64|16 逻辑处理器 / 16 GB RAM / 系统盘约 54.71 GB 可用|3.13.15（官方嵌入式包）|POC-01 已收口；POC-02、POC-05 完全断网功能链已验证；POC-04 统一网关与真实 DeepSeek 已验证|POC01_PASS / POC02_PASS / POC04_FUNCTIONAL_PASS / POC05_PASS|
-|Linux 验收环境|Debian 13|x86-64|最低 4C / 8 GB / 100 GB|未确认|正式目标；POC-01/POC-02 验证经用户批准暂缓；POC-05 尚未执行|DEFERRED_BY_USER / POC05_NOT_RUN|
+|Linux 验收环境|Debian 13|x86-64|最低 4C / 8 GB / 100 GB|未确认|正式目标；POC-01/POC-02/POC-04 验证经用户批准暂缓；POC-05 尚未执行|DEFERRED_BY_USER / POC04_DEFERRED_BY_USER / POC05_NOT_RUN|
 
 ## 当前工具发现
 
@@ -43,14 +43,14 @@
 
 ## 环境缺口
 
-1. Debian 13 的 POC-01/POC-02 分别依据 `EXC-P0-001`、`EXC-P0-002` 暂缓；POC-05 尚未取得独立例外，保持 `NOT_RUN`。恢复验证时仍需可重复使用的 x86-64 环境。
+1. Debian 13 的 POC-01/POC-02/POC-04 分别依据 `EXC-P0-001`、`EXC-P0-002`、`EXC-P0-003` 暂缓；POC-05 尚未取得独立例外，保持 `NOT_RUN`。恢复验证时仍需可重复使用的 x86-64 环境。
 2. POC-02 Windows 11 已使用本地制品完成全部功能验证，但物理断网重放依据 `EXC-P0-002` 暂缓。
 3. Windows 11 与 Windows Server 2025 的 PostgreSQL 18.6 + pgvector 0.8.6 功能链已通过；Server 已完全断网验证，Windows 11 断网重放为 `DEFERRED_BY_USER`。
 4. Windows Server 2025 当前账号无管理员令牌，系统策略拒绝 Python EXE 安装器；POC-01 已使用官方嵌入式包验证无管理员部署路径。
 5. Windows 11 的 PostgreSQL `initdb` 在中文运行路径失败；当前部署约束为程序、数据和临时 SQL 使用纯 ASCII 路径。
 6. POC-05 Windows 11 已从显式本地 PaddleOCR 模型目录重放，但物理断网未验证；Windows Server 2025 已完全断网通过。
 7. POC-05 尚无真实脱敏扫描件，当前 100% 术语召回只适用于固定退化合成样本。
-8. POC-04 Windows 11 与 Windows Server 2025 功能链已通过；Debian 13 尚未形成独立证据或例外。
+8. POC-04 Windows 11 与 Windows Server 2025 功能链已通过；Debian 13 依据 `EXC-P0-003` 暂缓且保持未验证。
 
 ## 本机预检摘要
 

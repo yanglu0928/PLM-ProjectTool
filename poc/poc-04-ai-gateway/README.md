@@ -2,7 +2,7 @@
 
 ## Status
 
-`IN_PROGRESS`
+`PASS_WITH_EXCEPTION`
 
 ## Objective
 
@@ -17,7 +17,7 @@
 - Python 3.13.15。
 - httpx 0.28.1。
 - jsonschema 4.26.0。
-- Debian 13：`NOT_RUN`。
+- Debian 13：依据 `EXC-P0-003` 为 `DEFERRED_BY_USER / 未验证`。
 - `DEEPSEEK_API_KEY`：仅从本地 Secret 或来宾机临时文件读取；任何证据都不得记录 Secret 值。
 
 ## Input
@@ -40,13 +40,13 @@
 
 |验收域|Windows 11|Windows Server 2025|Debian 13|说明|
 |---|---|---|---|---|
-|统一 AIService / ModelRouter / ProviderAdapter|PASS|PASS|NOT_RUN|业务入口不包含厂商 URL 或 SDK|
-|确定性协议与异常场景|PASS|PASS|NOT_RUN|两端均为 11/11 场景通过|
-|单元测试|PASS|PASS|NOT_RUN|两端均为 11/11 测试通过|
-|真实 DeepSeek 无效密钥|PASS|PASS|NOT_RUN|HTTP 401 映射 `AI_AUTH_FAILED`，不重试|
-|真实 DeepSeek 文本|PASS|PASS|NOT_RUN|预期输出精确匹配|
-|真实 DeepSeek SSE 流式|PASS|PASS|NOT_RUN|Chunk 拼接与预期输出匹配|
-|真实 DeepSeek 结构化 JSON|PASS|PASS|NOT_RUN|JSON 解析与本地 Schema 通过|
+|统一 AIService / ModelRouter / ProviderAdapter|PASS|PASS|DEFERRED_BY_USER|业务入口不包含厂商 URL 或 SDK|
+|确定性协议与异常场景|PASS|PASS|DEFERRED_BY_USER|两端均为 11/11 场景通过|
+|单元测试|PASS|PASS|DEFERRED_BY_USER|两端均为 11/11 测试通过|
+|真实 DeepSeek 无效密钥|PASS|PASS|DEFERRED_BY_USER|HTTP 401 映射 `AI_AUTH_FAILED`，不重试|
+|真实 DeepSeek 文本|PASS|PASS|DEFERRED_BY_USER|预期输出精确匹配|
+|真实 DeepSeek SSE 流式|PASS|PASS|DEFERRED_BY_USER|Chunk 拼接与预期输出匹配|
+|真实 DeepSeek 结构化 JSON|PASS|PASS|DEFERRED_BY_USER|JSON 解析与本地 Schema 通过|
 
 真实结构化调用第一次返回不可解析 JSON，网关当时没有对 JSON/Schema failure 重试，结果为 FAIL。修复后，`AI_JSON_INVALID` 与 `AI_SCHEMA_INVALID` 纳入最多 3 次受控重试；第二次真实全量复跑三场景全部 PASS。首次失败证据保留在 `live-validation-result-attempt-1.json`。
 
@@ -73,18 +73,18 @@ MockTransport 的亚毫秒耗时只用于代码路径回归，不代表生产网
 
 1. MockTransport 只能验证网关逻辑和协议解析；真实文本、流式与结构化已另行验证，但尚未形成质量、并发或容量结论。
 2. 当前默认模型名来自 2026-09-17 官方文档快照，正式开发时必须配置化，不得在业务模块硬编码。
-3. Debian 13 尚未执行。
+3. Debian 13 依据 `EXC-P0-003` 暂缓，仍未形成 Debian 兼容性结论。
 4. DeepSeek 官方说明 JSON Output 偶尔可能返回空内容；本 PoC 使用最多 3 次受控重试，连续失败后返回 `AI_JSON_INVALID` 或 `AI_SCHEMA_INVALID`，不把无效结果写成业务事实。
 
 ## Conclusion
 
 Windows 11 与 Windows Server 2025 上统一 AI Gateway 与 DeepSeek Chat Completions 技术路径可行：真实文本、SSE 流式、结构化 JSON 和无效密钥均已通过，异常、重试及业务层厂商隔离由确定性场景覆盖。
 
-POC-04 仍为 `IN_PROGRESS`。Debian 13 尚未执行或取得本 PoC 独立例外，不形成 Debian 平台结论。
+Debian 13 依据用户批准的 `EXC-P0-003` 暂缓，不形成 Debian 平台结论。POC-04 以 `PASS_WITH_EXCEPTION` 收口；恢复 Debian 验证或进入 Debian 发行 Gate 时必须重新验证。
 
 ## PASS / FAIL
 
-`IN_PROGRESS`
+`PASS_WITH_EXCEPTION`
 
 ## Alternative
 
