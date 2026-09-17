@@ -42,10 +42,17 @@ try {
     }
     $started = $true
 
-    & $psql -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p $Port -U poc_admin -d postgres -f $runtimeSql 2>&1 |
-        Tee-Object -FilePath $sqlOutputPath
-    if ($LASTEXITCODE -ne 0) {
-        throw "pgvector smoke SQL failed with exit code $LASTEXITCODE"
+    $savedErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        & $psql -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p $Port -U poc_admin -d postgres -f $runtimeSql 2>&1 |
+            Tee-Object -FilePath $sqlOutputPath
+        $psqlExitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $savedErrorActionPreference
+    }
+    if ($psqlExitCode -ne 0) {
+        throw "pgvector smoke SQL failed with exit code $psqlExitCode"
     }
 
     $extensionVersion = (& $psql -X -h 127.0.0.1 -p $Port -U poc_admin -d postgres -Atc "SELECT extversion FROM pg_extension WHERE extname='vector';" | Out-String).Trim()

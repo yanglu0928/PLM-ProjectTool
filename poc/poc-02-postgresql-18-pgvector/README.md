@@ -4,7 +4,7 @@
 
 `IN_PROGRESS`
 
-Windows 11 功能链已通过；完全断网重放、Windows Server 2025 和 Debian 13 尚未完成，因此不得判定整个 POC-02 PASS。
+Windows 11 功能链已通过；Windows Server 2025 完全断网功能链已通过。Windows 11 断网重放与 Debian 13 尚未完成，因此不得判定整个 POC-02 PASS。
 
 ## Objective
 
@@ -13,6 +13,7 @@ Windows 11 功能链已通过；完全断网重放、Windows Server 2025 和 Deb
 ## Environment
 
 - Windows 11 Home Chinese 10.0.26200，x86-64，32 个逻辑处理器，31.63 GB RAM。
+- Windows Server 2025 Datacenter 10.0.26100，x86-64，16 个逻辑处理器，16 GB RAM，VMware 实机虚拟机。
 - PostgreSQL 18.6 Windows x86-64 官方二进制 ZIP，隔离运行目录 `D:\POC-02\postgresql-18.6`。
 - pgvector 0.8.6，tag commit `8ee86c96f0fd72390f890aa8a336fda6d3ab4c6c`。
 - Visual Studio Build Tools 2022 17.14.41，MSVC 14.44 x64。
@@ -40,39 +41,40 @@ Windows 11 功能链已通过；完全断网重放、Windows Server 2025 和 Deb
 7. 导入 100,000 条向量，构建 HNSW，并以精确查询对照 20 组 Top-5 结果。
 8. 使用 `pg_dump` / `pg_restore` 恢复到新数据库，核对条数、ID 校验和、扩展与索引。
 9. 重启 PostgreSQL 后再次核对源库与恢复库。
+10. 将最小运行包复制到 Windows Server 2025，断开唯一物理网卡后在全新目录重复第 3、5～9 步，再恢复网卡。
 
 ## Result
 
-|验收域|Windows 11 结果|说明|
-|---|---|---|
-|制品清单与 Hash|PASS|4 个制品已登记 SHA-256|
-|完全断网安装|NOT_RUN|本轮使用本地制品，但执行时未物理断网|
-|PostgreSQL init / start / stop|PASS|18.6，实例结束后无残留监听或进程|
-|pgvector 构建与加载|PASS|0.8.6，MSVC x64 构建，`CREATE EXTENSION` 成功|
-|基础向量 CRUD / HNSW|PASS|插入、更新、删除、距离排序与 HNSW 索引通过|
-|SQLAlchemy / psycopg|PASS|Python 3.13.15 连接成功|
-|Alembic 空库 up/down|PASS|升级至 `0002`，回退至 base 后表已删除|
-|Alembic 有数据升级|PASS|升级及回退到 `0001` 后原数据仍在|
-|10 万向量 / HNSW|PASS|100,000 条 32 维向量，执行计划命中 HNSW|
-|备份与恢复|PASS|源库/恢复库各 100,000 条，ID 总和一致|
-|重启健康检查|PASS|重启后源库与恢复库均保持 100,000 条|
+|验收域|Windows 11|Windows Server 2025|说明|
+|---|---|---|---|
+|制品清单与 Hash|PASS|PASS|版本、大小和 SHA-256 已登记|
+|完全断网安装|NOT_RUN|PASS|Server 验证时 1 个物理网卡、0 个已连接|
+|PostgreSQL init / start / stop|PASS|PASS|18.6，实例结束后无残留监听或进程|
+|pgvector 构建与加载|PASS|PASS|Windows 11 构建；两端 `CREATE EXTENSION` 成功|
+|基础向量 CRUD / HNSW|PASS|PASS|插入、更新、删除、距离排序与 HNSW 索引通过|
+|SQLAlchemy / psycopg|PASS|PASS|Python 3.13.15 连接成功|
+|Alembic 空库 up/down|PASS|PASS|升级至 `0002`，回退至 base 后表已删除|
+|Alembic 有数据升级|PASS|PASS|升级及回退到 `0001` 后原数据仍在|
+|10 万向量 / HNSW|PASS|PASS|100,000 条 32 维向量，执行计划命中 HNSW|
+|备份与恢复|PASS|PASS|源库/恢复库各 100,000 条，ID 总和一致|
+|重启健康检查|PASS|PASS|重启后源库与恢复库均保持 100,000 条|
 
 ## Metrics
 
-|指标|Windows 11 实测值|
-|---|---|
-|向量数 / 维度|100,000 / 32|
-|数据生成 SHA-256|`8d4c3916598ec27c363cf75a50bb32954253b2e718318d392661c4cbe99c2500`|
-|导入耗时|1.869 s|
-|HNSW 构建耗时|16.508 s|
-|查询数 / Top-K|20 / 5|
-|平均 / 最低 Top-5 Recall|100% / 100%|
-|精确查询 P50 / P95|23.497 ms / 29.740 ms|
-|HNSW 查询 P50 / P95|1.667 ms / 3.378 ms|
-|备份文件大小|15,687,652 bytes|
-|备份 SHA-256|`3faaa583a1ca8b42844340b8f42d08e572fda64e74fea5dab30f08342167ddcd`|
+|指标|Windows 11|Windows Server 2025|
+|---|---|---|
+|向量数 / 维度|100,000 / 32|100,000 / 32|
+|数据生成 SHA-256|`8d4c...c2500`|`8d4c...c2500`|
+|导入耗时|1.970 s|2.521 s|
+|HNSW 构建耗时|17.586 s|20.476 s|
+|查询数 / Top-K|20 / 5|20 / 5|
+|平均 / 最低 Top-5 Recall|100% / 100%|100% / 100%|
+|精确查询 P50 / P95|26.744 / 31.954 ms|50.869 / 62.206 ms|
+|HNSW 查询 P50 / P95|1.781 / 4.645 ms|2.642 / 15.473 ms|
+|备份文件大小|15,687,652 bytes|15,687,652 bytes|
+|备份 SHA-256|`3faaa5...7ddcd`|`ca3d7d...54c1f`|
 
-以上性能数据仅代表当前 Windows 11 PoC 主机，不是生产容量承诺。
+以上性能数据仅代表对应 PoC 主机，不是生产容量承诺。
 
 ## Logs
 
@@ -84,24 +86,27 @@ Windows 11 功能链已通过；完全断网重放、Windows Server 2025 和 Deb
 - Python、Migration 与 10 万向量：`evidence/windows-11/python-validation.json`
 - 备份、恢复与重启：`evidence/windows-11/backup-restore.json`
 - 中文路径问题：`evidence/windows-11/path-compatibility.md`
+- Windows Server 2025 总结与断网证据：`evidence/windows-server-2025/README.md`、`overall-result.json`
+- Windows Server 2025 组件结果：`evidence/windows-server-2025/postgresql-smoke.json`、`pgvector-smoke.json`、`python-validation.json`、`backup-restore.json`
 
 原始日志、数据库目录、下载制品和 dump 位于被 Git 忽略的 `artifacts/poc-02/` 与 `D:\POC-02`，仓库只提交脱敏摘要。
 
 ## Known Issues
 
 1. PostgreSQL 18.6 `initdb` 在包含中文字符的运行路径中出现路径乱码和 `invalid byte sequence for encoding "UTF8": 0xb9`；改用纯 ASCII 运行路径后通过。Windows 正式部署目录必须限制为纯 ASCII 路径，除非后续上游版本复验解除。
-2. 本轮虽从已下载的本地制品完成解压、构建和运行，但网络未被隔离，不能作为“完全离线安装”证据。
+2. Windows 11 虽从已下载的本地制品完成解压、构建和运行，但执行时网络未隔离；Windows Server 2025 已完成物理网卡断开验证。
 3. `trust` 认证只用于隔离、回环地址 PoC；生产配置必须使用口令或更强认证并实施最小权限。
-4. Windows Server 2025 和 Debian 13 尚未执行本 PoC；Windows 11 结果不能替代其兼容性结论。
+4. Debian 13 尚未执行本 PoC；两个 Windows 平台的结果不能替代 Debian 兼容性结论。
 5. Debian 13 的 `EXC-P0-001` 只适用于 POC-01，不自动扩展到 POC-02。
+6. Windows PowerShell 5.1 会把原生程序写入 stderr 的普通 `NOTICE` 包装为错误记录；验证脚本已改为保留日志并仅以进程退出码判断成败。
 
 ## Conclusion
 
-PostgreSQL 18.6 + pgvector 0.8.6 在当前 Windows 11 x86-64 环境中已通过初始化、扩展构建、ORM/Migration、10 万向量 HNSW、备份恢复和重启验证。该结果支持继续执行 Windows Server 2025 验证，但不等于 POC-02 已跨平台完成。
+PostgreSQL 18.6 + pgvector 0.8.6 已在 Windows 11 与 Windows Server 2025 x86-64 通过初始化、扩展加载、ORM/Migration、10 万向量 HNSW、备份恢复和重启验证；Windows Server 2025 还通过完全断网安装与执行。Debian 13 仍未验证，因此 POC-02 尚未跨平台完成。
 
 ## PASS / FAIL
 
-`IN_PROGRESS`：Windows 11 功能验收 PASS；完全断网、Windows Server 2025、Debian 13 为 NOT_RUN。
+`IN_PROGRESS`：Windows 11 功能验收 PASS、断网重放 NOT_RUN；Windows Server 2025 全部验收项 PASS；Debian 13 为 NOT_RUN。
 
 ## Alternative
 

@@ -57,10 +57,17 @@ try {
         throw "Source benchmark data is incomplete before backup"
     }
 
-    & $pgDump -h 127.0.0.1 -p $Port -U poc_admin -d $sourceDatabase `
-        --format=custom --compress=6 --no-owner --no-privileges --file=$dumpPath 2>&1 |
-        Tee-Object -FilePath $dumpLogPath
-    if ($LASTEXITCODE -ne 0) { throw "pg_dump failed with exit code $LASTEXITCODE" }
+    $savedErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        & $pgDump -h 127.0.0.1 -p $Port -U poc_admin -d $sourceDatabase `
+            --format=custom --compress=6 --no-owner --no-privileges --file=$dumpPath 2>&1 |
+            Tee-Object -FilePath $dumpLogPath
+        $dumpExitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $savedErrorActionPreference
+    }
+    if ($dumpExitCode -ne 0) { throw "pg_dump failed with exit code $dumpExitCode" }
 
     & $psql -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p $Port -U poc_admin -d postgres `
         -c "DROP DATABASE IF EXISTS $restoreDatabase WITH (FORCE);" | Out-Null
@@ -69,10 +76,17 @@ try {
         -c "CREATE DATABASE $restoreDatabase;" | Out-Null
     if ($LASTEXITCODE -ne 0) { throw "Restore database creation failed" }
 
-    & $pgRestore -h 127.0.0.1 -p $Port -U poc_admin -d $restoreDatabase `
-        --exit-on-error --no-owner --no-privileges $dumpPath 2>&1 |
-        Tee-Object -FilePath $restoreLogPath
-    if ($LASTEXITCODE -ne 0) { throw "pg_restore failed with exit code $LASTEXITCODE" }
+    $savedErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        & $pgRestore -h 127.0.0.1 -p $Port -U poc_admin -d $restoreDatabase `
+            --exit-on-error --no-owner --no-privileges $dumpPath 2>&1 |
+            Tee-Object -FilePath $restoreLogPath
+        $restoreExitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $savedErrorActionPreference
+    }
+    if ($restoreExitCode -ne 0) { throw "pg_restore failed with exit code $restoreExitCode" }
 
     $restoredCount = [int64](Invoke-ScalarQuery -Database $restoreDatabase -Sql "SELECT count(*) FROM poc02_benchmark_vectors;")
     $restoredIdSum = [int64](Invoke-ScalarQuery -Database $restoreDatabase -Sql "SELECT sum(id) FROM poc02_benchmark_vectors;")

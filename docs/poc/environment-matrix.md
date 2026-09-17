@@ -16,7 +16,7 @@
 |环境|操作系统|CPU 架构|资源|Python 3.13|资格|状态|
 |---|---|---|---|---|---|---|
 |本地开发机 / Windows 11 验收环境|Windows 11 Home 10.0.26200|x86-64|32 逻辑处理器 / 31.63 GB RAM / D盘约 435.29 GB 可用|3.13.15|POC-01 已收口；POC-02 PostgreSQL/pgvector 功能链已验证|POC01_PASS / POC02_FUNCTIONAL_PASS|
-|VMware / Windows Server 2025 验收环境|Windows Server 2025 Datacenter 10.0.26100（Desktop Experience）|x86-64|16 逻辑处理器 / 16 GB RAM / 系统盘约 54.71 GB 可用|3.13.15（官方嵌入式包）|POC-01 依赖、离线 wheel、Tesseract/OCRmyPDF 主链已验证|POC01_PASS|
+|VMware / Windows Server 2025 验收环境|Windows Server 2025 Datacenter 10.0.26100（Desktop Experience）|x86-64|16 逻辑处理器 / 16 GB RAM / 系统盘约 54.71 GB 可用|3.13.15（官方嵌入式包）|POC-01 已收口；POC-02 完全断网功能链已验证|POC01_PASS / POC02_PASS|
 |Linux 验收环境|Debian 13|x86-64|最低 4C / 8 GB / 100 GB|未确认|正式目标；本轮验证暂缓|DEFERRED_BY_USER|
 
 ## 当前工具发现
@@ -42,7 +42,7 @@
 
 1. Debian 13 本轮验证依据 `EXC-P0-001` 暂缓；恢复验证时仍需可重复使用的 x86-64 环境。
 2. POC-02 三个平台均需具备断网验收窗口；Windows 11 已使用本地制品，但未在物理断网状态执行。
-3. Windows 11 的 PostgreSQL 18.6 + pgvector 0.8.6 功能链已通过；Windows Server 2025 和 Debian 13 仍为 NOT_RUN。
+3. Windows 11 与 Windows Server 2025 的 PostgreSQL 18.6 + pgvector 0.8.6 功能链已通过；Server 已完全断网验证，Windows 11 断网重放仍为 NOT_RUN。
 4. Windows Server 2025 当前账号无管理员令牌，系统策略拒绝 Python EXE 安装器；POC-01 已使用官方嵌入式包验证无管理员部署路径。
 5. Windows 11 的 PostgreSQL `initdb` 在中文运行路径失败；当前部署约束为程序、数据和临时 SQL 使用纯 ASCII 路径。
 
@@ -79,3 +79,7 @@
 |Ghostscript 10.08.0 / PDF-A-2b|PASS|
 |OCRmyPDF deskew / 中文输出编码|PASS|
 |预期术语召回率|5/5，100%|
+|PostgreSQL 18.6 完全断网 init / start / stop|PASS|
+|pgvector 0.8.6 / SQLAlchemy / Alembic|PASS|
+|100,000 条 32 维向量 / HNSW|PASS；20 组 Top-5 Recall 100%|
+|pg_dump / pg_restore / 重启健康检查|PASS|

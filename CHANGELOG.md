@@ -27,6 +27,9 @@
 - 安装并验证 Visual Studio Build Tools 2022 17.14.41 / MSVC 14.44 x64，按 pgvector 官方流程构建并加载 pgvector 0.8.6。
 - 新增 POC-02 SQLAlchemy/Alembic 验证脚手架；空库 up/down 与有数据升级/回退均通过。
 - 完成 Windows 11 100,000 条 32 维向量 HNSW 验证：20 组 Top-5 平均及最低 Recall 均为 100%，并完成 `pg_dump` / `pg_restore` 与重启健康检查。
+- 完成 Windows Server 2025 完全断网验证：PostgreSQL 18.6、pgvector 0.8.6、SQLAlchemy/Alembic、100,000 条向量 HNSW、备份恢复及重启全部通过。
+- 新增 Windows Server 2025 最小离线包生成与来宾验收脚本；运行包和证据均记录 SHA-256，虚拟网卡在验证结束后恢复。
+- 修复 Windows PowerShell 5.1 将 `psql` 普通 stderr/NOTICE 误判为终止错误的问题，并兼容嵌入式 Python 的 Alembic 本地模块路径。
 
 ### 兼容性
 
@@ -41,11 +44,12 @@
 
 - 项目 Skill 结构校验通过。
 - POC-01 本轮要求覆盖 2/2：Windows 11、Windows Server 2025 PASS；Debian 13 为 `DEFERRED_BY_USER`。
-- POC-02 Windows 11 除“完全断网”外的功能验收项 PASS；Windows Server 2025、Debian 13 仍为 NOT_RUN。
+- POC-02 Windows 11 除“完全断网”外的功能验收项 PASS。
+- POC-02 Windows Server 2025 全部验收项 PASS；20 组 Top-5 平均及最低 Recall 100%，备份恢复条数与 ID 校验和一致。
 
 ### 已知问题
 
 - Phase 0 阻塞 PoC 尚未全部通过，禁止进入大规模正式业务开发。
 - Debian 13 尚无可用验收环境，兼容性保持未验证；恢复 Debian 验证或发行时必须重新开启相关 Gate。
-- POC-02 完全断网、Windows Server 2025 与 Debian 13 尚未验证，不能形成跨平台 PASS 结论。
+- POC-02 Windows 11 完全断网与 Debian 13 尚未验证，不能形成三平台 PASS 结论。
 - PostgreSQL 18.6 在 Windows 中文运行路径存在 `initdb` 编码失败；当前部署路径必须为纯 ASCII。

@@ -1,9 +1,16 @@
 from __future__ import annotations
 
 from logging.config import fileConfig
+from pathlib import Path
+import sys
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
+
+# Embedded Python does not always add the invoked script directory to sys.path.
+python_root = str(Path(__file__).resolve().parents[1])
+if python_root not in sys.path:
+    sys.path.insert(0, python_root)
 
 from models import Base
 

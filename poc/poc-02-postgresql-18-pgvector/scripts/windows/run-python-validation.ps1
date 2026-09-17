@@ -39,9 +39,16 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "pg_ctl start failed with exit code $LASTEXITCODE" }
     $started = $true
 
-    & $PythonExecutable $validationScript --port $Port --output $resultPath 2>&1 |
-        Tee-Object -FilePath $validationLog
-    if ($LASTEXITCODE -ne 0) { throw "Python database validation failed with exit code $LASTEXITCODE" }
+    $savedErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        & $PythonExecutable $validationScript --port $Port --output $resultPath 2>&1 |
+            Tee-Object -FilePath $validationLog
+        $pythonExitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $savedErrorActionPreference
+    }
+    if ($pythonExitCode -ne 0) { throw "Python database validation failed with exit code $pythonExitCode" }
 
     $result = Get-Content -LiteralPath $resultPath -Raw | ConvertFrom-Json
     if ($result.status -ne "PASS") { throw "Python database validation did not report PASS" }

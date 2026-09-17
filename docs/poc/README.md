@@ -7,7 +7,7 @@
 - Phase：Phase 0
 - 状态：IN_PROGRESS
 - 启动日期：2026-09-17
-- 当前任务：POC-02 PostgreSQL 18 + pgvector（Windows 11 功能链已通过，待断网及另两平台验证）
+- 当前任务：POC-02 PostgreSQL 18 + pgvector（Windows 11 功能链、Windows Server 2025 完全断网功能链已通过；待 Windows 11 断网与 Debian 13）
 - 正式业务开发：BLOCKED
 
 ## 入口

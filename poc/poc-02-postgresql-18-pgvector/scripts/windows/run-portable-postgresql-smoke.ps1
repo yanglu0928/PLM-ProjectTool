@@ -77,10 +77,17 @@ try {
         throw "Unexpected PostgreSQL version output"
     }
 
-    & $psql -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p $Port -U poc_admin -d postgres -f $runtimeSmokeSql 2>&1 |
-        Tee-Object -FilePath $sqlOutputPath
-    if ($LASTEXITCODE -ne 0) {
-        throw "PostgreSQL smoke SQL failed with exit code $LASTEXITCODE"
+    $savedErrorActionPreference = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        & $psql -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p $Port -U poc_admin -d postgres -f $runtimeSmokeSql 2>&1 |
+            Tee-Object -FilePath $sqlOutputPath
+        $psqlExitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $savedErrorActionPreference
+    }
+    if ($psqlExitCode -ne 0) {
+        throw "PostgreSQL smoke SQL failed with exit code $psqlExitCode"
     }
 
     $rowCount = [int]((& $psql -X -h 127.0.0.1 -p $Port -U poc_admin -d postgres -Atc "SELECT count(*) FROM poc02_smoke;" | Out-String).Trim())

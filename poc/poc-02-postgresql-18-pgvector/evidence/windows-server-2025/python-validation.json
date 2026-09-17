@@ -15,19 +15,19 @@
     "dimensions": 32,
     "seed": 20260917,
     "data_sha256": "8d4c3916598ec27c363cf75a50bb32954253b2e718318d392661c4cbe99c2500",
-    "load_seconds": 1.97,
-    "hnsw_build_seconds": 17.586,
+    "load_seconds": 2.521,
+    "hnsw_build_seconds": 20.476,
     "query_count": 20,
     "top_k": 5,
     "mean_top5_recall": 1.0,
     "minimum_accepted_mean_top5_recall": 0.95,
     "min_top5_recall": 1.0,
-    "exact_latency_ms_p50": 26.744,
-    "exact_latency_ms_p95": 31.954,
-    "hnsw_latency_ms_p50": 1.781,
-    "hnsw_latency_ms_p95": 4.645,
+    "exact_latency_ms_p50": 50.869,
+    "exact_latency_ms_p95": 62.206,
+    "hnsw_latency_ms_p50": 2.642,
+    "hnsw_latency_ms_p95": 15.473,
     "query_plan_uses_hnsw": true,
     "pgvector_version": "0.8.6"
   },
-  "total_seconds": 21.76
+  "total_seconds": 38.096
 }
