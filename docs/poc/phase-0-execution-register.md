@@ -15,7 +15,7 @@
 |PoC|对应 WBS|验证主题|状态|开始日期|完成日期|结论|证据|
 |---|---|---|---|---|---|---|---|
 |POC-01|P0.01/P0.01S/P0.02/P0.03/P0.04|Python 3.13 三平台依赖及离线安装|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11、Windows Server 2025 PASS；Debian 13 经用户批准暂缓，不构成兼容性结论|`poc/poc-01-python-313-dependencies/`、`docs/poc/phase-0-exceptions.md`|
-|POC-02|P0.05/P0.06/P0.07/P0.08|PostgreSQL 18 + pgvector|IN_PROGRESS|2026-09-17|-|Windows 11 官方制品可用性 PASS；本机未安装 PostgreSQL，缺少 MSVC x64/`nmake` 工具链|`poc/poc-02-postgresql-18-pgvector/`|
+|POC-02|P0.05/P0.06/P0.07/P0.08|PostgreSQL 18 + pgvector|IN_PROGRESS|2026-09-17|-|Windows 11 功能链 PASS：PostgreSQL 18.6、pgvector 0.8.6、Alembic、10 万向量 HNSW、备份恢复与重启；完全断网及另两平台仍未验证|`poc/poc-02-postgresql-18-pgvector/`|
 |POC-03|P0.09/P0.10/P0.12|PLM RAG|NOT_STARTED|-|-|-|-|
 |POC-04|P0.11|AI Gateway / DeepSeek|NOT_STARTED|-|-|-|-|
 |POC-05|P0.04/P0.12|Document + OCR|NOT_STARTED|-|-|-|-|
@@ -46,3 +46,4 @@
 |2026-09-17|Windows Server 2025 Datacenter 实机完成 Python 3.13.15 官方嵌入式运行时、109-wheel 完全离线安装、15/15 项检查及中文 OCR/PDF-A-2b/deskew 验证；POC-01 平台覆盖达到 2/3。|
 |2026-09-17|用户明确批准 Debian 13 本轮不验证；登记 `EXC-P0-001`，POC-01 以 `PASS_WITH_EXCEPTION` 收口，Debian 兼容性仍为未验证。|
 |2026-09-17|启动 POC-02；创建工作区和验收矩阵，完成 Windows 11 PostgreSQL 18.6 / pgvector 0.8.6 官方制品可用性检查。|
+|2026-09-17|POC-02 Windows 11 功能链通过：便携式 PostgreSQL 18.6、MSVC x64 构建 pgvector 0.8.6、SQLAlchemy/Alembic、10 万向量 HNSW、备份恢复及重启；登记中文运行路径约束，完全断网与另两平台保持 NOT_RUN。|

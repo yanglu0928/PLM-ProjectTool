@@ -1,0 +1,33 @@
+{
+  "status": "PASS",
+  "python_version": "3.13.15",
+  "sqlalchemy_psycopg_connection": "PASS",
+  "migrations": {
+    "status": "PASS",
+    "empty_database_upgrade_revision": "0002",
+    "empty_database_downgrade_to_base": true,
+    "data_retained_on_upgrade": true,
+    "data_retained_on_downgrade": true
+  },
+  "benchmark": {
+    "status": "PASS",
+    "vector_count": 100000,
+    "dimensions": 32,
+    "seed": 20260917,
+    "data_sha256": "8d4c3916598ec27c363cf75a50bb32954253b2e718318d392661c4cbe99c2500",
+    "load_seconds": 1.869,
+    "hnsw_build_seconds": 16.508,
+    "query_count": 20,
+    "top_k": 5,
+    "mean_top5_recall": 1.0,
+    "minimum_accepted_mean_top5_recall": 0.95,
+    "min_top5_recall": 1.0,
+    "exact_latency_ms_p50": 23.497,
+    "exact_latency_ms_p95": 29.74,
+    "hnsw_latency_ms_p50": 1.667,
+    "hnsw_latency_ms_p95": 3.378,
+    "query_plan_uses_hnsw": true,
+    "pgvector_version": "0.8.6"
+  },
+  "total_seconds": 20.508
+}

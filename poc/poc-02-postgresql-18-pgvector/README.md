@@ -4,7 +4,7 @@
 
 `IN_PROGRESS`
 
-Windows 11 可用性检查已完成；尚未安装、初始化或执行数据库功能验证，不得判定 POC-02 PASS。
+Windows 11 功能链已通过；完全断网重放、Windows Server 2025 和 Debian 13 尚未完成，因此不得判定整个 POC-02 PASS。
 
 ## Objective
 
@@ -12,94 +12,99 @@ Windows 11 可用性检查已完成；尚未安装、初始化或执行数据库
 
 ## Environment
 
-正式目标环境：
+- Windows 11 Home Chinese 10.0.26200，x86-64，32 个逻辑处理器，31.63 GB RAM。
+- PostgreSQL 18.6 Windows x86-64 官方二进制 ZIP，隔离运行目录 `D:\POC-02\postgresql-18.6`。
+- pgvector 0.8.6，tag commit `8ee86c96f0fd72390f890aa8a336fda6d3ab4c6c`。
+- Visual Studio Build Tools 2022 17.14.41，MSVC 14.44 x64。
+- Python 3.13.15、SQLAlchemy 2.0.54、Alembic 1.20.0、psycopg 3.3.5、pgvector Python 0.5.0、NumPy 2.3.5。
+- 数据库仅监听 `127.0.0.1:55432`；PoC 临时集群使用 `trust`，不得用于生产。
 
-- Windows 11 x86-64/AMD64。
-- Windows Server 2025 x86-64/AMD64。
-- Debian 13 x86-64/AMD64。
-
-当前执行环境：Windows 11 Home 10.0.26200 x86-64，32 个逻辑处理器，31.63 GB RAM，D 盘约 435.29 GB 可用。当前账号不是管理员。
+正式目标环境仍为 Windows 11、Windows Server 2025、Debian 13，均为 x86-64/AMD64。
 
 ## Input
 
-- PostgreSQL 18.6 Windows x86-64 安装器或官方二进制 ZIP。
-- pgvector 0.8.6 源码，Git tag `v0.8.6`，commit `8ee86c96f0fd72390f890aa8a336fda6d3ab4c6c`。
+- PostgreSQL 18.6 Windows 安装器与二进制 ZIP。
+- pgvector 0.8.6 官方源码。
 - Visual Studio C++ x64 构建工具和 `nmake`。
-- Python 3.13、SQLAlchemy 2.x、Alembic、psycopg 3.x、pgvector Python client。
-- 10 万条可重复生成的测试向量。
+- POC-01 已验证的 Python 3.13 离线环境。
+- 固定种子 `20260917` 生成的 100,000 条 32 维向量。
 
 ## Steps
 
-1. 执行 `scripts/windows/check-availability.ps1`，记录操作系统、权限、本机 PostgreSQL 和 C++ 工具链状态，并检查官方制品 URL。
-2. 下载并校验 PostgreSQL 18.6、pgvector 0.8.6 及离线构建依赖。
-3. 在无管理员服务安装依赖的隔离目录中初始化 PostgreSQL 18 数据目录并启动实例。
-4. 使用 x64 MSVC 工具链构建 pgvector，安装到隔离 PostgreSQL 目录。
-5. 执行 `CREATE EXTENSION vector`、基础向量 SQL 和 HNSW 验证。
-6. 执行 SQLAlchemy/Alembic up/down、空库和有数据升级验证。
-7. 导入 10 万条测试向量，记录构建时间、查询延迟和 Recall 指标。
-8. 执行 `pg_dump` / `pg_restore`，核对数据量、扩展和索引。
-9. 在 Windows Server 2025 重复执行并保留独立证据。
+1. 采集操作系统、权限、本机安装状态和官方制品可用性。
+2. 下载制品，记录版本、大小和 SHA-256；核验 pgvector tag commit。
+3. 将 PostgreSQL 解压到纯 ASCII 路径，执行 `initdb`、启动、SQL 和停止验证。
+4. 使用 MSVC x64 / `nmake` 构建 pgvector 并安装到隔离 PostgreSQL 目录。
+5. 执行 `CREATE EXTENSION vector`、基础向量 CRUD 和 HNSW 索引检查。
+6. 使用 SQLAlchemy 2.x / psycopg 连接；执行 Alembic 空库 up/down 和有数据升级/回退。
+7. 导入 100,000 条向量，构建 HNSW，并以精确查询对照 20 组 Top-5 结果。
+8. 使用 `pg_dump` / `pg_restore` 恢复到新数据库，核对条数、ID 校验和、扩展与索引。
+9. 重启 PostgreSQL 后再次核对源库与恢复库。
 
 ## Result
 
-### Windows 11 可用性检查
-
-|检查项|结果|证据/说明|
+|验收域|Windows 11 结果|说明|
 |---|---|---|
-|PostgreSQL 18 当前稳定维护版本|AVAILABLE|PostgreSQL 官方页面显示 18.6|
-|Windows x86-64 安装器|AVAILABLE_ONLINE|HTTP 200，375,833,688 bytes|
-|Windows x86-64 二进制 ZIP|AVAILABLE_ONLINE|HTTP 200，343,808,005 bytes|
-|PostgreSQL 18 Windows 平台支持|AVAILABLE|官方页面列出 Windows Server 2025/2022；桌面 Windows 属可比平台，仍须本机实测|
-|pgvector PostgreSQL 18 支持|AVAILABLE|pgvector 0.8.6 官方文档以 `PGROOT=...\PostgreSQL\18` 给出 Windows 构建命令|
-|pgvector 0.8.6 tag|AVAILABLE|远端 tag commit `8ee86c96f0fd72390f890aa8a336fda6d3ab4c6c`|
-|本机 PostgreSQL|NOT_INSTALLED|未发现命令、服务、注册表安装项或标准安装目录|
-|Visual Studio C++ / `nmake`|NOT_AVAILABLE|未发现 Visual Studio Installer、`cl.exe` 或 `nmake.exe`|
-|本机管理员令牌|NO|优先验证便携式 PostgreSQL；安装构建工具可能需要管理员操作|
-
-官方来源：
-
-- <https://www.postgresql.org/download/windows/>
-- <https://www.enterprisedb.com/download-postgresql-binaries>
-- <https://github.com/pgvector/pgvector>
-- <https://github.com/pgvector/pgvector/blob/v0.8.6/CHANGELOG.md>
+|制品清单与 Hash|PASS|4 个制品已登记 SHA-256|
+|完全断网安装|NOT_RUN|本轮使用本地制品，但执行时未物理断网|
+|PostgreSQL init / start / stop|PASS|18.6，实例结束后无残留监听或进程|
+|pgvector 构建与加载|PASS|0.8.6，MSVC x64 构建，`CREATE EXTENSION` 成功|
+|基础向量 CRUD / HNSW|PASS|插入、更新、删除、距离排序与 HNSW 索引通过|
+|SQLAlchemy / psycopg|PASS|Python 3.13.15 连接成功|
+|Alembic 空库 up/down|PASS|升级至 `0002`，回退至 base 后表已删除|
+|Alembic 有数据升级|PASS|升级及回退到 `0001` 后原数据仍在|
+|10 万向量 / HNSW|PASS|100,000 条 32 维向量，执行计划命中 HNSW|
+|备份与恢复|PASS|源库/恢复库各 100,000 条，ID 总和一致|
+|重启健康检查|PASS|重启后源库与恢复库均保持 100,000 条|
 
 ## Metrics
 
-|指标|目标|当前值|
-|---|---|---|
-|官方 PostgreSQL Windows 制品可访问性|100%|2/2 URL HTTP 200|
-|pgvector PostgreSQL 18 官方支持证据|存在|PASS（0.8.6）|
-|本机 PostgreSQL 18 安装与初始化|PASS|NOT_RUN|
-|pgvector 构建与 `CREATE EXTENSION`|PASS|BLOCKED_TOOLCHAIN|
-|Alembic up/down 与升级|PASS|NOT_RUN|
-|10 万级 HNSW|PASS|NOT_RUN|
-|备份恢复|PASS|NOT_RUN|
-|Windows 平台覆盖|2/2|0/2 功能验证；Windows 11 仅完成可用性检查|
+|指标|Windows 11 实测值|
+|---|---|
+|向量数 / 维度|100,000 / 32|
+|数据生成 SHA-256|`8d4c3916598ec27c363cf75a50bb32954253b2e718318d392661c4cbe99c2500`|
+|导入耗时|1.869 s|
+|HNSW 构建耗时|16.508 s|
+|查询数 / Top-K|20 / 5|
+|平均 / 最低 Top-5 Recall|100% / 100%|
+|精确查询 P50 / P95|23.497 ms / 29.740 ms|
+|HNSW 查询 P50 / P95|1.667 ms / 3.378 ms|
+|备份文件大小|15,687,652 bytes|
+|备份 SHA-256|`3faaa583a1ca8b42844340b8f42d08e572fda64e74fea5dab30f08342167ddcd`|
+
+以上性能数据仅代表当前 Windows 11 PoC 主机，不是生产容量承诺。
 
 ## Logs
 
-- Windows 11 可用性摘要：`evidence/windows-11/availability.json`
-- Windows 11 可用性说明：`evidence/windows-11/README.md`
-- 总体验收矩阵：`acceptance-matrix.md`
+- 制品清单：`evidence/windows-11/asset-manifest.json`
+- PostgreSQL 初始化：`evidence/windows-11/postgresql-smoke.json`
+- 构建工具：`evidence/windows-11/toolchain.json`
+- pgvector 构建：`evidence/windows-11/pgvector-build.json`
+- pgvector 基础功能：`evidence/windows-11/pgvector-smoke.json`
+- Python、Migration 与 10 万向量：`evidence/windows-11/python-validation.json`
+- 备份、恢复与重启：`evidence/windows-11/backup-restore.json`
+- 中文路径问题：`evidence/windows-11/path-compatibility.md`
 
-日志和原始下载制品必须保存在被 Git 忽略的 `artifacts/poc-02/`，脱敏摘要才可提交。
+原始日志、数据库目录、下载制品和 dump 位于被 Git 忽略的 `artifacts/poc-02/` 与 `D:\POC-02`，仓库只提交脱敏摘要。
 
 ## Known Issues
 
-1. Windows 官方 pgvector 安装方式需要 Visual Studio C++ x64 工具链和 `nmake`，当前本机未安装。
-2. 当前账号没有管理员令牌；不能假设 EDB 服务安装器和 Visual Studio Build Tools 可静默安装成功。
-3. PostgreSQL 18.6 Windows 安装器存在近期已关闭的[上游问题记录](https://github.com/EnterpriseDB/edb-installers/issues/658)，因此本 PoC 同时准备官方二进制 ZIP 作为隔离验证路径；两种路径均尚未执行安装。
-4. Windows 11 不是 PostgreSQL 下载页列出的服务器认证平台；官方仅说明可比桌面版本通常可运行，必须以本机执行证据确认。
-5. Debian 13 本轮尚未开始；`EXC-P0-001` 只适用于 POC-01，不自动扩展到 POC-02。
+1. PostgreSQL 18.6 `initdb` 在包含中文字符的运行路径中出现路径乱码和 `invalid byte sequence for encoding "UTF8": 0xb9`；改用纯 ASCII 运行路径后通过。Windows 正式部署目录必须限制为纯 ASCII 路径，除非后续上游版本复验解除。
+2. 本轮虽从已下载的本地制品完成解压、构建和运行，但网络未被隔离，不能作为“完全离线安装”证据。
+3. `trust` 认证只用于隔离、回环地址 PoC；生产配置必须使用口令或更强认证并实施最小权限。
+4. Windows Server 2025 和 Debian 13 尚未执行本 PoC；Windows 11 结果不能替代其兼容性结论。
+5. Debian 13 的 `EXC-P0-001` 只适用于 POC-01，不自动扩展到 POC-02。
 
 ## Conclusion
 
-PostgreSQL 18.6 和 pgvector 0.8.6 均存在官方 Windows 18 路径，Windows 11 具备继续准备离线制品的基础条件。当前只能判定“制品来源可用”，不能判定“PostgreSQL 18 + pgvector 已兼容 Windows 11”。下一阻塞项是补齐 MSVC x64/`nmake` 构建能力并完成首次隔离安装。
+PostgreSQL 18.6 + pgvector 0.8.6 在当前 Windows 11 x86-64 环境中已通过初始化、扩展构建、ORM/Migration、10 万向量 HNSW、备份恢复和重启验证。该结果支持继续执行 Windows Server 2025 验证，但不等于 POC-02 已跨平台完成。
 
 ## PASS / FAIL
 
-`IN_PROGRESS`：可用性检查 PASS；功能链尚未执行。
+`IN_PROGRESS`：Windows 11 功能验收 PASS；完全断网、Windows Server 2025、Debian 13 为 NOT_RUN。
 
 ## Alternative
 
-若 EDB 安装器受权限或上游缺陷影响，优先使用同版本官方二进制 ZIP 在项目隔离目录执行 `initdb`，不更换 PostgreSQL 18 基线。若 pgvector 0.8.6 无法在官方 Windows 构建流程中编译，必须先形成 Failure Analysis、Root Cause、Impact、Option A、Option B 和 Recommendation，再由用户决定方案。
+- 若 EDB 服务安装器受权限或策略影响，继续使用同版本官方二进制 ZIP 的便携式部署路径，不更换 PostgreSQL 18 基线。
+- 若目标环境无法在本机构建 pgvector，可在同 OS/架构的受控构建机生成并校验二进制制品，但必须重新验证 PostgreSQL 小版本、编译器 ABI 和完整离线安装。
+- 若纯 ASCII 安装路径约束不可接受，须形成独立上游兼容性调查和方案评审，不得直接宣称中文路径受支持。
