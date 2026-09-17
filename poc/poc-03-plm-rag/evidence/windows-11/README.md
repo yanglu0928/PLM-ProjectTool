@@ -20,6 +20,14 @@
 - 合同/技术协议资料产生 192 个 Chunk；历史方案产生 463 个 Chunk。
 - 候选正文仅保存在 `artifacts/poc-03/candidate-dataset/2026-09-17-r2/`。
 
+## Human Review Workbook
+
+- 已从 120 条候选生成本地 Excel 评审工作簿，包含“评审总览”和“候选评审”两张工作表。
+- 工作簿初始状态为 120 条 `PENDING`、0 条 `APPROVED`、0 条可转正式集。
+- 3 组下拉规则、完备性公式、冻结窗格、筛选表和条件格式已写入导出文件。
+- 已渲染并检查两张工作表；导出后重新载入成功，公式错误扫描为 0。
+- 工作簿含候选正文，只保存在 Git 忽略的本地 `artifacts/`；仓库仅提交 `review-workbook-result.json` 的脱敏结论。
+
 ## Privacy
 
 - `方案库/`、`技术协议&合同/` 和 `artifacts/` 均由 Git 忽略。
@@ -28,7 +36,7 @@
 
 ## Result
 
-候选集生成链路 PASS，但这些记录尚未人工确认，因此不能计入正式 Golden Dataset，不能计算或宣称 Top-5 Recall、分类准确率和引用准确率通过。
+候选集生成链路和本地评审工作簿生成链路 PASS，但这些记录尚未人工确认，因此不能计入正式 Golden Dataset，不能计算或宣称 Top-5 Recall、分类准确率和引用准确率通过。
 
 ## Known Issues
 
