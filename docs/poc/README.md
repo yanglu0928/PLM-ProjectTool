@@ -7,7 +7,7 @@
 - Phase：Phase 0
 - 状态：IN_PROGRESS
 - 启动日期：2026-09-17
-- 当前任务：POC-02 已按 `EXC-P0-002` 以 `PASS_WITH_EXCEPTION` 收口；下一推荐任务为 POC-05 Document + OCR
+- 当前任务：POC-05 Windows 11 功能链及 Windows Server 2025 完全断网链已通过；Windows 11 断网、Debian 13 和真实扫描件仍待处理
 - 正式业务开发：BLOCKED
 
 ## 入口
@@ -16,6 +16,7 @@
 - [三平台环境矩阵](environment-matrix.md)
 - [POC-01 实施与结果](../../poc/poc-01-python-313-dependencies/README.md)
 - [POC-02 实施与结果](../../poc/poc-02-postgresql-18-pgvector/README.md)
+- [POC-05 实施与结果](../../poc/poc-05-document-ocr/README.md)
 - [Phase 0 验证例外](phase-0-exceptions.md)
 
 ## 判定规则

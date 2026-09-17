@@ -1,10 +1,12 @@
 # Phase 0 PoC 工作区
 
-每个 PoC 使用独立目录，保存输入、脚本、非敏感证据及正式结论。当前只初始化正在执行的 POC-01，其他 PoC 在进入对应 WBS 时创建，避免产生无结论的空目录。
+每个 PoC 使用独立目录，保存输入、脚本、非敏感证据及正式结论。仅在进入对应 WBS 后创建目录，避免产生无结论的空工作区。
 
 ## 当前 PoC
 
-- `poc-01-python-313-dependencies/`：Python 3.13 双平台核心依赖与离线安装验证。
+- `poc-01-python-313-dependencies/`：Python 3.13 三平台依赖与离线安装验证。
+- `poc-02-postgresql-18-pgvector/`：PostgreSQL 18 + pgvector 离线部署与功能验证。
+- `poc-05-document-ocr/`：Document + OCR 六类输入统一解析验证。
 
 ## 证据要求
 
