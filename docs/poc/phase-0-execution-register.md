@@ -1,0 +1,54 @@
+# Phase 0 执行登记表
+
+## 阶段状态
+
+|字段|值|
+|---|---|
+|Phase|Phase 0 技术验证|
+|状态|IN_PROGRESS|
+|启动日期|2026-09-17|
+|正式开发 Gate|BLOCKED|
+|完成条件|全部 P0 PoC PASS，或失败项具有用户确认的替代方案|
+
+## PoC 登记
+
+|PoC|对应 WBS|验证主题|状态|开始日期|完成日期|结论|证据|
+|---|---|---|---|---|---|---|---|
+|POC-01|P0.01/P0.01S/P0.02/P0.03/P0.04|Python 3.13 三平台依赖及离线安装|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11、Windows Server 2025 PASS；Debian 13 经用户批准暂缓，不构成兼容性结论|`poc/poc-01-python-313-dependencies/`、`docs/poc/phase-0-exceptions.md`|
+|POC-02|P0.05/P0.06/P0.07/P0.08|PostgreSQL 18 + pgvector|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11 功能链 PASS；Windows Server 2025 完全断网功能链 PASS；Windows 11 断网重放与 Debian 13 经用户批准暂缓，不构成对应兼容性结论|`poc/poc-02-postgresql-18-pgvector/`、`docs/poc/phase-0-exceptions.md`|
+|POC-03|P0.09/P0.10/P0.12|PLM RAG|NOT_STARTED|-|-|-|-|
+|POC-04|P0.11|AI Gateway / DeepSeek|NOT_STARTED|-|-|-|-|
+|POC-05|P0.04/P0.12|Document + OCR|IN_PROGRESS|2026-09-17|-|Windows 11 六类输入和主辅 OCR 功能链 PASS；Windows Server 2025 完全断网 8/8 PASS；Windows 11 断网、Debian 13 和真实扫描件待处理|`poc/poc-05-document-ocr/`|
+|POC-06|P0.16/P0.17|Word / PPT|NOT_STARTED|-|-|-|-|
+|POC-07|P1|VSDX|DEFERRED_P1|-|-|不阻塞 Phase 0|-|
+|POC-08|P0.13|Plugin Host|NOT_STARTED|-|-|-|-|
+|POC-09|P0.14/P0.15|License|NOT_STARTED|-|-|-|-|
+
+## 状态定义
+
+- `NOT_STARTED`：尚未开始。
+- `IN_PROGRESS`：已有执行活动，但未满足完整验收条件。
+- `BLOCKED`：当前缺少必要环境、输入或决策。
+- `PASS`：全部必需产物和验收项通过。
+- `PASS_WITH_EXCEPTION`：已验证范围通过，未验证范围具有用户明确批准的书面例外；不得把例外范围描述为已验证。
+- `FAIL`：已形成完整失败分析，尚无获批替代方案。
+- `DEFERRED_P1`：正式降级为 P1，不阻塞 Phase 0。
+
+## 变更记录
+
+|日期|变更|
+|---|---|
+|2026-09-17|建立 Phase 0 登记表并启动 POC-01。|
+|2026-09-17|完成 Windows 11 / Python 3.13.15 在线与 wheelhouse 离线预检；POC-01 保持 IN_PROGRESS。|
+|2026-09-17|基线升版：新增 Windows 11，与 Windows Server 2025、Debian 13 并列为正式目标环境。|
+|2026-09-17|Windows 11 完成 Tesseract/OCRmyPDF 中文扫描 PDF 主链验证，POC-01 平台覆盖达到 1/3。|
+|2026-09-17|Windows 11 完成 Ghostscript 10.08.0 portable 安装、deskew 编码修复及 PDF/A-2b 回归验证。|
+|2026-09-17|Windows Server 2025 Datacenter 实机完成 Python 3.13.15 官方嵌入式运行时、109-wheel 完全离线安装、15/15 项检查及中文 OCR/PDF-A-2b/deskew 验证；POC-01 平台覆盖达到 2/3。|
+|2026-09-17|用户明确批准 Debian 13 本轮不验证；登记 `EXC-P0-001`，POC-01 以 `PASS_WITH_EXCEPTION` 收口，Debian 兼容性仍为未验证。|
+|2026-09-17|启动 POC-02；创建工作区和验收矩阵，完成 Windows 11 PostgreSQL 18.6 / pgvector 0.8.6 官方制品可用性检查。|
+|2026-09-17|POC-02 Windows 11 功能链通过：便携式 PostgreSQL 18.6、MSVC x64 构建 pgvector 0.8.6、SQLAlchemy/Alembic、10 万向量 HNSW、备份恢复及重启；登记中文运行路径约束，完全断网与另两平台保持 NOT_RUN。|
+|2026-09-17|POC-02 Windows Server 2025 在物理网卡断开状态完成全新离线部署、SQLAlchemy/Alembic、10 万向量 HNSW、备份恢复与重启；修复 Windows PowerShell 5.1 stderr 误判和嵌入式 Python Alembic 路径兼容。|
+|2026-09-17|用户批准 `EXC-P0-002`：暂缓 POC-02 Windows 11 完全断网重放与 Debian 13 验证；POC-02 以 `PASS_WITH_EXCEPTION` 收口，未验证范围不形成兼容性结论。|
+|2026-09-17|启动 POC-05；创建 Document + OCR 工作区、PoC 统一 ParsedDocument Schema 和三平台验收矩阵，从 Windows 11 六类输入验证开始。|
+|2026-09-17|POC-05 Windows 11 六类输入、统一 Schema、来源定位、PaddleOCR/Tesseract/OCRmyPDF 全部通过；PaddlePaddle 3.3.1 Windows CPU 需关闭 oneDNN。|
+|2026-09-17|POC-05 Windows Server 2025 在虚拟网卡断开状态完成受控模型与制品全新复跑，六类输入和三条 OCR 链 8/8 PASS；修复 PowerShell 5.1 无 BOM UTF-8 JSON 回读问题。|
