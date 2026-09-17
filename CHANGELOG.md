@@ -20,6 +20,7 @@
 - 新增 ADR-002，采用 Ghostscript AGPL 源码公开策略；仓库公开、项目许可证和第三方声明仍为发行 Gate。
 - 完成 Windows Server 2025 Datacenter 10.0.26100 实机验证：Python 3.13.15 官方嵌入式运行时、完整离线依赖、15/15 项检查、Tesseract/OCRmyPDF/Ghostscript PDF/A-2b 与 deskew 中文主链全部通过。
 - 增加 Windows Server 2025 非管理员部署脚本；当系统策略拒绝 Python EXE 安装器时，回退到校验过的官方嵌入式包。
+- 根据用户决定登记 `EXC-P0-001`，暂缓 Debian 13 的 POC-01 验证；POC-01 以 `PASS_WITH_EXCEPTION` 收口，不形成 Debian 兼容性结论。
 
 ### 兼容性
 
@@ -33,9 +34,9 @@
 ### 验证结果
 
 - 项目 Skill 结构校验通过。
-- POC-01 平台覆盖 2/3：Windows 11、Windows Server 2025 PASS；Debian 13 待验证。
+- POC-01 本轮要求覆盖 2/2：Windows 11、Windows Server 2025 PASS；Debian 13 为 `DEFERRED_BY_USER`。
 
 ### 已知问题
 
 - Phase 0 阻塞 PoC 尚未全部通过，禁止进入大规模正式业务开发。
-- Debian 13 尚无可用验收环境；POC-01 保持 `IN_PROGRESS`。
+- Debian 13 尚无可用验收环境，兼容性保持未验证；恢复 Debian 验证或发行时必须重新开启相关 Gate。

@@ -17,7 +17,7 @@
 |---|---|---|---|---|---|---|
 |本地开发机 / Windows 11 验收环境|Windows 11 Home 10.0.26200|x86-64|32 逻辑处理器 / 31.63 GB RAM / D盘约 441.76 GB 可用|3.13.15|POC-01 依赖、离线 wheel、Tesseract/OCRmyPDF 主链已验证|POC01_PASS|
 |VMware / Windows Server 2025 验收环境|Windows Server 2025 Datacenter 10.0.26100（Desktop Experience）|x86-64|16 逻辑处理器 / 16 GB RAM / 系统盘约 54.71 GB 可用|3.13.15（官方嵌入式包）|POC-01 依赖、离线 wheel、Tesseract/OCRmyPDF 主链已验证|POC01_PASS|
-|Linux 验收环境|Debian 13|x86-64|最低 4C / 8 GB / 100 GB|未确认|正式验收|BLOCKED_ENVIRONMENT|
+|Linux 验收环境|Debian 13|x86-64|最低 4C / 8 GB / 100 GB|未确认|正式目标；本轮验证暂缓|DEFERRED_BY_USER|
 
 ## 当前工具发现
 
@@ -38,7 +38,7 @@
 
 ## 环境缺口
 
-1. 需要可重复使用的 Debian 13 x86-64 环境。
+1. Debian 13 本轮验证依据 `EXC-P0-001` 暂缓；恢复验证时仍需可重复使用的 x86-64 环境。
 2. 三个平台均需具备断网验收窗口，以验证 wheel/deb/安装介质完整性。
 3. Windows 11 与 Windows Server 2025 完整离线发行包仍待 Release Gate 验证；当前项目内安装与功能链已通过。
 4. Windows Server 2025 当前账号无管理员令牌，系统策略拒绝 Python EXE 安装器；POC-01 已使用官方嵌入式包验证无管理员部署路径。

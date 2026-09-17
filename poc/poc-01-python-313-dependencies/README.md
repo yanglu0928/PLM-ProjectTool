@@ -2,9 +2,9 @@
 
 ## Status
 
-`IN_PROGRESS`
+`PASS_WITH_EXCEPTION`
 
-Debian 13 尚未验证，因此当前不得判定整体 PASS 或 FAIL。
+Windows 11 与 Windows Server 2025 的必需检查均已通过。根据用户 2026-09-17 的明确决定，Debian 13 本轮验证暂缓并登记为例外；该状态不表示 Debian 13 已验证或已兼容。
 
 ## Objective
 
@@ -74,15 +74,15 @@ bash scripts/linux/run-offline-validation.sh <wheelhouse目录>
 
 |检查项|Windows 11 本机预检|Windows Server 2025|Debian 13|
 |---|---|---|---|
-|Python 3.13 运行时|PASS（3.13.15）|PASS（3.13.15 官方嵌入式包）|BLOCKED_ENVIRONMENT|
-|隔离 Python 环境|PASS（venv）|PASS（portable runtime；系统策略禁止安装器）|NOT_RUN|
-|完整依赖安装|PASS|PASS（完全离线）|NOT_RUN|
-|import / 最小功能|15/15 PASS|15/15 PASS|NOT_RUN|
-|wheelhouse 构建|PASS（109 文件）|复用已校验 Windows wheelhouse|NOT_RUN|
-|完全离线安装|PASS（本机 `--no-index` 预检）|PASS（`--no-index`）|NOT_RUN|
-|Tesseract `chi_sim+eng`|PASS|PASS|NOT_RUN|
-|Ghostscript 10.08.0|PASS|PASS|NOT_RUN|
-|OCRmyPDF deskew + PDF/A-2b 中文扫描 PDF 主链|PASS（5/5 术语）|PASS（5/5 术语）|NOT_RUN|
+|Python 3.13 运行时|PASS（3.13.15）|PASS（3.13.15 官方嵌入式包）|DEFERRED_BY_USER|
+|隔离 Python 环境|PASS（venv）|PASS（portable runtime；系统策略禁止安装器）|DEFERRED_BY_USER|
+|完整依赖安装|PASS|PASS（完全离线）|DEFERRED_BY_USER|
+|import / 最小功能|15/15 PASS|15/15 PASS|DEFERRED_BY_USER|
+|wheelhouse 构建|PASS（109 文件）|复用已校验 Windows wheelhouse|DEFERRED_BY_USER|
+|完全离线安装|PASS（本机 `--no-index` 预检）|PASS（`--no-index`）|DEFERRED_BY_USER|
+|Tesseract `chi_sim+eng`|PASS|PASS|DEFERRED_BY_USER|
+|Ghostscript 10.08.0|PASS|PASS|DEFERRED_BY_USER|
+|OCRmyPDF deskew + PDF/A-2b 中文扫描 PDF 主链|PASS（5/5 术语）|PASS（5/5 术语）|DEFERRED_BY_USER|
 
 执行结果写入 `evidence/<platform>/`，并将非敏感摘要回填本文件。
 
@@ -94,7 +94,8 @@ bash scripts/linux/run-offline-validation.sh <wheelhouse目录>
 |核心 import 成功率|100%|15/15|
 |最小功能检查通过率|100%|15/15|
 |断网安装网络请求数|0|本机使用 `--no-index`，0 次包索引请求|
-|目标平台覆盖率|3/3|POC-01 为 2/3；Windows 11、Windows Server 2025 PASS|
+|本轮要求的平台覆盖率|2/2|Windows 11、Windows Server 2025 PASS|
+|正式目标平台累计实测覆盖率|3/3|2/3；Debian 13 `DEFERRED_BY_USER`|
 |Windows wheelhouse 完整性|全部文件有 SHA-256|109/109|
 |Windows 11 OCR 术语召回率|100%|5/5|
 |Windows 11 PDF/A-2b|通过|PASS|
@@ -125,7 +126,7 @@ bash scripts/linux/run-offline-validation.sh <wheelhouse目录>
 
 ## Known Issues
 
-1. Debian 13 验收环境尚未提供。
+1. Debian 13 仍是正式兼容目标，但本轮验证已由用户明确暂缓；不得据此声称 Debian 13 已兼容。
 2. PaddlePaddle/PaddleOCR 在 Debian 13 的 Python 3.13 wheel 可用性尚未验证；Windows 11 与 Windows Server 2025 已通过。
 3. Windows Server 2025 的非管理员账号受系统策略限制，Python EXE 安装器返回 1625；已验证官方嵌入式 Python 的完全离线路径，正式安装器策略仍须在 Release Gate 单独确认。
 4. Windows 编码兼容层挂接 OCRmyPDF 内部解析函数，升级 OCRmyPDF 时必须重新执行回归测试。
@@ -134,11 +135,11 @@ bash scripts/linux/run-offline-validation.sh <wheelhouse目录>
 
 ## Conclusion
 
-POC-01 的 Windows 11 与 Windows Server 2025 子项均已通过：Python 3.13.15 离线依赖、15/15 项最小检查、Tesseract、Ghostscript 10.08.0、OCRmyPDF deskew 与 PDF/A-2b 中文主链均 PASS。POC-01 总体仍为 `IN_PROGRESS`；Debian 13 完成前不得标记整体 PASS。真实扫描质量属于 POC-05，源码公开与 Ghostscript 发行合规属于 POC-09 / Release Gate。
+POC-01 的 Windows 11 与 Windows Server 2025 子项均已通过：Python 3.13.15 离线依赖、15/15 项最小检查、Tesseract、Ghostscript 10.08.0、OCRmyPDF deskew 与 PDF/A-2b 中文主链均 PASS。依据用户批准的 `EXC-P0-001`，POC-01 以 `PASS_WITH_EXCEPTION` 收口并允许转入下一项 PoC；Debian 13 未验证风险保留到恢复验证或 Release Gate。真实扫描质量属于 POC-05，源码公开与 Ghostscript 发行合规属于 POC-09 / Release Gate。
 
 ## PASS / FAIL
 
-`IN_PROGRESS`：不是 PASS，也不是 FAIL。
+`PASS_WITH_EXCEPTION`：本轮要求的两个 Windows 平台全部 PASS；Debian 13 经用户明确批准暂缓。此状态不是 Debian 13 的兼容性结论，也不能替代 Debian 发行验收。
 
 ## Alternative
 
