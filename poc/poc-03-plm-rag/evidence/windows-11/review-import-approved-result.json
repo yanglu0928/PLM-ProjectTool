@@ -1,0 +1,23 @@
+{
+  "schema_version": "poc-03.review-import-result.v1",
+  "generated_at": "2026-09-17T20:55:02.061999+08:00",
+  "status": "READY",
+  "privacy": {
+    "workbook_content_committed": false,
+    "queries_committed": false,
+    "answer_terms_committed": false,
+    "reviewer_names_committed": false,
+    "output_dataset_committed": false
+  },
+  "summary": {
+    "workbook_candidate_row_count": 120,
+    "approved_case_count": 109,
+    "review_status_counts": {
+      "APPROVED": 109,
+      "PENDING": 11
+    },
+    "issue_count": 0,
+    "output_written": false
+  },
+  "conclusion": "Human review Gate is ready. Formal export waits for an activated embedding index binding."
+}

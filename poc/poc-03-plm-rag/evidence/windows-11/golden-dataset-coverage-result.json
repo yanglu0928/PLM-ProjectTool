@@ -1,0 +1,44 @@
+{
+  "schema_version": "poc-03.golden-coverage-result.v1",
+  "generated_at": "2026-09-17T21:33:45.204726+08:00",
+  "status": "FAIL",
+  "summary": {
+    "case_count": 109,
+    "unique_query_count": 1,
+    "duplicate_query_count": 108,
+    "unique_document_count": 26,
+    "unique_chunk_count": 109,
+    "unique_project_count": 1,
+    "source_type_counts": {
+      "SURVEY": 109
+    },
+    "classification_counts": {
+      "STANDARD_SATISFIED": 109
+    }
+  },
+  "checks": {
+    "case_count_100_to_200": true,
+    "distinct_query_per_case": false,
+    "all_source_types_present": false,
+    "all_classifications_present": false
+  },
+  "missing_source_types": [
+    "CONTRACT",
+    "STANDARD_CAPABILITY",
+    "TECHNICAL_AGREEMENT"
+  ],
+  "missing_classifications": [
+    "HUMAN_CONFIRMATION_REQUIRED",
+    "INSUFFICIENT_INFORMATION",
+    "NON_STANDARD",
+    "NO_RELIABLE_MATCH",
+    "PARTIALLY_SATISFIED"
+  ],
+  "privacy": {
+    "queries_committed": false,
+    "answer_terms_committed": false,
+    "reviewer_names_committed": false,
+    "dataset_committed": false
+  },
+  "conclusion": "Golden Dataset quality coverage remains blocked."
+}

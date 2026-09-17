@@ -1,0 +1,23 @@
+{
+  "schema_version": "poc-03.review-import-result.v1",
+  "generated_at": "2026-09-17T13:28:26.150937+00:00",
+  "status": "PASS",
+  "privacy": {
+    "workbook_content_committed": false,
+    "queries_committed": false,
+    "answer_terms_committed": false,
+    "reviewer_names_committed": false,
+    "output_dataset_committed": false
+  },
+  "summary": {
+    "workbook_candidate_row_count": 120,
+    "approved_case_count": 109,
+    "review_status_counts": {
+      "APPROVED": 109,
+      "PENDING": 11
+    },
+    "issue_count": 0,
+    "output_written": true
+  },
+  "conclusion": "Schema-valid reviewed dataset export completed; quality coverage remains separately gated."
+}
