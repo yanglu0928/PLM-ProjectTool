@@ -73,6 +73,7 @@
 - POC-03 P03-A07 完成 PostgreSQL Full Text 验证：`simple` 配置结合上游中文术语空格规范化，4 场景/40 条合成记录 Top-5 平均与最低 Recall 100%，表达式 GIN 索引命中；未宣称数据库原生中文分词。
 - POC-03 P03-A08 完成 pgvector HNSW Top-5 验证：1,000 条合成三维向量、4 组已知近邻的平均与最低 Recall 100%，执行计划命中 HNSW；不替代真实 Golden Dataset 指标。
 - POC-03 P03-A09 完成 Hybrid Retrieval 验证：Vector 0.6 + Full Text 0.4、每通道 4 倍 Top-K 候选池，HNSW `m=32`/`ef_construction=200`/`ef_search=200`；1,000 条合成记录、4 场景 Top-5 平均与最低 Recall 100%，GIN/HNSW 均命中。
+- POC-03 P03-A10 完成外部可配置 Reranker：百炼华北 2 `qwen3-rerank` 真实 5→3 重排通过；新增响应完整性校验，以及 HTTP 429、超时、无效响应 fail-open 降级和脱敏记录。
 
 ### 兼容性
 
@@ -99,6 +100,7 @@
 - POC-03 R2 初始生成验证为 25/25 单元测试通过、120 行全部 PENDING、0 个来源一致性问题、明细公式错误扫描为 0；P03-A04 真实 Embedding 探测与索引绑定 PASS。
 - POC-03 R3 确认交互原型验证通过：30/30 单元测试通过，R2 技术页逐单元格差异为 0，主表含 120 个相对证据链接，本地定位器含 120 个候选锚点和 120 个原文件入口；状态为 `PASS_FOR_UX_REVIEW`，不代表 P03-A02 或正式交接模块通过。
 - POC-03 当前 49/49 单元测试通过；P03-A08 HNSW 与 P03-A09 Hybrid 的 4 组 Top-5 平均/最低 Recall 均为 100%。
+- POC-03 P03-A10 完成后 56/56 单元测试通过；Reranker 真实请求与三类降级场景均 PASS。
 
 ### 已知问题
 

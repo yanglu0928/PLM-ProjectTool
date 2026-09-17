@@ -80,6 +80,13 @@
 - 1,000 条合成记录的执行计划同时命中表达式 GIN 与 HNSW 索引。
 - 合成 ID 可提交，查询文本、向量值和合成数据库行未提交；临时 Schema 已删除。真实语料指标仍受 P03-A02 阻塞。
 
+## External Configurable Reranker
+
+- 官方协议：<https://help.aliyun.com/en/model-studio/rerank>；华北 2（北京）OpenAI-compatible `/reranks`。
+- `qwen3-rerank` 使用 5 条固定非客户候选真实返回 Top-3，两个预期相关项位列前二。
+- 外部服务 HTTP 429、超时、无效响应分别记录 `HTTP_429`、`NETWORK_ERROR`、`INVALID_RESPONSE`，并 fail-open 保留原始候选顺序。
+- API Key 仅在进程环境变量中短暂存在；提交证据不包含 Key、查询、候选正文或响应正文。
+
 ## Dataset Export and Coverage
 
 - 109 条 APPROVED 记录已按 `poc-03.golden.v1` 完成 Schema 合法导出；数据集只保存在 Git 忽略的本地 `artifacts/`。

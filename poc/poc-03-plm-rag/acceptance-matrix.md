@@ -11,7 +11,7 @@
 |P03-A07|PostgreSQL Full Text 检索|PASS|NOT_RUN|NOT_RUN|PostgreSQL 18.6 `simple` + 上游中文术语空格规范化；4 场景/40 条合成记录，Top-5 平均及最低 Recall 100%，GIN 执行计划命中|
 |P03-A08|pgvector 向量检索|PASS|NOT_RUN|NOT_RUN|PostgreSQL 18.6 + pgvector 0.8.6，1,000 条合成三维向量、4 场景 HNSW cosine Top-5，平均/最低 Recall 100%，HNSW 执行计划命中|
 |P03-A09|Hybrid Retrieval|PASS|NOT_RUN|NOT_RUN|PostgreSQL 18.6 + pgvector 0.8.6，Vector 0.6 + Full Text 0.4；每通道候选池为 Top-K 的 4 倍，HNSW `m=32`、`ef_construction=200`、`ef_search=200`；1,000 条合成记录、4 场景 Top-5 平均/最低 Recall 100%，GIN/HNSW 均命中|
-|P03-A10|外部可配置 Reranker|NOT_RUN|NOT_RUN|NOT_RUN|请求、错误和降级记录|
+|P03-A10|外部可配置 Reranker|PASS|NOT_RUN|NOT_RUN|百炼华北 2 `qwen3-rerank` OpenAI-compatible `/reranks` 真实 5→3 调用 PASS；相关项位列前二；HTTP 429、超时、无效响应均 fail-open 保留原顺序并记录脱敏错误码|
 |P03-A11|Top-5 Recall ≥95%|NOT_RUN|NOT_RUN|NOT_RUN|Golden Dataset 指标|
 |P03-A12|分类准确率 ≥90%|NOT_RUN|NOT_RUN|NOT_RUN|六类允许结果的混淆统计|
 |P03-A13|来源引用准确率 ≥98%|NOT_RUN|NOT_RUN|NOT_RUN|引用与来源定位核对|
