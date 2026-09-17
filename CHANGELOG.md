@@ -6,6 +6,9 @@
 
 ### 新增
 
+- 纳入《AI自主执行与最小人工确认规则 V1.0》：新增 `.ai/SKILL.md`、根目录 `STATUS.md` 和 `docs/decisions/decision-log.md`，后续采用 L1 自主执行、L2 记录、L3/Gate 确认模式。
+- 新增 Codex/GPT 周额度保护：自动执行开始、WBS 切换前和长任务结束后检查周窗口，剩余低于 20% 时保存检查点并停止新任务；额度重置仍须用户逐次明确确认。
+- 用户授权在当前 Scope 和正确分支内使用已绑定 GitHub 身份自动 fetch、commit、push，同时保留禁止 force push、直接提交 main、覆盖未知远端改动和上传敏感数据的约束。
 - 建立仓库级 AI 开发约束入口。
 - 建立项目开发 Skill，以及架构、技术、开发、测试、PoC 和发行规则。
 - 将 GitHub 私有仓库设为唯一代码和版本说明同步目标。

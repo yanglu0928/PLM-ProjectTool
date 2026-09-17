@@ -5,15 +5,16 @@ description: Execute architecture, PoC, implementation, testing, packaging, and 
 
 # PLM Project Development
 
-本 Skill 将《PLM项目实施辅助工具软件开发实施方案 V2.1》作为最高业务与技术基线，将《AI开发总控指令与 Skill 规范 V1.1》作为执行约束。原始文档始终是事实来源；本 Skill 只负责路由和执行，不替代原文。
+本 Skill 将《PLM项目实施辅助工具软件开发实施方案 V2.1》作为最高业务与技术基线，将《AI开发总控指令与 Skill 规范 V1.1》和《AI自主执行与最小人工确认规则 V1.0》作为执行约束。原始文档始终是事实来源；本 Skill 只负责路由和执行，不替代原文。
 
 ## 开始任务
 
-1. 读取两份根目录基线文档。
+1. 新 Session 先读取根目录 `.ai/SKILL.md`、`STATUS.md` 和自主执行规则。
 2. 识别当前 Phase、WBS、前置条件、输入基线及验收标准。
-3. 检查 `docs/architecture/adr/`、冻结数据模型、冻结 API Contract 和相关模块文档是否存在。
-4. 读取下方与任务相关的参考文件。
-5. 若前置 Gate 未通过，不进入后续阶段；完成仍被允许的验证或文档工作。
+3. 检查 Codex/GPT 周额度；剩余低于 20% 时保存检查点并停止新任务。
+4. 检查 `docs/architecture/adr/`、冻结数据模型、冻结 API Contract 和相关模块文档是否存在。
+5. 读取下方与任务相关的参考文件；只在基线相关、Gate、L3 或版本变化时重读完整基线。
+6. 若前置 Gate 未通过，不进入后续阶段；完成仍被允许的验证或文档工作。
 
 ## 当前项目状态
 
@@ -65,6 +66,9 @@ description: Execute architecture, PoC, implementation, testing, packaging, and 
 - 保持 UI → API → Application Service → Domain → Repository/Gateway 的依赖方向。
 - 正式业务事实必须来自结构化对象和人工确认；AI 输出只是建议。
 - 正式 Requirement、Prototype、Solution Section、WBS Task 必须具有可反向查询的 TraceLink。
+- L1 工作自主完成；L2 决策记录到 `docs/decisions/decision-log.md` 后继续；L3 事件停止受影响任务并请求用户决策。
+- 每个 WBS 完成后更新根目录 `STATUS.md`，满足自动继续条件时直接进入下一 WBS。
+- 当前批准 Scope 内可自主提交并推送到正确 Git 分支；仍须遵守远端同步和 Secret 检查规则。
 
 ## 默认响应合同
 
