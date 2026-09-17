@@ -16,7 +16,7 @@
 |---|---|---|---|---|---|---|---|
 |POC-01|P0.01/P0.01S/P0.02/P0.03/P0.04|Python 3.13 三平台依赖及离线安装|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11、Windows Server 2025 PASS；Debian 13 经用户批准暂缓，不构成兼容性结论|`poc/poc-01-python-313-dependencies/`、`docs/poc/phase-0-exceptions.md`|
 |POC-02|P0.05/P0.06/P0.07/P0.08|PostgreSQL 18 + pgvector|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11 功能链 PASS；Windows Server 2025 完全断网功能链 PASS；Windows 11 断网重放与 Debian 13 经用户批准暂缓，不构成对应兼容性结论|`poc/poc-02-postgresql-18-pgvector/`、`docs/poc/phase-0-exceptions.md`|
-|POC-03|P0.09/P0.10/P0.12|PLM RAG|IN_PROGRESS|2026-09-17|-|P03-A02 因缺标准能力/调研语料 BLOCKED；P03-A04~A07 已 PASS：单模型绑定、120/120 重建、ProjectId 泄漏 0、Full Text Top-5 合成 Recall 100%。质量指标未执行|`poc/poc-03-plm-rag/`|
+|POC-03|P0.09/P0.10/P0.12|PLM RAG|IN_PROGRESS|2026-09-17|-|P03-A02 因缺标准能力/调研语料 BLOCKED；P03-A04~A09 已 PASS：单模型绑定、全量重建、隔离、FTS、HNSW 与 Hybrid。合成 FTS/Vector/Hybrid Top-5 Recall 100%；真实质量指标未执行|`poc/poc-03-plm-rag/`|
 |POC-04|P0.11|AI Gateway / DeepSeek|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11、Windows Server 2025 统一网关、11/11 确定性场景及真实文本/流式/结构化/401 PASS；Debian 13 经用户批准暂缓，不构成兼容性结论|`poc/poc-04-ai-gateway/`、`docs/poc/phase-0-exceptions.md`|
 |POC-05|P0.04/P0.12|Document + OCR|IN_PROGRESS|2026-09-17|-|Windows 11 六类输入和主辅 OCR 功能链 PASS；Windows Server 2025 完全断网 8/8 PASS；Windows 11 真实资料 26/26 个受支持文件通过并含 5 个扫描 PDF；Windows 11 断网、Debian 13 和真实扫描语义准确率待处理|`poc/poc-05-document-ocr/`|
 |POC-06|P0.16/P0.17|Word / PPT|NOT_STARTED|-|-|-|-|
@@ -72,3 +72,5 @@
 |2026-09-17|P03-A05 Windows 11 PASS：旧 `v1` 原地换模被拒绝；新建 `text-embedding-v4` 768 维 `v2`，以 120 条非客户文本真实调用 12 批完成 120/120 全量重建，旧向量复用 0，v2 未激活。|
 |2026-09-17|P03-A06 Windows 11 PASS：PostgreSQL 18.6 + pgvector 0.8.6 上两个项目、40 条合成记录执行 Vector/FTS/Hybrid 6 组 Top-5，30 行结果跨项目泄漏 0；缺失 ProjectId 拒绝，注入式参数返回 0。|
 |2026-09-17|P03-A07 Windows 11 PASS：PostgreSQL `simple` + 上游中文术语空格规范化，4 场景/40 条合成记录 Top-5 平均与最低 Recall 100%，GIN 执行计划命中；不形成原生中文分词结论。|
+|2026-09-17|P03-A08 Windows 11 PASS：pgvector HNSW cosine 在 1,000 条合成向量、4 组已知近邻上的 Top-5 平均与最低 Recall 100%，执行计划命中 HNSW；不形成真实语料质量结论。|
+|2026-09-17|P03-A09 Windows 11 PASS：Vector 0.6 + Full Text 0.4，加大每通道候选池并提高 HNSW 构建/搜索深度后，1,000 条合成记录、4 场景 Top-5 平均与最低 Recall 100%，执行计划同时命中 GIN/HNSW；参数待真实 Gold Set 校准。|

@@ -33,6 +33,7 @@ class ProjectRetrievalRequest:
             "query_text": self.query_text.strip(),
             "query_vector": "[" + ",".join(str(value) for value in self.query_vector) + "]",
             "limit": self.limit,
+            "candidate_limit": min(self.limit * 4, 100),
         }
 
 
@@ -63,7 +64,7 @@ WITH vector_hits AS (
   FROM poc03_isolation.retrieval_document
   WHERE scope = 'PROJECT' AND project_id = %(project_id)s
   ORDER BY embedding <=> %(query_vector)s::vector, id
-  LIMIT %(limit)s
+  LIMIT %(candidate_limit)s
 ), text_hits AS (
   SELECT id, project_id,
          ts_rank(to_tsvector('simple', body), plainto_tsquery('simple', %(query_text)s)) AS score
@@ -72,7 +73,7 @@ WITH vector_hits AS (
     AND project_id = %(project_id)s
     AND to_tsvector('simple', body) @@ plainto_tsquery('simple', %(query_text)s)
   ORDER BY score DESC, id
-  LIMIT %(limit)s
+  LIMIT %(candidate_limit)s
 ), combined AS (
   SELECT id, project_id, score * 0.6 AS score FROM vector_hits
   UNION ALL

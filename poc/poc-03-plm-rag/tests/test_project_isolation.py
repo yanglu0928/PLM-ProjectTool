@@ -32,6 +32,25 @@ class ProjectIsolationTests(unittest.TestCase):
             self.assertIn("project_id = %(project_id)s", sql)
             self.assertNotIn("PROJECT-A", sql)
 
+    def test_vector_query_uses_cosine_distance_and_top_k(self) -> None:
+        self.assertIn("embedding <=> %(query_vector)s::vector", VECTOR_SQL)
+        self.assertIn("LIMIT %(limit)s", VECTOR_SQL)
+
+    def test_hybrid_query_uses_both_channels_and_fixed_weights(self) -> None:
+        self.assertIn("vector_hits AS", HYBRID_SQL)
+        self.assertIn("text_hits AS", HYBRID_SQL)
+        self.assertIn("score * 0.6", HYBRID_SQL)
+        self.assertIn("score * 0.4", HYBRID_SQL)
+        self.assertIn("UNION ALL", HYBRID_SQL)
+        self.assertIn("LIMIT %(candidate_limit)s", HYBRID_SQL)
+        request = ProjectRetrievalRequest(
+            project_id="PROJECT-A",
+            query_text="query",
+            query_vector=(1.0, 0.0),
+            limit=5,
+        )
+        self.assertEqual(20, request.parameters["candidate_limit"])
+
     def test_parameters_keep_project_id_out_of_sql_text(self) -> None:
         request = ProjectRetrievalRequest(
             project_id="PROJECT-A' OR '1'='1",

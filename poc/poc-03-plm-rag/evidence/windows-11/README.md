@@ -66,6 +66,20 @@
 - 该 PoC 不宣称 PostgreSQL 原生具备中文分词能力；不带上游术语规范化的中文检索尚未验证。
 - 临时 Schema 已删除，查询文本和合成行未提交。
 
+## pgvector Vector Retrieval
+
+- PostgreSQL 18.6 + pgvector 0.8.6 建立 HNSW `vector_cosine_ops` 索引。
+- 1,000 条合成三维向量、4 组已知近邻分别执行 Top-5；平均和最低 Recall 均为 100%。
+- `EXPLAIN` 确认命中 HNSW 索引。
+- 该结果只验证机制，不代表真实 PLM 语料的 P03-A11 Recall；向量值未提交，临时 Schema 已删除。
+
+## Hybrid Retrieval
+
+- Vector 与 Full Text 固定权重分别为 0.6 和 0.4，每通道候选池为最终 Top-K 的 4 倍。
+- HNSW 使用 `m=32`、`ef_construction=200`、`ef_search=200`；默认参数首轮出现近邻漏召回，调整后 4 场景 Top-5 平均与最低 Recall 均为 100%。
+- 1,000 条合成记录的执行计划同时命中表达式 GIN 与 HNSW 索引。
+- 合成 ID 可提交，查询文本、向量值和合成数据库行未提交；临时 Schema 已删除。真实语料指标仍受 P03-A02 阻塞。
+
 ## Dataset Export and Coverage
 
 - 109 条 APPROVED 记录已按 `poc-03.golden.v1` 完成 Schema 合法导出；数据集只保存在 Git 忽略的本地 `artifacts/`。
