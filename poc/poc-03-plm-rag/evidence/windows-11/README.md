@@ -87,6 +87,13 @@
 - 外部服务 HTTP 429、超时、无效响应分别记录 `HTTP_429`、`NETWORK_ERROR`、`INVALID_RESPONSE`，并 fail-open 保留原始候选顺序。
 - API Key 仅在进程环境变量中短暂存在；提交证据不包含 Key、查询、候选正文或响应正文。
 
+## Context Builder to AIService
+
+- 调用链：`RagAIOrchestrator → AIService → ModelRouter → ProviderAdapter`；验证脚本使用确定性 RecordingProvider，不重复调用真实模型。
+- Context 按相关度排序，带 ChunkId 和来源定位，并受字符预算约束；PromptId、PromptVersion、ProjectId 和实际 ChunkIds 写入请求元数据。
+- 结构化结果由 POC-04 AIService 按 JSON Schema 校验；RAG Context 模块不含 HTTP、厂商 SDK 或具体 ProviderAdapter。
+- 提交证据不包含查询、上下文或 AI 输出正文。
+
 ## Dataset Export and Coverage
 
 - 109 条 APPROVED 记录已按 `poc-03.golden.v1` 完成 Schema 合法导出；数据集只保存在 Git 忽略的本地 `artifacts/`。

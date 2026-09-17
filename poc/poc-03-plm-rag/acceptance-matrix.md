@@ -15,7 +15,7 @@
 |P03-A11|Top-5 Recall ≥95%|NOT_RUN|NOT_RUN|NOT_RUN|Golden Dataset 指标|
 |P03-A12|分类准确率 ≥90%|NOT_RUN|NOT_RUN|NOT_RUN|六类允许结果的混淆统计|
 |P03-A13|来源引用准确率 ≥98%|NOT_RUN|NOT_RUN|NOT_RUN|引用与来源定位核对|
-|P03-A14|Context Builder → AIService|NOT_RUN|NOT_RUN|NOT_RUN|不绕过统一 AI Gateway|
+|P03-A14|Context Builder → AIService|PASS|NOT_RUN|NOT_RUN|`RagAIOrchestrator → AIService → ModelRouter → ProviderAdapter` 实测 PASS；Context 保留 Chunk/来源引用和字符预算，PromptId/Version、ProjectId、ChunkIds 可追溯；RAG 模块无 HTTP 或厂商适配代码|
 |P03-A15|异常与空结果|NOT_RUN|NOT_RUN|NOT_RUN|AI/Reranker/DB 不可用及无可靠匹配|
 
 ## 状态定义
