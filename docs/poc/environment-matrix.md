@@ -15,7 +15,7 @@
 
 |环境|操作系统|CPU 架构|资源|Python 3.13|资格|状态|
 |---|---|---|---|---|---|---|
-|本地开发机 / Windows 11 验收环境|Windows 11 Home 10.0.26200|x86-64|32 逻辑处理器 / 31.63 GB RAM / D盘约 435.29 GB 可用|3.13.15|POC-01 已收口；POC-02 功能链已验证；POC-05 功能链与本地模型重放已验证|POC01_PASS / POC02_FUNCTIONAL_PASS / POC05_FUNCTIONAL_PASS|
+|本地开发机 / Windows 11 验收环境|Windows 11 Home 10.0.26200|x86-64|32 逻辑处理器 / 31.63 GB RAM / D盘约 435.29 GB 可用|3.13.15|POC-01 已收口；POC-02 功能链已验证；POC-04 统一网关与真实 DeepSeek 已验证；POC-05 功能链与本地模型重放已验证|POC01_PASS / POC02_FUNCTIONAL_PASS / POC04_FUNCTIONAL_PASS / POC05_FUNCTIONAL_PASS|
 |VMware / Windows Server 2025 验收环境|Windows Server 2025 Datacenter 10.0.26100（Desktop Experience）|x86-64|16 逻辑处理器 / 16 GB RAM / 系统盘约 54.71 GB 可用|3.13.15（官方嵌入式包）|POC-01 已收口；POC-02、POC-05 完全断网功能链已验证|POC01_PASS / POC02_PASS / POC05_PASS|
 |Linux 验收环境|Debian 13|x86-64|最低 4C / 8 GB / 100 GB|未确认|正式目标；POC-01/POC-02 验证经用户批准暂缓；POC-05 尚未执行|DEFERRED_BY_USER / POC05_NOT_RUN|
 
@@ -38,6 +38,8 @@
 |PostgreSQL 18|PASS_PORTABLE|18.6 Windows x64 二进制 ZIP；纯 ASCII 隔离目录完成 init/start/stop、Migration、备份恢复|
 |pgvector|PASS|0.8.6 已以 MSVC x64 构建；基础 CRUD、HNSW 与 10 万向量验证通过|
 |Visual Studio C++ Build Tools|AVAILABLE|2022 17.14.41，MSVC 14.44 x64 与 `nmake` 已验证|
+|httpx / jsonschema|PASS|0.28.1 / 4.26.0；POC-04 确定性协议和异常场景 11/11 PASS|
+|DeepSeek 官方端点|PASS_WINDOWS11|401 连通性、真实文本、SSE 流式和结构化 JSON 已通过；不记录密钥或响应正文|
 
 ## 环境缺口
 
@@ -48,6 +50,7 @@
 5. Windows 11 的 PostgreSQL `initdb` 在中文运行路径失败；当前部署约束为程序、数据和临时 SQL 使用纯 ASCII 路径。
 6. POC-05 Windows 11 已从显式本地 PaddleOCR 模型目录重放，但物理断网未验证；Windows Server 2025 已完全断网通过。
 7. POC-05 尚无真实脱敏扫描件，当前 100% 术语召回只适用于固定退化合成样本。
+8. POC-04 Windows 11 功能链已通过；Windows Server 2025 与 Debian 13 尚未形成独立证据或例外。
 
 ## 本机预检摘要
 
