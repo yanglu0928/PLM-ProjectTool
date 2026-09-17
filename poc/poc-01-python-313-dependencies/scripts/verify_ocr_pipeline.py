@@ -32,6 +32,16 @@ def find_tesseract() -> Path | None:
     return next((path for path in candidates if path and path.is_file()), None)
 
 
+def find_ghostscript() -> Path | None:
+    configured = os.environ.get("GHOSTSCRIPT_EXE")
+    candidates = [
+        Path(configured) if configured else None,
+        Path(shutil.which("gswin64c")) if shutil.which("gswin64c") else None,
+        Path(shutil.which("gs")) if shutil.which("gs") else None,
+    ]
+    return next((path for path in candidates if path and path.is_file()), None)
+
+
 def find_font() -> Path:
     candidates = [
         Path("C:/Windows/Fonts/msyh.ttc"),
@@ -69,6 +79,8 @@ def normalize(text: str) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output-dir", type=Path, required=True)
+    parser.add_argument("--output-type", choices=("pdf", "pdfa-2"), default="pdf")
+    parser.add_argument("--deskew", action="store_true")
     args = parser.parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -82,10 +94,20 @@ def main() -> int:
     tesseract = find_tesseract()
     if tesseract is None:
         raise RuntimeError("Tesseract executable was not found")
+    ghostscript = find_ghostscript()
+    if args.output_type == "pdfa-2" and ghostscript is None:
+        raise RuntimeError("Ghostscript executable was not found")
 
     generate_scanned_pdf(input_pdf)
     env = os.environ.copy()
-    env["PATH"] = f"{tesseract.parent}{os.pathsep}{env.get('PATH', '')}"
+    executable_dirs = [tesseract.parent]
+    if ghostscript:
+        executable_dirs.append(ghostscript.parent)
+    env["PATH"] = os.pathsep.join(
+        [*(str(path) for path in executable_dirs), env.get("PATH", "")]
+    )
+    compat_dir = Path(__file__).parent / "compat"
+    env["PYTHONPATH"] = os.pathsep.join([str(compat_dir), env.get("PYTHONPATH", "")])
     command = [
         sys.executable,
         "-m",
@@ -93,16 +115,17 @@ def main() -> int:
         "--language",
         "chi_sim+eng",
         "--output-type",
-        "pdf",
+        args.output_type,
         "--optimize",
         "0",
         "--oversample",
         "400",
         "--tesseract-pagesegmode",
         "6",
-        str(input_pdf),
-        str(output_pdf),
     ]
+    if args.deskew:
+        command.append("--deskew")
+    command.extend([str(input_pdf), str(output_pdf)])
     completed = subprocess.run(
         command,
         env=env,
@@ -111,7 +134,7 @@ def main() -> int:
         timeout=300,
         check=False,
     )
-    stderr_path.write_text(completed.stderr, encoding="utf-8")
+    stderr_path.write_text(completed.stderr.rstrip() + "\n", encoding="utf-8")
 
     extracted = extract_text(output_pdf) if output_pdf.is_file() else ""
     normalized = normalize(extracted)
@@ -127,6 +150,16 @@ def main() -> int:
             "path": tesseract.name,
             "languages": ["chi_sim", "eng"],
         },
+        "ghostscript": {
+            "path": ghostscript.name if ghostscript else None,
+        },
+        "output_type": args.output_type,
+        "deskew": args.deskew,
+        "pdfa_validated": (
+            "Output file is a PDF/A-2b (as expected)" in completed.stderr
+            if args.output_type == "pdfa-2"
+            else None
+        ),
         "ocrmypdf_exit_code": completed.returncode,
         "input_size_bytes": input_pdf.stat().st_size,
         "output_size_bytes": output_pdf.stat().st_size if output_pdf.is_file() else 0,
@@ -136,7 +169,10 @@ def main() -> int:
     }
     report["status"] = (
         "PASS"
-        if completed.returncode == 0 and output_pdf.is_file() and report["term_recall"] == 1.0
+        if completed.returncode == 0
+        and output_pdf.is_file()
+        and report["term_recall"] == 1.0
+        and (args.output_type != "pdfa-2" or report["pdfa_validated"] is True)
         else "FAIL"
     )
     result_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")

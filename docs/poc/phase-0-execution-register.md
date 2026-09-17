@@ -41,3 +41,4 @@
 |2026-09-17|完成 Windows 11 / Python 3.13.15 在线与 wheelhouse 离线预检；POC-01 保持 IN_PROGRESS。|
 |2026-09-17|基线升版：新增 Windows 11，与 Windows Server 2025、Debian 13 并列为正式目标环境。|
 |2026-09-17|Windows 11 完成 Tesseract/OCRmyPDF 中文扫描 PDF 主链验证，POC-01 平台覆盖达到 1/3。|
+|2026-09-17|Windows 11 完成 Ghostscript 10.08.0 portable 安装、deskew 编码修复及 PDF/A-2b 回归验证。|

@@ -45,6 +45,8 @@ wheelhouse/
 .poc-runtime/
 poc/**/evidence/**/ocrmypdf-stderr-attempt-*.txt
 poc/**/evidence/**/output-searchable-attempt-*.pdf
+poc/**/evidence/**/output-searchable-deskew-fixed.pdf
+poc/**/evidence/**/output-searchable-pdfa2-deskew.pdf
 
 # IDE / OS
 .idea/

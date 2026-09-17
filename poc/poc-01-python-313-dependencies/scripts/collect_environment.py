@@ -43,7 +43,12 @@ def executable_available(name: str) -> bool:
         if name == "tesseract":
             standard_paths = (Path("C:/Program Files/Tesseract-OCR/tesseract.exe"),)
         elif name == "gswin64c":
-            standard_paths = tuple(Path("C:/Program Files/gs").glob("gs*/bin/gswin64c.exe"))
+            repo_root = Path(__file__).resolve().parents[3]
+            standard_paths = (
+                *Path("C:/Program Files/gs").glob("gs*/bin/gswin64c.exe"),
+                repo_root
+                / "artifacts/poc-01/windows/ghostscript-10.08.0-portable/bin/gswin64c.exe",
+            )
     return (
         bool(shutil.which(name))
         or any((scripts_dir / candidate).is_file() for candidate in candidates)

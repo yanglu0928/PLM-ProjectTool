@@ -29,10 +29,11 @@
 |Python 3.13|AVAILABLE|已安装 3.13.15；在线和 wheelhouse 离线预检通过|
 |Docker|NOT_AVAILABLE|不能用本机容器替代 Debian 13 验收|
 |WSL Debian 13|NOT_AVAILABLE|WSL 未安装发行版|
-|Tesseract|AVAILABLE|5.4.0.20240606；`chi_sim/eng/osd` 可用|
-|OCRmyPDF Python 包/CLI|PASS|17.12.1；普通 searchable PDF 中文 OCR 主链通过|
+|Tesseract|AVAILABLE|5.4.0.20240606；`chi_sim/chi_sim_vert/eng/osd` 可用|
+|OCRmyPDF Python 包/CLI|PASS|17.12.1；deskew + PDF/A-2b 中文 OCR 主链通过|
 |tessdata_best|PASS|`chi_sim/chi_sim_vert/eng/osd` 已准备并保存 SHA-256|
-|Ghostscript|INCOMPLETE|10.08.0 安装包 Hash 通过，但非交互静默安装停滞；PDF-A 未验证|
+|Ghostscript|PASS|10.08.0 项目内 portable 安装；安装包 Hash、版本及 PDF/A-2b 验证通过|
+|OCRmyPDF deskew|PASS|补齐 `chi_sim_vert` 并增加 Windows 本地编码回退兼容层|
 |PostgreSQL client|NOT_AVAILABLE|属于 POC-02 准备项|
 
 ## 环境缺口
@@ -40,7 +41,7 @@
 1. 需要可重复使用的 Windows Server 2025 x86-64 环境。
 2. 需要可重复使用的 Debian 13 x86-64 环境。
 3. 三个平台均需具备断网验收窗口，以验证 wheel/deb/安装介质完整性。
-4. Windows 11 的 Ghostscript/PDF-A、deskew 编码兼容和完整发行安装流程仍待验证。
+4. Windows 11 完整离线发行包仍待 Release Gate 验证；当前项目内安装与功能链已通过。
 
 ## 本机预检摘要
 
@@ -55,4 +56,5 @@
 |Tesseract 中文/英文语言|PASS|
 |中文扫描 PDF → searchable PDF|PASS|
 |预期术语召回率|5/5，100%|
-|Ghostscript / PDF-A|INCOMPLETE|
+|Ghostscript / PDF-A|PASS|
+|deskew / 中文路径编码|PASS|

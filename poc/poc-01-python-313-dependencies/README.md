@@ -18,7 +18,7 @@
 - Windows Server 2025 x86-64，Python 3.13.x。
 - Debian 13 x86-64，Python 3.13.x。
 
-当前环境：Windows 11 Home 10.0.26200 x86-64，Python 3.13.15。根据 V2.1 基线，该环境属于正式目标平台；当前结果计入 Windows 11 的 Python 包子项，但不代表该平台全部系统依赖已通过。完整环境状态见 `docs/poc/environment-matrix.md`。
+当前环境：Windows 11 Home 10.0.26200 x86-64，Python 3.13.15。根据 V2.1 基线，该环境属于正式目标平台；当前 POC-01 依赖子项已通过，但不代表完整发行 Gate 已通过。完整环境状态见 `docs/poc/environment-matrix.md`。
 
 ## Input
 
@@ -41,6 +41,14 @@
 
 ```powershell
 .\scripts\windows\build-wheelhouse.ps1
+```
+
+### Windows OCR 系统组件与回归验证
+
+```powershell
+.\scripts\windows\prepare-tessdata-best.ps1
+.\scripts\windows\install-ghostscript-portable.ps1
+.\scripts\windows\run-ocr-validation.ps1
 ```
 
 将整个 `artifacts/poc-01/windows/` 复制到断网的 Windows 11 或 Windows Server 2025 后；通过 `EvidencePlatform` 分别记录证据：
@@ -73,7 +81,8 @@ bash scripts/linux/run-offline-validation.sh <wheelhouse目录>
 |wheelhouse 构建|PASS（109 文件）|NOT_RUN|NOT_RUN|
 |完全离线安装|PASS（本机 `--no-index` 预检）|NOT_RUN|NOT_RUN|
 |Tesseract `chi_sim+eng`|PASS|NOT_RUN|NOT_RUN|
-|OCRmyPDF 中文扫描 PDF 主链|PASS（5/5 术语）|NOT_RUN|NOT_RUN|
+|Ghostscript 10.08.0|PASS|NOT_RUN|NOT_RUN|
+|OCRmyPDF deskew + PDF/A-2b 中文扫描 PDF 主链|PASS（5/5 术语）|NOT_RUN|NOT_RUN|
 
 执行结果写入 `evidence/<platform>/`，并将非敏感摘要回填本文件。
 
@@ -88,6 +97,8 @@ bash scripts/linux/run-offline-validation.sh <wheelhouse目录>
 |目标平台覆盖率|3/3|POC-01 为 1/3；Windows 11 PASS|
 |Windows wheelhouse 完整性|全部文件有 SHA-256|109/109|
 |Windows 11 OCR 术语召回率|100%|5/5|
+|Windows 11 PDF/A-2b|通过|PASS|
+|Windows 11 deskew 编码兼容|无解码异常|PASS|
 
 ## Logs
 
@@ -102,6 +113,7 @@ bash scripts/linux/run-offline-validation.sh <wheelhouse目录>
 - 中文 OCR 输入/输出：`evidence/windows-11-ocr/input-scanned.pdf`、`output-searchable.pdf`
 - 高精度语言模型 Hash：`evidence/windows-11-ocr/tessdata-best-sha256sums.txt`
 - Ghostscript 尝试及备选方案：`evidence/windows-11-ocr/ghostscript-install-attempt.md`
+- Ghostscript 最终安装证据：`evidence/windows-11-ocr/ghostscript-installation.md`
 
 日志必须去除用户名、主机名、路径中的个人信息和任何 Secret 后才能提交。
 
@@ -109,13 +121,13 @@ bash scripts/linux/run-offline-validation.sh <wheelhouse目录>
 
 1. Windows Server 2025 和 Debian 13 验收环境尚未提供。
 2. PaddlePaddle/PaddleOCR 在 Windows Server 2025 与 Debian 13 的 Python 3.13 wheel 可用性尚未验证；Windows 11 已通过。
-3. OCRmyPDF `--deskew` 在中文 Windows 上因 Tesseract 本地编码输出触发 `UnicodeDecodeError`；关闭 deskew 后核心 OCR 通过。
-4. Ghostscript 静默安装未完成，PDF/A 与优化路径未验证，并存在闭源发行许可证评审要求。
-5. 当前 OCR 样本是合成基准；真实扫描件质量与准确率仍属于 POC-05。
+3. Windows 编码兼容层挂接 OCRmyPDF 内部解析函数，升级 OCRmyPDF 时必须重新执行回归测试。
+4. 当前 OCR 样本是合成基准；真实扫描件质量与准确率仍属于 POC-05。
+5. 当前仓库仍为私有；Ghostscript 对外发行前必须完成 ADR-002 的源码公开、兼容许可证和第三方声明 Gate。
 
 ## Conclusion
 
-POC-01 的 Windows 11 子项已通过：Python 3.13.15 在线/离线依赖、15/15 项最小检查、Tesseract 中文语言和 OCRmyPDF searchable PDF 主链均 PASS。POC-01 总体仍为 `IN_PROGRESS`；Windows Server 2025 与 Debian 13 完成前不得标记整体 PASS。deskew、Ghostscript/PDF-A 和真实扫描质量作为 POC-05 待验证项，Ghostscript 发行许可证作为 POC-09 待验证项。
+POC-01 的 Windows 11 子项已通过：Python 3.13.15 在线/离线依赖、15/15 项最小检查、Tesseract、Ghostscript 10.08.0、OCRmyPDF deskew 与 PDF/A-2b 中文主链均 PASS。POC-01 总体仍为 `IN_PROGRESS`；Windows Server 2025 与 Debian 13 完成前不得标记整体 PASS。真实扫描质量属于 POC-05，源码公开与 Ghostscript 发行合规属于 POC-09 / Release Gate。
 
 ## PASS / FAIL
 

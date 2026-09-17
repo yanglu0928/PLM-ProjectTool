@@ -12,9 +12,15 @@
       "eng"
     ]
   },
+  "ghostscript": {
+    "path": "gswin64c.exe"
+  },
+  "output_type": "pdfa-2",
+  "deskew": true,
+  "pdfa_validated": true,
   "ocrmypdf_exit_code": 0,
   "input_size_bytes": 189198,
-  "output_size_bytes": 201365,
+  "output_size_bytes": 320053,
   "expected_terms": {
     "PLM项目实施辅助工具": true,
     "需求调研": true,

@@ -30,6 +30,10 @@
 
 本轮继续验证普通 PDF OCR 链。将 Ghostscript 安装和 PDF/A 纳入 POC-05，将发行许可证选择纳入 POC-09；未经用户确认，不修改现有 OCR 技术基线。
 
+## Resolution
+
+2026-09-17：改用项目内 portable 安装，避免非交互环境的管理员安装阻塞。Ghostscript 10.08.0 已安装并通过 PDF/A-2b 验证；本记录作为首次系统级安装失败的历史证据保留。最终证据见 `ghostscript-installation.md`。
+
 ## Sources
 
 - Ghostscript 官方下载与许可证说明：https://ghostscript.com/releases/gsdnld.html

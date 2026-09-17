@@ -1,7 +1,7 @@
 {
   "executables": {
     "gs": false,
-    "gswin64c": false,
+    "gswin64c": true,
     "ocrmypdf": true,
     "tesseract": true
   },
