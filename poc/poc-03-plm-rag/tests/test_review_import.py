@@ -169,6 +169,21 @@ class ReviewImportTests(unittest.TestCase):
         self.assertIn("QUERY_TOO_SHORT", {issue.code for issue in result.issues})
         self.assertEqual([], result.cases)
 
+    def test_confirm_all_and_dotted_local_date_are_normalized(self) -> None:
+        record = candidate(1)
+        row = review_row(record)
+        row[13] = "确认"
+        row[16] = "2026.9.17"
+        workbook_path = self.root / "review.xlsx"
+        write_workbook(workbook_path, [record], [row])
+        result = import_review_workbook(workbook_path, [record])
+        self.assertFalse(result.has_errors)
+        self.assertEqual(
+            "word/paragraph/1",
+            result.cases[0]["expected_citations"][0]["source_locator"],
+        )
+        self.assertEqual("2026-09-16T16:00:00Z", result.cases[0]["review"]["reviewed_at"])
+
 
 if __name__ == "__main__":
     unittest.main()

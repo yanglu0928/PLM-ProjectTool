@@ -131,7 +131,12 @@ def _reviewed_at(value: Any, timezone_name: str) -> str:
         raw = _text(value)
         if not raw:
             raise ValueError("reviewed_at is required")
-        parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        dotted_date = re.fullmatch(r"(\d{4})[./](\d{1,2})[./](\d{1,2})", raw)
+        if dotted_date:
+            year, month, day = (int(part) for part in dotted_date.groups())
+            parsed = datetime(year, month, day)
+        else:
+            parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
     if parsed.tzinfo is None:
         parsed = parsed.replace(tzinfo=local_timezone)
     return parsed.astimezone(UTC).isoformat().replace("+00:00", "Z")
@@ -159,6 +164,13 @@ def _expected_source(candidate: dict[str, Any]) -> dict[str, Any]:
         "candidate_content_sha256": _text(candidate.get("candidate_content_sha256")),
         "relevant_chunk_ids": [_text(item) for item in chunk_ids],
     }
+
+
+def _confirmed_locators(value: Any, source_locators: list[str]) -> list[str]:
+    text = _text(value)
+    if text in {"确认", "全部确认", "确认全部建议定位"}:
+        return list(source_locators)
+    return _split_values(value)
 
 
 def _source_checks(
@@ -321,7 +333,7 @@ def import_review_workbook(
             source_type = _text(row[10]).upper()
             classification = _text(row[11]).upper()
             answer_terms = _split_values(row[12])
-            confirmed_locators = _split_values(row[13])
+            confirmed_locators = _confirmed_locators(row[13], expected["source_locators"])
             reviewed_by = _text(row[15])
             approved_issues: list[ImportIssue] = []
             required = {

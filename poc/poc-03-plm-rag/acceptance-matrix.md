@@ -3,9 +3,9 @@
 |ID|验收项|Windows 11|Windows Server 2025|Debian 13|证据要求|
 |---|---|---|---|---|---|
 |P03-A01|POC-02/04/05 前置证据可用|PASS|NOT_RUN|NOT_RUN|数据库、AI Gateway、ParsedDocument 证据|
-|P03-A02|100~200 条人工确认 Golden Dataset|IN_PROGRESS|NOT_RUN|NOT_RUN|Schema、人工评审工作簿、严格导入报告、审核状态、四类资料覆盖|
+|P03-A02|100~200 条人工确认 Golden Dataset|IN_PROGRESS|NOT_RUN|NOT_RUN|109 条人工 APPROVED、0 个导入问题；等待 P03-A04 绑定激活后正式导出|
 |P03-A03|确定性 Chunk 与来源定位|PASS|NOT_RUN|NOT_RUN|Chunk、页/章节/表格定位、内容 Hash|
-|P03-A04|Index 绑定单一 Embedding 模型|NOT_RUN|NOT_RUN|NOT_RUN|provider/model/dimension/index_version|
+|P03-A04|Index 绑定单一 Embedding 模型|IN_PROGRESS|NOT_RUN|NOT_RUN|不可变绑定与维度保护 PASS；候选 provider/model/dimension/index_version 尚待 live probe|
 |P03-A05|更换模型新建索引与全量重建|NOT_RUN|NOT_RUN|NOT_RUN|索引版本和重建记录|
 |P03-A06|PROJECT 强制 ProjectId 隔离|NOT_RUN|NOT_RUN|NOT_RUN|跨项目泄漏为 0|
 |P03-A07|PostgreSQL Full Text 检索|NOT_RUN|NOT_RUN|NOT_RUN|查询与 Top-K|

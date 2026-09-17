@@ -1,0 +1,16 @@
+{
+  "schema_version": "poc-03.index-binding.v1",
+  "status": "PROPOSED_NOT_LIVE_VERIFIED",
+  "index_id": "plm-rag-poc03-qwen37-1024-v1",
+  "index_version": "v1",
+  "embedding": {
+    "provider": "aliyun-model-studio-openai-compatible",
+    "model": "qwen3.7-text-embedding",
+    "dimension": 1024
+  },
+  "activation_gate": {
+    "provider_credential_present": false,
+    "live_dimension_probe_passed": false,
+    "golden_dataset_export_allowed": false
+  }
+}

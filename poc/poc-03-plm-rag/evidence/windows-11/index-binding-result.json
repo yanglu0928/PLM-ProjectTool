@@ -1,0 +1,28 @@
+{
+  "schema_version": "poc-03.index-binding-result.v1",
+  "generated_at": "2026-09-17T21:03:49+08:00",
+  "status": "IN_PROGRESS",
+  "candidate_binding": {
+    "index_id": "plm-rag-poc03-qwen37-1024-v1",
+    "index_version": "v1",
+    "provider": "aliyun-model-studio-openai-compatible",
+    "model": "qwen3.7-text-embedding",
+    "dimension": 1024,
+    "fingerprint_sha256": "e193113829b7921199966abe01f45b4760fb170949ec72756571e114e955dd08"
+  },
+  "checks": {
+    "complete_binding_identity": "PASS",
+    "idempotent_same_binding": "PASS",
+    "same_index_model_change_rejected": "PASS",
+    "same_index_dimension_change_rejected": "PASS",
+    "vector_dimension_mismatch_rejected": "PASS",
+    "sanitized_probe_contract": "PASS",
+    "live_provider_probe": "NOT_RUN_MISSING_CREDENTIAL"
+  },
+  "privacy": {
+    "api_key_committed": false,
+    "customer_content_sent": false,
+    "customer_content_committed": false
+  },
+  "conclusion": "Index-binding invariants pass locally; candidate activation remains blocked until a live provider dimension probe passes."
+}

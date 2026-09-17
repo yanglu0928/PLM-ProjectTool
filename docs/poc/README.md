@@ -7,7 +7,7 @@
 - Phase：Phase 0
 - 状态：IN_PROGRESS
 - 启动日期：2026-09-17
-- 当前任务：POC-03 P0.09 Golden Dataset 候选准备；Windows 11 已生成 120 条候选记录，待人工确认后才能进入质量指标验证
+- 当前任务：POC-03 P03-A04 Embedding 索引绑定；109 条人工批准记录已通过导入 Gate，正式数据集等待实际 Embedding 绑定激活
 - 正式业务开发：BLOCKED
 
 ## 入口
