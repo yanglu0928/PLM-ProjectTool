@@ -17,7 +17,7 @@
 |POC-01|P0.01/P0.01S/P0.02/P0.03/P0.04|Python 3.13 三平台依赖及离线安装|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11、Windows Server 2025 PASS；Debian 13 经用户批准暂缓，不构成兼容性结论|`poc/poc-01-python-313-dependencies/`、`docs/poc/phase-0-exceptions.md`|
 |POC-02|P0.05/P0.06/P0.07/P0.08|PostgreSQL 18 + pgvector|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11 功能链 PASS；Windows Server 2025 完全断网功能链 PASS；Windows 11 断网重放与 Debian 13 经用户批准暂缓，不构成对应兼容性结论|`poc/poc-02-postgresql-18-pgvector/`、`docs/poc/phase-0-exceptions.md`|
 |POC-03|P0.09/P0.10/P0.12|PLM RAG|NOT_STARTED|-|-|-|-|
-|POC-04|P0.11|AI Gateway / DeepSeek|IN_PROGRESS|2026-09-17|-|Windows 11 统一网关、11/11 确定性场景及真实文本/流式/结构化/401 PASS；Windows Server 2025、Debian 13 未执行|`poc/poc-04-ai-gateway/`|
+|POC-04|P0.11|AI Gateway / DeepSeek|IN_PROGRESS|2026-09-17|-|Windows 11、Windows Server 2025 统一网关、11/11 确定性场景及真实文本/流式/结构化/401 PASS；Debian 13 未执行|`poc/poc-04-ai-gateway/`|
 |POC-05|P0.04/P0.12|Document + OCR|IN_PROGRESS|2026-09-17|-|Windows 11 六类输入和主辅 OCR 功能链 PASS；Windows Server 2025 完全断网 8/8 PASS；Windows 11 断网、Debian 13 和真实扫描件待处理|`poc/poc-05-document-ocr/`|
 |POC-06|P0.16/P0.17|Word / PPT|NOT_STARTED|-|-|-|-|
 |POC-07|P1|VSDX|DEFERRED_P1|-|-|不阻塞 Phase 0|-|
@@ -54,3 +54,4 @@
 |2026-09-17|POC-05 Windows Server 2025 在虚拟网卡断开状态完成受控模型与制品全新复跑，六类输入和三条 OCR 链 8/8 PASS；修复 PowerShell 5.1 无 BOM UTF-8 JSON 回读问题。|
 |2026-09-17|启动 POC-04；建立 AIService、ModelRouter、DeepSeekAdapter、验收矩阵和官方协议快照。|
 |2026-09-17|POC-04 Windows 11 确定性场景 11/11 PASS，DeepSeek 官方端点 401、真实文本、SSE 流式和结构化 JSON 全部通过；修复 JSON/Schema failure 未受控重试的问题。|
+|2026-09-17|POC-04 Windows Server 2025 实机完成 11/11 单元测试、11/11 确定性场景及 DeepSeek 官方端点 401、真实文本、SSE 流式和结构化 JSON 验证；临时密钥已删除，脱敏证据扫描无匹配。|

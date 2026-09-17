@@ -7,7 +7,7 @@
 - Phase：Phase 0
 - 状态：IN_PROGRESS
 - 启动日期：2026-09-17
-- 当前任务：POC-04 Windows 11 统一网关与真实 DeepSeek 文本、流式、结构化调用已通过；Windows Server 2025 与 Debian 13 尚未执行
+- 当前任务：POC-04 Windows 11、Windows Server 2025 统一网关与真实 DeepSeek 文本、流式、结构化调用已通过；Debian 13 尚未执行
 - 正式业务开发：BLOCKED
 
 ## 入口
