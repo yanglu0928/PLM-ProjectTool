@@ -56,6 +56,10 @@
 - POC-03 评审导入器兼容人工“确认全部建议定位”和 `YYYY.M.D`/`YYYY/M/D` 本地日期；修正后实际评审表为 109 条 APPROVED、11 条 PENDING、0 个导入问题。
 - POC-03 启动 P03-A04，新增不可变索引—Embedding 模型绑定与向量维度保护；同一索引禁止原地更换模型或维度。
 - POC-03 新增 OpenAI-compatible Embedding 安全探测入口；API Key 仅从环境变量读取，报告不保存输入文本、向量值或厂商响应正文。
+- POC-03 修复 Windows 隔离运行时缺少 `tzdata` 时探测报告无法生成的问题，改用操作系统本地时区时间戳。
+- POC-03 P03-A04 实际调用百炼 `qwen3.7-text-embedding`，请求与返回均为 1024 维；索引 `v1` 单模型绑定 PASS。
+- POC-03 将 109 条人工 APPROVED 记录完成 Schema 合法导出；覆盖审计发现仅 1 个唯一查询、1 种来源类型和 1 种分类，故质量 Gate 保持未通过。
+- POC-03 新增可重复执行的脱敏 Gold Set 覆盖审计，校验查询唯一性、四类来源和六类分类，不保存查询或客户内容。
 
 ### 兼容性
 
@@ -79,7 +83,7 @@
 - POC-03 P0.09 候选准备 PASS：120 条候选覆盖 26/26 个可解析文档，全部保持 `PENDING_HUMAN_REVIEW`；正式 Golden Dataset 和三项质量指标尚未执行。
 - POC-05 Windows 11 真实技术协议/合同批次为 `PARTIAL_PASS`：当前支持格式 9/9 PASS，含 5 个扫描 PDF、105 页和 45,145 个 OCR 行；9 个旧版 `.doc` 不支持。
 - POC-03 人工评审工作簿生成验证通过：两张工作表均完成渲染检查，导出后回读成功，公式错误为 0；初始 120 条全部为 `PENDING`，尚未形成正式 Golden Dataset。
-- POC-03 19/19 单元测试通过；人工评审 Gate 为 READY，P03-A04 本地绑定与安全探测合同通过，但 live provider probe 尚未运行。
+- POC-03 21/21 单元测试通过；P03-A04 真实 Embedding 探测与索引绑定 PASS；109 条评审数据 Schema 导出 PASS、质量覆盖 FAIL。
 
 ### 已知问题
 
@@ -91,6 +95,5 @@
 - 当前工作区依赖未提供打包 LibreOffice，POC-05 DOCX 样本未完成 DOCX 转 PNG 视觉检查；OOXML 结构解析已通过，Office 打开性留在 POC-06。
 - POC-05 当前不支持旧版二进制 `.doc`；真实方案库中的 1 个文件未转换、未解析，是否纳入 P0 需单独确认。
 - POC-04 Debian 13 尚未验证；虽已依据 `EXC-P0-003` 收口，仍不得声明 Debian 兼容或通过 Debian Release Gate。
-- POC-03 已有 109 条人工批准记录，但正式 Golden Dataset 尚待 P03-A04 实际 Embedding 绑定激活后导出；Top-5 Recall、分类准确率和引用准确率仍未运行。
-- POC-03 候选 Embedding 服务缺少对应凭据和 live dimension probe；当前候选不得描述为已激活或已冻结。
+- POC-03 的 109 条人工批准记录仅有 1 个唯一查询，且全部为 `SURVEY` / `STANDARD_SATISFIED`；在人工修正真实覆盖前不得运行或宣称 Top-5 Recall、分类准确率和引用准确率。
 - 两个本地资料库共 10 个旧版二进制 `.doc` 不受当前统一解析器支持，未自动转换或改写。

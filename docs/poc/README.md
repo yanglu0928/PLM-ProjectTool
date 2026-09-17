@@ -7,7 +7,7 @@
 - Phase：Phase 0
 - 状态：IN_PROGRESS
 - 启动日期：2026-09-17
-- 当前任务：POC-03 P03-A04 Embedding 索引绑定；109 条人工批准记录已通过导入 Gate，正式数据集等待实际 Embedding 绑定激活
+- 当前任务：POC-03 P03-A02 Gold Set 覆盖修正；P03-A04 百炼 1024 维索引绑定已 PASS，109 条 Schema 合法数据因查询/来源/分类单一而暂不进入指标计算
 - 正式业务开发：BLOCKED
 
 ## 入口

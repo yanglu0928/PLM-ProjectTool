@@ -6,7 +6,6 @@ import os
 import sys
 from datetime import datetime
 from pathlib import Path
-from zoneinfo import ZoneInfo
 
 
 POC_DIR = Path(__file__).resolve().parents[1]
@@ -54,7 +53,7 @@ def main() -> int:
         return 1
     report = {
         "schema_version": "poc-03.embedding-probe-result.v1",
-        "generated_at": datetime.now(ZoneInfo("Asia/Shanghai")).isoformat(),
+        "generated_at": datetime.now().astimezone().isoformat(),
         "status": "PASS",
         "result": result.to_sanitized_dict(),
     }

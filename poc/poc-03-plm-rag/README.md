@@ -37,7 +37,7 @@
 
 ## Result
 
-P0.09 候选准备链已通过：26 个 ParsedDocument 生成 655 个带 PROJECT/ProjectId 和来源定位的 Chunk，并轮询抽样 120 条候选记录，覆盖 26/26 个文档。Windows 11 实际评审表复核为 109 条 `APPROVED`、11 条 `PENDING`、0 个导入问题，人工 Gate 已达到 100 条以上门槛。P03-A04 已完成索引不可变绑定和维度保护的本地结构验证；候选 Embedding 服务尚缺实际凭据探测，因此正式 Golden Dataset 仍未导出，检索、Reranker 和 DeepSeek 端到端质量指标尚未运行。
+P0.09 候选准备链已通过：26 个 ParsedDocument 生成 655 个带 PROJECT/ProjectId 和来源定位的 Chunk，并轮询抽样 120 条候选记录，覆盖 26/26 个文档。Windows 11 评审表复核为 109 条 `APPROVED`、11 条 `PENDING`、0 个导入问题，并已完成 Schema 合法导出。P03-A04 使用百炼 `qwen3.7-text-embedding` 实测请求/返回 1024 维，索引 `v1` 绑定 PASS。导出后覆盖审计为 FAIL：109 条记录只有 1 个唯一查询、1 种来源类型和 1 种分类，故不能进入检索、Reranker 或 DeepSeek 端到端质量指标计算。
 
 ## Review Import
 
@@ -66,15 +66,24 @@ python scripts/probe_embedding_provider.py `
 Remove-Item Env:PLM_POC_EMBEDDING_API_KEY
 ```
 
+导出后必须执行脱敏覆盖审计；审计报告只包含数量和缺失类别：
+
+```powershell
+python scripts/audit_golden_dataset.py `
+  --dataset <本地 Golden Dataset.json> `
+  --report <本地脱敏覆盖报告.json>
+```
+
 ## Metrics
 
 |指标|目标|当前状态|
 |---|---|---|
 |候选评审记录|100~200 条|120 条，26/26 文档覆盖，PASS|
-|人工批准记录|100~200 条|109 条 APPROVED，Gate READY|
-|正式 Golden Dataset 导出|100~200 条|等待 P03-A04 实际绑定激活|
+|人工批准记录|100~200 条|109 条 APPROVED，Schema Gate PASS|
+|Schema 合法数据集导出|100~200 条|109 条，PASS；本地 Git 忽略|
+|Gold Set 质量覆盖|查询、四类来源、六类分类可评估|FAIL：唯一查询/来源类型/分类均为 1|
 |确定性 Chunk|可追溯且强制 PROJECT/ProjectId|655 个，PASS|
-|单索引单 Embedding 模型|不可原地换模/换维度|结构规则 PASS；live provider NOT_RUN|
+|单索引单 Embedding 模型|不可原地换模/换维度|`qwen3.7-text-embedding` 1024 维 live PASS|
 |Top-5 Recall|≥95%|NOT_RUN|
 |分类准确率|≥90%|NOT_RUN|
 |来源引用准确率|≥98%|NOT_RUN|
@@ -93,9 +102,10 @@ Remove-Item Env:PLM_POC_EMBEDDING_API_KEY
 2. 自动抽取只能形成候选集；没有人工批准的记录不得计入 Golden Dataset，也不得作为业务事实。
 3. 两个资料库共 10 个旧版二进制 `.doc` 尚不支持，不进入本轮候选池。
 4. Windows Server 2025 与 Debian 13 尚未执行本 PoC。
-5. 工作簿仍有 11 条 `PENDING`，不会进入本轮正式数据集；109 条已批准记录满足数量门槛。
-6. P03-A04 候选为阿里云百炼 OpenAI-compatible `qwen3.7-text-embedding`、1024 维、索引 `v1`；当前缺少对应凭据和 live dimension probe，不能描述为已激活或已冻结。
-7. DeepSeek 官方资料本轮未找到 Embedding 端点；不得把现有 DeepSeek Chat Key 假定为向量服务凭据。
+5. 工作簿仍有 11 条 `PENDING`，不会进入本轮导出；109 条已批准记录满足数量和 Schema 门槛。
+6. 109 条已批准记录只有 1 个唯一查询，且全部为 `SURVEY` / `STANDARD_SATISFIED`，不满足 Gold Set 覆盖要求；必须由人工按真实语义修正，不得自动伪造分布。
+7. P03-A04 已激活阿里云百炼 OpenAI-compatible `qwen3.7-text-embedding`、1024 维、索引 `v1` 的 PoC 绑定；它不代表正式架构冻结。
+8. DeepSeek 官方资料本轮未找到 Embedding 端点；不得把现有 DeepSeek Chat Key 假定为向量服务凭据。
 
 ## Conclusion
 

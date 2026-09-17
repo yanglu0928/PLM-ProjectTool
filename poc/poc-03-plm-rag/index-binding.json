@@ -1,6 +1,6 @@
 {
   "schema_version": "poc-03.index-binding.v1",
-  "status": "PROPOSED_NOT_LIVE_VERIFIED",
+  "status": "ACTIVE_LIVE_VERIFIED_POC",
   "index_id": "plm-rag-poc03-qwen37-1024-v1",
   "index_version": "v1",
   "embedding": {
@@ -9,8 +9,9 @@
     "dimension": 1024
   },
   "activation_gate": {
-    "provider_credential_present": false,
-    "live_dimension_probe_passed": false,
-    "golden_dataset_export_allowed": false
+    "provider_credential_present": true,
+    "live_dimension_probe_passed": true,
+    "schema_valid_dataset_exported": true,
+    "golden_dataset_quality_coverage_passed": false
   }
 }

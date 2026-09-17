@@ -2,7 +2,7 @@
 
 ## 状态
 
-`PROPOSED_NOT_LIVE_VERIFIED`
+`PASS_POC_LIVE_VERIFIED`
 
 ## 2026-09-17 官方资料检查
 
@@ -19,7 +19,7 @@ dimension: 1024
 index_version: v1
 ```
 
-该绑定当前仅为 PoC 候选，不能写成已冻结或已验证事实。只有使用对应区域的百炼 API Key 完成无客户数据的连通性/维度探测后，才允许激活索引并导出带该元数据的正式 Golden Dataset。
+该绑定已使用华北 2（北京）OpenAI-compatible 端点和固定非客户探测文本完成实测：请求维度 1024，返回维度 1024。它是 POC-03 的已激活验证绑定，不代表正式架构冻结。
 
 ## 约束
 
@@ -33,9 +33,10 @@ index_version: v1
 - DeepSeek API 文档：https://api-docs.deepseek.com/
 - DeepSeek API 参考：https://api-docs.deepseek.com/api/deepseek-api/
 - 阿里云百炼 Embedding 文档：https://help.aliyun.com/en/model-studio/embedding
+- 阿里云百炼 Base URL 文档：https://help.aliyun.com/en/model-studio/base-url
 
 ## 当前阻塞
 
-缺少百炼对应区域的 API Key 和 Workspace/Base URL，故 live probe、索引激活和正式 Golden Dataset 导出暂不执行。
+Embedding provider 与维度不再阻塞。109 条人工批准记录已完成 Schema 合法导出，但覆盖审计发现仅 1 个唯一查询、1 种来源类型和 1 种分类；该数据集不能进入 RAG 指标计算，需先修正人工标签覆盖。
 
 仓库已提供 `scripts/probe_embedding_provider.py`。脚本仅发送固定的非客户探测文本，Key 只从进程环境读取，成功报告仅保存 provider、model、请求/返回维度和输入数量。
