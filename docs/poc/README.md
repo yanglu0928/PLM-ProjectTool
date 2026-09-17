@@ -7,7 +7,7 @@
 - Phase：Phase 0
 - 状态：IN_PROGRESS
 - 启动日期：2026-09-17
-- 当前任务：POC-02 PostgreSQL 18 + pgvector（待启动）
+- 当前任务：POC-02 PostgreSQL 18 + pgvector（Windows 11 可用性检查）
 - 正式业务开发：BLOCKED
 
 ## 入口
@@ -15,6 +15,7 @@
 - [Phase 0 执行登记表](phase-0-execution-register.md)
 - [三平台环境矩阵](environment-matrix.md)
 - [POC-01 实施与结果](../../poc/poc-01-python-313-dependencies/README.md)
+- [POC-02 实施与结果](../../poc/poc-02-postgresql-18-pgvector/README.md)
 - [Phase 0 验证例外](phase-0-exceptions.md)
 
 ## 判定规则

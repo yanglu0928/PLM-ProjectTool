@@ -34,7 +34,9 @@
 |tessdata_best|PASS|`chi_sim/chi_sim_vert/eng/osd` 已准备并保存 SHA-256|
 |Ghostscript|PASS|10.08.0 项目内 portable 安装；安装包 Hash、版本及 PDF/A-2b 验证通过|
 |OCRmyPDF deskew|PASS|补齐 `chi_sim_vert` 并增加 Windows 本地编码回退兼容层|
-|PostgreSQL client|NOT_AVAILABLE|属于 POC-02 准备项|
+|PostgreSQL 18|ASSETS_AVAILABLE_NOT_INSTALLED|18.6 Windows x64 安装器和二进制 ZIP 均可访问；尚未安装或运行|
+|pgvector|SOURCE_AVAILABLE_TOOLCHAIN_BLOCKED|0.8.6 官方文档支持 PostgreSQL 18 Windows 构建；本机缺少 MSVC x64/`nmake`|
+|Visual Studio C++ Build Tools|NOT_AVAILABLE|POC-02 Windows pgvector 官方构建流程的当前阻塞项|
 
 ## 环境缺口
 
