@@ -16,7 +16,7 @@
 |---|---|---|---|---|---|---|---|
 |POC-01|P0.01/P0.01S/P0.02/P0.03/P0.04|Python 3.13 三平台依赖及离线安装|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11、Windows Server 2025 PASS；Debian 13 经用户批准暂缓，不构成兼容性结论|`poc/poc-01-python-313-dependencies/`、`docs/poc/phase-0-exceptions.md`|
 |POC-02|P0.05/P0.06/P0.07/P0.08|PostgreSQL 18 + pgvector|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11 功能链 PASS；Windows Server 2025 完全断网功能链 PASS；Windows 11 断网重放与 Debian 13 经用户批准暂缓，不构成对应兼容性结论|`poc/poc-02-postgresql-18-pgvector/`、`docs/poc/phase-0-exceptions.md`|
-|POC-03|P0.09/P0.10/P0.12|PLM RAG|IN_PROGRESS|2026-09-17|-|Windows 11 已从历史方案及技术协议/合同生成 655 个可追溯 Chunk 和 120 条候选评审记录，并生成本地人工评审工作簿；当前 0 条 APPROVED，质量指标未执行|`poc/poc-03-plm-rag/`|
+|POC-03|P0.09/P0.10/P0.12|PLM RAG|IN_PROGRESS|2026-09-17|-|Windows 11 已生成 655 个可追溯 Chunk、120 条候选、本地评审工作簿和严格导入 Gate；实际复核为 0 条 APPROVED、0 个一致性问题，正式集和质量指标未执行|`poc/poc-03-plm-rag/`|
 |POC-04|P0.11|AI Gateway / DeepSeek|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11、Windows Server 2025 统一网关、11/11 确定性场景及真实文本/流式/结构化/401 PASS；Debian 13 经用户批准暂缓，不构成兼容性结论|`poc/poc-04-ai-gateway/`、`docs/poc/phase-0-exceptions.md`|
 |POC-05|P0.04/P0.12|Document + OCR|IN_PROGRESS|2026-09-17|-|Windows 11 六类输入和主辅 OCR 功能链 PASS；Windows Server 2025 完全断网 8/8 PASS；Windows 11 真实资料 26/26 个受支持文件通过并含 5 个扫描 PDF；Windows 11 断网、Debian 13 和真实扫描语义准确率待处理|`poc/poc-05-document-ocr/`|
 |POC-06|P0.16/P0.17|Word / PPT|NOT_STARTED|-|-|-|-|
@@ -60,3 +60,4 @@
 |2026-09-17|POC-03 Windows 11 只读处理历史方案及技术协议/合同：26 个受支持文件生成 60,430 个块、655 个 Chunk 和 120 条候选记录；全部候选保持 `PENDING_HUMAN_REVIEW`，未冒充正式 Golden Dataset。|
 |2026-09-17|修复 POC-05 Tesseract 页面图片句柄未及时关闭导致 Windows 临时目录清理失败，并过滤 macOS `._` 旁车文件；技术协议/合同批次 9/9 个受支持文件通过。|
 |2026-09-17|POC-03 生成本地人工评审工作簿：120 条候选、2 张工作表、3 组下拉规则和完备性公式；导出后回读与公式错误扫描通过，候选仍保持 0 条 APPROVED。|
+|2026-09-17|POC-03 新增评审表严格导入 Gate：校验不可变来源、人工字段、引用边界和正式 Schema；9/9 测试通过，实际工作簿 120 条 PENDING、0 个问题，未生成正式集。|

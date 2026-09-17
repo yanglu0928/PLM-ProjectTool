@@ -31,12 +31,27 @@
 2. 按文档轮询抽样 120 条候选评审记录，避免由大文档垄断样本。
 3. 所有候选记录标记为 `PENDING_HUMAN_REVIEW`；规则或 AI 输出不得直接成为 Golden Dataset 真值。
 4. 使用本地人工评审工作簿补齐查询、相关性、分类、答案关键术语与引用标签，并按 Schema 验证为 100~200 条正式数据。
-5. 在 PostgreSQL 18 + pgvector 上验证 ProjectId 隔离、FTS、Vector、Hybrid、Reranker 和 Context Builder。
-6. 通过统一 AIService 执行端到端回归，计算并留存质量指标。
+5. 使用 `scripts/import_review_workbook.py` 复核不可变来源字段，只导出人工 `APPROVED`、字段完整且引用仍在原候选定位范围内的记录。
+6. 在 PostgreSQL 18 + pgvector 上验证 ProjectId 隔离、FTS、Vector、Hybrid、Reranker 和 Context Builder。
+7. 通过统一 AIService 执行端到端回归，计算并留存质量指标。
 
 ## Result
 
-P0.09 候选准备链已通过：26 个 ParsedDocument 生成 655 个带 PROJECT/ProjectId 和来源定位的 Chunk，并轮询抽样 120 条候选记录，覆盖 26/26 个文档。Windows 11 已生成本地人工评审工作簿，包含 2 张工作表、3 组下拉规则、完备性公式和 120 条候选明细；所有候选仍为 `PENDING_HUMAN_REVIEW`，正式检索、Reranker、DeepSeek 端到端质量指标尚未运行。
+P0.09 候选准备链已通过：26 个 ParsedDocument 生成 655 个带 PROJECT/ProjectId 和来源定位的 Chunk，并轮询抽样 120 条候选记录，覆盖 26/26 个文档。Windows 11 已生成本地人工评审工作簿，并实现评审表导入与正式集 Gate；实际工作簿复核为 120 条 `PENDING`、0 条 `APPROVED`、0 个结构或来源一致性问题，工具未生成正式 Golden Dataset。正式检索、Reranker、DeepSeek 端到端质量指标尚未运行。
+
+## Review Import
+
+仅检查工作簿，不生成正式数据：
+
+```powershell
+python scripts/import_review_workbook.py `
+  --workbook <本地评审工作簿.xlsx> `
+  --candidates <本地候选集.jsonl> `
+  --report <本地脱敏报告.json> `
+  --validate-only
+```
+
+正式导出还必须提供 `--output`、`--dataset-id`、`--embedding-provider`、`--embedding-model`、`--embedding-dimension` 和 `--index-version`。只有 100~200 条记录通过人工批准并满足 Schema 时才会写出文件；不完整或校验失败时不会生成正式集。
 
 ## Metrics
 
@@ -64,6 +79,7 @@ P0.09 候选准备链已通过：26 个 ParsedDocument 生成 655 个带 PROJECT
 3. 两个资料库共 10 个旧版二进制 `.doc` 尚不支持，不进入本轮候选池。
 4. Windows Server 2025 与 Debian 13 尚未执行本 PoC。
 5. 人工评审工作簿已就绪，但当前仍为 0 条 APPROVED；只有完备性为“可转正式集”的记录才能生成正式 Golden Dataset。
+6. Embedding provider、model、dimension 和 index_version 尚未执行 P03-A04 并冻结；正式集导出参数当前不可填写为已验证值。
 
 ## Conclusion
 
