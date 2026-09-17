@@ -3,7 +3,7 @@
 |ID|验收项|Windows 11|Windows Server 2025|Debian 13|证据要求|
 |---|---|---|---|---|---|
 |P03-A01|POC-02/04/05 前置证据可用|PASS|NOT_RUN|NOT_RUN|数据库、AI Gateway、ParsedDocument 证据|
-|P03-A02|100~200 条人工确认 Golden Dataset|IN_PROGRESS|NOT_RUN|NOT_RUN|109 条人工 APPROVED 且 Schema 导出 PASS；覆盖审计 FAIL：唯一查询/来源类型/分类均为 1|
+|P03-A02|100~200 条人工确认 Golden Dataset|IN_PROGRESS|NOT_RUN|NOT_RUN|R2 已本地预填 120 条不同查询并全部重置为 PENDING；45 条 CONTRACT 可明确映射，75 条 SOLUTION 因锁定枚举无对应类型待人工确认；旧版 109 条导出覆盖审计 FAIL|
 |P03-A03|确定性 Chunk 与来源定位|PASS|NOT_RUN|NOT_RUN|Chunk、页/章节/表格定位、内容 Hash|
 |P03-A04|Index 绑定单一 Embedding 模型|PASS|NOT_RUN|NOT_RUN|百炼 `qwen3.7-text-embedding`、1024 维、索引 `v1`；live probe 与不可变绑定 PASS|
 |P03-A05|更换模型新建索引与全量重建|NOT_RUN|NOT_RUN|NOT_RUN|索引版本和重建记录|
