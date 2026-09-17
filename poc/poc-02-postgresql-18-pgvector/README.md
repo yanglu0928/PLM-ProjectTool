@@ -2,9 +2,9 @@
 
 ## Status
 
-`IN_PROGRESS`
+`PASS_WITH_EXCEPTION`
 
-Windows 11 功能链已通过；Windows Server 2025 完全断网功能链已通过。Windows 11 断网重放与 Debian 13 尚未完成，因此不得判定整个 POC-02 PASS。
+Windows 11 功能链已通过；Windows Server 2025 完全断网功能链已通过。根据用户批准的 `EXC-P0-002`，Windows 11 断网重放和 Debian 13 验证暂缓，POC-02 以 `PASS_WITH_EXCEPTION` 收口；未验证范围不构成兼容性结论。
 
 ## Objective
 
@@ -97,16 +97,16 @@ Windows 11 功能链已通过；Windows Server 2025 完全断网功能链已通�
 2. Windows 11 虽从已下载的本地制品完成解压、构建和运行，但执行时网络未隔离；Windows Server 2025 已完成物理网卡断开验证。
 3. `trust` 认证只用于隔离、回环地址 PoC；生产配置必须使用口令或更强认证并实施最小权限。
 4. Debian 13 尚未执行本 PoC；两个 Windows 平台的结果不能替代 Debian 兼容性结论。
-5. Debian 13 的 `EXC-P0-001` 只适用于 POC-01，不自动扩展到 POC-02。
+5. `EXC-P0-002` 仅暂缓 Windows 11 断网重放和 Debian 13 验证，不把未验证范围转换为 PASS。
 6. Windows PowerShell 5.1 会把原生程序写入 stderr 的普通 `NOTICE` 包装为错误记录；验证脚本已改为保留日志并仅以进程退出码判断成败。
 
 ## Conclusion
 
-PostgreSQL 18.6 + pgvector 0.8.6 已在 Windows 11 与 Windows Server 2025 x86-64 通过初始化、扩展加载、ORM/Migration、10 万向量 HNSW、备份恢复和重启验证；Windows Server 2025 还通过完全断网安装与执行。Debian 13 仍未验证，因此 POC-02 尚未跨平台完成。
+PostgreSQL 18.6 + pgvector 0.8.6 已在 Windows 11 与 Windows Server 2025 x86-64 通过初始化、扩展加载、ORM/Migration、10 万向量 HNSW、备份恢复和重启验证；Windows Server 2025 还通过完全断网安装与执行。依据用户批准的 `EXC-P0-002`，POC-02 阶段性收口并允许进入下一 PoC；Windows 11 完全断网与 Debian 13 兼容性仍未验证。
 
 ## PASS / FAIL
 
-`IN_PROGRESS`：Windows 11 功能验收 PASS、断网重放 NOT_RUN；Windows Server 2025 全部验收项 PASS；Debian 13 为 NOT_RUN。
+`PASS_WITH_EXCEPTION`：Windows 11 功能验收 PASS、断网重放 `DEFERRED_BY_USER`；Windows Server 2025 全部验收项 PASS；Debian 13 为 `DEFERRED_BY_USER`。例外登记：`docs/poc/phase-0-exceptions.md#exc-p0-002暂缓-poc-02-windows-11-断网重放与-debian-13-验证`。
 
 ## Alternative
 

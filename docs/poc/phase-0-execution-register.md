@@ -15,7 +15,7 @@
 |PoC|对应 WBS|验证主题|状态|开始日期|完成日期|结论|证据|
 |---|---|---|---|---|---|---|---|
 |POC-01|P0.01/P0.01S/P0.02/P0.03/P0.04|Python 3.13 三平台依赖及离线安装|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11、Windows Server 2025 PASS；Debian 13 经用户批准暂缓，不构成兼容性结论|`poc/poc-01-python-313-dependencies/`、`docs/poc/phase-0-exceptions.md`|
-|POC-02|P0.05/P0.06/P0.07/P0.08|PostgreSQL 18 + pgvector|IN_PROGRESS|2026-09-17|-|Windows 11 功能链 PASS；Windows Server 2025 完全断网功能链 PASS；Windows 11 断网重放与 Debian 13 未验证|`poc/poc-02-postgresql-18-pgvector/`|
+|POC-02|P0.05/P0.06/P0.07/P0.08|PostgreSQL 18 + pgvector|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11 功能链 PASS；Windows Server 2025 完全断网功能链 PASS；Windows 11 断网重放与 Debian 13 经用户批准暂缓，不构成对应兼容性结论|`poc/poc-02-postgresql-18-pgvector/`、`docs/poc/phase-0-exceptions.md`|
 |POC-03|P0.09/P0.10/P0.12|PLM RAG|NOT_STARTED|-|-|-|-|
 |POC-04|P0.11|AI Gateway / DeepSeek|NOT_STARTED|-|-|-|-|
 |POC-05|P0.04/P0.12|Document + OCR|NOT_STARTED|-|-|-|-|
@@ -48,3 +48,4 @@
 |2026-09-17|启动 POC-02；创建工作区和验收矩阵，完成 Windows 11 PostgreSQL 18.6 / pgvector 0.8.6 官方制品可用性检查。|
 |2026-09-17|POC-02 Windows 11 功能链通过：便携式 PostgreSQL 18.6、MSVC x64 构建 pgvector 0.8.6、SQLAlchemy/Alembic、10 万向量 HNSW、备份恢复及重启；登记中文运行路径约束，完全断网与另两平台保持 NOT_RUN。|
 |2026-09-17|POC-02 Windows Server 2025 在物理网卡断开状态完成全新离线部署、SQLAlchemy/Alembic、10 万向量 HNSW、备份恢复与重启；修复 Windows PowerShell 5.1 stderr 误判和嵌入式 Python Alembic 路径兼容。|
+|2026-09-17|用户批准 `EXC-P0-002`：暂缓 POC-02 Windows 11 完全断网重放与 Debian 13 验证；POC-02 以 `PASS_WITH_EXCEPTION` 收口，未验证范围不形成兼容性结论。|
