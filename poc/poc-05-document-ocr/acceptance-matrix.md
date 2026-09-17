@@ -16,6 +16,8 @@
 |P05-A12|页码/章节/表格来源断言|PASS|PASS|NOT_RUN|逐格式断言结果|
 |P05-A13|中文和英文预期术语召回|PASS|PASS|NOT_RUN|逐术语命中及比例|
 |P05-A14|完全离线模型和运行制品复跑|PASS_LOCAL_ASSETS|PASS|NOT_RUN|网络隔离说明、manifest、执行结果|
+|P05-A15|真实方案库只读批量解析|PARTIAL_PASS|NOT_RUN|NOT_RUN|17/17 个受支持文件通过；1 个旧版 `.doc` 为 `UNSUPPORTED`|
+|P05-A16|真实方案库隐私与输入不变性|PASS|NOT_RUN|NOT_RUN|不提交文件名/正文/Hash；18/18 原件前后校验一致|
 
 ## 当前验收阈值
 
@@ -25,6 +27,7 @@
 - 扫描 PDF 的 PaddleOCR 主链与 Tesseract 辅助链，在自生成样本上的预期术语召回率均不得低于 90%。
 - OCRmyPDF 必须成功生成可检索 PDF，`--deskew` 中文 Windows 输出不得触发编码异常。
 - 任何未执行平台均保持 `NOT_RUN`；只有用户明确批准并登记例外后才能改为 `DEFERRED_BY_USER`。
+- 真实方案库批次仅验证结构解析、Schema、来源定位和输入不变性；没有人工标注答案集时，不得把成功解析报告成语义完整率或 OCR 准确率。
 
 ## 状态定义
 
@@ -35,3 +38,4 @@
 - `BLOCKED_RUNTIME`：依赖、模型或本机能力阻止执行。
 - `FAIL`：已执行但未满足标准，必须保留失败分析。
 - `DEFERRED_BY_USER`：仅可在用户明确批准并登记例外后使用。
+- `PARTIAL_PASS`：批次内所有当前支持格式均通过，但仍存在明确记录的不支持输入；不等同于整个 POC PASS。

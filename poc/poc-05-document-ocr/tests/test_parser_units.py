@@ -4,11 +4,13 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 
 POC_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(POC_DIR / "src"))
 
 from poc05_parser import parse_document  # noqa: E402
+from poc05_parser.parser import _paragraph_style_name  # noqa: E402
 
 
 class ParserUnitTests(unittest.TestCase):
@@ -25,6 +27,10 @@ class ParserUnitTests(unittest.TestCase):
             unknown.write_text("sample", encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "Unsupported document type"):
                 parse_document(unknown)
+
+    def test_docx_paragraph_style_without_name_is_treated_as_empty(self) -> None:
+        paragraph = SimpleNamespace(style=SimpleNamespace(name=None))
+        self.assertEqual(_paragraph_style_name(paragraph), "")
 
 
 if __name__ == "__main__":

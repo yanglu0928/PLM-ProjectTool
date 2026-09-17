@@ -24,6 +24,10 @@ from .models import Block, Page, ParsedDocument, Source
 SUPPORTED_SUFFIXES = {".docx", ".pptx", ".xlsx", ".csv", ".pdf"}
 
 
+def _paragraph_style_name(paragraph: Any) -> str:
+    return getattr(getattr(paragraph, "style", None), "name", None) or ""
+
+
 class BlockBuilder:
     def __init__(self) -> None:
         self.blocks: list[Block] = []
@@ -83,7 +87,7 @@ def _docx(path: Path) -> ParsedDocument:
         if isinstance(child, CT_P):
             paragraph_index += 1
             paragraph = Paragraph(child, document)
-            style = paragraph.style.name if paragraph.style else ""
+            style = _paragraph_style_name(paragraph)
             has_page_break = bool(child.xpath(".//w:br[@w:type='page']"))
             text = paragraph.text.strip()
             if text:

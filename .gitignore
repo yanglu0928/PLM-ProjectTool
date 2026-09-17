@@ -37,6 +37,9 @@ temp/
 tmp/
 *.log
 
+# Local source corpus (may contain customer or project-confidential material)
+/方案库/
+
 # Build and packaging output
 build/
 artifacts/
