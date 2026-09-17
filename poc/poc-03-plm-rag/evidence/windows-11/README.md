@@ -46,6 +46,25 @@
 - 已激活 PoC 绑定：阿里云百炼 OpenAI-compatible `qwen3.7-text-embedding`、1024 维、索引 `v1`。
 - 使用固定非客户文本完成真实探测，请求与返回均为 1024 维；Key、输入文本、向量值和厂商响应正文均未提交。
 - 安全探测合同通过模拟验证：Key 不写入报告、返回维度必须匹配、HTTP 错误不透传厂商响应正文。
+- P03-A05 使用 `text-embedding-v4` 768 维创建独立 `v2` index identity；旧 `v1` 原地换模被拒绝。
+- 120 条固定非客户文本通过 12 批真实调用完成 120/120 重建，返回维度均为 768，旧向量复用 0。
+- `v2` 仅验证未激活；报告不含 Key、输入文本、向量值或厂商响应正文。
+
+## Project Isolation
+
+- Windows 11 本地 PostgreSQL 18.6 + pgvector 0.8.6 建立临时隔离 Schema，写入两个项目共 40 条合成记录。
+- PROJECT 请求必须包含非空 ProjectId；缺失值在进入数据库前被拒绝。
+- Vector、Full Text、Hybrid 对两个项目各执行 Top-5，共 6 个场景、30 行结果，跨项目泄漏为 0。
+- 所有 SQL 使用参数化 ProjectId；注入式字符串返回 0 行，没有扩大结果范围。
+- 验证结束后临时 Schema 删除，未保留合成行，也未使用客户内容。
+
+## PostgreSQL Full Text
+
+- PostgreSQL 18.6 使用 `simple` text search configuration；中文术语由上游以空格完成确定性规范化。
+- 4 组中文合成查询、40 条记录分别执行 Top-5；平均及最低 Recall 均为 100%。
+- `EXPLAIN` 确认命中表达式 GIN 索引。
+- 该 PoC 不宣称 PostgreSQL 原生具备中文分词能力；不带上游术语规范化的中文检索尚未验证。
+- 临时 Schema 已删除，查询文本和合成行未提交。
 
 ## Dataset Export and Coverage
 
@@ -69,9 +88,17 @@
 - 当前 POC-03 全量单元测试 30/30 通过，包含“APPROVED 状态不得绕过其他必填字段”的回归用例。
 - 该结果仅为 `PASS_FOR_UX_REVIEW`，不代表正式交接 ActionItem 模块或 P03-A02 通过。
 
+## Source Type Eligibility Audit
+
+- 审计脚本按原文件标题的显式“合同”或“技术协议”标识进行确定性分类，不读取 AI 推断作为正式来源类型。
+- 120 条候选中，20 条合同已验证，25 条需从 `CONTRACT` 纠正为 `TECHNICAL_AGREEMENT`。
+- 75 条来自历史解决方案，均不属于锁定的 `STANDARD_CAPABILITY`、`CONTRACT`、`TECHNICAL_AGREEMENT`、`SURVEY`，已标记排除而非伪造映射。
+- 当前只有 45 条合格来源，距最低 100 条差 55 条，并缺少标准能力和调研两类真实语料。
+- 审计本身 PASS；P03-A02 状态为 `BLOCKED_MISSING_SOURCE_CORPORA`。
+
 ## Result
 
-候选集、工作簿、严格导入、确认交互原型和 P03-A04 Embedding 绑定已验证。R2 的 120 行虽均由用户填为 `APPROVED`，但只有 45 行满足必填 Gate，75 行来源类型仍需人工决定；因此 P03-A02 仍为 `IN_PROGRESS`，不能计算或宣称 Top-5 Recall、分类准确率和引用准确率通过。
+候选集、工作簿、严格导入、确认交互原型、来源资格审计和 P03-A04 Embedding 绑定已验证。R2 的 120 行虽均由用户填为 `APPROVED`，但只有 45 条来源合格；75 条历史解决方案不能进入锁定四类。P03-A02 现为 `BLOCKED`，不能计算或宣称 Top-5 Recall、分类准确率和引用准确率通过。
 
 ## Known Issues
 

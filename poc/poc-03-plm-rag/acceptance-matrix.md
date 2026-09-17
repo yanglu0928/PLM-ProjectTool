@@ -3,12 +3,12 @@
 |ID|验收项|Windows 11|Windows Server 2025|Debian 13|证据要求|
 |---|---|---|---|---|---|
 |P03-A01|POC-02/04/05 前置证据可用|PASS|NOT_RUN|NOT_RUN|数据库、AI Gateway、ParsedDocument 证据|
-|P03-A02|100~200 条人工确认 Golden Dataset|IN_PROGRESS|NOT_RUN|NOT_RUN|用户已填写 R2 的 120 条为 APPROVED；严格 Gate 仅认定 45 条字段完整，75 条仍缺来源类型。R3 UX 原型提供 120 个证据定位链接和明确维护提示，但不等同于正式 Golden Dataset；旧版 109 条导出覆盖审计 FAIL|
+|P03-A02|100~200 条人工确认 Golden Dataset|BLOCKED|NOT_RUN|NOT_RUN|来源资格审计 PASS：20 条合同、25 条技术协议可作为合格来源；75 条历史解决方案不属于锁定四类，禁止伪造映射。当前仅 45 条合格，距最低 100 条差 55 条，且缺少 STANDARD_CAPABILITY、SURVEY 真实语料；需 L3 决策或补充语料|
 |P03-A03|确定性 Chunk 与来源定位|PASS|NOT_RUN|NOT_RUN|Chunk、页/章节/表格定位、内容 Hash|
 |P03-A04|Index 绑定单一 Embedding 模型|PASS|NOT_RUN|NOT_RUN|百炼 `qwen3.7-text-embedding`、1024 维、索引 `v1`；live probe 与不可变绑定 PASS|
-|P03-A05|更换模型新建索引与全量重建|NOT_RUN|NOT_RUN|NOT_RUN|索引版本和重建记录|
-|P03-A06|PROJECT 强制 ProjectId 隔离|NOT_RUN|NOT_RUN|NOT_RUN|跨项目泄漏为 0|
-|P03-A07|PostgreSQL Full Text 检索|NOT_RUN|NOT_RUN|NOT_RUN|查询与 Top-K|
+|P03-A05|更换模型新建索引与全量重建|PASS|NOT_RUN|NOT_RUN|旧 `qwen3.7-text-embedding` 1024/v1 原地换模被拒绝；新建 `text-embedding-v4` 768/v2，以 120 条固定非客户文本真实调用 12 批完成 120/120 重建，旧向量复用 0；v2 未激活|
+|P03-A06|PROJECT 强制 ProjectId 隔离|PASS|NOT_RUN|NOT_RUN|PostgreSQL 18.6 + pgvector 0.8.6；2 项目/40 条合成记录，Vector/FTS/Hybrid 共 6 组 Top-5、30 行结果，跨项目泄漏 0；缺失 ProjectId 被拒绝，参数注入返回 0|
+|P03-A07|PostgreSQL Full Text 检索|PASS|NOT_RUN|NOT_RUN|PostgreSQL 18.6 `simple` + 上游中文术语空格规范化；4 场景/40 条合成记录，Top-5 平均及最低 Recall 100%，GIN 执行计划命中|
 |P03-A08|pgvector 向量检索|NOT_RUN|NOT_RUN|NOT_RUN|查询与 Top-K|
 |P03-A09|Hybrid Retrieval|NOT_RUN|NOT_RUN|NOT_RUN|融合策略和 Top-K|
 |P03-A10|外部可配置 Reranker|NOT_RUN|NOT_RUN|NOT_RUN|请求、错误和降级记录|

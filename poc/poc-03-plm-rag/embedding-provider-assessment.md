@@ -28,12 +28,22 @@ index_version: v1
 3. API Key 只从本地 Secret/环境变量读取，不进入 Git、日志或报告。
 4. 业务链路只通过统一 Embedding/AI 能力边界，不在业务模块直接调用厂商 SDK。
 
+## P03-A05 换模重建验证
+
+- 官方 OpenAI-compatible 文档确认华北 2（北京）支持 `text-embedding-v4`，并支持 768 维输出。
+- 旧绑定：`qwen3.7-text-embedding`、1024 维、index `v1`。
+- 新验证绑定：`text-embedding-v4`、768 维、新 index `v2`。
+- 旧 index_id 原地换模由绑定注册器拒绝。
+- 使用 120 条固定非客户文本执行 12 批真实 Embedding 请求，120/120 返回 768 维，旧向量复用 0。
+- 新 `v2` 仅为 P03-A05 验证制品，状态 `VALIDATED_NOT_ACTIVATED`；当前激活绑定仍为 `v1`。
+
 ## 官方来源
 
 - DeepSeek API 文档：https://api-docs.deepseek.com/
 - DeepSeek API 参考：https://api-docs.deepseek.com/api/deepseek-api/
 - 阿里云百炼 Embedding 文档：https://help.aliyun.com/en/model-studio/embedding
 - 阿里云百炼 Base URL 文档：https://help.aliyun.com/en/model-studio/base-url
+- 阿里云百炼 OpenAI-compatible Embedding：https://help.aliyun.com/en/model-studio/embedding-interfaces-compatible-with-openai
 
 ## 当前阻塞
 

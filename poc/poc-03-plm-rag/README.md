@@ -37,7 +37,13 @@
 
 ## Result
 
-P0.09 候选准备链已通过：26 个 ParsedDocument 生成 655 个带 PROJECT/ProjectId 和来源定位的 Chunk，并轮询抽样 120 条候选记录，覆盖 26/26 个文档。旧 R1 曾导出 109 条记录，但覆盖审计仅有 1 个唯一查询、1 种来源类型和 1 种分类，已判定不可用于质量指标。用户已填写 R2 的 120 行审核状态、审核人和日期；独立 Gate 复核显示 45 行字段完整，75 行仍缺锁定的来源类型，不能因填写 `APPROVED` 自动视为正式数据。R3 将其转换为人工确认待办交互原型：主表不再展示大段正文，提供 120 个本地证据定位链接和逐项维护提示，同时完整保留 R2 技术评审页。P03-A04 使用百炼 `qwen3.7-text-embedding` 实测请求/返回 1024 维，索引 `v1` 绑定 PASS。
+P0.09 候选准备链已通过：26 个 ParsedDocument 生成 655 个带 PROJECT/ProjectId 和来源定位的 Chunk，并轮询抽样 120 条候选记录，覆盖 26/26 个文档。旧 R1 曾导出 109 条记录，但覆盖审计仅有 1 个唯一查询、1 种来源类型和 1 种分类，已判定不可用于质量指标。用户已填写 R2 的 120 行审核状态、审核人和日期；R3 将其转换为人工确认待办交互原型并保留技术评审页。随后来源资格审计确认：20 条合同可保留，25 条应由 `CONTRACT` 纠正为 `TECHNICAL_AGREEMENT`，75 条历史解决方案不属于锁定来源类型，不能伪造为标准能力或调研。当前只有 45 条合格来源，距最低门槛差 55 条，P03-A02 因缺少真实 `STANDARD_CAPABILITY` 和 `SURVEY` 语料进入 BLOCKED。P03-A04 使用百炼 `qwen3.7-text-embedding` 实测请求/返回 1024 维，索引 `v1` 绑定 PASS。
+
+P03-A05 已验证模型切换纪律：保留激活的 `qwen3.7-text-embedding` 1024 维 `v1`，拒绝对旧 index_id 原地更换模型；创建独立 `text-embedding-v4` 768 维 `v2`，使用 120 条固定非客户文本执行 12 批真实请求，120/120 全量重建完成，旧向量复用数为 0。`v2` 状态为验证通过但未激活，不替换当前绑定。
+
+P03-A06 已在本地 PostgreSQL 18.6 + pgvector 0.8.6 实测 PROJECT 强制隔离：两个项目各 20 条合成记录，Vector、Full Text、Hybrid 各执行双项目 Top-5 查询；30 行结果跨项目泄漏为 0。缺失 ProjectId 在数据库调用前被拒绝，参数注入式 ProjectId 仅作为参数处理并返回 0 行。验证结束后临时 Schema 已删除。
+
+P03-A07 已验证 PostgreSQL Full Text：使用 `simple` 配置和上游空格分词后的中文术语，建立表达式 GIN 索引；4 组查询、40 条合成记录的 Top-5 平均和最低 Recall 均为 100%，执行计划确认使用 GIN。该结论不代表 PostgreSQL 内置中文分词，正式链路必须保留上游术语规范化步骤。
 
 ## Confirmation UX Prototype
 
@@ -105,14 +111,17 @@ python scripts/audit_golden_dataset.py `
 |当前人工批准记录|100~200 条且字段完整|R2 人工填写 120 条 APPROVED；仅 45 条字段完整，75 条缺来源类型|
 |本地预填建议|辅助人工评审，不形成真值|120 条不同查询；45 条来源类型可映射，75 条待确认|
 |人工确认交互原型|证据可定位、输入有提示、原数据可追溯|R3 生成 120 个本地证据链接；45 条已确认、75 条待补充；PASS_FOR_UX_REVIEW|
+|来源资格审计|不得将解决方案伪造为锁定来源类型|20 CONTRACT、25 TECHNICAL_AGREEMENT 合格；75 SOLUTION 排除；审计 PASS，P03-A02 BLOCKED|
 |Schema 合法数据集导出|100~200 条|当前 R2 未导出；旧 R1 的 109 条仅 Schema PASS、覆盖 FAIL|
 |Gold Set 质量覆盖|查询、四类来源、六类分类可评估|IN_PROGRESS：R2 尚未人工批准，不能审计为正式 Gold Set|
 |确定性 Chunk|可追溯且强制 PROJECT/ProjectId|655 个，PASS|
 |单索引单 Embedding 模型|不可原地换模/换维度|`qwen3.7-text-embedding` 1024 维 live PASS|
+|模型切换与全量重建|新 index_id、全量重建、旧向量复用 0|`text-embedding-v4` 768/v2，120/120 live rebuild，PASS；未激活|
+|PostgreSQL Full Text|查询与 Top-K|4 场景、Top-5 平均/最低 Recall 100%、GIN 命中，PASS|
 |Top-5 Recall|≥95%|NOT_RUN|
 |分类准确率|≥90%|NOT_RUN|
 |来源引用准确率|≥98%|NOT_RUN|
-|PROJECT 跨项目泄漏|0|NOT_RUN|
+|PROJECT 跨项目泄漏|0|P03-A06：6 组查询、30 行结果，泄漏 0，PASS|
 
 ## Logs
 
@@ -132,6 +141,7 @@ python scripts/audit_golden_dataset.py `
 7. 旧 R1 的 109 条批准记录只有 1 个唯一查询，且全部为 `SURVEY` / `STANDARD_SATISFIED`，不满足 Gold Set 覆盖要求，保留为历史失败证据。
 8. P03-A04 已激活阿里云百炼 OpenAI-compatible `qwen3.7-text-embedding`、1024 维、索引 `v1` 的 PoC 绑定；它不代表正式架构冻结。
 9. DeepSeek 官方资料本轮未找到 Embedding 端点；不得把现有 DeepSeek Chat Key 假定为向量服务凭据。
+10. 当前语料不存在独立的标准能力基线和调研记录。除非补充真实语料或由用户批准修改验收标准，不得把 75 条历史解决方案改名为 `STANDARD_CAPABILITY` 或 `SURVEY`。
 
 ## Conclusion
 
