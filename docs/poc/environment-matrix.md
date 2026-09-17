@@ -1,21 +1,21 @@
-# Phase 0 双平台环境矩阵
+# Phase 0 三平台环境矩阵
 
 ## 目标环境
 
-|项目|Windows 目标|Debian 目标|验收要求|
-|---|---|---|---|
-|操作系统|Windows Server 2025 x86-64|Debian 13 x86-64|两端均须实际执行|
-|Python|3.13.x|3.13.x|安装、创建 venv、核心依赖 import 和最小功能通过|
-|数据库|PostgreSQL 18 + pgvector|PostgreSQL 18 + pgvector|离线安装、Alembic、HNSW、备份恢复|
-|OCR|PaddleOCR + Tesseract + OCRmyPDF|PaddleOCR + Tesseract + OCRmyPDF|扫描 PDF 可处理|
-|Office 输出|python-docx + python-pptx|python-docx + python-pptx|生成文件可由 Microsoft Office 正常打开|
-|安装方式|完全离线|完全离线|从本地制品完成 clean install|
+|项目|Windows 11|Windows Server 2025|Debian 13|验收要求|
+|---|---|---|---|---|
+|CPU 架构|x86-64|x86-64|x86-64|三端均须实际执行|
+|Python|3.13.x|3.13.x|3.13.x|安装、创建 venv、核心依赖 import 和最小功能通过|
+|数据库|PostgreSQL 18 + pgvector|PostgreSQL 18 + pgvector|PostgreSQL 18 + pgvector|离线安装、Alembic、HNSW、备份恢复|
+|OCR|PaddleOCR + Tesseract + OCRmyPDF|PaddleOCR + Tesseract + OCRmyPDF|PaddleOCR + Tesseract + OCRmyPDF|扫描 PDF 可处理|
+|Office 输出|python-docx + python-pptx|python-docx + python-pptx|python-docx + python-pptx|生成文件可由 Microsoft Office 正常打开|
+|安装方式|完全离线|完全离线|完全离线|从本地制品完成 clean install|
 
 ## 当前可用环境
 
 |环境|操作系统|CPU 架构|资源|Python 3.13|资格|状态|
 |---|---|---|---|---|---|---|
-|本地开发机|Windows 11 Home 10.0.26200|x86-64|32 逻辑处理器 / 31.63 GB RAM / D盘约 441.76 GB 可用|3.13.15|仅本机预检，不替代正式环境|LOCAL_PRECHECK_PASS|
+|本地开发机 / Windows 11 验收环境|Windows 11 Home 10.0.26200|x86-64|32 逻辑处理器 / 31.63 GB RAM / D盘约 441.76 GB 可用|3.13.15|Windows 11 正式目标；Python 包子项已验证|PARTIAL_PASS|
 |Windows 验收环境|Windows Server 2025|x86-64|最低 4C / 8 GB / 100 GB|未确认|正式验收|BLOCKED_ENVIRONMENT|
 |Linux 验收环境|Debian 13|x86-64|最低 4C / 8 GB / 100 GB|未确认|正式验收|BLOCKED_ENVIRONMENT|
 
@@ -37,8 +37,8 @@
 
 1. 需要可重复使用的 Windows Server 2025 x86-64 环境。
 2. 需要可重复使用的 Debian 13 x86-64 环境。
-3. 两端需具备断网验收窗口，以验证 wheel/deb/安装介质完整性。
-4. 本机预检通过只降低脚本和依赖组合风险，不改变上述正式环境缺口状态。
+3. 三个平台均需具备断网验收窗口，以验证 wheel/deb/安装介质完整性。
+4. 当前 Windows 11 只完成 Python 包在线/离线子项；Tesseract、Ghostscript、完整 OCR 与安装流程仍待验证。
 
 ## 本机预检摘要
 

@@ -20,7 +20,7 @@
 |后台任务|PostgreSQL Job Table + Worker Process|
 |插件|Python 独立子进程 + JSON-RPC over stdio|
 |License|MAC 规范化 → SHA-256；Ed25519 签名|
-|服务器|Windows Server 2025、Debian 13；x86-64/AMD64|
+|目标环境|Windows 11、Windows Server 2025、Debian 13；x86-64/AMD64|
 |最低资源|4 Core / 8 GB RAM / 100 GB SSD；不运行本地模型|
 
 ## AI Provider
@@ -42,4 +42,3 @@ Reranker 使用外部可配置 API，服务器不做本地推理。
 - 客户自开发插件、AI 原型执行沙箱、自动代码提交。
 - WebSocket、FTP、COM、ActiveX、自定义 TCP。
 - 自行实现完整 Visio OOXML。
-

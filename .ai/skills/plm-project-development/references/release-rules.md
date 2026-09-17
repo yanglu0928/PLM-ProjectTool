@@ -2,6 +2,7 @@
 
 ## 目标环境
 
+- Windows 11。
 - Windows Server 2025。
 - Debian 13。
 - x86-64 / AMD64。
@@ -13,7 +14,7 @@ Linux 建议目录：`/opt/plmtool/{app,runtime,plugins,config,data,logs,license
 
 ## 安装验收
 
-两种目标系统都必须在断网环境完成 clean install、restart、license、create project、AI 配置、OCR 和 output 验证。
+三个目标系统都必须在断网环境完成 clean install、restart、license、create project、AI 配置、OCR 和 output 验证。
 
 ## 升级
 
@@ -37,7 +38,7 @@ Linux 建议目录：`/opt/plmtool/{app,runtime,plugins,config,data,logs,license
 ## 最低交付物
 
 ```text
-Windows Server 2025 离线发行包
+Windows 11 / Windows Server 2025 离线发行包
 Debian 13 离线发行包
 数据库初始化包
 数据库升级脚本

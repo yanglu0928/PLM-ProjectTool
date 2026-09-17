@@ -2,8 +2,8 @@
 
 本文件适用于整个仓库。开始任何任务前，必须先读取：
 
-1. `AI开发总控指令与 Skill 规范 V1.0.md`
-2. `PLM项目实施辅助工具软件开发实施方案 V2.0.md`
+1. `AI开发总控指令与 Skill 规范 V1.1.md`
+2. `PLM项目实施辅助工具软件开发实施方案 V2.1.md`
 3. `.ai/skills/plm-project-development/SKILL.md`
 4. 该 Skill 针对当前任务指定的参考文件
 
@@ -41,6 +41,7 @@
 - RAG：统一平台；PROJECT 数据必须按 ProjectId 隔离；更换 Embedding 模型必须新建索引并全量重建。
 - 插件：独立子进程、JSON-RPC over stdio；插件不得直连数据库或管理 AI Key。
 - License：MAC 规范化 → SHA-256 → Ed25519；私钥只允许存在于开发者工作台。
+- 目标环境：Windows 11、Windows Server 2025、Debian 13，均为 x86-64/AMD64 正式兼容目标。
 - 不得擅自加入 Redis、消息队列、独立向量库、本地大模型、SSO、手机 App、第三方插件市场或 AI 原型执行沙箱。
 
 ## 工作纪律

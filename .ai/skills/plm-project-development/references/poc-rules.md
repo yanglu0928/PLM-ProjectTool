@@ -8,7 +8,7 @@ Phase 0 包含：
 
 |PoC|验证范围|
 |---|---|
-|POC-01|Python 3.13 在 Windows Server 2025、Debian 13 的核心依赖及离线安装|
+|POC-01|Python 3.13 在 Windows 11、Windows Server 2025、Debian 13 的核心依赖及离线安装|
 |POC-02|PostgreSQL 18 + pgvector、Alembic、HNSW、备份恢复、10 万级向量|
 |POC-03|PLM RAG Golden Dataset、Hybrid、Reranker、DeepSeek 与引用质量|
 |POC-04|AI Gateway / DeepSeek：文本、流式、结构化输出、超时、重试、错误|
@@ -18,6 +18,8 @@ Phase 0 包含：
 |POC-09|MAC、SHA-256、Ed25519、过期、篡改、错公钥、系统时间|
 
 POC-07 VSDX 为 P1，不阻塞正式开发。
+
+凡涉及操作系统兼容、安装、系统组件或原生依赖的 PoC，必须分别记录 Windows 11、Windows Server 2025、Debian 13 的证据；不得以一个 Windows 版本替代另一个 Windows 版本的正式结论。
 
 ## 每个 PoC 的必需产物
 
@@ -58,4 +60,3 @@ RAG 指标是初值，只有真实数据 PoC 和评审可修订。
 Python 依赖 → PostgreSQL/pgvector → Document/OCR → DeepSeek Gateway → RAG → Plugin → License → Word/PPT。
 
 允许在资源具备时并行验证基础依赖、AI Gateway、文档/OCR、Plugin/License、Word/PPT；RAG 端到端验证依赖数据库、AI 和文档链路。
-

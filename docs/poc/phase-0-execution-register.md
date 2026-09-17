@@ -14,7 +14,7 @@
 
 |PoC|对应 WBS|验证主题|状态|开始日期|完成日期|结论|证据|
 |---|---|---|---|---|---|---|---|
-|POC-01|P0.01/P0.02/P0.03/P0.04|Python 3.13 双平台依赖及离线安装|IN_PROGRESS|2026-09-17|-|Windows 11 在线/离线预检 PASS；待两个目标环境验证|`poc/poc-01-python-313-dependencies/`|
+|POC-01|P0.01/P0.01S/P0.02/P0.03/P0.04|Python 3.13 三平台依赖及离线安装|IN_PROGRESS|2026-09-17|-|Windows 11 Python 包在线/离线预检 PASS；系统依赖及另两个平台待验证|`poc/poc-01-python-313-dependencies/`|
 |POC-02|P0.05/P0.06/P0.07/P0.08|PostgreSQL 18 + pgvector|NOT_STARTED|-|-|-|-|
 |POC-03|P0.09/P0.10/P0.12|PLM RAG|NOT_STARTED|-|-|-|-|
 |POC-04|P0.11|AI Gateway / DeepSeek|NOT_STARTED|-|-|-|-|
@@ -39,3 +39,4 @@
 |---|---|
 |2026-09-17|建立 Phase 0 登记表并启动 POC-01。|
 |2026-09-17|完成 Windows 11 / Python 3.13.15 在线与 wheelhouse 离线预检；POC-01 保持 IN_PROGRESS。|
+|2026-09-17|基线升版：新增 Windows 11，与 Windows Server 2025、Debian 13 并列为正式目标环境。|

@@ -8,16 +8,17 @@
 
 ## Objective
 
-证明项目核心 Python 依赖能够在 Windows Server 2025 与 Debian 13 的 Python 3.13.x 环境中完成在线制品准备、完全离线安装、import 和最小功能运行。
+证明项目核心 Python 依赖能够在 Windows 11、Windows Server 2025 与 Debian 13 的 Python 3.13.x 环境中完成在线制品准备、完全离线安装、import 和最小功能运行。
 
 ## Environment
 
 正式目标：
 
+- Windows 11 x86-64，Python 3.13.x。
 - Windows Server 2025 x86-64，Python 3.13.x。
 - Debian 13 x86-64，Python 3.13.x。
 
-当前预检环境：Windows 11 Home 10.0.26200 x86-64，Python 3.13.15。该环境仅用于验证脚本和初步依赖兼容性，不计入双平台正式结论。完整环境状态见 `docs/poc/environment-matrix.md`。
+当前环境：Windows 11 Home 10.0.26200 x86-64，Python 3.13.15。根据 V2.1 基线，该环境属于正式目标平台；当前结果计入 Windows 11 的 Python 包子项，但不代表该平台全部系统依赖已通过。完整环境状态见 `docs/poc/environment-matrix.md`。
 
 ## Input
 
@@ -42,10 +43,10 @@
 .\scripts\windows\build-wheelhouse.ps1
 ```
 
-将整个 `artifacts/poc-01/windows/` 复制到断网的 Windows Server 2025 后：
+将整个 `artifacts/poc-01/windows/` 复制到断网的 Windows 11 或 Windows Server 2025 后；通过 `EvidencePlatform` 分别记录证据：
 
 ```powershell
-.\scripts\windows\run-offline-validation.ps1 -WheelhousePath <wheelhouse目录>
+.\scripts\windows\run-offline-validation.ps1 -WheelhousePath <wheelhouse目录> -EvidencePlatform <windows-11或windows-server-2025>
 ```
 
 ### Debian 13 在线预检
@@ -82,7 +83,7 @@ bash scripts/linux/run-offline-validation.sh <wheelhouse目录>
 |核心 import 成功率|100%|15/15|
 |最小功能检查通过率|100%|15/15|
 |断网安装网络请求数|0|本机使用 `--no-index`，0 次包索引请求|
-|目标平台覆盖率|2/2|0/2|
+|目标平台覆盖率|3/3|Windows 11 Python 包子项通过；完整平台 0/3|
 |Windows wheelhouse 完整性|全部文件有 SHA-256|109/109|
 
 ## Logs
@@ -100,13 +101,13 @@ bash scripts/linux/run-offline-validation.sh <wheelhouse目录>
 ## Known Issues
 
 1. Windows Server 2025 和 Debian 13 验收环境尚未提供。
-2. PaddlePaddle/PaddleOCR 在 Python 3.13 双平台的 wheel 可用性尚未验证。
+2. PaddlePaddle/PaddleOCR 在 Windows Server 2025 与 Debian 13 的 Python 3.13 wheel 可用性尚未验证；Windows 11 已通过。
 3. OCRmyPDF 依赖的 Tesseract、Ghostscript 等系统组件尚未验证。
 4. 当前验证只覆盖包安装、import 和不依赖外部程序的最小功能；OCR 真实样本质量属于 POC-05。
 
 ## Conclusion
 
-POC-01 已完成 Windows 11 / Python 3.13.15 本机在线与 wheelhouse 离线预检，全部 15 项检查通过。正式结论仍为 `IN_PROGRESS`；在 Windows Server 2025 与 Debian 13 均完成制品准备、断网安装和最小功能验证前，不得标记 PASS。
+POC-01 已完成 Windows 11 / Python 3.13.15 的 Python 包在线与 wheelhouse 离线验证，全部 15 项检查通过。正式结论仍为 `IN_PROGRESS`；Windows 11 系统依赖以及 Windows Server 2025、Debian 13 的制品准备、断网安装和最小功能验证全部完成前，不得标记 PASS。
 
 ## PASS / FAIL
 

@@ -1,11 +1,11 @@
 ---
 name: plm-project-development
-description: Execute architecture, PoC, implementation, testing, packaging, and deployment work for the PLM project implementation assistant while enforcing its locked V2.0 baseline, phase gates, traceability, and reporting contracts. Use for all engineering work in this repository; do not use it to reinterpret or expand the product scope.
+description: Execute architecture, PoC, implementation, testing, packaging, and deployment work for the PLM project implementation assistant while enforcing its locked V2.1 baseline, phase gates, traceability, and reporting contracts. Use for all engineering work in this repository; do not use it to reinterpret or expand the product scope.
 ---
 
 # PLM Project Development
 
-本 Skill 将《PLM项目实施辅助工具软件开发实施方案 V2.0》作为最高业务与技术基线，将《AI开发总控指令与 Skill 规范 V1.0》作为执行约束。原始文档始终是事实来源；本 Skill 只负责路由和执行，不替代原文。
+本 Skill 将《PLM项目实施辅助工具软件开发实施方案 V2.1》作为最高业务与技术基线，将《AI开发总控指令与 Skill 规范 V1.1》作为执行约束。原始文档始终是事实来源；本 Skill 只负责路由和执行，不替代原文。
 
 ## 开始任务
 
@@ -29,7 +29,7 @@ description: Execute architecture, PoC, implementation, testing, packaging, and 
 - 涉及编码、数据库/API 变更、版本、异常、安全、Git 或 ADR 时，读取 [development-rules.md](references/development-rules.md)。
 - 涉及测试设计、验收、Definition of Done 或质量 Gate 时，读取 [testing-rules.md](references/testing-rules.md)。
 - 涉及 Phase 0 或任何技术可行性结论时，读取 [poc-rules.md](references/poc-rules.md)。
-- 涉及安装、升级、打包、交付、双平台或 Release Gate 时，读取 [release-rules.md](references/release-rules.md)。
+- 涉及安装、升级、打包、交付、三平台或 Release Gate 时，读取 [release-rules.md](references/release-rules.md)。
 
 ## 决策规则
 
@@ -87,4 +87,3 @@ description: Execute architecture, PoC, implementation, testing, packaging, and 
 ```
 
 完成一个任务后，必须明确 Changed、Files、Migration、API、Tests、Result、Known Issues、Next。若用户只要求简短状态，可压缩篇幅，但不得省略阻塞、失败或未验证事实。
-

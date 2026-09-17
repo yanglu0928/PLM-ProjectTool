@@ -9,13 +9,15 @@
 - 建立仓库级 AI 开发约束入口。
 - 建立项目开发 Skill，以及架构、技术、开发、测试、PoC 和发行规则。
 - 将 GitHub 私有仓库设为唯一代码和版本说明同步目标。
-- 启动 Phase 0，建立 PoC 工作区、执行登记表和双平台环境矩阵。
-- 建立 POC-01 Python 3.13 依赖分组、环境采集、最小功能验证及双平台在线/离线验证脚本。
-- 完成 Windows 11 / Python 3.13.15 本机在线与 wheelhouse 离线预检：109 个制品、15/15 项检查通过；目标 Windows Server 2025 与 Debian 13 仍待验证。
+- 启动 Phase 0，建立 PoC 工作区、执行登记表和三平台环境矩阵。
+- 建立 POC-01 Python 3.13 依赖分组、环境采集、最小功能验证及三平台在线/离线验证脚本。
+- 完成 Windows 11 / Python 3.13.15 Python 包在线与 wheelhouse 离线验证：109 个制品、15/15 项检查通过；系统依赖、Windows Server 2025 与 Debian 13 仍待验证。
+- 基线升版至实施方案 V2.1 / 总控规范 V1.1，新增 Windows 11，与 Windows Server 2025、Debian 13 并列支持。
 
 ### 兼容性
 
-- 当前仍处于 Phase 0 技术验证前/执行期，尚无可发布程序版本。
+- 正式目标环境为 Windows 11、Windows Server 2025、Debian 13，均为 x86-64/AMD64。
+- 当前仍处于 Phase 0 技术验证执行期，尚无可发布程序版本。
 
 ### Migration
 
