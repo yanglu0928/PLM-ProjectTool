@@ -1,10 +1,25 @@
+param(
+    [string]$EvidencePlatform = "windows-11-ocr",
+    [string]$PythonLauncher = ""
+)
+
 $ErrorActionPreference = "Stop"
 $pocRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $repoRoot = (Resolve-Path (Join-Path $pocRoot "..\..")).Path
-$python = Join-Path $repoRoot ".poc-runtime\poc-01\windows-offline\Scripts\python.exe"
+$python = if ($PythonLauncher) {
+    $PythonLauncher
+} else {
+    Join-Path $repoRoot ".poc-runtime\poc-01\windows-offline\Scripts\python.exe"
+}
 $verifier = Join-Path $pocRoot "scripts\verify_ocr_pipeline.py"
-$evidenceRoot = Join-Path $pocRoot "evidence\windows-11-ocr"
-$tesseract = "C:\Program Files\Tesseract-OCR\tesseract.exe"
+$evidenceRoot = Join-Path $pocRoot ("evidence\" + $EvidencePlatform)
+$systemTesseract = "C:\Program Files\Tesseract-OCR\tesseract.exe"
+$portableTesseract = Join-Path $repoRoot "artifacts\poc-01\windows\tesseract-portable\tesseract.exe"
+$tesseract = if (Test-Path -LiteralPath $systemTesseract -PathType Leaf) {
+    $systemTesseract
+} else {
+    $portableTesseract
+}
 $tessdata = Join-Path $repoRoot "artifacts\poc-01\windows\tessdata-best"
 $ghostscript = Join-Path $repoRoot "artifacts\poc-01\windows\ghostscript-10.08.0-portable\bin\gswin64c.exe"
 

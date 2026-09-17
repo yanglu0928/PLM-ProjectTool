@@ -41,7 +41,12 @@ def executable_available(name: str) -> bool:
     standard_paths: tuple[Path, ...] = ()
     if platform.system() == "Windows":
         if name == "tesseract":
-            standard_paths = (Path("C:/Program Files/Tesseract-OCR/tesseract.exe"),)
+            repo_root = Path(__file__).resolve().parents[3]
+            standard_paths = (
+                Path("C:/Program Files/Tesseract-OCR/tesseract.exe"),
+                repo_root
+                / "artifacts/poc-01/windows/tesseract-portable/tesseract.exe",
+            )
         elif name == "gswin64c":
             repo_root = Path(__file__).resolve().parents[3]
             standard_paths = (

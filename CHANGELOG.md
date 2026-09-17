@@ -11,13 +11,15 @@
 - 将 GitHub 私有仓库设为唯一代码和版本说明同步目标。
 - 启动 Phase 0，建立 PoC 工作区、执行登记表和三平台环境矩阵。
 - 建立 POC-01 Python 3.13 依赖分组、环境采集、最小功能验证及三平台在线/离线验证脚本。
-- 完成 Windows 11 / Python 3.13.15 Python 包在线与 wheelhouse 离线验证：109 个制品、15/15 项检查通过；系统依赖、Windows Server 2025 与 Debian 13 仍待验证。
+- 完成 Windows 11 / Python 3.13.15 Python 包在线与 wheelhouse 离线验证：109 个制品、15/15 项检查通过。
 - 基线升版至实施方案 V2.1 / 总控规范 V1.1，新增 Windows 11，与 Windows Server 2025、Debian 13 并列支持。
 - 增加 Windows 11 中文扫描 PDF 的 OCRmyPDF/Tesseract 端到端验证脚本，并记录 Ghostscript 安装与许可证风险。
 - Windows 11 中文 searchable PDF 主链验证通过：Tesseract 5.4 + OCRmyPDF 17.12.1 + `tessdata_best`，5/5 术语命中。
 - 完成 Ghostscript 10.08.0 项目内 portable 安装脚本及 SHA-256 校验，Windows 11 PDF/A-2b 验证通过。
 - 修复 OCRmyPDF deskew 在中文 Windows 错误输出上的编码兼容问题，补充 UTF-8/本地编码回退单元测试。
 - 新增 ADR-002，采用 Ghostscript AGPL 源码公开策略；仓库公开、项目许可证和第三方声明仍为发行 Gate。
+- 完成 Windows Server 2025 Datacenter 10.0.26100 实机验证：Python 3.13.15 官方嵌入式运行时、完整离线依赖、15/15 项检查、Tesseract/OCRmyPDF/Ghostscript PDF/A-2b 与 deskew 中文主链全部通过。
+- 增加 Windows Server 2025 非管理员部署脚本；当系统策略拒绝 Python EXE 安装器时，回退到校验过的官方嵌入式包。
 
 ### 兼容性
 
@@ -31,7 +33,9 @@
 ### 验证结果
 
 - 项目 Skill 结构校验通过。
+- POC-01 平台覆盖 2/3：Windows 11、Windows Server 2025 PASS；Debian 13 待验证。
 
 ### 已知问题
 
-- Phase 0 阻塞 PoC 尚未执行，禁止进入大规模正式业务开发。
+- Phase 0 阻塞 PoC 尚未全部通过，禁止进入大规模正式业务开发。
+- Debian 13 尚无可用验收环境；POC-01 保持 `IN_PROGRESS`。

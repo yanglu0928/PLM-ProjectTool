@@ -4,7 +4,7 @@
 
 `IN_PROGRESS`
 
-目标平台尚未全部可用，因此当前不得判定 PASS 或 FAIL。
+Debian 13 尚未验证，因此当前不得判定整体 PASS 或 FAIL。
 
 ## Objective
 
@@ -18,7 +18,7 @@
 - Windows Server 2025 x86-64，Python 3.13.x。
 - Debian 13 x86-64，Python 3.13.x。
 
-当前环境：Windows 11 Home 10.0.26200 x86-64，Python 3.13.15。根据 V2.1 基线，该环境属于正式目标平台；当前 POC-01 依赖子项已通过，但不代表完整发行 Gate 已通过。完整环境状态见 `docs/poc/environment-matrix.md`。
+已验证环境包括 Windows 11 Home 10.0.26200 x86-64，以及 Windows Server 2025 Datacenter 10.0.26100 x86-64；两端均使用 Python 3.13.15。根据 V2.1 基线，这两个环境属于正式目标平台；当前 POC-01 的 Windows 子项已通过，但不代表完整发行 Gate 已通过。完整环境状态见 `docs/poc/environment-matrix.md`。
 
 ## Input
 
@@ -74,15 +74,15 @@ bash scripts/linux/run-offline-validation.sh <wheelhouse目录>
 
 |检查项|Windows 11 本机预检|Windows Server 2025|Debian 13|
 |---|---|---|---|
-|Python 3.13 运行时|PASS（3.13.15）|BLOCKED_ENVIRONMENT|BLOCKED_ENVIRONMENT|
-|创建隔离 venv|PASS|NOT_RUN|NOT_RUN|
-|完整依赖在线安装|PASS|NOT_RUN|NOT_RUN|
-|import / 最小功能|15/15 PASS|NOT_RUN|NOT_RUN|
-|wheelhouse 构建|PASS（109 文件）|NOT_RUN|NOT_RUN|
-|完全离线安装|PASS（本机 `--no-index` 预检）|NOT_RUN|NOT_RUN|
-|Tesseract `chi_sim+eng`|PASS|NOT_RUN|NOT_RUN|
-|Ghostscript 10.08.0|PASS|NOT_RUN|NOT_RUN|
-|OCRmyPDF deskew + PDF/A-2b 中文扫描 PDF 主链|PASS（5/5 术语）|NOT_RUN|NOT_RUN|
+|Python 3.13 运行时|PASS（3.13.15）|PASS（3.13.15 官方嵌入式包）|BLOCKED_ENVIRONMENT|
+|隔离 Python 环境|PASS（venv）|PASS（portable runtime；系统策略禁止安装器）|NOT_RUN|
+|完整依赖安装|PASS|PASS（完全离线）|NOT_RUN|
+|import / 最小功能|15/15 PASS|15/15 PASS|NOT_RUN|
+|wheelhouse 构建|PASS（109 文件）|复用已校验 Windows wheelhouse|NOT_RUN|
+|完全离线安装|PASS（本机 `--no-index` 预检）|PASS（`--no-index`）|NOT_RUN|
+|Tesseract `chi_sim+eng`|PASS|PASS|NOT_RUN|
+|Ghostscript 10.08.0|PASS|PASS|NOT_RUN|
+|OCRmyPDF deskew + PDF/A-2b 中文扫描 PDF 主链|PASS（5/5 术语）|PASS（5/5 术语）|NOT_RUN|
 
 执行结果写入 `evidence/<platform>/`，并将非敏感摘要回填本文件。
 
@@ -94,11 +94,14 @@ bash scripts/linux/run-offline-validation.sh <wheelhouse目录>
 |核心 import 成功率|100%|15/15|
 |最小功能检查通过率|100%|15/15|
 |断网安装网络请求数|0|本机使用 `--no-index`，0 次包索引请求|
-|目标平台覆盖率|3/3|POC-01 为 1/3；Windows 11 PASS|
+|目标平台覆盖率|3/3|POC-01 为 2/3；Windows 11、Windows Server 2025 PASS|
 |Windows wheelhouse 完整性|全部文件有 SHA-256|109/109|
 |Windows 11 OCR 术语召回率|100%|5/5|
 |Windows 11 PDF/A-2b|通过|PASS|
 |Windows 11 deskew 编码兼容|无解码异常|PASS|
+|Windows Server 2025 核心 import / 最小功能|100%|15/15|
+|Windows Server 2025 OCR 术语召回率|100%|5/5|
+|Windows Server 2025 PDF/A-2b / deskew|通过且无解码异常|PASS|
 
 ## Logs
 
@@ -114,20 +117,24 @@ bash scripts/linux/run-offline-validation.sh <wheelhouse目录>
 - 高精度语言模型 Hash：`evidence/windows-11-ocr/tessdata-best-sha256sums.txt`
 - Ghostscript 尝试及备选方案：`evidence/windows-11-ocr/ghostscript-install-attempt.md`
 - Ghostscript 最终安装证据：`evidence/windows-11-ocr/ghostscript-installation.md`
+- Windows Server 2025 验证摘要：`evidence/windows-server-2025/README.md`
+- Windows Server 2025 环境与依赖结果：`evidence/windows-server-2025/environment.json`、`verification.json`
+- Windows Server 2025 OCR 结果：`evidence/windows-server-2025/ocr-result.json`
 
 日志必须去除用户名、主机名、路径中的个人信息和任何 Secret 后才能提交。
 
 ## Known Issues
 
-1. Windows Server 2025 和 Debian 13 验收环境尚未提供。
-2. PaddlePaddle/PaddleOCR 在 Windows Server 2025 与 Debian 13 的 Python 3.13 wheel 可用性尚未验证；Windows 11 已通过。
-3. Windows 编码兼容层挂接 OCRmyPDF 内部解析函数，升级 OCRmyPDF 时必须重新执行回归测试。
-4. 当前 OCR 样本是合成基准；真实扫描件质量与准确率仍属于 POC-05。
-5. 当前仓库仍为私有；Ghostscript 对外发行前必须完成 ADR-002 的源码公开、兼容许可证和第三方声明 Gate。
+1. Debian 13 验收环境尚未提供。
+2. PaddlePaddle/PaddleOCR 在 Debian 13 的 Python 3.13 wheel 可用性尚未验证；Windows 11 与 Windows Server 2025 已通过。
+3. Windows Server 2025 的非管理员账号受系统策略限制，Python EXE 安装器返回 1625；已验证官方嵌入式 Python 的完全离线路径，正式安装器策略仍须在 Release Gate 单独确认。
+4. Windows 编码兼容层挂接 OCRmyPDF 内部解析函数，升级 OCRmyPDF 时必须重新执行回归测试。
+5. 当前 OCR 样本是合成基准；真实扫描件质量与准确率仍属于 POC-05。
+6. 当前仓库仍为私有；Ghostscript 对外发行前必须完成 ADR-002 的源码公开、兼容许可证和第三方声明 Gate。
 
 ## Conclusion
 
-POC-01 的 Windows 11 子项已通过：Python 3.13.15 在线/离线依赖、15/15 项最小检查、Tesseract、Ghostscript 10.08.0、OCRmyPDF deskew 与 PDF/A-2b 中文主链均 PASS。POC-01 总体仍为 `IN_PROGRESS`；Windows Server 2025 与 Debian 13 完成前不得标记整体 PASS。真实扫描质量属于 POC-05，源码公开与 Ghostscript 发行合规属于 POC-09 / Release Gate。
+POC-01 的 Windows 11 与 Windows Server 2025 子项均已通过：Python 3.13.15 离线依赖、15/15 项最小检查、Tesseract、Ghostscript 10.08.0、OCRmyPDF deskew 与 PDF/A-2b 中文主链均 PASS。POC-01 总体仍为 `IN_PROGRESS`；Debian 13 完成前不得标记整体 PASS。真实扫描质量属于 POC-05，源码公开与 Ghostscript 发行合规属于 POC-09 / Release Gate。
 
 ## PASS / FAIL
 
