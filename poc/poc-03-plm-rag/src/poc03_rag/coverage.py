@@ -17,8 +17,9 @@ REQUIRED_CLASSIFICATIONS = {
     "NON_STANDARD",
     "INSUFFICIENT_INFORMATION",
     "NO_RELIABLE_MATCH",
-    "HUMAN_CONFIRMATION_REQUIRED",
 }
+
+WORKFLOW_ONLY_CLASSIFICATIONS = {"HUMAN_CONFIRMATION_REQUIRED"}
 
 
 def audit_golden_dataset_coverage(dataset: dict[str, Any]) -> dict[str, Any]:
@@ -48,14 +49,18 @@ def audit_golden_dataset_coverage(dataset: dict[str, Any]) -> dict[str, Any]:
         REQUIRED_CLASSIFICATIONS - set(classification_counts)
     )
     duplicate_query_count = len(queries) - len(set(queries))
+    workflow_only_count = sum(
+        classification_counts[item] for item in WORKFLOW_ONLY_CLASSIFICATIONS
+    )
     checks = {
         "case_count_100_to_200": 100 <= len(cases) <= 200,
         "distinct_query_per_case": bool(cases) and duplicate_query_count == 0,
         "all_source_types_present": not missing_source_types,
-        "all_classifications_present": not missing_classifications,
+        "all_final_classifications_present": not missing_classifications,
+        "no_workflow_only_classifications": workflow_only_count == 0,
     }
     return {
-        "schema_version": "poc-03.golden-coverage-result.v1",
+        "schema_version": "poc-03.golden-coverage-result.v2",
         "status": "PASS" if all(checks.values()) else "FAIL",
         "summary": {
             "case_count": len(cases),
@@ -66,6 +71,7 @@ def audit_golden_dataset_coverage(dataset: dict[str, Any]) -> dict[str, Any]:
             "unique_project_count": len(project_ids),
             "source_type_counts": dict(sorted(source_type_counts.items())),
             "classification_counts": dict(sorted(classification_counts.items())),
+            "workflow_only_classification_count": workflow_only_count,
         },
         "checks": checks,
         "missing_source_types": missing_source_types,

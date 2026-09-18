@@ -2,7 +2,7 @@
 
 ## Status
 
-`FAIL / BLOCKED_QUALITY_GATE`
+`BLOCKED_L3_DECISION`
 
 ## Objective
 
@@ -38,11 +38,13 @@
 
 ## Result
 
-P0.09 候选准备链已更新：用户指定的 `标准能力库/` 20 个 DOCX 全部解析通过，确定性分区为 19 份 `STANDARD_CAPABILITY` 和 1 份 `SURVEY`；连同 4 份合同、5 份技术协议，29 个 ParsedDocument 生成 1,695 个带 PROJECT/ProjectId 和来源定位的 Chunk，并轮询抽样 120 条候选，覆盖 29/29 个文档。R4 经严格导入得到 120 条 APPROVED、0 个问题，当时 P03-A02 判定 PASS；R1 质量失败后该标签 Gate 已在 R5 重新打开。P03-A04 使用百炼 `qwen3.7-text-embedding` 实测请求/返回 1024 维，索引 `v1` 绑定 PASS。
+P0.09 候选准备链已更新：用户指定的 `标准能力库/` 20 个 DOCX 全部解析通过，确定性分区为 19 份 `STANDARD_CAPABILITY` 和 1 份 `SURVEY`；连同 4 份合同、5 份技术协议，29 个 ParsedDocument 生成 1,695 个带 PROJECT/ProjectId 和来源定位的 Chunk，并轮询抽样 120 条候选，覆盖 29/29 个文档。R5 经全局人工确认和严格导入得到 120 条 APPROVED、0 个问题，Schema 与覆盖审计 PASS；最终只保留五类业务分类，工作流态不进入 Golden 真值。P03-A04 使用百炼 `qwen3.7-text-embedding` 实测请求/返回 1024 维，索引 `v1` 绑定 PASS。
 
 P03-A11~A13 首轮真实质量验证完整执行但未达门槛：Top-5 Recall 72/120（60.00%）、分类准确率 17/120（14.17%）、来源引用准确率 61/120（50.83%），三项均 FAIL。120/120 次重排使用百炼 `qwen3-rerank`，GIN/HNSW 均实际命中，预测无缺失、越界引用为 0。精确 Chunk 召回 72 条而同文档召回 88 条；分类在已召回样本中仍只有 10/72 正确。R4 的最终分类多数继承候选阶段关键词启发式值，已登记 Golden 标签一致性风险；不得通过事后改标签或降低门槛掩盖失败。
 
-用户已批准按“先复核标签、再分层调优”继续。R5 轻量确认包从 R4 人工说明中确定性识别出 62 条明确最终分类且与已导出标签一致，这些记录不要求重复确认；其余 58 条按“R4 分类 × 本次 AI 分类”归并为 7 组。工作簿默认保持未确认，只有人工选择全局批量确认后建议规则才生效，单条最终分类可覆盖分组。当前严格导入结果为 `AWAITING_HUMAN_CONFIRMATION`、问题 0、数据集未写出。
+用户已批准按“先复核标签、再分层调优”继续。R5 轻量确认包从 R4 人工说明中确定性识别出 62 条明确最终分类，其余 58 条按 7 组规则完成全局人工确认；严格导入和防篡改校验均通过。R5 分层诊断后，扩展候选池命中 115/120（95.83%），120/120 次真实百炼重排得到 Top-5 89/120（74.17%）。进一步定位到扫描件逐字换行造成的中文术语破碎；加入 OCR 字间空白规范化和确定性词法 IDF 后，Top-5 达到 114/120（95.00%），P03-A11 达标。
+
+剩余 6 条问题的唯一目标 Chunk 排名为 8、11、24、27、41、117；在当前“AI 只接收 Top-5，且引用必须等于唯一原始 Chunk”的口径下，P03-A13 引用准确率上限为 95.00%，低于 98% 门槛。该冲突触发 L3：不得通过硬编码、使用答案字段或静默修改 Golden 真值来伪造通过；需人工选择修订低区分度问题/可接受引用集合，或明确调整引用上下文与验收口径。
 
 P03-A05 已验证模型切换纪律：保留激活的 `qwen3.7-text-embedding` 1024 维 `v1`，拒绝对旧 index_id 原地更换模型；创建独立 `text-embedding-v4` 768 维 `v2`，使用 120 条固定非客户文本执行 12 批真实请求，120/120 全量重建完成，旧向量复用数为 0。`v2` 状态为验证通过但未激活，不替换当前绑定。
 
@@ -143,10 +145,10 @@ python scripts/audit_golden_dataset.py `
 |候选评审记录|100~200 条|120 条，29/29 文档覆盖，四类来源均有候选，PASS|
 |当前人工批准记录|100~200 条且字段完整|R4 历史导入 120 条；R5 重新打开标签 Gate，62 条明确结论已锁定、58 条/7 组等待批量确认，IN_PROGRESS|
 |本地预填建议|辅助人工评审，不形成真值|120 条不同查询；120 条来源类型已确定；全部保持 PENDING|
-|人工确认交互原型|证据可定位、输入有提示、原数据可追溯|R5 四表轻量确认包：62 条明确结论、58 条冲突/7 组、单条例外覆盖；公式错误 0；AWAITING_HUMAN_CONFIRMATION|
+|人工确认交互原型|证据可定位、输入有提示、原数据可追溯|R5 四表轻量确认包：62 条明确结论、58 条冲突/7 组、单条例外覆盖；公式错误 0；全局确认与严格导入 PASS|
 |来源资格审计|不得将解决方案伪造为锁定来源类型|4 CONTRACT、5 TECHNICAL_AGREEMENT、19 STANDARD_CAPABILITY、1 SURVEY 文档；历史 SOLUTION 不进入本轮候选|
 |Schema 合法数据集导出|100~200 条|R4 导出 120 条，Schema PASS|
-|Gold Set 质量覆盖|查询、四类来源、六类分类可评估|120 个唯一查询、29 份文档、四类来源和六类结果，覆盖审计 PASS；标签一致性风险待重新评审|
+|Gold Set 质量覆盖|查询、四类来源、五类最终业务分类可评估|120 个唯一查询、29 份文档、四类来源和五类结果；R5 Schema/覆盖审计 PASS|
 |确定性 Chunk|可追溯且强制 PROJECT/ProjectId|1,695 个，PASS|
 |单索引单 Embedding 模型|不可原地换模/换维度|`qwen3.7-text-embedding` 1024 维 live PASS|
 |模型切换与全量重建|新 index_id、全量重建、旧向量复用 0|`text-embedding-v4` 768/v2，120/120 live rebuild，PASS；未激活|
@@ -156,9 +158,9 @@ python scripts/audit_golden_dataset.py `
 |外部 Reranker|可配置请求、响应校验、错误与降级|百炼 `qwen3-rerank` 真实 5→3 PASS；429/超时/无效响应降级 PASS|
 |Context Builder → AIService|统一网关、Prompt/Context/Trace|统一调用链与结构化输出 PASS；无 RAG 直连厂商|
 |异常与空结果|DB/Reranker/AI 不可用、空结果、低可靠度|6 场景 PASS；空/低可靠度不调用 AI|
-|Top-5 Recall|≥95%|60.00%（72/120），FAIL|
-|分类准确率|≥90%|14.17%（17/120），FAIL|
-|来源引用准确率|≥98%|50.83%（61/120），FAIL|
+|Top-5 Recall|≥95%|OCR 规范化确定性检索 95.00%（114/120），PASS；百炼调优重排为 74.17%（89/120）|
+|分类准确率|≥90%|R5 对既有预测重评分 57.50%（69/120），FAIL；Prompt v2 因 L3 暂停未调用|
+|来源引用准确率|≥98%|Top-5 Context 下当前可达上限 95.00%，BLOCKED_L3_DECISION|
 |PROJECT 跨项目泄漏|0|P03-A06：6 组查询、30 行结果，泄漏 0，PASS|
 
 ## Logs
@@ -170,8 +172,8 @@ python scripts/audit_golden_dataset.py `
 
 ## Known Issues
 
-1. P03-A11~A13 首轮真实指标均 FAIL；R5 标签 Gate 完成人工确认和严格导入前，不得启动检索调优或重跑质量指标。
-2. R5 已把 R4 的 62 条明确人工结论与 58 条未明确冲突分离；当前全局批量确认仍未选择，因此新 Golden Dataset 尚未生成。
+1. R5 标签 Gate 已完成；P03-A11 达标，但 P03-A12 未达标、P03-A13 因冻结引用口径触发 L3。
+2. 当前调优与验收使用同一 Golden Dataset；正式生产质量结论仍需独立留出集，不能把探索结果解释为泛化能力证明。
 3. 两个资料库共 10 个旧版二进制 `.doc` 尚不支持，不进入本轮候选池。
 4. Windows Server 2025 与 Debian 13 尚未执行本 PoC。
 5. 旧 R2/R3 历史工作簿不作为新四类来源基线；其人工填写记录被保留，但不会自动迁移成新候选的批准状态。
@@ -183,11 +185,11 @@ python scripts/audit_golden_dataset.py `
 
 ## Conclusion
 
-POC-03 的基础链路与 Golden Dataset 覆盖已完成，但首轮真实质量门槛全部失败；当前不形成 RAG 质量通过结论。
+POC-03 的基础链路、Golden Dataset 标签 Gate 和 P03-A11 已完成；P03-A12/P03-A13 未完成，当前不形成 RAG 全量质量通过结论。
 
 ## PASS / FAIL
 
-`FAIL / BLOCKED_QUALITY_GATE`
+`BLOCKED_L3_DECISION`
 
 ## Alternative
 

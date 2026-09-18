@@ -11,13 +11,31 @@ sys.path.insert(0, str(POC_DIR / "src"))
 from poc03_rag.quality_evaluation import (  # noqa: E402
     evaluate_quality,
     lexical_terms,
+    normalize_cjk_spacing,
     parse_plain_prediction,
+    rank_lexical_overlap,
     searchable_text,
     tsquery_or,
 )
 
 
 class QualityEvaluationTests(unittest.TestCase):
+    def test_cjk_ocr_spacing_is_removed_before_term_extraction(self) -> None:
+        normalized = normalize_cjk_spacing("合\n同\n的 有 效 组 成 部 分")
+        self.assertEqual("合同的有效组成部分", normalized)
+        self.assertIn("合同", lexical_terms(f"关于“{normalized}”有哪些约定？"))
+        self.assertIn("合同", searchable_text("合\n同\n条\n款").split())
+
+    def test_lexical_overlap_ranks_ocr_spaced_direct_evidence_first(self) -> None:
+        ranked = rank_lexical_overlap(
+            "关于合同有效组成部分有哪些约定？",
+            {
+                "C-OTHER": "系统支持项目计划与资源分配。",
+                "C-TARGET": "该附件是合\n同\n的\n有\n效\n组\n成\n部\n分。",
+            },
+        )
+        self.assertEqual("C-TARGET", ranked[0])
+
     def test_lexical_terms_prefers_quoted_subject(self) -> None:
         terms = lexical_terms('参考资料中，关于“工程变更、ECO”采用了什么方式？')
         self.assertIn("eco", terms)

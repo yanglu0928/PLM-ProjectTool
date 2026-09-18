@@ -11,6 +11,7 @@ sys.path.insert(0, str(POC_DIR / "src"))
 from poc03_rag.coverage import (  # noqa: E402
     REQUIRED_CLASSIFICATIONS,
     REQUIRED_SOURCE_TYPES,
+    WORKFLOW_ONLY_CLASSIFICATIONS,
     audit_golden_dataset_coverage,
 )
 
@@ -57,6 +58,25 @@ class GoldenDatasetCoverageTests(unittest.TestCase):
         self.assertEqual(108, report["summary"]["duplicate_query_count"])
         self.assertIn("CONTRACT", report["missing_source_types"])
         self.assertIn("NON_STANDARD", report["missing_classifications"])
+
+    def test_workflow_only_classification_is_rejected_from_final_dataset(self) -> None:
+        source_types = sorted(REQUIRED_SOURCE_TYPES)
+        classifications = sorted(REQUIRED_CLASSIFICATIONS)
+        cases = [
+            case(
+                index,
+                source_types[index % len(source_types)],
+                classifications[index % len(classifications)],
+            )
+            for index in range(100)
+        ]
+        cases[0]["expected_classification"] = next(iter(WORKFLOW_ONLY_CLASSIFICATIONS))
+
+        report = audit_golden_dataset_coverage({"cases": cases})
+
+        self.assertEqual("FAIL", report["status"])
+        self.assertFalse(report["checks"]["no_workflow_only_classifications"])
+        self.assertEqual(1, report["summary"]["workflow_only_classification_count"])
 
 
 if __name__ == "__main__":

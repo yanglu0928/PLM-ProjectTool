@@ -24,6 +24,7 @@ class RerankerConfig:
     model: str
     timeout_seconds: float = 15.0
     fail_open: bool = True
+    instruct: str | None = None
 
     def __post_init__(self) -> None:
         if not self.provider.strip() or not self.base_url.strip() or not self.model.strip():
@@ -120,6 +121,8 @@ def rerank_candidates(
         "documents": [candidate.text for candidate in candidates],
         "top_n": top_n,
     }
+    if config.instruct and config.instruct.strip():
+        payload["instruct"] = config.instruct.strip()
     sender = transport or _default_transport
     try:
         status_code, response_body = sender(

@@ -25,6 +25,7 @@ class RerankerTests(unittest.TestCase):
             base_url="https://rerank.example.invalid/compatible-api/v1",
             model="test-rerank",
             timeout_seconds=2,
+            instruct="Retrieve direct evidence for the requirement.",
         )
         self.candidates = (
             RerankCandidate("C-1", "first candidate"),
@@ -56,6 +57,10 @@ class RerankerTests(unittest.TestCase):
         )
         self.assertEqual("https://rerank.example.invalid/compatible-api/v1/reranks", captured["url"])
         self.assertEqual(["C-2", "C-1"], [item.candidate_id for item in result.items])
+        self.assertEqual(
+            "Retrieve direct evidence for the requirement.",
+            captured["body"]["instruct"],
+        )
         report = result.to_sanitized_dict()
         self.assertFalse(report["api_key_committed"])
         self.assertFalse(report["query_text_committed"])

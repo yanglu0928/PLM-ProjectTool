@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import re
+import math
 from collections import Counter, defaultdict
-from typing import Any, Iterable
+from typing import Any, Iterable, Mapping
 
 
 ALLOWED_CLASSIFICATIONS = {
@@ -32,9 +33,15 @@ _GENERIC_QUERY_TERMS = {
 }
 
 
+def normalize_cjk_spacing(text: str) -> str:
+    """Remove OCR whitespace inserted between adjacent CJK characters."""
+    return re.sub(r"(?<=[\u4e00-\u9fff])\s+(?=[\u4e00-\u9fff])", "", str(text))
+
+
 def lexical_terms(text: str, *, limit: int = 32) -> list[str]:
     if limit < 1:
         raise ValueError("limit must be positive")
+    text = normalize_cjk_spacing(text)
     quoted = re.findall(r"[“\"]([^”\"]+)[”\"]", text)
     source = " ".join(quoted) if quoted else text
     terms: list[str] = []
@@ -60,6 +67,7 @@ def lexical_terms(text: str, *, limit: int = 32) -> list[str]:
 
 
 def searchable_text(text: str) -> str:
+    text = normalize_cjk_spacing(text)
     terms: list[str] = []
     terms.extend(re.findall(r"[A-Za-z0-9_][A-Za-z0-9_.+-]*", text.lower()))
     for run in re.findall(r"[\u4e00-\u9fff]+", text):
@@ -69,6 +77,35 @@ def searchable_text(text: str) -> str:
             terms.extend(run[index : index + 2] for index in range(len(run) - 1))
             terms.extend(run[index : index + 3] for index in range(len(run) - 2))
     return " ".join(terms)
+
+
+def rank_lexical_overlap(
+    query: str,
+    candidates: Mapping[str, str],
+    *,
+    limit: int = 5,
+) -> list[str]:
+    """Rank text by deterministic CJK-aware term coverage with corpus IDF."""
+    if limit < 1:
+        raise ValueError("limit must be positive")
+    terms = lexical_terms(query, limit=64)
+    normalized = {
+        str(candidate_id): normalize_cjk_spacing(text).lower()
+        for candidate_id, text in candidates.items()
+    }
+    document_frequency = {
+        term: sum(term in text for text in normalized.values()) for term in terms
+    }
+    count = len(normalized)
+    scores = {
+        candidate_id: sum(
+            len(term) * math.log((count + 1) / (document_frequency[term] + 1))
+            for term in terms
+            if term in text
+        )
+        for candidate_id, text in normalized.items()
+    }
+    return sorted(scores, key=lambda item: (-scores[item], item))[:limit]
 
 
 def tsquery_or(terms: Iterable[str]) -> str:
