@@ -3,7 +3,7 @@
 |ID|验收项|Windows 11|Windows Server 2025|Debian 13|证据要求|
 |---|---|---|---|---|---|
 |P03-A01|POC-02/04/05 前置证据可用|PASS|NOT_RUN|NOT_RUN|数据库、AI Gateway、ParsedDocument 证据|
-|P03-A02|100~200 条人工确认 Golden Dataset|BLOCKED|NOT_RUN|NOT_RUN|来源资格审计 PASS：20 条合同、25 条技术协议可作为合格来源；75 条历史解决方案不属于锁定四类，禁止伪造映射。当前仅 45 条合格，距最低 100 条差 55 条，且缺少 STANDARD_CAPABILITY、SURVEY 真实语料；需 L3 决策或补充语料|
+|P03-A02|100~200 条人工确认 Golden Dataset|IN_PROGRESS|NOT_RUN|NOT_RUN|用户指定的标准能力库 20/20 解析 PASS，确定性分区为 19 份 STANDARD_CAPABILITY、1 份 SURVEY；连同 4 份 CONTRACT、5 份 TECHNICAL_AGREEMENT，29 份文档生成 120 条候选并覆盖 29/29 文档。R4 确认清单与本地证据定位器已生成，120 条均为待人工确认，尚未形成正式 Golden Dataset|
 |P03-A03|确定性 Chunk 与来源定位|PASS|NOT_RUN|NOT_RUN|Chunk、页/章节/表格定位、内容 Hash|
 |P03-A04|Index 绑定单一 Embedding 模型|PASS|NOT_RUN|NOT_RUN|百炼 `qwen3.7-text-embedding`、1024 维、索引 `v1`；live probe 与不可变绑定 PASS|
 |P03-A05|更换模型新建索引与全量重建|PASS|NOT_RUN|NOT_RUN|旧 `qwen3.7-text-embedding` 1024/v1 原地换模被拒绝；新建 `text-embedding-v4` 768/v2，以 120 条固定非客户文本真实调用 12 批完成 120/120 重建，旧向量复用 0；v2 未激活|

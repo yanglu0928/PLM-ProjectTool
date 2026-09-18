@@ -19,6 +19,12 @@ def _text(value: Any) -> str:
 def classify_document_source(*, source_corpus: str, file_name: str) -> dict[str, str | None]:
     corpus = _text(source_corpus).upper()
     normalized_name = "".join(_text(file_name).split()).lower()
+    if corpus in {"STANDARD_CAPABILITY", "SURVEY"}:
+        return {
+            "eligibility": "ELIGIBLE",
+            "proposed_source_type": corpus,
+            "reason": "USER_DESIGNATED_SOURCE_LIBRARY",
+        }
     if corpus != "CONTRACT":
         return {
             "eligibility": "INELIGIBLE",

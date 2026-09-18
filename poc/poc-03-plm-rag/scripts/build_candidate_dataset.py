@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -44,7 +45,7 @@ def main() -> int:
             raise ValueError("--parsed-source must use LABEL=PATH")
         label, raw_path = source.split("=", 1)
         label = label.strip().upper()
-        if not label or not label.replace("-", "").isalnum():
+        if not re.fullmatch(r"[A-Z][A-Z0-9_-]*", label):
             raise ValueError(f"Invalid parsed source label: {label!r}")
         parsed_dir = Path(raw_path).resolve()
         if not parsed_dir.is_dir():

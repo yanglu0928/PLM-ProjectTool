@@ -39,6 +39,16 @@ class SourceTypeAuditTests(unittest.TestCase):
         self.assertEqual("INELIGIBLE", result["eligibility"])
         self.assertIsNone(result["proposed_source_type"])
 
+    def test_user_designated_standard_and_survey_corpora_are_eligible(self) -> None:
+        for source_type in ("STANDARD_CAPABILITY", "SURVEY"):
+            result = classify_document_source(
+                source_corpus=source_type,
+                file_name="redacted.docx",
+            )
+            self.assertEqual("ELIGIBLE", result["eligibility"])
+            self.assertEqual(source_type, result["proposed_source_type"])
+            self.assertEqual("USER_DESIGNATED_SOURCE_LIBRARY", result["reason"])
+
     def test_audit_marks_existing_mismatch_for_correction(self) -> None:
         candidates = [
             {

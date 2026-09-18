@@ -5,6 +5,8 @@ import hashlib
 import mimetypes
 import os
 import tempfile
+import zipfile
+from xml.etree import ElementTree
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -26,6 +28,27 @@ SUPPORTED_SUFFIXES = {".docx", ".pptx", ".xlsx", ".csv", ".pdf"}
 
 def _paragraph_style_name(paragraph: Any) -> str:
     return getattr(getattr(paragraph, "style", None), "name", None) or ""
+
+
+def _write_docx_without_null_relationships(source: Path, target: Path) -> int:
+    """Copy a DOCX while dropping invalid internal relationships targeting NULL."""
+    removed_count = 0
+    with zipfile.ZipFile(source) as input_archive, zipfile.ZipFile(
+        target, "w", compression=zipfile.ZIP_DEFLATED
+    ) as output_archive:
+        for item in input_archive.infolist():
+            payload = input_archive.read(item.filename)
+            if item.filename.endswith(".rels"):
+                root = ElementTree.fromstring(payload)
+                for relationship in list(root):
+                    target_value = str(relationship.attrib.get("Target") or "").strip()
+                    target_mode = str(relationship.attrib.get("TargetMode") or "").strip()
+                    if target_mode.lower() != "external" and target_value.upper() == "NULL":
+                        root.remove(relationship)
+                        removed_count += 1
+                payload = ElementTree.tostring(root, encoding="utf-8", xml_declaration=True)
+            output_archive.writestr(item, payload)
+    return removed_count
 
 
 class BlockBuilder:
@@ -74,7 +97,25 @@ def _source(path: Path) -> Source:
 
 
 def _docx(path: Path) -> ParsedDocument:
-    document = Document(path)
+    temporary_directory: tempfile.TemporaryDirectory[str] | None = None
+    parser_warnings = [
+        "DOCX page numbers reflect explicit page breaks, not automatic layout pagination."
+    ]
+    try:
+        document = Document(path)
+    except KeyError as exc:
+        if "word/NULL" not in str(exc):
+            raise
+        temporary_directory = tempfile.TemporaryDirectory(prefix="poc05-docx-repair-")
+        repaired_path = Path(temporary_directory.name) / "repaired.docx"
+        removed_count = _write_docx_without_null_relationships(path, repaired_path)
+        if removed_count < 1:
+            temporary_directory.cleanup()
+            raise
+        document = Document(repaired_path)
+        parser_warnings.append(
+            f"Ignored {removed_count} invalid internal DOCX relationship(s) targeting NULL."
+        )
     builder = BlockBuilder()
     pages: list[Page] = [Page(1, "Page 1", "word/page/1")]
     page_number = 1
@@ -83,54 +124,60 @@ def _docx(path: Path) -> ParsedDocument:
     paragraph_index = 0
     table_index = 0
 
-    for child in document.element.body.iterchildren():
-        if isinstance(child, CT_P):
-            paragraph_index += 1
-            paragraph = Paragraph(child, document)
-            style = _paragraph_style_name(paragraph)
-            has_page_break = bool(child.xpath(".//w:br[@w:type='page']"))
-            text = paragraph.text.strip()
-            if text:
-                block_type = "paragraph"
-                if style == "Title":
-                    block_type = "title"
-                    title = title or text
-                elif style.startswith("Heading"):
-                    block_type = "heading"
-                    section = text
-                builder.add(
-                    block_type,
-                    text,
-                    page=page_number,
-                    section=section,
-                    source_locator=f"word/paragraph/{paragraph_index}",
-                    metadata={"style": style},
-                )
-            if has_page_break:
-                page_number += 1
-                pages.append(Page(page_number, f"Page {page_number}", f"word/page/{page_number}"))
-        elif isinstance(child, CT_Tbl):
-            table_index += 1
-            table = Table(child, document)
-            for row_index, row in enumerate(table.rows, start=1):
-                cells = [" ".join(cell.text.split()) for cell in row.cells]
-                builder.add(
-                    "table_row",
-                    " | ".join(cells),
-                    page=page_number,
-                    section=section,
-                    source_locator=f"word/table/{table_index}/row/{row_index}",
-                    table={"index": table_index, "row": row_index, "cells": cells},
-                )
+    try:
+        for child in document.element.body.iterchildren():
+            if isinstance(child, CT_P):
+                paragraph_index += 1
+                paragraph = Paragraph(child, document)
+                style = _paragraph_style_name(paragraph)
+                has_page_break = bool(child.xpath(".//w:br[@w:type='page']"))
+                text = paragraph.text.strip()
+                if text:
+                    block_type = "paragraph"
+                    if style == "Title":
+                        block_type = "title"
+                        title = title or text
+                    elif style.startswith("Heading"):
+                        block_type = "heading"
+                        section = text
+                    builder.add(
+                        block_type,
+                        text,
+                        page=page_number,
+                        section=section,
+                        source_locator=f"word/paragraph/{paragraph_index}",
+                        metadata={"style": style},
+                    )
+                if has_page_break:
+                    page_number += 1
+                    pages.append(
+                        Page(page_number, f"Page {page_number}", f"word/page/{page_number}")
+                    )
+            elif isinstance(child, CT_Tbl):
+                table_index += 1
+                table = Table(child, document)
+                for row_index, row in enumerate(table.rows, start=1):
+                    cells = [" ".join(cell.text.split()) for cell in row.cells]
+                    builder.add(
+                        "table_row",
+                        " | ".join(cells),
+                        page=page_number,
+                        section=section,
+                        source_locator=f"word/table/{table_index}/row/{row_index}",
+                        table={"index": table_index, "row": row_index, "cells": cells},
+                    )
 
-    return ParsedDocument(
-        source=_source(path),
-        title=title,
-        pages=pages,
-        blocks=builder.blocks,
-        metadata={"format": "docx", "explicit_page_count": len(pages)},
-        warnings=["DOCX page numbers reflect explicit page breaks, not automatic layout pagination."],
-    )
+        return ParsedDocument(
+            source=_source(path),
+            title=title,
+            pages=pages,
+            blocks=builder.blocks,
+            metadata={"format": "docx", "explicit_page_count": len(pages)},
+            warnings=parser_warnings,
+        )
+    finally:
+        if temporary_directory is not None:
+            temporary_directory.cleanup()
 
 
 def _pptx(path: Path) -> ParsedDocument:
