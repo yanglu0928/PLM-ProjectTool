@@ -16,7 +16,7 @@
 |---|---|---|---|---|---|---|---|
 |POC-01|P0.01/P0.01S/P0.02/P0.03/P0.04|Python 3.13 三平台依赖及离线安装|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11、Windows Server 2025 PASS；Debian 13 经用户批准暂缓，不构成兼容性结论|`poc/poc-01-python-313-dependencies/`、`docs/poc/phase-0-exceptions.md`|
 |POC-02|P0.05/P0.06/P0.07/P0.08|PostgreSQL 18 + pgvector|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11 功能链 PASS；Windows Server 2025 完全断网功能链 PASS；Windows 11 断网重放与 Debian 13 经用户批准暂缓，不构成对应兼容性结论|`poc/poc-02-postgresql-18-pgvector/`、`docs/poc/phase-0-exceptions.md`|
-|POC-03|P0.09/P0.10/P0.12|PLM RAG|IN_PROGRESS|2026-09-17|-|方案 A 已获批并生成 R6 六项问题与引用复核包；114 条及全部 R5 分类锁定不变。当前等待人工批量确认，确认后重跑 P03-A11~A13|`poc/poc-03-plm-rag/`|
+|POC-03|P0.09/P0.10/P0.12|PLM RAG|IN_PROGRESS|2026-09-17|-|R6 严格导入 120/120；本地 Top-5 116/120（96.67%），P03-A11 PASS。完整百炼/DeepSeek 复验等待本轮外部数据处理明确授权，尚未发送 R6 数据|`poc/poc-03-plm-rag/`|
 |POC-04|P0.11|AI Gateway / DeepSeek|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11、Windows Server 2025 统一网关、11/11 确定性场景及真实文本/流式/结构化/401 PASS；Debian 13 经用户批准暂缓，不构成兼容性结论|`poc/poc-04-ai-gateway/`、`docs/poc/phase-0-exceptions.md`|
 |POC-05|P0.04/P0.12|Document + OCR|IN_PROGRESS|2026-09-17|-|Windows 11 六类输入和主辅 OCR 功能链 PASS；Windows Server 2025 完全断网 8/8 PASS；Windows 11 真实资料 26/26 个受支持文件通过并含 5 个扫描 PDF；Windows 11 断网、Debian 13 和真实扫描语义准确率待处理|`poc/poc-05-document-ocr/`|
 |POC-06|P0.16/P0.17|Word / PPT|NOT_STARTED|-|-|-|-|
@@ -82,3 +82,4 @@
 |2026-09-18|R5 人工批量确认严格导入 120/120，Schema 与覆盖审计 PASS；最终数据集使用五类业务标签，工作流态不作为最终分类。|
 |2026-09-18|完成分层诊断、72 组候选扫描与 120/120 次百炼真实重排：扩展候选池 115/120（95.83%），重排 Top-5 89/120（74.17%）。中文 OCR 字间空白规范化检索达到 114/120（95.00%），P03-A11 PASS；P03-A13 当前 Top-5 引用上限 95.00%，按 L3 暂停受影响任务。|
 |2026-09-18|用户批准方案 A；生成 R6 六项问题与引用复核包、Top-5 证据定位器和严格导入器。未确认复验为 6 条 PENDING、0 个问题、不输出数据集；其余 114 条及全部 R5 分类保持锁定。|
+|2026-09-18|用户确认 R6；严格导入为 120/120、问题 0，覆盖审计 PASS。本地 OCR 规范化 Top-5 为 116/120（96.67%）。完整真实复验因需要把查询/候选片段发送至百炼与 DeepSeek，等待本轮显式数据处理授权；拦截前未发送数据。|
