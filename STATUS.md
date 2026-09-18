@@ -4,11 +4,11 @@
 |---|---|
 |Current Phase|Phase 0 技术验证|
 |Current WBS|P03-A11~A13：真实 Golden Dataset 质量指标|
-|Current Status|READY_FOR_REAL_METRICS|
+|Current Status|BLOCKED_MISSING_BAILIAN_CREDENTIAL|
 |Completed Phases|无|
 |Completed WBS|POC-01、POC-02、POC-04 已按批准例外收口；P03-A02~A10、P03-A14、P03-A15 已 PASS|
-|Blockers|无；P03-A11~A13 已由 P03-A02 解锁|
-|Pending User Decisions|无|
+|Blockers|P03-A11~A13 已由 P03-A02 解锁，但当前会话找不到百炼 Embedding/Reranker 密钥；不得用合成向量替代真实 `qwen3.7-text-embedding` / `qwen3-rerank` 指标|
+|Pending User Decisions|无需业务决策；需在本机恢复百炼凭据，可将当前有效 Key 放入 Git 忽略的 `secrets/bailian-api-key.txt` 后继续|
 |Architecture Version|未冻结；正式基线为实施方案 V2.1|
 |DB Schema Version|未冻结|
 |API Contract Version|未冻结|
@@ -25,6 +25,6 @@
 ## 最近检查点
 
 - 分支：`poc/poc-03-plm-rag`
-- 最近功能检查点：更新后的 R4 已完成严格导入和覆盖审计；120 条均满足批准 Gate，正式 Golden Dataset 仅保存在 Git 忽略的本地目录，P03-A02 已 PASS。
+- 最近功能检查点：更新后的 R4 已完成严格导入和覆盖审计；120 条均满足批准 Gate，正式 Golden Dataset 仅保存在 Git 忽略的本地目录，P03-A02 已 PASS。P03-A11~A13 编码前检查完成，等待本地百炼凭据后执行真实 Hybrid/Reranker 指标。
 - 远端同步状态必须在每次任务结束前通过 Git 实时检查，不在本文件固化可能过期的 ahead/behind 数值。
 - 本地用户文件和 Git 忽略的客户资料保持不变。
