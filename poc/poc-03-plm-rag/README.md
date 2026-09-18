@@ -2,7 +2,7 @@
 
 ## Status
 
-`IN_PROGRESS`
+`FAIL / BLOCKED_QUALITY_GATE`
 
 ## Objective
 
@@ -38,7 +38,9 @@
 
 ## Result
 
-P0.09 候选准备链已更新：用户指定的 `标准能力库/` 20 个 DOCX 全部解析通过，确定性分区为 19 份 `STANDARD_CAPABILITY` 和 1 份 `SURVEY`；连同 4 份合同、5 份技术协议，29 个 ParsedDocument 生成 1,695 个带 PROJECT/ProjectId 和来源定位的 Chunk，并轮询抽样 120 条候选，覆盖 29/29 个文档。候选分布为 CONTRACT 20、TECHNICAL_AGREEMENT 20、STANDARD_CAPABILITY 76、SURVEY 4。R4 本地确认包提供 120 个证据链接和原文件入口，所有记录仍为待人工确认，因此 P03-A02 从来源缺失阻塞转为 `IN_PROGRESS / AWAITING_HUMAN_REVIEW`，尚不能执行或宣称三项质量指标。P03-A04 使用百炼 `qwen3.7-text-embedding` 实测请求/返回 1024 维，索引 `v1` 绑定 PASS。
+P0.09 候选准备链已更新：用户指定的 `标准能力库/` 20 个 DOCX 全部解析通过，确定性分区为 19 份 `STANDARD_CAPABILITY` 和 1 份 `SURVEY`；连同 4 份合同、5 份技术协议，29 个 ParsedDocument 生成 1,695 个带 PROJECT/ProjectId 和来源定位的 Chunk，并轮询抽样 120 条候选，覆盖 29/29 个文档。R4 经严格导入得到 120 条 APPROVED、0 个问题，P03-A02 PASS。P03-A04 使用百炼 `qwen3.7-text-embedding` 实测请求/返回 1024 维，索引 `v1` 绑定 PASS。
+
+P03-A11~A13 首轮真实质量验证完整执行但未达门槛：Top-5 Recall 72/120（60.00%）、分类准确率 17/120（14.17%）、来源引用准确率 61/120（50.83%），三项均 FAIL。120/120 次重排使用百炼 `qwen3-rerank`，GIN/HNSW 均实际命中，预测无缺失、越界引用为 0。精确 Chunk 召回 72 条而同文档召回 88 条；分类在已召回样本中仍只有 10/72 正确。R4 的最终分类多数继承候选阶段关键词启发式值，已登记 Golden 标签一致性风险；不得通过事后改标签或降低门槛掩盖失败。
 
 P03-A05 已验证模型切换纪律：保留激活的 `qwen3.7-text-embedding` 1024 维 `v1`，拒绝对旧 index_id 原地更换模型；创建独立 `text-embedding-v4` 768 维 `v2`，使用 120 条固定非客户文本执行 12 批真实请求，120/120 全量重建完成，旧向量复用数为 0。`v2` 状态为验证通过但未激活，不替换当前绑定。
 
@@ -122,12 +124,12 @@ python scripts/audit_golden_dataset.py `
 |指标|目标|当前状态|
 |---|---|---|
 |候选评审记录|100~200 条|120 条，29/29 文档覆盖，四类来源均有候选，PASS|
-|当前人工批准记录|100~200 条且字段完整|R4 流程已处理 120 条；严格导入 1 条批准、119 条待项目交接确认，距最低门槛差 99 条|
+|当前人工批准记录|100~200 条且字段完整|R4 严格导入 120 条 APPROVED、0 个问题，PASS|
 |本地预填建议|辅助人工评审，不形成真值|120 条不同查询；120 条来源类型已确定；全部保持 PENDING|
 |人工确认交互原型|证据可定位、输入有提示、原数据可追溯|R4 生成 120 个本地证据链接和 120 个原文件入口；公式错误 0；PASS_FOR_HUMAN_REVIEW|
 |来源资格审计|不得将解决方案伪造为锁定来源类型|4 CONTRACT、5 TECHNICAL_AGREEMENT、19 STANDARD_CAPABILITY、1 SURVEY 文档；历史 SOLUTION 不进入本轮候选|
-|Schema 合法数据集导出|100~200 条|当前 R2 未导出；旧 R1 的 109 条仅 Schema PASS、覆盖 FAIL|
-|Gold Set 质量覆盖|查询、四类来源、六类分类可评估|BLOCKED：仅 1 条有效批准，未达到 100 条导出门槛|
+|Schema 合法数据集导出|100~200 条|R4 导出 120 条，Schema PASS|
+|Gold Set 质量覆盖|查询、四类来源、六类分类可评估|120 个唯一查询、29 份文档、四类来源和六类结果，覆盖审计 PASS；标签一致性风险待重新评审|
 |确定性 Chunk|可追溯且强制 PROJECT/ProjectId|1,695 个，PASS|
 |单索引单 Embedding 模型|不可原地换模/换维度|`qwen3.7-text-embedding` 1024 维 live PASS|
 |模型切换与全量重建|新 index_id、全量重建、旧向量复用 0|`text-embedding-v4` 768/v2，120/120 live rebuild，PASS；未激活|
@@ -137,9 +139,9 @@ python scripts/audit_golden_dataset.py `
 |外部 Reranker|可配置请求、响应校验、错误与降级|百炼 `qwen3-rerank` 真实 5→3 PASS；429/超时/无效响应降级 PASS|
 |Context Builder → AIService|统一网关、Prompt/Context/Trace|统一调用链与结构化输出 PASS；无 RAG 直连厂商|
 |异常与空结果|DB/Reranker/AI 不可用、空结果、低可靠度|6 场景 PASS；空/低可靠度不调用 AI|
-|Top-5 Recall|≥95%|NOT_RUN|
-|分类准确率|≥90%|NOT_RUN|
-|来源引用准确率|≥98%|NOT_RUN|
+|Top-5 Recall|≥95%|60.00%（72/120），FAIL|
+|分类准确率|≥90%|14.17%（17/120），FAIL|
+|来源引用准确率|≥98%|50.83%（61/120），FAIL|
 |PROJECT 跨项目泄漏|0|P03-A06：6 组查询、30 行结果，泄漏 0，PASS|
 
 ## Logs
@@ -151,8 +153,8 @@ python scripts/audit_golden_dataset.py `
 
 ## Known Issues
 
-1. 四类来源数量缺口已解除，但当前只有 1 条具备 Golden Dataset 批准语义；119 条已登记为项目交接阶段确认，不能提前用于质量指标。
-2. 自动抽取只能形成候选集；没有人工批准的记录不得计入 Golden Dataset，也不得作为业务事实。
+1. P03-A11~A13 首轮真实指标均 FAIL；在用户确认标签复核与检索调优方案前不得进入下一 WBS。
+2. R4 的自由文本结论没有逐条显式写回最终分类，多数标签仍继承候选阶段关键词启发式值；需重新打开标签 Gate，不能以模型输出自动改写真值。
 3. 两个资料库共 10 个旧版二进制 `.doc` 尚不支持，不进入本轮候选池。
 4. Windows Server 2025 与 Debian 13 尚未执行本 PoC。
 5. 旧 R2/R3 历史工作簿不作为新四类来源基线；其人工填写记录被保留，但不会自动迁移成新候选的批准状态。
@@ -164,13 +166,13 @@ python scripts/audit_golden_dataset.py `
 
 ## Conclusion
 
-POC-03 已启动，当前仅形成候选数据准备能力，不形成 RAG 质量通过结论。
+POC-03 的基础链路与 Golden Dataset 覆盖已完成，但首轮真实质量门槛全部失败；当前不形成 RAG 质量通过结论。
 
 ## PASS / FAIL
 
-`IN_PROGRESS`
+`FAIL / BLOCKED_QUALITY_GATE`
 
 ## Alternative
 
-- 如果现有方案库无法覆盖四类资料，保留覆盖缺口，补充脱敏标准能力、合同、技术协议和调研样本后再冻结 Golden Dataset。
-- 如果外部 Reranker 不可用，记录失败证据并评估候选外部 API；不得擅自引入本地模型或独立向量库。
+- 推荐先在友好确认界面中新增明确的“最终分类”必填项，重新冻结 Golden Dataset 标签；随后对 Vector/FTS/融合/Reranker 各阶段做排名诊断和透明调优。
+- 不得降低质量门槛、事后按模型输出改标签、泄露期望答案到 Prompt，或擅自引入独立向量库和本地模型。

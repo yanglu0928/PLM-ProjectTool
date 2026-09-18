@@ -144,14 +144,22 @@
 - 用户更新后的 R4 为 120 条“修改后确认”，每条均包含“人工复核”和明确“结论”，审核人和日期完整；严格导入得到 120 条 APPROVED、0 个校验问题。
 - 对原分类为 `HUMAN_CONFIRMATION_REQUIRED` 的记录，导入器只依据人工结论中的明确短语做确定性覆盖：38 条转为 `INSUFFICIENT_INFORMATION`、8 条转为 `NO_RELIABLE_MATCH`，其余保留原分类。
 
+## Live Golden Dataset Quality
+
+- 120 条真实质量验证完整执行：`qwen3.7-text-embedding` 1024 维、PostgreSQL 18.6/pgvector 0.8.6 Hybrid 0.6/0.4、120/120 次 `qwen3-rerank`、统一 DeepSeek AIService。
+- P03-A11 Top-5 Recall 为 72/120（60.00%），FAIL；精确 Chunk 命中 72 条，同文档命中 88 条。
+- P03-A12 分类准确率为 17/120（14.17%），FAIL；精确召回样本中仅 10/72 分类正确。
+- P03-A13 来源引用准确率为 61/120（50.83%），FAIL；越界引用 0。
+- 查询、正文、向量、逐条响应和 case-level 结果未提交；仓库只保留脱敏聚合指标和失败分析。
+
 ## Result
 
-来源数量、人工批准和质量覆盖缺口均已解除。严格导入和覆盖审计 PASS，P03-A02 在 Windows 11 标记为 PASS，并解锁 P03-A11 Top-5 Recall、P03-A12 分类准确率和 P03-A13 来源引用准确率。
+来源数量、人工批准和覆盖缺口已解除，P03-A02 PASS；但 P03-A11~A13 首轮真实指标全部 FAIL。POC-03 保持 `FAIL / BLOCKED_QUALITY_GATE`，等待用户确认重新打开 Golden 标签评审和检索调优方案。
 
 ## Known Issues
 
 1. 两个资料库共 10 个旧版二进制 `.doc` 尚不支持。
-2. P03-A11~A13 尚未执行，当前只完成 Golden Dataset 的导出与覆盖审计，不得提前宣称三项质量指标通过。
+2. P03-A11~A13 已执行且全部 FAIL，不得用合成指标、同文档命中或事后改标签描述为通过。
 3. Tesseract 扫描件结果尚未完成语义准确率人工标注。
 4. 旧 R2/R3 是历史评审基线，不自动转化为新四类候选的人工批准状态。
 5. R4 的本地证据定位器是 PoC；Office 文件尚不能从浏览器自动跳到精确段落并高亮，正式产品需由内置 Evidence Viewer 实现。

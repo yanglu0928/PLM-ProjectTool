@@ -16,7 +16,7 @@
 |---|---|---|---|---|---|---|---|
 |POC-01|P0.01/P0.01S/P0.02/P0.03/P0.04|Python 3.13 三平台依赖及离线安装|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11、Windows Server 2025 PASS；Debian 13 经用户批准暂缓，不构成兼容性结论|`poc/poc-01-python-313-dependencies/`、`docs/poc/phase-0-exceptions.md`|
 |POC-02|P0.05/P0.06/P0.07/P0.08|PostgreSQL 18 + pgvector|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11 功能链 PASS；Windows Server 2025 完全断网功能链 PASS；Windows 11 断网重放与 Debian 13 经用户批准暂缓，不构成对应兼容性结论|`poc/poc-02-postgresql-18-pgvector/`、`docs/poc/phase-0-exceptions.md`|
-|POC-03|P0.09/P0.10/P0.12|PLM RAG|BLOCKED|2026-09-17|-|P03-A02 因缺至少 55 条合格来源且缺标准能力/调研语料 BLOCKED；其余可独立执行的 P03-A03~A10、A14、A15 均 PASS。P03-A11~A13 真实质量指标等待 Golden Dataset|`poc/poc-03-plm-rag/`|
+|POC-03|P0.09/P0.10/P0.12|PLM RAG|FAIL|2026-09-17|-|P03-A02~A10、A14、A15 PASS；P03-A11~A13 Windows 11 首轮真实指标分别为 60.00%、14.17%、50.83%，均未达门槛。已完成失败分析，等待 Golden 标签 Gate 与检索调优决策|`poc/poc-03-plm-rag/`|
 |POC-04|P0.11|AI Gateway / DeepSeek|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11、Windows Server 2025 统一网关、11/11 确定性场景及真实文本/流式/结构化/401 PASS；Debian 13 经用户批准暂缓，不构成兼容性结论|`poc/poc-04-ai-gateway/`、`docs/poc/phase-0-exceptions.md`|
 |POC-05|P0.04/P0.12|Document + OCR|IN_PROGRESS|2026-09-17|-|Windows 11 六类输入和主辅 OCR 功能链 PASS；Windows Server 2025 完全断网 8/8 PASS；Windows 11 真实资料 26/26 个受支持文件通过并含 5 个扫描 PDF；Windows 11 断网、Debian 13 和真实扫描语义准确率待处理|`poc/poc-05-document-ocr/`|
 |POC-06|P0.16/P0.17|Word / PPT|NOT_STARTED|-|-|-|-|
@@ -77,3 +77,5 @@
 |2026-09-17|P03-A10 Windows 11 PASS：百炼华北 2 `qwen3-rerank` 真实 5→3 重排通过，两个预期相关项位列前二；HTTP 429、超时和无效响应均按原候选顺序降级，证据未保存 Secret 或内容。|
 |2026-09-17|P03-A14 Windows 11 PASS：Context Builder 按相关度和字符预算生成可追溯上下文，实际调用统一 `AIService → ModelRouter → ProviderAdapter`，Prompt/Project/Chunk Trace 与结构化输出校验通过，RAG 未直连厂商。|
 |2026-09-17|P03-A15 Windows 11 PASS：DB 不可用、空结果、低可靠度、Reranker 不可用、AI 不可用及正常链路共 6 场景通过；空/低可靠度不调用 AI，错误证据保持脱敏。POC-03 转为等待 P03-A02 L3 决策。|
+|2026-09-18|P03-A02 Windows 11 PASS：R4 严格导入 120 条 APPROVED、0 个问题；覆盖 29 份文档、120 个唯一查询、四类来源和六类结果。|
+|2026-09-18|P03-A11~A13 Windows 11 首轮真实验证完成并判定 FAIL：Top-5 Recall 72/120（60.00%）、分类准确率 17/120（14.17%）、来源引用准确率 61/120（50.83%）；120/120 实时重排、GIN/HNSW 命中、无缺失预测和越界引用。POC-03 转为 `FAIL / BLOCKED_QUALITY_GATE`。|

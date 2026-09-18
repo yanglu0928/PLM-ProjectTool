@@ -81,6 +81,8 @@
 - POC-03 以 4 份合同、5 份技术协议、19 份标准能力文档和 1 份调研表单重建候选集：29 份文档生成 1,695 个 Chunk 和 120 条候选，覆盖 29/29 文档。
 - POC-03 新增四类来源 R4 人工确认包：主表只展示问题、AI 建议和人工输入，120 个链接可打开本地证据并定位原文件；新候选全部保持待确认，不继承旧工作簿批准状态。
 - POC-03 完成 R4 待办清单严格导入：只有“同意 AI 建议”或带实质性“人工复核/结论”的“修改后确认”可转为批准；“暂不处理”保持 PENDING。明确的信息不足和无可靠匹配结论按确定性短语映射到锁定枚举。
+- POC-03 新增 Windows 11 真实 Golden Dataset 质量验证器：复用 1,815 个百炼真实向量、PostgreSQL 18.6/pgvector Hybrid 检索、120/120 次 `qwen3-rerank` 和统一 DeepSeek AIService；加入可恢复缓存、严格引用约束及脱敏聚合诊断。
+- POC-03 P03-A11~A13 首轮真实指标完成并判定 FAIL：Top-5 Recall 60.00%、分类准确率 14.17%、来源引用准确率 50.83%；保留门槛和本轮失败证据，登记 Golden 标签一致性风险及建议修复顺序。
 
 ### 兼容性
 
@@ -98,6 +100,7 @@
 - POC-02 Windows 11 除“完全断网”外的功能验收项 PASS。
 - POC-02 Windows Server 2025 全部验收项 PASS；20 组 Top-5 平均及最低 Recall 100%，备份恢复条数与 ID 校验和一致。
 - POC-02 当前要求覆盖按例外处理完成：Windows 11 功能链 PASS、Windows Server 2025 完全断网功能链 PASS；Windows 11 断网重放与 Debian 13 为 `DEFERRED_BY_USER`。
+- POC-03 Windows 11 P03-A11~A13 已执行：基础链路完整、越界引用 0，但三项真实质量门槛均 FAIL；POC-03 保持 `BLOCKED_QUALITY_GATE`，不进入下一 WBS。
 - POC-05 Windows 11 功能链 PASS；Windows Server 2025 完全断网 8/8 PASS；扫描 PDF 三条 OCR 链在两端均为 5/5 术语召回。
 - POC-05 Windows 11 真实方案库批次为 `PARTIAL_PASS`：当前支持格式 17/17 PASS，旧版 `.doc` 1 个不支持；该批次没有真实扫描 PDF，不形成真实扫描件准确率结论。
 - POC-04 当前要求覆盖按例外处理完成：Windows 11、Windows Server 2025 功能链 PASS，两端确定性场景均为 11/11，真实 DeepSeek 文本/流式/结构化/401 全部通过；Debian 13 为 `DEFERRED_BY_USER`。
