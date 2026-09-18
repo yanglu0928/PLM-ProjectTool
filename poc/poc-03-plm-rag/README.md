@@ -2,7 +2,7 @@
 
 ## Status
 
-`AWAITING_EXTERNAL_DATA_PROCESSING_APPROVAL`
+`FAIL / BLOCKED_QUALITY_GATE`
 
 ## Objective
 
@@ -44,7 +44,9 @@ P03-A11~A13 首轮真实质量验证完整执行但未达门槛：Top-5 Recall 7
 
 用户已批准按“先复核标签、再分层调优”继续。R5 轻量确认包从 R4 人工说明中确定性识别出 62 条明确最终分类，其余 58 条按 7 组规则完成全局人工确认；严格导入和防篡改校验均通过。R5 分层诊断后，扩展候选池命中 115/120（95.83%），120/120 次真实百炼重排得到 Top-5 89/120（74.17%）。进一步定位到扫描件逐字换行造成的中文术语破碎；加入 OCR 字间空白规范化和确定性词法 IDF 后，Top-5 达到 114/120（95.00%），P03-A11 达标。
 
-剩余 6 条问题的唯一目标 Chunk 排名为 8、11、24、27、41、117；用户批准并确认方案 A 后，R6 只更新这 6 条的问题与引用，其余 114 条和全部 R5 分类保持不变。严格导入、覆盖审计均 PASS；本地确定性 Top-5 提升到 116/120（96.67%）。完整真实复验需要把 R6 查询与候选片段发送至百炼和 DeepSeek，当前等待本轮显式数据处理授权，尚未发送 R6 数据。
+剩余 6 条问题的唯一目标 Chunk 排名为 8、11、24、27、41、117；用户批准并确认方案 A 后，R6 只更新这 6 条的问题与引用，其余 114 条和全部 R5 分类保持不变。严格导入、覆盖审计均 PASS；本地确定性 Top-5 提升到 116/120（96.67%）。用户随后明确授权真实外发复验，百炼重排与 DeepSeek 预测均完成 120/120；正式端到端 Top-5、分类和引用分别为 60.00%、47.50%、51.67%，三项均 FAIL。
+
+R6 分层诊断显示：Vector Top-20 为 69/120、Full Text Top-20 为 78/120、0.6/0.4 融合 Top-20 为 80/120，Reranker Top-5 恢复至 72/120。瓶颈包括 25 条通道召回缺失、15 条融合丢失、8 条重排丢失；同时有 9 条由重排恢复。差异说明本地 96.67% 结果所用的来源类型过滤与确定性词法 IDF 尚未进入正式端到端检索链，因此本地诊断不得覆盖正式失败结论。
 
 P03-A05 已验证模型切换纪律：保留激活的 `qwen3.7-text-embedding` 1024 维 `v1`，拒绝对旧 index_id 原地更换模型；创建独立 `text-embedding-v4` 768 维 `v2`，使用 120 条固定非客户文本执行 12 批真实请求，120/120 全量重建完成，旧向量复用数为 0。`v2` 状态为验证通过但未激活，不替换当前绑定。
 
@@ -56,7 +58,7 @@ P03-A08 已验证 pgvector HNSW：1,000 条合成三维向量、4 组已知近�
 
 P03-A09 已验证 Hybrid Retrieval：Vector 0.6 + Full Text 0.4，每通道候选池为 Top-K 的 4 倍；HNSW 采用 `m=32`、`ef_construction=200`、`ef_search=200`。1,000 条合成记录和 4 组组合相关场景的 Top-5 平均与最低 Recall 均为 100%，执行计划同时命中 GIN 与 HNSW。首次默认 HNSW 参数测试暴露近邻漏召回，参数调整后通过；这些参数仍须由真实 Golden Dataset 做最终校准。
 
-P03-A10 已验证外部可配置 Reranker：按[阿里云百炼官方 Rerank 文档](https://help.aliyun.com/en/model-studio/rerank)使用华北 2（北京）OpenAI-compatible `/reranks` 和 `qwen3-rerank`，以固定非客户文本完成真实 5→3 重排，两个预期相关项位列前二。适配层只依赖配置，不由业务模块直连厂商 SDK；HTTP 429、超时和无效响应均 fail-open 到原候选顺序，并仅记录脱敏错误码。
+P03-A10 已验证外部可配置 Reranker：按[阿里云百炼官方 Rerank 文档](https://help.aliyun.com/en/model-studio/rerank)使用华北 2（北京）业务空间专属 `compatible-api/v1/reranks` 和 `qwen3-rerank`，以固定非客户文本完成真实 5→3 重排，两个预期相关项位列前二。适配层只依赖配置，不由业务模块直连厂商 SDK；HTTP 429、超时和无效响应均 fail-open 到原候选顺序，并仅记录脱敏错误码。R6 复验确认通用 `compatible-mode/v1` 不适用于该 Reranker，返回 404 后未继续处理，并改回官方业务空间端点。
 
 P03-A14 已验证 Context Builder 到统一 AIService：按相关度和字符预算生成带 ChunkId/来源定位的上下文，Prompt 以 `PromptId + Version + OutputSchema` 独立传入；实际调用链为 `RagAIOrchestrator → AIService → ModelRouter → ProviderAdapter`，结构化输出仍由 POC-04 AIService 校验。RAG 模块不包含 HTTP、厂商 SDK 或具体 ProviderAdapter 调用。
 
@@ -169,12 +171,12 @@ python scripts/audit_golden_dataset.py `
 |PostgreSQL Full Text|查询与 Top-K|4 场景、Top-5 平均/最低 Recall 100%、GIN 命中，PASS|
 |pgvector 向量检索|查询与 Top-K|1,000 条、4 场景、Top-5 平均/最低 Recall 100%、HNSW 命中，PASS|
 |Hybrid Retrieval|Vector + Full Text 融合与 Top-K|1,000 条、4 场景、0.6/0.4 加权融合、Top-5 平均/最低 Recall 100%、GIN/HNSW 命中，PASS|
-|外部 Reranker|可配置请求、响应校验、错误与降级|百炼 `qwen3-rerank` 真实 5→3 PASS；429/超时/无效响应降级 PASS|
+|外部 Reranker|可配置请求、响应校验、错误与降级|百炼业务空间专属 `compatible-api/v1` + `qwen3-rerank` 真实 5→3 PASS；429/超时/无效响应降级 PASS|
 |Context Builder → AIService|统一网关、Prompt/Context/Trace|统一调用链与结构化输出 PASS；无 RAG 直连厂商|
 |异常与空结果|DB/Reranker/AI 不可用、空结果、低可靠度|6 场景 PASS；空/低可靠度不调用 AI|
-|Top-5 Recall|≥95%|R6 OCR 规范化确定性检索 96.67%（116/120），PASS；完整百炼重排待本轮外部数据处理授权|
-|分类准确率|≥90%|R5 对既有预测重评分 57.50%（69/120），FAIL；R6 DeepSeek 复验尚未启动|
-|来源引用准确率|≥98%|R6 本地 Top-5 上限 96.67%；完整百炼/DeepSeek 复验尚未启动，IN_PROGRESS|
+|Top-5 Recall|≥95%|R6 真实端到端 72/120（60.00%），FAIL；本地确定性 116/120 仅作诊断|
+|分类准确率|≥90%|R6 DeepSeek 57/120（47.50%），FAIL；120/120 预测完整|
+|来源引用准确率|≥98%|R6 真实引用 62/120（51.67%），FAIL；越界引用 0|
 |PROJECT 跨项目泄漏|0|P03-A06：6 组查询、30 行结果，泄漏 0，PASS|
 
 ## Logs
@@ -186,7 +188,7 @@ python scripts/audit_golden_dataset.py `
 
 ## Known Issues
 
-1. R6 Golden Dataset 已确认并严格导入；P03-A11 达标。P03-A12/A13 的真实百炼与 DeepSeek 复验等待本轮显式数据处理授权。
+1. R6 Golden Dataset 已确认并严格导入，但正式端到端 P03-A11/A12/A13 均 FAIL；本地确定性检索通过不替代真实链路 Gate。
 2. 当前调优与验收使用同一 Golden Dataset；正式生产质量结论仍需独立留出集，不能把探索结果解释为泛化能力证明。
 3. 两个资料库共 10 个旧版二进制 `.doc` 尚不支持，不进入本轮候选池。
 4. Windows Server 2025 与 Debian 13 尚未执行本 PoC。
@@ -199,11 +201,11 @@ python scripts/audit_golden_dataset.py `
 
 ## Conclusion
 
-POC-03 的基础链路、Golden Dataset 标签 Gate 和 P03-A11 已完成；P03-A12/P03-A13 未完成，当前不形成 RAG 全量质量通过结论。
+POC-03 的基础链路和 Golden Dataset 标签 Gate 已完成；P03-A11/P03-A12/P03-A13 真实端到端指标均未通过，当前不形成 RAG 全量质量通过结论。
 
 ## PASS / FAIL
 
-`AWAITING_EXTERNAL_DATA_PROCESSING_APPROVAL`
+`FAIL / BLOCKED_QUALITY_GATE`
 
 ## Alternative
 

@@ -11,10 +11,10 @@
 |P03-A07|PostgreSQL Full Text 检索|PASS|NOT_RUN|NOT_RUN|PostgreSQL 18.6 `simple` + 上游中文术语空格规范化；4 场景/40 条合成记录，Top-5 平均及最低 Recall 100%，GIN 执行计划命中|
 |P03-A08|pgvector 向量检索|PASS|NOT_RUN|NOT_RUN|PostgreSQL 18.6 + pgvector 0.8.6，1,000 条合成三维向量、4 场景 HNSW cosine Top-5，平均/最低 Recall 100%，HNSW 执行计划命中|
 |P03-A09|Hybrid Retrieval|PASS|NOT_RUN|NOT_RUN|PostgreSQL 18.6 + pgvector 0.8.6，Vector 0.6 + Full Text 0.4；每通道候选池为 Top-K 的 4 倍，HNSW `m=32`、`ef_construction=200`、`ef_search=200`；1,000 条合成记录、4 场景 Top-5 平均/最低 Recall 100%，GIN/HNSW 均命中|
-|P03-A10|外部可配置 Reranker|PASS|NOT_RUN|NOT_RUN|百炼华北 2 `qwen3-rerank` OpenAI-compatible `/reranks` 真实 5→3 调用 PASS；相关项位列前二；HTTP 429、超时、无效响应均 fail-open 保留原顺序并记录脱敏错误码|
-|P03-A11|Top-5 Recall ≥95%|PASS|NOT_RUN|NOT_RUN|R6 本地 120 条：中文 OCR 字间空白规范化 + 来源过滤 + 确定性词法 IDF 为 116/120（96.67%）；同数据探索调优，正式生产声明仍需独立留出集|
-|P03-A12|分类准确率 ≥90%|FAIL|NOT_RUN|NOT_RUN|R5 对既有预测重评分为 69/120（57.50%）；R6 真实 DeepSeek 复验因等待本轮外部数据处理明确授权而未启动|
-|P03-A13|来源引用准确率 ≥98%|IN_PROGRESS|NOT_RUN|NOT_RUN|R6 本地 Top-5 引用上限为 116/120（96.67%）；完整百炼重排与 DeepSeek 引用预测尚未启动，不能判定通过|
+|P03-A10|外部可配置 Reranker|PASS|NOT_RUN|NOT_RUN|百炼华北 2 业务空间专属 `compatible-api/v1/reranks`、`qwen3-rerank` 真实 5→3 调用 PASS；相关项位列前二；HTTP 429、超时、无效响应均 fail-open 保留原顺序并记录脱敏错误码|
+|P03-A11|Top-5 Recall ≥95%|FAIL|NOT_RUN|NOT_RUN|R6 真实端到端链路 72/120（60.00%）；120/120 百炼重排完成，GIN/HNSW 均命中。本地来源过滤 + OCR 规范化 + 确定性词法 IDF 为 116/120（96.67%），仅作为诊断，不覆盖正式端到端结果|
+|P03-A12|分类准确率 ≥90%|FAIL|NOT_RUN|NOT_RUN|R6 真实 DeepSeek 预测 120/120，正确 57/120（47.50%），预测缺失 0；模型显著偏向 `STANDARD_SATISFIED`，三项质量 Gate 不通过|
+|P03-A13|来源引用准确率 ≥98%|FAIL|NOT_RUN|NOT_RUN|R6 真实来源引用正确 62/120（51.67%），越界引用 0；同文档检索 88/120，但验收按精确 Chunk 口径，不以同文档命中替代|
 |P03-A14|Context Builder → AIService|PASS|NOT_RUN|NOT_RUN|`RagAIOrchestrator → AIService → ModelRouter → ProviderAdapter` 实测 PASS；Context 保留 Chunk/来源引用和字符预算，PromptId/Version、ProjectId、ChunkIds 可追溯；RAG 模块无 HTTP 或厂商适配代码|
 |P03-A15|异常与空结果|PASS|NOT_RUN|NOT_RUN|6 场景 PASS：DB 不可用停止且不调用 AI；空结果/最高分 <0.5 返回无可靠匹配且不调用 AI；Reranker 不可用按原顺序降级；AI 不可用返回脱敏可重试状态；正常链路保留引用 ID|
 

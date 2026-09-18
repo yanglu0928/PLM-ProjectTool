@@ -82,7 +82,7 @@
 
 ## External Configurable Reranker
 
-- 官方协议：<https://help.aliyun.com/en/model-studio/rerank>；华北 2（北京）OpenAI-compatible `/reranks`。
+- 官方协议：<https://help.aliyun.com/en/model-studio/rerank>；华北 2（北京）业务空间专属 `compatible-api/v1/reranks`。
 - `qwen3-rerank` 使用 5 条固定非客户候选真实返回 Top-3，两个预期相关项位列前二。
 - 外部服务 HTTP 429、超时、无效响应分别记录 `HTTP_429`、`NETWORK_ERROR`、`INVALID_RESPONSE`，并 fail-open 保留原始候选顺序。
 - API Key 仅在进程环境变量中短暂存在；提交证据不包含 Key、查询、候选正文或响应正文。
@@ -160,19 +160,20 @@
 - 严格导入器对范围、只读字段和引用白名单失败关闭；当前未确认复验为 6 条 PENDING、0 个问题、不输出 R6 数据集。
 - 工作簿、问题、客户文件名、内容和证据定位器只保存在 Git 忽略的 `artifacts/`；仓库仅保存脱敏状态与数量。
 - 用户确认后严格导入为 120/120、待确认 0、问题 0；覆盖审计 PASS，R6 数据集继续只保存在本地忽略目录。
-- 本地 OCR 规范化检索 Top-5 为 116/120（96.67%），P03-A11 PASS。完整百炼/DeepSeek 复验因等待本轮显式客户数据处理授权而未启动，拦截前没有发送 R6 数据。
+- 本地 OCR 规范化检索 Top-5 为 116/120（96.67%），但仅是诊断路径；用户明确授权后完成正式百炼/DeepSeek 复验，端到端 Top-5 为 72/120（60.00%），P03-A11 按正式口径 FAIL。
 
 ## Live Golden Dataset Quality
 
 - 120 条真实质量验证完整执行：`qwen3.7-text-embedding` 1024 维、PostgreSQL 18.6/pgvector 0.8.6 Hybrid 0.6/0.4、120/120 次 `qwen3-rerank`、统一 DeepSeek AIService。
-- P03-A11 Top-5 Recall 为 72/120（60.00%），FAIL；精确 Chunk 命中 72 条，同文档命中 88 条。
-- P03-A12 分类准确率为 17/120（14.17%），FAIL；精确召回样本中仅 10/72 分类正确。
-- P03-A13 来源引用准确率为 61/120（50.83%），FAIL；越界引用 0。
+- R6 P03-A11 Top-5 Recall 为 72/120（60.00%），FAIL；精确 Chunk 命中 72 条，同文档命中 88 条。
+- R6 P03-A12 分类准确率为 57/120（47.50%），FAIL；精确召回样本中 29/72 分类正确。
+- R6 P03-A13 来源引用准确率为 62/120（51.67%），FAIL；越界引用 0。
+- R6 分层诊断：Vector Top-20 69/120、Full Text Top-20 78/120、融合 Top-20 80/120、Reranker Top-5 72/120；瓶颈为通道召回缺失 25、融合丢失 15、重排丢失 8，另有重排恢复 9。
 - 查询、正文、向量、逐条响应和 case-level 结果未提交；仓库只保留脱敏聚合指标和失败分析。
 
 ## Result
 
-R6 Golden Dataset 已完成严格导入和覆盖审计。本地确定性 Top-5 达到 116/120（96.67%），P03-A11 PASS；P03-A12/A13 的完整真实复验等待本轮显式外部数据处理授权，当前不形成通过结论。
+R6 Golden Dataset 已完成严格导入、覆盖审计和真实端到端复验。本地确定性 Top-5 达到 116/120（96.67%），但正式 Hybrid/Reranker 链路只有 72/120（60.00%）；分类 47.50%、引用 51.67%，P03-A11~A13 均 FAIL。
 
 ## Known Issues
 
@@ -181,4 +182,4 @@ R6 Golden Dataset 已完成严格导入和覆盖审计。本地确定性 Top-5 �
 3. Tesseract 扫描件结果尚未完成语义准确率人工标注。
 4. 旧 R2/R3 是历史评审基线，不自动转化为新四类候选的人工批准状态。
 5. R4 的本地证据定位器是 PoC；Office 文件尚不能从浏览器自动跳到精确段落并高亮，正式产品需由内置 Evidence Viewer 实现。
-6. R6 本地 Top-5 仍有 4 条未命中，当前 96.67% 的引用上限低于 98%；需结合获批后的真实百炼重排与 DeepSeek 引用预测判断 P03-A13。
+6. R6 本地确定性检索与正式端到端链路存在 36.67 个百分点差异；正式链路尚未接入来源类型过滤和确定性词法 IDF 候选通道，必须先对齐检索契约再复验。
