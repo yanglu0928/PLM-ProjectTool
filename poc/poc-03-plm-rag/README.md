@@ -65,6 +65,7 @@ R4 延续对用户体验的 Phase 0 验证，不是正式项目交接 `ActionIte
 - 人工输入列明确标色并说明需要维护的内容。
 - 新候选的技术底稿不重复展示大段正文；完整上下文保存在本地证据定位器和候选 JSON 中。
 - R4 的 120 条处理结果默认留空，不把规则建议预先写成人工决定。
+- 用户填写后的 R4 经严格导入得到 1 条 `APPROVED`、119 条 `PENDING` 和 0 个校验问题；“暂不处理”保持待定，不自动转为批准。
 - 详细边界和正式模块建议见 `confirmation-ux-prototype.md`。
 
 ## Local Review Prefill
@@ -120,12 +121,12 @@ python scripts/audit_golden_dataset.py `
 |指标|目标|当前状态|
 |---|---|---|
 |候选评审记录|100~200 条|120 条，29/29 文档覆盖，四类来源均有候选，PASS|
-|当前人工批准记录|100~200 条且字段完整|新 R4 候选 0 条批准、120 条待确认|
+|当前人工批准记录|100~200 条且字段完整|R4 严格导入 1 条批准、119 条暂缓；距最低门槛差 99 条|
 |本地预填建议|辅助人工评审，不形成真值|120 条不同查询；120 条来源类型已确定；全部保持 PENDING|
 |人工确认交互原型|证据可定位、输入有提示、原数据可追溯|R4 生成 120 个本地证据链接和 120 个原文件入口；公式错误 0；PASS_FOR_HUMAN_REVIEW|
 |来源资格审计|不得将解决方案伪造为锁定来源类型|4 CONTRACT、5 TECHNICAL_AGREEMENT、19 STANDARD_CAPABILITY、1 SURVEY 文档；历史 SOLUTION 不进入本轮候选|
 |Schema 合法数据集导出|100~200 条|当前 R2 未导出；旧 R1 的 109 条仅 Schema PASS、覆盖 FAIL|
-|Gold Set 质量覆盖|查询、四类来源、六类分类可评估|IN_PROGRESS：四类来源已覆盖，仍待人工确认并完成分类覆盖审计|
+|Gold Set 质量覆盖|查询、四类来源、六类分类可评估|BLOCKED：仅 1 条有效批准，未达到 100 条导出门槛|
 |确定性 Chunk|可追溯且强制 PROJECT/ProjectId|1,695 个，PASS|
 |单索引单 Embedding 模型|不可原地换模/换维度|`qwen3.7-text-embedding` 1024 维 live PASS|
 |模型切换与全量重建|新 index_id、全量重建、旧向量复用 0|`text-embedding-v4` 768/v2，120/120 live rebuild，PASS；未激活|
@@ -149,7 +150,7 @@ python scripts/audit_golden_dataset.py `
 
 ## Known Issues
 
-1. 四类来源数量缺口已解除，但来源覆盖不等于业务真值；120 条候选仍需人工确认。
+1. 四类来源数量缺口已解除，但当前只有 1 条有效人工批准；至少还需确认 99 条才能导出正式 Golden Dataset。
 2. 自动抽取只能形成候选集；没有人工批准的记录不得计入 Golden Dataset，也不得作为业务事实。
 3. 两个资料库共 10 个旧版二进制 `.doc` 尚不支持，不进入本轮候选池。
 4. Windows Server 2025 与 Debian 13 尚未执行本 PoC。
