@@ -122,7 +122,7 @@
 - R3 主清单移除大段候选正文，生成 120 个“打开证据”链接和 120 条逐项维护提示。
 - 本地证据定位器包含 120 个候选锚点和 120 个原文件入口；PDF 链接携带页码，Office 文件显示精确段落、表格或幻灯片定位。
 - 浏览器实测 `#GD-C-0010` 可直接跳到对应证据卡；工作簿公式回读为 120 个相对 `HYPERLINK`。
-- 当前 POC-03 全量单元测试 30/30 通过，包含“APPROVED 状态不得绕过其他必填字段”的回归用例。
+- R3 阶段 POC-03 单元测试为 30/30 通过，包含“APPROVED 状态不得绕过其他必填字段”的回归用例；当前完整计数见 R5 章节。
 - 该结果仅为 `PASS_FOR_UX_REVIEW`，不代表正式交接 ActionItem 模块或 P03-A02 通过。
 
 ## Source Type Eligibility Audit
@@ -144,6 +144,15 @@
 - 用户更新后的 R4 为 120 条“修改后确认”，每条均包含“人工复核”和明确“结论”，审核人和日期完整；严格导入得到 120 条 APPROVED、0 个校验问题。
 - 对原分类为 `HUMAN_CONFIRMATION_REQUIRED` 的记录，导入器只依据人工结论中的明确短语做确定性覆盖：38 条转为 `INSUFFICIENT_INFORMATION`、8 条转为 `NO_RELIABLE_MATCH`，其余保留原分类。
 
+## R5 Lightweight Label Review
+
+- R1 失败证据保留不变；根据已批准修复路线重新打开 P03-A02 标签一致性 Gate。
+- R4 人工说明中有 62 条可确定性识别的最终分类，且全部与 R4 已导出标签一致；这些记录在 R5 中只读保留，不要求重复填写。
+- 剩余 58 条按 `R4 分类 × 本次 AI 分类` 归并为 7 组；主表支持一次批量确认，冲突页支持单条最终分类覆盖。
+- 四张表均已用 Artifact Tool 导出、回读、公式扫描和渲染检查，公式错误 0；工作簿仍保持“未确认”。
+- 严格导入器独立重算分组和生效分类；全局确认前状态为 `AWAITING_HUMAN_CONFIRMATION`、问题 0、输出数据集未写出。
+- POC-03 全量单元测试 96/96 通过；提交证据不含查询、审核人、客户正文、向量或逐条模型响应。
+
 ## Live Golden Dataset Quality
 
 - 120 条真实质量验证完整执行：`qwen3.7-text-embedding` 1024 维、PostgreSQL 18.6/pgvector 0.8.6 Hybrid 0.6/0.4、120/120 次 `qwen3-rerank`、统一 DeepSeek AIService。
@@ -154,7 +163,7 @@
 
 ## Result
 
-来源数量、人工批准和覆盖缺口已解除，P03-A02 PASS；但 P03-A11~A13 首轮真实指标全部 FAIL。POC-03 保持 `FAIL / BLOCKED_QUALITY_GATE`，等待用户确认重新打开 Golden 标签评审和检索调优方案。
+来源数量和覆盖缺口已解除，R4 历史数据集已完成导出；但 P03-A11~A13 首轮真实指标全部 FAIL，P03-A02 标签一致性 Gate 已重新打开。POC-03 保持 `FAIL / BLOCKED_QUALITY_GATE`，等待用户在 R5 工作簿中完成批量确认后重新冻结 Golden Dataset。
 
 ## Known Issues
 
@@ -163,3 +172,4 @@
 3. Tesseract 扫描件结果尚未完成语义准确率人工标注。
 4. 旧 R2/R3 是历史评审基线，不自动转化为新四类候选的人工批准状态。
 5. R4 的本地证据定位器是 PoC；Office 文件尚不能从浏览器自动跳到精确段落并高亮，正式产品需由内置 Evidence Viewer 实现。
+6. R5 当前未收到全局批量确认，不能导出新数据集或开始检索调优。

@@ -38,9 +38,11 @@
 
 ## Result
 
-P0.09 候选准备链已更新：用户指定的 `标准能力库/` 20 个 DOCX 全部解析通过，确定性分区为 19 份 `STANDARD_CAPABILITY` 和 1 份 `SURVEY`；连同 4 份合同、5 份技术协议，29 个 ParsedDocument 生成 1,695 个带 PROJECT/ProjectId 和来源定位的 Chunk，并轮询抽样 120 条候选，覆盖 29/29 个文档。R4 经严格导入得到 120 条 APPROVED、0 个问题，P03-A02 PASS。P03-A04 使用百炼 `qwen3.7-text-embedding` 实测请求/返回 1024 维，索引 `v1` 绑定 PASS。
+P0.09 候选准备链已更新：用户指定的 `标准能力库/` 20 个 DOCX 全部解析通过，确定性分区为 19 份 `STANDARD_CAPABILITY` 和 1 份 `SURVEY`；连同 4 份合同、5 份技术协议，29 个 ParsedDocument 生成 1,695 个带 PROJECT/ProjectId 和来源定位的 Chunk，并轮询抽样 120 条候选，覆盖 29/29 个文档。R4 经严格导入得到 120 条 APPROVED、0 个问题，当时 P03-A02 判定 PASS；R1 质量失败后该标签 Gate 已在 R5 重新打开。P03-A04 使用百炼 `qwen3.7-text-embedding` 实测请求/返回 1024 维，索引 `v1` 绑定 PASS。
 
 P03-A11~A13 首轮真实质量验证完整执行但未达门槛：Top-5 Recall 72/120（60.00%）、分类准确率 17/120（14.17%）、来源引用准确率 61/120（50.83%），三项均 FAIL。120/120 次重排使用百炼 `qwen3-rerank`，GIN/HNSW 均实际命中，预测无缺失、越界引用为 0。精确 Chunk 召回 72 条而同文档召回 88 条；分类在已召回样本中仍只有 10/72 正确。R4 的最终分类多数继承候选阶段关键词启发式值，已登记 Golden 标签一致性风险；不得通过事后改标签或降低门槛掩盖失败。
+
+用户已批准按“先复核标签、再分层调优”继续。R5 轻量确认包从 R4 人工说明中确定性识别出 62 条明确最终分类且与已导出标签一致，这些记录不要求重复确认；其余 58 条按“R4 分类 × 本次 AI 分类”归并为 7 组。工作簿默认保持未确认，只有人工选择全局批量确认后建议规则才生效，单条最终分类可覆盖分组。当前严格导入结果为 `AWAITING_HUMAN_CONFIRMATION`、问题 0、数据集未写出。
 
 P03-A05 已验证模型切换纪律：保留激活的 `qwen3.7-text-embedding` 1024 维 `v1`，拒绝对旧 index_id 原地更换模型；创建独立 `text-embedding-v4` 768 维 `v2`，使用 120 条固定非客户文本执行 12 批真实请求，120/120 全量重建完成，旧向量复用数为 0。`v2` 状态为验证通过但未激活，不替换当前绑定。
 
@@ -69,6 +71,8 @@ R4 延续对用户体验的 Phase 0 验证，不是正式项目交接 `ActionIte
 - R4 的 120 条处理结果默认留空，不把规则建议预先写成人工决定。
 - 用户更新后的 R4 为 120 条“修改后确认”，每条均包含实质性“人工复核”和明确“结论”；锁定任务中的查询、来源类型、答案术语和引用定位保持完整。严格导入得到 120 条 `APPROVED`、0 个校验问题。
 - 对原分类为 `HUMAN_CONFIRMATION_REQUIRED` 的记录，只在人工结论含有明确判定短语时确定性映射为 `INSUFFICIENT_INFORMATION` 或 `NO_RELIABLE_MATCH`，其余保留原分类；覆盖审计最终包含六类允许结果。
+- R5 主表只需确认 7 组规则；62 条 R4 明确结论只读保留，58 条冲突可在独立页逐条覆盖。全局确认未选择时，导入器不会把 AI 建议转成业务真值。
+- R5 导入器独立重算分组和生效分类，不信任公式缓存；查询、来源类型、R4/AI 分类组合或分组被改动时失败关闭。
 - 详细边界和正式模块建议见 `confirmation-ux-prototype.md`。
 
 ## Local Review Prefill
@@ -98,6 +102,19 @@ python scripts/import_review_workbook.py `
 
 正式导出还必须提供 `--output`、`--dataset-id`、`--embedding-provider`、`--embedding-model`、`--embedding-dimension` 和 `--index-version`。只有 100~200 条记录通过人工批准并满足 Schema 时才会写出文件；不完整或校验失败时不会生成正式集。
 
+R5 标签复核使用单独入口。未选择全局批量确认时命令正常生成脱敏的等待状态报告，但不会写出数据集：
+
+```powershell
+python scripts/import_r5_label_review.py `
+  --workbook <本地R5轻量确认工作簿.xlsx> `
+  --r4-workbook <本地R4工作簿.xlsx> `
+  --golden <本地R4 Golden Dataset.json> `
+  --quality <本地R1逐条质量结果.json> `
+  --dataset-id poc-03-golden-2026-09-18-r5 `
+  --output <本地R5 Golden Dataset.json> `
+  --report <本地脱敏导入报告.json>
+```
+
 实际 Embedding 探测只从环境变量读取 Key，提交报告不含输入文本、向量值或 Secret：
 
 ```powershell
@@ -124,9 +141,9 @@ python scripts/audit_golden_dataset.py `
 |指标|目标|当前状态|
 |---|---|---|
 |候选评审记录|100~200 条|120 条，29/29 文档覆盖，四类来源均有候选，PASS|
-|当前人工批准记录|100~200 条且字段完整|R4 严格导入 120 条 APPROVED、0 个问题，PASS|
+|当前人工批准记录|100~200 条且字段完整|R4 历史导入 120 条；R5 重新打开标签 Gate，62 条明确结论已锁定、58 条/7 组等待批量确认，IN_PROGRESS|
 |本地预填建议|辅助人工评审，不形成真值|120 条不同查询；120 条来源类型已确定；全部保持 PENDING|
-|人工确认交互原型|证据可定位、输入有提示、原数据可追溯|R4 生成 120 个本地证据链接和 120 个原文件入口；公式错误 0；PASS_FOR_HUMAN_REVIEW|
+|人工确认交互原型|证据可定位、输入有提示、原数据可追溯|R5 四表轻量确认包：62 条明确结论、58 条冲突/7 组、单条例外覆盖；公式错误 0；AWAITING_HUMAN_CONFIRMATION|
 |来源资格审计|不得将解决方案伪造为锁定来源类型|4 CONTRACT、5 TECHNICAL_AGREEMENT、19 STANDARD_CAPABILITY、1 SURVEY 文档；历史 SOLUTION 不进入本轮候选|
 |Schema 合法数据集导出|100~200 条|R4 导出 120 条，Schema PASS|
 |Gold Set 质量覆盖|查询、四类来源、六类分类可评估|120 个唯一查询、29 份文档、四类来源和六类结果，覆盖审计 PASS；标签一致性风险待重新评审|
@@ -153,8 +170,8 @@ python scripts/audit_golden_dataset.py `
 
 ## Known Issues
 
-1. P03-A11~A13 首轮真实指标均 FAIL；在用户确认标签复核与检索调优方案前不得进入下一 WBS。
-2. R4 的自由文本结论没有逐条显式写回最终分类，多数标签仍继承候选阶段关键词启发式值；需重新打开标签 Gate，不能以模型输出自动改写真值。
+1. P03-A11~A13 首轮真实指标均 FAIL；R5 标签 Gate 完成人工确认和严格导入前，不得启动检索调优或重跑质量指标。
+2. R5 已把 R4 的 62 条明确人工结论与 58 条未明确冲突分离；当前全局批量确认仍未选择，因此新 Golden Dataset 尚未生成。
 3. 两个资料库共 10 个旧版二进制 `.doc` 尚不支持，不进入本轮候选池。
 4. Windows Server 2025 与 Debian 13 尚未执行本 PoC。
 5. 旧 R2/R3 历史工作簿不作为新四类来源基线；其人工填写记录被保留，但不会自动迁移成新候选的批准状态。
@@ -174,5 +191,5 @@ POC-03 的基础链路与 Golden Dataset 覆盖已完成，但首轮真实质量
 
 ## Alternative
 
-- 推荐先在友好确认界面中新增明确的“最终分类”必填项，重新冻结 Golden Dataset 标签；随后对 Vector/FTS/融合/Reranker 各阶段做排名诊断和透明调优。
+- 已提供轻量批量确认界面；完成人工确认并冻结 R5 Golden Dataset 后，对 Vector/FTS/融合/Reranker 和分类 Prompt 各阶段做排名诊断和透明调优。
 - 不得降低质量门槛、事后按模型输出改标签、泄露期望答案到 Prompt，或擅自引入独立向量库和本地模型。

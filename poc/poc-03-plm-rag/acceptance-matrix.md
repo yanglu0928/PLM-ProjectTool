@@ -3,7 +3,7 @@
 |ID|验收项|Windows 11|Windows Server 2025|Debian 13|证据要求|
 |---|---|---|---|---|---|
 |P03-A01|POC-02/04/05 前置证据可用|PASS|NOT_RUN|NOT_RUN|数据库、AI Gateway、ParsedDocument 证据|
-|P03-A02|100~200 条人工确认 Golden Dataset|PASS|NOT_RUN|NOT_RUN|更新后的 R4 含 120 条“修改后确认”，每条均有实质性人工复核和明确结论；严格导入 APPROVED 120、问题 0。正式数据集覆盖 29 份文档、120 个唯一问题、四类来源和六类结果，Schema 与覆盖审计 PASS|
+|P03-A02|100~200 条人工确认 Golden Dataset|IN_PROGRESS|NOT_RUN|NOT_RUN|R4 历史导入 120 条并通过 Schema/覆盖审计；R1 质量失败后重新打开标签一致性 Gate。R5 已保留 62 条明确人工结论，并将 58 条归并为 7 组，当前等待全局人工确认，尚未导出 R5 数据集|
 |P03-A03|确定性 Chunk 与来源定位|PASS|NOT_RUN|NOT_RUN|Chunk、页/章节/表格定位、内容 Hash|
 |P03-A04|Index 绑定单一 Embedding 模型|PASS|NOT_RUN|NOT_RUN|百炼 `qwen3.7-text-embedding`、1024 维、索引 `v1`；live probe 与不可变绑定 PASS|
 |P03-A05|更换模型新建索引与全量重建|PASS|NOT_RUN|NOT_RUN|旧 `qwen3.7-text-embedding` 1024/v1 原地换模被拒绝；新建 `text-embedding-v4` 768/v2，以 120 条固定非客户文本真实调用 12 批完成 120/120 重建，旧向量复用 0；v2 未激活|
