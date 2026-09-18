@@ -1,7 +1,7 @@
 {
   "schema_version": "poc-03.action-list-import-result.v1",
-  "generated_at": "2026-09-18T01:41:48.311930+00:00",
-  "status": "INCOMPLETE",
+  "generated_at": "2026-09-18T02:49:22.786360+00:00",
+  "status": "PASS",
   "privacy": {
     "workbook_content_committed": false,
     "queries_committed": false,
@@ -11,20 +11,18 @@
   },
   "summary": {
     "workbook_candidate_row_count": 120,
-    "approved_case_count": 1,
+    "approved_case_count": 120,
     "review_status_counts": {
-      "APPROVED": 1,
-      "PENDING": 119
+      "APPROVED": 120
     },
     "issue_count": 0,
-    "output_written": false,
+    "output_written": true,
     "minimum_required_approved_count": 100,
-    "approved_count_gap": 99,
+    "approved_count_gap": 0,
     "human_decision_counts": {
-      "修改后确认": 119,
-      "同意AI建议": 1
+      "修改后确认": 120
     }
   },
   "issues": [],
-  "conclusion": "Formal Golden Dataset export remains blocked."
+  "conclusion": "Formal Golden Dataset export is allowed."
 }

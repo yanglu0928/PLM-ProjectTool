@@ -37,10 +37,45 @@ ACTION_HEADERS = [
 DECISION_STATUS = {
     "": "PENDING",
     "同意AI建议": "APPROVED",
-    "修改后确认": "PENDING",
+    "修改后确认": "APPROVED",
     "退回重新分析": "RETURNED",
     "暂不处理": "PENDING",
 }
+
+NO_RELIABLE_MATCH_MARKERS = (
+    "暂不作为独立需求项",
+    "无法形成有效合同结论",
+    "更像缩写、编号或OCR片段",
+)
+INSUFFICIENT_INFORMATION_MARKERS = (
+    "证据片段不足",
+    "摘录不足",
+    "不足以完整判断",
+    "单凭该片段无法",
+    "尚不能",
+)
+
+
+def _has_substantive_modified_conclusion(value: Any) -> bool:
+    conclusion = _text(value)
+    return (
+        len(conclusion) >= 20
+        and "人工复核：" in conclusion
+        and "结论：" in conclusion
+    )
+
+
+def _classification_from_modified_conclusion(
+    classification: str,
+    conclusion: str,
+) -> str:
+    if classification != "HUMAN_CONFIRMATION_REQUIRED":
+        return classification
+    if any(marker in conclusion for marker in NO_RELIABLE_MATCH_MARKERS):
+        return "NO_RELIABLE_MATCH"
+    if any(marker in conclusion for marker in INSUFFICIENT_INFORMATION_MARKERS):
+        return "INSUFFICIENT_INFORMATION"
+    return classification
 
 
 def import_action_list(
@@ -185,20 +220,38 @@ def import_action_list(
                 continue
             review_status = DECISION_STATUS[decision]
             status_counts[review_status] += 1
-            if decision == "修改后确认":
-                continue
             if review_status != "APPROVED":
                 continue
 
             query = _text(task.get("ai_finding"))
             source_type = _text(task.get("source_type")).upper()
             classification = _text(task.get("classification")).upper()
+            if decision == "修改后确认":
+                classification = _classification_from_modified_conclusion(
+                    classification,
+                    _text(row[7]),
+                )
             answer_terms = _split_values(task.get("answer_terms"))
             confirmed_locators = _confirmed_locators(
                 task.get("confirmed_locator"), expected["source_locators"]
             )
             reviewed_by = _text(row[8])
             approved_issues: list[ImportIssue] = []
+            if decision == "修改后确认" and not _has_substantive_modified_conclusion(
+                row[7]
+            ):
+                approved_issues.append(
+                    ImportIssue(
+                        code="MODIFIED_CONCLUSION_INCOMPLETE",
+                        message=(
+                            "Modified confirmation requires a substantive human-review "
+                            "statement containing both '人工复核：' and '结论：'"
+                        ),
+                        row=row_number,
+                        candidate_id=candidate_id,
+                        field="修改后结论 / 补充说明",
+                    )
+                )
             required = {
                 "AI分析问题": query,
                 "来源类型": source_type,

@@ -117,7 +117,7 @@ class ActionListImportTests(unittest.TestCase):
         self.assertEqual([], result.cases)
         self.assertEqual(1, result.status_counts["PENDING"])
 
-    def test_modified_confirmation_stays_pending_until_structured(self) -> None:
+    def test_modified_confirmation_requires_substantive_conclusion(self) -> None:
         record = candidate(1)
         item = task(record)
         workbook_path = self.root / "actions.xlsx"
@@ -125,9 +125,76 @@ class ActionListImportTests(unittest.TestCase):
 
         result = import_action_list(workbook_path, [record], [item])
 
-        self.assertFalse(result.has_errors)
+        self.assertIn(
+            "MODIFIED_CONCLUSION_INCOMPLETE",
+            {issue.code for issue in result.issues},
+        )
         self.assertEqual([], result.cases)
-        self.assertEqual(1, result.status_counts["PENDING"])
+        self.assertEqual(1, result.status_counts["APPROVED"])
+
+    def test_substantive_modified_confirmation_builds_approved_case(self) -> None:
+        record = candidate(1)
+        item = task(record)
+        workbook_path = self.root / "actions.xlsx"
+        conclusion = (
+            "人工复核：原文和证据已经完成核对，技术字段与来源保持一致。"
+            "结论：按修改后的业务说明确认，并纳入本轮质量真值。"
+        )
+        write_action_list(
+            workbook_path,
+            [action_row(item, "修改后确认", conclusion)],
+        )
+
+        result = import_action_list(workbook_path, [record], [item])
+
+        self.assertFalse(result.has_errors)
+        self.assertEqual(1, len(result.cases))
+        self.assertEqual("GD-0001", result.cases[0]["case_id"])
+        self.assertEqual(1, result.status_counts["APPROVED"])
+
+    def test_modified_conclusion_can_resolve_insufficient_information(self) -> None:
+        record = candidate(1)
+        item = task(record)
+        item["classification"] = "HUMAN_CONFIRMATION_REQUIRED"
+        workbook_path = self.root / "actions.xlsx"
+        conclusion = (
+            "人工复核：当前证据片段不足，尚不能支持完整业务判断。"
+            "结论：保留为信息不足，待补充上下文后再确认。"
+        )
+        write_action_list(
+            workbook_path,
+            [action_row(item, "修改后确认", conclusion)],
+        )
+
+        result = import_action_list(workbook_path, [record], [item])
+
+        self.assertFalse(result.has_errors)
+        self.assertEqual(
+            "INSUFFICIENT_INFORMATION",
+            result.cases[0]["expected_classification"],
+        )
+
+    def test_modified_conclusion_can_resolve_no_reliable_match(self) -> None:
+        record = candidate(1)
+        item = task(record)
+        item["classification"] = "HUMAN_CONFIRMATION_REQUIRED"
+        workbook_path = self.root / "actions.xlsx"
+        conclusion = (
+            "人工复核：当前抽取内容更像缩写、编号或OCR片段。"
+            "结论：暂不作为独立需求项，未发现可靠业务匹配。"
+        )
+        write_action_list(
+            workbook_path,
+            [action_row(item, "修改后确认", conclusion)],
+        )
+
+        result = import_action_list(workbook_path, [record], [item])
+
+        self.assertFalse(result.has_errors)
+        self.assertEqual(
+            "NO_RELIABLE_MATCH",
+            result.cases[0]["expected_classification"],
+        )
 
     def test_changed_question_is_rejected(self) -> None:
         record = candidate(1)
