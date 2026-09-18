@@ -3,8 +3,11 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections import Counter
 from datetime import UTC, datetime
 from pathlib import Path
+
+from openpyxl import load_workbook
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -17,6 +20,21 @@ from poc03_rag.review_import import (  # noqa: E402
     build_sanitized_import_report,
     load_candidate_records,
 )
+
+
+def _decision_counts(workbook_path: Path) -> dict[str, int]:
+    workbook = load_workbook(workbook_path, read_only=True, data_only=False)
+    try:
+        sheet = workbook["确认清单"]
+        counts: Counter[str] = Counter()
+        for row in sheet.iter_rows(min_row=9, max_row=128, max_col=7, values_only=True):
+            if not str(row[0] or "").strip():
+                continue
+            decision = str(row[6] or "").strip() or "BLANK"
+            counts[decision] += 1
+        return dict(sorted(counts.items()))
+    finally:
+        workbook.close()
 
 
 def main() -> int:
@@ -88,6 +106,7 @@ def main() -> int:
     report["schema_version"] = "poc-03.action-list-import-result.v1"
     report["summary"]["minimum_required_approved_count"] = 100
     report["summary"]["approved_count_gap"] = max(0, 100 - len(result.cases))
+    report["summary"]["human_decision_counts"] = _decision_counts(args.workbook)
     args.report.parent.mkdir(parents=True, exist_ok=True)
     args.report.write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n",

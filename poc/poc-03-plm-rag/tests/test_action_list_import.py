@@ -117,7 +117,7 @@ class ActionListImportTests(unittest.TestCase):
         self.assertEqual([], result.cases)
         self.assertEqual(1, result.status_counts["PENDING"])
 
-    def test_modified_confirmation_requires_structured_fields(self) -> None:
+    def test_modified_confirmation_stays_pending_until_structured(self) -> None:
         record = candidate(1)
         item = task(record)
         workbook_path = self.root / "actions.xlsx"
@@ -125,11 +125,9 @@ class ActionListImportTests(unittest.TestCase):
 
         result = import_action_list(workbook_path, [record], [item])
 
-        self.assertIn(
-            "MODIFIED_REVIEW_REQUIRES_STRUCTURED_FIELDS",
-            {issue.code for issue in result.issues},
-        )
+        self.assertFalse(result.has_errors)
         self.assertEqual([], result.cases)
+        self.assertEqual(1, result.status_counts["PENDING"])
 
     def test_changed_question_is_rejected(self) -> None:
         record = candidate(1)

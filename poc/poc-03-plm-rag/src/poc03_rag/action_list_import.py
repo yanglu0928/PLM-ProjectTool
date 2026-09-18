@@ -186,18 +186,6 @@ def import_action_list(
             review_status = DECISION_STATUS[decision]
             status_counts[review_status] += 1
             if decision == "修改后确认":
-                issues.append(
-                    ImportIssue(
-                        code="MODIFIED_REVIEW_REQUIRES_STRUCTURED_FIELDS",
-                        message=(
-                            "Modified confirmation requires structured query, source type, "
-                            "classification, answer terms, and citations"
-                        ),
-                        row=row_number,
-                        candidate_id=candidate_id,
-                        field="修改后结论 / 补充说明",
-                    )
-                )
                 continue
             if review_status != "APPROVED":
                 continue
