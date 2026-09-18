@@ -2,7 +2,7 @@
 
 ## Status
 
-`BLOCKED_L3_DECISION`
+`AWAITING_R6_HUMAN_CONFIRMATION`
 
 ## Objective
 
@@ -44,7 +44,7 @@ P03-A11~A13 首轮真实质量验证完整执行但未达门槛：Top-5 Recall 7
 
 用户已批准按“先复核标签、再分层调优”继续。R5 轻量确认包从 R4 人工说明中确定性识别出 62 条明确最终分类，其余 58 条按 7 组规则完成全局人工确认；严格导入和防篡改校验均通过。R5 分层诊断后，扩展候选池命中 115/120（95.83%），120/120 次真实百炼重排得到 Top-5 89/120（74.17%）。进一步定位到扫描件逐字换行造成的中文术语破碎；加入 OCR 字间空白规范化和确定性词法 IDF 后，Top-5 达到 114/120（95.00%），P03-A11 达标。
 
-剩余 6 条问题的唯一目标 Chunk 排名为 8、11、24、27、41、117；在当前“AI 只接收 Top-5，且引用必须等于唯一原始 Chunk”的口径下，P03-A13 引用准确率上限为 95.00%，低于 98% 门槛。该冲突触发 L3：不得通过硬编码、使用答案字段或静默修改 Golden 真值来伪造通过；需人工选择修订低区分度问题/可接受引用集合，或明确调整引用上下文与验收口径。
+剩余 6 条问题的唯一目标 Chunk 排名为 8、11、24、27、41、117；在当前“AI 只接收 Top-5，且引用必须等于唯一原始 Chunk”的口径下，P03-A13 引用准确率上限为 95.00%，低于 98% 门槛。用户已批准方案 A：R6 只复核这 6 条的问题与引用，保持其余 114 条和全部 R5 分类不变。R6 本地工作簿已生成，等待人工批量确认；确认前不生成 R6 数据集或重跑指标。
 
 P03-A05 已验证模型切换纪律：保留激活的 `qwen3.7-text-embedding` 1024 维 `v1`，拒绝对旧 index_id 原地更换模型；创建独立 `text-embedding-v4` 768 维 `v2`，使用 120 条固定非客户文本执行 12 批真实请求，120/120 全量重建完成，旧向量复用数为 0。`v2` 状态为验证通过但未激活，不替换当前绑定。
 
@@ -75,6 +75,8 @@ R4 延续对用户体验的 Phase 0 验证，不是正式项目交接 `ActionIte
 - 对原分类为 `HUMAN_CONFIRMATION_REQUIRED` 的记录，只在人工结论含有明确判定短语时确定性映射为 `INSUFFICIENT_INFORMATION` 或 `NO_RELIABLE_MATCH`，其余保留原分类；覆盖审计最终包含六类允许结果。
 - R5 主表只需确认 7 组规则；62 条 R4 明确结论只读保留，58 条冲突可在独立页逐条覆盖。全局确认未选择时，导入器不会把 AI 建议转成业务真值。
 - R5 导入器独立重算分组和生效分类，不信任公式缓存；查询、来源类型、R4/AI 分类组合或分组被改动时失败关闭。
+- R6 主表仅有 6 条低区分度样本；选择一次“确认全部AI建议”并填写确认人/日期即可完成常规确认，单条例外才需要维护黄色列。
+- R6 证据页同时展示原核定 Chunk 和 Top-5 对照，并提供原始文件入口。严格导入器只允许使用已展示的引用，逐对象验证其余 114 条未变化。
 - 详细边界和正式模块建议见 `confirmation-ux-prototype.md`。
 
 ## Local Review Prefill
@@ -117,6 +119,18 @@ python scripts/import_r5_label_review.py `
   --report <本地脱敏导入报告.json>
 ```
 
+R6 六项问题与引用复核同样默认失败关闭；未选择全局或逐条确认时只生成等待状态报告：
+
+```powershell
+python scripts/import_r6_citation_review.py `
+  --workbook <本地R6确认工作簿.xlsx> `
+  --golden <本地R5 Golden Dataset.json> `
+  --package <本地R6复核包.json> `
+  --dataset-id poc-03-golden-2026-09-18-r6 `
+  --output <本地R6 Golden Dataset.json> `
+  --report <本地脱敏导入报告.json>
+```
+
 实际 Embedding 探测只从环境变量读取 Key，提交报告不含输入文本、向量值或 Secret：
 
 ```powershell
@@ -143,7 +157,7 @@ python scripts/audit_golden_dataset.py `
 |指标|目标|当前状态|
 |---|---|---|
 |候选评审记录|100~200 条|120 条，29/29 文档覆盖，四类来源均有候选，PASS|
-|当前人工批准记录|100~200 条且字段完整|R4 历史导入 120 条；R5 重新打开标签 Gate，62 条明确结论已锁定、58 条/7 组等待批量确认，IN_PROGRESS|
+|当前人工批准记录|100~200 条且字段完整|R5 已严格导入 120/120；R6 仅复核 6 条问题/引用，当前等待人工确认|
 |本地预填建议|辅助人工评审，不形成真值|120 条不同查询；120 条来源类型已确定；全部保持 PENDING|
 |人工确认交互原型|证据可定位、输入有提示、原数据可追溯|R5 四表轻量确认包：62 条明确结论、58 条冲突/7 组、单条例外覆盖；公式错误 0；全局确认与严格导入 PASS|
 |来源资格审计|不得将解决方案伪造为锁定来源类型|4 CONTRACT、5 TECHNICAL_AGREEMENT、19 STANDARD_CAPABILITY、1 SURVEY 文档；历史 SOLUTION 不进入本轮候选|
@@ -160,7 +174,7 @@ python scripts/audit_golden_dataset.py `
 |异常与空结果|DB/Reranker/AI 不可用、空结果、低可靠度|6 场景 PASS；空/低可靠度不调用 AI|
 |Top-5 Recall|≥95%|OCR 规范化确定性检索 95.00%（114/120），PASS；百炼调优重排为 74.17%（89/120）|
 |分类准确率|≥90%|R5 对既有预测重评分 57.50%（69/120），FAIL；Prompt v2 因 L3 暂停未调用|
-|来源引用准确率|≥98%|Top-5 Context 下当前可达上限 95.00%，BLOCKED_L3_DECISION|
+|来源引用准确率|≥98%|方案 A 已获批；R6 六项复核包等待人工确认，确认后重跑，IN_PROGRESS|
 |PROJECT 跨项目泄漏|0|P03-A06：6 组查询、30 行结果，泄漏 0，PASS|
 
 ## Logs
@@ -172,7 +186,7 @@ python scripts/audit_golden_dataset.py `
 
 ## Known Issues
 
-1. R5 标签 Gate 已完成；P03-A11 达标，但 P03-A12 未达标、P03-A13 因冻结引用口径触发 L3。
+1. R5 标签 Gate 已完成；P03-A11 达标。P03-A12 未达标，P03-A13 已进入获批方案 A 的 R6 人工确认阶段。
 2. 当前调优与验收使用同一 Golden Dataset；正式生产质量结论仍需独立留出集，不能把探索结果解释为泛化能力证明。
 3. 两个资料库共 10 个旧版二进制 `.doc` 尚不支持，不进入本轮候选池。
 4. Windows Server 2025 与 Debian 13 尚未执行本 PoC。
@@ -189,7 +203,7 @@ POC-03 的基础链路、Golden Dataset 标签 Gate 和 P03-A11 已完成；P03-
 
 ## PASS / FAIL
 
-`BLOCKED_L3_DECISION`
+`AWAITING_R6_HUMAN_CONFIRMATION`
 
 ## Alternative
 

@@ -1,0 +1,21 @@
+{
+  "schema_version": "poc-03.r6-citation-import-result.v1",
+  "generated_at": "2026-09-18",
+  "status": "AWAITING_HUMAN_CONFIRMATION",
+  "summary": {
+    "review_scope_count": 6,
+    "preserved_case_count": 114,
+    "resolved_case_count": 0,
+    "pending_count": 6,
+    "returned_count": 0,
+    "issue_count": 0,
+    "output_written": false
+  },
+  "privacy": {
+    "workbook_content_committed": false,
+    "queries_committed": false,
+    "reviewer_names_committed": false,
+    "output_dataset_committed": false
+  },
+  "conclusion": "R6 Golden Dataset export remains blocked until human confirmation."
+}

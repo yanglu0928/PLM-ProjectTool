@@ -13,8 +13,8 @@
 |P03-A09|Hybrid Retrieval|PASS|NOT_RUN|NOT_RUN|PostgreSQL 18.6 + pgvector 0.8.6，Vector 0.6 + Full Text 0.4；每通道候选池为 Top-K 的 4 倍，HNSW `m=32`、`ef_construction=200`、`ef_search=200`；1,000 条合成记录、4 场景 Top-5 平均/最低 Recall 100%，GIN/HNSW 均命中|
 |P03-A10|外部可配置 Reranker|PASS|NOT_RUN|NOT_RUN|百炼华北 2 `qwen3-rerank` OpenAI-compatible `/reranks` 真实 5→3 调用 PASS；相关项位列前二；HTTP 429、超时、无效响应均 fail-open 保留原顺序并记录脱敏错误码|
 |P03-A11|Top-5 Recall ≥95%|PASS|NOT_RUN|NOT_RUN|R5 真实 120 条：中文 OCR 字间空白规范化 + 来源过滤 + 确定性词法 IDF 为 114/120（95.00%）；同数据探索调优，正式生产声明仍需独立留出集|
-|P03-A12|分类准确率 ≥90%|FAIL|NOT_RUN|NOT_RUN|R5 对 R1 既有预测重评分为 69/120（57.50%）；因 P03-A13 触发 L3，尚未启动 Prompt v2 新增外部调用|
-|P03-A13|来源引用准确率 ≥98%|BLOCKED|NOT_RUN|NOT_RUN|现行 Top-5 Context 下引用命中上限为 114/120（95.00%）；6 条唯一目标 Chunk 排名 8/11/24/27/41/117，需 L3 决定修订 Golden 引用集合/问题或验收口径|
+|P03-A12|分类准确率 ≥90%|FAIL|NOT_RUN|NOT_RUN|R5 对 R1 既有预测重评分为 69/120（57.50%）；方案 A 的 R6 人工确认完成前，尚未启动 Prompt v2 新增外部调用|
+|P03-A13|来源引用准确率 ≥98%|IN_PROGRESS|NOT_RUN|NOT_RUN|方案 A 已获批；R6 已为 6 条低区分度样本生成明确问题、原核定引用与 Top-5 对照，114 条及全部分类锁定不变。当前等待人工批量确认，确认前不重跑指标|
 |P03-A14|Context Builder → AIService|PASS|NOT_RUN|NOT_RUN|`RagAIOrchestrator → AIService → ModelRouter → ProviderAdapter` 实测 PASS；Context 保留 Chunk/来源引用和字符预算，PromptId/Version、ProjectId、ChunkIds 可追溯；RAG 模块无 HTTP 或厂商适配代码|
 |P03-A15|异常与空结果|PASS|NOT_RUN|NOT_RUN|6 场景 PASS：DB 不可用停止且不调用 AI；空结果/最高分 <0.5 返回无可靠匹配且不调用 AI；Reranker 不可用按原顺序降级；AI 不可用返回脱敏可重试状态；正常链路保留引用 ID|
 
