@@ -31,7 +31,7 @@ def write_json(path: Path, payload: dict) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Build a deterministic contamination-resistant POC-03 holdout lock")
-    parser.add_argument("--parsed-root", type=Path, required=True)
+    parser.add_argument("--parsed-root", type=Path, action="append", required=True)
     parser.add_argument("--calibration-dataset", type=Path, required=True)
     parser.add_argument("--prompt-payload", type=Path, required=True)
     parser.add_argument("--review-package", type=Path, required=True)
@@ -51,7 +51,11 @@ def main() -> int:
         review_package,
         retrieval_rows,
     )
-    chunks = load_partitioned_chunks(args.parsed_root, args.project_id)
+    chunks = [
+        chunk
+        for parsed_root in args.parsed_root
+        for chunk in load_partitioned_chunks(parsed_root, args.project_id)
+    ]
     try:
         lock, report = build_holdout_lock(
             chunks,

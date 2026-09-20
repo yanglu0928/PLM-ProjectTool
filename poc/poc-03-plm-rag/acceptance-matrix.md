@@ -13,8 +13,8 @@
 |P03-A09|Hybrid Retrieval|PASS|NOT_RUN|NOT_RUN|PostgreSQL 18.6 + pgvector 0.8.6，Vector 0.6 + Full Text 0.4；每通道候选池为 Top-K 的 4 倍，HNSW `m=32`、`ef_construction=200`、`ef_search=200`；1,000 条合成记录、4 场景 Top-5 平均/最低 Recall 100%，GIN/HNSW 均命中|
 |P03-A10|外部可配置 Reranker|PASS|NOT_RUN|NOT_RUN|百炼华北 2 业务空间专属 `compatible-api/v1/reranks`、`qwen3-rerank` 真实 5→3 调用 PASS；相关项位列前二；HTTP 429、超时、无效响应均 fail-open 保留原顺序并记录脱敏错误码|
 |P03-A11|Top-5 Recall ≥95%|PASS|NOT_RUN|NOT_RUN|用户明确授权后完成 R4 真实百炼重排 120/120，纯语义 Top-5 为 91/120（75.83%）。R5 保护性融合保留百炼第 1 名与 OCR 规范化词法前 4 名，复用同批真实结果后精确 Top-5 为 114/120（95.00%）、同文档 118/120（98.33%）；GIN/HNSW 命中，R5 复算外部调用 0。无金标、答案术语或 ChunkId 参与排序；同集探索调优仍需独立留出集验证|
-|P03-A12|分类准确率 ≥90%|FAIL|NOT_RUN|NOT_RUN|Prompt v2 真实预测正确 51/120（42.50%）。用户已批准重新评审并生成 R7 全量确认包，当前 120 条均 PENDING；R7 使用过模型诊断结果，只能作为校准集，确认后仍须在独立留出集上重新验收|
-|P03-A13|来源引用准确率 ≥98%|FAIL|NOT_RUN|NOT_RUN|Prompt v2 真实来源引用正确 62/120（51.67%），越界引用 0。R7 提供 836 条可接受证据候选并建议变更 58 条引用；未确认前不导出，确认后的同集结果不得替代独立留出集|
+|P03-A12|分类准确率 ≥90%|FAIL|NOT_RUN|NOT_RUN|Prompt v2 历史结果 51/120（42.50%）。R7.1 仅作校准；新的 50 条独立来源锁已 PASS，来源配额 33/7/8/2，下一步生成并人工确认独立问题/分类后再真实验收|
+|P03-A13|来源引用准确率 ≥98%|FAIL|NOT_RUN|NOT_RUN|Prompt v2 历史结果 62/120（51.67%），越界引用 0。50 条独立来源锁已排除历史暴露 Chunk 和相邻定位；引用建议与人工确认尚未完成，不能提前改判|
 |P03-A14|Context Builder → AIService|PASS|NOT_RUN|NOT_RUN|`RagAIOrchestrator → AIService → ModelRouter → ProviderAdapter` 实测 PASS；Context 保留 Chunk/来源引用和字符预算，PromptId/Version、ProjectId、ChunkIds 可追溯；RAG 模块无 HTTP 或厂商适配代码|
 |P03-A15|异常与空结果|PASS|NOT_RUN|NOT_RUN|6 场景 PASS：DB 不可用停止且不调用 AI；空结果/最高分 <0.5 返回无可靠匹配且不调用 AI；Reranker 不可用按原顺序降级；AI 不可用返回脱敏可重试状态；正常链路保留引用 ID|
 

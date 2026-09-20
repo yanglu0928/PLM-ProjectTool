@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from .dataset import chunk_document
+from .source_roles import ACTUAL_SURVEY_RECORD_ROLE
 
 
 DEFAULT_QUOTAS = {
@@ -34,14 +35,18 @@ def load_partitioned_chunks(parsed_root: Path, project_id: str) -> list[dict[str
     for corpus_dir in sorted(path for path in parsed_root.iterdir() if path.is_dir()):
         for path in sorted(corpus_dir.glob("*.parsed.json")):
             parsed = json.loads(path.read_text(encoding="utf-8"))
-            chunks.extend(
-                chunk_document(
-                    f"{corpus_dir.name}-{path.name.removesuffix('.parsed.json')}",
+            stem = path.name.removesuffix(".parsed.json")
+            document_id = stem if stem.startswith(f"{corpus_dir.name}-") else f"{corpus_dir.name}-{stem}"
+            document_chunks = chunk_document(
+                    document_id,
                     parsed,
                     project_id,
                     source_corpus=corpus_dir.name,
                 )
-            )
+            evidence_role = str((parsed.get("metadata") or {}).get("evidence_role") or "UNSPECIFIED")
+            for chunk in document_chunks:
+                chunk["evidence_role"] = evidence_role
+            chunks.extend(document_chunks)
     return chunks
 
 
@@ -123,6 +128,9 @@ def build_holdout_lock(
         if source_type not in quotas:
             exclusion_counts["outside_quota_sources"] += 1
             continue
+        if source_type == "SURVEY" and chunk.get("evidence_role") != ACTUAL_SURVEY_RECORD_ROLE:
+            exclusion_counts["survey_reference_only"] += 1
+            continue
         chunk_id = str(chunk["chunk_id"])
         if chunk_id in contaminated_ids:
             exclusion_counts["contaminated_chunk"] += 1
@@ -179,6 +187,7 @@ def build_holdout_lock(
             "scope": "PROJECT",
             "project_id": project_id,
             "source_type": chunk["source_corpus"],
+            "evidence_role": chunk.get("evidence_role", "UNSPECIFIED"),
             "document_id": chunk["document_id"],
             "chunk_id": chunk["chunk_id"],
             "candidate_content": chunk["text"],
@@ -208,6 +217,21 @@ def build_holdout_lock(
         "candidates": candidates,
     }
     selected_documents = {candidate["document_id"] for candidate in candidates}
+    contaminated_documents = {
+        str(chunk["document_id"])
+        for chunk in chunks
+        if str(chunk["chunk_id"]) in contaminated_ids
+    }
+    overlapping_documents = selected_documents & contaminated_documents
+    lock["isolation"]["document_disjoint"] = not overlapping_documents
+    lock["isolation"]["document_disjoint_reason"] = (
+        "All selected documents are disjoint from prior exposure."
+        if not overlapping_documents
+        else (
+            "Legacy standard, contract or technical-agreement sources cannot be fully separated at document "
+            "level; the lock enforces unseen chunks and source locators. Actual survey records are new sources."
+        )
+    )
     report = {
         "schema_version": "poc-03.holdout-lock-result.v1",
         "status": "PASS",
@@ -215,6 +239,7 @@ def build_holdout_lock(
             "target_count": sum(quotas.values()),
             "selected_count": len(candidates),
             "selected_document_count": len(selected_documents),
+            "selected_document_overlap_count": len(overlapping_documents),
             "source_type_counts": dict(sorted(Counter(candidate["source_type"] for candidate in candidates).items())),
             "eligible_counts": dict(sorted(eligible_counts.items())),
             "contaminated_chunk_count": len(contaminated_ids),
@@ -233,6 +258,11 @@ def build_holdout_lock(
                 for candidate in candidates
             ),
             "unique_selected_text": len({candidate["text_sha256"] for candidate in candidates}) == len(candidates),
+            "survey_candidates_use_actual_records": all(
+                candidate["evidence_role"] == ACTUAL_SURVEY_RECORD_ROLE
+                for candidate in candidates
+                if candidate["source_type"] == "SURVEY"
+            ),
         },
         "privacy": {
             "candidate_content_committed": False,
@@ -241,9 +271,14 @@ def build_holdout_lock(
             "source_locators_committed": False,
             "lock_file_committed": False,
         },
+        "source_governance": {
+            "actual_survey_records": "PRIMARY_EVIDENCE",
+            "survey_form_templates": "REFERENCE_ONLY_NOT_ELIGIBLE_FOR_HOLDOUT_QUOTA",
+        },
         "known_limit": (
-            "Document-level isolation is impossible with the current corpus because all 29 documents "
-            "appear in calibration. The lock enforces unseen cases, queries, chunks and source locators."
+            "Legacy standard, contract and technical-agreement documents overlap the calibration corpus at "
+            "document level. The lock therefore enforces unseen cases, queries, chunks and source locators for "
+            "those sources; survey candidates are drawn only from new actual customer discovery records."
         ),
     }
     if not all(report["checks"].values()):

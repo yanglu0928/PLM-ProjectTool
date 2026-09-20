@@ -1,20 +1,31 @@
 {
   "schema_version": "poc-03.holdout-lock-result.v1",
-  "status": "BLOCKED_MISSING_SURVEY_SOURCE",
+  "status": "PASS",
   "platform": "Windows 11 x86-64",
   "target_count": 50,
-  "source_type_quotas": {
+  "selected_count": 50,
+  "selected_document_count": 21,
+  "selected_document_overlap_count": 19,
+  "source_type_counts": {
     "STANDARD_CAPABILITY": 33,
     "CONTRACT": 7,
     "TECHNICAL_AGREEMENT": 8,
     "SURVEY": 2
   },
-  "survey_eligible_count": 0,
-  "strict_exposure_check": "FAIL_CLOSED",
-  "model_exposure_only_check": "FAIL_CLOSED",
-  "lock_file_written": false,
+  "checks": {
+    "all_source_type_quotas_met": true,
+    "selected_chunk_ids_disjoint": true,
+    "selected_source_locators_disjoint": true,
+    "unique_selected_text": true,
+    "survey_candidates_use_actual_records": true
+  },
+  "excluded_survey_reference_blocks": 13,
+  "source_governance": {
+    "actual_survey_records": "PRIMARY_EVIDENCE",
+    "survey_form_templates": "REFERENCE_ONLY_NOT_ELIGIBLE_FOR_HOLDOUT_QUOTA"
+  },
   "tests": {
-    "passed": 137,
+    "passed": 141,
     "failed": 0
   },
   "external_calls": {
@@ -26,9 +37,10 @@
     "candidate_content_committed": false,
     "chunk_ids_committed": false,
     "source_names_committed": false,
+    "source_hashes_committed": false,
     "source_locators_committed": false,
+    "lock_file_committed": false,
     "customer_files_committed": false
   },
-  "required_input": "At least one new survey source document; two are recommended.",
-  "conclusion": "The independent holdout remains blocked. Exposed survey evidence will not be reused to fabricate a complete holdout."
+  "known_limit": "Legacy standard, contract and technical-agreement sources overlap the calibration corpus at document level; unseen chunks and source locators are enforced. Survey candidates use only new actual customer discovery records."
 }

@@ -27,6 +27,7 @@ def make_chunk(source: str, document: str, index: int, locator: str | None = Non
         "source_locators": [locator or f"word/paragraph/{index}"],
         "pages": [1],
         "sections": [],
+        "evidence_role": "ACTUAL_CUSTOMER_DISCOVERY_RECORD" if source == "SURVEY" else "UNSPECIFIED",
     }
 
 
@@ -70,6 +71,18 @@ class HoldoutLockTests(unittest.TestCase):
         self.assertEqual(len(first["candidates"]), 5)
         self.assertNotIn(overlapping_chunk["chunk_id"], {item["chunk_id"] for item in first["candidates"]})
         self.assertTrue(report["checks"]["selected_chunk_ids_disjoint"])
+        self.assertTrue(report["checks"]["survey_candidates_use_actual_records"])
+
+    def test_survey_form_template_does_not_satisfy_holdout_quota(self) -> None:
+        template = make_chunk("SURVEY", "SL-001", 1)
+        template["evidence_role"] = "REFERENCE_FORM_TEMPLATE"
+        with self.assertRaisesRegex(HoldoutQuotaError, "quotas cannot be satisfied"):
+            build_holdout_lock(
+                [template],
+                set(),
+                project_id="P",
+                quotas={"SURVEY": 1},
+            )
 
     def test_unsatisfied_quota_fails_closed(self) -> None:
         with self.assertRaisesRegex(HoldoutQuotaError, "quotas cannot be satisfied"):
