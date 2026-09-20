@@ -35,6 +35,7 @@ class AIRequest:
     output_schema: dict[str, Any] | None = None
     max_tokens: int = 512
     temperature: float = 0.0
+    thinking: str | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -46,6 +47,8 @@ class AIRequest:
             raise ValueError("model is required")
         if not self.messages:
             raise ValueError("at least one message is required")
+        if self.thinking not in {None, "enabled", "disabled"}:
+            raise ValueError("thinking must be enabled, disabled or None")
 
 
 @dataclass(frozen=True, slots=True)

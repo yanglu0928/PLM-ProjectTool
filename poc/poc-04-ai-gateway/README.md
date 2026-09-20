@@ -75,6 +75,7 @@ MockTransport 的亚毫秒耗时只用于代码路径回归，不代表生产网
 2. 当前默认模型名来自 2026-09-17 官方文档快照，正式开发时必须配置化，不得在业务模块硬编码。
 3. Debian 13 依据 `EXC-P0-003` 暂缓，仍未形成 Debian 兼容性结论。
 4. DeepSeek 官方说明 JSON Output 偶尔可能返回空内容；本 PoC 使用最多 3 次受控重试，连续失败后返回 `AI_JSON_INVALID` 或 `AI_SCHEMA_INVALID`，不把无效结果写成业务事实。
+5. 2026-09-20 复验确认 DeepSeek V4 `deepseek-flash` 默认开启思考模式；结构化短任务应通过统一 AIService 显式设置 `thinking="disabled"`，避免推理 Token 消耗完输出预算而得到空正文。该参数已加入 `AIRequest` 并由 ProviderAdapter 统一映射，业务模块仍不得直连厂商。
 
 ## Conclusion
 

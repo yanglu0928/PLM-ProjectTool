@@ -226,6 +226,29 @@ class GatewayTests(unittest.TestCase):
         finally:
             router.close()
 
+    def test_request_can_disable_thinking_mode(self) -> None:
+        captured: dict = {}
+
+        def handler(incoming: httpx.Request) -> httpx.Response:
+            captured.update(json.loads(incoming.content))
+            return response("ok")
+
+        service, router = self.service(handler)
+        try:
+            base = request()
+            service.complete(
+                AIRequest(
+                    task_type=base.task_type,
+                    provider=base.provider,
+                    model=base.model,
+                    messages=base.messages,
+                    thinking="disabled",
+                )
+            )
+            self.assertEqual(captured["thinking"], {"type": "disabled"})
+        finally:
+            router.close()
+
     def test_stream_is_not_retried_after_output_started(self) -> None:
         calls = 0
 

@@ -57,6 +57,8 @@ class DeepSeekAdapter:
         }
         if request.output_schema is not None:
             payload["response_format"] = {"type": "json_object"}
+        if request.thinking is not None:
+            payload["thinking"] = {"type": request.thinking}
         return payload
 
     @staticmethod
