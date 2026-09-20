@@ -1,0 +1,38 @@
+{
+  "schema_version": "poc-03.r7-semantic-review-result.v1",
+  "status": "AWAITING_HUMAN_CONFIRMATION",
+  "platform": "Windows 11 x86-64",
+  "source_dataset": "R6",
+  "review_scope_count": 120,
+  "evidence_candidate_count": 836,
+  "original_document_resolved_count": 120,
+  "suggested_classification_change_count": 73,
+  "suggested_citation_change_count": 58,
+  "import_precheck": {
+    "pending_count": 120,
+    "issue_count": 0,
+    "output_dataset_written": false
+  },
+  "workbook_validation": {
+    "sheet_count": 4,
+    "rendered_sheet_count": 4,
+    "formula_error_count": 0
+  },
+  "tests": {
+    "passed": 129,
+    "failed": 0
+  },
+  "external_calls": {
+    "embedding": 0,
+    "reranker": 0,
+    "llm": 0
+  },
+  "privacy": {
+    "workbook_committed": false,
+    "queries_committed": false,
+    "document_text_committed": false,
+    "reviewer_names_committed": false,
+    "api_keys_committed": false
+  },
+  "validation_limit": "R7 is an AI-assisted calibration dataset. The same 120 cases cannot close P03-A12/P03-A13; an independently constructed holdout set remains mandatory."
+}

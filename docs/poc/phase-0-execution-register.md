@@ -16,7 +16,7 @@
 |---|---|---|---|---|---|---|---|
 |POC-01|P0.01/P0.01S/P0.02/P0.03/P0.04|Python 3.13 三平台依赖及离线安装|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11、Windows Server 2025 PASS；Debian 13 经用户批准暂缓，不构成兼容性结论|`poc/poc-01-python-313-dependencies/`、`docs/poc/phase-0-exceptions.md`|
 |POC-02|P0.05/P0.06/P0.07/P0.08|PostgreSQL 18 + pgvector|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11 功能链 PASS；Windows Server 2025 完全断网功能链 PASS；Windows 11 断网重放与 Debian 13 经用户批准暂缓，不构成对应兼容性结论|`poc/poc-02-postgresql-18-pgvector/`、`docs/poc/phase-0-exceptions.md`|
-|POC-03|P0.09/P0.10/P0.12|PLM RAG|FAIL|2026-09-17|-|P03-A11 R5 保护性融合达到 Top-5 114/120（95.00%）并 PASS；分类仍为 57/120（47.50%）、引用仍为 62/120（51.67%），P03-A12/A13 未达 Gate，因此 PoC 总体保持 FAIL|`poc/poc-03-plm-rag/`|
+|POC-03|P0.09/P0.10/P0.12|PLM RAG|FAIL|2026-09-17|-|P03-A11 R5 保护性融合达到 Top-5 114/120（95.00%）并 PASS；Prompt v2 分类为 51/120（42.50%）、引用为 62/120（51.67%）。R7 重新评审包等待人工确认，独立留出集尚未建立，PoC 总体保持 FAIL|`poc/poc-03-plm-rag/`|
 |POC-04|P0.11|AI Gateway / DeepSeek|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11、Windows Server 2025 统一网关、11/11 确定性场景及真实文本/流式/结构化/401 PASS；Debian 13 经用户批准暂缓，不构成兼容性结论|`poc/poc-04-ai-gateway/`、`docs/poc/phase-0-exceptions.md`|
 |POC-05|P0.04/P0.12|Document + OCR|IN_PROGRESS|2026-09-17|-|Windows 11 六类输入和主辅 OCR 功能链 PASS；Windows Server 2025 完全断网 8/8 PASS；Windows 11 真实资料 26/26 个受支持文件通过并含 5 个扫描 PDF；Windows 11 断网、Debian 13 和真实扫描语义准确率待处理|`poc/poc-05-document-ocr/`|
 |POC-06|P0.16/P0.17|Word / PPT|NOT_STARTED|-|-|-|-|
@@ -90,3 +90,4 @@
 |2026-09-20|P03-A12-R1 Prompt v2 本地准备 PASS：仅保留五类正式标签，按匹配性、充分性、满足程度顺序判断；120/120 条 payload 各含 5 个来源隔离且未截断的 R5 Context，Golden 字段泄漏 0，全部外部调用 0，124/124 测试 PASS。分类准确率等待获批后的 DeepSeek 真实复验。|
 |2026-09-20|用户明确授权 P03-A12-R2 仅向 DeepSeek 外发 120 条查询及各 5 个 R5 Context；`--prediction-only` 复用完整本地 Embedding/R5 缓存，Embedding 与当前轮 Reranker 外部调用均为 0。120/120 条预测完成；两个瞬时空/非约束响应由逐条缓存断点续跑恢复，PostgreSQL 每轮均正常停止。|
 |2026-09-20|Prompt v2 真实复验 FAIL：Top-5 114/120（95.00%），分类 51/120（42.50%），引用 62/120（51.67%），越界引用 0。诊断显示部分抽取式问题无法从输入推导人工“资料不足/非标”标签，唯一期望 Chunk 口径也缺少等价引用集合；冻结 R6、90%/98% 门槛保持不变，P03-A12/A13 转入 L3 质量 Gate。|
+|2026-09-20|用户批准重新评审；保留 R6，新建 R7 全量 120 条语义/分类/引用确认包。工作簿含 836 条证据候选和 120/120 原文定位，AI 建议改分类 73 条、改引用 58 条；合同、技术协议和调研材料缺少标准能力交叉证据时保守建议资料不足。4/4 表渲染、公式错误 0，129/129 测试 PASS；未确认预检为 120 PENDING、0 个问题、不输出数据集。|

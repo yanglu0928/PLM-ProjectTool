@@ -199,9 +199,18 @@
 - Prompt v2 分类正确 51/120（42.50%），引用正确 62/120（51.67%），越界引用 0；P03-A12/P03-A13 均 FAIL。47 条 `INSUFFICIENT_INFORMATION` 中 30 条误判为 `STANDARD_SATISFIED`，6 条 `NON_STANDARD` 正确数为 0。
 - 脱敏汇总见 `prompt-v2-live-quality-result.json`，失败诊断见 `prompt-v2-live-failure-analysis.md`；查询、Context、向量、逐条模型响应和 case-level 结果未提交。
 
+## R7 Semantic and Citation Re-review
+
+- 用户批准重新打开业务语义评审；R6、Prompt v1/v2 和历史失败证据全部保留不变。
+- R7 工作簿覆盖 120 条样本，预填可判定目标、五类分类建议、分类理由和可接受引用集合；AI 建议改分类 73 条、改引用 58 条。合同、技术协议和调研材料缺少标准能力交叉证据时保守建议资料不足。
+- 本地证据定位器包含 836 条候选和 120/120 个原文入口；工作簿 4/4 表已渲染、回读，公式错误 0。
+- 严格导入预检为 120 PENDING、0 个问题、不输出数据集；范围、AI 建议、人工必填项和引用白名单均失败关闭。
+- POC-03 全量 129/129 单元测试 PASS，本轮 Embedding、Reranker、LLM 外部调用均为 0；脱敏汇总见 `r7-semantic-review-result.json`。
+- R7 使用了 Prompt v2 诊断结果，只能作为校准集；同一 120 条上的后续分数不得用于关闭 P03-A12/P03-A13，必须另建独立留出集。
+
 ## Result
 
-R6 Golden Dataset 已完成严格导入、覆盖审计和 Prompt v2 真实复验。P03-A11-R5 保护性融合达到 114/120（95.00%）并 PASS；P03-A12/P03-A13 分别为 42.50%/51.67%，仍保持 FAIL，因此 POC-03 总体尚未通过。
+R6 Golden Dataset 已完成严格导入、覆盖审计和 Prompt v2 真实复验。P03-A11-R5 保护性融合达到 114/120（95.00%）并 PASS；P03-A12/P03-A13 分别为 42.50%/51.67%，仍保持 FAIL。用户已批准重新评审并生成 R7：120 条确认项、836 条证据候选、原文定位 120/120，未确认预检 120 PENDING、0 个问题、不输出数据集；129/129 测试 PASS。R7 仅为校准集，独立留出集完成前 POC-03 仍不能收口。
 
 ## Known Issues
 
@@ -211,3 +220,4 @@ R6 Golden Dataset 已完成严格导入、覆盖审计和 Prompt v2 真实复验
 4. 旧 R2/R3 是历史评审基线，不自动转化为新四类候选的人工批准状态。
 5. R4 的本地证据定位器是 PoC；Office 文件尚不能从浏览器自动跳到精确段落并高亮，正式产品需由内置 Evidence Viewer 实现。
 6. P03-A11-R5 结果恰好达到 95% 门槛且使用同集探索调优；独立留出集与 Windows Server 2025、Debian 13 仍未验证，不得外推平台或生产泛化结论。
+7. R7 显示 Prompt v2 建议并据此辅助重标，因此确认后的 R7 不具备独立验收集资格；不得以同集复测结果替代新的独立留出集。

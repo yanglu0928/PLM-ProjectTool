@@ -2,7 +2,7 @@
 
 ## Status
 
-`FAIL / P03_A11_PASS_READY_FOR_P03_A12`
+`FAIL / BLOCKED_QUALITY_GATE / R7_AWAITING_HUMAN_CONFIRMATION`
 
 ## Objective
 
@@ -54,6 +54,8 @@ P03-A11-R4 已把该诊断路径接回统一链：Vector、Full Text 和词法 I
 
 P03-A12-R2 已在用户明确授权后完成 Prompt v2 真实复验。120/120 条预测完整返回，Embedding 外部调用 0、当前轮 Reranker 外部调用 0，复用 120 条已获批真实重排结果；两个瞬时空/非约束响应通过逐条缓存断点续跑恢复。分类正确 51/120（42.50%），低于 90%；47 条 `INSUFFICIENT_INFORMATION` 中 30 条仍被判为 `STANDARD_SATISFIED`，6 条 `NON_STANDARD` 正确数为 0。部分抽取式问题本身未携带“满足/非标/资料不足”的业务判定目标，继续在同一验收集上调 Prompt 存在把 Golden 反向编码进规则的风险，因此 P03-A12 保持 FAIL，等待 R6 可判定性 Gate。
 
+用户随后批准重新评审。R6 保留为历史基线，R7 对 120 条样本重新预填可判定的业务目标、五类分类建议、分类理由和可接受引用集合；工作簿包含 120 条主确认项、五类业务说明、836 条证据候选和技术底稿，原文定位 120/120。AI 建议改分类 73 条、改引用 58 条；合同、技术协议和调研材料缺少标准能力交叉证据时保守建议为资料不足，而不直接采纳失败的 Prompt v2 满足程度结论。未确认预检为 120 条 PENDING、0 个问题且不生成数据集，129/129 单元测试 PASS。本轮没有新增外部调用。R7 使用过 Prompt v2 的诊断结果，只能作为校准集；即使人工确认，也不能在同一 120 条上关闭 P03-A12/P03-A13，后续必须另建独立留出集。
+
 P03-A05 已验证模型切换纪律：保留激活的 `qwen3.7-text-embedding` 1024 维 `v1`，拒绝对旧 index_id 原地更换模型；创建独立 `text-embedding-v4` 768 维 `v2`，使用 120 条固定非客户文本执行 12 批真实请求，120/120 全量重建完成，旧向量复用数为 0。`v2` 状态为验证通过但未激活，不替换当前绑定。
 
 P03-A06 已在本地 PostgreSQL 18.6 + pgvector 0.8.6 实测 PROJECT 强制隔离：两个项目各 20 条合成记录，Vector、Full Text、Hybrid 各执行双项目 Top-5 查询；30 行结果跨项目泄漏为 0。缺失 ProjectId 在数据库调用前被拒绝，参数注入式 ProjectId 仅作为参数处理并返回 0 行。验证结束后临时 Schema 已删除。
@@ -85,6 +87,8 @@ R4 延续对用户体验的 Phase 0 验证，不是正式项目交接 `ActionIte
 - R5 导入器独立重算分组和生效分类，不信任公式缓存；查询、来源类型、R4/AI 分类组合或分组被改动时失败关闭。
 - R6 主表仅有 6 条低区分度样本；选择一次“确认全部AI建议”并填写确认人/日期即可完成常规确认，单条例外才需要维护黄色列。
 - R6 证据页同时展示原核定 Chunk 和 Top-5 对照，并提供原始文件入口。严格导入器只允许使用已展示的引用，逐对象验证其余 114 条未变化。
+- R7 主表覆盖 120 条，可一次确认全部 AI 建议；只有例外项需要在黄色列维护人工判定目标、最终分类、引用和说明。五类业务含义单独成表，避免仅凭技术代码选择。
+- R7 的证据候选页提供 836 条证据卡与原文件入口；严格导入器锁定 AI 建议字段，人工引用只能从已展示候选中选择。未确认、退回、缺少人工说明或越界引用均失败关闭。
 - 详细边界和正式模块建议见 `confirmation-ux-prototype.md`。
 
 ## Local Review Prefill
@@ -138,6 +142,20 @@ python scripts/import_r6_citation_review.py `
   --output <本地R6 Golden Dataset.json> `
   --report <本地脱敏导入报告.json>
 ```
+
+R7 全量语义与引用重新评审保留 R6 不变。工作簿未确认、存在退回项、人工例外缺字段或引用不在证据候选内时均不输出数据集：
+
+```powershell
+python scripts/import_r7_semantic_review.py `
+  --workbook <本地R7确认工作簿.xlsx> `
+  --golden <本地R6 Golden Dataset.json> `
+  --package <本地R7复核包.json> `
+  --dataset-id poc-03-golden-2026-09-20-r7 `
+  --output <本地R7校准数据集.json> `
+  --report <本地脱敏导入报告.json>
+```
+
+R7 是 AI 辅助校准集。即使导入成功，也必须另建未被 Prompt v1/v2 使用的独立留出集，才能重新执行 P03-A12/P03-A13 验收。
 
 实际 Embedding 探测只从环境变量读取 Key，提交报告不含输入文本、向量值或 Secret：
 
@@ -235,7 +253,7 @@ python scripts/prepare_prompt_v2_offline.py `
 
 ## Conclusion
 
-POC-03 的基础链路已完成；P03-A11 在 Windows 11 上以 R5 保护性融合达到 95.00% 并 PASS。Prompt v2 已完成真实 DeepSeek 复验，但 P03-A12/P03-A13 分别只有 42.50%/51.67%，仍未达门槛。下一步必须先由 L3 决定是否重新打开 R6 的问题、标签理由与可接受引用集合评审；未经确认不得修改冻结基线或继续新增客户数据外发。
+POC-03 的基础链路已完成；P03-A11 在 Windows 11 上以 R5 保护性融合达到 95.00% 并 PASS。Prompt v2 已完成真实 DeepSeek 复验，但 P03-A12/P03-A13 分别只有 42.50%/51.67%，仍未达门槛。用户已批准重新评审，R7 工作簿正在等待人工确认；确认后先严格导入为校准集，再另建独立留出集。任何新客户数据外发仍需当轮明确授权。
 
 ## PASS / FAIL
 
