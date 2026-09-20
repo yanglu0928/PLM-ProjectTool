@@ -69,6 +69,8 @@
 - P03-A11-R4 将来源类型过滤、OCR 中文空白规范化和确定性词法 IDF Top-20 接入正式候选链，保留 Vector/Full Text 0.6/0.4；检索缓存新增 pipeline version 防止误用旧排名。无外部调用的 120 条 PostgreSQL 回放候选池覆盖 119/120（99.17%），并新增不调用 DeepSeek 的 `--retrieval-only` 真实 Reranker 验收模式。
 - 用户明确授权后完成 P03-A11-R4 的 120/120 条百炼 `qwen3-rerank` 真实复验，纯语义 Top-5 为 91/120（75.83%）；新增瞬时网络错误/429/5xx 有限重试与指数退避，已有逐条缓存可在超时后断点恢复。
 - P03-A11-R5 新增无标签保护性融合：保留百炼重排第 1 名和 OCR 规范化词法前 4 名；复用 120 条真实重排缓存后精确 Top-5 达到 114/120（95.00%）、同文档 118/120（98.33%），P03-A11 PASS。结果来自同一 Golden Dataset 的探索调优且没有门槛余量，正式生产声明仍要求独立留出集。
+- P03-A12-R1 新增 Prompt v2：正式输出只允许五类业务标签，按“匹配性 → 充分性 → 满足程度”顺序判断，禁止把资料缺失推断为非标准，使用 OCR 空白规范化后的完整 Chunk，并将预测缓存绑定 `PromptId + PromptVersion`。
+- 新增 `--prediction-only` 失败关闭模式：要求完整本地 Embedding 与 R5 检索缓存，只允许执行 DeepSeek 预测，不调用百炼 Embedding/Reranker。120/120 条本地 payload 离线审计 PASS，来源越界、正文截断和 Golden 字段泄漏均为 0；分类准确率仍等待真实复验。
 - POC-03 评审导入器兼容人工“确认全部建议定位”和 `YYYY.M.D`/`YYYY/M/D` 本地日期；修正后实际评审表为 109 条 APPROVED、11 条 PENDING、0 个导入问题。
 - POC-03 启动 P03-A04，新增不可变索引—Embedding 模型绑定与向量维度保护；同一索引禁止原地更换模型或维度。
 - POC-03 新增 OpenAI-compatible Embedding 安全探测入口；API Key 仅从环境变量读取，报告不保存输入文本、向量值或厂商响应正文。

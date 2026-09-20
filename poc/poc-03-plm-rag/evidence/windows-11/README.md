@@ -188,6 +188,15 @@
 - POC-03 全量单元测试为 117/117 PASS，端口 55432 在验证结束后无监听。脱敏汇总见 `r5-protected-lexical-result.json`。
 - 结果没有门槛余量，且同一 Golden Dataset 用于探索调优；独立留出集验证前不得宣称生产泛化能力。
 
+## P03-A12 Prompt v2 Offline Preparation
+
+- v1 真实混淆矩阵显示：47 条 `INSUFFICIENT_INFORMATION` 只有 7 条正确，其中 37 条被判为 `STANDARD_SATISFIED`；6 条 `NON_STANDARD` 正确数为 0。
+- Prompt v2 只允许五类正式标签，移除工作流态；强制按“匹配性 → 充分性 → 满足程度”判断，并明确禁止把资料未提及直接判为非标准。
+- Context 使用 OCR 空白规范化后的完整 Chunk（上限 1000 字），Prediction Cache 强制绑定 `poc03-quality/v2`；v1、缺失版本或其他 Prompt 的缓存不会复用。
+- 120/120 条本地 payload 各含 5 个 R5 Context，精确证据可用 114/120、同文档 118/120、来源越界 0、规范化后正文截断 0、Golden 字段泄漏 0。
+- 新增 `--prediction-only` 失败关闭模式，后续复验只允许 DeepSeek 调用；Embedding/Reranker 缓存不完整时停止，不回退到外部调用。
+- 本步骤 Embedding、Reranker、DeepSeek 调用均为 0，不能据此声称 P03-A12 通过。脱敏证据见 `prompt-v2-offline-audit.json`。
+
 ## Result
 
 R6 Golden Dataset 已完成严格导入、覆盖审计和真实端到端复验。P03-A11-R5 保护性融合达到 114/120（95.00%）并 PASS；P03-A12/P03-A13 仍保持 FAIL，因此 POC-03 总体尚未通过。

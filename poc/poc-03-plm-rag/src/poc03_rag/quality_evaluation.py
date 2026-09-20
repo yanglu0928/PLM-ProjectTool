@@ -200,7 +200,10 @@ def tsquery_or(terms: Iterable[str]) -> str:
 
 
 def parse_plain_prediction(
-    text: str, *, valid_chunk_ids: Iterable[str]
+    text: str,
+    *,
+    valid_chunk_ids: Iterable[str],
+    allowed_classifications: Iterable[str] = ALLOWED_CLASSIFICATIONS,
 ) -> dict[str, Any]:
     """Parse one constrained final marker without accepting invented IDs."""
     match = re.fullmatch(r"\s*([A-Z_]+)\s*\|\s*([^\s|]+)\s*", text)
@@ -213,7 +216,8 @@ def parse_plain_prediction(
         classification, chunk_id = markers[0]
     else:
         classification, chunk_id = match.groups()
-    if classification not in ALLOWED_CLASSIFICATIONS:
+    allowed = {str(value) for value in allowed_classifications}
+    if classification not in allowed:
         raise ValueError("prediction classification is not allowed")
     allowed_ids = {str(value) for value in valid_chunk_ids}
     if chunk_id not in allowed_ids:

@@ -197,6 +197,14 @@ class QualityEvaluationTests(unittest.TestCase):
                 valid_chunk_ids=["CHUNK-001"],
             )
 
+    def test_plain_prediction_parser_can_exclude_workflow_only_label(self) -> None:
+        with self.assertRaisesRegex(ValueError, "classification"):
+            parse_plain_prediction(
+                "HUMAN_CONFIRMATION_REQUIRED|CHUNK-001",
+                valid_chunk_ids=["CHUNK-001"],
+                allowed_classifications=["STANDARD_SATISFIED"],
+            )
+
     def test_plain_prediction_parser_accepts_one_framed_final_line(self) -> None:
         prediction = parse_plain_prediction(
             "Internal analysis may appear here.\nFINAL:NON_STANDARD|CHUNK-001",

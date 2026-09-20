@@ -13,7 +13,7 @@
 |P03-A09|Hybrid Retrieval|PASS|NOT_RUN|NOT_RUN|PostgreSQL 18.6 + pgvector 0.8.6，Vector 0.6 + Full Text 0.4；每通道候选池为 Top-K 的 4 倍，HNSW `m=32`、`ef_construction=200`、`ef_search=200`；1,000 条合成记录、4 场景 Top-5 平均/最低 Recall 100%，GIN/HNSW 均命中|
 |P03-A10|外部可配置 Reranker|PASS|NOT_RUN|NOT_RUN|百炼华北 2 业务空间专属 `compatible-api/v1/reranks`、`qwen3-rerank` 真实 5→3 调用 PASS；相关项位列前二；HTTP 429、超时、无效响应均 fail-open 保留原顺序并记录脱敏错误码|
 |P03-A11|Top-5 Recall ≥95%|PASS|NOT_RUN|NOT_RUN|用户明确授权后完成 R4 真实百炼重排 120/120，纯语义 Top-5 为 91/120（75.83%）。R5 保护性融合保留百炼第 1 名与 OCR 规范化词法前 4 名，复用同批真实结果后精确 Top-5 为 114/120（95.00%）、同文档 118/120（98.33%）；GIN/HNSW 命中，R5 复算外部调用 0。无金标、答案术语或 ChunkId 参与排序；同集探索调优仍需独立留出集验证|
-|P03-A12|分类准确率 ≥90%|FAIL|NOT_RUN|NOT_RUN|R6 真实 DeepSeek 预测 120/120，正确 57/120（47.50%），预测缺失 0；模型显著偏向 `STANDARD_SATISFIED`，三项质量 Gate 不通过|
+|P03-A12|分类准确率 ≥90%|FAIL|NOT_RUN|NOT_RUN|v1 真实 DeepSeek 预测 120/120，正确 57/120（47.50%），其中 47 条 `INSUFFICIENT_INFORMATION` 有 37 条误判为 `STANDARD_SATISFIED`。Prompt v2 已完成零外部调用离线审计：五类正式标签、顺序证据 Gate、完整 OCR 规范化 Context、PromptVersion 缓存隔离，120/120 payload PASS；尚未取得本轮 DeepSeek 数据外发授权，不能提前改判|
 |P03-A13|来源引用准确率 ≥98%|FAIL|NOT_RUN|NOT_RUN|R6 真实来源引用正确 62/120（51.67%），越界引用 0；同文档检索 88/120，但验收按精确 Chunk 口径，不以同文档命中替代|
 |P03-A14|Context Builder → AIService|PASS|NOT_RUN|NOT_RUN|`RagAIOrchestrator → AIService → ModelRouter → ProviderAdapter` 实测 PASS；Context 保留 Chunk/来源引用和字符预算，PromptId/Version、ProjectId、ChunkIds 可追溯；RAG 模块无 HTTP 或厂商适配代码|
 |P03-A15|异常与空结果|PASS|NOT_RUN|NOT_RUN|6 场景 PASS：DB 不可用停止且不调用 AI；空结果/最高分 <0.5 返回无可靠匹配且不调用 AI；Reranker 不可用按原顺序降级；AI 不可用返回脱敏可重试状态；正常链路保留引用 ID|

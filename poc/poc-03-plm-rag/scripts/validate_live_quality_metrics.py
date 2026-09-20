@@ -24,7 +24,6 @@ sys.path.insert(0, str(REPO_ROOT / "poc" / "poc-04-ai-gateway" / "src"))
 
 from poc03_rag.dataset import chunk_document  # noqa: E402
 from poc03_rag.quality_evaluation import (  # noqa: E402
-    ALLOWED_CLASSIFICATIONS,
     evaluate_quality,
     evaluate_retrieval_quality,
     lexical_terms,
@@ -34,6 +33,16 @@ from poc03_rag.quality_evaluation import (  # noqa: E402
     rank_lexical_overlap,
     searchable_text,
     tsquery_or,
+)
+from poc03_rag.prompt_v2 import (  # noqa: E402
+    FINAL_CLASSIFICATIONS,
+    PLAIN_RECOVERY_PROMPT,
+    PROMPT_ID,
+    PROMPT_VERSION,
+    RECOVERY_JSON_PROMPT,
+    SYSTEM_PROMPT,
+    build_case_payload,
+    prediction_schema,
 )
 from poc03_rag.reranker import (  # noqa: E402
     RerankCandidate,
@@ -393,62 +402,16 @@ def _hybrid_candidates(
 
 
 def _prediction_schema() -> dict[str, Any]:
-    return {
-        "type": "object",
-        "required": ["items"],
-        "properties": {
-            "items": {
-                "type": "array",
-                "minItems": 1,
-                "items": {
-                    "type": "object",
-                    "required": ["case_id", "classification", "citation_chunk_ids"],
-                    "properties": {
-                        "case_id": {"type": "string", "minLength": 1},
-                        "classification": {"enum": sorted(ALLOWED_CLASSIFICATIONS)},
-                        "citation_chunk_ids": {
-                            "type": "array",
-                            "minItems": 1,
-                            "uniqueItems": True,
-                            "items": {"type": "string", "minLength": 1},
-                        },
-                    },
-                    "additionalProperties": False,
-                },
-            }
-        },
-        "additionalProperties": False,
-    }
-
-
-SYSTEM_PROMPT = """You are evaluating PLM implementation evidence. Use only the supplied retrieved contexts.
-For each case choose exactly one classification:
-- STANDARD_SATISFIED: the supplied standard capability clearly satisfies the question.
-- PARTIALLY_SATISFIED: only part is supported or project configuration/integration remains.
-- NON_STANDARD: the requirement clearly needs non-standard development or customization.
-- INSUFFICIENT_INFORMATION: relevant evidence exists but is insufficient for a conclusion.
-- NO_RELIABLE_MATCH: no supplied context reliably matches the question.
-- HUMAN_CONFIRMATION_REQUIRED: evidence is relevant but contract scope, responsibility, or project judgement needs human confirmation.
-Return one JSON object exactly in this shape and do not use Markdown fences:
-{"items":[{"case_id":"the supplied case id","classification":"one allowed enum","citation_chunk_ids":["one supplied chunk_id"]}]}
-Cite one or more chunk_id values from the supplied contexts. Never invent an id."""
-
-RECOVERY_JSON_PROMPT = """Use only the supplied question and contexts. Return valid JSON only.
-Choose exactly one of STANDARD_SATISFIED, PARTIALLY_SATISFIED, NON_STANDARD,
-INSUFFICIENT_INFORMATION, NO_RELIABLE_MATCH, HUMAN_CONFIRMATION_REQUIRED and cite one supplied chunk_id.
-Never add Markdown or explanation.
-Exact shape: {"items":[{"case_id":"supplied id","classification":"ALLOWED_ENUM","citation_chunk_ids":["supplied chunk_id"]}]}"""
-
-PLAIN_RECOVERY_PROMPT = """Use only the supplied question and contexts.
-End the response with exactly one line in this format: FINAL:CLASSIFICATION|CHUNK_ID
-CLASSIFICATION must be exactly one of STANDARD_SATISFIED, PARTIALLY_SATISFIED,
-NON_STANDARD, INSUFFICIENT_INFORMATION, NO_RELIABLE_MATCH, HUMAN_CONFIRMATION_REQUIRED.
-CHUNK_ID must be one supplied id.
-Do not return JSON or Markdown. Never emit more than one FINAL line."""
+    return prediction_schema()
 
 
 def _load_prediction_cache(path: Path) -> dict[str, dict[str, Any]]:
-    return {str(row["case_id"]): row for row in _load_json_lines(path)}
+    return {
+        str(row["case_id"]): row
+        for row in _load_json_lines(path)
+        if row.get("prompt_id") == PROMPT_ID
+        and row.get("prompt_version") == PROMPT_VERSION
+    }
 
 
 def _predict(
@@ -478,24 +441,12 @@ def _predict(
             payload_cases = []
             for case in batch:
                 case_id = str(case["case_id"])
-                contexts = []
-                for chunk_id in retrievals[case_id]:
-                    chunk = chunks_by_id[chunk_id]
-                    contexts.append(
-                        {
-                            "chunk_id": chunk_id,
-                            "document_id": chunk["document_id"],
-                            "source_locators": chunk["source_locators"],
-                            "text": str(chunk["text"])[:600],
-                        }
-                    )
                 payload_cases.append(
-                    {
-                        "case_id": case_id,
-                        "source_type": case["source_type"],
-                        "query": case["query"],
-                        "contexts": contexts,
-                    }
+                    build_case_payload(
+                        case,
+                        retrievals[case_id],
+                        chunks_by_id,
+                    )
                 )
             request_payload = json.dumps({"cases": payload_cases}, ensure_ascii=False)
             format_fallback = False
@@ -512,7 +463,7 @@ def _predict(
                         output_schema=_prediction_schema(),
                         max_tokens=1024,
                         temperature=0.0,
-                        metadata={"prompt_id": "poc03-quality", "prompt_version": "v1"},
+                        metadata={"prompt_id": PROMPT_ID, "prompt_version": PROMPT_VERSION},
                     )
                 )
             except AIError as first_error:
@@ -546,8 +497,8 @@ def _predict(
                             max_tokens=4096,
                             temperature=0.0,
                             metadata={
-                                "prompt_id": "poc03-quality-json-recovery",
-                                "prompt_version": "v1",
+                                "prompt_id": f"{PROMPT_ID}-json-recovery",
+                                "prompt_version": PROMPT_VERSION,
                             },
                         )
                     )
@@ -573,15 +524,17 @@ def _predict(
                                 max_tokens=2048,
                                 temperature=0.0,
                                 metadata={
-                                    "prompt_id": "poc03-quality-plain-recovery",
-                                    "prompt_version": "v1",
+                                    "prompt_id": f"{PROMPT_ID}-plain-recovery",
+                                    "prompt_version": PROMPT_VERSION,
                                     "recovery_attempt": recovery_attempt,
                                 },
                             )
                         )
                         try:
                             parsed = parse_plain_prediction(
-                                candidate.text, valid_chunk_ids=valid_chunk_ids
+                                candidate.text,
+                                valid_chunk_ids=valid_chunk_ids,
+                                allowed_classifications=FINAL_CLASSIFICATIONS,
                             )
                         except ValueError as exc:
                             last_parse_error = exc
@@ -609,6 +562,8 @@ def _predict(
                 item["format_fallback"] = bool(
                     item.get("format_fallback") or format_fallback
                 )
+                item["prompt_id"] = PROMPT_ID
+                item["prompt_version"] = PROMPT_VERSION
                 predictions[item["case_id"]] = item
                 fallback_count += bool(item["format_fallback"])
             _append_json_lines(cache_path, items)
@@ -645,19 +600,29 @@ def main() -> int:
     parser.add_argument("--port", type=int, default=55432)
     parser.add_argument("--user", default="poc_admin")
     parser.add_argument("--database", default="postgres")
-    parser.add_argument(
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
         "--retrieval-only",
         action="store_true",
         help="Run live embedding/hybrid/reranker validation without DeepSeek predictions",
+    )
+    mode.add_argument(
+        "--prediction-only",
+        action="store_true",
+        help="Require complete local embedding/retrieval caches and call only DeepSeek",
     )
     args = parser.parse_args()
 
     bailian_key = os.environ.get("DASHSCOPE_API_KEY", "").strip()
     deepseek_key = os.environ.get("DEEPSEEK_API_KEY", "").strip()
-    if not bailian_key:
+    if not bailian_key and not args.prediction_only:
         raise RuntimeError("DASHSCOPE_API_KEY is required")
     if not args.retrieval_only and not deepseek_key:
         raise RuntimeError("DEEPSEEK_API_KEY is required unless --retrieval-only is set")
+    if args.prediction_only and (not args.embedding_cache or not args.reranker_cache):
+        raise RuntimeError(
+            "--prediction-only requires --embedding-cache and --reranker-cache"
+        )
     args.output_dir.mkdir(parents=True, exist_ok=True)
     dataset = json.loads(args.dataset.read_text(encoding="utf-8"))
     cases = list(dataset.get("cases") or [])
@@ -690,7 +655,7 @@ def main() -> int:
     embedding_items.extend(
         (f"QUERY:{case['case_id']}", str(case["query"])) for case in cases
     )
-    if args.retrieval_only:
+    if args.retrieval_only or args.prediction_only:
         embeddings = _load_complete_embeddings(
             embedding_items,
             cache_path=embedding_cache,
@@ -763,6 +728,10 @@ def main() -> int:
                 hnsw_index_used = hnsw_index_used or bool(cached.get("hnsw_index_used"))
                 reranker_cached_live_results_reused += bool(cached.get("reranker_live"))
                 continue
+            if args.prediction_only:
+                raise RuntimeError(
+                    f"prediction-only mode requires a complete current R5 retrieval cache: {case_id}"
+                )
             source_type = str(case["source_type"])
             lexical_top5 = rank_lexical_overlap(
                 str(case["query"]),
@@ -841,7 +810,9 @@ def main() -> int:
             "semantic_reranker_count": TOP_K - PROTECTED_LEXICAL_COUNT,
             "reranker_provider": "aliyun-bailian",
             "reranker_model": args.reranker_model,
-            "embedding_external_calls": 0 if args.retrieval_only else "as_needed",
+            "embedding_external_calls": 0
+            if args.retrieval_only or args.prediction_only
+            else "as_needed",
             "reranker_external_calls_current_run": reranker_external_calls,
             "cached_live_reranker_results_reused": reranker_cached_live_results_reused,
         }
@@ -909,8 +880,8 @@ def main() -> int:
             **common_configuration,
             "ai_provider": "deepseek",
             "ai_model": args.deepseek_model,
-            "prompt_id": "poc03-quality",
-            "prompt_version": "v1",
+            "prompt_id": PROMPT_ID,
+            "prompt_version": PROMPT_VERSION,
             "format_recovery": "structured-json-then-constrained-token",
             "label_leakage": False,
         }

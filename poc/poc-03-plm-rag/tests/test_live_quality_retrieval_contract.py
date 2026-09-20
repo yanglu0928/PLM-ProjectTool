@@ -16,6 +16,7 @@ from validate_live_quality_metrics import (  # noqa: E402
     RETRIEVAL_PIPELINE_VERSION,
     VECTOR_SQL,
     _load_complete_embeddings,
+    _load_prediction_cache,
     _retrieval_cache_is_current,
     _sha256,
 )
@@ -86,6 +87,20 @@ class LiveQualityRetrievalContractTests(unittest.TestCase):
                 _load_complete_embeddings(
                     [("C-1", "changed")], cache_path=path, dimension=2
                 )
+
+    def test_prediction_cache_is_bound_to_prompt_v2(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "prediction-cache.jsonl"
+            rows = [
+                {"case_id": "OLD", "prompt_id": "poc03-quality", "prompt_version": "v1"},
+                {"case_id": "CURRENT", "prompt_id": "poc03-quality", "prompt_version": "v2"},
+                {"case_id": "MISSING"},
+            ]
+            path.write_text(
+                "\n".join(json.dumps(row) for row in rows) + "\n",
+                encoding="utf-8",
+            )
+            self.assertEqual({"CURRENT"}, set(_load_prediction_cache(path)))
 
 
 if __name__ == "__main__":

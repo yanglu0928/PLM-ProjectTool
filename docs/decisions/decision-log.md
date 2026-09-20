@@ -251,3 +251,15 @@
 |Reason|R4 候选池精确覆盖 119/120，但纯语义重排只有 91/120；失例包括 OCR 将 `MPP` 拆成单字符，以及同一 API 文档内多个语义等价 XML 片段。纯重排会覆盖高置信字面证据，保护性融合可同时保留语义首选与 OCR/标识符敏感结果。|
 |Impact|Windows 11 R6 精确 Top-5 达到 114/120（95.00%），同文档 118/120（98.33%），120/120 个重排结果均源自获批的真实百炼调用，GIN/HNSW 命中，P03-A11 PASS。该结果没有门槛余量且使用同一数据集探索调优，必须保留“独立留出集后验验证”限制；P03-A12/P03-A13 状态不变。|
 |Rollback|将最终 Top-5 恢复为纯百炼排序，P03-A11 回到 R4 的 91/120（75.83%）失败结果；保留 R4/R5 脱敏证据和 Golden Dataset，不降低门槛、不修改标签。|
+
+## DEC-20260920-012
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260920-012|
+|Date|2026-09-20|
+|WBS|P03-A12-R1|
+|Decision|Prompt v2 只允许五类正式业务标签，移除工作流态 `HUMAN_CONFIRMATION_REQUIRED`；模型必须先判断 Context 与问题的匹配性，再判断证据充分性，最后判断满足程度。Context 使用 OCR 字间空白规范化后的完整 Chunk（上限 1000 字），引用只允许一个最直接 Chunk。Prediction Cache 必须绑定 `PromptId + PromptVersion`；新增 `--prediction-only` 模式，缓存不完整时失败关闭，确保复验只调用 DeepSeek。|
+|Reason|v1 将六类状态一次性并列，未建立证据 Gate，且每段只取前 600 字；47 条人工确认的 `INSUFFICIENT_INFORMATION` 中有 37 条被误判为 `STANDARD_SATISFIED`，6 条 `NON_STANDARD` 全部误判。需要先消除 Prompt 定义、上下文截断和缓存串版问题，再做真实模型复验。|
+|Impact|120/120 条 v2 payload 离线准备完成，每条 5 个 R5 Context；精确证据可用 114/120、同文档 118/120、来源越界 0、规范化后正文截断 0、Golden 字段泄漏 0，外部调用 0。P03-A12 仍保持 FAIL，直到新的 DeepSeek 真实准确率达到 90%。|
+|Rollback|恢复 v1 Prompt 与 600 字 Context 作为历史失败实现；删除 v2 payload/报告与 `--prediction-only` 模式，不修改 R6 Golden 标签、P03-A11 结果或验收门槛。|
