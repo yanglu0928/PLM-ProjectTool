@@ -1,6 +1,6 @@
 {
   "schema_version": "poc-03.r7-semantic-review-result.v1",
-  "status": "R7_IMPORT_PASS_R7_1_CONFIRMATION_REQUIRED",
+  "status": "R7_1_COVERAGE_PASS_HOLDOUT_REQUIRED",
   "platform": "Windows 11 x86-64",
   "source_dataset": "R6",
   "review_scope_count": 120,
@@ -17,20 +17,23 @@
     "schema_validation": "PASS"
   },
   "coverage_audit": {
-    "status": "FAIL",
+    "status": "PASS",
     "case_count": 120,
     "unique_query_count": 120,
     "unique_document_count": 29,
     "unique_chunk_count": 112,
-    "missing_classifications": [
-      "NON_STANDARD"
-    ]
+    "all_source_types_present": true,
+    "all_final_classifications_present": true,
+    "missing_classifications": []
   },
   "r7_1_exception_review": {
-    "status": "AWAITING_HUMAN_CONFIRMATION",
+    "status": "PASS",
     "scope_count": 1,
     "case_id_committed": false,
-    "reason": "Direct second-development evidence exists, but AI advice must not become a formal business fact without human confirmation."
+    "resolved_count": 1,
+    "issue_count": 0,
+    "schema_validation": "PASS",
+    "output_dataset_written": true
   },
   "workbook_validation": {
     "sheet_count": 6,
@@ -38,7 +41,7 @@
     "formula_error_count": 0
   },
   "tests": {
-    "passed": 130,
+    "passed": 134,
     "failed": 0
   },
   "external_calls": {

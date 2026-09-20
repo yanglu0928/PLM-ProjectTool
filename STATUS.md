@@ -3,17 +3,17 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 0 技术验证|
-|Current WBS|P03-A12-R4：R7.1 非标准覆盖例外确认|
-|Current Status|FAIL / BLOCKED_QUALITY_GATE|
+|Current WBS|P03-A12-R5：独立留出集设计与来源锁定|
+|Current Status|IN PROGRESS / CALIBRATION_PASS|
 |Completed Phases|无|
 |Completed WBS|POC-01、POC-02、POC-04 已按批准例外收口；P03-A02~A11、P03-A14、P03-A15 已 PASS|
-|Blockers|R7 严格导入与 Schema 校验已 PASS，但覆盖审计发现 `NON_STANDARD=0`，未满足五类全覆盖；同一批 120 条已被 Prompt v2 用于诊断，R7/R7.1 只能作为校准集，不能用于关闭 P03-A12/P03-A13，仍须另建独立留出集|
-|Pending User Decisions|在本地 R7.1 工作簿中选择“确认本次修正”并填写确认人/日期，或退回修正；AI 不得自动把例外建议写成正式业务事实|
+|Blockers|R7.1 严格导入、Schema 与覆盖审计均 PASS，但 R7/R7.1 已用于 Prompt v2 诊断，只能作为校准集；P03-A12/P03-A13 必须由未被 Prompt v1/v2 使用的独立留出集关闭|
+|Pending User Decisions|无；在出现新的数据外发复验前仍须取得当轮明确授权|
 |Architecture Version|未冻结；正式基线为实施方案 V2.1|
 |DB Schema Version|未冻结|
 |API Contract Version|未冻结|
-|Test Summary|POC-03 130/130 单元测试 PASS；R7 严格导入 120/120、Schema 校验 PASS；覆盖审计除 `NON_STANDARD` 缺失外均通过；R7.1 工作簿 2/2 表已渲染、公式错误 0；本轮外部 AI 调用 0|
-|Next WBS|等待 R7.1 单条人工确认；确认后生成 R7.1 校准集并重跑覆盖审计，再单独设计未被 Prompt v1/v2 使用的独立留出集。任何新外发复验仍须当轮明确授权|
+|Test Summary|POC-03 134/134 单元测试 PASS；R7.1 严格导入 1/1、Schema 校验 PASS；120 条覆盖审计 PASS（五类齐全、重复问题 0、四类来源齐全）；本轮外部 AI 调用 0|
+|Next WBS|建立未被 Prompt v1/v2 使用的独立留出集方案、来源锁定规则和验收包；任何新外发复验仍须当轮明确授权|
 
 ## 自动执行策略
 
@@ -25,6 +25,6 @@
 ## 最近检查点
 
 - 分支：`poc/poc-03-plm-rag`
-- 最近功能检查点：用户已完成 R7 全局人工确认；严格导入生成 120 条本地 R7 校准数据集，Schema 校验 PASS，0 条待确认、0 条退回。覆盖审计发现五类中缺少 `NON_STANDARD`，因此不伪造 PASS；已基于合同中直接出现的二次开发交付证据生成只含 GD-0060 的 R7.1 例外确认表，等待单条人工确认。P03-A12/A13 继续 FAIL。
+- 最近功能检查点：用户已确认 R7.1 单条例外；严格导入生成新的本地 R7.1 校准数据集，Schema 校验 PASS，覆盖审计 120 条 PASS，五类结论与四类来源齐全、重复问题 0。R7 与 R7.1 均保留且不覆盖；因同批数据已参与 Prompt v2 诊断，P03-A12/A13 仍不能据此关闭，已进入独立留出集设计。
 - 远端同步状态必须在每次任务结束前通过 Git 实时检查，不在本文件固化可能过期的 ahead/behind 数值。
 - 本地用户文件和 Git 忽略的客户资料保持不变。
