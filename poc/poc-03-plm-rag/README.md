@@ -2,7 +2,7 @@
 
 ## Status
 
-`FAIL / READY_FOR_LIVE_RERANK_APPROVAL`
+`FAIL / P03_A11_PASS_READY_FOR_P03_A12`
 
 ## Objective
 
@@ -49,6 +49,8 @@ P03-A11~A13 首轮真实质量验证完整执行但未达门槛：Top-5 Recall 7
 R6 分层诊断显示：Vector Top-20 为 69/120、Full Text Top-20 为 78/120、0.6/0.4 融合 Top-20 为 80/120，Reranker Top-5 恢复至 72/120。瓶颈包括 25 条通道召回缺失、15 条融合丢失、8 条重排丢失；同时有 9 条由重排恢复。差异说明本地 96.67% 结果所用的来源类型过滤与确定性词法 IDF 尚未进入正式端到端检索链，因此本地诊断不得覆盖正式失败结论。
 
 P03-A11-R4 已把该诊断路径接回统一链：Vector、Full Text 和词法 IDF 各保留 Top-20，全部强制 ProjectId 与来源类型过滤；Vector/Full Text 仍按 0.6/0.4 排序，三通道稳定去重后再交给 Reranker。无外部调用的 120 条 PostgreSQL 回放候选池覆盖 119/120（99.17%），同文档覆盖 120/120，来源越界 0，候选数为 13~59。该结果只证明 Reranker 前的召回上限，正式 Top-5 仍以新百炼重排为准。
+
+用户明确授权后，R4 对上述候选池完成 120/120 条百炼 `qwen3-rerank` 真实调用，纯语义 Top-5 为 91/120（75.83%），同文档为 107/120（89.17%）。失例表明纯语义重排会覆盖 OCR 规范化后的高置信标识符和字面证据。R5 因此采用无标签保护性融合：百炼第 1 名 + 确定性词法前 4 名；复用同批真实重排缓存后精确 Top-5 为 114/120（95.00%），同文档 118/120（98.33%），P03-A11 PASS。融合不读取金标、答案术语或 ChunkId；结果恰好达到门槛且来自同集探索调优，仍需独立留出集验证。
 
 P03-A05 已验证模型切换纪律：保留激活的 `qwen3.7-text-embedding` 1024 维 `v1`，拒绝对旧 index_id 原地更换模型；创建独立 `text-embedding-v4` 768 维 `v2`，使用 120 条固定非客户文本执行 12 批真实请求，120/120 全量重建完成，旧向量复用数为 0。`v2` 状态为验证通过但未激活，不替换当前绑定。
 
@@ -169,6 +171,8 @@ python scripts/validate_r4_retrieval_contract.py `
 
 取得明确数据外发授权后，可用现有真实质量入口的 `--retrieval-only --embedding-cache <完整本地缓存>` 模式只验证百炼 Reranker。该模式要求所有 Chunk 和查询的向量 Hash 完整匹配，缺失或过期时失败关闭，不调用 Embedding，也不向 DeepSeek 发送数据。
 
+R5 可通过 `--reranker-cache <已获批真实R4重排缓存>` 在零外部调用下复算保护性融合。缓存只记录 case、pipeline version、来源类型和排序 ID，不保存查询、候选正文、向量或厂商响应正文；报告分别记录当前运行调用数和复用的真实结果数。
+
 ## Metrics
 
 |指标|目标|当前状态|
@@ -189,7 +193,7 @@ python scripts/validate_r4_retrieval_contract.py `
 |外部 Reranker|可配置请求、响应校验、错误与降级|百炼业务空间专属 `compatible-api/v1` + `qwen3-rerank` 真实 5→3 PASS；429/超时/无效响应降级 PASS|
 |Context Builder → AIService|统一网关、Prompt/Context/Trace|统一调用链与结构化输出 PASS；无 RAG 直连厂商|
 |异常与空结果|DB/Reranker/AI 不可用、空结果、低可靠度|6 场景 PASS；空/低可靠度不调用 AI|
-|Top-5 Recall|≥95%|最近真实端到端 72/120（60.00%），FAIL；P03-A11-R4 本地三通道候选池 119/120（99.17%），等待新百炼 Top-5 复验|
+|Top-5 Recall|≥95%|R4 真实百炼纯重排 91/120（75.83%）；R5 保护性融合 114/120（95.00%），同文档 118/120（98.33%），P03-A11 PASS；独立留出集待验证|
 |分类准确率|≥90%|R6 DeepSeek 57/120（47.50%），FAIL；120/120 预测完整|
 |来源引用准确率|≥98%|R6 真实引用 62/120（51.67%），FAIL；越界引用 0|
 |PROJECT 跨项目泄漏|0|P03-A06：6 组查询、30 行结果，泄漏 0，PASS|
@@ -203,7 +207,7 @@ python scripts/validate_r4_retrieval_contract.py `
 
 ## Known Issues
 
-1. R6 Golden Dataset 已确认并严格导入，但最近正式端到端 P03-A11/A12/A13 均 FAIL；P03-A11-R4 候选池已达 99.17%，尚需新百炼 Reranker 复验，不能提前改判 PASS。
+1. R6 Golden Dataset 已确认并严格导入；P03-A11 已由 R5 保护性融合达到 114/120（95.00%）并 PASS，但 P03-A12/P03-A13 仍分别为 47.50%/51.67% 并 FAIL，POC-03 尚不能收口。
 2. 当前调优与验收使用同一 Golden Dataset；正式生产质量结论仍需独立留出集，不能把探索结果解释为泛化能力证明。
 3. 两个资料库共 10 个旧版二进制 `.doc` 尚不支持，不进入本轮候选池。
 4. Windows Server 2025 与 Debian 13 尚未执行本 PoC。
@@ -216,11 +220,11 @@ python scripts/validate_r4_retrieval_contract.py `
 
 ## Conclusion
 
-POC-03 的基础链路和 Golden Dataset 标签 Gate 已完成；P03-A11-R4 本地候选池对齐已通过，但新的真实 Reranker Top-5 尚未执行，P03-A11/P03-A12/P03-A13 仍不形成通过结论。
+POC-03 的基础链路和 Golden Dataset 标签 Gate 已完成；P03-A11 在 Windows 11 上以 R5 保护性融合达到 95.00% 并 PASS。P03-A12/P03-A13 仍未达门槛，下一 WBS 为 Prompt v2 本地设计与离线分类评估；任何新的客户数据外发需按当轮范围重新确认。
 
 ## PASS / FAIL
 
-`FAIL / READY_FOR_LIVE_RERANK_APPROVAL`
+`FAIL / P03_A11_PASS_READY_FOR_P03_A12`
 
 ## Alternative
 

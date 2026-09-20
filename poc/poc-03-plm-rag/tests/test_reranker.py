@@ -14,6 +14,7 @@ from poc03_rag.reranker import (  # noqa: E402
     RerankerConfig,
     RerankerError,
     rerank_candidates,
+    rerank_candidates_with_retry,
     rerank_with_fallback,
 )
 
@@ -108,6 +109,52 @@ class RerankerTests(unittest.TestCase):
         )
         self.assertEqual("NETWORK_ERROR", result.error_code)
         self.assertNotIn("private", json.dumps(result.to_sanitized_dict()))
+
+    def test_transient_timeout_is_retried_with_exponential_backoff(self) -> None:
+        attempts = 0
+        delays: list[float] = []
+
+        def transport(*_):
+            nonlocal attempts
+            attempts += 1
+            if attempts < 3:
+                raise TimeoutError("temporary timeout")
+            return 200, b'{"results":[{"index":1,"relevance_score":0.9}]}'
+
+        result = rerank_candidates_with_retry(
+            config=self.config,
+            api_key="key",
+            query="query",
+            candidates=self.candidates,
+            top_n=1,
+            max_attempts=3,
+            initial_backoff_seconds=0.5,
+            transport=transport,
+            sleeper=delays.append,
+        )
+        self.assertEqual(3, attempts)
+        self.assertEqual([0.5, 1.0], delays)
+        self.assertEqual("C-2", result.items[0].candidate_id)
+
+    def test_non_retryable_error_is_not_retried(self) -> None:
+        attempts = 0
+
+        def transport(*_):
+            nonlocal attempts
+            attempts += 1
+            return 400, b""
+
+        with self.assertRaisesRegex(RerankerError, "HTTP 400"):
+            rerank_candidates_with_retry(
+                config=self.config,
+                api_key="key",
+                query="query",
+                candidates=self.candidates,
+                top_n=1,
+                transport=transport,
+                sleeper=lambda _delay: None,
+            )
+        self.assertEqual(1, attempts)
 
     def test_invalid_response_degrades(self) -> None:
         result = rerank_with_fallback(

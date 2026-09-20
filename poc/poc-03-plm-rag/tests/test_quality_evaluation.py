@@ -15,6 +15,7 @@ from poc03_rag.quality_evaluation import (  # noqa: E402
     normalize_cjk_spacing,
     parse_plain_prediction,
     merge_hybrid_and_lexical_candidates,
+    merge_reranked_with_protected_lexical,
     rank_lexical_overlap,
     searchable_text,
     tsquery_or,
@@ -61,6 +62,19 @@ class QualityEvaluationTests(unittest.TestCase):
             [],
         )
         self.assertEqual(["VECTOR", "TEXT"], merged)
+
+    def test_protected_lexical_merge_keeps_one_semantic_winner(self) -> None:
+        merged = merge_reranked_with_protected_lexical(
+            ["SEMANTIC", "L-2", "R-3"],
+            ["L-1", "L-2", "L-3", "L-4", "L-5"],
+        )
+        self.assertEqual(["SEMANTIC", "L-1", "L-2", "L-3", "L-4"], merged)
+
+    def test_protected_lexical_merge_validates_slot_count(self) -> None:
+        with self.assertRaisesRegex(ValueError, "between zero and top_k"):
+            merge_reranked_with_protected_lexical(
+                ["R-1"], ["L-1"], top_k=5, protected_lexical_count=6
+            )
 
     def test_searchable_text_and_tsquery_are_safe(self) -> None:
         body = searchable_text("工程变更 ECO-01")

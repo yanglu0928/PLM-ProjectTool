@@ -16,7 +16,7 @@
 |---|---|---|---|---|---|---|---|
 |POC-01|P0.01/P0.01S/P0.02/P0.03/P0.04|Python 3.13 三平台依赖及离线安装|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11、Windows Server 2025 PASS；Debian 13 经用户批准暂缓，不构成兼容性结论|`poc/poc-01-python-313-dependencies/`、`docs/poc/phase-0-exceptions.md`|
 |POC-02|P0.05/P0.06/P0.07/P0.08|PostgreSQL 18 + pgvector|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11 功能链 PASS；Windows Server 2025 完全断网功能链 PASS；Windows 11 断网重放与 Debian 13 经用户批准暂缓，不构成对应兼容性结论|`poc/poc-02-postgresql-18-pgvector/`、`docs/poc/phase-0-exceptions.md`|
-|POC-03|P0.09/P0.10/P0.12|PLM RAG|FAIL|2026-09-17|-|R6 真实端到端复验完成：Top-5 72/120（60.00%）、分类 57/120（47.50%）、引用 62/120（51.67%），三项均未达 Gate；120/120 重排与预测完整，无缺失或越界引用|`poc/poc-03-plm-rag/`|
+|POC-03|P0.09/P0.10/P0.12|PLM RAG|FAIL|2026-09-17|-|P03-A11 R5 保护性融合达到 Top-5 114/120（95.00%）并 PASS；分类仍为 57/120（47.50%）、引用仍为 62/120（51.67%），P03-A12/A13 未达 Gate，因此 PoC 总体保持 FAIL|`poc/poc-03-plm-rag/`|
 |POC-04|P0.11|AI Gateway / DeepSeek|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11、Windows Server 2025 统一网关、11/11 确定性场景及真实文本/流式/结构化/401 PASS；Debian 13 经用户批准暂缓，不构成兼容性结论|`poc/poc-04-ai-gateway/`、`docs/poc/phase-0-exceptions.md`|
 |POC-05|P0.04/P0.12|Document + OCR|IN_PROGRESS|2026-09-17|-|Windows 11 六类输入和主辅 OCR 功能链 PASS；Windows Server 2025 完全断网 8/8 PASS；Windows 11 真实资料 26/26 个受支持文件通过并含 5 个扫描 PDF；Windows 11 断网、Debian 13 和真实扫描语义准确率待处理|`poc/poc-05-document-ocr/`|
 |POC-06|P0.16/P0.17|Word / PPT|NOT_STARTED|-|-|-|-|
@@ -85,3 +85,5 @@
 |2026-09-18|用户确认 R6；严格导入为 120/120、问题 0，覆盖审计 PASS。本地 OCR 规范化 Top-5 为 116/120（96.67%）。完整真实复验因需要把查询/候选片段发送至百炼与 DeepSeek，等待本轮显式数据处理授权；拦截前未发送数据。|
 |2026-09-18|用户明确授权 R6 数据外发复验；120/120 次百炼重排和 120/120 次 DeepSeek 预测完成。真实端到端 Top-5、分类、引用分别为 60.00%、47.50%、51.67%，均 FAIL；预测缺失 0、越界引用 0、GIN/HNSW 均命中。分层诊断记录 25 条通道召回缺失、15 条融合丢失、8 条重排丢失和 9 条重排恢复。|
 |2026-09-20|P03-A11-R4 完成无外部调用的检索链对齐：按 ProjectId 与来源类型过滤，合并 Vector Top-20、Full Text Top-20、OCR 规范化词法 IDF Top-20，保留 0.6/0.4 权重并版本化缓存。本地候选池精确覆盖 119/120（99.17%）、同文档 120/120、来源越界 0，113/113 测试 PASS；正式 Top-5 等待新百炼重排。|
+|2026-09-20|用户明确授权 P03-A11-R4 外发复验；120/120 条百炼 `qwen3-rerank` 真实调用完成，纯语义 Top-5 为 91/120（75.83%）。一次接口超时由新增有限重试与逐条断点恢复处理，数据库正常停止。|
+|2026-09-20|P03-A11-R5 采用不读取金标的保护性融合：百炼第 1 名 + OCR 规范化词法前 4 名。复用 120 条真实重排缓存后精确 Top-5 114/120（95.00%）、同文档 118/120（98.33%），GIN/HNSW 命中，117/117 测试 PASS；P03-A11 改判 PASS，P03-A12/A13 保持 FAIL。|

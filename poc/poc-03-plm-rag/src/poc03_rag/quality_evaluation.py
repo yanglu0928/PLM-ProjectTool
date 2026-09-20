@@ -157,6 +157,39 @@ def merge_hybrid_and_lexical_candidates(
     return merged
 
 
+def merge_reranked_with_protected_lexical(
+    reranked_ids: Iterable[str],
+    lexical_ranked_ids: Iterable[str],
+    *,
+    top_k: int = 5,
+    protected_lexical_count: int = 4,
+) -> list[str]:
+    """Keep one semantic winner while protecting exact/OCR-sensitive evidence.
+
+    The policy is query-only and label-agnostic: the first external reranker
+    result is retained, followed by the highest deterministic lexical results.
+    Remaining slots are filled from the two rankings without duplicates.
+    """
+    if top_k < 1:
+        raise ValueError("top_k must be positive")
+    if not 0 <= protected_lexical_count <= top_k:
+        raise ValueError("protected_lexical_count must be between zero and top_k")
+    reranked = [str(value) for value in reranked_ids]
+    lexical = [str(value) for value in lexical_ranked_ids]
+    protected = lexical[:protected_lexical_count]
+    semantic_count = top_k - protected_lexical_count
+    ordered = [*reranked[:semantic_count], *protected, *reranked, *lexical]
+    merged: list[str] = []
+    seen: set[str] = set()
+    for value in ordered:
+        if value and value not in seen:
+            seen.add(value)
+            merged.append(value)
+            if len(merged) == top_k:
+                break
+    return merged
+
+
 def tsquery_or(terms: Iterable[str]) -> str:
     safe = []
     for term in terms:

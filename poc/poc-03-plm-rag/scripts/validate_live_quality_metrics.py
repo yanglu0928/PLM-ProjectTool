@@ -29,6 +29,7 @@ from poc03_rag.quality_evaluation import (  # noqa: E402
     evaluate_retrieval_quality,
     lexical_terms,
     merge_hybrid_and_lexical_candidates,
+    merge_reranked_with_protected_lexical,
     parse_plain_prediction,
     rank_lexical_overlap,
     searchable_text,
@@ -37,7 +38,7 @@ from poc03_rag.quality_evaluation import (  # noqa: E402
 from poc03_rag.reranker import (  # noqa: E402
     RerankCandidate,
     RerankerConfig,
-    rerank_candidates,
+    rerank_candidates_with_retry,
 )
 from poc04_gateway import (  # noqa: E402
     AIError,
@@ -55,7 +56,9 @@ TOP_K = 5
 CANDIDATE_LIMIT = 20
 EMBEDDING_BATCH_SIZE = 20
 PREDICTION_BATCH_SIZE = 1
-RETRIEVAL_PIPELINE_VERSION = "r4-source-filter-lexical-idf-v1"
+RERANKER_CANDIDATE_PIPELINE_VERSION = "r4-source-filter-lexical-idf-v1"
+RETRIEVAL_PIPELINE_VERSION = "r5-protected-lexical-fusion-v1"
+PROTECTED_LEXICAL_COUNT = 4
 
 
 def _sha256(text: str) -> str:
@@ -70,6 +73,22 @@ def _retrieval_cache_is_current(
         and row.get("pipeline_version") == RETRIEVAL_PIPELINE_VERSION
         and row.get("source_type") == source_type
     )
+
+
+def _cached_reranker_top5(
+    row: dict[str, Any] | None, *, source_type: str
+) -> list[str] | None:
+    if not row or row.get("source_type") != source_type or not row.get("reranker_live"):
+        return None
+    if row.get("pipeline_version") == RERANKER_CANDIDATE_PIPELINE_VERSION:
+        values = row.get("top5_ids")
+    elif row.get("reranker_candidate_pipeline_version") == RERANKER_CANDIDATE_PIPELINE_VERSION:
+        values = row.get("reranker_top5_ids")
+    else:
+        return None
+    if not isinstance(values, list) or not values:
+        return None
+    return [str(value) for value in values]
 
 
 def _vector_literal(vector: Iterable[float]) -> str:
@@ -610,6 +629,11 @@ def main() -> int:
         type=Path,
         help="Optional existing embedding cache; required to avoid embedding calls in retrieval-only mode",
     )
+    parser.add_argument(
+        "--reranker-cache",
+        type=Path,
+        help="Optional prior live R4 reranker cache for label-free R5 replay",
+    )
     parser.add_argument("--embedding-base-url", required=True)
     parser.add_argument("--reranker-base-url", required=True)
     parser.add_argument("--embedding-model", default="qwen3.7-text-embedding")
@@ -693,6 +717,8 @@ def main() -> int:
     )
     retrievals: dict[str, list[str]] = {}
     reranker_live_count = 0
+    reranker_external_calls = 0
+    reranker_cached_live_results_reused = 0
     gin_index_used = False
     hnsw_index_used = False
     try:
@@ -711,9 +737,20 @@ def main() -> int:
             fail_open=False,
         )
         retrieval_cache_path = args.output_dir / "retrieval-cache.jsonl"
-        cached_retrievals = {
-            str(row["case_id"]): row for row in _load_json_lines(retrieval_cache_path)
-        }
+        cached_retrievals: dict[str, dict[str, Any]] = {}
+        if args.reranker_cache:
+            cached_retrievals.update(
+                {
+                    str(row["case_id"]): row
+                    for row in _load_json_lines(args.reranker_cache)
+                }
+            )
+        cached_retrievals.update(
+            {
+                str(row["case_id"]): row
+                for row in _load_json_lines(retrieval_cache_path)
+            }
+        )
         for index, case in enumerate(cases, start=1):
             case_id = str(case["case_id"])
             cached = cached_retrievals.get(case_id)
@@ -724,36 +761,62 @@ def main() -> int:
                 reranker_live_count += bool(cached.get("reranker_live"))
                 gin_index_used = gin_index_used or bool(cached.get("gin_index_used"))
                 hnsw_index_used = hnsw_index_used or bool(cached.get("hnsw_index_used"))
+                reranker_cached_live_results_reused += bool(cached.get("reranker_live"))
                 continue
-            candidate_ids, used_gin, used_hnsw = _hybrid_candidates(
-                connection,
-                project_id=project_id,
-                source_type=str(case["source_type"]),
-                query=str(case["query"]),
-                query_vector=embeddings[f"QUERY:{case_id}"],
-                lexical_corpus=chunks_by_source[str(case["source_type"])],
+            source_type = str(case["source_type"])
+            lexical_top5 = rank_lexical_overlap(
+                str(case["query"]),
+                chunks_by_source[source_type],
+                limit=TOP_K,
             )
+            reranker_top5 = _cached_reranker_top5(cached, source_type=source_type)
+            if reranker_top5 is not None:
+                used_gin = bool(cached.get("gin_index_used"))
+                used_hnsw = bool(cached.get("hnsw_index_used"))
+                reranker_live = True
+                reranker_cached_live_results_reused += 1
+            else:
+                candidate_ids, used_gin, used_hnsw = _hybrid_candidates(
+                    connection,
+                    project_id=project_id,
+                    source_type=source_type,
+                    query=str(case["query"]),
+                    query_vector=embeddings[f"QUERY:{case_id}"],
+                    lexical_corpus=chunks_by_source[source_type],
+                )
+                candidates = [
+                    RerankCandidate(chunk_id, str(chunks_by_id[chunk_id]["text"]))
+                    for chunk_id in candidate_ids
+                ]
+                reranked = rerank_candidates_with_retry(
+                    config=reranker_config,
+                    api_key=bailian_key,
+                    query=str(case["query"]),
+                    candidates=candidates,
+                    top_n=min(TOP_K, len(candidates)),
+                    max_attempts=3,
+                    initial_backoff_seconds=2,
+                )
+                reranker_top5 = [item.candidate_id for item in reranked.items]
+                reranker_live = bool(reranked.provider_used and not reranked.degraded)
+                reranker_external_calls += 1
             gin_index_used = gin_index_used or used_gin
             hnsw_index_used = hnsw_index_used or used_hnsw
-            candidates = [
-                RerankCandidate(chunk_id, str(chunks_by_id[chunk_id]["text"]))
-                for chunk_id in candidate_ids
-            ]
-            reranked = rerank_candidates(
-                config=reranker_config,
-                api_key=bailian_key,
-                query=str(case["query"]),
-                candidates=candidates,
-                top_n=min(TOP_K, len(candidates)),
+            reranker_live_count += reranker_live
+            retrievals[case_id] = merge_reranked_with_protected_lexical(
+                reranker_top5,
+                lexical_top5,
+                top_k=TOP_K,
+                protected_lexical_count=PROTECTED_LEXICAL_COUNT,
             )
-            reranker_live_count += reranked.provider_used and not reranked.degraded
-            retrievals[case_id] = [item.candidate_id for item in reranked.items]
             cache_row = {
                 "case_id": case_id,
                 "pipeline_version": RETRIEVAL_PIPELINE_VERSION,
-                "source_type": str(case["source_type"]),
+                "reranker_candidate_pipeline_version": RERANKER_CANDIDATE_PIPELINE_VERSION,
+                "source_type": source_type,
+                "reranker_top5_ids": reranker_top5,
                 "top5_ids": retrievals[case_id],
-                "reranker_live": bool(reranked.provider_used and not reranked.degraded),
+                "reranker_live": reranker_live,
                 "gin_index_used": used_gin,
                 "hnsw_index_used": used_hnsw,
             }
@@ -773,9 +836,14 @@ def main() -> int:
             "source_type_filter": True,
             "cjk_ocr_spacing_normalization": True,
             "retrieval_pipeline_version": RETRIEVAL_PIPELINE_VERSION,
+            "reranker_candidate_pipeline_version": RERANKER_CANDIDATE_PIPELINE_VERSION,
+            "protected_lexical_count": PROTECTED_LEXICAL_COUNT,
+            "semantic_reranker_count": TOP_K - PROTECTED_LEXICAL_COUNT,
             "reranker_provider": "aliyun-bailian",
             "reranker_model": args.reranker_model,
             "embedding_external_calls": 0 if args.retrieval_only else "as_needed",
+            "reranker_external_calls_current_run": reranker_external_calls,
+            "cached_live_reranker_results_reused": reranker_cached_live_results_reused,
         }
         common_input = {
             "golden_case_count": len(cases),
@@ -800,9 +868,9 @@ def main() -> int:
             report["configuration"] = common_configuration
             report["input"] = common_input
             report["conclusion"] = (
-                "The live R4 retrieval and reranker threshold passed."
+                "The live retrieval and reranker threshold passed."
                 if report["status"] == "PASS"
-                else "The live R4 retrieval and reranker threshold failed."
+                else "The live retrieval and reranker threshold failed."
             )
             report_path = args.output_dir / "live-retrieval-result.json"
             report_path.write_text(

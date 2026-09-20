@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import time
 from dataclasses import dataclass
 from numbers import Real
 from typing import Callable, Sequence
@@ -76,6 +77,7 @@ class RerankResult:
 
 
 Transport = Callable[[str, dict[str, str], bytes, float], tuple[int, bytes]]
+Sleeper = Callable[[float], None]
 
 
 def _default_transport(
@@ -185,6 +187,45 @@ def rerank_candidates(
         provider_used=True,
         degraded=False,
     )
+
+
+def rerank_candidates_with_retry(
+    *,
+    config: RerankerConfig,
+    api_key: str,
+    query: str,
+    candidates: Sequence[RerankCandidate],
+    top_n: int,
+    max_attempts: int = 3,
+    initial_backoff_seconds: float = 1.0,
+    transport: Transport | None = None,
+    sleeper: Sleeper = time.sleep,
+) -> RerankResult:
+    """Retry transient provider failures while preserving fail-closed semantics."""
+    if max_attempts < 1:
+        raise ValueError("max_attempts must be positive")
+    if initial_backoff_seconds < 0:
+        raise ValueError("initial_backoff_seconds must not be negative")
+
+    for attempt in range(1, max_attempts + 1):
+        try:
+            return rerank_candidates(
+                config=config,
+                api_key=api_key,
+                query=query,
+                candidates=candidates,
+                top_n=top_n,
+                transport=transport,
+            )
+        except RerankerError as exc:
+            retryable = exc.code in {"NETWORK_ERROR", "HTTP_429"} or bool(
+                exc.http_status and 500 <= exc.http_status < 600
+            )
+            if not retryable or attempt == max_attempts:
+                raise
+            sleeper(initial_backoff_seconds * (2 ** (attempt - 1)))
+
+    raise AssertionError("retry loop exited unexpectedly")
 
 
 def rerank_with_fallback(
