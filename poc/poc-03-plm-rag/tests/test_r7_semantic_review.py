@@ -197,6 +197,20 @@ class R7SemanticReviewTests(unittest.TestCase):
         self.assertTrue(result.has_errors)
         self.assertIn("CITATION_OUTSIDE_R7_EVIDENCE", {issue.code for issue in result.issues})
 
+    def test_schema_validation_blocks_invalid_export(self) -> None:
+        golden, package = make_inputs()
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "r7.xlsx"
+            write_workbook(path, package, confirmed=True)
+            result = import_r7_semantic_review(path, golden, package)
+        schema = {
+            "type": "object",
+            "required": ["dataset_id"],
+            "properties": {"dataset_id": {"const": "required-id"}},
+        }
+        with self.assertRaisesRegex(ValueError, "schema validation failed"):
+            build_r7_dataset(golden, result, dataset_id="wrong-id", schema=schema)
+
 
 if __name__ == "__main__":
     unittest.main()

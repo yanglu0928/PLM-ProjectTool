@@ -1,6 +1,6 @@
 {
   "schema_version": "poc-03.r7-semantic-review-result.v1",
-  "status": "AWAITING_HUMAN_CONFIRMATION",
+  "status": "R7_IMPORT_PASS_R7_1_CONFIRMATION_REQUIRED",
   "platform": "Windows 11 x86-64",
   "source_dataset": "R6",
   "review_scope_count": 120,
@@ -8,18 +8,37 @@
   "original_document_resolved_count": 120,
   "suggested_classification_change_count": 73,
   "suggested_citation_change_count": 58,
-  "import_precheck": {
-    "pending_count": 120,
+  "import_result": {
+    "resolved_count": 120,
+    "pending_count": 0,
+    "returned_count": 0,
     "issue_count": 0,
-    "output_dataset_written": false
+    "output_dataset_written": true,
+    "schema_validation": "PASS"
+  },
+  "coverage_audit": {
+    "status": "FAIL",
+    "case_count": 120,
+    "unique_query_count": 120,
+    "unique_document_count": 29,
+    "unique_chunk_count": 112,
+    "missing_classifications": [
+      "NON_STANDARD"
+    ]
+  },
+  "r7_1_exception_review": {
+    "status": "AWAITING_HUMAN_CONFIRMATION",
+    "scope_count": 1,
+    "case_id_committed": false,
+    "reason": "Direct second-development evidence exists, but AI advice must not become a formal business fact without human confirmation."
   },
   "workbook_validation": {
-    "sheet_count": 4,
-    "rendered_sheet_count": 4,
+    "sheet_count": 6,
+    "rendered_sheet_count": 6,
     "formula_error_count": 0
   },
   "tests": {
-    "passed": 129,
+    "passed": 130,
     "failed": 0
   },
   "external_calls": {

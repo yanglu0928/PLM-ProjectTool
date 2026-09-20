@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from openpyxl import load_workbook
+from jsonschema import Draft202012Validator, FormatChecker
 
 from .review_import import ImportIssue, _reviewed_at, _split_values, _text
 
@@ -361,12 +362,25 @@ def build_r7_dataset(
     result: R7ImportResult,
     *,
     dataset_id: str,
+    schema: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     if not result.ready:
         raise ValueError("R7 review is not ready for export")
     dataset = copy.deepcopy(golden)
     dataset["dataset_id"] = dataset_id
     dataset["cases"] = result.cases
+    if schema is not None:
+        validator = Draft202012Validator(schema, format_checker=FormatChecker())
+        errors = sorted(
+            validator.iter_errors(dataset),
+            key=lambda item: list(item.absolute_path),
+        )
+        if errors:
+            paths = [
+                "/".join(str(part) for part in error.absolute_path)
+                for error in errors
+            ]
+            raise ValueError(f"R7 Golden Dataset schema validation failed at: {paths}")
     return dataset
 
 

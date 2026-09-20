@@ -31,16 +31,46 @@ def main() -> int:
     parser.add_argument("--workbook", type=Path, required=True)
     parser.add_argument("--golden", type=Path, required=True)
     parser.add_argument("--package", type=Path, required=True)
+    parser.add_argument(
+        "--schema",
+        type=Path,
+        default=POC_DIR / "schema" / "golden-dataset.schema.json",
+    )
     parser.add_argument("--dataset-id", default="poc-03-golden-2026-09-20-r7")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--report", type=Path, required=True)
     args = parser.parse_args()
     golden = load_json(args.golden)
     package = load_json(args.package)
+    schema = load_json(args.schema)
     result = import_r7_semantic_review(args.workbook, golden, package)
     output_written = False
     if result.ready:
-        write_json(args.output, build_r7_dataset(golden, result, dataset_id=args.dataset_id))
+        try:
+            dataset = build_r7_dataset(
+                golden,
+                result,
+                dataset_id=args.dataset_id,
+                schema=schema,
+            )
+        except ValueError as error:
+            report = build_sanitized_r7_report(
+                result,
+                generated_at=datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+                output_written=False,
+            )
+            report["status"] = "FAIL"
+            report["issues"] = [
+                {
+                    "code": "SCHEMA_VALIDATION_FAILED",
+                    "message": str(error),
+                }
+            ]
+            report["conclusion"] = "R7 dataset export remains blocked."
+            write_json(args.report, report)
+            print(json.dumps(report, ensure_ascii=False))
+            return 1
+        write_json(args.output, dataset)
         output_written = True
     report = build_sanitized_r7_report(
         result,
