@@ -108,6 +108,55 @@ def rank_lexical_overlap(
     return sorted(scores, key=lambda item: (-scores[item], item))[:limit]
 
 
+def merge_hybrid_and_lexical_candidates(
+    vector_rows: Iterable[tuple[str, float]],
+    full_text_rows: Iterable[tuple[str, float]],
+    lexical_ranked_ids: Iterable[str],
+    *,
+    channel_limit: int = 20,
+    vector_weight: float = 0.6,
+) -> list[str]:
+    """Merge three source-filtered recall channels before external reranking.
+
+    The locked 0.6/0.4 weighting still orders the vector/full-text union. The
+    lexical IDF channel expands recall only; it does not replace or reweight the
+    existing hybrid score. Duplicate chunk IDs retain their earliest position.
+    """
+    if channel_limit < 1:
+        raise ValueError("channel_limit must be positive")
+    if not 0.0 <= vector_weight <= 1.0:
+        raise ValueError("vector_weight must be between 0 and 1")
+    vector = [(str(item), max(0.0, float(score))) for item, score in vector_rows][
+        :channel_limit
+    ]
+    full_text = [
+        (str(item), max(0.0, float(score))) for item, score in full_text_rows
+    ][:channel_limit]
+    vector_scores = dict(vector)
+    raw_text_scores = dict(full_text)
+    max_text_score = max(raw_text_scores.values(), default=0.0)
+    text_scores = {
+        chunk_id: score / max_text_score if max_text_score else 0.0
+        for chunk_id, score in raw_text_scores.items()
+    }
+    combined = {
+        chunk_id: vector_weight * vector_scores.get(chunk_id, 0.0)
+        + (1.0 - vector_weight) * text_scores.get(chunk_id, 0.0)
+        for chunk_id in set(vector_scores) | set(text_scores)
+    }
+    hybrid_ranked = sorted(
+        combined, key=lambda chunk_id: (-combined[chunk_id], chunk_id)
+    )
+    merged: list[str] = []
+    seen: set[str] = set()
+    for chunk_id in [*hybrid_ranked, *list(lexical_ranked_ids)[:channel_limit]]:
+        value = str(chunk_id)
+        if value not in seen:
+            seen.add(value)
+            merged.append(value)
+    return merged
+
+
 def tsquery_or(terms: Iterable[str]) -> str:
     safe = []
     for term in terms:
@@ -139,6 +188,74 @@ def parse_plain_prediction(
     return {
         "classification": classification,
         "citation_chunk_ids": [chunk_id],
+    }
+
+
+def evaluate_retrieval_quality(
+    cases: list[dict[str, Any]],
+    retrievals: dict[str, list[str]],
+    *,
+    reranker_live_count: int,
+    gin_index_used: bool,
+    hnsw_index_used: bool,
+) -> dict[str, Any]:
+    if not cases:
+        raise ValueError("cases must not be empty")
+    recall_hits = same_document_hits = 0
+    by_source: dict[str, Counter[str]] = defaultdict(Counter)
+    for case in cases:
+        case_id = str(case["case_id"])
+        retrieved = list(retrievals.get(case_id) or [])[:5]
+        expected = {str(value) for value in case["expected_relevant_chunk_ids"]}
+        expected_documents = {value.rsplit("-C-", 1)[0] for value in expected}
+        exact_hit = bool(expected.intersection(retrieved))
+        same_document_hit = bool(
+            expected_documents.intersection(
+                value.rsplit("-C-", 1)[0] for value in retrieved
+            )
+        )
+        recall_hits += exact_hit
+        same_document_hits += same_document_hit
+        source_counts = by_source[str(case.get("source_type") or "UNKNOWN")]
+        source_counts["case_count"] += 1
+        source_counts["exact_chunk_retrieval_hits"] += exact_hit
+        source_counts["same_document_retrieval_hits"] += same_document_hit
+    count = len(cases)
+    recall = recall_hits / count
+    checks = {
+        "top5_recall_at_least_95_percent": recall >= 0.95,
+        "all_reranker_calls_live": reranker_live_count == count,
+        "gin_index_used": gin_index_used,
+        "hnsw_index_used": hnsw_index_used,
+    }
+    return {
+        "schema_version": "poc-03.live-retrieval-result.v1",
+        "status": "PASS" if all(checks.values()) else "FAIL",
+        "summary": {
+            "case_count": count,
+            "top_k": 5,
+            "top5_recall_hits": recall_hits,
+            "top5_recall": recall,
+            "same_document_top5_hits": same_document_hits,
+            "same_document_top5_recall": same_document_hits / count,
+            "reranker_live_count": reranker_live_count,
+        },
+        "thresholds": {"top5_recall": 0.95},
+        "checks": checks,
+        "diagnostics": {
+            "by_source_type": {
+                source: dict(sorted(values.items()))
+                for source, values in sorted(by_source.items())
+            }
+        },
+        "privacy": {
+            "queries_committed": False,
+            "document_text_committed": False,
+            "vectors_committed": False,
+            "model_responses_committed": False,
+            "case_level_results_committed": False,
+            "api_keys_committed": False,
+        },
     }
 
 

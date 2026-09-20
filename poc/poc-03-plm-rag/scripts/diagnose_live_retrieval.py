@@ -107,6 +107,7 @@ def main() -> int:
             case_id = str(case["case_id"])
             parameters = {
                 "project_id": project_id,
+                "source_type": str(case["source_type"]),
                 "query_vector": _vector_literal(embeddings[f"QUERY:{case_id}"]),
                 "limit": 20,
             }
@@ -118,7 +119,12 @@ def main() -> int:
                 if tsquery:
                     cursor.execute(
                         FULL_TEXT_SQL,
-                        {"project_id": project_id, "tsquery": tsquery, "limit": 20},
+                        {
+                            "project_id": project_id,
+                            "source_type": str(case["source_type"]),
+                            "tsquery": tsquery,
+                            "limit": 20,
+                        },
                     )
                     text_rows = cursor.fetchall()
             vector_scores = {str(row[0]): max(0.0, float(row[1])) for row in vector_rows}

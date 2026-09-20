@@ -10,9 +10,11 @@ sys.path.insert(0, str(POC_DIR / "src"))
 
 from poc03_rag.quality_evaluation import (  # noqa: E402
     evaluate_quality,
+    evaluate_retrieval_quality,
     lexical_terms,
     normalize_cjk_spacing,
     parse_plain_prediction,
+    merge_hybrid_and_lexical_candidates,
     rank_lexical_overlap,
     searchable_text,
     tsquery_or,
@@ -41,6 +43,24 @@ class QualityEvaluationTests(unittest.TestCase):
         self.assertIn("eco", terms)
         self.assertIn("工程", terms)
         self.assertNotIn("参考", terms)
+
+    def test_candidate_merge_preserves_all_channels_and_deduplicates(self) -> None:
+        merged = merge_hybrid_and_lexical_candidates(
+            [("V-1", 0.9), ("SHARED", 0.8)],
+            [("T-1", 10.0), ("SHARED", 5.0)],
+            ["L-1", "SHARED", "L-2"],
+            channel_limit=3,
+        )
+        self.assertEqual({"V-1", "T-1", "SHARED", "L-1", "L-2"}, set(merged))
+        self.assertEqual(1, merged.count("SHARED"))
+
+    def test_candidate_merge_keeps_locked_hybrid_weights(self) -> None:
+        merged = merge_hybrid_and_lexical_candidates(
+            [("VECTOR", 1.0), ("TEXT", 0.0)],
+            [("TEXT", 1.0), ("VECTOR", 0.0)],
+            [],
+        )
+        self.assertEqual(["VECTOR", "TEXT"], merged)
 
     def test_searchable_text_and_tsquery_are_safe(self) -> None:
         body = searchable_text("工程变更 ECO-01")
@@ -86,6 +106,37 @@ class QualityEvaluationTests(unittest.TestCase):
                 "same_document_retrieval_hits"
             ],
         )
+
+    def test_retrieval_only_report_enforces_live_reranker_and_indexes(self) -> None:
+        cases = [
+            {
+                "case_id": f"GD-{index:04d}",
+                "source_type": "CONTRACT",
+                "expected_relevant_chunk_ids": [f"DOC-C-{index:04d}"],
+            }
+            for index in range(100)
+        ]
+        retrievals = {
+            case["case_id"]: list(case["expected_relevant_chunk_ids"])
+            for case in cases
+        }
+        report = evaluate_retrieval_quality(
+            cases,
+            retrievals,
+            reranker_live_count=100,
+            gin_index_used=True,
+            hnsw_index_used=True,
+        )
+        self.assertEqual("PASS", report["status"])
+        self.assertEqual(1.0, report["summary"]["top5_recall"])
+        report = evaluate_retrieval_quality(
+            cases,
+            retrievals,
+            reranker_live_count=99,
+            gin_index_used=True,
+            hnsw_index_used=True,
+        )
+        self.assertEqual("FAIL", report["status"])
 
     def test_invalid_or_wrong_citation_fails(self) -> None:
         case = {

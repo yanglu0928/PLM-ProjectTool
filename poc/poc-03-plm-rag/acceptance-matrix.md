@@ -12,7 +12,7 @@
 |P03-A08|pgvector 向量检索|PASS|NOT_RUN|NOT_RUN|PostgreSQL 18.6 + pgvector 0.8.6，1,000 条合成三维向量、4 场景 HNSW cosine Top-5，平均/最低 Recall 100%，HNSW 执行计划命中|
 |P03-A09|Hybrid Retrieval|PASS|NOT_RUN|NOT_RUN|PostgreSQL 18.6 + pgvector 0.8.6，Vector 0.6 + Full Text 0.4；每通道候选池为 Top-K 的 4 倍，HNSW `m=32`、`ef_construction=200`、`ef_search=200`；1,000 条合成记录、4 场景 Top-5 平均/最低 Recall 100%，GIN/HNSW 均命中|
 |P03-A10|外部可配置 Reranker|PASS|NOT_RUN|NOT_RUN|百炼华北 2 业务空间专属 `compatible-api/v1/reranks`、`qwen3-rerank` 真实 5→3 调用 PASS；相关项位列前二；HTTP 429、超时、无效响应均 fail-open 保留原顺序并记录脱敏错误码|
-|P03-A11|Top-5 Recall ≥95%|FAIL|NOT_RUN|NOT_RUN|R6 真实端到端链路 72/120（60.00%）；120/120 百炼重排完成，GIN/HNSW 均命中。本地来源过滤 + OCR 规范化 + 确定性词法 IDF 为 116/120（96.67%），仅作为诊断，不覆盖正式端到端结果|
+|P03-A11|Top-5 Recall ≥95%|FAIL|NOT_RUN|NOT_RUN|最近正式真实链路仍为 72/120（60.00%）。R4 已把来源过滤、OCR 规范化和词法 IDF 接入统一候选链；本地候选池 119/120（99.17%）、来源越界 0、GIN/HNSW 命中，但尚未执行新百炼 Reranker Top-5，不能提前改判 PASS|
 |P03-A12|分类准确率 ≥90%|FAIL|NOT_RUN|NOT_RUN|R6 真实 DeepSeek 预测 120/120，正确 57/120（47.50%），预测缺失 0；模型显著偏向 `STANDARD_SATISFIED`，三项质量 Gate 不通过|
 |P03-A13|来源引用准确率 ≥98%|FAIL|NOT_RUN|NOT_RUN|R6 真实来源引用正确 62/120（51.67%），越界引用 0；同文档检索 88/120，但验收按精确 Chunk 口径，不以同文档命中替代|
 |P03-A14|Context Builder → AIService|PASS|NOT_RUN|NOT_RUN|`RagAIOrchestrator → AIService → ModelRouter → ProviderAdapter` 实测 PASS；Context 保留 Chunk/来源引用和字符预算，PromptId/Version、ProjectId、ChunkIds 可追溯；RAG 模块无 HTTP 或厂商适配代码|

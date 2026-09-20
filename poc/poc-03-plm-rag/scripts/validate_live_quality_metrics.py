@@ -26,8 +26,11 @@ from poc03_rag.dataset import chunk_document  # noqa: E402
 from poc03_rag.quality_evaluation import (  # noqa: E402
     ALLOWED_CLASSIFICATIONS,
     evaluate_quality,
+    evaluate_retrieval_quality,
     lexical_terms,
+    merge_hybrid_and_lexical_candidates,
     parse_plain_prediction,
+    rank_lexical_overlap,
     searchable_text,
     tsquery_or,
 )
@@ -52,10 +55,21 @@ TOP_K = 5
 CANDIDATE_LIMIT = 20
 EMBEDDING_BATCH_SIZE = 20
 PREDICTION_BATCH_SIZE = 1
+RETRIEVAL_PIPELINE_VERSION = "r4-source-filter-lexical-idf-v1"
 
 
 def _sha256(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _retrieval_cache_is_current(
+    row: dict[str, Any] | None, *, source_type: str
+) -> bool:
+    return bool(
+        row
+        and row.get("pipeline_version") == RETRIEVAL_PIPELINE_VERSION
+        and row.get("source_type") == source_type
+    )
 
 
 def _vector_literal(vector: Iterable[float]) -> str:
@@ -89,6 +103,22 @@ def _load_embedding_cache(path: Path, dimension: int) -> dict[str, tuple[str, li
         if isinstance(vector, list) and len(vector) == dimension:
             cache[str(row["id"])] = (str(row["text_sha256"]), vector)
     return cache
+
+
+def _load_complete_embeddings(
+    items: list[tuple[str, str]], *, cache_path: Path, dimension: int
+) -> dict[str, list[float]]:
+    cache = _load_embedding_cache(cache_path, dimension)
+    stale = [
+        item_id
+        for item_id, value in items
+        if item_id not in cache or cache[item_id][0] != _sha256(value)
+    ]
+    if stale:
+        raise RuntimeError(
+            f"retrieval-only mode requires a complete embedding cache; stale={len(stale)}"
+        )
+    return {item_id: cache[item_id][1] for item_id, _ in items}
 
 
 def _request_embeddings(
@@ -205,6 +235,7 @@ VECTOR_SQL = f"""
 SELECT chunk_id, 1 - (embedding <=> %(query_vector)s::vector) AS score
 FROM {SCHEMA_NAME}.retrieval_chunk
 WHERE scope = 'PROJECT' AND project_id = %(project_id)s
+  AND source_corpus = %(source_type)s
 ORDER BY embedding <=> %(query_vector)s::vector, chunk_id
 LIMIT %(limit)s
 """.strip()
@@ -216,6 +247,7 @@ SELECT chunk_id,
 FROM {SCHEMA_NAME}.retrieval_chunk
 WHERE scope = 'PROJECT'
   AND project_id = %(project_id)s
+  AND source_corpus = %(source_type)s
   AND to_tsvector('simple', search_body) @@ to_tsquery('simple', %(tsquery)s)
 ORDER BY score DESC, chunk_id
 LIMIT %(limit)s
@@ -291,11 +323,14 @@ def _hybrid_candidates(
     connection: psycopg.Connection,
     *,
     project_id: str,
+    source_type: str,
     query: str,
     query_vector: list[float],
+    lexical_corpus: dict[str, str],
 ) -> tuple[list[str], bool, bool]:
     parameters = {
         "project_id": project_id,
+        "source_type": source_type,
         "query_vector": _vector_literal(query_vector),
         "limit": CANDIDATE_LIMIT,
     }
@@ -311,6 +346,7 @@ def _hybrid_candidates(
         if tsquery:
             text_parameters = {
                 "project_id": project_id,
+                "source_type": source_type,
                 "tsquery": tsquery,
                 "limit": CANDIDATE_LIMIT,
             }
@@ -318,21 +354,20 @@ def _hybrid_candidates(
             text_rows = cursor.fetchall()
             cursor.execute("EXPLAIN " + FULL_TEXT_SQL, text_parameters)
             text_plan = "\n".join(str(row[0]) for row in cursor.fetchall())
-    vector_scores = {str(row[0]): max(0.0, float(row[1])) for row in vector_rows}
-    raw_text_scores = {str(row[0]): max(0.0, float(row[1])) for row in text_rows}
-    max_text_score = max(raw_text_scores.values(), default=0.0)
-    text_scores = {
-        chunk_id: score / max_text_score if max_text_score else 0.0
-        for chunk_id, score in raw_text_scores.items()
-    }
-    combined = {
-        chunk_id: 0.6 * vector_scores.get(chunk_id, 0.0)
-        + 0.4 * text_scores.get(chunk_id, 0.0)
-        for chunk_id in set(vector_scores) | set(text_scores)
-    }
-    ranked = sorted(combined, key=lambda chunk_id: (-combined[chunk_id], chunk_id))
+    lexical_ranked = rank_lexical_overlap(
+        query,
+        lexical_corpus,
+        limit=min(CANDIDATE_LIMIT, len(lexical_corpus)),
+    )
+    ranked = merge_hybrid_and_lexical_candidates(
+        [(str(row[0]), float(row[1])) for row in vector_rows],
+        [(str(row[0]), float(row[1])) for row in text_rows],
+        lexical_ranked,
+        channel_limit=CANDIDATE_LIMIT,
+        vector_weight=0.6,
+    )
     return (
-        ranked[:CANDIDATE_LIMIT],
+        ranked,
         "poc03_live_fts_idx" in text_plan,
         "poc03_live_hnsw_idx" in vector_plan,
     )
@@ -570,6 +605,11 @@ def main() -> int:
     parser.add_argument("--dataset", required=True, type=Path)
     parser.add_argument("--parsed-root", required=True, type=Path)
     parser.add_argument("--output-dir", required=True, type=Path)
+    parser.add_argument(
+        "--embedding-cache",
+        type=Path,
+        help="Optional existing embedding cache; required to avoid embedding calls in retrieval-only mode",
+    )
     parser.add_argument("--embedding-base-url", required=True)
     parser.add_argument("--reranker-base-url", required=True)
     parser.add_argument("--embedding-model", default="qwen3.7-text-embedding")
@@ -581,12 +621,19 @@ def main() -> int:
     parser.add_argument("--port", type=int, default=55432)
     parser.add_argument("--user", default="poc_admin")
     parser.add_argument("--database", default="postgres")
+    parser.add_argument(
+        "--retrieval-only",
+        action="store_true",
+        help="Run live embedding/hybrid/reranker validation without DeepSeek predictions",
+    )
     args = parser.parse_args()
 
     bailian_key = os.environ.get("DASHSCOPE_API_KEY", "").strip()
     deepseek_key = os.environ.get("DEEPSEEK_API_KEY", "").strip()
-    if not bailian_key or not deepseek_key:
-        raise RuntimeError("DASHSCOPE_API_KEY and DEEPSEEK_API_KEY are required")
+    if not bailian_key:
+        raise RuntimeError("DASHSCOPE_API_KEY is required")
+    if not args.retrieval_only and not deepseek_key:
+        raise RuntimeError("DEEPSEEK_API_KEY is required unless --retrieval-only is set")
     args.output_dir.mkdir(parents=True, exist_ok=True)
     dataset = json.loads(args.dataset.read_text(encoding="utf-8"))
     cases = list(dataset.get("cases") or [])
@@ -598,6 +645,12 @@ def main() -> int:
     project_id = next(iter(project_ids))
     chunks = _load_chunks(args.parsed_root, project_id)
     chunks_by_id = {str(chunk["chunk_id"]): chunk for chunk in chunks}
+    chunks_by_source: dict[str, dict[str, str]] = {}
+    for chunk in chunks:
+        source_type = str(chunk["source_corpus"])
+        chunks_by_source.setdefault(source_type, {})[str(chunk["chunk_id"])] = str(
+            chunk["text"]
+        )
     expected_chunk_ids = {
         str(chunk_id)
         for case in cases
@@ -608,20 +661,27 @@ def main() -> int:
         raise ValueError(f"expected chunks missing from corpus: {len(missing_expected)}")
     print(f"corpus ready: {len(chunks)} chunks, {len(cases)} cases", flush=True)
 
-    embedding_cache = args.output_dir / "embedding-cache.jsonl"
+    embedding_cache = args.embedding_cache or args.output_dir / "embedding-cache.jsonl"
     embedding_items = [(str(chunk["chunk_id"]), str(chunk["text"])) for chunk in chunks]
     embedding_items.extend(
         (f"QUERY:{case['case_id']}", str(case["query"])) for case in cases
     )
-    embeddings = _ensure_embeddings(
-        embedding_items,
-        cache_path=embedding_cache,
-        base_url=args.embedding_base_url,
-        api_key=bailian_key,
-        model=args.embedding_model,
-        dimension=args.embedding_dimension,
-        timeout=60,
-    )
+    if args.retrieval_only:
+        embeddings = _load_complete_embeddings(
+            embedding_items,
+            cache_path=embedding_cache,
+            dimension=args.embedding_dimension,
+        )
+    else:
+        embeddings = _ensure_embeddings(
+            embedding_items,
+            cache_path=embedding_cache,
+            base_url=args.embedding_base_url,
+            api_key=bailian_key,
+            model=args.embedding_model,
+            dimension=args.embedding_dimension,
+            timeout=60,
+        )
     print(f"embedding cache ready: {len(embeddings)} vectors", flush=True)
 
     connection = psycopg.connect(
@@ -657,7 +717,9 @@ def main() -> int:
         for index, case in enumerate(cases, start=1):
             case_id = str(case["case_id"])
             cached = cached_retrievals.get(case_id)
-            if cached is not None:
+            if _retrieval_cache_is_current(
+                cached, source_type=str(case["source_type"])
+            ):
                 retrievals[case_id] = [str(value) for value in cached["top5_ids"]]
                 reranker_live_count += bool(cached.get("reranker_live"))
                 gin_index_used = gin_index_used or bool(cached.get("gin_index_used"))
@@ -666,8 +728,10 @@ def main() -> int:
             candidate_ids, used_gin, used_hnsw = _hybrid_candidates(
                 connection,
                 project_id=project_id,
+                source_type=str(case["source_type"]),
                 query=str(case["query"]),
                 query_vector=embeddings[f"QUERY:{case_id}"],
+                lexical_corpus=chunks_by_source[str(case["source_type"])],
             )
             gin_index_used = gin_index_used or used_gin
             hnsw_index_used = hnsw_index_used or used_hnsw
@@ -686,6 +750,8 @@ def main() -> int:
             retrievals[case_id] = [item.candidate_id for item in reranked.items]
             cache_row = {
                 "case_id": case_id,
+                "pipeline_version": RETRIEVAL_PIPELINE_VERSION,
+                "source_type": str(case["source_type"]),
                 "top5_ids": retrievals[case_id],
                 "reranker_live": bool(reranked.provider_used and not reranked.degraded),
                 "gin_index_used": used_gin,
@@ -694,6 +760,57 @@ def main() -> int:
             _append_json_lines(retrieval_cache_path, [cache_row])
             if index % 10 == 0 or index == len(cases):
                 print(f"retrieval cases: {index}/{len(cases)}", flush=True)
+
+        common_configuration = {
+            "embedding_provider": "aliyun-model-studio-openai-compatible",
+            "embedding_model": args.embedding_model,
+            "embedding_dimension": args.embedding_dimension,
+            "index_version": "v1",
+            "vector_weight": 0.6,
+            "full_text_weight": 0.4,
+            "candidate_limit_per_channel": CANDIDATE_LIMIT,
+            "candidate_channels": ["vector", "full_text", "lexical_idf"],
+            "source_type_filter": True,
+            "cjk_ocr_spacing_normalization": True,
+            "retrieval_pipeline_version": RETRIEVAL_PIPELINE_VERSION,
+            "reranker_provider": "aliyun-bailian",
+            "reranker_model": args.reranker_model,
+            "embedding_external_calls": 0 if args.retrieval_only else "as_needed",
+        }
+        common_input = {
+            "golden_case_count": len(cases),
+            "corpus_document_count": len({chunk["document_id"] for chunk in chunks}),
+            "corpus_chunk_count": len(chunks),
+            "project_count": len(project_ids),
+        }
+        if args.retrieval_only:
+            report = evaluate_retrieval_quality(
+                cases,
+                retrievals,
+                reranker_live_count=reranker_live_count,
+                gin_index_used=gin_index_used,
+                hnsw_index_used=hnsw_index_used,
+            )
+            report["generated_at"] = datetime.now().astimezone().isoformat()
+            report["environment"] = {
+                "postgresql_version": database_version,
+                "pgvector_version": pgvector_version,
+                "platform": "Windows 11 x86-64",
+            }
+            report["configuration"] = common_configuration
+            report["input"] = common_input
+            report["conclusion"] = (
+                "The live R4 retrieval and reranker threshold passed."
+                if report["status"] == "PASS"
+                else "The live R4 retrieval and reranker threshold failed."
+            )
+            report_path = args.output_dir / "live-retrieval-result.json"
+            report_path.write_text(
+                json.dumps(report, ensure_ascii=False, indent=2) + "\n",
+                encoding="utf-8",
+            )
+            print(json.dumps(report, ensure_ascii=False, indent=2), flush=True)
+            return 0 if report["status"] == "PASS" else 1
 
         predictions, format_fallback_count = _predict(
             cases,
@@ -721,15 +838,7 @@ def main() -> int:
             "platform": "Windows 11 x86-64",
         }
         report["configuration"] = {
-            "embedding_provider": "aliyun-model-studio-openai-compatible",
-            "embedding_model": args.embedding_model,
-            "embedding_dimension": args.embedding_dimension,
-            "index_version": "v1",
-            "vector_weight": 0.6,
-            "full_text_weight": 0.4,
-            "candidate_limit_per_channel": CANDIDATE_LIMIT,
-            "reranker_provider": "aliyun-bailian",
-            "reranker_model": args.reranker_model,
+            **common_configuration,
             "ai_provider": "deepseek",
             "ai_model": args.deepseek_model,
             "prompt_id": "poc03-quality",
@@ -737,12 +846,7 @@ def main() -> int:
             "format_recovery": "structured-json-then-constrained-token",
             "label_leakage": False,
         }
-        report["input"] = {
-            "golden_case_count": len(cases),
-            "corpus_document_count": len({chunk["document_id"] for chunk in chunks}),
-            "corpus_chunk_count": len(chunks),
-            "project_count": len(project_ids),
-        }
+        report["input"] = common_input
         report["conclusion"] = (
             "All three live Golden Dataset quality thresholds passed."
             if report["status"] == "PASS"
