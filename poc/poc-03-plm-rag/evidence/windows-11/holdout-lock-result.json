@@ -1,0 +1,34 @@
+{
+  "schema_version": "poc-03.holdout-lock-result.v1",
+  "status": "BLOCKED_MISSING_SURVEY_SOURCE",
+  "platform": "Windows 11 x86-64",
+  "target_count": 50,
+  "source_type_quotas": {
+    "STANDARD_CAPABILITY": 33,
+    "CONTRACT": 7,
+    "TECHNICAL_AGREEMENT": 8,
+    "SURVEY": 2
+  },
+  "survey_eligible_count": 0,
+  "strict_exposure_check": "FAIL_CLOSED",
+  "model_exposure_only_check": "FAIL_CLOSED",
+  "lock_file_written": false,
+  "tests": {
+    "passed": 137,
+    "failed": 0
+  },
+  "external_calls": {
+    "embedding": 0,
+    "reranker": 0,
+    "llm": 0
+  },
+  "privacy": {
+    "candidate_content_committed": false,
+    "chunk_ids_committed": false,
+    "source_names_committed": false,
+    "source_locators_committed": false,
+    "customer_files_committed": false
+  },
+  "required_input": "At least one new survey source document; two are recommended.",
+  "conclusion": "The independent holdout remains blocked. Exposed survey evidence will not be reused to fabricate a complete holdout."
+}
