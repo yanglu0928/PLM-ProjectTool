@@ -3,17 +3,17 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 0 技术验证|
-|Current WBS|P03-A12-R1：Prompt v2 本地设计与离线评估|
-|Current Status|READY_FOR_LIVE_DEEPSEEK_APPROVAL|
+|Current WBS|P03-A12-R2：Prompt v2 真实复验与质量 Gate 诊断|
+|Current Status|FAIL / BLOCKED_QUALITY_GATE|
 |Completed Phases|无|
 |Completed WBS|POC-01、POC-02、POC-04 已按批准例外收口；P03-A02~A11、P03-A14、P03-A15 已 PASS|
-|Blockers|Prompt v2 离线契约已 PASS，但离线步骤不能测量 DeepSeek 分类准确率；P03-A12 正式状态仍以 v1 的 57/120（47.50%）为 FAIL，必须完成新的真实模型复验|
-|Pending User Decisions|是否明确允许把 R6 的 120 条查询及每条 5 个 R5 Context（每段不超过 1000 字）发送至 DeepSeek，仅执行 P03-A12 Prompt v2 分类/引用复验；本轮不调用百炼 Embedding 或 Reranker|
+|Blockers|Prompt v2 真实 DeepSeek 复验已完成，但分类仅 51/120（42.50%），低于 90%；引用仅 62/120（51.67%），低于 98%。诊断显示部分 R6 问题与人工分类/唯一期望 Chunk 之间缺少可由 Prompt 输入推导的判定语义，继续针对同一验收集调 Prompt 会产生过拟合风险|
+|Pending User Decisions|L3：是否重新打开 R6 Golden Dataset 的业务语义评审，为每条问题补充可判定的“需求/结论目标”、分类理由及可接受引用集合；未经确认不得修改已冻结 R6 标签、引用或验收门槛|
 |Architecture Version|未冻结；正式基线为实施方案 V2.1|
 |DB Schema Version|未冻结|
 |API Contract Version|未冻结|
-|Test Summary|POC-03 124/124 单元测试 PASS；Prompt v2 为 120/120 条准备 5 个来源隔离 Context，精确证据 114/120、同文档 118/120、正文截断 0、Golden 字段泄漏 0；Embedding/Reranker/DeepSeek 外部调用均为 0|
-|Next WBS|取得本轮明确数据外发授权后，以 `--prediction-only` 复用完整本地 Embedding/R5 检索缓存，只执行 120 条 DeepSeek Prompt v2 复验；未授权前不发送数据|
+|Test Summary|POC-03 124/124 单元测试 PASS；Prompt v2 真实复验 120/120 预测完整、越界引用 0；Embedding 外部调用 0、当前轮 Reranker 外部调用 0、复用 120 条已获批真实重排结果|
+|Next WBS|等待 R6 业务语义/引用 Gate 的 L3 决定；在此之前不启动 Prompt v3、不修改 Golden、不降低 90%/98% 门槛，也不新增客户数据外发|
 
 ## 自动执行策略
 
@@ -25,6 +25,6 @@
 ## 最近检查点
 
 - 分支：`poc/poc-03-plm-rag`
-- 最近功能检查点：P03-A12 Prompt v2 已完成本地设计与离线审计。v2 只允许五类正式标签，按“匹配性 → 充分性 → 满足程度”判断，使用 OCR 规范化完整 Chunk，并以 PromptId/Version 绑定预测缓存。120/120 条 payload、来源隔离、零截断和零 Golden 字段泄漏均 PASS；分类准确率尚未真实测量。
+- 最近功能检查点：用户明确授权后，Prompt v2 以 `--prediction-only` 完成 120/120 条真实 DeepSeek 复验；两个瞬时空/非约束响应通过逐条缓存断点续跑恢复。Top-5 为 114/120（95.00%），分类为 51/120（42.50%），引用为 62/120（51.67%）；P03-A12/A13 继续 FAIL，且不得以继续同集 Prompt 调优掩盖 Golden 可判定性风险。
 - 远端同步状态必须在每次任务结束前通过 Git 实时检查，不在本文件固化可能过期的 ahead/behind 数值。
 - 本地用户文件和 Git 忽略的客户资料保持不变。

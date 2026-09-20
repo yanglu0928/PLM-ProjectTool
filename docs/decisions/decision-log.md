@@ -263,3 +263,15 @@
 |Reason|v1 将六类状态一次性并列，未建立证据 Gate，且每段只取前 600 字；47 条人工确认的 `INSUFFICIENT_INFORMATION` 中有 37 条被误判为 `STANDARD_SATISFIED`，6 条 `NON_STANDARD` 全部误判。需要先消除 Prompt 定义、上下文截断和缓存串版问题，再做真实模型复验。|
 |Impact|120/120 条 v2 payload 离线准备完成，每条 5 个 R5 Context；精确证据可用 114/120、同文档 118/120、来源越界 0、规范化后正文截断 0、Golden 字段泄漏 0，外部调用 0。P03-A12 仍保持 FAIL，直到新的 DeepSeek 真实准确率达到 90%。|
 |Rollback|恢复 v1 Prompt 与 600 字 Context 作为历史失败实现；删除 v2 payload/报告与 `--prediction-only` 模式，不修改 R6 Golden 标签、P03-A11 结果或验收门槛。|
+
+## DEC-20260920-013
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260920-013|
+|Date|2026-09-20|
+|WBS|P03-A12-R2 / P03-A13|
+|Decision|Prompt v2 真实复验未达门槛后，不继续在同一 R6 验收集上启动 Prompt v3，也不根据模型结果修改冻结标签、唯一期望 Chunk 或 90%/98% 门槛。先升级为 L3 质量 Gate，由用户决定是否重新打开 R6 业务语义评审，为问题补充可判定的需求/结论目标、人工分类理由和可接受引用集合。|
+|Reason|Prompt v2 在 Top-5 已达 114/120 的条件下，分类仍只有 51/120，引用 62/120；主要错误为 30 条 `INSUFFICIENT_INFORMATION` 被判为 `STANDARD_SATISFIED`，6 条 `NON_STANDARD` 无一命中。抽样显示若干问题只要求摘录“采用何种方式/有哪些约定”，输入中没有要求模型判断标准满足或非标的业务目标；继续同集调优会把 Golden 分布或单条答案反向编码进 Prompt，不能证明泛化能力。|
+|Impact|P03-A11 保持 PASS；P03-A12/P03-A13 保持 FAIL，POC-03 保持 `BLOCKED_QUALITY_GATE`。保留本轮脱敏聚合证据，查询、Context、逐条响应和 case-level 数据继续只留在 Git 忽略目录；任何新外发复验仍需按当轮范围授权。|
+|Rollback|用户若批准重新打开 R6 Gate，则生成新版本数据集和独立留出集，保留 R6 与 Prompt v1/v2 作为历史失败基线；若不批准，则以当前失败结论结束 POC-03，不伪造通过状态。|

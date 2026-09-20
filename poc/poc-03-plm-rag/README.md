@@ -52,7 +52,7 @@ P03-A11-R4 已把该诊断路径接回统一链：Vector、Full Text 和词法 I
 
 用户明确授权后，R4 对上述候选池完成 120/120 条百炼 `qwen3-rerank` 真实调用，纯语义 Top-5 为 91/120（75.83%），同文档为 107/120（89.17%）。失例表明纯语义重排会覆盖 OCR 规范化后的高置信标识符和字面证据。R5 因此采用无标签保护性融合：百炼第 1 名 + 确定性词法前 4 名；复用同批真实重排缓存后精确 Top-5 为 114/120（95.00%），同文档 118/120（98.33%），P03-A11 PASS。融合不读取金标、答案术语或 ChunkId；结果恰好达到门槛且来自同集探索调优，仍需独立留出集验证。
 
-P03-A12-R1 已完成 Prompt v2 本地准备。v1 的主要分类偏差是把 47 条 `INSUFFICIENT_INFORMATION` 中的 37 条判成 `STANDARD_SATISFIED`，并且 6 条 `NON_STANDARD` 全部误判。v2 只保留五类正式业务标签，要求依次判断匹配性、充分性和满足程度，禁止把“资料未提及”直接推断为非标准；Context 改为 OCR 空白规范化后的完整 Chunk。120/120 条本地 payload 离线审计 PASS，每条 5 个 Context，来源越界、正文截断和 Golden 字段泄漏均为 0；该步骤不调用模型，因此尚不能形成新的分类准确率结论。
+P03-A12-R2 已在用户明确授权后完成 Prompt v2 真实复验。120/120 条预测完整返回，Embedding 外部调用 0、当前轮 Reranker 外部调用 0，复用 120 条已获批真实重排结果；两个瞬时空/非约束响应通过逐条缓存断点续跑恢复。分类正确 51/120（42.50%），低于 90%；47 条 `INSUFFICIENT_INFORMATION` 中 30 条仍被判为 `STANDARD_SATISFIED`，6 条 `NON_STANDARD` 正确数为 0。部分抽取式问题本身未携带“满足/非标/资料不足”的业务判定目标，继续在同一验收集上调 Prompt 存在把 Golden 反向编码进规则的风险，因此 P03-A12 保持 FAIL，等待 R6 可判定性 Gate。
 
 P03-A05 已验证模型切换纪律：保留激活的 `qwen3.7-text-embedding` 1024 维 `v1`，拒绝对旧 index_id 原地更换模型；创建独立 `text-embedding-v4` 768 维 `v2`，使用 120 条固定非客户文本执行 12 批真实请求，120/120 全量重建完成，旧向量复用数为 0。`v2` 状态为验证通过但未激活，不替换当前绑定。
 
@@ -209,8 +209,8 @@ python scripts/prepare_prompt_v2_offline.py `
 |Context Builder → AIService|统一网关、Prompt/Context/Trace|统一调用链与结构化输出 PASS；无 RAG 直连厂商|
 |异常与空结果|DB/Reranker/AI 不可用、空结果、低可靠度|6 场景 PASS；空/低可靠度不调用 AI|
 |Top-5 Recall|≥95%|R4 真实百炼纯重排 91/120（75.83%）；R5 保护性融合 114/120（95.00%），同文档 118/120（98.33%），P03-A11 PASS；独立留出集待验证|
-|分类准确率|≥90%|v1 DeepSeek 57/120（47.50%），FAIL；Prompt v2 的 120/120 条 payload 离线契约 PASS，真实 DeepSeek 复验尚未授权/执行|
-|来源引用准确率|≥98%|R6 真实引用 62/120（51.67%），FAIL；越界引用 0|
+|分类准确率|≥90%|Prompt v2 DeepSeek 51/120（42.50%），FAIL；120/120 预测完整，越界引用 0|
+|来源引用准确率|≥98%|Prompt v2 真实引用 62/120（51.67%），FAIL；R5 检索精确命中 114/120，但模型选择唯一期望 Chunk 仅 62 条|
 |PROJECT 跨项目泄漏|0|P03-A06：6 组查询、30 行结果，泄漏 0，PASS|
 
 ## Logs
@@ -222,7 +222,7 @@ python scripts/prepare_prompt_v2_offline.py `
 
 ## Known Issues
 
-1. R6 Golden Dataset 已确认并严格导入；P03-A11 已由 R5 保护性融合达到 114/120（95.00%）并 PASS。P03-A12 Prompt v2 只完成本地离线契约，真实准确率仍以 v1 的 47.50% 为 FAIL；P03-A13 仍为 51.67%，POC-03 尚不能收口。
+1. R6 Golden Dataset 已确认并严格导入；P03-A11 已由 R5 保护性融合达到 114/120（95.00%）并 PASS。Prompt v2 真实分类只有 51/120（42.50%），引用 62/120（51.67%）；P03-A12/A13 仍 FAIL，POC-03 尚不能收口。
 2. 当前调优与验收使用同一 Golden Dataset；正式生产质量结论仍需独立留出集，不能把探索结果解释为泛化能力证明。
 3. 两个资料库共 10 个旧版二进制 `.doc` 尚不支持，不进入本轮候选池。
 4. Windows Server 2025 与 Debian 13 尚未执行本 PoC。
@@ -235,7 +235,7 @@ python scripts/prepare_prompt_v2_offline.py `
 
 ## Conclusion
 
-POC-03 的基础链路和 Golden Dataset 标签 Gate 已完成；P03-A11 在 Windows 11 上以 R5 保护性融合达到 95.00% 并 PASS。P03-A12 Prompt v2 本地准备已 PASS，但真实 DeepSeek 复验尚未执行；P03-A12/P03-A13 仍未达门槛。任何新的客户数据外发需按当轮范围重新确认。
+POC-03 的基础链路已完成；P03-A11 在 Windows 11 上以 R5 保护性融合达到 95.00% 并 PASS。Prompt v2 已完成真实 DeepSeek 复验，但 P03-A12/P03-A13 分别只有 42.50%/51.67%，仍未达门槛。下一步必须先由 L3 决定是否重新打开 R6 的问题、标签理由与可接受引用集合评审；未经确认不得修改冻结基线或继续新增客户数据外发。
 
 ## PASS / FAIL
 
