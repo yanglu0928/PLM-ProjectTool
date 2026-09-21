@@ -3,17 +3,17 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 0 技术验证|
-|Current WBS|P03-A12~A13-R10：独立开发集分类与引用修复设计|
-|Current Status|DIAGNOSED / BLOCKED_QUALITY_GATE|
+|Current WBS|P03-A12~A13-R11：Prompt v3 与 Evidence Selector 离线修复|
+|Current Status|IMPLEMENTED_OFFLINE / NOT_LIVE_REVALIDATED / BLOCKED_QUALITY_GATE|
 |Completed Phases|无|
 |Completed WBS|POC-01、POC-02、POC-04 已按批准例外收口；P03-A02~A11、P03-A14、P03-A15 已 PASS；P03-A11 已由 50 条独立留出集 98.00% 再验证 PASS|
 |Blockers|独立留出集分类准确率 24/50（48.00%）低于 90%，精确引用 37/50（74.00%）低于 98%；R10 诊断确认能力适配标签缺少跨来源对照输入、Prompt 混合条款存在与能力满足、46/50 引用首位候选，且至少 8 条引用失例存在可接受引用集合潜在漏标。P03-A12/P03-A13 与 Phase 0 质量 Gate 保持 FAIL|
-|Pending User Decisions|当前本地失败诊断和改进设计可按授权自主执行；任何新的客户数据外发、全新留出集真实调用或正式 Gate 仍需按规则单独确认|
+|Pending User Decisions|用户已同意 R10 修复方向并明确不重复本轮真实复验；任何新的客户数据外发、全新留出集真实调用或正式 Gate 仍需按规则单独确认|
 |Architecture Version|未冻结；正式基线为实施方案 V2.1|
 |DB Schema Version|未冻结|
 |API Contract Version|未冻结|
-|Test Summary|POC-03 193/193、POC-04 12/12 单元测试 PASS；独立留出集真实复验 50/50 完成：Top-5 49/50（98.00%，PASS）、分类 24/50（48.00%，FAIL）、引用 37/50（74.00%，FAIL）；R10 本地诊断复算 26 条分类失例、13 条引用失例、1 条检索失例，17 条需求来源样本分类仅 1 条正确，46/50 引用第 1 名，13 条引用失例中 8 条引用包含全部答案术语、4 条包含部分术语|
-|Next WBS|在不复用本轮 50 条作为调优集的前提下，设计独立开发集、双来源证据装配、Prompt v3 结构化判定和 Evidence Selector；新的真实模型调用前重新执行外发 Gate|
+|Test Summary|POC-03 203/203、POC-04 12/12 单元测试 PASS；R11 使用纯合成样本完成 Prompt v3、双来源证据装配和 Evidence Selector 的 10 项新增测试，验证问题类型显式路由、ProjectId 隔离、Golden 字段防泄漏、第 2 名直接证据可超过第 1 名泛化描述以及各类失败关闭；本轮外部调用 0，50 条留出集未重复运行|
+|Next WBS|POC-03 保持历史 FAIL 且不进入冻结；继续处理不依赖该质量结论的其余 Phase 0 PoC，优先收口 POC-05 Windows 11 断网重放与真实扫描语义准确率|
 
 ## 自动执行策略
 
@@ -26,6 +26,6 @@
 ## 最近检查点
 
 - 分支：`poc/poc-03-plm-rag`
-- 最近功能检查点：R10 本地失败分层诊断完成。合同、调研、技术协议共 17 条，检索命中 16 条但分类仅 1 条正确，确认能力适配任务缺少跨来源标准能力对照；模型 46/50 次引用第 1 名，正确证据位于第 2～5 名时仅命中 2/12。13 条严格引用失例中，8 条模型引用包含全部人工答案术语，提示未来数据集需在推理前完整登记可接受引用集合。本轮分数、门槛和人工标签均未修改，推荐在独立开发集采用双阶段证据与判定链。
+- 最近功能检查点：用户同意 R10 方向后完成 R11 离线实现。Prompt v3 显式区分 `DOCUMENT_ASSERTION` 与 `CAPABILITY_FIT`，能力适配必须同时提供需求证据和标准能力证据；Evidence Selector 比较候选支持度，原始名次只作同分规则。10 项合成测试和 POC-03 全量 203 项测试通过；未读取本轮 50 条调规则，未重复真实复验，未产生外部调用。质量 Gate 和历史分数不变。
 - 远端同步状态必须在每次任务结束前通过 Git 实时检查，不在本文件固化可能过期的 ahead/behind 数值。
 - 本地用户文件和 Git 忽略的客户资料保持不变。
