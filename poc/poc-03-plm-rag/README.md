@@ -282,6 +282,15 @@ python scripts/prepare_prompt_v2_offline.py `
 - 4/4 页签完成渲染、回读、公式错误扫描和输入交互回归；任务完成与决策关闭会同步更新看板统计。POC-03 全量 160/160 单元测试 PASS，本轮外部模型调用 0。
 - 客户项目名、任务内容、工作簿、证据页和确认记录继续只保存在 Git 忽略的 `artifacts/project-analysis/`；仓库仅同步通用脚手架、测试和脱敏说明。
 
+## Local Desktop Discovery and Requirement Candidates R3
+
+- 因第一批暂时无法安排客户访谈，将 R2 第 1 批的 5 个项目转换为“基于现有资料的桌面调研”；每条结果均标注证据等级、资料局限和是否需要后续确认，不把资料推断写成客户已确认事实。
+- 新增通用包生成器 `scripts/build_desktop_discovery_requirements.py`，校验 R1/R2 指纹后形成 25 条桌面调研结论、40 条需求候选和 10 条未关闭前置假设。
+- 需求候选按证据与类型分为 29 条 `DRAFT_READY`、1 条 `DRAFT_WITH_ASSUMPTION` 和 10 条 `BLOCKED_BY_DECISION`；其中待确认项始终转成前置决策，不因缺少访谈而自动关闭。
+- 新增 Artifact Tool 工作簿生成器 `scripts/build_desktop_discovery_workbook.mjs`，提供结果总览、桌面调研结果、需求候选、前置假设和使用说明五页，并保留本地证据跳转与黄色可选评审区。
+- 5/5 页签完成渲染、回读、公式错误扫描和输入交互回归；POC-03 全量 165/165 单元测试 PASS，本轮外部模型调用 0。
+- 客户项目名、原文件名、结论、候选正文、工作簿和证据页继续只保存在 Git 忽略的 `artifacts/project-analysis/`。R3 仅进入需求候选准备，不构成正式 Requirement、需求冻结或 Phase 6 开始；正式 Phase 0 Gate 与独立留出集外发授权要求不变。
+
 ## Known Issues
 
 1. R6 Golden Dataset 已确认并严格导入；P03-A11 已由 R5 保护性融合达到 114/120（95.00%）并 PASS。Prompt v2 真实分类只有 51/120（42.50%），引用 62/120（51.67%）；P03-A12/A13 仍 FAIL，POC-03 尚不能收口。
@@ -294,6 +303,7 @@ python scripts/prepare_prompt_v2_offline.py `
 8. P03-A04 已激活阿里云百炼 OpenAI-compatible `qwen3.7-text-embedding`、1024 维、索引 `v1` 的 PoC 绑定；它不代表正式架构冻结。
 9. DeepSeek 官方资料本轮未找到 Embedding 端点；不得把现有 DeepSeek Chat Key 假定为向量服务凭据。
 10. 标准能力库中的调研业务表单仅作参考；客户事实应优先来自实际访谈、现场交流和调研结论记录。
+11. R3 桌面调研用于在无法安排访谈时形成可追溯的需求候选，不替代客户/项目经理确认；10 条前置假设保持未关闭，正式需求状态不得据此自动升级。
 
 ## Conclusion
 
