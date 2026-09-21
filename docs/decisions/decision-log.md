@@ -479,3 +479,15 @@
 |Reason|R10 已确认能力适配缺少跨来源对照且引用存在首位偏差。离线合同和合成测试可以修复结构性缺陷而不泄漏已见留出集；但没有新的独立真实证据，不能据此声明 P03-A12/P03-A13 PASS。|
 |Impact|新增文档事实/能力适配显式路由、条件 OutputSchema、需求与标准能力证据角色、ProjectId 失败关闭和查询支持度选择器。模型供应商、统一 AIService、数据库、质量门槛、人工标签及历史结果不变；POC-03 保持 FAIL，项目仅继续不依赖该结论的其他 Phase 0 PoC。|
 |Rollback|删除 Prompt v3、Evidence Selector、对应测试和 R11 设计文档即可回到 R10 诊断状态；不会改变 v2 历史代码、真实调用缓存或冻结结果。|
+
+## DEC-20260921-031
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260921-031|
+|Date|2026-09-21|
+|WBS|P05-A19 真实扫描 PDF 分层语义准确率|
+|Decision|以“原页视觉抄录后再比 OCR”的 75 个分层检查点作为真实扫描语义 PoC 门槛：一般语义相似度不低于 0.85，数值、代码和版本完全一致，总召回不低于 95%，关键错误为 0。PaddleOCR 保持主链；未过门槛的 Tesseract 只作辅助回退，关键字段必须由主链或人工确认。依据用户批准，Windows 11 物理断网与 Debian 13 登记 `EXC-P0-004` 暂缓。|
+|Reason|成功解析、OCR 行数和自生成术语召回不能证明真实扫描语义准确率。分层页面与人工视觉检查点可避免 OCR 自证；主辅链对照显示 PaddleOCR 75/75，而 Tesseract 只有 70/75 且含关键错误。用户已明确同意 Windows 11 保留 `PASS_LOCAL_ASSETS`、不主动断网，并曾明确 Debian 13 暂不验证。|
+|Impact|POC-05 以 `PASS_WITH_EXCEPTION` 收口。Windows 11 与 Windows Server 2025 的已验证结论保留；Windows 11 物理断网、Debian 13 和 105 页逐字符全量标注仍不形成通过结论。原页、真值、客户内容和逐项结果只留在 Git 忽略的本地 artifacts，仓库保存匿名汇总。|
+|Rollback|可删除本轮评分工具和匿名汇总并恢复 POC-05 `IN_PROGRESS`；不得把 Tesseract 基线失败改写为通过，也不得删除 `EXC-P0-004` 的历史批准记录。|

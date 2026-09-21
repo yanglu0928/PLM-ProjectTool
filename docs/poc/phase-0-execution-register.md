@@ -18,7 +18,7 @@
 |POC-02|P0.05/P0.06/P0.07/P0.08|PostgreSQL 18 + pgvector|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11 功能链 PASS；Windows Server 2025 完全断网功能链 PASS；Windows 11 断网重放与 Debian 13 经用户批准暂缓，不构成对应兼容性结论|`poc/poc-02-postgresql-18-pgvector/`、`docs/poc/phase-0-exceptions.md`|
 |POC-03|P0.09/P0.10/P0.12|PLM RAG|FAIL|2026-09-17|-|50 条独立留出集真实复验：Top-5 49/50（98.00%）PASS；分类 24/50（48.00%）、引用 37/50（74.00%）FAIL。50/50 条百炼重排和 DeepSeek 预测完整，GIN/HNSW 命中，缺失预测与越界引用均为 0；质量 Gate 保持 FAIL|`poc/poc-03-plm-rag/`|
 |POC-04|P0.11|AI Gateway / DeepSeek|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11、Windows Server 2025 统一网关、11/11 确定性场景及真实文本/流式/结构化/401 PASS；Debian 13 经用户批准暂缓，不构成兼容性结论|`poc/poc-04-ai-gateway/`、`docs/poc/phase-0-exceptions.md`|
-|POC-05|P0.04/P0.12|Document + OCR|IN_PROGRESS|2026-09-17|-|Windows 11 六类输入和主辅 OCR 功能链 PASS；Windows Server 2025 完全断网 8/8 PASS；Windows 11 真实资料 26/26 个受支持文件通过并含 5 个扫描 PDF；Windows 11 断网、Debian 13 和真实扫描语义准确率待处理|`poc/poc-05-document-ocr/`|
+|POC-05|P0.04/P0.12|Document + OCR|PASS_WITH_EXCEPTION|2026-09-17|2026-09-21|Windows 11 功能链和真实扫描分层语义审计 PASS，PaddleOCR 75/75、关键错误 0；Windows Server 2025 完全断网 8/8 PASS；Windows 11 物理断网与 Debian 13 依据 `EXC-P0-004` 暂缓|`poc/poc-05-document-ocr/`、`docs/poc/phase-0-exceptions.md`|
 |POC-06|P0.16/P0.17|Word / PPT|NOT_STARTED|-|-|-|-|
 |POC-07|P1|VSDX|DEFERRED_P1|-|-|不阻塞 Phase 0|-|
 |POC-08|P0.13|Plugin Host|NOT_STARTED|-|-|-|-|
@@ -52,6 +52,7 @@
 |2026-09-17|启动 POC-05；创建 Document + OCR 工作区、PoC 统一 ParsedDocument Schema 和三平台验收矩阵，从 Windows 11 六类输入验证开始。|
 |2026-09-17|POC-05 Windows 11 六类输入、统一 Schema、来源定位、PaddleOCR/Tesseract/OCRmyPDF 全部通过；PaddlePaddle 3.3.1 Windows CPU 需关闭 oneDNN。|
 |2026-09-17|POC-05 Windows Server 2025 在虚拟网卡断开状态完成受控模型与制品全新复跑，六类输入和三条 OCR 链 8/8 PASS；修复 PowerShell 5.1 无 BOM UTF-8 JSON 回读问题。|
+|2026-09-21|POC-05 真实扫描件完成 5 份文档、15 页、75 个视觉真值检查点的分层审计：PaddleOCR 75/75、关键错误 0，Tesseract 70/75 且降级为辅助链。登记 `EXC-P0-004` 后以 `PASS_WITH_EXCEPTION` 收口。|
 |2026-09-17|启动 POC-04；建立 AIService、ModelRouter、DeepSeekAdapter、验收矩阵和官方协议快照。|
 |2026-09-17|POC-04 Windows 11 确定性场景 11/11 PASS，DeepSeek 官方端点 401、真实文本、SSE 流式和结构化 JSON 全部通过；修复 JSON/Schema failure 未受控重试的问题。|
 |2026-09-17|POC-04 Windows Server 2025 实机完成 11/11 单元测试、11/11 确定性场景及 DeepSeek 官方端点 401、真实文本、SSE 流式和结构化 JSON 验证；临时密钥已删除，脱敏证据扫描无匹配。|

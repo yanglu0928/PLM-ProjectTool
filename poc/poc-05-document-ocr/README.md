@@ -2,9 +2,9 @@
 
 ## Status
 
-`IN_PROGRESS`
+`PASS_WITH_EXCEPTION`
 
-Windows 11 六类输入和主辅 OCR 功能链已通过；Windows Server 2025 已在虚拟网卡断开状态完成同一语料的全新离线复跑。Windows 11 两批本地真实资料中，26/26 个受支持文件通过统一解析：历史方案 17 个，技术协议/合同 9 个，其中包含 5 个扫描 PDF。POC-05 仍为 `IN_PROGRESS`：Windows 11 未做物理断网复跑，Debian 13 未执行，真实扫描件尚未完成人工语义准确率标注。
+Windows 11 六类输入和主辅 OCR 功能链已通过；Windows Server 2025 已在虚拟网卡断开状态完成同一语料的全新离线复跑。Windows 11 两批本地真实资料中，26/26 个受支持文件通过统一解析：历史方案 17 个，技术协议/合同 9 个，其中包含 5 个扫描 PDF。真实扫描件已完成 15 页、75 个视觉真值检查点的分层语义审计，PaddleOCR 主链 75/75、关键错误 0；Tesseract 基线未达标并限定为辅助链。依据 `EXC-P0-004`，Windows 11 物理断网复跑和 Debian 13 验证暂缓，POC-05 以 `PASS_WITH_EXCEPTION` 收口。
 
 ## Objective
 
@@ -16,7 +16,7 @@ Windows 11 六类输入和主辅 OCR 功能链已通过；Windows Server 2025 �
 
 - Windows 11 Home 10.0.26200，x86-64，Python 3.13.15。
 - Windows Server 2025 Datacenter 10.0.26100，x86-64，Python 3.13.15；已完成本 PoC 完全断网复跑。
-- Debian 13 x86-64；当前无可用验收环境，状态为 `NOT_RUN`。
+- Debian 13 x86-64；当前无可用验收环境，依据 `EXC-P0-004` 为 `DEFERRED_BY_USER / 未验证`。
 - Python 依赖沿用 POC-01 已验证范围：python-docx、python-pptx、openpyxl、PyMuPDF、pdfplumber、Pillow、PaddleOCR、PaddlePaddle、pytesseract、OCRmyPDF。
 - Tesseract、Ghostscript、OCRmyPDF 的 Windows 安装与中文 `--deskew` 编码兼容修复沿用 POC-01 成果，但必须在本 PoC 输入上重新执行。
 
@@ -45,26 +45,28 @@ POC-03 启动时又以被 Git 忽略的 `技术协议&合同/` 作为只读输�
 4. 验证每个输出符合 PoC JSON Schema，且保留原格式可提供的页码、章节、工作表、表格和源定位。
 5. 对扫描 PDF 分别执行 PaddleOCR 与 Tesseract；另用 OCRmyPDF 生成 searchable PDF 并回读文本。
 6. 统计预期术语召回率、处理耗时、块数量、页数和表格行数。
-7. 在 Windows Server 2025 使用同一输入和脚本复跑；Debian 13 保持独立未验证状态，除非后续取得环境或用户批准例外。
+7. 在 Windows Server 2025 使用同一输入和脚本复跑；Debian 13 依据 `EXC-P0-004` 暂缓并保持独立未验证状态。
 8. 对本地真实方案库执行 OOXML 包完整性检查、格式识别、统一解析、Schema 校验及解析前后 Hash/大小/修改时间核对；不修改原件，不提交文件名或正文。
 9. 对本地技术协议/合同资料执行同一只读检查；过滤 macOS `._` 旁车文件，并确保 Tesseract 页面图片句柄在每页处理后关闭。
+10. 对 5 个真实扫描 PDF 固定抽取 15 页，从原页视觉抄录 75 个检查点，再分别评估既有 Tesseract 输出与本地 PaddleOCR 主链；原页、真值和逐项结果不提交 Git。
 
 ## Result
 
 |验收域|Windows 11|Windows Server 2025|Debian 13|说明|
 |---|---|---|---|---|
-|测试语料与 Hash|PASS|PASS|NOT_RUN|两端输入 SHA-256 一致|
-|DOCX 统一解析|PASS|PASS|NOT_RUN|2 个显式页、15 个块、7 个表格行|
-|PPTX 统一解析|PASS|PASS|NOT_RUN|2 张幻灯片、7 个块、4 个表格行|
-|XLSX 统一解析|PASS|PASS|NOT_RUN|2 个工作表、9 个表格行|
-|CSV 统一解析|PASS|PASS|NOT_RUN|3 个表格行，保留行号|
-|文本 PDF 统一解析|PASS|PASS|NOT_RUN|2 页、19 个块、6 个表格行|
-|扫描 PDF PaddleOCR|PASS|PASS|NOT_RUN|两端预期术语 5/5|
-|扫描 PDF Tesseract/OCRmyPDF|PASS|PASS|NOT_RUN|两端两条辅助链均为 5/5|
-|Schema 与来源断言|PASS|PASS|NOT_RUN|两端 8/8 结果 PASS|
-|完全离线复跑|PASS_LOCAL_ASSETS|PASS|NOT_RUN|Server：1 个物理网卡、0 个连接|
-|真实方案库只读批量解析|PARTIAL_PASS|NOT_RUN|NOT_RUN|17/17 个受支持文件 PASS；1 个旧版 `.doc` 不在当前范围；18/18 原件未改变|
-|真实技术协议/合同批量解析|PARTIAL_PASS|NOT_RUN|NOT_RUN|9/9 个受支持文件 PASS；含 5 个扫描 PDF；9 个旧版 `.doc` 不支持；18/18 原件未改变|
+|测试语料与 Hash|PASS|PASS|DEFERRED_BY_USER|两端输入 SHA-256 一致|
+|DOCX 统一解析|PASS|PASS|DEFERRED_BY_USER|2 个显式页、15 个块、7 个表格行|
+|PPTX 统一解析|PASS|PASS|DEFERRED_BY_USER|2 张幻灯片、7 个块、4 个表格行|
+|XLSX 统一解析|PASS|PASS|DEFERRED_BY_USER|2 个工作表、9 个表格行|
+|CSV 统一解析|PASS|PASS|DEFERRED_BY_USER|3 个表格行，保留行号|
+|文本 PDF 统一解析|PASS|PASS|DEFERRED_BY_USER|2 页、19 个块、6 个表格行|
+|扫描 PDF PaddleOCR|PASS|PASS|DEFERRED_BY_USER|两端预期术语 5/5|
+|扫描 PDF Tesseract/OCRmyPDF|PASS|PASS|DEFERRED_BY_USER|两端两条辅助链均为 5/5|
+|Schema 与来源断言|PASS|PASS|DEFERRED_BY_USER|两端 8/8 结果 PASS|
+|完全离线复跑|PASS_LOCAL_ASSETS|PASS|DEFERRED_BY_USER|Server：1 个物理网卡、0 个连接|
+|真实方案库只读批量解析|PARTIAL_PASS|NOT_RUN|DEFERRED_BY_USER|17/17 个受支持文件 PASS；1 个旧版 `.doc` 不在当前范围；18/18 原件未改变|
+|真实技术协议/合同批量解析|PARTIAL_PASS|NOT_RUN|DEFERRED_BY_USER|9/9 个受支持文件 PASS；含 5 个扫描 PDF；9 个旧版 `.doc` 不支持；18/18 原件未改变|
+|真实扫描件语义准确率|PASS|NOT_RUN|DEFERRED_BY_USER|PaddleOCR 75/75、关键错误 0；Tesseract 70/75、关键错误 2，仅作辅助链|
 
 ## Metrics
 
@@ -77,6 +79,7 @@ POC-03 启动时又以被 Git 忽略的 `技术协议&合同/` 作为只读输�
 |PoC Schema 错误|0|0|
 |PaddleOCR 模型|PP-OCRv5 mobile det + rec|同一模型 Hash，显式本地目录|
 |离线状态|本地制品重放，网络未隔离|1 个物理网卡、0 个连接|
+|真实扫描分层语义审计|75/75，100%，关键错误 0|NOT_RUN|
 
 Windows 11 真实方案库批次指标：
 
@@ -106,6 +109,16 @@ Windows 11 技术协议/合同批次指标：
 |批次耗时|194.970 秒|
 |旧格式|9 个 `.doc`，`UNSUPPORTED`|
 
+Windows 11 真实扫描件语义审计：
+
+|指标|Tesseract 辅助基线|PaddleOCR 主链|
+|---|---|---|
+|匿名文档 / 抽样页 / 检查点|5 / 15 / 75|5 / 15 / 75|
+|命中与召回|70/75，93.33%|75/75，100%|
+|关键错误|2|0|
+|数值/代码/版本精确错误|1|0|
+|结论|FAIL，仅作辅助回退|PASS|
+
 Windows 11 标准能力库批次指标：
 
 |指标|结果|
@@ -123,17 +136,18 @@ Windows 11 标准能力库批次指标：
 - Windows 11：`evidence/windows-11/`
 - Windows 11 真实方案库脱敏结果：`evidence/windows-11/solution-library-validation.json` 与 `solution-library-README.md`
 - Windows 11 技术协议/合同脱敏汇总：`../poc-03-plm-rag/evidence/windows-11/`
+- Windows 11 真实扫描件语义审计：`evidence/windows-11/real-scan-semantic-audit.json` 与 `real-scan-semantic-audit.md`
 - Windows Server 2025：`evidence/windows-server-2025/`
 - Debian 13：`evidence/debian-13/`
 - 大型模型、渲染中间文件和原始运行日志保存在被 Git 忽略的 `artifacts/poc-05/`。
 
 ## Known Issues
 
-1. 已完成 5 个真实扫描 PDF 的 Tesseract 解析、Schema 和来源定位，但没有逐页人工真值，不能把 OCR 行数解释为语义准确率。
+1. 真实扫描件已形成 15 页分层视觉真值，但不是 105 页逐字符全量标注；结果不能外推为所有扫描质量均达到 100%。
 2. Windows 11 使用显式本地模型目录完成重放，但没有物理断开主机网络；只有 Windows Server 2025 形成完全断网证据。
 3. XLSX 和 CSV 没有天然页码；本 PoC 使用工作表、行号和单元格范围作为来源，不伪造物理页码。
 4. DOCX 的物理分页取决于排版引擎；PoC 仅保证显式分页符和章节来源，自动分页页码需由渲染或版面解析补充。
-5. Debian 13 尚未执行；两个 Windows 平台的结果不能替代 Debian 兼容性结论。
+5. Debian 13 依据 `EXC-P0-004` 暂缓；两个 Windows 平台的结果不能替代 Debian 兼容性结论。
 6. PaddlePaddle 3.3.1 在本次 Windows CPU 环境启用 oneDNN 时触发 `ConvertPirAttribute2RuntimeAttribute` 未实现错误；PoC 通过 `enable_mkldnn=False` 稳定运行，需作为 Windows 运行约束继续回归。
 7. Windows PowerShell 5.1 读取 Python 生成的无 BOM UTF-8 JSON 时会按本地代码页解码；Server 驱动已显式使用 `-Encoding UTF8`。
 8. 当前工作区依赖未提供打包的 LibreOffice，DOCX 样本无法按文档制作规范完成 DOCX 转 PNG；已完成 OOXML 结构解析，Microsoft Office 打开性属于 POC-06。
@@ -149,13 +163,15 @@ Windows 11 真实方案库的 17 个受支持文件也已全部完成结构解�
 
 Windows 11 技术协议/合同批次的 4 个 DOCX 和 5 个扫描 PDF 同样全部通过，补齐了真实扫描 PDF 技术链证据；Tesseract 临时图片句柄问题已修复并增加回归测试。由于仍无人工 OCR 真值，本结果不构成真实扫描件语义准确率通过结论。
 
+随后完成的分层语义审计表明，PaddleOCR 主链在 15 页、75 个视觉真值检查点上全部命中且关键错误为 0；既有 Tesseract 输出未过门槛，因此正式边界是“PaddleOCR 主链 + Tesseract 辅助回退 + 关键字段失败转人工确认”。
+
 Windows 11 标准能力库的 20 个 DOCX 全部完成结构解析和 Schema 校验；无效 `word/NULL` 关系的兼容修复已由回归测试覆盖，且未改写用户原文件。
 
-POC-05 尚不收口。Windows 11 物理断网复跑、Debian 13 和真实扫描件人工语义准确率仍待处理或取得独立用户例外。
+POC-05 依据 `EXC-P0-004` 以例外收口。Windows 11 物理断网复跑和 Debian 13 仍为未验证范围；恢复对应 Release Gate 时必须重新执行，不能由现有 Windows 证据外推。
 
 ## PASS / FAIL
 
-`IN_PROGRESS`
+`PASS_WITH_EXCEPTION`
 
 ## Alternative
 

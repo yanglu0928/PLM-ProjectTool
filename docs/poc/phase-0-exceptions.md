@@ -61,3 +61,25 @@
 3. 在声称 Debian 13 AI Gateway 兼容、制作 Debian 发行包或通过 Debian Release Gate 前，必须恢复并完成对应验证。
 4. 本例外不改变统一 `AIService → ModelRouter → ProviderAdapter` 基线，不允许业务模块直接调用厂商 SDK。
 5. 本例外不代表 Phase 0 整体完成；其他阻塞 PoC 仍须通过或取得独立例外。
+
+## EXC-P0-004：暂缓 POC-05 Windows 11 物理断网复跑与 Debian 13 验证
+
+|字段|内容|
+|---|---|
+|状态|APPROVED|
+|批准日期|2026-09-21|
+|批准人|用户/项目负责人|
+|关联 PoC|POC-05|
+|例外内容|Windows 11 保留 `PASS_LOCAL_ASSETS`，不主动断开当前主机网络；Debian 13 本轮暂不验证|
+|已完成范围|Windows 11 六类输入、主辅 OCR 功能链、26 个受支持真实文件、5 个真实扫描 PDF 的分层语义审计；Windows Server 2025 完全断网 8/8 功能链|
+|未验证范围|Windows 11 物理断网复跑；Debian 13 六类格式、OCR、模型与运行制品验证|
+|处理结果|POC-05 以 `PASS_WITH_EXCEPTION` 收口，可进入下一项 Phase 0 PoC|
+
+## EXC-P0-004 边界
+
+1. Windows 11 已使用显式本地模型和运行制品完成重放，但不得描述为已完成物理断网验证。
+2. Windows Server 2025 的完全断网结果不得替代 Windows 11 或 Debian 13 平台证据。
+3. Debian 13 保持 `DEFERRED_BY_USER / 未验证`；在制作 Debian 发行包或通过 Debian Release Gate 前必须恢复验证。
+4. 真实扫描语义结论只覆盖 5 份文档中的 15 个分层抽样页和 75 个视觉检查点，不等同于 105 页逐字符全量标注。
+5. PaddleOCR 为主链；未达门槛的 Tesseract 只能作为辅助回退，关键字段必须由主链或人工确认。
+6. 本例外不改变三个正式目标环境，也不代表 Phase 0 整体完成；POC-03 质量 Gate 仍为 FAIL。

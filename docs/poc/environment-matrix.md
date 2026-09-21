@@ -15,9 +15,9 @@
 
 |环境|操作系统|CPU 架构|资源|Python 3.13|资格|状态|
 |---|---|---|---|---|---|---|
-|本地开发机 / Windows 11 验收环境|Windows 11 Home 10.0.26200|x86-64|32 逻辑处理器 / 31.63 GB RAM / D盘约 435.29 GB 可用|3.13.15|POC-01 已收口；POC-02 功能链已验证；POC-03 候选数据准备已验证；POC-04 统一网关与真实 DeepSeek 已验证；POC-05 功能链与本地模型重放已验证|POC01_PASS / POC02_FUNCTIONAL_PASS / POC03_DATASET_CANDIDATES_PASS / POC04_FUNCTIONAL_PASS / POC05_FUNCTIONAL_PASS|
+|本地开发机 / Windows 11 验收环境|Windows 11 Home 10.0.26200|x86-64|32 逻辑处理器 / 31.63 GB RAM / D盘约 435.29 GB 可用|3.13.15|POC-01 已收口；POC-02 功能链已验证；POC-03 候选数据准备已验证；POC-04 统一网关与真实 DeepSeek 已验证；POC-05 功能链与真实扫描分层语义审计已验证|POC01_PASS / POC02_FUNCTIONAL_PASS / POC03_DATASET_CANDIDATES_PASS / POC04_FUNCTIONAL_PASS / POC05_PASS_WITH_EXCEPTION|
 |VMware / Windows Server 2025 验收环境|Windows Server 2025 Datacenter 10.0.26100（Desktop Experience）|x86-64|16 逻辑处理器 / 16 GB RAM / 系统盘约 54.71 GB 可用|3.13.15（官方嵌入式包）|POC-01 已收口；POC-02、POC-05 完全断网功能链已验证；POC-04 统一网关与真实 DeepSeek 已验证|POC01_PASS / POC02_PASS / POC04_FUNCTIONAL_PASS / POC05_PASS|
-|Linux 验收环境|Debian 13|x86-64|最低 4C / 8 GB / 100 GB|未确认|正式目标；POC-01/POC-02/POC-04 验证经用户批准暂缓；POC-05 尚未执行|DEFERRED_BY_USER / POC04_DEFERRED_BY_USER / POC05_NOT_RUN|
+|Linux 验收环境|Debian 13|x86-64|最低 4C / 8 GB / 100 GB|未确认|正式目标；POC-01/POC-02/POC-04/POC-05 验证经用户批准暂缓|DEFERRED_BY_USER / POC04_DEFERRED_BY_USER / POC05_DEFERRED_BY_USER|
 
 ## 当前工具发现
 
@@ -44,13 +44,13 @@
 
 ## 环境缺口
 
-1. Debian 13 的 POC-01/POC-02/POC-04 分别依据 `EXC-P0-001`、`EXC-P0-002`、`EXC-P0-003` 暂缓；POC-05 尚未取得独立例外，保持 `NOT_RUN`。恢复验证时仍需可重复使用的 x86-64 环境。
+1. Debian 13 的 POC-01/POC-02/POC-04/POC-05 分别依据 `EXC-P0-001`、`EXC-P0-002`、`EXC-P0-003`、`EXC-P0-004` 暂缓。恢复验证时仍需可重复使用的 x86-64 环境。
 2. POC-02 Windows 11 已使用本地制品完成全部功能验证，但物理断网重放依据 `EXC-P0-002` 暂缓。
 3. Windows 11 与 Windows Server 2025 的 PostgreSQL 18.6 + pgvector 0.8.6 功能链已通过；Server 已完全断网验证，Windows 11 断网重放为 `DEFERRED_BY_USER`。
 4. Windows Server 2025 当前账号无管理员令牌，系统策略拒绝 Python EXE 安装器；POC-01 已使用官方嵌入式包验证无管理员部署路径。
 5. Windows 11 的 PostgreSQL `initdb` 在中文运行路径失败；当前部署约束为程序、数据和临时 SQL 使用纯 ASCII 路径。
-6. POC-05 Windows 11 已从显式本地 PaddleOCR 模型目录重放，但物理断网未验证；Windows Server 2025 已完全断网通过。
-7. POC-05 已处理 5 个真实扫描 PDF，但尚无逐页人工真值；技术链通过不能替代 OCR 语义准确率结论。
+6. POC-05 Windows 11 已从显式本地 PaddleOCR 模型目录重放，但物理断网依据 `EXC-P0-004` 暂缓；Windows Server 2025 已完全断网通过。
+7. POC-05 已对 5 个真实扫描 PDF 的 15 个分层抽样页建立 75 个视觉真值检查点；PaddleOCR 75/75，Tesseract 70/75。该抽样结论不等同于 105 页逐字符全量标注。
 8. POC-04 Windows 11 与 Windows Server 2025 功能链已通过；Debian 13 依据 `EXC-P0-003` 暂缓且保持未验证。
 9. POC-03 已形成 120 条候选记录，但 0 条完成 APPROVED 人工确认；Top-5 Recall、分类准确率和来源引用准确率保持 `NOT_RUN`。
 
@@ -76,6 +76,7 @@
 |pg_dump / pg_restore / 重启健康检查|PASS|
 |POC-05 六类输入统一解析|PASS；Schema 错误 0|
 |POC-05 扫描 PDF PaddleOCR / Tesseract / OCRmyPDF|三条链术语召回均为 5/5|
+|POC-05 真实扫描分层语义审计|PaddleOCR 75/75、关键错误 0；Tesseract 70/75，仅作辅助链|
 |POC-03 候选评审记录|120 条；覆盖 26/26 个可解析真实资料；全部为 `PENDING_HUMAN_REVIEW`|
 
 ## Windows Server 2025 实机验证摘要
