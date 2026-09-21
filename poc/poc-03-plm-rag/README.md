@@ -309,6 +309,15 @@ python scripts/prepare_prompt_v2_offline.py `
 - POC-03 全量 176/176 单元测试 PASS，本轮外部模型调用 0。所有方案保持 `SOLUTION_DRAFT_INTERNAL / NOT_FORMAL_SOLUTION`，不得跳过 Requirement Review、Solution Review 或正式 Gate。
 - 客户项目名、需求与方案正文、工作簿和证据页继续只保存在 Git 忽略的 `artifacts/project-analysis/`；仓库只同步通用生成器、测试和脱敏说明。
 
+## Final Requirement and Solution Delivery R6
+
+- 新增通用生成器 `scripts/build_final_delivery_package.py`，同时验证 R4/R5 指纹绑定、需求—方案一一对应关系和非正式状态；不匹配、重复、缺项或正式对象混入时失败关闭。
+- 5 个项目的 40 条需求—方案被整理为 W0 范围与决策收敛、W1 标准能力配置、W2 差异验证与治理、W3 非标与专项实现、W4 验收/交接/正式化五段实施路线。每条记录包含进入条件、完成证据、排除项、依赖、专项类型和 Trace。
+- 汇总 21 项 `InterfaceSpec` / `MigrationSpec` / `PermissionDesign` 草案、10 条 AI 工作基线正式化待办和 30 个推荐调研主题。调研大纲以实际调研记录、需求和证据为主，业务表单只作参考。
+- 新增 Artifact Tool 工作簿生成器 `scripts/build_final_delivery_workbook.mjs`，提供交付总览、需求与方案、实施路线、专项清单、正式化待办和调研大纲六页。6/6 页签完成视觉和导出回读检查，71/71 证据链接公式存在，公式错误 0。
+- POC-03 全量 183/183 单元测试 PASS，本轮外部模型调用 0。R6 仅用于内部交接和项目准备，所有 Requirement、Solution 及专项仍须经过 Phase、Review 和对应冻结 Gate 才能正式化。
+- 客户项目名、需求与方案正文、工作簿和证据页继续只保存在 Git 忽略的 `artifacts/project-analysis/`；仓库只同步通用生成器、测试和脱敏说明。
+
 ## Known Issues
 
 1. R6 Golden Dataset 已确认并严格导入；P03-A11 已由 R5 保护性融合达到 114/120（95.00%）并 PASS。Prompt v2 真实分类只有 51/120（42.50%），引用 62/120（51.67%）；P03-A12/A13 仍 FAIL，POC-03 尚不能收口。
@@ -324,6 +333,7 @@ python scripts/prepare_prompt_v2_offline.py `
 11. R3 桌面调研用于在无法安排访谈时形成可追溯的需求候选，不替代客户/项目经理确认；10 条前置假设保持未关闭，正式需求状态不得据此自动升级。
 12. R4 已用 AI 工作基线处理上述 10 条假设并允许内部分析继续，但工作基线不是合同正式解释或客户确认；40 条需求评审稿仍须在正式 Gate 后才能版本化为正式 Requirement。
 13. R5 的 40 条解决方案及 21 条专项设计均为内部草案；接口、迁移、权限和正式方案必须在资料、样例、联调/试迁移证据与对应 Review Gate 齐备后才能冻结。
+14. R6 已形成可内部交接的实施路线和正式化待办，但它不等于项目实施计划冻结、正式需求/方案批准或客户签字；W0-W4 只能在相应 Phase 与 Review Gate 满足后转为正式基线。
 
 ## Conclusion
 
