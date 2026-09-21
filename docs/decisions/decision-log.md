@@ -515,3 +515,15 @@
 |Reason|当前 Phase 0 需要直接证明 crash、timeout、invalid JSON、版本不兼容和独立升级，不需要提前引入常驻池、容器、微服务或自定义 TCP。短命子进程便于失败后立即回收，并与锁定的 stdio 协议一致。|
 |Impact|Windows 11 和 Windows Server 2025 均完成 13/13 测试、10/10 验收场景和 20/20 并发调用；插件 crash/timeout 后 FastAPI 仍健康，invalid JSON 失败关闭，v1→v1.1 不修改宿主。SHA-256 只是本 PoC 的包完整性检查，不代表开发者身份签名；正式发布签名待后续冻结。Debian 13 未验证。|
 |Rollback|删除 `poc/poc-08-plugin-host/` 和对应匿名证据即可回到 `NOT_STARTED`；不影响正式业务模块、数据库、API Contract 或发布签名方案。|
+
+## DEC-20260921-034
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260921-034|
+|Date|2026-09-21|
+|WBS|POC-09 License|
+|Decision|PoC 将 MAC 规范化为大写冒号形式后计算 SHA-256；License Payload 采用字段排序、紧凑分隔符的确定性 UTF-8 JSON，并由仅驻留开发者工作台进程内的 Ed25519 私钥签名。客户侧只使用公钥；`SystemTimeGuard` 记录本次运行最近成功时间并拒绝回拨。|
+|Reason|基线已锁定 MAC → Normalize → SHA-256 → Ed25519，但未规定规范化文本和确定性序列化细节。显式规范避免分隔符/大小写导致同一网卡产生不同指纹，确定性 JSON 避免同一 Payload 因编码差异导致验签失败。|
+|Impact|Windows 11 与 Windows Server 2025 均完成 26/26 测试和 10/10 场景；8 类非法授权全部拒绝，License/MAC/时间防护覆盖率 91%～94%，私钥和原始 MAC 未落盘。跨进程可信时间状态存储留待 Architecture Freeze，Debian 13 未验证。|
+|Rollback|删除 `poc/poc-09-license/` 和对应匿名证据即可回到 `NOT_STARTED`；不改变 Ed25519、Payload 正式字段、数据库、正式 API 或商业授权规则。|

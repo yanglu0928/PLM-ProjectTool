@@ -15,9 +15,9 @@
 
 |环境|操作系统|CPU 架构|资源|Python 3.13|资格|状态|
 |---|---|---|---|---|---|---|
-|本地开发机 / Windows 11 验收环境|Windows 11 Home 10.0.26200|x86-64|32 逻辑处理器 / 31.63 GB RAM / D盘约 435.29 GB 可用|3.13.15|POC-01 已收口；POC-02 功能链已验证；POC-03 候选数据准备已验证；POC-04 统一网关与真实 DeepSeek 已验证；POC-05 功能链与真实扫描分层语义审计已验证；POC-06 Office 实开已验证；POC-08 Plugin Host 已验证|POC01_PASS / POC02_FUNCTIONAL_PASS / POC03_DATASET_CANDIDATES_PASS / POC04_FUNCTIONAL_PASS / POC05_PASS_WITH_EXCEPTION / POC06_PASS / POC08_PASS|
-|VMware / Windows Server 2025 验收环境|Windows Server 2025 Datacenter 10.0.26100（Desktop Experience）|x86-64|16 逻辑处理器 / 16 GB RAM / 系统盘约 54.71 GB 可用|3.13.15（官方嵌入式包）|POC-01 已收口；POC-02、POC-05 完全断网功能链已验证；POC-04 统一网关与真实 DeepSeek 已验证；POC-06 包结构/Hash 已验证但 Office 未安装；POC-08 Plugin Host 离线链已验证|POC01_PASS / POC02_PASS / POC04_FUNCTIONAL_PASS / POC05_PASS / POC06_PARTIAL_OFFICE_BLOCKED / POC08_PASS|
-|Linux 验收环境|Debian 13|x86-64|最低 4C / 8 GB / 100 GB|未确认|正式目标；POC-01/POC-02/POC-04/POC-05 验证经用户批准暂缓；POC-08 尚未取得独立例外|DEFERRED_BY_USER / POC04_DEFERRED_BY_USER / POC05_DEFERRED_BY_USER / POC08_NOT_RUN|
+|本地开发机 / Windows 11 验收环境|Windows 11 Home 10.0.26200|x86-64|32 逻辑处理器 / 31.63 GB RAM / D盘约 435.29 GB 可用|3.13.15|POC-01 已收口；POC-02 功能链已验证；POC-03 候选数据准备已验证；POC-04 统一网关与真实 DeepSeek 已验证；POC-05 功能链与真实扫描分层语义审计已验证；POC-06 Office 实开已验证；POC-08 Plugin Host 与 POC-09 License 已验证|POC01_PASS / POC02_FUNCTIONAL_PASS / POC03_DATASET_CANDIDATES_PASS / POC04_FUNCTIONAL_PASS / POC05_PASS_WITH_EXCEPTION / POC06_PASS / POC08_PASS / POC09_PASS|
+|VMware / Windows Server 2025 验收环境|Windows Server 2025 Datacenter 10.0.26100（Desktop Experience）|x86-64|16 逻辑处理器 / 16 GB RAM / 系统盘约 54.71 GB 可用|3.13.15（官方嵌入式包）|POC-01 已收口；POC-02、POC-05 完全断网功能链已验证；POC-04 统一网关与真实 DeepSeek 已验证；POC-06 包结构/Hash 已验证但 Office 未安装；POC-08 Plugin Host 与 POC-09 License 离线链已验证|POC01_PASS / POC02_PASS / POC04_FUNCTIONAL_PASS / POC05_PASS / POC06_PARTIAL_OFFICE_BLOCKED / POC08_PASS / POC09_PASS|
+|Linux 验收环境|Debian 13|x86-64|最低 4C / 8 GB / 100 GB|未确认|正式目标；POC-01/POC-02/POC-04/POC-05 验证经用户批准暂缓；POC-08/POC-09 尚未取得独立例外|DEFERRED_BY_USER / POC04_DEFERRED_BY_USER / POC05_DEFERRED_BY_USER / POC08_NOT_RUN / POC09_NOT_RUN|
 
 ## 当前工具发现
 
@@ -55,6 +55,7 @@
 9. POC-03 已形成 120 条候选记录，但 0 条完成 APPROVED 人工确认；Top-5 Recall、分类准确率和来源引用准确率保持 `NOT_RUN`。
 10. POC-06 Windows 11 完成 100 页 Word / 50 页 PowerPoint 实开、PDF 导出和全量视觉检查；Windows Server 2025 未安装 Microsoft Office，只完成 OOXML 包与 Hash 复验，不得外推 Office 兼容性。
 11. POC-08 Windows 11 与 Windows Server 2025 已通过；Debian 13 仍缺少可执行环境，不得以 Windows 结果替代 Linux 进程/信号/stdio 兼容性证据。
+12. POC-09 Windows 11 与 Windows Server 2025 已通过；Debian 13 的 `/sys/class/net` 网卡枚举与 cryptography/Ed25519 离线链仍须实际执行。
 
 ## 本机预检摘要
 
@@ -81,6 +82,7 @@
 |POC-05 真实扫描分层语义审计|PaddleOCR 75/75、关键错误 0；Tesseract 70/75，仅作辅助链|
 |POC-06 Word / PowerPoint|Word 100 页、PowerPoint 50 页；Office 实开/PDF 导出 PASS；150 页全量视觉检查 PASS|
 |POC-08 Plugin Host|13/13 测试、10/10 场景、20/20 并发 PASS；crash/timeout 后 FastAPI 健康|
+|POC-09 License|26/26 测试、10/10 场景 PASS；核心覆盖率 91%～94%，8/8 非法授权拒绝|
 |POC-03 候选评审记录|120 条；覆盖 26/26 个可解析真实资料；全部为 `PENDING_HUMAN_REVIEW`|
 
 ## Windows Server 2025 实机验证摘要
@@ -106,3 +108,4 @@
 |POC-06 OOXML 包 / Hash|PASS；DOCX 99 个显式分页、PPTX 50 页，与 Windows 11 Hash 一致|
 |POC-06 Microsoft Office 实开|BLOCKED；未安装 Word/PowerPoint|
 |POC-08 Plugin Host 离线验证|PASS；13/13 测试、10/10 场景、20/20 并发，敏感环境变量可见数 0|
+|POC-09 License 离线验证|PASS；26/26 测试、10/10 场景、8/8 非法授权拒绝，私钥/原始 MAC 不落盘|

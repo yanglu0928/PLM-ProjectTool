@@ -7,7 +7,7 @@
 - Phase：Phase 0
 - 状态：IN_PROGRESS
 - 启动日期：2026-09-17
-- 当前任务：POC-08 Windows 11 / Windows Server 2025 已通过；Debian 13 保持 `NOT_RUN`，POC-08 总状态为 `IN_PROGRESS`
+- 当前任务：POC-09 Windows 11 / Windows Server 2025 已通过；Debian 13 保持 `NOT_RUN`，POC-09 总状态为 `IN_PROGRESS`
 - 正式业务开发：BLOCKED
 
 ## 入口
@@ -21,6 +21,7 @@
 - [POC-05 实施与结果](../../poc/poc-05-document-ocr/README.md)
 - [POC-06 实施与结果](../../poc/poc-06-word-ppt/README.md)
 - [POC-08 实施与结果](../../poc/poc-08-plugin-host/README.md)
+- [POC-09 实施与结果](../../poc/poc-09-license/README.md)
 - [Phase 0 验证例外](phase-0-exceptions.md)
 
 ## 判定规则
