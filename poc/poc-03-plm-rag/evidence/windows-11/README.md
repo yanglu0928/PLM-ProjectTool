@@ -245,6 +245,14 @@
 - 17 个重复 ChunkId、22 行冗余记录经核验均逐字段相同；完全一致记录被去重，同 ID 不同内容继续失败关闭。
 - 脱敏汇总见 `holdout-live-quality-result.json`，失败分析见 `holdout-live-quality-failure-analysis.md`。查询、正文、向量、逐条响应、人工信息和 case-level 结果未提交。
 
+## Independent Holdout Failure Analysis R10
+
+- 新增纯本地诊断工具，对 26 条分类失例、13 条引用失例和 1 条检索失例进行复算，不发起任何外部调用。
+- 17 条合同/调研/技术协议样本中，检索命中 16 条但分类只命中 1 条；当前同来源检索无法为能力适配标签提供标准能力对照证据。
+- 50 条中 46 条引用候选第 1 名；正确证据位于第 2～5 名时只命中 2/12，确认存在首位引用偏差。
+- 13 条精确引用失例中，8 条模型引用包含全部人工答案术语、4 条包含部分术语；这只作为未来引用集合审查线索，本轮结果不补标、不重算。
+- 脱敏复算见 `holdout-failure-analysis-summary.json`；详细结论和方案见 `holdout-live-quality-failure-analysis.md`。完整 Case 级诊断仍在 Git 忽略目录。
+
 ## Known Issues
 
 1. 两个资料库共 10 个旧版二进制 `.doc` 尚不支持。
