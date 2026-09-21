@@ -291,6 +291,15 @@ python scripts/prepare_prompt_v2_offline.py `
 - 5/5 页签完成渲染、回读、公式错误扫描和输入交互回归；POC-03 全量 165/165 单元测试 PASS，本轮外部模型调用 0。
 - 客户项目名、原文件名、结论、候选正文、工作簿和证据页继续只保存在 Git 忽略的 `artifacts/project-analysis/`。R3 仅进入需求候选准备，不构成正式 Requirement、需求冻结或 Phase 6 开始；正式 Phase 0 Gate 与独立留出集外发授权要求不变。
 
+## Delegated Requirement Review R4
+
+- 用户授权 AI 代为处理普通确认、资料补充和可回滚方案选择。新增通用生成器 `scripts/build_delegated_requirement_review.py`，按证据优先、保守默认、最小影响和可回滚原则处理 R3 的 10 条前置假设。
+- 10 条事项分别形成软件兼容、分期范围、项目/产品/报价版本关系、报价验收样例、PLM/SAP 主数据边界、文档迁移与下发、受控业务定义、未知外部接口、合同优先级和定制交付责任的工作基线；每条都包含纳入范围、明确排除、验收依据、风险和证据链接。
+- 40 条候选全部转为 `INTERNAL_REVIEW_DRAFT`，其中 P0 30 条、P1 10 条、高风险 6 条；全部固定为 `NOT_FORMAL_REQUIREMENT`，不存在由 AI 直接升级为正式需求的路径。
+- 新增 Artifact Tool 工作簿生成器 `scripts/build_delegated_requirement_review_workbook.mjs`，提供评审总览、代决策结果、需求评审稿和使用边界四页。工作簿无需用户逐条填写，并保留 50 个本地证据入口。
+- 4/4 页签完成视觉检查和导出回读，50/50 证据链接公式存在，公式错误 0；POC-03 全量 170/170 单元测试 PASS，本轮外部模型调用 0。
+- 客户项目名、资料依据、需求正文、工作簿和证据页继续只保存在 Git 忽略的 `artifacts/project-analysis/`。R4 解除内部分析阻塞，但不替代客户确认、Review Engine 或正式 Gate，也不改变当前 Phase 0 状态。
+
 ## Known Issues
 
 1. R6 Golden Dataset 已确认并严格导入；P03-A11 已由 R5 保护性融合达到 114/120（95.00%）并 PASS。Prompt v2 真实分类只有 51/120（42.50%），引用 62/120（51.67%）；P03-A12/A13 仍 FAIL，POC-03 尚不能收口。
@@ -304,6 +313,7 @@ python scripts/prepare_prompt_v2_offline.py `
 9. DeepSeek 官方资料本轮未找到 Embedding 端点；不得把现有 DeepSeek Chat Key 假定为向量服务凭据。
 10. 标准能力库中的调研业务表单仅作参考；客户事实应优先来自实际访谈、现场交流和调研结论记录。
 11. R3 桌面调研用于在无法安排访谈时形成可追溯的需求候选，不替代客户/项目经理确认；10 条前置假设保持未关闭，正式需求状态不得据此自动升级。
+12. R4 已用 AI 工作基线处理上述 10 条假设并允许内部分析继续，但工作基线不是合同正式解释或客户确认；40 条需求评审稿仍须在正式 Gate 后才能版本化为正式 Requirement。
 
 ## Conclusion
 
