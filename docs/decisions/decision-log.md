@@ -491,3 +491,15 @@
 |Reason|成功解析、OCR 行数和自生成术语召回不能证明真实扫描语义准确率。分层页面与人工视觉检查点可避免 OCR 自证；主辅链对照显示 PaddleOCR 75/75，而 Tesseract 只有 70/75 且含关键错误。用户已明确同意 Windows 11 保留 `PASS_LOCAL_ASSETS`、不主动断网，并曾明确 Debian 13 暂不验证。|
 |Impact|POC-05 以 `PASS_WITH_EXCEPTION` 收口。Windows 11 与 Windows Server 2025 的已验证结论保留；Windows 11 物理断网、Debian 13 和 105 页逐字符全量标注仍不形成通过结论。原页、真值、客户内容和逐项结果只留在 Git 忽略的本地 artifacts，仓库保存匿名汇总。|
 |Rollback|可删除本轮评分工具和匿名汇总并恢复 POC-05 `IN_PROGRESS`；不得把 Tesseract 基线失败改写为通过，也不得删除 `EXC-P0-004` 的历史批准记录。|
+
+## DEC-20260921-032
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260921-032|
+|Date|2026-09-21|
+|WBS|POC-06 Word / PowerPoint 交付级样例|
+|Decision|以 Microsoft Office 实开和 PDF 导出作为 Windows 目标应用验收主证据；Windows 11 结论为 PASS。Windows Server 2025 未安装 Word/PowerPoint，只记录 OOXML 包结构和 Hash 复验 PASS，POC-06 保持 `IN_PROGRESS / SERVER_OFFICE_BLOCKED`，不从 Windows 11 外推 Server 或 Debian 兼容性。|
+|Reason|基线要求“可由 Microsoft Office 正常打开”。工作区 DOCX 渲染器因未安装 LibreOffice 无法运行，但 Windows 11 已由目标 Word 应用导出并完成 100 页视觉检查；Server 虚拟机缺少 Office，不能以结构验证替代实开验收。|
+|Impact|Windows 11 形成 100 页 DOCX、50 页 PPTX、实开/PDF 导出、OOXML 完整性和 150 页全量视觉证据。PPTX 制件按当前工作区规范使用 Artifact Tool，不修改正式 `python-pptx` 基线。未经许可不在 Server 安装 Microsoft Office，也不将缺少环境记为通过。|
+|Rollback|可删除 POC-06 样件、脚本和匿名证据并恢复 `NOT_STARTED`；不得将 Windows 11 的实验结果改写为 Server/Debian 通过，也不得隐去 Server 未安装 Office 的阻塞。|

@@ -19,6 +19,7 @@
 - [POC-03 实施与结果](../../poc/poc-03-plm-rag/README.md)
 - [POC-04 实施与结果](../../poc/poc-04-ai-gateway/README.md)
 - [POC-05 实施与结果](../../poc/poc-05-document-ocr/README.md)
+- [POC-06 实施与结果](../../poc/poc-06-word-ppt/README.md)
 - [Phase 0 验证例外](phase-0-exceptions.md)
 
 ## 判定规则
