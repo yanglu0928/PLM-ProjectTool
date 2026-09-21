@@ -68,10 +68,22 @@ PREDICTION_BATCH_SIZE = 1
 RERANKER_CANDIDATE_PIPELINE_VERSION = "r4-source-filter-lexical-idf-v1"
 RETRIEVAL_PIPELINE_VERSION = "r5-protected-lexical-fusion-v1"
 PROTECTED_LEXICAL_COUNT = 4
+HOLDOUT_SCHEMA_VERSION = "poc-03.holdout.v1"
 
 
 def _sha256(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _validate_evaluation_dataset_size(dataset: dict[str, Any]) -> str:
+    cases = list(dataset.get("cases") or [])
+    if dataset.get("schema_version") == HOLDOUT_SCHEMA_VERSION:
+        if len(cases) != 50:
+            raise ValueError("Independent holdout dataset must contain exactly 50 cases")
+        return "independent_holdout"
+    if not 100 <= len(cases) <= 200:
+        raise ValueError("Golden Dataset must contain 100 to 200 cases")
+    return "golden_dataset"
 
 
 def _retrieval_cache_is_current(
@@ -626,8 +638,7 @@ def main() -> int:
     args.output_dir.mkdir(parents=True, exist_ok=True)
     dataset = json.loads(args.dataset.read_text(encoding="utf-8"))
     cases = list(dataset.get("cases") or [])
-    if not 100 <= len(cases) <= 200:
-        raise ValueError("Golden Dataset must contain 100 to 200 cases")
+    dataset_kind = _validate_evaluation_dataset_size(dataset)
     project_ids = {str(case.get("project_id") or "") for case in cases}
     if len(project_ids) != 1 or "" in project_ids:
         raise ValueError("live quality run requires one non-empty ProjectId")
@@ -817,6 +828,7 @@ def main() -> int:
             "cached_live_reranker_results_reused": reranker_cached_live_results_reused,
         }
         common_input = {
+            "dataset_kind": dataset_kind,
             "golden_case_count": len(cases),
             "corpus_document_count": len({chunk["document_id"] for chunk in chunks}),
             "corpus_chunk_count": len(chunks),

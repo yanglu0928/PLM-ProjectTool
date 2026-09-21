@@ -16,7 +16,7 @@
 |---|---|---|---|---|---|---|---|
 |POC-01|P0.01/P0.01S/P0.02/P0.03/P0.04|Python 3.13 三平台依赖及离线安装|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11、Windows Server 2025 PASS；Debian 13 经用户批准暂缓，不构成兼容性结论|`poc/poc-01-python-313-dependencies/`、`docs/poc/phase-0-exceptions.md`|
 |POC-02|P0.05/P0.06/P0.07/P0.08|PostgreSQL 18 + pgvector|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11 功能链 PASS；Windows Server 2025 完全断网功能链 PASS；Windows 11 断网重放与 Debian 13 经用户批准暂缓，不构成对应兼容性结论|`poc/poc-02-postgresql-18-pgvector/`、`docs/poc/phase-0-exceptions.md`|
-|POC-03|P0.09/P0.10/P0.12|PLM RAG|FAIL|2026-09-17|-|P03-A11 R5 保护性融合达到 Top-5 114/120（95.00%）并 PASS；Prompt v2 分类为 51/120（42.50%）、引用为 62/120（51.67%）。R7 重新评审包等待人工确认，独立留出集尚未建立，PoC 总体保持 FAIL|`poc/poc-03-plm-rag/`|
+|POC-03|P0.09/P0.10/P0.12|PLM RAG|FAIL|2026-09-17|-|P03-A11 R5 保护性融合在 120 条校准集达到 Top-5 114/120（95.00%）并 PASS；Prompt v2 分类 51/120（42.50%）、引用 62/120（51.67%）均 FAIL。独立留出集 50/50 已严格导入且覆盖审计 PASS；真实复验因缺少百炼 Embedding/Reranker 的明确数据外发授权保持 NOT_RUN|`poc/poc-03-plm-rag/`|
 |POC-04|P0.11|AI Gateway / DeepSeek|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11、Windows Server 2025 统一网关、11/11 确定性场景及真实文本/流式/结构化/401 PASS；Debian 13 经用户批准暂缓，不构成兼容性结论|`poc/poc-04-ai-gateway/`、`docs/poc/phase-0-exceptions.md`|
 |POC-05|P0.04/P0.12|Document + OCR|IN_PROGRESS|2026-09-17|-|Windows 11 六类输入和主辅 OCR 功能链 PASS；Windows Server 2025 完全断网 8/8 PASS；Windows 11 真实资料 26/26 个受支持文件通过并含 5 个扫描 PDF；Windows 11 断网、Debian 13 和真实扫描语义准确率待处理|`poc/poc-05-document-ocr/`|
 |POC-06|P0.16/P0.17|Word / PPT|NOT_STARTED|-|-|-|-|
@@ -95,3 +95,5 @@
 |2026-09-20|用户明确授权仅将 50 条锁定候选发送至 DeepSeek 生成待确认建议。50/50 完成、问题 50/50 唯一、五类分类全覆盖；分类分布 23/3/10/13/1。当前 DeepSeek V4 默认开启思考模式，统一 AIService 增加显式非思考开关后完成受约束 JSON 恢复；总请求尝试 227，Embedding/Reranker 调用 0。|
 |2026-09-20|P03-A12-R6 友好确认包完成：主表只展示建议、定位与人工例外字段，不填充大段正文；支持一次批量确认、单条修改/退回和 50/50 证据定位。3/3 表渲染、公式错误 0，批量确认和缺字段失败关闭回归 PASS；POC-03 146/146、POC-04 12/12 测试 PASS。|
 |2026-09-21|用户完成独立留出集 R1 全局确认；严格导入 50/50 APPROVED、0 PENDING、0 RETURNED、0 问题。独立 `poc-03.holdout.v1` Schema 和 12/12 覆盖/隔离检查 PASS，POC-03 151/151 测试 PASS；完整数据集与人工信息留在 Git 忽略目录。真实 Embedding/Reranker/DeepSeek 复验等待新的明确数据外发授权。|
+|2026-09-21|实施 WBS R7 与管理层汇报 R8.1 完成：5 个项目形成 60 项内部草案任务，40 个需求任务保留四层追溯；WBS 5/5 页签、管理汇报 8/8 页最终化与渲染检查通过。留出集验证器新增 `poc-03.holdout.v1` 恰好 50 条入口，普通数据集继续保持 100~200 条限制；POC-03 188/188 测试 PASS。|
+|2026-09-21|独立留出集真实复验前置检查 PASS：组合语料 2,078 个 Chunk、50 条预期证据缺失 0，PostgreSQL 18.6/pgvector 0.8.6 可用。安全审查要求另外明确允许将留出集查询及候选正文发送至百炼 Embedding/Reranker；未获授权，本轮外部调用 0，POC-03 保持 FAIL。|

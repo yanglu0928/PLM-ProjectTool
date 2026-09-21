@@ -19,10 +19,31 @@ from validate_live_quality_metrics import (  # noqa: E402
     _load_prediction_cache,
     _retrieval_cache_is_current,
     _sha256,
+    _validate_evaluation_dataset_size,
 )
 
 
 class LiveQualityRetrievalContractTests(unittest.TestCase):
+    def test_holdout_requires_exactly_fifty_cases(self) -> None:
+        dataset = {
+            "schema_version": "poc-03.holdout.v1",
+            "cases": [{} for _ in range(50)],
+        }
+        self.assertEqual(
+            "independent_holdout", _validate_evaluation_dataset_size(dataset)
+        )
+        dataset["cases"].pop()
+        with self.assertRaisesRegex(ValueError, "exactly 50"):
+            _validate_evaluation_dataset_size(dataset)
+
+    def test_golden_dataset_keeps_original_size_contract(self) -> None:
+        self.assertEqual(
+            "golden_dataset",
+            _validate_evaluation_dataset_size({"cases": [{} for _ in range(100)]}),
+        )
+        with self.assertRaisesRegex(ValueError, "100 to 200"):
+            _validate_evaluation_dataset_size({"cases": [{} for _ in range(50)]})
+
     def test_live_queries_require_parameterized_source_type_filter(self) -> None:
         for sql in (VECTOR_SQL, FULL_TEXT_SQL):
             self.assertIn("source_corpus = %(source_type)s", sql)

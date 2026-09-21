@@ -2,7 +2,7 @@
 
 ## Status
 
-`FAIL / BLOCKED_QUALITY_GATE / R7_AWAITING_HUMAN_CONFIRMATION`
+`FAIL / BLOCKED_QUALITY_GATE / HOLDOUT_LIVE_WAITING_EXPLICIT_BAILIAN_EGRESS_AUTHORIZATION`
 
 ## Objective
 
@@ -55,6 +55,10 @@ P03-A11-R4 已把该诊断路径接回统一链：Vector、Full Text 和词法 I
 P03-A12-R2 已在用户明确授权后完成 Prompt v2 真实复验。120/120 条预测完整返回，Embedding 外部调用 0、当前轮 Reranker 外部调用 0，复用 120 条已获批真实重排结果；两个瞬时空/非约束响应通过逐条缓存断点续跑恢复。分类正确 51/120（42.50%），低于 90%；47 条 `INSUFFICIENT_INFORMATION` 中 30 条仍被判为 `STANDARD_SATISFIED`，6 条 `NON_STANDARD` 正确数为 0。部分抽取式问题本身未携带“满足/非标/资料不足”的业务判定目标，继续在同一验收集上调 Prompt 存在把 Golden 反向编码进规则的风险，因此 P03-A12 保持 FAIL，等待 R6 可判定性 Gate。
 
 用户随后批准重新评审。R6 保留为历史基线，R7 对 120 条样本重新预填可判定的业务目标、五类分类建议、分类理由和可接受引用集合；工作簿包含 120 条主确认项、五类业务说明、836 条证据候选和技术底稿，原文定位 120/120。AI 建议改分类 73 条、改引用 58 条；合同、技术协议和调研材料缺少标准能力交叉证据时保守建议为资料不足，而不直接采纳失败的 Prompt v2 满足程度结论。未确认预检为 120 条 PENDING、0 个问题且不生成数据集，129/129 单元测试 PASS。本轮没有新增外部调用。R7 使用过 Prompt v2 的诊断结果，只能作为校准集；即使人工确认，也不能在同一 120 条上关闭 P03-A12/P03-A13，后续必须另建独立留出集。
+
+独立留出集已由 49 份新增实际调研记录与既有合格来源锁定并完成严格确认：50/50 APPROVED、0 个问题，独立 `poc-03.holdout.v1` Schema 与 12/12 覆盖/隔离检查 PASS。真实质量入口现仅对该 Schema 接受恰好 50 条，普通 Golden Dataset 继续失败关闭在 100~200 条；组合语料为 2,078 个 Chunk，50 条预期证据缺失 0，PostgreSQL 18.6/pgvector 0.8.6 前置检查通过。DeepSeek 外发已有明确授权，但百炼 Embedding/Reranker 会接收查询及候选正文，安全审查要求另行明确目的地与载荷授权；本轮拦截前外部调用 0，独立留出集结果不得推断。
+
+项目准备成果新增实施 WBS 草案 R7 和管理层汇报 R8.1。WBS 覆盖 5 个项目、60 项任务，其中 40 项需求交付任务保留 Requirement/Solution/Delivery/Evidence 追溯，20 项为基线、联调、验收和交接控制；不填写实名、日期或承诺工期，状态为 `NOT_FORMAL_WBS`。管理汇报共 8 页，如实呈现校准集 Top-5 95.00%、分类 42.50%、引用 51.67% 与总体 FAIL，并把独立留出集标记为待授权复验。POC-03 全量 188/188 单元测试 PASS。
 
 P03-A05 已验证模型切换纪律：保留激活的 `qwen3.7-text-embedding` 1024 维 `v1`，拒绝对旧 index_id 原地更换模型；创建独立 `text-embedding-v4` 768 维 `v2`，使用 120 条固定非客户文本执行 12 批真实请求，120/120 全量重建完成，旧向量复用数为 0。`v2` 状态为验证通过但未激活，不替换当前绑定。
 
