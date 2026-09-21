@@ -263,11 +263,21 @@ python scripts/prepare_prompt_v2_offline.py `
 - POC-03 全量 151/151 单元测试 PASS。本轮只执行本地导入和审计，Embedding、Reranker、DeepSeek 外部调用均为 0。
 - 工作簿、审核人、问题、答案术语、客户正文、源文件名和完整留出集继续只保存在 Git 忽略的 `artifacts/`；仓库仅保存脱敏数量、状态和检查结果。
 
+## Local Project Analysis Confirmation Package R1
+
+- 新增通用本地分析包生成器 `scripts/build_project_analysis_package.py` 和 Artifact Tool 工作簿生成器 `scripts/build_project_analysis_workbook.mjs`，按项目组织标准功能、非标功能、差异项、待确认项和推荐调研大纲。
+- 证据优先级固定为：实际调研记录 > 合同/技术协议 > 风险评估 > 既有方案 > 调研业务表单；调研业务表单只作提问参考，不能替代客户实际表达。
+- 主工作簿不复制大段原文。每条 AI 建议提供本地“打开证据”入口，证据页再链接原始本地文件；用户先在“项目总览”做项目级判断，只有需要调优时才逐条维护黄色列。
+- 客户项目名、原文件名、摘录、确认工作簿、证据定位页和分析 JSON 全部保存在 Git 忽略的 `artifacts/project-analysis/`，仓库只提交通用程序、测试和脱敏说明。
+- 本轮未调用外部模型；任何分析结论在人工确认前均为 `AWAITING_HUMAN_CONFIRMATION`，不得转成正式需求、正式方案或合同事实。
+- 旧版 `.doc` 通过本机 Microsoft Word 生成不修改原件的本地 DOCX 分析副本，再复用 POC-05 ParsedDocument 解析链。该辅助路径不改变 POC-05 对 `.doc` 直接解析仍不支持的结论。
+- 工作簿 8/8 页签完成渲染、回读、公式错误扫描和输入交互回归；POC-03 全量 155/155 单元测试 PASS。
+
 ## Known Issues
 
 1. R6 Golden Dataset 已确认并严格导入；P03-A11 已由 R5 保护性融合达到 114/120（95.00%）并 PASS。Prompt v2 真实分类只有 51/120（42.50%），引用 62/120（51.67%）；P03-A12/A13 仍 FAIL，POC-03 尚不能收口。
 2. 50 条独立留出集已人工确认并通过严格导入、Schema 和覆盖审计，但尚未执行真实 Embedding/Reranker/DeepSeek 质量复验；确认集不能替代实际模型指标。
-3. 两个资料库共 10 个旧版二进制 `.doc` 尚不支持，不进入本轮候选池。
+3. POC-05 仍不直接支持两个资料库中的 10 个旧版二进制 `.doc`；项目分析辅助包已用本机 Word 生成本地只读分析副本补齐内容覆盖，但该路径依赖已安装的 Microsoft Word，不属于跨平台解析能力。
 4. Windows Server 2025 与 Debian 13 尚未执行本 PoC。
 5. 旧 R2/R3 历史工作簿不作为新四类来源基线；其人工填写记录被保留，但不会自动迁移成新候选的批准状态。
 6. R4 是本地 UX 原型，不是正式交接待办；当前 Office 原件定位依赖“打开原文件 + 精确定位说明”，正式产品仍需内置证据查看器完成自动跳转与高亮。
