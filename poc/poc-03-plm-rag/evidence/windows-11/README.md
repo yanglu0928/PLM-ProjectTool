@@ -210,7 +210,7 @@
 
 ## Result
 
-R6 Golden Dataset 已完成严格导入、覆盖审计和 Prompt v2 真实复验。P03-A11-R5 保护性融合达到 114/120（95.00%）并 PASS；P03-A12/P03-A13 分别为 42.50%/51.67%，仍保持 FAIL。用户已批准重新评审并生成 R7：120 条确认项、836 条证据候选、原文定位 120/120，未确认预检 120 PENDING、0 个问题、不输出数据集；129/129 测试 PASS。R7 仅为校准集，独立留出集完成前 POC-03 仍不能收口。
+50 条独立留出集真实复验已经完成。P03-A11 Top-5 为 49/50（98.00%）并 PASS；P03-A12 分类为 24/50（48.00%）、P03-A13 精确引用为 37/50（74.00%），均 FAIL。50/50 条百炼重排和 50/50 条 DeepSeek 预测完整，GIN/HNSW 命中，缺失预测与越界引用均为 0。POC-03 总体保持 `FAIL / BLOCKED_QUALITY_GATE`。
 
 ## Independent Holdout Source Lock
 
@@ -237,6 +237,14 @@ R6 Golden Dataset 已完成严格导入、覆盖审计和 Prompt v2 真实复验
 - POC-03 全量 151/151 单元测试 PASS。本轮外部模型调用 0。
 - 脱敏汇总见 `holdout-import-result.json` 与 `holdout-coverage-result.json`；工作簿、审核人、问题、客户正文、源文件名和完整数据集未提交。
 
+## Independent Holdout Live Quality R8
+
+- 用户明确同意将 50 条查询及最小必要候选正文发送至百炼 Embedding/Reranker 和 DeepSeek。
+- 2,106 个唯一向量缓存完成；50/50 条 `qwen3-rerank` 和 50/50 条 `deepseek-flash` Prompt v2 预测完成。
+- Top-5 为 49/50（98.00%），达到 95% 门槛；分类为 24/50（48.00%），低于 90%；引用为 37/50（74.00%），低于 98%。
+- 17 个重复 ChunkId、22 行冗余记录经核验均逐字段相同；完全一致记录被去重，同 ID 不同内容继续失败关闭。
+- 脱敏汇总见 `holdout-live-quality-result.json`，失败分析见 `holdout-live-quality-failure-analysis.md`。查询、正文、向量、逐条响应、人工信息和 case-level 结果未提交。
+
 ## Known Issues
 
 1. 两个资料库共 10 个旧版二进制 `.doc` 尚不支持。
@@ -244,5 +252,5 @@ R6 Golden Dataset 已完成严格导入、覆盖审计和 Prompt v2 真实复验
 3. Tesseract 扫描件结果尚未完成语义准确率人工标注。
 4. 旧 R2/R3 是历史评审基线，不自动转化为新四类候选的人工批准状态。
 5. R4 的本地证据定位器是 PoC；Office 文件尚不能从浏览器自动跳到精确段落并高亮，正式产品需由内置 Evidence Viewer 实现。
-6. P03-A11-R5 结果恰好达到 95% 门槛且使用同集探索调优；独立留出集与 Windows Server 2025、Debian 13 仍未验证，不得外推平台或生产泛化结论。
-7. R7 显示 Prompt v2 建议并据此辅助重标，因此确认后的 R7 不具备独立验收集资格；不得以同集复测结果替代新的独立留出集。
+6. 独立留出集只在 Windows 11 完成；Windows Server 2025 与 Debian 13 的本轮质量链未验证，不得外推平台结论。
+7. 本轮 50 条独立留出集已经被使用，后续调优不得以重复测试结果声明未见集通过；修复后必须建立全新独立留出集。

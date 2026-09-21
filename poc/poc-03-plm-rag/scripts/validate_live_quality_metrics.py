@@ -253,6 +253,19 @@ def _ensure_embeddings(
     return {item_id: cache[item_id][1] for item_id, _ in items}
 
 
+def _deduplicate_chunks(chunks: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    unique: dict[str, dict[str, Any]] = {}
+    for chunk in chunks:
+        chunk_id = str(chunk["chunk_id"])
+        existing = unique.get(chunk_id)
+        if existing is None:
+            unique[chunk_id] = chunk
+            continue
+        if existing != chunk:
+            raise ValueError(f"conflicting duplicate ChunkId: {chunk_id}")
+    return list(unique.values())
+
+
 def _load_chunks(parsed_root: Path, project_id: str) -> list[dict[str, Any]]:
     chunks: list[dict[str, Any]] = []
     for corpus_dir in sorted(path for path in parsed_root.iterdir() if path.is_dir()):
@@ -268,7 +281,7 @@ def _load_chunks(parsed_root: Path, project_id: str) -> list[dict[str, Any]]:
                     source_corpus=corpus_dir.name,
                 )
             )
-    return chunks
+    return _deduplicate_chunks(chunks)
 
 
 VECTOR_SQL = f"""

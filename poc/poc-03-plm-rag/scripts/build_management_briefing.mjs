@@ -19,6 +19,7 @@ const { resolvePresentationFont, applyPresentationChartFont, finalizePresentatio
 const delivery = JSON.parse(await fs.readFile(deliveryPath, "utf8"));
 const wbs = JSON.parse(await fs.readFile(wbsPath, "utf8"));
 const quality = JSON.parse(await fs.readFile(qualityPath, "utf8"));
+const isIndependentHoldout = quality.input?.dataset_kind === "independent_holdout";
 const FONT = resolvePresentationFont({ fontFamily: "Microsoft YaHei" });
 const C = {
   navy: "#17365D", blue: "#1F4E78", cyan: "#2F75B5", pale: "#DDEBF7",
@@ -109,7 +110,7 @@ function note(slide, text) {
   addText(slide, "• 五项目需求分类与解决方案一一追溯\n• 标准/非标/差异/待确认各 10 条\n• W0–W4 内部实施路线与角色职责\n• Windows 11 技术链路与真实模型调用证据", 100, 380, 470, 180, { fontSize: 19, color: C.text });
   addRect(slide, 664, 300, 544, 310, C.redPale);
   addText(slide, "仍未完成", 692, 326, 220, 34, { fontSize: 24, bold: true, color: C.red });
-  addText(slide, "• 分类与引用质量门槛尚未通过\n• 50 条独立留出集真实复验尚未执行\n• Architecture / Data Model / API Contract 尚未冻结\n• 正式资源、日历计划和实名责任人尚未排定", 692, 380, 470, 180, { fontSize: 19, color: C.text });
+  addText(slide, "• 分类与引用质量门槛尚未通过\n• 50 条独立留出集已完成，但总状态为 FAIL\n• Architecture / Data Model / API Contract 尚未冻结\n• 正式资源、日历计划和实名责任人尚未排定", 692, 380, 470, 180, { fontSize: 19, color: C.text });
   note(slide, "来源：R6 内部交付包与 R7 WBS 草案。‘已具备’只指内部准备成果；正式状态仍受 Phase 0 和后续冻结 Gate 约束。");
 }
 
@@ -179,7 +180,6 @@ function note(slide, text) {
     addText(slide, code, left, 212, 80, 38, { fontSize: 28, bold: true, color });
     addText(slide, name, left, 254, 198, 58, { fontSize: 19, bold: true, color: C.ink });
     addText(slide, `${count} 项任务`, left, 326, 150, 32, { fontSize: 18, color: C.muted });
-    if (i < waves.length - 1) addText(slide, "→", left + 194, 246, 32, 38, { fontSize: 28, bold: true, color: C.line, align: "center" });
   });
   addRect(slide, 72, 410, 1136, 150, C.gray);
   addText(slide, "WBS 设计原则", 98, 432, 220, 34, { fontSize: 22, bold: true, color: C.navy });
@@ -190,7 +190,7 @@ function note(slide, text) {
 
 // 6. Quality metrics
 {
-  const slide = baseSlide("质量基线：检索刚好达标，分类与引用仍明显不足", "05 · Phase 0 质量 Gate", 6);
+  const slide = baseSlide("独立留出集：检索通过，分类与引用仍未达标", "05 · Phase 0 质量 Gate", 6);
   const actual = [quality.summary.top5_recall, quality.summary.classification_accuracy, quality.summary.citation_accuracy]
     .map((value) => Number((value * 100).toFixed(1)));
   const threshold = [quality.thresholds.top5_recall * 100, quality.thresholds.classification_accuracy * 100, quality.thresholds.citation_accuracy * 100];
@@ -198,7 +198,7 @@ function note(slide, text) {
     position: { left: 72, top: 166, width: 730, height: 420 },
     categories: ["Top-5 召回", "分类准确率", "引用准确率"],
     series: [
-      { name: "校准集实际", values: actual, fill: C.cyan },
+      { name: isIndependentHoldout ? "独立留出集实际" : "校准集实际", values: actual, fill: C.cyan },
       { name: "门槛", values: threshold, fill: C.line },
     ],
     barOptions: { direction: "bar", grouping: "clustered", gapWidth: 50 },
@@ -213,23 +213,23 @@ function note(slide, text) {
   });
   applyPresentationChartFont(chart, { fontFamily: FONT });
   addRect(slide, 848, 174, 360, 118, C.redPale);
-  addText(slide, "校准集总状态", 874, 194, 300, 24, { fontSize: 15, bold: true, color: C.red });
+  addText(slide, isIndependentHoldout ? "独立留出集总状态" : "校准集总状态", 874, 194, 300, 24, { fontSize: 15, bold: true, color: C.red });
   addText(slide, "FAIL", 874, 226, 300, 48, { fontSize: 38, bold: true, color: C.red });
-  addRect(slide, 848, 316, 360, 132, C.amberPale);
-  addText(slide, "50 条独立留出集", 874, 338, 300, 26, { fontSize: 18, bold: true, color: C.amber });
-  addText(slide, "尚未执行真实复验", 874, 378, 300, 34, { fontSize: 23, bold: true, color: C.ink });
-  addText(slide, "原因：百炼 Embedding/Reranker 的数据外发授权需单独明确。", 874, 420, 296, 52, { fontSize: 14, color: C.muted });
+  addRect(slide, 848, 316, 360, 132, C.greenPale);
+  addText(slide, "50 条真实复验", 874, 338, 300, 26, { fontSize: 18, bold: true, color: C.green });
+  addText(slide, "已完成", 874, 378, 300, 34, { fontSize: 23, bold: true, color: C.ink });
+  addText(slide, "Reranker 50/50；DeepSeek 50/50\n缺失预测 0；越界引用 0", 874, 418, 296, 52, { fontSize: 14, color: C.muted });
   addRect(slide, 848, 486, 360, 100, C.gray);
   addText(slide, "门槛保持不变", 874, 504, 300, 24, { fontSize: 16, bold: true, color: C.navy });
   addText(slide, "95% / 90% / 98%", 874, 538, 300, 34, { fontSize: 24, bold: true, color: C.navy });
-  note(slide, "来源：prompt-v2-live-quality-result.json。120 条校准集：Top-5 95.00%（门槛 95%）、分类 42.50%（门槛 90%）、引用 51.67%（门槛 98%）；总状态 FAIL。50 条独立留出集当前未执行，不能推断结果。");
+  note(slide, `来源：holdout-live-quality-result.json。${quality.summary.case_count} 条独立留出集：Top-5 ${(quality.summary.top5_recall * 100).toFixed(2)}%（门槛 ${(quality.thresholds.top5_recall * 100).toFixed(0)}%）、分类 ${(quality.summary.classification_accuracy * 100).toFixed(2)}%（门槛 ${(quality.thresholds.classification_accuracy * 100).toFixed(0)}%）、引用 ${(quality.summary.citation_accuracy * 100).toFixed(2)}%（门槛 ${(quality.thresholds.citation_accuracy * 100).toFixed(0)}%）；总状态 ${quality.status}。`);
 }
 
 // 7. Risks
 {
   const slide = baseSlide("四项管理风险决定下一阶段能否进入正式化", "06 · 风险与控制", 7);
   const risks = [
-    ["01", "质量 Gate 未关闭", "分类与引用远低于门槛；独立留出集仍未真实验证。", "保持 FAIL；完成授权后复验，不降门槛。", C.red],
+    ["01", "质量 Gate 未关闭", "独立留出集分类 48%、引用 74%，仍低于 90% 和 98% 门槛。", "保持 FAIL；冻结本轮结果，不降门槛。", C.red],
     ["02", "10 项业务事实待正式化", "内部工作基线尚未转为正式需求与验收责任。", "逐项形成唯一书面结论并升版。", C.amber],
     ["03", "6 项高风险交付", "接口、迁移、权限或专项前置可能形成连锁阻塞。", "W0/W2 前置验证，W3 才实施。", C.red],
     ["04", "平台验证不完整", "本轮质量链仅 Windows 11；Debian 13 按用户要求暂缓。", "正式发布前补齐目标平台证据矩阵。", C.cyan],
@@ -247,13 +247,13 @@ function note(slide, text) {
 
 // 8. Decisions / next
 {
-  const slide = baseSlide("建议：先关闭质量与决策前置，再进入冻结和正式排期", "07 · 管理决策与下一步", 8);
+  const slide = baseSlide("下一阶段：质量修复与全新留出集复验", "07 · 管理决策与下一步", 8);
   const actions = [
-    ["1", "补齐数据外发授权", "明确允许 50 条留出集查询及候选正文发送至百炼 Embedding/Reranker；DeepSeek 授权已具备。", "立即"],
-    ["2", "执行独立留出集复验", "保持 95% / 90% / 98% 门槛；PASS/FAIL 均原样记录。", "授权后"],
-    ["3", "关闭 10 项正式化待办", "将工作基线升级为唯一书面业务结论、验收责任与适用版本。", "冻结前"],
-    ["4", "完成三项冻结", "Architecture → Data Model → API Contract，按顺序通过 Gate。", "Phase 0 后"],
-    ["5", "发布正式 WBS", "确认资源、实名责任人、环境、开始/结束日期和里程碑。", "冻结后"],
+    ["1", "接受本轮 FAIL 结论", "冻结 98% / 48% / 74% 结果，不修改门槛、人工标签或引用真值。", "立即"],
+    ["2", "开展失败分层诊断", "本地分析 26 条分类失例、13 条引用失例和 1 条检索失例。", "立即"],
+    ["3", "修复分类与引用链", "使用独立开发集调整业务判定、Prompt 和可接受引用集合。", "下一轮"],
+    ["4", "建立全新独立留出集", "本轮 50 条已成为已见测试集，不能继续用于未见集通过声明。", "修复后"],
+    ["5", "完成冻结与正式 WBS", "按 Architecture、Data Model、API Contract 顺序通过 Gate，再确认资源和日历计划。", "Phase 0 后"],
   ];
   actions.forEach(([num, name, detail, when], i) => {
     const top = 158 + i * 92;
@@ -264,13 +264,13 @@ function note(slide, text) {
     addText(slide, when, 1072, top + 6, 116, 30, { fontSize: 16, bold: true, color: i === 0 ? C.red : C.blue, align: "right" });
   });
   addRect(slide, 72, 628, 1136, 38, C.navy);
-  addText(slide, "推荐状态：保持 Phase 0，完成独立复验后再决定是否进入冻结。", 92, 634, 1096, 26, { fontSize: 17, bold: true, color: C.white });
-  note(slide, "管理建议基于当前正式 Gate 约束与已验证事实。外发授权必须由用户明确给出，AI 不可代为扩大数据目的地范围。");
+  addText(slide, "推荐状态：保持 Phase 0，完成质量修复并通过全新独立留出集后再进入冻结。", 92, 634, 1096, 26, { fontSize: 17, bold: true, color: C.white });
+  note(slide, "管理建议基于本轮 50 条独立留出集真实结果。该留出集已被使用，后续调优不得再次把它作为未见独立集的通过证据。");
 }
 
 await fs.mkdir(outputDir, { recursive: true });
-const finalPath = path.join(outputDir, "PLM项目实施分析与技术验证管理汇报-R8.1.pptx");
-const stagingDir = path.join(path.dirname(outputDir), ".management-briefing-r8-validation");
+const finalPath = path.join(outputDir, "PLM项目实施分析与技术验证管理汇报-R9.pptx");
+const stagingDir = path.join(path.dirname(outputDir), ".management-briefing-r9-validation");
 await fs.mkdir(stagingDir, { recursive: true });
 const candidatePath = path.join(stagingDir, "candidate.pptx");
 await (await PresentationFile.exportPptx(presentation)).save(candidatePath);
@@ -294,7 +294,7 @@ const result = await finalizePresentation({
   requiredNativeTableOwnerSlides: [],
   fontPolicy: { basis: "design", families: [FONT] },
   verifyArtifactToolImport: true,
-  receiptPath: path.join(stagingDir, "PLM项目实施分析与技术验证管理汇报-R8.1.validation.json"),
+  receiptPath: path.join(stagingDir, "PLM项目实施分析与技术验证管理汇报-R9.validation.json"),
 });
 
 const checked = await PresentationFile.importPptx(await FileBlob.load(finalPath));
@@ -309,9 +309,9 @@ for (let i = 0; i < checked.slides.items.length; i += 1) {
 await fs.writeFile(path.join(outputDir, "deck-result.json"), JSON.stringify({
   output_path: finalPath,
   slide_count: checked.slides.items.length,
-  status: "MANAGEMENT_BRIEFING_READY_WITH_HOLDOUT_PENDING",
+  status: "MANAGEMENT_BRIEFING_READY_WITH_HOLDOUT_FAIL",
   quality_status: quality.status,
-  holdout_live_status: "NOT_RUN_PENDING_EXPLICIT_BAILIAN_EGRESS_AUTHORIZATION",
+  holdout_live_status: "COMPLETED_FAIL",
   finalizer: result,
 }, null, 2), "utf8");
-console.log(JSON.stringify({ outputPath: finalPath, slideCount: checked.slides.items.length, qualityStatus: quality.status, holdoutLiveStatus: "PENDING_AUTHORIZATION" }));
+console.log(JSON.stringify({ outputPath: finalPath, slideCount: checked.slides.items.length, qualityStatus: quality.status, holdoutLiveStatus: "COMPLETED_FAIL" }));

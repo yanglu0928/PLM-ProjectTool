@@ -12,9 +12,9 @@
 |P03-A08|pgvector 向量检索|PASS|NOT_RUN|NOT_RUN|PostgreSQL 18.6 + pgvector 0.8.6，1,000 条合成三维向量、4 场景 HNSW cosine Top-5，平均/最低 Recall 100%，HNSW 执行计划命中|
 |P03-A09|Hybrid Retrieval|PASS|NOT_RUN|NOT_RUN|PostgreSQL 18.6 + pgvector 0.8.6，Vector 0.6 + Full Text 0.4；每通道候选池为 Top-K 的 4 倍，HNSW `m=32`、`ef_construction=200`、`ef_search=200`；1,000 条合成记录、4 场景 Top-5 平均/最低 Recall 100%，GIN/HNSW 均命中|
 |P03-A10|外部可配置 Reranker|PASS|NOT_RUN|NOT_RUN|百炼华北 2 业务空间专属 `compatible-api/v1/reranks`、`qwen3-rerank` 真实 5→3 调用 PASS；相关项位列前二；HTTP 429、超时、无效响应均 fail-open 保留原顺序并记录脱敏错误码|
-|P03-A11|Top-5 Recall ≥95%|PASS|NOT_RUN|NOT_RUN|用户明确授权后完成 R4 真实百炼重排 120/120，纯语义 Top-5 为 91/120（75.83%）。R5 保护性融合保留百炼第 1 名与 OCR 规范化词法前 4 名，复用同批真实结果后精确 Top-5 为 114/120（95.00%）、同文档 118/120（98.33%）；GIN/HNSW 命中，R5 复算外部调用 0。无金标、答案术语或 ChunkId 参与排序；同集探索调优仍需独立留出集验证|
-|P03-A12|分类准确率 ≥90%|FAIL|NOT_RUN|NOT_RUN|Prompt v2 历史结果 51/120（42.50%）。独立留出集 50/50 已人工确认并严格导入，Schema/覆盖审计 PASS，五类分布 23/3/10/13/1；尚未执行独立真实预测，不能提前计分|
-|P03-A13|来源引用准确率 ≥98%|FAIL|NOT_RUN|NOT_RUN|Prompt v2 历史结果 62/120（51.67%），越界引用 0。独立留出集 50/50 已确认，锁定 Chunk 与引用定位对齐检查 PASS；尚未执行独立真实引用复验|
+|P03-A11|Top-5 Recall ≥95%|PASS|NOT_RUN|NOT_RUN|独立留出集真实复验 49/50（98.00%），达到 95% 门槛；50/50 条百炼重排完成，GIN/HNSW 均命中，来源隔离启用。该结果取代同集调优结果作为 P03-A11 的独立验证证据|
+|P03-A12|分类准确率 ≥90%|FAIL|NOT_RUN|NOT_RUN|独立留出集真实预测 24/50（48.00%），低于 90%；缺失预测 0。模型预测 44 条 `STANDARD_SATISFIED`，13 条资料不足仅 1 条正确、10 条非标功能 0 条正确，保持质量 Gate FAIL|
+|P03-A13|来源引用准确率 ≥98%|FAIL|NOT_RUN|NOT_RUN|独立留出集精确引用 37/50（74.00%），低于 98%；越界引用 0。检索命中 49/50，说明 13 条引用失例主要发生在已召回候选的证据选择，保持质量 Gate FAIL|
 |P03-A14|Context Builder → AIService|PASS|NOT_RUN|NOT_RUN|`RagAIOrchestrator → AIService → ModelRouter → ProviderAdapter` 实测 PASS；Context 保留 Chunk/来源引用和字符预算，PromptId/Version、ProjectId、ChunkIds 可追溯；RAG 模块无 HTTP 或厂商适配代码|
 |P03-A15|异常与空结果|PASS|NOT_RUN|NOT_RUN|6 场景 PASS：DB 不可用停止且不调用 AI；空结果/最高分 <0.5 返回无可靠匹配且不调用 AI；Reranker 不可用按原顺序降级；AI 不可用返回脱敏可重试状态；正常链路保留引用 ID|
 

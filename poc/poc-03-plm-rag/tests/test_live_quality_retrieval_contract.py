@@ -15,6 +15,7 @@ from validate_live_quality_metrics import (  # noqa: E402
     FULL_TEXT_SQL,
     RETRIEVAL_PIPELINE_VERSION,
     VECTOR_SQL,
+    _deduplicate_chunks,
     _load_complete_embeddings,
     _load_prediction_cache,
     _retrieval_cache_is_current,
@@ -24,6 +25,19 @@ from validate_live_quality_metrics import (  # noqa: E402
 
 
 class LiveQualityRetrievalContractTests(unittest.TestCase):
+    def test_identical_duplicate_chunks_are_deduplicated(self) -> None:
+        chunk = {"chunk_id": "C-1", "text": "same", "source_locators": ["L1"]}
+        self.assertEqual([chunk], _deduplicate_chunks([chunk, dict(chunk)]))
+
+    def test_conflicting_duplicate_chunk_id_fails_closed(self) -> None:
+        with self.assertRaisesRegex(ValueError, "conflicting duplicate ChunkId"):
+            _deduplicate_chunks(
+                [
+                    {"chunk_id": "C-1", "text": "first"},
+                    {"chunk_id": "C-1", "text": "second"},
+                ]
+            )
+
     def test_holdout_requires_exactly_fifty_cases(self) -> None:
         dataset = {
             "schema_version": "poc-03.holdout.v1",
