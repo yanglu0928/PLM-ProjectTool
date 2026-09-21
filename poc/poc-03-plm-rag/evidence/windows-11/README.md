@@ -229,6 +229,14 @@ R6 Golden Dataset 已完成严格导入、覆盖审计和 Prompt v2 真实复验
 - 评审工作簿三表渲染、公式错误 0；批量确认 50/50、单条修改缺说明保持待补充、补齐后转为已确认。原文件定位 50/50。
 - 查询、客户正文、原文件名、逐条模型响应、人工信息、工作簿和证据页未提交 Git。
 
+## Independent Holdout Strict Import R1
+
+- 用户确认后的工作簿严格导入为 50 APPROVED、0 PENDING、0 RETURNED、0 问题，人工例外 0。
+- `poc-03.holdout.v1` JSON Schema 校验 PASS；独立验收集没有并入 120 条 R7.1 校准集。
+- 12/12 覆盖与隔离检查 PASS：50 个唯一问题、候选和 Chunk，四类来源配额 33/7/8/2，五类分类分布 23/3/10/13/1，PROJECT 隔离与引用锁对齐均通过。
+- POC-03 全量 151/151 单元测试 PASS。本轮外部模型调用 0。
+- 脱敏汇总见 `holdout-import-result.json` 与 `holdout-coverage-result.json`；工作簿、审核人、问题、客户正文、源文件名和完整数据集未提交。
+
 ## Known Issues
 
 1. 两个资料库共 10 个旧版二进制 `.doc` 尚不支持。
