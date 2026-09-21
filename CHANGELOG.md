@@ -6,6 +6,7 @@
 
 ### 新增
 
+- 2026-09-21：启动 POC-08 Plugin Host，实现 Phase 0 验证性 `PluginService → Python 独立子进程 → JSON-RPC 2.0 over stdio` 链路。Windows 11 与 Windows Server 2025 均通过 13/13 单元/集成测试、10/10 验收场景及 20/20 并发调用；crash、timeout、invalid JSON 均失败关闭且 FastAPI 继续健康，不兼容版本/篡改/禁用在启动前拒绝，v1.0.0→v1.1.0 独立升级 PASS，插件可见敏感环境变量数 0。Debian 13 保持未验证。
 - 2026-09-21：启动 POC-06，生成恰好 100 页的中文 DOCX 与 50 页的中文 PPTX，覆盖三级章节、表格、图片、原生流程和可编辑数据图。Windows 11 上 OOXML 完整性、Microsoft Word/PowerPoint 实开、PDF 导出及 150 页全量视觉检查 PASS；Windows Server 2025 包结构与 Hash PASS，但因虚拟机未安装 Office 保持 `PARTIAL_PASS_OFFICE_BLOCKED`；Debian 13 未验证。
 - 2026-09-21：POC-05 完成真实扫描件分层语义准确率审计。5 份匿名文档固定抽取 15 页，先从原页视觉抄录 75 个检查点再比较 OCR；PaddleOCR 主链 75/75、关键错误 0，Tesseract 辅助基线 70/75、关键错误 2，后者不得作为关键字段唯一来源。登记 `EXC-P0-004`，Windows 11 物理断网复跑与 Debian 13 暂缓，POC-05 以 `PASS_WITH_EXCEPTION` 收口；客户原文、文件名、渲染页和逐项真值未提交。
 - 2026-09-21：用户同意 R10 修复方向并要求不重复真实复验后，完成 POC-03 R11 离线修复合同。新增 Prompt v3，显式区分文档事实与能力适配，能力适配强制装配需求/约定与标准能力双来源证据；新增 Evidence Selector，使直接支持证据可超过第 1 名泛化候选，并保持 ProjectId、来源角色和 Golden 字段防泄漏失败关闭。新增 10 项合成单元测试，本轮外部调用 0，历史 50 条与 98.00% / 48.00% / 74.00% 不重跑、不改写。

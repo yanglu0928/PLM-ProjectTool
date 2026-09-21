@@ -21,7 +21,7 @@
 |POC-05|P0.04/P0.12|Document + OCR|PASS_WITH_EXCEPTION|2026-09-17|2026-09-21|Windows 11 功能链和真实扫描分层语义审计 PASS，PaddleOCR 75/75、关键错误 0；Windows Server 2025 完全断网 8/8 PASS；Windows 11 物理断网与 Debian 13 依据 `EXC-P0-004` 暂缓|`poc/poc-05-document-ocr/`、`docs/poc/phase-0-exceptions.md`|
 |POC-06|P0.16/P0.17|Word / PPT|IN_PROGRESS|2026-09-21|-|Windows 11：100 页 Word / 50 页 PowerPoint 结构、Office 实开、PDF 导出和全量视觉检查 PASS；Windows Server 2025：包结构与 Hash PASS，但未安装 Office；Debian 13 NOT_RUN|`poc/poc-06-word-ppt/`|
 |POC-07|P1|VSDX|DEFERRED_P1|-|-|不阻塞 Phase 0|-|
-|POC-08|P0.13|Plugin Host|NOT_STARTED|-|-|-|-|
+|POC-08|P0.13|Plugin Host|IN_PROGRESS|2026-09-21|-|Windows 11 与 Windows Server 2025 的 crash、timeout、invalid JSON、不兼容版本、环境隔离、启停、独立升级和 20 并发全部 PASS；Debian 13 NOT_RUN|`poc/poc-08-plugin-host/`|
 |POC-09|P0.14/P0.15|License|NOT_STARTED|-|-|-|-|
 
 ## 状态定义
@@ -54,6 +54,7 @@
 |2026-09-17|POC-05 Windows Server 2025 在虚拟网卡断开状态完成受控模型与制品全新复跑，六类输入和三条 OCR 链 8/8 PASS；修复 PowerShell 5.1 无 BOM UTF-8 JSON 回读问题。|
 |2026-09-21|POC-05 真实扫描件完成 5 份文档、15 页、75 个视觉真值检查点的分层审计：PaddleOCR 75/75、关键错误 0，Tesseract 70/75 且降级为辅助链。登记 `EXC-P0-004` 后以 `PASS_WITH_EXCEPTION` 收口。|
 |2026-09-21|启动 POC-06；Windows 11 生成恰好 100 页 DOCX 和 50 页 PPTX，OOXML 断言、Microsoft Office 实开/PDF 导出与 150 页全量视觉检查 PASS。Windows Server 2025 包结构和 Hash 复验 PASS，但因虚拟机未安装 Word/PowerPoint，保持 `IN_PROGRESS / SERVER_OFFICE_BLOCKED`。|
+|2026-09-21|启动 POC-08；Windows 11 与 Windows Server 2025 均完成 13/13 单元/集成测试、10/10 验收场景和 20/20 并发调用。插件 crash/timeout 后 FastAPI 仍健康，invalid JSON 失败关闭，不兼容版本与篡改包启动前拒绝，v1→v1.1 独立升级 PASS；Debian 13 保持 NOT_RUN。|
 |2026-09-17|启动 POC-04；建立 AIService、ModelRouter、DeepSeekAdapter、验收矩阵和官方协议快照。|
 |2026-09-17|POC-04 Windows 11 确定性场景 11/11 PASS，DeepSeek 官方端点 401、真实文本、SSE 流式和结构化 JSON 全部通过；修复 JSON/Schema failure 未受控重试的问题。|
 |2026-09-17|POC-04 Windows Server 2025 实机完成 11/11 单元测试、11/11 确定性场景及 DeepSeek 官方端点 401、真实文本、SSE 流式和结构化 JSON 验证；临时密钥已删除，脱敏证据扫描无匹配。|
