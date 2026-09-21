@@ -2,7 +2,7 @@
 
 ## Status
 
-`IN_PROGRESS / WINDOWS11_PASS / SERVER2025_PASS / DEBIAN13_NOT_RUN`
+`PASS_WITH_EXCEPTION / WINDOWS11_PASS / SERVER2025_PASS / DEBIAN13_DEFERRED_BY_USER`
 
 ## Environment
 
@@ -40,7 +40,7 @@ Windows 11 与 Windows Server 2025 全部通过。两端均能生成不含原始
 
 ## Known Issues
 
-- Debian 13 尚未执行，不得从 Windows 结果外推 Linux 网卡枚举或密码库兼容性。
+- Debian 13 依据 `EXC-P0-005` 暂缓，仍不得从 Windows 结果外推 Linux 网卡枚举或密码库兼容性。
 - `SystemTimeGuard` 本 PoC 验证运行期间回拨逻辑；跨进程重启的可信时间状态存储、OS ACL 与防篡改策略须在 Architecture Freeze 时确定。
 - 本 PoC 不冻结正式管理 API、数据库实体、License 文件安装目录或商业授权策略。
 
@@ -50,7 +50,7 @@ Windows 11 与 Windows Server 2025 全部通过。两端均能生成不含原始
 
 ## PASS / FAIL
 
-`IN_PROGRESS`：Windows 11 `PASS`；Windows Server 2025 `PASS`；Debian 13 `NOT_RUN`。
+`PASS_WITH_EXCEPTION`：Windows 11 `PASS`；Windows Server 2025 `PASS`；Debian 13 `DEFERRED_BY_USER / 未验证`。
 
 ## Alternative
 

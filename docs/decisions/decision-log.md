@@ -527,3 +527,15 @@
 |Reason|基线已锁定 MAC → Normalize → SHA-256 → Ed25519，但未规定规范化文本和确定性序列化细节。显式规范避免分隔符/大小写导致同一网卡产生不同指纹，确定性 JSON 避免同一 Payload 因编码差异导致验签失败。|
 |Impact|Windows 11 与 Windows Server 2025 均完成 26/26 测试和 10/10 场景；8 类非法授权全部拒绝，License/MAC/时间防护覆盖率 91%～94%，私钥和原始 MAC 未落盘。跨进程可信时间状态存储留待 Architecture Freeze，Debian 13 未验证。|
 |Rollback|删除 `poc/poc-09-license/` 和对应匿名证据即可回到 `NOT_STARTED`；不改变 Ed25519、Payload 正式字段、数据库、正式 API 或商业授权规则。|
+
+## DEC-20260921-035
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260921-035|
+|Date|2026-09-21|
+|WBS|Phase 0 Debian 13 验证范围|
+|Decision|依据用户明确决定，登记 `EXC-P0-005` 暂缓 POC-06、POC-08、POC-09 的 Debian 13 验证；POC-08、POC-09 以 `PASS_WITH_EXCEPTION` 收口。POC-06 仅解除 Debian 缺口，Windows Server 2025 Office 阻塞保持。|
+|Reason|用户明确表示 Debian 13 不用验证。该决定满足 L3 例外确认要求，但不等于形成 Debian 兼容证据。|
+|Impact|Phase 0 不再因 POC-08/POC-09 的 Debian 缺口阻塞；剩余正式阻塞为 POC-03 质量 Gate 和 POC-06 Windows Server 2025 Office 实开。Debian 发行与 Release Gate 仍不得宣称通过。|
+|Rollback|用户可撤销例外并恢复 Debian 13 实机验证；恢复后 POC-06、POC-08、POC-09 在 Debian 结果形成前回到 `IN_PROGRESS`。|

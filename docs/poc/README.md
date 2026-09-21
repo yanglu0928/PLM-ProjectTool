@@ -7,7 +7,7 @@
 - Phase：Phase 0
 - 状态：IN_PROGRESS
 - 启动日期：2026-09-17
-- 当前任务：POC-09 Windows 11 / Windows Server 2025 已通过；Debian 13 保持 `NOT_RUN`，POC-09 总状态为 `IN_PROGRESS`
+- 当前任务：POC-08、POC-09 已按 `EXC-P0-005` 收口；Phase 0 等待 POC-03 质量 Gate 与 POC-06 Windows Server 2025 Office 阻塞处理
 - 正式业务开发：BLOCKED
 
 ## 入口

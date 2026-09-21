@@ -19,10 +19,10 @@
 |POC-03|P0.09/P0.10/P0.12|PLM RAG|FAIL|2026-09-17|-|50 条独立留出集真实复验：Top-5 49/50（98.00%）PASS；分类 24/50（48.00%）、引用 37/50（74.00%）FAIL。50/50 条百炼重排和 DeepSeek 预测完整，GIN/HNSW 命中，缺失预测与越界引用均为 0；质量 Gate 保持 FAIL|`poc/poc-03-plm-rag/`|
 |POC-04|P0.11|AI Gateway / DeepSeek|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11、Windows Server 2025 统一网关、11/11 确定性场景及真实文本/流式/结构化/401 PASS；Debian 13 经用户批准暂缓，不构成兼容性结论|`poc/poc-04-ai-gateway/`、`docs/poc/phase-0-exceptions.md`|
 |POC-05|P0.04/P0.12|Document + OCR|PASS_WITH_EXCEPTION|2026-09-17|2026-09-21|Windows 11 功能链和真实扫描分层语义审计 PASS，PaddleOCR 75/75、关键错误 0；Windows Server 2025 完全断网 8/8 PASS；Windows 11 物理断网与 Debian 13 依据 `EXC-P0-004` 暂缓|`poc/poc-05-document-ocr/`、`docs/poc/phase-0-exceptions.md`|
-|POC-06|P0.16/P0.17|Word / PPT|IN_PROGRESS|2026-09-21|-|Windows 11：100 页 Word / 50 页 PowerPoint 结构、Office 实开、PDF 导出和全量视觉检查 PASS；Windows Server 2025：包结构与 Hash PASS，但未安装 Office；Debian 13 NOT_RUN|`poc/poc-06-word-ppt/`|
+|POC-06|P0.16/P0.17|Word / PPT|IN_PROGRESS|2026-09-21|-|Windows 11：100 页 Word / 50 页 PowerPoint 结构、Office 实开、PDF 导出和全量视觉检查 PASS；Windows Server 2025：包结构与 Hash PASS，但未安装 Office；Debian 13 依据 `EXC-P0-005` 暂缓|`poc/poc-06-word-ppt/`、`docs/poc/phase-0-exceptions.md`|
 |POC-07|P1|VSDX|DEFERRED_P1|-|-|不阻塞 Phase 0|-|
-|POC-08|P0.13|Plugin Host|IN_PROGRESS|2026-09-21|-|Windows 11 与 Windows Server 2025 的 crash、timeout、invalid JSON、不兼容版本、环境隔离、启停、独立升级和 20 并发全部 PASS；Debian 13 NOT_RUN|`poc/poc-08-plugin-host/`|
-|POC-09|P0.14/P0.15|License|IN_PROGRESS|2026-09-21|-|Windows 11 与 Windows Server 2025 的 MAC 显式选择、SHA-256、Ed25519、过期、篡改、错公钥与系统时间场景全部 PASS；Debian 13 NOT_RUN|`poc/poc-09-license/`|
+|POC-08|P0.13|Plugin Host|PASS_WITH_EXCEPTION|2026-09-21|2026-09-21|Windows 11 与 Windows Server 2025 的 crash、timeout、invalid JSON、不兼容版本、环境隔离、启停、独立升级和 20 并发全部 PASS；Debian 13 依据 `EXC-P0-005` 暂缓|`poc/poc-08-plugin-host/`、`docs/poc/phase-0-exceptions.md`|
+|POC-09|P0.14/P0.15|License|PASS_WITH_EXCEPTION|2026-09-21|2026-09-21|Windows 11 与 Windows Server 2025 的 MAC 显式选择、SHA-256、Ed25519、过期、篡改、错公钥与系统时间场景全部 PASS；Debian 13 依据 `EXC-P0-005` 暂缓|`poc/poc-09-license/`、`docs/poc/phase-0-exceptions.md`|
 
 ## 状态定义
 
@@ -56,6 +56,7 @@
 |2026-09-21|启动 POC-06；Windows 11 生成恰好 100 页 DOCX 和 50 页 PPTX，OOXML 断言、Microsoft Office 实开/PDF 导出与 150 页全量视觉检查 PASS。Windows Server 2025 包结构和 Hash 复验 PASS，但因虚拟机未安装 Word/PowerPoint，保持 `IN_PROGRESS / SERVER_OFFICE_BLOCKED`。|
 |2026-09-21|启动 POC-08；Windows 11 与 Windows Server 2025 均完成 13/13 单元/集成测试、10/10 验收场景和 20/20 并发调用。插件 crash/timeout 后 FastAPI 仍健康，invalid JSON 失败关闭，不兼容版本与篡改包启动前拒绝，v1→v1.1 独立升级 PASS；Debian 13 保持 NOT_RUN。|
 |2026-09-21|启动 POC-09；Windows 11 与 Windows Server 2025 均完成 26/26 单元测试和 10/10 验收场景。MAC 变化、过期、Payload/签名篡改、错公钥、异常系统时间、回拨与畸形文档 8/8 全部拒绝；私钥和原始 MAC 未落盘，Debian 13 保持 NOT_RUN。|
+|2026-09-21|用户明确决定 Debian 13 不再执行；登记 `EXC-P0-005`，POC-08、POC-09 以 `PASS_WITH_EXCEPTION` 收口。POC-06 的 Debian 缺口解除，但 Windows Server 2025 Office 缺失仍保持独立阻塞。|
 |2026-09-17|启动 POC-04；建立 AIService、ModelRouter、DeepSeekAdapter、验收矩阵和官方协议快照。|
 |2026-09-17|POC-04 Windows 11 确定性场景 11/11 PASS，DeepSeek 官方端点 401、真实文本、SSE 流式和结构化 JSON 全部通过；修复 JSON/Schema failure 未受控重试的问题。|
 |2026-09-17|POC-04 Windows Server 2025 实机完成 11/11 单元测试、11/11 确定性场景及 DeepSeek 官方端点 401、真实文本、SSE 流式和结构化 JSON 验证；临时密钥已删除，脱敏证据扫描无匹配。|

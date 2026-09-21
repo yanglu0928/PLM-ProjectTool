@@ -2,7 +2,7 @@
 
 ## Status
 
-`IN_PROGRESS / WINDOWS11_PASS / SERVER2025_PASS`
+`PASS_WITH_EXCEPTION / WINDOWS11_PASS / SERVER2025_PASS / DEBIAN13_DEFERRED_BY_USER`
 
 ## Environment
 
@@ -40,7 +40,7 @@ Windows 11 与 Windows Server 2025 全部通过。两端均证明 crash、timeou
 
 ## Known Issues
 
-- Debian 13 尚未执行，不得从 Windows 结果外推。
+- Debian 13 依据 `EXC-P0-005` 暂缓，仍不得从 Windows 结果外推。
 - 本 PoC 不实现插件容器、第三方插件市场或客户 SDK。
 - Manifest `signature` 在本 PoC 仅以入口文件 SHA-256 验证包完整性，不声称具备开发者身份信任；正式发布签名算法尚待 Architecture/Release 阶段冻结。
 
@@ -50,7 +50,7 @@ Python 3.13 独立子进程 + JSON-RPC 2.0 over stdio 在 Windows 11 和 Windows
 
 ## PASS / FAIL
 
-`IN_PROGRESS`：Windows 11 `PASS`；Windows Server 2025 `PASS`；Debian 13 `NOT_RUN`。
+`PASS_WITH_EXCEPTION`：Windows 11 `PASS`；Windows Server 2025 `PASS`；Debian 13 `DEFERRED_BY_USER / 未验证`。
 
 ## Alternative
 

@@ -83,3 +83,24 @@
 4. 真实扫描语义结论只覆盖 5 份文档中的 15 个分层抽样页和 75 个视觉检查点，不等同于 105 页逐字符全量标注。
 5. PaddleOCR 为主链；未达门槛的 Tesseract 只能作为辅助回退，关键字段必须由主链或人工确认。
 6. 本例外不改变三个正式目标环境，也不代表 Phase 0 整体完成；POC-03 质量 Gate 仍为 FAIL。
+
+## EXC-P0-005：暂缓剩余 POC-06 / POC-08 / POC-09 Debian 13 验证
+
+|字段|内容|
+|---|---|
+|状态|APPROVED|
+|批准日期|2026-09-21|
+|批准人|用户/项目负责人|
+|关联 PoC|POC-06、POC-08、POC-09|
+|例外内容|Debian 13 本轮不再验证，跳过 Word/PPT、Plugin Host 与 License 的 Debian 执行|
+|已完成范围|POC-06 Windows 11 全链及 Windows Server 2025 包结构/Hash；POC-08、POC-09 的 Windows 11 与 Windows Server 2025 全链|
+|未验证范围|Debian 13 的 Word/PPT 生成与打开、Plugin Host 进程/stdio 行为、MAC 枚举及 Ed25519 离线链|
+|处理结果|POC-08、POC-09 以 `PASS_WITH_EXCEPTION` 收口；POC-06 解除 Debian 缺口，但仍因 Windows Server 2025 未安装 Microsoft Office 保持 `IN_PROGRESS`|
+
+## EXC-P0-005 边界
+
+1. 本例外只调整 Phase 0 当前验证范围，不删除 Debian 13 正式兼容目标。
+2. Windows 11、Windows Server 2025 的结果不得外推为 Debian 13 兼容性证据；Debian 13 保持 `DEFERRED_BY_USER / 未验证`。
+3. 在声称 Debian 13 兼容、制作 Debian 发行包或通过 Debian Release Gate 前，必须恢复并完成对应安装、License、Plugin 与输出验证。
+4. POC-06 的 Windows Server 2025 Office 实开仍为独立阻塞，本例外不允许将包结构/Hash 结果描述为 Office 兼容通过。
+5. 本例外不改变 Plugin 子进程、License Ed25519、Word/PPT 技术基线，也不代表 Phase 0 整体完成；POC-03 质量 Gate 仍为 FAIL。

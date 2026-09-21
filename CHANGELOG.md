@@ -6,6 +6,7 @@
 
 ### 新增
 
+- 2026-09-21：用户批准 `EXC-P0-005`，暂缓 POC-06、POC-08、POC-09 的 Debian 13 验证。POC-08、POC-09 以 `PASS_WITH_EXCEPTION` 收口；POC-06 仅解除 Debian 缺口，Windows Server 2025 未安装 Microsoft Office 的阻塞不变。Debian 13 仍是正式兼容目标，未形成兼容性结论。
 - 2026-09-21：启动 POC-09 License，实现“显式选择 MAC → 规范化 → SHA-256 → 确定性 Payload → Ed25519”验证链。Windows 11 与 Windows Server 2025 均通过 26/26 单元测试和 10/10 验收场景；MAC 变化、过期、Payload/签名篡改、错公钥、异常系统时间、回拨及畸形文档 8/8 全部拒绝，核心源码覆盖率 91%～94%，测试私钥与原始 MAC 均未落盘。Debian 13 保持未验证。
 - 2026-09-21：启动 POC-08 Plugin Host，实现 Phase 0 验证性 `PluginService → Python 独立子进程 → JSON-RPC 2.0 over stdio` 链路。Windows 11 与 Windows Server 2025 均通过 13/13 单元/集成测试、10/10 验收场景及 20/20 并发调用；crash、timeout、invalid JSON 均失败关闭且 FastAPI 继续健康，不兼容版本/篡改/禁用在启动前拒绝，v1.0.0→v1.1.0 独立升级 PASS，插件可见敏感环境变量数 0。Debian 13 保持未验证。
 - 2026-09-21：启动 POC-06，生成恰好 100 页的中文 DOCX 与 50 页的中文 PPTX，覆盖三级章节、表格、图片、原生流程和可编辑数据图。Windows 11 上 OOXML 完整性、Microsoft Word/PowerPoint 实开、PDF 导出及 150 页全量视觉检查 PASS；Windows Server 2025 包结构与 Hash PASS，但因虚拟机未安装 Office 保持 `PARTIAL_PASS_OFFICE_BLOCKED`；Debian 13 未验证。

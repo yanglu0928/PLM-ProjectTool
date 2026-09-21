@@ -3,17 +3,17 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 0 技术验证|
-|Current WBS|POC-09：MAC / SHA-256 / Ed25519 License|
-|Current Status|POC09_WINDOWS_PASS / DEBIAN_NOT_RUN / PHASE0_BLOCKED_BY_POC03|
+|Current WBS|Phase 0 阻塞项收口：POC-03 / POC-06|
+|Current Status|POC08_POC09_PASS_WITH_EXCEPTION / PHASE0_BLOCKED_BY_POC03_POC06|
 |Completed Phases|无|
-|Completed WBS|POC-01、POC-02、POC-04、POC-05 已按批准例外收口；POC-06 Windows 11 全链验收 PASS；POC-08、POC-09 Windows 11 / Windows Server 2025 全部 PASS；P03-A02~A11、P03-A14、P03-A15 已 PASS|
-|Blockers|独立留出集分类准确率 24/50（48.00%）低于 90%，精确引用 37/50（74.00%）低于 98%，P03-A12/P03-A13 与 Phase 0 质量 Gate 保持 FAIL；POC-06 Windows Server 2025 缺少 Microsoft Office；POC-06、POC-08 与 POC-09 的 Debian 13 尚未验证|
+|Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-08、POC-09 已按批准例外收口；POC-06 Windows 11 全链验收 PASS；P03-A02~A11、P03-A14、P03-A15 已 PASS|
+|Blockers|独立留出集分类准确率 24/50（48.00%）低于 90%，精确引用 37/50（74.00%）低于 98%，P03-A12/P03-A13 与 Phase 0 质量 Gate 保持 FAIL；POC-06 Windows Server 2025 缺少 Microsoft Office|
 |Pending User Decisions|用户已同意 R10 修复方向并明确不重复本轮真实复验；任何新的客户数据外发、全新留出集真实调用或正式 Gate 仍需按规则单独确认|
 |Architecture Version|未冻结；正式基线为实施方案 V2.1|
 |DB Schema Version|未冻结|
 |API Contract Version|未冻结|
 |Test Summary|POC-09 Windows 11 与 Windows Server 2025 均为 26/26 测试、10/10 验收场景 PASS；8/8 非法授权拒绝，核心覆盖率 91%～94%，私钥与原始 MAC 未落盘|
-|Next WBS|POC-09 保持 `IN_PROGRESS`，等待 Debian 13 环境或书面例外；Phase 0 仍由 POC-03 质量 Gate、POC-06 Server Office 和未验证平台项阻塞|
+|Next WBS|POC-03 质量 Gate 与 POC-06 Windows Server 2025 Office 均需要独立 L3/环境处理；未解除前不得进入 Architecture Freeze|
 
 ## 自动执行策略
 
@@ -26,6 +26,6 @@
 ## 最近检查点
 
 - 分支：`poc/poc-09-license`
-- 最近功能检查点：POC-09 的显式 MAC 选择、规范化、SHA-256、确定性 Payload 与 Ed25519 路径在 Windows 11 与 Windows Server 2025 通过；8 类非法授权全部拒绝，Debian 13 保持未验证。
+- 最近功能检查点：用户批准 `EXC-P0-005` 暂缓剩余 Debian 13 验证；POC-08、POC-09 以 `PASS_WITH_EXCEPTION` 收口，POC-06 仍由 Windows Server 2025 Office 缺失阻塞。
 - 远端同步状态必须在每次任务结束前通过 Git 实时检查，不在本文件固化可能过期的 ahead/behind 数值。
 - 本地用户文件和 Git 忽略的客户资料保持不变。

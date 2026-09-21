@@ -17,7 +17,7 @@
 |---|---|---|---|---|---|---|
 |本地开发机 / Windows 11 验收环境|Windows 11 Home 10.0.26200|x86-64|32 逻辑处理器 / 31.63 GB RAM / D盘约 435.29 GB 可用|3.13.15|POC-01 已收口；POC-02 功能链已验证；POC-03 候选数据准备已验证；POC-04 统一网关与真实 DeepSeek 已验证；POC-05 功能链与真实扫描分层语义审计已验证；POC-06 Office 实开已验证；POC-08 Plugin Host 与 POC-09 License 已验证|POC01_PASS / POC02_FUNCTIONAL_PASS / POC03_DATASET_CANDIDATES_PASS / POC04_FUNCTIONAL_PASS / POC05_PASS_WITH_EXCEPTION / POC06_PASS / POC08_PASS / POC09_PASS|
 |VMware / Windows Server 2025 验收环境|Windows Server 2025 Datacenter 10.0.26100（Desktop Experience）|x86-64|16 逻辑处理器 / 16 GB RAM / 系统盘约 54.71 GB 可用|3.13.15（官方嵌入式包）|POC-01 已收口；POC-02、POC-05 完全断网功能链已验证；POC-04 统一网关与真实 DeepSeek 已验证；POC-06 包结构/Hash 已验证但 Office 未安装；POC-08 Plugin Host 与 POC-09 License 离线链已验证|POC01_PASS / POC02_PASS / POC04_FUNCTIONAL_PASS / POC05_PASS / POC06_PARTIAL_OFFICE_BLOCKED / POC08_PASS / POC09_PASS|
-|Linux 验收环境|Debian 13|x86-64|最低 4C / 8 GB / 100 GB|未确认|正式目标；POC-01/POC-02/POC-04/POC-05 验证经用户批准暂缓；POC-08/POC-09 尚未取得独立例外|DEFERRED_BY_USER / POC04_DEFERRED_BY_USER / POC05_DEFERRED_BY_USER / POC08_NOT_RUN / POC09_NOT_RUN|
+|Linux 验收环境|Debian 13|x86-64|最低 4C / 8 GB / 100 GB|未确认|正式目标；POC-01/POC-02/POC-04/POC-05 及剩余 POC-06/POC-08/POC-09 验证均经用户批准暂缓|DEFERRED_BY_USER / POC06_DEFERRED_BY_USER / POC08_DEFERRED_BY_USER / POC09_DEFERRED_BY_USER|
 
 ## 当前工具发现
 
@@ -53,9 +53,9 @@
 7. POC-05 已对 5 个真实扫描 PDF 的 15 个分层抽样页建立 75 个视觉真值检查点；PaddleOCR 75/75，Tesseract 70/75。该抽样结论不等同于 105 页逐字符全量标注。
 8. POC-04 Windows 11 与 Windows Server 2025 功能链已通过；Debian 13 依据 `EXC-P0-003` 暂缓且保持未验证。
 9. POC-03 已形成 120 条候选记录，但 0 条完成 APPROVED 人工确认；Top-5 Recall、分类准确率和来源引用准确率保持 `NOT_RUN`。
-10. POC-06 Windows 11 完成 100 页 Word / 50 页 PowerPoint 实开、PDF 导出和全量视觉检查；Windows Server 2025 未安装 Microsoft Office，只完成 OOXML 包与 Hash 复验，不得外推 Office 兼容性。
-11. POC-08 Windows 11 与 Windows Server 2025 已通过；Debian 13 仍缺少可执行环境，不得以 Windows 结果替代 Linux 进程/信号/stdio 兼容性证据。
-12. POC-09 Windows 11 与 Windows Server 2025 已通过；Debian 13 的 `/sys/class/net` 网卡枚举与 cryptography/Ed25519 离线链仍须实际执行。
+10. POC-06 Windows 11 完成 100 页 Word / 50 页 PowerPoint 实开、PDF 导出和全量视觉检查；Windows Server 2025 未安装 Microsoft Office，只完成 OOXML 包与 Hash 复验；Debian 13 依据 `EXC-P0-005` 暂缓。
+11. POC-08 Windows 11 与 Windows Server 2025 已通过；Debian 13 依据 `EXC-P0-005` 暂缓，不得以 Windows 结果替代 Linux 进程/信号/stdio 兼容性证据。
+12. POC-09 Windows 11 与 Windows Server 2025 已通过；Debian 13 的 `/sys/class/net` 网卡枚举与 cryptography/Ed25519 离线链依据 `EXC-P0-005` 暂缓。
 
 ## 本机预检摘要
 
