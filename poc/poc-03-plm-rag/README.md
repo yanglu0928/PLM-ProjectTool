@@ -273,6 +273,15 @@ python scripts/prepare_prompt_v2_offline.py `
 - 旧版 `.doc` 通过本机 Microsoft Word 生成不修改原件的本地 DOCX 分析副本，再复用 POC-05 ParsedDocument 解析链。该辅助路径不改变 POC-05 对 `.doc` 直接解析仍不支持的结论。
 - 工作簿 8/8 页签完成渲染、回读、公式错误扫描和输入交互回归；POC-03 全量 155/155 单元测试 PASS。
 
+## Local Survey Execution Package R2
+
+- 用户已整体确认 R1 项目分析包。确认记录绑定 R1 指纹，仅表示可作为下一步调研执行基线；不把 AI 建议自动转成正式需求/方案，也不构成独立留出集数据外发授权。
+- 新增通用执行包生成器 `scripts/build_survey_execution_package.py`，按资料成熟度将 12 个项目分为 4 批，形成 60 条调研任务、39 条 P0 任务和 24 条待决策记录。
+- 新增 Artifact Tool 工作簿生成器 `scripts/build_survey_execution_workbook.mjs`。工作簿包含“执行看板、调研任务、决策追踪、使用说明”四页；黄色列明确提示负责人、日期、状态、最终决策和备注等人工维护项。
+- 调研任务和决策记录均保留本地“打开证据”入口，回到 R1 证据定位页和原始文件。第 3/4 批项目必须先补真实业务调研，不得直接用既有方案替代客户事实。
+- 4/4 页签完成渲染、回读、公式错误扫描和输入交互回归；任务完成与决策关闭会同步更新看板统计。POC-03 全量 160/160 单元测试 PASS，本轮外部模型调用 0。
+- 客户项目名、任务内容、工作簿、证据页和确认记录继续只保存在 Git 忽略的 `artifacts/project-analysis/`；仓库仅同步通用脚手架、测试和脱敏说明。
+
 ## Known Issues
 
 1. R6 Golden Dataset 已确认并严格导入；P03-A11 已由 R5 保护性融合达到 114/120（95.00%）并 PASS。Prompt v2 真实分类只有 51/120（42.50%），引用 62/120（51.67%）；P03-A12/A13 仍 FAIL，POC-03 尚不能收口。
