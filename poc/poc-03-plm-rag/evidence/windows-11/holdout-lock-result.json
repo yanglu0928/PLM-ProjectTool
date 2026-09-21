@@ -1,0 +1,46 @@
+{
+  "schema_version": "poc-03.holdout-lock-result.v1",
+  "status": "PASS",
+  "platform": "Windows 11 x86-64",
+  "target_count": 50,
+  "selected_count": 50,
+  "selected_document_count": 21,
+  "selected_document_overlap_count": 19,
+  "source_type_counts": {
+    "STANDARD_CAPABILITY": 33,
+    "CONTRACT": 7,
+    "TECHNICAL_AGREEMENT": 8,
+    "SURVEY": 2
+  },
+  "checks": {
+    "all_source_type_quotas_met": true,
+    "selected_chunk_ids_disjoint": true,
+    "selected_source_locators_disjoint": true,
+    "unique_selected_text": true,
+    "survey_candidates_use_actual_records": true
+  },
+  "excluded_survey_reference_blocks": 13,
+  "source_governance": {
+    "actual_survey_records": "PRIMARY_EVIDENCE",
+    "survey_form_templates": "REFERENCE_ONLY_NOT_ELIGIBLE_FOR_HOLDOUT_QUOTA"
+  },
+  "tests": {
+    "passed": 141,
+    "failed": 0
+  },
+  "external_calls": {
+    "embedding": 0,
+    "reranker": 0,
+    "llm": 0
+  },
+  "privacy": {
+    "candidate_content_committed": false,
+    "chunk_ids_committed": false,
+    "source_names_committed": false,
+    "source_hashes_committed": false,
+    "source_locators_committed": false,
+    "lock_file_committed": false,
+    "customer_files_committed": false
+  },
+  "known_limit": "Legacy standard, contract and technical-agreement sources overlap the calibration corpus at document level; unseen chunks and source locators are enforced. Survey candidates use only new actual customer discovery records."
+}
