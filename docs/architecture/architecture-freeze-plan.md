@@ -2,7 +2,7 @@
 
 ## 状态
 
-`IN_PROGRESS / AF-01_PASS / AF-02_PASS / AF-03_PASS / AF-04_NEXT`
+`IN_PROGRESS / AF-01_PASS / AF-02_PASS / AF-03_PASS / AF-04_PASS / AF-05_NEXT`
 
 ## 前置 Gate
 
@@ -37,7 +37,7 @@
 |AF-01|收敛模块与上下文边界|模块目录、职责、Owner、允许依赖、禁止依赖|PASS；见 `module-boundaries-v1-candidate.md`|
 |AF-02|冻结统一服务与跨模块通信|AIService、RetrievalService、PluginService、TraceService、ReviewService 端口及 Domain Event 清单|PASS；见 `application-contracts-v1-candidate.md`|
 |AF-03|冻结安全、文件、任务与运行边界|认证/授权链、文件流、日志、Job Worker、配置和 Secret 边界|PASS；见 `security-file-job-runtime-boundaries-v1-candidate.md`|
-|AF-04|补齐关键 ADR|模块化单体、AI/RAG、Plugin、License、Job、文件存储、质量替代控制 ADR|每个长期决策具备 Context/Decision/Consequences/Rollback|
+|AF-04|补齐关键 ADR|模块化单体、AI/RAG、Plugin、License、Job、文件存储、质量替代控制 ADR|PASS；见 `adr/ADR-003`～`ADR-009` 及 `adr/README.md`|
 |AF-05|生成 Architecture Freeze 候选|架构总览、依赖矩阵、运行视图、部署视图、风险与例外清单|无未登记架构分歧，进入 Data Model Freeze|
 
 ## 后续冻结顺序
@@ -71,4 +71,4 @@ Architecture Freeze Candidate
 
 ## 下一输出
 
-AF-04 关键 ADR；完成后进入 AF-05 Architecture Freeze Candidate，不请求普通人工确认。只有改变锁定技术栈、总体架构或出现不可裁决长期方案时触发 L3。
+AF-05 Architecture Freeze Candidate；完成后进入 Core Entity / Data Model Freeze，不请求普通人工确认。只有改变锁定技术栈、总体架构或出现不可裁决长期方案时触发 L3。

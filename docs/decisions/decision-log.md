@@ -587,3 +587,15 @@
 |Reason|模块与 Application Contract 已明确，但如果认证授权顺序、文件原子性、Worker 系统主体、Secret 解密范围和日志数据边界不统一，后续 Data/API 设计会产生绕过 ProjectId、泄露路径/凭据或重复任务写入的风险。V1 又明确禁止引入 Redis、消息队列、容器化插件和第三方市场。|
 |Impact|后续 Data Model 与 API Contract 必须承载服务器端 Session、CSRF、资源授权、不可变文件版本、Job 租约/幂等、SecretRef、Audit 与可信时间状态语义；具体表名、字段、REST 路径、密码哈希库和服务管理器仍未冻结。Windows 11、Windows Server 2025、Debian 13 保持正式目标，但 Debian 与 Server Office 未验证事实不变。|
 |Rollback|Gate 2 前可调整内部顺序或端口粒度；不得弱化默认拒绝、ProjectId 隔离、License 私钥隔离、文件受权访问或 Audit 不可普通删除等基线。若需引入新基础设施或强插件沙箱，提交 L3 Change Request。|
+
+## DEC-20260922-040
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260922-040|
+|Date|2026-09-22|
+|WBS|AF-04 Architecture Decision Records|
+|Decision|将七项长期架构决策分别固化为 ADR-003～ADR-009，而不合并成单一总 ADR；其状态标记为继承已批准基线但尚未通过 Gate 2 完整冻结。ADR-009 单独保留 POC-03 质量失败和 Gate 3/UAT 阻塞，避免被一般 AI/RAG 架构决策掩盖。|
+|Reason|模块化单体、AI/RAG、Plugin、License、Job、文件存储和质量控制的变更触发条件、回滚路径与验收 Gate 不同。独立 ADR 可以让后续 Data/API 设计逐项追溯，也能在某一决策被替代时保留其他决策稳定。|
+|Impact|Architecture Freeze Candidate 将引用九份 ADR；ADR-003～009 均具备 Context、Decision、Consequences、Rejected Alternatives 和 Rollback/Change Rule。未引入新技术栈、Schema、API 或正式业务代码。|
+|Rollback|Gate 2 前可合并、拆分或调整 ADR 候选；必须保留历史失败与用户例外，不得通过文档重组弱化 L3、Release、Gate 3 或 UAT 约束。|

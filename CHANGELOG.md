@@ -6,6 +6,7 @@
 
 ### 新增
 
+- 2026-09-22：AF-04 完成关键 ADR。新增 ADR-003～009，分别固化模块化单体、统一 AI/RAG、Plugin 独立进程、License/可信时间、PostgreSQL Job/Outbox、本地文件元数据化存储和 POC-03 质量替代控制；每项均包含 Context、Decision、Consequences、Rejected Alternatives 与 Rollback/Change Rule，并明确仍等待 Gate 2 完整冻结。
 - 2026-09-22：AF-03 完成安全、文件、任务与运行边界候选。固定 Server Session → CSRF → Role → Project/Resource → Review Lock 的默认拒绝链；文件采用隔离临时区、流式 Hash、原子提升和不可变版本；Secret 只以引用进入业务/Job/日志；长任务采用 PostgreSQL Job/Outbox、租约、至少一次与幂等执行；Application/Integration/Audit 三类记录分离，并明确 API、Worker、Plugin、客户 License 区与 Developer Workbench 信任边界。未引入 Redis、消息队列、容器化插件或新的正式业务代码。
 - 2026-09-22：启动 Architecture Freeze。AF-01 形成 22 个客户运行模块与独立 Developer Workbench 的边界候选，单列 Output 编排且保持 Plugin 进程边界；AF-02 形成 ProjectAuthorizationService、AIService、RetrievalService、PluginService、TraceService、ReviewService 等技术无关 Application Contract 及 18 个最小 Domain Event，长任务继续使用 PostgreSQL Job/Outbox，不引入消息队列。以上均为候选，未冻结实体字段、表或 `/api/v1`。
 - 2026-09-22：用户批准 `EXC-P0-006/007` 并正式确认 Phase 0 Gate 1。POC-03 保留 Top-5 98.00% PASS、分类 48.00% FAIL、引用 74.00% FAIL，以 R11 + 强制人工确认作为批准替代控制；POC-06 以 Windows 11 Office 全链、Server OOXML/Hash 和 Server Office 实开豁免收口。新增 Phase 0 总结，项目进入 Architecture Freeze；正式业务编码继续由 Gate 2 阻塞。

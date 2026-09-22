@@ -3,17 +3,17 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Architecture / Data Model / API Contract Freeze|
-|Current WBS|AF-04：关键架构决策记录（ADR）|
+|Current WBS|AF-05：Architecture Freeze Candidate|
 |Current Status|PHASE0_GATE1_APPROVED / ARCHITECTURE_FREEZE_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）|
-|Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01、AF-02、AF-03 PASS|
+|Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-04 PASS|
 |Blockers|正式业务编码仍由 Gate 2 阻塞；POC-03 质量失败转为 Gate 3/UAT 阻塞项，Server Office 与 Debian 未验证范围转为 Release 约束|
 |Pending User Decisions|Architecture、Data Model、DB Schema V1 与 API Contract V1 候选完成后需执行 Gate 2 正式确认；任何新的客户数据外发仍需当轮明确授权|
 |Architecture Version|未冻结；正式基线为实施方案 V2.1|
 |DB Schema Version|未冻结|
 |API Contract Version|未冻结|
 |Test Summary|Phase 0 证据已汇总；POC-03 Top-5 98.00% PASS、分类 48.00% FAIL、引用 74.00% FAIL；POC-06 Windows 11 Office PASS、Server 包结构/Hash PASS；其余 PoC 详见 `docs/progress/phase-0-summary.md`|
-|Next WBS|AF-04 补齐模块化单体、AI/RAG、Plugin、License、Job、文件存储与质量替代控制 ADR；随后 AF-05 Architecture Freeze Candidate|
+|Next WBS|AF-05 汇总架构总览、依赖矩阵、运行/部署视图、风险和例外清单；随后进入 Core Entity / Data Model Freeze|
 
 ## 自动执行策略
 
@@ -26,6 +26,6 @@
 ## 最近检查点
 
 - 分支：`feature/architecture-freeze`
-- 最近功能检查点：Gate 1 收口完成；AF-01～AF-03 候选通过，模块边界、统一 Application Contract、认证授权链、文件/Secret、PostgreSQL Job/Outbox、日志审计及三平台运行边界已明确；正式业务编码继续由 Gate 2 阻塞。
+- 最近功能检查点：Gate 1 收口完成；AF-01～AF-04 通过，模块边界、Application Contract、运行安全边界和 ADR-003～009 已形成 Gate 2 候选输入；正式业务编码继续由 Gate 2 阻塞。
 - 远端同步状态必须在每次任务结束前通过 Git 实时检查，不在本文件固化可能过期的 ahead/behind 数值。
 - 本地用户文件和 Git 忽略的客户资料保持不变。
