@@ -599,3 +599,15 @@
 |Reason|模块化单体、AI/RAG、Plugin、License、Job、文件存储和质量控制的变更触发条件、回滚路径与验收 Gate 不同。独立 ADR 可以让后续 Data/API 设计逐项追溯，也能在某一决策被替代时保留其他决策稳定。|
 |Impact|Architecture Freeze Candidate 将引用九份 ADR；ADR-003～009 均具备 Context、Decision、Consequences、Rejected Alternatives 和 Rollback/Change Rule。未引入新技术栈、Schema、API 或正式业务代码。|
 |Rollback|Gate 2 前可合并、拆分或调整 ADR 候选；必须保留历史失败与用户例外，不得通过文档重组弱化 L3、Release、Gate 3 或 UAT 约束。|
+
+## DEC-20260922-041
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260922-041|
+|Date|2026-09-22|
+|WBS|AF-05 Architecture Freeze Candidate|
+|Decision|将 AF-01～AF-04 的详细成果汇总为 `ARCH-CANDIDATE-V1`，采用“显式允许依赖、其余全部禁止”的依赖矩阵，并把同步请求、文件、AI 正式化、Job 和 Output/Plugin 固化为五类运行视图。七项 Phase 0 例外与五项持续风险全部保留关闭 Gate，不因形成候选而视为已解决。|
+|Reason|Data Model Freeze 需要稳定的模块 Owner、跨模块 Contract、信任边界、运行流程和风险输入；单一候选清单可以消除多个设计文件之间的解释歧义，同时保留详细文档和 ADR 的反向追溯。|
+|Impact|AF-01～AF-05 状态均为 PASS，项目进入 DM-01。Architecture 版本为候选而非正式冻结；实体字段、物理 Schema、REST API 和业务代码仍未授权，正式开发继续由 Gate 2 阻塞。|
+|Rollback|Gate 2 前可回退为 AF-05 IN_PROGRESS 并修订候选；不得删除 Phase 0 失败/例外或绕过 L3。Gate 2 后的总体架构变更必须提交独立 Architecture Change Request。|

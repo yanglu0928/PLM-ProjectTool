@@ -2,7 +2,7 @@
 
 ## 状态
 
-`IN_PROGRESS / AF-01_PASS / AF-02_PASS / AF-03_PASS / AF-04_PASS / AF-05_NEXT`
+`COMPLETE / AF-01_PASS / AF-02_PASS / AF-03_PASS / AF-04_PASS / AF-05_PASS / ARCH-CANDIDATE-V1`
 
 ## 前置 Gate
 
@@ -38,7 +38,7 @@
 |AF-02|冻结统一服务与跨模块通信|AIService、RetrievalService、PluginService、TraceService、ReviewService 端口及 Domain Event 清单|PASS；见 `application-contracts-v1-candidate.md`|
 |AF-03|冻结安全、文件、任务与运行边界|认证/授权链、文件流、日志、Job Worker、配置和 Secret 边界|PASS；见 `security-file-job-runtime-boundaries-v1-candidate.md`|
 |AF-04|补齐关键 ADR|模块化单体、AI/RAG、Plugin、License、Job、文件存储、质量替代控制 ADR|PASS；见 `adr/ADR-003`～`ADR-009` 及 `adr/README.md`|
-|AF-05|生成 Architecture Freeze 候选|架构总览、依赖矩阵、运行视图、部署视图、风险与例外清单|无未登记架构分歧，进入 Data Model Freeze|
+|AF-05|生成 Architecture Freeze 候选|架构总览、依赖矩阵、运行视图、部署视图、风险与例外清单|PASS；见 `architecture-freeze-candidate-v1.md`|
 
 ## 后续冻结顺序
 
@@ -71,4 +71,4 @@ Architecture Freeze Candidate
 
 ## 下一输出
 
-AF-05 Architecture Freeze Candidate；完成后进入 Core Entity / Data Model Freeze，不请求普通人工确认。只有改变锁定技术栈、总体架构或出现不可裁决长期方案时触发 L3。
+Core Entity / Data Model Freeze 的 DM-01 实体与聚合目录；Architecture 与后续 Data/Schema/API 候选在 Gate 2 一并正式确认。
