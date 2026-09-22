@@ -5,9 +5,9 @@
 ## 当前状态
 
 - Phase：Phase 0
-- 状态：IN_PROGRESS
+- 状态：COMPLETE_WITH_APPROVED_ALTERNATIVES
 - 启动日期：2026-09-17
-- 当前任务：POC-08、POC-09 已按 `EXC-P0-005` 收口；Phase 0 等待 POC-03 质量 Gate 与 POC-06 Windows Server 2025 Office 阻塞处理
+- 当前任务：Gate 1 已于 2026-09-22 通过；项目进入 Architecture Freeze
 - 正式业务开发：BLOCKED
 
 ## 入口
@@ -23,6 +23,7 @@
 - [POC-08 实施与结果](../../poc/poc-08-plugin-host/README.md)
 - [POC-09 实施与结果](../../poc/poc-09-license/README.md)
 - [Phase 0 验证例外](phase-0-exceptions.md)
+- [Phase 0 总结](../progress/phase-0-summary.md)
 
 ## 判定规则
 

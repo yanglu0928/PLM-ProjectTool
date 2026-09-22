@@ -6,6 +6,8 @@
 
 ### 新增
 
+- 2026-09-22：启动 Architecture Freeze。AF-01 形成 22 个客户运行模块与独立 Developer Workbench 的边界候选，单列 Output 编排且保持 Plugin 进程边界；AF-02 形成 ProjectAuthorizationService、AIService、RetrievalService、PluginService、TraceService、ReviewService 等技术无关 Application Contract 及 18 个最小 Domain Event，长任务继续使用 PostgreSQL Job/Outbox，不引入消息队列。以上均为候选，未冻结实体字段、表或 `/api/v1`。
+- 2026-09-22：用户批准 `EXC-P0-006/007` 并正式确认 Phase 0 Gate 1。POC-03 保留 Top-5 98.00% PASS、分类 48.00% FAIL、引用 74.00% FAIL，以 R11 + 强制人工确认作为批准替代控制；POC-06 以 Windows 11 Office 全链、Server OOXML/Hash 和 Server Office 实开豁免收口。新增 Phase 0 总结，项目进入 Architecture Freeze；正式业务编码继续由 Gate 2 阻塞。
 - 2026-09-21：用户批准 `EXC-P0-005`，暂缓 POC-06、POC-08、POC-09 的 Debian 13 验证。POC-08、POC-09 以 `PASS_WITH_EXCEPTION` 收口；POC-06 仅解除 Debian 缺口，Windows Server 2025 未安装 Microsoft Office 的阻塞不变。Debian 13 仍是正式兼容目标，未形成兼容性结论。
 - 2026-09-21：启动 POC-09 License，实现“显式选择 MAC → 规范化 → SHA-256 → 确定性 Payload → Ed25519”验证链。Windows 11 与 Windows Server 2025 均通过 26/26 单元测试和 10/10 验收场景；MAC 变化、过期、Payload/签名篡改、错公钥、异常系统时间、回拨及畸形文档 8/8 全部拒绝，核心源码覆盖率 91%～94%，测试私钥与原始 MAC 均未落盘。Debian 13 保持未验证。
 - 2026-09-21：启动 POC-08 Plugin Host，实现 Phase 0 验证性 `PluginService → Python 独立子进程 → JSON-RPC 2.0 over stdio` 链路。Windows 11 与 Windows Server 2025 均通过 13/13 单元/集成测试、10/10 验收场景及 20/20 并发调用；crash、timeout、invalid JSON 均失败关闭且 FastAPI 继续健康，不兼容版本/篡改/禁用在启动前拒绝，v1.0.0→v1.1.0 独立升级 PASS，插件可见敏感环境变量数 0。Debian 13 保持未验证。

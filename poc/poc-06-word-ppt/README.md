@@ -2,7 +2,7 @@
 
 ## Status
 
-`IN_PROGRESS / WINDOWS11_PASS / SERVER_OFFICE_BLOCKED / DEBIAN13_DEFERRED_BY_USER`
+`PASS_WITH_EXCEPTION / WINDOWS11_PASS / SERVER_PACKAGE_PASS / SERVER_OFFICE_DEFERRED / DEBIAN13_DEFERRED_BY_USER`
 
 ## Objective
 
@@ -52,17 +52,17 @@ Windows Server 2025 实机复验两个文件的 SHA-256 与 Windows 11 一致；
 
 ## Known Issues
 
-1. Windows Server 2025 未安装 Microsoft Office，实开与 PDF 导出未验证；Debian 13 依据 `EXC-P0-005` 暂缓。不得从 Windows 11 外推这两个平台的 Office 兼容性。
+1. Windows Server 2025 未安装 Microsoft Office，实开与 PDF 导出依据 `EXC-P0-007` 豁免；Debian 13 依据 `EXC-P0-005` 暂缓。不得从 Windows 11 外推这两个平台的 Office 兼容性。
 2. PPTX 样例使用工作区 Artifact Tool 生成，以满足当前制品制作规范；这不替换正式产品的 `python-pptx` 基线。
 3. 工作区 DOCX 渲染器依赖 LibreOffice，当前未安装 `soffice.exe`；本轮改用目标应用 Microsoft Word 导出 PDF 并完成 100 页视觉检查。
 
 ## Conclusion
 
-Windows 11 上从确定性生成、OOXML 完整性、Microsoft Office 实开到全量视觉检查的技术路径可行。Windows Server 2025 已证明相同制品的包结构和 Hash 不变，但因缺少 Office 不具备完整验收条件。
+Windows 11 上从确定性生成、OOXML 完整性、Microsoft Office 实开到全量视觉检查的技术路径可行。Windows Server 2025 已证明相同制品的包结构和 Hash 不变；用户依据 `EXC-P0-007` 批准豁免 Server 本机 Office 实开，且不将该范围描述为已验证。
 
 ## PASS / FAIL
 
-`IN_PROGRESS`：Windows 11 `PASS`；Windows Server 2025 `PARTIAL_PASS_OFFICE_BLOCKED`；Debian 13 `DEFERRED_BY_USER / 未验证`。
+`PASS_WITH_EXCEPTION`：Windows 11 `PASS`；Windows Server 2025 `PACKAGE_AND_HASH_PASS / OFFICE_DEFERRED_BY_USER`；Debian 13 `DEFERRED_BY_USER / 未验证`。
 
 ## Alternative
 

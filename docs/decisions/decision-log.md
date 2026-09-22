@@ -539,3 +539,39 @@
 |Reason|用户明确表示 Debian 13 不用验证。该决定满足 L3 例外确认要求，但不等于形成 Debian 兼容证据。|
 |Impact|Phase 0 不再因 POC-08/POC-09 的 Debian 缺口阻塞；剩余正式阻塞为 POC-03 质量 Gate 和 POC-06 Windows Server 2025 Office 实开。Debian 发行与 Release Gate 仍不得宣称通过。|
 |Rollback|用户可撤销例外并恢复 Debian 13 实机验证；恢复后 POC-06、POC-08、POC-09 在 Debian 结果形成前回到 `IN_PROGRESS`。|
+
+## DEC-20260922-036
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260922-036|
+|Date|2026-09-22|
+|WBS|Phase 0 Gate 1|
+|Decision|用户批准 POC-03 和 POC-06 两项替代方案并正式确认 Gate 1。POC-03 保留分类 48.00%、引用 74.00% 的 FAIL，以 R11 + 强制人工确认收口；POC-06 以 Windows 11 Office 实开、Server 包结构/Hash 和 Server Office 豁免收口。|
+|Reason|用户此前决定不重复本轮 POC-03 真实复验；POC-06 的 Microsoft Office 不是服务器运行依赖，且 Server 已确认制品 Hash/OOXML 与 Windows 11 一致。两项原验收无法在现有条件下继续，已按 L3 取得明确决定。|
+|Impact|Phase 0 状态变为 `COMPLETE_WITH_APPROVED_ALTERNATIVES`，项目进入 Architecture Freeze。POC-03 质量指标转为 Gate 3/UAT 阻塞；Server Office 与 Debian 未验证范围转为 Release 约束；Gate 2 前仍禁止正式业务编码。|
+|Rollback|撤销 Gate 1 时恢复 Phase 0 `IN_PROGRESS`：POC-03 重新执行全新独立留出集，POC-06 补齐 Server Office 实开；Architecture/Data/API 冻结活动停止。|
+
+## DEC-20260922-037
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260922-037|
+|Date|2026-09-22|
+|WBS|AF-01 Architecture Baseline Consolidation|
+|Decision|在锁定模块化单体内把 V1 Scope 收敛为 Platform 公共模块、AI/RAG、Capability 与七个实施业务域，并单列 `output` 作为输出编排模块。`output` 只构造 OutputContext、调用 PluginService 和登记制品，不自行实现格式渲染或直接操作插件进程。|
+|Reason|V2.1 功能子系统包含 Output，但最小模块清单未单列；若把输出编排并入 Plugin，会混淆业务输出上下文与进程/包管理边界。单列编排模块可以保持业务依赖稳定，又不改变 python-docx/python-pptx 与 Plugin 技术基线。|
+|Impact|形成 22 个客户运行模块与 1 个独立 Developer Workbench 信任区的边界候选；所有跨模块写入通过 Application Port/Domain Event，文件、AI、RAG、Plugin、Review、Trace、Audit 各有唯一 Owner。未冻结实体字段、表或 API。|
+|Rollback|在 Architecture Freeze 前可把 `output` 编排职责合并到 Solution Application 层并删除候选模块；不得把职责合并到 Plugin 进程管理实现或引入新的渲染技术栈。|
+
+## DEC-20260922-038
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260922-038|
+|Date|2026-09-22|
+|WBS|AF-02 Application Contract|
+|Decision|模块间同步交互采用技术无关 Application Port；跨模块状态传播使用最小 Domain Event。第一版同步事件进程内分发，长任务和需要恢复的事件写 PostgreSQL Job/Outbox，并按至少一次处理与幂等消费设计；不引入消息队列。|
+|Reason|模块化单体需要稳定边界但不需要分布式基础设施。Application Port 防止跨模块访问内部表，持久化 Job/Outbox 满足长任务和恢复需要，同时符合禁止 Redis/消息队列的基线。|
+|Impact|六个公共服务、Document/Evidence 读取端口、18 个事件及错误语义形成候选 Contract；未固定 REST、ORM、表结构或 Python 签名。|
+|Rollback|Architecture Freeze 前可合并或拆分事件语义；不得改为直接跨模块写表或新增消息队列，除非提交 L3 Change Request。|

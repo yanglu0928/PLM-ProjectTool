@@ -2,7 +2,7 @@
 
 ## Status
 
-`FAIL / BLOCKED_QUALITY_GATE / HOLDOUT_LIVE_COMPLETED`
+`CLOSED_WITH_APPROVED_ALTERNATIVE / HOLDOUT_QUALITY_FAIL_RETAINED`
 
 ## Objective
 
@@ -330,10 +330,10 @@ python scripts/prepare_prompt_v2_offline.py `
 
 ## Known Issues
 
-1. R6 Golden Dataset 已确认并严格导入；P03-A11 已由 R5 保护性融合达到 114/120（95.00%）并 PASS。Prompt v2 真实分类只有 51/120（42.50%），引用 62/120（51.67%）；P03-A12/A13 仍 FAIL，POC-03 尚不能收口。
-2. 50 条独立留出集已人工确认并通过严格导入、Schema 和覆盖审计，但尚未执行真实 Embedding/Reranker/DeepSeek 质量复验；确认集不能替代实际模型指标。
+1. R6 Golden Dataset 已确认并严格导入；P03-A11 已由 R5 保护性融合达到 114/120（95.00%）并 PASS。Prompt v2 真实分类只有 51/120（42.50%），引用 62/120（51.67%）；P03-A12/A13 仍 FAIL，并依据 `EXC-P0-006` 保留为后续质量 Gate 风险。
+2. 50 条独立留出集已人工确认并完成真实 Embedding/Reranker/DeepSeek 复验；Top-5 98.00% PASS，分类 48.00% 与引用 74.00% FAIL，结果已冻结为已见测试集。
 3. POC-05 仍不直接支持两个资料库中的 10 个旧版二进制 `.doc`；项目分析辅助包已用本机 Word 生成本地只读分析副本补齐内容覆盖，但该路径依赖已安装的 Microsoft Word，不属于跨平台解析能力。
-4. Windows Server 2025 与 Debian 13 尚未执行本 PoC。
+4. 完整端到端质量复验只在 Windows 11 执行；Windows Server 2025 与 Debian 13 未执行 POC-03 全链，不形成对应平台质量结论。
 5. 旧 R2/R3 历史工作簿不作为新四类来源基线；其人工填写记录被保留，但不会自动迁移成新候选的批准状态。
 6. R4 是本地 UX 原型，不是正式交接待办；当前 Office 原件定位依赖“打开原文件 + 精确定位说明”，正式产品仍需内置证据查看器完成自动跳转与高亮。
 7. 旧 R1 的 109 条批准记录只有 1 个唯一查询，且全部为 `SURVEY` / `STANDARD_SATISFIED`，不满足 Gold Set 覆盖要求，保留为历史失败证据。
@@ -347,13 +347,13 @@ python scripts/prepare_prompt_v2_offline.py `
 
 ## Conclusion
 
-POC-03 的基础链路已完成；50 条独立留出集证明 P03-A11 Top-5 为 98.00% 并 PASS。P03-A12 分类为 48.00%、P03-A13 引用为 74.00%，仍未达到 90%/98% 门槛，POC-03 总体保持 FAIL。R11 已完成双来源证据、Prompt v3 结构化判定与 Evidence Selector 的离线合同和合成测试；用户决定不重复本轮真实验证，因此不把离线实现描述为质量 PASS，也不进入冻结。
+POC-03 的基础链路已完成；50 条独立留出集证明 P03-A11 Top-5 为 98.00% 并 PASS。P03-A12 分类为 48.00%、P03-A13 引用为 74.00%，仍未达到 90%/98% 门槛。R11 已完成双来源证据、Prompt v3 结构化判定与 Evidence Selector 的离线合同和合成测试。用户依据 `EXC-P0-006` 批准以 R11 + 强制人工确认作为 Phase 0 替代控制，因此允许 Gate 1 收口；历史质量 FAIL 不变，真实质量转为 Gate 3/UAT 阻塞项。
 
 ## PASS / FAIL
 
-`FAIL / HOLDOUT_LIVE_CLASSIFICATION_AND_CITATION_BELOW_THRESHOLD`
+`CLOSED_WITH_APPROVED_ALTERNATIVE / QUALITY_METRICS_REMAIN_FAIL`
 
 ## Alternative
 
-- 冻结本轮 50 条及其 98.00%/48.00%/74.00% 结果；使用独立开发/校准集区分文档事实与能力适配问题，装配需求与标准能力双来源证据，并增加独立 Evidence Selector，再使用全新独立留出集复验。
+- 批准的 Phase 0 替代方案：冻结本轮 50 条及其 98.00%/48.00%/74.00% 结果；采用双来源证据、Prompt v3、Evidence Selector 和强制人工确认；在 Gate 3/UAT 使用全新独立留出集复验。
 - 不得降低质量门槛、事后按模型输出改标签、泄露期望答案到 Prompt，或擅自引入独立向量库和本地模型。

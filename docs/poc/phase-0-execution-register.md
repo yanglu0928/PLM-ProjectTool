@@ -5,9 +5,9 @@
 |字段|值|
 |---|---|
 |Phase|Phase 0 技术验证|
-|状态|IN_PROGRESS|
+|状态|COMPLETE_WITH_APPROVED_ALTERNATIVES|
 |启动日期|2026-09-17|
-|正式开发 Gate|BLOCKED|
+|正式开发 Gate|GATE_1_APPROVED；仍须完成 Architecture/Data Model/API Contract Freeze（Gate 2）|
 |完成条件|全部 P0 PoC PASS，或失败项具有用户确认的替代方案|
 
 ## PoC 登记
@@ -16,10 +16,10 @@
 |---|---|---|---|---|---|---|---|
 |POC-01|P0.01/P0.01S/P0.02/P0.03/P0.04|Python 3.13 三平台依赖及离线安装|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11、Windows Server 2025 PASS；Debian 13 经用户批准暂缓，不构成兼容性结论|`poc/poc-01-python-313-dependencies/`、`docs/poc/phase-0-exceptions.md`|
 |POC-02|P0.05/P0.06/P0.07/P0.08|PostgreSQL 18 + pgvector|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11 功能链 PASS；Windows Server 2025 完全断网功能链 PASS；Windows 11 断网重放与 Debian 13 经用户批准暂缓，不构成对应兼容性结论|`poc/poc-02-postgresql-18-pgvector/`、`docs/poc/phase-0-exceptions.md`|
-|POC-03|P0.09/P0.10/P0.12|PLM RAG|FAIL|2026-09-17|-|50 条独立留出集真实复验：Top-5 49/50（98.00%）PASS；分类 24/50（48.00%）、引用 37/50（74.00%）FAIL。50/50 条百炼重排和 DeepSeek 预测完整，GIN/HNSW 命中，缺失预测与越界引用均为 0；质量 Gate 保持 FAIL|`poc/poc-03-plm-rag/`|
+|POC-03|P0.09/P0.10/P0.12|PLM RAG|CLOSED_WITH_APPROVED_ALTERNATIVE|2026-09-17|2026-09-22|Top-5 49/50（98.00%）PASS；分类 24/50（48.00%）、引用 37/50（74.00%）仍为 FAIL。依据 `EXC-P0-006` 保留失败指标，采用 R11 + 强制人工确认替代方案并转入后续质量 Gate|`poc/poc-03-plm-rag/`、`docs/poc/phase-0-exceptions.md`|
 |POC-04|P0.11|AI Gateway / DeepSeek|PASS_WITH_EXCEPTION|2026-09-17|2026-09-17|Windows 11、Windows Server 2025 统一网关、11/11 确定性场景及真实文本/流式/结构化/401 PASS；Debian 13 经用户批准暂缓，不构成兼容性结论|`poc/poc-04-ai-gateway/`、`docs/poc/phase-0-exceptions.md`|
 |POC-05|P0.04/P0.12|Document + OCR|PASS_WITH_EXCEPTION|2026-09-17|2026-09-21|Windows 11 功能链和真实扫描分层语义审计 PASS，PaddleOCR 75/75、关键错误 0；Windows Server 2025 完全断网 8/8 PASS；Windows 11 物理断网与 Debian 13 依据 `EXC-P0-004` 暂缓|`poc/poc-05-document-ocr/`、`docs/poc/phase-0-exceptions.md`|
-|POC-06|P0.16/P0.17|Word / PPT|IN_PROGRESS|2026-09-21|-|Windows 11：100 页 Word / 50 页 PowerPoint 结构、Office 实开、PDF 导出和全量视觉检查 PASS；Windows Server 2025：包结构与 Hash PASS，但未安装 Office；Debian 13 依据 `EXC-P0-005` 暂缓|`poc/poc-06-word-ppt/`、`docs/poc/phase-0-exceptions.md`|
+|POC-06|P0.16/P0.17|Word / PPT|PASS_WITH_EXCEPTION|2026-09-21|2026-09-22|Windows 11 全链 PASS；Windows Server 2025 包结构与 Hash PASS，Office 实开依据 `EXC-P0-007` 豁免；Debian 13 依据 `EXC-P0-005` 暂缓|`poc/poc-06-word-ppt/`、`docs/poc/phase-0-exceptions.md`|
 |POC-07|P1|VSDX|DEFERRED_P1|-|-|不阻塞 Phase 0|-|
 |POC-08|P0.13|Plugin Host|PASS_WITH_EXCEPTION|2026-09-21|2026-09-21|Windows 11 与 Windows Server 2025 的 crash、timeout、invalid JSON、不兼容版本、环境隔离、启停、独立升级和 20 并发全部 PASS；Debian 13 依据 `EXC-P0-005` 暂缓|`poc/poc-08-plugin-host/`、`docs/poc/phase-0-exceptions.md`|
 |POC-09|P0.14/P0.15|License|PASS_WITH_EXCEPTION|2026-09-21|2026-09-21|Windows 11 与 Windows Server 2025 的 MAC 显式选择、SHA-256、Ed25519、过期、篡改、错公钥与系统时间场景全部 PASS；Debian 13 依据 `EXC-P0-005` 暂缓|`poc/poc-09-license/`、`docs/poc/phase-0-exceptions.md`|
@@ -32,6 +32,7 @@
 - `PASS`：全部必需产物和验收项通过。
 - `PASS_WITH_EXCEPTION`：已验证范围通过，未验证范围具有用户明确批准的书面例外；不得把例外范围描述为已验证。
 - `FAIL`：已形成完整失败分析，尚无获批替代方案。
+- `CLOSED_WITH_APPROVED_ALTERNATIVE`：验收指标仍失败，但用户已批准保留失败事实和明确的替代控制措施，可用于阶段 Gate 收口。
 - `DEFERRED_P1`：正式降级为 P1，不阻塞 Phase 0。
 
 ## 变更记录
@@ -57,6 +58,9 @@
 |2026-09-21|启动 POC-08；Windows 11 与 Windows Server 2025 均完成 13/13 单元/集成测试、10/10 验收场景和 20/20 并发调用。插件 crash/timeout 后 FastAPI 仍健康，invalid JSON 失败关闭，不兼容版本与篡改包启动前拒绝，v1→v1.1 独立升级 PASS；Debian 13 保持 NOT_RUN。|
 |2026-09-21|启动 POC-09；Windows 11 与 Windows Server 2025 均完成 26/26 单元测试和 10/10 验收场景。MAC 变化、过期、Payload/签名篡改、错公钥、异常系统时间、回拨与畸形文档 8/8 全部拒绝；私钥和原始 MAC 未落盘，Debian 13 保持 NOT_RUN。|
 |2026-09-21|用户明确决定 Debian 13 不再执行；登记 `EXC-P0-005`，POC-08、POC-09 以 `PASS_WITH_EXCEPTION` 收口。POC-06 的 Debian 缺口解除，但 Windows Server 2025 Office 缺失仍保持独立阻塞。|
+|2026-09-22|用户批准 `EXC-P0-006`：POC-03 保留 48.00%/74.00% 失败指标，以 R11 + 强制人工确认作为替代控制，真实质量转入后续 Gate/UAT。|
+|2026-09-22|用户批准 `EXC-P0-007`：POC-06 Windows Server 2025 Office 实开豁免，不把结构/Hash 结果改写为 Server Office PASS。|
+|2026-09-22|用户正式确认 Phase 0 Gate 1 通过；Phase 0 以 `COMPLETE_WITH_APPROVED_ALTERNATIVES` 收口，进入 Architecture Freeze。|
 |2026-09-17|启动 POC-04；建立 AIService、ModelRouter、DeepSeekAdapter、验收矩阵和官方协议快照。|
 |2026-09-17|POC-04 Windows 11 确定性场景 11/11 PASS，DeepSeek 官方端点 401、真实文本、SSE 流式和结构化 JSON 全部通过；修复 JSON/Schema failure 未受控重试的问题。|
 |2026-09-17|POC-04 Windows Server 2025 实机完成 11/11 单元测试、11/11 确定性场景及 DeepSeek 官方端点 401、真实文本、SSE 流式和结构化 JSON 验证；临时密钥已删除，脱敏证据扫描无匹配。|
