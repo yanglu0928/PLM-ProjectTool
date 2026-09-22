@@ -2,7 +2,7 @@
 
 ## 状态
 
-`IN_PROGRESS / DM-01_NEXT / NOT_GATE_2_FROZEN`
+`IN_PROGRESS / DM-01_PASS / DM-02_NEXT / NOT_GATE_2_FROZEN`
 
 ## 前置条件
 
@@ -21,7 +21,7 @@
 
 |WBS|目标|交付物|完成判定|
 |---|---|---|---|
-|DM-01|建立核心实体与聚合目录|实体、Owner、Scope、Aggregate Root、正式/建议态分类|所有架构模块有数据 Owner，无孤立实体|
+|DM-01|建立核心实体与聚合目录|实体、Owner、Scope、Aggregate Root、正式/建议态分类|PASS；见 `core-entity-aggregate-catalog-v1-candidate.md`|
 |DM-02|冻结平台与安全模型|Project/User/Session/Role、Workflow、Review、Audit、Secret、License|权限、锁定、可信时间和审计不变量完整|
 |DM-03|冻结 Document/Evidence/Trace/版本模型|文件、版本、解析、证据定位、TraceLink|不可变版本和 ProjectId/Global 边界完整|
 |DM-04|冻结 AI/RAG/Job/Plugin/Output 模型|Prompt/Invocation、Index/Chunk、Job/Lease、Plugin、OutputArtifact|索引绑定、幂等、建议态和执行状态完整|
@@ -44,4 +44,4 @@ Data Model Freeze 定义业务实体、聚合、身份、关系、基数、生�
 
 ## 下一输出
 
-DM-01 核心实体与聚合目录；完成后进入 DM-02，不请求普通人工确认。
+DM-02 平台与安全数据模型；完成后进入 DM-03，不请求普通人工确认。

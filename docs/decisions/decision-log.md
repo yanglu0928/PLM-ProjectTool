@@ -611,3 +611,15 @@
 |Reason|Data Model Freeze 需要稳定的模块 Owner、跨模块 Contract、信任边界、运行流程和风险输入；单一候选清单可以消除多个设计文件之间的解释歧义，同时保留详细文档和 ADR 的反向追溯。|
 |Impact|AF-01～AF-05 状态均为 PASS，项目进入 DM-01。Architecture 版本为候选而非正式冻结；实体字段、物理 Schema、REST API 和业务代码仍未授权，正式开发继续由 Gate 2 阻塞。|
 |Rollback|Gate 2 前可回退为 AF-05 IN_PROGRESS 并修订候选；不得删除 Phase 0 失败/例外或绕过 L3。Gate 2 后的总体架构变更必须提交独立 Architecture Change Request。|
+
+## DEC-20260922-042
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260922-042|
+|Date|2026-09-22|
+|WBS|DM-01 Core Entity / Aggregate Catalog|
+|Decision|采用“逻辑对象 Aggregate + 不可变 Version Aggregate”的正式制品模式；AI 建议只保留在 AITask/AIInvocation 聚合，人工显式接受后由目标 Domain 创建新的 Draft Version，再经 Review 指定版本正式化。为落实既有 Review/Event/Job/License 语义，补充 HandoverAnalysisVersion、PlanVersion、TrustedTimeState 和 OutboxEvent 等必要聚合根。|
+|Reason|若版本作为可变字段内嵌在逻辑对象，送审锁定、历史确认、Trace 和并发编辑会相互冲突；若 AI 对象可直接切换为正式状态，则无法证明人工确认、证据和输入版本。独立 Version 与显式接受命令可以保持历史不可变和责任边界。|
+|Impact|22 个客户运行模块形成 65 个 Aggregate Root，Developer Workbench 另有 3 个且不进入客户 Schema。后续 DM-02～DM-06 必须沿用 Owner、Scope、Version Ref 和 AI/正式事实分离；物理表和外键仍待 Schema V1。|
+|Rollback|Gate 2 前可合并低价值运行聚合，但不得合并 AI Suggestion 与正式 Domain Version、不得取消不可变版本/ReviewSubject 或跨模块稳定引用原则；涉及这些原则的改变按 L3 核心数据模型调整处理。|
