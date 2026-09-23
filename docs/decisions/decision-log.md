@@ -635,3 +635,15 @@
 |Reason|复制 current_stage 会造成 project 与 workflow 的双写和反向依赖；Review 若永久绑定单一版本则无法同时满足送审锁定、退回升版重审和历史决定保留。规范化用户名、摘要 Session 与角色分离可让授权和凭据失效语义在 Schema/API 阶段保持唯一解释。|
 |Impact|DM-01 聚合数量不变，但 PRJ-01、RVW-01、RVW-02 的包含语义已校正。后续 Schema 必须支持凭据版本失效、单一有效项目成员、Workflow 乐观并发、Review 轮次/版本唯一性、Secret 单 Active Version 与 TrustedTime 单调更新。|
 |Rollback|Gate 2 前可调整规范化或状态命名；不得恢复 Project/Workflow 双写、覆盖 Review 历史、保存原始 Session Token/Secret 明文或合并部署/项目角色。触及安全或核心数据机制时按 L3 处理。|
+
+## DEC-20260923-044
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-044|
+|Date|2026-09-23|
+|WBS|DM-03 Document / Evidence / Trace / Version Data Model|
+|Decision|分离 Document 逻辑身份、不可变 DocumentVersion 与 FileObject 物理元数据；以类型化 EvidenceLocator 和 EvidenceBinding 表达证据定位与支持关系，TraceLink 仅表达业务制品间的来源与追溯。实际调研记录归为 PROJECT_RECORD 并作为主要事实来源，调研业务表单归为 TEMPLATE，只能辅助组织调研而不能独立证明客户事实。|
+|Reason|逻辑对象、版本和物理文件混合会导致覆盖历史、路径泄漏和定位漂移；Evidence 与 Trace 共用一种关系会混淆“原文证明”与“业务制品来源”。明确实际记录优先也落实了用户此前确认的调研事实规则，并支持从待办一键定位原文。|
+|Impact|DM-01 的 EVD-02 Scope 调整为 GLOBAL_OR_PROJECT。后续 Schema/API 必须实现稳定引用、九类定位器、文件状态与恢复、版本保留和图关系授权；Evidence Viewer 不得暴露绝对路径或把短摘录当作权威原文。本阶段仍未定义物理表、API 或 Migration。|
+|Rollback|Gate 2 前可细化定位器和关系枚举；不得恢复绝对路径定位、覆盖 DocumentVersion、让模板独立证明客户事实，或重新合并 EvidenceBinding 与 TraceLink。触及核心数据模型时按 L3 处理。|

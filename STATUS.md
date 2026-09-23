@@ -3,17 +3,17 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Architecture / Data Model / API Contract Freeze|
-|Current WBS|DM-03：Document / Evidence / Trace / 版本模型|
+|Current WBS|DM-04：AI / RAG / Job / Plugin / Output 模型|
 |Current Status|ARCHITECTURE_CANDIDATE_V1_COMPLETE / DATA_MODEL_FREEZE_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）|
-|Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-02 PASS|
+|Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-03 PASS|
 |Blockers|正式业务编码仍由 Gate 2 阻塞；POC-03 质量失败转为 Gate 3/UAT 阻塞项，Server Office 与 Debian 未验证范围转为 Release 约束|
 |Pending User Decisions|Architecture、Data Model、DB Schema V1 与 API Contract V1 候选完成后需执行 Gate 2 正式确认；任何新的客户数据外发仍需当轮明确授权|
 |Architecture Version|`ARCH-CANDIDATE-V1`；AF-01～AF-05 PASS，待 Gate 2 正式冻结|
 |DB Schema Version|未冻结|
 |API Contract Version|未冻结|
 |Test Summary|Phase 0 证据已汇总；POC-03 Top-5 98.00% PASS、分类 48.00% FAIL、引用 74.00% FAIL；POC-06 Windows 11 Office PASS、Server 包结构/Hash PASS；其余 PoC 详见 `docs/progress/phase-0-summary.md`|
-|Next WBS|DM-03 冻结 Document/FileObject/ParseRecord、Evidence、Trace 与版本保留；随后 DM-04 AI/RAG/Job/Plugin/Output|
+|Next WBS|DM-04 冻结 AI/RAG/Job/Plugin/Output 的索引绑定、幂等、建议态和执行状态；随后 DM-05 实施业务域模型|
 
 ## 自动执行策略
 
@@ -26,6 +26,6 @@
 ## 最近检查点
 
 - 分支：`feature/data-model-freeze`
-- 最近功能检查点：DM-02 已冻结身份/Session、项目成员与角色、Workflow/Gate、Review、Audit、Secret、License 与可信时间候选；Project 不再复制 current stage，ReviewRound 绑定不可变主题版本；正式业务编码继续由 Gate 2 阻塞。
+- 最近功能检查点：DM-03 已形成 Document/不可变 DocumentVersion/FileObject 分离、文件提交恢复、ParseRecord、九类 EvidenceLocator、EvidenceBinding 与 TraceLink 候选；实际调研记录优先于调研模板，Evidence Viewer 只通过稳定 ID 授权定位；正式业务编码继续由 Gate 2 阻塞。
 - 远端同步状态必须在每次任务结束前通过 Git 实时检查，不在本文件固化可能过期的 ahead/behind 数值。
 - 本地用户文件和 Git 忽略的客户资料保持不变。

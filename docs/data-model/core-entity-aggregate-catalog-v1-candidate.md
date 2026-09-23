@@ -78,7 +78,7 @@
 |DOC-03|document|FileObject|StorageLocator、SHA256、Mime、Size|GLOBAL_OR_PROJECT|系统事实|StorageLocator 受控；Hash/Size 与落盘内容一致；不返回绝对路径|
 |DOC-04|document|ParseRecord|DocumentVersionRef、ParserVersion、ParseStatus、ResultRef|GLOBAL_OR_PROJECT|运行事实|只解析不可变版本；结果绑定 Parser/Input 版本|
 |EVD-01|evidence|Evidence|EvidenceLocator、DocumentVersionRef、EligibilityState|GLOBAL_OR_PROJECT|证据/参考事实|必须定位不可变 DocumentVersion；Locator 可解析|
-|EVD-02|evidence|EvidenceBinding|EvidenceRef、SubjectVersionRef、Purpose|PROJECT|不可变记录|Evidence 与 Subject Scope 一致；绑定不复制正文|
+|EVD-02|evidence|EvidenceBinding|EvidenceRef、SubjectVersionRef、Purpose|GLOBAL_OR_PROJECT|不可变记录|PROJECT Evidence 仅绑定同项目；GLOBAL Evidence 可受控支持 GLOBAL/PROJECT；绑定不复制正文|
 |JOB-01|jobs|Job|JobAttempt、JobLease、RetryPolicy、CancellationState|GLOBAL_OR_PROJECT|运行事实|至少一次；租约唯一；可重试写必须幂等|
 |JOB-02|jobs|OutboxEvent|EventType、PayloadRefs、DeliveryState|GLOBAL_OR_PROJECT|不可变记录|与业务事务同提交；Payload 不含 Secret/正文；消费者去重|
 

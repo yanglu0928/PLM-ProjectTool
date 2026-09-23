@@ -2,7 +2,7 @@
 
 ## 状态
 
-`IN_PROGRESS / DM-01_PASS / DM-02_PASS / DM-03_NEXT / NOT_GATE_2_FROZEN`
+`IN_PROGRESS / DM-01_PASS / DM-02_PASS / DM-03_PASS / DM-04_NEXT / NOT_GATE_2_FROZEN`
 
 ## 前置条件
 
@@ -23,7 +23,7 @@
 |---|---|---|---|
 |DM-01|建立核心实体与聚合目录|实体、Owner、Scope、Aggregate Root、正式/建议态分类|PASS；见 `core-entity-aggregate-catalog-v1-candidate.md`|
 |DM-02|冻结平台与安全模型|Project/User/Session/Role、Workflow、Review、Audit、Secret、License|PASS；见 `platform-security-model-v1-candidate.md`|
-|DM-03|冻结 Document/Evidence/Trace/版本模型|文件、版本、解析、证据定位、TraceLink|不可变版本和 ProjectId/Global 边界完整|
+|DM-03|冻结 Document/Evidence/Trace/版本模型|文件、版本、解析、证据定位、TraceLink|PASS；见 `document-evidence-trace-model-v1-candidate.md`|
 |DM-04|冻结 AI/RAG/Job/Plugin/Output 模型|Prompt/Invocation、Index/Chunk、Job/Lease、Plugin、OutputArtifact|索引绑定、幂等、建议态和执行状态完整|
 |DM-05|冻结实施业务域模型|Capability、Handover、Survey、Requirement、Prototype、Solution、Plan|主链对象、版本、来源、Review 与 Trace 完整|
 |DM-06|生成 Data Model Candidate|关系、基数、生命周期、不变量、删除/保留策略和风险清单|无未登记模型分歧，进入 Database Schema V1|
@@ -44,4 +44,4 @@ Data Model Freeze 定义业务实体、聚合、身份、关系、基数、生�
 
 ## 下一输出
 
-DM-03 Document/Evidence/Trace/版本模型；完成后进入 DM-04，不请求普通人工确认。
+DM-04 AI/RAG/Job/Plugin/Output 模型；完成后进入 DM-05，不请求普通人工确认。
