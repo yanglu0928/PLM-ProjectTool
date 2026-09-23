@@ -11,17 +11,17 @@ description: Execute architecture, PoC, implementation, testing, packaging, and 
 
 1. 新 Session 先读取根目录 `.ai/SKILL.md`、`STATUS.md` 和自主执行规则。
 2. 识别当前 Phase、WBS、前置条件、输入基线及验收标准。
-3. 检查 Codex/GPT 周额度；剩余低于 20% 时保存检查点并停止新任务。
+3. 不自动检查 Codex/GPT 周额度；只有用户明确要求时才读取，且不得未经逐次确认使用额度重置或购买。
 4. 检查 `docs/architecture/adr/`、冻结数据模型、冻结 API Contract 和相关模块文档是否存在。
 5. 读取下方与任务相关的参考文件；只在基线相关、Gate、L3 或版本变化时重读完整基线。
 6. 若前置 Gate 未通过，不进入后续阶段；完成仍被允许的验证或文档工作。
 
 ## 当前项目状态
 
-- 业务范围和技术选型已满足冻结条件。
-- 正式开发启动条件尚未满足。
-- 下一阶段是 Phase 0 技术 PoC。
-- Phase 0 完成之前可以编写 PoC 代码，但不得大规模开发正式业务模块。
+- Phase 0 Gate 1 已通过，结论为 `COMPLETE_WITH_APPROVED_ALTERNATIVES`。
+- `ARCH-CANDIDATE-V1`、`DATA-MODEL-CANDIDATE-V1` 和 `DB-SCHEMA-CANDIDATE-V1` 已完成。
+- 当前下一阶段为 API Contract V1；正式开发启动条件仍未满足。
+- Gate 2 前只允许设计、Contract、ADR、验证脚手架和必要空壳，不得大规模开发正式业务模块。
 
 ## 参考文件路由
 

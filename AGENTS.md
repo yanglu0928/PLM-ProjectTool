@@ -29,10 +29,10 @@
 
 ## 当前 Gate
 
-- 当前处于 Phase 0 技术验证前/执行期。
-- Phase 0 全部阻塞 PoC 通过前，只允许 PoC、验证脚本、测试数据、报告、ADR 草案和必要的验证性脚手架。
-- 禁止大规模业务功能开发。
-- Phase 0 完成后，仍须依次完成 Architecture Freeze、Data Model Freeze、API Contract Freeze，才能进入正式业务编码。
+- Phase 0 Gate 1 已通过，结论为 `COMPLETE_WITH_APPROVED_ALTERNATIVES`。
+- `ARCH-CANDIDATE-V1`、`DATA-MODEL-CANDIDATE-V1` 和 `DB-SCHEMA-CANDIDATE-V1` 已完成；当前进入 API Contract V1。
+- Gate 2 通过前，只允许架构、数据模型、Schema、API Contract、ADR、验证脚手架与必要空壳设计；禁止正式业务功能开发。
+- Architecture、Data Model、Database Schema V1 和 API Contract V1 必须在 Gate 2 一并正式确认后，才能进入正式业务编码。
 
 ## 硬性约束
 
@@ -58,12 +58,10 @@
 - AI 建议必须经人工确认后才能成为正式业务事实。
 - 保留并尊重用户已有修改，不覆盖无关工作。
 
-## GPT 周额度保护
+## GPT 周额度规则
 
-- 每次自动执行开始、进入下一 WBS 前以及长任务结束后，读取当前 Codex/GPT 周额度。
-- 判断口径为周窗口的剩余百分比，即 `100 - usedPercent`；缺失值不得按 0 或 100 推断。
-- 周额度剩余低于 20% 时：完成当前不可分割操作并保存安全检查点，更新 `STATUS.md`，停止启动新任务、下一 WBS 和非必要外部操作，并立即向用户报告。
-- 周额度剩余等于或高于 20% 时，可按自主执行规则继续。
+- 根据用户 2026-09-23 的最新明确指令，本项目不再自动读取 Codex/GPT 周额度，也不再以“剩余低于 20%”作为停止新任务或 WBS 的条件。
+- 只有用户之后明确要求查看额度时才查询；不得自行恢复定期检查或停止线。
 - 不得未经用户逐次明确确认而使用额度重置、购买额度或消耗 reset credit。
 
 ## 代码仓库与同步

@@ -731,3 +731,27 @@
 |Reason|SC-01～SC-03 已冻结结构机制，但尚未形成每个 owned table 的完整生产列清单；直接生成完整业务 Migration 会把推断误写为正式事实。Profile + 关键代表表能在不越过 Gate 2 的情况下真实验证 PostgreSQL/Alembic、跨项目 FK、partial unique、GIN/HNSW、Job 并发、Retention 和恢复。优化器按选择性选择 exact fallback 是正确行为，强关 planner 选项不能作为生产性能证据。|
 |Impact|Windows 11 上 4/4 单元、65 Root 空库/有数据 up/down、10/10 负向约束、20/20 Worker 唯一领取、Retention/Hold、备份恢复、GIN/HNSW 与敏感扫描通过；生成可重复 JSON 证据。SC-05 必须继续明确验证性/生产边界并汇总未细化 owned table；Gate 2 后正式 Migration 需冻结 revision、与最终 ORM 同步并重跑全量测试。Server 使用既有 POC-02 可行性证据，本轮未重跑；Debian 保持 Release 未验证约束。|
 |Rollback|验证工作区可整体移除，不影响任何生产/客户数据库。可在 SC-05/Gate 2 前调整代表表和验证规模，但不得用 Profile 最小列替代正式字段设计、删除 Project 复合保护、append-only、Job fencing/幂等、Hold/保护引用或备份恢复要求。|
+
+## DEC-20260923-052
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-052|
+|Date|2026-09-23|
+|WBS|SC-05 DB Schema Candidate 汇总|
+|Decision|执行规则改为不自动读取 Codex/GPT 周额度，不再以剩余低于 20% 作为停止新任务或 WBS 的条件；仅在用户明确要求时查询。额度重置、购买或消耗 reset credit 仍需逐次明确确认。|
+|Reason|用户在进入 SC-05 时明确取消原 20% 停止限制并要求不再检查；该最新明确指令优先于仓库此前的额度保护规则。|
+|Impact|`AGENTS.md`、`.ai/SKILL.md`、项目开发 Skill 与 `STATUS.md` 的当前执行规则同步更新；历史决策和 Changelog 作为当时事实保留，不回写删除。该变更不影响 Gate、L3、Secret、客户数据外发或 Git 安全约束。|
+|Rollback|用户可再次明确启用新的额度检查频率和停止阈值；在此之前不得自行恢复自动检查。|
+
+## DEC-20260923-053
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-053|
+|Date|2026-09-23|
+|WBS|SC-05 DB Schema Candidate 汇总|
+|Decision|以 `database-schema-v1-candidate.md` 作为 `DB-SCHEMA-CANDIDATE-V1` 单一规范入口，完整固化 65 个 Root primary table/PK/Profile 和 20 个 Query ID；SC-01～SC-04 作为受控明细附件。验证性 Schema Contract 仅作为机制证据，Gate 2 后按模块形成正式 ORM/Alembic，不将 generic Profile 最小列或 5 个代表 child 直接复制为生产 Schema。|
+|Reason|逐字复制 SC-01～SC-04 会造成重复和漂移，但只有摘要又不足以检查 Root/Query 完整性。单一入口 + 机器 manifest + 受控明细能统一优先级、保留可追溯性，并如实区分设计候选、验证证据和正式生产实现。|
+|Impact|Database Schema V1 候选覆盖 22 Owner、65 Root、29 个物理唯一键、20 个关键查询、14 项开放风险和 14 条 API Contract 输入。SC-05 静态一致性检查全部通过；项目可进入 API Contract V1，但 Architecture/Data Model/Schema/API 仍须 Gate 2 一并确认，正式业务编码继续阻塞。|
+|Rollback|Gate 2 前可回退本汇总文件并恢复 SC-05 为待完成；不得删除 SC-01～SC-04 历史证据或把验证性 Migration 改称生产 Migration。若修改 65 Root、Owner、Scope、安全机制或基础设施，必须按 L3 处理。|

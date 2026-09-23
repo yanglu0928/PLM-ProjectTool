@@ -2,7 +2,7 @@
 
 ## 状态
 
-`IN_PROGRESS / SC-01_PASS / SC-02_PASS / SC-03_PASS / SC-04_PASS / SC-05_NEXT / NOT_GATE_2_FROZEN / VALIDATION_MIGRATION_ONLY`
+`COMPLETE / SC-01_PASS / SC-02_PASS / SC-03_PASS / SC-04_PASS / SC-05_PASS / DB-SCHEMA-CANDIDATE-V1 / API_CONTRACT_V1_NEXT / NOT_GATE_2_FROZEN / VALIDATION_MIGRATION_ONLY`
 
 本计划把 `DATA-MODEL-CANDIDATE-V1` 转换为 PostgreSQL 18 + pgvector 的物理 Schema 候选。SC-01～SC-05 只产出物理设计、约束、索引、Migration 方案与验证脚手架；在 Gate 2 前不实现正式业务功能。
 
@@ -22,7 +22,7 @@
 |SC-02|字段、类型与约束|PK/FK、Scope/ProjectId、Version、唯一、CHECK、不可变和多态引用约束|PASS；见 `sc-02-field-types-constraints-v1-candidate.md`|
 |SC-03|索引与关键查询|pgvector/FTS、Job/Outbox、Audit/Trace、授权过滤、WBS 图和容量索引|PASS；见 `sc-03-index-query-plan-v1-candidate.md`|
 |SC-04|Migration 与恢复验证|Alembic 基线、up/down、空库、有数据升级、文件恢复、Retention/Cleanup 验证|PASS；见 `sc-04-migration-recovery-validation.md`|
-|SC-05|汇总 DB Schema Candidate|表/列/约束/索引/Migration/风险单一候选|形成 `DB-SCHEMA-CANDIDATE-V1`，进入 API Contract V1|
+|SC-05|汇总 DB Schema Candidate|表/列/约束/索引/Migration/风险单一候选|PASS；见 `database-schema-v1-candidate.md`，进入 API Contract V1|
 
 ## 设计边界
 
@@ -43,6 +43,6 @@
 - Owned collection 只有在需要查询、唯一、顺序、独立状态或引用时拆表；大正文不塞入关系行。
 - 所有物理清理和级联仍受 Data Model 的 Retention/Hold/保护引用约束。
 
-## 下一输出
+## 完成结论
 
-SC-05：汇总 SC-01～SC-04，形成单一 `DB-SCHEMA-CANDIDATE-V1`，统一表/列/Profile/约束/索引/Migration 边界、验证证据、未关闭风险和 API Contract 输入。
+`DB-SCHEMA-CANDIDATE-V1` 已汇总 SC-01～SC-04，统一表/列/Profile/约束/索引/Migration 边界、验证证据、14 项未关闭风险和 API Contract 输入。下一阶段进入 API Contract V1；正式业务编码继续由 Gate 2 阻塞。
