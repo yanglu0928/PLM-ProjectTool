@@ -767,3 +767,15 @@
 |Reason|统一 HTTP 外壳可避免各模块自行发明认证、分页、并发和错误语义；Project 路径、资源归属双检、固定版本引用和默认拒绝能够把 Architecture/Data/Schema 的隔离不变量提升为可测试 Contract。分类暴露可保留完整领域模型，同时避免把数据库 Root 或运行时细节机械暴露成 API。|
 |Impact|后续 API-02～API-04 必须逐操作登记 Owner Port、Role、Scope、License、CSRF、If-Match、Idempotency、Audit 和错误码；API-05 汇总 OpenAPI/权限/错误/SSE。API Contract 工作从已同步的 Schema 检查点进入 `feature/api-contract-v1` 分支。DeploymentAdmin 不自动获得项目业务数据访问权；V1 不使用通用 DELETE、Offset 主分页、GraphQL、WebSocket 或任意 filter/order 表达式。|
 |Rollback|Gate 2 前可修改具体路径名、Cookie/Header 名或资源暴露级别并重跑 65 Root/权限一致性检查；不得弱化 Project 隔离、Session/CSRF、固定版本、幂等、乐观并发、文件路径隐藏或内部 Root 不直出的安全边界。冻结后的 Breaking Change 必须走新端点、v2 或 API Change Request。|
+
+## DEC-20260923-055
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-055|
+|Date|2026-09-23|
+|WBS|API-02 Platform, Security, Document and Governance Contract|
+|Decision|平台/安全/治理 API 采用专用状态命令而非通用 DELETE/状态 PATCH；Session、FileObject、Parse runtime、TrustedTimeState 等内部 Root 不提供通用 CRUD。文件上传固定为 UploadIntent → 流式 Content → 幂等 Commit 三步，Commit 同步创建不可变 DocumentVersion 并返回 Parse JobRef。Review Round、EvidenceBinding 和 TraceLink 一律引用固定 Version；License 无效时只开放健康、登录、当前 Session 和 DeploymentAdmin 的五个 License 恢复端点。|
+|Reason|内部运行 Root 直接暴露会允许客户端绕过 Application Port、状态机、文件一致性或可信时间。三步上传能隔离大文件传输与业务事务并支持崩溃恢复；固定版本引用保证 Review/Evidence/Trace 可审计。最小 License 恢复面既允许现场修复，又不会把无效 License 变成业务旁路。|
+|Impact|形成 10 Owner/22 Root 的 86 个 Operation、42 个模块错误码、DTO 禁止字段、权限/Audit/测试矩阵。DeploymentAdmin 仍不是项目数据超级用户；Secret/临时密码 write-only，Viewer/下载不返回 Storage Locator，Trace 图逐节点授权。后续 API-03/04 必须沿用 API-01 公共 Envelope、CSRF、Project 隔离、If-Match、幂等和错误安全边界。|
+|Rollback|Gate 2 前可调整具体路径、Operation 分组或角色白名单并重跑 Contract lint；不得改为通用内部 Root CRUD、返回 Secret/路径、动态 current 引用、跨项目可见、无 CSRF 状态写或扩大 License 恢复面。冻结后的 Breaking Change 走新端点、v2 或 API Change Request。|
