@@ -44,7 +44,7 @@
 |IP 地址|`inet`|可选 Audit 安全字段；最小化保存|
 |金额/精确成本|`numeric(20,8)`|仅实际需要时使用；禁止浮点累计费用|
 |检索/模型分数|`double precision`|Application 拒绝 NaN/Infinity；范围按策略字段校验|
-|向量|`vector(n)`|仅 `rag_embedding_records`；n 与 Index Model 固定，SC-03 细化|
+|向量|受控 `vector` + `vector(n)` 索引 cast|仅 `rag_embedding_records`；n 与 Index Model 固定，不同维度由 SC-03 的 Migration 索引族支持|
 
 ### 文本上限类别
 
@@ -286,9 +286,9 @@ WHERE root_id = :id AND lock_version = :expected;
 |部门代码|`(project_id,department_code_normalized)`|未归档/按业务策略|
 |Project Workflow|`wfl_project_workflows(project_id)`|恰好一个|
 |Version no|`(parent_id,version_no)`|全部版本|
-|一个 Active ReviewRound|`rvw_review_rounds(review_id)`|state=ACTIVE|
+|一个 Active ReviewRound|`rvw_review_rounds(review_id)`|round_state=IN_REVIEW|
 |Review assignment|`(review_round_id,reviewer_id)`|每轮每人一次|
-|一个 Active SecretVersion|`plt_secret_versions(secret_record_id)`|state=ACTIVE|
+|一个 Active SecretVersion|`plt_secret_versions(secret_record_id)`|activated_at 非空且 retired_at 为空|
 |Document Version|`(document_id,version_no)`|全部版本|
 |Evidence active binding|`(evidence_id,subject_owner,subject_type,subject_version_id,purpose)`|state=ACTIVE|
 |Trace active edge|`(source tuple,target tuple,relation_type)`|state=ACTIVE|
@@ -299,7 +299,7 @@ WHERE root_id = :id AND lock_version = :expected;
 |Embedding index version|`UNIQUE NULLS NOT DISTINCT (scope,project_id,index_purpose,index_version)`|全部|
 |Active index|`UNIQUE NULLS NOT DISTINCT (scope,project_id,index_purpose)`|state=ACTIVE|
 |Embedding record|`(embedding_index_id,chunk_id)`|state=AVAILABLE|
-|Survey assignment|`UNIQUE NULLS NOT DISTINCT (survey_round_id,department_id,assignee_id)`|非取消|
+|Survey assignment|`UNIQUE NULLS NOT DISTINCT (survey_round_id,department_id,assignee_id)`|全部历史；Assignment 状态无 CANCELLED|
 |Package membership|`(package_id,member_root_id)`|全部|
 |Requirement relation|`(source_version_id,target_version_id,relation_type)`|state=ACTIVE|
 |Outline section order|`(outline_version_id,ordinal)`、`(outline_version_id,section_id)`|全部|

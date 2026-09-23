@@ -707,3 +707,15 @@
 |Reason|有序 UUID 降低随机主键的索引局部性成本，同时不承载授权语义；text + named CHECK 比 ENUM 更利于 Alembic 的双版本升级/回退。显式 ProjectId 与复合 FK 能在 Repository 漏写过滤时继续阻止跨项目归属，而过早启用 RLS 会显著增加连接池、后台 Job、Migration 和恢复路径的策略复杂度。NO ACTION 与无自动级联保证 Retention、Hold、Audit 和保护引用先完成预检。|
 |Impact|65 个 Root 已分配 M/V/A/R/SEC 字段 Profile，形成 28 组唯一语义、多态白名单、敏感列与数据库角色候选。SC-03 必须把条件唯一、授权过滤、Job/Outbox、Audit/Trace、Retention、FTS 与 pgvector 转为索引和关键查询计划；SC-04 再生成 Alembic 并执行空库/有数据 up/down、绕过 ORM 的负向测试。本阶段没有创建 ORM、Migration、业务表或索引。|
 |Rollback|Gate 2 前可调整具体类型长度、CHECK 值、索引或受控 trigger 实现，但必须提供兼容 Migration 与 up/down 证据；不得弱化 Project 隔离、版本不可变、Secret/Session/License 敏感边界、Hold/保护引用预检，或让普通删除通过 CASCADE 绕过清理控制。若未来启用 RLS，须以 ADR 和连接池/Job/Migration/恢复全链验证后增量引入。|
+
+## DEC-20260923-050
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-050|
+|Date|2026-09-23|
+|WBS|SC-03 Index and Critical Query Design|
+|Decision|索引采用“约束索引复用 + 引用侧 FK B-tree + Project 前缀/keyset + 条件唯一 + 专用运行索引”的最小集合。Job/Outbox 使用短事务、稳定排序、`FOR UPDATE SKIP LOCKED`、Lease fencing 与消费幂等。全文使用受控中文 Token `search_body` 的 stored `tsvector` + GIN；向量使用按受支持维度由 Migration 创建的 HNSW 表达式索引族，查询强制 Scope/Project/EmbeddingIndex 过滤并启用 iterative scan，不足时只能在同授权范围扩大扫描或精确回退。V1 不启用按项目动态分区、每项目索引或 Runtime DDL。|
+|Reason|PK/UNIQUE 重复索引和无消费者索引会增加单服务器的写放大与维护成本；Project 前缀和双向引用索引同时支撑授权、删除预检和稳定分页。pgvector 共享 HNSW 的过滤发生在近邻扫描过程中，不能只依赖默认候选数；模型维度又可能变化，因此需要受控维度索引、迭代扫描和同 Scope 精确回退。Job/Outbox 的至少一次语义要求数据库领取与外部执行分离，并由 fencing/幂等阻止过期 Worker 发布。|
+|Impact|形成 20 个关键 Query ID、28 组唯一语义到 29 个物理唯一键映射、11 项风险及 SC-04 的数据规模/并发/执行计划验收计划。SC-04 必须生成 index manifest，验证 `EXPLAIN (ANALYZE, BUFFERS)`、多项目 Recall、20 Worker 领取/崩溃回收、Retention 保护引用和索引写放大；POC-02/03 的 HNSW 参数仅作初值，不能直接作为生产性能结论。HNSW `vector` 超过 2,000 维默认不兼容，替代表示需质量 PoC。本阶段没有创建 ORM、Migration、表或索引。|
+|Rollback|Gate 2 前可依据 SC-04 计划删除冗余索引、调整列序/INCLUDE、HNSW 参数或固定 hash partition；必须保留 Project 隔离、同 Scope 精确回退、Job fencing/幂等和保护引用查询。引入独立向量库、消息队列、Redis、运行时 DDL或按客户动态分区属于超出当前方案的变更，须按 L3 处理。|
