@@ -659,3 +659,15 @@
 |Reason|这些运行对象跨越外部 Provider、PostgreSQL、文件系统和独立进程，无法可靠承诺精确一次或依赖可变“当前版本”。不可变快照、Scope 隔离、fencing 和分阶段发布可避免模型/索引漂移、跨项目泄露、过期 Worker 提交和半完成制品；GLOBAL 检索记录也必须可审计，不能因目录先前误限为 PROJECT 而丢失。|
 |Impact|后续 Schema/API 必须实现 AI、Embedding、Reranker 的逐次外发授权引用，以及 Invocation/Index generation、单一活动索引、Job Lease fencing、Outbox 消费去重、Plugin 精确包版本和 Output 发布完整性；既往 PoC/复验授权不得自动复用于未来调用。POC-03 分类 48%/引用 74% 的质量失败保持 Gate 3/UAT 阻塞，不因模型冻结而关闭；本阶段仍未定义物理表、API 或 Migration。|
 |Rollback|Gate 2 前可细化状态名、策略字段和保留方式；不得允许业务模块直连厂商 SDK/pgvector、复用不兼容向量、移除 Project 隔离/外发授权、宣称精确一次、让 Plugin 直连数据库/Secret，或让 AI/插件结果绕过人工确认和制品校验。触及这些边界时按 L3 处理。|
+
+## DEC-20260923-046
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-046|
+|Date|2026-09-23|
+|WBS|DM-05 Implementation Domain Data Model|
+|Decision|实施业务主链统一采用逻辑对象与不可变版本分离，正式指针只指向通过 Review 的指定版本；GLOBAL Capability 是标准能力事实，项目的 STANDARD_FUNCTION、NONSTANDARD_FUNCTION、DIFFERENCE、PENDING_CONFIRMATION 是 RequirementVersion 判断。实际调研记录优先于 TEMPLATE；NeedConfirm/ActionItem 必须保存明确问题、影响、选项、建议、人工输入规格和 EvidenceRef。Requirement→Solution 以章节版本内覆盖快照加 TraceLink IMPLEMENTS 表达，不新增可变双写关系；PlanVersion 固定最多六级 WBS 和仅 FS 的无环依赖。|
+|Reason|现有 R1～R9 验证成果同时包含标准、非标、差异和待确认草案，但明确不是正式需求/方案。若直接把表格行或 AI 结果当作事实，会丢失来源、版本和人工责任；若只复制原文到待办，又无法提供友好维护提示和精确原文定位。不可变版本、Evidence Viewer、Review 与 Trace 可以在保留真实调研优先原则的同时形成完整交付链。|
+|Impact|后续 Schema/API 必须实现各业务对象的逻辑身份/版本指针、ReviewSubjectSnapshot、CapabilityAssessment、AnalysisItem 输入提示、面对面调研来源标识、需求覆盖、专项设计校验和 WBS DAG 约束。R1～R9 文件保持历史验证制品，不自动导入正式数据库或转为客户事实；POC-03 质量失败仍由 Gate 3/UAT 阻塞。|
+|Rollback|Gate 2 前可细化业务枚举、专项字段和状态名称；不得让 GLOBAL 基线被项目反写、让模板/AI 自动成为事实、覆盖已审核版本、取消 Evidence/Review/Trace、把待确认项静默转正，或放宽六级 WBS/仅 FS/无环约束。触及核心业务模型时按 L3 处理。|

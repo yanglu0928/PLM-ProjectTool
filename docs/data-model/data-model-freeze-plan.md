@@ -2,7 +2,7 @@
 
 ## 状态
 
-`IN_PROGRESS / DM-01_PASS / DM-02_PASS / DM-03_PASS / DM-04_PASS / DM-05_NEXT / NOT_GATE_2_FROZEN`
+`IN_PROGRESS / DM-01_PASS / DM-02_PASS / DM-03_PASS / DM-04_PASS / DM-05_PASS / DM-06_NEXT / NOT_GATE_2_FROZEN`
 
 ## 前置条件
 
@@ -25,7 +25,7 @@
 |DM-02|冻结平台与安全模型|Project/User/Session/Role、Workflow、Review、Audit、Secret、License|PASS；见 `platform-security-model-v1-candidate.md`|
 |DM-03|冻结 Document/Evidence/Trace/版本模型|文件、版本、解析、证据定位、TraceLink|PASS；见 `document-evidence-trace-model-v1-candidate.md`|
 |DM-04|冻结 AI/RAG/Job/Plugin/Output 模型|Prompt/Invocation、Index/Chunk、Job/Lease、Plugin、OutputArtifact|PASS；见 `ai-rag-job-plugin-output-model-v1-candidate.md`|
-|DM-05|冻结实施业务域模型|Capability、Handover、Survey、Requirement、Prototype、Solution、Plan|主链对象、版本、来源、Review 与 Trace 完整|
+|DM-05|冻结实施业务域模型|Capability、Handover、Survey、Requirement、Prototype、Solution、Plan|PASS；见 `implementation-domain-model-v1-candidate.md`|
 |DM-06|生成 Data Model Candidate|关系、基数、生命周期、不变量、删除/保留策略和风险清单|无未登记模型分歧，进入 Database Schema V1|
 
 ## Data Model 与 Schema 边界
@@ -44,4 +44,4 @@ Data Model Freeze 定义业务实体、聚合、身份、关系、基数、生�
 
 ## 下一输出
 
-DM-05 Capability/Handover/Survey/Requirement/Prototype/Solution/Plan 实施业务域模型；完成后进入 DM-06，不请求普通人工确认。
+DM-06 汇总 Data Model Candidate，统一关系、基数、生命周期、删除/保留策略和风险清单；完成后进入 Database Schema V1 候选设计。
