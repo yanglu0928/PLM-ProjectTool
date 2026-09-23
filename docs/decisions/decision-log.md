@@ -791,3 +791,15 @@
 |Reason|外发授权必须能证明谁在何时为哪一最小载荷授权，避免授权漂移和客户数据越界；AI 建议、异步任务、插件及文件输出若直接暴露内部状态或绕过 Owner Port，会破坏事实确认、Project 隔离、at-least-once 幂等、fencing 与文件可追溯性。|
 |Impact|形成 5 Owner/15 Root 的 79 个 Operation、51 个模块错误码、DTO、权限、SSE、强制 Audit 和测试矩阵。API-04/05 必须沿用逐次外发授权、`NOT_FORMAL_FACT`、Project 隔离、内部运行 Root 不直出、签名插件和输出二次校验边界。POC-03 的分类/引用质量仍为 Gate 3/UAT 阻塞项；本轮实际外部调用 0。|
 |Rollback|Gate 2 前可调整具体路径、Operation 分组、角色白名单或事件粒度并重跑 Contract lint；不得弱化逐次最小外发授权、Project 隔离、AI 建议态、Job fencing、签名插件/无任意调用或输出校验与登记边界。冻结后的 Breaking Change 走新端点、v2 或 API Change Request。|
+
+## DEC-20260923-057
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-057|
+|Date|2026-09-23|
+|WBS|API-04 Implementation Business Chain Contract|
+|Decision|Capability、Handover、Survey、Requirement、Prototype、Solution 与 Plan 统一采用逻辑 Identity + 不可变 Version API；版本正文无 PATCH/DELETE，修订创建新 Version。各 Owner 的 `:submit-review` 只做送审前校验和 ReviewService 原子编排，不替代 API-02 的 Reviewer/锁定/决策规则；ReviewCompleted 后由 Owner 幂等更新正式指针、Trace、Audit 与 Outbox。实际调研记录优先于 TEMPLATE，AI Suggestion 只可经白名单 Owner Port 创建 Draft。所有跨阶段关系固定 VersionRef；上游替代只生成影响项，不自动改写或批准下游。|
+|Reason|统一版本与 Review 编排可以让业务界面提供清晰动作，又不形成第二套评审引擎；固定引用、来源优先级和 Owner 正式化边界可防止模板/AI 冒充客户事实、动态当前版本漂移及跨模块直接写表。上游变化显式影响分析可保留历史交付并避免静默级联。|
+|Impact|形成 7 Owner/28 Root 的 158 个 Operation、54 个模块错误码、DTO、Role × Resource 权限、SSE、强制 Audit 和测试矩阵。API-05 必须验证统一资源/Operation/错误/权限目录，保留不可变版本、Project 隔离、Evidence 定位、Review 锁、AI Draft 和影响分析边界。POC-03 分类/引用质量仍为 Gate 3/UAT 阻塞；本轮实际外部调用 0。|
+|Rollback|Gate 2 前可调整具体路径、Operation 分组、角色白名单或 DTO 拆分并重跑 Contract lint；不得弱化版本不可变、固定 VersionRef、统一 Review、实际调研优先、AI 不自动正式化、跨项目拒绝、方案覆盖/Trace 一致或 WBS 六级/FS DAG 边界。冻结后的 Breaking Change 走新端点、v2 或 API Change Request。|

@@ -6,6 +6,7 @@
 
 ### 新增
 
+- 2026-09-23：API-04 完成实施业务主链 API Contract 候选。覆盖 Capability/Handover/Survey/Requirement/Prototype/Solution/Plan 7 个 Owner、28 个 Root，定义 158 个唯一 Operation ID、54 个唯一错误码、DTO、权限、Audit、SSE 和 Contract 测试矩阵；固化逻辑身份 + 不可变版本、Owner 编排统一 Review、实际调研记录优先于模板、AI Suggestion 只创建 Draft、需求四分类与能力匹配、原型范围决定、方案覆盖/Trace 一致以及最多六级且仅 FS 的 WBS。14/14 风险、14/14 验收通过，实际外部调用 0，未创建正式业务实现。
 - 2026-09-23：API-03 完成 AI、RAG、Job、Plugin 与 Output API Contract 候选。覆盖 5 个 Owner、15 个 Root，定义 79 个唯一 Operation ID、51 个唯一错误码、DTO、权限、Audit、SSE 和 Contract 测试矩阵；固化逐次最小数据外发授权、AI 建议 `NOT_FORMAL_FACT`、Project RAG 隔离与换模型新建索引、Job/Outbox 内部控制、签名插件且无公共任意调用，以及输出二次校验与文档登记。12/12 风险、14/14 验收通过，实际外部调用 0，未创建 FastAPI/Pydantic/Worker 业务实现。
 - 2026-09-23：API-02 完成平台、安全、文档与治理 API Contract 候选。覆盖 Platform/Auth/Project/Workflow/Review/Document/Evidence/Trace/Audit/License 10 个 Owner、22 个 Root，定义 86 个唯一 Operation ID、DTO、Role × Resource 权限、42 个唯一错误码、强制 Audit 和 Contract 测试矩阵；固化 Secret write-only、Session/CSRF、项目隔离、Review 锁、三步流式上传、9 类 Evidence Locator、固定版本 Viewer、逐节点 Trace 授权与最小 License 恢复面。14/14 验收通过，未创建 FastAPI/Pydantic/业务代码。
 - 2026-09-23：API-01 完成 API Contract V1 执行计划与公共协议候选。定义 API-01～API-05 路径、`/api/v1` REST/JSON + multipart + SSE、成功/错误 Envelope、Session/CSRF、License/授权顺序、六类主体权限基线、ETag/If-Match、Idempotency-Key、keyset cursor、文件/Viewer、`202 + JobRef` 和 SSE 恢复规则；22 个 Owner/65 个 Root 全部分类为 DIRECT/NESTED/READ_ONLY/INTERNAL。13/13 验收通过，未创建 FastAPI 或正式业务代码。
