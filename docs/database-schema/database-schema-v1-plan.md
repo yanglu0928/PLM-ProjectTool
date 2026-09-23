@@ -2,7 +2,7 @@
 
 ## 状态
 
-`IN_PROGRESS / SC-01_PASS / SC-02_NEXT / NOT_GATE_2_FROZEN / NO_MIGRATION_YET`
+`IN_PROGRESS / SC-01_PASS / SC-02_PASS / SC-03_NEXT / NOT_GATE_2_FROZEN / NO_MIGRATION_YET`
 
 本计划把 `DATA-MODEL-CANDIDATE-V1` 转换为 PostgreSQL 18 + pgvector 的物理 Schema 候选。SC-01～SC-05 只产出物理设计、约束、索引、Migration 方案与验证脚手架；在 Gate 2 前不实现正式业务功能。
 
@@ -19,7 +19,7 @@
 |WBS|目标|交付物|完成判定|
 |---|---|---|---|
 |SC-01|逻辑到物理映射|数据库/Schema/命名策略；65 个 Root 与 Owned Entity 表映射；引用和内容存储策略|PASS；见 `sc-01-logical-physical-map-v1-candidate.md`|
-|SC-02|字段、类型与约束|PK/FK、Scope/ProjectId、Version、唯一、CHECK、不可变和多态引用约束|核心不变量均有数据库或 Application 双层保护|
+|SC-02|字段、类型与约束|PK/FK、Scope/ProjectId、Version、唯一、CHECK、不可变和多态引用约束|PASS；见 `sc-02-field-types-constraints-v1-candidate.md`|
 |SC-03|索引与关键查询|pgvector/FTS、Job/Outbox、Audit/Trace、授权过滤、WBS 图和容量索引|关键查询具有索引与查询计划验证方案|
 |SC-04|Migration 与恢复验证|Alembic 基线、up/down、空库、有数据升级、文件恢复、Retention/Cleanup 验证|升级/回退和恢复测试完整，失败关闭|
 |SC-05|汇总 DB Schema Candidate|表/列/约束/索引/Migration/风险单一候选|形成 `DB-SCHEMA-CANDIDATE-V1`，进入 API Contract V1|
@@ -45,4 +45,4 @@
 
 ## 下一输出
 
-SC-02：为 SC-01 的表映射确定 PostgreSQL 18 字段类型、PK/FK、Scope/ProjectId、版本、唯一、CHECK、不可变与并发约束。
+SC-03：根据 SC-02 冻结的字段与唯一语义，设计 PK/FK/授权查询、条件唯一、Job/Outbox、Audit/Trace、Retention、全文检索和 pgvector 索引及关键查询计划。

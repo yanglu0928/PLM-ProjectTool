@@ -695,3 +695,15 @@
 |Reason|V1 是单服务器模块化单体并使用同一应用数据库身份，22 个 PostgreSQL Schema 不形成真正安全隔离，却增加 Alembic search_path、跨 Schema FK、备份恢复和离线运维复杂度。模块前缀与 Application Port 能清晰表达 Owner；全局 object_registry 会成为所有模块共同写热点并破坏唯一 Owner。|
 |Impact|形成 65/65 Root primary table 映射及 owned table 候选，表名使用 ASCII lower_snake_case、目标不超过 55 字符。SC-02 必须补齐 Scope/ProjectId、Version、固定 FK、多态白名单、唯一/CHECK 与不可变约束；SC-03/04 再定义索引、pgvector、Migration 和恢复测试。本阶段没有创建 ORM、Migration 或业务表。|
 |Rollback|Gate 2 前可改为少量分组 Schema 或调整 table/child 拆分，但必须提供 Alembic、权限、备份和跨平台证据；不得把 Developer Workbench 放入客户数据库、取消 Owner 前缀/边界、用 JSONB 隐藏 ProjectId/核心 FK，或引入共享写 object_registry。|
+
+## DEC-20260923-049
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-049|
+|Date|2026-09-23|
+|WBS|SC-02 Field Types and Constraints|
+|Decision|主键使用 PostgreSQL 18 `uuidv7()`；时间使用 UTC `timestamptz(6)`，日历计划日期单独使用 `date`。状态采用 text + named CHECK，不使用 PostgreSQL ENUM/DOMAIN；固定长度 Hash 使用 `bytea` 并检查字节数。PROJECT/GLOBAL_OR_PROJECT 表显式保存 ProjectId/Scope，并以复合 FK 防跨项目归属漂移；FK 默认 NO ACTION、NOT DEFERRABLE，V1 不启用 CASCADE。Version/current pointer 使用复合归属约束，内容不可变、append-only、状态迁移及多态目标由数据库约束、受控 trigger 和 Application Command 共同保护。V1 不把 RLS 作为主防线且默认不启用，授权依靠 ProjectAuthorizationService、显式过滤、复合约束与负向测试。|
+|Reason|有序 UUID 降低随机主键的索引局部性成本，同时不承载授权语义；text + named CHECK 比 ENUM 更利于 Alembic 的双版本升级/回退。显式 ProjectId 与复合 FK 能在 Repository 漏写过滤时继续阻止跨项目归属，而过早启用 RLS 会显著增加连接池、后台 Job、Migration 和恢复路径的策略复杂度。NO ACTION 与无自动级联保证 Retention、Hold、Audit 和保护引用先完成预检。|
+|Impact|65 个 Root 已分配 M/V/A/R/SEC 字段 Profile，形成 28 组唯一语义、多态白名单、敏感列与数据库角色候选。SC-03 必须把条件唯一、授权过滤、Job/Outbox、Audit/Trace、Retention、FTS 与 pgvector 转为索引和关键查询计划；SC-04 再生成 Alembic 并执行空库/有数据 up/down、绕过 ORM 的负向测试。本阶段没有创建 ORM、Migration、业务表或索引。|
+|Rollback|Gate 2 前可调整具体类型长度、CHECK 值、索引或受控 trigger 实现，但必须提供兼容 Migration 与 up/down 证据；不得弱化 Project 隔离、版本不可变、Secret/Session/License 敏感边界、Hold/保护引用预检，或让普通删除通过 CASCADE 绕过清理控制。若未来启用 RLS，须以 ADR 和连接池/Job/Migration/恢复全链验证后增量引入。|

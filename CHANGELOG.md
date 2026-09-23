@@ -6,6 +6,7 @@
 
 ### 新增
 
+- 2026-09-23：SC-02 完成 PostgreSQL 18 字段、类型与约束候选。65 个 Root 全部获得 M/V/A/R/SEC Profile，采用 `uuidv7()`、UTC `timestamptz(6)`、text + named CHECK、显式 Scope/ProjectId 复合约束与默认 NO ACTION/NOT DEFERRABLE；登记 28 组唯一语义、多态白名单、版本不可变、乐观并发和敏感字段规则。12/12 验收通过；未创建 ORM、Migration、业务表或索引，进入 SC-03。
 - 2026-09-23：SC-01 完成 PostgreSQL 18 逻辑到物理映射候选。采用单一客户数据库与 `plm` 应用 Schema，以 22 个模块短前缀维护 Owner；65 个 Aggregate Root 全部映射唯一 primary table，Developer Workbench 3 个 Root 保持独立数据库。明确 Root/Child/Inline/JSONB/File Ref、多态引用和默认 RESTRICT 边界，10/10 验收通过，未提前定义字段类型、约束、索引或 Migration。
 - 2026-09-23：DM-06 完成 `DATA-MODEL-CANDIDATE-V1`。汇总 DM-01～DM-05 的 22 个客户运行模块、65 个 Aggregate Root 和 3 个隔离 Developer Workbench Root，统一 Scope、跨聚合关系、六类生命周期、正式化链、9 类候选保留期限、Legal Hold、物理清理前置、25 条完整性不变量、14 项风险和 Schema V1 交接清单。12/12 验收通过，项目进入 SC-01；Data Model 仍待 Gate 2 正式冻结。
 - 2026-09-23：DM-05 完成实施业务域数据模型候选。细化 Capability、Handover、Survey、Requirement、Prototype、Solution 与 Plan 的逻辑身份、不可变版本、Evidence、Review 和 Trace 主链；固化实际调研记录优先、标准功能/非标功能/差异项/待确认项分类、友好待办输入提示、六级 WBS 与仅 FS 依赖。12/12 验收通过，历史 R1～R9 成果不自动正式化。
