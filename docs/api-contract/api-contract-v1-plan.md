@@ -2,7 +2,7 @@
 
 ## 状态
 
-`IN_PROGRESS / API-01_PASS / API-02_PASS / API-03_PASS / API-04_PASS / API-05_NEXT / NOT_GATE_2_FROZEN / NO_FASTAPI_IMPLEMENTATION`
+`COMPLETE / API-01～API-05_PASS / API-CONTRACT-CANDIDATE-V1 / GATE_2_PENDING / NO_FASTAPI_IMPLEMENTATION`
 
 本计划把 `ARCH-CANDIDATE-V1`、`DATA-MODEL-CANDIDATE-V1` 和 `DB-SCHEMA-CANDIDATE-V1` 转换为稳定的 `/api/v1` REST/JSON + SSE 契约候选。API-01～API-05 只定义资源、路径、DTO、权限、状态命令、错误、分页、幂等和事件；Gate 2 前不创建正式 FastAPI 路由或业务实现。
 
@@ -22,7 +22,7 @@
 |API-02|平台、安全、文档与治理 Contract|Auth、Project、Workflow、Document、Evidence、Review、Trace、Audit、License、Configuration/Secret 端点与 DTO|PASS；见 `api-02-platform-security-document-governance-v1-candidate.md`|
 |API-03|AI、RAG、Job、Plugin 与 Output Contract|AI Task、Retrieval/Index、Job、Plugin、Output 的异步提交、状态、取消、外发授权和 SSE|PASS；见 `api-03-ai-rag-job-plugin-output-v1-candidate.md`|
 |API-04|实施业务主链 Contract|Capability、Handover、Survey、Requirement、Prototype、Solution、Plan 资源、版本、Review 和 Trace 端点|PASS；见 `api-04-implementation-business-chain-v1-candidate.md`|
-|API-05|汇总 API Contract Candidate|OpenAPI 资源清单、DTO/枚举、Role × API × Project、错误码、SSE、兼容性和测试矩阵|形成 `API-CONTRACT-CANDIDATE-V1`，提交 Gate 2|
+|API-05|汇总 API Contract Candidate|OpenAPI 资源清单、DTO/枚举、Role × API × Project、错误码、SSE、兼容性和测试矩阵|PASS；见 `api-contract-v1-candidate.md` 与 API-05 Contract Lint|
 
 ## 强制协议边界
 
@@ -56,4 +56,4 @@
 
 ## 下一输出
 
-API-05：汇总 API-01～API-04，形成统一资源、Operation、DTO、枚举、权限、错误、SSE 与自动一致性检查，生成 `API-CONTRACT-CANDIDATE-V1` 并提交 Gate 2。
+Gate 2：由用户正式确认 `ARCH-CANDIDATE-V1`、`DATA-MODEL-CANDIDATE-V1`、`DB-SCHEMA-CANDIDATE-V1` 与 `API-CONTRACT-CANDIDATE-V1`；确认前正式业务编码继续阻塞。确认包见 `docs/progress/gate-2-review-package.md`。
