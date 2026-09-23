@@ -2,7 +2,7 @@
 
 ## 状态
 
-`IN_PROGRESS / DM-01_PASS / DM-02_PASS / DM-03_PASS / DM-04_PASS / DM-05_PASS / DM-06_NEXT / NOT_GATE_2_FROZEN`
+`COMPLETE / DM-01～DM-06_PASS / DATA-MODEL-CANDIDATE-V1 / NOT_GATE_2_FROZEN`
 
 ## 前置条件
 
@@ -26,7 +26,7 @@
 |DM-03|冻结 Document/Evidence/Trace/版本模型|文件、版本、解析、证据定位、TraceLink|PASS；见 `document-evidence-trace-model-v1-candidate.md`|
 |DM-04|冻结 AI/RAG/Job/Plugin/Output 模型|Prompt/Invocation、Index/Chunk、Job/Lease、Plugin、OutputArtifact|PASS；见 `ai-rag-job-plugin-output-model-v1-candidate.md`|
 |DM-05|冻结实施业务域模型|Capability、Handover、Survey、Requirement、Prototype、Solution、Plan|PASS；见 `implementation-domain-model-v1-candidate.md`|
-|DM-06|生成 Data Model Candidate|关系、基数、生命周期、不变量、删除/保留策略和风险清单|无未登记模型分歧，进入 Database Schema V1|
+|DM-06|生成 Data Model Candidate|关系、基数、生命周期、不变量、删除/保留策略和风险清单|PASS；见 `data-model-candidate-v1.md`，进入 Database Schema V1|
 
 ## Data Model 与 Schema 边界
 
@@ -42,6 +42,6 @@ Data Model Freeze 定义业务实体、聚合、身份、关系、基数、生�
 - 删除、归档、保留与审计语义必须显式；普通用户不能删除 Audit。
 - Data Model 候选不得被当作已存在数据库或已验证 Migration。
 
-## 下一输出
+## 完成结论
 
-DM-06 汇总 Data Model Candidate，统一关系、基数、生命周期、删除/保留策略和风险清单；完成后进入 Database Schema V1 候选设计。
+`DATA-MODEL-CANDIDATE-V1` 已完成，DM-01～DM-06 全部 PASS；Data Model 仍待与 Architecture、Database Schema V1、API Contract V1 在 Gate 2 一并正式确认。下一输出为 SC-01 逻辑到物理 Schema 映射。

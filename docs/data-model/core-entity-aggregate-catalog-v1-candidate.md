@@ -52,7 +52,7 @@
 
 |ID|Owner|Aggregate Root|包含实体/值对象|Scope|事实语义|核心不变量|
 |---|---|---|---|---|---|---|
-|PLT-01|platform|SystemConfiguration|SystemSetting、ConfigVersion|DEPLOYMENT|系统事实|非 Secret 配置版本化；修改受权并审计|
+|PLT-01|platform|SystemConfiguration|SystemSetting、ConfigVersion、RetentionPolicy、RetentionHoldEntry|DEPLOYMENT|系统事实|非 Secret 配置版本化；修改受权并审计；Active Hold 优先于清理策略|
 |PLT-02|platform|SecretRecord|SecretVersion、SecretRef、EncryptedPayloadMetadata|DEPLOYMENT|签名安全状态|密文与主材料分离；查询不回显明文|
 |AUT-01|auth|User|PasswordCredential、AccountState|DEPLOYMENT|系统事实|用户名部署内唯一；密码仅哈希；停用使 Session 失效|
 |AUT-02|auth|Session|SessionState、CsrfBinding|DEPLOYMENT|运行事实|服务端不透明会话；只属于一个 User；可撤销/过期|

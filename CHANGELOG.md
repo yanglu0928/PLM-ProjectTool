@@ -6,6 +6,7 @@
 
 ### 新增
 
+- 2026-09-23：DM-06 完成 `DATA-MODEL-CANDIDATE-V1`。汇总 DM-01～DM-05 的 22 个客户运行模块、65 个 Aggregate Root 和 3 个隔离 Developer Workbench Root，统一 Scope、跨聚合关系、六类生命周期、正式化链、9 类候选保留期限、Legal Hold、物理清理前置、25 条完整性不变量、14 项风险和 Schema V1 交接清单。12/12 验收通过，项目进入 SC-01；Data Model 仍待 Gate 2 正式冻结。
 - 2026-09-23：DM-05 完成实施业务域数据模型候选。细化 Capability、Handover、Survey、Requirement、Prototype、Solution 与 Plan 的逻辑身份、不可变版本、Evidence、Review 和 Trace 主链；固化实际调研记录优先、标准功能/非标功能/差异项/待确认项分类、友好待办输入提示、六级 WBS 与仅 FS 依赖。12/12 验收通过，历史 R1～R9 成果不自动正式化。
 - 2026-09-23：DM-04 完成 AI / RAG / Job / Plugin / Output 数据模型候选。细化统一 Provider/Model/Prompt/AITask/Invocation、Chunk/EmbeddingIndex/RetrievalRun、PostgreSQL Job/Lease/Outbox、开发者签名 Plugin 与 OutputArtifact 的状态、引用、幂等、外发授权和失败关闭；校正 RetrievalRun 为 GLOBAL_OR_PROJECT。10/10 验收通过，未引入消息队列、独立向量库、本地模型或物理 Schema/API。
 - 2026-09-23：DM-03 完成 Document / Evidence / Trace / 版本数据模型候选。分离 Document、不可变 DocumentVersion 与 FileObject，定义文件提交补偿恢复、ParseRecord 生命周期、9 类 EvidenceLocator、EvidenceBinding 与 TraceLink 边界；实际调研记录作为项目事实来源，调研业务表单仅为模板参考。8/8 验收通过，未定义物理 Schema、API 或 Migration。
