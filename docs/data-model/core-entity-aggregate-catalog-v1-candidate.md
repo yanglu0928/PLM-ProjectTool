@@ -93,7 +93,7 @@
 |RAG-01|rag|DocumentChunk|DocumentVersionRef、ChunkLocator、Text、Metadata|GLOBAL_OR_PROJECT|知识记录|Chunk 绑定不可变版本；PROJECT 必须含 ProjectId|
 |RAG-02|rag|EmbeddingIndex|AIModelRef、Dimension、IndexVersion、ActivationState|GLOBAL_OR_PROJECT|系统事实|一个 Index 绑定一个模型/维度；激活切换受控|
 |RAG-03|rag|EmbeddingRecord|IndexRef、ChunkRef、VectorFingerprint|GLOBAL_OR_PROJECT|运行事实|Index/Chunk Scope 一致；不得跨模型复用向量|
-|RAG-04|rag|RetrievalRun|QueryHash、CandidateRefs、ScoreBreakdown、RerankState|PROJECT|运行事实|ProjectId 失败关闭；结果绑定 Index/Model/Policy 版本|
+|RAG-04|rag|RetrievalRun|QueryHash、CandidateRefs、ScoreBreakdown、RerankState|GLOBAL_OR_PROJECT|运行事实|PROJECT 请求缺失/越权 ProjectId 时失败关闭；结果绑定 Index/Model/Policy 版本|
 |CAP-01|capability|CapabilityBaseline|BaselineIdentity、CurrentApprovedVersionRef|GLOBAL|可正式化业务版本|只能引用已 Review 的 BaselineVersion 作为正式版本|
 |CAP-02|capability|BaselineVersion|CapabilityItem、SourceEvidenceRefs、ReviewSubjectRef|GLOBAL|可正式化业务版本|版本不可变；Item 来源可追溯；AI 仅可生成 Draft|
 

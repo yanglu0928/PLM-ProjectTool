@@ -647,3 +647,15 @@
 |Reason|逻辑对象、版本和物理文件混合会导致覆盖历史、路径泄漏和定位漂移；Evidence 与 Trace 共用一种关系会混淆“原文证明”与“业务制品来源”。明确实际记录优先也落实了用户此前确认的调研事实规则，并支持从待办一键定位原文。|
 |Impact|DM-01 的 EVD-02 Scope 调整为 GLOBAL_OR_PROJECT。后续 Schema/API 必须实现稳定引用、九类定位器、文件状态与恢复、版本保留和图关系授权；Evidence Viewer 不得暴露绝对路径或把短摘录当作权威原文。本阶段仍未定义物理表、API 或 Migration。|
 |Rollback|Gate 2 前可细化定位器和关系枚举；不得恢复绝对路径定位、覆盖 DocumentVersion、让模板独立证明客户事实，或重新合并 EvidenceBinding 与 TraceLink。触及核心数据模型时按 L3 处理。|
+
+## DEC-20260923-045
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-045|
+|Date|2026-09-23|
+|WBS|DM-04 AI / RAG / Job / Plugin / Output Data Model|
+|Decision|AITask 只通过统一 AIService 创建不可变 AIInvocation，并保存 Prompt/Input/Context/Provider/Model/Schema 与外发授权快照；Embedding Index 绑定精确模型、维度、Chunk Profile 和 Scope，不兼容变化必须新建索引并全量重建；Job/Outbox 采用至少一次、幂等与租约 fencing；Plugin 成功只产生待校验结果，OutputArtifact 在 FileObject/DocumentVersion/Hash 全部登记后才可发布。将 RAG-04 RetrievalRun Scope 从 PROJECT 校正为 GLOBAL_OR_PROJECT，以落实既有 GLOBAL/PROJECT 双知识域。|
+|Reason|这些运行对象跨越外部 Provider、PostgreSQL、文件系统和独立进程，无法可靠承诺精确一次或依赖可变“当前版本”。不可变快照、Scope 隔离、fencing 和分阶段发布可避免模型/索引漂移、跨项目泄露、过期 Worker 提交和半完成制品；GLOBAL 检索记录也必须可审计，不能因目录先前误限为 PROJECT 而丢失。|
+|Impact|后续 Schema/API 必须实现 AI、Embedding、Reranker 的逐次外发授权引用，以及 Invocation/Index generation、单一活动索引、Job Lease fencing、Outbox 消费去重、Plugin 精确包版本和 Output 发布完整性；既往 PoC/复验授权不得自动复用于未来调用。POC-03 分类 48%/引用 74% 的质量失败保持 Gate 3/UAT 阻塞，不因模型冻结而关闭；本阶段仍未定义物理表、API 或 Migration。|
+|Rollback|Gate 2 前可细化状态名、策略字段和保留方式；不得允许业务模块直连厂商 SDK/pgvector、复用不兼容向量、移除 Project 隔离/外发授权、宣称精确一次、让 Plugin 直连数据库/Secret，或让 AI/插件结果绕过人工确认和制品校验。触及这些边界时按 L3 处理。|
