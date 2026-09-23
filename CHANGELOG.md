@@ -6,6 +6,7 @@
 
 ### 新增
 
+- 2026-09-23：API-01 完成 API Contract V1 执行计划与公共协议候选。定义 API-01～API-05 路径、`/api/v1` REST/JSON + multipart + SSE、成功/错误 Envelope、Session/CSRF、License/授权顺序、六类主体权限基线、ETag/If-Match、Idempotency-Key、keyset cursor、文件/Viewer、`202 + JobRef` 和 SSE 恢复规则；22 个 Owner/65 个 Root 全部分类为 DIRECT/NESTED/READ_ONLY/INTERNAL。13/13 验收通过，未创建 FastAPI 或正式业务代码。
 - 2026-09-23：SC-05 完成 `DB-SCHEMA-CANDIDATE-V1`。以单一候选入口汇总 22 个 Owner、65 个 Root primary table/PK/Profile、PostgreSQL 类型与 Scope/Version/安全约束、29 个物理唯一键、20 个关键 Query ID、Migration/恢复契约、14 项统一开放风险和 14 条 API Contract 输入；静态一致性检查 65/65 Root、20/20 Query、14/14 风险、12/12 验收 PASS。候选仍待 Gate 2，SC-04 工作区继续标记为验证性而非生产 Migration。
 - 2026-09-23：按用户最新明确指令取消 Codex/GPT 周额度自动检查和 20% 停止线；后续仅在用户明确要求时查询，额度重置或购买仍需逐次确认。
 - 2026-09-23：SC-04 完成 Windows 11 PostgreSQL 18.6 Migration 与恢复验证。新增 `VALIDATION_ONLY` SQLAlchemy/Alembic 工作区，机器可读覆盖 65 个 Root/20 个 Query ID；空库及有数据 up/down、10 个直接 SQL 负例、Job/Audit/GIN/HNSW 计划、20 Worker `SKIP LOCKED`、Retention/Hold、敏感字段及 `pg_dump`/`pg_restore` 均 PASS。代表性 HNSW 1,001 条 Top-5 Recall 100%；强过滤小集合由 planner 选择 exact fallback，不作正式性能声明，也不把 Profile 最小表描述为生产 Schema。

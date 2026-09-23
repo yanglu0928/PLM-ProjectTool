@@ -755,3 +755,15 @@
 |Reason|逐字复制 SC-01～SC-04 会造成重复和漂移，但只有摘要又不足以检查 Root/Query 完整性。单一入口 + 机器 manifest + 受控明细能统一优先级、保留可追溯性，并如实区分设计候选、验证证据和正式生产实现。|
 |Impact|Database Schema V1 候选覆盖 22 Owner、65 Root、29 个物理唯一键、20 个关键查询、14 项开放风险和 14 条 API Contract 输入。SC-05 静态一致性检查全部通过；项目可进入 API Contract V1，但 Architecture/Data Model/Schema/API 仍须 Gate 2 一并确认，正式业务编码继续阻塞。|
 |Rollback|Gate 2 前可回退本汇总文件并恢复 SC-05 为待完成；不得删除 SC-01～SC-04 历史证据或把验证性 Migration 改称生产 Migration。若修改 65 Root、Owner、Scope、安全机制或基础设施，必须按 L3 处理。|
+
+## DEC-20260923-054
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-054|
+|Date|2026-09-23|
+|WBS|API-01 Resource Catalog and Common Protocol|
+|Decision|API V1 使用 `/api/v1` REST/JSON、multipart 流式上传和 SSE；JSON 成功/错误均携带 `trace_id`。PROJECT 资源强制 `/projects/{project_id}` 路径并再次校验归属；Session 使用 HttpOnly `plm_session`，状态改变请求使用 `X-CSRF-Token`。Mutable 资源以 ETag/If-Match 映射 `expected_version`，可重试写操作使用 Idempotency-Key，列表使用绑定 Scope/查询指纹的不透明 keyset cursor。65 个 Root 按 DIRECT/NESTED/READ_ONLY/INTERNAL 分类，内部 Job/Outbox/File/Embedding/安全状态不提供通用 CRUD。|
+|Reason|统一 HTTP 外壳可避免各模块自行发明认证、分页、并发和错误语义；Project 路径、资源归属双检、固定版本引用和默认拒绝能够把 Architecture/Data/Schema 的隔离不变量提升为可测试 Contract。分类暴露可保留完整领域模型，同时避免把数据库 Root 或运行时细节机械暴露成 API。|
+|Impact|后续 API-02～API-04 必须逐操作登记 Owner Port、Role、Scope、License、CSRF、If-Match、Idempotency、Audit 和错误码；API-05 汇总 OpenAPI/权限/错误/SSE。API Contract 工作从已同步的 Schema 检查点进入 `feature/api-contract-v1` 分支。DeploymentAdmin 不自动获得项目业务数据访问权；V1 不使用通用 DELETE、Offset 主分页、GraphQL、WebSocket 或任意 filter/order 表达式。|
+|Rollback|Gate 2 前可修改具体路径名、Cookie/Header 名或资源暴露级别并重跑 65 Root/权限一致性检查；不得弱化 Project 隔离、Session/CSRF、固定版本、幂等、乐观并发、文件路径隐藏或内部 Root 不直出的安全边界。冻结后的 Breaking Change 必须走新端点、v2 或 API Change Request。|
