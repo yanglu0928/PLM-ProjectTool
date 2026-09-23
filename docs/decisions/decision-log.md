@@ -779,3 +779,15 @@
 |Reason|内部运行 Root 直接暴露会允许客户端绕过 Application Port、状态机、文件一致性或可信时间。三步上传能隔离大文件传输与业务事务并支持崩溃恢复；固定版本引用保证 Review/Evidence/Trace 可审计。最小 License 恢复面既允许现场修复，又不会把无效 License 变成业务旁路。|
 |Impact|形成 10 Owner/22 Root 的 86 个 Operation、42 个模块错误码、DTO 禁止字段、权限/Audit/测试矩阵。DeploymentAdmin 仍不是项目数据超级用户；Secret/临时密码 write-only，Viewer/下载不返回 Storage Locator，Trace 图逐节点授权。后续 API-03/04 必须沿用 API-01 公共 Envelope、CSRF、Project 隔离、If-Match、幂等和错误安全边界。|
 |Rollback|Gate 2 前可调整具体路径、Operation 分组或角色白名单并重跑 Contract lint；不得改为通用内部 Root CRUD、返回 Secret/路径、动态 current 引用、跨项目可见、无 CSRF 状态写或扩大 License 恢复面。冻结后的 Breaking Change 走新端点、v2 或 API Change Request。|
+
+## DEC-20260923-056
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-056|
+|Date|2026-09-23|
+|WBS|API-03 AI, RAG, Job, Plugin and Output Contract|
+|Decision|所有可能向外部 AI Provider 发送数据的操作必须先生成可审计的外发预览，并取得绑定 Provider、Region、Purpose、Source、Payload Bounds 与单次逻辑操作的明确授权；授权只允许同一 Payload 的受限重试，不得复用 PoC、其他任务或历史轮次授权。AI Suggestion 始终标记 `NOT_FORMAL_FACT`，接受建议只能经目标 Owner Port 创建 Draft。Chunk、Embedding、Job Lease/fencing 与 Outbox 保持内部对象；Plugin 仅接受开发者签名包并通过独立子进程受控执行，不提供公共任意调用；Output Artifact 只有在二次校验和 Document 登记完成后才可发布。|
+|Reason|外发授权必须能证明谁在何时为哪一最小载荷授权，避免授权漂移和客户数据越界；AI 建议、异步任务、插件及文件输出若直接暴露内部状态或绕过 Owner Port，会破坏事实确认、Project 隔离、at-least-once 幂等、fencing 与文件可追溯性。|
+|Impact|形成 5 Owner/15 Root 的 79 个 Operation、51 个模块错误码、DTO、权限、SSE、强制 Audit 和测试矩阵。API-04/05 必须沿用逐次外发授权、`NOT_FORMAL_FACT`、Project 隔离、内部运行 Root 不直出、签名插件和输出二次校验边界。POC-03 的分类/引用质量仍为 Gate 3/UAT 阻塞项；本轮实际外部调用 0。|
+|Rollback|Gate 2 前可调整具体路径、Operation 分组、角色白名单或事件粒度并重跑 Contract lint；不得弱化逐次最小外发授权、Project 隔离、AI 建议态、Job fencing、签名插件/无任意调用或输出校验与登记边界。冻结后的 Breaking Change 走新端点、v2 或 API Change Request。|
