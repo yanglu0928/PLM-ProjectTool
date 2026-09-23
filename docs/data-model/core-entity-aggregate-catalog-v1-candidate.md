@@ -53,16 +53,16 @@
 |ID|Owner|Aggregate Root|包含实体/值对象|Scope|事实语义|核心不变量|
 |---|---|---|---|---|---|---|
 |PLT-01|platform|SystemConfiguration|SystemSetting、ConfigVersion|DEPLOYMENT|系统事实|非 Secret 配置版本化；修改受权并审计|
-|PLT-02|platform|SecretRecord|SecretVersion、SecretRef、EncryptedPayloadMetadata|DEPLOYMENT|签名/安全状态|密文与主材料分离；查询不回显明文|
+|PLT-02|platform|SecretRecord|SecretVersion、SecretRef、EncryptedPayloadMetadata|DEPLOYMENT|签名安全状态|密文与主材料分离；查询不回显明文|
 |AUT-01|auth|User|PasswordCredential、AccountState|DEPLOYMENT|系统事实|用户名部署内唯一；密码仅哈希；停用使 Session 失效|
 |AUT-02|auth|Session|SessionState、CsrfBinding|DEPLOYMENT|运行事实|服务端不透明会话；只属于一个 User；可撤销/过期|
-|PRJ-01|project|Project|ProjectState、CurrentStageRef|DEPLOYMENT|系统事实|ProjectCode 唯一；Active → Archived 不可反向复活而无专用命令|
+|PRJ-01|project|Project|ProjectState、ProjectCode|DEPLOYMENT|系统事实|ProjectCode 唯一；阶段状态由 workflow 唯一拥有；Active → Archived 不可反向复活而无专用命令|
 |PRJ-02|project|ProjectMember|RoleAssignment、DepartmentRef|PROJECT|系统事实|普通 User 只绑定一个 Project、一个业务角色、一个部门|
 |PRJ-03|project|Department|DepartmentState|PROJECT|系统事实|部门只在本项目内唯一引用；停用前处理成员引用|
 |WFL-01|workflow|ProjectWorkflow|Stage、StageChecklist、ChecklistItem|PROJECT|系统事实|阶段定义与项目一致；Gate 只消费已授权 Evidence/Review 状态|
 |WFL-02|workflow|StageTransition|TransitionReason、GateSnapshot|PROJECT|不可变记录|只追加合法迁移；记录前后阶段、actor 与证据快照|
-|RVW-01|review|Review|ReviewSubjectRef、ReviewPolicy、ReviewStatus|PROJECT|系统事实|一个 Review 只绑定一个不可变主题版本；送审期间锁定|
-|RVW-02|review|ReviewRound|ReviewAssignment、ReviewDecision|PROJECT|不可变记录|1～N 处理人全部完成才汇总；任一退回则本轮退回；退回意见必填|
+|RVW-01|review|Review|ReviewSubjectIdentityRef、ReviewPolicy、ReviewStatus|GLOBAL_OR_PROJECT|系统事实|一个 Review 绑定一个逻辑主题；Active Round 期间锁定主题|
+|RVW-02|review|ReviewRound|ReviewSubjectVersionRef、ReviewAssignment、ReviewDecision|GLOBAL_OR_PROJECT|不可变记录|每轮绑定一个不可变版本；1～N 处理人全部完成才汇总；任一退回则本轮退回|
 |TRC-01|trace|TraceLink|ObjectVersionRef、RelationType、SupersedeRef|GLOBAL_OR_PROJECT|不可变记录|只保存稳定引用；跨项目默认拒绝；历史 Link 不覆盖|
 |AUD-01|audit|AuditEvent|ActorRef、ObjectRef、BeforeAfterSummary|DEPLOYMENT|不可变记录|Append-only；普通用户无删除能力；不含 Secret/正文|
 |LIC-01|license|LicenseInstallation|SignedLicenseDocument、PublicKeyRef|DEPLOYMENT|签名安全状态|客户侧只验签；不含签名私钥；导入保留历史|

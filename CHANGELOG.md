@@ -6,6 +6,7 @@
 
 ### 新增
 
+- 2026-09-23：DM-02 完成平台与安全数据模型候选。细化 User/PasswordCredential/Session、ProjectMember/Role/Department、Workflow/Gate、Review/Round、SystemConfiguration/Secret、License/TrustedTime 和 Audit 的字段语义、基数、状态机、失败关闭与不变量；修正 Project 不复制 current stage、ReviewRound 绑定不可变主题版本两项所有权边界。8/8 验收通过，未定义物理 Schema、API 或 Migration。
 - 2026-09-22：DM-01 完成核心实体与聚合目录候选。22 个客户运行模块映射为 65 个 Aggregate Root，另有 3 个物理隔离的 Developer Workbench 聚合；每项均声明 Owner、Scope、事实语义和核心不变量。固定逻辑对象/不可变 Version 分离，以及 `AI Suggestion → 人工显式接受 → Domain Draft Version → Review → 正式版本` 链，未定义物理表、列、索引或 Migration。
 - 2026-09-22：AF-05 完成 `ARCH-CANDIDATE-V1`。汇总 22 个客户运行模块与独立 Developer Workbench、显式允许依赖矩阵、统一 Application Contract、五类关键运行视图、单服务器三平台部署、质量属性、七项 Phase 0 例外和五项持续风险；8/8 架构候选验收通过。新增 Data Model Freeze 计划并进入 DM-01；Architecture 仍须与 Data Model、Schema V1、API Contract V1 在 Gate 2 一并正式确认。
 - 2026-09-22：AF-04 完成关键 ADR。新增 ADR-003～009，分别固化模块化单体、统一 AI/RAG、Plugin 独立进程、License/可信时间、PostgreSQL Job/Outbox、本地文件元数据化存储和 POC-03 质量替代控制；每项均包含 Context、Decision、Consequences、Rejected Alternatives 与 Rollback/Change Rule，并明确仍等待 Gate 2 完整冻结。
