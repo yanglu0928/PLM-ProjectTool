@@ -1,0 +1,198 @@
+{
+  "status": "PASS",
+  "platform": {
+    "system": "Windows",
+    "release": "11",
+    "version": "10.0.26200",
+    "machine": "AMD64"
+  },
+  "python_version": "3.13.15",
+  "results": {
+    "sample.docx": {
+      "status": "PASS",
+      "duration_seconds": 0.017,
+      "page_count": 2,
+      "block_count": 15,
+      "table_row_count": 7,
+      "schema_errors": [],
+      "source_checks": {
+        "word/paragraph/": true,
+        "word/table/": true
+      },
+      "term_recall": {
+        "matches": {
+          "POC 05": true,
+          "PLM 项目实施辅助工具": true,
+          "PLM-2026-005": true,
+          "需求确认": true,
+          "客户确认": true
+        },
+        "recall": 1.0
+      },
+      "output": "sample.docx.parsed.json"
+    },
+    "sample.pptx": {
+      "status": "PASS",
+      "duration_seconds": 0.004,
+      "page_count": 2,
+      "block_count": 7,
+      "table_row_count": 4,
+      "schema_errors": [],
+      "source_checks": {
+        "ppt/slides/": true,
+        "/table/1/row/": true
+      },
+      "term_recall": {
+        "matches": {
+          "POC 05": true,
+          "PLM 项目实施辅助工具": true,
+          "PLM-2026-005": true,
+          "需求确认": true,
+          "客户确认": true
+        },
+        "recall": 1.0
+      },
+      "output": "sample.pptx.parsed.json"
+    },
+    "sample.xlsx": {
+      "status": "PASS",
+      "duration_seconds": 0.009,
+      "page_count": 2,
+      "block_count": 9,
+      "table_row_count": 9,
+      "schema_errors": [],
+      "source_checks": {
+        "excel/sheets/项目台账/rows/": true,
+        "excel/sheets/风险记录/rows/": true
+      },
+      "term_recall": {
+        "matches": {
+          "POC 05": true,
+          "PLM 项目实施辅助工具": true,
+          "PLM-2026-005": true,
+          "需求确认": true,
+          "客户确认": true
+        },
+        "recall": 1.0
+      },
+      "output": "sample.xlsx.parsed.json"
+    },
+    "sample.csv": {
+      "status": "PASS",
+      "duration_seconds": 0.001,
+      "page_count": 1,
+      "block_count": 3,
+      "table_row_count": 3,
+      "schema_errors": [],
+      "source_checks": {
+        "csv/rows/": true
+      },
+      "term_recall": {
+        "matches": {
+          "POC 05": false,
+          "PLM 项目实施辅助工具": true,
+          "PLM-2026-005": true,
+          "需求确认": true,
+          "客户确认": true
+        },
+        "recall": 0.8
+      },
+      "output": "sample.csv.parsed.json"
+    },
+    "sample-text.pdf": {
+      "status": "PASS",
+      "duration_seconds": 0.157,
+      "page_count": 2,
+      "block_count": 19,
+      "table_row_count": 6,
+      "schema_errors": [],
+      "source_checks": {
+        "pdf/pages/": true,
+        "/tables/": true
+      },
+      "term_recall": {
+        "matches": {
+          "POC 05": true,
+          "PLM 项目实施辅助工具": true,
+          "PLM-2026-005": true,
+          "需求确认": true,
+          "客户确认": true
+        },
+        "recall": 1.0
+      },
+      "output": "sample-text.pdf.parsed.json"
+    },
+    "sample-scan.pdf::paddle": {
+      "status": "PASS",
+      "duration_seconds": 10.981,
+      "page_count": 1,
+      "block_count": 8,
+      "schema_errors": [],
+      "term_recall": {
+        "matches": {
+          "PLM项目实施辅助工具": true,
+          "需求确认": true,
+          "合同编号": true,
+          "PLM-2026-005": true,
+          "客户确认": true
+        },
+        "recall": 1.0
+      },
+      "metadata": {
+        "format": "pdf",
+        "ocr_engine": "paddle",
+        "ocr_model": {
+          "detection": "PP-OCRv5_mobile_det",
+          "recognition": "PP-OCRv5_mobile_rec",
+          "source": "explicit_local_directories"
+        }
+      },
+      "output": "sample-scan.paddle.parsed.json"
+    },
+    "sample-scan.pdf::tesseract": {
+      "status": "PASS",
+      "duration_seconds": 1.222,
+      "page_count": 1,
+      "block_count": 20,
+      "schema_errors": [],
+      "term_recall": {
+        "matches": {
+          "PLM项目实施辅助工具": true,
+          "需求确认": true,
+          "合同编号": true,
+          "PLM-2026-005": true,
+          "客户确认": true
+        },
+        "recall": 1.0
+      },
+      "metadata": {
+        "format": "pdf",
+        "ocr_engine": "tesseract",
+        "ocr_model": {
+          "languages": [
+            "chi_sim",
+            "eng"
+          ]
+        }
+      },
+      "output": "sample-scan.tesseract.parsed.json"
+    },
+    "sample-scan.pdf::ocrmypdf": {
+      "status": "PASS",
+      "exit_code": 0,
+      "duration_seconds": 7.386,
+      "pdfa_validated": true,
+      "schema_errors": [],
+      "term_recall": {
+        "matches": {
+          "PLM项目实施辅助工具": true,
+          "需求确认": true,
+          "合同编号": true,
+          "PLM-2026-005": true,
+          "客户确认": true
+        },
+        "recall": 1.0
+      }
+    }
+  }
+}

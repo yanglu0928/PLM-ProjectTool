@@ -1,0 +1,61 @@
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+config/local*.yml
+config/local*.yaml
+secrets/
+*.key
+*.pem
+/Deepseek秘钥.txt
+
+# License private material and generated customer licenses
+developer-workbench/private/
+license/private/
+license/generated/
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# Node / frontend
+node_modules/
+dist/
+.vite/
+coverage/
+
+# Runtime data
+data/
+logs/
+temp/
+tmp/
+*.log
+
+# Local source corpus (may contain customer or project-confidential material)
+/方案库/
+/技术协议&合同/
+/标准能力库/
+
+# Build and packaging output
+build/
+artifacts/
+wheelhouse/
+*.whl
+.poc-runtime/
+poc/**/evidence/**/ocrmypdf-stderr-attempt-*.txt
+poc/**/evidence/**/output-searchable-attempt-*.pdf
+poc/**/evidence/**/output-searchable-deskew-fixed.pdf
+poc/**/evidence/**/output-searchable-pdfa2-deskew.pdf
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
