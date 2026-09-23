@@ -6,6 +6,7 @@
 
 ### 新增
 
+- 2026-09-23：SC-04 完成 Windows 11 PostgreSQL 18.6 Migration 与恢复验证。新增 `VALIDATION_ONLY` SQLAlchemy/Alembic 工作区，机器可读覆盖 65 个 Root/20 个 Query ID；空库及有数据 up/down、10 个直接 SQL 负例、Job/Audit/GIN/HNSW 计划、20 Worker `SKIP LOCKED`、Retention/Hold、敏感字段及 `pg_dump`/`pg_restore` 均 PASS。代表性 HNSW 1,001 条 Top-5 Recall 100%；强过滤小集合由 planner 选择 exact fallback，不作正式性能声明，也不把 Profile 最小表描述为生产 Schema。
 - 2026-09-23：SC-03 完成 PostgreSQL 18 索引与关键查询候选。定义 B-tree/GIN/HNSW 索引 Profile、20 个关键 Query ID、28 组唯一语义到 29 个物理唯一键映射，以及 Project 授权/keyset、Job/Outbox `SKIP LOCKED`、Lease fencing、Audit/Trace/Evidence 双向反查、Retention、WBS/Requirement 图和 Hybrid Retrieval 查询计划。12/12 设计验收通过；POC-02/03 参数仅作为初值，DDL、执行计划与并发性能留待 SC-04 实测。
 - 2026-09-23：SC-02 完成 PostgreSQL 18 字段、类型与约束候选。65 个 Root 全部获得 M/V/A/R/SEC Profile，采用 `uuidv7()`、UTC `timestamptz(6)`、text + named CHECK、显式 Scope/ProjectId 复合约束与默认 NO ACTION/NOT DEFERRABLE；登记 28 组唯一语义、多态白名单、版本不可变、乐观并发和敏感字段规则。12/12 验收通过；未创建 ORM、Migration、业务表或索引，进入 SC-03。
 - 2026-09-23：SC-01 完成 PostgreSQL 18 逻辑到物理映射候选。采用单一客户数据库与 `plm` 应用 Schema，以 22 个模块短前缀维护 Owner；65 个 Aggregate Root 全部映射唯一 primary table，Developer Workbench 3 个 Root 保持独立数据库。明确 Root/Child/Inline/JSONB/File Ref、多态引用和默认 RESTRICT 边界，10/10 验收通过，未提前定义字段类型、约束、索引或 Migration。

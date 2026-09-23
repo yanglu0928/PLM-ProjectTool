@@ -3,18 +3,18 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Architecture / Data Model / API Contract Freeze|
-|Current WBS|SC-04：Migration 与恢复验证|
+|Current WBS|SC-05：DB Schema Candidate 汇总|
 |Current Status|ARCHITECTURE_CANDIDATE_V1_COMPLETE / DATA_MODEL_CANDIDATE_V1_COMPLETE / DATABASE_SCHEMA_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）|
-|Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-03 PASS|
+|Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-04 PASS|
 |Blockers|正式业务编码仍由 Gate 2 阻塞；POC-03 质量失败转为 Gate 3/UAT 阻塞项，Server Office 与 Debian 未验证范围转为 Release 约束|
 |Pending User Decisions|Architecture、Data Model、DB Schema V1 与 API Contract V1 候选完成后需执行 Gate 2 正式确认；任何新的客户数据外发仍需当轮明确授权|
 |Architecture Version|`ARCH-CANDIDATE-V1`；AF-01～AF-05 PASS，待 Gate 2 正式冻结|
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；DM-01～DM-06 PASS，待 Gate 2 正式冻结|
-|DB Schema Version|SC-01～SC-03 PASS；逻辑物理映射、字段/约束、索引与关键查询候选已形成，`DB-SCHEMA-CANDIDATE-V1` 形成中，未冻结|
+|DB Schema Version|SC-01～SC-04 PASS；验证性 Migration/恢复已通过，`DB-SCHEMA-CANDIDATE-V1` 待 SC-05 汇总，未冻结|
 |API Contract Version|未冻结|
-|Test Summary|Phase 0 证据已汇总；POC-03 Top-5 98.00% PASS、分类 48.00% FAIL、引用 74.00% FAIL；POC-06 Windows 11 Office PASS、Server 包结构/Hash PASS；其余 PoC 详见 `docs/progress/phase-0-summary.md`|
-|Next WBS|SC-04 生成 Alembic Schema 基线与 index manifest，并验证空库/有数据 up/down、直接 SQL 负向约束、查询计划、并发、Retention/恢复和敏感字段|
+|Test Summary|SC-04 Windows 11：4/4 unit、空库/有数据 up/down、10/10 负向约束、20/20 Worker、GIN/HNSW、Retention/Hold、65 Root 备份恢复和敏感扫描 PASS；性能不作正式声明。Phase 0/POC-03 质量结论保持不变|
+|Next WBS|SC-05 汇总 SC-01～SC-04，形成单一 `DB-SCHEMA-CANDIDATE-V1` 与 API Contract 输入|
 
 ## 自动执行策略
 
@@ -27,6 +27,6 @@
 ## 最近检查点
 
 - 分支：`feature/database-schema-v1`
-- 最近功能检查点：SC-03 已形成 B-tree/GIN/HNSW 索引族、20 个关键 Query ID、28 组唯一语义到 29 个物理唯一键映射，以及 Job/Outbox、Audit/Trace/Evidence、Retention、WBS/Requirement 图和多租户 Hybrid Retrieval 查询计划；全部仍为待 SC-04 运行验证的候选，正式业务编码继续由 Gate 2 阻塞。
+- 最近功能检查点：SC-04 已建立 `VALIDATION_ONLY` Schema Contract 与两级 Alembic Migration，覆盖 65 Root/70 表；Windows 11 空库/有数据 up/down、10 个直接 SQL 负例、4 类索引计划、20 Worker、Retention/Hold、备份恢复和敏感扫描通过。非关键 Root 仍为 Profile 最小列，不能描述为生产 Schema；正式业务编码继续由 Gate 2 阻塞。
 - 远端同步状态必须在每次任务结束前通过 Git 实时检查，不在本文件固化可能过期的 ahead/behind 数值。
 - 本地用户文件和 Git 忽略的客户资料保持不变。

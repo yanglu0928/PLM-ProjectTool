@@ -2,7 +2,7 @@
 
 ## 状态
 
-`IN_PROGRESS / SC-01_PASS / SC-02_PASS / SC-03_PASS / SC-04_NEXT / NOT_GATE_2_FROZEN / NO_MIGRATION_YET`
+`IN_PROGRESS / SC-01_PASS / SC-02_PASS / SC-03_PASS / SC-04_PASS / SC-05_NEXT / NOT_GATE_2_FROZEN / VALIDATION_MIGRATION_ONLY`
 
 本计划把 `DATA-MODEL-CANDIDATE-V1` 转换为 PostgreSQL 18 + pgvector 的物理 Schema 候选。SC-01～SC-05 只产出物理设计、约束、索引、Migration 方案与验证脚手架；在 Gate 2 前不实现正式业务功能。
 
@@ -21,7 +21,7 @@
 |SC-01|逻辑到物理映射|数据库/Schema/命名策略；65 个 Root 与 Owned Entity 表映射；引用和内容存储策略|PASS；见 `sc-01-logical-physical-map-v1-candidate.md`|
 |SC-02|字段、类型与约束|PK/FK、Scope/ProjectId、Version、唯一、CHECK、不可变和多态引用约束|PASS；见 `sc-02-field-types-constraints-v1-candidate.md`|
 |SC-03|索引与关键查询|pgvector/FTS、Job/Outbox、Audit/Trace、授权过滤、WBS 图和容量索引|PASS；见 `sc-03-index-query-plan-v1-candidate.md`|
-|SC-04|Migration 与恢复验证|Alembic 基线、up/down、空库、有数据升级、文件恢复、Retention/Cleanup 验证|升级/回退和恢复测试完整，失败关闭|
+|SC-04|Migration 与恢复验证|Alembic 基线、up/down、空库、有数据升级、文件恢复、Retention/Cleanup 验证|PASS；见 `sc-04-migration-recovery-validation.md`|
 |SC-05|汇总 DB Schema Candidate|表/列/约束/索引/Migration/风险单一候选|形成 `DB-SCHEMA-CANDIDATE-V1`，进入 API Contract V1|
 
 ## 设计边界
@@ -45,4 +45,4 @@
 
 ## 下一输出
 
-SC-04：生成 Alembic Schema 基线与 index manifest，执行空库 up/down、有数据升级/回退、直接 SQL 负向约束、关键查询计划、Job/Outbox 并发、Retention/恢复和敏感字段扫描。
+SC-05：汇总 SC-01～SC-04，形成单一 `DB-SCHEMA-CANDIDATE-V1`，统一表/列/Profile/约束/索引/Migration 边界、验证证据、未关闭风险和 API Contract 输入。
