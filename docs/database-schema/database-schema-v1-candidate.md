@@ -2,9 +2,9 @@
 
 ## 状态
 
-`DB-SCHEMA-CANDIDATE-V1 / SC-01～SC-05_PASS / GATE_2_PENDING / DESIGN_FROZEN_CANDIDATE / NO_PRODUCTION_MIGRATION / NO_BUSINESS_CODE`
+`DB-SCHEMA-CANDIDATE-V1 / SC-01～SC-05_PASS / GATE_2_APPROVED / DESIGN_FROZEN / NO_PRODUCTION_MIGRATION / NO_BUSINESS_CODE`
 
-本文件是 SC-01～SC-04 的单一汇总候选，统一 PostgreSQL 18 + pgvector 的物理组织、65 个 Aggregate Root 映射、字段 Profile、完整性约束、索引与关键查询、Migration/恢复边界、未关闭风险及 API Contract 输入。它是 Gate 2 的数据库设计候选，不是已部署的生产 Schema，也不授权正式业务编码。
+本文件是 SC-01～SC-04 的单一汇总，统一 PostgreSQL 18 + pgvector 的物理组织、65 个 Aggregate Root 映射、字段 Profile、完整性约束、索引与关键查询、Migration/恢复边界、未关闭风险及 API Contract 输入。它已于 2026-09-23 在 Gate 2 冻结为 DB Schema V1 设计基线，冻结内容固定为提交 `64cdf09`；候选标识为保持历史 Trace 不重命名。它仍不是已部署的生产 Schema，SC-04 仍只是验证性 Migration。
 
 ## 候选标识与规范来源
 
@@ -17,7 +17,7 @@
 |Root Count|65|
 |Owner Module Count|22|
 |Critical Query Count|20|
-|Gate|Gate 2 待确认|
+|Gate|Gate 2 `APPROVED`（2026-09-23）|
 
 本文件统一结论优先；下列文件提供受控明细，未被本文件明确改变的内容继续有效：
 
@@ -220,7 +220,7 @@ Windows Server 2025 继承 POC-02 的 PostgreSQL/pgvector/Alembic 可行性证�
 |DB-R11|正式索引大小、写放大、bloat 与 BRIN/分区阈值缺少容量证据|CONTROLLED_OPEN|性能环境；无证据不新增索引/分区|
 |DB-R12|SC-04 未在 Server 重跑，Debian 未实机验证|RELEASE_CONSTRAINT|Server 回归；Debian 按批准方案登记 Release 风险|
 |DB-R13|验证性 Alembic 不是正式生产 revision|CONTROLLED_OPEN|Gate 2 后正式 ORM/Migration review 与漂移测试|
-|DB-R14|资源授权、错误语义、分页、DTO 和幂等头尚未冻结|CONTROLLED_OPEN|API Contract V1|
+|DB-R14|资源授权、错误语义、分页、DTO 和幂等头的冻结缺口|CLOSED_AT_GATE_2|`API-CONTRACT-CANDIDATE-V1`、API-05 Contract Lint|
 
 这些风险不构成 Schema 候选内部冲突，但不得在关闭前宣称相应生产能力已验证。任何风险若需要修改 Scope/Owner、核心安全/License 机制、技术栈或新增基础设施，按 L3 Change Request 处理。
 
@@ -265,8 +265,8 @@ API Contract V1 必须把以下数据库不变量提升为外部契约，不得�
 - 14 项统一风险具有当前控制、状态和关闭位置：PASS。
 - API Contract V1 的身份、版本、授权、并发、分页、错误、Job、文件和 AI/RAG 输入明确：PASS。
 - 未引入新技术栈、基础设施、Scope 或 Breaking API：PASS。
-- 未创建正式业务 ORM/API/Migration，Gate 2 前正式编码仍被阻塞：PASS。
+- Gate 2 批准前未创建正式业务 ORM/API/Migration，也未提前开始正式业务编码：PASS。
 
 ## 结论与下一步
 
-`DB-SCHEMA-CANDIDATE-V1` 满足 Database Schema V1 候选条件。下一阶段进入 API Contract V1：把 Architecture、Data Model 与本 Schema 候选转换为资源、DTO、权限、状态命令、错误码、分页、幂等和 SSE 契约；Architecture/Data Model/Schema/API 候选全部完成后，一并提交 Gate 2 正式确认。
+`DB-SCHEMA-CANDIDATE-V1` 已在 2026-09-23 Gate 2 冻结为 DB Schema V1 正式设计基线。下一阶段按 Phase 1 WBS 逐模块生成生产 ORM 与 Alembic Migration，并执行空库、有数据 up/down、权限、漂移和恢复验证；不得把 SC-04 验证性 Profile 表直接发布为生产 Schema。冻结 Schema 的破坏性变化必须走 L3 Schema/API Change Request。

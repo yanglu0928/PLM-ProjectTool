@@ -2,9 +2,9 @@
 
 ## 状态
 
-`API-CONTRACT-CANDIDATE-V1 / API-01～API-05_PASS / GATE_2_PENDING / DESIGN_FROZEN_CANDIDATE / NO_FASTAPI_IMPLEMENTATION / NO_EXTERNAL_CALLS`
+`API-CONTRACT-CANDIDATE-V1 / API-01～API-05_PASS / GATE_2_APPROVED / DESIGN_FROZEN / NO_FASTAPI_IMPLEMENTATION / NO_EXTERNAL_CALLS`
 
-本文件是 API-01～API-04 的单一汇总候选，统一 `/api/v1` 的资源、Operation、DTO、受控枚举、权限、安全控制、错误、SSE、兼容性和测试边界。详细端点继续由四份受控明细定义，机器目录由 API-05 Contract Lint 从明细确定性生成。Gate 2 正式确认前，本候选不授权创建生产 FastAPI Router、Pydantic DTO、ORM、Migration 或业务模块。
+本文件是 API-01～API-04 的单一汇总，统一 `/api/v1` 的资源、Operation、DTO、受控枚举、权限、安全控制、错误、SSE、兼容性和测试边界。它已于 2026-09-23 在 Gate 2 冻结为 API Contract V1 正式开发基线，冻结内容固定为提交 `64cdf09`；候选标识为保持历史 Trace 不重命名。详细端点继续由四份受控明细定义，机器目录由 API-05 Contract Lint 从明细确定性生成。本次冻结不代表 FastAPI Router、Pydantic DTO、ORM、Migration 或业务模块已经实现。
 
 ## 候选标识与规范来源
 
@@ -20,7 +20,7 @@
 |统一错误码|150|
 |SSE event type|18|
 |Schema Query 映射|20|
-|Gate|Gate 2 待用户正式确认|
+|Gate|Gate 2 `APPROVED`（2026-09-23）|
 
 规范来源：
 
@@ -300,8 +300,8 @@ Trace/Security Context
 - 15 项统一风险具有当前控制和后续关闭位置：PASS。
 - Contract Lint 5/5 测试通过，通用 DELETE 0，真实外部调用 0：PASS。
 - 未创建生产 FastAPI/Pydantic/ORM/Migration 或业务实现：PASS。
-- Gate 2 未被自动批准，正式业务编码继续阻塞：PASS。
+- Gate 2 批准前未被 AI 自动代批，且未提前开始正式业务编码：PASS。
 
 ## Gate 2 结论边界
 
-`API-CONTRACT-CANDIDATE-V1` 满足 API Contract V1 候选条件。Architecture、Data Model、DB Schema 与 API Contract 四份候选现已齐备，应由用户执行 Gate 2 正式确认。确认前状态保持 `GATE_2_PENDING`；确认后才可把四份候选标记为冻结基线并进入正式基础工程/业务编码。
+`API-CONTRACT-CANDIDATE-V1` 已于 2026-09-23 随 Architecture、Data Model 和 DB Schema 由用户批准 Gate 2，并冻结为 API Contract V1 正式开发基线。后续可以按 WBS 创建 FastAPI/Pydantic 实现和运行 OpenAPI，但必须与 API-05 manifest 做 Contract diff；`/api/v1` Breaking Change 必须采用新端点、v2 或 L3 API Change Request。

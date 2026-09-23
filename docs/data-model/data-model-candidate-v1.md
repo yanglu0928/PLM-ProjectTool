@@ -2,11 +2,11 @@
 
 ## 状态
 
-`DATA-MODEL-CANDIDATE-V1 / DM-01～DM-06_PASS / NOT_GATE_2_FROZEN / NOT_PHYSICAL_SCHEMA`
+`DATA-MODEL-CANDIDATE-V1 / DM-01～DM-06_PASS / FROZEN_AT_GATE_2 / NOT_PHYSICAL_SCHEMA`
 
 本文件汇总 DM-01～DM-05 的数据模型结论，统一 22 个客户运行模块、65 个 Aggregate Root、跨聚合关系、基数、生命周期、Scope、删除/保留和风险。详细字段与状态仍以本文件列出的下级候选为准；出现表述差异时，本文件的统一规则优先，但不得覆盖已锁定架构、ADR、用户批准例外或实施方案 V2.1。
 
-本候选不是 PostgreSQL Schema、Alembic Migration、REST API Contract 或正式业务编码授权。Architecture、Data Model、Database Schema V1 与 API Contract V1 全部形成候选后，仍须通过 Gate 2。
+本文件已于 2026-09-23 随 Architecture、Database Schema V1 与 API Contract V1 通过 Gate 2 并冻结为 Data Model V1 正式开发基线，冻结内容固定为提交 `64cdf09`。候选标识为保持历史 Trace 不重命名；它仍不是 PostgreSQL Schema、Alembic Migration 或 REST API Contract，物理实现须按冻结 Schema/API 和后续 WBS 完成。
 
 ## 输入与组成
 
@@ -416,11 +416,11 @@ Schema V1 不得通过触发器或跨模块 FK 建立新的共享写所有权；
 - Schema V1 交接清单覆盖 Scope、版本、多态引用、文件、图、向量、Job、保留和 Migration：PASS。
 - POC-03、Server Office、Debian 13 等已知失败/未验证项未被改写为通过：PASS。
 - 未引入 Redis、消息队列、独立向量库、本地模型、SSO、第三方插件市场或 AI 原型执行沙箱：PASS。
-- 未定义物理表、列、索引、REST Contract 或 Migration，正式业务编码仍由 Gate 2 阻塞：PASS。
+- Gate 2 批准前未定义物理表、列、索引、REST Contract 或生产 Migration，也未提前开始正式业务编码：PASS。
 
 ## 下一步
 
-Data Model Candidate V1 已具备进入 Database Schema V1 候选设计的条件。建议后续 WBS：
+Data Model Candidate V1 已在 Gate 2 冻结。下列 Schema 候选设计 WBS 已全部完成并形成冻结的 DB Schema V1：
 
 1. `SC-01`：65 个 Root 的逻辑到物理映射与命名规范。
 2. `SC-02`：主键、Scope/ProjectId、版本、唯一、外键和 CHECK 约束。
@@ -428,4 +428,4 @@ Data Model Candidate V1 已具备进入 Database Schema V1 候选设计的条件
 4. `SC-04`：Retention/Cleanup、文件恢复、Migration 与有数据升级/回退验证。
 5. `SC-05`：汇总 `DB-SCHEMA-CANDIDATE-V1`，再进入 API Contract V1。
 
-完成 Schema 与 API Contract 候选后，Architecture/Data Model/Schema/API 一并提交 Gate 2 正式确认。
+Architecture、Data Model、Schema 和 API 已一并通过 Gate 2。后续按 Phase 1 WBS 落实模块目录、正式 ORM/Migration、Application Port 和 API 实现；核心模型变化必须走 L3 Data Model Change Request。

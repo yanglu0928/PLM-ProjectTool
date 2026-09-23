@@ -2,9 +2,9 @@
 
 ## 状态
 
-`COMPLETE / API-01～API-05_PASS / API-CONTRACT-CANDIDATE-V1 / GATE_2_PENDING / NO_FASTAPI_IMPLEMENTATION`
+`COMPLETE / API-01～API-05_PASS / API-CONTRACT-CANDIDATE-V1 / GATE_2_APPROVED / API_CONTRACT_FROZEN / NO_FASTAPI_IMPLEMENTATION`
 
-本计划把 `ARCH-CANDIDATE-V1`、`DATA-MODEL-CANDIDATE-V1` 和 `DB-SCHEMA-CANDIDATE-V1` 转换为稳定的 `/api/v1` REST/JSON + SSE 契约候选。API-01～API-05 只定义资源、路径、DTO、权限、状态命令、错误、分页、幂等和事件；Gate 2 前不创建正式 FastAPI 路由或业务实现。
+本计划已把 `ARCH-CANDIDATE-V1`、`DATA-MODEL-CANDIDATE-V1` 和 `DB-SCHEMA-CANDIDATE-V1` 转换为稳定的 `/api/v1` REST/JSON + SSE 契约，并于 2026-09-23 随四份基线通过 Gate 2。API-01～API-05 只定义资源、路径、DTO、权限、状态命令、错误、分页、幂等和事件；本计划本身未创建正式 FastAPI 路由或业务实现。
 
 ## 前置条件
 
@@ -12,7 +12,7 @@
 - Architecture：`ARCH-CANDIDATE-V1 / AF-01～AF-05 PASS`。
 - Data Model：`DATA-MODEL-CANDIDATE-V1 / DM-01～DM-06 PASS`。
 - Database Schema：`DB-SCHEMA-CANDIDATE-V1 / SC-01～SC-05 PASS`。
-- 正式业务编码继续由 Gate 2 阻塞。
+- Gate 2：`APPROVED`；正式实现须按后续 WBS 与冻结 Contract 推进。
 
 ## API-01～API-05
 
@@ -56,4 +56,4 @@
 
 ## 下一输出
 
-Gate 2：由用户正式确认 `ARCH-CANDIDATE-V1`、`DATA-MODEL-CANDIDATE-V1`、`DB-SCHEMA-CANDIDATE-V1` 与 `API-CONTRACT-CANDIDATE-V1`；确认前正式业务编码继续阻塞。确认包见 `docs/progress/gate-2-review-package.md`。
+Gate 2 已批准，冻结记录见 `docs/progress/gate-2-freeze-record.md`。下一输出为 Phase 1 `1.01 定义模块目录规范`，随后按 WBS 建立 FastAPI/Vue/SQLAlchemy/Alembic 基础工程，并以实际 OpenAPI 对冻结 manifest 执行 Contract diff。

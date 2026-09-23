@@ -2,16 +2,18 @@
 
 ## 状态
 
-`READY_FOR_USER_DECISION / GATE_2_PENDING / FORMAL_CODING_BLOCKED`
+`APPROVED / SUPERSEDED_BY_GATE_2_FREEZE_RECORD / FORMAL_DEVELOPMENT_AUTHORIZED`
 
-## 待确认的四份候选
+用户已于 2026-09-23 明确批准 Gate 2。本文件保留为批准前评审包；正式冻结范围、内容身份和变更控制见 `gate-2-freeze-record.md`。
+
+## 已确认的四份候选
 
 |基线|候选标识|完成范围|当前状态|
 |---|---|---|---|
-|Architecture|`ARCH-CANDIDATE-V1`|22 模块、依赖、运行/部署视图、ADR-001～009|候选，未冻结|
-|Data Model|`DATA-MODEL-CANDIDATE-V1`|22 Owner、65 Root、Scope、生命周期、关系、保留|候选，未冻结|
-|Database Schema|`DB-SCHEMA-CANDIDATE-V1`|PostgreSQL 18/pgvector 物理组织、Root/Profile、约束/查询/Migration 边界|候选，未冻结|
-|API Contract|`API-CONTRACT-CANDIDATE-V1`|323 Operation、150 错误、18 SSE、DTO/权限/兼容性|候选，未冻结|
+|Architecture|`ARCH-CANDIDATE-V1`|22 模块、依赖、运行/部署视图、ADR-001～009|Gate 2 已冻结|
+|Data Model|`DATA-MODEL-CANDIDATE-V1`|22 Owner、65 Root、Scope、生命周期、关系、保留|Gate 2 已冻结|
+|Database Schema|`DB-SCHEMA-CANDIDATE-V1`|PostgreSQL 18/pgvector 物理组织、Root/Profile、约束/查询/Migration 边界|Gate 2 已冻结|
+|API Contract|`API-CONTRACT-CANDIDATE-V1`|323 Operation、150 错误、18 SSE、DTO/权限/兼容性|Gate 2 已冻结|
 
 ## Gate 2 确认含义
 
@@ -44,10 +46,9 @@
 
 ## 用户决策
 
-Gate 2 必须由用户明确批准，AI 不自动代批。批准后将：
+用户于 2026-09-23 明确指令：“批准 Gate 2，冻结 Architecture、Data Model、DB Schema V1 和 API Contract V1”。据此：
 
-1. 更新四份候选和 `STATUS.md` 为 Gate 2 已冻结。
-2. 记录正式 Gate 2 决策与保留风险。
-3. 创建 Gate 2 后首批正式开发 WBS，不一次性生成全库/全业务实现。
-
-若不批准，项目保持设计候选状态，正式业务编码继续阻塞；可按用户指出的问题修订对应候选后重新提交 Gate 2。
+1. 四份候选以提交 `64cdf09` 的内容冻结为正式开发基线。
+2. 正式基础工程与业务实现解除 Gate 2 阻塞，但仍必须逐 WBS 实施和验证。
+3. 所有保留风险继续有效，不因 Gate 2 批准自动关闭。
+4. 冻结基线变更必须遵守 L3 Change Request；批准记录见 `gate-2-freeze-record.md` 与 `DEC-20260923-059`。

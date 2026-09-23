@@ -30,9 +30,10 @@
 ## 当前 Gate
 
 - Phase 0 Gate 1 已通过，结论为 `COMPLETE_WITH_APPROVED_ALTERNATIVES`。
-- `ARCH-CANDIDATE-V1`、`DATA-MODEL-CANDIDATE-V1` 和 `DB-SCHEMA-CANDIDATE-V1` 已完成；当前进入 API Contract V1。
-- Gate 2 通过前，只允许架构、数据模型、Schema、API Contract、ADR、验证脚手架与必要空壳设计；禁止正式业务功能开发。
-- Architecture、Data Model、Database Schema V1 和 API Contract V1 必须在 Gate 2 一并正式确认后，才能进入正式业务编码。
+- Gate 2 已于 2026-09-23 由用户明确批准；`ARCH-CANDIDATE-V1`、`DATA-MODEL-CANDIDATE-V1`、`DB-SCHEMA-CANDIDATE-V1` 和 `API-CONTRACT-CANDIDATE-V1` 已冻结为正式开发基线，冻结内容固定为提交 `64cdf09`。
+- 当前进入 Phase 1 架构冻结与基础工程，首项 WBS 为 `1.01 定义模块目录规范`；允许按 WBS 开展正式基础工程与业务实现。
+- 冻结后的总体架构、核心数据模型、DB Schema V1、`/api/v1` Breaking Change、技术栈、安全/License 机制或 Scope 变化必须走 L3 Change Request；不得在普通实现任务中静默改写。
+- Gate 2 批准不代表生产 ORM/Migration、运行 OpenAPI、性能、AI 质量、三平台发行或 UAT 已通过。
 
 ## 硬性约束
 

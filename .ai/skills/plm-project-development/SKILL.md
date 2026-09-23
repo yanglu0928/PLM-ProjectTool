@@ -19,9 +19,10 @@ description: Execute architecture, PoC, implementation, testing, packaging, and 
 ## 当前项目状态
 
 - Phase 0 Gate 1 已通过，结论为 `COMPLETE_WITH_APPROVED_ALTERNATIVES`。
-- `ARCH-CANDIDATE-V1`、`DATA-MODEL-CANDIDATE-V1` 和 `DB-SCHEMA-CANDIDATE-V1` 已完成。
-- 当前下一阶段为 API Contract V1；正式开发启动条件仍未满足。
-- Gate 2 前只允许设计、Contract、ADR、验证脚手架和必要空壳，不得大规模开发正式业务模块。
+- Gate 2 已于 2026-09-23 由用户明确批准；Architecture、Data Model、DB Schema V1 和 API Contract V1 已按提交 `64cdf09` 冻结。
+- 当前进入 Phase 1 架构冻结与基础工程，下一 WBS 为 `1.01 定义模块目录规范`；正式实现必须按 WBS、编码前检查和冻结基线推进。
+- 冻结后的总体架构、核心数据模型、DB Schema V1、Breaking API、技术栈、安全/License 机制或 Scope 变化属于 L3，不得由实现任务自行修改。
+- POC-03 质量失败继续阻塞 Gate 3/UAT；Server Office、Debian 13 和 Ghostscript 发行合规继续由各自 Release Gate 关闭。
 
 ## 参考文件路由
 

@@ -5,13 +5,15 @@
 |字段|值|
 |---|---|
 |Architecture ID|`ARCH-CANDIDATE-V1`|
-|状态|`CANDIDATE / AF-05_COMPLETE / NOT_GATE_2_FROZEN`|
+|状态|`FROZEN / AF-01～AF-05_PASS / GATE_2_APPROVED`|
 |日期|2026-09-22|
 |上游 Gate|Phase 0 Gate 1 `APPROVED`|
-|正式编码|`BLOCKED_BY_GATE_2`|
+|冻结日期|2026-09-23|
+|冻结内容提交|`64cdf09`|
+|正式编码|`AUTHORIZED_UNDER_APPROVED_WBS`|
 |目标环境|Windows 11、Windows Server 2025、Debian 13；x86-64/AMD64|
 
-本文件是 Architecture Freeze 的汇总候选，不替代实施方案 V2.1、各 ADR 或详细边界文档。Architecture、Core Data Model、Database Schema V1 和 API Contract V1 全部完成后，仍需用户在 Gate 2 正式确认；本候选不能单独授权业务编码。
+本文件原为 Architecture Freeze 汇总候选，现已随 Architecture、Core Data Model、Database Schema V1 和 API Contract V1 在 Gate 2 一并获用户批准并冻结。候选标识为保持历史 Trace 不重命名；冻结范围与批准证据见 `docs/progress/gate-2-freeze-record.md`。本文件不替代实施方案 V2.1、各 ADR 或详细边界文档。
 
 ## 输入与优先级
 
@@ -348,4 +350,4 @@ V1 不引入：微服务、Redis、Kafka、RabbitMQ、独立向量库、本地�
 
 ## 结论与下一步
 
-`ARCH-CANDIDATE-V1` 满足 Architecture Freeze 候选条件，AF-01～AF-05 完成。项目进入 Core Entity / Data Model Freeze；Architecture 仍等待 Gate 2 与 Data Model、Database Schema V1、API Contract V1 一并正式确认。
+`ARCH-CANDIDATE-V1` 已在 2026-09-23 Gate 2 冻结为 Architecture V1 正式开发基线。项目进入 Phase 1 基础工程；后续若需改变总体架构、模块边界、技术栈或核心安全机制，必须提交 L3 Architecture Change Request。

@@ -815,3 +815,15 @@
 |Reason|完整手工复制会形成重复规范和漂移，只有文字摘要又无法自动验证。单一汇总 + 受控明细 + 可再生机器目录既保留人类可评审语义，也提供实现和 CI 所需的稳定输入，并如实区分设计契约与尚未创建的运行 OpenAPI。|
 |Impact|API-05 静态验证覆盖 22 Owner、65 Root、323 Operation、363 Method/Path 变体、150 错误、18 SSE、20 Query 映射和 18 枚举族，5/5 测试 PASS。Architecture/Data Model/Schema/API 四份 Gate 2 候选已齐备；Gate 2 仍需用户明确确认，正式编码未获授权。|
 |Rollback|Gate 2 前可删除生成 manifest/校验器并恢复 API-05 为待完成；不得删除 API-01～04 历史或把未实现的 OpenAPI 描述为已运行。Gate 2 后修改冻结 Operation/DTO/枚举/错误/安全边界必须走非 Breaking 扩展、v2 或 API Change Request。|
+
+## DEC-20260923-059
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-059|
+|Date|2026-09-23|
+|WBS|Gate 2：Architecture / Data Model / DB Schema V1 / API Contract V1 Freeze|
+|Decision|依据用户明确指令“批准 Gate 2，冻结 Architecture、Data Model、DB Schema V1 和 API Contract V1”，将 `ARCH-CANDIDATE-V1`、`DATA-MODEL-CANDIDATE-V1`、`DB-SCHEMA-CANDIDATE-V1` 和 `API-CONTRACT-CANDIDATE-V1` 以提交 `64cdf09` 的内容冻结为正式开发基线。候选标识为保持历史 Trace 不重命名；Gate 2 对正式开发的阻塞解除，下一 WBS 为 Phase 1 `1.01 定义模块目录规范`。|
+|Reason|AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 已全部 PASS；跨层 22 Owner、65 Root、323 Operation、363 Method/Path、150 错误、18 SSE 和 20 Query 映射一致，API-05 Contract Lint 5/5 PASS。用户已完成正式 Gate 决策，满足进入基础工程的前置条件。|
+|Impact|允许按 WBS 创建正式基础工程和业务实现；冻结后的总体架构、核心数据模型、DB Schema V1、Breaking API、技术栈、安全/License 机制或 Scope 变化必须走 L3 Change Request。批准不等于生产 ORM/Migration、运行 OpenAPI、性能、AI 质量、发行或 UAT 通过；POC-03 继续阻塞 Gate 3/UAT，Server Office、Debian 13、Ghostscript AGPL 发行合规和 SC-04 验证性边界继续保留。|
+|Rollback|Gate 决策不得静默回退或通过技术提交抹除。若需撤销或修改冻结基线，必须由用户明确批准独立 Change Request，保留本决策、原冻结提交和全部历史证据；普通 Git revert 不改变该历史批准事实。|
