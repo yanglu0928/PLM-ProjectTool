@@ -683,3 +683,15 @@
 |Reason|Schema V1 需要单一、无冲突的关系、基数、生命周期和保留输入。只写“历史保留”无法指导清理与容量设计，而把合同/法规期限硬编码又会产生合规风险；版本化策略、可延长默认值、Hold 优先和引用预检能同时提供可实施基线与客户配置空间。|
 |Impact|Data Model Freeze 的六个 WBS 全部 PASS，形成 25 条核心不变量、14 项风险和 15 项 Schema 交接要求。后续 SC-01～SC-05 必须映射这些约束并验证空库/有数据升级；候选期限不构成法律结论，客户合同可延长，缩短正式/审计数据期限需在 Gate 2/Release 评审。POC-03、Server Office 和 Debian 未验证结论保持不变。|
 |Rollback|Gate 2 前可调整候选期限、物理清理实现和 Schema 交接顺序；不得移除 Hold/保护引用、允许普通用户删除 Audit/正式历史、破坏 Owner/Scope/版本/Review/Evidence/Trace 边界，或把候选 Data Model 描述为已冻结物理数据库。触及核心数据、安全或合规边界时按 L3 处理。|
+
+## DEC-20260923-048
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-048|
+|Date|2026-09-23|
+|WBS|SC-01 Logical-to-Physical Schema Mapping|
+|Decision|客户运行时采用单一 PostgreSQL 数据库和单一 `plm` 应用 Schema，不为 22 个模块分别创建 PostgreSQL Schema；以 `plt_`、`auth_`、`prj_` 等 22 个短前缀表达表 Owner。65 个 Aggregate Root 各映射一个唯一 primary table，Owned Entity 按查询、唯一、顺序、状态和引用需要拆表。固定目标类型优先直接 FK；Review/Trace/Audit/Event 等多态引用采用受控 discriminator + object/version/project 列组，不新增全局共享写 object_registry。Developer Workbench 使用独立数据库/部署。|
+|Reason|V1 是单服务器模块化单体并使用同一应用数据库身份，22 个 PostgreSQL Schema 不形成真正安全隔离，却增加 Alembic search_path、跨 Schema FK、备份恢复和离线运维复杂度。模块前缀与 Application Port 能清晰表达 Owner；全局 object_registry 会成为所有模块共同写热点并破坏唯一 Owner。|
+|Impact|形成 65/65 Root primary table 映射及 owned table 候选，表名使用 ASCII lower_snake_case、目标不超过 55 字符。SC-02 必须补齐 Scope/ProjectId、Version、固定 FK、多态白名单、唯一/CHECK 与不可变约束；SC-03/04 再定义索引、pgvector、Migration 和恢复测试。本阶段没有创建 ORM、Migration 或业务表。|
+|Rollback|Gate 2 前可改为少量分组 Schema 或调整 table/child 拆分，但必须提供 Alembic、权限、备份和跨平台证据；不得把 Developer Workbench 放入客户数据库、取消 Owner 前缀/边界、用 JSONB 隐藏 ProjectId/核心 FK，或引入共享写 object_registry。|
