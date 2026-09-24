@@ -1511,3 +1511,15 @@
 |Reason|冻结 API-02 仅写“metadata”，未规定可修改 code；DM-02 明确 ProjectCode 不可静默复用，而当前冻结 Schema 不保存旧 code，直接改码会释放旧码导致复用。名称是可安全修改的显示元数据；乐观并发和事实锁避免撤权/归档竞态。|
 |Impact|新增内部 Project 写命令/SQL Repository，授权 Port 增加同事务入口；无 Schema/Migration、新依赖或公开 API。若未来需要 code 修改，先按正式变更流程设计历史保留与升级。|
 |Rollback|内部命令未挂公开路由；已有名称/归档变更保留在 Audit，归档不可自动回滚为 ACTIVE。|
+
+## DEC-20260925-019
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-019|
+|Date|2026-09-25|
+|WBS|PRJ-02-A01 ProjectMember 授权列表读取|
+|Decision|`PROJECT_MEMBER_LIST` 在 License Guard 与 Auth 当前 Session 验证后，于同一数据库事务调用 ProjectAuthorizationService 的 `PROJECT_MEMBER_LIST` 策略；仅 ProjectManager/CustomerManager 可读取该路径 Project 的成员历史。Project Repository 只读 ProjectMember/Department，Auth-owned Port 批量提供 user_id/display name，Project 不直接查询 Auth 表。内部分页以 `(project_member_id ASC)` 做稳定 keyset，原始 after_id 不对 HTTP 客户端暴露；后续公开路由必须按 API-01 封装完整性保护的不透明 cursor。|
+|Reason|成员列表需保留 ACTIVE/SUSPENDED/REMOVED 历史，同时防止其他项目成员和 Auth 凭据数据泄漏。用户显示名由 Auth Owner 提供，避免跨模块内部表访问。内部 keyset 位置不是可直接暴露的 API cursor。|
+|Impact|新增 Project 内部列表 Service/Repository 与 Auth 最小用户摘要适配器；无 Schema/Migration、新依赖或公开 API。归档 Project 仍允许授权只读。|
+|Rollback|撤销未公开查询 Port；不改变成员历史。|

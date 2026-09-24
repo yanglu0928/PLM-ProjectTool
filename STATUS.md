@@ -3,18 +3,18 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 2：Platform Core|
-|Current WBS|`PRJ-01-A06 Project 元数据修改与归档内部命令`（已完成；AUT-03-A07 与 PLT-02-A07 仍待前置）|
-|Current Status|PHASE_1_COMPLETE / PRJ_01_A06_PASS / AUT_03_A07_PREREQUISITES_IN_PROGRESS / PHASE_2_IN_PROGRESS|
+|Current WBS|`PRJ-02-A01 ProjectMember 授权列表读取`（已完成；AUT-03-A07 与 PLT-02-A07 仍待前置）|
+|Current Status|PHASE_1_COMPLETE / PRJ_02_A01_PASS / AUT_03_A07_PREREQUISITES_IN_PROGRESS / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
-|Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、PRJ-01-A01～A06、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03 PASS|
+|Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、PRJ-01-A01～A06、PRJ-02-A01、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03 PASS|
 |Blockers|AUT-03-A07 生产登录装配仍待安全运行数据库凭据/可信 Origin 配置与端到端验证；PLT-02-A07 公开接线待 Auth HTTP、持久幂等/If-Match、生产 License/Key Provider，项目可继续做前置；POC-03 质量失败继续阻塞 Gate 3/UAT，Server Office、Debian 未验证和 Ghostscript 发行合规继续作为 Release 约束|
 |Pending User Decisions|LIC-03-A03 方案 A 已确定；当前无人工决策待办。客户数据外发、付款/额度重置和不可恢复生产操作不在持续授权内|
 |Architecture Version|`ARCH-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，License ADR-006 经用户批准 CR-LIC-001 修订|
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，DM-02 License 授权粒度经用户批准 CR-LIC-001 修订|
 |DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`；Auth 限流增量 `20260925_0012`，PRJ-01～03 正式实现 Migration `20260925_0013`|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
-|Test Summary|PRJ-01-A06：Windows 11/Python 3.13 后端 259/259 PASS；Project 写服务覆盖率 96%；PostgreSQL 18.6 权限/版本/审计回滚/归档 PASS；wheel 构建 PASS。生产默认登录/Secret 路由仍 404|
-|Next WBS|`PRJ-02-A01 ProjectMember 授权列表读取`；随后推进成员/部门管理、AUT-03-A07 安全运行配置/真实接线与 PLT-02-A07|
+|Test Summary|PRJ-02-A01：Windows 11/Python 3.13 后端 265/265 PASS；成员查询服务覆盖率 96%；PostgreSQL 18.6 角色/隔离/历史/keyset PASS；wheel 构建 PASS。生产默认登录/Secret 路由仍 404|
+|Next WBS|`PRJ-02-A02 ProjectMember 创建命令`；随后推进角色/部门修改、暂停/恢复/移除、AUT-03-A07 与 PLT-02-A07|
 
 ## 自动执行策略
 
@@ -50,6 +50,7 @@
 - PRJ-01-A04 完成仅内部原子创建 Project、首位 Manager 与默认/指定 Department；真实 Auth Session/CSRF 已接，License Guard 在临时库仍为合成依赖，公开路由未开放。
 - PRJ-01-A05 完成内部当前 Session/成员驱动的 Project 列表与详情读取；归档受权可读，跨项目隐藏，公开 GET 与生产 License 装配仍未完成。
 - PRJ-01-A06 完成内部项目名称修改与单向归档，按当前管理角色和 expected version 串行化并同事务审计；跨模块归档写拦截及公开 API 仍需后续接线。
+- PRJ-02-A01 完成内部授权成员历史列表与 keyset 分页；公开 HTTP 的不透明 cursor、生产 License 与安全运行接线仍未完成。
 - LIC-02-A02 冻结冲突已由用户明确批准方案 B；正式差异见 `docs/changes/CR-LIC-001-single-product-full-bundle.md`。V2.1 原文保留历史，专项补充为当前 License 授权粒度基线。
 - 远端同步状态必须在每次任务结束前通过 Git 实时检查，不在本文件固化可能过期的 ahead/behind 数值。
 - 本地用户文件和 Git 忽略的客户资料保持不变。

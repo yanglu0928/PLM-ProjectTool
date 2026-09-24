@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PRJ-02-A01 新增内部 ProjectMember 授权列表，ProjectManager/CustomerManager 可读取所属项目成员历史；跨项目隐藏，Auth 最小用户名投影与 Project 成员事实分离，内部 keyset 分页。Windows 11/Python 3.13 后端 265/265、服务覆盖率 96%、PostgreSQL 18.6 临时库角色/隔离/历史/分页复验和 wheel 构建 PASS。无 Migration、新依赖或公开 API，升级无需数据步骤。已知问题：生产 License 使用合成 Guard；公开路由及 API-01 不透明 cursor、Server 2025/Debian 13 本项验证未完成。
+
 - 2026-09-25：`0.1.0.dev0`/PRJ-01-A06 新增内部 Project 名称修改与单向归档命令，当前负责人权限、Session/CSRF、License、预期版本和 Audit 同事务保护；归档后拒绝写。Windows 11/Python 3.13 后端 259/259、写服务覆盖率 96%、PostgreSQL 18.6 临时库权限/版本/回滚/归档及 wheel 构建 PASS。无 Migration、新依赖或公开 API，升级无需数据步骤。已知问题：ProjectCode 通用 PATCH 不支持（旧码不能静默复用）；License 使用合成 Guard，公开路由、跨模块归档写拦截及 Server 2025/Debian 13 本项验证未完成。
 
 - 2026-09-25：`0.1.0.dev0`/PRJ-01-A05 新增内部 Project 授权列表与详情读取，当前 Session/成员/部门即时核查、跨项目隐藏、归档项目受权只读与强 ETag。Windows 11/Python 3.13 后端 252/252、服务覆盖率 98%、PostgreSQL 18.6 临时库隔离/撤销/归档/ETag 验证和 wheel 构建 PASS。无 Migration、新依赖或公开 API，升级无需数据步骤。已知问题：License 使用合成 Guard，生产装配、公开 GET 与 Server 2025/Debian 13 本项验证未完成。
