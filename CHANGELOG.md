@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/AUT-03-A03 新增仅内部登录编排：限流、规范化用户名、活动身份查询、未知/停用假验证、真实 scrypt 密码证明、Session/CSRF 签发及脱敏拒绝审计；外部凭据失败统一。Windows 11/Python 3.13 后端 223/223、服务覆盖率 100%、PostgreSQL 18.6 真实验证链及 wheel 构建 PASS。兼容现有 Schema，无 Migration、新依赖、公开 API 或客户数据外发。已知问题：登录 HTTP/Cookie/Origin 接线、初始管理员、限流清理和三平台复验未完成，不能对外开放登录。
+
 - 2026-09-25：`0.1.0.dev0`/AUT-03-A02 按 CR-AUT-001 新增 PostgreSQL 18 Auth 登录限流桶、ORM/Alembic `20260925_0012` 与原子预约服务；来源 30 次/5 分钟、账户 10 次/5 分钟，数据库故障拒绝，存摘要键不存原始身份。Windows 11/Python 3.13 后端 215/215、服务覆盖率 96%、PostgreSQL 18.6 空库/已有用户升级、ORM drift=0、40 并发/窗口/约束/回退、wheel 构建 PASS。升级前备份并执行 `upgrade head`；有桶数据时普通 downgrade 拒绝。无新依赖、公开 API 或客户数据外发。已知问题：过期桶清理、可信代理地址、限流误拒评估、公开登录与三平台复验未完成。
 
 - 2026-09-25：`0.1.0.dev0`/AUT-03-A01 新增未挂路由的登录可信 Host/Origin 策略：显式允许源、非 loopback HTTPS、缺失/重复/畸形头拒绝，转发头不提升信任。Windows 11/Python 3.13 后端 211/211、组件覆盖率 96%、wheel 构建 PASS。无 Schema/Migration、新依赖或公开 API，升级无需数据步骤。已知问题：限流、凭据编排、Cookie/CSRF 与真实部署配置尚未完成，登录仍 404；Windows Server 2025、Debian 13 本项未验证。

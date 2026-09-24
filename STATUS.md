@@ -3,18 +3,18 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 2：Platform Core|
-|Current WBS|`AUT-03-A02 登录限流策略与持久化边界`（已完成；PLT-02-A07 仍待前置）|
-|Current Status|PHASE_1_COMPLETE / AUT_03_A02_PASS / PLT_02_A07_PREREQUISITES_IN_PROGRESS / PHASE_2_IN_PROGRESS|
+|Current WBS|`AUT-03-A03 登录用户名/密码证明与 Session 签发编排`（已完成；PLT-02-A07 仍待前置）|
+|Current Status|PHASE_1_COMPLETE / AUT_03_A03_PASS / PLT_02_A07_PREREQUISITES_IN_PROGRESS / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
-|Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A02、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03 PASS|
+|Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A03、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03 PASS|
 |Blockers|PLT-02-A07 公开接线待 Auth HTTP、持久幂等/If-Match、生产 License/Key Provider，项目可继续做前置；POC-03 质量失败继续阻塞 Gate 3/UAT，Server Office、Debian 未验证和 Ghostscript 发行合规继续作为 Release 约束|
 |Pending User Decisions|LIC-03-A03 方案 A 已确定；当前无人工决策待办。客户数据外发、付款/额度重置和不可恢复生产操作不在持续授权内|
 |Architecture Version|`ARCH-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，License ADR-006 经用户批准 CR-LIC-001 修订|
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，DM-02 License 授权粒度经用户批准 CR-LIC-001 修订|
 |DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`；Auth 登录限流表差异见 CR-AUT-001、Alembic `20260925_0012`|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
-|Test Summary|AUT-03-A02：Windows 11/Python 3.13 后端 215/215 PASS；限流服务覆盖率 96%；PostgreSQL 18.6 空库/已有用户升级、ORM drift=0、并发/窗口/约束/回退 PASS；wheel 构建 PASS。登录/Secret 路由仍 404|
-|Next WBS|`AUT-03-A03 登录用户名/密码证明与 Session 签发编排`；后续推进 Cookie/CSRF、生产 License/Key Provider 与幂等/If-Match，再恢复 PLT-02-A07|
+|Test Summary|AUT-03-A03：Windows 11/Python 3.13 后端 223/223 PASS；登录服务覆盖率 100%；PostgreSQL 18.6 真实 scrypt/Session/CSRF/审计 PASS；wheel 构建 PASS。登录/Secret 路由仍 404|
+|Next WBS|`AUT-03-A04 登录 HTTP Cookie/CSRF 接线`；后续推进生产 License/Key Provider 与幂等/If-Match，再恢复 PLT-02-A07|
 
 ## 自动执行策略
 
@@ -39,6 +39,7 @@
 - PLT-02-A07 前置核查未通过，见 `docs/progress/plt-02-a07-precheck.md` 与 CR-PLT-003；该单项公开接线停留在 404，项目转先完成 AUT-03 等前置，不将 A07 标为 PASS。
 - AUT-03-A01 仅完成未挂载的可信 Host/Origin 策略；缺失/重复/不匹配失败关闭。限流、凭据、Cookie/CSRF 与公开登录仍待后续任务。
 - AUT-03-A02 完成 PostgreSQL 原子登录限流；真实客户端地址可信代理策略和过期桶清理调度未接线，登录仍未公开。
+- AUT-03-A03 完成内部登录编排与真实 scrypt/Session 集成；公开 HTTP/Cookie/CSRF、初始管理员和生产装配仍未完成。
 - LIC-02-A02 冻结冲突已由用户明确批准方案 B；正式差异见 `docs/changes/CR-LIC-001-single-product-full-bundle.md`。V2.1 原文保留历史，专项补充为当前 License 授权粒度基线。
 - 远端同步状态必须在每次任务结束前通过 Git 实时检查，不在本文件固化可能过期的 ahead/behind 数值。
 - 本地用户文件和 Git 忽略的客户资料保持不变。

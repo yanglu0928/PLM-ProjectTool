@@ -1379,3 +1379,15 @@
 |Reason|单机部署可运行多个 API 进程，进程内限流可绕过；双维度限制来源爆破与分布式针对账户尝试，且不落原始地址/用户名。|
 |Impact|新增 ORM/Migration，密文/API Contract/架构不变；摘要不等同匿名化，数据库仍需访问控制与短期保留。限值、代理来源与清理调度须在正式登录装配前验证。|
 |Rollback|短期计数桶可在维护窗口清理，确认无登录流量后按 Alembic down 回退；不得删除 Audit/User/Session 历史。|
+
+## DEC-20260925-008
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-008|
+|Date|2026-09-25|
+|WBS|AUT-03-A03 登录用户名/密码证明与 Session 签发编排|
+|Decision|登录先预约限流，再规范化用户名并查活动身份；不存在或停用的用户执行受控 scrypt 假验证以缩小时间差，成功身份交既有 SessionService 再次锁用户/校验真实密码并原子签发 Session+Audit。所有凭据失败对外统一 `AUTH_INVALID_CREDENTIALS`，追加不含原始用户名/密码的拒绝审计；密码可变缓冲区始终清零。|
+|Reason|复用已验证的 Session 与密码 Port，避免按用户名查询与签发之间的停用/换密竞争；不让错误类型直接暴露用户存在性。|
+|Impact|仅新增 Auth 应用编排、只读身份仓储和假验证适配，无 Schema/Migration、公开 API 或新依赖；HTTP Cookie/Origin/限流真实客户端地址仍待装配。|
+|Rollback|内部服务未挂路由；撤销不改变已签发 Session 历史，已有 Session 只能按正式撤销命令处理。|
