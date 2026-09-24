@@ -1,0 +1,8 @@
+{
+  "status": "PASS",
+  "expected_error": "AI_AUTH_FAILED",
+  "actual_error": "AI_AUTH_FAILED",
+  "http_status": 401,
+  "duration_seconds": 0.474,
+  "secret_value_recorded": false
+}
