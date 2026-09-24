@@ -6,6 +6,7 @@
 
 ### 新增
 
+- 2026-09-24：WBS 1.05 完成正式 Alembic migration 基线。新增 `plm` ORM Base、统一命名约定、随 wheel 交付的 Alembic 1.20 env/template 和不可变 revision `20260924_0001`，仅固定 PostgreSQL 18 + pgvector 0.8.6，不创建业务表。Windows 11/PostgreSQL 18.6 下后端 32/32、空库与有数据 up/down/re-upgrade、ORM drift=0、offline SQL、pg_dump/pg_restore 及 wheel 内容验证全部 PASS；下一 WBS 为 1.06 Error contract。
 - 2026-09-24：WBS 1.04 完成 SQLAlchemy session。新增技术无关 UnitOfWork Contract、同步 SQLAlchemy 2.0.54 + psycopg 3.3.5 DatabaseRuntime、独立 Session/显式事务、默认与异常回滚、连接池健康检查及密码安全展示；Windows 11/Python 3.13.15/PostgreSQL 18.6 下后端测试 25/25、双连接实连和 wheel 构建 PASS。业务 ORM、数据库对象、Migration、业务 API 与客户数据外发均为 0；下一 WBS 为 1.05 Alembic migration。
 - 2026-09-24：WBS 1.03 完成 Vue app shell。新增 Vue 3.5.43 + TypeScript 5.9.3 + Vite 8.3.0 响应式应用壳、最小 Router、same-origin 后端状态、安全错误边界和 404；Windows 11 下 Vitest 9/9、类型检查、生产构建、官方 npm 漏洞审计、机器验收及预览 HTTP smoke 2/2 全部 PASS。当前无登录/业务页面、数据库或客户数据外发；无 Migration，下一 WBS 为 1.04 SQLAlchemy session。
 - 2026-09-24：WBS 1.02 完成 FastAPI app factory。新增 Python 3.13 后端包、无全局单例的 `create_app()`、隔离 lifespan、最小 `/health/live` 与 `/health/ready`、失败关闭 readiness 探针及 12 项 Unit/API/Permission/Integration 测试；Windows 11 使用 FastAPI 0.141.1、Uvicorn 0.53.0、HTTPX2 2.13.1 验证 PASS，wheel 构建及 Uvicorn factory 实际 HTTP smoke 2/2 PASS。Swagger/ReDoc/外部 OpenAPI 与全部业务 API 保持未暴露，数据库、Migration 和外部调用均为 0；下一 WBS 为 1.03 Vue app shell。

@@ -9,6 +9,7 @@ description = "Backend for the PLM project implementation assistant"
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
 dependencies = [
+  "Alembic==1.20.0",
   "fastapi==0.141.1",
   "psycopg[binary]==3.3.5",
   "SQLAlchemy==2.0.54",
@@ -23,3 +24,6 @@ test = [
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["plm_assistant*"]
+
+[tool.setuptools.package-data]
+"plm_assistant.migrations" = ["script.py.mako"]

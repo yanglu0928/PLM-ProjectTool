@@ -157,13 +157,7 @@ def create_database_runtime(
 ) -> DatabaseRuntime:
     """Build the PostgreSQL runtime without reading environment or secret files."""
 
-    url = make_url(database_url) if isinstance(database_url, str) else database_url
-    if url.drivername != POSTGRESQL_DRIVER:
-        raise DatabaseConfigurationError(
-            f"database driver must be {POSTGRESQL_DRIVER!r}"
-        )
-    if not url.database:
-        raise DatabaseConfigurationError("database name is required")
+    url = validate_database_url(database_url)
 
     engine_options = options or DatabaseEngineOptions()
     engine = create_engine(
@@ -182,3 +176,16 @@ def create_database_runtime(
         hide_parameters=True,
     )
     return DatabaseRuntime(engine)
+
+
+def validate_database_url(database_url: str | URL) -> URL:
+    """Return a validated PostgreSQL URL without rendering its credentials."""
+
+    url = make_url(database_url) if isinstance(database_url, str) else database_url
+    if url.drivername != POSTGRESQL_DRIVER:
+        raise DatabaseConfigurationError(
+            f"database driver must be {POSTGRESQL_DRIVER!r}"
+        )
+    if not url.database:
+        raise DatabaseConfigurationError("database name is required")
+    return url

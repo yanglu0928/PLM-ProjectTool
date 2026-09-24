@@ -875,3 +875,15 @@
 |Reason|同步 Session 与 Phase 0/SC-04 已验证的 PostgreSQL/psycopg 路径一致，也可由 FastAPI 同步依赖和独立 Worker 共用一套事务边界，避免在基础阶段维护同步/异步双栈。显式 begin/commit、默认 rollback 和一次性实例能防止请求间 Session 共享、隐式提交及连接池污染；技术无关 Application Protocol 保持业务层不依赖 ORM。|
 |Impact|`platform` 提供 UnitOfWork Contract、SQLAlchemy Adapter、连接健康检查和安全 URL；业务 Repository 只能在对应模块 Infrastructure 内使用当前 UoW Session，不得把 Session 跨线程/请求缓存。异步端点不得在事件循环中直接执行同步数据库 I/O，应使用同步依赖/执行边界。1.05 使用独立 Migration 角色建立正式 Alembic；1.09 负责 URL/Secret 与 Engine 生命周期装配。本任务未创建业务 ORM、表、Migration 或 API。|
 |Rollback|删除 WBS 1.04 的 UnitOfWork/DatabaseRuntime、测试与验证材料并移除 SQLAlchemy/psycopg 依赖即可回到 1.03；当前无数据库对象或客户数据需要回滚。若未来以 AsyncSession 取代该基础边界，应提交后继 L2 决策和等价事务/并发验证；不得借此改变 PostgreSQL 18、Schema、安全角色或冻结业务模型。|
+
+## DEC-20260924-064
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-064|
+|Date|2026-09-24|
+|WBS|1.05 Alembic migration|
+|Decision|正式 ORM Base 固定 `plm` Schema 和 PK/FK/UQ/CK/IX 命名约定；Alembic 环境与 revision 作为 `plm_assistant.migrations` 包随 backend wheel 交付。首个不可变 revision 为 `20260924_0001`，只验证 PostgreSQL 18 并建立 pgvector 0.8.6 平台基线，不创建任何业务表。`plm.alembic_version` 位于应用 Schema；online/offline 环境先幂等建立 `plm` Schema。downgrade 到 base 删除 revision 记录，但按冻结恢复边界保留空 `plm` Schema、版本表和共享 pgvector 扩展。迁移 URL 仅通过内存 Config attribute 注入，`alembic.ini` 不保存凭据。|
+|Reason|WBS 1.05 需要建立可发行、可审计的正式 Migration 链，但 DB Schema V1 明确要求业务表按模块 WBS 逐项细化，禁止复制 SC-04 的 70 张验证表。先冻结 Schema/版本表/扩展/命名与打包机制，既能满足后续 revision 前置，又不会把 Profile 占位结构冒充生产 ORM。保留共享扩展和空 Schema 与冻结 SC-04 恢复边界一致，也避免 downgrade 破坏其他 revision 或数据库能力。|
+|Impact|后续每个模块数据库任务必须继承此 Base、以新 revision 增量变更并完成 ORM、空库/有数据 up/down、漂移和恢复验证。Runtime Role 不得调用本迁移入口或拥有 DDL/版本表写权限；1.09 再装配 Secret/配置与部署命令。本 revision 不关闭 65 Root 正式 ORM、业务约束、索引或权限验证风险，当前业务表数量仍为 0。|
+|Rollback|可执行 downgrade 到 base 清除 revision 记录；空 `plm` Schema、版本表和 pgvector 作为平台前置按设计保留，不包含客户数据。代码回退可移除迁移包与 Alembic 依赖。只有在确认没有后续 revision、业务对象或其他扩展依赖时，管理员才能通过独立维护步骤移除这些前置；不得在普通 downgrade 中级联删除。|
