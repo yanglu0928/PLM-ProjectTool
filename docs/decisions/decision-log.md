@@ -971,3 +971,15 @@
 |Reason|冻结 API 明确同键同 payload 返回原结果、不同 payload 返回冲突，而进程内字典无法跨重启/并发保证。技术表只承载请求去重事实，不改变 PLT-01 业务聚合的 Root/Version/Retention 映射；摘要化避免 Idempotency-Key 误含敏感材料时明文留库。事务收据确保 Audit 失败也不会留下假的成功重放。|
 |Impact|新增普通增量迁移 `20260924_0004`；A02 内部命令签名增加必填 idempotency_key，仍无公开 API、客户数据外发或新第三方依赖。正式 Auth/License/CSRF/AuditEvent 和受控 Retention 尚未接入，命令不得对外开放。Phase 1 基础工程按实施方案收口并写阶段总结，转入 Phase 2 AuditEvent；Gate 3 不自动通过。|
 |Rollback|空收据表可降级到 `0003`；有收据时必须先备份并完成受控恢复/迁移，不允许普通 downgrade 删除重放历史。移除本任务内部命令修改不影响 A01/A02 已保存的配置主记录和不可变版本。|
+
+## DEC-20260924-072
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-072|
+|Date|2026-09-24|
+|WBS|AUD-01-A01 AuditEvent ORM/Migration|
+|Decision|AUD-01 首步只提供真实存储模型，不开放写/查 API。Audit Root 保持 DEPLOYMENT Owner Scope；`event_scope` 标示被审计操作的部署或项目上下文，PROJECT 必填 `target_project_id`，DEPLOYMENT 不得填写。多态目标在库内固定为冻结的 65 个客户运行 Root 类型或全空（无可定位对象的认证失败），不包含 Developer Workbench。仅存受控 action/outcome/reason/state 码、标识与可选 SHA-256 主体提示摘要，不存请求正文、Secret、文件或完整 AI 输入输出。数据库触发器禁止普通 UPDATE/DELETE/TRUNCATE；非空 downgrade 拒绝。|
+|Reason|冻结模型要求 AuditEvent 只追加、项目隔离、来源可追溯和最小安全摘要；冻结 SC-02 允许部署 Owner 与项目目标并存，SC-03 固定三组索引。当前 Auth/Project/License 未落地，外键或真实权限不能伪造；安全码替代任意自由文本，避免向审计库复制敏感内容。|
+|Impact|新增迁移 `20260924_0005` 和一张 `plm` 表；无冻结基线变更、新依赖、公开 API 或客户数据外发。数据库管理员仍有 DDL 权限，因此触发器不是防篡改封存；AuditService 权限/事务 Port、读隔离、Retention/Legal Hold 和备份权限控制留待对应 WBS。|
+|Rollback|空表可回退到 `0004`；含审计事件时须备份并进行受控恢复/迁移，普通回退失败关闭，不能删历史记录换取迁移通过。|
