@@ -7,3 +7,5 @@
 - 方案 A（建议）：保持既定 Release 安全设计时点；将 LIC-03-A03 缩为一次性受控初态初始化（不接生产密钥），生产 SecretKeyProvider、密钥恢复和完整装配进入后续 PLT-02/Release WBS。不能把此子任务标为生产可信来源 PASS。
 - 方案 B：明确批准现在提前开展跨平台 SecretKeyProvider、备份/恢复与失密失败关闭设计及验证，再实施完整 LIC-03-A03；这改变冻结架构安排的阶段边界，需单独记录 L3 Change Request。
 - 未处理后果：继续失败关闭；没有生产 License 授权放行。可继续与该密钥选型无关的独立 WBS，但不得宣称 Gate 3/Release 通过。
+- 用户结论：2026-09-24 明确选择方案 A；本项改为一次性受控初态初始化，生产密钥来源/恢复仍留待 PLT-02/Release。持续执行授权及差异追溯见 `docs/changes/CR-EXEC-001-continuous-delivery.md`。
+- 处置：受控初态初始化已作为缩小后的 LIC-03-A03 实现与验证，结果见 `docs/progress/lic-03-a03-initialization.md`；原 DECISION_REQUIRED 为历史状态，当前无待用户决策。

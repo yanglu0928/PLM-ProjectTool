@@ -5,7 +5,7 @@ description: Execute architecture, PoC, implementation, testing, packaging, and 
 
 # PLM Project Development
 
-本 Skill 将《PLM项目实施辅助工具软件开发实施方案 V2.1》及用户批准的 License 专项补充 `CR-LIC-001` 作为最高业务与技术基线，将《AI开发总控指令与 Skill 规范 V1.1》和《AI自主执行与最小人工确认规则 V1.0》作为执行约束。原始文档始终是事实来源；本 Skill 只负责路由和执行，不替代原文。
+本 Skill 将《PLM项目实施辅助工具软件开发实施方案 V2.1》及用户批准的 License 专项补充 `CR-LIC-001` 作为业务与技术基线，将《AI开发总控指令与 Skill 规范 V1.1》和《AI自主执行与最小人工确认规则 V1.1》作为执行约束。2026-09-24 用户另明确授权基线不兼容时可自主记录并执行调整，最终持续推进至可用程序包。原始文档和历史冻结提交保留，差异以 Change Request 追溯。
 
 ## 开始任务
 
@@ -20,8 +20,8 @@ description: Execute architecture, PoC, implementation, testing, packaging, and 
 
 - Phase 0 Gate 1 已通过，结论为 `COMPLETE_WITH_APPROVED_ALTERNATIVES`。
 - Gate 2 已于 2026-09-23 由用户明确批准；Architecture、Data Model、DB Schema V1 和 API Contract V1 已按提交 `64cdf09` 冻结。
-- Phase 1 基础工程已完成，`1.01`～`1.09`、`PLT-01-A01～A03` PASS；Phase 2 `AUD-01-A01～A03`、`AUT-01-A01～A03`、`AUT-02-A01～A05`、`LIC-01-A01～A04`、`LIC-02-A01～A05`、`LIC-03-A01～A02` PASS。用户批准 `CR-LIC-001` 方案 B 后，内部 LicenseService、验证结果/Audit 编排、受控导入/激活、运行时 Guard 与受控重验证已完成。暂定 `LIC-03-A03 生产可信来源与初始化装配` 的编码前检查发现阶段边界与密钥来源方案未定，等待 L3 决策，详见 `docs/progress/lic-03-a03-precheck.md`。首版只支持本产品全功能整体授权，生产公钥/选定 MAC/可信时间密钥来源与初始化尚未接线，Auth 仍无公开登录/管理 API；Gate 3 尚未通过。
-- 冻结后的总体架构、核心数据模型、DB Schema V1、Breaking API、技术栈、安全/License 机制或 Scope 变化属于 L3，不得由实现任务自行修改。
+- Phase 1 基础工程已完成，`1.01`～`1.09`、`PLT-01-A01～A03` PASS；Phase 2 `AUD-01-A01～A03`、`AUT-01-A01～A03`、`AUT-02-A01～A05`、`LIC-01-A01～A04`、`LIC-02-A01～A05`、`LIC-03-A01～A03` PASS。用户批准 `CR-LIC-001` 方案 B 后，内部 LicenseService、验证结果/Audit 编排、受控导入/激活、运行时 Guard 与受控重验证已完成。LIC-03-A03 按用户选定方案 A 完成一次性受控初态初始化；生产可信来源留至 PLT-02/Release 安全设计。下一项 `PLT-02-A01 SecretRecord ORM/Migration`。首版只支持本产品全功能整体授权，生产公钥/选定 MAC/可信时间密钥来源仍未接线，Auth 仍无公开登录/管理 API；Gate 3 尚未通过。
+- 冻结后的总体架构、核心数据模型、DB Schema V1、Breaking API、技术栈、安全/License 机制或 Scope 变化须先建立 Change Request，记录影响与验证后依 V1.1 持续授权执行，不得静默改写。
 - POC-03 质量失败继续阻塞 Gate 3/UAT；Server Office、Debian 13 和 Ghostscript 发行合规继续由各自 Release Gate 关闭。
 
 ## 参考文件路由
@@ -37,7 +37,7 @@ description: Execute architecture, PoC, implementation, testing, packaging, and 
 
 优先级：用户最新明确变更 > 正式锁定方案 > 已冻结 ADR > 已冻结数据模型/API Contract > 当前阶段设计 > AI 建议。
 
-只有用户明确表示“修改已锁定方案”时，才能修改正式基线。发现问题时，输出风险、证据、影响和变更建议，等待确认；不得自行替换技术或业务规则。
+用户 2026-09-24 已明确授权原方案不兼容时可自主选择并执行解决方案。发现问题先记录风险、证据、方案比较、所选方案、迁移/回滚与验证到 Change Request；保留原基线历史，再实施并同步 GitHub。不得由默认授权推定测试/Gate 已通过。
 
 不要把“合理推断”“待验证”或 AI 生成内容写成“已验证”。技术可行性只有在对应 PoC 具备完整记录并 PASS 后才能确认。
 
@@ -67,7 +67,7 @@ description: Execute architecture, PoC, implementation, testing, packaging, and 
 - 保持 UI → API → Application Service → Domain → Repository/Gateway 的依赖方向。
 - 正式业务事实必须来自结构化对象和人工确认；AI 输出只是建议。
 - 正式 Requirement、Prototype、Solution Section、WBS Task 必须具有可反向查询的 TraceLink。
-- L1 工作自主完成；L2 决策记录到 `docs/decisions/decision-log.md` 后继续；L3 事件停止受影响任务并请求用户决策。
+- L1 工作自主完成；L2 决策记录到 `docs/decisions/decision-log.md` 后继续；原 L3 事件按 V1.1 建立正式 Change Request 后自主执行。真实环境/数据或付款等无法由 AI 代替时记录客观限制并继续不受阻塞的任务。
 - 每个 WBS 完成后更新根目录 `STATUS.md`，满足自动继续条件时直接进入下一 WBS。
 - 当前批准 Scope 内可自主提交并推送到正确 Git 分支；仍须遵守远端同步和 Secret 检查规则。
 

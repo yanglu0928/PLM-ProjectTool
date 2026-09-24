@@ -4,7 +4,7 @@
 
 1. `.ai/SKILL.md`
 2. `STATUS.md`
-3. `AI自主执行与最小人工确认规则 V1.0.md`
+3. `AI自主执行与最小人工确认规则 V1.1.md`（并继承其未覆盖的 V1.0 条款）
 4. `.ai/skills/plm-project-development/SKILL.md`
 5. 该 Skill 针对当前任务指定的参考文件
 
@@ -23,8 +23,7 @@
 > AI 建议
 ```
 
-- 只有用户明确表示“修改已锁定方案”时，才可改变正式基线。
-- 发现基线问题时，只能提交风险、证据和变更建议，不得直接替换方案。
+- 用户 2026-09-24 已明确作出持续授权：原方案不兼容时可自行分析并执行解决方案，无需逐项再批准；实施前必须记录 Change Request、差异、风险、迁移/回滚和验证计划，保留原冻结版本并同步 GitHub。该授权不豁免客观验收，也不授权秘密/客户数据外发、购买或不可恢复生产操作。
 - 不得把合理推断、待验证事项或 AI 输出描述成已验证事实。
 
 ## 当前 Gate
@@ -32,7 +31,7 @@
 - Phase 0 Gate 1 已通过，结论为 `COMPLETE_WITH_APPROVED_ALTERNATIVES`。
 - Gate 2 已于 2026-09-23 由用户明确批准；`ARCH-CANDIDATE-V1`、`DATA-MODEL-CANDIDATE-V1`、`DB-SCHEMA-CANDIDATE-V1` 和 `API-CONTRACT-CANDIDATE-V1` 已冻结为正式开发基线，原冻结内容固定为提交 `64cdf09`。2026-09-24 用户另明确批准 License 专项 `CR-LIC-001` 方案 B，作为可追溯的后续基线修订，不追写原冻结提交。
 - 当前处于 Phase 2 Platform Core；基础工程及 `LIC-03-A02` 之前的状态以 `STATUS.md` 为准。`LIC-02-A02` 的冻结冲突已由用户批准 CR-LIC-001 方案 B，允许按 WBS 恢复 LicenseService 实现；Gate 3 尚未通过。
-- 冻结后的总体架构、核心数据模型、DB Schema V1、`/api/v1` Breaking Change、技术栈、安全/License 机制或 Scope 变化必须走 L3 Change Request；不得在普通实现任务中静默改写。
+- 冻结后的总体架构、核心数据模型、DB Schema V1、`/api/v1` Breaking Change、技术栈、安全/License 机制或 Scope 变化必须走可追溯 Change Request；按用户 2026-09-24 的持续授权可在记录、验证与兼容/迁移分析后自主实施，不得静默改写或虚报 PASS。
 - Gate 2 批准不代表生产 ORM/Migration、运行 OpenAPI、性能、AI 质量、三平台发行或 UAT 已通过。
 
 ## 硬性约束
@@ -50,7 +49,7 @@
 
 ## 工作纪律
 
-- 默认执行模式为“自主执行 + Gate 确认 + 异常升级”。当前 Scope 内的 L1 工作直接执行；L2 决策写入 `docs/decisions/decision-log.md` 后继续；只有新规则列明的 L3 事件和正式 Gate 才请求人工确认。
+- 默认执行模式为“持续自主执行至可用程序包 + 偏差先记录后实施 + 按证据关闭 Gate”。L1 直接执行；L2 写决策日志；原 L3 事项走正式 Change Request 并按 V1.1 的持续授权执行，不再逐项请求同意。Gate 只有在验收证据满足时才能关闭；客观阻塞要记录并转向独立任务，不伪造通过。
 - 一个 WBS 任务只解决一个明确问题，不得跨模块顺手修改。
 - 正式编码前必须完成 Skill 中的编码前检查；前置未满足则停止该任务。
 - 数据库变更必须包含 ORM、Alembic migration、up/down、空库及有数据升级验证。
