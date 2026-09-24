@@ -1,0 +1,26 @@
+{
+  "platform": {
+    "system": "Windows",
+    "release": "2025Server",
+    "version": "10.0.26100",
+    "machine": "AMD64"
+  },
+  "python_version": "3.13.15",
+  "packages": {
+    "python-docx": "1.2.0",
+    "python-pptx": "1.0.2",
+    "openpyxl": "3.1.5",
+    "PyMuPDF": "1.28.2",
+    "pdfplumber": "0.11.10",
+    "Pillow": "12.3.0",
+    "paddleocr": "3.7.0",
+    "paddlepaddle": "3.3.1",
+    "pytesseract": "0.3.13",
+    "ocrmypdf": "17.12.1",
+    "jsonschema": "4.26.0"
+  },
+  "tools": {
+    "tesseract": "tesseract v5.4.0.20240606",
+    "ghostscript": "10.08.0"
+  }
+}

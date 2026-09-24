@@ -1,0 +1,40 @@
+{
+  "schema_version": "poc-03.holdout-suggestion-result.v1",
+  "status": "PASS",
+  "platform": "Windows 11 x86-64",
+  "summary": {
+    "expected_count": 50,
+    "suggestion_count": 50,
+    "unique_question_count": 50,
+    "classification_counts": {
+      "STANDARD_SATISFIED": 23,
+      "PARTIALLY_SATISFIED": 3,
+      "NON_STANDARD": 10,
+      "INSUFFICIENT_INFORMATION": 13,
+      "NO_RELIABLE_MATCH": 1
+    },
+    "all_five_classifications_present": true,
+    "provider_request_attempt_count": 227,
+    "format_recovery_count": 50,
+    "evidence_quote_repair_count": 9,
+    "answer_terms_repair_count": 9
+  },
+  "checks": {
+    "all_candidates_complete": true,
+    "questions_unique": true,
+    "evidence_quotes_grounded": true,
+    "answer_terms_grounded": true
+  },
+  "external_calls": {
+    "deepseek": 227,
+    "embedding": 0,
+    "reranker": 0
+  },
+  "quality_scope": "ai_prefill_only_pending_human_confirmation",
+  "privacy": {
+    "customer_content_committed": false,
+    "questions_committed": false,
+    "suggestions_committed": false,
+    "provider_responses_committed": false
+  }
+}

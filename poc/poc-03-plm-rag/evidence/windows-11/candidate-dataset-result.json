@@ -1,0 +1,52 @@
+{
+  "status": "PASS",
+  "generated_at": "2026-09-17T11:55:13.894101+00:00",
+  "quality_scope": "candidate_generation_only_not_human_approved_golden_dataset",
+  "privacy": {
+    "source_files_committed": false,
+    "source_names_committed": false,
+    "source_hashes_committed": false,
+    "parsed_content_committed": false,
+    "candidate_content_committed": false,
+    "local_output_location": "git-ignored artifacts/poc-03/candidate-dataset/"
+  },
+  "summary": {
+    "parsed_document_count": 26,
+    "input_block_count": 60430,
+    "chunk_count": 655,
+    "candidate_target_count": 120,
+    "candidate_count": 120,
+    "candidate_status": "PENDING_HUMAN_REVIEW",
+    "document_coverage_count": 26,
+    "scope_counts": {"PROJECT": 655},
+    "source_corpus_counts": {"CONTRACT": 192, "SOLUTION": 463}
+  },
+  "per_document": [
+    {"document_id": "CONTRACT-SL-001", "source_corpus": "CONTRACT", "chunk_count": 20, "candidate_count": 5},
+    {"document_id": "CONTRACT-SL-004", "source_corpus": "CONTRACT", "chunk_count": 8, "candidate_count": 5},
+    {"document_id": "CONTRACT-SL-007", "source_corpus": "CONTRACT", "chunk_count": 10, "candidate_count": 5},
+    {"document_id": "CONTRACT-SL-008", "source_corpus": "CONTRACT", "chunk_count": 22, "candidate_count": 5},
+    {"document_id": "CONTRACT-SL-010", "source_corpus": "CONTRACT", "chunk_count": 31, "candidate_count": 5},
+    {"document_id": "CONTRACT-SL-011", "source_corpus": "CONTRACT", "chunk_count": 42, "candidate_count": 5},
+    {"document_id": "CONTRACT-SL-016", "source_corpus": "CONTRACT", "chunk_count": 13, "candidate_count": 5},
+    {"document_id": "CONTRACT-SL-017", "source_corpus": "CONTRACT", "chunk_count": 33, "candidate_count": 5},
+    {"document_id": "CONTRACT-SL-018", "source_corpus": "CONTRACT", "chunk_count": 13, "candidate_count": 5},
+    {"document_id": "SOLUTION-SL-001", "source_corpus": "SOLUTION", "chunk_count": 7, "candidate_count": 5},
+    {"document_id": "SOLUTION-SL-002", "source_corpus": "SOLUTION", "chunk_count": 5, "candidate_count": 5},
+    {"document_id": "SOLUTION-SL-003", "source_corpus": "SOLUTION", "chunk_count": 6, "candidate_count": 5},
+    {"document_id": "SOLUTION-SL-004", "source_corpus": "SOLUTION", "chunk_count": 27, "candidate_count": 5},
+    {"document_id": "SOLUTION-SL-005", "source_corpus": "SOLUTION", "chunk_count": 78, "candidate_count": 5},
+    {"document_id": "SOLUTION-SL-006", "source_corpus": "SOLUTION", "chunk_count": 55, "candidate_count": 5},
+    {"document_id": "SOLUTION-SL-007", "source_corpus": "SOLUTION", "chunk_count": 24, "candidate_count": 5},
+    {"document_id": "SOLUTION-SL-008", "source_corpus": "SOLUTION", "chunk_count": 96, "candidate_count": 4},
+    {"document_id": "SOLUTION-SL-009", "source_corpus": "SOLUTION", "chunk_count": 11, "candidate_count": 4},
+    {"document_id": "SOLUTION-SL-010", "source_corpus": "SOLUTION", "chunk_count": 4, "candidate_count": 4},
+    {"document_id": "SOLUTION-SL-011", "source_corpus": "SOLUTION", "chunk_count": 34, "candidate_count": 4},
+    {"document_id": "SOLUTION-SL-012", "source_corpus": "SOLUTION", "chunk_count": 6, "candidate_count": 4},
+    {"document_id": "SOLUTION-SL-013", "source_corpus": "SOLUTION", "chunk_count": 35, "candidate_count": 4},
+    {"document_id": "SOLUTION-SL-014", "source_corpus": "SOLUTION", "chunk_count": 8, "candidate_count": 4},
+    {"document_id": "SOLUTION-SL-016", "source_corpus": "SOLUTION", "chunk_count": 34, "candidate_count": 4},
+    {"document_id": "SOLUTION-SL-017", "source_corpus": "SOLUTION", "chunk_count": 16, "candidate_count": 4},
+    {"document_id": "SOLUTION-SL-018", "source_corpus": "SOLUTION", "chunk_count": 17, "candidate_count": 4}
+  ]
+}

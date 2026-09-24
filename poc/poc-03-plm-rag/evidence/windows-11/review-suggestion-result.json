@@ -1,0 +1,32 @@
+{
+  "schema_version": "poc-03.review-suggestion-result.v1",
+  "generated_at": "2026-09-17T13:44:46.747279+00:00",
+  "status": "PASS_FOR_HUMAN_REVIEW",
+  "generation_mode": "LOCAL_DETERMINISTIC_RULES",
+  "summary": {
+    "suggestion_count": 120,
+    "unique_query_count": 120,
+    "unresolved_source_type_count": 75,
+    "source_type_suggestion_counts": {
+      "CONTRACT": 45,
+      "UNRESOLVED": 75
+    },
+    "classification_suggestion_counts": {
+      "HUMAN_CONFIRMATION_REQUIRED": 93,
+      "NON_STANDARD": 7,
+      "STANDARD_SATISFIED": 20
+    },
+    "pending_review_count": 120,
+    "citation_prefill_count": 120
+  },
+  "privacy": {
+    "external_ai_service_called": false,
+    "customer_content_uploaded": false,
+    "customer_content_committed": false,
+    "queries_committed": false,
+    "answer_terms_committed": false,
+    "workbook_committed": false
+  },
+  "quality_scope": "local_prefill_suggestions_only_not_human_approved_ground_truth",
+  "conclusion": "Local suggestions are ready for human review; no row is approved and no Golden Dataset quality metric may be claimed."
+}
