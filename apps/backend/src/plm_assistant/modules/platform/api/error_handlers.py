@@ -1,9 +1,5 @@
 from __future__ import annotations
 
-import secrets
-import time
-import uuid
-
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -14,38 +10,21 @@ from plm_assistant.modules.platform.application.errors import (
     ApplicationError,
     ErrorSpec,
 )
-
-
-def _new_uuid7() -> str:
-    timestamp_ms = int(time.time_ns() // 1_000_000) & ((1 << 48) - 1)
-    random_a = secrets.randbits(12)
-    random_b = secrets.randbits(62)
-    value = (
-        (timestamp_ms << 80)
-        | (7 << 76)
-        | (random_a << 64)
-        | (2 << 62)
-        | random_b
-    )
-    return str(uuid.UUID(int=value))
+from plm_assistant.modules.platform.application.trace_context import (
+    is_canonical_uuid,
+    new_uuid7 as _new_uuid7,
+)
 
 
 def error_trace_id(request: Request) -> str:
-    """Use the later trace middleware's ID, or resolve an API-01 trace ID."""
+    """Use the request context, with a safe fallback for isolated handlers."""
 
     attached = getattr(request.state, "trace_id", None)
-    if isinstance(attached, str):
-        try:
-            if str(uuid.UUID(attached)) == attached:
-                return attached
-        except ValueError:
-            pass
+    if is_canonical_uuid(attached):
+        return attached
     supplied = request.headers.get("x-trace-id", "")
-    try:
-        if str(uuid.UUID(supplied)) == supplied:
-            return supplied
-    except ValueError:
-        pass
+    if is_canonical_uuid(supplied):
+        return supplied
     return _new_uuid7()
 
 

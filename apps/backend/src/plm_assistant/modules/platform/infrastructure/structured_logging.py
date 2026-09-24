@@ -11,7 +11,7 @@ from typing import TextIO
 
 _SAFE_LABEL = re.compile(r"[A-Za-z][A-Za-z0-9_.-]{0,63}\Z")
 _SAFE_CODE = re.compile(r"[A-Z][A-Z0-9_]{0,63}\Z")
-_APPLICATION_EVENTS = {"app_started", "app_stopped", "request_failed"}
+_APPLICATION_EVENTS = {"app_started", "app_stopped", "request_failed", "request_completed"}
 _INTEGRATION_EVENTS = {"integration_finished"}
 _INTEGRATION_TYPES = {"ai", "ocr", "plugin", "file_conversion"}
 _PROVIDERS = {
@@ -65,6 +65,7 @@ class StructuredLoggers:
         trace_id: str | None = None,
         error_code: str | None = None,
         duration_ms: int | None = None,
+        status_code: int | None = None,
     ) -> None:
         if event not in _APPLICATION_EVENTS:
             raise ValueError("unregistered application log event")
@@ -74,6 +75,8 @@ class StructuredLoggers:
             raise ValueError("unsafe error code")
         if duration_ms is not None and (type(duration_ms) is not int or duration_ms < 0):
             raise ValueError("invalid duration")
+        if status_code is not None and (type(status_code) is not int or not 100 <= status_code <= 599):
+            raise ValueError("invalid status code")
         record: dict[str, object] = {
             "timestamp": datetime.now(timezone.utc).isoformat(timespec="milliseconds"),
             "category": "application",
@@ -85,6 +88,7 @@ class StructuredLoggers:
             ("trace_id", _trace(trace_id)),
             ("error_code", error_code),
             ("duration_ms", duration_ms),
+            ("status_code", status_code),
         ):
             if value is not None:
                 record[key] = value

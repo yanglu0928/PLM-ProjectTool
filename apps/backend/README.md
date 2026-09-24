@@ -14,6 +14,8 @@ uvicorn --factory plm_assistant.entrypoints.api:create_app
 
 WBS 1.07 提供独立的 Application/Integration JSON 日志流。`create_app(loggers=...)` 可注入平台 `StructuredLoggers`；默认 Application 写 stdout、Integration 写 stderr。只能通过受控事件与字段写入，不得将原始异常、请求/响应正文、Secret、路径或客户字段作为日志消息；Audit 不属于此日志器。未分类 API 失败会记录固定安全码与响应相同的 TraceId。
 
+WBS 1.08 在所有 HTTP 请求上绑定 TraceId：仅复用单个规范 UUID 的 `X-Trace-Id`，否则生成 UUIDv7；`request.state.trace_id` 和 `current_trace_id()` 可供当前请求的 API/Application 调用，`trace_scope()` 供后续受控 Worker 入口显式继承。每个响应头和受控完成日志使用同一值。健康端点 body 保持最小响应；正式业务成功 JSON 的 `data`/`trace_id` Envelope 仍由对应 API 层按冻结 Contract 构造，不能把 TraceId 用作授权或幂等凭据。
+
 数据库 URL 只由 Composition Root 或迁移入口注入；本模块不读取 `.env` 或 Secret 文件，也不输出明文密码。正式 ORM Base 固定使用 `plm` Schema；首个 revision `20260924_0001` 只建立 PostgreSQL 18 + pgvector 0.8.6 平台基线，业务表仍为 0。
 
 Migration 文件随 backend wheel 交付。`plm` Schema、`plm.alembic_version` 和共享 pgvector 扩展在 downgrade 到 base 后保留；后续模块只能新增自己的正式 ORM/Migration，不得复制 SC-04 的验证性占位表。当前不注册业务 API；认证、业务 Router、Worker 与 Config/Secret 仍由后续 WBS 实现。

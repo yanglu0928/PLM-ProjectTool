@@ -911,3 +911,15 @@
 |Reason|自由文本和第三方异常拼接易把 Secret、客户正文、绝对路径或 Provider 原始响应写进普通日志；事件/字段白名单在写入前拒绝不受控数据。按应用/集成分流可保持权限、保留期和排障职责分离，且不抢占后续 Audit、Trace、Config WBS。|
 |Impact|仅增加平台日志能力和未分类 API 失败的安全记录；未新增业务 API、数据库对象或网络调用。当前记录不含请求性能、Actor/Project 等上下文；WBS 1.08 Trace 中间件和后续业务模块逐步接入受控字段。默认 Application 输出 stdout、Integration 输出 stderr；正式部署的收集、保留与访问控制由 Release 阶段配置。|
 |Rollback|移除日志模块、App Factory 注入及异常处理中的安全记录即可恢复 WBS 1.06；无数据迁移。未来需要新 Provider 或事件时先扩充受控目录及测试，不允许改成任意消息透传。|
+
+## DEC-20260924-067
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-067|
+|Date|2026-09-24|
+|WBS|1.08 TraceId middleware|
+|Decision|采用纯 ASGI Trace 中间件，在每个 HTTP 请求入口只解析一次 `X-Trace-Id`：仅单个规范 UUID 可复用，缺失、格式无效或重复请求头一律生成 UUIDv7。TraceId 同时写入 `request.state` 与 ContextVar，响应头统一回传；上下文在请求结束后恢复，供 Application 和后续受控集成调用读取。新增受控 `request_completed` Application Log，仅记录 TraceId、HTTP 状态和非负耗时，不写 URL、Header 或正文。健康端点只增加响应头，不改变冻结的最小 body。|
+|Reason|单次入口解析防止错误处理、业务代码和日志各自生成不同 TraceId；纯 ASGI 包裹整个响应发送过程，可覆盖同步/异步请求及流式响应，ContextVar 避免并发请求污染。重复请求头不能有歧义，按无效值处理更安全。|
+|Impact|所有 HTTP 响应增加 `X-Trace-Id`；错误正文继续由 WBS 1.06 固定 Envelope 保持相同值。未来正式业务成功 JSON 仍须按冻结 API-01 由业务响应层提供 `data` 与 `trace_id`，中间件不会改写响应正文。当前无 Job/AI/Plugin/Audit 实例；后续入口应显式继承已验证的 TraceId，不能把它当授权或幂等凭据。无业务路由、数据库或外部调用变化。|
+|Rollback|移除中间件装配、Trace 上下文及新增日志字段即可恢复 WBS 1.07；WBS 1.06 错误响应仍保留独立 Trace 回退。若需改变冻结的 Trace Header/Envelope 语义，必须走 API Change Request/L3。|

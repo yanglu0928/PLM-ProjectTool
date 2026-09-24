@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from plm_assistant import __version__
 from plm_assistant.modules.platform.api.error_handlers import install_error_handlers
 from plm_assistant.modules.platform.api.health import create_health_router
+from plm_assistant.modules.platform.api.trace_middleware import TraceMiddleware
 from plm_assistant.modules.platform.application.health import (
     HealthService,
     ReadinessCheck,
@@ -53,6 +54,7 @@ def create_app(
     )
     app.state.health_service = health_service
     app.state.loggers = loggers or StructuredLoggers()
+    app.add_middleware(TraceMiddleware, loggers=app.state.loggers)
     install_error_handlers(app)
     app.include_router(create_health_router(health_service))
     return app
