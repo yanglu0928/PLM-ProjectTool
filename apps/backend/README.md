@@ -16,6 +16,8 @@ WBS 1.07 提供独立的 Application/Integration JSON 日志流。`create_app(lo
 
 WBS 1.08 在所有 HTTP 请求上绑定 TraceId：仅复用单个规范 UUID 的 `X-Trace-Id`，否则生成 UUIDv7；`request.state.trace_id` 和 `current_trace_id()` 可供当前请求的 API/Application 调用，`trace_scope()` 供后续受控 Worker 入口显式继承。每个响应头和受控完成日志使用同一值。健康端点 body 保持最小响应；正式业务成功 JSON 的 `data`/`trace_id` Envelope 仍由对应 API 层按冻结 Contract 构造，不能把 TraceId 用作授权或幂等凭据。
 
+WBS 1.09 增加非敏感启动配置加载器与 Secret 访问契约。`config/bootstrap.example.yaml` 只给出监听地址、端口、数据目录及日志级别；`load_bootstrap_settings(path)` 读取受限 YAML 与 `PLM_` 环境覆盖，只有显式传入 `development_env_file` 才读取开发用 `.env`。未知字段、重复键和密钥类配置均失败关闭，配置错误只给固定安全提示。Secret 只能以 `SecretRef` 交给受控 Adapter，在 ACTIVE、用途、消费方、版本与 Audit 检查通过后，于一次调用作用域内解密并清理可变缓冲。实际 PostgreSQL 密文仓库、加密算法及 Windows/Linux `SecretKeyProvider` 尚未实现，不能把此契约当作可投产的 Secret Store；启动引导仍需后续 Composition Root/发行任务接入。
+
 数据库 URL 只由 Composition Root 或迁移入口注入；本模块不读取 `.env` 或 Secret 文件，也不输出明文密码。正式 ORM Base 固定使用 `plm` Schema；首个 revision `20260924_0001` 只建立 PostgreSQL 18 + pgvector 0.8.6 平台基线，业务表仍为 0。
 
 Migration 文件随 backend wheel 交付。`plm` Schema、`plm.alembic_version` 和共享 pgvector 扩展在 downgrade 到 base 后保留；后续模块只能新增自己的正式 ORM/Migration，不得复制 SC-04 的验证性占位表。当前不注册业务 API；认证、业务 Router、Worker 与 Config/Secret 仍由后续 WBS 实现。

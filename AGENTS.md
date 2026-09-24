@@ -31,7 +31,7 @@
 
 - Phase 0 Gate 1 已通过，结论为 `COMPLETE_WITH_APPROVED_ALTERNATIVES`。
 - Gate 2 已于 2026-09-23 由用户明确批准；`ARCH-CANDIDATE-V1`、`DATA-MODEL-CANDIDATE-V1`、`DB-SCHEMA-CANDIDATE-V1` 和 `API-CONTRACT-CANDIDATE-V1` 已冻结为正式开发基线，冻结内容固定为提交 `64cdf09`。
-- 当前处于 Phase 1 架构冻结与基础工程；`1.01`～`1.08` 已 PASS，下一 WBS 为 `1.09 Config/Secret`。允许按 WBS 开展正式基础工程与业务实现。
+- 当前处于 Phase 1 架构冻结与基础工程；`1.01`～`1.09` 基础任务已 PASS，下一任务为 `PLT-01-A01 SystemConfiguration ORM/Migration`。允许按 WBS 开展正式基础工程与业务实现；WBS 1.09 不代表生产 Secret Store 已实现。
 - 冻结后的总体架构、核心数据模型、DB Schema V1、`/api/v1` Breaking Change、技术栈、安全/License 机制或 Scope 变化必须走 L3 Change Request；不得在普通实现任务中静默改写。
 - Gate 2 批准不代表生产 ORM/Migration、运行 OpenAPI、性能、AI 质量、三平台发行或 UAT 已通过。
 

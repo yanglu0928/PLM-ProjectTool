@@ -923,3 +923,15 @@
 |Reason|单次入口解析防止错误处理、业务代码和日志各自生成不同 TraceId；纯 ASGI 包裹整个响应发送过程，可覆盖同步/异步请求及流式响应，ContextVar 避免并发请求污染。重复请求头不能有歧义，按无效值处理更安全。|
 |Impact|所有 HTTP 响应增加 `X-Trace-Id`；错误正文继续由 WBS 1.06 固定 Envelope 保持相同值。未来正式业务成功 JSON 仍须按冻结 API-01 由业务响应层提供 `data` 与 `trace_id`，中间件不会改写响应正文。当前无 Job/AI/Plugin/Audit 实例；后续入口应显式继承已验证的 TraceId，不能把它当授权或幂等凭据。无业务路由、数据库或外部调用变化。|
 |Rollback|移除中间件装配、Trace 上下文及新增日志字段即可恢复 WBS 1.07；WBS 1.06 错误响应仍保留独立 Trace 回退。若需改变冻结的 Trace Header/Envelope 语义，必须走 API Change Request/L3。|
+
+## DEC-20260924-068
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-068|
+|Date|2026-09-24|
+|WBS|1.09 Config/Secret|
+|Decision|基础工程先实现非敏感 Bootstrap 配置与 Secret 单次访问边界，不提前创建 PLT-01/PLT-02 正式业务表/API。Bootstrap 采用基线建议的 pydantic-settings 2.15.0 与 PyYAML 6.0.3，显式加载受限 UTF-8 YAML、`PLM_` 环境变量，开发 `.env` 仅在调用者明确传入时读取；重复/未知键、未知环境字段、危险 YAML tag、超限文件或非法类型失败关闭，错误消息固定脱敏。密钥、密码、Token 不进入 Bootstrap schema。Secret 只用 `SecretRef`，按受控 Purpose/Consumer、ACTIVE、版本与密文元数据检查后调用注入的解密 Port；Audit Port 是必需依赖，失败关闭；明文仅作为单次调用的可变缓冲区使用并在退出时清零。加密算法、持久密文仓库与 Windows/Linux SecretKeyProvider 保持未实现，遵照冻结方案留待 PLT-02 与 Release 安全设计，不把当前 Port 冒充生产 Secret Store。|
+|Reason|现有正式 Migration 仅是无业务表的平台基线，PLT-01/PLT-02 的版本化实体和 Audit 尚未实施；在 1.09 直接写持久 Secret 或私自选定平台主密钥机制会跨 WBS 且掩盖 Gate 风险。先锁定非敏感配置来源和失败关闭的单次访问契约，可让后续 DB/AI Adapter 使用统一引用，同时避免把明文配置或测试密钥写入 Git。pydantic-settings/YAML 选型直接落实已批准技术建议，不引入新的商业授权或更改安全基线。|
+|Impact|backend 增加两项固定直接依赖和一个不含 Secret 的示例模板；无数据库对象、业务 API、真实密钥、外发或生产加密能力。App Factory 目前不自动从 YAML/.env 读取，也不以缺失的 SecretKeyProvider 假装连接数据库；PLT-01/PLT-02 后续 Task 必须实现正式 ORM/Migration、权限/API、审计、密文与主材料分离及恢复验证，才能标记生产 Secret 可用。|
+|Rollback|移除 Bootstrap/Secret 边界代码、示例、测试及两项依赖即可回到 WBS 1.08；无数据迁移。任何把密钥写入 YAML/.env 发行包、弱化 Secret 消费方授权或改变冻结 PLT-01/PLT-02 API/数据语义的方案必须走对应 L3 Change Request。|

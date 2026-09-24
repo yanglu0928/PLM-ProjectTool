@@ -6,6 +6,7 @@
 
 ### 新增
 
+- 2026-09-24：WBS 1.09 完成 Config/Secret 基础边界。新增受限 YAML + `PLM_` 环境启动配置、显式开发 `.env`、固定脱敏错误、SecretRef/受控消费方/必需 Audit/单次使用并清理缓冲区契约；backend 新增 pydantic-settings 2.15.0 与 PyYAML 6.0.3。Windows 11/Python 3.13 下后端 72/72 测试及 wheel 内容验证 PASS；无新增业务 API、表、Migration、真实密钥或客户数据外发。升级只需安装新增依赖；下一任务为 PLT-01-A01 SystemConfiguration ORM/Migration。已知未完成项：生产密文仓库、加密算法、外部 SecretKeyProvider、主材料恢复、PLT-01/02 API/审计尚未实现，不能宣称生产 Secret 可用；Server/Debian 未在本任务验证。
 - 2026-09-24：WBS 1.08 完成纯 ASGI TraceId 中间件。对每个 HTTP 请求只复用单个规范 UUID，缺失、无效或重复头生成 UUIDv7；上下文在同步/异步、并发及流式响应间保持隔离，所有响应头、错误正文和安全 JSON 日志使用同一 TraceId。Windows 11/Python 3.13 下后端 57/57 测试 PASS；健康最小 body、公开路由范围、数据库与外部调用均未改变。无升级步骤；下一 WBS 为 1.09 Config/Secret。已知未完成项：正式业务成功 Envelope、Job/AI/Plugin/Audit 跨入口传播须在相应 WBS 实现；Server/Debian 未在本任务验证。
 - 2026-09-24：WBS 1.07 完成平台 JSON 日志基础能力。Application 与 Integration 采用独立、可注入的 JSON 行输出流和事件/字段白名单；未分类 API 错误只记录安全码与响应 TraceId，原始异常、正文、Secret 和路径不进入日志。Windows 11/Python 3.13 下后端 48/48 测试 PASS；无业务 API、数据库变更或外部调用。无升级步骤；下一 WBS 为 1.08 TraceId。已知未完成项：请求级 Trace/耗时上下文、Audit 持久化及正式部署日志收集/保留策略仍由后续 WBS/Release 完成；Server/Debian 未在本任务验证。
 - 2026-09-24：WBS 1.06 完成 FastAPI 统一错误边界。实现冻结通用错误码、固定安全提示、请求校验 400/422、未分类异常 500、普通权限 403 隐藏为 404、规范 UUIDv7 TraceId 与 `X-Trace-Id` 同步；新增兼容 405 码且不改冻结语义。Windows 11/Python 3.13 下后端测试 43/43 PASS；仅健康端点公开，业务表、业务 API、Migration 和外部调用均未增加。无升级步骤；下一 WBS 为 1.07 JSON log。已知未完成项：服务端脱敏日志与全生命周期 Trace 中间件分别在 1.07、1.08 实现，Server/Debian 发行兼容性未由本 WBS 验证。
