@@ -1,0 +1,270 @@
+:root {
+  color: #12221b;
+  background: #f2f5ef;
+  font-family:
+    Inter, "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(circle at 8% 8%, rgb(205 225 210 / 62%), transparent 28rem),
+    #f2f5ef;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+a {
+  font: inherit;
+}
+
+button,
+.state-panel a {
+  display: inline-flex;
+  min-height: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.7rem 1.1rem;
+  color: #fff;
+  background: #1e6046;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid #e09f3e;
+  outline-offset: 3px;
+}
+
+.skip-link {
+  position: fixed;
+  z-index: 10;
+  top: 0.75rem;
+  left: 0.75rem;
+  transform: translateY(-150%);
+  padding: 0.55rem 0.8rem;
+  border-radius: 0.5rem;
+  color: #fff;
+  background: #12221b;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.app-shell {
+  display: grid;
+  min-height: 100vh;
+  grid-template-rows: auto 1fr auto;
+}
+
+.app-header,
+.app-main,
+.app-footer {
+  width: min(1180px, calc(100% - 2rem));
+  margin-inline: auto;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  padding-block: 1.5rem;
+  border-bottom: 1px solid rgb(18 34 27 / 14%);
+}
+
+.app-eyebrow,
+.section-kicker,
+.state-label {
+  margin: 0;
+  color: #44715d;
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.16em;
+}
+
+.app-brand {
+  margin: 0.2rem 0 0;
+  font-size: 1.25rem;
+  font-weight: 760;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+nav a {
+  text-underline-offset: 0.35rem;
+}
+
+.connection-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #3f544a;
+  font-size: 0.88rem;
+}
+
+.connection-status span {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: #d29b42;
+}
+
+.connection-status[data-state="READY"] span {
+  background: #2d8a61;
+}
+
+.connection-status[data-state="UNAVAILABLE"] span {
+  background: #b14f45;
+}
+
+.app-main {
+  padding-block: clamp(3rem, 9vw, 7.5rem);
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.7fr) minmax(17rem, 0.7fr);
+  align-items: end;
+  gap: clamp(2rem, 7vw, 6rem);
+}
+
+.hero h1 {
+  max-width: 13ch;
+  margin: 0.7rem 0 1.2rem;
+  font-family: Georgia, "Noto Serif SC", serif;
+  font-size: clamp(2.7rem, 7vw, 5.8rem);
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+}
+
+.hero-copy {
+  max-width: 42rem;
+  color: #52645b;
+  font-size: 1.08rem;
+  line-height: 1.8;
+}
+
+.foundation-card,
+.principles,
+.state-panel {
+  border: 1px solid rgb(18 34 27 / 13%);
+  border-radius: 1.25rem;
+  background: rgb(255 255 255 / 64%);
+  box-shadow: 0 1rem 3rem rgb(18 34 27 / 7%);
+}
+
+.foundation-card {
+  padding: 1.6rem;
+}
+
+.foundation-card span,
+.foundation-card p {
+  color: #607168;
+}
+
+.foundation-card strong {
+  display: block;
+  margin-block: 0.4rem 1.3rem;
+  font-size: 1.85rem;
+}
+
+.principles {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 2rem;
+  margin-top: clamp(4rem, 9vw, 8rem);
+  padding: clamp(1.5rem, 4vw, 3rem);
+}
+
+.principles h2 {
+  margin: 0.5rem 0 0;
+  font-size: 2rem;
+}
+
+.principles ul {
+  display: grid;
+  gap: 0.85rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.principles li {
+  border-bottom: 1px solid rgb(18 34 27 / 12%);
+  padding-bottom: 0.85rem;
+}
+
+.state-panel {
+  max-width: 42rem;
+  padding: clamp(1.7rem, 4vw, 3rem);
+}
+
+.state-panel h1 {
+  margin-block: 0.65rem;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+}
+
+.state-panel p:not(.state-label) {
+  margin-bottom: 1.5rem;
+  color: #607168;
+  line-height: 1.7;
+}
+
+.app-footer {
+  padding-block: 1.25rem 1.75rem;
+  color: #6b7a73;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 760px) {
+  .app-header,
+  .header-actions {
+    align-items: flex-start;
+  }
+
+  .app-header,
+  .header-actions,
+  .hero,
+  .principles {
+    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.5rem, 13vw, 4rem);
+  }
+
+  .foundation-card {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

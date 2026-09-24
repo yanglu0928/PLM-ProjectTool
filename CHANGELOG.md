@@ -6,6 +6,7 @@
 
 ### 新增
 
+- 2026-09-24：WBS 1.03 完成 Vue app shell。新增 Vue 3.5.43 + TypeScript 5.9.3 + Vite 8.3.0 响应式应用壳、最小 Router、same-origin 后端状态、安全错误边界和 404；Windows 11 下 Vitest 9/9、类型检查、生产构建、官方 npm 漏洞审计、机器验收及预览 HTTP smoke 2/2 全部 PASS。当前无登录/业务页面、数据库或客户数据外发；无 Migration，下一 WBS 为 1.04 SQLAlchemy session。
 - 2026-09-24：WBS 1.02 完成 FastAPI app factory。新增 Python 3.13 后端包、无全局单例的 `create_app()`、隔离 lifespan、最小 `/health/live` 与 `/health/ready`、失败关闭 readiness 探针及 12 项 Unit/API/Permission/Integration 测试；Windows 11 使用 FastAPI 0.141.1、Uvicorn 0.53.0、HTTPX2 2.13.1 验证 PASS，wheel 构建及 Uvicorn factory 实际 HTTP smoke 2/2 PASS。Swagger/ReDoc/外部 OpenAPI 与全部业务 API 保持未暴露，数据库、Migration 和外部调用均为 0；下一 WBS 为 1.03 Vue app shell。
 - 2026-09-23：WBS 1.01 完成模块目录规范 V1。建立 `apps/backend`、`apps/frontend` 和独立 `tools/developer-workbench` 顶层边界，冻结 `src/plm_assistant`、模块四层模板、测试镜像与 Windows 路径规则；新增机器目录和验证器，22/22 Runtime Module 与 API Owner、65/65 Root 及冻结依赖矩阵一致，6/6 测试 PASS。本任务未创建运行代码、API、Migration 或外部调用，下一 WBS 为 1.02 FastAPI app factory。
 - 2026-09-23：用户正式批准 Gate 2；Architecture、Data Model、DB Schema V1 和 API Contract V1 按提交 `64cdf09` 冻结为正式开发基线，新增 Gate 2 冻结记录并解除正式开发阻塞，项目进入 Phase 1 `1.01 定义模块目录规范`。POC-03 继续阻塞 Gate 3/UAT，Server Office、Debian 13 与 Ghostscript 发行合规继续作为 Release 约束；SC-04 仍为验证性 Migration，本次没有外部调用或生产数据库变更。

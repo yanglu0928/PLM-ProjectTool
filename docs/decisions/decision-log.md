@@ -851,3 +851,15 @@
 |Reason|工厂模式避免测试、Worker 或多实例共享可变状态，并为后续 Config、DB Session、日志、Trace 和 Router 逐步装配提供稳定入口。健康面符合冻结 Contract 的最小披露原则；注入探针允许后续数据库/存储检查接入而不改变公开响应。固定已在 Python 3.13.14 验证的直接版本可减少三平台漂移。|
 |Impact|当前运行面只有两个健康端点，不初始化数据库、License、Session 或业务模块；外部 OpenAPI 仍为 404，但 `app.openapi()` 可供后续 Contract diff 使用。1.04/1.09 可向工厂装配基础设施；1.06 负责正式错误 Contract，1.08 负责 TraceId。|
 |Rollback|删除 WBS 1.02 新增 package/测试并恢复 backend README/pyproject 即可回到 1.01；不影响数据库或客户数据。更换 FastAPI/Uvicorn、改变健康路径或暴露额外未冻结 API 必须按依赖/API 变更规则重新评审。|
+
+## DEC-20260924-062
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-062|
+|Date|2026-09-24|
+|WBS|1.03 Vue app shell|
+|Decision|前端采用 Vue 3 + TypeScript + Vite 的单页应用壳，使用 Vue Router 维护首页与 catch-all 404；目录先建立 `app` 与 `shared` 两个公共层，不预建业务模块。浏览器仅通过 same-origin `/health/ready` 读取后端就绪状态，开发代理只指向本机 `127.0.0.1:8000`；不在浏览器存储 Secret、Token 或业务事实。固定 Node 24/pnpm 11 工具链和直接依赖版本，并以 lockfile 及 workspace override 将传递依赖 `ini` 固定为无已知漏洞的 1.3.8。|
+|Reason|最小应用壳为后续认证、错误处理和业务模块提供稳定挂载点，同时避免在对应 WBS 前形成伪页面或客户端信任边界。same-origin 健康检查不会引入厂商调用或跨域凭据；固定依赖和安全 override 可复现当前 Windows 11 验证结果。|
+|Impact|当前 UI 只包含产品导航骨架、后端连接状态、可访问性基础样式、安全错误边界和 404；没有登录、权限裁决、业务路由、数据库或外部 AI 调用。后续业务页面应放入 `src/modules` 并经正式 API/权限 WBS 接入，客户端显示权限不得代替服务端授权。|
+|Rollback|删除 WBS 1.03 新增前端源码、测试、lockfile 和验证证据并恢复 frontend README 即可回到空前端目录；不影响数据库、后端或客户数据。更换冻结技术栈、引入跨域业务调用或改变 `/api/v1` Contract 必须按对应 L3/API 变更规则处理。|

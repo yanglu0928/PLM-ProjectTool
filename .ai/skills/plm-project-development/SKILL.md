@@ -20,7 +20,7 @@ description: Execute architecture, PoC, implementation, testing, packaging, and 
 
 - Phase 0 Gate 1 已通过，结论为 `COMPLETE_WITH_APPROVED_ALTERNATIVES`。
 - Gate 2 已于 2026-09-23 由用户明确批准；Architecture、Data Model、DB Schema V1 和 API Contract V1 已按提交 `64cdf09` 冻结。
-- 当前处于 Phase 1 架构冻结与基础工程；`1.01`、`1.02` 已 PASS，下一 WBS 为 `1.03 Vue app shell`；正式实现必须按 WBS、编码前检查和冻结基线推进。
+- 当前处于 Phase 1 架构冻结与基础工程；`1.01`～`1.03` 已 PASS，下一 WBS 为 `1.04 SQLAlchemy session`；正式实现必须按 WBS、编码前检查和冻结基线推进。
 - 冻结后的总体架构、核心数据模型、DB Schema V1、Breaking API、技术栈、安全/License 机制或 Scope 变化属于 L3，不得由实现任务自行修改。
 - POC-03 质量失败继续阻塞 Gate 3/UAT；Server Office、Debian 13 和 Ghostscript 发行合规继续由各自 Release Gate 关闭。
 
