@@ -1523,3 +1523,15 @@
 |Reason|成员列表需保留 ACTIVE/SUSPENDED/REMOVED 历史，同时防止其他项目成员和 Auth 凭据数据泄漏。用户显示名由 Auth Owner 提供，避免跨模块内部表访问。内部 keyset 位置不是可直接暴露的 API cursor。|
 |Impact|新增 Project 内部列表 Service/Repository 与 Auth 最小用户摘要适配器；无 Schema/Migration、新依赖或公开 API。归档 Project 仍允许授权只读。|
 |Rollback|撤销未公开查询 Port；不改变成员历史。|
+
+## DEC-20260925-020
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-020|
+|Date|2026-09-25|
+|WBS|PRJ-02-A02 ProjectMember 创建命令|
+|Decision|创建成员由当前 ProjectManager 在 License Guard、Session/CSRF 后于同一事务执行：锁定当前项目权限事实，Auth-owned Port 锁定 ENABLED 目标 User 并返回最小显示名，Project-owned Repository 锁定同项目 ACTIVE Department、检查目标 User 未有任何非 REMOVED membership，插入单一角色/部门成员并同事务 Audit。数据库 partial unique 与复合 FK 作为并发/跨项目最终防线；目标 User 缺失/停用或部门不合规则固定拒绝，已分配返回 `PROJECT_USER_ALREADY_ASSIGNED` 且不披露另一项目。允许可选未来 effective_at，未提供由数据库取当前时间。|
+|Reason|冻结模型要求一个 User 同时最多一个未移除成员，部门必须同项目；跨模块 User 状态只能通过 Auth Port，不能由 Project 直查 Auth 内部表。锁 User 与 Department，再结合数据库约束可防并发重复和归属漂移。|
+|Impact|新增 Project 内部创建 Service/Repository、Auth-owned 目标资格适配器；无 Schema/Migration、新依赖或公开 API。公开 POST 的 Idempotency-Key 仍待正式 API 安全装配。|
+|Rollback|内部命令尚未公开；已创建成员如需撤销，应走后续 REMOVE 命令保留历史，不物理删除。|
