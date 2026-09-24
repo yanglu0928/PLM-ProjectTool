@@ -1,0 +1,81 @@
+{
+  "python_version": "3.13.15",
+  "status": "PASS",
+  "checks": [
+    {
+      "check": "python_3_13",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "fastapi_minimal",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "uvicorn_import",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "sqlalchemy_minimal",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "alembic_import",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "psycopg_import",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "pgvector_import",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "pdf_stack_minimal",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "docx_minimal",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "pptx_minimal",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "openpyxl_minimal",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "paddleocr_import",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "paddle_import",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "pytesseract_import",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "check": "ocrmypdf_import",
+      "status": "PASS",
+      "detail": ""
+    }
+  ]
+}
