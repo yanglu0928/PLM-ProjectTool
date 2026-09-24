@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-24：`0.1.0.dev0`/LIC-02-A05 新增仅内部 DeploymentAdmin 受控重验证：当前 ACTIVE 安装在失败关闭后须重新核对不可变文档、受信任产品公钥、Ed25519、机器/有效期/可信时间，成功才恢复 VALID；失败写新事件和拒绝状态，安装结果引用、状态与 Audit 同事务。Windows 11/Python 3.13 后端 182/182、服务单元覆盖率 93%、PostgreSQL 18.6 一次性库真实合成签名恢复/CSRF 拒绝/过期与可信时间拒绝/审计回滚及 wheel 构建 PASS。兼容现有 Schema 和签名格式；无需 Migration/数据升级，无新依赖、公开 API 或客户数据外发。已知问题：生产公钥/选定 MAC/可信时间密钥来源与初始化、HTTP 接线及性能未验收；Windows Server 2025/Debian 13 本项未复验。
+
 - 2026-09-24：`0.1.0.dev0`/LIC-02-A04 新增内部运行时 License Guard：锁定部署状态后复核活动安装/不可变文档/当前事件，重验 Ed25519、机器指纹、有效期与可信时间完整性/单调性，检查事件、状态与 Audit 同事务；未安装、过期、状态损坏、审计失败均拒绝。Windows 11/Python 3.13 后端 174/174、Guard 覆盖率 92%、PostgreSQL 18.6 真实合成签名链/双检查串行/过期及审计回滚、可信时间回归、wheel 构建 PASS。兼容现有 Schema；无 Migration、新依赖、公开 API 或客户数据外发。已知问题：每次检查均写事件/Audit，性能未验收；受控恢复、HTTP 接线与生产信任源未完成，Windows Server 2025/Debian 13 未复验。
 
 - 2026-09-24：`0.1.0.dev0`/LIC-01-A04 新增仅内部受控激活：要求本次完整验证成功且同追踪号/文档摘要/安装引用/有效期一致，并在 60 秒内复核当前 Session+CSRF+DeploymentAdmin；旧 ACTIVE→SUPERSEDED、新 IMPORTED→ACTIVE、部署级 ValidationState→VALID 与 Audit 同事务。Windows 11/Python 3.13 后端 163/163、服务覆盖率 92%、PostgreSQL 18.6 临时库首次激活/替换/旧证据拒绝/审计回滚及 wheel 构建 PASS。兼容现有 Schema，无 Migration、新依赖、公开 API 或客户数据外发。已知问题：验证记录与激活跨事务，失败留下未激活验证事件；运行时 Guard 和生产信任源未接线，Windows Server 2025/Debian 13 未复验。
