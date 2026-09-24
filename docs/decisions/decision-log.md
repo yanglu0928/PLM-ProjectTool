@@ -1019,3 +1019,15 @@
 |Reason|冻结 DM-02/SC-01～03 要求身份与凭据版本分离、唯一用户名、一个有效凭据和 Session 凭据版本失效。先创建 DISABLED Root 避开循环 FK 插入顺序，同时由复合 FK 阻止把别人的或旧版本凭据设为当前；不得在 Schema 任务中假装选定密码算法或开放登录。|
 |Impact|新增正式迁移 `20260924_0006` 与两张 Auth 表，无新依赖、公开 API、客户数据外发或冻结基线变更。Unicode trim/NFC/casefold、密码 Hash 策略、命令授权/审计、Session 失效须由后续 WBS 实现并验证；原始密码和哈希不得进入 DTO/Audit/日志。|
 |Rollback|空 Auth 表可降级到 `0005`；一旦有身份/凭据历史，普通 downgrade 失败关闭，必须先备份并通过受控恢复/迁移处理，不删除账号历史。|
+
+## DEC-20260924-076
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-076|
+|Date|2026-09-24|
+|WBS|AUT-01-A02 User/Credential 内部命令与规范化|
+|Decision|本项只实现内部 User 创建，不提前实现登录、重置密码、停用/启用或公开管理端点。用户名以 `strip → NFC → casefold → NFC` 得到规范值，拒绝空值、控制字符及 Schema 长度越界；数据库唯一键处理并发重名。命令必须注入同事务权限、密码 Hash 和 AuditService，先授权再哈希/写库；初始凭据版本为 1，默认普通部署角色。Hash 结果只允许受控算法 ID、非敏感整数参数和限定长度编码值；不内置或宣称生产算法。原始密码从调用方可变 UTF-8 缓冲区传入并在成功/失败后尽力清零。|
+|Reason|冻结 DM-02/API-02 要求服务端 canonical username、DeploymentAdmin 授权、write-only 密码、同事务 Audit 和凭据版本。生产密码算法、Session/License 和持久幂等尚未落地；独立 Port 与无公开路由可验证创建流程及失败关闭，同时避免在普通实现任务中擅定安全核心机制。|
+|Impact|新增 Auth Domain/Application/Repository 与合成测试；不改 A01 Schema、冻结 API 或技术栈，无新依赖/真实客户数据外发。只有未来正式 Hash Adapter、真实 Auth/License/Session 授权和幂等收据就绪后才能开放 `AUTH_USER_CREATE`；测试算法 `TEST_ONLY` 不属于生产支持。Python/第三方组件可能复制密码缓冲区，清零不是内存绝对擦除承诺。|
+|Rollback|移除内部命令、仓储及测试即可回到 A01；已有 User/Credential/Audit 历史不能因代码回退而删除，须继续遵守 A01 非空 downgrade 拒绝。|
