@@ -1487,3 +1487,15 @@
 |Reason|冻结 API 允许 department seed 缺省，但冻结 DM-02 要求每个 Member 有同项目 Department；创建者不自动成为项目成员。归一化统一代码大小写与兼容字符，锁定负责人防并发重复绑定，数据库约束最终兜底。|
 |Impact|内部服务、Auth 只读资格 Port 与 Project 写适配器；无 Schema/Migration、公开 API 或新依赖。生产 License/HTTP 装配仍待后续。|
 |Rollback|内部命令尚未公开；撤销代码不自动删除已创建项目或审计历史。|
+
+## DEC-20260925-017
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-017|
+|Date|2026-09-25|
+|WBS|PRJ-01-A05 Project 列表与详情读取|
+|Decision|Project 只读 Application Port 先执行 License Guard，再由 Auth-owned Port 在查询事务验证当前 Session、User 状态与凭据版本；Project-owned SQL 在同一事务重读 ACTIVE 且已生效 Member、ACTIVE Department 与 Project 当前状态，不使用登录时摘要。`PROJECT_LIST` 仅返回当前有权项目；`PROJECT_GET` 对不存在、无成员或跨项目统一隐藏。ARCHIVED 允许受权读取。冻结单有效项目成员不变量使当前列表最多 1 项，DTO 仍保留 Page 形状，`next_cursor` 为 null。|
+|Reason|避免 Session 摘要陈旧与 DeploymentAdmin 隐式越权；列表和详情共用当前成员事实。模型强制单一未移除成员，当前不产生多页，因此无须提前引入未验证的公开游标格式。强 ETag 仅从 Project.lock_version 生成。|
+|Impact|新增 Auth 只读 Session 身份适配器、Project 查询 Service/Repository；无 Schema/Migration、公开 API 或新依赖。公开 GET 仍须由后续 HTTP 装配并应用 API-01 Envelope/trace。|
+|Rollback|撤销未公开的查询 Port；不改变项目数据。|

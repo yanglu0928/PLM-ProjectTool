@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PRJ-01-A05 新增内部 Project 授权列表与详情读取，当前 Session/成员/部门即时核查、跨项目隐藏、归档项目受权只读与强 ETag。Windows 11/Python 3.13 后端 252/252、服务覆盖率 98%、PostgreSQL 18.6 临时库隔离/撤销/归档/ETag 验证和 wheel 构建 PASS。无 Migration、新依赖或公开 API，升级无需数据步骤。已知问题：License 使用合成 Guard，生产装配、公开 GET 与 Server 2025/Debian 13 本项验证未完成。
+
 - 2026-09-25：`0.1.0.dev0`/PRJ-01-A04 新增内部 Project 原子创建命令，包含首位 ProjectManager、默认或指定 Department、Session/CSRF/License 前置与同事务 Audit；创建者不自动成为成员。Windows 11/Python 3.13 后端 246/246、服务覆盖率 92%、PostgreSQL 18.6 临时库权限/冲突/回滚验证和 wheel 构建 PASS。无 Migration、新依赖或公开 API，升级无需数据步骤。已知问题：License 使用合成 Guard；生产装配、公开项目 API 与 Server 2025/Debian 13 本项验证未完成。
 
 - 2026-09-25：`0.1.0.dev0`/PRJ-01-A03 新增 Project 路径内 13 项逐操作授权、即时成员/部门状态核查及目标归属检查；无权限/跨项目统一隐藏，授权归档项目只读。Windows 11/Python 3.13 后端 241/241、服务覆盖率 98%、PostgreSQL 18.6 临时库权限/状态/归属复验和 wheel 构建 PASS。无 Migration、新依赖或公开 API，升级无需数据步骤。已知问题：Auth/License 生产装配和 Project 业务命令未完成；Server 2025/Debian 13 本项未复验。
