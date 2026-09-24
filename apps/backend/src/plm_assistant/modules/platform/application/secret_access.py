@@ -68,6 +68,15 @@ class SecretEnvelope:
     key_provider_ref: str = field(repr=False)
 
 
+@dataclass(frozen=True, slots=True)
+class EncryptedSecretDraft:
+    """Internal write-only ciphertext draft; never expose through an API DTO."""
+
+    encrypted_payload: bytes = field(repr=False)
+    encryption_metadata: bytes = field(repr=False)
+    key_provider_ref: str = field(repr=False)
+
+
 class EncryptedSecretStorePort(Protocol):
     def load(self, secret_ref: SecretRef) -> SecretEnvelope | None: ...
 

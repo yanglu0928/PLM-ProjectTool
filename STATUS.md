@@ -3,18 +3,18 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 2：Platform Core|
-|Current WBS|`PLT-02-A04 Secret 加密算法与密文写入边界`（已完成）|
-|Current Status|PHASE_1_COMPLETE / PLT_02_A04_PASS / PHASE_2_IN_PROGRESS|
+|Current WBS|`PLT-02-A05 Secret 管理写入与轮换命令`（已完成）|
+|Current Status|PHASE_1_COMPLETE / PLT_02_A05_PASS / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
-|Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03 PASS|
+|Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A05、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03 PASS|
 |Blockers|LIC-02-A02 的载荷冲突已由 CR-LIC-001 方案 B 解除；POC-03 质量失败继续阻塞 Gate 3/UAT，Server Office、Debian 未验证和 Ghostscript 发行合规继续作为 Release 约束|
 |Pending User Decisions|LIC-03-A03 方案 A 已确定；当前无人工决策待办。客户数据外发、付款/额度重置和不可恢复生产操作不在持续授权内|
 |Architecture Version|`ARCH-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，License ADR-006 经用户批准 CR-LIC-001 修订|
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，DM-02 License 授权粒度经用户批准 CR-LIC-001 修订|
 |DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；SC-01～SC-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）；SC-04 Migration 仅为验证性实现|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
-|Test Summary|PLT-02-A04：Windows 11/Python 3.13 后端 201/201 PASS；加密组件覆盖率 96%；PostgreSQL 18.6 临时库密文写入/读取与错误密钥拒绝 PASS；wheel 构建 PASS；无公开 API|
-|Next WBS|`PLT-02-A05 Secret 管理写入与轮换命令`；生产密钥来源与恢复另列 Release 安全设计|
+|Test Summary|PLT-02-A05：Windows 11/Python 3.13 后端 205/205 PASS；写服务覆盖率 96%；PostgreSQL 18.6 临时库权限、密文创建/轮换、读回、历史、并发及审计回滚 PASS；wheel 构建 PASS；无公开 API|
+|Next WBS|`PLT-02-A06 Secret 停用命令与管理 API 接线`；生产密钥来源与恢复另列 Release 安全设计|
 
 ## 自动执行策略
 
@@ -34,6 +34,7 @@
 - PLT-02-A02 已完成只读密文信封适配；使用合成解密器验证消费边界，不代表生产加密/解密已可用。管理元数据、正式写命令与跨平台主密钥仍待后续任务。
 - PLT-02-A03 已完成管理员元数据内部查询与脱敏投影；公开 GET、生产 License/Secret 装配和写命令未接线。
 - PLT-02-A04 已完成版本化 AES-256-GCM 加解密适配和临时库密文写入验证；生产 Key Provider、正式权限写命令和轮换仍未接线。
+- PLT-02-A05 已完成仅内部受控创建/轮换与同事务审计；生产 Key Provider、公开管理 API、停用命令及 License 整体接线仍未完成。
 - LIC-02-A02 冻结冲突已由用户明确批准方案 B；正式差异见 `docs/changes/CR-LIC-001-single-product-full-bundle.md`。V2.1 原文保留历史，专项补充为当前 License 授权粒度基线。
 - 远端同步状态必须在每次任务结束前通过 Git 实时检查，不在本文件固化可能过期的 ahead/behind 数值。
 - 本地用户文件和 Git 忽略的客户资料保持不变。

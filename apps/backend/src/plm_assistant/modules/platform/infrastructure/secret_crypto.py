@@ -5,13 +5,12 @@ from __future__ import annotations
 import base64
 import json
 import secrets
-from dataclasses import dataclass, field
 from typing import Protocol
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from plm_assistant.modules.platform.application.secret_access import (
-    SecretConsumer, SecretEnvelope, SecretPurpose, SecretRef,
+    EncryptedSecretDraft, SecretConsumer, SecretEnvelope, SecretPurpose, SecretRef,
 )
 
 
@@ -26,13 +25,6 @@ class SecretCryptoError(RuntimeError):
 
 class SecretKeyProviderPort(Protocol):
     def resolve_key(self, key_ref: str) -> bytes | None: ...
-
-
-@dataclass(frozen=True, slots=True)
-class EncryptedSecretDraft:
-    encrypted_payload: bytes = field(repr=False)
-    encryption_metadata: bytes = field(repr=False)
-    key_provider_ref: str = field(repr=False)
 
 
 def _aad(secret_ref: SecretRef, purpose: SecretPurpose,

@@ -1319,3 +1319,15 @@
 |Reason|冻结模型规定只存密文、算法元数据和 Key 引用，但未定密文算法。Authenticated Encryption 可在不改 Schema/API 下提供完整性和上下文绑定。|
 |Impact|新增内部加解密适配、合成测试和 PostgreSQL 临时库验证；无 Migration、新依赖、公开 API 或生产 Key Provider。生产安全验收仍未满足。|
 |Rollback|尚无正式 Secret 写命令；已有历史密文不可静默转换或删除，后续算法升级须版本读取或受控重加密。|
+
+## DEC-20260925-003
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-003|
+|Date|2026-09-25|
+|WBS|PLT-02-A05 Secret 管理写入与轮换命令|
+|Decision|内部写服务在 License Guard 前先检查管理员 Session+CSRF，写事务再次检查；创建生成 SecretRef，轮换以活动记录行锁及 expected_version_no 保护，旧版先退役再激活新版并更新 Record，Audit 同事务。Cipher 草稿放入 Platform 应用层契约以保持依赖方向。|
+|Reason|防止无权操作触发 License 信息侧信道，避免失效 Session/CSRF、并发轮换和审计失败留下部分密文。冻结 API-02 的 write-only 值与当前期望版本在内部命令层先形成可验证边界。|
+|Impact|无 Schema/Migration、新依赖或公开 API；License Guard 与写事务分离导致检查后变化窗口，正式集成前须复核。生产 Key Provider 未实现，合成验证不能视为真实 Secret 可用。|
+|Rollback|内部服务未公开；已存密文历史不可删除或覆盖，应使用新受控版本/状态命令恢复，不能普通降级。|

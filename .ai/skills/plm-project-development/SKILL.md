@@ -20,7 +20,7 @@ description: Execute architecture, PoC, implementation, testing, packaging, and 
 
 - Phase 0 Gate 1 已通过，结论为 `COMPLETE_WITH_APPROVED_ALTERNATIVES`。
 - Gate 2 已于 2026-09-23 由用户明确批准；Architecture、Data Model、DB Schema V1 和 API Contract V1 已按提交 `64cdf09` 冻结。
-- Phase 1 基础工程已完成，`1.01`～`1.09`、`PLT-01-A01～A03` PASS；Phase 2 `AUD-01-A01～A03`、`AUT-01-A01～A03`、`AUT-02-A01～A05`、`LIC-01-A01～A04`、`LIC-02-A01～A05`、`LIC-03-A01～A03`、`PLT-02-A01～A04` PASS。用户批准 `CR-LIC-001` 方案 B 后，内部 LicenseService、验证结果/Audit 编排、受控导入/激活、运行时 Guard 与受控重验证已完成。LIC-03-A03 按用户选定方案 A 完成一次性受控初态初始化；PLT-02-A01～A04 完成 Secret 密文版本 Schema、只读信封、管理员元数据安全投影及 AES-256-GCM-V1 内部加解密适配。生产可信来源留至 PLT-02/Release 安全设计。下一项 `PLT-02-A05 Secret 管理写入与轮换命令`。首版只支持本产品全功能整体授权，生产公钥/选定 MAC/可信时间密钥来源仍未接线，Auth 仍无公开登录/管理 API；Gate 3 尚未通过。
+- Phase 1 基础工程已完成，`1.01`～`1.09`、`PLT-01-A01～A03` PASS；Phase 2 `AUD-01-A01～A03`、`AUT-01-A01～A03`、`AUT-02-A01～A05`、`LIC-01-A01～A04`、`LIC-02-A01～A05`、`LIC-03-A01～A03`、`PLT-02-A01～A05` PASS。用户批准 `CR-LIC-001` 方案 B 后，内部 LicenseService、验证结果/Audit 编排、受控导入/激活、运行时 Guard 与受控重验证已完成。LIC-03-A03 按用户选定方案 A 完成一次性受控初态初始化；PLT-02-A01～A05 完成 Secret 密文版本 Schema、只读信封、管理员元数据安全投影、AES-256-GCM-V1 加解密及内部受控创建/轮换。生产可信来源留至 PLT-02/Release 安全设计。下一项 `PLT-02-A06 Secret 停用命令与管理 API 接线`。首版只支持本产品全功能整体授权，生产公钥/选定 MAC/可信时间密钥来源仍未接线，Auth 仍无公开登录/管理 API；Gate 3 尚未通过。
 - 冻结后的总体架构、核心数据模型、DB Schema V1、Breaking API、技术栈、安全/License 机制或 Scope 变化须先建立 Change Request，记录影响与验证后依 V1.1 持续授权执行，不得静默改写。
 - POC-03 质量失败继续阻塞 Gate 3/UAT；Server Office、Debian 13 和 Ghostscript 发行合规继续由各自 Release Gate 关闭。
 
