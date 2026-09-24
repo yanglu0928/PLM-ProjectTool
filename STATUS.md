@@ -3,18 +3,18 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 2：Platform Core|
-|Current WBS|`LIC-02-A02 LicenseService 综合验证`（已完成）|
+|Current WBS|`LIC-02-A03 验证结果持久化与审计编排`（已完成）|
 |Current Status|PHASE_1_COMPLETE / LIC_02_A02_PASS / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
-|Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、LIC-01-A01～A02、LIC-02-A01～A02、LIC-03-A01～A02 PASS|
+|Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、LIC-01-A01～A02、LIC-02-A01～A03、LIC-03-A01～A02 PASS|
 |Blockers|LIC-02-A02 的载荷冲突已由 CR-LIC-001 方案 B 解除；POC-03 质量失败继续阻塞 Gate 3/UAT，Server Office、Debian 未验证和 Ghostscript 发行合规继续作为 Release 约束|
 |Pending User Decisions|当前无待决策；任何新的客户数据外发仍需当轮明确授权|
 |Architecture Version|`ARCH-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，License ADR-006 经用户批准 CR-LIC-001 修订|
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，DM-02 License 授权粒度经用户批准 CR-LIC-001 修订|
 |DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；SC-01～SC-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）；SC-04 Migration 仅为验证性实现|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
-|Test Summary|LIC-02-A02：Windows 11/Python 3.13 后端 144/144 PASS；LicenseService 覆盖率 91%；PostgreSQL 18.6 真实签名/选定 MAC/时间链与负例 PASS；wheel 构建 PASS；无公开业务 API|
-|Next WBS|`LIC-02-A03 验证结果持久化与审计编排`|
+|Test Summary|LIC-02-A03：Windows 11/Python 3.13 后端 150/150 PASS；PostgreSQL 18.6 临时库验证事件/安装引用/Audit 同事务、拒绝及审计失败回滚 PASS；wheel 构建与模块包含 PASS；无公开业务 API|
+|Next WBS|`LIC-01-A03 受控导入命令与初始安装记录`|
 
 ## 自动执行策略
 
@@ -26,7 +26,7 @@
 ## 最近检查点
 
 - 分支：`feature/license-validation-service`
-- 最近功能检查点：LIC-02-A02 已实现遵循 CR-LIC-001 的内部七字段 v1 LicenseService 综合验证，成功结果仅表示本产品全功能整体授权候选且可信时间已前移；验证状态持久化、导入/激活、生产公钥及选定 MAC 配置、可信时间密钥来源/初始化仍未接线，不得对外开放 License 业务。Auth 仍无公开登录或管理 API。
+- 最近功能检查点：LIC-02-A03 已实现对已有 IMPORTED 安装的内部验证事件、结果引用与 Audit 同事务记录；成功事件仍是未激活候选，不更新部署级 ValidationState。受控导入/激活、生产公钥及选定 MAC 配置、可信时间密钥来源/初始化仍未接线，不得对外开放 License 业务。Auth 仍无公开登录或管理 API。
 - LIC-02-A02 冻结冲突已由用户明确批准方案 B；正式差异见 `docs/changes/CR-LIC-001-single-product-full-bundle.md`。V2.1 原文保留历史，专项补充为当前 License 授权粒度基线。
 - 远端同步状态必须在每次任务结束前通过 Git 实时检查，不在本文件固化可能过期的 ahead/behind 数值。
 - 本地用户文件和 Git 忽略的客户资料保持不变。

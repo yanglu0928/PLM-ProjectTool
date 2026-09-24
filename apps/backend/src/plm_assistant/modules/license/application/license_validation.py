@@ -108,7 +108,7 @@ class LicenseService:
         self._rollback_tolerance = rollback_tolerance
 
     def validate(self, signed_document: bytes, *, expected_time_version: int,
-                 trace_id: uuid.UUID) -> VerifiedFullBundleLicense:
+                 trace_id: uuid.UUID, expected_public_key_ref: str | None = None) -> VerifiedFullBundleLicense:
         if type(expected_time_version) is not int or expected_time_version < 0 or type(trace_id) is not uuid.UUID or trace_id.int == 0:
             raise LicenseValidationError("TRUST_STATE_INVALID")
         try:
@@ -116,6 +116,8 @@ class LicenseService:
         except Exception:
             raise LicenseValidationError("TRUST_STATE_INVALID") from None
         if type(key_ref) is not str or not 1 <= len(key_ref) <= 128:
+            raise LicenseValidationError("TRUST_STATE_INVALID")
+        if expected_public_key_ref is not None and key_ref != expected_public_key_ref:
             raise LicenseValidationError("TRUST_STATE_INVALID")
         try:
             verified = self._signature.verify(signed_document, public_key_ref=key_ref)

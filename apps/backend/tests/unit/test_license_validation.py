@@ -100,6 +100,14 @@ class LicenseValidationTests(unittest.TestCase):
         self.assertEqual(self.time.calls[0]["expected_version"], 1)
         self.assertEqual(self.time.calls[0]["rollback_tolerance"], timedelta(0))
 
+    def test_stored_key_ref_mismatch_rejects_before_trusted_time_advance(self):
+        with self.assertRaises(LicenseValidationError) as caught:
+            self.service().validate(document(self.private, self.payload),
+                                    expected_time_version=1, trace_id=self.trace,
+                                    expected_public_key_ref="other-release")
+        self.assertEqual(caught.exception.code, "TRUST_STATE_INVALID")
+        self.assertEqual(self.time.calls, [])
+
     def test_seven_field_v1_schema_and_ranges(self):
         for changed in (
             {**self.payload, "features": ["all"]},
