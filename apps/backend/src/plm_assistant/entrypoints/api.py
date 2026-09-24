@@ -12,13 +12,18 @@ from plm_assistant.modules.platform.application.health import (
     HealthService,
     ReadinessCheck,
 )
+from plm_assistant.modules.platform.infrastructure.structured_logging import (
+    StructuredLoggers,
+)
 
 
 APP_TITLE = "PLM Project Implementation Assistant API"
 
 
 def create_app(
-    *, readiness_checks: Iterable[ReadinessCheck] | None = None
+    *,
+    readiness_checks: Iterable[ReadinessCheck] | None = None,
+    loggers: StructuredLoggers | None = None,
 ) -> FastAPI:
     """Create one isolated API application instance.
 
@@ -47,6 +52,7 @@ def create_app(
         lifespan=lifespan,
     )
     app.state.health_service = health_service
+    app.state.loggers = loggers or StructuredLoggers()
     install_error_handlers(app)
     app.include_router(create_health_router(health_service))
     return app

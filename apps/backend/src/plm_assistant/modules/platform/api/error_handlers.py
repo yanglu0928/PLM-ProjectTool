@@ -49,8 +49,10 @@ def error_trace_id(request: Request) -> str:
     return _new_uuid7()
 
 
-def _response(request: Request, spec: ErrorSpec) -> JSONResponse:
-    trace_id = error_trace_id(request)
+def _response(
+    request: Request, spec: ErrorSpec, *, trace_id: str | None = None
+) -> JSONResponse:
+    trace_id = trace_id or error_trace_id(request)
     return JSONResponse(
         status_code=spec.status_code,
         content={
@@ -107,5 +109,16 @@ def install_error_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(Exception)
     async def internal_error(request: Request, exc: Exception) -> JSONResponse:
-        del exc  # WBS 1.07 will add redacted server-side exception logging.
-        return _response(request, COMMON_ERRORS["SYSTEM_INTERNAL"])
+        del exc  # Raw exception text and traceback must never enter generic logs.
+        trace_id = error_trace_id(request)
+        try:
+            request.app.state.loggers.application(
+                event="request_failed",
+                component="platform.api",
+                level="ERROR",
+                trace_id=trace_id,
+                error_code="SYSTEM_INTERNAL",
+            )
+        except Exception:
+            pass  # Logging failure must not turn a safe error into an unsafe one.
+        return _response(request, COMMON_ERRORS["SYSTEM_INTERNAL"], trace_id=trace_id)

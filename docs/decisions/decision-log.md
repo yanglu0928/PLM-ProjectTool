@@ -899,3 +899,15 @@
 |Reason|统一封装可以防止框架异常明文、校验原值、权限存在性、堆栈与内部路径进入公开响应，并为后续模块提供稳定的错误边界。405 使用独立码比错误地归类为请求格式错误更精确，属于 API-01 允许的非破坏性扩展。|
 |Impact|只改变错误响应，不新增公开业务路由或数据库对象；两个健康端点的冻结最小响应保持原样。后续模块需先登记自己的业务错误码再使用；1.07 增加服务端脱敏日志，1.08 统一整个请求生命周期的 TraceId。|
 |Rollback|移除平台错误目录、异常处理注册和对应测试，即恢复 WBS 1.05 行为；当前无数据迁移。若改变已冻结 `/api/v1` 错误 Envelope 或已有错误码语义，须走 API Change Request/L3。|
+
+## DEC-20260924-066
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-066|
+|Date|2026-09-24|
+|WBS|1.07 JSON log|
+|Decision|平台日志使用两个独立、由 Composition Root 注入的 JSON 行输出流，分别记录 Application 与 Integration 事件；不改 Python root logger，也不以自由文本格式化异常。写入 API 只接受登记事件、受控集成类型/Provider、规范 UUID、固定格式错误码和非负耗时，输出字段由代码白名单构造。未分类 API 异常记录 `request_failed`、`SYSTEM_INTERNAL` 与响应同一 TraceId，不记录 exception、request body、URL、SQL 或路径；日志写入失败不改变安全错误响应。Audit 保持独立，未来由 audit 模块写 PostgreSQL。|
+|Reason|自由文本和第三方异常拼接易把 Secret、客户正文、绝对路径或 Provider 原始响应写进普通日志；事件/字段白名单在写入前拒绝不受控数据。按应用/集成分流可保持权限、保留期和排障职责分离，且不抢占后续 Audit、Trace、Config WBS。|
+|Impact|仅增加平台日志能力和未分类 API 失败的安全记录；未新增业务 API、数据库对象或网络调用。当前记录不含请求性能、Actor/Project 等上下文；WBS 1.08 Trace 中间件和后续业务模块逐步接入受控字段。默认 Application 输出 stdout、Integration 输出 stderr；正式部署的收集、保留与访问控制由 Release 阶段配置。|
+|Rollback|移除日志模块、App Factory 注入及异常处理中的安全记录即可恢复 WBS 1.06；无数据迁移。未来需要新 Provider 或事件时先扩充受控目录及测试，不允许改成任意消息透传。|

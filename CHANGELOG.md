@@ -6,6 +6,7 @@
 
 ### 新增
 
+- 2026-09-24：WBS 1.07 完成平台 JSON 日志基础能力。Application 与 Integration 采用独立、可注入的 JSON 行输出流和事件/字段白名单；未分类 API 错误只记录安全码与响应 TraceId，原始异常、正文、Secret 和路径不进入日志。Windows 11/Python 3.13 下后端 48/48 测试 PASS；无业务 API、数据库变更或外部调用。无升级步骤；下一 WBS 为 1.08 TraceId。已知未完成项：请求级 Trace/耗时上下文、Audit 持久化及正式部署日志收集/保留策略仍由后续 WBS/Release 完成；Server/Debian 未在本任务验证。
 - 2026-09-24：WBS 1.06 完成 FastAPI 统一错误边界。实现冻结通用错误码、固定安全提示、请求校验 400/422、未分类异常 500、普通权限 403 隐藏为 404、规范 UUIDv7 TraceId 与 `X-Trace-Id` 同步；新增兼容 405 码且不改冻结语义。Windows 11/Python 3.13 下后端测试 43/43 PASS；仅健康端点公开，业务表、业务 API、Migration 和外部调用均未增加。无升级步骤；下一 WBS 为 1.07 JSON log。已知未完成项：服务端脱敏日志与全生命周期 Trace 中间件分别在 1.07、1.08 实现，Server/Debian 发行兼容性未由本 WBS 验证。
 
 - 2026-09-24：WBS 1.05 完成正式 Alembic migration 基线。新增 `plm` ORM Base、统一命名约定、随 wheel 交付的 Alembic 1.20 env/template 和不可变 revision `20260924_0001`，仅固定 PostgreSQL 18 + pgvector 0.8.6，不创建业务表。Windows 11/PostgreSQL 18.6 下后端 32/32、空库与有数据 up/down/re-upgrade、ORM drift=0、offline SQL、pg_dump/pg_restore 及 wheel 内容验证全部 PASS；下一 WBS 为 1.06 Error contract。
