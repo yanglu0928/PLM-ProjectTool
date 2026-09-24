@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-24：`0.1.0.dev0`/LIC-01-A04 新增仅内部受控激活：要求本次完整验证成功且同追踪号/文档摘要/安装引用/有效期一致，并在 60 秒内复核当前 Session+CSRF+DeploymentAdmin；旧 ACTIVE→SUPERSEDED、新 IMPORTED→ACTIVE、部署级 ValidationState→VALID 与 Audit 同事务。Windows 11/Python 3.13 后端 163/163、服务覆盖率 92%、PostgreSQL 18.6 临时库首次激活/替换/旧证据拒绝/审计回滚及 wheel 构建 PASS。兼容现有 Schema，无 Migration、新依赖、公开 API 或客户数据外发。已知问题：验证记录与激活跨事务，失败留下未激活验证事件；运行时 Guard 和生产信任源未接线，Windows Server 2025/Debian 13 未复验。
+
 - 2026-09-24：`0.1.0.dev0`/LIC-01-A03 新增仅内部受控 License 导入：Auth 模块在同一事务校验当前 Session、CSRF、DeploymentAdmin 与凭据版本；本产品受信任公钥预检 Ed25519，成功仅建立 IMPORTED 安装/不可变文档和 Audit，签名失败仅留脱敏验证事件/Audit。Windows 11/Python 3.13 后端 155/155、PostgreSQL 18.6 临时库权限与回滚、wheel 构建 PASS。兼容既有 PostgreSQL 18 Schema，无 Migration、新依赖、公开 API 或客户数据外发。已知问题：导入不等于综合验证/激活，生产公钥/Session HTTP 接线与运行状态投影尚未完成；Windows Server 2025/Debian 13 未复验。
 
 - 2026-09-24：`0.1.0.dev0`/LIC-02-A03 新增仅内部 IMPORTED 安装验证结果记录：从不可变文档读取并核对 SHA-256、公钥引用与并发版本，成功/拒绝事件、安装结果引用和部署 Audit 同事务写入，审计失败回滚。Windows 11/Python 3.13 后端 150/150、PostgreSQL 18.6 临时库事务与回滚、wheel 构建与模块包含 PASS。兼容既有 PostgreSQL 18 Schema；无 Migration、新依赖、公开 API 或客户数据外发，升级无需数据步骤。已知问题：成功事件不等于激活，部署级 ValidationState 不更新；可信时间前移与记录分属事务，记录失败保持导入项不可激活；生产信任源和受控导入/激活未接线，Windows Server 2025/Debian 13 未复验。

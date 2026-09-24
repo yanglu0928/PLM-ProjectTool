@@ -1211,3 +1211,15 @@
 |Reason|冻结 API 的 LICENSE_IMPORT 恢复面不能绕过 Session/CSRF/Role/Audit；在 HTTP 装配和完整 License 判定尚未完成时，先把候选导入与激活分离。Auth 模块拥有身份表的查询，License 不直连 Auth 表。|
 |Impact|无 Schema、Migration、新依赖或公开 API；成功导入的 `validation_result_ref` 仍为空且状态仅 IMPORTED，后续综合验证和激活必须另行执行。过大或未授权请求不落库；验签失败留摘要、分类和追踪，不留 Payload。|
 |Rollback|内部命令尚无公开路由；移除代码不删除已形成的不可变安装、验证和 Audit 历史。|
+
+## DEC-20260924-092
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-092|
+|Date|2026-09-24|
+|WBS|LIC-01-A04 受控激活与部署验证状态投影|
+|Decision|激活命令内部先复核管理员 Session/CSRF，再调用 LIC-02-A03 对目标 IMPORTED 安装执行本次完整验证；仅 VALID 可继续。激活事务再次核对权限和事件的安装/文档摘要/同追踪号、完整本产品权益、有效期及 60 秒新鲜度；旧 ACTIVE→SUPERSEDED、新安装→ACTIVE、部署单例状态→VALID、Audit 同事务。|
+|Reason|冻结 DM-02/ADR-006 要求成功验证才可激活、至多一条 ACTIVE、旧记录保留历史；旧 VALID 事件不能成为可重复使用的客户端激活凭据。双次权限检查覆盖验证跨事务窗口；60 秒界限缩短状态漂移窗口。|
+|Impact|无 Schema/API/依赖变更。验证记录先于激活提交，若激活权限/并发/Audit 失败，成功验证事件仍作为历史存在但安装保持 IMPORTED；不得据此开放业务。首次投影版本为 0，后续每次更新 +1。|
+|Rollback|无公开路由；代码可回退但不可删除已形成的安装、验证与 Audit 历史，已有 ACTIVE 需受控迁移或后续激活替换。|
