@@ -1619,3 +1619,15 @@
 |Reason|CR-AUT-002 要求可信 Origin 生产来源，而现有 Auth 策略已有精确语义；配置层只持有非敏感部署值，避免 Platform 反向依赖 Auth 或维护两套可能分叉的来源校验。|
 |Impact|新增非敏感配置和测试；无 Schema/Migration、新依赖、公开 API 或权限变化。配置加载成功本身不代表生产登录可用，安全数据库凭据和端到端装配仍待完成。|
 |Rollback|删除部署配置即可恢复默认空来源；当前默认应用不挂登录路由，无数据迁移。|
+
+## DEC-20260925-028
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-028|
+|Date|2026-09-25|
+|WBS|AUT-03-A07-P02 Windows 数据库凭据来源|
+|Decision|依 CR-AUT-003 使用当前 Windows 运行账户的 Credential Manager Generic Credential，固定生产 Target `PLMProjectTool/Database`；本机无参数、无回显交互写入/轮换，运行时只读。URL 必须为带 Host、用户名、密码的 `postgresql+psycopg`；读取/写入失败统一脱敏拒绝，不回退到环境变量/YAML/测试 URL。|
+|Reason|安全数据库凭据是 AUT-03-A07 的真实前置；使用系统账户保护的持久存储，比把密码保存在普通配置中更符合已冻结 Secret 边界。固定 Target 防止运行时路径注入；测试只操作 UUID 合成 Target。|
+|Impact|新增 Windows 专有基础设施和部署入口；无 Schema/Migration、新依赖或公开 API。目标服务账户需现场录入，跨账户/跨机器不自动迁移；Debian 仍需独立来源。Python/SQLAlchemy 内存副本不可保证绝对清零。|
+|Rollback|停止调用该来源并关闭服务；生产 Vault 凭据不会自动删除，由部署管理员通过系统凭据管理手工移除或轮换。|
