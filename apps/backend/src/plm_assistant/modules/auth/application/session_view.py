@@ -6,12 +6,10 @@ import uuid
 from dataclasses import dataclass
 from typing import Protocol
 
+from plm_assistant.modules.project.application.public import ProjectAccessSummary
 
-@dataclass(frozen=True, slots=True)
-class AuthorizedProjectSummary:
-    project_id: uuid.UUID
-    name: str
-    role: str
+
+AuthorizedProjectSummary = ProjectAccessSummary
 
 
 @dataclass(frozen=True, slots=True)

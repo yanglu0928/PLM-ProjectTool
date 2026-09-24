@@ -1451,3 +1451,15 @@
 |Reason|真实项目授权摘要需要可验证成员事实；数据库必须阻止跨项目部门绑定及多项目有效成员，不能依赖登录响应空列表替代。|
 |Impact|新增普通增量 Migration 和 ORM，无现有表变更、公开 API 或新依赖。Project 状态/角色变更的应用命令与授权读取后续单项完成；已有库升级保留所有数据。|
 |Rollback|仅确认三张表无数据且无下游 FK 后允许 Alembic downgrade；有数据时拒绝自动删除。|
+
+## DEC-20260925-014
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-014|
+|Date|2026-09-25|
+|WBS|PRJ-01-A02 项目成员授权摘要读取|
+|Decision|Project 模块公开只读 `ProjectAccessSummary` DTO，并在当前事务中按 UserId 查询 ACTIVE、已生效、未结束的 ProjectMember；只返回 ACTIVE Project 与 ACTIVE Department 的项目 ID/名称/角色，不缓存也不以 DeploymentAdmin 身份推定项目成员。Auth SessionView 复用该公开 DTO，并从显式 Project Port 取得摘要。|
+|Reason|冻结模型将 ProjectMember 作为项目权限唯一事实，Session 不持久化权限快照；部署管理员不自动拥有项目数据访问权。|
+|Impact|无 Schema/Migration、公开 API 或新依赖；补齐登录响应所需的真实 Project 摘要读层，但完整 ProjectAuthorizationService 的逐操作判定仍待后续 WBS。|
+|Rollback|移除只读适配器并恢复 Auth Port 未装配状态；不改变项目成员或 Session 历史。|
