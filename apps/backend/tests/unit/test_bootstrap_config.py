@@ -33,6 +33,43 @@ class BootstrapConfigTests(unittest.TestCase):
         self.assertEqual(settings.bind_port, 9001)
         self.assertEqual(settings.data_root, self.root)
         self.assertEqual(settings.log_level, LogLevel.INFO)
+        self.assertEqual(settings.trusted_origins, ())
+
+    def test_explicit_trusted_origins_and_environment_override(self) -> None:
+        self.yaml_file.write_text(
+            f'data_root: "{self.root.as_posix()}"\n'
+            'trusted_origins: ["https://plm.example.test"]\n',
+            encoding="utf-8",
+        )
+        with patch.dict(os.environ, {}, clear=True):
+            settings = load_bootstrap_settings(self.yaml_file)
+        self.assertEqual(settings.trusted_origins, ("https://plm.example.test",))
+        with patch.dict(
+            os.environ,
+            {"PLM_TRUSTED_ORIGINS": '["https://plm-alt.example.test"]'},
+            clear=True,
+        ):
+            overridden = load_bootstrap_settings(self.yaml_file)
+        self.assertEqual(overridden.trusted_origins, ("https://plm-alt.example.test",))
+
+    def test_invalid_trusted_origin_shape_fails_without_leaking_value(self) -> None:
+        synthetic = "x" * 257
+        cases = (
+            f'trusted_origins: ["{synthetic}"]\n',
+            'trusted_origins: "https://plm.example.test"\n',
+            'trusted_origins: [""]\n',
+            "trusted_origins: [" + ", ".join('"https://plm.example.test"' for _ in range(17)) + "]\n",
+        )
+        with patch.dict(os.environ, {}, clear=True):
+            for case in cases:
+                with self.subTest(case=case[:32]):
+                    self.yaml_file.write_text(
+                        f'data_root: "{self.root.as_posix()}"\n' + case,
+                        encoding="utf-8",
+                    )
+                    with self.assertRaises(BootstrapConfigurationError) as captured:
+                        load_bootstrap_settings(self.yaml_file)
+                    self.assertNotIn(synthetic, str(captured.exception))
 
     def test_development_dotenv_requires_explicit_file(self) -> None:
         env_file = self.root / ".env"

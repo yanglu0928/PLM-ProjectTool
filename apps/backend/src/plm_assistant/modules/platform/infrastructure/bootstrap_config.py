@@ -44,6 +44,7 @@ class BootstrapSettings(BaseSettings):
     bind_port: int = Field(default=8000, ge=1, le=65_535)
     data_root: Path
     log_level: LogLevel = LogLevel.INFO
+    trusted_origins: tuple[str, ...] = ()
 
     @field_validator("bind_host")
     @classmethod
@@ -56,6 +57,15 @@ class BootstrapSettings(BaseSettings):
     def validate_data_root(cls, value: Path) -> Path:
         if not value.is_absolute():
             raise ValueError("data root must be absolute")
+        return value
+
+    @field_validator("trusted_origins")
+    @classmethod
+    def validate_trusted_origins(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        # The Auth origin policy performs the final URL/Host validation when
+        # the login router is assembled. Bootstrap only accepts bounded input.
+        if len(value) > 16 or any(not origin or len(origin) > 256 for origin in value):
+            raise ValueError("invalid trusted origin configuration")
         return value
 
     @classmethod

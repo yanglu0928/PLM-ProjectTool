@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/AUT-03-A07-P01 新增非敏感可信 Origin 部署配置：显式 YAML/`PLM_TRUSTED_ORIGINS` JSON 数组、默认空集合和输入界限，错误不回显配置值。Windows 11/Python 3.13 后端 306/306、wheel 构建 PASS；无 Migration、新依赖或公开 API，升级无需数据操作。兼容当前开发环境；Server 2025/Debian 13 本项未验证。已知问题：最终 URL/Host/HTTPS 校验须在 Auth 生产装配执行，数据库凭据来源未完成，登录仍默认 404。
+
 - 2026-09-25：`0.1.0.dev0`/PRJ-03-A04 新增内部 Department 单向停用：当前 ProjectManager、Session/CSRF/License、目标归属、强版本保护；有 ACTIVE/SUSPENDED 成员引用时拒绝，仅 REMOVED 历史允许，状态变更与 Audit 同事务。Windows 11/Python 3.13 后端 304/304、服务覆盖率 96%、PostgreSQL 18.6 引用/并发/回滚及 wheel 构建 PASS。无 Migration、新依赖或公开 API；升级无需数据操作。兼容当前 Windows 11 开发环境；Server 2025/Debian 13 本项未验证。已知问题：生产 License、公开幂等/If-Match 与安全运行装配仍未完成。
 
 - 2026-09-25：`0.1.0.dev0`/PRJ-03-A03 新增内部 Department 名称/编码 PATCH：当前 ProjectManager、Session/CSRF/License、目标归属与 ACTIVE 状态、强 expected_version、同项目活动编码冲突与同事务 Audit；无变化不增加版本或审计。Windows 11/Python 3.13 后端 299/299、服务覆盖率 93%、PostgreSQL 18.6 权限/并发/回滚及 wheel 构建 PASS。无 Migration、新依赖或公开 API，升级无需数据操作。兼容当前 Windows 11 开发环境；Server 2025/Debian 13 本项未验证。已知问题：生产 License/公开 If-Match 未接线；现有 Audit 不保存部门字段级旧值，不能作为逐版恢复依据。

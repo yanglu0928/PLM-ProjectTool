@@ -1607,3 +1607,15 @@
 |Reason|冻结 DM-02 与 API-02 明确成员引用阻断和 `PROJECT_DEPARTMENT_IN_USE`；项目行锁与成员新建/修改命令共享写入序列，数据库查询在同事务内复核，避免并发创建与停用形成矛盾状态。|
 |Impact|新增 Project 内部停用 Service/Repository；无 Schema/Migration、新依赖或公开 API。仅通过正式服务写入可受项目锁保护；部署数据库角色权限仍须保证应用外写入受控。|
 |Rollback|内部命令未公开；已停用部门按冻结状态模型无普通恢复命令，若业务需要重用编码可新建部门，旧 DepartmentId 和历史引用保持不变。|
+
+## DEC-20260925-027
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-027|
+|Date|2026-09-25|
+|WBS|AUT-03-A07-P01 可信 Origin 部署配置|
+|Decision|在现有非敏感 BootstrapSettings 中新增默认空的 `trusted_origins`，允许 YAML 显式数组和 `PLM_TRUSTED_ORIGINS` JSON 数组覆盖；配置层限制最多 16 项、非空和单项长度，但不在 Platform 层复制 Auth 的 URL/Host 规则。最终装配仍必须调用既有 `LoginOriginPolicy` 校验 URL、HTTPS/loopback、Host 匹配，任何失败不得挂载登录路由。|
+|Reason|CR-AUT-002 要求可信 Origin 生产来源，而现有 Auth 策略已有精确语义；配置层只持有非敏感部署值，避免 Platform 反向依赖 Auth 或维护两套可能分叉的来源校验。|
+|Impact|新增非敏感配置和测试；无 Schema/Migration、新依赖、公开 API 或权限变化。配置加载成功本身不代表生产登录可用，安全数据库凭据和端到端装配仍待完成。|
+|Rollback|删除部署配置即可恢复默认空来源；当前默认应用不挂登录路由，无数据迁移。|
