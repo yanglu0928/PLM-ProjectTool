@@ -1007,3 +1007,15 @@
 |Reason|冻结 API-01/02 要求权限先行、项目隔离、受控筛选、完整性保护分页和不暴露敏感材料；SC-03 已冻结对应 Audit 索引。真实 Auth/License/Session 尚未落地，当前不提供公开路由或伪造权限适配器。31 天上限是可回滚的内部初值，控制无界查询，不改变冻结外部 API 语义。|
 |Impact|只新增 Audit 内部查询与测试，不改 A01 Schema/索引或冻结 `/api/v1`。权限 Port 必须由后续真实认证/项目授权实现；公开 API 上线前还必须加入签名游标及 Scope/查询指纹校验。审计导出另行 WBS 实施。|
 |Rollback|移除内部查询 Service/Repository 和测试即可回到 A02；不删除审计事件，也不改变已冻结查询索引。|
+
+## DEC-20260924-075
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-075|
+|Date|2026-09-24|
+|WBS|AUT-01-A01 User/Credential ORM/Migration|
+|Decision|User Root 先以 DISABLED、credential_version=0、无当前凭据建立，随后同事务追加不可变 PasswordCredential 版本并由复合 FK 指向本 User 的相同版本；只有存在当前凭据才可 ENABLED。用户名展示值与规范值分列，规范值部署内普通唯一，停用不释放。凭据只保存不可逆 Hash、算法 ID、非敏感参数、版本和变更时间；算法选择/哈希验证由后续专门任务完成，不以本迁移中的合成测试值作为生产方案。数据库触发器禁止凭据历史 UPDATE/DELETE/TRUNCATE 与 User 凭据版本倒退；非空 downgrade 拒绝。|
+|Reason|冻结 DM-02/SC-01～03 要求身份与凭据版本分离、唯一用户名、一个有效凭据和 Session 凭据版本失效。先创建 DISABLED Root 避开循环 FK 插入顺序，同时由复合 FK 阻止把别人的或旧版本凭据设为当前；不得在 Schema 任务中假装选定密码算法或开放登录。|
+|Impact|新增正式迁移 `20260924_0006` 与两张 Auth 表，无新依赖、公开 API、客户数据外发或冻结基线变更。Unicode trim/NFC/casefold、密码 Hash 策略、命令授权/审计、Session 失效须由后续 WBS 实现并验证；原始密码和哈希不得进入 DTO/Audit/日志。|
+|Rollback|空 Auth 表可降级到 `0005`；一旦有身份/凭据历史，普通 downgrade 失败关闭，必须先备份并通过受控恢复/迁移处理，不删除账号历史。|

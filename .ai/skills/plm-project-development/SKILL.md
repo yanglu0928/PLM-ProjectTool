@@ -20,7 +20,7 @@ description: Execute architecture, PoC, implementation, testing, packaging, and 
 
 - Phase 0 Gate 1 已通过，结论为 `COMPLETE_WITH_APPROVED_ALTERNATIVES`。
 - Gate 2 已于 2026-09-23 由用户明确批准；Architecture、Data Model、DB Schema V1 和 API Contract V1 已按提交 `64cdf09` 冻结。
-- Phase 1 基础工程已完成，`1.01`～`1.09`、`PLT-01-A01～A03` PASS；Phase 2 `AUD-01-A01～A03` PASS，下一任务为 `AUT-01-A01 User/Credential ORM/Migration`。PLT-01 仍仅为内部命令，不代表真实授权/审计接线、管理 API 或生产 Secret Store 已可用；Gate 3 尚未通过。
+- Phase 1 基础工程已完成，`1.01`～`1.09`、`PLT-01-A01～A03` PASS；Phase 2 `AUD-01-A01～A03`、`AUT-01-A01` PASS，下一任务为 `AUT-01-A02 User/Credential 内部命令与规范化`。PLT-01 仍仅为内部命令，不代表真实授权/审计接线、管理 API 或生产 Secret Store 已可用；Gate 3 尚未通过。
 - 冻结后的总体架构、核心数据模型、DB Schema V1、Breaking API、技术栈、安全/License 机制或 Scope 变化属于 L3，不得由实现任务自行修改。
 - POC-03 质量失败继续阻塞 Gate 3/UAT；Server Office、Debian 13 和 Ghostscript 发行合规继续由各自 Release Gate 关闭。
 
