@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import re
 import uuid
-from collections.abc import Callable, Mapping
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from types import TracebackType
 from typing import Protocol, Self
 
 from plm_assistant.modules.audit.application.public import AuditEventDraft, AuditService
+from plm_assistant.modules.auth.application.ports.password_hash import PasswordHashResult, PasswordHasherPort
 from plm_assistant.modules.auth.domain.username import normalize_username, UsernameValidationError
 
 
@@ -33,13 +34,6 @@ class CreateUser:
     password: bytearray = field(repr=False)
 
 
-@dataclass(frozen=True, slots=True, repr=False)
-class PasswordHashResult:
-    password_hash: str
-    algorithm_id: str
-    parameter_set: Mapping[str, int]
-
-
 @dataclass(frozen=True, slots=True)
 class CreatedUser:
     user_id: uuid.UUID
@@ -57,10 +51,6 @@ class UserRepositoryPort(Protocol):
     def add_user(self, transaction: AuthTransaction, *, username_display: str, username_normalized: str, actor_id: uuid.UUID) -> uuid.UUID | None: ...
     def add_credential(self, transaction: AuthTransaction, *, user_id: uuid.UUID, password_hash: PasswordHashResult, actor_id: uuid.UUID) -> uuid.UUID: ...
     def activate_initial_credential(self, transaction: AuthTransaction, *, user_id: uuid.UUID, credential_id: uuid.UUID, actor_id: uuid.UUID) -> bool: ...
-
-
-class PasswordHasherPort(Protocol):
-    def hash_password(self, password: memoryview) -> PasswordHashResult: ...
 
 
 class UserCreateAccessPort(Protocol):
@@ -90,7 +80,7 @@ class UserCommandService:
             raise UserCommandError("VALIDATION_FAILED")
         password = command.password
         try:
-            if type(password) is not bytearray or not 1 <= len(password) <= 4096 or b"\x00" in password:
+            if type(password) is not bytearray or not 1 <= len(password) <= 1024 or b"\x00" in password:
                 raise UserCommandError("VALIDATION_FAILED")
             try:
                 password.decode("utf-8", errors="strict")

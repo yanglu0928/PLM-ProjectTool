@@ -1031,3 +1031,15 @@
 |Reason|冻结 DM-02/API-02 要求服务端 canonical username、DeploymentAdmin 授权、write-only 密码、同事务 Audit 和凭据版本。生产密码算法、Session/License 和持久幂等尚未落地；独立 Port 与无公开路由可验证创建流程及失败关闭，同时避免在普通实现任务中擅定安全核心机制。|
 |Impact|新增 Auth Domain/Application/Repository 与合成测试；不改 A01 Schema、冻结 API 或技术栈，无新依赖/真实客户数据外发。只有未来正式 Hash Adapter、真实 Auth/License/Session 授权和幂等收据就绪后才能开放 `AUTH_USER_CREATE`；测试算法 `TEST_ONLY` 不属于生产支持。Python/第三方组件可能复制密码缓冲区，清零不是内存绝对擦除承诺。|
 |Rollback|移除内部命令、仓储及测试即可回到 A01；已有 User/Credential/Audit 历史不能因代码回退而删除，须继续遵守 A01 非空 downgrade 拒绝。|
+
+## DEC-20260924-077
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-077|
+|Date|2026-09-24|
+|WBS|AUT-01-A03 生产密码哈希与凭据校验|
+|Decision|首版采用 Python 3.13/OpenSSL 标准库 `hashlib.scrypt` 固定 V1 Profile：每条凭据 16 字节独立随机盐、`N=2^17,r=8,p=1,dklen=32`、256 MiB `maxmem` 上限、自描述编码与独立 `algorithm_id/parameter_set` 一致性校验。Verifier 只接受本 Profile，拒绝由数据库记录选择任意耗时参数，使用 `hmac.compare_digest` 比较导出值。密码输入上限同步收紧为 1024 字节；保留既有 Port，使将来算法升级新建 Profile/版本，不静默重写旧凭据。无 Argon2id 第三方依赖或安全基线替换。|
+|Reason|冻结方案要求不可逆 PasswordHasher，但未规定库与参数。[OWASP 密码存储建议](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)首选 Argon2id，标准库可用时推荐的 scrypt Profile 为 `N=2^17,r=8,p=1`；[Python 3.13 `hashlib` 文档](https://docs.python.org/3.13/library/hashlib.html)提供 scrypt 与显式内存限制。此选择不新增重要第三方依赖，属于当前已批准安全机制的具体实现；对畸形参数失败关闭避免存储内容触发资源耗尽。|
+|Impact|新增 Auth Infrastructure Hash/Verifier，无 Schema、API 或新依赖；本机单次创建约 317ms 仅为观测，不代表三平台吞吐或安全审计通过。每次哈希约需 128 MiB 工作内存，公开登录前仍必须实现 Origin/Host/限流、Session/CSRF、License/权限、统一失败响应和平台负载验收。Python/OpenSSL 可能复制密码字节，调用方清零不保证绝对擦除。|
+|Rollback|移除新适配器可返回仅 Port 的 A02，但已保存的 `SCRYPT` 凭据将无法验证；上线后不得直接撤销而不提供兼容验证或受控凭据迁移。普通代码回滚不删除用户/凭据历史。|

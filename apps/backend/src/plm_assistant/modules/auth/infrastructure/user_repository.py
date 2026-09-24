@@ -8,7 +8,7 @@ from sqlalchemy import func, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
-from plm_assistant.modules.auth.application.user_commands import PasswordHashResult
+from plm_assistant.modules.auth.application.ports.password_hash import PasswordHashResult
 from plm_assistant.modules.auth.infrastructure.user_orm import PasswordCredentialRow, UserRow
 
 
