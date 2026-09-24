@@ -1139,3 +1139,15 @@
 |Reason|冻结 SC-01/DM-02 要求当前安全状态与不可变验证历史分离；单例与 VALID 必备形状可在数据库失败关闭。单向 FK 既落实安装结果指针的来源完整性，又让事件→安装→状态按依赖顺序恢复；事件来源 ID 的匹配关系由未来 LicenseService 在同事务检查，不可凭事件行自行放行。|
 |Impact|新增两张正式 License 表与迁移 `20260924_0009`；无公开 API、实际授权判定、新依赖或客户数据外发。测试仅使用合成验证事实，即使状态行标为 VALID，也不代表真实有效授权；TrustedTimeState 与 LicenseService 仍未实现。|
 |Rollback|空表及无新验证 FK 引用时可降级到 `0008`；有状态或事件历史时普通 downgrade 拒绝，须备份并受控恢复，不删除验证历史。|
+
+## DEC-20260924-086
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-086|
+|Date|2026-09-24|
+|WBS|LIC-03-A01 TrustedTimeState ORM/Migration|
+|Decision|按冻结 DM-02/SC-01 建立 `lic_trusted_time_states` 部署单例与追加不可变 `lic_trusted_time_events`。单例初态允许尚未成功验证的空时间、版本 0；前移后必须有 UTC 成功时间、正版本、对象型完整性元数据及事件引用。更新触发器要求身份不变、时间严格前移、版本恰好 +1、事件引用变化及更新时间不倒退；事件禁止 UPDATE/DELETE/TRUNCATE，状态禁止 DELETE/TRUNCATE。事件结果码仅要求非空且限长，不在存储层提前冻结 License 分类或完整性算法。|
+|Reason|冻结基线要求原子 expected_version、单调时间和追加检查事件，但完整性算法由后续 TrustedTimeStatePort 实施。数据库负责可稳定验证的结构与转移约束；不设置 INSERT 只能空态的触发器，以允许含历史前移状态的普通备份恢复，初始写入和完整性认证必须由受控服务保证。|
+|Impact|新增两张 License 表和 Alembic `20260924_0010`；无公开 API、新依赖、客户数据外发或真实 License 判定。数据库表中的完整性元数据仅为存储位，不能单凭行内容放行业务。|
+|Rollback|空表可降级至 `0009`；存在状态/事件历史时普通 downgrade 拒绝，须先备份并按受控恢复方案处理。|

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-24：`0.1.0.dev0`/LIC-03-A01 新增部署级可信时间单例与不可变检查事件 ORM/Alembic `20260924_0010`；数据库约束时间严格前移、版本逐次递增、单例和历史不可改/删/清空。Windows 11/Python 3.13 后端 132/132、PostgreSQL 18.6 空库及有数据升级、ORM drift=0、负例、非空回退拒绝、备份恢复和 wheel 构建 PASS。兼容 PostgreSQL 18；升级前备份并执行 `upgrade head`，有可信时间历史不可普通降级。无新依赖、公开 API 或数据外发。已知问题：完整性算法与 TrustedTimeStatePort、真实 License 校验/Audit 未实现；本项无 Windows Server 2025/Debian 13 验证。
+
 - 2026-09-24：`0.1.0.dev0`/LIC-02-A01 新增 LicenseValidationState 单例与不可变验证事件 ORM/Alembic `20260924_0009`，VALID 必备形状、状态版本保护和安装结果 FK；旧的无来源验证引用在升级前拒绝。Windows 11/Python 3.13 后端 132/132、PostgreSQL 18.6 空库/已有安装升级、ORM drift=0、约束负例、非空回退拒绝及含历史恢复、wheel 构建 PASS。兼容 PostgreSQL 18；升级前备份并执行 `upgrade head`，有旧脏引用须先核对，有验证历史不能普通降级。无新依赖、公开 API 或客户数据外发。已知问题：真实 LicenseService/TrustedTimeState/机器/产品/时间验证与 Windows Server 2025/Debian 13 本任务未验证，测试 VALID 不代表有效授权。
 
 - 2026-09-24：`0.1.0.dev0`/LIC-01-A02 经用户本轮明确批准，后端新增 `cryptography==50.0.1` 生产依赖与内部 Ed25519 签名真实性预检；公钥只由可信引用解析器提供，严格限制 JSON/签名/文档规模，输出不表示 License 有效。Windows 11/Python 3.13 后端 132/132、License 代码覆盖率 96%、wheel 构建 PASS。兼容现有 PostgreSQL 18 Schema；无 Migration、公开 API、升级数据步骤或客户数据外发。已知问题：机器/时间/产品/功能授权、受控导入/Audit、公钥生产装配及 Windows Server 2025/Debian 13 本任务未验证。

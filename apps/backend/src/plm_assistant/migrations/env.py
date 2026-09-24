@@ -21,6 +21,7 @@ from plm_assistant.modules.auth.infrastructure import user_orm  # noqa: F401 - r
 from plm_assistant.modules.auth.infrastructure import session_orm  # noqa: F401 - register AUT-02 table
 from plm_assistant.modules.license.infrastructure import installation_orm  # noqa: F401 - register LIC-01 tables
 from plm_assistant.modules.license.infrastructure import validation_orm  # noqa: F401 - register LIC-02 tables
+from plm_assistant.modules.license.infrastructure import trusted_time_orm  # noqa: F401 - register LIC-03 tables
 
 
 config = context.config
