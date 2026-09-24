@@ -20,7 +20,7 @@ description: Execute architecture, PoC, implementation, testing, packaging, and 
 
 - Phase 0 Gate 1 已通过，结论为 `COMPLETE_WITH_APPROVED_ALTERNATIVES`。
 - Gate 2 已于 2026-09-23 由用户明确批准；Architecture、Data Model、DB Schema V1 和 API Contract V1 已按提交 `64cdf09` 冻结。
-- Phase 1 基础工程已完成，`1.01`～`1.09`、`PLT-01-A01～A03` PASS；Phase 2 `AUD-01-A01～A03`、`AUT-01-A01～A03`、`AUT-02-A01～A05`、`LIC-01-A01～A04`、`LIC-02-A01～A05`、`LIC-03-A01～A02` PASS。用户批准 `CR-LIC-001` 方案 B 后，内部 LicenseService、验证结果/Audit 编排、受控导入/激活、运行时 Guard 与受控重验证已完成；下一项暂定 `LIC-03-A03 生产可信来源与初始化装配`，编码前须核对 WBS 边界。首版只支持本产品全功能整体授权，生产公钥/选定 MAC/可信时间密钥来源与初始化尚未接线，Auth 仍无公开登录/管理 API；Gate 3 尚未通过。
+- Phase 1 基础工程已完成，`1.01`～`1.09`、`PLT-01-A01～A03` PASS；Phase 2 `AUD-01-A01～A03`、`AUT-01-A01～A03`、`AUT-02-A01～A05`、`LIC-01-A01～A04`、`LIC-02-A01～A05`、`LIC-03-A01～A02` PASS。用户批准 `CR-LIC-001` 方案 B 后，内部 LicenseService、验证结果/Audit 编排、受控导入/激活、运行时 Guard 与受控重验证已完成。暂定 `LIC-03-A03 生产可信来源与初始化装配` 的编码前检查发现阶段边界与密钥来源方案未定，等待 L3 决策，详见 `docs/progress/lic-03-a03-precheck.md`。首版只支持本产品全功能整体授权，生产公钥/选定 MAC/可信时间密钥来源与初始化尚未接线，Auth 仍无公开登录/管理 API；Gate 3 尚未通过。
 - 冻结后的总体架构、核心数据模型、DB Schema V1、Breaking API、技术栈、安全/License 机制或 Scope 变化属于 L3，不得由实现任务自行修改。
 - POC-03 质量失败继续阻塞 Gate 3/UAT；Server Office、Debian 13 和 Ghostscript 发行合规继续由各自 Release Gate 关闭。
 
