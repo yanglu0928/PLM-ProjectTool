@@ -839,3 +839,15 @@
 |Reason|该布局直接承载冻结的模块化单体、22 Owner 和 API/Application/Domain/Adapter 依赖方向，同时避免 FastAPI 与 Worker 复制业务代码。独立 Workbench 路径能防止私钥工具误入客户包；按需创建模块可避免 22 组空目录和伪实现。|
 |Impact|后续 1.02/1.03 分别在稳定的 backend/frontend 根创建 App；模块 WBS 必须遵循固定层次、测试镜像和依赖白名单。新增运行模块或把 Workbench 合并进客户运行包属于 L3；普通模块内子目录调整属于 L2。|
 |Rollback|在尚无运行实现和 Migration 时，可删除新增骨架并恢复为纯文档仓库；若需变更顶层布局，先更新机器 manifest、验证和本决策的后继记录。不得借回滚改变冻结的 22 模块、信任区或依赖矩阵。|
+
+## DEC-20260924-061
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-061|
+|Date|2026-09-24|
+|WBS|1.02 FastAPI app factory|
+|Decision|后端采用无模块级全局 App 的 `create_app()` 工厂，由 Uvicorn `--factory` 加载；每个实例拥有独立的 lifespan 与 `HealthService`。只注册 `/health/live`、`/health/ready` 两个非业务健康端点，Swagger、ReDoc 和外部 OpenAPI 暂不暴露。Readiness 通过 Composition Root 注入同步/异步探针，未启动、探针返回非 True 或抛异常时统一失败关闭为最小 `503 {"status":"NOT_READY"}`。直接依赖固定为 FastAPI 0.141.1、Uvicorn 0.53.0，测试按 Starlette 1.7 要求使用 HTTPX2 2.13.1。|
+|Reason|工厂模式避免测试、Worker 或多实例共享可变状态，并为后续 Config、DB Session、日志、Trace 和 Router 逐步装配提供稳定入口。健康面符合冻结 Contract 的最小披露原则；注入探针允许后续数据库/存储检查接入而不改变公开响应。固定已在 Python 3.13.14 验证的直接版本可减少三平台漂移。|
+|Impact|当前运行面只有两个健康端点，不初始化数据库、License、Session 或业务模块；外部 OpenAPI 仍为 404，但 `app.openapi()` 可供后续 Contract diff 使用。1.04/1.09 可向工厂装配基础设施；1.06 负责正式错误 Contract，1.08 负责 TraceId。|
+|Rollback|删除 WBS 1.02 新增 package/测试并恢复 backend README/pyproject 即可回到 1.01；不影响数据库或客户数据。更换 FastAPI/Uvicorn、改变健康路径或暴露额外未冻结 API 必须按依赖/API 变更规则重新评审。|
