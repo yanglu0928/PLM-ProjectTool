@@ -1,0 +1,15 @@
+{
+  "status": "PASS",
+  "standard_id": "MODULE-DIRECTORY-STANDARD-V1",
+  "wbs": "1.01",
+  "runtime_module_count": 22,
+  "api_owner_count": 22,
+  "aggregate_root_count": 65,
+  "dependency_edge_count": 85,
+  "dependency_cycle_count": 0,
+  "required_path_count": 8,
+  "missing_path_count": 0,
+  "developer_workbench_isolated": true,
+  "external_call_count": 0,
+  "runtime_code_created": false
+}
