@@ -1,0 +1,23 @@
+{
+  "status": "PASS",
+  "wbs": "1.02",
+  "python": "3.13.14",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "fastapi": "0.141.1",
+  "starlette": "1.7.0",
+  "pydantic": "2.13.5",
+  "uvicorn": "0.53.0",
+  "httpx2": "2.13.1",
+  "app_instance_isolation": true,
+  "registered_route_count": 2,
+  "registered_routes": [
+    "/health/live",
+    "/health/ready"
+  ],
+  "liveness_status": 200,
+  "readiness_status": 200,
+  "failed_readiness_status": 503,
+  "docs_exposed": false,
+  "database_call_count": 0,
+  "external_call_count": 0
+}
