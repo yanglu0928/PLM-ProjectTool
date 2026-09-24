@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-24：`0.1.0.dev0`/AUT-02-A03 新增内部 Session 续期轮换：Token/CSRF 重新随机生成，旧记录与新记录/Audit 同事务；新记录继承原绝对到期时间，错误 CSRF、随机源重复及审计失败均关闭或回滚。Windows 11/Python 3.13 后端 118/118、PostgreSQL 18.6 临时库原子轮换和失败回滚 PASS。兼容现有 PostgreSQL 18 Schema；无 Migration、新依赖、公开 API 或升级步骤。已知问题：真实登录、Cookie/Origin/Host/限流、License、多标签处理及 Windows Server 2025/Debian 13 本任务未验证。
+
 - 2026-09-24：`0.1.0.dev0`/AUT-02-A02 新增仅内部 Session 签发/校验/撤销 Service 与 PostgreSQL 适配；签发需认证证明 Port，Token/CSRF 各 32 字节随机值仅以 SHA-256 摘要落库，用户停用/凭据版本变化/超时/撤销均失败关闭，CSRF 与 Audit 同事务。Windows 11/Python 3.13 后端 115/115、PostgreSQL 18.6 临时库真实生命周期与失败回滚 PASS。兼容现有 PostgreSQL 18 Schema；无 Migration、新依赖、公开 API 或升级步骤。已知问题：生产认证/License 接线、Cookie/Origin/Host/限流、续期及三平台验证未完成，不可开放登录；Windows Server 2025/Debian 13 本任务未验证。
 
 ### 新增

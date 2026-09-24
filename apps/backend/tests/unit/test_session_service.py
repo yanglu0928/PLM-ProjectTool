@@ -38,22 +38,26 @@ class FakeRepo:
         return tx.working["version"] if tx.working["state"] == "ENABLED" else None
 
     def create(self, tx, **values):
-        tx.working["row"] = dict(values, session_id=SESSION, revoked_at=None)
-        return SESSION
+        session_id = SESSION if not tx.working["rows"] else uuid.uuid4()
+        row = dict(values, session_id=session_id, revoked_at=None)
+        tx.working["row"] = row
+        tx.working["rows"].append(row)
+        return session_id
 
     def find_by_token_digest(self, tx, digest):
-        row = tx.working["row"]
-        if row is None or row["token_digest"] != digest:
+        row = next((item for item in tx.working["rows"] if item["token_digest"] == digest), None)
+        if row is None:
             return None
-        return SessionRecord(SESSION, USER, row["credential_version"], row["csrf_digest"],
+        return SessionRecord(row["session_id"], USER, row["credential_version"], row["csrf_digest"],
                              row["absolute_expires_at"], row["idle_expires_at"],
                              row["revoked_at"], tx.working["state"], tx.working["version"])
 
     def revoke(self, tx, session_id, now, reason):
-        if tx.working["row"]["revoked_at"] is not None:
+        row = next((item for item in tx.working["rows"] if item["session_id"] == session_id), None)
+        if row is None or row["revoked_at"] is not None:
             return False
-        tx.working["row"]["revoked_at"] = now
-        tx.working["row"]["reason"] = reason
+        row["revoked_at"] = now
+        row["reason"] = reason
         return True
 
 
@@ -77,7 +81,7 @@ class FakeAudit:
 
 
 def make_service(*, allowed=True, fail_audit=False, clock=None, random_bytes=None):
-    store = {"version": 1, "state": "ENABLED", "row": None, "audit": []}
+    store = {"version": 1, "state": "ENABLED", "row": None, "rows": [], "audit": []}
     service = SessionService(
         unit_of_work=lambda: FakeUow(store), repository=FakeRepo(),
         issue_access=FakeAccess(allowed), audit=FakeAudit(fail_audit),
@@ -138,6 +142,43 @@ class SessionServiceTests(unittest.TestCase):
             service.issue(user_id=USER, trace_id=TRACE, proof=True)
         self.assertIsNone(store["row"])
         self.assertEqual(store["audit"], [])
+
+    def test_renew_rotates_both_secrets_and_retires_old_pair(self):
+        values = iter((b"a" * 32, b"b" * 32, b"c" * 32, b"d" * 32))
+        service, store = make_service(random_bytes=lambda n: next(values))
+        old = service.issue(user_id=USER, trace_id=TRACE, proof=True)
+        renewed = service.renew(token=old.token, csrf_token=old.csrf_token, trace_id=TRACE)
+        self.assertNotEqual(old.session_id, renewed.session_id)
+        self.assertNotEqual(old.token, renewed.token)
+        self.assertNotEqual(old.csrf_token, renewed.csrf_token)
+        self.assertEqual(old.absolute_expires_at, renewed.absolute_expires_at)
+        self.assertEqual(store["rows"][0]["reason"], "RENEWED")
+        self.assertEqual(store["audit"][-1].action, "SESSION_RENEWED")
+        with self.assertRaises(SessionError):
+            service.validate(old.token)
+        self.assertEqual(service.validate(renewed.token, csrf_token=renewed.csrf_token, require_csrf=True).user_id, USER)
+
+    def test_renew_wrong_csrf_and_audit_failure_leave_old_active(self):
+        values = iter((b"a" * 32, b"b" * 32, b"c" * 32, b"d" * 32))
+        service, store = make_service(random_bytes=lambda n: next(values))
+        old = service.issue(user_id=USER, trace_id=TRACE, proof=True)
+        with self.assertRaises(SessionError):
+            service.renew(token=old.token, csrf_token=b"x" * 32, trace_id=TRACE)
+        service._audit.fail = True
+        with self.assertRaisesRegex(RuntimeError, "audit unavailable"):
+            service.renew(token=old.token, csrf_token=old.csrf_token, trace_id=TRACE)
+        self.assertEqual(len(store["rows"]), 1)
+        self.assertIsNone(store["row"]["revoked_at"])
+        self.assertEqual(service.validate(old.token).user_id, USER)
+
+    def test_renew_entropy_reuse_fails_before_revocation(self):
+        values = iter((b"a" * 32, b"b" * 32, b"a" * 32, b"d" * 32))
+        service, store = make_service(random_bytes=lambda n: next(values))
+        old = service.issue(user_id=USER, trace_id=TRACE, proof=True)
+        with self.assertRaises(SessionError) as caught:
+            service.renew(token=old.token, csrf_token=old.csrf_token, trace_id=TRACE)
+        self.assertEqual(caught.exception.code, "AUTH_ENTROPY_UNAVAILABLE")
+        self.assertIsNone(store["row"]["revoked_at"])
 
     def test_bad_entropy_clock_policy_and_token_rejected(self):
         service, _ = make_service(random_bytes=lambda n: b"a" * n)

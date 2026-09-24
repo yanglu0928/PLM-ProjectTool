@@ -1067,3 +1067,15 @@
 |Reason|冻结 DM-02/API-02 规定服务器端 Session、凭据变化失效、CSRF 和审计，但未固定内部期限数值。保守初值与强制认证证明 Port 防止仅凭 UserId 签发；无公开路由避免跳过 Origin/Host、限流、Cookie 与 License。固定 Token 长度使摘要存储和输入检查简单；原值不进入数据库或 Audit。|
 |Impact|新增 Auth Application Service、Auth Infrastructure Repository、单元及 PostgreSQL 临时库验证；无 Schema/Migration、公开 API、第三方依赖或客户数据外发。Cookie 设置、Origin/Host、真实密码证明/License 适配、登录限流、续期轮换、全会话管理员撤销及项目授权仍需后续任务，当前不能开放真实登录。|
 |Rollback|未接入公开入口，移除本服务/适配器即可回退代码；已签发 Session 的撤销历史及 Audit 不删除。调整期限需安全评估和兼容测试，不改变冻结的摘要/凭据版本机制。|
+
+## DEC-20260924-080
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-080|
+|Date|2026-09-24|
+|WBS|AUT-02-A03 Session 续期轮换|
+|Decision|把已冻结 API-02 的 Session 续期轮换细化为独立内部 WBS A03。仅有效 Session + 绑定 CSRF 可续期；在单一数据库事务中先将旧记录撤销为 `RENEWED`，再创建独立随机 Token/CSRF 的新记录及 Audit。新记录继承旧会话绝对到期时间，仅将空闲期限延至 `min(当前时间+空闲期, 原绝对期限)`；因此轮换不能无限延长认证会话。新旧 Token 或 CSRF 发生重复则失败关闭。|
+|Reason|冻结 API-02 已规定 `AUTH_SESSION_RENEW` 必须轮换；A02 仅实现初始签发/校验/撤销。将轮换独立验收符合一 WBS 一问题。继承绝对期限可保留“绝对到期”的安全含义，而同事务写入保证 Audit 或新记录失败时旧 Session 继续有效，不出现半轮换。|
+|Impact|仅变更内部 Auth Application Service 与测试，无 Schema/Migration、公开 API、外部依赖或客户数据外发。Cookie 原子替换、多标签行为、Origin/Host、限流、License、真实登录与管理员撤销仍未接入，不能宣称对外续期已可用。|
+|Rollback|未接入公开路由，可移除内部续期命令；既有 Session/Audit 历史不删除。|

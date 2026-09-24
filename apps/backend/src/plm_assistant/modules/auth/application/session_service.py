@@ -147,6 +147,38 @@ class SessionService:
             transaction.commit()
             return True
 
+    def renew(self, *, token: bytes, csrf_token: bytes, trace_id: uuid.UUID) -> IssuedSession:
+        """Atomically retire the old bearer/CSRF pair and issue a fresh pair."""
+        self._ids(trace_id)
+        self._token(token)
+        self._token(csrf_token)
+        now = self._now()
+        with self._unit_of_work() as transaction:  # type: ignore[attr-defined]
+            record = self._repository.find_by_token_digest(transaction, hashlib.sha256(token).digest())
+            self._check_active(record, now)
+            assert record is not None
+            if not hmac.compare_digest(hashlib.sha256(csrf_token).digest(), record.csrf_digest):
+                raise SessionError("AUTH_ACCESS_DENIED")
+            new_token, new_csrf = self._random_bytes(32), self._random_bytes(32)
+            if (type(new_token) is not bytes or type(new_csrf) is not bytes
+                    or len(new_token) != 32 or len(new_csrf) != 32
+                    or hmac.compare_digest(new_token, new_csrf)
+                    or hmac.compare_digest(new_token, token)
+                    or hmac.compare_digest(new_csrf, csrf_token)):
+                raise SessionError("AUTH_ENTROPY_UNAVAILABLE")
+            if not self._repository.revoke(transaction, record.session_id, now, "RENEWED"):
+                raise SessionError("AUTH_SESSION_EXPIRED")
+            absolute = record.absolute_expires_at
+            idle = min(now + self._policy.idle_lifetime, absolute)
+            new_id = self._repository.create(
+                transaction, user_id=record.user_id, credential_version=record.credential_version,
+                token_digest=hashlib.sha256(new_token).digest(), csrf_digest=hashlib.sha256(new_csrf).digest(),
+                now=now, absolute_expires_at=absolute, idle_expires_at=idle,
+            )
+            self._audit.append(transaction, self._event(trace_id, record.user_id, new_id, "SESSION_RENEWED"))
+            transaction.commit()
+        return IssuedSession(new_id, record.user_id, new_token, new_csrf, absolute, idle)
+
     @staticmethod
     def _check_active(record: SessionRecord | None, now: datetime) -> None:
         if (record is None or record.revoked_at is not None or record.user_state != "ENABLED"
