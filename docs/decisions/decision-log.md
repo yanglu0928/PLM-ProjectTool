@@ -1055,3 +1055,15 @@
 |Reason|冻结 DM-02/API-02 要求服务端 Session、Token/CSRF 不可逆摘要、凭据变化使旧 Session 失效和撤销不可恢复；SC-02 R-DEP Profile 允许专用列覆盖通用状态。复合 FK 保留历史版本，但不能代替实时 User 状态校验；避免误把数据库行存在等同于已认证。验收中显式补上 `revoke_reason IS NOT NULL`，以防 PostgreSQL CHECK 对 NULL 的 UNKNOWN 结果放行。|
 |Impact|新增普通增量迁移 `20260924_0007` 和一张 Session 表，无冻结 API/架构变更、新依赖或客户数据外发。真实 Token 生成/哈希、Cookie/CSRF、续期/撤销及 License/项目授权均须后续独立 WBS 实现；当前仅持久层，不可开放登录。|
 |Rollback|空表可降级到 `0006`；含 Session 记录时普通 downgrade 拒绝，必须备份并走受控恢复/迁移，不删除历史以强制通过。|
+
+## DEC-20260924-079
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-079|
+|Date|2026-09-24|
+|WBS|AUT-02-A02 Session 签发/校验/撤销内部服务|
+|Decision|内部 Session 签发须由注入的 `SessionIssueAccessPort` 对当次认证证明、User 和当前凭据版本作明确许可；没有生产适配器时不得开放登录。每次生成独立 32 字节随机 Token/CSRF，数据库只存各自 SHA-256 摘要。内部默认绝对期限 8 小时、空闲期限 30 分钟，允许受控配置但上限 24 小时且空闲期不超过绝对期；本任务校验不滑动空闲期。校验实时重查 User ENABLED、当前凭据版本、撤销及双期限；撤销需有效 Token 与绑定 CSRF，更新与 Audit 同事务。|
+|Reason|冻结 DM-02/API-02 规定服务器端 Session、凭据变化失效、CSRF 和审计，但未固定内部期限数值。保守初值与强制认证证明 Port 防止仅凭 UserId 签发；无公开路由避免跳过 Origin/Host、限流、Cookie 与 License。固定 Token 长度使摘要存储和输入检查简单；原值不进入数据库或 Audit。|
+|Impact|新增 Auth Application Service、Auth Infrastructure Repository、单元及 PostgreSQL 临时库验证；无 Schema/Migration、公开 API、第三方依赖或客户数据外发。Cookie 设置、Origin/Host、真实密码证明/License 适配、登录限流、续期轮换、全会话管理员撤销及项目授权仍需后续任务，当前不能开放真实登录。|
+|Rollback|未接入公开入口，移除本服务/适配器即可回退代码；已签发 Session 的撤销历史及 Audit 不删除。调整期限需安全评估和兼容测试，不改变冻结的摘要/凭据版本机制。|
