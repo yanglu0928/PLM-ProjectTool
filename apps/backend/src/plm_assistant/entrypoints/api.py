@@ -4,6 +4,7 @@ from collections.abc import Iterable
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.routing import APIRouter
 
 from plm_assistant import __version__
 from plm_assistant.modules.platform.api.error_handlers import install_error_handlers
@@ -25,6 +26,7 @@ def create_app(
     *,
     readiness_checks: Iterable[ReadinessCheck] | None = None,
     loggers: StructuredLoggers | None = None,
+    login_router: APIRouter | None = None,
 ) -> FastAPI:
     """Create one isolated API application instance.
 
@@ -57,4 +59,6 @@ def create_app(
     app.add_middleware(TraceMiddleware, loggers=app.state.loggers)
     install_error_handlers(app)
     app.include_router(create_health_router(health_service))
+    if login_router is not None:
+        app.include_router(login_router)
     return app

@@ -1391,3 +1391,15 @@
 |Reason|复用已验证的 Session 与密码 Port，避免按用户名查询与签发之间的停用/换密竞争；不让错误类型直接暴露用户存在性。|
 |Impact|仅新增 Auth 应用编排、只读身份仓储和假验证适配，无 Schema/Migration、公开 API 或新依赖；HTTP Cookie/Origin/限流真实客户端地址仍待装配。|
 |Rollback|内部服务未挂路由；撤销不改变已签发 Session 历史，已有 Session 只能按正式撤销命令处理。|
+
+## DEC-20260925-009
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-009|
+|Date|2026-09-25|
+|WBS|AUT-03-A04 登录 HTTP Cookie/CSRF 接线|
+|Decision|增加显式注入的登录 Router，默认应用不挂载；HTTP 入口先校验已配置的精确 Host/Origin，再限制 JSON 正文为 4096 字节且只收 username/password。Session Token 仅放 HttpOnly/SameSite=Lax Cookie，HTTPS Origin 自动设置 Secure，受信任 loopback HTTP 用于本机验证；CSRF 原值仅在本次成功响应 DTO 给前端内存，错误统一安全 Envelope。|
+|Reason|在生产依赖装配前验证 HTTP 边界，防止默认开放未配置的登录；保持冻结 API-01/02 的传输与失败语义。|
+|Impact|新增登录 HTTP Router、可选应用装配和已冻结 AUTH_INVALID_CREDENTIALS 错误码映射；无 Schema/Migration、新依赖或默认公开登录。Session 查询/续期/注销和初始管理员仍由后续 WBS 完成。|
+|Rollback|移除可选 Router 注入即可恢复默认 404；已签发 Session 不能仅靠下线 Router 撤销。|

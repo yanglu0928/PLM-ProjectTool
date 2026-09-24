@@ -18,6 +18,7 @@ COMMON_ERRORS: dict[str, ErrorSpec] = {
         "REQUEST_METHOD_NOT_ALLOWED", 405, "此操作不支持该请求方法。"
     ),
     "AUTH_REQUIRED": ErrorSpec("AUTH_REQUIRED", 401, "请先登录。"),
+    "AUTH_INVALID_CREDENTIALS": ErrorSpec("AUTH_INVALID_CREDENTIALS", 401, "用户名或密码不正确。"),
     "AUTH_SESSION_EXPIRED": ErrorSpec("AUTH_SESSION_EXPIRED", 401, "登录已失效。"),
     "AUTH_CSRF_INVALID": ErrorSpec("AUTH_CSRF_INVALID", 403, "请求安全校验失败。"),
     "LICENSE_OPERATION_DENIED": ErrorSpec(
