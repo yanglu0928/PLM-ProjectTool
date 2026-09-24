@@ -1043,3 +1043,15 @@
 |Reason|冻结方案要求不可逆 PasswordHasher，但未规定库与参数。[OWASP 密码存储建议](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)首选 Argon2id，标准库可用时推荐的 scrypt Profile 为 `N=2^17,r=8,p=1`；[Python 3.13 `hashlib` 文档](https://docs.python.org/3.13/library/hashlib.html)提供 scrypt 与显式内存限制。此选择不新增重要第三方依赖，属于当前已批准安全机制的具体实现；对畸形参数失败关闭避免存储内容触发资源耗尽。|
 |Impact|新增 Auth Infrastructure Hash/Verifier，无 Schema、API 或新依赖；本机单次创建约 317ms 仅为观测，不代表三平台吞吐或安全审计通过。每次哈希约需 128 MiB 工作内存，公开登录前仍必须实现 Origin/Host/限流、Session/CSRF、License/权限、统一失败响应和平台负载验收。Python/OpenSSL 可能复制密码字节，调用方清零不保证绝对擦除。|
 |Rollback|移除新适配器可返回仅 Port 的 A02，但已保存的 `SCRYPT` 凭据将无法验证；上线后不得直接撤销而不提供兼容验证或受控凭据迁移。普通代码回滚不删除用户/凭据历史。|
+
+## DEC-20260924-078
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-078|
+|Date|2026-09-24|
+|WBS|AUT-02-A01 Session ORM/Migration|
+|Decision|Session 为部署级运行聚合，物理表只存 32 字节 Session Token 摘要与 CSRF 绑定摘要，不存 Cookie/CSRF 原值。`(user_id,credential_version)` 复合 FK 指向不可变 PasswordCredential 历史，Session 是否仍有效还须后续服务重新检查 User ENABLED、当前凭据版本、绝对/空闲到期与撤销。`state` 由时间/撤销事实派生，不持久化。Token 摘要唯一，额外 `(user_id,revoked_at)` 索引用于用户全会话撤销；更新触发器禁止身份/摘要/绝对期限替换、last_seen/idle 倒退及撤销复活。|
+|Reason|冻结 DM-02/API-02 要求服务端 Session、Token/CSRF 不可逆摘要、凭据变化使旧 Session 失效和撤销不可恢复；SC-02 R-DEP Profile 允许专用列覆盖通用状态。复合 FK 保留历史版本，但不能代替实时 User 状态校验；避免误把数据库行存在等同于已认证。验收中显式补上 `revoke_reason IS NOT NULL`，以防 PostgreSQL CHECK 对 NULL 的 UNKNOWN 结果放行。|
+|Impact|新增普通增量迁移 `20260924_0007` 和一张 Session 表，无冻结 API/架构变更、新依赖或客户数据外发。真实 Token 生成/哈希、Cookie/CSRF、续期/撤销及 License/项目授权均须后续独立 WBS 实现；当前仅持久层，不可开放登录。|
+|Rollback|空表可降级到 `0006`；含 Session 记录时普通 downgrade 拒绝，必须备份并走受控恢复/迁移，不删除历史以强制通过。|
