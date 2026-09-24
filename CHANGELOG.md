@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-24：`0.1.0.dev0`/CR-LIC-001 用户明确批准修改已锁定 License 授权粒度：首版单一产品、全功能整体授权；保留七字段 v1 签名 Payload，增加正式补充、Change Request 并修订 ADR-006/DM-02，不改变原 V2.1 历史或 Gate 2 冻结提交。无程序/API/Schema/Migration/依赖变更，Windows 11 文档引用与差异检查 PASS；升级无需数据迁移，生产公钥必须限定本产品。已知问题：不可按功能细分授权；生产 License 综合验证尚未完成。
+
 - 2026-09-24：`0.1.0.dev0`/LIC-03-A02 新增内部 TrustedTimeStatePort、HMAC-SHA256-V1 状态完整性适配及 PostgreSQL 预期版本原子前移；回拨、并发冲突和损坏拒绝时保持状态不后退，拒绝事件与 Audit 独立持久化。Windows 11/Python 3.13 后端 139/139、目标组件覆盖率 97%、PostgreSQL 18.6 双线程竞争/回拨/篡改与审计、wheel 构建 PASS。兼容现有 PostgreSQL 18 Schema；无 Migration、新依赖、公开 API 或数据外发。已知问题：密钥来源与一次性初始化仍待生产装配，高权限数据库初态重置或数据库/密钥同时回滚不能检测，真实 License 综合判定尚未实现；本项未验证 Windows Server 2025/Debian 13。
 
 - 2026-09-24：`0.1.0.dev0`/LIC-03-A01 新增部署级可信时间单例与不可变检查事件 ORM/Alembic `20260924_0010`；数据库约束时间严格前移、版本逐次递增、单例和历史不可改/删/清空。Windows 11/Python 3.13 后端 132/132、PostgreSQL 18.6 空库及有数据升级、ORM drift=0、负例、非空回退拒绝、备份恢复和 wheel 构建 PASS。兼容 PostgreSQL 18；升级前备份并执行 `upgrade head`，有可信时间历史不可普通降级。无新依赖、公开 API 或数据外发。已知问题：完整性算法与 TrustedTimeStatePort、真实 License 校验/Audit 未实现；本项无 Windows Server 2025/Debian 13 验证。

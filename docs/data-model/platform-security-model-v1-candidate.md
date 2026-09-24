@@ -2,7 +2,7 @@
 
 ## 状态
 
-`CANDIDATE / DM-02_COMPLETE / NOT_GATE_2_FROZEN / NOT_PHYSICAL_SCHEMA`
+`GATE_2_FROZEN_AT_64cdf09 / AMENDED_BY_CR-LIC-001 / NOT_PHYSICAL_SCHEMA`
 
 本文件细化 Platform、Auth、Project、Workflow、Review、Audit、Secret 与 License 的实体关系、字段语义、状态机和不变量。字段名称表示领域语义，不代表 PostgreSQL 列名或 API DTO；类型、长度、索引、物理外键和 Migration 留待 Database Schema V1。
 
@@ -262,14 +262,14 @@ Secret、密码、Token、License 私钥和客户正文不得存入 SystemConfig
 |active_license_ref|可为空，指向当前 Active 安装|
 |machine_fingerprint_hash|只保存规范化 MAC 的 SHA-256，不保存原始 MAC|
 |validation_code|分类安全结果|
-|entitlement_snapshot|受许可产品/功能/有效期的最小快照|
+|entitlement_snapshot|CR-LIC-001 后只保存本产品全功能整体授权的最小派生状态与有效期；不承载按产品/功能区分的权益|
 |validated_at|UTC 验证时间|
 
 validation_code 至少区分：`VALID / NOT_INSTALLED / MALFORMED / SIGNATURE_INVALID / MACHINE_MISMATCH / NOT_YET_VALID / EXPIRED / TIME_ROLLBACK`。
 
 不变量：
 
-- 只有签名、Schema、产品、机器、有效期和可信时间全部通过时为 VALID。
+- 只有受信任的本产品专用公钥引用、签名、Schema、机器、有效期和可信时间全部通过时为 VALID；不执行七字段载荷无法支持的细分产品/功能权益验证（CR-LIC-001）。
 - 验证结果不能由客户端提交；由 LicenseService 根据签名材料和 TrustedTimeState 计算。
 - 无效状态只允许最小存活、登录和已认证 DeploymentAdmin 的 License 恢复面，其他许可业务失败关闭。
 

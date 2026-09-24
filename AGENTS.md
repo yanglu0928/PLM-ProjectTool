@@ -8,7 +8,7 @@
 4. `.ai/skills/plm-project-development/SKILL.md`
 5. 该 Skill 针对当前任务指定的参考文件
 
-`AI开发总控指令与 Skill 规范 V1.1.md` 和 `PLM项目实施辅助工具软件开发实施方案 V2.1.md` 始终是正式基线；仅在当前任务涉及对应基线、Gate、L3 事件或基线版本变化时按需读取，不在每轮重复加载全文。
+`AI开发总控指令与 Skill 规范 V1.1.md`、`PLM项目实施辅助工具软件开发实施方案 V2.1.md` 及其正式 License 补充 `PLM项目实施辅助工具软件开发实施方案 V2.1 License 变更补充 CR-LIC-001.md` 是正式基线；补充仅在 License 授权粒度上优先。仅在当前任务涉及对应基线、Gate、L3 事件或基线版本变化时按需读取，不在每轮重复加载全文。
 
 ## 基线与优先级
 
@@ -30,8 +30,8 @@
 ## 当前 Gate
 
 - Phase 0 Gate 1 已通过，结论为 `COMPLETE_WITH_APPROVED_ALTERNATIVES`。
-- Gate 2 已于 2026-09-23 由用户明确批准；`ARCH-CANDIDATE-V1`、`DATA-MODEL-CANDIDATE-V1`、`DB-SCHEMA-CANDIDATE-V1` 和 `API-CONTRACT-CANDIDATE-V1` 已冻结为正式开发基线，冻结内容固定为提交 `64cdf09`。
-- 当前处于 Phase 1 架构冻结与基础工程；`1.01`～`1.09` 基础任务已 PASS，下一任务为 `PLT-01-A01 SystemConfiguration ORM/Migration`。允许按 WBS 开展正式基础工程与业务实现；WBS 1.09 不代表生产 Secret Store 已实现。
+- Gate 2 已于 2026-09-23 由用户明确批准；`ARCH-CANDIDATE-V1`、`DATA-MODEL-CANDIDATE-V1`、`DB-SCHEMA-CANDIDATE-V1` 和 `API-CONTRACT-CANDIDATE-V1` 已冻结为正式开发基线，原冻结内容固定为提交 `64cdf09`。2026-09-24 用户另明确批准 License 专项 `CR-LIC-001` 方案 B，作为可追溯的后续基线修订，不追写原冻结提交。
+- 当前处于 Phase 2 Platform Core；基础工程及 `LIC-03-A02` 之前的状态以 `STATUS.md` 为准。`LIC-02-A02` 的冻结冲突已由用户批准 CR-LIC-001 方案 B，允许按 WBS 恢复 LicenseService 实现；Gate 3 尚未通过。
 - 冻结后的总体架构、核心数据模型、DB Schema V1、`/api/v1` Breaking Change、技术栈、安全/License 机制或 Scope 变化必须走 L3 Change Request；不得在普通实现任务中静默改写。
 - Gate 2 批准不代表生产 ORM/Migration、运行 OpenAPI、性能、AI 质量、三平台发行或 UAT 已通过。
 
@@ -44,7 +44,7 @@
 - AI：业务模块只能调用统一 AIService；不得直接调用厂商 SDK。
 - RAG：统一平台；PROJECT 数据必须按 ProjectId 隔离；更换 Embedding 模型必须新建索引并全量重建。
 - 插件：独立子进程、JSON-RPC over stdio；插件不得直连数据库或管理 AI Key。
-- License：MAC 规范化 → SHA-256 → Ed25519；私钥只允许存在于开发者工作台。
+- License：MAC 规范化 → SHA-256 → Ed25519；私钥只允许存在于开发者工作台。CR-LIC-001 后首版仅本产品全功能整体授权，七字段签名载荷不增加产品/功能权益。
 - 目标环境：Windows 11、Windows Server 2025、Debian 13，均为 x86-64/AMD64 正式兼容目标。
 - 不得擅自加入 Redis、消息队列、独立向量库、本地大模型、SSO、手机 App、第三方插件市场或 AI 原型执行沙箱。
 

@@ -5,7 +5,7 @@ description: Execute architecture, PoC, implementation, testing, packaging, and 
 
 # PLM Project Development
 
-本 Skill 将《PLM项目实施辅助工具软件开发实施方案 V2.1》作为最高业务与技术基线，将《AI开发总控指令与 Skill 规范 V1.1》和《AI自主执行与最小人工确认规则 V1.0》作为执行约束。原始文档始终是事实来源；本 Skill 只负责路由和执行，不替代原文。
+本 Skill 将《PLM项目实施辅助工具软件开发实施方案 V2.1》及用户批准的 License 专项补充 `CR-LIC-001` 作为最高业务与技术基线，将《AI开发总控指令与 Skill 规范 V1.1》和《AI自主执行与最小人工确认规则 V1.0》作为执行约束。原始文档始终是事实来源；本 Skill 只负责路由和执行，不替代原文。
 
 ## 开始任务
 
@@ -20,7 +20,7 @@ description: Execute architecture, PoC, implementation, testing, packaging, and 
 
 - Phase 0 Gate 1 已通过，结论为 `COMPLETE_WITH_APPROVED_ALTERNATIVES`。
 - Gate 2 已于 2026-09-23 由用户明确批准；Architecture、Data Model、DB Schema V1 和 API Contract V1 已按提交 `64cdf09` 冻结。
-- Phase 1 基础工程已完成，`1.01`～`1.09`、`PLT-01-A01～A03` PASS；Phase 2 `AUD-01-A01～A03`、`AUT-01-A01～A03`、`AUT-02-A01～A05`、`LIC-01-A01～A02`、`LIC-02-A01`、`LIC-03-A01～A02` PASS。`LIC-02-A02` 因已锁定 7 字段 License Payload 与冻结产品/功能校验要求冲突而 L3 暂停，见 `docs/progress/lic-02-a02-payload-conflict.md`。可信时间端口尚缺生产密钥来源/初始化接线，不代表 License 有效，Auth 仍无公开登录/管理 API；Gate 3 尚未通过。
+- Phase 1 基础工程已完成，`1.01`～`1.09`、`PLT-01-A01～A03` PASS；Phase 2 `AUD-01-A01～A03`、`AUT-01-A01～A03`、`AUT-02-A01～A05`、`LIC-01-A01～A02`、`LIC-02-A01`、`LIC-03-A01～A02` PASS。`LIC-02-A02` 的 L3 冲突已由用户批准 `CR-LIC-001` 方案 B，当前允许恢复该任务；首版只支持本产品全功能整体授权。可信时间端口尚缺生产密钥来源/初始化接线，不代表 License 有效，Auth 仍无公开登录/管理 API；Gate 3 尚未通过。
 - 冻结后的总体架构、核心数据模型、DB Schema V1、Breaking API、技术栈、安全/License 机制或 Scope 变化属于 L3，不得由实现任务自行修改。
 - POC-03 质量失败继续阻塞 Gate 3/UAT；Server Office、Debian 13 和 Ghostscript 发行合规继续由各自 Release Gate 关闭。
 

@@ -19,7 +19,7 @@
 |缓存|进程内缓存|
 |后台任务|PostgreSQL Job Table + Worker Process|
 |插件|Python 独立子进程 + JSON-RPC over stdio|
-|License|MAC 规范化 → SHA-256；Ed25519 签名|
+|License|MAC 规范化 → SHA-256；Ed25519 签名；首版单产品、全功能整体授权（CR-LIC-001）|
 |目标环境|Windows 11、Windows Server 2025、Debian 13；x86-64/AMD64|
 |最低资源|4 Core / 8 GB RAM / 100 GB SSD；不运行本地模型|
 
