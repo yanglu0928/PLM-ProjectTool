@@ -1,0 +1,11 @@
+{
+  "platform": "Windows 11 Home",
+  "version": "10.0.26200",
+  "architecture": "x86-64",
+  "python": "3.13",
+  "office_product": "Microsoft Office Home and Student 2021",
+  "word_version": "16.0",
+  "powerpoint_version": "16.0",
+  "office_build": "16.0.20326.20144",
+  "status": "PASS"
+}

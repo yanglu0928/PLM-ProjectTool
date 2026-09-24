@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "visual_studio_build_tools": "17.14.41",
+  "msvc_toolset": "14.44.35207",
+  "architecture": "x64",
+  "workload": "Microsoft.VisualStudio.Workload.VCTools",
+  "restart_required": false,
+  "completed_at_utc": "2026-09-17T07:03:32.9008757Z"
+}

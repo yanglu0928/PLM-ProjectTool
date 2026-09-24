@@ -1,0 +1,22 @@
+{
+  "schema_version": "poc-03.source-review-package-result.v1",
+  "generated_at": "2026-09-18T01:02:51.446347+00:00",
+  "status": "PASS_FOR_HUMAN_REVIEW",
+  "summary": {
+    "task_count": 120,
+    "pending_human_decision_count": 120,
+    "evidence_link_count": 120,
+    "unresolved_source_type_count": 0,
+    "unresolved_original_count": 0,
+    "workbook_sheet_count": 2,
+    "workbook_formula_error_count": 0
+  },
+  "privacy": {
+    "external_ai_service_called": false,
+    "customer_content_uploaded": false,
+    "customer_content_committed": false,
+    "navigator_committed": false,
+    "workbook_committed": false
+  },
+  "conclusion": "The local review package is ready; no candidate is approved until a human decision is recorded."
+}
