@@ -995,3 +995,15 @@
 |Reason|冻结 DM-02 要求强制审计与业务状态同事务提交，且只由 AuditService 追加。由业务用例掌握事务可避免 Audit 成功而业务回滚或相反；自由文本会扩大敏感内容进入审计库的风险。Auth/License/Project 权限仍未落地，本任务不以测试替身伪装成公开可用写入口。|
 |Impact|只新增 Audit 模块 Application/Domain/Infrastructure、测试与验收脚本；A01 迁移与冻结 API 不变，无新依赖或客户数据外发。业务命令只有在真实权限和 Audit 适配器接线后才能开放。下一项单独完成只读查询及项目隔离。|
 |Rollback|移除 A02 新增服务、Port、仓储和测试即可退回 A01；已提交的审计事件仍由 A01 append-only 表保护，不得清理历史以撤销代码。|
+
+## DEC-20260924-074
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-074|
+|Date|2026-09-24|
+|WBS|AUD-01-A03 审计只读查询与项目隔离|
+|Decision|内部 AuditQueryService 必须注入权限 Port 并在 Repository 查询前检查；Project 读取固定 `event_scope=PROJECT AND target_project_id=授权项目`，部署读取固定 `event_scope=DEPLOYMENT AND target_project_id IS NULL`，DeploymentAdmin 不自动读取项目 Audit。时间查询要求显式、最多 31 天，页大小 1～200，排序固定 `occurred_at DESC, audit_event_id DESC`；内部 keyset position 不作为公开游标，对外签名/Scope/查询指纹绑定在未来 HTTP API 任务中实现。投影排除主体提示摘要。|
+|Reason|冻结 API-01/02 要求权限先行、项目隔离、受控筛选、完整性保护分页和不暴露敏感材料；SC-03 已冻结对应 Audit 索引。真实 Auth/License/Session 尚未落地，当前不提供公开路由或伪造权限适配器。31 天上限是可回滚的内部初值，控制无界查询，不改变冻结外部 API 语义。|
+|Impact|只新增 Audit 内部查询与测试，不改 A01 Schema/索引或冻结 `/api/v1`。权限 Port 必须由后续真实认证/项目授权实现；公开 API 上线前还必须加入签名游标及 Scope/查询指纹校验。审计导出另行 WBS 实施。|
+|Rollback|移除内部查询 Service/Repository 和测试即可回到 A02；不删除审计事件，也不改变已冻结查询索引。|

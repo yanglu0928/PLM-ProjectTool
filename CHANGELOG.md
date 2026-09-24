@@ -6,6 +6,7 @@
 
 ### 新增
 
+- 2026-09-24：`0.1.0.dev0`/AUD-01-A03 新增内部审计只读查询 Service、必需权限 Port、固定部署/项目 Scope、31 天受限时间窗、白名单筛选、每页 1～200 条的 keyset 分页与不含主体提示摘要的安全投影。Windows 11/Python 3.13 后端 99/99、PostgreSQL 18.6 独立库受权分页、跨项目隐藏、部署/项目隔离和越权拒绝 PASS。兼容现有 PostgreSQL 18 Schema；无 Migration、新依赖、公开 API 或升级步骤。已知问题：真实 Auth/License/Session 与对外签名游标、Audit API/导出、Retention 尚未完成；Windows Server 2025/Debian 13 本任务未验证。
 - 2026-09-24：`0.1.0.dev0`/AUD-01-A02 新增内部 AuditService 只追加契约、受控 AuditEventDraft、SQLAlchemy 仓储和单事务验证；调用者拥有事务，服务不单独提交或补偿写入。Windows 11/Python 3.13 后端 94/94、PostgreSQL 18.6 独立库同事务提交/异常回滚/默认回滚 PASS。兼容现有 PostgreSQL 18 Schema；无 Migration、新依赖、公开 API 或升级步骤。已知问题：真实 Auth/License/CSRF 权限、各业务命令接线、审计只读查询/导出、Retention 尚未实现；Windows Server 2025/Debian 13 本任务未验证。
 - 2026-09-24：`0.1.0.dev0`/AUD-01-A01 新增 `plm.aud_events` ORM 与 Alembic `20260924_0005`，包含部署/项目 Scope、受控主体与目标类型、仅安全状态码摘要、三组查询索引，以及数据库层禁止 UPDATE/DELETE/TRUNCATE 的只追加触发器。Windows 11/Python 3.13 后端 89/89、PostgreSQL 18.6 空库 up/down/re-up、有数据升级、ORM drift=0、约束负例、非空回退拒绝、备份恢复 PASS。兼容现有 PostgreSQL 18.6；升级前备份并执行 `upgrade head`，有审计数据时不可直接 downgrade。无新依赖、公开 API 或客户数据外发；AuditService/同事务接入、真实权限与审计查询仍待后续实现，Windows Server 2025/Debian 13 本任务未验证。
 - 2026-09-24：`0.1.0.dev0`/PLT-01-A03 完成内部配置身份创建与持久幂等：SHA-256 键摘要、请求指纹、同事务命令收据、同键重放/冲突和完成后不可变保护；Alembic `20260924_0004` 新增技术性收据表。Windows 11/Python 3.13 后端 89/89、PostgreSQL 18.6 空库/有数据迁移、并发、审计回滚、ORM drift=0、备份恢复及 A01/A02 回归 PASS。升级前备份并执行 `upgrade head`；有收据数据时 downgrade 失败关闭。无公开 API 或新依赖；真实 Auth/License/CSRF/Audit、默认配置策略与 Retention 尚未实现，Windows Server 2025/Debian 13 本任务未验证。Phase 1 基础工程收口，进入 Phase 2 Audit。
