@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PLT-02-A02 新增仅内部活动 Secret 密文信封只读适配，按 SecretRef、活动状态及未退役版本读取，复用既有用途/消费者与单次清零边界。Windows 11/Python 3.13 后端 191/191、适配器覆盖率 91%、PostgreSQL 18.6 临时库未激活/停用拒绝及消费者隔离、wheel 构建 PASS。兼容现有 Schema；无 Migration、新依赖、公开 API 或客户数据外发，升级无需数据步骤。已知问题：合成解密器不代表生产加密/密钥来源，正式 Secret 写命令/管理 API/三平台复验未完成。
+
 - 2026-09-24：`0.1.0.dev0`/PLT-02-A01 新增 SecretRecord/SecretVersion ORM 与 Alembic `20260924_0011`，保存密文版本和外部 key reference，不存明文或主密钥；约束单活动版本、跨父引用、生命周期与历史保护。Windows 11/Python 3.13 后端 188/188、PostgreSQL 18.6 空库/已有数据升级、空库回退、ORM drift=0、约束与非空回退拒绝、wheel 构建 PASS。兼容 PostgreSQL 18；升级前备份并执行 `upgrade head`，有 Secret 历史不能普通降级。无新依赖、公开 API 或客户数据外发。已知问题：生产加密/解密、SecretKeyProvider、写命令和三平台复验未完成，不能对外声称生产 Secret Store 可用。
 
 - 2026-09-24：`0.1.0.dev0`/LIC-03-A03 按用户选定方案 A 新增仅内部的可信时间初态一次性受控创建：DeploymentAdmin Session/CSRF、无既存状态/事件、并发单例和 Audit 同事务。Windows 11/Python 3.13 后端 188/188、服务覆盖率 98%、PostgreSQL 18.6 临时库权限/回滚/并发及 wheel 构建 PASS。兼容现有 PostgreSQL 18 Schema；无 Migration、新依赖、公开 API 或客户数据外发，升级无需数据步骤。已知问题：不提供生产公钥/选定 MAC/HMAC 密钥来源或安装接线；Windows Server 2025/Debian 13 本项未复验，不能据此开放 License 业务。执行纪律 V1.1 与 CR-EXEC-001 同步，原 V1.0/冻结提交保留历史。
