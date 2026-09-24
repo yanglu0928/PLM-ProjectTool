@@ -863,3 +863,15 @@
 |Reason|最小应用壳为后续认证、错误处理和业务模块提供稳定挂载点，同时避免在对应 WBS 前形成伪页面或客户端信任边界。same-origin 健康检查不会引入厂商调用或跨域凭据；固定依赖和安全 override 可复现当前 Windows 11 验证结果。|
 |Impact|当前 UI 只包含产品导航骨架、后端连接状态、可访问性基础样式、安全错误边界和 404；没有登录、权限裁决、业务路由、数据库或外部 AI 调用。后续业务页面应放入 `src/modules` 并经正式 API/权限 WBS 接入，客户端显示权限不得代替服务端授权。|
 |Rollback|删除 WBS 1.03 新增前端源码、测试、lockfile 和验证证据并恢复 frontend README 即可回到空前端目录；不影响数据库、后端或客户数据。更换冻结技术栈、引入跨域业务调用或改变 `/api/v1` Contract 必须按对应 L3/API 变更规则处理。|
+
+## DEC-20260924-063
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-063|
+|Date|2026-09-24|
+|WBS|1.04 SQLAlchemy session|
+|Decision|客户运行时采用同步 SQLAlchemy 2.0.54 + psycopg 3.3.5；每个进程持有一个 `DatabaseRuntime`/Engine Pool，每个 Application Command 使用一次性 `SqlAlchemyUnitOfWork` 和独立 Session/事务。事务 `autobegin=False`，进入 UoW 时显式 begin；只有显式 `commit()` 才提交，异常、遗漏提交或显式 rollback 均回滚，退出始终关闭 Session。连接池启用 pre-ping、return rollback、recycle 和有限超时，隔离级别固定 `READ COMMITTED`；只接受 `postgresql+psycopg`。数据库 URL 由 Composition Root 注入且所有展示隐藏密码，本 WBS 不读取环境或 Secret。|
+|Reason|同步 Session 与 Phase 0/SC-04 已验证的 PostgreSQL/psycopg 路径一致，也可由 FastAPI 同步依赖和独立 Worker 共用一套事务边界，避免在基础阶段维护同步/异步双栈。显式 begin/commit、默认 rollback 和一次性实例能防止请求间 Session 共享、隐式提交及连接池污染；技术无关 Application Protocol 保持业务层不依赖 ORM。|
+|Impact|`platform` 提供 UnitOfWork Contract、SQLAlchemy Adapter、连接健康检查和安全 URL；业务 Repository 只能在对应模块 Infrastructure 内使用当前 UoW Session，不得把 Session 跨线程/请求缓存。异步端点不得在事件循环中直接执行同步数据库 I/O，应使用同步依赖/执行边界。1.05 使用独立 Migration 角色建立正式 Alembic；1.09 负责 URL/Secret 与 Engine 生命周期装配。本任务未创建业务 ORM、表、Migration 或 API。|
+|Rollback|删除 WBS 1.04 的 UnitOfWork/DatabaseRuntime、测试与验证材料并移除 SQLAlchemy/psycopg 依赖即可回到 1.03；当前无数据库对象或客户数据需要回滚。若未来以 AsyncSession 取代该基础边界，应提交后继 L2 决策和等价事务/并发验证；不得借此改变 PostgreSQL 18、Schema、安全角色或冻结业务模型。|
