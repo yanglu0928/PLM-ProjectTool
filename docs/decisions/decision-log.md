@@ -1559,3 +1559,15 @@
 |Reason|统一状态矩阵避免各命令实现分歧；最后负责人保护防管理权限被清空，数据库时间约束要求提前移除的 ended_at 不早于 effective_at。|
 |Impact|新增 Project 内部状态 Service/Repository，无 Schema/Migration、新依赖或公开 API；正式 POST 幂等和 If-Match 留给公开 API 安全接线。|
 |Rollback|内部命令未公开；已移除成员不可原地恢复，只能按后续受权创建命令重新分配并保留原历史。|
+
+## DEC-20260925-023
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-023|
+|Date|2026-09-25|
+|WBS|PRJ-03-A01 Department 授权列表读取|
+|Decision|`PROJECT_DEPARTMENT_LIST` 在合成 License Guard 与 Auth 当前 Session 证明后，于同一事务检查 ProjectAuthorizationService 的当前成员事实。Project Repository 只查目标 Project 的 ACTIVE/INACTIVE Department，不访问 Auth 表；内部按 department_id ASC 稳定 keyset，返回最多 200 项及内部 after_department_id。归档项目受权只读保留。|
+|Reason|冻结 API-02 授权所有当前 ProjectMember 读取所属项目部门；历史部门须保留，权限不得依赖缓存或客户端 project_id 声称。稳定内部 keyset 避免更新造成分页位置漂移；公开 API-01 cursor 后续必须签名或完整性保护，不暴露原始 ID。|
+|Impact|新增 Project 内部只读 Service/Repository；无 Schema/Migration、新依赖或公开 API。|
+|Rollback|内部查询尚未公开，可移除该 Port；不影响部门数据与历史。|
