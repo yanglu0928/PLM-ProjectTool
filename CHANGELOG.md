@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PRJ-03-A02 新增内部 Project Department 创建命令：当前 ProjectManager、Session/CSRF/License/项目状态保护，NFKC+casefold 编码规范化，同项目活动编码唯一及并发冲突处理，创建与 Audit 同事务。Windows 11/Python 3.13 后端 294/294、服务覆盖率 93%、PostgreSQL 18.6 权限/并发/停用编码复用/回滚及 wheel 构建 PASS。无 Migration、新依赖或公开 API；升级无需数据操作。兼容当前 Windows 11 开发环境；Server 2025/Debian 13 本项未验证。已知问题：生产 License 使用合成 Guard，公开持久幂等/安全接线未完成；活动编码唯一解释记录于 DEC-20260925-024。
+
 - 2026-09-25：`0.1.0.dev0`/PRJ-03-A01 新增内部 Project Department 授权列表：当前四种项目成员角色均可读取所属项目活动/停用部门历史，返回强 ETag 和稳定内部 keyset 分页；跨项目/暂停成员/失效 Session 隐藏，归档项目授权只读。Windows 11/Python 3.13 后端 289/289、服务覆盖率 95%、PostgreSQL 18.6 角色/隔离/分页复验及 wheel 构建 PASS。无 Migration、新依赖或公开 API，升级无需数据操作。兼容当前 Windows 11 开发环境；Server 2025/Debian 13 本项未验证。已知问题：License 使用合成 Guard，公开不透明 cursor 与生产安全接线未完成。
 
 - 2026-09-25：`0.1.0.dev0`/PRJ-02-A04 新增内部 ProjectMember 暂停、恢复与移除命令：当前 ProjectManager、Session/CSRF/License、跨项目归属、强版本、合法转换、最后有效负责人和恢复时活动部门保护；状态变化与 Audit 同事务，未来生效成员提前移除满足时间约束。Windows 11/Python 3.13 后端 284/284、服务覆盖率 95%、PostgreSQL 18.6 转换/隔离/回滚验证及 wheel 构建 PASS。无 Migration、新依赖或公开 API，升级无需数据操作。已知问题：License 使用合成 Guard，公开幂等/If-Match、Server 2025/Debian 13 本项验证未完成。

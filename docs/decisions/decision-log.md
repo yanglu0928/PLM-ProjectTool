@@ -1571,3 +1571,15 @@
 |Reason|冻结 API-02 授权所有当前 ProjectMember 读取所属项目部门；历史部门须保留，权限不得依赖缓存或客户端 project_id 声称。稳定内部 keyset 避免更新造成分页位置漂移；公开 API-01 cursor 后续必须签名或完整性保护，不暴露原始 ID。|
 |Impact|新增 Project 内部只读 Service/Repository；无 Schema/Migration、新依赖或公开 API。|
 |Rollback|内部查询尚未公开，可移除该 Port；不影响部门数据与历史。|
+
+## DEC-20260925-024
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-024|
+|Date|2026-09-25|
+|WBS|PRJ-03-A02 Department 创建命令|
+|Decision|Department 创建沿用 Project bootstrap 的 NFKC/trim 显示值与 casefold 规范化语义，在当前 ProjectManager、Session/CSRF、License 与项目 ACTIVE 检查后，以 PostgreSQL `uq_prj_departments__project_code_live` 部分唯一索引作为并发最终防线。冻结 DM 的“DepartmentCode 项目内唯一”按更具体的冻结 SC-02/03 部分唯一索引解释为同项目 ACTIVE Department 唯一；INACTIVE 历史保留且其代码可被新 ACTIVE Department 复用。创建与 Audit 同事务，冲突固定 `CONFLICT_DUPLICATE`。|
+|Reason|冻结 SC-03 明确为 partial unique，已有 ORM/Migration 仅对 ACTIVE 行唯一；保持现有 DB 基线与可追溯历史，不额外改变冻结 Schema。|
+|Impact|新增 Project 内部创建 Service/Repository；无 Schema/Migration、新依赖或公开 API。对停用部门编码复用的 UI 展示需要在未来公开设计中结合 ID/状态区分，不能只凭 code 认定历史身份。|
+|Rollback|内部命令尚未公开，可停止新建；已有 Department 不物理删除，若需撤销须走后续受控停用并保留历史。|
