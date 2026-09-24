@@ -15,6 +15,7 @@ from plm_assistant.modules.platform.infrastructure.orm import (
     APPLICATION_SCHEMA,
     Base,
 )
+from plm_assistant.modules.platform.infrastructure import configuration_orm  # noqa: F401 - register PLT-01 tables
 
 
 config = context.config

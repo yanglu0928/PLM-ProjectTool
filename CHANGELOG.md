@@ -6,6 +6,7 @@
 
 ### 新增
 
+- 2026-09-24：`0.1.0.dev0`/PLT-01-A01 完成 SystemConfiguration 身份与不可变版本 ORM、Alembic `20260924_0002`。Windows 11/Python 3.13 后端 72/72 PASS；PostgreSQL 18.6 空库及已有数据升级、空表回退、ORM drift=0、约束负例和备份恢复 PASS。升级前备份并执行 `upgrade head`；有配置数据时 downgrade 失败关闭。无公开 API。已知问题：配置命令/权限/Audit/敏感值校验、Retention 子表和 SecretRecord 尚未完成；Windows Server 2025、Debian 13 本任务未验证。
 - 2026-09-24：WBS 1.09 完成 Config/Secret 基础边界。新增受限 YAML + `PLM_` 环境启动配置、显式开发 `.env`、固定脱敏错误、SecretRef/受控消费方/必需 Audit/单次使用并清理缓冲区契约；backend 新增 pydantic-settings 2.15.0 与 PyYAML 6.0.3。Windows 11/Python 3.13 下后端 72/72 测试及 wheel 内容验证 PASS；无新增业务 API、表、Migration、真实密钥或客户数据外发。升级只需安装新增依赖；下一任务为 PLT-01-A01 SystemConfiguration ORM/Migration。已知未完成项：生产密文仓库、加密算法、外部 SecretKeyProvider、主材料恢复、PLT-01/02 API/审计尚未实现，不能宣称生产 Secret 可用；Server/Debian 未在本任务验证。
 - 2026-09-24：WBS 1.08 完成纯 ASGI TraceId 中间件。对每个 HTTP 请求只复用单个规范 UUID，缺失、无效或重复头生成 UUIDv7；上下文在同步/异步、并发及流式响应间保持隔离，所有响应头、错误正文和安全 JSON 日志使用同一 TraceId。Windows 11/Python 3.13 下后端 57/57 测试 PASS；健康最小 body、公开路由范围、数据库与外部调用均未改变。无升级步骤；下一 WBS 为 1.09 Config/Secret。已知未完成项：正式业务成功 Envelope、Job/AI/Plugin/Audit 跨入口传播须在相应 WBS 实现；Server/Debian 未在本任务验证。
 - 2026-09-24：WBS 1.07 完成平台 JSON 日志基础能力。Application 与 Integration 采用独立、可注入的 JSON 行输出流和事件/字段白名单；未分类 API 错误只记录安全码与响应 TraceId，原始异常、正文、Secret 和路径不进入日志。Windows 11/Python 3.13 下后端 48/48 测试 PASS；无业务 API、数据库变更或外部调用。无升级步骤；下一 WBS 为 1.08 TraceId。已知未完成项：请求级 Trace/耗时上下文、Audit 持久化及正式部署日志收集/保留策略仍由后续 WBS/Release 完成；Server/Debian 未在本任务验证。

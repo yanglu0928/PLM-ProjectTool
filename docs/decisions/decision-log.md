@@ -935,3 +935,15 @@
 |Reason|现有正式 Migration 仅是无业务表的平台基线，PLT-01/PLT-02 的版本化实体和 Audit 尚未实施；在 1.09 直接写持久 Secret 或私自选定平台主密钥机制会跨 WBS 且掩盖 Gate 风险。先锁定非敏感配置来源和失败关闭的单次访问契约，可让后续 DB/AI Adapter 使用统一引用，同时避免把明文配置或测试密钥写入 Git。pydantic-settings/YAML 选型直接落实已批准技术建议，不引入新的商业授权或更改安全基线。|
 |Impact|backend 增加两项固定直接依赖和一个不含 Secret 的示例模板；无数据库对象、业务 API、真实密钥、外发或生产加密能力。App Factory 目前不自动从 YAML/.env 读取，也不以缺失的 SecretKeyProvider 假装连接数据库；PLT-01/PLT-02 后续 Task 必须实现正式 ORM/Migration、权限/API、审计、密文与主材料分离及恢复验证，才能标记生产 Secret 可用。|
 |Rollback|移除 Bootstrap/Secret 边界代码、示例、测试及两项依赖即可回到 WBS 1.08；无数据迁移。任何把密钥写入 YAML/.env 发行包、弱化 Secret 消费方授权或改变冻结 PLT-01/PLT-02 API/数据语义的方案必须走对应 L3 Change Request。|
+
+## DEC-20260924-069
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-069|
+|Date|2026-09-24|
+|WBS|PLT-01-A01 SystemConfiguration ORM/Migration|
+|Decision|将本任务严格限定为 PLT-01 的非敏感配置身份表与不可变版本表；Root Active Version 使用同父复合 FK，Version 的 UPDATE/DELETE 用数据库触发器拒绝，已有配置数据的 Alembic downgrade 失败关闭。Settings/RetentionPolicy/RetentionHold 子表、版本命令、DeploymentAdmin 授权、Audit 与敏感值识别留给后续独立 WBS。配置值物理形状暂用 STRING/INTEGER/BOOLEAN/JSON 四类 JSONB 约束；应用层必须进一步校验 INTEGER 语义及禁止 Secret/客户正文。|
+|Reason|SC-01/02 冻结了聚合所有权、M-DEP 和不可变版本约束，但未冻结 PLT-01 每个子表的完整业务字段与命令实现。先交付可独立验证的身份/版本存储，不把未实现的权限或敏感值检测称为已完成。拒绝含数据回退可避免默认 DROP TABLE 静默丢失正式配置历史。|
+|Impact|新增正式 Alembic `20260924_0002` 和两张 `plm` 表；`retention_policy_id` 保留 nullable 占位，目标子表落地前不具备外键/保留策略功能。无公开 API、客户数据外发或冻结基线变更。后续业务命令在开放前必须补齐非敏感值筛查、单调版本分配、乐观并发、权限与 Audit。|
+|Rollback|空表可降级到 `20260924_0001`；含配置数据拒绝回退，须经备份和受控数据迁移/恢复流程处理。不得通过禁用不可变触发器来绕过正式版本历史。|

@@ -7,6 +7,7 @@ from plm_assistant.modules.platform.infrastructure.orm import (
     NAMING_CONVENTION,
     Base,
 )
+from plm_assistant.modules.platform.infrastructure import configuration_orm  # noqa: F401
 
 
 class OrmMetadataTests(unittest.TestCase):
@@ -20,8 +21,8 @@ class OrmMetadataTests(unittest.TestCase):
             {"ix", "uq", "ck", "fk", "pk"},
         )
 
-    def test_platform_baseline_does_not_create_business_tables(self) -> None:
-        self.assertEqual(len(Base.metadata.tables), 0)
+    def test_only_plt_01_configuration_tables_are_registered(self) -> None:
+        self.assertEqual(set(Base.metadata.tables), {"plm.plt_system_configurations", "plm.plt_configuration_versions"})
 
 
 if __name__ == "__main__":
