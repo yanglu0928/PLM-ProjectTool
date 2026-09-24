@@ -1355,3 +1355,15 @@
 |Reason|TestClient 实测登录及 Secret 路由均 404，仅健康路由 200；若以合成 Guard/Key Provider 挂路由会违反冻结 API-01/API-02 和生产 Secret 分离要求。|
 |Impact|不变更冻结路径、Schema 或权限；A07 未完成，不得声称管理 API/真实 Secret 可用。项目继续不受阻塞的 Auth/平台基础任务。|
 |Rollback|尚无公开 Secret 路由；若前置不能满足，保持默认 404 和失败关闭，不能以测试替身代替生产装配。|
+
+## DEC-20260925-006
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-006|
+|Date|2026-09-25|
+|WBS|AUT-03-A01 登录可信 Host/Origin 边界|
+|Decision|将 A07 前置的“登录 HTTP 安全边界”拆为可信 Host/Origin、限流、凭据编排和 Cookie/CSRF 独立可验收项；首项采用显式允许集合，非 loopback 仅 HTTPS，缺失/重复来源拒绝，转发头不参与信任判断。|
+|Reason|当前无公开登录路由与可信部署源配置；一次性开放会混入未验证限流和凭据流程。严格来源策略先作为独立组件验证，不把 `X-Forwarded-Host` 当作可信目标。|
+|Impact|无公开 API、Schema、Migration 或新依赖；登录仍 404。反向代理须保留可信 Host；配置、限流与 Cookie 另行验收。|
+|Rollback|组件未挂路由；移除不会改变现有健康接口，不能以宽松默认源替代。|
