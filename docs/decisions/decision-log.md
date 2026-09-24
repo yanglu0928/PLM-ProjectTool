@@ -1547,3 +1547,15 @@
 |Reason|冻结 DM-02 要求角色变更历史，而原 Schema 与通用 AuditEvent 无法完整追溯角色和部门的旧、新值。项目行锁使当前授权与负责人数量检查串行，成员版本锁与数据库约束防覆盖。|
 |Impact|新增 Migration `20260925_0014`、Project 内部修改命令及 Auth 最小显示名 Port；无公开 API Breaking Change。必须升级数据库后部署本版。|
 |Rollback|历史表为空时可降级到 `20260925_0013`；已有历史需保留，不允许自动丢弃。内部命令未公开，可停用但不可篡改已写历史。|
+
+## DEC-20260925-022
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-022|
+|Date|2026-09-25|
+|WBS|PRJ-02-A04 ProjectMember 暂停/恢复/移除命令|
+|Decision|三项内部命令复用同一状态 Service/Repository，但调用不同的冻结操作策略；仅允许 ACTIVE→SUSPENDED、SUSPENDED→ACTIVE、ACTIVE/SUSPENDED→REMOVED。每次变更需当前 ProjectManager、Session/CSRF、License、目标归属、expected_version 与同事务 Audit。恢复要求关联部门 ACTIVE。暂停/移除最后一个当前有效 ProjectManager 拒绝。未来生效成员提前移除时 `ended_at = greatest(statement_timestamp(), effective_at)`，状态立即 REMOVED。|
+|Reason|统一状态矩阵避免各命令实现分歧；最后负责人保护防管理权限被清空，数据库时间约束要求提前移除的 ended_at 不早于 effective_at。|
+|Impact|新增 Project 内部状态 Service/Repository，无 Schema/Migration、新依赖或公开 API；正式 POST 幂等和 If-Match 留给公开 API 安全接线。|
+|Rollback|内部命令未公开；已移除成员不可原地恢复，只能按后续受权创建命令重新分配并保留原历史。|
