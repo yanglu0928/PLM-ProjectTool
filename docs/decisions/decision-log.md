@@ -1199,3 +1199,15 @@
 |Reason|验证成功是安装候选的真实性与当前机器/时间判定，不等于管理员授权激活；部署级运行许可必须待受控激活和状态投影实现后才可能为 VALID。先保持失败关闭，避免单个事件绕过权限边界。|
 |Impact|无 Schema/API/依赖变更；可信时间前移由既有独立事务完成，若随后结果记录失败，安装仍为 IMPORTED 且没有新结果引用，不能激活，重试需新的可信时间版本。|
 |Rollback|没有公开入口或状态激活；回退代码不删除已写入的不可变验证/Audit 历史。|
+
+## DEC-20260924-091
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-091|
+|Date|2026-09-24|
+|WBS|LIC-01-A03 受控导入命令与初始安装记录|
+|Decision|内部导入命令由 Auth 所有的适配器在同一事务验证 Session Token、CSRF、当前凭据版本、未撤销/未超时状态和 DeploymentAdmin；公钥引用只取本产品可信 Port。Ed25519 预检成功后存 IMPORTED 安装和不可变文档；预检拒绝写无安装关联的脱敏验证事件及 Audit，绝不存失败文档正文。|
+|Reason|冻结 API 的 LICENSE_IMPORT 恢复面不能绕过 Session/CSRF/Role/Audit；在 HTTP 装配和完整 License 判定尚未完成时，先把候选导入与激活分离。Auth 模块拥有身份表的查询，License 不直连 Auth 表。|
+|Impact|无 Schema、Migration、新依赖或公开 API；成功导入的 `validation_result_ref` 仍为空且状态仅 IMPORTED，后续综合验证和激活必须另行执行。过大或未授权请求不落库；验签失败留摘要、分类和追踪，不留 Payload。|
+|Rollback|内部命令尚无公开路由；移除代码不删除已形成的不可变安装、验证和 Audit 历史。|

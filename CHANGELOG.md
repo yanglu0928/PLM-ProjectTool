@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-24：`0.1.0.dev0`/LIC-01-A03 新增仅内部受控 License 导入：Auth 模块在同一事务校验当前 Session、CSRF、DeploymentAdmin 与凭据版本；本产品受信任公钥预检 Ed25519，成功仅建立 IMPORTED 安装/不可变文档和 Audit，签名失败仅留脱敏验证事件/Audit。Windows 11/Python 3.13 后端 155/155、PostgreSQL 18.6 临时库权限与回滚、wheel 构建 PASS。兼容既有 PostgreSQL 18 Schema，无 Migration、新依赖、公开 API 或客户数据外发。已知问题：导入不等于综合验证/激活，生产公钥/Session HTTP 接线与运行状态投影尚未完成；Windows Server 2025/Debian 13 未复验。
+
 - 2026-09-24：`0.1.0.dev0`/LIC-02-A03 新增仅内部 IMPORTED 安装验证结果记录：从不可变文档读取并核对 SHA-256、公钥引用与并发版本，成功/拒绝事件、安装结果引用和部署 Audit 同事务写入，审计失败回滚。Windows 11/Python 3.13 后端 150/150、PostgreSQL 18.6 临时库事务与回滚、wheel 构建与模块包含 PASS。兼容既有 PostgreSQL 18 Schema；无 Migration、新依赖、公开 API 或客户数据外发，升级无需数据步骤。已知问题：成功事件不等于激活，部署级 ValidationState 不更新；可信时间前移与记录分属事务，记录失败保持导入项不可激活；生产信任源和受控导入/激活未接线，Windows Server 2025/Debian 13 未复验。
 
 - 2026-09-24：`0.1.0.dev0`/LIC-02-A02 按用户批准的 CR-LIC-001 实现内部七字段 v1 LicenseService：签名、Schema、受信任本产品公钥引用、选定 MAC 指纹、签发/生效/失效时间与可信时间顺序校验；仅返回本产品全功能整体授权候选，不做状态写入或激活。Windows 11/Python 3.13 后端 144/144、POC-09 回归 26/26、目标覆盖率 91%、PostgreSQL 18.6 真实签名/时间链与拒绝负例、wheel 构建 PASS。兼容现有 PostgreSQL 18 Schema 与 v1 签名格式；无 Migration、新依赖、公开 API 或客户数据外发。已知问题：验证状态持久化/Audit 编排、导入激活、生产公钥/选定 MAC/可信时间密钥来源和初始化、Windows Server 2025/Debian 13 本项未完成或未验证。
