@@ -1463,3 +1463,15 @@
 |Reason|冻结模型将 ProjectMember 作为项目权限唯一事实，Session 不持久化权限快照；部署管理员不自动拥有项目数据访问权。|
 |Impact|无 Schema/Migration、公开 API 或新依赖；补齐登录响应所需的真实 Project 摘要读层，但完整 ProjectAuthorizationService 的逐操作判定仍待后续 WBS。|
 |Rollback|移除只读适配器并恢复 Auth Port 未装配状态；不改变项目成员或 Session 历史。|
+
+## DEC-20260925-015
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-015|
+|Date|2026-09-25|
+|WBS|PRJ-01-A03 ProjectAuthorizationService 逐操作授权|
+|Decision|Project 模块对冻结 API-02 的项目路径操作维护显式角色白名单；未登记操作默认拒绝。每次在新事务中从 Project、ACTIVE Member、ACTIVE Department 重读状态，目标 Member/Department 由数据库反查 owner ProjectId 并与路径交叉校验；DeploymentAdmin 不自动成为项目成员。归档项目只允许授权读取，不允许写。普通无权/不存在/跨项目统一 `RESOURCE_NOT_FOUND`；有权成员对归档项目写入返回 `PROJECT_ARCHIVED`。|
+|Reason|登录摘要不能当权限快照；冻结模型要求按资源实际归属和当前成员事实重新校验。`PROJECT_LIST` 的授权列表与部署级 `PROJECT_CREATE` 的管理员命令另在对应读/写任务接线，不能用项目成员角色替代。|
+|Impact|新增 Project 内部授权 Service/SQL Repository，无 Schema/Migration、公开 API 或新依赖。调用者仍必须先经 Auth Session、License、CSRF 等契约前置；本服务只实现 Project 角色/Scope 判定，不宣称全链路开放。|
+|Rollback|内部 Port 尚未挂公开路由；撤销本实现不改变业务数据。|

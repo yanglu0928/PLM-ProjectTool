@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PRJ-01-A03 新增 Project 路径内 13 项逐操作授权、即时成员/部门状态核查及目标归属检查；无权限/跨项目统一隐藏，授权归档项目只读。Windows 11/Python 3.13 后端 241/241、服务覆盖率 98%、PostgreSQL 18.6 临时库权限/状态/归属复验和 wheel 构建 PASS。无 Migration、新依赖或公开 API，升级无需数据步骤。已知问题：Auth/License 生产装配和 Project 业务命令未完成；Server 2025/Debian 13 本项未复验。
+
 - 2026-09-25：`0.1.0.dev0`/PRJ-01-A02 新增 Project-owned 当前成员授权摘要，Auth SessionView 可读取真实项目 ID/名称/角色；暂停、移除、未生效、项目归档与部门停用立即过滤，不缓存权限。Windows 11/Python 3.13 后端 237/237、读层覆盖率 100%、PostgreSQL 18.6 隔离/状态复验及 wheel 构建 PASS。无 Migration/新依赖/公开 API。已知问题：完整逐操作授权和生产登录安全配置未完成，Server 2025/Debian 13 未复验。
 
 - 2026-09-25：`0.1.0.dev0`/PRJ-01-A01 按冻结模型新增 Project/Department/ProjectMember ORM 与 Alembic `20260925_0013`；复合 FK 防跨项目部门绑定，partial unique 防多项目有效成员。Windows 11/Python 3.13 后端 235/235、PostgreSQL 18.6 空库/已有用户升级、ORM drift=0、约束/降级验证及 wheel 构建 PASS。升级前备份并运行 `upgrade head`，三表有数据时拒绝 downgrade。已知问题：业务命令与授权读取未实现，Server 2025/Debian 13 未复验。
