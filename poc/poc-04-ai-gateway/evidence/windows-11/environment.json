@@ -1,0 +1,15 @@
+{
+  "platform": {
+    "system": "Windows",
+    "release": "11",
+    "version": "10.0.26200",
+    "machine": "AMD64"
+  },
+  "python_version": "3.13.15",
+  "packages": {
+    "httpx": "0.28.1",
+    "jsonschema": "4.26.0"
+  },
+  "secret_values_recorded": false,
+  "validation_mode": "deterministic_mock_transport"
+}

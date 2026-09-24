@@ -1,0 +1,38 @@
+{
+  "schema_version": "poc-03.hybrid-retrieval-result.v1",
+  "generated_at": "2026-09-17T23:05:13.327001+08:00",
+  "status": "PASS",
+  "environment": {
+    "postgresql_version": "PostgreSQL 18.6 on x86_64-windows",
+    "pgvector_version": "0.8.6"
+  },
+  "fusion": {
+    "vector_weight": 0.6,
+    "full_text_weight": 0.4,
+    "candidate_limit_per_channel": 20,
+    "hnsw_ef_search": 200,
+    "hnsw_m": 32,
+    "hnsw_ef_construction": 200
+  },
+  "summary": {
+    "scenario_count": 4,
+    "synthetic_record_count": 1000,
+    "top_k": 5,
+    "average_top5_recall": 1.0,
+    "minimum_top5_recall": 1.0,
+    "gin_index_used": true,
+    "hnsw_index_used": true
+  },
+  "scenarios": [
+    {"scenario_id": "H01", "expected_count": 5, "result_count": 5, "top5_recall": 1.0},
+    {"scenario_id": "H02", "expected_count": 5, "result_count": 5, "top5_recall": 1.0},
+    {"scenario_id": "H03", "expected_count": 5, "result_count": 5, "top5_recall": 1.0},
+    {"scenario_id": "H04", "expected_count": 5, "result_count": 5, "top5_recall": 1.0}
+  ],
+  "privacy": {
+    "customer_content_used": false,
+    "query_text_committed": false,
+    "vector_values_committed": false,
+    "synthetic_rows_persisted": false
+  }
+}
