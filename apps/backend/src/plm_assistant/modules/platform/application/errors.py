@@ -35,6 +35,9 @@ COMMON_ERRORS: dict[str, ErrorSpec] = {
         "FILE_TYPE_UNSUPPORTED", 415, "不支持此文件类型。"
     ),
     "VALIDATION_FAILED": ErrorSpec("VALIDATION_FAILED", 422, "请求内容不符合要求。"),
+    "PLATFORM_SENSITIVE_VALUE_FORBIDDEN": ErrorSpec(
+        "PLATFORM_SENSITIVE_VALUE_FORBIDDEN", 422, "此配置值不允许保存。"
+    ),
     "CONFLICT_VERSION_REQUIRED": ErrorSpec(
         "CONFLICT_VERSION_REQUIRED", 428, "请提供资源版本。"
     ),

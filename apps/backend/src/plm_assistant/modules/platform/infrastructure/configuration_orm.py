@@ -60,6 +60,7 @@ class ConfigurationVersionRow(Base):
         UniqueConstraint("system_configuration_id", "version_no"),
         UniqueConstraint("configuration_version_id", "system_configuration_id"),
         CheckConstraint("version_no > 0", name="ck_plt_configuration_versions__version_no"),
+        CheckConstraint("schema_version > 0", name="ck_plt_configuration_versions__schema_version"),
         CheckConstraint("version_state IN ('ACTIVE', 'INACTIVE')", name="ck_plt_configuration_versions__version_state"),
         CheckConstraint("value_type IN ('STRING', 'INTEGER', 'BOOLEAN', 'JSON')", name="ck_plt_configuration_versions__value_type"),
         CheckConstraint("octet_length(content_fingerprint) = 32", name="ck_plt_configuration_versions__content_fingerprint"),
@@ -71,6 +72,7 @@ class ConfigurationVersionRow(Base):
     version_no: Mapped[int] = mapped_column(Integer, nullable=False)
     version_state: Mapped[str] = mapped_column(Text, nullable=False)
     supersedes_version_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    schema_version: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("1"))
     value_type: Mapped[str] = mapped_column(Text, nullable=False)
     value_json: Mapped[Any] = mapped_column(JSONB, nullable=False)
     content_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)

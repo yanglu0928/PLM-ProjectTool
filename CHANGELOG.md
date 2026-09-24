@@ -6,6 +6,7 @@
 
 ### 新增
 
+- 2026-09-24：`0.1.0.dev0`/PLT-01-A02 增加内部配置版本创建/激活命令、SQLAlchemy 仓储、精确非敏感值白名单与同事务权限/Audit Port；Alembic `20260924_0003` 补齐冻结契约要求的 `schema_version`，旧版本默认 1。Windows 11/Python 3.13 后端 85/85、PostgreSQL 18.6 有数据 up/down/re-up、并发/回滚/ORM drift 与 wheel 检查 PASS。升级前备份并执行 `upgrade head`；非初始 Schema 版本阻止回退。无公开 API。已知问题：真实认证/License/CSRF/Audit、持久幂等、身份创建和默认策略未实现，Windows Server 2025/Debian 13 本任务未验证。
 - 2026-09-24：`0.1.0.dev0`/PLT-01-A01 完成 SystemConfiguration 身份与不可变版本 ORM、Alembic `20260924_0002`。Windows 11/Python 3.13 后端 72/72 PASS；PostgreSQL 18.6 空库及已有数据升级、空表回退、ORM drift=0、约束负例和备份恢复 PASS。升级前备份并执行 `upgrade head`；有配置数据时 downgrade 失败关闭。无公开 API。已知问题：配置命令/权限/Audit/敏感值校验、Retention 子表和 SecretRecord 尚未完成；Windows Server 2025、Debian 13 本任务未验证。
 - 2026-09-24：WBS 1.09 完成 Config/Secret 基础边界。新增受限 YAML + `PLM_` 环境启动配置、显式开发 `.env`、固定脱敏错误、SecretRef/受控消费方/必需 Audit/单次使用并清理缓冲区契约；backend 新增 pydantic-settings 2.15.0 与 PyYAML 6.0.3。Windows 11/Python 3.13 下后端 72/72 测试及 wheel 内容验证 PASS；无新增业务 API、表、Migration、真实密钥或客户数据外发。升级只需安装新增依赖；下一任务为 PLT-01-A01 SystemConfiguration ORM/Migration。已知未完成项：生产密文仓库、加密算法、外部 SecretKeyProvider、主材料恢复、PLT-01/02 API/审计尚未实现，不能宣称生产 Secret 可用；Server/Debian 未在本任务验证。
 - 2026-09-24：WBS 1.08 完成纯 ASGI TraceId 中间件。对每个 HTTP 请求只复用单个规范 UUID，缺失、无效或重复头生成 UUIDv7；上下文在同步/异步、并发及流式响应间保持隔离，所有响应头、错误正文和安全 JSON 日志使用同一 TraceId。Windows 11/Python 3.13 下后端 57/57 测试 PASS；健康最小 body、公开路由范围、数据库与外部调用均未改变。无升级步骤；下一 WBS 为 1.09 Config/Secret。已知未完成项：正式业务成功 Envelope、Job/AI/Plugin/Audit 跨入口传播须在相应 WBS 实现；Server/Debian 未在本任务验证。
