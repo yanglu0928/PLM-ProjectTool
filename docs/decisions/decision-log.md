@@ -1403,3 +1403,15 @@
 |Reason|在生产依赖装配前验证 HTTP 边界，防止默认开放未配置的登录；保持冻结 API-01/02 的传输与失败语义。|
 |Impact|新增登录 HTTP Router、可选应用装配和已冻结 AUTH_INVALID_CREDENTIALS 错误码映射；无 Schema/Migration、新依赖或默认公开登录。Session 查询/续期/注销和初始管理员仍由后续 WBS 完成。|
 |Rollback|移除可选 Router 注入即可恢复默认 404；已签发 Session 不能仅靠下线 Router 撤销。|
+
+## DEC-20260925-010
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-010|
+|Date|2026-09-25|
+|WBS|AUT-03-A05 登录 SessionView 真实身份投影|
+|Decision|把冻结 SessionView 的 user/deployment_role/authorized_projects 设为登录 Router 必填的只读投影 Port。Auth 适配器只从当前 ENABLED User 读身份和部署角色；项目摘要必须由 Project-owned Port 显式提供，尚无 ProjectMember 层时不设置生产默认空列表。投影失败时不发 Cookie、返回固定服务不可用错误。生产装配与初始管理员顺延为 A06。|
+|Reason|上一项 HTTP 边界的最小 DTO 缺少冻结字段；Auth 不应自行伪造项目成员事实或长期把缺失数据写为空项目权限。|
+|Impact|登录 Router 签名要求真实投影，旧的可选接线测试需增加投影替身；无 Schema/Breaking API，新响应补齐冻结结构，仍不默认开放。已签发但投影失败的 Session 在服务器端保留至超时，后续评估补偿撤销。|
+|Rollback|回退该非公开 Router 装配；不改变已冻结 API 或 User/Session 数据。|

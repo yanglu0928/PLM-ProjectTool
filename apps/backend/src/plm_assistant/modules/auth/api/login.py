@@ -16,15 +16,17 @@ from plm_assistant.modules.auth.api.login_origin_policy import (
 from plm_assistant.modules.auth.application.login_service import (
     LoginAttempt, LoginError, LoginService,
 )
+from plm_assistant.modules.auth.application.session_view import SessionViewPort
 from plm_assistant.modules.platform.application.errors import ApplicationError
 
 
 MAX_LOGIN_BODY = 4096
 
 
-def create_login_router(*, login: LoginService, origins: LoginOriginPolicy) -> APIRouter:
-    if login is None or origins is None:
-        raise ValueError("login and origins are required")
+def create_login_router(*, login: LoginService, origins: LoginOriginPolicy,
+                        views: SessionViewPort) -> APIRouter:
+    if login is None or origins is None or views is None:
+        raise ValueError("login, origins and identity projection are required")
     router = APIRouter()
 
     @router.post("/api/v1/auth/login")
@@ -67,11 +69,18 @@ def create_login_router(*, login: LoginService, origins: LoginOriginPolicy) -> A
             raise ApplicationError(exc.code) from None
         finally:
             password[:] = b"\x00" * len(password)
+        try:
+            view = await run_in_threadpool(views.resolve, issued.user_id)
+            if view.user_id != issued.user_id:
+                raise RuntimeError("identity projection mismatch")
+            public = view.public_data()
+        except Exception:
+            raise ApplicationError("SYSTEM_UNAVAILABLE") from None
         now = datetime.now(timezone.utc)
         max_age = max(0, min(int((issued.absolute_expires_at - now).total_seconds()),
                              int((issued.idle_expires_at - now).total_seconds())))
         response = JSONResponse({"data": {
-            "user": {"user_id": str(issued.user_id)},
+            **public,
             "absolute_expires_at": issued.absolute_expires_at.isoformat(),
             "idle_expires_at": issued.idle_expires_at.isoformat(),
             "csrf_token": issued.csrf_token.hex(),

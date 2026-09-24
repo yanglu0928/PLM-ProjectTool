@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/AUT-03-A05 登录成功响应增加真实 User 显示名、部署角色与显式 Project 授权摘要 Port；投影失败不发 Cookie，默认应用仍不开放登录。Windows 11/Python 3.13 后端 229/229、PostgreSQL 18.6 身份/停用验证、wheel 构建 PASS。无 Migration/新依赖。已知问题：正式项目摘要读取器、初始管理员和生产装配仍缺；Server 2025/Debian 13 未复验。
+
 - 2026-09-25：`0.1.0.dev0`/AUT-03-A04 新增可选登录 HTTP Router、冻结错误码映射、Host/Origin/JSON 大小边界与 HttpOnly/SameSite=Lax Cookie、HTTPS Secure/本机 loopback 策略，CSRF 在成功 DTO 返回；默认应用仍 404。Windows 11/Python 3.13 后端 227/227、Router 覆盖率 85%、wheel 构建 PASS。无 Migration/新依赖，升级无需数据操作。已知问题：生产装配、管理员初态和其余 Session API 尚未交付；Windows Server 2025、Debian 13 未复验。
 
 - 2026-09-25：`0.1.0.dev0`/AUT-03-A03 新增仅内部登录编排：限流、规范化用户名、活动身份查询、未知/停用假验证、真实 scrypt 密码证明、Session/CSRF 签发及脱敏拒绝审计；外部凭据失败统一。Windows 11/Python 3.13 后端 223/223、服务覆盖率 100%、PostgreSQL 18.6 真实验证链及 wheel 构建 PASS。兼容现有 Schema，无 Migration、新依赖、公开 API 或客户数据外发。已知问题：登录 HTTP/Cookie/Origin 接线、初始管理员、限流清理和三平台复验未完成，不能对外开放登录。

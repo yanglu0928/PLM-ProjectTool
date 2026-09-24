@@ -11,6 +11,7 @@ from plm_assistant.modules.auth.api.login import create_login_router
 from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
 from plm_assistant.modules.auth.application.login_service import LoginError
 from plm_assistant.modules.auth.application.session_service import IssuedSession
+from plm_assistant.modules.auth.application.session_view import LoginSessionView
 
 
 class FakeLogin:
@@ -27,11 +28,22 @@ class FakeLogin:
                              now + timedelta(hours=8), now + timedelta(minutes=30))
 
 
+class FakeViews:
+    fail = False
+
+    def resolve(self, user_id):
+        if self.fail:
+            raise RuntimeError("read unavailable")
+        return LoginSessionView(user_id, "Alice", "DEPLOYMENT_ADMIN", ())
+
+
 class LoginApiTests(unittest.TestCase):
     def setUp(self):
         self.login = FakeLogin()
+        self.views = FakeViews()
         self.origins = LoginOriginPolicy(["https://plm.example.test", "http://localhost"])
-        self.app = create_app(login_router=create_login_router(login=self.login, origins=self.origins))
+        self.app = create_app(login_router=create_login_router(
+            login=self.login, origins=self.origins, views=self.views))
         self.client = TestClient(self.app, base_url="https://plm.example.test")
         self.headers = {"origin": "https://plm.example.test"}
 
@@ -46,6 +58,9 @@ class LoginApiTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["trace_id"], response.headers["x-trace-id"])
         self.assertEqual(response.json()["data"]["csrf_token"], (b"c" * 32).hex())
+        self.assertEqual(response.json()["data"]["deployment_role"], "DEPLOYMENT_ADMIN")
+        self.assertEqual(response.json()["data"]["authorized_projects"], [])
+        self.assertEqual(response.json()["data"]["user"]["username_display"], "Alice")
         self.assertNotIn("some-password", str(response.json()))
         self.assertNotIn((b"t" * 32).hex(), str(response.json()))
         cookie = response.headers["set-cookie"]
@@ -82,6 +97,14 @@ class LoginApiTests(unittest.TestCase):
         self.assertNotIn("set-cookie", response.headers)
         self.assertNotIn("missing", response.text)
         self.assertNotIn("private", response.text)
+
+    def test_projection_failure_issues_no_cookie(self):
+        self.views.fail = True
+        response = self.client.post("/api/v1/auth/login", headers=self.headers,
+                                    json={"username": "alice", "password": "private"})
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()["error"]["code"], "SYSTEM_UNAVAILABLE")
+        self.assertNotIn("set-cookie", response.headers)
 
 
 if __name__ == "__main__":
