@@ -983,3 +983,15 @@
 |Reason|冻结模型要求 AuditEvent 只追加、项目隔离、来源可追溯和最小安全摘要；冻结 SC-02 允许部署 Owner 与项目目标并存，SC-03 固定三组索引。当前 Auth/Project/License 未落地，外键或真实权限不能伪造；安全码替代任意自由文本，避免向审计库复制敏感内容。|
 |Impact|新增迁移 `20260924_0005` 和一张 `plm` 表；无冻结基线变更、新依赖、公开 API 或客户数据外发。数据库管理员仍有 DDL 权限，因此触发器不是防篡改封存；AuditService 权限/事务 Port、读隔离、Retention/Legal Hold 和备份权限控制留待对应 WBS。|
 |Rollback|空表可回退到 `0004`；含审计事件时须备份并进行受控恢复/迁移，普通回退失败关闭，不能删历史记录换取迁移通过。|
+
+## DEC-20260924-073
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-073|
+|Date|2026-09-24|
+|WBS|AUD-01-A02 AuditService append Port/Repository|
+|Decision|Audit 的跨模块公开入口仅暴露只追加 AuditService 与不可变 AuditEventDraft；Audit 模块内部 Port/SQLAlchemy 仓储不对业务模块开放。Service 接收调用方已开启的事务并直接插入，不创建、提交或补偿第二事务。输入只接受 UUID、受控大写码、结构化目标和可选 32 字节主体提示摘要；数据库白名单与 append-only 触发器作为第二层约束。|
+|Reason|冻结 DM-02 要求强制审计与业务状态同事务提交，且只由 AuditService 追加。由业务用例掌握事务可避免 Audit 成功而业务回滚或相反；自由文本会扩大敏感内容进入审计库的风险。Auth/License/Project 权限仍未落地，本任务不以测试替身伪装成公开可用写入口。|
+|Impact|只新增 Audit 模块 Application/Domain/Infrastructure、测试与验收脚本；A01 迁移与冻结 API 不变，无新依赖或客户数据外发。业务命令只有在真实权限和 Audit 适配器接线后才能开放。下一项单独完成只读查询及项目隔离。|
+|Rollback|移除 A02 新增服务、Port、仓储和测试即可退回 A01；已提交的审计事件仍由 A01 append-only 表保护，不得清理历史以撤销代码。|
