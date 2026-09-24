@@ -104,6 +104,20 @@ class TrustedTimePortTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             repo.read_locked(object())
 
+    def test_current_version_requires_verified_state(self):
+        self.assertEqual(self.port(FakeRepository(self.state)).current_verified_version(), 0)
+        broken_integrity = self.port(FakeRepository(self.state))
+        broken_integrity._integrity.verify = lambda _record: False
+        with self.assertRaises(TrustedTimeError) as invalid:
+            broken_integrity.current_verified_version()
+        self.assertEqual(invalid.exception.code, "TRUST_STATE_INVALID")
+        with self.assertRaises(TrustedTimeError) as missing:
+            self.port(FakeRepository(None)).current_verified_version()
+        self.assertEqual(missing.exception.code, "TRUST_STATE_INVALID")
+        with self.assertRaises(TrustedTimeError) as broken:
+            self.port(FakeRepository(self.state, read_error=True)).current_verified_version()
+        self.assertEqual(broken.exception.code, "TRUST_STATE_INVALID")
+
 
 if __name__ == "__main__":
     unittest.main()

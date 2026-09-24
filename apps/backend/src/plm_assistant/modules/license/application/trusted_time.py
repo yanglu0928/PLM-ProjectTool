@@ -59,6 +59,19 @@ class TrustedTimeStatePort:
         self._integrity = integrity
         self._audit = audit
 
+    def current_verified_version(self) -> int:
+        """Read the current monotonic version only after integrity verification."""
+        try:
+            with self._unit_of_work() as tx:
+                state = self._repository.read_locked(tx)
+                if state is None or not self._integrity.verify(state):
+                    raise TrustedTimeError("TRUST_STATE_INVALID")
+                return state.state_version
+        except TrustedTimeError:
+            raise
+        except Exception:
+            raise TrustedTimeError("TRUST_STATE_INVALID") from None
+
     def advance(self, *, candidate: datetime, expected_version: int,
                 trace_id: uuid.UUID, rollback_tolerance: timedelta = timedelta(0)) -> TrustedTimeRecord:
         if (not isinstance(candidate, datetime) or candidate.tzinfo is None
