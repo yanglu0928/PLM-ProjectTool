@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/AUT-03-A02 按 CR-AUT-001 新增 PostgreSQL 18 Auth 登录限流桶、ORM/Alembic `20260925_0012` 与原子预约服务；来源 30 次/5 分钟、账户 10 次/5 分钟，数据库故障拒绝，存摘要键不存原始身份。Windows 11/Python 3.13 后端 215/215、服务覆盖率 96%、PostgreSQL 18.6 空库/已有用户升级、ORM drift=0、40 并发/窗口/约束/回退、wheel 构建 PASS。升级前备份并执行 `upgrade head`；有桶数据时普通 downgrade 拒绝。无新依赖、公开 API 或客户数据外发。已知问题：过期桶清理、可信代理地址、限流误拒评估、公开登录与三平台复验未完成。
+
 - 2026-09-25：`0.1.0.dev0`/AUT-03-A01 新增未挂路由的登录可信 Host/Origin 策略：显式允许源、非 loopback HTTPS、缺失/重复/畸形头拒绝，转发头不提升信任。Windows 11/Python 3.13 后端 211/211、组件覆盖率 96%、wheel 构建 PASS。无 Schema/Migration、新依赖或公开 API，升级无需数据步骤。已知问题：限流、凭据编排、Cookie/CSRF 与真实部署配置尚未完成，登录仍 404；Windows Server 2025、Debian 13 本项未验证。
 
 - 2026-09-25：`0.1.0.dev0`/PLT-02-A07 前置核查确认当前仅健康接口公开；登录和 Secret 管理路径均为 404。按 CR-PLT-003 将 Auth HTTP、持久幂等/If-Match 和生产 License/Key Provider 装配前置，A07 未通过、无程序/API/Schema/Migration/依赖变更，升级无需数据操作。Windows 11 TestClient 路由检查完成；A07 功能/安全测试未运行。已知问题：Secret 管理和真实密钥仍不可使用。
