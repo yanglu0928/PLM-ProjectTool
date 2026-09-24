@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PLT-02-A03 新增仅内部 DeploymentAdmin+有效 License 的 Secret 元数据详情/分页服务；读投影不含密文、加密元数据和 Key Provider 引用。Windows 11/Python 3.13 后端 197/197、服务覆盖率 97%、PostgreSQL 18.6 临时库权限/分页/许可拒绝、wheel 构建 PASS。兼容现有 Schema；无 Migration、新依赖、公开 API 或客户数据外发。已知问题：License 集成使用合成 Guard，真实生产信任源、HTTP、写入/轮换和三平台复验尚未完成。
+
 - 2026-09-25：`0.1.0.dev0`/PLT-02-A02 新增仅内部活动 Secret 密文信封只读适配，按 SecretRef、活动状态及未退役版本读取，复用既有用途/消费者与单次清零边界。Windows 11/Python 3.13 后端 191/191、适配器覆盖率 91%、PostgreSQL 18.6 临时库未激活/停用拒绝及消费者隔离、wheel 构建 PASS。兼容现有 Schema；无 Migration、新依赖、公开 API 或客户数据外发，升级无需数据步骤。已知问题：合成解密器不代表生产加密/密钥来源，正式 Secret 写命令/管理 API/三平台复验未完成。
 
 - 2026-09-24：`0.1.0.dev0`/PLT-02-A01 新增 SecretRecord/SecretVersion ORM 与 Alembic `20260924_0011`，保存密文版本和外部 key reference，不存明文或主密钥；约束单活动版本、跨父引用、生命周期与历史保护。Windows 11/Python 3.13 后端 188/188、PostgreSQL 18.6 空库/已有数据升级、空库回退、ORM drift=0、约束与非空回退拒绝、wheel 构建 PASS。兼容 PostgreSQL 18；升级前备份并执行 `upgrade head`，有 Secret 历史不能普通降级。无新依赖、公开 API 或客户数据外发。已知问题：生产加密/解密、SecretKeyProvider、写命令和三平台复验未完成，不能对外声称生产 Secret Store 可用。

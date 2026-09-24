@@ -1295,3 +1295,15 @@
 |Reason|内部消费与管理员查询具有不同权限/数据最小化边界；先验收受控消费适配，避免通用密文查询扩散。|
 |Impact|无 Schema/Migration、公开 API 或解密器实现；生产加密主材料和正式写命令仍未具备。|
 |Rollback|可移除内部只读适配，不修改已存 Secret 历史。|
+
+## DEC-20260925-001
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-001|
+|Date|2026-09-25|
+|WBS|PLT-02-A03 Secret 管理元数据只读查询与权限边界|
+|Decision|内部详情与分页服务先用 Auth-owned 无 CSRF DeploymentAdmin 只读 Session 证明，再执行 License Guard，最终同事务复核管理员身份并读取只含安全列的投影；普通查询不读取 encrypted_payload、encryption_metadata 或 key_provider_ref。|
+|Reason|冻结 GET 合同仅要求 Session+License，不能套用写操作的 CSRF；Guard 检查跨事务，第二次身份复核缩小权限撤销窗口；只投影安全字段降低误回显风险。|
+|Impact|新增 Auth 内部只读权限适配及 Platform 服务/仓储；无 Schema、Migration、公开 API 或新依赖。Guard 尚未挂 HTTP，测试使用合成许可替身。|
+|Rollback|内部服务未公开；撤销代码不影响 Secret 历史或冻结 API Contract。|
