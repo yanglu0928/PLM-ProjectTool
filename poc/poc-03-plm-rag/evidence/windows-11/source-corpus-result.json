@@ -1,0 +1,42 @@
+{
+  "status": "PARTIAL_PASS",
+  "quality_scope": "structure_schema_and_candidate_input_only_no_semantic_ground_truth",
+  "privacy": {
+    "source_files_committed": false,
+    "source_names_committed": false,
+    "source_hashes_committed": false,
+    "parsed_content_committed": false,
+    "ocr_content_committed": false
+  },
+  "summary": {
+    "source_file_count": 36,
+    "source_unchanged_count": 36,
+    "supported_file_count": 26,
+    "parsed_document_count": 26,
+    "parsed_block_count": 60430,
+    "unsupported_legacy_doc_count": 10,
+    "schema_error_count": 0
+  },
+  "corpora": [
+    {
+      "corpus_id": "SOLUTION",
+      "file_count": 18,
+      "supported_count": 17,
+      "passed_count": 17,
+      "unsupported_legacy_doc_count": 1,
+      "block_count": 13710
+    },
+    {
+      "corpus_id": "CONTRACT",
+      "file_count": 18,
+      "supported_count": 9,
+      "passed_count": 9,
+      "unsupported_legacy_doc_count": 9,
+      "block_count": 46720,
+      "scanned_pdf_count": 5,
+      "scanned_pdf_page_count": 105,
+      "ocr_line_count": 45145,
+      "parse_duration_seconds": 194.97
+    }
+  ]
+}
