@@ -42,6 +42,15 @@ class RotateSecret:
     trace_id: uuid.UUID
 
 
+@dataclass(frozen=True, slots=True)
+class DisableSecret:
+    session_token: bytes = field(repr=False)
+    csrf_token: bytes = field(repr=False)
+    secret_ref: SecretRef
+    expected_lock_version: int
+    trace_id: uuid.UUID
+
+
 class SecretWriteAccessPort(Protocol):
     def authorized_admin(self, transaction: object, *, session_token: bytes,
                          csrf_token: bytes, now: datetime) -> uuid.UUID | None: ...
@@ -64,6 +73,9 @@ class SecretWriteRepositoryPort(Protocol):
     def rotate(self, transaction: object, *, secret_ref: SecretRef,
                expected_version_no: int, encrypted: EncryptedSecretDraft,
                actor: uuid.UUID) -> uuid.UUID: ...
+
+    def disable(self, transaction: object, *, secret_ref: SecretRef,
+                expected_lock_version: int) -> uuid.UUID | None: ...
 
 
 _CONSUMER = {
@@ -161,6 +173,35 @@ class SecretWriteService:
             if type(value) is bytearray:
                 value[:] = b"\x00" * len(value)
 
+    def disable(self, command: DisableSecret) -> None:
+        if (type(command) is not DisableSecret
+                or type(command.session_token) is not bytes or len(command.session_token) != 32
+                or type(command.csrf_token) is not bytes or len(command.csrf_token) != 32
+                or type(command.secret_ref) is not SecretRef
+                or type(command.expected_lock_version) is not int
+                or not 1 <= command.expected_lock_version < 9_223_372_036_854_775_807
+                or type(command.trace_id) is not uuid.UUID or command.trace_id.int == 0):
+            raise SecretWriteError("VALIDATION_FAILED")
+        try:
+            self._precheck(command)
+            with self._uow() as tx:
+                actor = self._require_admin(tx, command)
+                version_id = self._repo.disable(
+                    tx, secret_ref=command.secret_ref,
+                    expected_lock_version=command.expected_lock_version,
+                )
+                if version_id is None:
+                    raise SecretWriteError("CONFLICT_VERSION")
+                self._audit.append(tx, self._event(
+                    command.trace_id, actor, command.secret_ref,
+                    version_id, "PLATFORM_SECRET_DISABLE",
+                ))
+                tx.commit()
+        except SecretWriteError:
+            raise
+        except Exception:
+            raise SecretWriteError("PLATFORM_SECRET_UNAVAILABLE") from None
+
     @staticmethod
     def _validate_common(command: object) -> None:
         if (type(command) not in (CreateSecret, RotateSecret)
@@ -171,12 +212,12 @@ class SecretWriteService:
                 or not 1 <= len(command.secret_value) <= 65520):
             raise SecretWriteError("VALIDATION_FAILED")
 
-    def _precheck(self, command: CreateSecret | RotateSecret) -> None:
+    def _precheck(self, command: CreateSecret | RotateSecret | DisableSecret) -> None:
         with self._uow() as tx:
             self._require_admin(tx, command)
         self._guard.require_valid(trace_id=command.trace_id)
 
-    def _require_admin(self, tx: object, command: CreateSecret | RotateSecret) -> uuid.UUID:
+    def _require_admin(self, tx: object, command: CreateSecret | RotateSecret | DisableSecret) -> uuid.UUID:
         now = self._clock()
         if not isinstance(now, datetime) or now.tzinfo is None or now.utcoffset() is None:
             raise SecretWriteError("PLATFORM_SECRET_UNAVAILABLE")

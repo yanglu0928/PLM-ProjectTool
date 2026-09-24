@@ -117,6 +117,35 @@ class SqlAlchemySecretWriteRepository:
                  lock_version=record.lock_version + 1, updated_at=now))
         return new.secret_version_id
 
+    def disable(self, transaction: object, *, secret_ref: SecretRef,
+                expected_lock_version: int) -> uuid.UUID | None:
+        session = _session(transaction)
+        record = session.execute(select(SecretRecordRow).where(
+            SecretRecordRow.secret_record_id == secret_ref.secret_id,
+            SecretRecordRow.secret_state == "ACTIVE",
+            SecretRecordRow.lock_version == expected_lock_version,
+        ).with_for_update()).scalar_one_or_none()
+        if record is None or record.current_version_ref is None:
+            return None
+        version = session.execute(select(SecretVersionRow).where(
+            SecretVersionRow.secret_version_id == record.current_version_ref,
+            SecretVersionRow.secret_record_id == record.secret_record_id,
+            SecretVersionRow.activated_at.is_not(None),
+            SecretVersionRow.retired_at.is_(None),
+        )).scalar_one_or_none()
+        if version is None:
+            raise RuntimeError("invalid active Secret version")
+        now = select_now()
+        session.execute(update(SecretVersionRow).where(
+            SecretVersionRow.secret_version_id == version.secret_version_id,
+        ).values(retired_at=now))
+        session.execute(update(SecretRecordRow).where(
+            SecretRecordRow.secret_record_id == record.secret_record_id,
+            SecretRecordRow.lock_version == expected_lock_version,
+        ).values(secret_state="DISABLED", current_version_ref=None,
+                 lock_version=expected_lock_version + 1, updated_at=now))
+        return version.secret_version_id
+
 
 def select_now():
     return func.statement_timestamp()

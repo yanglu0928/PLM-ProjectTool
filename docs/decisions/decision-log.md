@@ -1331,3 +1331,15 @@
 |Reason|防止无权操作触发 License 信息侧信道，避免失效 Session/CSRF、并发轮换和审计失败留下部分密文。冻结 API-02 的 write-only 值与当前期望版本在内部命令层先形成可验证边界。|
 |Impact|无 Schema/Migration、新依赖或公开 API；License Guard 与写事务分离导致检查后变化窗口，正式集成前须复核。生产 Key Provider 未实现，合成验证不能视为真实 Secret 可用。|
 |Rollback|内部服务未公开；已存密文历史不可删除或覆盖，应使用新受控版本/状态命令恢复，不能普通降级。|
+
+## DEC-20260925-004
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-004|
+|Date|2026-09-25|
+|WBS|PLT-02-A06 Secret 停用命令|
+|Decision|把上一检查点暂列的“停用命令与管理 API 接线”拆为 A06 内部停用命令和 A07 公开 API/生产装配前置审查；停用将活动版本退役、Record 置 DISABLED 且 current_version_ref 清空，要求期望 lock_version 与同事务 Audit。|
+|Reason|当前 FastAPI 仅开放健康检查；生产 Auth/License/Key Provider 装配、If-Match 与幂等基础尚未齐备，直接挂路由不能满足冻结 API-01/API-02 的安全协议。先验收不可逆读取拒绝的状态命令，公开接线另行验证。|
+|Impact|仅时序/任务粒度调整，不改变冻结 API Contract、Schema 或数据模型；无 Migration/新依赖。公开 Secret API 仍未可用，完整程序包仍未交付。|
+|Rollback|内部服务未公开；已退役密文历史不删除、不直接复活，恢复必须另走受控新版本命令。|

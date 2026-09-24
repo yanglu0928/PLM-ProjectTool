@@ -8,7 +8,7 @@ from plm_assistant.modules.platform.application.secret_access import (
     EncryptedSecretDraft, SecretConsumer, SecretPurpose, SecretRef,
 )
 from plm_assistant.modules.platform.application.secret_write import (
-    CreateSecret, RotateSecret, SecretWriteError, SecretWriteService,
+    CreateSecret, DisableSecret, RotateSecret, SecretWriteError, SecretWriteService,
 )
 
 
@@ -62,6 +62,12 @@ class Deps:
         return self.current
 
     def rotate(self, tx, **kwargs):
+        self.writes += 1
+        return uuid.uuid4()
+
+    def disable(self, tx, **kwargs):
+        if self.current is None:
+            return None
         self.writes += 1
         return uuid.uuid4()
 
@@ -145,6 +151,30 @@ class SecretWriteTests(unittest.TestCase):
             self.service.rotate(command)
         self.assertEqual(self.deps.encryptions, 0)
         self.assertEqual(command.secret_value, bytearray(len(command.secret_value)))
+
+    def test_disable_requires_current_version_and_audit(self):
+        ref = SecretRef(uuid.uuid4())
+        command = DisableSecret(b"s" * 32, b"c" * 32, ref, 1, uuid.uuid4())
+        self.service.disable(command)
+        self.assertEqual(self.deps.writes, 1)
+        self.assertEqual(self.deps.commits, 1)
+        self.deps.current = None
+        with self.assertRaises(SecretWriteError) as caught:
+            self.service.disable(command)
+        self.assertEqual(caught.exception.code, "CONFLICT_VERSION")
+        self.assertEqual(self.deps.commits, 1)
+
+    def test_disable_denies_invalid_request_and_audit_failure(self):
+        ref = SecretRef(uuid.uuid4())
+        with self.assertRaises(SecretWriteError) as caught:
+            self.service.disable(DisableSecret(b"s" * 32, b"short", ref, 1, uuid.uuid4()))
+        self.assertEqual(caught.exception.code, "VALIDATION_FAILED")
+        self.assertEqual(self.deps.writes, 0)
+        self.deps.audit_ok = False
+        with self.assertRaises(SecretWriteError) as caught:
+            self.service.disable(DisableSecret(b"s" * 32, b"c" * 32, ref, 1, uuid.uuid4()))
+        self.assertEqual(caught.exception.code, "PLATFORM_SECRET_UNAVAILABLE")
+        self.assertEqual(self.deps.commits, 0)
 
 
 if __name__ == "__main__":
