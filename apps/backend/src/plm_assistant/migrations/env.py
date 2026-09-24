@@ -19,6 +19,7 @@ from plm_assistant.modules.platform.infrastructure import configuration_orm  # n
 from plm_assistant.modules.audit.infrastructure import audit_orm  # noqa: F401 - register AUD-01 table
 from plm_assistant.modules.auth.infrastructure import user_orm  # noqa: F401 - register AUT-01 tables
 from plm_assistant.modules.auth.infrastructure import session_orm  # noqa: F401 - register AUT-02 table
+from plm_assistant.modules.license.infrastructure import installation_orm  # noqa: F401 - register LIC-01 tables
 
 
 config = context.config

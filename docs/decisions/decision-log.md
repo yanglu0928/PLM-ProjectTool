@@ -1103,3 +1103,15 @@
 |Reason|冻结 API-02 允许 License 无效时登录，但管理员业务接口仍需有效 License；当前仓库没有正式 License 模块，不能用测试许可绕过。把密码证明单独验收可完成不受阻塞部分，又避免把未实现的 License/权限或 Origin/Host/限流误报为已可用。|
 |Impact|新增 Auth 内部密码证明 DTO、Verifier Port、SQLAlchemy 适配、测试；无 Schema/Migration、公开 API、第三方依赖或客户数据外发。密码缓冲区清零不承诺 Python/OpenSSL 内部副本绝对擦除。公开登录仍需用户名解析、统一失败/审计、Origin/Host、限流、Cookie/CSRF 等后续工作；管理员权限接线仍依赖 License。|
 |Rollback|未接入公开路由，移除适配器可回退；不修改现有 Credential/Session 历史。|
+
+## DEC-20260924-083
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-083|
+|Date|2026-09-24|
+|WBS|LIC-01-A01 LicenseInstallation ORM/Migration|
+|Decision|按冻结 SC-01/DM-02 建立 `lic_installations` 与不可变 `lic_installation_documents`。签名文档以最多 64 KiB 原始字节快照与 32 字节 SHA-256 摘要保留，关联 `public_key_ref`，不存公钥私钥或原始 MAC；每次安装独立 UUIDv7。状态限 `IMPORTED/ACTIVE/SUPERSEDED/REJECTED`，partial unique 保证至多一个 ACTIVE；进入非 IMPORTED 状态须有验证结果引用。更新触发器只允许 IMPORTED→ACTIVE/REJECTED、ACTIVE→SUPERSEDED 及受控同态验证引用更新，终态不可复活；文档禁止更新/删除，安装历史禁止删除。INSERT 不设只允许 IMPORTED 的触发器，以保证含 ACTIVE 历史的备份恢复；初始导入状态由未来受控服务保证。|
+|Reason|冻结模型要求签名文档历史、单一 ACTIVE、不可变签名内容和私钥隔离，但未固定长度与具体列。64 KiB 是可调整的 L2 存储上限；原始字节避免 JSON 重新序列化破坏签名材料。用数据库约束守住状态/单例及历史更新，避免恢复时触发器拒绝历史状态。|
+|Impact|新增两张正式 License 表与迁移 `20260924_0008`；无公开 API、验签/激活服务、新依赖或客户数据外发。`validation_result_ref` 待 LIC-02 建表后加正式关联与验证来源检查；仅有非空 UUID 不证明签名、机器、时间或 License 有效。测试使用明确标注的合成无效签名文档，只验 Schema，不构成 License 验证。|
+|Rollback|空表可降级至 `0007`；存在安装或文档历史时普通 downgrade 拒绝，必须备份并按受控恢复方案处理，不删除历史以强制降级。|

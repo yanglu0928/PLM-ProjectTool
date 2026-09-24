@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-24：`0.1.0.dev0`/LIC-01-A01 新增 LicenseInstallation 与不可变签名文档 ORM/Alembic `20260924_0008`，限制单一 ACTIVE、状态流转及历史不可删；私钥/原始 MAC 不建列。Windows 11/Python 3.13 后端 126/126、PostgreSQL 18.6 空库/已有用户升级、ORM drift=0、约束负例、非空回退拒绝、含 ACTIVE 历史备份恢复 PASS。兼容 PostgreSQL 18；升级前备份并执行 `upgrade head`，非空表不能普通降级。无新依赖、公开 API 或客户数据外发。已知问题：真实验签、可信时间、LicenseService/权限/Audit 和 Windows Server 2025/Debian 13 本任务未验证；测试 ACTIVE 不代表有效授权。
+
 - 2026-09-24：`0.1.0.dev0`/AUT-02-A05 新增 Auth 内部真实密码证明适配：对 ENABLED User 当前凭据调用已批准 scrypt Verifier，拒绝错误/畸形证明，短时密码缓冲区在签发后清理。Windows 11/Python 3.13 后端 126/126、PostgreSQL 18.6 临时库正确/错误密码及停用拒绝 PASS。兼容现有 PostgreSQL 18 Schema；无 Migration、新依赖、公开 API 或升级步骤。已知问题：登录 Origin/Host/限流、Cookie、失败审计、License/管理员权限和 Windows Server 2025/Debian 13 本任务未验证；不能开放登录。
 
 - 2026-09-24：`0.1.0.dev0`/AUT-02-A04 新增仅内部管理员按用户批量撤销 Session；必需权限 Port 默认拒绝、目标 User 行锁、批量撤销与 Audit 同事务、重复调用返回 0。Windows 11/Python 3.13 后端 121/121、PostgreSQL 18.6 临时库拒权/回滚/批量失效 PASS。兼容现有 PostgreSQL 18 Schema；无 Migration、新依赖、公开 API 或升级步骤。已知问题：生产 Session/License/管理员授权、Cookie/CSRF/Origin/Host/限流、用户停用/换密同事务接线及 Windows Server 2025/Debian 13 本任务未验证。

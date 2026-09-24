@@ -11,6 +11,7 @@ from plm_assistant.modules.platform.infrastructure import configuration_orm  # n
 from plm_assistant.modules.audit.infrastructure import audit_orm  # noqa: F401
 from plm_assistant.modules.auth.infrastructure import user_orm  # noqa: F401
 from plm_assistant.modules.auth.infrastructure import session_orm  # noqa: F401
+from plm_assistant.modules.license.infrastructure import installation_orm  # noqa: F401
 
 
 class OrmMetadataTests(unittest.TestCase):
@@ -24,8 +25,8 @@ class OrmMetadataTests(unittest.TestCase):
             {"ix", "uq", "ck", "fk", "pk"},
         )
 
-    def test_platform_audit_and_auth_tables_are_registered(self) -> None:
-        self.assertEqual(set(Base.metadata.tables), {"plm.plt_system_configurations", "plm.plt_configuration_versions", "plm.plt_configuration_command_receipts", "plm.aud_events", "plm.auth_users", "plm.auth_password_credentials", "plm.auth_sessions"})
+    def test_platform_audit_auth_and_license_tables_are_registered(self) -> None:
+        self.assertEqual(set(Base.metadata.tables), {"plm.plt_system_configurations", "plm.plt_configuration_versions", "plm.plt_configuration_command_receipts", "plm.aud_events", "plm.auth_users", "plm.auth_password_credentials", "plm.auth_sessions", "plm.lic_installations", "plm.lic_installation_documents"})
 
 
 if __name__ == "__main__":
