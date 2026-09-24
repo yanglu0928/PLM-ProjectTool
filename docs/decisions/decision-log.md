@@ -1475,3 +1475,15 @@
 |Reason|登录摘要不能当权限快照；冻结模型要求按资源实际归属和当前成员事实重新校验。`PROJECT_LIST` 的授权列表与部署级 `PROJECT_CREATE` 的管理员命令另在对应读/写任务接线，不能用项目成员角色替代。|
 |Impact|新增 Project 内部授权 Service/SQL Repository，无 Schema/Migration、公开 API 或新依赖。调用者仍必须先经 Auth Session、License、CSRF 等契约前置；本服务只实现 Project 角色/Scope 判定，不宣称全链路开放。|
 |Rollback|内部 Port 尚未挂公开路由；撤销本实现不改变业务数据。|
+
+## DEC-20260925-016
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-016|
+|Date|2026-09-25|
+|WBS|PRJ-01-A04 Project 创建命令|
+|Decision|Project code 与可选 department seed code 做 Unicode NFKC、去首尾空白与 casefold 归一化，再由数据库唯一约束兜底；未提供部门 seed 时原子建立 `DEFAULT`/`默认部门`，保证首位 ProjectManager 的必需 Department FK。创建命令先验证当前管理员 Session/CSRF，再执行 License Guard，再在同一写事务重新验权并由 Auth-owned Port 锁定 ENABLED 初始负责人；Project、Department、Member 和 Audit 原子提交。|
+|Reason|冻结 API 允许 department seed 缺省，但冻结 DM-02 要求每个 Member 有同项目 Department；创建者不自动成为项目成员。归一化统一代码大小写与兼容字符，锁定负责人防并发重复绑定，数据库约束最终兜底。|
+|Impact|内部服务、Auth 只读资格 Port 与 Project 写适配器；无 Schema/Migration、公开 API 或新依赖。生产 License/HTTP 装配仍待后续。|
+|Rollback|内部命令尚未公开；撤销代码不自动删除已创建项目或审计历史。|
