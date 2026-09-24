@@ -1,0 +1,24 @@
+{
+  "schema_version": "poc-03.holdout-review-package-result.v1",
+  "status": "PASS",
+  "platform": "Windows 11 x86-64",
+  "scope_count": 50,
+  "unresolved_original_count": 0,
+  "source_type_counts": {
+    "STANDARD_CAPABILITY": 33,
+    "CONTRACT": 7,
+    "TECHNICAL_AGREEMENT": 8,
+    "SURVEY": 2
+  },
+  "checks": {
+    "all_candidates_have_suggestions": true,
+    "all_original_files_located": true,
+    "all_evidence_links_created": true,
+    "all_rows_pending_human_confirmation": true
+  },
+  "privacy": {
+    "package_committed": false,
+    "navigator_committed": false,
+    "customer_content_committed": false
+  }
+}
