@@ -28,7 +28,7 @@ class LicenseInstallationRow(Base):
     imported_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("plm.auth_users.user_id", ondelete="NO ACTION", name="fk_lic_installations__importer"), nullable=False, index=True)
     imported_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False, server_default=text("statement_timestamp()"))
     installation_state: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'IMPORTED'"))
-    validation_result_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    validation_result_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), ForeignKey("plm.lic_validation_events.validation_event_id", ondelete="NO ACTION", name="fk_lic_installations__validation_result"), index=True)
     import_trace_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
 
