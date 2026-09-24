@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PRJ-03-A04 新增内部 Department 单向停用：当前 ProjectManager、Session/CSRF/License、目标归属、强版本保护；有 ACTIVE/SUSPENDED 成员引用时拒绝，仅 REMOVED 历史允许，状态变更与 Audit 同事务。Windows 11/Python 3.13 后端 304/304、服务覆盖率 96%、PostgreSQL 18.6 引用/并发/回滚及 wheel 构建 PASS。无 Migration、新依赖或公开 API；升级无需数据操作。兼容当前 Windows 11 开发环境；Server 2025/Debian 13 本项未验证。已知问题：生产 License、公开幂等/If-Match 与安全运行装配仍未完成。
+
 - 2026-09-25：`0.1.0.dev0`/PRJ-03-A03 新增内部 Department 名称/编码 PATCH：当前 ProjectManager、Session/CSRF/License、目标归属与 ACTIVE 状态、强 expected_version、同项目活动编码冲突与同事务 Audit；无变化不增加版本或审计。Windows 11/Python 3.13 后端 299/299、服务覆盖率 93%、PostgreSQL 18.6 权限/并发/回滚及 wheel 构建 PASS。无 Migration、新依赖或公开 API，升级无需数据操作。兼容当前 Windows 11 开发环境；Server 2025/Debian 13 本项未验证。已知问题：生产 License/公开 If-Match 未接线；现有 Audit 不保存部门字段级旧值，不能作为逐版恢复依据。
 
 - 2026-09-25：`0.1.0.dev0`/PRJ-03-A02 新增内部 Project Department 创建命令：当前 ProjectManager、Session/CSRF/License/项目状态保护，NFKC+casefold 编码规范化，同项目活动编码唯一及并发冲突处理，创建与 Audit 同事务。Windows 11/Python 3.13 后端 294/294、服务覆盖率 93%、PostgreSQL 18.6 权限/并发/停用编码复用/回滚及 wheel 构建 PASS。无 Migration、新依赖或公开 API；升级无需数据操作。兼容当前 Windows 11 开发环境；Server 2025/Debian 13 本项未验证。已知问题：生产 License 使用合成 Guard，公开持久幂等/安全接线未完成；活动编码唯一解释记录于 DEC-20260925-024。

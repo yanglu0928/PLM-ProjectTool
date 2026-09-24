@@ -1595,3 +1595,15 @@
 |Reason|维持冻结 API-01 强 ETag、API-02 逐操作权限与 SC-03 活动编码唯一；禁止修改停用历史，避免旧引用被悄然改写。|
 |Impact|新增 Project 内部 PATCH Service/Repository；无 Schema/Migration、新依赖或公开 API。当前 AuditEvent 可追溯操作者/对象/时间，但不保存字段级旧/新 code/name，不能支持逐版字段恢复；如后续正式要求该能力须单独 Change Request。|
 |Rollback|内部命令尚未公开，可停止使用；已修改元数据不能依赖 Audit 自动恢复旧值，需有正式备份或后续受权修订。|
+
+## DEC-20260925-026
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-026|
+|Date|2026-09-25|
+|WBS|PRJ-03-A04 Department 停用命令|
+|Decision|仅当前 ProjectManager 可对所属 ACTIVE 项目内的 ACTIVE Department 执行一次性停用；先核对 Session/CSRF、License、目标归属与 expected_version，再在项目行锁保护下检查目标部门没有 ACTIVE/SUSPENDED ProjectMember。仅 REMOVED 历史引用不阻止停用，不做成员静默迁移。成功时版本+1并与前后状态 Audit 同事务提交；重复停用拒绝。|
+|Reason|冻结 DM-02 与 API-02 明确成员引用阻断和 `PROJECT_DEPARTMENT_IN_USE`；项目行锁与成员新建/修改命令共享写入序列，数据库查询在同事务内复核，避免并发创建与停用形成矛盾状态。|
+|Impact|新增 Project 内部停用 Service/Repository；无 Schema/Migration、新依赖或公开 API。仅通过正式服务写入可受项目锁保护；部署数据库角色权限仍须保证应用外写入受控。|
+|Rollback|内部命令未公开；已停用部门按冻结状态模型无普通恢复命令，若业务需要重用编码可新建部门，旧 DepartmentId 和历史引用保持不变。|
