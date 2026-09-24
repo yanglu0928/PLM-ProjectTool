@@ -1271,3 +1271,15 @@
 |Reason|用户选择方案 A，只允许创建首次空状态，不提前决定生产密钥来源。冻结 DEC-20260924-087 禁止日常可信时间端口在缺失时自动补建。|
 |Impact|无 Schema/Migration、公开 API、新依赖或生产 Secret；生产密钥保护和恢复留待 PLT-02/Release，测试不可当作生产 License 验收。|
 |Rollback|未挂外部路由；代码可撤销，但已经创建的单例及 Audit 不删除，恢复依正式备份流程。|
+
+## DEC-20260924-097
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-097|
+|Date|2026-09-24|
+|WBS|PLT-02-A01 SecretRecord / SecretVersion ORM/Migration|
+|Decision|按冻结 DM-02/SC-01～03 建立部署级 SecretRecord 与密文版本；版本的密文、元数据、Key Provider 引用及创建事实不可改，activated_at/retired_at 仅可沿 CREATED→ACTIVE→RETIRED 单向变化。当前版本用同父复合 FK；partial unique 保证同一记录至多一个活动版本，记录状态用 lock_version 约束。|
+|Reason|保留密文与主材料分离及历史追溯，防止跨 Secret 引用和静默覆盖；冻结模型虽称 SecretVersion 不可变，但版本激活/退役需要受控生命周期字段变更，内容本身始终不可变。|
+|Impact|新增两表和迁移 `20260924_0011`；无公开 API、新依赖或生产密钥来源。非空历史拒绝普通降级，升级前需备份。|
+|Rollback|空表可降级到 `20260924_0010`；有历史时须走受控备份恢复，不能删除密文历史。|
