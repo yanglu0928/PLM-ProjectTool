@@ -3,18 +3,18 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 2：Platform Core|
-|Current WBS|`AUT-02-A05 生产认证证明与权限接线`（下一任务，须核对 License 前置）|
-|Current Status|PHASE_1_COMPLETE / AUT_02_A04_PASS / PHASE_2_IN_PROGRESS|
+|Current WBS|`LIC-01-A01 LicenseInstallation ORM/Migration`（下一任务，需核对冻结 Schema）|
+|Current Status|PHASE_1_COMPLETE / AUT_02_A05_PASS / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
-|Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A04 PASS|
+|Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05 PASS|
 |Blockers|Gate 2 对正式开发的阻塞已解除；POC-03 质量失败继续阻塞 Gate 3/UAT，Server Office、Debian 未验证和 Ghostscript 发行合规继续作为 Release 约束|
 |Pending User Decisions|当前无待决策；任何新的客户数据外发仍需当轮明确授权；冻结基线变更须 L3 明确批准|
 |Architecture Version|`ARCH-CANDIDATE-V1`；AF-01～AF-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；DM-01～DM-06 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
 |DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；SC-01～SC-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）；SC-04 Migration 仅为验证性实现|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
-|Test Summary|AUT-02-A04：Windows 11/Python 3.13 后端 121/121 PASS；PostgreSQL 18.6 临时库拒权无写入、Audit 失败回滚、双 Session 批量失效及重复调用 0 PASS；无公开业务 API|
-|Next WBS|`AUT-02-A05 生产认证证明与权限接线`（先核对 License 前置）|
+|Test Summary|AUT-02-A05：Windows 11/Python 3.13 后端 126/126 PASS；PostgreSQL 18.6 临时库真实 scrypt 正确/错误密码、停用拒绝、失败零 Session 写入 PASS；无公开业务 API|
+|Next WBS|`LIC-01-A01 LicenseInstallation ORM/Migration`（先核对冻结 Schema）|
 
 ## 自动执行策略
 
@@ -25,7 +25,7 @@
 
 ## 最近检查点
 
-- 分支：`feature/auth-session-admin-revoke`
-- 最近功能检查点：AUT-02-A04 已建立内部管理员批量撤销，但生产权限 Port 未接线，外部不可用；真实认证证明/License、Cookie/Origin/Host/限流、User 停用/换密同事务接线、公开审计 API 和生产 Secret Store 仍不可用。下一任务先核对 License 前置。
+- 分支：`feature/auth-password-issue-proof`
+- 最近功能检查点：AUT-02-A05 已为内部 Session 签发接入真实密码证明，但生产 License/管理员权限、公开登录、Cookie/Origin/Host/限流、User 停用/换密同事务接线、公开审计 API 和生产 Secret Store 仍不可用。下一任务核对 LicenseInstallation 冻结 Schema 并进入持久层。
 - 远端同步状态必须在每次任务结束前通过 Git 实时检查，不在本文件固化可能过期的 ahead/behind 数值。
 - 本地用户文件和 Git 忽略的客户资料保持不变。

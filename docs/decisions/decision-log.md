@@ -1091,3 +1091,15 @@
 |Reason|Session 签发已锁定 User 行；管理员批量撤销采用相同 User 行锁以序列化并发签发，避免撤销时漏掉已在提交中的新 Session。权限 Port 阻止凭 UserId 直接执行高权限命令；单事务 Audit 避免无证据的状态变更。|
 |Impact|新增 Auth 内部管理员撤销命令与 Repository、测试；无 Schema/Migration、公开路由、第三方依赖或客户数据外发。`AUTH_USER_DISABLE` 仍需在未来 User 状态命令里与撤销同事务接线；生产权限/License/CSRF 尚未接线，此内部命令不能直接暴露为 API。|
 |Rollback|移除内部命令可回退代码；已撤销 Session 不可恢复，Audit 历史不得删除。|
+
+## DEC-20260924-082
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-082|
+|Date|2026-09-24|
+|WBS|AUT-02-A05 生产密码证明适配|
+|Decision|将原候选“生产认证证明与权限接线”拆分：A05 仅实现内部 Session 签发的真实密码证明，管理员权限适配须待 LicenseService 形成后另列任务。`PasswordIssueProof` 持有短时可变字节缓冲区且不显示于 repr，Session 签发结束无论成功、拒绝或异常均清零。Auth Infrastructure 在同一事务中只对 ENABLED User 的当前 PasswordCredential 调用已批准 scrypt Verifier；错误/畸形证明统一拒绝，无密码或哈希进入 Audit、Session 或日志。|
+|Reason|冻结 API-02 允许 License 无效时登录，但管理员业务接口仍需有效 License；当前仓库没有正式 License 模块，不能用测试许可绕过。把密码证明单独验收可完成不受阻塞部分，又避免把未实现的 License/权限或 Origin/Host/限流误报为已可用。|
+|Impact|新增 Auth 内部密码证明 DTO、Verifier Port、SQLAlchemy 适配、测试；无 Schema/Migration、公开 API、第三方依赖或客户数据外发。密码缓冲区清零不承诺 Python/OpenSSL 内部副本绝对擦除。公开登录仍需用户名解析、统一失败/审计、Origin/Host、限流、Cookie/CSRF 等后续工作；管理员权限接线仍依赖 License。|
+|Rollback|未接入公开路由，移除适配器可回退；不修改现有 Credential/Session 历史。|

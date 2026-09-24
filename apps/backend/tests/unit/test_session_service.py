@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 from plm_assistant.modules.auth.application.session_service import (
-    SessionError, SessionPolicy, SessionRecord, SessionService,
+    PasswordIssueProof, SessionError, SessionPolicy, SessionRecord, SessionService,
 )
 
 
@@ -230,6 +230,23 @@ class SessionServiceTests(unittest.TestCase):
         with self.assertRaises(SessionError) as caught:
             service.revoke_user_sessions(actor_id=USER, user_id=USER, trace_id=TRACE)
         self.assertEqual(caught.exception.code, "AUTH_ACCESS_DENIED")
+
+    def test_password_proof_is_not_rendered_and_erased_on_denial(self):
+        proof = PasswordIssueProof(bytearray(b"synthetic-secret"))
+        self.assertNotIn("synthetic-secret", repr(proof))
+        service, store = make_service(allowed=False)
+        with self.assertRaises(SessionError):
+            service.issue(user_id=USER, trace_id=TRACE, proof=proof)
+        self.assertEqual(proof.password, bytearray(len(proof.password)))
+        self.assertIsNone(store["row"])
+
+    def test_password_proof_erased_when_user_disabled_before_access(self):
+        proof = PasswordIssueProof(bytearray(b"synthetic-secret"))
+        service, store = make_service()
+        store["state"] = "DISABLED"
+        with self.assertRaises(SessionError):
+            service.issue(user_id=USER, trace_id=TRACE, proof=proof)
+        self.assertEqual(proof.password, bytearray(len(proof.password)))
 
     def test_bad_entropy_clock_policy_and_token_rejected(self):
         service, _ = make_service(random_bytes=lambda n: b"a" * n)

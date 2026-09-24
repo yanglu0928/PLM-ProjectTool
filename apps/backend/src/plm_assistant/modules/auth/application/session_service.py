@@ -20,6 +20,17 @@ class SessionError(RuntimeError):
         super().__init__(code)
 
 
+@dataclass(slots=True)
+class PasswordIssueProof:
+    """Caller-owned short-lived password bytes; never persist or log this object."""
+
+    password: bytearray = field(repr=False)
+
+    def erase(self) -> None:
+        if type(self.password) is bytearray:
+            self.password[:] = b"\x00" * len(self.password)
+
+
 @dataclass(frozen=True, slots=True)
 class SessionPolicy:
     absolute_lifetime: timedelta = timedelta(hours=8)
@@ -102,6 +113,13 @@ class SessionService:
         self._random_bytes = random_bytes or secrets.token_bytes
 
     def issue(self, *, user_id: uuid.UUID, trace_id: uuid.UUID, proof: object) -> IssuedSession:
+        try:
+            return self._issue(user_id=user_id, trace_id=trace_id, proof=proof)
+        finally:
+            if isinstance(proof, PasswordIssueProof):
+                proof.erase()
+
+    def _issue(self, *, user_id: uuid.UUID, trace_id: uuid.UUID, proof: object) -> IssuedSession:
         self._ids(user_id, trace_id)
         if proof is None:
             raise SessionError("AUTH_ACCESS_DENIED")

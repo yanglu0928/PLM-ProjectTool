@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-24：`0.1.0.dev0`/AUT-02-A05 新增 Auth 内部真实密码证明适配：对 ENABLED User 当前凭据调用已批准 scrypt Verifier，拒绝错误/畸形证明，短时密码缓冲区在签发后清理。Windows 11/Python 3.13 后端 126/126、PostgreSQL 18.6 临时库正确/错误密码及停用拒绝 PASS。兼容现有 PostgreSQL 18 Schema；无 Migration、新依赖、公开 API 或升级步骤。已知问题：登录 Origin/Host/限流、Cookie、失败审计、License/管理员权限和 Windows Server 2025/Debian 13 本任务未验证；不能开放登录。
+
 - 2026-09-24：`0.1.0.dev0`/AUT-02-A04 新增仅内部管理员按用户批量撤销 Session；必需权限 Port 默认拒绝、目标 User 行锁、批量撤销与 Audit 同事务、重复调用返回 0。Windows 11/Python 3.13 后端 121/121、PostgreSQL 18.6 临时库拒权/回滚/批量失效 PASS。兼容现有 PostgreSQL 18 Schema；无 Migration、新依赖、公开 API 或升级步骤。已知问题：生产 Session/License/管理员授权、Cookie/CSRF/Origin/Host/限流、用户停用/换密同事务接线及 Windows Server 2025/Debian 13 本任务未验证。
 
 - 2026-09-24：`0.1.0.dev0`/AUT-02-A03 新增内部 Session 续期轮换：Token/CSRF 重新随机生成，旧记录与新记录/Audit 同事务；新记录继承原绝对到期时间，错误 CSRF、随机源重复及审计失败均关闭或回滚。Windows 11/Python 3.13 后端 118/118、PostgreSQL 18.6 临时库原子轮换和失败回滚 PASS。兼容现有 PostgreSQL 18 Schema；无 Migration、新依赖、公开 API 或升级步骤。已知问题：真实登录、Cookie/Origin/Host/限流、License、多标签处理及 Windows Server 2025/Debian 13 本任务未验证。
