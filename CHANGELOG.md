@@ -6,6 +6,8 @@
 
 ### 新增
 
+- 2026-09-24：WBS 1.06 完成 FastAPI 统一错误边界。实现冻结通用错误码、固定安全提示、请求校验 400/422、未分类异常 500、普通权限 403 隐藏为 404、规范 UUIDv7 TraceId 与 `X-Trace-Id` 同步；新增兼容 405 码且不改冻结语义。Windows 11/Python 3.13 下后端测试 43/43 PASS；仅健康端点公开，业务表、业务 API、Migration 和外部调用均未增加。无升级步骤；下一 WBS 为 1.07 JSON log。已知未完成项：服务端脱敏日志与全生命周期 Trace 中间件分别在 1.07、1.08 实现，Server/Debian 发行兼容性未由本 WBS 验证。
+
 - 2026-09-24：WBS 1.05 完成正式 Alembic migration 基线。新增 `plm` ORM Base、统一命名约定、随 wheel 交付的 Alembic 1.20 env/template 和不可变 revision `20260924_0001`，仅固定 PostgreSQL 18 + pgvector 0.8.6，不创建业务表。Windows 11/PostgreSQL 18.6 下后端 32/32、空库与有数据 up/down/re-upgrade、ORM drift=0、offline SQL、pg_dump/pg_restore 及 wheel 内容验证全部 PASS；下一 WBS 为 1.06 Error contract。
 - 2026-09-24：WBS 1.04 完成 SQLAlchemy session。新增技术无关 UnitOfWork Contract、同步 SQLAlchemy 2.0.54 + psycopg 3.3.5 DatabaseRuntime、独立 Session/显式事务、默认与异常回滚、连接池健康检查及密码安全展示；Windows 11/Python 3.13.15/PostgreSQL 18.6 下后端测试 25/25、双连接实连和 wheel 构建 PASS。业务 ORM、数据库对象、Migration、业务 API 与客户数据外发均为 0；下一 WBS 为 1.05 Alembic migration。
 - 2026-09-24：WBS 1.03 完成 Vue app shell。新增 Vue 3.5.43 + TypeScript 5.9.3 + Vite 8.3.0 响应式应用壳、最小 Router、same-origin 后端状态、安全错误边界和 404；Windows 11 下 Vitest 9/9、类型检查、生产构建、官方 npm 漏洞审计、机器验收及预览 HTTP smoke 2/2 全部 PASS。当前无登录/业务页面、数据库或客户数据外发；无 Migration，下一 WBS 为 1.04 SQLAlchemy session。

@@ -887,3 +887,15 @@
 |Reason|WBS 1.05 需要建立可发行、可审计的正式 Migration 链，但 DB Schema V1 明确要求业务表按模块 WBS 逐项细化，禁止复制 SC-04 的 70 张验证表。先冻结 Schema/版本表/扩展/命名与打包机制，既能满足后续 revision 前置，又不会把 Profile 占位结构冒充生产 ORM。保留共享扩展和空 Schema 与冻结 SC-04 恢复边界一致，也避免 downgrade 破坏其他 revision 或数据库能力。|
 |Impact|后续每个模块数据库任务必须继承此 Base、以新 revision 增量变更并完成 ORM、空库/有数据 up/down、漂移和恢复验证。Runtime Role 不得调用本迁移入口或拥有 DDL/版本表写权限；1.09 再装配 Secret/配置与部署命令。本 revision 不关闭 65 Root 正式 ORM、业务约束、索引或权限验证风险，当前业务表数量仍为 0。|
 |Rollback|可执行 downgrade 到 base 清除 revision 记录；空 `plm` Schema、版本表和 pgvector 作为平台前置按设计保留，不包含客户数据。代码回退可移除迁移包与 Alembic 依赖。只有在确认没有后续 revision、业务对象或其他扩展依赖时，管理员才能通过独立维护步骤移除这些前置；不得在普通 downgrade 中级联删除。|
+
+## DEC-20260924-065
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-065|
+|Date|2026-09-24|
+|WBS|1.06 Error contract|
+|Decision|平台层建立受控错误码目录和统一 FastAPI 异常处理。已分类的 ApplicationError 按冻结 API-01 通用码返回；未分类异常固定为 SYSTEM_INTERNAL，Pydantic 校验只返回安全的 400/422 而不暴露原始输入。普通 HTTP 403 隐藏为与不存在资源一致的 404；CSRF、License 等已分类错误保留冻结的 403。框架 405 使用新增的兼容错误码 REQUEST_METHOD_NOT_ALLOWED，不修改任何冻结码语义。响应固定为 `error.code/message/details` + `trace_id`，并同步 `X-Trace-Id`、禁止缓存；在 WBS 1.08 Trace 中间件接入前，复用规范 UUID 请求头或生成 UUIDv7。|
+|Reason|统一封装可以防止框架异常明文、校验原值、权限存在性、堆栈与内部路径进入公开响应，并为后续模块提供稳定的错误边界。405 使用独立码比错误地归类为请求格式错误更精确，属于 API-01 允许的非破坏性扩展。|
+|Impact|只改变错误响应，不新增公开业务路由或数据库对象；两个健康端点的冻结最小响应保持原样。后续模块需先登记自己的业务错误码再使用；1.07 增加服务端脱敏日志，1.08 统一整个请求生命周期的 TraceId。|
+|Rollback|移除平台错误目录、异常处理注册和对应测试，即恢复 WBS 1.05 行为；当前无数据迁移。若改变已冻结 `/api/v1` 错误 Envelope 或已有错误码语义，须走 API Change Request/L3。|

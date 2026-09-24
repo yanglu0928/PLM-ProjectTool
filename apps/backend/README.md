@@ -10,7 +10,7 @@ WBS 1.02 已提供无全局单例的 FastAPI app factory，WBS 1.04～1.05 增�
 uvicorn --factory plm_assistant.entrypoints.api:create_app
 ```
 
-当前仅开放 `/health/live` 与 `/health/ready` 最小健康面。数据库驱动固定为 `postgresql+psycopg`；Session 由 `DatabaseRuntime` 按事务创建，不使用全局 Session。UnitOfWork 必须显式 `commit()`，异常或遗漏提交会回滚并关闭 Session。
+当前仅开放 `/health/live` 与 `/health/ready` 最小健康面。WBS 1.06 已装配统一错误边界：业务层使用平台注册的 `ApplicationError(code)`；API 错误返回 `error.code/message/details` 和 `trace_id`，并在 `X-Trace-Id` 中回传同一规范 UUID。未分类异常不公开内部内容；普通 403 隐藏为 404，明确分类的 CSRF/License 403 保留。健康端点按冻结约定保持最小响应，不套用业务错误 Envelope。数据库驱动固定为 `postgresql+psycopg`；Session 由 `DatabaseRuntime` 按事务创建，不使用全局 Session。UnitOfWork 必须显式 `commit()`，异常或遗漏提交会回滚并关闭 Session。
 
 数据库 URL 只由 Composition Root 或迁移入口注入；本模块不读取 `.env` 或 Secret 文件，也不输出明文密码。正式 ORM Base 固定使用 `plm` Schema；首个 revision `20260924_0001` 只建立 PostgreSQL 18 + pgvector 0.8.6 平台基线，业务表仍为 0。
 
