@@ -1427,3 +1427,27 @@
 |Reason|初次部署时不存在可验证的管理员 Session，既有 UserCommandService 正确地要求已登录授权。离线单次初始化可解除循环依赖，但必须独立于公开 API 并禁止重新引导提权。|
 |Impact|新增 Auth bootstrap 内部服务、SQL 适配和受控 CLI；无 Schema/Migration、公开路由或新依赖。初始化凭据仍需部署者现场设置，不能由 AI 代用户填写真实密码。生产登录 Router 与 Project 授权读取仍待后续任务。|
 |Rollback|在尚未执行初始化的部署可移除 CLI；已创建的管理员属于正式 User/Audit 历史，不得简单删除，应走未来受控管理员迁移/停用流程。|
+
+## DEC-20260925-012
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-012|
+|Date|2026-09-25|
+|WBS|AUT-03-A07 登录生产依赖装配前置|
+|Decision|按 CR-AUT-002 保留默认登录关闭，A07 暂不记 PASS；先建设 Phase 2 范围内的 Project/ProjectMember 持久层及授权摘要读取，再在安全运行配置完成后恢复生产装配，随后继续 Session HTTP。|
+|Reason|现有项目授权摘要和运行信任源缺口无法由空列表或测试配置安全替代。|
+|Impact|仅实施顺序调整，无冻结 API/Schema 变化；Gate 3/UAT 不受自动放行。|
+|Rollback|前置补齐后可直接恢复 A07，保留本次核查记录。|
+
+## DEC-20260925-013
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-013|
+|Date|2026-09-25|
+|WBS|PRJ-01-A01 Project/Department/ProjectMember ORM 与 Migration|
+|Decision|按冻结 PRJ-01～03 建立三张 `plm.prj_*` 表：Project 代码部署内唯一；Department 代码在同项目 ACTIVE 状态唯一；ProjectMember 对未 REMOVED 用户建立全部署与同项目 partial unique；ProjectMember.department_id 与 project_id 通过复合 FK 锁定同项目。三者保留状态、时间、乐观锁版本和不可删除 FK；本任务不开放读写 API 或自动生成项目事实。|
+|Reason|真实项目授权摘要需要可验证成员事实；数据库必须阻止跨项目部门绑定及多项目有效成员，不能依赖登录响应空列表替代。|
+|Impact|新增普通增量 Migration 和 ORM，无现有表变更、公开 API 或新依赖。Project 状态/角色变更的应用命令与授权读取后续单项完成；已有库升级保留所有数据。|
+|Rollback|仅确认三张表无数据且无下游 FK 后允许 Alembic downgrade；有数据时拒绝自动删除。|
