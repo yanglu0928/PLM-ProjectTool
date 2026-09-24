@@ -1415,3 +1415,15 @@
 |Reason|上一项 HTTP 边界的最小 DTO 缺少冻结字段；Auth 不应自行伪造项目成员事实或长期把缺失数据写为空项目权限。|
 |Impact|登录 Router 签名要求真实投影，旧的可选接线测试需增加投影替身；无 Schema/Breaking API，新响应补齐冻结结构，仍不默认开放。已签发但投影失败的 Session 在服务器端保留至超时，后续评估补偿撤销。|
 |Rollback|回退该非公开 Router 装配；不改变已冻结 API 或 User/Session 数据。|
+
+## DEC-20260925-011
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-011|
+|Date|2026-09-25|
+|WBS|AUT-03-A06 初始 DeploymentAdmin 离线受控创建|
+|Decision|仅在本机离线命令入口创建首个 DeploymentAdmin。应用服务使用专用 PostgreSQL 事务级 advisory lock 串行化，确认整个 User 表为空后在同一事务写 User、scrypt 凭据和不含密码的 Audit；任何已有 User 即拒绝，不能用于管理员恢复或新增普通用户。初始密码至少 15 个 Unicode 字符、最多 1024 UTF-8 字节。CLI 通过终端无回显读取数据库 URL 和双次密码，不能从参数或环境变量接收初始密码；无回显不可用时失败关闭。|
+|Reason|初次部署时不存在可验证的管理员 Session，既有 UserCommandService 正确地要求已登录授权。离线单次初始化可解除循环依赖，但必须独立于公开 API 并禁止重新引导提权。|
+|Impact|新增 Auth bootstrap 内部服务、SQL 适配和受控 CLI；无 Schema/Migration、公开路由或新依赖。初始化凭据仍需部署者现场设置，不能由 AI 代用户填写真实密码。生产登录 Router 与 Project 授权读取仍待后续任务。|
+|Rollback|在尚未执行初始化的部署可移除 CLI；已创建的管理员属于正式 User/Audit 历史，不得简单删除，应走未来受控管理员迁移/停用流程。|

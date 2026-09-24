@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/AUT-03-A06 新增本机离线首个 DeploymentAdmin 初始化：空 User 表事务锁、15 字符密码下限、固定 scrypt、同事务 Audit 与交互式无回显输入；不提供管理员恢复或公开 API。Windows 11/Python 3.13 后端 233/233、服务覆盖率 91%、PostgreSQL 18.6 审计回滚/并发/哈希验证和 wheel 构建 PASS。无 Migration/新依赖；真实部署管理员仍须现场创建。已知问题：生产登录装配/项目权限读层未交付，Server 2025/Debian 13 未复验。
+
 - 2026-09-25：`0.1.0.dev0`/AUT-03-A05 登录成功响应增加真实 User 显示名、部署角色与显式 Project 授权摘要 Port；投影失败不发 Cookie，默认应用仍不开放登录。Windows 11/Python 3.13 后端 229/229、PostgreSQL 18.6 身份/停用验证、wheel 构建 PASS。无 Migration/新依赖。已知问题：正式项目摘要读取器、初始管理员和生产装配仍缺；Server 2025/Debian 13 未复验。
 
 - 2026-09-25：`0.1.0.dev0`/AUT-03-A04 新增可选登录 HTTP Router、冻结错误码映射、Host/Origin/JSON 大小边界与 HttpOnly/SameSite=Lax Cookie、HTTPS Secure/本机 loopback 策略，CSRF 在成功 DTO 返回；默认应用仍 404。Windows 11/Python 3.13 后端 227/227、Router 覆盖率 85%、wheel 构建 PASS。无 Migration/新依赖，升级无需数据操作。已知问题：生产装配、管理员初态和其余 Session API 尚未交付；Windows Server 2025、Debian 13 未复验。
