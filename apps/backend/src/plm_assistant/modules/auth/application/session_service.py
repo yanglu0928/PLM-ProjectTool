@@ -69,6 +69,8 @@ class SessionRepositoryPort(Protocol):
                absolute_expires_at: datetime, idle_expires_at: datetime) -> uuid.UUID: ...
     def find_by_token_digest(self, transaction: object, digest: bytes) -> SessionRecord | None: ...
     def revoke(self, transaction: object, session_id: uuid.UUID, now: datetime, reason: str) -> bool: ...
+    def lock_user(self, transaction: object, user_id: uuid.UUID) -> bool: ...
+    def revoke_user_sessions(self, transaction: object, user_id: uuid.UUID, now: datetime, reason: str) -> int: ...
 
 
 class SessionIssueAccessPort(Protocol):
@@ -76,9 +78,15 @@ class SessionIssueAccessPort(Protocol):
         """Validate fresh authentication proof and applicable login policy; deny by default."""
 
 
+class SessionAdminAccessPort(Protocol):
+    def can_revoke_user_sessions(self, transaction: object, actor_id: uuid.UUID, user_id: uuid.UUID) -> bool:
+        """Verify actor Session, License and DeploymentAdmin in this transaction."""
+
+
 class SessionService:
     def __init__(self, *, unit_of_work: Callable[[], object], repository: SessionRepositoryPort,
                  issue_access: SessionIssueAccessPort, audit: AuditService,
+                 admin_access: SessionAdminAccessPort | None = None,
                  policy: SessionPolicy | None = None,
                  clock: Callable[[], datetime] | None = None,
                  random_bytes: Callable[[int], bytes] | None = None) -> None:
@@ -88,6 +96,7 @@ class SessionService:
         self._repository = repository
         self._issue_access = issue_access
         self._audit = audit
+        self._admin_access = admin_access
         self._policy = policy or SessionPolicy()
         self._clock = clock or (lambda: datetime.now(timezone.utc))
         self._random_bytes = random_bytes or secrets.token_bytes
@@ -178,6 +187,29 @@ class SessionService:
             self._audit.append(transaction, self._event(trace_id, record.user_id, new_id, "SESSION_RENEWED"))
             transaction.commit()
         return IssuedSession(new_id, record.user_id, new_token, new_csrf, absolute, idle)
+
+    def revoke_user_sessions(self, *, actor_id: uuid.UUID, user_id: uuid.UUID,
+                             trace_id: uuid.UUID) -> int:
+        """Admin-only internal command; unavailable without a real access adapter."""
+        self._ids(actor_id, user_id, trace_id)
+        if self._admin_access is None:
+            raise SessionError("AUTH_ACCESS_DENIED")
+        now = self._now()
+        with self._unit_of_work() as transaction:  # type: ignore[attr-defined]
+            if self._admin_access.can_revoke_user_sessions(transaction, actor_id, user_id) is not True:
+                raise SessionError("AUTH_ACCESS_DENIED")
+            if not self._repository.lock_user(transaction, user_id):
+                raise SessionError("AUTH_ACCESS_DENIED")
+            count = self._repository.revoke_user_sessions(transaction, user_id, now, "ADMIN_REVOKE")
+            self._audit.append(transaction, AuditEventDraft(
+                trace_id=trace_id, event_scope="DEPLOYMENT", target_project_id=None,
+                actor_type="USER", actor_id=actor_id, original_actor_id=None,
+                actor_hint_digest=None, action="USER_SESSIONS_REVOKED", outcome="SUCCESS",
+                target_owner_module="auth", target_object_type="AUT-01",
+                target_object_id=user_id,
+            ))
+            transaction.commit()
+            return count
 
     @staticmethod
     def _check_active(record: SessionRecord | None, now: datetime) -> None:

@@ -1079,3 +1079,15 @@
 |Reason|冻结 API-02 已规定 `AUTH_SESSION_RENEW` 必须轮换；A02 仅实现初始签发/校验/撤销。将轮换独立验收符合一 WBS 一问题。继承绝对期限可保留“绝对到期”的安全含义，而同事务写入保证 Audit 或新记录失败时旧 Session 继续有效，不出现半轮换。|
 |Impact|仅变更内部 Auth Application Service 与测试，无 Schema/Migration、公开 API、外部依赖或客户数据外发。Cookie 原子替换、多标签行为、Origin/Host、限流、License、真实登录与管理员撤销仍未接入，不能宣称对外续期已可用。|
 |Rollback|未接入公开路由，可移除内部续期命令；既有 Session/Audit 历史不删除。|
+
+## DEC-20260924-081
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-081|
+|Date|2026-09-24|
+|WBS|AUT-02-A04 Session 管理员批量撤销|
+|Decision|将冻结 API-02 的 `AUTH_USER_REVOKE_SESSIONS` 底层能力拆为内部 A04。服务必须注入真实管理员权限 Port，验证 actor 的 Session、License、DeploymentAdmin 后，锁定目标 User 行并批量撤销该用户尚未撤销的 Session；单次 Audit 与撤销同事务。未注入生产权限适配器时默认拒绝。重复调用返回本次实际撤销数 0，并保留审计，不删除历史。|
+|Reason|Session 签发已锁定 User 行；管理员批量撤销采用相同 User 行锁以序列化并发签发，避免撤销时漏掉已在提交中的新 Session。权限 Port 阻止凭 UserId 直接执行高权限命令；单事务 Audit 避免无证据的状态变更。|
+|Impact|新增 Auth 内部管理员撤销命令与 Repository、测试；无 Schema/Migration、公开路由、第三方依赖或客户数据外发。`AUTH_USER_DISABLE` 仍需在未来 User 状态命令里与撤销同事务接线；生产权限/License/CSRF 尚未接线，此内部命令不能直接暴露为 API。|
+|Rollback|移除内部命令可回退代码；已撤销 Session 不可恢复，Audit 历史不得删除。|

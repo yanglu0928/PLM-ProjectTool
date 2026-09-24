@@ -24,6 +24,11 @@ def _session(transaction: object) -> Session:
 
 
 class SqlAlchemySessionRepository:
+    def lock_user(self, transaction: object, user_id: uuid.UUID) -> bool:
+        return _session(transaction).execute(
+            select(UserRow.user_id).where(UserRow.user_id == user_id).with_for_update()
+        ).scalar_one_or_none() is not None
+
     def current_credential_version(self, transaction: object, user_id: uuid.UUID) -> int | None:
         return _session(transaction).execute(
             select(UserRow.credential_version).where(
@@ -73,3 +78,14 @@ class SqlAlchemySessionRepository:
                      lock_version=SessionRow.lock_version + 1)
         )
         return result.rowcount == 1
+
+    def revoke_user_sessions(self, transaction: object, user_id: uuid.UUID, now: datetime, reason: str) -> int:
+        result = _session(transaction).execute(
+            update(SessionRow).where(
+                SessionRow.user_id == user_id,
+                SessionRow.revoked_at.is_(None),
+                SessionRow.created_at <= now,
+            ).values(revoked_at=now, revoke_reason=reason,
+                     lock_version=SessionRow.lock_version + 1)
+        )
+        return result.rowcount

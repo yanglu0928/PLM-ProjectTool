@@ -34,6 +34,18 @@ class FakeUow:
 
 
 class FakeRepo:
+    def lock_user(self, tx, user_id):
+        return user_id == USER
+
+    def revoke_user_sessions(self, tx, user_id, now, reason):
+        count = 0
+        for row in tx.working["rows"]:
+            if row["revoked_at"] is None:
+                row["revoked_at"] = now
+                row["reason"] = reason
+                count += 1
+        return count
+
     def current_credential_version(self, tx, user_id):
         return tx.working["version"] if tx.working["state"] == "ENABLED" else None
 
@@ -69,6 +81,14 @@ class FakeAccess:
         return self.allowed and proof is True
 
 
+class FakeAdminAccess:
+    def __init__(self, allowed=True):
+        self.allowed = allowed
+
+    def can_revoke_user_sessions(self, tx, actor_id, user_id):
+        return self.allowed
+
+
 class FakeAudit:
     def __init__(self, fail=False):
         self.fail = fail
@@ -80,11 +100,11 @@ class FakeAudit:
         return uuid.uuid4()
 
 
-def make_service(*, allowed=True, fail_audit=False, clock=None, random_bytes=None):
+def make_service(*, allowed=True, admin_access=None, fail_audit=False, clock=None, random_bytes=None):
     store = {"version": 1, "state": "ENABLED", "row": None, "rows": [], "audit": []}
     service = SessionService(
         unit_of_work=lambda: FakeUow(store), repository=FakeRepo(),
-        issue_access=FakeAccess(allowed), audit=FakeAudit(fail_audit),
+        issue_access=FakeAccess(allowed), admin_access=admin_access, audit=FakeAudit(fail_audit),
         clock=clock or (lambda: NOW), random_bytes=random_bytes or (lambda n: b"a" * n if not store["row"] else b"c" * n),
     )
     return service, store
@@ -179,6 +199,37 @@ class SessionServiceTests(unittest.TestCase):
             service.renew(token=old.token, csrf_token=old.csrf_token, trace_id=TRACE)
         self.assertEqual(caught.exception.code, "AUTH_ENTROPY_UNAVAILABLE")
         self.assertIsNone(store["row"]["revoked_at"])
+
+    def test_admin_revoke_requires_access_and_is_audited(self):
+        values = iter((b"a" * 32, b"b" * 32, b"c" * 32, b"d" * 32))
+        service, store = make_service(admin_access=FakeAdminAccess(False), random_bytes=lambda n: next(values))
+        first = service.issue(user_id=USER, trace_id=TRACE, proof=True)
+        second = service.issue(user_id=USER, trace_id=TRACE, proof=True)
+        with self.assertRaises(SessionError):
+            service.revoke_user_sessions(actor_id=USER, user_id=USER, trace_id=TRACE)
+        self.assertIsNone(store["rows"][0]["revoked_at"])
+        service._admin_access.allowed = True
+        self.assertEqual(service.revoke_user_sessions(actor_id=USER, user_id=USER, trace_id=TRACE), 2)
+        self.assertEqual(service.revoke_user_sessions(actor_id=USER, user_id=USER, trace_id=TRACE), 0)
+        self.assertEqual(store["audit"][-1].action, "USER_SESSIONS_REVOKED")
+        for issued in (first, second):
+            with self.assertRaises(SessionError):
+                service.validate(issued.token)
+
+    def test_admin_revoke_audit_failure_rolls_back(self):
+        values = iter((b"a" * 32, b"b" * 32))
+        service, store = make_service(admin_access=FakeAdminAccess(), random_bytes=lambda n: next(values))
+        issued = service.issue(user_id=USER, trace_id=TRACE, proof=True)
+        service._audit.fail = True
+        with self.assertRaisesRegex(RuntimeError, "audit unavailable"):
+            service.revoke_user_sessions(actor_id=USER, user_id=USER, trace_id=TRACE)
+        self.assertEqual(service.validate(issued.token).user_id, USER)
+
+    def test_admin_revoke_unavailable_without_adapter(self):
+        service, _ = make_service()
+        with self.assertRaises(SessionError) as caught:
+            service.revoke_user_sessions(actor_id=USER, user_id=USER, trace_id=TRACE)
+        self.assertEqual(caught.exception.code, "AUTH_ACCESS_DENIED")
 
     def test_bad_entropy_clock_policy_and_token_rejected(self):
         service, _ = make_service(random_bytes=lambda n: b"a" * n)
