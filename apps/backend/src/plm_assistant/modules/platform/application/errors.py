@@ -1,0 +1,54 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True, slots=True)
+class ErrorSpec:
+    code: str
+    status_code: int
+    message: str
+
+
+# The common codes and HTTP meanings come from the frozen API-01 contract.
+# REQUEST_METHOD_NOT_ALLOWED is an additive code for the framework's 405.
+COMMON_ERRORS: dict[str, ErrorSpec] = {
+    "REQUEST_MALFORMED": ErrorSpec("REQUEST_MALFORMED", 400, "请求格式不正确。"),
+    "REQUEST_METHOD_NOT_ALLOWED": ErrorSpec(
+        "REQUEST_METHOD_NOT_ALLOWED", 405, "此操作不支持该请求方法。"
+    ),
+    "AUTH_REQUIRED": ErrorSpec("AUTH_REQUIRED", 401, "请先登录。"),
+    "AUTH_SESSION_EXPIRED": ErrorSpec("AUTH_SESSION_EXPIRED", 401, "登录已失效。"),
+    "AUTH_CSRF_INVALID": ErrorSpec("AUTH_CSRF_INVALID", 403, "请求安全校验失败。"),
+    "LICENSE_OPERATION_DENIED": ErrorSpec(
+        "LICENSE_OPERATION_DENIED", 403, "当前许可不允许此操作。"
+    ),
+    "RESOURCE_NOT_FOUND": ErrorSpec("RESOURCE_NOT_FOUND", 404, "资源不存在。"),
+    "CONFLICT_VERSION": ErrorSpec("CONFLICT_VERSION", 409, "资源已更新，请刷新后重试。"),
+    "CONFLICT_STATE": ErrorSpec("CONFLICT_STATE", 409, "当前状态不允许此操作。"),
+    "CONFLICT_DUPLICATE": ErrorSpec("CONFLICT_DUPLICATE", 409, "资源已存在。"),
+    "CONFLICT_IDEMPOTENCY": ErrorSpec(
+        "CONFLICT_IDEMPOTENCY", 409, "请求与已受理的操作不一致。"
+    ),
+    "FILE_TOO_LARGE": ErrorSpec("FILE_TOO_LARGE", 413, "文件超过允许大小。"),
+    "FILE_TYPE_UNSUPPORTED": ErrorSpec(
+        "FILE_TYPE_UNSUPPORTED", 415, "不支持此文件类型。"
+    ),
+    "VALIDATION_FAILED": ErrorSpec("VALIDATION_FAILED", 422, "请求内容不符合要求。"),
+    "CONFLICT_VERSION_REQUIRED": ErrorSpec(
+        "CONFLICT_VERSION_REQUIRED", 428, "请提供资源版本。"
+    ),
+    "AUTH_RATE_LIMITED": ErrorSpec("AUTH_RATE_LIMITED", 429, "请求过于频繁，请稍后重试。"),
+    "SYSTEM_INTERNAL": ErrorSpec("SYSTEM_INTERNAL", 500, "服务暂时无法完成请求。"),
+    "SYSTEM_UNAVAILABLE": ErrorSpec("SYSTEM_UNAVAILABLE", 503, "服务暂时不可用。"),
+}
+
+
+class ApplicationError(Exception):
+    """A classified failure; caller-controlled exception text is never public."""
+
+    def __init__(self, code: str) -> None:
+        if code not in COMMON_ERRORS:
+            raise ValueError("unregistered application error code")
+        self.spec = COMMON_ERRORS[code]
+        super().__init__(code)
