@@ -61,7 +61,7 @@ class AuthorizedProjectAction:
 
 class ProjectAuthorizationRepositoryPort(Protocol):
     def actor_facts(self, transaction: object, *, user_id: uuid.UUID,
-                    project_id: uuid.UUID) -> ProjectActorFacts | None: ...
+                    project_id: uuid.UUID, lock: bool = False) -> ProjectActorFacts | None: ...
     def owner_project_id(self, transaction: object, *, target: str,
                          resource_id: uuid.UUID) -> uuid.UUID | None: ...
 
@@ -75,6 +75,15 @@ class ProjectAuthorizationService:
 
     def require(self, *, user_id: uuid.UUID, project_id: uuid.UUID,
                 operation: str, resource_id: uuid.UUID | None = None) -> AuthorizedProjectAction:
+        with self._uow() as tx:
+            return self.require_in_transaction(
+                tx, user_id=user_id, project_id=project_id,
+                operation=operation, resource_id=resource_id,
+            )
+
+    def require_in_transaction(self, transaction: object, *, user_id: uuid.UUID,
+                               project_id: uuid.UUID, operation: str,
+                               resource_id: uuid.UUID | None = None) -> AuthorizedProjectAction:
         policy = POLICIES.get(operation) if type(operation) is str else None
         if (policy is None or type(user_id) is not uuid.UUID or user_id.int == 0
                 or type(project_id) is not uuid.UUID or project_id.int == 0
@@ -82,18 +91,19 @@ class ProjectAuthorizationService:
                 or (policy.target is not None and
                     (type(resource_id) is not uuid.UUID or resource_id.int == 0))):
             raise ProjectAuthorizationError("RESOURCE_NOT_FOUND")
-        with self._uow() as tx:
-            facts = self._repository.actor_facts(tx, user_id=user_id, project_id=project_id)
-            if (type(facts) is not ProjectActorFacts
-                    or facts.project_role not in policy.roles
-                    or facts.project_state not in ("ACTIVE", "ARCHIVED")):
+        facts = self._repository.actor_facts(
+            transaction, user_id=user_id, project_id=project_id, lock=policy.write,
+        )
+        if (type(facts) is not ProjectActorFacts
+                or facts.project_role not in policy.roles
+                or facts.project_state not in ("ACTIVE", "ARCHIVED")):
+            raise ProjectAuthorizationError("RESOURCE_NOT_FOUND")
+        if policy.target is not None:
+            owner = self._repository.owner_project_id(
+                transaction, target=policy.target, resource_id=resource_id,
+            )
+            if owner != project_id:
                 raise ProjectAuthorizationError("RESOURCE_NOT_FOUND")
-            if policy.target is not None:
-                owner = self._repository.owner_project_id(
-                    tx, target=policy.target, resource_id=resource_id,
-                )
-                if owner != project_id:
-                    raise ProjectAuthorizationError("RESOURCE_NOT_FOUND")
-            if policy.write and facts.project_state == "ARCHIVED":
-                raise ProjectAuthorizationError("PROJECT_ARCHIVED")
-            return AuthorizedProjectAction(user_id, project_id, operation, facts.project_role)
+        if policy.write and facts.project_state == "ARCHIVED":
+            raise ProjectAuthorizationError("PROJECT_ARCHIVED")
+        return AuthorizedProjectAction(user_id, project_id, operation, facts.project_role)

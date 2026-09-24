@@ -25,8 +25,9 @@ class Repo:
         self.owner = project_id
         self.calls = 0
 
-    def actor_facts(self, transaction, *, user_id, project_id):
+    def actor_facts(self, transaction, *, user_id, project_id, lock=False):
         self.calls += 1
+        self.last_lock = lock
         return None if self.role is None else ProjectActorFacts(self.state, self.role)
 
     def owner_project_id(self, transaction, *, target, resource_id):
@@ -84,6 +85,16 @@ class ProjectAuthorizationTests(unittest.TestCase):
         with self.assertRaises(ProjectAuthorizationError) as archived:
             self.check("PROJECT_PATCH")
         self.assertEqual(archived.exception.code, "PROJECT_ARCHIVED")
+
+    def test_write_uses_locked_current_facts_in_caller_transaction(self):
+        tx = Tx()
+        result = self.service.require_in_transaction(
+            tx, user_id=self.user, project_id=self.project, operation="PROJECT_PATCH",
+        )
+        self.assertEqual(result.project_role, "PROJECT_MANAGER")
+        self.assertTrue(self.repo.last_lock)
+        self.check("PROJECT_GET")
+        self.assertFalse(self.repo.last_lock)
 
 
 if __name__ == "__main__":

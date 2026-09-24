@@ -1499,3 +1499,15 @@
 |Reason|避免 Session 摘要陈旧与 DeploymentAdmin 隐式越权；列表和详情共用当前成员事实。模型强制单一未移除成员，当前不产生多页，因此无须提前引入未验证的公开游标格式。强 ETag 仅从 Project.lock_version 生成。|
 |Impact|新增 Auth 只读 Session 身份适配器、Project 查询 Service/Repository；无 Schema/Migration、公开 API 或新依赖。公开 GET 仍须由后续 HTTP 装配并应用 API-01 Envelope/trace。|
 |Rollback|撤销未公开的查询 Port；不改变项目数据。|
+
+## DEC-20260925-018
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-018|
+|Date|2026-09-25|
+|WBS|PRJ-01-A06 Project 元数据修改与归档内部命令|
+|Decision|`PROJECT_PATCH` 首版只允许修改 Project 显示名称，不允许经通用 PATCH 修改 ProjectCode；编码不可静默复用，未来如需改码须专用受控命令和旧码保留机制。`PROJECT_PATCH`/`PROJECT_ARCHIVE` 均要求当前 ProjectManager、ACTIVE Project、Session/CSRF、License、expected lock_version 与同事务 Audit；归档不提供普通反向操作。Project 授权 Port 增加写事务内核验，写操作锁定项目/成员/部门事实并在同事务更新。|
+|Reason|冻结 API-02 仅写“metadata”，未规定可修改 code；DM-02 明确 ProjectCode 不可静默复用，而当前冻结 Schema 不保存旧 code，直接改码会释放旧码导致复用。名称是可安全修改的显示元数据；乐观并发和事实锁避免撤权/归档竞态。|
+|Impact|新增内部 Project 写命令/SQL Repository，授权 Port 增加同事务入口；无 Schema/Migration、新依赖或公开 API。若未来需要 code 修改，先按正式变更流程设计历史保留与升级。|
+|Rollback|内部命令未挂公开路由；已有名称/归档变更保留在 Audit，归档不可自动回滚为 ACTIVE。|

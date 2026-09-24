@@ -22,8 +22,8 @@ def _session(transaction: object) -> Session:
 
 class SqlAlchemyProjectAuthorizationRepository:
     def actor_facts(self, transaction: object, *, user_id: uuid.UUID,
-                    project_id: uuid.UUID) -> ProjectActorFacts | None:
-        row = _session(transaction).execute(select(
+                    project_id: uuid.UUID, lock: bool = False) -> ProjectActorFacts | None:
+        statement = select(
             ProjectRow.state, ProjectMemberRow.project_role,
         ).join(
             ProjectMemberRow, ProjectMemberRow.project_id == ProjectRow.project_id,
@@ -38,7 +38,10 @@ class SqlAlchemyProjectAuthorizationRepository:
             ProjectMemberRow.effective_at <= func.statement_timestamp(),
             ProjectMemberRow.ended_at.is_(None),
             DepartmentRow.state == "ACTIVE",
-        )).one_or_none()
+        )
+        if lock:
+            statement = statement.with_for_update(of=(ProjectRow, ProjectMemberRow, DepartmentRow))
+        row = _session(transaction).execute(statement).one_or_none()
         return None if row is None else ProjectActorFacts(row.state, row.project_role)
 
     def owner_project_id(self, transaction: object, *, target: str,
