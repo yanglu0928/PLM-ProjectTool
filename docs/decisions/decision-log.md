@@ -959,3 +959,15 @@
 |Reason|冻结 API 要求非敏感值、Schema 版本、乐观锁、DeploymentAdmin 和强制 Audit；当前真实 Auth/License/Audit/Idempotency 适配器未落地。白名单与 Port 失败关闭使内部逻辑可验证，又不把测试替身冒充生产安全能力。版本数只由锁定的 Root 分配，避免并发产生重复或跳号。|
 |Impact|A01 旧数据升级时 Schema 版本安全归为 1；有非初始 Schema 版本时拒绝回退到 `0002`。当前无公开 API、客户数据外发、新依赖或冻结基线改变；配置身份创建、持久幂等、真实认证/License/CSRF/Audit 和默认策略留给后续 WBS。A01 `version_state` 被解释为版本可用性，生效版本只由 Root 指针决定，避免更新不可变历史。|
 |Rollback|移除内部命令、仓储和策略代码即可撤回未暴露功能；数据库 `0003` 仅在所有记录 Schema 版本为 1 时可安全降级到 `0002`，否则先完成受控备份/迁移，不强制删除或改写正式历史。|
+
+## DEC-20260924-071
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-071|
+|Date|2026-09-24|
+|WBS|PLT-01-A03 配置身份与幂等命令|
+|Decision|为已冻结的 API-01/02 幂等要求，增加 PLT-01 技术性命令收据表，不新增 Aggregate Root 或客户业务实体。以 `(actor_id, operation, SHA-256(Idempotency-Key))` 唯一约束确定部署范围内重放；只存规范请求 SHA-256 和结果引用，原始键/值不持久化。`INSERT ... ON CONFLICT DO NOTHING` 在同一事务中预约收据，随后配置写入、Audit Port、完成收据原子提交；完成收据由专用触发器禁止 UPDATE/DELETE，源 FK 设置索引。含收据数据的迁移回退失败关闭。|
+|Reason|冻结 API 明确同键同 payload 返回原结果、不同 payload 返回冲突，而进程内字典无法跨重启/并发保证。技术表只承载请求去重事实，不改变 PLT-01 业务聚合的 Root/Version/Retention 映射；摘要化避免 Idempotency-Key 误含敏感材料时明文留库。事务收据确保 Audit 失败也不会留下假的成功重放。|
+|Impact|新增普通增量迁移 `20260924_0004`；A02 内部命令签名增加必填 idempotency_key，仍无公开 API、客户数据外发或新第三方依赖。正式 Auth/License/CSRF/AuditEvent 和受控 Retention 尚未接入，命令不得对外开放。Phase 1 基础工程按实施方案收口并写阶段总结，转入 Phase 2 AuditEvent；Gate 3 不自动通过。|
+|Rollback|空收据表可降级到 `0003`；有收据时必须先备份并完成受控恢复/迁移，不允许普通 downgrade 删除重放历史。移除本任务内部命令修改不影响 A01/A02 已保存的配置主记录和不可变版本。|

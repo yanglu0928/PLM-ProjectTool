@@ -27,6 +27,9 @@ from plm_assistant.modules.platform.infrastructure import configuration_orm  # n
 from plm_assistant.modules.platform.infrastructure.configuration_repository import (
     SqlAlchemyConfigurationRepository,
 )
+from plm_assistant.modules.platform.infrastructure.configuration_receipts import (
+    SqlAlchemyConfigurationReceiptRepository,
+)
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
 from plm_assistant.modules.platform.infrastructure.orm import Base
@@ -115,6 +118,7 @@ def main() -> None:
                 repository=SqlAlchemyConfigurationRepository(),
                 access=access,
                 audit=audit,
+                receipts=SqlAlchemyConfigurationReceiptRepository(),
                 policies={"app.mode": ConfigurationValuePolicy(
                     "app.mode", 1, ConfigurationValueType.STRING,
                     ("enabled", "disabled"),
@@ -122,11 +126,11 @@ def main() -> None:
             )
             try:
                 created_version = service.create_version(CreateConfigurationVersion(
-                    config_id, actor_id, 0, 1, "disabled"
+                    config_id, actor_id, 0, 1, "disabled", str(uuid.uuid4())
                 ))
                 assert created_version.version_no == 2
                 activated = service.activate_version(ActivateConfigurationVersion(
-                    config_id, actor_id, 1, 2
+                    config_id, actor_id, 1, 2, str(uuid.uuid4())
                 ))
                 assert activated.version_id == created_version.version_id
                 with _conn(data) as conn:
@@ -135,7 +139,7 @@ def main() -> None:
                 audit.fail = True
                 try:
                     service.create_version(CreateConfigurationVersion(
-                        config_id, actor_id, 2, 1, "enabled"
+                        config_id, actor_id, 2, 1, "enabled", str(uuid.uuid4())
                     ))
                 except ConfigurationCommandError as exc:
                     assert exc.code == "SYSTEM_UNAVAILABLE"
@@ -148,7 +152,7 @@ def main() -> None:
                 access.allowed = False
                 try:
                     service.create_version(CreateConfigurationVersion(
-                        config_id, actor_id, 2, 1, "enabled"
+                        config_id, actor_id, 2, 1, "enabled", str(uuid.uuid4())
                     ))
                 except ConfigurationCommandError:
                     pass
@@ -159,7 +163,7 @@ def main() -> None:
                 def race() -> str:
                     try:
                         service.create_version(CreateConfigurationVersion(
-                            config_id, actor_id, 2, 1, "enabled"
+                            config_id, actor_id, 2, 1, "enabled", str(uuid.uuid4())
                         ))
                         return "created"
                     except ConfigurationCommandError as exc:
@@ -174,6 +178,10 @@ def main() -> None:
             finally:
                 runtime.dispose()
 
+            # The A02 migration probe predates durable A03 receipts. This isolated
+            # database removes only its own test receipts before exercising down.
+            with _conn(data) as conn:
+                conn.execute("TRUNCATE TABLE plm.plt_configuration_command_receipts")
             command.downgrade(create_migration_config(_url(data)), "20260924_0002")
             with _conn(data) as conn:
                 assert conn.execute("SELECT count(*) FROM plm.plt_configuration_versions").fetchone()[0] == 3

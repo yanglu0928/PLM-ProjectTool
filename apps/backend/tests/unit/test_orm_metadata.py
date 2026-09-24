@@ -22,7 +22,7 @@ class OrmMetadataTests(unittest.TestCase):
         )
 
     def test_only_plt_01_configuration_tables_are_registered(self) -> None:
-        self.assertEqual(set(Base.metadata.tables), {"plm.plt_system_configurations", "plm.plt_configuration_versions"})
+        self.assertEqual(set(Base.metadata.tables), {"plm.plt_system_configurations", "plm.plt_configuration_versions", "plm.plt_configuration_command_receipts"})
 
 
 if __name__ == "__main__":

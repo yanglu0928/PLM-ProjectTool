@@ -6,6 +6,7 @@ import uuid
 from typing import Any
 
 from sqlalchemy import func, select, update
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from plm_assistant.modules.platform.application.configuration_commands import (
     ConfigurationSnapshot,
@@ -19,6 +20,24 @@ from plm_assistant.modules.platform.infrastructure.database import SqlAlchemyUni
 
 
 class SqlAlchemyConfigurationRepository:
+    def add_configuration(
+        self, uow: SqlAlchemyUnitOfWork, *, configuration_id: uuid.UUID,
+        config_key: str, actor_id: uuid.UUID,
+    ) -> bool:
+        inserted = uow.session.execute(
+            pg_insert(SystemConfigurationRow)
+            .values(
+                system_configuration_id=configuration_id,
+                config_key=config_key,
+                state="INACTIVE",
+                created_by=actor_id,
+                updated_by=actor_id,
+            )
+            .on_conflict_do_nothing(index_elements=["config_key"])
+            .returning(SystemConfigurationRow.system_configuration_id)
+        ).scalar_one_or_none()
+        return inserted is not None
+
     def lock(
         self, uow: SqlAlchemyUnitOfWork, configuration_id: uuid.UUID
     ) -> ConfigurationSnapshot | None:
