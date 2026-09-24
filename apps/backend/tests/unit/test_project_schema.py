@@ -5,7 +5,7 @@ import unittest
 from sqlalchemy import ForeignKeyConstraint, Index
 
 from plm_assistant.modules.project.infrastructure.orm import (
-    DepartmentRow, ProjectMemberRow, ProjectRow,
+    DepartmentRow, ProjectMemberAssignmentHistoryRow, ProjectMemberRow, ProjectRow,
 )
 
 
@@ -29,6 +29,14 @@ class ProjectSchemaTests(unittest.TestCase):
                    if isinstance(item, Index)}
         self.assertTrue(indices["uq_prj_members__user_active"].unique)
         self.assertIn("REMOVED", str(indices["uq_prj_members__user_active"].dialect_options["postgresql"]["where"]))
+
+    def test_assignment_history_is_project_scoped(self):
+        table = ProjectMemberAssignmentHistoryRow.__table__
+        names = {constraint.name for constraint in table.constraints}
+        self.assertIn("fk_prj_assignment_history__member_project", names)
+        self.assertIn("fk_prj_assignment_history__before_department", names)
+        self.assertIn("fk_prj_assignment_history__after_department", names)
+        self.assertIn("uq_prj_assignment_history__member_version", names)
 
 
 if __name__ == "__main__":

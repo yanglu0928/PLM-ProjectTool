@@ -1535,3 +1535,15 @@
 |Reason|冻结模型要求一个 User 同时最多一个未移除成员，部门必须同项目；跨模块 User 状态只能通过 Auth Port，不能由 Project 直查 Auth 内部表。锁 User 与 Department，再结合数据库约束可防并发重复和归属漂移。|
 |Impact|新增 Project 内部创建 Service/Repository、Auth-owned 目标资格适配器；无 Schema/Migration、新依赖或公开 API。公开 POST 的 Idempotency-Key 仍待正式 API 安全装配。|
 |Rollback|内部命令尚未公开；已创建成员如需撤销，应走后续 REMOVE 命令保留历史，不物理删除。|
+
+## DEC-20260925-021
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-021|
+|Date|2026-09-25|
+|WBS|PRJ-02-A03 ProjectMember 角色/部门修改命令|
+|Decision|依据 CR-PRJ-001，在冻结的当前成员表之外增加 Project-owned 角色/部门变更历史子表，不改当前权限读取路径；每次实际变更在同一事务更新成员版本、插入前后值历史并写 AuditEvent。无变化返回原 ETag，不制造事件。最后一名当前有效 ProjectManager 不允许降级，以避免项目无法再管理。|
+|Reason|冻结 DM-02 要求角色变更历史，而原 Schema 与通用 AuditEvent 无法完整追溯角色和部门的旧、新值。项目行锁使当前授权与负责人数量检查串行，成员版本锁与数据库约束防覆盖。|
+|Impact|新增 Migration `20260925_0014`、Project 内部修改命令及 Auth 最小显示名 Port；无公开 API Breaking Change。必须升级数据库后部署本版。|
+|Rollback|历史表为空时可降级到 `20260925_0013`；已有历史需保留，不允许自动丢弃。内部命令未公开，可停用但不可篡改已写历史。|

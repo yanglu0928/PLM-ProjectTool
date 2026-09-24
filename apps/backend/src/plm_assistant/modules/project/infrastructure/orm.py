@@ -95,3 +95,39 @@ class ProjectMemberRow(Base):
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False, server_default=text("statement_timestamp()"))
     updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False, server_default=text("statement_timestamp()"))
     lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+
+
+class ProjectMemberAssignmentHistoryRow(Base):
+    __tablename__ = "prj_member_assignment_history"
+    __table_args__ = (
+        ForeignKeyConstraint(["project_member_id", "project_id"],
+                             ["plm.prj_project_members.project_member_id", "plm.prj_project_members.project_id"],
+                             name="fk_prj_assignment_history__member_project", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["actor_user_id"], ["plm.auth_users.user_id"],
+                             name="fk_prj_assignment_history__actor", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["before_department_id", "project_id"],
+                             ["plm.prj_departments.department_id", "plm.prj_departments.project_id"],
+                             name="fk_prj_assignment_history__before_department", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["after_department_id", "project_id"],
+                             ["plm.prj_departments.department_id", "plm.prj_departments.project_id"],
+                             name="fk_prj_assignment_history__after_department", ondelete="NO ACTION"),
+        UniqueConstraint("project_member_id", "after_version", name="uq_prj_assignment_history__member_version"),
+        CheckConstraint("before_role IN ('PROJECT_MANAGER','IMPLEMENTATION_MEMBER','CUSTOMER_MANAGER','CUSTOMER_MEMBER')", name="ck_prj_assignment_history__before_role"),
+        CheckConstraint("after_role IN ('PROJECT_MANAGER','IMPLEMENTATION_MEMBER','CUSTOMER_MANAGER','CUSTOMER_MEMBER')", name="ck_prj_assignment_history__after_role"),
+        CheckConstraint("after_version = before_version + 1 AND before_version >= 0", name="ck_prj_assignment_history__version"),
+        CheckConstraint("before_role <> after_role OR before_department_id <> after_department_id", name="ck_prj_assignment_history__changed"),
+        Index("ix_prj_assignment_history__project_member", "project_id", "project_member_id", text("changed_at DESC")),
+    )
+
+    history_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    project_member_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    before_role: Mapped[str] = mapped_column(Text, nullable=False)
+    after_role: Mapped[str] = mapped_column(Text, nullable=False)
+    before_department_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    after_department_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    actor_user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    trace_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    before_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    after_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    changed_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False, server_default=text("statement_timestamp()"))

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PRJ-02-A03 新增内部 ProjectMember 角色/部门修改命令与版本化历史表（CR-PRJ-001，Migration `20260925_0014`）。当前 ProjectManager、Session/CSRF、License、强 expected_version、同项目活动部门、最后负责人保护；当前值/变更历史/Audit 同事务，失败回滚。Windows 11/Python 3.13 后端 278/278、服务覆盖率 95%、PostgreSQL 18.6 空库/已有数据升级及安全降级、ORM drift=0、隔离/回滚和 wheel 构建 PASS。升级前备份并执行 `upgrade head`；已有历史时禁止普通 downgrade。无新依赖或公开 API。已知问题：生产 License 使用合成 Guard，公开 If-Match/幂等、Server 2025/Debian 13 本项及数据库角色级历史防篡改未验证。
+
 - 2026-09-25：`0.1.0.dev0`/PRJ-02-A02 新增内部 ProjectMember 创建命令：当前 ProjectManager、Session/CSRF/License、ENABLED 目标 User、同项目活动部门与单项目唯一性保护，同事务 Audit；并发重复分配固定拒绝。Windows 11/Python 3.13 后端 271/271、服务覆盖率 95%、PostgreSQL 18.6 临时库并发/隔离/审计回滚及 wheel 构建 PASS。无 Migration、新依赖或公开 API，升级无需数据步骤。已知问题：License 使用合成 Guard，公开幂等/API 接线及 Server 2025/Debian 13 本项验证未完成。
 
 - 2026-09-25：`0.1.0.dev0`/PRJ-02-A01 新增内部 ProjectMember 授权列表，ProjectManager/CustomerManager 可读取所属项目成员历史；跨项目隐藏，Auth 最小用户名投影与 Project 成员事实分离，内部 keyset 分页。Windows 11/Python 3.13 后端 265/265、服务覆盖率 96%、PostgreSQL 18.6 临时库角色/隔离/历史/分页复验和 wheel 构建 PASS。无 Migration、新依赖或公开 API，升级无需数据步骤。已知问题：生产 License 使用合成 Guard；公开路由及 API-01 不透明 cursor、Server 2025/Debian 13 本项验证未完成。
