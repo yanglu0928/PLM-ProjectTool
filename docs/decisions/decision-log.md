@@ -1583,3 +1583,15 @@
 |Reason|冻结 SC-03 明确为 partial unique，已有 ORM/Migration 仅对 ACTIVE 行唯一；保持现有 DB 基线与可追溯历史，不额外改变冻结 Schema。|
 |Impact|新增 Project 内部创建 Service/Repository；无 Schema/Migration、新依赖或公开 API。对停用部门编码复用的 UI 展示需要在未来公开设计中结合 ID/状态区分，不能只凭 code 认定历史身份。|
 |Rollback|内部命令尚未公开，可停止新建；已有 Department 不物理删除，若需撤销须走后续受控停用并保留历史。|
+
+## DEC-20260925-025
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-025|
+|Date|2026-09-25|
+|WBS|PRJ-03-A03 Department 名称/编码修改命令|
+|Decision|仅 ACTIVE Department 可由当前 ProjectManager 在同事务 Session/CSRF、License、目标归属及 expected_version 检查后修改名称和/或编码。编码沿用 NFKC/trim/casefold；同项目 ACTIVE 部门不得重复，项目行锁串行化受权写入且 DB partial unique 兜底。真实变更版本+1并写 Audit，无变化返回原 ETag 不制造事件；INACTIVE 历史不允许普通 PATCH。|
+|Reason|维持冻结 API-01 强 ETag、API-02 逐操作权限与 SC-03 活动编码唯一；禁止修改停用历史，避免旧引用被悄然改写。|
+|Impact|新增 Project 内部 PATCH Service/Repository；无 Schema/Migration、新依赖或公开 API。当前 AuditEvent 可追溯操作者/对象/时间，但不保存字段级旧/新 code/name，不能支持逐版字段恢复；如后续正式要求该能力须单独 Change Request。|
+|Rollback|内部命令尚未公开，可停止使用；已修改元数据不能依赖 Audit 自动恢复旧值，需有正式备份或后续受权修订。|
