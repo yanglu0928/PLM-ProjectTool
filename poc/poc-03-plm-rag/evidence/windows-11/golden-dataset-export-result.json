@@ -1,0 +1,28 @@
+{
+  "schema_version": "poc-03.action-list-import-result.v1",
+  "generated_at": "2026-09-18T02:49:22.786360+00:00",
+  "status": "PASS",
+  "privacy": {
+    "workbook_content_committed": false,
+    "queries_committed": false,
+    "answer_terms_committed": false,
+    "reviewer_names_committed": false,
+    "output_dataset_committed": false
+  },
+  "summary": {
+    "workbook_candidate_row_count": 120,
+    "approved_case_count": 120,
+    "review_status_counts": {
+      "APPROVED": 120
+    },
+    "issue_count": 0,
+    "output_written": true,
+    "minimum_required_approved_count": 100,
+    "approved_count_gap": 0,
+    "human_decision_counts": {
+      "修改后确认": 120
+    }
+  },
+  "issues": [],
+  "conclusion": "Schema-valid reviewed dataset export completed; quality coverage passed."
+}
