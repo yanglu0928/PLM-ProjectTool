@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PLT-02-A04 新增内部版本化 AES-256-GCM Secret 加解密适配；AAD 绑定引用/用途/消费者/版本/Key 引用，随机 nonce，输入可变缓冲区清零，篡改和错误密钥失败关闭。Windows 11/Python 3.13 后端 201/201、组件覆盖率 96%、PostgreSQL 18.6 临时库密文存储/受控读取/错误密钥拒绝、wheel 构建 PASS。兼容现有 Schema；无 Migration、新依赖、公开 API 或客户数据外发。CR-PLT-002 记录算法差异。已知问题：生产 Key Provider、管理写命令/轮换、三平台复验和内存取证防护未完成，不能投入真实 Secret。
+
 - 2026-09-25：`0.1.0.dev0`/PLT-02-A03 新增仅内部 DeploymentAdmin+有效 License 的 Secret 元数据详情/分页服务；读投影不含密文、加密元数据和 Key Provider 引用。Windows 11/Python 3.13 后端 197/197、服务覆盖率 97%、PostgreSQL 18.6 临时库权限/分页/许可拒绝、wheel 构建 PASS。兼容现有 Schema；无 Migration、新依赖、公开 API 或客户数据外发。已知问题：License 集成使用合成 Guard，真实生产信任源、HTTP、写入/轮换和三平台复验尚未完成。
 
 - 2026-09-25：`0.1.0.dev0`/PLT-02-A02 新增仅内部活动 Secret 密文信封只读适配，按 SecretRef、活动状态及未退役版本读取，复用既有用途/消费者与单次清零边界。Windows 11/Python 3.13 后端 191/191、适配器覆盖率 91%、PostgreSQL 18.6 临时库未激活/停用拒绝及消费者隔离、wheel 构建 PASS。兼容现有 Schema；无 Migration、新依赖、公开 API 或客户数据外发，升级无需数据步骤。已知问题：合成解密器不代表生产加密/密钥来源，正式 Secret 写命令/管理 API/三平台复验未完成。

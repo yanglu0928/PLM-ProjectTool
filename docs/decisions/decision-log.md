@@ -1307,3 +1307,15 @@
 |Reason|冻结 GET 合同仅要求 Session+License，不能套用写操作的 CSRF；Guard 检查跨事务，第二次身份复核缩小权限撤销窗口；只投影安全字段降低误回显风险。|
 |Impact|新增 Auth 内部只读权限适配及 Platform 服务/仓储；无 Schema、Migration、公开 API 或新依赖。Guard 尚未挂 HTTP，测试使用合成许可替身。|
 |Rollback|内部服务未公开；撤销代码不影响 Secret 历史或冻结 API Contract。|
+
+## DEC-20260925-002
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-002|
+|Date|2026-09-25|
+|WBS|PLT-02-A04 Secret 加密算法与密文写入边界|
+|Decision|按 CR-PLT-002 采用版本化 AES-256-GCM；随机 96-bit nonce，AAD 绑定 SecretRef/用途/消费者/版本号/Key 引用，严格拒绝非 V1 元数据；加密输入与解密失败缓冲区尽量清零，主密钥仍只由外部 Key Provider Port 解析。|
+|Reason|冻结模型规定只存密文、算法元数据和 Key 引用，但未定密文算法。Authenticated Encryption 可在不改 Schema/API 下提供完整性和上下文绑定。|
+|Impact|新增内部加解密适配、合成测试和 PostgreSQL 临时库验证；无 Migration、新依赖、公开 API 或生产 Key Provider。生产安全验收仍未满足。|
+|Rollback|尚无正式 Secret 写命令；已有历史密文不可静默转换或删除，后续算法升级须版本读取或受控重加密。|
