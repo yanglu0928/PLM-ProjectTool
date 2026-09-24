@@ -1,0 +1,23 @@
+{
+  "status": "PASS",
+  "docx": {
+    "size_bytes": 1862035,
+    "sha256": "c02c542e360ac23d6ac9c7356b0e2d5f63906287b91883675d15a670f1faf2af",
+    "paragraph_count": 799,
+    "table_count": 9,
+    "inline_shape_count": 4,
+    "explicit_page_breaks": 99,
+    "zip_integrity": true,
+    "chinese_and_three_heading_levels": true
+  },
+  "pptx": {
+    "size_bytes": 1974007,
+    "sha256": "a5dacab4af80f8cf40cb773b17f8eda61fa5d27bde11d3bde92e6307dcf1397e",
+    "slide_count": 50,
+    "table_count": 1,
+    "image_count": 1,
+    "connector_count": 3,
+    "zip_integrity": true,
+    "editable_data_visualization": true
+  }
+}
