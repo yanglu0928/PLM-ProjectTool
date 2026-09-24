@@ -1343,3 +1343,15 @@
 |Reason|当前 FastAPI 仅开放健康检查；生产 Auth/License/Key Provider 装配、If-Match 与幂等基础尚未齐备，直接挂路由不能满足冻结 API-01/API-02 的安全协议。先验收不可逆读取拒绝的状态命令，公开接线另行验证。|
 |Impact|仅时序/任务粒度调整，不改变冻结 API Contract、Schema 或数据模型；无 Migration/新依赖。公开 Secret API 仍未可用，完整程序包仍未交付。|
 |Rollback|内部服务未公开；已退役密文历史不删除、不直接复活，恢复必须另走受控新版本命令。|
+
+## DEC-20260925-005
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-005|
+|Date|2026-09-25|
+|WBS|PLT-02-A07 Secret 管理 API 前置检查|
+|Decision|A07 公开路由暂不接线，保留 BLOCKED_BY_PREREQUISITES；先实施 AUT-03 登录/Session HTTP 安全、生产 License/Key Provider 装配和幂等/版本协议，再恢复 A07。CR-PLT-003 记录将 Key Provider 安全设计前移的时序差异。|
+|Reason|TestClient 实测登录及 Secret 路由均 404，仅健康路由 200；若以合成 Guard/Key Provider 挂路由会违反冻结 API-01/API-02 和生产 Secret 分离要求。|
+|Impact|不变更冻结路径、Schema 或权限；A07 未完成，不得声称管理 API/真实 Secret 可用。项目继续不受阻塞的 Auth/平台基础任务。|
+|Rollback|尚无公开 Secret 路由；若前置不能满足，保持默认 404 和失败关闭，不能以测试替身代替生产装配。|

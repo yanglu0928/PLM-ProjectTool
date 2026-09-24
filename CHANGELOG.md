@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PLT-02-A07 前置核查确认当前仅健康接口公开；登录和 Secret 管理路径均为 404。按 CR-PLT-003 将 Auth HTTP、持久幂等/If-Match 和生产 License/Key Provider 装配前置，A07 未通过、无程序/API/Schema/Migration/依赖变更，升级无需数据操作。Windows 11 TestClient 路由检查完成；A07 功能/安全测试未运行。已知问题：Secret 管理和真实密钥仍不可使用。
+
 - 2026-09-25：`0.1.0.dev0`/PLT-02-A06 新增内部 Secret 停用：管理员 Session+CSRF、License Guard、期望 lock_version/行锁、活动版本退役、读拒绝及 Audit 同事务。Windows 11/Python 3.13 后端 207/207、写服务覆盖率 97%、PostgreSQL 18.6 临时库状态/历史/读拒绝/审计、wheel 构建 PASS。兼容现有 Schema；无 Migration、新依赖、公开 API 或客户数据外发。原拟 A06 的公开管理 API 拆为 A07，见 DEC-20260925-004。已知问题：合成安全依赖、生产 Key Provider/HTTP/幂等及三平台复验未完成，不能保存真实 Secret。
 
 - 2026-09-25：`0.1.0.dev0`/PLT-02-A05 新增内部 Secret 创建/轮换：管理员 Session+CSRF、License Guard、期望版本/行锁、旧版退役与新版激活、Audit 同事务；Secret 值只写不回显。Windows 11/Python 3.13 后端 205/205、服务覆盖率 96%、PostgreSQL 18.6 临时库权限/并发/历史/回滚及 wheel 构建 PASS。兼容现有 Schema；无 Migration、新依赖、公开 API 或客户数据外发。已知问题：使用合成 Key Provider/License Guard 验证；生产密钥来源、HTTP/Idempotency、停用和三平台复验未完成，不能保存真实 Secret。
