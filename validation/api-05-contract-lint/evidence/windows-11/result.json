@@ -1,0 +1,28 @@
+{
+  "status": "PASS",
+  "contract_version": "API-CONTRACT-CANDIDATE-V1",
+  "validation_only": true,
+  "owner_count": 22,
+  "root_count": 65,
+  "root_exposure_counts": {
+    "DIRECT": 34,
+    "INTERNAL": 7,
+    "NESTED": 18,
+    "READ_ONLY": 6
+  },
+  "operation_count": 323,
+  "operation_path_variant_count": 363,
+  "error_code_count": 150,
+  "sse_event_count": 18,
+  "query_mapping_count": 20,
+  "enum_family_count": 18,
+  "egress_operation_count": 5,
+  "generic_delete_count": 0,
+  "external_call_count": 0,
+  "source_hashes": {
+    "docs/api-contract/api-01-resource-common-protocol-v1-candidate.md": "9b869783b2b3a1befe4bd04686bbbb359a4cdb964b1bc662c41c8f0c10fadefc",
+    "docs/api-contract/api-02-platform-security-document-governance-v1-candidate.md": "2be7690af51c52992491d4438a4158b20d95bf9a6c0c64559ca9a4cda5f2653b",
+    "docs/api-contract/api-03-ai-rag-job-plugin-output-v1-candidate.md": "6337d44f8f05ff36e7f74b4fc02ba169a32d1ffcb6db02bbf2ef4fc6dafa430e",
+    "docs/api-contract/api-04-implementation-business-chain-v1-candidate.md": "e66f53741742609f8db51cfd7501a6c5a408af80550b04d2275eabd778f75c3a"
+  }
+}
