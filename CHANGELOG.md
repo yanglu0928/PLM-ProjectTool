@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/CR-DOC-008/A03-P01 增加已登记 Abort 文件的内部只读清理资格检查：同 ID 栅栏、双次数据库状态/引用校验、仅暂存文件 Hash/大小验证；最终文件或保留标记拒绝。Windows 11 后端 553 项无失败（2 项环境跳过），隔离 PostgreSQL 18.6/临时文件与开发 wheel PASS。无 Migration/公开 API/新依赖；未执行已登记正文删除。
+
 - 2026-09-26：`0.1.0.dev0`/CR-DOC-008/A02-P03 Abort 接入上传同 ID 栅栏，Content/Commit/Abort 在 Windows 显式写组合共用锁；旧组合验证脚本补齐后续 Document 游标签名源。Windows 11 后端 550 项无失败（2 项环境跳过），隔离 PostgreSQL 18.6/临时文件真实 Session/Project 上传提交与中止、开发 wheel PASS。无 Migration/新依赖/API 变更；物理清理仍关闭。
 
 - 2026-09-26：`0.1.0.dev0`/CR-DOC-008/A02-P02 Commit 命令从首次预检到文件提升及最终版本/Job 事务持有上传同 ID 栅栏，Windows 显式写组合接入。Windows 11 后端 548 项无失败（2 项环境跳过），隔离 PostgreSQL 18.6/临时文件 Commit 脚本与开发 wheel PASS。无 Migration/新依赖/API 变更；Abort/清理仍未接入。

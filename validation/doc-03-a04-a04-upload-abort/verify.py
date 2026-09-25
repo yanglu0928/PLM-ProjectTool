@@ -18,9 +18,11 @@ from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlche
 from plm_assistant.modules.document.application.abort_upload import (
     AbortUpload, AbortUploadService, UploadAbortError,
 )
+from plm_assistant.modules.document.application.inspect_registered_abort import InspectRegisteredAbortService
 from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage
 from plm_assistant.modules.document.infrastructure.upload_operation_gate import LocalUploadOperationGate
 from plm_assistant.modules.document.infrastructure.upload_abort_repository import SqlAlchemyUploadAbortRepository
+from plm_assistant.modules.document.infrastructure.registered_abort_read_repository import SqlAlchemyRegisteredAbortReadRepository
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
@@ -117,6 +119,11 @@ def verify() -> None:
                 return upload_id, stage, final, content
 
             worker = service()
+            inspector = InspectRegisteredAbortService(
+                unit_of_work=runtime.unit_of_work,
+                repository=SqlAlchemyRegisteredAbortReadRepository(),
+                storage=storage, operation_gate=operation_gate,
+            )
             created, _, _, _ = seed(ready=False)
             created_command = AbortUpload(created, "PROJECT", project, actor, uuid.uuid4())
             assert worker.abort(created_command, idempotency_key="abort-created-01").cleanup_pending is False
@@ -143,6 +150,18 @@ def verify() -> None:
                 assert db.execute("SELECT count(*) FROM plm.aud_events WHERE action='DOCUMENT_UPLOAD_ABORT'").fetchone() == (2,)
             assert storage.verify_content(stage, expected_sha256=hashlib.sha256(content).digest(), expected_size=len(content), max_bytes=len(content))
             assert not (root / final).exists()
+            assert inspector.inspect(upload).shape == "STAGE_VERIFIED"
+            assert inspector.inspect(upload).eligible
+            assert not inspector.inspect(created).eligible
+            with connect(name) as db:
+                db.execute(
+                    "UPDATE plm.doc_file_objects SET retention_due_at=statement_timestamp()+interval '1 day' WHERE file_object_id=%s",
+                    (upload,),
+                )
+            assert not inspector.inspect(upload).eligible
+            with connect(name) as db:
+                db.execute("UPDATE plm.doc_file_objects SET retention_due_at=NULL WHERE file_object_id=%s", (upload,))
+            assert inspector.inspect(upload).eligible
 
             rollback, rollback_stage, _, _ = seed(ready=True)
             rollback_command = replace(command_abort, upload_id=rollback, trace_id=uuid.uuid4())
@@ -153,7 +172,15 @@ def verify() -> None:
                 assert db.execute("SELECT count(*) FROM plm.doc_file_state_events WHERE file_object_id=%s", (rollback,)).fetchone() == (0,)
             assert (root / rollback_stage).is_file()
             assert worker.abort(rollback_command, idempotency_key="abort-rollback-01").cleanup_pending
-            print("PASS: created/ready abort, exact replay, actor/license denial, immutable history, audit rollback and retained bytes")
+            assert inspector.inspect(rollback).eligible
+            final_only, final_stage, final_locator, _ = seed(ready=True)
+            final_command = replace(command_abort, upload_id=final_only, trace_id=uuid.uuid4())
+            assert worker.abort(final_command, idempotency_key="abort-final-only-01").cleanup_pending
+            storage.promote(final_stage, final_locator)
+            inspected = inspector.inspect(final_only)
+            assert inspected.shape == "FINAL_VERIFIED" and not inspected.eligible
+            assert (root / final_locator).is_file()
+            print("PASS: abort/replay/denial/rollback and registered read-only inspection; retained/final-only files untouched")
     finally:
         if runtime is not None:
             runtime.dispose()
