@@ -2673,3 +2673,14 @@
 |Reason|现有状态字段不能防止崩溃后旧投递者确认；至少一次语义要求目标消费和确认有明确事务边界与幂等键。|
 |Impact|`CR-DOC-007` 的 ORM/迁移增量、jobs 内部 Application/Repository 和隔离 PostgreSQL 测试；无公开 API 或新依赖。|
 |Rollback|停用 Outbox 调度，保留事件与 token 历史；若已有新语义历史，迁移降级失败关闭，不自动抹除。|
+## DEC-20260926-116
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-116|
+|Date|2026-09-26|
+|WBS|DOC-03-A04-A04-P04 上传 Commit/Abort 编排|
+|Decision|Document Commit 不调用现有会独立提交数据库事务的 FilePublishService；复用其受控 Storage 物理提升与事务内 FilePublishRepository、DocumentVersionRepository，并通过 Job Owner 的公开 Application Port 在同一调用方事务登记 DOCUMENT_PARSE Job 和最小引用 Outbox。先完成 Job Owner 的受限解析入队 Port，再接 Document 事务编排；接口不自行 commit。|
+|Reason|冻结 DM-03 要求 FileObject AVAILABLE、DocumentVersion、Parse Job/Outbox、Audit 作为单一数据库提交。跨模块直接访问 jobs 内部表或复用独立事务 FilePublishService 均破坏该不变量。|
+|Impact|jobs Application Port/Repository 与 Document Commit 实现、合成 PostgreSQL 回归；不改公开 API、数据模型或迁移。|
+|Rollback|移除尚未挂载的 Commit 编排；已提交 Job/Outbox 不删除，需按受控取消/Dead 路径处理。原 FilePublishService 保留供独立恢复命令使用。|
