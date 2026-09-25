@@ -43,9 +43,34 @@ def _write_error(exc: SecretWriteError) -> ApplicationError:
         "PLATFORM_SECRET_PURPOSE_INVALID": "PLATFORM_SECRET_PURPOSE_INVALID",
         "PLATFORM_SECRET_UNAVAILABLE": "PLATFORM_SECRET_UNAVAILABLE",
         "CONFLICT_IDEMPOTENCY": "CONFLICT_IDEMPOTENCY",
+        "CONFLICT_VERSION": "CONFLICT_VERSION",
         "VALIDATION_FAILED": "VALIDATION_FAILED",
     }.get(exc.code, "SYSTEM_UNAVAILABLE")
     return ApplicationError(code)
+
+
+def _require_json_content_type(headers: tuple[tuple[bytes, bytes], ...]) -> None:
+    content_types = [value for name, value in headers if name.lower() == b"content-type"]
+    if (len(content_types) != 1
+            or content_types[0].split(b";", 1)[0].strip().lower() != b"application/json"):
+        raise ApplicationError("REQUEST_MALFORMED")
+
+
+async def _read_secret_json(request: Request) -> object:
+    raw = bytearray()
+    try:
+        async for chunk in request.stream():
+            if len(raw) + len(chunk) > MAX_SECRET_CREATE_BODY:
+                raise ApplicationError("REQUEST_MALFORMED")
+            raw.extend(chunk)
+        try:
+            return json.loads(raw.decode("utf-8", errors="strict"),
+                              object_pairs_hook=_unique_pairs,
+                              parse_constant=_reject_constant)
+        except (ValueError, UnicodeDecodeError, TypeError):
+            raise ApplicationError("REQUEST_MALFORMED") from None
+    finally:
+        raw[:] = b"\x00" * len(raw)
 
 
 def create_secret_create_router(*, sessions: SessionService,
@@ -73,24 +98,8 @@ def create_secret_create_router(*, sessions: SessionService,
             raise _session_failure(exc) from None
         except Exception:
             raise ApplicationError("SYSTEM_UNAVAILABLE") from None
-        content_types = [value for name, value in headers if name.lower() == b"content-type"]
-        if (len(content_types) != 1
-                or content_types[0].split(b";", 1)[0].strip().lower() != b"application/json"):
-            raise ApplicationError("REQUEST_MALFORMED")
-        raw = bytearray()
-        try:
-            async for chunk in request.stream():
-                if len(raw) + len(chunk) > MAX_SECRET_CREATE_BODY:
-                    raise ApplicationError("REQUEST_MALFORMED")
-                raw.extend(chunk)
-            try:
-                body = json.loads(raw.decode("utf-8", errors="strict"),
-                                  object_pairs_hook=_unique_pairs,
-                                  parse_constant=_reject_constant)
-            except (ValueError, UnicodeDecodeError, TypeError):
-                raise ApplicationError("REQUEST_MALFORMED") from None
-        finally:
-            raw[:] = b"\x00" * len(raw)
+        _require_json_content_type(headers)
+        body = await _read_secret_json(request)
         if (type(body) is not dict
                 or set(body) != {"purpose", "allowed_consumer", "secret_value"}
                 or type(body["purpose"]) is not str

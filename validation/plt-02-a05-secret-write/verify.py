@@ -20,6 +20,7 @@ from plm_assistant.modules.auth.infrastructure.license_import_access import SqlA
 from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
 from plm_assistant.modules.auth.application.session_service import SessionError
 from plm_assistant.modules.platform.api.secret_create import create_secret_create_router
+from plm_assistant.modules.platform.api.secret_rotate import create_secret_rotate_router
 from plm_assistant.modules.platform.application.secret_access import SecretConsumer, SecretPurpose, SecretResolver
 from plm_assistant.modules.platform.application.secret_write import (
     CreateSecret, RotateSecret, SecretWriteError, SecretWriteService,
@@ -202,7 +203,12 @@ def main():
                     sessions=HttpSessions(), writes=service,
                     origins=LoginOriginPolicy(["http://localhost"]),
                 )
-                with TestClient(create_app(secret_create_router=http_router),
+                rotate_router = create_secret_rotate_router(
+                    sessions=HttpSessions(), writes=service,
+                    origins=LoginOriginPolicy(["http://localhost"]),
+                )
+                with TestClient(create_app(secret_create_router=http_router,
+                                           secret_rotate_router=rotate_router),
                                 base_url="http://localhost") as client:
                     headers = {
                         "origin": "http://localhost", "cookie": "plm_session=" + admin_token.hex(),
@@ -220,6 +226,20 @@ def main():
                     with connect(name) as db:
                         assert db.execute("SELECT count(*) FROM plm.plt_secret_records WHERE secret_record_id=%s", (created_id,)).fetchone()[0] == 1
                         assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='PLATFORM_SECRET_CREATE'", (created_id,)).fetchone()[0] == 1
+                    rotate_headers = {**headers, "idempotency-key": str(uuid.uuid4()),
+                                      "if-match": '"v1"'}
+                    rotate_path = f"/api/v1/admin/secrets/{created_id}:rotate"
+                    rotated = client.post(rotate_path, headers=rotate_headers,
+                                          json={"secret_value": "synthetic-http-rotated"})
+                    rotated_replay = client.post(rotate_path, headers=rotate_headers,
+                                                 json={"secret_value": "synthetic-http-rotated"})
+                    assert rotated.status_code == rotated_replay.status_code == 200
+                    assert rotated.json()["data"] == rotated_replay.json()["data"]
+                    assert rotated.headers["etag"] == '"v2"'
+                    assert "synthetic-http-rotated" not in rotated.text + rotated_replay.text
+                    with connect(name) as db:
+                        assert db.execute("SELECT count(*) FROM plm.plt_secret_versions WHERE secret_record_id=%s", (created_id,)).fetchone()[0] == 2
+                        assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='PLATFORM_SECRET_ROTATE'", (created_id,)).fetchone()[0] == 1
                 print("PASS: admin/CSRF/License, atomic create and rotate replay, ciphertext history, concurrent version and Audit rollback")
             finally:
                 runtime.dispose()

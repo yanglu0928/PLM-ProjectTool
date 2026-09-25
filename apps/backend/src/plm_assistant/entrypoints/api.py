@@ -33,6 +33,7 @@ def create_app(
     secret_metadata_router: APIRouter | None = None,
     secret_metadata_list_router: APIRouter | None = None,
     secret_create_router: APIRouter | None = None,
+    secret_rotate_router: APIRouter | None = None,
     shutdown_callback: Callable[[], None] | None = None,
 ) -> FastAPI:
     """Create one isolated API application instance.
@@ -82,4 +83,6 @@ def create_app(
         app.include_router(secret_metadata_list_router)
     if secret_create_router is not None:
         app.include_router(secret_create_router)
+    if secret_rotate_router is not None:
+        app.include_router(secret_rotate_router)
     return app

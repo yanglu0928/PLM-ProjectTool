@@ -1883,3 +1883,15 @@
 |Reason|冻结 API-02 要求 Secret 值 write-only、DeploymentAdmin、Session/License/CSRF/幂等/Audit；已有内部服务与收据可支撑可选 HTTP 契约，但正式主密钥/发行信任锚尚未供给。|
 |Impact|新增 HTTP 边界、错误码注册与契约测试；不改 Schema/Migration/冻结路径。JSON 解析产生短生命周期不可原地清零的字符串，使用大小上限、不记录请求体、可变明文字节清零并保持部署前置关闭。|
 |Rollback|不注入 Router 仍 404；无数据库迁移或自动 Secret 创建。|
+
+## DEC-20260925-050
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-050|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P05-A06 Secret 轮换 write-only HTTP|
+|Decision|新增仅显式注入的 `POST /api/v1/admin/secrets/{secret_id}:rotate`：与创建相同的可信来源/Session/CSRF/幂等安全门，登录校验后严格解析单个强 If-Match 并作为记录锁版本；请求仅接受有界非空 UTF-8 `secret_value`，200 仅返回 SecretRef、新密文版本号、ACTIVE 状态与原语义强 ETag，不回显原值/密文。默认与当前生产组合不挂载。|
+|Reason|冻结 API-02 轮换需要 S/L/C/I/M/A；内部轮换及收据已具备，可独立验证 HTTP 边界，正式主密钥/License 仍未供给。|
+|Impact|新增可选 Router、错误映射和验证；不改 Schema/Migration、冻结路径或生产启动行为。复用创建 JSON 安全解析规则；JSON 不可原地清零的短生命周期字符串风险继续按 P05-A05 控制。|
+|Rollback|不注入 Router 仍 404；无数据迁移或自动轮换。|
