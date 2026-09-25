@@ -2888,3 +2888,15 @@
 |Reason|两路径一次删除无法在崩溃中恢复步骤边界；逐路径操作使每个中断后的物理形态可重新识别，直到 `NONE` 才由后续数据库编排记录 `REMOVED`。|
 |Impact|LocalFileStorage 内部受控方法及合成临时文件测试；无 Schema、公开 API、新依赖或生产装配。此单项不允许对实际已登记文件执行删除。|
 |Rollback|不调用该内部方法；保留 `CLEANUP_PENDING` 和所有现有文件供后续受控恢复，不删除历史记录。|
+
+## DEC-20260926-134
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-134|
+|Date|2026-09-26|
+|WBS|CR-DOC-008/A03-P02-A02 已登记 Abort 文件内部清理编排|
+|Decision|仅内部维护命令在同 ID OS 栅栏内先验证当前数据库候选与全部物理形态，再于短事务记录一次清理请求 Audit；之后每步重读数据库资格并调用单路径清理，直到两路径均不存在。最后短事务行锁复核候选并原子写 `CLEANUP_PENDING → REMOVED` FileStateEvent 与完成/缺失对账 Audit。首次无文件且没有持久请求时拒绝；已有请求且文件缺失时按“观察到缺失”对账，不声称本次实际删除。|
+|Reason|文件系统和 PostgreSQL 不具分布式事务；持久请求和可重复的单路径步骤允许在任意一步崩溃后保持 `CLEANUP_PENDING`，下次根据真实文件形态恢复，并区分实际删除与缺失对账。|
+|Impact|Document 内部维护 Service、行锁 Repository、只读/清理 Storage 扩展及隔离库/临时文件验证；无 Schema、公开 API、新依赖或正式生产组合。维护身份授权由注入 Access Port 显式承担，生产来源未装配。|
+|Rollback|停止调用内部维护命令；已 `REMOVED` 的合成测试文件不能靠回滚恢复，正式生产调用未授权；Audit/状态历史不删除。|

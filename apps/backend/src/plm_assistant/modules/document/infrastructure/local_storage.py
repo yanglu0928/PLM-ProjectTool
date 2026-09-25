@@ -361,6 +361,45 @@ class LocalFileStorage:
             return "STAGE_REMOVED"
         raise LocalStorageError()
 
+    def verified_registered_abort_shape(self, staging_locator: str,
+                                        final_locator: str, *,
+                                        expected_sha256: bytes,
+                                        expected_size: int, max_bytes: int) -> str:
+        """Verify every existing path without deleting, for a fenced DB candidate."""
+        shape = self.inspect_recovery(
+            staging_locator, final_locator, expected_sha256=expected_sha256,
+            expected_size=expected_size, max_bytes=max_bytes,
+        ).shape
+        if shape == "NONE":
+            return shape
+        if shape == "STAGE_ONLY":
+            self.verify_content(staging_locator, expected_sha256=expected_sha256,
+                                expected_size=expected_size, max_bytes=max_bytes)
+            return shape
+        if shape == "FINAL_VERIFIED":
+            return shape
+        if shape == "LINKED_PAIR":
+            stage_path, final_path = self._path(staging_locator), self._path(final_locator)
+            before_stage = _checked_file(stage_path, link_count=2)
+            before_final = _checked_file(final_path, link_count=2)
+            if (before_stage.st_dev, before_stage.st_ino) != (before_final.st_dev, before_final.st_ino):
+                raise LocalStorageError()
+            self._verify_content(staging_locator, expected_sha256=expected_sha256,
+                                 expected_size=expected_size, max_bytes=max_bytes,
+                                 link_count=2)
+            self._verify_content(final_locator, expected_sha256=expected_sha256,
+                                 expected_size=expected_size, max_bytes=max_bytes,
+                                 link_count=2)
+            after_stage = _checked_file(stage_path, link_count=2)
+            after_final = _checked_file(final_path, link_count=2)
+            if (self._identity(before_stage) != self._identity(after_stage)
+                    or self._identity(before_final) != self._identity(after_final)
+                    or (after_stage.st_dev, after_stage.st_ino) !=
+                       (after_final.st_dev, after_final.st_ino)):
+                raise LocalStorageError()
+            return shape
+        raise LocalStorageError()
+
     @staticmethod
     def _identity(info: os.stat_result) -> tuple[int, int, int, int, int]:
         return (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_nlink)

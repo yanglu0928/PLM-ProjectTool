@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import tempfile
 import uuid
 from dataclasses import replace
@@ -19,7 +20,10 @@ from plm_assistant.modules.document.application.abort_upload import (
     AbortUpload, AbortUploadService, UploadAbortError,
 )
 from plm_assistant.modules.document.application.inspect_registered_abort import InspectRegisteredAbortService
-from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage
+from plm_assistant.modules.document.application.cleanup_registered_abort import (
+    CleanupRegisteredAbort, CleanupRegisteredAbortService, RegisteredAbortCleanupError,
+)
+from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage, LocalStorageError
 from plm_assistant.modules.document.infrastructure.upload_operation_gate import LocalUploadOperationGate
 from plm_assistant.modules.document.infrastructure.upload_abort_repository import SqlAlchemyUploadAbortRepository
 from plm_assistant.modules.document.infrastructure.registered_abort_read_repository import SqlAlchemyRegisteredAbortReadRepository
@@ -42,6 +46,15 @@ class Access:
     def require_in_transaction(self, tx, *, actor_id, scope, project_id, upload_id, operation):
         if actor_id != self.actor or operation != "V1_DOCUMENT_UPLOAD_ABORT":
             raise PermissionError("synthetic actor denied")
+
+
+class MaintenanceAccess:
+    def __init__(self, actor):
+        self.actor = actor
+
+    def require_in_transaction(self, tx, *, actor_id, scope, project_id, upload_id, operation):
+        if actor_id != self.actor or operation != "V1_DOCUMENT_REGISTERED_ABORT_CLEANUP":
+            raise PermissionError("synthetic maintenance actor denied")
 
 
 class Guard:
@@ -124,6 +137,21 @@ def verify() -> None:
                 repository=SqlAlchemyRegisteredAbortReadRepository(),
                 storage=storage, operation_gate=operation_gate,
             )
+
+            def cleanup_service(audit_override=None, storage_override=None):
+                return CleanupRegisteredAbortService(
+                    unit_of_work=runtime.unit_of_work,
+                    access=MaintenanceAccess(actor),
+                    repository=SqlAlchemyRegisteredAbortReadRepository(),
+                    audit=audit_override or AuditService(SqlAlchemyAuditRepository()),
+                    storage=storage_override or storage,
+                    operation_gate=operation_gate,
+                )
+
+            def cleanup_command(upload_id, *, cleanup_actor=None):
+                return CleanupRegisteredAbort(
+                    upload_id, "PROJECT", project, cleanup_actor or actor, uuid.uuid4(),
+                )
             created, _, _, _ = seed(ready=False)
             created_command = AbortUpload(created, "PROJECT", project, actor, uuid.uuid4())
             assert worker.abort(created_command, idempotency_key="abort-created-01").cleanup_pending is False
@@ -180,7 +208,104 @@ def verify() -> None:
             inspected = inspector.inspect(final_only)
             assert inspected.shape == "FINAL_VERIFIED" and not inspected.eligible
             assert (root / final_locator).is_file()
-            print("PASS: abort/replay/denial/rollback and registered read-only inspection; retained/final-only files untouched")
+
+            cleaner = cleanup_service()
+            expect(PermissionError, lambda: cleaner.cleanup_one(
+                cleanup_command(upload, cleanup_actor=other)))
+            expect(RegisteredAbortCleanupError, lambda: cleaner.cleanup_one(
+                cleanup_command(created)), "CONFLICT_STATE")
+            assert cleaner.cleanup_one(cleanup_command(upload))
+            assert not cleaner.cleanup_one(cleanup_command(upload))
+            assert not (root / stage).exists()
+            with connect(name) as db:
+                assert db.execute("SELECT file_state FROM plm.doc_file_objects WHERE file_object_id=%s", (upload,)).fetchone() == ("REMOVED",)
+                assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='DOCUMENT_REGISTERED_ABORT_CLEANUP_REQUESTED'", (upload,)).fetchone() == (1,)
+                assert db.execute("SELECT count(*) FROM plm.doc_file_state_events WHERE file_object_id=%s AND to_state='REMOVED'", (upload,)).fetchone() == (1,)
+
+            expect(RuntimeError, lambda: cleanup_service(audit_override=FailingAudit()).cleanup_one(
+                cleanup_command(rollback)))
+            assert (root / rollback_stage).is_file()
+            with connect(name) as db:
+                assert db.execute("SELECT file_state FROM plm.doc_file_objects WHERE file_object_id=%s", (rollback,)).fetchone() == ("CLEANUP_PENDING",)
+            assert cleaner.cleanup_one(cleanup_command(rollback))
+            assert cleaner.cleanup_one(cleanup_command(final_only))
+            assert not (root / final_locator).exists()
+
+            linked, linked_stage, linked_final, _ = seed(ready=True)
+            assert worker.abort(replace(command_abort, upload_id=linked,
+                                        trace_id=uuid.uuid4()),
+                                idempotency_key="abort-linked-file-01").cleanup_pending
+            (root / linked_final).parent.mkdir(parents=True, exist_ok=True)
+            os.link(root / linked_stage, root / linked_final)
+
+            class OneStepThenFailure:
+                verified_registered_abort_shape = storage.verified_registered_abort_shape
+
+                def __init__(self):
+                    self.calls = 0
+
+                def discard_one_registered_aborted(self, *args, **kwargs):
+                    self.calls += 1
+                    if self.calls == 2:
+                        raise LocalStorageError()
+                    return storage.discard_one_registered_aborted(*args, **kwargs)
+
+            expect(RegisteredAbortCleanupError, lambda: cleanup_service(
+                storage_override=OneStepThenFailure()).cleanup_one(cleanup_command(linked)),
+                "FILE_CONTENT_UNAVAILABLE")
+            assert not (root / linked_stage).exists() and (root / linked_final).is_file()
+            with connect(name) as db:
+                assert db.execute("SELECT file_state FROM plm.doc_file_objects WHERE file_object_id=%s", (linked,)).fetchone() == ("CLEANUP_PENDING",)
+            assert cleaner.cleanup_one(cleanup_command(linked))
+            with connect(name) as db:
+                assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='DOCUMENT_REGISTERED_ABORT_CLEANUP_REQUESTED'", (linked,)).fetchone() == (1,)
+
+            absent, absent_stage, _, _ = seed(ready=True)
+            assert worker.abort(replace(command_abort, upload_id=absent,
+                                        trace_id=uuid.uuid4()),
+                                idempotency_key="abort-absent-file-01").cleanup_pending
+
+            class FailCompletionAudit:
+                def __init__(self):
+                    self.real = AuditService(SqlAlchemyAuditRepository())
+
+                def append(self, tx, event):
+                    if event.action == "DOCUMENT_REGISTERED_ABORT_CLEANUP_COMPLETED":
+                        raise RuntimeError("synthetic completion audit rollback")
+                    return self.real.append(tx, event)
+
+            expect(RuntimeError, lambda: cleanup_service(
+                audit_override=FailCompletionAudit()).cleanup_one(cleanup_command(absent)))
+            assert not (root / absent_stage).exists()
+            with connect(name) as db:
+                assert db.execute("SELECT file_state FROM plm.doc_file_objects WHERE file_object_id=%s", (absent,)).fetchone() == ("CLEANUP_PENDING",)
+                assert db.execute("SELECT count(*) FROM plm.doc_file_state_events WHERE file_object_id=%s AND to_state='REMOVED'", (absent,)).fetchone() == (0,)
+            assert cleaner.cleanup_one(cleanup_command(absent))
+            with connect(name) as db:
+                assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='DOCUMENT_REGISTERED_ABORT_CLEANUP_ABSENT'", (absent,)).fetchone() == (1,)
+
+            missing_first, missing_stage, _, _ = seed(ready=True)
+            assert worker.abort(replace(command_abort, upload_id=missing_first,
+                                        trace_id=uuid.uuid4()),
+                                idempotency_key="abort-missing-first-01").cleanup_pending
+            os.unlink(root / missing_stage)
+            expect(RegisteredAbortCleanupError, lambda: cleaner.cleanup_one(
+                cleanup_command(missing_first)), "FILE_CONTENT_UNAVAILABLE")
+            with connect(name) as db:
+                assert db.execute("SELECT file_state FROM plm.doc_file_objects WHERE file_object_id=%s", (missing_first,)).fetchone() == ("CLEANUP_PENDING",)
+                assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='DOCUMENT_REGISTERED_ABORT_CLEANUP_REQUESTED'", (missing_first,)).fetchone() == (0,)
+
+            unsafe, unsafe_stage, _, _ = seed(ready=True)
+            assert worker.abort(replace(command_abort, upload_id=unsafe,
+                                        trace_id=uuid.uuid4()),
+                                idempotency_key="abort-unsafe-link-01").cleanup_pending
+            os.link(root / unsafe_stage, root / "synthetic-extra-hardlink")
+            expect(RegisteredAbortCleanupError, lambda: cleaner.cleanup_one(
+                cleanup_command(unsafe)), "FILE_CONTENT_UNAVAILABLE")
+            assert (root / unsafe_stage).is_file()
+            with connect(name) as db:
+                assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='DOCUMENT_REGISTERED_ABORT_CLEANUP_REQUESTED'", (unsafe,)).fetchone() == (0,)
+            print("PASS: registered abort cleanup staged/final/linked, crash-step retry, Audit rollback/absence reconciliation, authorization")
     finally:
         if runtime is not None:
             runtime.dispose()
