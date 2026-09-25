@@ -2171,3 +2171,15 @@
 |Reason|三命令具有同一安全协议，但状态机与操作作用域由 Project Service 分别执行；HTTP 不自行判断授权或重建首次响应。|
 |Impact|Project 可选 Router、应用工厂注入点、测试与文档；无新 Schema/Migration/依赖或 Breaking API。默认和当前 Windows 组合不挂载。|
 |Rollback|移除 Router 注入恢复 404，已提交的状态事件、审计与幂等快照保持不变。|
+
+## DEC-20260925-074
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-074|
+|Date|2026-09-25|
+|WBS|PRJ-04-A12-P03 Windows 显式平台成员状态组合|
+|Decision|仅在 `--platform` 和 `--platform-write` 已有信任源与 Schema 门禁后装配成员状态服务及三个路由；默认登录模式保持 404。|
+|Reason|沿用当前 Project 组合的 Session、License、ProjectManager、Audit 和同事务幂等，不增加额外的无保护入口。|
+|Impact|Windows 平台组合与测试；无新 Schema/Migration/依赖和 Breaking API。|
+|Rollback|移除平台组合注入恢复 404；既有事件、审计和快照保留。|

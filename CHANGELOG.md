@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PRJ-04-A12-P03 在 Windows 显式 `--platform`/`--platform-write` 组合接入成员暂停/恢复/移除，复用当前 Session、License、ProjectManager、Audit 和同事务幂等；默认登录模式仍 404。Windows 11 后端 421/421、PostgreSQL 18 临时库两种组合三状态真实 Session/重放/合成 License 与缺信任源失败关闭、开发 wheel PASS。无新 Migration/依赖，目标库需 `0017`；正式目标账户材料、Server 2025/Debian 13 与最终程序包未完成。
+
 - 2026-09-25：`0.1.0.dev0`/PRJ-04-A12-P02 新增可选 Project Member 暂停/恢复/移除 HTTP，按冻结路径使用可信 Origin、Session/CSRF、Idempotency-Key 与强 If-Match；200 返回首次安全 MemberView/ETag，重放不重复 Audit。Windows 11 后端 421/421、PostgreSQL 18 临时库三状态 HTTP 重放/冲突/跨项目/许可拒绝、开发 wheel PASS。无新 Migration/依赖；目标库需升至 `0017`。默认和当前 Windows 平台组合仍 404，正式信任源、Server 2025/Debian 13 与最终程序包未完成。
 
 - 2026-09-25：`0.1.0.dev0`/PRJ-04-A12-P01 按 CR-PRJ-003 增加 Project Member 暂停/恢复/移除首次响应不可变快照及内部同事务幂等；三操作独立作用域，同 Key 重放原 MemberView，异载荷冲突。Windows 11 后端 418/418、PostgreSQL 18 临时库空/已有数据升级、三状态并发、回滚、历史响应/归档重放、ORM 差异及降级保护、开发 wheel PASS。新增 Migration `20260925_0017`，目标库升级前须备份并执行至 head；不增依赖。公开状态 HTTP、正式信任源、Server 2025/Debian 13 与最终程序包未完成。

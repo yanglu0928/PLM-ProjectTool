@@ -6,6 +6,9 @@ import hashlib
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import Mock, patch as mock_patch
 
 import psycopg
 from alembic import command
@@ -16,12 +19,18 @@ from sqlalchemy.engine import URL
 from plm_assistant.modules.audit.application.public import AuditService
 from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
 from plm_assistant.entrypoints.api import create_app
+from plm_assistant.entrypoints.production_login import (
+    create_production_platform_app, create_production_platform_write_app,
+)
 from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
 from plm_assistant.modules.auth.application.session_service import SessionError
 from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
 from plm_assistant.modules.project.api.change_member_state import create_project_member_state_router
 from plm_assistant.modules.auth.infrastructure.project_member_patch_access import SqlAlchemyProjectMemberPatchAccess
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
+from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
+from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
+from plm_assistant.modules.project.api.member_list_cursor import MemberListCursorCodec
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
 from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
@@ -107,6 +116,8 @@ def main():
                 concurrent_target = user(db, "Synthetic Concurrent Target")
                 audit_target = user(db, "Synthetic Audit Target")
                 http_target = user(db, "Synthetic HTTP Target")
+                platform_target = user(db, "Synthetic Platform Target")
+                platform_write_target = user(db, "Synthetic Platform Write Target")
                 p1 = db.execute("INSERT INTO plm.prj_projects(project_code,project_code_normalized,name,created_by) VALUES ('P1','p1','First',%s) RETURNING project_id", (manager,)).fetchone()[0]
                 p2 = db.execute("INSERT INTO plm.prj_projects(project_code,project_code_normalized,name,created_by) VALUES ('P2','p2','Second',%s) RETURNING project_id", (manager,)).fetchone()[0]
                 d1 = db.execute("INSERT INTO plm.prj_departments(project_id,department_code,department_code_normalized,name) VALUES (%s,'D1','d1','First') RETURNING department_id", (p1,)).fetchone()[0]
@@ -122,6 +133,8 @@ def main():
                 concurrent_member = db.execute("INSERT INTO plm.prj_project_members(project_id,user_id,department_id,project_role) VALUES (%s,%s,%s,'CUSTOMER_MEMBER') RETURNING project_member_id", (p1, concurrent_target, d1)).fetchone()[0]
                 audit_member = db.execute("INSERT INTO plm.prj_project_members(project_id,user_id,department_id,project_role) VALUES (%s,%s,%s,'CUSTOMER_MEMBER') RETURNING project_member_id", (p1, audit_target, d1)).fetchone()[0]
                 http_member = db.execute("INSERT INTO plm.prj_project_members(project_id,user_id,department_id,project_role) VALUES (%s,%s,%s,'CUSTOMER_MEMBER') RETURNING project_member_id", (p1, http_target, d1)).fetchone()[0]
+                platform_member = db.execute("INSERT INTO plm.prj_project_members(project_id,user_id,department_id,project_role) VALUES (%s,%s,%s,'CUSTOMER_MEMBER') RETURNING project_member_id", (p1, platform_target, d1)).fetchone()[0]
+                platform_write_member = db.execute("INSERT INTO plm.prj_project_members(project_id,user_id,department_id,project_role) VALUES (%s,%s,%s,'CUSTOMER_MEMBER') RETURNING project_member_id", (p1, platform_write_target, d1)).fetchone()[0]
             runtime = create_database_runtime(url)
             try:
                 guard = Guard()
@@ -315,6 +328,62 @@ def main():
                 with connect(name) as db:
                     assert db.execute("SELECT state,lock_version FROM plm.prj_project_members WHERE project_member_id=%s", (http_member,)).fetchone() == ("REMOVED", 3)
                     assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s", (http_member,)).fetchone()[0] == 3
+                settings = BootstrapSettings(
+                    data_root=Path.cwd(), trusted_origins=("http://localhost",),
+                )
+                with mock_patch("plm_assistant.entrypoints.production_login.read_database_url",
+                                return_value=url), mock_patch(
+                                "plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services",
+                                return_value=SimpleNamespace(guard=guard)), mock_patch(
+                                "plm_assistant.entrypoints.production_login.create_windows_secret_list_cursor_codec",
+                                return_value=SecretListCursorCodec(b"q" * 32)), mock_patch(
+                                "plm_assistant.entrypoints.production_login.create_windows_project_member_cursor_codec",
+                                return_value=MemberListCursorCodec(b"m" * 32)), mock_patch(
+                                "plm_assistant.entrypoints.windows_secret_write.create_windows_secret_write_service",
+                                return_value=Mock()):
+                    for factory, target_member in (
+                        (create_production_platform_app, platform_member),
+                        (create_production_platform_write_app, platform_write_member),
+                    ):
+                        platform = factory(settings)
+                        with TestClient(platform, base_url="http://localhost") as client:
+                            path = f"/api/v1/projects/{p1}/members/{target_member}"
+                            platform_headers = {
+                                "origin": "http://localhost",
+                                "cookie": "plm_session=" + token1.hex(),
+                                "x-csrf-token": CSRF.hex(),
+                            }
+                            for operation, version, state in (
+                                ("suspend", 0, "SUSPENDED"),
+                                ("resume", 1, "ACTIVE"),
+                                ("remove", 2, "REMOVED"),
+                            ):
+                                request_headers = {
+                                    **platform_headers, "if-match": f'"v{version}"',
+                                    "idempotency-key": f"platform-{target_member}-{operation}",
+                                }
+                                first = client.post(path + ":" + operation, headers=request_headers)
+                                replay = client.post(path + ":" + operation, headers=request_headers)
+                                assert first.status_code == replay.status_code == 200, (first.text, replay.text)
+                                assert first.json()["data"] == replay.json()["data"]
+                                assert first.json()["data"]["state"] == state
+                            guard.valid = False
+                            assert client.post(path + ":remove", headers={
+                                **platform_headers, "if-match": '"v2"',
+                                "idempotency-key": f"platform-{target_member}-remove",
+                            }).status_code == 403
+                            guard.valid = True
+                        with connect(name) as db:
+                            assert db.execute("SELECT state,lock_version FROM plm.prj_project_members WHERE project_member_id=%s", (target_member,)).fetchone() == ("REMOVED", 3)
+                            assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s", (target_member,)).fetchone()[0] == 3
+                    with mock_patch("plm_assistant.entrypoints.production_login.create_windows_project_member_cursor_codec",
+                                    side_effect=RuntimeError("synthetic missing member key")):
+                        try:
+                            create_production_platform_app(settings)
+                        except Exception as exc:
+                            assert str(exc) == "production login unavailable"
+                        else:
+                            raise AssertionError("missing trust source did not fail closed")
                 # One manager can leave while another remains; the last one cannot.
                 first_manager = action("suspend", member_id=pm2)
                 assert first_manager.state == "SUSPENDED"
@@ -347,7 +416,7 @@ def main():
                         ("PROJECT_MEMBER_RESUMED", "SUSPENDED", "ACTIVE"),
                         ("PROJECT_MEMBER_REMOVED", "ACTIVE", "REMOVED"),
                     ], actions
-                print("PASS: empty/existing-data migration, 3 state HTTP replay/security, concurrent one-write, history snapshots, rollback and downgrade guard")
+                print("PASS: empty/existing-data migration, 3 state HTTP and Windows explicit platform replay/security, concurrent one-write, snapshots, rollback and downgrade guard")
             finally:
                 runtime.dispose()
         finally:
