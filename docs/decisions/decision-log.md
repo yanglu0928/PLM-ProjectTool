@@ -2291,3 +2291,15 @@
 |Reason|复用现有 Session、ProjectManager、License、Audit 和强版本服务，不新增无保护入口。|
 |Impact|Windows 平台组合与契约/隔离 PostgreSQL 验证；无 Schema/Migration、依赖或 Breaking API。|
 |Rollback|移除平台 Router 注入恢复 404；已完成的修改与审计记录保留。|
+
+## DEC-20260925-084
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-084|
+|Date|2026-09-25|
+|WBS|PRJ-04-A16-P01 Department 停用持久幂等与快照|
+|Decision|按 CR-PRJ-005 复用 `0015` 通用收据，新增 Project-owned 不可变首次 DepartmentView 快照；旧非幂等内部命令保留，新增独立幂等入口。|
+|Reason|停用后版本/状态改变，读取当前部门无法重放冻结 API-01 的首次 200 响应。|
+|Impact|Migration `20260925_0019`、ORM、Repository、Service、错误码与测试；不开放 HTTP，不改变成员在用规则。|
+|Rollback|新表为空可降至 `0018`；已有快照时拒绝降级并保留幂等证据。|

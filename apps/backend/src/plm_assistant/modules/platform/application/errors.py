@@ -60,6 +60,9 @@ COMMON_ERRORS: dict[str, ErrorSpec] = {
     "PROJECT_ARCHIVED": ErrorSpec(
         "PROJECT_ARCHIVED", 409, "项目已归档，不允许修改。"
     ),
+    "PROJECT_DEPARTMENT_IN_USE": ErrorSpec(
+        "PROJECT_DEPARTMENT_IN_USE", 409, "部门仍有在用成员，不能停用。"
+    ),
 }
 
 

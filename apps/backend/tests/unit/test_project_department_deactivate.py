@@ -11,6 +11,7 @@ from plm_assistant.modules.project.application.deactivate_department import (
     ProjectDepartmentDeactivateService,
 )
 from plm_assistant.modules.project.application.read_departments import DepartmentFacts
+from plm_assistant.modules.platform.application.idempotency import IdempotencyError
 
 
 class Tx:
@@ -66,6 +67,32 @@ class Repo:
         self.kwargs = kwargs
         return self.facts
 
+    def save_deactivate_result(self, _tx, *, result_id, project_id, view, version):
+        self.snapshot = (result_id, project_id, view, version)
+
+    def get_deactivate_result(self, _tx, *, result_id, project_id, department_id):
+        saved_id, saved_project, view, _ = self.snapshot
+        return view if (saved_id, saved_project, view.department_id) == (
+            result_id, project_id, department_id,
+        ) else None
+
+
+class Receipts:
+    def __init__(self):
+        self.saved = None
+
+    def reserve(self, _tx, *, scope, request_fingerprint):
+        self.fingerprint = request_fingerprint
+        if self.saved is None:
+            return None
+        saved_scope, saved_fingerprint, result = self.saved
+        if scope != saved_scope or request_fingerprint != saved_fingerprint:
+            raise IdempotencyError("CONFLICT_IDEMPOTENCY")
+        return result
+
+    def complete(self, _tx, *, scope, result):
+        self.saved = (scope, self.fingerprint, result)
+
 
 class Audit:
     def __init__(self, state):
@@ -97,6 +124,8 @@ class ProjectDepartmentDeactivateTests(unittest.TestCase):
             b"s" * 32, b"c" * 32, uuid.uuid4(), self.project_id,
             self.department_id, 0,
         )
+        self.receipts = Receipts()
+        self.service._receipts = self.receipts
 
     def test_deactivation_is_audited(self):
         view = self.service.deactivate(self.command)
@@ -141,6 +170,30 @@ class ProjectDepartmentDeactivateTests(unittest.TestCase):
             self.service.deactivate(self.command)
         self.assertEqual(caught.exception.code, "PROJECT_UNAVAILABLE")
         self.assertEqual(self.state["commits"], 0)
+
+    def test_idempotent_replay_keeps_first_result_and_rechecks_access(self):
+        first = self.service.deactivate_idempotent(
+            self.command, idempotency_key="department-deactivate-key-001",
+        )
+        self.repo.facts = replace(self.repo.facts, name="Changed after first result")
+        replay = self.service.deactivate_idempotent(
+            self.command, idempotency_key="department-deactivate-key-001",
+        )
+        self.assertEqual(first, replay)
+        self.assertEqual(self.repo.calls, 1)
+        self.assertEqual(self.state["commits"], 1)
+        with self.assertRaises(ProjectDepartmentDeactivateError) as caught:
+            self.service.deactivate_idempotent(
+                replace(self.command, expected_version=1),
+                idempotency_key="department-deactivate-key-001",
+            )
+        self.assertEqual(caught.exception.code, "CONFLICT_IDEMPOTENCY")
+        self.auth_facts.role = "CUSTOMER_MANAGER"
+        with self.assertRaises(ProjectDepartmentDeactivateError) as caught:
+            self.service.deactivate_idempotent(
+                self.command, idempotency_key="department-deactivate-key-001",
+            )
+        self.assertEqual(caught.exception.code, "RESOURCE_NOT_FOUND")
 
 
 if __name__ == "__main__":

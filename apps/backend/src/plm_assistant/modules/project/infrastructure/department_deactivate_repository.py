@@ -4,15 +4,41 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import func, select, update
+from sqlalchemy import func, insert, select, update
 from sqlalchemy.orm import Session
 
 from plm_assistant.modules.project.application.deactivate_department import ProjectDepartmentDeactivateError
-from plm_assistant.modules.project.application.read_departments import DepartmentFacts
-from plm_assistant.modules.project.infrastructure.orm import DepartmentRow, ProjectMemberRow
+from plm_assistant.modules.project.application.read_departments import DepartmentFacts, DepartmentView
+from plm_assistant.modules.project.infrastructure.orm import (
+    DepartmentRow, ProjectDepartmentDeactivateResultRow, ProjectMemberRow,
+)
 
 
 class SqlAlchemyProjectDepartmentDeactivateRepository:
+    def save_deactivate_result(self, transaction: object, *, result_id: uuid.UUID,
+                               project_id: uuid.UUID, view: DepartmentView,
+                               version: int) -> None:
+        transaction.session.execute(insert(ProjectDepartmentDeactivateResultRow).values(
+            result_id=result_id, project_id=project_id,
+            department_id=view.department_id, code=view.code, name=view.name,
+            created_at=view.created_at, lock_version=version,
+        ))
+
+    def get_deactivate_result(self, transaction: object, *, result_id: uuid.UUID,
+                              project_id: uuid.UUID,
+                              department_id: uuid.UUID) -> DepartmentView | None:
+        row = transaction.session.execute(select(ProjectDepartmentDeactivateResultRow).where(
+            ProjectDepartmentDeactivateResultRow.result_id == result_id,
+            ProjectDepartmentDeactivateResultRow.project_id == project_id,
+            ProjectDepartmentDeactivateResultRow.department_id == department_id,
+        )).scalar_one_or_none()
+        if row is None:
+            return None
+        return DepartmentView(
+            row.department_id, row.code, row.name, "INACTIVE", row.created_at,
+            f'"v{row.lock_version}"',
+        )
+
     def deactivate(self, transaction: object, *, project_id: uuid.UUID,
                    department_id: uuid.UUID, expected_version: int) -> DepartmentFacts:
         session = transaction.session  # type: ignore[attr-defined]

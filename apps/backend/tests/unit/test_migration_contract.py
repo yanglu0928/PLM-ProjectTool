@@ -21,7 +21,7 @@ class MigrationContractTests(unittest.TestCase):
                 "postgresql+psycopg://app@127.0.0.1/plm"
             )
         )
-        self.assertEqual(scripts.get_heads(), ["20260925_0018"])
+        self.assertEqual(scripts.get_heads(), ["20260925_0019"])
         revision = scripts.get_revision("20260924_0001")
         self.assertIsNone(revision.down_revision)
         self.assertEqual(scripts.get_revision("20260924_0002").down_revision, "20260924_0001")
@@ -41,6 +41,7 @@ class MigrationContractTests(unittest.TestCase):
         self.assertEqual(scripts.get_revision("20260925_0016").down_revision, "20260925_0015")
         self.assertEqual(scripts.get_revision("20260925_0017").down_revision, "20260925_0016")
         self.assertEqual(scripts.get_revision("20260925_0018").down_revision, "20260925_0017")
+        self.assertEqual(scripts.get_revision("20260925_0019").down_revision, "20260925_0018")
 
     def test_config_keeps_database_url_out_of_main_options(self) -> None:
         secret = "migration-secret-must-not-leak"

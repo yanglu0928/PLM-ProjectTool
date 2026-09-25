@@ -133,3 +133,16 @@ class ProjectAuthorizationService:
                     transaction, target="MEMBER", resource_id=member_id,
                 ) != project_id):
             raise ProjectAuthorizationError("RESOURCE_NOT_FOUND")
+
+    def require_department_deactivate_replay_in_transaction(self, transaction: object, *,
+                                                            user_id: uuid.UUID, project_id: uuid.UUID,
+                                                            department_id: uuid.UUID) -> None:
+        """Check current manager and Department ownership for a completed command."""
+        self.require_archive_replay_in_transaction(
+            transaction, user_id=user_id, project_id=project_id,
+        )
+        if (type(department_id) is not uuid.UUID or department_id.int == 0
+                or self._repository.owner_project_id(
+                    transaction, target="DEPARTMENT", resource_id=department_id,
+                ) != project_id):
+            raise ProjectAuthorizationError("RESOURCE_NOT_FOUND")

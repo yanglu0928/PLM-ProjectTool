@@ -11,6 +11,7 @@ import psycopg
 from alembic import command
 from psycopg import sql
 from sqlalchemy.engine import URL
+from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
 
 from plm_assistant.modules.audit.application.public import AuditService
 from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
@@ -78,7 +79,17 @@ def main():
         admin.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(name)))
         try:
             url = URL.create("postgresql+psycopg", username=USER, host=HOST, port=PORT, database=name)
-            command.upgrade(create_migration_config(url), "head")
+            migration = create_migration_config(url)
+            command.upgrade(migration, "20260925_0018")
+            with connect(name) as existing_db:
+                user(existing_db, "Synthetic Existing Before Upgrade")
+            command.upgrade(migration, "head")
+            with connect(name) as upgraded:
+                assert upgraded.execute("SELECT count(*) FROM plm.auth_users").fetchone()[0] == 1
+                assert upgraded.execute("SELECT count(*) FROM plm.prj_department_deactivate_results").fetchone()[0] == 0
+            command.downgrade(migration, "20260925_0018")
+            command.upgrade(migration, "head")
+            command.check(migration)
             runtime = create_database_runtime(url)
             try:
                 with connect(name) as db:
@@ -115,6 +126,10 @@ def main():
                 )
                 service = ProjectDepartmentDeactivateService(
                     **deactivation_kwargs, audit=AuditService(SqlAlchemyAuditRepository()),
+                )
+                idempotent = ProjectDepartmentDeactivateService(
+                    **deactivation_kwargs, audit=AuditService(SqlAlchemyAuditRepository()),
+                    receipts=SqlAlchemyIdempotencyReceipts(),
                 )
                 member_service = ProjectMemberCreateService(
                     **common, access=SqlAlchemyProjectMemberCreateAccess(),
@@ -156,6 +171,80 @@ def main():
                     assert db.execute("SELECT state,lock_version FROM plm.prj_departments WHERE department_id=%s", (deps["free"],)).fetchone() == ("ACTIVE", 0)
                     assert db.execute("SELECT action,before_state,after_state FROM plm.aud_events WHERE target_object_id=%s", (deps["removed"],)).fetchone() == ("PROJECT_DEPARTMENT_DEACTIVATED", "ACTIVE", "INACTIVE")
 
+                idem_command = DeactivateProjectDepartment(
+                    token, CSRF, uuid.uuid4(), p1, deps["free"], 0,
+                )
+                first = idempotent.deactivate_idempotent(
+                    idem_command, idempotency_key="department-deactivate-first-001",
+                )
+                assert (first.state, first.etag) == ("INACTIVE", '"v1"')
+                with connect(name) as db:
+                    db.execute("UPDATE plm.prj_departments SET name='Changed After Deactivation' WHERE department_id=%s", (deps["free"],))
+                assert idempotent.deactivate_idempotent(
+                    idem_command, idempotency_key="department-deactivate-first-001",
+                ) == first
+                denied("CONFLICT_IDEMPOTENCY", lambda: idempotent.deactivate_idempotent(
+                    DeactivateProjectDepartment(token, CSRF, uuid.uuid4(), p1, deps["free"], 1),
+                    idempotency_key="department-deactivate-first-001",
+                ))
+                denied("RESOURCE_NOT_FOUND", lambda: idempotent.deactivate_idempotent(
+                    DeactivateProjectDepartment(cm_token, CSRF, uuid.uuid4(), p1, deps["free"], 0),
+                    idempotency_key="department-deactivate-first-001",
+                ))
+                guard.valid = False
+                try:
+                    idempotent.deactivate_idempotent(
+                        idem_command, idempotency_key="department-deactivate-first-001",
+                    )
+                except RuntimeError as exc:
+                    assert str(exc) == "synthetic License failure"
+                else:
+                    raise AssertionError("License failure bypassed on replay")
+                guard.valid = True
+                with connect(name) as db:
+                    assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='PROJECT_DEPARTMENT_DEACTIVATED'", (deps["free"],)).fetchone()[0] == 1
+                    assert db.execute("SELECT count(*) FROM plm.prj_department_deactivate_results WHERE department_id=%s", (deps["free"],)).fetchone()[0] == 1
+                    try:
+                        db.execute("UPDATE plm.prj_department_deactivate_results SET name='Tampered' WHERE department_id=%s", (deps["free"],))
+                    except psycopg.errors.RaiseException:
+                        pass
+                    else:
+                        raise AssertionError("deactivate snapshot unexpectedly mutable")
+
+                with connect(name) as db:
+                    concurrent = db.execute("INSERT INTO plm.prj_departments(project_id,department_code,department_code_normalized,name) VALUES (%s,'CONCURRENT','concurrent','Concurrent') RETURNING department_id", (p1,)).fetchone()[0]
+                concurrent_command = DeactivateProjectDepartment(
+                    token, CSRF, uuid.uuid4(), p1, concurrent, 0,
+                )
+                with ThreadPoolExecutor(max_workers=2) as pool:
+                    repeated = list(pool.map(lambda _: idempotent.deactivate_idempotent(
+                        concurrent_command, idempotency_key="department-deactivate-concurrent-001",
+                    ), range(2)))
+                assert repeated[0] == repeated[1]
+                with connect(name) as db:
+                    assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='PROJECT_DEPARTMENT_DEACTIVATED'", (concurrent,)).fetchone()[0] == 1
+                    assert db.execute("SELECT count(*) FROM plm.prj_department_deactivate_results WHERE department_id=%s", (concurrent,)).fetchone()[0] == 1
+
+                with connect(name) as db:
+                    rollback = db.execute("INSERT INTO plm.prj_departments(project_id,department_code,department_code_normalized,name) VALUES (%s,'ROLLBACK','rollback','Rollback') RETURNING department_id", (p1,)).fetchone()[0]
+                failed_idempotent = ProjectDepartmentDeactivateService(
+                    **deactivation_kwargs, audit=FailedAudit(),
+                    receipts=SqlAlchemyIdempotencyReceipts(),
+                )
+                try:
+                    failed_idempotent.deactivate_idempotent(
+                        DeactivateProjectDepartment(token, CSRF, uuid.uuid4(), p1, rollback, 0),
+                        idempotency_key="department-deactivate-rollback-001",
+                    )
+                except RuntimeError as exc:
+                    assert str(exc) == "synthetic Audit failure"
+                else:
+                    raise AssertionError("idempotent Audit failure bypassed")
+                with connect(name) as db:
+                    assert db.execute("SELECT state,lock_version FROM plm.prj_departments WHERE department_id=%s", (rollback,)).fetchone() == ("ACTIVE", 0)
+                    assert db.execute("SELECT count(*) FROM plm.prj_department_deactivate_results WHERE department_id=%s", (rollback,)).fetchone()[0] == 0
+                    assert db.execute("SELECT count(*) FROM plm.plt_idempotency_receipts WHERE operation='V1_PROJECT_DEPARTMENT_DEACTIVATE' AND project_id=%s AND result_ref_id IS NULL", (p1,)).fetchone()[0] == 0
+
                 def compete_deactivate():
                     try:
                         return deactivate("race").state
@@ -181,7 +270,16 @@ def main():
                     assert (state == "INACTIVE" and active_members == 0) or (state == "ACTIVE" and active_members == 1)
                     db.execute("UPDATE plm.prj_projects SET state='ARCHIVED' WHERE project_id=%s", (p1,))
                 denied("PROJECT_ARCHIVED", lambda: deactivate("free"))
-                print("PASS: ACTIVE/SUSPENDED references blocked, REMOVED history allowed, version/state/scope/License, Audit rollback, concurrent assignment/deactivation and archived denial")
+                assert idempotent.deactivate_idempotent(
+                    idem_command, idempotency_key="department-deactivate-first-001",
+                ) == first
+                try:
+                    command.downgrade(migration, "20260925_0018")
+                except RuntimeError as exc:
+                    assert "department deactivate results exist" in str(exc)
+                else:
+                    raise AssertionError("nonempty deactivate result downgrade should fail")
+                print("PASS: migration/ORM, idempotent Department deactivation replay/concurrency/rollback, member-in-use and archived denial")
             finally:
                 runtime.dispose()
         finally:
