@@ -19,6 +19,7 @@ from plm_assistant.modules.document.application.abort_upload import (
     AbortUpload, AbortUploadService, UploadAbortError,
 )
 from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage
+from plm_assistant.modules.document.infrastructure.upload_operation_gate import LocalUploadOperationGate
 from plm_assistant.modules.document.infrastructure.upload_abort_repository import SqlAlchemyUploadAbortRepository
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
@@ -77,6 +78,7 @@ def verify() -> None:
             root = Path(temporary) / "data"
             root.mkdir()
             storage = LocalFileStorage(root)
+            operation_gate = LocalUploadOperationGate(root)
             with connect(name) as db:
                 actor = db.execute("INSERT INTO plm.auth_users(username_display,username_normalized) VALUES ('Abort Actor','abort actor') RETURNING user_id").fetchone()[0]
                 other = db.execute("INSERT INTO plm.auth_users(username_display,username_normalized) VALUES ('Other Actor','other actor') RETURNING user_id").fetchone()[0]
@@ -91,6 +93,7 @@ def verify() -> None:
                     receipts=SqlAlchemyIdempotencyReceipts(),
                     audit=audit or AuditService(SqlAlchemyAuditRepository()),
                     license_guard=guard,
+                    operation_gate=operation_gate,
                 )
 
             def seed(*, ready):

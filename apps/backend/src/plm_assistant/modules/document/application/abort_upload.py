@@ -8,6 +8,9 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from plm_assistant.modules.audit.application.public import AuditEventDraft, AuditService
+from plm_assistant.modules.document.application.upload_operation_gate import (
+    UploadGateUnavailable, UploadOperationGatePort,
+)
 from plm_assistant.modules.platform.application.idempotency import (
     IdempotencyResult, IdempotencyScope, canonical_payload_fingerprint,
     validate_idempotency_key,
@@ -63,16 +66,25 @@ class AbortLicensePort(Protocol):
 class AbortUploadService:
     def __init__(self, *, unit_of_work: Callable[[], object], access: AbortAccessPort,
                  repository: AbortRepositoryPort, receipts: AbortReceiptPort,
-                 audit: AuditService, license_guard: AbortLicensePort) -> None:
+                 audit: AuditService, license_guard: AbortLicensePort,
+                 operation_gate: UploadOperationGatePort) -> None:
         if any(item is None for item in (unit_of_work, access, repository,
-                                         receipts, audit, license_guard)):
+                                         receipts, audit, license_guard, operation_gate)):
             raise ValueError("Upload abort dependencies are required")
         self._uow, self._access, self._repository = unit_of_work, access, repository
         self._receipts, self._audit, self._license_guard = receipts, audit, license_guard
+        self._operation_gate = operation_gate
 
     def abort(self, command: AbortUpload, *, idempotency_key: str) -> AbortedUpload:
         self._validate(command)
         validate_idempotency_key(idempotency_key)
+        try:
+            with self._operation_gate.hold(command.upload_id):
+                return self._abort_held(command, idempotency_key=idempotency_key)
+        except UploadGateUnavailable:
+            raise UploadAbortError("FILE_UNAVAILABLE") from None
+
+    def _abort_held(self, command: AbortUpload, *, idempotency_key: str) -> AbortedUpload:
         self._license_guard.require_valid(trace_id=command.trace_id)
         scope = IdempotencyScope.from_key(
             actor_id=command.actor_id, project_id=command.project_id,

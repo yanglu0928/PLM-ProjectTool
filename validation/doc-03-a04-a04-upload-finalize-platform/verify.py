@@ -20,6 +20,8 @@ from plm_assistant.entrypoints.production_login import (
     create_production_platform_write_app,
 )
 from plm_assistant.modules.document.infrastructure.upload_token import HmacUploadTokenIssuer
+from plm_assistant.modules.document.api.document_list_cursor import DocumentListCursorCodec
+from plm_assistant.modules.document.api.version_list_cursor import VersionListCursorCodec
 from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
 from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
 from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
@@ -120,6 +122,10 @@ def main():
                        return_value=MemberListCursorCodec(b"m" * 32)), patch(
                        "plm_assistant.entrypoints.production_login.create_windows_project_department_cursor_codec",
                        return_value=DepartmentListCursorCodec(b"d" * 32)), patch(
+                       "plm_assistant.entrypoints.production_login.create_windows_document_list_cursor_codec",
+                       return_value=DocumentListCursorCodec(b"l" * 32)), patch(
+                       "plm_assistant.entrypoints.production_login.create_windows_document_version_cursor_codec",
+                       return_value=VersionListCursorCodec(b"v" * 32)), patch(
                        "plm_assistant.entrypoints.windows_secret_write.create_windows_secret_write_service",
                        return_value=object()), patch(
                        "plm_assistant.entrypoints.production_login.create_windows_document_upload_token_issuer",

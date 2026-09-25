@@ -528,6 +528,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                         repository=SqlAlchemyUploadAbortRepository(),
                         receipts=SqlAlchemyIdempotencyReceipts(),
                         audit=audit, license_guard=licenses.guard,
+                        operation_gate=upload_operation_gate,
                     )
 
                 document_upload_finalize_router = create_document_upload_finalize_router(
