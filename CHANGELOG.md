@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/EVD-01-A03-P02-A02 前置核查确认八类精确定位仍缺正式 Parser/ParseRecord 结果来源，维持未通过，不以 PoC 输出或全文 Hash 冒充。转 DOC-04 ParseRecord 持久基础；无代码、Migration、API 或依赖变化。
+
 - 2026-09-26：`0.1.0.dev0`/EVD-01-A03-P02-A01 新增仅内部固定 DocumentVersion 全文来源证明，经 DocumentService 已验证快照取得服务器 SHA-256；损坏文件拒绝，非全文精确定位暂拒绝。Windows 11 后端 572 项无失败（2 项环境跳过），真实临时文件完整性测试和开发 wheel PASS。无 Migration/公开 API/新依赖；解析定位、受权生产装配与候选创建仍未完成。
 
 - 2026-09-26：`0.1.0.dev0`/EVD-01-A03-P01 新增仅内部的 Evidence 候选创建授权边界，按冻结权限矩阵检查实时 Session/CSRF、GLOBAL 管理员与项目 PM/IM，拒绝归档或无权请求。Windows 11 后端 568 项无失败（2 项环境跳过），开发 wheel PASS。无 Migration/公开 API/新依赖；真实定位、候选持久创建和 Audit 未接线。
