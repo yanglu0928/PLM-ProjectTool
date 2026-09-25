@@ -14,7 +14,7 @@
 |DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`；Auth 限流增量 `20260925_0012`，PRJ-01～03 正式实现 Migration `20260925_0013`，成员变更历史增量 `20260925_0014`（CR-PRJ-001），通用幂等收据增量 `20260925_0015`（CR-API-001），成员首次响应快照增量 `20260925_0016`（CR-PRJ-002），成员状态首次响应快照增量 `20260925_0017`（CR-PRJ-003），部门创建首次响应快照增量 `20260925_0018`（CR-PRJ-004）|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
 |Test Summary|PRJ-04-A15-P02：Windows 11/Python 3.13 后端 437/437 PASS；PostgreSQL 18 临时库两种显式平台部门修改/权限/版本/许可/缺信任源拒绝及开发 wheel PASS|
-|Next WBS|PRJ-04-A16 Department 停用前置核查；PLT-02-A07-P05-A09 发行信任源待工作台操作员仪式，Server 2025/HTTPS 仍待；Debian 13 暂不验证|
+|Next WBS|PRJ-04-A16-P01 Department 停用持久幂等/快照与错误码（CR-PRJ-005）；公开接线暂不开始。PLT-02-A07-P05-A09 发行信任源待工作台操作员仪式，Server 2025/HTTPS 仍待；Debian 13 暂不验证|
 
 ## 自动执行策略
 
