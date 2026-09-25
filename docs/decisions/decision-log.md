@@ -2744,3 +2744,15 @@
 |Reason|冻结 API-01/02 要求不透明 keyset 分页；直接暴露 UUID 位置或跨会话/项目复用游标会扩大枚举面。现有目标账户安全密钥供给可复用生命周期而不新增技术栈。|
 |Impact|Document API cursor codec、Windows 只读密钥适配与测试；无 Schema、冻结 API 路径或第三方依赖变化。正式目标账户密钥需独立供给/备份后才能挂载 Document 列表。|
 |Rollback|不注入 Document 读 Router；旧游标失密时失败关闭，可用独立备份恢复，不用其他用途密钥替代。|
+
+## DEC-20260926-122
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-122|
+|Date|2026-09-26|
+|WBS|DOC-01-A03-P02 可选 Document 元数据 GET|
+|Decision|按冻结 API-02 展开 PROJECT/GLOBAL 明确路径，将已验证的内部受权 Document 读取与独立签名游标组合为可选只读 Router。项目和 GLOBAL 路径不共用用户可控 Scope；默认应用不装配。投影仅含业务元数据、版本引用、时间和 ETag，不返回存储 Locator、正文或文件系统路径。|
+|Reason|先以可选边界验证 HTTP 契约与真实数据库读层；正式 Windows 组合仍需独立 Document 游标密钥和目标账户安全来源，不能因内部验证通过而提前开放。|
+|Impact|Document API、应用可选路由入口、合同测试及版本/状态记录；无 Schema、冻结路径/权限变更或新依赖。GLOBAL 当前仅管理员，正式跨域引用授权另行设计验证。|
+|Rollback|不向应用注入 `document_read_router` 即保持 404；已有 Document 数据及上传流程不受影响。|
