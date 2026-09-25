@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/AUT-03-A09 新增可选挂载的 Session 续期 HTTP：有效 Cookie/CSRF/Origin/Host、投影预检、旧 Session 原子撤销与新 Cookie/CSRF 签发；默认应用仍 404。Windows 11/Python 3.13 后端 322/322、PostgreSQL 18.6 真实旧 Token 失效/绝对到期不延长/审计及 wheel 构建 PASS。无 Migration/新依赖或 Breaking Change；升级无需数据操作。Server 2025/Debian 13 未验证；注销幂等、管理接口和最终程序包尚未完成。
+
 - 2026-09-25：`0.1.0.dev0`/AUT-03-A08 新增可选挂载的当前 Session GET：可信 Host、严格唯一 Cookie、现行 Session/身份/ProjectMember 摘要，响应不含 CSRF/Token 或新 Cookie；生产 Windows 组合根挂载，普通应用仍 404。Windows 11/Python 3.13 后端 320/320、PostgreSQL 18.6 真实登录后成员状态即时刷新及 wheel 构建 PASS。无 Migration/新依赖或 Breaking Change；升级无需数据操作。Server 2025/Debian 13 未验证，续期/注销、License/Secret 管理和最终程序包尚未完成。
 
 - 2026-09-25：`0.1.0.dev0`/AUT-03-A07-P03 新增 Windows 登录生产组合根与本机回环启动入口：当前账户凭据、可信 Origin、当前 Alembic Schema、真实 Auth/Project/Audit 依赖及数据库关闭释放；默认应用仍 404。Windows 11/Python 3.13 后端 316/316、PostgreSQL 18.6+合成 Vault 凭据完整登录/项目摘要/Cookie/CSRF/审计、wheel 构建 PASS。无 Migration/新依赖，升级前需将库迁移到包内 head 并由目标账户录入凭据。Server 2025/Debian 13 未验证；HTTPS 代理、服务安装、Session 后续端点和 Gate 3/UAT 仍待完成。

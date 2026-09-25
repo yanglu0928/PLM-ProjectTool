@@ -6,6 +6,7 @@ import ctypes
 import tempfile
 import uuid
 from ctypes import wintypes
+from datetime import datetime
 from pathlib import Path
 
 import psycopg
@@ -118,10 +119,28 @@ def main() -> None:
                                            (project, user))
                             refreshed = client.get("/api/v1/auth/session")
                             assert refreshed.status_code == 200 and refreshed.json()["data"]["authorized_projects"] == []
+                            old_cookie = good.cookies["plm_session"]
+                            old_csrf = good.json()["data"]["csrf_token"]
+                            renewed = client.post("/api/v1/auth/session:renew", headers={
+                                "origin": "http://localhost", "x-csrf-token": old_csrf,
+                            })
+                            assert renewed.status_code == 200, renewed.text
+                            assert renewed.cookies["plm_session"] != old_cookie
+                            assert renewed.json()["data"]["csrf_token"] != old_csrf
+                            assert datetime.fromisoformat(renewed.json()["data"]["absolute_expires_at"]) == datetime.fromisoformat(
+                                good.json()["data"]["absolute_expires_at"]
+                            )
+                            assert renewed.json()["data"]["authorized_projects"] == []
+                            old_read = client.get("/api/v1/auth/session", headers={
+                                "cookie": "plm_session=" + old_cookie,
+                            })
+                            assert old_read.status_code == 401
+                            assert client.get("/api/v1/auth/session").status_code == 200
                     with connect(dbname) as db:
-                        assert db.execute("SELECT count(*) FROM plm.auth_sessions").fetchone()[0] == 1
+                        assert db.execute("SELECT count(*) FROM plm.auth_sessions").fetchone()[0] == 2
                         assert db.execute("SELECT count(*) FROM plm.aud_events WHERE action='SESSION_ISSUED'").fetchone()[0] == 1
-                    print("PASS: Windows Vault, real PostgreSQL login, live Session GET/project summary, Cookie/CSRF, denial and Audit")
+                        assert db.execute("SELECT count(*) FROM plm.aud_events WHERE action='SESSION_RENEWED'").fetchone()[0] == 1
+                    print("PASS: Windows Vault, real PostgreSQL login, Session GET/renew, old token revocation, Project summary and Audit")
                 finally:
                     delete_test_credential(target)
             finally:

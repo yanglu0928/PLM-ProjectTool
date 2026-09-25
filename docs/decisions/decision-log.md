@@ -1655,3 +1655,15 @@
 |Reason|API-02 对 GET 标记 `S` 而非 `C`，CSRF 原值仅在创建/轮换响应发放；强行要求所有 GET 带 Origin 会拒绝合法浏览器读取。Host 必须可信以避免不受信域名承载 Cookie 身份投影，实时摘要不能复用登录时的旧权限。|
 |Impact|新增 Auth 只读 HTTP 入口、Host 策略及生产显式挂载；无 Schema/Migration、新依赖或冻结 API Breaking Change。Windows 11 真实 PostgreSQL 验证成员暂停后摘要即时刷新；业务请求仍须逐操作重新授权。|
 |Rollback|停止显式挂载 Session Router 即恢复默认 404；GET 不修改 Session/项目数据，无迁移回滚。|
+
+## DEC-20260925-031
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-031|
+|Date|2026-09-25|
+|WBS|AUT-03-A09 Session 续期 HTTP|
+|Decision|冻结 `POST /api/v1/auth/session:renew` 使用唯一严格 Cookie、`X-CSRF-Token`、精确 Origin/Host 且不接受请求正文。先验证当前 Session/CSRF 并读取 User/Project 投影，确保投影失败不会先撤销旧凭据；之后调用已验收的同事务 Session 轮换/Audit，成功只通过 HttpOnly Cookie 和本次 DTO 返回新 Token/CSRF。绝对到期保持原时刻，旧凭据立即失效。|
+|Reason|API-02 的续期控制为 S/C/A 而非 I；投影属于响应必需内容，若轮换后才发现投影故障会让浏览器收不到新凭据。预检与轮换间的并发由轮换服务再次校验 Session 关闭，不把预检当成最终授权。|
+|Impact|新增 Auth 续期 HTTP 与显式生产挂载；无 Schema/Migration、新依赖或 Breaking Change。投影可能在相邻事务之间被项目成员变更，后续业务请求仍须实时重验授权；多标签旧凭据按冻结轮换语义失效。|
+|Rollback|停止显式挂载续期 Router 即恢复默认 404；已成功轮换的 Session 不反向复活，用户可重新登录，无数据库迁移。|

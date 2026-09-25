@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import re
+import uuid
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Request
 from fastapi.concurrency import run_in_threadpool
@@ -32,6 +34,22 @@ def _session_cookie(headers: tuple[tuple[bytes, bytes], ...]) -> bytes:
         return bytes.fromhex(values[0])
     except (AttributeError, TypeError, UnicodeDecodeError, ValueError):
         raise ApplicationError("AUTH_SESSION_EXPIRED") from None
+
+
+def _csrf_header(headers: tuple[tuple[bytes, bytes], ...]) -> bytes:
+    try:
+        values = [value.decode("ascii") for name, value in headers if name.lower() == b"x-csrf-token"]
+        if len(values) != 1 or _TOKEN.fullmatch(values[0]) is None:
+            raise ValueError()
+        return bytes.fromhex(values[0])
+    except (AttributeError, TypeError, UnicodeDecodeError, ValueError):
+        raise ApplicationError("AUTH_CSRF_INVALID") from None
+
+
+def _session_failure(exc: SessionError) -> ApplicationError:
+    return ApplicationError(
+        "AUTH_CSRF_INVALID" if exc.code == "AUTH_ACCESS_DENIED" else "AUTH_SESSION_EXPIRED"
+    )
 
 
 def create_session_read_router(*, sessions: SessionService, views: SessionViewPort,
@@ -66,5 +84,67 @@ def create_session_read_router(*, sessions: SessionService, views: SessionViewPo
             "absolute_expires_at": principal.absolute_expires_at.isoformat(),
             "idle_expires_at": principal.idle_expires_at.isoformat(),
         }, "trace_id": request.state.trace_id}, headers={"Cache-Control": "no-store"})
+
+    return router
+
+
+def create_session_renew_router(*, sessions: SessionService, views: SessionViewPort,
+                                origins: LoginOriginPolicy) -> APIRouter:
+    if sessions is None or views is None or origins is None:
+        raise ValueError("session, identity projection and origins are required")
+    router = APIRouter()
+
+    @router.post("/api/v1/auth/session:renew")
+    async def renew_session(request: Request) -> JSONResponse:
+        headers = tuple(request.scope.get("headers", ()))
+        try:
+            origins.require_trusted(headers)
+        except LoginOriginError:
+            raise ApplicationError("AUTH_CSRF_INVALID") from None
+        token, csrf = _session_cookie(headers), _csrf_header(headers)
+        async for chunk in request.stream():
+            if chunk:
+                raise ApplicationError("REQUEST_MALFORMED")
+        try:
+            principal = await run_in_threadpool(
+                sessions.validate, token, csrf_token=csrf, require_csrf=True,
+            )
+        except SessionError as exc:
+            raise _session_failure(exc) from None
+        except Exception:
+            raise ApplicationError("SYSTEM_UNAVAILABLE") from None
+        # Project/identity projection must be available before the old token
+        # is retired; otherwise a 503 would strand the browser without either.
+        try:
+            view = await run_in_threadpool(views.resolve, principal.user_id)
+            if view.user_id != principal.user_id:
+                raise RuntimeError("identity projection mismatch")
+            public = view.public_data()
+        except Exception:
+            raise ApplicationError("SYSTEM_UNAVAILABLE") from None
+        try:
+            issued = await run_in_threadpool(
+                sessions.renew, token=token, csrf_token=csrf,
+                trace_id=uuid.UUID(request.state.trace_id),
+            )
+        except SessionError as exc:
+            raise _session_failure(exc) from None
+        except Exception:
+            raise ApplicationError("SYSTEM_UNAVAILABLE") from None
+        now = datetime.now(timezone.utc)
+        max_age = max(0, min(int((issued.absolute_expires_at - now).total_seconds()),
+                             int((issued.idle_expires_at - now).total_seconds())))
+        response = JSONResponse({"data": {
+            **public,
+            "absolute_expires_at": issued.absolute_expires_at.isoformat(),
+            "idle_expires_at": issued.idle_expires_at.isoformat(),
+            "csrf_token": issued.csrf_token.hex(),
+        }, "trace_id": request.state.trace_id}, headers={"Cache-Control": "no-store"})
+        response.set_cookie(
+            "plm_session", issued.token.hex(), max_age=max_age,
+            path="/", secure=request.headers["origin"].startswith("https://"),
+            httponly=True, samesite="lax",
+        )
+        return response
 
     return router
