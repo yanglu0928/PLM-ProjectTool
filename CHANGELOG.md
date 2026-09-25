@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PRJ-04-A15-P02 在 Windows 显式 `--platform`/`--platform-write` 组合接入 Department 修改，复用当前 Session、ProjectManager、License、Audit 与强版本；默认登录模式仍 404。Windows 11 后端 437/437、PostgreSQL 18 临时库两种组合真实 Session/版本/权限/合成 License 及缺信任源关闭、开发 wheel PASS。无新 Migration/依赖，目标库需 `0018`；正式目标账户材料、Server 2025/Debian 13 与最终程序包未完成。
+
 - 2026-09-25：`0.1.0.dev0`/PRJ-04-A15-P01 新增可选 Department 修改 PATCH，要求可信 Origin、Session/CSRF 与强 If-Match，安全返回 DepartmentView/ETag。Windows 11 后端 437/437、PostgreSQL 18 临时库真实 Session/权限/版本/许可/无变化及审计回滚 PASS。无新 Migration/依赖，目标库需 `0018`；默认与当前 Windows 平台仍 404，正式信任源、Server 2025/Debian 13 与最终程序包未完成。
 
 - 2026-09-25：`0.1.0.dev0`/PRJ-04-A14-P03 在 Windows 显式 `--platform`/`--platform-write` 组合接入 Department 创建，复用当前 Session、ProjectManager、License、Audit 和同事务幂等；默认登录模式仍 404。Windows 11 后端 434/434、PostgreSQL 18 临时库两种组合真实 Session/同 Key 重放/权限/合成 License 与缺信任源失败关闭、开发 wheel PASS。无新 Migration/依赖，目标库需 `0018`；正式目标账户材料、Server 2025/Debian 13 与最终程序包未完成。

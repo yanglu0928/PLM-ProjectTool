@@ -68,6 +68,8 @@ description: Execute architecture, PoC, implementation, testing, packaging, and 
 
 ## 参考文件路由
 
+- PRJ-04-A15-P02 已在 Windows 两种显式平台模式挂载 Department PATCH，PostgreSQL 真实 Session/版本/权限/许可和缺信任源关闭、437 个后端测试与开发 wheel 通过；默认模式仍 404，下一项以 `STATUS.md` 为准。
+
 - PRJ-04-A15-P01 已新增可选 Department PATCH HTTP，PostgreSQL 真实 Session/权限/版本/许可/无变化及审计回滚、437 个后端测试和开发 wheel 通过；默认与当前 Windows 平台仍 404，下一项以 `STATUS.md` 为准。
 
 - 涉及模块边界、依赖、AI/RAG、Trace、Review 或数据流时，读取 [architecture.md](references/architecture.md)。

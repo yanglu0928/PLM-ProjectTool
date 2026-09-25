@@ -86,6 +86,7 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(bare.patch("/api/v1/projects/00000000-0000-0000-0000-000000000001/members/00000000-0000-0000-0000-000000000002").status_code, 404)
             self.assertEqual(bare.get("/api/v1/projects/00000000-0000-0000-0000-000000000001/departments").status_code, 404)
             self.assertEqual(bare.post("/api/v1/projects/00000000-0000-0000-0000-000000000001/departments").status_code, 404)
+            self.assertEqual(bare.patch("/api/v1/projects/00000000-0000-0000-0000-000000000001/departments/00000000-0000-0000-0000-000000000002").status_code, 404)
             for action in ("suspend", "resume", "remove"):
                 self.assertEqual(bare.post("/api/v1/projects/00000000-0000-0000-0000-000000000001/members/00000000-0000-0000-0000-000000000002:" + action).status_code, 404)
         with TestClient(app, base_url="http://localhost") as client:
@@ -94,6 +95,7 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(client.patch("/api/v1/projects/00000000-0000-0000-0000-000000000001/members/00000000-0000-0000-0000-000000000002").status_code, 404)
             self.assertEqual(client.get("/api/v1/projects/00000000-0000-0000-0000-000000000001/departments").status_code, 404)
             self.assertEqual(client.post("/api/v1/projects/00000000-0000-0000-0000-000000000001/departments").status_code, 404)
+            self.assertEqual(client.patch("/api/v1/projects/00000000-0000-0000-0000-000000000001/departments/00000000-0000-0000-0000-000000000002").status_code, 404)
             for action in ("suspend", "resume", "remove"):
                 self.assertEqual(client.post("/api/v1/projects/00000000-0000-0000-0000-000000000001/members/00000000-0000-0000-0000-000000000002:" + action).status_code, 404)
             response = client.post("/api/v1/auth/login", headers={"origin": "http://evil.test"},
@@ -184,6 +186,7 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(client.get("/api/v1/projects/00000000-0000-0000-0000-000000000001/members").status_code, 401)
             self.assertEqual(client.get("/api/v1/projects/00000000-0000-0000-0000-000000000001/departments").status_code, 401)
             self.assertEqual(client.post("/api/v1/projects/00000000-0000-0000-0000-000000000001/departments").status_code, 403)
+            self.assertEqual(client.patch("/api/v1/projects/00000000-0000-0000-0000-000000000001/departments/00000000-0000-0000-0000-000000000002").status_code, 403)
             self.assertEqual(client.post("/api/v1/projects/00000000-0000-0000-0000-000000000001/members").status_code, 403)
             self.assertEqual(client.patch("/api/v1/projects/00000000-0000-0000-0000-000000000001/members/00000000-0000-0000-0000-000000000002").status_code, 403)
             for action in ("suspend", "resume", "remove"):
@@ -309,6 +312,7 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(client.get("/api/v1/projects/00000000-0000-0000-0000-000000000001/members").status_code, 401)
             self.assertEqual(client.get("/api/v1/projects/00000000-0000-0000-0000-000000000001/departments").status_code, 401)
             self.assertEqual(client.post("/api/v1/projects/00000000-0000-0000-0000-000000000001/departments").status_code, 403)
+            self.assertEqual(client.patch("/api/v1/projects/00000000-0000-0000-0000-000000000001/departments/00000000-0000-0000-0000-000000000002").status_code, 403)
             self.assertEqual(client.post("/api/v1/projects/00000000-0000-0000-0000-000000000001/members").status_code, 403)
             self.assertEqual(client.patch("/api/v1/projects/00000000-0000-0000-0000-000000000001/members/00000000-0000-0000-0000-000000000002").status_code, 403)
             for action in ("suspend", "resume", "remove"):

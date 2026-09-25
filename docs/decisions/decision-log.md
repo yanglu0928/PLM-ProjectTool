@@ -2279,3 +2279,15 @@
 |Reason|公开边界无需重写权限、许可、并发或审计规则；与现有 Project/Member 修改入口一致。|
 |Impact|新增 Router、应用工厂可选注入点、契约与 PostgreSQL 临时库验证；无 Schema/Migration 或依赖变化。|
 |Rollback|移除可选 Router 注入恢复 404，已完成的修改和审计记录保留。|
+
+## DEC-20260925-083
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-083|
+|Date|2026-09-25|
+|WBS|PRJ-04-A15-P02 Windows 显式平台 Department 修改组合|
+|Decision|只在 `--platform` 与 `--platform-write` 既有 Schema、License 和游标信任源门禁通过后装配 Department 修改服务及 Router；默认登录模式保持 404。|
+|Reason|复用现有 Session、ProjectManager、License、Audit 和强版本服务，不新增无保护入口。|
+|Impact|Windows 平台组合与契约/隔离 PostgreSQL 验证；无 Schema/Migration、依赖或 Breaking API。|
+|Rollback|移除平台 Router 注入恢复 404；已完成的修改与审计记录保留。|

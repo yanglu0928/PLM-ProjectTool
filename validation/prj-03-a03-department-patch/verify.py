@@ -6,6 +6,9 @@ import hashlib
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import Mock, patch as mock_patch
 
 import psycopg
 from alembic import command
@@ -14,6 +17,13 @@ from psycopg import sql
 from sqlalchemy.engine import URL
 
 from plm_assistant.entrypoints.api import create_app
+from plm_assistant.entrypoints.production_login import (
+    create_production_platform_app, create_production_platform_write_app,
+)
+from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
+from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
+from plm_assistant.modules.project.api.member_list_cursor import MemberListCursorCodec
+from plm_assistant.modules.project.api.department_list_cursor import DepartmentListCursorCodec
 from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
 from plm_assistant.modules.auth.application.session_service import SessionError
 from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
@@ -176,6 +186,60 @@ def main():
                 with connect(name) as db:
                     assert db.execute("SELECT name,lock_version FROM plm.prj_departments WHERE department_id=%s", (d2,)).fetchone() == ("HTTP", 2)
                     assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='PROJECT_DEPARTMENT_PATCHED'", (d2,)).fetchone()[0] == 2
+                    platform_department = db.execute(
+                        "INSERT INTO plm.prj_departments(project_id,department_code,department_code_normalized,name) VALUES (%s,'PATCH-PLATFORM','patch-platform','Before') RETURNING department_id",
+                        (p1,),
+                    ).fetchone()[0]
+                settings = BootstrapSettings(data_root=Path.cwd(), trusted_origins=("http://localhost",))
+                with mock_patch("plm_assistant.entrypoints.production_login.read_database_url",
+                                return_value=url), mock_patch(
+                                "plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services",
+                                return_value=SimpleNamespace(guard=guard)), mock_patch(
+                                "plm_assistant.entrypoints.production_login.create_windows_secret_list_cursor_codec",
+                                return_value=SecretListCursorCodec(b"q" * 32)), mock_patch(
+                                "plm_assistant.entrypoints.production_login.create_windows_project_member_cursor_codec",
+                                return_value=MemberListCursorCodec(b"m" * 32)), mock_patch(
+                                "plm_assistant.entrypoints.production_login.create_windows_project_department_cursor_codec",
+                                return_value=DepartmentListCursorCodec(b"d" * 32)), mock_patch(
+                                "plm_assistant.entrypoints.windows_secret_write.create_windows_secret_write_service",
+                                return_value=Mock()):
+                    for version, factory in enumerate((create_production_platform_app,
+                                                       create_production_platform_write_app)):
+                        production = factory(settings)
+                        with TestClient(production, base_url="http://localhost") as client:
+                            platform_path = f"/api/v1/projects/{p1}/departments/{platform_department}"
+                            platform_headers = {
+                                "origin": "http://localhost",
+                                "cookie": "plm_session=" + tokens["pm"].hex(),
+                                "x-csrf-token": CSRF.hex(), "if-match": f'"v{version}"',
+                            }
+                            new_name = f"Platform {version}"
+                            response = client.patch(platform_path, headers=platform_headers,
+                                                    json={"name": new_name})
+                            assert response.status_code == 200, response.text
+                            assert response.headers["etag"] == f'"v{version + 1}"'
+                            assert client.patch(platform_path, headers=platform_headers,
+                                                json={"name": "Stale"}).status_code == 409
+                            assert client.patch(platform_path, headers={
+                                **platform_headers, "cookie": "plm_session=" + tokens["cm"].hex(),
+                                "if-match": f'"v{version + 1}"',
+                            }, json={"name": "Denied"}).status_code == 404
+                            guard.valid = False
+                            assert client.patch(platform_path, headers={
+                                **platform_headers, "if-match": f'"v{version + 1}"',
+                            }, json={"name": "Denied"}).status_code == 403
+                            guard.valid = True
+                    with mock_patch("plm_assistant.entrypoints.production_login.create_windows_project_department_cursor_codec",
+                                    side_effect=RuntimeError("synthetic missing department key")):
+                        try:
+                            create_production_platform_app(settings)
+                        except Exception as exc:
+                            assert str(exc) == "production login unavailable"
+                        else:
+                            raise AssertionError("missing trust source did not fail closed")
+                with connect(name) as db:
+                    assert db.execute("SELECT name,lock_version FROM plm.prj_departments WHERE department_id=%s", (platform_department,)).fetchone() == ("Platform 1", 2)
+                    assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='PROJECT_DEPARTMENT_PATCHED'", (platform_department,)).fetchone()[0] == 2
                 failed = ProjectDepartmentPatchService(**kwargs, audit=FailedAudit())
                 try:
                     patch(version=2, name_value="Rollback", client=failed)
@@ -200,7 +264,7 @@ def main():
                     assert db.execute("SELECT count(*) FROM plm.prj_departments WHERE project_id=%s AND department_code_normalized='shared' AND state='ACTIVE'", (p1,)).fetchone()[0] == 1
                     db.execute("UPDATE plm.prj_projects SET state='ARCHIVED' WHERE project_id=%s", (p1,))
                 denied("PROJECT_ARCHIVED", lambda: patch(version=2, name_value="Blocked"))
-                print("PASS: Department internal and optional HTTP, role/scope/CSRF/License, version/noop, concurrency and Audit rollback")
+                print("PASS: Department internal, optional HTTP and both Windows platform modes; role/scope/CSRF/License, version/noop, concurrency and Audit rollback")
             finally:
                 runtime.dispose()
         finally:
