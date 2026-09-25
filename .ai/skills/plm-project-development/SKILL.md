@@ -24,6 +24,7 @@ description: Execute architecture, PoC, implementation, testing, packaging, and 
 - 冻结后的总体架构、核心数据模型、DB Schema V1、Breaking API、技术栈、安全/License 机制或 Scope 变化须先建立 Change Request，记录影响与验证后依 V1.1 持续授权执行，不得静默改写。
 - AUT-03-A08～A10 当前 Session GET/续期/注销已在 Windows 11 合成 PostgreSQL 环境验证并仅于 Windows 生产组合根显式挂载；普通默认应用仍 404。API-RUNTIME-01 已依据 CR-API-001 增加通用持久幂等收据与 Migration `20260925_0015`，注销已按同事务收据/撤销/Audit 接线；其他业务命令尚未接线。PLT-02-A07-P01/P02 已在 Windows 11 验证当前账户 Vault 主密钥只读、交互式供给与合成备份恢复后旧密文解密；P03-A01 完成 Windows 选定 MAC 本机匹配；P03-A02 包内公钥装载和 P03-A03 工作台仪式工具已实现，但正式私钥/公钥、独立备份与发行门禁未完成，不标 PASS。P03-A04 在 Windows 11 完成独立可信时间 HMAC Vault 密钥合成失密/恢复；P03-A05 完成 Windows License 组合根及 PostgreSQL 临时库合成完整 Guard 验证，正式信任锚仍未供给，不标生产 PASS。异账户/Server 2025 恢复、生产 Secret/API 接线仍待完成。下一项按 `STATUS.md` 推进管理 API 前置；此前概述中的“下一项”以本条和根目录 `STATUS.md` 的最新状态为准。
 - POC-03 质量失败继续阻塞 Gate 3/UAT；Server Office、Debian 13 和 Ghostscript 发行合规继续由各自 Release Gate 关闭。
+- PRJ-04-A06 已完成可选 Project 名称 PATCH HTTP，并修复规范初始 ETag `"v0"` 的 If-Match 解析；仅 Windows 11/隔离 PostgreSQL 合成验证，默认与当前平台组合未挂载，下一项以 `STATUS.md` 为准。
 - PLT-02-A07-P04-A01 已增加可选 Secret 详情 GET 的 Session/权限/License 安全投影与强 ETag；仅合成 HTTP 契约和 Windows 11 开发 wheel 验证。默认应用仍不挂载 Secret 路由，正式信任锚、列表/写 API 与目标环境验收未完成；最新 WBS 以根目录 `STATUS.md` 为准。
 - PLT-02-A07-P04-A02 已增加可选 Secret 列表 GET 的 HMAC 完整性游标与真实 PostgreSQL keyset 验证；默认应用仍不挂载，游标签名密钥的目标账户来源/恢复、正式 License 信任锚及写 API 未完成。最新状态以根目录 `STATUS.md` 为准。
 - PLT-02-A07-P04-A03 已完成 Windows 当前账户 Vault 独立游标签名密钥来源与临时凭据加密备份恢复验证；目标账户正式供给/Server 2025、生产只读组合和写 API 未完成。最新状态以根目录 `STATUS.md` 为准。

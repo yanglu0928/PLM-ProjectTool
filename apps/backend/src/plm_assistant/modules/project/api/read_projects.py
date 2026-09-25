@@ -22,7 +22,7 @@ from plm_assistant.modules.project.application.read_projects import (
 _PAGE_SIZE = re.compile(r"[1-9][0-9]{0,2}\Z", re.ASCII)
 
 
-def _public(view: ProjectView) -> dict[str, object]:
+def project_view_data(view: ProjectView) -> dict[str, object]:
     if (type(view) is not ProjectView or view.created_at.tzinfo is None
             or view.created_at.utcoffset() is None
             or not re.fullmatch(r'"v(0|[1-9][0-9]*)"', view.etag)):
@@ -87,7 +87,7 @@ def create_project_read_router(*, sessions: SessionService,
         if page.next_cursor is not None or page.has_more or len(page.items) > int(raw_size):
             raise ApplicationError("SYSTEM_UNAVAILABLE")
         return JSONResponse({
-            "data": {"items": [_public(item) for item in page.items],
+            "data": {"items": [project_view_data(item) for item in page.items],
                      "next_cursor": None, "has_more": False},
             "trace_id": request.state.trace_id,
         }, headers={"Cache-Control": "no-store"})
@@ -103,7 +103,7 @@ def create_project_read_router(*, sessions: SessionService,
             raise _error(exc) from None
         except Exception:
             raise ApplicationError("SYSTEM_UNAVAILABLE") from None
-        body = _public(view)
+        body = project_view_data(view)
         return JSONResponse(
             {"data": body, "trace_id": request.state.trace_id},
             headers={"Cache-Control": "no-store", "ETag": view.etag},

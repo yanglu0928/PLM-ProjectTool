@@ -57,6 +57,9 @@ COMMON_ERRORS: dict[str, ErrorSpec] = {
     "PROJECT_ROLE_INVALID": ErrorSpec(
         "PROJECT_ROLE_INVALID", 422, "项目负责人不符合要求。"
     ),
+    "PROJECT_ARCHIVED": ErrorSpec(
+        "PROJECT_ARCHIVED", 409, "项目已归档，不允许修改。"
+    ),
 }
 
 

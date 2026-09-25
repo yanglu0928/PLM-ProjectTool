@@ -1979,3 +1979,15 @@
 |Reason|内部原子创建、持久幂等和可选 HTTP 已验证；复用显式平台组合可向正式可用程序推进，避免第二套权限/许可判断或在普通模式隐式开放。|
 |Impact|只改 Windows 组合与测试；无 Schema/Migration、冻结 API 或项目规则变化。正式发行公钥/目标账户材料和 Server 2025 仍待验收。|
 |Rollback|退回默认登录模式，Project 创建路由不挂载；已有 Project/审计/收据不可回滚删除。|
+
+## DEC-20260925-058
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-058|
+|Date|2026-09-25|
+|WBS|PRJ-04-A06 Project 元数据 PATCH HTTP|
+|Decision|将通用强 If-Match 解析器补齐对规范 `"v0"` 的接受；仍拒绝弱、多值、前导零和越界形式。原因是冻结 API-01 明确 ETag 映射当前 `lock_version`，Project 初始值为 0。新增仅显式注入的 `PATCH /api/v1/projects/{project_id}`：可信来源/Session/CSRF、强 If-Match、仅 name 的有界 JSON，调用现有 ProjectWriteService；200 返回安全 ProjectView 与新强 ETag。默认/当前平台组合先不挂载。|
+|Reason|不接受 v0 会让刚创建 Project 的首次 PATCH 永远无法满足冻结并发合同；内部服务/SQL 已支持 expected_version=0。|
+|Impact|通用解析器接纳合法初始版本，Secret 内部轮换/停用仍自行拒绝其不合法 v0；新增可选 Project HTTP 与测试，无 Schema/Migration、冻结 API 或安全规则变化。|
+|Rollback|不注入 Project PATCH Router 恢复 404；解析器可回退，但会重新引入 Project 首次修改不可用缺陷，因此须先替代此合同实现。|

@@ -8,6 +8,7 @@ from plm_assistant.modules.platform.application.errors import ApplicationError
 
 class IfMatchTests(unittest.TestCase):
     def test_canonical_strong_etag_maps_to_record_version(self) -> None:
+        self.assertEqual(parse_if_match(((b"If-Match", b'"v0"'),)), 0)
         self.assertEqual(parse_if_match(((b"If-Match", b'"v1"'),)), 1)
         self.assertEqual(parse_if_match(((b"if-match", b'"v9223372036854775806"'),)),
                          9_223_372_036_854_775_806)
@@ -20,7 +21,7 @@ class IfMatchTests(unittest.TestCase):
 
     def test_noncanonical_weak_multiple_and_oversized_rejected(self) -> None:
         bad_values = (
-            b'W/"v1"', b'*', b'"v0"', b'"v01"', b'"v1", "v2"', b'v1',
+            b'W/"v1"', b'*', b'"v00"', b'"v01"', b'"v1", "v2"', b'v1',
             b'"v-1"', b'"v1" ', b'"V1"', b'"v9223372036854775807"',
             b'"v9999999999999999999999999999"', b'"v1"\x00',
         )

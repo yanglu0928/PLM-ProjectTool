@@ -7,7 +7,7 @@ import re
 from plm_assistant.modules.platform.application.errors import ApplicationError
 
 
-_STRONG_VERSION = re.compile(rb'"v([1-9][0-9]{0,18})"\Z', re.ASCII)
+_STRONG_VERSION = re.compile(rb'"v(0|[1-9][0-9]{0,18})"\Z', re.ASCII)
 _MAX_EXPECTED = 9_223_372_036_854_775_806
 
 
