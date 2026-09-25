@@ -2447,3 +2447,15 @@
 |Reason|冻结恢复矩阵要求半完成版本不可见且恢复动作可审计；但 STAGED 可能属于仍在运行的发布，单凭年龄或文件快照不允许自动置 FAILED。当前生产停写证明未接线，内部能力不得作为自动扫描器对外装配。|
 |Impact|Document Storage/Application/Repository 和合成文件/隔离 PostgreSQL 验证；无 Migration、公开 API 或新依赖。正式 Quiescence Port、TTL 清理、AVAILABLE/DocumentVersion/Parse Job 的其他恢复矩阵行后续实施。|
 |Rollback|停止内部装配；FAILED 历史保留，不倒写为 AVAILABLE，重新上传产生新 FileObject；物理文件未删，可人工核查。|
+
+## DEC-20260925-097
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-097|
+|Date|2026-09-25|
+|WBS|DOC-03-A03-P04-P04 生产停写证明前置核查|
+|Decision|现有应用无正式维护模式、上传并发栅栏或活动发布证明；不以年龄/人工布尔值替代，不装配 P04-P03 隔离命令。将正式 Quiescence Port 与目标账户演练放入运行时维护/上传任务，先推进无此依赖的 DOC-02 内部版本提交。|
+|Reason|STAGED 也可能属于活跃发布；错误置 FAILED 会使合法上传无法完成，违反冻结恢复矩阵与失败关闭要求。|
+|Impact|仅记录前置与时序，不改变 Schema/API；DOC-03-A03-P04 整体未 PASS，Gate 3/Release 不因此放行。|
+|Rollback|本记录无运行时回滚；后续正式实现需另行验证再装配。|
