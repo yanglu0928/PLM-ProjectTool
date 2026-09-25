@@ -1751,3 +1751,15 @@
 |Reason|现有忽略规则只覆盖根级 `developer-workbench/private/`，没有整体覆盖实际 `tools/developer-workbench/private/`；若非 `.pem` 文件误入目录可被 Git 纳入。正式签发私钥尚不存在，不能用合成测试钥冒充生产信任锚。|
 |Impact|修复忽略规则、增加开发者工作台工具与测试，不改冻结载荷、Schema 或公开 API。真实密钥生成依赖人工秘密口令和独立备份保管；工具可先实现/合成验证但未举行仪式前 P03-A02 和发行 Gate 仍未通过。|
 |Rollback|工具不运行则无密钥；若仪式尚未发行，保留生成的加密私钥及公钥供核对，不自动覆盖、轮换或删除。已经发行的公钥不可静默替换。|
+
+## DEC-20260925-039
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-039|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P03-A04 Windows 可信时间 HMAC 密钥来源|
+|Decision|可信时间使用独立固定引用 `trusted-time-v1` 的 32 字节随机密钥，通过已有当前 Windows 账户受保护 Vault Port 供给，部署时沿用加密备份/空目标恢复流程；组合根在装配前强制检查密钥可用。HMAC 对 pristine 空初态也先检查密钥，不允许无密钥的空初态被视为可信。不得将密钥放入数据库、普通 YAML、环境变量或 License 文档。|
+|Reason|LIC-03-A03 只创建受控空初态，现有 HMAC verify 对 pristine 状态提前返回 True，若未先检查独立密钥，装配层可能误以为可信来源已就绪。独立 key_ref 避免与业务 Secret 主密钥混用；当前 Vault/备份机制可复用而不改变冻结 HMAC 规则。|
+|Impact|调整 License 完整性失败关闭与 Windows 组合入口；无 Schema/Migration、签名载荷或公开 API 变更。真实目标账户密钥尚需现场供给与备份演练；Server 2025 和 Debian 13 状态不变。|
+|Rollback|不挂载 License 组合入口则受许可业务保持关闭；既有可信时间状态不自动重置或改写，丢钥只可从匹配备份受控恢复。|

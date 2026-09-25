@@ -46,6 +46,9 @@ class TrustedTimeIntegrityTests(unittest.TestCase):
 
     def test_only_empty_uninitialized_state_is_accepted_without_tag(self) -> None:
         self.assertTrue(self.integrity.verify(TrustedTimeRecord(uuid.uuid4(), None, 0, None, None)))
+        self.assertFalse(HmacTrustedTimeIntegrity(
+            Resolver(None), key_ref="synthetic-test-key",
+        ).verify(TrustedTimeRecord(uuid.uuid4(), None, 0, None, None)))
         self.assertFalse(self.integrity.verify(TrustedTimeRecord(uuid.uuid4(), None, 1, None, None)))
 
 

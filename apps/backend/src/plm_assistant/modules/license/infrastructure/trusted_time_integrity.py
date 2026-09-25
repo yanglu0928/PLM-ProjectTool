@@ -11,6 +11,9 @@ from typing import Protocol
 from plm_assistant.modules.license.application.trusted_time import TrustedTimeError, TrustedTimeRecord
 
 
+TRUSTED_TIME_KEY_REF = "trusted-time-v1"
+
+
 class TrustedTimeKeyResolverPort(Protocol):
     def resolve_key(self, key_ref: str) -> bytes | None:
         """Return a deployment secret from a separate protected store, never the database."""
@@ -34,7 +37,11 @@ class HmacTrustedTimeIntegrity:
     def verify(self, record: TrustedTimeRecord) -> bool:
         if (record.last_successful_time is None and record.state_version == 0
                 and record.integrity_metadata is None and record.last_event_ref is None):
-            return True
+            try:
+                self.require_available()
+                return True
+            except TrustedTimeError:
+                return False
         metadata = record.integrity_metadata
         if (type(metadata) is not dict or set(metadata) != {"algorithm", "key_ref", "tag"}
                 or metadata.get("algorithm") != self.ALGORITHM
@@ -47,15 +54,25 @@ class HmacTrustedTimeIntegrity:
             return False
 
     def _tag(self, record: TrustedTimeRecord) -> str:
-        key = self._resolver.resolve_key(self._key_ref)
-        if type(key) is not bytes or len(key) < 32:
-            raise TrustedTimeError("TRUST_STATE_INVALID")
         message = _canonical(record)
-        mutable_key = bytearray(key)
+        mutable_key = self._load_key()
         try:
             return hmac.new(mutable_key, message, hashlib.sha256).hexdigest()
         finally:
             mutable_key[:] = b"\x00" * len(mutable_key)
+
+    def require_available(self) -> None:
+        key = self._load_key()
+        key[:] = b"\x00" * len(key)
+
+    def _load_key(self) -> bytearray:
+        try:
+            key = self._resolver.resolve_key(self._key_ref)
+            if type(key) is not bytes or len(key) != 32:
+                raise TrustedTimeError("TRUST_STATE_INVALID")
+            return bytearray(key)
+        except Exception:
+            raise TrustedTimeError("TRUST_STATE_INVALID") from None
 
 
 def _canonical(record: TrustedTimeRecord) -> bytes:
