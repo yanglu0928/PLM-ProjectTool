@@ -2543,3 +2543,15 @@
 |Reason|长流不能持有数据库事务；单次前置检查无法防上传中归档、过期、权限变化或终止。确定性暂存身份加后置行锁使重复写入不会覆盖原字节。|
 |Impact|Document 内部 Service/Repository、合成 PostgreSQL/文件测试；无 Schema/API/依赖变更。正式 Session/License/CSRF 授权适配、重传恢复与公开 HTTP 尚未完成。|
 |Rollback|入口未装配，可停止新写入；失败事务回滚 STAGED/Event/Intent/Audit。事务外孤儿文件不可作为业务版本读取，后续按固定 ID/TTL 受控清理；不删除有记录或未知状态文件。|
+
+## DEC-20260926-105
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-105|
+|Date|2026-09-26|
+|WBS|DOC-03-A04-A03-P03-A02-P01 已登记 Content 安全重传|
+|Decision|仅在 UploadIntent 为 CONTENT_READY 且 FileObject 仍为同 Scope/Project 的 STAGED、确定性暂存 Locator、元数据与声明一致时允许重传。重传必须完整读取并校验请求正文，再校验暂存文件 Hash/Size，最后在短事务重新授权、锁定并复核两条记录；不新增文件、状态事件或 Audit。未登记孤儿恢复与 TTL 清理拆为 P02/P03，必须先具备活跃写入的停写/租约证明。|
+|Reason|仅按声明 Header 返回 200 会接受不同正文；仅凭孤儿文件现存无法区分崩溃完整文件与仍在写入的文件。|
+|Impact|Document 内部 Service/Repository 和合成验证；不变更冻结 API、Schema、权限模型或依赖。|
+|Rollback|入口未公开；停止装配即可禁止重传。已有 STAGED 数据保持不变，故障继续失败关闭。|

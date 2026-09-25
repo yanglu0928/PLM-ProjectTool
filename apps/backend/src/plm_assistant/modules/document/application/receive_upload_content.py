@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import re
+import hashlib
+import hmac
 import uuid
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
@@ -42,6 +44,7 @@ class UploadContentIntent:
     original_display_name: str
     expected_size_bytes: int | None
     mime_hint: str | None
+    replay: StagedContentProof | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,6 +66,8 @@ class UploadContentRepositoryPort(Protocol):
     def preflight(self, transaction: object, *, command: ReceiveUploadContent) -> UploadContentIntent: ...
     def stage(self, transaction: object, *, command: ReceiveUploadContent,
               expected: UploadContentIntent, proof: StagedContentProof) -> uuid.UUID: ...
+    def confirm_replay(self, transaction: object, *, command: ReceiveUploadContent,
+                       expected: UploadContentIntent) -> uuid.UUID: ...
 
 
 class ReceiveUploadContentService:
@@ -79,6 +84,25 @@ class ReceiveUploadContentService:
         with self._uow() as tx:
             self._authorize(tx, command)
             intent = self._repository.preflight(tx, command=command)
+        if intent.replay is not None:
+            self._validate_replay_body(chunks, command)
+            proof = intent.replay
+            try:
+                self._storage.verify_content(
+                    proof.staging_locator, expected_sha256=proof.sha256,
+                    expected_size=proof.size_bytes, max_bytes=command.declared_length,
+                )
+            except LocalStorageError:
+                raise UploadContentError("FILE_INTEGRITY_MISMATCH") from None
+            with self._uow() as tx:
+                self._authorize(tx, command)
+                file_id = self._repository.confirm_replay(
+                    tx, command=command, expected=intent,
+                )
+            return ReceivedUploadContent(
+                command.upload_id, file_id, proof.size_bytes,
+                proof.sha256, proof.detected_mime,
+            )
         proof = self._spool.receive(
             chunks=chunks, scope=command.scope, project_id=command.project_id,
             file_object_id=command.upload_id,
@@ -125,6 +149,21 @@ class ReceiveUploadContentService:
             project_id=command.project_id, upload_id=command.upload_id,
             operation=_OPERATION,
         )
+
+    @staticmethod
+    def _validate_replay_body(chunks: Iterable[bytes], command: ReceiveUploadContent) -> None:
+        digest = hashlib.sha256()
+        total = 0
+        for chunk in chunks:
+            if type(chunk) is not bytes or len(chunk) > 1_048_576:
+                raise UploadContentError("VALIDATION_FAILED")
+            total += len(chunk)
+            if total > command.declared_length:
+                raise UploadContentError("FILE_TOO_LARGE")
+            digest.update(chunk)
+        if (total != command.declared_length
+                or not hmac.compare_digest(digest.digest(), command.declared_sha256)):
+            raise UploadContentError("FILE_INTEGRITY_MISMATCH")
 
     @staticmethod
     def _validate(command: ReceiveUploadContent) -> None:

@@ -144,7 +144,32 @@ def main():
                 assert db.execute("SELECT file_state,storage_class,storage_locator,sha256,size_bytes,detected_mime,original_name_metadata FROM plm.doc_file_objects WHERE file_object_id=%s", (made.upload_id,)).fetchone() == ("STAGED", "PERSISTENT", stage, sha, len(body), "application/pdf", "interview.pdf")
                 assert db.execute("SELECT from_state,to_state FROM plm.doc_file_state_events WHERE file_object_id=%s", (made.upload_id,)).fetchone() == (None, "STAGED")
                 assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='DOCUMENT_UPLOAD_CONTENT_STAGED'", (made.upload_id,)).fetchone() == (1,)
-            expect(UploadContentError, lambda: receiver().receive(content, chunks=[body]), "CONFLICT_STATE")
+            assert receiver().receive(content, chunks=[body]) == result
+            expect(UploadContentError, lambda: receiver().receive(
+                content, chunks=[],
+            ), "FILE_INTEGRITY_MISMATCH")
+            expect(UploadContentError, lambda: receiver().receive(
+                content, chunks=[body[:-1] + b"!"],
+            ), "FILE_INTEGRITY_MISMATCH")
+            expect(UploadContentError, lambda: receiver().receive(
+                replace(content, declared_sha256=hashlib.sha256(b"x" * len(body)).digest()),
+                chunks=[body],
+            ), "CONFLICT_STATE")
+            expect(UploadContentError, lambda: receiver().receive(
+                replace(content, upload_token="B" * 43), chunks=[body],
+            ), "AUTH_ACCESS_DENIED")
+            expect(PermissionError, lambda: receiver().receive(
+                replace(content, actor_id=outsider), chunks=[body],
+            ))
+            (root / stage).write_bytes(body[:-1] + b"!")
+            expect(UploadContentError, lambda: receiver().receive(
+                content, chunks=[body],
+            ), "FILE_INTEGRITY_MISMATCH")
+            (root / stage).write_bytes(body)
+            assert receiver().receive(content, chunks=[body]) == result
+            with connect(name) as db:
+                assert db.execute("SELECT count(*) FROM plm.doc_file_state_events WHERE file_object_id=%s", (made.upload_id,)).fetchone() == (1,)
+                assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='DOCUMENT_UPLOAD_CONTENT_STAGED'", (made.upload_id,)).fetchone() == (1,)
             made2, content2 = create("content-stage-rollback-0001")
             expect(RuntimeError, lambda: receiver(FailingAudit()).receive(content2, chunks=[body]))
             with connect(name) as db:
@@ -175,7 +200,7 @@ def main():
                         results.append(attempt.result())
                     except (UploadContentError, ContentSpoolError) as exc:
                         errors.append(exc)
-            assert len(results) == 1 and len(errors) == 1
+            assert len(results) >= 1 and len(results) + len(errors) == 2
             with connect(name) as db:
                 assert db.execute("SELECT count(*) FROM plm.doc_file_objects WHERE file_object_id=%s", (made4.upload_id,)).fetchone() == (1,)
                 assert db.execute("SELECT count(*) FROM plm.doc_file_state_events WHERE file_object_id=%s", (made4.upload_id,)).fetchone() == (1,)
@@ -201,7 +226,7 @@ def main():
             expired = ReceiveUploadContent(expired_id, "PROJECT", other, actor,
                                            uuid.uuid4(), token, len(body), sha)
             expect(UploadContentError, lambda: receiver().receive(expired, chunks=[body]), "FILE_UPLOAD_EXPIRED")
-            print("DOC-03-A04-A03-P03-A01 PostgreSQL synthetic verification: PASS")
+            print("DOC-03-A04-A03-P03-A01/A02-P01 PostgreSQL synthetic verification: PASS")
         finally:
             if runtime is not None:
                 runtime.dispose()

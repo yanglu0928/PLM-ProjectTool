@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/DOC-03-A04-A03-P03-A02-P01 增加已登记 Content 的内部安全重传：校验完整请求正文、Token/身份/状态、数据库与暂存文件 Hash/Size 并再次加锁确认；不重复建 FileObject、事件或 Audit。Windows 11 后端 472 项无失败（2 项符号链接跳过），PostgreSQL 18 隔离合成重传/拒绝/损坏/并发验证 PASS。无新 Migration/API/依赖，升级仍须已有 `0024`；孤儿恢复/TTL 清理、正式授权与公开 HTTP、Server 2025/Debian 13、最终程序包未完成。
+
 - 2026-09-25：`0.1.0.dev0`/DOC-03-A04-A03-P03-A01 增加内部 Content 两阶段受权与 STAGED 元数据登记：流前/流后重查创建者、Scope、Token、过期与项目状态，按确定性 ID 同事务写 FileObject、初始状态事件、Intent 与 Audit。Windows 11 后端 471 项无失败（2 项符号链接跳过）、PostgreSQL 18 临时库/合成文件权限、并发、归档/终止、过期、审计回滚及开发 wheel PASS。无新 Migration/API/依赖；正式 Session/License/CSRF、重传/孤儿清理、公开 HTTP、Commit/Abort/Parser、Server 2025/Debian 13 与最终程序包未完成。
 
 - 2026-09-25：`0.1.0.dev0`/DOC-03-A04-A03-P02 增加内部有界流式 Content 暂存与类型/长度/SHA-256 核验，独占 UUID Locator，失败仅清理本次文件身份仍一致的未登记暂存；支持按用途允许清单核查 PDF、DOCX/XLSX/PPTX、PNG/JPEG/TIFF、UTF-8 TXT/CSV。Windows 11 后端 470 项无失败（2 项符号链接跳过）、真实临时文件系统测试与开发 wheel PASS。无 Migration/公开 API/新依赖；Session/Token/Intent 二次授权、FileObject/STAGED 登记、重传/孤儿清理、Server 2025/Debian 13 和最终程序包仍待。

@@ -24,10 +24,39 @@ class SqlAlchemyUploadContentRepository:
     def preflight(self, transaction: object, *, command: ReceiveUploadContent) -> UploadContentIntent:
         session = self._session(transaction)
         row = self._intent(session, command, lock=False)
-        self._check(session, row, command)
+        self._check(session, row, command, allow_ready=True)
+        replay = self._replay_proof(session, row, command) if row.state == "CONTENT_READY" else None
         return UploadContentIntent(
-            row.original_display_name, row.expected_size_bytes, row.mime_hint,
+            row.original_display_name, row.expected_size_bytes, row.mime_hint, replay,
         )
+
+    def confirm_replay(self, transaction: object, *, command: ReceiveUploadContent,
+                       expected: UploadContentIntent) -> uuid.UUID:
+        session = self._session(transaction)
+        if command.project_id is not None and session.execute(select(ProjectRow.state).where(
+            ProjectRow.project_id == command.project_id,
+        ).with_for_update(of=ProjectRow)).scalar_one_or_none() != "ACTIVE":
+            raise UploadContentError("PROJECT_ARCHIVED")
+        pre = self._intent(session, command, lock=False)
+        if pre is None:
+            raise UploadContentError("RESOURCE_NOT_FOUND")
+        if pre.target_document_id is not None:
+            document = session.execute(select(DocumentRow).where(
+                DocumentRow.document_id == pre.target_document_id,
+                DocumentRow.scope == command.scope,
+                DocumentRow.project_id == command.project_id,
+            ).with_for_update(of=DocumentRow)).scalar_one_or_none()
+            if document is None or document.document_state != "ACTIVE":
+                raise UploadContentError("CONFLICT_STATE")
+        row = self._intent(session, command, lock=True)
+        self._check(session, row, command, allow_ready=True)
+        if row.state != "CONTENT_READY" or expected.replay is None:
+            raise UploadContentError("CONFLICT_STATE")
+        proof = self._replay_proof(session, row, command)
+        if (UploadContentIntent(row.original_display_name, row.expected_size_bytes,
+                                row.mime_hint, proof) != expected):
+            raise UploadContentError("CONFLICT_STATE")
+        return row.file_object_id
 
     def stage(self, transaction: object, *, command: ReceiveUploadContent,
               expected: UploadContentIntent, proof: StagedContentProof) -> uuid.UUID:
@@ -115,7 +144,8 @@ class SqlAlchemyUploadContentRepository:
         return session.execute(query).scalar_one_or_none()
 
     @staticmethod
-    def _check(session: Session, row, command: ReceiveUploadContent) -> None:
+    def _check(session: Session, row, command: ReceiveUploadContent, *,
+               allow_ready: bool = False) -> None:
         if row is None:
             raise UploadContentError("RESOURCE_NOT_FOUND")
         if not hmac.compare_digest(
@@ -124,7 +154,7 @@ class SqlAlchemyUploadContentRepository:
             raise UploadContentError("AUTH_ACCESS_DENIED")
         if row.expires_at <= session.execute(select(func.statement_timestamp())).scalar_one():
             raise UploadContentError("FILE_UPLOAD_EXPIRED")
-        if row.state != "CREATED":
+        if row.state != "CREATED" and not (allow_ready and row.state == "CONTENT_READY"):
             raise UploadContentError("CONFLICT_STATE")
         if row.original_display_name is None:
             raise UploadContentError("CONFLICT_STATE")
@@ -134,3 +164,24 @@ class SqlAlchemyUploadContentRepository:
             ProjectRow.project_id == command.project_id,
         )).scalar_one_or_none() != "ACTIVE":
             raise UploadContentError("PROJECT_ARCHIVED")
+
+    @staticmethod
+    def _replay_proof(session: Session, row, command: ReceiveUploadContent) -> StagedContentProof:
+        locator, _ = LocalFileStorage.locators(
+            scope=command.scope, project_id=command.project_id,
+            file_object_id=command.upload_id,
+        )
+        file = session.execute(select(FileObjectRow).where(
+            FileObjectRow.file_object_id == command.upload_id,
+            FileObjectRow.scope == command.scope,
+            FileObjectRow.project_id == command.project_id,
+        )).scalar_one_or_none()
+        if (row.file_object_id != command.upload_id or file is None
+                or file.file_state != "STAGED" or file.storage_class != "PERSISTENT"
+                or file.storage_locator != locator
+                or file.original_name_metadata != row.original_display_name
+                or file.sha256 != command.declared_sha256
+                or file.size_bytes != command.declared_length
+                or type(file.detected_mime) is not str or not file.detected_mime):
+            raise UploadContentError("CONFLICT_STATE")
+        return StagedContentProof(locator, file.sha256, file.size_bytes, file.detected_mime)

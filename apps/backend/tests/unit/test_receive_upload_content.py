@@ -30,6 +30,20 @@ class UploadContentValidationTests(unittest.TestCase):
             with self.subTest(change=change), self.assertRaises(UploadContentError):
                 ReceiveUploadContentService._validate(replace(self.command, **change))
 
+    def test_replay_body_must_match_declared_bytes(self):
+        body = b"%PDF-1.7\nsynthetic\n%%EOF\n"
+        ReceiveUploadContentService._validate_replay_body([body[:4], body[4:]], self.command)
+        for chunks, code in (
+            ([], "FILE_INTEGRITY_MISMATCH"),
+            ([body[:-1] + b"!"], "FILE_INTEGRITY_MISMATCH"),
+            ([body, b"extra"], "FILE_TOO_LARGE"),
+            (["not bytes"], "VALIDATION_FAILED"),
+            ([b"x" * 1_048_577], "VALIDATION_FAILED"),
+        ):
+            with self.subTest(code=code, chunks=len(chunks)), self.assertRaises(UploadContentError) as raised:
+                ReceiveUploadContentService._validate_replay_body(chunks, self.command)
+            self.assertEqual(raised.exception.code, code)
+
 
 if __name__ == "__main__":
     unittest.main()
