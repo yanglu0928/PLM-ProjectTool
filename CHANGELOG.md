@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/DOC-01-A04-P04 增加 DocumentVersion HTTP+PostgreSQL 18.6 隔离同链路验证，覆盖真实 Session/项目成员、三版本两页、GLOBAL/跨项目、受限版本/文件状态和 License 拒绝；Windows 11 合成验证 PASS。无程序 API/Schema/依赖变化；正式平台版本密钥与受权下载仍待。
+
 - 2026-09-26：`0.1.0.dev0`/DOC-01-A04-P03 新增默认关闭、可选挂载的 PROJECT/GLOBAL DocumentVersion 元数据列表/详情 GET，专用签名游标与无路径投影。Windows 11 后端 527 项无失败（2 项环境跳过）、HTTP 合同与开发 wheel PASS。无 Migration/新依赖/API 破坏；HTTP+真实库同链路、Windows 显式装配、受权下载仍待。
 
 - 2026-09-26：`0.1.0.dev0`/DOC-01-A04-P02 新增 DocumentVersion 独立签名分页游标及 Windows 当前账户只读密钥入口，绑定 Session/Scope/Project/父 Document/页大小/版本号。Windows 11 后端 524 项无失败（2 项环境跳过），临时 Vault 失密/备份恢复与开发 wheel PASS。无 Migration/新依赖/公开 API；正式账户密钥和版本 HTTP GET 仍待。
