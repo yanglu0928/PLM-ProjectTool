@@ -1859,3 +1859,15 @@
 |Reason|公开 Secret 创建可重试，原内部服务单独提交会在网络重试时重复创建；现有 Migration `0015` 已提供原子收据。|
 |Impact|修改内部创建命令和依赖签名、单元/临时库验证；轮换/停用与 HTTP 接线另项完成。无 Schema/Migration/已公开 API 变更。|
 |Rollback|写 HTTP 仍关闭；实现异常可回退代码，既有历史 Secret/收据不删除。|
+
+## DEC-20260925-048
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-048|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P05-A04 Secret 轮换/停用持久幂等|
+|Decision|轮换与停用命令均强制合法 Idempotency-Key。完成管理员/License 复核后，在写事务内按 actor/部署全局/操作/Key 摘要预约通用收据；轮换指纹只含 SecretRef、期望锁版本和新值 SHA-256，停用指纹只含 SecretRef/期望锁版本。轮换完成收据引用不可变新密文版本，重放在相同 SecretRef 下读取原版本号；停用完成收据引用退役版本，仅在归属吻合时承认重放。密文状态、Audit 和收据同事务提交。|
+|Reason|冻结 API-01 要求可重试写命令幂等；现有轮换/停用事务已原子，但网络重试会遇陈旧版本冲突，无法区分同请求重放。|
+|Impact|修改内部命令/仓储 Port 与验证，不改 Schema/Migration 或已公开 API；HTTP 写路由继续关闭。|
+|Rollback|写路由未开放；既有历史记录和收据不可删除，故障时仅回退未发布代码。|

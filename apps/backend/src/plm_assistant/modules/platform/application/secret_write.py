@@ -46,6 +46,7 @@ class RotateSecret:
     expected_lock_version: int
     secret_value: bytearray = field(repr=False)
     trace_id: uuid.UUID
+    idempotency_key: str = field(repr=False)
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,6 +56,7 @@ class DisableSecret:
     secret_ref: SecretRef
     expected_lock_version: int
     trace_id: uuid.UUID
+    idempotency_key: str = field(repr=False)
 
 
 class SecretWriteAccessPort(Protocol):
@@ -90,6 +92,9 @@ class SecretWriteRepositoryPort(Protocol):
 
     def disable(self, transaction: object, *, secret_ref: SecretRef,
                 expected_lock_version: int) -> uuid.UUID | None: ...
+
+    def version_no(self, transaction: object, *, secret_ref: SecretRef,
+                   version_id: uuid.UUID) -> int | None: ...
 
 
 _CONSUMER = {
@@ -176,9 +181,31 @@ class SecretWriteService:
                     or type(command.expected_lock_version) is not int
                     or not 1 <= command.expected_lock_version < 9_223_372_036_854_775_807):
                 raise SecretWriteError("VALIDATION_FAILED")
+            validate_idempotency_key(command.idempotency_key)
+            fingerprint = canonical_payload_fingerprint({
+                "secret_id": str(command.secret_ref.secret_id),
+                "expected_lock_version": command.expected_lock_version,
+                "secret_sha256": hashlib.sha256(command.secret_value).hexdigest(),
+            })
             self._precheck(command)
             with self._uow() as tx:
                 actor = self._require_admin(tx, command)
+                scope = IdempotencyScope.from_key(
+                    actor_id=actor, project_id=None,
+                    operation="V1_PLATFORM_SECRET_ROTATE", key=command.idempotency_key,
+                )
+                replay = self._receipts.reserve(
+                    tx, scope=scope, request_fingerprint=fingerprint,
+                )
+                if replay is not None:
+                    if replay.ref_type != "V1_PLATFORM_SECRET_VERSION" or replay.status_code != 200:
+                        raise SecretWriteError("PLATFORM_SECRET_UNAVAILABLE")
+                    previous_no = self._repo.version_no(
+                        tx, secret_ref=command.secret_ref, version_id=replay.ref_id,
+                    )
+                    if type(previous_no) is not int or previous_no < 1:
+                        raise SecretWriteError("PLATFORM_SECRET_UNAVAILABLE")
+                    return previous_no
                 current = self._repo.lock_current(
                     tx, secret_ref=command.secret_ref,
                     expected_lock_version=command.expected_lock_version,
@@ -203,10 +230,16 @@ class SecretWriteService:
                 self._audit.append(tx, self._event(command.trace_id, actor,
                                                    command.secret_ref, version_id,
                                                    "PLATFORM_SECRET_ROTATE"))
+                self._receipts.complete(
+                    tx, scope=scope,
+                    result=IdempotencyResult("V1_PLATFORM_SECRET_VERSION", version_id, 200),
+                )
                 tx.commit()
                 return version_no
         except SecretWriteError:
             raise
+        except IdempotencyError as exc:
+            raise SecretWriteError(exc.code) from None
         except Exception:
             raise SecretWriteError("PLATFORM_SECRET_UNAVAILABLE") from None
         finally:
@@ -223,9 +256,30 @@ class SecretWriteService:
                 or type(command.trace_id) is not uuid.UUID or command.trace_id.int == 0):
             raise SecretWriteError("VALIDATION_FAILED")
         try:
+            validate_idempotency_key(command.idempotency_key)
+            fingerprint = canonical_payload_fingerprint({
+                "secret_id": str(command.secret_ref.secret_id),
+                "expected_lock_version": command.expected_lock_version,
+            })
             self._precheck(command)
             with self._uow() as tx:
                 actor = self._require_admin(tx, command)
+                scope = IdempotencyScope.from_key(
+                    actor_id=actor, project_id=None,
+                    operation="V1_PLATFORM_SECRET_DISABLE", key=command.idempotency_key,
+                )
+                replay = self._receipts.reserve(
+                    tx, scope=scope, request_fingerprint=fingerprint,
+                )
+                if replay is not None:
+                    if replay.ref_type != "V1_PLATFORM_SECRET_VERSION" or replay.status_code != 200:
+                        raise SecretWriteError("PLATFORM_SECRET_UNAVAILABLE")
+                    previous_no = self._repo.version_no(
+                        tx, secret_ref=command.secret_ref, version_id=replay.ref_id,
+                    )
+                    if type(previous_no) is not int or previous_no < 1:
+                        raise SecretWriteError("PLATFORM_SECRET_UNAVAILABLE")
+                    return
                 version_id = self._repo.disable(
                     tx, secret_ref=command.secret_ref,
                     expected_lock_version=command.expected_lock_version,
@@ -236,9 +290,15 @@ class SecretWriteService:
                     command.trace_id, actor, command.secret_ref,
                     version_id, "PLATFORM_SECRET_DISABLE",
                 ))
+                self._receipts.complete(
+                    tx, scope=scope,
+                    result=IdempotencyResult("V1_PLATFORM_SECRET_VERSION", version_id, 200),
+                )
                 tx.commit()
         except SecretWriteError:
             raise
+        except IdempotencyError as exc:
+            raise SecretWriteError(exc.code) from None
         except Exception:
             raise SecretWriteError("PLATFORM_SECRET_UNAVAILABLE") from None
 

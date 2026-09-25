@@ -42,8 +42,9 @@ class Deps:
         self.writes = 0
         self.encryptions = 0
         self.audit_ok = True
-        self.receipt: tuple[object, bytes, IdempotencyResult] | None = None
-        self.pending: tuple[object, bytes] | None = None
+        self.receipts: dict[object, tuple[bytes, IdempotencyResult]] = {}
+        self.pending: dict[object, bytes] = {}
+        self.versions: dict[uuid.UUID, int] = {}
 
     def unit_of_work(self):
         return Tx(self)
@@ -71,13 +72,20 @@ class Deps:
         assert kwargs["expected_lock_version"] == self.lock_version
         assert kwargs["expected_version_no"] == self.current[2]
         self.writes += 1
-        return uuid.uuid4()
+        version_id = uuid.uuid4()
+        self.versions[version_id] = kwargs["expected_version_no"] + 1
+        return version_id
 
     def disable(self, tx, **kwargs):
         if self.current is None:
             return None
         self.writes += 1
-        return uuid.uuid4()
+        version_id = uuid.uuid4()
+        self.versions[version_id] = self.current[2]
+        return version_id
+
+    def version_no(self, tx, *, secret_ref, version_id):
+        return self.versions.get(version_id)
 
     def append(self, tx, event):
         if not self.audit_ok:
@@ -86,20 +94,17 @@ class Deps:
         return uuid.uuid4()
 
     def reserve(self, tx, *, scope, request_fingerprint):
-        if self.receipt is None:
-            self.pending = (scope, request_fingerprint)
+        if scope not in self.receipts:
+            self.pending[scope] = request_fingerprint
             return None
-        previous_scope, previous_fingerprint, result = self.receipt
-        if scope == previous_scope:
-            if request_fingerprint != previous_fingerprint:
-                raise IdempotencyError("CONFLICT_IDEMPOTENCY")
-            return result
-        self.pending = (scope, request_fingerprint)
-        return None
+        previous_fingerprint, result = self.receipts[scope]
+        if request_fingerprint != previous_fingerprint:
+            raise IdempotencyError("CONFLICT_IDEMPOTENCY")
+        return result
 
     def complete(self, tx, *, scope, result):
-        assert self.pending is not None and self.pending[0] == scope
-        self.receipt = (scope, self.pending[1], result)
+        assert scope in self.pending
+        self.receipts[scope] = (self.pending.pop(scope), result)
 
 
 class SecretWriteTests(unittest.TestCase):
@@ -123,7 +128,8 @@ class SecretWriteTests(unittest.TestCase):
     def rotate_command(self, **changes):
         args = dict(session_token=b"s" * 32, csrf_token=b"c" * 32,
                     secret_ref=SecretRef(uuid.uuid4()), expected_lock_version=1,
-                    secret_value=bytearray(b"synthetic-next"), trace_id=uuid.uuid4())
+                    secret_value=bytearray(b"synthetic-next"), trace_id=uuid.uuid4(),
+                    idempotency_key=str(uuid.uuid4()))
         args.update(changes)
         return RotateSecret(**args)
 
@@ -203,27 +209,46 @@ class SecretWriteTests(unittest.TestCase):
         self.assertEqual(self.service.rotate(
             self.rotate_command(expected_lock_version=3)), 8)
 
+    def test_rotation_replay_does_not_reencrypt_or_reaudit(self):
+        key = str(uuid.uuid4())
+        ref = SecretRef(uuid.uuid4())
+        first = self.rotate_command(secret_ref=ref, idempotency_key=key)
+        self.assertEqual(self.service.rotate(first), 2)
+        self.assertEqual(self.service.rotate(self.rotate_command(
+            secret_ref=ref, idempotency_key=key)), 2)
+        self.assertEqual(self.deps.writes, 1)
+        self.assertEqual(self.deps.encryptions, 1)
+        different = self.rotate_command(secret_ref=ref, idempotency_key=key,
+                                        secret_value=bytearray(b"different-value"))
+        with self.assertRaises(SecretWriteError) as caught:
+            self.service.rotate(different)
+        self.assertEqual(caught.exception.code, "CONFLICT_IDEMPOTENCY")
+        self.assertEqual(different.secret_value, bytearray(len(different.secret_value)))
+
     def test_disable_requires_current_version_and_audit(self):
         ref = SecretRef(uuid.uuid4())
-        command = DisableSecret(b"s" * 32, b"c" * 32, ref, 1, uuid.uuid4())
+        command = DisableSecret(b"s" * 32, b"c" * 32, ref, 1, uuid.uuid4(), str(uuid.uuid4()))
         self.service.disable(command)
         self.assertEqual(self.deps.writes, 1)
         self.assertEqual(self.deps.commits, 1)
+        self.service.disable(command)
+        self.assertEqual(self.deps.writes, 1)
         self.deps.current = None
         with self.assertRaises(SecretWriteError) as caught:
-            self.service.disable(command)
+            self.service.disable(DisableSecret(b"s" * 32, b"c" * 32, ref, 1,
+                                               uuid.uuid4(), str(uuid.uuid4())))
         self.assertEqual(caught.exception.code, "CONFLICT_VERSION")
         self.assertEqual(self.deps.commits, 1)
 
     def test_disable_denies_invalid_request_and_audit_failure(self):
         ref = SecretRef(uuid.uuid4())
         with self.assertRaises(SecretWriteError) as caught:
-            self.service.disable(DisableSecret(b"s" * 32, b"short", ref, 1, uuid.uuid4()))
+            self.service.disable(DisableSecret(b"s" * 32, b"short", ref, 1, uuid.uuid4(), str(uuid.uuid4())))
         self.assertEqual(caught.exception.code, "VALIDATION_FAILED")
         self.assertEqual(self.deps.writes, 0)
         self.deps.audit_ok = False
         with self.assertRaises(SecretWriteError) as caught:
-            self.service.disable(DisableSecret(b"s" * 32, b"c" * 32, ref, 1, uuid.uuid4()))
+            self.service.disable(DisableSecret(b"s" * 32, b"c" * 32, ref, 1, uuid.uuid4(), str(uuid.uuid4())))
         self.assertEqual(caught.exception.code, "PLATFORM_SECRET_UNAVAILABLE")
         self.assertEqual(self.deps.commits, 0)
 

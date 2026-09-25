@@ -29,6 +29,13 @@ def _metadata(draft: EncryptedSecretDraft) -> dict[str, str]:
 
 
 class SqlAlchemySecretWriteRepository:
+    def version_no(self, transaction: object, *, secret_ref: SecretRef,
+                   version_id: uuid.UUID) -> int | None:
+        return _session(transaction).execute(select(SecretVersionRow.version_no).where(
+            SecretVersionRow.secret_version_id == version_id,
+            SecretVersionRow.secret_record_id == secret_ref.secret_id,
+        )).scalar_one_or_none()
+
     def create(self, transaction: object, *, secret_ref: SecretRef,
                purpose: SecretPurpose, consumer: SecretConsumer,
                encrypted: EncryptedSecretDraft, actor: uuid.UUID) -> uuid.UUID:

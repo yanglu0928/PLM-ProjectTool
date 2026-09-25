@@ -145,28 +145,33 @@ def main():
                 with connect(name) as db:
                     db.execute("UPDATE plm.plt_secret_records SET lock_version=2,updated_at=statement_timestamp() WHERE secret_record_id=%s", (ref.secret_id,))
 
-                def rotate(expected=1, value=b"synthetic-secret-two", target=service):
+                def rotate(expected=1, value=b"synthetic-secret-two", target=service, key=None):
                     clear = bytearray(value)
                     try:
                         return target.rotate(RotateSecret(admin_token, CSRF, ref, expected,
-                                                          clear, uuid.uuid4()))
+                                                          clear, uuid.uuid4(), key or str(uuid.uuid4())))
                     finally:
                         assert clear == bytearray(len(clear))
 
                 expect_error("CONFLICT_VERSION", rotate)
-                assert rotate(2) == 2
+                rotate_key = str(uuid.uuid4())
+                assert rotate(2, key=rotate_key) == 2
+                assert rotate(2, key=rotate_key) == 2
+                expect_error("CONFLICT_IDEMPOTENCY", lambda: rotate(
+                    2, b"synthetic-different", key=rotate_key))
                 expect_error("CONFLICT_VERSION", lambda: rotate(2))
                 failed = SecretWriteService(**kwargs, audit=FailedAudit())
                 expect_error("PLATFORM_SECRET_UNAVAILABLE", lambda: rotate(3, b"synthetic-secret-three", failed))
+                concurrent_rotate_key = str(uuid.uuid4())
                 def competing_rotate(_):
                     try:
-                        return rotate(3, b"synthetic-secret-concurrent")
+                        return rotate(3, b"synthetic-secret-concurrent", key=concurrent_rotate_key)
                     except SecretWriteError as exc:
                         return exc.code
 
                 with ThreadPoolExecutor(max_workers=2) as pool:
                     outcomes = list(pool.map(competing_rotate, range(2)))
-                assert sorted(map(str, outcomes)) == ["3", "CONFLICT_VERSION"], outcomes
+                assert sorted(map(str, outcomes)) == ["3", "3"], outcomes
                 reader = SecretResolver(SqlAlchemyEncryptedSecretStore(runtime.unit_of_work),
                                         AesGcmSecretCrypto(KeyProvider(), key_ref="synthetic-key"),
                                         ReadAudit())
@@ -181,7 +186,7 @@ def main():
                     audit = db.execute("SELECT action,target_version_id FROM plm.aud_events WHERE target_object_id=%s ORDER BY occurred_at", (ref.secret_id,)).fetchall()
                     assert {row[0] for row in audit} == {"PLATFORM_SECRET_CREATE", "PLATFORM_SECRET_ROTATE"}
                     assert len(audit) == 3 and all(row[1] is not None for row in audit)
-                print("PASS: admin/CSRF/License, atomic create idempotency, ciphertext-only rotation, concurrent version and Audit rollback")
+                print("PASS: admin/CSRF/License, atomic create and rotate replay, ciphertext history, concurrent version and Audit rollback")
             finally:
                 runtime.dispose()
         finally:
