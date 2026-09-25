@@ -2924,3 +2924,15 @@
 |Reason|冻结 SC-01 允许 Locator 类型细节使用 JSONB，SC-02 要求核心类型/版本为列。GLOBAL 的空 ProjectId 使普通复合 FK 无法完整证明跨表 Scope，因此增加数据库插入触发器；DocumentVersion 原表不为 Evidence 增加可空复合键。|
 |Impact|Evidence ORM、增量 Migration、隔离 PostgreSQL 验证与版本说明；不修改冻结 Gate 2 文件、不开放 API 或生产事实创建。后续 Eligibility/Viewer 必须有独立权限和有效来源校验。|
 |Rollback|空表可降级；有 Evidence 历史时拒绝降级，先备份并走可追溯迁移，不自动删除证据。|
+
+## DEC-20260926-137
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-137|
+|Date|2026-09-26|
+|WBS|EVD-01-A03-P01 Evidence 创建授权边界|
+|Decision|EVD-01-A03 分为 P01 实时 Session/CSRF/角色授权、P02 固定 DocumentVersion 与真实 Locator 解析、P03 同事务候选创建/幂等/Audit。P01 仅允许项目 `PROJECT_MANAGER`、`IMPLEMENTATION_MEMBER`，GLOBAL 仅 `DeploymentAdmin`；任何创建在无 P02 来源证明与 P03 编排时不开放。|
+|Reason|冻结 API-02 明确项目 PM/IM 与 GLOBAL Admin；现有 Document 读层提供版本/文件元数据，但九型 Locator 的实际解析证明尚无生产 Port。只凭 A01 字段校验或 A02 数据库触发器创建记录会允许无法点击定位的假证据。|
+|Impact|仅 Evidence 应用授权适配、测试与任务时序；无 Schema/API/生产入口变更。后续 P02/P03 保持完整九型终态，不把当前分步实现替代最终可用要求。|
+|Rollback|P01 未挂生产入口，停止注入该适配即可；历史冻结 API 权限矩阵不变。|
