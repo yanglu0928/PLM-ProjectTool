@@ -13,6 +13,7 @@ from psycopg import sql
 from sqlalchemy.engine import URL
 
 from plm_assistant.entrypoints.api import create_app
+from plm_assistant.entrypoints.trace_document_owner import DocumentVersionTraceOwner
 from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
 from plm_assistant.modules.auth.application.session_service import SessionService
 from plm_assistant.modules.auth.infrastructure.deployment_read_access import SqlAlchemyDeploymentReadAccess
@@ -26,6 +27,10 @@ from plm_assistant.modules.license.application.runtime_guard import RuntimeLicen
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
 from plm_assistant.modules.project.infrastructure.authorization_repository import SqlAlchemyProjectAuthorizationRepository
+from plm_assistant.modules.trace.application.target_proof import (
+    TraceProofQuery, TraceTargetProofError, TraceTargetProofService,
+)
+from plm_assistant.modules.trace.domain.link_shape import TraceEdgeShape, TraceVersionRef
 
 
 HOST, PORT, USER = "127.0.0.1", 55432, "poc_admin"
@@ -175,6 +180,33 @@ def verify():
             project_facts=SqlAlchemyProjectAuthorizationRepository(),
             license_guard=guard, repository=SqlAlchemyDocumentReadRepository(),
         )
+        trace_owner = DocumentVersionTraceOwner(documents)
+        trace_proof = TraceTargetProofService({("document", "DOC-02"): trace_owner})
+        source_ref = TraceVersionRef("document", "DOC-02", doc, first,
+                                     "PROJECT", project)
+        target_ref = TraceVersionRef("document", "DOC-02", doc, second,
+                                     "PROJECT", project)
+        edge = TraceEdgeShape(source_ref, target_ref, "DERIVED_FROM")
+        assert tuple(item.ref for item in trace_proof.prove_edge(
+            TraceProofQuery(pm_token, uuid.uuid4()), edge,
+        )) == (source_ref, target_ref)
+        for denied_token in (outsider_token, admin_token):
+            try:
+                trace_proof.prove_edge(TraceProofQuery(denied_token, uuid.uuid4()), edge)
+            except TraceTargetProofError as exc:
+                assert exc.code == "RESOURCE_NOT_FOUND"
+            else:
+                raise AssertionError("unauthorized Trace endpoint proof accepted")
+        global_ref = TraceVersionRef("document", "DOC-02", global_doc,
+                                     global_version, "GLOBAL", None)
+        assert trace_owner.prove(TraceProofQuery(admin_token, uuid.uuid4()),
+                                 global_ref).ref == global_ref
+        try:
+            trace_owner.prove(TraceProofQuery(pm_token, uuid.uuid4()), global_ref)
+        except TraceTargetProofError as exc:
+            assert exc.code == "RESOURCE_NOT_FOUND"
+        else:
+            raise AssertionError("project member was granted GLOBAL Trace target")
         router = create_document_version_read_router(
             sessions=sessions, documents=documents,
             origins=LoginOriginPolicy(["https://plm.example.test"]),

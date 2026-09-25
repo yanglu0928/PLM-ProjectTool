@@ -3032,3 +3032,15 @@
 |Reason|冻结 SC-01/02 要求多态边有受控 discriminator、保护引用、历史保留和活动边唯一；不创建全局 Object Registry，也不能将数据库形状当成目标事实证明。|
 |Impact|Trace ORM、Alembic Migration `20260926_0029`、迁移/数据库验证与版本说明；无公开 API、新依赖或生产写路由。|
 |Rollback|空表可降级；有任何 TraceLink 历史时拒绝降级，需备份和可追溯迁移方案。|
+
+## DEC-20260926-146
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-146|
+|Date|2026-09-26|
+|WBS|TRC-01-A03 目标 Owner Port 与 DocumentVersion 证明|
+|Decision|Trace 应用定义只返回匹配固定版本引用的 `TraceTargetProof` 和失败关闭的 Owner Port 调度；组合根适配既有 DocumentReadService 的受权 `get_version`，只支持 `document/DOC-02`。任何未注册类型、跨 Scope/Project、错误 DocumentVersion、无 Session/License/权限均拒绝，不返回路径、正文或文档元数据。通用 TraceLink 创建在所有目标 Owner Port、无环、幂等和 Audit 完成前仍关闭。|
+|Reason|冻结架构禁止 Trace 直接跨模块读 ORM，多态目标需由 Owner Port 证明。DocumentVersion 读取已有真实授权链，适合先建立可验证的第一种端点；未来业务 Owner 必须逐类接入，不以合成数据放行。|
+|Impact|Trace 应用合同、组合层 Document 适配、测试；无 Schema、公开 API、新依赖或生产写入口。|
+|Rollback|不在生产组合注册该适配；数据库历史与冻结合同不变。|
