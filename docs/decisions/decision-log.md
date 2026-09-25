@@ -2792,3 +2792,15 @@
 |Reason|版本号虽非机密，但明文或跨父文档复用分页位置会扩大枚举与状态推断面；冻结 API-01 分页采用不透明游标，现有 Windows 安全密钥供给/恢复模式可直接沿用。|
 |Impact|Version cursor codec、Windows 只读密钥入口与单元测试；无 Schema、公开 API、依赖变化。正式目标账户密钥供给前不挂载版本列表。|
 |Rollback|不注入版本列表 Router；失密时拒绝解码，可从该独立密钥备份恢复旧游标，不以其他用途密钥替代。|
+
+## DEC-20260926-126
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-126|
+|Date|2026-09-26|
+|WBS|DOC-01-A04-P03 可选 DocumentVersion 元数据 HTTP GET|
+|Decision|版本列表/详情以独立可选 Router 实现 PROJECT/GLOBAL 四条固定 GET 路径，复用 DocumentReadService 和专用版本游标；默认应用不装配。Page 返回 items/next_cursor/has_more，详情只返回冻结 VersionView 元数据，不含 FileObject ID、Locator、正文或 source_metadata。|
+|Reason|冻结 API-02 已要求版本列表/详情；独立 Router 可在正式目标账户版本游标密钥缺失时与其他 Document 路由分离并失败关闭，避免默默共用旧游标。|
+|Impact|Document API 与可选应用入口、合同测试；无 Schema、依赖、Breaking API 或权限粒度变化。Windows 显式组合留到同链路验证后单独实施。|
+|Rollback|不向应用注入版本 Router 即保持 404；已有 Document 读与上传数据不变。|
