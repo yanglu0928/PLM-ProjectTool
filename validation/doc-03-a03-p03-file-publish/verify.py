@@ -39,7 +39,7 @@ class SyntheticAccess:
 
     def require_in_transaction(self, transaction, *, actor_id, scope, project_id, operation):
         assert transaction.session.in_transaction()
-        assert operation == "V1_DOCUMENT_FILE_PUBLISH"
+        assert operation in ("V1_DOCUMENT_FILE_PUBLISH", "V1_DOCUMENT_FILE_RECOVER")
         if actor_id != self.actor:
             raise PermissionError("synthetic denied")
 

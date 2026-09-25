@@ -2411,3 +2411,15 @@
 |Reason|文件系统与 PostgreSQL 不共享事务；先物理发布后提交数据库可让失败保持业务不可见，残余由恢复器按冻结矩阵处理，不能以调用方传入的布尔值当作文件证明。|
 |Impact|Document 内部 Storage/Application/Repository 与合成文件及隔离 PostgreSQL 验证；无 Migration/公开 API/新依赖。MIME/特征的上传校验、正式 Document 权限装配和崩溃恢复仍为后续任务。|
 |Rollback|服务不挂公开组合根即可停止新发布；已经提升但未提交的文件不盲删，按恢复矩阵核验/隔离清理；已 AVAILABLE 的历史不得回写。|
+
+## DEC-20260925-094
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-094|
+|Date|2026-09-25|
+|WBS|DOC-03-A03-P04-P01 发布后数据库未提交的受控恢复|
+|Decision|先实现只针对明确 FileObject 的内部恢复：授权与版本核查后，要求 STAGED 元数据、暂存路径不存在、最终路径存在且独占，按数据库摘要/大小有界重校验，再复用行锁、状态事件/Audit/幂等收据同事务完成 AVAILABLE。暂存和最终路径同时存在、缺失、异常或 Hash 不符均失败关闭，保持业务不可见，不自动删除/改写。|
+|Reason|冻结 DM-03 恢复矩阵允许最终文件存在且 DB=STAGED 时校验后继续提交；同时存在的硬链接窗口及缺失/损坏需单独隔离策略，不能把未知文件当作完成证明。|
+|Impact|仅 Document 内部 Storage/Application 与合成文件、隔离 PostgreSQL 验证；不新增 Migration、公开 API 或依赖。P04-P02 再处理双路径窗口和隔离分类，P04 整体不因 P01 完成而关闭。|
+|Rollback|停止内部恢复装配；已成功提交的 AVAILABLE 与历史不可回写，失败仍 STAGED 且无物理删除。|

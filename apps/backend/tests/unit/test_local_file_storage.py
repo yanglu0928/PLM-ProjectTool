@@ -80,6 +80,34 @@ class LocalFileStorageTests(unittest.TestCase):
                 )
             self.assertFalse((self.root / final).exists())
 
+    def test_recover_only_complete_final_file(self):
+        stage, final = self.store.locators(
+            scope="GLOBAL", project_id=None, file_object_id=self.file_id,
+        )
+        content = b"synthetic recovered content"
+        digest = hashlib.sha256(content).digest()
+        with self.store.reserve_staging(stage) as stream:
+            stream.write(content)
+        with self.assertRaises(LocalStorageError):
+            self.store.recover_verified_final(
+                stage, final, expected_sha256=digest,
+                expected_size=len(content), max_bytes=len(content),
+            )
+        self.store.promote(stage, final)
+        proof = self.store.recover_verified_final(
+            stage, final, expected_sha256=digest,
+            expected_size=len(content), max_bytes=len(content),
+        )
+        self.assertEqual((proof.locator, proof.sha256, proof.size_bytes),
+                         (final, digest, len(content)))
+        with self.store.reserve_staging(stage) as stream:
+            stream.write(b"ambiguous second staged file")
+        with self.assertRaises(LocalStorageError):
+            self.store.recover_verified_final(
+                stage, final, expected_sha256=digest,
+                expected_size=len(content), max_bytes=len(content),
+            )
+
     def test_global_scope_and_invalid_uuids_rejected(self):
         stage, final = self.store.locators(
             scope="GLOBAL", project_id=None, file_object_id=self.file_id,

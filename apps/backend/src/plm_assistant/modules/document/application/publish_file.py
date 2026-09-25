@@ -16,6 +16,7 @@ from plm_assistant.modules.platform.application.idempotency import (
 
 
 _OPERATION = "V1_DOCUMENT_FILE_PUBLISH"
+_RECOVER_OPERATION = "V1_DOCUMENT_FILE_RECOVER"
 
 
 class FilePublishError(RuntimeError):
@@ -78,11 +79,20 @@ class FilePublishService:
         self._storage = storage
 
     def publish(self, command: PublishFile, *, idempotency_key: str) -> uuid.UUID:
+        return self._run(command, idempotency_key=idempotency_key, recovering=False)
+
+    def recover_final_only(self, command: PublishFile, *, idempotency_key: str) -> uuid.UUID:
+        """Complete a known final-only crash window after rechecking the bytes."""
+        return self._run(command, idempotency_key=idempotency_key, recovering=True)
+
+    def _run(self, command: PublishFile, *, idempotency_key: str,
+             recovering: bool) -> uuid.UUID:
         self._validate(command)
         validate_idempotency_key(idempotency_key)
+        operation = _RECOVER_OPERATION if recovering else _OPERATION
         scope = IdempotencyScope.from_key(
             actor_id=command.actor_id, project_id=command.project_id,
-            operation=_OPERATION, key=idempotency_key,
+            operation=operation, key=idempotency_key,
         )
         fingerprint = canonical_payload_fingerprint({
             "file_object_id": str(command.file_object_id), "scope": command.scope,
@@ -93,19 +103,21 @@ class FilePublishService:
         # This short transaction authorizes and snapshots metadata; do not hold a
         # database lock while hashing potentially large files.
         with self._unit_of_work() as tx:
-            self._authorize(tx, command)
+            self._authorize(tx, command, operation=operation)
             replay = self._receipts.reserve(
                 tx, scope=scope, request_fingerprint=fingerprint,
             )
             if replay is not None:
-                if replay.ref_type != _OPERATION:
+                if replay.ref_type != operation:
                     raise FilePublishError("FILE_UNAVAILABLE")
                 tx.commit()
                 return replay.ref_id
             staged = self._repository.staged(tx, command=command)
             # Roll back the provisional receipt; it must be committed only with
             # the state event, Audit, and AVAILABLE update below.
-        proof = self._storage.publish_verified(
+        verify = (self._storage.recover_verified_final if recovering
+                  else self._storage.publish_verified)
+        proof = verify(
             staged.staging_locator, staged.final_locator,
             expected_sha256=staged.sha256, expected_size=staged.size_bytes,
             max_bytes=command.max_bytes,
@@ -114,12 +126,12 @@ class FilePublishService:
                 or proof.size_bytes != staged.size_bytes):
             raise FilePublishError("FILE_UNAVAILABLE")
         with self._unit_of_work() as tx:
-            self._authorize(tx, command)
+            self._authorize(tx, command, operation=operation)
             replay = self._receipts.reserve(
                 tx, scope=scope, request_fingerprint=fingerprint,
             )
             if replay is not None:
-                if replay.ref_type != _OPERATION:
+                if replay.ref_type != operation:
                     raise FilePublishError("FILE_UNAVAILABLE")
                 tx.commit()
                 return replay.ref_id
@@ -130,21 +142,22 @@ class FilePublishService:
                 target_project_id=command.project_id,
                 actor_type="USER", actor_id=command.actor_id,
                 original_actor_id=None, actor_hint_digest=None,
-                action="DOCUMENT_FILE_PUBLISH", outcome="SUCCESS",
+                action="DOCUMENT_FILE_RECOVER" if recovering else "DOCUMENT_FILE_PUBLISH",
+                outcome="SUCCESS",
                 target_owner_module="document", target_object_type="DOC-03",
                 target_object_id=command.file_object_id, reason_code=None,
                 before_state="STAGED", after_state="AVAILABLE",
             ))
             self._receipts.complete(
-                tx, scope=scope, result=IdempotencyResult(_OPERATION, event_id, 200),
+                tx, scope=scope, result=IdempotencyResult(operation, event_id, 200),
             )
             tx.commit()
             return event_id
 
-    def _authorize(self, tx: object, command: PublishFile) -> None:
+    def _authorize(self, tx: object, command: PublishFile, *, operation: str) -> None:
         self._access.require_in_transaction(
             tx, actor_id=command.actor_id, scope=command.scope,
-            project_id=command.project_id, operation=_OPERATION,
+            project_id=command.project_id, operation=operation,
         )
 
     @staticmethod

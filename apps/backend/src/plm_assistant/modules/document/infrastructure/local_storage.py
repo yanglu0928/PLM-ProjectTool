@@ -212,3 +212,19 @@ class LocalFileStorage:
             final_locator, expected_sha256=expected_sha256,
             expected_size=expected_size, max_bytes=max_bytes,
         )
+
+    def recover_verified_final(self, staging_locator: str, final_locator: str, *,
+                               expected_sha256: bytes, expected_size: int,
+                               max_bytes: int) -> FileContentProof:
+        """Proof for the final-only crash window; never deletes a staged file."""
+        if (type(staging_locator) is not str or type(final_locator) is not str
+                or not staging_locator.startswith("temp/")
+                or final_locator != staging_locator.removeprefix("temp/")):
+            raise LocalStorageError()
+        staging_path = self._path(staging_locator)
+        if os.path.lexists(staging_path):
+            raise LocalStorageError()
+        return self.verify_content(
+            final_locator, expected_sha256=expected_sha256,
+            expected_size=expected_size, max_bytes=max_bytes,
+        )
