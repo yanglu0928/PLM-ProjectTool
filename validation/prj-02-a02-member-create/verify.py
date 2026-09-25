@@ -6,6 +6,9 @@ import hashlib
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 import psycopg
 from alembic import command
@@ -20,6 +23,12 @@ from plm_assistant.modules.auth.infrastructure.project_member_create_access impo
 from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
 from plm_assistant.modules.auth.application.session_service import SessionError
 from plm_assistant.entrypoints.api import create_app
+from plm_assistant.entrypoints.production_login import (
+    create_production_platform_app, create_production_platform_write_app,
+)
+from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
+from plm_assistant.modules.project.api.member_list_cursor import MemberListCursorCodec
+from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
 from plm_assistant.modules.project.api.create_member import create_project_member_create_router
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
@@ -109,6 +118,8 @@ def main():
                     idempotent_concurrent_target = user(db, "Synthetic Idempotent Concurrent Target")
                     http_target = user(db, "Synthetic HTTP Target")
                     http_forbidden_target = user(db, "Synthetic HTTP Forbidden Target")
+                    platform_target = user(db, "Synthetic Platform Target")
+                    platform_write_target = user(db, "Synthetic Platform Write Target")
                     disabled_target = user(db, "Synthetic Disabled")
                     db.execute("UPDATE plm.auth_users SET state='DISABLED' WHERE user_id=%s", (disabled_target,))
                     p1 = db.execute("INSERT INTO plm.prj_projects(project_code,project_code_normalized,name,created_by) VALUES ('P1','p1','First',%s) RETURNING project_id", (ids["pm1"],)).fetchone()[0]
@@ -257,6 +268,65 @@ def main():
                     assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE user_id=%s", (http_target,)).fetchone()[0] == 1
                     assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s", (http_member_id,)).fetchone()[0] == 1
                     assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE user_id=%s", (http_forbidden_target,)).fetchone()[0] == 0
+                settings = BootstrapSettings(
+                    data_root=Path.cwd(), trusted_origins=("http://localhost",),
+                )
+                with patch("plm_assistant.entrypoints.production_login.read_database_url",
+                           return_value=url), patch(
+                           "plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services",
+                           return_value=SimpleNamespace(guard=guard)), patch(
+                           "plm_assistant.entrypoints.production_login.create_windows_secret_list_cursor_codec",
+                           return_value=SecretListCursorCodec(b"q" * 32)), patch(
+                           "plm_assistant.entrypoints.production_login.create_windows_project_member_cursor_codec",
+                           return_value=MemberListCursorCodec(b"m" * 32)), patch(
+                           "plm_assistant.entrypoints.windows_secret_write.create_windows_secret_write_service",
+                           return_value=Mock()):
+                    for factory, target_id in (
+                        (create_production_platform_app, platform_target),
+                        (create_production_platform_write_app, platform_write_target),
+                    ):
+                        production = factory(settings)
+                        with TestClient(production, base_url="http://localhost") as client:
+                            platform_headers = {
+                                "origin": "http://localhost",
+                                "cookie": "plm_session=" + tokens["pm1"].hex(),
+                                "x-csrf-token": CSRF.hex(),
+                                "idempotency-key": str(uuid.uuid4()),
+                            }
+                            platform_body = {
+                                "user_id": str(target_id), "role": "IMPLEMENTATION_MEMBER",
+                                "department_id": str(d1),
+                            }
+                            first_platform = client.post(url_path, headers=platform_headers,
+                                                         json=platform_body)
+                            replay_platform = client.post(url_path, headers=platform_headers,
+                                                          json=platform_body)
+                            assert first_platform.status_code == replay_platform.status_code == 201, (first_platform.text, replay_platform.text)
+                            assert first_platform.json()["data"] == replay_platform.json()["data"]
+                            forbidden_platform = client.post(url_path, headers={
+                                **platform_headers,
+                                "cookie": "plm_session=" + tokens["cm"].hex(),
+                                "idempotency-key": str(uuid.uuid4()),
+                            }, json={**platform_body, "user_id": str(http_forbidden_target)})
+                            assert forbidden_platform.status_code == 404, forbidden_platform.text
+                            guard.enabled = False
+                            denied_platform = client.post(url_path, headers={
+                                **platform_headers, "idempotency-key": str(uuid.uuid4()),
+                            }, json={**platform_body, "user_id": str(http_forbidden_target)})
+                            assert denied_platform.status_code == 403, denied_platform.text
+                            guard.enabled = True
+                        with connect(name) as db:
+                            member_id = uuid.UUID(first_platform.json()["data"]["member_id"])
+                            assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE user_id=%s", (target_id,)).fetchone()[0] == 1
+                            assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s", (member_id,)).fetchone()[0] == 1
+                    with patch("plm_assistant.entrypoints.production_login.create_windows_project_member_cursor_codec",
+                               side_effect=RuntimeError("synthetic missing member key")):
+                        try:
+                            create_production_platform_app(settings)
+                        except Exception as exc:
+                            assert str(exc) == "production login unavailable"
+                        else:
+                            raise AssertionError("missing trust source did not fail closed")
                 denied("CONFLICT_IDEMPOTENCY", lambda: idempotent.create_idempotent(
                     make_command(target_id=replay_target, role="CUSTOMER_MEMBER"),
                     idempotency_key="member-create-replay-key-001",
@@ -280,7 +350,7 @@ def main():
                 else:
                     raise AssertionError("downgrade unexpectedly discarded snapshots")
                 denied("PROJECT_ARCHIVED", lambda: service.create(make_command(target_id=audit_target)))
-                print("PASS: empty/existing-data up-down, HTTP Session/CSRF/License/role/isolation/replay, rollback, concurrent one-write, immutable history and downgrade guard")
+                print("PASS: empty/existing-data up-down, optional and Windows platform/write HTTP replay/security, trust-source fail-closed, rollback and snapshot guards")
             finally:
                 runtime.dispose()
         finally:

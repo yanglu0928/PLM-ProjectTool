@@ -60,9 +60,13 @@ from plm_assistant.modules.project.infrastructure.create_repository import SqlAl
 from plm_assistant.modules.project.api.patch_project import create_project_patch_router
 from plm_assistant.modules.project.api.archive_project import create_project_archive_router
 from plm_assistant.modules.project.api.read_members import create_project_member_read_router
+from plm_assistant.modules.project.api.create_member import create_project_member_create_router
 from plm_assistant.modules.project.application.read_members import ProjectMemberReadService
+from plm_assistant.modules.project.application.create_member import ProjectMemberCreateService
 from plm_assistant.modules.project.infrastructure.member_read_repository import SqlAlchemyProjectMemberReadRepository
+from plm_assistant.modules.project.infrastructure.member_create_repository import SqlAlchemyProjectMemberCreateRepository
 from plm_assistant.modules.auth.infrastructure.project_member_names import SqlAlchemyProjectMemberNames
+from plm_assistant.modules.auth.infrastructure.project_member_create_access import SqlAlchemyProjectMemberCreateAccess
 from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
 from plm_assistant.modules.project.application.write_project import ProjectWriteService
 from plm_assistant.modules.project.infrastructure.authorization_repository import SqlAlchemyProjectAuthorizationRepository
@@ -166,6 +170,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         project_patch_router = None
         project_archive_router = None
         project_member_read_router = None
+        project_member_create_router = None
         if include_secret_read:
             from plm_assistant.entrypoints.windows_license_runtime import (
                 create_windows_license_services,
@@ -237,6 +242,21 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 sessions=sessions, members=member_reads,
                 origins=origins, cursors=member_cursors,
             )
+            member_creates = ProjectMemberCreateService(
+                unit_of_work=runtime.unit_of_work,
+                access=SqlAlchemyProjectMemberCreateAccess(),
+                license_guard=licenses.guard,
+                authorization=ProjectAuthorizationService(
+                    unit_of_work=runtime.unit_of_work,
+                    repository=SqlAlchemyProjectAuthorizationRepository(),
+                ),
+                repository=SqlAlchemyProjectMemberCreateRepository(),
+                audit=audit,
+                receipts=SqlAlchemyIdempotencyReceipts(),
+            )
+            project_member_create_router = create_project_member_create_router(
+                sessions=sessions, members=member_creates, origins=origins,
+            )
             if include_secret_write:
                 from plm_assistant.entrypoints.windows_secret_write import (
                     create_windows_secret_write_service,
@@ -269,6 +289,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             project_patch_router=project_patch_router,
             project_archive_router=project_archive_router,
             project_member_read_router=project_member_read_router,
+            project_member_create_router=project_member_create_router,
             shutdown_callback=runtime.dispose,
         )
     except Exception:

@@ -2111,3 +2111,15 @@
 |Reason|冻结 API-02 指定成员创建路径和 201 MemberView；内部 P01 已具备原样重放，接口不应自行绕过服务授权或回显内部字段。|
 |Impact|Project 可选 Router、应用工厂注入点、测试和版本记录；无 Schema、Migration、Breaking API 或新依赖。|
 |Rollback|移除 Router 注入后恢复 404；不影响内部成员创建与已存结果快照。|
+
+## DEC-20260925-069
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-069|
+|Date|2026-09-25|
+|WBS|PRJ-04-A10-P03 Windows 显式平台成员创建组合|
+|Decision|仅在 `--platform`/`--platform-write` 的 Schema、License、Secret 与成员 cursor 前置检查全部成功后装配成员创建；复用现行 Session、ProjectManager 授权、P01 收据/快照及 Audit。普通登录模式不挂载。|
+|Reason|成员创建不能成为绕过生产信任源的平行入口，且须与既有 Project 路由共享同一安全组合根。|
+|Impact|Windows 组合根和合成验证；无新 Schema、Migration、冻结 API 或依赖。|
+|Rollback|移除该 Router 注入，恢复成员创建 404；历史成员及幂等快照保持不变。|
