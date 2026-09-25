@@ -2051,3 +2051,15 @@
 |Reason|冻结 API-01 要求不透明、完整性保护、Scope/查询绑定 cursor；内部 `after_member_id` 不得直接暴露为可构造查询参数。|
 |Impact|新增 Project API cursor 编解码及测试，无 Schema/Migration、冻结 API 或第三方依赖变化；正式目标账户须额外安全供给并备份此密钥。|
 |Rollback|不挂载成员列表路由保持 404；已签发 cursor 可自然失效，但不得静默更换密钥后宣称分页连续。|
+
+## DEC-20260925-064
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-064|
+|Date|2026-09-25|
+|WBS|PRJ-04-A09-P02 Project Member 列表可选 HTTP|
+|Decision|仅显式注入成员列表 Router；复用当前 Host/Session 验证、P01 HMAC cursor 与 PRJ-02-A01 Service。请求仅 page_size/cursor，响应仅安全 MemberView Page。内部 Service 将 RuntimeLicenseError 映射为 `LICENSE_OPERATION_DENIED`，避免生产 HTTP 将已知许可拒绝误报为 503；其他异常仍失败关闭。|
+|Reason|冻结 API-02 只允许 ProjectManager/CustomerManager 读取成员历史，API-01 要求完整性保护分页和安全响应；现有 Service 将 License 异常统一包成 PROJECT_UNAVAILABLE，需在公开前修正。|
+|Impact|Project 成员读服务、可选 Router、测试和文档；无 Schema/Migration、冻结 API、依赖或权限扩张。默认/当前平台组合仍 404。|
+|Rollback|停止注入 Router 恢复 404；License 错误映射可独立回退，但会使已知许可拒绝错报 503。|

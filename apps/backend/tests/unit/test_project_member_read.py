@@ -11,6 +11,7 @@ from plm_assistant.modules.project.application.read_members import (
     MemberFacts, ProjectMemberListQuery, ProjectMemberReadError,
     ProjectMemberReadService,
 )
+from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
 
 
 class Tx:
@@ -36,9 +37,12 @@ class Access:
 class Guard:
     def __init__(self):
         self.calls = 0
+        self.denied = False
 
     def require_valid(self, **_kwargs):
         self.calls += 1
+        if self.denied:
+            raise RuntimeLicenseError("EXPIRED")
 
 
 class AuthorizationFacts:
@@ -136,6 +140,13 @@ class ProjectMemberReadTests(unittest.TestCase):
         with self.assertRaises(ProjectMemberReadError) as caught:
             self.service.list_page(self.query)
         self.assertEqual(caught.exception.code, "AUTH_ACCESS_DENIED")
+        self.assertEqual(self.repo.calls, 0)
+
+    def test_license_denial_is_classified(self):
+        self.guard.denied = True
+        with self.assertRaises(ProjectMemberReadError) as caught:
+            self.service.list_page(self.query)
+        self.assertEqual(caught.exception.code, "LICENSE_OPERATION_DENIED")
         self.assertEqual(self.repo.calls, 0)
 
 

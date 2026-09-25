@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PRJ-04-A09-P02 新增可选 Project Member 历史列表 HTTP：当前角色/Session、HMAC cursor、安全用户/部门摘要，并修正 License 拒绝为 403；默认/当前平台组合仍 404。Windows 11 后端 405/405、PostgreSQL 18 临时库双页/跨项目/跨会话/License 和开发 wheel PASS。无 Migration/新依赖；正式 cursor 密钥、生产组合、Server 2025/Debian 13 与最终程序包未完成。
+
 - 2026-09-25：`0.1.0.dev0`/PRJ-04-A09-P01 新增 Project Member 历史列表的不透明 HMAC cursor 前置，绑定项目、会话、页大小和位置；修正旧 Secret cursor 测试随机未篡改的问题。Windows 11 后端 401/401、开发 wheel PASS；无 Migration/公开 API/新依赖。本项未运行 PostgreSQL；独立目标账户密钥供给、HTTP/生产组合、Server 2025/Debian 13 与最终程序包未完成。
 
 - 2026-09-25：`0.1.0.dev0`/PRJ-04-A08-P03 在 Windows 显式 `--platform`/`--platform-write` 模式接入 Project 单向归档 POST，复用当前 Session、License、权限和 `0015` 收据；默认模式仍 404。Windows 11 后端 398/398、PostgreSQL 18 临时库真实会话同 Key 归档重放仅一次 Audit/合成 License 拒绝及开发 wheel PASS。无新 Migration/依赖；正式信任源、Server 2025/Debian 13 与最终程序包未完成。

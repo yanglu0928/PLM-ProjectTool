@@ -11,6 +11,7 @@ from typing import Protocol
 from plm_assistant.modules.project.application.authorization import (
     ProjectAuthorizationError, ProjectAuthorizationService,
 )
+from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
 
 
 class ProjectMemberReadError(RuntimeError):
@@ -142,5 +143,7 @@ class ProjectMemberReadService:
                 )
         except ProjectMemberReadError:
             raise
+        except RuntimeLicenseError:
+            raise ProjectMemberReadError("LICENSE_OPERATION_DENIED") from None
         except Exception:
             raise ProjectMemberReadError("PROJECT_UNAVAILABLE") from None

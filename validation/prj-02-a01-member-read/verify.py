@@ -8,10 +8,17 @@ from datetime import datetime, timezone
 
 import psycopg
 from alembic import command
+from fastapi.testclient import TestClient
 from psycopg import sql
 from sqlalchemy.engine import URL
 
 from plm_assistant.modules.auth.infrastructure.project_member_names import SqlAlchemyProjectMemberNames
+from plm_assistant.entrypoints.api import create_app
+from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
+from plm_assistant.modules.auth.application.session_service import SessionError
+from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
+from plm_assistant.modules.project.api.member_list_cursor import MemberListCursorCodec
+from plm_assistant.modules.project.api.read_members import create_project_member_read_router
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
 from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
@@ -30,7 +37,17 @@ class Guard:
 
     def require_valid(self, **_):
         if not self.enabled:
-            raise RuntimeError("synthetic invalid License")
+            raise RuntimeLicenseError("EXPIRED")
+
+
+class HttpSessions:
+    def __init__(self, tokens):
+        self.tokens = tokens
+
+    def validate(self, token):
+        if token not in self.tokens.values():
+            raise SessionError("AUTH_SESSION_EXPIRED")
+        return object()
 
 
 def connect(name):
@@ -107,6 +124,34 @@ def main():
                 denied("RESOURCE_NOT_FOUND", lambda: service.list_page(query("im")))
                 denied("RESOURCE_NOT_FOUND", lambda: service.list_page(query("other")))
                 denied("RESOURCE_NOT_FOUND", lambda: service.list_page(query("pm", project=p2)))
+                router = create_project_member_read_router(
+                    sessions=HttpSessions(tokens), members=service,
+                    origins=LoginOriginPolicy(["https://plm.example.test"]),
+                    cursors=MemberListCursorCodec(b"k" * 32),
+                )
+                with TestClient(create_app(project_member_read_router=router),
+                                base_url="https://plm.example.test") as client:
+                    path = f"/api/v1/projects/{p1}/members"
+                    def headers(key):
+                        return {"cookie": "plm_session=" + tokens[key].hex()}
+                    first_http = client.get(path + "?page_size=2", headers=headers("pm"))
+                    assert first_http.status_code == 200, first_http.text
+                    first_page = first_http.json()["data"]
+                    assert len(first_page["items"]) == 2 and first_page["has_more"]
+                    cursor = first_page["next_cursor"]
+                    second_http = client.get(path + "?page_size=2&cursor=" + cursor,
+                                             headers=headers("pm"))
+                    assert second_http.status_code == 200
+                    assert len(second_http.json()["data"]["items"]) == 2
+                    assert {item["member_id"] for item in first_page["items"] + second_http.json()["data"]["items"]} == {str(value) for value in member_ids.values()}
+                    assert client.get(path + "?page_size=2", headers=headers("cm")).status_code == 200
+                    assert client.get(path, headers=headers("im")).status_code == 404
+                    assert client.get(f"/api/v1/projects/{p2}/members", headers=headers("pm")).status_code == 404
+                    assert client.get(path + "?page_size=2&cursor=" + cursor,
+                                      headers=headers("cm")).status_code == 400
+                    guard.enabled = False
+                    assert client.get(path, headers=headers("cm")).status_code == 403
+                    guard.enabled = True
                 with connect(name) as db:
                     db.execute("UPDATE plm.prj_projects SET state='ARCHIVED' WHERE project_id=%s", (p1,))
                 assert len(service.list_page(query("pm", limit=10)).items) == 4
@@ -114,7 +159,7 @@ def main():
                     db.execute("UPDATE plm.prj_project_members SET state='SUSPENDED' WHERE project_member_id=%s", (member_ids["pm"],))
                 denied("RESOURCE_NOT_FOUND", lambda: service.list_page(query("pm")))
                 guard.enabled = False
-                denied("PROJECT_UNAVAILABLE", lambda: service.list_page(query("cm")))
+                denied("LICENSE_OPERATION_DENIED", lambda: service.list_page(query("cm")))
                 print("PASS: role matrix, cross-project isolation, archived/history reads, keyset paging and current revocation")
             finally:
                 runtime.dispose()
