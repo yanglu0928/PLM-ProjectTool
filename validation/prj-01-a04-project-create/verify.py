@@ -9,18 +9,24 @@ from datetime import datetime, timezone
 
 import psycopg
 from alembic import command
+from fastapi.testclient import TestClient
 from psycopg import sql
 from sqlalchemy.engine import URL
 
+from plm_assistant.entrypoints.api import create_app
+from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
+from plm_assistant.modules.auth.application.session_service import SessionError
 from plm_assistant.modules.audit.application.public import AuditService
 from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
 from plm_assistant.modules.auth.infrastructure.project_create_access import SqlAlchemyProjectCreateAccess
+from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
 from plm_assistant.modules.project.application.create_project import (
     CreateProject, DepartmentSeed, ProjectCreateError, ProjectCreateService,
 )
+from plm_assistant.modules.project.api.create_project import create_project_create_router
 from plm_assistant.modules.project.infrastructure.create_repository import SqlAlchemyProjectCreateRepository
 
 HOST, PORT, USER = "127.0.0.1", 55432, "poc_admin"
@@ -33,12 +39,20 @@ class Guard:
 
     def require_valid(self, **_):
         if not self.enabled:
-            raise RuntimeError("synthetic expired License")
+            raise RuntimeLicenseError("EXPIRED")
 
 
 class FailedAudit:
     def append(self, *_):
         raise RuntimeError("synthetic Audit failure")
+
+
+class HttpSessions:
+    def validate(self, token, *, csrf_token, require_csrf):
+        if (token not in (ADMIN_TOKEN, NONADMIN_TOKEN) or csrf_token != CSRF
+                or require_csrf is not True):
+            raise SessionError("AUTH_SESSION_EXPIRED")
+        return object()
 
 
 def connect(name):
@@ -79,6 +93,7 @@ def main():
                     disabled_id = user(db, "Synthetic Disabled", "NONE")
                     replay_manager_id = user(db, "Synthetic Replay Manager", "NONE")
                     rollback_manager_id = user(db, "Synthetic Rollback Manager", "NONE")
+                    http_manager_id = user(db, "Synthetic HTTP Manager", "NONE")
                     db.execute("UPDATE plm.auth_users SET state='DISABLED' WHERE user_id=%s", (disabled_id,))
                 guard = Guard()
                 kwargs = dict(unit_of_work=runtime.unit_of_work,
@@ -96,8 +111,8 @@ def main():
                 guard.enabled = False
                 try:
                     service.create(cmd())
-                except RuntimeError as exc:
-                    assert str(exc) == "synthetic expired License"
+                except RuntimeLicenseError as exc:
+                    assert exc.code == "EXPIRED"
                 else:
                     raise AssertionError("expired License allowed")
                 guard.enabled = True
@@ -192,7 +207,48 @@ def main():
                         "SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='PROJECT_CREATED'",
                         (recovered.project_id,),
                     ).fetchone()[0] == 1
-                print("PASS: admin/CSRF/License, manager eligibility, atomic bootstrap, concurrent same-key replay, immutable first response, Audit rollback")
+                router = create_project_create_router(
+                    sessions=HttpSessions(), projects=idempotent,
+                    origins=LoginOriginPolicy(["http://localhost"]),
+                )
+                with TestClient(create_app(project_create_router=router),
+                                base_url="http://localhost") as client:
+                    headers = {
+                        "origin": "http://localhost",
+                        "cookie": "plm_session=" + ADMIN_TOKEN.hex(),
+                        "x-csrf-token": CSRF.hex(),
+                        "idempotency-key": str(uuid.uuid4()),
+                    }
+                    body = {
+                        "code": "P7", "name": "Synthetic HTTP Project",
+                        "initial_manager_user_id": str(http_manager_id),
+                    }
+                    first = client.post("/api/v1/projects", headers=headers, json=body)
+                    replay = client.post("/api/v1/projects", headers=headers, json=body)
+                    assert first.status_code == replay.status_code == 201
+                    assert first.json()["data"] == replay.json()["data"]
+                    http_project_id = uuid.UUID(first.json()["data"]["project_id"])
+                    assert first.headers["etag"] == '"v0"'
+                    nonadmin = client.post("/api/v1/projects", headers={
+                        **headers, "cookie": "plm_session=" + NONADMIN_TOKEN.hex(),
+                        "idempotency-key": str(uuid.uuid4()),
+                    }, json={**body, "code": "P8"})
+                    assert nonadmin.status_code == 404
+                    guard.enabled = False
+                    denied_http = client.post("/api/v1/projects", headers={
+                        **headers, "idempotency-key": str(uuid.uuid4()),
+                    }, json={**body, "code": "P8"})
+                    assert denied_http.status_code == 403
+                    guard.enabled = True
+                with connect(name) as db:
+                    assert db.execute(
+                        "SELECT count(*) FROM plm.prj_projects WHERE project_code_normalized='p7'"
+                    ).fetchone()[0] == 1
+                    assert db.execute(
+                        "SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='PROJECT_CREATED'",
+                        (http_project_id,),
+                    ).fetchone()[0] == 1
+                print("PASS: admin/CSRF/License, atomic Project bootstrap, concurrent/HTTP replay, immutable first response, Audit rollback")
             finally:
                 runtime.dispose()
         finally:

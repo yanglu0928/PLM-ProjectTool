@@ -39,6 +39,7 @@ description: Execute architecture, PoC, implementation, testing, packaging, and 
 - PLT-02-A07-P05-A09 正式信任源受工作台操作员口令保管与离线备份阻塞；PRJ-04-A01 已新增可选 Project 列表/详情 HTTP，并在 PostgreSQL 临时库完成合成 License 及真实多用户授权验证。生产组合、Gate 3 未完成；最新状态以根目录 `STATUS.md` 为准。
 - PRJ-04-A02 已将 Project 读取挂入 Windows 显式平台组合，在 PostgreSQL 临时库验证真实 Session/Project 隔离与合成 License 拒绝；正式发行信任源、Server 2025 和 Gate 3 未完成。最新状态以根目录 `STATUS.md` 为准。
 - PRJ-04-A03 已先补内部 Project 创建同事务持久幂等，复用 `0015` 并验证 PostgreSQL 并发同 Key、原响应重放和 Audit 回滚；公开创建 HTTP、正式信任源与 Gate 3 未完成。最新状态以根目录 `STATUS.md` 为准。
+- PRJ-04-A04 已新增可选 Project 创建 HTTP，并在 PostgreSQL 临时库验证同 Key 重放、管理员/License 拒绝；正式 Windows 平台组合、发行信任源与 Gate 3 未完成。最新状态以根目录 `STATUS.md` 为准。
 
 ## 参考文件路由
 

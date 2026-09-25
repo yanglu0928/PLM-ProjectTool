@@ -1955,3 +1955,15 @@
 |Reason|冻结 API-01 的可重试 POST 必须持久幂等；现有内部创建没有 Idempotency-Key，直接开放 HTTP 会使同键网络重试产生重复写入或错误响应。通用收据只能存一个非敏感结果引用，冻结创建响应恰为 ProjectView，不要求重放内部 Department/Member ID。|
 |Impact|增加 Project 应用方法、只读 `created_at` Repository Port、单元/临时 PostgreSQL 验证；无 Schema/Migration、新依赖或公开 API。若项目历史行异常消失则失败关闭。|
 |Rollback|停止调用新幂等方法，旧内部 `create` 语义保持；保留已完成的收据/Project/Audit 历史，不删除数据。|
+
+## DEC-20260925-056
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-056|
+|Date|2026-09-25|
+|WBS|PRJ-04-A04 Project 创建 HTTP|
+|Decision|新增仅显式注入的 `POST /api/v1/projects`，验证可信 Host/Origin、唯一 Cookie/CSRF/Idempotency-Key 和现行 Session 后解析最多 8 KiB、UTF-8、无重复键/非标准常量的 JSON。只接受 code/name/initial_manager_user_id 与可选 department seed，UUID 必须 canonical lowercase；调用 `create_idempotent`。201 仅返回冻结 ProjectView、ETag/Location/TraceId，不返回初始成员内部 ID。默认和当前生产组合先不挂载。|
+|Reason|内部管理员原子创建与持久幂等已具备，现需补齐冻结浏览器请求边界；在正式 License 信任源未供给前仍需保持生产默认关闭。|
+|Impact|新增 Project HTTP、错误码映射、契约/临时库验证；无 Schema/Migration、冻结 API 或安全机制变更。|
+|Rollback|不注入 Router 即恢复 404；既有 Project/审计/收据保留，无数据迁移。|

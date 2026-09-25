@@ -51,6 +51,12 @@ COMMON_ERRORS: dict[str, ErrorSpec] = {
     "PLATFORM_SECRET_UNAVAILABLE": ErrorSpec(
         "PLATFORM_SECRET_UNAVAILABLE", 503, "Secret 服务暂时不可用。"
     ),
+    "PROJECT_USER_ALREADY_ASSIGNED": ErrorSpec(
+        "PROJECT_USER_ALREADY_ASSIGNED", 409, "用户已属于其他项目。"
+    ),
+    "PROJECT_ROLE_INVALID": ErrorSpec(
+        "PROJECT_ROLE_INVALID", 422, "项目负责人不符合要求。"
+    ),
 }
 
 

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PRJ-04-A04 新增可选 Project 创建 HTTP：可信来源/Session/CSRF/同事务幂等、严格有界 JSON、201 ProjectView/ETag/Location；默认/当前生产组合未挂载。Windows 11 后端 390/390、PostgreSQL 18 临时库 HTTP 同 Key 重放/管理员与 License 拒绝及开发 wheel PASS。无新 Migration/依赖，需已有 `0015`；生产组合、正式发行信任源、Server 2025/Debian 13 和最终程序包未完成。
+
 - 2026-09-25：`0.1.0.dev0`/PRJ-04-A03 为 Project 创建新增同事务持久幂等前置，保留旧内部命令；管理员作用域/规范化请求指纹，同 Key 返首次 ProjectView 语义，异载荷冲突，Project/首位负责人/审计/收据原子提交。Windows 11 后端 386/386、PostgreSQL 18 临时库并发重放/历史响应/Audit 回滚及开发 wheel PASS。无新 Migration/依赖，需已有 `0015`；公开 POST、正式发行信任源、Server 2025/Debian 13 和最终程序包未完成。
 
 - 2026-09-25：`0.1.0.dev0`/PRJ-04-A02 在 Windows 显式 `--platform`/`--platform-write` 模式接入 Project 列表/详情 GET，继续复用 Session/License/Project 当前授权；默认登录模式仍 404。Windows 11 后端 384/384、PostgreSQL 18 临时库合成平台组合跨项目隔离/License 拒绝及开发 wheel PASS。无新 Migration/依赖；真实发行信任源、Server 2025/Debian 13 和最终程序包未完成。
