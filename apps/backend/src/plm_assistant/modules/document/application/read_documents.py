@@ -72,6 +72,7 @@ class DocumentVersionPage:
 
 @dataclass(frozen=True, slots=True)
 class DocumentDownloadSource:
+    actor_user_id: uuid.UUID
     document_id: uuid.UUID
     document_version_id: uuid.UUID
     file_object_id: uuid.UUID
@@ -117,7 +118,8 @@ class DocumentReadRepositoryPort(Protocol):
                     document_version_id: uuid.UUID) -> DocumentVersionView | None: ...
     def get_download_source(self, transaction: object, *, scope: str,
                             project_id: uuid.UUID | None, document_id: uuid.UUID,
-                            document_version_id: uuid.UUID) -> DocumentDownloadSource | None: ...
+                            document_version_id: uuid.UUID,
+                            actor_user_id: uuid.UUID) -> DocumentDownloadSource | None: ...
 
 
 class DocumentReadService:
@@ -251,13 +253,19 @@ class DocumentReadService:
         try:
             self._guard.require_valid(trace_id=query.trace_id)
             with self._uow() as tx:
-                self._authorize(tx, query)
+                actor = self._authorize(tx, query)
                 self._require_document(tx, query, document_id)
                 source = self._repository.get_download_source(
                     tx, scope=query.scope, project_id=query.project_id,
                     document_id=document_id, document_version_id=document_version_id,
+                    actor_user_id=actor,
                 )
-                if type(source) is not DocumentDownloadSource:
+                if (type(source) is not DocumentDownloadSource
+                        or source.actor_user_id != actor
+                        or source.document_id != document_id
+                        or source.document_version_id != document_version_id
+                        or source.scope != query.scope
+                        or source.project_id != query.project_id):
                     raise DocumentReadError("RESOURCE_NOT_FOUND")
                 return source
         except DocumentReadError:
@@ -285,7 +293,7 @@ class DocumentReadService:
                     type(query.project_id) is not uuid.UUID or query.project_id.int == 0)):
             raise DocumentReadError("VALIDATION_FAILED")
 
-    def _authorize(self, tx: object, query: DocumentReadQuery) -> None:
+    def _authorize(self, tx: object, query: DocumentReadQuery) -> uuid.UUID:
         now = self._clock()
         if type(now) is not datetime or now.tzinfo is None or now.utcoffset() is None:
             raise DocumentReadError("DOCUMENT_UNAVAILABLE")
@@ -306,3 +314,4 @@ class DocumentReadService:
             if (type(facts) is not ProjectActorFacts or facts.project_role not in ALL_MEMBERS
                     or facts.project_state not in ("ACTIVE", "ARCHIVED")):
                 raise DocumentReadError("RESOURCE_NOT_FOUND")
+        return actor

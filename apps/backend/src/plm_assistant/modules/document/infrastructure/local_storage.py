@@ -18,6 +18,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import BinaryIO, Iterator
 
+from plm_assistant.modules.document.application.prepare_download import DownloadStorageError
+
 
 _UUID_HEX = r"[0-9a-f]{32}"
 _LOCATOR = re.compile(
@@ -28,7 +30,7 @@ _LOCATOR = re.compile(
 _REPARSE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
 
 
-class LocalStorageError(RuntimeError):
+class LocalStorageError(DownloadStorageError):
     def __init__(self) -> None:
         super().__init__("local storage unavailable")
 

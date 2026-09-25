@@ -2840,3 +2840,15 @@
 |Reason|下载不能仅凭客户端 VersionId 或从公开 VersionView 推断物理地址；先建立可复用的授权来源事实，后续由下载 Service 执行文件快照、完整性事件与发送前复核。|
 |Impact|Document Application/Repository 与隔离数据库验证；无 Schema、公开 API、新依赖或权限扩张。当前还不能直接下载。|
 |Rollback|不调用下载来源方法；现有 Document 元数据读取与上传流程不变。|
+
+## DEC-20260926-130
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-130|
+|Date|2026-09-26|
+|WBS|DOC-01-A05-P03 内部受权下载快照编排|
+|Decision|下载 Service 先取得含当前受权 Actor 的内部来源，再创建已校验私有快照，并于向调用方交付前再次读取当前授权/Version/FileObject 来源且逐字段比较；失败关闭快照。源文件缺失/Hash/大小/身份不符时，在独立短事务写不可变 `DOCUMENT_DOWNLOAD_INTEGRITY_FAILED` Audit，目标为 FileObject 并关联 Version，失败分类不含路径/正文；不写 FileStateEvent、不擅自改 RESTRICTED/REMOVED 状态。Audit 写入失败也拒绝下载。|
+|Reason|FileStateEvent 是状态沿革，原地记入同状态事件会误导后续追溯；Audit 的 FAILED 事件可记录本次观察且保留真实 Actor。文件外部 I/O 不能持有数据库长事务，二次核验减小状态变化窗口。|
+|Impact|Document 内部读取 DTO、下载编排与审计/资源关闭测试；无 Schema、公开 API 或新依赖。并发容量与响应期间撤销语义留给 HTTP/Release 任务验证。|
+|Rollback|不装配下载 Service；既有元数据 GET 和上传流程不变，已产生的失败 Audit 不删除。|

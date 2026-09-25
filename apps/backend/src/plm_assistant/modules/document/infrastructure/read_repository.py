@@ -109,7 +109,8 @@ class SqlAlchemyDocumentReadRepository:
 
     def get_download_source(self, transaction: object, *, scope: str,
                             project_id: uuid.UUID | None, document_id: uuid.UUID,
-                            document_version_id: uuid.UUID) -> DocumentDownloadSource | None:
+                            document_version_id: uuid.UUID,
+                            actor_user_id: uuid.UUID) -> DocumentDownloadSource | None:
         pair = _session(transaction).execute(
             self._visible_versions(scope, project_id, document_id)
             .add_columns(FileObjectRow)
@@ -119,7 +120,8 @@ class SqlAlchemyDocumentReadRepository:
             return None
         version, file = pair
         return DocumentDownloadSource(
-            version.document_id, version.document_version_id, file.file_object_id,
+            actor_user_id, version.document_id, version.document_version_id,
+            file.file_object_id,
             version.scope, version.project_id, file.storage_locator,
             version.content_sha256, version.size_bytes, version.detected_mime,
         )
