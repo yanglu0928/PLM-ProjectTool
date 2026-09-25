@@ -9,12 +9,18 @@ from datetime import datetime, timezone
 
 import psycopg
 from alembic import command
+from fastapi.testclient import TestClient
 from psycopg import sql
 from sqlalchemy.engine import URL
 
 from plm_assistant.modules.audit.application.public import AuditService
 from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
 from plm_assistant.modules.auth.infrastructure.project_write_access import SqlAlchemyProjectWriteAccess
+from plm_assistant.entrypoints.api import create_app
+from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
+from plm_assistant.modules.auth.application.session_service import SessionError
+from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
+from plm_assistant.modules.project.api.create_department import create_project_department_create_router
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
@@ -48,7 +54,15 @@ class Guard:
 
     def require_valid(self, **_):
         if not self.valid:
-            raise RuntimeError("synthetic License failure")
+            raise RuntimeLicenseError("EXPIRED")
+
+
+class HttpSessions:
+    def validate(self, token, *, csrf_token, require_csrf):
+        if (token not in (b"p" * 32, b"q" * 32, b"m" * 32)
+                or csrf_token != CSRF or require_csrf is not True):
+            raise SessionError("AUTH_SESSION_EXPIRED")
+        return object()
 
 
 class FailedAudit:
@@ -122,8 +136,8 @@ def main():
                 guard.valid = False
                 try:
                     create()
-                except RuntimeError as exc:
-                    assert str(exc) == "synthetic License failure"
+                except RuntimeLicenseError as exc:
+                    assert exc.code == "EXPIRED"
                 else:
                     raise AssertionError("License failure bypassed")
                 guard.valid = True
@@ -204,6 +218,38 @@ def main():
                         pass
                     else:
                         raise AssertionError("department result unexpectedly mutable")
+                router = create_project_department_create_router(
+                    sessions=HttpSessions(), departments=idempotent,
+                    origins=LoginOriginPolicy(["http://localhost"]),
+                )
+                with TestClient(create_app(project_department_create_router=router),
+                                base_url="http://localhost") as client:
+                    path = f"/api/v1/projects/{p1}/departments"
+                    headers = {"origin": "http://localhost",
+                               "cookie": "plm_session=" + tokens["pm1"].hex(),
+                               "x-csrf-token": CSRF.hex(),
+                               "idempotency-key": "department-http-create-001"}
+                    body = {"code": "HTTP-CREATE", "name": "HTTP Department"}
+                    first_http = client.post(path, headers=headers, json=body)
+                    replay_http = client.post(path, headers=headers, json=body)
+                    assert first_http.status_code == replay_http.status_code == 201, (first_http.text, replay_http.text)
+                    assert first_http.json()["data"] == replay_http.json()["data"]
+                    assert first_http.headers["etag"] == '"v0"'
+                    assert client.post(path, headers=headers, json={**body, "name": "Changed"}).status_code == 409
+                    assert client.post(path, headers={**headers, "cookie": "plm_session=" + tokens["cm"].hex(),
+                                                      "idempotency-key": "department-http-other-role-001"},
+                                       json=body).status_code == 404
+                    assert client.post(f"/api/v1/projects/{p2}/departments", headers={
+                        **headers, "idempotency-key": "department-http-cross-project-001",
+                    }, json=body).status_code == 404
+                    guard.valid = False
+                    assert client.post(path, headers=headers, json=body).status_code == 403
+                    guard.valid = True
+                with connect(name) as db:
+                    http_id = uuid.UUID(first_http.json()["data"]["department_id"])
+                    assert db.execute("SELECT count(*) FROM plm.prj_departments WHERE department_id=%s", (http_id,)).fetchone()[0] == 1
+                    assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s", (http_id,)).fetchone()[0] == 1
+                    assert db.execute("SELECT count(*) FROM plm.prj_department_create_results WHERE department_id=%s", (http_id,)).fetchone()[0] == 1
                     db.execute("UPDATE plm.prj_departments SET state='INACTIVE' WHERE department_id=%s", (created.department_id,))
                 reused = create(code="abc")
                 assert reused.department_id != created.department_id
@@ -225,7 +271,7 @@ def main():
                     assert "department create results exist" in str(exc)
                 else:
                     raise AssertionError("nonempty department result downgrade should fail")
-                print("PASS: empty/existing-data migration, ORM drift, normalization/roles, idempotent replay/concurrency, immutable snapshots, rollback and downgrade guard")
+                print("PASS: empty/existing-data migration, ORM drift, optional HTTP create replay/security, concurrency, immutable snapshots, rollback and downgrade guard")
             finally:
                 runtime.dispose()
         finally:

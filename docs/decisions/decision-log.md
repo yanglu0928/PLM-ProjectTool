@@ -2243,3 +2243,15 @@
 |Reason|当前 Department 可被修改或停用，仅凭部门 ID 无法履行冻结 API-01 的原响应重放。|
 |Impact|Migration `20260925_0018`、ORM、Repository、Service 与测试；不开放 HTTP，不改变部门唯一性或授权规则。|
 |Rollback|新表为空可降至 `0017`；已有快照时拒绝降级并保留幂等证据。|
+
+## DEC-20260925-080
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-080|
+|Date|2026-09-25|
+|WBS|PRJ-04-A14-P02 Department 创建可选 HTTP|
+|Decision|只在显式注入时提供冻结 `POST /api/v1/projects/{project_id}/departments`；复用可信 Origin、Session/CSRF、Idempotency-Key、严格 JSON 和 P01 持久幂等服务，返回安全 DepartmentView/ETag/Location。|
+|Reason|HTTP 边界不重做权限或首次响应重建；保持默认应用 404 与既有业务状态机。|
+|Impact|Project 可选 Router、应用工厂注入点、契约/集成测试；无新 Schema/Migration/依赖或 Breaking API。|
+|Rollback|移除 Router 注入恢复 404，已提交的部门、审计和幂等快照保留。|

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PRJ-04-A14-P02 新增可选 Department 创建 POST，使用可信 Origin、Session/CSRF、Idempotency-Key 与同事务首次结果快照；201 返回安全 DepartmentView/ETag/Location。Windows 11 后端 434/434、PostgreSQL 18 临时库真实 Session 同 Key 重放仅一部门/Audit、异载荷/权限/License 拒绝及开发 wheel PASS。无新 Migration/依赖，目标库需升级到 `0018`；默认与当前 Windows 组合仍 404，正式信任源、Server 2025/Debian 13 与最终程序包未完成。
+
 - 2026-09-25：`0.1.0.dev0`/PRJ-04-A14-P01 按 CR-PRJ-004 新增 Department 创建首次响应不可变快照及内部同事务持久幂等；同 Key 返回原 DepartmentView，异载荷冲突，归档后仅原成功可重放。Windows 11 后端 431/431、PostgreSQL 18 临时库空/已有数据升级、ORM 差异、并发单写、历史响应、审计回滚、快照不可变/降级保护及开发 wheel PASS。新增 Migration `20260925_0018`，目标库升级前须备份并执行至 head；不增依赖。公开部门 POST、正式信任源、Server 2025/Debian 13 与最终程序包未完成。
 
 - 2026-09-25：`0.1.0.dev0`/PRJ-04-A13-P04 在 Windows 显式 `--platform`/`--platform-write` 组合接入 Department 历史列表；独立部门 cursor 密钥缺失时启动失败关闭，默认登录模式仍 404。Windows 11 后端 430/430、PostgreSQL 18 临时库两种组合双页/隔离/合成 License、8 个受影响 Project/Member/Department 验证脚本回归及开发 wheel PASS。无新 Migration/依赖；正式目标账户密钥、Server 2025/Debian 13 与最终程序包未完成。
