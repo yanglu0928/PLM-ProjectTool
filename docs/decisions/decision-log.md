@@ -1907,3 +1907,15 @@
 |Reason|冻结 API-02 停用需要 S/L/C/I/M/A；内部停用/收据已经保证同事务，HTTP 必须拒绝未经声明的请求体和弱/缺失版本条件。|
 |Impact|新增可选 Router、契约/临时库验证；无 Schema/Migration、冻结路径或生产启动行为变化。|
 |Rollback|不注入 Router 仍 404；不触及既有 Secret 数据。|
+
+## DEC-20260925-052
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-052|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P05-A08 Windows 生产 Secret 写装配|
+|Decision|保留现有默认登录与 `--platform` 只读模式，新增显式 `--platform-write` 组合；此模式在 Schema、包内 License 公钥/选定本机 MAC/可信时间 Vault、游标独立 Vault 和当前账户固定 `secret-master-v1` 主密钥均可用后，才构造共用的 SecretWriteService 并挂载创建/轮换/停用路由。任一来源缺失则拒绝启动，不从 YAML/环境变量/请求获取主密钥或测试替身。|
+|Reason|可选 write-only HTTP 已验证，但正式组合不能因路由存在而隐式开放；固定引用避免普通配置控制加密主材料选择，显式模式保留当前只读装配语义。|
+|Impact|Windows 启动入口增加非默认模式与组合测试；无 Schema/Migration/冻结 API 变化。正式发行公钥/目标账户密钥供给及 Server 2025/HTTPS 验收仍独立，不能由合成组合声称生产 PASS。|
+|Rollback|退回 `--platform` 只读模式，不卸载或改写既有 Secret 密文；无数据迁移。|

@@ -11,6 +11,7 @@ from plm_assistant.entrypoints.api import create_app
 from plm_assistant.entrypoints.production_login import (
     ProductionLoginStartupError,
     create_production_login_app, create_production_platform_app,
+    create_production_platform_write_app,
 )
 from plm_assistant.entrypoints.serve_windows import main as serve_windows_main
 from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
@@ -171,6 +172,71 @@ class ProductionLoginTests(unittest.TestCase):
              return_value="synthetic-platform") as factory:
             self.assertEqual(serve_windows_main(), 0)
             self.assertEqual(run.call_args.args[0](), "synthetic-platform")
+            factory.assert_called_once_with(settings)
+
+    def test_write_mode_missing_master_key_disposes_without_publishing(self) -> None:
+        runtime = Mock()
+        runtime.is_ready.return_value = True
+        settings = self.settings(("http://localhost",))
+        from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
+        with patch("plm_assistant.entrypoints.production_login.read_database_url",
+                   return_value="postgresql+psycopg://test:synthetic@localhost/test"), patch(
+                   "plm_assistant.entrypoints.production_login.create_database_runtime",
+                   return_value=runtime), patch(
+                   "plm_assistant.entrypoints.production_login._schema_current",
+                   return_value=True), patch(
+                   "plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services",
+                   return_value=Mock(guard=Mock())), patch(
+                   "plm_assistant.entrypoints.production_login.create_windows_secret_list_cursor_codec",
+                   return_value=SecretListCursorCodec(b"q" * 32)):
+            with self.assertRaises(ProductionLoginStartupError):
+                create_production_platform_write_app(settings)
+        runtime.dispose.assert_called_once()
+
+    def test_write_mode_mounts_only_after_all_sources_exist(self) -> None:
+        runtime = Mock()
+        runtime.is_ready.return_value = True
+        settings = self.settings(("http://localhost",))
+        from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
+        with patch("plm_assistant.entrypoints.production_login.read_database_url",
+                   return_value="postgresql+psycopg://test:synthetic@localhost/test"), patch(
+                   "plm_assistant.entrypoints.production_login.create_database_runtime",
+                   return_value=runtime), patch(
+                   "plm_assistant.entrypoints.production_login._schema_current",
+                   return_value=True), patch(
+                   "plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services",
+                   return_value=Mock(guard=Mock())) as license_factory, patch(
+                   "plm_assistant.entrypoints.production_login.create_windows_secret_list_cursor_codec",
+                   return_value=SecretListCursorCodec(b"q" * 32)), patch(
+                   "plm_assistant.entrypoints.windows_secret_write.create_windows_secret_write_service",
+                   return_value=Mock()) as write_factory:
+            app = create_production_platform_write_app(settings)
+        license_factory.assert_called_once()
+        write_factory.assert_called_once()
+        with TestClient(app, base_url="http://localhost") as client:
+            self.assertEqual(client.post("/api/v1/admin/secrets").status_code, 403)
+            self.assertEqual(client.post(
+                "/api/v1/admin/secrets/00000000-0000-0000-0000-000000000001:rotate"
+            ).status_code, 403)
+            self.assertEqual(client.post(
+                "/api/v1/admin/secrets/00000000-0000-0000-0000-000000000001:disable"
+            ).status_code, 403)
+        runtime.dispose.assert_called_once()
+
+    def test_windows_launcher_write_mode_is_explicit(self) -> None:
+        settings = self.settings(("http://localhost",))
+        bootstrap = Path(self.temp_dir.name) / "bootstrap.yaml"
+        bootstrap.write_text("data_root: ignored\n", encoding="utf-8")
+        with patch("plm_assistant.entrypoints.serve_windows.sys.platform", "win32"), patch(
+             "plm_assistant.entrypoints.serve_windows.sys.argv",
+             ["serve_windows", str(bootstrap), "--platform-write"]), patch(
+             "plm_assistant.entrypoints.serve_windows.load_bootstrap_settings",
+             return_value=settings), patch(
+             "plm_assistant.entrypoints.serve_windows.uvicorn.run") as run, patch(
+             "plm_assistant.entrypoints.serve_windows.create_production_platform_write_app",
+             return_value="synthetic-write-platform") as factory:
+            self.assertEqual(serve_windows_main(), 0)
+            self.assertEqual(run.call_args.args[0](), "synthetic-write-platform")
             factory.assert_called_once_with(settings)
 
 

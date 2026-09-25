@@ -32,6 +32,9 @@ from plm_assistant.modules.auth.infrastructure.deployment_read_access import Sql
 from plm_assistant.modules.platform.api.secret_metadata import (
     create_secret_metadata_detail_router, create_secret_metadata_list_router,
 )
+from plm_assistant.modules.platform.api.secret_create import create_secret_create_router
+from plm_assistant.modules.platform.api.secret_rotate import create_secret_rotate_router
+from plm_assistant.modules.platform.api.secret_disable import create_secret_disable_router
 from plm_assistant.modules.platform.application.secret_metadata import SecretMetadataService
 from plm_assistant.modules.platform.infrastructure.secret_metadata_repository import (
     SqlAlchemySecretMetadataRepository,
@@ -69,7 +72,7 @@ def create_production_login_app(
     """Read the current account's credential and wire real PostgreSQL adapters."""
 
     return _create_production_app(settings, credential_target=credential_target,
-                                  include_secret_read=False)
+                                  include_secret_read=False, include_secret_write=False)
 
 
 def create_production_platform_app(
@@ -78,11 +81,21 @@ def create_production_platform_app(
     """Mount protected Secret reads only when every production trust source exists."""
 
     return _create_production_app(settings, credential_target=credential_target,
-                                  include_secret_read=True)
+                                  include_secret_read=True, include_secret_write=False)
+
+
+def create_production_platform_write_app(
+    settings: BootstrapSettings, *, credential_target: str = DEFAULT_TARGET,
+) -> FastAPI:
+    """Explicit write mode, closed until all read and write trust sources exist."""
+
+    return _create_production_app(settings, credential_target=credential_target,
+                                  include_secret_read=True, include_secret_write=True)
 
 
 def _create_production_app(settings: BootstrapSettings, *, credential_target: str,
-                           include_secret_read: bool) -> FastAPI:
+                           include_secret_read: bool,
+                           include_secret_write: bool) -> FastAPI:
 
     if not isinstance(settings, BootstrapSettings):
         raise ProductionLoginStartupError()
@@ -125,6 +138,9 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         logout_router = create_session_logout_router(sessions=sessions, origins=origins)
         secret_detail_router = None
         secret_list_router = None
+        secret_create_router = None
+        secret_rotate_router = None
+        secret_disable_router = None
         if include_secret_read:
             from plm_assistant.entrypoints.windows_license_runtime import (
                 create_windows_license_services,
@@ -143,6 +159,22 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             secret_list_router = create_secret_metadata_list_router(
                 sessions=sessions, metadata=metadata, origins=origins, cursors=cursors,
             )
+            if include_secret_write:
+                from plm_assistant.entrypoints.windows_secret_write import (
+                    create_windows_secret_write_service,
+                )
+                writes = create_windows_secret_write_service(
+                    runtime, license_guard=licenses.guard,
+                )
+                secret_create_router = create_secret_create_router(
+                    sessions=sessions, writes=writes, origins=origins,
+                )
+                secret_rotate_router = create_secret_rotate_router(
+                    sessions=sessions, writes=writes, origins=origins,
+                )
+                secret_disable_router = create_secret_disable_router(
+                    sessions=sessions, writes=writes, origins=origins,
+                )
         return create_app(
             readiness_checks=(runtime.is_ready,),
             login_router=router,
@@ -151,6 +183,9 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             session_logout_router=logout_router,
             secret_metadata_router=secret_detail_router,
             secret_metadata_list_router=secret_list_router,
+            secret_create_router=secret_create_router,
+            secret_rotate_router=secret_rotate_router,
+            secret_disable_router=secret_disable_router,
             shutdown_callback=runtime.dispose,
         )
     except Exception:

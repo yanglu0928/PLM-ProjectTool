@@ -6,6 +6,9 @@ import hashlib
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 import psycopg
 from alembic import command
@@ -14,6 +17,7 @@ from sqlalchemy.engine import URL
 from fastapi.testclient import TestClient
 
 from plm_assistant.entrypoints.api import create_app
+from plm_assistant.entrypoints.production_login import create_production_platform_write_app
 from plm_assistant.modules.audit.application.public import AuditService
 from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
 from plm_assistant.modules.auth.infrastructure.license_import_access import SqlAlchemyLicenseImportAccess
@@ -21,6 +25,7 @@ from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
 from plm_assistant.modules.auth.application.session_service import SessionError
 from plm_assistant.modules.platform.api.secret_create import create_secret_create_router
 from plm_assistant.modules.platform.api.secret_rotate import create_secret_rotate_router
+from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
 from plm_assistant.modules.platform.application.secret_access import SecretConsumer, SecretPurpose, SecretResolver
 from plm_assistant.modules.platform.application.secret_write import (
     CreateSecret, RotateSecret, SecretWriteError, SecretWriteService,
@@ -31,6 +36,7 @@ from plm_assistant.modules.platform.infrastructure.secret_crypto import AesGcmSe
 from plm_assistant.modules.platform.infrastructure.secret_store_reader import SqlAlchemyEncryptedSecretStore
 from plm_assistant.modules.platform.infrastructure.secret_write_repository import SqlAlchemySecretWriteRepository
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
+from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
 
 
 HOST, PORT, USER = "127.0.0.1", 55432, "poc_admin"
@@ -240,7 +246,62 @@ def main():
                     with connect(name) as db:
                         assert db.execute("SELECT count(*) FROM plm.plt_secret_versions WHERE secret_record_id=%s", (created_id,)).fetchone()[0] == 2
                         assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='PLATFORM_SECRET_ROTATE'", (created_id,)).fetchone()[0] == 1
+                class FixedWriteKey:
+                    def resolve_key(self, key_ref):
+                        return b"w" * 32 if key_ref == "secret-master-v1" else None
+
+                settings = BootstrapSettings(
+                    data_root=Path.cwd(), trusted_origins=("http://localhost",),
+                )
+                with patch("plm_assistant.entrypoints.production_login.read_database_url",
+                           return_value=url), patch(
+                           "plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services",
+                           return_value=SimpleNamespace(guard=guard)), patch(
+                           "plm_assistant.entrypoints.production_login.create_windows_secret_list_cursor_codec",
+                           return_value=SecretListCursorCodec(b"q" * 32)), patch(
+                           "plm_assistant.entrypoints.windows_secret_write.WindowsSecretKeyProvider",
+                           return_value=FixedWriteKey()):
+                    production = create_production_platform_write_app(settings)
+                    with TestClient(production, base_url="http://localhost") as client:
+                        headers = {
+                            "origin": "http://localhost",
+                            "cookie": "plm_session=" + admin_token.hex(),
+                            "x-csrf-token": CSRF.hex(),
+                            "idempotency-key": str(uuid.uuid4()),
+                        }
+                        created = client.post("/api/v1/admin/secrets", headers=headers, json={
+                            "purpose": "AI_PROVIDER_KEY", "allowed_consumer": "AI_PROVIDER_ADAPTER",
+                            "secret_value": "synthetic-composed-secret",
+                        })
+                        assert created.status_code == 201, created.text
+                        composed_id = uuid.UUID(created.json()["data"]["secret_id"])
+                        path = f"/api/v1/admin/secrets/{composed_id}"
+                        rotated = client.post(path + ":rotate", headers={
+                            **headers, "idempotency-key": str(uuid.uuid4()),
+                            "if-match": '"v1"',
+                        }, json={"secret_value": "synthetic-composed-rotated"})
+                        assert rotated.status_code == 200, rotated.text
+                        disabled = client.post(path + ":disable", headers={
+                            **headers, "idempotency-key": str(uuid.uuid4()),
+                            "if-match": '"v2"',
+                        })
+                        assert disabled.status_code == 200, disabled.text
+                        assert "synthetic-composed" not in created.text + rotated.text + disabled.text
+                    with connect(name) as db:
+                        record = db.execute(
+                            "SELECT secret_state,current_version_ref,lock_version FROM plm.plt_secret_records WHERE secret_record_id=%s",
+                            (composed_id,),
+                        ).fetchone()
+                        assert record == ("DISABLED", None, 3), record
+                        actions = db.execute(
+                            "SELECT action FROM plm.aud_events WHERE target_object_id=%s ORDER BY occurred_at",
+                            (composed_id,),
+                        ).fetchall()
+                        assert [row[0] for row in actions] == [
+                            "PLATFORM_SECRET_CREATE", "PLATFORM_SECRET_ROTATE", "PLATFORM_SECRET_DISABLE",
+                        ]
                 print("PASS: admin/CSRF/License, atomic create and rotate replay, ciphertext history, concurrent version and Audit rollback")
+                print("PASS: explicit Windows write composition via PostgreSQL create, rotate, disable and Audit (synthetic trust sources)")
             finally:
                 runtime.dispose()
         finally:
