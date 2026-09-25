@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PLT-02-A07-P04-A04 新增 Windows 显式 `--platform` 组合模式：仅真实 Schema、License 信任源和独立游标密钥齐备时挂载登录及 Secret 只读详情/列表；缺项拒绝启动并释放数据库，默认登录模式不变，写 API 仍关闭。Windows 11 后端 360/360 合成组合测试与开发 wheel PASS；无 Migration/新依赖。正式公钥/目标账户密钥、Server 2025/Debian 13 与最终可用程序包未验收。
+
 - 2026-09-25：`0.1.0.dev0`/PLT-02-A07-P04-A03 新增 Windows 当前账户 Vault 的独立 Secret 列表游标签名密钥组合入口，缺钥拒绝装配；Windows 11 后端 357/357、临时 Vault 丢失/加密备份恢复后旧游标验证及开发 wheel PASS。无 Migration/公开 API 或新依赖；升级前须由正式运行账户交互式供给并离线保存备份。Server 2025/异账户、Debian 13、正式目标账户和最终程序包未验证，默认管理路由仍 404。
 
 - 2026-09-25：`0.1.0.dev0`/PLT-02-A07-P04-A02 新增可选 Secret 元数据列表 GET：固定创建时间/ID 倒序、50～200 分页和会话/查询绑定的 HMAC 完整性保护游标；无值/密文输出，默认应用仍 404。Windows 11/Python 3.13 后端 355/355、PostgreSQL 18 临时库同时间戳 keyset/锁版本验证及开发 wheel PASS。无 Migration/新依赖；升级无需数据操作。生产游标签名密钥、正式信任锚、Server 2025/Debian 13 与最终程序包未验证。

@@ -1811,3 +1811,15 @@
 |Reason|游标不能与业务 Secret 主密钥或可信时间 HMAC 密钥共用；目标账户密钥必须可恢复，否则服务重启/迁移后分页全部失效。|
 |Impact|新增 Windows 组合入口和合成/临时 Vault 恢复测试，不改 API、Schema、Migration；真实目标账户供给/恢复需后续部署验收。|
 |Rollback|不装配列表 Router 时仍保持默认 404；既有游标不作数据迁移，丢钥只能从对应备份受控恢复。|
+
+## DEC-20260925-044
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-044|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P04-A04 Windows Secret 只读生产组合根|
+|Decision|保留当前登录/恢复启动入口；新增显式 `--platform` 启动模式，仅在现行 PostgreSQL Schema、包内正式产品公钥/本机 MAC/可信时间密钥和独立游标签名 Vault 密钥全部可装配时同时挂载登录与 Secret 只读详情/列表。任一前置失败则整个平台模式拒绝启动并释放数据库，不回退到合成 Guard 或静默退回登录模式。写接口仍关闭。|
+|Reason|Secret 只读路由已具备 Session、管理员及 License 保护；生产组合必须在真实信任源齐备后才开放，又不能因其缺失剥夺既有登录/恢复面。|
+|Impact|扩展 Windows 组合与启动模式，增加失败关闭测试；不改冻结 API、Schema、Migration 或登录默认行为。正式公钥/目标账户密钥尚缺，平台模式不能标生产 PASS。|
+|Rollback|不传 `--platform` 继续运行原登录模式；无数据迁移，失败启动不挂载只读路由。|

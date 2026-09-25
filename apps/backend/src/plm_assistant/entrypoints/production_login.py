@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from sqlalchemy import text
 
 from plm_assistant.entrypoints.api import create_app
+from plm_assistant.entrypoints.windows_secret_list_cursor import create_windows_secret_list_cursor_codec
 from plm_assistant.modules.audit.application.public import AuditService
 from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
 from plm_assistant.modules.auth.api.login import create_login_router
@@ -27,6 +28,14 @@ from plm_assistant.modules.auth.infrastructure.password_issue_access import SqlA
 from plm_assistant.modules.auth.infrastructure.scrypt_password import ScryptPasswordHasher
 from plm_assistant.modules.auth.infrastructure.session_repository import SqlAlchemySessionRepository
 from plm_assistant.modules.auth.infrastructure.session_view import SqlAlchemySessionView
+from plm_assistant.modules.auth.infrastructure.deployment_read_access import SqlAlchemyDeploymentReadAccess
+from plm_assistant.modules.platform.api.secret_metadata import (
+    create_secret_metadata_detail_router, create_secret_metadata_list_router,
+)
+from plm_assistant.modules.platform.application.secret_metadata import SecretMetadataService
+from plm_assistant.modules.platform.infrastructure.secret_metadata_repository import (
+    SqlAlchemySecretMetadataRepository,
+)
 from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
 from plm_assistant.modules.platform.infrastructure.database import DatabaseRuntime, create_database_runtime
 from plm_assistant.modules.platform.infrastructure.migration import MIGRATION_PACKAGE
@@ -58,6 +67,22 @@ def create_production_login_app(
     settings: BootstrapSettings, *, credential_target: str = DEFAULT_TARGET,
 ) -> FastAPI:
     """Read the current account's credential and wire real PostgreSQL adapters."""
+
+    return _create_production_app(settings, credential_target=credential_target,
+                                  include_secret_read=False)
+
+
+def create_production_platform_app(
+    settings: BootstrapSettings, *, credential_target: str = DEFAULT_TARGET,
+) -> FastAPI:
+    """Mount protected Secret reads only when every production trust source exists."""
+
+    return _create_production_app(settings, credential_target=credential_target,
+                                  include_secret_read=True)
+
+
+def _create_production_app(settings: BootstrapSettings, *, credential_target: str,
+                           include_secret_read: bool) -> FastAPI:
 
     if not isinstance(settings, BootstrapSettings):
         raise ProductionLoginStartupError()
@@ -98,12 +123,34 @@ def create_production_login_app(
         session_router = create_session_read_router(sessions=sessions, origins=origins, views=views)
         renew_router = create_session_renew_router(sessions=sessions, origins=origins, views=views)
         logout_router = create_session_logout_router(sessions=sessions, origins=origins)
+        secret_detail_router = None
+        secret_list_router = None
+        if include_secret_read:
+            from plm_assistant.entrypoints.windows_license_runtime import (
+                create_windows_license_services,
+            )
+            licenses = create_windows_license_services(runtime, settings)
+            cursors = create_windows_secret_list_cursor_codec()
+            metadata = SecretMetadataService(
+                unit_of_work=runtime.unit_of_work,
+                access=SqlAlchemyDeploymentReadAccess(),
+                license_guard=licenses.guard,
+                repository=SqlAlchemySecretMetadataRepository(),
+            )
+            secret_detail_router = create_secret_metadata_detail_router(
+                sessions=sessions, metadata=metadata, origins=origins,
+            )
+            secret_list_router = create_secret_metadata_list_router(
+                sessions=sessions, metadata=metadata, origins=origins, cursors=cursors,
+            )
         return create_app(
             readiness_checks=(runtime.is_ready,),
             login_router=router,
             session_router=session_router,
             session_renew_router=renew_router,
             session_logout_router=logout_router,
+            secret_metadata_router=secret_detail_router,
+            secret_metadata_list_router=secret_list_router,
             shutdown_callback=runtime.dispose,
         )
     except Exception:

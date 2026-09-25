@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 from plm_assistant.entrypoints.api import create_app
 from plm_assistant.entrypoints.production_login import (
     ProductionLoginStartupError,
-    create_production_login_app,
+    create_production_login_app, create_production_platform_app,
 )
 from plm_assistant.entrypoints.serve_windows import main as serve_windows_main
 from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
@@ -113,6 +113,65 @@ class ProductionLoginTests(unittest.TestCase):
              "plm_assistant.entrypoints.serve_windows.uvicorn.run") as run:
             self.assertEqual(serve_windows_main(), 1)
             run.assert_not_called()
+
+    def test_platform_requires_license_and_cursor_key_before_routes_publish(self) -> None:
+        runtime = Mock()
+        runtime.is_ready.return_value = True
+        settings = self.settings(("http://localhost",))
+        with patch("plm_assistant.entrypoints.production_login.read_database_url",
+                   return_value="postgresql+psycopg://test:synthetic@localhost/test"), patch(
+                   "plm_assistant.entrypoints.production_login.create_database_runtime",
+                   return_value=runtime), patch(
+                   "plm_assistant.entrypoints.production_login._schema_current",
+                   return_value=True), patch(
+                   "plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services",
+                   return_value=Mock(guard=Mock())) as license_factory, patch(
+                   "plm_assistant.entrypoints.production_login.create_windows_secret_list_cursor_codec",
+                   side_effect=RuntimeError("synthetic missing cursor key")):
+            with self.assertRaises(ProductionLoginStartupError) as caught:
+                create_production_platform_app(settings)
+        self.assertNotIn("synthetic missing cursor key", str(caught.exception))
+        license_factory.assert_called_once_with(runtime, settings)
+        runtime.dispose.assert_called_once()
+
+    def test_platform_mounts_read_only_with_explicit_trust_sources(self) -> None:
+        runtime = Mock()
+        runtime.is_ready.return_value = True
+        settings = self.settings(("http://localhost",))
+        from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
+        with patch("plm_assistant.entrypoints.production_login.read_database_url",
+                   return_value="postgresql+psycopg://test:synthetic@localhost/test"), patch(
+                   "plm_assistant.entrypoints.production_login.create_database_runtime",
+                   return_value=runtime), patch(
+                   "plm_assistant.entrypoints.production_login._schema_current",
+                   return_value=True), patch(
+                   "plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services",
+                   return_value=Mock(guard=Mock())), patch(
+                   "plm_assistant.entrypoints.production_login.create_windows_secret_list_cursor_codec",
+                   return_value=SecretListCursorCodec(b"q" * 32)):
+            app = create_production_platform_app(settings)
+        with TestClient(app, base_url="http://localhost") as client:
+            self.assertEqual(client.get("/api/v1/admin/secrets").status_code, 401)
+            self.assertEqual(client.get("/api/v1/admin/secrets/" + "1" * 36).status_code, 422)
+            self.assertEqual(client.post("/api/v1/admin/secrets").status_code, 405)
+            self.assertEqual(client.get("/health/ready").status_code, 200)
+        runtime.dispose.assert_called_once()
+
+    def test_windows_launcher_platform_mode_is_explicit(self) -> None:
+        settings = self.settings(("http://localhost",))
+        bootstrap = Path(self.temp_dir.name) / "bootstrap.yaml"
+        bootstrap.write_text("data_root: ignored\n", encoding="utf-8")
+        with patch("plm_assistant.entrypoints.serve_windows.sys.platform", "win32"), patch(
+             "plm_assistant.entrypoints.serve_windows.sys.argv",
+             ["serve_windows", str(bootstrap), "--platform"]), patch(
+             "plm_assistant.entrypoints.serve_windows.load_bootstrap_settings",
+             return_value=settings), patch(
+             "plm_assistant.entrypoints.serve_windows.uvicorn.run") as run, patch(
+             "plm_assistant.entrypoints.serve_windows.create_production_platform_app",
+             return_value="synthetic-platform") as factory:
+            self.assertEqual(serve_windows_main(), 0)
+            self.assertEqual(run.call_args.args[0](), "synthetic-platform")
+            factory.assert_called_once_with(settings)
 
 
 if __name__ == "__main__":
