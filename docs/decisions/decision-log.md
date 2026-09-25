@@ -1691,3 +1691,15 @@
 |Reason|冻结 API-02 的注销同时标记 S/C/I/A，但首次成功后 S 已失效；为了满足 API-01 同 Key 同结果重试，不可用普通 Session 再授权，也不可把所有旧 Cookie 当幂等成功。通过持久收据与已撤销原因双重绑定，重试只获取原注销语义，不恢复权限。|
 |Impact|新增 Auth 注销 Application/HTTP 接线，复用 `0015` 收据；无新 Migration、新依赖或 Breaking Change。已完成收据与 Session 历史的 Retention 需协同设计，当前不得自动删除。默认应用仍不挂 Auth 路由。|
 |Rollback|停止显式挂载注销 Router 即恢复默认 404；已撤销 Session 不反向复活，用户需重新登录；收据与 Audit 保留供追溯。|
+
+## DEC-20260925-034
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-034|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P01 Windows Secret 主密钥只读来源|
+|Decision|依 CR-PLT-003 的安全装配前置，Windows 侧使用当前运行账户 Windows Credential Manager Generic Credential 作为独立主密钥读取来源，严格映射受限 key_ref，要求正好 32 字节；读取器不创建、覆盖、导出或自动回退到配置/环境变量。此项只是 OS 来源适配，不宣称生产 Key Provider 和恢复已完成。|
+|Reason|现有 AES-GCM Secret 密文引用 key_ref，需要密文库外的受保护来源；Windows Vault 可由当前运行身份访问且不需将原始主密钥放进仓库、YAML 或数据库。缺失、错账户或错长度必须失败关闭。|
+|Impact|新增 Platform 基础设施适配器与 Windows 11 合成测试；无 Schema、Migration、公开 API、新依赖或冻结合同变化。服务账户供给、独立备份与异机恢复、Server 2025/Debian 13 均未验证。|
+|Rollback|移除该只读适配器注入即可回到原先未装配状态；测试临时凭据已删除，无真实主密钥或业务密文迁移。|

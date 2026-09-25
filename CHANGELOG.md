@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PLT-02-A07-P01 新增 Windows 当前运行账户 Vault 的 Secret 主密钥只读适配器，严格引用/32 字节检查、缺失失败关闭；Windows 11/Python 3.13 后端 331/331 与合成 Vault/AES-GCM 往返 PASS。无 Migration、公开 API 或新依赖；升级无需数据操作。主密钥供给与独立备份恢复、Server 2025/Debian 13、生产 Secret API 和最终程序包仍未完成。
+
 - 2026-09-25：`0.1.0.dev0`/AUT-03-A10 新增显式挂载的 Session 注销 HTTP：Session/CSRF/Origin/Host、持久 `Idempotency-Key`、同事务撤销/Audit/收据、同 Key 重放和安全清除 Cookie；普通默认应用仍 404。Windows 11/Python 3.13 后端 329/329、PostgreSQL 18.6 真正并发重放/不同 Session 冲突/旧 Cookie 失效及 wheel 构建 PASS。无本项新 Migration/依赖，部署需先升级至 `0015`；Server 2025/Debian 13 未验证。管理 API、生产 License/Key Provider 和最终程序包仍未完成。
 
 - 2026-09-25：`0.1.0.dev0`/API-RUNTIME-01 经 CR-API-001 新增通用 PostgreSQL 持久幂等收据（Migration `20260925_0015`）：actor/project/operation/Key 摘要范围、请求指纹、非敏感结果引用/状态，数据库并发仲裁与已完成不可变；配置专用收据不变。Windows 11/Python 3.13 后端 324/324、PostgreSQL 18.6 空表 up/down/有数据升级/并发/回滚/受保护降级、Alembic check 和 wheel 构建 PASS。升级需备份并执行 Migration；非空收据禁止降级。Server 2025/Debian 13 未验证，注销与业务命令尚未接线，Gate 3 未通过。
