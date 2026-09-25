@@ -26,6 +26,7 @@ description: Execute architecture, PoC, implementation, testing, packaging, and 
 - POC-03 质量失败继续阻塞 Gate 3/UAT；Server Office、Debian 13 和 Ghostscript 发行合规继续由各自 Release Gate 关闭。
 - PLT-02-A07-P04-A01 已增加可选 Secret 详情 GET 的 Session/权限/License 安全投影与强 ETag；仅合成 HTTP 契约和 Windows 11 开发 wheel 验证。默认应用仍不挂载 Secret 路由，正式信任锚、列表/写 API 与目标环境验收未完成；最新 WBS 以根目录 `STATUS.md` 为准。
 - PLT-02-A07-P04-A02 已增加可选 Secret 列表 GET 的 HMAC 完整性游标与真实 PostgreSQL keyset 验证；默认应用仍不挂载，游标签名密钥的目标账户来源/恢复、正式 License 信任锚及写 API 未完成。最新状态以根目录 `STATUS.md` 为准。
+- PLT-02-A07-P04-A03 已完成 Windows 当前账户 Vault 独立游标签名密钥来源与临时凭据加密备份恢复验证；目标账户正式供给/Server 2025、生产只读组合和写 API 未完成。最新状态以根目录 `STATUS.md` 为准。
 
 ## 参考文件路由
 
