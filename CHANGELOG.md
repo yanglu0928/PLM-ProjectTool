@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PLT-02-A07-P05-A03 Secret 内部创建新增同事务持久幂等：合法 Key、仅摘要指纹、同请求返回原 SecretRef、异请求冲突，密文/Audit/收据一同提交且明文清零。Windows 11/Python 3.13 后端 365/365、PostgreSQL 18 临时库顺序及并发重放/审计回滚和开发 wheel PASS。复用 Migration `0015`，无新 Schema/公开 API；目标库需先升级到 head。轮换/停用幂等、正式密钥、Server 2025/Debian 13 和最终程序包仍未完成。
+
 - 2026-09-25：`0.1.0.dev0`/PLT-02-A07-P05-A02 新增强 `If-Match` 请求解析边界：仅单个规范 `"vN"`，缺失 428，弱/重复/通配/非规范/越界安全 400。Windows 11/Python 3.13 后端 364/364 与开发 wheel PASS；无 Migration、新依赖或已公开写 API。正式同事务幂等/写路由、生产信任锚、Server 2025/Debian 13 及最终程序包未完成。
 
 - 2026-09-25：`0.1.0.dev0`/PLT-02-A07-P05-A01 将 Secret 内部轮换并发条件对齐冻结强 ETag 的记录 `lock_version`，不再误用密文 `version_no`；密文下一版本从受锁当前版本计算。Windows 11 后端 361/361、PostgreSQL 18 临时库版本分离/陈旧拒绝/并发/审计回滚及开发 wheel PASS。无 Migration、公开 API 或新依赖；升级无需数据操作。正式写 HTTP、生产密钥、Server 2025/Debian 13 和最终程序包仍未完成。

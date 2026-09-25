@@ -10,6 +10,9 @@ from plm_assistant.modules.platform.application.secret_access import (
 from plm_assistant.modules.platform.application.secret_write import (
     CreateSecret, DisableSecret, RotateSecret, SecretWriteError, SecretWriteService,
 )
+from plm_assistant.modules.platform.application.idempotency import (
+    IdempotencyError, IdempotencyResult,
+)
 
 
 NOW = datetime(2026, 9, 25, tzinfo=timezone.utc)
@@ -39,6 +42,8 @@ class Deps:
         self.writes = 0
         self.encryptions = 0
         self.audit_ok = True
+        self.receipt: tuple[object, bytes, IdempotencyResult] | None = None
+        self.pending: tuple[object, bytes] | None = None
 
     def unit_of_work(self):
         return Tx(self)
@@ -80,6 +85,22 @@ class Deps:
         assert event.action.startswith("PLATFORM_SECRET_")
         return uuid.uuid4()
 
+    def reserve(self, tx, *, scope, request_fingerprint):
+        if self.receipt is None:
+            self.pending = (scope, request_fingerprint)
+            return None
+        previous_scope, previous_fingerprint, result = self.receipt
+        if scope == previous_scope:
+            if request_fingerprint != previous_fingerprint:
+                raise IdempotencyError("CONFLICT_IDEMPOTENCY")
+            return result
+        self.pending = (scope, request_fingerprint)
+        return None
+
+    def complete(self, tx, *, scope, result):
+        assert self.pending is not None and self.pending[0] == scope
+        self.receipt = (scope, self.pending[1], result)
+
 
 class SecretWriteTests(unittest.TestCase):
     def setUp(self):
@@ -87,14 +108,15 @@ class SecretWriteTests(unittest.TestCase):
         self.service = SecretWriteService(
             unit_of_work=self.deps.unit_of_work, access=self.deps,
             license_guard=self.deps, repository=self.deps,
-            cipher=self.deps, audit=self.deps, clock=lambda: NOW,
+            cipher=self.deps, audit=self.deps, receipts=self.deps, clock=lambda: NOW,
         )
 
     def create_command(self, **changes):
         args = dict(session_token=b"s" * 32, csrf_token=b"c" * 32,
                     purpose=SecretPurpose.AI_PROVIDER_KEY,
                     consumer=SecretConsumer.AI_PROVIDER_ADAPTER,
-                    secret_value=bytearray(b"synthetic-only"), trace_id=uuid.uuid4())
+                    secret_value=bytearray(b"synthetic-only"), trace_id=uuid.uuid4(),
+                    idempotency_key=str(uuid.uuid4()))
         args.update(changes)
         return CreateSecret(**args)
 
@@ -147,6 +169,20 @@ class SecretWriteTests(unittest.TestCase):
         self.assertEqual(caught.exception.code, "PLATFORM_SECRET_UNAVAILABLE")
         self.assertEqual(self.deps.commits, 0)
         self.assertEqual(command.secret_value, bytearray(len(command.secret_value)))
+
+    def test_create_replay_is_write_only_and_conflict_is_safe(self):
+        key = str(uuid.uuid4())
+        first = self.service.create(self.create_command(idempotency_key=key))
+        replay = self.service.create(self.create_command(idempotency_key=key))
+        self.assertEqual(replay, first)
+        self.assertEqual(self.deps.writes, 1)
+        self.assertEqual(self.deps.encryptions, 1)
+        different = self.create_command(idempotency_key=key,
+                                        secret_value=bytearray(b"different-synthetic"))
+        with self.assertRaises(SecretWriteError) as caught:
+            self.service.create(different)
+        self.assertEqual(caught.exception.code, "CONFLICT_IDEMPOTENCY")
+        self.assertEqual(different.secret_value, bytearray(len(different.secret_value)))
 
     def test_invalid_rotation_version_rejected(self):
         command = self.rotate_command(expected_lock_version=0)

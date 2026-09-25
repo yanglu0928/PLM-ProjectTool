@@ -3,8 +3,8 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 2：Platform Core|
-|Current WBS|`PLT-02-A07-P05-A02 强 If-Match 请求边界`（解析器已验证；写 HTTP 未开放）|
-|Current Status|PHASE_1_COMPLETE / PLT_02_A07_P05_A02_WIN11_PASS / PLT_02_A07_P03_A03_CEREMONY_PENDING / PHASE_2_IN_PROGRESS|
+|Current WBS|`PLT-02-A07-P05-A03 Secret 创建持久幂等`（内部事务/真实 PostgreSQL 已验证；写 HTTP 未开放）|
+|Current Status|PHASE_1_COMPLETE / PLT_02_A07_P05_A03_WIN11_PASS / PLT_02_A07_P03_A03_CEREMONY_PENDING / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
 |Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03 PASS|
 |Blockers|AUT-03-A07 Windows 11 合成端到端已通过，Server 2025 目标运行账户/HTTPS 代理与 Debian 安全凭据来源未验证；PLT-02-A07 公开接线待正式发行公钥、目标账户可信时间密钥、生产 License/Secret 装配、If-Match/管理权限与 Server 2025 恢复演练；POC-03 质量失败继续阻塞 Gate 3/UAT，Server Office、Debian 未验证和 Ghostscript 发行合规继续作为 Release 约束|
@@ -13,8 +13,8 @@
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，DM-02 License 授权粒度经用户批准 CR-LIC-001 修订|
 |DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`；Auth 限流增量 `20260925_0012`，PRJ-01～03 正式实现 Migration `20260925_0013`，成员变更历史增量 `20260925_0014`（CR-PRJ-001），通用幂等收据增量 `20260925_0015`（CR-API-001）|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
-|Test Summary|PLT-02-A07-P05-A02：Windows 11/Python 3.13 后端 364/364 PASS，强 If-Match 格式/缺失/越界拒绝及开发 wheel PASS；P05-A01 PostgreSQL 版本分离/并发结论保持。正式目标账户/发行信任锚未供给，Secret 写路由仍关闭|
-|Next WBS|PLT-02-A07-P05-A03 Secret 创建命令同事务持久幂等，再接写 HTTP；真实发行公钥/目标账户密钥、Server 2025 和 HTTPS 部署仍待；Debian 13 暂不验证|
+|Test Summary|PLT-02-A07-P05-A03：Windows 11/Python 3.13 后端 365/365 PASS，PostgreSQL 18 临时库 Secret 创建顺序/并发幂等、冲突、Audit/收据回滚和开发 wheel PASS。正式目标账户/发行信任锚未供给，Secret 写路由仍关闭|
+|Next WBS|PLT-02-A07-P05-A04 轮换/停用同事务持久幂等，再接 write-only HTTP；真实发行公钥/目标账户密钥、Server 2025 和 HTTPS 部署仍待；Debian 13 暂不验证|
 
 ## 自动执行策略
 
@@ -43,6 +43,7 @@
 - PLT-02-A07-P04-A04 已新增 Windows 显式平台组合，仅在正式 License/游标信任源齐备时挂载 Secret 详情/列表；合成失败关闭通过但正式公钥/账户尚缺，不能把 `--platform` 标为生产 PASS，写 API 仍关闭。
 - PLT-02-A07-P05-A01 已修正内部轮换版本条件为记录 `lock_version` 并经 PostgreSQL 版本分离/并发验证；公开 If-Match/幂等尚未接线，写路由仍关闭。
 - PLT-02-A07-P05-A02 已增加规范强 If-Match 解析并验证 428/400 安全边界；尚无完整写路由或同事务幂等，不能标 Secret 写 API PASS。
+- PLT-02-A07-P05-A03 已完成内部 Secret 创建同事务持久幂等，PostgreSQL 顺序/并发/回滚通过；轮换/停用收据与公开 write-only HTTP 仍待完成。
 - AUT-03-A01 仅完成未挂载的可信 Host/Origin 策略；缺失/重复/不匹配失败关闭。限流、凭据、Cookie/CSRF 与公开登录仍待后续任务。
 - AUT-03-A02 完成 PostgreSQL 原子登录限流；真实客户端地址可信代理策略和过期桶清理调度未接线，登录仍未公开。
 - AUT-03-A03 完成内部登录编排与真实 scrypt/Session 集成；公开 HTTP/Cookie/CSRF、初始管理员和生产装配仍未完成。

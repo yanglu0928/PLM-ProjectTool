@@ -24,6 +24,7 @@ from plm_assistant.modules.platform.infrastructure.migration import create_migra
 from plm_assistant.modules.platform.infrastructure.secret_crypto import AesGcmSecretCrypto
 from plm_assistant.modules.platform.infrastructure.secret_store_reader import SqlAlchemyEncryptedSecretStore
 from plm_assistant.modules.platform.infrastructure.secret_write_repository import SqlAlchemySecretWriteRepository
+from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
 
 
 HOST, PORT, USER = "127.0.0.1", 55432, "poc_admin"
@@ -95,15 +96,16 @@ def main():
                               license_guard=guard,
                               repository=SqlAlchemySecretWriteRepository(),
                               cipher=AesGcmSecretCrypto(KeyProvider(), key_ref="synthetic-key"),
+                              receipts=SqlAlchemyIdempotencyReceipts(),
                               clock=lambda: datetime.now(timezone.utc))
                 service = SecretWriteService(**kwargs, audit=AuditService(SqlAlchemyAuditRepository()))
 
-                def create(token=admin_token, csrf=CSRF, value=b"synthetic-secret-one"):
+                def create(token=admin_token, csrf=CSRF, value=b"synthetic-secret-one", key=None):
                     clear = bytearray(value)
                     try:
                         return service.create(CreateSecret(token, csrf, SecretPurpose.AI_PROVIDER_KEY,
                                                            SecretConsumer.AI_PROVIDER_ADAPTER,
-                                                           clear, uuid.uuid4()))
+                                                           clear, uuid.uuid4(), key or str(uuid.uuid4())))
                     finally:
                         assert clear == bytearray(len(clear))
 
@@ -114,7 +116,29 @@ def main():
                 guard.enabled = True
                 with connect(name) as db:
                     assert db.execute("SELECT count(*) FROM plm.plt_secret_records").fetchone()[0] == 0
-                ref = create()
+                create_key = str(uuid.uuid4())
+                ref = create(key=create_key)
+                assert create(key=create_key) == ref
+                expect_error("CONFLICT_IDEMPOTENCY", lambda: create(value=b"synthetic-different", key=create_key))
+                with connect(name) as db:
+                    assert db.execute("SELECT count(*) FROM plm.plt_secret_records").fetchone()[0] == 1
+                    assert db.execute("SELECT count(*) FROM plm.aud_events WHERE action='PLATFORM_SECRET_CREATE'").fetchone()[0] == 1
+                concurrent_key = str(uuid.uuid4())
+                with ThreadPoolExecutor(max_workers=2) as pool:
+                    repeated = list(pool.map(lambda _: create(key=concurrent_key), range(2)))
+                assert repeated[0] == repeated[1] and repeated[0] != ref
+                with connect(name) as db:
+                    assert db.execute("SELECT count(*) FROM plm.plt_secret_records").fetchone()[0] == 2
+                    assert db.execute("SELECT count(*) FROM plm.aud_events WHERE action='PLATFORM_SECRET_CREATE'").fetchone()[0] == 2
+                failed_create = SecretWriteService(**kwargs, audit=FailedAudit())
+                rollback_key = str(uuid.uuid4())
+                rollback_value = bytearray(b"synthetic-rollback")
+                expect_error("PLATFORM_SECRET_UNAVAILABLE", lambda: failed_create.create(
+                    CreateSecret(admin_token, CSRF, SecretPurpose.AI_PROVIDER_KEY,
+                                 SecretConsumer.AI_PROVIDER_ADAPTER, rollback_value,
+                                 uuid.uuid4(), rollback_key)))
+                assert rollback_value == bytearray(len(rollback_value))
+                assert create(value=b"synthetic-rollback", key=rollback_key) != ref
                 assert "synthetic-secret" not in repr(ref)
                 # A legal record-only version bump proves If-Match is the record
                 # lock version, not the ciphertext version number.
@@ -157,7 +181,7 @@ def main():
                     audit = db.execute("SELECT action,target_version_id FROM plm.aud_events WHERE target_object_id=%s ORDER BY occurred_at", (ref.secret_id,)).fetchall()
                     assert {row[0] for row in audit} == {"PLATFORM_SECRET_CREATE", "PLATFORM_SECRET_ROTATE"}
                     assert len(audit) == 3 and all(row[1] is not None for row in audit)
-                print("PASS: admin/CSRF/License, ciphertext-only create/rotation, history, stale/concurrent version and Audit rollback")
+                print("PASS: admin/CSRF/License, atomic create idempotency, ciphertext-only rotation, concurrent version and Audit rollback")
             finally:
                 runtime.dispose()
         finally:

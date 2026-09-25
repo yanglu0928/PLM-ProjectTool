@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+import hashlib
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -13,6 +14,10 @@ from plm_assistant.modules.platform.application.secret_access import (
     EncryptedSecretDraft, SecretConsumer, SecretPurpose, SecretRef,
 )
 from plm_assistant.modules.platform.application.secret_metadata import LicenseGuardPort
+from plm_assistant.modules.platform.application.idempotency import (
+    IdempotencyError, IdempotencyResult, IdempotencyScope,
+    canonical_payload_fingerprint, validate_idempotency_key,
+)
 from plm_assistant.modules.platform.application.trace_context import new_uuid7
 
 
@@ -30,6 +35,7 @@ class CreateSecret:
     consumer: SecretConsumer
     secret_value: bytearray = field(repr=False)
     trace_id: uuid.UUID
+    idempotency_key: str = field(repr=False)
 
 
 @dataclass(frozen=True, slots=True)
@@ -59,7 +65,14 @@ class SecretWriteAccessPort(Protocol):
 class SecretCipherPort(Protocol):
     def encrypt(self, *, secret_ref: SecretRef, purpose: SecretPurpose,
                 consumer: SecretConsumer, version_no: int,
-                plaintext: bytearray) -> EncryptedSecretDraft: ...
+                 plaintext: bytearray) -> EncryptedSecretDraft: ...
+
+
+class SecretReceiptPort(Protocol):
+    def reserve(self, transaction: object, *, scope: IdempotencyScope,
+                request_fingerprint: bytes) -> IdempotencyResult | None: ...
+    def complete(self, transaction: object, *, scope: IdempotencyScope,
+                 result: IdempotencyResult) -> None: ...
 
 
 class SecretWriteRepositoryPort(Protocol):
@@ -90,13 +103,14 @@ _CONSUMER = {
 class SecretWriteService:
     def __init__(self, *, unit_of_work: Callable[[], object], access: SecretWriteAccessPort,
                  license_guard: LicenseGuardPort, repository: SecretWriteRepositoryPort,
-                 cipher: SecretCipherPort, audit: AuditService,
+                 cipher: SecretCipherPort, audit: AuditService, receipts: SecretReceiptPort,
                  clock: Callable[[], datetime] | None = None) -> None:
         if any(item is None for item in (unit_of_work, access, license_guard,
-                                         repository, cipher, audit)):
+                                         repository, cipher, audit, receipts)):
             raise ValueError("secret write dependencies are required")
         self._uow, self._access, self._guard = unit_of_work, access, license_guard
         self._repo, self._cipher, self._audit = repository, cipher, audit
+        self._receipts = receipts
         self._clock = clock or (lambda: datetime.now(timezone.utc))
 
     def create(self, command: CreateSecret) -> SecretRef:
@@ -107,10 +121,27 @@ class SecretWriteService:
                     or type(command.consumer) is not SecretConsumer
                     or _CONSUMER.get(command.purpose) is not command.consumer):
                 raise SecretWriteError("PLATFORM_SECRET_PURPOSE_INVALID")
+            validate_idempotency_key(command.idempotency_key)
+            fingerprint = canonical_payload_fingerprint({
+                "purpose": command.purpose.value,
+                "consumer": command.consumer.value,
+                "secret_sha256": hashlib.sha256(command.secret_value).hexdigest(),
+            })
             self._precheck(command)
-            secret_ref = SecretRef(uuid.UUID(new_uuid7()))
             with self._uow() as tx:
                 actor = self._require_admin(tx, command)
+                scope = IdempotencyScope.from_key(
+                    actor_id=actor, project_id=None,
+                    operation="V1_PLATFORM_SECRET_CREATE", key=command.idempotency_key,
+                )
+                replay = self._receipts.reserve(
+                    tx, scope=scope, request_fingerprint=fingerprint,
+                )
+                if replay is not None:
+                    if replay.ref_type != "V1_PLATFORM_SECRET" or replay.status_code != 201:
+                        raise SecretWriteError("PLATFORM_SECRET_UNAVAILABLE")
+                    return SecretRef(replay.ref_id)
+                secret_ref = SecretRef(uuid.UUID(new_uuid7()))
                 encrypted = self._cipher.encrypt(
                     secret_ref=secret_ref, purpose=command.purpose,
                     consumer=command.consumer, version_no=1,
@@ -121,10 +152,16 @@ class SecretWriteService:
                                                encrypted=encrypted, actor=actor)
                 self._audit.append(tx, self._event(command.trace_id, actor, secret_ref,
                                                    version_id, "PLATFORM_SECRET_CREATE"))
+                self._receipts.complete(
+                    tx, scope=scope,
+                    result=IdempotencyResult("V1_PLATFORM_SECRET", secret_ref.secret_id, 201),
+                )
                 tx.commit()
                 return secret_ref
         except SecretWriteError:
             raise
+        except IdempotencyError as exc:
+            raise SecretWriteError(exc.code) from None
         except Exception:
             raise SecretWriteError("PLATFORM_SECRET_UNAVAILABLE") from None
         finally:

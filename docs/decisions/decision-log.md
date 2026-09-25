@@ -1847,3 +1847,15 @@
 |Reason|冻结 API-01 要求强 ETag 与 If-Match；宽松 HTTP 解析可能把弱/复合条件误当成单资源并发版本。|
 |Impact|新增无状态解析器和边界测试；无 Schema、Migration 或公开写路由变更。|
 |Rollback|写路由尚未开放，可移除解析器；不影响现有只读/登录功能。|
+
+## DEC-20260925-047
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-047|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P05-A03 Secret 创建持久幂等|
+|Decision|创建命令强制 `Idempotency-Key`；在当前管理员与 License 复核后，同一数据库事务先按 actor/全局范围/操作/Key 摘要预约通用收据，指纹只包含 purpose、consumer 与 Secret 值的 SHA-256 摘要，不持久化明文。相同请求重放只返回原 SecretRef，不重新加密/审计；不同请求返回冻结的幂等冲突。密文、Audit 与完成收据同事务提交。|
+|Reason|公开 Secret 创建可重试，原内部服务单独提交会在网络重试时重复创建；现有 Migration `0015` 已提供原子收据。|
+|Impact|修改内部创建命令和依赖签名、单元/临时库验证；轮换/停用与 HTTP 接线另项完成。无 Schema/Migration/已公开 API 变更。|
+|Rollback|写 HTTP 仍关闭；实现异常可回退代码，既有历史 Secret/收据不删除。|

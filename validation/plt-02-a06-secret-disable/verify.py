@@ -23,6 +23,7 @@ from plm_assistant.modules.platform.infrastructure.migration import create_migra
 from plm_assistant.modules.platform.infrastructure.secret_crypto import AesGcmSecretCrypto
 from plm_assistant.modules.platform.infrastructure.secret_store_reader import SqlAlchemyEncryptedSecretStore
 from plm_assistant.modules.platform.infrastructure.secret_write_repository import SqlAlchemySecretWriteRepository
+from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
 
 
 HOST, PORT, USER = "127.0.0.1", 55432, "poc_admin"
@@ -71,12 +72,13 @@ def main():
                     unit_of_work=runtime.unit_of_work, access=SyntheticAccess(actor),
                     license_guard=SyntheticGuard(), repository=SqlAlchemySecretWriteRepository(),
                     cipher=cipher, audit=AuditService(SqlAlchemyAuditRepository()),
+                    receipts=SqlAlchemyIdempotencyReceipts(),
                     clock=lambda: datetime.now(timezone.utc),
                 )
                 value = bytearray(b"synthetic-disable-secret")
                 ref = service.create(CreateSecret(b"s" * 32, b"c" * 32,
                     SecretPurpose.AI_PROVIDER_KEY, SecretConsumer.AI_PROVIDER_ADAPTER,
-                    value, uuid.uuid4()))
+                    value, uuid.uuid4(), str(uuid.uuid4())))
                 assert value == bytearray(len(value))
                 reader = SecretResolver(SqlAlchemyEncryptedSecretStore(runtime.unit_of_work),
                                         cipher, ReadAudit())
