@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PLT-02-A07-P02 新增 Windows 当前账户 Secret 主密钥交互式首次供给、已有键加密备份与空目标恢复；scrypt/AES-256-GCM 独立恢复信封，不接受命令行口令或覆盖既有键/备份。Windows 11/Python 3.13 后端 335/335、合成 Vault 丢失/恢复后旧密文解密及 wheel 构建 PASS。无 Migration、公开 API 或新依赖；升级无需数据操作。异账户/Server 2025、Debian 13、生产 License/Secret 装配及最终程序包仍未验证/完成。
+
 - 2026-09-25：`0.1.0.dev0`/PLT-02-A07-P01 新增 Windows 当前运行账户 Vault 的 Secret 主密钥只读适配器，严格引用/32 字节检查、缺失失败关闭；Windows 11/Python 3.13 后端 331/331 与合成 Vault/AES-GCM 往返 PASS。无 Migration、公开 API 或新依赖；升级无需数据操作。主密钥供给与独立备份恢复、Server 2025/Debian 13、生产 Secret API 和最终程序包仍未完成。
 
 - 2026-09-25：`0.1.0.dev0`/AUT-03-A10 新增显式挂载的 Session 注销 HTTP：Session/CSRF/Origin/Host、持久 `Idempotency-Key`、同事务撤销/Audit/收据、同 Key 重放和安全清除 Cookie；普通默认应用仍 404。Windows 11/Python 3.13 后端 329/329、PostgreSQL 18.6 真正并发重放/不同 Session 冲突/旧 Cookie 失效及 wheel 构建 PASS。无本项新 Migration/依赖，部署需先升级至 `0015`；Server 2025/Debian 13 未验证。管理 API、生产 License/Key Provider 和最终程序包仍未完成。
