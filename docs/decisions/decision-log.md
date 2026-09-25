@@ -2780,3 +2780,15 @@
 |Reason|冻结 DM-03 要求 DocumentVersion→FileObject 的一致性与版本不可变，API-02 要求受权列表/详情和无文件路径投影。降序版本号让最新版本优先且已发布版本的编号稳定。|
 |Impact|Document 内部 Application/Repository 与测试；不改变数据库、公开 API、冻结授权粒度或依赖。后续 HTTP 分页游标需独立完整性保护并绑定 Document/Scope/Session。|
 |Rollback|不暴露版本读接口；保留原有文档元数据读取与数据库历史。|
+
+## DEC-20260926-125
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-125|
+|Date|2026-09-26|
+|WBS|DOC-01-A04-P02 独立签名 DocumentVersion 列表游标|
+|Decision|版本列表使用独立 `document-version-cursor-v1` Windows 当前账户密钥与 HMAC-SHA-256 游标，绑定当前 Session 摘要、Scope、ProjectId、父 DocumentId、page_size 和降序 `before_version_no`；不复用 Document 列表、成员、Secret 或上传令牌密钥。|
+|Reason|版本号虽非机密，但明文或跨父文档复用分页位置会扩大枚举与状态推断面；冻结 API-01 分页采用不透明游标，现有 Windows 安全密钥供给/恢复模式可直接沿用。|
+|Impact|Version cursor codec、Windows 只读密钥入口与单元测试；无 Schema、公开 API、依赖变化。正式目标账户密钥供给前不挂载版本列表。|
+|Rollback|不注入版本列表 Router；失密时拒绝解码，可从该独立密钥备份恢复旧游标，不以其他用途密钥替代。|
