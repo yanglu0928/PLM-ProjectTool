@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/DOC-03-A04-A04-P04-P04-A02 将上传 Commit/Abort 仅挂入 Windows 显式写模式，复用真实 Session/项目创建者授权与 PostgreSQL 持久事务；默认/只读模式仍 404。Windows 11 后端 507 项无失败（2 项权限跳过），隔离 PostgreSQL 18/临时文件合成 Create→Content→Commit/Abort、重放、越权/许可拒绝、既有上传平台回归及开发 wheel PASS。无 Migration/API 破坏/新依赖；正式信任源、Server 2025、物理清理和 Parser Worker 仍待。
+
 - 2026-09-26：`0.1.0.dev0`/DOC-03-A04-A04-P04-P04-A01 新增默认关闭、可选挂载的 GLOBAL/PROJECT 上传 Commit/Abort HTTP 契约；要求可信 Origin、Session/CSRF、幂等 Key、空请求体，Commit 支持强 If-Match，Abort 仅返回待清理。Windows 11 后端 507 项无失败（2 项权限跳过），4 项合成 HTTP 契约及开发 wheel PASS。无 Migration/新依赖；真实平台组合和已登记文件物理清理未完成。
 
 - 2026-09-26：`0.1.0.dev0`/DOC-03-A04-A04-P04-P03-P01 增加内部上传 Abort 状态编排：CREATED/CONTENT_READY 意图同事务进入 ABORTED，已登记文件按冻结状态图进入 CLEANUP_PENDING，并记录事件、Audit 与幂等收据；暂不物理删除。Windows 11 后端 503 项无失败（2 项权限跳过），隔离 PostgreSQL 18/临时文件状态/重放/权限/许可/回滚及开发 wheel PASS。无新 Migration/API/依赖；物理清理、正式 HTTP、Parser Worker 和最终程序包仍待。用户再次确认持续执行与偏差追溯纪律，见 CR-EXEC-001。

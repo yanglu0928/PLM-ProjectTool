@@ -2708,3 +2708,15 @@
 |Reason|冻结 API-02 已规定两个操作及控制项；当前物理清理缺可信停写栅栏，不能把 HTTP 返回待清理解释为实际删除。可选挂载允许先验证合同且保持默认生产入口关闭。|
 |Impact|仅 Document API 与通用应用可选 Router 参数、契约测试；不改 Schema、冻结路径、依赖或默认路由。|
 |Rollback|不向应用注入该 Router，两个接口恢复默认 404；已通过内部 Commit/Abort 写入的历史仍保留。|
+
+## DEC-20260926-119
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-119|
+|Date|2026-09-26|
+|WBS|DOC-03-A04-A04-P04-P04-A02 Windows 显式写模式上传终结组合|
+|Decision|仅在既有 Windows `--platform-write` 组合中装配 Commit/Abort 可选 Router，使用同一请求级 DocumentUploadAccess、正式 PostgreSQL 收据/Audit、File Storage 与 Job Owner Parse 入队 Port；登录/只读模式保持 404，缺任何既有信任源则整个显式写模式失败关闭。Abort 不调用物理清理。|
+|Reason|已有 Create/Content 在该显式模式验证，冻结 API-02 要求相同 Session/License/CSRF/Project Role/创建者边界；单独挂载无保护终结路由会绕过现有组合根。|
+|Impact|Windows 组合根和隔离 PostgreSQL/临时文件验收；无 Schema、冻结 API、依赖或默认应用行为变化。|
+|Rollback|撤下 Commit/Abort Router 注入，两个路径恢复 404；已提交 DocumentVersion/Job 与已终止 Intent 历史保留，不能回滚业务事实。|

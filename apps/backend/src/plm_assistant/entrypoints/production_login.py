@@ -103,6 +103,13 @@ from plm_assistant.modules.document.application.receive_upload_content import Re
 from plm_assistant.modules.document.infrastructure.upload_content_repository import SqlAlchemyUploadContentRepository
 from plm_assistant.modules.document.infrastructure.content_spool import ValidatedContentSpool
 from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage
+from plm_assistant.modules.document.api.finalize_upload import create_document_upload_finalize_router
+from plm_assistant.modules.document.application.commit_upload import CommitUploadService
+from plm_assistant.modules.document.application.abort_upload import AbortUploadService
+from plm_assistant.modules.document.infrastructure.upload_commit_repository import SqlAlchemyUploadCommitRepository
+from plm_assistant.modules.document.infrastructure.upload_abort_repository import SqlAlchemyUploadAbortRepository
+from plm_assistant.modules.jobs.application.parse_enqueue import ParseJobQueue
+from plm_assistant.modules.jobs.infrastructure.parse_enqueue_repository import SqlAlchemyParseJobQueueRepository
 
 
 class ProductionLoginStartupError(RuntimeError):
@@ -210,6 +217,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         project_department_deactivate_router = None
         document_upload_create_router = None
         document_upload_content_router = None
+        document_upload_finalize_router = None
         if include_secret_read:
             from plm_assistant.entrypoints.windows_license_runtime import (
                 create_windows_license_services,
@@ -449,6 +457,40 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 document_upload_content_router = create_document_upload_content_router(
                     sessions=sessions, origins=origins, service_factory=content_service,
                 )
+
+                def finalize_access(token: bytes, csrf: bytes) -> DocumentUploadAccess:
+                    return DocumentUploadAccess(
+                        session_token=token, csrf_token=csrf,
+                        session_access=SqlAlchemyProjectWriteAccess(),
+                        admin_access=SqlAlchemyLicenseImportAccess(),
+                        project_facts=SqlAlchemyProjectAuthorizationRepository(),
+                        upload_owner=upload_repository,
+                    )
+
+                def commit_service(token: bytes, csrf: bytes) -> CommitUploadService:
+                    return CommitUploadService(
+                        unit_of_work=runtime.unit_of_work,
+                        access=finalize_access(token, csrf),
+                        repository=SqlAlchemyUploadCommitRepository(),
+                        receipts=SqlAlchemyIdempotencyReceipts(),
+                        jobs=ParseJobQueue(SqlAlchemyParseJobQueueRepository()),
+                        audit=audit, storage=upload_storage,
+                        license_guard=licenses.guard,
+                    )
+
+                def abort_service(token: bytes, csrf: bytes) -> AbortUploadService:
+                    return AbortUploadService(
+                        unit_of_work=runtime.unit_of_work,
+                        access=finalize_access(token, csrf),
+                        repository=SqlAlchemyUploadAbortRepository(),
+                        receipts=SqlAlchemyIdempotencyReceipts(),
+                        audit=audit, license_guard=licenses.guard,
+                    )
+
+                document_upload_finalize_router = create_document_upload_finalize_router(
+                    sessions=sessions, origins=origins,
+                    commit_factory=commit_service, abort_factory=abort_service,
+                )
         return create_app(
             readiness_checks=(runtime.is_ready,),
             login_router=router,
@@ -474,6 +516,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             project_department_deactivate_router=project_department_deactivate_router,
             document_upload_create_router=document_upload_create_router,
             document_upload_content_router=document_upload_content_router,
+            document_upload_finalize_router=document_upload_finalize_router,
             shutdown_callback=runtime.dispose,
         )
     except Exception:
