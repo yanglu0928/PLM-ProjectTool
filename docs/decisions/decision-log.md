@@ -2768,3 +2768,15 @@
 |Reason|Document 页游标必须具备独立信任锚；仅 HTTP/数据库合成测试不足以授权在目标账户缺钥时降级运行。复用既有 License、Session、Project Owner Port，不增加第二权限体系。|
 |Impact|Windows 组合入口、启动失败关闭与模式分离测试；无 Schema、冻结 API 或新依赖变化。正式账户密钥与发行公钥仍未供给，不能声明生产可用。|
 |Rollback|撤下 Document Router 注入并保留独立游标入口；普通登录模式和现有 Document/上传数据不受影响。|
+
+## DEC-20260926-124
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-124|
+|Date|2026-09-26|
+|WBS|DOC-01-A04-P01 内部 DocumentVersion 元数据读取|
+|Decision|复用 DocumentReadService 的当前 Session/Scope/Project/License 授权与父 Document 可见性，在同一只读事务内读取不可变版本；按 version_no 降序做有界 keyset。普通版本读取仅投影 AVAILABLE 且引用 PERSISTENT/AVAILABLE、同 Scope/Project 且 Hash/Size/MIME 与版本快照一致的 FileObject；RESTRICTED/REVOKED 与异常文件状态不向普通读者暴露。只投影冻结 API-02 的版本元数据，不返回 file_object_id、storage_locator 或 source_metadata。|
+|Reason|冻结 DM-03 要求 DocumentVersion→FileObject 的一致性与版本不可变，API-02 要求受权列表/详情和无文件路径投影。降序版本号让最新版本优先且已发布版本的编号稳定。|
+|Impact|Document 内部 Application/Repository 与测试；不改变数据库、公开 API、冻结授权粒度或依赖。后续 HTTP 分页游标需独立完整性保护并绑定 Document/Scope/Session。|
+|Rollback|不暴露版本读接口；保留原有文档元数据读取与数据库历史。|

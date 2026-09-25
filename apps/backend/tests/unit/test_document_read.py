@@ -23,6 +23,28 @@ class DocumentReadValidationTests(unittest.TestCase):
             with self.subTest(query=query), self.assertRaises(DocumentReadError):
                 DocumentReadService._validate_query(query)
 
+    def test_invalid_version_identity_and_page_size_rejected(self) -> None:
+        class Guard:
+            def require_valid(self, *, trace_id):
+                raise AssertionError("invalid request reached License Guard")
+
+        service = DocumentReadService(
+            unit_of_work=lambda: object(), session_access=object(),
+            admin_access=object(), project_facts=object(), license_guard=Guard(),
+            repository=object(),
+        )
+        for document_id, before, limit in (
+            (uuid.UUID(int=0), None, 50),
+            (uuid.uuid4(), 0, 50),
+            (uuid.uuid4(), True, 50),
+            (uuid.uuid4(), None, 201),
+        ):
+            with self.subTest(before=before, limit=limit), self.assertRaises(DocumentReadError):
+                service.list_versions(self.query, document_id,
+                                      before_version_no=before, limit=limit)
+        with self.assertRaises(DocumentReadError):
+            service.get_version(self.query, uuid.uuid4(), uuid.UUID(int=0))
+
 
 if __name__ == "__main__":
     unittest.main()

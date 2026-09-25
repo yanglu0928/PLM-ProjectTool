@@ -49,6 +49,27 @@ class DocumentPage:
     has_more: bool
 
 
+@dataclass(frozen=True, slots=True)
+class DocumentVersionView:
+    document_version_id: uuid.UUID
+    document_id: uuid.UUID
+    version_no: int
+    content_sha256: str
+    size_bytes: int
+    detected_mime: str
+    availability_state: str
+    supersedes_version_ref: uuid.UUID | None
+    created_at: datetime
+    integrity_checked_at: datetime | None
+
+
+@dataclass(frozen=True, slots=True)
+class DocumentVersionPage:
+    items: tuple[DocumentVersionView, ...]
+    next_before_version_no: int | None
+    has_more: bool
+
+
 class DocumentReadSessionPort(Protocol):
     def authenticated_user(self, transaction: object, *, session_token: bytes,
                            now: datetime) -> uuid.UUID | None: ...
@@ -74,6 +95,13 @@ class DocumentReadRepositoryPort(Protocol):
              limit: int) -> DocumentPage: ...
     def get(self, transaction: object, *, scope: str,
             project_id: uuid.UUID | None, document_id: uuid.UUID) -> DocumentView | None: ...
+    def list_versions(self, transaction: object, *, scope: str,
+                      project_id: uuid.UUID | None, document_id: uuid.UUID,
+                      before_version_no: int | None,
+                      limit: int) -> DocumentVersionPage: ...
+    def get_version(self, transaction: object, *, scope: str,
+                    project_id: uuid.UUID | None, document_id: uuid.UUID,
+                    document_version_id: uuid.UUID) -> DocumentVersionView | None: ...
 
 
 class DocumentReadService:
@@ -140,6 +168,69 @@ class DocumentReadService:
             raise DocumentReadError("LICENSE_OPERATION_DENIED") from None
         except Exception:
             raise DocumentReadError("DOCUMENT_UNAVAILABLE") from None
+
+    def list_versions(self, query: DocumentReadQuery, document_id: uuid.UUID, *,
+                      before_version_no: int | None = None,
+                      limit: int = 50) -> DocumentVersionPage:
+        self._validate_query(query)
+        if type(document_id) is not uuid.UUID or document_id.int == 0:
+            raise DocumentReadError("RESOURCE_NOT_FOUND")
+        if (before_version_no is not None and (
+                type(before_version_no) is not int or before_version_no <= 0)
+                or type(limit) is not int or not 1 <= limit <= 200):
+            raise DocumentReadError("VALIDATION_FAILED")
+        try:
+            self._guard.require_valid(trace_id=query.trace_id)
+            with self._uow() as tx:
+                self._authorize(tx, query)
+                self._require_document(tx, query, document_id)
+                page = self._repository.list_versions(
+                    tx, scope=query.scope, project_id=query.project_id,
+                    document_id=document_id, before_version_no=before_version_no,
+                    limit=limit,
+                )
+                if type(page) is not DocumentVersionPage:
+                    raise DocumentReadError("DOCUMENT_UNAVAILABLE")
+                return page
+        except DocumentReadError:
+            raise
+        except RuntimeLicenseError:
+            raise DocumentReadError("LICENSE_OPERATION_DENIED") from None
+        except Exception:
+            raise DocumentReadError("DOCUMENT_UNAVAILABLE") from None
+
+    def get_version(self, query: DocumentReadQuery, document_id: uuid.UUID,
+                    document_version_id: uuid.UUID) -> DocumentVersionView:
+        self._validate_query(query)
+        if (type(document_id) is not uuid.UUID or document_id.int == 0
+                or type(document_version_id) is not uuid.UUID
+                or document_version_id.int == 0):
+            raise DocumentReadError("RESOURCE_NOT_FOUND")
+        try:
+            self._guard.require_valid(trace_id=query.trace_id)
+            with self._uow() as tx:
+                self._authorize(tx, query)
+                self._require_document(tx, query, document_id)
+                view = self._repository.get_version(
+                    tx, scope=query.scope, project_id=query.project_id,
+                    document_id=document_id, document_version_id=document_version_id,
+                )
+                if type(view) is not DocumentVersionView:
+                    raise DocumentReadError("RESOURCE_NOT_FOUND")
+                return view
+        except DocumentReadError:
+            raise
+        except RuntimeLicenseError:
+            raise DocumentReadError("LICENSE_OPERATION_DENIED") from None
+        except Exception:
+            raise DocumentReadError("DOCUMENT_UNAVAILABLE") from None
+
+    def _require_document(self, tx: object, query: DocumentReadQuery,
+                          document_id: uuid.UUID) -> None:
+        if type(self._repository.get(
+                tx, scope=query.scope, project_id=query.project_id,
+                document_id=document_id)) is not DocumentView:
+            raise DocumentReadError("RESOURCE_NOT_FOUND")
 
     @staticmethod
     def _validate_query(query: DocumentReadQuery) -> None:
