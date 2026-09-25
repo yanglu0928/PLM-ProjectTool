@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/EVD-01-A03-P02-A01 新增仅内部固定 DocumentVersion 全文来源证明，经 DocumentService 已验证快照取得服务器 SHA-256；损坏文件拒绝，非全文精确定位暂拒绝。Windows 11 后端 572 项无失败（2 项环境跳过），真实临时文件完整性测试和开发 wheel PASS。无 Migration/公开 API/新依赖；解析定位、受权生产装配与候选创建仍未完成。
+
 - 2026-09-26：`0.1.0.dev0`/EVD-01-A03-P01 新增仅内部的 Evidence 候选创建授权边界，按冻结权限矩阵检查实时 Session/CSRF、GLOBAL 管理员与项目 PM/IM，拒绝归档或无权请求。Windows 11 后端 568 项无失败（2 项环境跳过），开发 wheel PASS。无 Migration/公开 API/新依赖；真实定位、候选持久创建和 Audit 未接线。
 
 - 2026-09-26：`0.1.0.dev0`/EVD-01-A02 增加固定 DocumentVersion 的 Evidence 持久模型与 Migration `20260926_0027`。Windows 11 后端 564 项无失败（2 项环境跳过），隔离 PostgreSQL 18.6 已有 DocumentVersion 数据升级、空 Evidence 表降级/再升级、GLOBAL/PROJECT 来源与不可变/保留约束、ORM 一致性及开发 wheel PASS。升级前需备份；有证据历史时拒绝降级。无公开 API/新依赖，真实定位、授权创建、资格和 Viewer 尚未完成。

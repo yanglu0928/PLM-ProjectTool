@@ -2936,3 +2936,15 @@
 |Reason|冻结 API-02 明确项目 PM/IM 与 GLOBAL Admin；现有 Document 读层提供版本/文件元数据，但九型 Locator 的实际解析证明尚无生产 Port。只凭 A01 字段校验或 A02 数据库触发器创建记录会允许无法点击定位的假证据。|
 |Impact|仅 Evidence 应用授权适配、测试与任务时序；无 Schema/API/生产入口变更。后续 P02/P03 保持完整九型终态，不把当前分步实现替代最终可用要求。|
 |Rollback|P01 未挂生产入口，停止注入该适配即可；历史冻结 API 权限矩阵不变。|
+
+## DEC-20260926-138
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-138|
+|Date|2026-09-26|
+|WBS|EVD-01-A03-P02-A01 全文固定版本来源证明|
+|Decision|Evidence 应用通过 DocumentService 现有受权 `PrepareDownloadService` 取得无路径、已全量 Hash 验证的私有快照；仅 `DOCUMENT` Locator 可由固定 DocumentVersion 全文 SHA-256 形成来源证明。流在成功/异常后均关闭；其余八类保持 `EVIDENCE_RESOLUTION_UNAVAILABLE`，直到格式解析器能给出实际位置和内容指纹，不以全文 Hash 假冒页/段精度。|
+|Reason|ADR-008 禁止 Evidence 直读物理路径，且 Document 下载链已具状态/权限/完整性双查。Parser/结构定位尚未有生产 Port；现阶段只能对全文位置作可复验的真实性证明。|
+|Impact|Evidence 内部来源证明服务、测试；无 Schema、公开 API、新依赖或生产候选创建入口。A03-P02 整体未完成，九类定位的终态不缩减。|
+|Rollback|停止调用未挂生产的证明服务；不改动任何 Evidence/Document 历史记录。|
