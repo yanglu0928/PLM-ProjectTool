@@ -2696,3 +2696,15 @@
 |Reason|冻结 API 返回 cleanup-pending；文件系统与 PostgreSQL 不能原子提交，先删除再回滚会丢失已登记正文；Commit 可能在外部文件提升与数据库提交之间竞争，必须通过状态锁与后续恢复核查避免误删。|
 |Impact|Document 内部 Application/Repository 与测试；无新 Schema、迁移、依赖或公开 API。CREATED 无文件时返回 cleanup_pending=false，CONTENT_READY 有文件时为 true。|
 |Rollback|撤下未挂载的内部 Abort 入口；已标记 CLEANUP_PENDING 的记录保持可追溯，不恢复成可提交状态，也不自动删除物理文件。|
+
+## DEC-20260926-118
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-118|
+|Date|2026-09-26|
+|WBS|DOC-03-A04-A04-P04-P04-A01 可选 Commit/Abort HTTP 契约|
+|Decision|在现有 FastAPI 组合根增加默认不挂载的上传终结 Router。Commit/Abort 共用可信 Origin、当前 Session/CSRF、空请求体与 Idempotency-Key 边界；Commit 可选读取强 If-Match，新建无父版本，升版由内部服务要求父版本；服务复核创建者和 License。Abort 只返回数据库终止与 cleanup_pending，不在 HTTP 请求内做物理清理。|
+|Reason|冻结 API-02 已规定两个操作及控制项；当前物理清理缺可信停写栅栏，不能把 HTTP 返回待清理解释为实际删除。可选挂载允许先验证合同且保持默认生产入口关闭。|
+|Impact|仅 Document API 与通用应用可选 Router 参数、契约测试；不改 Schema、冻结路径、依赖或默认路由。|
+|Rollback|不向应用注入该 Router，两个接口恢复默认 404；已通过内部 Commit/Abort 写入的历史仍保留。|
