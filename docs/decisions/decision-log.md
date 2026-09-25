@@ -2135,3 +2135,15 @@
 |Reason|冻结 API-02 要求角色/部门更新为受 ProjectManager 控制的版本化 PATCH，已有内部服务负责跨项目、最后负责人、历史和 Audit，不应在 HTTP 层重复业务规则。|
 |Impact|Project 可选 Router、应用工厂注入点、测试与文档；无 Schema/Migration、新依赖或 Breaking API。|
 |Rollback|撤销 Router 注入恢复 404；不回滚已成功提交的成员变更历史。|
+
+## DEC-20260925-071
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-071|
+|Date|2026-09-25|
+|WBS|PRJ-04-A11-P02 Windows 显式平台成员更新组合|
+|Decision|仅在 `--platform`/`--platform-write` 的 Schema、License、Secret/成员 cursor 可信来源全部就绪后装配成员 PATCH，复用真实 Session、ProjectManager 授权、PRJ-02-A03 历史与 Audit。普通登录模式不挂载。|
+|Reason|成员更新不能经独立路线绕过生产信任源或现行成员授权；公开前置与既有 Project 路由保持一致。|
+|Impact|Windows 组合根、契约与临时 PostgreSQL 组合验证；无新 Schema/Migration、冻结 API 或依赖。|
+|Rollback|移除 Router 注入恢复成员 PATCH 404；已提交的角色/部门历史保持不变。|

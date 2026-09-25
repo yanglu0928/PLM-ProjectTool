@@ -82,9 +82,11 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(bare.patch("/api/v1/projects/00000000-0000-0000-0000-000000000001").status_code, 404)
             self.assertEqual(bare.post("/api/v1/projects/00000000-0000-0000-0000-000000000001:archive").status_code, 404)
             self.assertEqual(bare.post("/api/v1/projects/00000000-0000-0000-0000-000000000001/members").status_code, 404)
+            self.assertEqual(bare.patch("/api/v1/projects/00000000-0000-0000-0000-000000000001/members/00000000-0000-0000-0000-000000000002").status_code, 404)
         with TestClient(app, base_url="http://localhost") as client:
             self.assertEqual(client.get("/health/ready").status_code, 200)
             self.assertEqual(client.post("/api/v1/projects/00000000-0000-0000-0000-000000000001/members").status_code, 404)
+            self.assertEqual(client.patch("/api/v1/projects/00000000-0000-0000-0000-000000000001/members/00000000-0000-0000-0000-000000000002").status_code, 404)
             response = client.post("/api/v1/auth/login", headers={"origin": "http://evil.test"},
                                    json={"username": "a", "password": "b"})
             self.assertEqual(response.status_code, 403)
@@ -170,6 +172,7 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(client.post("/api/v1/projects/00000000-0000-0000-0000-000000000001:archive").status_code, 403)
             self.assertEqual(client.get("/api/v1/projects/00000000-0000-0000-0000-000000000001/members").status_code, 401)
             self.assertEqual(client.post("/api/v1/projects/00000000-0000-0000-0000-000000000001/members").status_code, 403)
+            self.assertEqual(client.patch("/api/v1/projects/00000000-0000-0000-0000-000000000001/members/00000000-0000-0000-0000-000000000002").status_code, 403)
             self.assertEqual(client.get("/health/ready").status_code, 200)
         runtime.dispose.assert_called_once()
 
@@ -262,6 +265,7 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(client.post("/api/v1/projects/00000000-0000-0000-0000-000000000001:archive").status_code, 403)
             self.assertEqual(client.get("/api/v1/projects/00000000-0000-0000-0000-000000000001/members").status_code, 401)
             self.assertEqual(client.post("/api/v1/projects/00000000-0000-0000-0000-000000000001/members").status_code, 403)
+            self.assertEqual(client.patch("/api/v1/projects/00000000-0000-0000-0000-000000000001/members/00000000-0000-0000-0000-000000000002").status_code, 403)
             self.assertEqual(client.post(
                 "/api/v1/admin/secrets/00000000-0000-0000-0000-000000000001:rotate"
             ).status_code, 403)

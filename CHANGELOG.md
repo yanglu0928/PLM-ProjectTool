@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PRJ-04-A11-P02 在 Windows 显式 `--platform`/`--platform-write` 模式接入成员 PATCH，复用当前 Session、ProjectManager、License、角色/部门历史与 Audit；默认登录模式仍 404。Windows 11 后端 416/416、PostgreSQL 18 临时库两种组合真实 Session/版本/权限/许可/缺信任源失败关闭及开发 wheel PASS。无新 Migration/依赖，目标库需 `0014`；正式目标账户材料、Server 2025/Debian 13 与最终程序包未完成。
+
 - 2026-09-25：`0.1.0.dev0`/PRJ-04-A11-P01 新增可选成员角色/部门 PATCH HTTP，强 If-Match、Session/CSRF/License/ProjectManager 和安全 MemberView/ETag；默认与当前平台组合仍 404。Windows 11 后端 416/416、PostgreSQL 18 临时库版本/跨项目/最后负责人/许可/历史与 Audit、开发 wheel PASS。无新 Migration/依赖，目标库需已有 `0014`；正式平台接线、信任源、Server 2025/Debian 13 和最终程序包未完成。
 
 - 2026-09-25：`0.1.0.dev0`/PRJ-04-A10-P03 在 Windows 显式 `--platform`/`--platform-write` 模式接入成员创建，复用当前 Session、ProjectManager、License、Audit 与不可变幂等结果；默认登录模式仍 404。Windows 11 后端 413/413、PostgreSQL 18 临时库两种组合真实 Session/重放/权限/许可/缺信任源失败关闭及开发 wheel PASS。无新 Migration/依赖，目标库需 `0016`；正式目标账户材料、Server 2025/Debian 13 和最终程序包未完成。
