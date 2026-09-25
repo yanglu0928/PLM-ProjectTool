@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/DOC-01-A03-P04 将 Document 元数据 GET 接入 Windows `--platform`/`--platform-write` 显式模式，普通登录模式仍 404；独立游标密钥缺失时整模式失败关闭。Windows 11 后端 518 项无失败（2 项符号链接环境跳过），平台合同与开发 wheel PASS。无 Migration/新依赖；正式目标账户密钥、公钥及跨平台发行仍待。
+
 - 2026-09-26：`0.1.0.dev0`/DOC-01-A03-P03 增加 Document HTTP + PostgreSQL 18.6 隔离同链路验证脚本，覆盖真实 Session/项目成员、PROJECT/GLOBAL、双页游标、受限/跨项目隐藏、License 与状态变化；Windows 11 合成验证 PASS。无程序 API、Schema 或依赖变化；正式 Windows 平台装配、目标账户密钥和最终程序包仍待。
 
 - 2026-09-26：`0.1.0.dev0`/DOC-01-A03-P02 新增默认关闭、可选挂载的 PROJECT/GLOBAL Document 元数据列表和详情 GET；Session/License/当前 Scope 授权、独立签名游标、强 ETag 与无物理路径投影。Windows 11 后端 517 项无失败（2 项符号链接环境跳过）、HTTP 合同与既有 PostgreSQL 18 读层复验、开发 wheel PASS。无 Migration/新依赖/API 破坏；正式 Windows 组合、目标账户密钥、版本读取/下载和最终程序包仍待。

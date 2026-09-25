@@ -2756,3 +2756,15 @@
 |Reason|先以可选边界验证 HTTP 契约与真实数据库读层；正式 Windows 组合仍需独立 Document 游标密钥和目标账户安全来源，不能因内部验证通过而提前开放。|
 |Impact|Document API、应用可选路由入口、合同测试及版本/状态记录；无 Schema、冻结路径/权限变更或新依赖。GLOBAL 当前仅管理员，正式跨域引用授权另行设计验证。|
 |Rollback|不向应用注入 `document_read_router` 即保持 404；已有 Document 数据及上传流程不受影响。|
+
+## DEC-20260926-123
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-123|
+|Date|2026-09-26|
+|WBS|DOC-01-A03-P04 Windows 显式平台只读组合|
+|Decision|在现有 `--platform` 与 `--platform-write` 显式模式接入 Document 读 Service/Router；普通登录模式继续不装配。两个显式模式均要求独立 `document-list-cursor-v1` 当前账户密钥，任何读取/验证失败使整个模式启动失败并释放数据库资源。|
+|Reason|Document 页游标必须具备独立信任锚；仅 HTTP/数据库合成测试不足以授权在目标账户缺钥时降级运行。复用既有 License、Session、Project Owner Port，不增加第二权限体系。|
+|Impact|Windows 组合入口、启动失败关闭与模式分离测试；无 Schema、冻结 API 或新依赖变化。正式账户密钥与发行公钥仍未供给，不能声明生产可用。|
+|Rollback|撤下 Document Router 注入并保留独立游标入口；普通登录模式和现有 Document/上传数据不受影响。|
