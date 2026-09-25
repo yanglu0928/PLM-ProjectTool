@@ -2387,3 +2387,15 @@
 |Reason|冻结 DM-03 要求 Document/FileObject/DocumentVersion 分离；当前 DOC-02 尚缺，必须防止悬空或跨 Scope 的版本引用。|
 |Impact|后续 Migration `0021`、ORM、约束和验证；本登记本身不改变运行 Schema/API。|
 |Rollback|本登记无需数据回滚；后续 Migration 仅在空表时允许普通降级。|
+
+## DEC-20260925-092
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-092|
+|Date|2026-09-25|
+|WBS|DOC-02-A01 DocumentVersion 持久层|
+|Decision|依据 CR-DOC-003 在 `0022` 建独立版本与来源引用表，使用 FK/触发器守护同 Scope、文件状态/摘要、前驱、指针和不可变字段；文件字节、发布命令与恢复流程保持在后续任务。|
+|Reason|既有 `0021` Document 指针被安全地锁为 NULL，只有版本 Root 和数据库约束完备后才能解除初态限制，不允许自由引用。|
+|Impact|Document ORM/Migration/临时 PostgreSQL 验证；无公开 API/新依赖，不修改原冻结提交。|
+|Rollback|空版本且指针 NULL 可降至 `0021`，有版本时拒绝普通降级并保留历史。|

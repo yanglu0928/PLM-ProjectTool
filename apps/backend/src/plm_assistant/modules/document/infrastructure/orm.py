@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import BigInteger, CheckConstraint, ForeignKeyConstraint, Index, LargeBinary, Text, UniqueConstraint, text
-from sqlalchemy.dialects.postgresql import TIMESTAMP, UUID
+from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from plm_assistant.modules.platform.infrastructure.orm import Base
@@ -101,7 +101,7 @@ _DOCUMENT_CATEGORIES = "'CONTRACTUAL','PROJECT_RECORD','STANDARD_CAPABILITY','RE
 
 
 class DocumentRow(Base):
-    """DOC-01 stable identity; version pointers stay NULL until DOC-02."""
+    """DOC-01 stable identity and DOC-02 version pointers."""
 
     __tablename__ = "doc_documents"
     __table_args__ = (
@@ -114,6 +114,14 @@ class DocumentRow(Base):
                              name="fk_doc_documents__creator", ondelete="NO ACTION"),
         ForeignKeyConstraint(["updated_by"], ["plm.auth_users.user_id"],
                              name="fk_doc_documents__updater", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["latest_version_ref", "document_id"],
+                             ["plm.doc_document_versions.document_version_id", "plm.doc_document_versions.document_id"],
+                             name="fk_doc_documents__latest_version", ondelete="NO ACTION",
+                             use_alter=True),
+        ForeignKeyConstraint(["effective_version_ref", "document_id"],
+                             ["plm.doc_document_versions.document_version_id", "plm.doc_document_versions.document_id"],
+                             name="fk_doc_documents__effective_version", ondelete="NO ACTION",
+                             use_alter=True),
         CheckConstraint("(scope='GLOBAL' AND project_id IS NULL) OR (scope='PROJECT' AND project_id IS NOT NULL)",
                         name="ck_doc_documents__scope_project"),
         CheckConstraint(f"document_category IN ({_DOCUMENT_CATEGORIES})",
@@ -132,8 +140,6 @@ class DocumentRow(Base):
                         name="ck_doc_documents__other_details"),
         CheckConstraint("document_category <> 'GENERATED_ARTIFACT' OR scope='PROJECT'",
                         name="ck_doc_documents__generated_scope"),
-        CheckConstraint("latest_version_ref IS NULL AND effective_version_ref IS NULL",
-                        name="ck_doc_documents__pre_version_pointers"),
         CheckConstraint("lock_version >= 0", name="ck_doc_documents__version"),
         Index("ix_doc_documents__scope_project_state", "scope", "project_id", "document_state"),
     )
@@ -154,3 +160,84 @@ class DocumentRow(Base):
     updated_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False, server_default=text("statement_timestamp()"))
     lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+
+
+class DocumentVersionRow(Base):
+    """DOC-02 immutable content snapshot, guarded by PostgreSQL triggers."""
+
+    __tablename__ = "doc_document_versions"
+    __table_args__ = (
+        UniqueConstraint("document_id", "version_no", name="uq_doc_versions__document_no"),
+        UniqueConstraint("document_version_id", "document_id",
+                         name="uq_doc_versions__id_document"),
+        UniqueConstraint("file_object_id", name="uq_doc_versions__file"),
+        ForeignKeyConstraint(["document_id"], ["plm.doc_documents.document_id"],
+                             name="fk_doc_versions__document", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["file_object_id"], ["plm.doc_file_objects.file_object_id"],
+                             name="fk_doc_versions__file", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["created_by"], ["plm.auth_users.user_id"],
+                             name="fk_doc_versions__creator", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["supersedes_version_ref", "document_id"],
+                             ["plm.doc_document_versions.document_version_id", "plm.doc_document_versions.document_id"],
+                             name="fk_doc_versions__supersedes", ondelete="NO ACTION"),
+        CheckConstraint("(scope='GLOBAL' AND project_id IS NULL) OR (scope='PROJECT' AND project_id IS NOT NULL)",
+                        name="ck_doc_versions__scope_project"),
+        CheckConstraint("version_no > 0", name="ck_doc_versions__number"),
+        CheckConstraint("octet_length(content_sha256)=32", name="ck_doc_versions__sha256"),
+        CheckConstraint("size_bytes >= 0", name="ck_doc_versions__size"),
+        CheckConstraint("char_length(detected_mime) BETWEEN 1 AND 255",
+                        name="ck_doc_versions__mime"),
+        CheckConstraint("jsonb_typeof(source_metadata)='object'",
+                        name="ck_doc_versions__source"),
+        CheckConstraint("availability_state IN ('AVAILABLE','RESTRICTED','REVOKED')",
+                        name="ck_doc_versions__state"),
+        Index("ix_doc_versions__document_created", "document_id", "created_at"),
+    )
+
+    document_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    document_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    scope: Mapped[str] = mapped_column(Text, nullable=False)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    version_no: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    file_object_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    content_sha256: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    detected_mime: Mapped[str] = mapped_column(Text, nullable=False)
+    source_metadata: Mapped[dict] = mapped_column(JSONB, nullable=False, server_default=text("'{}'::jsonb"))
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False, server_default=text("statement_timestamp()"))
+    availability_state: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'AVAILABLE'"))
+    supersedes_version_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    integrity_checked_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True, precision=6))
+
+
+class DocumentVersionSourceRefRow(Base):
+    """Append-only, non-path provenance for a committed content version."""
+
+    __tablename__ = "doc_version_source_refs"
+    __table_args__ = (
+        UniqueConstraint("document_version_id", "ordinal",
+                         name="uq_doc_version_sources__version_ordinal"),
+        ForeignKeyConstraint(["document_version_id"],
+                             ["plm.doc_document_versions.document_version_id"],
+                             name="fk_doc_version_sources__version", ondelete="NO ACTION"),
+        CheckConstraint("ordinal >= 0", name="ck_doc_version_sources__ordinal"),
+        CheckConstraint("source_kind ~ '^[A-Z][A-Z0-9_]{0,63}$'",
+                        name="ck_doc_version_sources__kind"),
+        CheckConstraint("(source_owner_module IS NULL AND source_object_type IS NULL AND source_object_id IS NULL AND source_version_id IS NULL) OR (source_owner_module IS NOT NULL AND source_object_type IS NOT NULL AND source_object_id IS NOT NULL)",
+                        name="ck_doc_version_sources__ref_shape"),
+        CheckConstraint("source_owner_module IS NULL OR source_owner_module ~ '^[a-z][a-z0-9_]{0,39}$'",
+                        name="ck_doc_version_sources__owner"),
+        CheckConstraint("source_object_type IS NULL OR source_object_type ~ '^[A-Z]{2,3}-[0-9]{2}$'",
+                        name="ck_doc_version_sources__object_type"),
+    )
+
+    source_ref_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    document_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    ordinal: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    source_kind: Mapped[str] = mapped_column(Text, nullable=False)
+    source_owner_module: Mapped[str | None] = mapped_column(Text)
+    source_object_type: Mapped[str | None] = mapped_column(Text)
+    source_object_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    source_version_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False, server_default=text("statement_timestamp()"))

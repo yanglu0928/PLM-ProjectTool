@@ -68,6 +68,7 @@ description: Execute architecture, PoC, implementation, testing, packaging, and 
 
 ## 参考文件路由
 
+- DOC-02-A01 已按 CR-DOC-003 增加不可变 DocumentVersion/来源引用与 Migration `0022`，PostgreSQL 归属/摘要/前驱/指针/已发布文件元数据约束、453 项后端测试（2 项跳过）及开发 wheel 通过；实际文件 Hash/上传 Commit/恢复仍待，下一项以 `STATUS.md` 为准。
 - DOC-01-A01 已按 CR-DOC-002 新增 Document 逻辑身份与 Migration `0021`，PostgreSQL Scope/类别/初态指针/身份不可变和空/有数据升降级、453 项后端测试（2 项跳过）及开发 wheel 通过；DocumentVersion/正式授权/上传仍待，下一项以 `STATUS.md` 为准。
 - DOC-03-A03-P02 已完成内部失败/限制状态命令的 PostgreSQL 行锁、事件/Audit/收据同事务、并发重放/回滚；Windows 11 后端 453 项无失败（2 项符号链接场景跳过），开发 wheel 通过。正式 Document 授权、AVAILABLE 发布/恢复和公开上传仍待，下一项以 `STATUS.md` 为准。
 - DOC-03-A03-P01 已按冻结 DM-03 增加内部 FileObject 状态图及外部证明要求；Windows 11 后端 451 项无失败（2 项符号链接场景因账户权限跳过），开发 wheel 通过；数据库状态命令/恢复审计、上传/下载仍待，下一项以 `STATUS.md` 为准。
