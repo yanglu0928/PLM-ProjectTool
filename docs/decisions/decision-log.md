@@ -2912,3 +2912,15 @@
 |Reason|冻结模型规定类型和最小语义，但未逐字段规定传输形状；先固定可测试的内部 DTO，后续 API/持久层复用同一校验，避免把模型摘要或任意 JSON 当成精确定位。选择不修改原 Gate 2 冻结内容。|
 |Impact|仅 Evidence 领域模块和单元测试；无 Schema、公开 API、外部依赖或生产资格变更。实际解析/重新定位仍需 EVD 后续任务，不以字段校验代替证明。|
 |Rollback|移除未对外装配的领域校验器；若后续 API/存储已引用，须先迁移持久定位器并保留历史固定版本，不可静默重解释。|
+
+## DEC-20260926-136
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-136|
+|Date|2026-09-26|
+|WBS|EVD-01-A02 Evidence 固定版本持久模型|
+|Decision|新增 `evd_evidence_records`，保存 Evidence 身份、Scope/Project、固定 Document/DocumentVersion 双引用、Locator 类型与 schema version 及 JSONB 细节、32-byte 内容指纹、受限显示字段、资格状态和乐观版本。FK 固定版本归属；插入触发器检查 DocumentVersion 当前 AVAILABLE 与 Scope/Project 一致，拒绝非 CANDIDATE 直接创建；更新触发器保护来源/Locator/指纹身份及保留历史。Locator 完整语义由 EVD-01-A01 校验与后续受权解析服务承担，不把 JSONB 字段合同冒称数据库已证明实际定位。|
+|Reason|冻结 SC-01 允许 Locator 类型细节使用 JSONB，SC-02 要求核心类型/版本为列。GLOBAL 的空 ProjectId 使普通复合 FK 无法完整证明跨表 Scope，因此增加数据库插入触发器；DocumentVersion 原表不为 Evidence 增加可空复合键。|
+|Impact|Evidence ORM、增量 Migration、隔离 PostgreSQL 验证与版本说明；不修改冻结 Gate 2 文件、不开放 API 或生产事实创建。后续 Eligibility/Viewer 必须有独立权限和有效来源校验。|
+|Rollback|空表可降级；有 Evidence 历史时拒绝降级，先备份并走可追溯迁移，不自动删除证据。|

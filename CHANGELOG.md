@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/EVD-01-A02 增加固定 DocumentVersion 的 Evidence 持久模型与 Migration `20260926_0027`。Windows 11 后端 564 项无失败（2 项环境跳过），隔离 PostgreSQL 18.6 已有 DocumentVersion 数据升级、空 Evidence 表降级/再升级、GLOBAL/PROJECT 来源与不可变/保留约束、ORM 一致性及开发 wheel PASS。升级前需备份；有证据历史时拒绝降级。无公开 API/新依赖，真实定位、授权创建、资格和 Viewer 尚未完成。
+
 - 2026-09-26：`0.1.0.dev0`/EVD-01-A01 新增九类 EvidenceLocator 的内部类型校验与非法精度拒绝；Windows 11 后端 564 项无失败（2 项环境跳过），开发 wheel PASS。无 Migration、公开 API 或新依赖；尚未验证固定版本来源、权限或实际定位，不能用于正式 Evidence/Viewer。
 
 - 2026-09-26：`0.1.0.dev0`/CR-DOC-008/A03-P03 完成生产清理部署前置核查：Windows Server 2025 虚拟机可启动、VMware Tools 可见，但远程访问、目标账户/数据根、旧版写进程收敛及恢复演练均无验收证据；维持清理入口关闭和 Gate 3 未通过。无代码、Migration、API 或依赖变更；Windows 11 本机无 PLM 写进程不作为生产停写证明。
