@@ -68,6 +68,8 @@ description: Execute architecture, PoC, implementation, testing, packaging, and 
 
 ## 参考文件路由
 
+- PRJ-04-A16-P02 已新增可选 Department 停用 POST，PostgreSQL 真实 Session/同 Key 200 重放/在用/权限/许可拒绝、441 个后端测试与开发 wheel 通过；默认及当前 Windows 平台仍 404，下一项以 `STATUS.md` 为准。
+
 - PRJ-04-A16-P01 已按 CR-PRJ-005 完成内部 Department 停用同事务幂等/不可变首次结果快照与 Migration `0019`，PostgreSQL 并发/回滚/降级、438 个后端测试及开发 wheel 通过；公开 POST 仍未挂载，下一项以 `STATUS.md` 为准。
 
 - PRJ-04-A16 前置核查已登记 CR-PRJ-005：Department 停用公开 POST 缺同事务持久幂等/首次响应快照和在用错误码；需先完成 P01，不能直接挂载公开接口，下一项以 `STATUS.md` 为准。

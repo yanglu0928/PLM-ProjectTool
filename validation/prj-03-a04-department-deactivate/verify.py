@@ -9,8 +9,14 @@ from datetime import datetime, timezone
 
 import psycopg
 from alembic import command
+from fastapi.testclient import TestClient
 from psycopg import sql
 from sqlalchemy.engine import URL
+from plm_assistant.entrypoints.api import create_app
+from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
+from plm_assistant.modules.auth.application.session_service import SessionError
+from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
+from plm_assistant.modules.project.api.deactivate_department import create_project_department_deactivate_router
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
 
 from plm_assistant.modules.audit.application.public import AuditService
@@ -55,7 +61,17 @@ class Guard:
 
     def require_valid(self, **_):
         if not self.valid:
-            raise RuntimeError("synthetic License failure")
+            raise RuntimeLicenseError("EXPIRED")
+
+
+class Sessions:
+    def __init__(self, tokens):
+        self.tokens = tokens
+
+    def validate(self, token, *, csrf_token, require_csrf):
+        if token not in self.tokens or csrf_token != CSRF or require_csrf is not True:
+            raise SessionError("AUTH_SESSION_EXPIRED")
+        return object()
 
 
 class FailedAudit:
@@ -151,8 +167,8 @@ def main():
                 guard.valid = False
                 try:
                     deactivate("free")
-                except RuntimeError as exc:
-                    assert str(exc) == "synthetic License failure"
+                except RuntimeLicenseError as exc:
+                    assert exc.code == "EXPIRED"
                 else:
                     raise AssertionError("License failure bypassed")
                 guard.valid = True
@@ -196,8 +212,8 @@ def main():
                     idempotent.deactivate_idempotent(
                         idem_command, idempotency_key="department-deactivate-first-001",
                     )
-                except RuntimeError as exc:
-                    assert str(exc) == "synthetic License failure"
+                except RuntimeLicenseError as exc:
+                    assert exc.code == "EXPIRED"
                 else:
                     raise AssertionError("License failure bypassed on replay")
                 guard.valid = True
@@ -245,6 +261,39 @@ def main():
                     assert db.execute("SELECT count(*) FROM plm.prj_department_deactivate_results WHERE department_id=%s", (rollback,)).fetchone()[0] == 0
                     assert db.execute("SELECT count(*) FROM plm.plt_idempotency_receipts WHERE operation='V1_PROJECT_DEPARTMENT_DEACTIVATE' AND project_id=%s AND result_ref_id IS NULL", (p1,)).fetchone()[0] == 0
 
+                with connect(name) as db:
+                    http_department = db.execute("INSERT INTO plm.prj_departments(project_id,department_code,department_code_normalized,name) VALUES (%s,'HTTP-DEACTIVATE','http-deactivate','HTTP Department') RETURNING department_id", (p1,)).fetchone()[0]
+                router = create_project_department_deactivate_router(
+                    sessions=Sessions((token, other_token, cm_token)), departments=idempotent,
+                    origins=LoginOriginPolicy(["https://plm.example.test"]),
+                )
+                path = f"/api/v1/projects/{p1}/departments/{http_department}:deactivate"
+                headers = {
+                    "origin": "https://plm.example.test",
+                    "cookie": "plm_session=" + token.hex(),
+                    "x-csrf-token": CSRF.hex(), "if-match": '"v0"',
+                    "idempotency-key": "department-http-deactivate-001",
+                }
+                with TestClient(create_app(), base_url="https://plm.example.test") as bare:
+                    assert bare.post(path, headers=headers).status_code == 404
+                with TestClient(create_app(project_department_deactivate_router=router),
+                                base_url="https://plm.example.test") as http:
+                    first_http = http.post(path, headers=headers)
+                    replay_http = http.post(path, headers=headers)
+                    assert first_http.status_code == replay_http.status_code == 200, (first_http.text, replay_http.text)
+                    assert first_http.json()["data"] == replay_http.json()["data"]
+                    assert first_http.headers["etag"] == '"v1"'
+                    assert http.post(path, headers={**headers, "if-match": '"v1"'}).status_code == 409
+                    assert http.post(path, headers={**headers, "cookie": "plm_session=" + cm_token.hex()}).status_code == 404
+                    assert http.post(f"/api/v1/projects/{p1}/departments/{deps['active']}:deactivate",
+                                     headers={**headers, "idempotency-key": "department-http-inuse-001"}).status_code == 409
+                    guard.valid = False
+                    assert http.post(path, headers=headers).status_code == 403
+                    guard.valid = True
+                with connect(name) as db:
+                    assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='PROJECT_DEPARTMENT_DEACTIVATED'", (http_department,)).fetchone()[0] == 1
+                    assert db.execute("SELECT count(*) FROM plm.prj_department_deactivate_results WHERE department_id=%s", (http_department,)).fetchone()[0] == 1
+
                 def compete_deactivate():
                     try:
                         return deactivate("race").state
@@ -279,7 +328,7 @@ def main():
                     assert "department deactivate results exist" in str(exc)
                 else:
                     raise AssertionError("nonempty deactivate result downgrade should fail")
-                print("PASS: migration/ORM, idempotent Department deactivation replay/concurrency/rollback, member-in-use and archived denial")
+                print("PASS: migration/ORM, idempotent Department internal and optional HTTP replay/concurrency/rollback, member-in-use and archived denial")
             finally:
                 runtime.dispose()
         finally:

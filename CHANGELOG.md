@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PRJ-04-A16-P02 新增可选 Department 停用 POST，使用可信 Origin、当前 Session/CSRF、强 If-Match、Idempotency-Key 与同事务首次结果快照；200 返回安全 DepartmentView/ETag。Windows 11 后端 441/441、PostgreSQL 18 临时库真实 Session 首次/重放仅一次停用/Audit、成员在用/版本/权限/合成 License 拒绝及开发 wheel PASS。无新 Migration/依赖，目标库需 `0019`；默认与当前 Windows 平台仍 404，正式信任源、Server 2025/Debian 13 与最终程序包未完成。
+
 - 2026-09-25：`0.1.0.dev0`/PRJ-04-A16-P01 按 CR-PRJ-005 增加 Department 停用同事务持久幂等、不可变首次响应快照及 `PROJECT_DEPARTMENT_IN_USE` 安全错误码；旧内部命令保留。Windows 11 后端 438/438、PostgreSQL 18 临时库 Migration/ORM、顺序/并发重放、在用拒绝、审计回滚与非空降级保护、开发 wheel PASS。新增 Migration `20260925_0019`；目标库升级前须备份并执行至 head，无新增依赖。公开停用 HTTP、正式信任源、Server 2025/Debian 13 与最终程序包未完成。
 
 - 2026-09-25：`0.1.0.dev0`/PRJ-04-A16 前置核查登记 CR-PRJ-005：冻结部门停用 POST 所需同事务持久幂等/首次响应快照尚缺，且 `PROJECT_DEPARTMENT_IN_USE` 错误码未登记；公开接线保持未开放。仅文档变化，无 Migration/依赖或安装升级动作；P01 实施与验证、正式信任源、Server 2025/Debian 13 和最终程序包仍待。

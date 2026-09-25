@@ -2303,3 +2303,15 @@
 |Reason|停用后版本/状态改变，读取当前部门无法重放冻结 API-01 的首次 200 响应。|
 |Impact|Migration `20260925_0019`、ORM、Repository、Service、错误码与测试；不开放 HTTP，不改变成员在用规则。|
 |Rollback|新表为空可降至 `0018`；已有快照时拒绝降级并保留幂等证据。|
+
+## DEC-20260925-085
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-085|
+|Date|2026-09-25|
+|WBS|PRJ-04-A16-P02 Department 停用可选 HTTP|
+|Decision|只在显式注入时提供冻结 `POST /api/v1/projects/{project_id}/departments/{department_id}:deactivate`；使用可信 Origin、Session/CSRF、强 If-Match、Idempotency-Key 与 P01 持久幂等服务。|
+|Reason|HTTP 边界复用已验证的权限、成员在用、许可、并发与快照语义；默认应用保持 404。|
+|Impact|Project 可选 Router、应用工厂注入点、契约/隔离 PostgreSQL 验证；无新 Schema/Migration/依赖或 Breaking API。|
+|Rollback|移除 Router 注入恢复 404；已停用的部门、审计及快照保留。|
