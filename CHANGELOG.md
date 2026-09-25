@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/DOC-03-A04-A03-P02 增加内部有界流式 Content 暂存与类型/长度/SHA-256 核验，独占 UUID Locator，失败仅清理本次文件身份仍一致的未登记暂存；支持按用途允许清单核查 PDF、DOCX/XLSX/PPTX、PNG/JPEG/TIFF、UTF-8 TXT/CSV。Windows 11 后端 470 项无失败（2 项符号链接跳过）、真实临时文件系统测试与开发 wheel PASS。无 Migration/公开 API/新依赖；Session/Token/Intent 二次授权、FileObject/STAGED 登记、重传/孤儿清理、Server 2025/Debian 13 和最终程序包仍待。
+
 - 2026-09-25：`0.1.0.dev0`/DOC-03-A04-A03-P01 按 CR-DOC-005 修正升版 UploadIntent 文件名契约：增量 `20260925_0024` 允许既有 Document 目标携带本次上传文件显示名，并对新建 Intent 强制必填；旧缺名意图不伪造回填。Windows 11 后端 464 项无失败（2 项符号链接跳过）、PostgreSQL 18 临时库空/已有数据升级、可逆降级/新形态拒绝降级、ORM 差异及 A02 回归、开发 wheel PASS。目标库先备份再升级 `head`；无新公开 API/依赖，流式 Content、正式授权/密钥、Server 2025/Debian 13 和最终程序包仍待。
 
 - 2026-09-25：`0.1.0.dev0`/DOC-03-A04-A02 增加内部 UploadIntent 创建、独立 HMAC 短时 Token（数据库仅存摘要）、同事务幂等收据与 Audit；项目/Document 归属和状态、过期重放失败关闭。Windows 11 后端 464 项无失败（2 项符号链接跳过）、PostgreSQL 18 临时库合成并发/权限/跨项目/审计回滚/失钥及开发 wheel PASS。无新 Migration/API/依赖；目标库需已有 `0023`，当前无生产密钥/正式 Session 授权或公开上传。Server 2025/Debian 13、Content/Commit/Abort、Parser Job 和最终程序包未完成。

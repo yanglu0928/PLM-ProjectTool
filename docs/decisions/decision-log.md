@@ -2519,3 +2519,15 @@
 |Reason|冻结 API-02 要求升版也声明 display name，现有 `0023` 约束错误禁止，无法验证扩展名或形成可信 FileObject 名称。|
 |Impact|Document ORM/增量 Migration、创建命令验证、合成验证与版本记录；无公开 API Breaking Change。|
 |Rollback|降级仅在不存在新形态记录时允许，绝不删除有历史记录；旧缺名记录保持可追溯并按期限终止。|
+
+## DEC-20260925-103
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-103|
+|Date|2026-09-25|
+|WBS|DOC-03-A04-A03-P02 有界流式 Content 校验与受控暂存|
+|Decision|先在 Document Storage Adapter 构建与授权无关的单次暂存证明：调用方显式传入已受权的内部 FileObject ID/Scope 和格式允许清单，独占创建受控 Locator；对流式 Chunk 做长度/上限/SHA-256 校验，并以文件特征和容器结构复核类型。失败仅在文件身份仍为本次创建的普通单链接文件时删除暂存；成功返回不含绝对路径的内容证明。数据库 Intent/STAGED 登记、Token/Session 检查、重传/崩溃清理留独立 P03。|
+|Reason|冻结上传次序要求先受控临时区校验，再建立 FileObject/STAGED；单纯信任扩展名、客户端 MIME 或一次性读入内存均不满足大小与类型底线。|
+|Impact|仅 Document 基础设施与本地合成测试；不改 Schema、公开 API、技术栈或生产组合。允许格式仍由后续用途/部署配置注入，未列明或未实现的格式失败关闭。|
+|Rollback|不装配暂存器即可停止新写入；已生成未登记的临时内容由后续 TTL 恢复/清理机制处理，不自动删除未知历史或业务版本。|

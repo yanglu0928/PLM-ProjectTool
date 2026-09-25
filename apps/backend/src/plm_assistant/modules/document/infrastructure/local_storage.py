@@ -193,11 +193,25 @@ class LocalFileStorage:
         if type(locator) is not str or not locator.startswith("temp/"):
             raise LocalStorageError()
         target = self._path(locator, create_parents=True)
-        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0)
+        flags = os.O_RDWR | os.O_CREAT | os.O_EXCL | getattr(os, "O_BINARY", 0)
         flags |= getattr(os, "O_NOFOLLOW", 0)
         try:
             descriptor = os.open(target, flags, 0o600)
-            return os.fdopen(descriptor, "wb")
+            return os.fdopen(descriptor, "w+b")
+        except OSError:
+            raise LocalStorageError() from None
+
+    def discard_new_staging(self, locator: str, *, device: int, inode: int) -> None:
+        """Remove only the exact unregistered ordinary file created by this request."""
+        if (type(locator) is not str or not locator.startswith("temp/")
+                or type(device) is not int or type(inode) is not int):
+            raise LocalStorageError()
+        target = self._path(locator)
+        current = _checked_file(target)
+        if (current.st_dev, current.st_ino) != (device, inode):
+            raise LocalStorageError()
+        try:
+            os.unlink(target)
         except OSError:
             raise LocalStorageError() from None
 
