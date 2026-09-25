@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/DOC-03-A03-P01 增加冻结 DM-03 的内部 FileObject 状态流转策略，明确内容校验、清理资格和原因记录的外部证明要求；拒绝未登记、逆向及 PERSISTENT AVAILABLE 清理流转。Windows 11 后端 451 项无失败（2 项符号链接场景因账户权限跳过）、开发 wheel PASS。无 Migration/公开 API/新依赖，升级无需新增操作；同事务数据库命令、真实文件完整性、引用/保留、恢复审计及 Server 2025/Debian 13 未验证，非最终程序包。
+
 - 2026-09-25：`0.1.0.dev0`/DOC-03-A02 增加内部本地 Storage Adapter：仅接受 UUID 派生的 Scope 绑定相对 Locator，独占暂存、同卷无覆盖发布，拒绝路径穿越、硬链接源、Windows 大小写别名及检测到的重解析点。Windows 11 后端 448 项无失败（2 项符号链接场景因账户权限跳过）、开发 wheel PASS。无 Migration/API/新增依赖，已有 `0020` 元数据迁移仍需按计划执行；未接数据库状态事务、上传/下载及清理恢复，真实重解析点和 Server 2025/Debian 13 未验证，非最终可用程序包。
 
 - 2026-09-25：`0.1.0.dev0`/DOC-03-A01 按 CR-DOC-001 增加 FileObject 元数据及追加式状态事件持久层，显式 GLOBAL/PROJECT Scope、受控相对 Locator 基础约束、Hash/Size/MIME 和降级保护；文件正文不入库。Windows 11 后端 441/441、PostgreSQL 18 临时库空/已有数据升降级、ORM 差异、Scope/Locator/Hash/状态/历史约束及开发 wheel PASS。新增 Migration `20260925_0020`；目标库升级前备份并执行至 head。Storage Adapter/上传/下载、正式信任源、Server 2025/Debian 13 与最终程序包未完成。

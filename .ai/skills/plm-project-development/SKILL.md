@@ -68,6 +68,7 @@ description: Execute architecture, PoC, implementation, testing, packaging, and 
 
 ## 参考文件路由
 
+- DOC-03-A03-P01 已按冻结 DM-03 增加内部 FileObject 状态图及外部证明要求；Windows 11 后端 451 项无失败（2 项符号链接场景因账户权限跳过），开发 wheel 通过；数据库状态命令/恢复审计、上传/下载仍待，下一项以 `STATUS.md` 为准。
 - DOC-03-A02 已增加内部受控本地 Storage Adapter；Windows 11 后端 448 项无失败（2 项符号链接场景因账户权限跳过），开发 wheel 通过；真实重解析点与数据库状态联动、上传/下载尚未验证/实现，下一项以 `STATUS.md` 为准。
 - DOC-03-A01 已按 CR-DOC-001 增加 FileObject 元数据/状态事件与 Migration `0020`，PostgreSQL 约束/升级/降级、441 个后端测试和开发 wheel 通过；真实文件存储、上传/下载仍未实现，下一项以 `STATUS.md` 为准。
 
