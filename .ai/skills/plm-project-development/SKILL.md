@@ -44,6 +44,7 @@ description: Execute architecture, PoC, implementation, testing, packaging, and 
 - PRJ-04-A13-P01 已新增独立签名部门分页游标并验证范围/会话/查询绑定；公开 GET 与 Windows 正式密钥来源仍待，下一项以 `STATUS.md` 为准。
 - PRJ-04-A13-P02 已新增可选部门列表 GET，并在 PostgreSQL 验证分页/权限/许可错误合同；默认和当前 Windows 组合仍 404，独立密钥来源待，下一项以 `STATUS.md` 为准。
 - PRJ-04-A13-P03 已新增 Windows 独立 Department cursor 当前账户 Vault 只读来源，临时引用备份恢复测试通过；正式账户密钥与平台组合仍待，下一项以 `STATUS.md` 为准。
+- PRJ-04-A13-P04 已在 Windows 两种显式平台模式挂载部门历史列表，PostgreSQL 双页/隔离/许可及缺钥关闭、8 个关联集成验证脚本回归通过；默认模式仍 404，正式账户材料未供给，下一项以 `STATUS.md` 为准。
 - PLT-02-A07-P04-A01 已增加可选 Secret 详情 GET 的 Session/权限/License 安全投影与强 ETag；仅合成 HTTP 契约和 Windows 11 开发 wheel 验证。默认应用仍不挂载 Secret 路由，正式信任锚、列表/写 API 与目标环境验收未完成；最新 WBS 以根目录 `STATUS.md` 为准。
 - PLT-02-A07-P04-A02 已增加可选 Secret 列表 GET 的 HMAC 完整性游标与真实 PostgreSQL keyset 验证；默认应用仍不挂载，游标签名密钥的目标账户来源/恢复、正式 License 信任锚及写 API 未完成。最新状态以根目录 `STATUS.md` 为准。
 - PLT-02-A07-P04-A03 已完成 Windows 当前账户 Vault 独立游标签名密钥来源与临时凭据加密备份恢复验证；目标账户正式供给/Server 2025、生产只读组合和写 API 未完成。最新状态以根目录 `STATUS.md` 为准。

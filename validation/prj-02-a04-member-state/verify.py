@@ -31,6 +31,7 @@ from plm_assistant.modules.platform.infrastructure.database import create_databa
 from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
 from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
 from plm_assistant.modules.project.api.member_list_cursor import MemberListCursorCodec
+from plm_assistant.modules.project.api.department_list_cursor import DepartmentListCursorCodec
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
 from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
@@ -339,6 +340,8 @@ def main():
                                 return_value=SecretListCursorCodec(b"q" * 32)), mock_patch(
                                 "plm_assistant.entrypoints.production_login.create_windows_project_member_cursor_codec",
                                 return_value=MemberListCursorCodec(b"m" * 32)), mock_patch(
+                                "plm_assistant.entrypoints.production_login.create_windows_project_department_cursor_codec",
+                                return_value=DepartmentListCursorCodec(b"d" * 32)), mock_patch(
                                 "plm_assistant.entrypoints.windows_secret_write.create_windows_secret_write_service",
                                 return_value=Mock()):
                     for factory, target_member in (

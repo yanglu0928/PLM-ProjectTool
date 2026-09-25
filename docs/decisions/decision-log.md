@@ -2219,3 +2219,15 @@
 |Reason|部门游标不能复用成员或 Secret 游标密钥；跨重启稳定签名需可恢复的当前账户安全来源。|
 |Impact|新增 Windows 只读适配与合成 Vault 备份恢复测试；不生成、导出或提交正式密钥，不改 Schema/API。|
 |Rollback|移除未接入生产组合的适配；测试临时 Vault 引用清理，正式资料不受影响。|
+
+## DEC-20260925-078
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-078|
+|Date|2026-09-25|
+|WBS|PRJ-04-A13-P04 Windows 显式平台 Department 列表组合|
+|Decision|仅在 `--platform` 与 `--platform-write` 已有 Schema/License/现有 cursor 信任源门禁后，再要求独立 Department cursor Vault 密钥并挂载 Department GET；默认登录模式保持 404。|
+|Reason|沿用当前 Session、Project 授权、License Guard 和独立游标来源，不引入无保护入口。|
+|Impact|Windows 平台组合、契约与 PostgreSQL 集成测试；无新 Schema/Migration/依赖或 Breaking API。|
+|Rollback|移除平台 Router 注入恢复 404，已有部门事实不变。|

@@ -22,6 +22,7 @@ from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
 from plm_assistant.modules.auth.application.session_service import SessionError
 from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
 from plm_assistant.modules.project.api.member_list_cursor import MemberListCursorCodec
+from plm_assistant.modules.project.api.department_list_cursor import DepartmentListCursorCodec
 from plm_assistant.modules.project.api.read_members import create_project_member_read_router
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
@@ -166,7 +167,9 @@ def main():
                            "plm_assistant.entrypoints.production_login.create_windows_secret_list_cursor_codec",
                            return_value=SecretListCursorCodec(b"q" * 32)), patch(
                            "plm_assistant.entrypoints.production_login.create_windows_project_member_cursor_codec",
-                           return_value=MemberListCursorCodec(b"m" * 32)):
+                           return_value=MemberListCursorCodec(b"m" * 32)), patch(
+                           "plm_assistant.entrypoints.production_login.create_windows_project_department_cursor_codec",
+                           return_value=DepartmentListCursorCodec(b"d" * 32)):
                     production = create_production_platform_app(settings)
                     with TestClient(production, base_url="http://localhost") as client:
                         path = f"/api/v1/projects/{p1}/members"

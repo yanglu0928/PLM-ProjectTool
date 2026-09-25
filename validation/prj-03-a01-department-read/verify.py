@@ -5,6 +5,9 @@ from __future__ import annotations
 import hashlib
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import Mock, patch as mock_patch
 
 import psycopg
 from alembic import command
@@ -14,11 +17,17 @@ from sqlalchemy.engine import URL
 
 from plm_assistant.modules.auth.infrastructure.project_read_access import SqlAlchemyProjectReadAccess
 from plm_assistant.entrypoints.api import create_app
+from plm_assistant.entrypoints.production_login import (
+    create_production_platform_app, create_production_platform_write_app,
+)
 from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
 from plm_assistant.modules.auth.application.session_service import SessionError
 from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
 from plm_assistant.modules.project.api.department_list_cursor import DepartmentListCursorCodec
+from plm_assistant.modules.project.api.member_list_cursor import MemberListCursorCodec
 from plm_assistant.modules.project.api.read_departments import create_project_department_read_router
+from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
+from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
 from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
@@ -153,10 +162,51 @@ def main():
                     guard.enabled = False
                     assert client.get(path, headers=headers).status_code == 403
                     guard.enabled = True
+                settings = BootstrapSettings(
+                    data_root=Path.cwd(), trusted_origins=("http://localhost",),
+                )
+                with mock_patch("plm_assistant.entrypoints.production_login.read_database_url",
+                                return_value=url), mock_patch(
+                                "plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services",
+                                return_value=SimpleNamespace(guard=guard)), mock_patch(
+                                "plm_assistant.entrypoints.production_login.create_windows_secret_list_cursor_codec",
+                                return_value=SecretListCursorCodec(b"q" * 32)), mock_patch(
+                                "plm_assistant.entrypoints.production_login.create_windows_project_member_cursor_codec",
+                                return_value=MemberListCursorCodec(b"m" * 32)), mock_patch(
+                                "plm_assistant.entrypoints.production_login.create_windows_project_department_cursor_codec",
+                                return_value=DepartmentListCursorCodec(b"d" * 32)), mock_patch(
+                                "plm_assistant.entrypoints.windows_secret_write.create_windows_secret_write_service",
+                                return_value=Mock()):
+                    for factory in (create_production_platform_app,
+                                    create_production_platform_write_app):
+                        platform = factory(settings)
+                        with TestClient(platform, base_url="http://localhost") as client:
+                            path = f"/api/v1/projects/{p1}/departments"
+                            headers = {"cookie": "plm_session=" + tokens["pm"].hex()}
+                            first_platform = client.get(path + "?page_size=2", headers=headers)
+                            assert first_platform.status_code == 200, first_platform.text
+                            cursor = first_platform.json()["data"]["next_cursor"]
+                            second_platform = client.get(path + "?page_size=2&cursor=" + cursor,
+                                                         headers=headers)
+                            assert second_platform.status_code == 200, second_platform.text
+                            assert len(first_platform.json()["data"]["items"] + second_platform.json()["data"]["items"]) == 3
+                            assert client.get(f"/api/v1/projects/{p2}/departments",
+                                              headers=headers).status_code == 404
+                            guard.enabled = False
+                            assert client.get(path, headers=headers).status_code == 403
+                            guard.enabled = True
+                    with mock_patch("plm_assistant.entrypoints.production_login.create_windows_project_department_cursor_codec",
+                                    side_effect=RuntimeError("synthetic missing department key")):
+                        try:
+                            create_production_platform_app(settings)
+                        except Exception as exc:
+                            assert str(exc) == "production login unavailable"
+                        else:
+                            raise AssertionError("missing department cursor key did not fail closed")
                 with connect(name) as db:
                     db.execute("UPDATE plm.prj_projects SET state='ARCHIVED' WHERE project_id=%s", (p1,))
                 assert len(page("cust").items) == 3
-                print("PASS: four current roles, HTTP cursor pages, cross-project/suspended/session/License denial and archived read")
+                print("PASS: four roles, HTTP and both Windows explicit platform cursor pages, cross-project/session/License denial and archived read")
             finally:
                 runtime.dispose()
         finally:
