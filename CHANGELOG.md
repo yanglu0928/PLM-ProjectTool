@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/DOC-03-A04-A04-P01 按 CR-DOC-006 增加 Job/Attempt/Lease/Outbox/Consumption 私有 ORM 与迁移 `20260926_0025`，为上传提交同事务生成 Parse Job 提供持久层。Windows 11 后端 495 项无失败（2 项权限跳过），隔离 PostgreSQL 18 旧数据升级、ORM 对齐、重复拒绝、非空降级拒绝及空表降级/再升级、开发 wheel PASS。生产升级前备份并执行至 head；无公开 API/新依赖。Commit/Abort、Worker、Server 2025、正式信任源和最终程序包仍待。
+
 - 2026-09-26：`0.1.0.dev0`/DOC-03-A04-A03-P04-P03 新增仅 Windows 显式写模式的流式 Content PUT：固定 GLOBAL/PROJECT 路径、可信 Origin、Session/CSRF、短时 Upload Token、严格长度/摘要、最大 100 MB，AnyIO 桥接每段最多 1 MiB；内部服务在流前/流后重查 License 与创建者/项目角色，成功仅登记 STAGED FileObject，不生成业务版本。Windows 11 后端 495 项无失败（2 项符号链接跳过），PostgreSQL 18/临时目录合成首传/重传/越权/改正文/许可拒绝和单次 Audit、开发 wheel PASS。无 Migration/新依赖；正式信任源、Commit/Abort/Parser、Server 2025/Debian 13 和最终程序包仍待。
 
 - 2026-09-26：`0.1.0.dev0`/DOC-03-A04-A03-P04-P02-A03 将 UploadIntent 创建 POST 仅装入 Windows `--platform-write`，以真实 PostgreSQL Session/CSRF、Project 成员事实、GLOBAL 管理员、License Guard、专用 Token Key、Audit 与收据组合；缺上传密钥拒绝整个写模式启动，登录/只读模式保持 404。Windows 11 后端 490 项无失败（2 项符号链接跳过），PostgreSQL 18 隔离合成信任源下角色矩阵/许可/重放/降权/撤销及开发 wheel PASS。无 Migration/新依赖；正式发行信任源、Content/Commit/Abort、Server 2025/Debian 13 和最终程序包未完成。
