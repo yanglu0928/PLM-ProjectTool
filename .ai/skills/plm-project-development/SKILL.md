@@ -68,6 +68,8 @@ description: Execute architecture, PoC, implementation, testing, packaging, and 
 
 ## 参考文件路由
 
+- PRJ-04-A15-P01 已新增可选 Department PATCH HTTP，PostgreSQL 真实 Session/权限/版本/许可/无变化及审计回滚、437 个后端测试和开发 wheel 通过；默认与当前 Windows 平台仍 404，下一项以 `STATUS.md` 为准。
+
 - 涉及模块边界、依赖、AI/RAG、Trace、Review 或数据流时，读取 [architecture.md](references/architecture.md)。
 - 涉及语言、框架、数据库、文档处理、插件、License 或部署平台选型时，读取 [technology-baseline.md](references/technology-baseline.md)。
 - 涉及编码、数据库/API 变更、版本、异常、安全、Git 或 ADR 时，读取 [development-rules.md](references/development-rules.md)。

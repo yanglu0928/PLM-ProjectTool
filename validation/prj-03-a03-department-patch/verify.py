@@ -9,8 +9,15 @@ from datetime import datetime, timezone
 
 import psycopg
 from alembic import command
+from fastapi.testclient import TestClient
 from psycopg import sql
 from sqlalchemy.engine import URL
+
+from plm_assistant.entrypoints.api import create_app
+from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
+from plm_assistant.modules.auth.application.session_service import SessionError
+from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
+from plm_assistant.modules.project.api.patch_department import create_project_department_patch_router
 
 from plm_assistant.modules.audit.application.public import AuditService
 from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
@@ -47,7 +54,17 @@ class Guard:
 
     def require_valid(self, **_):
         if not self.valid:
-            raise RuntimeError("synthetic License failure")
+            raise RuntimeLicenseError("EXPIRED")
+
+
+class Sessions:
+    def __init__(self, tokens):
+        self.tokens = tokens
+
+    def validate(self, token, *, csrf_token, require_csrf):
+        if token not in self.tokens.values() or csrf_token != CSRF or require_csrf is not True:
+            raise SessionError("AUTH_SESSION_EXPIRED")
+        return object()
 
 
 class FailedAudit:
@@ -110,8 +127,8 @@ def main():
                 guard.valid = False
                 try:
                     patch(name_value="Name")
-                except RuntimeError as exc:
-                    assert str(exc) == "synthetic License failure"
+                except RuntimeLicenseError as exc:
+                    assert exc.code == "EXPIRED"
                 else:
                     raise AssertionError("License failure bypassed")
                 guard.valid = True
@@ -125,15 +142,49 @@ def main():
                 with connect(name) as db:
                     assert db.execute("SELECT department_code_normalized,lock_version FROM plm.prj_departments WHERE department_id=%s", (d2,)).fetchone() == ("new", 1)
                     assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='PROJECT_DEPARTMENT_PATCHED'", (d2,)).fetchone()[0] == 1
+                router = create_project_department_patch_router(
+                    sessions=Sessions(tokens), departments=service,
+                    origins=LoginOriginPolicy(["https://plm.example.test"]),
+                )
+                path = f"/api/v1/projects/{p1}/departments/{d2}"
+                headers = {
+                    "origin": "https://plm.example.test",
+                    "cookie": "plm_session=" + tokens["pm"].hex(),
+                    "x-csrf-token": CSRF.hex(), "if-match": '"v1"',
+                }
+                with TestClient(create_app(), base_url="https://plm.example.test") as bare:
+                    assert bare.patch(path, headers=headers, json={"name": "HTTP"}).status_code == 404
+                with TestClient(create_app(project_department_patch_router=router),
+                                base_url="https://plm.example.test") as http:
+                    response = http.patch(path, headers=headers, json={"name": "HTTP"})
+                    assert response.status_code == 200, response.text
+                    assert response.headers["etag"] == '"v2"'
+                    assert response.json()["data"]["name"] == "HTTP"
+                    assert http.patch(path, headers=headers, json={"name": "Stale"}).status_code == 409
+                    assert http.patch(f"/api/v1/projects/{p1}/departments/{d3}", headers=headers,
+                                      json={"name": "Other"}).status_code == 404
+                    cm_headers = {**headers, "cookie": "plm_session=" + tokens["cm"].hex(),
+                                  "if-match": '"v2"'}
+                    assert http.patch(path, headers=cm_headers, json={"name": "Denied"}).status_code == 404
+                    guard.valid = False
+                    assert http.patch(path, headers={**headers, "if-match": '"v2"'},
+                                      json={"name": "Denied"}).status_code == 403
+                    guard.valid = True
+                    noop = http.patch(path, headers={**headers, "if-match": '"v2"'},
+                                      json={"name": "HTTP"})
+                    assert noop.status_code == 200 and noop.headers["etag"] == '"v2"'
+                with connect(name) as db:
+                    assert db.execute("SELECT name,lock_version FROM plm.prj_departments WHERE department_id=%s", (d2,)).fetchone() == ("HTTP", 2)
+                    assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='PROJECT_DEPARTMENT_PATCHED'", (d2,)).fetchone()[0] == 2
                 failed = ProjectDepartmentPatchService(**kwargs, audit=FailedAudit())
                 try:
-                    patch(version=1, name_value="Rollback", client=failed)
+                    patch(version=2, name_value="Rollback", client=failed)
                 except RuntimeError as exc:
                     assert str(exc) == "synthetic Audit failure"
                 else:
                     raise AssertionError("Audit failure bypassed")
                 with connect(name) as db:
-                    assert db.execute("SELECT name,lock_version FROM plm.prj_departments WHERE department_id=%s", (d2,)).fetchone() == ("新部门", 1)
+                    assert db.execute("SELECT name,lock_version FROM plm.prj_departments WHERE department_id=%s", (d2,)).fetchone() == ("HTTP", 2)
                 def competing(args):
                     department_id, version = args
                     try:
@@ -142,14 +193,14 @@ def main():
                         return exc.code
 
                 with ThreadPoolExecutor(max_workers=2) as pool:
-                    outcomes = list(pool.map(competing, ((d1, 0), (d2, 1))))
+                    outcomes = list(pool.map(competing, ((d1, 0), (d2, 2))))
                 assert len([item for item in outcomes if isinstance(item, uuid.UUID)]) == 1, outcomes
                 assert outcomes.count("CONFLICT_DUPLICATE") == 1, outcomes
                 with connect(name) as db:
                     assert db.execute("SELECT count(*) FROM plm.prj_departments WHERE project_id=%s AND department_code_normalized='shared' AND state='ACTIVE'", (p1,)).fetchone()[0] == 1
                     db.execute("UPDATE plm.prj_projects SET state='ARCHIVED' WHERE project_id=%s", (p1,))
-                denied("PROJECT_ARCHIVED", lambda: patch(version=1, name_value="Blocked"))
-                print("PASS: normalization, role/scope/CSRF/License, duplicate/stale/inactive/noop, concurrent code contest, Audit rollback and archived denial")
+                denied("PROJECT_ARCHIVED", lambda: patch(version=2, name_value="Blocked"))
+                print("PASS: Department internal and optional HTTP, role/scope/CSRF/License, version/noop, concurrency and Audit rollback")
             finally:
                 runtime.dispose()
         finally:

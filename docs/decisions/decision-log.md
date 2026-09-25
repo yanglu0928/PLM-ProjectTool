@@ -2267,3 +2267,15 @@
 |Reason|复用当前 Session、ProjectManager、License、Audit 和同事务幂等，不引入额外无保护入口。|
 |Impact|Windows 平台组合与测试；无新 Schema/Migration/依赖或 Breaking API。|
 |Rollback|移除平台 Router 注入恢复 404；既有部门、审计与快照保留。|
+
+## DEC-20260925-082
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-082|
+|Date|2026-09-25|
+|WBS|PRJ-04-A15-P01 Department 修改可选 HTTP|
+|Decision|按冻结 API-02 增加可选部门 PATCH Router；复用已验证的内部服务，要求可信 Origin、Session/CSRF 与强 If-Match，响应安全 DepartmentView/ETag；默认应用保持 404。|
+|Reason|公开边界无需重写权限、许可、并发或审计规则；与现有 Project/Member 修改入口一致。|
+|Impact|新增 Router、应用工厂可选注入点、契约与 PostgreSQL 临时库验证；无 Schema/Migration 或依赖变化。|
+|Rollback|移除可选 Router 注入恢复 404，已完成的修改和审计记录保留。|
