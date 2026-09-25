@@ -2015,3 +2015,15 @@
 |Reason|现有内部归档只支持强版本，若直接公开 POST，同 Key 重放在项目已归档后会被拒绝，违反冻结 API 的幂等控制。|
 |Impact|Project 内部应用服务/仓库与测试；复用已有 Migration `0015`，不改变冻结 API、Schema 或 License。普通内部 `archive()` 保留兼容。|
 |Rollback|不接入公开路由即可停用新路径；已提交的 Project 归档为单向业务事实，不回滚删除，仅可恢复代码到旧内部命令并保留收据历史。|
+
+## DEC-20260925-061
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-061|
+|Date|2026-09-25|
+|WBS|PRJ-04-A08-P02 Project 归档 HTTP 边界|
+|Decision|新增仅显式注入的 `POST /api/v1/projects/{project_id}:archive`。可信 Origin、Cookie Session、CSRF、规范 Idempotency-Key、强 If-Match 必填；请求正文必须为空。调用 P01 同事务归档幂等服务，成功 200 ProjectView、强 ETag、no-store；不同指纹 Key 409，默认/当前生产组合先不挂载。|
+|Reason|冻结 API-02 明确 S,L,C,I,M,A 和 200 ARCHIVED；沿用现行写路由边界避免另设认证或请求格式。|
+|Impact|新增可选 Project Router/契约与临时库 HTTP 测试，无 Schema、Migration、冻结 API 或新依赖。|
+|Rollback|停止注入 Router 即恢复 404；已归档 Project 不提供逆向写接口。|

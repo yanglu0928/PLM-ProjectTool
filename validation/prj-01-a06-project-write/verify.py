@@ -31,6 +31,7 @@ from plm_assistant.modules.platform.infrastructure.idempotency_receipts import S
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
 from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
 from plm_assistant.modules.project.api.patch_project import create_project_patch_router
+from plm_assistant.modules.project.api.archive_project import create_project_archive_router
 from plm_assistant.modules.project.application.write_project import (
     ArchiveProject, PatchProjectName, ProjectWriteError, ProjectWriteService,
 )
@@ -185,6 +186,29 @@ def main():
                     **kwargs, audit=AuditService(SqlAlchemyAuditRepository()),
                     receipts=SqlAlchemyIdempotencyReceipts(),
                 )
+                archive_router = create_project_archive_router(
+                    sessions=HttpSessions(), writes=idempotent,
+                    origins=LoginOriginPolicy(["https://plm.example.test"]),
+                )
+                with TestClient(create_app(project_archive_router=archive_router),
+                                base_url="https://plm.example.test") as client:
+                    path = f"/api/v1/projects/{p3}:archive"
+                    headers = {
+                        "origin": "https://plm.example.test",
+                        "cookie": "plm_session=" + HTTP_TOKEN.hex(),
+                        "x-csrf-token": CSRF.hex(),
+                        "idempotency-key": "project-http-archive-0001",
+                        "if-match": '"v2"',
+                    }
+                    first = client.post(path, headers=headers)
+                    replay = client.post(path, headers=headers)
+                    assert first.status_code == replay.status_code == 200, (first.text, replay.text)
+                    assert first.json()["data"] == replay.json()["data"]
+                    assert first.headers["etag"] == '"v3"'
+                    assert client.post(path, headers={**headers, "if-match": '"v3"'}).status_code == 409
+                with connect(name) as db:
+                    assert db.execute("SELECT state,lock_version FROM plm.prj_projects WHERE project_id=%s", (p3,)).fetchone() == ("ARCHIVED", 3)
+                    assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_project_id=%s AND action='PROJECT_ARCHIVED'", (p3,)).fetchone()[0] == 1
                 with ThreadPoolExecutor(max_workers=2) as pool:
                     futures = [pool.submit(
                         idempotent.archive_idempotent, archive_p2,
