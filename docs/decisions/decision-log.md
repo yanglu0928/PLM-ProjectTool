@@ -1895,3 +1895,15 @@
 |Reason|冻结 API-02 轮换需要 S/L/C/I/M/A；内部轮换及收据已具备，可独立验证 HTTP 边界，正式主密钥/License 仍未供给。|
 |Impact|新增可选 Router、错误映射和验证；不改 Schema/Migration、冻结路径或生产启动行为。复用创建 JSON 安全解析规则；JSON 不可原地清零的短生命周期字符串风险继续按 P05-A05 控制。|
 |Rollback|不注入 Router 仍 404；无数据迁移或自动轮换。|
+
+## DEC-20260925-051
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-051|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P05-A07 Secret 停用 HTTP|
+|Decision|新增仅显式注入的 `POST /api/v1/admin/secrets/{secret_id}:disable`。可信 Host/Origin、唯一 Cookie/CSRF/Idempotency-Key 与现行 Session 先验证，再严格解析单个强 If-Match 为记录锁版本；请求体必须为空，200 仅返回 SecretRef、DISABLED、空当前版本、原语义新强 ETag 与 TraceId。默认和当前生产组合不挂载。|
+|Reason|冻结 API-02 停用需要 S/L/C/I/M/A；内部停用/收据已经保证同事务，HTTP 必须拒绝未经声明的请求体和弱/缺失版本条件。|
+|Impact|新增可选 Router、契约/临时库验证；无 Schema/Migration、冻结路径或生产启动行为变化。|
+|Rollback|不注入 Router 仍 404；不触及既有 Secret 数据。|

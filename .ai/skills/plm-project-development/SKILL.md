@@ -34,6 +34,7 @@ description: Execute architecture, PoC, implementation, testing, packaging, and 
 - PLT-02-A07-P05-A04 已完成内部轮换/停用同事务幂等和 PostgreSQL 同 Key 并发验证；write-only HTTP、正式主密钥/License 信任源和 Gate 3 仍未完成。最新状态以根目录 `STATUS.md` 为准。
 - PLT-02-A07-P05-A05 已新增可选 Secret 创建 write-only HTTP 并在 PostgreSQL 临时库完成隔离合成端到端；默认/生产组合仍不挂载写路由，轮换/停用 HTTP 与正式主密钥/License 未完成。最新状态以根目录 `STATUS.md` 为准。
 - PLT-02-A07-P05-A06 已新增可选 Secret 轮换 write-only HTTP 并在 PostgreSQL 临时库完成隔离合成端到端；默认/生产组合仍不挂载写路由，停用 HTTP 与正式主密钥/License 未完成。最新状态以根目录 `STATUS.md` 为准。
+- PLT-02-A07-P05-A07 已新增可选 Secret 停用 HTTP 并在 PostgreSQL 临时库完成隔离合成端到端；默认/生产组合仍不挂载写路由，正式主密钥/License 与 Gate 3 未完成。最新状态以根目录 `STATUS.md` 为准。
 
 ## 参考文件路由
 
