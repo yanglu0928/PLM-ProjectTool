@@ -31,6 +31,7 @@ from plm_assistant.modules.platform.infrastructure.idempotency_receipts import S
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
 from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
 from plm_assistant.modules.project.api.patch_project import create_project_patch_router
+from plm_assistant.modules.project.api.member_list_cursor import MemberListCursorCodec
 from plm_assistant.modules.project.api.archive_project import create_project_archive_router
 from plm_assistant.modules.project.application.write_project import (
     ArchiveProject, PatchProjectName, ProjectWriteError, ProjectWriteService,
@@ -149,6 +150,9 @@ def main():
                 ), mock_patch(
                     "plm_assistant.entrypoints.production_login.create_windows_secret_list_cursor_codec",
                     return_value=SecretListCursorCodec(b"q" * 32),
+                ), mock_patch(
+                    "plm_assistant.entrypoints.production_login.create_windows_project_member_cursor_codec",
+                    return_value=MemberListCursorCodec(b"m" * 32),
                 ):
                     production = create_production_platform_app(settings)
                     with TestClient(production, base_url="http://localhost") as client:

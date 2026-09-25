@@ -18,6 +18,7 @@ from fastapi.testclient import TestClient
 
 from plm_assistant.entrypoints.api import create_app
 from plm_assistant.entrypoints.production_login import create_production_platform_write_app
+from plm_assistant.modules.project.api.member_list_cursor import MemberListCursorCodec
 from plm_assistant.modules.audit.application.public import AuditService
 from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
 from plm_assistant.modules.auth.infrastructure.license_import_access import SqlAlchemyLicenseImportAccess
@@ -259,6 +260,8 @@ def main():
                            return_value=SimpleNamespace(guard=guard)), patch(
                            "plm_assistant.entrypoints.production_login.create_windows_secret_list_cursor_codec",
                            return_value=SecretListCursorCodec(b"q" * 32)), patch(
+                           "plm_assistant.entrypoints.production_login.create_windows_project_member_cursor_codec",
+                           return_value=MemberListCursorCodec(b"m" * 32)), patch(
                            "plm_assistant.entrypoints.windows_secret_write.WindowsSecretKeyProvider",
                            return_value=FixedWriteKey()):
                     production = create_production_platform_write_app(settings)

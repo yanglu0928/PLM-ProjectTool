@@ -5,6 +5,9 @@ from __future__ import annotations
 import hashlib
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 import psycopg
 from alembic import command
@@ -14,12 +17,15 @@ from sqlalchemy.engine import URL
 
 from plm_assistant.modules.auth.infrastructure.project_member_names import SqlAlchemyProjectMemberNames
 from plm_assistant.entrypoints.api import create_app
+from plm_assistant.entrypoints.production_login import create_production_platform_app
 from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
 from plm_assistant.modules.auth.application.session_service import SessionError
 from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
 from plm_assistant.modules.project.api.member_list_cursor import MemberListCursorCodec
 from plm_assistant.modules.project.api.read_members import create_project_member_read_router
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
+from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
+from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
 from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
 from plm_assistant.modules.project.application.read_members import (
@@ -152,6 +158,33 @@ def main():
                     guard.enabled = False
                     assert client.get(path, headers=headers("cm")).status_code == 403
                     guard.enabled = True
+                settings = BootstrapSettings(data_root=Path.cwd(), trusted_origins=("http://localhost",))
+                with patch("plm_assistant.entrypoints.production_login.read_database_url",
+                           return_value=url), patch(
+                           "plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services",
+                           return_value=SimpleNamespace(guard=guard)), patch(
+                           "plm_assistant.entrypoints.production_login.create_windows_secret_list_cursor_codec",
+                           return_value=SecretListCursorCodec(b"q" * 32)), patch(
+                           "plm_assistant.entrypoints.production_login.create_windows_project_member_cursor_codec",
+                           return_value=MemberListCursorCodec(b"m" * 32)):
+                    production = create_production_platform_app(settings)
+                    with TestClient(production, base_url="http://localhost") as client:
+                        path = f"/api/v1/projects/{p1}/members"
+                        pm_headers = {"cookie": "plm_session=" + tokens["pm"].hex()}
+                        cm_headers = {"cookie": "plm_session=" + tokens["cm"].hex()}
+                        first_prod = client.get(path + "?page_size=2", headers=pm_headers)
+                        assert first_prod.status_code == 200, first_prod.text
+                        next_cursor = first_prod.json()["data"]["next_cursor"]
+                        second_prod = client.get(path + "?page_size=2&cursor=" + next_cursor,
+                                                 headers=pm_headers)
+                        assert second_prod.status_code == 200
+                        assert len(second_prod.json()["data"]["items"]) == 2
+                        assert client.get(path + "?page_size=2&cursor=" + next_cursor,
+                                          headers=cm_headers).status_code == 400
+                        assert client.get(path, headers={"cookie": "plm_session=" + tokens["im"].hex()}).status_code == 404
+                        guard.enabled = False
+                        assert client.get(path, headers=cm_headers).status_code == 403
+                        guard.enabled = True
                 with connect(name) as db:
                     db.execute("UPDATE plm.prj_projects SET state='ARCHIVED' WHERE project_id=%s", (p1,))
                 assert len(service.list_page(query("pm", limit=10)).items) == 4

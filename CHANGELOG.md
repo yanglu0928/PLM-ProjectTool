@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PRJ-04-A09-P04 在 Windows 显式平台模式挂载 Project Member 历史列表，独立 Vault cursor 密钥缺失即拒绝启动；默认模式仍 404。Windows 11 后端 408/408、PostgreSQL 18 临时库真实 Session/双页/权限/License 与既有组合回归、开发 wheel PASS。无 Migration/新依赖；正式目标账户密钥与发行信任源、Server 2025/Debian 13 和最终程序包未完成。
+
 - 2026-09-25：`0.1.0.dev0`/PRJ-04-A09-P03 新增 Windows 当前账户 Vault 的独立成员分页签名密钥来源 `project-member-list-cursor-v1`；缺钥失败关闭，测试 Vault 丢失/加密备份恢复后旧 cursor 可验。Windows 11 后端 407/407、开发 wheel PASS；无 Migration/公开 API/新依赖，本项未运行 PostgreSQL。正式目标账户密钥与平台组合、Server 2025/Debian 13 和最终程序包未完成。
 
 - 2026-09-25：`0.1.0.dev0`/PRJ-04-A09-P02 新增可选 Project Member 历史列表 HTTP：当前角色/Session、HMAC cursor、安全用户/部门摘要，并修正 License 拒绝为 403；默认/当前平台组合仍 404。Windows 11 后端 405/405、PostgreSQL 18 临时库双页/跨项目/跨会话/License 和开发 wheel PASS。无 Migration/新依赖；正式 cursor 密钥、生产组合、Server 2025/Debian 13 与最终程序包未完成。

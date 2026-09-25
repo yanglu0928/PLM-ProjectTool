@@ -17,6 +17,7 @@ from sqlalchemy.engine import URL
 
 from plm_assistant.entrypoints.api import create_app
 from plm_assistant.entrypoints.production_login import create_production_platform_app
+from plm_assistant.modules.project.api.member_list_cursor import MemberListCursorCodec
 from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
 from plm_assistant.modules.auth.application.session_service import SessionError
 from plm_assistant.modules.auth.infrastructure.project_read_access import SqlAlchemyProjectReadAccess
@@ -140,7 +141,9 @@ def main():
                            "plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services",
                            return_value=SimpleNamespace(guard=guard)), patch(
                            "plm_assistant.entrypoints.production_login.create_windows_secret_list_cursor_codec",
-                           return_value=SecretListCursorCodec(b"q" * 32)):
+                           return_value=SecretListCursorCodec(b"q" * 32)), patch(
+                           "plm_assistant.entrypoints.production_login.create_windows_project_member_cursor_codec",
+                           return_value=MemberListCursorCodec(b"m" * 32)):
                     production = create_production_platform_app(settings)
                     with TestClient(production, base_url="http://localhost") as client:
                         member_headers = {"cookie": "plm_session=" + member_token.hex()}

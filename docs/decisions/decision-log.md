@@ -2075,3 +2075,15 @@
 |Reason|成员列表 cursor 必须能跨重启、备份恢复保持签名有效，不能取随机进程密钥、普通 YAML 或 Secret 列表专用签名密钥。|
 |Impact|Windows 组合入口与测试，无 Schema/Migration、API、安全算法或新依赖变化；正式账户需单独供给/离线保管。|
 |Rollback|成员列表不挂载即可停用；更换或丢失密钥会使旧 cursor 失效，须按备份流程恢复。|
+
+## DEC-20260925-066
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-066|
+|Date|2026-09-25|
+|WBS|PRJ-04-A09-P04 Windows 显式平台成员列表组合|
+|Decision|仅在 `--platform`/`--platform-write` 的 Schema/License/Secret 游标前置通过后，再读取独立成员 cursor Vault 密钥；任一密钥缺失则整个显式平台启动失败。复用当前 Session、License、Project 授权、Auth 用户摘要与成员 SQL 读层挂载 P02 Router；普通默认模式保持 404。|
+|Reason|成员 cursor 的签名源必须在路由开放前稳定且可恢复；沿用单一生产组合避免接口自行获取密钥或放宽授权。|
+|Impact|Windows 组合根、合成端到端与既有组合测试注入点更新，无 Schema/Migration、冻结 API 或新依赖。正式目标账户需独立供给和备份。|
+|Rollback|退回普通登录模式或移除成员 Router 注入；旧 cursor 仅在原密钥恢复后可继续使用。|
