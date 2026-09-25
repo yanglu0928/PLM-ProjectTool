@@ -356,6 +356,7 @@ class ProductionLoginTests(unittest.TestCase):
              return_value="synthetic-platform") as factory:
             self.assertEqual(serve_windows_main(), 0)
             self.assertEqual(run.call_args.args[0](), "synthetic-platform")
+            self.assertEqual(run.call_args.kwargs["workers"], 1)
             factory.assert_called_once_with(settings)
 
     def test_write_mode_missing_master_key_disposes_without_publishing(self) -> None:

@@ -34,6 +34,7 @@ def main() -> int:
             lambda: app_factory(settings),
             factory=True, host=settings.bind_host, port=settings.bind_port,
             log_level=settings.log_level.value.lower(),
+            workers=1,
             proxy_headers=False, forwarded_allow_ips="",
         )
         return 0

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import io
 import threading
 import unittest
@@ -138,6 +139,39 @@ class DocumentDownloadApiTests(unittest.TestCase):
             self.get(self.path)
         self.assertTrue(self.downloads.stream.closed)
         self.downloads.stream_factory = lambda: io.BytesIO(b"verified pdf bytes")
+        self.assertEqual(self.get(self.path).status_code, 200)
+
+    def test_client_send_disconnect_closes_snapshot_and_releases_slot(self):
+        async def disconnected_send(message):
+            if message["type"] == "http.response.body" and message.get("body"):
+                raise OSError("synthetic client disconnected")
+
+        async def request():
+            seen = False
+
+            async def receive():
+                nonlocal seen
+                if not seen:
+                    seen = True
+                    return {"type": "http.request", "body": b"", "more_body": False}
+                await asyncio.Event().wait()
+
+            scope = {
+                "type": "http", "asgi": {"version": "3.0", "spec_version": "2.4"},
+                "http_version": "1.1", "method": "GET", "scheme": "https",
+                "path": self.path, "raw_path": self.path.encode("ascii"),
+                "query_string": b"", "root_path": "",
+                "headers": [(b"host", b"plm.example.test"),
+                            (b"cookie", self.cookie.encode("ascii"))],
+                "client": ("127.0.0.1", 12345),
+                "server": ("plm.example.test", 443),
+            }
+            await self.app(scope, receive, disconnected_send)
+
+        with self.assertRaises(Exception):
+            asyncio.run(asyncio.wait_for(request(), timeout=3))
+        self.assertEqual(self.downloads.calls, 1)
+        self.assertTrue(self.downloads.stream.closed)
         self.assertEqual(self.get(self.path).status_code, 200)
 
 

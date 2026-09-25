@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/DOC-01-A05-P06 Windows 官方启动入口显式单工作进程，并补充下载发送端断线模拟；异常后文件与并发名额释放 PASS。Windows 11 后端 541 项无失败（2 项环境跳过），开发 wheel PASS。单入口下载快照理论上限 400 MB；真实网络断线压测、多实例及现场磁盘余量仍待 Release 验证。无 Migration/新依赖/API 变更。
+
 - 2026-09-26：`0.1.0.dev0`/DOC-01-A05-P05 将受权 DocumentVersion 内容 GET 接入 Windows `--platform`/`--platform-write` 显式组合；默认/仅登录模式继续 404，存储根目录校验失败时整平台拒绝启动。Windows 11 后端 540 项无失败（2 项环境跳过），组合合同及开发 wheel PASS。无 Migration、新依赖或 API Breaking Change；正式账户信任源、主动断线与多进程磁盘预算及 Server 2025 仍待验证。
 
 - 2026-09-26：`0.1.0.dev0`/DOC-01-A05-P04 新增默认关闭、可选挂载的受权 DocumentVersion 内容流式 GET：已验证快照、四路并发上限、1 MiB 分块、无路径响应和异常资源清理。Windows 11 后端 539 项无失败（2 项环境跳过），HTTP 合同及隔离 PostgreSQL 18.6/临时文件同链路成功下载、开发 wheel PASS。无 Migration/新依赖；正式 Windows 装配、主动断线/多进程预算和发行信任源仍待。
