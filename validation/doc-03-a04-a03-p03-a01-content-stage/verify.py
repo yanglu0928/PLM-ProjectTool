@@ -78,6 +78,16 @@ class FailingAudit:
         raise RuntimeError("synthetic audit failure")
 
 
+class FailCleanupCompletion:
+    def __init__(self, delegate):
+        self.delegate = delegate
+
+    def append(self, transaction, event):
+        if event.action == "DOCUMENT_ORPHAN_CLEANUP_COMPLETED":
+            raise RuntimeError("synthetic completion crash")
+        return self.delegate.append(transaction, event)
+
+
 def main():
     name = "doc03a04p03_" + uuid.uuid4().hex[:9]
     with connect("postgres") as admin, tempfile.TemporaryDirectory(prefix="plm-content-stage-") as temporary:
@@ -321,7 +331,26 @@ def main():
             expect(OrphanCleanupError, lambda: cleanup_service().cleanup_one(protected),
                    "CONFLICT_STATE")
             assert (root / protected_locator).exists()
-            print("DOC-03-A04-A03-P03-A01/A02-P01/P02/P03-P01 PostgreSQL synthetic verification: PASS")
+            interrupted_cleanup, interrupted_locator = stale_candidate("interrupted-cleanup")
+            expect(RuntimeError, lambda: cleanup_service(
+                FailCleanupCompletion(audit),
+            ).cleanup_one(interrupted_cleanup))
+            assert not (root / interrupted_locator).exists()
+            with connect(name) as db:
+                assert db.execute("SELECT action FROM plm.aud_events WHERE target_object_id=%s AND action LIKE 'DOCUMENT_ORPHAN_CLEANUP_%%'", (interrupted_cleanup.upload_id,)).fetchall() == [("DOCUMENT_ORPHAN_CLEANUP_REQUESTED",)]
+            scanned = cleanup_service().scan_and_cleanup(
+                actor_id=actor, trace_id=uuid.uuid4(),
+            )
+            assert scanned.candidates >= 3 and scanned.removed >= 1
+            assert scanned.absent_reconciled == 1
+            assert not (root / busy_locator).exists()
+            assert (root / recent_locator).exists() and (root / protected_locator).exists()
+            with connect(name) as db:
+                assert db.execute("SELECT action FROM plm.aud_events WHERE target_object_id=%s AND action LIKE 'DOCUMENT_ORPHAN_CLEANUP_%%' ORDER BY action", (interrupted_cleanup.upload_id,)).fetchall() == [("DOCUMENT_ORPHAN_CLEANUP_ABSENT",), ("DOCUMENT_ORPHAN_CLEANUP_REQUESTED",)]
+            assert cleanup_service().scan_and_cleanup(
+                actor_id=actor, trace_id=uuid.uuid4(),
+            ).absent_reconciled == 0
+            print("DOC-03-A04-A03-P03-A01/A02-P01/P02/P03-P01/P02 PostgreSQL synthetic verification: PASS")
         finally:
             if runtime is not None:
                 runtime.dispose()

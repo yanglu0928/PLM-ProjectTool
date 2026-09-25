@@ -35,6 +35,16 @@ class CleanupUploadOrphan:
     trace_id: uuid.UUID
 
 
+@dataclass(frozen=True, slots=True)
+class OrphanScanResult:
+    inspected: int
+    candidates: int
+    removed: int
+    skipped: int
+    absent_reconciled: int
+    truncated: bool
+
+
 class OrphanCleanupAccessPort(Protocol):
     def require_in_transaction(self, transaction: object, *, actor_id: uuid.UUID,
                                scope: str, project_id: uuid.UUID | None,
@@ -44,6 +54,10 @@ class OrphanCleanupAccessPort(Protocol):
 class OrphanCleanupRepositoryPort(Protocol):
     def require_eligible(self, transaction: object, *, command: CleanupUploadOrphan,
                          ttl_seconds: int, modified_ns: int) -> int: ...
+    def pending_requests(self, transaction: object, *, limit: int) -> tuple[tuple[uuid.UUID, str, uuid.UUID | None], ...]: ...
+    def require_missing_reconciliation(self, transaction: object, *,
+                                       command: CleanupUploadOrphan,
+                                       ttl_seconds: int) -> bool: ...
 
 
 class OrphanCleanupReceiptPort(Protocol):
@@ -118,6 +132,80 @@ class CleanupUploadOrphanService:
             tx.commit()
         return True
 
+    def reconcile_missing(self, command: CleanupUploadOrphan) -> bool:
+        """Record observed absence after a durable cleanup request, not deletion."""
+        self._validate(command)
+        with self._uow() as tx:
+            self._authorize(tx, command)
+        try:
+            locator, _ = self._storage.locators(
+                scope=command.scope, project_id=command.project_id,
+                file_object_id=command.upload_id,
+            )
+            if self._storage.inspect_staging_for_cleanup(locator) is not None:
+                return False
+        except LocalStorageError:
+            raise OrphanCleanupError("FILE_CONTENT_UNAVAILABLE") from None
+        with self._uow() as tx:
+            self._authorize(tx, command)
+            if not self._repository.require_missing_reconciliation(
+                tx, command=command, ttl_seconds=self._ttl,
+            ):
+                return False
+            try:
+                if self._storage.inspect_staging_for_cleanup(locator) is not None:
+                    raise OrphanCleanupError("CONFLICT_STATE")
+            except LocalStorageError:
+                raise OrphanCleanupError("FILE_CONTENT_UNAVAILABLE") from None
+            self._audit.append(tx, self._event(command, "DOCUMENT_ORPHAN_CLEANUP_ABSENT"))
+            tx.commit()
+        return True
+
+    def scan_and_cleanup(self, *, actor_id: uuid.UUID, trace_id: uuid.UUID,
+                         max_entries: int = 10_000,
+                         max_candidates: int = 500) -> OrphanScanResult:
+        if (type(actor_id) is not uuid.UUID or actor_id.int == 0
+                or type(trace_id) is not uuid.UUID or trace_id.int == 0):
+            raise OrphanCleanupError("VALIDATION_FAILED")
+        try:
+            scan = self._storage.scan_staging_candidates(
+                max_entries=max_entries, max_candidates=max_candidates,
+            )
+        except LocalStorageError:
+            raise OrphanCleanupError("FILE_CONTENT_UNAVAILABLE") from None
+        removed = reconciled = 0
+        skipped = scan.skipped
+        for candidate in scan.candidates:
+            command = CleanupUploadOrphan(
+                candidate.upload_id, candidate.scope, candidate.project_id,
+                actor_id, trace_id,
+            )
+            try:
+                if self.cleanup_one(command):
+                    removed += 1
+                else:
+                    skipped += 1
+            except OrphanCleanupError as exc:
+                if exc.code not in ("CONFLICT_STATE", "FILE_CONTENT_UNAVAILABLE"):
+                    raise
+                skipped += 1
+        with self._uow() as tx:
+            pending = self._repository.pending_requests(tx, limit=max_candidates)
+        for upload_id, scope, project_id in pending:
+            command = CleanupUploadOrphan(upload_id, scope, project_id,
+                                          actor_id, trace_id)
+            try:
+                if self.reconcile_missing(command):
+                    reconciled += 1
+            except OrphanCleanupError as exc:
+                if exc.code not in ("CONFLICT_STATE", "FILE_CONTENT_UNAVAILABLE"):
+                    raise
+                skipped += 1
+        return OrphanScanResult(
+            scan.inspected, len(scan.candidates), removed, skipped,
+            reconciled, scan.truncated or len(pending) >= max_candidates,
+        )
+
     def _authorize(self, tx: object, command: CleanupUploadOrphan) -> None:
         self._access.require_in_transaction(
             tx, actor_id=command.actor_id, scope=command.scope,
@@ -127,6 +215,11 @@ class CleanupUploadOrphanService:
 
     @staticmethod
     def _event(command: CleanupUploadOrphan, action: str) -> AuditEventDraft:
+        after_state = {
+            "DOCUMENT_ORPHAN_CLEANUP_REQUESTED": "CLEANUP_PENDING",
+            "DOCUMENT_ORPHAN_CLEANUP_COMPLETED": "REMOVED",
+            "DOCUMENT_ORPHAN_CLEANUP_ABSENT": "ABSENT",
+        }[action]
         return AuditEventDraft(
             trace_id=command.trace_id,
             event_scope="PROJECT" if command.scope == "PROJECT" else "DEPLOYMENT",
@@ -136,7 +229,8 @@ class CleanupUploadOrphanService:
             action=action, outcome="SUCCESS",
             target_owner_module="document", target_object_type="DOC-03",
             target_object_id=command.upload_id,
-            before_state="ORPHAN", after_state="CLEANUP_PENDING" if action.endswith("REQUESTED") else "REMOVED",
+            before_state="ORPHAN" if action.endswith("REQUESTED") else "CLEANUP_PENDING",
+            after_state=after_state,
         )
 
     @staticmethod

@@ -52,6 +52,21 @@ class StagingSnapshot:
     modified_ns: int
 
 
+@dataclass(frozen=True, slots=True)
+class StagingCandidate:
+    scope: str
+    project_id: uuid.UUID | None
+    upload_id: uuid.UUID
+
+
+@dataclass(frozen=True, slots=True)
+class StagingScan:
+    candidates: tuple[StagingCandidate, ...]
+    skipped: int
+    inspected: int
+    truncated: bool
+
+
 def _optional_info(path: Path) -> os.stat_result | None:
     try:
         return path.lstat()
@@ -122,6 +137,86 @@ class LocalFileStorage:
         suffix = f"objects/{file_object_id.hex[:2]}/{file_object_id.hex}"
         base = "global" if scope == "GLOBAL" else f"projects/{project_id.hex}"
         return f"temp/{base}/{suffix}", f"{base}/{suffix}"
+
+    def scan_staging_candidates(self, *, max_entries: int = 10_000,
+                                max_candidates: int = 500) -> StagingScan:
+        """Bounded read-only inventory of canonical upload staging entries."""
+        if (type(max_entries) is not int or not 1 <= max_entries <= 100_000
+                or type(max_candidates) is not int or not 1 <= max_candidates <= max_entries):
+            raise LocalStorageError()
+        inspected = skipped = 0
+        truncated = False
+        candidates: list[StagingCandidate] = []
+
+        def children(directory: Path) -> Iterator[Path]:
+            nonlocal inspected, truncated
+            if _optional_info(directory) is None:
+                return
+            _checked_directory(directory)
+            try:
+                with os.scandir(directory) as entries:
+                    for entry in entries:
+                        if inspected >= max_entries or len(candidates) >= max_candidates:
+                            truncated = True
+                            return
+                        inspected += 1
+                        yield Path(entry.path)
+            except OSError:
+                raise LocalStorageError() from None
+
+        temp = self._root / "temp"
+        if _optional_info(temp) is None:
+            return StagingScan((), 0, 0, False)
+        _checked_directory(temp)
+        global_root = temp / "global"
+        if _optional_info(global_root) is not None:
+            _checked_directory(global_root)
+        roots: list[tuple[Path, str, uuid.UUID | None]] = [
+            (global_root / "objects", "GLOBAL", None),
+        ]
+        projects = temp / "projects"
+        for project_dir in children(projects):
+            try:
+                if not re.fullmatch(_UUID_HEX, project_dir.name, re.ASCII):
+                    raise LocalStorageError()
+                project_id = uuid.UUID(hex=project_dir.name)
+                if project_id.int == 0:
+                    raise LocalStorageError()
+                _checked_directory(project_dir)
+                roots.append((project_dir / "objects", "PROJECT", project_id))
+            except (LocalStorageError, ValueError):
+                skipped += 1
+        for objects, scope, project_id in roots:
+            if truncated:
+                break
+            for bucket in children(objects):
+                try:
+                    if not re.fullmatch(r"[0-9a-f]{2}", bucket.name, re.ASCII):
+                        raise LocalStorageError()
+                    _checked_directory(bucket)
+                except LocalStorageError:
+                    skipped += 1
+                    continue
+                for path in children(bucket):
+                    try:
+                        if not re.fullmatch(_UUID_HEX, path.name, re.ASCII):
+                            raise LocalStorageError()
+                        upload_id = uuid.UUID(hex=path.name)
+                        locator, _ = self.locators(
+                            scope=scope, project_id=project_id, file_object_id=upload_id,
+                        )
+                        if path != self._root / locator:
+                            raise LocalStorageError()
+                        _checked_file(path)
+                        candidates.append(StagingCandidate(scope, project_id, upload_id))
+                    except (LocalStorageError, ValueError):
+                        skipped += 1
+                    if truncated or len(candidates) >= max_candidates:
+                        truncated = len(candidates) >= max_candidates or truncated
+                        break
+                if truncated:
+                    break
+        return StagingScan(tuple(candidates), skipped, inspected, truncated)
 
     def _path(self, locator: str, *, create_parents: bool = False,
               allow_missing_parents: bool = False) -> Path:

@@ -2579,3 +2579,15 @@
 |Reason|删除文件与提交数据库审计无法原子化；先持久记录请求可避免删除成功而完全无审计。七天阈值来自冻结数据保留矩阵，不按失败暂存的 24 小时规则误删未登记内容。|
 |Impact|Document 内部 Storage/Application/Repository、合成文件/隔离数据库验证；不改 Schema、公开 API 或依赖。|
 |Rollback|内部入口未装配时不执行清理；已产生的不可变 Audit 保留。清理后的临时正文不可恢复，只允许在无 FileObject/业务引用且满七天时执行；恢复仍依赖备份，不允许操作正式文件。|
+
+## DEC-20260926-108
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-108|
+|Date|2026-09-26|
+|WBS|DOC-03-A04-A03-P03-A02-P03-P02 受控扫描与中断对账|
+|Decision|扫描仅遍历 temp/global/objects 和 temp/projects/{UUID}/objects 的固定层级，限制检查条目数，只返回规范 UUID Locator；未知、符号链接、重解析点及结构异常计数但不跟随/删除。批处理逐候选复用 P01 的授权/DB/文件身份检查，缺 Intent 或已有 FileObject 的候选保持不动。对已持久记录清理请求而物理文件缺失、没有完成 Audit 的对象，重新检查 DB/授权后只写 `DOCUMENT_ORPHAN_CLEANUP_ABSENT` 观察事件，不伪称由本进程完成删除。|
+|Reason|文件目录遍历不能直接成为删除授权；PostgreSQL 与本地文件系统非原子，中断窗口只可陈述已观察到的状态。|
+|Impact|Document Storage/维护 Service/Repository 与隔离文件/数据库测试；无 Schema、公开 API、新依赖。生产定时调度和目标账户路径权限仍属部署接线。|
+|Rollback|维护入口未装配时不执行；已写的 Audit 保留，未知文件原样保留。不以扫描结果自动删除客户文件。|

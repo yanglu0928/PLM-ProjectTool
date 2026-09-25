@@ -83,6 +83,28 @@ class LocalFileStorageTests(unittest.TestCase):
         )
         self.assertFalse(path.exists())
 
+    def test_staging_scan_only_returns_canonical_bounded_candidates(self):
+        project_stage, _ = self.store.locators(
+            scope="PROJECT", project_id=self.project, file_object_id=self.file_id,
+        )
+        global_id = uuid.uuid4()
+        global_stage, _ = self.store.locators(
+            scope="GLOBAL", project_id=None, file_object_id=global_id,
+        )
+        for locator in (project_stage, global_stage):
+            with self.store.reserve_staging(locator) as stream:
+                stream.write(b"synthetic")
+        (self.root / project_stage).parent.joinpath("unknown.txt").write_bytes(b"keep")
+        scan = self.store.scan_staging_candidates()
+        self.assertEqual({item.upload_id for item in scan.candidates},
+                         {self.file_id, global_id})
+        self.assertEqual(scan.skipped, 1)
+        self.assertFalse(scan.truncated)
+        bounded = self.store.scan_staging_candidates(max_candidates=1)
+        self.assertEqual(len(bounded.candidates), 1)
+        self.assertTrue(bounded.truncated)
+        self.assertTrue((self.root / project_stage).exists())
+
     def test_verified_publish_streams_bytes_and_hash(self):
         stage, final = self.store.locators(
             scope="GLOBAL", project_id=None, file_object_id=self.file_id,
