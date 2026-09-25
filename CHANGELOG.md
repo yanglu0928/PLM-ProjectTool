@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/DOC-01-A03-P01 新增独立签名 Document 列表游标及 Windows 当前账户只读密钥入口，绑定 Session、Scope/Project、页大小与末尾文档 ID；缺钥失败关闭。Windows 11 后端 513 项无失败（2 项权限跳过），临时 Vault 失密/备份恢复旧游标及开发 wheel PASS。无 Migration/API/新依赖；正式目标账户密钥、可选 GET 和最终程序包仍待。
+
 - 2026-09-26：`0.1.0.dev0`/DOC-01-A02 增加内部受权 Document 元数据列表/详情与稳定 keyset：当前 Session、项目成员或 GLOBAL 管理员、License 同事务核验；受限/跨项目文档失败关闭且不返回 Locator。Windows 11 后端 508 项无失败（2 项权限跳过），隔离 PostgreSQL 18 权限/分页/归档/许可验证及开发 wheel PASS。无 Migration/API/新依赖；签名游标、公开 GET、GLOBAL 正式引用策略、版本读取/下载和最终程序包仍待。
 
 - 2026-09-26：`0.1.0.dev0`/DOC-03-A04-A04-P04-P04-A02 将上传 Commit/Abort 仅挂入 Windows 显式写模式，复用真实 Session/项目创建者授权与 PostgreSQL 持久事务；默认/只读模式仍 404。Windows 11 后端 507 项无失败（2 项权限跳过），隔离 PostgreSQL 18/临时文件合成 Create→Content→Commit/Abort、重放、越权/许可拒绝、既有上传平台回归及开发 wheel PASS。无 Migration/API 破坏/新依赖；正式信任源、Server 2025、物理清理和 Parser Worker 仍待。

@@ -2732,3 +2732,15 @@
 |Reason|冻结 API-02 要求 ProjectId 隔离与 GLOBAL 引用/类别联合策略；目前未有可核验的 GLOBAL→PROJECT 正式引用事实，直接放行标准类别会造成过度读取。Document 读层先建立可复用的 Owner 边界和分页事实。|
 |Impact|Document 内部 Application/Repository、Port 组合与测试；不改 Schema、公开 API、依赖或冻结权限规则。后续 HTTP cursor 必须独立签名并绑定 Scope/Project/Session。|
 |Rollback|不装配尚未公开的内部读 Service；Document 表和既有上传历史不变。|
+
+## DEC-20260926-121
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-121|
+|Date|2026-09-26|
+|WBS|DOC-01-A03-P01 独立签名 Document 列表游标|
+|Decision|Document 列表使用专用 `document-list-cursor-v1` Windows 当前账户密钥引用和 HMAC-SHA-256 完整性游标，绑定会话摘要、GLOBAL/PROJECT、ProjectId、page_size 与最后 document_id；不复用成员、部门、Secret 或上传令牌密钥。游标只承载键集位置，不承载未授权标题/路径。|
+|Reason|冻结 API-01/02 要求不透明 keyset 分页；直接暴露 UUID 位置或跨会话/项目复用游标会扩大枚举面。现有目标账户安全密钥供给可复用生命周期而不新增技术栈。|
+|Impact|Document API cursor codec、Windows 只读密钥适配与测试；无 Schema、冻结 API 路径或第三方依赖变化。正式目标账户密钥需独立供给/备份后才能挂载 Document 列表。|
+|Rollback|不注入 Document 读 Router；旧游标失密时失败关闭，可用独立备份恢复，不用其他用途密钥替代。|
