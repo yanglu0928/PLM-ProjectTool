@@ -91,6 +91,7 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(bare.get("/api/v1/projects").status_code, 404)
             self.assertEqual(bare.get("/api/v1/global/documents").status_code, 404)
             self.assertEqual(bare.get("/api/v1/global/documents/00000000-0000-0000-0000-000000000001/versions").status_code, 404)
+            self.assertEqual(bare.get("/api/v1/global/documents/00000000-0000-0000-0000-000000000001/versions/00000000-0000-0000-0000-000000000002/content").status_code, 404)
             self.assertEqual(bare.post("/api/v1/projects").status_code, 404)
             self.assertEqual(bare.patch("/api/v1/projects/00000000-0000-0000-0000-000000000001").status_code, 404)
             self.assertEqual(bare.post("/api/v1/projects/00000000-0000-0000-0000-000000000001:archive").status_code, 404)
@@ -109,6 +110,7 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(client.get("/api/v1/projects/00000000-0000-0000-0000-000000000001/departments").status_code, 404)
             self.assertEqual(client.get("/api/v1/global/documents").status_code, 404)
             self.assertEqual(client.get("/api/v1/global/documents/00000000-0000-0000-0000-000000000001/versions").status_code, 404)
+            self.assertEqual(client.get("/api/v1/global/documents/00000000-0000-0000-0000-000000000001/versions/00000000-0000-0000-0000-000000000002/content").status_code, 404)
             self.assertEqual(client.post("/api/v1/projects/00000000-0000-0000-0000-000000000001/departments").status_code, 404)
             self.assertEqual(client.patch("/api/v1/projects/00000000-0000-0000-0000-000000000001/departments/00000000-0000-0000-0000-000000000002").status_code, 404)
             self.assertEqual(client.post("/api/v1/projects/00000000-0000-0000-0000-000000000001/departments/00000000-0000-0000-0000-000000000002:deactivate").status_code, 404)
@@ -203,6 +205,7 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(client.get("/api/v1/projects/00000000-0000-0000-0000-000000000001/departments").status_code, 401)
             self.assertEqual(client.get("/api/v1/global/documents").status_code, 401)
             self.assertEqual(client.get("/api/v1/global/documents/00000000-0000-0000-0000-000000000001/versions").status_code, 401)
+            self.assertEqual(client.get("/api/v1/global/documents/00000000-0000-0000-0000-000000000001/versions/00000000-0000-0000-0000-000000000002/content").status_code, 401)
             self.assertEqual(client.post("/api/v1/projects/00000000-0000-0000-0000-000000000001/departments").status_code, 403)
             self.assertEqual(client.patch("/api/v1/projects/00000000-0000-0000-0000-000000000001/departments/00000000-0000-0000-0000-000000000002").status_code, 403)
             self.assertEqual(client.post("/api/v1/projects/00000000-0000-0000-0000-000000000001/departments/00000000-0000-0000-0000-000000000002:deactivate").status_code, 403)
@@ -213,6 +216,32 @@ class ProductionLoginTests(unittest.TestCase):
             for action in ("suspend", "resume", "remove"):
                 self.assertEqual(client.post("/api/v1/projects/00000000-0000-0000-0000-000000000001/members/00000000-0000-0000-0000-000000000002:" + action).status_code, 403)
             self.assertEqual(client.get("/health/ready").status_code, 200)
+        runtime.dispose.assert_called_once()
+
+    def test_platform_download_storage_failure_disposes_before_publish(self) -> None:
+        runtime = Mock()
+        runtime.is_ready.return_value = True
+        settings = self.settings(("http://localhost",))
+        from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
+        with patch("plm_assistant.entrypoints.production_login.read_database_url",
+                   return_value="postgresql+psycopg://test:synthetic@localhost/test"), patch(
+                   "plm_assistant.entrypoints.production_login.create_database_runtime",
+                   return_value=runtime), patch(
+                   "plm_assistant.entrypoints.production_login._schema_current",
+                   return_value=True), patch(
+                   "plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services",
+                   return_value=Mock(guard=Mock())), patch(
+                   "plm_assistant.entrypoints.production_login.create_windows_secret_list_cursor_codec",
+                   return_value=SecretListCursorCodec(b"q" * 32)), patch(
+                   "plm_assistant.entrypoints.production_login.create_windows_project_member_cursor_codec",
+                   return_value=MemberListCursorCodec(b"m" * 32)), patch(
+                   "plm_assistant.entrypoints.production_login.create_windows_project_department_cursor_codec",
+                   return_value=DepartmentListCursorCodec(b"d" * 32)), patch(
+                   "plm_assistant.entrypoints.production_login.LocalFileStorage",
+                   side_effect=RuntimeError("synthetic-storage-path")):
+            with self.assertRaises(ProductionLoginStartupError) as caught:
+                create_production_platform_app(settings)
+        self.assertNotIn("synthetic-storage-path", str(caught.exception))
         runtime.dispose.assert_called_once()
 
     def test_platform_missing_member_cursor_key_disposes_before_publish(self) -> None:

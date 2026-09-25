@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/DOC-01-A05-P05 将受权 DocumentVersion 内容 GET 接入 Windows `--platform`/`--platform-write` 显式组合；默认/仅登录模式继续 404，存储根目录校验失败时整平台拒绝启动。Windows 11 后端 540 项无失败（2 项环境跳过），组合合同及开发 wheel PASS。无 Migration、新依赖或 API Breaking Change；正式账户信任源、主动断线与多进程磁盘预算及 Server 2025 仍待验证。
+
 - 2026-09-26：`0.1.0.dev0`/DOC-01-A05-P04 新增默认关闭、可选挂载的受权 DocumentVersion 内容流式 GET：已验证快照、四路并发上限、1 MiB 分块、无路径响应和异常资源清理。Windows 11 后端 539 项无失败（2 项环境跳过），HTTP 合同及隔离 PostgreSQL 18.6/临时文件同链路成功下载、开发 wheel PASS。无 Migration/新依赖；正式 Windows 装配、主动断线/多进程预算和发行信任源仍待。
 
 - 2026-09-26：`0.1.0.dev0`/DOC-01-A05-P03 增加内部受权下载快照编排：全量校验后再核验当前权限/状态，完整性失败写不可变无路径 Audit，任何失败关闭快照。Windows 11 后端 534 项无失败（2 项环境跳过），隔离 PostgreSQL 18.6/临时文件成功、损坏、复制后撤权及开发 wheel PASS。无 Migration/新依赖/公开 API；流式 HTTP、容量/中断策略与正式发行仍待。

@@ -99,7 +99,9 @@ from plm_assistant.modules.auth.infrastructure.license_import_access import SqlA
 from plm_assistant.modules.document.api.create_upload import create_document_upload_create_router
 from plm_assistant.modules.document.api.read_documents import create_document_read_router
 from plm_assistant.modules.document.api.read_versions import create_document_version_read_router
+from plm_assistant.modules.document.api.download_version import create_document_download_router
 from plm_assistant.modules.document.application.read_documents import DocumentReadService
+from plm_assistant.modules.document.application.prepare_download import PrepareDownloadService
 from plm_assistant.modules.document.infrastructure.read_repository import SqlAlchemyDocumentReadRepository
 from plm_assistant.modules.document.application.create_upload_intent import CreateUploadIntentService
 from plm_assistant.modules.document.application.upload_access import DocumentUploadAccess
@@ -226,6 +228,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         document_upload_finalize_router = None
         document_read_router = None
         document_version_read_router = None
+        document_download_router = None
         if include_secret_read:
             from plm_assistant.entrypoints.windows_license_runtime import (
                 create_windows_license_services,
@@ -251,6 +254,16 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             document_version_read_router = create_document_version_read_router(
                 sessions=sessions, documents=document_reads,
                 origins=origins, cursors=version_cursors,
+            )
+            document_download_router = create_document_download_router(
+                sessions=sessions,
+                downloads=PrepareDownloadService(
+                    reader=document_reads,
+                    storage=LocalFileStorage(settings.data_root),
+                    unit_of_work=runtime.unit_of_work,
+                    audit=audit,
+                ),
+                origins=origins,
             )
             metadata = SecretMetadataService(
                 unit_of_work=runtime.unit_of_work,
@@ -545,6 +558,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             document_upload_finalize_router=document_upload_finalize_router,
             document_read_router=document_read_router,
             document_version_read_router=document_version_read_router,
+            document_download_router=document_download_router,
             shutdown_callback=runtime.dispose,
         )
     except Exception:
