@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/DOC-03-A04-A03-P03-A01 增加内部 Content 两阶段受权与 STAGED 元数据登记：流前/流后重查创建者、Scope、Token、过期与项目状态，按确定性 ID 同事务写 FileObject、初始状态事件、Intent 与 Audit。Windows 11 后端 471 项无失败（2 项符号链接跳过）、PostgreSQL 18 临时库/合成文件权限、并发、归档/终止、过期、审计回滚及开发 wheel PASS。无新 Migration/API/依赖；正式 Session/License/CSRF、重传/孤儿清理、公开 HTTP、Commit/Abort/Parser、Server 2025/Debian 13 与最终程序包未完成。
+
 - 2026-09-25：`0.1.0.dev0`/DOC-03-A04-A03-P02 增加内部有界流式 Content 暂存与类型/长度/SHA-256 核验，独占 UUID Locator，失败仅清理本次文件身份仍一致的未登记暂存；支持按用途允许清单核查 PDF、DOCX/XLSX/PPTX、PNG/JPEG/TIFF、UTF-8 TXT/CSV。Windows 11 后端 470 项无失败（2 项符号链接跳过）、真实临时文件系统测试与开发 wheel PASS。无 Migration/公开 API/新依赖；Session/Token/Intent 二次授权、FileObject/STAGED 登记、重传/孤儿清理、Server 2025/Debian 13 和最终程序包仍待。
 
 - 2026-09-25：`0.1.0.dev0`/DOC-03-A04-A03-P01 按 CR-DOC-005 修正升版 UploadIntent 文件名契约：增量 `20260925_0024` 允许既有 Document 目标携带本次上传文件显示名，并对新建 Intent 强制必填；旧缺名意图不伪造回填。Windows 11 后端 464 项无失败（2 项符号链接跳过）、PostgreSQL 18 临时库空/已有数据升级、可逆降级/新形态拒绝降级、ORM 差异及 A02 回归、开发 wheel PASS。目标库先备份再升级 `head`；无新公开 API/依赖，流式 Content、正式授权/密钥、Server 2025/Debian 13 和最终程序包仍待。

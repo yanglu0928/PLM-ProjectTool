@@ -2531,3 +2531,15 @@
 |Reason|冻结上传次序要求先受控临时区校验，再建立 FileObject/STAGED；单纯信任扩展名、客户端 MIME 或一次性读入内存均不满足大小与类型底线。|
 |Impact|仅 Document 基础设施与本地合成测试；不改 Schema、公开 API、技术栈或生产组合。允许格式仍由后续用途/部署配置注入，未列明或未实现的格式失败关闭。|
 |Rollback|不装配暂存器即可停止新写入；已生成未登记的临时内容由后续 TTL 恢复/清理机制处理，不自动删除未知历史或业务版本。|
+
+## DEC-20260925-104
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-104|
+|Date|2026-09-25|
+|WBS|DOC-03-A04-A03-P03-A01 内部 Content STAGED 登记|
+|Decision|采用两次短事务：流前受权并查 Intent/Token/数据库时间，事务外有界流式暂存；流后重新受权并按 Project→Document→Intent 行锁复核，随后同事务写 FileObject(STAGED)、初始状态事件、Intent(CONTENT_READY) 与 Audit。FileObject ID 固定使用本次 upload_id，避免重复请求在不同随机暂存路径产生多个候选。数据库结果不确定时不自动删暂存文件，交由后续受控恢复/TTL 清理；重复 PUT 先失败关闭，独立 P04 完成安全重传。|
+|Reason|长流不能持有数据库事务；单次前置检查无法防上传中归档、过期、权限变化或终止。确定性暂存身份加后置行锁使重复写入不会覆盖原字节。|
+|Impact|Document 内部 Service/Repository、合成 PostgreSQL/文件测试；无 Schema/API/依赖变更。正式 Session/License/CSRF 授权适配、重传恢复与公开 HTTP 尚未完成。|
+|Rollback|入口未装配，可停止新写入；失败事务回滚 STAGED/Event/Intent/Audit。事务外孤儿文件不可作为业务版本读取，后续按固定 ID/TTL 受控清理；不删除有记录或未知状态文件。|
