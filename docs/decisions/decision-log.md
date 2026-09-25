@@ -2972,3 +2972,15 @@
 |Reason|冻结 DOCUMENT_PARSE_LIST 需要固定版本受权历史；单独绕开 Document 授权或将受控存储路径投影到 UI 都不符合边界。|
 |Impact|Document 内部读服务、仓储、测试；无 Schema、公开 API、新依赖或实际 Parser 运行。SUCCEEDED 仅代表数据库元数据状态，不证明结果文件完整。|
 |Rollback|停止调用尚未挂载的内部读取方法；历史数据及已冻结接口不变。|
+
+## DEC-20260926-141
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-141|
+|Date|2026-09-26|
+|WBS|DOC-04-A03 ParseRecord 列表可选 HTTP|
+|Decision|按冻结 `DOCUMENT_PARSE_LIST` 提供 PROJECT/GLOBAL 两条显式 GET 路径，仅可选注入 Router；独立 HMAC 游标签名绑定 Session、Scope/Project、Document、固定 Version、页大小和 `(created_at, parse_record_id)` 位置。公开安全 ParseRecordView，不返回结构化结果路径/正文/Hash。生产 Windows 游标密钥供给及组合挂载另列 A04/A05。|
+|Reason|复用既有 Document 认证与错误合同，同时防止游标跨用户、跨项目或跨版本重放；独立密钥避免与 Document/Version 游标混用。|
+|Impact|Document HTTP/游标、可选应用挂载、合同测试；无 Schema、新依赖或默认公开入口。|
+|Rollback|不注入可选 Router 即保持 404；不变更冻结 API 路径或历史数据。|
