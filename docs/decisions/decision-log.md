@@ -1763,3 +1763,15 @@
 |Reason|LIC-03-A03 只创建受控空初态，现有 HMAC verify 对 pristine 状态提前返回 True，若未先检查独立密钥，装配层可能误以为可信来源已就绪。独立 key_ref 避免与业务 Secret 主密钥混用；当前 Vault/备份机制可复用而不改变冻结 HMAC 规则。|
 |Impact|调整 License 完整性失败关闭与 Windows 组合入口；无 Schema/Migration、签名载荷或公开 API 变更。真实目标账户密钥尚需现场供给与备份演练；Server 2025 和 Debian 13 状态不变。|
 |Rollback|不挂载 License 组合入口则受许可业务保持关闭；既有可信时间状态不自动重置或改写，丢钥只可从匹配备份受控恢复。|
+
+## DEC-20260925-040
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-040|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P03-A05 Windows License 生产组合根|
+|Decision|Windows 组合根只从已安装包内唯一产品公钥、配置中显式选择且本机存在的 MAC、当前运行账户独立可信时间 Vault 密钥和当前 PostgreSQL Schema 形成 LicenseService/TrustedTimeStatePort/RuntimeGuard；任一缺失则拒绝装配，不自动降级合成 Port。恢复登录面与受许可业务路由分离，当前不公开管理路由。|
+|Reason|内部 License 组件单独通过测试不代表生产信任链；组合根必须保证各 Port 来源和数据库版本一致，避免部署端可替换公钥或空可信时间无密钥仍放行业务。|
+|Impact|新增 Windows 入口组合和合成/临时库验证，不改七字段载荷、Schema、API 或权限。真实签发私钥/公钥和目标账户 Vault 密钥仍待现场仪式；本项不能据合成数据宣称生产 License PASS。|
+|Rollback|不调用此组合根即可保持原生产登录/健康面；无数据迁移或自动密钥生成，已有 License 状态不修改。|

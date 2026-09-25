@@ -3,8 +3,8 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 2：Platform Core|
-|Current WBS|`PLT-02-A07-P03-A04 Windows 可信时间 HMAC 密钥来源`（Windows 11 合成验证已完成；正式密钥未供给）|
-|Current Status|PHASE_1_COMPLETE / PLT_02_A07_P03_A04_WIN11_PASS / PLT_02_A07_P03_A03_CEREMONY_PENDING / PHASE_2_IN_PROGRESS|
+|Current WBS|`PLT-02-A07-P03-A05 Windows License 生产组合根`（Windows 11 合成端到端已验证；正式信任锚未供给）|
+|Current Status|PHASE_1_COMPLETE / PLT_02_A07_P03_A05_SYNTHETIC_WIN11_PASS / PLT_02_A07_P03_A03_CEREMONY_PENDING / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
 |Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03 PASS|
 |Blockers|AUT-03-A07 Windows 11 合成端到端已通过，Server 2025 目标运行账户/HTTPS 代理与 Debian 安全凭据来源未验证；PLT-02-A07 公开接线待正式发行公钥、目标账户可信时间密钥、生产 License/Secret 装配、If-Match/管理权限与 Server 2025 恢复演练；POC-03 质量失败继续阻塞 Gate 3/UAT，Server Office、Debian 未验证和 Ghostscript 发行合规继续作为 Release 约束|
@@ -13,8 +13,8 @@
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，DM-02 License 授权粒度经用户批准 CR-LIC-001 修订|
 |DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`；Auth 限流增量 `20260925_0012`，PRJ-01～03 正式实现 Migration `20260925_0013`，成员变更历史增量 `20260925_0014`（CR-PRJ-001），通用幂等收据增量 `20260925_0015`（CR-API-001）|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
-|Test Summary|PLT-02-A07-P03-A04：Windows 11/Python 3.13 后端 345/345 PASS；临时 Vault HMAC 签名→失密拒绝→备份恢复验旧状态 PASS，wheel PASS。真实签发/可信时间密钥未供给，普通默认应用 Auth/Secret 路由仍 404|
-|Next WBS|复核 License 生产组合根前置并推进不依赖真实签发口令的装配/失效保护；工作台真实密钥、独立备份与目标账户可信时间密钥仍须在发行前闭合。安排 Server 2025 恢复/发行验证；Debian 13 按用户要求暂不验证|
+|Test Summary|PLT-02-A07-P03-A05：Windows 11/Python 3.13 后端 348/348 PASS；真实 PostgreSQL 18.6 临时库/本机 MAC/临时 Vault/合成 Ed25519 的 Guard 通过、失密拒绝与持久化 PASS；wheel PASS。正式信任锚未供给，普通默认应用 Auth/Secret 路由仍 404|
+|Next WBS|检查 PLT-02-A07 公开接线剩余管理权限、If-Match 与幂等依赖，推进可独立验收的安全 API；真实签发密钥/公钥、目标账户密钥与 Server 2025 验证继续并行待办；Debian 13 按用户要求暂不验证|
 
 ## 自动执行策略
 

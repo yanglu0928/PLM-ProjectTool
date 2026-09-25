@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PLT-02-A07-P03-A05 新增 Windows License 内部生产组合根：包内本产品公钥、本机选定 MAC、独立 Vault 可信时间密钥与当前 PostgreSQL Schema 任一缺失均拒绝装配；不公开新路由。Windows 11/Python 3.13 后端 348/348、真实 PostgreSQL 18.6 临时库合成 License 通过及失密持久拒绝、wheel 构建 PASS。无 Migration、新依赖或公开 API；正式发行公钥/目标账户密钥、Server 2025/Debian 13 和最终程序包仍未完成。
+
 - 2026-09-25：`0.1.0.dev0`/PLT-02-A07-P03-A04 Windows 可信时间 HMAC 组合入口改用独立固定引用的当前账户 Vault 密钥，并在装配前检查；缺钥时 pristine 空初态亦失败关闭。Windows 11/Python 3.13 后端 345/345、合成 Vault 失密/备份恢复后旧状态验签与 wheel PASS。无 Migration、公开 API 或新依赖；正式目标账户供给、Server 2025/异账户恢复、生产 License 装配及最终程序包仍未完成。
 
 - 2026-09-25：`0.1.0.dev0`/PLT-02-A07-P03-A03 修正开发者工作台实际 private 目录的 Git 整体忽略规则；新增仅交互式、加密 PKCS#8 Ed25519 签发密钥与包内公钥清单生成/离线副本核验工具。Windows 11/Python 3.13 后端 343/343 合成测试与开发 wheel PASS；真实签发密钥、独立备份和最终 wheel 发行门禁未完成，本项未 PASS。无 Migration、公开 API 或客户运行依赖变化。
