@@ -3,8 +3,8 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 2：Platform Core|
-|Current WBS|`PRJ-04-A16-P02 Department 停用可选 HTTP`（隔离 PostgreSQL 已验证；默认/Windows 平台未挂载）|
-|Current Status|PHASE_1_COMPLETE / PRJ_04_A16_P02_OPTIONAL_HTTP_PASS / PLT_02_A07_P05_A09_CEREMONY_PENDING / PHASE_2_IN_PROGRESS|
+|Current WBS|`PRJ-04-A16-P03 Windows 显式平台 Department 停用组合`（隔离 PostgreSQL 已验证；默认模式未挂载）|
+|Current Status|PHASE_1_COMPLETE / PRJ_04_A16_P03_WINDOWS_PLATFORM_PASS / PLT_02_A07_P05_A09_CEREMONY_PENDING / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
 |Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03 PASS|
 |Blockers|AUT-03-A07 Windows 11 合成端到端已通过，Server 2025 目标运行账户/HTTPS 代理与 Debian 安全凭据来源未验证；PLT-02-A07 显式生产写组合已合成验证，正式发行公钥、目标账户可信时间/游标/Secret 主密钥供给、Server 2025 恢复演练仍待；POC-03 质量失败继续阻塞 Gate 3/UAT，Server Office、Debian 未验证和 Ghostscript 发行合规继续作为 Release 约束|
@@ -13,8 +13,8 @@
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，DM-02 License 授权粒度经用户批准 CR-LIC-001 修订|
 |DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`；Auth 限流增量 `20260925_0012`，PRJ-01～03 正式实现 Migration `20260925_0013`，成员变更历史增量 `20260925_0014`（CR-PRJ-001），通用幂等收据增量 `20260925_0015`（CR-API-001），成员首次响应快照增量 `20260925_0016`（CR-PRJ-002），成员状态首次响应快照增量 `20260925_0017`（CR-PRJ-003），部门创建首次响应快照增量 `20260925_0018`（CR-PRJ-004），部门停用首次响应快照增量 `20260925_0019`（CR-PRJ-005）|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
-|Test Summary|PRJ-04-A16-P02：Windows 11/Python 3.13 后端 441/441 PASS；PostgreSQL 18 临时库部门停用可选 HTTP 首次/重放、在用/权限/许可拒绝及开发 wheel PASS|
-|Next WBS|PRJ-04-A16-P03 Windows 显式平台 Department 停用组合；PLT-02-A07-P05-A09 发行信任源待工作台操作员仪式，Server 2025/HTTPS 仍待；Debian 13 暂不验证|
+|Test Summary|PRJ-04-A16-P03：Windows 11/Python 3.13 后端 441/441 PASS；PostgreSQL 18 临时库两种显式平台部门停用/重放/权限/许可/缺信任源拒绝及开发 wheel PASS|
+|Next WBS|Phase 2 Document/Evidence/Workflow/Review/Trace 模块前置核查与 WBS 分解；PLT-02-A07-P05-A09 发行信任源待工作台操作员仪式，Server 2025/HTTPS 仍待；Debian 13 暂不验证|
 
 ## 自动执行策略
 

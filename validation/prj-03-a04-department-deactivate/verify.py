@@ -6,6 +6,9 @@ import hashlib
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import Mock, patch as mock_patch
 
 import psycopg
 from alembic import command
@@ -13,10 +16,17 @@ from fastapi.testclient import TestClient
 from psycopg import sql
 from sqlalchemy.engine import URL
 from plm_assistant.entrypoints.api import create_app
+from plm_assistant.entrypoints.production_login import (
+    create_production_platform_app, create_production_platform_write_app,
+)
 from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
 from plm_assistant.modules.auth.application.session_service import SessionError
 from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
 from plm_assistant.modules.project.api.deactivate_department import create_project_department_deactivate_router
+from plm_assistant.modules.project.api.member_list_cursor import MemberListCursorCodec
+from plm_assistant.modules.project.api.department_list_cursor import DepartmentListCursorCodec
+from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
+from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
 
 from plm_assistant.modules.audit.application.public import AuditService
@@ -294,6 +304,59 @@ def main():
                     assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='PROJECT_DEPARTMENT_DEACTIVATED'", (http_department,)).fetchone()[0] == 1
                     assert db.execute("SELECT count(*) FROM plm.prj_department_deactivate_results WHERE department_id=%s", (http_department,)).fetchone()[0] == 1
 
+                settings = BootstrapSettings(data_root=Path.cwd(), trusted_origins=("http://localhost",))
+                with mock_patch("plm_assistant.entrypoints.production_login.read_database_url",
+                                return_value=url), mock_patch(
+                                "plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services",
+                                return_value=SimpleNamespace(guard=guard)), mock_patch(
+                                "plm_assistant.entrypoints.production_login.create_windows_secret_list_cursor_codec",
+                                return_value=SecretListCursorCodec(b"q" * 32)), mock_patch(
+                                "plm_assistant.entrypoints.production_login.create_windows_project_member_cursor_codec",
+                                return_value=MemberListCursorCodec(b"m" * 32)), mock_patch(
+                                "plm_assistant.entrypoints.production_login.create_windows_project_department_cursor_codec",
+                                return_value=DepartmentListCursorCodec(b"d" * 32)), mock_patch(
+                                "plm_assistant.entrypoints.windows_secret_write.create_windows_secret_write_service",
+                                return_value=Mock()):
+                    for factory, suffix in (
+                        (create_production_platform_app, "read"),
+                        (create_production_platform_write_app, "write"),
+                    ):
+                        with connect(name) as db:
+                            platform_department = db.execute(
+                                "INSERT INTO plm.prj_departments(project_id,department_code,department_code_normalized,name) VALUES (%s,%s,%s,%s) RETURNING department_id",
+                                (p1, f"PLATFORM-{suffix.upper()}", f"platform-{suffix}", f"Platform {suffix}"),
+                            ).fetchone()[0]
+                        production = factory(settings)
+                        with TestClient(production, base_url="http://localhost") as client:
+                            platform_path = f"/api/v1/projects/{p1}/departments/{platform_department}:deactivate"
+                            platform_headers = {
+                                "origin": "http://localhost",
+                                "cookie": "plm_session=" + token.hex(),
+                                "x-csrf-token": CSRF.hex(), "if-match": '"v0"',
+                                "idempotency-key": f"department-platform-deactivate-{suffix}-001",
+                            }
+                            first_platform = client.post(platform_path, headers=platform_headers)
+                            replay_platform = client.post(platform_path, headers=platform_headers)
+                            assert first_platform.status_code == replay_platform.status_code == 200, (first_platform.text, replay_platform.text)
+                            assert first_platform.json()["data"] == replay_platform.json()["data"]
+                            assert first_platform.headers["etag"] == '"v1"'
+                            assert client.post(platform_path, headers={**platform_headers,
+                                               "cookie": "plm_session=" + cm_token.hex()}).status_code == 404
+                            guard.valid = False
+                            assert client.post(platform_path, headers=platform_headers).status_code == 403
+                            guard.valid = True
+                        with connect(name) as db:
+                            assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='PROJECT_DEPARTMENT_DEACTIVATED'", (platform_department,)).fetchone()[0] == 1
+                            assert db.execute("SELECT count(*) FROM plm.prj_department_deactivate_results WHERE department_id=%s", (platform_department,)).fetchone()[0] == 1
+                    with mock_patch("plm_assistant.entrypoints.production_login.create_windows_project_department_cursor_codec",
+                                    side_effect=RuntimeError("synthetic missing department key")):
+                        try:
+                            create_production_platform_app(settings)
+                        except Exception as exc:
+                            assert str(exc) == "production login unavailable"
+                        else:
+                            raise AssertionError("missing trust source did not fail closed")
+
                 def compete_deactivate():
                     try:
                         return deactivate("race").state
@@ -328,7 +391,7 @@ def main():
                     assert "department deactivate results exist" in str(exc)
                 else:
                     raise AssertionError("nonempty deactivate result downgrade should fail")
-                print("PASS: migration/ORM, idempotent Department internal and optional HTTP replay/concurrency/rollback, member-in-use and archived denial")
+                print("PASS: migration/ORM, idempotent Department internal, optional HTTP and both Windows platform modes; replay/concurrency/rollback, member-in-use and archived denial")
             finally:
                 runtime.dispose()
         finally:

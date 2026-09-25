@@ -2315,3 +2315,15 @@
 |Reason|HTTP 边界复用已验证的权限、成员在用、许可、并发与快照语义；默认应用保持 404。|
 |Impact|Project 可选 Router、应用工厂注入点、契约/隔离 PostgreSQL 验证；无新 Schema/Migration/依赖或 Breaking API。|
 |Rollback|移除 Router 注入恢复 404；已停用的部门、审计及快照保留。|
+
+## DEC-20260925-086
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-086|
+|Date|2026-09-25|
+|WBS|PRJ-04-A16-P03 Windows 显式平台 Department 停用组合|
+|Decision|仅在 `--platform` 与 `--platform-write` 既有 Schema、License 和游标信任源门禁通过后装配部门停用服务及 Router；默认登录模式保持 404。|
+|Reason|复用当前 Session、ProjectManager、License、Audit、强版本与同事务持久幂等，不新增无保护入口。|
+|Impact|Windows 平台组合与契约/隔离 PostgreSQL 验证；无新 Schema/Migration/依赖或 Breaking API。|
+|Rollback|移除平台 Router 注入恢复 404；已停用部门、审计与快照保留。|
