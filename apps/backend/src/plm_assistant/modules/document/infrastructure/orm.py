@@ -95,3 +95,62 @@ class FileStateEventRow(Base):
     actor_user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     trace_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False, server_default=text("statement_timestamp()"))
+
+
+_DOCUMENT_CATEGORIES = "'CONTRACTUAL','PROJECT_RECORD','STANDARD_CAPABILITY','REFERENCE_MATERIAL','TEMPLATE','GENERATED_ARTIFACT','OTHER'"
+
+
+class DocumentRow(Base):
+    """DOC-01 stable identity; version pointers stay NULL until DOC-02."""
+
+    __tablename__ = "doc_documents"
+    __table_args__ = (
+        UniqueConstraint("document_id", "scope", "project_id",
+                         name="uq_doc_documents__id_scope_project",
+                         postgresql_nulls_not_distinct=True),
+        ForeignKeyConstraint(["project_id"], ["plm.prj_projects.project_id"],
+                             name="fk_doc_documents__project", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["created_by"], ["plm.auth_users.user_id"],
+                             name="fk_doc_documents__creator", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["updated_by"], ["plm.auth_users.user_id"],
+                             name="fk_doc_documents__updater", ondelete="NO ACTION"),
+        CheckConstraint("(scope='GLOBAL' AND project_id IS NULL) OR (scope='PROJECT' AND project_id IS NOT NULL)",
+                        name="ck_doc_documents__scope_project"),
+        CheckConstraint(f"document_category IN ({_DOCUMENT_CATEGORIES})",
+                        name="ck_doc_documents__category"),
+        CheckConstraint("document_state IN ('ACTIVE','ARCHIVED','RESTRICTED')",
+                        name="ck_doc_documents__state"),
+        CheckConstraint("char_length(title) BETWEEN 1 AND 255 AND title=btrim(title)",
+                        name="ck_doc_documents__title"),
+        CheckConstraint("char_length(original_display_name) BETWEEN 1 AND 255 AND original_display_name=btrim(original_display_name)",
+                        name="ck_doc_documents__display_name"),
+        CheckConstraint("document_subtype IS NULL OR (char_length(document_subtype) BETWEEN 1 AND 128 AND document_subtype=btrim(document_subtype))",
+                        name="ck_doc_documents__subtype"),
+        CheckConstraint("document_purpose IS NULL OR (char_length(document_purpose) BETWEEN 1 AND 255 AND document_purpose=btrim(document_purpose))",
+                        name="ck_doc_documents__purpose"),
+        CheckConstraint("document_category <> 'OTHER' OR (document_subtype IS NOT NULL AND document_purpose IS NOT NULL)",
+                        name="ck_doc_documents__other_details"),
+        CheckConstraint("document_category <> 'GENERATED_ARTIFACT' OR scope='PROJECT'",
+                        name="ck_doc_documents__generated_scope"),
+        CheckConstraint("latest_version_ref IS NULL AND effective_version_ref IS NULL",
+                        name="ck_doc_documents__pre_version_pointers"),
+        CheckConstraint("lock_version >= 0", name="ck_doc_documents__version"),
+        Index("ix_doc_documents__scope_project_state", "scope", "project_id", "document_state"),
+    )
+
+    document_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    scope: Mapped[str] = mapped_column(Text, nullable=False)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    document_category: Mapped[str] = mapped_column(Text, nullable=False)
+    document_subtype: Mapped[str | None] = mapped_column(Text)
+    document_purpose: Mapped[str | None] = mapped_column(Text)
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    original_display_name: Mapped[str] = mapped_column(Text, nullable=False)
+    document_state: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'ACTIVE'"))
+    latest_version_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    effective_version_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False, server_default=text("statement_timestamp()"))
+    updated_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False, server_default=text("statement_timestamp()"))
+    lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))

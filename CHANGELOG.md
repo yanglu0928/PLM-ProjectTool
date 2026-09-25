@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/DOC-01-A01 按 CR-DOC-002 新增 Document 逻辑身份持久层：GLOBAL/PROJECT Scope、类别/OTHER 明细、显示元数据、状态/版本及不可变身份；latest/effective 指针在 DOC-02 前保持 NULL。Windows 11 后端 453 项无失败（2 项符号链接场景因账户权限跳过）、PostgreSQL 18 临时库空/已有数据升级、ORM 差异、数据库约束/身份变更拒绝、非空降级保护与开发 wheel PASS。新增 Migration `20260925_0021`，目标库须先备份再升级到 head；无公开 API/新依赖。DocumentVersion、文件发布、正式授权、Server 2025/Debian 13 和最终程序包未完成。
+
 - 2026-09-25：`0.1.0.dev0`/DOC-03-A03-P02 增加内部 FileObject `STAGED→FAILED`、`AVAILABLE→RESTRICTED` 事务命令：Scope/expected_version 行锁、追加式状态事件、Audit 与通用幂等收据同事务；其他发布/清理流转维持关闭。Windows 11 后端 453 项无失败（2 项符号链接场景因账户权限跳过）、PostgreSQL 18 临时库重放/并发/隔离/审计失败回滚与开发 wheel PASS。无新 Migration/公开 API/依赖，升级仍需已有 `0015` 与 `0020`；本项使用合成授权 Port 验证，正式 Document 权限接线、文件完整性、恢复器、Server 2025/Debian 13 和最终程序包未完成。
 
 - 2026-09-25：`0.1.0.dev0`/DOC-03-A03-P01 增加冻结 DM-03 的内部 FileObject 状态流转策略，明确内容校验、清理资格和原因记录的外部证明要求；拒绝未登记、逆向及 PERSISTENT AVAILABLE 清理流转。Windows 11 后端 451 项无失败（2 项符号链接场景因账户权限跳过）、开发 wheel PASS。无 Migration/公开 API/新依赖，升级无需新增操作；同事务数据库命令、真实文件完整性、引用/保留、恢复审计及 Server 2025/Debian 13 未验证，非最终程序包。

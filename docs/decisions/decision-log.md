@@ -2375,3 +2375,15 @@
 |Reason|A01 元数据与 A03-P01 状态图已具备，但 DocumentVersion/物理 Hash 验证和清理引用检查尚未具备；先落实失败关闭/限制读取所需的安全状态变更，避免单独发布未证明的文件。|
 |Impact|Document Application/Infrastructure 与 PostgreSQL 隔离验证；复用既有 `0015`/`0020`，无新 Migration、公开 API 或依赖。|
 |Rollback|内部调用未装配至 HTTP；移除服务接线即可停止新命令，既有状态/事件/Audit/收据按历史保留，不逆向改写。|
+
+## DEC-20260925-091
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-091|
+|Date|2026-09-25|
+|WBS|DOC-01-A01 Document 逻辑身份持久层|
+|Decision|依据 CR-DOC-002 先建 Document Root；latest/effective 指针在 DOC-02 建表前均为 NULL，不能用自由 UUID 代替版本外键。|
+|Reason|冻结 DM-03 要求 Document/FileObject/DocumentVersion 分离；当前 DOC-02 尚缺，必须防止悬空或跨 Scope 的版本引用。|
+|Impact|后续 Migration `0021`、ORM、约束和验证；本登记本身不改变运行 Schema/API。|
+|Rollback|本登记无需数据回滚；后续 Migration 仅在空表时允许普通降级。|
