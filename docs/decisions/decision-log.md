@@ -2183,3 +2183,15 @@
 |Reason|沿用当前 Project 组合的 Session、License、ProjectManager、Audit 和同事务幂等，不增加额外的无保护入口。|
 |Impact|Windows 平台组合与测试；无新 Schema/Migration/依赖和 Breaking API。|
 |Rollback|移除平台组合注入恢复 404；既有事件、审计和快照保留。|
+
+## DEC-20260925-075
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-075|
+|Date|2026-09-25|
+|WBS|PRJ-04-A13-P01 Department 列表游标前置|
+|Decision|部门历史分页使用独立资源族 `project-department-history` 与专用 32 字节密钥签名游标，绑定 ProjectId、当前 Session、page size 和 `department_id` 稳定位置；跨资源族、跨会话/项目或篡改均拒绝。|
+|Reason|冻结 API-01 禁止公开内部 keyset ID，现有成员列表游标不可作为部门游标复用，避免资源族混用和错误密钥域。|
+|Impact|新增 Project API 游标编解码与测试；暂不开放 GET，不改 Schema、Migration 或冻结路径。Windows 独立密钥来源由后续组合任务验证。|
+|Rollback|移除尚未公开的部门游标组件；不存在持久数据迁移。|

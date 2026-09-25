@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PRJ-04-A13-P01 新增独立 Project Department 历史分页 HMAC 游标，绑定当前 Session、ProjectId、page size 与稳定部门位置，拒绝篡改和成员游标跨资源族复用。Windows 11 后端 424/424、开发 wheel PASS；无新 Migration/依赖，升级无需数据操作。公开部门 GET、Windows 正式密钥来源、Server 2025/Debian 13 与最终程序包未完成。
+
 - 2026-09-25：`0.1.0.dev0`/PRJ-04-A12-P03 在 Windows 显式 `--platform`/`--platform-write` 组合接入成员暂停/恢复/移除，复用当前 Session、License、ProjectManager、Audit 和同事务幂等；默认登录模式仍 404。Windows 11 后端 421/421、PostgreSQL 18 临时库两种组合三状态真实 Session/重放/合成 License 与缺信任源失败关闭、开发 wheel PASS。无新 Migration/依赖，目标库需 `0017`；正式目标账户材料、Server 2025/Debian 13 与最终程序包未完成。
 
 - 2026-09-25：`0.1.0.dev0`/PRJ-04-A12-P02 新增可选 Project Member 暂停/恢复/移除 HTTP，按冻结路径使用可信 Origin、Session/CSRF、Idempotency-Key 与强 If-Match；200 返回首次安全 MemberView/ETag，重放不重复 Audit。Windows 11 后端 421/421、PostgreSQL 18 临时库三状态 HTTP 重放/冲突/跨项目/许可拒绝、开发 wheel PASS。无新 Migration/依赖；目标库需升至 `0017`。默认和当前 Windows 平台组合仍 404，正式信任源、Server 2025/Debian 13 与最终程序包未完成。
