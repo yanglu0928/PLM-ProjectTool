@@ -71,6 +71,30 @@ class DocumentVersionPage:
 
 
 @dataclass(frozen=True, slots=True)
+class ParseRecordView:
+    parse_record_id: uuid.UUID
+    document_version_id: uuid.UUID
+    parser_profile: str
+    parser_version: str
+    parse_state: str
+    attempt_no: int
+    job_ref: uuid.UUID
+    result_ref: uuid.UUID | None
+    error_code: str | None
+    retryable: bool | None
+    created_at: datetime
+    started_at: datetime | None
+    completed_at: datetime | None
+
+
+@dataclass(frozen=True, slots=True)
+class ParseRecordPage:
+    items: tuple[ParseRecordView, ...]
+    next_before: tuple[datetime, uuid.UUID] | None
+    has_more: bool
+
+
+@dataclass(frozen=True, slots=True)
 class DocumentDownloadSource:
     actor_user_id: uuid.UUID
     document_id: uuid.UUID
@@ -116,6 +140,10 @@ class DocumentReadRepositoryPort(Protocol):
     def get_version(self, transaction: object, *, scope: str,
                     project_id: uuid.UUID | None, document_id: uuid.UUID,
                     document_version_id: uuid.UUID) -> DocumentVersionView | None: ...
+    def list_parses(self, transaction: object, *, scope: str,
+                    project_id: uuid.UUID | None, document_version_id: uuid.UUID,
+                    before: tuple[datetime, uuid.UUID] | None,
+                    limit: int) -> ParseRecordPage: ...
     def get_download_source(self, transaction: object, *, scope: str,
                             project_id: uuid.UUID | None, document_id: uuid.UUID,
                             document_version_id: uuid.UUID,
@@ -236,6 +264,46 @@ class DocumentReadService:
                 if type(view) is not DocumentVersionView:
                     raise DocumentReadError("RESOURCE_NOT_FOUND")
                 return view
+        except DocumentReadError:
+            raise
+        except RuntimeLicenseError:
+            raise DocumentReadError("LICENSE_OPERATION_DENIED") from None
+        except Exception:
+            raise DocumentReadError("DOCUMENT_UNAVAILABLE") from None
+
+    def list_parses(self, query: DocumentReadQuery, document_id: uuid.UUID,
+                    document_version_id: uuid.UUID, *,
+                    before: tuple[datetime, uuid.UUID] | None = None,
+                    limit: int = 50) -> ParseRecordPage:
+        self._validate_query(query)
+        if (type(document_id) is not uuid.UUID or document_id.int == 0
+                or type(document_version_id) is not uuid.UUID
+                or document_version_id.int == 0):
+            raise DocumentReadError("RESOURCE_NOT_FOUND")
+        if (type(limit) is not int or not 1 <= limit <= 200
+                or before is not None and (
+                    type(before) is not tuple or len(before) != 2
+                    or type(before[0]) is not datetime
+                    or before[0].tzinfo is None or before[0].utcoffset() is None
+                    or type(before[1]) is not uuid.UUID or before[1].int == 0)):
+            raise DocumentReadError("VALIDATION_FAILED")
+        try:
+            self._guard.require_valid(trace_id=query.trace_id)
+            with self._uow() as tx:
+                self._authorize(tx, query)
+                self._require_document(tx, query, document_id)
+                if type(self._repository.get_version(
+                        tx, scope=query.scope, project_id=query.project_id,
+                        document_id=document_id,
+                        document_version_id=document_version_id)) is not DocumentVersionView:
+                    raise DocumentReadError("RESOURCE_NOT_FOUND")
+                page = self._repository.list_parses(
+                    tx, scope=query.scope, project_id=query.project_id,
+                    document_version_id=document_version_id, before=before, limit=limit,
+                )
+                if type(page) is not ParseRecordPage:
+                    raise DocumentReadError("DOCUMENT_UNAVAILABLE")
+                return page
         except DocumentReadError:
             raise
         except RuntimeLicenseError:

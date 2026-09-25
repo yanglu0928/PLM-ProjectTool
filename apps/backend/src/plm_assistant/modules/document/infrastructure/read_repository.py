@@ -3,16 +3,17 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
 
 from plm_assistant.modules.document.application.read_documents import (
     DocumentDownloadSource, DocumentPage, DocumentVersionPage,
-    DocumentVersionView, DocumentView,
+    DocumentVersionView, DocumentView, ParseRecordPage, ParseRecordView,
 )
 from plm_assistant.modules.document.infrastructure.orm import (
-    DocumentRow, DocumentVersionRow, FileObjectRow,
+    DocumentRow, DocumentVersionRow, FileObjectRow, ParseRecordRow,
 )
 
 
@@ -107,6 +108,31 @@ class SqlAlchemyDocumentReadRepository:
         ).scalar_one_or_none()
         return None if row is None else _version_view(row)
 
+    def list_parses(self, transaction: object, *, scope: str,
+                    project_id: uuid.UUID | None, document_version_id: uuid.UUID,
+                    before: tuple[datetime, uuid.UUID] | None,
+                    limit: int) -> ParseRecordPage:
+        statement = select(ParseRecordRow).where(
+            ParseRecordRow.document_version_id == document_version_id,
+            ParseRecordRow.scope == scope,
+            ParseRecordRow.project_id == project_id,
+        )
+        if before is not None:
+            statement = statement.where(or_(
+                ParseRecordRow.created_at < before[0],
+                and_(ParseRecordRow.created_at == before[0],
+                     ParseRecordRow.parse_record_id < before[1]),
+            ))
+        rows = _session(transaction).execute(
+            statement.order_by(ParseRecordRow.created_at.desc(),
+                               ParseRecordRow.parse_record_id.desc()).limit(limit + 1),
+        ).scalars().all()
+        more = len(rows) > limit
+        items = tuple(_parse_view(row) for row in rows[:limit])
+        tail = rows[limit - 1] if more else None
+        return ParseRecordPage(items, (tail.created_at, tail.parse_record_id)
+                               if tail is not None else None, more)
+
     def get_download_source(self, transaction: object, *, scope: str,
                             project_id: uuid.UUID | None, document_id: uuid.UUID,
                             document_version_id: uuid.UUID,
@@ -133,4 +159,13 @@ def _version_view(row: DocumentVersionRow) -> DocumentVersionView:
         row.content_sha256.hex(), row.size_bytes, row.detected_mime,
         row.availability_state, row.supersedes_version_ref,
         row.created_at, row.integrity_checked_at,
+    )
+
+
+def _parse_view(row: ParseRecordRow) -> ParseRecordView:
+    return ParseRecordView(
+        row.parse_record_id, row.document_version_id,
+        row.parser_profile, row.parser_version, row.parse_state,
+        row.attempt_no, row.job_ref, row.result_ref, row.error_code,
+        row.retryable, row.created_at, row.started_at, row.completed_at,
     )

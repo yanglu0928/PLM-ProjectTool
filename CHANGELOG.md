@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/DOC-04-A02 新增固定 DocumentVersion 的内部 ParseRecord 受权历史读取与安全投影，采用 `(created_at, parse_record_id)` keyset；不返回物理结果路径或正文。Windows 11 后端 576 项无失败（2 项环境跳过），隔离 PostgreSQL 18.6 同时间戳分页/Scope 隔离及开发 wheel PASS。无 Migration、新依赖或公开 API；公开 `DOCUMENT_PARSE_LIST`、真实 Parser/OCR 与结果文件完整性仍待。
+
 - 2026-09-26：`0.1.0.dev0`/DOC-04-A01 增加 ParseRecord/结果引用持久基础及 Migration `20260926_0028`，固定 DocumentVersion/Job 归属、Attempt 顺序、终态与历史保留。Windows 11 后端 572 项无失败（2 项环境跳过），隔离 PostgreSQL 18.6 已有数据升级、空表降级、GLOBAL/PROJECT/异常约束和开发 wheel PASS。升级前备份；有历史拒绝降级。无公开 API/新依赖；真正 Parser/OCR、结果文件完整性与精确定位未完成。
 
 - 2026-09-26：`0.1.0.dev0`/EVD-01-A03-P02-A02 前置核查确认八类精确定位仍缺正式 Parser/ParseRecord 结果来源，维持未通过，不以 PoC 输出或全文 Hash 冒充。转 DOC-04 ParseRecord 持久基础；无代码、Migration、API 或依赖变化。

@@ -2960,3 +2960,15 @@
 |Reason|冻结 DM-03 与 SC-01 要求 ParseRecord 独立重试历史和受控结构化结果引用。真正 Parser/OCR Worker 在 Phase 3；Phase 2 先建立不可伪造成功形态、Job/版本归属和保留边界，以供后续结果发布/精确 Evidence 定位。|
 |Impact|Document ORM、增量 Migration、隔离 PostgreSQL 测试；不引入解析依赖、公开 API 或 Worker，不把 PoC Parser 直接用作正式结果。结果 Locator 仅存受控相对标识，不返回给业务/UI。|
 |Rollback|空表可降级；任何 ParseRecord/结果历史存在时拒绝降级，恢复须备份并走有记录的迁移计划。|
+
+## DEC-20260926-140
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-140|
+|Date|2026-09-26|
+|WBS|DOC-04-A02 固定版本解析记录受权读取|
+|Decision|复用 DocumentReadService 的 Session、License、GLOBAL 管理员/PROJECT 成员授权，在同一只读事务确认 Document 与 AVAILABLE 固定版本后读取 ParseRecord 历史。按 `(created_at, parse_record_id)` 降序 keyset 分页；安全视图仅含解析身份、状态、Job/不透明结果引用、脱敏错误与时间，不暴露结果物理 Locator、Hash 或异常堆栈。公开 HTTP 游标和 Worker 留给独立任务。|
+|Reason|冻结 DOCUMENT_PARSE_LIST 需要固定版本受权历史；单独绕开 Document 授权或将受控存储路径投影到 UI 都不符合边界。|
+|Impact|Document 内部读服务、仓储、测试；无 Schema、公开 API、新依赖或实际 Parser 运行。SUCCEEDED 仅代表数据库元数据状态，不证明结果文件完整。|
+|Rollback|停止调用尚未挂载的内部读取方法；历史数据及已冻结接口不变。|
