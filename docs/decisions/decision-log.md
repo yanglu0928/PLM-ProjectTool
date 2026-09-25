@@ -2804,3 +2804,15 @@
 |Reason|冻结 API-02 已要求版本列表/详情；独立 Router 可在正式目标账户版本游标密钥缺失时与其他 Document 路由分离并失败关闭，避免默默共用旧游标。|
 |Impact|Document API 与可选应用入口、合同测试；无 Schema、依赖、Breaking API 或权限粒度变化。Windows 显式组合留到同链路验证后单独实施。|
 |Rollback|不向应用注入版本 Router 即保持 404；已有 Document 读与上传数据不变。|
+
+## DEC-20260926-127
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-127|
+|Date|2026-09-26|
+|WBS|DOC-01-A04-P05 Windows 显式 DocumentVersion 读组合|
+|Decision|仅在现有 `--platform`/`--platform-write` 显式模式装配 Version 读 Router；两个模式都必须从当前 Windows 账户解析独立 `document-version-cursor-v1` 密钥，缺钥或无效时整个模式失败关闭并释放数据库资源。普通登录模式继续 404。|
+|Reason|版本 HTTP 已经完成隔离数据库同链路验证，但正式提供不透明分页前必须绑定目标账户独立密钥；不能复用 Document 列表密钥或回退未签名游标。|
+|Impact|Windows 组合入口、缺钥合同与回归；无 Schema、API 路径/权限或依赖变化。正式发行信任源和目标账户供给仍待 Release 验证。|
+|Rollback|撤下版本 Router 注入并保留原 Document 读组合，已有业务数据不变。|

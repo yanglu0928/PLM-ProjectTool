@@ -13,6 +13,7 @@ from plm_assistant.entrypoints.windows_project_member_cursor import create_windo
 from plm_assistant.entrypoints.windows_project_department_cursor import create_windows_project_department_cursor_codec
 from plm_assistant.entrypoints.windows_document_upload_token import create_windows_document_upload_token_issuer
 from plm_assistant.entrypoints.windows_document_list_cursor import create_windows_document_list_cursor_codec
+from plm_assistant.entrypoints.windows_document_version_cursor import create_windows_document_version_cursor_codec
 from plm_assistant.modules.audit.application.public import AuditService
 from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
 from plm_assistant.modules.auth.api.login import create_login_router
@@ -97,6 +98,7 @@ from plm_assistant.modules.auth.infrastructure.project_write_access import SqlAl
 from plm_assistant.modules.auth.infrastructure.license_import_access import SqlAlchemyLicenseImportAccess
 from plm_assistant.modules.document.api.create_upload import create_document_upload_create_router
 from plm_assistant.modules.document.api.read_documents import create_document_read_router
+from plm_assistant.modules.document.api.read_versions import create_document_version_read_router
 from plm_assistant.modules.document.application.read_documents import DocumentReadService
 from plm_assistant.modules.document.infrastructure.read_repository import SqlAlchemyDocumentReadRepository
 from plm_assistant.modules.document.application.create_upload_intent import CreateUploadIntentService
@@ -223,6 +225,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         document_upload_content_router = None
         document_upload_finalize_router = None
         document_read_router = None
+        document_version_read_router = None
         if include_secret_read:
             from plm_assistant.entrypoints.windows_license_runtime import (
                 create_windows_license_services,
@@ -232,6 +235,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             member_cursors = create_windows_project_member_cursor_codec()
             department_cursors = create_windows_project_department_cursor_codec()
             document_cursors = create_windows_document_list_cursor_codec()
+            version_cursors = create_windows_document_version_cursor_codec()
             document_reads = DocumentReadService(
                 unit_of_work=runtime.unit_of_work,
                 session_access=SqlAlchemyProjectReadAccess(),
@@ -243,6 +247,10 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             document_read_router = create_document_read_router(
                 sessions=sessions, documents=document_reads,
                 origins=origins, cursors=document_cursors,
+            )
+            document_version_read_router = create_document_version_read_router(
+                sessions=sessions, documents=document_reads,
+                origins=origins, cursors=version_cursors,
             )
             metadata = SecretMetadataService(
                 unit_of_work=runtime.unit_of_work,
@@ -536,6 +544,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             document_upload_content_router=document_upload_content_router,
             document_upload_finalize_router=document_upload_finalize_router,
             document_read_router=document_read_router,
+            document_version_read_router=document_version_read_router,
             shutdown_callback=runtime.dispose,
         )
     except Exception:
