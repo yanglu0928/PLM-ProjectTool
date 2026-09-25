@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/DOC-03-A04-A02 增加内部 UploadIntent 创建、独立 HMAC 短时 Token（数据库仅存摘要）、同事务幂等收据与 Audit；项目/Document 归属和状态、过期重放失败关闭。Windows 11 后端 464 项无失败（2 项符号链接跳过）、PostgreSQL 18 临时库合成并发/权限/跨项目/审计回滚/失钥及开发 wheel PASS。无新 Migration/API/依赖；目标库需已有 `0023`，当前无生产密钥/正式 Session 授权或公开上传。Server 2025/Debian 13、Content/Commit/Abort、Parser Job 和最终程序包未完成。
+
 - 2026-09-25：`0.1.0.dev0`/DOC-03-A04-A01 按 CR-DOC-004 增加三步上传的私有 UploadIntent ORM/Migration `20260925_0023`：Scope/Project、创建者、新建/升版意图、短时 Token 摘要、状态/过期、文件与提交结果归属约束、身份不可变和历史删除/降级保护。Windows 11 后端 462 项无失败（2 项符号链接跳过）、PostgreSQL 18 临时库已有数据升级/空表降级再升级/ORM 差异/状态负例及开发 wheel PASS。目标库先备份再升级 head；无公开 API/新依赖。Create/Content/Commit/Abort、Parser Job、正式权限、Server 2025/Debian 13 与最终程序包未完成。
 
 - 2026-09-25：`0.1.0.dev0`/DOC-02-A02-P02 与 DOC-03-A04-A01 前置：非上传来源缺正式 Owner/授权 Port，暂停泛化不可变来源提交；按 CR-DOC-004 登记冻结 API-02 三步上传所需 UploadIntent 独立持久层。当前仅设计/追溯文档变化，尚无 Migration/API/依赖或升级操作；三步上传、Parser Job、Server 2025/Debian 13 与最终程序包未完成。

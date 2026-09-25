@@ -3,18 +3,18 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 2：Platform Core|
-|Current WBS|`DOC-03-A04-A01 UploadIntent 持久层`（ORM/Migration 已验证；三步上传命令/接口未实现）|
-|Current Status|PHASE_1_COMPLETE / DOC_03_A03_P04_P04_PRECONDITION_BLOCKED / DOC_02_A02_P01_INTERNAL_PASS / DOC_02_A02_P02_PRECONDITION_BLOCKED / DOC_03_A04_A01_SCHEMA_PASS / PLT_02_A07_P05_A09_CEREMONY_PENDING / PHASE_2_IN_PROGRESS|
+|Current WBS|`DOC-03-A04-A02 受权 UploadIntent 创建与短时 Token`（内部命令已合成验证；公开上传与生产授权/密钥未接线）|
+|Current Status|PHASE_1_COMPLETE / DOC_03_A03_P04_P04_PRECONDITION_BLOCKED / DOC_02_A02_P01_INTERNAL_PASS / DOC_02_A02_P02_PRECONDITION_BLOCKED / DOC_03_A04_A01_SCHEMA_PASS / DOC_03_A04_A02_INTERNAL_PASS / PLT_02_A07_P05_A09_CEREMONY_PENDING / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
-|Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03、DOC-03-A01、DOC-03-A02（限定范围）、DOC-03-A03-P01～P03（P03 内部合成验证）、DOC-03-A03-P04-P01～P03（内部合成验证）、DOC-03-A04-A01（Schema 验证）、DOC-01-A01、DOC-02-A01、DOC-02-A02-P01（内部合成验证） PASS|
+|Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03、DOC-03-A01、DOC-03-A02（限定范围）、DOC-03-A03-P01～P03（P03 内部合成验证）、DOC-03-A03-P04-P01～P03（内部合成验证）、DOC-03-A04-A01（Schema 验证）、DOC-03-A04-A02（内部合成验证）、DOC-01-A01、DOC-02-A01、DOC-02-A02-P01（内部合成验证） PASS|
 |Blockers|AUT-03-A07 Windows 11 合成端到端已通过，Server 2025 目标运行账户/HTTPS 代理与 Debian 安全凭据来源未验证；PLT-02-A07 显式生产写组合已合成验证，正式发行公钥、目标账户可信时间/游标/Secret 主密钥供给、Server 2025 恢复演练仍待；POC-03 质量失败继续阻塞 Gate 3/UAT，Server Office、Debian 未验证和 Ghostscript 发行合规继续作为 Release 约束|
 |Pending User Decisions|LIC-03-A03 方案 A 已确定；当前无人工决策待办。客户数据外发、付款/额度重置和不可恢复生产操作不在持续授权内|
 |Architecture Version|`ARCH-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，License ADR-006 经用户批准 CR-LIC-001 修订|
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，DM-02 License 授权粒度经用户批准 CR-LIC-001 修订|
 |DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`；Auth 限流增量 `20260925_0012`，PRJ-01～03 正式实现 Migration `20260925_0013`，成员变更历史增量 `20260925_0014`（CR-PRJ-001），通用幂等收据增量 `20260925_0015`（CR-API-001），成员首次响应快照增量 `20260925_0016`（CR-PRJ-002），成员状态首次响应快照增量 `20260925_0017`（CR-PRJ-003），部门创建首次响应快照增量 `20260925_0018`（CR-PRJ-004），部门停用首次响应快照增量 `20260925_0019`（CR-PRJ-005），FileObject 元数据与状态历史增量 `20260925_0020`（CR-DOC-001），Document 逻辑身份增量 `20260925_0021`（CR-DOC-002），DocumentVersion/来源引用增量 `20260925_0022`（CR-DOC-003），UploadIntent 控制 Root 增量 `20260925_0023`（CR-DOC-004）|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
-|Test Summary|DOC-03-A04-A01：Windows 11/Python 3.13 后端 462 项无失败（2 项符号链接场景跳过）；PostgreSQL 18 临时库已有数据升级、空表降级再升级、ORM 差异/状态/归属/历史保护及开发 wheel PASS|
-|Next WBS|DOC-03-A04-A02 受权 UploadIntent 创建与短时 Token；随后流式 Content/Commit/Abort 与 Parser Job/Outbox；DOC-03-A03-P04 正式停写证明和 DOC-02 非上传来源待其 Owner；发行信任源/Server 2025 仍待，Debian 13 暂不验证|
+|Test Summary|DOC-03-A04-A02：Windows 11/Python 3.13 后端 464 项无失败（2 项符号链接场景跳过）；PostgreSQL 18 临时库并发重放、单次审计/收据、Token 摘要、权限/跨项目/回滚/失钥及开发 wheel PASS。仅合成授权/密钥，未开放生产 HTTP|
+|Next WBS|DOC-03-A04-A03 流式 Content 受控暂存与校验前置；随后 Commit/Abort、Parser Job/Outbox 与公开授权装配；DOC-03-A03-P04 正式停写证明和 DOC-02 非上传来源待其 Owner；发行信任源/Server 2025 仍待，Debian 13 暂不验证|
 
 ## 自动执行策略
 

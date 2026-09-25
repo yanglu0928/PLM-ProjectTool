@@ -2495,3 +2495,15 @@
 |Reason|冻结 API-02 要求三步上传及崩溃重试，当前 Schema 没有短时意图、Token 摘要/过期和命令状态的可持久载体。|
 |Impact|后续 Migration `0023`、Document ORM、临时库验证；当前记录本身无运行 Schema/API 变化。|
 |Rollback|空表可降级，非空意图保留并拒绝普通降级，不能清除已创建的版本或文件历史。|
+
+## DEC-20260925-101
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-101|
+|Date|2026-09-25|
+|WBS|DOC-03-A04-A02 受权 UploadIntent 创建与短时 Token|
+|Decision|仅在内部创建入口实现同事务授权、持久幂等、审计和短时 Token；以稳定的独立 256-bit 密钥对 upload_id、actor_id、scope/project 作域分离 HMAC，数据库只保存 Token 的 SHA-256 摘要，重放由相同输入重新派生并比对摘要。过期时间和状态以数据库为准，过期/终止后不再返回 Token。服务不得自行生成或持久化生产密钥，未提供受控密钥来源时不装配。|
+|Reason|随机 Token 不可在不保存明文的条件下恢复首次幂等响应；确定性派生既可重放，也保持数据库泄露时 Token 不可直接使用。|
+|Impact|Document Application/Repository、Token 适配与测试；不改冻结 API、Schema 或现有生产组合。密钥必须在所有未过期 Intent 生命周期内稳定，轮换/失密时失败关闭；目标账户安全供给及 Content/Commit/Abort 另列任务。|
+|Rollback|撤去未装配的内部创建入口即停止创建；已有 Intent 按 TTL 过期，不删除历史。事务失败回滚 Intent/Audit/收据；密钥丢失不能恢复 Token，须让旧 Intent 过期后重新创建。|
