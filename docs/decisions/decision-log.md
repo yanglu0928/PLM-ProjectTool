@@ -2900,3 +2900,15 @@
 |Reason|文件系统和 PostgreSQL 不具分布式事务；持久请求和可重复的单路径步骤允许在任意一步崩溃后保持 `CLEANUP_PENDING`，下次根据真实文件形态恢复，并区分实际删除与缺失对账。|
 |Impact|Document 内部维护 Service、行锁 Repository、只读/清理 Storage 扩展及隔离库/临时文件验证；无 Schema、公开 API、新依赖或正式生产组合。维护身份授权由注入 Access Port 显式承担，生产来源未装配。|
 |Rollback|停止调用内部维护命令；已 `REMOVED` 的合成测试文件不能靠回滚恢复，正式生产调用未授权；Audit/状态历史不删除。|
+
+## DEC-20260926-135
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-135|
+|Date|2026-09-26|
+|WBS|EVD-01-A01 EvidenceLocator 类型化校验|
+|Decision|在冻结的九种 `locator_type` 内提供纯领域校验器：DOCUMENT 无细节；PAGE 页号及可选归一化矩形；TEXT_RANGE 以页或节二选一定位，并持起止偏移与 64 位十六进制规范正文指纹；SECTION 为节路径；PARAGRAPH 为一基序号或稳定锚点；TABLE_CELL 为表锚点、行、列；SHEET_RANGE 为 Sheet 与 A1 起止单元格；SLIDE_SHAPE 为页号与 shape 身份及可选矩形；STRUCTURED_NODE 为 ParseRecord UUID、节点 ID 与非嵌套源定位。只接受各型白名单字段并返回规范副本。|
+|Reason|冻结模型规定类型和最小语义，但未逐字段规定传输形状；先固定可测试的内部 DTO，后续 API/持久层复用同一校验，避免把模型摘要或任意 JSON 当成精确定位。选择不修改原 Gate 2 冻结内容。|
+|Impact|仅 Evidence 领域模块和单元测试；无 Schema、公开 API、外部依赖或生产资格变更。实际解析/重新定位仍需 EVD 后续任务，不以字段校验代替证明。|
+|Rollback|移除未对外装配的领域校验器；若后续 API/存储已引用，须先迁移持久定位器并保留历史固定版本，不可静默重解释。|
