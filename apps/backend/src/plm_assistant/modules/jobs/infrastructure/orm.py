@@ -87,7 +87,12 @@ class OutboxEventRow(Base):
         CheckConstraint("(scope='GLOBAL' AND project_id IS NULL) OR (scope='PROJECT' AND project_id IS NOT NULL)", name="ck_job_outbox_events__scope"),
         CheckConstraint("delivery_state IN ('PENDING','DELIVERING','DELIVERED','RETRY_WAIT','DEAD')", name="ck_job_outbox_events__state"),
         CheckConstraint("attempt_count >= 0", name="ck_job_outbox_events__attempts"),
+        CheckConstraint("max_attempts > 0 AND delivery_token >= 0", name="ck_job_outbox_events__delivery_counters"),
+        CheckConstraint("(delivery_state='DELIVERING' AND delivery_owner IS NOT NULL AND delivery_expires_at IS NOT NULL) OR (delivery_state<>'DELIVERING' AND delivery_owner IS NULL AND delivery_expires_at IS NULL)", name="ck_job_outbox_events__lease_shape"),
+        CheckConstraint("delivery_owner IS NULL OR (char_length(delivery_owner) BETWEEN 1 AND 128 AND delivery_owner=btrim(delivery_owner))", name="ck_job_outbox_events__delivery_owner"),
+        CheckConstraint("last_error_code IS NULL OR char_length(last_error_code) BETWEEN 1 AND 64", name="ck_job_outbox_events__error"),
         Index("ix_job_outbox__claim", "next_attempt_at", "event_id", postgresql_where=text("delivery_state IN ('PENDING','RETRY_WAIT')")),
+        Index("ix_job_outbox__lease_expiry", "delivery_expires_at", "event_id", postgresql_where=text("delivery_state='DELIVERING'")),
     )
     event_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
     event_type: Mapped[str] = mapped_column(Text, nullable=False)
@@ -101,8 +106,14 @@ class OutboxEventRow(Base):
     trace_id: Mapped[str] = mapped_column(Text, nullable=False)
     delivery_state: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'PENDING'"))
     attempt_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
+    max_attempts: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("5"))
+    delivery_token: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+    delivery_owner: Mapped[str | None] = mapped_column(Text)
+    delivery_expires_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True, precision=6))
     next_attempt_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False, server_default=text("statement_timestamp()"))
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False, server_default=text("statement_timestamp()"))
+    delivered_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True, precision=6))
+    last_error_code: Mapped[str | None] = mapped_column(Text)
 
 
 class OutboxConsumptionRow(Base):

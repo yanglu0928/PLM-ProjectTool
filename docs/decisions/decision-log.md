@@ -2662,3 +2662,14 @@
 |Reason|ADR-007 的至少一次与崩溃回收必须阻止旧 Worker 在租约失效后覆盖新结果，单靠内存锁或任务状态不足。|
 |Impact|仅 jobs 内部 Application/Repository 与合成测试；不增加 API、迁移、依赖或外部副作用。|
 |Rollback|停用 Worker 调度并回退内部命令；已产生的 Job/Attempt/Lease 历史保留，不能删除重建 fencing token。|
+## DEC-20260926-115
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-115|
+|Date|2026-09-26|
+|WBS|DOC-03-A04-A04-P03 Outbox 投递/消费去重|
+|Decision|Outbox Owner 使用 `FOR UPDATE SKIP LOCKED` 与数据库时间在短事务领取到期事件；过期 `DELIVERING` 以单调 token 接管。确认投递要求当前 owner/token/未过期，并将目标数据库消费回调、`(event_id, consumer_id)` 去重记录和 DELIVERED 状态放在同一事务；回调不能在事务内进行外部 I/O。失败按有界次数进入 RETRY_WAIT 或 DEAD。|
+|Reason|现有状态字段不能防止崩溃后旧投递者确认；至少一次语义要求目标消费和确认有明确事务边界与幂等键。|
+|Impact|`CR-DOC-007` 的 ORM/迁移增量、jobs 内部 Application/Repository 和隔离 PostgreSQL 测试；无公开 API 或新依赖。|
+|Rollback|停用 Outbox 调度，保留事件与 token 历史；若已有新语义历史，迁移降级失败关闭，不自动抹除。|
