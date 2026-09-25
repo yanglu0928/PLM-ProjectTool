@@ -10,6 +10,9 @@ import os
 import re
 import stat
 import uuid
+import hashlib
+import hmac
+from dataclasses import dataclass
 from pathlib import Path
 from typing import BinaryIO
 
@@ -26,6 +29,13 @@ _REPARSE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
 class LocalStorageError(RuntimeError):
     def __init__(self) -> None:
         super().__init__("local storage unavailable")
+
+
+@dataclass(frozen=True, slots=True)
+class FileContentProof:
+    locator: str
+    sha256: bytes
+    size_bytes: int
 
 
 def _is_reparse(info: os.stat_result) -> bool:
@@ -143,3 +153,62 @@ class LocalFileStorage:
             os.unlink(source)
         except (OSError, NotImplementedError):
             raise LocalStorageError() from None
+
+    def verify_content(self, locator: str, *, expected_sha256: bytes,
+                       expected_size: int, max_bytes: int) -> FileContentProof:
+        if (type(expected_sha256) is not bytes or len(expected_sha256) != 32
+                or type(expected_size) is not int or expected_size < 0
+                or type(max_bytes) is not int or max_bytes < 0
+                or expected_size > max_bytes):
+            raise LocalStorageError()
+        path = self._path(locator)
+        before = _checked_file(path)
+        if before.st_size != expected_size:
+            raise LocalStorageError()
+        flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+        try:
+            descriptor = os.open(path, flags)
+            with os.fdopen(descriptor, "rb") as stream:
+                opened = os.fstat(stream.fileno())
+                if (not stat.S_ISREG(opened.st_mode) or _is_reparse(opened)
+                        or opened.st_nlink != 1
+                        or (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino)):
+                    raise LocalStorageError()
+                digest = hashlib.sha256()
+                total = 0
+                while chunk := stream.read(min(1_048_576, max_bytes - total + 1)):
+                    total += len(chunk)
+                    if total > max_bytes or total > expected_size:
+                        raise LocalStorageError()
+                    digest.update(chunk)
+                after_fd = os.fstat(stream.fileno())
+            after_path = _checked_file(path)
+            if ((after_fd.st_dev, after_fd.st_ino, after_fd.st_size,
+                 after_fd.st_mtime_ns) !=
+                (opened.st_dev, opened.st_ino, opened.st_size, opened.st_mtime_ns)
+                    or (after_path.st_dev, after_path.st_ino, after_path.st_size,
+                        after_path.st_mtime_ns) !=
+                       (opened.st_dev, opened.st_ino, opened.st_size, opened.st_mtime_ns)
+                    or total != expected_size
+                    or not hmac.compare_digest(digest.digest(), expected_sha256)):
+                raise LocalStorageError()
+            return FileContentProof(locator, digest.digest(), total)
+        except OSError:
+            raise LocalStorageError() from None
+
+    def publish_verified(self, staging_locator: str, final_locator: str, *,
+                         expected_sha256: bytes, expected_size: int,
+                         max_bytes: int) -> FileContentProof:
+        if (type(staging_locator) is not str or type(final_locator) is not str
+                or not staging_locator.startswith("temp/")
+                or final_locator != staging_locator.removeprefix("temp/")):
+            raise LocalStorageError()
+        self.verify_content(
+            staging_locator, expected_sha256=expected_sha256,
+            expected_size=expected_size, max_bytes=max_bytes,
+        )
+        self.promote(staging_locator, final_locator)
+        return self.verify_content(
+            final_locator, expected_sha256=expected_sha256,
+            expected_size=expected_size, max_bytes=max_bytes,
+        )

@@ -2399,3 +2399,15 @@
 |Reason|既有 `0021` Document 指针被安全地锁为 NULL，只有版本 Root 和数据库约束完备后才能解除初态限制，不允许自由引用。|
 |Impact|Document ORM/Migration/临时 PostgreSQL 验证；无公开 API/新依赖，不修改原冻结提交。|
 |Rollback|空版本且指针 NULL 可降至 `0021`，有版本时拒绝普通降级并保留历史。|
+
+## DEC-20260925-093
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-093|
+|Date|2026-09-25|
+|WBS|DOC-03-A03-P03 FileObject 内容证明与受控 AVAILABLE 发布|
+|Decision|只在内部已受权 STAGED FileObject 上，按 DB 记录的 UUID Locator/Hash/Size/MIME 校验暂存字节，限额流式 SHA-256 后同卷无覆盖提升，再校验正式文件；随后独立数据库事务行锁重检 STAGED 与版本并原子写 AVAILABLE/状态事件/Audit/幂等收据。|
+|Reason|文件系统与 PostgreSQL 不共享事务；先物理发布后提交数据库可让失败保持业务不可见，残余由恢复器按冻结矩阵处理，不能以调用方传入的布尔值当作文件证明。|
+|Impact|Document 内部 Storage/Application/Repository 与合成文件及隔离 PostgreSQL 验证；无 Migration/公开 API/新依赖。MIME/特征的上传校验、正式 Document 权限装配和崩溃恢复仍为后续任务。|
+|Rollback|服务不挂公开组合根即可停止新发布；已经提升但未提交的文件不盲删，按恢复矩阵核验/隔离清理；已 AVAILABLE 的历史不得回写。|

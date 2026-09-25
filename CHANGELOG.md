@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/DOC-03-A03-P03 增加内部 FileObject 内容证明与受控 `STAGED→AVAILABLE` 发布：按数据库 Hash/Size 有界流式校验、同卷无覆盖提升、最终文件复核，以及状态事件/Audit/幂等收据同事务。Windows 11 后端 456 项无失败（2 项符号链接场景跳过）、PostgreSQL 18 临时库合成文件/权限/跨项目/重放/审计回滚与开发 wheel PASS。无新 Migration/API/依赖；升级仍需已有 `0022`。物理提升与数据库非原子，失败后正式文件留待恢复；正式权限、上传类型验证、公开接口、Server 2025/Debian 13 和最终程序包未完成。
+
 - 2026-09-25：`0.1.0.dev0`/DOC-02-A01 按 CR-DOC-003 增加不可变 DocumentVersion、追加式来源引用和受控 Document latest/effective 指针；数据库守护同 Scope/Project、AVAILABLE 持久 FileObject、Hash/Size/MIME 快照、连续版本/前驱链、有效指针及已发布文件元数据不可改写。Windows 11 后端 453 项无失败（2 项符号链接场景跳过）、PostgreSQL 18 临时库空/已有数据升降级、ORM 差异与负向约束、开发 wheel PASS。新增 Migration `20260925_0022`，目标库须先备份再升级到 head；无公开 API/新依赖。文件系统真实 Hash、授权/上传 Commit/恢复、Server 2025/Debian 13 与最终程序包未完成。
 
 - 2026-09-25：`0.1.0.dev0`/DOC-01-A01 按 CR-DOC-002 新增 Document 逻辑身份持久层：GLOBAL/PROJECT Scope、类别/OTHER 明细、显示元数据、状态/版本及不可变身份；latest/effective 指针在 DOC-02 前保持 NULL。Windows 11 后端 453 项无失败（2 项符号链接场景因账户权限跳过）、PostgreSQL 18 临时库空/已有数据升级、ORM 差异、数据库约束/身份变更拒绝、非空降级保护与开发 wheel PASS。新增 Migration `20260925_0021`，目标库须先备份再升级到 head；无公开 API/新依赖。DocumentVersion、文件发布、正式授权、Server 2025/Debian 13 和最终程序包未完成。

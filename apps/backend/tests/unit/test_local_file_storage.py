@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import hashlib
 import stat
 import tempfile
 import unittest
@@ -43,6 +44,41 @@ class LocalFileStorageTests(unittest.TestCase):
             self.store.promote(stage, final)
         self.assertEqual((self.root / final).read_bytes(), b"synthetic complete content")
         self.assertEqual((self.root / stage).read_bytes(), b"must not overwrite")
+
+    def test_verified_publish_streams_bytes_and_hash(self):
+        stage, final = self.store.locators(
+            scope="GLOBAL", project_id=None, file_object_id=self.file_id,
+        )
+        content = b"synthetic document bytes" * 4096
+        digest = hashlib.sha256(content).digest()
+        with self.store.reserve_staging(stage) as stream:
+            stream.write(content)
+        proof = self.store.publish_verified(
+            stage, final, expected_sha256=digest,
+            expected_size=len(content), max_bytes=len(content),
+        )
+        self.assertEqual((proof.locator, proof.sha256, proof.size_bytes),
+                         (final, digest, len(content)))
+        self.assertFalse((self.root / stage).exists())
+        self.assertEqual((self.root / final).read_bytes(), content)
+
+    def test_bad_hash_size_or_limit_never_promotes(self):
+        stage, final = self.store.locators(
+            scope="PROJECT", project_id=self.project, file_object_id=self.file_id,
+        )
+        with self.store.reserve_staging(stage) as stream:
+            stream.write(b"wrong bytes")
+        for digest, size, limit in (
+            (b"0" * 32, 11, 11),
+            (hashlib.sha256(b"wrong bytes").digest(), 10, 9),
+            (hashlib.sha256(b"wrong bytes").digest(), 10, 8),
+        ):
+            with self.subTest(size=size, limit=limit), self.assertRaises(LocalStorageError):
+                self.store.publish_verified(
+                    stage, final, expected_sha256=digest,
+                    expected_size=size, max_bytes=limit,
+                )
+            self.assertFalse((self.root / final).exists())
 
     def test_global_scope_and_invalid_uuids_rejected(self):
         stage, final = self.store.locators(
