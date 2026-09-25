@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 
 import psycopg
@@ -16,6 +17,7 @@ from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlche
 from plm_assistant.modules.auth.infrastructure.project_member_patch_access import SqlAlchemyProjectMemberPatchAccess
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
+from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
 from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
 from plm_assistant.modules.project.application.change_member_state import (
     ChangeProjectMemberState, ProjectMemberStateError, ProjectMemberStateService,
@@ -71,13 +73,26 @@ def main():
         admin.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(name)))
         try:
             url = URL.create("postgresql+psycopg", username=USER, host=HOST, port=PORT, database=name)
-            command.upgrade(create_migration_config(url), "head")
+            migration = create_migration_config(url)
+            command.upgrade(migration, "20260925_0016")
+            with connect(name) as existing_db:
+                user(existing_db, "Synthetic Existing Before Upgrade")
+            command.upgrade(migration, "head")
+            with connect(name) as upgraded:
+                assert upgraded.execute("SELECT count(*) FROM plm.auth_users").fetchone()[0] == 1
+                assert upgraded.execute("SELECT count(*) FROM plm.prj_member_state_results").fetchone()[0] == 0
+            command.downgrade(migration, "20260925_0016")
+            command.upgrade(migration, "head")
+            command.check(migration)
             with connect(name) as db:
                 manager = user(db, "Synthetic Manager", token1)
                 manager2 = user(db, "Synthetic Manager Two", token2)
                 target = user(db, "Synthetic Target")
                 future = user(db, "Synthetic Future")
                 outsider = user(db, "Synthetic Outsider")
+                replay_target = user(db, "Synthetic Replay Target")
+                concurrent_target = user(db, "Synthetic Concurrent Target")
+                audit_target = user(db, "Synthetic Audit Target")
                 p1 = db.execute("INSERT INTO plm.prj_projects(project_code,project_code_normalized,name,created_by) VALUES ('P1','p1','First',%s) RETURNING project_id", (manager,)).fetchone()[0]
                 p2 = db.execute("INSERT INTO plm.prj_projects(project_code,project_code_normalized,name,created_by) VALUES ('P2','p2','Second',%s) RETURNING project_id", (manager,)).fetchone()[0]
                 d1 = db.execute("INSERT INTO plm.prj_departments(project_id,department_code,department_code_normalized,name) VALUES (%s,'D1','d1','First') RETURNING department_id", (p1,)).fetchone()[0]
@@ -89,6 +104,9 @@ def main():
                 future_time = datetime.now(timezone.utc) + timedelta(days=1)
                 future_member = db.execute("INSERT INTO plm.prj_project_members(project_id,user_id,department_id,project_role,effective_at) VALUES (%s,%s,%s,'CUSTOMER_MEMBER',%s) RETURNING project_member_id", (p1, future, d1, future_time)).fetchone()[0]
                 foreign_member = db.execute("INSERT INTO plm.prj_project_members(project_id,user_id,department_id,project_role) VALUES (%s,%s,%s,'CUSTOMER_MEMBER') RETURNING project_member_id", (p2, outsider, d3)).fetchone()[0]
+                replay_member = db.execute("INSERT INTO plm.prj_project_members(project_id,user_id,department_id,project_role) VALUES (%s,%s,%s,'CUSTOMER_MEMBER') RETURNING project_member_id", (p1, replay_target, d1)).fetchone()[0]
+                concurrent_member = db.execute("INSERT INTO plm.prj_project_members(project_id,user_id,department_id,project_role) VALUES (%s,%s,%s,'CUSTOMER_MEMBER') RETURNING project_member_id", (p1, concurrent_target, d1)).fetchone()[0]
+                audit_member = db.execute("INSERT INTO plm.prj_project_members(project_id,user_id,department_id,project_role) VALUES (%s,%s,%s,'CUSTOMER_MEMBER') RETURNING project_member_id", (p1, audit_target, d1)).fetchone()[0]
             runtime = create_database_runtime(url)
             try:
                 guard = Guard()
@@ -102,6 +120,10 @@ def main():
                     clock=lambda: datetime.now(timezone.utc),
                 )
                 service = ProjectMemberStateService(**kwargs, audit=AuditService(SqlAlchemyAuditRepository()))
+                idempotent = ProjectMemberStateService(
+                    **kwargs, audit=AuditService(SqlAlchemyAuditRepository()),
+                    receipts=SqlAlchemyIdempotencyReceipts(),
+                )
 
                 def action(which, *, member_id=member, version=0, target_token=token1,
                            csrf=CSRF, project=p1, client=service):
@@ -142,6 +164,94 @@ def main():
                 denied("CONFLICT_STATE", lambda: action("resume", version=3))
                 future_removed = action("remove", member_id=future_member)
                 assert future_removed.ended_at == future_removed.effective_at
+                replay_command = ChangeProjectMemberState(
+                    token1, CSRF, uuid.uuid4(), p1, replay_member, 0,
+                )
+                suspended_first = idempotent.suspend_idempotent(
+                    replay_command, idempotency_key="member-suspend-replay-001",
+                )
+                resumed_first = idempotent.resume_idempotent(
+                    ChangeProjectMemberState(token1, CSRF, uuid.uuid4(), p1, replay_member, 1),
+                    idempotency_key="member-resume-replay-001",
+                )
+                removed_first = idempotent.remove_idempotent(
+                    ChangeProjectMemberState(token1, CSRF, uuid.uuid4(), p1, replay_member, 2),
+                    idempotency_key="member-remove-replay-001",
+                )
+                assert (suspended_first.state, resumed_first.state, removed_first.state) == (
+                    "SUSPENDED", "ACTIVE", "REMOVED",
+                )
+                with connect(name) as db:
+                    db.execute("UPDATE plm.auth_users SET username_display='Synthetic Renamed' WHERE user_id=%s", (replay_target,))
+                    db.execute("UPDATE plm.prj_departments SET name='Renamed Department' WHERE department_id=%s", (d1,))
+                assert idempotent.suspend_idempotent(
+                    replay_command, idempotency_key="member-suspend-replay-001",
+                ) == suspended_first
+                assert idempotent.resume_idempotent(
+                    ChangeProjectMemberState(token1, CSRF, uuid.uuid4(), p1, replay_member, 1),
+                    idempotency_key="member-resume-replay-001",
+                ) == resumed_first
+                assert idempotent.remove_idempotent(
+                    ChangeProjectMemberState(token1, CSRF, uuid.uuid4(), p1, replay_member, 2),
+                    idempotency_key="member-remove-replay-001",
+                ) == removed_first
+                assert suspended_first.user_display_name == "Synthetic Replay Target"
+                assert suspended_first.department_name == "First"
+                denied("CONFLICT_IDEMPOTENCY", lambda: idempotent.suspend_idempotent(
+                    ChangeProjectMemberState(token1, CSRF, uuid.uuid4(), p1, replay_member, 1),
+                    idempotency_key="member-suspend-replay-001",
+                ))
+                concurrent_command = ChangeProjectMemberState(
+                    token1, CSRF, uuid.uuid4(), p1, concurrent_member, 0,
+                )
+                with ThreadPoolExecutor(max_workers=2) as pool:
+                    outcomes = list(pool.map(
+                        lambda _: idempotent.suspend_idempotent(
+                            concurrent_command, idempotency_key="member-suspend-concurrent-001",
+                        ), range(2),
+                    ))
+                assert outcomes[0] == outcomes[1]
+                for method, version, key in (
+                    ("resume_idempotent", 1, "member-resume-concurrent-001"),
+                    ("remove_idempotent", 2, "member-remove-concurrent-001"),
+                ):
+                    concurrent_next = ChangeProjectMemberState(
+                        token1, CSRF, uuid.uuid4(), p1, concurrent_member, version,
+                    )
+                    with ThreadPoolExecutor(max_workers=2) as pool:
+                        outcomes = list(pool.map(
+                            lambda _: getattr(idempotent, method)(
+                                concurrent_next, idempotency_key=key,
+                            ), range(2),
+                        ))
+                    assert outcomes[0] == outcomes[1]
+                failed_idempotent = ProjectMemberStateService(
+                    **kwargs, audit=FailedAudit(), receipts=SqlAlchemyIdempotencyReceipts(),
+                )
+                rollback_command = ChangeProjectMemberState(
+                    token1, CSRF, uuid.uuid4(), p1, audit_member, 0,
+                )
+                try:
+                    failed_idempotent.remove_idempotent(
+                        rollback_command, idempotency_key="member-remove-audit-rollback-001",
+                    )
+                except RuntimeError as exc:
+                    assert str(exc) == "synthetic Audit failure"
+                else:
+                    raise AssertionError("idempotent Audit failure bypassed")
+                with connect(name) as db:
+                    assert db.execute("SELECT state,lock_version FROM plm.prj_project_members WHERE project_member_id=%s", (audit_member,)).fetchone() == ("ACTIVE", 0)
+                    assert db.execute("SELECT count(*) FROM plm.plt_idempotency_receipts WHERE operation='V1_PROJECT_MEMBER_REMOVE' AND key_digest=%s", (hashlib.sha256(b"member-remove-audit-rollback-001").digest(),)).fetchone()[0] == 0
+                    assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s", (replay_member,)).fetchone()[0] == 3
+                    assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s", (concurrent_member,)).fetchone()[0] == 3
+                    assert db.execute("SELECT count(*) FROM plm.prj_member_state_results WHERE member_id=%s", (replay_member,)).fetchone()[0] == 3
+                    assert db.execute("SELECT count(*) FROM plm.prj_member_state_results WHERE member_id=%s", (concurrent_member,)).fetchone()[0] == 3
+                    try:
+                        db.execute("UPDATE plm.prj_member_state_results SET state='ACTIVE' WHERE member_id=%s", (replay_member,))
+                    except psycopg.errors.RaiseException:
+                        pass
+                    else:
+                        raise AssertionError("state snapshot unexpectedly mutable")
                 # One manager can leave while another remains; the last one cannot.
                 first_manager = action("suspend", member_id=pm2)
                 assert first_manager.state == "SUSPENDED"
@@ -157,6 +267,16 @@ def main():
                 with connect(name) as db:
                     db.execute("UPDATE plm.prj_projects SET state='ARCHIVED' WHERE project_id=%s", (p1,))
                 denied("PROJECT_ARCHIVED", lambda: action("remove", member_id=pm2, version=1))
+                assert idempotent.remove_idempotent(
+                    ChangeProjectMemberState(token1, CSRF, uuid.uuid4(), p1, replay_member, 2),
+                    idempotency_key="member-remove-replay-001",
+                ) == removed_first
+                try:
+                    command.downgrade(migration, "20260925_0016")
+                except RuntimeError as exc:
+                    assert "member state results exist" in str(exc)
+                else:
+                    raise AssertionError("nonempty state result downgrade should fail")
                 with connect(name) as db:
                     actions = db.execute("SELECT action,before_state,after_state FROM plm.aud_events WHERE target_object_id=%s ORDER BY occurred_at,audit_event_id", (member,)).fetchall()
                     assert actions == [
@@ -164,7 +284,7 @@ def main():
                         ("PROJECT_MEMBER_RESUMED", "SUSPENDED", "ACTIVE"),
                         ("PROJECT_MEMBER_REMOVED", "ACTIVE", "REMOVED"),
                     ], actions
-                print("PASS: ACTIVE/SUSPENDED removal and no resurrection, version/CSRF/License/scope, sole-manager and inactive-department guards, future removal, Audit rollback and archive")
+                print("PASS: empty/existing-data migration, 3 state replay snapshots after changes/archive, concurrent one-write, conflicts, rollback and downgrade guard")
             finally:
                 runtime.dispose()
         finally:

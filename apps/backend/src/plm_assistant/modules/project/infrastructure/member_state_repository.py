@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import func, select, update
+from sqlalchemy import func, insert, select, update
 from sqlalchemy.orm import Session
 
 from plm_assistant.modules.project.application.change_member_state import ProjectMemberStateError
-from plm_assistant.modules.project.application.read_members import MemberFacts
-from plm_assistant.modules.project.infrastructure.orm import DepartmentRow, ProjectMemberRow
+from plm_assistant.modules.project.application.read_members import MemberFacts, ProjectMemberView
+from plm_assistant.modules.project.infrastructure.orm import (
+    DepartmentRow, ProjectMemberRow, ProjectMemberStateResultRow,
+)
 
 
 _TRANSITIONS = {
@@ -20,6 +22,35 @@ _TRANSITIONS = {
 
 
 class SqlAlchemyProjectMemberStateRepository:
+    def save_state_result(self, transaction: object, *, result_id: uuid.UUID,
+                          project_id: uuid.UUID, operation: str,
+                          view: ProjectMemberView, version: int) -> None:
+        transaction.session.execute(insert(ProjectMemberStateResultRow).values(
+            result_id=result_id, project_id=project_id, member_id=view.member_id,
+            operation=operation, user_id=view.user_id,
+            user_display_name=view.user_display_name, role=view.role,
+            department_id=view.department_id, department_name=view.department_name,
+            state=view.state, effective_at=view.effective_at,
+            ended_at=view.ended_at, lock_version=version,
+        ))
+
+    def get_state_result(self, transaction: object, *, result_id: uuid.UUID,
+                         project_id: uuid.UUID, member_id: uuid.UUID,
+                         operation: str) -> ProjectMemberView | None:
+        row = transaction.session.execute(select(ProjectMemberStateResultRow).where(
+            ProjectMemberStateResultRow.result_id == result_id,
+            ProjectMemberStateResultRow.project_id == project_id,
+            ProjectMemberStateResultRow.member_id == member_id,
+            ProjectMemberStateResultRow.operation == operation,
+        )).scalar_one_or_none()
+        if row is None:
+            return None
+        return ProjectMemberView(
+            row.member_id, row.user_id, row.user_display_name, row.role,
+            row.department_id, row.department_name, row.state,
+            row.effective_at, row.ended_at, f'"v{row.lock_version}"',
+        )
+
     def change(self, transaction: object, *, project_id: uuid.UUID, member_id: uuid.UUID,
                expected_version: int, operation: str) -> tuple[MemberFacts, str]:
         session = transaction.session  # type: ignore[attr-defined]

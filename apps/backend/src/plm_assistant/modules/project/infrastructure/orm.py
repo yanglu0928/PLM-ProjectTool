@@ -120,6 +120,39 @@ class ProjectMemberCreateResultRow(Base):
     effective_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False)
 
 
+class ProjectMemberStateResultRow(Base):
+    """Immutable first-success MemberView for each state-command receipt."""
+
+    __tablename__ = "prj_member_state_results"
+    __table_args__ = (
+        ForeignKeyConstraint(["member_id", "project_id"],
+                             ["plm.prj_project_members.project_member_id", "plm.prj_project_members.project_id"],
+                             name="fk_prj_member_state_results__member_project", ondelete="NO ACTION"),
+        CheckConstraint("operation IN ('SUSPEND','RESUME','REMOVE')", name="ck_prj_member_state_results__operation"),
+        CheckConstraint("role IN ('PROJECT_MANAGER','IMPLEMENTATION_MEMBER','CUSTOMER_MANAGER','CUSTOMER_MEMBER')", name="ck_prj_member_state_results__role"),
+        CheckConstraint("(operation = 'SUSPEND' AND state = 'SUSPENDED') OR (operation = 'RESUME' AND state = 'ACTIVE') OR (operation = 'REMOVE' AND state = 'REMOVED')", name="ck_prj_member_state_results__state"),
+        CheckConstraint("(state = 'REMOVED' AND ended_at IS NOT NULL) OR (state <> 'REMOVED' AND ended_at IS NULL)", name="ck_prj_member_state_results__ended_shape"),
+        CheckConstraint("ended_at IS NULL OR ended_at >= effective_at", name="ck_prj_member_state_results__time"),
+        CheckConstraint("lock_version > 0", name="ck_prj_member_state_results__version"),
+        CheckConstraint("char_length(user_display_name) BETWEEN 1 AND 255", name="ck_prj_member_state_results__user_name"),
+        CheckConstraint("char_length(department_name) BETWEEN 1 AND 255", name="ck_prj_member_state_results__department_name"),
+    )
+
+    result_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    member_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    operation: Mapped[str] = mapped_column(Text, nullable=False)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    user_display_name: Mapped[str] = mapped_column(Text, nullable=False)
+    role: Mapped[str] = mapped_column(Text, nullable=False)
+    department_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    department_name: Mapped[str] = mapped_column(Text, nullable=False)
+    state: Mapped[str] = mapped_column(Text, nullable=False)
+    effective_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False)
+    ended_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True, precision=6))
+    lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+
+
 class ProjectMemberAssignmentHistoryRow(Base):
     __tablename__ = "prj_member_assignment_history"
     __table_args__ = (

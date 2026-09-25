@@ -120,3 +120,16 @@ class ProjectAuthorizationService:
         if (type(facts) is not ProjectActorFacts or facts.project_role != "PROJECT_MANAGER"
                 or facts.project_state not in ("ACTIVE", "ARCHIVED")):
             raise ProjectAuthorizationError("RESOURCE_NOT_FOUND")
+
+    def require_member_state_replay_in_transaction(self, transaction: object, *,
+                                                   user_id: uuid.UUID, project_id: uuid.UUID,
+                                                   member_id: uuid.UUID) -> None:
+        """Check current manager and member ownership without repeating a completed write."""
+        self.require_archive_replay_in_transaction(
+            transaction, user_id=user_id, project_id=project_id,
+        )
+        if (type(member_id) is not uuid.UUID or member_id.int == 0
+                or self._repository.owner_project_id(
+                    transaction, target="MEMBER", resource_id=member_id,
+                ) != project_id):
+            raise ProjectAuthorizationError("RESOURCE_NOT_FOUND")

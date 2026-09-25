@@ -2147,3 +2147,15 @@
 |Reason|成员更新不能经独立路线绕过生产信任源或现行成员授权；公开前置与既有 Project 路由保持一致。|
 |Impact|Windows 组合根、契约与临时 PostgreSQL 组合验证；无新 Schema/Migration、冻结 API 或依赖。|
 |Rollback|移除 Router 注入恢复成员 PATCH 404；已提交的角色/部门历史保持不变。|
+
+## DEC-20260925-072
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-072|
+|Date|2026-09-25|
+|WBS|PRJ-04-A12-P01 成员状态命令持久幂等前置|
+|Decision|依 CR-PRJ-003 以 Project-owned 不可变类型化快照保存 SUSPEND/RESUME/REMOVE 首次 MemberView；通用收据仅保存引用，三个操作分别作用域化，重放重新检查当前 Session/CSRF、License、ProjectManager 与目标归属。|
+|Reason|状态、角色、显示名和版本会继续变化；现有内部命令重复执行会触发版本/状态冲突，当前成员行不能履行冻结 API-01 的原语义重放。|
+|Impact|Migration `20260925_0017`、ORM、内部服务/授权查询及测试；不开放 HTTP，不改变冻结状态机。|
+|Rollback|新表为空可降至 `0016`；已有快照时拒绝降级并保留幂等证据。|
