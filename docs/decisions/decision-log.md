@@ -1715,3 +1715,15 @@
 |Reason|仅依赖当前账户 Vault 会在账户/主机丢失时造成历史 Secret 密文永久不可读。独立加密备份允许受控异账户恢复，同时避免应用自动获取恢复口令；旧 Vault 条目必须避免误覆盖。|
 |Impact|新增 Platform 密钥生命周期和本机运维入口；不改变冻结 API、数据模型、算法中的 Secret 密文格式或目标平台。备份口令及文件由部署人员分开离线保管，不能自动恢复。Windows 11 合成验证后仍须 Server 2025 目标账户/恢复验证，Debian 13 暂不验证。|
 |Rollback|停止使用运维入口，保留原 Vault 条目及已生成的加密备份供人工保管；不删除真实主密钥、密文或审计。错误供给和恢复不能覆盖既有条目。|
+
+## DEC-20260925-036
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-036|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P03-A01 Windows 选定 MAC 本机匹配来源|
+|Decision|Bootstrap 仅可包含一个显式选定、非秘密的 MAC；License 的 Windows SelectedMachine Port 在每次验证时以 Windows IP Helper 的 GetAdaptersAddresses 读取本机网卡，只有选定 MAC 规范化后与本机某个 6 字节网卡地址匹配才返回。缺配置、枚举失败、虚构地址和格式异常一律失败关闭，不回退到 `uuid.getnode()` 或配置自证。|
+|Reason|现有 LicenseService 只对 Port 返回值作 SHA-256；若 Port 直接透传配置，复制配置即可使不同机器声称相同指纹。现场显式选择仍符合 ADR-006，但必须与当前机器事实绑定。|
+|Impact|增加 Windows License 基础设施与非敏感 Bootstrap 字段；不改变七字段签名载荷、MAC 规范化/哈希算法、Schema 或公开 API。MAC 可由虚拟网卡提供，不能抵御有系统级控制权的伪造；Server 2025 和 Debian 13 仍须分别验证/实现。|
+|Rollback|不装配该 Port 时公开受许可业务保持关闭；不修改已有 License 文档、可信时间或数据库数据。|

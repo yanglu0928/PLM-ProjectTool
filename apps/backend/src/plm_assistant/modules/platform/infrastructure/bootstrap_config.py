@@ -45,6 +45,7 @@ class BootstrapSettings(BaseSettings):
     data_root: Path
     log_level: LogLevel = LogLevel.INFO
     trusted_origins: tuple[str, ...] = ()
+    selected_mac: str | None = None
 
     @field_validator("bind_host")
     @classmethod
@@ -66,6 +67,14 @@ class BootstrapSettings(BaseSettings):
         # the login router is assembled. Bootstrap only accepts bounded input.
         if len(value) > 16 or any(not origin or len(origin) > 256 for origin in value):
             raise ValueError("invalid trusted origin configuration")
+        return value
+
+    @field_validator("selected_mac")
+    @classmethod
+    def validate_selected_mac(cls, value: str | None) -> str | None:
+        # Non-secret operator choice. The License adapter verifies local presence.
+        if value is not None and (not value.strip() or len(value) > 32):
+            raise ValueError("invalid selected MAC configuration")
         return value
 
     @classmethod

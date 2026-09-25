@@ -34,6 +34,27 @@ class BootstrapConfigTests(unittest.TestCase):
         self.assertEqual(settings.data_root, self.root)
         self.assertEqual(settings.log_level, LogLevel.INFO)
         self.assertEqual(settings.trusted_origins, ())
+        self.assertIsNone(settings.selected_mac)
+
+    def test_selected_mac_is_explicit_nonsecret_setting(self) -> None:
+        self.yaml_file.write_text(
+            f'data_root: "{self.root.as_posix()}"\n'
+            'selected_mac: "02:11:22:33:44:55"\n',
+            encoding="utf-8",
+        )
+        with patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(load_bootstrap_settings(self.yaml_file).selected_mac,
+                             "02:11:22:33:44:55")
+        with patch.dict(os.environ, {"PLM_SELECTED_MAC": "02-11-22-33-44-55"}, clear=True):
+            self.assertEqual(load_bootstrap_settings(self.yaml_file).selected_mac,
+                             "02-11-22-33-44-55")
+        self.yaml_file.write_text(
+            f'data_root: "{self.root.as_posix()}"\nselected_mac: "{"x" * 40}"\n',
+            encoding="utf-8",
+        )
+        with patch.dict(os.environ, {}, clear=True):
+            with self.assertRaises(BootstrapConfigurationError):
+                load_bootstrap_settings(self.yaml_file)
 
     def test_explicit_trusted_origins_and_environment_override(self) -> None:
         self.yaml_file.write_text(
