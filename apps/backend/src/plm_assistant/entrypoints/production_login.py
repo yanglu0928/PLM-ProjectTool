@@ -47,6 +47,10 @@ from plm_assistant.modules.platform.infrastructure.windows_database_credential i
     DEFAULT_TARGET,
     read_database_url,
 )
+from plm_assistant.modules.project.api.read_projects import create_project_read_router
+from plm_assistant.modules.project.application.read_projects import ProjectReadService
+from plm_assistant.modules.project.infrastructure.read_repository import SqlAlchemyProjectReadRepository
+from plm_assistant.modules.auth.infrastructure.project_read_access import SqlAlchemyProjectReadAccess
 from plm_assistant.modules.project.infrastructure.authorized_projects import SqlAlchemyAuthorizedProjects
 
 
@@ -141,6 +145,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         secret_create_router = None
         secret_rotate_router = None
         secret_disable_router = None
+        project_read_router = None
         if include_secret_read:
             from plm_assistant.entrypoints.windows_license_runtime import (
                 create_windows_license_services,
@@ -158,6 +163,15 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             )
             secret_list_router = create_secret_metadata_list_router(
                 sessions=sessions, metadata=metadata, origins=origins, cursors=cursors,
+            )
+            project_reads = ProjectReadService(
+                unit_of_work=runtime.unit_of_work,
+                access=SqlAlchemyProjectReadAccess(),
+                license_guard=licenses.guard,
+                repository=SqlAlchemyProjectReadRepository(),
+            )
+            project_read_router = create_project_read_router(
+                sessions=sessions, projects=project_reads, origins=origins,
             )
             if include_secret_write:
                 from plm_assistant.entrypoints.windows_secret_write import (
@@ -186,6 +200,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             secret_create_router=secret_create_router,
             secret_rotate_router=secret_rotate_router,
             secret_disable_router=secret_disable_router,
+            project_read_router=project_read_router,
             shutdown_callback=runtime.dispose,
         )
     except Exception:

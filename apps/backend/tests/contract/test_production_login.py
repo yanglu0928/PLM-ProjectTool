@@ -76,6 +76,7 @@ class ProductionLoginTests(unittest.TestCase):
             app = create_production_login_app(self.settings(("http://localhost",)))
         with TestClient(create_app(), base_url="http://localhost") as bare:
             self.assertEqual(bare.post("/api/v1/auth/login").status_code, 404)
+            self.assertEqual(bare.get("/api/v1/projects").status_code, 404)
         with TestClient(app, base_url="http://localhost") as client:
             self.assertEqual(client.get("/health/ready").status_code, 200)
             response = client.post("/api/v1/auth/login", headers={"origin": "http://evil.test"},
@@ -155,6 +156,7 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(client.get("/api/v1/admin/secrets").status_code, 401)
             self.assertEqual(client.get("/api/v1/admin/secrets/" + "1" * 36).status_code, 422)
             self.assertEqual(client.post("/api/v1/admin/secrets").status_code, 405)
+            self.assertEqual(client.get("/api/v1/projects").status_code, 401)
             self.assertEqual(client.get("/health/ready").status_code, 200)
         runtime.dispose.assert_called_once()
 
@@ -215,6 +217,7 @@ class ProductionLoginTests(unittest.TestCase):
         write_factory.assert_called_once()
         with TestClient(app, base_url="http://localhost") as client:
             self.assertEqual(client.post("/api/v1/admin/secrets").status_code, 403)
+            self.assertEqual(client.get("/api/v1/projects").status_code, 401)
             self.assertEqual(client.post(
                 "/api/v1/admin/secrets/00000000-0000-0000-0000-000000000001:rotate"
             ).status_code, 403)

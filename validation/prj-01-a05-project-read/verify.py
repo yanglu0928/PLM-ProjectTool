@@ -5,6 +5,9 @@ from __future__ import annotations
 import hashlib
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 import psycopg
 from alembic import command
@@ -13,11 +16,14 @@ from psycopg import sql
 from sqlalchemy.engine import URL
 
 from plm_assistant.entrypoints.api import create_app
+from plm_assistant.entrypoints.production_login import create_production_platform_app
 from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
 from plm_assistant.modules.auth.application.session_service import SessionError
 from plm_assistant.modules.auth.infrastructure.project_read_access import SqlAlchemyProjectReadAccess
 from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
+from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
+from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
 from plm_assistant.modules.project.application.read_projects import (
     ProjectReadError, ProjectReadQuery, ProjectReadService,
@@ -126,6 +132,28 @@ def main():
                     assert denied_response.status_code == 403
                     assert denied_response.json()["error"]["code"] == "LICENSE_OPERATION_DENIED"
                     guard.enabled = True
+                settings = BootstrapSettings(
+                    data_root=Path.cwd(), trusted_origins=("http://localhost",),
+                )
+                with patch("plm_assistant.entrypoints.production_login.read_database_url",
+                           return_value=url), patch(
+                           "plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services",
+                           return_value=SimpleNamespace(guard=guard)), patch(
+                           "plm_assistant.entrypoints.production_login.create_windows_secret_list_cursor_codec",
+                           return_value=SecretListCursorCodec(b"q" * 32)):
+                    production = create_production_platform_app(settings)
+                    with TestClient(production, base_url="http://localhost") as client:
+                        member_headers = {"cookie": "plm_session=" + member_token.hex()}
+                        own = client.get("/api/v1/projects", headers=member_headers)
+                        cross = client.get(f"/api/v1/projects/{p2}", headers=member_headers)
+                        detail = client.get(f"/api/v1/projects/{p1}", headers=member_headers)
+                        assert own.status_code == 200 and cross.status_code == 404
+                        assert detail.status_code == 200 and detail.headers["etag"] == '"v0"'
+                        assert [item["project_id"] for item in own.json()["data"]["items"]] == [str(p1)]
+                        guard.enabled = False
+                        denied_response = client.get("/api/v1/projects", headers=member_headers)
+                        assert denied_response.status_code == 403
+                        guard.enabled = True
                 with connect(name) as db:
                     db.execute("UPDATE plm.prj_projects SET state='ARCHIVED',lock_version=lock_version+1 WHERE project_id=%s", (p1,))
                 view = service.get(q_member, p1)
@@ -157,7 +185,7 @@ def main():
                         "cookie": "plm_session=" + member_token.hex(),
                     })
                     assert revoked.status_code == 401
-                print("PASS: current Session/License, isolated internal/HTTP list/detail, archived read, membership/department revocation, ETag")
+                print("PASS: current Session/License, isolated optional/Windows platform HTTP list/detail, archived read, membership/department revocation, ETag")
             finally:
                 runtime.dispose()
         finally:

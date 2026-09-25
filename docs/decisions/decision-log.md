@@ -1931,3 +1931,15 @@
 |Reason|内部读取与单有效成员 Schema 已验证，但无前端可用的冻结 Project GET API；显式边界可先验证权限隔离，同时不绕过尚缺的正式发行信任源。|
 |Impact|新增 Project HTTP、错误分类、契约/临时库测试；无 Schema/Migration 或冻结路径变化。若未来允许多项目成员，必须另行实现完整性保护 keyset cursor，不得沿用无游标假设。|
 |Rollback|不注入 Router 即恢复 404；无数据迁移或 Project 数据改写。|
+
+## DEC-20260925-054
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-054|
+|Date|2026-09-25|
+|WBS|PRJ-04-A02 Windows 显式平台 Project 读取组合|
+|Decision|仅在 `--platform` 与 `--platform-write` 已完成 Schema、License 信任链和游标签名密钥装配后，使用现行 SessionService、LicenseRuntimeGuard、Auth Session 读 Port 与 Project SQL 读仓库挂载 `PROJECT_LIST`/`PROJECT_GET`。默认登录模式及未供齐信任源时保持不可访问。|
+|Reason|Project 可选 HTTP 与内部授权读取已通过，但还缺正式组合入口；复用现有安全前置避免创建第二套 Session 或 License 判定。|
+|Impact|只改 Windows 组合根与合成/临时库验证，不变更 Schema、冻结 API、Project 数据或普通启动行为；真实目标账户/发行材料与 Server 2025 仍待验收。|
+|Rollback|改用默认登录模式，Project 路由继续 404；无数据迁移。|
