@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/CR-DOC-008/A01 新增上传操作跨进程本地 OS 栅栏适配（固定 256 锁桶，私有数据根，异常/崩溃释放）；Windows 11 后端 546 项无失败（2 项环境跳过），跨进程争用/崩溃和开发 wheel PASS。无 Migration/公开 API/新依赖。尚未接入上传命令，物理清理保持关闭。
+
 - 2026-09-26：`0.1.0.dev0`/DOC-01-A05-P06 Windows 官方启动入口显式单工作进程，并补充下载发送端断线模拟；异常后文件与并发名额释放 PASS。Windows 11 后端 541 项无失败（2 项环境跳过），开发 wheel PASS。单入口下载快照理论上限 400 MB；真实网络断线压测、多实例及现场磁盘余量仍待 Release 验证。无 Migration/新依赖/API 变更。
 
 - 2026-09-26：`0.1.0.dev0`/DOC-01-A05-P05 将受权 DocumentVersion 内容 GET 接入 Windows `--platform`/`--platform-write` 显式组合；默认/仅登录模式继续 404，存储根目录校验失败时整平台拒绝启动。Windows 11 后端 540 项无失败（2 项环境跳过），组合合同及开发 wheel PASS。无 Migration、新依赖或 API Breaking Change；正式账户信任源、主动断线与多进程磁盘预算及 Server 2025 仍待验证。
