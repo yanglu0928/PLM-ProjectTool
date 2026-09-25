@@ -3008,3 +3008,15 @@
 |Reason|不扩大默认入口，避免仅合成 Router 被误用为生产可用；沿用 Document 读服务权限链及平台统一信任源要求。|
 |Impact|Windows 组合与其测试；无 Schema、新依赖或冻结 API 变化。目标账户正式密钥与发行 License 信任锚仍由 Release 关闭。|
 |Rollback|移除显式组合的 Router 注入即可恢复 404；不影响已有数据。|
+
+## DEC-20260926-144
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-144|
+|Date|2026-09-26|
+|WBS|TRC-01-A01 TraceLink 版本引用与边形状|
+|Decision|为 Trace 域建立冻结 SC-02 允许的具体 `(owner_module, object_type)` 白名单和固定 `object_id/version_id`、Scope/Project 值对象；边校验拒绝自环、PROJECT→GLOBAL、跨 PROJECT，并仅允许 GLOBAL→PROJECT 的 `DERIVED_FROM`/`REFERENCES_CAPABILITY`。关系只采用 DM-03 七种类型。输出标准化不可变值对象，不在该步骤判断目标存在性、正式状态、授权或图无环。|
+|Reason|多态目标不能用通用 FK；应用层必须先限定类型和方向，但不能以形状合格替代 Owner Port 证明。参考对象、模板及未来业务版本仅可在后续受控写入时被验证。|
+|Impact|新增 Trace 纯领域校验与单元测试；无 Schema、公开 API、数据外发或外部依赖。后续 Schema/TraceService 仍需目标 Owner Port、审计、持久幂等、无环和逐节点权限。|
+|Rollback|停止调用尚未接生产的值对象工厂；不影响历史数据或冻结基线。|

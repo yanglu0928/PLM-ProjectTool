@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/TRC-01-A01 新增 TraceLink 固定版本引用与边形状纯领域校验，限制目标类型、Scope/Project、跨域方向、关系种类与自环。Windows 11 后端 587 项无失败（2 项环境跳过），开发 wheel PASS。无 Migration/API/新依赖；目标存在性、授权、图无环、持久历史和 Audit 尚未实现，TraceService 不可开放。
+
 - 2026-09-26：`0.1.0.dev0`/DOC-04-A05 在 Windows 显式 `--platform`/`--platform-write` 组合挂载 Parse 列表，独立游标密钥缺失时失败关闭；默认模式仍 404。Windows 11 后端 582 项无失败（2 项环境跳过），隔离 PostgreSQL 18.6 真实 Session/Project/HTTP 双页、越权/License 拒绝及开发 wheel PASS。无 Migration/新依赖/冻结 API 变更；正式部署信任锚、Parser/OCR、结果文件完整性与 Server 2025 未验。
 
 - 2026-09-26：`0.1.0.dev0`/DOC-04-A04 新增 Windows 当前账户独立 `document-parse-cursor-v1` 密钥只读装配，缺失/无效失败关闭；临时引用已验证失密、加密备份恢复后旧游标仍有效并清理测试凭据。Windows 11 后端 581 项无失败（2 项环境跳过），开发 wheel PASS。无 Migration/公开 API/新依赖；正式部署账户密钥未供给，平台组合未挂载。
