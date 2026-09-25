@@ -2327,3 +2327,15 @@
 |Reason|复用当前 Session、ProjectManager、License、Audit、强版本与同事务持久幂等，不新增无保护入口。|
 |Impact|Windows 平台组合与契约/隔离 PostgreSQL 验证；无新 Schema/Migration/依赖或 Breaking API。|
 |Rollback|移除平台 Router 注入恢复 404；已停用部门、审计与快照保留。|
+
+## DEC-20260925-087
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-087|
+|Date|2026-09-25|
+|WBS|DOC-03-A01 FileObject 持久层|
+|Decision|按 CR-DOC-001 为 FileObject 建独立 M-SCP Root 及追加式状态事件表；Locator 只保存受控相对值，内容字节不入库。|
+|Reason|DocumentVersion 和上传恢复必须建立在 Scope/Project、Hash/Size/MIME 与状态历史可约束的元数据上；数据库表不能替代 Storage Adapter。|
+|Impact|Migration `20260925_0020`、Document ORM、Alembic 注册、约束与验证；无公开 API、文件写入或新增依赖。|
+|Rollback|空表可降至 `0019`；已有 FileObject/事件时拒绝普通降级。|

@@ -26,6 +26,7 @@ from plm_assistant.modules.license.infrastructure import installation_orm  # noq
 from plm_assistant.modules.license.infrastructure import validation_orm  # noqa: F401 - register LIC-02 tables
 from plm_assistant.modules.license.infrastructure import trusted_time_orm  # noqa: F401 - register LIC-03 tables
 from plm_assistant.modules.project.infrastructure import orm as project_orm  # noqa: F401 - register PRJ-01/02/03 tables
+from plm_assistant.modules.document.infrastructure import orm as document_orm  # noqa: F401 - register DOC-03 tables
 
 
 config = context.config

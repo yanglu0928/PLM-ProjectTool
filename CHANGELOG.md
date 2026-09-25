@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/DOC-03-A01 按 CR-DOC-001 增加 FileObject 元数据及追加式状态事件持久层，显式 GLOBAL/PROJECT Scope、受控相对 Locator 基础约束、Hash/Size/MIME 和降级保护；文件正文不入库。Windows 11 后端 441/441、PostgreSQL 18 临时库空/已有数据升降级、ORM 差异、Scope/Locator/Hash/状态/历史约束及开发 wheel PASS。新增 Migration `20260925_0020`；目标库升级前备份并执行至 head。Storage Adapter/上传/下载、正式信任源、Server 2025/Debian 13 与最终程序包未完成。
+
 - 2026-09-25：`0.1.0.dev0`/PRJ-04-A16-P03 在 Windows 显式 `--platform`/`--platform-write` 组合接入 Department 停用，复用当前 Session、ProjectManager、License、Audit、强版本及同事务幂等；默认登录模式仍 404。Windows 11 后端 441/441、PostgreSQL 18 临时库两种组合真实 Session/同 Key 重放/权限/合成 License 与缺信任源失败关闭、开发 wheel PASS。无新 Migration/依赖，目标库需 `0019`；正式目标账户材料、Server 2025/Debian 13 与最终程序包未完成。
 
 - 2026-09-25：`0.1.0.dev0`/PRJ-04-A16-P02 新增可选 Department 停用 POST，使用可信 Origin、当前 Session/CSRF、强 If-Match、Idempotency-Key 与同事务首次结果快照；200 返回安全 DepartmentView/ETag。Windows 11 后端 441/441、PostgreSQL 18 临时库真实 Session 首次/重放仅一次停用/Audit、成员在用/版本/权限/合成 License 拒绝及开发 wheel PASS。无新 Migration/依赖，目标库需 `0019`；默认与当前 Windows 平台仍 404，正式信任源、Server 2025/Debian 13 与最终程序包未完成。
