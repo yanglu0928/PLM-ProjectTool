@@ -28,6 +28,7 @@ description: Execute architecture, PoC, implementation, testing, packaging, and 
 - PLT-02-A07-P04-A02 已增加可选 Secret 列表 GET 的 HMAC 完整性游标与真实 PostgreSQL keyset 验证；默认应用仍不挂载，游标签名密钥的目标账户来源/恢复、正式 License 信任锚及写 API 未完成。最新状态以根目录 `STATUS.md` 为准。
 - PLT-02-A07-P04-A03 已完成 Windows 当前账户 Vault 独立游标签名密钥来源与临时凭据加密备份恢复验证；目标账户正式供给/Server 2025、生产只读组合和写 API 未完成。最新状态以根目录 `STATUS.md` 为准。
 - PLT-02-A07-P04-A04 已新增 Windows 显式 `--platform` 只读组合并验证缺信任源失败关闭；仅合成组合 PASS，正式公钥/目标账户密钥未供给，写 API 与 Gate 3 未完成。最新状态以根目录 `STATUS.md` 为准。
+- PLT-02-A07-P05-A01 已将内部 Secret 轮换并发条件与记录强 ETag `lock_version` 对齐，PostgreSQL 版本分离/并发验证通过；公开写 HTTP 的 If-Match/持久幂等、正式信任源与 Gate 3 未完成。最新状态以根目录 `STATUS.md` 为准。
 
 ## 参考文件路由
 

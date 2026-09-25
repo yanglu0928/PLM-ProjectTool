@@ -33,7 +33,8 @@ class Deps:
     def __init__(self):
         self.actor = uuid.uuid4()
         self.guard_ok = True
-        self.current = (SecretPurpose.AI_PROVIDER_KEY, SecretConsumer.AI_PROVIDER_ADAPTER)
+        self.current = (SecretPurpose.AI_PROVIDER_KEY, SecretConsumer.AI_PROVIDER_ADAPTER, 1)
+        self.lock_version = 1
         self.commits = 0
         self.writes = 0
         self.encryptions = 0
@@ -58,10 +59,12 @@ class Deps:
         self.writes += 1
         return uuid.uuid4()
 
-    def lock_current(self, tx, **_):
-        return self.current
+    def lock_current(self, tx, **kwargs):
+        return self.current if kwargs["expected_lock_version"] == self.lock_version else None
 
     def rotate(self, tx, **kwargs):
+        assert kwargs["expected_lock_version"] == self.lock_version
+        assert kwargs["expected_version_no"] == self.current[2]
         self.writes += 1
         return uuid.uuid4()
 
@@ -97,7 +100,7 @@ class SecretWriteTests(unittest.TestCase):
 
     def rotate_command(self, **changes):
         args = dict(session_token=b"s" * 32, csrf_token=b"c" * 32,
-                    secret_ref=SecretRef(uuid.uuid4()), expected_version_no=1,
+                    secret_ref=SecretRef(uuid.uuid4()), expected_lock_version=1,
                     secret_value=bytearray(b"synthetic-next"), trace_id=uuid.uuid4())
         args.update(changes)
         return RotateSecret(**args)
@@ -146,11 +149,23 @@ class SecretWriteTests(unittest.TestCase):
         self.assertEqual(command.secret_value, bytearray(len(command.secret_value)))
 
     def test_invalid_rotation_version_rejected(self):
-        command = self.rotate_command(expected_version_no=0)
+        command = self.rotate_command(expected_lock_version=0)
         with self.assertRaises(SecretWriteError):
             self.service.rotate(command)
         self.assertEqual(self.deps.encryptions, 0)
         self.assertEqual(command.secret_value, bytearray(len(command.secret_value)))
+
+    def test_rotation_uses_record_lock_version_not_cipher_version(self):
+        self.deps.lock_version = 3
+        self.deps.current = (SecretPurpose.AI_PROVIDER_KEY,
+                             SecretConsumer.AI_PROVIDER_ADAPTER, 7)
+        stale = self.rotate_command(expected_lock_version=7)
+        with self.assertRaises(SecretWriteError) as caught:
+            self.service.rotate(stale)
+        self.assertEqual(caught.exception.code, "CONFLICT_VERSION")
+        self.assertEqual(self.deps.encryptions, 0)
+        self.assertEqual(self.service.rotate(
+            self.rotate_command(expected_lock_version=3)), 8)
 
     def test_disable_requires_current_version_and_audit(self):
         ref = SecretRef(uuid.uuid4())

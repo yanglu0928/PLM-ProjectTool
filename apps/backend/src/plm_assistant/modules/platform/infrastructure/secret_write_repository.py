@@ -58,7 +58,7 @@ class SqlAlchemySecretWriteRepository:
         return version.secret_version_id
 
     def lock_current(self, transaction: object, *, secret_ref: SecretRef,
-                     expected_version_no: int) -> tuple[SecretPurpose, SecretConsumer] | None:
+                     expected_lock_version: int) -> tuple[SecretPurpose, SecretConsumer, int] | None:
         session = _session(transaction)
         row = session.execute(select(SecretRecordRow, SecretVersionRow).join(
             SecretVersionRow,
@@ -66,23 +66,25 @@ class SqlAlchemySecretWriteRepository:
         ).where(
             SecretRecordRow.secret_record_id == secret_ref.secret_id,
             SecretRecordRow.secret_state == "ACTIVE",
+            SecretRecordRow.lock_version == expected_lock_version,
             SecretVersionRow.secret_record_id == secret_ref.secret_id,
-            SecretVersionRow.version_no == expected_version_no,
             SecretVersionRow.activated_at.is_not(None),
             SecretVersionRow.retired_at.is_(None),
         ).with_for_update(of=SecretRecordRow)).one_or_none()
         if row is None:
             return None
-        record, _ = row
-        return SecretPurpose(record.purpose), SecretConsumer(record.allowed_consumer)
+        record, version = row
+        return SecretPurpose(record.purpose), SecretConsumer(record.allowed_consumer), version.version_no
 
     def rotate(self, transaction: object, *, secret_ref: SecretRef,
-               expected_version_no: int, encrypted: EncryptedSecretDraft,
+               expected_lock_version: int, expected_version_no: int,
+               encrypted: EncryptedSecretDraft,
                actor: uuid.UUID) -> uuid.UUID:
         session = _session(transaction)
         record = session.execute(select(SecretRecordRow).where(
             SecretRecordRow.secret_record_id == secret_ref.secret_id,
             SecretRecordRow.secret_state == "ACTIVE",
+            SecretRecordRow.lock_version == expected_lock_version,
         ).with_for_update()).scalar_one_or_none()
         if record is None or record.current_version_ref is None:
             raise RuntimeError("Secret version conflict")

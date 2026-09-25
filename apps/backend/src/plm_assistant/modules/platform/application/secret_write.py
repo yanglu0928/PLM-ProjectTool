@@ -37,7 +37,7 @@ class RotateSecret:
     session_token: bytes = field(repr=False)
     csrf_token: bytes = field(repr=False)
     secret_ref: SecretRef
-    expected_version_no: int
+    expected_lock_version: int
     secret_value: bytearray = field(repr=False)
     trace_id: uuid.UUID
 
@@ -68,10 +68,11 @@ class SecretWriteRepositoryPort(Protocol):
                encrypted: EncryptedSecretDraft, actor: uuid.UUID) -> uuid.UUID: ...
 
     def lock_current(self, transaction: object, *, secret_ref: SecretRef,
-                     expected_version_no: int) -> tuple[SecretPurpose, SecretConsumer] | None: ...
+                     expected_lock_version: int) -> tuple[SecretPurpose, SecretConsumer, int] | None: ...
 
     def rotate(self, transaction: object, *, secret_ref: SecretRef,
-               expected_version_no: int, encrypted: EncryptedSecretDraft,
+               expected_lock_version: int, expected_version_no: int,
+               encrypted: EncryptedSecretDraft,
                actor: uuid.UUID) -> uuid.UUID: ...
 
     def disable(self, transaction: object, *, secret_ref: SecretRef,
@@ -135,21 +136,22 @@ class SecretWriteService:
         try:
             self._validate_common(command)
             if (type(command.secret_ref) is not SecretRef
-                    or type(command.expected_version_no) is not int
-                    or command.expected_version_no < 1
-                    or command.expected_version_no >= 2_147_483_647):
+                    or type(command.expected_lock_version) is not int
+                    or not 1 <= command.expected_lock_version < 9_223_372_036_854_775_807):
                 raise SecretWriteError("VALIDATION_FAILED")
             self._precheck(command)
             with self._uow() as tx:
                 actor = self._require_admin(tx, command)
                 current = self._repo.lock_current(
                     tx, secret_ref=command.secret_ref,
-                    expected_version_no=command.expected_version_no,
+                    expected_lock_version=command.expected_lock_version,
                 )
                 if current is None:
                     raise SecretWriteError("CONFLICT_VERSION")
-                purpose, consumer = current
-                version_no = command.expected_version_no + 1
+                purpose, consumer, current_version_no = current
+                if current_version_no >= 2_147_483_647:
+                    raise SecretWriteError("CONFLICT_VERSION")
+                version_no = current_version_no + 1
                 encrypted = self._cipher.encrypt(
                     secret_ref=command.secret_ref, purpose=purpose,
                     consumer=consumer, version_no=version_no,
@@ -157,7 +159,8 @@ class SecretWriteService:
                 )
                 version_id = self._repo.rotate(
                     tx, secret_ref=command.secret_ref,
-                    expected_version_no=command.expected_version_no,
+                    expected_lock_version=command.expected_lock_version,
+                    expected_version_no=current_version_no,
                     encrypted=encrypted, actor=actor,
                 )
                 self._audit.append(tx, self._event(command.trace_id, actor,

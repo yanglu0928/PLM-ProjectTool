@@ -116,6 +116,10 @@ def main():
                     assert db.execute("SELECT count(*) FROM plm.plt_secret_records").fetchone()[0] == 0
                 ref = create()
                 assert "synthetic-secret" not in repr(ref)
+                # A legal record-only version bump proves If-Match is the record
+                # lock version, not the ciphertext version number.
+                with connect(name) as db:
+                    db.execute("UPDATE plm.plt_secret_records SET lock_version=2,updated_at=statement_timestamp() WHERE secret_record_id=%s", (ref.secret_id,))
 
                 def rotate(expected=1, value=b"synthetic-secret-two", target=service):
                     clear = bytearray(value)
@@ -125,13 +129,14 @@ def main():
                     finally:
                         assert clear == bytearray(len(clear))
 
-                assert rotate() == 2
                 expect_error("CONFLICT_VERSION", rotate)
+                assert rotate(2) == 2
+                expect_error("CONFLICT_VERSION", lambda: rotate(2))
                 failed = SecretWriteService(**kwargs, audit=FailedAudit())
-                expect_error("PLATFORM_SECRET_UNAVAILABLE", lambda: rotate(2, b"synthetic-secret-three", failed))
+                expect_error("PLATFORM_SECRET_UNAVAILABLE", lambda: rotate(3, b"synthetic-secret-three", failed))
                 def competing_rotate(_):
                     try:
-                        return rotate(2, b"synthetic-secret-concurrent")
+                        return rotate(3, b"synthetic-secret-concurrent")
                     except SecretWriteError as exc:
                         return exc.code
 
@@ -145,7 +150,7 @@ def main():
                     assert clear.tobytes() == b"synthetic-secret-concurrent"
                 with connect(name) as db:
                     record = db.execute("SELECT secret_state, lock_version FROM plm.plt_secret_records WHERE secret_record_id=%s", (ref.secret_id,)).fetchone()
-                    assert record == ("ACTIVE", 3), record
+                    assert record == ("ACTIVE", 4), record
                     versions = db.execute("SELECT version_no,encrypted_payload,activated_at IS NOT NULL,retired_at IS NOT NULL FROM plm.plt_secret_versions WHERE secret_record_id=%s ORDER BY version_no", (ref.secret_id,)).fetchall()
                     assert [(row[0], row[2], row[3]) for row in versions] == [(1, True, True), (2, True, True), (3, True, False)]
                     assert all(b"synthetic-secret" not in row[1] for row in versions)
