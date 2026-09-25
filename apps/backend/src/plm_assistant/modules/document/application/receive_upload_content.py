@@ -103,8 +103,8 @@ class ReceiveUploadContentService:
                 command.upload_id, file_id, proof.size_bytes,
                 proof.sha256, proof.detected_mime,
             )
-        proof = self._spool.receive(
-            chunks=chunks, scope=command.scope, project_id=command.project_id,
+        claims = dict(
+            scope=command.scope, project_id=command.project_id,
             file_object_id=command.upload_id,
             original_display_name=intent.original_display_name,
             declared_length=command.declared_length,
@@ -112,6 +112,11 @@ class ReceiveUploadContentService:
             mime_hint=intent.mime_hint,
             expected_size_bytes=intent.expected_size_bytes,
         )
+        with self._spool.recover_existing(**claims) as recovered:
+            if recovered is not None:
+                self._validate_replay_body(chunks, command)
+                return self._stage(command, intent, recovered)
+        proof = self._spool.receive(chunks=chunks, **claims)
         # This second physical proof precedes the short DB transaction. The
         # later publish command must verify bytes again before making them visible.
         try:
@@ -121,6 +126,10 @@ class ReceiveUploadContentService:
             )
         except LocalStorageError:
             raise UploadContentError("FILE_INTEGRITY_MISMATCH") from None
+        return self._stage(command, intent, proof)
+
+    def _stage(self, command: ReceiveUploadContent, intent: UploadContentIntent,
+               proof: StagedContentProof) -> ReceivedUploadContent:
         with self._uow() as tx:
             self._authorize(tx, command)
             file_id = self._repository.stage(

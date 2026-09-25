@@ -12,9 +12,10 @@ import stat
 import uuid
 import hashlib
 import hmac
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import BinaryIO
+from typing import BinaryIO, Iterator
 
 
 _UUID_HEX = r"[0-9a-f]{32}"
@@ -75,6 +76,20 @@ def _checked_file(path: Path, *, link_count: int = 1) -> os.stat_result:
     if not stat.S_ISREG(info.st_mode) or _is_reparse(info) or info.st_nlink != link_count:
         raise LocalStorageError()
     return info
+
+
+def _lock_staging(descriptor: int) -> None:
+    """Nonblocking process-owned lock; released when the descriptor closes."""
+    try:
+        if os.name == "nt":
+            import msvcrt
+            os.lseek(descriptor, 0, os.SEEK_SET)
+            msvcrt.locking(descriptor, msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except (OSError, ImportError):
+        raise LocalStorageError() from None
 
 
 class LocalFileStorage:
@@ -197,9 +212,62 @@ class LocalFileStorage:
         flags |= getattr(os, "O_NOFOLLOW", 0)
         try:
             descriptor = os.open(target, flags, 0o600)
-            return os.fdopen(descriptor, "w+b")
+            try:
+                _lock_staging(descriptor)
+                return os.fdopen(descriptor, "w+b")
+            except Exception:
+                os.close(descriptor)
+                raise
         except OSError:
             raise LocalStorageError() from None
+
+    @contextmanager
+    def locked_existing_staging(self, locator: str) -> Iterator[BinaryIO | None]:
+        """Hold the writer-compatible lock while inspecting an existing stage."""
+        if type(locator) is not str or not locator.startswith("temp/"):
+            raise LocalStorageError()
+        target = self._path(locator, allow_missing_parents=True)
+        before = _optional_info(target)
+        if before is None:
+            yield None
+            return
+        before = _checked_file(target)
+        flags = os.O_RDWR | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+        try:
+            descriptor = os.open(target, flags)
+        except OSError:
+            raise LocalStorageError() from None
+        try:
+            _lock_staging(descriptor)
+            opened = os.fstat(descriptor)
+            after = _checked_file(target)
+            if (not stat.S_ISREG(opened.st_mode) or _is_reparse(opened)
+                    or opened.st_nlink != 1
+                    or (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino)
+                    or (after.st_dev, after.st_ino) != (before.st_dev, before.st_ino)):
+                raise LocalStorageError()
+            with os.fdopen(descriptor, "r+b") as stream:
+                descriptor = -1
+                yield stream
+        finally:
+            if descriptor != -1:
+                os.close(descriptor)
+
+    def check_locked_staging(self, locator: str, stream: BinaryIO, *,
+                             device: int, inode: int, size: int) -> None:
+        if (type(locator) is not str or not locator.startswith("temp/")
+                or type(device) is not int or type(inode) is not int
+                or type(size) is not int or size < 0):
+            raise LocalStorageError()
+        opened = os.fstat(stream.fileno())
+        current = _checked_file(self._path(locator))
+        if (not stat.S_ISREG(opened.st_mode) or _is_reparse(opened)
+                or opened.st_nlink != 1 or current.st_nlink != 1
+                or (opened.st_dev, opened.st_ino) != (device, inode)
+                or (current.st_dev, current.st_ino) != (device, inode)
+                or opened.st_size != size or current.st_size != size
+                or opened.st_mtime_ns != current.st_mtime_ns):
+            raise LocalStorageError()
 
     def discard_new_staging(self, locator: str, *, device: int, inode: int) -> None:
         """Remove only the exact unregistered ordinary file created by this request."""

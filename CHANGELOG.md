@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/DOC-03-A04-A03-P03-A02-P02 增加未登记 Content 孤儿的内部受控恢复：写入与接管共享 OS 排他文件锁，重验请求正文、暂存文件身份/Hash/类型和数据库授权状态后同事务登记；活动写入或损坏文件失败关闭。Windows 11 后端 474 项无失败（2 项符号链接跳过），PostgreSQL 18 隔离合成故障/并发及异常退出释放锁回归、开发 wheel PASS。无新 Migration/API/依赖；升级仍须已有 `0024`。TTL 清理、正式授权/公开 HTTP、Server 2025/Debian 13 和最终程序包未完成。
+
 - 2026-09-26：`0.1.0.dev0`/DOC-03-A04-A03-P03-A02-P01 增加已登记 Content 的内部安全重传：校验完整请求正文、Token/身份/状态、数据库与暂存文件 Hash/Size 并再次加锁确认；不重复建 FileObject、事件或 Audit。Windows 11 后端 472 项无失败（2 项符号链接跳过），PostgreSQL 18 隔离合成重传/拒绝/损坏/并发验证 PASS。无新 Migration/API/依赖，升级仍须已有 `0024`；孤儿恢复/TTL 清理、正式授权与公开 HTTP、Server 2025/Debian 13、最终程序包未完成。
 
 - 2026-09-25：`0.1.0.dev0`/DOC-03-A04-A03-P03-A01 增加内部 Content 两阶段受权与 STAGED 元数据登记：流前/流后重查创建者、Scope、Token、过期与项目状态，按确定性 ID 同事务写 FileObject、初始状态事件、Intent 与 Audit。Windows 11 后端 471 项无失败（2 项符号链接跳过）、PostgreSQL 18 临时库/合成文件权限、并发、归档/终止、过期、审计回滚及开发 wheel PASS。无新 Migration/API/依赖；正式 Session/License/CSRF、重传/孤儿清理、公开 HTTP、Commit/Abort/Parser、Server 2025/Debian 13 与最终程序包未完成。

@@ -11,8 +11,9 @@ import stat
 import uuid
 import zipfile
 import zlib
+from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import Iterable
+from typing import Iterable, Iterator
 from xml.etree import ElementTree
 
 from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage, LocalStorageError
@@ -89,6 +90,7 @@ class ValidatedContentSpool:
             )
         except LocalStorageError:
             raise ContentSpoolError("FILE_CONTENT_UNAVAILABLE") from None
+
         identity = None
         try:
             with self._storage.reserve_staging(locator) as stream:
@@ -130,6 +132,56 @@ class ValidatedContentSpool:
                     pass  # Orphan must be handled by the controlled TTL recovery job.
             if isinstance(exc, ContentSpoolError):
                 raise
+            raise ContentSpoolError("FILE_CONTENT_UNAVAILABLE") from None
+
+    @contextmanager
+    def recover_existing(self, *, scope: str, project_id: uuid.UUID | None,
+                         file_object_id: uuid.UUID, original_display_name: str,
+                         declared_length: int, declared_sha256: bytes,
+                         mime_hint: str | None = None,
+                         expected_size_bytes: int | None = None) -> Iterator[StagedContentProof | None]:
+        """Inspect a crash orphan under the same OS lock held by new writers."""
+        extension = self._extension(original_display_name)
+        if (type(declared_length) is not int or declared_length <= 0
+                or type(declared_sha256) is not bytes or len(declared_sha256) != 32):
+            raise ContentSpoolError("VALIDATION_FAILED")
+        if declared_length > self._max_bytes:
+            raise ContentSpoolError("FILE_TOO_LARGE")
+        if (expected_size_bytes is not None
+                and (type(expected_size_bytes) is not int
+                     or expected_size_bytes != declared_length)):
+            raise ContentSpoolError("FILE_INTEGRITY_MISMATCH")
+        if extension not in self._allowed or mime_hint is not None and mime_hint != _MIME[extension]:
+            raise ContentSpoolError("FILE_TYPE_UNSUPPORTED")
+        try:
+            locator, _ = self._storage.locators(
+                scope=scope, project_id=project_id, file_object_id=file_object_id,
+            )
+            with self._storage.locked_existing_staging(locator) as stream:
+                if stream is None:
+                    yield None
+                    return
+                before = os.fstat(stream.fileno())
+                if before.st_size != declared_length:
+                    raise ContentSpoolError("FILE_INTEGRITY_MISMATCH")
+                digest = hashlib.sha256()
+                total = 0
+                stream.seek(0)
+                while part := stream.read(_CHUNK_BYTES):
+                    total += len(part)
+                    if total > declared_length or total > self._max_bytes:
+                        raise ContentSpoolError("FILE_TOO_LARGE")
+                    digest.update(part)
+                if (total != declared_length
+                        or not hmac.compare_digest(digest.digest(), declared_sha256)):
+                    raise ContentSpoolError("FILE_INTEGRITY_MISMATCH")
+                self._check_type(stream, extension, total)
+                self._storage.check_locked_staging(
+                    locator, stream, device=before.st_dev, inode=before.st_ino,
+                    size=total,
+                )
+                yield StagedContentProof(locator, digest.digest(), total, _MIME[extension])
+        except LocalStorageError:
             raise ContentSpoolError("FILE_CONTENT_UNAVAILABLE") from None
 
     @staticmethod

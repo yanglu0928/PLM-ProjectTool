@@ -179,6 +179,36 @@ def main():
             stage2, _ = storage.locators(scope="PROJECT", project_id=project,
                                          file_object_id=made2.upload_id)
             assert (root / stage2).exists()  # Deliberate orphan for controlled recovery.
+            recovered = receiver().receive(content2, chunks=[body])
+            assert recovered.file_object_id == made2.upload_id
+            with connect(name) as db:
+                assert db.execute("SELECT state,file_object_id FROM plm.doc_upload_intents WHERE upload_id=%s", (made2.upload_id,)).fetchone() == ("CONTENT_READY", made2.upload_id)
+                assert db.execute("SELECT count(*) FROM plm.doc_file_state_events WHERE file_object_id=%s", (made2.upload_id,)).fetchone() == (1,)
+                assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='DOCUMENT_UPLOAD_CONTENT_STAGED'", (made2.upload_id,)).fetchone() == (1,)
+            made_busy, busy_content = create("content-stage-busy-0001")
+            busy_locator, _ = storage.locators(scope="PROJECT", project_id=project,
+                                                file_object_id=made_busy.upload_id)
+            with storage.reserve_staging(busy_locator) as active_stream:
+                active_stream.write(body[:5])
+                active_stream.flush()
+                expect(ContentSpoolError, lambda: receiver().receive(
+                    busy_content, chunks=[body],
+                ), "FILE_CONTENT_UNAVAILABLE")
+                with connect(name) as db:
+                    assert db.execute("SELECT state FROM plm.doc_upload_intents WHERE upload_id=%s", (made_busy.upload_id,)).fetchone() == ("CREATED",)
+                active_stream.write(body[5:])
+                active_stream.flush()
+            assert receiver().receive(busy_content, chunks=[body]).file_object_id == made_busy.upload_id
+            made_corrupt, corrupt_content = create("content-stage-corrupt-0001")
+            corrupt_locator, _ = storage.locators(scope="PROJECT", project_id=project,
+                                                   file_object_id=made_corrupt.upload_id)
+            with storage.reserve_staging(corrupt_locator) as corrupt_stream:
+                corrupt_stream.write(body[:-1] + b"!")
+            expect(ContentSpoolError, lambda: receiver().receive(
+                corrupt_content, chunks=[body],
+            ), "FILE_INTEGRITY_MISMATCH")
+            with connect(name) as db:
+                assert db.execute("SELECT state FROM plm.doc_upload_intents WHERE upload_id=%s", (made_corrupt.upload_id,)).fetchone() == ("CREATED",)
             made3, content3 = create("content-stage-abort-0001")
 
             def interrupted():
@@ -226,7 +256,7 @@ def main():
             expired = ReceiveUploadContent(expired_id, "PROJECT", other, actor,
                                            uuid.uuid4(), token, len(body), sha)
             expect(UploadContentError, lambda: receiver().receive(expired, chunks=[body]), "FILE_UPLOAD_EXPIRED")
-            print("DOC-03-A04-A03-P03-A01/A02-P01 PostgreSQL synthetic verification: PASS")
+            print("DOC-03-A04-A03-P03-A01/A02-P01/P02 PostgreSQL synthetic verification: PASS")
         finally:
             if runtime is not None:
                 runtime.dispose()

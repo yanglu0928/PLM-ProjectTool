@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import hashlib
 import io
+import subprocess
+import sys
 import tempfile
 import unittest
 import uuid
@@ -79,6 +81,62 @@ class ContentSpoolTests(unittest.TestCase):
         with self.assertRaises(ContentSpoolError):
             self.receive(data, "合同.pdf")
         self.assertEqual(self.stage_path().read_bytes(), data)
+
+    def test_recover_existing_requires_writer_lock_and_exact_content(self):
+        data = b"%PDF-1.7\nrecoverable\n%%EOF\n"
+        claims = dict(
+            scope="PROJECT", project_id=self.project,
+            file_object_id=self.file_id, original_display_name="recovery.pdf",
+            declared_length=len(data), declared_sha256=hashlib.sha256(data).digest(),
+        )
+        with self.spool.recover_existing(**claims) as absent:
+            self.assertIsNone(absent)
+        locator, _ = self.storage.locators(
+            scope="PROJECT", project_id=self.project, file_object_id=self.file_id,
+        )
+        with self.storage.reserve_staging(locator) as active:
+            active.write(data[:8])
+            active.flush()
+            with self.assertRaises(ContentSpoolError) as caught:
+                with self.spool.recover_existing(**claims):
+                    pass
+            self.assertEqual(caught.exception.code, "FILE_CONTENT_UNAVAILABLE")
+            active.write(data[8:])
+        with self.spool.recover_existing(**claims) as proof:
+            self.assertEqual(proof.sha256, claims["declared_sha256"])
+            self.assertEqual(proof.detected_mime, "application/pdf")
+            with self.assertRaises(LocalStorageError):
+                with self.storage.locked_existing_staging(locator):
+                    pass
+        self.stage_path().write_bytes(data[:-1] + b"!")
+        with self.assertRaises(ContentSpoolError) as caught:
+            with self.spool.recover_existing(**claims):
+                pass
+        self.assertEqual(caught.exception.code, "FILE_INTEGRITY_MISMATCH")
+
+    def test_recover_after_abrupt_writer_process_exit(self):
+        data = b"%PDF-1.7\ncrash window\n%%EOF\n"
+        self.receive(data, "crash.pdf")
+        locator, _ = self.storage.locators(
+            scope="PROJECT", project_id=self.project, file_object_id=self.file_id,
+        )
+        script = (
+            "import os,sys; from pathlib import Path; "
+            "from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage; "
+            "storage=LocalFileStorage(Path(sys.argv[1])); "
+            "with_lock=storage.locked_existing_staging(sys.argv[2]); "
+            "with_lock.__enter__(); os._exit(0)"
+        )
+        subprocess.run(
+            [sys.executable, "-c", script, str(self.root), locator],
+            check=True, timeout=10, capture_output=True,
+        )
+        with self.spool.recover_existing(
+            scope="PROJECT", project_id=self.project,
+            file_object_id=self.file_id, original_display_name="crash.pdf",
+            declared_length=len(data), declared_sha256=hashlib.sha256(data).digest(),
+        ) as proof:
+            self.assertEqual(proof.size_bytes, len(data))
 
     def test_reject_size_hash_type_mime_and_name_without_staging(self):
         content = b"%PDF-1.7\nsynthetic\n"

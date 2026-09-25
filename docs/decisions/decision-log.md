@@ -2555,3 +2555,15 @@
 |Reason|仅按声明 Header 返回 200 会接受不同正文；仅凭孤儿文件现存无法区分崩溃完整文件与仍在写入的文件。|
 |Impact|Document 内部 Service/Repository 和合成验证；不变更冻结 API、Schema、权限模型或依赖。|
 |Rollback|入口未公开；停止装配即可禁止重传。已有 STAGED 数据保持不变，故障继续失败关闭。|
+
+## DEC-20260926-106
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-106|
+|Date|2026-09-26|
+|WBS|DOC-03-A04-A03-P03-A02-P02 未登记 Content 孤儿恢复|
+|Decision|暂存写入从创建起持有 OS 排他文件锁，完成类型/Hash 与 fsync 后关闭；重传若发现未登记同 ID 文件，必须在非阻塞取得同一锁后才可验证其文件身份、Hash、长度和类型，并在持锁期间重新授权、按既有锁顺序登记 FileObject/Intent/Event/Audit。请求正文也须独立完整校验。锁不可得/格式不符/状态改变均失败关闭；不覆盖或删除未知文件。|
+|Reason|只看文件存在、大小或 mtime 不能排除活跃写入；进程崩溃时 OS 文件锁自动释放，能区分仍在写入与可检查的孤儿。仍通过数据库行锁处理双请求并发。|
+|Impact|Document Storage/Spool/Service 与合成验证；无 Schema、公开 API、技术栈或依赖变更。Windows 11 与目标 OS 的锁行为需分别实测，未验证平台不宣称 PASS。|
+|Rollback|未公开的内部入口可停止装配；原有暂存/数据库记录保留，未知文件由后续受控 TTL 策略处理，不执行自动删除。|
