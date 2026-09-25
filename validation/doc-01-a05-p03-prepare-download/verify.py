@@ -10,13 +10,20 @@ from pathlib import Path
 
 import psycopg
 from alembic import command
+from fastapi.testclient import TestClient
 from psycopg import sql
 from sqlalchemy.engine import URL
+
+from plm_assistant.entrypoints.api import create_app
 
 from plm_assistant.modules.audit.application.public import AuditService
 from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
 from plm_assistant.modules.auth.infrastructure.deployment_read_access import SqlAlchemyDeploymentReadAccess
+from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
+from plm_assistant.modules.auth.application.session_service import SessionService
 from plm_assistant.modules.auth.infrastructure.project_read_access import SqlAlchemyProjectReadAccess
+from plm_assistant.modules.auth.infrastructure.session_repository import SqlAlchemySessionRepository
+from plm_assistant.modules.document.api.download_version import create_document_download_router
 from plm_assistant.modules.document.application.prepare_download import DownloadError, PrepareDownloadService
 from plm_assistant.modules.document.application.read_documents import DocumentReadQuery, DocumentReadService
 from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage
@@ -167,6 +174,25 @@ def verify():
             with service.prepare(query(), document, version) as ready:
                 assert ready.stream.read() == content
                 assert ready.content_sha256 == digest
+            sessions = SessionService(
+                unit_of_work=runtime.unit_of_work,
+                repository=SqlAlchemySessionRepository(),
+                issue_access=object(), audit=object(),
+            )
+            router = create_document_download_router(
+                sessions=sessions, downloads=service,
+                origins=LoginOriginPolicy(["https://plm.example.test"]),
+            )
+            path = (f"/api/v1/projects/{project}/documents/{document}"
+                    f"/versions/{version}/content")
+            with TestClient(create_app(document_download_router=router),
+                            base_url="https://plm.example.test") as client:
+                response = client.get(
+                    path, headers={"cookie": "plm_session=" + token.hex()},
+                )
+                assert response.status_code == 200 and response.content == content
+                assert response.headers["content-length"] == str(len(content))
+                assert response.headers["cache-control"] == "no-store"
             with connect(name) as db:
                 assert db.execute("SELECT count(*) FROM plm.aud_events").fetchone()[0] == 0
             (root / final).write_bytes(b"x" * len(content))

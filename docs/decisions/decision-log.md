@@ -2852,3 +2852,15 @@
 |Reason|FileStateEvent 是状态沿革，原地记入同状态事件会误导后续追溯；Audit 的 FAILED 事件可记录本次观察且保留真实 Actor。文件外部 I/O 不能持有数据库长事务，二次核验减小状态变化窗口。|
 |Impact|Document 内部读取 DTO、下载编排与审计/资源关闭测试；无 Schema、公开 API 或新依赖。并发容量与响应期间撤销语义留给 HTTP/Release 任务验证。|
 |Rollback|不装配下载 Service；既有元数据 GET 和上传流程不变，已产生的失败 Audit 不删除。|
+
+## DEC-20260926-131
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-131|
+|Date|2026-09-26|
+|WBS|DOC-01-A05-P04 可选受权流式下载 HTTP|
+|Decision|按冻结 API-02 四条 PROJECT/GLOBAL 内容 GET 路径中的两种固定 Scope 路径实现可选 Router。请求先核验可信 Host/Session 且拒绝查询/Range；每 Router 默认最多四个并行快照/响应，单文件上限 100 MB。内部服务完整准备已验证快照后才返回 `StreamingResponse`；每次读取最多 1 MiB，设置长度、受控 MIME、nosniff、no-store 和不含用户文件名的附件名。流结束/中断/异常与响应后台均调用幂等关闭，释放快照和并发名额。|
+|Reason|冻结合同要求受权流式内容且不暴露 locator；快照法在首字节前校验全部内容。并发限额将每进程临时快照上界限制到 4×100 MB，避免无限并发占满数据卷；后续 Release 须验证多进程/磁盘预算和实际中断行为。|
+|Impact|可选 Document 下载 Router、应用入口与合同测试；无 Schema、第三方依赖或权限扩张。默认/当前 Windows 平台暂不装配，真实库/文件和目标账户验证后再开放。|
+|Rollback|不注入下载 Router，维持 404；已存储文件/版本和 Audit 历史不变。|

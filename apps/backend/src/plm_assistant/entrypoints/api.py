@@ -52,6 +52,7 @@ def create_app(
     document_upload_finalize_router: APIRouter | None = None,
     document_read_router: APIRouter | None = None,
     document_version_read_router: APIRouter | None = None,
+    document_download_router: APIRouter | None = None,
     shutdown_callback: Callable[[], None] | None = None,
 ) -> FastAPI:
     """Create one isolated API application instance.
@@ -139,4 +140,6 @@ def create_app(
         app.include_router(document_read_router)
     if document_version_read_router is not None:
         app.include_router(document_version_read_router)
+    if document_download_router is not None:
+        app.include_router(document_download_router)
     return app
