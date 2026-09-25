@@ -9,11 +9,17 @@ from datetime import datetime, timedelta, timezone
 
 import psycopg
 from alembic import command
+from fastapi.testclient import TestClient
 from psycopg import sql
 from sqlalchemy.engine import URL
 
 from plm_assistant.modules.audit.application.public import AuditService
 from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
+from plm_assistant.entrypoints.api import create_app
+from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
+from plm_assistant.modules.auth.application.session_service import SessionError
+from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
+from plm_assistant.modules.project.api.change_member_state import create_project_member_state_router
 from plm_assistant.modules.auth.infrastructure.project_member_patch_access import SqlAlchemyProjectMemberPatchAccess
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
@@ -49,7 +55,14 @@ class Guard:
 
     def require_valid(self, **_):
         if not self.valid:
-            raise RuntimeError("synthetic License failure")
+            raise RuntimeLicenseError("EXPIRED")
+
+
+class HttpSessions:
+    def validate(self, token, *, csrf_token, require_csrf):
+        if token != b"p" * 32 or csrf_token != CSRF or require_csrf is not True:
+            raise SessionError("AUTH_SESSION_EXPIRED")
+        return object()
 
 
 class FailedAudit:
@@ -93,6 +106,7 @@ def main():
                 replay_target = user(db, "Synthetic Replay Target")
                 concurrent_target = user(db, "Synthetic Concurrent Target")
                 audit_target = user(db, "Synthetic Audit Target")
+                http_target = user(db, "Synthetic HTTP Target")
                 p1 = db.execute("INSERT INTO plm.prj_projects(project_code,project_code_normalized,name,created_by) VALUES ('P1','p1','First',%s) RETURNING project_id", (manager,)).fetchone()[0]
                 p2 = db.execute("INSERT INTO plm.prj_projects(project_code,project_code_normalized,name,created_by) VALUES ('P2','p2','Second',%s) RETURNING project_id", (manager,)).fetchone()[0]
                 d1 = db.execute("INSERT INTO plm.prj_departments(project_id,department_code,department_code_normalized,name) VALUES (%s,'D1','d1','First') RETURNING department_id", (p1,)).fetchone()[0]
@@ -107,6 +121,7 @@ def main():
                 replay_member = db.execute("INSERT INTO plm.prj_project_members(project_id,user_id,department_id,project_role) VALUES (%s,%s,%s,'CUSTOMER_MEMBER') RETURNING project_member_id", (p1, replay_target, d1)).fetchone()[0]
                 concurrent_member = db.execute("INSERT INTO plm.prj_project_members(project_id,user_id,department_id,project_role) VALUES (%s,%s,%s,'CUSTOMER_MEMBER') RETURNING project_member_id", (p1, concurrent_target, d1)).fetchone()[0]
                 audit_member = db.execute("INSERT INTO plm.prj_project_members(project_id,user_id,department_id,project_role) VALUES (%s,%s,%s,'CUSTOMER_MEMBER') RETURNING project_member_id", (p1, audit_target, d1)).fetchone()[0]
+                http_member = db.execute("INSERT INTO plm.prj_project_members(project_id,user_id,department_id,project_role) VALUES (%s,%s,%s,'CUSTOMER_MEMBER') RETURNING project_member_id", (p1, http_target, d1)).fetchone()[0]
             runtime = create_database_runtime(url)
             try:
                 guard = Guard()
@@ -136,8 +151,8 @@ def main():
                 guard.valid = False
                 try:
                     action("suspend")
-                except RuntimeError as exc:
-                    assert str(exc) == "synthetic License failure"
+                except RuntimeLicenseError as exc:
+                    assert exc.code == "EXPIRED"
                 else:
                     raise AssertionError("License failure bypassed")
                 guard.valid = True
@@ -252,6 +267,54 @@ def main():
                         pass
                     else:
                         raise AssertionError("state snapshot unexpectedly mutable")
+                router = create_project_member_state_router(
+                    sessions=HttpSessions(), members=idempotent,
+                    origins=LoginOriginPolicy(["http://localhost"]),
+                )
+                with TestClient(create_app(project_member_state_router=router),
+                                base_url="http://localhost") as client:
+                    base_path = f"/api/v1/projects/{p1}/members/{http_member}"
+                    headers = {"origin": "http://localhost",
+                               "cookie": "plm_session=" + token1.hex(),
+                               "x-csrf-token": CSRF.hex()}
+                    results = {}
+                    for operation, version, state in (
+                        ("suspend", 0, "SUSPENDED"),
+                        ("resume", 1, "ACTIVE"),
+                        ("remove", 2, "REMOVED"),
+                    ):
+                        command_headers = {**headers, "if-match": f'"v{version}"',
+                                           "idempotency-key": f"member-http-{operation}-key-001"}
+                        first_http = client.post(base_path + ":" + operation,
+                                                 headers=command_headers)
+                        replay_http = client.post(base_path + ":" + operation,
+                                                  headers=command_headers)
+                        assert first_http.status_code == replay_http.status_code == 200, (first_http.text, replay_http.text)
+                        assert first_http.json()["data"] == replay_http.json()["data"]
+                        assert first_http.json()["data"]["state"] == state
+                        assert first_http.headers["etag"] == f'"v{version + 1}"'
+                        results[operation] = first_http.json()["data"]
+                    assert client.post(base_path + ":suspend", headers={
+                        **headers, "if-match": '"v0"',
+                        "idempotency-key": "member-http-suspend-key-001",
+                    }).json()["data"] == results["suspend"]
+                    assert client.post(base_path + ":remove", headers={
+                        **headers, "if-match": '"v1"',
+                        "idempotency-key": "member-http-remove-key-001",
+                    }).status_code == 409
+                    assert client.post(f"/api/v1/projects/{p2}/members/{http_member}:suspend", headers={
+                        **headers, "if-match": '"v0"',
+                        "idempotency-key": "member-http-cross-project-001",
+                    }).status_code == 404
+                    guard.valid = False
+                    assert client.post(base_path + ":remove", headers={
+                        **headers, "if-match": '"v2"',
+                        "idempotency-key": "member-http-remove-key-001",
+                    }).status_code == 403
+                    guard.valid = True
+                with connect(name) as db:
+                    assert db.execute("SELECT state,lock_version FROM plm.prj_project_members WHERE project_member_id=%s", (http_member,)).fetchone() == ("REMOVED", 3)
+                    assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s", (http_member,)).fetchone()[0] == 3
                 # One manager can leave while another remains; the last one cannot.
                 first_manager = action("suspend", member_id=pm2)
                 assert first_manager.state == "SUSPENDED"
@@ -284,7 +347,7 @@ def main():
                         ("PROJECT_MEMBER_RESUMED", "SUSPENDED", "ACTIVE"),
                         ("PROJECT_MEMBER_REMOVED", "ACTIVE", "REMOVED"),
                     ], actions
-                print("PASS: empty/existing-data migration, 3 state replay snapshots after changes/archive, concurrent one-write, conflicts, rollback and downgrade guard")
+                print("PASS: empty/existing-data migration, 3 state HTTP replay/security, concurrent one-write, history snapshots, rollback and downgrade guard")
             finally:
                 runtime.dispose()
         finally:

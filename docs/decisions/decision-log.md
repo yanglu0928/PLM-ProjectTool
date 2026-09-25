@@ -2159,3 +2159,15 @@
 |Reason|状态、角色、显示名和版本会继续变化；现有内部命令重复执行会触发版本/状态冲突，当前成员行不能履行冻结 API-01 的原语义重放。|
 |Impact|Migration `20260925_0017`、ORM、内部服务/授权查询及测试；不开放 HTTP，不改变冻结状态机。|
 |Rollback|新表为空可降至 `0016`；已有快照时拒绝降级并保留幂等证据。|
+
+## DEC-20260925-073
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-073|
+|Date|2026-09-25|
+|WBS|PRJ-04-A12-P02 成员状态命令可选 HTTP|
+|Decision|一个仅显式注入的 Router 提供 `:suspend`、`:resume`、`:remove` 三个冻结 POST；共享可信 Origin、Session/CSRF、Idempotency-Key、强 If-Match 和空请求体边界，各自调用 P01 持久幂等服务，返回安全 MemberView/ETag。|
+|Reason|三命令具有同一安全协议，但状态机与操作作用域由 Project Service 分别执行；HTTP 不自行判断授权或重建首次响应。|
+|Impact|Project 可选 Router、应用工厂注入点、测试与文档；无新 Schema/Migration/依赖或 Breaking API。默认和当前 Windows 组合不挂载。|
+|Rollback|移除 Router 注入恢复 404，已提交的状态事件、审计与幂等快照保持不变。|
