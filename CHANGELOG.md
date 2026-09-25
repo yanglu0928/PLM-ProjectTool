@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/DOC-01-A05-P02 新增内部受权 DocumentVersion 下载来源：当前 Session/License/Scope/父 Document 与 Version/FileObject 状态和元数据联结后才交付内部 Locator/Hash。Windows 11 后端 530 项无失败（2 项环境跳过），隔离 PostgreSQL 18.6 权限/状态/越权与开发 wheel PASS。无 Migration/新依赖/公开 API；文件快照、完整性事件、发送前复核及 HTTP 仍待。
+
 - 2026-09-26：`0.1.0.dev0`/DOC-01-A05-P01 新增内部有界下载前验证快照，防止先验 Hash 再重开源文件导致的替换窗口；校验完成前不交付字节，错误自动关闭快照。Windows 11 后端 530 项无失败（2 项环境跳过）、大文件/篡改/上限单元测试及开发 wheel PASS。无 Migration/新依赖/公开 API；受权下载 Service/HTTP、容量及中断控制仍待。
 
 - 2026-09-26：`0.1.0.dev0`/DOC-01-A04-P05 将 DocumentVersion 元数据 GET 接入 Windows `--platform`/`--platform-write` 显式模式，普通登录模式仍 404；版本独立游标密钥缺失时整模式失败关闭。Windows 11 后端 528 项无失败（2 项环境跳过），平台合同及开发 wheel PASS。无 Migration/新依赖；正式目标账户密钥/公钥与受权文件下载仍待。

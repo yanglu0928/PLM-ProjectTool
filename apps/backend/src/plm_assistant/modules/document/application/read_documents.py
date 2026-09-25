@@ -70,6 +70,19 @@ class DocumentVersionPage:
     has_more: bool
 
 
+@dataclass(frozen=True, slots=True)
+class DocumentDownloadSource:
+    document_id: uuid.UUID
+    document_version_id: uuid.UUID
+    file_object_id: uuid.UUID
+    scope: str
+    project_id: uuid.UUID | None
+    storage_locator: str = field(repr=False)
+    content_sha256: bytes = field(repr=False)
+    size_bytes: int
+    detected_mime: str
+
+
 class DocumentReadSessionPort(Protocol):
     def authenticated_user(self, transaction: object, *, session_token: bytes,
                            now: datetime) -> uuid.UUID | None: ...
@@ -102,6 +115,9 @@ class DocumentReadRepositoryPort(Protocol):
     def get_version(self, transaction: object, *, scope: str,
                     project_id: uuid.UUID | None, document_id: uuid.UUID,
                     document_version_id: uuid.UUID) -> DocumentVersionView | None: ...
+    def get_download_source(self, transaction: object, *, scope: str,
+                            project_id: uuid.UUID | None, document_id: uuid.UUID,
+                            document_version_id: uuid.UUID) -> DocumentDownloadSource | None: ...
 
 
 class DocumentReadService:
@@ -218,6 +234,32 @@ class DocumentReadService:
                 if type(view) is not DocumentVersionView:
                     raise DocumentReadError("RESOURCE_NOT_FOUND")
                 return view
+        except DocumentReadError:
+            raise
+        except RuntimeLicenseError:
+            raise DocumentReadError("LICENSE_OPERATION_DENIED") from None
+        except Exception:
+            raise DocumentReadError("DOCUMENT_UNAVAILABLE") from None
+
+    def get_download_source(self, query: DocumentReadQuery, document_id: uuid.UUID,
+                            document_version_id: uuid.UUID) -> DocumentDownloadSource:
+        self._validate_query(query)
+        if (type(document_id) is not uuid.UUID or document_id.int == 0
+                or type(document_version_id) is not uuid.UUID
+                or document_version_id.int == 0):
+            raise DocumentReadError("RESOURCE_NOT_FOUND")
+        try:
+            self._guard.require_valid(trace_id=query.trace_id)
+            with self._uow() as tx:
+                self._authorize(tx, query)
+                self._require_document(tx, query, document_id)
+                source = self._repository.get_download_source(
+                    tx, scope=query.scope, project_id=query.project_id,
+                    document_id=document_id, document_version_id=document_version_id,
+                )
+                if type(source) is not DocumentDownloadSource:
+                    raise DocumentReadError("RESOURCE_NOT_FOUND")
+                return source
         except DocumentReadError:
             raise
         except RuntimeLicenseError:

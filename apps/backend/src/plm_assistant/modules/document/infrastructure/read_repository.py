@@ -8,7 +8,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from plm_assistant.modules.document.application.read_documents import (
-    DocumentPage, DocumentVersionPage, DocumentVersionView, DocumentView,
+    DocumentDownloadSource, DocumentPage, DocumentVersionPage,
+    DocumentVersionView, DocumentView,
 )
 from plm_assistant.modules.document.infrastructure.orm import (
     DocumentRow, DocumentVersionRow, FileObjectRow,
@@ -105,6 +106,23 @@ class SqlAlchemyDocumentReadRepository:
             ),
         ).scalar_one_or_none()
         return None if row is None else _version_view(row)
+
+    def get_download_source(self, transaction: object, *, scope: str,
+                            project_id: uuid.UUID | None, document_id: uuid.UUID,
+                            document_version_id: uuid.UUID) -> DocumentDownloadSource | None:
+        pair = _session(transaction).execute(
+            self._visible_versions(scope, project_id, document_id)
+            .add_columns(FileObjectRow)
+            .where(DocumentVersionRow.document_version_id == document_version_id),
+        ).one_or_none()
+        if pair is None:
+            return None
+        version, file = pair
+        return DocumentDownloadSource(
+            version.document_id, version.document_version_id, file.file_object_id,
+            version.scope, version.project_id, file.storage_locator,
+            version.content_sha256, version.size_bytes, version.detected_mime,
+        )
 
 
 def _version_view(row: DocumentVersionRow) -> DocumentVersionView:

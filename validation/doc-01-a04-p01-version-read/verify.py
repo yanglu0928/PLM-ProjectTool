@@ -182,6 +182,13 @@ def verify():
         view = service.get_version(query(pm_token), document, third)
         assert view.content_sha256 == HASH.hex() and view.size_bytes == 7
         assert not hasattr(view, "storage_locator") and not hasattr(view, "file_object_id")
+        source = service.get_download_source(query(pm_token), document, third)
+        assert source.document_version_id == third and source.file_object_id == file_third
+        assert source.content_sha256 == HASH and source.size_bytes == 7
+        assert "storage_locator" not in repr(source) and "synthetic/" not in repr(source)
+        assert source.storage_locator.startswith("synthetic/")
+        expect("RESOURCE_NOT_FOUND", lambda: service.get_download_source(query(pm_token), document, foreign))
+        expect("RESOURCE_NOT_FOUND", lambda: service.get_download_source(query(outsider_token), document, first))
         expect("RESOURCE_NOT_FOUND", lambda: service.get_version(query(pm_token), document, foreign))
         expect("RESOURCE_NOT_FOUND", lambda: service.get_version(query(pm_token), foreign_document, foreign))
         expect("RESOURCE_NOT_FOUND", lambda: service.get_version(query(outsider_token), document, first))
@@ -193,16 +200,20 @@ def verify():
                 db.execute("UPDATE plm.doc_document_versions SET availability_state='RESTRICTED' WHERE document_version_id=%s", (third,))
         assert [item.version_no for item in service.list_versions(query(pm_token), document).items] == [2, 1]
         expect("RESOURCE_NOT_FOUND", lambda: service.get_version(query(pm_token), document, third))
+        expect("RESOURCE_NOT_FOUND", lambda: service.get_download_source(query(pm_token), document, third))
         with connect(name) as db:
             db.execute("UPDATE plm.doc_file_objects SET file_state='RESTRICTED' WHERE file_object_id=%s", (file_second,))
         assert [item.version_no for item in service.list_versions(query(pm_token), document).items] == [1]
+        expect("RESOURCE_NOT_FOUND", lambda: service.get_download_source(query(pm_token), document, second))
         guard.enabled = False
         expect("LICENSE_OPERATION_DENIED", lambda: service.get_version(query(pm_token), document, first))
+        expect("LICENSE_OPERATION_DENIED", lambda: service.get_download_source(query(pm_token), document, first))
         guard.enabled = True
         with connect(name) as db:
             db.execute("UPDATE plm.prj_project_members SET state='SUSPENDED' WHERE project_id=%s", (project,))
         expect("RESOURCE_NOT_FOUND", lambda: service.list_versions(query(pm_token), document))
-        print("PASS: version keyset, ownership, status/file integrity, current permission and License")
+        expect("RESOURCE_NOT_FOUND", lambda: service.get_download_source(query(pm_token), document, first))
+        print("PASS: version keyset and authorized private download source, state, permission and License")
     finally:
         if runtime is not None:
             runtime.dispose()

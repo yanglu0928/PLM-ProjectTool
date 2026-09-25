@@ -2828,3 +2828,15 @@
 |Reason|先 verify 再重新打开原文件发送存在 TOCTOU；边验边发可能在末尾 Hash 失败时已经泄露不完整内容。快照在响应前完整校验且不把 locator/path 暴露给 HTTP。|
 |Impact|Document 存储适配器与测试；不改变 Schema、冻结 API、文件格式或外部依赖。短时磁盘空间与并发容量需后续下载 Service/Release 策略限制，正式下载未开放。|
 |Rollback|不调用快照方法；既有 verify/publish 行为不变。已关闭的临时快照由操作系统删除；不触碰登记 FileObject。|
+
+## DEC-20260926-129
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-129|
+|Date|2026-09-26|
+|WBS|DOC-01-A05-P02 内部受权下载来源|
+|Decision|DocumentReadService 在同一短事务复用 Session/License/Scope/父 Document 当前可见性，并由 Document Repository 对 AVAILABLE Version 与 PERSISTENT/AVAILABLE、同 Scope/Project、Hash/Size/MIME 一致的 FileObject 进行联结，返回仅内部消费的 `DocumentDownloadSource`（Locator 隐藏 repr，不进入 API）。普通读取不放行 RESTRICTED/REVOKED。|
+|Reason|下载不能仅凭客户端 VersionId 或从公开 VersionView 推断物理地址；先建立可复用的授权来源事实，后续由下载 Service 执行文件快照、完整性事件与发送前复核。|
+|Impact|Document Application/Repository 与隔离数据库验证；无 Schema、公开 API、新依赖或权限扩张。当前还不能直接下载。|
+|Rollback|不调用下载来源方法；现有 Document 元数据读取与上传流程不变。|
