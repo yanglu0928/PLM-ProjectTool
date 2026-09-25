@@ -1667,3 +1667,15 @@
 |Reason|API-02 的续期控制为 S/C/A 而非 I；投影属于响应必需内容，若轮换后才发现投影故障会让浏览器收不到新凭据。预检与轮换间的并发由轮换服务再次校验 Session 关闭，不把预检当成最终授权。|
 |Impact|新增 Auth 续期 HTTP 与显式生产挂载；无 Schema/Migration、新依赖或 Breaking Change。投影可能在相邻事务之间被项目成员变更，后续业务请求仍须实时重验授权；多标签旧凭据按冻结轮换语义失效。|
 |Rollback|停止显式挂载续期 Router 即恢复默认 404；已成功轮换的 Session 不反向复活，用户可重新登录，无数据库迁移。|
+
+## DEC-20260925-032
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-032|
+|Date|2026-09-25|
+|WBS|API-RUNTIME-01 通用持久幂等收据|
+|Decision|按 CR-API-001 新增与配置专用收据并列的 `plt_idempotency_receipts`；范围为 actor/project/版本化 operation/Key SHA-256，部署级 NULL Project 通过 `UNIQUE NULLS NOT DISTINCT` 仍唯一。只存规范化请求 SHA-256 和非敏感结果引用/HTTP 状态，不存 Key/正文/Token/完整响应。reserve→业务/Audit→complete 必须在同一事务；已完成行触发器禁止修改/删除，PENDING 误提交后失败关闭；非空表禁止 downgrade，暂不自动过期清理。|
+|Reason|冻结 API-01 要求跨进程/重启重放同一语义，现有 `plt_configuration_command_receipts` 受 CHECK/外键限制，不能混入 Auth/Project 命令。单独增量保留 Gate 2 历史与旧配置收据语义。|
+|Impact|新增 ORM/Alembic `20260925_0015`、应用范围/指纹与 PostgreSQL 收据仓储；无公开 API/新依赖。调用方必须先完成授权并保证结果引用可重建原语义，ProjectId 归属由调用方验证。记录会持续增长，Retention 和误提交 PENDING 的受控恢复仍需单独设计。|
+|Rollback|停止新命令挂载；新收据为空时可 downgrade 到 `0014`，非空时拒绝以保留去重历史。旧表和旧业务数据不变。|

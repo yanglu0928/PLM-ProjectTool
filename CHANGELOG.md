@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/API-RUNTIME-01 经 CR-API-001 新增通用 PostgreSQL 持久幂等收据（Migration `20260925_0015`）：actor/project/operation/Key 摘要范围、请求指纹、非敏感结果引用/状态，数据库并发仲裁与已完成不可变；配置专用收据不变。Windows 11/Python 3.13 后端 324/324、PostgreSQL 18.6 空表 up/down/有数据升级/并发/回滚/受保护降级、Alembic check 和 wheel 构建 PASS。升级需备份并执行 Migration；非空收据禁止降级。Server 2025/Debian 13 未验证，注销与业务命令尚未接线，Gate 3 未通过。
+
 - 2026-09-25：`0.1.0.dev0`/AUT-03-A09 新增可选挂载的 Session 续期 HTTP：有效 Cookie/CSRF/Origin/Host、投影预检、旧 Session 原子撤销与新 Cookie/CSRF 签发；默认应用仍 404。Windows 11/Python 3.13 后端 322/322、PostgreSQL 18.6 真实旧 Token 失效/绝对到期不延长/审计及 wheel 构建 PASS。无 Migration/新依赖或 Breaking Change；升级无需数据操作。Server 2025/Debian 13 未验证；注销幂等、管理接口和最终程序包尚未完成。
 
 - 2026-09-25：`0.1.0.dev0`/AUT-03-A08 新增可选挂载的当前 Session GET：可信 Host、严格唯一 Cookie、现行 Session/身份/ProjectMember 摘要，响应不含 CSRF/Token 或新 Cookie；生产 Windows 组合根挂载，普通应用仍 404。Windows 11/Python 3.13 后端 320/320、PostgreSQL 18.6 真实登录后成员状态即时刷新及 wheel 构建 PASS。无 Migration/新依赖或 Breaking Change；升级无需数据操作。Server 2025/Debian 13 未验证，续期/注销、License/Secret 管理和最终程序包尚未完成。
