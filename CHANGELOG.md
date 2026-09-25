@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/DOC-04-A04 新增 Windows 当前账户独立 `document-parse-cursor-v1` 密钥只读装配，缺失/无效失败关闭；临时引用已验证失密、加密备份恢复后旧游标仍有效并清理测试凭据。Windows 11 后端 581 项无失败（2 项环境跳过），开发 wheel PASS。无 Migration/公开 API/新依赖；正式部署账户密钥未供给，平台组合未挂载。
+
 - 2026-09-26：`0.1.0.dev0`/DOC-04-A03 新增冻结 `DOCUMENT_PARSE_LIST` 双 Scope 可选 GET、独立 HMAC 游标（Session/Project/Document/Version/页大小/位置绑定）和仅安全元数据投影。Windows 11 后端 578 项无失败（2 项环境跳过）、合成 HTTP 合同及开发 wheel PASS。无 Migration/新依赖；默认应用不挂载，正式游标密钥/平台组合与真实 PostgreSQL HTTP 联调待后续任务；Parser/OCR 未运行。
 
 - 2026-09-26：`0.1.0.dev0`/DOC-04-A02 新增固定 DocumentVersion 的内部 ParseRecord 受权历史读取与安全投影，采用 `(created_at, parse_record_id)` keyset；不返回物理结果路径或正文。Windows 11 后端 576 项无失败（2 项环境跳过），隔离 PostgreSQL 18.6 同时间戳分页/Scope 隔离及开发 wheel PASS。无 Migration、新依赖或公开 API；公开 `DOCUMENT_PARSE_LIST`、真实 Parser/OCR 与结果文件完整性仍待。

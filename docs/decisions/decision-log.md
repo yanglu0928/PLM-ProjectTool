@@ -2984,3 +2984,15 @@
 |Reason|复用既有 Document 认证与错误合同，同时防止游标跨用户、跨项目或跨版本重放；独立密钥避免与 Document/Version 游标混用。|
 |Impact|Document HTTP/游标、可选应用挂载、合同测试；无 Schema、新依赖或默认公开入口。|
 |Rollback|不注入可选 Router 即保持 404；不变更冻结 API 路径或历史数据。|
+
+## DEC-20260926-142
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-142|
+|Date|2026-09-26|
+|WBS|DOC-04-A04 Windows Parse 游标专用密钥来源|
+|Decision|采用现有 Windows 当前账户 Credential Manager 只读 SecretKeyProvider，使用独立引用 `document-parse-cursor-v1` 装配 ParseListCursorCodec；缺失或无效时失败关闭。以临时引用和合成口令验证加密备份、删除后恢复以及旧游标仍可验证；测试末删除临时凭据。|
+|Reason|Parse 历史游标需独立密钥和可恢复性，不可复用 Document、Version 或其他资源族游标密钥，也不能把测试密钥内置于生产应用。|
+|Impact|Windows 装配适配、单元/当前账户测试；无 Schema、API、依赖或正式密钥供给。|
+|Rollback|不在生产组合调用该适配即可保持 Router 关闭；临时测试凭据测试后删除。|
