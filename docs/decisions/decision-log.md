@@ -1991,3 +1991,15 @@
 |Reason|不接受 v0 会让刚创建 Project 的首次 PATCH 永远无法满足冻结并发合同；内部服务/SQL 已支持 expected_version=0。|
 |Impact|通用解析器接纳合法初始版本，Secret 内部轮换/停用仍自行拒绝其不合法 v0；新增可选 Project HTTP 与测试，无 Schema/Migration、冻结 API 或安全规则变化。|
 |Rollback|不注入 Project PATCH Router 恢复 404；解析器可回退，但会重新引入 Project 首次修改不可用缺陷，因此须先替代此合同实现。|
+
+## DEC-20260925-059
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-059|
+|Date|2026-09-25|
+|WBS|PRJ-04-A07 Windows 显式平台 Project PATCH 组合|
+|Decision|仅在 `--platform` 与 `--platform-write` 既有 Schema、License、游标信任源前置全部通过后，复用当前 Session、License Guard、Project 授权/SQL 写仓库和 Audit 组合 ProjectWriteService，并挂载 PRJ-04-A06 PATCH Router。普通默认登录模式保持 404。|
+|Reason|可选接口和内部写服务已分别验证；复用单一平台组合根可防止多套 License 或权限判断。|
+|Impact|仅组合根和合成端到端验证；无新 Migration、依赖、冻结 API 或 License 机制变化。正式公钥/目标账户材料和 Server 2025 仍待。|
+|Rollback|恢复普通登录模式或移除显式平台 PATCH 注入，路由保持 404；既有 Project 修改和 Audit 不删除。|

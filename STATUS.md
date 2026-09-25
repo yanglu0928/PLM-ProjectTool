@@ -3,8 +3,8 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 2：Platform Core|
-|Current WBS|`PRJ-04-A06 Project 元数据 PATCH HTTP`（隔离 PostgreSQL 已验证；正式发行信任锚未供给）|
-|Current Status|PHASE_1_COMPLETE / PRJ_04_A06_OPTIONAL_HTTP_PASS / PLT_02_A07_P05_A09_CEREMONY_PENDING / PHASE_2_IN_PROGRESS|
+|Current WBS|`PRJ-04-A07 Windows 显式平台 Project PATCH 组合`（隔离 PostgreSQL 已验证；正式发行信任锚未供给）|
+|Current Status|PHASE_1_COMPLETE / PRJ_04_A07_SYNTHETIC_COMPOSITION_PASS / PLT_02_A07_P05_A09_CEREMONY_PENDING / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
 |Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03 PASS|
 |Blockers|AUT-03-A07 Windows 11 合成端到端已通过，Server 2025 目标运行账户/HTTPS 代理与 Debian 安全凭据来源未验证；PLT-02-A07 显式生产写组合已合成验证，正式发行公钥、目标账户可信时间/游标/Secret 主密钥供给、Server 2025 恢复演练仍待；POC-03 质量失败继续阻塞 Gate 3/UAT，Server Office、Debian 未验证和 Ghostscript 发行合规继续作为 Release 约束|
@@ -13,8 +13,8 @@
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，DM-02 License 授权粒度经用户批准 CR-LIC-001 修订|
 |DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`；Auth 限流增量 `20260925_0012`，PRJ-01～03 正式实现 Migration `20260925_0013`，成员变更历史增量 `20260925_0014`（CR-PRJ-001），通用幂等收据增量 `20260925_0015`（CR-API-001）|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
-|Test Summary|PRJ-04-A06：Windows 11/Python 3.13 后端 393/393 PASS，PostgreSQL 18 临时库 Project PATCH HTTP v0 首改/冲突/隔离/Audit、内部 License/回滚及开发 wheel PASS。正式发行信任锚未供给|
-|Next WBS|PRJ-04-A07 Windows 显式平台 Project PATCH 组合；PLT-02-A07-P05-A09 发行信任源待工作台操作员仪式，Server 2025/HTTPS 仍待；Debian 13 暂不验证|
+|Test Summary|PRJ-04-A07：Windows 11/Python 3.13 后端 393/393 PASS，PostgreSQL 18 临时库显式平台 Project PATCH 真实 Session/版本冲突/合成 License 拒绝、开发 wheel PASS。正式发行信任锚未供给|
+|Next WBS|PRJ-04-A08 Project 单向归档 HTTP 合同预检与接线；PLT-02-A07-P05-A09 发行信任源待工作台操作员仪式，Server 2025/HTTPS 仍待；Debian 13 暂不验证|
 
 ## 自动执行策略
 
@@ -56,6 +56,7 @@
 - PRJ-04-A04 已完成可选 Project 创建 HTTP 与 PostgreSQL 隔离合成端到端；默认/当前生产组合未挂载，正式信任源和 PRJ-04 整体未 PASS。
 - PRJ-04-A05 已在 Windows 显式平台组合挂载 Project 创建，并在 PostgreSQL 临时库验证真实 Session/同 Key 重放/管理员与合成 License 拒绝；默认模式仍 404，正式信任源与 PRJ-04 整体未 PASS。
 - PRJ-04-A06 已完成可选 Project 名称 PATCH，补齐冻结 ETag 初始版本 `"v0"` 的通用解析；PostgreSQL 临时库验证 HTTP 冲突/隔离/Audit，默认及当前平台组合仍 404，正式信任源与 PRJ-04 整体未 PASS。
+- PRJ-04-A07 已在 Windows 显式平台组合挂载 Project 名称 PATCH，并在 PostgreSQL 临时库验证真实 Session/版本冲突/合成 License 拒绝；默认模式仍 404，正式信任源与 PRJ-04 整体未 PASS。
 - AUT-03-A01 仅完成未挂载的可信 Host/Origin 策略；缺失/重复/不匹配失败关闭。限流、凭据、Cookie/CSRF 与公开登录仍待后续任务。
 - AUT-03-A02 完成 PostgreSQL 原子登录限流；真实客户端地址可信代理策略和过期桶清理调度未接线，登录仍未公开。
 - AUT-03-A03 完成内部登录编排与真实 scrypt/Session 集成；公开 HTTP/Cookie/CSRF、初始管理员和生产装配仍未完成。

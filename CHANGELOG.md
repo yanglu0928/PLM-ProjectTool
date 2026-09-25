@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PRJ-04-A07 在 Windows 显式 `--platform`/`--platform-write` 模式接入 Project 名称 PATCH，复用当前 Session、License、Project 授权和同事务 Audit；默认登录模式仍 404。Windows 11 后端 393/393、PostgreSQL 18 临时库真实 Session/版本冲突/合成 License 拒绝及开发 wheel PASS。无新 Migration/依赖；正式发行信任源、Server 2025/Debian 13 与最终程序包未完成。
+
 - 2026-09-25：`0.1.0.dev0`/PRJ-04-A06 新增可选 Project 名称 PATCH：Session/CSRF/当前负责人/License/强 If-Match，200 返回安全 ProjectView 与新 ETag；修复首次版本 `"v0"` 可用性，默认及当前平台组合仍 404。Windows 11 后端 393/393、PostgreSQL 18 临时库 HTTP 版本冲突/隔离/Audit 与开发 wheel PASS。无新 Migration/依赖；正式装配、信任源、Server 2025/Debian 13 和最终程序包未完成。
 
 - 2026-09-25：`0.1.0.dev0`/PRJ-04-A05 在 Windows 显式 `--platform`/`--platform-write` 模式接入 Project 创建 POST，复用现行 Session、License、管理员、Audit 与 `0015` 幂等；默认登录模式仍 404。Windows 11 后端 390/390、PostgreSQL 18 临时库合成平台组合同 Key 重放/权限/License 和开发 wheel PASS。无新 Migration/依赖；正式发行信任源、Server 2025/Debian 13 和最终程序包未完成。

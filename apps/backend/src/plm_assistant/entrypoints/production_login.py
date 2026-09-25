@@ -56,6 +56,12 @@ from plm_assistant.modules.project.infrastructure.authorized_projects import Sql
 from plm_assistant.modules.project.api.create_project import create_project_create_router
 from plm_assistant.modules.project.application.create_project import ProjectCreateService
 from plm_assistant.modules.project.infrastructure.create_repository import SqlAlchemyProjectCreateRepository
+from plm_assistant.modules.project.api.patch_project import create_project_patch_router
+from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
+from plm_assistant.modules.project.application.write_project import ProjectWriteService
+from plm_assistant.modules.project.infrastructure.authorization_repository import SqlAlchemyProjectAuthorizationRepository
+from plm_assistant.modules.project.infrastructure.write_repository import SqlAlchemyProjectWriteRepository
+from plm_assistant.modules.auth.infrastructure.project_write_access import SqlAlchemyProjectWriteAccess
 
 
 class ProductionLoginStartupError(RuntimeError):
@@ -151,6 +157,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         secret_disable_router = None
         project_read_router = None
         project_create_router = None
+        project_patch_router = None
         if include_secret_read:
             from plm_assistant.entrypoints.windows_license_runtime import (
                 create_windows_license_services,
@@ -189,6 +196,20 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             project_create_router = create_project_create_router(
                 sessions=sessions, projects=project_creates, origins=origins,
             )
+            project_writes = ProjectWriteService(
+                unit_of_work=runtime.unit_of_work,
+                access=SqlAlchemyProjectWriteAccess(),
+                license_guard=licenses.guard,
+                authorization=ProjectAuthorizationService(
+                    unit_of_work=runtime.unit_of_work,
+                    repository=SqlAlchemyProjectAuthorizationRepository(),
+                ),
+                repository=SqlAlchemyProjectWriteRepository(),
+                audit=audit,
+            )
+            project_patch_router = create_project_patch_router(
+                sessions=sessions, writes=project_writes, origins=origins,
+            )
             if include_secret_write:
                 from plm_assistant.entrypoints.windows_secret_write import (
                     create_windows_secret_write_service,
@@ -218,6 +239,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             secret_disable_router=secret_disable_router,
             project_read_router=project_read_router,
             project_create_router=project_create_router,
+            project_patch_router=project_patch_router,
             shutdown_callback=runtime.dispose,
         )
     except Exception:
