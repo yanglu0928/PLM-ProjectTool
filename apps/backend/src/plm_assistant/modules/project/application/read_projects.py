@@ -8,6 +8,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Protocol
 
+from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
+
 
 class ProjectReadError(RuntimeError):
     def __init__(self, code: str) -> None:
@@ -76,6 +78,8 @@ class ProjectReadService:
                 return ProjectPage(items)
         except ProjectReadError:
             raise
+        except RuntimeLicenseError:
+            raise ProjectReadError("LICENSE_OPERATION_DENIED") from None
         except Exception:
             raise ProjectReadError("PROJECT_UNAVAILABLE") from None
 
@@ -93,6 +97,8 @@ class ProjectReadService:
                 return item
         except ProjectReadError:
             raise
+        except RuntimeLicenseError:
+            raise ProjectReadError("LICENSE_OPERATION_DENIED") from None
         except Exception:
             raise ProjectReadError("PROJECT_UNAVAILABLE") from None
 

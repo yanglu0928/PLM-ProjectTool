@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PRJ-04-A01 新增可选 Project 列表/详情 GET：当前会话、License 与成员/部门授权、跨项目 404、Page/强 ETag，默认/当前生产组合不挂载。Windows 11 后端 384/384、PostgreSQL 18 临时库 HTTP 多用户隔离/License/Session 撤销及开发 wheel PASS。无 Migration/新依赖；生产组合、正式发行信任源、Server 2025/Debian 13 与最终程序包未完成。
+
 - 2026-09-25：`0.1.0.dev0`/PLT-02-A07-P05-A08 新增 Windows 显式 `--platform-write` 组合，固定当前账户 Vault `secret-master-v1`，仅在 Schema、License、游标与主密钥全部就绪后挂载 Secret 创建/轮换/停用；默认与 `--platform` 只读模式不变。Windows 11 后端 381/381、PostgreSQL 18 临时库合成生产组合创建→轮换→停用/Audit 和开发 wheel PASS。无新 Migration/依赖，目标库需已有 `0015`；正式发行信任锚、目标账户密钥、Server 2025/Debian 13 和最终程序包未完成。
 
 - 2026-09-25：`0.1.0.dev0`/PLT-02-A07-P05-A07 新增可选 Secret 停用 HTTP：可信来源/Session/CSRF/幂等/强 If-Match，空正文、200 仅停用元数据与 ETag，默认/当前生产组合不挂载。Windows 11 后端 376/376、PostgreSQL 18 临时库同 Key HTTP 重放仅一次停用/审计和开发 wheel PASS。无新 Migration/依赖，目标库需已有 `0015`；正式主密钥/License、Server 2025/Debian 13 和最终程序包未完成。

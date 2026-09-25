@@ -8,15 +8,21 @@ from datetime import datetime, timezone
 
 import psycopg
 from alembic import command
+from fastapi.testclient import TestClient
 from psycopg import sql
 from sqlalchemy.engine import URL
 
+from plm_assistant.entrypoints.api import create_app
+from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
+from plm_assistant.modules.auth.application.session_service import SessionError
 from plm_assistant.modules.auth.infrastructure.project_read_access import SqlAlchemyProjectReadAccess
+from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
 from plm_assistant.modules.project.application.read_projects import (
     ProjectReadError, ProjectReadQuery, ProjectReadService,
 )
+from plm_assistant.modules.project.api.read_projects import create_project_read_router
 from plm_assistant.modules.project.infrastructure.read_repository import SqlAlchemyProjectReadRepository
 
 HOST, PORT, USER = "127.0.0.1", 55432, "poc_admin"
@@ -28,7 +34,14 @@ class Guard:
 
     def require_valid(self, **_):
         if not self.enabled:
-            raise RuntimeError("synthetic invalid License")
+            raise RuntimeLicenseError("EXPIRED")
+
+
+class HttpSessions:
+    def validate(self, token):
+        if token not in (b"m" * 32, b"o" * 32, b"a" * 32):
+            raise SessionError("AUTH_SESSION_EXPIRED")
+        return object()
 
 
 def connect(name):
@@ -88,6 +101,31 @@ def main():
                 denied("RESOURCE_NOT_FOUND", lambda: service.get(q_creator, p1))
                 view = service.get(q_member, p1)
                 assert (view.code, view.name, view.state, view.etag) == ("P1", "First", "ACTIVE", '"v0"')
+                router = create_project_read_router(
+                    sessions=HttpSessions(), projects=service,
+                    origins=LoginOriginPolicy(["http://localhost"]),
+                )
+                with TestClient(create_app(project_read_router=router),
+                                base_url="http://localhost") as client:
+                    member_headers = {"cookie": "plm_session=" + member_token.hex()}
+                    other_headers = {"cookie": "plm_session=" + other_token.hex()}
+                    creator_headers = {"cookie": "plm_session=" + creator_token.hex()}
+                    member_page = client.get("/api/v1/projects", headers=member_headers)
+                    other_page = client.get("/api/v1/projects", headers=other_headers)
+                    creator_page = client.get("/api/v1/projects", headers=creator_headers)
+                    assert member_page.status_code == other_page.status_code == creator_page.status_code == 200
+                    assert [item["project_id"] for item in member_page.json()["data"]["items"]] == [str(p1)]
+                    assert [item["project_id"] for item in other_page.json()["data"]["items"]] == [str(p2)]
+                    assert creator_page.json()["data"]["items"] == []
+                    cross = client.get(f"/api/v1/projects/{p2}", headers=member_headers)
+                    own = client.get(f"/api/v1/projects/{p1}", headers=member_headers)
+                    assert cross.status_code == 404 and own.status_code == 200
+                    assert own.headers["etag"] == '"v0"'
+                    guard.enabled = False
+                    denied_response = client.get("/api/v1/projects", headers=member_headers)
+                    assert denied_response.status_code == 403
+                    assert denied_response.json()["error"]["code"] == "LICENSE_OPERATION_DENIED"
+                    guard.enabled = True
                 with connect(name) as db:
                     db.execute("UPDATE plm.prj_projects SET state='ARCHIVED',lock_version=lock_version+1 WHERE project_id=%s", (p1,))
                 view = service.get(q_member, p1)
@@ -108,12 +146,18 @@ def main():
                     db.execute("UPDATE plm.prj_departments SET state='ACTIVE' WHERE department_id=%s", (d1,))
                 assert service.get(q_member, p1).project_id == p1
                 guard.enabled = False
-                denied("PROJECT_UNAVAILABLE", lambda: service.list(q_member))
+                denied("LICENSE_OPERATION_DENIED", lambda: service.list(q_member))
                 guard.enabled = True
                 with connect(name) as db:
                     db.execute("UPDATE plm.auth_sessions SET revoked_at=statement_timestamp(),revoke_reason='ADMIN_REVOKE',lock_version=lock_version+1 WHERE session_token_digest=%s", (hashlib.sha256(member_token).digest(),))
                 denied("AUTH_ACCESS_DENIED", lambda: service.get(q_member, p1))
-                print("PASS: current Session/License, isolated list/detail, archived read, membership/department revocation, ETag")
+                with TestClient(create_app(project_read_router=router),
+                                base_url="http://localhost") as client:
+                    revoked = client.get("/api/v1/projects", headers={
+                        "cookie": "plm_session=" + member_token.hex(),
+                    })
+                    assert revoked.status_code == 401
+                print("PASS: current Session/License, isolated internal/HTTP list/detail, archived read, membership/department revocation, ETag")
             finally:
                 runtime.dispose()
         finally:

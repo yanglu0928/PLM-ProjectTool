@@ -1919,3 +1919,15 @@
 |Reason|可选 write-only HTTP 已验证，但正式组合不能因路由存在而隐式开放；固定引用避免普通配置控制加密主材料选择，显式模式保留当前只读装配语义。|
 |Impact|Windows 启动入口增加非默认模式与组合测试；无 Schema/Migration/冻结 API 变化。正式发行公钥/目标账户密钥供给及 Server 2025/HTTPS 验收仍独立，不能由合成组合声称生产 PASS。|
 |Rollback|退回 `--platform` 只读模式，不卸载或改写既有 Secret 密文；无数据迁移。|
+
+## DEC-20260925-053
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-053|
+|Date|2026-09-25|
+|WBS|PRJ-04-A01 Project 列表/详情 HTTP|
+|Decision|将已有 ProjectReadService 以仅显式注入的 `GET /api/v1/projects` 与 `GET /api/v1/projects/{project_id}` 接入 HTTP。先校验可信 Host 和当前 Session，再由 Project 服务在事务内重复校验会话、License 与成员/部门授权；列表仍只返回当前至多一个授权 Project，固定 Page 结构，无需生成游标，接受规范 1～200 `page_size`，拒绝 cursor/未知/重复参数。详情统一隐藏跨项目并返回强 ETag。真实 License Guard 拒绝映射为冻结的 `LICENSE_OPERATION_DENIED`，基础设施失败保持 503。默认应用不挂载。|
+|Reason|内部读取与单有效成员 Schema 已验证，但无前端可用的冻结 Project GET API；显式边界可先验证权限隔离，同时不绕过尚缺的正式发行信任源。|
+|Impact|新增 Project HTTP、错误分类、契约/临时库测试；无 Schema/Migration 或冻结路径变化。若未来允许多项目成员，必须另行实现完整性保护 keyset cursor，不得沿用无游标假设。|
+|Rollback|不注入 Router 即恢复 404；无数据迁移或 Project 数据改写。|

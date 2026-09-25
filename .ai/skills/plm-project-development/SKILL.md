@@ -36,6 +36,7 @@ description: Execute architecture, PoC, implementation, testing, packaging, and 
 - PLT-02-A07-P05-A06 已新增可选 Secret 轮换 write-only HTTP 并在 PostgreSQL 临时库完成隔离合成端到端；默认/生产组合仍不挂载写路由，停用 HTTP 与正式主密钥/License 未完成。最新状态以根目录 `STATUS.md` 为准。
 - PLT-02-A07-P05-A07 已新增可选 Secret 停用 HTTP 并在 PostgreSQL 临时库完成隔离合成端到端；默认/生产组合仍不挂载写路由，正式主密钥/License 与 Gate 3 未完成。最新状态以根目录 `STATUS.md` 为准。
 - PLT-02-A07-P05-A08 已新增 Windows 显式 `--platform-write` 组合并在 PostgreSQL 临时库完成合成信任源端到端；默认/只读模式不挂载写路由，正式发行信任锚/目标账户密钥和 Gate 3 未完成。最新状态以根目录 `STATUS.md` 为准。
+- PLT-02-A07-P05-A09 正式信任源受工作台操作员口令保管与离线备份阻塞；PRJ-04-A01 已新增可选 Project 列表/详情 HTTP，并在 PostgreSQL 临时库完成合成 License 及真实多用户授权验证。生产组合、Gate 3 未完成；最新状态以根目录 `STATUS.md` 为准。
 
 ## 参考文件路由
 
