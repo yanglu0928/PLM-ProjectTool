@@ -64,12 +64,14 @@ class DocumentUploadAccess:
                                operation: str, target_document_id: uuid.UUID | None = None,
                                upload_id: uuid.UUID | None = None) -> None:
         if (type(actor_id) is not uuid.UUID or actor_id.int == 0
-                or operation not in ("V1_DOCUMENT_UPLOAD_CREATE", "V1_DOCUMENT_UPLOAD_CONTENT")
+                or operation not in ("V1_DOCUMENT_UPLOAD_CREATE", "V1_DOCUMENT_UPLOAD_CONTENT",
+                                     "V1_DOCUMENT_UPLOAD_COMMIT", "V1_DOCUMENT_UPLOAD_ABORT")
                 or scope not in ("GLOBAL", "PROJECT")
                 or (scope == "GLOBAL" and project_id is not None)
                 or (scope == "PROJECT" and (type(project_id) is not uuid.UUID or project_id.int == 0))
                 or (operation == "V1_DOCUMENT_UPLOAD_CREATE" and upload_id is not None)
-                or (operation == "V1_DOCUMENT_UPLOAD_CONTENT" and (
+                or (operation in ("V1_DOCUMENT_UPLOAD_CONTENT", "V1_DOCUMENT_UPLOAD_COMMIT",
+                                  "V1_DOCUMENT_UPLOAD_ABORT") and (
                     type(upload_id) is not uuid.UUID or upload_id.int == 0
                     or target_document_id is not None))):
             raise DocumentUploadAccessError("RESOURCE_NOT_FOUND")
@@ -98,7 +100,7 @@ class DocumentUploadAccess:
                 raise DocumentUploadAccessError("RESOURCE_NOT_FOUND")
             if getattr(facts, "project_state", None) != "ACTIVE":
                 raise DocumentUploadAccessError("PROJECT_ARCHIVED")
-        if operation == "V1_DOCUMENT_UPLOAD_CONTENT":
+        if operation != "V1_DOCUMENT_UPLOAD_CREATE":
             creator = self._upload_owner.creator_id(
                 transaction, upload_id=upload_id, scope=scope, project_id=project_id,
             )

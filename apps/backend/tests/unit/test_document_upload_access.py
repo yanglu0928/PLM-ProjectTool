@@ -92,6 +92,24 @@ class DocumentUploadAccessTests(unittest.TestCase):
             self._require(content=True)
         self.assertEqual(result.exception.code, "RESOURCE_NOT_FOUND")
 
+    def test_commit_and_abort_require_current_creator(self):
+        for operation in ("V1_DOCUMENT_UPLOAD_COMMIT", "V1_DOCUMENT_UPLOAD_ABORT"):
+            with self.subTest(operation=operation):
+                self.access.require_in_transaction(
+                    object(), actor_id=self.actor, scope="PROJECT",
+                    project_id=self.project, upload_id=self.upload,
+                    operation=operation,
+                )
+                self.owner.user = uuid.uuid4()
+                with self.assertRaises(DocumentUploadAccessError) as result:
+                    self.access.require_in_transaction(
+                        object(), actor_id=self.actor, scope="PROJECT",
+                        project_id=self.project, upload_id=self.upload,
+                        operation=operation,
+                    )
+                self.assertEqual(result.exception.code, "RESOURCE_NOT_FOUND")
+                self.owner.user = self.actor
+
     def test_global_requires_deployment_admin(self):
         self._require(global_scope=True)
         self.admin.user = None

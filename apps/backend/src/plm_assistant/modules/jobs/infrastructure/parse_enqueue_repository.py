@@ -38,10 +38,8 @@ class SqlAlchemyParseJobQueueRepository:
             ).with_for_update(of=OutboxEventRow)).scalar_one_or_none()
             if (event is None or existing.payload_refs != payload
                     or existing.actor_ref != request.actor_id
-                    or existing.trace_id != str(request.trace_id)
                     or event.aggregate_ref != request.document_version_id
                     or event.aggregate_version != request.version_no
-                    or event.trace_id != str(request.trace_id)
                     or event.payload_refs != {"job_id": str(existing.job_id),
                                               "document_version_id": str(request.document_version_id)}):
                 raise ParseEnqueueError("CONFLICT_STATE")

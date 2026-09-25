@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/DOC-03-A04-A04-P04-P02 新增内部上传 Commit 原子编排：文件提升后同事务写 FileObject AVAILABLE、不可变 DocumentVersion、UploadIntent COMMITTED、Parse Job/Outbox、Audit 与收据；失败后仅验证匹配的最终文件恢复。Windows 11 后端 502 项无失败（2 项权限跳过），隔离 PostgreSQL 18/临时目录新建/升版/重放/权限/许可/回滚/损坏验证与开发 wheel PASS。无新 Migration/API/依赖；正式 HTTP、Abort、Parser Worker 与最终程序包仍待。
+
 - 2026-09-26：`0.1.0.dev0`/DOC-03-A04-A04-P04-P01 增加 Job Owner 的内部 Parse Job/Outbox 同事务入队接口，上传 ID 幂等、最小引用载荷且不自行提交。Windows 11 后端 500 项无失败（2 项权限跳过），隔离 PostgreSQL 18 回滚/重放/冲突/GLOBAL 与 PROJECT 范围 PASS。无新 Migration/API/依赖，需已有 `0026`；Document Commit/Abort、Parser Worker 与最终程序包仍待。
 
 - 2026-09-26：`0.1.0.dev0`/DOC-03-A04-A04-P03 按 CR-DOC-007 增量迁移 `20260926_0026` 增加 Outbox 投递租约/防旧进程 token，并实现短事务领取、心跳、确认、消费去重及有界重试。Windows 11 后端 498 项无失败（2 项权限跳过），隔离 PostgreSQL 18 升降级/并发/崩溃接管/消费回滚与去重 PASS。生产升级前备份并执行至 head；旧 DELIVERING 状态须先受控恢复。无公开 API/新依赖；真正 Worker/Parser、上传 Commit/Abort 和最终程序包仍待。
