@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/DOC-03-A04-A03-P04-P01 增加请求级 Document 上传授权适配：复用 Auth 所有的当前 Session/CSRF、DeploymentAdmin 证明，按冻结 API-02 检查项目上传角色及 Content 创建者，并在流前/流后每个事务重查。Windows 11 后端 482 项无失败（2 项符号链接场景跳过），开发 wheel 构建通过。无新 Migration、公开 API 或依赖；升级仍需已有 `0024`。License/HTTP、PostgreSQL 真实身份组合、Server 2025/Debian 13 与最终程序包未完成。
+
 - 2026-09-26：`0.1.0.dev0`/DOC-03-A04-A03-P03-A02-P03-P02 增加受控暂存目录限界扫描与逐候选 TTL 清理，并在删除后完成审计中断时记录“重新观察到缺失”而非伪称删除成功。Windows 11 后端 476 项无失败（2 项符号链接跳过），PostgreSQL 18 隔离合成批处理/拒绝/中断对账及开发 wheel PASS。无新 Migration/API/依赖；升级仍需已有 `0024`。生产调度、正式上传 HTTP、Server 2025/Debian 13、最终程序包未完成。
 
 - 2026-09-26：`0.1.0.dev0`/DOC-03-A04-A03-P03-A02-P03-P01 增加单候选未登记暂存文件七天 TTL 清理：维护授权、Intent/FileObject/年龄/文件锁与身份双重核对、清理请求审计及确定性收据、删除后完成审计。Windows 11 后端 475 项无失败（2 项符号链接跳过），PostgreSQL 18 隔离合成权限/活动锁/已登记保护、审计回滚和开发 wheel PASS。无新 Migration/API/依赖；升级仍需已有 `0024`。目录扫描/中断对账、正式 HTTP、Server 2025/Debian 13 和最终程序包未完成。

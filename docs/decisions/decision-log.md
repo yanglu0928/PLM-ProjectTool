@@ -2591,3 +2591,15 @@
 |Reason|文件目录遍历不能直接成为删除授权；PostgreSQL 与本地文件系统非原子，中断窗口只可陈述已观察到的状态。|
 |Impact|Document Storage/维护 Service/Repository 与隔离文件/数据库测试；无 Schema、公开 API、新依赖。生产定时调度和目标账户路径权限仍属部署接线。|
 |Rollback|维护入口未装配时不执行；已写的 Audit 保留，未知文件原样保留。不以扫描结果自动删除客户文件。|
+
+## DEC-20260926-109
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-109|
+|Date|2026-09-26|
+|WBS|DOC-03-A04-A03-P04-P01 上传身份与角色授权适配|
+|Decision|以请求级适配器连接已有 Auth Session/CSRF、DeploymentAdmin 与 Project 当前成员事实，项目上传创建只允许 ProjectManager/ImplementationMember/CustomerManager，Content 额外核验 UploadIntent 创建者。上传前和流结束后的事务均重新检查，不持有跨流数据库锁；License Guard 与 HTTP 由 P02 单独装配。|
+|Reason|冻结 API-02 区分创建与 Content 权限；既有内部上传命令仅有合成授权 Port，不能把它直接公开。跨流 Session/成员状态可能变化，必须重新检查。|
+|Impact|Document Application 授权适配与 UploadIntent 创建者只读查询；无冻结 Schema/API 变更。|
+|Rollback|未接公开路由，移除该适配器即可恢复此前内部状态；无数据迁移。P02 装配前不得把本项称为生产授权通过。|

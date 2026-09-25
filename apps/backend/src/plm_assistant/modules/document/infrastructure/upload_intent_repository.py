@@ -16,6 +16,14 @@ from plm_assistant.modules.project.infrastructure.orm import ProjectRow
 
 
 class SqlAlchemyUploadIntentRepository:
+    def creator_id(self, transaction: object, *, upload_id: uuid.UUID,
+                   scope: str, project_id: uuid.UUID | None) -> uuid.UUID | None:
+        return self._session(transaction).execute(select(UploadIntentRow.actor_id).where(
+            UploadIntentRow.upload_id == upload_id,
+            UploadIntentRow.scope == scope,
+            UploadIntentRow.project_id == project_id,
+        ).with_for_update(of=UploadIntentRow)).scalar_one_or_none()
+
     def create(self, transaction: object, *, command: CreateUploadIntent,
                upload_id: uuid.UUID, token_digest: bytes,
                ttl_seconds: int) -> UploadIntentSnapshot:
