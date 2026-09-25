@@ -40,6 +40,7 @@ def create_app(
     project_patch_router: APIRouter | None = None,
     project_archive_router: APIRouter | None = None,
     project_member_read_router: APIRouter | None = None,
+    project_member_create_router: APIRouter | None = None,
     shutdown_callback: Callable[[], None] | None = None,
 ) -> FastAPI:
     """Create one isolated API application instance.
@@ -103,4 +104,6 @@ def create_app(
         app.include_router(project_archive_router)
     if project_member_read_router is not None:
         app.include_router(project_member_read_router)
+    if project_member_create_router is not None:
+        app.include_router(project_member_create_router)
     return app

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PRJ-04-A10-P02 新增可选 Project Member 创建 HTTP，复用 P01 不可变首次结果重放；严格 Origin/Session/CSRF/幂等键/有界 JSON，201 返回安全 MemberView、ETag 和 Location。Windows 11 后端 413/413、PostgreSQL 18 临时库真实 Session/重放/权限/License 与开发 wheel PASS。无新增 Migration/依赖，目标库需升至 `0016`；默认/当前平台组合仍 404。正式信任源、Server 2025/Debian 13 和最终程序包未完成。
+
 - 2026-09-25：`0.1.0.dev0`/PRJ-04-A10-P01 按 CR-PRJ-002 增加 Project Member 创建首次响应不可变快照及内部同事务幂等，复用通用收据；同 Key 重放原 MemberView，异载荷冲突。Windows 11 后端 410/410、PostgreSQL 18 临时库空/已有数据升级、并发、回滚、历史响应及降级保护、开发 wheel PASS。新增 Migration `20260925_0016`，目标库升级前须备份并执行至 head；不增依赖。公开创建 HTTP、正式信任源、Server 2025/Debian 13 与最终程序包未完成。
 
 - 2026-09-25：`0.1.0.dev0`/PRJ-04-A09-P04 在 Windows 显式平台模式挂载 Project Member 历史列表，独立 Vault cursor 密钥缺失即拒绝启动；默认模式仍 404。Windows 11 后端 408/408、PostgreSQL 18 临时库真实 Session/双页/权限/License 与既有组合回归、开发 wheel PASS。无 Migration/新依赖；正式目标账户密钥与发行信任源、Server 2025/Debian 13 和最终程序包未完成。

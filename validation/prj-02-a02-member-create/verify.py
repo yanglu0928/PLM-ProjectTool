@@ -9,12 +9,18 @@ from datetime import datetime, timedelta, timezone
 
 import psycopg
 from alembic import command
+from fastapi.testclient import TestClient
 from psycopg import sql
 from sqlalchemy.engine import URL
 
 from plm_assistant.modules.audit.application.public import AuditService
 from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
+from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
 from plm_assistant.modules.auth.infrastructure.project_member_create_access import SqlAlchemyProjectMemberCreateAccess
+from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
+from plm_assistant.modules.auth.application.session_service import SessionError
+from plm_assistant.entrypoints.api import create_app
+from plm_assistant.modules.project.api.create_member import create_project_member_create_router
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
@@ -35,12 +41,22 @@ class Guard:
 
     def require_valid(self, **_):
         if not self.enabled:
-            raise RuntimeError("synthetic invalid License")
+            raise RuntimeLicenseError("EXPIRED")
 
 
 class FailedAudit:
     def append(self, *_):
         raise RuntimeError("synthetic Audit failure")
+
+
+class HttpSessions:
+    def __init__(self, tokens):
+        self.tokens = frozenset(tokens)
+
+    def validate(self, token, *, csrf_token, require_csrf):
+        if token not in self.tokens or csrf_token != CSRF or require_csrf is not True:
+            raise SessionError("AUTH_SESSION_EXPIRED")
+        return object()
 
 
 def connect(name):
@@ -91,6 +107,8 @@ def main():
                     audit_target = user(db, "Synthetic Audit Target")
                     idempotent_audit_target = user(db, "Synthetic Idempotent Audit Target")
                     idempotent_concurrent_target = user(db, "Synthetic Idempotent Concurrent Target")
+                    http_target = user(db, "Synthetic HTTP Target")
+                    http_forbidden_target = user(db, "Synthetic HTTP Forbidden Target")
                     disabled_target = user(db, "Synthetic Disabled")
                     db.execute("UPDATE plm.auth_users SET state='DISABLED' WHERE user_id=%s", (disabled_target,))
                     p1 = db.execute("INSERT INTO plm.prj_projects(project_code,project_code_normalized,name,created_by) VALUES ('P1','p1','First',%s) RETURNING project_id", (ids["pm1"],)).fetchone()[0]
@@ -127,8 +145,8 @@ def main():
                 guard.enabled = False
                 try:
                     service.create(make_command())
-                except RuntimeError as exc:
-                    assert str(exc) == "synthetic invalid License"
+                except RuntimeLicenseError as exc:
+                    assert exc.code == "EXPIRED"
                 else:
                     raise AssertionError("License denial bypassed")
                 guard.enabled = True
@@ -197,6 +215,48 @@ def main():
                 replayed = idempotent.create_idempotent(replay_command, idempotency_key="member-create-replay-key-001")
                 assert replayed == first and replayed.etag == '"v0"'
                 assert replayed.user_display_name == "Synthetic Replay" and replayed.department_name == "First Department"
+                router = create_project_member_create_router(
+                    sessions=HttpSessions(tokens.values()), members=idempotent,
+                    origins=LoginOriginPolicy(["http://localhost"]),
+                )
+                with TestClient(create_app(project_member_create_router=router),
+                                base_url="http://localhost") as client:
+                    url_path = f"/api/v1/projects/{p1}/members"
+                    headers = {
+                        "origin": "http://localhost",
+                        "cookie": "plm_session=" + tokens["pm1"].hex(),
+                        "x-csrf-token": CSRF.hex(),
+                        "idempotency-key": "member-create-http-key-001",
+                    }
+                    body = {"user_id": str(http_target), "role": "IMPLEMENTATION_MEMBER",
+                            "department_id": str(d1)}
+                    first_http = client.post(url_path, headers=headers, json=body)
+                    second_http = client.post(url_path, headers=headers, json=body)
+                    assert first_http.status_code == second_http.status_code == 201, (first_http.text, second_http.text)
+                    assert first_http.json()["data"] == second_http.json()["data"]
+                    assert first_http.headers["etag"] == '"v0"'
+                    http_member_id = uuid.UUID(first_http.json()["data"]["member_id"])
+                    assert client.post(url_path, headers=headers,
+                                       json={**body, "role": "CUSTOMER_MEMBER"}).status_code == 409
+                    denied_role = client.post(url_path, headers={
+                        **headers, "cookie": "plm_session=" + tokens["cm"].hex(),
+                        "idempotency-key": "member-create-http-key-002",
+                    }, json={**body, "user_id": str(http_forbidden_target)})
+                    assert denied_role.status_code == 404, denied_role.text
+                    denied_project = client.post(f"/api/v1/projects/{p2}/members", headers={
+                        **headers, "idempotency-key": "member-create-http-key-003",
+                    }, json={**body, "user_id": str(http_forbidden_target)})
+                    assert denied_project.status_code == 404, denied_project.text
+                    guard.enabled = False
+                    denied_license = client.post(url_path, headers={
+                        **headers, "idempotency-key": "member-create-http-key-004",
+                    }, json={**body, "user_id": str(http_forbidden_target)})
+                    assert denied_license.status_code == 403, denied_license.text
+                    guard.enabled = True
+                with connect(name) as db:
+                    assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE user_id=%s", (http_target,)).fetchone()[0] == 1
+                    assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s", (http_member_id,)).fetchone()[0] == 1
+                    assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE user_id=%s", (http_forbidden_target,)).fetchone()[0] == 0
                 denied("CONFLICT_IDEMPOTENCY", lambda: idempotent.create_idempotent(
                     make_command(target_id=replay_target, role="CUSTOMER_MEMBER"),
                     idempotency_key="member-create-replay-key-001",
@@ -220,7 +280,7 @@ def main():
                 else:
                     raise AssertionError("downgrade unexpectedly discarded snapshots")
                 denied("PROJECT_ARCHIVED", lambda: service.create(make_command(target_id=audit_target)))
-                print("PASS: empty/existing-data up-down, authorization, rollback, concurrent one-write replay, immutable history and downgrade guard")
+                print("PASS: empty/existing-data up-down, HTTP Session/CSRF/License/role/isolation/replay, rollback, concurrent one-write, immutable history and downgrade guard")
             finally:
                 runtime.dispose()
         finally:

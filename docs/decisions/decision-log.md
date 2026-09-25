@@ -2099,3 +2099,15 @@
 |Reason|成员角色、部门、状态与显示名称均可变化，读取当前行无法履行冻结 API-01 的首次响应重放合同。|
 |Impact|新增 Migration `20260925_0016`、ORM、内部服务和测试；不改 `/api/v1` 结构，不开放公开创建路由。|
 |Rollback|新表为空可降至 `0015`；已有快照时拒绝降级，须保留版本并受控迁移。|
+
+## DEC-20260925-068
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-068|
+|Date|2026-09-25|
+|WBS|PRJ-04-A10-P02 成员创建可选 HTTP|
+|Decision|复用 Project 创建的 8 KiB 严格 JSON、可信 Origin/Session/CSRF/Idempotency-Key 边界；body 仅接受 `user_id`、`role`、`department_id` 及可选 UTC `effective_at`，ProjectId 只取路径。MemberView 复用已有安全投影，默认与当前平台组合均不挂载。|
+|Reason|冻结 API-02 指定成员创建路径和 201 MemberView；内部 P01 已具备原样重放，接口不应自行绕过服务授权或回显内部字段。|
+|Impact|Project 可选 Router、应用工厂注入点、测试和版本记录；无 Schema、Migration、Breaking API 或新依赖。|
+|Rollback|移除 Router 注入后恢复 404；不影响内部成员创建与已存结果快照。|
