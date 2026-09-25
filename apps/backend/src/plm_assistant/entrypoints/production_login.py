@@ -11,6 +11,7 @@ from plm_assistant.entrypoints.api import create_app
 from plm_assistant.entrypoints.windows_secret_list_cursor import create_windows_secret_list_cursor_codec
 from plm_assistant.entrypoints.windows_project_member_cursor import create_windows_project_member_cursor_codec
 from plm_assistant.entrypoints.windows_project_department_cursor import create_windows_project_department_cursor_codec
+from plm_assistant.entrypoints.windows_document_upload_token import create_windows_document_upload_token_issuer
 from plm_assistant.modules.audit.application.public import AuditService
 from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
 from plm_assistant.modules.auth.api.login import create_login_router
@@ -92,6 +93,11 @@ from plm_assistant.modules.project.application.write_project import ProjectWrite
 from plm_assistant.modules.project.infrastructure.authorization_repository import SqlAlchemyProjectAuthorizationRepository
 from plm_assistant.modules.project.infrastructure.write_repository import SqlAlchemyProjectWriteRepository
 from plm_assistant.modules.auth.infrastructure.project_write_access import SqlAlchemyProjectWriteAccess
+from plm_assistant.modules.auth.infrastructure.license_import_access import SqlAlchemyLicenseImportAccess
+from plm_assistant.modules.document.api.create_upload import create_document_upload_create_router
+from plm_assistant.modules.document.application.create_upload_intent import CreateUploadIntentService
+from plm_assistant.modules.document.application.upload_access import DocumentUploadAccess
+from plm_assistant.modules.document.infrastructure.upload_intent_repository import SqlAlchemyUploadIntentRepository
 
 
 class ProductionLoginStartupError(RuntimeError):
@@ -197,6 +203,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         project_department_create_router = None
         project_department_patch_router = None
         project_department_deactivate_router = None
+        document_upload_create_router = None
         if include_secret_read:
             from plm_assistant.entrypoints.windows_license_runtime import (
                 create_windows_license_services,
@@ -387,6 +394,28 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 secret_disable_router = create_secret_disable_router(
                     sessions=sessions, writes=writes, origins=origins,
                 )
+                upload_issuer = create_windows_document_upload_token_issuer()
+                upload_repository = SqlAlchemyUploadIntentRepository()
+
+                def upload_service(token: bytes, csrf: bytes) -> CreateUploadIntentService:
+                    return CreateUploadIntentService(
+                        unit_of_work=runtime.unit_of_work,
+                        access=DocumentUploadAccess(
+                            session_token=token, csrf_token=csrf,
+                            session_access=SqlAlchemyProjectWriteAccess(),
+                            admin_access=SqlAlchemyLicenseImportAccess(),
+                            project_facts=SqlAlchemyProjectAuthorizationRepository(),
+                            upload_owner=upload_repository,
+                        ),
+                        repository=upload_repository,
+                        receipts=SqlAlchemyIdempotencyReceipts(), audit=audit,
+                        token_issuer=upload_issuer,
+                    )
+
+                document_upload_create_router = create_document_upload_create_router(
+                    sessions=sessions, origins=origins, license_guard=licenses.guard,
+                    service_factory=upload_service,
+                )
         return create_app(
             readiness_checks=(runtime.is_ready,),
             login_router=router,
@@ -410,6 +439,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             project_department_create_router=project_department_create_router,
             project_department_patch_router=project_department_patch_router,
             project_department_deactivate_router=project_department_deactivate_router,
+            document_upload_create_router=document_upload_create_router,
             shutdown_callback=runtime.dispose,
         )
     except Exception:

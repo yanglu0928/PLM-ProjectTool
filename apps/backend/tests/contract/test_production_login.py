@@ -191,6 +191,7 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(client.patch("/api/v1/projects/00000000-0000-0000-0000-000000000001/departments/00000000-0000-0000-0000-000000000002").status_code, 403)
             self.assertEqual(client.post("/api/v1/projects/00000000-0000-0000-0000-000000000001/departments/00000000-0000-0000-0000-000000000002:deactivate").status_code, 403)
             self.assertEqual(client.post("/api/v1/projects/00000000-0000-0000-0000-000000000001/members").status_code, 403)
+            self.assertEqual(client.post("/api/v1/global/document-uploads").status_code, 404)
             self.assertEqual(client.patch("/api/v1/projects/00000000-0000-0000-0000-000000000001/members/00000000-0000-0000-0000-000000000002").status_code, 403)
             for action in ("suspend", "resume", "remove"):
                 self.assertEqual(client.post("/api/v1/projects/00000000-0000-0000-0000-000000000001/members/00000000-0000-0000-0000-000000000002:" + action).status_code, 403)
@@ -302,14 +303,19 @@ class ProductionLoginTests(unittest.TestCase):
                    "plm_assistant.entrypoints.production_login.create_windows_project_department_cursor_codec",
                    return_value=DepartmentListCursorCodec(b"d" * 32)), patch(
                    "plm_assistant.entrypoints.windows_secret_write.create_windows_secret_write_service",
-                   return_value=Mock()) as write_factory:
+                   return_value=Mock()) as write_factory, patch(
+                   "plm_assistant.entrypoints.production_login.create_windows_document_upload_token_issuer",
+                   return_value=Mock()) as upload_issuer_factory:
             app = create_production_platform_write_app(settings)
         license_factory.assert_called_once()
         write_factory.assert_called_once()
+        upload_issuer_factory.assert_called_once()
         with TestClient(app, base_url="http://localhost") as client:
             self.assertEqual(client.post("/api/v1/admin/secrets").status_code, 403)
             self.assertEqual(client.get("/api/v1/projects").status_code, 401)
             self.assertEqual(client.post("/api/v1/projects").status_code, 403)
+            self.assertEqual(client.post("/api/v1/global/document-uploads").status_code, 403)
+            self.assertEqual(client.post("/api/v1/projects/00000000-0000-0000-0000-000000000001/document-uploads").status_code, 403)
             self.assertEqual(client.patch("/api/v1/projects/00000000-0000-0000-0000-000000000001").status_code, 403)
             self.assertEqual(client.post("/api/v1/projects/00000000-0000-0000-0000-000000000001:archive").status_code, 403)
             self.assertEqual(client.get("/api/v1/projects/00000000-0000-0000-0000-000000000001/members").status_code, 401)
@@ -327,6 +333,34 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(client.post(
                 "/api/v1/admin/secrets/00000000-0000-0000-0000-000000000001:disable"
             ).status_code, 403)
+        runtime.dispose.assert_called_once()
+
+    def test_write_mode_missing_upload_key_disposes_without_publishing(self) -> None:
+        runtime = Mock()
+        runtime.is_ready.return_value = True
+        settings = self.settings(("http://localhost",))
+        from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
+        with patch("plm_assistant.entrypoints.production_login.read_database_url",
+                   return_value="postgresql+psycopg://test:synthetic@localhost/test"), patch(
+                   "plm_assistant.entrypoints.production_login.create_database_runtime",
+                   return_value=runtime), patch(
+                   "plm_assistant.entrypoints.production_login._schema_current",
+                   return_value=True), patch(
+                   "plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services",
+                   return_value=Mock(guard=Mock())), patch(
+                   "plm_assistant.entrypoints.production_login.create_windows_secret_list_cursor_codec",
+                   return_value=SecretListCursorCodec(b"q" * 32)), patch(
+                   "plm_assistant.entrypoints.production_login.create_windows_project_member_cursor_codec",
+                   return_value=MemberListCursorCodec(b"m" * 32)), patch(
+                   "plm_assistant.entrypoints.production_login.create_windows_project_department_cursor_codec",
+                   return_value=DepartmentListCursorCodec(b"d" * 32)), patch(
+                   "plm_assistant.entrypoints.windows_secret_write.create_windows_secret_write_service",
+                   return_value=Mock()), patch(
+                   "plm_assistant.entrypoints.production_login.create_windows_document_upload_token_issuer",
+                   side_effect=RuntimeError("synthetic missing upload key")):
+            with self.assertRaises(ProductionLoginStartupError) as caught:
+                create_production_platform_write_app(settings)
+        self.assertNotIn("synthetic missing upload key", str(caught.exception))
         runtime.dispose.assert_called_once()
 
     def test_windows_launcher_write_mode_is_explicit(self) -> None:

@@ -2627,3 +2627,15 @@
 |Reason|Upload Token 必须跨进程重放稳定，不能复用 License、可信时间、Secret 主密钥或列表游标签名密钥；无备份的临时 Key 会使未过期意图失效。|
 |Impact|Document Windows 入口适配与独立合成密钥备份恢复测试；无 Schema/API/技术栈变化。|
 |Rollback|不装配上传 Router 即停止签发；撤下专用引用后旧 Token 失败关闭，可由独立备份恢复。正式发行时须由目标账户和操作员完成供给仪式。|
+
+## DEC-20260926-112
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-112|
+|Date|2026-09-26|
+|WBS|DOC-03-A04-A03-P04-P02-A03 Windows 显式上传创建组合|
+|Decision|仅在现有 Windows `--platform-write` 模式装入 UploadIntent 创建 Router；启动时要求独立上传 Token Key 与既有 License/Secret/游标信任源全部就绪，任一缺失回滚整个应用构造。每次请求新建 DocumentUploadAccess，使用 Auth 所有的 Session/CSRF、DeploymentAdmin 和 Project 当前成员事实，复用 PostgreSQL 收据与 Audit；登录/只读模式不开放。|
+|Reason|冻结 API-02 要求上传创建的 Session、License、CSRF、幂等和审计，用户不可通过已认证的其他写路由绕过上传专用密钥前置。|
+|Impact|Windows 组合根与生产模式契约；无 Schema/Breaking API/新依赖。|
+|Rollback|撤下该显式 Router，上传路径恢复 404；已持久化意图按过期/终止流程处理，不删除其他数据。正式目标账户材料和 Content/Commit 仍须另行验证。|
