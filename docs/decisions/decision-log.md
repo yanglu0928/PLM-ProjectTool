@@ -2363,3 +2363,15 @@
 |Reason|当前 A01 仅有表约束、A02 仅有存储适配器；直接把文件发布或数据库字段改写当作完整状态命令会绕过跨资源恢复与审计。|
 |Impact|Document 内部领域代码/单测；无 Schema、公开 API、依赖或冻结基线变更。|
 |Rollback|不接入调用方即可停用；无数据迁移或状态变化。|
+
+## DEC-20260925-090
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-090|
+|Date|2026-09-25|
+|WBS|DOC-03-A03-P02 FileObject 失败/限制状态事务命令|
+|Decision|先实现不需要文件内容或保护引用证明的 `STAGED→FAILED` 与 `AVAILABLE→RESTRICTED` 内部命令，使用当前事务的行锁/expected_version、状态事件、Audit 与通用幂等收据；AVAILABLE 发布和清理状态仍不开放。|
+|Reason|A01 元数据与 A03-P01 状态图已具备，但 DocumentVersion/物理 Hash 验证和清理引用检查尚未具备；先落实失败关闭/限制读取所需的安全状态变更，避免单独发布未证明的文件。|
+|Impact|Document Application/Infrastructure 与 PostgreSQL 隔离验证；复用既有 `0015`/`0020`，无新 Migration、公开 API 或依赖。|
+|Rollback|内部调用未装配至 HTTP；移除服务接线即可停止新命令，既有状态/事件/Audit/收据按历史保留，不逆向改写。|
