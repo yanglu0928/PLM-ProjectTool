@@ -14,7 +14,7 @@
 |DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`；增量至 `20260926_0026` Outbox 投递租约（CR-DOC-007），前序 `0025` Job/Outbox 基础层（CR-DOC-006）及 0001～0024 历史保留|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
 |Test Summary|DOC-03-A04-A04-P04-P04-A02：Windows 11/Python 3.13 后端 507 项无失败（2 项符号链接场景跳过）；隔离 PostgreSQL 18/临时文件真实 Session/Project 成员 + 合成 License/上传 Key 的 Commit/Abort、重放、拒绝及既有上传平台回归 PASS；开发 wheel PASS。未操作生产库|
-|Next WBS|独立 Parser Worker/解析结果发布前置核查（按正式 WBS 定位编号）；P03-P02 已登记文件物理清理待正式停写栅栏。Document 下载与完整业务版本、生产发行信任源/Server 2025 仍待，Debian 13 暂不验证|
+|Next WBS|DOC-01-A02 受权 Document 列表/元数据读取前置检查与实现，后续版本读取和受权流式下载；Phase 3 才进入正式 Parser Worker。P03-P02 已登记文件物理清理待正式停写栅栏；生产发行信任源/Server 2025 仍待，Debian 13 暂不验证|
 
 ## 自动执行策略
 
