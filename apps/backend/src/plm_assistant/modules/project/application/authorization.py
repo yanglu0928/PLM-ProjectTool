@@ -107,3 +107,16 @@ class ProjectAuthorizationService:
         if policy.write and facts.project_state == "ARCHIVED":
             raise ProjectAuthorizationError("PROJECT_ARCHIVED")
         return AuthorizedProjectAction(user_id, project_id, operation, facts.project_role)
+
+    def require_archive_replay_in_transaction(self, transaction: object, *, user_id: uuid.UUID,
+                                               project_id: uuid.UUID) -> None:
+        """Lock current manager facts while allowing the already archived replay state."""
+        if (type(user_id) is not uuid.UUID or user_id.int == 0
+                or type(project_id) is not uuid.UUID or project_id.int == 0):
+            raise ProjectAuthorizationError("RESOURCE_NOT_FOUND")
+        facts = self._repository.actor_facts(
+            transaction, user_id=user_id, project_id=project_id, lock=True,
+        )
+        if (type(facts) is not ProjectActorFacts or facts.project_role != "PROJECT_MANAGER"
+                or facts.project_state not in ("ACTIVE", "ARCHIVED")):
+            raise ProjectAuthorizationError("RESOURCE_NOT_FOUND")

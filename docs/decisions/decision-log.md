@@ -2003,3 +2003,15 @@
 |Reason|可选接口和内部写服务已分别验证；复用单一平台组合根可防止多套 License 或权限判断。|
 |Impact|仅组合根和合成端到端验证；无新 Migration、依赖、冻结 API 或 License 机制变化。正式公钥/目标账户材料和 Server 2025 仍待。|
 |Rollback|恢复普通登录模式或移除显式平台 PATCH 注入，路由保持 404；既有 Project 修改和 Audit 不删除。|
+
+## DEC-20260925-060
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-060|
+|Date|2026-09-25|
+|WBS|PRJ-04-A08-P01 Project 归档持久幂等前置|
+|Decision|冻结 `PROJECT_ARCHIVE` 含 I 控制，公开 HTTP 前先为内部归档新增同事务 `0015` 收据。作用域为当前负责人/Project/`V1_PROJECT_ARCHIVE`/Key 摘要；请求指纹含 ProjectId 与 expected_version。首次执行锁定当前权限后归档、Audit、收据原子提交。增加仅内部归档重放权限检查：负责人角色、Project/Member/Department 当前事实加锁，但允许读取已归档项目；不扩展冻结的 13 个公开操作。重放仍检查当前 Session、License 和负责人角色，再从已归档 Project 读取既有结果，不重复写入。|
+|Reason|现有内部归档只支持强版本，若直接公开 POST，同 Key 重放在项目已归档后会被拒绝，违反冻结 API 的幂等控制。|
+|Impact|Project 内部应用服务/仓库与测试；复用已有 Migration `0015`，不改变冻结 API、Schema 或 License。普通内部 `archive()` 保留兼容。|
+|Rollback|不接入公开路由即可停用新路径；已提交的 Project 归档为单向业务事实，不回滚删除，仅可恢复代码到旧内部命令并保留收据历史。|

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
@@ -26,6 +27,7 @@ from plm_assistant.modules.license.application.runtime_guard import RuntimeLicen
 from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
 from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
+from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
 from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
 from plm_assistant.modules.project.api.patch_project import create_project_patch_router
@@ -163,6 +165,45 @@ def main():
                 with connect(name) as db:
                     assert db.execute("SELECT name,lock_version FROM plm.prj_projects WHERE project_id=%s", (p3,)).fetchone() == ("Production After", 2)
                     assert db.execute("SELECT action FROM plm.aud_events WHERE target_project_id=%s ORDER BY audit_event_id", (p3,)).fetchall() == [("PROJECT_PATCHED",), ("PROJECT_PATCHED",)]
+                failed_idempotent = ProjectWriteService(
+                    **kwargs, audit=FailedAudit(),
+                    receipts=SqlAlchemyIdempotencyReceipts(),
+                )
+                archive_p2 = ArchiveProject(OTHER_TOKEN, CSRF, uuid.uuid4(), p2, 0)
+                try:
+                    failed_idempotent.archive_idempotent(
+                        archive_p2, idempotency_key="project-archive-fail-0001",
+                    )
+                except RuntimeError as exc:
+                    assert str(exc) == "synthetic Audit failure"
+                else:
+                    raise AssertionError("archive Audit failure bypassed")
+                with connect(name) as db:
+                    assert db.execute("SELECT state,lock_version FROM plm.prj_projects WHERE project_id=%s", (p2,)).fetchone() == ("ACTIVE", 0)
+                    assert db.execute("SELECT count(*) FROM plm.plt_idempotency_receipts WHERE project_id=%s", (p2,)).fetchone()[0] == 0
+                idempotent = ProjectWriteService(
+                    **kwargs, audit=AuditService(SqlAlchemyAuditRepository()),
+                    receipts=SqlAlchemyIdempotencyReceipts(),
+                )
+                with ThreadPoolExecutor(max_workers=2) as pool:
+                    futures = [pool.submit(
+                        idempotent.archive_idempotent, archive_p2,
+                        idempotency_key="project-archive-key-0001",
+                    ) for _ in range(2)]
+                    results = [future.result() for future in futures]
+                assert [result.state for result in results] == ["ARCHIVED", "ARCHIVED"]
+                assert [result.etag for result in results] == ['"v1"', '"v1"']
+                denied("CONFLICT_IDEMPOTENCY", lambda: idempotent.archive_idempotent(
+                    ArchiveProject(OTHER_TOKEN, CSRF, uuid.uuid4(), p2, 1),
+                    idempotency_key="project-archive-key-0001",
+                ))
+                denied("PROJECT_ARCHIVED", lambda: idempotent.archive_idempotent(
+                    archive_p2, idempotency_key="project-archive-key-0002",
+                ))
+                with connect(name) as db:
+                    assert db.execute("SELECT state,lock_version FROM plm.prj_projects WHERE project_id=%s", (p2,)).fetchone() == ("ARCHIVED", 1)
+                    assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_project_id=%s AND action='PROJECT_ARCHIVED'", (p2,)).fetchone()[0] == 1
+                    assert db.execute("SELECT count(*) FROM plm.plt_idempotency_receipts WHERE project_id=%s", (p2,)).fetchone()[0] == 1
 
                 def patch(version=0, token=MANAGER_TOKEN, csrf=CSRF, target=service):
                     return target.patch_name(PatchProjectName(token, csrf, uuid.uuid4(), p1, version, " 新名称 "))
@@ -204,7 +245,7 @@ def main():
                 with connect(name) as db:
                     assert db.execute("SELECT state,name,lock_version FROM plm.prj_projects WHERE project_id=%s", (p1,)).fetchone() == ("ARCHIVED", "新名称", 2)
                     assert db.execute("SELECT action FROM plm.aud_events WHERE target_project_id=%s ORDER BY audit_event_id", (p1,)).fetchall() == [("PROJECT_PATCHED",), ("PROJECT_ARCHIVED",)]
-                print("PASS: Project PATCH optional/Windows platform HTTP, real Session/DB, role isolation, License, ETag, Audit rollback and one-way archive")
+                print("PASS: Project PATCH optional/Windows platform HTTP, real Session/DB, role isolation, License, ETag, Audit rollback and concurrent idempotent archive")
             finally:
                 runtime.dispose()
         finally:

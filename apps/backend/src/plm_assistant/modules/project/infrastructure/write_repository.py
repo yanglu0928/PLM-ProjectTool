@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import func, update
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from plm_assistant.modules.project.application.read_projects import ProjectView
@@ -24,6 +24,13 @@ def _view(row: object) -> ProjectView:
 
 
 class SqlAlchemyProjectWriteRepository:
+    def get(self, transaction: object, *, project_id: uuid.UUID) -> ProjectView | None:
+        row = _session(transaction).execute(select(
+            ProjectRow.project_id, ProjectRow.project_code, ProjectRow.name,
+            ProjectRow.state, ProjectRow.created_at, ProjectRow.lock_version,
+        ).where(ProjectRow.project_id == project_id)).one_or_none()
+        return None if row is None else _view(row)
+
     def patch_name(self, transaction: object, *, project_id: uuid.UUID,
                    expected_version: int, name: str) -> ProjectView | None:
         return self._change(transaction, project_id=project_id,
