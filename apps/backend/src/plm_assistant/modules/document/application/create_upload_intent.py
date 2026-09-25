@@ -39,6 +39,7 @@ class CreateUploadIntent:
     trace_id: uuid.UUID
     purpose_code: str
     target_document_id: uuid.UUID | None = None
+    supersedes_version_id: uuid.UUID | None = None
     document_category: str | None = None
     document_subtype: str | None = None
     document_purpose: str | None = None
@@ -106,7 +107,7 @@ class CreateUploadIntentService:
     def create(self, command: CreateUploadIntent, *, idempotency_key: str) -> CreatedUploadIntent:
         self._validate(command)
         validate_idempotency_key(idempotency_key)
-        fingerprint = canonical_payload_fingerprint({
+        payload = {
             "scope": command.scope, "project_id": str(command.project_id),
             "target_document_id": str(command.target_document_id),
             "category": command.document_category, "subtype": command.document_subtype,
@@ -114,7 +115,12 @@ class CreateUploadIntentService:
             "display_name": command.original_display_name,
             "purpose_code": command.purpose_code,
             "expected_size_bytes": command.expected_size_bytes, "mime_hint": command.mime_hint,
-        })
+        }
+        # Preserve the previously issued receipt fingerprint when no parent
+        # precondition was supplied; older in-flight intents remain replayable.
+        if command.supersedes_version_id is not None:
+            payload["supersedes_version_id"] = str(command.supersedes_version_id)
+        fingerprint = canonical_payload_fingerprint(payload)
         scope = IdempotencyScope.from_key(
             actor_id=command.actor_id, project_id=command.project_id,
             operation=_OPERATION, key=idempotency_key,
@@ -172,6 +178,8 @@ class CreateUploadIntentService:
                 or command.scope == "PROJECT" and not self._uuid(command.project_id)
                 or not self._uuid(command.actor_id) or not self._uuid(command.trace_id)
                 or command.target_document_id is not None and not self._uuid(command.target_document_id)
+                or command.supersedes_version_id is not None and not self._uuid(command.supersedes_version_id)
+                or command.target_document_id is None and command.supersedes_version_id is not None
                 or type(command.purpose_code) is not str or not _PURPOSE.fullmatch(command.purpose_code)
                 or command.expected_size_bytes is not None and (
                     type(command.expected_size_bytes) is not int

@@ -47,6 +47,7 @@ def create_app(
     project_department_create_router: APIRouter | None = None,
     project_department_patch_router: APIRouter | None = None,
     project_department_deactivate_router: APIRouter | None = None,
+    document_upload_create_router: APIRouter | None = None,
     shutdown_callback: Callable[[], None] | None = None,
 ) -> FastAPI:
     """Create one isolated API application instance.
@@ -124,4 +125,6 @@ def create_app(
         app.include_router(project_department_patch_router)
     if project_department_deactivate_router is not None:
         app.include_router(project_department_deactivate_router)
+    if document_upload_create_router is not None:
+        app.include_router(document_upload_create_router)
     return app

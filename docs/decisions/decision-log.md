@@ -2603,3 +2603,15 @@
 |Reason|冻结 API-02 区分创建与 Content 权限；既有内部上传命令仅有合成授权 Port，不能把它直接公开。跨流 Session/成员状态可能变化，必须重新检查。|
 |Impact|Document Application 授权适配与 UploadIntent 创建者只读查询；无冻结 Schema/API 变更。|
 |Rollback|未接公开路由，移除该适配器即可恢复此前内部状态；无数据迁移。P02 装配前不得把本项称为生产授权通过。|
+
+## DEC-20260926-110
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-110|
+|Date|2026-09-26|
+|WBS|DOC-03-A04-A03-P04-P02-A01 可选 UploadIntent 创建 HTTP|
+|Decision|冻结 API-02 的可选 supersedes_version_id 仅作为创建意图时对既有 Document 最新版本的乐观前置条件；提供时纳入幂等请求指纹，未提供时保留旧指纹以兼容已发收据；创建和重放时都核对，不写入 UploadIntent，因为正式提交仍必须独立携带父 Document If-Match。HTTP 先以显式注入方式提供 GLOBAL/PROJECT 固定路径，默认与生产组合继续关闭；License Guard 和请求级 Session/CSRF 缺一不可。|
+|Reason|不忽略已声明的父版本，也不把创建阶段的预检误当作提交阶段并发保护；复用既有 Document 最新指针，无需新增 Schema。|
+|Impact|Document 创建命令/Repository/可选 API 与契约测试；无冻结 API/Schema 破坏、新依赖或生产密钥供给。|
+|Rollback|不注入 Router 即恢复 404；内部可选预检字段不改变既有 Intent。已创建测试记录仅留合成库。正式平台装配和 Content/Commit 留后续验证。|

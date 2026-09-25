@@ -35,6 +35,9 @@ COMMON_ERRORS: dict[str, ErrorSpec] = {
     "FILE_TYPE_UNSUPPORTED": ErrorSpec(
         "FILE_TYPE_UNSUPPORTED", 415, "不支持此文件类型。"
     ),
+    "FILE_UPLOAD_EXPIRED": ErrorSpec(
+        "FILE_UPLOAD_EXPIRED", 409, "上传意图已过期或已终止。"
+    ),
     "VALIDATION_FAILED": ErrorSpec("VALIDATION_FAILED", 422, "请求内容不符合要求。"),
     "PLATFORM_SECRET_PURPOSE_INVALID": ErrorSpec(
         "PLATFORM_SECRET_PURPOSE_INVALID", 422, "Secret 用途或使用方不受支持。"

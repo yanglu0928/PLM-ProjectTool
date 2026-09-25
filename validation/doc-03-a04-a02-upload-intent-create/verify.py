@@ -119,6 +119,13 @@ def main():
                                              document_category=None, title=None),
                                      idempotency_key="upload-existing-doc-0001")
             assert existing.upload_id != result.upload_id
+            assert worker.create(replace(cmd, target_document_id=document,
+                                         document_category=None, title=None),
+                                 idempotency_key="upload-existing-doc-0001") == existing
+            expect(UploadIntentCreateError, lambda: worker.create(replace(
+                cmd, target_document_id=document, supersedes_version_id=uuid.uuid4(),
+                document_category=None, title=None,
+            ), idempotency_key="upload-parent-mismatch-0001"), "CONFLICT_VERSION")
             expect(RuntimeError, lambda: service(FailingAudit()).create(cmd, idempotency_key="upload-audit-fails-0001"))
             with connect(name) as db:
                 assert db.execute("SELECT count(*) FROM plm.doc_upload_intents").fetchone() == (2,)

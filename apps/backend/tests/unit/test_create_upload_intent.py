@@ -42,10 +42,14 @@ class UploadIntentCreateTests(unittest.TestCase):
             dict(original_display_name="bad\nname"), dict(expected_size_bytes=True),
             dict(expected_size_bytes=100_000_001),
             dict(target_document_id=uuid.uuid4()),
+            dict(supersedes_version_id=uuid.uuid4()),
         ):
             with self.subTest(changes=changes), self.assertRaises(UploadIntentCreateError):
                 worker._validate(replace(self.command, **changes))
         worker._validate(replace(self.command, target_document_id=uuid.uuid4(),
+                                 document_category=None, title=None))
+        worker._validate(replace(self.command, target_document_id=uuid.uuid4(),
+                                 supersedes_version_id=uuid.uuid4(),
                                  document_category=None, title=None))
         with self.assertRaises(UploadIntentCreateError):
             worker._validate(replace(self.command, target_document_id=uuid.uuid4(),

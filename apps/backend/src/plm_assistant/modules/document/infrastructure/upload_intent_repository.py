@@ -44,6 +44,9 @@ class SqlAlchemyUploadIntentRepository:
                 raise UploadIntentCreateError("RESOURCE_NOT_FOUND")
             if document.document_state != "ACTIVE" or document.document_category == "GENERATED_ARTIFACT":
                 raise UploadIntentCreateError("CONFLICT_STATE")
+            if (command.supersedes_version_id is not None
+                    and document.latest_version_ref != command.supersedes_version_id):
+                raise UploadIntentCreateError("CONFLICT_VERSION")
         expires_at = session.execute(select(
             func.statement_timestamp() + timedelta(seconds=ttl_seconds)
         )).scalar_one()
@@ -85,6 +88,9 @@ class SqlAlchemyUploadIntentRepository:
             )).scalar_one_or_none()
             if document is None or document.document_state != "ACTIVE":
                 raise UploadIntentCreateError("CONFLICT_STATE")
+            if (command.supersedes_version_id is not None
+                    and document.latest_version_ref != command.supersedes_version_id):
+                raise UploadIntentCreateError("CONFLICT_VERSION")
         now = session.execute(select(func.statement_timestamp())).scalar_one()
         if row.expires_at <= now or row.state not in ("CREATED", "CONTENT_READY"):
             raise UploadIntentCreateError("FILE_UPLOAD_EXPIRED")
