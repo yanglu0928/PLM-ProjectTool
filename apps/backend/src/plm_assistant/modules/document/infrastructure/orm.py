@@ -241,3 +241,83 @@ class DocumentVersionSourceRefRow(Base):
     source_object_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     source_version_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False, server_default=text("statement_timestamp()"))
+
+
+class UploadIntentRow(Base):
+    """Private, expiring three-step upload control; never a content version."""
+
+    __tablename__ = "doc_upload_intents"
+    __table_args__ = (
+        ForeignKeyConstraint(["project_id"], ["plm.prj_projects.project_id"],
+                             name="fk_doc_upload_intents__project", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["actor_id"], ["plm.auth_users.user_id"],
+                             name="fk_doc_upload_intents__actor", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["target_document_id"], ["plm.doc_documents.document_id"],
+                             name="fk_doc_upload_intents__target_document", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["committed_document_id"], ["plm.doc_documents.document_id"],
+                             name="fk_doc_upload_intents__committed_document", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["file_object_id"], ["plm.doc_file_objects.file_object_id"],
+                             name="fk_doc_upload_intents__file", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["document_version_id"], ["plm.doc_document_versions.document_version_id"],
+                             name="fk_doc_upload_intents__version", ondelete="NO ACTION"),
+        UniqueConstraint("token_digest", name="uq_doc_upload_intents__token_digest"),
+        UniqueConstraint("file_object_id", name="uq_doc_upload_intents__file"),
+        CheckConstraint("(scope='GLOBAL' AND project_id IS NULL) OR (scope='PROJECT' AND project_id IS NOT NULL)",
+                        name="ck_doc_upload_intents__scope_project"),
+        CheckConstraint("state IN ('CREATED','CONTENT_READY','COMMITTED','ABORTED','EXPIRED')",
+                        name="ck_doc_upload_intents__state"),
+        CheckConstraint("octet_length(token_digest)=32", name="ck_doc_upload_intents__token_digest"),
+        CheckConstraint("expires_at > created_at", name="ck_doc_upload_intents__expiry"),
+        CheckConstraint("lock_version >= 0", name="ck_doc_upload_intents__version"),
+        CheckConstraint("expected_size_bytes IS NULL OR expected_size_bytes >= 0",
+                        name="ck_doc_upload_intents__size"),
+        CheckConstraint("mime_hint IS NULL OR char_length(mime_hint) BETWEEN 1 AND 255",
+                        name="ck_doc_upload_intents__mime"),
+        CheckConstraint("char_length(purpose_code) BETWEEN 1 AND 64 AND purpose_code ~ '^[A-Z][A-Z0-9_]*$'",
+                        name="ck_doc_upload_intents__purpose"),
+        CheckConstraint("target_document_id IS NOT NULL OR (document_category IS NOT NULL AND title IS NOT NULL AND original_display_name IS NOT NULL)",
+                        name="ck_doc_upload_intents__new_document"),
+        CheckConstraint("target_document_id IS NULL OR (document_category IS NULL AND document_subtype IS NULL AND document_purpose IS NULL AND title IS NULL AND original_display_name IS NULL)",
+                        name="ck_doc_upload_intents__existing_document"),
+        CheckConstraint(f"document_category IS NULL OR document_category IN ({_DOCUMENT_CATEGORIES})",
+                        name="ck_doc_upload_intents__category"),
+        CheckConstraint("document_category IS DISTINCT FROM 'OTHER' OR (document_subtype IS NOT NULL AND document_purpose IS NOT NULL)",
+                        name="ck_doc_upload_intents__other_details"),
+        CheckConstraint("document_category IS DISTINCT FROM 'GENERATED_ARTIFACT' OR scope='PROJECT'",
+                        name="ck_doc_upload_intents__generated_scope"),
+        CheckConstraint("title IS NULL OR (char_length(title) BETWEEN 1 AND 255 AND title=btrim(title))",
+                        name="ck_doc_upload_intents__title"),
+        CheckConstraint("original_display_name IS NULL OR (char_length(original_display_name) BETWEEN 1 AND 255 AND original_display_name=btrim(original_display_name))",
+                        name="ck_doc_upload_intents__name"),
+        CheckConstraint("document_subtype IS NULL OR (char_length(document_subtype) BETWEEN 1 AND 128 AND document_subtype=btrim(document_subtype))",
+                        name="ck_doc_upload_intents__subtype"),
+        CheckConstraint("document_purpose IS NULL OR (char_length(document_purpose) BETWEEN 1 AND 255 AND document_purpose=btrim(document_purpose))",
+                        name="ck_doc_upload_intents__document_purpose"),
+        CheckConstraint("(state='CREATED' AND file_object_id IS NULL AND committed_document_id IS NULL AND document_version_id IS NULL) OR (state='CONTENT_READY' AND file_object_id IS NOT NULL AND committed_document_id IS NULL AND document_version_id IS NULL) OR (state='COMMITTED' AND file_object_id IS NOT NULL AND committed_document_id IS NOT NULL AND document_version_id IS NOT NULL) OR (state IN ('ABORTED','EXPIRED') AND committed_document_id IS NULL AND document_version_id IS NULL)",
+                        name="ck_doc_upload_intents__state_shape"),
+        Index("ix_doc_upload_intents__actor_state_expiry", "actor_id", "state", "expires_at"),
+        Index("ix_doc_upload_intents__project_state_expiry", "project_id", "state", "expires_at"),
+    )
+
+    upload_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    scope: Mapped[str] = mapped_column(Text, nullable=False)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    actor_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    target_document_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    document_category: Mapped[str | None] = mapped_column(Text)
+    document_subtype: Mapped[str | None] = mapped_column(Text)
+    document_purpose: Mapped[str | None] = mapped_column(Text)
+    title: Mapped[str | None] = mapped_column(Text)
+    original_display_name: Mapped[str | None] = mapped_column(Text)
+    purpose_code: Mapped[str] = mapped_column(Text, nullable=False)
+    expected_size_bytes: Mapped[int | None] = mapped_column(BigInteger)
+    mime_hint: Mapped[str | None] = mapped_column(Text)
+    token_digest: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    state: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'CREATED'"))
+    expires_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False)
+    file_object_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    committed_document_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    document_version_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False, server_default=text("statement_timestamp()"))
+    updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False, server_default=text("statement_timestamp()"))
+    lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))

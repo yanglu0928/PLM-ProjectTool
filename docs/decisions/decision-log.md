@@ -2471,3 +2471,27 @@
 |Reason|冻结 DM-03 区分 latest 与 effective，真实上传/生成/迁移的来源语义不同；先把已具备的发布文件接成可追溯上传版本，避免在 Parser/Review 尚未就绪时自动生效或伪造其他来源。|
 |Impact|Document 内部 Application/Repository 与合成 PostgreSQL/文件验证；无 Migration、公开 API 或新依赖。其他来源、Parser Job/Outbox、上传 HTTP、正式授权/文件 ACL 和恢复协调另列子任务；DOC-02-A02 整体不因 P01 关闭。|
 |Rollback|不装配内部提交入口可停止新提交；已提交版本和来源不可删除/倒写，失败事务回滚 Version/指针/Audit/收据，孤立已发布 FileObject 留给恢复矩阵处理。|
+
+## DEC-20260925-099
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-099|
+|Date|2026-09-25|
+|WBS|DOC-02-A02-P02 非上传来源引用前置核查|
+|Decision|生成/转换/迁移来源的正式 Owner 与授权 Port 未建立，不把自由 UUID 写成已验证来源；该子任务停在前置，独立推进 API-02 必需的上传链。|
+|Reason|不可变来源引用一旦写入即难以纠正，伪造可追溯性会污染正式业务事实。|
+|Impact|仅任务顺序调整与文档记录；DOC-02-A02 整体未 PASS。|
+|Rollback|无运行时变更；Owner 可验证后恢复各来源子任务。|
+
+## DEC-20260925-100
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-100|
+|Date|2026-09-25|
+|WBS|DOC-03-A04-A01 UploadIntent 持久层前置|
+|Decision|按 CR-DOC-004 增加独立 UploadIntent 控制 Root，不混入 FileObject 或 Document；先完成 Schema/ORM 与迁移验证，再独立实现 Create/Content/Commit/Abort。|
+|Reason|冻结 API-02 要求三步上传及崩溃重试，当前 Schema 没有短时意图、Token 摘要/过期和命令状态的可持久载体。|
+|Impact|后续 Migration `0023`、Document ORM、临时库验证；当前记录本身无运行 Schema/API 变化。|
+|Rollback|空表可降级，非空意图保留并拒绝普通降级，不能清除已创建的版本或文件历史。|

@@ -4,6 +4,10 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/DOC-03-A04-A01 按 CR-DOC-004 增加三步上传的私有 UploadIntent ORM/Migration `20260925_0023`：Scope/Project、创建者、新建/升版意图、短时 Token 摘要、状态/过期、文件与提交结果归属约束、身份不可变和历史删除/降级保护。Windows 11 后端 462 项无失败（2 项符号链接跳过）、PostgreSQL 18 临时库已有数据升级/空表降级再升级/ORM 差异/状态负例及开发 wheel PASS。目标库先备份再升级 head；无公开 API/新依赖。Create/Content/Commit/Abort、Parser Job、正式权限、Server 2025/Debian 13 与最终程序包未完成。
+
+- 2026-09-25：`0.1.0.dev0`/DOC-02-A02-P02 与 DOC-03-A04-A01 前置：非上传来源缺正式 Owner/授权 Port，暂停泛化不可变来源提交；按 CR-DOC-004 登记冻结 API-02 三步上传所需 UploadIntent 独立持久层。当前仅设计/追溯文档变化，尚无 Migration/API/依赖或升级操作；三步上传、Parser Job、Server 2025/Debian 13 与最终程序包未完成。
+
 - 2026-09-25：`0.1.0.dev0`/DOC-02-A02-P01 新增仅内部的上传来源不可变版本提交：重验正式文件 Hash/Size，同 Scope/Project 和预期版本行锁后生成连续 DocumentVersion/UPLOAD 来源引用，更新 latest，Audit 与幂等收据同事务；effective 不自动生效。Windows 11 后端 462 项无失败（2 项符号链接跳过）、PostgreSQL 18 临时库合成文件首/后续版本、并发重放、隔离/损坏/回滚及开发 wheel PASS。无新 Migration/API/依赖，既有 `0022` 是升级前置。正式权限、上传 HTTP、Parser Job/Outbox、其他来源、真实 ACL、Server 2025/Debian 13 与最终程序包未完成。
 
 - 2026-09-25：`0.1.0.dev0`/DOC-03-A03-P04-P04 前置核查发现生产维护模式/活动发布停写证明尚不存在；内部隔离命令继续不装配，P04 整体未 PASS，转向独立 DOC-02 版本提交工作。仅追溯文档变化，无 Migration/API/依赖或升级操作；正式并发栅栏、Windows Server 2025/Debian 13 验证与最终程序包仍待。
