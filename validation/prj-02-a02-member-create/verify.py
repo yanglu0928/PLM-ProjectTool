@@ -17,6 +17,7 @@ from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlche
 from plm_assistant.modules.auth.infrastructure.project_member_create_access import SqlAlchemyProjectMemberCreateAccess
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
+from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
 from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
 from plm_assistant.modules.project.application.create_member import (
     CreateProjectMember, ProjectMemberCreateError, ProjectMemberCreateService,
@@ -71,7 +72,16 @@ def main():
         admin.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(name)))
         try:
             url = URL.create("postgresql+psycopg", username=USER, host=HOST, port=PORT, database=name)
-            command.upgrade(create_migration_config(url), "head")
+            migration = create_migration_config(url)
+            command.upgrade(migration, "20260925_0015")
+            with connect(name) as before_upgrade:
+                user(before_upgrade, "Synthetic Existing Before Upgrade")
+            command.upgrade(migration, "head")
+            with connect(name) as after_upgrade:
+                assert after_upgrade.execute("SELECT count(*) FROM plm.auth_users").fetchone()[0] == 1
+                assert after_upgrade.execute("SELECT count(*) FROM plm.prj_member_create_results").fetchone()[0] == 0
+            command.downgrade(migration, "20260925_0015")
+            command.upgrade(migration, "head")
             runtime = create_database_runtime(url)
             try:
                 with connect(name) as db:
@@ -79,6 +89,8 @@ def main():
                     target = user(db, "Synthetic Target")
                     concurrent_target = user(db, "Synthetic Concurrent")
                     audit_target = user(db, "Synthetic Audit Target")
+                    idempotent_audit_target = user(db, "Synthetic Idempotent Audit Target")
+                    idempotent_concurrent_target = user(db, "Synthetic Idempotent Concurrent Target")
                     disabled_target = user(db, "Synthetic Disabled")
                     db.execute("UPDATE plm.auth_users SET state='DISABLED' WHERE user_id=%s", (disabled_target,))
                     p1 = db.execute("INSERT INTO plm.prj_projects(project_code,project_code_normalized,name,created_by) VALUES ('P1','p1','First',%s) RETURNING project_id", (ids["pm1"],)).fetchone()[0]
@@ -98,6 +110,10 @@ def main():
                               repository=SqlAlchemyProjectMemberCreateRepository(),
                               clock=lambda: datetime.now(timezone.utc))
                 service = ProjectMemberCreateService(**kwargs, audit=AuditService(SqlAlchemyAuditRepository()))
+                idempotent = ProjectMemberCreateService(
+                    **kwargs, audit=AuditService(SqlAlchemyAuditRepository()),
+                    receipts=SqlAlchemyIdempotencyReceipts(),
+                )
 
                 def make_command(project=p1, department=d1, target_id=target, actor="pm1",
                                  csrf=CSRF, role="IMPLEMENTATION_MEMBER", effective=None):
@@ -125,6 +141,21 @@ def main():
                     raise AssertionError("Audit failure bypassed")
                 with connect(name) as db:
                     assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE user_id=%s", (audit_target,)).fetchone()[0] == 0
+                failed_idempotent = ProjectMemberCreateService(
+                    **kwargs, audit=FailedAudit(), receipts=SqlAlchemyIdempotencyReceipts(),
+                )
+                try:
+                    failed_idempotent.create_idempotent(
+                        make_command(target_id=idempotent_audit_target),
+                        idempotency_key="member-create-audit-rollback-001",
+                    )
+                except RuntimeError as exc:
+                    assert str(exc) == "synthetic Audit failure"
+                else:
+                    raise AssertionError("idempotent Audit failure bypassed")
+                with connect(name) as db:
+                    assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE user_id=%s", (idempotent_audit_target,)).fetchone()[0] == 0
+                    assert db.execute("SELECT count(*) FROM plm.plt_idempotency_receipts WHERE operation='V1_PROJECT_MEMBER_CREATE'").fetchone()[0] == 0
                 future = datetime.now(timezone.utc) + timedelta(days=1)
                 created = service.create(make_command(effective=future))
                 assert (created.user_id, created.department_id, created.role, created.state, created.etag) == (target, d1, "IMPLEMENTATION_MEMBER", "ACTIVE", '"v0"')
@@ -143,12 +174,53 @@ def main():
                                              ((p1, d1, "pm1"), (p2, d2, "pm2"))))
                 assert len([item for item in outcomes if isinstance(item, uuid.UUID)]) == 1, outcomes
                 assert outcomes.count("PROJECT_USER_ALREADY_ASSIGNED") == 1, outcomes
+                concurrent_command = make_command(target_id=idempotent_concurrent_target)
+                with ThreadPoolExecutor(max_workers=2) as pool:
+                    replay_outcomes = list(pool.map(
+                        lambda _: idempotent.create_idempotent(
+                            concurrent_command, idempotency_key="member-create-concurrent-001",
+                        ), range(2),
+                    ))
+                assert replay_outcomes[0] == replay_outcomes[1]
                 with connect(name) as db:
                     assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE user_id=%s AND state<>'REMOVED'", (concurrent_target,)).fetchone()[0] == 1
+                    assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE user_id=%s", (idempotent_concurrent_target,)).fetchone()[0] == 1
+                    assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s", (replay_outcomes[0].member_id,)).fetchone()[0] == 1
                     assert db.execute("SELECT action,target_project_id FROM plm.aud_events WHERE target_object_id=%s", (created.member_id,)).fetchone() == ("PROJECT_MEMBER_CREATED", p1)
+                    replay_target = user(db, "Synthetic Replay")
+                    replay_command = make_command(target_id=replay_target)
+                first = idempotent.create_idempotent(replay_command, idempotency_key="member-create-replay-key-001")
+                with connect(name) as db:
+                    db.execute("UPDATE plm.auth_users SET username_display='Synthetic Renamed' WHERE user_id=%s", (replay_target,))
+                    db.execute("UPDATE plm.prj_departments SET name='Renamed Department' WHERE department_id=%s", (d1,))
+                    db.execute("UPDATE plm.prj_project_members SET project_role='CUSTOMER_MEMBER', lock_version=1 WHERE project_member_id=%s", (first.member_id,))
+                replayed = idempotent.create_idempotent(replay_command, idempotency_key="member-create-replay-key-001")
+                assert replayed == first and replayed.etag == '"v0"'
+                assert replayed.user_display_name == "Synthetic Replay" and replayed.department_name == "First Department"
+                denied("CONFLICT_IDEMPOTENCY", lambda: idempotent.create_idempotent(
+                    make_command(target_id=replay_target, role="CUSTOMER_MEMBER"),
+                    idempotency_key="member-create-replay-key-001",
+                ))
+                with connect(name) as db:
+                    assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s", (first.member_id,)).fetchone()[0] == 1
+                    assert db.execute("SELECT count(*) FROM plm.prj_member_create_results WHERE member_id=%s", (first.member_id,)).fetchone()[0] == 1
+                    assert db.execute("SELECT count(*) FROM plm.plt_idempotency_receipts WHERE result_ref_id=%s", (first.member_id,)).fetchone()[0] == 1
+                    try:
+                        db.execute("UPDATE plm.prj_member_create_results SET role='CUSTOMER_MEMBER' WHERE member_id=%s", (first.member_id,))
+                    except psycopg.errors.RaiseException:
+                        pass
+                    else:
+                        raise AssertionError("snapshot unexpectedly mutable")
                     db.execute("UPDATE plm.prj_projects SET state='ARCHIVED' WHERE project_id=%s", (p1,))
+                assert idempotent.create_idempotent(replay_command, idempotency_key="member-create-replay-key-001") == first
+                try:
+                    command.downgrade(migration, "20260925_0015")
+                except RuntimeError as exc:
+                    assert "member create results exist" in str(exc)
+                else:
+                    raise AssertionError("downgrade unexpectedly discarded snapshots")
                 denied("PROJECT_ARCHIVED", lambda: service.create(make_command(target_id=audit_target)))
-                print("PASS: role/CSRF/License, same-project department, uniqueness, concurrent assignment, Audit rollback")
+                print("PASS: empty/existing-data up-down, authorization, rollback, concurrent one-write replay, immutable history and downgrade guard")
             finally:
                 runtime.dispose()
         finally:

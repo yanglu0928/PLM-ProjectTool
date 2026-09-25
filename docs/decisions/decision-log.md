@@ -2087,3 +2087,15 @@
 |Reason|成员 cursor 的签名源必须在路由开放前稳定且可恢复；沿用单一生产组合避免接口自行获取密钥或放宽授权。|
 |Impact|Windows 组合根、合成端到端与既有组合测试注入点更新，无 Schema/Migration、冻结 API 或新依赖。正式目标账户需独立供给和备份。|
 |Rollback|退回普通登录模式或移除成员 Router 注入；旧 cursor 仅在原密钥恢复后可继续使用。|
+
+## DEC-20260925-067
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-067|
+|Date|2026-09-25|
+|WBS|PRJ-04-A10-P01 成员创建 HTTP 幂等前置|
+|Decision|依 CR-PRJ-002 新增 Project-owned 不可变创建结果快照，通用收据仅保存快照引用；同 Key 重放首次 MemberView，并重新检查当前 Session/CSRF、License 和 ProjectManager。|
+|Reason|成员角色、部门、状态与显示名称均可变化，读取当前行无法履行冻结 API-01 的首次响应重放合同。|
+|Impact|新增 Migration `20260925_0016`、ORM、内部服务和测试；不改 `/api/v1` 结构，不开放公开创建路由。|
+|Rollback|新表为空可降至 `0015`；已有快照时拒绝降级，须保留版本并受控迁移。|

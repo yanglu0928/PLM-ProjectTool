@@ -9,11 +9,36 @@ from sqlalchemy import insert, select
 from sqlalchemy.orm import Session
 
 from plm_assistant.modules.project.application.create_member import ProjectMemberCreateError
-from plm_assistant.modules.project.application.read_members import MemberFacts
-from plm_assistant.modules.project.infrastructure.orm import DepartmentRow, ProjectMemberRow
+from plm_assistant.modules.project.application.read_members import MemberFacts, ProjectMemberView
+from plm_assistant.modules.project.infrastructure.orm import (
+    DepartmentRow, ProjectMemberCreateResultRow, ProjectMemberRow,
+)
 
 
 class SqlAlchemyProjectMemberCreateRepository:
+    def save_create_result(self, transaction: object, *, project_id: uuid.UUID,
+                           view: ProjectMemberView) -> None:
+        transaction.session.execute(insert(ProjectMemberCreateResultRow).values(
+            member_id=view.member_id, project_id=project_id, user_id=view.user_id,
+            user_display_name=view.user_display_name, role=view.role,
+            department_id=view.department_id, department_name=view.department_name,
+            effective_at=view.effective_at,
+        ))
+
+    def get_create_result(self, transaction: object, *, project_id: uuid.UUID,
+                          member_id: uuid.UUID) -> ProjectMemberView | None:
+        row = transaction.session.execute(select(ProjectMemberCreateResultRow).where(
+            ProjectMemberCreateResultRow.project_id == project_id,
+            ProjectMemberCreateResultRow.member_id == member_id,
+        )).scalar_one_or_none()
+        if row is None:
+            return None
+        return ProjectMemberView(
+            row.member_id, row.user_id, row.user_display_name, row.role,
+            row.department_id, row.department_name, "ACTIVE", row.effective_at,
+            None, '"v0"',
+        )
+
     def create(self, transaction: object, *, project_id: uuid.UUID,
                user_id: uuid.UUID, role: str, department_id: uuid.UUID,
                effective_at: datetime | None) -> MemberFacts:

@@ -97,6 +97,29 @@ class ProjectMemberRow(Base):
     lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
 
 
+class ProjectMemberCreateResultRow(Base):
+    """Immutable first-success projection for the member-create replay contract."""
+
+    __tablename__ = "prj_member_create_results"
+    __table_args__ = (
+        ForeignKeyConstraint(["member_id", "project_id"],
+                             ["plm.prj_project_members.project_member_id", "plm.prj_project_members.project_id"],
+                             name="fk_prj_member_create_results__member_project", ondelete="NO ACTION"),
+        CheckConstraint("role IN ('PROJECT_MANAGER','IMPLEMENTATION_MEMBER','CUSTOMER_MANAGER','CUSTOMER_MEMBER')", name="ck_prj_member_create_results__role"),
+        CheckConstraint("char_length(user_display_name) BETWEEN 1 AND 255", name="ck_prj_member_create_results__user_name"),
+        CheckConstraint("char_length(department_name) BETWEEN 1 AND 255", name="ck_prj_member_create_results__department_name"),
+    )
+
+    member_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    user_display_name: Mapped[str] = mapped_column(Text, nullable=False)
+    role: Mapped[str] = mapped_column(Text, nullable=False)
+    department_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    department_name: Mapped[str] = mapped_column(Text, nullable=False)
+    effective_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False)
+
+
 class ProjectMemberAssignmentHistoryRow(Base):
     __tablename__ = "prj_member_assignment_history"
     __table_args__ = (
