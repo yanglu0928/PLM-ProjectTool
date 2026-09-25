@@ -1727,3 +1727,15 @@
 |Reason|现有 LicenseService 只对 Port 返回值作 SHA-256；若 Port 直接透传配置，复制配置即可使不同机器声称相同指纹。现场显式选择仍符合 ADR-006，但必须与当前机器事实绑定。|
 |Impact|增加 Windows License 基础设施与非敏感 Bootstrap 字段；不改变七字段签名载荷、MAC 规范化/哈希算法、Schema 或公开 API。MAC 可由虚拟网卡提供，不能抵御有系统级控制权的伪造；Server 2025 和 Debian 13 仍须分别验证/实现。|
 |Rollback|不装配该 Port 时公开受许可业务保持关闭；不修改已有 License 文档、可信时间或数据库数据。|
+
+## DEC-20260925-037
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-037|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P03-A02 本产品发行公钥来源|
+|Decision|客户运行时公钥只可来自后端 wheel 内的本产品发行清单，不从请求、数据库、普通 YAML、环境变量或 License 文件读取公钥。解析器固定产品代码和唯一 key_ref，严格校验 Ed25519 原始公钥格式及清单字段，缺失/错误即拒绝装配。开发 wheel 可以不含真实发行清单而失败关闭；正式 release 构建必须显式核对签发公钥已装入包。|
+|Reason|现有 StaticPublicKeyResolver 仅是依赖注入边界，生产若从可编辑配置建立信任锚，攻击者可替换公钥并自签 License。包内受信公钥与签发私钥物理隔离，保持 ADR-006 的离线验签边界。|
+|Impact|新增 License 基础设施与发行检查；无签名载荷、Schema、API 或加密算法变更。真实发行密钥与私钥备份仍必须在 Developer Workbench 单独生成和保管；当前未生成时不把生产 License 标 PASS。|
+|Rollback|不装配解析器即可保持原受许可业务关闭；测试公钥不进入正式包，已有 License 文档/数据库不变。|

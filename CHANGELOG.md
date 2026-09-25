@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PLT-02-A07-P03-A02 增加仅从 wheel 包内清单解析本产品 Ed25519 公钥的失败关闭边界和发行检查入口；普通部署配置不能替换信任锚。Windows 11/Python 3.13 后端 341/341、合成公钥/错误清单拒绝 PASS；开发 wheel 构建 PASS，但正式签发密钥/公钥清单尚未生成，本项与 Release 门禁未 PASS。无 Migration、公开 API 或新依赖；升级无需数据操作。
+
 - 2026-09-25：`0.1.0.dev0`/PLT-02-A07-P03-A01 新增 Windows License 显式 MAC 本机来源：非敏感配置仅为人工选择，运行时必须与 IP Helper 本机网卡精确匹配，不匹配或枚举失败关闭。Windows 11/Python 3.13 后端 339/339、真实网卡匹配/虚构地址拒绝与 wheel PASS。无 Migration、公开 API 或新依赖；升级仅在正式 License 装配时需设置所选本机 MAC。Server 2025/Debian 13、生产公钥/可信时间和最终程序包仍未完成。
 
 - 2026-09-25：`0.1.0.dev0`/PLT-02-A07-P02 新增 Windows 当前账户 Secret 主密钥交互式首次供给、已有键加密备份与空目标恢复；scrypt/AES-256-GCM 独立恢复信封，不接受命令行口令或覆盖既有键/备份。Windows 11/Python 3.13 后端 335/335、合成 Vault 丢失/恢复后旧密文解密及 wheel 构建 PASS。无 Migration、公开 API 或新依赖；升级无需数据操作。异账户/Server 2025、Debian 13、生产 License/Secret 装配及最终程序包仍未验证/完成。

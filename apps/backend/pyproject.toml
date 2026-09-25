@@ -30,3 +30,4 @@ include = ["plm_assistant*"]
 
 [tool.setuptools.package-data]
 "plm_assistant.migrations" = ["script.py.mako"]
+"plm_assistant.modules.license" = ["trust/product_public_key.json"]
