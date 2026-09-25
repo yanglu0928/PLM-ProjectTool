@@ -122,6 +122,52 @@ class LocalFileStorageTests(unittest.TestCase):
         self.assertFalse((self.root / stage).exists())
         self.assertEqual((self.root / final).read_bytes(), content)
 
+    def test_verified_download_snapshot_is_bounded_and_independent(self):
+        stage, final = self.store.locators(
+            scope="PROJECT", project_id=self.project, file_object_id=self.file_id,
+        )
+        content = b"verified download bytes" * 100_000
+        digest = hashlib.sha256(content).digest()
+        with self.store.reserve_staging(stage) as stream:
+            stream.write(content)
+        self.store.promote(stage, final)
+        with self.store.open_verified_snapshot(
+                final, expected_sha256=digest, expected_size=len(content),
+                max_bytes=100_000_000) as snapshot:
+            (self.root / final).write_bytes(b"changed after proof")
+            self.assertEqual(snapshot.read(), content)
+        with self.assertRaises(LocalStorageError):
+            self.store.open_verified_snapshot(
+                final, expected_sha256=digest, expected_size=len(content),
+                max_bytes=100_000_000,
+            )
+
+    def test_download_snapshot_rejects_unverified_or_staged_content(self):
+        stage, final = self.store.locators(
+            scope="GLOBAL", project_id=None, file_object_id=self.file_id,
+        )
+        content = b"private content"
+        digest = hashlib.sha256(content).digest()
+        with self.store.reserve_staging(stage) as stream:
+            stream.write(content)
+        with self.assertRaises(LocalStorageError):
+            self.store.open_verified_snapshot(
+                stage, expected_sha256=digest, expected_size=len(content),
+                max_bytes=100_000_000,
+            )
+        self.store.promote(stage, final)
+        for sha, size, limit in (
+            (b"x" * 32, len(content), 100_000_000),
+            (digest, len(content) + 1, 100_000_000),
+            (digest, len(content), len(content) - 1),
+            (digest, len(content), 100_000_001),
+        ):
+            with self.subTest(size=size, limit=limit), self.assertRaises(LocalStorageError):
+                self.store.open_verified_snapshot(
+                    final, expected_sha256=sha, expected_size=size,
+                    max_bytes=limit,
+                )
+
     def test_bad_hash_size_or_limit_never_promotes(self):
         stage, final = self.store.locators(
             scope="PROJECT", project_id=self.project, file_object_id=self.file_id,

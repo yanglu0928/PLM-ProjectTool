@@ -12,6 +12,7 @@ import stat
 import uuid
 import hashlib
 import hmac
+import tempfile
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
@@ -460,6 +461,65 @@ class LocalFileStorage:
             locator, expected_sha256=expected_sha256,
             expected_size=expected_size, max_bytes=max_bytes, link_count=1,
         )
+
+    def open_verified_snapshot(self, locator: str, *, expected_sha256: bytes,
+                               expected_size: int, max_bytes: int) -> BinaryIO:
+        """Return a private validated byte snapshot before any caller can stream it.
+
+        The caller owns and must close the returned file. No source descriptor or
+        storage path escapes. A failed copy always closes its temporary snapshot.
+        """
+        if (type(locator) is not str or locator.startswith("temp/")
+                or type(expected_sha256) is not bytes or len(expected_sha256) != 32
+                or type(expected_size) is not int or expected_size < 0
+                or type(max_bytes) is not int or not 0 <= expected_size <= max_bytes
+                or max_bytes > 100_000_000):
+            raise LocalStorageError()
+        path = self._path(locator)
+        before = _checked_file(path)
+        if before.st_size != expected_size:
+            raise LocalStorageError()
+        try:
+            snapshot = tempfile.SpooledTemporaryFile(
+                max_size=1_048_576, mode="w+b", dir=self._root,
+            )
+        except OSError:
+            raise LocalStorageError() from None
+        try:
+            flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+            descriptor = os.open(path, flags)
+            with os.fdopen(descriptor, "rb") as source:
+                opened = os.fstat(source.fileno())
+                if (not stat.S_ISREG(opened.st_mode) or _is_reparse(opened)
+                        or opened.st_nlink != 1
+                        or (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino)):
+                    raise LocalStorageError()
+                digest = hashlib.sha256()
+                total = 0
+                while chunk := source.read(min(1_048_576, max_bytes - total + 1)):
+                    total += len(chunk)
+                    if total > expected_size or total > max_bytes:
+                        raise LocalStorageError()
+                    snapshot.write(chunk)
+                    digest.update(chunk)
+                after_fd = os.fstat(source.fileno())
+            after_path = _checked_file(path)
+            if ((after_fd.st_dev, after_fd.st_ino, after_fd.st_size,
+                 after_fd.st_mtime_ns, after_fd.st_nlink) !=
+                (opened.st_dev, opened.st_ino, opened.st_size,
+                 opened.st_mtime_ns, opened.st_nlink)
+                    or (after_path.st_dev, after_path.st_ino, after_path.st_size,
+                        after_path.st_mtime_ns, after_path.st_nlink) !=
+                       (opened.st_dev, opened.st_ino, opened.st_size,
+                        opened.st_mtime_ns, opened.st_nlink)
+                    or total != expected_size
+                    or not hmac.compare_digest(digest.digest(), expected_sha256)):
+                raise LocalStorageError()
+            snapshot.seek(0)
+            return snapshot
+        except Exception:
+            snapshot.close()
+            raise LocalStorageError() from None
 
     def _verify_content(self, locator: str, *, expected_sha256: bytes,
                         expected_size: int, max_bytes: int,

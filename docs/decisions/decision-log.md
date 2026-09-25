@@ -2816,3 +2816,15 @@
 |Reason|版本 HTTP 已经完成隔离数据库同链路验证，但正式提供不透明分页前必须绑定目标账户独立密钥；不能复用 Document 列表密钥或回退未签名游标。|
 |Impact|Windows 组合入口、缺钥合同与回归；无 Schema、API 路径/权限或依赖变化。正式发行信任源和目标账户供给仍待 Release 验证。|
 |Rollback|撤下版本 Router 注入并保留原 Document 读组合，已有业务数据不变。|
+
+## DEC-20260926-128
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-128|
+|Date|2026-09-26|
+|WBS|DOC-01-A05-P01 下载前验证快照|
+|Decision|LocalFileStorage 新增仅内部使用的有界已验证快照：从规范 PERSISTENT locator 打开普通单链接文件，复制到数据根下的私有 `SpooledTemporaryFile`，在返回给调用者前完成 SHA-256/大小、源文件句柄及路径身份/时间检查；失败关闭并清理快照。成功快照与源文件脱钩，后续流式响应只读快照，最大字节数沿用 100 MB 上传限制。|
+|Reason|先 verify 再重新打开原文件发送存在 TOCTOU；边验边发可能在末尾 Hash 失败时已经泄露不完整内容。快照在响应前完整校验且不把 locator/path 暴露给 HTTP。|
+|Impact|Document 存储适配器与测试；不改变 Schema、冻结 API、文件格式或外部依赖。短时磁盘空间与并发容量需后续下载 Service/Release 策略限制，正式下载未开放。|
+|Rollback|不调用快照方法；既有 verify/publish 行为不变。已关闭的临时快照由操作系统删除；不触碰登记 FileObject。|
