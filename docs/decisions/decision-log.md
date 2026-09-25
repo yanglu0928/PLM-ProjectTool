@@ -2459,3 +2459,15 @@
 |Reason|STAGED 也可能属于活跃发布；错误置 FAILED 会使合法上传无法完成，违反冻结恢复矩阵与失败关闭要求。|
 |Impact|仅记录前置与时序，不改变 Schema/API；DOC-03-A03-P04 整体未 PASS，Gate 3/Release 不因此放行。|
 |Rollback|本记录无运行时回滚；后续正式实现需另行验证再装配。|
+
+## DEC-20260925-098
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-098|
+|Date|2026-09-25|
+|WBS|DOC-02-A02-P01 上传来源的内部 DocumentVersion 提交|
+|Decision|先仅实现已发布、持久 FileObject 的上传来源版本提交：服务端按 UUID 派生最终 Locator 和 DB Hash/Size 重校验字节；授权后在短事务行锁 Document/FileObject，检查 ACTIVE Project、预期 Document lock_version、文件同 Scope/Project 和未被引用，按 latest 生成连续版本号/前驱，写不可变 Version、UPLOAD 来源引用、latest 指针、Audit 与幂等收据。effective 指针保持原值，不自动视为正式业务有效版本。|
+|Reason|冻结 DM-03 区分 latest 与 effective，真实上传/生成/迁移的来源语义不同；先把已具备的发布文件接成可追溯上传版本，避免在 Parser/Review 尚未就绪时自动生效或伪造其他来源。|
+|Impact|Document 内部 Application/Repository 与合成 PostgreSQL/文件验证；无 Migration、公开 API 或新依赖。其他来源、Parser Job/Outbox、上传 HTTP、正式授权/文件 ACL 和恢复协调另列子任务；DOC-02-A02 整体不因 P01 关闭。|
+|Rollback|不装配内部提交入口可停止新提交；已提交版本和来源不可删除/倒写，失败事务回滚 Version/指针/Audit/收据，孤立已发布 FileObject 留给恢复矩阵处理。|

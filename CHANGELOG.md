@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/DOC-02-A02-P01 新增仅内部的上传来源不可变版本提交：重验正式文件 Hash/Size，同 Scope/Project 和预期版本行锁后生成连续 DocumentVersion/UPLOAD 来源引用，更新 latest，Audit 与幂等收据同事务；effective 不自动生效。Windows 11 后端 462 项无失败（2 项符号链接跳过）、PostgreSQL 18 临时库合成文件首/后续版本、并发重放、隔离/损坏/回滚及开发 wheel PASS。无新 Migration/API/依赖，既有 `0022` 是升级前置。正式权限、上传 HTTP、Parser Job/Outbox、其他来源、真实 ACL、Server 2025/Debian 13 与最终程序包未完成。
+
 - 2026-09-25：`0.1.0.dev0`/DOC-03-A03-P04-P04 前置核查发现生产维护模式/活动发布停写证明尚不存在；内部隔离命令继续不装配，P04 整体未 PASS，转向独立 DOC-02 版本提交工作。仅追溯文档变化，无 Migration/API/依赖或升级操作；正式并发栅栏、Windows Server 2025/Debian 13 验证与最终程序包仍待。
 
 - 2026-09-25：`0.1.0.dev0`/DOC-03-A03-P04-P03 新增仅内部的异常文件隔离：停写证明 Port、Scope/版本与两次文件形态检查后，按缺失/仅暂存/损坏/双路径不同文件分类，STAGED→FAILED、状态事件/Audit/幂等收据同事务，不删除文件。Windows 11 后端 461 项无失败（2 项符号链接跳过）、PostgreSQL 18 临时库分类/授权/重放/审计回滚、既有发布恢复回归和开发 wheel PASS。无新 Migration/API/依赖；正式停写证明尚未接线，不能自动装配；Server 2025/Debian 13、后续恢复矩阵与最终程序包未完成。
