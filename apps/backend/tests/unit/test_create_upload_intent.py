@@ -46,8 +46,11 @@ class UploadIntentCreateTests(unittest.TestCase):
             with self.subTest(changes=changes), self.assertRaises(UploadIntentCreateError):
                 worker._validate(replace(self.command, **changes))
         worker._validate(replace(self.command, target_document_id=uuid.uuid4(),
-                                 document_category=None, title=None,
-                                 original_display_name=None))
+                                 document_category=None, title=None))
+        with self.assertRaises(UploadIntentCreateError):
+            worker._validate(replace(self.command, target_document_id=uuid.uuid4(),
+                                     document_category=None, title=None,
+                                     original_display_name=None))
 
     def test_token_is_deterministic_bound_and_unavailable_without_key(self):
         provider = SyntheticProvider()

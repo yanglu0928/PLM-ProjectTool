@@ -114,10 +114,9 @@ def main():
                 assert db.execute("SELECT token_digest FROM plm.doc_upload_intents WHERE upload_id=%s", (result.upload_id,)).fetchone()[0] == hashlib.sha256(result.upload_token.encode()).digest()
             expect(IdempotencyError, lambda: worker.create(replace(cmd, title="Different"), idempotency_key="upload-create-once"), "CONFLICT_IDEMPOTENCY")
             expect(PermissionError, lambda: worker.create(replace(cmd, actor_id=outsider), idempotency_key="upload-denied-0001"))
-            expect(UploadIntentCreateError, lambda: worker.create(replace(cmd, target_document_id=other_doc, document_category=None, title=None, original_display_name=None), idempotency_key="upload-cross-doc-0001"), "RESOURCE_NOT_FOUND")
+            expect(UploadIntentCreateError, lambda: worker.create(replace(cmd, target_document_id=other_doc, document_category=None, title=None), idempotency_key="upload-cross-doc-0001"), "RESOURCE_NOT_FOUND")
             existing = worker.create(replace(cmd, target_document_id=document,
-                                             document_category=None, title=None,
-                                             original_display_name=None),
+                                             document_category=None, title=None),
                                      idempotency_key="upload-existing-doc-0001")
             assert existing.upload_id != result.upload_id
             expect(RuntimeError, lambda: service(FailingAudit()).create(cmd, idempotency_key="upload-audit-fails-0001"))

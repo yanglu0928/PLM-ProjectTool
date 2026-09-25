@@ -277,7 +277,7 @@ class UploadIntentRow(Base):
                         name="ck_doc_upload_intents__purpose"),
         CheckConstraint("target_document_id IS NOT NULL OR (document_category IS NOT NULL AND title IS NOT NULL AND original_display_name IS NOT NULL)",
                         name="ck_doc_upload_intents__new_document"),
-        CheckConstraint("target_document_id IS NULL OR (document_category IS NULL AND document_subtype IS NULL AND document_purpose IS NULL AND title IS NULL AND original_display_name IS NULL)",
+        CheckConstraint("target_document_id IS NULL OR (document_category IS NULL AND document_subtype IS NULL AND document_purpose IS NULL AND title IS NULL)",
                         name="ck_doc_upload_intents__existing_document"),
         CheckConstraint(f"document_category IS NULL OR document_category IN ({_DOCUMENT_CATEGORIES})",
                         name="ck_doc_upload_intents__category"),

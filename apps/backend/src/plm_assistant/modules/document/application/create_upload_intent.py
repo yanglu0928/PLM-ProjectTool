@@ -181,8 +181,8 @@ class CreateUploadIntentService:
         if command.target_document_id is not None:
             if any(value is not None for value in (
                 command.document_category, command.document_subtype,
-                command.document_purpose, command.title, command.original_display_name,
-            )):
+                command.document_purpose, command.title,
+            )) or not self._label(command.original_display_name, 255):
                 raise UploadIntentCreateError("VALIDATION_FAILED")
         elif (command.document_category not in _CATEGORIES
               or not self._label(command.title, 255)

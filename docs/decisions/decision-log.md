@@ -2507,3 +2507,15 @@
 |Reason|随机 Token 不可在不保存明文的条件下恢复首次幂等响应；确定性派生既可重放，也保持数据库泄露时 Token 不可直接使用。|
 |Impact|Document Application/Repository、Token 适配与测试；不改冻结 API、Schema 或现有生产组合。密钥必须在所有未过期 Intent 生命周期内稳定，轮换/失密时失败关闭；目标账户安全供给及 Content/Commit/Abort 另列任务。|
 |Rollback|撤去未装配的内部创建入口即停止创建；已有 Intent 按 TTL 过期，不删除历史。事务失败回滚 Intent/Audit/收据；密钥丢失不能恢复 Token，须让旧 Intent 过期后重新创建。|
+
+## DEC-20260925-102
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-102|
+|Date|2026-09-25|
+|WBS|DOC-03-A04-A03-P01 Content 文件名契约前置|
+|Decision|按 CR-DOC-005 修正 UploadIntent：既有 Document 升版也由创建请求提供 `original_display_name`，只作本次上传文件名，不改 Document 身份；旧缺名意图不自动回填、不可进入 Content。|
+|Reason|冻结 API-02 要求升版也声明 display name，现有 `0023` 约束错误禁止，无法验证扩展名或形成可信 FileObject 名称。|
+|Impact|Document ORM/增量 Migration、创建命令验证、合成验证与版本记录；无公开 API Breaking Change。|
+|Rollback|降级仅在不存在新形态记录时允许，绝不删除有历史记录；旧缺名记录保持可追溯并按期限终止。|
