@@ -1967,3 +1967,15 @@
 |Reason|内部管理员原子创建与持久幂等已具备，现需补齐冻结浏览器请求边界；在正式 License 信任源未供给前仍需保持生产默认关闭。|
 |Impact|新增 Project HTTP、错误码映射、契约/临时库验证；无 Schema/Migration、冻结 API 或安全机制变更。|
 |Rollback|不注入 Router 即恢复 404；既有 Project/审计/收据保留，无数据迁移。|
+
+## DEC-20260925-057
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-057|
+|Date|2026-09-25|
+|WBS|PRJ-04-A05 Windows 显式平台 Project 创建组合|
+|Decision|仅在 `--platform` 与 `--platform-write` 已经通过 Schema、License 信任链和游标签名密钥装配后，以现行 SessionService、LicenseRuntimeGuard、Auth 管理员/初始负责人 Port、Project SQL 创建仓库、Audit 与 `0015` 收据构造 ProjectCreateService，并挂载 `PROJECT_CREATE` Router。默认登录模式继续 404。|
+|Reason|内部原子创建、持久幂等和可选 HTTP 已验证；复用显式平台组合可向正式可用程序推进，避免第二套权限/许可判断或在普通模式隐式开放。|
+|Impact|只改 Windows 组合与测试；无 Schema/Migration、冻结 API 或项目规则变化。正式发行公钥/目标账户材料和 Server 2025 仍待验收。|
+|Rollback|退回默认登录模式，Project 创建路由不挂载；已有 Project/审计/收据不可回滚删除。|

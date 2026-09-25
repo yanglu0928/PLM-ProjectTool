@@ -6,6 +6,9 @@ import hashlib
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 import psycopg
 from alembic import command
@@ -14,6 +17,7 @@ from psycopg import sql
 from sqlalchemy.engine import URL
 
 from plm_assistant.entrypoints.api import create_app
+from plm_assistant.entrypoints.production_login import create_production_platform_app
 from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
 from plm_assistant.modules.auth.application.session_service import SessionError
 from plm_assistant.modules.audit.application.public import AuditService
@@ -23,6 +27,8 @@ from plm_assistant.modules.license.application.runtime_guard import RuntimeLicen
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
+from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
+from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
 from plm_assistant.modules.project.application.create_project import (
     CreateProject, DepartmentSeed, ProjectCreateError, ProjectCreateService,
 )
@@ -94,6 +100,7 @@ def main():
                     replay_manager_id = user(db, "Synthetic Replay Manager", "NONE")
                     rollback_manager_id = user(db, "Synthetic Rollback Manager", "NONE")
                     http_manager_id = user(db, "Synthetic HTTP Manager", "NONE")
+                    production_manager_id = user(db, "Synthetic Production Manager", "NONE")
                     db.execute("UPDATE plm.auth_users SET state='DISABLED' WHERE user_id=%s", (disabled_id,))
                 guard = Guard()
                 kwargs = dict(unit_of_work=runtime.unit_of_work,
@@ -248,7 +255,54 @@ def main():
                         "SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='PROJECT_CREATED'",
                         (http_project_id,),
                     ).fetchone()[0] == 1
-                print("PASS: admin/CSRF/License, atomic Project bootstrap, concurrent/HTTP replay, immutable first response, Audit rollback")
+                settings = BootstrapSettings(
+                    data_root=Path.cwd(), trusted_origins=("http://localhost",),
+                )
+                with patch("plm_assistant.entrypoints.production_login.read_database_url",
+                           return_value=url), patch(
+                           "plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services",
+                           return_value=SimpleNamespace(guard=guard)), patch(
+                           "plm_assistant.entrypoints.production_login.create_windows_secret_list_cursor_codec",
+                           return_value=SecretListCursorCodec(b"q" * 32)):
+                    production = create_production_platform_app(settings)
+                    with TestClient(production, base_url="http://localhost") as client:
+                        prod_headers = {
+                            "origin": "http://localhost",
+                            "cookie": "plm_session=" + ADMIN_TOKEN.hex(),
+                            "x-csrf-token": CSRF.hex(),
+                            "idempotency-key": str(uuid.uuid4()),
+                        }
+                        prod_body = {
+                            "code": "P9", "name": "Production Composition Synthetic",
+                            "initial_manager_user_id": str(production_manager_id),
+                        }
+                        first = client.post("/api/v1/projects", headers=prod_headers,
+                                            json=prod_body)
+                        replay = client.post("/api/v1/projects", headers=prod_headers,
+                                             json=prod_body)
+                        assert first.status_code == replay.status_code == 201, (first.text, replay.text)
+                        assert first.json()["data"] == replay.json()["data"]
+                        production_project_id = uuid.UUID(first.json()["data"]["project_id"])
+                        forbidden = client.post("/api/v1/projects", headers={
+                            **prod_headers, "cookie": "plm_session=" + NONADMIN_TOKEN.hex(),
+                            "idempotency-key": str(uuid.uuid4()),
+                        }, json={**prod_body, "code": "P10"})
+                        assert forbidden.status_code == 404
+                        guard.enabled = False
+                        denied_prod = client.post("/api/v1/projects", headers={
+                            **prod_headers, "idempotency-key": str(uuid.uuid4()),
+                        }, json={**prod_body, "code": "P10"})
+                        assert denied_prod.status_code == 403
+                        guard.enabled = True
+                with connect(name) as db:
+                    assert db.execute(
+                        "SELECT count(*) FROM plm.prj_projects WHERE project_code_normalized='p9'"
+                    ).fetchone()[0] == 1
+                    assert db.execute(
+                        "SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='PROJECT_CREATED'",
+                        (production_project_id,),
+                    ).fetchone()[0] == 1
+                print("PASS: admin/CSRF/License, atomic bootstrap, concurrent/optional/Windows platform HTTP replay, Audit rollback")
             finally:
                 runtime.dispose()
         finally:

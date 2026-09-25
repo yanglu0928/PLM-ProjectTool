@@ -51,7 +51,11 @@ from plm_assistant.modules.project.api.read_projects import create_project_read_
 from plm_assistant.modules.project.application.read_projects import ProjectReadService
 from plm_assistant.modules.project.infrastructure.read_repository import SqlAlchemyProjectReadRepository
 from plm_assistant.modules.auth.infrastructure.project_read_access import SqlAlchemyProjectReadAccess
+from plm_assistant.modules.auth.infrastructure.project_create_access import SqlAlchemyProjectCreateAccess
 from plm_assistant.modules.project.infrastructure.authorized_projects import SqlAlchemyAuthorizedProjects
+from plm_assistant.modules.project.api.create_project import create_project_create_router
+from plm_assistant.modules.project.application.create_project import ProjectCreateService
+from plm_assistant.modules.project.infrastructure.create_repository import SqlAlchemyProjectCreateRepository
 
 
 class ProductionLoginStartupError(RuntimeError):
@@ -146,6 +150,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         secret_rotate_router = None
         secret_disable_router = None
         project_read_router = None
+        project_create_router = None
         if include_secret_read:
             from plm_assistant.entrypoints.windows_license_runtime import (
                 create_windows_license_services,
@@ -172,6 +177,17 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             )
             project_read_router = create_project_read_router(
                 sessions=sessions, projects=project_reads, origins=origins,
+            )
+            project_creates = ProjectCreateService(
+                unit_of_work=runtime.unit_of_work,
+                access=SqlAlchemyProjectCreateAccess(),
+                license_guard=licenses.guard,
+                repository=SqlAlchemyProjectCreateRepository(),
+                audit=audit,
+                receipts=SqlAlchemyIdempotencyReceipts(),
+            )
+            project_create_router = create_project_create_router(
+                sessions=sessions, projects=project_creates, origins=origins,
             )
             if include_secret_write:
                 from plm_assistant.entrypoints.windows_secret_write import (
@@ -201,6 +217,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             secret_rotate_router=secret_rotate_router,
             secret_disable_router=secret_disable_router,
             project_read_router=project_read_router,
+            project_create_router=project_create_router,
             shutdown_callback=runtime.dispose,
         )
     except Exception:
