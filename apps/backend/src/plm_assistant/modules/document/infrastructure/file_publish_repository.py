@@ -44,6 +44,10 @@ class SqlAlchemyFilePublishRepository:
             raise FilePublishError("FILE_UNAVAILABLE")
         return StagedFile(stage, final, row.sha256, row.size_bytes)
 
+    def staged_locked(self, transaction: object, *, command: PublishFile) -> StagedFile:
+        self._row(transaction, command, lock=True)
+        return self.staged(transaction, command=command)
+
     def publish(self, transaction: object, *, command: PublishFile,
                 expected: StagedFile) -> uuid.UUID:
         row = self._row(transaction, command, lock=True)
@@ -70,6 +74,36 @@ class SqlAlchemyFilePublishRepository:
         session.execute(insert(FileStateEventRow).values(
             file_state_event_id=event_id, file_object_id=command.file_object_id,
             from_state="STAGED", to_state="AVAILABLE", reason_code=None,
+            actor_user_id=command.actor_id, trace_id=command.trace_id,
+        ))
+        return event_id
+
+    def quarantine(self, transaction: object, *, command: PublishFile,
+                   expected: StagedFile, reason_code: str) -> uuid.UUID:
+        row = self._row(transaction, command, lock=True)
+        if row is None:
+            raise FilePublishError("RESOURCE_NOT_FOUND")
+        if row.lock_version != command.expected_version:
+            raise FilePublishError("CONFLICT_VERSION")
+        current = self.staged(transaction, command=command)
+        if current != expected:
+            raise FilePublishError("CONFLICT_VERSION")
+        session = transaction.session  # type: ignore[attr-defined]
+        result = session.execute(update(FileObjectRow).where(
+            FileObjectRow.file_object_id == command.file_object_id,
+            FileObjectRow.lock_version == command.expected_version,
+            FileObjectRow.file_state == "STAGED",
+        ).values(
+            file_state="FAILED", failure_code=reason_code,
+            updated_at=func.statement_timestamp(), updated_by=command.actor_id,
+            lock_version=FileObjectRow.lock_version + 1,
+        ))
+        if result.rowcount != 1:
+            raise FilePublishError("CONFLICT_VERSION")
+        event_id = uuid.uuid4()
+        session.execute(insert(FileStateEventRow).values(
+            file_state_event_id=event_id, file_object_id=command.file_object_id,
+            from_state="STAGED", to_state="FAILED", reason_code=reason_code,
             actor_user_id=command.actor_id, trace_id=command.trace_id,
         ))
         return event_id

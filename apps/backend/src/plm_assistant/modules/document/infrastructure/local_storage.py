@@ -38,6 +38,20 @@ class FileContentProof:
     size_bytes: int
 
 
+@dataclass(frozen=True, slots=True)
+class FileRecoveryInspection:
+    shape: str
+
+
+def _optional_info(path: Path) -> os.stat_result | None:
+    try:
+        return path.lstat()
+    except FileNotFoundError:
+        return None
+    except OSError:
+        raise LocalStorageError() from None
+
+
 def _is_reparse(info: os.stat_result) -> bool:
     return stat.S_ISLNK(info.st_mode) or bool(
         getattr(info, "st_file_attributes", 0) & _REPARSE
@@ -86,7 +100,8 @@ class LocalFileStorage:
         base = "global" if scope == "GLOBAL" else f"projects/{project_id.hex}"
         return f"temp/{base}/{suffix}", f"{base}/{suffix}"
 
-    def _path(self, locator: str, *, create_parents: bool = False) -> Path:
+    def _path(self, locator: str, *, create_parents: bool = False,
+              allow_missing_parents: bool = False) -> Path:
         if type(locator) is not str or _LOCATOR.fullmatch(locator) is None:
             raise LocalStorageError()
         parts = locator.split("/")
@@ -94,15 +109,21 @@ class LocalFileStorage:
             raise LocalStorageError()
         _checked_directory(self._root)
         current = self._root
+        missing_parent = False
         for part in parts[:-1]:
             parent = current
             current = current / part
+            if missing_parent:
+                continue
             try:
                 entries = {entry.name for entry in os.scandir(parent)}
                 if os.name == "nt" and any(name.casefold() == part and name != part
                                            for name in entries):
                     raise LocalStorageError()
                 if part not in entries:
+                    if allow_missing_parents and not create_parents:
+                        missing_parent = True
+                        continue
                     if not create_parents:
                         raise LocalStorageError()
                     current.mkdir(mode=0o700)
@@ -110,7 +131,7 @@ class LocalFileStorage:
             except OSError:
                 raise LocalStorageError() from None
         target = current / parts[-1]
-        if os.name == "nt":
+        if os.name == "nt" and not missing_parent:
             try:
                 if any(entry.name.casefold() == target.name and entry.name != target.name
                        for entry in os.scandir(current)):
@@ -118,6 +139,55 @@ class LocalFileStorage:
             except OSError:
                 raise LocalStorageError() from None
         return target
+
+    def inspect_recovery(self, staging_locator: str, final_locator: str, *,
+                         expected_sha256: bytes, expected_size: int,
+                         max_bytes: int) -> FileRecoveryInspection:
+        """Classify a named STAGED object without mutating either file."""
+        if (type(staging_locator) is not str or type(final_locator) is not str
+                or not staging_locator.startswith("temp/")
+                or final_locator != staging_locator.removeprefix("temp/")
+                or type(expected_sha256) is not bytes or len(expected_sha256) != 32
+                or type(expected_size) is not int or expected_size < 0
+                or type(max_bytes) is not int or max_bytes < 0
+                or expected_size > max_bytes):
+            raise LocalStorageError()
+        staging_path = self._path(staging_locator, allow_missing_parents=True)
+        final_path = self._path(final_locator, allow_missing_parents=True)
+        stage = _optional_info(staging_path)
+        final = _optional_info(final_path)
+        if stage is None and final is None:
+            return FileRecoveryInspection("NONE")
+        if stage is not None and final is None:
+            try:
+                _checked_file(staging_path)
+            except LocalStorageError:
+                return FileRecoveryInspection("UNSAFE")
+            return FileRecoveryInspection("STAGE_ONLY")
+        if stage is None:
+            try:
+                _checked_file(final_path)
+            except LocalStorageError:
+                return FileRecoveryInspection("UNSAFE")
+            try:
+                self.verify_content(
+                    final_locator, expected_sha256=expected_sha256,
+                    expected_size=expected_size, max_bytes=max_bytes,
+                )
+            except LocalStorageError:
+                return FileRecoveryInspection("FINAL_INVALID")
+            return FileRecoveryInspection("FINAL_VERIFIED")
+        if (_is_reparse(stage) or _is_reparse(final)
+                or not stat.S_ISREG(stage.st_mode)
+                or not stat.S_ISREG(final.st_mode)):
+            return FileRecoveryInspection("UNSAFE")
+        if (stage.st_dev, stage.st_ino) == (final.st_dev, final.st_ino):
+            if stage.st_nlink == final.st_nlink == 2:
+                return FileRecoveryInspection("LINKED_PAIR")
+            return FileRecoveryInspection("UNSAFE")
+        if stage.st_nlink == final.st_nlink == 1:
+            return FileRecoveryInspection("BOTH_UNRELATED")
+        return FileRecoveryInspection("UNSAFE")
 
     def reserve_staging(self, locator: str) -> BinaryIO:
         if type(locator) is not str or not locator.startswith("temp/"):

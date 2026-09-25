@@ -155,6 +155,48 @@ class LocalFileStorageTests(unittest.TestCase):
             )
         self.assertTrue((self.root / stage).exists())
 
+    def test_recovery_inspection_classifies_without_mutation(self):
+        content = b"synthetic inspected content"
+        digest = hashlib.sha256(content).digest()
+        stage, final = self.store.locators(
+            scope="GLOBAL", project_id=None, file_object_id=self.file_id,
+        )
+
+        def shape():
+            return self.store.inspect_recovery(
+                stage, final, expected_sha256=digest,
+                expected_size=len(content), max_bytes=len(content),
+            ).shape
+
+        self.assertEqual(shape(), "NONE")
+        with self.store.reserve_staging(stage) as stream:
+            stream.write(content)
+        self.assertEqual(shape(), "STAGE_ONLY")
+        (self.root / final).parent.mkdir(parents=True)
+        os.link(self.root / stage, self.root / final)
+        self.assertEqual(shape(), "LINKED_PAIR")
+        (self.root / final).unlink()
+        (self.root / final).write_bytes(content)
+        self.assertEqual(shape(), "BOTH_UNRELATED")
+        (self.root / stage).unlink()
+        self.assertEqual(shape(), "FINAL_VERIFIED")
+        (self.root / final).write_bytes(b"different bytes")
+        self.assertEqual(shape(), "FINAL_INVALID")
+
+    def test_recovery_inspection_rejects_untrusted_extra_link(self):
+        content = b"synthetic extra link"
+        digest = hashlib.sha256(content).digest()
+        stage, final = self.store.locators(
+            scope="GLOBAL", project_id=None, file_object_id=self.file_id,
+        )
+        with self.store.reserve_staging(stage) as stream:
+            stream.write(content)
+        os.link(self.root / stage, Path(self.temporary.name) / "extra-link")
+        self.assertEqual(self.store.inspect_recovery(
+            stage, final, expected_sha256=digest,
+            expected_size=len(content), max_bytes=len(content),
+        ).shape, "UNSAFE")
+
     def test_global_scope_and_invalid_uuids_rejected(self):
         stage, final = self.store.locators(
             scope="GLOBAL", project_id=None, file_object_id=self.file_id,

@@ -2435,3 +2435,15 @@
 |Reason|当前 Storage Adapter 的无覆盖提升用硬链接后删除暂存入口；崩溃可能恰好落在两步之间。该明确窗口可恢复，但不能将两个不同文件或额外硬链接当作同一可信内容。|
 |Impact|仅内部 Document Storage/Application 和合成 Windows 文件/隔离 PostgreSQL 验证，无 Migration/公开 API/新依赖；异常隔离分类留 P04-P03。|
 |Rollback|停止该内部命令装配；若暂存入口已删而 DB 提交失败，保持 STAGED/最终文件独占，可由 P04-P01 重试，不回写已提交历史。|
+
+## DEC-20260925-096
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-096|
+|Date|2026-09-25|
+|WBS|DOC-03-A03-P04-P03 缺失/异常文件隔离分类与审计|
+|Decision|新增仅内部显式指定 FileObject 的隔离命令，并要求注入的停写/无活动发布证明 Port 在前后事务均通过。对无文件、仅暂存、最终文件摘要不符或两条互不相同的普通文件，前后两次检查形态一致后以行锁原子写 STAGED→FAILED、分类失败码、状态事件/Audit/幂等收据；不删除任何文件。已验证最终文件、可恢复的同一硬链接对、重解析点/不安全路径等不自动判失败，保持 STAGED 交受控恢复或人工处理。|
+|Reason|冻结恢复矩阵要求半完成版本不可见且恢复动作可审计；但 STAGED 可能属于仍在运行的发布，单凭年龄或文件快照不允许自动置 FAILED。当前生产停写证明未接线，内部能力不得作为自动扫描器对外装配。|
+|Impact|Document Storage/Application/Repository 和合成文件/隔离 PostgreSQL 验证；无 Migration、公开 API 或新依赖。正式 Quiescence Port、TTL 清理、AVAILABLE/DocumentVersion/Parse Job 的其他恢复矩阵行后续实施。|
+|Rollback|停止内部装配；FAILED 历史保留，不倒写为 AVAILABLE，重新上传产生新 FileObject；物理文件未删，可人工核查。|
