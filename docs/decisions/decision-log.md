@@ -1835,3 +1835,15 @@
 |Reason|旧实现只核对密文版本号；两者虽在正常活动路径通常相等，却不能证明公开 `If-Match` 正确落在记录并发版本上。|
 |Impact|仅修改内部命令/仓储签名与验证，不改公开 API、Schema、Migration 或密文版本规则；更新全部内部调用和历史验证脚本。|
 |Rollback|保留原冻结 API 与数据库数据；如实现异常可回退该内部代码，公开写路由仍保持关闭。|
+
+## DEC-20260925-046
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-046|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P05-A02 强 If-Match 请求边界|
+|Decision|写请求仅接受恰好一个 ASCII `If-Match: "vN"`，其中 N 为无前导零的正整数且小于 PostgreSQL bigint 上界；缺失映射冻结的 428 `CONFLICT_VERSION_REQUIRED`，重复、弱标签、通配符、列表、畸形或越界映射 400 `REQUEST_MALFORMED`。解析后只向内部命令传记录 `lock_version`。|
+|Reason|冻结 API-01 要求强 ETag 与 If-Match；宽松 HTTP 解析可能把弱/复合条件误当成单资源并发版本。|
+|Impact|新增无状态解析器和边界测试；无 Schema、Migration 或公开写路由变更。|
+|Rollback|写路由尚未开放，可移除解析器；不影响现有只读/登录功能。|

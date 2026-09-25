@@ -29,6 +29,7 @@ description: Execute architecture, PoC, implementation, testing, packaging, and 
 - PLT-02-A07-P04-A03 已完成 Windows 当前账户 Vault 独立游标签名密钥来源与临时凭据加密备份恢复验证；目标账户正式供给/Server 2025、生产只读组合和写 API 未完成。最新状态以根目录 `STATUS.md` 为准。
 - PLT-02-A07-P04-A04 已新增 Windows 显式 `--platform` 只读组合并验证缺信任源失败关闭；仅合成组合 PASS，正式公钥/目标账户密钥未供给，写 API 与 Gate 3 未完成。最新状态以根目录 `STATUS.md` 为准。
 - PLT-02-A07-P05-A01 已将内部 Secret 轮换并发条件与记录强 ETag `lock_version` 对齐，PostgreSQL 版本分离/并发验证通过；公开写 HTTP 的 If-Match/持久幂等、正式信任源与 Gate 3 未完成。最新状态以根目录 `STATUS.md` 为准。
+- PLT-02-A07-P05-A02 已补强 If-Match 请求解析与缺失 428/畸形 400 边界；创建/轮换/停用的同事务持久幂等及写 HTTP 仍未接线。最新状态以根目录 `STATUS.md` 为准。
 
 ## 参考文件路由
 
