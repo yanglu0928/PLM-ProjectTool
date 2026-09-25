@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/DOC-03-A04-A04-P02 增加内部 PostgreSQL Job 领取、心跳、过期接管、fencing、完成与有界重试；旧 Worker 不可发布，发布失败回滚终态。Windows 11 后端 497 项无失败（2 项权限跳过），隔离 PostgreSQL 18 并发/过期/回滚/成功完成验证 PASS。无新 Migration/API/依赖；现有部署需 `0025`。Outbox 投递、Parser Worker、Commit/Abort、Server 2025 与最终程序包仍待。
+
 - 2026-09-26：`0.1.0.dev0`/DOC-03-A04-A04-P01 按 CR-DOC-006 增加 Job/Attempt/Lease/Outbox/Consumption 私有 ORM 与迁移 `20260926_0025`，为上传提交同事务生成 Parse Job 提供持久层。Windows 11 后端 495 项无失败（2 项权限跳过），隔离 PostgreSQL 18 旧数据升级、ORM 对齐、重复拒绝、非空降级拒绝及空表降级/再升级、开发 wheel PASS。生产升级前备份并执行至 head；无公开 API/新依赖。Commit/Abort、Worker、Server 2025、正式信任源和最终程序包仍待。
 
 - 2026-09-26：`0.1.0.dev0`/DOC-03-A04-A03-P04-P03 新增仅 Windows 显式写模式的流式 Content PUT：固定 GLOBAL/PROJECT 路径、可信 Origin、Session/CSRF、短时 Upload Token、严格长度/摘要、最大 100 MB，AnyIO 桥接每段最多 1 MiB；内部服务在流前/流后重查 License 与创建者/项目角色，成功仅登记 STAGED FileObject，不生成业务版本。Windows 11 后端 495 项无失败（2 项符号链接跳过），PostgreSQL 18/临时目录合成首传/重传/越权/改正文/许可拒绝和单次 Audit、开发 wheel PASS。无 Migration/新依赖；正式信任源、Commit/Abort/Parser、Server 2025/Debian 13 和最终程序包仍待。

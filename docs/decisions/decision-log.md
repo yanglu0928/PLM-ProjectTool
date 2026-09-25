@@ -2651,3 +2651,14 @@
 |Reason|内部 Content 已具备暂存、类型/Hash/长度和数据库原子登记，但直接读取整份 HTTP 正文将突破有界内存目标；只在流前检查许可会让长传输后的状态变化失效。|
 |Impact|Document 可选 API、Content Service 授权时序、Windows 组合与测试；无 Schema/冻结 API 破坏。|
 |Rollback|撤下 Content Router，已创建意图自然过期；孤儿暂存依已有受控恢复/TTL 清理流程，不执行任意文件删除。|
+## DEC-20260926-114
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-114|
+|Date|2026-09-26|
+|WBS|DOC-03-A04-A04-P02 Job Lease/fencing 事务命令|
+|Decision|Job Owner 使用数据库 `statement_timestamp()`、单行 `FOR UPDATE SKIP LOCKED` 与短事务领取；每次领取增加单调 fencing token，同时追加 Attempt/Lease，过期租约在同一事务标记 EXPIRED；心跳与终态提交必须再次核对 Job 状态、token、worker、活动 Lease 和数据库过期时间。完成和重试只改变内部 Job/Lease/Attempt，不在 Worker 事务中执行外部解析。|
+|Reason|ADR-007 的至少一次与崩溃回收必须阻止旧 Worker 在租约失效后覆盖新结果，单靠内存锁或任务状态不足。|
+|Impact|仅 jobs 内部 Application/Repository 与合成测试；不增加 API、迁移、依赖或外部副作用。|
+|Rollback|停用 Worker 调度并回退内部命令；已产生的 Job/Attempt/Lease 历史保留，不能删除重建 fencing token。|
