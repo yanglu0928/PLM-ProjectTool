@@ -77,7 +77,7 @@ class SecretMetadataListApiTests(unittest.TestCase):
         first = self.get("/api/v1/admin/secrets?page_size=1").json()["data"]["next_cursor"]
         count = self.metadata.calls
         for path, cookie in (
-            (f"/api/v1/admin/secrets?page_size=1&cursor={first[:-1]}A", None),
+            (f"/api/v1/admin/secrets?page_size=1&cursor={first[:-1]}{'A' if first[-1] != 'A' else 'B'}", None),
             (f"/api/v1/admin/secrets?page_size=2&cursor={first}", None),
             (f"/api/v1/admin/secrets?page_size=1&cursor={first}", "plm_session=" + "cd" * 32),
             ("/api/v1/admin/secrets?page_size=1&page_size=2", None),

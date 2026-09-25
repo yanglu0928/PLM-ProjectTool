@@ -2039,3 +2039,15 @@
 |Reason|内部幂等与可选 HTTP 已验证；复用单一组合避免第二套身份/License/权限逻辑。|
 |Impact|仅 Windows 显式组合、合成端到端测试和版本记录；无新 Migration、冻结 API 或新依赖。|
 |Rollback|退回普通登录模式或不注入归档 Router，保留既有 Project/Audit/收据事实；正式信任源缺失时仍失败关闭。|
+
+## DEC-20260925-063
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-063|
+|Date|2026-09-25|
+|WBS|PRJ-04-A09-P01 Project Member 列表 cursor 前置|
+|Decision|沿用内部 MemberId 升序 keyset；公开 cursor 采用独立 32 字节 HMAC-SHA256 密钥、URL-safe 规范编码，绑定资源族 `project-member-history`、ProjectId、Session 摘要、page_size 查询指纹与最后 MemberId。生产 Windows 来源使用独立当前账户 Vault 引用 `project-member-list-cursor-v1`，在后续显式组合 WBS 接线；无签名密钥时不得开放列表。|
+|Reason|冻结 API-01 要求不透明、完整性保护、Scope/查询绑定 cursor；内部 `after_member_id` 不得直接暴露为可构造查询参数。|
+|Impact|新增 Project API cursor 编解码及测试，无 Schema/Migration、冻结 API 或第三方依赖变化；正式目标账户须额外安全供给并备份此密钥。|
+|Rollback|不挂载成员列表路由保持 404；已签发 cursor 可自然失效，但不得静默更换密钥后宣称分页连续。|
