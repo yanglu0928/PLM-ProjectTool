@@ -2720,3 +2720,15 @@
 |Reason|已有 Create/Content 在该显式模式验证，冻结 API-02 要求相同 Session/License/CSRF/Project Role/创建者边界；单独挂载无保护终结路由会绕过现有组合根。|
 |Impact|Windows 组合根和隔离 PostgreSQL/临时文件验收；无 Schema、冻结 API、依赖或默认应用行为变化。|
 |Rollback|撤下 Commit/Abort Router 注入，两个路径恢复 404；已提交 DocumentVersion/Job 与已终止 Intent 历史保留，不能回滚业务事实。|
+
+## DEC-20260926-120
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-120|
+|Date|2026-09-26|
+|WBS|DOC-01-A02 内部受权 Document 元数据读取|
+|Decision|Document 只查询本模块 DocumentRow；Auth Session、DeploymentAdmin 与 Project 当前成员/状态分别通过 Owner Port 在同一事务核验。内部按 document_id 稳定 keyset 读取 ACTIVE/ARCHIVED，RESTRICTED 默认不可见；GLOBAL 当前只放行 DeploymentAdmin，项目成员的正式引用/类别授权待引用模型具备后单独实施，不以类别或 ID 猜测放行。|
+|Reason|冻结 API-02 要求 ProjectId 隔离与 GLOBAL 引用/类别联合策略；目前未有可核验的 GLOBAL→PROJECT 正式引用事实，直接放行标准类别会造成过度读取。Document 读层先建立可复用的 Owner 边界和分页事实。|
+|Impact|Document 内部 Application/Repository、Port 组合与测试；不改 Schema、公开 API、依赖或冻结权限规则。后续 HTTP cursor 必须独立签名并绑定 Scope/Project/Session。|
+|Rollback|不装配尚未公开的内部读 Service；Document 表和既有上传历史不变。|
