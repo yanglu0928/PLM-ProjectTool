@@ -2684,3 +2684,15 @@
 |Reason|冻结 DM-03 要求 FileObject AVAILABLE、DocumentVersion、Parse Job/Outbox、Audit 作为单一数据库提交。跨模块直接访问 jobs 内部表或复用独立事务 FilePublishService 均破坏该不变量。|
 |Impact|jobs Application Port/Repository 与 Document Commit 实现、合成 PostgreSQL 回归；不改公开 API、数据模型或迁移。|
 |Rollback|移除尚未挂载的 Commit 编排；已提交 Job/Outbox 不删除，需按受控取消/Dead 路径处理。原 FilePublishService 保留供独立恢复命令使用。|
+
+## DEC-20260926-117
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-117|
+|Date|2026-09-26|
+|WBS|DOC-03-A04-A04-P04-P03-P01 上传 Abort 状态编排|
+|Decision|Abort 仅在一个数据库事务内把 CREATED/CONTENT_READY 意图置为 ABORTED；有已登记暂存文件时按冻结状态图记录 STAGED→FAILED→CLEANUP_PENDING 两次状态事件，并同事务保存 Audit 与幂等收据。物理删除留给后续精确身份校验的清理命令，Abort 不在数据库事务内删除文件。|
+|Reason|冻结 API 返回 cleanup-pending；文件系统与 PostgreSQL 不能原子提交，先删除再回滚会丢失已登记正文；Commit 可能在外部文件提升与数据库提交之间竞争，必须通过状态锁与后续恢复核查避免误删。|
+|Impact|Document 内部 Application/Repository 与测试；无新 Schema、迁移、依赖或公开 API。CREATED 无文件时返回 cleanup_pending=false，CONTENT_READY 有文件时为 true。|
+|Rollback|撤下未挂载的内部 Abort 入口；已标记 CLEANUP_PENDING 的记录保持可追溯，不恢复成可提交状态，也不自动删除物理文件。|
