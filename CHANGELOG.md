@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/DOC-03-A04-A03-P04-P02-A02 增加上传 Token 的独立 Windows 当前账户密钥只读入口，缺失/错误长度时拒绝装配，运行中失密失败关闭；沿用既有交互式供给和离线加密备份。Windows 11 后端 489 项无失败（2 项符号链接跳过），临时独立凭据失密/恢复后旧 Token 重新派生及开发 wheel PASS。无 Migration/API/新依赖；正式目标账户密钥、显式平台装配、Server 2025/Debian 13 和最终程序包仍待。
+
 - 2026-09-26：`0.1.0.dev0`/DOC-03-A04-A03-P04-P02-A01 增加仅显式注入的 GLOBAL/PROJECT UploadIntent 创建 HTTP，要求可信 Origin、当前 Session/CSRF、License、幂等 Key，并返回无缓存短时 Token；可选父版本在创建/重放时核对，未提供时保留旧收据指纹。Windows 11 后端 487 项无失败（2 项符号链接跳过），隔离 PostgreSQL 18 内部创建/父版本拒绝回归及开发 wheel PASS。无新 Migration/依赖；默认与生产组合仍 404，独立上传 Token 密钥来源、真实 HTTP+数据库组合、Content/Commit/Abort、Server 2025/Debian 13 和最终程序包未完成。
 
 - 2026-09-26：`0.1.0.dev0`/DOC-03-A04-A03-P04-P01 增加请求级 Document 上传授权适配：复用 Auth 所有的当前 Session/CSRF、DeploymentAdmin 证明，按冻结 API-02 检查项目上传角色及 Content 创建者，并在流前/流后每个事务重查。Windows 11 后端 482 项无失败（2 项符号链接场景跳过），开发 wheel 构建通过。无新 Migration、公开 API 或依赖；升级仍需已有 `0024`。License/HTTP、PostgreSQL 真实身份组合、Server 2025/Debian 13 与最终程序包未完成。

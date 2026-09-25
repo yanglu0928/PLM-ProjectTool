@@ -2615,3 +2615,15 @@
 |Reason|不忽略已声明的父版本，也不把创建阶段的预检误当作提交阶段并发保护；复用既有 Document 最新指针，无需新增 Schema。|
 |Impact|Document 创建命令/Repository/可选 API 与契约测试；无冻结 API/Schema 破坏、新依赖或生产密钥供给。|
 |Rollback|不注入 Router 即恢复 404；内部可选预检字段不改变既有 Intent。已创建测试记录仅留合成库。正式平台装配和 Content/Commit 留后续验证。|
+
+## DEC-20260926-111
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-111|
+|Date|2026-09-26|
+|WBS|DOC-03-A04-A03-P04-P02-A02 上传 Token 独立 Windows 密钥来源|
+|Decision|为 Document Upload Token 使用独立 `document-upload-token-v1` 当前账户 Windows Credential Manager 引用，启动时仅只读校验 32 字节密钥；运行时重新解析，缺失则失败关闭。供给和离线加密备份沿用既有交互式 Secret Key Lifecycle，不生成或提交真实密钥。|
+|Reason|Upload Token 必须跨进程重放稳定，不能复用 License、可信时间、Secret 主密钥或列表游标签名密钥；无备份的临时 Key 会使未过期意图失效。|
+|Impact|Document Windows 入口适配与独立合成密钥备份恢复测试；无 Schema/API/技术栈变化。|
+|Rollback|不装配上传 Router 即停止签发；撤下专用引用后旧 Token 失败关闭，可由独立备份恢复。正式发行时须由目标账户和操作员完成供给仪式。|
