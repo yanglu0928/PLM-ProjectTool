@@ -39,12 +39,12 @@ from plm_assistant.modules.project.infrastructure.authorization_repository impor
 from plm_assistant.modules.project.infrastructure.write_repository import SqlAlchemyProjectWriteRepository
 
 HOST, PORT, USER = "127.0.0.1", 55432, "poc_admin"
-CSRF, MANAGER_TOKEN, OTHER_TOKEN, HTTP_TOKEN = b"c" * 32, b"m" * 32, b"o" * 32, b"h" * 32
+CSRF, MANAGER_TOKEN, OTHER_TOKEN, HTTP_TOKEN, PROD_TOKEN = b"c" * 32, b"m" * 32, b"o" * 32, b"h" * 32, b"p" * 32
 
 
 class HttpSessions:
     def validate(self, token, *, csrf_token, require_csrf):
-        if token not in (MANAGER_TOKEN, OTHER_TOKEN, HTTP_TOKEN) or csrf_token != CSRF or require_csrf is not True:
+        if token not in (MANAGER_TOKEN, OTHER_TOKEN, HTTP_TOKEN, PROD_TOKEN) or csrf_token != CSRF or require_csrf is not True:
             raise SessionError("AUTH_SESSION_EXPIRED")
         return object()
 
@@ -97,15 +97,19 @@ def main():
                     manager = user(db, "Synthetic Manager", MANAGER_TOKEN)
                     other = user(db, "Synthetic Other", OTHER_TOKEN)
                     http_manager = user(db, "Synthetic HTTP Manager", HTTP_TOKEN)
+                    prod_manager = user(db, "Synthetic Production Manager", PROD_TOKEN)
                     p1 = db.execute("INSERT INTO plm.prj_projects(project_code,project_code_normalized,name,created_by) VALUES ('P1','p1','First',%s) RETURNING project_id", (manager,)).fetchone()[0]
                     p2 = db.execute("INSERT INTO plm.prj_projects(project_code,project_code_normalized,name,created_by) VALUES ('P2','p2','Second',%s) RETURNING project_id", (manager,)).fetchone()[0]
                     p3 = db.execute("INSERT INTO plm.prj_projects(project_code,project_code_normalized,name,created_by) VALUES ('P3','p3','HTTP Before',%s) RETURNING project_id", (http_manager,)).fetchone()[0]
+                    p4 = db.execute("INSERT INTO plm.prj_projects(project_code,project_code_normalized,name,created_by) VALUES ('P4','p4','Production Before',%s) RETURNING project_id", (prod_manager,)).fetchone()[0]
                     d1 = db.execute("INSERT INTO plm.prj_departments(project_id,department_code,department_code_normalized,name) VALUES (%s,'D1','d1','First') RETURNING department_id", (p1,)).fetchone()[0]
                     d2 = db.execute("INSERT INTO plm.prj_departments(project_id,department_code,department_code_normalized,name) VALUES (%s,'D2','d2','Second') RETURNING department_id", (p2,)).fetchone()[0]
                     d3 = db.execute("INSERT INTO plm.prj_departments(project_id,department_code,department_code_normalized,name) VALUES (%s,'D3','d3','HTTP') RETURNING department_id", (p3,)).fetchone()[0]
+                    d4 = db.execute("INSERT INTO plm.prj_departments(project_id,department_code,department_code_normalized,name) VALUES (%s,'D4','d4','Production') RETURNING department_id", (p4,)).fetchone()[0]
                     m1 = db.execute("INSERT INTO plm.prj_project_members(project_id,user_id,department_id,project_role) VALUES (%s,%s,%s,'PROJECT_MANAGER') RETURNING project_member_id", (p1, manager, d1)).fetchone()[0]
                     db.execute("INSERT INTO plm.prj_project_members(project_id,user_id,department_id,project_role) VALUES (%s,%s,%s,'PROJECT_MANAGER')", (p2, other, d2))
                     db.execute("INSERT INTO plm.prj_project_members(project_id,user_id,department_id,project_role) VALUES (%s,%s,%s,'PROJECT_MANAGER')", (p3, http_manager, d3))
+                    db.execute("INSERT INTO plm.prj_project_members(project_id,user_id,department_id,project_role) VALUES (%s,%s,%s,'PROJECT_MANAGER')", (p4, prod_manager, d4))
                 guard = Guard()
                 kwargs = dict(unit_of_work=runtime.unit_of_work,
                               access=SqlAlchemyProjectWriteAccess(), license_guard=guard,
@@ -163,9 +167,27 @@ def main():
                         denied_prod = client.patch(path, headers={**headers, "if-match": '"v2"'}, json={"name": "Denied"})
                         assert denied_prod.status_code == 403, denied_prod.text
                         guard.enabled = True
+                        archive_path = f"/api/v1/projects/{p4}:archive"
+                        archive_headers = {
+                            "origin": "http://localhost",
+                            "cookie": "plm_session=" + PROD_TOKEN.hex(),
+                            "x-csrf-token": CSRF.hex(),
+                            "idempotency-key": "production-archive-key-0001",
+                            "if-match": '"v0"',
+                        }
+                        archived_prod = client.post(archive_path, headers=archive_headers)
+                        replay_prod = client.post(archive_path, headers=archive_headers)
+                        assert archived_prod.status_code == replay_prod.status_code == 200, (archived_prod.text, replay_prod.text)
+                        assert archived_prod.json()["data"] == replay_prod.json()["data"]
+                        assert archived_prod.headers["etag"] == '"v1"'
+                        guard.enabled = False
+                        assert client.post(archive_path, headers=archive_headers).status_code == 403
+                        guard.enabled = True
                 with connect(name) as db:
                     assert db.execute("SELECT name,lock_version FROM plm.prj_projects WHERE project_id=%s", (p3,)).fetchone() == ("Production After", 2)
                     assert db.execute("SELECT action FROM plm.aud_events WHERE target_project_id=%s ORDER BY audit_event_id", (p3,)).fetchall() == [("PROJECT_PATCHED",), ("PROJECT_PATCHED",)]
+                    assert db.execute("SELECT state,lock_version FROM plm.prj_projects WHERE project_id=%s", (p4,)).fetchone() == ("ARCHIVED", 1)
+                    assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_project_id=%s AND action='PROJECT_ARCHIVED'", (p4,)).fetchone()[0] == 1
                 failed_idempotent = ProjectWriteService(
                     **kwargs, audit=FailedAudit(),
                     receipts=SqlAlchemyIdempotencyReceipts(),

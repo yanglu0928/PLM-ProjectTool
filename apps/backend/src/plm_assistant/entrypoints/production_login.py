@@ -57,6 +57,7 @@ from plm_assistant.modules.project.api.create_project import create_project_crea
 from plm_assistant.modules.project.application.create_project import ProjectCreateService
 from plm_assistant.modules.project.infrastructure.create_repository import SqlAlchemyProjectCreateRepository
 from plm_assistant.modules.project.api.patch_project import create_project_patch_router
+from plm_assistant.modules.project.api.archive_project import create_project_archive_router
 from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
 from plm_assistant.modules.project.application.write_project import ProjectWriteService
 from plm_assistant.modules.project.infrastructure.authorization_repository import SqlAlchemyProjectAuthorizationRepository
@@ -158,6 +159,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         project_read_router = None
         project_create_router = None
         project_patch_router = None
+        project_archive_router = None
         if include_secret_read:
             from plm_assistant.entrypoints.windows_license_runtime import (
                 create_windows_license_services,
@@ -206,8 +208,12 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 ),
                 repository=SqlAlchemyProjectWriteRepository(),
                 audit=audit,
+                receipts=SqlAlchemyIdempotencyReceipts(),
             )
             project_patch_router = create_project_patch_router(
+                sessions=sessions, writes=project_writes, origins=origins,
+            )
+            project_archive_router = create_project_archive_router(
                 sessions=sessions, writes=project_writes, origins=origins,
             )
             if include_secret_write:
@@ -240,6 +246,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             project_read_router=project_read_router,
             project_create_router=project_create_router,
             project_patch_router=project_patch_router,
+            project_archive_router=project_archive_router,
             shutdown_callback=runtime.dispose,
         )
     except Exception:

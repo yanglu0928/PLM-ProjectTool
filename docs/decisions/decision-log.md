@@ -2027,3 +2027,15 @@
 |Reason|冻结 API-02 明确 S,L,C,I,M,A 和 200 ARCHIVED；沿用现行写路由边界避免另设认证或请求格式。|
 |Impact|新增可选 Project Router/契约与临时库 HTTP 测试，无 Schema、Migration、冻结 API 或新依赖。|
 |Rollback|停止注入 Router 即恢复 404；已归档 Project 不提供逆向写接口。|
+
+## DEC-20260925-062
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-062|
+|Date|2026-09-25|
+|WBS|PRJ-04-A08-P03 Windows 显式平台归档组合|
+|Decision|只在 `--platform`/`--platform-write` 已通过 Schema、License 与游标信任源前置时，为现有 ProjectWriteService 注入通用 `0015` 收据，并挂载 P02 归档 Router；PATCH 继续复用同一服务，普通默认登录模式保持 404。|
+|Reason|内部幂等与可选 HTTP 已验证；复用单一组合避免第二套身份/License/权限逻辑。|
+|Impact|仅 Windows 显式组合、合成端到端测试和版本记录；无新 Migration、冻结 API 或新依赖。|
+|Rollback|退回普通登录模式或不注入归档 Router，保留既有 Project/Audit/收据事实；正式信任源缺失时仍失败关闭。|
