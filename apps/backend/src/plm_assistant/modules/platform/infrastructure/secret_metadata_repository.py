@@ -15,6 +15,7 @@ _FIELDS = (
     SecretRecordRow.secret_record_id, SecretRecordRow.purpose,
     SecretRecordRow.secret_state, SecretRecordRow.allowed_consumer,
     SecretVersionRow.version_no, SecretRecordRow.created_at, SecretRecordRow.updated_at,
+    SecretRecordRow.lock_version,
 )
 
 

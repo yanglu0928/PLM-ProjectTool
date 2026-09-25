@@ -28,7 +28,7 @@ class Dependencies:
         self.auth_calls = 0
         self.read_calls = 0
         self.view = SecretMetadataView(uuid.uuid4(), "AI_PROVIDER_KEY", "ACTIVE",
-                                       "AI_PROVIDER_ADAPTER", 1, NOW, NOW)
+                                       "AI_PROVIDER_ADAPTER", 1, NOW, NOW, 1)
 
     def uow(self):
         return Tx()

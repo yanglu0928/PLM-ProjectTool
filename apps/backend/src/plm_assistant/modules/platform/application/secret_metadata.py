@@ -24,6 +24,7 @@ class SecretMetadataView:
     current_version_no: int | None
     created_at: datetime
     updated_at: datetime
+    lock_version: int
 
 
 @dataclass(frozen=True, slots=True)

@@ -1775,3 +1775,15 @@
 |Reason|内部 License 组件单独通过测试不代表生产信任链；组合根必须保证各 Port 来源和数据库版本一致，避免部署端可替换公钥或空可信时间无密钥仍放行业务。|
 |Impact|新增 Windows 入口组合和合成/临时库验证，不改七字段载荷、Schema、API 或权限。真实签发私钥/公钥和目标账户 Vault 密钥仍待现场仪式；本项不能据合成数据宣称生产 License PASS。|
 |Rollback|不调用此组合根即可保持原生产登录/健康面；无数据迁移或自动密钥生成，已有 License 状态不修改。|
+
+## DEC-20260925-041
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-041|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P04-A01 Secret 元数据详情只读 HTTP|
+|Decision|先实现可选挂载的单条 Secret 元数据详情 GET。严格检查可信 Host/Origin、唯一有效 Session，再由既有内部服务复核 DeploymentAdmin 与 License；投影仅含冻结允许的元数据和强 ETag。列表的不透明游标及写操作另立任务，不在本项以明文分页或虚假依赖替代。默认应用不挂载，正式信任锚就绪前不公开生产管理路由。|
+|Reason|内部安全投影和会话服务已存在，可以独立验证单条只读 HTTP 契约；写入/轮换仍受正式密钥、If-Match、幂等及审计接线制约。|
+|Impact|仅增加可选 HTTP Router、元数据锁版本投影和测试；不改变冻结 API、Schema、Migration 或生产路由。|
+|Rollback|不注入该 Router 时保持默认 404；无数据变更。|
