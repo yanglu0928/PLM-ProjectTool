@@ -36,6 +36,9 @@ COMMON_ERRORS: dict[str, ErrorSpec] = {
         "FILE_TYPE_UNSUPPORTED", 415, "不支持此文件类型。"
     ),
     "VALIDATION_FAILED": ErrorSpec("VALIDATION_FAILED", 422, "请求内容不符合要求。"),
+    "PLATFORM_SECRET_PURPOSE_INVALID": ErrorSpec(
+        "PLATFORM_SECRET_PURPOSE_INVALID", 422, "Secret 用途或使用方不受支持。"
+    ),
     "PLATFORM_SENSITIVE_VALUE_FORBIDDEN": ErrorSpec(
         "PLATFORM_SENSITIVE_VALUE_FORBIDDEN", 422, "此配置值不允许保存。"
     ),
@@ -45,6 +48,9 @@ COMMON_ERRORS: dict[str, ErrorSpec] = {
     "AUTH_RATE_LIMITED": ErrorSpec("AUTH_RATE_LIMITED", 429, "请求过于频繁，请稍后重试。"),
     "SYSTEM_INTERNAL": ErrorSpec("SYSTEM_INTERNAL", 500, "服务暂时无法完成请求。"),
     "SYSTEM_UNAVAILABLE": ErrorSpec("SYSTEM_UNAVAILABLE", 503, "服务暂时不可用。"),
+    "PLATFORM_SECRET_UNAVAILABLE": ErrorSpec(
+        "PLATFORM_SECRET_UNAVAILABLE", 503, "Secret 服务暂时不可用。"
+    ),
 }
 
 

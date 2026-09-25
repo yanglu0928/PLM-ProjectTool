@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PLT-02-A07-P05-A05 新增可选 Secret 创建 write-only HTTP：可信来源/Session/CSRF/幂等、严格有界 JSON，201 仅 SecretRef/ETag/Location，默认/当前生产组合仍不挂载。Windows 11 后端 370/370、PostgreSQL 18 临时库 HTTP→密文/审计/收据同 Key 重放及开发 wheel PASS。无新 Migration/依赖，目标库需已有 `0015`；正式主密钥/License、轮换/停用 HTTP、Server 2025/Debian 13 和最终程序包未完成。
+
 - 2026-09-25：`0.1.0.dev0`/PLT-02-A07-P05-A04 Secret 内部轮换/停用新增同事务持久幂等：同 Key/请求复用原版本或停用结果、不重复密文/审计，异请求冲突，收据仅保存摘要和版本引用。Windows 11/Python 3.13 后端 366/366、PostgreSQL 18 临时库同 Key 并发轮换/停用及开发 wheel PASS。复用 Migration `0015`，无新 Schema/公开 API；目标库需升至 head。write-only HTTP、正式信任锚、Server 2025/Debian 13 和最终程序包仍未完成。
 
 - 2026-09-25：`0.1.0.dev0`/PLT-02-A07-P05-A03 Secret 内部创建新增同事务持久幂等：合法 Key、仅摘要指纹、同请求返回原 SecretRef、异请求冲突，密文/Audit/收据一同提交且明文清零。Windows 11/Python 3.13 后端 365/365、PostgreSQL 18 临时库顺序及并发重放/审计回滚和开发 wheel PASS。复用 Migration `0015`，无新 Schema/公开 API；目标库需先升级到 head。轮换/停用幂等、正式密钥、Server 2025/Debian 13 和最终程序包仍未完成。

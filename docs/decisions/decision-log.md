@@ -1871,3 +1871,15 @@
 |Reason|冻结 API-01 要求可重试写命令幂等；现有轮换/停用事务已原子，但网络重试会遇陈旧版本冲突，无法区分同请求重放。|
 |Impact|修改内部命令/仓储 Port 与验证，不改 Schema/Migration 或已公开 API；HTTP 写路由继续关闭。|
 |Rollback|写路由未开放；既有历史记录和收据不可删除，故障时仅回退未发布代码。|
+
+## DEC-20260925-049
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-049|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P05-A05 Secret 创建 write-only HTTP|
+|Decision|新增仅显式注入的 `POST /api/v1/admin/secrets`：先验证可信 Host/Origin、唯一 Cookie/CSRF/Idempotency-Key 与现行 Session，再读取受限大小的 JSON，要求精确三字段 `purpose`、`allowed_consumer`、`secret_value`，拒绝重复键/非标准常量/未知字段；受控枚举与非空 UTF-8 值交给内部创建服务。201 响应仅 SecretRef、强 ETag、Location 和 TraceId，永不回显值/密文。默认/当前生产组合不挂载写 Router。|
+|Reason|冻结 API-02 要求 Secret 值 write-only、DeploymentAdmin、Session/License/CSRF/幂等/Audit；已有内部服务与收据可支撑可选 HTTP 契约，但正式主密钥/发行信任锚尚未供给。|
+|Impact|新增 HTTP 边界、错误码注册与契约测试；不改 Schema/Migration/冻结路径。JSON 解析产生短生命周期不可原地清零的字符串，使用大小上限、不记录请求体、可变明文字节清零并保持部署前置关闭。|
+|Rollback|不注入 Router 仍 404；无数据库迁移或自动 Secret 创建。|

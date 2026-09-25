@@ -11,10 +11,15 @@ import psycopg
 from alembic import command
 from psycopg import sql
 from sqlalchemy.engine import URL
+from fastapi.testclient import TestClient
 
+from plm_assistant.entrypoints.api import create_app
 from plm_assistant.modules.audit.application.public import AuditService
 from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
 from plm_assistant.modules.auth.infrastructure.license_import_access import SqlAlchemyLicenseImportAccess
+from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
+from plm_assistant.modules.auth.application.session_service import SessionError
+from plm_assistant.modules.platform.api.secret_create import create_secret_create_router
 from plm_assistant.modules.platform.application.secret_access import SecretConsumer, SecretPurpose, SecretResolver
 from plm_assistant.modules.platform.application.secret_write import (
     CreateSecret, RotateSecret, SecretWriteError, SecretWriteService,
@@ -54,6 +59,13 @@ class FailedAudit:
 class ReadAudit:
     def record_access(self, **_):
         return None
+
+
+class HttpSessions:
+    def validate(self, token, *, csrf_token, require_csrf):
+        if token != b"a" * 32 or csrf_token != CSRF or require_csrf is not True:
+            raise SessionError("AUTH_SESSION_EXPIRED")
+        return object()
 
 
 def connect(name):
@@ -186,6 +198,28 @@ def main():
                     audit = db.execute("SELECT action,target_version_id FROM plm.aud_events WHERE target_object_id=%s ORDER BY occurred_at", (ref.secret_id,)).fetchall()
                     assert {row[0] for row in audit} == {"PLATFORM_SECRET_CREATE", "PLATFORM_SECRET_ROTATE"}
                     assert len(audit) == 3 and all(row[1] is not None for row in audit)
+                http_router = create_secret_create_router(
+                    sessions=HttpSessions(), writes=service,
+                    origins=LoginOriginPolicy(["http://localhost"]),
+                )
+                with TestClient(create_app(secret_create_router=http_router),
+                                base_url="http://localhost") as client:
+                    headers = {
+                        "origin": "http://localhost", "cookie": "plm_session=" + admin_token.hex(),
+                        "x-csrf-token": CSRF.hex(), "idempotency-key": str(uuid.uuid4()),
+                    }
+                    body = {"purpose": "AI_PROVIDER_KEY", "allowed_consumer": "AI_PROVIDER_ADAPTER",
+                            "secret_value": "synthetic-http-secret"}
+                    first = client.post("/api/v1/admin/secrets", headers=headers, json=body)
+                    replay = client.post("/api/v1/admin/secrets", headers=headers, json=body)
+                    assert first.status_code == replay.status_code == 201
+                    assert first.json()["data"] == replay.json()["data"]
+                    assert first.headers["etag"] == '"v1"'
+                    assert "synthetic-http-secret" not in first.text + replay.text
+                    created_id = uuid.UUID(first.json()["data"]["secret_id"])
+                    with connect(name) as db:
+                        assert db.execute("SELECT count(*) FROM plm.plt_secret_records WHERE secret_record_id=%s", (created_id,)).fetchone()[0] == 1
+                        assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='PLATFORM_SECRET_CREATE'", (created_id,)).fetchone()[0] == 1
                 print("PASS: admin/CSRF/License, atomic create and rotate replay, ciphertext history, concurrent version and Audit rollback")
             finally:
                 runtime.dispose()
