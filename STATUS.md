@@ -3,18 +3,18 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 2：Platform Core|
-|Current WBS|`API-RUNTIME-01 通用持久幂等收据`（Windows 11/PostgreSQL 18.6 已完成；业务命令尚未接线）|
-|Current Status|PHASE_1_COMPLETE / API_RUNTIME_01_WIN11_PASS / AUT_03_A07_CROSS_PLATFORM_PENDING / PHASE_2_IN_PROGRESS|
+|Current WBS|`AUT-03-A10 Session 注销 HTTP`（Windows 11/PostgreSQL 18.6 已完成；其他管理命令仍待安全接线）|
+|Current Status|PHASE_1_COMPLETE / AUT_03_A10_WIN11_PASS / AUT_03_A07_CROSS_PLATFORM_PENDING / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
-|Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A09（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03 PASS|
-|Blockers|AUT-03-A07 Windows 11 合成端到端已通过，Server 2025 目标运行账户/HTTPS 代理与 Debian 安全凭据来源未验证；PLT-02-A07 公开接线待 Session 注销、持久幂等/If-Match、生产 License/Key Provider；POC-03 质量失败继续阻塞 Gate 3/UAT，Server Office、Debian 未验证和 Ghostscript 发行合规继续作为 Release 约束|
+|Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03 PASS|
+|Blockers|AUT-03-A07 Windows 11 合成端到端已通过，Server 2025 目标运行账户/HTTPS 代理与 Debian 安全凭据来源未验证；PLT-02-A07 公开接线待管理权限、If-Match、生产 License/Secret Key Provider（Session 注销与持久幂等基础已完成）；POC-03 质量失败继续阻塞 Gate 3/UAT，Server Office、Debian 未验证和 Ghostscript 发行合规继续作为 Release 约束|
 |Pending User Decisions|LIC-03-A03 方案 A 已确定；当前无人工决策待办。客户数据外发、付款/额度重置和不可恢复生产操作不在持续授权内|
 |Architecture Version|`ARCH-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，License ADR-006 经用户批准 CR-LIC-001 修订|
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，DM-02 License 授权粒度经用户批准 CR-LIC-001 修订|
 |DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`；Auth 限流增量 `20260925_0012`，PRJ-01～03 正式实现 Migration `20260925_0013`，成员变更历史增量 `20260925_0014`（CR-PRJ-001），通用幂等收据增量 `20260925_0015`（CR-API-001）|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
-|Test Summary|API-RUNTIME-01：Windows 11/Python 3.13 后端 324/324 PASS；PostgreSQL 18.6 空表 up/down、有数据升级、Alembic check、并发/回滚/不可变/非空降级拒绝 PASS；临时库已清理，wheel PASS。注销/Secret 默认路由仍 404|
-|Next WBS|实现 `AUT-03-A10` Session 注销 HTTP 并安全关联持久幂等收据；之后推进 `PLT-02-A07` 公开前置和 Server 2025/发行验证|
+|Test Summary|AUT-03-A10：Windows 11/Python 3.13 后端 329/329 PASS；PostgreSQL 18.6 + Windows Vault 登录/GET/续期/注销、并发同 Key 重放、不同 Session 冲突与审计 PASS，临时资源已清理，wheel PASS。普通默认应用 Auth/Secret 路由仍 404|
+|Next WBS|复核 `PLT-02-A07` 生产 License/Secret Key Provider 与 If-Match/管理权限前置，优先推进可真实验收的独立任务；同步安排 Server 2025/发行验证|
 
 ## 自动执行策略
 

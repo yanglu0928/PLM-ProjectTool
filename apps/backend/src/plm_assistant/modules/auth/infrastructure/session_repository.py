@@ -56,7 +56,7 @@ class SqlAlchemySessionRepository:
                 SessionRow.session_id, SessionRow.user_id, SessionRow.credential_version,
                 SessionRow.csrf_digest, SessionRow.absolute_expires_at,
                 SessionRow.idle_expires_at, SessionRow.revoked_at,
-                UserRow.state, UserRow.credential_version,
+                UserRow.state, UserRow.credential_version, SessionRow.revoke_reason,
             ).join(UserRow, SessionRow.user_id == UserRow.user_id)
             .where(SessionRow.session_token_digest == digest)
         ).one_or_none()

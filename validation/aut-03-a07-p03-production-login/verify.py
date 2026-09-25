@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ctypes
+import concurrent.futures
 import tempfile
 import uuid
 from ctypes import wintypes
@@ -136,11 +137,56 @@ def main() -> None:
                             })
                             assert old_read.status_code == 401
                             assert client.get("/api/v1/auth/session").status_code == 200
+                            logout_key = "synthetic-logout-key-1234"
+                            logout_headers = {
+                                "origin": "http://localhost",
+                                "x-csrf-token": renewed.json()["data"]["csrf_token"],
+                                "idempotency-key": logout_key,
+                            }
+                            latest_cookie = renewed.cookies["plm_session"]
+                            logout = client.post("/api/v1/auth/logout", headers=logout_headers)
+                            assert logout.status_code == 200, logout.text
+                            assert logout.json()["data"] == {"revoked": True}
+                            assert "Max-Age=0" in logout.headers["set-cookie"]
+                            retry_headers = {**logout_headers, "cookie": "plm_session=" + latest_cookie}
+                            assert client.post("/api/v1/auth/logout", headers=retry_headers).status_code == 200
+                            assert client.get("/api/v1/auth/session", headers={
+                                "cookie": "plm_session=" + latest_cookie,
+                            }).status_code == 401
+                            assert client.post("/api/v1/auth/logout", headers={
+                                **retry_headers, "idempotency-key": "synthetic-different-key-1234",
+                            }).status_code == 401
+                            second_login = client.post("/api/v1/auth/login", headers={"origin": "http://localhost"},
+                                                       json=body)
+                            assert second_login.status_code == 200
+                            conflict = client.post("/api/v1/auth/logout", headers={
+                                **logout_headers,
+                                "x-csrf-token": second_login.json()["data"]["csrf_token"],
+                            })
+                            assert conflict.status_code == 409
+                            assert client.get("/api/v1/auth/session").status_code == 200
+                            concurrent_headers = {
+                                "origin": "http://localhost",
+                                "x-csrf-token": second_login.json()["data"]["csrf_token"],
+                                "idempotency-key": "synthetic-concurrent-logout-1234",
+                                "cookie": "plm_session=" + second_login.cookies["plm_session"],
+                            }
+                            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
+                                outcomes = list(pool.map(
+                                    lambda _: client.post("/api/v1/auth/logout", headers=concurrent_headers).status_code,
+                                    range(2),
+                                ))
+                            assert outcomes == [200, 200], outcomes
+                            assert client.get("/api/v1/auth/session", headers={
+                                "cookie": concurrent_headers["cookie"],
+                            }).status_code == 401
                     with connect(dbname) as db:
-                        assert db.execute("SELECT count(*) FROM plm.auth_sessions").fetchone()[0] == 2
-                        assert db.execute("SELECT count(*) FROM plm.aud_events WHERE action='SESSION_ISSUED'").fetchone()[0] == 1
+                        assert db.execute("SELECT count(*) FROM plm.auth_sessions").fetchone()[0] == 3
+                        assert db.execute("SELECT count(*) FROM plm.aud_events WHERE action='SESSION_ISSUED'").fetchone()[0] == 2
                         assert db.execute("SELECT count(*) FROM plm.aud_events WHERE action='SESSION_RENEWED'").fetchone()[0] == 1
-                    print("PASS: Windows Vault, real PostgreSQL login, Session GET/renew, old token revocation, Project summary and Audit")
+                        assert db.execute("SELECT count(*) FROM plm.aud_events WHERE action='SESSION_REVOKED'").fetchone()[0] == 2
+                        assert db.execute("SELECT count(*) FROM plm.plt_idempotency_receipts WHERE operation='V1_AUTH_LOGOUT'").fetchone()[0] == 2
+                    print("PASS: Windows Vault, real PostgreSQL login/GET/renew/logout, exact replay/conflict, Cookie/CSRF, Project summary and Audit")
                 finally:
                     delete_test_credential(target)
             finally:

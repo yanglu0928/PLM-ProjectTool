@@ -12,6 +12,10 @@ from datetime import datetime, timedelta, timezone
 from typing import Protocol
 
 from plm_assistant.modules.audit.application.public import AuditEventDraft, AuditService
+from plm_assistant.modules.platform.application.idempotency import (
+    IdempotencyResult, IdempotencyScope, canonical_payload_fingerprint,
+    validate_idempotency_key,
+)
 
 
 class SessionError(RuntimeError):
@@ -71,6 +75,7 @@ class SessionRecord:
     revoked_at: datetime | None
     user_state: str
     current_credential_version: int
+    revoke_reason: str | None = None
 
 
 class SessionRepositoryPort(Protocol):
@@ -94,10 +99,18 @@ class SessionAdminAccessPort(Protocol):
         """Verify actor Session, License and DeploymentAdmin in this transaction."""
 
 
+class SessionIdempotencyPort(Protocol):
+    def reserve(self, transaction: object, *, scope: IdempotencyScope,
+                request_fingerprint: bytes) -> IdempotencyResult | None: ...
+    def complete(self, transaction: object, *, scope: IdempotencyScope,
+                 result: IdempotencyResult) -> None: ...
+
+
 class SessionService:
     def __init__(self, *, unit_of_work: Callable[[], object], repository: SessionRepositoryPort,
                  issue_access: SessionIssueAccessPort, audit: AuditService,
                  admin_access: SessionAdminAccessPort | None = None,
+                 idempotency: SessionIdempotencyPort | None = None,
                  policy: SessionPolicy | None = None,
                  clock: Callable[[], datetime] | None = None,
                  random_bytes: Callable[[int], bytes] | None = None) -> None:
@@ -108,6 +121,7 @@ class SessionService:
         self._issue_access = issue_access
         self._audit = audit
         self._admin_access = admin_access
+        self._idempotency = idempotency
         self._policy = policy or SessionPolicy()
         self._clock = clock or (lambda: datetime.now(timezone.utc))
         self._random_bytes = random_bytes or secrets.token_bytes
@@ -171,6 +185,58 @@ class SessionService:
             if not self._repository.revoke(transaction, record.session_id, now, "LOGOUT"):
                 raise SessionError("AUTH_SESSION_EXPIRED")
             self._audit.append(transaction, self._event(trace_id, record.user_id, record.session_id, "SESSION_REVOKED"))
+            transaction.commit()
+            return True
+
+    def logout(self, *, token: bytes, csrf_token: bytes, idempotency_key: str,
+               trace_id: uuid.UUID) -> bool:
+        """Atomic first logout; exact completed replay grants no new authority."""
+
+        self._ids(trace_id)
+        self._token(token)
+        self._token(csrf_token)
+        validate_idempotency_key(idempotency_key)
+        if self._idempotency is None:
+            raise SessionError("SYSTEM_UNAVAILABLE")
+        now = self._now()
+        with self._unit_of_work() as transaction:  # type: ignore[attr-defined]
+            record = self._repository.find_by_token_digest(
+                transaction, hashlib.sha256(token).digest()
+            )
+            if record is None:
+                raise SessionError("AUTH_SESSION_EXPIRED")
+            if not hmac.compare_digest(hashlib.sha256(csrf_token).digest(), record.csrf_digest):
+                raise SessionError("AUTH_ACCESS_DENIED")
+            scope = IdempotencyScope.from_key(
+                actor_id=record.user_id, project_id=None,
+                operation="V1_AUTH_LOGOUT", key=idempotency_key,
+            )
+            fingerprint = canonical_payload_fingerprint({"session_id": str(record.session_id)})
+            replay = self._idempotency.reserve(
+                transaction, scope=scope, request_fingerprint=fingerprint,
+            )
+            if replay is not None:
+                # READ COMMITTED: the initial Session read may predate a
+                # concurrent winner's commit; refresh after unique-key wait.
+                current = self._repository.find_by_token_digest(
+                    transaction, hashlib.sha256(token).digest()
+                )
+                if (current is None or current.revoked_at is None
+                        or current.revoke_reason != "LOGOUT"
+                        or replay != IdempotencyResult("V1_AUTH_SESSION", record.session_id, 200)):
+                    raise SessionError("SYSTEM_UNAVAILABLE")
+                return True
+            self._check_active(record, now)
+            if not self._repository.revoke(transaction, record.session_id, now, "LOGOUT"):
+                raise SessionError("AUTH_SESSION_EXPIRED")
+            self._audit.append(
+                transaction,
+                self._event(trace_id, record.user_id, record.session_id, "SESSION_REVOKED"),
+            )
+            self._idempotency.complete(
+                transaction, scope=scope,
+                result=IdempotencyResult("V1_AUTH_SESSION", record.session_id, 200),
+            )
             transaction.commit()
             return True
 

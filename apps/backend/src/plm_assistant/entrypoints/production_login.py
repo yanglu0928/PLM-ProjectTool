@@ -15,6 +15,7 @@ from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
 from plm_assistant.modules.auth.api.session import (
     create_session_read_router,
     create_session_renew_router,
+    create_session_logout_router,
 )
 from plm_assistant.modules.auth.application.login_rate_limit import LoginRateLimiter
 from plm_assistant.modules.auth.application.login_service import LoginService
@@ -29,6 +30,7 @@ from plm_assistant.modules.auth.infrastructure.session_view import SqlAlchemySes
 from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
 from plm_assistant.modules.platform.infrastructure.database import DatabaseRuntime, create_database_runtime
 from plm_assistant.modules.platform.infrastructure.migration import MIGRATION_PACKAGE
+from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
 from plm_assistant.modules.platform.infrastructure.windows_database_credential import (
     DEFAULT_TARGET,
     read_database_url,
@@ -75,6 +77,7 @@ def create_production_login_app(
             repository=SqlAlchemySessionRepository(),
             issue_access=SqlAlchemyPasswordIssueAccess(verifier),
             audit=audit,
+            idempotency=SqlAlchemyIdempotencyReceipts(),
         )
         login = LoginService(
             unit_of_work=runtime.unit_of_work,
@@ -94,11 +97,13 @@ def create_production_login_app(
         router = create_login_router(login=login, origins=origins, views=views)
         session_router = create_session_read_router(sessions=sessions, origins=origins, views=views)
         renew_router = create_session_renew_router(sessions=sessions, origins=origins, views=views)
+        logout_router = create_session_logout_router(sessions=sessions, origins=origins)
         return create_app(
             readiness_checks=(runtime.is_ready,),
             login_router=router,
             session_router=session_router,
             session_renew_router=renew_router,
+            session_logout_router=logout_router,
             shutdown_callback=runtime.dispose,
         )
     except Exception:

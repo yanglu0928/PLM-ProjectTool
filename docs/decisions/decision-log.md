@@ -1679,3 +1679,15 @@
 |Reason|冻结 API-01 要求跨进程/重启重放同一语义，现有 `plt_configuration_command_receipts` 受 CHECK/外键限制，不能混入 Auth/Project 命令。单独增量保留 Gate 2 历史与旧配置收据语义。|
 |Impact|新增 ORM/Alembic `20260925_0015`、应用范围/指纹与 PostgreSQL 收据仓储；无公开 API/新依赖。调用方必须先完成授权并保证结果引用可重建原语义，ProjectId 归属由调用方验证。记录会持续增长，Retention 和误提交 PENDING 的受控恢复仍需单独设计。|
 |Rollback|停止新命令挂载；新收据为空时可 downgrade 到 `0014`，非空时拒绝以保留去重历史。旧表和旧业务数据不变。|
+
+## DEC-20260925-033
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-033|
+|Date|2026-09-25|
+|WBS|AUT-03-A10 Session 注销 HTTP|
+|Decision|注销首次请求以有效 Session、匹配 CSRF、可信 Origin/Host 与合法幂等 Key 为前置，在同一 UoW 内预留 `V1_AUTH_LOGOUT` 收据、撤销 Session、追加 `SESSION_REVOKED` Audit 并完成指向该 Session 的 200 结果引用。已撤销 Session 仅在原 Token/CSRF、同 Key/同 Session 指纹、收据已完成、撤销原因确为 LOGOUT 时返回原 200 并再次清 Cookie；并发等待收据后重新读取 Session 状态。不同 Key 对旧 Session 返回 401，不同 Session 同 Key 返回 409。|
+|Reason|冻结 API-02 的注销同时标记 S/C/I/A，但首次成功后 S 已失效；为了满足 API-01 同 Key 同结果重试，不可用普通 Session 再授权，也不可把所有旧 Cookie 当幂等成功。通过持久收据与已撤销原因双重绑定，重试只获取原注销语义，不恢复权限。|
+|Impact|新增 Auth 注销 Application/HTTP 接线，复用 `0015` 收据；无新 Migration、新依赖或 Breaking Change。已完成收据与 Session 历史的 Retention 需协同设计，当前不得自动删除。默认应用仍不挂 Auth 路由。|
+|Rollback|停止显式挂载注销 Router 即恢复默认 404；已撤销 Session 不反向复活，用户需重新登录；收据与 Audit 保留供追溯。|

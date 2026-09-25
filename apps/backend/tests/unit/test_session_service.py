@@ -9,6 +9,7 @@ from datetime import datetime, timedelta, timezone
 from plm_assistant.modules.auth.application.session_service import (
     PasswordIssueProof, SessionError, SessionPolicy, SessionRecord, SessionService,
 )
+from plm_assistant.modules.platform.application.idempotency import IdempotencyError
 
 
 USER = uuid.uuid4()
@@ -62,7 +63,8 @@ class FakeRepo:
             return None
         return SessionRecord(row["session_id"], USER, row["credential_version"], row["csrf_digest"],
                              row["absolute_expires_at"], row["idle_expires_at"],
-                             row["revoked_at"], tx.working["state"], tx.working["version"])
+                             row["revoked_at"], tx.working["state"], tx.working["version"],
+                             row.get("reason"))
 
     def revoke(self, tx, session_id, now, reason):
         row = next((item for item in tx.working["rows"] if item["session_id"] == session_id), None)
@@ -100,17 +102,71 @@ class FakeAudit:
         return uuid.uuid4()
 
 
-def make_service(*, allowed=True, admin_access=None, fail_audit=False, clock=None, random_bytes=None):
-    store = {"version": 1, "state": "ENABLED", "row": None, "rows": [], "audit": []}
+class FakeReceipts:
+    def reserve(self, tx, *, scope, request_fingerprint):
+        identity = (scope.actor_id, scope.project_id, scope.operation, scope.key_digest)
+        receipt = tx.working["receipts"].get(identity)
+        if receipt is None:
+            tx.working["receipts"][identity] = [request_fingerprint, None]
+            return None
+        if receipt[0] != request_fingerprint:
+            raise IdempotencyError("CONFLICT_IDEMPOTENCY")
+        return receipt[1]
+
+    def complete(self, tx, *, scope, result):
+        identity = (scope.actor_id, scope.project_id, scope.operation, scope.key_digest)
+        tx.working["receipts"][identity][1] = result
+
+
+def make_service(*, allowed=True, admin_access=None, idempotency=None,
+                 fail_audit=False, clock=None, random_bytes=None):
+    store = {"version": 1, "state": "ENABLED", "row": None, "rows": [], "audit": [], "receipts": {}}
     service = SessionService(
         unit_of_work=lambda: FakeUow(store), repository=FakeRepo(),
-        issue_access=FakeAccess(allowed), admin_access=admin_access, audit=FakeAudit(fail_audit),
+        issue_access=FakeAccess(allowed), admin_access=admin_access,
+        idempotency=idempotency, audit=FakeAudit(fail_audit),
         clock=clock or (lambda: NOW), random_bytes=random_bytes or (lambda n: b"a" * n if not store["row"] else b"c" * n),
     )
     return service, store
 
 
 class SessionServiceTests(unittest.TestCase):
+    def test_idempotent_logout_replay_and_conflict(self):
+        values = iter((b"a" * 32, b"b" * 32, b"c" * 32, b"d" * 32))
+        service, store = make_service(idempotency=FakeReceipts(), random_bytes=lambda n: next(values))
+        first = service.issue(user_id=USER, trace_id=TRACE, proof=True)
+        key = "synthetic-logout-key-1234"
+        with self.assertRaises(SessionError):
+            service.logout(token=first.token, csrf_token=b"x" * 32,
+                           idempotency_key=key, trace_id=TRACE)
+        self.assertTrue(service.logout(token=first.token, csrf_token=first.csrf_token,
+                                       idempotency_key=key, trace_id=TRACE))
+        self.assertTrue(service.logout(token=first.token, csrf_token=first.csrf_token,
+                                       idempotency_key=key, trace_id=TRACE))
+        self.assertEqual(len(store["receipts"]), 1)
+        self.assertEqual([event.action for event in store["audit"]],
+                         ["SESSION_ISSUED", "SESSION_REVOKED"])
+        with self.assertRaises(SessionError):
+            service.logout(token=first.token, csrf_token=first.csrf_token,
+                           idempotency_key="different-logout-key-1234", trace_id=TRACE)
+        second = service.issue(user_id=USER, trace_id=TRACE, proof=True)
+        with self.assertRaises(IdempotencyError) as captured:
+            service.logout(token=second.token, csrf_token=second.csrf_token,
+                           idempotency_key=key, trace_id=TRACE)
+        self.assertEqual(captured.exception.code, "CONFLICT_IDEMPOTENCY")
+        self.assertEqual(service.validate(second.token).user_id, USER)
+
+    def test_idempotent_logout_audit_failure_rolls_back_receipt_and_session(self):
+        values = iter((b"a" * 32, b"b" * 32))
+        service, store = make_service(idempotency=FakeReceipts(), random_bytes=lambda n: next(values))
+        issued = service.issue(user_id=USER, trace_id=TRACE, proof=True)
+        service._audit.fail = True
+        with self.assertRaisesRegex(RuntimeError, "audit unavailable"):
+            service.logout(token=issued.token, csrf_token=issued.csrf_token,
+                           idempotency_key="synthetic-logout-key-1234", trace_id=TRACE)
+        self.assertEqual(store["receipts"], {})
+        self.assertEqual(service.validate(issued.token).user_id, USER)
+
     def test_issue_validate_revoke_and_no_raw_storage_or_repr(self):
         values = iter((b"a" * 32, b"b" * 32))
         service, store = make_service(random_bytes=lambda n: next(values))

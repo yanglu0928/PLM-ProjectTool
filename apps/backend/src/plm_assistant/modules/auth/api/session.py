@@ -14,6 +14,9 @@ from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginError,
 from plm_assistant.modules.auth.application.session_service import SessionError, SessionService
 from plm_assistant.modules.auth.application.session_view import SessionViewPort
 from plm_assistant.modules.platform.application.errors import ApplicationError
+from plm_assistant.modules.platform.application.idempotency import (
+    IdempotencyError, validate_idempotency_key,
+)
 
 
 _TOKEN = re.compile(r"[0-9a-f]{64}\Z", re.ASCII)
@@ -47,9 +50,21 @@ def _csrf_header(headers: tuple[tuple[bytes, bytes], ...]) -> bytes:
 
 
 def _session_failure(exc: SessionError) -> ApplicationError:
-    return ApplicationError(
-        "AUTH_CSRF_INVALID" if exc.code == "AUTH_ACCESS_DENIED" else "AUTH_SESSION_EXPIRED"
-    )
+    if exc.code == "AUTH_ACCESS_DENIED":
+        return ApplicationError("AUTH_CSRF_INVALID")
+    if exc.code == "SYSTEM_UNAVAILABLE":
+        return ApplicationError("SYSTEM_UNAVAILABLE")
+    return ApplicationError("AUTH_SESSION_EXPIRED")
+
+
+def _idempotency_header(headers: tuple[tuple[bytes, bytes], ...]) -> str:
+    try:
+        values = [value.decode("ascii") for name, value in headers if name.lower() == b"idempotency-key"]
+        if len(values) != 1:
+            raise ValueError()
+        return validate_idempotency_key(values[0])
+    except (AttributeError, TypeError, UnicodeDecodeError, ValueError):
+        raise ApplicationError("VALIDATION_FAILED") from None
 
 
 def create_session_read_router(*, sessions: SessionService, views: SessionViewPort,
@@ -84,6 +99,51 @@ def create_session_read_router(*, sessions: SessionService, views: SessionViewPo
             "absolute_expires_at": principal.absolute_expires_at.isoformat(),
             "idle_expires_at": principal.idle_expires_at.isoformat(),
         }, "trace_id": request.state.trace_id}, headers={"Cache-Control": "no-store"})
+
+    return router
+
+
+def create_session_logout_router(*, sessions: SessionService,
+                                 origins: LoginOriginPolicy) -> APIRouter:
+    if sessions is None or origins is None:
+        raise ValueError("session and origins are required")
+    router = APIRouter()
+
+    @router.post("/api/v1/auth/logout")
+    async def logout_session(request: Request) -> JSONResponse:
+        headers = tuple(request.scope.get("headers", ()))
+        try:
+            origins.require_trusted(headers)
+        except LoginOriginError:
+            raise ApplicationError("AUTH_CSRF_INVALID") from None
+        token, csrf, key = (
+            _session_cookie(headers), _csrf_header(headers), _idempotency_header(headers),
+        )
+        async for chunk in request.stream():
+            if chunk:
+                raise ApplicationError("REQUEST_MALFORMED")
+        try:
+            revoked = await run_in_threadpool(
+                sessions.logout, token=token, csrf_token=csrf,
+                idempotency_key=key, trace_id=uuid.UUID(request.state.trace_id),
+            )
+        except IdempotencyError:
+            raise
+        except SessionError as exc:
+            raise _session_failure(exc) from None
+        except Exception:
+            raise ApplicationError("SYSTEM_UNAVAILABLE") from None
+        if revoked is not True:
+            raise ApplicationError("SYSTEM_UNAVAILABLE")
+        response = JSONResponse(
+            {"data": {"revoked": True}, "trace_id": request.state.trace_id},
+            headers={"Cache-Control": "no-store"},
+        )
+        response.delete_cookie(
+            "plm_session", path="/", secure=request.headers["origin"].startswith("https://"),
+            httponly=True, samesite="lax",
+        )
+        return response
 
     return router
 

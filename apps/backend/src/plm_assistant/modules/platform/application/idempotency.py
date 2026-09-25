@@ -20,6 +20,13 @@ class IdempotencyError(ApplicationError):
         super().__init__(code)
 
 
+def validate_idempotency_key(key: str) -> str:
+    if (type(key) is not str or not 16 <= len(key) <= 128
+            or any(not 32 <= ord(char) <= 126 for char in key)):
+        raise IdempotencyError("VALIDATION_FAILED")
+    return key
+
+
 @dataclass(frozen=True, slots=True)
 class IdempotencyScope:
     actor_id: uuid.UUID
@@ -41,11 +48,10 @@ class IdempotencyScope:
         if (type(actor_id) is not uuid.UUID or actor_id.int == 0
                 or project_id is not None and (type(project_id) is not uuid.UUID or project_id.int == 0)
                 or type(operation) is not str or len(operation) > 128
-                or _OPERATION.fullmatch(operation) is None
-                or type(key) is not str or not 16 <= len(key) <= 128
-                or any(not 32 <= ord(char) <= 126 for char in key)):
+                or _OPERATION.fullmatch(operation) is None):
             raise IdempotencyError("VALIDATION_FAILED")
-        return cls(actor_id, project_id, operation, hashlib.sha256(key.encode("ascii")).digest())
+        return cls(actor_id, project_id, operation,
+                   hashlib.sha256(validate_idempotency_key(key).encode("ascii")).digest())
 
 
 @dataclass(frozen=True, slots=True)
