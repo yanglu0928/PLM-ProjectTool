@@ -2339,3 +2339,15 @@
 |Reason|DocumentVersion 和上传恢复必须建立在 Scope/Project、Hash/Size/MIME 与状态历史可约束的元数据上；数据库表不能替代 Storage Adapter。|
 |Impact|Migration `20260925_0020`、Document ORM、Alembic 注册、约束与验证；无公开 API、文件写入或新增依赖。|
 |Rollback|空表可降至 `0019`；已有 FileObject/事件时拒绝普通降级。|
+
+## DEC-20260925-088
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-088|
+|Date|2026-09-25|
+|WBS|DOC-03-A02 受控本地 Storage Adapter|
+|Decision|Storage Adapter 只接受内部 UUID 生成的 ASCII 小写 Locator，绑定 `global`/`projects/{project_id}` 与隔离 `temp`；拒绝符号链接/Windows 重解析点、大小写别名和既有目标，使用同卷硬链接发布完整暂存文件后移除暂存链接。|
+|Reason|既有公开 API/业务模块不能触碰物理路径；独占暂存和无覆盖发布可使完整内容原子可见，同时避免覆盖历史版本。|
+|Impact|Document Infrastructure 与合成文件系统测试；不改数据库/API/依赖。未来提交仍需 FileObject 状态事务和恢复器，不以本 Adapter 宣称全链原子。|
+|Rollback|不接入组合根即可停用 Adapter；临时文件由后续受控清理流程处理，不自动删除未知文件。|
