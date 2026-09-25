@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/CR-DOC-008/A02-P01 Content 接收命令及 Windows 显式写模式接入上传同 ID 栅栏，取锁失败在数据库预检前拒绝。Windows 11 后端 547 项无失败（2 项环境跳过），隔离 PostgreSQL 18.6/临时文件内容脚本和开发 wheel PASS。无 Migration/新依赖/API 变更；Commit/Abort/物理清理仍未接入。
+
 - 2026-09-26：`0.1.0.dev0`/CR-DOC-008/A01 新增上传操作跨进程本地 OS 栅栏适配（固定 256 锁桶，私有数据根，异常/崩溃释放）；Windows 11 后端 546 项无失败（2 项环境跳过），跨进程争用/崩溃和开发 wheel PASS。无 Migration/公开 API/新依赖。尚未接入上传命令，物理清理保持关闭。
 
 - 2026-09-26：`0.1.0.dev0`/DOC-01-A05-P06 Windows 官方启动入口显式单工作进程，并补充下载发送端断线模拟；异常后文件与并发名额释放 PASS。Windows 11 后端 541 项无失败（2 项环境跳过），开发 wheel PASS。单入口下载快照理论上限 400 MB；真实网络断线压测、多实例及现场磁盘余量仍待 Release 验证。无 Migration/新依赖/API 变更。

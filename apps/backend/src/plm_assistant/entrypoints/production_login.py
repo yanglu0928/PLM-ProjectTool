@@ -111,6 +111,7 @@ from plm_assistant.modules.document.application.receive_upload_content import Re
 from plm_assistant.modules.document.infrastructure.upload_content_repository import SqlAlchemyUploadContentRepository
 from plm_assistant.modules.document.infrastructure.content_spool import ValidatedContentSpool
 from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage
+from plm_assistant.modules.document.infrastructure.upload_operation_gate import LocalUploadOperationGate
 from plm_assistant.modules.document.api.finalize_upload import create_document_upload_finalize_router
 from plm_assistant.modules.document.application.commit_upload import CommitUploadService
 from plm_assistant.modules.document.application.abort_upload import AbortUploadService
@@ -470,6 +471,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                     service_factory=upload_service,
                 )
                 upload_storage = LocalFileStorage(settings.data_root)
+                upload_operation_gate = LocalUploadOperationGate(settings.data_root)
                 upload_spool = ValidatedContentSpool(
                     storage=upload_storage, max_bytes=100_000_000,
                     allowed_extensions=frozenset({
@@ -490,6 +492,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                         ),
                         repository=SqlAlchemyUploadContentRepository(), audit=audit,
                         spool=upload_spool, storage=upload_storage,
+                        operation_gate=upload_operation_gate,
                         license_guard=licenses.guard,
                     )
 

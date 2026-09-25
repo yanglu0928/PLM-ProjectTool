@@ -29,6 +29,7 @@ from plm_assistant.modules.document.application.receive_upload_content import (
 )
 from plm_assistant.modules.document.infrastructure.content_spool import ContentSpoolError, ValidatedContentSpool
 from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage
+from plm_assistant.modules.document.infrastructure.upload_operation_gate import LocalUploadOperationGate
 from plm_assistant.modules.document.infrastructure.orphan_cleanup_repository import SqlAlchemyOrphanCleanupRepository
 from plm_assistant.modules.document.infrastructure.upload_content_repository import SqlAlchemyUploadContentRepository
 from plm_assistant.modules.document.infrastructure.upload_intent_repository import SqlAlchemyUploadIntentRepository
@@ -106,6 +107,7 @@ def main():
             root = Path(temporary) / "data"
             root.mkdir()
             storage = LocalFileStorage(root)
+            operation_gate = LocalUploadOperationGate(root)
             spool = ValidatedContentSpool(storage=storage, max_bytes=1_000_000,
                                           allowed_extensions=frozenset((".pdf",)))
             access = Access(actor)
@@ -122,6 +124,7 @@ def main():
                     unit_of_work=runtime.unit_of_work, access=access,
                     repository=SqlAlchemyUploadContentRepository(),
                     audit=audit_override or audit, spool=spool, storage=storage,
+                    operation_gate=operation_gate,
                 )
 
             body = b"%PDF-1.7\nsynthetic content\n%%EOF\n"

@@ -15,6 +15,9 @@ from plm_assistant.modules.document.infrastructure.content_spool import (
     StagedContentProof, ValidatedContentSpool,
 )
 from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage, LocalStorageError
+from plm_assistant.modules.document.application.upload_operation_gate import (
+    UploadGateUnavailable, UploadOperationGatePort,
+)
 
 
 _OPERATION = "V1_DOCUMENT_UPLOAD_CONTENT"
@@ -78,15 +81,26 @@ class ReceiveUploadContentService:
     def __init__(self, *, unit_of_work: Callable[[], object], access: UploadContentAccessPort,
                  repository: UploadContentRepositoryPort, audit: AuditService,
                  spool: ValidatedContentSpool, storage: LocalFileStorage,
+                 operation_gate: UploadOperationGatePort,
                  license_guard: UploadContentLicensePort | None = None) -> None:
-        if any(value is None for value in (unit_of_work, access, repository, audit, spool, storage)):
+        if any(value is None for value in (unit_of_work, access, repository, audit,
+                                           spool, storage, operation_gate)):
             raise ValueError("Upload content dependencies are required")
         self._uow, self._access, self._repository = unit_of_work, access, repository
         self._audit, self._spool, self._storage = audit, spool, storage
+        self._operation_gate = operation_gate
         self._license_guard = license_guard
 
     def receive(self, command: ReceiveUploadContent, *, chunks: Iterable[bytes]) -> ReceivedUploadContent:
         self._validate(command)
+        try:
+            with self._operation_gate.hold(command.upload_id):
+                return self._receive_held(command, chunks=chunks)
+        except UploadGateUnavailable:
+            raise UploadContentError("FILE_UNAVAILABLE") from None
+
+    def _receive_held(self, command: ReceiveUploadContent, *,
+                      chunks: Iterable[bytes]) -> ReceivedUploadContent:
         self._licensed(command)
         with self._uow() as tx:
             self._authorize(tx, command)

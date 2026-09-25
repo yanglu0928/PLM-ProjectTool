@@ -10,13 +10,14 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Iterator
 
+from plm_assistant.modules.document.application.upload_operation_gate import UploadGateUnavailable
 from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage
 
 
 _REPARSE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
 
 
-class UploadGateError(RuntimeError):
+class UploadGateError(UploadGateUnavailable):
     def __init__(self) -> None:
         super().__init__("upload operation gate unavailable")
 

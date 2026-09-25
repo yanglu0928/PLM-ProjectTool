@@ -10,6 +10,7 @@ from plm_assistant.modules.document.application.receive_upload_content import (
     ReceiveUploadContent, ReceiveUploadContentService, UploadContentError, UploadContentIntent,
 )
 from plm_assistant.modules.document.infrastructure.content_spool import StagedContentProof
+from plm_assistant.modules.document.application.upload_operation_gate import UploadGateUnavailable
 from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
 
 
@@ -47,7 +48,36 @@ class UploadContentValidationTests(unittest.TestCase):
                 ReceiveUploadContentService._validate_replay_body(chunks, self.command)
             self.assertEqual(raised.exception.code, code)
 
+    def test_gate_contention_rejects_before_database_preflight(self):
+        class BusyGate:
+            def hold(self, _upload_id):
+                raise UploadGateUnavailable()
+
+        def no_transaction():
+            self.fail("content preflight must not run without the gate")
+
+        service = ReceiveUploadContentService(
+            unit_of_work=no_transaction, access=object(), repository=object(),
+            audit=object(), spool=object(), storage=object(),
+            operation_gate=BusyGate(),
+        )
+        with self.assertRaises(UploadContentError) as raised:
+            service.receive(self.command, chunks=[])
+        self.assertEqual(raised.exception.code, "FILE_UNAVAILABLE")
+
     def test_license_is_rechecked_after_stream_before_stage(self):
+        class Gate:
+            active = False
+
+            @contextmanager
+            def hold(self, upload_id):
+                assert upload_id == self_command.upload_id
+                self.active = True
+                try:
+                    yield
+                finally:
+                    self.active = False
+
         class Guard:
             calls = 0
 
@@ -71,6 +101,7 @@ class UploadContentValidationTests(unittest.TestCase):
             staged = False
 
             def preflight(self, *_args, **_kwargs):
+                assert gate.active
                 return UploadContentIntent("report.pdf", None, None)
 
             def stage(self, *_args, **_kwargs):
@@ -83,6 +114,7 @@ class UploadContentValidationTests(unittest.TestCase):
                 yield None
 
             def receive(self, *, chunks, **kwargs):
+                assert gate.active
                 assert b"".join(chunks)
                 return StagedContentProof("temp/global/objects/aa/" + uuid.uuid4().hex,
                                           self_sha, self_length, "application/pdf")
@@ -92,15 +124,19 @@ class UploadContentValidationTests(unittest.TestCase):
                 return None
 
         self_sha, self_length = self.command.declared_sha256, self.command.declared_length
+        self_command = self.command
+        gate = Gate()
         guard, repository = Guard(), Repository()
         service = ReceiveUploadContentService(
             unit_of_work=Transaction, access=Access(), repository=repository,
-            audit=object(), spool=Spool(), storage=Storage(), license_guard=guard,
+            audit=object(), spool=Spool(), storage=Storage(),
+            operation_gate=gate, license_guard=guard,
         )
         with self.assertRaises(RuntimeLicenseError):
             service.receive(self.command, chunks=[b"%PDF-1.7\nsynthetic\n%%EOF\n"])
         self.assertEqual(guard.calls, 2)
         self.assertFalse(repository.staged)
+        self.assertFalse(gate.active)
 
 
 if __name__ == "__main__":
