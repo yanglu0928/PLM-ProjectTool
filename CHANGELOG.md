@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/DOC-01-A03-P03 增加 Document HTTP + PostgreSQL 18.6 隔离同链路验证脚本，覆盖真实 Session/项目成员、PROJECT/GLOBAL、双页游标、受限/跨项目隐藏、License 与状态变化；Windows 11 合成验证 PASS。无程序 API、Schema 或依赖变化；正式 Windows 平台装配、目标账户密钥和最终程序包仍待。
+
 - 2026-09-26：`0.1.0.dev0`/DOC-01-A03-P02 新增默认关闭、可选挂载的 PROJECT/GLOBAL Document 元数据列表和详情 GET；Session/License/当前 Scope 授权、独立签名游标、强 ETag 与无物理路径投影。Windows 11 后端 517 项无失败（2 项符号链接环境跳过）、HTTP 合同与既有 PostgreSQL 18 读层复验、开发 wheel PASS。无 Migration/新依赖/API 破坏；正式 Windows 组合、目标账户密钥、版本读取/下载和最终程序包仍待。
 
 - 2026-09-26：`0.1.0.dev0`/DOC-01-A03-P01 新增独立签名 Document 列表游标及 Windows 当前账户只读密钥入口，绑定 Session、Scope/Project、页大小与末尾文档 ID；缺钥失败关闭。Windows 11 后端 513 项无失败（2 项权限跳过），临时 Vault 失密/备份恢复旧游标及开发 wheel PASS。无 Migration/API/新依赖；正式目标账户密钥、可选 GET 和最终程序包仍待。
