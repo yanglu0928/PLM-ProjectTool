@@ -2948,3 +2948,15 @@
 |Reason|ADR-008 禁止 Evidence 直读物理路径，且 Document 下载链已具状态/权限/完整性双查。Parser/结构定位尚未有生产 Port；现阶段只能对全文位置作可复验的真实性证明。|
 |Impact|Evidence 内部来源证明服务、测试；无 Schema、公开 API、新依赖或生产候选创建入口。A03-P02 整体未完成，九类定位的终态不缩减。|
 |Rollback|停止调用未挂生产的证明服务；不改动任何 Evidence/Document 历史记录。|
+
+## DEC-20260926-139
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-139|
+|Date|2026-09-26|
+|WBS|DOC-04-A01 ParseRecord 持久基础|
+|Decision|新增 `doc_parse_records` 每次解析 Attempt 独立 Root，固定 DocumentVersion、同 Scope/Project 的 `DOCUMENT_PARSE` Job、Profile/Version/递增 Attempt、状态/时间/脱敏错误与结果指纹；新增 `doc_parse_result_refs` 保存唯一受控相对结果 Locator、Schema Version、Hash/Size，并由 SUCCEEDED 记录通过触发器核对引用/指纹。PENDING→RUNNING→终态，终态不复活；删除拒绝，有历史不自动降级。|
+|Reason|冻结 DM-03 与 SC-01 要求 ParseRecord 独立重试历史和受控结构化结果引用。真正 Parser/OCR Worker 在 Phase 3；Phase 2 先建立不可伪造成功形态、Job/版本归属和保留边界，以供后续结果发布/精确 Evidence 定位。|
+|Impact|Document ORM、增量 Migration、隔离 PostgreSQL 测试；不引入解析依赖、公开 API 或 Worker，不把 PoC Parser 直接用作正式结果。结果 Locator 仅存受控相对标识，不返回给业务/UI。|
+|Rollback|空表可降级；任何 ParseRecord/结果历史存在时拒绝降级，恢复须备份并走有记录的迁移计划。|

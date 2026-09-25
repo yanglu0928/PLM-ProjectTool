@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import BigInteger, CheckConstraint, ForeignKeyConstraint, Index, LargeBinary, Text, UniqueConstraint, text
+from sqlalchemy import BigInteger, Boolean, CheckConstraint, ForeignKeyConstraint, Index, Integer, LargeBinary, Text, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -241,6 +241,92 @@ class DocumentVersionSourceRefRow(Base):
     source_object_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     source_version_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False, server_default=text("statement_timestamp()"))
+
+
+class ParseRecordRow(Base):
+    """DOC-04 one retained parse attempt against an immutable content version."""
+
+    __tablename__ = "doc_parse_records"
+    __table_args__ = (
+        UniqueConstraint("document_version_id", "parser_profile", "parser_version",
+                         "attempt_no", name="uq_doc_parse_records__attempt"),
+        UniqueConstraint("job_ref", "attempt_no", name="uq_doc_parse_records__job_attempt"),
+        UniqueConstraint("result_ref", name="uq_doc_parse_records__result"),
+        ForeignKeyConstraint(["document_version_id"],
+                             ["plm.doc_document_versions.document_version_id"],
+                             name="fk_doc_parse_records__version", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["job_ref"], ["plm.job_jobs.job_id"],
+                             name="fk_doc_parse_records__job", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["project_id"], ["plm.prj_projects.project_id"],
+                             name="fk_doc_parse_records__project", ondelete="NO ACTION"),
+        CheckConstraint("(scope='GLOBAL' AND project_id IS NULL) OR (scope='PROJECT' AND project_id IS NOT NULL)",
+                        name="ck_doc_parse_records__scope"),
+        CheckConstraint("char_length(parser_profile) BETWEEN 1 AND 128 AND parser_profile=btrim(parser_profile)",
+                        name="ck_doc_parse_records__profile"),
+        CheckConstraint("char_length(parser_version) BETWEEN 1 AND 64 AND parser_version=btrim(parser_version)",
+                        name="ck_doc_parse_records__parser_version"),
+        CheckConstraint("attempt_no > 0 AND lock_version >= 0", name="ck_doc_parse_records__counters"),
+        CheckConstraint("parse_state IN ('PENDING','RUNNING','SUCCEEDED','FAILED','CANCELLED')",
+                        name="ck_doc_parse_records__state"),
+        CheckConstraint("completed_at IS NULL OR (started_at IS NULL OR completed_at >= started_at)",
+                        name="ck_doc_parse_records__time"),
+        CheckConstraint("result_sha256 IS NULL OR octet_length(result_sha256)=32",
+                        name="ck_doc_parse_records__result_sha"),
+        CheckConstraint("error_code IS NULL OR error_code ~ '^[A-Z][A-Z0-9_]{0,63}$'",
+                        name="ck_doc_parse_records__error"),
+        CheckConstraint("(parse_state='PENDING' AND started_at IS NULL AND completed_at IS NULL AND result_ref IS NULL AND result_sha256 IS NULL AND error_code IS NULL AND retryable IS NULL) OR (parse_state='RUNNING' AND started_at IS NOT NULL AND completed_at IS NULL AND result_ref IS NULL AND result_sha256 IS NULL AND error_code IS NULL AND retryable IS NULL) OR (parse_state='SUCCEEDED' AND started_at IS NOT NULL AND completed_at IS NOT NULL AND result_ref IS NOT NULL AND result_sha256 IS NOT NULL AND error_code IS NULL AND retryable IS FALSE) OR (parse_state='FAILED' AND started_at IS NOT NULL AND completed_at IS NOT NULL AND result_ref IS NULL AND result_sha256 IS NULL AND error_code IS NOT NULL AND retryable IS NOT NULL) OR (parse_state='CANCELLED' AND completed_at IS NOT NULL AND result_ref IS NULL AND result_sha256 IS NULL AND retryable IS FALSE)",
+                        name="ck_doc_parse_records__shape"),
+        Index("ix_doc_parse_records__version_created", "document_version_id",
+              "created_at", "parse_record_id"),
+    )
+
+    parse_record_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True,
+                                                       server_default=text("uuidv7()"))
+    document_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    scope: Mapped[str] = mapped_column(Text, nullable=False)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    parser_profile: Mapped[str] = mapped_column(Text, nullable=False)
+    parser_version: Mapped[str] = mapped_column(Text, nullable=False)
+    job_ref: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    attempt_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    parse_state: Mapped[str] = mapped_column(Text, nullable=False,
+                                            server_default=text("'PENDING'"))
+    result_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    result_sha256: Mapped[bytes | None] = mapped_column(LargeBinary)
+    started_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True, precision=6))
+    completed_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True, precision=6))
+    error_code: Mapped[str | None] = mapped_column(Text)
+    retryable: Mapped[bool | None] = mapped_column(Boolean)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False,
+                                                 server_default=text("statement_timestamp()"))
+    lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False,
+                                              server_default=text("0"))
+
+
+class ParseResultRefRow(Base):
+    """Opaque, append-only metadata for an authorized structured parse result."""
+
+    __tablename__ = "doc_parse_result_refs"
+    __table_args__ = (
+        UniqueConstraint("parse_record_id", name="uq_doc_parse_result_refs__record"),
+        ForeignKeyConstraint(["parse_record_id"], ["plm.doc_parse_records.parse_record_id"],
+                             name="fk_doc_parse_result_refs__record", ondelete="NO ACTION"),
+        CheckConstraint("char_length(storage_locator) BETWEEN 1 AND 1024 AND left(storage_locator,1)<>'/' AND position('..' in storage_locator)=0 AND position(':' in storage_locator)=0 AND position(chr(92) in storage_locator)=0",
+                        name="ck_doc_parse_result_refs__locator"),
+        CheckConstraint("result_schema_version > 0 AND size_bytes >= 0",
+                        name="ck_doc_parse_result_refs__numbers"),
+        CheckConstraint("octet_length(sha256)=32", name="ck_doc_parse_result_refs__sha"),
+    )
+
+    parse_result_ref_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True,
+                                                           server_default=text("uuidv7()"))
+    parse_record_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    storage_locator: Mapped[str] = mapped_column(Text, nullable=False)
+    result_schema_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    sha256: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False,
+                                                 server_default=text("statement_timestamp()"))
 
 
 class UploadIntentRow(Base):
