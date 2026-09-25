@@ -50,6 +50,10 @@ class Dependencies:
         self.read_calls += 1
         return [self.view]
 
+    def list_http_page(self, tx, **kwargs):
+        self.read_calls += 1
+        return [self.view]
+
 
 class SecretMetadataTests(unittest.TestCase):
     def setUp(self):
@@ -71,6 +75,9 @@ class SecretMetadataTests(unittest.TestCase):
         with self.assertRaises(SecretMetadataError) as caught:
             self.service.list_page(self.query, limit=101)
         self.assertEqual(caught.exception.code, "VALIDATION_FAILED")
+        self.assertEqual(self.service.list_http_page(self.query, limit=201), [self.deps.view])
+        with self.assertRaises(SecretMetadataError):
+            self.service.list_http_page(self.query, limit=202)
 
     def test_unauthorized_never_calls_repository(self):
         self.deps.actor = None

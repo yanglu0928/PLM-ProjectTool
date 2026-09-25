@@ -1787,3 +1787,15 @@
 |Reason|内部安全投影和会话服务已存在，可以独立验证单条只读 HTTP 契约；写入/轮换仍受正式密钥、If-Match、幂等及审计接线制约。|
 |Impact|仅增加可选 HTTP Router、元数据锁版本投影和测试；不改变冻结 API、Schema、Migration 或生产路由。|
 |Rollback|不注入该 Router 时保持默认 404；无数据变更。|
+
+## DEC-20260925-042
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-042|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P04-A02 Secret 元数据列表安全游标|
+|Decision|列表只允许 `created_at DESC, secret_id DESC` 的固定 keyset 顺序；游标以 HMAC-SHA256 完整性保护并绑定资源族、DeploymentAdmin Scope、当前 Session 摘要、分页参数指纹和最后一项排序键。签名密钥由装配层显式注入且必须为独立 32 字节秘密；缺失时不得装配生产列表。保留既有内部 UUID 分页供历史调用，本项新增 HTTP 专用排序方法。|
+|Reason|冻结 API-01 要求默认最多 200 条、稳定顺序及不透明完整性保护游标；既有内部 UUID 升序分页不足以构成公开列表合同。|
+|Impact|新增只读列表 API/游标/仓储查询与测试，不改变 Schema、Migration、写 API 或默认应用挂载。生产密钥供给继续纳入后续装配验收。|
+|Rollback|不注入列表 Router 时默认 404；可保留原内部列表，不迁移数据。|

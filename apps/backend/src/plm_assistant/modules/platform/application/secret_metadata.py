@@ -46,6 +46,9 @@ class SecretMetadataRepositoryPort(Protocol):
     def get(self, transaction: object, secret_id: uuid.UUID) -> SecretMetadataView | None: ...
     def list_page(self, transaction: object, *, after: uuid.UUID | None,
                   limit: int) -> list[SecretMetadataView]: ...
+    def list_http_page(self, transaction: object, *,
+                       after: tuple[datetime, uuid.UUID] | None,
+                       limit: int) -> list[SecretMetadataView]: ...
 
 
 class SecretMetadataService:
@@ -70,6 +73,21 @@ class SecretMetadataService:
             raise SecretMetadataError("VALIDATION_FAILED")
         return self._query(query, lambda tx: self._repository.list_page(tx, after=after, limit=limit),
                            single=False)
+
+    def list_http_page(self, query: SecretMetadataQuery, *,
+                       after: tuple[datetime, uuid.UUID] | None = None,
+                       limit: int = 51) -> list[SecretMetadataView]:
+        if (type(limit) is not int or not 1 <= limit <= 201
+                or (after is not None and (
+                    type(after) is not tuple or len(after) != 2
+                    or not isinstance(after[0], datetime) or after[0].tzinfo is None
+                    or after[0].utcoffset() is None
+                    or type(after[1]) is not uuid.UUID or after[1].int == 0))):
+            raise SecretMetadataError("VALIDATION_FAILED")
+        return self._query(
+            query, lambda tx: self._repository.list_http_page(tx, after=after, limit=limit),
+            single=False,
+        )
 
     def _query(self, query: SecretMetadataQuery, reader: Callable[[object], object],
                *, single: bool):

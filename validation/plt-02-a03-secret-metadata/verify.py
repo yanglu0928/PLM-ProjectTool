@@ -60,11 +60,12 @@ def main():
                 with connect(name) as db:
                     actor = user(db, "Synthetic Secret Admin", "DEPLOYMENT_ADMIN", admin_token)
                     user(db, "Synthetic Secret Member", "NONE", member_token)
-                    ids = []
-                    for purpose, consumer in (("AI_PROVIDER_KEY", "AI_PROVIDER_ADAPTER"),
-                                              ("RERANKER_KEY", "RERANKER_ADAPTER")):
-                        record = db.execute("INSERT INTO plm.plt_secret_records(purpose,allowed_consumer,created_by) VALUES (%s,%s,%s) RETURNING secret_record_id", (purpose, consumer, actor)).fetchone()[0]
-                        ids.append(record)
+                    ids = [row[0] for row in db.execute(
+                        "INSERT INTO plm.plt_secret_records(purpose,allowed_consumer,created_by) "
+                        "VALUES (%s,%s,%s),(%s,%s,%s) RETURNING secret_record_id",
+                        ("AI_PROVIDER_KEY", "AI_PROVIDER_ADAPTER", actor,
+                         "RERANKER_KEY", "RERANKER_ADAPTER", actor),
+                    ).fetchall()]
                     version = db.execute("INSERT INTO plm.plt_secret_versions(secret_record_id,version_no,encrypted_payload,encryption_metadata,key_provider_ref,created_by) VALUES (%s,1,%s,'{}'::jsonb,'synthetic-provider',%s) RETURNING secret_version_id", (ids[0], b"synthetic-ciphertext", actor)).fetchone()[0]
                     db.execute("UPDATE plm.plt_secret_versions SET activated_at=statement_timestamp() WHERE secret_version_id=%s", (version,))
                     db.execute("UPDATE plm.plt_secret_records SET secret_state='ACTIVE',current_version_ref=%s,lock_version=1 WHERE secret_record_id=%s", (version, ids[0]))
@@ -86,12 +87,26 @@ def main():
                 assert guard.calls == 0
                 detail = service.get(admin_query, ids[0])
                 assert detail.current_version_no == 1 and detail.state == "ACTIVE"
+                assert detail.lock_version == 1
                 assert "synthetic-ciphertext" not in repr(detail)
                 assert "synthetic-provider" not in repr(detail)
                 page = service.list_page(admin_query, limit=1)
                 assert len(page) == 1
                 second = service.list_page(admin_query, after=page[0].secret_id, limit=1)
                 assert len(second) == 1 and second[0].secret_id != page[0].secret_id
+                newest = service.list_http_page(admin_query, limit=2)
+                assert newest[0].created_at == newest[1].created_at
+                assert len(newest) == 2 and newest[0].secret_id == max(ids)
+                older = service.list_http_page(
+                    admin_query, after=(newest[0].created_at, newest[0].secret_id), limit=2,
+                )
+                assert len(older) == 1 and older[0].secret_id == min(ids)
+                with connect(name) as db:
+                    db.execute("UPDATE plm.plt_secret_records SET secret_state='DISABLED',current_version_ref=NULL,lock_version=2 WHERE secret_record_id=%s", (ids[0],))
+                disabled = service.get(admin_query, ids[0])
+                assert disabled.state == "DISABLED" and disabled.current_version_no is None
+                assert disabled.lock_version == 2
+                assert "synthetic-ciphertext" not in repr(disabled)
                 guard.enabled = False
                 try:
                     service.list_page(admin_query)
@@ -99,7 +114,7 @@ def main():
                     assert exc.code == "SECRET_UNAVAILABLE"
                 else:
                     raise AssertionError("expired License allowed")
-                print("PASS: PostgreSQL admin-only metadata, safe projection, pagination and License denial")
+                print("PASS: PostgreSQL admin-only metadata, safe projection, lock version, signed-cursor keyset source and License denial")
             finally:
                 runtime.dispose()
         finally:

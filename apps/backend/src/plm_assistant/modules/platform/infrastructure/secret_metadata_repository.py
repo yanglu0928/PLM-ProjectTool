@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import select, tuple_
 from sqlalchemy.orm import Session
 
 from plm_assistant.modules.platform.application.secret_metadata import SecretMetadataView
@@ -50,5 +51,22 @@ class SqlAlchemySecretMetadataRepository:
             statement = statement.where(SecretRecordRow.secret_record_id > after)
         rows = _session(transaction).execute(statement.order_by(
             SecretRecordRow.secret_record_id,
+        ).limit(limit)).all()
+        return [_view(row) for row in rows]
+
+    def list_http_page(self, transaction: object, *,
+                       after: tuple[datetime, uuid.UUID] | None,
+                       limit: int) -> list[SecretMetadataView]:
+        statement = select(*_FIELDS).select_from(SecretRecordRow).outerjoin(
+            SecretVersionRow,
+            (SecretRecordRow.current_version_ref == SecretVersionRow.secret_version_id)
+            & (SecretRecordRow.secret_record_id == SecretVersionRow.secret_record_id),
+        )
+        if after is not None:
+            statement = statement.where(tuple_(
+                SecretRecordRow.created_at, SecretRecordRow.secret_record_id,
+            ) < after)
+        rows = _session(transaction).execute(statement.order_by(
+            SecretRecordRow.created_at.desc(), SecretRecordRow.secret_record_id.desc(),
         ).limit(limit)).all()
         return [_view(row) for row in rows]

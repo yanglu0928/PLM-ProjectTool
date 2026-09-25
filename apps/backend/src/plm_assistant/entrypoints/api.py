@@ -31,6 +31,7 @@ def create_app(
     session_renew_router: APIRouter | None = None,
     session_logout_router: APIRouter | None = None,
     secret_metadata_router: APIRouter | None = None,
+    secret_metadata_list_router: APIRouter | None = None,
     shutdown_callback: Callable[[], None] | None = None,
 ) -> FastAPI:
     """Create one isolated API application instance.
@@ -76,4 +77,6 @@ def create_app(
         app.include_router(session_logout_router)
     if secret_metadata_router is not None:
         app.include_router(secret_metadata_router)
+    if secret_metadata_list_router is not None:
+        app.include_router(secret_metadata_list_router)
     return app

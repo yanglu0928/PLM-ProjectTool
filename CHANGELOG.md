@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PLT-02-A07-P04-A02 新增可选 Secret 元数据列表 GET：固定创建时间/ID 倒序、50～200 分页和会话/查询绑定的 HMAC 完整性保护游标；无值/密文输出，默认应用仍 404。Windows 11/Python 3.13 后端 355/355、PostgreSQL 18 临时库同时间戳 keyset/锁版本验证及开发 wheel PASS。无 Migration/新依赖；升级无需数据操作。生产游标签名密钥、正式信任锚、Server 2025/Debian 13 与最终程序包未验证。
+
 - 2026-09-25：`0.1.0.dev0`/PLT-02-A07-P04-A01 新增可选 Secret 元数据详情 GET，现行 Session/可信来源与内部管理员/License 保护，安全投影及强 ETag；默认应用仍 404。Windows 11/Python 3.13 后端 351/351、开发 wheel 构建 PASS。无 Migration/新依赖；升级无需数据操作。正式生产信任锚、目标账户、Server 2025/Debian 13 和最终程序包未验证，列表/写接口仍未公开。
 
 - 2026-09-25：`0.1.0.dev0`/PLT-02-A07-P03-A05 新增 Windows License 内部生产组合根：包内本产品公钥、本机选定 MAC、独立 Vault 可信时间密钥与当前 PostgreSQL Schema 任一缺失均拒绝装配；不公开新路由。Windows 11/Python 3.13 后端 348/348、真实 PostgreSQL 18.6 临时库合成 License 通过及失密持久拒绝、wheel 构建 PASS。无 Migration、新依赖或公开 API；正式发行公钥/目标账户密钥、Server 2025/Debian 13 和最终程序包仍未完成。
