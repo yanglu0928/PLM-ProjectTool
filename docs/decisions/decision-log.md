@@ -2996,3 +2996,15 @@
 |Reason|Parse 历史游标需独立密钥和可恢复性，不可复用 Document、Version 或其他资源族游标密钥，也不能把测试密钥内置于生产应用。|
 |Impact|Windows 装配适配、单元/当前账户测试；无 Schema、API、依赖或正式密钥供给。|
 |Rollback|不在生产组合调用该适配即可保持 Router 关闭；临时测试凭据测试后删除。|
+
+## DEC-20260926-143
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-143|
+|Date|2026-09-26|
+|WBS|DOC-04-A05 Windows 显式平台组合 Parse 列表|
+|Decision|只在 `--platform`/`--platform-write` 已有真实 Session、License 与 DocumentReadService 组合中装入 Parse 列表 Router；启动前读取独立 `document-parse-cursor-v1` 当前账户密钥，缺失则整个显式组合失败关闭，默认登录应用保持 404。隔离 PostgreSQL 验证固定版本、授权及真实 HTTP。|
+|Reason|不扩大默认入口，避免仅合成 Router 被误用为生产可用；沿用 Document 读服务权限链及平台统一信任源要求。|
+|Impact|Windows 组合与其测试；无 Schema、新依赖或冻结 API 变化。目标账户正式密钥与发行 License 信任锚仍由 Release 关闭。|
+|Rollback|移除显式组合的 Router 注入即可恢复 404；不影响已有数据。|

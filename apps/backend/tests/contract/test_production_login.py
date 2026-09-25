@@ -19,6 +19,7 @@ from plm_assistant.modules.project.api.member_list_cursor import MemberListCurso
 from plm_assistant.modules.project.api.department_list_cursor import DepartmentListCursorCodec
 from plm_assistant.modules.document.api.document_list_cursor import DocumentListCursorCodec
 from plm_assistant.modules.document.api.version_list_cursor import VersionListCursorCodec
+from plm_assistant.modules.document.api.parse_list_cursor import ParseListCursorCodec
 
 
 class ProductionLoginTests(unittest.TestCase):
@@ -32,6 +33,10 @@ class ProductionLoginTests(unittest.TestCase):
         self.enterContext(patch(
             "plm_assistant.entrypoints.production_login.create_windows_document_version_cursor_codec",
             return_value=VersionListCursorCodec(b"z" * 32),
+        ))
+        self.enterContext(patch(
+            "plm_assistant.entrypoints.production_login.create_windows_document_parse_cursor_codec",
+            return_value=ParseListCursorCodec(b"p" * 32),
         ))
 
     def settings(self, origins: tuple[str, ...]) -> BootstrapSettings:
@@ -358,6 +363,31 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(run.call_args.args[0](), "synthetic-platform")
             self.assertEqual(run.call_args.kwargs["workers"], 1)
             factory.assert_called_once_with(settings)
+
+    def test_missing_parse_cursor_key_disposes_platform(self) -> None:
+        runtime = Mock()
+        runtime.is_ready.return_value = True
+        settings = self.settings(("http://localhost",))
+        with patch("plm_assistant.entrypoints.production_login.read_database_url",
+                   return_value="postgresql+psycopg://test:synthetic@localhost/test"), patch(
+                   "plm_assistant.entrypoints.production_login.create_database_runtime",
+                   return_value=runtime), patch(
+                   "plm_assistant.entrypoints.production_login._schema_current",
+                   return_value=True), patch(
+                   "plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services",
+                   return_value=Mock(guard=Mock())), patch(
+                   "plm_assistant.entrypoints.production_login.create_windows_secret_list_cursor_codec",
+                   return_value=Mock()), patch(
+                   "plm_assistant.entrypoints.production_login.create_windows_project_member_cursor_codec",
+                   return_value=Mock()), patch(
+                   "plm_assistant.entrypoints.production_login.create_windows_project_department_cursor_codec",
+                   return_value=Mock()), patch(
+                   "plm_assistant.entrypoints.production_login.create_windows_document_parse_cursor_codec",
+                   side_effect=RuntimeError("synthetic missing Parse key")):
+            with self.assertRaises(ProductionLoginStartupError) as caught:
+                create_production_platform_app(settings)
+        self.assertNotIn("synthetic missing Parse key", str(caught.exception))
+        runtime.dispose.assert_called_once()
 
     def test_write_mode_missing_master_key_disposes_without_publishing(self) -> None:
         runtime = Mock()

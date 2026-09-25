@@ -22,6 +22,7 @@ from plm_assistant.entrypoints.production_login import (
 from plm_assistant.modules.document.infrastructure.upload_token import HmacUploadTokenIssuer
 from plm_assistant.modules.document.api.document_list_cursor import DocumentListCursorCodec
 from plm_assistant.modules.document.api.version_list_cursor import VersionListCursorCodec
+from plm_assistant.modules.document.api.parse_list_cursor import ParseListCursorCodec
 from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
 from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
 from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
@@ -126,6 +127,8 @@ def main():
                        return_value=DocumentListCursorCodec(b"l" * 32)), patch(
                        "plm_assistant.entrypoints.production_login.create_windows_document_version_cursor_codec",
                        return_value=VersionListCursorCodec(b"v" * 32)), patch(
+                       "plm_assistant.entrypoints.production_login.create_windows_document_parse_cursor_codec",
+                       return_value=ParseListCursorCodec(b"p" * 32)), patch(
                        "plm_assistant.entrypoints.windows_secret_write.create_windows_secret_write_service",
                        return_value=object()), patch(
                        "plm_assistant.entrypoints.production_login.create_windows_document_upload_token_issuer",
@@ -173,6 +176,40 @@ def main():
                     assert first.json()["data"] == replay.json()["data"]
                     assert first.json()["data"]["version_no"] == 1
                     assert client.post(commit_path, headers=headers(pm_token, "finalize-commit-other-01")).status_code == 409
+
+                    parsed = first.json()["data"]
+                    parse_path = (f"/api/v1/projects/{project}/documents/"
+                                  f"{parsed['document_id']}/versions/"
+                                  f"{parsed['document_version_id']}/parses")
+                    with connect(name) as db:
+                        for attempt in (1, 2, 3):
+                            db.execute(
+                                "INSERT INTO plm.doc_parse_records(document_version_id,scope,"
+                                "project_id,parser_profile,parser_version,job_ref,attempt_no) "
+                                "VALUES (%s,'PROJECT',%s,'PDF','1.0',%s,%s)",
+                                (uuid.UUID(parsed["document_version_id"]), project,
+                                 uuid.UUID(parsed["parse_job_id"]), attempt),
+                            )
+                    parse_first = client.get(parse_path + "?page_size=2",
+                                             headers=headers(pm_token, "unused-read-01"))
+                    assert parse_first.status_code == 200, parse_first.text
+                    parse_data = parse_first.json()["data"]
+                    assert len(parse_data["items"]) == 2 and parse_data["has_more"]
+                    assert "storage_locator" not in parse_first.text
+                    parse_second = client.get(
+                        parse_path + "?page_size=2&cursor=" + parse_data["next_cursor"],
+                        headers=headers(pm_token, "unused-read-02"),
+                    )
+                    assert parse_second.status_code == 200, parse_second.text
+                    assert len(parse_second.json()["data"]["items"]) == 1
+                    assert client.get(parse_path, headers=headers(outsider_token, "unused-read-03")).status_code == 404
+                    guard.enabled = False
+                    assert client.get(parse_path, headers=headers(pm_token, "unused-read-04")).status_code == 403
+                    guard.enabled = True
+                    with TestClient(read_only, base_url="http://localhost") as read_client:
+                        assert read_client.get(parse_path, headers=headers(pm_token, "unused-read-05")).status_code == 200
+                    with TestClient(login_only, base_url="http://localhost") as login_client:
+                        assert login_client.get(parse_path, headers=headers(pm_token, "unused-read-06")).status_code == 404
 
                     aborted = create("finalize-create-two-01")
                     stage(aborted, content)
