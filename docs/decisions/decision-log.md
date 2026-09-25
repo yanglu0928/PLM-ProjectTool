@@ -2063,3 +2063,15 @@
 |Reason|冻结 API-02 只允许 ProjectManager/CustomerManager 读取成员历史，API-01 要求完整性保护分页和安全响应；现有 Service 将 License 异常统一包成 PROJECT_UNAVAILABLE，需在公开前修正。|
 |Impact|Project 成员读服务、可选 Router、测试和文档；无 Schema/Migration、冻结 API、依赖或权限扩张。默认/当前平台组合仍 404。|
 |Rollback|停止注入 Router 恢复 404；License 错误映射可独立回退，但会使已知许可拒绝错报 503。|
+
+## DEC-20260925-065
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-065|
+|Date|2026-09-25|
+|WBS|PRJ-04-A09-P03 Windows 成员 cursor 密钥来源|
+|Decision|新增独立只读 Windows 当前账户 Vault 装配入口，固定引用 `project-member-list-cursor-v1`；缺钥/错长失败关闭。沿用已有交互式通用密钥供给、加密备份/恢复流程，仅使用 UUID 范围测试引用进行 Vault 丢失恢复验证；本任务不产生正式密钥。|
+|Reason|成员列表 cursor 必须能跨重启、备份恢复保持签名有效，不能取随机进程密钥、普通 YAML 或 Secret 列表专用签名密钥。|
+|Impact|Windows 组合入口与测试，无 Schema/Migration、API、安全算法或新依赖变化；正式账户需单独供给/离线保管。|
+|Rollback|成员列表不挂载即可停用；更换或丢失密钥会使旧 cursor 失效，须按备份流程恢复。|
