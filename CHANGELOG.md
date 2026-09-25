@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/PRJ-04-A13-P03 新增 Windows 当前账户独立 Department cursor Vault 只读来源，固定引用且缺钥/错长拒绝启动；临时测试引用完成加密备份、丢失、恢复后旧游标验证。Windows 11 后端 429/429、开发 wheel PASS。无新 Migration/依赖；正式目标账户密钥未供给，平台组合未接线，Server 2025/Debian 13 与最终程序包未完成。
+
 - 2026-09-25：`0.1.0.dev0`/PRJ-04-A13-P02 新增可选 Department 历史列表 GET，使用当前 Session、Project 授权、独立签名游标和安全投影；修正正式 License 拒绝为 403 而非误报 503。Windows 11 后端 427/427、PostgreSQL 18 临时库双页/角色/跨项目/许可及归档只读、开发 wheel PASS。无新 Migration/依赖；默认与当前 Windows 组合仍 404，正式密钥、Server 2025/Debian 13 和最终程序包未完成。
 
 - 2026-09-25：`0.1.0.dev0`/PRJ-04-A13-P01 新增独立 Project Department 历史分页 HMAC 游标，绑定当前 Session、ProjectId、page size 与稳定部门位置，拒绝篡改和成员游标跨资源族复用。Windows 11 后端 424/424、开发 wheel PASS；无新 Migration/依赖，升级无需数据操作。公开部门 GET、Windows 正式密钥来源、Server 2025/Debian 13 与最终程序包未完成。

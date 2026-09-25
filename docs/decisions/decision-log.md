@@ -2207,3 +2207,15 @@
 |Reason|冻结 API-01/02 要求受权部门 page、跨项目隐藏和 License 拒绝；内部 keyset ID 不能直接暴露，许可失败不能被误报为 503。|
 |Impact|Project 可选 Router、应用工厂注入点、部门读取错误映射和测试；无新 Schema/Migration/依赖或 Breaking API。|
 |Rollback|移除 Router 注入恢复 404；错误映射可单独恢复但会重新违反冻结 License 错误合同。|
+
+## DEC-20260925-077
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-077|
+|Date|2026-09-25|
+|WBS|PRJ-04-A13-P03 Windows 独立部门游标密钥来源|
+|Decision|固定 Windows 当前账户 Vault 引用 `project-department-list-cursor-v1`，只读解析独立 32 字节密钥；缺失/错长拒绝启动。正式供给和备份需运行账户操作员完成，测试只使用临时 UUID 引用。|
+|Reason|部门游标不能复用成员或 Secret 游标密钥；跨重启稳定签名需可恢复的当前账户安全来源。|
+|Impact|新增 Windows 只读适配与合成 Vault 备份恢复测试；不生成、导出或提交正式密钥，不改 Schema/API。|
+|Rollback|移除未接入生产组合的适配；测试临时 Vault 引用清理，正式资料不受影响。|
