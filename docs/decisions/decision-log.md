@@ -2123,3 +2123,15 @@
 |Reason|成员创建不能成为绕过生产信任源的平行入口，且须与既有 Project 路由共享同一安全组合根。|
 |Impact|Windows 组合根和合成验证；无新 Schema、Migration、冻结 API 或依赖。|
 |Rollback|移除该 Router 注入，恢复成员创建 404；历史成员及幂等快照保持不变。|
+
+## DEC-20260925-070
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-070|
+|Date|2026-09-25|
+|WBS|PRJ-04-A11-P01 ProjectMember 更新可选 HTTP|
+|Decision|新增仅显式注入的成员 PATCH Router：复用可信 Origin/Session/CSRF、有界严格 JSON、强 If-Match 解析，body 仅接受非空 `role`/`department_id` 子集；调用既有 PRJ-02-A03 服务并复用 MemberView 安全投影。默认及当前 Windows 平台组合不挂载。|
+|Reason|冻结 API-02 要求角色/部门更新为受 ProjectManager 控制的版本化 PATCH，已有内部服务负责跨项目、最后负责人、历史和 Audit，不应在 HTTP 层重复业务规则。|
+|Impact|Project 可选 Router、应用工厂注入点、测试与文档；无 Schema/Migration、新依赖或 Breaking API。|
+|Rollback|撤销 Router 注入恢复 404；不回滚已成功提交的成员变更历史。|

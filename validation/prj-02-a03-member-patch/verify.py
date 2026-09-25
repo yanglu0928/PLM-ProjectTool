@@ -8,11 +8,17 @@ from datetime import datetime, timezone
 
 import psycopg
 from alembic import command
+from fastapi.testclient import TestClient
 from psycopg import sql
 from sqlalchemy.engine import URL
 
 from plm_assistant.modules.audit.application.public import AuditService
 from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
+from plm_assistant.entrypoints.api import create_app
+from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
+from plm_assistant.modules.auth.application.session_service import SessionError
+from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
+from plm_assistant.modules.project.api.patch_member import create_project_member_patch_router
 from plm_assistant.modules.auth.infrastructure.project_member_patch_access import SqlAlchemyProjectMemberPatchAccess
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
@@ -42,8 +48,20 @@ def user(db, name, token=None):
 
 
 class Guard:
+    def __init__(self):
+        self.enabled = True
+
     def require_valid(self, **_):
+        if not self.enabled:
+            raise RuntimeLicenseError("EXPIRED")
         return None
+
+
+class HttpSessions:
+    def validate(self, token, *, csrf_token, require_csrf):
+        if token not in (b"p" * 32, b"m" * 32) or csrf_token != CSRF or require_csrf is not True:
+            raise SessionError("AUTH_SESSION_EXPIRED")
+        return object()
 
 
 class FailedAudit:
@@ -85,7 +103,9 @@ def main():
             command.upgrade(config, "20260925_0013")
             with connect(name) as db:
                 manager = user(db, "Synthetic Manager", token)
+                customer_manager = user(db, "Synthetic Customer Manager", b"m" * 32)
                 target = user(db, "Synthetic Target")
+                http_target = user(db, "Synthetic HTTP Target")
                 outsider = user(db, "Synthetic Outsider")
                 p1 = db.execute("INSERT INTO plm.prj_projects(project_code,project_code_normalized,name,created_by) VALUES ('P1','p1','First',%s) RETURNING project_id", (manager,)).fetchone()[0]
                 p2 = db.execute("INSERT INTO plm.prj_projects(project_code,project_code_normalized,name,created_by) VALUES ('P2','p2','Second',%s) RETURNING project_id", (manager,)).fetchone()[0]
@@ -93,15 +113,18 @@ def main():
                 d2 = db.execute("INSERT INTO plm.prj_departments(project_id,department_code,department_code_normalized,name) VALUES (%s,'D2','d2','Second Department') RETURNING department_id", (p1,)).fetchone()[0]
                 other = db.execute("INSERT INTO plm.prj_departments(project_id,department_code,department_code_normalized,name) VALUES (%s,'D3','d3','Other Department') RETURNING department_id", (p2,)).fetchone()[0]
                 manager_member = db.execute("INSERT INTO plm.prj_project_members(project_id,user_id,department_id,project_role) VALUES (%s,%s,%s,'PROJECT_MANAGER') RETURNING project_member_id", (p1, manager, d1)).fetchone()[0]
+                db.execute("INSERT INTO plm.prj_project_members(project_id,user_id,department_id,project_role) VALUES (%s,%s,%s,'CUSTOMER_MANAGER')", (p1, customer_manager, d1))
                 member = db.execute("INSERT INTO plm.prj_project_members(project_id,user_id,department_id,project_role) VALUES (%s,%s,%s,'IMPLEMENTATION_MEMBER') RETURNING project_member_id", (p1, target, d1)).fetchone()[0]
+                http_member = db.execute("INSERT INTO plm.prj_project_members(project_id,user_id,department_id,project_role) VALUES (%s,%s,%s,'IMPLEMENTATION_MEMBER') RETURNING project_member_id", (p1, http_target, d1)).fetchone()[0]
                 foreign_member = db.execute("INSERT INTO plm.prj_project_members(project_id,user_id,department_id,project_role) VALUES (%s,%s,%s,'CUSTOMER_MEMBER') RETURNING project_member_id", (p2, outsider, other)).fetchone()[0]
             command.upgrade(config, "head")  # existing-data upgrade
             command.check(config)
             runtime = create_database_runtime(url)
             try:
+                guard = Guard()
                 kwargs = dict(
                     unit_of_work=runtime.unit_of_work,
-                    access=SqlAlchemyProjectMemberPatchAccess(), license_guard=Guard(),
+                    access=SqlAlchemyProjectMemberPatchAccess(), license_guard=guard,
                     authorization=ProjectAuthorizationService(
                         unit_of_work=runtime.unit_of_work,
                         repository=SqlAlchemyProjectAuthorizationRepository(),
@@ -126,6 +149,40 @@ def main():
                 denied("CONFLICT_VERSION", lambda: patch(role="IMPLEMENTATION_MEMBER"))
                 noop = patch(version=1, role="CUSTOMER_MEMBER")
                 assert noop.etag == '"v1"'
+                router = create_project_member_patch_router(
+                    sessions=HttpSessions(), members=service,
+                    origins=LoginOriginPolicy(["http://localhost"]),
+                )
+                with TestClient(create_app(project_member_patch_router=router),
+                                base_url="http://localhost") as client:
+                    path = f"/api/v1/projects/{p1}/members/{http_member}"
+                    headers = {"origin": "http://localhost",
+                               "cookie": "plm_session=" + token.hex(),
+                               "x-csrf-token": CSRF.hex(), "if-match": '"v0"'}
+                    body = {"role": "CUSTOMER_MEMBER", "department_id": str(d2)}
+                    updated = client.patch(path, headers=headers, json=body)
+                    assert updated.status_code == 200, updated.text
+                    assert updated.headers["etag"] == '"v1"'
+                    assert updated.json()["data"]["role"] == "CUSTOMER_MEMBER"
+                    assert client.patch(path, headers=headers, json=body).status_code == 409
+                    assert client.patch(f"/api/v1/projects/{p2}/members/{http_member}",
+                                        headers=headers, json=body).status_code == 404
+                    assert client.patch(f"/api/v1/projects/{p1}/members/{foreign_member}",
+                                        headers=headers, json=body).status_code == 404
+                    assert client.patch(path, headers={
+                        **headers, "cookie": "plm_session=" + (b"m" * 32).hex(),
+                        "if-match": '"v1"',
+                    }, json={"role": "IMPLEMENTATION_MEMBER"}).status_code == 404
+                    assert client.patch(f"/api/v1/projects/{p1}/members/{manager_member}",
+                                        headers=headers, json={"role": "CUSTOMER_MEMBER"}).status_code == 422
+                    guard.enabled = False
+                    assert client.patch(path, headers={**headers, "if-match": '"v1"'},
+                                        json={"role": "IMPLEMENTATION_MEMBER"}).status_code == 403
+                    guard.enabled = True
+                with connect(name) as db:
+                    assert db.execute("SELECT project_role,department_id,lock_version FROM plm.prj_project_members WHERE project_member_id=%s", (http_member,)).fetchone() == ("CUSTOMER_MEMBER", d2, 1)
+                    assert db.execute("SELECT count(*) FROM plm.prj_member_assignment_history WHERE project_member_id=%s", (http_member,)).fetchone()[0] == 1
+                    assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='PROJECT_MEMBER_PATCHED'", (http_member,)).fetchone()[0] == 1
                 with connect(name) as db:
                     row = db.execute("SELECT before_role,after_role,before_department_id,after_department_id,before_version,after_version FROM plm.prj_member_assignment_history WHERE project_member_id=%s", (member,)).fetchone()
                     assert row == ("IMPLEMENTATION_MEMBER", "CUSTOMER_MEMBER", d1, d2, 0, 1), row
@@ -149,7 +206,7 @@ def main():
                     assert "empty history" in str(exc)
                 else:
                     raise AssertionError("nonempty history downgrade should fail")
-                print("PASS: empty/used upgrade and empty downgrade, scope/CSRF/version, last-manager guard, assignment history, Audit rollback, archive and nonempty downgrade guard")
+                print("PASS: empty/used upgrade, optional HTTP If-Match/role/isolation/License, history/Audit atomicity, rollback/archive and downgrade guard")
             finally:
                 runtime.dispose()
         finally:
