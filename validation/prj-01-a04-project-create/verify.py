@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
 import psycopg
@@ -16,6 +17,7 @@ from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlche
 from plm_assistant.modules.auth.infrastructure.project_create_access import SqlAlchemyProjectCreateAccess
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
+from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
 from plm_assistant.modules.project.application.create_project import (
     CreateProject, DepartmentSeed, ProjectCreateError, ProjectCreateService,
 )
@@ -75,6 +77,8 @@ def main():
                     manager_id = user(db, "Synthetic Manager", "NONE")
                     other_id = user(db, "Synthetic Other", "NONE", NONADMIN_TOKEN)
                     disabled_id = user(db, "Synthetic Disabled", "NONE")
+                    replay_manager_id = user(db, "Synthetic Replay Manager", "NONE")
+                    rollback_manager_id = user(db, "Synthetic Rollback Manager", "NONE")
                     db.execute("UPDATE plm.auth_users SET state='DISABLED' WHERE user_id=%s", (disabled_id,))
                 guard = Guard()
                 kwargs = dict(unit_of_work=runtime.unit_of_work,
@@ -123,7 +127,72 @@ def main():
                 second = service.create(cmd("P2", manager=other_id, dept=DepartmentSeed("D2", "Second")))
                 with connect(name) as db:
                     assert db.execute("SELECT department_code FROM plm.prj_departments WHERE department_id=%s", (second.department_id,)).fetchone()[0] == "D2"
-                print("PASS: admin/CSRF/License, manager eligibility, atomic bootstrap, duplicate and rollback")
+                receipts = SqlAlchemyIdempotencyReceipts()
+                idempotent = ProjectCreateService(
+                    **kwargs, audit=AuditService(SqlAlchemyAuditRepository()), receipts=receipts,
+                )
+                replay_command = cmd("P4", manager=replay_manager_id)
+                replay_key = str(uuid.uuid4())
+                with ThreadPoolExecutor(max_workers=2) as pool:
+                    outcomes = list(pool.map(
+                        lambda _: idempotent.create_idempotent(
+                            replay_command, idempotency_key=replay_key,
+                        ), range(2),
+                    ))
+                assert outcomes[0] == outcomes[1]
+                assert (outcomes[0].code, outcomes[0].name,
+                        outcomes[0].state, outcomes[0].etag) == (
+                    "P4", "Synthetic Project", "ACTIVE", '"v0"',
+                )
+                with connect(name) as db:
+                    db.execute(
+                        "UPDATE plm.prj_projects SET name='Later Name',state='ARCHIVED',lock_version=1 WHERE project_id=%s",
+                        (outcomes[0].project_id,),
+                    )
+                assert idempotent.create_idempotent(
+                    replay_command, idempotency_key=replay_key,
+                ) == outcomes[0]
+                try:
+                    idempotent.create_idempotent(
+                        cmd("P5", manager=replay_manager_id), idempotency_key=replay_key,
+                    )
+                except ProjectCreateError as exc:
+                    assert exc.code == "CONFLICT_IDEMPOTENCY"
+                else:
+                    raise AssertionError("different Project payload reused one Key")
+                with connect(name) as db:
+                    assert db.execute(
+                        "SELECT count(*) FROM plm.prj_projects WHERE project_code_normalized='p4'"
+                    ).fetchone()[0] == 1
+                    assert db.execute(
+                        "SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='PROJECT_CREATED'",
+                        (outcomes[0].project_id,),
+                    ).fetchone()[0] == 1
+                failed_idempotent = ProjectCreateService(
+                    **kwargs, audit=FailedAudit(), receipts=receipts,
+                )
+                rollback_command = cmd("P6", manager=rollback_manager_id)
+                rollback_key = str(uuid.uuid4())
+                try:
+                    failed_idempotent.create_idempotent(
+                        rollback_command, idempotency_key=rollback_key,
+                    )
+                except RuntimeError as exc:
+                    assert str(exc) == "synthetic Audit failure"
+                else:
+                    raise AssertionError("failed Audit committed Project")
+                recovered = idempotent.create_idempotent(
+                    rollback_command, idempotency_key=rollback_key,
+                )
+                with connect(name) as db:
+                    assert db.execute(
+                        "SELECT count(*) FROM plm.prj_projects WHERE project_code_normalized='p6'"
+                    ).fetchone()[0] == 1
+                    assert db.execute(
+                        "SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='PROJECT_CREATED'",
+                        (recovered.project_id,),
+                    ).fetchone()[0] == 1
+                print("PASS: admin/CSRF/License, manager eligibility, atomic bootstrap, concurrent same-key replay, immutable first response, Audit rollback")
             finally:
                 runtime.dispose()
         finally:

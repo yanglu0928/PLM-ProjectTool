@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
 
 from sqlalchemy import insert, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
@@ -13,6 +14,14 @@ from plm_assistant.modules.project.infrastructure.orm import DepartmentRow, Proj
 
 
 class SqlAlchemyProjectCreateRepository:
+    def created_at(self, transaction: object, project_id: uuid.UUID) -> datetime | None:
+        session = transaction.session  # type: ignore[attr-defined]
+        if not isinstance(session, Session) or not session.in_transaction():
+            raise RuntimeError("active Project transaction is required")
+        return session.execute(select(ProjectRow.created_at).where(
+            ProjectRow.project_id == project_id,
+        )).scalar_one_or_none()
+
     def create(self, transaction: object, *, code: str, normalized_code: str,
                name: str, department_code: str, department_normalized_code: str,
                department_name: str, manager_user_id: uuid.UUID,

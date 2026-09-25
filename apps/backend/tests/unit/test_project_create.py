@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import unittest
 import uuid
+from datetime import datetime, timezone
 
+from plm_assistant.modules.platform.application.idempotency import IdempotencyError
 from plm_assistant.modules.project.application.create_project import (
     CreateProject, CreatedProject, DepartmentSeed, ProjectCreateError, ProjectCreateService,
 )
@@ -52,6 +54,25 @@ class Repo:
     def create(self, *_args, **kwargs):
         self.state["kwargs"] = kwargs
         return self.result
+
+    def created_at(self, *_args):
+        return datetime(2026, 9, 25, tzinfo=timezone.utc)
+
+
+class Receipts:
+    def __init__(self):
+        self.saved = None
+
+    def reserve(self, _tx, *, scope, request_fingerprint):
+        if self.saved is None:
+            self.fingerprint = request_fingerprint
+            return None
+        if self.fingerprint != request_fingerprint:
+            raise IdempotencyError("CONFLICT_IDEMPOTENCY")
+        return self.saved
+
+    def complete(self, _tx, *, scope, result):
+        self.saved = result
 
 
 class Audit:
@@ -115,6 +136,40 @@ class ProjectCreateTests(unittest.TestCase):
         self.assertEqual(caught.exception.code, "PROJECT_CODE_CONFLICT")
         self.assertNotIn("audit", self.state)
         self.assertEqual(self.state["commits"], 0)
+
+    def test_idempotent_create_replays_original_view_without_repeat_write(self):
+        receipts = Receipts()
+        service = ProjectCreateService(
+            unit_of_work=lambda: Tx(self.state), access=self.access,
+            license_guard=Guard(self.state), repository=self.repo,
+            audit=Audit(self.state), receipts=receipts,
+        )
+        first = service.create_idempotent(self.command, idempotency_key="a" * 16)
+        self.state.pop("kwargs")
+        replay = service.create_idempotent(self.command, idempotency_key="a" * 16)
+        self.assertEqual(first, replay)
+        self.assertEqual(first.etag, '"v0"')
+        self.assertEqual(first.project_id, self.repo.result.project_id)
+        self.assertNotIn("kwargs", self.state)
+        self.assertEqual(self.state["commits"], 1)
+
+    def test_idempotent_create_rejects_changed_payload(self):
+        receipts = Receipts()
+        service = ProjectCreateService(
+            unit_of_work=lambda: Tx(self.state), access=self.access,
+            license_guard=Guard(self.state), repository=self.repo,
+            audit=Audit(self.state), receipts=receipts,
+        )
+        service.create_idempotent(self.command, idempotency_key="a" * 16)
+        changed = CreateProject(
+            self.command.session_token, self.command.csrf_token,
+            uuid.uuid4(), "P2", self.command.name,
+            self.command.initial_manager_user_id,
+        )
+        with self.assertRaises(ProjectCreateError) as caught:
+            service.create_idempotent(changed, idempotency_key="a" * 16)
+        self.assertEqual(caught.exception.code, "CONFLICT_IDEMPOTENCY")
+        self.assertEqual(self.state["commits"], 1)
 
 
 if __name__ == "__main__":

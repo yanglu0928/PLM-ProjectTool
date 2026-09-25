@@ -1943,3 +1943,15 @@
 |Reason|Project 可选 HTTP 与内部授权读取已通过，但还缺正式组合入口；复用现有安全前置避免创建第二套 Session 或 License 判定。|
 |Impact|只改 Windows 组合根与合成/临时库验证，不变更 Schema、冻结 API、Project 数据或普通启动行为；真实目标账户/发行材料与 Server 2025 仍待验收。|
 |Rollback|改用默认登录模式，Project 路由继续 404；无数据迁移。|
+
+## DEC-20260925-055
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-055|
+|Date|2026-09-25|
+|WBS|PRJ-04-A03 Project 创建同事务持久幂等前置|
+|Decision|在现有内部 Project 创建服务上新增独立的 HTTP 用途幂等创建方法，不改变原 `create` 的历史返回 DTO；使用 `API-RUNTIME-01` 通用收据按管理员 actor/`V1_PROJECT_CREATE`/Key 范围与规范化请求指纹进行事务预留，在同一事务提交 Project、初始 Department/Manager、Audit 和只含 ProjectId 的结果引用。对重放以原请求规范化字段和不可变 `created_at` 重建冻结 `ProjectView` 的首次 201 语义，强 ETag 固定 `"v0"`；不用当前可变 name/state/lock_version 冒充首次结果。|
+|Reason|冻结 API-01 的可重试 POST 必须持久幂等；现有内部创建没有 Idempotency-Key，直接开放 HTTP 会使同键网络重试产生重复写入或错误响应。通用收据只能存一个非敏感结果引用，冻结创建响应恰为 ProjectView，不要求重放内部 Department/Member ID。|
+|Impact|增加 Project 应用方法、只读 `created_at` Repository Port、单元/临时 PostgreSQL 验证；无 Schema/Migration、新依赖或公开 API。若项目历史行异常消失则失败关闭。|
+|Rollback|停止调用新幂等方法，旧内部 `create` 语义保持；保留已完成的收据/Project/Audit 历史，不删除数据。|
