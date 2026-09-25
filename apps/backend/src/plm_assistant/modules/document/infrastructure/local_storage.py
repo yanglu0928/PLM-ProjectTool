@@ -310,6 +310,77 @@ class LocalFileStorage:
             return FileRecoveryInspection("BOTH_UNRELATED")
         return FileRecoveryInspection("UNSAFE")
 
+    def discard_one_registered_aborted(self, staging_locator: str, final_locator: str,
+                                       *, expected_sha256: bytes, expected_size: int,
+                                       max_bytes: int) -> str:
+        """Remove at most one exact verified path after caller's DB/gate proof.
+
+        The caller must hold the same upload ID's cross-process operation gate.
+        This method cannot establish database ownership, retention or Audit.
+        """
+        inspection = self.inspect_recovery(
+            staging_locator, final_locator, expected_sha256=expected_sha256,
+            expected_size=expected_size, max_bytes=max_bytes,
+        )
+        if inspection.shape == "NONE":
+            return "NONE"
+        if inspection.shape == "STAGE_ONLY":
+            self._discard_exact_verified(staging_locator, expected_sha256=expected_sha256,
+                                         expected_size=expected_size, max_bytes=max_bytes,
+                                         link_count=1)
+            return "STAGE_REMOVED"
+        if inspection.shape == "FINAL_VERIFIED":
+            self._discard_exact_verified(final_locator, expected_sha256=expected_sha256,
+                                         expected_size=expected_size, max_bytes=max_bytes,
+                                         link_count=1)
+            return "FINAL_REMOVED"
+        if inspection.shape == "LINKED_PAIR":
+            stage_path = self._path(staging_locator)
+            final_path = self._path(final_locator)
+            stage_before = _checked_file(stage_path, link_count=2)
+            final_before = _checked_file(final_path, link_count=2)
+            if (stage_before.st_dev, stage_before.st_ino) != (final_before.st_dev, final_before.st_ino):
+                raise LocalStorageError()
+            self._verify_content(staging_locator, expected_sha256=expected_sha256,
+                                 expected_size=expected_size, max_bytes=max_bytes,
+                                 link_count=2)
+            self._verify_content(final_locator, expected_sha256=expected_sha256,
+                                 expected_size=expected_size, max_bytes=max_bytes,
+                                 link_count=2)
+            stage_after = _checked_file(stage_path, link_count=2)
+            final_after = _checked_file(final_path, link_count=2)
+            if (self._identity(stage_before) != self._identity(stage_after)
+                    or self._identity(final_before) != self._identity(final_after)
+                    or (stage_after.st_dev, stage_after.st_ino) !=
+                       (final_after.st_dev, final_after.st_ino)):
+                raise LocalStorageError()
+            try:
+                os.unlink(stage_path)
+            except OSError:
+                raise LocalStorageError() from None
+            return "STAGE_REMOVED"
+        raise LocalStorageError()
+
+    @staticmethod
+    def _identity(info: os.stat_result) -> tuple[int, int, int, int, int]:
+        return (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns, info.st_nlink)
+
+    def _discard_exact_verified(self, locator: str, *, expected_sha256: bytes,
+                                expected_size: int, max_bytes: int,
+                                link_count: int) -> None:
+        path = self._path(locator)
+        before = _checked_file(path, link_count=link_count)
+        self._verify_content(locator, expected_sha256=expected_sha256,
+                             expected_size=expected_size, max_bytes=max_bytes,
+                             link_count=link_count)
+        after = _checked_file(path, link_count=link_count)
+        if self._identity(before) != self._identity(after):
+            raise LocalStorageError()
+        try:
+            os.unlink(path)
+        except OSError:
+            raise LocalStorageError() from None
+
     def reserve_staging(self, locator: str) -> BinaryIO:
         if type(locator) is not str or not locator.startswith("temp/"):
             raise LocalStorageError()
