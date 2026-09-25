@@ -19,6 +19,7 @@ from plm_assistant.modules.document.application.commit_upload import (
     CommitUpload, CommitUploadService, UploadCommitError,
 )
 from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage
+from plm_assistant.modules.document.infrastructure.upload_operation_gate import LocalUploadOperationGate
 from plm_assistant.modules.document.infrastructure.upload_commit_repository import SqlAlchemyUploadCommitRepository
 from plm_assistant.modules.jobs.application.parse_enqueue import ParseJobQueue
 from plm_assistant.modules.jobs.infrastructure.parse_enqueue_repository import SqlAlchemyParseJobQueueRepository
@@ -79,6 +80,7 @@ def verify() -> None:
             root = Path(temporary) / "data"
             root.mkdir()
             storage = LocalFileStorage(root)
+            operation_gate = LocalUploadOperationGate(root)
             with connect(name) as db:
                 actor = db.execute("INSERT INTO plm.auth_users(username_display,username_normalized) VALUES ('Commit Actor','commit actor') RETURNING user_id").fetchone()[0]
                 other = db.execute("INSERT INTO plm.auth_users(username_display,username_normalized) VALUES ('Other Actor','other actor') RETURNING user_id").fetchone()[0]
@@ -94,6 +96,7 @@ def verify() -> None:
                     jobs=ParseJobQueue(SqlAlchemyParseJobQueueRepository()),
                     audit=audit or AuditService(SqlAlchemyAuditRepository()),
                     storage=storage, license_guard=guard,
+                    operation_gate=operation_gate,
                 )
 
             def seed(content: bytes, *, target=None, actual=None):

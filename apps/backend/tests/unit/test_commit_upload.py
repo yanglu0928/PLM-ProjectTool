@@ -7,6 +7,7 @@ from dataclasses import replace
 from plm_assistant.modules.document.application.commit_upload import (
     CommitUpload, CommitUploadService, UploadCommitError,
 )
+from plm_assistant.modules.document.application.upload_operation_gate import UploadGateUnavailable
 
 
 class CommitUploadValidationTests(unittest.TestCase):
@@ -25,6 +26,23 @@ class CommitUploadValidationTests(unittest.TestCase):
         ):
             with self.subTest(command=command), self.assertRaises(UploadCommitError):
                 CommitUploadService._validate(command)
+
+    def test_gate_contention_rejects_before_database_preflight(self) -> None:
+        class BusyGate:
+            def hold(self, _upload_id):
+                raise UploadGateUnavailable()
+
+        def no_transaction():
+            self.fail("commit preflight must not run without the gate")
+
+        service = CommitUploadService(
+            unit_of_work=no_transaction, access=object(), repository=object(),
+            receipts=object(), jobs=object(), audit=object(), storage=object(),
+            license_guard=object(), operation_gate=BusyGate(),
+        )
+        with self.assertRaises(UploadCommitError) as raised:
+            service.commit(self.command, idempotency_key="commit-gate-contention")
+        self.assertEqual(raised.exception.code, "FILE_UNAVAILABLE")
 
 
 if __name__ == "__main__":

@@ -9,6 +9,9 @@ from typing import Protocol
 
 from plm_assistant.modules.audit.application.public import AuditEventDraft, AuditService
 from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage, LocalStorageError
+from plm_assistant.modules.document.application.upload_operation_gate import (
+    UploadGateUnavailable, UploadOperationGatePort,
+)
 from plm_assistant.modules.jobs.application.parse_enqueue import ParseJobQueue, ParseJobRequest
 from plm_assistant.modules.platform.application.idempotency import (
     IdempotencyResult, IdempotencyScope, canonical_payload_fingerprint,
@@ -93,17 +96,27 @@ class CommitUploadService:
     def __init__(self, *, unit_of_work: Callable[[], object], access: UploadCommitAccessPort,
                  repository: UploadCommitRepositoryPort, receipts: UploadCommitReceiptPort,
                  jobs: ParseJobQueue, audit: AuditService,
-                 storage: LocalFileStorage, license_guard: UploadCommitLicensePort) -> None:
+                 storage: LocalFileStorage, license_guard: UploadCommitLicensePort,
+                 operation_gate: UploadOperationGatePort) -> None:
         if any(item is None for item in (unit_of_work, access, repository,
-                                         receipts, jobs, audit, storage, license_guard)):
+                                         receipts, jobs, audit, storage, license_guard,
+                                         operation_gate)):
             raise ValueError("Upload commit dependencies are required")
         self._uow, self._access, self._repository = unit_of_work, access, repository
         self._receipts, self._jobs, self._audit = receipts, jobs, audit
         self._storage, self._license_guard = storage, license_guard
+        self._operation_gate = operation_gate
 
     def commit(self, command: CommitUpload, *, idempotency_key: str) -> CommittedUpload:
         self._validate(command)
         validate_idempotency_key(idempotency_key)
+        try:
+            with self._operation_gate.hold(command.upload_id):
+                return self._commit_held(command, idempotency_key=idempotency_key)
+        except UploadGateUnavailable:
+            raise UploadCommitError("FILE_UNAVAILABLE") from None
+
+    def _commit_held(self, command: CommitUpload, *, idempotency_key: str) -> CommittedUpload:
         receipt_scope = IdempotencyScope.from_key(
             actor_id=command.actor_id, project_id=command.project_id,
             operation=_OPERATION, key=idempotency_key,

@@ -518,6 +518,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                         jobs=ParseJobQueue(SqlAlchemyParseJobQueueRepository()),
                         audit=audit, storage=upload_storage,
                         license_guard=licenses.guard,
+                        operation_gate=upload_operation_gate,
                     )
 
                 def abort_service(token: bytes, csrf: bytes) -> AbortUploadService:
