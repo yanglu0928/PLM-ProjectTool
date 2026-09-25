@@ -2255,3 +2255,15 @@
 |Reason|HTTP 边界不重做权限或首次响应重建；保持默认应用 404 与既有业务状态机。|
 |Impact|Project 可选 Router、应用工厂注入点、契约/集成测试；无新 Schema/Migration/依赖或 Breaking API。|
 |Rollback|移除 Router 注入恢复 404，已提交的部门、审计和幂等快照保留。|
+
+## DEC-20260925-081
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-081|
+|Date|2026-09-25|
+|WBS|PRJ-04-A14-P03 Windows 显式平台 Department 创建组合|
+|Decision|仅在 `--platform` 与 `--platform-write` 既有 Schema、License 和游标信任源门禁通过后装配部门创建服务及 Router；默认登录模式保持 404。|
+|Reason|复用当前 Session、ProjectManager、License、Audit 和同事务幂等，不引入额外无保护入口。|
+|Impact|Windows 平台组合与测试；无新 Schema/Migration/依赖或 Breaking API。|
+|Rollback|移除平台 Router 注入恢复 404；既有部门、审计与快照保留。|

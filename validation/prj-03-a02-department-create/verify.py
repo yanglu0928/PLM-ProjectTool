@@ -6,6 +6,9 @@ import hashlib
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
+from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import Mock, patch as mock_patch
 
 import psycopg
 from alembic import command
@@ -17,10 +20,17 @@ from plm_assistant.modules.audit.application.public import AuditService
 from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
 from plm_assistant.modules.auth.infrastructure.project_write_access import SqlAlchemyProjectWriteAccess
 from plm_assistant.entrypoints.api import create_app
+from plm_assistant.entrypoints.production_login import (
+    create_production_platform_app, create_production_platform_write_app,
+)
 from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
 from plm_assistant.modules.auth.application.session_service import SessionError
 from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
 from plm_assistant.modules.project.api.create_department import create_project_department_create_router
+from plm_assistant.modules.project.api.member_list_cursor import MemberListCursorCodec
+from plm_assistant.modules.project.api.department_list_cursor import DepartmentListCursorCodec
+from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
+from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
@@ -250,6 +260,56 @@ def main():
                     assert db.execute("SELECT count(*) FROM plm.prj_departments WHERE department_id=%s", (http_id,)).fetchone()[0] == 1
                     assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s", (http_id,)).fetchone()[0] == 1
                     assert db.execute("SELECT count(*) FROM plm.prj_department_create_results WHERE department_id=%s", (http_id,)).fetchone()[0] == 1
+                settings = BootstrapSettings(
+                    data_root=Path.cwd(), trusted_origins=("http://localhost",),
+                )
+                with mock_patch("plm_assistant.entrypoints.production_login.read_database_url",
+                                return_value=url), mock_patch(
+                                "plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services",
+                                return_value=SimpleNamespace(guard=guard)), mock_patch(
+                                "plm_assistant.entrypoints.production_login.create_windows_secret_list_cursor_codec",
+                                return_value=SecretListCursorCodec(b"q" * 32)), mock_patch(
+                                "plm_assistant.entrypoints.production_login.create_windows_project_member_cursor_codec",
+                                return_value=MemberListCursorCodec(b"m" * 32)), mock_patch(
+                                "plm_assistant.entrypoints.production_login.create_windows_project_department_cursor_codec",
+                                return_value=DepartmentListCursorCodec(b"d" * 32)), mock_patch(
+                                "plm_assistant.entrypoints.windows_secret_write.create_windows_secret_write_service",
+                                return_value=Mock()):
+                    for factory, suffix in (
+                        (create_production_platform_app, "read"),
+                        (create_production_platform_write_app, "write"),
+                    ):
+                        production = factory(settings)
+                        with TestClient(production, base_url="http://localhost") as client:
+                            path = f"/api/v1/projects/{p1}/departments"
+                            headers = {"origin": "http://localhost",
+                                       "cookie": "plm_session=" + tokens["pm1"].hex(),
+                                       "x-csrf-token": CSRF.hex(),
+                                       "idempotency-key": f"department-platform-{suffix}-001"}
+                            body = {"code": f"PLATFORM-{suffix.upper()}", "name": "Platform Department"}
+                            first_platform = client.post(path, headers=headers, json=body)
+                            replay_platform = client.post(path, headers=headers, json=body)
+                            assert first_platform.status_code == replay_platform.status_code == 201, (first_platform.text, replay_platform.text)
+                            assert first_platform.json()["data"] == replay_platform.json()["data"]
+                            platform_id = uuid.UUID(first_platform.json()["data"]["department_id"])
+                            assert client.post(path, headers={**headers, "cookie": "plm_session=" + tokens["cm"].hex(),
+                                                              "idempotency-key": f"department-platform-role-{suffix}"},
+                                               json=body).status_code == 404
+                            guard.valid = False
+                            assert client.post(path, headers=headers, json=body).status_code == 403
+                            guard.valid = True
+                        with connect(name) as db:
+                            assert db.execute("SELECT count(*) FROM plm.prj_departments WHERE department_id=%s", (platform_id,)).fetchone()[0] == 1
+                            assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s", (platform_id,)).fetchone()[0] == 1
+                    with mock_patch("plm_assistant.entrypoints.production_login.create_windows_project_department_cursor_codec",
+                                    side_effect=RuntimeError("synthetic missing department key")):
+                        try:
+                            create_production_platform_app(settings)
+                        except Exception as exc:
+                            assert str(exc) == "production login unavailable"
+                        else:
+                            raise AssertionError("missing trust source did not fail closed")
+                with connect(name) as db:
                     db.execute("UPDATE plm.prj_departments SET state='INACTIVE' WHERE department_id=%s", (created.department_id,))
                 reused = create(code="abc")
                 assert reused.department_id != created.department_id
@@ -271,7 +331,7 @@ def main():
                     assert "department create results exist" in str(exc)
                 else:
                     raise AssertionError("nonempty department result downgrade should fail")
-                print("PASS: empty/existing-data migration, ORM drift, optional HTTP create replay/security, concurrency, immutable snapshots, rollback and downgrade guard")
+                print("PASS: migration/ORM, optional and Windows platform Department HTTP replay/security, concurrency, immutable snapshots, rollback and downgrade guard")
             finally:
                 runtime.dispose()
         finally:
