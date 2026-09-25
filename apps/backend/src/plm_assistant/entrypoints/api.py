@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -27,6 +27,7 @@ def create_app(
     readiness_checks: Iterable[ReadinessCheck] | None = None,
     loggers: StructuredLoggers | None = None,
     login_router: APIRouter | None = None,
+    shutdown_callback: Callable[[], None] | None = None,
 ) -> FastAPI:
     """Create one isolated API application instance.
 
@@ -44,6 +45,8 @@ def create_app(
             yield
         finally:
             health_service.mark_stopped()
+            if shutdown_callback is not None:
+                shutdown_callback()
 
     app = FastAPI(
         title=APP_TITLE,

@@ -1631,3 +1631,15 @@
 |Reason|安全数据库凭据是 AUT-03-A07 的真实前置；使用系统账户保护的持久存储，比把密码保存在普通配置中更符合已冻结 Secret 边界。固定 Target 防止运行时路径注入；测试只操作 UUID 合成 Target。|
 |Impact|新增 Windows 专有基础设施和部署入口；无 Schema/Migration、新依赖或公开 API。目标服务账户需现场录入，跨账户/跨机器不自动迁移；Debian 仍需独立来源。Python/SQLAlchemy 内存副本不可保证绝对清零。|
 |Rollback|停止调用该来源并关闭服务；生产 Vault 凭据不会自动删除，由部署管理员通过系统凭据管理手工移除或轮换。|
+
+## DEC-20260925-029
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-029|
+|Date|2026-09-25|
+|WBS|AUT-03-A07-P03 Windows 生产登录组合根|
+|Decision|单独提供显式 Windows 登录应用工厂，不更改普通 `create_app()` 的默认无登录行为。启动顺序为可信 Origin 策略 → 当前账户 Credential Manager 数据库 URL → PostgreSQL 连通性与 `plm.alembic_version` 等于包内迁移 head → 真实 Auth/Project/Audit 接线；任一步失败均不发布应用且释放连接。进程退出释放 Engine。本机 Uvicorn 明文入口只绑定回环 IP，禁用代理头信任；对外 HTTPS 由本机受控反向代理提供。|
+|Reason|让 CR-AUT-002 的项目摘要与安全来源成为真实生产依赖，同时避免把测试注入应用冒充默认产品入口。仅 `SELECT 1` 不能证明 Schema 已升级；非回环明文监听会让密码暴露于网络。|
+|Impact|新增组合根、Windows 启动入口及应用生命周期清理；无 Schema/Migration、新依赖或冻结 API 变化。Windows 11 合成 PostgreSQL/Windows Vault 链路已验证；Server 2025 服务账户、HTTPS 代理与 Debian 来源仍需单独验收，不能由本项推定通过。|
+|Rollback|不调用 Windows 启动入口即可保留原默认健康-only 应用；无数据迁移，已签发的测试 Session 随一次性库删除。|
