@@ -192,6 +192,7 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(client.post("/api/v1/projects/00000000-0000-0000-0000-000000000001/departments/00000000-0000-0000-0000-000000000002:deactivate").status_code, 403)
             self.assertEqual(client.post("/api/v1/projects/00000000-0000-0000-0000-000000000001/members").status_code, 403)
             self.assertEqual(client.post("/api/v1/global/document-uploads").status_code, 404)
+            self.assertEqual(client.put("/api/v1/global/document-uploads/00000000-0000-0000-0000-000000000001/content").status_code, 404)
             self.assertEqual(client.patch("/api/v1/projects/00000000-0000-0000-0000-000000000001/members/00000000-0000-0000-0000-000000000002").status_code, 403)
             for action in ("suspend", "resume", "remove"):
                 self.assertEqual(client.post("/api/v1/projects/00000000-0000-0000-0000-000000000001/members/00000000-0000-0000-0000-000000000002:" + action).status_code, 403)
@@ -316,6 +317,7 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(client.post("/api/v1/projects").status_code, 403)
             self.assertEqual(client.post("/api/v1/global/document-uploads").status_code, 403)
             self.assertEqual(client.post("/api/v1/projects/00000000-0000-0000-0000-000000000001/document-uploads").status_code, 403)
+            self.assertEqual(client.put("/api/v1/global/document-uploads/00000000-0000-0000-0000-000000000001/content").status_code, 403)
             self.assertEqual(client.patch("/api/v1/projects/00000000-0000-0000-0000-000000000001").status_code, 403)
             self.assertEqual(client.post("/api/v1/projects/00000000-0000-0000-0000-000000000001:archive").status_code, 403)
             self.assertEqual(client.get("/api/v1/projects/00000000-0000-0000-0000-000000000001/members").status_code, 401)

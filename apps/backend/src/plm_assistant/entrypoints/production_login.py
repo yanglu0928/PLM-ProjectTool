@@ -98,6 +98,11 @@ from plm_assistant.modules.document.api.create_upload import create_document_upl
 from plm_assistant.modules.document.application.create_upload_intent import CreateUploadIntentService
 from plm_assistant.modules.document.application.upload_access import DocumentUploadAccess
 from plm_assistant.modules.document.infrastructure.upload_intent_repository import SqlAlchemyUploadIntentRepository
+from plm_assistant.modules.document.api.upload_content import create_document_upload_content_router
+from plm_assistant.modules.document.application.receive_upload_content import ReceiveUploadContentService
+from plm_assistant.modules.document.infrastructure.upload_content_repository import SqlAlchemyUploadContentRepository
+from plm_assistant.modules.document.infrastructure.content_spool import ValidatedContentSpool
+from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage
 
 
 class ProductionLoginStartupError(RuntimeError):
@@ -204,6 +209,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         project_department_patch_router = None
         project_department_deactivate_router = None
         document_upload_create_router = None
+        document_upload_content_router = None
         if include_secret_read:
             from plm_assistant.entrypoints.windows_license_runtime import (
                 create_windows_license_services,
@@ -416,6 +422,33 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                     sessions=sessions, origins=origins, license_guard=licenses.guard,
                     service_factory=upload_service,
                 )
+                upload_storage = LocalFileStorage(settings.data_root)
+                upload_spool = ValidatedContentSpool(
+                    storage=upload_storage, max_bytes=100_000_000,
+                    allowed_extensions=frozenset({
+                        ".pdf", ".docx", ".xlsx", ".pptx", ".png", ".jpg", ".jpeg",
+                        ".tif", ".tiff", ".txt", ".csv",
+                    }),
+                )
+
+                def content_service(token: bytes, csrf: bytes) -> ReceiveUploadContentService:
+                    return ReceiveUploadContentService(
+                        unit_of_work=runtime.unit_of_work,
+                        access=DocumentUploadAccess(
+                            session_token=token, csrf_token=csrf,
+                            session_access=SqlAlchemyProjectWriteAccess(),
+                            admin_access=SqlAlchemyLicenseImportAccess(),
+                            project_facts=SqlAlchemyProjectAuthorizationRepository(),
+                            upload_owner=upload_repository,
+                        ),
+                        repository=SqlAlchemyUploadContentRepository(), audit=audit,
+                        spool=upload_spool, storage=upload_storage,
+                        license_guard=licenses.guard,
+                    )
+
+                document_upload_content_router = create_document_upload_content_router(
+                    sessions=sessions, origins=origins, service_factory=content_service,
+                )
         return create_app(
             readiness_checks=(runtime.is_ready,),
             login_router=router,
@@ -440,6 +473,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             project_department_patch_router=project_department_patch_router,
             project_department_deactivate_router=project_department_deactivate_router,
             document_upload_create_router=document_upload_create_router,
+            document_upload_content_router=document_upload_content_router,
             shutdown_callback=runtime.dispose,
         )
     except Exception:

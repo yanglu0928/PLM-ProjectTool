@@ -2639,3 +2639,15 @@
 |Reason|冻结 API-02 要求上传创建的 Session、License、CSRF、幂等和审计，用户不可通过已认证的其他写路由绕过上传专用密钥前置。|
 |Impact|Windows 组合根与生产模式契约；无 Schema/Breaking API/新依赖。|
 |Rollback|撤下该显式 Router，上传路径恢复 404；已持久化意图按过期/终止流程处理，不删除其他数据。正式目标账户材料和 Content/Commit 仍须另行验证。|
+
+## DEC-20260926-113
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-113|
+|Date|2026-09-26|
+|WBS|DOC-03-A04-A03-P04-P03 流式 Content HTTP|
+|Decision|Content PUT 仅在显式 Windows 写模式挂载；要求固定 Scope 路径、可信 Origin、Session/CSRF、专用 Upload Token、严格 Content-Length 与 SHA-256 声明。HTTP 异步请求流通过 AnyIO 线程桥逐段供给现有同步 Content Service，单段最多 1 MiB，不在 HTTP 层整体缓存正文。服务在流前/流后分别校验 License Guard 与当前 Session/项目角色/创建者。|
+|Reason|内部 Content 已具备暂存、类型/Hash/长度和数据库原子登记，但直接读取整份 HTTP 正文将突破有界内存目标；只在流前检查许可会让长传输后的状态变化失效。|
+|Impact|Document 可选 API、Content Service 授权时序、Windows 组合与测试；无 Schema/冻结 API 破坏。|
+|Rollback|撤下 Content Router，已创建意图自然过期；孤儿暂存依已有受控恢复/TTL 清理流程，不执行任意文件删除。|

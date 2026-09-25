@@ -70,17 +70,24 @@ class UploadContentRepositoryPort(Protocol):
                        expected: UploadContentIntent) -> uuid.UUID: ...
 
 
+class UploadContentLicensePort(Protocol):
+    def require_valid(self, *, trace_id: uuid.UUID) -> object: ...
+
+
 class ReceiveUploadContentService:
     def __init__(self, *, unit_of_work: Callable[[], object], access: UploadContentAccessPort,
                  repository: UploadContentRepositoryPort, audit: AuditService,
-                 spool: ValidatedContentSpool, storage: LocalFileStorage) -> None:
+                 spool: ValidatedContentSpool, storage: LocalFileStorage,
+                 license_guard: UploadContentLicensePort | None = None) -> None:
         if any(value is None for value in (unit_of_work, access, repository, audit, spool, storage)):
             raise ValueError("Upload content dependencies are required")
         self._uow, self._access, self._repository = unit_of_work, access, repository
         self._audit, self._spool, self._storage = audit, spool, storage
+        self._license_guard = license_guard
 
     def receive(self, command: ReceiveUploadContent, *, chunks: Iterable[bytes]) -> ReceivedUploadContent:
         self._validate(command)
+        self._licensed(command)
         with self._uow() as tx:
             self._authorize(tx, command)
             intent = self._repository.preflight(tx, command=command)
@@ -94,6 +101,7 @@ class ReceiveUploadContentService:
                 )
             except LocalStorageError:
                 raise UploadContentError("FILE_INTEGRITY_MISMATCH") from None
+            self._licensed(command)
             with self._uow() as tx:
                 self._authorize(tx, command)
                 file_id = self._repository.confirm_replay(
@@ -130,6 +138,7 @@ class ReceiveUploadContentService:
 
     def _stage(self, command: ReceiveUploadContent, intent: UploadContentIntent,
                proof: StagedContentProof) -> ReceivedUploadContent:
+        self._licensed(command)
         with self._uow() as tx:
             self._authorize(tx, command)
             file_id = self._repository.stage(
@@ -151,6 +160,10 @@ class ReceiveUploadContentService:
             command.upload_id, file_id, proof.size_bytes,
             proof.sha256, proof.detected_mime,
         )
+
+    def _licensed(self, command: ReceiveUploadContent) -> None:
+        if self._license_guard is not None:
+            self._license_guard.require_valid(trace_id=command.trace_id)
 
     def _authorize(self, tx: object, command: ReceiveUploadContent) -> None:
         self._access.require_in_transaction(

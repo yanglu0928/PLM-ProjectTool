@@ -38,6 +38,12 @@ COMMON_ERRORS: dict[str, ErrorSpec] = {
     "FILE_UPLOAD_EXPIRED": ErrorSpec(
         "FILE_UPLOAD_EXPIRED", 409, "上传意图已过期或已终止。"
     ),
+    "FILE_INTEGRITY_MISMATCH": ErrorSpec(
+        "FILE_INTEGRITY_MISMATCH", 409, "文件内容与声明不一致。"
+    ),
+    "FILE_CONTENT_UNAVAILABLE": ErrorSpec(
+        "FILE_CONTENT_UNAVAILABLE", 503, "文件内容暂不可用。"
+    ),
     "VALIDATION_FAILED": ErrorSpec("VALIDATION_FAILED", 422, "请求内容不符合要求。"),
     "PLATFORM_SECRET_PURPOSE_INVALID": ErrorSpec(
         "PLATFORM_SECRET_PURPOSE_INVALID", 422, "Secret 用途或使用方不受支持。"

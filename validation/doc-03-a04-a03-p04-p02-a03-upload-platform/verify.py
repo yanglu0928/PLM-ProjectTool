@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import tempfile
 import uuid
 from pathlib import Path
 from types import SimpleNamespace
@@ -83,7 +84,7 @@ def headers(token, key):
 
 def main():
     name = "doc03p04a03_" + uuid.uuid4().hex[:8]
-    with connect("postgres") as admin:
+    with tempfile.TemporaryDirectory() as temporary_root, connect("postgres") as admin:
         admin.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(name)))
         try:
             url = URL.create("postgresql+psycopg", username=USER, host=HOST,
@@ -120,7 +121,7 @@ def main():
                         "VALUES (%s,%s,%s,%s)",
                         (project, users[role], dept, project_role),
                     )
-            settings = BootstrapSettings(data_root=Path.cwd(), trusted_origins=("http://localhost",))
+            settings = BootstrapSettings(data_root=Path(temporary_root), trusted_origins=("http://localhost",))
             guard = Guard()
             issuer = HmacUploadTokenIssuer(provider=Key(), key_ref="document-upload-token-v1")
             with patch("plm_assistant.entrypoints.production_login.read_database_url",
@@ -154,6 +155,23 @@ def main():
                     assert first.json()["data"] == replay.json()["data"]
                     assert first.headers["cache-control"] == "no-store"
                     upload_id = uuid.UUID(first.json()["data"]["upload_id"])
+                    content = b"%PDF-1.7\nsynthetic interview\n%%EOF\n"
+                    content_path = path + f"/{upload_id}/content"
+                    content_headers = {**headers(tokens["PM"], "unused-content-key"),
+                                       "x-upload-token": first.json()["data"]["upload_token"],
+                                       "x-content-sha256": hashlib.sha256(content).hexdigest(),
+                                       "content-type": "application/octet-stream"}
+                    staged = client.put(content_path, headers=content_headers, content=content)
+                    retried = client.put(content_path, headers=content_headers, content=content)
+                    assert staged.status_code == retried.status_code == 200, (staged.text, retried.text)
+                    assert staged.json()["data"] == retried.json()["data"]
+                    assert staged.json()["data"]["size_bytes"] == len(content)
+                    wrong_body = client.put(content_path, headers=content_headers, content=content + b"x")
+                    assert wrong_body.status_code == 409, wrong_body.text
+                    wrong_actor = client.put(content_path, headers={
+                        **content_headers, "cookie": "plm_session=" + tokens["IM"].hex(),
+                    }, content=content)
+                    assert wrong_actor.status_code == 404, wrong_actor.text
                     for role in ("IM", "CM"):
                         result = client.post(path, headers=headers(tokens[role], "upload-" + role.lower() + "-key-0001"), json=body)
                         assert result.status_code == 201, (role, result.text)
@@ -174,6 +192,8 @@ def main():
                     guard.enabled = False
                     denied = client.post(path, headers=headers(tokens["PM"], "upload-license-key-0001"), json=body)
                     assert denied.status_code == 403, denied.text
+                    denied_content = client.put(content_path, headers=content_headers, content=content)
+                    assert denied_content.status_code == 403, denied_content.text
                     guard.enabled = True
                     with connect(name) as db:
                         db.execute("UPDATE plm.prj_project_members SET project_role='CUSTOMER_MEMBER' "
@@ -188,8 +208,11 @@ def main():
                     assert denied.status_code == 401, denied.text
                 with connect(name) as db:
                     assert db.execute("SELECT count(*) FROM plm.doc_upload_intents").fetchone()[0] == 4
+                    assert db.execute("SELECT count(*) FROM plm.doc_file_objects WHERE file_object_id=%s", (upload_id,)).fetchone()[0] == 1
                     assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s "
                                       "AND action='DOCUMENT_UPLOAD_CREATE'", (upload_id,)).fetchone()[0] == 1
+                    assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s "
+                                      "AND action='DOCUMENT_UPLOAD_CONTENT_STAGED'", (upload_id,)).fetchone()[0] == 1
                 print("DOC-03-A04-A03-P04-P02-A03 Windows composition/PostgreSQL synthetic verification: PASS")
         finally:
             admin.execute(sql.SQL("DROP DATABASE {} WITH (FORCE)").format(sql.Identifier(name)))
