@@ -90,6 +90,7 @@ def main() -> None:
                         app = create_production_login_app(settings, credential_target=target)
                         with TestClient(create_app(), base_url="http://localhost") as bare:
                             assert bare.post("/api/v1/auth/login").status_code == 404
+                            assert bare.get("/api/v1/auth/session").status_code == 404
                         with TestClient(app, base_url="http://localhost",
                                         client=(HOST, 50000)) as client:
                             assert client.get("/health/ready").status_code == 200
@@ -108,10 +109,19 @@ def main() -> None:
                             assert len(good.json()["data"]["csrf_token"]) == 64
                             assert "HttpOnly" in good.headers["set-cookie"]
                             assert "synthetic-login-password" not in good.text
+                            current = client.get("/api/v1/auth/session")
+                            assert current.status_code == 200, current.text
+                            assert current.json()["data"]["authorized_projects"] == good.json()["data"]["authorized_projects"]
+                            assert "csrf_token" not in current.text and "set-cookie" not in current.headers
+                            with connect(dbname) as db:
+                                db.execute("UPDATE plm.prj_project_members SET state='SUSPENDED' WHERE project_id=%s AND user_id=%s",
+                                           (project, user))
+                            refreshed = client.get("/api/v1/auth/session")
+                            assert refreshed.status_code == 200 and refreshed.json()["data"]["authorized_projects"] == []
                     with connect(dbname) as db:
                         assert db.execute("SELECT count(*) FROM plm.auth_sessions").fetchone()[0] == 1
                         assert db.execute("SELECT count(*) FROM plm.aud_events WHERE action='SESSION_ISSUED'").fetchone()[0] == 1
-                    print("PASS: Windows Vault, real PostgreSQL login, Project summary, Cookie/CSRF, denial and Audit")
+                    print("PASS: Windows Vault, real PostgreSQL login, live Session GET/project summary, Cookie/CSRF, denial and Audit")
                 finally:
                     delete_test_credential(target)
             finally:

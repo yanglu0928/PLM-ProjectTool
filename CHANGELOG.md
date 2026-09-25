@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-25：`0.1.0.dev0`/AUT-03-A08 新增可选挂载的当前 Session GET：可信 Host、严格唯一 Cookie、现行 Session/身份/ProjectMember 摘要，响应不含 CSRF/Token 或新 Cookie；生产 Windows 组合根挂载，普通应用仍 404。Windows 11/Python 3.13 后端 320/320、PostgreSQL 18.6 真实登录后成员状态即时刷新及 wheel 构建 PASS。无 Migration/新依赖或 Breaking Change；升级无需数据操作。Server 2025/Debian 13 未验证，续期/注销、License/Secret 管理和最终程序包尚未完成。
+
 - 2026-09-25：`0.1.0.dev0`/AUT-03-A07-P03 新增 Windows 登录生产组合根与本机回环启动入口：当前账户凭据、可信 Origin、当前 Alembic Schema、真实 Auth/Project/Audit 依赖及数据库关闭释放；默认应用仍 404。Windows 11/Python 3.13 后端 316/316、PostgreSQL 18.6+合成 Vault 凭据完整登录/项目摘要/Cookie/CSRF/审计、wheel 构建 PASS。无 Migration/新依赖，升级前需将库迁移到包内 head 并由目标账户录入凭据。Server 2025/Debian 13 未验证；HTTPS 代理、服务安装、Session 后续端点和 Gate 3/UAT 仍待完成。
 
 - 2026-09-25：`0.1.0.dev0`/AUT-03-A07-P02 新增 Windows Credential Manager 当前账户的数据库 URL 安全来源及无回显本机录入入口；不写入仓库、普通配置或命令行参数。Windows 11/Python 3.13 合成凭据写入/读取/轮换、后端 309/309、wheel 构建 PASS；无 Migration、新依赖或公开 API，升级需由目标服务账户现场录入数据库凭据。Server 2025 未实测；Debian 13 来源未实现/未验证。已知问题：生产登录组合根尚未接线，账户/机器恢复须重录，默认登录仍 404。

@@ -27,6 +27,7 @@ def create_app(
     readiness_checks: Iterable[ReadinessCheck] | None = None,
     loggers: StructuredLoggers | None = None,
     login_router: APIRouter | None = None,
+    session_router: APIRouter | None = None,
     shutdown_callback: Callable[[], None] | None = None,
 ) -> FastAPI:
     """Create one isolated API application instance.
@@ -64,4 +65,6 @@ def create_app(
     app.include_router(create_health_router(health_service))
     if login_router is not None:
         app.include_router(login_router)
+    if session_router is not None:
+        app.include_router(session_router)
     return app

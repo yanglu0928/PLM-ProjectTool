@@ -1643,3 +1643,15 @@
 |Reason|让 CR-AUT-002 的项目摘要与安全来源成为真实生产依赖，同时避免把测试注入应用冒充默认产品入口。仅 `SELECT 1` 不能证明 Schema 已升级；非回环明文监听会让密码暴露于网络。|
 |Impact|新增组合根、Windows 启动入口及应用生命周期清理；无 Schema/Migration、新依赖或冻结 API 变化。Windows 11 合成 PostgreSQL/Windows Vault 链路已验证；Server 2025 服务账户、HTTPS 代理与 Debian 来源仍需单独验收，不能由本项推定通过。|
 |Rollback|不调用 Windows 启动入口即可保留原默认健康-only 应用；无数据迁移，已签发的测试 Session 随一次性库删除。|
+
+## DEC-20260925-030
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-030|
+|Date|2026-09-25|
+|WBS|AUT-03-A08 当前 Session 查询 HTTP|
+|Decision|冻结 GET Session 仅验证唯一严格格式的 `plm_session` Cookie 和当前 Session，再读取最新 User/ProjectMember 摘要；响应只含身份、授权摘要与到期时间，不回显 Cookie/Token/CSRF，也不刷新期限。只读请求必须有单一可信 Host；若客户端提供 Origin 则仍按已冻结登录来源策略精确校验，不要求浏览器 GET 必须带 Origin。仅显式生产组合根挂载，普通应用继续 404。|
+|Reason|API-02 对 GET 标记 `S` 而非 `C`，CSRF 原值仅在创建/轮换响应发放；强行要求所有 GET 带 Origin 会拒绝合法浏览器读取。Host 必须可信以避免不受信域名承载 Cookie 身份投影，实时摘要不能复用登录时的旧权限。|
+|Impact|新增 Auth 只读 HTTP 入口、Host 策略及生产显式挂载；无 Schema/Migration、新依赖或冻结 API Breaking Change。Windows 11 真实 PostgreSQL 验证成员暂停后摘要即时刷新；业务请求仍须逐操作重新授权。|
+|Rollback|停止显式挂载 Session Router 即恢复默认 404；GET 不修改 Session/项目数据，无迁移回滚。|

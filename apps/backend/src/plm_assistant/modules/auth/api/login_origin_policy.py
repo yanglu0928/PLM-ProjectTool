@@ -55,6 +55,20 @@ class LoginOriginPolicy:
             raise ValueError("one to sixteen trusted origins are required")
         self._allowed = frozenset(parsed)
 
+    def require_trusted_host(self, headers: Iterable[tuple[bytes, bytes]]) -> None:
+        """Check a read-only request's Host; validate Origin when supplied."""
+
+        entries = tuple(headers)
+        try:
+            hosts = [value.decode("ascii") for name, value in entries if name.lower() == b"host"]
+            origins = [value for name, value in entries if name.lower() == b"origin"]
+        except (AttributeError, TypeError, UnicodeDecodeError):
+            raise LoginOriginError() from None
+        if len(hosts) != 1 or hosts[0].lower() not in {authority for _, authority in self._allowed}:
+            raise LoginOriginError()
+        if origins:
+            self.require_trusted(entries)
+
     def require_trusted(self, headers: Iterable[tuple[bytes, bytes]]) -> None:
         hosts, origins = [], []
         try:

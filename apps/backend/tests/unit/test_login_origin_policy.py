@@ -47,6 +47,22 @@ class LoginOriginPolicyTests(unittest.TestCase):
                 (b"x-forwarded-host", b"plm.example.test"),
             ])
 
+    def test_read_only_host_without_origin_and_optional_origin(self):
+        self.policy.require_trusted_host([(b"host", b"plm.example.test")])
+        self.policy.require_trusted_host([
+            (b"host", b"plm.example.test"), (b"origin", b"https://plm.example.test")
+        ])
+        for headers in (
+            [],
+            [(b"host", b"plm.example.test"), (b"host", b"plm.example.test")],
+            [(b"host", b"evil.test")],
+            [(b"host", b"plm.example.test"), (b"origin", b"https://evil.test")],
+            [(b"host", b"plm.example.test"), (b"origin", b"https://plm.example.test"),
+             (b"origin", b"https://plm.example.test")],
+        ):
+            with self.subTest(headers=headers), self.assertRaises(LoginOriginError):
+                self.policy.require_trusted_host(headers)
+
 
 if __name__ == "__main__":
     unittest.main()

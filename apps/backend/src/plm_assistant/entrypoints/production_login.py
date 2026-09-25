@@ -12,6 +12,7 @@ from plm_assistant.modules.audit.application.public import AuditService
 from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
 from plm_assistant.modules.auth.api.login import create_login_router
 from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
+from plm_assistant.modules.auth.api.session import create_session_read_router
 from plm_assistant.modules.auth.application.login_rate_limit import LoginRateLimiter
 from plm_assistant.modules.auth.application.login_service import LoginService
 from plm_assistant.modules.auth.application.session_service import SessionService
@@ -88,9 +89,11 @@ def create_production_login_app(
             projects=SqlAlchemyAuthorizedProjects(),
         )
         router = create_login_router(login=login, origins=origins, views=views)
+        session_router = create_session_read_router(sessions=sessions, origins=origins, views=views)
         return create_app(
             readiness_checks=(runtime.is_ready,),
             login_router=router,
+            session_router=session_router,
             shutdown_callback=runtime.dispose,
         )
     except Exception:
