@@ -1739,3 +1739,15 @@
 |Reason|现有 StaticPublicKeyResolver 仅是依赖注入边界，生产若从可编辑配置建立信任锚，攻击者可替换公钥并自签 License。包内受信公钥与签发私钥物理隔离，保持 ADR-006 的离线验签边界。|
 |Impact|新增 License 基础设施与发行检查；无签名载荷、Schema、API 或加密算法变更。真实发行密钥与私钥备份仍必须在 Developer Workbench 单独生成和保管；当前未生成时不把生产 License 标 PASS。|
 |Rollback|不装配解析器即可保持原受许可业务关闭；测试公钥不进入正式包，已有 License 文档/数据库不变。|
+
+## DEC-20260925-038
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-038|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P03-A03 Developer Workbench License 签发密钥仪式|
+|Decision|先修正实际工作台私钥目录的完整 Git 忽略规则；仅在本机交互终端从隐藏输入取得由操作员保管的强口令，生成 Ed25519 私钥并以加密 PKCS#8 PEM 独占创建于工作台 private 目录，公钥清单独占创建于客户后端包内。禁止自动用测试钥、空口令、命令行或环境变量口令代替。独立备份/恢复与最终 wheel 验证是发行门禁。|
+|Reason|现有忽略规则只覆盖根级 `developer-workbench/private/`，没有整体覆盖实际 `tools/developer-workbench/private/`；若非 `.pem` 文件误入目录可被 Git 纳入。正式签发私钥尚不存在，不能用合成测试钥冒充生产信任锚。|
+|Impact|修复忽略规则、增加开发者工作台工具与测试，不改冻结载荷、Schema 或公开 API。真实密钥生成依赖人工秘密口令和独立备份保管；工具可先实现/合成验证但未举行仪式前 P03-A02 和发行 Gate 仍未通过。|
+|Rollback|工具不运行则无密钥；若仪式尚未发行，保留生成的加密私钥及公钥供核对，不自动覆盖、轮换或删除。已经发行的公钥不可静默替换。|

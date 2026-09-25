@@ -11,6 +11,7 @@ secrets/
 
 # License private material and generated customer licenses
 developer-workbench/private/
+/tools/developer-workbench/private/
 license/private/
 license/generated/
 
