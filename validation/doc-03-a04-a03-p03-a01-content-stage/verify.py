@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import tempfile
+import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
@@ -19,11 +21,15 @@ from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlche
 from plm_assistant.modules.document.application.create_upload_intent import (
     CreateUploadIntent, CreateUploadIntentService,
 )
+from plm_assistant.modules.document.application.cleanup_upload_orphan import (
+    CleanupUploadOrphan, CleanupUploadOrphanService, OrphanCleanupError,
+)
 from plm_assistant.modules.document.application.receive_upload_content import (
     ReceiveUploadContent, ReceiveUploadContentService, UploadContentError,
 )
 from plm_assistant.modules.document.infrastructure.content_spool import ContentSpoolError, ValidatedContentSpool
 from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage
+from plm_assistant.modules.document.infrastructure.orphan_cleanup_repository import SqlAlchemyOrphanCleanupRepository
 from plm_assistant.modules.document.infrastructure.upload_content_repository import SqlAlchemyUploadContentRepository
 from plm_assistant.modules.document.infrastructure.upload_intent_repository import SqlAlchemyUploadIntentRepository
 from plm_assistant.modules.document.infrastructure.upload_token import HmacUploadTokenIssuer
@@ -55,7 +61,8 @@ class Access:
 
     def require_in_transaction(self, transaction, *, actor_id, operation, **kwargs):
         assert transaction.session.in_transaction()
-        assert operation in ("V1_DOCUMENT_UPLOAD_CREATE", "V1_DOCUMENT_UPLOAD_CONTENT")
+        assert operation in ("V1_DOCUMENT_UPLOAD_CREATE", "V1_DOCUMENT_UPLOAD_CONTENT",
+                             "V1_DOCUMENT_ORPHAN_CLEANUP")
         if actor_id != self.actor:
             raise PermissionError("synthetic denied")
 
@@ -256,7 +263,65 @@ def main():
             expired = ReceiveUploadContent(expired_id, "PROJECT", other, actor,
                                            uuid.uuid4(), token, len(body), sha)
             expect(UploadContentError, lambda: receiver().receive(expired, chunks=[body]), "FILE_UPLOAD_EXPIRED")
-            print("DOC-03-A04-A03-P03-A01/A02-P01/P02 PostgreSQL synthetic verification: PASS")
+            def cleanup_service(audit_override=None):
+                return CleanupUploadOrphanService(
+                    unit_of_work=runtime.unit_of_work, access=access,
+                    repository=SqlAlchemyOrphanCleanupRepository(),
+                    receipts=SqlAlchemyIdempotencyReceipts(),
+                    audit=audit_override or audit, storage=storage,
+                )
+
+            def stale_candidate(suffix):
+                upload_id = uuid.uuid4()
+                with connect(name) as db:
+                    db.execute("INSERT INTO plm.doc_upload_intents(upload_id,scope,project_id,actor_id,document_category,title,original_display_name,purpose_code,token_digest,created_at,expires_at) VALUES (%s,'PROJECT',%s,%s,'PROJECT_RECORD','Expired Cleanup','old.pdf','PROJECT_RECORD',%s,statement_timestamp()-interval '8 days',statement_timestamp()-interval '7 days')", (upload_id, other, actor, hashlib.sha256(suffix.encode()).digest()))
+                locator, _ = storage.locators(scope="PROJECT", project_id=other,
+                                               file_object_id=upload_id)
+                with storage.reserve_staging(locator) as stream:
+                    stream.write(body)
+                old_ns = time.time_ns() - 8 * 86_400 * 1_000_000_000
+                os.utime(root / locator, ns=(old_ns, old_ns))
+                return CleanupUploadOrphan(upload_id, "PROJECT", other, actor, uuid.uuid4()), locator
+
+            stale, stale_locator = stale_candidate("stale-cleanup")
+            expect(PermissionError, lambda: cleanup_service().cleanup_one(
+                replace(stale, actor_id=outsider),
+            ))
+            expect(RuntimeError, lambda: cleanup_service(FailingAudit()).cleanup_one(stale))
+            assert (root / stale_locator).exists()
+            with connect(name) as db:
+                assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='DOCUMENT_ORPHAN_CLEANUP_REQUESTED'", (stale.upload_id,)).fetchone() == (0,)
+            assert cleanup_service().cleanup_one(stale) is True
+            assert not (root / stale_locator).exists()
+            assert cleanup_service().cleanup_one(stale) is False
+            with connect(name) as db:
+                assert db.execute("SELECT action,count(*) FROM plm.aud_events WHERE target_object_id=%s AND action LIKE 'DOCUMENT_ORPHAN_CLEANUP_%%' GROUP BY action ORDER BY action", (stale.upload_id,)).fetchall() == [("DOCUMENT_ORPHAN_CLEANUP_COMPLETED", 1), ("DOCUMENT_ORPHAN_CLEANUP_REQUESTED", 1)]
+                assert db.execute("SELECT count(*) FROM plm.plt_idempotency_receipts WHERE result_ref_id=%s", (stale.upload_id,)).fetchone() == (1,)
+            busy, busy_locator = stale_candidate("busy-cleanup")
+            with storage.locked_existing_staging(busy_locator):
+                expect(OrphanCleanupError, lambda: cleanup_service().cleanup_one(busy),
+                       "FILE_CONTENT_UNAVAILABLE")
+            assert (root / busy_locator).exists()
+            recent_id = uuid.uuid4()
+            with connect(name) as db:
+                db.execute("INSERT INTO plm.doc_upload_intents(upload_id,scope,project_id,actor_id,document_category,title,original_display_name,purpose_code,token_digest,created_at,expires_at) VALUES (%s,'PROJECT',%s,%s,'PROJECT_RECORD','Recent Cleanup','recent.pdf','PROJECT_RECORD',%s,statement_timestamp()-interval '1 day',statement_timestamp()-interval '12 hours')", (recent_id, other, actor, hashlib.sha256(b"recent-cleanup").digest()))
+            recent_locator, _ = storage.locators(scope="PROJECT", project_id=other,
+                                                  file_object_id=recent_id)
+            with storage.reserve_staging(recent_locator) as stream:
+                stream.write(body)
+            old_ns = time.time_ns() - 8 * 86_400 * 1_000_000_000
+            os.utime(root / recent_locator, ns=(old_ns, old_ns))
+            expect(OrphanCleanupError, lambda: cleanup_service().cleanup_one(
+                CleanupUploadOrphan(recent_id, "PROJECT", other, actor, uuid.uuid4()),
+            ), "CONFLICT_STATE")
+            assert (root / recent_locator).exists()
+            protected, protected_locator = stale_candidate("registered-cleanup")
+            with connect(name) as db:
+                db.execute("INSERT INTO plm.doc_file_objects(file_object_id,scope,project_id,storage_class,storage_locator,original_name_metadata,sha256,size_bytes,detected_mime,file_state,created_by) VALUES (%s,'PROJECT',%s,'PERSISTENT',%s,'old.pdf',%s,%s,'application/pdf','STAGED',%s)", (protected.upload_id, other, protected_locator, sha, len(body), actor))
+            expect(OrphanCleanupError, lambda: cleanup_service().cleanup_one(protected),
+                   "CONFLICT_STATE")
+            assert (root / protected_locator).exists()
+            print("DOC-03-A04-A03-P03-A01/A02-P01/P02/P03-P01 PostgreSQL synthetic verification: PASS")
         finally:
             if runtime is not None:
                 runtime.dispose()

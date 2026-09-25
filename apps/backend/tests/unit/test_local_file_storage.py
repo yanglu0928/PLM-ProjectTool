@@ -4,6 +4,7 @@ import os
 import hashlib
 import stat
 import tempfile
+import time
 import unittest
 import uuid
 from pathlib import Path
@@ -44,6 +45,43 @@ class LocalFileStorageTests(unittest.TestCase):
             self.store.promote(stage, final)
         self.assertEqual((self.root / final).read_bytes(), b"synthetic complete content")
         self.assertEqual((self.root / stage).read_bytes(), b"must not overwrite")
+
+    def test_stale_cleanup_requires_same_identity_age_and_no_active_writer(self):
+        stage, _ = self.store.locators(
+            scope="PROJECT", project_id=self.project, file_object_id=self.file_id,
+        )
+        path = self.root / stage
+        with self.store.reserve_staging(stage) as stream:
+            stream.write(b"synthetic orphan")
+            with self.assertRaises(LocalStorageError):
+                self.store.inspect_staging_for_cleanup(stage)
+        old_ns = time.time_ns() - 8 * 86_400 * 1_000_000_000
+        os.utime(path, ns=(old_ns, old_ns))
+        snapshot = self.store.inspect_staging_for_cleanup(stage)
+        self.assertIsNotNone(snapshot)
+        with self.assertRaises(LocalStorageError):
+            self.store.discard_stale_staging(
+                stage, snapshot=snapshot, cutoff_ns=old_ns - 1,
+            )
+        path.write_bytes(b"replacement bytes")
+        with self.assertRaises(LocalStorageError):
+            self.store.discard_stale_staging(
+                stage, snapshot=snapshot, cutoff_ns=time.time_ns(),
+            )
+        self.assertEqual(path.read_bytes(), b"replacement bytes")
+        path.unlink()
+        with self.store.reserve_staging(stage) as stream:
+            stream.write(b"synthetic orphan")
+        os.utime(path, ns=(old_ns, old_ns))
+        with self.assertRaises(LocalStorageError):
+            self.store.discard_stale_staging(
+                stage, snapshot=snapshot, cutoff_ns=time.time_ns(),
+            )
+        new_snapshot = self.store.inspect_staging_for_cleanup(stage)
+        self.store.discard_stale_staging(
+            stage, snapshot=new_snapshot, cutoff_ns=time.time_ns(),
+        )
+        self.assertFalse(path.exists())
 
     def test_verified_publish_streams_bytes_and_hash(self):
         stage, final = self.store.locators(

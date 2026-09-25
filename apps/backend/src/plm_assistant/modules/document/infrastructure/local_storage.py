@@ -44,6 +44,14 @@ class FileRecoveryInspection:
     shape: str
 
 
+@dataclass(frozen=True, slots=True)
+class StagingSnapshot:
+    device: int
+    inode: int
+    size_bytes: int
+    modified_ns: int
+
+
 def _optional_info(path: Path) -> os.stat_result | None:
     try:
         return path.lstat()
@@ -268,6 +276,51 @@ class LocalFileStorage:
                 or opened.st_size != size or current.st_size != size
                 or opened.st_mtime_ns != current.st_mtime_ns):
             raise LocalStorageError()
+
+    def inspect_staging_for_cleanup(self, locator: str) -> StagingSnapshot | None:
+        """Observe a private staged file only when no upload owns its OS lock."""
+        with self.locked_existing_staging(locator) as stream:
+            if stream is None:
+                return None
+            info = os.fstat(stream.fileno())
+            self.check_locked_staging(
+                locator, stream, device=info.st_dev, inode=info.st_ino,
+                size=info.st_size,
+            )
+            return StagingSnapshot(info.st_dev, info.st_ino,
+                                   info.st_size, info.st_mtime_ns)
+
+    def discard_stale_staging(self, locator: str, *, snapshot: StagingSnapshot,
+                              cutoff_ns: int) -> None:
+        """Delete only an unchanged candidate; caller must prove DB eligibility."""
+        if (type(snapshot) is not StagingSnapshot or type(cutoff_ns) is not int
+                or cutoff_ns <= 0 or snapshot.modified_ns > cutoff_ns):
+            raise LocalStorageError()
+        with self.locked_existing_staging(locator) as stream:
+            if stream is None:
+                raise LocalStorageError()
+            info = os.fstat(stream.fileno())
+            if ((info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns) !=
+                    (snapshot.device, snapshot.inode, snapshot.size_bytes,
+                     snapshot.modified_ns)):
+                raise LocalStorageError()
+            self.check_locked_staging(
+                locator, stream, device=snapshot.device, inode=snapshot.inode,
+                size=snapshot.size_bytes,
+            )
+        # Windows cannot unlink while this handle is locked/open. The private
+        # storage root and final inode/mtime check narrow the release window.
+        path = self._path(locator)
+        current = _checked_file(path)
+        if ((current.st_dev, current.st_ino, current.st_size, current.st_mtime_ns) !=
+                (snapshot.device, snapshot.inode, snapshot.size_bytes,
+                 snapshot.modified_ns)
+                or current.st_mtime_ns > cutoff_ns):
+            raise LocalStorageError()
+        try:
+            os.unlink(path)
+        except OSError:
+            raise LocalStorageError() from None
 
     def discard_new_staging(self, locator: str, *, device: int, inode: int) -> None:
         """Remove only the exact unregistered ordinary file created by this request."""
