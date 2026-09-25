@@ -2423,3 +2423,15 @@
 |Reason|冻结 DM-03 恢复矩阵允许最终文件存在且 DB=STAGED 时校验后继续提交；同时存在的硬链接窗口及缺失/损坏需单独隔离策略，不能把未知文件当作完成证明。|
 |Impact|仅 Document 内部 Storage/Application 与合成文件、隔离 PostgreSQL 验证；不新增 Migration、公开 API 或依赖。P04-P02 再处理双路径窗口和隔离分类，P04 整体不因 P01 完成而关闭。|
 |Rollback|停止内部恢复装配；已成功提交的 AVAILABLE 与历史不可回写，失败仍 STAGED 且无物理删除。|
+
+## DEC-20260925-095
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-095|
+|Date|2026-09-25|
+|WBS|DOC-03-A03-P04-P02 双路径硬链接中断窗口恢复|
+|Decision|只允许暂存与最终路径均为同一普通文件的恰好两条硬链接、Scope 派生路径匹配、两侧有界流式 Hash/Size 校验一致时，删除暂存目录项、重新校验独占最终文件，再沿独立恢复幂等作用域与 DB 行锁/Audit/事件同事务提交 AVAILABLE。其他双路径情况失败关闭且不删除、不提升状态。|
+|Reason|当前 Storage Adapter 的无覆盖提升用硬链接后删除暂存入口；崩溃可能恰好落在两步之间。该明确窗口可恢复，但不能将两个不同文件或额外硬链接当作同一可信内容。|
+|Impact|仅内部 Document Storage/Application 和合成 Windows 文件/隔离 PostgreSQL 验证，无 Migration/公开 API/新依赖；异常隔离分类留 P04-P03。|
+|Rollback|停止该内部命令装配；若暂存入口已删而 DB 提交失败，保持 STAGED/最终文件独占，可由 P04-P01 重试，不回写已提交历史。|

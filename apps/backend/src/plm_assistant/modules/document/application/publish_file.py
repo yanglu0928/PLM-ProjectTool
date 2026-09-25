@@ -17,6 +17,7 @@ from plm_assistant.modules.platform.application.idempotency import (
 
 _OPERATION = "V1_DOCUMENT_FILE_PUBLISH"
 _RECOVER_OPERATION = "V1_DOCUMENT_FILE_RECOVER"
+_LINKED_RECOVER_OPERATION = "V1_DOCUMENT_FILE_LINKED_RECOVER"
 
 
 class FilePublishError(RuntimeError):
@@ -79,17 +80,25 @@ class FilePublishService:
         self._storage = storage
 
     def publish(self, command: PublishFile, *, idempotency_key: str) -> uuid.UUID:
-        return self._run(command, idempotency_key=idempotency_key, recovering=False)
+        return self._run(command, idempotency_key=idempotency_key, mode="publish")
 
     def recover_final_only(self, command: PublishFile, *, idempotency_key: str) -> uuid.UUID:
         """Complete a known final-only crash window after rechecking the bytes."""
-        return self._run(command, idempotency_key=idempotency_key, recovering=True)
+        return self._run(command, idempotency_key=idempotency_key, mode="final_only")
+
+    def recover_linked_pair(self, command: PublishFile, *, idempotency_key: str) -> uuid.UUID:
+        """Finish the exact two-hard-link crash window after content proof."""
+        return self._run(command, idempotency_key=idempotency_key, mode="linked_pair")
 
     def _run(self, command: PublishFile, *, idempotency_key: str,
-             recovering: bool) -> uuid.UUID:
+             mode: str) -> uuid.UUID:
         self._validate(command)
         validate_idempotency_key(idempotency_key)
-        operation = _RECOVER_OPERATION if recovering else _OPERATION
+        operation = {
+            "publish": _OPERATION,
+            "final_only": _RECOVER_OPERATION,
+            "linked_pair": _LINKED_RECOVER_OPERATION,
+        }[mode]
         scope = IdempotencyScope.from_key(
             actor_id=command.actor_id, project_id=command.project_id,
             operation=operation, key=idempotency_key,
@@ -115,8 +124,11 @@ class FilePublishService:
             staged = self._repository.staged(tx, command=command)
             # Roll back the provisional receipt; it must be committed only with
             # the state event, Audit, and AVAILABLE update below.
-        verify = (self._storage.recover_verified_final if recovering
-                  else self._storage.publish_verified)
+        verify = {
+            "publish": self._storage.publish_verified,
+            "final_only": self._storage.recover_verified_final,
+            "linked_pair": self._storage.recover_linked_pair,
+        }[mode]
         proof = verify(
             staged.staging_locator, staged.final_locator,
             expected_sha256=staged.sha256, expected_size=staged.size_bytes,
@@ -142,7 +154,7 @@ class FilePublishService:
                 target_project_id=command.project_id,
                 actor_type="USER", actor_id=command.actor_id,
                 original_actor_id=None, actor_hint_digest=None,
-                action="DOCUMENT_FILE_RECOVER" if recovering else "DOCUMENT_FILE_PUBLISH",
+                action="DOCUMENT_FILE_PUBLISH" if mode == "publish" else "DOCUMENT_FILE_RECOVER",
                 outcome="SUCCESS",
                 target_owner_module="document", target_object_type="DOC-03",
                 target_object_id=command.file_object_id, reason_code=None,

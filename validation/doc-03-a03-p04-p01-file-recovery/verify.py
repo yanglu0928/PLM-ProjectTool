@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import tempfile
 import uuid
 from dataclasses import replace
@@ -37,7 +38,7 @@ class SyntheticAccess:
 
     def require_in_transaction(self, transaction, *, actor_id, scope, project_id, operation):
         assert transaction.session.in_transaction()
-        assert operation == "V1_DOCUMENT_FILE_RECOVER"
+        assert operation in ("V1_DOCUMENT_FILE_RECOVER", "V1_DOCUMENT_FILE_LINKED_RECOVER")
         if actor_id != self.actor:
             raise PermissionError("synthetic denied")
 
@@ -131,7 +132,35 @@ def main():
                     assert db.execute("SELECT count(*) FROM plm.doc_file_state_events WHERE file_object_id=%s", (rejected,)).fetchone() == (0,)
                     assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s", (rejected,)).fetchone() == (0,)
                 assert (root / rollback_final).read_bytes() == content
-            print("PASS: DOC-03-A03-P04-P01 final-only recovery, replay, permission, isolation, damage and Audit rollback")
+            linked_id, linked_stage, linked_final = seed(content, final_only=False)
+            (root / linked_final).parent.mkdir(parents=True, exist_ok=True)
+            os.link(root / linked_stage, root / linked_final)
+            linked = replace(cmd, file_object_id=linked_id, trace_id=uuid.uuid4())
+            linked_event = service().recover_linked_pair(linked, idempotency_key="doc03-linked-recovery-good")
+            assert service().recover_linked_pair(linked, idempotency_key="doc03-linked-recovery-good") == linked_event
+            assert not (root / linked_stage).exists() and (root / linked_final).read_bytes() == content
+            with connect(name) as db:
+                assert db.execute("SELECT file_state,storage_locator,lock_version FROM plm.doc_file_objects WHERE file_object_id=%s", (linked_id,)).fetchone() == ("AVAILABLE", linked_final, 1)
+                assert db.execute("SELECT count(*) FROM plm.doc_file_state_events WHERE file_object_id=%s", (linked_id,)).fetchone() == (1,)
+                assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s", (linked_id,)).fetchone() == (1,)
+            unrelated_id, unrelated_stage, unrelated_final = seed(content, final_only=False)
+            (root / unrelated_final).parent.mkdir(parents=True, exist_ok=True)
+            (root / unrelated_final).write_bytes(content)
+            unrelated = replace(cmd, file_object_id=unrelated_id, trace_id=uuid.uuid4())
+            expect(LocalStorageError, lambda: service().recover_linked_pair(unrelated, idempotency_key="doc03-linked-unrelated"))
+            assert (root / unrelated_stage).exists() and (root / unrelated_final).exists()
+            linked_rollback_id, linked_rollback_stage, linked_rollback_final = seed(content, final_only=False)
+            (root / linked_rollback_final).parent.mkdir(parents=True, exist_ok=True)
+            os.link(root / linked_rollback_stage, root / linked_rollback_final)
+            linked_rollback = replace(cmd, file_object_id=linked_rollback_id, trace_id=uuid.uuid4())
+            expect(RuntimeError, lambda: service(FailingAudit()).recover_linked_pair(linked_rollback, idempotency_key="doc03-linked-rollback"))
+            assert not (root / linked_rollback_stage).exists() and (root / linked_rollback_final).read_bytes() == content
+            with connect(name) as db:
+                for rejected in (unrelated_id, linked_rollback_id):
+                    assert db.execute("SELECT file_state,lock_version FROM plm.doc_file_objects WHERE file_object_id=%s", (rejected,)).fetchone() == ("STAGED", 0)
+                    assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s", (rejected,)).fetchone() == (0,)
+            assert service().recover_final_only(linked_rollback, idempotency_key="doc03-linked-followup-final")
+            print("PASS: DOC-03-A03-P04-P01/P02 final-only and linked-pair recovery, replay, permission, isolation, damage and Audit rollback")
         finally:
             if runtime is not None:
                 runtime.dispose()

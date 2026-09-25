@@ -108,6 +108,53 @@ class LocalFileStorageTests(unittest.TestCase):
                 expected_size=len(content), max_bytes=len(content),
             )
 
+    def test_recover_only_exact_linked_pair(self):
+        stage, final = self.store.locators(
+            scope="GLOBAL", project_id=None, file_object_id=self.file_id,
+        )
+        content = b"synthetic linked crash window"
+        digest = hashlib.sha256(content).digest()
+        with self.store.reserve_staging(stage) as stream:
+            stream.write(content)
+        (self.root / final).parent.mkdir(parents=True)
+        os.link(self.root / stage, self.root / final)
+        proof = self.store.recover_linked_pair(
+            stage, final, expected_sha256=digest,
+            expected_size=len(content), max_bytes=len(content),
+        )
+        self.assertEqual((proof.locator, proof.sha256, proof.size_bytes),
+                         (final, digest, len(content)))
+        self.assertFalse((self.root / stage).exists())
+        self.assertEqual((self.root / final).read_bytes(), content)
+
+    def test_linked_recovery_rejects_extra_or_unrelated_links(self):
+        stage, final = self.store.locators(
+            scope="GLOBAL", project_id=None, file_object_id=self.file_id,
+        )
+        content = b"synthetic linked crash window"
+        digest = hashlib.sha256(content).digest()
+        with self.store.reserve_staging(stage) as stream:
+            stream.write(content)
+        (self.root / final).parent.mkdir(parents=True)
+        os.link(self.root / stage, self.root / final)
+        extra = Path(self.temporary.name) / "extra-link"
+        os.link(self.root / stage, extra)
+        with self.assertRaises(LocalStorageError):
+            self.store.recover_linked_pair(
+                stage, final, expected_sha256=digest,
+                expected_size=len(content), max_bytes=len(content),
+            )
+        self.assertTrue((self.root / stage).exists())
+        extra.unlink()
+        (self.root / final).unlink()
+        (self.root / final).write_bytes(content)
+        with self.assertRaises(LocalStorageError):
+            self.store.recover_linked_pair(
+                stage, final, expected_sha256=digest,
+                expected_size=len(content), max_bytes=len(content),
+            )
+        self.assertTrue((self.root / stage).exists())
+
     def test_global_scope_and_invalid_uuids_rejected(self):
         stage, final = self.store.locators(
             scope="GLOBAL", project_id=None, file_object_id=self.file_id,

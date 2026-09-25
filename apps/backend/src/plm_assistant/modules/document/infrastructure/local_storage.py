@@ -53,12 +53,12 @@ def _checked_directory(path: Path) -> None:
         raise LocalStorageError()
 
 
-def _checked_file(path: Path) -> os.stat_result:
+def _checked_file(path: Path, *, link_count: int = 1) -> os.stat_result:
     try:
         info = path.lstat()
     except OSError:
         raise LocalStorageError() from None
-    if not stat.S_ISREG(info.st_mode) or _is_reparse(info) or info.st_nlink != 1:
+    if not stat.S_ISREG(info.st_mode) or _is_reparse(info) or info.st_nlink != link_count:
         raise LocalStorageError()
     return info
 
@@ -156,13 +156,21 @@ class LocalFileStorage:
 
     def verify_content(self, locator: str, *, expected_sha256: bytes,
                        expected_size: int, max_bytes: int) -> FileContentProof:
+        return self._verify_content(
+            locator, expected_sha256=expected_sha256,
+            expected_size=expected_size, max_bytes=max_bytes, link_count=1,
+        )
+
+    def _verify_content(self, locator: str, *, expected_sha256: bytes,
+                        expected_size: int, max_bytes: int,
+                        link_count: int) -> FileContentProof:
         if (type(expected_sha256) is not bytes or len(expected_sha256) != 32
                 or type(expected_size) is not int or expected_size < 0
                 or type(max_bytes) is not int or max_bytes < 0
                 or expected_size > max_bytes):
             raise LocalStorageError()
         path = self._path(locator)
-        before = _checked_file(path)
+        before = _checked_file(path, link_count=link_count)
         if before.st_size != expected_size:
             raise LocalStorageError()
         flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
@@ -171,7 +179,7 @@ class LocalFileStorage:
             with os.fdopen(descriptor, "rb") as stream:
                 opened = os.fstat(stream.fileno())
                 if (not stat.S_ISREG(opened.st_mode) or _is_reparse(opened)
-                        or opened.st_nlink != 1
+                        or opened.st_nlink != link_count
                         or (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino)):
                     raise LocalStorageError()
                 digest = hashlib.sha256()
@@ -182,13 +190,15 @@ class LocalFileStorage:
                         raise LocalStorageError()
                     digest.update(chunk)
                 after_fd = os.fstat(stream.fileno())
-            after_path = _checked_file(path)
+            after_path = _checked_file(path, link_count=link_count)
             if ((after_fd.st_dev, after_fd.st_ino, after_fd.st_size,
-                 after_fd.st_mtime_ns) !=
-                (opened.st_dev, opened.st_ino, opened.st_size, opened.st_mtime_ns)
+                 after_fd.st_mtime_ns, after_fd.st_nlink) !=
+                (opened.st_dev, opened.st_ino, opened.st_size,
+                 opened.st_mtime_ns, opened.st_nlink)
                     or (after_path.st_dev, after_path.st_ino, after_path.st_size,
-                        after_path.st_mtime_ns) !=
-                       (opened.st_dev, opened.st_ino, opened.st_size, opened.st_mtime_ns)
+                        after_path.st_mtime_ns, after_path.st_nlink) !=
+                       (opened.st_dev, opened.st_ino, opened.st_size,
+                        opened.st_mtime_ns, opened.st_nlink)
                     or total != expected_size
                     or not hmac.compare_digest(digest.digest(), expected_sha256)):
                 raise LocalStorageError()
@@ -224,6 +234,41 @@ class LocalFileStorage:
         staging_path = self._path(staging_locator)
         if os.path.lexists(staging_path):
             raise LocalStorageError()
+        return self.verify_content(
+            final_locator, expected_sha256=expected_sha256,
+            expected_size=expected_size, max_bytes=max_bytes,
+        )
+
+    def recover_linked_pair(self, staging_locator: str, final_locator: str, *,
+                            expected_sha256: bytes, expected_size: int,
+                            max_bytes: int) -> FileContentProof:
+        """Finish only the exact hard-link-before-unlink promotion window."""
+        if (type(staging_locator) is not str or type(final_locator) is not str
+                or not staging_locator.startswith("temp/")
+                or final_locator != staging_locator.removeprefix("temp/")):
+            raise LocalStorageError()
+        staging_path = self._path(staging_locator)
+        final_path = self._path(final_locator)
+        source = _checked_file(staging_path, link_count=2)
+        target = _checked_file(final_path, link_count=2)
+        if (source.st_dev, source.st_ino) != (target.st_dev, target.st_ino):
+            raise LocalStorageError()
+        self._verify_content(
+            staging_locator, expected_sha256=expected_sha256,
+            expected_size=expected_size, max_bytes=max_bytes, link_count=2,
+        )
+        self._verify_content(
+            final_locator, expected_sha256=expected_sha256,
+            expected_size=expected_size, max_bytes=max_bytes, link_count=2,
+        )
+        source = _checked_file(staging_path, link_count=2)
+        target = _checked_file(final_path, link_count=2)
+        if (source.st_dev, source.st_ino) != (target.st_dev, target.st_ino):
+            raise LocalStorageError()
+        try:
+            os.unlink(staging_path)
+        except OSError:
+            raise LocalStorageError() from None
         return self.verify_content(
             final_locator, expected_sha256=expected_sha256,
             expected_size=expected_size, max_bytes=max_bytes,
