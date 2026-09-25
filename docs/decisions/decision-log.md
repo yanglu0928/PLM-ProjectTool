@@ -2195,3 +2195,15 @@
 |Reason|冻结 API-01 禁止公开内部 keyset ID，现有成员列表游标不可作为部门游标复用，避免资源族混用和错误密钥域。|
 |Impact|新增 Project API 游标编解码与测试；暂不开放 GET，不改 Schema、Migration 或冻结路径。Windows 独立密钥来源由后续组合任务验证。|
 |Rollback|移除尚未公开的部门游标组件；不存在持久数据迁移。|
+
+## DEC-20260925-076
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-076|
+|Date|2026-09-25|
+|WBS|PRJ-04-A13-P02 Department 列表可选 HTTP|
+|Decision|沿用 Project Member 列表的可信 Host、当前 Session、严格分页参数、独立签名游标和安全投影边界；内部部门读取将正式 RuntimeLicenseError 映射为冻结的 `LICENSE_OPERATION_DENIED`。默认应用不挂载。|
+|Reason|冻结 API-01/02 要求受权部门 page、跨项目隐藏和 License 拒绝；内部 keyset ID 不能直接暴露，许可失败不能被误报为 503。|
+|Impact|Project 可选 Router、应用工厂注入点、部门读取错误映射和测试；无新 Schema/Migration/依赖或 Breaking API。|
+|Rollback|移除 Router 注入恢复 404；错误映射可单独恢复但会重新违反冻结 License 错误合同。|

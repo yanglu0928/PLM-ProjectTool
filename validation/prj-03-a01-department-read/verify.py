@@ -8,10 +8,17 @@ from datetime import datetime, timezone
 
 import psycopg
 from alembic import command
+from fastapi.testclient import TestClient
 from psycopg import sql
 from sqlalchemy.engine import URL
 
 from plm_assistant.modules.auth.infrastructure.project_read_access import SqlAlchemyProjectReadAccess
+from plm_assistant.entrypoints.api import create_app
+from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
+from plm_assistant.modules.auth.application.session_service import SessionError
+from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
+from plm_assistant.modules.project.api.department_list_cursor import DepartmentListCursorCodec
+from plm_assistant.modules.project.api.read_departments import create_project_department_read_router
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
 from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
@@ -31,7 +38,14 @@ class Guard:
 
     def require_valid(self, **_):
         if not self.enabled:
-            raise RuntimeError("synthetic License refusal")
+            raise RuntimeLicenseError("EXPIRED")
+
+
+class HttpSessions:
+    def validate(self, token):
+        if token not in (b"p" * 32, b"u" * 32):
+            raise SessionError("AUTH_SESSION_EXPIRED")
+        return object()
 
 
 def connect(name):
@@ -114,12 +128,35 @@ def main():
                 denied("RESOURCE_NOT_FOUND", lambda: page("suspended"))
                 denied("AUTH_ACCESS_DENIED", lambda: service.list_page(ProjectDepartmentListQuery(b"x" * 32, uuid.uuid4(), p1)))
                 guard.enabled = False
-                denied("PROJECT_UNAVAILABLE", page)
+                denied("LICENSE_OPERATION_DENIED", page)
                 guard.enabled = True
+                router = create_project_department_read_router(
+                    sessions=HttpSessions(), departments=service,
+                    origins=LoginOriginPolicy(["http://localhost"]),
+                    cursors=DepartmentListCursorCodec(b"d" * 32),
+                )
+                with TestClient(create_app(project_department_read_router=router),
+                                base_url="http://localhost") as client:
+                    path = f"/api/v1/projects/{p1}/departments"
+                    headers = {"cookie": "plm_session=" + tokens["pm"].hex()}
+                    first_http = client.get(path + "?page_size=2", headers=headers)
+                    assert first_http.status_code == 200, first_http.text
+                    first_data = first_http.json()["data"]
+                    assert len(first_data["items"]) == 2 and first_data["has_more"]
+                    second_http = client.get(path + "?page_size=2&cursor=" + first_data["next_cursor"], headers=headers)
+                    assert second_http.status_code == 200, second_http.text
+                    assert len(second_http.json()["data"]["items"]) == 1
+                    assert {item["department_id"] for item in first_data["items"] + second_http.json()["data"]["items"]} == {str(item) for item in expected}
+                    assert client.get(path, headers={"cookie": "plm_session=" + tokens["cust"].hex()}).status_code == 200
+                    assert client.get(path, headers={"cookie": "plm_session=" + tokens["suspended"].hex()}).status_code == 401
+                    assert client.get(f"/api/v1/projects/{p2}/departments", headers=headers).status_code == 404
+                    guard.enabled = False
+                    assert client.get(path, headers=headers).status_code == 403
+                    guard.enabled = True
                 with connect(name) as db:
                     db.execute("UPDATE plm.prj_projects SET state='ARCHIVED' WHERE project_id=%s", (p1,))
                 assert len(page("cust").items) == 3
-                print("PASS: four current roles, history, stable pages, cross-project/suspended/session/License denial and archived read")
+                print("PASS: four current roles, HTTP cursor pages, cross-project/suspended/session/License denial and archived read")
             finally:
                 runtime.dispose()
         finally:
