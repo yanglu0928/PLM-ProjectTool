@@ -2231,3 +2231,15 @@
 |Reason|沿用当前 Session、Project 授权、License Guard 和独立游标来源，不引入无保护入口。|
 |Impact|Windows 平台组合、契约与 PostgreSQL 集成测试；无新 Schema/Migration/依赖或 Breaking API。|
 |Rollback|移除平台 Router 注入恢复 404，已有部门事实不变。|
+
+## DEC-20260925-079
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-079|
+|Date|2026-09-25|
+|WBS|PRJ-04-A14-P01 Department 创建持久幂等前置|
+|Decision|按 CR-PRJ-004 新增 Project-owned 类型化首次 DepartmentView 快照，复用 `0015` 通用收据；旧内部创建命令保持，新增独立幂等入口。|
+|Reason|当前 Department 可被修改或停用，仅凭部门 ID 无法履行冻结 API-01 的原响应重放。|
+|Impact|Migration `20260925_0018`、ORM、Repository、Service 与测试；不开放 HTTP，不改变部门唯一性或授权规则。|
+|Rollback|新表为空可降至 `0017`；已有快照时拒绝降级并保留幂等证据。|

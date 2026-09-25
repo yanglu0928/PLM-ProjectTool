@@ -63,6 +63,25 @@ class DepartmentRow(Base):
     lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
 
 
+class ProjectDepartmentCreateResultRow(Base):
+    """Immutable first-success DepartmentView for the create replay contract."""
+
+    __tablename__ = "prj_department_create_results"
+    __table_args__ = (
+        ForeignKeyConstraint(["department_id", "project_id"],
+                             ["plm.prj_departments.department_id", "plm.prj_departments.project_id"],
+                             name="fk_prj_department_create_results__department_project", ondelete="NO ACTION"),
+        CheckConstraint("char_length(code) BETWEEN 1 AND 64", name="ck_prj_department_create_results__code"),
+        CheckConstraint("char_length(name) BETWEEN 1 AND 255", name="ck_prj_department_create_results__name"),
+    )
+
+    department_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    code: Mapped[str] = mapped_column(Text, nullable=False)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False)
+
+
 class ProjectMemberRow(Base):
     __tablename__ = "prj_project_members"
     __table_args__ = (

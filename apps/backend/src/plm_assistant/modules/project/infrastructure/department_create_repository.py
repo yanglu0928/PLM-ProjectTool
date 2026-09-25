@@ -4,14 +4,34 @@ from __future__ import annotations
 
 import uuid
 
+from sqlalchemy import insert, select
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
-from plm_assistant.modules.project.application.read_departments import DepartmentFacts
-from plm_assistant.modules.project.infrastructure.orm import DepartmentRow
+from plm_assistant.modules.project.application.read_departments import DepartmentFacts, DepartmentView
+from plm_assistant.modules.project.infrastructure.orm import DepartmentRow, ProjectDepartmentCreateResultRow
 
 
 class SqlAlchemyProjectDepartmentCreateRepository:
+    def save_create_result(self, transaction: object, *, project_id: uuid.UUID,
+                           view: DepartmentView) -> None:
+        transaction.session.execute(insert(ProjectDepartmentCreateResultRow).values(
+            department_id=view.department_id, project_id=project_id,
+            code=view.code, name=view.name, created_at=view.created_at,
+        ))
+
+    def get_create_result(self, transaction: object, *, project_id: uuid.UUID,
+                          department_id: uuid.UUID) -> DepartmentView | None:
+        row = transaction.session.execute(select(ProjectDepartmentCreateResultRow).where(
+            ProjectDepartmentCreateResultRow.project_id == project_id,
+            ProjectDepartmentCreateResultRow.department_id == department_id,
+        )).scalar_one_or_none()
+        if row is None:
+            return None
+        return DepartmentView(
+            row.department_id, row.code, row.name, "ACTIVE", row.created_at, '"v0"',
+        )
+
     def create(self, transaction: object, *, project_id: uuid.UUID,
                code: str, normalized_code: str, name: str) -> DepartmentFacts | None:
         session = transaction.session  # type: ignore[attr-defined]
