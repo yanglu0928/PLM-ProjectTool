@@ -3020,3 +3020,15 @@
 |Reason|多态目标不能用通用 FK；应用层必须先限定类型和方向，但不能以形状合格替代 Owner Port 证明。参考对象、模板及未来业务版本仅可在后续受控写入时被验证。|
 |Impact|新增 Trace 纯领域校验与单元测试；无 Schema、公开 API、数据外发或外部依赖。后续 Schema/TraceService 仍需目标 Owner Port、审计、持久幂等、无环和逐节点权限。|
 |Rollback|停止调用尚未接生产的值对象工厂；不影响历史数据或冻结基线。|
+
+## DEC-20260926-145
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-145|
+|Date|2026-09-26|
+|WBS|TRC-01-A02 TraceLink 不可变持久结构|
+|Decision|新增 `trc_links`，保存双端固定 Object/Version Ref、Scope/Project 快照、七类关系、ACTIVE/SUPERSEDED/REVOKED、创建 Actor/Trace/时间及替代引用。数据库约束白名单、自环/跨项目/方向、活动边唯一；触发器只允许 ACTIVE→SUPERSEDED/REVOKED，禁止其他字段变更与删除。多态目标存在性、正式状态、权限、无环与 Audit 留给后续 TraceService/Owner Port，同步前不得公开写入口。|
+|Reason|冻结 SC-01/02 要求多态边有受控 discriminator、保护引用、历史保留和活动边唯一；不创建全局 Object Registry，也不能将数据库形状当成目标事实证明。|
+|Impact|Trace ORM、Alembic Migration `20260926_0029`、迁移/数据库验证与版本说明；无公开 API、新依赖或生产写路由。|
+|Rollback|空表可降级；有任何 TraceLink 历史时拒绝降级，需备份和可追溯迁移方案。|

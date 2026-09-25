@@ -28,6 +28,7 @@ from plm_assistant.modules.license.infrastructure import trusted_time_orm  # noq
 from plm_assistant.modules.project.infrastructure import orm as project_orm  # noqa: F401 - register PRJ-01/02/03 tables
 from plm_assistant.modules.document.infrastructure import orm as document_orm  # noqa: F401 - register DOC-03 tables
 from plm_assistant.modules.evidence.infrastructure import orm as evidence_orm  # noqa: F401 - register EVD-01 table
+from plm_assistant.modules.trace.infrastructure import orm as trace_orm  # noqa: F401 - register TRC-01 table
 from plm_assistant.modules.jobs.infrastructure import orm as jobs_orm  # noqa: F401 - register Job/Outbox tables
 
 

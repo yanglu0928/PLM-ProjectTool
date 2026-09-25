@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/TRC-01-A02 新增受保护的 `trc_links` 历史表及 Migration `20260926_0029`，限制多态版本类型、Scope/方向、自环、活动边唯一及 ACTIVE→SUPERSEDED/REVOKED；拒绝历史删除和非空降级。Windows 11 后端 587 项无失败（2 项环境跳过），隔离 PostgreSQL 18.6 已有数据升级、空表降级/再升级、ORM parity 与异常约束、开发 wheel PASS。升级前备份；无公开 API/新依赖，目标 Owner Port、授权、无环及 Audit 仍待。
+
 - 2026-09-26：`0.1.0.dev0`/TRC-01-A01 新增 TraceLink 固定版本引用与边形状纯领域校验，限制目标类型、Scope/Project、跨域方向、关系种类与自环。Windows 11 后端 587 项无失败（2 项环境跳过），开发 wheel PASS。无 Migration/API/新依赖；目标存在性、授权、图无环、持久历史和 Audit 尚未实现，TraceService 不可开放。
 
 - 2026-09-26：`0.1.0.dev0`/DOC-04-A05 在 Windows 显式 `--platform`/`--platform-write` 组合挂载 Parse 列表，独立游标密钥缺失时失败关闭；默认模式仍 404。Windows 11 后端 582 项无失败（2 项环境跳过），隔离 PostgreSQL 18.6 真实 Session/Project/HTTP 双页、越权/License 拒绝及开发 wheel PASS。无 Migration/新依赖/冻结 API 变更；正式部署信任锚、Parser/OCR、结果文件完整性与 Server 2025 未验。
