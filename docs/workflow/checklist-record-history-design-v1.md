@@ -2,6 +2,8 @@
 
 日期 2026-09-26；0.1.0.dev0；CR-WFL-004；P03/0032 已实施两表并完成隔离 Schema 验证；无运行写命令/实际 Gate，证据见 P03 报告。
 
+P04 已实现内部调用方事务当前记录/固定依据快照查询，验完整首次→更正链及当前 Item 结果/版本、保持 Workflow→Item 锁。旧非初态缺链或过时状态拒绝，不回填；Workflow 后续锁增量不使同 Item 完整记录失效。历史观测与实际 Owner 当下证明严格分离，无公开入口/受权写命令/实际 Gate，证据见 `docs/progress/wfl-01-a05-p04-current-record.md`。
+
 ## 根记录
 
 `wfl_checklist_records` 为 WFL-01 owned 追加实体，不新增业务 Aggregate Scope。record_id UUIDv7；workflow_id/project_id 复合 FK→Workflow；(workflow_id,item_key) FK→固定 Item。唯一 (record_id,workflow_id,project_id,item_key) 与 (workflow_id,item_key,after_item_version)。

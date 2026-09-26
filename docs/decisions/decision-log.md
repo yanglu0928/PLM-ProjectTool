@@ -3202,3 +3202,11 @@
 - Reason：更正需保留当时依据、阻断状态不能被顺手消除；空白理由不能通过区域设置差异绕过。旧无链不虚构历史，Gate 固定记录关系与实际 Owner 留待独立任务。
 - Impact：两表/0032/metadata/隔离验证，无 API/权限/依赖改变；结构与合成失败不是客户批准。
 - Rollback：空历史可 down，非空拒绝；应用不装配写命令并保留历史。
+
+## DEC-20260926-165
+
+- Date：2026-09-26；WBS：WFL-01-A05-P04；CR：CR-WFL-004。
+- Decision：内部当前记录 Port 使用调用方活动事务，Workflow→Item 同写方锁序和 Core 现值；按单 Item 全部不可变根验完整初次/更正链，只返回当前版本完整固定 refs。Workflow 版本允许后来增长；历史观测不重新投影为当下 Owner 事实。
+- Reason：旧无链或过时 PASS 不能充当 Gate 依据；ORM identity map 可能滞后，双锁序列不同，跨项目/无链不自动回填。
+- Impact：仅内部 Port/DTO/Repository；无 Migration/公开 API/依赖/权限改变，不装配不受权入口。完整链读取增长成本留待性能验证；受权 Owner/Gate 仍待。
+- Rollback：不使用新 Port，保留当前表与历史，无数据回滚。

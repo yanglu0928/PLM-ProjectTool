@@ -3,7 +3,7 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 2：Platform Core|
-|Current WBS|`WFL-01-A05-P03 Checklist 记录两表`（0032/隔离 Schema PASS；当前查询/实际授权/Owner/Gate 命令待）|
+|Current WBS|`WFL-01-A05-P04 当前 Checklist 记录查询`（内部事务/完整链/固定依据 PASS；实际授权/Owner/Gate 命令待）|
 |Current Status|PHASE_1_COMPLETE / DOC_03_A03_P04_P04_PRECONDITION_BLOCKED / DOC_02_A02_P01_INTERNAL_PASS / DOC_02_A02_P02_PRECONDITION_BLOCKED / DOC_03_A04_A03_P04_P03_CONTENT_HTTP_PASS / DOC_03_A04_A04_P01_JOB_SCHEMA_PASS / DOC_03_A04_A04_P02_JOB_LEASE_PASS / DOC_03_A04_A04_P03_OUTBOX_PASS / DOC_03_A04_A04_P04_P01_PARSE_QUEUE_PASS / DOC_03_A04_A04_P04_P02_COMMIT_INTERNAL_PASS / DOC_03_A04_A04_P04_P03_P01_ABORT_STATE_PASS / DOC_03_A04_A04_P04_P03_P02_PRECONDITION_BLOCKED / DOC_03_A04_A04_P04_P04_A01_FINALIZE_HTTP_PASS / DOC_03_A04_A04_P04_P04_A02_WINDOWS_COMPOSITION_PASS / DOC_03_A04_A04_P04_COMMIT_ABORT_IN_PROGRESS / DOC_01_A02_INTERNAL_PASS / DOC_01_A03_P01_CURSOR_PASS / DOC_01_A03_P02_HTTP_CONTRACT_PASS / DOC_01_A03_P03_HTTP_DB_PASS / DOC_01_A03_P04_WINDOWS_COMPOSITION_PASS / DOC_01_A04_P01_VERSION_INTERNAL_PASS / DOC_01_A04_P02_VERSION_CURSOR_PASS / DOC_01_A04_P03_VERSION_HTTP_CONTRACT_PASS / DOC_01_A04_P04_VERSION_HTTP_DB_PASS / DOC_01_A04_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P01_VERIFIED_SNAPSHOT_PASS / DOC_01_A05_P02_DOWNLOAD_SOURCE_PASS / DOC_01_A05_P03_PREPARE_DOWNLOAD_PASS / DOC_01_A05_P04_DOWNLOAD_HTTP_PASS / DOC_01_A05_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P06_DISCONNECT_CAPACITY_BOUNDED_PASS / DOC_03_A04_A04_P04_P03_P02_A01_GATE_ADAPTER_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P01_CONTENT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P02_COMMIT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P03_ABORT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P01_READONLY_INSPECTION_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A01_STORAGE_STEP_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A02_INTERNAL_CLEANUP_PASS / PLT_02_A07_P05_A09_CEREMONY_PENDING / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
 |Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03、DOC-03-A01、DOC-03-A02（限定范围）、DOC-03-A03-P01～P03（P03 内部合成验证）、DOC-03-A03-P04-P01～P03（内部合成验证）、DOC-03-A04-A01（Schema 验证）、DOC-03-A04-A02（内部合成验证）、DOC-01-A01、DOC-02-A01、DOC-02-A02-P01（内部合成验证） PASS|
@@ -13,8 +13,8 @@
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，DM-02 License 授权粒度经用户批准 CR-LIC-001 修订|
 |DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`；增量至 `20260926_0032` Checklist owned 记录两表（CR-WFL-004）；0031 Transition/Gate（CR-WFL-003）、0030 Workflow（CR-WFL-002）、0029 TraceLink、0028 ParseRecord、0027 Evidence 与 0001～0026 历史保留|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
-|Test Summary|WFL-01-A05-P03 Windows 11/Python 3.13 后端 663 项无失败（2 项环境跳过）；隔离 PostgreSQL 0032 空/有数据 up/down/re-up/旧值不变、ORM parity/九更正组合/并发/拒绝与回滚/状态保持/追加封口/非空降级，既有 Workflow Schema/Windows HTTP 回归与开发 wheel PASS；合成 Review/例外/Audit 故障，不是实际 Gate/生产证明|
-|Next WBS|WFL-01-A05-P04 受控事务当前记录/固定依据快照查询，拒绝无链与过时记录；Gate 固定记录关联、START/完成/Review/实际 Owner 仍待，原 Scope 保留。Trace HTTP 待各 Owner 受权解析，EVD-01-A03-P02-A02 待 Phase 3 Parser，发行 Gate/Server 2025 待验证，Debian 13 暂不验证|
+|Test Summary|WFL-01-A05-P04 Windows 11/Python 3.13 后端 670 项无失败（2 项环境跳过）；隔离 PostgreSQL 当前完整链/依据、Scope/缺链旧 PASS/过时结果拒绝、观测保留/双锁/无写、0032/0031 Schema 及既有 Workflow/Windows HTTP 回归、开发 wheel PASS；内部 Port/合成 Review/例外，不是实际 Owner/授权入口/Gate/生产证明|
+|Next WBS|WFL-02-A01-P04 GateItem 固定 Checklist 记录关联设计/前置核查；START/完成/Review/实际 Owner 仍待，原 Scope 保留。Trace HTTP 待各 Owner 受权解析，EVD-01-A03-P02-A02 待 Phase 3 Parser，发行 Gate/Server 2025 待验证，Debian 13 暂不验证|
 
 ## 自动执行策略
 
@@ -24,6 +24,8 @@
 - GitHub：允许在当前 Scope 和正确分支内自动 fetch、commit、push；禁止 force push、直接提交 main、覆盖未知远端修改或提交 Secret/客户数据。
 
 ## 最近检查点
+
+- WFL-01-A05-P04 已实现内部事务当前记录/固定依据查询，核对完整历史链与当前 Item 结果/版本，缺链旧 PASS 和过时值拒绝，保持 Workflow→Item 锁至调用方结束。后续 Evidence 变化不重写历史；查询结果仍需真实受权 Owner 重验，未开放 Checklist 写/Gate 路由。
 
 - WFL-01-A05-P03/CR-WFL-004 已新增两表/0032 与初次/更正可信链、同事务两个版本/当前投影、BLOCKED 保持、观测与不可改写保护，隔离合成 Schema PASS。实际 Review/Owner/受权写命令/Gate 固定记录关联尚缺，不把旧无链 PASS 或合成 APPROVED 当业务事实。
 
