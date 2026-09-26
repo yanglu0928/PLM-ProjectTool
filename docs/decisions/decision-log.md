@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260926-209
+
+- Date：2026-09-26；WBS：AUD-03-A06-A04-P03-A03-P02。
+- Decision：抽取既有Worker User-first授权/原pair/Lease检查以供capture及RENDER共用；RENDER只读已封口源，再登记或返回同代固定计划，前后当前权限/租约复核；own Repository不鉴权、不commit、不触及外模块私有表。
+- Reason：不能以0041坐标或预分配file_id推断当前权限/Lease，不能RENDER时重捕获。
+- Impact：无Schema/API/依赖变化；同代数据库重试只读原计划，部分文件失败必须新Lease代次；仅PG40P01整UOW限三次重试，未知commit不盲重试。
+- Rollback：撤应用入口/代码，保留0041及不可变历史；后续唯一结果/文件/Job原子发布另任务验收。
+
 ## DEC-20260917-001
 
 |字段|内容|

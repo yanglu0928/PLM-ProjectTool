@@ -50,10 +50,13 @@ class AuditExportWorkerCapture:
         self._queue,self._leases,self._captures=queue,leases,captures
 
     def capture(self,command:AuditExportCaptureCommand)->CapturedAuditExport:
+        return self._run(command,self._capture)
+
+    def _run(self,command,operation):
         if type(command) is not AuditExportCaptureCommand:raise AuditExportWorkerError("VALIDATION_FAILED")
         command.__post_init__()
         for attempt in range(3):
-            try:return self._capture(command)
+            try:return operation(command)
             except Exception as exc:
                 if self._repository.is_retryable_deadlock(exc) is True:
                     if attempt<2:continue
@@ -78,6 +81,7 @@ class AuditExportWorkerCapture:
                 or type(job.attempt_no) is not int or job.attempt_no<1
                 or job.payload_refs!=dict(export_id=str(intent.export_id),policy_version=intent.policy_version)):
             raise AuditExportWorkerError()
+        return job
 
     @staticmethod
     def _result(result,intent):
@@ -93,22 +97,25 @@ class AuditExportWorkerCapture:
                 or result.captured_at.utcoffset() is None or result.captured_at<intent.requested_at):
             raise AuditExportWorkerError()
 
+    def _authorized(self,tx,c,stage):
+        intent=self._repository.peek_created(tx,export_id=c.export_id)
+        self._intent(intent,c)
+        request=AuditExportAuthorityRequest(intent.export_id,intent.actor_id,intent.spec.scope,intent.spec.project_id,stage)
+        if self._authority.assert_current(tx,request=request) is not None:raise AuditExportWorkerError()
+        locked=self._repository.get_created(tx,export_id=c.export_id)
+        self._intent(locked,c)
+        if locked!=intent:raise AuditExportWorkerError()
+        accepted=self._repository.get_accepted(tx,intent=intent)
+        if type(accepted) is not AcceptedAuditExport or accepted.intent!=intent or accepted.job_id!=c.job_id:raise AuditExportWorkerError()
+        accepted.__post_init__()
+        queued=self._queue.find_export(tx,request=AuditExportJobRequest(intent.export_id,intent.actor_id,intent.spec.scope,intent.spec.project_id,intent.trace_id,intent.policy_version))
+        if type(queued) is not AuditExportJobRef or (queued.job_id,queued.event_id)!=(accepted.job_id,accepted.event_id):raise AuditExportWorkerError()
+        queued.__post_init__()
+        return intent,request,self._lease(tx,c,intent)
+
     def _capture(self,c):
         with self._uow() as tx:
-            intent=self._repository.peek_created(tx,export_id=c.export_id)
-            self._intent(intent,c)
-            request=AuditExportAuthorityRequest(intent.export_id,intent.actor_id,intent.spec.scope,intent.spec.project_id,"CAPTURE")
-            if self._authority.assert_current(tx,request=request) is not None:raise AuditExportWorkerError()
-            locked=self._repository.get_created(tx,export_id=c.export_id)
-            self._intent(locked,c)
-            if locked!=intent:raise AuditExportWorkerError()
-            accepted=self._repository.get_accepted(tx,intent=intent)
-            if type(accepted) is not AcceptedAuditExport or accepted.intent!=intent or accepted.job_id!=c.job_id:raise AuditExportWorkerError()
-            accepted.__post_init__()
-            queued=self._queue.find_export(tx,request=AuditExportJobRequest(intent.export_id,intent.actor_id,intent.spec.scope,intent.spec.project_id,intent.trace_id,intent.policy_version))
-            if type(queued) is not AuditExportJobRef or (queued.job_id,queued.event_id)!=(accepted.job_id,accepted.event_id):raise AuditExportWorkerError()
-            queued.__post_init__()
-            self._lease(tx,c,intent)
+            intent,request,_=self._authorized(tx,c,"CAPTURE")
             result=self._captures.capture(tx,request=request)
             self._result(result,intent)
             if self._authority.assert_current(tx,request=request) is not None:raise AuditExportWorkerError()

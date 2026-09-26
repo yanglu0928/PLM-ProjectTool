@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A03-P02接入真实当前User/PM/Admin/License及原受理Job/pair/有效Lease的渲染计划，仅读已封口完整capture，同代读原计划、新代独立file。实际双Scope/并发/撤权/取消/到期/写后回滚/PG40P01限次恢复和既有capture回归PASS；912项无失败（2环境跳过）、开发wheel通过。Windows11验证；Schema仍0041，无API/依赖/升级动作，撤代码保留计划历史。License合成，结果/文件/原子发布/下载、Server2025/Debian及可用发行包待。
+
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A03-P01新增0041 Audit不可变渲染尝试，固定原受理Job/封口来源、单Job/token文件计划及新代次独立file，禁止修改/删除/截断。真实空/旧历史up/down/reup/parity/真并发与历史down锁保护PASS；904项无失败（2环境跳过）、0040/0039/文件元数据回归/开发wheel通过。无API/依赖；需受控0040→0041升级，任何计划历史拒绝降级；无生产迁移。Job/Lease/File refs合成，实际计划命令/结果/发布/下载与正式包待。
 
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A02-P02增加Document owned caller-UOW审计文件元数据登记/查读/可用转换Port，精确归属/Hash/Size/版本/状态来源、原trace保持与重放无重复事件，已限制不复活。真实双Scope文件/临时库、真并发单次变化/共享锁、caller真实Audit后故障全回滚PASS；902项无失败（2环境跳过）、0040/旧上传回归及开发wheel通过。无Migration/API/依赖/升级动作；Export/权限/Lease caller合成，真正Job结果/Worker发布/下载与正式包待。
