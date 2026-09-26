@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-260
+
+- Precode：JOB-01-A02-P01/CR-JOB-002，冻结API-01明确强v<lock_version>，发现Job缺字段后先Schema版本，不发布hash/弱ETag假兼容。
+- Decision：新增0043/Job.lock_version与DB-owned业务UPDATE统一递增，heartbeat续租/同值更新不递增，手动版本/溢出拒绝；可信恢复INSERT允许历史版本。ORM/readDTO同步，旧Repo原授权不改。
+- Evidence：真实空库up/down/up、有实际发布数据0042→0043旧业务六表保留/初始0；双Scope接受v0/claim v1/真实heartbeat稳定/publish v2，manual/overflow P0001事务无写。快照脚本排序/SQL重载类型错误按证据修正，失败保留进度，未改业务比较。
+- Impact：新增Schema迁移，无公开API/依赖变；离线备份/停机升级，回滚须回代码并使旧ETag失效，不生产迁移。下一完整JobView/GET；If-Match/其他Owner/正式环境/完整包/Gate待。
+
 ## DEC-20260927-259
 
 - Precode：Phase2/JOB-01-A01，CR-JOB-001在实施前记录；冻结通用Job详情授权链，不直接序列化ORM或以Job/Lease状态猜Owner结果。

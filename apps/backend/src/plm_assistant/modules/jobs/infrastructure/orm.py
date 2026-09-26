@@ -20,6 +20,7 @@ class JobRow(Base):
         CheckConstraint("(scope IN ('GLOBAL','DEPLOYMENT') AND project_id IS NULL) OR (scope='PROJECT' AND project_id IS NOT NULL)", name="ck_job_jobs__scope"),
         CheckConstraint("state IN ('PENDING','RUNNING','RETRY_WAIT','SUCCEEDED','FAILED','CANCEL_REQUESTED','CANCELLED')", name="ck_job_jobs__state"),
         CheckConstraint("attempt_count >= 0 AND max_attempts > 0 AND fencing_token >= 0", name="ck_job_jobs__counters"),
+        CheckConstraint("lock_version >= 0", name="ck_job_jobs__lock_version"),
         ForeignKeyConstraint(["cancel_requested_by"], ["plm.auth_users.user_id"], name="fk_job_jobs__cancel_user"),
         CheckConstraint("""(cancel_requested_by IS NULL AND cancel_reason IS NULL AND cancel_requested_at IS NULL)
  OR (cancel_requested_by IS NOT NULL AND cancel_reason IS NOT NULL AND cancel_requested_at IS NOT NULL
@@ -40,6 +41,7 @@ class JobRow(Base):
     payload_refs: Mapped[dict] = mapped_column(JSONB, nullable=False)
     idempotency_key: Mapped[str] = mapped_column(Text, nullable=False)
     state: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'PENDING'"))
+    lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text('0'))
     priority: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     attempt_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     max_attempts: Mapped[int] = mapped_column(Integer, nullable=False)

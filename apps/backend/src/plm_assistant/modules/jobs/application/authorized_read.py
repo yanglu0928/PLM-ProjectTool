@@ -37,6 +37,7 @@ class JobReadFacts:
     attempt_count:int
     created_at:datetime
     completed_at:datetime|None
+    lock_version:int=0
     def __post_init__(self):
         if (not _id(self.job_id) or any(type(v) is not str or not v or len(v)>64 or not v.isascii()
             or any(c not in 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_' for c in v)
@@ -47,6 +48,7 @@ class JobReadFacts:
             or self.actor_id is not None and not _id(self.actor_id)
             or type(self.state) is not str or self.state not in ('PENDING','RUNNING','RETRY_WAIT','SUCCEEDED','FAILED','CANCEL_REQUESTED','CANCELLED')
             or type(self.attempt_count) is not int or not 0<=self.attempt_count<=2147483647
+            or type(self.lock_version) is not int or not 0<=self.lock_version<=9223372036854775807
             or not _time(self.created_at) or self.completed_at is not None and (not _time(self.completed_at) or self.completed_at<self.created_at)
             or (self.state in ('SUCCEEDED','FAILED','CANCELLED'))!=(self.completed_at is not None)):
             raise JobReadError()

@@ -83,7 +83,7 @@ class JobReadTests(unittest.TestCase):
         self.guard.require_valid.side_effect=RuntimeLicenseError('LICENSE_EXPIRED')
         self.fail('LICENSE_OPERATION_DENIED');self.repo.get.assert_not_called()
     def test_strict_fact_and_projection_shapes(self):
-        for changes in ({'attempt_count':True},{'actor_id':uuid4().__str__()},{'scope':'GLOBAL'}, {'state':'SUCCEEDED'}):
+        for changes in ({'attempt_count':True},{'lock_version':True},{'lock_version':-1},{'lock_version':9223372036854775808},{'actor_id':uuid4().__str__()},{'scope':'GLOBAL'}, {'state':'SUCCEEDED'}):
             with self.assertRaises(JobReadError):replace(self.facts,**changes)
         for args in ((self.job,1),(self.job,False,'../../file',uuid4()),(self.job,False,None,uuid4())):
             with self.assertRaises(JobReadError):JobOwnerProjection(*args)

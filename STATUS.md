@@ -3,7 +3,7 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 2：Platform Core|
-|Current WBS|`JOB-01-A01 内部任务安全详情`（真实Session/Project/Owner原源绑定内部PASS；Audit首个Owner已验，公开GET/完整JobView/ETag/其他Owner未完成，CR-JOB-001打开）|
+|Current WBS|`JOB-01-A02-P01 Job用户并发版本`（0043/ORM/读取版本与空库/有数据升级、真实领取/续租/发布内部PASS；公开GET/If-Match未实现，CR-JOB-002打开）|
 |Current Status|PHASE_1_COMPLETE / DOC_03_A03_P04_P04_PRECONDITION_BLOCKED / DOC_02_A02_P01_INTERNAL_PASS / DOC_02_A02_P02_PRECONDITION_BLOCKED / DOC_03_A04_A03_P04_P03_CONTENT_HTTP_PASS / DOC_03_A04_A04_P01_JOB_SCHEMA_PASS / DOC_03_A04_A04_P02_JOB_LEASE_PASS / DOC_03_A04_A04_P03_OUTBOX_PASS / DOC_03_A04_A04_P04_P01_PARSE_QUEUE_PASS / DOC_03_A04_A04_P04_P02_COMMIT_INTERNAL_PASS / DOC_03_A04_A04_P04_P03_P01_ABORT_STATE_PASS / DOC_03_A04_A04_P04_P03_P02_PRECONDITION_BLOCKED / DOC_03_A04_A04_P04_P04_A01_FINALIZE_HTTP_PASS / DOC_03_A04_A04_P04_P04_A02_WINDOWS_COMPOSITION_PASS / DOC_03_A04_A04_P04_COMMIT_ABORT_IN_PROGRESS / DOC_01_A02_INTERNAL_PASS / DOC_01_A03_P01_CURSOR_PASS / DOC_01_A03_P02_HTTP_CONTRACT_PASS / DOC_01_A03_P03_HTTP_DB_PASS / DOC_01_A03_P04_WINDOWS_COMPOSITION_PASS / DOC_01_A04_P01_VERSION_INTERNAL_PASS / DOC_01_A04_P02_VERSION_CURSOR_PASS / DOC_01_A04_P03_VERSION_HTTP_CONTRACT_PASS / DOC_01_A04_P04_VERSION_HTTP_DB_PASS / DOC_01_A04_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P01_VERIFIED_SNAPSHOT_PASS / DOC_01_A05_P02_DOWNLOAD_SOURCE_PASS / DOC_01_A05_P03_PREPARE_DOWNLOAD_PASS / DOC_01_A05_P04_DOWNLOAD_HTTP_PASS / DOC_01_A05_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P06_DISCONNECT_CAPACITY_BOUNDED_PASS / DOC_03_A04_A04_P04_P03_P02_A01_GATE_ADAPTER_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P01_CONTENT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P02_COMMIT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P03_ABORT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P01_READONLY_INSPECTION_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A01_STORAGE_STEP_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A02_INTERNAL_CLEANUP_PASS / PLT_02_A07_P05_A09_CEREMONY_PENDING / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
 |Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03、DOC-03-A01、DOC-03-A02（限定范围）、DOC-03-A03-P01～P03（P03 内部合成验证）、DOC-03-A03-P04-P01～P03（内部合成验证）、DOC-03-A04-A01（Schema 验证）、DOC-03-A04-A02（内部合成验证）、DOC-01-A01、DOC-02-A01、DOC-02-A02-P01（内部合成验证） PASS|
@@ -11,10 +11,10 @@
 |Pending User Decisions|LIC-03-A03 方案 A 已确定；当前无人工决策待办。客户数据外发、付款/额度重置和不可恢复生产操作不在持续授权内|
 |Architecture Version|`ARCH-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，License ADR-006 经用户批准 CR-LIC-001 修订|
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，DM-02 License 授权粒度经用户批准 CR-LIC-001 修订|
-|DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；原冻结64cdf09保留；增量至`20260926_0042` 审计不可变成功结果（CR-AUD-002），0001～0041历史不改写；无生产迁移|
+|DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；原冻结64cdf09保留；增量至`20260927_0043` Job用户并发版本（CR-JOB-002），0001～0042历史不改写；无生产迁移|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
-|Test Summary|JOB-01-A01 Windows11/Python3.13后端1143无失败（2既有权限跳过）；11新unit，真实PG双ScopePENDING/RUNNING/SUCCEEDED与原Result、PM/IM/客户仅自身、跨项目/Admin/停用User/Department/未知Session/错actor拒绝六业务表无写，原发布回归通过。明确合成License、非HTTP/ETag/其他Owner/正式材料/发行证明|
-|Next WBS|JOB-01-A02：完整详情投影与GET合同/ETag语义前置，不以fencing/常数冒充取消资源版本；随后可选GET、Windows装配、Audit导出POST。Document/其他Owner、列表/取消If-Match/受控重试完整Scope保留。未知跨进程恢复/复杂故障、网络/质量/Gate/正式材料/完整Scope保留，Server2025未验、Debian13暂缓|
+|Test Summary|JOB-01-A02-P01 Windows11/Python3.13后端1145无失败（2既有权限跳过）；0043空/有数据up/down/up六表旧业务保留、双Scopev0→claimv1/heartbeat稳定→publishv2、manual/overflow拒绝，实际A01读取/提交确认/混排/耗尽安全收尾/原发布与开发wheel640560通过；非公开GET/If-Match/正式部署/20Worker/性能证明|
+|Next WBS|JOB-01-A02-P02：完整JobView安全投影及可选GET，使用实际v<lock_version>而非Lease/hash；随后Windows装配、Audit导出POST。Document/其他Owner、列表/取消expected_version/受控重试完整Scope保留。未知跨进程恢复/复杂故障、网络/质量/Gate/正式材料/完整Scope保留，Server2025未验、Debian13暂缓|
 
 ## 自动执行策略
 
@@ -24,6 +24,8 @@
 - GitHub：允许在当前 Scope 和正确分支内自动 fetch、commit、push；禁止 force push、直接提交 main、覆盖未知远端修改或提交 Secret/客户数据。
 
 ## 最近检查点
+
+- 2026-09-27/JOB-01-A02-P01核对冻结强v<version>要求，先CR-JOB-002再0043/ORM/DTO；数据库统一业务变化加版本、心跳稳定、手改/溢出拒绝。1145无失败/2跳过，真实空/有数据up/down/up旧业务保留、领取/续租/发布及读取/提交确认/混排/耗尽安全收尾回归/wheel通过。无生产迁移/公开GET/If-Match/完整发行证明；升级备份停机、离线降级回旧代码并使旧ETag失效，下一完整JobView/GET。
 
 - 2026-09-27/JOB-01-A01按CR-JOB-001新增只读事实/Service/显式Owner原源绑定与Project GET策略，11新unit/1143无失败/2跳过；真实双Scope任务待执行/运行中/成功原结果与角色/actor/项目/停用/来源错误拒绝六业务表无写，原发布回归通过。仅内部Audit Owner，HTTP/完整JobView/ETag/其他Owner/正式包未完成；无Migration/API/依赖，回滚撤新只读接线保旧路径。下一A02合同前置。
 
