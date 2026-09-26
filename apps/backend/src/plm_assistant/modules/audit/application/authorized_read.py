@@ -32,6 +32,14 @@ class AuditGetQuery:
     event_id: UUID
 
 
+@dataclass(frozen=True,slots=True)
+class AuthorizedAuditListContext:
+    """Actual read binding metadata, NOT reusable permission or cursor authority."""
+    actor_id: UUID
+    project_id: UUID | None
+    page: AuditPage
+
+
 class _BoundAccess:
     """Private same-tx capability created ONLY after actual current authz.
 
@@ -60,10 +68,13 @@ class AuthorizedAuditReadService:
     def list(self,query):
         return self._read(query,listing=True)
 
+    def list_with_actor(self,query):
+        return self._read(query,listing=True,include_actor=True)
+
     def get(self,query):
         return self._read(query,listing=False)
 
-    def _read(self,q,*,listing):
+    def _read(self,q,*,listing,include_actor=False):
         if (type(q) is not (AuditListQuery if listing else AuditGetQuery)
                 or type(q.session_token) is not bytes or len(q.session_token)!=32
                 or not _uuid(q.trace_id) or not _uuid(q.project_id,optional=True)):
@@ -98,7 +109,8 @@ class AuthorizedAuditReadService:
                 reader=AuditQueryService(access=_BoundAccess(tx,principal,q.project_id),repository=self._repository)
                 if listing:
                     page=reader.list_deployment(tx,principal,q.search) if q.project_id is None else reader.list_project(tx,principal,q.project_id,q.search)
-                    return self._page(page,q.project_id,q.search)
+                    page=self._page(page,q.project_id,q.search)
+                    return AuthorizedAuditListContext(actor,q.project_id,page) if include_actor else page
                 view=reader.get_deployment(tx,principal,q.event_id) if q.project_id is None else reader.get_project(tx,principal,q.project_id,q.event_id)
                 if view is None:raise AuthorizedAuditReadError("RESOURCE_NOT_FOUND")
                 view=self._view(view,q.project_id)

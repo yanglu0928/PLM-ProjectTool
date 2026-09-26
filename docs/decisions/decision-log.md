@@ -3370,3 +3370,11 @@
 - Reason：抽象AuditReadAccess和合成Review Owner不是生产身份事实，不能直接暴露已有Query或跨模块访问；Audit不依赖后续业务Owner，可继续实现批准Scope。
 - Impact：Audit当前Session/Project授权服务、两项既有操作必要策略、测试；无Schema/API/角色/依赖或Phase变更。当前公开Review阻塞仍保留。
 - Rollback：不装配新读服务，已有append/history保留；无数据写入。
+
+## DEC-20260926-186
+
+- Date：2026-09-26；WBS：AUD-02-A02。
+- Decision：Audit专用32byte HMAC key/domain/family，绑定真实同事务读返回的Actor、Session digest、显式DEPLOYMENT或PROJECT、全部筛选/page_size和UTC窗口、(time,event_id)位置。strict decode用于显式日期；saved-window decode仅供未来日期未指定的HTTP使用，保留首窗，不忽略显式日期修改。
+- Reason：当前默认时间每页重算会使查询指纹漂移；当前页权限必须另验，cursor绝不授予访问。独立签名域防他族复用，完整性不是加密或跨页MVCC快照。
+- Impact：内部list_with_actor返回实际读上下文（不公开API），旧list保持原合同；新Codec/测试/设计，无Schema/API/权限/依赖变更。正式key来源/HTTP未接，不复用License、Secret或其他cursor key。
+- Rollback：不装配新Codec/HTTP，保留原safe查询及审计历史，无数据动作。

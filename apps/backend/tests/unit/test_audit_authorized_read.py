@@ -36,6 +36,10 @@ class AuditAuthorizedReadTests(unittest.TestCase):
         self.assertIs(self.repo.get_event.call_args.args[0],self.tx)
         self.tx.commit.assert_not_called()
         self.admin.authorized_admin.assert_not_called()
+        context=self.service.list_with_actor(self.q)
+        self.assertEqual(context.actor_id,self.actor)
+        self.assertEqual(context.project_id,self.project)
+        self.assertEqual(context.page.items,(self.view,))
 
     def test_deployment_explicit_scope_no_project_fallback(self):
         self.repo.list_events.return_value=AuditPage((replace(self.view,event_scope="DEPLOYMENT",target_project_id=None),),None,False)
