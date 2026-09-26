@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/RVW-01-A04 完成 Review 两层读授权/固定旧版权限与相对锁序设计，真实 Owner 缺失阻塞公开接线，转内部默认拒绝服务；仅文档，无新程序测试/Migration/API/依赖或升级动作。
+
 - 2026-09-26：`0.1.0.dev0`/RVW-01-A03 新增受控事务 Review 身份/固定轮次与 Subject 快照查询 Port、不可变 DTO 和 Repository，保留完整决定/撤回/固定来源观测，区分当前身份与历史结果，拒绝缺快照或版本异常。Windows 11 后端 692 项无失败（2 项环境跳过），隔离 PostgreSQL Scope/历史/无写入/共享锁、Review 0034/Workflow 回归与开发 wheel PASS。无 Migration/API/依赖改变；需既有 0034，升级无新动作。真实 Subject Owner/受权服务/客户资格/正式程序包未完成，Server 2025 未验、Debian 13 暂不验证。
 
 - 2026-09-26：`0.1.0.dev0`/RVW-01-A02/CR-RVW-001 新增 Review 八表 ORM 与独立 Migration `0034`，GLOBAL 非空 Scope 复合键、完整轮次/所有人决定后汇总、不可变决定/固定 Subject 观测、身份锁/事件原子与封口。Windows 11 后端 684 项无失败（2 项环境跳过），隔离 PostgreSQL up/down/re-up/旧数据保持、Scope/决定撤回/并发/回滚/真实 Sources/拒绝/非空 down、既有 Workflow 回归与开发 wheel PASS。升级先备份到 0034，八表非空拒绝 down；无 API/角色/依赖变化。实际资格/Subject Owner/受权审批服务/正式安装包未完成，Server 2025 未验、Debian 13 暂不验证。

@@ -3242,3 +3242,11 @@
 - Reason：旧轮次结果不能随当前轮次变化；来源后来失效不应改写历史，也不能继续被当作当前有效批准。权限/License/真实 Owner 必须由后续受权应用独立验证。
 - Impact：内部 Port/DTO/Repository 与测试，无数据库/API/权限/依赖变化。全历史读取成本未做性能验收；锁保护只针对遵循先锁 Review 的受控写方，不声称任意 SQL 无死锁。
 - Rollback：不使用新 Port，保留 0034 历史；无数据回滚或公开路由变化。
+
+## DEC-20260926-170
+
+- Date：2026-09-26；WBS：RVW-01-A04。
+- Decision：Project REVIEW_GET 只提供有效成员资格；主题 Owner 在同事务独立核验身份及固定旧版读取权。缺 Owner 默认拒绝，不创建恒真生产适配，不以历史批准/assigned 身份/部署管理员替代权限。
+- Reason：冻结契约要求受权成员与真实固定 Subject；共享旧轮次意见不能绕过当前访问限制。
+- Impact：设计内部读服务及 Project→Review→Owner→Round 相对锁序，不改 Schema/API/角色/依赖；真实 Owner 和跨模块并发验收仍待。
+- Rollback：保持公开路由关闭，不使用新服务，保留历史。
