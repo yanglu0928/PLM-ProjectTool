@@ -3,7 +3,7 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 2：Platform Core|
-|Current WBS|`AUD-03-A06-A04-P03-A07-P04-P03-P06-P06 领取提交确认恢复`（本次已知命令的真实活代来源恢复内部PASS；未知跨进程恢复/调度/主循环待）|
+|Current WBS|`AUD-03-A06-A04-P03-A07-P04-P03-P06-P07 有界后台单步`（真实领取/周期heartbeat/发布与停止不准入内部PASS；进程loop/未知恢复/全局公平待）|
 |Current Status|PHASE_1_COMPLETE / DOC_03_A03_P04_P04_PRECONDITION_BLOCKED / DOC_02_A02_P01_INTERNAL_PASS / DOC_02_A02_P02_PRECONDITION_BLOCKED / DOC_03_A04_A03_P04_P03_CONTENT_HTTP_PASS / DOC_03_A04_A04_P01_JOB_SCHEMA_PASS / DOC_03_A04_A04_P02_JOB_LEASE_PASS / DOC_03_A04_A04_P03_OUTBOX_PASS / DOC_03_A04_A04_P04_P01_PARSE_QUEUE_PASS / DOC_03_A04_A04_P04_P02_COMMIT_INTERNAL_PASS / DOC_03_A04_A04_P04_P03_P01_ABORT_STATE_PASS / DOC_03_A04_A04_P04_P03_P02_PRECONDITION_BLOCKED / DOC_03_A04_A04_P04_P04_A01_FINALIZE_HTTP_PASS / DOC_03_A04_A04_P04_P04_A02_WINDOWS_COMPOSITION_PASS / DOC_03_A04_A04_P04_COMMIT_ABORT_IN_PROGRESS / DOC_01_A02_INTERNAL_PASS / DOC_01_A03_P01_CURSOR_PASS / DOC_01_A03_P02_HTTP_CONTRACT_PASS / DOC_01_A03_P03_HTTP_DB_PASS / DOC_01_A03_P04_WINDOWS_COMPOSITION_PASS / DOC_01_A04_P01_VERSION_INTERNAL_PASS / DOC_01_A04_P02_VERSION_CURSOR_PASS / DOC_01_A04_P03_VERSION_HTTP_CONTRACT_PASS / DOC_01_A04_P04_VERSION_HTTP_DB_PASS / DOC_01_A04_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P01_VERIFIED_SNAPSHOT_PASS / DOC_01_A05_P02_DOWNLOAD_SOURCE_PASS / DOC_01_A05_P03_PREPARE_DOWNLOAD_PASS / DOC_01_A05_P04_DOWNLOAD_HTTP_PASS / DOC_01_A05_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P06_DISCONNECT_CAPACITY_BOUNDED_PASS / DOC_03_A04_A04_P04_P03_P02_A01_GATE_ADAPTER_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P01_CONTENT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P02_COMMIT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P03_ABORT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P01_READONLY_INSPECTION_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A01_STORAGE_STEP_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A02_INTERNAL_CLEANUP_PASS / PLT_02_A07_P05_A09_CEREMONY_PENDING / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
 |Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03、DOC-03-A01、DOC-03-A02（限定范围）、DOC-03-A03-P01～P03（P03 内部合成验证）、DOC-03-A03-P04-P01～P03（内部合成验证）、DOC-03-A04-A01（Schema 验证）、DOC-03-A04-A02（内部合成验证）、DOC-01-A01、DOC-02-A01、DOC-02-A02-P01（内部合成验证） PASS|
@@ -13,8 +13,8 @@
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，DM-02 License 授权粒度经用户批准 CR-LIC-001 修订|
 |DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；原冻结64cdf09保留；增量至`20260926_0042` 审计不可变成功结果（CR-AUD-002），0001～0041历史不改写；无生产迁移|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
-|Test Summary|P06-P06 Windows11/Python3.13后端1084项无失败（2既有环境跳过）；3新unit、真实PG-Vault双Scope提交前整回滚/不重领、真正commit后故障返回原当前活claim且仅一Lease/Attempt、六表只读重验、错Worker/过期/换代/成功拒绝、撤权技术收据不授正文权限；旧准入/发布回归及开发wheel验证|
-|Next WBS|AUD-03-A06-A04-P03-A07-P04-P03-P06-P07：有界后台单步编排及停止控制前置；再公平调度/进程loop/CLI/提交Jobs HTTP。未知跨进程命令恢复、公开POST/If-Match仍待。网络/质量/Gate/正式材料/完整Scope保留，Server2025未验、Debian13暂缓|
+|Test Summary|P06-P07 Windows11/Python3.13后端1090项无失败（2既有环境跳过）；6新unit停止/互斥/交替优先/保pending与续原命令/Reader活线程拒绝/错facts和本机到期释放；真实bounded PG-Vault双ScopePENDING到实际发布、空/stop六表不写不领取、真实撤权安全失败及原发布回归，开发wheel通过|
+|Next WBS|AUD-03-A06-A04-P03-A07-P04-P03-P06-P08：有界后台主循环/可中断等待/排空停止；再公平隔离/CLI/提交Jobs HTTP。未知跨进程命令恢复、公开POST/If-Match仍待。网络/质量/Gate/正式材料/完整Scope保留，Server2025未验、Debian13暂缓|
 
 ## 自动执行策略
 
@@ -24,6 +24,8 @@
 - GitHub：允许在当前 Scope 和正确分支内自动 fetch、commit、push；禁止 force push、直接提交 main、覆盖未知远端修改或提交 Secret/客户数据。
 
 ## 最近检查点
+
+- 2026-09-27/P06-P07内部通过：单步实例互斥/交替尝试优先/stop仅停新准入，异常保已知pending，真实静止Reader仅按绑定旧代/前两次期限释放本机pending，不改DB或猜成功。真实双Scope领取/周期heartbeat/发布、空及stop不写与撤权安全FAILED；6新unit/1090无失败（2跳过）及wheel。全局公平/实际timeout综合/loop/完整包/Gate仍待，无Migration/API/依赖。
 
 - 2026-09-27/P06-P06内部通过：commit异常只保本次实际命令/Claim/identity，退出原UOW后新UOW核完整Root/pair/同Worker-fence活代与实际Claim；不走deadlock盲重领、不猜STALE。真实双Scope提交前回滚和commit后故障恢复、六表无写/错Worker期限代际终态拒绝、正文仍实时授权，1084无失败（2跳过）/wheel通过。跨进程未知命令/后台loop/完整包/Gate待，无Migration/API/依赖。
 

@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-242
+
+- Precode：Phase2/P06-P07，CR-AUD-004/ADR011，原领取/确认/执行/耗尽已验；实施前progress记录单步边界和停止不是强杀。无DB/API/依赖/权限变更。
+- Decision：每次最多一个业务动作，实例互斥/交替尝试优先，stop仅停新准入；异常保原pending，静止Reader核绑定旧代/前两次真实期限仅清本机pending（非Job成功/删除），其他仍原执行器核源排空。无法核验/活线程不猜状态或盲领。
+- Evidence：6新unit/1090无失败（2既有环境权限跳过），真实bounded PG-Vault双ScopePENDING实际准入/周期heartbeat/发布、空和stop六表无写、实际撤权安全FAILED与原发布回归，开发wheel通过。实例交替/timeout排空和错facts/本机释放仅unit，未证明多Worker全局公平或实际timeout综合场景。
+- Risks/rollback：坏源/无法核验终态可阻实例，未知跨进程恢复/隔离/loop待；无Migration/API/依赖/生产升级，撤内部装配保历史。下一P06-P08主循环/可中断等待/排空停止；正式信任/质量/完整包/Gate未完成。
+
 ## DEC-20260927-241
 
 - Precode：Phase2/P06-P06，CR-AUD-004/ADR011，前置P06-P03/04/05已验；编码前进度记录领取确认不明的问题与最小确认方案，无Schema/API/技术栈或权限扩张。

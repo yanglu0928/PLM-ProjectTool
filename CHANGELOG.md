@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/P06-P07新增有界后台单步：实例互斥、交替尝试耗尽收尾/正常领取、停止新准入但排空已知命令，异常保pending、实际静止Reader旧代/前两次期限仅释放本机调度引用，不猜终态/强杀/改DB。6新unit/1090无失败（2环境权限跳过），真实bounded PG-Vault双Scope实际领取/周期heartbeat/发布、空及stop六表不写、撤权安全失败及原发布回归通过；开发wheel成功。Windows11，无Migration/API/依赖/数据升级，0042保留，撤内部装配保历史回滚。调度交替和异常排空仅unit范围；全局公平/多Worker/主循环/CLI/HTTP、正式材料/质量/其他平台/Gate/可用安装包仍待。
+
 - 2026-09-27：`0.1.0.dev0`/P06-P06新增专属领取commit异常的本次已知命令确认恢复：结束原UOW后核Root/pair/current Worker-fence活Lease/Attempt、实际完整Claim/同受控identity；不盲重领，不用STALE猜成功。3新unit/1084项后端无失败（2Windows权限跳过）、真实PG双Scope提交前回滚拒绝与commit后确认故障仅一Lease/Attempt、六表只读/错Worker过期换代成功拒绝/撤权仍正文拒绝，开发wheel通过。Windows11，无Migration/API/依赖/数据升级，0042保留；撤内部确认分支保已创建历史回滚。实际网络断线/跨进程未知命令恢复/调度/loop/CLI/HTTP、正式材料/质量/其他平台/Gate/可用安装包仍待。
 
 - 2026-09-27：`0.1.0.dev0`/P06-P05新增耗尽到期任务无锁单候选扫描与原安全Owner受控收尾；固定audit/AUDIT_EXPORT/current第三Attempt/max3/ACTIVE一致Lease及DB期限，hint非授权，前后identity，不直接写状态或读正文。6新unit/真实PG-Vault两Scope六表只读、正确Worker-fence、收尾后无候选/真实commit后确认恢复及旧发布链验证通过；1081项无失败（2Windows权限跳过）、开发wheel通过。Windows11，无Migration/API/依赖/数据升级，0042不变；撤未公开装配保历史回滚。领取确认恢复/公平并发/坏源隔离/主循环/CLI/HTTP、正式材料/质量/其他平台/Gate/可用安装包未完成。
