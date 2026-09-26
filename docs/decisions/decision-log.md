@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-263
+
+- Precode：AUD-03-A07-P01 submit-http进度先记录，实际Submit/Receipt/JobGET前置满足，原冻结AUDIT_EXPORT路径/Role/错误码不改。
+- Decision：可选POST严格8192 UTF8 JSON/白名单/aware日期原Spec、当前Session-CSRF+原事务重验，202固定原受理JobRef+export_id/status_url；重放终态不复活，实时状态另GET。scope冻结安全码正式注册，无本文正文/路径泄露。
+- Evidence：5新Contract/1155无失败/2跳过，实际PG两Scope202/重复原refs无写/409/Session-CSRF-Origin-License/项目与角色拒绝；原Audit插入后故障十表回滚，原Worker真发布/GET SUCCEEDEDv2/终态重放保原受理且单Attempt，原发布回归通过。
+- Impact：无Migration/权限/依赖变，默认/Windows尚未挂POST；撤可选Router回滚，原提交历史保留。下一Windows仅写模式接线；正式材料/其他Owner/性能/完整Scope/Gate/安装包待，不新增外发或生产操作。
+
 ## DEC-20260927-262
 
 - Precode：JOB-01-A03 Windows装配进度先记录，原可选GET/Audit Owner/0043前置满足。
