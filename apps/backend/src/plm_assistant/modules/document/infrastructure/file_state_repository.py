@@ -28,6 +28,8 @@ class SqlAlchemyFileStateRepository:
             FileObjectRow.file_object_id == command.file_object_id,
             FileObjectRow.scope == command.scope,
             FileObjectRow.project_id == command.project_id,
+            FileObjectRow.usage_kind == "DOCUMENT",
+            FileObjectRow.owner_object_id.is_(None),
         ).with_for_update(of=FileObjectRow)).scalar_one_or_none()
         if row is None:
             raise FileStateCommandError("RESOURCE_NOT_FOUND")

@@ -120,6 +120,8 @@ class SqlAlchemyFilePublishRepository:
             FileObjectRow.file_object_id == command.file_object_id,
             FileObjectRow.scope == command.scope,
             FileObjectRow.project_id == command.project_id,
+            FileObjectRow.usage_kind == "DOCUMENT",
+            FileObjectRow.owner_object_id.is_(None),
         )
         if lock:
             query = query.with_for_update(of=FileObjectRow)

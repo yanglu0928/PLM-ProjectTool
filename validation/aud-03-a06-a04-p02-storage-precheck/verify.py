@@ -43,9 +43,13 @@ class StorageCompatibility(unittest.TestCase):
             if hasattr(constraint, "sqltext")
         }
         scope = constraints["ck_doc_file_objects__scope_project"]
-        self.assertIn("scope='GLOBAL'", scope)
+        self.assertIn("'GLOBAL'", scope)
         self.assertIn("scope='PROJECT'", scope)
-        self.assertNotIn("DEPLOYMENT", scope)
+        # CR-AUD-002/0040 expands metadata only; ordinary publication stays closed.
+        self.assertIn("DEPLOYMENT", scope)
+        usage = constraints["ck_doc_file_objects__usage"]
+        self.assertIn("usage_kind='DOCUMENT'", usage)
+        self.assertIn("scope IN ('GLOBAL','PROJECT')", usage)
 
 
 if __name__ == "__main__":

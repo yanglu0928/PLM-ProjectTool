@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A01按CR-AUD-002新增0040 FileObject内部AUDIT_EXPORT用途/归属与身份/内容/历史保护，旧DOCUMENT默认及所有原列保留；同项目DocumentVersion/Upload误绑和普通FileState/Publish拒绝。实际空/旧数据up/down/reup/parity/竞争down锁与历史拒绝PASS，883项无失败（2环境跳过）、四项链路回归/开发wheel通过。无HTTP/依赖变化；升级需受控0039→0040，任何专用文件历史拒绝降级；无生产迁移。实际审计存储/结果/Worker发布/下载和正式包待。
+
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03 实施前登记CR-AUD-002/ADR010，内部审计FileObject用途/DEPLOYMENT归属、独立结果与恢复发布设计；保留普通Document/Upload/Parse/Output规则及原冻结历史。仅设计文档，无Migration/API/依赖/升级动作；未实现或运行验收，下一项Schema分项，非可用程序包。
 
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P02 文件归属前置核查，4项只读兼容探测通过：既有GLOBAL/PROJECT保持支持、DEPLOYMENT存储与发布实际拒绝、ORM范围一致。普通OutputArtifact来源不可伪造，下一项专项CR后实现内部文件/结果契约；无生产代码/Migration/API/依赖变更，无升级动作。核查完成不等于导出文件交付通过，三平台/正式包仍待。

@@ -58,4 +58,6 @@ P03-A01：FileObject用途/归属及DocumentVersion/Upload防误绑Schema，真�
 
 ## 当前结果
 
-仅完成变更决策和验收设计；无Migration、生产代码或公开API变更。A04-P02兼容探测证据保留；CR整体IN_PROGRESS，Gate3/质量/正式信任源/发行完整Scope仍未关闭。
+初始设计时仅完成变更决策和验收设计，无Migration、生产代码或公开API变更。后续实际实施见下列分项结果；A04-P02兼容探测证据保留。CR整体IN_PROGRESS，Gate3/质量/正式信任源/发行完整Scope仍未关闭。
+
+2026-09-26 P03-A01执行结果：增量0040/ORM用途与归属、同PROJECT普通引用与通用状态/发布入口隔离、身份/内容/状态历史保护；实际空/旧数据up/down/reup/parity、并发down锁/历史拒绝PASS。883项无失败（2环境跳过）、四项真实链路回归及开发wheel PASS。旧DOCUMENT原值不变、无生产操作/公开API。细节见对应进度记录；合成owner不冒充实际Export根、File/Lease/下载证明。存储公共Port/尝试与成功结果/原子发布/完整交付仍待，CR整体IN_PROGRESS。

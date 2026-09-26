@@ -3514,6 +3514,16 @@
 - Authority：纯renderer和owned source Port不鉴权、不建UOW/commit、不授予文件交付；Owner须先实际权限/Root/原Job/Lease，再受控临时产物，完成发布前重新授权。失败可能已写部分字节，必须保持临时且不可下载/清理，不伪装文件I/O回滚。
 - Verification：规范向量/空集合/UTF8/LF/确定性、文件与成员hash区分、安全投影/筛选/范围、缺失/多项/重复/错序/错版本、短写/异常/超限、真实固定member源与新事件排除。摘要去重O(n)UUID内存保留，批量DB读取不声称常量内存或性能通过。
 - Rollback：撤未装配代码无历史变更；无Migration/API/Scope/依赖，正式Artifact/当前渲染权限/发布/下载/Gate/包仍待。
+## DEC-20260926-205 — P03-A01编码前检查
+
+- 当前Phase/WBS：Phase2 / AUD-03-A06-A04-P03-A01；输入CR-AUD-002/ADR010、0039、DM03/04/API02，P02实际不兼容与P03设计已完成。
+- 涉及模块/实体：Document FileObject、DocumentVersion/Upload引用保护；Audit仅后续来源，不跨模块写表。无新API/角色/依赖/生产操作。
+- 验收：0040与ORM parity，旧DOCUMENT完整保留；专用文件用途/归属/内容身份固定，禁止普通DocumentVersion/Upload误绑，即使同PROJECT；空/有数据up/down/reup、实际并发降级锁和专用历史拒绝down。
+- 实现选择：新增用途/owner CHECK及独立触发器，不改写0022/0023已有函数。用途/owner对所有FileObject immutable；专用Audit文件固定Hash/Size/MIME/Locator/Scope/Actor，初态STAGED/PERSISTENT，AVAILABLE后仅限制且不可复活；保留失败/取消文件历史，不物理delete/truncate。实际Export根与Worker权限不由UUID/Schema证明，后续公共Port独立验。
+- 风险/回滚：含任一AUDIT_EXPORT历史拒绝0040降级；仅临时DB运行，离线down关闭；DDL停写/备份与正式文件/存储/Lease/HTTP/Gate/性能仍待。
+
+- 同问题入口隔离补充：FileState/Publish通用Repository只加载DOCUMENT/NULL owner，防同PROJECT审计文件被旧状态/发布入口处理；实际公共Port独立验证仍待。
+
 ## DEC-20260926-204
 
 - Date：2026-09-26；WBS：AUD-03-A06-A04-P03变更设计。

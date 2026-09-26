@@ -27,8 +27,16 @@ class FileObjectRow(Base):
                              name="fk_doc_file_objects__creator", ondelete="NO ACTION"),
         ForeignKeyConstraint(["updated_by"], ["plm.auth_users.user_id"],
                              name="fk_doc_file_objects__updater", ondelete="NO ACTION"),
-        CheckConstraint("(scope='GLOBAL' AND project_id IS NULL) OR (scope='PROJECT' AND project_id IS NOT NULL)",
+        CheckConstraint("(scope IN ('GLOBAL','DEPLOYMENT') AND project_id IS NULL) OR (scope='PROJECT' AND project_id IS NOT NULL)",
                         name="ck_doc_file_objects__scope_project"),
+        CheckConstraint("""(usage_kind='DOCUMENT' AND owner_object_id IS NULL AND scope IN ('GLOBAL','PROJECT'))
+ OR (usage_kind='AUDIT_EXPORT' AND owner_object_id IS NOT NULL
+ AND owner_object_id<>'00000000-0000-0000-0000-000000000000'::uuid
+ AND scope IN ('DEPLOYMENT','PROJECT') AND storage_class='PERSISTENT'
+ AND sha256 IS NOT NULL AND size_bytes IS NOT NULL AND size_bytes BETWEEN 0 AND 134217728
+ AND detected_mime IS NOT NULL AND detected_mime='application/x-ndjson'
+ AND isfinite(created_at)
+ AND (available_at IS NULL OR (isfinite(available_at) AND file_state IN ('AVAILABLE','RESTRICTED'))))""", name="ck_doc_file_objects__usage"),
         CheckConstraint("storage_class IN ('TEMPORARY','PERSISTENT')",
                         name="ck_doc_file_objects__storage_class"),
         CheckConstraint(f"file_state IN ({_STATES})", name="ck_doc_file_objects__state"),
@@ -51,6 +59,8 @@ class FileObjectRow(Base):
     )
 
     file_object_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    usage_kind: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'DOCUMENT'"))
+    owner_object_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     scope: Mapped[str] = mapped_column(Text, nullable=False)
     project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     storage_class: Mapped[str] = mapped_column(Text, nullable=False)
