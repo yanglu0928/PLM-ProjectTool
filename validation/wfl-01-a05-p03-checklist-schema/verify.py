@@ -248,7 +248,7 @@ def main():
                 raise AssertionError("nonempty Checklist history downgrade accepted")
             command.check(config)
             with connect(name) as db:
-                assert db.execute("SELECT version_num FROM plm.alembic_version").fetchone()[0] == "20260926_0032"
+                assert db.execute("SELECT version_num FROM plm.alembic_version").fetchone()[0] == "20260926_0033"
                 assert db.execute("SELECT count(*) FROM plm.wfl_checklist_records").fetchone()[0] == count
             print("PASS: 0032 two-table ORM parity, empty and existing-state upgrade/down/re-up unchanged; nine correction pairs, legacy-chain rejection, version/concurrency/rollback/atomicity, blocked stage retained, scoped/generated Evidence, basis/sealing/immutability and nonempty down refusal; synthetic Review/exception/Audit failure, not actual Gate/production")
         finally:

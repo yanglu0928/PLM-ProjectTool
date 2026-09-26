@@ -1,6 +1,10 @@
 # CR-WFL-004：Checklist 追加记录与受控更正
 
 日期 2026-09-26；设计 WFL-01-A05-P01；状态 SCHEMA_IMPLEMENTED / APPLICATION_PENDING。P02 形状、P03 两表/0032 和隔离结构验收已完成，结果见 P03 报告；真实 Owner/Gate/命令未完成，不能据此判客户流程或 Gate PASS。
+
+2026-09-26 后续：P04 当前完整链内部查询已验；WFL-02-A01-P04 登记 Gate→固定记录关联增量，比较并采用旧 GateItem 三 nullable 字段+复合 FK，而非新映射实体/覆盖历史/推定回填。nullable 仅兼容旧历史，新插入强制全有；0033 实施前设计/差异/风险/迁移/回滚/验收见 `docs/workflow/gate-checklist-record-link-design-v1.md`。此处记录授权方案，不宣称 0033 或实际 Gate 已通过。
+
+实施检查点：WFL-02-A01-P05/0033 已在 Windows 11 隔离 PostgreSQL 验证固定记录/精确依据/重观测不回退、旧历史保持与非空 down 拒绝，见 P05 报告；上条为实施前记录保留。真实 Review/例外 Owner、受权写服务/Gate 命令尚缺，不判客户批准/实际 Gate PASS。
 依据 DM-02 ChecklistItem/WAIVED、API-02 WORKFLOW_CHECKLIST_RECORD、SC-01 WFL-01、CR-WFL-001/002/003；用户持续授权 V1.1。原冻结 `64cdf09` 和 0030/0031 不覆盖。
 
 ## 证据与差异

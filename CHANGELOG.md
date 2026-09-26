@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/WFL-02-A01-P04/P05/CR-WFL-004 新增 GateItem 固定 ChecklistRecord 三字段/复合 FK 与独立 Migration `0033`，旧历史保持 NULL、新插入强制当前已提交记录、typed 依据精确集合和重观测不回退。Windows 11 后端 672 项无失败（2 项环境跳过），隔离 PostgreSQL 五阶段/十关联、旧数据 up/down/re-up、拒绝/并发/回滚/不可变/非空 down 和既有回归、开发 wheel PASS。升级先备份至 0033，新关联非空拒绝 down；无 API/角色/依赖变化。真实 Review/Owner/Gate 服务及正式安装包未完成，Server 2025 未验、Debian 13 暂不验证。
+
 - 2026-09-26：`0.1.0.dev0`/WFL-01-A05-P04 新增内部事务当前 Checklist 完整链/固定依据查询，锁定当前投影、拒绝缺链旧 PASS/过时记录、保留历史观测。Windows 11 后端 670 项无失败（2 项环境跳过），隔离 PostgreSQL Scope/链/版本分离/观测保留/并发锁与既有 Workflow 回归、开发 wheel PASS。无 Migration/API/依赖/架构变化，需已有 0032，升级无新动作；真实权限入口/Owner/Gate/性能与正式安装包未完成，Server 2025 未验、Debian 13 暂不验证。
 
 - 2026-09-26：`0.1.0.dev0`/WFL-01-A05-P03/CR-WFL-004 新增 Checklist 记录/依据两表 ORM 和 Migration `0032`，首次/可信更正链、两个投影原子核对、BLOCKED 状态保持、追加封口/保留观测及非空降级保护。Windows 11 后端 663 项无失败（2 项环境跳过），隔离 PostgreSQL 空/有数据 up/down/re-up、九更正组合/并发/回滚/拒绝、既有 Workflow 回归与开发 wheel PASS。升级前备份到 0032；无 API/依赖/架构改变。真实 Owner/Review/例外/写服务/Gate 关联未完成，Server 2025 未验、Debian 13 暂不验证，不是正式程序包。

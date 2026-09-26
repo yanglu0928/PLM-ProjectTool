@@ -3210,3 +3210,11 @@
 - Reason：旧无链或过时 PASS 不能充当 Gate 依据；ORM identity map 可能滞后，双锁序列不同，跨项目/无链不自动回填。
 - Impact：仅内部 Port/DTO/Repository；无 Migration/公开 API/依赖/权限改变，不装配不受权入口。完整链读取增长成本留待性能验证；受权 Owner/Gate 仍待。
 - Rollback：不使用新 Port，保留当前表与历史，无数据回滚。
+
+## DEC-20260926-166
+
+- Date：2026-09-26；WBS：WFL-02-A01-P04/P05；CR：CR-WFL-004。
+- Decision：GateItem 增加三 nullable 固定记录/版本/摘要字段与复合 FK；旧历史保持 NULL，新 INSERT 强制关联已提交的当前同项记录，保留 typed refs 精确集合和独立 Gate 重观测。
+- Reason：直接返回 PASS 无法回溯具体更正记录；旧快照不可改写，不能由 nullable 漏洞创建新无链 Gate。记录操作者不等于例外批准人。
+- Impact：拟独立 0033，原 0031/0032/冻结 API 不改，无新增业务 Scope/依赖。Schema 先验，实际批准 Owner/Gate 服务另做，不把结构当客户确认。
+- Rollback：新关联非空拒绝 down；只有旧 NULL 关系允许删空字段，应用不装配新 Gate 命令。

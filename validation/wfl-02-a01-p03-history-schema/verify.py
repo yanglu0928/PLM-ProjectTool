@@ -186,6 +186,9 @@ def main():
             # Empty history down is allowed even with existing Workflow instances.
             command.downgrade(config, "20260926_0030")
             command.upgrade(config, "head")
+            # The original raw-state fixture is a legacy 0032 control, not a new
+            # Gate bypass. 0033 new fixed-record insertion is tested separately.
+            command.downgrade(config, "20260926_0032")
             with connect(name) as db:
                 assert before == db.execute("SELECT * FROM plm.wfl_project_workflows ORDER BY workflow_id").fetchall()
                 assert db.execute("SELECT count(*) FROM plm.wfl_stage_transitions").fetchone()[0] == 0
@@ -267,9 +270,10 @@ def main():
                 assert "Workflow success history exists" in str(exc)
             else:
                 raise AssertionError("nonempty history downgrade accepted")
+            command.upgrade(config, "head")
             command.check(config)
             with connect(name) as db:
-                assert db.execute("SELECT version_num FROM plm.alembic_version").fetchone()[0] == "20260926_0032"
+                assert db.execute("SELECT version_num FROM plm.alembic_version").fetchone()[0] == "20260926_0033"
                 assert db.execute("SELECT count(*) FROM plm.wfl_stage_transitions").fetchone()[0] == 5
             print("PASS: 0031 three-table ORM parity, empty up/down/re-up and existing Workflow unchanged; all 36 stage pairs, five valid histories, waiver/global basis, rejection rollback, concurrent expected version, immutability/sealing and retained observed Evidence after revoke; synthetic Review/exception, not Gate/production")
         finally:
