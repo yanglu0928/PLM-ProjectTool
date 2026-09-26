@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "plm-project-tool-backend"
+version = "0.1.0.dev0"
+description = "Backend for the PLM project implementation assistant"
+readme = "README.md"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+  "Alembic==1.20.0",
+  "cryptography==50.0.1",
+  "fastapi==0.141.1",
+  "pydantic-settings==2.15.0",
+  "psycopg[binary]==3.3.5",
+  "PyYAML==6.0.3",
+  "SQLAlchemy==2.0.54",
+  "uvicorn==0.53.0",
+]
+
+[project.optional-dependencies]
+test = [
+  "httpx2==2.13.1",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["plm_assistant*"]
+
+[tool.setuptools.package-data]
+"plm_assistant.migrations" = ["script.py.mako"]
+"plm_assistant.modules.license" = ["trust/product_public_key.json"]

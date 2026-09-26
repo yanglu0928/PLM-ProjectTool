@@ -1,0 +1,415 @@
+"""Current authorized Document metadata reads; no content or HTTP projection."""
+
+from __future__ import annotations
+
+import uuid
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from typing import Protocol
+
+from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
+from plm_assistant.modules.project.application.authorization import ALL_MEMBERS, ProjectActorFacts
+
+
+class DocumentReadError(RuntimeError):
+    def __init__(self, code: str) -> None:
+        self.code = code
+        super().__init__(code)
+
+
+@dataclass(frozen=True, slots=True)
+class DocumentReadQuery:
+    session_token: bytes = field(repr=False)
+    trace_id: uuid.UUID
+    scope: str
+    project_id: uuid.UUID | None
+
+
+@dataclass(frozen=True, slots=True)
+class DocumentView:
+    document_id: uuid.UUID
+    scope: str
+    project_id: uuid.UUID | None
+    document_category: str
+    document_subtype: str | None
+    title: str
+    original_display_name: str
+    document_state: str
+    latest_version_ref: uuid.UUID | None
+    effective_version_ref: uuid.UUID | None
+    created_at: datetime
+    etag: str
+
+
+@dataclass(frozen=True, slots=True)
+class DocumentPage:
+    items: tuple[DocumentView, ...]
+    next_after_document_id: uuid.UUID | None
+    has_more: bool
+
+
+@dataclass(frozen=True, slots=True)
+class DocumentVersionView:
+    document_version_id: uuid.UUID
+    document_id: uuid.UUID
+    version_no: int
+    content_sha256: str
+    size_bytes: int
+    detected_mime: str
+    availability_state: str
+    supersedes_version_ref: uuid.UUID | None
+    created_at: datetime
+    integrity_checked_at: datetime | None
+
+
+@dataclass(frozen=True, slots=True)
+class DocumentVersionPage:
+    items: tuple[DocumentVersionView, ...]
+    next_before_version_no: int | None
+    has_more: bool
+
+
+@dataclass(frozen=True, slots=True)
+class ParseRecordView:
+    parse_record_id: uuid.UUID
+    document_version_id: uuid.UUID
+    parser_profile: str
+    parser_version: str
+    parse_state: str
+    attempt_no: int
+    job_ref: uuid.UUID
+    result_ref: uuid.UUID | None
+    error_code: str | None
+    retryable: bool | None
+    created_at: datetime
+    started_at: datetime | None
+    completed_at: datetime | None
+
+
+@dataclass(frozen=True, slots=True)
+class ParseRecordPage:
+    items: tuple[ParseRecordView, ...]
+    next_before: tuple[datetime, uuid.UUID] | None
+    has_more: bool
+
+
+@dataclass(frozen=True, slots=True)
+class DocumentDownloadSource:
+    actor_user_id: uuid.UUID
+    document_id: uuid.UUID
+    document_version_id: uuid.UUID
+    file_object_id: uuid.UUID
+    scope: str
+    project_id: uuid.UUID | None
+    storage_locator: str = field(repr=False)
+    content_sha256: bytes = field(repr=False)
+    size_bytes: int
+    detected_mime: str
+
+
+class DocumentReadSessionPort(Protocol):
+    def authenticated_user(self, transaction: object, *, session_token: bytes,
+                           now: datetime) -> uuid.UUID | None: ...
+
+
+class DocumentReadAdminPort(Protocol):
+    def authorized_admin(self, transaction: object, *, session_token: bytes,
+                         now: datetime) -> uuid.UUID | None: ...
+
+
+class DocumentReadProjectFactsPort(Protocol):
+    def actor_facts(self, transaction: object, *, user_id: uuid.UUID,
+                    project_id: uuid.UUID, lock: bool = False) -> ProjectActorFacts | None: ...
+
+
+class DocumentReadLicensePort(Protocol):
+    def require_valid(self, *, trace_id: uuid.UUID) -> object: ...
+
+
+class DocumentReadRepositoryPort(Protocol):
+    def list(self, transaction: object, *, scope: str,
+             project_id: uuid.UUID | None, after_document_id: uuid.UUID | None,
+             limit: int) -> DocumentPage: ...
+    def get(self, transaction: object, *, scope: str,
+            project_id: uuid.UUID | None, document_id: uuid.UUID) -> DocumentView | None: ...
+    def list_versions(self, transaction: object, *, scope: str,
+                      project_id: uuid.UUID | None, document_id: uuid.UUID,
+                      before_version_no: int | None,
+                      limit: int) -> DocumentVersionPage: ...
+    def get_version(self, transaction: object, *, scope: str,
+                    project_id: uuid.UUID | None, document_id: uuid.UUID,
+                    document_version_id: uuid.UUID) -> DocumentVersionView | None: ...
+    def get_version_for_trace(self, transaction: object, *, scope: str,
+                              project_id: uuid.UUID | None, document_id: uuid.UUID,
+                              document_version_id: uuid.UUID) -> DocumentVersionView | None: ...
+    def list_parses(self, transaction: object, *, scope: str,
+                    project_id: uuid.UUID | None, document_version_id: uuid.UUID,
+                    before: tuple[datetime, uuid.UUID] | None,
+                    limit: int) -> ParseRecordPage: ...
+    def get_download_source(self, transaction: object, *, scope: str,
+                            project_id: uuid.UUID | None, document_id: uuid.UUID,
+                            document_version_id: uuid.UUID,
+                            actor_user_id: uuid.UUID) -> DocumentDownloadSource | None: ...
+
+
+class DocumentReadService:
+    def __init__(self, *, unit_of_work: Callable[[], object],
+                 session_access: DocumentReadSessionPort,
+                 admin_access: DocumentReadAdminPort,
+                 project_facts: DocumentReadProjectFactsPort,
+                 license_guard: DocumentReadLicensePort,
+                 repository: DocumentReadRepositoryPort,
+                 clock: Callable[[], datetime] | None = None) -> None:
+        if any(item is None for item in (unit_of_work, session_access, admin_access,
+                                         project_facts, license_guard, repository)):
+            raise ValueError("Document read dependencies are required")
+        self._uow = unit_of_work
+        self._session_access, self._admin_access = session_access, admin_access
+        self._project_facts, self._guard, self._repository = (
+            project_facts, license_guard, repository,
+        )
+        self._clock = clock or (lambda: datetime.now(timezone.utc))
+
+    def list(self, query: DocumentReadQuery, *, after_document_id: uuid.UUID | None = None,
+             limit: int = 50) -> DocumentPage:
+        self._validate_query(query)
+        if ((after_document_id is not None and (
+                type(after_document_id) is not uuid.UUID or after_document_id.int == 0))
+                or type(limit) is not int or not 1 <= limit <= 200):
+            raise DocumentReadError("VALIDATION_FAILED")
+        try:
+            self._guard.require_valid(trace_id=query.trace_id)
+            with self._uow() as tx:
+                self._authorize(tx, query)
+                page = self._repository.list(
+                    tx, scope=query.scope, project_id=query.project_id,
+                    after_document_id=after_document_id, limit=limit,
+                )
+                if type(page) is not DocumentPage:
+                    raise DocumentReadError("DOCUMENT_UNAVAILABLE")
+                return page
+        except DocumentReadError:
+            raise
+        except RuntimeLicenseError:
+            raise DocumentReadError("LICENSE_OPERATION_DENIED") from None
+        except Exception:
+            raise DocumentReadError("DOCUMENT_UNAVAILABLE") from None
+
+    def get(self, query: DocumentReadQuery, document_id: uuid.UUID) -> DocumentView:
+        self._validate_query(query)
+        if type(document_id) is not uuid.UUID or document_id.int == 0:
+            raise DocumentReadError("RESOURCE_NOT_FOUND")
+        try:
+            self._guard.require_valid(trace_id=query.trace_id)
+            with self._uow() as tx:
+                self._authorize(tx, query)
+                view = self._repository.get(
+                    tx, scope=query.scope, project_id=query.project_id,
+                    document_id=document_id,
+                )
+                if type(view) is not DocumentView:
+                    raise DocumentReadError("RESOURCE_NOT_FOUND")
+                return view
+        except DocumentReadError:
+            raise
+        except RuntimeLicenseError:
+            raise DocumentReadError("LICENSE_OPERATION_DENIED") from None
+        except Exception:
+            raise DocumentReadError("DOCUMENT_UNAVAILABLE") from None
+
+    def list_versions(self, query: DocumentReadQuery, document_id: uuid.UUID, *,
+                      before_version_no: int | None = None,
+                      limit: int = 50) -> DocumentVersionPage:
+        self._validate_query(query)
+        if type(document_id) is not uuid.UUID or document_id.int == 0:
+            raise DocumentReadError("RESOURCE_NOT_FOUND")
+        if (before_version_no is not None and (
+                type(before_version_no) is not int or before_version_no <= 0)
+                or type(limit) is not int or not 1 <= limit <= 200):
+            raise DocumentReadError("VALIDATION_FAILED")
+        try:
+            self._guard.require_valid(trace_id=query.trace_id)
+            with self._uow() as tx:
+                self._authorize(tx, query)
+                self._require_document(tx, query, document_id)
+                page = self._repository.list_versions(
+                    tx, scope=query.scope, project_id=query.project_id,
+                    document_id=document_id, before_version_no=before_version_no,
+                    limit=limit,
+                )
+                if type(page) is not DocumentVersionPage:
+                    raise DocumentReadError("DOCUMENT_UNAVAILABLE")
+                return page
+        except DocumentReadError:
+            raise
+        except RuntimeLicenseError:
+            raise DocumentReadError("LICENSE_OPERATION_DENIED") from None
+        except Exception:
+            raise DocumentReadError("DOCUMENT_UNAVAILABLE") from None
+
+    def get_version(self, query: DocumentReadQuery, document_id: uuid.UUID,
+                    document_version_id: uuid.UUID) -> DocumentVersionView:
+        self._validate_query(query)
+        if (type(document_id) is not uuid.UUID or document_id.int == 0
+                or type(document_version_id) is not uuid.UUID
+                or document_version_id.int == 0):
+            raise DocumentReadError("RESOURCE_NOT_FOUND")
+        try:
+            self._guard.require_valid(trace_id=query.trace_id)
+            with self._uow() as tx:
+                self._authorize(tx, query)
+                self._require_document(tx, query, document_id)
+                view = self._repository.get_version(
+                    tx, scope=query.scope, project_id=query.project_id,
+                    document_id=document_id, document_version_id=document_version_id,
+                )
+                if type(view) is not DocumentVersionView:
+                    raise DocumentReadError("RESOURCE_NOT_FOUND")
+                return view
+        except DocumentReadError:
+            raise
+        except RuntimeLicenseError:
+            raise DocumentReadError("LICENSE_OPERATION_DENIED") from None
+        except Exception:
+            raise DocumentReadError("DOCUMENT_UNAVAILABLE") from None
+
+    def get_version_for_trace(self, transaction: object, query: DocumentReadQuery,
+                              document_id: uuid.UUID,
+                              document_version_id: uuid.UUID) -> DocumentVersionView:
+        """Prove a fixed, available version inside the caller's write transaction."""
+        self._validate_query(query)
+        if (transaction is None or type(document_id) is not uuid.UUID
+                or document_id.int == 0 or type(document_version_id) is not uuid.UUID
+                or document_version_id.int == 0):
+            raise DocumentReadError("RESOURCE_NOT_FOUND")
+        try:
+            self._guard.require_valid(trace_id=query.trace_id)
+            self._authorize(transaction, query, lock_project=True)
+            view = self._repository.get_version_for_trace(
+                transaction, scope=query.scope, project_id=query.project_id,
+                document_id=document_id, document_version_id=document_version_id,
+            )
+            if type(view) is not DocumentVersionView:
+                raise DocumentReadError("RESOURCE_NOT_FOUND")
+            return view
+        except DocumentReadError:
+            raise
+        except RuntimeLicenseError:
+            raise DocumentReadError("LICENSE_OPERATION_DENIED") from None
+        except Exception:
+            raise DocumentReadError("DOCUMENT_UNAVAILABLE") from None
+
+    def list_parses(self, query: DocumentReadQuery, document_id: uuid.UUID,
+                    document_version_id: uuid.UUID, *,
+                    before: tuple[datetime, uuid.UUID] | None = None,
+                    limit: int = 50) -> ParseRecordPage:
+        self._validate_query(query)
+        if (type(document_id) is not uuid.UUID or document_id.int == 0
+                or type(document_version_id) is not uuid.UUID
+                or document_version_id.int == 0):
+            raise DocumentReadError("RESOURCE_NOT_FOUND")
+        if (type(limit) is not int or not 1 <= limit <= 200
+                or before is not None and (
+                    type(before) is not tuple or len(before) != 2
+                    or type(before[0]) is not datetime
+                    or before[0].tzinfo is None or before[0].utcoffset() is None
+                    or type(before[1]) is not uuid.UUID or before[1].int == 0)):
+            raise DocumentReadError("VALIDATION_FAILED")
+        try:
+            self._guard.require_valid(trace_id=query.trace_id)
+            with self._uow() as tx:
+                self._authorize(tx, query)
+                self._require_document(tx, query, document_id)
+                if type(self._repository.get_version(
+                        tx, scope=query.scope, project_id=query.project_id,
+                        document_id=document_id,
+                        document_version_id=document_version_id)) is not DocumentVersionView:
+                    raise DocumentReadError("RESOURCE_NOT_FOUND")
+                page = self._repository.list_parses(
+                    tx, scope=query.scope, project_id=query.project_id,
+                    document_version_id=document_version_id, before=before, limit=limit,
+                )
+                if type(page) is not ParseRecordPage:
+                    raise DocumentReadError("DOCUMENT_UNAVAILABLE")
+                return page
+        except DocumentReadError:
+            raise
+        except RuntimeLicenseError:
+            raise DocumentReadError("LICENSE_OPERATION_DENIED") from None
+        except Exception:
+            raise DocumentReadError("DOCUMENT_UNAVAILABLE") from None
+
+    def get_download_source(self, query: DocumentReadQuery, document_id: uuid.UUID,
+                            document_version_id: uuid.UUID) -> DocumentDownloadSource:
+        self._validate_query(query)
+        if (type(document_id) is not uuid.UUID or document_id.int == 0
+                or type(document_version_id) is not uuid.UUID
+                or document_version_id.int == 0):
+            raise DocumentReadError("RESOURCE_NOT_FOUND")
+        try:
+            self._guard.require_valid(trace_id=query.trace_id)
+            with self._uow() as tx:
+                actor = self._authorize(tx, query)
+                self._require_document(tx, query, document_id)
+                source = self._repository.get_download_source(
+                    tx, scope=query.scope, project_id=query.project_id,
+                    document_id=document_id, document_version_id=document_version_id,
+                    actor_user_id=actor,
+                )
+                if (type(source) is not DocumentDownloadSource
+                        or source.actor_user_id != actor
+                        or source.document_id != document_id
+                        or source.document_version_id != document_version_id
+                        or source.scope != query.scope
+                        or source.project_id != query.project_id):
+                    raise DocumentReadError("RESOURCE_NOT_FOUND")
+                return source
+        except DocumentReadError:
+            raise
+        except RuntimeLicenseError:
+            raise DocumentReadError("LICENSE_OPERATION_DENIED") from None
+        except Exception:
+            raise DocumentReadError("DOCUMENT_UNAVAILABLE") from None
+
+    def _require_document(self, tx: object, query: DocumentReadQuery,
+                          document_id: uuid.UUID) -> None:
+        if type(self._repository.get(
+                tx, scope=query.scope, project_id=query.project_id,
+                document_id=document_id)) is not DocumentView:
+            raise DocumentReadError("RESOURCE_NOT_FOUND")
+
+    @staticmethod
+    def _validate_query(query: DocumentReadQuery) -> None:
+        if (type(query) is not DocumentReadQuery
+                or type(query.session_token) is not bytes or len(query.session_token) != 32
+                or type(query.trace_id) is not uuid.UUID or query.trace_id.int == 0
+                or query.scope not in ("GLOBAL", "PROJECT")
+                or query.scope == "GLOBAL" and query.project_id is not None
+                or query.scope == "PROJECT" and (
+                    type(query.project_id) is not uuid.UUID or query.project_id.int == 0)):
+            raise DocumentReadError("VALIDATION_FAILED")
+
+    def _authorize(self, tx: object, query: DocumentReadQuery, *,
+                   lock_project: bool = False) -> uuid.UUID:
+        now = self._clock()
+        if type(now) is not datetime or now.tzinfo is None or now.utcoffset() is None:
+            raise DocumentReadError("DOCUMENT_UNAVAILABLE")
+        now = now.astimezone(timezone.utc)
+        actor = self._session_access.authenticated_user(
+            tx, session_token=query.session_token, now=now,
+        )
+        if type(actor) is not uuid.UUID or actor.int == 0:
+            raise DocumentReadError("AUTH_ACCESS_DENIED")
+        if query.scope == "GLOBAL":
+            if self._admin_access.authorized_admin(
+                    tx, session_token=query.session_token, now=now) != actor:
+                raise DocumentReadError("RESOURCE_NOT_FOUND")
+        else:
+            facts = self._project_facts.actor_facts(
+                tx, user_id=actor, project_id=query.project_id, lock=lock_project,
+            )
+            if (type(facts) is not ProjectActorFacts or facts.project_role not in ALL_MEMBERS
+                    or facts.project_state not in ("ACTIVE", "ARCHIVED")):
+                raise DocumentReadError("RESOURCE_NOT_FOUND")
+        return actor

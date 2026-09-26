@@ -1,0 +1,3744 @@
+# 自主决策记录
+
+## DEC-20260927-233
+
+- Date/WBS：2026-09-27 / P04-P03-P04-P05；Phase2，CR-AUD-004/ADR011；前置首申请/活代ack/到期恢复/静止锁已验，编码前检查登记进度文件。
+- Decision：只读复核原Root/acceptance/Job-Outbox、唯一首USER源、当前Worker/fence一致CANCELLED/Lease/Attempt/完成时间、唯一SYSTEM完成源和当前identity前后；活期RELEASED与到期EXPIRED严格区分，首申请Audit先于完成Audit，不猜STALE或仅状态，不commit/重复Audit/读文件。
+- Evidence：6新unit，1031后端无失败（2环境跳过），真实PG临时Vault两Scope两种真正commit后确认丢失/重复八表无写；错绑定/类型/缺或重复源/identity失败拒绝，旧发布/wheel通过。初次unit合成时间窗错误修正重跑，不放宽生产校验；详见进度证据，不声称新并发/实际网络断线已验。
+- Risk/rollback：即时取消非本Worker证明，当前受控identity失去即无成功receipt；无Migration/API/依赖或生产升级。撤未装配核验保历史终态，Next瞬时失败retry策略，执行器/主循环/公开HTTP/正式材料/质量/全Scope可用包/Gate保持待。
+
+## DEC-20260927-232
+
+- Date/WBS：2026-09-27 / P04-P03-P04-P04；Phase2，编码前检查已登记，输入CR-AUD-004/ADR011，前置首USER源、静止锁、受控identity、alive取消Owner已验。
+- Decision：保留无Worker/fence的旧技术恢复，另增严格当前Worker/fence/一致Job-Lease-Attempt和实际DB时钟到期恢复；首USER源与当前identity核验→最小SYSTEM AUDIT_EXPORT_CANCEL_RECOVERED/LEASE_EXPIRED→identity后验→owned转换最后→commit。无权限扩张、文件删除或OS强杀断言。
+- Evidence：4新unit，实际PG临时Vault两Scope真正2秒到期/未到期/旧代/错Worker/原Root/成功/重复/裸技术来源矩阵，Audit及恢复实际写后/后验identity故障整体回滚；撤User+License业务拒绝但安全恢复成功，首历史/字节/结果保留。完整后端1025项无失败（2环境跳过）、旧发布和开发wheel通过，包hash记录进度文件。首次hash文件名误用纠正复核，构建未失败。
+- Risk/rollback：期限仅DB fencing；主执行同步I/O应已返回，静止锁非跨进程强杀。无Migration/API/依赖或生产升级，撤未装配Owner保终态历史；确认丢失/执行器/主循环/retry/HTTP与可用包/Gate待，Next取消确认丢失核验。
+
+## DEC-20260926-231
+
+- Date/WBS：2026-09-26 / P04-P03-P04-P03；前置实际首申请当前权限/USER Audit和owned Jobs ack/SystemActor/静止锁已验；输入CR-AUD-004/ADR011。只做当前活代安全确认，无权限扩张或新申请。
+- Decision：同Supervisor静止→当前identity→原Root/acceptance/pair和CANCEL_REQUESTED首历史/唯一USER源→最小SYSTEM完成Audit→第二identity→owned真实Worker/fence/alive ack最后→commit。原User/License撤权禁止业务但不阻断安全确认，reason正文不入Audit、不删除字节、不修改首申请/复活终态。
+- Evidence：4新unit/1021后端无失败（2环境跳过）、真实PG临时Vault两Scope真实申请后撤User+License仍安全ack，Job/RELEASED Lease/Attempt JOB_CANCELLED一致、唯一SYSTEM Audit，首历史/字节保留；Audit及ack写后/identity故障回滚，错绑定/已取消/成功/裸技术源/真实到期拒改，原发布/wheel通过。新ack/publish竞争未额外执行，不扩大旧fixture证明。
+- Risk/rollback：静止锁不是跨进程/磁盘强杀，同步I/O应先返回；到期取消恢复/确认丢失/执行器/HTTP仍待。无Schema/API/依赖，撤未装配Owner保历史，Next到期恢复，整体包/Gate待。
+
+## DEC-20260926-230
+
+- Date/WBS：2026-09-26 / P04-P03-P04-P02；Phase2，前置原Root/acceptance/pair/真实取消权限与技术取消Port已验；输入API03/CR-AUD-004。内部可信Owner不接受客户端original actor/spec断言。
+- Decision：可信Root→current auth→锁Root/pair→Jobs owned首事实→0015同UOW收据+首申请USER Audit/技术状态。以不可变Audit为首次响应源无需新Schema；同key重放原状态不随后续CANCELLED漂移，新keyCHECKED不覆盖首申请，所有已有首历史需唯一请求Audit佐证，裸技术取消拒绝。reason正文不入Audit或repr，首历史只留owned Job。
+- Evidence：5新unit/1017无失败（2环境跳过）、真实PG两Scope并发重放一首申请/异payload冲突/后续技术ack后原响应八表无写/新key保历史、实际PENDING立即及SUCCEEDED结果不撤回，Audit/Job写后与后验auth故障整UOW回滚、裸状态缺源拒绝，原发布/wheel通过。
+- Risk/rollback：测试technical ack只证响应漂移，不冒充Worker确认Owner/完成审计；公开HTTP-IfMatch/系统确认/到期恢复/主循环未完成。撤未装配服务保首源/状态/成功历史，无Schema/API/依赖或生产升级；Next原首申请Audit的受控系统确认，整体包/Gate待。
+
+## DEC-20260926-229
+
+- Date/WBS：2026-09-26 / P04-P03-P04-P01；实际取消技术Port缺Owner来源，导出提交权限仅PM，不能复用为冻结API03创建者或PM取消；Phase2前置真实Auth/License/Project事实已验。
+- Decision：新取消申请Authority与Project owned只读锁住current member操作，PROJECT当前有效creator任何角色或PM、DEPLOYMENT当前Admin，Session-CSRF-License每次检查，Admin无Project旁路。Archived只能申请停止既有Job，不授导出/业务写；原actor/spec必须可信Owner从Root读取，DTO不是权限凭证。无Schema/API/依赖/基线扩张，仅落实冻结角色政策。
+- Evidence：4新unit/1012无失败（2环境跳过）、实际PG两Scope当前身份/CSRF/License与creator各角色/PM/跨项目/暂停/管理员矩阵、Archived停止权限九表读无写、原发布/wheel通过；测试字段误用修正从新库重跑记进度。
+- Risk/rollback：没有取消首申请/审计/持久幂等或后台确认，POST关闭；撤未装配Port/Policy保历史。Next Owner原Root绑定与首申请审计来源/幂等，再安全确认和执行器；全Scope/Gate/正式包保持未完成。
+
+## DEC-20260926-228
+
+- Date/WBS：2026-09-26 / P04-P03-P03；CR-AUD-004/ADR011和实际原pair/同UOW失败Owner前置PASS；单一问题为提交确认丢失后的原失败只读证明，无安全权限扩张。
+- Decision：Jobs owned当前FAILED/RELEASED Lease/同Attempt错误与完成时间证明，Audit owned唯一原Scope/trace/actor/target/原因/前后状态及时间证明，当前SystemActor/同Supervisor静止锁前后核验。业务Owner不读Jobs私有表，不根据错误文字或单一FAILED猜成功，不重复审计/重写终态；接口未接执行器。
+- Evidence：4新unit/1008后端无失败（2环境跳过）、真实PG双Scope actual commit THEN lost confirmation返回原失败/Audit，多次八表无写，RUNNING/成功/错绑定原因/技术FAILED无审计/错重复审计拒绝，原终止发布回归/wheel通过。unit Mock声明失败修复重跑记进度；取消/到期verify新矩阵没有额外执行，不借旧Owner证据扩大声明。
+- Risk/rollback：无Schema/API/依赖，撤未装配核验保历史；Next取消安全Owner，再retry/执行器/主循环；生产材料/三平台/Gate/安装包待。
+
+## DEC-20260926-227
+
+- Date/WBS：2026-09-26 / P04-P03-P02；CR-AUD-004先登记、V2.1/总控/API02/ADR010基线核验完成，Jobs原pair/current失败Port/受控SystemActor前置PASS。仅内部安全失败终止，不扩大License恢复面或系统业务角色。
+- Decision：相同Supervisor短静止锁拒真实活心跳/阻止重启，当前identity→原Root/acceptance/pair→最小SYSTEM Audit→再次identity→actual Jobs alive generation FAILED最后→同UOW commit；5固定不可恢复原因，原User仅历史，无正文/文件/发布/续租。ADR011记录新边界；主同步I/O必须先返回，锁不是全局强杀。
+- Evidence：6新unit/1004无失败（2环境跳过）、真实PG临时Vault两Scope撤User/角色/License仍拒业务但终止唯一失败Audit，Audit与技术写后/identity故障回滚，成功取消过期接管旧代无写，实际活心跳拒收尾/停止后允许，私有字节保留/原发布/wheel通过。首轮测试错误均修正完整重跑记进度。
+- Risk/rollback：瞬时retry/取消/确认丢失/执行器未接线，正式信任源/Gate/安装包待；撤未装配Owner保历史，不复活终态。Next失败提交确认丢失原源核验，再取消Owner及安全接线。
+
+## DEC-20260926-226
+
+- Date/WBS：2026-09-26 / P04-P03-P01；通用LeaseService自有事务不能与Owner审计原子，前置原pair/current/retry与单次执行已验。CR-AUD-004先登记撤权安全终止差异，不在本技术分项实现政策。
+- Decision：新独立Jobs caller-UOW失败Port，不修改通用Service/Schema/API；严格原pair/current绑定、白名单error、严格bool/有界delay、既有3尝试。调用Owner必须先核验真实原源/系统身份，并负责同UOW审计/提交；不能把技术坐标当权限。
+- Evidence：5新unit/998后端无失败（2环境跳过）、实际PG双Scope FAILED/retry限额、Attempt/Lease绑定/接管拒旧代/终态取消过期拒改、真实Audit写后caller异常整UOW回滚、私有字节保留/原发布回归/wheel通过。测试属性误用和相对build路径失败均修正重跑，有进度记录。
+- Risk/rollback：Owner安全终止基线核验/策略、取消及主循环仍待；撤未装配Port保历史，无生产迁移，Next P02，正式包/Gate保持未完成。
+
+## DEC-20260926-225
+
+- Date/WBS：2026-09-26 / AUD-03-A06-A04-P03-A07-P04-P02；实际发布/恢复、受权周期和WorkerDB边界前置PASS。
+- Decision：当前原源只读分类三路径只是提示；新command完整capture/render/publish，已登记源恢复，已成功直接重放不续租。finally stop，线程真实结束后再次受权DB成功/完整物理hash恢复才回结果；确认丢失/STALE不能猜成功或把成功Job改失败，未登记同代字节保留且不覆盖。
+- Evidence：11新unit/993后端无失败（2环境跳过），真实PG bounded UOW+周期线程 dualScope空/260未capture新command完整成功/13表无写重放、stage-only同file恢复、未登记旧字节拒绝保原/实际commit确认丢失按原源返回/原User停用前置无写拒绝、旧发布回归/wheel通过。
+- Risk/rollback：不claim/分派/自动技术失败或取消，未登记旧字节失败尚需正式终止/重试Owner；本轮没有新增runner并发/取消/新代运行证明，不冒充底层验证。撤未装配入口保历史，Next失败取消Owner政策/同UOW审计前置，再主循环/重启/提交Jobs HTTP；正式材料/三平台/网络/质量/Gate/可用包待。
+
+## DEC-20260926-224
+
+- Date/WBS：2026-09-26 / AUD-03-A06-A04-P03-A07-P04-P01；P03周期线程真实验证PASS，但join不能终止SQL阻塞。
+- Decision：新增opt-in Platform Worker runtime，专用有限池/连接参数，每短UOW PG18限定+三LOCAL超时读回核验；普通API及通用数据库默认不改，参数绑定/无服务器全局配置，技术/Schema/API/权限基线不变。transaction终止连接必须rollback/失效恢复，不能继续commit。
+- Evidence：4unit/982后端无失败（2环境跳过），真实PG LOCAL/普通UOW恢复、慢SQL前实际Audit回滚、多query总事务终止/新连接ready、单槽池真实满额超时及另一连接User锁导致受权心跳退出/实际线程结束/容量复用、原发布/wheel通过。
+- Risk/rollback：仅SQL服务器和池等待证据，连接黑洞/客户端读写/pre_ping没有全网络墙钟保证，默认极限数据性能未验。撤未装配factory保历史；Next单次Worker协调+真实失败取消/主循环与停机策略核查，正式材料/三平台/质量/Gate/可用包待。
+
+## DEC-20260926-223
+
+- Date/WBS：2026-09-26 / AUD-03-A06-A04-P03-A07-P03；P02受权短事务心跳前置PASS。
+- Decision：独立有界Supervisor，actual线程存活登记/同Job唯一，立刻首心跳后Event周期；check/stop传播安全错误、stop join超时保容量，不杀线程或解释STALE为成功；每次service自己短UOW，文件主线程不持事务。无Schema/API/权限/依赖调整。
+- Evidence：5新增真线程unit/978后端无失败（2环境跳过），真实PG双Scope短3秒租约跨人为4秒实际提升返回延迟仍原子发布；后续STALE七表不变、真实撤权/取消停止且传播、原发布回归/wheel通过。
+- Risk/rollback：周期为进程内非全局，延迟非性能证明；join不能强停DB阻塞，同步DB超时与Worker停机/单次协调需P04核查；撤未装配入口保历史。正式材料/三平台/Gate/质量/可用包待，POST仍关。
+
+## DEC-20260926-222
+
+- Date/WBS：2026-09-26 / AUD-03-A06-A04-P03-A07-P02；P01技术续租前置PASS。
+- Decision：Audit新内部WorkerHeartbeat继承原capture检查以保User-first锁序/原Root/受理pair/current Lease，显式注入Jobs caller-UOW renewal后再授权/验期限commit；保持原三stage，无新增权限/Schema/API/依赖，不把Lease当授权，不挂HTTP或进行文件I/O。
+- Evidence：5unit/973后端无失败（2环境跳过），真实PG双Scope所有原stage、13表源历史无写、User/PM/部署角色/License/错Worker/跨Root误绑/终态取消/实际到期/真实接管拒旧代与新代续期、renew写后故障和后验许可拒绝回滚，原发布/wheel通过。
+- Risk/rollback：只证明短事务心跳，非周期调度/长任务运行；原死锁重试复用但本轮未新增独立真死锁注入。撤未装配服务保历史；Next有界协调/stop/失败传播/发布竞争，正式材料/三平台/质量/Gate/可用包仍待。
+
+## DEC-20260926-221
+
+- Date/WBS：2026-09-26 / AUD-03-A06-A04-P03-A07-P01。
+- Finding：通用heartbeat自有UOW无法与Audit当前授权/Root/pair同事务，既有checkpoint必须保持只读。Decision：独立Jobs caller-UOW JobLeaseRenewal，前后当前实际claim重核、中间复用owned heartbeat，无自commit/跨Owner表/外部I/O，不用增大固定超时替代心跳；无Schema/API/权限基线调整。
+- Evidence：5新unit/968后端无失败（2环境跳过），真实PG双Scope续期、并发串行/期限一致、未commit/后置异常回滚、错Worker/fence/成功/取消/到期拒绝、实际接管旧代拒绝新代可续；原发布完整回归和wheel成功。
+- Risk/rollback：本项仅Jobs技术事实，不证明Audit权限或调度存活；撤未装配Port保历史。Next P02受权短事务心跳，再实际调度/Worker/提交Job接口；正式材料/三平台/性能/质量/Gate与完整程序包仍待。
+
+## DEC-20260926-220
+
+- Date/WBS：2026-09-26 / AUD-03-A06-A04-P03-A06-P03；前置P01/P02增量契约与实际授权/字节/资源生命周期PASS。
+- Decision：Windows两显式平台模式挂既有四GET，复用Auth read/Project/License与各Owner公开Port；不额外要求Worker身份供给、不装配Worker或开放POST，无新Schema/角色/依赖。default/login-only404保留，装配异常沿用dispose+安全StartupError。
+- Evidence：实际PG发布dualScope260与临时文件到两factory详情/完整Hash下载及Session/Scope/Admin旁路/许可/坏文件拒绝PASS；三构造故障不发布app，两模式dispose一次unit通过；旧WindowsAudit/上传Finalize完整回归通过，963后端无失败（2跳过）、wheel成功。
+- Risk/rollback：Credential/License/cursor/write信任注入合成，不是正式账户/三平台/代理/性能验收。撤显式挂载保所有历史，Next Worker协调/心跳前置和实际循环，然后提交/Jobs HTTP；完整Scope、质量/Gate/可用包仍待。
+
+## DEC-20260926-219
+
+- Date/WBS：2026-09-26 / AUD-03-A06-A04-P03-A06-P02；前置P01契约/P03-A05快照PASS。
+- Decision：仅新增Audit opt-in内容GET；准备至传输结束占有Router有界槽，Response外层finally覆盖尚未启动生成器/response.start失败；显式线程资源所有权使请求取消不能关闭活跃read或提前释放活跃prepare名额，线程完成后close/release。不顺手改普通文档下载。
+- Evidence：7新增契约/ASGI测试覆盖start/body发送故障、未启动流取消、prepare/read取消容量保留/收尾、长度/读取失败；真实PG与实际文件双Scope空/260精确内容/Hash/当前权限、复制后撤销与损坏文件安全Audit通过；962后端无失败（2环境跳过）、开发wheel成功。
+- Impact/rollback：无DB/依赖/权限变化，原冻结API保留、默认404，移除可选Router保历史；名额为进程内非全局，代理断网/三平台/性能/正式材料未验。下一项P03实际Windows组合，不关闭Gate3或交付目标。
+
+## DEC-20260926-218
+
+- Date/WBS：2026-09-26 / AUD-03-A06-A04-P03-A06-P01。
+- Decision：先登记CR-AUD-003和非Breaking契约，保64cdf09；新增opt-in PROJECT/DEPLOYMENT成功结果详情，不复用普通DocumentVersion或静态URL，不序列化内部DTO/manifest。当前Session/License/实际PM或部署Admin由P03-A05真实源服务重核，路由二次验证坐标并显式安全投影。
+- Evidence：4新契约测试/955后端无失败（2环境跳过）、真实PG双Scope已发布260条来源和当前权限、跨范围/Admin旁路/License拒绝及无业务写、旧原子发布回归/wheel通过。无Migration/依赖，默认404，未挂生产组合。
+- Risk/rollback：移除opt-in路由即可，无历史删除；元数据不是物理完好证明，下载流/断连取消限额/P03装配/正式账户/三平台/Gate/可用包仍待。子任务分项验收不缩减原交付Scope。
+
+## DEC-20260926-217
+
+- Date：2026-09-26；WBS：AUD-03-A06-A04-P03-A05。
+- Decision：新当前Session Scope授权读取实际成功源，原提交actor仅历史来源；共享Document安全快照原语但专用审计入口128MiB、普通100MB不变。Hash/copy在UOW外，返回前重复当前授权/source，内容失败受权同UOW最小Audit、保原历史。
+- Reason：内部Worker权限不能用于浏览器读取；当前PM可读停用提交者历史，Admin无项目旁路。实际发现渲染128MiB与普通snapshot100MB不兼容，先在CR-AUD-002记录最小适配，不缩小合法导出或扩大普通规则。
+- Impact：6新unit/951后端无失败（2跳过），真实dualScope/源/权限/复制后撤销close/坏文件审计与Storage128MiB边界PASS，旧下载/恢复发布回归；无Schema/API/依赖，未挂HTTP。
+- Rollback：撤未装配内容入口，保所有来源与成功历史，不自动删文件。公开路径需增量契约/生命周期限额验证；正式账户/三平台/性能/完整包/Gate仍待。
+
+## DEC-20260926-216
+
+- Date：2026-09-26；WBS：AUD-03-A06-A04-P03-A04-P04。
+- Decision：恢复读实际原计划和Document登记摘要/来源，不依赖失去的内存DTO或路径猜Hash。当前代STAGED/有效Lease才恢复三种真实物理形状；已成功必须Jobs真实终态Lease/Attempt+Result/AVAILABLE/完整Hash，Hash后重新当前授权，只返回原结果不写历史。
+- Reason：必须处理提升后事务失败、至少一次/确认丢失，不能将文件存在或Audit宣称成功当Job事实；不得复活过期/取消旧代或重finish成功。
+- Impact：6新unit/945后端无失败（2跳过）；真实双Scope三形状恢复/成功并发无写、确认丢失与坏/缺来源拒绝、接管保旧file/原capturePASS；无Schema/HTTP/依赖，新增owned只读Port不授予业务权。
+- Rollback：撤未装配恢复入口，保所有来源/文件/结果，不自动删生产数据。中断注入非真实杀进程演练、License/正式账户/三平台/Gate/包待；下一项当前Session结果访问授权/内容公共Port。
+
+## DEC-20260926-215
+
+- Date：2026-09-26；WBS：AUD-03-A06-A04-P03-A04-P03。
+- Decision：实际Owner预核权限/根/pair/Lease/capture/plan，事务外Hash，短UOW STAGED登记，再事务外提升，最后单UOW File AVAILABLE+SYSTEM Audit+Result+Jobs completion，完成后迅速commit；无跨Owner私有表访问。
+- Reason：File提升不是成功，必须统一DB业务事实且保当前权限/租约/取消与原身份来源；不嵌套自提交Jobs service，不接受随机SystemActor或只凭旧Hash。
+- Impact：双Scope真实成功链/实际撤权取消过期/系统材料丢失与四个DB写后回滚、真实取消两锁竞争PASS；5新unit/939后端无失败（2跳过）、三项实际回归/开发wheel通过。无Migration/HTTP/依赖；CR-AUD-002/ADR010范围不改。
+- Rollback：撤未装配入口，保原计划/STAGED/私有提升文件及成功历史，不删生产数据或复活任务。下一项来源恢复/当前授权结果重放及下载；License合成、正式账户/三平台/完整交付与Gate仍待。
+
+## DEC-20260926-214
+
+- Date：2026-09-26；WBS：AUT-04-A01（AUD原子发布前置）。
+- Decision：先记录CR-AUT-004再实现独立Windows当前账户Vault材料派生系统UUID；固定域/ref、启动pin完整摘要、每次使用重读，缺失/变化拒绝。复用既有加密备份，不新增User/角色/凭据登录、自动供给或业务授权。
+- Reason：实际代码无受控SystemActor来源，不能用随机UUID或普通User冒充冻结Worker身份。完成此可独立验收前置才恢复真实发布。
+- Impact：4项新增含临时Vault真实丢失/错误口令/恢复/换材料验证通过，全后端934项无失败（2跳过），开发wheel成功；无Schema/HTTP/依赖/License改变。
+- Rollback：停未装配入口，保留Vault与历史，不自动删生产材料；正式账户/异账户及Server2025/Debian未验，下一Owner仍须全部当前权限/Lease/文件事实核验，不标完整包或Gate通过。
+
+## DEC-20260926-213
+
+- Date：2026-09-26；WBS：AUD-03-A06-A04-P03-A04-P02。
+- Decision：当前授权/原pair/租约短事务页取固定封口成员，每页最多128，结束后才文件写；准备与结尾完整capture复核，fsync/hash在所有UOW外，失败文件仅私有保留。
+- Reason：不能把当前源流放在持User/Job锁的长事务内写文件，不能仅凭旧plan/Hash延续当前授权；每页释放锁并重新核验。
+- Impact：无Schema/API/依赖；不提升/写元数据/结果/Job成功。只DB阶段40P01限三次重试，整个文件流程不盲重试；同代已留文件不覆盖，需新代。
+- Rollback：撤渲染入口，保留所有原计划/私有文件供后续受控恢复，不删除生产数据；心跳/原子发布/下载后续验收。
+
+## DEC-20260926-212
+
+- Date：2026-09-26；WBS：AUD-03-A06-A04-P03-A04-P01。
+- Decision：新增Audit专用Jobs caller-UOW完成公共Port，用原Queue request/ref核对Job/Outbox、Checkpoint完整租约及Claim绑定，然后同UOW调用既有Repository finish；不嵌套自开事务LeaseService.finish，也不运行发布回调。
+- Reason：真实文件/元数据/结果/Audit需Owner同事务提交，避免Job-first新事务或非原pair误完成；Lease必须在最后数据库步骤重新验证。
+- Impact：无Schema/HTTP/依赖，原finish接口不变；权限、真实文件与结果/发布Audit为Owner前置，完成不授予这些权限。
+- Rollback：撤新公共Port，历史状态保留；不能直接回退已成功任务或删除结果。
+
+## DEC-20260926-211
+
+- Date：2026-09-26；WBS：AUD-03-A06-A04-P03-A03-P04。
+- Decision：renderer和结果Repository共用纯canonical manifest构造；读写都从实际own Root/acceptance/capture/plan/发布Audit重新绑定，而不信输入DTO或结果行；同请求读回首次结果，替换pubAudit/计划/内容拒绝。
+- Reason：持久结果不能只是SQL行转DTO或相信Hash存在，需保持规范字节及来源且适配后续原子caller-UOW。
+- Impact：无Schema/API/依赖，Repository不鉴权/commit/文件I/O/跨Owner私有访问；无新增公开下载。
+- Rollback：撤应用代码，0042/不可变历史保留；真实SystemActor/Lease/文件/Job原子成功另验。
+
+## DEC-20260926-210
+
+- Date：2026-09-26；WBS：AUD-03-A06-A04-P03-A03-P03。
+- Decision：0042 own唯一成功结果引用不可变渲染计划/发布Audit；规范manifest字节由own Root/capture/NEW文件事实独立重建精确核验，非只JSON语义相等；结果不直接读Jobs/Document私有表。
+- Reason：原计划/文件存在不等于成功，清单不能包含自由正文或非规范字节；跨Owner事实须公共Port实际编排。
+- Impact：新增Schema/ORM，无API/依赖；原0001～0041不变，原计划不猜回填成功；当前权限/真实SystemActor/Lease/原子发布后续验收。
+- Rollback：空表可离线受控down，任何结果历史禁止down，先表排他锁；保留原冻结与历史，不删文件或结果。
+
+## DEC-20260926-209
+
+- Date：2026-09-26；WBS：AUD-03-A06-A04-P03-A03-P02。
+- Decision：抽取既有Worker User-first授权/原pair/Lease检查以供capture及RENDER共用；RENDER只读已封口源，再登记或返回同代固定计划，前后当前权限/租约复核；own Repository不鉴权、不commit、不触及外模块私有表。
+- Reason：不能以0041坐标或预分配file_id推断当前权限/Lease，不能RENDER时重捕获。
+- Impact：无Schema/API/依赖变化；同代数据库重试只读原计划，部分文件失败必须新Lease代次；仅PG40P01整UOW限三次重试，未知commit不盲重试。
+- Rollback：撤应用入口/代码，保留0041及不可变历史；后续唯一结果/文件/Job原子发布另任务验收。
+
+## DEC-20260917-001
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260917-001|
+|Date|2026-09-17|
+|WBS|Repository Governance|
+|Decision|启用“默认自主执行 + Gate 确认 + 异常升级”；自动执行批次和 WBS 边界检查周额度，剩余低于 20% 时保存检查点并停止新任务；允许在正确分支内自主同步 GitHub。|
+|Reason|落实用户最新明确规则，减少普通确认和聊天消耗，同时保留重大变更、资源和远端安全边界。|
+|Impact|后续 L1 任务自动执行，L2 记录后继续，L3/Gate 才请求确认；新增 `STATUS.md`、最小 Session 入口和额度保护。|
+|Rollback|回退本决策对应提交，并恢复原有逐任务启动方式；不影响业务数据或正式技术基线。|
+
+## DEC-20260917-002
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260917-002|
+|Date|2026-09-17|
+|WBS|P03-A02|
+|Decision|来源资格审计只接受文件标题中明确的“合同”或“技术协议”作为确定性分类证据；历史解决方案不自动映射为标准能力或调研。|
+|Reason|保持来源语义真实，避免为满足覆盖率把 AI 推断或目录名称写成已验证业务事实。|
+|Impact|确认 20 条 CONTRACT、25 条 TECHNICAL_AGREEMENT；75 条 SOLUTION 排除。P03-A02 需要补充至少 55 条合格记录，并补齐 STANDARD_CAPABILITY、SURVEY。|
+|Rollback|删除审计映射和证据，恢复全部记录为待确认；不会修改原始资料或用户工作簿。|
+
+## DEC-20260917-003
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260917-003|
+|Date|2026-09-17|
+|WBS|P03-A05|
+|Decision|使用百炼 `text-embedding-v4` 768 维作为换模重建验证目标，创建独立 `v2` index identity；保持当前 `v1` 激活，不自动切换。|
+|Reason|官方文档和当前华北 2 工作区均支持该模型与维度，可同时验证模型和维度变化；独立索引满足既定不可原地换模规则。|
+|Impact|120 条非客户合成记录完成真实全量重建；新增验证制品，不改变正式架构或当前激活绑定。|
+|Rollback|删除 `v2` 验证制品即可；`v1` 未被修改。|
+
+## DEC-20260917-004
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260917-004|
+|Date|2026-09-17|
+|WBS|P03-A06|
+|Decision|所有 PROJECT Vector、Full Text、Hybrid SQL 在各自最内层查询强制使用参数化 `project_id = %(project_id)s`；缺失 ProjectId 在 Repository 调用前拒绝。|
+|Reason|只在外层过滤可能让候选集、排序或中间结果接触其他项目数据；参数化内层过滤能同时控制隔离和注入风险。|
+|Impact|6 个双项目检索场景跨项目泄漏为 0；形成后续 RetrievalService/Repository 的 PoC 约束。|
+|Rollback|回退 PoC 查询实现和证据；不影响正式数据库，因为临时 Schema 已删除。|
+
+## DEC-20260917-005
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260917-005|
+|Date|2026-09-17|
+|WBS|P03-A07|
+|Decision|PoC Full Text 使用 PostgreSQL `simple` 配置和上游空格分词后的中文术语，并为相同表达式建立 GIN 索引。|
+|Reason|PostgreSQL 内置配置不提供可靠中文分词；上游规范化无需引入新第三方组件，且能验证锁定的 PostgreSQL FTS 链路。|
+|Impact|4 组 Top-5 Recall 100%，但正式链路必须保留术语规范化，不得把结果解释为数据库原生中文分词。|
+|Rollback|删除 PoC FTS 脚本与证据；临时 Schema 已删除。|
+
+## DEC-20260917-006
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260917-006|
+|Date|2026-09-17|
+|WBS|P03-A08|
+|Decision|pgvector PoC 使用 HNSW + `vector_cosine_ops`，以 1,000 条合成向量和 4 组确定性近邻验证 Top-5。|
+|Reason|与 POC-02 已验证索引方法一致，可隔离验证 RAG Repository 的向量 Top-K 行为和执行计划。|
+|Impact|合成 Top-5 平均/最低 Recall 100%；不改变当前 1024 维真实索引绑定，也不形成真实语料质量结论。|
+|Rollback|删除向量验证脚本与证据；临时 Schema 已删除。|
+
+## DEC-20260917-007
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260917-007|
+|Date|2026-09-17|
+|WBS|P03-A09|
+|Decision|Hybrid PoC 使用 Vector 0.6 + Full Text 0.4 的固定加权融合；每通道候选池取 Top-K 的 4 倍，并将 HNSW 基线设为 `m=32`、`ef_construction=200`、`ef_search=200`。|
+|Reason|直接用最终 Top-K 作为候选池会截断并列结果；默认 HNSW 构建/搜索参数在组合数据上出现近邻漏召回。扩大候选池并提高索引构建与搜索深度后，4 组场景稳定召回全部组合相关项。|
+|Impact|合成数据 Top-5 平均/最低 Recall 达到 100%，GIN 与 HNSW 均被使用；参数只是 PoC 基线，正式值仍需真实 Golden Dataset 校准。|
+|Rollback|回退 Hybrid 查询、验证脚本和证据；临时 Schema 已删除，不影响正式数据库。|
+
+## DEC-20260917-008
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260917-008|
+|Date|2026-09-17|
+|WBS|P03-A10|
+|Decision|Reranker 采用可配置 provider/base URL/model/timeout，并通过统一适配层调用；PoC 选择百炼华北 2 的 `qwen3-rerank` OpenAI-compatible `/reranks`。外部失败默认 fail-open，保留检索原顺序并记录脱敏错误码。|
+|Reason|官方文档将 `qwen3-rerank`列为当前文本 RAG 排序模型；可配置适配与 fail-open 能避免厂商绑定，并在限流或暂时不可用时保持基础检索可用。|
+|Impact|真实 5→3 重排通过；429、超时和响应异常降级通过。业务模块仍不得直接调用厂商 SDK，正式启用策略需在 API/架构冻结时确认。|
+|Rollback|移除 PoC Reranker 适配、脚本和证据；没有持久化业务数据或厂商响应正文。|
+
+## DEC-20260917-009
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260917-009|
+|Date|2026-09-17|
+|WBS|P03-A14|
+|Decision|Context Builder 只负责排序、预算、引用封装和 Trace 元数据；LLM 调用必须通过 POC-04 `AIService → ModelRouter → ProviderAdapter`。Prompt 以版本化定义传入，不写散落的业务内 Prompt 或厂商条件分支。|
+|Reason|落实统一 RAG 和 AI Gateway 边界，并确保每次回答可追溯 ProjectId、Prompt 版本与实际 Chunk 来源。|
+|Impact|Context 到统一 AIService 的确定性链路通过，结构化输出由 AIService 校验；该 PoC 不冻结正式 API Contract。|
+|Rollback|移除 Context Builder/Orchestrator PoC、测试和证据；不影响 POC-04 网关。|
+
+## DEC-20260917-010
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260917-010|
+|Date|2026-09-17|
+|WBS|P03-A15|
+|Decision|PoC 将最高检索分 0.5 设为“可进入 AI”的最低可靠度；空结果或低于阈值时禁止调用 AI。数据库失败直接停止，Reranker 失败 fail-open，AI 失败返回脱敏错误码和重试属性。|
+|Reason|无证据仍调用模型会产生不可追溯答案；Reranker 是增强步骤，可降级，而检索数据库和最终 AI 的失败语义不同，应分别处理。|
+|Impact|6 个成功/异常场景全部通过；0.5 只是合成 PoC 阈值，必须由真实 Golden Dataset 校准后才能成为正式配置。|
+|Rollback|移除异常编排 PoC、测试和证据；不改变 POC-04 或数据库。|
+
+## DEC-20260918-001
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260918-001|
+|Date|2026-09-18|
+|WBS|P03-A02|
+|Decision|将用户明确指定的 `标准能力库/` 中名称含“调研”的业务表单归为 `SURVEY`，其余用户手册、标准接口和部署资料归为 `STANDARD_CAPABILITY`；历史方案不用于补齐四类来源。|
+|Reason|目录用途由用户明确提供，文件类型与名称可形成确定性来源证据；继续使用历史方案映射会违反来源真实性约束。|
+|Impact|20 份新增文档分为 19 份 STANDARD_CAPABILITY、1 份 SURVEY；与合同/技术协议合并后形成 120 条四类候选，P03-A02 从缺少语料转为等待人工确认。|
+|Rollback|删除本地分区和 R4 候选输出，恢复 P03-A02 来源缺口；不修改用户原文件或旧 R2/R3 历史制品。|
+
+## DEC-20260918-002
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260918-002|
+|Date|2026-09-18|
+|WBS|POC-05 / P03-A02|
+|Decision|DOCX 解析遇到指向 `word/NULL` 的无效内部关系时，仅在临时副本删除该无效关系后重试；不得改写来源文件，其他异常继续失败关闭。|
+|Reason|该关系不是有效 OOXML 内容，但会使 python-docx 中止整个文档；限定异常文本和关系目标的最小修复可恢复结构解析，同时保护原件与未知异常边界。|
+|Impact|标准能力库 20/20 DOCX 解析通过，原件 20/20 未改变；新增关系过滤回归测试和警告记录。|
+|Rollback|移除临时副本修复逻辑并恢复该文档 FAIL_PARSE；用户原文件始终未被修改。|
+
+## DEC-20260918-003
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260918-003|
+|Date|2026-09-18|
+|WBS|P03-A02|
+|Decision|R4 的“修改后确认”只有在补充说明不少于 20 个字符且同时包含“人工复核：”和“结论：”，并且锁定任务的查询、来源类型、分类、答案术语、引用定位、审核人和日期完整时，才转为 APPROVED。原分类为 HUMAN_CONFIRMATION_REQUIRED 时，仅依据人工结论中的明确短语确定性映射为 INSUFFICIENT_INFORMATION 或 NO_RELIABLE_MATCH；其余分类保持不变。|
+|Reason|用户更新后的 120 条记录均已形成逐项复核和明确结论，继续统一视为 PENDING 会违背“修改后确认”的业务语义；同时必须防止空泛说明绕过 Golden Dataset 必填 Gate，并避免 AI 自行扩大人工结论。|
+|Impact|120 条记录通过严格导入；38 条明确证据不足的记录映射为 INSUFFICIENT_INFORMATION，8 条明确无可靠业务匹配的记录映射为 NO_RELIABLE_MATCH，最终覆盖四类来源和六类结果。人工原文和数据集仍只保存在 Git 忽略的本地目录。|
+|Rollback|恢复“修改后确认”统一 PENDING 的映射并删除当前 R4 导出；不修改用户工作簿、来源文件或历史 R1~R3 证据。|
+
+## DEC-20260918-004
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260918-004|
+|Date|2026-09-18|
+|WBS|P03-A11~A13|
+|Decision|将首轮 120 条真实 Golden Dataset 指标按原始门槛判定为 FAIL，保留脱敏失败证据；在用户确认 Quality Gate 前不降低门槛、不按模型输出事后改标签、不改变 Hybrid 0.6/0.4 或更换模型。|
+|Reason|Top-5 Recall、分类准确率、来源引用准确率分别为 60.00%、14.17%、50.83%，均显著低于 95%、90%、98%；同时发现多数最终分类仍继承候选阶段关键词启发式值，需先验证标签一致性再调优。|
+|Impact|POC-03 状态转为 `FAIL / BLOCKED_QUALITY_GATE`；建议先用明确的最终分类字段重新冻结 Golden Dataset，再分层诊断 Vector、FTS、融合与 Reranker 排名。|
+|Rollback|无数据回滚；本决策仅记录已发生的验证事实。后续获批方案必须新建数据集/配置版本并保留本轮 R1 失败证据。|
+
+## DEC-20260918-005
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260918-005|
+|Date|2026-09-18|
+|WBS|P03-A02-R5|
+|Decision|在保留 R1 质量失败证据的前提下重新打开 Golden 标签 Gate。R5 只复用 R4 文字中可确定性识别且与已导出标签一致的 62 条明确结论；其余 58 条按“R4 分类 × 本次 AI 分类”归并为 7 组。工作簿默认保持未确认，只有人工选择全局批量确认后才按建议规则生效，单条最终分类优先于分组规则。|
+|Reason|R4 的自由文本已包含部分明确人工结论，但要求用户重新逐条填写 120 条不友好；同时不能让 AI 自动把自身预测写成 Golden 真值。分组确认既保留人工 Gate，又将必要操作压缩为一次批量确认和少量例外。|
+|Impact|新增四表 R5 工作簿、严格导入器和防篡改校验；当前 62 条无需重复确认，58 条等待 7 组规则确认。全局确认前不生成 R5 数据集，原始质量门槛、模型与 Hybrid 参数均不变。|
+|Rollback|删除 R5 本地工作簿和导入脚手架，恢复到 R4/R1 失败检查点；不修改 R4 工作簿、R1 失败证据或用户源文件。|
+
+## DEC-20260918-006
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260918-006|
+|Date|2026-09-18|
+|WBS|P03-A02-R5|
+|Decision|R5 人工全局确认生效后，最终 Golden Dataset 只允许五类业务结论；`HUMAN_CONFIRMATION_REQUIRED` 是评审工作流态，不得作为最终分类。单条例外优先于分组规则，所有锁定来源字段继续失败关闭。|
+|Reason|人工确认已将 58 条冲突记录归并为明确业务结论；把“需要确认”继续作为最终答案会混淆流程状态与业务事实，并使质量评估无法闭合。|
+|Impact|R5 严格导入 120/120、问题 0，Schema 与覆盖审计 PASS；历史 R4/R1 证据保持不变。|
+|Rollback|删除 R5 本地导出并恢复到等待确认状态；不修改用户工作簿或历史数据集。|
+
+## DEC-20260918-007
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260918-007|
+|Date|2026-09-18|
+|WBS|P03-A11-R2|
+|Decision|检索前对相邻中文字符之间由 OCR 插入的空白进行规范化，并增加来源类型过滤下的确定性词法 IDF 通道；保留原始 Chunk 文本、ChunkId 和来源定位，不改写证据原文。|
+|Reason|扫描合同存在逐字换行，旧分词只能得到孤立单字；规范化后可恢复“合同的有效组成部分”等连续术语，同时不影响审计原文和引用身份。|
+|Impact|R5 Top-5 Recall 从首轮 60.00% 提升到 95.00%（114/120），达到 P03-A11 门槛；该结果来自同一数据集的探索调优，生产声明仍需独立留出集。|
+|Rollback|移除 OCR 字间空白规范化与词法通道；Chunk 和 Golden 数据无需迁移。|
+
+## DEC-20260918-008
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260918-008|
+|Date|2026-09-18|
+|WBS|P03-A11~A13-R3|
+|Decision|用户批准方案 A：对 6 条低区分度 Golden 样本生成 R6 问题与引用复核包。只允许修改这 6 条的问题和经证据页展示的引用集合；其余 114 条及全部 R5 分类逐对象保持不变。AI 建议在人工全局或单条确认前不得写入 R6 数据集。|
+|Reason|6 条原问题由通用短语或 OCR 片段构成，缺少文档和业务场景，唯一目标 Chunk 排名为 8、11、24、27、41、117；修订问题比降低 98% 门槛或扩大 Context 更能保持验收语义和可追溯性。|
+|Impact|新增三表 R6 轻量确认工作簿、本地证据定位器、严格导入器、防篡改与 114 条保留校验。当前状态为等待人工确认，P03-A12/A13 尚未重跑。|
+|Rollback|删除 R6 本地输出和导入脚手架，恢复 R5/L3 检查点；不修改 R5 数据集、历史质量证据或用户源文件。|
+
+## DEC-20260918-009
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260918-009|
+|Date|2026-09-18|
+|WBS|P03-A11~A13-R3 / P03-A11-R4|
+|Decision|正式验收以 R6 端到端 `Hybrid → Reranker → AIService` 结果为准；本地来源过滤、OCR 空白规范化和确定性词法 IDF 的 116/120 结果仅作为诊断，不得覆盖真实链路 72/120 的失败结论。下一 WBS 在保持模型、0.6/0.4 基线权重、门槛和 R6 标签不变的前提下，把已验证的来源类型过滤与确定性词法候选通道接入端到端检索链。|
+|Reason|R6 真实复验三项分别为 60.00%、47.50%、51.67%；分层诊断显示 25 条通道召回缺失、15 条融合丢失和 8 条重排丢失，而本地确定性路径为 96.67%。当前差异属于检索实现路径不一致，不能以离线旁路结果宣称正式 Gate 通过。|
+|Impact|P03-A11~A13 保持 FAIL，POC-03 保持 `FAIL / BLOCKED_QUALITY_GATE`。先完成无外部调用的检索契约对齐、回归和本地排名验证；再次调用百炼或 DeepSeek 前重新取得明确的数据外发授权。|
+|Rollback|移除新增候选通道和来源过滤接线，恢复 R6 真实失败检查点；不修改 R6 Golden Dataset、模型、门槛或历史证据。|
+
+## DEC-20260920-010
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260920-010|
+|Date|2026-09-20|
+|WBS|P03-A11-R4|
+|Decision|端到端候选池按 `source_type + ProjectId` 过滤，分别获取 Vector Top-20、Full Text Top-20 和 OCR 规范化词法 IDF Top-20。Vector/Full Text 继续按锁定的 0.6/0.4 排序，随后与词法通道稳定去重合并，再交给外部 Reranker。检索缓存必须携带 `r4-source-filter-lexical-idf-v1` 版本及来源类型，旧缓存不得复用。|
+|Reason|旧端到端链在每通道 Top-20 后过早压缩为 20 条且未按来源类型过滤，导致通道召回和融合丢失；词法旁路 116/120 已证明对 OCR 中文有效，但必须接入统一链且不能改变既定 Hybrid 权重。|
+|Impact|本地 120 条候选池精确覆盖达到 119/120（99.17%），同文档覆盖 120/120，来源越界 0，候选数 13~59；增加只运行 Hybrid/Reranker、不调用 Embedding 或 DeepSeek 的 `--retrieval-only` 验收模式，完整向量缓存缺失或 Hash 过期时失败关闭。正式 Top-5 仍需新百炼重排验证。|
+|Rollback|移除第三词法候选通道、来源过滤参数、检索缓存版本和 `--retrieval-only` 分支；恢复 R6 端到端失败实现，不修改 Golden Dataset、模型或门槛。|
+
+## DEC-20260920-011
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260920-011|
+|Date|2026-09-20|
+|WBS|P03-A11-R5|
+|Decision|最终 Top-5 采用保护性融合：保留百炼 `qwen3-rerank` 第 1 名，并加入 OCR 规范化、来源类型隔离的确定性词法 IDF 前 4 名；重复项按既有顺序去重并从两路补足。排序过程只使用查询和候选正文，不读取 `expected_relevant_chunk_ids`、答案术语、人工标签或单条 ChunkId 规则。R4 的 120 条真实重排结果允许按 pipeline version 脱敏缓存并用于无外部调用的确定性复算。|
+|Reason|R4 候选池精确覆盖 119/120，但纯语义重排只有 91/120；失例包括 OCR 将 `MPP` 拆成单字符，以及同一 API 文档内多个语义等价 XML 片段。纯重排会覆盖高置信字面证据，保护性融合可同时保留语义首选与 OCR/标识符敏感结果。|
+|Impact|Windows 11 R6 精确 Top-5 达到 114/120（95.00%），同文档 118/120（98.33%），120/120 个重排结果均源自获批的真实百炼调用，GIN/HNSW 命中，P03-A11 PASS。该结果没有门槛余量且使用同一数据集探索调优，必须保留“独立留出集后验验证”限制；P03-A12/P03-A13 状态不变。|
+|Rollback|将最终 Top-5 恢复为纯百炼排序，P03-A11 回到 R4 的 91/120（75.83%）失败结果；保留 R4/R5 脱敏证据和 Golden Dataset，不降低门槛、不修改标签。|
+
+## DEC-20260920-012
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260920-012|
+|Date|2026-09-20|
+|WBS|P03-A12-R1|
+|Decision|Prompt v2 只允许五类正式业务标签，移除工作流态 `HUMAN_CONFIRMATION_REQUIRED`；模型必须先判断 Context 与问题的匹配性，再判断证据充分性，最后判断满足程度。Context 使用 OCR 字间空白规范化后的完整 Chunk（上限 1000 字），引用只允许一个最直接 Chunk。Prediction Cache 必须绑定 `PromptId + PromptVersion`；新增 `--prediction-only` 模式，缓存不完整时失败关闭，确保复验只调用 DeepSeek。|
+|Reason|v1 将六类状态一次性并列，未建立证据 Gate，且每段只取前 600 字；47 条人工确认的 `INSUFFICIENT_INFORMATION` 中有 37 条被误判为 `STANDARD_SATISFIED`，6 条 `NON_STANDARD` 全部误判。需要先消除 Prompt 定义、上下文截断和缓存串版问题，再做真实模型复验。|
+|Impact|120/120 条 v2 payload 离线准备完成，每条 5 个 R5 Context；精确证据可用 114/120、同文档 118/120、来源越界 0、规范化后正文截断 0、Golden 字段泄漏 0，外部调用 0。P03-A12 仍保持 FAIL，直到新的 DeepSeek 真实准确率达到 90%。|
+|Rollback|恢复 v1 Prompt 与 600 字 Context 作为历史失败实现；删除 v2 payload/报告与 `--prediction-only` 模式，不修改 R6 Golden 标签、P03-A11 结果或验收门槛。|
+
+## DEC-20260920-013
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260920-013|
+|Date|2026-09-20|
+|WBS|P03-A12-R2 / P03-A13|
+|Decision|Prompt v2 真实复验未达门槛后，不继续在同一 R6 验收集上启动 Prompt v3，也不根据模型结果修改冻结标签、唯一期望 Chunk 或 90%/98% 门槛。先升级为 L3 质量 Gate，由用户决定是否重新打开 R6 业务语义评审，为问题补充可判定的需求/结论目标、人工分类理由和可接受引用集合。|
+|Reason|Prompt v2 在 Top-5 已达 114/120 的条件下，分类仍只有 51/120，引用 62/120；主要错误为 30 条 `INSUFFICIENT_INFORMATION` 被判为 `STANDARD_SATISFIED`，6 条 `NON_STANDARD` 无一命中。抽样显示若干问题只要求摘录“采用何种方式/有哪些约定”，输入中没有要求模型判断标准满足或非标的业务目标；继续同集调优会把 Golden 分布或单条答案反向编码进 Prompt，不能证明泛化能力。|
+|Impact|P03-A11 保持 PASS；P03-A12/P03-A13 保持 FAIL，POC-03 保持 `BLOCKED_QUALITY_GATE`。保留本轮脱敏聚合证据，查询、Context、逐条响应和 case-level 数据继续只留在 Git 忽略目录；任何新外发复验仍需按当轮范围授权。|
+|Rollback|用户若批准重新打开 R6 Gate，则生成新版本数据集和独立留出集，保留 R6 与 Prompt v1/v2 作为历史失败基线；若不批准，则以当前失败结论结束 POC-03，不伪造通过状态。|
+
+## DEC-20260920-014
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260920-014|
+|Date|2026-09-20|
+|WBS|P03-A12-R3 / P03-A13|
+|Decision|用户批准重新打开 R6 业务语义评审。保留 R6 与 Prompt v1/v2 历史证据，新建 R7 全量 120 条语义、分类与引用确认包；AI 预填可判定目标、五类分类建议、分类理由和可接受引用候选，但只有全局或单条人工确认后才允许导出 R7。|
+|Reason|Prompt v2 已证明 R6 中部分抽取式问题与满足程度分类、唯一期望引用之间不可由输入稳定推导。全量重新评审比继续同集调 Prompt 或降低门槛更能修复数据定义，同时保持历史可追溯性。|
+|Impact|R7 工作簿含 120 条主确认项、五类结论说明、836 条证据候选和严格技术底稿；原文定位 120/120。AI 建议变更分类 73 条、引用 58 条；合同、技术协议和调研材料缺少标准能力交叉证据时保守建议资料不足。未确认预检为 120 PENDING、0 个问题且不输出数据集；129/129 测试 PASS。R7 因已使用 Prompt v2 诊断结果，只能作为校准集，不能在同一 120 条上关闭 P03-A12/P03-A13；仍须独立留出集。|
+|Rollback|删除 R7 本地输出与新增脚手架，恢复 DEC-20260920-013 检查点；R6、Prompt v1/v2、90%/98% 门槛和历史失败证据均不改变。|
+
+## DEC-20260920-015
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260920-015|
+|Date|2026-09-20|
+|WBS|P03-A12-R4 / P03-A13|
+|Decision|用户完成 R7 全局确认后，严格导入并执行 Schema 与覆盖审计。R7 导入 120/120 PASS，但五类覆盖缺少 `NON_STANDARD`，因此不把数据集标记为覆盖通过，也不为凑数伪造标签。基于原始合同中直接出现的二次开发交付证据，生成仅含 1 条的 R7.1 例外确认表；只有人工确认后才允许修订该条业务语义与分类。|
+|Reason|R7 的 AI 建议偏向保守，将所有合同类事项判为资料不足，导致已确认结果没有非标准样本；同时项目规则要求五类全覆盖，且 AI 建议必须经人工确认才能成为正式业务事实。|
+|Impact|R7 本地校准数据集已生成且 Schema 有效，但覆盖 Gate 保持 FAIL；R7.1 只影响 1 条，其他 119 条不重审。130/130 测试 PASS，R7.1 两张表均渲染通过、公式错误 0；未调用外部 AI。即使 R7.1 覆盖通过，该批数据仍是校准集，P03-A12/P03-A13 仍需独立留出集关闭。|
+|Rollback|若用户退回 R7.1，则保持 R7 的 `NON_STANDARD=0` 和覆盖 FAIL，不修改已确认数据；若确认，则保留 R7 作为历史版本，新建 R7.1 并重跑 Schema 与覆盖审计，不覆盖 R7。|
+
+## DEC-20260920-016
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260920-016|
+|Date|2026-09-20|
+|WBS|P03-A12-R4 / P03-A12-R5|
+|Decision|严格导入用户确认的 R7.1 单条例外，保留 R7 历史版本并新建 R7.1 数据集；导入后必须同时通过 Golden Dataset Schema 与覆盖审计。R7.1 通过后只作为 Prompt/检索校准集，不使用同批 120 条关闭 P03-A12/P03-A13，下一 WBS 建立独立留出集。|
+|Reason|确认项具备直接二次开发证据，且人工确认字段完整；覆盖审计要求 100~200 条、查询唯一、四类来源和五类正式分类齐全。已参与模型诊断的数据若再次作为验收集会产生后验偏差。|
+|Impact|R7.1 导入 1/1、问题 0、Schema PASS；120 条覆盖审计 PASS，分类分布为 38/15/1/57/9，重复问题 0，四类来源齐全。134/134 测试 PASS，未调用外部 AI。P03-A12/P03-A13 继续保持未关闭，直到独立留出集完成真实复验。|
+|Rollback|保留 R7 数据集与其覆盖失败报告，删除本地 R7.1 输出即可回到确认前状态；已确认工作簿和两版数据集均不覆盖，便于追溯。|
+
+## DEC-20260920-017
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260920-017|
+|Date|2026-09-20|
+|WBS|P03-A12-R5 / P03-A13|
+|Decision|独立留出集目标锁定为 50 条，来源配额为标准能力 33、合同 7、技术协议 8、调研 2。来源锁必须排除 R7.1 标签、Prompt v2 Context、R4/R5 检索 Top-5 与 R7 评审候选的 Chunk，并排除与污染 Chunk 共享 Source Locator 的相邻重叠块；锁定失败时不得写出部分结果或复用污染样本。|
+|Reason|50 条可使分类门槛 90% 对应至少 45/50，引用门槛 98% 对应至少 49/50，同时控制人工评审规模。当前 29 份文档均出现在校准集，无法文档级隔离，只能以未见 Case、Query、Chunk 和 Source Locator 作为最强可实现隔离；调研类在严格口径和仅模型暴露口径下均为 0/2。|
+|Impact|来源锁脚手架与失败关闭测试已实现，但当前 WBS 因缺少新的调研来源而阻塞。需要至少 1 份、建议 2 份此前未进入 POC-03 的真实调研业务表单；原始资料、本地锁文件和内容不提交 Git。P03-A12/P03-A13 保持未关闭，验收门槛不变。|
+|Rollback|删除留出集锁定脚手架和本地补充资料入口，恢复到 R7.1 校准集检查点；不会修改 R7/R7.1、Prompt v1/v2 历史证据或 90%/98% 门槛。|
+
+## DEC-20260920-018
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260920-018|
+|Date|2026-09-20|
+|WBS|P03-A12-R5 / P03-A13|
+|Decision|调研类事实证据以面对面访谈、现场交流及其形成的实际客户调研记录为准；调研业务表单只作为问题清单、字段和覆盖范围参考，不得替代客户事实结论，也不得单独满足独立留出集的调研配额。新增资料统一标记为 `ACTUAL_CUSTOMER_DISCOVERY_RECORD`，来源锁对未带该角色的调研块失败关闭。|
+|Reason|多数客户不会完整维护标准调研业务表单，模板只能表达应调查什么，不能证明客户实际说过什么、确认了什么。用户明确说明本次新增文件是面对面交流形成的调研记录，应赋予其主要事实证据地位。|
+|Impact|49 份新增记录本地解析与文件/正文 Hash 去重全部通过；50 条来源锁按 33/7/8/2 完成，历史表单的 13 个调研块被排除，调研 2/2 均来自新的实际记录。141/141 测试 PASS，外部 AI 调用 0。P03-A12/P03-A13 仍需独立问题、标签、引用人工确认和真实复验。|
+|Rollback|移除证据角色强制校验会允许模板再次进入调研配额，因此仅能通过新的正式决策回滚；原始资料、R7/R7.1 和历史失败证据均不修改。|
+
+## DEC-20260920-019
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260920-019|
+|Date|2026-09-20|
+|WBS|P03-A12-R6 / P03-A13|
+|Decision|在用户当轮明确授权范围内，仅将 50 条锁定候选编号、来源类型、证据角色和正文发送至 DeepSeek，生成问题、五类分类、理由、关键词和摘录建议。DeepSeek V4 结构化短任务通过统一 AIService 显式关闭思考模式；模型同义改写的摘录和关键词不得作为引用，必须由本地原文确定性替换并标记。全部建议仍保持待人工确认。|
+|Reason|当前 DeepSeek V4 默认启用思考模式，JSON 模式多次耗尽输出预算并返回空正文；显式非思考模式符合官方接口能力，也保持业务模块只调用 AIService。引用必须逐字落地，不能把模型改写当成原文证据。|
+|Impact|50/50 建议完成、问题 50/50 唯一、五类分类全覆盖，分布 23/3/10/13/1；累计请求尝试 227，Embedding/Reranker 调用 0。9 条摘录和 9 条关键词完成本地原文修复。R1 工作簿三表渲染、公式错误 0、50/50 原文定位及批量/例外交互回归 PASS；POC-03 146/146、POC-04 12/12 测试 PASS。P03-A12/P03-A13 状态不变，等待人工确认。|
+|Rollback|删除本地 R1 建议缓存、工作簿和证据页即可回到 50 条来源锁检查点；若移除 DeepSeek V4 非思考开关，结构化短任务将恢复空正文风险。历史 R7/R7.1、来源锁和质量门槛均不修改。|
+
+## DEC-20260921-020
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260921-020|
+|Date|2026-09-21|
+|WBS|P03-A12-R7 / P03-A13|
+|Decision|将人工确认的 50 条独立留出样本保存为单独的 `poc-03.holdout.v1` 验收数据集，不与已经参与 Prompt 和检索调优的 120 条 R7.1 校准集合并。导入器必须独立重算生效状态，锁定确认表和技术底稿的来源字段，并同时验证 50 条固定范围、四类来源配额、五类分类、唯一问题/候选/Chunk、PROJECT 隔离和引用锁对齐。|
+|Reason|沿用 Golden Dataset Schema 会要求 100~200 条并诱导把独立样本并入校准集，从而破坏独立验收边界。独立 Schema 可以复用相同业务字段，同时把来源锁指纹、配额和隔离属性设为可验证约束。|
+|Impact|实际导入 50/50 APPROVED、0 PENDING、0 RETURNED、0 问题，人工例外 0；Schema 和 12/12 覆盖/隔离检查 PASS，POC-03 151/151 测试 PASS。完整数据集、问题、答案术语、审核人、客户正文和源文件名继续只存在于 Git 忽略目录。P03-A12/P03-A13 仍保持 FAIL，直到独立真实复验达到 90%/98%。|
+|Rollback|删除本地独立留出集输出、新 Schema 和导入脚手架，可回到已确认工作簿与来源锁检查点；不会修改 R7/R7.1 校准集、历史 Prompt 结果、来源锁或质量门槛。|
+
+## DEC-20260921-021
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260921-021|
+|Date|2026-09-21|
+|WBS|项目分析辅助 R2（Phase 0 本地成果）|
+|Decision|将用户对 R1 的整体认可登记为“可作为调研执行输入基线”，并用确定性规则生成 R2：优先依据真实调研与合同/技术约束的组合和资料数量划分四个执行批次；范围、合同、接口、数据迁移、环境、权限、安全、合规、验收、切换和上线类主题标为 P0；R1 待确认项转为独立决策记录。|
+|Reason|用户需要直接进入下一步执行，而不是继续逐条填写分析表。确定性分批和优先级便于安排访谈，同时保留证据入口和人工维护字段，避免把方案资料或 AI 建议误当客户事实。|
+|Impact|12 个项目形成 60 条调研任务、39 条 P0 和 24 条决策记录；第 3/4 批明确要求先补真实业务调研。工作簿包含看板、任务、决策和说明四页，4/4 渲染、回读、公式与交互验证 PASS；POC-03 160/160 测试 PASS。客户数据与成品不提交，本轮外部调用 0，独立留出集外发 Gate 不变。|
+|Rollback|删除 R2 本地输出和新增通用生成器即可回到已确认的 R1；R1 指纹、历史 PoC 证据、质量门槛及当前 HOLDOUT_LIVE_DATA_EGRESS Gate 均不改变。|
+
+## DEC-20260921-022
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260921-022|
+|Date|2026-09-21|
+|WBS|项目分析辅助 R3（Phase 0 本地成果）|
+|Decision|第一批无法安排客户访谈时，允许以已确认 R1 和 R2 为输入执行桌面调研，并生成带证据等级、局限声明和 TraceLink 的需求候选。标准/非标/差异项仅在有实际调研、合同或技术协议证据时标为可评审；仅有方案/风险资料时保留工作假设；所有待确认项均保持为未关闭前置决策。|
+|Reason|项目需要进入下一分析环节，但现阶段不能获得新的客户访谈。桌面调研可以利用已有资料持续推进，同时必须显式隔离“资料事实、资料推断、工作假设和客户确认”，避免制造不存在的调研结论。|
+|Impact|第 1 批 5 个项目形成 25 条桌面调研结论、40 条需求候选和 10 条未关闭前置假设；29 条可进入需求评审、1 条带工作假设、10 条受前置决策阻塞。工作簿 5/5 页签渲染、回读、公式和交互验证 PASS，POC-03 165/165 测试 PASS。本决策不形成正式 Requirement、不触发需求冻结或 Phase 6，也不改变独立留出集数据外发 Gate。|
+|Rollback|删除 R3 本地输出和新增通用生成器即可回到 R2 调研执行计划；R1/R2 指纹、正式 Phase 0 状态、历史 PoC 证据、质量门槛及 HOLDOUT_LIVE_DATA_EGRESS Gate 均不改变。|
+
+## DEC-20260921-023
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260921-023|
+|Date|2026-09-21|
+|WBS|后续项目分析与实施辅助工作|
+|Decision|用户授权 AI 代为处理后续普通确认、资料缺口补全、候选项取舍和可回滚方案选择。AI 按“已有证据优先、保守默认、最小影响、可追溯、可回滚”原则直接形成推荐结论并继续执行，不再要求用户逐项填写或确认；证据不足时保留假设标识和 TraceLink。|
+|Reason|用户当前无法投入时间逐项确认，希望项目连续推进，同时避免将未验证推断伪装成客户事实。将代决策范围和例外固化，可减少重复交互并维持审计边界。|
+|Impact|后续需求候选收敛、普通字段补充、批次安排、文档结构和非破坏性实现选择可由 AI 自主决定并登记。该授权不替代正式 Gate、客户数据外发、安全/License 核心机制、已锁定基线变更、删除已确认 Scope、Secret 使用或不可逆外部操作所需的专项确认；周额度低于 20% 时仍按保护规则停止新任务。|
+|Rollback|用户可随时撤销或缩小代决策范围；撤销前已登记的可回滚决策保留历史记录，未进入正式 Gate 的候选结论不自动升级为正式业务事实。|
+
+## DEC-20260921-024
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260921-024|
+|Date|2026-09-21|
+|WBS|项目分析辅助 R4（Phase 0 本地成果）|
+|Decision|按 DEC-20260921-023 的用户授权，将 R3 的 10 条前置假设分别映射到可复用的保守决策规则，并采用工作基线解除内部分析阻塞。规则必须同时给出纳入范围、明确排除、验收依据、风险和证据链接；受影响候选只能转成内部需求评审稿，统一标记为 `NOT_FORMAL_REQUIREMENT`。|
+|Reason|用户要求后续普通确认和资料补充由 AI 代为决定。结构化工作基线可以让标准能力匹配和解决方案分析继续，同时保留未知项、合同解释和客户确认边界，避免概括授权越过正式 Gate。|
+|Impact|第一批 5 个项目的 10 条前置假设全部匹配到专用规则，无兜底项；40 条候选全部进入内部需求评审稿，其中 P0 30、P1 10、高风险 6。工作簿 4/4 页签完成视觉和回读检查，50 个证据链接完整、公式错误 0，POC-03 170/170 测试 PASS。本轮外部调用 0，正式 Phase 0 与 HOLDOUT_LIVE_DATA_EGRESS Gate 均不改变。|
+|Rollback|删除 R4 本地输出和新增通用生成器即可回到 R3；R3 指纹、原前置假设、客户资料、正式 Gate、历史 PoC 证据和质量门槛均不修改。|
+
+## DEC-20260921-025
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260921-025|
+|Date|2026-09-21|
+|WBS|项目分析辅助 R5（Phase 0 本地成果）|
+|Decision|将 R4 的 40 条内部需求评审稿一一映射为解决方案草案。标准功能优先使用标准配置；非标功能按接口适配、迁移链路、安全扩展或领域扩展实现；差异项优先采用兼容控制、数据/规则治理或受控流程扩展；代决策事项继承 R4 工作基线。接口、迁移和权限方案另生成结构化专项草案，全部标记为 `NOT_FORMAL_SOLUTION`。|
+|Reason|下一环节需要把标准、非标、接口和差异结论转为可实施方案，同时不能在 Phase 0 或需求未正式化时创建正式 Solution。确定性映射和专项设计能保持 Requirement→Solution→Evidence Trace，并避免业务模块绕过统一适配、权限和审计边界。|
+|Impact|5 个项目形成 40 条需求—方案映射：标准配置 10、非标实现 10、差异处理 10、工作基线专项 10；结构化专项包括 InterfaceSpec 11、MigrationSpec 7、PermissionDesign 3，高风险方案 6。工作簿 4/4 页签视觉和回读通过，61 个证据链接完整、公式错误 0，POC-03 176/176 测试 PASS。本轮外部调用 0，正式 Phase 0 与 HOLDOUT_LIVE_DATA_EGRESS Gate 均不改变。|
+|Rollback|删除 R5 本地输出和新增通用生成器即可回到 R4；R4 指纹、需求评审稿、代决策记录、客户资料、正式 Gate 和历史 PoC 证据均不修改。|
+
+## DEC-20260921-026
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260921-026|
+|Date|2026-09-21|
+|WBS|项目分析辅助 R6（Phase 0 本地成果）|
+|Decision|把 R4 需求评审稿与 R5 解决方案草案按指纹和唯一 Trace 整合为内部交付包，并采用 W0 范围与决策收敛、W1 标准能力配置、W2 差异验证与治理、W3 非标与专项实现、W4 验收/交接/正式化的顺序组织后续工作。10 条 AI 代决策单列为正式化待办，21 项接口/迁移/权限设计单列为专项，30 个调研主题继续以实际调研记录和证据为主。|
+|Reason|项目需要一份能够直接用于内部交接和后续计划编制的统一视图，同时不能把 Phase 0 期间生成的需求、方案和 AI 工作基线描述成正式业务事实。分段路线、进入条件和完成证据可让后续 WBS 保持可追溯、可验收和可回滚。|
+|Impact|5 个项目形成 40 条交付项、21 项专项、10 条正式化待办和 30 个调研主题；工作簿 6/6 页签视觉和回读通过，71 个证据链接完整、公式错误 0，POC-03 183/183 测试 PASS。本轮外部调用 0，不创建正式 Requirement/Solution，不改变正式 Phase 0、冻结顺序或 HOLDOUT_LIVE_DATA_EGRESS Gate。|
+|Rollback|删除 R6 本地输出和新增通用生成器即可回到 R4/R5；两份源包指纹、客户资料、历史版本、正式 Gate 和质量复验授权状态均不修改。|
+
+## DEC-20260921-027
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260921-027|
+|Date|2026-09-21|
+|WBS|项目实施 WBS R7 / 管理层汇报 R8.1 / P03-A11~A13-R8 前置检查|
+|Decision|把 R6 内部交付包展开为 5 个项目、60 项内部 WBS 草案任务，按 W0-W4 保留角色、依赖、进入条件、验收和证据追溯，但不填写实名、日期或承诺工期；同时生成 8 页管理层汇报，如实展示校准集 FAIL 和独立留出集待复验。留出集验证器只对 `poc-03.holdout.v1` 接受恰好 50 条，其他数据集仍保持 100~200 条。虽然用户授权“真实质量复验”且 DeepSeek 外发已有明确记录，本轮不得把该授权自动扩大到百炼 Embedding/Reranker；需用户另行明确其目的地和载荷范围。|
+|Reason|WBS 与管理汇报可在不外发客户内容的前提下推进内部准备；实名、日期和正式工期需要资源与 Gate 事实，不能由 AI 编造。百炼调用会发送查询及候选正文，属于与 DeepSeek 不同的外部目的地，必须按最小授权原则单独确认。|
+|Impact|WBS R7 为 60 项任务、40 个证据链接、5/5 页签检查通过；管理层汇报 R8.1 为 8 页并通过最终化、逐页渲染和原生图表检查；POC-03 188/188 测试 PASS。组合语料为 2,078 个 Chunk、50 条预期证据缺失 0，PostgreSQL 18.6/pgvector 0.8.6 前置检查 PASS；安全拦截前本轮外部调用 0，Phase 0 与质量 Gate 不变。|
+|Rollback|删除 R7/R8.1 本地输出及三个新增生成器，回退留出集大小入口改动即可恢复至 R6 检查点；R6 交付包、客户资料、校准集结果、正式 Gate 和历史版本不受影响。|
+
+## DEC-20260921-028
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260921-028|
+|Date|2026-09-21|
+|WBS|P03-A11~A13-R8 独立留出集真实复验 / P03-A12~A13-R9 质量改进|
+|Decision|接受并冻结本轮独立留出集 98.00% / 48.00% / 74.00% 的真实结果：P03-A11 PASS，P03-A12/P03-A13 FAIL。门槛、人工标签和引用真值均不修改。首次装载发现的 17 个重复 ChunkId 只在逐字段完全一致时去重；同 ID 不同内容继续失败关闭。本轮 50 条已成为已见测试集，后续调优不得再次把它作为未见独立集的通过证据。|
+|Reason|检索命中 49/50 但分类只有 24/50、引用只有 37/50，证明主要瓶颈位于业务分类判断和已召回候选中的精确引用选择。模型把 44/50 条判为标准满足，资料不足和非标功能识别明显不足。逐条针对本留出集写规则会产生数据泄漏，不能形成可推广的质量结论。|
+|Impact|50/50 条百炼重排与 50/50 条 DeepSeek 预测完整完成，GIN/HNSW 命中，缺失预测与越界引用均为 0。新增两个重复 Chunk 失败关闭回归，POC-03 测试增至 190 项。管理层汇报更新为 R9，Phase 0 和正式编码 Gate 保持阻塞。下一 WBS 在本地分析 26 条分类失例、13 条引用失例和 1 条检索失例，并在独立开发集上设计修复。|
+|Rollback|真实结果和审计证据不可回滚或覆盖；代码可回退重复 Chunk 处理与汇报生成器，但不得删除或改写本次质量失败历史。|
+
+## DEC-20260921-029
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260921-029|
+|Date|2026-09-21|
+|WBS|P03-A12~A13-R10 独立留出集失败分层诊断|
+|Decision|冻结 R10 诊断，采用“双来源证据装配 + Prompt v3 结构化判定 + 独立 Evidence Selector”作为下一轮独立开发集修复方向。当前 50 条只作为已见回归诊断集；不修改其标签、可接受引用集合或分数。|
+|Reason|需求来源 17 条中检索命中 16 条但分类只命中 1 条，证明能力适配标签所需的标准能力对照未进入同来源上下文；模型 46/50 次引用第 1 名，正确证据位于第 2～5 名时只命中 2/12。13 条严格引用失例中有 8 条引用覆盖全部答案术语，说明未来数据冻结前还需完成可接受引用集合审查。|
+|Impact|下一轮先建立与本留出集隔离的开发/校准集，区分文档事实与能力适配问题，保留 ProjectId 隔离并增加需求证据与标准能力证据双通道；模型供应商、Embedding、Reranker、PostgreSQL、质量门槛和总体架构均不变。任何新真实外部调用仍需当轮外发授权。|
+|Rollback|可回退新增诊断工具和建议方案，不影响已冻结的 98.00% / 48.00% / 74.00% 真实结果；不得删除失败历史或把当前 50 条恢复为未见留出集。|
+
+## DEC-20260921-030
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260921-030|
+|Date|2026-09-21|
+|WBS|P03-A12~A13-R11 Prompt v3 与 Evidence Selector 离线修复|
+|Decision|按用户批准的方案 A 实现离线 Prompt v3、双来源证据装配和 Evidence Selector；遵循用户“不用重复验证”的决定，不对当前 50 条重新调用模型或重算质量分数。|
+|Reason|R10 已确认能力适配缺少跨来源对照且引用存在首位偏差。离线合同和合成测试可以修复结构性缺陷而不泄漏已见留出集；但没有新的独立真实证据，不能据此声明 P03-A12/P03-A13 PASS。|
+|Impact|新增文档事实/能力适配显式路由、条件 OutputSchema、需求与标准能力证据角色、ProjectId 失败关闭和查询支持度选择器。模型供应商、统一 AIService、数据库、质量门槛、人工标签及历史结果不变；POC-03 保持 FAIL，项目仅继续不依赖该结论的其他 Phase 0 PoC。|
+|Rollback|删除 Prompt v3、Evidence Selector、对应测试和 R11 设计文档即可回到 R10 诊断状态；不会改变 v2 历史代码、真实调用缓存或冻结结果。|
+
+## DEC-20260921-031
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260921-031|
+|Date|2026-09-21|
+|WBS|P05-A19 真实扫描 PDF 分层语义准确率|
+|Decision|以“原页视觉抄录后再比 OCR”的 75 个分层检查点作为真实扫描语义 PoC 门槛：一般语义相似度不低于 0.85，数值、代码和版本完全一致，总召回不低于 95%，关键错误为 0。PaddleOCR 保持主链；未过门槛的 Tesseract 只作辅助回退，关键字段必须由主链或人工确认。依据用户批准，Windows 11 物理断网与 Debian 13 登记 `EXC-P0-004` 暂缓。|
+|Reason|成功解析、OCR 行数和自生成术语召回不能证明真实扫描语义准确率。分层页面与人工视觉检查点可避免 OCR 自证；主辅链对照显示 PaddleOCR 75/75，而 Tesseract 只有 70/75 且含关键错误。用户已明确同意 Windows 11 保留 `PASS_LOCAL_ASSETS`、不主动断网，并曾明确 Debian 13 暂不验证。|
+|Impact|POC-05 以 `PASS_WITH_EXCEPTION` 收口。Windows 11 与 Windows Server 2025 的已验证结论保留；Windows 11 物理断网、Debian 13 和 105 页逐字符全量标注仍不形成通过结论。原页、真值、客户内容和逐项结果只留在 Git 忽略的本地 artifacts，仓库保存匿名汇总。|
+|Rollback|可删除本轮评分工具和匿名汇总并恢复 POC-05 `IN_PROGRESS`；不得把 Tesseract 基线失败改写为通过，也不得删除 `EXC-P0-004` 的历史批准记录。|
+
+## DEC-20260921-032
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260921-032|
+|Date|2026-09-21|
+|WBS|POC-06 Word / PowerPoint 交付级样例|
+|Decision|以 Microsoft Office 实开和 PDF 导出作为 Windows 目标应用验收主证据；Windows 11 结论为 PASS。Windows Server 2025 未安装 Word/PowerPoint，只记录 OOXML 包结构和 Hash 复验 PASS，POC-06 保持 `IN_PROGRESS / SERVER_OFFICE_BLOCKED`，不从 Windows 11 外推 Server 或 Debian 兼容性。|
+|Reason|基线要求“可由 Microsoft Office 正常打开”。工作区 DOCX 渲染器因未安装 LibreOffice 无法运行，但 Windows 11 已由目标 Word 应用导出并完成 100 页视觉检查；Server 虚拟机缺少 Office，不能以结构验证替代实开验收。|
+|Impact|Windows 11 形成 100 页 DOCX、50 页 PPTX、实开/PDF 导出、OOXML 完整性和 150 页全量视觉证据。PPTX 制件按当前工作区规范使用 Artifact Tool，不修改正式 `python-pptx` 基线。未经许可不在 Server 安装 Microsoft Office，也不将缺少环境记为通过。|
+|Rollback|可删除 POC-06 样件、脚本和匿名证据并恢复 `NOT_STARTED`；不得将 Windows 11 的实验结果改写为 Server/Debian 通过，也不得隐去 Server 未安装 Office 的阻塞。|
+
+## DEC-20260921-033
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260921-033|
+|Date|2026-09-21|
+|WBS|POC-08 Plugin Host|
+|Decision|PoC 宿主采用“每次调用一个独立 Python 子进程 + 单条 JSON-RPC 2.0 stdio 请求/响应”的最小隔离实现。Manifest 在启动前检查必填字段、Plugin API 版本、OS、入口路径边界和入口文件 SHA-256；子进程只继承最小系统环境，不继承 DB/AI Key。|
+|Reason|当前 Phase 0 需要直接证明 crash、timeout、invalid JSON、版本不兼容和独立升级，不需要提前引入常驻池、容器、微服务或自定义 TCP。短命子进程便于失败后立即回收，并与锁定的 stdio 协议一致。|
+|Impact|Windows 11 和 Windows Server 2025 均完成 13/13 测试、10/10 验收场景和 20/20 并发调用；插件 crash/timeout 后 FastAPI 仍健康，invalid JSON 失败关闭，v1→v1.1 不修改宿主。SHA-256 只是本 PoC 的包完整性检查，不代表开发者身份签名；正式发布签名待后续冻结。Debian 13 未验证。|
+|Rollback|删除 `poc/poc-08-plugin-host/` 和对应匿名证据即可回到 `NOT_STARTED`；不影响正式业务模块、数据库、API Contract 或发布签名方案。|
+
+## DEC-20260921-034
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260921-034|
+|Date|2026-09-21|
+|WBS|POC-09 License|
+|Decision|PoC 将 MAC 规范化为大写冒号形式后计算 SHA-256；License Payload 采用字段排序、紧凑分隔符的确定性 UTF-8 JSON，并由仅驻留开发者工作台进程内的 Ed25519 私钥签名。客户侧只使用公钥；`SystemTimeGuard` 记录本次运行最近成功时间并拒绝回拨。|
+|Reason|基线已锁定 MAC → Normalize → SHA-256 → Ed25519，但未规定规范化文本和确定性序列化细节。显式规范避免分隔符/大小写导致同一网卡产生不同指纹，确定性 JSON 避免同一 Payload 因编码差异导致验签失败。|
+|Impact|Windows 11 与 Windows Server 2025 均完成 26/26 测试和 10/10 场景；8 类非法授权全部拒绝，License/MAC/时间防护覆盖率 91%～94%，私钥和原始 MAC 未落盘。跨进程可信时间状态存储留待 Architecture Freeze，Debian 13 未验证。|
+|Rollback|删除 `poc/poc-09-license/` 和对应匿名证据即可回到 `NOT_STARTED`；不改变 Ed25519、Payload 正式字段、数据库、正式 API 或商业授权规则。|
+
+## DEC-20260921-035
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260921-035|
+|Date|2026-09-21|
+|WBS|Phase 0 Debian 13 验证范围|
+|Decision|依据用户明确决定，登记 `EXC-P0-005` 暂缓 POC-06、POC-08、POC-09 的 Debian 13 验证；POC-08、POC-09 以 `PASS_WITH_EXCEPTION` 收口。POC-06 仅解除 Debian 缺口，Windows Server 2025 Office 阻塞保持。|
+|Reason|用户明确表示 Debian 13 不用验证。该决定满足 L3 例外确认要求，但不等于形成 Debian 兼容证据。|
+|Impact|Phase 0 不再因 POC-08/POC-09 的 Debian 缺口阻塞；剩余正式阻塞为 POC-03 质量 Gate 和 POC-06 Windows Server 2025 Office 实开。Debian 发行与 Release Gate 仍不得宣称通过。|
+|Rollback|用户可撤销例外并恢复 Debian 13 实机验证；恢复后 POC-06、POC-08、POC-09 在 Debian 结果形成前回到 `IN_PROGRESS`。|
+
+## DEC-20260922-036
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260922-036|
+|Date|2026-09-22|
+|WBS|Phase 0 Gate 1|
+|Decision|用户批准 POC-03 和 POC-06 两项替代方案并正式确认 Gate 1。POC-03 保留分类 48.00%、引用 74.00% 的 FAIL，以 R11 + 强制人工确认收口；POC-06 以 Windows 11 Office 实开、Server 包结构/Hash 和 Server Office 豁免收口。|
+|Reason|用户此前决定不重复本轮 POC-03 真实复验；POC-06 的 Microsoft Office 不是服务器运行依赖，且 Server 已确认制品 Hash/OOXML 与 Windows 11 一致。两项原验收无法在现有条件下继续，已按 L3 取得明确决定。|
+|Impact|Phase 0 状态变为 `COMPLETE_WITH_APPROVED_ALTERNATIVES`，项目进入 Architecture Freeze。POC-03 质量指标转为 Gate 3/UAT 阻塞；Server Office 与 Debian 未验证范围转为 Release 约束；Gate 2 前仍禁止正式业务编码。|
+|Rollback|撤销 Gate 1 时恢复 Phase 0 `IN_PROGRESS`：POC-03 重新执行全新独立留出集，POC-06 补齐 Server Office 实开；Architecture/Data/API 冻结活动停止。|
+
+## DEC-20260922-037
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260922-037|
+|Date|2026-09-22|
+|WBS|AF-01 Architecture Baseline Consolidation|
+|Decision|在锁定模块化单体内把 V1 Scope 收敛为 Platform 公共模块、AI/RAG、Capability 与七个实施业务域，并单列 `output` 作为输出编排模块。`output` 只构造 OutputContext、调用 PluginService 和登记制品，不自行实现格式渲染或直接操作插件进程。|
+|Reason|V2.1 功能子系统包含 Output，但最小模块清单未单列；若把输出编排并入 Plugin，会混淆业务输出上下文与进程/包管理边界。单列编排模块可以保持业务依赖稳定，又不改变 python-docx/python-pptx 与 Plugin 技术基线。|
+|Impact|形成 22 个客户运行模块与 1 个独立 Developer Workbench 信任区的边界候选；所有跨模块写入通过 Application Port/Domain Event，文件、AI、RAG、Plugin、Review、Trace、Audit 各有唯一 Owner。未冻结实体字段、表或 API。|
+|Rollback|在 Architecture Freeze 前可把 `output` 编排职责合并到 Solution Application 层并删除候选模块；不得把职责合并到 Plugin 进程管理实现或引入新的渲染技术栈。|
+
+## DEC-20260922-038
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260922-038|
+|Date|2026-09-22|
+|WBS|AF-02 Application Contract|
+|Decision|模块间同步交互采用技术无关 Application Port；跨模块状态传播使用最小 Domain Event。第一版同步事件进程内分发，长任务和需要恢复的事件写 PostgreSQL Job/Outbox，并按至少一次处理与幂等消费设计；不引入消息队列。|
+|Reason|模块化单体需要稳定边界但不需要分布式基础设施。Application Port 防止跨模块访问内部表，持久化 Job/Outbox 满足长任务和恢复需要，同时符合禁止 Redis/消息队列的基线。|
+|Impact|六个公共服务、Document/Evidence 读取端口、18 个事件及错误语义形成候选 Contract；未固定 REST、ORM、表结构或 Python 签名。|
+|Rollback|Architecture Freeze 前可合并或拆分事件语义；不得改为直接跨模块写表或新增消息队列，除非提交 L3 Change Request。|
+
+## DEC-20260922-039
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260922-039|
+|Date|2026-09-22|
+|WBS|AF-03 Security / File / Job / Runtime Boundaries|
+|Decision|在 V2.1 基线内固定默认拒绝的请求安全链、受控文件生命周期、Secret 引用边界、PostgreSQL Job/Outbox 至少一次语义、三类日志以及 API/Worker/Plugin/Developer Workbench 信任区。Plugin 独立子进程只作为故障与凭据隔离，不宣称为可运行任意第三方代码的强安全沙箱。|
+|Reason|模块与 Application Contract 已明确，但如果认证授权顺序、文件原子性、Worker 系统主体、Secret 解密范围和日志数据边界不统一，后续 Data/API 设计会产生绕过 ProjectId、泄露路径/凭据或重复任务写入的风险。V1 又明确禁止引入 Redis、消息队列、容器化插件和第三方市场。|
+|Impact|后续 Data Model 与 API Contract 必须承载服务器端 Session、CSRF、资源授权、不可变文件版本、Job 租约/幂等、SecretRef、Audit 与可信时间状态语义；具体表名、字段、REST 路径、密码哈希库和服务管理器仍未冻结。Windows 11、Windows Server 2025、Debian 13 保持正式目标，但 Debian 与 Server Office 未验证事实不变。|
+|Rollback|Gate 2 前可调整内部顺序或端口粒度；不得弱化默认拒绝、ProjectId 隔离、License 私钥隔离、文件受权访问或 Audit 不可普通删除等基线。若需引入新基础设施或强插件沙箱，提交 L3 Change Request。|
+
+## DEC-20260922-040
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260922-040|
+|Date|2026-09-22|
+|WBS|AF-04 Architecture Decision Records|
+|Decision|将七项长期架构决策分别固化为 ADR-003～ADR-009，而不合并成单一总 ADR；其状态标记为继承已批准基线但尚未通过 Gate 2 完整冻结。ADR-009 单独保留 POC-03 质量失败和 Gate 3/UAT 阻塞，避免被一般 AI/RAG 架构决策掩盖。|
+|Reason|模块化单体、AI/RAG、Plugin、License、Job、文件存储和质量控制的变更触发条件、回滚路径与验收 Gate 不同。独立 ADR 可以让后续 Data/API 设计逐项追溯，也能在某一决策被替代时保留其他决策稳定。|
+|Impact|Architecture Freeze Candidate 将引用九份 ADR；ADR-003～009 均具备 Context、Decision、Consequences、Rejected Alternatives 和 Rollback/Change Rule。未引入新技术栈、Schema、API 或正式业务代码。|
+|Rollback|Gate 2 前可合并、拆分或调整 ADR 候选；必须保留历史失败与用户例外，不得通过文档重组弱化 L3、Release、Gate 3 或 UAT 约束。|
+
+## DEC-20260922-041
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260922-041|
+|Date|2026-09-22|
+|WBS|AF-05 Architecture Freeze Candidate|
+|Decision|将 AF-01～AF-04 的详细成果汇总为 `ARCH-CANDIDATE-V1`，采用“显式允许依赖、其余全部禁止”的依赖矩阵，并把同步请求、文件、AI 正式化、Job 和 Output/Plugin 固化为五类运行视图。七项 Phase 0 例外与五项持续风险全部保留关闭 Gate，不因形成候选而视为已解决。|
+|Reason|Data Model Freeze 需要稳定的模块 Owner、跨模块 Contract、信任边界、运行流程和风险输入；单一候选清单可以消除多个设计文件之间的解释歧义，同时保留详细文档和 ADR 的反向追溯。|
+|Impact|AF-01～AF-05 状态均为 PASS，项目进入 DM-01。Architecture 版本为候选而非正式冻结；实体字段、物理 Schema、REST API 和业务代码仍未授权，正式开发继续由 Gate 2 阻塞。|
+|Rollback|Gate 2 前可回退为 AF-05 IN_PROGRESS 并修订候选；不得删除 Phase 0 失败/例外或绕过 L3。Gate 2 后的总体架构变更必须提交独立 Architecture Change Request。|
+
+## DEC-20260922-042
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260922-042|
+|Date|2026-09-22|
+|WBS|DM-01 Core Entity / Aggregate Catalog|
+|Decision|采用“逻辑对象 Aggregate + 不可变 Version Aggregate”的正式制品模式；AI 建议只保留在 AITask/AIInvocation 聚合，人工显式接受后由目标 Domain 创建新的 Draft Version，再经 Review 指定版本正式化。为落实既有 Review/Event/Job/License 语义，补充 HandoverAnalysisVersion、PlanVersion、TrustedTimeState 和 OutboxEvent 等必要聚合根。|
+|Reason|若版本作为可变字段内嵌在逻辑对象，送审锁定、历史确认、Trace 和并发编辑会相互冲突；若 AI 对象可直接切换为正式状态，则无法证明人工确认、证据和输入版本。独立 Version 与显式接受命令可以保持历史不可变和责任边界。|
+|Impact|22 个客户运行模块形成 65 个 Aggregate Root，Developer Workbench 另有 3 个且不进入客户 Schema。后续 DM-02～DM-06 必须沿用 Owner、Scope、Version Ref 和 AI/正式事实分离；物理表和外键仍待 Schema V1。|
+|Rollback|Gate 2 前可合并低价值运行聚合，但不得合并 AI Suggestion 与正式 Domain Version、不得取消不可变版本/ReviewSubject 或跨模块稳定引用原则；涉及这些原则的改变按 L3 核心数据模型调整处理。|
+
+## DEC-20260923-043
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-043|
+|Date|2026-09-23|
+|WBS|DM-02 Platform and Security Data Model|
+|Decision|Project 不保存 current_stage 可写副本，由 ProjectWorkflow 唯一拥有阶段状态；Review 绑定逻辑主题身份，ReviewRound 绑定具体不可变主题版本。用户名唯一键采用 trim + Unicode NFC + invariant case-fold；Session 只持 Token/CSRF 摘要并绑定 credential_version；Project Role 只存在 ProjectMember，DeploymentAdmin 保持独立部署角色。|
+|Reason|复制 current_stage 会造成 project 与 workflow 的双写和反向依赖；Review 若永久绑定单一版本则无法同时满足送审锁定、退回升版重审和历史决定保留。规范化用户名、摘要 Session 与角色分离可让授权和凭据失效语义在 Schema/API 阶段保持唯一解释。|
+|Impact|DM-01 聚合数量不变，但 PRJ-01、RVW-01、RVW-02 的包含语义已校正。后续 Schema 必须支持凭据版本失效、单一有效项目成员、Workflow 乐观并发、Review 轮次/版本唯一性、Secret 单 Active Version 与 TrustedTime 单调更新。|
+|Rollback|Gate 2 前可调整规范化或状态命名；不得恢复 Project/Workflow 双写、覆盖 Review 历史、保存原始 Session Token/Secret 明文或合并部署/项目角色。触及安全或核心数据机制时按 L3 处理。|
+
+## DEC-20260923-044
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-044|
+|Date|2026-09-23|
+|WBS|DM-03 Document / Evidence / Trace / Version Data Model|
+|Decision|分离 Document 逻辑身份、不可变 DocumentVersion 与 FileObject 物理元数据；以类型化 EvidenceLocator 和 EvidenceBinding 表达证据定位与支持关系，TraceLink 仅表达业务制品间的来源与追溯。实际调研记录归为 PROJECT_RECORD 并作为主要事实来源，调研业务表单归为 TEMPLATE，只能辅助组织调研而不能独立证明客户事实。|
+|Reason|逻辑对象、版本和物理文件混合会导致覆盖历史、路径泄漏和定位漂移；Evidence 与 Trace 共用一种关系会混淆“原文证明”与“业务制品来源”。明确实际记录优先也落实了用户此前确认的调研事实规则，并支持从待办一键定位原文。|
+|Impact|DM-01 的 EVD-02 Scope 调整为 GLOBAL_OR_PROJECT。后续 Schema/API 必须实现稳定引用、九类定位器、文件状态与恢复、版本保留和图关系授权；Evidence Viewer 不得暴露绝对路径或把短摘录当作权威原文。本阶段仍未定义物理表、API 或 Migration。|
+|Rollback|Gate 2 前可细化定位器和关系枚举；不得恢复绝对路径定位、覆盖 DocumentVersion、让模板独立证明客户事实，或重新合并 EvidenceBinding 与 TraceLink。触及核心数据模型时按 L3 处理。|
+
+## DEC-20260923-045
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-045|
+|Date|2026-09-23|
+|WBS|DM-04 AI / RAG / Job / Plugin / Output Data Model|
+|Decision|AITask 只通过统一 AIService 创建不可变 AIInvocation，并保存 Prompt/Input/Context/Provider/Model/Schema 与外发授权快照；Embedding Index 绑定精确模型、维度、Chunk Profile 和 Scope，不兼容变化必须新建索引并全量重建；Job/Outbox 采用至少一次、幂等与租约 fencing；Plugin 成功只产生待校验结果，OutputArtifact 在 FileObject/DocumentVersion/Hash 全部登记后才可发布。将 RAG-04 RetrievalRun Scope 从 PROJECT 校正为 GLOBAL_OR_PROJECT，以落实既有 GLOBAL/PROJECT 双知识域。|
+|Reason|这些运行对象跨越外部 Provider、PostgreSQL、文件系统和独立进程，无法可靠承诺精确一次或依赖可变“当前版本”。不可变快照、Scope 隔离、fencing 和分阶段发布可避免模型/索引漂移、跨项目泄露、过期 Worker 提交和半完成制品；GLOBAL 检索记录也必须可审计，不能因目录先前误限为 PROJECT 而丢失。|
+|Impact|后续 Schema/API 必须实现 AI、Embedding、Reranker 的逐次外发授权引用，以及 Invocation/Index generation、单一活动索引、Job Lease fencing、Outbox 消费去重、Plugin 精确包版本和 Output 发布完整性；既往 PoC/复验授权不得自动复用于未来调用。POC-03 分类 48%/引用 74% 的质量失败保持 Gate 3/UAT 阻塞，不因模型冻结而关闭；本阶段仍未定义物理表、API 或 Migration。|
+|Rollback|Gate 2 前可细化状态名、策略字段和保留方式；不得允许业务模块直连厂商 SDK/pgvector、复用不兼容向量、移除 Project 隔离/外发授权、宣称精确一次、让 Plugin 直连数据库/Secret，或让 AI/插件结果绕过人工确认和制品校验。触及这些边界时按 L3 处理。|
+
+## DEC-20260923-046
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-046|
+|Date|2026-09-23|
+|WBS|DM-05 Implementation Domain Data Model|
+|Decision|实施业务主链统一采用逻辑对象与不可变版本分离，正式指针只指向通过 Review 的指定版本；GLOBAL Capability 是标准能力事实，项目的 STANDARD_FUNCTION、NONSTANDARD_FUNCTION、DIFFERENCE、PENDING_CONFIRMATION 是 RequirementVersion 判断。实际调研记录优先于 TEMPLATE；NeedConfirm/ActionItem 必须保存明确问题、影响、选项、建议、人工输入规格和 EvidenceRef。Requirement→Solution 以章节版本内覆盖快照加 TraceLink IMPLEMENTS 表达，不新增可变双写关系；PlanVersion 固定最多六级 WBS 和仅 FS 的无环依赖。|
+|Reason|现有 R1～R9 验证成果同时包含标准、非标、差异和待确认草案，但明确不是正式需求/方案。若直接把表格行或 AI 结果当作事实，会丢失来源、版本和人工责任；若只复制原文到待办，又无法提供友好维护提示和精确原文定位。不可变版本、Evidence Viewer、Review 与 Trace 可以在保留真实调研优先原则的同时形成完整交付链。|
+|Impact|后续 Schema/API 必须实现各业务对象的逻辑身份/版本指针、ReviewSubjectSnapshot、CapabilityAssessment、AnalysisItem 输入提示、面对面调研来源标识、需求覆盖、专项设计校验和 WBS DAG 约束。R1～R9 文件保持历史验证制品，不自动导入正式数据库或转为客户事实；POC-03 质量失败仍由 Gate 3/UAT 阻塞。|
+|Rollback|Gate 2 前可细化业务枚举、专项字段和状态名称；不得让 GLOBAL 基线被项目反写、让模板/AI 自动成为事实、覆盖已审核版本、取消 Evidence/Review/Trace、把待确认项静默转正，或放宽六级 WBS/仅 FS/无环约束。触及核心业务模型时按 L3 处理。|
+
+## DEC-20260923-047
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-047|
+|Date|2026-09-23|
+|WBS|DM-06 Data Model Candidate Consolidation|
+|Decision|将 DM-01～DM-05 汇总为 `DATA-MODEL-CANDIDATE-V1`，保持 22 个客户运行模块、65 个 Aggregate Root 和 3 个物理隔离 Developer Workbench Root。统一五类 Scope、稳定引用、六类生命周期、正式化链与物理清理六项前置；RetentionPolicy/RetentionHoldEntry 作为 platform.SystemConfiguration 的受控子实体，不新增 Root。采用 R0～R8 九类候选保留策略，其中 Audit/签名/Review 与正式项目资料候选默认 5 年，AI/RAG/Job 运行记录 180 天，临时区 7 天；Active Hold 和保护引用始终优先。|
+|Reason|Schema V1 需要单一、无冲突的关系、基数、生命周期和保留输入。只写“历史保留”无法指导清理与容量设计，而把合同/法规期限硬编码又会产生合规风险；版本化策略、可延长默认值、Hold 优先和引用预检能同时提供可实施基线与客户配置空间。|
+|Impact|Data Model Freeze 的六个 WBS 全部 PASS，形成 25 条核心不变量、14 项风险和 15 项 Schema 交接要求。后续 SC-01～SC-05 必须映射这些约束并验证空库/有数据升级；候选期限不构成法律结论，客户合同可延长，缩短正式/审计数据期限需在 Gate 2/Release 评审。POC-03、Server Office 和 Debian 未验证结论保持不变。|
+|Rollback|Gate 2 前可调整候选期限、物理清理实现和 Schema 交接顺序；不得移除 Hold/保护引用、允许普通用户删除 Audit/正式历史、破坏 Owner/Scope/版本/Review/Evidence/Trace 边界，或把候选 Data Model 描述为已冻结物理数据库。触及核心数据、安全或合规边界时按 L3 处理。|
+
+## DEC-20260923-048
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-048|
+|Date|2026-09-23|
+|WBS|SC-01 Logical-to-Physical Schema Mapping|
+|Decision|客户运行时采用单一 PostgreSQL 数据库和单一 `plm` 应用 Schema，不为 22 个模块分别创建 PostgreSQL Schema；以 `plt_`、`auth_`、`prj_` 等 22 个短前缀表达表 Owner。65 个 Aggregate Root 各映射一个唯一 primary table，Owned Entity 按查询、唯一、顺序、状态和引用需要拆表。固定目标类型优先直接 FK；Review/Trace/Audit/Event 等多态引用采用受控 discriminator + object/version/project 列组，不新增全局共享写 object_registry。Developer Workbench 使用独立数据库/部署。|
+|Reason|V1 是单服务器模块化单体并使用同一应用数据库身份，22 个 PostgreSQL Schema 不形成真正安全隔离，却增加 Alembic search_path、跨 Schema FK、备份恢复和离线运维复杂度。模块前缀与 Application Port 能清晰表达 Owner；全局 object_registry 会成为所有模块共同写热点并破坏唯一 Owner。|
+|Impact|形成 65/65 Root primary table 映射及 owned table 候选，表名使用 ASCII lower_snake_case、目标不超过 55 字符。SC-02 必须补齐 Scope/ProjectId、Version、固定 FK、多态白名单、唯一/CHECK 与不可变约束；SC-03/04 再定义索引、pgvector、Migration 和恢复测试。本阶段没有创建 ORM、Migration 或业务表。|
+|Rollback|Gate 2 前可改为少量分组 Schema 或调整 table/child 拆分，但必须提供 Alembic、权限、备份和跨平台证据；不得把 Developer Workbench 放入客户数据库、取消 Owner 前缀/边界、用 JSONB 隐藏 ProjectId/核心 FK，或引入共享写 object_registry。|
+
+## DEC-20260923-049
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-049|
+|Date|2026-09-23|
+|WBS|SC-02 Field Types and Constraints|
+|Decision|主键使用 PostgreSQL 18 `uuidv7()`；时间使用 UTC `timestamptz(6)`，日历计划日期单独使用 `date`。状态采用 text + named CHECK，不使用 PostgreSQL ENUM/DOMAIN；固定长度 Hash 使用 `bytea` 并检查字节数。PROJECT/GLOBAL_OR_PROJECT 表显式保存 ProjectId/Scope，并以复合 FK 防跨项目归属漂移；FK 默认 NO ACTION、NOT DEFERRABLE，V1 不启用 CASCADE。Version/current pointer 使用复合归属约束，内容不可变、append-only、状态迁移及多态目标由数据库约束、受控 trigger 和 Application Command 共同保护。V1 不把 RLS 作为主防线且默认不启用，授权依靠 ProjectAuthorizationService、显式过滤、复合约束与负向测试。|
+|Reason|有序 UUID 降低随机主键的索引局部性成本，同时不承载授权语义；text + named CHECK 比 ENUM 更利于 Alembic 的双版本升级/回退。显式 ProjectId 与复合 FK 能在 Repository 漏写过滤时继续阻止跨项目归属，而过早启用 RLS 会显著增加连接池、后台 Job、Migration 和恢复路径的策略复杂度。NO ACTION 与无自动级联保证 Retention、Hold、Audit 和保护引用先完成预检。|
+|Impact|65 个 Root 已分配 M/V/A/R/SEC 字段 Profile，形成 28 组唯一语义、多态白名单、敏感列与数据库角色候选。SC-03 必须把条件唯一、授权过滤、Job/Outbox、Audit/Trace、Retention、FTS 与 pgvector 转为索引和关键查询计划；SC-04 再生成 Alembic 并执行空库/有数据 up/down、绕过 ORM 的负向测试。本阶段没有创建 ORM、Migration、业务表或索引。|
+|Rollback|Gate 2 前可调整具体类型长度、CHECK 值、索引或受控 trigger 实现，但必须提供兼容 Migration 与 up/down 证据；不得弱化 Project 隔离、版本不可变、Secret/Session/License 敏感边界、Hold/保护引用预检，或让普通删除通过 CASCADE 绕过清理控制。若未来启用 RLS，须以 ADR 和连接池/Job/Migration/恢复全链验证后增量引入。|
+
+## DEC-20260923-050
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-050|
+|Date|2026-09-23|
+|WBS|SC-03 Index and Critical Query Design|
+|Decision|索引采用“约束索引复用 + 引用侧 FK B-tree + Project 前缀/keyset + 条件唯一 + 专用运行索引”的最小集合。Job/Outbox 使用短事务、稳定排序、`FOR UPDATE SKIP LOCKED`、Lease fencing 与消费幂等。全文使用受控中文 Token `search_body` 的 stored `tsvector` + GIN；向量使用按受支持维度由 Migration 创建的 HNSW 表达式索引族，查询强制 Scope/Project/EmbeddingIndex 过滤并启用 iterative scan，不足时只能在同授权范围扩大扫描或精确回退。V1 不启用按项目动态分区、每项目索引或 Runtime DDL。|
+|Reason|PK/UNIQUE 重复索引和无消费者索引会增加单服务器的写放大与维护成本；Project 前缀和双向引用索引同时支撑授权、删除预检和稳定分页。pgvector 共享 HNSW 的过滤发生在近邻扫描过程中，不能只依赖默认候选数；模型维度又可能变化，因此需要受控维度索引、迭代扫描和同 Scope 精确回退。Job/Outbox 的至少一次语义要求数据库领取与外部执行分离，并由 fencing/幂等阻止过期 Worker 发布。|
+|Impact|形成 20 个关键 Query ID、28 组唯一语义到 29 个物理唯一键映射、11 项风险及 SC-04 的数据规模/并发/执行计划验收计划。SC-04 必须生成 index manifest，验证 `EXPLAIN (ANALYZE, BUFFERS)`、多项目 Recall、20 Worker 领取/崩溃回收、Retention 保护引用和索引写放大；POC-02/03 的 HNSW 参数仅作初值，不能直接作为生产性能结论。HNSW `vector` 超过 2,000 维默认不兼容，替代表示需质量 PoC。本阶段没有创建 ORM、Migration、表或索引。|
+|Rollback|Gate 2 前可依据 SC-04 计划删除冗余索引、调整列序/INCLUDE、HNSW 参数或固定 hash partition；必须保留 Project 隔离、同 Scope 精确回退、Job fencing/幂等和保护引用查询。引入独立向量库、消息队列、Redis、运行时 DDL或按客户动态分区属于超出当前方案的变更，须按 L3 处理。|
+
+## DEC-20260923-051
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-051|
+|Date|2026-09-23|
+|WBS|SC-04 Migration and Recovery Validation|
+|Decision|Gate 2 前建立独立 `VALIDATION_ONLY` Schema Contract：机器可读 manifest 覆盖全部 65 个 Root，关键安全/项目/文档/Review/Job/Audit/RAG/Trace/Retention/WBS 表使用代表字段与真实约束，其余 Root 只验证 M/V/A/R/SEC Profile。Alembic 0001 验证结构，0002 验证索引和 append-only guard；`plm.alembic_version` 位于应用 Schema。强过滤小向量集合允许 planner 使用 B-tree 后精确排序，HNSW 通过独立物理计划和 exact Recall 对照验证，不强制优化器采用成本更高的路径。|
+|Reason|SC-01～SC-03 已冻结结构机制，但尚未形成每个 owned table 的完整生产列清单；直接生成完整业务 Migration 会把推断误写为正式事实。Profile + 关键代表表能在不越过 Gate 2 的情况下真实验证 PostgreSQL/Alembic、跨项目 FK、partial unique、GIN/HNSW、Job 并发、Retention 和恢复。优化器按选择性选择 exact fallback 是正确行为，强关 planner 选项不能作为生产性能证据。|
+|Impact|Windows 11 上 4/4 单元、65 Root 空库/有数据 up/down、10/10 负向约束、20/20 Worker 唯一领取、Retention/Hold、备份恢复、GIN/HNSW 与敏感扫描通过；生成可重复 JSON 证据。SC-05 必须继续明确验证性/生产边界并汇总未细化 owned table；Gate 2 后正式 Migration 需冻结 revision、与最终 ORM 同步并重跑全量测试。Server 使用既有 POC-02 可行性证据，本轮未重跑；Debian 保持 Release 未验证约束。|
+|Rollback|验证工作区可整体移除，不影响任何生产/客户数据库。可在 SC-05/Gate 2 前调整代表表和验证规模，但不得用 Profile 最小列替代正式字段设计、删除 Project 复合保护、append-only、Job fencing/幂等、Hold/保护引用或备份恢复要求。|
+
+## DEC-20260923-052
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-052|
+|Date|2026-09-23|
+|WBS|SC-05 DB Schema Candidate 汇总|
+|Decision|执行规则改为不自动读取 Codex/GPT 周额度，不再以剩余低于 20% 作为停止新任务或 WBS 的条件；仅在用户明确要求时查询。额度重置、购买或消耗 reset credit 仍需逐次明确确认。|
+|Reason|用户在进入 SC-05 时明确取消原 20% 停止限制并要求不再检查；该最新明确指令优先于仓库此前的额度保护规则。|
+|Impact|`AGENTS.md`、`.ai/SKILL.md`、项目开发 Skill 与 `STATUS.md` 的当前执行规则同步更新；历史决策和 Changelog 作为当时事实保留，不回写删除。该变更不影响 Gate、L3、Secret、客户数据外发或 Git 安全约束。|
+|Rollback|用户可再次明确启用新的额度检查频率和停止阈值；在此之前不得自行恢复自动检查。|
+
+## DEC-20260923-053
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-053|
+|Date|2026-09-23|
+|WBS|SC-05 DB Schema Candidate 汇总|
+|Decision|以 `database-schema-v1-candidate.md` 作为 `DB-SCHEMA-CANDIDATE-V1` 单一规范入口，完整固化 65 个 Root primary table/PK/Profile 和 20 个 Query ID；SC-01～SC-04 作为受控明细附件。验证性 Schema Contract 仅作为机制证据，Gate 2 后按模块形成正式 ORM/Alembic，不将 generic Profile 最小列或 5 个代表 child 直接复制为生产 Schema。|
+|Reason|逐字复制 SC-01～SC-04 会造成重复和漂移，但只有摘要又不足以检查 Root/Query 完整性。单一入口 + 机器 manifest + 受控明细能统一优先级、保留可追溯性，并如实区分设计候选、验证证据和正式生产实现。|
+|Impact|Database Schema V1 候选覆盖 22 Owner、65 Root、29 个物理唯一键、20 个关键查询、14 项开放风险和 14 条 API Contract 输入。SC-05 静态一致性检查全部通过；项目可进入 API Contract V1，但 Architecture/Data Model/Schema/API 仍须 Gate 2 一并确认，正式业务编码继续阻塞。|
+|Rollback|Gate 2 前可回退本汇总文件并恢复 SC-05 为待完成；不得删除 SC-01～SC-04 历史证据或把验证性 Migration 改称生产 Migration。若修改 65 Root、Owner、Scope、安全机制或基础设施，必须按 L3 处理。|
+
+## DEC-20260923-054
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-054|
+|Date|2026-09-23|
+|WBS|API-01 Resource Catalog and Common Protocol|
+|Decision|API V1 使用 `/api/v1` REST/JSON、multipart 流式上传和 SSE；JSON 成功/错误均携带 `trace_id`。PROJECT 资源强制 `/projects/{project_id}` 路径并再次校验归属；Session 使用 HttpOnly `plm_session`，状态改变请求使用 `X-CSRF-Token`。Mutable 资源以 ETag/If-Match 映射 `expected_version`，可重试写操作使用 Idempotency-Key，列表使用绑定 Scope/查询指纹的不透明 keyset cursor。65 个 Root 按 DIRECT/NESTED/READ_ONLY/INTERNAL 分类，内部 Job/Outbox/File/Embedding/安全状态不提供通用 CRUD。|
+|Reason|统一 HTTP 外壳可避免各模块自行发明认证、分页、并发和错误语义；Project 路径、资源归属双检、固定版本引用和默认拒绝能够把 Architecture/Data/Schema 的隔离不变量提升为可测试 Contract。分类暴露可保留完整领域模型，同时避免把数据库 Root 或运行时细节机械暴露成 API。|
+|Impact|后续 API-02～API-04 必须逐操作登记 Owner Port、Role、Scope、License、CSRF、If-Match、Idempotency、Audit 和错误码；API-05 汇总 OpenAPI/权限/错误/SSE。API Contract 工作从已同步的 Schema 检查点进入 `feature/api-contract-v1` 分支。DeploymentAdmin 不自动获得项目业务数据访问权；V1 不使用通用 DELETE、Offset 主分页、GraphQL、WebSocket 或任意 filter/order 表达式。|
+|Rollback|Gate 2 前可修改具体路径名、Cookie/Header 名或资源暴露级别并重跑 65 Root/权限一致性检查；不得弱化 Project 隔离、Session/CSRF、固定版本、幂等、乐观并发、文件路径隐藏或内部 Root 不直出的安全边界。冻结后的 Breaking Change 必须走新端点、v2 或 API Change Request。|
+
+## DEC-20260923-055
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-055|
+|Date|2026-09-23|
+|WBS|API-02 Platform, Security, Document and Governance Contract|
+|Decision|平台/安全/治理 API 采用专用状态命令而非通用 DELETE/状态 PATCH；Session、FileObject、Parse runtime、TrustedTimeState 等内部 Root 不提供通用 CRUD。文件上传固定为 UploadIntent → 流式 Content → 幂等 Commit 三步，Commit 同步创建不可变 DocumentVersion 并返回 Parse JobRef。Review Round、EvidenceBinding 和 TraceLink 一律引用固定 Version；License 无效时只开放健康、登录、当前 Session 和 DeploymentAdmin 的五个 License 恢复端点。|
+|Reason|内部运行 Root 直接暴露会允许客户端绕过 Application Port、状态机、文件一致性或可信时间。三步上传能隔离大文件传输与业务事务并支持崩溃恢复；固定版本引用保证 Review/Evidence/Trace 可审计。最小 License 恢复面既允许现场修复，又不会把无效 License 变成业务旁路。|
+|Impact|形成 10 Owner/22 Root 的 86 个 Operation、42 个模块错误码、DTO 禁止字段、权限/Audit/测试矩阵。DeploymentAdmin 仍不是项目数据超级用户；Secret/临时密码 write-only，Viewer/下载不返回 Storage Locator，Trace 图逐节点授权。后续 API-03/04 必须沿用 API-01 公共 Envelope、CSRF、Project 隔离、If-Match、幂等和错误安全边界。|
+|Rollback|Gate 2 前可调整具体路径、Operation 分组或角色白名单并重跑 Contract lint；不得改为通用内部 Root CRUD、返回 Secret/路径、动态 current 引用、跨项目可见、无 CSRF 状态写或扩大 License 恢复面。冻结后的 Breaking Change 走新端点、v2 或 API Change Request。|
+
+## DEC-20260923-056
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-056|
+|Date|2026-09-23|
+|WBS|API-03 AI, RAG, Job, Plugin and Output Contract|
+|Decision|所有可能向外部 AI Provider 发送数据的操作必须先生成可审计的外发预览，并取得绑定 Provider、Region、Purpose、Source、Payload Bounds 与单次逻辑操作的明确授权；授权只允许同一 Payload 的受限重试，不得复用 PoC、其他任务或历史轮次授权。AI Suggestion 始终标记 `NOT_FORMAL_FACT`，接受建议只能经目标 Owner Port 创建 Draft。Chunk、Embedding、Job Lease/fencing 与 Outbox 保持内部对象；Plugin 仅接受开发者签名包并通过独立子进程受控执行，不提供公共任意调用；Output Artifact 只有在二次校验和 Document 登记完成后才可发布。|
+|Reason|外发授权必须能证明谁在何时为哪一最小载荷授权，避免授权漂移和客户数据越界；AI 建议、异步任务、插件及文件输出若直接暴露内部状态或绕过 Owner Port，会破坏事实确认、Project 隔离、at-least-once 幂等、fencing 与文件可追溯性。|
+|Impact|形成 5 Owner/15 Root 的 79 个 Operation、51 个模块错误码、DTO、权限、SSE、强制 Audit 和测试矩阵。API-04/05 必须沿用逐次外发授权、`NOT_FORMAL_FACT`、Project 隔离、内部运行 Root 不直出、签名插件和输出二次校验边界。POC-03 的分类/引用质量仍为 Gate 3/UAT 阻塞项；本轮实际外部调用 0。|
+|Rollback|Gate 2 前可调整具体路径、Operation 分组、角色白名单或事件粒度并重跑 Contract lint；不得弱化逐次最小外发授权、Project 隔离、AI 建议态、Job fencing、签名插件/无任意调用或输出校验与登记边界。冻结后的 Breaking Change 走新端点、v2 或 API Change Request。|
+
+## DEC-20260923-057
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-057|
+|Date|2026-09-23|
+|WBS|API-04 Implementation Business Chain Contract|
+|Decision|Capability、Handover、Survey、Requirement、Prototype、Solution 与 Plan 统一采用逻辑 Identity + 不可变 Version API；版本正文无 PATCH/DELETE，修订创建新 Version。各 Owner 的 `:submit-review` 只做送审前校验和 ReviewService 原子编排，不替代 API-02 的 Reviewer/锁定/决策规则；ReviewCompleted 后由 Owner 幂等更新正式指针、Trace、Audit 与 Outbox。实际调研记录优先于 TEMPLATE，AI Suggestion 只可经白名单 Owner Port 创建 Draft。所有跨阶段关系固定 VersionRef；上游替代只生成影响项，不自动改写或批准下游。|
+|Reason|统一版本与 Review 编排可以让业务界面提供清晰动作，又不形成第二套评审引擎；固定引用、来源优先级和 Owner 正式化边界可防止模板/AI 冒充客户事实、动态当前版本漂移及跨模块直接写表。上游变化显式影响分析可保留历史交付并避免静默级联。|
+|Impact|形成 7 Owner/28 Root 的 158 个 Operation、54 个模块错误码、DTO、Role × Resource 权限、SSE、强制 Audit 和测试矩阵。API-05 必须验证统一资源/Operation/错误/权限目录，保留不可变版本、Project 隔离、Evidence 定位、Review 锁、AI Draft 和影响分析边界。POC-03 分类/引用质量仍为 Gate 3/UAT 阻塞；本轮实际外部调用 0。|
+|Rollback|Gate 2 前可调整具体路径、Operation 分组、角色白名单或 DTO 拆分并重跑 Contract lint；不得弱化版本不可变、固定 VersionRef、统一 Review、实际调研优先、AI 不自动正式化、跨项目拒绝、方案覆盖/Trace 一致或 WBS 六级/FS DAG 边界。冻结后的 Breaking Change 走新端点、v2 或 API Change Request。|
+
+## DEC-20260923-058
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-058|
+|Date|2026-09-23|
+|WBS|API-05 API Contract Candidate Aggregation|
+|Decision|`api-contract-v1-candidate.md` 作为 API V1 单一汇总入口，API-01～04 保持规范明细；不复制 323 个 Operation 形成第二份人工清单，而由 `contract_lint.py` 从四份源文档确定性生成带 SHA-256 的机器 manifest。manifest 统一索引 65 Root/暴露、Operation/展开 Path、错误、SSE、Query 映射和 18 个核心枚举族，但不冒充可部署 OpenAPI；Gate 2 后 FastAPI/Pydantic 生成的实际 OpenAPI 必须与该 manifest 做 Contract diff。|
+|Reason|完整手工复制会形成重复规范和漂移，只有文字摘要又无法自动验证。单一汇总 + 受控明细 + 可再生机器目录既保留人类可评审语义，也提供实现和 CI 所需的稳定输入，并如实区分设计契约与尚未创建的运行 OpenAPI。|
+|Impact|API-05 静态验证覆盖 22 Owner、65 Root、323 Operation、363 Method/Path 变体、150 错误、18 SSE、20 Query 映射和 18 枚举族，5/5 测试 PASS。Architecture/Data Model/Schema/API 四份 Gate 2 候选已齐备；Gate 2 仍需用户明确确认，正式编码未获授权。|
+|Rollback|Gate 2 前可删除生成 manifest/校验器并恢复 API-05 为待完成；不得删除 API-01～04 历史或把未实现的 OpenAPI 描述为已运行。Gate 2 后修改冻结 Operation/DTO/枚举/错误/安全边界必须走非 Breaking 扩展、v2 或 API Change Request。|
+
+## DEC-20260923-059
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-059|
+|Date|2026-09-23|
+|WBS|Gate 2：Architecture / Data Model / DB Schema V1 / API Contract V1 Freeze|
+|Decision|依据用户明确指令“批准 Gate 2，冻结 Architecture、Data Model、DB Schema V1 和 API Contract V1”，将 `ARCH-CANDIDATE-V1`、`DATA-MODEL-CANDIDATE-V1`、`DB-SCHEMA-CANDIDATE-V1` 和 `API-CONTRACT-CANDIDATE-V1` 以提交 `64cdf09` 的内容冻结为正式开发基线。候选标识为保持历史 Trace 不重命名；Gate 2 对正式开发的阻塞解除，下一 WBS 为 Phase 1 `1.01 定义模块目录规范`。|
+|Reason|AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 已全部 PASS；跨层 22 Owner、65 Root、323 Operation、363 Method/Path、150 错误、18 SSE 和 20 Query 映射一致，API-05 Contract Lint 5/5 PASS。用户已完成正式 Gate 决策，满足进入基础工程的前置条件。|
+|Impact|允许按 WBS 创建正式基础工程和业务实现；冻结后的总体架构、核心数据模型、DB Schema V1、Breaking API、技术栈、安全/License 机制或 Scope 变化必须走 L3 Change Request。批准不等于生产 ORM/Migration、运行 OpenAPI、性能、AI 质量、发行或 UAT 通过；POC-03 继续阻塞 Gate 3/UAT，Server Office、Debian 13、Ghostscript AGPL 发行合规和 SC-04 验证性边界继续保留。|
+|Rollback|Gate 决策不得静默回退或通过技术提交抹除。若需撤销或修改冻结基线，必须由用户明确批准独立 Change Request，保留本决策、原冻结提交和全部历史证据；普通 Git revert 不改变该历史批准事实。|
+
+## DEC-20260923-060
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260923-060|
+|Date|2026-09-23|
+|WBS|1.01 定义模块目录规范|
+|Decision|采用单仓库双应用布局：客户运行代码放在 `apps/backend` 与 `apps/frontend`；后端使用 `src/plm_assistant` Python src layout，FastAPI 与 Worker 共用 22 个 `plm_assistant.modules.<module>` 模块；每个模块固定为 `api/application/domain/infrastructure` 四层，跨模块只允许目标模块 `application.public`。License/Plugin 签名和 Release 工具放在物理分离的 `tools/developer-workbench`，不进入客户运行包。未进入实现 WBS 的模块不创建空 package。|
+|Reason|该布局直接承载冻结的模块化单体、22 Owner 和 API/Application/Domain/Adapter 依赖方向，同时避免 FastAPI 与 Worker 复制业务代码。独立 Workbench 路径能防止私钥工具误入客户包；按需创建模块可避免 22 组空目录和伪实现。|
+|Impact|后续 1.02/1.03 分别在稳定的 backend/frontend 根创建 App；模块 WBS 必须遵循固定层次、测试镜像和依赖白名单。新增运行模块或把 Workbench 合并进客户运行包属于 L3；普通模块内子目录调整属于 L2。|
+|Rollback|在尚无运行实现和 Migration 时，可删除新增骨架并恢复为纯文档仓库；若需变更顶层布局，先更新机器 manifest、验证和本决策的后继记录。不得借回滚改变冻结的 22 模块、信任区或依赖矩阵。|
+
+## DEC-20260924-061
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-061|
+|Date|2026-09-24|
+|WBS|1.02 FastAPI app factory|
+|Decision|后端采用无模块级全局 App 的 `create_app()` 工厂，由 Uvicorn `--factory` 加载；每个实例拥有独立的 lifespan 与 `HealthService`。只注册 `/health/live`、`/health/ready` 两个非业务健康端点，Swagger、ReDoc 和外部 OpenAPI 暂不暴露。Readiness 通过 Composition Root 注入同步/异步探针，未启动、探针返回非 True 或抛异常时统一失败关闭为最小 `503 {"status":"NOT_READY"}`。直接依赖固定为 FastAPI 0.141.1、Uvicorn 0.53.0，测试按 Starlette 1.7 要求使用 HTTPX2 2.13.1。|
+|Reason|工厂模式避免测试、Worker 或多实例共享可变状态，并为后续 Config、DB Session、日志、Trace 和 Router 逐步装配提供稳定入口。健康面符合冻结 Contract 的最小披露原则；注入探针允许后续数据库/存储检查接入而不改变公开响应。固定已在 Python 3.13.14 验证的直接版本可减少三平台漂移。|
+|Impact|当前运行面只有两个健康端点，不初始化数据库、License、Session 或业务模块；外部 OpenAPI 仍为 404，但 `app.openapi()` 可供后续 Contract diff 使用。1.04/1.09 可向工厂装配基础设施；1.06 负责正式错误 Contract，1.08 负责 TraceId。|
+|Rollback|删除 WBS 1.02 新增 package/测试并恢复 backend README/pyproject 即可回到 1.01；不影响数据库或客户数据。更换 FastAPI/Uvicorn、改变健康路径或暴露额外未冻结 API 必须按依赖/API 变更规则重新评审。|
+
+## DEC-20260924-062
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-062|
+|Date|2026-09-24|
+|WBS|1.03 Vue app shell|
+|Decision|前端采用 Vue 3 + TypeScript + Vite 的单页应用壳，使用 Vue Router 维护首页与 catch-all 404；目录先建立 `app` 与 `shared` 两个公共层，不预建业务模块。浏览器仅通过 same-origin `/health/ready` 读取后端就绪状态，开发代理只指向本机 `127.0.0.1:8000`；不在浏览器存储 Secret、Token 或业务事实。固定 Node 24/pnpm 11 工具链和直接依赖版本，并以 lockfile 及 workspace override 将传递依赖 `ini` 固定为无已知漏洞的 1.3.8。|
+|Reason|最小应用壳为后续认证、错误处理和业务模块提供稳定挂载点，同时避免在对应 WBS 前形成伪页面或客户端信任边界。same-origin 健康检查不会引入厂商调用或跨域凭据；固定依赖和安全 override 可复现当前 Windows 11 验证结果。|
+|Impact|当前 UI 只包含产品导航骨架、后端连接状态、可访问性基础样式、安全错误边界和 404；没有登录、权限裁决、业务路由、数据库或外部 AI 调用。后续业务页面应放入 `src/modules` 并经正式 API/权限 WBS 接入，客户端显示权限不得代替服务端授权。|
+|Rollback|删除 WBS 1.03 新增前端源码、测试、lockfile 和验证证据并恢复 frontend README 即可回到空前端目录；不影响数据库、后端或客户数据。更换冻结技术栈、引入跨域业务调用或改变 `/api/v1` Contract 必须按对应 L3/API 变更规则处理。|
+
+## DEC-20260924-063
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-063|
+|Date|2026-09-24|
+|WBS|1.04 SQLAlchemy session|
+|Decision|客户运行时采用同步 SQLAlchemy 2.0.54 + psycopg 3.3.5；每个进程持有一个 `DatabaseRuntime`/Engine Pool，每个 Application Command 使用一次性 `SqlAlchemyUnitOfWork` 和独立 Session/事务。事务 `autobegin=False`，进入 UoW 时显式 begin；只有显式 `commit()` 才提交，异常、遗漏提交或显式 rollback 均回滚，退出始终关闭 Session。连接池启用 pre-ping、return rollback、recycle 和有限超时，隔离级别固定 `READ COMMITTED`；只接受 `postgresql+psycopg`。数据库 URL 由 Composition Root 注入且所有展示隐藏密码，本 WBS 不读取环境或 Secret。|
+|Reason|同步 Session 与 Phase 0/SC-04 已验证的 PostgreSQL/psycopg 路径一致，也可由 FastAPI 同步依赖和独立 Worker 共用一套事务边界，避免在基础阶段维护同步/异步双栈。显式 begin/commit、默认 rollback 和一次性实例能防止请求间 Session 共享、隐式提交及连接池污染；技术无关 Application Protocol 保持业务层不依赖 ORM。|
+|Impact|`platform` 提供 UnitOfWork Contract、SQLAlchemy Adapter、连接健康检查和安全 URL；业务 Repository 只能在对应模块 Infrastructure 内使用当前 UoW Session，不得把 Session 跨线程/请求缓存。异步端点不得在事件循环中直接执行同步数据库 I/O，应使用同步依赖/执行边界。1.05 使用独立 Migration 角色建立正式 Alembic；1.09 负责 URL/Secret 与 Engine 生命周期装配。本任务未创建业务 ORM、表、Migration 或 API。|
+|Rollback|删除 WBS 1.04 的 UnitOfWork/DatabaseRuntime、测试与验证材料并移除 SQLAlchemy/psycopg 依赖即可回到 1.03；当前无数据库对象或客户数据需要回滚。若未来以 AsyncSession 取代该基础边界，应提交后继 L2 决策和等价事务/并发验证；不得借此改变 PostgreSQL 18、Schema、安全角色或冻结业务模型。|
+
+## DEC-20260924-064
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-064|
+|Date|2026-09-24|
+|WBS|1.05 Alembic migration|
+|Decision|正式 ORM Base 固定 `plm` Schema 和 PK/FK/UQ/CK/IX 命名约定；Alembic 环境与 revision 作为 `plm_assistant.migrations` 包随 backend wheel 交付。首个不可变 revision 为 `20260924_0001`，只验证 PostgreSQL 18 并建立 pgvector 0.8.6 平台基线，不创建任何业务表。`plm.alembic_version` 位于应用 Schema；online/offline 环境先幂等建立 `plm` Schema。downgrade 到 base 删除 revision 记录，但按冻结恢复边界保留空 `plm` Schema、版本表和共享 pgvector 扩展。迁移 URL 仅通过内存 Config attribute 注入，`alembic.ini` 不保存凭据。|
+|Reason|WBS 1.05 需要建立可发行、可审计的正式 Migration 链，但 DB Schema V1 明确要求业务表按模块 WBS 逐项细化，禁止复制 SC-04 的 70 张验证表。先冻结 Schema/版本表/扩展/命名与打包机制，既能满足后续 revision 前置，又不会把 Profile 占位结构冒充生产 ORM。保留共享扩展和空 Schema 与冻结 SC-04 恢复边界一致，也避免 downgrade 破坏其他 revision 或数据库能力。|
+|Impact|后续每个模块数据库任务必须继承此 Base、以新 revision 增量变更并完成 ORM、空库/有数据 up/down、漂移和恢复验证。Runtime Role 不得调用本迁移入口或拥有 DDL/版本表写权限；1.09 再装配 Secret/配置与部署命令。本 revision 不关闭 65 Root 正式 ORM、业务约束、索引或权限验证风险，当前业务表数量仍为 0。|
+|Rollback|可执行 downgrade 到 base 清除 revision 记录；空 `plm` Schema、版本表和 pgvector 作为平台前置按设计保留，不包含客户数据。代码回退可移除迁移包与 Alembic 依赖。只有在确认没有后续 revision、业务对象或其他扩展依赖时，管理员才能通过独立维护步骤移除这些前置；不得在普通 downgrade 中级联删除。|
+
+## DEC-20260924-065
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-065|
+|Date|2026-09-24|
+|WBS|1.06 Error contract|
+|Decision|平台层建立受控错误码目录和统一 FastAPI 异常处理。已分类的 ApplicationError 按冻结 API-01 通用码返回；未分类异常固定为 SYSTEM_INTERNAL，Pydantic 校验只返回安全的 400/422 而不暴露原始输入。普通 HTTP 403 隐藏为与不存在资源一致的 404；CSRF、License 等已分类错误保留冻结的 403。框架 405 使用新增的兼容错误码 REQUEST_METHOD_NOT_ALLOWED，不修改任何冻结码语义。响应固定为 `error.code/message/details` + `trace_id`，并同步 `X-Trace-Id`、禁止缓存；在 WBS 1.08 Trace 中间件接入前，复用规范 UUID 请求头或生成 UUIDv7。|
+|Reason|统一封装可以防止框架异常明文、校验原值、权限存在性、堆栈与内部路径进入公开响应，并为后续模块提供稳定的错误边界。405 使用独立码比错误地归类为请求格式错误更精确，属于 API-01 允许的非破坏性扩展。|
+|Impact|只改变错误响应，不新增公开业务路由或数据库对象；两个健康端点的冻结最小响应保持原样。后续模块需先登记自己的业务错误码再使用；1.07 增加服务端脱敏日志，1.08 统一整个请求生命周期的 TraceId。|
+|Rollback|移除平台错误目录、异常处理注册和对应测试，即恢复 WBS 1.05 行为；当前无数据迁移。若改变已冻结 `/api/v1` 错误 Envelope 或已有错误码语义，须走 API Change Request/L3。|
+
+## DEC-20260924-066
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-066|
+|Date|2026-09-24|
+|WBS|1.07 JSON log|
+|Decision|平台日志使用两个独立、由 Composition Root 注入的 JSON 行输出流，分别记录 Application 与 Integration 事件；不改 Python root logger，也不以自由文本格式化异常。写入 API 只接受登记事件、受控集成类型/Provider、规范 UUID、固定格式错误码和非负耗时，输出字段由代码白名单构造。未分类 API 异常记录 `request_failed`、`SYSTEM_INTERNAL` 与响应同一 TraceId，不记录 exception、request body、URL、SQL 或路径；日志写入失败不改变安全错误响应。Audit 保持独立，未来由 audit 模块写 PostgreSQL。|
+|Reason|自由文本和第三方异常拼接易把 Secret、客户正文、绝对路径或 Provider 原始响应写进普通日志；事件/字段白名单在写入前拒绝不受控数据。按应用/集成分流可保持权限、保留期和排障职责分离，且不抢占后续 Audit、Trace、Config WBS。|
+|Impact|仅增加平台日志能力和未分类 API 失败的安全记录；未新增业务 API、数据库对象或网络调用。当前记录不含请求性能、Actor/Project 等上下文；WBS 1.08 Trace 中间件和后续业务模块逐步接入受控字段。默认 Application 输出 stdout、Integration 输出 stderr；正式部署的收集、保留与访问控制由 Release 阶段配置。|
+|Rollback|移除日志模块、App Factory 注入及异常处理中的安全记录即可恢复 WBS 1.06；无数据迁移。未来需要新 Provider 或事件时先扩充受控目录及测试，不允许改成任意消息透传。|
+
+## DEC-20260924-067
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-067|
+|Date|2026-09-24|
+|WBS|1.08 TraceId middleware|
+|Decision|采用纯 ASGI Trace 中间件，在每个 HTTP 请求入口只解析一次 `X-Trace-Id`：仅单个规范 UUID 可复用，缺失、格式无效或重复请求头一律生成 UUIDv7。TraceId 同时写入 `request.state` 与 ContextVar，响应头统一回传；上下文在请求结束后恢复，供 Application 和后续受控集成调用读取。新增受控 `request_completed` Application Log，仅记录 TraceId、HTTP 状态和非负耗时，不写 URL、Header 或正文。健康端点只增加响应头，不改变冻结的最小 body。|
+|Reason|单次入口解析防止错误处理、业务代码和日志各自生成不同 TraceId；纯 ASGI 包裹整个响应发送过程，可覆盖同步/异步请求及流式响应，ContextVar 避免并发请求污染。重复请求头不能有歧义，按无效值处理更安全。|
+|Impact|所有 HTTP 响应增加 `X-Trace-Id`；错误正文继续由 WBS 1.06 固定 Envelope 保持相同值。未来正式业务成功 JSON 仍须按冻结 API-01 由业务响应层提供 `data` 与 `trace_id`，中间件不会改写响应正文。当前无 Job/AI/Plugin/Audit 实例；后续入口应显式继承已验证的 TraceId，不能把它当授权或幂等凭据。无业务路由、数据库或外部调用变化。|
+|Rollback|移除中间件装配、Trace 上下文及新增日志字段即可恢复 WBS 1.07；WBS 1.06 错误响应仍保留独立 Trace 回退。若需改变冻结的 Trace Header/Envelope 语义，必须走 API Change Request/L3。|
+
+## DEC-20260924-068
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-068|
+|Date|2026-09-24|
+|WBS|1.09 Config/Secret|
+|Decision|基础工程先实现非敏感 Bootstrap 配置与 Secret 单次访问边界，不提前创建 PLT-01/PLT-02 正式业务表/API。Bootstrap 采用基线建议的 pydantic-settings 2.15.0 与 PyYAML 6.0.3，显式加载受限 UTF-8 YAML、`PLM_` 环境变量，开发 `.env` 仅在调用者明确传入时读取；重复/未知键、未知环境字段、危险 YAML tag、超限文件或非法类型失败关闭，错误消息固定脱敏。密钥、密码、Token 不进入 Bootstrap schema。Secret 只用 `SecretRef`，按受控 Purpose/Consumer、ACTIVE、版本与密文元数据检查后调用注入的解密 Port；Audit Port 是必需依赖，失败关闭；明文仅作为单次调用的可变缓冲区使用并在退出时清零。加密算法、持久密文仓库与 Windows/Linux SecretKeyProvider 保持未实现，遵照冻结方案留待 PLT-02 与 Release 安全设计，不把当前 Port 冒充生产 Secret Store。|
+|Reason|现有正式 Migration 仅是无业务表的平台基线，PLT-01/PLT-02 的版本化实体和 Audit 尚未实施；在 1.09 直接写持久 Secret 或私自选定平台主密钥机制会跨 WBS 且掩盖 Gate 风险。先锁定非敏感配置来源和失败关闭的单次访问契约，可让后续 DB/AI Adapter 使用统一引用，同时避免把明文配置或测试密钥写入 Git。pydantic-settings/YAML 选型直接落实已批准技术建议，不引入新的商业授权或更改安全基线。|
+|Impact|backend 增加两项固定直接依赖和一个不含 Secret 的示例模板；无数据库对象、业务 API、真实密钥、外发或生产加密能力。App Factory 目前不自动从 YAML/.env 读取，也不以缺失的 SecretKeyProvider 假装连接数据库；PLT-01/PLT-02 后续 Task 必须实现正式 ORM/Migration、权限/API、审计、密文与主材料分离及恢复验证，才能标记生产 Secret 可用。|
+|Rollback|移除 Bootstrap/Secret 边界代码、示例、测试及两项依赖即可回到 WBS 1.08；无数据迁移。任何把密钥写入 YAML/.env 发行包、弱化 Secret 消费方授权或改变冻结 PLT-01/PLT-02 API/数据语义的方案必须走对应 L3 Change Request。|
+
+## DEC-20260924-069
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-069|
+|Date|2026-09-24|
+|WBS|PLT-01-A01 SystemConfiguration ORM/Migration|
+|Decision|将本任务严格限定为 PLT-01 的非敏感配置身份表与不可变版本表；Root Active Version 使用同父复合 FK，Version 的 UPDATE/DELETE 用数据库触发器拒绝，已有配置数据的 Alembic downgrade 失败关闭。Settings/RetentionPolicy/RetentionHold 子表、版本命令、DeploymentAdmin 授权、Audit 与敏感值识别留给后续独立 WBS。配置值物理形状暂用 STRING/INTEGER/BOOLEAN/JSON 四类 JSONB 约束；应用层必须进一步校验 INTEGER 语义及禁止 Secret/客户正文。|
+|Reason|SC-01/02 冻结了聚合所有权、M-DEP 和不可变版本约束，但未冻结 PLT-01 每个子表的完整业务字段与命令实现。先交付可独立验证的身份/版本存储，不把未实现的权限或敏感值检测称为已完成。拒绝含数据回退可避免默认 DROP TABLE 静默丢失正式配置历史。|
+|Impact|新增正式 Alembic `20260924_0002` 和两张 `plm` 表；`retention_policy_id` 保留 nullable 占位，目标子表落地前不具备外键/保留策略功能。无公开 API、客户数据外发或冻结基线变更。后续业务命令在开放前必须补齐非敏感值筛查、单调版本分配、乐观并发、权限与 Audit。|
+|Rollback|空表可降级到 `20260924_0001`；含配置数据拒绝回退，须经备份和受控数据迁移/恢复流程处理。不得通过禁用不可变触发器来绕过正式版本历史。|
+
+## DEC-20260924-070
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-070|
+|Date|2026-09-24|
+|WBS|PLT-01-A02 配置版本命令与仓储边界|
+|Decision|只交付内部创建/激活版本命令与 SQLAlchemy 仓储，不提前暴露管理 API。受控配置值使用开发者拥有的键、Schema 版本、类型及精确值白名单；不提供任何默认可写策略，也不允许客户请求动态登记策略。写命令必须注入部署写授权 Port 和同事务 Audit Port，主记录行锁序列化版本号并以 lock_version 防陈旧写。A01 已发布迁移不可改写，以新增 `20260924_0003` 为不可变版本补充 API-02 已冻结要求的 `schema_version`。|
+|Reason|冻结 API 要求非敏感值、Schema 版本、乐观锁、DeploymentAdmin 和强制 Audit；当前真实 Auth/License/Audit/Idempotency 适配器未落地。白名单与 Port 失败关闭使内部逻辑可验证，又不把测试替身冒充生产安全能力。版本数只由锁定的 Root 分配，避免并发产生重复或跳号。|
+|Impact|A01 旧数据升级时 Schema 版本安全归为 1；有非初始 Schema 版本时拒绝回退到 `0002`。当前无公开 API、客户数据外发、新依赖或冻结基线改变；配置身份创建、持久幂等、真实认证/License/CSRF/Audit 和默认策略留给后续 WBS。A01 `version_state` 被解释为版本可用性，生效版本只由 Root 指针决定，避免更新不可变历史。|
+|Rollback|移除内部命令、仓储和策略代码即可撤回未暴露功能；数据库 `0003` 仅在所有记录 Schema 版本为 1 时可安全降级到 `0002`，否则先完成受控备份/迁移，不强制删除或改写正式历史。|
+
+## DEC-20260924-071
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-071|
+|Date|2026-09-24|
+|WBS|PLT-01-A03 配置身份与幂等命令|
+|Decision|为已冻结的 API-01/02 幂等要求，增加 PLT-01 技术性命令收据表，不新增 Aggregate Root 或客户业务实体。以 `(actor_id, operation, SHA-256(Idempotency-Key))` 唯一约束确定部署范围内重放；只存规范请求 SHA-256 和结果引用，原始键/值不持久化。`INSERT ... ON CONFLICT DO NOTHING` 在同一事务中预约收据，随后配置写入、Audit Port、完成收据原子提交；完成收据由专用触发器禁止 UPDATE/DELETE，源 FK 设置索引。含收据数据的迁移回退失败关闭。|
+|Reason|冻结 API 明确同键同 payload 返回原结果、不同 payload 返回冲突，而进程内字典无法跨重启/并发保证。技术表只承载请求去重事实，不改变 PLT-01 业务聚合的 Root/Version/Retention 映射；摘要化避免 Idempotency-Key 误含敏感材料时明文留库。事务收据确保 Audit 失败也不会留下假的成功重放。|
+|Impact|新增普通增量迁移 `20260924_0004`；A02 内部命令签名增加必填 idempotency_key，仍无公开 API、客户数据外发或新第三方依赖。正式 Auth/License/CSRF/AuditEvent 和受控 Retention 尚未接入，命令不得对外开放。Phase 1 基础工程按实施方案收口并写阶段总结，转入 Phase 2 AuditEvent；Gate 3 不自动通过。|
+|Rollback|空收据表可降级到 `0003`；有收据时必须先备份并完成受控恢复/迁移，不允许普通 downgrade 删除重放历史。移除本任务内部命令修改不影响 A01/A02 已保存的配置主记录和不可变版本。|
+
+## DEC-20260924-072
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-072|
+|Date|2026-09-24|
+|WBS|AUD-01-A01 AuditEvent ORM/Migration|
+|Decision|AUD-01 首步只提供真实存储模型，不开放写/查 API。Audit Root 保持 DEPLOYMENT Owner Scope；`event_scope` 标示被审计操作的部署或项目上下文，PROJECT 必填 `target_project_id`，DEPLOYMENT 不得填写。多态目标在库内固定为冻结的 65 个客户运行 Root 类型或全空（无可定位对象的认证失败），不包含 Developer Workbench。仅存受控 action/outcome/reason/state 码、标识与可选 SHA-256 主体提示摘要，不存请求正文、Secret、文件或完整 AI 输入输出。数据库触发器禁止普通 UPDATE/DELETE/TRUNCATE；非空 downgrade 拒绝。|
+|Reason|冻结模型要求 AuditEvent 只追加、项目隔离、来源可追溯和最小安全摘要；冻结 SC-02 允许部署 Owner 与项目目标并存，SC-03 固定三组索引。当前 Auth/Project/License 未落地，外键或真实权限不能伪造；安全码替代任意自由文本，避免向审计库复制敏感内容。|
+|Impact|新增迁移 `20260924_0005` 和一张 `plm` 表；无冻结基线变更、新依赖、公开 API 或客户数据外发。数据库管理员仍有 DDL 权限，因此触发器不是防篡改封存；AuditService 权限/事务 Port、读隔离、Retention/Legal Hold 和备份权限控制留待对应 WBS。|
+|Rollback|空表可回退到 `0004`；含审计事件时须备份并进行受控恢复/迁移，普通回退失败关闭，不能删历史记录换取迁移通过。|
+
+## DEC-20260924-073
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-073|
+|Date|2026-09-24|
+|WBS|AUD-01-A02 AuditService append Port/Repository|
+|Decision|Audit 的跨模块公开入口仅暴露只追加 AuditService 与不可变 AuditEventDraft；Audit 模块内部 Port/SQLAlchemy 仓储不对业务模块开放。Service 接收调用方已开启的事务并直接插入，不创建、提交或补偿第二事务。输入只接受 UUID、受控大写码、结构化目标和可选 32 字节主体提示摘要；数据库白名单与 append-only 触发器作为第二层约束。|
+|Reason|冻结 DM-02 要求强制审计与业务状态同事务提交，且只由 AuditService 追加。由业务用例掌握事务可避免 Audit 成功而业务回滚或相反；自由文本会扩大敏感内容进入审计库的风险。Auth/License/Project 权限仍未落地，本任务不以测试替身伪装成公开可用写入口。|
+|Impact|只新增 Audit 模块 Application/Domain/Infrastructure、测试与验收脚本；A01 迁移与冻结 API 不变，无新依赖或客户数据外发。业务命令只有在真实权限和 Audit 适配器接线后才能开放。下一项单独完成只读查询及项目隔离。|
+|Rollback|移除 A02 新增服务、Port、仓储和测试即可退回 A01；已提交的审计事件仍由 A01 append-only 表保护，不得清理历史以撤销代码。|
+
+## DEC-20260924-074
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-074|
+|Date|2026-09-24|
+|WBS|AUD-01-A03 审计只读查询与项目隔离|
+|Decision|内部 AuditQueryService 必须注入权限 Port 并在 Repository 查询前检查；Project 读取固定 `event_scope=PROJECT AND target_project_id=授权项目`，部署读取固定 `event_scope=DEPLOYMENT AND target_project_id IS NULL`，DeploymentAdmin 不自动读取项目 Audit。时间查询要求显式、最多 31 天，页大小 1～200，排序固定 `occurred_at DESC, audit_event_id DESC`；内部 keyset position 不作为公开游标，对外签名/Scope/查询指纹绑定在未来 HTTP API 任务中实现。投影排除主体提示摘要。|
+|Reason|冻结 API-01/02 要求权限先行、项目隔离、受控筛选、完整性保护分页和不暴露敏感材料；SC-03 已冻结对应 Audit 索引。真实 Auth/License/Session 尚未落地，当前不提供公开路由或伪造权限适配器。31 天上限是可回滚的内部初值，控制无界查询，不改变冻结外部 API 语义。|
+|Impact|只新增 Audit 内部查询与测试，不改 A01 Schema/索引或冻结 `/api/v1`。权限 Port 必须由后续真实认证/项目授权实现；公开 API 上线前还必须加入签名游标及 Scope/查询指纹校验。审计导出另行 WBS 实施。|
+|Rollback|移除内部查询 Service/Repository 和测试即可回到 A02；不删除审计事件，也不改变已冻结查询索引。|
+
+## DEC-20260924-075
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-075|
+|Date|2026-09-24|
+|WBS|AUT-01-A01 User/Credential ORM/Migration|
+|Decision|User Root 先以 DISABLED、credential_version=0、无当前凭据建立，随后同事务追加不可变 PasswordCredential 版本并由复合 FK 指向本 User 的相同版本；只有存在当前凭据才可 ENABLED。用户名展示值与规范值分列，规范值部署内普通唯一，停用不释放。凭据只保存不可逆 Hash、算法 ID、非敏感参数、版本和变更时间；算法选择/哈希验证由后续专门任务完成，不以本迁移中的合成测试值作为生产方案。数据库触发器禁止凭据历史 UPDATE/DELETE/TRUNCATE 与 User 凭据版本倒退；非空 downgrade 拒绝。|
+|Reason|冻结 DM-02/SC-01～03 要求身份与凭据版本分离、唯一用户名、一个有效凭据和 Session 凭据版本失效。先创建 DISABLED Root 避开循环 FK 插入顺序，同时由复合 FK 阻止把别人的或旧版本凭据设为当前；不得在 Schema 任务中假装选定密码算法或开放登录。|
+|Impact|新增正式迁移 `20260924_0006` 与两张 Auth 表，无新依赖、公开 API、客户数据外发或冻结基线变更。Unicode trim/NFC/casefold、密码 Hash 策略、命令授权/审计、Session 失效须由后续 WBS 实现并验证；原始密码和哈希不得进入 DTO/Audit/日志。|
+|Rollback|空 Auth 表可降级到 `0005`；一旦有身份/凭据历史，普通 downgrade 失败关闭，必须先备份并通过受控恢复/迁移处理，不删除账号历史。|
+
+## DEC-20260924-076
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-076|
+|Date|2026-09-24|
+|WBS|AUT-01-A02 User/Credential 内部命令与规范化|
+|Decision|本项只实现内部 User 创建，不提前实现登录、重置密码、停用/启用或公开管理端点。用户名以 `strip → NFC → casefold → NFC` 得到规范值，拒绝空值、控制字符及 Schema 长度越界；数据库唯一键处理并发重名。命令必须注入同事务权限、密码 Hash 和 AuditService，先授权再哈希/写库；初始凭据版本为 1，默认普通部署角色。Hash 结果只允许受控算法 ID、非敏感整数参数和限定长度编码值；不内置或宣称生产算法。原始密码从调用方可变 UTF-8 缓冲区传入并在成功/失败后尽力清零。|
+|Reason|冻结 DM-02/API-02 要求服务端 canonical username、DeploymentAdmin 授权、write-only 密码、同事务 Audit 和凭据版本。生产密码算法、Session/License 和持久幂等尚未落地；独立 Port 与无公开路由可验证创建流程及失败关闭，同时避免在普通实现任务中擅定安全核心机制。|
+|Impact|新增 Auth Domain/Application/Repository 与合成测试；不改 A01 Schema、冻结 API 或技术栈，无新依赖/真实客户数据外发。只有未来正式 Hash Adapter、真实 Auth/License/Session 授权和幂等收据就绪后才能开放 `AUTH_USER_CREATE`；测试算法 `TEST_ONLY` 不属于生产支持。Python/第三方组件可能复制密码缓冲区，清零不是内存绝对擦除承诺。|
+|Rollback|移除内部命令、仓储及测试即可回到 A01；已有 User/Credential/Audit 历史不能因代码回退而删除，须继续遵守 A01 非空 downgrade 拒绝。|
+
+## DEC-20260924-077
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-077|
+|Date|2026-09-24|
+|WBS|AUT-01-A03 生产密码哈希与凭据校验|
+|Decision|首版采用 Python 3.13/OpenSSL 标准库 `hashlib.scrypt` 固定 V1 Profile：每条凭据 16 字节独立随机盐、`N=2^17,r=8,p=1,dklen=32`、256 MiB `maxmem` 上限、自描述编码与独立 `algorithm_id/parameter_set` 一致性校验。Verifier 只接受本 Profile，拒绝由数据库记录选择任意耗时参数，使用 `hmac.compare_digest` 比较导出值。密码输入上限同步收紧为 1024 字节；保留既有 Port，使将来算法升级新建 Profile/版本，不静默重写旧凭据。无 Argon2id 第三方依赖或安全基线替换。|
+|Reason|冻结方案要求不可逆 PasswordHasher，但未规定库与参数。[OWASP 密码存储建议](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)首选 Argon2id，标准库可用时推荐的 scrypt Profile 为 `N=2^17,r=8,p=1`；[Python 3.13 `hashlib` 文档](https://docs.python.org/3.13/library/hashlib.html)提供 scrypt 与显式内存限制。此选择不新增重要第三方依赖，属于当前已批准安全机制的具体实现；对畸形参数失败关闭避免存储内容触发资源耗尽。|
+|Impact|新增 Auth Infrastructure Hash/Verifier，无 Schema、API 或新依赖；本机单次创建约 317ms 仅为观测，不代表三平台吞吐或安全审计通过。每次哈希约需 128 MiB 工作内存，公开登录前仍必须实现 Origin/Host/限流、Session/CSRF、License/权限、统一失败响应和平台负载验收。Python/OpenSSL 可能复制密码字节，调用方清零不保证绝对擦除。|
+|Rollback|移除新适配器可返回仅 Port 的 A02，但已保存的 `SCRYPT` 凭据将无法验证；上线后不得直接撤销而不提供兼容验证或受控凭据迁移。普通代码回滚不删除用户/凭据历史。|
+
+## DEC-20260924-078
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-078|
+|Date|2026-09-24|
+|WBS|AUT-02-A01 Session ORM/Migration|
+|Decision|Session 为部署级运行聚合，物理表只存 32 字节 Session Token 摘要与 CSRF 绑定摘要，不存 Cookie/CSRF 原值。`(user_id,credential_version)` 复合 FK 指向不可变 PasswordCredential 历史，Session 是否仍有效还须后续服务重新检查 User ENABLED、当前凭据版本、绝对/空闲到期与撤销。`state` 由时间/撤销事实派生，不持久化。Token 摘要唯一，额外 `(user_id,revoked_at)` 索引用于用户全会话撤销；更新触发器禁止身份/摘要/绝对期限替换、last_seen/idle 倒退及撤销复活。|
+|Reason|冻结 DM-02/API-02 要求服务端 Session、Token/CSRF 不可逆摘要、凭据变化使旧 Session 失效和撤销不可恢复；SC-02 R-DEP Profile 允许专用列覆盖通用状态。复合 FK 保留历史版本，但不能代替实时 User 状态校验；避免误把数据库行存在等同于已认证。验收中显式补上 `revoke_reason IS NOT NULL`，以防 PostgreSQL CHECK 对 NULL 的 UNKNOWN 结果放行。|
+|Impact|新增普通增量迁移 `20260924_0007` 和一张 Session 表，无冻结 API/架构变更、新依赖或客户数据外发。真实 Token 生成/哈希、Cookie/CSRF、续期/撤销及 License/项目授权均须后续独立 WBS 实现；当前仅持久层，不可开放登录。|
+|Rollback|空表可降级到 `0006`；含 Session 记录时普通 downgrade 拒绝，必须备份并走受控恢复/迁移，不删除历史以强制通过。|
+
+## DEC-20260924-079
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-079|
+|Date|2026-09-24|
+|WBS|AUT-02-A02 Session 签发/校验/撤销内部服务|
+|Decision|内部 Session 签发须由注入的 `SessionIssueAccessPort` 对当次认证证明、User 和当前凭据版本作明确许可；没有生产适配器时不得开放登录。每次生成独立 32 字节随机 Token/CSRF，数据库只存各自 SHA-256 摘要。内部默认绝对期限 8 小时、空闲期限 30 分钟，允许受控配置但上限 24 小时且空闲期不超过绝对期；本任务校验不滑动空闲期。校验实时重查 User ENABLED、当前凭据版本、撤销及双期限；撤销需有效 Token 与绑定 CSRF，更新与 Audit 同事务。|
+|Reason|冻结 DM-02/API-02 规定服务器端 Session、凭据变化失效、CSRF 和审计，但未固定内部期限数值。保守初值与强制认证证明 Port 防止仅凭 UserId 签发；无公开路由避免跳过 Origin/Host、限流、Cookie 与 License。固定 Token 长度使摘要存储和输入检查简单；原值不进入数据库或 Audit。|
+|Impact|新增 Auth Application Service、Auth Infrastructure Repository、单元及 PostgreSQL 临时库验证；无 Schema/Migration、公开 API、第三方依赖或客户数据外发。Cookie 设置、Origin/Host、真实密码证明/License 适配、登录限流、续期轮换、全会话管理员撤销及项目授权仍需后续任务，当前不能开放真实登录。|
+|Rollback|未接入公开入口，移除本服务/适配器即可回退代码；已签发 Session 的撤销历史及 Audit 不删除。调整期限需安全评估和兼容测试，不改变冻结的摘要/凭据版本机制。|
+
+## DEC-20260924-080
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-080|
+|Date|2026-09-24|
+|WBS|AUT-02-A03 Session 续期轮换|
+|Decision|把已冻结 API-02 的 Session 续期轮换细化为独立内部 WBS A03。仅有效 Session + 绑定 CSRF 可续期；在单一数据库事务中先将旧记录撤销为 `RENEWED`，再创建独立随机 Token/CSRF 的新记录及 Audit。新记录继承旧会话绝对到期时间，仅将空闲期限延至 `min(当前时间+空闲期, 原绝对期限)`；因此轮换不能无限延长认证会话。新旧 Token 或 CSRF 发生重复则失败关闭。|
+|Reason|冻结 API-02 已规定 `AUTH_SESSION_RENEW` 必须轮换；A02 仅实现初始签发/校验/撤销。将轮换独立验收符合一 WBS 一问题。继承绝对期限可保留“绝对到期”的安全含义，而同事务写入保证 Audit 或新记录失败时旧 Session 继续有效，不出现半轮换。|
+|Impact|仅变更内部 Auth Application Service 与测试，无 Schema/Migration、公开 API、外部依赖或客户数据外发。Cookie 原子替换、多标签行为、Origin/Host、限流、License、真实登录与管理员撤销仍未接入，不能宣称对外续期已可用。|
+|Rollback|未接入公开路由，可移除内部续期命令；既有 Session/Audit 历史不删除。|
+
+## DEC-20260924-081
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-081|
+|Date|2026-09-24|
+|WBS|AUT-02-A04 Session 管理员批量撤销|
+|Decision|将冻结 API-02 的 `AUTH_USER_REVOKE_SESSIONS` 底层能力拆为内部 A04。服务必须注入真实管理员权限 Port，验证 actor 的 Session、License、DeploymentAdmin 后，锁定目标 User 行并批量撤销该用户尚未撤销的 Session；单次 Audit 与撤销同事务。未注入生产权限适配器时默认拒绝。重复调用返回本次实际撤销数 0，并保留审计，不删除历史。|
+|Reason|Session 签发已锁定 User 行；管理员批量撤销采用相同 User 行锁以序列化并发签发，避免撤销时漏掉已在提交中的新 Session。权限 Port 阻止凭 UserId 直接执行高权限命令；单事务 Audit 避免无证据的状态变更。|
+|Impact|新增 Auth 内部管理员撤销命令与 Repository、测试；无 Schema/Migration、公开路由、第三方依赖或客户数据外发。`AUTH_USER_DISABLE` 仍需在未来 User 状态命令里与撤销同事务接线；生产权限/License/CSRF 尚未接线，此内部命令不能直接暴露为 API。|
+|Rollback|移除内部命令可回退代码；已撤销 Session 不可恢复，Audit 历史不得删除。|
+
+## DEC-20260924-082
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-082|
+|Date|2026-09-24|
+|WBS|AUT-02-A05 生产密码证明适配|
+|Decision|将原候选“生产认证证明与权限接线”拆分：A05 仅实现内部 Session 签发的真实密码证明，管理员权限适配须待 LicenseService 形成后另列任务。`PasswordIssueProof` 持有短时可变字节缓冲区且不显示于 repr，Session 签发结束无论成功、拒绝或异常均清零。Auth Infrastructure 在同一事务中只对 ENABLED User 的当前 PasswordCredential 调用已批准 scrypt Verifier；错误/畸形证明统一拒绝，无密码或哈希进入 Audit、Session 或日志。|
+|Reason|冻结 API-02 允许 License 无效时登录，但管理员业务接口仍需有效 License；当前仓库没有正式 License 模块，不能用测试许可绕过。把密码证明单独验收可完成不受阻塞部分，又避免把未实现的 License/权限或 Origin/Host/限流误报为已可用。|
+|Impact|新增 Auth 内部密码证明 DTO、Verifier Port、SQLAlchemy 适配、测试；无 Schema/Migration、公开 API、第三方依赖或客户数据外发。密码缓冲区清零不承诺 Python/OpenSSL 内部副本绝对擦除。公开登录仍需用户名解析、统一失败/审计、Origin/Host、限流、Cookie/CSRF 等后续工作；管理员权限接线仍依赖 License。|
+|Rollback|未接入公开路由，移除适配器可回退；不修改现有 Credential/Session 历史。|
+
+## DEC-20260924-083
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-083|
+|Date|2026-09-24|
+|WBS|LIC-01-A01 LicenseInstallation ORM/Migration|
+|Decision|按冻结 SC-01/DM-02 建立 `lic_installations` 与不可变 `lic_installation_documents`。签名文档以最多 64 KiB 原始字节快照与 32 字节 SHA-256 摘要保留，关联 `public_key_ref`，不存公钥私钥或原始 MAC；每次安装独立 UUIDv7。状态限 `IMPORTED/ACTIVE/SUPERSEDED/REJECTED`，partial unique 保证至多一个 ACTIVE；进入非 IMPORTED 状态须有验证结果引用。更新触发器只允许 IMPORTED→ACTIVE/REJECTED、ACTIVE→SUPERSEDED 及受控同态验证引用更新，终态不可复活；文档禁止更新/删除，安装历史禁止删除。INSERT 不设只允许 IMPORTED 的触发器，以保证含 ACTIVE 历史的备份恢复；初始导入状态由未来受控服务保证。|
+|Reason|冻结模型要求签名文档历史、单一 ACTIVE、不可变签名内容和私钥隔离，但未固定长度与具体列。64 KiB 是可调整的 L2 存储上限；原始字节避免 JSON 重新序列化破坏签名材料。用数据库约束守住状态/单例及历史更新，避免恢复时触发器拒绝历史状态。|
+|Impact|新增两张正式 License 表与迁移 `20260924_0008`；无公开 API、验签/激活服务、新依赖或客户数据外发。`validation_result_ref` 待 LIC-02 建表后加正式关联与验证来源检查；仅有非空 UUID 不证明签名、机器、时间或 License 有效。测试使用明确标注的合成无效签名文档，只验 Schema，不构成 License 验证。|
+|Rollback|空表可降级至 `0007`；存在安装或文档历史时普通 downgrade 拒绝，必须备份并按受控恢复方案处理，不删除历史以强制降级。|
+
+## DEC-20260924-084
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-084|
+|Date|2026-09-24|
+|WBS|LIC-01-A02 Ed25519 签名真实性预检|
+|Decision|用户已在本轮明确批准将 POC-09 验证的 `cryptography 50.0.1` 纳入后端生产依赖。原候选“签名文档验证与受控导入”拆分：A02 仅实现最多 64 KiB 签名文档的严格 UTF-8/JSON envelope 与 Ed25519 签名真实性校验；公钥只能由注入的可信 `PublicKeyResolverPort` 按引用提供，不接受请求自带公钥。采用 POC-09 的 UTF-8、字段排序、紧凑分隔符确定性 Payload 序列化；重复 JSON 键、非标准数值、畸形签名、未知公钥、超深/超量载荷均失败关闭。返回类型明确标记仅为 `SignatureVerifiedDocument`，不提供 License `VALID` 或 Entitlement。|
+|Reason|当前 LIC-02 验证事件、LIC-03 可信时间、正式机器/产品/功能规则与受控导入事务尚未实现；仅签名正确不能当作有效授权。拆分使已批准的密码学依赖可独立验收，同时不越过冻结的机器指纹与可信时间信任边界。|
+|Impact|正式后端新增已获用户批准的 `cryptography==50.0.1` 直接依赖及 License 内部验签组件；无 Schema/Migration、公开 API、私钥落盘或客户数据外发。生产公钥配置装配、语义 Schema/产品/功能/机器/有效期/可信时间校验、导入历史/Audit/激活仍属后续任务；测试私钥只在测试进程内即时生成，不序列化。|
+|Rollback|尚未接入公开路由或 License 状态决策，可移除验签组件与依赖；不修改 License 安装历史。若未来替换 Ed25519 核心机制必须走 L3，不由本决策授权。|
+
+## DEC-20260924-085
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-085|
+|Date|2026-09-24|
+|WBS|LIC-02-A01 LicenseValidationState ORM/Migration|
+|Decision|建立部署级单例 `lic_validation_states` 与追加不可变 `lic_validation_events`，验证码至少覆盖冻结 DM-02 的八类，并增加产品不符/可信时间状态损坏安全分类。`VALID` 行必须具备活动安装引用、32 字节机器指纹摘要、事件引用、对象型权益快照与验证时间；但这些列形状不代替密码学/机器/时间验证。状态变更要求新事件引用、版本单调加一和更新时间不倒退。安装记录的 `validation_result_ref` 在本迁移升级为指向验证事件的正式 FK；验证事件的可选 `installation_id` 保留可查询来源引用但不反向设 FK，以避免安装↔事件外键循环阻断备份恢复。已有非空且无对应事件的旧引用在升级前拒绝，要求受控核对。|
+|Reason|冻结 SC-01/DM-02 要求当前安全状态与不可变验证历史分离；单例与 VALID 必备形状可在数据库失败关闭。单向 FK 既落实安装结果指针的来源完整性，又让事件→安装→状态按依赖顺序恢复；事件来源 ID 的匹配关系由未来 LicenseService 在同事务检查，不可凭事件行自行放行。|
+|Impact|新增两张正式 License 表与迁移 `20260924_0009`；无公开 API、实际授权判定、新依赖或客户数据外发。测试仅使用合成验证事实，即使状态行标为 VALID，也不代表真实有效授权；TrustedTimeState 与 LicenseService 仍未实现。|
+|Rollback|空表及无新验证 FK 引用时可降级到 `0008`；有状态或事件历史时普通 downgrade 拒绝，须备份并受控恢复，不删除验证历史。|
+
+## DEC-20260924-086
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-086|
+|Date|2026-09-24|
+|WBS|LIC-03-A01 TrustedTimeState ORM/Migration|
+|Decision|按冻结 DM-02/SC-01 建立 `lic_trusted_time_states` 部署单例与追加不可变 `lic_trusted_time_events`。单例初态允许尚未成功验证的空时间、版本 0；前移后必须有 UTC 成功时间、正版本、对象型完整性元数据及事件引用。更新触发器要求身份不变、时间严格前移、版本恰好 +1、事件引用变化及更新时间不倒退；事件禁止 UPDATE/DELETE/TRUNCATE，状态禁止 DELETE/TRUNCATE。事件结果码仅要求非空且限长，不在存储层提前冻结 License 分类或完整性算法。|
+|Reason|冻结基线要求原子 expected_version、单调时间和追加检查事件，但完整性算法由后续 TrustedTimeStatePort 实施。数据库负责可稳定验证的结构与转移约束；不设置 INSERT 只能空态的触发器，以允许含历史前移状态的普通备份恢复，初始写入和完整性认证必须由受控服务保证。|
+|Impact|新增两张 License 表和 Alembic `20260924_0010`；无公开 API、新依赖、客户数据外发或真实 License 判定。数据库表中的完整性元数据仅为存储位，不能单凭行内容放行业务。|
+|Rollback|空表可降级至 `0009`；存在状态/事件历史时普通 downgrade 拒绝，须先备份并按受控恢复方案处理。|
+
+## DEC-20260924-087
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-087|
+|Date|2026-09-24|
+|WBS|LIC-03-A02 TrustedTimeStatePort 单调更新与完整性边界|
+|Decision|在冻结模型留出的 `integrity_metadata` 实现空间内，选用无新增依赖的 HMAC-SHA256-V1 对部署状态 ID、最新成功 UTC 时间、版本及最新事件 ID 做确定性绑定；元数据只保存算法、受信任密钥引用和 tag，密钥由独立注入解析器提供，不在数据库、Git、日志或客户端输入中取得。内部端口要求 expected_version，使用 PostgreSQL 行锁和条件 UPDATE，明显回拨（相对上次成功时间超过内部允许容差）、旧版本或完整性错误失败关闭。容差由可信内部调用方给定，受 0～5 分钟硬上限约束，容差内不回写较早时间。成功事件/Audit 与状态同事务，拒绝事件/Audit 在状态事务回滚后独立持久化。|
+|Reason|DM-02 明确完整性算法由 TrustedTimeStatePort 细化、时间只能前移且回拨/损坏/冲突拒绝并审计。HMAC 是状态完整性机制，不改变 License 的 Ed25519 签发、MAC 规范化或私钥隔离；未接入生产密钥源时默认失败关闭。一次性初态由未来部署装配显式创建，日常端口不自动补建缺失状态，避免数据库被清空后静默重置。|
+|Impact|新增内部端口、HMAC 适配和 PostgreSQL 仓储，无 Schema/Migration、第三方依赖、公开 API 或客户数据外发。仅使用合成测试密钥验证；生产 Secret Store 解析器与初始化尚未完成，不能据此判定 License 有效。高权限数据库初态重置及数据库与密钥/备份同时回滚不在此离线方案的可检测保证内，也不宣称硬件可信时间。|
+|Rollback|端口尚未接入公开路由和 LicenseService，可移除内部实现而不改变既有 Schema 与历史；已写入的 HMAC-V1 状态不应无验证地改写，未来算法迁移须保留验证/受控转换策略。|
+
+## DEC-20260924-088
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-088|
+|Date|2026-09-24|
+|WBS|CR-LIC-001 / LIC-02-A02 前置基线变更|
+|Decision|用户明确同意“修改已锁定方案，采用方案B”。首版 License 维持 `plm.license.v1` 七字段签名 Payload，限定为本产品全功能整体授权；不提供多产品或细分功能权益。原 V2.1 与 Gate 2 冻结提交保留历史，正式差异由 `docs/changes/CR-LIC-001-single-product-full-bundle.md` 与 V2.1 License 补充承载。|
+|Reason|七字段载荷没有产品/功能权益；原 ADR-006/DM-02 的细分验证无法在不更换签名 Payload 的情况下实现。用户选择保留载荷并收窄首版授权粒度。|
+|Impact|修订 ADR-006、DM-02、执行指令与状态；不改 MAC→SHA-256→Ed25519、私钥隔离、有效期、可信时间、Schema 或 `/api/v1`。生产可信公钥须限定本产品；无法按功能差异化授权。|
+|Rollback|不静默回退已批准业务规则。若未来需要多产品或功能分级，另提 L3、采用新版签名载荷并定义兼容/迁移。|
+
+## DEC-20260924-089
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-089|
+|Date|2026-09-24|
+|WBS|LIC-02-A02 LicenseService 综合验证|
+|Decision|本项只实现内部综合校验，不把 `SignatureVerifiedDocument` 或结果写成活动 License。受信任本产品专用公钥引用、实施人员选定 MAC 和当前 UTC 时间均由独立 Port 提供，客户端不能指定；严格接受 `plm.license.v1` 七字段，复用 LIC-01-A02 Ed25519 验签。先校验签名/Schema/机器/签发及有效期，再推进可信时间；产出 `VerifiedFullBundleLicense` 但不持久化验证状态。|
+|Reason|CR-LIC-001 保留七字段并取消细分权益，必须避免在代码中伪造签名保护的产品/功能列表。分离内部判定与下一任务的状态/Audit 编排，避免未完成权限/导入事务前对外开放。|
+|Impact|新增 License 内部服务、测试与临时 PostgreSQL 集成验证；无 Schema/Migration、新依赖、公开 API 或客户数据外发。生产公钥必须本产品专用，选定 MAC 和可信时间密钥/初始化尚待装配；本项测试密钥仅在进程内生成。|
+|Rollback|未接入公开路由或安装状态，移除内部服务可回退；不改 v1 签名载荷、既有表或历史记录。|
+
+## DEC-20260924-090
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-090|
+|Date|2026-09-24|
+|WBS|LIC-02-A03 验证结果持久化与审计编排|
+|Decision|只对已有 IMPORTED 安装从不可变文档取证并调用内部 LicenseService；完整验证成功记录 VALID 事件，但不更新部署级 ValidationState、不激活安装。事件、安装结果引用和 Audit 由同一数据库事务提交，拒绝事件不包含权益。|
+|Reason|验证成功是安装候选的真实性与当前机器/时间判定，不等于管理员授权激活；部署级运行许可必须待受控激活和状态投影实现后才可能为 VALID。先保持失败关闭，避免单个事件绕过权限边界。|
+|Impact|无 Schema/API/依赖变更；可信时间前移由既有独立事务完成，若随后结果记录失败，安装仍为 IMPORTED 且没有新结果引用，不能激活，重试需新的可信时间版本。|
+|Rollback|没有公开入口或状态激活；回退代码不删除已写入的不可变验证/Audit 历史。|
+
+## DEC-20260924-091
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-091|
+|Date|2026-09-24|
+|WBS|LIC-01-A03 受控导入命令与初始安装记录|
+|Decision|内部导入命令由 Auth 所有的适配器在同一事务验证 Session Token、CSRF、当前凭据版本、未撤销/未超时状态和 DeploymentAdmin；公钥引用只取本产品可信 Port。Ed25519 预检成功后存 IMPORTED 安装和不可变文档；预检拒绝写无安装关联的脱敏验证事件及 Audit，绝不存失败文档正文。|
+|Reason|冻结 API 的 LICENSE_IMPORT 恢复面不能绕过 Session/CSRF/Role/Audit；在 HTTP 装配和完整 License 判定尚未完成时，先把候选导入与激活分离。Auth 模块拥有身份表的查询，License 不直连 Auth 表。|
+|Impact|无 Schema、Migration、新依赖或公开 API；成功导入的 `validation_result_ref` 仍为空且状态仅 IMPORTED，后续综合验证和激活必须另行执行。过大或未授权请求不落库；验签失败留摘要、分类和追踪，不留 Payload。|
+|Rollback|内部命令尚无公开路由；移除代码不删除已形成的不可变安装、验证和 Audit 历史。|
+
+## DEC-20260924-092
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-092|
+|Date|2026-09-24|
+|WBS|LIC-01-A04 受控激活与部署验证状态投影|
+|Decision|激活命令内部先复核管理员 Session/CSRF，再调用 LIC-02-A03 对目标 IMPORTED 安装执行本次完整验证；仅 VALID 可继续。激活事务再次核对权限和事件的安装/文档摘要/同追踪号、完整本产品权益、有效期及 60 秒新鲜度；旧 ACTIVE→SUPERSEDED、新安装→ACTIVE、部署单例状态→VALID、Audit 同事务。|
+|Reason|冻结 DM-02/ADR-006 要求成功验证才可激活、至多一条 ACTIVE、旧记录保留历史；旧 VALID 事件不能成为可重复使用的客户端激活凭据。双次权限检查覆盖验证跨事务窗口；60 秒界限缩短状态漂移窗口。|
+|Impact|无 Schema/API/依赖变更。验证记录先于激活提交，若激活权限/并发/Audit 失败，成功验证事件仍作为历史存在但安装保持 IMPORTED；不得据此开放业务。首次投影版本为 0，后续每次更新 +1。|
+|Rollback|无公开路由；代码可回退但不可删除已形成的安装、验证与 Audit 历史，已有 ACTIVE 需受控迁移或后续激活替换。|
+
+## DEC-20260924-093
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-093|
+|Date|2026-09-24|
+|WBS|LIC-02-A04 运行时许可检查与失败关闭|
+|Decision|内部 Guard 对受许可操作每次读取并锁定部署级状态，核对 ACTIVE 安装、不可变文档摘要、当前验证事件与状态一致；再读取经完整性校验的可信时间版本并调用现有 LicenseService 全量验签/机器/时窗/单调时间检查。成功或拒绝均追加验证事件、更新单例状态并与 Audit 同事务。状态行锁贯穿检查，串行化并发运行时验证；任何 DB/审计/可信输入失败都拒绝，不信任旧 VALID 缓存。|
+|Reason|冻结 ADR-006/DM-02 要求任一验证失败即停止受许可业务。单独读取可信时间版本后释放状态锁会使并发成功检查互相冲突，甚至把合法状态投影为无效；贯穿行锁避免该竞态。|
+|Impact|无 Schema/API/依赖变更；每次 Guard 检查写新事件与 Audit，运行性能尚未验收。可信时间推进与状态事件仍是先后两笔事务，后者失败时 Guard 拒绝且不能把旧状态当放行依据。状态拒绝后只允许未来受控恢复命令重验证，不由普通 Guard 自动复活。|
+|Rollback|内部入口尚未挂路由；可撤销代码但不可删历史事件和 Audit。|
+
+## DEC-20260924-094
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-094|
+|Date|2026-09-24|
+|WBS|LIC-02-A05 受控重验证与状态恢复|
+|Decision|内部恢复命令仅接受当前 DeploymentAdmin Session+CSRF；在锁定部署状态与 ACTIVE 安装的同一事务中读取不可变签名文档和最新事件，再以可信时间版本调用原 LicenseService 全量验证。成功才追加 VALID 事件并恢复状态，失败追加分类拒绝事件；安装结果引用、状态投影和 Audit 同事务。|
+|Reason|运行时 Guard 失败关闭后不得自行复活；已冻结恢复面允许管理员触发重验证，但不能直接把数据库状态翻转为 VALID 或重置可信时间完整性。|
+|Impact|无 Schema、Migration、依赖或公开 API 变更。可信时间前移与状态事务仍是两个事务；若后者失败，本次命令拒绝，不能据此放行业务。|
+|Rollback|内部入口未挂 HTTP；代码可撤销，不删除已形成的不可变验证/Audit 历史。|
+
+## DEC-20260924-095
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-095|
+|Date|2026-09-24|
+|WBS|执行纪律 / LIC-03-A03 前置决策|
+|Decision|接受用户持续授权，按 `CR-EXEC-001` 将原 L3/Gate 的逐项许可改为偏差先记录、按证据执行与持续交付。LIC-03-A03 采用用户选择的方案 A，先做受控初态初始化，生产密钥来源与恢复留待 PLT-02/Release。|
+|Reason|用户明确要求减少确认并持续交付；冻结架构仍将跨平台密钥保护与恢复安排在 Release 安全设计。|
+|Impact|更新仓库执行约束、Skill、STATUS 与追溯文档；不自动通过 Gate，不上传 Secret/客户数据，不把测试密钥标作生产密钥。|
+|Rollback|保留原 V1.0 和冻结提交，可恢复旧流程；已经形成的偏差与验证历史不删除。|
+
+## DEC-20260924-096
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-096|
+|Date|2026-09-24|
+|WBS|LIC-03-A03 一次性受控可信时间初态初始化|
+|Decision|使用已存在的 Auth DeploymentAdmin Session+CSRF 适配器授权内部初始化；只在可信时间状态与事件均为空时插入版本 0/空成功时间单例，并与 Audit 同事务。PostgreSQL 事务 advisory lock 串行化同时初始化请求，事件表 SHARE 锁防止检查到插入之间出现事件历史；已有状态/历史绝不重置。|
+|Reason|用户选择方案 A，只允许创建首次空状态，不提前决定生产密钥来源。冻结 DEC-20260924-087 禁止日常可信时间端口在缺失时自动补建。|
+|Impact|无 Schema/Migration、公开 API、新依赖或生产 Secret；生产密钥保护和恢复留待 PLT-02/Release，测试不可当作生产 License 验收。|
+|Rollback|未挂外部路由；代码可撤销，但已经创建的单例及 Audit 不删除，恢复依正式备份流程。|
+
+## DEC-20260924-097
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-097|
+|Date|2026-09-24|
+|WBS|PLT-02-A01 SecretRecord / SecretVersion ORM/Migration|
+|Decision|按冻结 DM-02/SC-01～03 建立部署级 SecretRecord 与密文版本；版本的密文、元数据、Key Provider 引用及创建事实不可改，activated_at/retired_at 仅可沿 CREATED→ACTIVE→RETIRED 单向变化。当前版本用同父复合 FK；partial unique 保证同一记录至多一个活动版本，记录状态用 lock_version 约束。|
+|Reason|保留密文与主材料分离及历史追溯，防止跨 Secret 引用和静默覆盖；冻结模型虽称 SecretVersion 不可变，但版本激活/退役需要受控生命周期字段变更，内容本身始终不可变。|
+|Impact|新增两表和迁移 `20260924_0011`；无公开 API、新依赖或生产密钥来源。非空历史拒绝普通降级，升级前需备份。|
+|Rollback|空表可降级到 `20260924_0010`；有历史时须走受控备份恢复，不能删除密文历史。|
+
+## DEC-20260924-098
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260924-098|
+|Date|2026-09-24|
+|WBS|PLT-02-A02 活动密文信封只读适配|
+|Decision|将原候选“元数据读取与信封适配”拆为单一内部读路径：SQLAlchemy 仅从 ACTIVE SecretRecord 的 current_version_ref 读取同父、已激活且未退役的密文版本，转换为现有 SecretEnvelope；管理元数据查询另列 A03。|
+|Reason|内部消费与管理员查询具有不同权限/数据最小化边界；先验收受控消费适配，避免通用密文查询扩散。|
+|Impact|无 Schema/Migration、公开 API 或解密器实现；生产加密主材料和正式写命令仍未具备。|
+|Rollback|可移除内部只读适配，不修改已存 Secret 历史。|
+
+## DEC-20260925-001
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-001|
+|Date|2026-09-25|
+|WBS|PLT-02-A03 Secret 管理元数据只读查询与权限边界|
+|Decision|内部详情与分页服务先用 Auth-owned 无 CSRF DeploymentAdmin 只读 Session 证明，再执行 License Guard，最终同事务复核管理员身份并读取只含安全列的投影；普通查询不读取 encrypted_payload、encryption_metadata 或 key_provider_ref。|
+|Reason|冻结 GET 合同仅要求 Session+License，不能套用写操作的 CSRF；Guard 检查跨事务，第二次身份复核缩小权限撤销窗口；只投影安全字段降低误回显风险。|
+|Impact|新增 Auth 内部只读权限适配及 Platform 服务/仓储；无 Schema、Migration、公开 API 或新依赖。Guard 尚未挂 HTTP，测试使用合成许可替身。|
+|Rollback|内部服务未公开；撤销代码不影响 Secret 历史或冻结 API Contract。|
+
+## DEC-20260925-002
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-002|
+|Date|2026-09-25|
+|WBS|PLT-02-A04 Secret 加密算法与密文写入边界|
+|Decision|按 CR-PLT-002 采用版本化 AES-256-GCM；随机 96-bit nonce，AAD 绑定 SecretRef/用途/消费者/版本号/Key 引用，严格拒绝非 V1 元数据；加密输入与解密失败缓冲区尽量清零，主密钥仍只由外部 Key Provider Port 解析。|
+|Reason|冻结模型规定只存密文、算法元数据和 Key 引用，但未定密文算法。Authenticated Encryption 可在不改 Schema/API 下提供完整性和上下文绑定。|
+|Impact|新增内部加解密适配、合成测试和 PostgreSQL 临时库验证；无 Migration、新依赖、公开 API 或生产 Key Provider。生产安全验收仍未满足。|
+|Rollback|尚无正式 Secret 写命令；已有历史密文不可静默转换或删除，后续算法升级须版本读取或受控重加密。|
+
+## DEC-20260925-003
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-003|
+|Date|2026-09-25|
+|WBS|PLT-02-A05 Secret 管理写入与轮换命令|
+|Decision|内部写服务在 License Guard 前先检查管理员 Session+CSRF，写事务再次检查；创建生成 SecretRef，轮换以活动记录行锁及 expected_version_no 保护，旧版先退役再激活新版并更新 Record，Audit 同事务。Cipher 草稿放入 Platform 应用层契约以保持依赖方向。|
+|Reason|防止无权操作触发 License 信息侧信道，避免失效 Session/CSRF、并发轮换和审计失败留下部分密文。冻结 API-02 的 write-only 值与当前期望版本在内部命令层先形成可验证边界。|
+|Impact|无 Schema/Migration、新依赖或公开 API；License Guard 与写事务分离导致检查后变化窗口，正式集成前须复核。生产 Key Provider 未实现，合成验证不能视为真实 Secret 可用。|
+|Rollback|内部服务未公开；已存密文历史不可删除或覆盖，应使用新受控版本/状态命令恢复，不能普通降级。|
+
+## DEC-20260925-004
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-004|
+|Date|2026-09-25|
+|WBS|PLT-02-A06 Secret 停用命令|
+|Decision|把上一检查点暂列的“停用命令与管理 API 接线”拆为 A06 内部停用命令和 A07 公开 API/生产装配前置审查；停用将活动版本退役、Record 置 DISABLED 且 current_version_ref 清空，要求期望 lock_version 与同事务 Audit。|
+|Reason|当前 FastAPI 仅开放健康检查；生产 Auth/License/Key Provider 装配、If-Match 与幂等基础尚未齐备，直接挂路由不能满足冻结 API-01/API-02 的安全协议。先验收不可逆读取拒绝的状态命令，公开接线另行验证。|
+|Impact|仅时序/任务粒度调整，不改变冻结 API Contract、Schema 或数据模型；无 Migration/新依赖。公开 Secret API 仍未可用，完整程序包仍未交付。|
+|Rollback|内部服务未公开；已退役密文历史不删除、不直接复活，恢复必须另走受控新版本命令。|
+
+## DEC-20260925-005
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-005|
+|Date|2026-09-25|
+|WBS|PLT-02-A07 Secret 管理 API 前置检查|
+|Decision|A07 公开路由暂不接线，保留 BLOCKED_BY_PREREQUISITES；先实施 AUT-03 登录/Session HTTP 安全、生产 License/Key Provider 装配和幂等/版本协议，再恢复 A07。CR-PLT-003 记录将 Key Provider 安全设计前移的时序差异。|
+|Reason|TestClient 实测登录及 Secret 路由均 404，仅健康路由 200；若以合成 Guard/Key Provider 挂路由会违反冻结 API-01/API-02 和生产 Secret 分离要求。|
+|Impact|不变更冻结路径、Schema 或权限；A07 未完成，不得声称管理 API/真实 Secret 可用。项目继续不受阻塞的 Auth/平台基础任务。|
+|Rollback|尚无公开 Secret 路由；若前置不能满足，保持默认 404 和失败关闭，不能以测试替身代替生产装配。|
+
+## DEC-20260925-006
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-006|
+|Date|2026-09-25|
+|WBS|AUT-03-A01 登录可信 Host/Origin 边界|
+|Decision|将 A07 前置的“登录 HTTP 安全边界”拆为可信 Host/Origin、限流、凭据编排和 Cookie/CSRF 独立可验收项；首项采用显式允许集合，非 loopback 仅 HTTPS，缺失/重复来源拒绝，转发头不参与信任判断。|
+|Reason|当前无公开登录路由与可信部署源配置；一次性开放会混入未验证限流和凭据流程。严格来源策略先作为独立组件验证，不把 `X-Forwarded-Host` 当作可信目标。|
+|Impact|无公开 API、Schema、Migration 或新依赖；登录仍 404。反向代理须保留可信 Host；配置、限流与 Cookie 另行验收。|
+|Rollback|组件未挂路由；移除不会改变现有健康接口，不能以宽松默认源替代。|
+
+## DEC-20260925-007
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-007|
+|Date|2026-09-25|
+|WBS|AUT-03-A02 登录限流策略与持久化边界|
+|Decision|依 CR-AUT-001 在 PostgreSQL 建 Auth 私有窗口桶，以来源地址与规范化用户名两个独立 SHA-256 摘要键原子预约尝试；来源限 30 次/5 分钟、账户限 10 次/5 分钟，拒绝及数据库不可用时不进入密码验证。|
+|Reason|单机部署可运行多个 API 进程，进程内限流可绕过；双维度限制来源爆破与分布式针对账户尝试，且不落原始地址/用户名。|
+|Impact|新增 ORM/Migration，密文/API Contract/架构不变；摘要不等同匿名化，数据库仍需访问控制与短期保留。限值、代理来源与清理调度须在正式登录装配前验证。|
+|Rollback|短期计数桶可在维护窗口清理，确认无登录流量后按 Alembic down 回退；不得删除 Audit/User/Session 历史。|
+
+## DEC-20260925-008
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-008|
+|Date|2026-09-25|
+|WBS|AUT-03-A03 登录用户名/密码证明与 Session 签发编排|
+|Decision|登录先预约限流，再规范化用户名并查活动身份；不存在或停用的用户执行受控 scrypt 假验证以缩小时间差，成功身份交既有 SessionService 再次锁用户/校验真实密码并原子签发 Session+Audit。所有凭据失败对外统一 `AUTH_INVALID_CREDENTIALS`，追加不含原始用户名/密码的拒绝审计；密码可变缓冲区始终清零。|
+|Reason|复用已验证的 Session 与密码 Port，避免按用户名查询与签发之间的停用/换密竞争；不让错误类型直接暴露用户存在性。|
+|Impact|仅新增 Auth 应用编排、只读身份仓储和假验证适配，无 Schema/Migration、公开 API 或新依赖；HTTP Cookie/Origin/限流真实客户端地址仍待装配。|
+|Rollback|内部服务未挂路由；撤销不改变已签发 Session 历史，已有 Session 只能按正式撤销命令处理。|
+
+## DEC-20260925-009
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-009|
+|Date|2026-09-25|
+|WBS|AUT-03-A04 登录 HTTP Cookie/CSRF 接线|
+|Decision|增加显式注入的登录 Router，默认应用不挂载；HTTP 入口先校验已配置的精确 Host/Origin，再限制 JSON 正文为 4096 字节且只收 username/password。Session Token 仅放 HttpOnly/SameSite=Lax Cookie，HTTPS Origin 自动设置 Secure，受信任 loopback HTTP 用于本机验证；CSRF 原值仅在本次成功响应 DTO 给前端内存，错误统一安全 Envelope。|
+|Reason|在生产依赖装配前验证 HTTP 边界，防止默认开放未配置的登录；保持冻结 API-01/02 的传输与失败语义。|
+|Impact|新增登录 HTTP Router、可选应用装配和已冻结 AUTH_INVALID_CREDENTIALS 错误码映射；无 Schema/Migration、新依赖或默认公开登录。Session 查询/续期/注销和初始管理员仍由后续 WBS 完成。|
+|Rollback|移除可选 Router 注入即可恢复默认 404；已签发 Session 不能仅靠下线 Router 撤销。|
+
+## DEC-20260925-010
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-010|
+|Date|2026-09-25|
+|WBS|AUT-03-A05 登录 SessionView 真实身份投影|
+|Decision|把冻结 SessionView 的 user/deployment_role/authorized_projects 设为登录 Router 必填的只读投影 Port。Auth 适配器只从当前 ENABLED User 读身份和部署角色；项目摘要必须由 Project-owned Port 显式提供，尚无 ProjectMember 层时不设置生产默认空列表。投影失败时不发 Cookie、返回固定服务不可用错误。生产装配与初始管理员顺延为 A06。|
+|Reason|上一项 HTTP 边界的最小 DTO 缺少冻结字段；Auth 不应自行伪造项目成员事实或长期把缺失数据写为空项目权限。|
+|Impact|登录 Router 签名要求真实投影，旧的可选接线测试需增加投影替身；无 Schema/Breaking API，新响应补齐冻结结构，仍不默认开放。已签发但投影失败的 Session 在服务器端保留至超时，后续评估补偿撤销。|
+|Rollback|回退该非公开 Router 装配；不改变已冻结 API 或 User/Session 数据。|
+
+## DEC-20260925-011
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-011|
+|Date|2026-09-25|
+|WBS|AUT-03-A06 初始 DeploymentAdmin 离线受控创建|
+|Decision|仅在本机离线命令入口创建首个 DeploymentAdmin。应用服务使用专用 PostgreSQL 事务级 advisory lock 串行化，确认整个 User 表为空后在同一事务写 User、scrypt 凭据和不含密码的 Audit；任何已有 User 即拒绝，不能用于管理员恢复或新增普通用户。初始密码至少 15 个 Unicode 字符、最多 1024 UTF-8 字节。CLI 通过终端无回显读取数据库 URL 和双次密码，不能从参数或环境变量接收初始密码；无回显不可用时失败关闭。|
+|Reason|初次部署时不存在可验证的管理员 Session，既有 UserCommandService 正确地要求已登录授权。离线单次初始化可解除循环依赖，但必须独立于公开 API 并禁止重新引导提权。|
+|Impact|新增 Auth bootstrap 内部服务、SQL 适配和受控 CLI；无 Schema/Migration、公开路由或新依赖。初始化凭据仍需部署者现场设置，不能由 AI 代用户填写真实密码。生产登录 Router 与 Project 授权读取仍待后续任务。|
+|Rollback|在尚未执行初始化的部署可移除 CLI；已创建的管理员属于正式 User/Audit 历史，不得简单删除，应走未来受控管理员迁移/停用流程。|
+
+## DEC-20260925-012
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-012|
+|Date|2026-09-25|
+|WBS|AUT-03-A07 登录生产依赖装配前置|
+|Decision|按 CR-AUT-002 保留默认登录关闭，A07 暂不记 PASS；先建设 Phase 2 范围内的 Project/ProjectMember 持久层及授权摘要读取，再在安全运行配置完成后恢复生产装配，随后继续 Session HTTP。|
+|Reason|现有项目授权摘要和运行信任源缺口无法由空列表或测试配置安全替代。|
+|Impact|仅实施顺序调整，无冻结 API/Schema 变化；Gate 3/UAT 不受自动放行。|
+|Rollback|前置补齐后可直接恢复 A07，保留本次核查记录。|
+
+## DEC-20260925-013
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-013|
+|Date|2026-09-25|
+|WBS|PRJ-01-A01 Project/Department/ProjectMember ORM 与 Migration|
+|Decision|按冻结 PRJ-01～03 建立三张 `plm.prj_*` 表：Project 代码部署内唯一；Department 代码在同项目 ACTIVE 状态唯一；ProjectMember 对未 REMOVED 用户建立全部署与同项目 partial unique；ProjectMember.department_id 与 project_id 通过复合 FK 锁定同项目。三者保留状态、时间、乐观锁版本和不可删除 FK；本任务不开放读写 API 或自动生成项目事实。|
+|Reason|真实项目授权摘要需要可验证成员事实；数据库必须阻止跨项目部门绑定及多项目有效成员，不能依赖登录响应空列表替代。|
+|Impact|新增普通增量 Migration 和 ORM，无现有表变更、公开 API 或新依赖。Project 状态/角色变更的应用命令与授权读取后续单项完成；已有库升级保留所有数据。|
+|Rollback|仅确认三张表无数据且无下游 FK 后允许 Alembic downgrade；有数据时拒绝自动删除。|
+
+## DEC-20260925-014
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-014|
+|Date|2026-09-25|
+|WBS|PRJ-01-A02 项目成员授权摘要读取|
+|Decision|Project 模块公开只读 `ProjectAccessSummary` DTO，并在当前事务中按 UserId 查询 ACTIVE、已生效、未结束的 ProjectMember；只返回 ACTIVE Project 与 ACTIVE Department 的项目 ID/名称/角色，不缓存也不以 DeploymentAdmin 身份推定项目成员。Auth SessionView 复用该公开 DTO，并从显式 Project Port 取得摘要。|
+|Reason|冻结模型将 ProjectMember 作为项目权限唯一事实，Session 不持久化权限快照；部署管理员不自动拥有项目数据访问权。|
+|Impact|无 Schema/Migration、公开 API 或新依赖；补齐登录响应所需的真实 Project 摘要读层，但完整 ProjectAuthorizationService 的逐操作判定仍待后续 WBS。|
+|Rollback|移除只读适配器并恢复 Auth Port 未装配状态；不改变项目成员或 Session 历史。|
+
+## DEC-20260925-015
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-015|
+|Date|2026-09-25|
+|WBS|PRJ-01-A03 ProjectAuthorizationService 逐操作授权|
+|Decision|Project 模块对冻结 API-02 的项目路径操作维护显式角色白名单；未登记操作默认拒绝。每次在新事务中从 Project、ACTIVE Member、ACTIVE Department 重读状态，目标 Member/Department 由数据库反查 owner ProjectId 并与路径交叉校验；DeploymentAdmin 不自动成为项目成员。归档项目只允许授权读取，不允许写。普通无权/不存在/跨项目统一 `RESOURCE_NOT_FOUND`；有权成员对归档项目写入返回 `PROJECT_ARCHIVED`。|
+|Reason|登录摘要不能当权限快照；冻结模型要求按资源实际归属和当前成员事实重新校验。`PROJECT_LIST` 的授权列表与部署级 `PROJECT_CREATE` 的管理员命令另在对应读/写任务接线，不能用项目成员角色替代。|
+|Impact|新增 Project 内部授权 Service/SQL Repository，无 Schema/Migration、公开 API 或新依赖。调用者仍必须先经 Auth Session、License、CSRF 等契约前置；本服务只实现 Project 角色/Scope 判定，不宣称全链路开放。|
+|Rollback|内部 Port 尚未挂公开路由；撤销本实现不改变业务数据。|
+
+## DEC-20260925-016
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-016|
+|Date|2026-09-25|
+|WBS|PRJ-01-A04 Project 创建命令|
+|Decision|Project code 与可选 department seed code 做 Unicode NFKC、去首尾空白与 casefold 归一化，再由数据库唯一约束兜底；未提供部门 seed 时原子建立 `DEFAULT`/`默认部门`，保证首位 ProjectManager 的必需 Department FK。创建命令先验证当前管理员 Session/CSRF，再执行 License Guard，再在同一写事务重新验权并由 Auth-owned Port 锁定 ENABLED 初始负责人；Project、Department、Member 和 Audit 原子提交。|
+|Reason|冻结 API 允许 department seed 缺省，但冻结 DM-02 要求每个 Member 有同项目 Department；创建者不自动成为项目成员。归一化统一代码大小写与兼容字符，锁定负责人防并发重复绑定，数据库约束最终兜底。|
+|Impact|内部服务、Auth 只读资格 Port 与 Project 写适配器；无 Schema/Migration、公开 API 或新依赖。生产 License/HTTP 装配仍待后续。|
+|Rollback|内部命令尚未公开；撤销代码不自动删除已创建项目或审计历史。|
+
+## DEC-20260925-017
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-017|
+|Date|2026-09-25|
+|WBS|PRJ-01-A05 Project 列表与详情读取|
+|Decision|Project 只读 Application Port 先执行 License Guard，再由 Auth-owned Port 在查询事务验证当前 Session、User 状态与凭据版本；Project-owned SQL 在同一事务重读 ACTIVE 且已生效 Member、ACTIVE Department 与 Project 当前状态，不使用登录时摘要。`PROJECT_LIST` 仅返回当前有权项目；`PROJECT_GET` 对不存在、无成员或跨项目统一隐藏。ARCHIVED 允许受权读取。冻结单有效项目成员不变量使当前列表最多 1 项，DTO 仍保留 Page 形状，`next_cursor` 为 null。|
+|Reason|避免 Session 摘要陈旧与 DeploymentAdmin 隐式越权；列表和详情共用当前成员事实。模型强制单一未移除成员，当前不产生多页，因此无须提前引入未验证的公开游标格式。强 ETag 仅从 Project.lock_version 生成。|
+|Impact|新增 Auth 只读 Session 身份适配器、Project 查询 Service/Repository；无 Schema/Migration、公开 API 或新依赖。公开 GET 仍须由后续 HTTP 装配并应用 API-01 Envelope/trace。|
+|Rollback|撤销未公开的查询 Port；不改变项目数据。|
+
+## DEC-20260925-018
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-018|
+|Date|2026-09-25|
+|WBS|PRJ-01-A06 Project 元数据修改与归档内部命令|
+|Decision|`PROJECT_PATCH` 首版只允许修改 Project 显示名称，不允许经通用 PATCH 修改 ProjectCode；编码不可静默复用，未来如需改码须专用受控命令和旧码保留机制。`PROJECT_PATCH`/`PROJECT_ARCHIVE` 均要求当前 ProjectManager、ACTIVE Project、Session/CSRF、License、expected lock_version 与同事务 Audit；归档不提供普通反向操作。Project 授权 Port 增加写事务内核验，写操作锁定项目/成员/部门事实并在同事务更新。|
+|Reason|冻结 API-02 仅写“metadata”，未规定可修改 code；DM-02 明确 ProjectCode 不可静默复用，而当前冻结 Schema 不保存旧 code，直接改码会释放旧码导致复用。名称是可安全修改的显示元数据；乐观并发和事实锁避免撤权/归档竞态。|
+|Impact|新增内部 Project 写命令/SQL Repository，授权 Port 增加同事务入口；无 Schema/Migration、新依赖或公开 API。若未来需要 code 修改，先按正式变更流程设计历史保留与升级。|
+|Rollback|内部命令未挂公开路由；已有名称/归档变更保留在 Audit，归档不可自动回滚为 ACTIVE。|
+
+## DEC-20260925-019
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-019|
+|Date|2026-09-25|
+|WBS|PRJ-02-A01 ProjectMember 授权列表读取|
+|Decision|`PROJECT_MEMBER_LIST` 在 License Guard 与 Auth 当前 Session 验证后，于同一数据库事务调用 ProjectAuthorizationService 的 `PROJECT_MEMBER_LIST` 策略；仅 ProjectManager/CustomerManager 可读取该路径 Project 的成员历史。Project Repository 只读 ProjectMember/Department，Auth-owned Port 批量提供 user_id/display name，Project 不直接查询 Auth 表。内部分页以 `(project_member_id ASC)` 做稳定 keyset，原始 after_id 不对 HTTP 客户端暴露；后续公开路由必须按 API-01 封装完整性保护的不透明 cursor。|
+|Reason|成员列表需保留 ACTIVE/SUSPENDED/REMOVED 历史，同时防止其他项目成员和 Auth 凭据数据泄漏。用户显示名由 Auth Owner 提供，避免跨模块内部表访问。内部 keyset 位置不是可直接暴露的 API cursor。|
+|Impact|新增 Project 内部列表 Service/Repository 与 Auth 最小用户摘要适配器；无 Schema/Migration、新依赖或公开 API。归档 Project 仍允许授权只读。|
+|Rollback|撤销未公开查询 Port；不改变成员历史。|
+
+## DEC-20260925-020
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-020|
+|Date|2026-09-25|
+|WBS|PRJ-02-A02 ProjectMember 创建命令|
+|Decision|创建成员由当前 ProjectManager 在 License Guard、Session/CSRF 后于同一事务执行：锁定当前项目权限事实，Auth-owned Port 锁定 ENABLED 目标 User 并返回最小显示名，Project-owned Repository 锁定同项目 ACTIVE Department、检查目标 User 未有任何非 REMOVED membership，插入单一角色/部门成员并同事务 Audit。数据库 partial unique 与复合 FK 作为并发/跨项目最终防线；目标 User 缺失/停用或部门不合规则固定拒绝，已分配返回 `PROJECT_USER_ALREADY_ASSIGNED` 且不披露另一项目。允许可选未来 effective_at，未提供由数据库取当前时间。|
+|Reason|冻结模型要求一个 User 同时最多一个未移除成员，部门必须同项目；跨模块 User 状态只能通过 Auth Port，不能由 Project 直查 Auth 内部表。锁 User 与 Department，再结合数据库约束可防并发重复和归属漂移。|
+|Impact|新增 Project 内部创建 Service/Repository、Auth-owned 目标资格适配器；无 Schema/Migration、新依赖或公开 API。公开 POST 的 Idempotency-Key 仍待正式 API 安全装配。|
+|Rollback|内部命令尚未公开；已创建成员如需撤销，应走后续 REMOVE 命令保留历史，不物理删除。|
+
+## DEC-20260925-021
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-021|
+|Date|2026-09-25|
+|WBS|PRJ-02-A03 ProjectMember 角色/部门修改命令|
+|Decision|依据 CR-PRJ-001，在冻结的当前成员表之外增加 Project-owned 角色/部门变更历史子表，不改当前权限读取路径；每次实际变更在同一事务更新成员版本、插入前后值历史并写 AuditEvent。无变化返回原 ETag，不制造事件。最后一名当前有效 ProjectManager 不允许降级，以避免项目无法再管理。|
+|Reason|冻结 DM-02 要求角色变更历史，而原 Schema 与通用 AuditEvent 无法完整追溯角色和部门的旧、新值。项目行锁使当前授权与负责人数量检查串行，成员版本锁与数据库约束防覆盖。|
+|Impact|新增 Migration `20260925_0014`、Project 内部修改命令及 Auth 最小显示名 Port；无公开 API Breaking Change。必须升级数据库后部署本版。|
+|Rollback|历史表为空时可降级到 `20260925_0013`；已有历史需保留，不允许自动丢弃。内部命令未公开，可停用但不可篡改已写历史。|
+
+## DEC-20260925-022
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-022|
+|Date|2026-09-25|
+|WBS|PRJ-02-A04 ProjectMember 暂停/恢复/移除命令|
+|Decision|三项内部命令复用同一状态 Service/Repository，但调用不同的冻结操作策略；仅允许 ACTIVE→SUSPENDED、SUSPENDED→ACTIVE、ACTIVE/SUSPENDED→REMOVED。每次变更需当前 ProjectManager、Session/CSRF、License、目标归属、expected_version 与同事务 Audit。恢复要求关联部门 ACTIVE。暂停/移除最后一个当前有效 ProjectManager 拒绝。未来生效成员提前移除时 `ended_at = greatest(statement_timestamp(), effective_at)`，状态立即 REMOVED。|
+|Reason|统一状态矩阵避免各命令实现分歧；最后负责人保护防管理权限被清空，数据库时间约束要求提前移除的 ended_at 不早于 effective_at。|
+|Impact|新增 Project 内部状态 Service/Repository，无 Schema/Migration、新依赖或公开 API；正式 POST 幂等和 If-Match 留给公开 API 安全接线。|
+|Rollback|内部命令未公开；已移除成员不可原地恢复，只能按后续受权创建命令重新分配并保留原历史。|
+
+## DEC-20260925-023
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-023|
+|Date|2026-09-25|
+|WBS|PRJ-03-A01 Department 授权列表读取|
+|Decision|`PROJECT_DEPARTMENT_LIST` 在合成 License Guard 与 Auth 当前 Session 证明后，于同一事务检查 ProjectAuthorizationService 的当前成员事实。Project Repository 只查目标 Project 的 ACTIVE/INACTIVE Department，不访问 Auth 表；内部按 department_id ASC 稳定 keyset，返回最多 200 项及内部 after_department_id。归档项目受权只读保留。|
+|Reason|冻结 API-02 授权所有当前 ProjectMember 读取所属项目部门；历史部门须保留，权限不得依赖缓存或客户端 project_id 声称。稳定内部 keyset 避免更新造成分页位置漂移；公开 API-01 cursor 后续必须签名或完整性保护，不暴露原始 ID。|
+|Impact|新增 Project 内部只读 Service/Repository；无 Schema/Migration、新依赖或公开 API。|
+|Rollback|内部查询尚未公开，可移除该 Port；不影响部门数据与历史。|
+
+## DEC-20260925-024
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-024|
+|Date|2026-09-25|
+|WBS|PRJ-03-A02 Department 创建命令|
+|Decision|Department 创建沿用 Project bootstrap 的 NFKC/trim 显示值与 casefold 规范化语义，在当前 ProjectManager、Session/CSRF、License 与项目 ACTIVE 检查后，以 PostgreSQL `uq_prj_departments__project_code_live` 部分唯一索引作为并发最终防线。冻结 DM 的“DepartmentCode 项目内唯一”按更具体的冻结 SC-02/03 部分唯一索引解释为同项目 ACTIVE Department 唯一；INACTIVE 历史保留且其代码可被新 ACTIVE Department 复用。创建与 Audit 同事务，冲突固定 `CONFLICT_DUPLICATE`。|
+|Reason|冻结 SC-03 明确为 partial unique，已有 ORM/Migration 仅对 ACTIVE 行唯一；保持现有 DB 基线与可追溯历史，不额外改变冻结 Schema。|
+|Impact|新增 Project 内部创建 Service/Repository；无 Schema/Migration、新依赖或公开 API。对停用部门编码复用的 UI 展示需要在未来公开设计中结合 ID/状态区分，不能只凭 code 认定历史身份。|
+|Rollback|内部命令尚未公开，可停止新建；已有 Department 不物理删除，若需撤销须走后续受控停用并保留历史。|
+
+## DEC-20260925-025
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-025|
+|Date|2026-09-25|
+|WBS|PRJ-03-A03 Department 名称/编码修改命令|
+|Decision|仅 ACTIVE Department 可由当前 ProjectManager 在同事务 Session/CSRF、License、目标归属及 expected_version 检查后修改名称和/或编码。编码沿用 NFKC/trim/casefold；同项目 ACTIVE 部门不得重复，项目行锁串行化受权写入且 DB partial unique 兜底。真实变更版本+1并写 Audit，无变化返回原 ETag 不制造事件；INACTIVE 历史不允许普通 PATCH。|
+|Reason|维持冻结 API-01 强 ETag、API-02 逐操作权限与 SC-03 活动编码唯一；禁止修改停用历史，避免旧引用被悄然改写。|
+|Impact|新增 Project 内部 PATCH Service/Repository；无 Schema/Migration、新依赖或公开 API。当前 AuditEvent 可追溯操作者/对象/时间，但不保存字段级旧/新 code/name，不能支持逐版字段恢复；如后续正式要求该能力须单独 Change Request。|
+|Rollback|内部命令尚未公开，可停止使用；已修改元数据不能依赖 Audit 自动恢复旧值，需有正式备份或后续受权修订。|
+
+## DEC-20260925-026
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-026|
+|Date|2026-09-25|
+|WBS|PRJ-03-A04 Department 停用命令|
+|Decision|仅当前 ProjectManager 可对所属 ACTIVE 项目内的 ACTIVE Department 执行一次性停用；先核对 Session/CSRF、License、目标归属与 expected_version，再在项目行锁保护下检查目标部门没有 ACTIVE/SUSPENDED ProjectMember。仅 REMOVED 历史引用不阻止停用，不做成员静默迁移。成功时版本+1并与前后状态 Audit 同事务提交；重复停用拒绝。|
+|Reason|冻结 DM-02 与 API-02 明确成员引用阻断和 `PROJECT_DEPARTMENT_IN_USE`；项目行锁与成员新建/修改命令共享写入序列，数据库查询在同事务内复核，避免并发创建与停用形成矛盾状态。|
+|Impact|新增 Project 内部停用 Service/Repository；无 Schema/Migration、新依赖或公开 API。仅通过正式服务写入可受项目锁保护；部署数据库角色权限仍须保证应用外写入受控。|
+|Rollback|内部命令未公开；已停用部门按冻结状态模型无普通恢复命令，若业务需要重用编码可新建部门，旧 DepartmentId 和历史引用保持不变。|
+
+## DEC-20260925-027
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-027|
+|Date|2026-09-25|
+|WBS|AUT-03-A07-P01 可信 Origin 部署配置|
+|Decision|在现有非敏感 BootstrapSettings 中新增默认空的 `trusted_origins`，允许 YAML 显式数组和 `PLM_TRUSTED_ORIGINS` JSON 数组覆盖；配置层限制最多 16 项、非空和单项长度，但不在 Platform 层复制 Auth 的 URL/Host 规则。最终装配仍必须调用既有 `LoginOriginPolicy` 校验 URL、HTTPS/loopback、Host 匹配，任何失败不得挂载登录路由。|
+|Reason|CR-AUT-002 要求可信 Origin 生产来源，而现有 Auth 策略已有精确语义；配置层只持有非敏感部署值，避免 Platform 反向依赖 Auth 或维护两套可能分叉的来源校验。|
+|Impact|新增非敏感配置和测试；无 Schema/Migration、新依赖、公开 API 或权限变化。配置加载成功本身不代表生产登录可用，安全数据库凭据和端到端装配仍待完成。|
+|Rollback|删除部署配置即可恢复默认空来源；当前默认应用不挂登录路由，无数据迁移。|
+
+## DEC-20260925-028
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-028|
+|Date|2026-09-25|
+|WBS|AUT-03-A07-P02 Windows 数据库凭据来源|
+|Decision|依 CR-AUT-003 使用当前 Windows 运行账户的 Credential Manager Generic Credential，固定生产 Target `PLMProjectTool/Database`；本机无参数、无回显交互写入/轮换，运行时只读。URL 必须为带 Host、用户名、密码的 `postgresql+psycopg`；读取/写入失败统一脱敏拒绝，不回退到环境变量/YAML/测试 URL。|
+|Reason|安全数据库凭据是 AUT-03-A07 的真实前置；使用系统账户保护的持久存储，比把密码保存在普通配置中更符合已冻结 Secret 边界。固定 Target 防止运行时路径注入；测试只操作 UUID 合成 Target。|
+|Impact|新增 Windows 专有基础设施和部署入口；无 Schema/Migration、新依赖或公开 API。目标服务账户需现场录入，跨账户/跨机器不自动迁移；Debian 仍需独立来源。Python/SQLAlchemy 内存副本不可保证绝对清零。|
+|Rollback|停止调用该来源并关闭服务；生产 Vault 凭据不会自动删除，由部署管理员通过系统凭据管理手工移除或轮换。|
+
+## DEC-20260925-029
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-029|
+|Date|2026-09-25|
+|WBS|AUT-03-A07-P03 Windows 生产登录组合根|
+|Decision|单独提供显式 Windows 登录应用工厂，不更改普通 `create_app()` 的默认无登录行为。启动顺序为可信 Origin 策略 → 当前账户 Credential Manager 数据库 URL → PostgreSQL 连通性与 `plm.alembic_version` 等于包内迁移 head → 真实 Auth/Project/Audit 接线；任一步失败均不发布应用且释放连接。进程退出释放 Engine。本机 Uvicorn 明文入口只绑定回环 IP，禁用代理头信任；对外 HTTPS 由本机受控反向代理提供。|
+|Reason|让 CR-AUT-002 的项目摘要与安全来源成为真实生产依赖，同时避免把测试注入应用冒充默认产品入口。仅 `SELECT 1` 不能证明 Schema 已升级；非回环明文监听会让密码暴露于网络。|
+|Impact|新增组合根、Windows 启动入口及应用生命周期清理；无 Schema/Migration、新依赖或冻结 API 变化。Windows 11 合成 PostgreSQL/Windows Vault 链路已验证；Server 2025 服务账户、HTTPS 代理与 Debian 来源仍需单独验收，不能由本项推定通过。|
+|Rollback|不调用 Windows 启动入口即可保留原默认健康-only 应用；无数据迁移，已签发的测试 Session 随一次性库删除。|
+
+## DEC-20260925-030
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-030|
+|Date|2026-09-25|
+|WBS|AUT-03-A08 当前 Session 查询 HTTP|
+|Decision|冻结 GET Session 仅验证唯一严格格式的 `plm_session` Cookie 和当前 Session，再读取最新 User/ProjectMember 摘要；响应只含身份、授权摘要与到期时间，不回显 Cookie/Token/CSRF，也不刷新期限。只读请求必须有单一可信 Host；若客户端提供 Origin 则仍按已冻结登录来源策略精确校验，不要求浏览器 GET 必须带 Origin。仅显式生产组合根挂载，普通应用继续 404。|
+|Reason|API-02 对 GET 标记 `S` 而非 `C`，CSRF 原值仅在创建/轮换响应发放；强行要求所有 GET 带 Origin 会拒绝合法浏览器读取。Host 必须可信以避免不受信域名承载 Cookie 身份投影，实时摘要不能复用登录时的旧权限。|
+|Impact|新增 Auth 只读 HTTP 入口、Host 策略及生产显式挂载；无 Schema/Migration、新依赖或冻结 API Breaking Change。Windows 11 真实 PostgreSQL 验证成员暂停后摘要即时刷新；业务请求仍须逐操作重新授权。|
+|Rollback|停止显式挂载 Session Router 即恢复默认 404；GET 不修改 Session/项目数据，无迁移回滚。|
+
+## DEC-20260925-031
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-031|
+|Date|2026-09-25|
+|WBS|AUT-03-A09 Session 续期 HTTP|
+|Decision|冻结 `POST /api/v1/auth/session:renew` 使用唯一严格 Cookie、`X-CSRF-Token`、精确 Origin/Host 且不接受请求正文。先验证当前 Session/CSRF 并读取 User/Project 投影，确保投影失败不会先撤销旧凭据；之后调用已验收的同事务 Session 轮换/Audit，成功只通过 HttpOnly Cookie 和本次 DTO 返回新 Token/CSRF。绝对到期保持原时刻，旧凭据立即失效。|
+|Reason|API-02 的续期控制为 S/C/A 而非 I；投影属于响应必需内容，若轮换后才发现投影故障会让浏览器收不到新凭据。预检与轮换间的并发由轮换服务再次校验 Session 关闭，不把预检当成最终授权。|
+|Impact|新增 Auth 续期 HTTP 与显式生产挂载；无 Schema/Migration、新依赖或 Breaking Change。投影可能在相邻事务之间被项目成员变更，后续业务请求仍须实时重验授权；多标签旧凭据按冻结轮换语义失效。|
+|Rollback|停止显式挂载续期 Router 即恢复默认 404；已成功轮换的 Session 不反向复活，用户可重新登录，无数据库迁移。|
+
+## DEC-20260925-032
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-032|
+|Date|2026-09-25|
+|WBS|API-RUNTIME-01 通用持久幂等收据|
+|Decision|按 CR-API-001 新增与配置专用收据并列的 `plt_idempotency_receipts`；范围为 actor/project/版本化 operation/Key SHA-256，部署级 NULL Project 通过 `UNIQUE NULLS NOT DISTINCT` 仍唯一。只存规范化请求 SHA-256 和非敏感结果引用/HTTP 状态，不存 Key/正文/Token/完整响应。reserve→业务/Audit→complete 必须在同一事务；已完成行触发器禁止修改/删除，PENDING 误提交后失败关闭；非空表禁止 downgrade，暂不自动过期清理。|
+|Reason|冻结 API-01 要求跨进程/重启重放同一语义，现有 `plt_configuration_command_receipts` 受 CHECK/外键限制，不能混入 Auth/Project 命令。单独增量保留 Gate 2 历史与旧配置收据语义。|
+|Impact|新增 ORM/Alembic `20260925_0015`、应用范围/指纹与 PostgreSQL 收据仓储；无公开 API/新依赖。调用方必须先完成授权并保证结果引用可重建原语义，ProjectId 归属由调用方验证。记录会持续增长，Retention 和误提交 PENDING 的受控恢复仍需单独设计。|
+|Rollback|停止新命令挂载；新收据为空时可 downgrade 到 `0014`，非空时拒绝以保留去重历史。旧表和旧业务数据不变。|
+
+## DEC-20260925-033
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-033|
+|Date|2026-09-25|
+|WBS|AUT-03-A10 Session 注销 HTTP|
+|Decision|注销首次请求以有效 Session、匹配 CSRF、可信 Origin/Host 与合法幂等 Key 为前置，在同一 UoW 内预留 `V1_AUTH_LOGOUT` 收据、撤销 Session、追加 `SESSION_REVOKED` Audit 并完成指向该 Session 的 200 结果引用。已撤销 Session 仅在原 Token/CSRF、同 Key/同 Session 指纹、收据已完成、撤销原因确为 LOGOUT 时返回原 200 并再次清 Cookie；并发等待收据后重新读取 Session 状态。不同 Key 对旧 Session 返回 401，不同 Session 同 Key 返回 409。|
+|Reason|冻结 API-02 的注销同时标记 S/C/I/A，但首次成功后 S 已失效；为了满足 API-01 同 Key 同结果重试，不可用普通 Session 再授权，也不可把所有旧 Cookie 当幂等成功。通过持久收据与已撤销原因双重绑定，重试只获取原注销语义，不恢复权限。|
+|Impact|新增 Auth 注销 Application/HTTP 接线，复用 `0015` 收据；无新 Migration、新依赖或 Breaking Change。已完成收据与 Session 历史的 Retention 需协同设计，当前不得自动删除。默认应用仍不挂 Auth 路由。|
+|Rollback|停止显式挂载注销 Router 即恢复默认 404；已撤销 Session 不反向复活，用户需重新登录；收据与 Audit 保留供追溯。|
+
+## DEC-20260925-034
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-034|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P01 Windows Secret 主密钥只读来源|
+|Decision|依 CR-PLT-003 的安全装配前置，Windows 侧使用当前运行账户 Windows Credential Manager Generic Credential 作为独立主密钥读取来源，严格映射受限 key_ref，要求正好 32 字节；读取器不创建、覆盖、导出或自动回退到配置/环境变量。此项只是 OS 来源适配，不宣称生产 Key Provider 和恢复已完成。|
+|Reason|现有 AES-GCM Secret 密文引用 key_ref，需要密文库外的受保护来源；Windows Vault 可由当前运行身份访问且不需将原始主密钥放进仓库、YAML 或数据库。缺失、错账户或错长度必须失败关闭。|
+|Impact|新增 Platform 基础设施适配器与 Windows 11 合成测试；无 Schema、Migration、公开 API、新依赖或冻结合同变化。服务账户供给、独立备份与异机恢复、Server 2025/Debian 13 均未验证。|
+|Rollback|移除该只读适配器注入即可回到原先未装配状态；测试临时凭据已删除，无真实主密钥或业务密文迁移。|
+
+## DEC-20260925-035
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-035|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P02 Windows 主密钥供给和独立恢复|
+|Decision|为当前账户 Windows Vault 的 32 字节主密钥提供本机交互式首次供给、加密备份、目标为空时恢复；备份采用独立口令经 scrypt 派生的 AES-256-GCM 加密，并以 key_ref 绑定 AAD。首次供给先生成不可覆盖的新备份，后写 Vault 并回读校验；恢复先验证备份和口令，拒绝覆盖任何已存在目标。备份文件不进入源代码、数据库或普通配置。|
+|Reason|仅依赖当前账户 Vault 会在账户/主机丢失时造成历史 Secret 密文永久不可读。独立加密备份允许受控异账户恢复，同时避免应用自动获取恢复口令；旧 Vault 条目必须避免误覆盖。|
+|Impact|新增 Platform 密钥生命周期和本机运维入口；不改变冻结 API、数据模型、算法中的 Secret 密文格式或目标平台。备份口令及文件由部署人员分开离线保管，不能自动恢复。Windows 11 合成验证后仍须 Server 2025 目标账户/恢复验证，Debian 13 暂不验证。|
+|Rollback|停止使用运维入口，保留原 Vault 条目及已生成的加密备份供人工保管；不删除真实主密钥、密文或审计。错误供给和恢复不能覆盖既有条目。|
+
+## DEC-20260925-036
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-036|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P03-A01 Windows 选定 MAC 本机匹配来源|
+|Decision|Bootstrap 仅可包含一个显式选定、非秘密的 MAC；License 的 Windows SelectedMachine Port 在每次验证时以 Windows IP Helper 的 GetAdaptersAddresses 读取本机网卡，只有选定 MAC 规范化后与本机某个 6 字节网卡地址匹配才返回。缺配置、枚举失败、虚构地址和格式异常一律失败关闭，不回退到 `uuid.getnode()` 或配置自证。|
+|Reason|现有 LicenseService 只对 Port 返回值作 SHA-256；若 Port 直接透传配置，复制配置即可使不同机器声称相同指纹。现场显式选择仍符合 ADR-006，但必须与当前机器事实绑定。|
+|Impact|增加 Windows License 基础设施与非敏感 Bootstrap 字段；不改变七字段签名载荷、MAC 规范化/哈希算法、Schema 或公开 API。MAC 可由虚拟网卡提供，不能抵御有系统级控制权的伪造；Server 2025 和 Debian 13 仍须分别验证/实现。|
+|Rollback|不装配该 Port 时公开受许可业务保持关闭；不修改已有 License 文档、可信时间或数据库数据。|
+
+## DEC-20260925-037
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-037|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P03-A02 本产品发行公钥来源|
+|Decision|客户运行时公钥只可来自后端 wheel 内的本产品发行清单，不从请求、数据库、普通 YAML、环境变量或 License 文件读取公钥。解析器固定产品代码和唯一 key_ref，严格校验 Ed25519 原始公钥格式及清单字段，缺失/错误即拒绝装配。开发 wheel 可以不含真实发行清单而失败关闭；正式 release 构建必须显式核对签发公钥已装入包。|
+|Reason|现有 StaticPublicKeyResolver 仅是依赖注入边界，生产若从可编辑配置建立信任锚，攻击者可替换公钥并自签 License。包内受信公钥与签发私钥物理隔离，保持 ADR-006 的离线验签边界。|
+|Impact|新增 License 基础设施与发行检查；无签名载荷、Schema、API 或加密算法变更。真实发行密钥与私钥备份仍必须在 Developer Workbench 单独生成和保管；当前未生成时不把生产 License 标 PASS。|
+|Rollback|不装配解析器即可保持原受许可业务关闭；测试公钥不进入正式包，已有 License 文档/数据库不变。|
+
+## DEC-20260925-038
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-038|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P03-A03 Developer Workbench License 签发密钥仪式|
+|Decision|先修正实际工作台私钥目录的完整 Git 忽略规则；仅在本机交互终端从隐藏输入取得由操作员保管的强口令，生成 Ed25519 私钥并以加密 PKCS#8 PEM 独占创建于工作台 private 目录，公钥清单独占创建于客户后端包内。禁止自动用测试钥、空口令、命令行或环境变量口令代替。独立备份/恢复与最终 wheel 验证是发行门禁。|
+|Reason|现有忽略规则只覆盖根级 `developer-workbench/private/`，没有整体覆盖实际 `tools/developer-workbench/private/`；若非 `.pem` 文件误入目录可被 Git 纳入。正式签发私钥尚不存在，不能用合成测试钥冒充生产信任锚。|
+|Impact|修复忽略规则、增加开发者工作台工具与测试，不改冻结载荷、Schema 或公开 API。真实密钥生成依赖人工秘密口令和独立备份保管；工具可先实现/合成验证但未举行仪式前 P03-A02 和发行 Gate 仍未通过。|
+|Rollback|工具不运行则无密钥；若仪式尚未发行，保留生成的加密私钥及公钥供核对，不自动覆盖、轮换或删除。已经发行的公钥不可静默替换。|
+
+## DEC-20260925-039
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-039|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P03-A04 Windows 可信时间 HMAC 密钥来源|
+|Decision|可信时间使用独立固定引用 `trusted-time-v1` 的 32 字节随机密钥，通过已有当前 Windows 账户受保护 Vault Port 供给，部署时沿用加密备份/空目标恢复流程；组合根在装配前强制检查密钥可用。HMAC 对 pristine 空初态也先检查密钥，不允许无密钥的空初态被视为可信。不得将密钥放入数据库、普通 YAML、环境变量或 License 文档。|
+|Reason|LIC-03-A03 只创建受控空初态，现有 HMAC verify 对 pristine 状态提前返回 True，若未先检查独立密钥，装配层可能误以为可信来源已就绪。独立 key_ref 避免与业务 Secret 主密钥混用；当前 Vault/备份机制可复用而不改变冻结 HMAC 规则。|
+|Impact|调整 License 完整性失败关闭与 Windows 组合入口；无 Schema/Migration、签名载荷或公开 API 变更。真实目标账户密钥尚需现场供给与备份演练；Server 2025 和 Debian 13 状态不变。|
+|Rollback|不挂载 License 组合入口则受许可业务保持关闭；既有可信时间状态不自动重置或改写，丢钥只可从匹配备份受控恢复。|
+
+## DEC-20260925-040
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-040|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P03-A05 Windows License 生产组合根|
+|Decision|Windows 组合根只从已安装包内唯一产品公钥、配置中显式选择且本机存在的 MAC、当前运行账户独立可信时间 Vault 密钥和当前 PostgreSQL Schema 形成 LicenseService/TrustedTimeStatePort/RuntimeGuard；任一缺失则拒绝装配，不自动降级合成 Port。恢复登录面与受许可业务路由分离，当前不公开管理路由。|
+|Reason|内部 License 组件单独通过测试不代表生产信任链；组合根必须保证各 Port 来源和数据库版本一致，避免部署端可替换公钥或空可信时间无密钥仍放行业务。|
+|Impact|新增 Windows 入口组合和合成/临时库验证，不改七字段载荷、Schema、API 或权限。真实签发私钥/公钥和目标账户 Vault 密钥仍待现场仪式；本项不能据合成数据宣称生产 License PASS。|
+|Rollback|不调用此组合根即可保持原生产登录/健康面；无数据迁移或自动密钥生成，已有 License 状态不修改。|
+
+## DEC-20260925-041
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-041|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P04-A01 Secret 元数据详情只读 HTTP|
+|Decision|先实现可选挂载的单条 Secret 元数据详情 GET。严格检查可信 Host/Origin、唯一有效 Session，再由既有内部服务复核 DeploymentAdmin 与 License；投影仅含冻结允许的元数据和强 ETag。列表的不透明游标及写操作另立任务，不在本项以明文分页或虚假依赖替代。默认应用不挂载，正式信任锚就绪前不公开生产管理路由。|
+|Reason|内部安全投影和会话服务已存在，可以独立验证单条只读 HTTP 契约；写入/轮换仍受正式密钥、If-Match、幂等及审计接线制约。|
+|Impact|仅增加可选 HTTP Router、元数据锁版本投影和测试；不改变冻结 API、Schema、Migration 或生产路由。|
+|Rollback|不注入该 Router 时保持默认 404；无数据变更。|
+
+## DEC-20260925-042
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-042|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P04-A02 Secret 元数据列表安全游标|
+|Decision|列表只允许 `created_at DESC, secret_id DESC` 的固定 keyset 顺序；游标以 HMAC-SHA256 完整性保护并绑定资源族、DeploymentAdmin Scope、当前 Session 摘要、分页参数指纹和最后一项排序键。签名密钥由装配层显式注入且必须为独立 32 字节秘密；缺失时不得装配生产列表。保留既有内部 UUID 分页供历史调用，本项新增 HTTP 专用排序方法。|
+|Reason|冻结 API-01 要求默认最多 200 条、稳定顺序及不透明完整性保护游标；既有内部 UUID 升序分页不足以构成公开列表合同。|
+|Impact|新增只读列表 API/游标/仓储查询与测试，不改变 Schema、Migration、写 API 或默认应用挂载。生产密钥供给继续纳入后续装配验收。|
+|Rollback|不注入列表 Router 时默认 404；可保留原内部列表，不迁移数据。|
+
+## DEC-20260925-043
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-043|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P04-A03 Windows 游标签名密钥来源|
+|Decision|列表游标使用独立固定引用 `secret-list-cursor-v1` 的 32 字节随机密钥，通过当前 Windows 账户受保护 Vault 解析；缺钥、长度错误或读取失败拒绝装配。供给与独立加密备份/空目标恢复复用既有本机交互工具，不自动生成、打印或写入配置。|
+|Reason|游标不能与业务 Secret 主密钥或可信时间 HMAC 密钥共用；目标账户密钥必须可恢复，否则服务重启/迁移后分页全部失效。|
+|Impact|新增 Windows 组合入口和合成/临时 Vault 恢复测试，不改 API、Schema、Migration；真实目标账户供给/恢复需后续部署验收。|
+|Rollback|不装配列表 Router 时仍保持默认 404；既有游标不作数据迁移，丢钥只能从对应备份受控恢复。|
+
+## DEC-20260925-044
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-044|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P04-A04 Windows Secret 只读生产组合根|
+|Decision|保留当前登录/恢复启动入口；新增显式 `--platform` 启动模式，仅在现行 PostgreSQL Schema、包内正式产品公钥/本机 MAC/可信时间密钥和独立游标签名 Vault 密钥全部可装配时同时挂载登录与 Secret 只读详情/列表。任一前置失败则整个平台模式拒绝启动并释放数据库，不回退到合成 Guard 或静默退回登录模式。写接口仍关闭。|
+|Reason|Secret 只读路由已具备 Session、管理员及 License 保护；生产组合必须在真实信任源齐备后才开放，又不能因其缺失剥夺既有登录/恢复面。|
+|Impact|扩展 Windows 组合与启动模式，增加失败关闭测试；不改冻结 API、Schema、Migration 或登录默认行为。正式公钥/目标账户密钥尚缺，平台模式不能标生产 PASS。|
+|Rollback|不传 `--platform` 继续运行原登录模式；无数据迁移，失败启动不挂载只读路由。|
+
+## DEC-20260925-045
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-045|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P05-A01 Secret 轮换锁版本对齐|
+|Decision|内部 `RotateSecret` 的期望条件从当前密文 `version_no` 改为记录 `lock_version`，与冻结 API-01 强 ETag/If-Match 一致。持久层在锁定活动记录时验证锁版本，并读取真实当前密文版本号计算下一版本；实际写事务同时核查记录锁版本与当前版本，旧锁版本不触发加密/写入。|
+|Reason|旧实现只核对密文版本号；两者虽在正常活动路径通常相等，却不能证明公开 `If-Match` 正确落在记录并发版本上。|
+|Impact|仅修改内部命令/仓储签名与验证，不改公开 API、Schema、Migration 或密文版本规则；更新全部内部调用和历史验证脚本。|
+|Rollback|保留原冻结 API 与数据库数据；如实现异常可回退该内部代码，公开写路由仍保持关闭。|
+
+## DEC-20260925-046
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-046|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P05-A02 强 If-Match 请求边界|
+|Decision|写请求仅接受恰好一个 ASCII `If-Match: "vN"`，其中 N 为无前导零的正整数且小于 PostgreSQL bigint 上界；缺失映射冻结的 428 `CONFLICT_VERSION_REQUIRED`，重复、弱标签、通配符、列表、畸形或越界映射 400 `REQUEST_MALFORMED`。解析后只向内部命令传记录 `lock_version`。|
+|Reason|冻结 API-01 要求强 ETag 与 If-Match；宽松 HTTP 解析可能把弱/复合条件误当成单资源并发版本。|
+|Impact|新增无状态解析器和边界测试；无 Schema、Migration 或公开写路由变更。|
+|Rollback|写路由尚未开放，可移除解析器；不影响现有只读/登录功能。|
+
+## DEC-20260925-047
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-047|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P05-A03 Secret 创建持久幂等|
+|Decision|创建命令强制 `Idempotency-Key`；在当前管理员与 License 复核后，同一数据库事务先按 actor/全局范围/操作/Key 摘要预约通用收据，指纹只包含 purpose、consumer 与 Secret 值的 SHA-256 摘要，不持久化明文。相同请求重放只返回原 SecretRef，不重新加密/审计；不同请求返回冻结的幂等冲突。密文、Audit 与完成收据同事务提交。|
+|Reason|公开 Secret 创建可重试，原内部服务单独提交会在网络重试时重复创建；现有 Migration `0015` 已提供原子收据。|
+|Impact|修改内部创建命令和依赖签名、单元/临时库验证；轮换/停用与 HTTP 接线另项完成。无 Schema/Migration/已公开 API 变更。|
+|Rollback|写 HTTP 仍关闭；实现异常可回退代码，既有历史 Secret/收据不删除。|
+
+## DEC-20260925-048
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-048|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P05-A04 Secret 轮换/停用持久幂等|
+|Decision|轮换与停用命令均强制合法 Idempotency-Key。完成管理员/License 复核后，在写事务内按 actor/部署全局/操作/Key 摘要预约通用收据；轮换指纹只含 SecretRef、期望锁版本和新值 SHA-256，停用指纹只含 SecretRef/期望锁版本。轮换完成收据引用不可变新密文版本，重放在相同 SecretRef 下读取原版本号；停用完成收据引用退役版本，仅在归属吻合时承认重放。密文状态、Audit 和收据同事务提交。|
+|Reason|冻结 API-01 要求可重试写命令幂等；现有轮换/停用事务已原子，但网络重试会遇陈旧版本冲突，无法区分同请求重放。|
+|Impact|修改内部命令/仓储 Port 与验证，不改 Schema/Migration 或已公开 API；HTTP 写路由继续关闭。|
+|Rollback|写路由未开放；既有历史记录和收据不可删除，故障时仅回退未发布代码。|
+
+## DEC-20260925-049
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-049|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P05-A05 Secret 创建 write-only HTTP|
+|Decision|新增仅显式注入的 `POST /api/v1/admin/secrets`：先验证可信 Host/Origin、唯一 Cookie/CSRF/Idempotency-Key 与现行 Session，再读取受限大小的 JSON，要求精确三字段 `purpose`、`allowed_consumer`、`secret_value`，拒绝重复键/非标准常量/未知字段；受控枚举与非空 UTF-8 值交给内部创建服务。201 响应仅 SecretRef、强 ETag、Location 和 TraceId，永不回显值/密文。默认/当前生产组合不挂载写 Router。|
+|Reason|冻结 API-02 要求 Secret 值 write-only、DeploymentAdmin、Session/License/CSRF/幂等/Audit；已有内部服务与收据可支撑可选 HTTP 契约，但正式主密钥/发行信任锚尚未供给。|
+|Impact|新增 HTTP 边界、错误码注册与契约测试；不改 Schema/Migration/冻结路径。JSON 解析产生短生命周期不可原地清零的字符串，使用大小上限、不记录请求体、可变明文字节清零并保持部署前置关闭。|
+|Rollback|不注入 Router 仍 404；无数据库迁移或自动 Secret 创建。|
+
+## DEC-20260925-050
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-050|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P05-A06 Secret 轮换 write-only HTTP|
+|Decision|新增仅显式注入的 `POST /api/v1/admin/secrets/{secret_id}:rotate`：与创建相同的可信来源/Session/CSRF/幂等安全门，登录校验后严格解析单个强 If-Match 并作为记录锁版本；请求仅接受有界非空 UTF-8 `secret_value`，200 仅返回 SecretRef、新密文版本号、ACTIVE 状态与原语义强 ETag，不回显原值/密文。默认与当前生产组合不挂载。|
+|Reason|冻结 API-02 轮换需要 S/L/C/I/M/A；内部轮换及收据已具备，可独立验证 HTTP 边界，正式主密钥/License 仍未供给。|
+|Impact|新增可选 Router、错误映射和验证；不改 Schema/Migration、冻结路径或生产启动行为。复用创建 JSON 安全解析规则；JSON 不可原地清零的短生命周期字符串风险继续按 P05-A05 控制。|
+|Rollback|不注入 Router 仍 404；无数据迁移或自动轮换。|
+
+## DEC-20260925-051
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-051|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P05-A07 Secret 停用 HTTP|
+|Decision|新增仅显式注入的 `POST /api/v1/admin/secrets/{secret_id}:disable`。可信 Host/Origin、唯一 Cookie/CSRF/Idempotency-Key 与现行 Session 先验证，再严格解析单个强 If-Match 为记录锁版本；请求体必须为空，200 仅返回 SecretRef、DISABLED、空当前版本、原语义新强 ETag 与 TraceId。默认和当前生产组合不挂载。|
+|Reason|冻结 API-02 停用需要 S/L/C/I/M/A；内部停用/收据已经保证同事务，HTTP 必须拒绝未经声明的请求体和弱/缺失版本条件。|
+|Impact|新增可选 Router、契约/临时库验证；无 Schema/Migration、冻结路径或生产启动行为变化。|
+|Rollback|不注入 Router 仍 404；不触及既有 Secret 数据。|
+
+## DEC-20260925-052
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-052|
+|Date|2026-09-25|
+|WBS|PLT-02-A07-P05-A08 Windows 生产 Secret 写装配|
+|Decision|保留现有默认登录与 `--platform` 只读模式，新增显式 `--platform-write` 组合；此模式在 Schema、包内 License 公钥/选定本机 MAC/可信时间 Vault、游标独立 Vault 和当前账户固定 `secret-master-v1` 主密钥均可用后，才构造共用的 SecretWriteService 并挂载创建/轮换/停用路由。任一来源缺失则拒绝启动，不从 YAML/环境变量/请求获取主密钥或测试替身。|
+|Reason|可选 write-only HTTP 已验证，但正式组合不能因路由存在而隐式开放；固定引用避免普通配置控制加密主材料选择，显式模式保留当前只读装配语义。|
+|Impact|Windows 启动入口增加非默认模式与组合测试；无 Schema/Migration/冻结 API 变化。正式发行公钥/目标账户密钥供给及 Server 2025/HTTPS 验收仍独立，不能由合成组合声称生产 PASS。|
+|Rollback|退回 `--platform` 只读模式，不卸载或改写既有 Secret 密文；无数据迁移。|
+
+## DEC-20260925-053
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-053|
+|Date|2026-09-25|
+|WBS|PRJ-04-A01 Project 列表/详情 HTTP|
+|Decision|将已有 ProjectReadService 以仅显式注入的 `GET /api/v1/projects` 与 `GET /api/v1/projects/{project_id}` 接入 HTTP。先校验可信 Host 和当前 Session，再由 Project 服务在事务内重复校验会话、License 与成员/部门授权；列表仍只返回当前至多一个授权 Project，固定 Page 结构，无需生成游标，接受规范 1～200 `page_size`，拒绝 cursor/未知/重复参数。详情统一隐藏跨项目并返回强 ETag。真实 License Guard 拒绝映射为冻结的 `LICENSE_OPERATION_DENIED`，基础设施失败保持 503。默认应用不挂载。|
+|Reason|内部读取与单有效成员 Schema 已验证，但无前端可用的冻结 Project GET API；显式边界可先验证权限隔离，同时不绕过尚缺的正式发行信任源。|
+|Impact|新增 Project HTTP、错误分类、契约/临时库测试；无 Schema/Migration 或冻结路径变化。若未来允许多项目成员，必须另行实现完整性保护 keyset cursor，不得沿用无游标假设。|
+|Rollback|不注入 Router 即恢复 404；无数据迁移或 Project 数据改写。|
+
+## DEC-20260925-054
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-054|
+|Date|2026-09-25|
+|WBS|PRJ-04-A02 Windows 显式平台 Project 读取组合|
+|Decision|仅在 `--platform` 与 `--platform-write` 已完成 Schema、License 信任链和游标签名密钥装配后，使用现行 SessionService、LicenseRuntimeGuard、Auth Session 读 Port 与 Project SQL 读仓库挂载 `PROJECT_LIST`/`PROJECT_GET`。默认登录模式及未供齐信任源时保持不可访问。|
+|Reason|Project 可选 HTTP 与内部授权读取已通过，但还缺正式组合入口；复用现有安全前置避免创建第二套 Session 或 License 判定。|
+|Impact|只改 Windows 组合根与合成/临时库验证，不变更 Schema、冻结 API、Project 数据或普通启动行为；真实目标账户/发行材料与 Server 2025 仍待验收。|
+|Rollback|改用默认登录模式，Project 路由继续 404；无数据迁移。|
+
+## DEC-20260925-055
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-055|
+|Date|2026-09-25|
+|WBS|PRJ-04-A03 Project 创建同事务持久幂等前置|
+|Decision|在现有内部 Project 创建服务上新增独立的 HTTP 用途幂等创建方法，不改变原 `create` 的历史返回 DTO；使用 `API-RUNTIME-01` 通用收据按管理员 actor/`V1_PROJECT_CREATE`/Key 范围与规范化请求指纹进行事务预留，在同一事务提交 Project、初始 Department/Manager、Audit 和只含 ProjectId 的结果引用。对重放以原请求规范化字段和不可变 `created_at` 重建冻结 `ProjectView` 的首次 201 语义，强 ETag 固定 `"v0"`；不用当前可变 name/state/lock_version 冒充首次结果。|
+|Reason|冻结 API-01 的可重试 POST 必须持久幂等；现有内部创建没有 Idempotency-Key，直接开放 HTTP 会使同键网络重试产生重复写入或错误响应。通用收据只能存一个非敏感结果引用，冻结创建响应恰为 ProjectView，不要求重放内部 Department/Member ID。|
+|Impact|增加 Project 应用方法、只读 `created_at` Repository Port、单元/临时 PostgreSQL 验证；无 Schema/Migration、新依赖或公开 API。若项目历史行异常消失则失败关闭。|
+|Rollback|停止调用新幂等方法，旧内部 `create` 语义保持；保留已完成的收据/Project/Audit 历史，不删除数据。|
+
+## DEC-20260925-056
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-056|
+|Date|2026-09-25|
+|WBS|PRJ-04-A04 Project 创建 HTTP|
+|Decision|新增仅显式注入的 `POST /api/v1/projects`，验证可信 Host/Origin、唯一 Cookie/CSRF/Idempotency-Key 和现行 Session 后解析最多 8 KiB、UTF-8、无重复键/非标准常量的 JSON。只接受 code/name/initial_manager_user_id 与可选 department seed，UUID 必须 canonical lowercase；调用 `create_idempotent`。201 仅返回冻结 ProjectView、ETag/Location/TraceId，不返回初始成员内部 ID。默认和当前生产组合先不挂载。|
+|Reason|内部管理员原子创建与持久幂等已具备，现需补齐冻结浏览器请求边界；在正式 License 信任源未供给前仍需保持生产默认关闭。|
+|Impact|新增 Project HTTP、错误码映射、契约/临时库验证；无 Schema/Migration、冻结 API 或安全机制变更。|
+|Rollback|不注入 Router 即恢复 404；既有 Project/审计/收据保留，无数据迁移。|
+
+## DEC-20260925-057
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-057|
+|Date|2026-09-25|
+|WBS|PRJ-04-A05 Windows 显式平台 Project 创建组合|
+|Decision|仅在 `--platform` 与 `--platform-write` 已经通过 Schema、License 信任链和游标签名密钥装配后，以现行 SessionService、LicenseRuntimeGuard、Auth 管理员/初始负责人 Port、Project SQL 创建仓库、Audit 与 `0015` 收据构造 ProjectCreateService，并挂载 `PROJECT_CREATE` Router。默认登录模式继续 404。|
+|Reason|内部原子创建、持久幂等和可选 HTTP 已验证；复用显式平台组合可向正式可用程序推进，避免第二套权限/许可判断或在普通模式隐式开放。|
+|Impact|只改 Windows 组合与测试；无 Schema/Migration、冻结 API 或项目规则变化。正式发行公钥/目标账户材料和 Server 2025 仍待验收。|
+|Rollback|退回默认登录模式，Project 创建路由不挂载；已有 Project/审计/收据不可回滚删除。|
+
+## DEC-20260925-058
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-058|
+|Date|2026-09-25|
+|WBS|PRJ-04-A06 Project 元数据 PATCH HTTP|
+|Decision|将通用强 If-Match 解析器补齐对规范 `"v0"` 的接受；仍拒绝弱、多值、前导零和越界形式。原因是冻结 API-01 明确 ETag 映射当前 `lock_version`，Project 初始值为 0。新增仅显式注入的 `PATCH /api/v1/projects/{project_id}`：可信来源/Session/CSRF、强 If-Match、仅 name 的有界 JSON，调用现有 ProjectWriteService；200 返回安全 ProjectView 与新强 ETag。默认/当前平台组合先不挂载。|
+|Reason|不接受 v0 会让刚创建 Project 的首次 PATCH 永远无法满足冻结并发合同；内部服务/SQL 已支持 expected_version=0。|
+|Impact|通用解析器接纳合法初始版本，Secret 内部轮换/停用仍自行拒绝其不合法 v0；新增可选 Project HTTP 与测试，无 Schema/Migration、冻结 API 或安全规则变化。|
+|Rollback|不注入 Project PATCH Router 恢复 404；解析器可回退，但会重新引入 Project 首次修改不可用缺陷，因此须先替代此合同实现。|
+
+## DEC-20260925-059
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-059|
+|Date|2026-09-25|
+|WBS|PRJ-04-A07 Windows 显式平台 Project PATCH 组合|
+|Decision|仅在 `--platform` 与 `--platform-write` 既有 Schema、License、游标信任源前置全部通过后，复用当前 Session、License Guard、Project 授权/SQL 写仓库和 Audit 组合 ProjectWriteService，并挂载 PRJ-04-A06 PATCH Router。普通默认登录模式保持 404。|
+|Reason|可选接口和内部写服务已分别验证；复用单一平台组合根可防止多套 License 或权限判断。|
+|Impact|仅组合根和合成端到端验证；无新 Migration、依赖、冻结 API 或 License 机制变化。正式公钥/目标账户材料和 Server 2025 仍待。|
+|Rollback|恢复普通登录模式或移除显式平台 PATCH 注入，路由保持 404；既有 Project 修改和 Audit 不删除。|
+
+## DEC-20260925-060
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-060|
+|Date|2026-09-25|
+|WBS|PRJ-04-A08-P01 Project 归档持久幂等前置|
+|Decision|冻结 `PROJECT_ARCHIVE` 含 I 控制，公开 HTTP 前先为内部归档新增同事务 `0015` 收据。作用域为当前负责人/Project/`V1_PROJECT_ARCHIVE`/Key 摘要；请求指纹含 ProjectId 与 expected_version。首次执行锁定当前权限后归档、Audit、收据原子提交。增加仅内部归档重放权限检查：负责人角色、Project/Member/Department 当前事实加锁，但允许读取已归档项目；不扩展冻结的 13 个公开操作。重放仍检查当前 Session、License 和负责人角色，再从已归档 Project 读取既有结果，不重复写入。|
+|Reason|现有内部归档只支持强版本，若直接公开 POST，同 Key 重放在项目已归档后会被拒绝，违反冻结 API 的幂等控制。|
+|Impact|Project 内部应用服务/仓库与测试；复用已有 Migration `0015`，不改变冻结 API、Schema 或 License。普通内部 `archive()` 保留兼容。|
+|Rollback|不接入公开路由即可停用新路径；已提交的 Project 归档为单向业务事实，不回滚删除，仅可恢复代码到旧内部命令并保留收据历史。|
+
+## DEC-20260925-061
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-061|
+|Date|2026-09-25|
+|WBS|PRJ-04-A08-P02 Project 归档 HTTP 边界|
+|Decision|新增仅显式注入的 `POST /api/v1/projects/{project_id}:archive`。可信 Origin、Cookie Session、CSRF、规范 Idempotency-Key、强 If-Match 必填；请求正文必须为空。调用 P01 同事务归档幂等服务，成功 200 ProjectView、强 ETag、no-store；不同指纹 Key 409，默认/当前生产组合先不挂载。|
+|Reason|冻结 API-02 明确 S,L,C,I,M,A 和 200 ARCHIVED；沿用现行写路由边界避免另设认证或请求格式。|
+|Impact|新增可选 Project Router/契约与临时库 HTTP 测试，无 Schema、Migration、冻结 API 或新依赖。|
+|Rollback|停止注入 Router 即恢复 404；已归档 Project 不提供逆向写接口。|
+
+## DEC-20260925-062
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-062|
+|Date|2026-09-25|
+|WBS|PRJ-04-A08-P03 Windows 显式平台归档组合|
+|Decision|只在 `--platform`/`--platform-write` 已通过 Schema、License 与游标信任源前置时，为现有 ProjectWriteService 注入通用 `0015` 收据，并挂载 P02 归档 Router；PATCH 继续复用同一服务，普通默认登录模式保持 404。|
+|Reason|内部幂等与可选 HTTP 已验证；复用单一组合避免第二套身份/License/权限逻辑。|
+|Impact|仅 Windows 显式组合、合成端到端测试和版本记录；无新 Migration、冻结 API 或新依赖。|
+|Rollback|退回普通登录模式或不注入归档 Router，保留既有 Project/Audit/收据事实；正式信任源缺失时仍失败关闭。|
+
+## DEC-20260925-063
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-063|
+|Date|2026-09-25|
+|WBS|PRJ-04-A09-P01 Project Member 列表 cursor 前置|
+|Decision|沿用内部 MemberId 升序 keyset；公开 cursor 采用独立 32 字节 HMAC-SHA256 密钥、URL-safe 规范编码，绑定资源族 `project-member-history`、ProjectId、Session 摘要、page_size 查询指纹与最后 MemberId。生产 Windows 来源使用独立当前账户 Vault 引用 `project-member-list-cursor-v1`，在后续显式组合 WBS 接线；无签名密钥时不得开放列表。|
+|Reason|冻结 API-01 要求不透明、完整性保护、Scope/查询绑定 cursor；内部 `after_member_id` 不得直接暴露为可构造查询参数。|
+|Impact|新增 Project API cursor 编解码及测试，无 Schema/Migration、冻结 API 或第三方依赖变化；正式目标账户须额外安全供给并备份此密钥。|
+|Rollback|不挂载成员列表路由保持 404；已签发 cursor 可自然失效，但不得静默更换密钥后宣称分页连续。|
+
+## DEC-20260925-064
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-064|
+|Date|2026-09-25|
+|WBS|PRJ-04-A09-P02 Project Member 列表可选 HTTP|
+|Decision|仅显式注入成员列表 Router；复用当前 Host/Session 验证、P01 HMAC cursor 与 PRJ-02-A01 Service。请求仅 page_size/cursor，响应仅安全 MemberView Page。内部 Service 将 RuntimeLicenseError 映射为 `LICENSE_OPERATION_DENIED`，避免生产 HTTP 将已知许可拒绝误报为 503；其他异常仍失败关闭。|
+|Reason|冻结 API-02 只允许 ProjectManager/CustomerManager 读取成员历史，API-01 要求完整性保护分页和安全响应；现有 Service 将 License 异常统一包成 PROJECT_UNAVAILABLE，需在公开前修正。|
+|Impact|Project 成员读服务、可选 Router、测试和文档；无 Schema/Migration、冻结 API、依赖或权限扩张。默认/当前平台组合仍 404。|
+|Rollback|停止注入 Router 恢复 404；License 错误映射可独立回退，但会使已知许可拒绝错报 503。|
+
+## DEC-20260925-065
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-065|
+|Date|2026-09-25|
+|WBS|PRJ-04-A09-P03 Windows 成员 cursor 密钥来源|
+|Decision|新增独立只读 Windows 当前账户 Vault 装配入口，固定引用 `project-member-list-cursor-v1`；缺钥/错长失败关闭。沿用已有交互式通用密钥供给、加密备份/恢复流程，仅使用 UUID 范围测试引用进行 Vault 丢失恢复验证；本任务不产生正式密钥。|
+|Reason|成员列表 cursor 必须能跨重启、备份恢复保持签名有效，不能取随机进程密钥、普通 YAML 或 Secret 列表专用签名密钥。|
+|Impact|Windows 组合入口与测试，无 Schema/Migration、API、安全算法或新依赖变化；正式账户需单独供给/离线保管。|
+|Rollback|成员列表不挂载即可停用；更换或丢失密钥会使旧 cursor 失效，须按备份流程恢复。|
+
+## DEC-20260925-066
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-066|
+|Date|2026-09-25|
+|WBS|PRJ-04-A09-P04 Windows 显式平台成员列表组合|
+|Decision|仅在 `--platform`/`--platform-write` 的 Schema/License/Secret 游标前置通过后，再读取独立成员 cursor Vault 密钥；任一密钥缺失则整个显式平台启动失败。复用当前 Session、License、Project 授权、Auth 用户摘要与成员 SQL 读层挂载 P02 Router；普通默认模式保持 404。|
+|Reason|成员 cursor 的签名源必须在路由开放前稳定且可恢复；沿用单一生产组合避免接口自行获取密钥或放宽授权。|
+|Impact|Windows 组合根、合成端到端与既有组合测试注入点更新，无 Schema/Migration、冻结 API 或新依赖。正式目标账户需独立供给和备份。|
+|Rollback|退回普通登录模式或移除成员 Router 注入；旧 cursor 仅在原密钥恢复后可继续使用。|
+
+## DEC-20260925-067
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-067|
+|Date|2026-09-25|
+|WBS|PRJ-04-A10-P01 成员创建 HTTP 幂等前置|
+|Decision|依 CR-PRJ-002 新增 Project-owned 不可变创建结果快照，通用收据仅保存快照引用；同 Key 重放首次 MemberView，并重新检查当前 Session/CSRF、License 和 ProjectManager。|
+|Reason|成员角色、部门、状态与显示名称均可变化，读取当前行无法履行冻结 API-01 的首次响应重放合同。|
+|Impact|新增 Migration `20260925_0016`、ORM、内部服务和测试；不改 `/api/v1` 结构，不开放公开创建路由。|
+|Rollback|新表为空可降至 `0015`；已有快照时拒绝降级，须保留版本并受控迁移。|
+
+## DEC-20260925-068
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-068|
+|Date|2026-09-25|
+|WBS|PRJ-04-A10-P02 成员创建可选 HTTP|
+|Decision|复用 Project 创建的 8 KiB 严格 JSON、可信 Origin/Session/CSRF/Idempotency-Key 边界；body 仅接受 `user_id`、`role`、`department_id` 及可选 UTC `effective_at`，ProjectId 只取路径。MemberView 复用已有安全投影，默认与当前平台组合均不挂载。|
+|Reason|冻结 API-02 指定成员创建路径和 201 MemberView；内部 P01 已具备原样重放，接口不应自行绕过服务授权或回显内部字段。|
+|Impact|Project 可选 Router、应用工厂注入点、测试和版本记录；无 Schema、Migration、Breaking API 或新依赖。|
+|Rollback|移除 Router 注入后恢复 404；不影响内部成员创建与已存结果快照。|
+
+## DEC-20260925-069
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-069|
+|Date|2026-09-25|
+|WBS|PRJ-04-A10-P03 Windows 显式平台成员创建组合|
+|Decision|仅在 `--platform`/`--platform-write` 的 Schema、License、Secret 与成员 cursor 前置检查全部成功后装配成员创建；复用现行 Session、ProjectManager 授权、P01 收据/快照及 Audit。普通登录模式不挂载。|
+|Reason|成员创建不能成为绕过生产信任源的平行入口，且须与既有 Project 路由共享同一安全组合根。|
+|Impact|Windows 组合根和合成验证；无新 Schema、Migration、冻结 API 或依赖。|
+|Rollback|移除该 Router 注入，恢复成员创建 404；历史成员及幂等快照保持不变。|
+
+## DEC-20260925-070
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-070|
+|Date|2026-09-25|
+|WBS|PRJ-04-A11-P01 ProjectMember 更新可选 HTTP|
+|Decision|新增仅显式注入的成员 PATCH Router：复用可信 Origin/Session/CSRF、有界严格 JSON、强 If-Match 解析，body 仅接受非空 `role`/`department_id` 子集；调用既有 PRJ-02-A03 服务并复用 MemberView 安全投影。默认及当前 Windows 平台组合不挂载。|
+|Reason|冻结 API-02 要求角色/部门更新为受 ProjectManager 控制的版本化 PATCH，已有内部服务负责跨项目、最后负责人、历史和 Audit，不应在 HTTP 层重复业务规则。|
+|Impact|Project 可选 Router、应用工厂注入点、测试与文档；无 Schema/Migration、新依赖或 Breaking API。|
+|Rollback|撤销 Router 注入恢复 404；不回滚已成功提交的成员变更历史。|
+
+## DEC-20260925-071
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-071|
+|Date|2026-09-25|
+|WBS|PRJ-04-A11-P02 Windows 显式平台成员更新组合|
+|Decision|仅在 `--platform`/`--platform-write` 的 Schema、License、Secret/成员 cursor 可信来源全部就绪后装配成员 PATCH，复用真实 Session、ProjectManager 授权、PRJ-02-A03 历史与 Audit。普通登录模式不挂载。|
+|Reason|成员更新不能经独立路线绕过生产信任源或现行成员授权；公开前置与既有 Project 路由保持一致。|
+|Impact|Windows 组合根、契约与临时 PostgreSQL 组合验证；无新 Schema/Migration、冻结 API 或依赖。|
+|Rollback|移除 Router 注入恢复成员 PATCH 404；已提交的角色/部门历史保持不变。|
+
+## DEC-20260925-072
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-072|
+|Date|2026-09-25|
+|WBS|PRJ-04-A12-P01 成员状态命令持久幂等前置|
+|Decision|依 CR-PRJ-003 以 Project-owned 不可变类型化快照保存 SUSPEND/RESUME/REMOVE 首次 MemberView；通用收据仅保存引用，三个操作分别作用域化，重放重新检查当前 Session/CSRF、License、ProjectManager 与目标归属。|
+|Reason|状态、角色、显示名和版本会继续变化；现有内部命令重复执行会触发版本/状态冲突，当前成员行不能履行冻结 API-01 的原语义重放。|
+|Impact|Migration `20260925_0017`、ORM、内部服务/授权查询及测试；不开放 HTTP，不改变冻结状态机。|
+|Rollback|新表为空可降至 `0016`；已有快照时拒绝降级并保留幂等证据。|
+
+## DEC-20260925-073
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-073|
+|Date|2026-09-25|
+|WBS|PRJ-04-A12-P02 成员状态命令可选 HTTP|
+|Decision|一个仅显式注入的 Router 提供 `:suspend`、`:resume`、`:remove` 三个冻结 POST；共享可信 Origin、Session/CSRF、Idempotency-Key、强 If-Match 和空请求体边界，各自调用 P01 持久幂等服务，返回安全 MemberView/ETag。|
+|Reason|三命令具有同一安全协议，但状态机与操作作用域由 Project Service 分别执行；HTTP 不自行判断授权或重建首次响应。|
+|Impact|Project 可选 Router、应用工厂注入点、测试与文档；无新 Schema/Migration/依赖或 Breaking API。默认和当前 Windows 组合不挂载。|
+|Rollback|移除 Router 注入恢复 404，已提交的状态事件、审计与幂等快照保持不变。|
+
+## DEC-20260925-074
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-074|
+|Date|2026-09-25|
+|WBS|PRJ-04-A12-P03 Windows 显式平台成员状态组合|
+|Decision|仅在 `--platform` 和 `--platform-write` 已有信任源与 Schema 门禁后装配成员状态服务及三个路由；默认登录模式保持 404。|
+|Reason|沿用当前 Project 组合的 Session、License、ProjectManager、Audit 和同事务幂等，不增加额外的无保护入口。|
+|Impact|Windows 平台组合与测试；无新 Schema/Migration/依赖和 Breaking API。|
+|Rollback|移除平台组合注入恢复 404；既有事件、审计和快照保留。|
+
+## DEC-20260925-075
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-075|
+|Date|2026-09-25|
+|WBS|PRJ-04-A13-P01 Department 列表游标前置|
+|Decision|部门历史分页使用独立资源族 `project-department-history` 与专用 32 字节密钥签名游标，绑定 ProjectId、当前 Session、page size 和 `department_id` 稳定位置；跨资源族、跨会话/项目或篡改均拒绝。|
+|Reason|冻结 API-01 禁止公开内部 keyset ID，现有成员列表游标不可作为部门游标复用，避免资源族混用和错误密钥域。|
+|Impact|新增 Project API 游标编解码与测试；暂不开放 GET，不改 Schema、Migration 或冻结路径。Windows 独立密钥来源由后续组合任务验证。|
+|Rollback|移除尚未公开的部门游标组件；不存在持久数据迁移。|
+
+## DEC-20260925-076
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-076|
+|Date|2026-09-25|
+|WBS|PRJ-04-A13-P02 Department 列表可选 HTTP|
+|Decision|沿用 Project Member 列表的可信 Host、当前 Session、严格分页参数、独立签名游标和安全投影边界；内部部门读取将正式 RuntimeLicenseError 映射为冻结的 `LICENSE_OPERATION_DENIED`。默认应用不挂载。|
+|Reason|冻结 API-01/02 要求受权部门 page、跨项目隐藏和 License 拒绝；内部 keyset ID 不能直接暴露，许可失败不能被误报为 503。|
+|Impact|Project 可选 Router、应用工厂注入点、部门读取错误映射和测试；无新 Schema/Migration/依赖或 Breaking API。|
+|Rollback|移除 Router 注入恢复 404；错误映射可单独恢复但会重新违反冻结 License 错误合同。|
+
+## DEC-20260925-077
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-077|
+|Date|2026-09-25|
+|WBS|PRJ-04-A13-P03 Windows 独立部门游标密钥来源|
+|Decision|固定 Windows 当前账户 Vault 引用 `project-department-list-cursor-v1`，只读解析独立 32 字节密钥；缺失/错长拒绝启动。正式供给和备份需运行账户操作员完成，测试只使用临时 UUID 引用。|
+|Reason|部门游标不能复用成员或 Secret 游标密钥；跨重启稳定签名需可恢复的当前账户安全来源。|
+|Impact|新增 Windows 只读适配与合成 Vault 备份恢复测试；不生成、导出或提交正式密钥，不改 Schema/API。|
+|Rollback|移除未接入生产组合的适配；测试临时 Vault 引用清理，正式资料不受影响。|
+
+## DEC-20260925-078
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-078|
+|Date|2026-09-25|
+|WBS|PRJ-04-A13-P04 Windows 显式平台 Department 列表组合|
+|Decision|仅在 `--platform` 与 `--platform-write` 已有 Schema/License/现有 cursor 信任源门禁后，再要求独立 Department cursor Vault 密钥并挂载 Department GET；默认登录模式保持 404。|
+|Reason|沿用当前 Session、Project 授权、License Guard 和独立游标来源，不引入无保护入口。|
+|Impact|Windows 平台组合、契约与 PostgreSQL 集成测试；无新 Schema/Migration/依赖或 Breaking API。|
+|Rollback|移除平台 Router 注入恢复 404，已有部门事实不变。|
+
+## DEC-20260925-079
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-079|
+|Date|2026-09-25|
+|WBS|PRJ-04-A14-P01 Department 创建持久幂等前置|
+|Decision|按 CR-PRJ-004 新增 Project-owned 类型化首次 DepartmentView 快照，复用 `0015` 通用收据；旧内部创建命令保持，新增独立幂等入口。|
+|Reason|当前 Department 可被修改或停用，仅凭部门 ID 无法履行冻结 API-01 的原响应重放。|
+|Impact|Migration `20260925_0018`、ORM、Repository、Service 与测试；不开放 HTTP，不改变部门唯一性或授权规则。|
+|Rollback|新表为空可降至 `0017`；已有快照时拒绝降级并保留幂等证据。|
+
+## DEC-20260925-080
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-080|
+|Date|2026-09-25|
+|WBS|PRJ-04-A14-P02 Department 创建可选 HTTP|
+|Decision|只在显式注入时提供冻结 `POST /api/v1/projects/{project_id}/departments`；复用可信 Origin、Session/CSRF、Idempotency-Key、严格 JSON 和 P01 持久幂等服务，返回安全 DepartmentView/ETag/Location。|
+|Reason|HTTP 边界不重做权限或首次响应重建；保持默认应用 404 与既有业务状态机。|
+|Impact|Project 可选 Router、应用工厂注入点、契约/集成测试；无新 Schema/Migration/依赖或 Breaking API。|
+|Rollback|移除 Router 注入恢复 404，已提交的部门、审计和幂等快照保留。|
+
+## DEC-20260925-081
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-081|
+|Date|2026-09-25|
+|WBS|PRJ-04-A14-P03 Windows 显式平台 Department 创建组合|
+|Decision|仅在 `--platform` 与 `--platform-write` 既有 Schema、License 和游标信任源门禁通过后装配部门创建服务及 Router；默认登录模式保持 404。|
+|Reason|复用当前 Session、ProjectManager、License、Audit 和同事务幂等，不引入额外无保护入口。|
+|Impact|Windows 平台组合与测试；无新 Schema/Migration/依赖或 Breaking API。|
+|Rollback|移除平台 Router 注入恢复 404；既有部门、审计与快照保留。|
+
+## DEC-20260925-082
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-082|
+|Date|2026-09-25|
+|WBS|PRJ-04-A15-P01 Department 修改可选 HTTP|
+|Decision|按冻结 API-02 增加可选部门 PATCH Router；复用已验证的内部服务，要求可信 Origin、Session/CSRF 与强 If-Match，响应安全 DepartmentView/ETag；默认应用保持 404。|
+|Reason|公开边界无需重写权限、许可、并发或审计规则；与现有 Project/Member 修改入口一致。|
+|Impact|新增 Router、应用工厂可选注入点、契约与 PostgreSQL 临时库验证；无 Schema/Migration 或依赖变化。|
+|Rollback|移除可选 Router 注入恢复 404，已完成的修改和审计记录保留。|
+
+## DEC-20260925-083
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-083|
+|Date|2026-09-25|
+|WBS|PRJ-04-A15-P02 Windows 显式平台 Department 修改组合|
+|Decision|只在 `--platform` 与 `--platform-write` 既有 Schema、License 和游标信任源门禁通过后装配 Department 修改服务及 Router；默认登录模式保持 404。|
+|Reason|复用现有 Session、ProjectManager、License、Audit 和强版本服务，不新增无保护入口。|
+|Impact|Windows 平台组合与契约/隔离 PostgreSQL 验证；无 Schema/Migration、依赖或 Breaking API。|
+|Rollback|移除平台 Router 注入恢复 404；已完成的修改与审计记录保留。|
+
+## DEC-20260925-084
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-084|
+|Date|2026-09-25|
+|WBS|PRJ-04-A16-P01 Department 停用持久幂等与快照|
+|Decision|按 CR-PRJ-005 复用 `0015` 通用收据，新增 Project-owned 不可变首次 DepartmentView 快照；旧非幂等内部命令保留，新增独立幂等入口。|
+|Reason|停用后版本/状态改变，读取当前部门无法重放冻结 API-01 的首次 200 响应。|
+|Impact|Migration `20260925_0019`、ORM、Repository、Service、错误码与测试；不开放 HTTP，不改变成员在用规则。|
+|Rollback|新表为空可降至 `0018`；已有快照时拒绝降级并保留幂等证据。|
+
+## DEC-20260925-085
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-085|
+|Date|2026-09-25|
+|WBS|PRJ-04-A16-P02 Department 停用可选 HTTP|
+|Decision|只在显式注入时提供冻结 `POST /api/v1/projects/{project_id}/departments/{department_id}:deactivate`；使用可信 Origin、Session/CSRF、强 If-Match、Idempotency-Key 与 P01 持久幂等服务。|
+|Reason|HTTP 边界复用已验证的权限、成员在用、许可、并发与快照语义；默认应用保持 404。|
+|Impact|Project 可选 Router、应用工厂注入点、契约/隔离 PostgreSQL 验证；无新 Schema/Migration/依赖或 Breaking API。|
+|Rollback|移除 Router 注入恢复 404；已停用的部门、审计及快照保留。|
+
+## DEC-20260925-086
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-086|
+|Date|2026-09-25|
+|WBS|PRJ-04-A16-P03 Windows 显式平台 Department 停用组合|
+|Decision|仅在 `--platform` 与 `--platform-write` 既有 Schema、License 和游标信任源门禁通过后装配部门停用服务及 Router；默认登录模式保持 404。|
+|Reason|复用当前 Session、ProjectManager、License、Audit、强版本与同事务持久幂等，不新增无保护入口。|
+|Impact|Windows 平台组合与契约/隔离 PostgreSQL 验证；无新 Schema/Migration/依赖或 Breaking API。|
+|Rollback|移除平台 Router 注入恢复 404；已停用部门、审计与快照保留。|
+
+## DEC-20260925-087
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-087|
+|Date|2026-09-25|
+|WBS|DOC-03-A01 FileObject 持久层|
+|Decision|按 CR-DOC-001 为 FileObject 建独立 M-SCP Root 及追加式状态事件表；Locator 只保存受控相对值，内容字节不入库。|
+|Reason|DocumentVersion 和上传恢复必须建立在 Scope/Project、Hash/Size/MIME 与状态历史可约束的元数据上；数据库表不能替代 Storage Adapter。|
+|Impact|Migration `20260925_0020`、Document ORM、Alembic 注册、约束与验证；无公开 API、文件写入或新增依赖。|
+|Rollback|空表可降至 `0019`；已有 FileObject/事件时拒绝普通降级。|
+
+## DEC-20260925-088
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-088|
+|Date|2026-09-25|
+|WBS|DOC-03-A02 受控本地 Storage Adapter|
+|Decision|Storage Adapter 只接受内部 UUID 生成的 ASCII 小写 Locator，绑定 `global`/`projects/{project_id}` 与隔离 `temp`；拒绝符号链接/Windows 重解析点、大小写别名和既有目标，使用同卷硬链接发布完整暂存文件后移除暂存链接。|
+|Reason|既有公开 API/业务模块不能触碰物理路径；独占暂存和无覆盖发布可使完整内容原子可见，同时避免覆盖历史版本。|
+|Impact|Document Infrastructure 与合成文件系统测试；不改数据库/API/依赖。未来提交仍需 FileObject 状态事务和恢复器，不以本 Adapter 宣称全链原子。|
+|Rollback|不接入组合根即可停用 Adapter；临时文件由后续受控清理流程处理，不自动删除未知文件。|
+
+## DEC-20260925-089
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-089|
+|Date|2026-09-25|
+|WBS|DOC-03-A03-P01 FileObject 状态流转策略|
+|Decision|先将冻结 DM-03 的 FileObject 状态图和可清理边界实现为无 I/O 的内部领域策略；数据库命令、内容完整性证明、引用/保留检查及恢复审计分别在后续子项实现，不提前开放 AVAILABLE 或清理入口。|
+|Reason|当前 A01 仅有表约束、A02 仅有存储适配器；直接把文件发布或数据库字段改写当作完整状态命令会绕过跨资源恢复与审计。|
+|Impact|Document 内部领域代码/单测；无 Schema、公开 API、依赖或冻结基线变更。|
+|Rollback|不接入调用方即可停用；无数据迁移或状态变化。|
+
+## DEC-20260925-090
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-090|
+|Date|2026-09-25|
+|WBS|DOC-03-A03-P02 FileObject 失败/限制状态事务命令|
+|Decision|先实现不需要文件内容或保护引用证明的 `STAGED→FAILED` 与 `AVAILABLE→RESTRICTED` 内部命令，使用当前事务的行锁/expected_version、状态事件、Audit 与通用幂等收据；AVAILABLE 发布和清理状态仍不开放。|
+|Reason|A01 元数据与 A03-P01 状态图已具备，但 DocumentVersion/物理 Hash 验证和清理引用检查尚未具备；先落实失败关闭/限制读取所需的安全状态变更，避免单独发布未证明的文件。|
+|Impact|Document Application/Infrastructure 与 PostgreSQL 隔离验证；复用既有 `0015`/`0020`，无新 Migration、公开 API 或依赖。|
+|Rollback|内部调用未装配至 HTTP；移除服务接线即可停止新命令，既有状态/事件/Audit/收据按历史保留，不逆向改写。|
+
+## DEC-20260925-091
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-091|
+|Date|2026-09-25|
+|WBS|DOC-01-A01 Document 逻辑身份持久层|
+|Decision|依据 CR-DOC-002 先建 Document Root；latest/effective 指针在 DOC-02 建表前均为 NULL，不能用自由 UUID 代替版本外键。|
+|Reason|冻结 DM-03 要求 Document/FileObject/DocumentVersion 分离；当前 DOC-02 尚缺，必须防止悬空或跨 Scope 的版本引用。|
+|Impact|后续 Migration `0021`、ORM、约束和验证；本登记本身不改变运行 Schema/API。|
+|Rollback|本登记无需数据回滚；后续 Migration 仅在空表时允许普通降级。|
+
+## DEC-20260925-092
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-092|
+|Date|2026-09-25|
+|WBS|DOC-02-A01 DocumentVersion 持久层|
+|Decision|依据 CR-DOC-003 在 `0022` 建独立版本与来源引用表，使用 FK/触发器守护同 Scope、文件状态/摘要、前驱、指针和不可变字段；文件字节、发布命令与恢复流程保持在后续任务。|
+|Reason|既有 `0021` Document 指针被安全地锁为 NULL，只有版本 Root 和数据库约束完备后才能解除初态限制，不允许自由引用。|
+|Impact|Document ORM/Migration/临时 PostgreSQL 验证；无公开 API/新依赖，不修改原冻结提交。|
+|Rollback|空版本且指针 NULL 可降至 `0021`，有版本时拒绝普通降级并保留历史。|
+
+## DEC-20260925-093
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-093|
+|Date|2026-09-25|
+|WBS|DOC-03-A03-P03 FileObject 内容证明与受控 AVAILABLE 发布|
+|Decision|只在内部已受权 STAGED FileObject 上，按 DB 记录的 UUID Locator/Hash/Size/MIME 校验暂存字节，限额流式 SHA-256 后同卷无覆盖提升，再校验正式文件；随后独立数据库事务行锁重检 STAGED 与版本并原子写 AVAILABLE/状态事件/Audit/幂等收据。|
+|Reason|文件系统与 PostgreSQL 不共享事务；先物理发布后提交数据库可让失败保持业务不可见，残余由恢复器按冻结矩阵处理，不能以调用方传入的布尔值当作文件证明。|
+|Impact|Document 内部 Storage/Application/Repository 与合成文件及隔离 PostgreSQL 验证；无 Migration/公开 API/新依赖。MIME/特征的上传校验、正式 Document 权限装配和崩溃恢复仍为后续任务。|
+|Rollback|服务不挂公开组合根即可停止新发布；已经提升但未提交的文件不盲删，按恢复矩阵核验/隔离清理；已 AVAILABLE 的历史不得回写。|
+
+## DEC-20260925-094
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-094|
+|Date|2026-09-25|
+|WBS|DOC-03-A03-P04-P01 发布后数据库未提交的受控恢复|
+|Decision|先实现只针对明确 FileObject 的内部恢复：授权与版本核查后，要求 STAGED 元数据、暂存路径不存在、最终路径存在且独占，按数据库摘要/大小有界重校验，再复用行锁、状态事件/Audit/幂等收据同事务完成 AVAILABLE。暂存和最终路径同时存在、缺失、异常或 Hash 不符均失败关闭，保持业务不可见，不自动删除/改写。|
+|Reason|冻结 DM-03 恢复矩阵允许最终文件存在且 DB=STAGED 时校验后继续提交；同时存在的硬链接窗口及缺失/损坏需单独隔离策略，不能把未知文件当作完成证明。|
+|Impact|仅 Document 内部 Storage/Application 与合成文件、隔离 PostgreSQL 验证；不新增 Migration、公开 API 或依赖。P04-P02 再处理双路径窗口和隔离分类，P04 整体不因 P01 完成而关闭。|
+|Rollback|停止内部恢复装配；已成功提交的 AVAILABLE 与历史不可回写，失败仍 STAGED 且无物理删除。|
+
+## DEC-20260925-095
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-095|
+|Date|2026-09-25|
+|WBS|DOC-03-A03-P04-P02 双路径硬链接中断窗口恢复|
+|Decision|只允许暂存与最终路径均为同一普通文件的恰好两条硬链接、Scope 派生路径匹配、两侧有界流式 Hash/Size 校验一致时，删除暂存目录项、重新校验独占最终文件，再沿独立恢复幂等作用域与 DB 行锁/Audit/事件同事务提交 AVAILABLE。其他双路径情况失败关闭且不删除、不提升状态。|
+|Reason|当前 Storage Adapter 的无覆盖提升用硬链接后删除暂存入口；崩溃可能恰好落在两步之间。该明确窗口可恢复，但不能将两个不同文件或额外硬链接当作同一可信内容。|
+|Impact|仅内部 Document Storage/Application 和合成 Windows 文件/隔离 PostgreSQL 验证，无 Migration/公开 API/新依赖；异常隔离分类留 P04-P03。|
+|Rollback|停止该内部命令装配；若暂存入口已删而 DB 提交失败，保持 STAGED/最终文件独占，可由 P04-P01 重试，不回写已提交历史。|
+
+## DEC-20260925-096
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-096|
+|Date|2026-09-25|
+|WBS|DOC-03-A03-P04-P03 缺失/异常文件隔离分类与审计|
+|Decision|新增仅内部显式指定 FileObject 的隔离命令，并要求注入的停写/无活动发布证明 Port 在前后事务均通过。对无文件、仅暂存、最终文件摘要不符或两条互不相同的普通文件，前后两次检查形态一致后以行锁原子写 STAGED→FAILED、分类失败码、状态事件/Audit/幂等收据；不删除任何文件。已验证最终文件、可恢复的同一硬链接对、重解析点/不安全路径等不自动判失败，保持 STAGED 交受控恢复或人工处理。|
+|Reason|冻结恢复矩阵要求半完成版本不可见且恢复动作可审计；但 STAGED 可能属于仍在运行的发布，单凭年龄或文件快照不允许自动置 FAILED。当前生产停写证明未接线，内部能力不得作为自动扫描器对外装配。|
+|Impact|Document Storage/Application/Repository 和合成文件/隔离 PostgreSQL 验证；无 Migration、公开 API 或新依赖。正式 Quiescence Port、TTL 清理、AVAILABLE/DocumentVersion/Parse Job 的其他恢复矩阵行后续实施。|
+|Rollback|停止内部装配；FAILED 历史保留，不倒写为 AVAILABLE，重新上传产生新 FileObject；物理文件未删，可人工核查。|
+
+## DEC-20260925-097
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-097|
+|Date|2026-09-25|
+|WBS|DOC-03-A03-P04-P04 生产停写证明前置核查|
+|Decision|现有应用无正式维护模式、上传并发栅栏或活动发布证明；不以年龄/人工布尔值替代，不装配 P04-P03 隔离命令。将正式 Quiescence Port 与目标账户演练放入运行时维护/上传任务，先推进无此依赖的 DOC-02 内部版本提交。|
+|Reason|STAGED 也可能属于活跃发布；错误置 FAILED 会使合法上传无法完成，违反冻结恢复矩阵与失败关闭要求。|
+|Impact|仅记录前置与时序，不改变 Schema/API；DOC-03-A03-P04 整体未 PASS，Gate 3/Release 不因此放行。|
+|Rollback|本记录无运行时回滚；后续正式实现需另行验证再装配。|
+
+## DEC-20260925-098
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-098|
+|Date|2026-09-25|
+|WBS|DOC-02-A02-P01 上传来源的内部 DocumentVersion 提交|
+|Decision|先仅实现已发布、持久 FileObject 的上传来源版本提交：服务端按 UUID 派生最终 Locator 和 DB Hash/Size 重校验字节；授权后在短事务行锁 Document/FileObject，检查 ACTIVE Project、预期 Document lock_version、文件同 Scope/Project 和未被引用，按 latest 生成连续版本号/前驱，写不可变 Version、UPLOAD 来源引用、latest 指针、Audit 与幂等收据。effective 指针保持原值，不自动视为正式业务有效版本。|
+|Reason|冻结 DM-03 区分 latest 与 effective，真实上传/生成/迁移的来源语义不同；先把已具备的发布文件接成可追溯上传版本，避免在 Parser/Review 尚未就绪时自动生效或伪造其他来源。|
+|Impact|Document 内部 Application/Repository 与合成 PostgreSQL/文件验证；无 Migration、公开 API 或新依赖。其他来源、Parser Job/Outbox、上传 HTTP、正式授权/文件 ACL 和恢复协调另列子任务；DOC-02-A02 整体不因 P01 关闭。|
+|Rollback|不装配内部提交入口可停止新提交；已提交版本和来源不可删除/倒写，失败事务回滚 Version/指针/Audit/收据，孤立已发布 FileObject 留给恢复矩阵处理。|
+
+## DEC-20260925-099
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-099|
+|Date|2026-09-25|
+|WBS|DOC-02-A02-P02 非上传来源引用前置核查|
+|Decision|生成/转换/迁移来源的正式 Owner 与授权 Port 未建立，不把自由 UUID 写成已验证来源；该子任务停在前置，独立推进 API-02 必需的上传链。|
+|Reason|不可变来源引用一旦写入即难以纠正，伪造可追溯性会污染正式业务事实。|
+|Impact|仅任务顺序调整与文档记录；DOC-02-A02 整体未 PASS。|
+|Rollback|无运行时变更；Owner 可验证后恢复各来源子任务。|
+
+## DEC-20260925-100
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-100|
+|Date|2026-09-25|
+|WBS|DOC-03-A04-A01 UploadIntent 持久层前置|
+|Decision|按 CR-DOC-004 增加独立 UploadIntent 控制 Root，不混入 FileObject 或 Document；先完成 Schema/ORM 与迁移验证，再独立实现 Create/Content/Commit/Abort。|
+|Reason|冻结 API-02 要求三步上传及崩溃重试，当前 Schema 没有短时意图、Token 摘要/过期和命令状态的可持久载体。|
+|Impact|后续 Migration `0023`、Document ORM、临时库验证；当前记录本身无运行 Schema/API 变化。|
+|Rollback|空表可降级，非空意图保留并拒绝普通降级，不能清除已创建的版本或文件历史。|
+
+## DEC-20260925-101
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-101|
+|Date|2026-09-25|
+|WBS|DOC-03-A04-A02 受权 UploadIntent 创建与短时 Token|
+|Decision|仅在内部创建入口实现同事务授权、持久幂等、审计和短时 Token；以稳定的独立 256-bit 密钥对 upload_id、actor_id、scope/project 作域分离 HMAC，数据库只保存 Token 的 SHA-256 摘要，重放由相同输入重新派生并比对摘要。过期时间和状态以数据库为准，过期/终止后不再返回 Token。服务不得自行生成或持久化生产密钥，未提供受控密钥来源时不装配。|
+|Reason|随机 Token 不可在不保存明文的条件下恢复首次幂等响应；确定性派生既可重放，也保持数据库泄露时 Token 不可直接使用。|
+|Impact|Document Application/Repository、Token 适配与测试；不改冻结 API、Schema 或现有生产组合。密钥必须在所有未过期 Intent 生命周期内稳定，轮换/失密时失败关闭；目标账户安全供给及 Content/Commit/Abort 另列任务。|
+|Rollback|撤去未装配的内部创建入口即停止创建；已有 Intent 按 TTL 过期，不删除历史。事务失败回滚 Intent/Audit/收据；密钥丢失不能恢复 Token，须让旧 Intent 过期后重新创建。|
+
+## DEC-20260925-102
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-102|
+|Date|2026-09-25|
+|WBS|DOC-03-A04-A03-P01 Content 文件名契约前置|
+|Decision|按 CR-DOC-005 修正 UploadIntent：既有 Document 升版也由创建请求提供 `original_display_name`，只作本次上传文件名，不改 Document 身份；旧缺名意图不自动回填、不可进入 Content。|
+|Reason|冻结 API-02 要求升版也声明 display name，现有 `0023` 约束错误禁止，无法验证扩展名或形成可信 FileObject 名称。|
+|Impact|Document ORM/增量 Migration、创建命令验证、合成验证与版本记录；无公开 API Breaking Change。|
+|Rollback|降级仅在不存在新形态记录时允许，绝不删除有历史记录；旧缺名记录保持可追溯并按期限终止。|
+
+## DEC-20260925-103
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-103|
+|Date|2026-09-25|
+|WBS|DOC-03-A04-A03-P02 有界流式 Content 校验与受控暂存|
+|Decision|先在 Document Storage Adapter 构建与授权无关的单次暂存证明：调用方显式传入已受权的内部 FileObject ID/Scope 和格式允许清单，独占创建受控 Locator；对流式 Chunk 做长度/上限/SHA-256 校验，并以文件特征和容器结构复核类型。失败仅在文件身份仍为本次创建的普通单链接文件时删除暂存；成功返回不含绝对路径的内容证明。数据库 Intent/STAGED 登记、Token/Session 检查、重传/崩溃清理留独立 P03。|
+|Reason|冻结上传次序要求先受控临时区校验，再建立 FileObject/STAGED；单纯信任扩展名、客户端 MIME 或一次性读入内存均不满足大小与类型底线。|
+|Impact|仅 Document 基础设施与本地合成测试；不改 Schema、公开 API、技术栈或生产组合。允许格式仍由后续用途/部署配置注入，未列明或未实现的格式失败关闭。|
+|Rollback|不装配暂存器即可停止新写入；已生成未登记的临时内容由后续 TTL 恢复/清理机制处理，不自动删除未知历史或业务版本。|
+
+## DEC-20260925-104
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260925-104|
+|Date|2026-09-25|
+|WBS|DOC-03-A04-A03-P03-A01 内部 Content STAGED 登记|
+|Decision|采用两次短事务：流前受权并查 Intent/Token/数据库时间，事务外有界流式暂存；流后重新受权并按 Project→Document→Intent 行锁复核，随后同事务写 FileObject(STAGED)、初始状态事件、Intent(CONTENT_READY) 与 Audit。FileObject ID 固定使用本次 upload_id，避免重复请求在不同随机暂存路径产生多个候选。数据库结果不确定时不自动删暂存文件，交由后续受控恢复/TTL 清理；重复 PUT 先失败关闭，独立 P04 完成安全重传。|
+|Reason|长流不能持有数据库事务；单次前置检查无法防上传中归档、过期、权限变化或终止。确定性暂存身份加后置行锁使重复写入不会覆盖原字节。|
+|Impact|Document 内部 Service/Repository、合成 PostgreSQL/文件测试；无 Schema/API/依赖变更。正式 Session/License/CSRF 授权适配、重传恢复与公开 HTTP 尚未完成。|
+|Rollback|入口未装配，可停止新写入；失败事务回滚 STAGED/Event/Intent/Audit。事务外孤儿文件不可作为业务版本读取，后续按固定 ID/TTL 受控清理；不删除有记录或未知状态文件。|
+
+## DEC-20260926-105
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-105|
+|Date|2026-09-26|
+|WBS|DOC-03-A04-A03-P03-A02-P01 已登记 Content 安全重传|
+|Decision|仅在 UploadIntent 为 CONTENT_READY 且 FileObject 仍为同 Scope/Project 的 STAGED、确定性暂存 Locator、元数据与声明一致时允许重传。重传必须完整读取并校验请求正文，再校验暂存文件 Hash/Size，最后在短事务重新授权、锁定并复核两条记录；不新增文件、状态事件或 Audit。未登记孤儿恢复与 TTL 清理拆为 P02/P03，必须先具备活跃写入的停写/租约证明。|
+|Reason|仅按声明 Header 返回 200 会接受不同正文；仅凭孤儿文件现存无法区分崩溃完整文件与仍在写入的文件。|
+|Impact|Document 内部 Service/Repository 和合成验证；不变更冻结 API、Schema、权限模型或依赖。|
+|Rollback|入口未公开；停止装配即可禁止重传。已有 STAGED 数据保持不变，故障继续失败关闭。|
+
+## DEC-20260926-106
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-106|
+|Date|2026-09-26|
+|WBS|DOC-03-A04-A03-P03-A02-P02 未登记 Content 孤儿恢复|
+|Decision|暂存写入从创建起持有 OS 排他文件锁，完成类型/Hash 与 fsync 后关闭；重传若发现未登记同 ID 文件，必须在非阻塞取得同一锁后才可验证其文件身份、Hash、长度和类型，并在持锁期间重新授权、按既有锁顺序登记 FileObject/Intent/Event/Audit。请求正文也须独立完整校验。锁不可得/格式不符/状态改变均失败关闭；不覆盖或删除未知文件。|
+|Reason|只看文件存在、大小或 mtime 不能排除活跃写入；进程崩溃时 OS 文件锁自动释放，能区分仍在写入与可检查的孤儿。仍通过数据库行锁处理双请求并发。|
+|Impact|Document Storage/Spool/Service 与合成验证；无 Schema、公开 API、技术栈或依赖变更。Windows 11 与目标 OS 的锁行为需分别实测，未验证平台不宣称 PASS。|
+|Rollback|未公开的内部入口可停止装配；原有暂存/数据库记录保留，未知文件由后续受控 TTL 策略处理，不执行自动删除。|
+
+## DEC-20260926-107
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-107|
+|Date|2026-09-26|
+|WBS|DOC-03-A04-A03-P03-A02-P03-P01 单候选 TTL 清理|
+|Decision|按冻结 R7-TEMP 的七天保留阈值，仅对受控 Locator 的普通单链接暂存文件执行逐个候选清理。先获同上传写锁并核对文件年龄/身份，再在事务中检查维护授权、UploadIntent 已失效且无文件关联及 FileObject 不存在，持久追加清理请求 Audit；随后复核原文件身份与年龄并删除，再写完成 Audit。Windows 不能在持锁句柄打开时 unlink，因此放锁后只对私有根内重新核对的同一 inode 执行删除，未知/变化对象失败关闭。目录扫描与调度独立实施。|
+|Reason|删除文件与提交数据库审计无法原子化；先持久记录请求可避免删除成功而完全无审计。七天阈值来自冻结数据保留矩阵，不按失败暂存的 24 小时规则误删未登记内容。|
+|Impact|Document 内部 Storage/Application/Repository、合成文件/隔离数据库验证；不改 Schema、公开 API 或依赖。|
+|Rollback|内部入口未装配时不执行清理；已产生的不可变 Audit 保留。清理后的临时正文不可恢复，只允许在无 FileObject/业务引用且满七天时执行；恢复仍依赖备份，不允许操作正式文件。|
+
+## DEC-20260926-108
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-108|
+|Date|2026-09-26|
+|WBS|DOC-03-A04-A03-P03-A02-P03-P02 受控扫描与中断对账|
+|Decision|扫描仅遍历 temp/global/objects 和 temp/projects/{UUID}/objects 的固定层级，限制检查条目数，只返回规范 UUID Locator；未知、符号链接、重解析点及结构异常计数但不跟随/删除。批处理逐候选复用 P01 的授权/DB/文件身份检查，缺 Intent 或已有 FileObject 的候选保持不动。对已持久记录清理请求而物理文件缺失、没有完成 Audit 的对象，重新检查 DB/授权后只写 `DOCUMENT_ORPHAN_CLEANUP_ABSENT` 观察事件，不伪称由本进程完成删除。|
+|Reason|文件目录遍历不能直接成为删除授权；PostgreSQL 与本地文件系统非原子，中断窗口只可陈述已观察到的状态。|
+|Impact|Document Storage/维护 Service/Repository 与隔离文件/数据库测试；无 Schema、公开 API、新依赖。生产定时调度和目标账户路径权限仍属部署接线。|
+|Rollback|维护入口未装配时不执行；已写的 Audit 保留，未知文件原样保留。不以扫描结果自动删除客户文件。|
+
+## DEC-20260926-109
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-109|
+|Date|2026-09-26|
+|WBS|DOC-03-A04-A03-P04-P01 上传身份与角色授权适配|
+|Decision|以请求级适配器连接已有 Auth Session/CSRF、DeploymentAdmin 与 Project 当前成员事实，项目上传创建只允许 ProjectManager/ImplementationMember/CustomerManager，Content 额外核验 UploadIntent 创建者。上传前和流结束后的事务均重新检查，不持有跨流数据库锁；License Guard 与 HTTP 由 P02 单独装配。|
+|Reason|冻结 API-02 区分创建与 Content 权限；既有内部上传命令仅有合成授权 Port，不能把它直接公开。跨流 Session/成员状态可能变化，必须重新检查。|
+|Impact|Document Application 授权适配与 UploadIntent 创建者只读查询；无冻结 Schema/API 变更。|
+|Rollback|未接公开路由，移除该适配器即可恢复此前内部状态；无数据迁移。P02 装配前不得把本项称为生产授权通过。|
+
+## DEC-20260926-110
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-110|
+|Date|2026-09-26|
+|WBS|DOC-03-A04-A03-P04-P02-A01 可选 UploadIntent 创建 HTTP|
+|Decision|冻结 API-02 的可选 supersedes_version_id 仅作为创建意图时对既有 Document 最新版本的乐观前置条件；提供时纳入幂等请求指纹，未提供时保留旧指纹以兼容已发收据；创建和重放时都核对，不写入 UploadIntent，因为正式提交仍必须独立携带父 Document If-Match。HTTP 先以显式注入方式提供 GLOBAL/PROJECT 固定路径，默认与生产组合继续关闭；License Guard 和请求级 Session/CSRF 缺一不可。|
+|Reason|不忽略已声明的父版本，也不把创建阶段的预检误当作提交阶段并发保护；复用既有 Document 最新指针，无需新增 Schema。|
+|Impact|Document 创建命令/Repository/可选 API 与契约测试；无冻结 API/Schema 破坏、新依赖或生产密钥供给。|
+|Rollback|不注入 Router 即恢复 404；内部可选预检字段不改变既有 Intent。已创建测试记录仅留合成库。正式平台装配和 Content/Commit 留后续验证。|
+
+## DEC-20260926-111
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-111|
+|Date|2026-09-26|
+|WBS|DOC-03-A04-A03-P04-P02-A02 上传 Token 独立 Windows 密钥来源|
+|Decision|为 Document Upload Token 使用独立 `document-upload-token-v1` 当前账户 Windows Credential Manager 引用，启动时仅只读校验 32 字节密钥；运行时重新解析，缺失则失败关闭。供给和离线加密备份沿用既有交互式 Secret Key Lifecycle，不生成或提交真实密钥。|
+|Reason|Upload Token 必须跨进程重放稳定，不能复用 License、可信时间、Secret 主密钥或列表游标签名密钥；无备份的临时 Key 会使未过期意图失效。|
+|Impact|Document Windows 入口适配与独立合成密钥备份恢复测试；无 Schema/API/技术栈变化。|
+|Rollback|不装配上传 Router 即停止签发；撤下专用引用后旧 Token 失败关闭，可由独立备份恢复。正式发行时须由目标账户和操作员完成供给仪式。|
+
+## DEC-20260926-112
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-112|
+|Date|2026-09-26|
+|WBS|DOC-03-A04-A03-P04-P02-A03 Windows 显式上传创建组合|
+|Decision|仅在现有 Windows `--platform-write` 模式装入 UploadIntent 创建 Router；启动时要求独立上传 Token Key 与既有 License/Secret/游标信任源全部就绪，任一缺失回滚整个应用构造。每次请求新建 DocumentUploadAccess，使用 Auth 所有的 Session/CSRF、DeploymentAdmin 和 Project 当前成员事实，复用 PostgreSQL 收据与 Audit；登录/只读模式不开放。|
+|Reason|冻结 API-02 要求上传创建的 Session、License、CSRF、幂等和审计，用户不可通过已认证的其他写路由绕过上传专用密钥前置。|
+|Impact|Windows 组合根与生产模式契约；无 Schema/Breaking API/新依赖。|
+|Rollback|撤下该显式 Router，上传路径恢复 404；已持久化意图按过期/终止流程处理，不删除其他数据。正式目标账户材料和 Content/Commit 仍须另行验证。|
+
+## DEC-20260926-113
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-113|
+|Date|2026-09-26|
+|WBS|DOC-03-A04-A03-P04-P03 流式 Content HTTP|
+|Decision|Content PUT 仅在显式 Windows 写模式挂载；要求固定 Scope 路径、可信 Origin、Session/CSRF、专用 Upload Token、严格 Content-Length 与 SHA-256 声明。HTTP 异步请求流通过 AnyIO 线程桥逐段供给现有同步 Content Service，单段最多 1 MiB，不在 HTTP 层整体缓存正文。服务在流前/流后分别校验 License Guard 与当前 Session/项目角色/创建者。|
+|Reason|内部 Content 已具备暂存、类型/Hash/长度和数据库原子登记，但直接读取整份 HTTP 正文将突破有界内存目标；只在流前检查许可会让长传输后的状态变化失效。|
+|Impact|Document 可选 API、Content Service 授权时序、Windows 组合与测试；无 Schema/冻结 API 破坏。|
+|Rollback|撤下 Content Router，已创建意图自然过期；孤儿暂存依已有受控恢复/TTL 清理流程，不执行任意文件删除。|
+## DEC-20260926-114
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-114|
+|Date|2026-09-26|
+|WBS|DOC-03-A04-A04-P02 Job Lease/fencing 事务命令|
+|Decision|Job Owner 使用数据库 `statement_timestamp()`、单行 `FOR UPDATE SKIP LOCKED` 与短事务领取；每次领取增加单调 fencing token，同时追加 Attempt/Lease，过期租约在同一事务标记 EXPIRED；心跳与终态提交必须再次核对 Job 状态、token、worker、活动 Lease 和数据库过期时间。完成和重试只改变内部 Job/Lease/Attempt，不在 Worker 事务中执行外部解析。|
+|Reason|ADR-007 的至少一次与崩溃回收必须阻止旧 Worker 在租约失效后覆盖新结果，单靠内存锁或任务状态不足。|
+|Impact|仅 jobs 内部 Application/Repository 与合成测试；不增加 API、迁移、依赖或外部副作用。|
+|Rollback|停用 Worker 调度并回退内部命令；已产生的 Job/Attempt/Lease 历史保留，不能删除重建 fencing token。|
+## DEC-20260926-115
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-115|
+|Date|2026-09-26|
+|WBS|DOC-03-A04-A04-P03 Outbox 投递/消费去重|
+|Decision|Outbox Owner 使用 `FOR UPDATE SKIP LOCKED` 与数据库时间在短事务领取到期事件；过期 `DELIVERING` 以单调 token 接管。确认投递要求当前 owner/token/未过期，并将目标数据库消费回调、`(event_id, consumer_id)` 去重记录和 DELIVERED 状态放在同一事务；回调不能在事务内进行外部 I/O。失败按有界次数进入 RETRY_WAIT 或 DEAD。|
+|Reason|现有状态字段不能防止崩溃后旧投递者确认；至少一次语义要求目标消费和确认有明确事务边界与幂等键。|
+|Impact|`CR-DOC-007` 的 ORM/迁移增量、jobs 内部 Application/Repository 和隔离 PostgreSQL 测试；无公开 API 或新依赖。|
+|Rollback|停用 Outbox 调度，保留事件与 token 历史；若已有新语义历史，迁移降级失败关闭，不自动抹除。|
+## DEC-20260926-116
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-116|
+|Date|2026-09-26|
+|WBS|DOC-03-A04-A04-P04 上传 Commit/Abort 编排|
+|Decision|Document Commit 不调用现有会独立提交数据库事务的 FilePublishService；复用其受控 Storage 物理提升与事务内 FilePublishRepository、DocumentVersionRepository，并通过 Job Owner 的公开 Application Port 在同一调用方事务登记 DOCUMENT_PARSE Job 和最小引用 Outbox。先完成 Job Owner 的受限解析入队 Port，再接 Document 事务编排；接口不自行 commit。|
+|Reason|冻结 DM-03 要求 FileObject AVAILABLE、DocumentVersion、Parse Job/Outbox、Audit 作为单一数据库提交。跨模块直接访问 jobs 内部表或复用独立事务 FilePublishService 均破坏该不变量。|
+|Impact|jobs Application Port/Repository 与 Document Commit 实现、合成 PostgreSQL 回归；不改公开 API、数据模型或迁移。|
+|Rollback|移除尚未挂载的 Commit 编排；已提交 Job/Outbox 不删除，需按受控取消/Dead 路径处理。原 FilePublishService 保留供独立恢复命令使用。|
+
+## DEC-20260926-117
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-117|
+|Date|2026-09-26|
+|WBS|DOC-03-A04-A04-P04-P03-P01 上传 Abort 状态编排|
+|Decision|Abort 仅在一个数据库事务内把 CREATED/CONTENT_READY 意图置为 ABORTED；有已登记暂存文件时按冻结状态图记录 STAGED→FAILED→CLEANUP_PENDING 两次状态事件，并同事务保存 Audit 与幂等收据。物理删除留给后续精确身份校验的清理命令，Abort 不在数据库事务内删除文件。|
+|Reason|冻结 API 返回 cleanup-pending；文件系统与 PostgreSQL 不能原子提交，先删除再回滚会丢失已登记正文；Commit 可能在外部文件提升与数据库提交之间竞争，必须通过状态锁与后续恢复核查避免误删。|
+|Impact|Document 内部 Application/Repository 与测试；无新 Schema、迁移、依赖或公开 API。CREATED 无文件时返回 cleanup_pending=false，CONTENT_READY 有文件时为 true。|
+|Rollback|撤下未挂载的内部 Abort 入口；已标记 CLEANUP_PENDING 的记录保持可追溯，不恢复成可提交状态，也不自动删除物理文件。|
+
+## DEC-20260926-118
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-118|
+|Date|2026-09-26|
+|WBS|DOC-03-A04-A04-P04-P04-A01 可选 Commit/Abort HTTP 契约|
+|Decision|在现有 FastAPI 组合根增加默认不挂载的上传终结 Router。Commit/Abort 共用可信 Origin、当前 Session/CSRF、空请求体与 Idempotency-Key 边界；Commit 可选读取强 If-Match，新建无父版本，升版由内部服务要求父版本；服务复核创建者和 License。Abort 只返回数据库终止与 cleanup_pending，不在 HTTP 请求内做物理清理。|
+|Reason|冻结 API-02 已规定两个操作及控制项；当前物理清理缺可信停写栅栏，不能把 HTTP 返回待清理解释为实际删除。可选挂载允许先验证合同且保持默认生产入口关闭。|
+|Impact|仅 Document API 与通用应用可选 Router 参数、契约测试；不改 Schema、冻结路径、依赖或默认路由。|
+|Rollback|不向应用注入该 Router，两个接口恢复默认 404；已通过内部 Commit/Abort 写入的历史仍保留。|
+
+## DEC-20260926-119
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-119|
+|Date|2026-09-26|
+|WBS|DOC-03-A04-A04-P04-P04-A02 Windows 显式写模式上传终结组合|
+|Decision|仅在既有 Windows `--platform-write` 组合中装配 Commit/Abort 可选 Router，使用同一请求级 DocumentUploadAccess、正式 PostgreSQL 收据/Audit、File Storage 与 Job Owner Parse 入队 Port；登录/只读模式保持 404，缺任何既有信任源则整个显式写模式失败关闭。Abort 不调用物理清理。|
+|Reason|已有 Create/Content 在该显式模式验证，冻结 API-02 要求相同 Session/License/CSRF/Project Role/创建者边界；单独挂载无保护终结路由会绕过现有组合根。|
+|Impact|Windows 组合根和隔离 PostgreSQL/临时文件验收；无 Schema、冻结 API、依赖或默认应用行为变化。|
+|Rollback|撤下 Commit/Abort Router 注入，两个路径恢复 404；已提交 DocumentVersion/Job 与已终止 Intent 历史保留，不能回滚业务事实。|
+
+## DEC-20260926-120
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-120|
+|Date|2026-09-26|
+|WBS|DOC-01-A02 内部受权 Document 元数据读取|
+|Decision|Document 只查询本模块 DocumentRow；Auth Session、DeploymentAdmin 与 Project 当前成员/状态分别通过 Owner Port 在同一事务核验。内部按 document_id 稳定 keyset 读取 ACTIVE/ARCHIVED，RESTRICTED 默认不可见；GLOBAL 当前只放行 DeploymentAdmin，项目成员的正式引用/类别授权待引用模型具备后单独实施，不以类别或 ID 猜测放行。|
+|Reason|冻结 API-02 要求 ProjectId 隔离与 GLOBAL 引用/类别联合策略；目前未有可核验的 GLOBAL→PROJECT 正式引用事实，直接放行标准类别会造成过度读取。Document 读层先建立可复用的 Owner 边界和分页事实。|
+|Impact|Document 内部 Application/Repository、Port 组合与测试；不改 Schema、公开 API、依赖或冻结权限规则。后续 HTTP cursor 必须独立签名并绑定 Scope/Project/Session。|
+|Rollback|不装配尚未公开的内部读 Service；Document 表和既有上传历史不变。|
+
+## DEC-20260926-121
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-121|
+|Date|2026-09-26|
+|WBS|DOC-01-A03-P01 独立签名 Document 列表游标|
+|Decision|Document 列表使用专用 `document-list-cursor-v1` Windows 当前账户密钥引用和 HMAC-SHA-256 完整性游标，绑定会话摘要、GLOBAL/PROJECT、ProjectId、page_size 与最后 document_id；不复用成员、部门、Secret 或上传令牌密钥。游标只承载键集位置，不承载未授权标题/路径。|
+|Reason|冻结 API-01/02 要求不透明 keyset 分页；直接暴露 UUID 位置或跨会话/项目复用游标会扩大枚举面。现有目标账户安全密钥供给可复用生命周期而不新增技术栈。|
+|Impact|Document API cursor codec、Windows 只读密钥适配与测试；无 Schema、冻结 API 路径或第三方依赖变化。正式目标账户密钥需独立供给/备份后才能挂载 Document 列表。|
+|Rollback|不注入 Document 读 Router；旧游标失密时失败关闭，可用独立备份恢复，不用其他用途密钥替代。|
+
+## DEC-20260926-122
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-122|
+|Date|2026-09-26|
+|WBS|DOC-01-A03-P02 可选 Document 元数据 GET|
+|Decision|按冻结 API-02 展开 PROJECT/GLOBAL 明确路径，将已验证的内部受权 Document 读取与独立签名游标组合为可选只读 Router。项目和 GLOBAL 路径不共用用户可控 Scope；默认应用不装配。投影仅含业务元数据、版本引用、时间和 ETag，不返回存储 Locator、正文或文件系统路径。|
+|Reason|先以可选边界验证 HTTP 契约与真实数据库读层；正式 Windows 组合仍需独立 Document 游标密钥和目标账户安全来源，不能因内部验证通过而提前开放。|
+|Impact|Document API、应用可选路由入口、合同测试及版本/状态记录；无 Schema、冻结路径/权限变更或新依赖。GLOBAL 当前仅管理员，正式跨域引用授权另行设计验证。|
+|Rollback|不向应用注入 `document_read_router` 即保持 404；已有 Document 数据及上传流程不受影响。|
+
+## DEC-20260926-123
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-123|
+|Date|2026-09-26|
+|WBS|DOC-01-A03-P04 Windows 显式平台只读组合|
+|Decision|在现有 `--platform` 与 `--platform-write` 显式模式接入 Document 读 Service/Router；普通登录模式继续不装配。两个显式模式均要求独立 `document-list-cursor-v1` 当前账户密钥，任何读取/验证失败使整个模式启动失败并释放数据库资源。|
+|Reason|Document 页游标必须具备独立信任锚；仅 HTTP/数据库合成测试不足以授权在目标账户缺钥时降级运行。复用既有 License、Session、Project Owner Port，不增加第二权限体系。|
+|Impact|Windows 组合入口、启动失败关闭与模式分离测试；无 Schema、冻结 API 或新依赖变化。正式账户密钥与发行公钥仍未供给，不能声明生产可用。|
+|Rollback|撤下 Document Router 注入并保留独立游标入口；普通登录模式和现有 Document/上传数据不受影响。|
+
+## DEC-20260926-124
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-124|
+|Date|2026-09-26|
+|WBS|DOC-01-A04-P01 内部 DocumentVersion 元数据读取|
+|Decision|复用 DocumentReadService 的当前 Session/Scope/Project/License 授权与父 Document 可见性，在同一只读事务内读取不可变版本；按 version_no 降序做有界 keyset。普通版本读取仅投影 AVAILABLE 且引用 PERSISTENT/AVAILABLE、同 Scope/Project 且 Hash/Size/MIME 与版本快照一致的 FileObject；RESTRICTED/REVOKED 与异常文件状态不向普通读者暴露。只投影冻结 API-02 的版本元数据，不返回 file_object_id、storage_locator 或 source_metadata。|
+|Reason|冻结 DM-03 要求 DocumentVersion→FileObject 的一致性与版本不可变，API-02 要求受权列表/详情和无文件路径投影。降序版本号让最新版本优先且已发布版本的编号稳定。|
+|Impact|Document 内部 Application/Repository 与测试；不改变数据库、公开 API、冻结授权粒度或依赖。后续 HTTP 分页游标需独立完整性保护并绑定 Document/Scope/Session。|
+|Rollback|不暴露版本读接口；保留原有文档元数据读取与数据库历史。|
+
+## DEC-20260926-125
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-125|
+|Date|2026-09-26|
+|WBS|DOC-01-A04-P02 独立签名 DocumentVersion 列表游标|
+|Decision|版本列表使用独立 `document-version-cursor-v1` Windows 当前账户密钥与 HMAC-SHA-256 游标，绑定当前 Session 摘要、Scope、ProjectId、父 DocumentId、page_size 和降序 `before_version_no`；不复用 Document 列表、成员、Secret 或上传令牌密钥。|
+|Reason|版本号虽非机密，但明文或跨父文档复用分页位置会扩大枚举与状态推断面；冻结 API-01 分页采用不透明游标，现有 Windows 安全密钥供给/恢复模式可直接沿用。|
+|Impact|Version cursor codec、Windows 只读密钥入口与单元测试；无 Schema、公开 API、依赖变化。正式目标账户密钥供给前不挂载版本列表。|
+|Rollback|不注入版本列表 Router；失密时拒绝解码，可从该独立密钥备份恢复旧游标，不以其他用途密钥替代。|
+
+## DEC-20260926-126
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-126|
+|Date|2026-09-26|
+|WBS|DOC-01-A04-P03 可选 DocumentVersion 元数据 HTTP GET|
+|Decision|版本列表/详情以独立可选 Router 实现 PROJECT/GLOBAL 四条固定 GET 路径，复用 DocumentReadService 和专用版本游标；默认应用不装配。Page 返回 items/next_cursor/has_more，详情只返回冻结 VersionView 元数据，不含 FileObject ID、Locator、正文或 source_metadata。|
+|Reason|冻结 API-02 已要求版本列表/详情；独立 Router 可在正式目标账户版本游标密钥缺失时与其他 Document 路由分离并失败关闭，避免默默共用旧游标。|
+|Impact|Document API 与可选应用入口、合同测试；无 Schema、依赖、Breaking API 或权限粒度变化。Windows 显式组合留到同链路验证后单独实施。|
+|Rollback|不向应用注入版本 Router 即保持 404；已有 Document 读与上传数据不变。|
+
+## DEC-20260926-127
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-127|
+|Date|2026-09-26|
+|WBS|DOC-01-A04-P05 Windows 显式 DocumentVersion 读组合|
+|Decision|仅在现有 `--platform`/`--platform-write` 显式模式装配 Version 读 Router；两个模式都必须从当前 Windows 账户解析独立 `document-version-cursor-v1` 密钥，缺钥或无效时整个模式失败关闭并释放数据库资源。普通登录模式继续 404。|
+|Reason|版本 HTTP 已经完成隔离数据库同链路验证，但正式提供不透明分页前必须绑定目标账户独立密钥；不能复用 Document 列表密钥或回退未签名游标。|
+|Impact|Windows 组合入口、缺钥合同与回归；无 Schema、API 路径/权限或依赖变化。正式发行信任源和目标账户供给仍待 Release 验证。|
+|Rollback|撤下版本 Router 注入并保留原 Document 读组合，已有业务数据不变。|
+
+## DEC-20260926-128
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-128|
+|Date|2026-09-26|
+|WBS|DOC-01-A05-P01 下载前验证快照|
+|Decision|LocalFileStorage 新增仅内部使用的有界已验证快照：从规范 PERSISTENT locator 打开普通单链接文件，复制到数据根下的私有 `SpooledTemporaryFile`，在返回给调用者前完成 SHA-256/大小、源文件句柄及路径身份/时间检查；失败关闭并清理快照。成功快照与源文件脱钩，后续流式响应只读快照，最大字节数沿用 100 MB 上传限制。|
+|Reason|先 verify 再重新打开原文件发送存在 TOCTOU；边验边发可能在末尾 Hash 失败时已经泄露不完整内容。快照在响应前完整校验且不把 locator/path 暴露给 HTTP。|
+|Impact|Document 存储适配器与测试；不改变 Schema、冻结 API、文件格式或外部依赖。短时磁盘空间与并发容量需后续下载 Service/Release 策略限制，正式下载未开放。|
+|Rollback|不调用快照方法；既有 verify/publish 行为不变。已关闭的临时快照由操作系统删除；不触碰登记 FileObject。|
+
+## DEC-20260926-129
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-129|
+|Date|2026-09-26|
+|WBS|DOC-01-A05-P02 内部受权下载来源|
+|Decision|DocumentReadService 在同一短事务复用 Session/License/Scope/父 Document 当前可见性，并由 Document Repository 对 AVAILABLE Version 与 PERSISTENT/AVAILABLE、同 Scope/Project、Hash/Size/MIME 一致的 FileObject 进行联结，返回仅内部消费的 `DocumentDownloadSource`（Locator 隐藏 repr，不进入 API）。普通读取不放行 RESTRICTED/REVOKED。|
+|Reason|下载不能仅凭客户端 VersionId 或从公开 VersionView 推断物理地址；先建立可复用的授权来源事实，后续由下载 Service 执行文件快照、完整性事件与发送前复核。|
+|Impact|Document Application/Repository 与隔离数据库验证；无 Schema、公开 API、新依赖或权限扩张。当前还不能直接下载。|
+|Rollback|不调用下载来源方法；现有 Document 元数据读取与上传流程不变。|
+
+## DEC-20260926-130
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-130|
+|Date|2026-09-26|
+|WBS|DOC-01-A05-P03 内部受权下载快照编排|
+|Decision|下载 Service 先取得含当前受权 Actor 的内部来源，再创建已校验私有快照，并于向调用方交付前再次读取当前授权/Version/FileObject 来源且逐字段比较；失败关闭快照。源文件缺失/Hash/大小/身份不符时，在独立短事务写不可变 `DOCUMENT_DOWNLOAD_INTEGRITY_FAILED` Audit，目标为 FileObject 并关联 Version，失败分类不含路径/正文；不写 FileStateEvent、不擅自改 RESTRICTED/REMOVED 状态。Audit 写入失败也拒绝下载。|
+|Reason|FileStateEvent 是状态沿革，原地记入同状态事件会误导后续追溯；Audit 的 FAILED 事件可记录本次观察且保留真实 Actor。文件外部 I/O 不能持有数据库长事务，二次核验减小状态变化窗口。|
+|Impact|Document 内部读取 DTO、下载编排与审计/资源关闭测试；无 Schema、公开 API 或新依赖。并发容量与响应期间撤销语义留给 HTTP/Release 任务验证。|
+|Rollback|不装配下载 Service；既有元数据 GET 和上传流程不变，已产生的失败 Audit 不删除。|
+
+## DEC-20260926-131
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-131|
+|Date|2026-09-26|
+|WBS|DOC-01-A05-P04 可选受权流式下载 HTTP|
+|Decision|按冻结 API-02 四条 PROJECT/GLOBAL 内容 GET 路径中的两种固定 Scope 路径实现可选 Router。请求先核验可信 Host/Session 且拒绝查询/Range；每 Router 默认最多四个并行快照/响应，单文件上限 100 MB。内部服务完整准备已验证快照后才返回 `StreamingResponse`；每次读取最多 1 MiB，设置长度、受控 MIME、nosniff、no-store 和不含用户文件名的附件名。流结束/中断/异常与响应后台均调用幂等关闭，释放快照和并发名额。|
+|Reason|冻结合同要求受权流式内容且不暴露 locator；快照法在首字节前校验全部内容。并发限额将每进程临时快照上界限制到 4×100 MB，避免无限并发占满数据卷；后续 Release 须验证多进程/磁盘预算和实际中断行为。|
+|Impact|可选 Document 下载 Router、应用入口与合同测试；无 Schema、第三方依赖或权限扩张。默认/当前 Windows 平台暂不装配，真实库/文件和目标账户验证后再开放。|
+|Rollback|不注入下载 Router，维持 404；已存储文件/版本和 Audit 历史不变。|
+
+## DEC-20260926-132
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-132|
+|Date|2026-09-26|
+|WBS|DOC-01-A05-P06 下载中断与部署容量边界|
+|Decision|Windows 官方启动入口显式固定单工作进程，配合单 Router 四个并行、单文件 100 MB 上限，使此启动方式的下载快照理论上界为 400 MB；通过 ASGI 发送端中断模拟验证异常清理和名额释放。其他入口/多实例共享数据卷的容量不以此结论覆盖，Release 时需按实例数和同时运行任务重新评估。|
+|Reason|现有并发锁是进程内的，若未限制官方入口工作进程，无法把单进程上界用于部署预算。断线应在发送异常时立即关闭私有快照。|
+|Impact|Windows 启动配置与下载合同测试；无数据库、冻结 API 或外部依赖变化。此结论不替代现场磁盘空闲、故障及多实例验证。|
+|Rollback|撤销单进程显式配置后应将部署容量重新标为未验证；下载 Router 仍可从平台入口移除以恢复 404。|
+
+## DEC-20260926-133
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-133|
+|Date|2026-09-26|
+|WBS|CR-DOC-008/A03-P02-A01 已登记 Abort 文件单路径清理适配|
+|Decision|文件适配器每次只清理一个已验证路径。`STAGE_ONLY` 清暂存，`FINAL_VERIFIED` 清最终文件；同一 inode 的 `LINKED_PAIR` 先清暂存，重试时以 `FINAL_VERIFIED` 清剩余最终文件。两个无关文件、重解析点、硬链接数异常、Hash/大小/身份不符均拒绝。`NONE` 只报告无文件，不直接改数据库。调用者必须已持同 upload_id 跨进程栅栏并完成数据库资格检查；适配器本身不推断业务授权。|
+|Reason|两路径一次删除无法在崩溃中恢复步骤边界；逐路径操作使每个中断后的物理形态可重新识别，直到 `NONE` 才由后续数据库编排记录 `REMOVED`。|
+|Impact|LocalFileStorage 内部受控方法及合成临时文件测试；无 Schema、公开 API、新依赖或生产装配。此单项不允许对实际已登记文件执行删除。|
+|Rollback|不调用该内部方法；保留 `CLEANUP_PENDING` 和所有现有文件供后续受控恢复，不删除历史记录。|
+
+## DEC-20260926-134
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-134|
+|Date|2026-09-26|
+|WBS|CR-DOC-008/A03-P02-A02 已登记 Abort 文件内部清理编排|
+|Decision|仅内部维护命令在同 ID OS 栅栏内先验证当前数据库候选与全部物理形态，再于短事务记录一次清理请求 Audit；之后每步重读数据库资格并调用单路径清理，直到两路径均不存在。最后短事务行锁复核候选并原子写 `CLEANUP_PENDING → REMOVED` FileStateEvent 与完成/缺失对账 Audit。首次无文件且没有持久请求时拒绝；已有请求且文件缺失时按“观察到缺失”对账，不声称本次实际删除。|
+|Reason|文件系统和 PostgreSQL 不具分布式事务；持久请求和可重复的单路径步骤允许在任意一步崩溃后保持 `CLEANUP_PENDING`，下次根据真实文件形态恢复，并区分实际删除与缺失对账。|
+|Impact|Document 内部维护 Service、行锁 Repository、只读/清理 Storage 扩展及隔离库/临时文件验证；无 Schema、公开 API、新依赖或正式生产组合。维护身份授权由注入 Access Port 显式承担，生产来源未装配。|
+|Rollback|停止调用内部维护命令；已 `REMOVED` 的合成测试文件不能靠回滚恢复，正式生产调用未授权；Audit/状态历史不删除。|
+
+## DEC-20260926-135
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-135|
+|Date|2026-09-26|
+|WBS|EVD-01-A01 EvidenceLocator 类型化校验|
+|Decision|在冻结的九种 `locator_type` 内提供纯领域校验器：DOCUMENT 无细节；PAGE 页号及可选归一化矩形；TEXT_RANGE 以页或节二选一定位，并持起止偏移与 64 位十六进制规范正文指纹；SECTION 为节路径；PARAGRAPH 为一基序号或稳定锚点；TABLE_CELL 为表锚点、行、列；SHEET_RANGE 为 Sheet 与 A1 起止单元格；SLIDE_SHAPE 为页号与 shape 身份及可选矩形；STRUCTURED_NODE 为 ParseRecord UUID、节点 ID 与非嵌套源定位。只接受各型白名单字段并返回规范副本。|
+|Reason|冻结模型规定类型和最小语义，但未逐字段规定传输形状；先固定可测试的内部 DTO，后续 API/持久层复用同一校验，避免把模型摘要或任意 JSON 当成精确定位。选择不修改原 Gate 2 冻结内容。|
+|Impact|仅 Evidence 领域模块和单元测试；无 Schema、公开 API、外部依赖或生产资格变更。实际解析/重新定位仍需 EVD 后续任务，不以字段校验代替证明。|
+|Rollback|移除未对外装配的领域校验器；若后续 API/存储已引用，须先迁移持久定位器并保留历史固定版本，不可静默重解释。|
+
+## DEC-20260926-136
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-136|
+|Date|2026-09-26|
+|WBS|EVD-01-A02 Evidence 固定版本持久模型|
+|Decision|新增 `evd_evidence_records`，保存 Evidence 身份、Scope/Project、固定 Document/DocumentVersion 双引用、Locator 类型与 schema version 及 JSONB 细节、32-byte 内容指纹、受限显示字段、资格状态和乐观版本。FK 固定版本归属；插入触发器检查 DocumentVersion 当前 AVAILABLE 与 Scope/Project 一致，拒绝非 CANDIDATE 直接创建；更新触发器保护来源/Locator/指纹身份及保留历史。Locator 完整语义由 EVD-01-A01 校验与后续受权解析服务承担，不把 JSONB 字段合同冒称数据库已证明实际定位。|
+|Reason|冻结 SC-01 允许 Locator 类型细节使用 JSONB，SC-02 要求核心类型/版本为列。GLOBAL 的空 ProjectId 使普通复合 FK 无法完整证明跨表 Scope，因此增加数据库插入触发器；DocumentVersion 原表不为 Evidence 增加可空复合键。|
+|Impact|Evidence ORM、增量 Migration、隔离 PostgreSQL 验证与版本说明；不修改冻结 Gate 2 文件、不开放 API 或生产事实创建。后续 Eligibility/Viewer 必须有独立权限和有效来源校验。|
+|Rollback|空表可降级；有 Evidence 历史时拒绝降级，先备份并走可追溯迁移，不自动删除证据。|
+
+## DEC-20260926-137
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-137|
+|Date|2026-09-26|
+|WBS|EVD-01-A03-P01 Evidence 创建授权边界|
+|Decision|EVD-01-A03 分为 P01 实时 Session/CSRF/角色授权、P02 固定 DocumentVersion 与真实 Locator 解析、P03 同事务候选创建/幂等/Audit。P01 仅允许项目 `PROJECT_MANAGER`、`IMPLEMENTATION_MEMBER`，GLOBAL 仅 `DeploymentAdmin`；任何创建在无 P02 来源证明与 P03 编排时不开放。|
+|Reason|冻结 API-02 明确项目 PM/IM 与 GLOBAL Admin；现有 Document 读层提供版本/文件元数据，但九型 Locator 的实际解析证明尚无生产 Port。只凭 A01 字段校验或 A02 数据库触发器创建记录会允许无法点击定位的假证据。|
+|Impact|仅 Evidence 应用授权适配、测试与任务时序；无 Schema/API/生产入口变更。后续 P02/P03 保持完整九型终态，不把当前分步实现替代最终可用要求。|
+|Rollback|P01 未挂生产入口，停止注入该适配即可；历史冻结 API 权限矩阵不变。|
+
+## DEC-20260926-138
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-138|
+|Date|2026-09-26|
+|WBS|EVD-01-A03-P02-A01 全文固定版本来源证明|
+|Decision|Evidence 应用通过 DocumentService 现有受权 `PrepareDownloadService` 取得无路径、已全量 Hash 验证的私有快照；仅 `DOCUMENT` Locator 可由固定 DocumentVersion 全文 SHA-256 形成来源证明。流在成功/异常后均关闭；其余八类保持 `EVIDENCE_RESOLUTION_UNAVAILABLE`，直到格式解析器能给出实际位置和内容指纹，不以全文 Hash 假冒页/段精度。|
+|Reason|ADR-008 禁止 Evidence 直读物理路径，且 Document 下载链已具状态/权限/完整性双查。Parser/结构定位尚未有生产 Port；现阶段只能对全文位置作可复验的真实性证明。|
+|Impact|Evidence 内部来源证明服务、测试；无 Schema、公开 API、新依赖或生产候选创建入口。A03-P02 整体未完成，九类定位的终态不缩减。|
+|Rollback|停止调用未挂生产的证明服务；不改动任何 Evidence/Document 历史记录。|
+
+## DEC-20260926-139
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-139|
+|Date|2026-09-26|
+|WBS|DOC-04-A01 ParseRecord 持久基础|
+|Decision|新增 `doc_parse_records` 每次解析 Attempt 独立 Root，固定 DocumentVersion、同 Scope/Project 的 `DOCUMENT_PARSE` Job、Profile/Version/递增 Attempt、状态/时间/脱敏错误与结果指纹；新增 `doc_parse_result_refs` 保存唯一受控相对结果 Locator、Schema Version、Hash/Size，并由 SUCCEEDED 记录通过触发器核对引用/指纹。PENDING→RUNNING→终态，终态不复活；删除拒绝，有历史不自动降级。|
+|Reason|冻结 DM-03 与 SC-01 要求 ParseRecord 独立重试历史和受控结构化结果引用。真正 Parser/OCR Worker 在 Phase 3；Phase 2 先建立不可伪造成功形态、Job/版本归属和保留边界，以供后续结果发布/精确 Evidence 定位。|
+|Impact|Document ORM、增量 Migration、隔离 PostgreSQL 测试；不引入解析依赖、公开 API 或 Worker，不把 PoC Parser 直接用作正式结果。结果 Locator 仅存受控相对标识，不返回给业务/UI。|
+|Rollback|空表可降级；任何 ParseRecord/结果历史存在时拒绝降级，恢复须备份并走有记录的迁移计划。|
+
+## DEC-20260926-140
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-140|
+|Date|2026-09-26|
+|WBS|DOC-04-A02 固定版本解析记录受权读取|
+|Decision|复用 DocumentReadService 的 Session、License、GLOBAL 管理员/PROJECT 成员授权，在同一只读事务确认 Document 与 AVAILABLE 固定版本后读取 ParseRecord 历史。按 `(created_at, parse_record_id)` 降序 keyset 分页；安全视图仅含解析身份、状态、Job/不透明结果引用、脱敏错误与时间，不暴露结果物理 Locator、Hash 或异常堆栈。公开 HTTP 游标和 Worker 留给独立任务。|
+|Reason|冻结 DOCUMENT_PARSE_LIST 需要固定版本受权历史；单独绕开 Document 授权或将受控存储路径投影到 UI 都不符合边界。|
+|Impact|Document 内部读服务、仓储、测试；无 Schema、公开 API、新依赖或实际 Parser 运行。SUCCEEDED 仅代表数据库元数据状态，不证明结果文件完整。|
+|Rollback|停止调用尚未挂载的内部读取方法；历史数据及已冻结接口不变。|
+
+## DEC-20260926-141
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-141|
+|Date|2026-09-26|
+|WBS|DOC-04-A03 ParseRecord 列表可选 HTTP|
+|Decision|按冻结 `DOCUMENT_PARSE_LIST` 提供 PROJECT/GLOBAL 两条显式 GET 路径，仅可选注入 Router；独立 HMAC 游标签名绑定 Session、Scope/Project、Document、固定 Version、页大小和 `(created_at, parse_record_id)` 位置。公开安全 ParseRecordView，不返回结构化结果路径/正文/Hash。生产 Windows 游标密钥供给及组合挂载另列 A04/A05。|
+|Reason|复用既有 Document 认证与错误合同，同时防止游标跨用户、跨项目或跨版本重放；独立密钥避免与 Document/Version 游标混用。|
+|Impact|Document HTTP/游标、可选应用挂载、合同测试；无 Schema、新依赖或默认公开入口。|
+|Rollback|不注入可选 Router 即保持 404；不变更冻结 API 路径或历史数据。|
+
+## DEC-20260926-142
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-142|
+|Date|2026-09-26|
+|WBS|DOC-04-A04 Windows Parse 游标专用密钥来源|
+|Decision|采用现有 Windows 当前账户 Credential Manager 只读 SecretKeyProvider，使用独立引用 `document-parse-cursor-v1` 装配 ParseListCursorCodec；缺失或无效时失败关闭。以临时引用和合成口令验证加密备份、删除后恢复以及旧游标仍可验证；测试末删除临时凭据。|
+|Reason|Parse 历史游标需独立密钥和可恢复性，不可复用 Document、Version 或其他资源族游标密钥，也不能把测试密钥内置于生产应用。|
+|Impact|Windows 装配适配、单元/当前账户测试；无 Schema、API、依赖或正式密钥供给。|
+|Rollback|不在生产组合调用该适配即可保持 Router 关闭；临时测试凭据测试后删除。|
+
+## DEC-20260926-143
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-143|
+|Date|2026-09-26|
+|WBS|DOC-04-A05 Windows 显式平台组合 Parse 列表|
+|Decision|只在 `--platform`/`--platform-write` 已有真实 Session、License 与 DocumentReadService 组合中装入 Parse 列表 Router；启动前读取独立 `document-parse-cursor-v1` 当前账户密钥，缺失则整个显式组合失败关闭，默认登录应用保持 404。隔离 PostgreSQL 验证固定版本、授权及真实 HTTP。|
+|Reason|不扩大默认入口，避免仅合成 Router 被误用为生产可用；沿用 Document 读服务权限链及平台统一信任源要求。|
+|Impact|Windows 组合与其测试；无 Schema、新依赖或冻结 API 变化。目标账户正式密钥与发行 License 信任锚仍由 Release 关闭。|
+|Rollback|移除显式组合的 Router 注入即可恢复 404；不影响已有数据。|
+
+## DEC-20260926-144
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-144|
+|Date|2026-09-26|
+|WBS|TRC-01-A01 TraceLink 版本引用与边形状|
+|Decision|为 Trace 域建立冻结 SC-02 允许的具体 `(owner_module, object_type)` 白名单和固定 `object_id/version_id`、Scope/Project 值对象；边校验拒绝自环、PROJECT→GLOBAL、跨 PROJECT，并仅允许 GLOBAL→PROJECT 的 `DERIVED_FROM`/`REFERENCES_CAPABILITY`。关系只采用 DM-03 七种类型。输出标准化不可变值对象，不在该步骤判断目标存在性、正式状态、授权或图无环。|
+|Reason|多态目标不能用通用 FK；应用层必须先限定类型和方向，但不能以形状合格替代 Owner Port 证明。参考对象、模板及未来业务版本仅可在后续受控写入时被验证。|
+|Impact|新增 Trace 纯领域校验与单元测试；无 Schema、公开 API、数据外发或外部依赖。后续 Schema/TraceService 仍需目标 Owner Port、审计、持久幂等、无环和逐节点权限。|
+|Rollback|停止调用尚未接生产的值对象工厂；不影响历史数据或冻结基线。|
+
+## DEC-20260926-145
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-145|
+|Date|2026-09-26|
+|WBS|TRC-01-A02 TraceLink 不可变持久结构|
+|Decision|新增 `trc_links`，保存双端固定 Object/Version Ref、Scope/Project 快照、七类关系、ACTIVE/SUPERSEDED/REVOKED、创建 Actor/Trace/时间及替代引用。数据库约束白名单、自环/跨项目/方向、活动边唯一；触发器只允许 ACTIVE→SUPERSEDED/REVOKED，禁止其他字段变更与删除。多态目标存在性、正式状态、权限、无环与 Audit 留给后续 TraceService/Owner Port，同步前不得公开写入口。|
+|Reason|冻结 SC-01/02 要求多态边有受控 discriminator、保护引用、历史保留和活动边唯一；不创建全局 Object Registry，也不能将数据库形状当成目标事实证明。|
+|Impact|Trace ORM、Alembic Migration `20260926_0029`、迁移/数据库验证与版本说明；无公开 API、新依赖或生产写路由。|
+|Rollback|空表可降级；有任何 TraceLink 历史时拒绝降级，需备份和可追溯迁移方案。|
+
+## DEC-20260926-146
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-146|
+|Date|2026-09-26|
+|WBS|TRC-01-A03 目标 Owner Port 与 DocumentVersion 证明|
+|Decision|Trace 应用定义只返回匹配固定版本引用的 `TraceTargetProof` 和失败关闭的 Owner Port 调度；组合根适配既有 DocumentReadService 的受权 `get_version`，只支持 `document/DOC-02`。任何未注册类型、跨 Scope/Project、错误 DocumentVersion、无 Session/License/权限均拒绝，不返回路径、正文或文档元数据。通用 TraceLink 创建在所有目标 Owner Port、无环、幂等和 Audit 完成前仍关闭。|
+|Reason|冻结架构禁止 Trace 直接跨模块读 ORM，多态目标需由 Owner Port 证明。DocumentVersion 读取已有真实授权链，适合先建立可验证的第一种端点；未来业务 Owner 必须逐类接入，不以合成数据放行。|
+|Impact|Trace 应用合同、组合层 Document 适配、测试；无 Schema、公开 API、新依赖或生产写入口。|
+|Rollback|不在生产组合注册该适配；数据库历史与冻结合同不变。|
+
+## DEC-20260926-147
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-147|
+|Date|2026-09-26|
+|WBS|TRC-01-A04 受控关系写入期无环校验|
+|Decision|为 `DERIVED_FROM` 与 `SUPERSEDES` 的合并受控子图建立仅事务内使用的 PostgreSQL Guard：按 Link Scope/Project 取得事务级 advisory lock，再对活动边作去重递归可达性查询；新增 `source→target` 前若 `target` 可达 `source` 则拒绝。GLOBAL→PROJECT 仍按相同 Scope 图观察；正常创建服务必须持同一事务与锁完成插入。无写入口前仅以独立合成验证测试 Guard，不声称 DB 禁止绕过 Guard 的直接插入。|
+|Reason|冻结 DM-03 禁止受控关系成环，SC-02/03 明确无环留给 Application/transaction guard，不能以无上限触发器或仅单请求内检查代替并发写保护。|
+|Impact|Trace 基础设施 Guard、单元/隔离 PostgreSQL 并发测试；无 Schema、API、新依赖或业务事实写入。|
+|Rollback|停止调用尚未接生产写服务的 Guard；存量关系不变。|
+
+## DEC-20260926-148
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-148|
+|Date|2026-09-26|
+|WBS|TRC-01-A05-P02 内部 TraceLink 创建|
+|Decision|先实现与冻结 `TRACE_LINK_CREATE` 对齐的 PROJECT 用户路径：真实 Session/CSRF 与 ProjectManager/ImplementationMember 当前事实，在同一事务内证明双端固定版本、预留幂等收据、执行无环 Guard、插入活动边并追加 Audit。相同活动边由 PostgreSQL 唯一索引归一为原 LinkId，不产生第二条 Audit；同 Key 返回首次 LinkId。GLOBAL/Owner Service 自动写路径须在对应 Owner 身份合同具备后独立验收，不以测试伪造放行。|
+|Reason|当前仅 DOC-02 Owner 具备事务内真实证明，冻结 API 项目用户角色明确；通用服务可由已注册 Owner 渐进接入，同时禁止未知 Owner 或无权路径。|
+|Impact|Trace 应用/Repository 和测试；无 Schema、公开 API、外部依赖变化。内部 Project 用户路径完成不代表 Trace 全部 Owner 或生产 API 完成。|
+|Rollback|不装配内部创建服务；原 TraceLink 历史保留，既有只读与无环 Guard 不变。|
+
+## DEC-20260926-149
+
+<!-- 后续配置决策见文末 DEC-20260926-150；此历史记录保留。 -->
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-149|
+|Date|2026-09-26|
+|WBS|WFL-01-A01-P01 Workflow 定义形状|
+|Decision|先建立不含默认业务内容的版本化 WorkflowDefinition 纯领域结构，只校验阶段/清单唯一键、有序阶段、非空 GatePolicy 引用与状态枚举；正式六阶段 key、每阶段 Checklist/Evidence/Review Policy 由后续可追溯业务配置设计确定，不在此任务硬编码或写库。|
+|Reason|冻结 DM-02 给出了结构和不变量，但 API2-R04 明确正式 stage/checklist 配置尚未冻结。把合理推断的清单写进生产种子会误判 Gate。|
+|Impact|workflow 领域模块和单元测试；无 Schema/API/依赖/正式业务数据变更。|
+|Rollback|移除尚未被持久层使用的纯领域定义，不影响历史数据。|
+
+## DEC-20260926-150
+
+- Date：2026-09-26；WBS：WFL-01-A01-P02；Change Request：CR-WFL-001。
+- Decision：以 Python 不可变纯配置发布六阶段 V1，每阶段两项核心必需清单，引用稳定 Evidence/Review/Gate 策略标识；具体语义与来源存版本化文档。不加载可变用户配置、不种库、不执行 Gate。
+- Reason：冻结合同留下配置设计任务；最小配置可追溯，避免未经 Owner 事实验收就推进。
+- Impact：新增内部目录配置和测试，无 Schema/API/依赖变化；真实项目事实与原冻结提交不变。
+- Rollback：不装配配置；历史 V1 保留，未来修改发布新版本而非覆盖。
+
+## DEC-20260926-151
+
+- Date：2026-09-26；WBS：WFL-01-A02-P01。
+- Decision：冻结状态用 StrEnum 表达，迁移校验只处理 ACTIVE Workflow 的相邻定义目标、非归档与锁版本一致，不接收客户端 Gate 布尔值，不产生新状态。最终完成/BLOCKED 恢复独立设计，不新增虚构阶段 key。
+- Reason：冻结 API 只给目标 key 和 Gate 引用，真正证明必须从 Owner/Application Port 获取；纯校验不承担授权或事实证明。
+- Impact：workflow 领域与单元测试，无数据库/API/依赖变更，结构成功不代表业务 Gate 已通过。
+- Rollback：不装配该校验器；未持久化状态，无数据回滚需求。
+
+## DEC-20260926-152
+
+- Date：2026-09-26；WBS：WFL-01-A03-P02；CR-WFL-002。
+- Decision：四表保留固定 V1 内容及 fingerprint，复合 FK/唯一约束防归属漂移；DEFERRABLE INITIALLY DEFERRED trigger 校验提交时完整性/状态指针，BEFORE trigger 防定义覆盖/删除/非法状态迁移。Migration 使用自包含快照，不引用会变动的 Domain；公开写路径仍不装配。
+- Reason：初始化需要多行同事务插入，立即跨表完整性校验会误拒绝；只靠 ORM 无法防半套提交。数据库结构校验并不具备客户 Review/Gate 事实，因此不宣称正式阶段通过。
+- Impact：Schema 增量 0030 与 ORM/测试，API/外部依赖不变；已有 Project 不回填进度。
+- Rollback：空 Workflow 可 down 到 0029；有实例拒绝降级，回滚代码装配并保留历史。
+
+## DEC-20260926-153
+
+- Date：2026-09-26；WBS：WFL-01-A03-P03。
+- Decision：初始化入口使用调用方事务，固定 V1 定义，唯一 project_id insert-on-conflict；仅新实例追加 Audit，不自行提交，不重置已有实例。入口不开放给请求/回填 CLI，真实 Project/License 授权由后续接线的应用调用方承担。
+- Reason：Project 创建、幂等收据、Workflow 与 Audit 需要一事务提交；NOT_STARTED 初始化不需要虚构 StageTransition 或业务 Review 结果。唯一项目天然重试不能替代公开命令的请求幂等。
+- Impact：Workflow 应用/Repository/测试，无 Schema/API/依赖变化，现有生产创建路径暂未改变。
+- Rollback：不装配初始化服务；历史实例保留，不删除或回写进度。
+
+## DEC-20260926-154
+
+- Date：2026-09-26；WBS：WFL-01-A03-P04。
+- Decision：ProjectCreateService 依公共 Protocol 调用 Workflow 同事务初始化，Windows 显式平台始终提供真实实现；Port 对旧隔离内部调用保留可选兼容，公开请求不能关闭。失败传播至调用方事务回滚，重放不重复 bootstrap。
+- Reason：不让 Project Repository 直接写 Workflow 表；权限与 License 已由原 Project 创建服务验证，可复用原收据事务。跨模块修改仅为当前必要接线。
+- Impact：应用 Port/组合与关联验证，无 Schema/API/外部依赖变化。已有 Project/未装配 Port 的内部路径仍需独立补齐，不据此声称全局恰一 Workflow。
+- Rollback：回退组合装配，不删除已创建 Workflow，历史与初始状态保留；后续新项目未补齐须记录缺项。
+
+## DEC-20260926-155
+
+- Date：2026-09-26；WBS：WFL-01-A03-P05。
+- Decision：既有项目初始化仅作为 PM 受权内部准备命令，引用冻结 WORKFLOW_START 的 PM/write 权限；先认证/License，再在写事务重新验证 Session 与锁定 Project/成员/部门，调用已验证 bootstrap。不得映射为 start HTTP 或自动按文档推断进度。
+- Reason：初始化物理结构不等于业务启动；只读 GET 不得顺手写库，全局管理员也不能凭部署身份获得项目操作权限。
+- Impact：应用命令及一个已有合同权限策略接线，无 Schema/API/依赖变化；无公开调用入口，无生产批量回填。
+- Rollback：不装配内部命令；保留已初始化实例与 Audit，不重置或删除历史。
+
+## DEC-20260926-156
+
+- Date：2026-09-26；WBS：WFL-01-A04-P01。
+- Decision：Workflow 投影仅由一个 SQL MVCC 快照构造不可变 DTO，校验固定 V1/完整阶段与清单/状态指针，不初始化缺项。WORKFLOW_GET 为四角色只读权限，读取时保持 Project/成员/部门事实锁直到返回，阻止授权与投影之间的撤权竞态；不把读操作改成 write，也不拒绝归档读。
+- Reason：多次 SELECT 可能拼出不同时间的阶段状态；只有早先权限检查而不保持事实锁，会允许后续已撤销身份消费投影。
+- Impact：Workflow 应用/Repository、一个内部权限策略锁标志及关联测试，无 Schema/API/依赖改变。事实锁现复用既有锁 Port，会串行同项目读取，性能另验，不宣称 P95 达标。
+- Rollback：不装配读服务；保留实例与历史，不写库或清空进度。
+
+## DEC-20260926-157
+
+- Date：2026-09-26；WBS：WFL-01-A04-P02。
+- Decision：WORKFLOW_GET 先 opt-in；HTTP 单独白名单投影并再次校验路径 ProjectId，成功回 trace/ETag/no-store，未知参数拒绝，错误复用已注册公共错误码。默认与生产组合本任务不挂载，不把缺实例读转换为写初始化。
+- Reason：安全字段与应用对象分离，防内部字段意外暴露/错误 Project 投影；冻结 GET 不要求 CSRF 写令牌，但必须可信 Host/Session 和真实项目授权。
+- Impact：可选 Router/create_app 注入及测试，无 Schema/依赖/Breaking API 变化。
+- Rollback：不注入 Router，保持 404；实例/历史不变。
+
+## DEC-20260926-158
+
+- Date：2026-09-26；WBS：WFL-01-A04-P03。
+- Decision：Windows 两种显式平台模式复用已验证只读服务与原信任源启动检查；默认/仅登录继续不挂载，无 Workflow 写接口。
+- Reason：GET 组合不应创造另一套密钥/授权来源，缺信任源不允许降级。
+- Impact：组合及隔离验证，无 Schema/依赖/Breaking API；正式信任源和实际 Gate 仍待。
+- Rollback：撤销 Router 装配，保留所有实例和审计。
+
+## DEC-20260926-159
+
+- Date：2026-09-26；WBS：WFL-02-A01-P01。
+- Decision：成功相邻迁移的 Gate 快照先作为不可变纯领域值对象；完整固定清单和 PASS/WAIVED 形状校验，所有 UUID 引用仍待 Owner 同事务证明。没有写服务或 Gate evaluator，不把对象构造成功当 Gate PASS。
+- Reason：历史不能依可变当前 Checklist 重建；Waiver 需保留真实 actor/理由/影响/依据而不是改写 PASS。持久层和 START/完成语义独立设计，避免猜测 API。
+- Impact：仅领域/测试/文档，无 Schema、依赖、Breaking API 或安全机制变更。
+- Rollback：不使用新值对象；不改已有实例、审计或客户事实。
+
+## DEC-20260926-160
+
+- Date：2026-09-26；WBS：WFL-02-A01-P02；CR：CR-WFL-003。
+- Decision：追加历史保留冻结 Transition/GateItem 两表，增加 typed refs owned 表；固定引用同时保存当时 Scope/状态/版本/摘要。Evidence 使用真实 FK，Review/例外缺目标表明确标前置，不虚构保护。root 创建事务标识由数据库强制写入，提交后禁止补写子项改变快照。
+- Reason：Evidence eligibility 可变，只有 UUID 无法还原当时依据；JSON 数组也不足以提供查询/FK/项目结构约束。
+- Impact：设计阶段，不创建 0031；无业务事实/API/依赖变化。Schema 增量与验证矩阵、缺 Owner 和 Checklist/START/完成前置见 CR。
+- Rollback：设计可调整但保留历史版本；实施后有数据禁止破坏性 down，应用不装配并保留记录。
+
+## DEC-20260926-161
+
+- Date：2026-09-26；WBS：WFL-02-A01-P03；CR：CR-WFL-003。
+- Decision：0031 新根先核对 ACTIVE/from/before，提交时核对 to/after/完整 Gate 项与当前结果/观测 Evidence；created_xid 由数据库强制写，子项只可在同事务追加。单次事务只推进一步。Review/例外缺目标表明确保留 Owner 前置，不把类型化 UUID 当实际批准。
+- Reason：避免成功历史与实例状态脱节、事后补写快照，以及引用可变状态造成历史漂移。首次多表 trigger 字段错误经合法路径验证发现并修复，拒绝测试只接受预期约束错误。
+- Impact：三表 Schema/ORM/metadata/验证，无公开 API/权限/依赖改变；真实业务 Gate 和 Checklist 历史尚缺。
+- Rollback：空历史可 down；非空拒绝破坏性 down，不装配应用服务并保留事实。
+
+## DEC-20260926-162
+
+- Date：2026-09-26；WBS：WFL-01-A05-P01；CR：CR-WFL-004。
+- Decision：Checklist 当前投影与每次不可变记录链分离；首次 PENDING，后续受控更正不退回 PENDING，保留 supersedes/依据与两个乐观锁序列。FAIL 可表达不足；PASS/WAIVED 服务端证明，豁免不改写质量通过。暂不用循环 latest FK，按唯一 Item 版本解析当前记录。
+- Reason：覆盖当前值无法保留来源，更正又是补充资料/撤销依据后的必要闭环。旧非初态无可信链不能伪造回填。
+- Impact：当前只设计；两表增量与 Gate→记录关联分步登记，公开 API 字段/架构/依赖不改变。
+- Rollback：不装配记录命令，保留既有历史；未来非空 down 拒绝。
+
+## DEC-20260926-163
+
+- Date：2026-09-26；WBS：WFL-01-A05-P02；CR：CR-WFL-004。
+- Decision：记录快照为纯 frozen 值对象，保留首次/更正父与两个独立锁序列；FAIL 不造理由或来源，正向结果最小依据形状不当事实证明。UUID/UTC/bigint 检查失败使用安全统一异常；实际链与 Scope/批准由未来受权同事务服务负责。
+- Reason：在 ORM/写命令前固定不可变形状，不让错误版本或自引用进入持久层设计；不扩展冻结请求字段或把未注册 Owner 当可信。
+- Impact：仅 Domain/测试/文档，无 Schema/API/依赖/权限改变。
+- Rollback：不使用新对象，旧事实/历史不变。
+
+## DEC-20260926-164
+
+- Date：2026-09-26；WBS：WFL-01-A05-P03；CR：CR-WFL-004。
+- Decision：0032 只添加 owned 记录/refs，当前投影按两个独立版本提交核对；数据库捕获 observed_stage_state，不在记录时自动恢复 BLOCKED。FAIL 可保存已证身份的未通过状态，但正向依据仍要求完整 ELIGIBLE/APPROVED。Unicode 空白显式检查，不依赖 locale。
+- Reason：更正需保留当时依据、阻断状态不能被顺手消除；空白理由不能通过区域设置差异绕过。旧无链不虚构历史，Gate 固定记录关系与实际 Owner 留待独立任务。
+- Impact：两表/0032/metadata/隔离验证，无 API/权限/依赖改变；结构与合成失败不是客户批准。
+- Rollback：空历史可 down，非空拒绝；应用不装配写命令并保留历史。
+
+## DEC-20260926-165
+
+- Date：2026-09-26；WBS：WFL-01-A05-P04；CR：CR-WFL-004。
+- Decision：内部当前记录 Port 使用调用方活动事务，Workflow→Item 同写方锁序和 Core 现值；按单 Item 全部不可变根验完整初次/更正链，只返回当前版本完整固定 refs。Workflow 版本允许后来增长；历史观测不重新投影为当下 Owner 事实。
+- Reason：旧无链或过时 PASS 不能充当 Gate 依据；ORM identity map 可能滞后，双锁序列不同，跨项目/无链不自动回填。
+- Impact：仅内部 Port/DTO/Repository；无 Migration/公开 API/依赖/权限改变，不装配不受权入口。完整链读取增长成本留待性能验证；受权 Owner/Gate 仍待。
+- Rollback：不使用新 Port，保留当前表与历史，无数据回滚。
+
+## DEC-20260926-166
+
+- Date：2026-09-26；WBS：WFL-02-A01-P04/P05；CR：CR-WFL-004。
+- Decision：GateItem 增加三 nullable 固定记录/版本/摘要字段与复合 FK；旧历史保持 NULL，新 INSERT 强制关联已提交的当前同项记录，保留 typed refs 精确集合和独立 Gate 重观测。
+- Reason：直接返回 PASS 无法回溯具体更正记录；旧快照不可改写，不能由 nullable 漏洞创建新无链 Gate。记录操作者不等于例外批准人。
+- Impact：拟独立 0033，原 0031/0032/冻结 API 不改，无新增业务 Scope/依赖。Schema 先验，实际批准 Owner/Gate 服务另做，不把结构当客户确认。
+- Rollback：新关联非空拒绝 down；只有旧 NULL 关系允许删空字段，应用不装配新 Gate 命令。
+
+## DEC-20260926-167
+
+- Date：2026-09-26；WBS：RVW-01-A01/RVW-02-A01；CR：CR-RVW-001。
+- Decision：统一 Review 先固定所有 Assignment 完成才汇总；任何 RETURN 在完整集合中使结果 RETURNED，未完成仍 IN_REVIEW/持锁。固定决定/主题观测与 owned 身份锁/事件分离，不覆盖历史，不跨模块更新主题正式状态。
+- Reason：DM-01/DM-02/AF-02 明确完整集合规则，API 摘要不能被解释成提前终结；当前没有实际 Review，Gate 需要真实批准来源。
+- Impact：设计八表（五既定+三个 owned 辅助）及纯 Domain；未有新 migration/API/依赖，不声明真实资格/Owner/Gate 已验。
+- Rollback：不装配新模块，未来 owned 历史非空不允许破坏性 down，原冻结/0033 保留。
+
+## DEC-20260926-168
+
+- Date：2026-09-26；WBS：RVW-01-A02；CR：CR-RVW-001。
+- Decision：0034 保持两 Aggregate/八 owned 表；Global 生成非空 Scope 键建立真实复合父键，完整 Round/决定/状态/事件/身份锁提交一致，终态不可改写。Trace 观测版本 0 明示无来源锁字段，以固定关系 tuple 摘要/当前状态重核替代虚构列。
+- Reason：nullable Project 会跳过普通复合 FK，首条 RETURN 不能提前解锁，旧观测与新批准不同；现有 Trace 不具锁/摘要列，不能冒充存在。首次 CHECK/CASE/脚本失败修复重验。
+- Impact：八表/0034/隔离验收，无冻结 API/角色/依赖变化；真实 Subject Owner/客户资格/审批服务仍未完成。
+- Rollback：空表 down 至 0033，非空 owned 历史拒绝；关闭新应用入口并保留事实。
+
+## DEC-20260926-169
+
+- Date：2026-09-26；WBS：RVW-01-A03；CR：CR-RVW-001。
+- Decision：内部查询只接受调用方活动事务/显式 Scope，以 Core mappings 和 Review→Round 共享锁读取；当前身份与固定历史轮次分开返回，历史来源观测不连接为当前状态。全轮计数/完整子记录/多人决定重新核对，缺值失败关闭。
+- Reason：旧轮次结果不能随当前轮次变化；来源后来失效不应改写历史，也不能继续被当作当前有效批准。权限/License/真实 Owner 必须由后续受权应用独立验证。
+- Impact：内部 Port/DTO/Repository 与测试，无数据库/API/权限/依赖变化。全历史读取成本未做性能验收；锁保护只针对遵循先锁 Review 的受控写方，不声称任意 SQL 无死锁。
+- Rollback：不使用新 Port，保留 0034 历史；无数据回滚或公开路由变化。
+
+## DEC-20260926-170
+
+- Date：2026-09-26；WBS：RVW-01-A04。
+- Decision：Project REVIEW_GET 只提供有效成员资格；主题 Owner 在同事务独立核验身份及固定旧版读取权。缺 Owner 默认拒绝，不创建恒真生产适配，不以历史批准/assigned 身份/部署管理员替代权限。
+- Reason：冻结契约要求受权成员与真实固定 Subject；共享旧轮次意见不能绕过当前访问限制。
+- Impact：设计内部读服务及 Project→Review→Owner→Round 相对锁序，不改 Schema/API/角色/依赖；真实 Owner 和跨模块并发验收仍待。
+- Rollback：保持公开路由关闭，不使用新服务，保留历史。
+
+## DEC-20260926-171
+
+- Date：2026-09-26；WBS：RVW-01-A05。
+- Decision：REVIEW_GET 同事务锁读四角色当前 Project 事实；内部服务独立要求 Owner 身份与固定旧版两次授权。先在已锁 Review 下定位不可变 Version，再 Owner 授权，最后读取完整 Round，避免先返回旧意见或改变既定相对锁序。
+- Reason：未知 Owner/仅持 ID/旧决定不授予访问；服务凭据和身份不得由客户端证明替代。真实业务 Owner 未具备时不装配 HTTP。
+- Impact：Project 新内部锁读策略、Review read service/Version 定位 Port 与单位/隔离测试；无数据库/API/角色/依赖变化。真实 Owner 锁及端到端授权未验证，License 合成拒绝不代表正式信任源通过。
+- Rollback：停用内部服务/移除非公开策略，保留 0034 历史和冻结 API。
+
+## DEC-20260926-172
+
+- Date：2026-09-26；WBS：RVW-01-A06。
+- Decision：内部 CREATE 只生成逻辑 DRAFT 根；Owner 验证固定输入与管理资格，服务器选择 policy，START 独立重验固定版本/确认人/身份锁。通用收据重放不可变 CreatedReviewRef，不把后来的 state/etag 当首次响应。
+- Reason：冻结模型根绑定逻辑身份，轮次才绑定版本；目前通用收据不保存动态响应，根创建字段已不可变，可避免无必要的新 Schema。旧 Key 不能绕过现有授权，未知 Owner 不猜测。
+- Impact：创建前置设计，无新代码/Migration/API/角色/依赖；真实 Owner 和创建服务仍待。保持现有每主题可有多 Review、活动 Subject 锁唯一语义，不擅自新增业务唯一性。
+- Rollback：不装配创建服务，保留冻结版本/0034/历史。
+
+## DEC-20260926-173
+
+- Date：2026-09-26；WBS：RVW-01-A07。
+- Decision：PROJECT 创建强制当前 PM/ACTIVE/Session/CSRF 与明确 Owner proof，DRAFT 根和 REVIEW_CREATED Audit/通用 receipt 同事务提交；重放由根不可变创建字段重建 Ref，并要求当前 Owner 访问权，不重验原版本待送审状态。
+- Reason：身份创建不是送审，旧 Key 不能绕过撤权；原始创建 Ref 不含变化的 state/etag，可避免额外响应持久层。创建 version 只参与指纹，不误写为 Review 的 version Audit。
+- Impact：内部命令/owned Repository/Project 策略/单位与隔离验收，无 Migration/公开 API/角色/依赖变化；Owner/License 合成，不能标实际批准或身份锁 PASS。
+- Rollback：停用服务，保留 0034/不可变历史/审计/收据，禁止生产破坏性清理。
+
+## DEC-20260926-174
+
+- Date：2026-09-26；WBS：RVW-02-A02。
+- Decision：先锁真实 reviewer ENABLED 账户再核对 Project 活动成员/部门及明确服务器角色子集；此为基础资格，不替代具体 Subject Owner 逐人资格。送审完整路径另用共享 User Session/CSRF 校验，不能沿用先 actor 排他锁/Project 再 reviewer 的倒序。
+- Reason：数据库 FK/User 存在不等于有资格；冻结 Contract 不允许将 policy 字符串当授权，也不应静默限定全部 Review 为单一角色集合。账户与项目锁倒序可能引入死锁，须实际全链验收。
+- Impact：前置/窄基础资格组件设计，不改冻结 Schema/API/角色；实际政策/Owner 身份锁/完整 start 未完成。
+- Rollback：不装配新资格/start 服务，现有读/create 保持不变，历史保留。
+
+## DEC-20260926-175
+
+- Date：2026-09-26；WBS：RVW-02-A03。
+- Decision：Auth owned 仅返回已共享锁 ENABLED reviewer IDs；Project owned 复用当前成员/部门事实 Repository 锁读，验证 ACTIVE Project 与受控角色子集，保留调用方 Assignment 顺序、实际锁账户按 UUID 排序。无用户名/敏感值输出，无自动 Assignment/commit。
+- Reason：FK 或 User ID 不代表实时资格，成员/部门后来失效不能竞态逃过前置；此结果只证明必要资格，具体 Subject 资格另验。
+- Impact：Auth 窄查询、Project 内部基础资格服务与真实隔离验证，无 Schema/API/角色/依赖变化；完整送审、真实 Owner 和生产政策注册未完成。
+- Rollback：不调用新内部服务，保留既有 Project/Auth 与 Review 历史，无数据迁移。
+
+## DEC-20260926-176
+
+- Date：2026-09-26；WBS：RVW-02-A04。
+- Decision：送审 Owner 结果完整绑定当前 Review/Actor/Project/逻辑主题/版本/新 Round/确认人集合，以窄准备 Port 与实际身份锁重核分离；无 bool/UUID/摘要即代表成功的默认适配。Sources 观测 scope/时序/唯一与完整人集合校验。
+- Reason：纯 DTO 不证明真实业务权限或内容锁，旧准备结果不能复用到其他轮次/版本；实际 Owner 必须阻止编辑与替代 Draft，并同事务回滚。
+- Impact：内部合同/6 项测试/文档，无 Migration/API/角色/依赖变化；真实 Owner/审批与完整 start 仍待。
+- Rollback：不装配新 Port，保留原冻结/0034 历史；无数据动作。
+
+## DEC-20260926-177
+
+- Date：2026-09-26；WBS：RVW-02-A05-P01。
+- Decision：完整 start 拆为可信调用方事务持久化/Owner 重核/Audit（P01）与真实 Session/CSRF/PM/账户资格/幂等入口（P02）；P01 不自提交或装配 HTTP，不能代替 P02 权限。
+- Reason：先独立验完整八表原子与真实 Audit 回滚，避免在尚未完成统一锁序/授权入口时暴露不受权命令；原任务 Scope 与验收不删除。
+- Impact：内部 owned Repository/事务编排/隔离测试，无 Migration/API/角色/依赖改变；真实 Owner 与完整受权入口仍待。
+- Rollback：停用内部 Port，保留 0034 历史；无破坏性 down。
+
+## DEC-20260926-178
+
+- Date：2026-09-26；WBS：RVW-02-A05-P02。
+- Decision：送审账户共享预锁与 Project 基础资格分两步，同事务暂存账户观测不作为授权证明；PM 检查先于对外资格错误。成功 receipt 重放只重验当前 Session/CSRF/License/PM/固定旧版 Owner 访问权，不重新要求历史 reviewers 仍可发起新审批；不重复写轮次/审计。
+- Reason：提前锁定候选账户避免 Project→User 倒序；非 PM 不应从资格错误获知账户状态，历史重放不应被后来 reviewer 停用改写为新审批。reviewer 集合以 UUID 排序规范指纹，重排不改变请求语义。
+- Impact：内部 Auth 共享 CSRF 校验、基础资格两步复用、受权 start/通用 receipt/稳定 Ref；无 Schema/API/角色/依赖改变，实际 Owner 仍未完成，不挂载 HTTP。
+- Rollback：停用内部入口，保留原基础资格方法与 0034 历史/审计/收据。
+
+## DEC-20260926-179
+
+- Date：2026-09-26；WBS：RVW-02-A05-P02。
+- Decision：基础设施只识别实际 DBAPI SQLSTATE 40P01；应用在整个 UOW 已 rollback/释放后最多三次执行同一命令/Key，不重试未知数据库或任意异常。稳定轮次 Ref 重放核对原始 Actor/Project/Review/Version/完整 Assignment 集合，忽略后来的状态/根版本但不绕过当前权限。
+- Reason：新共享预锁不能使所有既有反序成员命令天然无死锁，实测确有循环；不能吞掉异常或局部重跑 INSERT。真实竞争验收证实第二次成功且只留一轮/一次 Audit。
+- Impact：受控内部入口及窄死锁分类/重试，无 Schema/API/角色/依赖改变；原首轮验收错误码断言按版本检查顺序修正重验。完整 Owner/业务锁/HTTP 和其他旧写命令并发恢复仍待。
+- Rollback：停用入口，原数据与不可变历史保留；不采用无限 retry 或 force 更新。
+
+## DEC-20260926-180
+
+- Date：2026-09-26；WBS：RVW-02-A06。
+- Decision：固定单次决定/撤回交接合同绑定可信旧快照与完整新进度；同一事务通过 Owner Port 同步消费终态和释放实际身份锁，失败连最终决定 rollback。decide 不新增冻结未要求的 M 控制，withdraw 沿用根 ETag。真实 Owner 缺失不公开命令。
+- Reason：Review owned 锁释放不等于业务锁正确释放，历史 Sources 观测不能代替当前批准事实；异步 best-effort 消费会留下不一致状态。
+- Impact：内部合同/测试与前置文档，无本轮 Schema/API/角色/依赖变化。AF-02 reason 持久缺口另登记 CR-RVW-002，保留 0034 原文与未知旧历史。
+- Rollback：不装配交接 Port，保留已有历史与送审路径；无数据动作。
+
+## DEC-20260926-181
+
+- Date：2026-09-26；WBS：RVW-02-A07 / CR-RVW-002。
+- Decision：0035给不可变WITHDRAWN事件加nullable原因，其他事件只能NULL；保留0034原文和未知历史。down同事务ACCESS EXCLUSIVE表锁检查，含原因及offline down拒绝。ORM/固定读回随0035。
+- Reason：冻结withdraw reason不得丢弃；无表锁EXISTS检查与删除列可能竞态丢失原因。
+- Impact：Review owned Schema/查询，历史Schema unit显式叠加新delta，四个head verifier跟随0035；API/角色/依赖不变。
+- Rollback：关闭未公开写入口；仅无原因库允许down，含历史保留新增列，禁止丢失回滚。
+
+## DEC-20260926-182
+
+- Date：2026-09-26；WBS：RVW-02-A08。
+- Decision：先实现可信调用方事务 owned 决定/撤回、固定历史校验、实际 Audit 和终态 Owner Port 消费，不自建 UOW/commit/HTTP/收据或声称受权入口完成。Review 根独占锁持有后复用固定查询的 Round 共享锁，再调用 Owner；真实 Owner 装配前必须验交叉锁序，不能把合成 Port 当事实锁。
+- Reason：先验完整结构与故障全回滚，再独立接当前 Session/权限/幂等；现有固定查询先读完整历史才能构造精确交接。所有 owned 更新仍以根为首锁；真正 Owner 交叉编辑路径尚不存在，不推断无死锁。
+- Impact：新增内部编排/Repository/测试，无 Schema/API/角色/依赖变化；0035为前置。A06的抽象Owner-before-Round锁序在此内部实现读阶段具体化为根→Round共享读取→Owner，正式装配仍需核对或调整并记录，不开放路由。
+- Rollback：不装配内部命令，保留全部历史与已有送审，无数据删除。
+
+## DEC-20260926-183
+
+- Date：2026-09-26；WBS：RVW-02-A09-P01（A09受权幂等入口前置）。
+- Decision：首次结果Ref加入不可变round_event_id，以DECISION_RECORDED/WITHDRAWN事件作为通用receipt引用；重放从固定事件/轮次历史还原原Actor/状态/计数/时间，不读当前根状态当首次结果。先独立验证该前置，再A09-P02接权限与receipt，完整Scope保留。
+- Reason：首次partial IN_REVIEW之后可终态甚至升版下一轮，根/轮次当前投影不是稳定首次响应。已有事件永久不可变，根首次计数可由round_no+前轮已封口lock_version之和+事件after_version还原，无需新快照表或改冻结HTTP。
+- Impact：内部Ref/Repository与测试调整，无Schema/API/角色/依赖变更；旧内部对象未公开，外部收据尚未创建，不需数据迁移。非命令STARTED/COMPLETED事件拒作重放Ref，跨项目/Actor/轮次绑定在后续入口继续核验。
+- Rollback：不装配受权入口，保留已提交事件和审计；无删除或原冻结内容覆盖。
+
+## DEC-20260926-184
+
+- Date：2026-09-26；WBS：RVW-02-A09-P02。
+- Decision：Project增加REVIEW_DECIDE四成员必要权限与REVIEW_WITHDRAW PM写策略，assigned reviewer和实际Subject权另验；复用Auth共享Session/CSRF。PROJECT→Review根→固定轮次→receipt，完成指向不可变命令事件的200收据；重放重验当前固定旧版访问，不再次consume/Audit或要求根仍旧版本。只识别实际40P01整UOW最多三次，其他失败拒绝。
+- Reason：角色不等于具体批准权，不能因旧receipt绕过撤权；首次结果不受后来终态/版本影响。恢复须在全部rollback后，不能只重跑INSERT。跨真实Owner锁序仍待，不以合成PASS声明全部路径无死锁。
+- Impact：内部受权命令/窄重放Port/现有Policy实现，无Schema/API/新角色/依赖变化；未知Owner关闭，不装配HTTP。
+- Rollback：不注册内部入口，保留事件/审计/receipt，关闭新操作但不删历史。
+
+## DEC-20260926-185
+
+- Date：2026-09-26；WBS：RVW-02-A10 / AUD-02-A01。
+- Decision：真实Review Owner缺失，公开接线保持关闭，不用合成Actor/锁/批准通过Gate；转Phase2独立Audit受权内部读。项目Audit仅当前PM，部署Audit仅当前DeploymentAdmin且只DEPLOYMENT scope，License不免除；复用已有safe query，当前权限在同一事务保持。
+- Reason：抽象AuditReadAccess和合成Review Owner不是生产身份事实，不能直接暴露已有Query或跨模块访问；Audit不依赖后续业务Owner，可继续实现批准Scope。
+- Impact：Audit当前Session/Project授权服务、两项既有操作必要策略、测试；无Schema/API/角色/依赖或Phase变更。当前公开Review阻塞仍保留。
+- Rollback：不装配新读服务，已有append/history保留；无数据写入。
+
+## DEC-20260926-186
+
+- Date：2026-09-26；WBS：AUD-02-A02。
+- Decision：Audit专用32byte HMAC key/domain/family，绑定真实同事务读返回的Actor、Session digest、显式DEPLOYMENT或PROJECT、全部筛选/page_size和UTC窗口、(time,event_id)位置。strict decode用于显式日期；saved-window decode仅供未来日期未指定的HTTP使用，保留首窗，不忽略显式日期修改。
+- Reason：当前默认时间每页重算会使查询指纹漂移；当前页权限必须另验，cursor绝不授予访问。独立签名域防他族复用，完整性不是加密或跨页MVCC快照。
+- Impact：内部list_with_actor返回实际读上下文（不公开API），旧list保持原合同；新Codec/测试/设计，无Schema/API/权限/依赖变更。正式key来源/HTTP未接，不复用License、Secret或其他cursor key。
+- Rollback：不装配新Codec/HTTP，保留原safe查询及审计历史，无数据动作。
+
+## DEC-20260926-187
+
+- Date：2026-09-26；WBS：AUD-02-A03-P01。
+- Decision：Application接受内部搜索解析Port，在License/实际Session和当前Scope权限同事务检查后、repository读取前调用。API游标适配注入codec并使用实际Actor，禁止二次查身份或从客户端游标Actor信任；解析后的筛选/page_size不得改变，只有签名默认窗口和after允许补齐。响应上下文携带有效搜索窗口供续页签名。
+- Reason：公开分页不能先信任客户端身份，也不应在独立事务取身份后查询；解码失败不触发仓库读取，当前授权先于游标格式错误。
+- Impact：内部Port/API适配与验证，旧list/get不变，无Schema/公开API/角色/依赖变化。默认日期是否显式仍由后续HTTP决定，正式密钥供给未实现。
+- Rollback：不装配解析适配，保留旧内部读取；无数据动作。
+
+## DEC-20260926-188
+
+- Date：2026-09-26；WBS：AUD-02-A03-P02。
+- Decision：四个冻结Audit GET仅opt-in Router，Cookie/可信Host、当前受权service及独立codec显式注入。白名单start_at/end_at（同时提供或同时省略）、page_size/cursor/action/outcome/actor_id/target_object_type/target_object_id/trace_id；默认24h UTC，明确范围最大31天，默认续页保留签名首窗。仅安全Actor/对象引用/code状态投影，不返回ORM/hint/正文。GET只读无ETag可变状态或Audit追加。
+- Reason：冻结合同已要求范围上限但未固定默认窗口；双端日期避免续页单边默认值漂移，service同事务实际Session/角色校验足够，不独立读取身份作为授权。普通默认应用不装配。
+- Impact：可选HTTP、契约测试、增量接口实施说明；无Schema/Breaking API/角色/依赖变化。生产专用key供给和Windows组合后续验证。
+- Rollback：不注入Router，四路径404；无数据动作。
+
+## DEC-20260926-189
+
+- Date：2026-09-26；WBS：AUD-02-A04。
+- Decision：独立Audit游标签名key_ref为audit-list-cursor-v1，复用已验证Windows当前账户Credential Manager只读provider和加密离线备份生命周期。缺失/长度错误/provider异常统一拒绝启动，不自动生成、无环境变量/key明文文件fallback，不复用其他key。
+- Reason：签名游标需持续稳定专用密钥；恢复须保持旧cursor可验证，重新生成不等于恢复。当前运行账户的临时Vault验证不代表正式部署账户或Server验证。
+- Impact：新增entrypoint只读factory及unit/真实临时Vault恢复，无Schema/API/角色/依赖或安全算法变更。正式账户供给、口令独立保管和平台组合仍待。
+- Rollback：不装配新factory，路由保持未启用；临时测试只清理own UUID引用，不操作正式key。
+
+## DEC-20260926-190
+
+- Date：2026-09-26；WBS：AUD-02-A05。
+- Decision：Windows两种显式平台模式挂载四Audit GET，以同runtime的当前Session/部署Admin/Project授权与实际Audit repository接线；必须取得独立Audit cursor来源才能构建应用，异常dispose并统一关闭。默认/login-only不加载该key或挂载Audit。
+- Reason：可选HTTP和当前账户来源已验证，正式组合仍需强制key前置，不能拿测试key或缺省生成继续运行。
+- Impact：组合根和相关测试fixture增加显式合成Audit key，不改变业务Scope/数据库/冻结API/角色/依赖。正式账户/License供给仍缺，不据合成组合放行生产Gate。
+- Rollback：回退组合根不挂载Audit；只读无数据变化。
+
+## DEC-20260926-191
+
+- Date：2026-09-26；WBS：AUD-03-A01。
+- Decision：导出POST前置未满足，先记录设计和实际Schema差异。冻结DM-04 Job允许DEPLOYMENT，当前0035 Job/Outbox仅GLOBAL/PROJECT；下一项先CR-JOB-001修正实现遗漏，不将部署导出映射GLOBAL绕过Scope。快照与Job/受权结果交付分别实现，当前不开放POST。
+- Reason：已有签名分页只是有界查询，不是跨页数据库快照；现有Job租约和Parse enqueue也不是审计导出受权入口或结果下载能力。
+- Impact：只新增设计/隔离库前置证据，本轮无生产代码/Schema/API/权限或基线实施变化。完整导出范围保留，前置缺口不是免验收或删除Scope。
+- Rollback：无生产变更；验证库只清理own UUID目标。后续CR必须保留原冻结版本并覆盖数据迁移/拒绝丢失的down/验证。
+
+## DEC-20260926-192
+
+- Date：2026-09-26；WBS：AUD-03-A03。
+- Decision：导出内部Spec仅固定DEPLOYMENT/PROJECT、非零项目归属、明确UTC窗口/筛选、受控用途code、JSONL格式/安全投影/政策版本。用途不接受自由说明、字段列表、游标/路径/厂商外发或payload正文；按需由UI提供用途提示。指纹是请求一致性，不是授权/快照。Worker分CAPTURE/RENDER/PUBLISH阶段复验当前原Actor账户/角色/Scope，Port不能由DTO或bool证明替代。
+- Reason：所有输入需固定供未来幂等与capture，Job只最小ExportRef。异步任务不持Session Token；登出本身不伪装取消Job，停用账户/撤角色/成员必须拦Worker发布，结果访问另须实时Session/License。
+- Impact：仅内部请求/权限Port合同与unit/设计；实际Auth事实Port、Project导出维护策略与捕获/授权编排在后续实现，不对外挂载。本轮无Schema/API/角色/依赖/安全核心变更。
+- Rollback：不装配未完成导出，保留已有查询；无数据动作。
+
+## DEC-20260926-193
+
+- Date：2026-09-26；WBS：AUD-03-A04-P03；依据CR-AUD-001。
+- Decision：固定服务器AUDIT-EXPORT-POLICY-V1单集合最多100000成员，不接受客户端调大/字段列表/路径。实际capture单条带数据修改CTE的INSERT SELECT在READ COMMITTED statement snapshot按全部原Scope/窗口/筛选选取最多100001，超过上限抛错且不封口；调用方整事务回滚，不返回截断成功。上限是安全保护不是性能PASS，不减少导出需求；需要更大范围用户可调整窗口或后续新版本策略/实际性能评审。
+- Reason：SQL string_agg封口及排序占O(n)空间，不能无限制占用数据库；时间/UUID分页不提供完整snapshot。首次已seal仅验证并返回原metadata，不重新选事件，Job retry/generation不替换集合。
+- Impact：可信调用方事务Owner存储入口，不自建UOW/commit/鉴权/License/Lease；原Actor/Scope匹配是绑定不是权限证明。实际当前权限/幂等/Job在A05/A06，POST仍关闭。read-back检查版本/Spec指纹/原Source/顺序/count/hash/xid，未知版本或腐损拒绝。现有0001～0037/API/角色/依赖不变。
+- Verification：真实隔离PostgreSQL验证single statement集合、晚提交/回填/新事件、两调用者重放同一seal、完整筛选/Scope/空集合、故障整UOW回滚。上限拒绝机制用测试小上限验证，100000行/20并发/P95实际性能另验，不虚报。
+- Rollback：撤未装配存储入口不删历史；0037含历史仍拒绝down；无生产操作/客户数据外发。
+
+## DEC-20260926-194
+
+- Date：2026-09-26；WBS：AUD-03-A05-A01。
+- Evidence：冻结API-02 AUDIT_EXPORT要求S/L/C/I/A、部署Admin/项目PM；DM-02明确归档允许受权审计/导出。现有Project政策只具AUDIT_PROJECT_LIST/GET，所有write一律拒归档；现有Parse enqueue只Document GLOBAL/PROJECT，不能假Document或GLOBAL绕过。
+- Decision：先落实单一提交授权前置：新增AUDIT_PROJECT_EXPORT当前PM write政策，只有该明确维护操作允许ARCHIVED，仍锁实际Project/member/department；其他write保持归档拒绝。Audit调用方事务服务用现有Auth Session/CSRF锁核验及部署Admin proof、实际Project公共授权和License Guard，无匿名/历史Actor/DTO旁路。返回最小绑定metadata不能当跨事务凭据。
+- Impact：补齐冻结权限/归档维护实现，不新增角色、Scope、API、安全机制或Schema；无新CR必要，原冻结不追写。Auth已有LicenseImportAccess只复用Session/CSRF/Admin事实，Audit服务始终另要求L，绝不复用License恢复面豁免。现有Job缺Audit专用enqueue公共Port与首次Ref读回，A02补齐后A03才能受权幂等/Audit/Job原子；不提前POST或创建未受权Job。
+- Verification：四角色×操作矩阵、归档仅export write例外、真实Session/CSRF/License拒绝、跨项目/部署Admin非成员拒绝、当前member/department/user/role撤销、五类事实锁保持到调用方UOW结束及授权服务不写任何Export/Job/receipt/Audit。
+- Rollback：撤未装配前置并移除新增operation，不影响历史/其他操作；无迁移/生产/客户外发。
+
+## DEC-20260926-195
+
+- Date：2026-09-26；WBS：AUD-03-A05-A02。
+- Decision：Jobs owned AuditExportJobQueue公共合同仅固定ExportRef、原Actor、PROJECT/DEPLOYMENT、ProjectRef、原TraceRef、V1政策；Job payload只有export_id/policy_version，Outbox另加job_id。不读取Audit/Document内部表，不接受Session/Secret/路径/任意payload，不创建UOW/commit/鉴权/发布。Audit实际受权调用方须先绑定自己的不可变意图；Queue DTO不是真实存在/授权/许可或Lease证明。
+- Replay：ExportRef唯一逻辑请求，内部对域分隔SHA-256的64-bit键取PostgreSQL事务级advisory lock，串行同Export首次空行竞争；跨Scope也用同Export锁。锁碰撞仅额外串行，不授予权限/合并身份，实际唯一键/全字段仍核对。Job与Outbox都存在且固定原Actor/Scope/Project/Trace/政策/aggregate/refs一致才返回原Ref；单边缺失/异载荷/改绑定拒绝，不自动修复。不复活终态或重写Worker mutable状态。首次Trace来自持久Export，不是重放请求的新HTTP trace。
+- Impact：既有0037/Job Schema、公开API/角色/依赖不变；max_attempts固定Job3、Outbox5只是投递技术策略，不重复模型调用。A03主命令须授权→receipt→Audit根→Queue锁/行，并全UOW原子。Worker持Job锁再取Owner/当前权限的反序风险A06另验并使用整UOW有限重试，不宣称已有全链无死锁。
+- Verification：真实PG双Scope、最小引用/原Trace、并发首次同Ref、失败Outbox全UOW回滚、调用方不commit、终态重放不复活、错Actor/Scope/Project/Trace/policy/缺一行拒绝、只读lookup不创建，已有Parse范围及Job租约回归。Queue本项不以可信调用方测试冒充客户权限/Worker/HTTP。
+- Rollback：撤未装配公共Port不删已有Job/Outbox，无数据库升级/生产变更；普通导出POST仍关闭。
+
+## DEC-20260926-196
+
+- Date：2026-09-26；WBS：AUD-03-A05-A03-P02；输入CR-AUD-001/0038。
+- Decision：完整内部提交使用A01当前许可/Session/CSRF/PM或Admin、通用receipt、Audit own Root/0038首次结果和A02 Jobs公共Queue，在同UOW受理并202。receipt按实际Actor/Project/版本化Scope操作/key digest隔离，指纹用完整规范Spec，HTTP trace与凭据不参加业务载荷指纹或落Job。请求Audit目标是确实创建的jobs/JOB-01，reason仅受控purpose，Root/Queue原Trace固定，不把Export伪装AUD-01。
+- Replay：每次先当前权限/License再receipt；加载原不可变Root与acceptance，核对原Spec/Actor/Scope及Jobs公开lookup精确原Job/Event ID。缺受理记录/缺Job或被替换拒绝，不创建/修补历史，不用enqueue做replay。新HTTP trace不会改写首次结果，终态原Job不复活。
+- Atomicity：授权→receipt→Root→Queue→请求Audit→acceptance→receipt complete→commit。任一异常全UOW退出回滚。只有实际DBAPIError sqlstate40P01（含安全包装因果链）最多3次完整新UOW重试，每次重验当前权限/许可；不凭error字符串/一般503重试，不重试未知commit或网络异常。原User/Project与receipt/Root/Queue锁序在此检查；Worker反序需A06另验。
+- Impact：无新Schema/角色/Scope/公开API/依赖变化，不自动capture或运行Worker，不声明文件产出/任务完成。现有0038保留原引用；未装配内部命令，导出POST仍关闭。实际正式信任材料/质量/性能/Gate/完整可用包仍待。
+- Verification：真实双Scope首次全记录、同key新trace原结果且全表不变、同key异Spec拒绝、不同Actor/Scope namespace、归档PM/部署无项目旁路/撤权/CSRF/许可拒绝、并发单组受理、每阶段故障全回滚、真实40P01限次整UOW恢复及耗尽拒绝、缺历史/替换Job拒绝。
+- Rollback：撤未装配服务不删除/更改任何历史，0038含历史拒绝down，无生产/客户数据操作。
+
+## DEC-20260926-197
+
+- Date：2026-09-26；WBS：AUD-03-A06-A01 当前Worker权限。
+- Precode：Phase2；输入冻结API-02/DM-02与A03当前授权Port、A05实际受理；前置满足。模块Auth/Audit，仅Auth公共当前User事实与Audit应用授权，无新实体/Schema/API/依赖。验收真实当前事实锁、撤权/范围/归档维护/许可拒绝、无业务写；风险坐标伪造及锁序，Owner仍须先绑定持久Root与真实Job租约，本项不是完整Worker。
+- Decision：Auth提供非Session的当前enabled User/部署角色事实公共Port，在调用方事务锁User；Audit每次CAPTURE/RENDER/PUBLISH调用重新检查License与当前User及Project公开AUDIT_PROJECT_EXPORT权限。部署Admin不旁路项目成员。原Session注销/自然到期不自动取消已受理任务；原始凭据不持久化，真实当前身份禁用/撤权阻止执行。许可检查trace使用Export UUID仅为技术关联，不制造审计业务事实。
+- Impact：结果None不构造可跨事务复用权限证书；原request仅坐标，持久Export/acceptance绑定与Job Lease/fencing/取消由后续Owner编排实施，不能以本项放行HTTP/文件发布。User→Project/member/department锁持至调用方事务结束；Job锁反序仍须实际整UOW验证。
+- Verification：真实隔离库各stage/两Scope、disabled/非Admin/nonPM/member/department/跨项目/归档、Session注销仍当前权限有效、四事实锁与无业务写；License合成明确标注。单元错误映射/输入/绑定/无默认许可。
+- Rollback：撤未装配Port，无数据迁移、不删除历史、不操作生产。正式信任源/性能/三平台及Gate仍待。
+
+## DEC-20260926-198
+
+- Date：2026-09-26；WBS：AUD-03-A06-A02-P01。
+- Precode：Phase2；输入DM-04/API-03既有租约fencing与A06-A01；前置满足。模块Jobs；实体既有Job/Lease/Attempt；无公开API/Schema/角色/依赖变化。只解决caller事务内当前Lease检查，不实现取消命令或发布。
+- Decision：新增Jobs公共JobLeaseCheckpoint，精确nonzero UUID/positive int64 token/worker校验，调用owned repository锁Job→Lease→Attempt，当前RUNNING/对应worker/token/未完成attempt/一致attempt_no及到期时点/未到期才返回现存ClaimedJob。取消中及所有非RUNNING状态拒绝，不heartbeat/finish/commit，不提供跨事务凭据。Caller必须短事务，长I/O不得持锁，后续发布重新检查。
+- Verification：真实当前成功且全表不变、竞争三事实锁、错worker/token/ID、到期/实际接管、取消中及终态、篡改期限/attempt编号、caller故障回滚及原租约回归。取消状态用测试设置只证明拒绝，不冒充真实取消流程。Audit Root/actor/scope/acceptance绑定及锁反序由后续编排另验。
+- Risk/rollback：Lease不是业务授权；保留A01当前权限。锁内到期仍须发布时重验，不能声称初次检查永久有效。撤未装配入口无迁移/历史删除/生产操作；POST保持关闭。
+
+## DEC-20260926-199
+
+- Date：2026-09-26；WBS：AUD-03-A06-A02-P02-A01。
+- Precode：Phase2；输入冻结DM-04/API-03、A02-P01、CR-JOB-002；Job协作取消信息缺失已代码核查，先补必要Schema。模块Jobs，实体Job，新增三nullable字段，无API/权限授予/依赖。验收空/旧数据up/down/parity、不可猜回填/不可变取消信息/历史保护/并发降级锁。
+- Decision：0039沿CR-JOB-002补齐首次申请人/原因/UTC时点，首值固定、取消态不可复活/删除、有历史禁止truncate/down。旧全NULL保持，元数据不代表实际授权；完整取消Port在下一分项，不用Schema替代Worker/HTTP。
+- Risk/rollback：增量DDL锁需备份维护；含取消信息不可down，无信息可撤列；无生产迁移/自动删历史。错误与未知内容不公开原理由，Secret文本识别不能仅靠CHECK。正式Scope/Gate保持。
+
+## DEC-20260926-200
+
+- Date：2026-09-26；WBS：AUD-03-A06-A02-P02-A02。
+- Precode：Phase2；输入DM-04/API-03/0039/CR-JOB-002/A02-P01；前置满足。模块Jobs，既有Job/Lease/Attempt和AuditExport Queue公共坐标；无Schema/API/权限授予/依赖。一个问题：可信Owner caller-UOW实际取消请求/协作确认/到期恢复及完成竞争。
+- Decision：每次核对原Export Queue pair与精确首次Job/Event refs，不猜修复缺边或替换。PENDING/RETRY_WAIT在同事务REQUESTED→CANCELLED；RUNNING登记REQUESTED保留租约，当前未过期Worker/token可确认；失联后仅真实到期恢复EXPIRED，保留历史。首次申请信息不重写；已成功/失败返回原终态，不能伪装回滚，旧取消历史无来源失败关闭。
+- Authority：坐标/申请人FK/Worker不是业务权限。Owner必须先锁自己的持久Root/acceptance，重新当前授权；本项只Jobs公共Port，不自建UOW/commit/许可或Session鉴权。申请原因不回到结果/payload/Audit自由正文；拒空白/未规范/控制字符/超长，但不能保证合法文本不含Secret。失败映射固定code。
+- Locks/verification：Queue事务advisory→Job→Outbox，再Lease→Attempt；与finish Job锁串行，实际先取消拒发布、先完成拒伪回滚、同请求并发首次一次、确认/到期恢复竞争、故障全回滚/原数据/当前Worker/过期及缺来源验证。Worker短事务锁反序及完整Audit幂等/审计仍另验。
+- Rollback：撤未装配入口不删历史；0039含信息拒绝down；无生产操作/公开API，正式信任/性能/完整Worker/包仍待。
+
+## DEC-20260926-201
+
+- Date：2026-09-26；WBS：AUD-03-A06-A03。
+- Precode：Phase2；输入A05真实受理/0038、A06当前权限/租约/取消与A04真实capture；前置满足。Audit聚合+Jobs/Auth/Project公共Port；无新Schema/API/角色/依赖。只完成真实已受理Worker capture原子事务，非文件发布。
+- Decision：Worker仅输入Export ID/原Job ID/worker/token。先无锁peek不可变Root作为内部查找线索，不授予权限，再User→Project/member/department→Root精确重读→原acceptance→Queue原pair→Lease/Attempt，核对真实Job Scope/Type/Trace/原payload/原ID，执行capture。完成后再当前许可/权限及Lease核验，commit只固定集合，不finish/heartbeat/发文件。迟到Worker/取消/缺源/替换/撤权失败回滚；已有seal只按原集合重放，不换snapshot。
+- Atomicity：只有实际因果链DBAPI40P01最多3次整UOW新事务重新授权，不凭错误文本或一般存储失败重试。peek不锁Auth反序；后续publish Job-first反序另验。原不可变数据不因重试改变。
+- Verification：真实受权提交→Job claim→Worker当前权限/原acceptance/pair/Lease→capture两Scope；重复/新事件不进旧seal，当前撤权/原Session注销/归档维护/取消/到期接管、故障及after-check失效全回滚；实际死锁与限次恢复，旧Worker不得成功。License合成须标注，无正式文件或性能承诺。
+- Rollback/risk：撤未装配Worker不删历史，0037/38/39历史down保护保留。capture可能长于Lease/空间策略，末次检查拒绝到期；性能待验，不宣称短耗时P95达标。普通导出POST关闭，正式信任/Gate/全Scope仍待。
+
+## DEC-20260926-202
+
+- Date：2026-09-26；WBS：AUD-03-A06-A04-P01。
+- Precode：Phase2；输入JSONL_V1/AUDIT-EVENT-SAFE-V1/CAPTURE-MEMBERSHIP-V1与已验A03实际seal；Audit owned安全渲染，前置满足；无新实体/Schema/API/权限/依赖。只解决固定来源安全字节与manifest，不接文件发布。
+- Decision：JSONL文件只含逐条显式白名单事件，UTF8无BOM、canonical排序key/紧凑JSON/LF，UTC微秒，独立manifest含固定意图/Scope/窗口/筛选/版本/来源count/hash/文件size/hash，不含路径/worker/session/hint/free正文。来源只按固定member.position流入，逐项序号/Scope/全Spec/安全codes重核，再同原规范计算成员摘要；不得重查live集合。大小上限128MiB、单行16KiB，失败不返回manifest、不声称截断完整。
+- Authority：纯renderer和owned source Port不鉴权、不建UOW/commit、不授予文件交付；Owner须先实际权限/Root/原Job/Lease，再受控临时产物，完成发布前重新授权。失败可能已写部分字节，必须保持临时且不可下载/清理，不伪装文件I/O回滚。
+- Verification：规范向量/空集合/UTF8/LF/确定性、文件与成员hash区分、安全投影/筛选/范围、缺失/多项/重复/错序/错版本、短写/异常/超限、真实固定member源与新事件排除。摘要去重O(n)UUID内存保留，批量DB读取不声称常量内存或性能通过。
+- Rollback：撤未装配代码无历史变更；无Migration/API/Scope/依赖，正式Artifact/当前渲染权限/发布/下载/Gate/包仍待。
+## DEC-20260926-205 — P03-A01编码前检查
+
+- 当前Phase/WBS：Phase2 / AUD-03-A06-A04-P03-A01；输入CR-AUD-002/ADR010、0039、DM03/04/API02，P02实际不兼容与P03设计已完成。
+- 涉及模块/实体：Document FileObject、DocumentVersion/Upload引用保护；Audit仅后续来源，不跨模块写表。无新API/角色/依赖/生产操作。
+- 验收：0040与ORM parity，旧DOCUMENT完整保留；专用文件用途/归属/内容身份固定，禁止普通DocumentVersion/Upload误绑，即使同PROJECT；空/有数据up/down/reup、实际并发降级锁和专用历史拒绝down。
+- 实现选择：新增用途/owner CHECK及独立触发器，不改写0022/0023已有函数。用途/owner对所有FileObject immutable；专用Audit文件固定Hash/Size/MIME/Locator/Scope/Actor，初态STAGED/PERSISTENT，AVAILABLE后仅限制且不可复活；保留失败/取消文件历史，不物理delete/truncate。实际Export根与Worker权限不由UUID/Schema证明，后续公共Port独立验。
+- 风险/回滚：含任一AUDIT_EXPORT历史拒绝0040降级；仅临时DB运行，离线down关闭；DDL停写/备份与正式文件/存储/Lease/HTTP/Gate/性能仍待。
+
+- 同问题入口隔离补充：FileState/Publish通用Repository只加载DOCUMENT/NULL owner，防同PROJECT审计文件被旧状态/发布入口处理；实际公共Port独立验证仍待。
+
+## DEC-20260926-204
+
+- Date：2026-09-26；WBS：AUD-03-A06-A04-P03变更设计。
+- Input：完整正式总控V1.1/实施方案V2.1、ADR007/008、冻结DM03/04/API02和P02实际拒绝。当前Phase2，前置核查已完；Audit/Document/Jobs内部文件归属与结果，公开API仍关闭。
+- Decision：实施前建立CR-AUD-002与ADR010，仅内部FileObject扩用途/DEPLOYMENT、Audit own尝试/结果；不伪造文档或插件、不重标Scope、不修改普通Upload/Parse/Output规则。Schema/锁序/迁移/历史down保护/存储恢复/实际权限/Lease/取消/下载验收逐项记录后实施。
+- Result/risk：本项是设计记录，尚无代码/Migration或运行验收，不标完整导出PASS；新路径/用途和旧链路误绑防护须真实DB+文件验证，含历史拒绝降级，正式信任/质量/目标账户/Gate仍待。
+
+## DEC-20260926-208 — P03-A03-P01编码前检查
+
+- Phase/WBS：Phase2/P03-A03-P01；前置0040及Document字节/元数据Port已验；输入CR-AUD-002/ADR010/0037～0038原源。Audit render attempt子记录/ORM/0041；无新HTTP/权限/依赖/生产操作。
+- Decision：实施前CR精化每Job/fencing单文件计划、固定capture摘要/原accepted Job与安全Worker坐标。DB仅证明own来源/形状/不可变，实际Job存在/当前权与Lease公共Port留P02；不跨模块读取表、计划file_id不伪造已存在的FileObject或成功结果。
+- Acceptance：空/旧accepted sealed历史up/down/re-up/ORM parity、双Scope来源绑定/缺capture或acceptance拒绝、UUID/token/worker/源/时点/唯一/immutability、真实并发同代单计划与down锁/有计划历史拒绝。无磁盘/真正Worker/下载证明。
+- Risk/rollback：不回填/删旧来源，任何计划历史拒绝down，离线危险down禁用；待结果Schema与完整权限/Lease/发布回归，Gate/完整包仍待。
+
+## DEC-20260926-207 — P03-A02-P02编码前检查
+
+- Phase/WBS：Phase2/P03-A02-P02；输入0040/CR-AUD-002/ADR010/P01真实存储，前置满足。Document owned FileObject/StateEvent公共caller-UOW元数据Port；无Schema/API/依赖/权限变化。
+- Decision：精确export/原User/Scope/File/content坐标登记STAGED与首次StateEvent，INSERT冲突后锁原行完整重核、重放不改来源。只由Document生成私有final Locator；AVAILABLE核对原身份/Hash/MIME/Size/初态版本并登记状态来源，同UOW不commit、不做长I/O。已可用只返回原事件，RESTRICTED/FAILED等不得复活。
+- Authority：坐标/DTO/Hash不是Export根/当前权限/Lease/字节证明。Owner先核实际Root/acceptance/pair/capture/授权/Lease，事务外验证实际文件，再调用此Port且同事务追加真实Audit/Job结果。本项不自鉴权/伪造SystemActor；不单独开放HTTP。模拟caller用真实Audit/文件/临时DB验证同事务失败全回滚，不冒充完整Worker。
+- Acceptance：两个Scope真实staging→字节Hash→元数据→提升→AVAILABLE，重复/并发单首次事件、不同owner/actor/scope/hash/size/普通用途/无来源历史拒绝、回滚包括Audit、原创建trace保持、已限制不复活；旧链路回归。正式信任/并发发布/下载/包仍待。
+
+## DEC-20260926-206 — P03-A02-P01编码前检查
+
+- Phase/WBS：Phase2 / AUD-03-A06-A04-P03-A02-P01；前置0040内部归属已验，输入CR-AUD-002/ADR010/P01安全字节。Document owned受控物理文件Application Port与Adapter；无新Schema/API/角色/依赖。
+- Decision：本分项只实现PROJECT/DEPLOYMENT独立generated/audit存储，通过精确内部file_id/Scope/project坐标生成Locator，不接客户端路径。复用原路径检查/排他reserve/hash/同卷不覆盖提升/恢复原语；普通locators和上传扫描保持原范围。bounded sink只允许bytes写入，正常结束flush/fsync关闭再独立Hash读回；异常保留私有部分文件，不自动删除/覆盖。
+- Acceptance：真实临时文件双Scope/空文件/上限/短写/模拟磁盘不足/路径污染/扫描隔离/不覆盖/新ID/实际linked与final恢复及损坏拒绝；坐标/Hash不是授权，不开下载或DB发布。旧Storage回归；目标账户ACL/实际磁盘满/128MiB性能/Server2025/Debian未验。
+- Risks/rollback：下一分项才接caller-UOW元数据及Audit持久尝试/结果/当前权限/Lease；文件提升后仍不可见。撤未装配入口不删除专用历史；没有清理删除Port，不放宽生产删除授权。
+
+## DEC-20260926-203
+
+- Date：2026-09-26；WBS：AUD-03-A06-A04-P02。
+- Precode：Phase2；前置P01安全渲染已验；输入冻结DM-03/04/API-02与0039；涉及Audit/Document/Jobs FileObject/结果归属；无新API/权限/Migration。只做实际入口只读探测与兼容核查，不实施范围变更。
+- Decision：核验GLOBAL/PROJECT入口保持支持、DEPLOYMENT存储/发布实际拒绝、ORM范围；普通OutputArtifact的项目/Plugin/DocumentVersion来源不能伪造。登记独立进度证据；下一任务先专项CR再内部DEPLOYMENT FileObject/Audit自有结果契约，保持普通Document/Upload/Parse范围。
+- Risk/rollback：探测不访问客户文件或修改数据库；不存在生产回滚。不得用拒绝探测PASS宣称导出交付PASS；没有实际文件/公开POST/发行验收。

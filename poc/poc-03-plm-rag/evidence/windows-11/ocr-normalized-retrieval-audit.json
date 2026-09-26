@@ -1,0 +1,46 @@
+{
+  "schema_version": "poc-03.ocr-normalized-retrieval-audit.v1",
+  "generated_at": "2026-09-18T14:50:58.531239+08:00",
+  "status": "PASS",
+  "summary": {
+    "case_count": 120,
+    "top5_hits": 114,
+    "top5_recall": 0.95,
+    "top20_hits": 116,
+    "top20_recall": 0.9666666666666667,
+    "top5_miss_count": 6,
+    "top5_miss_expected_ranks": [
+      8,
+      11,
+      24,
+      27,
+      41,
+      117
+    ],
+    "top5_misses_by_source_type": {
+      "CONTRACT": 1,
+      "STANDARD_CAPABILITY": 5
+    }
+  },
+  "configuration": {
+    "source_type_filter": true,
+    "cjk_ocr_spacing_normalization": true,
+    "term_features": "cjk_bigrams_trigrams_and_alphanumeric_tokens",
+    "scoring": "binary_term_coverage_with_corpus_idf",
+    "query_label_leakage": false,
+    "expected_chunk_id_leakage": false
+  },
+  "limitations": {
+    "same_dataset_used_for_exploratory_tuning": true,
+    "independent_holdout_required_before_production_claim": true,
+    "citation_accuracy_ceiling_when_context_is_top5": 0.95
+  },
+  "privacy": {
+    "queries_in_report": false,
+    "chunk_ids_in_report": false,
+    "document_text_in_report": false,
+    "source_names_in_report": false,
+    "case_level_report_committed": false,
+    "external_calls": 0
+  }
+}

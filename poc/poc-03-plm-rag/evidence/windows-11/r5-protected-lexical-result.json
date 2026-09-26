@@ -1,0 +1,59 @@
+{
+  "schema_version": "poc-03.live-retrieval-result.v1",
+  "generated_at": "2026-09-20T14:20:23.581890+08:00",
+  "status": "PASS",
+  "summary": {
+    "case_count": 120,
+    "top_k": 5,
+    "top5_recall_hits": 114,
+    "top5_recall": 0.95,
+    "same_document_top5_hits": 118,
+    "same_document_top5_recall": 0.9833333333333333,
+    "reranker_live_count": 120
+  },
+  "thresholds": {
+    "top5_recall": 0.95
+  },
+  "checks": {
+    "top5_recall_at_least_95_percent": true,
+    "all_reranker_results_originated_from_live_calls": true,
+    "gin_index_used": true,
+    "hnsw_index_used": true
+  },
+  "configuration": {
+    "retrieval_pipeline_version": "r5-protected-lexical-fusion-v1",
+    "reranker_candidate_pipeline_version": "r4-source-filter-lexical-idf-v1",
+    "source_type_filter": true,
+    "cjk_ocr_spacing_normalization": true,
+    "protected_lexical_count": 4,
+    "semantic_reranker_count": 1,
+    "reranker_provider": "aliyun-bailian",
+    "reranker_model": "qwen3-rerank",
+    "embedding_external_calls_current_run": 0,
+    "reranker_external_calls_current_run": 0,
+    "cached_live_reranker_results_reused": 120
+  },
+  "environment": {
+    "postgresql_version": "18.6",
+    "pgvector_version": "0.8.6",
+    "platform": "Windows 11 x86-64"
+  },
+  "limitations": {
+    "same_dataset_used_for_exploratory_tuning": true,
+    "independent_holdout_required_before_production_claim": true,
+    "threshold_margin_hits": 0,
+    "windows_server_2025_not_run": true,
+    "debian_13_not_run": true
+  },
+  "privacy": {
+    "queries_committed": false,
+    "chunk_ids_committed": false,
+    "document_text_committed": false,
+    "vectors_committed": false,
+    "model_responses_committed": false,
+    "case_level_results_committed": false,
+    "api_keys_committed": false,
+    "workspace_id_committed": false
+  },
+  "conclusion": "P03-A11 passed on Windows 11 at the exact 95 percent threshold; independent holdout validation remains required."
+}
