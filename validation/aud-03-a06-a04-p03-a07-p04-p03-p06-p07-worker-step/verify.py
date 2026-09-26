@@ -13,7 +13,7 @@ spec=spec_from_file_location('_step_fixture',Path(__file__).resolve().parents[1]
 p=module_from_spec(spec);spec.loader.exec_module(p);e=p.e;fixture=p.fixture
 
 
-def exercise(v):
+def exercise(v,*,decorate_step=None):
     database=e.create_worker_database_runtime(v['url']);db=v['db']
     @contextmanager
     def uow():
@@ -36,7 +36,9 @@ def exercise(v):
     admission=p.AuditExportClaimAdmission(unit_of_work=uow,repository=v['repo'],queue=v['queue'],system_actor=v['system_actor'],supervisor=supervisor,
         claims=p.AuditExportClaims(repository=p.SqlAlchemyAuditExportClaimRepository()))
     sweep=AuditExportExhaustionSweep(unit_of_work=uow,candidates=AuditExportExhaustionCandidates(repository=SqlAlchemyAuditExportExhaustionScanRepository()),system_actor=v['system_actor'],exhaustion=exhaustion)
-    def new_step():return AuditExportWorkerStep(admission=admission,executor=executor,sweep=sweep,worker_ref='step-real')
+    def new_step():
+        step=AuditExportWorkerStep(admission=admission,executor=executor,sweep=sweep,worker_ref='step-real')
+        return decorate_step(step) if decorate_step is not None else step
     def pending(scope):
         a=fixture.a;now=datetime.now(timezone.utc)
         spec=a.AuditExportSpec(scope,v['project'] if scope=='PROJECT' else None,'PROJECT_GOVERNANCE' if scope=='PROJECT' else 'SECURITY_REVIEW',now-timedelta(hours=1),now)

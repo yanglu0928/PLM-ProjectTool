@@ -52,3 +52,5 @@ P06-P05候选发现内部PASS：编码前策略另登记P05进度，Jobs仅固�
 P06-P06确认恢复政策在编码前progress记录：commit异常只保本次actual命令/Claim/identity，退出原UOW后核完整原Root/pair/current活Worker-fence/ActualClaim，不经deadlock重复领取、不以STALE猜成功，技术收据不授业务权限。实际双Scope提交前回滚与commit后确认故障一Lease/Attempt、六表无写/错Worker过期换代成功拒绝/撤权正文拒绝；1084无失败（2环境跳过）及开发wheel通过。本次已知命令恢复不等于实际网络中断或跨进程未知命令恢复，loop/CLI/HTTP未完成，CR/Gate未关闭。
 
 P06-P07编码前策略记录在进度：实例有界单步/交替优先/stop仅新准入停止，异常保pending，静止Reader核绑定旧代/前两次期限仅释放本机引用，不写DB/伪造成功/强杀。真实双Scope实际领取/周期heartbeat/发布、空和stop六表不写、撤权安全FAILED及原发布回归，1090无失败（2环境跳过）/wheel；交替/异常排空/活线程拒绝/错facts及本机释放为unit范围。全局公平/真实timeout综合/loop/CLI/HTTP未验，CR/Gate未关闭。
+
+P06-P08编码前Loop策略在progress登记，现内部PASS：原Step有界/持续运行、实例互斥与空闲Event可中断，actual STOPPED才停止、LIMIT非排空证明，异常保pending不自旋/强杀。1095无失败（2跳过）、真实两Scope经Loop实际领取/周期heartbeat/发布和撤权安全FAILED/空stop无写、旧发布及wheel通过。进程信号/服务组合/未知跨进程恢复/公平隔离/CLI/HTTP仍待，CR/Gate不关闭。

@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-243
+
+- Precode：Phase2/P06-P08，CR-AUD-004/ADR011，前置P07已验，编码前progress规定Loop边界/停止非强杀，无Schema/API/权限/依赖变化。
+- Decision：原Step有界或持续运行、实例互斥/空闲Event可中断；stop传原Step排空，只有actual STOPPED才报停止，LIMIT非停机证据；异常保原pending退出不盲重试，常数聚合计数不存业务输出。
+- Evidence：5新unit/1095无失败（2环境权限跳过），真实PG-Vault双Scope经Loop PENDING准入/周期heartbeat/发布、撤权安全失败/空stop无写，旧发布回归/wheel通过。Event等待中断/并行run拒绝与异常排空为unit真实线程行为，非正式服务进程信号证明。
+- Risk/rollback：无Migration/API/依赖/数据升级，0042保留，撤内部装配保历史。未知跨进程命令/坏源隔离/公平/CLI信号/服务与正式信任/质量/完整包/Gate仍待；下一P06-P09运行组合根/启动核查。
+
 ## DEC-20260927-242
 
 - Precode：Phase2/P06-P07，CR-AUD-004/ADR011，原领取/确认/执行/耗尽已验；实施前progress记录单步边界和停止不是强杀。无DB/API/依赖/权限变更。
