@@ -3162,3 +3162,11 @@
 - Reason：历史不能依可变当前 Checklist 重建；Waiver 需保留真实 actor/理由/影响/依据而不是改写 PASS。持久层和 START/完成语义独立设计，避免猜测 API。
 - Impact：仅领域/测试/文档，无 Schema、依赖、Breaking API 或安全机制变更。
 - Rollback：不使用新值对象；不改已有实例、审计或客户事实。
+
+## DEC-20260926-160
+
+- Date：2026-09-26；WBS：WFL-02-A01-P02；CR：CR-WFL-003。
+- Decision：追加历史保留冻结 Transition/GateItem 两表，增加 typed refs owned 表；固定引用同时保存当时 Scope/状态/版本/摘要。Evidence 使用真实 FK，Review/例外缺目标表明确标前置，不虚构保护。root 创建事务标识由数据库强制写入，提交后禁止补写子项改变快照。
+- Reason：Evidence eligibility 可变，只有 UUID 无法还原当时依据；JSON 数组也不足以提供查询/FK/项目结构约束。
+- Impact：设计阶段，不创建 0031；无业务事实/API/依赖变化。Schema 增量与验证矩阵、缺 Owner 和 Checklist/START/完成前置见 CR。
+- Rollback：设计可调整但保留历史版本；实施后有数据禁止破坏性 down，应用不装配并保留记录。
