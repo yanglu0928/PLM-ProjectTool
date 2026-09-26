@@ -134,3 +134,14 @@ results = sa.Table('aud_export_results', Base.metadata,
 
 class AuditExportResultRow(Base):
     __table__ = results
+
+
+cancel_versions = sa.Table('aud_export_cancel_versions',Base.metadata,
+    _col('audit_event_id',_id),_col('lock_version',sa.BigInteger()),
+    sa.PrimaryKeyConstraint('audit_event_id',name='pk_aud_export_cancel_versions'),
+    sa.ForeignKeyConstraint(['audit_event_id'],['plm.aud_events.audit_event_id'],name='fk_aud_export_cancel_versions__audit'),
+    sa.CheckConstraint("audit_event_id<>'00000000-0000-0000-0000-000000000000'::uuid AND lock_version>=0",name='ck_aud_export_cancel_versions__shape'))
+
+
+class AuditExportCancelVersionRow(Base):
+    __table__ = cancel_versions

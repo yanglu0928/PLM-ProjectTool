@@ -1,5 +1,7 @@
 # Job详情运行Contract增量
 
+JOB-02-A03（2026-09-27）首次版本前置已补：0044 append-only Audit取消版本快照，新JobId首次请求在原UOW保存实际lock_version；Worker确认推进后重放仍原state+原version。旧收据无快照保None，未来HTTP必须失败关闭，不能猜强ETag。冻结GET JobView不改，项目取消HTTP尚未挂载，Admin取消不自动新增；无本轮Breaking/权限变化，生产升级需0044备份维护门禁。
+
 JOB-02-A02（2026-09-27）内部Audit Owner支持JobId同UOW原源解析，强制expected_version；原当前授权/受理/pair与export入口指纹去重保持。无公开HTTP。API-03取消仅状态结果，GET才完整JobView；但API-01更新强ETag/首次重放需补取消首次lock_version快照，不能当前version拼旧state。冻结只有JOB_PROJECT_CANCEL，内部DEPLOYMENT不等新增JOB_ADMIN_CANCEL，若需HTTP另CR；其他Owner/完整Scope保留。
 
 JOB-02-A01（2026-09-27）内部前置更新：CR-JOB-003已补原Audit取消expected_version与锁内实际Job版本比较；显式版本绑定原持久指纹，同Key原命令重放返回首次结果且仍重验当前授权，过期新请求VERSION_CONFLICT整事务无写。None仅保留旧内部调用/指纹，未来公开If-Match映射必须显式提供版本；尚无公开取消HTTP/JobId受权Owner解析/完整响应，不能据本项宣称JOB_CANCEL或完整Jobs PASS。无新Migration/冻结API Breaking/角色变动；GET强vN保持。

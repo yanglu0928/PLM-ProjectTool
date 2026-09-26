@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-267
+
+- Precode：Phase2/JOB-02-A03，前置A01/A02/0043及原授权/收据已验；CR-JOB-004在编码前登记。Audit owned最小版本快照ORM/0044/up/down，既有Audit事件仍唯一状态与Actor/Job来源，无API/依赖/角色变更。
+- Decision：新JobId首次命令同事务读取实际锁版本并追加事件关联快照；重放保首次version，旧收据None不猜回填。不可变DB保护，含历史降级拒绝，公开HTTP不得接受缺版本。
+- Acceptance：空/有数据up/down/parity、非法来源与immutable拒绝、真实状态变化后旧version重放/当前权限/故障全回滚及旧链路；只临时PG不生产。结果待证据追加。
+- Evidence：1167无失败/2跳过；0044真实空/已有十表up/down/up、ORM parity/无猜回填、来源/不可变保护/含历史down拒绝；两Scope并发一快照、原请求v2→实际Worker当前v3重放state/v2、旧None保留、实际insert后十一表全回滚，旧A02/发布及wheel通过。首轮验证连接属性和精确metadata名单未更新已修复重测，详细失败保进度。INTERNAL_PASS，公开HTTP/正式材料/Gate待。
+
 ## DEC-20260927-266
 
 - Precode：Phase2/JOB-02-A02，前置A01/0043和原Audit取消授权/收据满足；详见job-02-a02-owner-cancel进度。无Schema/API/角色/依赖变动。

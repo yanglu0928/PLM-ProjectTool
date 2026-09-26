@@ -104,12 +104,15 @@ class RequestCancelTests(TestCase):
         return replace(command,**values)
 
     def test_job_owner_resolves_real_root_in_same_uow_and_binds_fingerprint(self):
+        self.cancel.read_facts.side_effect=[self.before,self.after,self.after]
+        self.result=replace(self.result,lock_version=0);self.sources.receipt.return_value=self.result
         self.assertEqual(self.service.request_job(self.job_command(),idempotency_key=self.key),self.result)
         self.f.repo.peek_created_for_job.assert_called_once_with(self.f.tx,job_id=self.f.cmd.job_id)
         self.f.repo.peek_created.assert_not_called()
         self.assertEqual(self.receipts.reserve.call_args.kwargs['request_fingerprint'],canonical_payload_fingerprint(dict(
             export_id=str(self.f.intent.export_id),intent_hash=self.f.intent.intent_hash,reason=self.c.reason,expected_version=0)))
         self.f.tx.commit.assert_called_once()
+        self.sources.record_version.assert_called_once()
 
     def test_job_owner_requires_explicit_version_and_does_not_accept_export_command(self):
         for version in (None,True,-1,2**63):

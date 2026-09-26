@@ -1,5 +1,6 @@
 """Owned append-only cancel request events double as immutable command receipts."""
-from sqlalchemy import select
+from sqlalchemy import select,insert
+from .export_orm import cancel_versions
 from .audit_orm import AuditEventRow
 from .audit_read_repository import _session
 from ..application.request_export_cancel import AuditExportCancelReceipt,AuditExportCancelRequestError as Error
@@ -27,7 +28,15 @@ class SqlAlchemyAuditExportCancelSources:
             expected={'PENDING':'CANCELLED','RETRY_WAIT':'CANCELLED','RUNNING':'CANCEL_REQUESTED'}.get(r.before_state)
             if r.after_state!=expected or expected is None:raise Error()
         elif r.action!='AUDIT_EXPORT_CANCEL_CHECKED' or r.before_state!=r.after_state:raise Error()
-        return AuditExportCancelReceipt(accepted.job_id,r.after_state,changed,r.audit_event_id)
+        version=_session(tx).execute(select(cancel_versions.c.lock_version).where(cancel_versions.c.audit_event_id==audit_event_id)).scalar_one_or_none()
+        return AuditExportCancelReceipt(accepted.job_id,r.after_state,changed,r.audit_event_id,version)
+
+    def record_version(self,tx,*,accepted,actor_id,audit_event_id,facts):
+        if type(facts) is not AuditExportCancelFacts:raise Error()
+        facts.__post_init__()
+        result=self.receipt(tx,accepted=accepted,actor_id=actor_id,audit_event_id=audit_event_id)
+        if result.lock_version is not None or (facts.job_id,facts.state)!=(result.job_id,result.state):raise Error()
+        _session(tx).execute(insert(cancel_versions).values(audit_event_id=audit_event_id,lock_version=facts.lock_version))
 
     def first_request(self,tx,*,accepted,facts):
         if type(accepted) is not AcceptedAuditExport or type(facts) is not AuditExportCancelFacts or facts.job_id!=accepted.job_id:raise Error()

@@ -44,10 +44,12 @@ class AuditExportCancelReceipt:
     state: str
     changed: bool
     audit_event_id: UUID
+    lock_version: int|None=None
 
     def __post_init__(self):
         if (any(type(v) is not UUID or not v.int for v in (self.job_id,self.audit_event_id))
-                or type(self.changed) is not bool or type(self.state) is not str or self.state not in {'CANCEL_REQUESTED','CANCELLED','SUCCEEDED','FAILED'}):
+                or type(self.changed) is not bool or type(self.state) is not str or self.state not in {'CANCEL_REQUESTED','CANCELLED','SUCCEEDED','FAILED'}
+                or self.lock_version is not None and (type(self.lock_version) is not int or not 0<=self.lock_version<=2**63-1)):
             raise AuditExportCancelRequestError()
 
 
@@ -141,8 +143,13 @@ class AuditExportCancelRequestService:
                     action='AUDIT_EXPORT_CANCEL_REQUESTED' if mutation.changed else 'AUDIT_EXPORT_CANCEL_CHECKED',outcome='SUCCESS',
                     target_owner_module='jobs',target_object_type='JOB-01',target_object_id=accepted.job_id,
                     reason_code='USER_REQUESTED',before_state=before.state,after_state=mutation.state))
+                if by_job:
+                    current=self._cancel.read_facts(tx,target=target)
+                    if current.state!=mutation.state:raise AuditExportCancelRequestError()
+                    self._sources.record_version(tx,accepted=accepted,actor_id=proof.actor_id,audit_event_id=event_id,facts=current)
                 result=self._sources.receipt(tx,accepted=accepted,actor_id=proof.actor_id,audit_event_id=event_id)
                 if (result.state,result.changed)!=(mutation.state,mutation.changed):raise AuditExportCancelRequestError()
+                if by_job and result.lock_version!=current.lock_version:raise AuditExportCancelRequestError()
                 self._receipts.complete(tx,scope=idem,result=IdempotencyResult('V1_AUDIT_EXPORT_CANCEL',event_id,200))
             if type(result) is not AuditExportCancelReceipt or result.job_id!=accepted.job_id:raise AuditExportCancelRequestError()
             result.__post_init__()
