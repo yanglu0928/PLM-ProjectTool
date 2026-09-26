@@ -1,6 +1,6 @@
 # CR-AUD-005：后台候选竞争与异常来源隔离
 
-日期：2026-09-27；状态：IN_PROGRESS / P02_LOCK_SKIP_INTERNAL_PASS / P03_SOURCE_ISOLATION_PENDING；持续授权：AI自主执行规则V1.1，用户最新允许兼容偏差先记录后实施，不待逐项批准。来源：P06-P13-P01真实PG证据，原冻结64cdf09与CR-AUD-004历史保留，Gate未通过。
+日期：2026-09-27；状态：IN_PROGRESS / P02_P07_BOUNDED_SCHEDULING_INTERNAL_PASS / RESIDUAL_FAILURE_AND_RELEASE_PENDING；持续授权：AI自主执行规则V1.1，用户最新允许兼容偏差先记录后实施，不待逐项批准。来源：P06-P13-P01真实PG证据，原冻结64cdf09与CR-AUD-004历史保留，Gate未通过。
 
 ## 冲突/证据
 
@@ -34,3 +34,5 @@ P13-P04更新：真实双Scope反向Root→Job与Worker Job→Root形成8个40P0
 P13-P05更新：新增独立expiry/JobId只读scan及常数cursor，旧peek/run默认保留；后台显式耗尽隔离、Owner只读原源预检且不授终态权，仍原expire/verify/提交后证明。1130通过/2既有跳过，实际双Scope第三次到期malformed/缺Root/错pair精确reason六表无写，健康后续发布、坏Job/Lease/Attempt全行不变，恢复测试来源后原收尾/真实commit-lost-ack/旧字节仍通过；真实CLI停止/旧发布/wheel通过。长期混排、Acceptance审计真实矩阵/复杂Lease/预检竞争仍待，CR保持打开。
 
 P13-P06更新：两轮真实持续Loop每轮12健康双Scope任务+4高优先坏源+1实际到期第三代坏源，健康全发布/坏Job-Lease-Attempt不动/true STOPPED，恢复普通来源后可发布，原安全收尾/actual lost-ack/字节/旧发布回归通过。Audit实际UPDATE被P0001不可变触发器拒绝、六表无写，未伪造真实Audit损坏通过；其专属分类保留unit范围。观察每轮91steps/78rejected/12executed，暴露正常claim清cursor的重复扫描开销；下一P07先记录后优化cursor回绕/新任务可见性，性能与无限流公平不冒充PASS，CR打开。
+
+P13-P07/P08更新：有界窗口保留拒绝位置、末尾或32次有结果调度动作回绕，1132无失败/2既有跳过；实际双Scope各41健康完成，新优先head在31个原任务完成后执行，坏技术行不动/STOPPED；固定混排各25steps/12拒绝/12完成。旧source修复同实例末尾回绕、提交确认、外部CLI停止、真实40P01/55P03和旧发布复验通过。P08依据实际代码/验证覆盖收口有限隔离子任务，不再将已完成源隔离标pending；参见 `docs/progress/aud-p06-p13-acceptance-closeout.md`。CR整体保持IN_PROGRESS，复杂Lease/预检竞争/真实损坏/长期负载/正式部署不被局部PASS覆盖。

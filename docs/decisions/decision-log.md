@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-258
+
+- Context：P06-P13-P08，当前acca660源码及真实验收记录；按项目Skill核对覆盖，不继续无界拆分已验有限调度子任务。
+- Decision：有限隔离验收矩阵收口、CR-AUD-005整体保留复杂故障/部署风险；更新实际已完成耗尽/死锁说明。公开链先JOB-01-A01详情，再GET/装配/Audit POST。完整Jobs列表/写操作及其他Owner不取消。
+- Evidence：Jobs无用户Read Service/API；Audit结果GET与内部submit存在但无POST；ORM无lock_version，不能以fencing或常数ETag冒充取消并发。原202要求可查询status_url；Owner权限/安全元数据必须先实现。
+- Impact：本轮仅文档审查、未重跑代码测试，无Migration/API/依赖/升级，撤增量文档可回滚；用户不需作普通继续决定。正式材料/Gate/完整包不关闭。
+
 ## DEC-20260927-257
 
 - Precode：Phase2/P06-P13-P07，CR-AUD-005，scan-window先记录保留拒绝游标/32动作回绕及新队首验证，原排序/权限/证明不改。
