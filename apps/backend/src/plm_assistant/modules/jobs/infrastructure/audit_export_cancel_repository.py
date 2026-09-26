@@ -11,9 +11,33 @@ from ..application.lease_checkpoint import validate_checkpoint
 from .audit_export_enqueue_repository import SqlAlchemyAuditExportJobQueueRepository
 from .lease_repository import SqlAlchemyJobLeaseRepository
 from .orm import JobRow,JobLeaseRow
+from ..application.cancellation_proof import CancelledJobProof
 
 
 class SqlAlchemyAuditExportCancellationRepository:
+    def assert_cancelled(self,transaction,*,target,fencing_token,worker_ref):
+        validate_target(target)
+        try:validate_checkpoint(job_id=target.refs.job_id,fencing_token=fencing_token,worker_ref=worker_ref)
+        except JobLeaseError:raise Error('VALIDATION_FAILED') from None
+        session,job=self._bound(transaction,target)
+        self._history(job)
+        if (job.state!='CANCELLED' or job.fencing_token!=fencing_token
+                or job.lease_expires_at is not None or job.completed_at is None):raise Error('STALE_LEASE')
+        lease=session.execute(select(JobLeaseRow).where(JobLeaseRow.job_id==job.job_id,
+            JobLeaseRow.fencing_token==fencing_token).with_for_update(of=JobLeaseRow)).scalar_one_or_none()
+        try:attempt=self._leases._attempt(session,job.job_id,fencing_token)
+        except JobLeaseError as exc:raise Error(exc.code) from None
+        if (lease is None or lease.state not in {'RELEASED','EXPIRED'} or lease.worker_ref!=worker_ref
+                or attempt.worker_ref!=worker_ref or attempt.attempt_no!=job.attempt_count
+                or not 1<=attempt.attempt_no<=job.max_attempts or attempt.error_code!='JOB_CANCELLED'
+                or attempt.completed_at!=job.completed_at
+                or not attempt.started_at<=job.cancel_requested_at<=job.completed_at
+                or lease.acquired_at>job.cancel_requested_at
+                or (lease.state=='RELEASED' and job.completed_at>=lease.lease_expires_at)
+                or (lease.state=='EXPIRED' and job.completed_at<lease.lease_expires_at)):
+            raise Error('CONFLICT_STATE')
+        return CancelledJobProof(self._leases._claim(job),lease.state,job.completed_at)
+
     def __init__(self):
         self._queue=SqlAlchemyAuditExportJobQueueRepository()
         self._leases=SqlAlchemyJobLeaseRepository()

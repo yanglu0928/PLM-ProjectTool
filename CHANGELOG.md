@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/P04-P03-P04-P05新增取消提交确认丢失只读核验，原Job/Outbox/Scope/trace/payload、当前Worker/fence一致终态Lease/Attempt、唯一首USER与SYSTEM完成源及当前identity；活期和到期完成严格区分，不推断STALE成功、不重复写Audit。6新unit/真实PG-Vault两Scope两方式commit后故障与八表无写重读、错绑定/缺重复源/identity拒绝及旧发布通过；1031无失败（2环境跳过）、wheel成功。Windows11，无Migration/API/依赖、0042，无数据升级，撤未装配核验保历史回滚。retry/执行器/主循环/HTTP/正式材料/三平台/质量/Gate/可用安装包待。
+
 - 2026-09-27：`0.1.0.dev0`/P04-P03-P04-P04新增严格当前Worker/fence的过期取消恢复；唯一首USER源、当前SystemActor与最小SYSTEM恢复Audit/实际Job-Lease-Attempt状态同事务。4新unit/真实PG-Vault双Scope实际到期及未到期、错绑定/终态/裸技术源拒绝、Audit/恢复写后/identity故障回滚，首历史/字节/结果保留；1025后端无失败（2环境跳过），旧发布/wheel通过。Windows11，无Migration/API/依赖，0042，无数据升级，撤未装配Owner保历史回滚。DB到期不代表进程强杀；确认丢失/主循环/HTTP/正式材料/三平台/质量/Gate/可用安装包待。
 
 - 2026-09-26：`0.1.0.dev0`/P04-P03-P04-P03新增后台活代取消确认Owner，要求同Supervisor实际静止、当前SystemActor、原Root/acceptance/pair/唯一首申请USER Audit，最小SYSTEM取消完成Audit与实际alive Worker/fence/Lease ack同UOW。4新unit/真实PG-Vault双Scope撤User+License仅安全停止、首历史/字节保留、Audit与ack写后/后验identity故障整回滚、错绑定/终态/首源缺失/实际到期拒绝及原发布回归PASS；1021无失败（2环境跳过），开发wheel成功。Windows11，无Migration/API/依赖、0042，无数据升级，撤未装配Owner保历史回滚。到期恢复/确认丢失/执行器/HTTP及正式材料/三平台/质量/Gate/可用安装包待。

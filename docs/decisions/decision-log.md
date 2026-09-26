@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-233
+
+- Date/WBS：2026-09-27 / P04-P03-P04-P05；Phase2，CR-AUD-004/ADR011；前置首申请/活代ack/到期恢复/静止锁已验，编码前检查登记进度文件。
+- Decision：只读复核原Root/acceptance/Job-Outbox、唯一首USER源、当前Worker/fence一致CANCELLED/Lease/Attempt/完成时间、唯一SYSTEM完成源和当前identity前后；活期RELEASED与到期EXPIRED严格区分，首申请Audit先于完成Audit，不猜STALE或仅状态，不commit/重复Audit/读文件。
+- Evidence：6新unit，1031后端无失败（2环境跳过），真实PG临时Vault两Scope两种真正commit后确认丢失/重复八表无写；错绑定/类型/缺或重复源/identity失败拒绝，旧发布/wheel通过。初次unit合成时间窗错误修正重跑，不放宽生产校验；详见进度证据，不声称新并发/实际网络断线已验。
+- Risk/rollback：即时取消非本Worker证明，当前受控identity失去即无成功receipt；无Migration/API/依赖或生产升级。撤未装配核验保历史终态，Next瞬时失败retry策略，执行器/主循环/公开HTTP/正式材料/质量/全Scope可用包/Gate保持待。
+
 ## DEC-20260927-232
 
 - Date/WBS：2026-09-27 / P04-P03-P04-P04；Phase2，编码前检查已登记，输入CR-AUD-004/ADR011，前置首USER源、静止锁、受控identity、alive取消Owner已验。

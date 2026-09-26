@@ -79,6 +79,7 @@ def validate_cancel_request(*,target,requested_by,reason):
 
 
 class AuditExportCancellationRepositoryPort(Protocol):
+    def assert_cancelled(self,transaction:object,*,target:AuditExportCancellationTarget,fencing_token:int,worker_ref:str): ...
     def recover_current_expired_cancel(self,transaction:object,*,target:AuditExportCancellationTarget,fencing_token:int,worker_ref:str)->AuditExportCancellationResult: ...
     def read_facts(self,transaction:object,*,target:AuditExportCancellationTarget)->AuditExportCancelFacts: ...
     def request_cancel(self,transaction:object,*,target:AuditExportCancellationTarget,requested_by:UUID,reason:str)->AuditExportCancellationResult: ...
@@ -98,6 +99,23 @@ class AuditExportCancellation:
             if type(result) is not AuditExportCancelFacts or result.job_id!=target.refs.job_id:
                 raise AuditExportCancellationError('JOB_STORE_UNAVAILABLE')
             result.__post_init__();return result
+        except AuditExportCancellationError:raise
+        except Exception:raise AuditExportCancellationError('JOB_STORE_UNAVAILABLE') from None
+
+    def assert_cancelled(self,transaction,*,target,fencing_token,worker_ref):
+        # Lazy import avoids the immutable proof/owned error type dependency cycle.
+        from .cancellation_proof import CancelledJobProof
+        from .audit_export_complete import AuditExportJobCompletion
+        validate_target(target)
+        try:validate_checkpoint(job_id=target.refs.job_id,fencing_token=fencing_token,worker_ref=worker_ref)
+        except JobLeaseError:raise AuditExportCancellationError('VALIDATION_FAILED') from None
+        try:
+            proof=self._repository.assert_cancelled(transaction,target=target,fencing_token=fencing_token,worker_ref=worker_ref)
+            if type(proof) is not CancelledJobProof:raise AuditExportCancellationError('JOB_STORE_UNAVAILABLE')
+            proof.__post_init__()
+            claim=AuditExportJobCompletion._claim(proof.claim,target.request,target.refs,fencing_token)
+            if claim.attempt_no>3:raise AuditExportCancellationError('JOB_STORE_UNAVAILABLE')
+            return proof
         except AuditExportCancellationError:raise
         except Exception:raise AuditExportCancellationError('JOB_STORE_UNAVAILABLE') from None
 
