@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/CR-TRC-002/TRC-01-A05-P03 完成通用 Trace HTTP 前置核查：冻结三字段 `ResourceVersionRef` 需逐 Owner 受权解析 Scope/Project，目前仅 DOC-02 已证明；写路由保持未挂载，转 Phase 2 Workflow 独立任务。无程序/Migration/API/依赖变化，未运行 HTTP 验收；不能视为 Trace 全链或 Gate 3 PASS。
+
 - 2026-09-26：`0.1.0.dev0`/TRC-01-A05-P02 新增仅内部 PROJECT TraceLink 创建命令，真实 Session/CSRF 与冻结角色授权、双端事务证明、无环、持久幂等、活动边去重及 Audit 同事务。Windows 11 后端 600 项无失败（2 项环境跳过），隔离 PostgreSQL 18.6 并发同边、重放、撤权、环及审计回滚、开发 wheel PASS。无 Migration/公开 API/新依赖，升级无需动作；仅 DOC-02 Owner 已接入，正式 HTTP、其他 Owner、Server 2025 未验，Debian 13 暂不验证。
 
 - 2026-09-26：`0.1.0.dev0`/CR-TRC-001/TRC-01-A05-P01 将 Trace 固定版本目标证明改为调用方同事务，并锁定 Document/Version/FileObject 与项目授权事实。Windows 11 后端 595 项无失败（2 项环境跳过），隔离 PostgreSQL 18.6 文件/成员并发更新阻塞和撤权拒绝、开发 wheel PASS。无 Migration/公开 API/新依赖；升级无需动作。仅 DOC-02 Owner 可证明，正式 Trace 创建/收据/Audit 尚未接线，Server 2025 未验，Debian 13 按用户指令暂不验证。
