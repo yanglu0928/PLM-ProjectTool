@@ -3218,3 +3218,11 @@
 - Reason：直接返回 PASS 无法回溯具体更正记录；旧快照不可改写，不能由 nullable 漏洞创建新无链 Gate。记录操作者不等于例外批准人。
 - Impact：拟独立 0033，原 0031/0032/冻结 API 不改，无新增业务 Scope/依赖。Schema 先验，实际批准 Owner/Gate 服务另做，不把结构当客户确认。
 - Rollback：新关联非空拒绝 down；只有旧 NULL 关系允许删空字段，应用不装配新 Gate 命令。
+
+## DEC-20260926-167
+
+- Date：2026-09-26；WBS：RVW-01-A01/RVW-02-A01；CR：CR-RVW-001。
+- Decision：统一 Review 先固定所有 Assignment 完成才汇总；任何 RETURN 在完整集合中使结果 RETURNED，未完成仍 IN_REVIEW/持锁。固定决定/主题观测与 owned 身份锁/事件分离，不覆盖历史，不跨模块更新主题正式状态。
+- Reason：DM-01/DM-02/AF-02 明确完整集合规则，API 摘要不能被解释成提前终结；当前没有实际 Review，Gate 需要真实批准来源。
+- Impact：设计八表（五既定+三个 owned 辅助）及纯 Domain；未有新 migration/API/依赖，不声明真实资格/Owner/Gate 已验。
+- Rollback：不装配新模块，未来 owned 历史非空不允许破坏性 down，原冻结/0033 保留。
