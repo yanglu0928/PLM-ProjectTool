@@ -21,3 +21,5 @@ Owner 同事务锁定主题逻辑身份和实际不可变版本、核验可送�
 RVW-02-A03 先完成真实账户 + Project 成员基础资格内部组件，返回固定 ID/角色，不返回用户名/账户敏感值；角色子集只来自受控服务调用，未知/空策略拒绝，无 GLOBAL 或管理员回退。本组件不承担交互 Actor/License/主题权限，不挂载 HTTP；Owner/完整 start 仍是独立待办。
 
 之后 RVW-02-A04 明确 Subject 固定快照/真实身份锁 Port，RVW-02-A05 内部完整 start-round/幂等/审计及隔离数据库验收；真实业务 Owner 必须实现后才开放 API。无真实 Owner 时转向独立 Phase 2 工作，不跨 Phase 编造业务成果。无新迁移/依赖；停用内部组件即可回滚，保留历史。
+
+RVW-02-A05-P02 实施细化：Auth Session/CSRF 共享锁→全部账户预锁（同 tx 暂存观测，不授权）→当前 PM/Project→Review/receipt→新请求成员资格→Owner/完整 Round。成功收据重放核验当前 Actor/PM/Owner 对固定旧版访问权，不重复要求历史 reviewer 当前仍可送审。现有旧成员写可能反向锁账户；实际隔离库已触发真实 40P01，送审仅此错误整笔 rollback 后最多三次尝试，其他错误不重试。不宣称任意跨模块无死锁或所有旧命令已有重试。

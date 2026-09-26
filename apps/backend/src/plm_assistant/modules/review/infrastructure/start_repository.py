@@ -1,12 +1,18 @@
 """Complete Review-owned round structure in the caller transaction, no Owner SQL."""
 from sqlalchemy import select, insert, update, func
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import DBAPIError
+from datetime import timezone
 from ..application.read_snapshot import ReviewIdentitySnapshot
 from ..application.persist_round import StartedReviewRoundRef, ReviewRoundPersistError
 from .orm import _tables
 
 
 class SqlAlchemyReviewStartRepository:
+    @staticmethod
+    def is_retryable_deadlock(error):
+        return isinstance(error,DBAPIError) and getattr(error.orig,"sqlstate",None)=="40P01"
+
     @staticmethod
     def _session(tx):
         session = getattr(tx, "session", None)
@@ -55,3 +61,16 @@ class SqlAlchemyReviewStartRepository:
             occurred_at=started_at, before_lock_version=None, after_lock_version=0, result_state="IN_REVIEW"))
         return StartedReviewRoundRef(request.round_id, root.review_id, root.project_id, number,
             request.subject_version_id, request.actor_id, started_at)
+
+    def get_started_ref(self, tx, *, project_id, review_id, round_id):
+        root, _ = self.lock_start_context(tx,project_id=project_id,review_id=review_id)
+        if root is None: return None
+        row = self._session(tx).execute(select(_tables[1]).where(_tables[1].c.review_round_id==round_id,
+            _tables[1].c.review_id==review_id,_tables[1].c.scope=="PROJECT",_tables[1].c.project_id==project_id
+        ).with_for_update(read=True)).mappings().one_or_none()
+        if row is None: return None
+        reviewers = tuple(self._session(tx).execute(select(_tables[2].c.reviewer_id).where(
+            _tables[2].c.review_round_id==round_id,_tables[2].c.review_id==review_id
+        ).order_by(_tables[2].c.reviewer_id)).scalars())
+        return StartedReviewRoundRef(round_id,review_id,project_id,row["round_no"],row["subject_version_id"],
+            row["started_by"],row["started_at"].astimezone(timezone.utc)), reviewers

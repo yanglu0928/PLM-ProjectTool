@@ -50,3 +50,10 @@ class ReviewerQualificationTests(unittest.TestCase):
     def test_auth_adapter_no_implicit_transaction_and_safe_error(self):
         with self.assertRaises(RuntimeError): SqlAlchemyReviewUserAccess().lock_enabled_users(SimpleNamespace(session=None), tuple(sorted(self.users)))
         self.assertEqual(str(ReviewReviewerEligibilityError()), "REVIEW_REVIEWER_INELIGIBLE")
+
+    def test_prelock_observation_cannot_be_reused_in_other_tx_or_set(self):
+        locked=self.service.lock_users_in_transaction(self.tx,reviewer_ids=self.users)
+        with self.assertRaises(ReviewReviewerEligibilityError):
+            self.service.qualify_locked_in_transaction(object(),project_id=self.project,locked=locked,allowed_roles=ALL_MEMBERS,reviewer_ids=self.users)
+        with self.assertRaises(ReviewReviewerEligibilityError):
+            self.service.qualify_locked_in_transaction(self.tx,project_id=self.project,locked=locked,allowed_roles=ALL_MEMBERS,reviewer_ids=(uuid4(),))

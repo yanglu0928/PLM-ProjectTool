@@ -3306,3 +3306,19 @@
 - Reason：先独立验完整八表原子与真实 Audit 回滚，避免在尚未完成统一锁序/授权入口时暴露不受权命令；原任务 Scope 与验收不删除。
 - Impact：内部 owned Repository/事务编排/隔离测试，无 Migration/API/角色/依赖改变；真实 Owner 与完整受权入口仍待。
 - Rollback：停用内部 Port，保留 0034 历史；无破坏性 down。
+
+## DEC-20260926-178
+
+- Date：2026-09-26；WBS：RVW-02-A05-P02。
+- Decision：送审账户共享预锁与 Project 基础资格分两步，同事务暂存账户观测不作为授权证明；PM 检查先于对外资格错误。成功 receipt 重放只重验当前 Session/CSRF/License/PM/固定旧版 Owner 访问权，不重新要求历史 reviewers 仍可发起新审批；不重复写轮次/审计。
+- Reason：提前锁定候选账户避免 Project→User 倒序；非 PM 不应从资格错误获知账户状态，历史重放不应被后来 reviewer 停用改写为新审批。reviewer 集合以 UUID 排序规范指纹，重排不改变请求语义。
+- Impact：内部 Auth 共享 CSRF 校验、基础资格两步复用、受权 start/通用 receipt/稳定 Ref；无 Schema/API/角色/依赖改变，实际 Owner 仍未完成，不挂载 HTTP。
+- Rollback：停用内部入口，保留原基础资格方法与 0034 历史/审计/收据。
+
+## DEC-20260926-179
+
+- Date：2026-09-26；WBS：RVW-02-A05-P02。
+- Decision：基础设施只识别实际 DBAPI SQLSTATE 40P01；应用在整个 UOW 已 rollback/释放后最多三次执行同一命令/Key，不重试未知数据库或任意异常。稳定轮次 Ref 重放核对原始 Actor/Project/Review/Version/完整 Assignment 集合，忽略后来的状态/根版本但不绕过当前权限。
+- Reason：新共享预锁不能使所有既有反序成员命令天然无死锁，实测确有循环；不能吞掉异常或局部重跑 INSERT。真实竞争验收证实第二次成功且只留一轮/一次 Audit。
+- Impact：受控内部入口及窄死锁分类/重试，无 Schema/API/角色/依赖改变；原首轮验收错误码断言按版本检查顺序修正重验。完整 Owner/业务锁/HTTP 和其他旧写命令并发恢复仍待。
+- Rollback：停用入口，原数据与不可变历史保留；不采用无限 retry 或 force 更新。
