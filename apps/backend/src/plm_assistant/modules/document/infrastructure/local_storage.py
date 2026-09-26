@@ -577,6 +577,20 @@ class LocalFileStorage:
 
     def open_verified_snapshot(self, locator: str, *, expected_sha256: bytes,
                                expected_size: int, max_bytes: int) -> BinaryIO:
+        if type(max_bytes) is not int or max_bytes > 100_000_000:
+            raise LocalStorageError()
+        return self._open_verified_snapshot(locator,expected_sha256=expected_sha256,
+            expected_size=expected_size,max_bytes=max_bytes)
+
+    def open_audit_export_snapshot(self, locator: str, *, expected_sha256: bytes,
+                                   expected_size: int) -> BinaryIO:
+        if type(locator) is not str or not locator.startswith('generated/audit/'):
+            raise LocalStorageError()
+        return self._open_verified_snapshot(locator,expected_sha256=expected_sha256,
+            expected_size=expected_size,max_bytes=128*1024*1024)
+
+    def _open_verified_snapshot(self, locator: str, *, expected_sha256: bytes,
+                               expected_size: int, max_bytes: int) -> BinaryIO:
         """Return a private validated byte snapshot before any caller can stream it.
 
         The caller owns and must close the returned file. No source descriptor or
@@ -586,7 +600,7 @@ class LocalFileStorage:
                 or type(expected_sha256) is not bytes or len(expected_sha256) != 32
                 or type(expected_size) is not int or expected_size < 0
                 or type(max_bytes) is not int or not 0 <= expected_size <= max_bytes
-                or max_bytes > 100_000_000):
+                or max_bytes > 128*1024*1024):
             raise LocalStorageError()
         path = self._path(locator)
         before = _checked_file(path)

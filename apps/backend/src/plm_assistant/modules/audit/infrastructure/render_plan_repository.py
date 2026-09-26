@@ -14,6 +14,14 @@ from plm_assistant.modules.jobs.application.lease import ClaimedJob
 
 
 class SqlAlchemyAuditRenderPlans:
+    def get(self,tx,*,render_attempt_id):
+        if type(render_attempt_id) is not UUID or not render_attempt_id.int:raise AuditExportWorkerError()
+        row=_session(tx).execute(select(render_attempts).where(
+            render_attempts.c.render_attempt_id==render_attempt_id)).mappings().one_or_none()
+        if row is None:return None
+        source=dict(row);source['created_at']=source['created_at'].astimezone(timezone.utc)
+        return AuditRenderPlan(**source)
+
     def find(self,tx,*,export_id,job_id,fencing_token):
         if (any(type(v) is not UUID or not v.int for v in (export_id,job_id))
                 or type(fencing_token) is not int or not 0<fencing_token<2**63):raise AuditExportWorkerError()

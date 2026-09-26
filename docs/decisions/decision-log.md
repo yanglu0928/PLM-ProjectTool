@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260926-217
+
+- Date：2026-09-26；WBS：AUD-03-A06-A04-P03-A05。
+- Decision：新当前Session Scope授权读取实际成功源，原提交actor仅历史来源；共享Document安全快照原语但专用审计入口128MiB、普通100MB不变。Hash/copy在UOW外，返回前重复当前授权/source，内容失败受权同UOW最小Audit、保原历史。
+- Reason：内部Worker权限不能用于浏览器读取；当前PM可读停用提交者历史，Admin无项目旁路。实际发现渲染128MiB与普通snapshot100MB不兼容，先在CR-AUD-002记录最小适配，不缩小合法导出或扩大普通规则。
+- Impact：6新unit/951后端无失败（2跳过），真实dualScope/源/权限/复制后撤销close/坏文件审计与Storage128MiB边界PASS，旧下载/恢复发布回归；无Schema/API/依赖，未挂HTTP。
+- Rollback：撤未装配内容入口，保所有来源与成功历史，不自动删文件。公开路径需增量契约/生命周期限额验证；正式账户/三平台/性能/完整包/Gate仍待。
+
 ## DEC-20260926-216
 
 - Date：2026-09-26；WBS：AUD-03-A06-A04-P03-A04-P04。

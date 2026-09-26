@@ -49,6 +49,13 @@ class LocalAuditExportFileStorage:
             raise ValueError("Local storage is required")
         self._storage = storage
 
+    def open_snapshot(self,expected):
+        (_,final),arguments=self._expected(expected)
+        try:
+            return self._storage.open_audit_export_snapshot(final,expected_sha256=arguments['expected_sha256'],
+                expected_size=arguments['expected_size'])
+        except LocalStorageError:raise AuditFileStorageError() from None
+
     @contextmanager
     def staging_sink(self, coordinate):
         stage, final = _locators(coordinate)

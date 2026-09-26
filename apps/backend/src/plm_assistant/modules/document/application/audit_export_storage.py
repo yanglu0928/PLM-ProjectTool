@@ -1,6 +1,7 @@
 """Internal Audit file coordinates/proofs, never authority or public download URLs."""
 from dataclasses import dataclass
 from typing import ContextManager, Protocol
+from typing import BinaryIO
 from uuid import UUID
 
 MAX_AUDIT_FILE_BYTES = 128 * 1024 * 1024
@@ -46,6 +47,7 @@ class AuditFileSink(Protocol):
 
 
 class AuditExportFileStoragePort(Protocol):
+    def open_snapshot(self, expected: AuditFileContent) -> BinaryIO: ...
     def staging_sink(self, coordinate: AuditFileCoordinate) -> ContextManager[AuditFileSink]: ...
     def verify_staged(self, expected: AuditFileContent) -> AuditFileContent: ...
     def inspect(self, expected: AuditFileContent) -> str: ...
