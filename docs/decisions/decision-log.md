@@ -3338,3 +3338,11 @@
 - Reason：冻结withdraw reason不得丢弃；无表锁EXISTS检查与删除列可能竞态丢失原因。
 - Impact：Review owned Schema/查询，历史Schema unit显式叠加新delta，四个head verifier跟随0035；API/角色/依赖不变。
 - Rollback：关闭未公开写入口；仅无原因库允许down，含历史保留新增列，禁止丢失回滚。
+
+## DEC-20260926-182
+
+- Date：2026-09-26；WBS：RVW-02-A08。
+- Decision：先实现可信调用方事务 owned 决定/撤回、固定历史校验、实际 Audit 和终态 Owner Port 消费，不自建 UOW/commit/HTTP/收据或声称受权入口完成。Review 根独占锁持有后复用固定查询的 Round 共享锁，再调用 Owner；真实 Owner 装配前必须验交叉锁序，不能把合成 Port 当事实锁。
+- Reason：先验完整结构与故障全回滚，再独立接当前 Session/权限/幂等；现有固定查询先读完整历史才能构造精确交接。所有 owned 更新仍以根为首锁；真正 Owner 交叉编辑路径尚不存在，不推断无死锁。
+- Impact：新增内部编排/Repository/测试，无 Schema/API/角色/依赖变化；0035为前置。A06的抽象Owner-before-Round锁序在此内部实现读阶段具体化为根→Round共享读取→Owner，正式装配仍需核对或调整并记录，不开放路由。
+- Rollback：不装配内部命令，保留全部历史与已有送审，无数据删除。

@@ -14,6 +14,8 @@
 
 授权/锁核验 Port 不提供默认实现，成功只能返回 None，异常失败关闭。调用方需要严格检查返回值，拒绝 True/UUID 替代真实操作。终态消费只接受 terminal intent；非终态不得释放身份锁。
 
+RVW-02-A08 内部实现另要求消费后独立 `assert_terminal_consumed_in_transaction` 重读实际消费/正式指针/身份锁释放事实，不能把 None 响应当事实证明。owned 根独占锁后复用固定 Round 共享读再交接 Owner 的实际读锁序记录于 DEC-20260926-182；真实 Owner 接入前必须检查交叉锁序和并发，不以合成事务标记替代业务锁。
+
 ## 同事务终态消费
 
 选择模块化单体同一业务事务内同步消费 ReviewCompleted，不选择异步 best-effort 通知。Review owned 状态/历史、Owner 消费与正式版本指针/实际身份锁释放、Audit、receipt 同事务 commit；任何一步失败连最终决定一起 rollback。Review 不写 Owner 表，Owner 只通过公开内部 Port 消费结果。没有实际 Owner 就不执行该写路径。
