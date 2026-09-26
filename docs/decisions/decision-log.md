@@ -3496,3 +3496,12 @@
 - Authority：坐标/申请人FK/Worker不是业务权限。Owner必须先锁自己的持久Root/acceptance，重新当前授权；本项只Jobs公共Port，不自建UOW/commit/许可或Session鉴权。申请原因不回到结果/payload/Audit自由正文；拒空白/未规范/控制字符/超长，但不能保证合法文本不含Secret。失败映射固定code。
 - Locks/verification：Queue事务advisory→Job→Outbox，再Lease→Attempt；与finish Job锁串行，实际先取消拒发布、先完成拒伪回滚、同请求并发首次一次、确认/到期恢复竞争、故障全回滚/原数据/当前Worker/过期及缺来源验证。Worker短事务锁反序及完整Audit幂等/审计仍另验。
 - Rollback：撤未装配入口不删历史；0039含信息拒绝down；无生产操作/公开API，正式信任/性能/完整Worker/包仍待。
+
+## DEC-20260926-201
+
+- Date：2026-09-26；WBS：AUD-03-A06-A03。
+- Precode：Phase2；输入A05真实受理/0038、A06当前权限/租约/取消与A04真实capture；前置满足。Audit聚合+Jobs/Auth/Project公共Port；无新Schema/API/角色/依赖。只完成真实已受理Worker capture原子事务，非文件发布。
+- Decision：Worker仅输入Export ID/原Job ID/worker/token。先无锁peek不可变Root作为内部查找线索，不授予权限，再User→Project/member/department→Root精确重读→原acceptance→Queue原pair→Lease/Attempt，核对真实Job Scope/Type/Trace/原payload/原ID，执行capture。完成后再当前许可/权限及Lease核验，commit只固定集合，不finish/heartbeat/发文件。迟到Worker/取消/缺源/替换/撤权失败回滚；已有seal只按原集合重放，不换snapshot。
+- Atomicity：只有实际因果链DBAPI40P01最多3次整UOW新事务重新授权，不凭错误文本或一般存储失败重试。peek不锁Auth反序；后续publish Job-first反序另验。原不可变数据不因重试改变。
+- Verification：真实受权提交→Job claim→Worker当前权限/原acceptance/pair/Lease→capture两Scope；重复/新事件不进旧seal，当前撤权/原Session注销/归档维护/取消/到期接管、故障及after-check失效全回滚；实际死锁与限次恢复，旧Worker不得成功。License合成须标注，无正式文件或性能承诺。
+- Rollback/risk：撤未装配Worker不删历史，0037/38/39历史down保护保留。capture可能长于Lease/空间策略，末次检查拒绝到期；性能待验，不宣称短耗时P95达标。普通导出POST关闭，正式信任/Gate/全Scope仍待。

@@ -43,6 +43,11 @@ class SqlAlchemyAuditExportSubmitRepository:
         row=_session(tx).execute(select(exports).where(exports.c.export_id==export_id).with_for_update()).mappings().one_or_none()
         return None if row is None else self._intent(row)
 
+    def peek_created(self,tx,*,export_id):
+        """Immutable internal lookup ONLY, no lock or permission; caller must rebind later."""
+        row=_session(tx).execute(select(exports).where(exports.c.export_id==export_id)).mappings().one_or_none()
+        return None if row is None else self._intent(row)
+
     def _bind(self,tx,intent):
         if type(intent) is not AuditExportIntent:raise AuditExportSubmitError()
         intent.__post_init__()
