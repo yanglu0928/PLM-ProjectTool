@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260926-215
+
+- Date：2026-09-26；WBS：AUD-03-A06-A04-P03-A04-P03。
+- Decision：实际Owner预核权限/根/pair/Lease/capture/plan，事务外Hash，短UOW STAGED登记，再事务外提升，最后单UOW File AVAILABLE+SYSTEM Audit+Result+Jobs completion，完成后迅速commit；无跨Owner私有表访问。
+- Reason：File提升不是成功，必须统一DB业务事实且保当前权限/租约/取消与原身份来源；不嵌套自提交Jobs service，不接受随机SystemActor或只凭旧Hash。
+- Impact：双Scope真实成功链/实际撤权取消过期/系统材料丢失与四个DB写后回滚、真实取消两锁竞争PASS；5新unit/939后端无失败（2跳过）、三项实际回归/开发wheel通过。无Migration/HTTP/依赖；CR-AUD-002/ADR010范围不改。
+- Rollback：撤未装配入口，保原计划/STAGED/私有提升文件及成功历史，不删生产数据或复活任务。下一项来源恢复/当前授权结果重放及下载；License合成、正式账户/三平台/完整交付与Gate仍待。
+
 ## DEC-20260926-214
 
 - Date：2026-09-26；WBS：AUT-04-A01（AUD原子发布前置）。

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A04-P03完成真实内部原子发布，当前权限/原受理pair/Lease/capture/plan与受控系统来源下，文件Hash/提升在UOW外，AVAILABLE/发布Audit/不可变结果/Job成功同UOW。双Scope empty/260、实际撤权取消过期/系统失密、四类DB写后全回滚及取消两锁顺序PASS；939后端无失败（2环境跳过）、三项回归/开发wheel成功。无Migration/API/依赖，head0042、无升级动作；失败提升文件保持私有STAGED，恢复/授权重放/HTTP/心跳与正式账户/Server2025/Debian/可用发行包待，License合成。
+
 - 2026-09-26：`0.1.0.dev0`/AUT-04-A01按实施前CR-AUT-004补Windows受控系统身份只读Port，专用Vault材料稳定派生UUID、启动摘要pin与每次失密/变更关闭；不新增User/角色/授权。4项新增含本机临时Vault真实丢失/错误口令/加密恢复保身份/换材料拒绝PASS，全后端934项无失败（2环境跳过）、开发wheel通过。无Migration/API/依赖，head0042、无升级动作；正式账户材料/异账户恢复/Server2025/Debian及真正原子发布/可用安装包仍待。
 
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A04-P02接入真实Worker私有文件渲染，原授权/Job pair/Lease/capture/plan下短事务128条固定源页取，结束UOW后写文件/flush/fsync/独立Hash，再终验权限/租约/完整封口。真实双Scope empty/260多页/中文存储根/晚到事件排除、页间撤权/取消/到期/源失败/同代不覆盖及新代文件通过；磁盘故障/License撤销合成标注。930项无失败（2环境跳过）、关联回归/开发wheel PASS。Windows11验证，无Migration/API/依赖/升级，head0042；无发布final/元数据/结果/Job成功/HTTP/心跳/性能，正式三平台包待。
