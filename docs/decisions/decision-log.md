@@ -3362,3 +3362,11 @@
 - Reason：角色不等于具体批准权，不能因旧receipt绕过撤权；首次结果不受后来终态/版本影响。恢复须在全部rollback后，不能只重跑INSERT。跨真实Owner锁序仍待，不以合成PASS声明全部路径无死锁。
 - Impact：内部受权命令/窄重放Port/现有Policy实现，无Schema/API/新角色/依赖变化；未知Owner关闭，不装配HTTP。
 - Rollback：不注册内部入口，保留事件/审计/receipt，关闭新操作但不删历史。
+
+## DEC-20260926-185
+
+- Date：2026-09-26；WBS：RVW-02-A10 / AUD-02-A01。
+- Decision：真实Review Owner缺失，公开接线保持关闭，不用合成Actor/锁/批准通过Gate；转Phase2独立Audit受权内部读。项目Audit仅当前PM，部署Audit仅当前DeploymentAdmin且只DEPLOYMENT scope，License不免除；复用已有safe query，当前权限在同一事务保持。
+- Reason：抽象AuditReadAccess和合成Review Owner不是生产身份事实，不能直接暴露已有Query或跨模块访问；Audit不依赖后续业务Owner，可继续实现批准Scope。
+- Impact：Audit当前Session/Project授权服务、两项既有操作必要策略、测试；无Schema/API/角色/依赖或Phase变更。当前公开Review阻塞仍保留。
+- Rollback：不装配新读服务，已有append/history保留；无数据写入。

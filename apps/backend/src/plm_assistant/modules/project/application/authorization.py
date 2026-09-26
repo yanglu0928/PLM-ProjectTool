@@ -32,6 +32,8 @@ POLICIES: dict[str, _Policy] = {
     "REVIEW_START_ROUND": _Policy(MANAGERS, True),
     "REVIEW_DECIDE": _Policy(ALL_MEMBERS, True),
     "REVIEW_WITHDRAW": _Policy(MANAGERS, True),
+    "AUDIT_PROJECT_LIST": _Policy(MANAGERS, False, lock_reads=True),
+    "AUDIT_PROJECT_GET": _Policy(MANAGERS, False, lock_reads=True),
     "TRACE_LINK_CREATE": _Policy(frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
     "PROJECT_PATCH": _Policy(MANAGERS, True),
     "PROJECT_ARCHIVE": _Policy(MANAGERS, True),
