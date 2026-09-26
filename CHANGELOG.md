@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A07-P03增加有界周期心跳Supervisor，实际线程存活/同Job单实例、首心跳+周期Event、停止超时保容量、故障安全传播、不把STALE当成功；5真线程unit及真实PG双Scope短租约跨人为文件提升延迟原子成功、成功后STALE无写/撤权取消停止与原发布回归PASS。978后端无失败（2环境跳过）、开发wheel成功。Windows11验证，无Migration/API/依赖，head0042，无数据升级，撤未装配协调保历史可回滚。进程内非全局；DB阻塞无法join强停、Worker生命周期/DB超时/主循环、正式账户/三平台/性能/质量/Gate和完整安装包待。
+
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A07-P02增加Audit内部当前授权心跳，原User/PM或Admin/License、Root/acceptance/pair与实际当前Lease同短事务续期后再授权/期限重核，原三stage和User-first锁序保留，无业务历史写。5新unit/真实PG双Scope/13表无源历史写/撤权取消到期接管/误绑拒绝/写后故障及后验许可拒绝回滚、原发布回归PASS；973后端无失败（2环境跳过）、开发wheel成功。Windows11验证，无Migration/API/依赖，head0042，无数据升级；撤未装配服务保历史可回滚。周期协调/Worker/提交Job HTTP、正式账户/三平台/性能/质量/Gate和完整安装包待。
 
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A07-P01增加独立Jobs caller-UOW续租Port，严格坐标/时长、实际check→heartbeat→check保持完整claim，原checkpoint只读保留，无自commit/业务授权。5新unit/真实PG双Scope期限一致/并发/后置失败回滚/取消到期/真实接管拒旧代及原发布回归PASS；968后端无失败（2环境跳过）、开发wheel成功。Windows11验证，无Migration/API/依赖，head0042、无需数据升级；撤未装配入口保历史可回滚。受权Audit心跳/调度Worker/提交Job HTTP、正式账户/三平台/性能/质量/Gate/完整安装包仍待。

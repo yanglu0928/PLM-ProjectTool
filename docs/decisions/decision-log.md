@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260926-223
+
+- Date/WBS：2026-09-26 / AUD-03-A06-A04-P03-A07-P03；P02受权短事务心跳前置PASS。
+- Decision：独立有界Supervisor，actual线程存活登记/同Job唯一，立刻首心跳后Event周期；check/stop传播安全错误、stop join超时保容量，不杀线程或解释STALE为成功；每次service自己短UOW，文件主线程不持事务。无Schema/API/权限/依赖调整。
+- Evidence：5新增真线程unit/978后端无失败（2环境跳过），真实PG双Scope短3秒租约跨人为4秒实际提升返回延迟仍原子发布；后续STALE七表不变、真实撤权/取消停止且传播、原发布回归/wheel通过。
+- Risk/rollback：周期为进程内非全局，延迟非性能证明；join不能强停DB阻塞，同步DB超时与Worker停机/单次协调需P04核查；撤未装配入口保历史。正式材料/三平台/Gate/质量/可用包待，POST仍关。
+
 ## DEC-20260926-222
 
 - Date/WBS：2026-09-26 / AUD-03-A06-A04-P03-A07-P02；P01技术续租前置PASS。
