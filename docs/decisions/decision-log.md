@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-270
+
+- Precode：Phase2/JOB-01-A04-P01，原Upload Commit/Parse enqueue/0044前置已验；Document Owner缺Jobs owned只读绑定接口，停止直接复用enqueue，拆前置Port后继续，非删Owner Scope。
+- Decision：新增严格只读peek/find与Binding，Jobs owned核完整Job/Outbox/原trace与坐标；hint不授权，find不创建缺行。Document真实Upload/Version/File与当前权限下一项再验。无Schema/API/角色/依赖变化。
+- Acceptance：单位安全/绝不enqueue、真实PROJECT提交来源读取与GLOBAL队列元数据分支/错pair/无写/原提交回归；GLOBAL队列不能冒充文件提交。撤新Port保历史回滚，证据待追加。
+- Evidence：1181无失败/2跳过，原三次真实PROJECT Upload Commit→精确只读绑定、错Actor/Document/version/trace拒绝/缺Scope/ref不创建、八表无写；GLOBAL真实Queue元数据分支及缺Outbox孤立Job拒绝，无Doc原源/权限结论。原提交/文件回归与wheel通过，下一Doc-owned原源DTO/Repo/双Scope真来源再验，不冒充Parser执行或完整Jobs。
+
 ## DEC-20260927-269
 
 - Precode：Phase2/JOB-02-A05，A04/0044/Windows提交与GET前置满足，详见windows-cancel进度；仅include_secret_write接项目取消，原信任/权限/事务依赖，无Schema/API/依赖变动。

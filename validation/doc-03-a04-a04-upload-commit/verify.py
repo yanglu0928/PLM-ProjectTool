@@ -68,7 +68,7 @@ def expect(error, action, code=None):
         raise AssertionError(f"expected {error.__name__}")
 
 
-def verify() -> None:
+def verify(*,exercise=None) -> None:
     name = "upload_commit_" + uuid.uuid4().hex[:12]
     admin = connect("postgres")
     admin.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(name)))
@@ -168,6 +168,7 @@ def verify() -> None:
             expect(UploadCommitError, lambda: worker.commit(damaged_cmd, idempotency_key="commit-damaged-file-01"), "FILE_INTEGRITY_MISMATCH")
             with connect(name) as db:
                 assert db.execute("SELECT state FROM plm.doc_upload_intents WHERE upload_id=%s", (damaged,)).fetchone() == ("CONTENT_READY",)
+            if exercise is not None:exercise(locals())
             print("PASS: new/existing version, parent precondition, replay, License/actor denial, atomic DB rollback, final-only recovery and corrupt bytes")
     finally:
         if runtime is not None:

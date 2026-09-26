@@ -8,12 +8,53 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from plm_assistant.modules.jobs.application.parse_enqueue import (
-    ParseEnqueueError, ParseJobRef, ParseJobRequest,
+    ParseEnqueueError, ParseJobRef, ParseJobRequest,ParseJobBinding,_validate_read_request,
 )
 from plm_assistant.modules.jobs.infrastructure.orm import JobRow, OutboxEventRow
 
 
 class SqlAlchemyParseJobQueueRepository:
+    @staticmethod
+    def _uuid(value):
+        if type(value) is not str:raise ParseEnqueueError('CONFLICT_STATE')
+        try:result=uuid.UUID(value)
+        except ValueError:raise ParseEnqueueError('CONFLICT_STATE') from None
+        if not result.int or str(result)!=value:raise ParseEnqueueError('CONFLICT_STATE')
+        return result
+
+    def _binding(self,session,job,*,lock):
+        if (job.owner_module,job.job_type)!=('document','DOCUMENT_PARSE'):return None
+        if type(job.payload_refs) is not dict or set(job.payload_refs)!={'document_id','document_version_id'}:
+            raise ParseEnqueueError('CONFLICT_STATE')
+        upload=self._uuid(job.idempotency_key)
+        document=self._uuid(job.payload_refs['document_id']);version=self._uuid(job.payload_refs['document_version_id'])
+        trace=self._uuid(job.trace_id)
+        query=select(OutboxEventRow).where(OutboxEventRow.owner_module=='document',OutboxEventRow.event_type=='DOCUMENT_VERSION_COMMITTED',
+            OutboxEventRow.scope==job.scope,OutboxEventRow.project_id==job.project_id,OutboxEventRow.idempotency_key==job.idempotency_key)
+        if lock:query=query.with_for_update(of=OutboxEventRow).execution_options(populate_existing=True)
+        event=session.execute(query).scalar_one_or_none()
+        if (event is None or event.aggregate_ref!=version or event.trace_id!=job.trace_id
+            or event.payload_refs!={'job_id':str(job.job_id),'document_version_id':str(version)}):
+            raise ParseEnqueueError('CONFLICT_STATE')
+        request=ParseJobRequest(upload,document,version,event.aggregate_version,job.scope,job.project_id,job.actor_ref,trace)
+        return ParseJobBinding(request,ParseJobRef(job.job_id,event.event_id))
+
+    def peek_parse_for_job(self,transaction,*,job_id):
+        if type(job_id) is not uuid.UUID or not job_id.int:raise ParseEnqueueError('VALIDATION_FAILED')
+        session=self._session(transaction)
+        job=session.execute(select(JobRow).where(JobRow.job_id==job_id)).scalar_one_or_none()
+        return None if job is None else self._binding(session,job,lock=False)
+
+    def find_parse(self,transaction,*,request):
+        _validate_read_request(request);session=self._session(transaction)
+        job=session.execute(select(JobRow).where(JobRow.owner_module=='document',JobRow.job_type=='DOCUMENT_PARSE',
+            JobRow.scope==request.scope,JobRow.project_id==request.project_id,JobRow.idempotency_key==str(request.upload_id))
+            .with_for_update(of=JobRow).execution_options(populate_existing=True)).scalar_one_or_none()
+        if job is None:return None
+        binding=self._binding(session,job,lock=True)
+        if binding.request!=request:raise ParseEnqueueError('CONFLICT_STATE')
+        return binding.refs
+
     def enqueue_parse(self, transaction: object, *, request: ParseJobRequest) -> ParseJobRef:
         session = self._session(transaction)
         key = str(request.upload_id)
