@@ -3298,3 +3298,11 @@
 - Reason：纯 DTO 不证明真实业务权限或内容锁，旧准备结果不能复用到其他轮次/版本；实际 Owner 必须阻止编辑与替代 Draft，并同事务回滚。
 - Impact：内部合同/6 项测试/文档，无 Migration/API/角色/依赖变化；真实 Owner/审批与完整 start 仍待。
 - Rollback：不装配新 Port，保留原冻结/0034 历史；无数据动作。
+
+## DEC-20260926-177
+
+- Date：2026-09-26；WBS：RVW-02-A05-P01。
+- Decision：完整 start 拆为可信调用方事务持久化/Owner 重核/Audit（P01）与真实 Session/CSRF/PM/账户资格/幂等入口（P02）；P01 不自提交或装配 HTTP，不能代替 P02 权限。
+- Reason：先独立验完整八表原子与真实 Audit 回滚，避免在尚未完成统一锁序/授权入口时暴露不受权命令；原任务 Scope 与验收不删除。
+- Impact：内部 owned Repository/事务编排/隔离测试，无 Migration/API/角色/依赖改变；真实 Owner 与完整受权入口仍待。
+- Rollback：停用内部 Port，保留 0034 历史；无破坏性 down。

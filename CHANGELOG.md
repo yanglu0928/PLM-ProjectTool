@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/RVW-02-A05-P01 新增可信调用方同事务完整 Round/Snapshot/Assignment/refs/锁/STARTED/根投影与真实 Audit，Owner 前后锁重核和绑定拒绝。Windows 11 后端 728 项无失败（2 项环境跳过），隔离 PostgreSQL 完整结构/故障全回滚、既有回归与开发 wheel PASS。无 Migration/API/角色/依赖变化，需 0034，升级无新动作；不自 commit/承担授权或收据，Owner 合成，完整受权幂等 start/真实业务锁/正式程序包未完成，Server 2025 未验，Debian 13 暂不验证。
+
 - 2026-09-26：`0.1.0.dev0`/RVW-02-A04 新增固定 Subject 送审 Request/Prepared、全维绑定/完整确认人与来源 Scope/时序校验、实际 Owner 准备/锁重核窄 Port，禁止默认成功证明。Windows 11 后端 723 项无失败（2 项环境跳过），开发 wheel PASS；无新增数据库/HTTP 验收。无 Migration/API/角色/依赖变化，升级无动作；真实 Owner 锁/客户资格/完整送审及正式包未完成，Server 2025 未验，Debian 13 暂不验证。
 
 - 2026-09-26：`0.1.0.dev0`/RVW-02-A02/A03 完成送审前置/锁序设计与真实 reviewer 账户/Project 成员基础资格组件，默认拒绝空策略/未知角色、暂停移除未生效停用跨项目，当前资格保持至调用方事务结束。Windows 11 后端 717 项无失败（2 项环境跳过），隔离 PostgreSQL 资格/拒绝/四类资格事实锁/无 Assignment 写入、既有 Review 回归及开发 wheel PASS。无 Migration/API/角色/依赖变化，升级无动作；具体 Subject 资格/完整送审/正式包未完成，Server 2025 未验，Debian 13 暂不验证。
