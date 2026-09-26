@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P01 增加固定member源安全canonical JSONL与独立manifest，Scope/全筛选/完整成员摘要和byte hash/size核对、128MiB/16KiB上限、短写/源异常与资源关闭；真实两Scope内存字节/新事件排除通过。880项无失败（2环境跳过）、Worker回归与开发wheel PASS；无Migration/API/依赖，需0039升级无新动作。未落盘或发布Artifact/公开下载/正式包，License合成，Server2025未验、Debian13暂缓。
+
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A03 接入真实已受理Worker固定来源事务，当前权限/原acceptance/原Job pair/租约前后核验、capture同UOW；重复并发/新事件/新generation原seal、撤权/实际取消/到期/故障及真实40P01有限恢复通过。873项无失败（2环境跳过）、相关回归与开发wheel PASS；无Migration/API/依赖变化，需0039升级无新动作。License合成，无渲染/Artifact/公开导出/正式包，Server2025未验、Debian13暂缓。
 
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A02-P02-A02 增加Jobs内部取消请求、当前Worker协作确认与租约到期恢复；原pair绑定/首信息/重复并发/故障回滚、取消与finish实际锁竞争及终态副作用保留通过。866项无失败（2环境跳过）、相关回归与开发wheel PASS；无新Migration/API/依赖，需0039升级无新动作。Owner授权/receipt/Audit与真实Artifact未接入，无公开取消/完整Worker/正式包，Server2025未验、Debian13暂缓。

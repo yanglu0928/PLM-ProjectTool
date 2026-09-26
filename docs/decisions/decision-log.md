@@ -3505,3 +3505,12 @@
 - Atomicity：只有实际因果链DBAPI40P01最多3次整UOW新事务重新授权，不凭错误文本或一般存储失败重试。peek不锁Auth反序；后续publish Job-first反序另验。原不可变数据不因重试改变。
 - Verification：真实受权提交→Job claim→Worker当前权限/原acceptance/pair/Lease→capture两Scope；重复/新事件不进旧seal，当前撤权/原Session注销/归档维护/取消/到期接管、故障及after-check失效全回滚；实际死锁与限次恢复，旧Worker不得成功。License合成须标注，无正式文件或性能承诺。
 - Rollback/risk：撤未装配Worker不删历史，0037/38/39历史down保护保留。capture可能长于Lease/空间策略，末次检查拒绝到期；性能待验，不宣称短耗时P95达标。普通导出POST关闭，正式信任/Gate/全Scope仍待。
+
+## DEC-20260926-202
+
+- Date：2026-09-26；WBS：AUD-03-A06-A04-P01。
+- Precode：Phase2；输入JSONL_V1/AUDIT-EVENT-SAFE-V1/CAPTURE-MEMBERSHIP-V1与已验A03实际seal；Audit owned安全渲染，前置满足；无新实体/Schema/API/权限/依赖。只解决固定来源安全字节与manifest，不接文件发布。
+- Decision：JSONL文件只含逐条显式白名单事件，UTF8无BOM、canonical排序key/紧凑JSON/LF，UTC微秒，独立manifest含固定意图/Scope/窗口/筛选/版本/来源count/hash/文件size/hash，不含路径/worker/session/hint/free正文。来源只按固定member.position流入，逐项序号/Scope/全Spec/安全codes重核，再同原规范计算成员摘要；不得重查live集合。大小上限128MiB、单行16KiB，失败不返回manifest、不声称截断完整。
+- Authority：纯renderer和owned source Port不鉴权、不建UOW/commit、不授予文件交付；Owner须先实际权限/Root/原Job/Lease，再受控临时产物，完成发布前重新授权。失败可能已写部分字节，必须保持临时且不可下载/清理，不伪装文件I/O回滚。
+- Verification：规范向量/空集合/UTF8/LF/确定性、文件与成员hash区分、安全投影/筛选/范围、缺失/多项/重复/错序/错版本、短写/异常/超限、真实固定member源与新事件排除。摘要去重O(n)UUID内存保留，批量DB读取不声称常量内存或性能通过。
+- Rollback：撤未装配代码无历史变更；无Migration/API/Scope/依赖，正式Artifact/当前渲染权限/发布/下载/Gate/包仍待。

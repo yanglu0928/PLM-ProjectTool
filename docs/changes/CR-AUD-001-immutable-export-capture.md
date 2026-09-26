@@ -25,6 +25,8 @@
 
 当前状态：IMPLEMENTATION_IN_PROGRESS。不得将计划视为Schema或真实权限证据。
 
+A06-A04-P01执行结果（2026-09-26）：真实固定member source显式安全列/Scope/筛选连接canonical JSONL内存字节及独立manifest，重核完整成员摘要/count/顺序/唯一，输出hash/size、空集/新事件排除、不安全码/短写/源故障/小上限及资源关闭通过。880项无失败（2环境跳过）、真实Worker回归和开发wheel通过；详见aud-03-a06-a04-p01-render.md。未生成/发布实际文件，纯renderer/source不授予权限，正式Artifact/渲染checkpoint/存储/发布/下载/性能仍待，CR整体IN_PROGRESS。
+
 A06-A03执行结果（2026-09-26）：实际已受理Root/acceptance/原Queue pair/真实claim、当前Actor权限与租约前后核验接真实capture全UOW通过；新事件/新generation不改原seal，真并发首次单seal，撤权/实际取消/到期及seal写后故障回滚，真实40P01第二次恢复与三次耗尽无残留通过。873项无失败（2环境跳过）、相关真实回归及开发wheel通过，详见aud-03-a06-a03-worker-capture.md。License合成，无渲染/Artifact/公开HTTP/性能/正式包，CR整体IN_PROGRESS。
 
 P02执行结果：0037/ORM三表及实际源校验/同事务封口/不可变/并发/降级保护在独立PostgreSQL库通过；816项unit无失败（2项环境跳过）、Windows审计和Job部署真实回归、开发wheel通过。详见aud-03-a04-p02-capture-schema.md。P03单statement选择完整集合/晚提交及A05～A07权限/Worker/交付未完成，CR整体仍IN_PROGRESS。
