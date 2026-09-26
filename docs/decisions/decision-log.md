@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260926-210
+
+- Date：2026-09-26；WBS：AUD-03-A06-A04-P03-A03-P03。
+- Decision：0042 own唯一成功结果引用不可变渲染计划/发布Audit；规范manifest字节由own Root/capture/NEW文件事实独立重建精确核验，非只JSON语义相等；结果不直接读Jobs/Document私有表。
+- Reason：原计划/文件存在不等于成功，清单不能包含自由正文或非规范字节；跨Owner事实须公共Port实际编排。
+- Impact：新增Schema/ORM，无API/依赖；原0001～0041不变，原计划不猜回填成功；当前权限/真实SystemActor/Lease/原子发布后续验收。
+- Rollback：空表可离线受控down，任何结果历史禁止down，先表排他锁；保留原冻结与历史，不删文件或结果。
+
 ## DEC-20260926-209
 
 - Date：2026-09-26；WBS：AUD-03-A06-A04-P03-A03-P02。

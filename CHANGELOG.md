@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A03-P03新增0042不可变唯一审计成功结果，绑定原计划/Scope/File/发布Audit及完整安全规范manifest与双SHA256，不覆盖历史。实际空/旧计划及Doc/Version up/down/reup/parity、双Scope empty/nonempty真实renderer清单、篡改拒绝/并发/down写锁历史保护PASS；914项无失败（2环境跳过）、计划/文件元数据回归及开发wheel通过。无API/依赖；需受控0041→0042升级，含结果历史拒绝down；无生产迁移。Windows11验证，Job/File/SystemActor refs合成，真正文件/Job原子发布/HTTP及Server2025/Debian/可用发行包仍待。
+
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A03-P02接入真实当前User/PM/Admin/License及原受理Job/pair/有效Lease的渲染计划，仅读已封口完整capture，同代读原计划、新代独立file。实际双Scope/并发/撤权/取消/到期/写后回滚/PG40P01限次恢复和既有capture回归PASS；912项无失败（2环境跳过）、开发wheel通过。Windows11验证；Schema仍0041，无API/依赖/升级动作，撤代码保留计划历史。License合成，结果/文件/原子发布/下载、Server2025/Debian及可用发行包待。
 
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A03-P01新增0041 Audit不可变渲染尝试，固定原受理Job/封口来源、单Job/token文件计划及新代次独立file，禁止修改/删除/截断。真实空/旧历史up/down/reup/parity/真并发与历史down锁保护PASS；904项无失败（2环境跳过）、0040/0039/文件元数据回归/开发wheel通过。无API/依赖；需受控0040→0041升级，任何计划历史拒绝降级；无生产迁移。Job/Lease/File refs合成，实际计划命令/结果/发布/下载与正式包待。

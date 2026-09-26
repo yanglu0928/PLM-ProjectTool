@@ -105,3 +105,32 @@ render_attempts = sa.Table("aud_export_render_attempts", Base.metadata,
 
 class AuditExportRenderAttemptRow(Base):
     __table__ = render_attempts
+
+
+results = sa.Table('aud_export_results', Base.metadata,
+    _col('export_id', _id, primary_key=True), _col('render_attempt_id', _id),
+    _col('file_id', _id), _col('file_sha256', sa.LargeBinary()), _col('byte_count', sa.BigInteger()),
+    _col('mime_type'), _col('manifest_version'), _col('manifest_bytes', sa.LargeBinary()),
+    _col('manifest_sha256', sa.LargeBinary()), _col('publish_audit_event_id', _id),
+    _col('published_at', _time, server_default=sa.text('statement_timestamp()')),
+    sa.PrimaryKeyConstraint('export_id', name='pk_aud_export_results'),
+    sa.ForeignKeyConstraint(['export_id'], ['plm.aud_exports.export_id'], name='fk_aud_export_results__export'),
+    sa.ForeignKeyConstraint(['render_attempt_id'], ['plm.aud_export_render_attempts.render_attempt_id'], name='fk_aud_export_results__attempt'),
+    sa.ForeignKeyConstraint(['publish_audit_event_id'], ['plm.aud_events.audit_event_id'], name='fk_aud_export_results__audit'),
+    sa.UniqueConstraint('render_attempt_id', name='uq_aud_export_results__attempt'),
+    sa.UniqueConstraint('file_id', name='uq_aud_export_results__file'),
+    sa.UniqueConstraint('publish_audit_event_id', name='uq_aud_export_results__audit'),
+    sa.CheckConstraint("""export_id<>'00000000-0000-0000-0000-000000000000'::uuid
+ AND render_attempt_id<>'00000000-0000-0000-0000-000000000000'::uuid
+ AND file_id<>'00000000-0000-0000-0000-000000000000'::uuid
+ AND publish_audit_event_id<>'00000000-0000-0000-0000-000000000000'::uuid
+ AND octet_length(file_sha256)=32 AND byte_count BETWEEN 0 AND 134217728
+ AND mime_type='application/x-ndjson' AND manifest_version='AUDIT-EXPORT-MANIFEST-V1'
+ AND octet_length(manifest_bytes) BETWEEN 1 AND 8192
+ AND octet_length(manifest_sha256)=32 AND manifest_sha256=sha256(manifest_bytes)
+ AND isfinite(published_at)""", name='ck_aud_export_results__shape'),
+)
+
+
+class AuditExportResultRow(Base):
+    __table__ = results

@@ -9,6 +9,7 @@ from uuid import uuid4,UUID
 import psycopg
 from psycopg import sql
 from alembic import command,op
+from alembic.script import ScriptDirectory
 from alembic.autogenerate import compare_metadata
 from alembic.migration import MigrationContext
 from sqlalchemy import create_engine
@@ -107,14 +108,14 @@ def main():
                 history=tuple(db.execute("SELECT * FROM plm.aud_export_render_attempts ORDER BY render_attempt_id"))
                 for action in (lambda:db.execute("UPDATE plm.aud_export_render_attempts SET worker_ref='changed' WHERE render_attempt_id=%s",(first,)),
                     lambda:db.execute("DELETE FROM plm.aud_export_render_attempts WHERE render_attempt_id=%s",(first,)),
-                    lambda:db.execute("TRUNCATE plm.aud_export_render_attempts")):
+                    lambda:db.execute("TRUNCATE plm.aud_export_render_attempts CASCADE")):
                     denied(action)
                 assert tuple(db.execute("SELECT * FROM plm.aud_export_render_attempts ORDER BY render_attempt_id"))==history
                 try:
                     with patch("alembic.op.execute",side_effect=locked):command.downgrade(cfg,"20260926_0040")
                 except RuntimeError as exc:assert "Audit rendering history exists" in str(exc)
                 else:raise AssertionError("rendering plan history lost")
-                assert db.execute("SELECT version_num FROM plm.alembic_version").fetchone()==("20260926_0041",)
+                assert db.execute("SELECT version_num FROM plm.alembic_version").fetchone()==(ScriptDirectory.from_config(cfg).get_current_head(),)
                 assert tuple(db.execute("SELECT * FROM plm.aud_export_render_attempts ORDER BY render_attempt_id"))==history and snapshot()==old
             print("P03-A03-P01 PASS: actual empty/old accepted sealed up/down/reup/parity/no backfill; dual-Scope original acceptance/capture/UUID/token/worker/time/unique guards; new generation independent file; concurrent same generation one plan; immutable and down actual lock/history refusal. Job/Lease/file refs synthetic, NOT actual authorization/Worker/files/manifest/result/API proof.")
         finally:

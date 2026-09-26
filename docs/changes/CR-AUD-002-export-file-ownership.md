@@ -1,6 +1,6 @@
 # CR-AUD-002：审计导出文件归属与发布结果
 
-日期：2026-09-26；Phase2；状态：RECORDED_FOR_IMPLEMENTATION / 未实施未验收。执行依据：用户2026-09-24及2026-09-26持续授权、V1.1。保留冻结提交64cdf09、ADR-008、既有0001～0039；不修改原冻结文件。
+日期：2026-09-26；Phase2；状态：IN_PROGRESS / 分项验证见当前结果，整体发布未验收。执行依据：用户2026-09-24及2026-09-26持续授权、V1.1。保留冻结提交64cdf09、ADR-008、既有0001～0039；不修改原冻结文件。
 
 ## 来源与实际冲突
 
@@ -57,6 +57,16 @@ P03-A01：FileObject用途/归属及DocumentVersion/Upload防误绑Schema，真�
 最低测试：双Scope空与非空、完整source/manifest/hash、误绑Document/Upload/跨项目/重标拒绝、新事件排除、磁盘不足/短写/DB故障/unknown commit、真实撤权/License拒绝/取消与publish两个锁顺序/到期接管/旧Worker、并发单结果/同代故障恢复/引用保持/损坏下载失败关闭。合成License、模拟磁盘不足与实际环境分别标注；128MiB/20并发性能和三平台/目标账户恢复不能用小fixture替代。新增依赖/服务/生产操作：无。
 
 ## 当前结果
+
+2026-09-26 P03-A03-P03：0042 own不可变唯一成功结果、原计划/文件opaque/发布Audit字段与时点、独立重建完整规范manifest字节/摘要及空文件规则PASS；实际空/旧双Scope计划与旧Doc/Version up/down/reup/parity/并发/历史与down写锁验证，914项无失败（2环境跳过）、真实计划/旧文件元数据回归/开发wheel PASS。Job/File/SystemActor refs合成、清单内存bytes，未证明正式身份/实际文件/Job/Lease/原子发布/HTTP；CR整体IN_PROGRESS。结果Repository及真正Worker发布继续。
+
+### P03-A03-P03实施前精化：唯一成功结果
+
+0042新增own `aud_export_results`，Export PK/own渲染计划唯一FK/file_id唯一opaque Ref、二进制file_sha256/size/MIME、manifest_version/原canonical manifest_bytes及二进制manifest_sha256、发布Audit唯一own FK、published_at。原Job/generation/成员源从不可变计划及capture反查，不重复可变坐标。触发器own Root锁→计划/封口/受理→发布Audit：计划Export/File必须一致、时点不得早于计划/capture；发布Audit必须SYSTEM形状、原actor/Scope/project/original trace、AUDIT_EXPORT_PUBLISHED/SUCCESS、jobs/JOB-01原Job、purpose、RUNNING→SUCCEEDED，时点处于plan与published之间。SYSTEM字段不是正式SystemActor配置证明，Owner必须以后核验真实运行身份。
+
+manifest最多8192字节；由Root全部Spec/filter/version和capture固定事实及NEW文件摘要/size重建安全JSON，按C排序紧凑UTF8/UTC六位微秒/LF精确字节比较，拒绝空白/重复键/额外键/换字段/hash/time伪造，不仅jsonb语义相等。manifest/file hash32，size0..128MiB；空成员必须空文件标准SHA256。不可变结果无可修改成功状态；UPDATE/DELETE/TRUNCATE拒绝。ownFK不跨Owner私有表；当前Document AVAILABLE/元数据来源、物理Hash/实际Lease/Job终态/权限原子性由后续公开Port编排验证，Schema不能证明这些。
+
+up保留0001～0041、旧计划不补结果；空表可down但先ACCESS EXCLUSIVE锁再检查，任何结果历史拒绝，offline down关闭。验收实际空/旧双Scope计划up/down/reup/parity/字段保持、规范manifest双Scope空与非空、源绑定/时点/摘要/唯一/真实并发/不可变及downgrade写锁竞争、失败版本不变；仅UUID临时数据库，无生产迁移。
 
 2026-09-26 P03-A03-P02：真实submit/原pair/claim/capture/当前权限/Lease下RENDER计划登记，同代原计划/新代独立file、真并发、撤权/实际取消/到期接管/写后回滚与实际40P01限次恢复PASS；912项无失败（2环境跳过），既有真实capture回归及开发wheel通过。无Schema/API/依赖；License合成，唯一成功结果/物理渲染/原子发布/下载与正式发行仍待，CR整体IN_PROGRESS，见对应进度。
 
