@@ -2,6 +2,7 @@
 from dataclasses import dataclass
 from math import isfinite
 from threading import Event,Lock
+from time import monotonic
 from .worker_step import AuditExportWorkerStep,AuditExportStepOutcome
 from .worker_capture import AuditExportWorkerError
 
@@ -31,6 +32,13 @@ class AuditExportWorkerLoop:
     def request_stop(self):
         self._step.request_stop();self._wake.set()
 
+    def _wait_idle(self):
+        deadline=monotonic()+self._seconds
+        while not self._wake.is_set():
+            remaining=deadline-monotonic()
+            if remaining<=0:return
+            self._wake.wait(min(.05,remaining))
+
     def run(self,*,max_steps=None):
         if max_steps is not None and (type(max_steps) is not int or not 1<=max_steps<=100000):raise AuditExportWorkerError('VALIDATION_FAILED')
         if not self._lock.acquire(blocking=False):raise AuditExportWorkerError('AUDIT_HEARTBEAT_CAPACITY')
@@ -46,7 +54,7 @@ class AuditExportWorkerLoop:
                 elif value.kind in {'LEASE_EXPIRED','SUPERSEDED'}:released+=1
                 elif value.kind=='IDLE':
                     idle+=1
-                    if max_steps is None or steps<max_steps:self._wake.wait(self._seconds)
+                    if max_steps is None or steps<max_steps:self._wait_idle()
             return AuditExportLoopResult('LIMIT',steps,executed,swept,idle,released)
         except AuditExportWorkerError:raise
         except Exception:raise AuditExportWorkerError() from None

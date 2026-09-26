@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-245
+
+- Precode：Phase2/P06-P10，CR-AUD-004/ADR011，前置Loop/组合已验；编码前进度记录信号最小callback与桥线程，补Loop前另记Windows长等待信号延迟兼容偏差。
+- Decision：signal只置标志不锁/DB/I/O；正常50ms桥线程请求原Loop停止排空，主线程注册/进程互斥/handler全恢复，恢复失败poison要求重启而非猜安全。空闲按50ms小段保原poll截止，让Python主线程及时执行handler；不强杀/自动dispose数据库。
+- Evidence：7新unit/1106无失败（2权限跳过），真实解释器SIGINT定向由60.052s降至0.122s并断言及时stop/保poll截止，两个独立合成进程idle与活动命令排空/一claim/handler还原，真实PG组合及发布回归/wheel通过。非外部Windows Console Ctrl-C/Break/SCM或生产性能证明。
+- Risk/rollback：无Migration/API/依赖/升级，0042保留；撤未公开适配保历史。活动阻塞I/O/外部Console/服务控制/正式来源/CLI/公平隔离/未知恢复/质量/完整包/Gate待，下一P06-P11安全来源及CLI前置核查。
+
 ## DEC-20260927-244
 
 - Precode：Phase2/P06-P09，CR-AUD-004/ADR011，前置原安全Owner/单步/Loop已验；实施前进度登记固定owned组合和启动失败关闭，无Schema/API/权限/技术栈变化。

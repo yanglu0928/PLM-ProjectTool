@@ -1,5 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
 from threading import Event
+from time import monotonic
 from unittest import TestCase
 from unittest.mock import Mock
 from . import test_audit_worker_step as fixture
@@ -46,3 +47,12 @@ class WorkerLoopTests(TestCase):
         self.t.admission.claim_next.assert_not_called()
         for seconds in (True,0,float('nan'),float('inf'),61):
             with self.assertRaises(ValueError):AuditExportWorkerLoop(step=self.t.step,poll_seconds=seconds)
+
+    def test_short_signal_wait_segments_preserve_poll_deadline(self):
+        self.t.admission.claim_next.return_value=None;self.loop._seconds=.15
+        original=self.loop._wake.wait;self.loop._wake.wait=Mock(wraps=original)
+        started=monotonic();result=self.loop.run(max_steps=2)
+        self.assertEqual((result.reason,result.idle),('LIMIT',2))
+        self.assertGreaterEqual(monotonic()-started,.14)
+        self.assertGreaterEqual(self.loop._wake.wait.call_count,2)
+        self.assertTrue(all(0<c.args[0]<=.05 for c in self.loop._wake.wait.call_args_list))
