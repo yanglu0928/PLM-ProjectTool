@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260926-224
+
+- Date/WBS：2026-09-26 / AUD-03-A06-A04-P03-A07-P04-P01；P03周期线程真实验证PASS，但join不能终止SQL阻塞。
+- Decision：新增opt-in Platform Worker runtime，专用有限池/连接参数，每短UOW PG18限定+三LOCAL超时读回核验；普通API及通用数据库默认不改，参数绑定/无服务器全局配置，技术/Schema/API/权限基线不变。transaction终止连接必须rollback/失效恢复，不能继续commit。
+- Evidence：4unit/982后端无失败（2环境跳过），真实PG LOCAL/普通UOW恢复、慢SQL前实际Audit回滚、多query总事务终止/新连接ready、单槽池真实满额超时及另一连接User锁导致受权心跳退出/实际线程结束/容量复用、原发布/wheel通过。
+- Risk/rollback：仅SQL服务器和池等待证据，连接黑洞/客户端读写/pre_ping没有全网络墙钟保证，默认极限数据性能未验。撤未装配factory保历史；Next单次Worker协调+真实失败取消/主循环与停机策略核查，正式材料/三平台/质量/Gate/可用包待。
+
 ## DEC-20260926-223
 
 - Date/WBS：2026-09-26 / AUD-03-A06-A04-P03-A07-P03；P02受权短事务心跳前置PASS。
