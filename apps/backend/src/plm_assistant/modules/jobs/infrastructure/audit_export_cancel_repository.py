@@ -3,6 +3,7 @@ from sqlalchemy import select
 from ..application.audit_export_cancel import (
     AuditExportCancellationError as Error,AuditExportCancellationResult as Result,
     validate_target,validate_cancel_request,
+    AuditExportCancelFacts,
 )
 from ..application.audit_export_enqueue import AuditExportEnqueueError
 from ..application.lease import JobLeaseError
@@ -16,6 +17,10 @@ class SqlAlchemyAuditExportCancellationRepository:
     def __init__(self):
         self._queue=SqlAlchemyAuditExportJobQueueRepository()
         self._leases=SqlAlchemyJobLeaseRepository()
+
+    def read_facts(self,transaction,*,target):
+        _,job=self._bound(transaction,target)
+        return AuditExportCancelFacts(job.job_id,job.state,job.cancel_requested_by,job.cancel_requested_at,job.cancel_reason)
 
     def _bound(self,tx,target):
         validate_target(target)

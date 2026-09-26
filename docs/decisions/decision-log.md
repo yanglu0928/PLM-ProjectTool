@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260926-230
+
+- Date/WBS：2026-09-26 / P04-P03-P04-P02；Phase2，前置原Root/acceptance/pair/真实取消权限与技术取消Port已验；输入API03/CR-AUD-004。内部可信Owner不接受客户端original actor/spec断言。
+- Decision：可信Root→current auth→锁Root/pair→Jobs owned首事实→0015同UOW收据+首申请USER Audit/技术状态。以不可变Audit为首次响应源无需新Schema；同key重放原状态不随后续CANCELLED漂移，新keyCHECKED不覆盖首申请，所有已有首历史需唯一请求Audit佐证，裸技术取消拒绝。reason正文不入Audit或repr，首历史只留owned Job。
+- Evidence：5新unit/1017无失败（2环境跳过）、真实PG两Scope并发重放一首申请/异payload冲突/后续技术ack后原响应八表无写/新key保历史、实际PENDING立即及SUCCEEDED结果不撤回，Audit/Job写后与后验auth故障整UOW回滚、裸状态缺源拒绝，原发布/wheel通过。
+- Risk/rollback：测试technical ack只证响应漂移，不冒充Worker确认Owner/完成审计；公开HTTP-IfMatch/系统确认/到期恢复/主循环未完成。撤未装配服务保首源/状态/成功历史，无Schema/API/依赖或生产升级；Next原首申请Audit的受控系统确认，整体包/Gate待。
+
 ## DEC-20260926-229
 
 - Date/WBS：2026-09-26 / P04-P03-P04-P01；实际取消技术Port缺Owner来源，导出提交权限仅PM，不能复用为冻结API03创建者或PM取消；Phase2前置真实Auth/License/Project事实已验。

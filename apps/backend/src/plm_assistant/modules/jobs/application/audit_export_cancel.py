@@ -1,5 +1,6 @@
 """Trusted Audit Owner transaction cancellation; refs never authorize callers."""
-from dataclasses import dataclass
+from dataclasses import dataclass,field
+from datetime import datetime
 from typing import Protocol
 from uuid import UUID
 import unicodedata
@@ -40,6 +41,30 @@ class AuditExportCancellationResult:
             raise AuditExportCancellationError("JOB_STORE_UNAVAILABLE")
 
 
+@dataclass(frozen=True,slots=True)
+class AuditExportCancelFacts:
+    job_id: UUID
+    state: str
+    requested_by: UUID|None
+    requested_at: datetime|None
+    reason: str|None=field(repr=False)
+
+    def __post_init__(self):
+        if (type(self.job_id) is not UUID or not self.job_id.int or type(self.state) is not str
+                or self.state not in {'PENDING','RUNNING','RETRY_WAIT','CANCEL_REQUESTED','CANCELLED','SUCCEEDED','FAILED'}):
+            raise AuditExportCancellationError('JOB_STORE_UNAVAILABLE')
+        history=(self.requested_by,self.requested_at,self.reason)
+        if all(v is None for v in history):
+            if self.state in {'CANCEL_REQUESTED','CANCELLED'}:raise AuditExportCancellationError('JOB_STORE_UNAVAILABLE')
+            return
+        if (type(self.requested_by) is not UUID or not self.requested_by.int
+                or self.state not in {'CANCEL_REQUESTED','CANCELLED'}
+                or type(self.requested_at) is not datetime or self.requested_at.tzinfo is None or self.requested_at.utcoffset() is None
+                or type(self.reason) is not str or not 1<=len(self.reason)<=1024 or self.reason.strip()!=self.reason
+                or any(unicodedata.category(char).startswith('C') for char in self.reason)):
+            raise AuditExportCancellationError('JOB_STORE_UNAVAILABLE')
+
+
 def validate_target(target):
     if type(target) is not AuditExportCancellationTarget:raise AuditExportCancellationError("VALIDATION_FAILED")
     target.__post_init__()
@@ -54,6 +79,7 @@ def validate_cancel_request(*,target,requested_by,reason):
 
 
 class AuditExportCancellationRepositoryPort(Protocol):
+    def read_facts(self,transaction:object,*,target:AuditExportCancellationTarget)->AuditExportCancelFacts: ...
     def request_cancel(self,transaction:object,*,target:AuditExportCancellationTarget,requested_by:UUID,reason:str)->AuditExportCancellationResult: ...
     def acknowledge_cancel(self,transaction:object,*,target:AuditExportCancellationTarget,fencing_token:int,worker_ref:str)->AuditExportCancellationResult: ...
     def recover_expired_cancel(self,transaction:object,*,target:AuditExportCancellationTarget)->AuditExportCancellationResult: ...
@@ -63,6 +89,16 @@ class AuditExportCancellation:
     def __init__(self,*,repository:AuditExportCancellationRepositoryPort):
         if repository is None:raise ValueError("cancellation repository required")
         self._repository=repository
+
+    def read_facts(self,transaction,*,target):
+        validate_target(target)
+        try:
+            result=self._repository.read_facts(transaction,target=target)
+            if type(result) is not AuditExportCancelFacts or result.job_id!=target.refs.job_id:
+                raise AuditExportCancellationError('JOB_STORE_UNAVAILABLE')
+            result.__post_init__();return result
+        except AuditExportCancellationError:raise
+        except Exception:raise AuditExportCancellationError('JOB_STORE_UNAVAILABLE') from None
 
     @staticmethod
     def _result(target,result):

@@ -20,3 +20,5 @@ P02首先实现固定不可重试原因AUTH_ACCESS_DENIED/RESOURCE_NOT_FOUND/LIC
 实施证据：P01 caller-UOW技术Port及P02终止Owner/静止锁已真实PG/临时Vault验证（详细进度/ADR011）；1004后端无失败（2环境跳过），开发wheel成功。撤权业务拒绝保持、最小SYSTEM失败Audit同事务、所有后置故障回滚/旧代终态拒改。仅终止Owner内部通过，剩余取消/瞬时retry/提交确认丢失及主循环未通过；不把CR整体或Gate标PASS。
 
 P03追加证据：失败提交确认丢失只读核验内部PASS，真实commit后raise、完整原pair/当前失败Lease-Attempt/唯一Audit源读取，多次八表无写，技术FAILED缺错重复审计拒绝；1008无失败（2环境跳过），原终止发布/wheel通过。取消/retry/执行器/主循环尚待，CR整体不标PASS。
+
+P04-P01/P02取消申请前置已验证：冻结creator或PM当前权限、可信Root取原actor/spec，Job首申请与USER Audit/持久不可变响应同UOW，首源缺失拒绝采用裸技术状态；真实并发/回滚/终态不撤回/原响应不漂移证明。1017无失败（2环境跳过）。后台SystemActor确认/过期恢复、公开HTTP/执行器/retry仍待，不将本申请或technical ack测试当取消整体PASS。
