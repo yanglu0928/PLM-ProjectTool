@@ -1,6 +1,6 @@
 # CR-WFL-004：Checklist 追加记录与受控更正
 
-日期 2026-09-26；设计 WFL-01-A05-P01；状态 DOMAIN_SHAPE_IMPLEMENTED / SCHEMA_APPLICATION_PENDING。P02 已验证不可变快照形状；两表/0032、真实 Owner/Gate/命令未完成，不能据此判记录链 Schema PASS。
+日期 2026-09-26；设计 WFL-01-A05-P01；状态 SCHEMA_IMPLEMENTED / APPLICATION_PENDING。P02 形状、P03 两表/0032 和隔离结构验收已完成，结果见 P03 报告；真实 Owner/Gate/命令未完成，不能据此判客户流程或 Gate PASS。
 依据 DM-02 ChecklistItem/WAIVED、API-02 WORKFLOW_CHECKLIST_RECORD、SC-01 WFL-01、CR-WFL-001/002/003；用户持续授权 V1.1。原冻结 `64cdf09` 和 0030/0031 不覆盖。
 
 ## 证据与差异

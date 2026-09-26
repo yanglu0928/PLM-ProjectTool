@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/WFL-01-A05-P03/CR-WFL-004 新增 Checklist 记录/依据两表 ORM 和 Migration `0032`，首次/可信更正链、两个投影原子核对、BLOCKED 状态保持、追加封口/保留观测及非空降级保护。Windows 11 后端 663 项无失败（2 项环境跳过），隔离 PostgreSQL 空/有数据 up/down/re-up、九更正组合/并发/回滚/拒绝、既有 Workflow 回归与开发 wheel PASS。升级前备份到 0032；无 API/依赖/架构改变。真实 Owner/Review/例外/写服务/Gate 关联未完成，Server 2025 未验、Debian 13 暂不验证，不是正式程序包。
+
 - 2026-09-26：`0.1.0.dev0`/WFL-01-A05-P02 新增固定十二项 Checklist 首次/更正不可变记录形状，保留父引用、独立 Item/Workflow 版本及理由/影响/依据；拒绝自引用、畸形豁免/UTC/版本溢出。Windows 11 后端 660 项无失败（2 项环境跳过）、开发 wheel PASS。无 Migration/API/依赖，升级无动作；当前仅领域，记录链 Schema/实际授权/Owner/Gate 未验，Server 2025 未验、Debian 13 暂不验证。
 
 - 2026-09-26：`0.1.0.dev0`/WFL-01-A05-P01/CR-WFL-004 记录 Checklist owned 追加记录/依据两表、受控更正链、两个锁版本序列及旧数据不回填设计；明确 Gate 固定记录关联待补。仅文档，无 Migration/API/依赖/升级动作；新数据库/权限/运行行为尚未验证。

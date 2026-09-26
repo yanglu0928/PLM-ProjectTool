@@ -3194,3 +3194,11 @@
 - Reason：在 ORM/写命令前固定不可变形状，不让错误版本或自引用进入持久层设计；不扩展冻结请求字段或把未注册 Owner 当可信。
 - Impact：仅 Domain/测试/文档，无 Schema/API/依赖/权限改变。
 - Rollback：不使用新对象，旧事实/历史不变。
+
+## DEC-20260926-164
+
+- Date：2026-09-26；WBS：WFL-01-A05-P03；CR：CR-WFL-004。
+- Decision：0032 只添加 owned 记录/refs，当前投影按两个独立版本提交核对；数据库捕获 observed_stage_state，不在记录时自动恢复 BLOCKED。FAIL 可保存已证身份的未通过状态，但正向依据仍要求完整 ELIGIBLE/APPROVED。Unicode 空白显式检查，不依赖 locale。
+- Reason：更正需保留当时依据、阻断状态不能被顺手消除；空白理由不能通过区域设置差异绕过。旧无链不虚构历史，Gate 固定记录关系与实际 Owner 留待独立任务。
+- Impact：两表/0032/metadata/隔离验证，无 API/权限/依赖改变；结构与合成失败不是客户批准。
+- Rollback：空历史可 down，非空拒绝；应用不装配写命令并保留历史。

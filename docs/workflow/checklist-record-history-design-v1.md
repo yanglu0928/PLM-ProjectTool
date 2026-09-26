@@ -1,12 +1,14 @@
 # Checklist 追加记录设计 V1
 
-日期 2026-09-26；0.1.0.dev0；CR-WFL-004；状态 DESIGN_ONLY，无 0032/运行写命令。
+日期 2026-09-26；0.1.0.dev0；CR-WFL-004；P03/0032 已实施两表并完成隔离 Schema 验证；无运行写命令/实际 Gate，证据见 P03 报告。
 
 ## 根记录
 
 `wfl_checklist_records` 为 WFL-01 owned 追加实体，不新增业务 Aggregate Scope。record_id UUIDv7；workflow_id/project_id 复合 FK→Workflow；(workflow_id,item_key) FK→固定 Item。唯一 (record_id,workflow_id,project_id,item_key) 与 (workflow_id,item_key,after_item_version)。
 
 字段：definition_version=1、item_key、stage_key（固定归属）；before_state PENDING/PASS/FAIL/WAIVED、result PASS/FAIL/WAIVED；before/after_item_version（+1）、before/after_workflow_version（+1）；supersedes_record_id 可空，同父/project/item 复合 self FK；actor_id User FK、trace_id、occurred_at UTC；reason/impact 可空、非空时最多 2000 字且不是纯空白；content_fingerprint 32 bytes；created_xid bigint 数据库强制 txid_current()。
+
+实施细化：observed_stage_state 由数据库强制捕获 ACTIVE/BLOCKED，提交时必须保持相同，记录事务不得隐藏恢复 BLOCKED。FAIL 的 ReviewRound 观测白名单按冻结模型 PENDING/IN_REVIEW/APPROVED/RETURNED/WITHDRAWN；正向记录仅 APPROVED。理由/影响使用显式 Unicode 空白集合检查，避免 locale 字符类漏判中文空白。
 
 首次必须 before_state=PENDING、before_item_version=0、supersedes 空；更正必须引用当前可信记录（不是任意同项目记录），before_item_version>0、before_state 与上一条 result 一致，不允许 PENDING 重置。新 record_id 不等于 supersedes，引用先前已存在记录，不接受循环或未来父。
 
@@ -34,4 +36,4 @@ Schema：空库 up/down/re-up、0031 旧初态与合成已判断状态升级原�
 
 应用：真实 PM/Session/CSRF/License/归档/撤权、Owner Scope/版本/批准/制品证明、每次独立重验、新 PASS 不能复用撤销依据、历史/Audit/幂等一致、失败结果不能推进；HTTP 与 Windows 组合、覆盖率/性能另验。
 
-以上均未运行；已有 0031 和 652 项后端测试不替代新记录链验收。Server 2025 未运行，Debian 13 暂不验证，完整 Workflow/Gate/可用程序包未完成。
+领域与 Schema 的隔离合成矩阵已在 P02/P03 执行，实际应用/Owner/HTTP/覆盖率/性能仍待；既有 0031 证据不替代本次记录链验收。Server 2025 未运行，Debian 13 暂不验证，完整 Workflow/Gate/可用程序包未完成。
