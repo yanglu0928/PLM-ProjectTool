@@ -22,3 +22,5 @@ P02首先实现固定不可重试原因AUTH_ACCESS_DENIED/RESOURCE_NOT_FOUND/LIC
 P03追加证据：失败提交确认丢失只读核验内部PASS，真实commit后raise、完整原pair/当前失败Lease-Attempt/唯一Audit源读取，多次八表无写，技术FAILED缺错重复审计拒绝；1008无失败（2环境跳过），原终止发布/wheel通过。取消/retry/执行器/主循环尚待，CR整体不标PASS。
 
 P04-P01/P02取消申请前置已验证：冻结creator或PM当前权限、可信Root取原actor/spec，Job首申请与USER Audit/持久不可变响应同UOW，首源缺失拒绝采用裸技术状态；真实并发/回滚/终态不撤回/原响应不漂移证明。1017无失败（2环境跳过）。后台SystemActor确认/过期恢复、公开HTTP/执行器/retry仍待，不将本申请或technical ack测试当取消整体PASS。
+
+P04-P03当前活代后台确认内部PASS：真实首USER来源+当前SystemActor+最小SYSTEM Audit/实际Worker-fence-alive ack同UOW，User/License撤权仅安全终止，后置Audit/ack/identity故障回滚，真实到期拒绝活代入口。1021无失败（2环境跳过），原发布/wheel通过。到期恢复/确认丢失/主循环/retry/HTTP尚待，不将CR或取消整体关闭。

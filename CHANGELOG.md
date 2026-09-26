@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/P04-P03-P04-P03新增后台活代取消确认Owner，要求同Supervisor实际静止、当前SystemActor、原Root/acceptance/pair/唯一首申请USER Audit，最小SYSTEM取消完成Audit与实际alive Worker/fence/Lease ack同UOW。4新unit/真实PG-Vault双Scope撤User+License仅安全停止、首历史/字节保留、Audit与ack写后/后验identity故障整回滚、错绑定/终态/首源缺失/实际到期拒绝及原发布回归PASS；1021无失败（2环境跳过），开发wheel成功。Windows11，无Migration/API/依赖、0042，无数据升级，撤未装配Owner保历史回滚。到期恢复/确认丢失/执行器/HTTP及正式材料/三平台/质量/Gate/可用安装包待。
+
 - 2026-09-26：`0.1.0.dev0`/P04-P03-P04-P02新增内部取消申请Owner、Jobs owned首取消事实只读与Audit owned不可变首响应/唯一申请源；当前Session-CSRF-License/原Root-pair绑定，Job首申请+USER Audit+0015收据同UOW。5新unit/实际PG双Scope并发重放/异payload冲突、后续CANCELLED仍原CANCEL_REQUESTED八表无写、新key保首历史、PENDING立即取消/已发布结果不撤回、Audit与Job写后/后验授权故障回滚、裸技术取消拒绝及原发布回归PASS；1017无失败（2环境跳过），开发wheel成功。Windows11，无Migration/API/依赖、0042，无数据升级，撤未装配Owner保历史回滚。系统确认/过期恢复/公开HTTP-IfMatch/执行器及正式材料/三平台/质量/Gate/可用安装包待。
 
 - 2026-09-26：`0.1.0.dev0`/P04-P03-P04-P01按冻结API03新增审计导出取消申请专属权限Port：PROJECT当前有效创建者或PM，DEPLOYMENT当前Admin，真实Session/CSRF/License，无Project管理员旁路，归档仅停止既有任务权限。4新unit/实际PG两Scope角色/停用/跨项目/暂停/许可/CSRF九表无写及原发布回归PASS；1012无失败（2环境跳过），开发wheel成功。Windows11，无Migration/API/依赖、0042，无数据升级；撤未装配Port/操作政策保历史可回滚。调用Owner必须从持久Root取original actor/spec，取消首申请/审计/幂等/系统确认及主循环未实现；正式材料/三平台/质量/Gate/可用安装包待。

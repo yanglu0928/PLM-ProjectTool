@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260926-231
+
+- Date/WBS：2026-09-26 / P04-P03-P04-P03；前置实际首申请当前权限/USER Audit和owned Jobs ack/SystemActor/静止锁已验；输入CR-AUD-004/ADR011。只做当前活代安全确认，无权限扩张或新申请。
+- Decision：同Supervisor静止→当前identity→原Root/acceptance/pair和CANCEL_REQUESTED首历史/唯一USER源→最小SYSTEM完成Audit→第二identity→owned真实Worker/fence/alive ack最后→commit。原User/License撤权禁止业务但不阻断安全确认，reason正文不入Audit、不删除字节、不修改首申请/复活终态。
+- Evidence：4新unit/1021后端无失败（2环境跳过）、真实PG临时Vault两Scope真实申请后撤User+License仍安全ack，Job/RELEASED Lease/Attempt JOB_CANCELLED一致、唯一SYSTEM Audit，首历史/字节保留；Audit及ack写后/identity故障回滚，错绑定/已取消/成功/裸技术源/真实到期拒改，原发布/wheel通过。新ack/publish竞争未额外执行，不扩大旧fixture证明。
+- Risk/rollback：静止锁不是跨进程/磁盘强杀，同步I/O应先返回；到期取消恢复/确认丢失/执行器/HTTP仍待。无Schema/API/依赖，撤未装配Owner保历史，Next到期恢复，整体包/Gate待。
+
 ## DEC-20260926-230
 
 - Date/WBS：2026-09-26 / P04-P03-P04-P02；Phase2，前置原Root/acceptance/pair/真实取消权限与技术取消Port已验；输入API03/CR-AUD-004。内部可信Owner不接受客户端original actor/spec断言。
