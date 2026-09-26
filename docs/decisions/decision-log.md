@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260926-214
+
+- Date：2026-09-26；WBS：AUT-04-A01（AUD原子发布前置）。
+- Decision：先记录CR-AUT-004再实现独立Windows当前账户Vault材料派生系统UUID；固定域/ref、启动pin完整摘要、每次使用重读，缺失/变化拒绝。复用既有加密备份，不新增User/角色/凭据登录、自动供给或业务授权。
+- Reason：实际代码无受控SystemActor来源，不能用随机UUID或普通User冒充冻结Worker身份。完成此可独立验收前置才恢复真实发布。
+- Impact：4项新增含临时Vault真实丢失/错误口令/恢复/换材料验证通过，全后端934项无失败（2跳过），开发wheel成功；无Schema/HTTP/依赖/License改变。
+- Rollback：停未装配入口，保留Vault与历史，不自动删生产材料；正式账户/异账户及Server2025/Debian未验，下一Owner仍须全部当前权限/Lease/文件事实核验，不标完整包或Gate通过。
+
 ## DEC-20260926-213
 
 - Date：2026-09-26；WBS：AUD-03-A06-A04-P03-A04-P02。
