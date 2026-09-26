@@ -25,6 +25,8 @@
 
 ## 最近检查点
 
+- 2026-09-27/P06-P12-A外部Console可响应合成路径内部通过：严格隔离隐藏Console/限定目标+发送器CTRL_BREAK，idle60停止、active单次排空及handler恢复；1111通过/2既有跳过。首次长阻塞再次领取失败保留，真实PG/文件子进程及停止桥接竞态待P12-B核查，无生产/API/Migration变化，完整包/Gate待。
+
 - 2026-09-27/P06-P11内部通过：保旧License入口、新Worker有界runtime固定信任装配；Windows CLI无秘密参数、--once LIMIT非就绪，Loop/Step/Supervisor全静止锁保护DB关闭，活线程拒绝关闭。1111无失败（2跳过）、临时Credential/真实Vault+PG两Scope合成Window组合发布及缺正式公钥失败关闭/六表无写、CLI边界/wheel通过。正式来源/外部Console/服务/完整包/Gate待，无Migration/API/依赖。
 
 - 2026-09-27/P06-P10内部通过：主线程注册/全局互斥，signal只置标志、桥线程正常Event stop，handler全恢复/失败poison；记录Windows长等待延迟偏差后保poll截止以50ms小段等待。7新unit/1106无失败（2跳过）、独立合成进程SIGINT idle与已知任务排空、PG组合发布回归/wheel通过。外部Console/服务/正式来源/其他平台/完整包/Gate待，无Migration/API/依赖。

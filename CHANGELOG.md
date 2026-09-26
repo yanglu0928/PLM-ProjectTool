@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/P06-P12-A增加独立隐藏Windows Console外部CTRL_BREAK验证；严格限定本轮目标/发送器。可响应合成执行器idle停止/active单次排空通过；后端1111通过（2既有跳过）。首次活动长阻塞再次领取的失败保留，真实DB/文件阻塞与桥接竞态仍待。Windows11，仅验证脚本/文档，无生产包/API/Migration/依赖/升级变化；撤脚本回滚。P12-B/SCM/其他平台/正式材料/完整包/Gate未完成。
+
 - 2026-09-27：`0.1.0.dev0`/P06-P11新增Windows后台CLI固定当前账户DB/Vault、原包内公钥/MAC/可信时间来源；保原License函数，新增显式有界Worker runtime同信任装配。--once LIMIT不报服务就绪，Loop/Step/Supervisor全静止锁才关闭本进程DB，活线程拒绝/不强杀。5新unit/1111无失败（2权限跳过），真实临时Windows凭据/Vault+PG18缺正式包内公钥失败关闭/六表无写/构造DB释放；显式测试License下两Scope真实Window工厂process adapter发布/撤权失败/stop无写/静止关闭，原发布/wheel通过。Windows11，无Migration/API/依赖/升级，0042保留，撤未公开装配保历史回滚。正式公钥及目标账户材料仍缺，外部Console/SCM/网络黑洞/公平隔离/未知恢复/HTTP、质量/其他平台/Gate/完整安装包待。
 
 - 2026-09-27：`0.1.0.dev0`/P06-P10新增主线程信号生命周期适配：SIGINT/SIGTERM及可用SIGBREAK注册、进程内互斥、最小标志callback/50ms桥线程正常stop、全handler恢复及恢复失败poison，不强杀/自动dispose。记录Windows解释器长等待延迟后，Loop改最长50ms Event段保原poll截止。7新unit/1106无失败（2环境权限跳过）、两个独立合成进程解释器SIGINT及时idle停止/已知任务排空及真实PG组合发布回归/wheel通过。定向测试调整前60.052s/后0.122s不是生产性能。Windows11，无Migration/API/依赖/升级，0042保留；撤未公开适配保历史回滚。外部Console Ctrl-C/Break/SCM/硬SIGTERM、正式来源/CLI/公平隔离/其他平台/质量/Gate/安装包待。

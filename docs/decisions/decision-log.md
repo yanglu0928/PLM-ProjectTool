@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-247
+
+- Precode：Phase2/P06-P12-A，输入CR-AUD-004/P10/P11；独立外部Console验证先记录于docs/progress/aud-p06-p12-external-console.md。
+- Decision：只创建隐藏新Console，发送器Attach指定本轮PID，清单严格仅双方后CTRL_BREAK广播；不向父Console投递，不强杀，不变生产机制。
+- Evidence：外部idle/active可响应合成路径通过；1111后端通过/2既有跳过。首次活动长阻塞发生第二次ACTIVE，分段等待测试后通过，不冒充真实执行器修复。
+- Risk/rollback：无Migration/API/依赖/升级，撤验证脚本；P12-B真实PG子进程与长阻塞停止/桥接竞态待核查，SCM/正式材料/完整包/Gate待。
+
 ## DEC-20260927-246
 
 - Precode：Phase2/P06-P11，CR-AUD-004/ADR011，原Windows固定信任与generic组合/信号已验；实施前记录普通License runtime不接受有界Worker的兼容差异和最小专属入口，无签名字段/权益/Schema/API/依赖改变。

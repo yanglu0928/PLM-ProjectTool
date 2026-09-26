@@ -60,3 +60,5 @@ P06-P09组合策略编码前进度登记，内部PASS：显式有界PG18/current
 P06-P10编码前signal/桥线程政策与Loop兼容偏差分别在progress记录，内部PASS：最小callback只标志，正常桥线程stop排空；主线程互斥注册/全恢复/失败poison，最长50ms小段保poll截止。实际原wait信号延迟60.052s后调整同定向测试0.122s；7新unit/1106无失败（2跳过），两个独立合成进程解释器SIGINT idle及时停/活动任务完成一claim/handler还原，PG组合发布回归/wheel通过。外部Console/SCM/硬SIGTERM/生产性能未证，正式来源/CLI/公平隔离/未知恢复/其他平台/Gate未完成，不强杀/auto-dispose。
 
 P06-P11实施前进度记录License普通runtime与Worker有界runtime冲突；保旧函数，新显式Worker同固定product/machine/integrity/_assemble，不变签名/权益/信任根。Windows CLI固定账户来源无秘密参数，Application全静止接口保护dispose，活线程拒绝/不强杀。1111无失败（2跳过）、临时Windows Credential/Vault+真实PG缺正式包内公钥失败关闭/六表不写与构造DB释放；明确合成License下Windows工厂process adapter两Scope物理发布/当前撤权安全失败/stop及静止资源关闭、原发布/wheel通过。正式来源/外部Console/SCM/网络黑洞/未知恢复/公平/HTTP待，CR/Gate不关闭。
+
+P06-P12-A外部隐藏Console限定目标与发送器后CTRL_BREAK，可响应合成idle/active路径通过；1111通过/2跳过。长阻塞合成路径首次发生再次领取，保留失败，测试分段等待不代表生产修复。真实PG子进程/阻塞/桥接竞态继续P12-B；CR/Gate未关闭。
