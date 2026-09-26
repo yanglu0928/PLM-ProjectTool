@@ -28,6 +28,9 @@ from plm_assistant.modules.jobs.api.read_detail import create_job_detail_router
 from plm_assistant.modules.jobs.application.authorized_read import AuthorizedJobReadService
 from plm_assistant.modules.jobs.infrastructure.read_repository import SqlAlchemyJobReadRepository
 from plm_assistant.modules.audit.application.job_read_projection import AuditJobReadProjection
+from plm_assistant.modules.audit.api.submit_export import create_audit_export_submit_router
+from plm_assistant.modules.audit.application.submit_export import AuditExportSubmitService
+from plm_assistant.modules.audit.application.export_submit_authorization import AuditExportSubmitAuthorization
 from plm_assistant.entrypoints.windows_secret_list_cursor import create_windows_secret_list_cursor_codec
 from plm_assistant.entrypoints.windows_project_member_cursor import create_windows_project_member_cursor_codec
 from plm_assistant.entrypoints.windows_project_department_cursor import create_windows_project_department_cursor_codec
@@ -244,6 +247,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         audit_read_router = None
         audit_export_result_router = None
         audit_export_download_router = None
+        audit_export_submit_router = None
         job_detail_router = None
         project_create_router = None
         project_patch_router = None
@@ -533,6 +537,18 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 sessions=sessions, departments=department_deactivates, origins=origins,
             )
             if include_secret_write:
+                audit_export_submit_router = create_audit_export_submit_router(
+                    sessions=sessions,origins=origins,
+                    exports=AuditExportSubmitService(
+                        unit_of_work=runtime.unit_of_work,
+                        authorization=AuditExportSubmitAuthorization(
+                            project_access=SqlAlchemyProjectWriteAccess(),deployment_access=SqlAlchemyLicenseImportAccess(),
+                            projects=ProjectAuthorizationService(unit_of_work=runtime.unit_of_work,
+                                repository=SqlAlchemyProjectAuthorizationRepository()),license_guard=licenses.guard),
+                        repository=SqlAlchemyAuditExportSubmitRepository(),receipts=SqlAlchemyIdempotencyReceipts(),
+                        queue=AuditExportJobQueue(SqlAlchemyAuditExportJobQueueRepository()),audit=audit,
+                    ),
+                )
                 from plm_assistant.entrypoints.windows_secret_write import (
                     create_windows_secret_write_service,
                 )
@@ -651,6 +667,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             audit_read_router=audit_read_router,
             audit_export_result_router=audit_export_result_router,
             audit_export_download_router=audit_export_download_router,
+            audit_export_submit_router=audit_export_submit_router,
             job_detail_router=job_detail_router,
             project_create_router=project_create_router,
             project_patch_router=project_patch_router,

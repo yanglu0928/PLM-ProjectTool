@@ -3,7 +3,7 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 2：Platform Core|
-|Current WBS|`AUD-03-A07-P01 可选审计导出提交POST`（原同事务幂等/真实Session-CSRF/202任务地址/回滚与终态重放内部HTTP通过；Windows写装配/正式信任/全Scope待）|
+|Current WBS|`AUD-03-A07-P02 Windows写模式导出链`（真实写Factory/PG/Session-CSRF→JobGET→generic Worker→结果下载摘要内部PASS；关闭模式与缺正式信任拒绝保留，完整Scope待）|
 |Current Status|PHASE_1_COMPLETE / DOC_03_A03_P04_P04_PRECONDITION_BLOCKED / DOC_02_A02_P01_INTERNAL_PASS / DOC_02_A02_P02_PRECONDITION_BLOCKED / DOC_03_A04_A03_P04_P03_CONTENT_HTTP_PASS / DOC_03_A04_A04_P01_JOB_SCHEMA_PASS / DOC_03_A04_A04_P02_JOB_LEASE_PASS / DOC_03_A04_A04_P03_OUTBOX_PASS / DOC_03_A04_A04_P04_P01_PARSE_QUEUE_PASS / DOC_03_A04_A04_P04_P02_COMMIT_INTERNAL_PASS / DOC_03_A04_A04_P04_P03_P01_ABORT_STATE_PASS / DOC_03_A04_A04_P04_P03_P02_PRECONDITION_BLOCKED / DOC_03_A04_A04_P04_P04_A01_FINALIZE_HTTP_PASS / DOC_03_A04_A04_P04_P04_A02_WINDOWS_COMPOSITION_PASS / DOC_03_A04_A04_P04_COMMIT_ABORT_IN_PROGRESS / DOC_01_A02_INTERNAL_PASS / DOC_01_A03_P01_CURSOR_PASS / DOC_01_A03_P02_HTTP_CONTRACT_PASS / DOC_01_A03_P03_HTTP_DB_PASS / DOC_01_A03_P04_WINDOWS_COMPOSITION_PASS / DOC_01_A04_P01_VERSION_INTERNAL_PASS / DOC_01_A04_P02_VERSION_CURSOR_PASS / DOC_01_A04_P03_VERSION_HTTP_CONTRACT_PASS / DOC_01_A04_P04_VERSION_HTTP_DB_PASS / DOC_01_A04_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P01_VERIFIED_SNAPSHOT_PASS / DOC_01_A05_P02_DOWNLOAD_SOURCE_PASS / DOC_01_A05_P03_PREPARE_DOWNLOAD_PASS / DOC_01_A05_P04_DOWNLOAD_HTTP_PASS / DOC_01_A05_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P06_DISCONNECT_CAPACITY_BOUNDED_PASS / DOC_03_A04_A04_P04_P03_P02_A01_GATE_ADAPTER_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P01_CONTENT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P02_COMMIT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P03_ABORT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P01_READONLY_INSPECTION_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A01_STORAGE_STEP_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A02_INTERNAL_CLEANUP_PASS / PLT_02_A07_P05_A09_CEREMONY_PENDING / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
 |Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03、DOC-03-A01、DOC-03-A02（限定范围）、DOC-03-A03-P01～P03（P03 内部合成验证）、DOC-03-A03-P04-P01～P03（内部合成验证）、DOC-03-A04-A01（Schema 验证）、DOC-03-A04-A02（内部合成验证）、DOC-01-A01、DOC-02-A01、DOC-02-A02-P01（内部合成验证） PASS|
@@ -13,8 +13,8 @@
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，DM-02 License 授权粒度经用户批准 CR-LIC-001 修订|
 |DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；原冻结64cdf09保留；增量至`20260927_0043` Job用户并发版本（CR-JOB-002），0001～0042历史不改写；无生产迁移|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
-|Test Summary|AUD-03-A07-P01 Windows11/Python3.13后端1155无失败（2既有权限跳过）；5新Contract，真实PG-ASGI Session-CSRF/PM/Admin两Scope202/可查询PENDING、同Key重放十表无写/冲突与授权拒绝、原Audit后故障十表回滚，实际Worker发布GET SUCCEEDEDv2/终态重放不复活/单Attempt，原发布及开发wheel644844通过；非Windows提交装配/正式信任/浏览器/If-Match/性能证明|
-|Next WBS|AUD-03-A07-P02：仅Windows显式写模式装配原Submit/安全POST与Job status_url，--platform只读及默认/login关闭提交，真实Session/PG/原Worker和信任门禁复验。Document/其他Owner、列表/取消expected_version/受控重试完整Scope保留。未知跨进程恢复/复杂故障、网络/质量/Gate/正式材料/完整Scope保留，Server2025未验、Debian13暂缓|
+|Test Summary|AUD-03-A07-P02 Windows11/Python3.13后端1155无失败（2既有权限跳过）；真实PG-ASGI WriteFactory双Scope202→Job查询→实际generic Worker/心跳→SUCCEEDEDv2→metadata/content真实SHA/size，重放/409/License/Admin项目拒绝十表无写/单Attempt，三关闭模式404与三构造故障/实际正式信任不可用拒绝半启动，旧Windows下载/原发布及开发wheel644975通过；正向合成信任、Worker在验证进程，非正式服务/浏览器/If-Match/性能/全Scope证明|
+|Next WBS|JOB-02-A01：原Audit取消命令expected_version前置核查与同事务版本比较/持久幂等，为冻结Job cancel If-Match补前置，不能无条件公开写入口。Document/其他Owner、列表/受控重试完整Scope保留。未知跨进程恢复/复杂故障、网络/质量/Gate/正式材料/完整Scope保留，Server2025未验、Debian13暂缓|
 
 ## 自动执行策略
 
@@ -24,6 +24,8 @@
 - GitHub：允许在当前 Scope 和正确分支内自动 fetch、commit、push；禁止 force push、直接提交 main、覆盖未知远端修改或提交 Secret/客户数据。
 
 ## 最近检查点
+
+- 2026-09-27/AUD-03-A07-P02仅Windows写模式装配导出POST，默认/login/readonly404；1155无失败/2跳过、实际Factory提交→任务GET→generic Worker/心跳/发布→结果下载摘要与size一致，重放/冲突/拒绝无写/单Attempt、构造故障/实际缺正式信任拒绝半启动、旧下载/原发布/wheel通过。无新Migration/依赖/权限，正向合成信任/后台在验证进程，非正式服务/UI/全Scope/完整包/GatePASS；下一取消expected_version前置。
 
 - 2026-09-27/AUD-03-A07-P01可选项目/admin提交POST、严格输入/浏览器安全/原同事务幂等与202固定受理地址，1155无失败/2跳过，真实PG-CSRF/权限/重放冲突/失败十表回滚、原Worker发布/GET成功v2/终态重放不复活及原发布/wheel通过。无Migration/权限/依赖变；当前Windows尚未挂提交，正式材料/全Owner/写If-Match/浏览器/完整包/Gate待；下一仅写模式装配。
 

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/AUD-03-A07-P02仅Windows --platform-write接导出提交，原事务依赖/信任门禁，默认/login/只读仍404。真实PG-ASGI写Factory双Scope提交→Job查询→实际generic Worker/心跳/发布→metadata/content真实摘要及size链、重放/冲突/权限拒绝无写和单Attempt通过；三个构造失败/实际正式信任不可用拒绝半启动，旧导出下载/原发布回归通过。无Migration/依赖/权限/Breaking/升级，撤写接线回滚；正向合成信任、Worker在验证进程，非正式服务/浏览器/性能/全Scope/Gate/完整包PASS，下一取消版本前置。
+
 - 2026-09-27：`0.1.0.dev0`/AUD-03-A07-P01新增可选项目/admin导出POST，严格JSON/Origin/Cookie/CSRF/Key与原同事务幂等授权，202固定受理JobRef+export_id/可查询status_url，终态重放不复活。Windows11后端1155无失败/2既有跳过；真实PG两Scope受理/重放无写/冲突/权限拒绝/原Audit后故障十表回滚、原Worker发布/成功v2与终态重放通过。无Migration/依赖/权限/升级（需前序0043），撤新Router回滚；默认/当前Windows未挂提交，下一仅写模式装配；正式材料/浏览器/性能/全Scope/Gate/完整包待。
 
 - 2026-09-27：`0.1.0.dev0`/JOB-01-A03把任务详情接入Windows --platform/--platform-write，复用原License/Auth/Project与实际Audit Owner，默认/login-only仍404。实际PG-ASGI双工厂双ScopeRUNNINGv1/SUCCEEDEDv2/原结果及授权隔离/读取无写通过；每工厂四构造失败、实际正式信任源不可用均拒绝半装配启动，旧导出下载/腐坏拒绝/发布回归通过。无新Migration/API路径/权限/依赖/升级，撤新装配回滚，需前序0043及正式目标账户材料；其他Owner/浏览器/正式部署/完整包/Gate待。

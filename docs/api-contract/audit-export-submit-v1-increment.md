@@ -1,5 +1,7 @@
 # Audit导出提交运行Contract增量
 
+AUD-03-A07-P02装配更新（2026-09-27）：仅Windows --platform-write已接SubmitService/POST及原Jobs状态URL；默认/login/--platform只读仍关闭提交。实际写Factory→任务GET→真实generic Worker→发布metadata/content摘要链已合成信任/真实PG验证，前文“当前Windows未挂POST”为P01历史状态保留。仍非正式材料/监听进程/UI/所有Owner/发行通过；权限及冻结路径未变。
+
 2026-09-27，AUD-03-A07-P01；原Gate2/API-02 AUDIT_EXPORT/64cdf09保留。可选POST `/api/v1/projects/{project_id}/audit-exports` 和 `/api/v1/admin/audit-exports`，角色原PM/Admin，S/L/C/I/A，短事务只接受并登记，不执行长任务/文件I/O。
 
 Origin/Host严格受控，Cookie plm_session及X-CSRF-Token各唯一32字节hex，Idempotency-Key使用原公共语法/上限；当前Session预验证后Application同事务重新检查Auth/角色/Project/License。项目路径绑定PROJECT，admin固定DEPLOYMENT，不接受客户端scope/project_id/请求actor/格式/存储位置。actor_id/trace_id字段仅Audit搜索过滤，不是执行主体或请求Trace。

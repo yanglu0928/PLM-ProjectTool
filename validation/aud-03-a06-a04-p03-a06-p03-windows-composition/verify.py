@@ -54,7 +54,8 @@ def exercise(v):
                     response=client.get(path+'/content',headers=cookie);assert response.status_code==200,response.text
                     assert len(response.content.splitlines())==260 and hashlib.sha256(response.content).digest()==result.file_sha256
                     assert int(response.headers['content-length'])==result.byte_count
-                    assert client.post(path.rsplit('/',1)[0],headers=cookie,json={}).status_code==404
+                    expected=403 if factory is production.create_production_platform_write_app else 404
+                    assert client.post(path.rsplit('/',1)[0],headers=cookie,json={}).status_code==expected
                     assert client.get(path,headers={'cookie':'plm_session='+(b'X'*32).hex()}).status_code==401
                     v['guard'].enabled=False
                     for suffix in ('','/content'):assert client.get(path+suffix,headers=cookie).status_code==403
@@ -75,7 +76,7 @@ def exercise(v):
                     try:factory(settings)
                     except production.ProductionLoginStartupError as exc:assert 'private' not in str(exc)
                     else:raise AssertionError('partially wired app published')
-    print('P03-A06-P03 PASS: both explicit Windows platform factories actual PG/schema/current Session/PM or Admin/published metadata/private file HTTP full hash/headers, unknown Session/Scope/Admin bypass/License/corruption safe; default/login-only404 and export POST closed, three constructor failures do not publish app. Credential/License/cursor/write trust injected synthetic; runtime dispose additionally unit tested; formal account/Server2025/Debian/quality/performance/installer remain pending.')
+    print('P03-A06-P03 PASS: both explicit Windows platform factories actual PG/schema/current Session/PM or Admin/published metadata/private file HTTP full hash/headers, unknown Session/Scope/Admin bypass/License/corruption safe; default/login-only404, readonly POST404 and write POST missing Origin403, three constructor failures do not publish app. Credential/License/cursor/write trust injected synthetic; runtime dispose additionally unit tested; formal account/Server2025/Debian/quality/performance/installer remain pending.')
 
 
 if __name__=='__main__':fixture.main(exercise=exercise)

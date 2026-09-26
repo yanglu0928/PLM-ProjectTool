@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-264
+
+- Precode：AUD-03-A07-P02 windows-submit进度先记录，P01POST/原Submit/已接JobGET前置满足，只有原include_secret_write接Submit，默认/login/readonly关闭。
+- Decision：复用真实事务Session/License/Project/Receipt/Queue/Audit，202不执行长任务。旧Windows下载回归写POST缺Origin预期改403，只读404不改，安全用例保留。
+- Evidence：真实WriteFactory双Scope202→JobPENDING→generic真实组合Worker/实际Vault identity/heartbeat→SUCCEEDEDv2→原结果metadata/content SHA和size一致；重放/冲突/许可/项目拒绝与终态重放十表无写/单Attempt，STOPPED后静止dispose。三关闭模式404、三新构造故障及实际正式信任不可用拒绝半启动，旧下载/原发布回归通过。
+- Impact：无Migration/权限/依赖/Breaking变化，撤写组合接线回滚；正向信任注入、Worker在验证进程内，非正式材料/独立服务端到端/UI/发行/Gate通过。下一JOB-02-A01原取消expected_version前置与同事务版本/幂等，完整Scope仍保留。
+
 ## DEC-20260927-263
 
 - Precode：AUD-03-A07-P01 submit-http进度先记录，实际Submit/Receipt/JobGET前置满足，原冻结AUDIT_EXPORT路径/Role/错误码不改。
