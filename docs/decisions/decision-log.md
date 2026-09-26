@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-250
+
+- Precode：Phase2/P06-P13-P01，先记录aud-p06-p13-queue-isolation.md，验证公平/坏源风险，不把缺陷复现当功能PASS。
+- Evidence：真实PG队首锁55P03在SKIP LOCKED前中止/六表无写，坏payload同样阻塞正常第二；修复本轮合成来源后双方真实发布，原发布回归通过。
+- Decision：依持续授权登记CR-AUD-005，下一先只锁不写SKIP LOCKED reservation、再有界坏源分类隔离；不吞全局DB/identity/commit确认失败、不伪终态、不改优先级。
+- Impact/rollback：当前仅验证/记录，无API/Migration/依赖/生产代码改变；撤脚本保历史。P13-P02/P03未实施，公平隔离FAIL/完整包/Gate待。
+
 ## DEC-20260927-249
 
 - Precode：Phase2/P06-P12-B02，CR-AUD-004/P11/P12-B01，先记录aud-p06-p12-pg-child.md。
