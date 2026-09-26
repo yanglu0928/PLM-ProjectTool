@@ -3106,3 +3106,11 @@
 - Reason：初始化需要多行同事务插入，立即跨表完整性校验会误拒绝；只靠 ORM 无法防半套提交。数据库结构校验并不具备客户 Review/Gate 事实，因此不宣称正式阶段通过。
 - Impact：Schema 增量 0030 与 ORM/测试，API/外部依赖不变；已有 Project 不回填进度。
 - Rollback：空 Workflow 可 down 到 0029；有实例拒绝降级，回滚代码装配并保留历史。
+
+## DEC-20260926-153
+
+- Date：2026-09-26；WBS：WFL-01-A03-P03。
+- Decision：初始化入口使用调用方事务，固定 V1 定义，唯一 project_id insert-on-conflict；仅新实例追加 Audit，不自行提交，不重置已有实例。入口不开放给请求/回填 CLI，真实 Project/License 授权由后续接线的应用调用方承担。
+- Reason：Project 创建、幂等收据、Workflow 与 Audit 需要一事务提交；NOT_STARTED 初始化不需要虚构 StageTransition 或业务 Review 结果。唯一项目天然重试不能替代公开命令的请求幂等。
+- Impact：Workflow 应用/Repository/测试，无 Schema/API/依赖变化，现有生产创建路径暂未改变。
+- Rollback：不装配初始化服务；历史实例保留，不删除或回写进度。

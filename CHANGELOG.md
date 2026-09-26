@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/WFL-01-A03-P03 新增 Workflow 调用方同事务初始化及唯一项目去重，固定六阶段/十二项 PENDING 与初始化 Audit；重试不重置进度。Windows 11 后端 623 项无失败（2 项环境跳过），隔离 PostgreSQL 并发/回滚与开发 wheel PASS。无 Migration/API/依赖变化，升级无动作；调用方必须负责真实授权/License，生产 Project 创建接线与既有项目回填未实施，Server 2025 未验、Debian 13 暂不验证。
+
 - 2026-09-26：`0.1.0.dev0`/WFL-01-A03-P02/CR-WFL-002 新增 Workflow 四表 ORM 与 `20260926_0030`，提交时校验完整 V1 定义/状态指针，防项目归属漂移/定义覆盖/历史删除，非空降级拒绝。Windows 11 后端 619 项无失败（2 项环境跳过），隔离 PostgreSQL 空/有数据升级、空降级/再升、ORM parity/约束和开发 wheel PASS。升级前备份；无 API/依赖变更，不回填进度；初始化、历史、真实 Gate 与生产接线未完成，Server 2025 未验、Debian 13 暂不验证。
 
 - 2026-09-26：`0.1.0.dev0`/WFL-01-A03-P01/CR-WFL-002 记录 Workflow 四表持久层设计、BLOCKED/终态指针语义及初始化/历史/最终完成 API 缺口。仅设计文档，无 Migration/运行代码/API/依赖变化，无升级动作；Schema/真实数据库验收尚待，不能判数据库或 Workflow PASS。
