@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260926-229
+
+- Date/WBS：2026-09-26 / P04-P03-P04-P01；实际取消技术Port缺Owner来源，导出提交权限仅PM，不能复用为冻结API03创建者或PM取消；Phase2前置真实Auth/License/Project事实已验。
+- Decision：新取消申请Authority与Project owned只读锁住current member操作，PROJECT当前有效creator任何角色或PM、DEPLOYMENT当前Admin，Session-CSRF-License每次检查，Admin无Project旁路。Archived只能申请停止既有Job，不授导出/业务写；原actor/spec必须可信Owner从Root读取，DTO不是权限凭证。无Schema/API/依赖/基线扩张，仅落实冻结角色政策。
+- Evidence：4新unit/1012无失败（2环境跳过）、实际PG两Scope当前身份/CSRF/License与creator各角色/PM/跨项目/暂停/管理员矩阵、Archived停止权限九表读无写、原发布/wheel通过；测试字段误用修正从新库重跑记进度。
+- Risk/rollback：没有取消首申请/审计/持久幂等或后台确认，POST关闭；撤未装配Port/Policy保历史。Next Owner原Root绑定与首申请审计来源/幂等，再安全确认和执行器；全Scope/Gate/正式包保持未完成。
+
 ## DEC-20260926-228
 
 - Date/WBS：2026-09-26 / P04-P03-P03；CR-AUD-004/ADR011和实际原pair/同UOW失败Owner前置PASS；单一问题为提交确认丢失后的原失败只读证明，无安全权限扩张。
