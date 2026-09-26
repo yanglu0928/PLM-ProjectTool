@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A02-P02增加Document owned caller-UOW审计文件元数据登记/查读/可用转换Port，精确归属/Hash/Size/版本/状态来源、原trace保持与重放无重复事件，已限制不复活。真实双Scope文件/临时库、真并发单次变化/共享锁、caller真实Audit后故障全回滚PASS；902项无失败（2环境跳过）、0040/旧上传回归及开发wheel通过。无Migration/API/依赖/升级动作；Export/权限/Lease caller合成，真正Job结果/Worker发布/下载与正式包待。
+
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A02-P01新增Document owned审计文件存储Port和独立generated/audit区域，bounded私有staging/flush/fsync/完整Hash读回、不可覆盖提升及final/linked恢复，普通上传locators/扫描不变。14项新增真实临时文件/故障，897后端无失败（2环境跳过）、相关回归/开发wheel PASS。无Migration/API/依赖或升级动作，head0040不变；元数据/实际Worker发布/下载和正式包未完成，磁盘满模拟、性能与目标账户/三平台待。
 
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A01按CR-AUD-002新增0040 FileObject内部AUDIT_EXPORT用途/归属与身份/内容/历史保护，旧DOCUMENT默认及所有原列保留；同项目DocumentVersion/Upload误绑和普通FileState/Publish拒绝。实际空/旧数据up/down/reup/parity/竞争down锁与历史拒绝PASS，883项无失败（2环境跳过）、四项链路回归/开发wheel通过。无HTTP/依赖变化；升级需受控0039→0040，任何专用文件历史拒绝降级；无生产迁移。实际审计存储/结果/Worker发布/下载和正式包待。

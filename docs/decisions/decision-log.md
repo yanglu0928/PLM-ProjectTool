@@ -3531,6 +3531,13 @@
 - Decision：实施前建立CR-AUD-002与ADR010，仅内部FileObject扩用途/DEPLOYMENT、Audit own尝试/结果；不伪造文档或插件、不重标Scope、不修改普通Upload/Parse/Output规则。Schema/锁序/迁移/历史down保护/存储恢复/实际权限/Lease/取消/下载验收逐项记录后实施。
 - Result/risk：本项是设计记录，尚无代码/Migration或运行验收，不标完整导出PASS；新路径/用途和旧链路误绑防护须真实DB+文件验证，含历史拒绝降级，正式信任/质量/目标账户/Gate仍待。
 
+## DEC-20260926-207 — P03-A02-P02编码前检查
+
+- Phase/WBS：Phase2/P03-A02-P02；输入0040/CR-AUD-002/ADR010/P01真实存储，前置满足。Document owned FileObject/StateEvent公共caller-UOW元数据Port；无Schema/API/依赖/权限变化。
+- Decision：精确export/原User/Scope/File/content坐标登记STAGED与首次StateEvent，INSERT冲突后锁原行完整重核、重放不改来源。只由Document生成私有final Locator；AVAILABLE核对原身份/Hash/MIME/Size/初态版本并登记状态来源，同UOW不commit、不做长I/O。已可用只返回原事件，RESTRICTED/FAILED等不得复活。
+- Authority：坐标/DTO/Hash不是Export根/当前权限/Lease/字节证明。Owner先核实际Root/acceptance/pair/capture/授权/Lease，事务外验证实际文件，再调用此Port且同事务追加真实Audit/Job结果。本项不自鉴权/伪造SystemActor；不单独开放HTTP。模拟caller用真实Audit/文件/临时DB验证同事务失败全回滚，不冒充完整Worker。
+- Acceptance：两个Scope真实staging→字节Hash→元数据→提升→AVAILABLE，重复/并发单首次事件、不同owner/actor/scope/hash/size/普通用途/无来源历史拒绝、回滚包括Audit、原创建trace保持、已限制不复活；旧链路回归。正式信任/并发发布/下载/包仍待。
+
 ## DEC-20260926-206 — P03-A02-P01编码前检查
 
 - Phase/WBS：Phase2 / AUD-03-A06-A04-P03-A02-P01；前置0040内部归属已验，输入CR-AUD-002/ADR010/P01安全字节。Document owned受控物理文件Application Port与Adapter；无新Schema/API/角色/依赖。

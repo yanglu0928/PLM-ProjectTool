@@ -58,6 +58,8 @@ P03-A01：FileObject用途/归属及DocumentVersion/Upload防误绑Schema，真�
 
 ## 当前结果
 
+2026-09-26 P03-A02-P02执行结果：Document owned caller-UOW元数据登记/查读/可用转换Port，原文件身份/内容与单一状态来源重核、真并发单次变化、实际共享锁、真实文件与post-Audit整UOW回滚PASS；902项无失败（2环境跳过）、0040与旧上传回归/开发wheel PASS。无新Schema/API。Export UUID/可信caller合成，未接真正Root/Lease/Job/唯一结果或下载；CR整体IN_PROGRESS，详见对应进度。
+
 2026-09-26 P03-A02-P01执行结果：Document Application存储坐标/Hash Port与独立generated/audit Adapter，真实私有临时写/flush/fsync/Hash读回/不覆盖提升和final/实际linked恢复、损坏与扫描隔离PASS。新增14项，后端897项无失败（2环境跳过）、P01真实固定源内存字节与旧FilePublish回归/开发wheel PASS。无新Schema/API/生产操作。仅物理原语，元数据公共Port/真实Worker发布/下载待；ENOSPC模拟、未作满盘/空间性能/三平台证明。详见对应进度；整体IN_PROGRESS。
 
 初始设计时仅完成变更决策和验收设计，无Migration、生产代码或公开API变更。后续实际实施见下列分项结果；A04-P02兼容探测证据保留。CR整体IN_PROGRESS，Gate3/质量/正式信任源/发行完整Scope仍未关闭。
