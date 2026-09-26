@@ -3346,3 +3346,11 @@
 - Reason：先验完整结构与故障全回滚，再独立接当前 Session/权限/幂等；现有固定查询先读完整历史才能构造精确交接。所有 owned 更新仍以根为首锁；真正 Owner 交叉编辑路径尚不存在，不推断无死锁。
 - Impact：新增内部编排/Repository/测试，无 Schema/API/角色/依赖变化；0035为前置。A06的抽象Owner-before-Round锁序在此内部实现读阶段具体化为根→Round共享读取→Owner，正式装配仍需核对或调整并记录，不开放路由。
 - Rollback：不装配内部命令，保留全部历史与已有送审，无数据删除。
+
+## DEC-20260926-183
+
+- Date：2026-09-26；WBS：RVW-02-A09-P01（A09受权幂等入口前置）。
+- Decision：首次结果Ref加入不可变round_event_id，以DECISION_RECORDED/WITHDRAWN事件作为通用receipt引用；重放从固定事件/轮次历史还原原Actor/状态/计数/时间，不读当前根状态当首次结果。先独立验证该前置，再A09-P02接权限与receipt，完整Scope保留。
+- Reason：首次partial IN_REVIEW之后可终态甚至升版下一轮，根/轮次当前投影不是稳定首次响应。已有事件永久不可变，根首次计数可由round_no+前轮已封口lock_version之和+事件after_version还原，无需新快照表或改冻结HTTP。
+- Impact：内部Ref/Repository与测试调整，无Schema/API/角色/依赖变更；旧内部对象未公开，外部收据尚未创建，不需数据迁移。非命令STARTED/COMPLETED事件拒作重放Ref，跨项目/Actor/轮次绑定在后续入口继续核验。
+- Rollback：不装配受权入口，保留已提交事件和审计；无删除或原冻结内容覆盖。

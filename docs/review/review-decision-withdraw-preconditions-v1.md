@@ -8,6 +8,8 @@
 
 新 Key 不覆盖已经最终决定；成功收据重放返回不可变首次结果，先重验当前 Session/CSRF/License/Project 与固定历史版本访问权，不重新执行批准或锁释放。资格后来改变不篡改旧决定，但不能绕过当前访问权。首次 RETURN comment 必填；全部 assigned reviewer 完成才终结，首条 RETURN 保持真实主题锁。
 
+RVW-02-A09-P01 首次结果采用不可变 DECISION_RECORDED/WITHDRAWN 的 event_id，而非 current Round/root 投影。历史事件的 after_version 和决定前缀计算原始集合状态；根首次版本为 round_no + 前轮封口版本之和 + 该事件 after_version。下一轮或后来终态不能改写首次 partial 结果，STARTED/COMPLETED不能冒作命令收据引用；具体权限/receipt仍由P02独立接线。
+
 ## 单步交接合同
 
 `ReviewSubjectTransition` 绑定当前可信固定 Round 快照、Actor、Trace、UTC 时间以及一次精确追加决定或撤回后的完整进度。拒绝更换 Round/确认人、重写历史、代理决定、终态再写与计数溢出。仅 PROJECT 内部入口；不把 GLOBAL 混为项目。DTO 构造与比对只能检查形状和关联，不能证明当前权限、Sources 或 Owner 实际锁。

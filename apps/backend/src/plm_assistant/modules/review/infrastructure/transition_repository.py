@@ -1,10 +1,12 @@
 """Review-owned writes under root exclusive lock, caller owns transaction."""
+from datetime import timezone
 from sqlalchemy import select, insert, update, func
 from .orm import _tables
 from .start_repository import SqlAlchemyReviewStartRepository
 from .read_repository import SqlAlchemyReviewSnapshotReadRepository
 from ..application.persist_round import ReviewRoundPersistError
 from ..application.persist_transition import AppliedReviewTransitionRef
+from ..domain.round_progress import ReviewRoundState, ReviewRoundProgress, _uuid
 
 
 class SqlAlchemyReviewTransitionRepository:
@@ -62,12 +64,75 @@ class SqlAlchemyReviewTransitionRepository:
         common = dict(parent,actor_id=intent.actor_id,trace_id=intent.trace_id,occurred_at=intent.occurred_at,
                       before_lock_version=old.round_lock_version,after_lock_version=version,result_state=new.state.value)
         if new.withdrawal is not None:
-            session.execute(insert(_tables[7]).values(**common,event_type="WITHDRAWN",
-                decision_id=None,withdrawal_reason=new.withdrawal.reason))
+            event_id = session.execute(insert(_tables[7]).values(**common,event_type="WITHDRAWN",
+                decision_id=None,withdrawal_reason=new.withdrawal.reason).returning(_tables[7].c.round_event_id)).scalar_one()
         else:
-            session.execute(insert(_tables[7]).values(**common,event_type="DECISION_RECORDED",decision_id=decision_id))
+            event_id = session.execute(insert(_tables[7]).values(**common,event_type="DECISION_RECORDED",
+                decision_id=decision_id).returning(_tables[7].c.round_event_id)).scalar_one()
             if intent.terminal:
                 session.execute(insert(_tables[7]).values(**common,event_type="COMPLETED",decision_id=None))
         return AppliedReviewTransitionRef(old.review.project_id,old.review.review_id,new.round_id,
             old.subject_version_id,intent.actor_id,intent.occurred_at,"WITHDRAW" if new.withdrawal else "DECIDE",
-            new.state,old.review.lock_version+1,version,decision_id)
+            new.state,old.review.lock_version+1,version,decision_id,event_id)
+
+    def get_transition_ref(self, tx, *, project_id, review_id, round_id, event_id):
+        """Original response from sealed command event, NOT current status.
+
+        Requires caller transaction/authz; no write or commit. Root lock keeps
+        structural history consistent. No current Source or Subject permission
+        inferred from historical snapshot. Receipt entry point rechecks access.
+        """
+        if not all(_uuid(v) for v in (project_id,review_id,round_id,event_id)):
+            raise ReviewRoundPersistError("VALIDATION_FAILED")
+        fixed = self.lock_transition_context(tx,project_id=project_id,review_id=review_id,round_id=round_id)
+        if fixed is None:
+            return None
+        table = _tables[7]
+        row = self._session(tx).execute(select(table).where(table.c.round_event_id==event_id,
+            table.c.review_id==review_id,table.c.review_round_id==round_id,
+            table.c.scope=="PROJECT",table.c.project_id==project_id,
+            table.c.event_type.in_(("DECISION_RECORDED","WITHDRAWN")))).mappings().one_or_none()
+        if row is None:
+            return None
+        if (type(row["after_lock_version"]) is not int
+                or not 0 < row["after_lock_version"] <= fixed.round_lock_version):
+            raise ReviewRoundPersistError()
+        progress = fixed.progress
+        if row["event_type"] == "WITHDRAWN":
+            if (progress.withdrawal is None or row["actor_id"] != progress.withdrawal.actor_id
+                    or row["withdrawal_reason"] != progress.withdrawal.reason
+                    or row["result_state"] != "WITHDRAWN"):
+                raise ReviewRoundPersistError()
+        else:
+            decision = next((d for d in progress.decisions if d.decision_id==row["decision_id"]),None)
+            if decision is None or decision.reviewer_id != row["actor_id"]:
+                raise ReviewRoundPersistError()
+        decisions = _tables[3]
+        versions = self._session(tx).execute(select(decisions.c.decision_id,decisions.c.round_after_version).where(
+            decisions.c.review_id==review_id,decisions.c.review_round_id==round_id,
+            decisions.c.scope=="PROJECT",decisions.c.project_id==project_id
+        ).order_by(decisions.c.round_after_version)).all()
+        if ([v.round_after_version for v in versions] != list(range(1,len(progress.decisions)+1))
+                or {v.decision_id for v in versions} != {d.decision_id for d in progress.decisions}):
+            raise ReviewRoundPersistError()
+        by_id = {d.decision_id:d for d in progress.decisions}
+        prefix = tuple(by_id[v.decision_id] for v in versions if v.round_after_version <= row["after_lock_version"])
+        withdrawal = progress.withdrawal if row["event_type"]=="WITHDRAWN" else None
+        original = ReviewRoundProgress(round_id,progress.started_at,progress.reviewer_ids,prefix,withdrawal)
+        if (row["after_lock_version"] != len(prefix)+(withdrawal is not None)
+                or original.state.value != row["result_state"]
+                or any(d.decided_at > row["occurred_at"] for d in prefix)):
+            raise ReviewRoundPersistError()
+        rounds = _tables[1]
+        previous = self._session(tx).execute(select(rounds.c.round_no,rounds.c.round_state,rounds.c.lock_version).where(
+            rounds.c.review_id==review_id,rounds.c.scope=="PROJECT",rounds.c.project_id==project_id,
+            rounds.c.round_no < fixed.round_no).order_by(rounds.c.round_no)).all()
+        if ([r.round_no for r in previous] != list(range(1,fixed.round_no))
+                or any(r.round_state not in ("APPROVED","RETURNED","WITHDRAWN") for r in previous)):
+            raise ReviewRoundPersistError()
+        # Earlier rounds are permanently sealed. Future rounds/current root
+        # must not change this original response's root-after counter.
+        root_version = fixed.round_no+sum(r.lock_version for r in previous)+row["after_lock_version"]
+        return AppliedReviewTransitionRef(project_id,review_id,round_id,fixed.subject_version_id,row["actor_id"],
+            row["occurred_at"].astimezone(timezone.utc),"WITHDRAW" if row["event_type"]=="WITHDRAWN" else "DECIDE",
+            ReviewRoundState(row["result_state"]),root_version,row["after_lock_version"],row["decision_id"],event_id)

@@ -23,9 +23,10 @@ class AppliedReviewTransitionRef:
     review_after_version: int
     round_after_version: int
     decision_id: UUID | None
+    event_id: UUID
 
     def __post_init__(self):
-        if (not all(_uuid(v) for v in (self.project_id,self.review_id,self.round_id,self.subject_version_id,self.actor_id))
+        if (not all(_uuid(v) for v in (self.project_id,self.review_id,self.round_id,self.subject_version_id,self.actor_id,self.event_id))
                 or not _utc(self.occurred_at) or type(self.state) is not ReviewRoundState
                 or self.state is ReviewRoundState.PENDING
                 or any(type(v) is not int or not 0 < v < 2**63 for v in (self.review_after_version,self.round_after_version))
@@ -105,13 +106,16 @@ class ReviewTransitionPersistenceService:
         if self._subjects.assert_transition_lock_in_transaction(tx,intent) is not None:
             raise ReviewRoundPersistError()
         result = self._repository.apply_transition(tx,intent=intent)
+        if type(result) is not AppliedReviewTransitionRef:
+            raise ReviewRoundPersistError()
+        result.__post_init__()
         new, old = intent.after_progress, intent.before
         action = "WITHDRAW" if new.withdrawal is not None else "DECIDE"
         expected = AppliedReviewTransitionRef(old.review.project_id,old.review.review_id,new.round_id,
             old.subject_version_id,intent.actor_id,intent.occurred_at,action,new.state,
             old.review.lock_version+1,old.round_lock_version+1,
-            None if action == "WITHDRAW" else new.decisions[-1].decision_id)
-        if type(result) is not AppliedReviewTransitionRef or result != expected:
+            None if action == "WITHDRAW" else new.decisions[-1].decision_id,result.event_id)
+        if result != expected:
             raise ReviewRoundPersistError()
         result.__post_init__()
         if self._subjects.assert_transition_lock_in_transaction(tx,intent) is not None:

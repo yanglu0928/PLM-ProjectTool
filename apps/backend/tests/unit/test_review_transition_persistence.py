@@ -29,7 +29,7 @@ class TransitionPersistenceTests(unittest.TestCase):
             f,n = intent.before,intent.after_progress
             return AppliedReviewTransitionRef(f.review.project_id,f.review.review_id,n.round_id,f.subject_version_id,
                 intent.actor_id,intent.occurred_at,"WITHDRAW" if n.withdrawal else "DECIDE",n.state,
-                f.review.lock_version+1,f.round_lock_version+1,None if n.withdrawal else n.decisions[-1].decision_id)
+                f.review.lock_version+1,f.round_lock_version+1,None if n.withdrawal else n.decisions[-1].decision_id,uuid4())
         self.repo.apply_transition.side_effect = apply
         self.args = dict(actor_id=self.users[0],project_id=root.project_id,review_id=root.review_id,
                          round_id=progress.round_id,trace_id=uuid4())
