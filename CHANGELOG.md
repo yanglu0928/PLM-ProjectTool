@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/AUD-03-A05-A01 新增调用方事务导出提交授权，实时Session/CSRF/License/PM或Admin；Project仅AUDIT_PROJECT_EXPORT作为归档write维护例外，普通write仍拒绝。Win11后端831项无失败（2项环境跳过）、真实数据库Scope/撤权/五事实锁/无业务写及审计查询/Windows平台回归、开发wheel PASS，License/key合成。无Migration/公开API/角色/Scope/依赖变化，升级无数据动作；Job/幂等/Worker/交付/正式包未完成，Server2025未验、Debian13暂缓。
+
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A04-P03/CR-AUD-001 新增可信事务实际单SQL采集/封口/安全读回与原集合重放；V1服务器100000行保护，超限拒绝不截断。Win11后端823项无失败（2项环境跳过）、隔离迟提交/回填/新事件/Scope筛选/并发重放/故障回滚/小上限机制及0037回归、开发wheel PASS。无Migration/API/角色/依赖变更，升级无数据动作；真实权限/Lease/文件/100000行性能/HTTP/正式包未完成，Server2025未验、Debian13暂缓。
 
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A04-P02/CR-AUD-001 新增0037及Audit owned不可变意图/成员/capture三表ORM，真实源Scope/筛选、同事务封口/数量顺序摘要与并发追加拒绝。Win11后端816项无失败（2项环境跳过）、真实隔离迁移/旧Audit保留/ORM parity/并发历史保护、Windows审计及Job回归、开发wheel PASS。升级先备份维护到0037；含任何导出历史禁止down，离线down关闭。无API/角色/依赖变化，无生产迁移；真实完整capture/权限/文件导出/性能/正式包未完成，Server2025未验、Debian13暂缓。

@@ -34,6 +34,7 @@ POLICIES: dict[str, _Policy] = {
     "REVIEW_WITHDRAW": _Policy(MANAGERS, True),
     "AUDIT_PROJECT_LIST": _Policy(MANAGERS, False, lock_reads=True),
     "AUDIT_PROJECT_GET": _Policy(MANAGERS, False, lock_reads=True),
+    "AUDIT_PROJECT_EXPORT": _Policy(MANAGERS, True),
     "TRACE_LINK_CREATE": _Policy(frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
     "PROJECT_PATCH": _Policy(MANAGERS, True),
     "PROJECT_ARCHIVE": _Policy(MANAGERS, True),
@@ -115,7 +116,9 @@ class ProjectAuthorizationService:
             )
             if owner != project_id:
                 raise ProjectAuthorizationError("RESOURCE_NOT_FOUND")
-        if policy.write and facts.project_state == "ARCHIVED":
+        # Frozen DM-02 permits authorized audit export as maintenance, not a
+        # general archived write or ordinary Job bypass. All other writes deny.
+        if policy.write and facts.project_state == "ARCHIVED" and operation != "AUDIT_PROJECT_EXPORT":
             raise ProjectAuthorizationError("PROJECT_ARCHIVED")
         return AuthorizedProjectAction(user_id, project_id, operation, facts.project_role)
 

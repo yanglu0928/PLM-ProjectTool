@@ -47,7 +47,9 @@ class ProjectAuthorizationTests(unittest.TestCase):
                                     operation=operation, resource_id=resource_id)
 
     def test_matrix_exact_for_four_roles(self):
-        self.assertEqual(len(POLICIES), 23)
+        self.assertEqual(len(POLICIES), 24)
+        self.assertEqual(POLICIES["AUDIT_PROJECT_EXPORT"].roles, {"PROJECT_MANAGER"})
+        self.assertTrue(POLICIES["AUDIT_PROJECT_EXPORT"].write)
         for operation in ("AUDIT_PROJECT_LIST", "AUDIT_PROJECT_GET"):
             self.assertEqual(POLICIES[operation].roles, {"PROJECT_MANAGER"})
             self.assertFalse(POLICIES[operation].write)
@@ -113,6 +115,19 @@ class ProjectAuthorizationTests(unittest.TestCase):
         with self.assertRaises(ProjectAuthorizationError) as archived:
             self.check("PROJECT_PATCH")
         self.assertEqual(archived.exception.code, "PROJECT_ARCHIVED")
+
+    def test_archived_export_is_only_new_write_maintenance_exception(self):
+        self.repo.state = "ARCHIVED"
+        for operation, policy in POLICIES.items():
+            if not policy.write:continue
+            resource = uuid.uuid4() if policy.target else None
+            if operation == "AUDIT_PROJECT_EXPORT":
+                self.assertEqual(self.check(operation).project_role,"PROJECT_MANAGER")
+                self.assertTrue(self.repo.last_lock)
+            else:
+                with self.subTest(operation=operation), self.assertRaises(ProjectAuthorizationError) as denied:
+                    self.check(operation,resource_id=resource)
+                self.assertEqual(denied.exception.code,"PROJECT_ARCHIVED")
 
     def test_write_uses_locked_current_facts_in_caller_transaction(self):
         tx = Tx()

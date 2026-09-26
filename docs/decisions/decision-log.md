@@ -3435,3 +3435,12 @@
 - Impact：可信调用方事务Owner存储入口，不自建UOW/commit/鉴权/License/Lease；原Actor/Scope匹配是绑定不是权限证明。实际当前权限/幂等/Job在A05/A06，POST仍关闭。read-back检查版本/Spec指纹/原Source/顺序/count/hash/xid，未知版本或腐损拒绝。现有0001～0037/API/角色/依赖不变。
 - Verification：真实隔离PostgreSQL验证single statement集合、晚提交/回填/新事件、两调用者重放同一seal、完整筛选/Scope/空集合、故障整UOW回滚。上限拒绝机制用测试小上限验证，100000行/20并发/P95实际性能另验，不虚报。
 - Rollback：撤未装配存储入口不删历史；0037含历史仍拒绝down；无生产操作/客户数据外发。
+
+## DEC-20260926-194
+
+- Date：2026-09-26；WBS：AUD-03-A05-A01。
+- Evidence：冻结API-02 AUDIT_EXPORT要求S/L/C/I/A、部署Admin/项目PM；DM-02明确归档允许受权审计/导出。现有Project政策只具AUDIT_PROJECT_LIST/GET，所有write一律拒归档；现有Parse enqueue只Document GLOBAL/PROJECT，不能假Document或GLOBAL绕过。
+- Decision：先落实单一提交授权前置：新增AUDIT_PROJECT_EXPORT当前PM write政策，只有该明确维护操作允许ARCHIVED，仍锁实际Project/member/department；其他write保持归档拒绝。Audit调用方事务服务用现有Auth Session/CSRF锁核验及部署Admin proof、实际Project公共授权和License Guard，无匿名/历史Actor/DTO旁路。返回最小绑定metadata不能当跨事务凭据。
+- Impact：补齐冻结权限/归档维护实现，不新增角色、Scope、API、安全机制或Schema；无新CR必要，原冻结不追写。Auth已有LicenseImportAccess只复用Session/CSRF/Admin事实，Audit服务始终另要求L，绝不复用License恢复面豁免。现有Job缺Audit专用enqueue公共Port与首次Ref读回，A02补齐后A03才能受权幂等/Audit/Job原子；不提前POST或创建未受权Job。
+- Verification：四角色×操作矩阵、归档仅export write例外、真实Session/CSRF/License拒绝、跨项目/部署Admin非成员拒绝、当前member/department/user/role撤销、五类事实锁保持到调用方UOW结束及授权服务不写任何Export/Job/receipt/Audit。
+- Rollback：撤未装配前置并移除新增operation，不影响历史/其他操作；无迁移/生产/客户外发。
