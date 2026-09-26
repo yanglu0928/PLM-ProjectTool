@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-236
+
+- Date/WBS：2026-09-27 / P04-P03-P06-P01；Phase2，CR-AUD-004/ADR011，前置安全转换/来源核验已验，编码前检查登记。执行器不能依调用方attempt/state断言选择动作，先实际owned读取。
+- Decision：真实原Root/acceptance/pair+指定Worker/fence/原Attempt/Lease与当前Job/DB clock，明确当前和历史代次；当前identity前后/同Supervisor静止，内部无业务正文/文件/commit/renew/Audit mutation。撤权仅可获得最小hint以选择安全停止，后续业务和终态来源校验不取消；状态不是receipt。
+- Evidence：5新unit/1047完整后端无失败（2既有环境跳过），实际PG临时Vault两Scope RUNNING/retry/真实新代/FAILED/SUCCEEDED/取消/到期六表读无写；撤User+License仍业务capture拒绝，错绑定/后identity拒绝，原发布/wheel通过。初次新unit漏必填参数修正重跑，不放宽生产校验。
+- Risk/rollback：事实会过时，不可据此改旧代或推断完成；技术取消状态样本缺完成源不算业务取消PASS。无Migration/API/依赖或生产升级；撤未装配Reader保历史。Next P06-P02单命令执行器接线；主循环/HTTP/质量/正式信任源/完整可用包/Gate仍待。
+
 ## DEC-20260927-235
 
 - Date/WBS：2026-09-27 / P04-P03-P05-P02；Phase2，输入CR-AUD-004/ADR011，前置当前授权/固定重试Owner/真实三次政策已验，编码前检查登记。

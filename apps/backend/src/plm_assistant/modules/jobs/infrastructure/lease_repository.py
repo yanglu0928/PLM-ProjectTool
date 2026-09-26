@@ -12,10 +12,35 @@ from plm_assistant.modules.jobs.application.lease import ClaimedJob, JobLeaseErr
 from plm_assistant.modules.jobs.application.lease_checkpoint import validate_checkpoint
 from plm_assistant.modules.jobs.application.failure_proof import FailedJobProof
 from plm_assistant.modules.jobs.application.retry_proof import RetryTransitionProof
+from plm_assistant.modules.jobs.application.execution_facts import AuditExportExecutionFacts
 from plm_assistant.modules.jobs.infrastructure.orm import JobAttemptRow, JobLeaseRow, JobRow
 
 
 class SqlAlchemyJobLeaseRepository:
+    def read_execution_facts(self,transaction,*,job_id,fencing_token,worker_ref):
+        validate_checkpoint(job_id=job_id,fencing_token=fencing_token,worker_ref=worker_ref)
+        session=self._session(transaction)
+        job=session.execute(select(JobRow).where(JobRow.job_id==job_id).with_for_update(of=JobRow)).scalar_one_or_none()
+        if job is None or job.max_attempts!=3 or job.fencing_token<fencing_token:raise JobLeaseError('STALE_LEASE')
+        lease=session.execute(select(JobLeaseRow).where(JobLeaseRow.job_id==job_id,JobLeaseRow.fencing_token==fencing_token)
+            .with_for_update(of=JobLeaseRow)).scalar_one_or_none()
+        attempt=self._attempt(session,job_id,fencing_token)
+        if (lease is None or lease.worker_ref!=worker_ref or attempt.worker_ref!=worker_ref
+                or not 1<=attempt.attempt_no<=job.attempt_count<=3):raise JobLeaseError('INCONSISTENT_LEASE')
+        current=job.fencing_token==fencing_token
+        if lease.state=='ACTIVE':
+            if (not current or job.state not in {'RUNNING','CANCEL_REQUESTED'} or job.completed_at is not None
+                    or attempt.completed_at is not None or attempt.error_code is not None
+                    or job.attempt_count!=attempt.attempt_no or job.lease_expires_at!=lease.lease_expires_at):raise JobLeaseError('INCONSISTENT_LEASE')
+        else:
+            if attempt.completed_at is None or attempt.completed_at<attempt.started_at:raise JobLeaseError('INCONSISTENT_ATTEMPT')
+            if current and (job.lease_expires_at is not None or job.attempt_count!=attempt.attempt_no
+                    or job.state not in {'RETRY_WAIT','SUCCEEDED','FAILED','CANCELLED'}):raise JobLeaseError('INCONSISTENT_LEASE')
+        now=self._now(session)
+        claim=ClaimedJob(job.job_id,job.job_type,job.scope,job.project_id,dict(job.payload_refs),job.trace_id,fencing_token,attempt.attempt_no)
+        return AuditExportExecutionFacts(claim,job.fencing_token,job.state,lease.state,
+            lease.state=='ACTIVE' and lease.lease_expires_at>now,attempt.error_code)
+
     def check_retry_transition(self,transaction,*,job_id,fencing_token,worker_ref,delay_seconds):
         validate_checkpoint(job_id=job_id,fencing_token=fencing_token,worker_ref=worker_ref)
         if type(delay_seconds) is not int or delay_seconds not in {0,5,15}:raise JobLeaseError('VALIDATION_FAILED')
