@@ -3290,3 +3290,11 @@
 - Reason：FK 或 User ID 不代表实时资格，成员/部门后来失效不能竞态逃过前置；此结果只证明必要资格，具体 Subject 资格另验。
 - Impact：Auth 窄查询、Project 内部基础资格服务与真实隔离验证，无 Schema/API/角色/依赖变化；完整送审、真实 Owner 和生产政策注册未完成。
 - Rollback：不调用新内部服务，保留既有 Project/Auth 与 Review 历史，无数据迁移。
+
+## DEC-20260926-176
+
+- Date：2026-09-26；WBS：RVW-02-A04。
+- Decision：送审 Owner 结果完整绑定当前 Review/Actor/Project/逻辑主题/版本/新 Round/确认人集合，以窄准备 Port 与实际身份锁重核分离；无 bool/UUID/摘要即代表成功的默认适配。Sources 观测 scope/时序/唯一与完整人集合校验。
+- Reason：纯 DTO 不证明真实业务权限或内容锁，旧准备结果不能复用到其他轮次/版本；实际 Owner 必须阻止编辑与替代 Draft，并同事务回滚。
+- Impact：内部合同/6 项测试/文档，无 Migration/API/角色/依赖变化；真实 Owner/审批与完整 start 仍待。
+- Rollback：不装配新 Port，保留原冻结/0034 历史；无数据动作。

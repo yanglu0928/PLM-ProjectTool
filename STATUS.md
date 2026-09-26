@@ -3,7 +3,7 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 2：Platform Core|
-|Current WBS|`RVW-02-A03 确认人基础资格`（真实账户/成员/部门及当前锁 PASS；具体 Subject 资格/完整送审仍待）|
+|Current WBS|`RVW-02-A04 Subject 固定送审合同`（内部 DTO/Port PASS；真实主题身份锁/资格与完整送审仍待）|
 |Current Status|PHASE_1_COMPLETE / DOC_03_A03_P04_P04_PRECONDITION_BLOCKED / DOC_02_A02_P01_INTERNAL_PASS / DOC_02_A02_P02_PRECONDITION_BLOCKED / DOC_03_A04_A03_P04_P03_CONTENT_HTTP_PASS / DOC_03_A04_A04_P01_JOB_SCHEMA_PASS / DOC_03_A04_A04_P02_JOB_LEASE_PASS / DOC_03_A04_A04_P03_OUTBOX_PASS / DOC_03_A04_A04_P04_P01_PARSE_QUEUE_PASS / DOC_03_A04_A04_P04_P02_COMMIT_INTERNAL_PASS / DOC_03_A04_A04_P04_P03_P01_ABORT_STATE_PASS / DOC_03_A04_A04_P04_P03_P02_PRECONDITION_BLOCKED / DOC_03_A04_A04_P04_P04_A01_FINALIZE_HTTP_PASS / DOC_03_A04_A04_P04_P04_A02_WINDOWS_COMPOSITION_PASS / DOC_03_A04_A04_P04_COMMIT_ABORT_IN_PROGRESS / DOC_01_A02_INTERNAL_PASS / DOC_01_A03_P01_CURSOR_PASS / DOC_01_A03_P02_HTTP_CONTRACT_PASS / DOC_01_A03_P03_HTTP_DB_PASS / DOC_01_A03_P04_WINDOWS_COMPOSITION_PASS / DOC_01_A04_P01_VERSION_INTERNAL_PASS / DOC_01_A04_P02_VERSION_CURSOR_PASS / DOC_01_A04_P03_VERSION_HTTP_CONTRACT_PASS / DOC_01_A04_P04_VERSION_HTTP_DB_PASS / DOC_01_A04_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P01_VERIFIED_SNAPSHOT_PASS / DOC_01_A05_P02_DOWNLOAD_SOURCE_PASS / DOC_01_A05_P03_PREPARE_DOWNLOAD_PASS / DOC_01_A05_P04_DOWNLOAD_HTTP_PASS / DOC_01_A05_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P06_DISCONNECT_CAPACITY_BOUNDED_PASS / DOC_03_A04_A04_P04_P03_P02_A01_GATE_ADAPTER_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P01_CONTENT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P02_COMMIT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P03_ABORT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P01_READONLY_INSPECTION_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A01_STORAGE_STEP_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A02_INTERNAL_CLEANUP_PASS / PLT_02_A07_P05_A09_CEREMONY_PENDING / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
 |Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03、DOC-03-A01、DOC-03-A02（限定范围）、DOC-03-A03-P01～P03（P03 内部合成验证）、DOC-03-A03-P04-P01～P03（内部合成验证）、DOC-03-A04-A01（Schema 验证）、DOC-03-A04-A02（内部合成验证）、DOC-01-A01、DOC-02-A01、DOC-02-A02-P01（内部合成验证） PASS|
@@ -13,8 +13,8 @@
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，DM-02 License 授权粒度经用户批准 CR-LIC-001 修订|
 |DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`；增量至 `20260926_0034` Review 八表（CR-RVW-001）、0033 GateItem 固定 Checklist 记录关联（CR-WFL-004）、0032 Checklist 记录、0031 Transition/Gate（CR-WFL-003）、0030 Workflow（CR-WFL-002）、0029 TraceLink、0028 ParseRecord、0027 Evidence 与 0001～0026 历史保留|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
-|Test Summary|RVW-02-A03 Windows 11/Python 3.13 后端 717 项无失败（2 项环境跳过）；隔离 PostgreSQL 真实 ENABLED User/当前 Project 成员/部门/角色、暂停移除未生效停用跨项目拒绝/事务资格锁/无 Assignment 写入、Review 创建与内部读回归、开发 wheel PASS；不是具体 Subject 资格/真实客户批准/完整送审或 Gate 证明|
-|Next WBS|RVW-02-A04 Subject Owner 固定送审快照/逐人资格/真实身份锁 Port 与合同验收；随后受控内部 start-round，缺真实 Owner 不挂载 HTTP。真实批准/Owner/受权审批、START/完成仍待，原 Scope 保留；Phase 3 Parser、发行 Gate/Server 2025 待验证，Debian 13 暂不验证|
+|Test Summary|RVW-02-A04 Windows 11/Python 3.13 后端 723 项无失败（2 项环境跳过）；固定 Subject Request/Prepared 全维绑定/完整确认人/来源 Scope 与观测时序拒绝、开发 wheel PASS；本项无新增数据库或 HTTP 测试，不是具体 Subject 资格/真实客户批准/完整送审或 Gate 证明|
+|Next WBS|RVW-02-A05 内部完整 start-round/幂等/审计与真实 Session/CSRF/Project/账户基础资格、隔离 Owner 协议验收；缺真实 Owner 不挂载 HTTP。真实批准/Owner/受权审批、START/完成仍待，原 Scope 保留；Phase 3 Parser、发行 Gate/Server 2025 待验证，Debian 13 暂不验证|
 
 ## 自动执行策略
 
@@ -24,6 +24,8 @@
 - GitHub：允许在当前 Scope 和正确分支内自动 fetch、commit、push；禁止 force push、直接提交 main、覆盖未知远端修改或提交 Secret/客户数据。
 
 ## 最近检查点
+
+- RVW-02-A04 已固定送审请求与 Prepared 的 Actor/Project/Review/逻辑主题/policy/Version/Round/完整确认人绑定，来源 Scope/唯一/UTC/时序校验；Owner prepare 和实际身份锁 assert 独立，禁止 DTO/UUID/True 代替事实。无真实 Owner 实现，完整 start 尚未完成。
 
 - RVW-02-A02/A03 已完成送审前置及真实账户/项目基础资格服务，先 Auth 共享锁再当前成员/部门锁读，暂停/移除/未来生效/停用/跨项目/角色不符拒绝。返回必要事实不授予具体 Subject 评审权；完整 Session/CSRF/start/Owner 身份锁/政策和跨模块并发仍待。
 
