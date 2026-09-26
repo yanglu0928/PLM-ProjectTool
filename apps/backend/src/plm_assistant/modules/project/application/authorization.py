@@ -20,11 +20,13 @@ class _Policy:
     roles: frozenset[str]
     write: bool
     target: str | None = None
+    lock_reads: bool = False
 
 
 POLICIES: dict[str, _Policy] = {
     "PROJECT_GET": _Policy(ALL_MEMBERS, False),
     "WORKFLOW_START": _Policy(MANAGERS, True),
+    "WORKFLOW_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "TRACE_LINK_CREATE": _Policy(frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
     "PROJECT_PATCH": _Policy(MANAGERS, True),
     "PROJECT_ARCHIVE": _Policy(MANAGERS, True),
@@ -94,7 +96,7 @@ class ProjectAuthorizationService:
                     (type(resource_id) is not uuid.UUID or resource_id.int == 0))):
             raise ProjectAuthorizationError("RESOURCE_NOT_FOUND")
         facts = self._repository.actor_facts(
-            transaction, user_id=user_id, project_id=project_id, lock=policy.write,
+            transaction, user_id=user_id, project_id=project_id, lock=policy.write or policy.lock_reads,
         )
         if (type(facts) is not ProjectActorFacts
                 or facts.project_role not in policy.roles

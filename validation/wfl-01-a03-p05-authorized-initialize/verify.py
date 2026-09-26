@@ -2,6 +2,7 @@
 import hashlib
 import uuid
 from concurrent.futures import ThreadPoolExecutor
+from threading import Event
 
 import psycopg
 from psycopg import sql
@@ -9,6 +10,9 @@ from alembic import command
 from sqlalchemy.engine import URL
 
 from plm_assistant.modules.auth.infrastructure.project_write_access import SqlAlchemyProjectWriteAccess
+from plm_assistant.modules.auth.infrastructure.project_read_access import SqlAlchemyProjectReadAccess
+from plm_assistant.modules.workflow.application.read_workflow import WorkflowReadService, WorkflowReadQuery, WorkflowReadError
+from plm_assistant.modules.workflow.infrastructure.read_repository import SqlAlchemyWorkflowReadRepository
 from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService, ProjectAuthorizationError
 from plm_assistant.modules.project.infrastructure.authorization_repository import SqlAlchemyProjectAuthorizationRepository
 from plm_assistant.modules.audit.application.public import AuditService
@@ -57,27 +61,35 @@ def main():
             url = URL.create("postgresql+psycopg", username="poc_admin", host="127.0.0.1", port=55432, database=name)
             command.upgrade(create_migration_config(url), "head")
             runtime = create_database_runtime(url)
-            tokens = [bytes([i])*32 for i in range(1, 6)]
+            tokens = [bytes([i])*32 for i in range(1, 7)]
             with connect(name) as db:
-                pm, im, customer, pm2, outsider = [user(db, label, token, "DEPLOYMENT_ADMIN" if i==4 else "NONE") for i, (label, token) in enumerate(zip(("Manager One", "Implementer", "Customer", "Manager Two", "Global Admin"), tokens))]
+                pm, im, customer, pm2, outsider, customer_member = [user(db, label, token, "DEPLOYMENT_ADMIN" if i==4 else "NONE") for i, (label, token) in enumerate(zip(("Manager One", "Implementer", "Customer", "Manager Two", "Global Admin", "Customer Member"), tokens))]
                 projects, departments = [], []
                 for i in range(2):
                     project = db.execute("INSERT INTO plm.prj_projects(project_code,project_code_normalized,name,created_by) VALUES(%s,%s,%s,%s) RETURNING project_id", (f"WPM{i}", f"wpm{i}", f"Workflow PM {i}", outsider)).fetchone()[0]
                     department = db.execute("INSERT INTO plm.prj_departments(project_id,department_code,department_code_normalized,name) VALUES(%s,'D','d','Department') RETURNING department_id", (project,)).fetchone()[0]
                     projects.append(project); departments.append(department)
-                for uid, role, index in ((pm,"PROJECT_MANAGER",0), (im,"IMPLEMENTATION_MEMBER",0), (customer,"CUSTOMER_MANAGER",0), (pm2,"PROJECT_MANAGER",1)):
+                for uid, role, index in ((pm,"PROJECT_MANAGER",0), (im,"IMPLEMENTATION_MEMBER",0), (customer,"CUSTOMER_MANAGER",0), (pm2,"PROJECT_MANAGER",1), (customer_member,"CUSTOMER_MEMBER",0)):
                     db.execute("INSERT INTO plm.prj_project_members(project_id,user_id,department_id,project_role) VALUES(%s,%s,%s,%s)", (projects[index], uid, departments[index], role))
             guard = Guard()
             bootstrap = WorkflowInitializationService(repository=SqlAlchemyWorkflowInitializationRepository(), audit=AuditService(SqlAlchemyAuditRepository()))
             dependencies = dict(unit_of_work=runtime.unit_of_work, sessions=SqlAlchemyProjectWriteAccess(), projects=ProjectAuthorizationService(unit_of_work=runtime.unit_of_work, repository=SqlAlchemyProjectAuthorizationRepository()), license_guard=guard)
             service = ExistingWorkflowInitializationService(**dependencies, initializer=bootstrap)
+            reads = WorkflowReadService(unit_of_work=runtime.unit_of_work, sessions=SqlAlchemyProjectReadAccess(), projects=dependencies["projects"], license_guard=guard, repository=SqlAlchemyWorkflowReadRepository())
+            def read_request(index=0, project=None):
+                return WorkflowReadQuery(tokens[index], project or projects[0], uuid.uuid4())
+            def read_denied(query, code):
+                try: reads.get(query)
+                except WorkflowReadError as exc: assert exc.code == code, (exc.code, code)
+                else: raise AssertionError("invalid Workflow read accepted")
+            read_denied(read_request(), "RESOURCE_NOT_FOUND")
             def request(index=0, project=None, csrf=CSRF):
                 return InitializeExistingWorkflow(tokens[index], csrf, project or projects[0], uuid.uuid4())
             def deny(command_value, code):
                 try: service.initialize(command_value)
                 except (WorkflowInitializationError, ProjectAuthorizationError) as exc: assert exc.code == code
                 else: raise AssertionError("unauthorized Workflow initialization accepted")
-            for index in (1,2,3,4): deny(request(index), "RESOURCE_NOT_FOUND")
+            for index in (1,2,3,4,5): deny(request(index), "RESOURCE_NOT_FOUND")
             deny(request(csrf=b"x"*32), "AUTH_ACCESS_DENIED")
             deny(request(project=projects[1]), "RESOURCE_NOT_FOUND")
             guard.enabled = False
@@ -90,6 +102,38 @@ def main():
             with ThreadPoolExecutor(max_workers=2) as pool:
                 ids = list(pool.map(lambda _i: service.initialize(request()), range(2)))
             assert ids[0] == ids[1] == service.initialize(request())
+            for index in (0,1,2,5):
+                view = reads.get(read_request(index))
+                assert view.workflow_id == ids[0] and view.etag == '"v0"'
+                assert len(view.stages) == 6 and sum(len(stage.checklist_items) for stage in view.stages) == 12
+            for index in (3,4): read_denied(read_request(index), "RESOURCE_NOT_FOUND")
+            read_denied(read_request(project=projects[1]), "RESOURCE_NOT_FOUND")
+            read_denied(read_request(3, projects[1]), "RESOURCE_NOT_FOUND")
+            guard.enabled = False
+            read_denied(read_request(), "LICENSE_OPERATION_DENIED")
+            guard.enabled = True
+            entered, release = Event(), Event()
+            class WaitingRepository:
+                def get(self, tx, project):
+                    entered.set()
+                    assert release.wait(timeout=10)
+                    return SqlAlchemyWorkflowReadRepository().get(tx, project)
+            locked_reads = WorkflowReadService(unit_of_work=runtime.unit_of_work, sessions=SqlAlchemyProjectReadAccess(), projects=dependencies["projects"], license_guard=guard, repository=WaitingRepository())
+            with ThreadPoolExecutor(max_workers=1) as pool:
+                waiting = pool.submit(locked_reads.get, read_request())
+                try:
+                    assert entered.wait(timeout=10)
+                    with connect(name) as db:
+                        db.execute("SET lock_timeout='150ms'")
+                        try:
+                            db.execute("UPDATE plm.prj_project_members SET state='SUSPENDED',lock_version=lock_version+1 WHERE user_id=%s", (pm,))
+                        except psycopg.errors.LockNotAvailable:
+                            pass
+                        else:
+                            raise AssertionError("member revocation raced authorized Workflow read")
+                finally:
+                    release.set()
+                assert waiting.result(timeout=10).workflow_id == ids[0]
             failing = ExistingWorkflowInitializationService(**dependencies, initializer=WorkflowInitializationService(repository=SqlAlchemyWorkflowInitializationRepository(), audit=FailedAudit()))
             try: failing.initialize(request(3, projects[1]))
             except RuntimeError as exc: assert "synthetic audit failure" in str(exc)
@@ -99,13 +143,16 @@ def main():
                 assert db.execute("SELECT count(*) FROM plm.aud_events WHERE action='WORKFLOW_INITIALIZED'").fetchone()[0] == 1
                 db.execute("UPDATE plm.prj_projects SET state='ARCHIVED',lock_version=lock_version+1 WHERE project_id=%s", (projects[0],))
             deny(request(), "PROJECT_ARCHIVED")
+            assert reads.get(read_request()).state == "NOT_STARTED"
             with connect(name) as db:
                 db.execute("UPDATE plm.auth_sessions SET revoked_at=statement_timestamp(),revoke_reason='TEST_REVOKED',lock_version=lock_version+1 WHERE user_id=%s", (pm,))
             deny(request(), "AUTH_ACCESS_DENIED")
+            read_denied(read_request(), "AUTH_ACCESS_DENIED")
             with connect(name) as db:
                 assert db.execute("SELECT workflow_state,current_stage_key FROM plm.wfl_project_workflows WHERE workflow_id=%s", (ids[0],)).fetchone() == ("NOT_STARTED", None)
                 assert db.execute("SELECT count(*) FROM plm.wfl_checklist_items WHERE item_state='PENDING'").fetchone()[0] == 12
             print("PASS: real Session/CSRF/project PM, cross-project/non-PM/admin/archived/revoked rejection, synthetic License denial, concurrent dedupe and Audit rollback; not HTTP or Gate")
+            print("PASS: Workflow read snapshot, all four project roles, archived read, missing instance no initialization, cross-project/admin/session/License rejection; not HTTP")
         finally:
             if runtime is not None: runtime.dispose()
             admin.execute("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=%s AND pid<>pg_backend_pid()", (name,))

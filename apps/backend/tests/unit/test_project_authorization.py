@@ -47,7 +47,10 @@ class ProjectAuthorizationTests(unittest.TestCase):
                                     operation=operation, resource_id=resource_id)
 
     def test_matrix_exact_for_four_roles(self):
-        self.assertEqual(len(POLICIES), 15)
+        self.assertEqual(len(POLICIES), 16)
+        self.assertEqual(POLICIES["WORKFLOW_GET"].roles, ALL_MEMBERS)
+        self.assertFalse(POLICIES["WORKFLOW_GET"].write)
+        self.assertTrue(POLICIES["WORKFLOW_GET"].lock_reads)
         self.assertEqual(POLICIES["WORKFLOW_START"].roles, {"PROJECT_MANAGER"})
         self.assertTrue(POLICIES["WORKFLOW_START"].write)
         self.assertEqual(POLICIES["TRACE_LINK_CREATE"].roles,
@@ -72,6 +75,11 @@ class ProjectAuthorizationTests(unittest.TestCase):
             with self.subTest(operation=operation), self.assertRaises(ProjectAuthorizationError):
                 self.check(operation, resource_id=resource)
         self.assertEqual(self.repo.calls, 0)
+
+    def test_workflow_read_locks_current_facts_but_allows_archived_read(self):
+        self.repo.state = "ARCHIVED"
+        self.assertEqual(self.check("WORKFLOW_GET").operation, "WORKFLOW_GET")
+        self.assertTrue(self.repo.last_lock)
 
     def test_missing_member_and_cross_project_target_are_hidden(self):
         self.repo.role = None
