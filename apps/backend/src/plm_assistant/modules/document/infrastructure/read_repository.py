@@ -108,6 +108,20 @@ class SqlAlchemyDocumentReadRepository:
         ).scalar_one_or_none()
         return None if row is None else _version_view(row)
 
+    def get_version_for_trace(self, transaction: object, *, scope: str,
+                              project_id: uuid.UUID | None, document_id: uuid.UUID,
+                              document_version_id: uuid.UUID) -> DocumentVersionView | None:
+        statement = self._visible_versions(scope, project_id, document_id).join(
+            DocumentRow, DocumentRow.document_id == DocumentVersionRow.document_id,
+        ).where(
+            DocumentVersionRow.document_version_id == document_version_id,
+            DocumentRow.scope == scope,
+            DocumentRow.project_id == project_id,
+            DocumentRow.document_state.in_(("ACTIVE", "ARCHIVED")),
+        ).with_for_update(read=True, of=(DocumentRow, DocumentVersionRow, FileObjectRow))
+        row = _session(transaction).execute(statement).scalar_one_or_none()
+        return None if row is None else _version_view(row)
+
     def list_parses(self, transaction: object, *, scope: str,
                     project_id: uuid.UUID | None, document_version_id: uuid.UUID,
                     before: tuple[datetime, uuid.UUID] | None,

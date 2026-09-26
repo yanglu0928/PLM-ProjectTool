@@ -27,7 +27,7 @@ class TraceTargetProof:
 
 
 class TraceTargetOwnerPort(Protocol):
-    def prove(self, query: TraceProofQuery,
+    def prove(self, transaction: object, query: TraceProofQuery,
               ref: TraceVersionRef) -> TraceTargetProof: ...
 
 
@@ -40,23 +40,24 @@ class TraceTargetProofService:
             raise ValueError("Trace target owners must be explicitly registered")
         self._owners = dict(owners)
 
-    def prove_edge(self, query: TraceProofQuery,
+    def prove_edge(self, transaction: object, query: TraceProofQuery,
                    edge: TraceEdgeShape) -> tuple[TraceTargetProof, TraceTargetProof]:
-        if (type(query) is not TraceProofQuery
+        if (transaction is None or type(query) is not TraceProofQuery
                 or type(query.session_token) is not bytes
                 or len(query.session_token) != 32
                 or type(query.trace_id) is not uuid.UUID or query.trace_id.int == 0
                 or type(edge) is not TraceEdgeShape):
             raise TraceTargetProofError("VALIDATION_FAILED")
-        return self._prove_one(query, edge.source), self._prove_one(query, edge.target)
+        return (self._prove_one(transaction, query, edge.source),
+                self._prove_one(transaction, query, edge.target))
 
-    def _prove_one(self, query: TraceProofQuery,
+    def _prove_one(self, transaction: object, query: TraceProofQuery,
                    ref: TraceVersionRef) -> TraceTargetProof:
         provider = self._owners.get((ref.owner_module, ref.object_type))
         if provider is None:
             raise TraceTargetProofError("RESOURCE_NOT_FOUND")
         try:
-            proof = provider.prove(query, ref)
+            proof = provider.prove(transaction, query, ref)
         except TraceTargetProofError:
             raise
         except Exception:

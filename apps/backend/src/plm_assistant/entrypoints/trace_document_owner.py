@@ -17,17 +17,18 @@ class DocumentVersionTraceOwner:
             raise ValueError("Document read service is required")
         self._documents = documents
 
-    def prove(self, query: TraceProofQuery,
+    def prove(self, transaction: object, query: TraceProofQuery,
               ref: TraceVersionRef) -> TraceTargetProof:
-        if (type(query) is not TraceProofQuery
+        if (transaction is None or type(query) is not TraceProofQuery
                 or type(ref) is not TraceVersionRef
                 or (ref.owner_module, ref.object_type) != ("document", "DOC-02")):
             raise TraceTargetProofError("RESOURCE_NOT_FOUND")
         document_query = DocumentReadQuery(query.session_token, query.trace_id,
                                            ref.scope, ref.project_id)
         try:
-            version = self._documents.get_version(document_query, ref.object_id,
-                                                  ref.version_id)
+            version = self._documents.get_version_for_trace(
+                transaction, document_query, ref.object_id, ref.version_id,
+            )
         except DocumentReadError as exc:
             if exc.code == "LICENSE_OPERATION_DENIED":
                 raise TraceTargetProofError("LICENSE_OPERATION_DENIED") from None

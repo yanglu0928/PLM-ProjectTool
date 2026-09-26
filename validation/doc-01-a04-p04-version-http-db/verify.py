@@ -187,22 +187,48 @@ def verify():
         target_ref = TraceVersionRef("document", "DOC-02", doc, second,
                                      "PROJECT", project)
         edge = TraceEdgeShape(source_ref, target_ref, "DERIVED_FROM")
-        assert tuple(item.ref for item in trace_proof.prove_edge(
-            TraceProofQuery(pm_token, uuid.uuid4()), edge,
-        )) == (source_ref, target_ref)
+        with runtime.unit_of_work() as tx:
+            assert tuple(item.ref for item in trace_proof.prove_edge(
+                tx, TraceProofQuery(pm_token, uuid.uuid4()), edge,
+            )) == (source_ref, target_ref)
+            with connect(name) as competing:
+                competing.execute("SET lock_timeout = '200ms'")
+                try:
+                    competing.execute(
+                        "UPDATE plm.doc_file_objects SET file_state='RESTRICTED' "
+                        "WHERE file_object_id=%s", (file_second,),
+                    )
+                except psycopg.errors.LockNotAvailable:
+                    pass
+                else:
+                    raise AssertionError("Trace target proof did not hold FileObject lock")
+                try:
+                    competing.execute(
+                        "UPDATE plm.prj_project_members SET state='SUSPENDED' "
+                        "WHERE project_id=%s AND user_id=%s", (project, pm),
+                    )
+                except psycopg.errors.LockNotAvailable:
+                    pass
+                else:
+                    raise AssertionError("Trace target proof did not hold member lock")
         for denied_token in (outsider_token, admin_token):
             try:
-                trace_proof.prove_edge(TraceProofQuery(denied_token, uuid.uuid4()), edge)
+                with runtime.unit_of_work() as tx:
+                    trace_proof.prove_edge(
+                        tx, TraceProofQuery(denied_token, uuid.uuid4()), edge,
+                    )
             except TraceTargetProofError as exc:
                 assert exc.code == "RESOURCE_NOT_FOUND"
             else:
                 raise AssertionError("unauthorized Trace endpoint proof accepted")
         global_ref = TraceVersionRef("document", "DOC-02", global_doc,
                                      global_version, "GLOBAL", None)
-        assert trace_owner.prove(TraceProofQuery(admin_token, uuid.uuid4()),
-                                 global_ref).ref == global_ref
+        with runtime.unit_of_work() as tx:
+            assert trace_owner.prove(tx, TraceProofQuery(admin_token, uuid.uuid4()),
+                                     global_ref).ref == global_ref
         try:
-            trace_owner.prove(TraceProofQuery(pm_token, uuid.uuid4()), global_ref)
+            with runtime.unit_of_work() as tx:
+                trace_owner.prove(tx, TraceProofQuery(pm_token, uuid.uuid4()), global_ref)
         except TraceTargetProofError as exc:
             assert exc.code == "RESOURCE_NOT_FOUND"
         else:
@@ -249,12 +275,28 @@ def verify():
             with connect(name) as db:
                 db.execute("UPDATE plm.doc_file_objects SET file_state='RESTRICTED' WHERE file_object_id=%s", (file_second,))
             assert [v["version_no"] for v in get(client, path, pm_token).json()["data"]["items"]] == [1]
+            try:
+                with runtime.unit_of_work() as tx:
+                    trace_owner.prove(tx, TraceProofQuery(pm_token, uuid.uuid4()),
+                                      target_ref)
+            except TraceTargetProofError as exc:
+                assert exc.code == "RESOURCE_NOT_FOUND"
+            else:
+                raise AssertionError("restricted FileObject remained a Trace target")
             guard.enabled = False
             assert get(client, path, pm_token).status_code == 403
             guard.enabled = True
             with connect(name) as db:
                 db.execute("UPDATE plm.prj_project_members SET state='SUSPENDED' WHERE project_id=%s", (project,))
             assert get(client, path, pm_token).status_code == 404
+            try:
+                with runtime.unit_of_work() as tx:
+                    trace_owner.prove(tx, TraceProofQuery(pm_token, uuid.uuid4()),
+                                      source_ref)
+            except TraceTargetProofError as exc:
+                assert exc.code == "RESOURCE_NOT_FOUND"
+            else:
+                raise AssertionError("suspended member retained Trace target access")
         print("PASS: HTTP+PostgreSQL version pages, Session/Scope/License, restricted/file state and projection")
     finally:
         if runtime is not None:
