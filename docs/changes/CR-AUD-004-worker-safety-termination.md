@@ -38,3 +38,7 @@ P05-P02重试确认丢失只读核验内部PASS：真实两Scope三次commit后�
 P06-P01执行器事实前置内部PASS：实际原pair/指定Worker-fence/Attempt-Lease/当前Job与DBclock，只读当前/历史关系，current identity前后与同Supervisor静止；实际两Scope状态和六表无写/撤权仅内部hint而业务拒绝/错绑定身份拒绝、1047无失败（2环境跳过）及wheel通过。无Mutation/renew/终态receipt或业务旁路，实际接线/主循环/HTTP未完成，CR/Gate保持未关闭。
 
 P06-P02单命令编排内部PASS：共享实际Supervisor与受控identity，真实facts路由原成功/终止/取消/retry与来源确认；四类实际commit后确认故障按源返回，不猜STALE/覆成功/活线程提前写。实际bounded PG-Vault两Scope0/260新执行、真实撤权/render中取消/到期/基础retry/无写重放及裸取消拒绝，1060无失败（2环境跳过）、旧发布/wheel通过。等待期即时取消不改原Worker retry收据。claim/主循环/CLI/HTTP与正式信任锚/质量/整体包仍待，CR/Gate未关闭。
+
+P06-P03实施前领取偏差：通用claim_next无Owner过滤并静默耗尽FAILED，不可直接沿用。保原接口，独立audit/AUDIT_EXPORT选择且只取未耗尽候选；先无锁hint再Root→原pair→Job一致锁顺序实际领取，避免Job→Root反序；同Supervisor真实静止/identity前后与last活租约核验。满三次由后续受控到期/耗尽审计分项解决，不能此时静默终止或宣称主循环完成。无Schema/API/技术栈改变，失败整UOW回滚/原字节尝试保留；确认丢失不自动重复猜领取。
+
+P06-P03专属领取准入内部PASS：实际bounded PG-Vault两ScopePENDING/授权retry实际deadline/过期三代新Worker-fence与原Root-pair完整源，第4次无写、其他Owner不变、独立Supervisor并发不重复与claim写后/identity故障回滚；1067无失败（2环境跳过）、旧发布/wheel通过。确认错误不猜重复，耗尽仍待安全审计终止，主循环/CLI/HTTP未完成，CR/Gate保持未关闭。

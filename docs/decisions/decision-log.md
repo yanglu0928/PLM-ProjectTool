@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-238
+
+- Date/WBS：2026-09-27 / P04-P03-P06-P03；Phase2，CR-AUD-004，编码前已记录通用混领/静默耗尽与反序锁差异，前置单命令执行器/真实来源已验。
+- Decision：保原Generic入口，专属audit/AUDIT_EXPORT无锁候选hint→原Root/pair→最终actual eligible Job/current lease；固定三次、Worker/fence/完整binding与当前identity/静止锁，refresh ORM旧缓存。已耗尽不静默终止，下一分项安全审计；确认异常不猜领取，不授SYSTEM业务角色。
+- Evidence：7新unit/1067后端无失败（2既有环境跳过），实际bounded PG/Vault两ScopePENDING后真实发布、5秒实际retry deadline、3秒实际过期三代/第4次无写、独立Supervisor并发不重复、高优先级其他Owner不变，claim写后/identity故障整回滚，旧发布/wheel通过。错Root/pair仅unit注入，claim确认恢复/网络/主循环未验。
+- Risk/rollback：候选或None不是权限/全队列状态，坏源隔离/公平调度尚待；到期不是进程强杀。无Migration/API/依赖/生产升级，撤未装配准入保历史。Next P06-P04到期耗尽安全审计，再确认恢复/主循环/CLI/HTTP；正式材料/质量/可用包/Gate未完成。
+
 ## DEC-20260927-237
 
 - Date/WBS：2026-09-27 / P04-P03-P06-P02；Phase2，输入CR-AUD-004/ADR011；前置真实状态Reader和成功/终止/取消/retry来源核验已验，编码前检查登记。只接单命令，不混入claim/循环/HTTP。

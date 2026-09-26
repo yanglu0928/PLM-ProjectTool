@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/P06-P03新增审计专属实际领取与命令准入，保通用接口；无锁候选后原Root/pair/当前identity与实际Worker-fence活租约绑定，刷新旧对象缓存，不混领其他Owner、不静默耗尽FAILED。7新unit/真实bounded PG-Vault两ScopePENDING实际发布/5秒retry deadline/真实三代到期/第4次无写、独立Supervisor并发与写后回滚通过；1067无失败（2环境跳过），旧发布/wheel通过。Windows11，无Migration/API/依赖、0042，无数据升级，撤未装配准入保历史回滚。到期耗尽审计/领取确认恢复/主循环/CLI/HTTP/正式材料/三平台/质量/Gate/可用安装包待。
+
 - 2026-09-27：`0.1.0.dev0`/P06-P02新增单命令执行器，强制共享Supervisor/安全identity，实际facts路由到原成功恢复/终止/取消/retry与来源确认；不撤回成功、不猜确认、不提前改活线程、不重复Audit，原retry收据不随等待期取消漂移。13新unit/真实bounded PG-Vault两Scope0/260新执行、撤权/执行中取消/到期/永久vs基础错误、四类真实commit后确认故障/六表无写重放通过；1060无失败（2环境跳过），旧发布/wheel通过。Windows11，无Migration/API/依赖、0042，无数据升级，撤未公开编排保历史回滚。claim/主循环/CLI/HTTP/正式材料/三平台/质量/Gate/可用安装包待。
 
 - 2026-09-27：`0.1.0.dev0`/P06-P01新增执行器内部真实状态Reader，原Root/Job-Outbox/Worker-fence/实际Attempt-Lease及DB时钟，严格区分旧代与当前代；只作hint，不作为终态收据/权限，不修改状态或续租。5新unit/真实PG-Vault两Scope状态/新claim/撤权仍业务拒绝/六表无写与错绑定/identity拒绝通过；1047无失败（2环境跳过），旧发布/wheel通过。Windows11，无Migration/API/依赖、0042，无数据升级，撤未装配Reader保历史回滚。执行器接线/主循环/HTTP/正式材料/三平台/质量/Gate/可用安装包待。
