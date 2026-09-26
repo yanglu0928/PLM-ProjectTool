@@ -3044,3 +3044,15 @@
 |Reason|冻结架构禁止 Trace 直接跨模块读 ORM，多态目标需由 Owner Port 证明。DocumentVersion 读取已有真实授权链，适合先建立可验证的第一种端点；未来业务 Owner 必须逐类接入，不以合成数据放行。|
 |Impact|Trace 应用合同、组合层 Document 适配、测试；无 Schema、公开 API、新依赖或生产写入口。|
 |Rollback|不在生产组合注册该适配；数据库历史与冻结合同不变。|
+
+## DEC-20260926-147
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-147|
+|Date|2026-09-26|
+|WBS|TRC-01-A04 受控关系写入期无环校验|
+|Decision|为 `DERIVED_FROM` 与 `SUPERSEDES` 的合并受控子图建立仅事务内使用的 PostgreSQL Guard：按 Link Scope/Project 取得事务级 advisory lock，再对活动边作去重递归可达性查询；新增 `source→target` 前若 `target` 可达 `source` 则拒绝。GLOBAL→PROJECT 仍按相同 Scope 图观察；正常创建服务必须持同一事务与锁完成插入。无写入口前仅以独立合成验证测试 Guard，不声称 DB 禁止绕过 Guard 的直接插入。|
+|Reason|冻结 DM-03 禁止受控关系成环，SC-02/03 明确无环留给 Application/transaction guard，不能以无上限触发器或仅单请求内检查代替并发写保护。|
+|Impact|Trace 基础设施 Guard、单元/隔离 PostgreSQL 并发测试；无 Schema、API、新依赖或业务事实写入。|
+|Rollback|停止调用尚未接生产写服务的 Guard；存量关系不变。|

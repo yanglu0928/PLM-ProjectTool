@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/TRC-01-A04 新增事务内 Trace 受控关系无环校验器，按 Scope/Project 事务锁串行并检索 `DERIVED_FROM`/`SUPERSEDES` 合并活动子图。Windows 11 后端 595 项无失败（2 项环境跳过），隔离 PostgreSQL 18.6 直接/混合环、项目隔离与并发请求验证、开发 wheel PASS。无 Migration/公开 API/新依赖；尚未接正式创建服务，不能据此宣称 Trace 写入已防环。
+
 - 2026-09-26：`0.1.0.dev0`/TRC-01-A03 新增失败关闭的 Trace 目标 Owner Port 合同及组合层 DocumentVersion 受权证明，只返回固定引用，不返回文件路径/内容。Windows 11 后端 592 项无失败（2 项环境跳过），隔离 PostgreSQL 18.6 真实 Session/Project/GLOBAL 权限及开发 wheel PASS。无 Migration/公开 API/新依赖；仅 DOC-02 已接入，其他目标、正式状态、图无环及 Trace 写入仍待。
 
 - 2026-09-26：`0.1.0.dev0`/TRC-01-A02 新增受保护的 `trc_links` 历史表及 Migration `20260926_0029`，限制多态版本类型、Scope/方向、自环、活动边唯一及 ACTIVE→SUPERSEDED/REVOKED；拒绝历史删除和非空降级。Windows 11 后端 587 项无失败（2 项环境跳过），隔离 PostgreSQL 18.6 已有数据升级、空表降级/再升级、ORM parity 与异常约束、开发 wheel PASS。升级前备份；无公开 API/新依赖，目标 Owner Port、授权、无环及 Audit 仍待。
