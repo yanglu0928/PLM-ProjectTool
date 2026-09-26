@@ -36,3 +36,5 @@ P05重试Owner内部PASS：当前权限/SystemActor前后校验、原pair/活Lea
 P05-P02重试确认丢失只读核验内部PASS：真实两Scope三次commit后确认故障、actual旧代Lease/Attempt/deadline与唯一执行窗口SYSTEM源，实际新代启动/最终FAILED旧收据不漂移、八表无写，当前权限/identity/缺重复源拒绝；1042无失败（2环境跳过）、旧发布/wheel通过。历史收据不代表当前状态或当前代授权，不是实际网络断线证明；执行器/主循环/HTTP仍待，CR/Gate未关闭。
 
 P06-P01执行器事实前置内部PASS：实际原pair/指定Worker-fence/Attempt-Lease/当前Job与DBclock，只读当前/历史关系，current identity前后与同Supervisor静止；实际两Scope状态和六表无写/撤权仅内部hint而业务拒绝/错绑定身份拒绝、1047无失败（2环境跳过）及wheel通过。无Mutation/renew/终态receipt或业务旁路，实际接线/主循环/HTTP未完成，CR/Gate保持未关闭。
+
+P06-P02单命令编排内部PASS：共享实际Supervisor与受控identity，真实facts路由原成功/终止/取消/retry与来源确认；四类实际commit后确认故障按源返回，不猜STALE/覆成功/活线程提前写。实际bounded PG-Vault两Scope0/260新执行、真实撤权/render中取消/到期/基础retry/无写重放及裸取消拒绝，1060无失败（2环境跳过）、旧发布/wheel通过。等待期即时取消不改原Worker retry收据。claim/主循环/CLI/HTTP与正式信任锚/质量/整体包仍待，CR/Gate未关闭。

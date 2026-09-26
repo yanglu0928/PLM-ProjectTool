@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/P06-P02新增单命令执行器，强制共享Supervisor/安全identity，实际facts路由到原成功恢复/终止/取消/retry与来源确认；不撤回成功、不猜确认、不提前改活线程、不重复Audit，原retry收据不随等待期取消漂移。13新unit/真实bounded PG-Vault两Scope0/260新执行、撤权/执行中取消/到期/永久vs基础错误、四类真实commit后确认故障/六表无写重放通过；1060无失败（2环境跳过），旧发布/wheel通过。Windows11，无Migration/API/依赖、0042，无数据升级，撤未公开编排保历史回滚。claim/主循环/CLI/HTTP/正式材料/三平台/质量/Gate/可用安装包待。
+
 - 2026-09-27：`0.1.0.dev0`/P06-P01新增执行器内部真实状态Reader，原Root/Job-Outbox/Worker-fence/实际Attempt-Lease及DB时钟，严格区分旧代与当前代；只作hint，不作为终态收据/权限，不修改状态或续租。5新unit/真实PG-Vault两Scope状态/新claim/撤权仍业务拒绝/六表无写与错绑定/identity拒绝通过；1047无失败（2环境跳过），旧发布/wheel通过。Windows11，无Migration/API/依赖、0042，无数据升级，撤未装配Reader保历史回滚。执行器接线/主循环/HTTP/正式材料/三平台/质量/Gate/可用安装包待。
 
 - 2026-09-27：`0.1.0.dev0`/P05-P02新增重试提交确认丢失只读核验，实际历史Worker/fence租约/Attempt/退避与唯一执行窗口SYSTEM源，当前权限/identity前后检查；下一代已claim及最终FAILED后原收据不漂移，不授当前代修改权。5新unit/实际PG-Vault两Scope三次commit后故障、真实等待/新代/八表无写及缺重复源/绑定/权限拒绝通过；1042无失败（2环境跳过），旧发布/wheel通过。Windows11，无Migration/API/依赖、0042，无数据升级，撤未装配核验保历史回滚。执行器/主循环/HTTP/正式材料/三平台/质量/Gate/可用安装包待。

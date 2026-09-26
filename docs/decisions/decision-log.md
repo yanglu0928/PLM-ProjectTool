@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-237
+
+- Date/WBS：2026-09-27 / P04-P03-P06-P02；Phase2，输入CR-AUD-004/ADR011；前置真实状态Reader和成功/终止/取消/retry来源核验已验，编码前检查登记。只接单命令，不混入claim/循环/HTTP。
+- Decision：强制同Supervisor/安全identity，真实facts路由；RUNNING才原业务RunOnce，失败后静止/重读、成功不撤回、取消优先、固定终止或白名单retry。返回Outcome必须原源证明，提交丢失先核验；STOP_TIMEOUT不提前写、旧代仅原retry收据，等待期即时取消不重写Worker历史。未知/缺源/过期拒绝，不猜STALE成功。
+- Evidence：13新unit/1060无失败（2既有环境跳过），实际bounded PG/临时Vault同周期heartbeat两Scope0/260新导出、已成功后撤权拒返回无写、停User安全FAILED无capture、首USER申请活/到期/render中取消、内容终止vs基础retry；四种实际commit后确认故障均真来源确认，重放六表无写/裸取消拒绝，旧发布/wheel通过。License合成，新增真实网络/执行器竞争/主循环未验。
+- Risk/rollback：Outcome属于该command代次，不保证当前Job一直处于该状态；不存在失去身份/源的可猜成功。无Migration/API/依赖/生产升级，撤未公开编排保历史。Next P06-P03专属claim适配，后主循环/CLI/HTTP；正式材料/质量/可用包/Gate仍待。
+
 ## DEC-20260927-236
 
 - Date/WBS：2026-09-27 / P04-P03-P06-P01；Phase2，CR-AUD-004/ADR011，前置安全转换/来源核验已验，编码前检查登记。执行器不能依调用方attempt/state断言选择动作，先实际owned读取。
