@@ -1,5 +1,7 @@
 # Job详情运行Contract增量
 
+JOB-01-A03（2026-09-27）装配更新：Windows --platform与--platform-write显式模式已接该详情Router、原当前授权和首个Audit Owner；默认与login-only仍404。实际PG/ASGI双工厂验证通过、正式信任源不可用时仍拒绝启动。前文“Windows尚未接线”为P02历史状态保留，完整Jobs Owner/正式账户/监听进程/浏览器/发行仍未完成。
+
 2026-09-27 / JOB-01-A02-P02 / CR-JOB-001、002；原Gate2冻结64cdf09保留。实现原JOB_PROJECT_GET/JOB_ADMIN_GET，非新增Breaking路径、非完整Jobs模块交付。
 
 GET `/api/v1/projects/{project_id}/jobs/{job_id}`：S/L/当前成员及Owner资源再授权，PM/IM可见受权任务元数据，其余角色仅原actor；路径ProjectId与资源必须一致。GET `/api/v1/admin/jobs/{job_id}`：当前DeploymentAdmin，仅DEPLOYMENT/GLOBAL，不包含项目Job。未知Owner/type或无权限与不存在同404。Admin不提供项目通配权。

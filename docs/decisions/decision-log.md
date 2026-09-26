@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-262
+
+- Precode：JOB-01-A03 Windows装配进度先记录，原可选GET/Audit Owner/0043前置满足。
+- Decision：仅原include_secret_read两显式工厂接任务详情，同原真实License/Auth/Project/Owner依赖；默认/login关闭，任何构造失败不发布半应用，不加测试密钥回退。
+- Evidence：实际PG/ASGI双Factory双ScopeRUNNINGv1/SUCCEEDEDv2/原结果读取无写，401/403/Admin项目404、默认/login404；每工厂4新构造失败拒绝，撤正向测试来源后实际正式信任不可用拒绝且六业务表无写，旧metadata/content/腐坏拒绝/原发布回归通过。
+- Impact：无本轮Migration/API路径/权限/依赖变，撤新Factory接线回滚；正向信任注入非正式账户/监听进程/浏览器/其他Owner/发行PASS。下一Audit导出POST复用真实提交与已接Job status_url，完整Scope/Gate保留。
+
 ## DEC-20260927-261
 
 - Precode：JOB-01-A02-P02 GET进度先记录，0043真实版本满足前置，原API-01/03路径/Scope/权限不改。

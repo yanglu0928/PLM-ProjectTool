@@ -1,5 +1,7 @@
 # CR-JOB-001：任务只读装配与Owner安全投影
 
+A03更新（2026-09-27）：Windows两显式platform工厂已组装实际Jobs读取与Audit Owner，正向合成信任/真实PG-Session-Worker两ScopeRUNNINGv1/SUCCEEDEDv2与原结果、401/403/Admin项目404/读取无写通过；默认/login404、每工厂四新构造失败及实际正式信任源不可用启动拒绝。旧导出下载/原发布回归通过。仍非其他Owner/完整Jobs/正式账户/浏览器/发行验收，CR-IN_PROGRESS；下一Audit公开提交POST。
+
 2026-09-27 / IN_PROGRESS；Phase2，原冻结64cdf09不改。持续自主授权执行，来源JOB-01-A01前置。只实现冻结通用Jobs详情内部能力，不修改路径/角色Scope、不将内部Lease作为浏览器版本。
 
 编码前：WBS JOB-01-A01；输入API-03与既有Job/Auth/Project；实体JOB-01只读，无Migration。涉及Jobs Service/DTO/Repo、Project新增JOB_PROJECT_GET只读锁定当前成员策略、Audit提供其任务原源绑定Port。正常Session/License、路径ProjectId、PM/IM或其他角色仅原actor，再叠加Owner策略。Audit仅返回任务元数据，不授导出正文/结果下载权限。
