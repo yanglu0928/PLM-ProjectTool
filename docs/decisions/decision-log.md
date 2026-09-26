@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260926-225
+
+- Date/WBS：2026-09-26 / AUD-03-A06-A04-P03-A07-P04-P02；实际发布/恢复、受权周期和WorkerDB边界前置PASS。
+- Decision：当前原源只读分类三路径只是提示；新command完整capture/render/publish，已登记源恢复，已成功直接重放不续租。finally stop，线程真实结束后再次受权DB成功/完整物理hash恢复才回结果；确认丢失/STALE不能猜成功或把成功Job改失败，未登记同代字节保留且不覆盖。
+- Evidence：11新unit/993后端无失败（2环境跳过），真实PG bounded UOW+周期线程 dualScope空/260未capture新command完整成功/13表无写重放、stage-only同file恢复、未登记旧字节拒绝保原/实际commit确认丢失按原源返回/原User停用前置无写拒绝、旧发布回归/wheel通过。
+- Risk/rollback：不claim/分派/自动技术失败或取消，未登记旧字节失败尚需正式终止/重试Owner；本轮没有新增runner并发/取消/新代运行证明，不冒充底层验证。撤未装配入口保历史，Next失败取消Owner政策/同UOW审计前置，再主循环/重启/提交Jobs HTTP；正式材料/三平台/网络/质量/Gate/可用包待。
+
 ## DEC-20260926-224
 
 - Date/WBS：2026-09-26 / AUD-03-A06-A04-P03-A07-P04-P01；P03周期线程真实验证PASS，但join不能终止SQL阻塞。

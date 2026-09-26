@@ -100,7 +100,7 @@ def main(*, exercise=None):
                 files, results = SqlAlchemyAuditExportFileMetadata(), SqlAlchemyAuditExportResults()
                 completion = AuditExportJobCompletion(queue=queue, leases=lease_repo)
                 worker = AuditExportWorkerPublish(files=files, results=results, completion=completion, audit=audit, system_actor=system_actor, **deps)
-                def prepare(scope='PROJECT', count=3, seconds=60):
+                def prepare(scope='PROJECT', count=3, seconds=60, *, capture_source=True, render_file=True):
                     now, source_trace = datetime.now(timezone.utc), uuid4()
                     index = 0 if scope == 'PROJECT' else 1
                     spec = a.AuditExportSpec(scope, project if index == 0 else None, 'PROJECT_GOVERNANCE' if index == 0 else 'SECURITY_REVIEW', now-timedelta(hours=1), now+timedelta(hours=1), action='SYNTHETIC_PUBLICATION', trace_id=source_trace)
@@ -112,8 +112,8 @@ def main(*, exercise=None):
                     claim = leases.claim_next(worker_ref='publisher-real', lease_seconds=seconds)
                     assert claim.job_id == accepted.job_id
                     c = w.AuditExportCaptureCommand(accepted.intent.export_id, accepted.job_id, claim.fencing_token, 'publisher-real')
-                    worker.capture(c)
-                    return accepted, c, worker.render(c)
+                    if capture_source:worker.capture(c)
+                    return accepted, c, worker.render(c) if render_file else None
                 def row(c):
                     return db.execute('SELECT state FROM plm.job_jobs WHERE job_id=%s', (c.job_id,)).fetchone()[0]
                 def reject(c, staged, code):
