@@ -3418,3 +3418,11 @@
 - Reason：已有签名分页只是有界查询，不是跨页数据库快照；现有Job租约和Parse enqueue也不是审计导出受权入口或结果下载能力。
 - Impact：只新增设计/隔离库前置证据，本轮无生产代码/Schema/API/权限或基线实施变化。完整导出范围保留，前置缺口不是免验收或删除Scope。
 - Rollback：无生产变更；验证库只清理own UUID目标。后续CR必须保留原冻结版本并覆盖数据迁移/拒绝丢失的down/验证。
+
+## DEC-20260926-192
+
+- Date：2026-09-26；WBS：AUD-03-A03。
+- Decision：导出内部Spec仅固定DEPLOYMENT/PROJECT、非零项目归属、明确UTC窗口/筛选、受控用途code、JSONL格式/安全投影/政策版本。用途不接受自由说明、字段列表、游标/路径/厂商外发或payload正文；按需由UI提供用途提示。指纹是请求一致性，不是授权/快照。Worker分CAPTURE/RENDER/PUBLISH阶段复验当前原Actor账户/角色/Scope，Port不能由DTO或bool证明替代。
+- Reason：所有输入需固定供未来幂等与capture，Job只最小ExportRef。异步任务不持Session Token；登出本身不伪装取消Job，停用账户/撤角色/成员必须拦Worker发布，结果访问另须实时Session/License。
+- Impact：仅内部请求/权限Port合同与unit/设计；实际Auth事实Port、Project导出维护策略与捕获/授权编排在后续实现，不对外挂载。本轮无Schema/API/角色/依赖/安全核心变更。
+- Rollback：不装配未完成导出，保留已有查询；无数据动作。

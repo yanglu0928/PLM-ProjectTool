@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/AUD-03-A03 新增固定内部导出Spec/用途/Scope/时间与完整指纹、当前Worker权限Port合同；指纹/DTO不是授权或snapshot，实际Auth/Owner实现待。Windows11后端805项无失败（2项环境跳过），纯合同8项与开发wheel PASS，无新增真实权限/数据库/HTTP/文件验收。无Migration/API/角色/依赖变化，升级无动作；导出/正式包未完成，Server2025未验、Debian13暂不验证。
+
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A02/CR-JOB-001 新增0036并对齐Job/Outbox ORM，恢复冻结DEPLOYMENT Scope（无项目）；原Document Parse范围不变。Windows11后端797项无失败（2项环境跳过），空/有数据迁移保留旧行/有部署历史拒绝down/双表并发锁/Scope唯一性/ORM租约投递及相关回归、开发wheel PASS。升级备份到0036；含DEPLOYMENT历史不可down，离线down关闭。无API/角色/依赖变化，无生产迁移，实际导出/可用包未完成，Server2025未验、Debian13暂不验证。
 
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A01 完成导出前置设计与隔离数据库缺口复现：head0035 Job/Outbox不接受冻结模型已有DEPLOYMENT Scope。后续先CR-JOB-001恢复遗漏，不映射GLOBAL绕过；真正快照/幂等/Worker/安全交付仍待。仅文档/验证脚本，无生产程序/Migration/API/角色/依赖变化，升级无动作。本轮未重跑全量测试或标导出PASS；Server2025未验、Debian13暂不验证，正式可用包未完成。
