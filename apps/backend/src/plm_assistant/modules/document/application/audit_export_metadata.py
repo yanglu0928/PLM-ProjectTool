@@ -3,13 +3,27 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Protocol
 from uuid import UUID
-from .audit_export_storage import AuditFileContent
+from .audit_export_storage import AuditFileContent, AuditFileCoordinate
 
 
 class AuditFileMetadataError(RuntimeError):
     def __init__(self, code="FILE_UNAVAILABLE"):
         self.code=code
         super().__init__(code)
+
+
+@dataclass(frozen=True,slots=True)
+class AuditRegisteredFileRequest:
+    export_id: UUID
+    actor_id: UUID
+    trace_id: UUID
+    coordinate: AuditFileCoordinate
+
+    def __post_init__(self):
+        if any(type(v) is not UUID or not v.int for v in (self.export_id,self.actor_id,self.trace_id)):
+            raise AuditFileMetadataError()
+        if type(self.coordinate) is not AuditFileCoordinate:raise AuditFileMetadataError()
+        self.coordinate.__post_init__()
 
 
 @dataclass(frozen=True,slots=True)
@@ -66,6 +80,7 @@ class AuditFileMutation:
 
 
 class AuditExportFileMetadataPort(Protocol):
+    def read_registered(self, transaction:object, *, request:AuditRegisteredFileRequest)->AuditFileMetadata|None: ...
     def register_staged(self, transaction:object, *, request:RegisterAuditFile)->AuditFileMutation: ...
     def get(self, transaction:object, *, request:RegisterAuditFile)->AuditFileMetadata: ...
     def mark_available(self, transaction:object, *, request:RegisterAuditFile, expected_version:int)->AuditFileMutation: ...

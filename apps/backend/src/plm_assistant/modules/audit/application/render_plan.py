@@ -37,6 +37,7 @@ class AuditRenderPlan:
 
 
 class AuditRenderPlanRepositoryPort(Protocol):
+    def find(self,tx:object,*,export_id:UUID,job_id:UUID,fencing_token:int)->AuditRenderPlan|None: ...
     def register(self,tx:object,*,intent,capture,claim,worker_ref:str)->AuditRenderPlan: ...
 
 

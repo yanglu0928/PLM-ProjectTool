@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260926-216
+
+- Date：2026-09-26；WBS：AUD-03-A06-A04-P03-A04-P04。
+- Decision：恢复读实际原计划和Document登记摘要/来源，不依赖失去的内存DTO或路径猜Hash。当前代STAGED/有效Lease才恢复三种真实物理形状；已成功必须Jobs真实终态Lease/Attempt+Result/AVAILABLE/完整Hash，Hash后重新当前授权，只返回原结果不写历史。
+- Reason：必须处理提升后事务失败、至少一次/确认丢失，不能将文件存在或Audit宣称成功当Job事实；不得复活过期/取消旧代或重finish成功。
+- Impact：6新unit/945后端无失败（2跳过）；真实双Scope三形状恢复/成功并发无写、确认丢失与坏/缺来源拒绝、接管保旧file/原capturePASS；无Schema/HTTP/依赖，新增owned只读Port不授予业务权。
+- Rollback：撤未装配恢复入口，保所有来源/文件/结果，不自动删生产数据。中断注入非真实杀进程演练、License/正式账户/三平台/Gate/包待；下一项当前Session结果访问授权/内容公共Port。
+
 ## DEC-20260926-215
 
 - Date：2026-09-26；WBS：AUD-03-A06-A04-P03-A04-P03。

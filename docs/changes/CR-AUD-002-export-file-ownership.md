@@ -32,6 +32,8 @@ API-02 AUDIT_EXPORT要求部署或项目范围的202 JobRef；DM-03/DOC-03 FileO
 
 ## 恢复、取消与访问
 
+P03-A04-P04实施前精化：恢复仅以已登记当前代plan及Document真实注册内容/原来源重建，新增只读公共注册元数据来源和Jobs成功Lease/Attempt事实读取；不写新plan/不从路径填Hash。当前代STAGED可按真实stage/final/linked形状完整Hash后继续既有原子发布。已有结果必须真实Job成功/原代来源、AVAILABLE及规范manifest/完整文件Hash，当前授权再次通过后只返回原结果，不续Lease/不写Audit/不复活Job。未知commit先按原结果/实际状态核验，缺来源不猜修复。无Schema/HTTP/角色变化，旧冻结历史保留。
+
 |观察|可见性|处理要求|
 |---|---|---|
 |只有尝试/无文件|不可下载|当前授权/Lease后重跑新file_id或登记失败|
@@ -57,6 +59,8 @@ P03-A01：FileObject用途/归属及DocumentVersion/Upload防误绑Schema，真�
 最低测试：双Scope空与非空、完整source/manifest/hash、误绑Document/Upload/跨项目/重标拒绝、新事件排除、磁盘不足/短写/DB故障/unknown commit、真实撤权/License拒绝/取消与publish两个锁顺序/到期接管/旧Worker、并发单结果/同代故障恢复/引用保持/损坏下载失败关闭。合成License、模拟磁盘不足与实际环境分别标注；128MiB/20并发性能和三平台/目标账户恢复不能用小fixture替代。新增依赖/服务/生产操作：无。
 
 ## 当前结果
+
+2026-09-26 P03-A04-P04：实际登记来源/原代plan及Jobs成功Lease/Attempt公共只读核验，新Owner仅command重建，双Scope stage/final/真实linked恢复，成功并发重放全表无写，坏/缺来源/撤权/取消/过期拒绝，接管新file与原capture/旧file保留，真实commit后合成确认丢失读原结果通过。945后端无失败（2跳过）、发布/旧Jobs与File元数据回归/开发wheel成功。无Schema/API/依赖；中断模拟非杀进程/生产恢复，License合成，Session访问/HTTP/心跳/完整发行待，CR整体IN_PROGRESS。
 
 2026-09-26 P03-A04-P03：真实受理/claim/capture/render文件、当前权限与Lease/受控临时Vault系统身份→Document STAGED→事务外Hash/提升→同UOW AVAILABLE+实际SYSTEM发布Audit+own Result+Jobs caller-UOW成功；双Scope empty/260、提升后撤权/取消/到期/失身份/合成License拒绝及四个真实DB写后故障全回滚、实际取消/发布两锁顺序通过。939后端无失败（2跳过）、三项链路回归/开发wheel通过。无Schema/API/依赖；License合成/正式账户未供给，恢复/授权重放/HTTP/心跳/三平台完整包待，CR整体IN_PROGRESS。详见对应进度。
 

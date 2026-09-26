@@ -5,8 +5,9 @@ from sqlalchemy.orm import Session
 from .orm import FileObjectRow, FileStateEventRow
 from .audit_export_storage import _locators
 from ..application.audit_export_metadata import (
-    RegisterAuditFile, AuditFileMetadata, AuditFileMutation, AuditFileMetadataError,
+    RegisterAuditFile, AuditFileMetadata, AuditFileMutation, AuditFileMetadataError, AuditRegisteredFileRequest,
 )
+from ..application.audit_export_storage import AuditFileContent
 
 
 def _session(transaction,request):
@@ -19,6 +20,24 @@ def _session(transaction,request):
 
 
 class SqlAlchemyAuditExportFileMetadata:
+    def read_registered(self,transaction,*,request):
+        """Actual registered hash/size, never guessed from a path or request body."""
+        try:
+            if type(request) is not AuditRegisteredFileRequest:raise AuditFileMetadataError()
+            request.__post_init__()
+            session=transaction.session
+            if not isinstance(session,Session) or not session.in_transaction():raise AuditFileMetadataError()
+            row=session.execute(select(FileObjectRow).where(
+                FileObjectRow.file_object_id==request.coordinate.file_id).with_for_update(read=True)).scalar_one_or_none()
+            if row is None:return None
+            expected=RegisterAuditFile(request.export_id,request.actor_id,request.trace_id,
+                AuditFileContent(request.coordinate,row.sha256,row.size_bytes))
+            result=self._view(session,row,expected)
+            if result.registration_trace_id!=request.trace_id:raise AuditFileMetadataError()
+            return result
+        except AuditFileMetadataError:raise
+        except Exception:raise AuditFileMetadataError() from None
+
     def register_staged(self,transaction,*,request):
         session=_session(transaction,request)
         try:

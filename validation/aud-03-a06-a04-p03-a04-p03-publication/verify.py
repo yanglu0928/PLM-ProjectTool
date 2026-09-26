@@ -31,7 +31,7 @@ p, w, a = f.p, f.w, f.a
 base = f.f
 
 
-def main():
+def main(*, exercise=None):
     name, runtime = 'publication_' + uuid4().hex[:12], None
     ref = 'publication-actor-test-' + uuid4().hex
     target = 'PLMProjectTool/SecretKey/' + ref
@@ -87,9 +87,12 @@ def main():
                     def verify_staged(self, c):
                         assert active[0] == 0
                         return actual.verify_staged(c)
-                    def promote(self, c):
+                    def inspect(self, c):
                         assert active[0] == 0
-                        value = actual.promote(c)
+                        return actual.inspect(c)
+                    def promote(self, c, *, mode='new'):
+                        assert active[0] == 0
+                        value = actual.promote(c, mode=mode)
                         if self.on_promote: self.on_promote()
                         return value
                 storage = Storage()
@@ -228,6 +231,7 @@ def main():
                     assert cancelled.state == 'SUCCEEDED' and cancelled.changed is False
                     assert published.export_id == c.export_id and row(c) == 'SUCCEEDED'
                 worker._completion = completion
+                if exercise is not None: exercise(locals())
                 accepted, c, staged = prepare()
                 def remove_identity(): assert lib.CredDeleteW(target, 1, 0)
                 storage.on_promote = remove_identity

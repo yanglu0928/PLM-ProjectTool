@@ -1,6 +1,7 @@
 """Audit owned, caller-UOW repository; no authority, file I/O or commit."""
 from sqlalchemy import select,text
 from datetime import timezone
+from uuid import UUID
 from sqlalchemy.dialects.postgresql import insert
 from .audit_read_repository import _session
 from .export_orm import render_attempts
@@ -13,6 +14,15 @@ from plm_assistant.modules.jobs.application.lease import ClaimedJob
 
 
 class SqlAlchemyAuditRenderPlans:
+    def find(self,tx,*,export_id,job_id,fencing_token):
+        if (any(type(v) is not UUID or not v.int for v in (export_id,job_id))
+                or type(fencing_token) is not int or not 0<fencing_token<2**63):raise AuditExportWorkerError()
+        row=_session(tx).execute(select(render_attempts).where(render_attempts.c.export_id==export_id,
+            render_attempts.c.job_id==job_id,render_attempts.c.fencing_token==fencing_token)).mappings().one_or_none()
+        if row is None:return None
+        source=dict(row);source['created_at']=source['created_at'].astimezone(timezone.utc)
+        return AuditRenderPlan(**source)
+
     def register(self,tx,*,intent,capture,claim,worker_ref):
         if (type(intent) is not AuditExportIntent or type(capture) is not CapturedAuditExport
                 or type(claim) is not ClaimedJob):raise AuditExportWorkerError()

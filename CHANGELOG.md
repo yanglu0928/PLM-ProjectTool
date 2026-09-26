@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A04-P04增加真实来源恢复和内部成功重放，Document登记Hash/来源与原plan、Jobs成功Lease/Attempt只读核验，新Owner command-only重建；双Scope stage/final/实际linked恢复，成功并发无写、commit后合成确认丢失返回原结果、坏/缺来源/撤权取消过期拒绝，接管独立file保原capture通过。945后端无失败（2环境跳过）、发布/旧Jobs/File回归及开发wheel成功。无Migration/API/依赖，head0042、无升级动作；中断是合成非生产杀进程，License合成，HTTP/Session下载/心跳、正式账户/三平台恢复与可用包待。
+
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A04-P03完成真实内部原子发布，当前权限/原受理pair/Lease/capture/plan与受控系统来源下，文件Hash/提升在UOW外，AVAILABLE/发布Audit/不可变结果/Job成功同UOW。双Scope empty/260、实际撤权取消过期/系统失密、四类DB写后全回滚及取消两锁顺序PASS；939后端无失败（2环境跳过）、三项回归/开发wheel成功。无Migration/API/依赖，head0042、无升级动作；失败提升文件保持私有STAGED，恢复/授权重放/HTTP/心跳与正式账户/Server2025/Debian/可用发行包待，License合成。
 
 - 2026-09-26：`0.1.0.dev0`/AUT-04-A01按实施前CR-AUT-004补Windows受控系统身份只读Port，专用Vault材料稳定派生UUID、启动摘要pin与每次失密/变更关闭；不新增User/角色/授权。4项新增含本机临时Vault真实丢失/错误口令/加密恢复保身份/换材料拒绝PASS，全后端934项无失败（2环境跳过）、开发wheel通过。无Migration/API/依赖，head0042、无升级动作；正式账户材料/异账户恢复/Server2025/Debian及真正原子发布/可用安装包仍待。

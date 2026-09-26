@@ -3,7 +3,7 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 2：Platform Core|
-|Current WBS|`AUD-03-A06-A04-P03-A04-P03 真实原子发布`（真实File/Audit/Result/Job同UOW、四边界故障回滚与取消两锁顺序PASS；恢复/授权重放/HTTP待）|
+|Current WBS|`AUD-03-A06-A04-P03-A04-P04 真实来源恢复/内部成功重放`（双Scope三文件形状、新Owner command-only、成功并发无写/确认丢失PASS；Session内容访问/HTTP待）|
 |Current Status|PHASE_1_COMPLETE / DOC_03_A03_P04_P04_PRECONDITION_BLOCKED / DOC_02_A02_P01_INTERNAL_PASS / DOC_02_A02_P02_PRECONDITION_BLOCKED / DOC_03_A04_A03_P04_P03_CONTENT_HTTP_PASS / DOC_03_A04_A04_P01_JOB_SCHEMA_PASS / DOC_03_A04_A04_P02_JOB_LEASE_PASS / DOC_03_A04_A04_P03_OUTBOX_PASS / DOC_03_A04_A04_P04_P01_PARSE_QUEUE_PASS / DOC_03_A04_A04_P04_P02_COMMIT_INTERNAL_PASS / DOC_03_A04_A04_P04_P03_P01_ABORT_STATE_PASS / DOC_03_A04_A04_P04_P03_P02_PRECONDITION_BLOCKED / DOC_03_A04_A04_P04_P04_A01_FINALIZE_HTTP_PASS / DOC_03_A04_A04_P04_P04_A02_WINDOWS_COMPOSITION_PASS / DOC_03_A04_A04_P04_COMMIT_ABORT_IN_PROGRESS / DOC_01_A02_INTERNAL_PASS / DOC_01_A03_P01_CURSOR_PASS / DOC_01_A03_P02_HTTP_CONTRACT_PASS / DOC_01_A03_P03_HTTP_DB_PASS / DOC_01_A03_P04_WINDOWS_COMPOSITION_PASS / DOC_01_A04_P01_VERSION_INTERNAL_PASS / DOC_01_A04_P02_VERSION_CURSOR_PASS / DOC_01_A04_P03_VERSION_HTTP_CONTRACT_PASS / DOC_01_A04_P04_VERSION_HTTP_DB_PASS / DOC_01_A04_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P01_VERIFIED_SNAPSHOT_PASS / DOC_01_A05_P02_DOWNLOAD_SOURCE_PASS / DOC_01_A05_P03_PREPARE_DOWNLOAD_PASS / DOC_01_A05_P04_DOWNLOAD_HTTP_PASS / DOC_01_A05_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P06_DISCONNECT_CAPACITY_BOUNDED_PASS / DOC_03_A04_A04_P04_P03_P02_A01_GATE_ADAPTER_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P01_CONTENT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P02_COMMIT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P03_ABORT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P01_READONLY_INSPECTION_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A01_STORAGE_STEP_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A02_INTERNAL_CLEANUP_PASS / PLT_02_A07_P05_A09_CEREMONY_PENDING / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
 |Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03、DOC-03-A01、DOC-03-A02（限定范围）、DOC-03-A03-P01～P03（P03 内部合成验证）、DOC-03-A03-P04-P01～P03（内部合成验证）、DOC-03-A04-A01（Schema 验证）、DOC-03-A04-A02（内部合成验证）、DOC-01-A01、DOC-02-A01、DOC-02-A02-P01（内部合成验证） PASS|
@@ -13,8 +13,8 @@
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，DM-02 License 授权粒度经用户批准 CR-LIC-001 修订|
 |DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；原冻结64cdf09保留；增量至`20260926_0042` 审计不可变成功结果（CR-AUD-002），0001～0041历史不改写；无生产迁移|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
-|Test Summary|P03-A04-P03 Windows11/Python3.13后端939项无失败（2既有环境跳过）；真实双Scope empty/260文件Hash/事务外提升→AVAILABLE/系统Audit/Result/Job同UOW成功，撤权取消到期/失身份及四边界写后全回滚、实际取消两锁竞争PASS，三项真实回归/开发wheel成功。License合成/正式账户未供给，恢复/授权重放/HTTP/心跳/性能/发行待|
-|Next WBS|AUD-03-A06-A04-P03-A04-P04：真实来源受控恢复与当前授权成功结果重放，再访问授权/HTTP；不从物理文件猜成功或重完成终态Job。POST关闭；真实Owner/质量/Gate/正式材料仍待，完整Scope保留，Server2025未验、Debian13暂缓|
+|Test Summary|P03-A04-P04 Windows11/Python3.13后端945项无失败（2既有环境跳过）；双Scope真实登记来源→新Owner command-only三形状恢复，原Job成功Lease/Attempt/结果/AVAILABLE/Hash重放与并发全表无写、确认丢失/坏缺来源/撤权取消过期拒绝及接管独立file PASS，发布/旧Jobs/File回归与wheel成功。中断模拟非杀进程，License合成/正式账户未供给，Session下载/HTTP/心跳/性能/发行待|
+|Next WBS|AUD-03-A06-A04-P03-A05：当前Session/Scope下的导出结果访问授权与Document受控内容读取，先核冻结Job/导出下载契约；不把内部Worker重放当浏览器权限。POST关闭；真实Owner/质量/Gate/正式材料仍待，完整Scope保留，Server2025未验、Debian13暂缓|
 
 ## 自动执行策略
 
@@ -24,6 +24,8 @@
 - GitHub：允许在当前 Scope 和正确分支内自动 fetch、commit、push；禁止 force push、直接提交 main、覆盖未知远端修改或提交 Secret/客户数据。
 
 ## 最近检查点
+
+- P03-A04-P04真实来源command-only恢复/内部成功重放，当前权限/原代Lease或真实Job成功来源→全Hash→再次授权；三形状恢复、并发重放无写、确认丢失/坏缺来源/撤权取消过期拒绝与接管原capture新file保旧final通过。945项无失败，完整发布/旧Jobs/File回归及wheel成功。中断模拟、HTTP/当前Session内容访问/心跳/正式账户/三平台及完整包仍待；下一项P03-A05。
 
 - P03-A04-P03实际原子发布成功，元数据/发布审计/结果/Job单UOW及四写后故障回滚、撤权取消到期/失身份/实际取消两锁顺序通过；939项无失败、三真实回归/开发wheel成功。文件Hash/提升不持DB事务，失败final仍私有/STAGED，尚无受控恢复/授权成功重放/HTTP/心跳；下一项P04，不标可用完整包/Gate。
 

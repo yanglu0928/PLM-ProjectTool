@@ -14,6 +14,25 @@ from plm_assistant.modules.jobs.infrastructure.orm import JobAttemptRow, JobLeas
 
 
 class SqlAlchemyJobLeaseRepository:
+    def check_succeeded(self, transaction: object, *, job_id: uuid.UUID,
+                        fencing_token: int, worker_ref: str) -> ClaimedJob:
+        """Read terminal success facts; never accept an expired ACTIVE lease as success."""
+        validate_checkpoint(job_id=job_id, fencing_token=fencing_token, worker_ref=worker_ref)
+        session=self._session(transaction)
+        job=session.execute(select(JobRow).where(JobRow.job_id==job_id)
+            .with_for_update(of=JobRow)).scalar_one_or_none()
+        if (job is None or job.state!='SUCCEEDED' or job.fencing_token!=fencing_token
+                or job.lease_expires_at is not None or job.completed_at is None):raise JobLeaseError('STALE_LEASE')
+        lease=session.execute(select(JobLeaseRow).where(JobLeaseRow.job_id==job_id,
+            JobLeaseRow.fencing_token==fencing_token).with_for_update(of=JobLeaseRow)).scalar_one_or_none()
+        attempt=self._attempt(session,job_id,fencing_token)
+        if (lease is None or lease.state!='RELEASED' or lease.worker_ref!=worker_ref
+                or attempt.worker_ref!=worker_ref or attempt.attempt_no!=job.attempt_count
+                or attempt.error_code is not None or attempt.completed_at!=job.completed_at
+                or not attempt.started_at<=job.completed_at<lease.lease_expires_at
+                or lease.acquired_at>job.completed_at):raise JobLeaseError('INCONSISTENT_LEASE')
+        return self._claim(job)
+
     def check_current(self, transaction: object, *, job_id: uuid.UUID,
                       fencing_token: int, worker_ref: str) -> ClaimedJob:
         validate_checkpoint(job_id=job_id, fencing_token=fencing_token, worker_ref=worker_ref)

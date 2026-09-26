@@ -6,11 +6,14 @@ from .lease import ClaimedJob,JobLeaseError
 
 
 class AuditExportCompletionLeasePort(Protocol):
+    def check_succeeded(self,transaction:object,*,job_id,fencing_token:int,worker_ref:str)->ClaimedJob: ...
     def check_current(self,transaction:object,*,job_id,fencing_token:int,worker_ref:str)->ClaimedJob: ...
     def finish(self,transaction:object,*,job_id,fencing_token:int,worker_ref:str)->ClaimedJob: ...
 
 
 class AuditExportJobCompletionPort(Protocol):
+    def assert_succeeded(self,transaction:object,*,request:AuditExportJobRequest,refs:AuditExportJobRef,
+                         fencing_token:int,worker_ref:str)->ClaimedJob: ...
     def complete_current(self,transaction:object,*,request:AuditExportJobRequest,refs:AuditExportJobRef,
                          fencing_token:int,worker_ref:str)->ClaimedJob: ...
 
@@ -55,4 +58,17 @@ class AuditExportJobCompletion:
             if after!=before:raise JobLeaseError('JOB_STORE_UNAVAILABLE')
             return after
         except JobLeaseError:raise
+        except Exception:raise JobLeaseError('JOB_STORE_UNAVAILABLE') from None
+
+    def assert_succeeded(self,transaction,*,request,refs,fencing_token,worker_ref):
+        if type(request) is not AuditExportJobRequest or type(refs) is not AuditExportJobRef:
+            raise JobLeaseError('VALIDATION_FAILED')
+        try:
+            request.__post_init__();refs.__post_init__()
+            validate_checkpoint(job_id=refs.job_id,fencing_token=fencing_token,worker_ref=worker_ref)
+            actual=self._queue.find_export(transaction,request=request)
+            if type(actual) is not AuditExportJobRef or actual!=refs:raise JobLeaseError('JOB_STORE_UNAVAILABLE')
+            return self._claim(self._leases.check_succeeded(transaction,job_id=refs.job_id,
+                fencing_token=fencing_token,worker_ref=worker_ref),request,refs,fencing_token)
+        except (AuditExportEnqueueError,JobLeaseError):raise
         except Exception:raise JobLeaseError('JOB_STORE_UNAVAILABLE') from None
