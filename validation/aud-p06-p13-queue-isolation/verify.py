@@ -85,6 +85,8 @@ def exercise(v):
                 assert v['db'].execute('SELECT count(*) FROM plm.job_attempts WHERE job_id=%s',(bad.job_id,)).fetchone()==(0,)
             v['db'].execute('UPDATE plm.job_jobs SET payload_refs=%s WHERE job_id=%s',(Jsonb(payload),first.job_id))
             v['db'].execute('UPDATE plm.job_jobs SET payload_refs=%s WHERE job_id=%s',(Jsonb(extra_payload),extra.job_id))
+            before=snapshot()
+            result=loop.run(max_steps=1);assert result.idle==1 and snapshot()==before
             result=loop.run(max_steps=2);assert result.executed==2
             assert v['db'].execute('SELECT state FROM plm.job_jobs WHERE job_id IN (%s,%s)',(first.job_id,second.job_id)).fetchall()==[('SUCCEEDED',),('SUCCEEDED',)]
             for reason in ('ROOT_MISSING','PAIR_MISMATCH'):
@@ -103,6 +105,8 @@ def exercise(v):
                     assert v['db'].execute('SELECT count(*) FROM plm.job_attempts WHERE job_id=%s',(bad.job_id,)).fetchone()==(0,)
                 finally:
                     v['db'].execute('UPDATE plm.job_jobs SET payload_refs=%s,trace_id=%s WHERE job_id=%s',(Jsonb(original_payload),original_trace,bad.job_id))
+                before=snapshot()
+                result=loop.run(max_steps=1);assert result.idle==1 and snapshot()==before
                 result=loop.run(max_steps=1);assert result.executed==1
     finally:
         if first is not None and payload is not None:

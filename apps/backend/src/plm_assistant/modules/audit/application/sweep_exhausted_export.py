@@ -1,7 +1,7 @@
 """Read a hint then invoke the original safe owner; no batch loop or body work."""
 from uuid import UUID
 from threading import Lock
-from .claim_export import RejectedAuditExportSource
+from .claim_export import RejectedAuditExportSource,SOURCE_SCAN_REFRESH
 from .worker_capture import AuditExportCaptureCommand,AuditExportWorkerError
 from .verify_termination import VerifiedAuditExportTermination
 from plm_assistant.modules.jobs.application.audit_export_exhaustion_scan import AuditExportExhaustionCandidate,AuditExportExhaustionScan
@@ -14,6 +14,7 @@ class AuditExportExhaustionSweep:
             raise ValueError('Owned safe sweep and same controlled identity required')
         self._uow,self._candidates,self._actor,self._exhaustion=unit_of_work,candidates,system_actor,exhaustion
         self._cursor,self._scan_lock=None,Lock()
+        self._scan_steps=0
 
     def _identity(self):
         try:
@@ -41,8 +42,12 @@ class AuditExportExhaustionSweep:
         if not isolate_sources:return self._run_next()
         if not self._scan_lock.acquire(blocking=False):raise AuditExportWorkerError('AUDIT_HEARTBEAT_CAPACITY')
         try:
+            if self._scan_steps>=SOURCE_SCAN_REFRESH:self._cursor,self._scan_steps=None,0
             result=self._run_next(True)
-            self._cursor=result.cursor if type(result) is RejectedAuditExportSource else None
+            if result is None:self._cursor,self._scan_steps=None,0
+            else:
+                if type(result) is RejectedAuditExportSource:self._cursor=result.cursor
+                self._scan_steps+=1
             return result
         finally:self._scan_lock.release()
 

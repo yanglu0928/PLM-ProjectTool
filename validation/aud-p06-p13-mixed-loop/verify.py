@@ -73,7 +73,9 @@ def exercise(v):
                         result=future.result(timeout=30)
                     assert result.reason=='STOPPED' and result.executed==12 and result.rejected>0 and done==targets
                     assert rows(originals)==unchanged
-                    assert len(originals)==5 and loop._step._admission._cursor is None
+                    assert len(originals)==5 and 0<=loop._step._admission._scan_steps<=32
+                    assert loop._step._admission._cursor is None or loop._step._admission._cursor.job_id in originals
+                    assert result.steps<91 and result.rejected<78
                     for accepted in healthy:
                         assert v['db'].execute('SELECT state,attempt_count FROM plm.job_jobs WHERE job_id=%s',(accepted.job_id,)).fetchone()==('SUCCEEDED',1)
                         with v['runtime'].unit_of_work() as tx:assert v['results'].get(tx,export_id=accepted.intent.export_id) is not None

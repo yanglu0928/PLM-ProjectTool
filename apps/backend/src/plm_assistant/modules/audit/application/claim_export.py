@@ -12,6 +12,8 @@ from plm_assistant.modules.jobs.application.audit_export_exhaustion_scan import 
 from plm_assistant.modules.jobs.application.audit_export_complete import AuditExportJobCompletion
 from plm_assistant.modules.jobs.application.lease import ClaimedJob,JobLeaseError
 
+SOURCE_SCAN_REFRESH=32  # Scheduling actions, not elapsed seconds or authority.
+
 
 @dataclass(frozen=True,slots=True)
 class ClaimedAuditExport:
@@ -51,6 +53,7 @@ class AuditExportClaimAdmission:
             raise ValueError('Owned admission dependencies required')
         self._uow,self._repo,self._claims,self._queue,self._actor,self._supervisor=unit_of_work,repository,claims,queue,system_actor,supervisor
         self._cursor,self._scan_lock=None,Lock()
+        self._scan_steps=0
 
     def _identity(self):
         try:
@@ -66,8 +69,12 @@ class AuditExportClaimAdmission:
         if not isolate_sources:return self._next(worker_ref,lease_seconds,False)
         if not self._scan_lock.acquire(blocking=False):raise AuditExportWorkerError('AUDIT_HEARTBEAT_CAPACITY')
         try:
+            if self._scan_steps>=SOURCE_SCAN_REFRESH:self._cursor,self._scan_steps=None,0
             result=self._next(worker_ref,lease_seconds,True)
-            self._cursor=result.cursor if type(result) is RejectedAuditExportSource else None
+            if result is None:self._cursor,self._scan_steps=None,0
+            else:
+                if type(result) is RejectedAuditExportSource:self._cursor=result.cursor
+                self._scan_steps+=1
             return result
         finally:self._scan_lock.release()
 

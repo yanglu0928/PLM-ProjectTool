@@ -57,6 +57,18 @@ class SourceAdmissionTests(TestCase):
         self.f.claims.claim_target.assert_called_once();self.f.claims.check_target.assert_called_once()
         self.assertEqual(AuditExportSourceRejected('ACCEPTANCE_SOURCE_INVALID').code,'AUDIT_UNAVAILABLE')
 
+    def test_cursor_retained_on_success_but_refreshes_after_32_actions(self):
+        good=self.f.claims.scan_next.return_value
+        bad=AuditExportScanReservation(self.cursor,None,'INVALID_EXPORT_REF')
+        self.f.claims.scan_next.side_effect=[bad]+[good]*32
+        self.next()
+        for _ in range(32):self.next()
+        calls=self.f.claims.scan_next.call_args_list
+        self.assertIsNone(calls[0].kwargs['after'])
+        self.assertTrue(all(c.kwargs['after'] is self.cursor for c in calls[1:32]))
+        self.assertIsNone(calls[32].kwargs['after'])
+        self.assertEqual(self.f.owner._scan_steps,1)
+
     def test_invalid_flag_and_busy_scan_fail_before_io(self):
         with self.assertRaises(AuditExportWorkerError):self.f.owner.claim_next(worker_ref='worker',isolate_sources=1)
         self.f.owner._scan_lock.acquire()

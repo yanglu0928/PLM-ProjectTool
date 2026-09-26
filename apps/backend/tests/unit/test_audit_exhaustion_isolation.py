@@ -38,6 +38,14 @@ class ExhaustionIsolationTests(TestCase):
         self.f.owner.verify.assert_called_once()
         self.f.t.f.tx.commit.assert_not_called()
 
+    def test_source_cursor_survives_success_and_window_refreshes(self):
+        good=self.f.candidates.scan_next.return_value
+        self.f.candidates.scan_next.side_effect=[AuditExportExhaustionScan(self.cursor,None,'INVALID_EXPORT_REF')]+[good]*32
+        for _ in range(33):self.f.sweep.run_next(isolate_sources=True)
+        calls=self.f.candidates.scan_next.call_args_list
+        self.assertTrue(all(c.kwargs['after'] is self.cursor for c in calls[1:32]))
+        self.assertIsNone(calls[32].kwargs['after'])
+
     def test_identity_after_scan_and_strict_port(self):
         self.f.t.t.actor.assert_current.side_effect=[uuid4(),uuid4()]
         with self.assertRaises(AuditExportWorkerError):self.f.sweep.run_next(isolate_sources=True)
