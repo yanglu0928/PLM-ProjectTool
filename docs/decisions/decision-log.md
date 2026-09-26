@@ -3234,3 +3234,11 @@
 - Reason：nullable Project 会跳过普通复合 FK，首条 RETURN 不能提前解锁，旧观测与新批准不同；现有 Trace 不具锁/摘要列，不能冒充存在。首次 CHECK/CASE/脚本失败修复重验。
 - Impact：八表/0034/隔离验收，无冻结 API/角色/依赖变化；真实 Subject Owner/客户资格/审批服务仍未完成。
 - Rollback：空表 down 至 0033，非空 owned 历史拒绝；关闭新应用入口并保留事实。
+
+## DEC-20260926-169
+
+- Date：2026-09-26；WBS：RVW-01-A03；CR：CR-RVW-001。
+- Decision：内部查询只接受调用方活动事务/显式 Scope，以 Core mappings 和 Review→Round 共享锁读取；当前身份与固定历史轮次分开返回，历史来源观测不连接为当前状态。全轮计数/完整子记录/多人决定重新核对，缺值失败关闭。
+- Reason：旧轮次结果不能随当前轮次变化；来源后来失效不应改写历史，也不能继续被当作当前有效批准。权限/License/真实 Owner 必须由后续受权应用独立验证。
+- Impact：内部 Port/DTO/Repository 与测试，无数据库/API/权限/依赖变化。全历史读取成本未做性能验收；锁保护只针对遵循先锁 Review 的受控写方，不声称任意 SQL 无死锁。
+- Rollback：不使用新 Port，保留 0034 历史；无数据回滚或公开路由变化。
