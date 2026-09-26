@@ -1,5 +1,6 @@
 """One bounded scheduling action; stop new admission, drain known owned work."""
 from dataclasses import dataclass,field
+from contextlib import contextmanager
 from threading import Event,Lock
 from .claim_export import ClaimedAuditExport
 from .execute_export import AuditExportExecutionOutcome
@@ -36,6 +37,13 @@ class AuditExportWorkerStep:
         self._stop,self._lock,self._pending,self._failed,self._prefer_sweep=Event(),Lock(),None,False,True
 
     def request_stop(self):self._stop.set()
+
+    @contextmanager
+    def quiescent(self):
+        if not self._lock.acquire(blocking=False):raise AuditExportWorkerError('AUDIT_HEARTBEAT_CAPACITY')
+        try:
+            with self._admission._supervisor.quiescent():yield
+        finally:self._lock.release()
 
     def step(self):
         if not self._lock.acquire(blocking=False):raise AuditExportWorkerError('AUDIT_HEARTBEAT_CAPACITY')

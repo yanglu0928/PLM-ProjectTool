@@ -78,3 +78,16 @@ def create_windows_license_services(
         return _assemble(runtime, product=product, machine=machine, integrity=integrity)
     except Exception:
         raise ProductionLicenseStartupError() from None
+
+
+def create_windows_worker_license_services(runtime, settings: BootstrapSettings) -> WindowsLicenseServices:
+    """Same fixed trust chain, explicit bounded Worker runtime; no fallback roots."""
+    from plm_assistant.modules.platform.infrastructure.worker_database import WorkerDatabaseRuntime
+    from plm_assistant.entrypoints.audit_worker import _schema_current as worker_schema_current
+    if type(runtime) is not WorkerDatabaseRuntime or type(settings) is not BootstrapSettings:raise ProductionLicenseStartupError()
+    try:
+        if runtime.is_ready() is not True or not worker_schema_current(runtime):raise ProductionLicenseStartupError()
+        product=PackagedProductKey();machine=WindowsSelectedMachine(settings.selected_mac);machine.selected_mac()
+        integrity=create_windows_trusted_time_integrity()
+        return _assemble(runtime,product=product,machine=machine,integrity=integrity)
+    except Exception:raise ProductionLicenseStartupError() from None

@@ -1,5 +1,6 @@
 """Interruptible polling of the owned step; no forced kill or guessed shutdown."""
 from dataclasses import dataclass
+from contextlib import contextmanager
 from math import isfinite
 from threading import Event,Lock
 from time import monotonic
@@ -31,6 +32,13 @@ class AuditExportWorkerLoop:
 
     def request_stop(self):
         self._step.request_stop();self._wake.set()
+
+    @contextmanager
+    def quiescent(self):
+        if not self._lock.acquire(blocking=False):raise AuditExportWorkerError('AUDIT_HEARTBEAT_CAPACITY')
+        try:
+            with self._step.quiescent():yield
+        finally:self._lock.release()
 
     def _wait_idle(self):
         deadline=monotonic()+self._seconds

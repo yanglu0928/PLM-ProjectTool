@@ -58,3 +58,5 @@ P06-P08编码前Loop策略在progress登记，现内部PASS：原Step有界/持�
 P06-P09组合策略编码前进度登记，内部PASS：显式有界PG18/current完整Schema与identity失败关闭、固定Audit/Jobs事实Repo/同Supervisor和原授权/存储Port；不授启动License业务权限或生成密钥/线程/claim/caller资源关闭。1099无失败（2跳过）、实际PG-Vault双Scope完整组合Loop发布/撤权安全失败/empty-stop无写及旧发布/wheel通过。首次PG连接超时后确认原进程活且ready重跑，无重建；异常长测试耗时非性能证据。正式来源/CLI信号/服务/公平隔离/未知恢复/HTTP仍待，CR/Gate未关闭。
 
 P06-P10编码前signal/桥线程政策与Loop兼容偏差分别在progress记录，内部PASS：最小callback只标志，正常桥线程stop排空；主线程互斥注册/全恢复/失败poison，最长50ms小段保poll截止。实际原wait信号延迟60.052s后调整同定向测试0.122s；7新unit/1106无失败（2跳过），两个独立合成进程解释器SIGINT idle及时停/活动任务完成一claim/handler还原，PG组合发布回归/wheel通过。外部Console/SCM/硬SIGTERM/生产性能未证，正式来源/CLI/公平隔离/未知恢复/其他平台/Gate未完成，不强杀/auto-dispose。
+
+P06-P11实施前进度记录License普通runtime与Worker有界runtime冲突；保旧函数，新显式Worker同固定product/machine/integrity/_assemble，不变签名/权益/信任根。Windows CLI固定账户来源无秘密参数，Application全静止接口保护dispose，活线程拒绝/不强杀。1111无失败（2跳过）、临时Windows Credential/Vault+真实PG缺正式包内公钥失败关闭/六表不写与构造DB释放；明确合成License下Windows工厂process adapter两Scope物理发布/当前撤权安全失败/stop及静止资源关闭、原发布/wheel通过。正式来源/外部Console/SCM/网络黑洞/未知恢复/公平/HTTP待，CR/Gate不关闭。

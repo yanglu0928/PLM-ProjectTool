@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-246
+
+- Precode：Phase2/P06-P11，CR-AUD-004/ADR011，原Windows固定信任与generic组合/信号已验；实施前记录普通License runtime不接受有界Worker的兼容差异和最小专属入口，无签名字段/权益/Schema/API/依赖改变。
+- Decision：保原函数，Worker函数仍固定product/machine/integrity/_assemble；Windows CLI固定账户源无秘密argv/env，缺源关、--once LIMIT非就绪，Application quiescent接口锁Loop/Step/真实全部HB，活线程拒绝dispose，无强杀。
+- Evidence：5新unit/1111无失败（2权限跳过），实际临时Windows Credential/Vault+PG18当前Schema，真实包内公钥缺失失败关闭/六表无写和构造资源释放；明确合成Guard下实际Windows工厂经process adapter双Scope准入/heartbeat/物理发布/当前User撤权安全失败/stop无写、静止关闭，原发布/wheel通过。正式License来源/密码未供给，不冒充完整签名复验；临时credential已删除。
+- Risk/rollback：无Migration/API/依赖/升级，0042保留，撤新装配保历史。外部Console/SCM/真实网络黑洞/公平隔离/未知恢复/HTTP/质量/其他平台/完整包/Gate待，下一P06-P12真实后台子进程/停止收口。
+
 ## DEC-20260927-245
 
 - Precode：Phase2/P06-P10，CR-AUD-004/ADR011，前置Loop/组合已验；编码前进度记录信号最小callback与桥线程，补Loop前另记Windows长等待信号延迟兼容偏差。

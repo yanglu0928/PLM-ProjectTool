@@ -43,6 +43,13 @@ class AuditHeartbeatSupervisor:
                 self._jobs.pop(handle._command.job_id)
 
     @contextmanager
+    def quiescent(self):
+        """Caller returned from synchronous work; guard all heartbeat restart."""
+        with self._lock:
+            if any(handle._thread.is_alive() for handle in self._jobs.values()):raise AuditExportWorkerError('AUDIT_HEARTBEAT_STOP_TIMEOUT')
+            yield
+
+    @contextmanager
     def stopped(self, command):
         """Short Owner UOW only; block restart in THIS supervisor, never kill I/O.
 

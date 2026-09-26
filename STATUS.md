@@ -3,7 +3,7 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 2：Platform Core|
-|Current WBS|`AUD-03-A06-A04-P03-A07-P04-P03-P06-P10 后台信号生命周期`（解释器SIGINT/排空/handler恢复与短段等待内部PASS；外部Console/服务控制/正式来源待）|
+|Current WBS|`AUD-03-A06-A04-P03-A07-P04-P03-P06-P11 Windows后台来源与CLI`（固定来源/真实合成Windows组合/静止关闭内部PASS；正式包内公钥缺失保持关闭，外部Console/服务待）|
 |Current Status|PHASE_1_COMPLETE / DOC_03_A03_P04_P04_PRECONDITION_BLOCKED / DOC_02_A02_P01_INTERNAL_PASS / DOC_02_A02_P02_PRECONDITION_BLOCKED / DOC_03_A04_A03_P04_P03_CONTENT_HTTP_PASS / DOC_03_A04_A04_P01_JOB_SCHEMA_PASS / DOC_03_A04_A04_P02_JOB_LEASE_PASS / DOC_03_A04_A04_P03_OUTBOX_PASS / DOC_03_A04_A04_P04_P01_PARSE_QUEUE_PASS / DOC_03_A04_A04_P04_P02_COMMIT_INTERNAL_PASS / DOC_03_A04_A04_P04_P03_P01_ABORT_STATE_PASS / DOC_03_A04_A04_P04_P03_P02_PRECONDITION_BLOCKED / DOC_03_A04_A04_P04_P04_A01_FINALIZE_HTTP_PASS / DOC_03_A04_A04_P04_P04_A02_WINDOWS_COMPOSITION_PASS / DOC_03_A04_A04_P04_COMMIT_ABORT_IN_PROGRESS / DOC_01_A02_INTERNAL_PASS / DOC_01_A03_P01_CURSOR_PASS / DOC_01_A03_P02_HTTP_CONTRACT_PASS / DOC_01_A03_P03_HTTP_DB_PASS / DOC_01_A03_P04_WINDOWS_COMPOSITION_PASS / DOC_01_A04_P01_VERSION_INTERNAL_PASS / DOC_01_A04_P02_VERSION_CURSOR_PASS / DOC_01_A04_P03_VERSION_HTTP_CONTRACT_PASS / DOC_01_A04_P04_VERSION_HTTP_DB_PASS / DOC_01_A04_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P01_VERIFIED_SNAPSHOT_PASS / DOC_01_A05_P02_DOWNLOAD_SOURCE_PASS / DOC_01_A05_P03_PREPARE_DOWNLOAD_PASS / DOC_01_A05_P04_DOWNLOAD_HTTP_PASS / DOC_01_A05_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P06_DISCONNECT_CAPACITY_BOUNDED_PASS / DOC_03_A04_A04_P04_P03_P02_A01_GATE_ADAPTER_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P01_CONTENT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P02_COMMIT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P03_ABORT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P01_READONLY_INSPECTION_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A01_STORAGE_STEP_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A02_INTERNAL_CLEANUP_PASS / PLT_02_A07_P05_A09_CEREMONY_PENDING / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
 |Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03、DOC-03-A01、DOC-03-A02（限定范围）、DOC-03-A03-P01～P03（P03 内部合成验证）、DOC-03-A03-P04-P01～P03（内部合成验证）、DOC-03-A04-A01（Schema 验证）、DOC-03-A04-A02（内部合成验证）、DOC-01-A01、DOC-02-A01、DOC-02-A02-P01（内部合成验证） PASS|
@@ -13,8 +13,8 @@
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，DM-02 License 授权粒度经用户批准 CR-LIC-001 修订|
 |DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；原冻结64cdf09保留；增量至`20260926_0042` 审计不可变成功结果（CR-AUD-002），0001～0041历史不改写；无生产迁移|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
-|Test Summary|P06-P10 Windows11/Python3.13后端1106项无失败（2既有环境跳过）；7新unit真实解释器SIGINT空闲及时停止/原handler恢复/非法非主线程及嵌套拒绝/部分安装回滚/恢复失败poison/异常保pending、短段等待保poll截止；两个独立合成进程空闲60s配置与活动任务排空，真实PG组合及发布回归/wheel通过。原长等待信号延迟60.052s，调整后0.122s（定向功能测试，非生产性能）|
-|Next WBS|AUD-03-A06-A04-P03-A07-P04-P03-P06-P11：Windows安全来源与后台CLI装配前置检查；随后外部Console/服务控制/公平隔离/提交Jobs HTTP。未知跨进程命令恢复、公开POST/If-Match仍待。网络/质量/Gate/正式材料/完整Scope保留，Server2025未验、Debian13暂缓|
+|Test Summary|P06-P11 Windows11/Python3.13后端1111项无失败（2既有环境跳过）；5新unit固定来源/缺源关闭/License固定接线/CLI边界及活心跳拒绝资源关闭、静止禁止并行run；真实临时Windows DB Credential/Vault-identity+PG18当前Schema，缺真实包内公钥拒绝/六表不写/构造DB释放；显式合成License下真实Windows工厂经process adapter两Scope发布/撤权失败/empty-stop无写/静止关闭，原发布及wheel通过。正式来源未供给|
+|Next WBS|AUD-03-A06-A04-P03-A07-P04-P03-P06-P12：真实Windows后台子进程/外部停止与装配收口；再公平隔离/公开提交Jobs HTTP。未知跨进程命令恢复、公开POST/If-Match仍待。网络/质量/Gate/正式材料/完整Scope保留，Server2025未验、Debian13暂缓|
 
 ## 自动执行策略
 
@@ -24,6 +24,8 @@
 - GitHub：允许在当前 Scope 和正确分支内自动 fetch、commit、push；禁止 force push、直接提交 main、覆盖未知远端修改或提交 Secret/客户数据。
 
 ## 最近检查点
+
+- 2026-09-27/P06-P11内部通过：保旧License入口、新Worker有界runtime固定信任装配；Windows CLI无秘密参数、--once LIMIT非就绪，Loop/Step/Supervisor全静止锁保护DB关闭，活线程拒绝关闭。1111无失败（2跳过）、临时Credential/真实Vault+PG两Scope合成Window组合发布及缺正式公钥失败关闭/六表无写、CLI边界/wheel通过。正式来源/外部Console/服务/完整包/Gate待，无Migration/API/依赖。
 
 - 2026-09-27/P06-P10内部通过：主线程注册/全局互斥，signal只置标志、桥线程正常Event stop，handler全恢复/失败poison；记录Windows长等待延迟偏差后保poll截止以50ms小段等待。7新unit/1106无失败（2跳过）、独立合成进程SIGINT idle与已知任务排空、PG组合发布回归/wheel通过。外部Console/服务/正式来源/其他平台/完整包/Gate待，无Migration/API/依赖。
 
