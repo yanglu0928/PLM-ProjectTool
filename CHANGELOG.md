@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A02-P02-A01/CR-JOB-002 新增0039和Job首次取消申请人/原因/UTC时点；旧NULL不猜回填，首信息/技术身份固定、取消历史删除/truncate/复活/down保护。860项无失败（2环境跳过）、真实空/旧数据迁移/parity/down竞争锁和四项回归、开发wheel PASS。升级需0039/备份维护；含取消信息不得降级，无API/依赖变更。真实取消/Worker/正式包未完成，Server2025未验、Debian13暂缓。
+
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A02-P01 增加Jobs事务内只检查当前租约公共Port，真实Job/Lease/Attempt锁、worker/fencing/到期/一致性与旧Worker拒绝通过，不续租/完成/commit。857项无失败（2环境跳过）、真实租约回归与开发wheel PASS；无Migration/API/依赖，升级无新动作。取消状态合成，真实取消/完整Worker/正式包未完成，Server2025未验、Debian13暂缓。
 
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A01 增加Auth当前User事实公共Port与Audit异步三检查点实际权限检查；User/PM/成员/部门/Admin事实锁、撤权/范围/归档维护/无业务写验证通过，853项无失败（2环境跳过）、原子提交回归与开发wheel PASS。无Migration/API/依赖，升级需既有0038无新动作。Export坐标和License合成，Root/Lease/取消编排、文件发布及正式包未完成，Server2025未验、Debian13暂缓。

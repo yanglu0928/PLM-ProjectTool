@@ -3480,3 +3480,10 @@
 - Decision：新增Jobs公共JobLeaseCheckpoint，精确nonzero UUID/positive int64 token/worker校验，调用owned repository锁Job→Lease→Attempt，当前RUNNING/对应worker/token/未完成attempt/一致attempt_no及到期时点/未到期才返回现存ClaimedJob。取消中及所有非RUNNING状态拒绝，不heartbeat/finish/commit，不提供跨事务凭据。Caller必须短事务，长I/O不得持锁，后续发布重新检查。
 - Verification：真实当前成功且全表不变、竞争三事实锁、错worker/token/ID、到期/实际接管、取消中及终态、篡改期限/attempt编号、caller故障回滚及原租约回归。取消状态用测试设置只证明拒绝，不冒充真实取消流程。Audit Root/actor/scope/acceptance绑定及锁反序由后续编排另验。
 - Risk/rollback：Lease不是业务授权；保留A01当前权限。锁内到期仍须发布时重验，不能声称初次检查永久有效。撤未装配入口无迁移/历史删除/生产操作；POST保持关闭。
+
+## DEC-20260926-199
+
+- Date：2026-09-26；WBS：AUD-03-A06-A02-P02-A01。
+- Precode：Phase2；输入冻结DM-04/API-03、A02-P01、CR-JOB-002；Job协作取消信息缺失已代码核查，先补必要Schema。模块Jobs，实体Job，新增三nullable字段，无API/权限授予/依赖。验收空/旧数据up/down/parity、不可猜回填/不可变取消信息/历史保护/并发降级锁。
+- Decision：0039沿CR-JOB-002补齐首次申请人/原因/UTC时点，首值固定、取消态不可复活/删除、有历史禁止truncate/down。旧全NULL保持，元数据不代表实际授权；完整取消Port在下一分项，不用Schema替代Worker/HTTP。
+- Risk/rollback：增量DDL锁需备份维护；含取消信息不可down，无信息可撤列；无生产迁移/自动删历史。错误与未知内容不公开原理由，Secret文本识别不能仅靠CHECK。正式Scope/Gate保持。

@@ -20,6 +20,13 @@ class JobRow(Base):
         CheckConstraint("(scope IN ('GLOBAL','DEPLOYMENT') AND project_id IS NULL) OR (scope='PROJECT' AND project_id IS NOT NULL)", name="ck_job_jobs__scope"),
         CheckConstraint("state IN ('PENDING','RUNNING','RETRY_WAIT','SUCCEEDED','FAILED','CANCEL_REQUESTED','CANCELLED')", name="ck_job_jobs__state"),
         CheckConstraint("attempt_count >= 0 AND max_attempts > 0 AND fencing_token >= 0", name="ck_job_jobs__counters"),
+        ForeignKeyConstraint(["cancel_requested_by"], ["plm.auth_users.user_id"], name="fk_job_jobs__cancel_user"),
+        CheckConstraint("""(cancel_requested_by IS NULL AND cancel_reason IS NULL AND cancel_requested_at IS NULL)
+ OR (cancel_requested_by IS NOT NULL AND cancel_reason IS NOT NULL AND cancel_requested_at IS NOT NULL
+ AND cancel_requested_by<>'00000000-0000-0000-0000-000000000000'::uuid
+ AND char_length(cancel_reason) BETWEEN 1 AND 1024 AND cancel_reason=btrim(cancel_reason)
+ AND isfinite(cancel_requested_at) AND cancel_requested_at>=created_at
+ AND state IN ('CANCEL_REQUESTED','CANCELLED'))""", name="ck_job_jobs__cancel_shape"),
         Index("ix_job_jobs__claim", text("priority DESC"), "available_at", "job_id", postgresql_where=text("state IN ('PENDING','RETRY_WAIT')")),
         Index("ix_job_jobs__lease_expiry", "lease_expires_at", "job_id", postgresql_where=text("state='RUNNING'")),
     )
@@ -41,6 +48,9 @@ class JobRow(Base):
     lease_expires_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True, precision=6))
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False, server_default=text("statement_timestamp()"))
     completed_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True, precision=6))
+    cancel_requested_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    cancel_reason: Mapped[str | None] = mapped_column(Text)
+    cancel_requested_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True, precision=6))
 
 
 class JobAttemptRow(Base):

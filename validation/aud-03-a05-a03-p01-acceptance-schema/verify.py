@@ -10,6 +10,7 @@ from psycopg import sql
 from alembic import command,op
 from alembic.autogenerate import compare_metadata
 from alembic.migration import MigrationContext
+from alembic.script import ScriptDirectory
 from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
@@ -106,7 +107,7 @@ def main():
                 try:command.downgrade(cfg,"20260926_0037")
                 except RuntimeError as exc:assert "history exists; downgrade refused" in str(exc)
                 else:raise AssertionError("first results deleted on down")
-                assert db.execute("SELECT version_num FROM plm.alembic_version").fetchone()[0]=="20260926_0038"
+                assert db.execute("SELECT version_num FROM plm.alembic_version").fetchone()[0]==ScriptDirectory.from_config(cfg).get_current_head()
                 assert db.execute("SELECT * FROM plm.aud_export_acceptances WHERE export_id=%s",(ref,)).fetchone()==fixed
             print("AUD-03-A05-A03-P01 PASS: ORM parity, empty/old root+Audit up/down/re-up unchanged/no backfill; matching PROJECT/DEPLOYMENT first result; source/trace/actor/scope/purpose/typed Job target/time/UUID/unique checks; immutable refs; down write lock and history refusal. Synthetic Job/Event refs, NOT existence/authority/receipt/enqueue/full submit/API/production")
         finally:
