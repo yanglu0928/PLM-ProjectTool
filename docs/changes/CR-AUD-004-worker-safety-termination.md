@@ -24,3 +24,5 @@ P03追加证据：失败提交确认丢失只读核验内部PASS，真实commit�
 P04-P01/P02取消申请前置已验证：冻结creator或PM当前权限、可信Root取原actor/spec，Job首申请与USER Audit/持久不可变响应同UOW，首源缺失拒绝采用裸技术状态；真实并发/回滚/终态不撤回/原响应不漂移证明。1017无失败（2环境跳过）。后台SystemActor确认/过期恢复、公开HTTP/执行器/retry仍待，不将本申请或technical ack测试当取消整体PASS。
 
 P04-P03当前活代后台确认内部PASS：真实首USER来源+当前SystemActor+最小SYSTEM Audit/实际Worker-fence-alive ack同UOW，User/License撤权仅安全终止，后置Audit/ack/identity故障回滚，真实到期拒绝活代入口。1021无失败（2环境跳过），原发布/wheel通过。到期恢复/确认丢失/主循环/retry/HTTP尚待，不将CR或取消整体关闭。
+
+P04-P04严格当前代到期恢复内部PASS：首USER源+当前identity与最小SYSTEM恢复Audit、实际DB到期/当前Worker-fence一致Job-Lease-Attempt转换同UOW，实际两Scope短租约与写后回滚/错绑定/未到期/终态/裸技术源矩阵通过，首历史/字节/结果不变；1025无失败（2环境跳过）、原发布/wheel通过。旧通用恢复保留但执行Owner不采用。到期仅DB fencing非OS强杀；取消确认丢失/执行器/主循环/retry/HTTP未完成，CR/Gate保持未关闭。

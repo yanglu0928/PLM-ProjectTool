@@ -79,6 +79,7 @@ def validate_cancel_request(*,target,requested_by,reason):
 
 
 class AuditExportCancellationRepositoryPort(Protocol):
+    def recover_current_expired_cancel(self,transaction:object,*,target:AuditExportCancellationTarget,fencing_token:int,worker_ref:str)->AuditExportCancellationResult: ...
     def read_facts(self,transaction:object,*,target:AuditExportCancellationTarget)->AuditExportCancelFacts: ...
     def request_cancel(self,transaction:object,*,target:AuditExportCancellationTarget,requested_by:UUID,reason:str)->AuditExportCancellationResult: ...
     def acknowledge_cancel(self,transaction:object,*,target:AuditExportCancellationTarget,fencing_token:int,worker_ref:str)->AuditExportCancellationResult: ...
@@ -127,4 +128,12 @@ class AuditExportCancellation:
         validate_target(target)
         result=self._call(transaction,target,self._repository.recover_expired_cancel)
         if result.state!="CANCELLED":raise AuditExportCancellationError("JOB_STORE_UNAVAILABLE")
+        return result
+
+    def recover_current_expired_cancel(self,transaction,*,target,fencing_token,worker_ref):
+        validate_target(target)
+        try:validate_checkpoint(job_id=target.refs.job_id,fencing_token=fencing_token,worker_ref=worker_ref)
+        except JobLeaseError:raise AuditExportCancellationError('VALIDATION_FAILED') from None
+        result=self._call(transaction,target,self._repository.recover_current_expired_cancel,fencing_token=fencing_token,worker_ref=worker_ref)
+        if result.state!='CANCELLED' or result.changed is not True:raise AuditExportCancellationError('JOB_STORE_UNAVAILABLE')
         return result

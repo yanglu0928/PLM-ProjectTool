@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-232
+
+- Date/WBS：2026-09-27 / P04-P03-P04-P04；Phase2，编码前检查已登记，输入CR-AUD-004/ADR011，前置首USER源、静止锁、受控identity、alive取消Owner已验。
+- Decision：保留无Worker/fence的旧技术恢复，另增严格当前Worker/fence/一致Job-Lease-Attempt和实际DB时钟到期恢复；首USER源与当前identity核验→最小SYSTEM AUDIT_EXPORT_CANCEL_RECOVERED/LEASE_EXPIRED→identity后验→owned转换最后→commit。无权限扩张、文件删除或OS强杀断言。
+- Evidence：4新unit，实际PG临时Vault两Scope真正2秒到期/未到期/旧代/错Worker/原Root/成功/重复/裸技术来源矩阵，Audit及恢复实际写后/后验identity故障整体回滚；撤User+License业务拒绝但安全恢复成功，首历史/字节/结果保留。完整后端1025项无失败（2环境跳过）、旧发布和开发wheel通过，包hash记录进度文件。首次hash文件名误用纠正复核，构建未失败。
+- Risk/rollback：期限仅DB fencing；主执行同步I/O应已返回，静止锁非跨进程强杀。无Migration/API/依赖或生产升级，撤未装配Owner保终态历史；确认丢失/执行器/主循环/retry/HTTP与可用包/Gate待，Next取消确认丢失核验。
+
 ## DEC-20260926-231
 
 - Date/WBS：2026-09-26 / P04-P03-P04-P03；前置实际首申请当前权限/USER Audit和owned Jobs ack/SystemActor/静止锁已验；输入CR-AUD-004/ADR011。只做当前活代安全确认，无权限扩张或新申请。

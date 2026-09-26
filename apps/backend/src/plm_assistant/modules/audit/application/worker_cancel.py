@@ -1,4 +1,4 @@
-"""Controlled cancellation acknowledgement ONLY; no business authority or file I/O."""
+"""Controlled cancellation acknowledgement/recovery; no business authority or file I/O."""
 from uuid import UUID
 from .heartbeat_coordinator import AuditHeartbeatSupervisor
 from .worker_capture import AuditExportCaptureCommand,AuditExportWorkerCapture,AuditExportWorkerError
@@ -23,11 +23,18 @@ class AuditExportWorkerCancel:
         except Exception:raise AuditExportWorkerError('SYSTEM_ACTOR_UNAVAILABLE') from None
 
     def acknowledge(self,command):
+        return self._invoke(command,expired=False)
+
+    def recover_expired(self,command):
+        """DB-fenced expiry recovery; NEVER a claim that another process was killed."""
+        return self._invoke(command,expired=True)
+
+    def _invoke(self,command,*,expired):
         if type(command) is not AuditExportCaptureCommand:raise AuditExportWorkerError('VALIDATION_FAILED')
         command.__post_init__()
         with self._supervisor.stopped(command):
             for attempt in range(3):
-                try:return self._acknowledge(command)
+                try:return self._acknowledge(command,expired=expired)
                 except Exception as exc:
                     if self._repo.is_retryable_deadlock(exc) is True:
                         if attempt<2:continue
@@ -37,7 +44,7 @@ class AuditExportWorkerCancel:
                     # Failed source proof details and DB messages never escape.
                     raise AuditExportWorkerError() from None
 
-    def _acknowledge(self,c):
+    def _acknowledge(self,c,*,expired=False):
         identity=self._identity()
         with self._uow() as tx:
             intent=self._repo.get_created(tx,export_id=c.export_id);AuditExportWorkerCapture._intent(intent,c)
@@ -53,11 +60,12 @@ class AuditExportWorkerCancel:
             first.__post_init__()
             event_id=self._audit.append(tx,AuditEventDraft(trace_id=intent.trace_id,event_scope=intent.spec.scope,
                 target_project_id=intent.spec.project_id,actor_type='SYSTEM',actor_id=identity,original_actor_id=intent.actor_id,
-                actor_hint_digest=None,action='AUDIT_EXPORT_CANCELLED',outcome='SUCCESS',target_owner_module='jobs',
-                target_object_type='JOB-01',target_object_id=c.job_id,reason_code='USER_REQUESTED',before_state='CANCEL_REQUESTED',after_state='CANCELLED'))
+                actor_hint_digest=None,action='AUDIT_EXPORT_CANCEL_RECOVERED' if expired else 'AUDIT_EXPORT_CANCELLED',outcome='SUCCESS',target_owner_module='jobs',
+                target_object_type='JOB-01',target_object_id=c.job_id,reason_code='LEASE_EXPIRED' if expired else 'USER_REQUESTED',before_state='CANCEL_REQUESTED',after_state='CANCELLED'))
             if type(event_id) is not UUID or not event_id.int:raise AuditExportWorkerError()
             if self._identity()!=identity:raise AuditExportWorkerError('SYSTEM_ACTOR_UNAVAILABLE')
-            result=self._cancel.acknowledge_cancel(tx,target=target,fencing_token=c.fencing_token,worker_ref=c.worker_ref)
+            method=self._cancel.recover_current_expired_cancel if expired else self._cancel.acknowledge_cancel
+            result=method(tx,target=target,fencing_token=c.fencing_token,worker_ref=c.worker_ref)
             if (type(result) is not AuditExportCancellationResult or result.job_id!=c.job_id
                     or result.state!='CANCELLED' or result.changed is not True):raise AuditExportWorkerError()
             result.__post_init__()

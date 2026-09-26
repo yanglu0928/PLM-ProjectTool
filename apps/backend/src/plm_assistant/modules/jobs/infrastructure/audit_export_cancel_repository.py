@@ -98,3 +98,17 @@ class SqlAlchemyAuditExportCancellationRepository:
         now=self._leases._now(session)
         if lease.lease_expires_at>now:raise Error("LEASE_NOT_EXPIRED")
         return self._finish(session,job,lease,attempt,now,expired=True)
+
+    def recover_current_expired_cancel(self,transaction,*,target,fencing_token,worker_ref):
+        """Current generation ONLY; expiry is DB fencing, not process termination."""
+        validate_target(target)
+        try:validate_checkpoint(job_id=target.refs.job_id,fencing_token=fencing_token,worker_ref=worker_ref)
+        except JobLeaseError:raise Error('VALIDATION_FAILED') from None
+        session,job=self._bound(transaction,target)
+        self._history(job)
+        if job.state!='CANCEL_REQUESTED' or job.fencing_token!=fencing_token:raise Error('STALE_LEASE')
+        lease,attempt=self._active(session,job)
+        if lease.worker_ref!=worker_ref:raise Error('STALE_LEASE')
+        now=self._leases._now(session)
+        if lease.lease_expires_at>now:raise Error('LEASE_NOT_EXPIRED')
+        return self._finish(session,job,lease,attempt,now,expired=True)
