@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/AUD-03-A04-P01/CR-AUD-001 实施前登记不可变导出/capture三表及迁移计划，新增纯领域成员摘要规范与安全拒绝规则。Windows11后端813项无失败（2项环境跳过），8项新unit与开发wheel PASS；不代表数据库capture/真实权限/文件导出完成。无Migration/API/角色/依赖变化，升级无动作；0037待实施，Server2025未验、Debian13暂缓，完整可用包/Gate仍未完成。
+
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A03 新增固定内部导出Spec/用途/Scope/时间与完整指纹、当前Worker权限Port合同；指纹/DTO不是授权或snapshot，实际Auth/Owner实现待。Windows11后端805项无失败（2项环境跳过），纯合同8项与开发wheel PASS，无新增真实权限/数据库/HTTP/文件验收。无Migration/API/角色/依赖变化，升级无动作；导出/正式包未完成，Server2025未验、Debian13暂不验证。
 
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A02/CR-JOB-001 新增0036并对齐Job/Outbox ORM，恢复冻结DEPLOYMENT Scope（无项目）；原Document Parse范围不变。Windows11后端797项无失败（2项环境跳过），空/有数据迁移保留旧行/有部署历史拒绝down/双表并发锁/Scope唯一性/ORM租约投递及相关回归、开发wheel PASS。升级备份到0036；含DEPLOYMENT历史不可down，离线down关闭。无API/角色/依赖变化，无生产迁移，实际导出/可用包未完成，Server2025未验、Debian13暂不验证。
