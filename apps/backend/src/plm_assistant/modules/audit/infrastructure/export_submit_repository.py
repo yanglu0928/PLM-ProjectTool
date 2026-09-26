@@ -48,6 +48,11 @@ class SqlAlchemyAuditExportSubmitRepository:
         row=_session(tx).execute(select(exports).where(exports.c.export_id==export_id)).mappings().one_or_none()
         return None if row is None else self._intent(row)
 
+    def get_created_for_job(self,tx,*,job_id):
+        """Audit-owned immutable acceptance lookup; no Jobs table access."""
+        export_id=_session(tx).execute(select(acceptances.c.export_id).where(acceptances.c.job_id==job_id)).scalar_one_or_none()
+        return None if export_id is None else self.get_created(tx,export_id=export_id)
+
     def _bind(self,tx,intent):
         if type(intent) is not AuditExportIntent:raise AuditExportSubmitError()
         intent.__post_init__()

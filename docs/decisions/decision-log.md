@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-259
+
+- Precode：Phase2/JOB-01-A01，CR-JOB-001在实施前记录；冻结通用Job详情授权链，不直接序列化ORM或以Job/Lease状态猜Owner结果。
+- Decision：Jobs只读事实+显式Owner Registry，真实Session/License/Project/actor权限，同事务Owner原源绑定后再读快照；未知Owner/type失败关闭。Audit首个安全资源引用不授正文下载权；Project JOB_PROJECT_GET按冻结四角色/creator只读锁策略。
+- Evidence：11新unit/1143无失败/2跳过，实际PG双ScopePENDING/RUNNING/SUCCEEDED、原发布Result、当前PM/IM/客户自身、Admin/项目隔离、User/Department停用/未知Session/错actor拒绝六表无写，原发布通过。初次新增测试边界和验证worker属性错误均记录后修正，不改领取语义。
+- Impact：无Migration/API/依赖/升级，撤只读Service/Port/策略回滚。当前Audit Owner仅内部已验，不冒充通用HTTP/完整JobView/ETag/其他Owner/Gate/完整包完成；下一A02合同/版本前置后GET与装配。
+
 ## DEC-20260927-258
 
 - Context：P06-P13-P08，当前acca660源码及真实验收记录；按项目Skill核对覆盖，不继续无界拆分已验有限调度子任务。
