@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260926-220
+
+- Date/WBS：2026-09-26 / AUD-03-A06-A04-P03-A06-P03；前置P01/P02增量契约与实际授权/字节/资源生命周期PASS。
+- Decision：Windows两显式平台模式挂既有四GET，复用Auth read/Project/License与各Owner公开Port；不额外要求Worker身份供给、不装配Worker或开放POST，无新Schema/角色/依赖。default/login-only404保留，装配异常沿用dispose+安全StartupError。
+- Evidence：实际PG发布dualScope260与临时文件到两factory详情/完整Hash下载及Session/Scope/Admin旁路/许可/坏文件拒绝PASS；三构造故障不发布app，两模式dispose一次unit通过；旧WindowsAudit/上传Finalize完整回归通过，963后端无失败（2跳过）、wheel成功。
+- Risk/rollback：Credential/License/cursor/write信任注入合成，不是正式账户/三平台/代理/性能验收。撤显式挂载保所有历史，Next Worker协调/心跳前置和实际循环，然后提交/Jobs HTTP；完整Scope、质量/Gate/可用包仍待。
+
 ## DEC-20260926-219
 
 - Date/WBS：2026-09-26 / AUD-03-A06-A04-P03-A06-P02；前置P01契约/P03-A05快照PASS。

@@ -18,3 +18,5 @@
 实施记录：P03-A06-P01可选两详情GET已实现；4契约测试、真实PG已发布双Scope/当前Session权限与无业务写验证PASS，全后端955项无失败（2既有环境跳过）、开发wheel成功。无Migration/依赖/生产组合，原API保留。下载/生命周期/P03装配尚未实施，CR整体不标完成。详见对应进度记录。
 
 P02实施记录：两内容GET已实现；准备/读线程取消的显式资源所有权与Response外层finally，取消不提前释放活跃线程名额；7契约/ASGI tests与实际PG/文件双Scope空/260字节/Hash/权限/复制后撤销/坏文件最小Audit通过。全后端962无失败（2环境跳过）、wheel成功。无Migration/依赖，默认404，生产组合留P03；真实代理/目标账户/三平台/性能未验，整体CR不标完成。
+
+P03实施记录：四GET在两种Windows显式平台模式完成装配，当前Auth/License/Project与Audit/Document/Jobs公开Port，无新信任材料。实际PG/文件260条dualScope到两factory完整摘要/字节/权限/坏文件验证通过；default/login-only和POST保持404；三初始化故障不发布app且两factory dispose实测，旧WindowsAudit与上传Finalize回归通过。963后端无失败（2环境跳过）、wheel成功。读接口增量状态 IMPLEMENTED_WIN11_SYNTHETIC_COMPOSITION；正式账户/代理/三平台/性能保留Release验收，不标生产或整体交付PASS。

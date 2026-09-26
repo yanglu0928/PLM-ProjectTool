@@ -12,6 +12,18 @@ from plm_assistant.entrypoints.windows_audit_list_cursor import create_windows_a
 from plm_assistant.modules.audit.api.read_events import create_audit_read_router
 from plm_assistant.modules.audit.application.authorized_read import AuthorizedAuditReadService
 from plm_assistant.modules.audit.infrastructure.audit_read_repository import SqlAlchemyAuditReadRepository
+from plm_assistant.modules.audit.api.read_export_result import create_audit_export_result_router
+from plm_assistant.modules.audit.api.download_export import create_audit_export_download_router
+from plm_assistant.modules.audit.application.export_content import AuditExportContentReader, PrepareAuditExportContent
+from plm_assistant.modules.audit.infrastructure.export_submit_repository import SqlAlchemyAuditExportSubmitRepository
+from plm_assistant.modules.audit.infrastructure.export_result_repository import SqlAlchemyAuditExportResults
+from plm_assistant.modules.audit.infrastructure.render_plan_repository import SqlAlchemyAuditRenderPlans
+from plm_assistant.modules.document.infrastructure.audit_export_metadata import SqlAlchemyAuditExportFileMetadata
+from plm_assistant.modules.document.infrastructure.audit_export_storage import LocalAuditExportFileStorage
+from plm_assistant.modules.jobs.application.audit_export_complete import AuditExportJobCompletion
+from plm_assistant.modules.jobs.application.audit_export_enqueue import AuditExportJobQueue
+from plm_assistant.modules.jobs.infrastructure.audit_export_enqueue_repository import SqlAlchemyAuditExportJobQueueRepository
+from plm_assistant.modules.jobs.infrastructure.lease_repository import SqlAlchemyJobLeaseRepository
 from plm_assistant.entrypoints.windows_secret_list_cursor import create_windows_secret_list_cursor_codec
 from plm_assistant.entrypoints.windows_project_member_cursor import create_windows_project_member_cursor_codec
 from plm_assistant.entrypoints.windows_project_department_cursor import create_windows_project_department_cursor_codec
@@ -226,6 +238,8 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         project_read_router = None
         workflow_read_router = None
         audit_read_router = None
+        audit_export_result_router = None
+        audit_export_download_router = None
         project_create_router = None
         project_patch_router = None
         project_archive_router = None
@@ -295,6 +309,29 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                     unit_of_work=runtime.unit_of_work,
                     audit=audit,
                 ),
+                origins=origins,
+            )
+            export_reads = AuditExportContentReader(
+                unit_of_work=runtime.unit_of_work,
+                project_access=SqlAlchemyProjectReadAccess(),
+                deployment_access=SqlAlchemyDeploymentReadAccess(),
+                projects=ProjectAuthorizationService(
+                    unit_of_work=runtime.unit_of_work,
+                    repository=SqlAlchemyProjectAuthorizationRepository(),
+                ),
+                license_guard=licenses.guard,
+                repository=SqlAlchemyAuditExportSubmitRepository(),
+                results=SqlAlchemyAuditExportResults(), plans=SqlAlchemyAuditRenderPlans(),
+                files=SqlAlchemyAuditExportFileMetadata(),
+                completion=AuditExportJobCompletion(
+                    queue=AuditExportJobQueue(SqlAlchemyAuditExportJobQueueRepository()), leases=SqlAlchemyJobLeaseRepository(),
+                ),
+                audit=audit,
+            )
+            audit_export_result_router = create_audit_export_result_router(reads=export_reads, origins=origins)
+            audit_export_download_router = create_audit_export_download_router(
+                downloads=PrepareAuditExportContent(reader=export_reads,
+                    storage=LocalAuditExportFileStorage(LocalFileStorage(settings.data_root))),
                 origins=origins,
             )
             metadata = SecretMetadataService(
@@ -593,6 +630,8 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             project_read_router=project_read_router,
             workflow_read_router=workflow_read_router,
             audit_read_router=audit_read_router,
+            audit_export_result_router=audit_export_result_router,
+            audit_export_download_router=audit_export_download_router,
             project_create_router=project_create_router,
             project_patch_router=project_patch_router,
             project_archive_router=project_archive_router,
