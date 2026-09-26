@@ -25,6 +25,14 @@ from plm_assistant.modules.jobs.application.audit_export_enqueue import AuditExp
 from plm_assistant.modules.jobs.infrastructure.audit_export_enqueue_repository import SqlAlchemyAuditExportJobQueueRepository
 from plm_assistant.modules.jobs.infrastructure.lease_repository import SqlAlchemyJobLeaseRepository
 from plm_assistant.modules.jobs.api.read_detail import create_job_detail_router
+from plm_assistant.modules.jobs.api.cancel import create_project_job_cancel_router
+from plm_assistant.modules.jobs.application.cancel_request import ProjectJobCancellation
+from plm_assistant.modules.jobs.application.audit_export_cancel import AuditExportCancellation
+from plm_assistant.modules.jobs.infrastructure.audit_export_cancel_repository import SqlAlchemyAuditExportCancellationRepository
+from plm_assistant.modules.audit.application.job_cancel_adapter import AuditJobCancelOwner
+from plm_assistant.modules.audit.application.request_export_cancel import AuditExportCancelRequestService
+from plm_assistant.modules.audit.application.export_cancel_authorization import AuditExportCancelAuthorization
+from plm_assistant.modules.audit.infrastructure.export_cancel_sources import SqlAlchemyAuditExportCancelSources
 from plm_assistant.modules.jobs.application.authorized_read import AuthorizedJobReadService
 from plm_assistant.modules.jobs.infrastructure.read_repository import SqlAlchemyJobReadRepository
 from plm_assistant.modules.audit.application.job_read_projection import AuditJobReadProjection
@@ -249,6 +257,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         audit_export_download_router = None
         audit_export_submit_router = None
         job_detail_router = None
+        job_cancel_router = None
         project_create_router = None
         project_patch_router = None
         project_archive_router = None
@@ -537,6 +546,23 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 sessions=sessions, departments=department_deactivates, origins=origins,
             )
             if include_secret_write:
+                job_cancel_router = create_project_job_cancel_router(
+                    sessions=sessions,origins=origins,
+                    cancellations=ProjectJobCancellation(
+                        unit_of_work=runtime.unit_of_work,repository=SqlAlchemyJobReadRepository(),
+                        sessions=sessions,license_guard=licenses.guard,
+                        owners={('audit','AUDIT_EXPORT'):AuditJobCancelOwner(
+                            requests=AuditExportCancelRequestService(
+                                unit_of_work=runtime.unit_of_work,repository=SqlAlchemyAuditExportSubmitRepository(),
+                                authorization=AuditExportCancelAuthorization(
+                                    project_access=SqlAlchemyProjectWriteAccess(),deployment_access=SqlAlchemyLicenseImportAccess(),
+                                    projects=ProjectAuthorizationService(unit_of_work=runtime.unit_of_work,
+                                        repository=SqlAlchemyProjectAuthorizationRepository()),license_guard=licenses.guard),
+                                cancellations=AuditExportCancellation(repository=SqlAlchemyAuditExportCancellationRepository()),
+                                receipts=SqlAlchemyIdempotencyReceipts(),sources=SqlAlchemyAuditExportCancelSources(),audit=audit,
+                            ))},
+                    ),
+                )
                 audit_export_submit_router = create_audit_export_submit_router(
                     sessions=sessions,origins=origins,
                     exports=AuditExportSubmitService(
@@ -669,6 +695,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             audit_export_download_router=audit_export_download_router,
             audit_export_submit_router=audit_export_submit_router,
             job_detail_router=job_detail_router,
+            job_cancel_router=job_cancel_router,
             project_create_router=project_create_router,
             project_patch_router=project_patch_router,
             project_archive_router=project_archive_router,

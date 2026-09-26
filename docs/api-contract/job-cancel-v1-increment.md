@@ -1,5 +1,7 @@
 # 项目Job协作取消Contract增量
 
+JOB-02-A05（2026-09-27）装配更新：Windows仅--platform-write已装项目取消、当前原信任和显式Audit Owner事务。默认/login404、--platform只读已有GET导致未提供POST405，Admin未提供取消POST仍405。实际Write Factory/PG/当前Session-CSRF两状态取消及Worker确认/currentGETv3和原重放v2、失败关闭通过。前文“Windows尚未接线”为A04历史状态保留；正式材料/其他Owner/三平台/性能/Gate尚未完成。
+
 2026-09-27 / JOB-02-A04，原冻结API-01/03与64cdf09保留，无Breaking路径/角色变更。可选 `POST /api/v1/projects/{project_id}/jobs/{job_id}:cancel`，不新增JOB_ADMIN_CANCEL。默认create_app未注入Router仍404；只挂本取消Router时Admin404，已有Job GET同挂时未知Admin POST因原动态GET路径匹配而405，均无取消写入口。Windows写组合本项尚未接线。
 
 请求：可信Host/Origin，唯一严格Cookie plm_session、X-CSRF-Token、Idempotency-Key；强If-Match映射expected_version，缺失428 CONFLICT_VERSION_REQUIRED，弱/多值/通配/畸形400，实际旧版本409 CONFLICT_VERSION。Content-Type application/json（可charset=utf-8），最多8192 bytes UTF8严格JSON，唯一reason字段（trim1～1024字符、禁止控制字符）；重复/未知/非标准常量拒绝400，原因值非法422。禁止客户端传Owner/Scope/export_id/路径。UUID零值404，其他非规范UUID按通用422；非空query400。

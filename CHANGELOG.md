@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/JOB-02-A05仅Windows显式write装项目取消，原许可/会话/Audit Owner事务与首次版本保留；default/login404、readonly及未提供Admin POST405，无写权限。实际Write Factory PG/Session提交v0→取消v2、真实运行v1→请求v2→Worker确认/currentGETv3与原重放v2、拒绝十一表无写/六新构造故障及实际正式缺材关闭、旧Windows提交/下载/发布回归通过；后端1177无失败/2既有跳过与wheel通过。无本轮Migration/API新路径/依赖/权限，需0044，撤write接线回滚保历史。Document/其他Owner/列表/重试/正式材料/三平台/完整包/Gate待。
+
 - 2026-09-27：`0.1.0.dev0`/JOB-02-A04新增可选项目Job :cancel HTTP、当前许可/Session与显式Owner分派、Audit原同事务再授权、强If-Match/CSRF/Key/严格JSON与首次state/强ETag重放；默认未挂，Admin不新增（原GET同挂时未支持POST405）。Windows11后端1177无失败/2既有跳过；真实PG-ASGI同Key并发单次/Worker当前v3与重放原v2、权限/版本/隔离/未知Owner/旧None拒绝十一表无写、快照后故障回滚/分派后撤权拒绝、原A03/发布与开发wheel通过。无本轮Migration/依赖/权限变化，需0044；撤可选入口回滚保历史。Windows装配/正式材料/其他Owner/三平台/完整包/Gate待。
 
 - 2026-09-27：`0.1.0.dev0`/JOB-02-A03按CR-JOB-004新增0044/Audit只追加首次取消版本快照，新JobId请求原子保存实际lock_version，重放保首次state/version；旧收据未知版本不猜回填。Windows11后端1167无失败/2既有跳过，真实PG空/有数据升降级十表保持、ORM parity/非法来源/immutable/含历史降级拒绝、两Scope并发单快照/Worker当前v3重放原v2、insert后十一表回滚、旧Owner/发布回归及wheel通过。生产升级需人工备份维护停写再0044，含历史不能降级删除，撤新入口保历史回旧代码；无依赖/权限/公开API变更。项目HTTP/正式材料/三平台/完整包/Gate待。

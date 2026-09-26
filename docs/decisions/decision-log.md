@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-269
+
+- Precode：Phase2/JOB-02-A05，A04/0044/Windows提交与GET前置满足，详见windows-cancel进度；仅include_secret_write接项目取消，原信任/权限/事务依赖，无Schema/API/依赖变动。
+- Decision：默认/login关闭404，readonly原GET匹配未支持POST405，Admin未提供取消POST；不新增stub。实际Audit取消Owner同UOW当前授权/来源/版本/首次receipt不变。
+- Acceptance：实际Write Factory PG/Session两状态取消+Worker确认后重放与currentGET差异、拒绝无写/构造故障/正式缺材关闭，旧Windows提交/下载/发布回归。回滚撤write接线保历史，非正式材料/Gate/包通过；证据待追加。
+- Evidence：真实Windows Write Factory提交PENDINGv0→HTTP取消v2；真实RUNNINGv1→HTTP请求v2→实际Worker确认/currentGETv3与原重放v2，拒绝十一表无写；三非写模式/无Admin取消入口、六构造故障与实际正式缺材拒绝半启动。旧Windows提交/下载/发布回归与1177无失败/2跳过/wheel通过。正向信任注入非正式账户，下一扩Document解析Owner前置，完整Jobs/其他Scope/Gate待。
+
 ## DEC-20260927-268
 
 - Precode：Phase2/JOB-02-A04，A01～A03/0044与冻结API-01/03前置满足，详见cancel-http进度。只可选项目HTTP，无Admin/Schema/依赖/角色变化。
