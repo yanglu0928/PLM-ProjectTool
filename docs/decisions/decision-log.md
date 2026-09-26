@@ -3098,3 +3098,11 @@
 - Reason：冻结 API 只给目标 key 和 Gate 引用，真正证明必须从 Owner/Application Port 获取；纯校验不承担授权或事实证明。
 - Impact：workflow 领域与单元测试，无数据库/API/依赖变更，结构成功不代表业务 Gate 已通过。
 - Rollback：不装配该校验器；未持久化状态，无数据回滚需求。
+
+## DEC-20260926-152
+
+- Date：2026-09-26；WBS：WFL-01-A03-P02；CR-WFL-002。
+- Decision：四表保留固定 V1 内容及 fingerprint，复合 FK/唯一约束防归属漂移；DEFERRABLE INITIALLY DEFERRED trigger 校验提交时完整性/状态指针，BEFORE trigger 防定义覆盖/删除/非法状态迁移。Migration 使用自包含快照，不引用会变动的 Domain；公开写路径仍不装配。
+- Reason：初始化需要多行同事务插入，立即跨表完整性校验会误拒绝；只靠 ORM 无法防半套提交。数据库结构校验并不具备客户 Review/Gate 事实，因此不宣称正式阶段通过。
+- Impact：Schema 增量 0030 与 ORM/测试，API/外部依赖不变；已有 Project 不回填进度。
+- Rollback：空 Workflow 可 down 到 0029；有实例拒绝降级，回滚代码装配并保留历史。

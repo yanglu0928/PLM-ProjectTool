@@ -1,6 +1,6 @@
 # CR-WFL-002：Workflow 持久层与状态语义补充
 
-日期：2026-09-26；当前任务 WFL-01-A03-P01；状态 DESIGN_RECORDED / IMPLEMENTATION_PENDING。
+日期：2026-09-26；设计任务 WFL-01-A03-P01；状态 STRUCTURE_IMPLEMENTED / APPLICATION_PENDING。P02 已实施四表/0030 并通过隔离结构验收，初始化/历史/Gate/API 仍待，结果见 P02 报告。
 依据：DM-02 Workflow、SC-01 WFL-01/WFL-02 映射、SC-02 M-PRJ/A-PRJ、API-02 Workflow、CR-WFL-001 配置 V1。原冻结提交 `64cdf09` 不修改。
 
 ## 冲突与方案
