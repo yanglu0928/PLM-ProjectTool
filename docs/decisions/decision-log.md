@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260927-265
+
+- Precode：Phase2/JOB-02-A01；输入冻结API-01/03、0043与原取消授权/事务/收据，前置PASS。涉及Jobs事实和Audit内部取消；Job/Audit/receipt实体无DDL，公开API与权限不变。CR-JOB-003实施前登记。
+- Decision：可选expected_version保留旧内部命令，显式版本绑定原指纹/operation；原持久重放先于版本比较，但始终当前授权。新命令锁内比较，冲突整事务回滚；owned锁定查询刷新数据库触发器版本，不猜加一。
+- Acceptance：严格类型/范围、旧指纹、新版本冲突与旧版本重放、双Scope真实PG状态版本/审计失败回滚、原Worker确认/发布回归；无正式材料/性能/Gate/三平台/包通过。
+- Risk/rollback：未来HTTP必须显式版本，None只兼容已有内部路径；回旧调用/代码保留历史，不生产迁移。结果待实际验证后追加。
+- Evidence：1160无失败/2既有跳过；真实PG双Scope即时v2同UOW刷新、运行v1→请求v2→实际Worker确认v3、同Key并发单次/不同Key同版本仅一成功、终态只检查；版本/指纹冲突十表无写、原收据兼容、实际Audit后故障回滚。原请求/确认/到期取消及各原发布回归和开发wheel通过。结果INTERNAL_PASS，公开Owner/HTTP/正式材料/全Scope待。
+
 ## DEC-20260927-264
 
 - Precode：AUD-03-A07-P02 windows-submit进度先记录，P01POST/原Submit/已接JobGET前置满足，只有原include_secret_write接Submit，默认/login/readonly关闭。

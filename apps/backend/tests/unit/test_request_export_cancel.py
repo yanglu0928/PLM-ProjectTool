@@ -8,6 +8,7 @@ from plm_assistant.modules.audit.application.request_export_cancel import AuditE
 from plm_assistant.modules.audit.application.export_cancel_authorization import AuthorizedAuditExportCancel
 from plm_assistant.modules.jobs.application.audit_export_cancel import AuditExportCancelFacts,AuditExportCancellationResult,AuditExportCancellationError
 from plm_assistant.modules.platform.application.idempotency import IdempotencyResult
+from plm_assistant.modules.platform.application.idempotency import canonical_payload_fingerprint
 
 
 class RequestCancelTests(TestCase):
@@ -58,3 +59,40 @@ class RequestCancelTests(TestCase):
         self.assertNotIn(self.c.reason,repr(self.after))
         for values in (dict(requested_by=None),dict(requested_at=None),dict(state='SUCCEEDED'),dict(reason='bad\x00')):
             with self.assertRaises(AuditExportCancellationError):replace(self.after,**values)
+
+    def test_version_types_are_strict_and_bounded_before_any_ports(self):
+        for version in (True,False,-1,2**63,'0',0.0):
+            with self.assertRaises(AuditExportCancelRequestError):replace(self.c,expected_version=version)
+            with self.assertRaises(AuditExportCancellationError):replace(self.before,lock_version=version)
+        for version in (0,2**63-1):
+            self.assertEqual(replace(self.c,expected_version=version).expected_version,version)
+        self.auth.require_in_transaction.assert_not_called()
+
+    def test_stale_new_command_never_cancels_audits_completes_or_commits(self):
+        self.cancel.read_facts.side_effect=[replace(self.before,lock_version=2)]
+        with self.assertRaises(AuditExportCancelRequestError) as caught:
+            self.service.request(replace(self.c,expected_version=1),idempotency_key=self.key)
+        self.assertEqual(caught.exception.code,'VERSION_CONFLICT')
+        self.receipts.reserve.assert_called_once()
+        self.cancel.request_cancel.assert_not_called();self.audit.append.assert_not_called()
+        self.receipts.complete.assert_not_called();self.f.tx.commit.assert_not_called()
+
+    def test_explicit_version_is_bound_to_original_operation_fingerprint(self):
+        self.service.request(replace(self.c,expected_version=0),idempotency_key=self.key)
+        args=self.receipts.reserve.call_args.kwargs
+        self.assertEqual(args['scope'].operation,'V1_AUDIT_EXPORT_CANCEL_DEPLOYMENT')
+        self.assertEqual(args['request_fingerprint'],canonical_payload_fingerprint(dict(
+            export_id=str(self.c.export_id),intent_hash=self.f.intent.intent_hash,reason=self.c.reason,expected_version=0)))
+
+    def test_legacy_fingerprint_is_unchanged(self):
+        self.service.request(self.c,idempotency_key=self.key)
+        self.assertEqual(self.receipts.reserve.call_args.kwargs['request_fingerprint'],canonical_payload_fingerprint(dict(
+            export_id=str(self.c.export_id),intent_hash=self.f.intent.intent_hash,reason=self.c.reason)))
+
+    def test_versioned_replay_after_version_changes_returns_original_no_writes(self):
+        self.cancel.read_facts.side_effect=[replace(self.after,lock_version=3,state='CANCELLED')]
+        self.receipts.reserve.return_value=IdempotencyResult('V1_AUDIT_EXPORT_CANCEL',self.event,200)
+        self.assertEqual(self.service.request(replace(self.c,expected_version=0),idempotency_key=self.key),self.result)
+        self.assertEqual(self.auth.require_in_transaction.call_count,2)
+        self.cancel.request_cancel.assert_not_called();self.audit.append.assert_not_called()
+        self.receipts.complete.assert_not_called();self.f.tx.commit.assert_not_called()

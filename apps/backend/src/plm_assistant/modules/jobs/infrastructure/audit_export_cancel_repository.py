@@ -44,7 +44,7 @@ class SqlAlchemyAuditExportCancellationRepository:
 
     def read_facts(self,transaction,*,target):
         _,job=self._bound(transaction,target)
-        return AuditExportCancelFacts(job.job_id,job.state,job.cancel_requested_by,job.cancel_requested_at,job.cancel_reason)
+        return AuditExportCancelFacts(job.job_id,job.state,job.cancel_requested_by,job.cancel_requested_at,job.cancel_reason,job.lock_version)
 
     def _bound(self,tx,target):
         validate_target(target)
@@ -52,7 +52,10 @@ class SqlAlchemyAuditExportCancellationRepository:
             refs=self._queue.find_export(tx,request=target.request)
             if refs!=target.refs:raise Error("CONFLICT_STATE")
             session=self._leases._session(tx)
-            job=session.execute(select(JobRow).where(JobRow.job_id==refs.job_id).with_for_update(of=JobRow)).scalar_one()
+            # Server-side version triggers may have changed a loaded row since its
+            # last flush. Re-read under the original lock; never infer the version.
+            job=session.execute(select(JobRow).where(JobRow.job_id==refs.job_id).with_for_update(of=JobRow)
+                .execution_options(populate_existing=True)).scalar_one()
             return session,job
         except (AuditExportEnqueueError,JobLeaseError) as exc:
             raise Error(exc.code) from None

@@ -48,10 +48,12 @@ class AuditExportCancelFacts:
     requested_by: UUID|None
     requested_at: datetime|None
     reason: str|None=field(repr=False)
+    lock_version: int=0
 
     def __post_init__(self):
         if (type(self.job_id) is not UUID or not self.job_id.int or type(self.state) is not str
-                or self.state not in {'PENDING','RUNNING','RETRY_WAIT','CANCEL_REQUESTED','CANCELLED','SUCCEEDED','FAILED'}):
+                or self.state not in {'PENDING','RUNNING','RETRY_WAIT','CANCEL_REQUESTED','CANCELLED','SUCCEEDED','FAILED'}
+                or type(self.lock_version) is not int or not 0<=self.lock_version<=2**63-1):
             raise AuditExportCancellationError('JOB_STORE_UNAVAILABLE')
         history=(self.requested_by,self.requested_at,self.reason)
         if all(v is None for v in history):

@@ -1,5 +1,7 @@
 # Job详情运行Contract增量
 
+JOB-02-A01（2026-09-27）内部前置更新：CR-JOB-003已补原Audit取消expected_version与锁内实际Job版本比较；显式版本绑定原持久指纹，同Key原命令重放返回首次结果且仍重验当前授权，过期新请求VERSION_CONFLICT整事务无写。None仅保留旧内部调用/指纹，未来公开If-Match映射必须显式提供版本；尚无公开取消HTTP/JobId受权Owner解析/完整响应，不能据本项宣称JOB_CANCEL或完整Jobs PASS。无新Migration/冻结API Breaking/角色变动；GET强vN保持。
+
 JOB-01-A03（2026-09-27）装配更新：Windows --platform与--platform-write显式模式已接该详情Router、原当前授权和首个Audit Owner；默认与login-only仍404。实际PG/ASGI双工厂验证通过、正式信任源不可用时仍拒绝启动。前文“Windows尚未接线”为P02历史状态保留，完整Jobs Owner/正式账户/监听进程/浏览器/发行仍未完成。
 
 2026-09-27 / JOB-01-A02-P02 / CR-JOB-001、002；原Gate2冻结64cdf09保留。实现原JOB_PROJECT_GET/JOB_ADMIN_GET，非新增Breaking路径、非完整Jobs模块交付。

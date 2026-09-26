@@ -24,6 +24,7 @@ class RequestAuditExportCancel:
     csrf_token: bytes=field(repr=False)
     trace_id: UUID
     reason: str=field(repr=False)
+    expected_version: int|None=None
 
     def __post_init__(self):
         if (any(type(v) is not UUID or not v.int for v in (self.export_id,self.trace_id))
@@ -32,7 +33,8 @@ class RequestAuditExportCancel:
                 or self.scope=='PROJECT' and (type(self.project_id) is not UUID or not self.project_id.int)
                 or self.scope=='DEPLOYMENT' and self.project_id is not None
                 or type(self.reason) is not str or not 1<=len(self.reason)<=1024 or self.reason.strip()!=self.reason
-                or any(unicodedata.category(char).startswith('C') for char in self.reason)):
+                or any(unicodedata.category(char).startswith('C') for char in self.reason)
+                or self.expected_version is not None and (type(self.expected_version) is not int or not 0<=self.expected_version<=2**63-1)):
             raise AuditExportCancelRequestError('VALIDATION_FAILED')
 
 
@@ -89,13 +91,19 @@ class AuditExportCancelRequestService:
             before=self._cancel.read_facts(tx,target=target)
             if before.requested_by is not None:self._sources.first_request(tx,accepted=accepted,facts=before)
             idem=IdempotencyScope.from_key(actor_id=proof.actor_id,project_id=c.project_id,operation='V1_AUDIT_EXPORT_CANCEL_'+c.scope,key=key)
-            fingerprint=canonical_payload_fingerprint(dict(export_id=str(c.export_id),intent_hash=intent.intent_hash,reason=c.reason))
+            payload=dict(export_id=str(c.export_id),intent_hash=intent.intent_hash,reason=c.reason)
+            # Preserve existing internal receipt fingerprints. Explicit versions
+            # bind to the same operation/key, so changed preconditions conflict.
+            if c.expected_version is not None:payload['expected_version']=c.expected_version
+            fingerprint=canonical_payload_fingerprint(payload)
             replay=self._receipts.reserve(tx,scope=idem,request_fingerprint=fingerprint)
             if replay is not None:
                 if type(replay) is not IdempotencyResult or replay.ref_type!='V1_AUDIT_EXPORT_CANCEL' or replay.status_code!=200:raise AuditExportCancelRequestError()
                 replay.__post_init__()
                 result=self._sources.receipt(tx,accepted=accepted,actor_id=proof.actor_id,audit_event_id=replay.ref_id)
             else:
+                if c.expected_version is not None and c.expected_version!=before.lock_version:
+                    raise AuditExportCancelRequestError('VERSION_CONFLICT')
                 mutation=self._cancel.request_cancel(tx,target=target,requested_by=proof.actor_id,reason=c.reason)
                 if mutation.changed:
                     after=self._cancel.read_facts(tx,target=target)
