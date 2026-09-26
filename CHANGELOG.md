@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/AUD-02-A03-P01 新增内部同事务受权搜索解析Port与API codec适配，先实际Session/角色/Scope后解析，不允许替换筛选/page_size；上下文携带有效搜索窗口。Windows11后端784项无失败（2项环境跳过），隔离PostgreSQL同事务项目/部署双页、默认窗口/当前撤权/读无写与A01授权锁回归、开发wheel PASS。无Migration/公开API/角色/依赖变化，升级无动作；HTTP/正式key供给/导出/可用包未完成，License合成，Server2025未验、Debian13暂不验证。
+
 - 2026-09-26：`0.1.0.dev0`/AUD-02-A02 新增独立域 HMAC 审计游标，绑定实际Actor/Session/Scope/完整筛选/UTC窗口与keyset；未显式日期可恢复首窗口，明确日期不可忽略。Windows11后端778项无失败（2项环境跳过），隔离PostgreSQL项目/部署双页、窗口外新事件/篡改/当前撤权拒绝与读无写、受影响回归及开发wheel PASS。无Migration/公开API/角色/依赖变化，升级无动作；内部新增list_with_actor不替代当前授权。HTTP/专用key供给/导出/正式程序包未完成，License合成；非加密/MVCC快照，Server2025未验，Debian13暂不验证。
 
 - 2026-09-26：`0.1.0.dev0`/RVW-02-A10记录Review公开接线因实际业务Owner缺失未通过；转Phase2独立AUD-02-A01，新增当前Session/PM或Admin受权内部审计列表/详情，部署/项目Scope明确隔离、同事务能力绑定、safe view及分页/排序/范围/筛选反核。Windows11后端771项无失败（2项环境跳过），真实PostgreSQL权限/撤权/归档历史/五类授权锁/读无写、Review回归与开发wheel PASS。无Migration/API/新角色/依赖变化，升级无动作；Project增加两项冻结Audit必要读策略。License合成、游标/HTTP/导出/正式包未完成，Server2025未验、Debian13暂不验证。

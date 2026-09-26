@@ -2,6 +2,7 @@
 from dataclasses import dataclass,field,replace
 from datetime import datetime,timezone
 from uuid import UUID
+from plm_assistant.modules.platform.application.errors import ApplicationError
 from plm_assistant.modules.project.application.authorization import AuthorizedProjectAction,ProjectAuthorizationError
 from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
 from ..domain.audit_event import AuditEventDraft,_uuid
@@ -38,6 +39,7 @@ class AuthorizedAuditListContext:
     actor_id: UUID
     project_id: UUID | None
     page: AuditPage
+    search: AuditSearch
 
 
 class _BoundAccess:
@@ -71,10 +73,18 @@ class AuthorizedAuditReadService:
     def list_with_actor(self,query):
         return self._read(query,listing=True,include_actor=True)
 
+    def list_resolved(self,query,resolver):
+        """Trusted adapter Port; resolve only after current same-UOW authority."""
+        if resolver is None or not callable(getattr(resolver,"resolve",None)):
+            raise ValueError("Audit search resolver required")
+        if type(query) is not AuditListQuery or type(query.search) is not AuditSearch or query.search.after is not None:
+            raise AuthorizedAuditReadError("VALIDATION_FAILED")
+        return self._read(query,listing=True,include_actor=True,resolver=resolver)
+
     def get(self,query):
         return self._read(query,listing=False)
 
-    def _read(self,q,*,listing,include_actor=False):
+    def _read(self,q,*,listing,include_actor=False,resolver=None):
         if (type(q) is not (AuditListQuery if listing else AuditGetQuery)
                 or type(q.session_token) is not bytes or len(q.session_token)!=32
                 or not _uuid(q.trace_id) or not _uuid(q.project_id,optional=True)):
@@ -108,9 +118,26 @@ class AuthorizedAuditReadService:
                 principal=object()
                 reader=AuditQueryService(access=_BoundAccess(tx,principal,q.project_id),repository=self._repository)
                 if listing:
-                    page=reader.list_deployment(tx,principal,q.search) if q.project_id is None else reader.list_project(tx,principal,q.project_id,q.search)
-                    page=self._page(page,q.project_id,q.search)
-                    return AuthorizedAuditListContext(actor,q.project_id,page) if include_actor else page
+                    search=q.search
+                    if resolver is not None:
+                        try:
+                            search=resolver.resolve(session_token=q.session_token,actor_id=actor,project_id=q.project_id,search=q.search)
+                        except ApplicationError as exc:
+                            if exc.spec.code=="REQUEST_MALFORMED":
+                                raise AuthorizedAuditReadError("REQUEST_MALFORMED") from None
+                            raise
+                        if type(search) is not AuditSearch:raise AuthorizedAuditReadError("AUDIT_UNAVAILABLE")
+                        search.__post_init__()
+                        if replace(search,start_at=q.search.start_at,end_at=q.search.end_at,after=None)!=q.search:
+                            raise AuthorizedAuditReadError("AUDIT_UNAVAILABLE")
+                        if search.after is not None:
+                            if type(search.after) is not AuditPosition:raise AuthorizedAuditReadError("AUDIT_UNAVAILABLE")
+                            search.after.__post_init__()
+                            if not search.start_at<=search.after.occurred_at<search.end_at:
+                                raise AuthorizedAuditReadError("AUDIT_UNAVAILABLE")
+                    page=reader.list_deployment(tx,principal,search) if q.project_id is None else reader.list_project(tx,principal,q.project_id,search)
+                    page=self._page(page,q.project_id,search)
+                    return AuthorizedAuditListContext(actor,q.project_id,page,search) if include_actor else page
                 view=reader.get_deployment(tx,principal,q.event_id) if q.project_id is None else reader.get_project(tx,principal,q.project_id,q.event_id)
                 if view is None:raise AuthorizedAuditReadError("RESOURCE_NOT_FOUND")
                 view=self._view(view,q.project_id)

@@ -3378,3 +3378,11 @@
 - Reason：当前默认时间每页重算会使查询指纹漂移；当前页权限必须另验，cursor绝不授予访问。独立签名域防他族复用，完整性不是加密或跨页MVCC快照。
 - Impact：内部list_with_actor返回实际读上下文（不公开API），旧list保持原合同；新Codec/测试/设计，无Schema/API/权限/依赖变更。正式key来源/HTTP未接，不复用License、Secret或其他cursor key。
 - Rollback：不装配新Codec/HTTP，保留原safe查询及审计历史，无数据动作。
+
+## DEC-20260926-187
+
+- Date：2026-09-26；WBS：AUD-02-A03-P01。
+- Decision：Application接受内部搜索解析Port，在License/实际Session和当前Scope权限同事务检查后、repository读取前调用。API游标适配注入codec并使用实际Actor，禁止二次查身份或从客户端游标Actor信任；解析后的筛选/page_size不得改变，只有签名默认窗口和after允许补齐。响应上下文携带有效搜索窗口供续页签名。
+- Reason：公开分页不能先信任客户端身份，也不应在独立事务取身份后查询；解码失败不触发仓库读取，当前授权先于游标格式错误。
+- Impact：内部Port/API适配与验证，旧list/get不变，无Schema/公开API/角色/依赖变化。默认日期是否显式仍由后续HTTP决定，正式密钥供给未实现。
+- Rollback：不装配解析适配，保留旧内部读取；无数据动作。

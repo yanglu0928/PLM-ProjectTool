@@ -8,6 +8,7 @@ from psycopg import sql
 from sqlalchemy.engine import URL
 from alembic import command
 from plm_assistant.modules.audit.api.list_cursor import AuditListCursorCodec
+from plm_assistant.modules.audit.api.search_resolver import AuditCursorSearchResolver
 from plm_assistant.modules.platform.application.errors import ApplicationError
 
 spec = spec_from_file_location("_audit_cursor_fixture", Path(__file__).resolve().parents[1] / "aud-02-a01-authorized-read" / "verify.py")
@@ -15,7 +16,7 @@ f = module_from_spec(spec)
 spec.loader.exec_module(f)
 
 
-def main():
+def main(*,resolved=False):
     name, runtime = "auditcursor_" + uuid.uuid4().hex[:12], None
     with f.schema.connect("postgres") as admin:
         admin.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(name)))
@@ -53,7 +54,9 @@ def main():
                 before = tuple(db.execute("SELECT * FROM plm.aud_events ORDER BY audit_event_id"))
                 moving = replace(search, start_at=search.start_at + timedelta(seconds=1), end_at=search.end_at + timedelta(seconds=1))
                 second_search = codec.decode_saved_window(cursor, **(args | dict(search=moving)))
-                second = service.list_with_actor(replace(q, search=second_search)).page
+                second_context = service.list_resolved(replace(q,search=moving),AuditCursorSearchResolver(codec,cursor,dates_omitted=True)) if resolved else service.list_with_actor(replace(q,search=second_search))
+                assert second_context.search == second_search
+                second = second_context.page
                 ids = [v.audit_event_id for v in context.page.items + second.items]
                 assert len(ids) == len(set(ids)) == 3 and set(ids) == set(local) and added not in ids
                 assert second_search.start_at == search.start_at and second_search.end_at == search.end_at
@@ -69,13 +72,13 @@ def main():
                 assert ac.actor_id == admin_actor and ac.project_id is None
                 aa = dict(session_token=admin_session, actor_id=admin_actor, project_id=None, search=search)
                 at = codec.encode(**aa, position=ac.page.next_position)
-                ap = service.list_with_actor(replace(aq, search=codec.decode(at, **aa))).page
+                ap = (service.list_resolved(aq,AuditCursorSearchResolver(codec,at)) if resolved else service.list_with_actor(replace(aq,search=codec.decode(at,**aa)))).page
                 assert {v.audit_event_id for v in ac.page.items + ap.items} == set(deployed)
                 # Valid integrity is not current authorization: each page rechecks actual facts.
                 db.execute("UPDATE plm.prj_project_members SET state='SUSPENDED',lock_version=lock_version+1 WHERE user_id=%s", (actor,))
                 decoded = codec.decode(cursor, **args)
                 try:
-                    service.list_with_actor(replace(q, search=decoded))
+                    service.list_resolved(q,AuditCursorSearchResolver(codec,cursor)) if resolved else service.list_with_actor(replace(q,search=decoded))
                 except f.AuthorizedAuditReadError as exc:
                     assert exc.code == "RESOURCE_NOT_FOUND"
                 else:
@@ -83,13 +86,14 @@ def main():
                 db.execute("UPDATE plm.prj_project_members SET state='ACTIVE',lock_version=lock_version+1 WHERE user_id=%s", (actor,))
                 db.execute("UPDATE plm.auth_sessions SET revoked_at=statement_timestamp(),revoke_reason='SYNTHETIC',lock_version=lock_version+1 WHERE user_id=%s", (actor,))
                 try:
-                    service.list_with_actor(replace(q, search=decoded))
+                    service.list_resolved(q,AuditCursorSearchResolver(codec,cursor)) if resolved else service.list_with_actor(replace(q,search=decoded))
                 except f.AuthorizedAuditReadError as exc:
                     assert exc.code == "AUTH_ACCESS_DENIED"
                 else:
                     raise AssertionError("cursor bypassed revoked Session")
                 assert tuple(db.execute("SELECT * FROM plm.aud_events ORDER BY audit_event_id")) == before
-            print("AUD-02-A02 PASS: signed actual-actor/scope/session/query/window keyset, PROJECT/DEPLOYMENT pages, new event outside saved window, current membership/session revocation, reads unchanged; synthetic License, no HTTP/key provisioning/MVCC snapshot")
+            label="AUD-02-A03-P01 same-UOW resolution" if resolved else "AUD-02-A02"
+            print(label+" PASS: signed actual-actor/scope/session/query/window keyset, PROJECT/DEPLOYMENT pages, new event outside saved window, current membership/session revocation, reads unchanged; synthetic License, no HTTP/key provisioning/MVCC snapshot")
         finally:
             if runtime is not None:
                 runtime.dispose()

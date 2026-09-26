@@ -8,6 +8,9 @@ from plm_assistant.modules.audit.application.authorized_read import (
 )
 from plm_assistant.modules.audit.application.queries.audit_query import AuditSearch,AuditEventView,AuditPage,AuditPosition
 from plm_assistant.modules.project.application.authorization import AuthorizedProjectAction
+from plm_assistant.modules.platform.application.errors import ApplicationError
+from plm_assistant.modules.audit.api.list_cursor import AuditListCursorCodec
+from plm_assistant.modules.audit.api.search_resolver import AuditCursorSearchResolver
 
 
 class AuditAuthorizedReadTests(unittest.TestCase):
@@ -92,3 +95,57 @@ class AuditAuthorizedReadTests(unittest.TestCase):
         self.assertFalse(bound.can_read_project(object(),principal,self.project))
         self.assertFalse(bound.can_read_project(self.tx,object(),self.project))
         self.assertFalse(bound.can_read_deployment(self.tx,principal))
+
+    def test_resolver_after_current_authority_before_read_same_uow(self):
+        def resolve(**kw):
+            self.access.authenticated_user.assert_called_once()
+            self.projects.require_in_transaction.assert_called_once()
+            self.repo.list_events.assert_not_called()
+            self.assertEqual(kw,dict(session_token=self.q.session_token,actor_id=self.actor,project_id=self.project,search=self.search))
+            return self.search
+        resolver=Mock();resolver.resolve.side_effect=resolve
+        result=self.service.list_resolved(self.q,resolver)
+        self.assertEqual(result.search,self.search)
+        self.assertIs(self.repo.list_events.call_args.args[0],self.tx)
+        self.tx.commit.assert_not_called()
+
+    def test_resolver_never_called_when_authority_denied(self):
+        resolver=Mock();self.access.authenticated_user.return_value=None
+        with self.assertRaisesRegex(AuthorizedAuditReadError,"AUTH_ACCESS_DENIED"):
+            self.service.list_resolved(self.q,resolver)
+        resolver.resolve.assert_not_called();self.repo.list_events.assert_not_called()
+
+    def test_malformed_cursor_only_safe_error_and_no_repository(self):
+        resolver=AuditCursorSearchResolver(AuditListCursorCodec(b"k"*32),"bad")
+        with self.assertRaisesRegex(AuthorizedAuditReadError,"REQUEST_MALFORMED"):
+            self.service.list_resolved(self.q,resolver)
+        self.repo.list_events.assert_not_called()
+
+    def test_resolver_cannot_replace_filters_page_size_or_bad_position(self):
+        for result in (None,replace(self.search,action="OTHER"),replace(self.search,page_size=1),
+                       replace(self.search,after=AuditPosition(self.search.end_at,uuid4()))):
+            resolver=Mock();resolver.resolve.return_value=result
+            with self.assertRaisesRegex(AuthorizedAuditReadError,"AUDIT_UNAVAILABLE"):
+                self.service.list_resolved(self.q,resolver)
+        self.repo.list_events.assert_not_called()
+
+    def test_signed_saved_window_is_effective_window_for_query_and_response(self):
+        codec=AuditListCursorCodec(b"k"*32)
+        position=AuditPosition(self.now,self.view.audit_event_id)
+        token=codec.encode(session_token=self.q.session_token,actor_id=self.actor,project_id=self.project,search=self.search,position=position)
+        moving=replace(self.search,start_at=self.search.start_at+timedelta(days=1),end_at=self.search.end_at+timedelta(days=1))
+        self.repo.list_events.return_value=AuditPage((),None,False)
+        result=self.service.list_resolved(replace(self.q,search=moving),AuditCursorSearchResolver(codec,token,dates_omitted=True))
+        self.assertEqual(result.search,replace(self.search,after=position))
+        self.assertEqual(self.repo.list_events.call_args.kwargs["search"],result.search)
+        with self.assertRaisesRegex(AuthorizedAuditReadError,"REQUEST_MALFORMED"):
+            self.service.list_resolved(replace(self.q,search=moving),AuditCursorSearchResolver(codec,token))
+
+    def test_resolver_bad_input_and_unknown_error_fail_closed(self):
+        for query in (None,replace(self.q,search=None),replace(self.q,search=replace(self.search,after=AuditPosition(self.now,uuid4())))):
+            with self.assertRaisesRegex(AuthorizedAuditReadError,"VALIDATION_FAILED"):
+                self.service.list_resolved(query,Mock())
+        resolver=Mock();resolver.resolve.side_effect=ApplicationError("SYSTEM_INTERNAL")
+        with self.assertRaisesRegex(AuthorizedAuditReadError,"AUDIT_UNAVAILABLE"):
+            self.service.list_resolved(self.q,resolver)
+        self.repo.list_events.assert_not_called()
