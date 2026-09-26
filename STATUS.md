@@ -3,7 +3,7 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 2：Platform Core|
-|Current WBS|`AUD-02-A04 Windows审计游标密钥来源`（只读独立ref/缺失关闭/真实临时Vault恢复旧cursor PASS；正式账户供给/平台装配/导出待实施）|
+|Current WBS|`AUD-02-A05 Windows显式审计组合`（两模式真实Session/Scope/分页与缺Audit信任源关闭PASS；License/key合成，正式账户供给/导出待实施）|
 |Current Status|PHASE_1_COMPLETE / DOC_03_A03_P04_P04_PRECONDITION_BLOCKED / DOC_02_A02_P01_INTERNAL_PASS / DOC_02_A02_P02_PRECONDITION_BLOCKED / DOC_03_A04_A03_P04_P03_CONTENT_HTTP_PASS / DOC_03_A04_A04_P01_JOB_SCHEMA_PASS / DOC_03_A04_A04_P02_JOB_LEASE_PASS / DOC_03_A04_A04_P03_OUTBOX_PASS / DOC_03_A04_A04_P04_P01_PARSE_QUEUE_PASS / DOC_03_A04_A04_P04_P02_COMMIT_INTERNAL_PASS / DOC_03_A04_A04_P04_P03_P01_ABORT_STATE_PASS / DOC_03_A04_A04_P04_P03_P02_PRECONDITION_BLOCKED / DOC_03_A04_A04_P04_P04_A01_FINALIZE_HTTP_PASS / DOC_03_A04_A04_P04_P04_A02_WINDOWS_COMPOSITION_PASS / DOC_03_A04_A04_P04_COMMIT_ABORT_IN_PROGRESS / DOC_01_A02_INTERNAL_PASS / DOC_01_A03_P01_CURSOR_PASS / DOC_01_A03_P02_HTTP_CONTRACT_PASS / DOC_01_A03_P03_HTTP_DB_PASS / DOC_01_A03_P04_WINDOWS_COMPOSITION_PASS / DOC_01_A04_P01_VERSION_INTERNAL_PASS / DOC_01_A04_P02_VERSION_CURSOR_PASS / DOC_01_A04_P03_VERSION_HTTP_CONTRACT_PASS / DOC_01_A04_P04_VERSION_HTTP_DB_PASS / DOC_01_A04_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P01_VERIFIED_SNAPSHOT_PASS / DOC_01_A05_P02_DOWNLOAD_SOURCE_PASS / DOC_01_A05_P03_PREPARE_DOWNLOAD_PASS / DOC_01_A05_P04_DOWNLOAD_HTTP_PASS / DOC_01_A05_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P06_DISCONNECT_CAPACITY_BOUNDED_PASS / DOC_03_A04_A04_P04_P03_P02_A01_GATE_ADAPTER_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P01_CONTENT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P02_COMMIT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P03_ABORT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P01_READONLY_INSPECTION_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A01_STORAGE_STEP_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A02_INTERNAL_CLEANUP_PASS / PLT_02_A07_P05_A09_CEREMONY_PENDING / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
 |Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03、DOC-03-A01、DOC-03-A02（限定范围）、DOC-03-A03-P01～P03（P03 内部合成验证）、DOC-03-A03-P04-P01～P03（内部合成验证）、DOC-03-A04-A01（Schema 验证）、DOC-03-A04-A02（内部合成验证）、DOC-01-A01、DOC-02-A01、DOC-02-A02-P01（内部合成验证） PASS|
@@ -13,8 +13,8 @@
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，DM-02 License 授权粒度经用户批准 CR-LIC-001 修订|
 |DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`；增量至 `20260926_0035` 撤回原因（CR-RVW-002）、0034 Review 八表（CR-RVW-001）、0033 GateItem 固定 Checklist 记录关联（CR-WFL-004）、0032 Checklist 记录、0031 Transition/Gate（CR-WFL-003）、0030 Workflow（CR-WFL-002）、0029 TraceLink、0028 ParseRecord、0027 Evidence 与 0001～0026 历史保留|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
-|Test Summary|AUD-02-A04 Windows11/Python3.13后端793项无失败（2项环境跳过）；当前账户真实临时Vault丢失/失败关闭/恢复旧cursor与key相同PASS；四个GET隔离PostgreSQL真实Session/Scope/当前撤权/读无写回归及开发wheel PASS。License合成，无正式账户密钥/平台装配/导出/发行证明|
-|Next WBS|AUD-02-A05 Windows显式平台组合与缺Audit信任源失败关闭、真实Session HTTP回归；Review真实Owner缺失保持公开关闭，完整Scope保留。发行Gate/Server2025待验证，Debian13暂不验证|
+|Test Summary|AUD-02-A05 Windows11/Python3.13后端794项无失败（2项环境跳过）；两种显式平台真实Session/PM/Admin/Scope/keyset、缺Audit key失败关闭/default-login404，14个受影响数据库集成脚本回归及开发wheel PASS。License/key合成，无正式账户供给/导出/发行证明|
+|Next WBS|AUD-03-A01 审计导出范围/用途/当前权限、不可变安全快照与Job生命周期前置核查，必要差异先CR；Review真实Owner缺失保持公开关闭，完整Scope保留。发行Gate/Server2025待验证，Debian13暂不验证|
 
 ## 自动执行策略
 
@@ -24,6 +24,8 @@
 - GitHub：允许在当前 Scope 和正确分支内自动 fetch、commit、push；禁止 force push、直接提交 main、覆盖未知远端修改或提交 Secret/客户数据。
 
 ## 最近检查点
+
+- AUD-02-A05 将四个审计GET装入Windows两种显式平台，独立Audit key缺失拒启且dispose；default/login-only404。真实数据库Session/PM/Admin/Scope双页、许可拒绝与14项受影响集成回归PASS。正式账户及发行信任锚未供给，非生产/Gate验收。
 
 - AUD-02-A04 新增audit-list-cursor-v1独立Windows当前账户只读入口，缺失/长度错误/provider异常统一失败关闭，不自动生成或复用其他key。唯一临时Vault引用丢失/恢复旧游标实测PASS并清理；正式账户供给/离线保管/平台组合待完成。
 

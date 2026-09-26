@@ -3402,3 +3402,11 @@
 - Reason：签名游标需持续稳定专用密钥；恢复须保持旧cursor可验证，重新生成不等于恢复。当前运行账户的临时Vault验证不代表正式部署账户或Server验证。
 - Impact：新增entrypoint只读factory及unit/真实临时Vault恢复，无Schema/API/角色/依赖或安全算法变更。正式账户供给、口令独立保管和平台组合仍待。
 - Rollback：不装配新factory，路由保持未启用；临时测试只清理own UUID引用，不操作正式key。
+
+## DEC-20260926-190
+
+- Date：2026-09-26；WBS：AUD-02-A05。
+- Decision：Windows两种显式平台模式挂载四Audit GET，以同runtime的当前Session/部署Admin/Project授权与实际Audit repository接线；必须取得独立Audit cursor来源才能构建应用，异常dispose并统一关闭。默认/login-only不加载该key或挂载Audit。
+- Reason：可选HTTP和当前账户来源已验证，正式组合仍需强制key前置，不能拿测试key或缺省生成继续运行。
+- Impact：组合根和相关测试fixture增加显式合成Audit key，不改变业务Scope/数据库/冻结API/角色/依赖。正式账户/License供给仍缺，不据合成组合放行生产Gate。
+- Rollback：回退组合根不挂载Audit；只读无数据变化。

@@ -8,6 +8,10 @@ from fastapi import FastAPI
 from sqlalchemy import text
 
 from plm_assistant.entrypoints.api import create_app
+from plm_assistant.entrypoints.windows_audit_list_cursor import create_windows_audit_cursor_codec
+from plm_assistant.modules.audit.api.read_events import create_audit_read_router
+from plm_assistant.modules.audit.application.authorized_read import AuthorizedAuditReadService
+from plm_assistant.modules.audit.infrastructure.audit_read_repository import SqlAlchemyAuditReadRepository
 from plm_assistant.entrypoints.windows_secret_list_cursor import create_windows_secret_list_cursor_codec
 from plm_assistant.entrypoints.windows_project_member_cursor import create_windows_project_member_cursor_codec
 from plm_assistant.entrypoints.windows_project_department_cursor import create_windows_project_department_cursor_codec
@@ -221,6 +225,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         secret_disable_router = None
         project_read_router = None
         workflow_read_router = None
+        audit_read_router = None
         project_create_router = None
         project_patch_router = None
         project_archive_router = None
@@ -247,6 +252,18 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             cursors = create_windows_secret_list_cursor_codec()
             member_cursors = create_windows_project_member_cursor_codec()
             department_cursors = create_windows_project_department_cursor_codec()
+            audit_cursors = create_windows_audit_cursor_codec()
+            audit_read_router = create_audit_read_router(
+                reads=AuthorizedAuditReadService(
+                    unit_of_work=runtime.unit_of_work,
+                    project_access=SqlAlchemyProjectReadAccess(),
+                    deployment_access=SqlAlchemyDeploymentReadAccess(),
+                    projects=ProjectAuthorizationService(
+                        unit_of_work=runtime.unit_of_work,
+                        repository=SqlAlchemyProjectAuthorizationRepository(),
+                    ), license_guard=licenses.guard, repository=SqlAlchemyAuditReadRepository(),
+                ), origins=origins, cursors=audit_cursors,
+            )
             document_cursors = create_windows_document_list_cursor_codec()
             version_cursors = create_windows_document_version_cursor_codec()
             parse_cursors = create_windows_document_parse_cursor_codec()
@@ -575,6 +592,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             secret_disable_router=secret_disable_router,
             project_read_router=project_read_router,
             workflow_read_router=workflow_read_router,
+            audit_read_router=audit_read_router,
             project_create_router=project_create_router,
             project_patch_router=project_patch_router,
             project_archive_router=project_archive_router,

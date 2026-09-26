@@ -8,6 +8,7 @@ from unittest.mock import Mock, patch
 from fastapi.testclient import TestClient
 
 from plm_assistant.entrypoints.api import create_app
+from plm_assistant.modules.audit.api.list_cursor import AuditListCursorCodec
 from plm_assistant.entrypoints.production_login import (
     ProductionLoginStartupError,
     create_production_login_app, create_production_platform_app,
@@ -24,6 +25,10 @@ from plm_assistant.modules.document.api.parse_list_cursor import ParseListCursor
 
 class ProductionLoginTests(unittest.TestCase):
     def setUp(self) -> None:
+        self.enterContext(patch(
+            "plm_assistant.entrypoints.production_login.create_windows_audit_cursor_codec",
+            return_value=AuditListCursorCodec(b"a"*32),
+        ))
         self.temp_dir = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp_dir.cleanup)
         self.enterContext(patch(
@@ -41,6 +46,25 @@ class ProductionLoginTests(unittest.TestCase):
 
     def settings(self, origins: tuple[str, ...]) -> BootstrapSettings:
         return BootstrapSettings(data_root=Path(self.temp_dir.name), trusted_origins=origins)
+
+    def test_missing_audit_cursor_disposes_both_platform_modes(self):
+        from contextlib import ExitStack
+        from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
+        for factory in (create_production_platform_app,create_production_platform_write_app):
+            runtime=Mock();runtime.is_ready.return_value=True
+            with ExitStack() as stack:
+                prefix="plm_assistant.entrypoints.production_login."
+                for name,value in (("read_database_url","postgresql+psycopg://test:synthetic@localhost/test"),
+                    ("create_database_runtime",runtime),("_schema_current",True),
+                    ("create_windows_secret_list_cursor_codec",SecretListCursorCodec(b"q"*32)),
+                    ("create_windows_project_member_cursor_codec",MemberListCursorCodec(b"m"*32)),
+                    ("create_windows_project_department_cursor_codec",DepartmentListCursorCodec(b"d"*32))):
+                    stack.enter_context(patch(prefix+name,return_value=value))
+                stack.enter_context(patch("plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services",return_value=Mock(guard=Mock())))
+                stack.enter_context(patch(prefix+"create_windows_audit_cursor_codec",side_effect=RuntimeError("sensitive synthetic missing key")))
+                with self.assertRaises(ProductionLoginStartupError) as exc:factory(self.settings(("http://localhost",)))
+                self.assertNotIn("sensitive",str(exc.exception))
+            runtime.dispose.assert_called_once()
 
     def test_empty_or_insecure_origin_never_reads_credential(self) -> None:
         with patch("plm_assistant.entrypoints.production_login.read_database_url") as reader:
@@ -200,6 +224,8 @@ class ProductionLoginTests(unittest.TestCase):
             app = create_production_platform_app(settings)
         with TestClient(app, base_url="http://localhost") as client:
             self.assertEqual(client.get("/api/v1/admin/secrets").status_code, 401)
+            self.assertEqual(client.get("/api/v1/admin/audit-events").status_code,401)
+            self.assertEqual(client.get("/api/v1/projects/00000000-0000-0000-0000-000000000001/audit-events").status_code,401)
             self.assertEqual(client.get("/api/v1/admin/secrets/" + "1" * 36).status_code, 422)
             self.assertEqual(client.post("/api/v1/admin/secrets").status_code, 405)
             self.assertEqual(client.get("/api/v1/projects").status_code, 401)

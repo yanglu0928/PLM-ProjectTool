@@ -16,7 +16,7 @@ f = module_from_spec(spec)
 spec.loader.exec_module(f)
 
 
-def main(*,resolved=False,http=False):
+def main(*,resolved=False,http=False,platform_check=None):
     name, runtime = "auditcursor_" + uuid.uuid4().hex[:12], None
     with f.schema.connect("postgres") as admin:
         admin.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(name)))
@@ -107,6 +107,8 @@ def main(*,resolved=False,http=False):
                         assert client.get("/api/v1/admin/audit-events",headers=ah).status_code==403
                         service._guard.enabled=True
                         assert "actor_hint_digest" not in first.text and session.hex() not in first.text
+                if platform_check is not None:
+                    platform_check(url=url,session=session,admin_session=admin_session,project=project,local=local+[added],deployed=deployed,guard=service._guard)
                 # Valid integrity is not current authorization: each page rechecks actual facts.
                 db.execute("UPDATE plm.prj_project_members SET state='SUSPENDED',lock_version=lock_version+1 WHERE user_id=%s", (actor,))
                 decoded = codec.decode(cursor, **args)
