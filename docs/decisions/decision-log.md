@@ -3322,3 +3322,11 @@
 - Reason：新共享预锁不能使所有既有反序成员命令天然无死锁，实测确有循环；不能吞掉异常或局部重跑 INSERT。真实竞争验收证实第二次成功且只留一轮/一次 Audit。
 - Impact：受控内部入口及窄死锁分类/重试，无 Schema/API/角色/依赖改变；原首轮验收错误码断言按版本检查顺序修正重验。完整 Owner/业务锁/HTTP 和其他旧写命令并发恢复仍待。
 - Rollback：停用入口，原数据与不可变历史保留；不采用无限 retry 或 force 更新。
+
+## DEC-20260926-180
+
+- Date：2026-09-26；WBS：RVW-02-A06。
+- Decision：固定单次决定/撤回交接合同绑定可信旧快照与完整新进度；同一事务通过 Owner Port 同步消费终态和释放实际身份锁，失败连最终决定 rollback。decide 不新增冻结未要求的 M 控制，withdraw 沿用根 ETag。真实 Owner 缺失不公开命令。
+- Reason：Review owned 锁释放不等于业务锁正确释放，历史 Sources 观测不能代替当前批准事实；异步 best-effort 消费会留下不一致状态。
+- Impact：内部合同/测试与前置文档，无本轮 Schema/API/角色/依赖变化。AF-02 reason 持久缺口另登记 CR-RVW-002，保留 0034 原文与未知旧历史。
+- Rollback：不装配交接 Port，保留已有历史与送审路径；无数据动作。
