@@ -24,7 +24,8 @@ from plm_assistant.modules.document.application.prepare_download import Download
 _UUID_HEX = r"[0-9a-f]{32}"
 _LOCATOR = re.compile(
     rf"(?:(?:global|temp/global)/objects/[0-9a-f]{{2}}/{_UUID_HEX}"
-    rf"|(?:projects|temp/projects)/{_UUID_HEX}/objects/[0-9a-f]{{2}}/{_UUID_HEX})\Z",
+    rf"|(?:projects|temp/projects)/{_UUID_HEX}/objects/[0-9a-f]{{2}}/{_UUID_HEX}"
+    rf"|(?:temp/)?generated/audit/(?:deployment|projects/{_UUID_HEX})/objects/[0-9a-f]{{2}}/{_UUID_HEX})\Z",
     re.ASCII,
 )
 _REPARSE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)

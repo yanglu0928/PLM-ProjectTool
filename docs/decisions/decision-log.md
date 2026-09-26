@@ -3531,6 +3531,13 @@
 - Decision：实施前建立CR-AUD-002与ADR010，仅内部FileObject扩用途/DEPLOYMENT、Audit own尝试/结果；不伪造文档或插件、不重标Scope、不修改普通Upload/Parse/Output规则。Schema/锁序/迁移/历史down保护/存储恢复/实际权限/Lease/取消/下载验收逐项记录后实施。
 - Result/risk：本项是设计记录，尚无代码/Migration或运行验收，不标完整导出PASS；新路径/用途和旧链路误绑防护须真实DB+文件验证，含历史拒绝降级，正式信任/质量/目标账户/Gate仍待。
 
+## DEC-20260926-206 — P03-A02-P01编码前检查
+
+- Phase/WBS：Phase2 / AUD-03-A06-A04-P03-A02-P01；前置0040内部归属已验，输入CR-AUD-002/ADR010/P01安全字节。Document owned受控物理文件Application Port与Adapter；无新Schema/API/角色/依赖。
+- Decision：本分项只实现PROJECT/DEPLOYMENT独立generated/audit存储，通过精确内部file_id/Scope/project坐标生成Locator，不接客户端路径。复用原路径检查/排他reserve/hash/同卷不覆盖提升/恢复原语；普通locators和上传扫描保持原范围。bounded sink只允许bytes写入，正常结束flush/fsync关闭再独立Hash读回；异常保留私有部分文件，不自动删除/覆盖。
+- Acceptance：真实临时文件双Scope/空文件/上限/短写/模拟磁盘不足/路径污染/扫描隔离/不覆盖/新ID/实际linked与final恢复及损坏拒绝；坐标/Hash不是授权，不开下载或DB发布。旧Storage回归；目标账户ACL/实际磁盘满/128MiB性能/Server2025/Debian未验。
+- Risks/rollback：下一分项才接caller-UOW元数据及Audit持久尝试/结果/当前权限/Lease；文件提升后仍不可见。撤未装配入口不删除专用历史；没有清理删除Port，不放宽生产删除授权。
+
 ## DEC-20260926-203
 
 - Date：2026-09-26；WBS：AUD-03-A06-A04-P02。
