@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/WFL-02-A01-P01 新增不可变成功相邻迁移/完整 Gate 清单快照形状，拒绝跳级、缺项、重复引用及不完整豁免。Windows 11 后端 649 项无失败（2 项环境跳过），开发 wheel PASS；无 Migration/API/依赖，升级无需动作。仅结构，不证明实际授权/引用批准/Gate；历史持久层/实际写命令/Server 2025 未验，Debian 13 暂不验证。
+
 - 2026-09-26：`0.1.0.dev0`/WFL-01-A04-P03 将只读 Workflow GET 接入 Windows 两种显式平台组合；默认/仅登录及 Workflow 写路径保持关闭，缺信任源拒绝启动。Windows 11 后端 641 项无失败（2 项环境跳过），隔离 PostgreSQL/真实 Session 两模式授权及失败关闭、开发 wheel PASS。无 Migration/依赖/Breaking API，升级无新增动作；正式信任源/历史/Gate/性能仍待，Server 2025 未验、Debian 13 暂不验证。
 
 - 2026-09-26：`0.1.0.dev0`/WFL-01-A04-P02 新增冻结 WORKFLOW_GET 可选路由，显式阶段/清单状态投影、ETag/trace/no-store、Host/Session/权限/License 拒绝及内部异常脱敏。Windows 11 后端 641 项无失败（2 项环境跳过），真实 PostgreSQL/Session HTTP 和开发 wheel PASS。无 Migration/Breaking API/依赖变化，升级无动作；默认/生产组合未挂载，正式信任源/性能/Gate 未验，Server 2025 未验、Debian 13 暂不验证。

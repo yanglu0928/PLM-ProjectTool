@@ -3154,3 +3154,11 @@
 - Reason：GET 组合不应创造另一套密钥/授权来源，缺信任源不允许降级。
 - Impact：组合及隔离验证，无 Schema/依赖/Breaking API；正式信任源和实际 Gate 仍待。
 - Rollback：撤销 Router 装配，保留所有实例和审计。
+
+## DEC-20260926-159
+
+- Date：2026-09-26；WBS：WFL-02-A01-P01。
+- Decision：成功相邻迁移的 Gate 快照先作为不可变纯领域值对象；完整固定清单和 PASS/WAIVED 形状校验，所有 UUID 引用仍待 Owner 同事务证明。没有写服务或 Gate evaluator，不把对象构造成功当 Gate PASS。
+- Reason：历史不能依可变当前 Checklist 重建；Waiver 需保留真实 actor/理由/影响/依据而不是改写 PASS。持久层和 START/完成语义独立设计，避免猜测 API。
+- Impact：仅领域/测试/文档，无 Schema、依赖、Breaking API 或安全机制变更。
+- Rollback：不使用新值对象；不改已有实例、审计或客户事实。
