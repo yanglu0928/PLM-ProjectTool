@@ -17,7 +17,7 @@ class JobRow(Base):
     __table_args__ = (
         ForeignKeyConstraint(["project_id"], ["plm.prj_projects.project_id"], name="fk_job_jobs__project", ondelete="NO ACTION"),
         UniqueConstraint("owner_module", "scope", "project_id", "job_type", "idempotency_key", name="uq_job_jobs__idempotency", postgresql_nulls_not_distinct=True),
-        CheckConstraint("(scope='GLOBAL' AND project_id IS NULL) OR (scope='PROJECT' AND project_id IS NOT NULL)", name="ck_job_jobs__scope"),
+        CheckConstraint("(scope IN ('GLOBAL','DEPLOYMENT') AND project_id IS NULL) OR (scope='PROJECT' AND project_id IS NOT NULL)", name="ck_job_jobs__scope"),
         CheckConstraint("state IN ('PENDING','RUNNING','RETRY_WAIT','SUCCEEDED','FAILED','CANCEL_REQUESTED','CANCELLED')", name="ck_job_jobs__state"),
         CheckConstraint("attempt_count >= 0 AND max_attempts > 0 AND fencing_token >= 0", name="ck_job_jobs__counters"),
         Index("ix_job_jobs__claim", text("priority DESC"), "available_at", "job_id", postgresql_where=text("state IN ('PENDING','RETRY_WAIT')")),
@@ -84,7 +84,7 @@ class OutboxEventRow(Base):
     __table_args__ = (
         ForeignKeyConstraint(["project_id"], ["plm.prj_projects.project_id"], name="fk_job_outbox_events__project", ondelete="NO ACTION"),
         UniqueConstraint("owner_module", "scope", "project_id", "event_type", "idempotency_key", name="uq_job_outbox_events__idempotency", postgresql_nulls_not_distinct=True),
-        CheckConstraint("(scope='GLOBAL' AND project_id IS NULL) OR (scope='PROJECT' AND project_id IS NOT NULL)", name="ck_job_outbox_events__scope"),
+        CheckConstraint("(scope IN ('GLOBAL','DEPLOYMENT') AND project_id IS NULL) OR (scope='PROJECT' AND project_id IS NOT NULL)", name="ck_job_outbox_events__scope"),
         CheckConstraint("delivery_state IN ('PENDING','DELIVERING','DELIVERED','RETRY_WAIT','DEAD')", name="ck_job_outbox_events__state"),
         CheckConstraint("attempt_count >= 0", name="ck_job_outbox_events__attempts"),
         CheckConstraint("max_attempts > 0 AND delivery_token >= 0", name="ck_job_outbox_events__delivery_counters"),

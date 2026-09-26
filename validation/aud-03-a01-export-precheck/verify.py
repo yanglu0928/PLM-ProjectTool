@@ -18,7 +18,7 @@ def main():
         admin.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(name)))
         try:
             url=URL.create("postgresql+psycopg",username="poc_admin",host="127.0.0.1",port=55432,database=name)
-            command.upgrade(create_migration_config(url),"head")
+            command.upgrade(create_migration_config(url),"20260926_0035")
             with fixture.schema.connect(name) as db:
                 assert db.execute("SELECT version_num FROM plm.alembic_version").fetchone()[0]=="20260926_0035"
                 for table,constraint,statement,args in (
