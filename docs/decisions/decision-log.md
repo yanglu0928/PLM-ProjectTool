@@ -3444,3 +3444,12 @@
 - Impact：补齐冻结权限/归档维护实现，不新增角色、Scope、API、安全机制或Schema；无新CR必要，原冻结不追写。Auth已有LicenseImportAccess只复用Session/CSRF/Admin事实，Audit服务始终另要求L，绝不复用License恢复面豁免。现有Job缺Audit专用enqueue公共Port与首次Ref读回，A02补齐后A03才能受权幂等/Audit/Job原子；不提前POST或创建未受权Job。
 - Verification：四角色×操作矩阵、归档仅export write例外、真实Session/CSRF/License拒绝、跨项目/部署Admin非成员拒绝、当前member/department/user/role撤销、五类事实锁保持到调用方UOW结束及授权服务不写任何Export/Job/receipt/Audit。
 - Rollback：撤未装配前置并移除新增operation，不影响历史/其他操作；无迁移/生产/客户外发。
+
+## DEC-20260926-195
+
+- Date：2026-09-26；WBS：AUD-03-A05-A02。
+- Decision：Jobs owned AuditExportJobQueue公共合同仅固定ExportRef、原Actor、PROJECT/DEPLOYMENT、ProjectRef、原TraceRef、V1政策；Job payload只有export_id/policy_version，Outbox另加job_id。不读取Audit/Document内部表，不接受Session/Secret/路径/任意payload，不创建UOW/commit/鉴权/发布。Audit实际受权调用方须先绑定自己的不可变意图；Queue DTO不是真实存在/授权/许可或Lease证明。
+- Replay：ExportRef唯一逻辑请求，内部对域分隔SHA-256的64-bit键取PostgreSQL事务级advisory lock，串行同Export首次空行竞争；跨Scope也用同Export锁。锁碰撞仅额外串行，不授予权限/合并身份，实际唯一键/全字段仍核对。Job与Outbox都存在且固定原Actor/Scope/Project/Trace/政策/aggregate/refs一致才返回原Ref；单边缺失/异载荷/改绑定拒绝，不自动修复。不复活终态或重写Worker mutable状态。首次Trace来自持久Export，不是重放请求的新HTTP trace。
+- Impact：既有0037/Job Schema、公开API/角色/依赖不变；max_attempts固定Job3、Outbox5只是投递技术策略，不重复模型调用。A03主命令须授权→receipt→Audit根→Queue锁/行，并全UOW原子。Worker持Job锁再取Owner/当前权限的反序风险A06另验并使用整UOW有限重试，不宣称已有全链无死锁。
+- Verification：真实PG双Scope、最小引用/原Trace、并发首次同Ref、失败Outbox全UOW回滚、调用方不commit、终态重放不复活、错Actor/Scope/Project/Trace/policy/缺一行拒绝、只读lookup不创建，已有Parse范围及Job租约回归。Queue本项不以可信调用方测试冒充客户权限/Worker/HTTP。
+- Rollback：撤未装配公共Port不删已有Job/Outbox，无数据库升级/生产变更；普通导出POST仍关闭。

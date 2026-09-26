@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/AUD-03-A05-A02 新增Jobs owned最小审计ExportRef/策略专用enqueue/lookup，同Export事务锁、完整固定绑定/Job Outbox pair、终态不复活。Win11后端836项无失败（2项环境跳过）、真实双Scope/并发同Ref/故障回滚/缺边篡改拒绝及Job/Outbox相关回归、开发wheel PASS。无Migration/API/角色/依赖变化，升级无数据动作；可信合成ExportRef测试不证明实际授权/根存在，完整提交/Worker/文件/HTTP/正式包未完成，Server2025未验、Debian13暂缓。
+
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A05-A01 新增调用方事务导出提交授权，实时Session/CSRF/License/PM或Admin；Project仅AUDIT_PROJECT_EXPORT作为归档write维护例外，普通write仍拒绝。Win11后端831项无失败（2项环境跳过）、真实数据库Scope/撤权/五事实锁/无业务写及审计查询/Windows平台回归、开发wheel PASS，License/key合成。无Migration/公开API/角色/Scope/依赖变化，升级无数据动作；Job/幂等/Worker/交付/正式包未完成，Server2025未验、Debian13暂缓。
 
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A04-P03/CR-AUD-001 新增可信事务实际单SQL采集/封口/安全读回与原集合重放；V1服务器100000行保护，超限拒绝不截断。Win11后端823项无失败（2项环境跳过）、隔离迟提交/回填/新事件/Scope筛选/并发重放/故障回滚/小上限机制及0037回归、开发wheel PASS。无Migration/API/角色/依赖变更，升级无数据动作；真实权限/Lease/文件/100000行性能/HTTP/正式包未完成，Server2025未验、Debian13暂缓。
