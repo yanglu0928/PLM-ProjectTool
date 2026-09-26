@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260926-219
+
+- Date/WBS：2026-09-26 / AUD-03-A06-A04-P03-A06-P02；前置P01契约/P03-A05快照PASS。
+- Decision：仅新增Audit opt-in内容GET；准备至传输结束占有Router有界槽，Response外层finally覆盖尚未启动生成器/response.start失败；显式线程资源所有权使请求取消不能关闭活跃read或提前释放活跃prepare名额，线程完成后close/release。不顺手改普通文档下载。
+- Evidence：7新增契约/ASGI测试覆盖start/body发送故障、未启动流取消、prepare/read取消容量保留/收尾、长度/读取失败；真实PG与实际文件双Scope空/260精确内容/Hash/当前权限、复制后撤销与损坏文件安全Audit通过；962后端无失败（2环境跳过）、开发wheel成功。
+- Impact/rollback：无DB/依赖/权限变化，原冻结API保留、默认404，移除可选Router保历史；名额为进程内非全局，代理断网/三平台/性能/正式材料未验。下一项P03实际Windows组合，不关闭Gate3或交付目标。
+
 ## DEC-20260926-218
 
 - Date/WBS：2026-09-26 / AUD-03-A06-A04-P03-A06-P01。

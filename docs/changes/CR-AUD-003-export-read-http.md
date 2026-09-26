@@ -16,3 +16,5 @@
 契约：docs/api-contract/audit-export-read-v1-increment.md。剩余风险：正式信任源、目标账户/三平台、Worker 心跳及性能、整体质量和 Release Gate 未关闭。
 
 实施记录：P03-A06-P01可选两详情GET已实现；4契约测试、真实PG已发布双Scope/当前Session权限与无业务写验证PASS，全后端955项无失败（2既有环境跳过）、开发wheel成功。无Migration/依赖/生产组合，原API保留。下载/生命周期/P03装配尚未实施，CR整体不标完成。详见对应进度记录。
+
+P02实施记录：两内容GET已实现；准备/读线程取消的显式资源所有权与Response外层finally，取消不提前释放活跃线程名额；7契约/ASGI tests与实际PG/文件双Scope空/260字节/Hash/权限/复制后撤销/坏文件最小Audit通过。全后端962无失败（2环境跳过）、wheel成功。无Migration/依赖，默认404，生产组合留P03；真实代理/目标账户/三平台/性能未验，整体CR不标完成。

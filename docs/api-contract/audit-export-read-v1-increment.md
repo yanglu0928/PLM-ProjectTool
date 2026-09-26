@@ -17,3 +17,5 @@
 内容为原始 UTF-8 JSONL（二进制响应不套 JSON envelope），固定安全附件名 `audit-export-{export_id}.jsonl`；Content-Length、Content-Type、nosniff、no-store。不支持 Range/If-Range，返回 REQUEST_MALFORMED。真实快照完整 Hash、128MiB 上限，返回字节前重核当前 Session/权限。准备到传输占有有界槽，满额 503；正常结束、断连、取消或异常关闭快照并释放槽。HTTP 开始后失败终止传输，不伪造成功 JSON。
 
 实现与验收分阶段；本文件不代表上述全部路由已可用。默认应用无路由，生产组合待实际验收后显式启用。
+
+实施状态（2026-09-26）：P01详情/P02内容opt-in Router及真实PG来源+文件验证PASS；普通create_app仍404。下载名额仅进程内Router实例有界（默认4、配置1～20），不是跨进程全局并发承诺；准备/读取消保留活跃线程名额直至实际线程结束，防止遗留工作无限扩张。生产Windows组合、真实代理和三平台/性能仍待。
