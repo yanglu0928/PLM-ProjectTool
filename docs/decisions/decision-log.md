@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260926-212
+
+- Date：2026-09-26；WBS：AUD-03-A06-A04-P03-A04-P01。
+- Decision：新增Audit专用Jobs caller-UOW完成公共Port，用原Queue request/ref核对Job/Outbox、Checkpoint完整租约及Claim绑定，然后同UOW调用既有Repository finish；不嵌套自开事务LeaseService.finish，也不运行发布回调。
+- Reason：真实文件/元数据/结果/Audit需Owner同事务提交，避免Job-first新事务或非原pair误完成；Lease必须在最后数据库步骤重新验证。
+- Impact：无Schema/HTTP/依赖，原finish接口不变；权限、真实文件与结果/发布Audit为Owner前置，完成不授予这些权限。
+- Rollback：撤新公共Port，历史状态保留；不能直接回退已成功任务或删除结果。
+
 ## DEC-20260926-211
 
 - Date：2026-09-26；WBS：AUD-03-A06-A04-P03-A03-P04。

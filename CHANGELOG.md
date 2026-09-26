@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A04-P01新增Audit专用Jobs caller-UOW完成Port，原pair/Scope/Trace/受控payload及当前Lease/Worker/fence完整重核，同事务技术完成，不自commit/回调或访问Audit/Document私有表。实际双Scope/真实并发、取消两阻塞顺序、到期/接管/不一致拒绝及caller Audit+marker故障回滚PASS；926项无失败（2环境跳过）、旧lease/cancel/checkpoint/结果回归及开发wheel通过。无Migration/API/依赖/升级；head0042、旧finish兼容；Windows11验证，Export/权限/File/结果/SystemActor合成或缺，真正Worker发布/HTTP及正式三平台包待。
+
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A03-P04增加内部审计结果DTO及caller-UOW record/get，原Root/acceptance/capture/plan/发布Audit精确绑定、共享canonical清单逐字节复核、原结果重放/并发单次changed，caller后置失败Audit+结果全回滚。真实双Scope empty/nonempty/完整filters与回归PASS；919项无失败（2环境跳过）、开发wheel成功。Windows11验证，无Migration/API/依赖/升级动作，head0042；Job/File/Lease/SystemActor/可信caller合成，真正文件/Job原子发布/HTTP、Server2025/Debian及可用发行包待。
 
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A03-P03新增0042不可变唯一审计成功结果，绑定原计划/Scope/File/发布Audit及完整安全规范manifest与双SHA256，不覆盖历史。实际空/旧计划及Doc/Version up/down/reup/parity、双Scope empty/nonempty真实renderer清单、篡改拒绝/并发/down写锁历史保护PASS；914项无失败（2环境跳过）、计划/文件元数据回归及开发wheel通过。无API/依赖；需受控0041→0042升级，含结果历史拒绝down；无生产迁移。Windows11验证，Job/File/SystemActor refs合成，真正文件/Job原子发布/HTTP及Server2025/Debian/可用发行包仍待。
