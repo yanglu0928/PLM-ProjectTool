@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260926-226
+
+- Date/WBS：2026-09-26 / P04-P03-P01；通用LeaseService自有事务不能与Owner审计原子，前置原pair/current/retry与单次执行已验。CR-AUD-004先登记撤权安全终止差异，不在本技术分项实现政策。
+- Decision：新独立Jobs caller-UOW失败Port，不修改通用Service/Schema/API；严格原pair/current绑定、白名单error、严格bool/有界delay、既有3尝试。调用Owner必须先核验真实原源/系统身份，并负责同UOW审计/提交；不能把技术坐标当权限。
+- Evidence：5新unit/998后端无失败（2环境跳过）、实际PG双Scope FAILED/retry限额、Attempt/Lease绑定/接管拒旧代/终态取消过期拒改、真实Audit写后caller异常整UOW回滚、私有字节保留/原发布回归/wheel通过。测试属性误用和相对build路径失败均修正重跑，有进度记录。
+- Risk/rollback：Owner安全终止基线核验/策略、取消及主循环仍待；撤未装配Port保历史，无生产迁移，Next P02，正式包/Gate保持未完成。
+
 ## DEC-20260926-225
 
 - Date/WBS：2026-09-26 / AUD-03-A06-A04-P03-A07-P04-P02；实际发布/恢复、受权周期和WorkerDB边界前置PASS。

@@ -3,7 +3,7 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 2：Platform Core|
-|Current WBS|`AUD-03-A06-A04-P03-A07-P04-P02 单次协调`（真实新command完整成功/恢复重放/周期收尾PASS；失败Owner/主循环待）|
+|Current WBS|`AUD-03-A06-A04-P03-A07-P04-P03-P01 Jobs失败Port`（caller-UOW技术转换PASS；安全终止Owner/主循环待）|
 |Current Status|PHASE_1_COMPLETE / DOC_03_A03_P04_P04_PRECONDITION_BLOCKED / DOC_02_A02_P01_INTERNAL_PASS / DOC_02_A02_P02_PRECONDITION_BLOCKED / DOC_03_A04_A03_P04_P03_CONTENT_HTTP_PASS / DOC_03_A04_A04_P01_JOB_SCHEMA_PASS / DOC_03_A04_A04_P02_JOB_LEASE_PASS / DOC_03_A04_A04_P03_OUTBOX_PASS / DOC_03_A04_A04_P04_P01_PARSE_QUEUE_PASS / DOC_03_A04_A04_P04_P02_COMMIT_INTERNAL_PASS / DOC_03_A04_A04_P04_P03_P01_ABORT_STATE_PASS / DOC_03_A04_A04_P04_P03_P02_PRECONDITION_BLOCKED / DOC_03_A04_A04_P04_P04_A01_FINALIZE_HTTP_PASS / DOC_03_A04_A04_P04_P04_A02_WINDOWS_COMPOSITION_PASS / DOC_03_A04_A04_P04_COMMIT_ABORT_IN_PROGRESS / DOC_01_A02_INTERNAL_PASS / DOC_01_A03_P01_CURSOR_PASS / DOC_01_A03_P02_HTTP_CONTRACT_PASS / DOC_01_A03_P03_HTTP_DB_PASS / DOC_01_A03_P04_WINDOWS_COMPOSITION_PASS / DOC_01_A04_P01_VERSION_INTERNAL_PASS / DOC_01_A04_P02_VERSION_CURSOR_PASS / DOC_01_A04_P03_VERSION_HTTP_CONTRACT_PASS / DOC_01_A04_P04_VERSION_HTTP_DB_PASS / DOC_01_A04_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P01_VERIFIED_SNAPSHOT_PASS / DOC_01_A05_P02_DOWNLOAD_SOURCE_PASS / DOC_01_A05_P03_PREPARE_DOWNLOAD_PASS / DOC_01_A05_P04_DOWNLOAD_HTTP_PASS / DOC_01_A05_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P06_DISCONNECT_CAPACITY_BOUNDED_PASS / DOC_03_A04_A04_P04_P03_P02_A01_GATE_ADAPTER_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P01_CONTENT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P02_COMMIT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P03_ABORT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P01_READONLY_INSPECTION_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A01_STORAGE_STEP_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A02_INTERNAL_CLEANUP_PASS / PLT_02_A07_P05_A09_CEREMONY_PENDING / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
 |Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03、DOC-03-A01、DOC-03-A02（限定范围）、DOC-03-A03-P01～P03（P03 内部合成验证）、DOC-03-A03-P04-P01～P03（内部合成验证）、DOC-03-A04-A01（Schema 验证）、DOC-03-A04-A02（内部合成验证）、DOC-01-A01、DOC-02-A01、DOC-02-A02-P01（内部合成验证） PASS|
@@ -13,8 +13,8 @@
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，DM-02 License 授权粒度经用户批准 CR-LIC-001 修订|
 |DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；原冻结64cdf09保留；增量至`20260926_0042` 审计不可变成功结果（CR-AUD-002），0001～0041历史不改写；无生产迁移|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
-|Test Summary|P03-A07-P04-P02 Windows11/Python3.13后端993项无失败（2既有环境跳过）；11新unit/真实PG bounded UOW+周期两Scope未capture空/260完整单次成功/13表重放无写、stage-only恢复/未登记旧字节拒绝保原/实际commit确认丢失返回原结果、原User停用分类前拒绝，旧发布/wheel成功。没有claim主循环/失败Owner/正式环境验收|
-|Next WBS|AUD-03-A06-A04-P03-A07-P04-P03：失败/取消Owner前置核查（撤权/License拒绝系统终止政策、SystemActor、原源/Lease与同UOW审计/技术转换），然后claim分派/主循环/重启与提交Jobs HTTP；未验Worker前POST关闭。网络/质量/Gate/正式材料/完整Scope保留，Server2025未验、Debian13暂缓|
+|Test Summary|P04-P03-P01 Windows11/Python3.13后端998项无失败（2既有环境跳过）；5新unit/真实PG双Scope失败/三次retry上限、旧代/终态/取消/过期拒改、真实Audit插入后caller异常整UOW回滚，私有字节保留，旧发布/wheel成功。技术Port不是Owner授权/正式环境验收|
+|Next WBS|AUD-03-A06-A04-P03-A07-P04-P03-P02：CR-AUD-004安全终止Owner基线核验与实现（受控SystemActor、原源/Lease、同UOW审计与技术转换），然后取消/claim分派/主循环/重启与提交Jobs HTTP；未验Worker前POST关闭。网络/质量/Gate/正式材料/完整Scope保留，Server2025未验、Debian13暂缓|
 
 ## 自动执行策略
 
@@ -24,6 +24,8 @@
 - GitHub：允许在当前 Scope 和正确分支内自动 fetch、commit、push；禁止 force push、直接提交 main、覆盖未知远端修改或提交 Secret/客户数据。
 
 ## 最近检查点
+
+- P04-P03-P01 Jobs caller-UOW失败技术Port通过；真实PG双Scope失败/限次retry/接管拒旧代、终态取消过期拒改与真实Audit后置故障整体回滚。998无失败（2环境跳过）、开发wheel成功；CR-AUD-004已先登记，安全终止Owner政策尚未实施，无Schema/API/依赖，正式包/Gate待。
 
 - P03-A07-P04-P02 actual bounded UOW/受权周期/单次原源分类与完整流程通过，双Scope新command空/260成功、原结果13表重放无写、stage-only同file恢复/未登记旧字节拒绝保原/真实commit确认丢失原源返回。993无失败（2环境跳过），旧发布/wheel成功；无Schema/API/依赖，失败Owner/主循环/重启/正式材料/整体包未完成，下一项失败取消政策前置核查。
 
