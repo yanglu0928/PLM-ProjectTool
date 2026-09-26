@@ -11,6 +11,15 @@ from .orm import JobRow,JobLeaseRow,JobAttemptRow
 class SqlAlchemyAuditExportClaimRepository:
     def __init__(self):self._leases=SqlAlchemyJobLeaseRepository()
 
+    def check_target(self,tx,*,job_id,fencing_token,worker_ref):
+        claim=self._leases.check_current(tx,job_id=job_id,fencing_token=fencing_token,worker_ref=worker_ref)
+        session=self._leases._session(tx)
+        job=session.get(JobRow,job_id)
+        attempt=self._leases._attempt(session,job_id,fencing_token)
+        if (job.owner_module!='audit' or job.job_type!='AUDIT_EXPORT' or job.max_attempts!=3
+                or job.completed_at is not None or attempt.error_code is not None or not 1<=claim.attempt_no<=3):raise JobLeaseError('JOB_STORE_UNAVAILABLE')
+        return claim
+
     @staticmethod
     def _eligible(now):
         return (JobRow.owner_module=='audit',JobRow.job_type=='AUDIT_EXPORT',JobRow.attempt_count<JobRow.max_attempts,

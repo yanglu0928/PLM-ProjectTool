@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-241
+
+- Precode：Phase2/P06-P06，CR-AUD-004/ADR011，前置P06-P03/04/05已验；编码前进度记录领取确认不明的问题与最小确认方案，无Schema/API/技术栈或权限扩张。
+- Decision：只保本次实际领取命令/Claim/identity；commit异常退出原UOW后新UOW完整原Root/pair/current同Worker-fence活Lease/未完成Attempt/actualClaim核验。没有真实证据则安全错误，commit异常不走deadlock重领；收据不授正文权限，无renew/文件/Audit/状态写。
+- Evidence：3新unit/1084无失败（2既有权限跳过），实际双Scope提交前整回滚拒绝/不重领、实际commit后确认故障只一Lease/Attempt、六表只读、错Worker/期限/代际/成功拒绝、撤权仍业务capture拒绝与后续新代发布；开发wheel通过。首次测试脚本私有方法错误类型捕获范围修正后重跑，不冒充实际网络断线。
+- Risks/rollback：无Migration/API/依赖，0042保留；撤内部确认分支保历史。已变代/过期拒绝而非猜成功，跨进程未知命令恢复/公平/坏源隔离/loop未验，下一P06-P07有界后台单步/停止控制；正式材料/质量/安装包/Gate未完成。
+
 ## DEC-20260927-240
 
 - Precode：Phase2/P06-P05，CR-AUD-004/ADR011；前置耗尽安全失败已验，新增Jobs owned只读最早到期一个候选Port与Audit单候选收尾，不扩Schema/API/权限/依赖。

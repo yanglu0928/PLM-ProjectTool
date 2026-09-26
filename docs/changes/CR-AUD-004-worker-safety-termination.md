@@ -48,3 +48,5 @@ P06-P04实施前耗尽政策：当前RUNNING匹配Worker/fence/一致ACTIVE Leas
 P06-P04内部PASS：实际PG双Scope三代真实到期/前代活租约错Worker拒绝、Audit与三表同UOW；Audit/state写后故障六表回滚、撤权仍正文拒绝但安全失败可用、真正commit后确认故障完整EXPIRED终态/唯一Audit核源恢复，无写重放/旧字节保留。1075无失败（2环境跳过）、旧执行器/发布/wheel通过。脚本首次相对路径问题修正重跑；非真实网络断线证明，扫描/领取确认恢复/loop/CLI/HTTP未完成，CR/Gate未关闭。
 
 P06-P05候选发现内部PASS：编码前策略另登记P05进度，Jobs仅固定Owner/type/current第三代一致ACTIVE Lease/未完成Attempt/实际期限的单候选无锁hint；扫描前后identity，收尾原Owner全部重验，不能用hint改状态。真实双Scope六表无写/真正确认恢复与完成后无候选、P04实际拒绝回滚/撤权/字节保留及原发布回归，1081无失败（2环境跳过）/wheel通过。公平并发/坏源隔离/领取确认/loop/CLI/HTTP仍待，CR/Gate未关闭。
+
+P06-P06确认恢复政策在编码前progress记录：commit异常只保本次actual命令/Claim/identity，退出原UOW后核完整原Root/pair/current活Worker-fence/ActualClaim，不经deadlock重复领取、不以STALE猜成功，技术收据不授业务权限。实际双Scope提交前回滚与commit后确认故障一Lease/Attempt、六表无写/错Worker过期换代成功拒绝/撤权正文拒绝；1084无失败（2环境跳过）及开发wheel通过。本次已知命令恢复不等于实际网络中断或跨进程未知命令恢复，loop/CLI/HTTP未完成，CR/Gate未关闭。

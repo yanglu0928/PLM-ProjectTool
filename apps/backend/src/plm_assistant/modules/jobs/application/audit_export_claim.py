@@ -46,3 +46,13 @@ class AuditExportClaims:
             return claim
         except JobLeaseError:raise
         except Exception:raise JobLeaseError('JOB_STORE_UNAVAILABLE') from None
+
+    def check_target(self,tx,*,job_id,fencing_token,worker_ref):
+        from .lease_checkpoint import validate_checkpoint
+        validate_checkpoint(job_id=job_id,fencing_token=fencing_token,worker_ref=worker_ref)
+        try:
+            value=self._repo.check_target(tx,job_id=job_id,fencing_token=fencing_token,worker_ref=worker_ref)
+            if type(value) is not ClaimedJob or (value.job_id,value.fencing_token)!=(job_id,fencing_token):raise JobLeaseError('JOB_STORE_UNAVAILABLE')
+            return value
+        except JobLeaseError:raise
+        except Exception:raise JobLeaseError('JOB_STORE_UNAVAILABLE') from None

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/P06-P06新增专属领取commit异常的本次已知命令确认恢复：结束原UOW后核Root/pair/current Worker-fence活Lease/Attempt、实际完整Claim/同受控identity；不盲重领，不用STALE猜成功。3新unit/1084项后端无失败（2Windows权限跳过）、真实PG双Scope提交前回滚拒绝与commit后确认故障仅一Lease/Attempt、六表只读/错Worker过期换代成功拒绝/撤权仍正文拒绝，开发wheel通过。Windows11，无Migration/API/依赖/数据升级，0042保留；撤内部确认分支保已创建历史回滚。实际网络断线/跨进程未知命令恢复/调度/loop/CLI/HTTP、正式材料/质量/其他平台/Gate/可用安装包仍待。
+
 - 2026-09-27：`0.1.0.dev0`/P06-P05新增耗尽到期任务无锁单候选扫描与原安全Owner受控收尾；固定audit/AUDIT_EXPORT/current第三Attempt/max3/ACTIVE一致Lease及DB期限，hint非授权，前后identity，不直接写状态或读正文。6新unit/真实PG-Vault两Scope六表只读、正确Worker-fence、收尾后无候选/真实commit后确认恢复及旧发布链验证通过；1081项无失败（2Windows权限跳过）、开发wheel通过。Windows11，无Migration/API/依赖/数据升级，0042不变；撤未公开装配保历史回滚。领取确认恢复/公平并发/坏源隔离/主循环/CLI/HTTP、正式材料/质量/其他平台/Gate/可用安装包未完成。
 
 - 2026-09-27：`0.1.0.dev0`/P06-P04新增第三次真实到期耗尽的安全失败与最小SYSTEM审计同事务、EXPIRED终态核验及可选单命令执行器接线；无业务授权旁路/强杀/删除。8新unit、真实PostgreSQL双Scope三代到期/六表故障回滚/撤权正文拒绝/commit后确认故障及只读重放/旧字节保留通过；1075项无失败（2环境跳过），旧执行器/发布回归与开发wheel成功。兼容当前Windows11；无Migration/API/依赖变化，Schema仍0042，无数据升级，撤未公开Owner/可选装配保历史回滚。扫描/领取确认恢复/主循环/CLI/HTTP、正式材料/质量/其他平台/Gate及可用安装包待。

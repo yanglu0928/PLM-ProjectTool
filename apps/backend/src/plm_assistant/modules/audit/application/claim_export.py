@@ -24,6 +24,11 @@ class ClaimedAuditExport:
         self.command.__post_init__()
 
 
+class _UnconfirmedClaim(Exception):
+    def __init__(self,result,identity):
+        super().__init__('AUDIT_UNAVAILABLE');self.result,self.identity=result,identity
+
+
 class AuditExportClaimAdmission:
     def __init__(self,*,unit_of_work,repository,claims,queue,system_actor,supervisor):
         if any(d is None for d in (unit_of_work,repository,claims,queue,system_actor)) or type(supervisor) is not AuditHeartbeatSupervisor:
@@ -45,6 +50,9 @@ class AuditExportClaimAdmission:
                 claimed=self._claim(worker_ref,lease_seconds)
                 if claimed is False:continue  # Actual eligibility race; fresh UOW/candidate.
                 return claimed
+            except _UnconfirmedClaim as exc:
+                try:return self._confirm(exc.result,exc.identity)
+                except Exception:raise AuditExportWorkerError() from None
             except Exception as exc:
                 if self._repo.is_retryable_deadlock(exc) is True and attempt<2:continue
                 if isinstance(exc,AuditExportWorkerError):raise
@@ -77,4 +85,27 @@ class AuditExportClaimAdmission:
                 if claim is None:return False
                 AuditExportJobCompletion._claim(claim,request,refs,claim.fencing_token)
                 command=AuditExportCaptureCommand(intent.export_id,claim.job_id,claim.fencing_token,worker_ref)
-                result=ClaimedAuditExport(command,claim);tx.commit();return result
+                result=ClaimedAuditExport(command,claim)
+                try:tx.commit()
+                except Exception:raise _UnconfirmedClaim(result,identity) from None
+                return result
+
+    def _confirm(self,result,identity):
+        result.__post_init__();c=result.command
+        with self._supervisor.stopped(c):
+            if self._identity()!=identity:raise AuditExportWorkerError('SYSTEM_ACTOR_UNAVAILABLE')
+            with self._uow() as tx:
+                intent=self._repo.get_created(tx,export_id=c.export_id)
+                if type(intent) is not AuditExportIntent or intent.export_id!=c.export_id:raise AuditExportWorkerError()
+                intent.__post_init__();accepted=self._repo.get_accepted(tx,intent=intent)
+                if type(accepted) is not AcceptedAuditExport or accepted.intent!=intent or accepted.job_id!=c.job_id:raise AuditExportWorkerError()
+                accepted.__post_init__()
+                request=AuditExportSubmitService._queue_request(intent);refs=AuditExportJobRef(accepted.job_id,accepted.event_id)
+                actual=self._queue.find_export(tx,request=request)
+                if type(actual) is not AuditExportJobRef or actual!=refs:raise AuditExportWorkerError()
+                actual.__post_init__()
+                if self._identity()!=identity:raise AuditExportWorkerError('SYSTEM_ACTOR_UNAVAILABLE')
+                claim=self._claims.check_target(tx,job_id=c.job_id,fencing_token=c.fencing_token,worker_ref=c.worker_ref)
+                AuditExportJobCompletion._claim(claim,request,refs,c.fencing_token)
+                if claim!=result.claim:raise AuditExportWorkerError()
+                return result

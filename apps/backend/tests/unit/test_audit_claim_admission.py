@@ -67,3 +67,29 @@ class ClaimAdmissionTests(TestCase):
             with self.assertRaises(AuditExportWorkerError):self.owner.claim_next(worker_ref='worker')
             self.claims.claim_target.assert_not_called()
         finally:release.set();handle.stop()
+
+    def test_commit_confirmation_recovered_only_from_actual_same_claim(self):
+        self.f.f.tx.commit.side_effect=RuntimeError('synthetic lost confirmation')
+        self.claims.check_target.return_value=self.f.f.claim
+        result=self.owner.claim_next(worker_ref=self.f.f.cmd.worker_ref)
+        self.assertEqual(result.command,self.f.f.cmd)
+        self.claims.claim_target.assert_called_once();self.claims.check_target.assert_called_once()
+        self.assertEqual(self.f.f.uow.call_count,2);self.f.f.tx.commit.assert_called_once()
+        self.f.f.auth.assert_current.assert_not_called()
+
+    def test_confirmation_wrong_source_or_changed_identity_not_reclaimed(self):
+        self.f.f.tx.commit.side_effect=RuntimeError('synthetic lost confirmation')
+        self.claims.check_target.return_value=replace(self.f.f.claim,attempt_no=2)
+        with self.assertRaises(AuditExportWorkerError):self.owner.claim_next(worker_ref='worker')
+        self.claims.claim_target.assert_called_once()
+        self.claims.claim_target.reset_mock();self.claims.check_target.reset_mock()
+        first,second=uuid4(),uuid4();self.f.actor.assert_current.side_effect=[first,first,second]
+        with self.assertRaises(AuditExportWorkerError):self.owner.claim_next(worker_ref='worker')
+        self.claims.claim_target.assert_called_once();self.claims.check_target.assert_not_called()
+
+    def test_unconfirmed_commit_never_uses_deadlock_reclaim(self):
+        self.f.f.tx.commit.side_effect=RuntimeError('synthetic commit error')
+        self.claims.check_target.side_effect=RuntimeError('synthetic uncommitted')
+        self.f.f.repo.is_retryable_deadlock.return_value=True
+        with self.assertRaises(AuditExportWorkerError):self.owner.claim_next(worker_ref='worker')
+        self.claims.claim_target.assert_called_once();self.f.f.tx.commit.assert_called_once()
