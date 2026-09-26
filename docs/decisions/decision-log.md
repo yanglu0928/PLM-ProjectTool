@@ -3258,3 +3258,11 @@
 - Reason：未知 Owner/仅持 ID/旧决定不授予访问；服务凭据和身份不得由客户端证明替代。真实业务 Owner 未具备时不装配 HTTP。
 - Impact：Project 新内部锁读策略、Review read service/Version 定位 Port 与单位/隔离测试；无数据库/API/角色/依赖变化。真实 Owner 锁及端到端授权未验证，License 合成拒绝不代表正式信任源通过。
 - Rollback：停用内部服务/移除非公开策略，保留 0034 历史和冻结 API。
+
+## DEC-20260926-172
+
+- Date：2026-09-26；WBS：RVW-01-A06。
+- Decision：内部 CREATE 只生成逻辑 DRAFT 根；Owner 验证固定输入与管理资格，服务器选择 policy，START 独立重验固定版本/确认人/身份锁。通用收据重放不可变 CreatedReviewRef，不把后来的 state/etag 当首次响应。
+- Reason：冻结模型根绑定逻辑身份，轮次才绑定版本；目前通用收据不保存动态响应，根创建字段已不可变，可避免无必要的新 Schema。旧 Key 不能绕过现有授权，未知 Owner 不猜测。
+- Impact：创建前置设计，无新代码/Migration/API/角色/依赖；真实 Owner 和创建服务仍待。保持现有每主题可有多 Review、活动 Subject 锁唯一语义，不擅自新增业务唯一性。
+- Rollback：不装配创建服务，保留冻结版本/0034/历史。
