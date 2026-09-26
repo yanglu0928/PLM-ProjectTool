@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-256
+
+- Precode：Phase2/P06-P13-P06，CR-AUD-005，先记录mixed-loop进度，实际有限混排持续run与不可变请求Audit保护，不关闭trigger制造伪PASS。
+- Evidence：两轮每轮12健康/4坏priority+1真实耗尽坏source，actual STOPPED，坏技术全行保原/健康全部发布；恢复测试源后发布、原第三代安全失败/actual lost-ack/旧字节/旧发布通过。Audit UPDATE实际P0001/六表无写；未证明真实Audit损坏恢复。
+- Decision：每轮91steps/78rejections暴露claim清cursor后重扫开销，明确PERFORMANCE_NOT_PROVED，下一P13-P07先记录后优化回绕/新任务可见性，不能改优先级或无限排除。
+- Impact/rollback：本轮仅验证/文档，无生产/API/Migration/依赖/升级，未重跑未变unit/wheel；撤脚本保历史。复杂故障/全局公平/正式材料/完整包/Gate仍待，CR不关闭。
+
 ## DEC-20260927-255
 
 - Precode：Phase2/P06-P13-P05，CR-AUD-005，exhaustion-isolation进度先记录原单首候选风险/expiry游标/Owner只读原源预检和未知故障边界。

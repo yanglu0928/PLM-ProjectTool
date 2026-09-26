@@ -3,7 +3,7 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 2：Platform Core|
-|Current WBS|`AUD-03-A06-A04-P03-A07-P04-P03-P06-P13-P05 耗尽明确坏来源隔离`（双Scope实际第三代到期坏源拒绝无写/健康后续发布内部PASS；长期混排/复杂故障待，CR-AUD-005打开）|
+|Current WBS|`AUD-03-A06-A04-P03-A07-P04-P03-P06-P13-P06 混合持续循环`（有限混排健康全完成/坏技术原行不动/STOPPED内部PASS；91steps/78拒绝暴露重扫开销，非性能PASS，CR-AUD-005打开）|
 |Current Status|PHASE_1_COMPLETE / DOC_03_A03_P04_P04_PRECONDITION_BLOCKED / DOC_02_A02_P01_INTERNAL_PASS / DOC_02_A02_P02_PRECONDITION_BLOCKED / DOC_03_A04_A03_P04_P03_CONTENT_HTTP_PASS / DOC_03_A04_A04_P01_JOB_SCHEMA_PASS / DOC_03_A04_A04_P02_JOB_LEASE_PASS / DOC_03_A04_A04_P03_OUTBOX_PASS / DOC_03_A04_A04_P04_P01_PARSE_QUEUE_PASS / DOC_03_A04_A04_P04_P02_COMMIT_INTERNAL_PASS / DOC_03_A04_A04_P04_P03_P01_ABORT_STATE_PASS / DOC_03_A04_A04_P04_P03_P02_PRECONDITION_BLOCKED / DOC_03_A04_A04_P04_P04_A01_FINALIZE_HTTP_PASS / DOC_03_A04_A04_P04_P04_A02_WINDOWS_COMPOSITION_PASS / DOC_03_A04_A04_P04_COMMIT_ABORT_IN_PROGRESS / DOC_01_A02_INTERNAL_PASS / DOC_01_A03_P01_CURSOR_PASS / DOC_01_A03_P02_HTTP_CONTRACT_PASS / DOC_01_A03_P03_HTTP_DB_PASS / DOC_01_A03_P04_WINDOWS_COMPOSITION_PASS / DOC_01_A04_P01_VERSION_INTERNAL_PASS / DOC_01_A04_P02_VERSION_CURSOR_PASS / DOC_01_A04_P03_VERSION_HTTP_CONTRACT_PASS / DOC_01_A04_P04_VERSION_HTTP_DB_PASS / DOC_01_A04_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P01_VERIFIED_SNAPSHOT_PASS / DOC_01_A05_P02_DOWNLOAD_SOURCE_PASS / DOC_01_A05_P03_PREPARE_DOWNLOAD_PASS / DOC_01_A05_P04_DOWNLOAD_HTTP_PASS / DOC_01_A05_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P06_DISCONNECT_CAPACITY_BOUNDED_PASS / DOC_03_A04_A04_P04_P03_P02_A01_GATE_ADAPTER_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P01_CONTENT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P02_COMMIT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P03_ABORT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P01_READONLY_INSPECTION_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A01_STORAGE_STEP_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A02_INTERNAL_CLEANUP_PASS / PLT_02_A07_P05_A09_CEREMONY_PENDING / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
 |Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03、DOC-03-A01、DOC-03-A02（限定范围）、DOC-03-A03-P01～P03（P03 内部合成验证）、DOC-03-A03-P04-P01～P03（内部合成验证）、DOC-03-A04-A01（Schema 验证）、DOC-03-A04-A02（内部合成验证）、DOC-01-A01、DOC-02-A01、DOC-02-A02-P01（内部合成验证） PASS|
@@ -14,7 +14,7 @@
 |DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；原冻结64cdf09保留；增量至`20260926_0042` 审计不可变成功结果（CR-AUD-002），0001～0041历史不改写；无生产迁移|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
 |Test Summary|P13-P05 Windows11/Python3.13后端1130无失败（2既有权限跳过）；新增耗尽cursor/未知故障/identity/原证明/只读预检unit，实际双Scope6场景第三代到期坏引用/缺Root/错pair六表无写拒绝、健康后续发布/坏Job-Lease-Attempt不改，恢复源后原安全失败/actual lost-ack/旧字节、真实CLI停止/旧发布/wheel通过。前P04真实40P01/55P03矩阵保留，长期混排/Acceptance实际审计矩阵/复杂Lease/正式来源待|
-|Next WBS|AUD-03-A06-A04-P03-A07-P04-P03-P06-P13-P06：持续循环混合队列/Acceptance实际来源分类收口；复杂Lease/预检竞争边界保留，后公开提交Jobs HTTP。未知跨进程命令恢复、公开POST/If-Match仍待。网络/质量/Gate/正式材料/完整Scope保留，Server2025未验、Debian13暂缓|
+|Next WBS|AUD-03-A06-A04-P03-A07-P04-P03-P06-P13-P07：游标回绕/正常claim后重扫开销优化及新任务可见性复验；复杂Lease/预检竞争/真实Audit损坏边界保留，后公开提交Jobs HTTP。未知跨进程命令恢复、公开POST/If-Match仍待。网络/质量/Gate/正式材料/完整Scope保留，Server2025未验、Debian13暂缓|
 
 ## 自动执行策略
 
@@ -24,6 +24,8 @@
 - GitHub：允许在当前 Scope 和正确分支内自动 fetch、commit、push；禁止 force push、直接提交 main、覆盖未知远端修改或提交 Secret/客户数据。
 
 ## 最近检查点
+
+- 2026-09-27/P06-P13-P06两轮真实混合持续Loop各12健康任务+4坏priority+1到期第三代坏source，健康全发布/坏技术行不动/true STOPPED，原source恢复后可发布/安全收尾/lost-ack/字节/旧发布通过。Audit UPDATE实际P0001/六表无写，未证明真实源损坏修复。每轮91steps/78拒绝暴露正常claim清cursor的重扫，性能未验，下一优化回绕；仅验证/文档，无生产/API/Migration变化，完整包/Gate待。
 
 - 2026-09-27/P06-P13-P05新增只读耗尽expiry游标/旧入口保留、Owner原源预检不授终态权，后台明确source拒绝后让Claim优先；1130通过/2跳过、真实双Scope第三代到期坏ref/缺Root/错pair精确reason六表无写拒绝，健康后续发布/坏技术原行不动，恢复合成源后原安全失败/actual lost-ack/旧字节及CLI停止/旧发布/wheel通过。无Migration/API/依赖，长期混排/Acceptance实际矩阵/复杂Lease/完整包/Gate待。
 

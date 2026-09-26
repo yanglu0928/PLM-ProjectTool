@@ -32,3 +32,5 @@ P13-P03-A02更新：显式后台isolated准入/严格来源拒绝DTO、只在完
 P13-P04更新：真实双Scope反向Root→Job与Worker Job→Root形成8个40P01，pg_blocking_pids核实际竞争；单次原有界重试成功，连续三次上限失败且六表无写，同实例竞争释放后单Attempt/RELEASED Lease/结果发布。真实2个55P03非死锁/非坏源拒绝、失败无写后恢复。只测试事务内检测时间协调，原生产limits不改，原发布回归通过；新锁序此矩阵内部关闭，不外推长期公平/耗尽坏源/Acceptance实际故障/复杂Lease/正式发行，CR保持打开。
 
 P13-P05更新：新增独立expiry/JobId只读scan及常数cursor，旧peek/run默认保留；后台显式耗尽隔离、Owner只读原源预检且不授终态权，仍原expire/verify/提交后证明。1130通过/2既有跳过，实际双Scope第三次到期malformed/缺Root/错pair精确reason六表无写，健康后续发布、坏Job/Lease/Attempt全行不变，恢复测试来源后原收尾/真实commit-lost-ack/旧字节仍通过；真实CLI停止/旧发布/wheel通过。长期混排、Acceptance审计真实矩阵/复杂Lease/预检竞争仍待，CR保持打开。
+
+P13-P06更新：两轮真实持续Loop每轮12健康双Scope任务+4高优先坏源+1实际到期第三代坏源，健康全发布/坏Job-Lease-Attempt不动/true STOPPED，恢复普通来源后可发布，原安全收尾/actual lost-ack/字节/旧发布回归通过。Audit实际UPDATE被P0001不可变触发器拒绝、六表无写，未伪造真实Audit损坏通过；其专属分类保留unit范围。观察每轮91steps/78rejected/12executed，暴露正常claim清cursor的重复扫描开销；下一P07先记录后优化cursor回绕/新任务可见性，性能与无限流公平不冒充PASS，CR打开。

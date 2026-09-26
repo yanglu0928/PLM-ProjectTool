@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/P06-P13-P06新增真实混合队列持续Loop验证：两轮各12双Scope健康任务+4普通坏source+1实际第三代到期坏source，健康全发布/坏技术原行不动/true STOPPED，恢复source后发布及原安全失败/lost-ack/字节/旧发布通过；请求Audit UPDATE真实P0001拒绝/六表不写，未伪造真实审计源损坏。每轮91steps/78rejected/12executed暴露重扫开销，下一优化，非性能或无限优先级公平PASS。Windows11，仅验证/文档，无API/Migration/依赖/升级，撤脚本回滚；未重跑未变unit/wheel，正式材料/复杂故障/完整包/Gate待。
+
 - 2026-09-27：`0.1.0.dev0`/P06-P13-P05隔离耗尽扫描明确坏来源：expiry/JobId只读游标、旧peek/run默认保留，Owner只读原源预检不授终态权；坏source技术拒绝后正常Claim优先，仍原expire/verify证明。5新unit/1130通过（2既有跳过），实际双Scope三次到期引用坏/缺Root/错pair精确reason六表无写，健康后续发布/坏Job-Lease-Attempt原行不变，恢复源后原安全失败/commit-lost-ack/旧字节、CLI外部停止/旧发布/wheel635109通过。Windows11，无Migration/API/依赖/升级，撤新Port/显式接线回滚。长期混排/Acceptance实际审计矩阵/复杂Lease/预检竞争/正式材料/完整包/Gate待。
 
 - 2026-09-27：`0.1.0.dev0`/P06-P13-P04新增真实反向锁序验证：双Scope共8实际40P01，单死锁有界重试成功、连续3死锁严格上限失败且六表无写，同实例释放竞争后单Attempt/RELEASED Lease/结果；2实际55P03不是死锁/坏源，失败无写后恢复。原发布回归通过，Windows11，仅验证脚本/文档，无生产代码/API/Migration/依赖/升级，撤脚本回滚；未重跑未变unit/wheel。Acceptance实际故障/耗尽坏源/复杂Lease/长期公平/正式材料/SCM/完整包/Gate待。
