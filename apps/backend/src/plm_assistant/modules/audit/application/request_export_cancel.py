@@ -51,6 +51,25 @@ class AuditExportCancelReceipt:
             raise AuditExportCancelRequestError()
 
 
+@dataclass(frozen=True,slots=True)
+class RequestAuditJobCancel:
+    """Audit Owner input; JobId is resolved internally, never an Export assertion."""
+    job_id: UUID
+    scope: str
+    project_id: UUID|None
+    session_token: bytes=field(repr=False)
+    csrf_token: bytes=field(repr=False)
+    trace_id: UUID
+    reason: str=field(repr=False)
+    expected_version: int
+
+    def __post_init__(self):
+        # Reuse strict coordinate/input validation only, not resource resolution.
+        RequestAuditExportCancel(self.job_id,self.scope,self.project_id,self.session_token,
+            self.csrf_token,self.trace_id,self.reason,self.expected_version)
+        if self.expected_version is None:raise AuditExportCancelRequestError('VALIDATION_FAILED')
+
+
 class AuditExportCancelRequestService:
     def __init__(self,*,unit_of_work,repository,authorization,cancellations,receipts,sources,audit):
         if any(v is None for v in (unit_of_work,repository,authorization,cancellations,receipts,sources,audit)):
@@ -59,11 +78,18 @@ class AuditExportCancelRequestService:
 
     def request(self,c,*,idempotency_key):
         if type(c) is not RequestAuditExportCancel:raise AuditExportCancelRequestError('VALIDATION_FAILED')
+        return self._invoke(c,idempotency_key,by_job=False)
+
+    def request_job(self,c,*,idempotency_key):
+        if type(c) is not RequestAuditJobCancel:raise AuditExportCancelRequestError('VALIDATION_FAILED')
+        return self._invoke(c,idempotency_key,by_job=True)
+
+    def _invoke(self,c,idempotency_key,*,by_job):
         c.__post_init__()
         try:validate_idempotency_key(idempotency_key)
         except IdempotencyError as exc:raise AuditExportCancelRequestError(exc.code) from None
         for attempt in range(3):
-            try:return self._request(c,idempotency_key)
+            try:return self._request(c,idempotency_key,by_job=by_job)
             except Exception as exc:
                 if self._repo.is_retryable_deadlock(exc) is True:
                     if attempt<2:continue
@@ -73,9 +99,10 @@ class AuditExportCancelRequestService:
                     raise AuditExportCancelRequestError(exc.code) from None
                 raise AuditExportCancelRequestError() from None
 
-    def _request(self,c,key):
+    def _request(self,c,key,*,by_job=False):
         with self._uow() as tx:
-            intent=self._repo.peek_created(tx,export_id=c.export_id)
+            intent=(self._repo.peek_created_for_job(tx,job_id=c.job_id) if by_job
+                else self._repo.peek_created(tx,export_id=c.export_id))
             if type(intent) is not AuditExportIntent or (intent.spec.scope,intent.spec.project_id)!=(c.scope,c.project_id):raise AuditExportCancelRequestError('RESOURCE_NOT_FOUND')
             intent.__post_init__()
             auth=AuditExportCancelAuthorizationRequest(c.session_token,c.csrf_token,c.trace_id,intent.spec,intent.actor_id)
@@ -83,15 +110,16 @@ class AuditExportCancelRequestService:
             if (type(proof) is not AuthorizedAuditExportCancel or type(proof.actor_id) is not UUID or not proof.actor_id.int
                     or (proof.scope,proof.project_id,proof.original_actor_id,proof.intent_hash)!=(c.scope,c.project_id,intent.actor_id,intent.intent_hash)):
                 raise AuditExportCancelRequestError()
-            if self._repo.get_created(tx,export_id=c.export_id)!=intent:raise AuditExportCancelRequestError()
+            if self._repo.get_created(tx,export_id=intent.export_id)!=intent:raise AuditExportCancelRequestError()
             accepted=self._repo.get_accepted(tx,intent=intent)
             if type(accepted) is not AcceptedAuditExport or accepted.intent!=intent:raise AuditExportCancelRequestError()
             accepted.__post_init__()
+            if by_job and accepted.job_id!=c.job_id:raise AuditExportCancelRequestError()
             target=AuditExportCancellationTarget(AuditExportSubmitService._queue_request(intent),AuditExportJobRef(accepted.job_id,accepted.event_id))
             before=self._cancel.read_facts(tx,target=target)
             if before.requested_by is not None:self._sources.first_request(tx,accepted=accepted,facts=before)
             idem=IdempotencyScope.from_key(actor_id=proof.actor_id,project_id=c.project_id,operation='V1_AUDIT_EXPORT_CANCEL_'+c.scope,key=key)
-            payload=dict(export_id=str(c.export_id),intent_hash=intent.intent_hash,reason=c.reason)
+            payload=dict(export_id=str(intent.export_id),intent_hash=intent.intent_hash,reason=c.reason)
             # Preserve existing internal receipt fingerprints. Explicit versions
             # bind to the same operation/key, so changed preconditions conflict.
             if c.expected_version is not None:payload['expected_version']=c.expected_version

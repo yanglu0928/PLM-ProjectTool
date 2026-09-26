@@ -53,6 +53,11 @@ class SqlAlchemyAuditExportSubmitRepository:
         export_id=_session(tx).execute(select(acceptances.c.export_id).where(acceptances.c.job_id==job_id)).scalar_one_or_none()
         return None if export_id is None else self.get_created(tx,export_id=export_id)
 
+    def peek_created_for_job(self,tx,*,job_id):
+        """Immutable hint only; cancellation must authorize before Root/pair locks."""
+        export_id=_session(tx).execute(select(acceptances.c.export_id).where(acceptances.c.job_id==job_id)).scalar_one_or_none()
+        return None if export_id is None else self.peek_created(tx,export_id=export_id)
+
     def _bind(self,tx,intent):
         if type(intent) is not AuditExportIntent:raise AuditExportSubmitError()
         intent.__post_init__()

@@ -1,5 +1,7 @@
 # Job详情运行Contract增量
 
+JOB-02-A02（2026-09-27）内部Audit Owner支持JobId同UOW原源解析，强制expected_version；原当前授权/受理/pair与export入口指纹去重保持。无公开HTTP。API-03取消仅状态结果，GET才完整JobView；但API-01更新强ETag/首次重放需补取消首次lock_version快照，不能当前version拼旧state。冻结只有JOB_PROJECT_CANCEL，内部DEPLOYMENT不等新增JOB_ADMIN_CANCEL，若需HTTP另CR；其他Owner/完整Scope保留。
+
 JOB-02-A01（2026-09-27）内部前置更新：CR-JOB-003已补原Audit取消expected_version与锁内实际Job版本比较；显式版本绑定原持久指纹，同Key原命令重放返回首次结果且仍重验当前授权，过期新请求VERSION_CONFLICT整事务无写。None仅保留旧内部调用/指纹，未来公开If-Match映射必须显式提供版本；尚无公开取消HTTP/JobId受权Owner解析/完整响应，不能据本项宣称JOB_CANCEL或完整Jobs PASS。无新Migration/冻结API Breaking/角色变动；GET强vN保持。
 
 JOB-01-A03（2026-09-27）装配更新：Windows --platform与--platform-write显式模式已接该详情Router、原当前授权和首个Audit Owner；默认与login-only仍404。实际PG/ASGI双工厂验证通过、正式信任源不可用时仍拒绝启动。前文“Windows尚未接线”为P02历史状态保留，完整Jobs Owner/正式账户/监听进程/浏览器/发行仍未完成。

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/JOB-02-A02新增Audit Owner严格JobId取消命令，原同UOW当前授权/Root/受理/pair/版本/持久收据复用。Windows11后端1165无失败/2既有权限跳过；真实PG两Scope取消/实际Worker确认、原export入口同Key去重、当前权限/跨项目/IM他人/Admin项目/过期版本/指纹/停用后重放拒绝十表无写、Audit故障回滚、原版本/发布回归及开发wheel通过。无新增Migration/API/依赖/权限/升级，需0043，撤Owner入口保历史；公开首次版本快照/项目HTTP、其他Owner/正式材料/三平台/完整包/Gate待。
+
 - 2026-09-27：`0.1.0.dev0`/JOB-02-A01按CR-JOB-003为原Audit取消内部命令增加版本条件，原收据指纹兼容/显式版本绑定与持久重放、锁定查询刷新实际触发器版本。Windows11后端1160无失败/2既有权限跳过，真实隔离PG双Scope即时v2/运行v1→请求v2→Worker确认v3、并发去重/同版本竞争/终态不复活/过期版本和指纹冲突十表无写、Audit故障全回滚；原取消/确认/到期与发布回归、开发wheel通过。无本轮Migration/API/依赖/权限变化，需0043；撤新调用逻辑回滚、保留历史。公开Owner解析/If-Match HTTP/正式材料/三平台/完整包/Gate未完成。
 
 - 2026-09-27：`0.1.0.dev0`/AUD-03-A07-P02仅Windows --platform-write接导出提交，原事务依赖/信任门禁，默认/login/只读仍404。真实PG-ASGI写Factory双Scope提交→Job查询→实际generic Worker/心跳/发布→metadata/content真实摘要及size链、重放/冲突/权限拒绝无写和单Attempt通过；三个构造失败/实际正式信任不可用拒绝半启动，旧导出下载/原发布回归通过。无Migration/依赖/权限/Breaking/升级，撤写接线回滚；正向合成信任、Worker在验证进程，非正式服务/浏览器/性能/全Scope/Gate/完整包PASS，下一取消版本前置。

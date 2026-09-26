@@ -4,7 +4,7 @@ from unittest import TestCase
 from unittest.mock import Mock
 from uuid import uuid4
 from . import test_audit_worker_capture as fixture
-from plm_assistant.modules.audit.application.request_export_cancel import AuditExportCancelRequestService,RequestAuditExportCancel,AuditExportCancelReceipt,AuditExportCancelRequestError
+from plm_assistant.modules.audit.application.request_export_cancel import AuditExportCancelRequestService,RequestAuditExportCancel,RequestAuditJobCancel,AuditExportCancelReceipt,AuditExportCancelRequestError
 from plm_assistant.modules.audit.application.export_cancel_authorization import AuthorizedAuditExportCancel
 from plm_assistant.modules.jobs.application.audit_export_cancel import AuditExportCancelFacts,AuditExportCancellationResult,AuditExportCancellationError
 from plm_assistant.modules.platform.application.idempotency import IdempotencyResult
@@ -96,3 +96,46 @@ class RequestCancelTests(TestCase):
         self.assertEqual(self.auth.require_in_transaction.call_count,2)
         self.cancel.request_cancel.assert_not_called();self.audit.append.assert_not_called()
         self.receipts.complete.assert_not_called();self.f.tx.commit.assert_not_called()
+
+    def job_command(self,**values):
+        command=RequestAuditJobCancel(self.f.cmd.job_id,self.c.scope,self.c.project_id,
+            self.c.session_token,self.c.csrf_token,self.c.trace_id,self.c.reason,0)
+        self.f.repo.peek_created_for_job.return_value=self.f.intent
+        return replace(command,**values)
+
+    def test_job_owner_resolves_real_root_in_same_uow_and_binds_fingerprint(self):
+        self.assertEqual(self.service.request_job(self.job_command(),idempotency_key=self.key),self.result)
+        self.f.repo.peek_created_for_job.assert_called_once_with(self.f.tx,job_id=self.f.cmd.job_id)
+        self.f.repo.peek_created.assert_not_called()
+        self.assertEqual(self.receipts.reserve.call_args.kwargs['request_fingerprint'],canonical_payload_fingerprint(dict(
+            export_id=str(self.f.intent.export_id),intent_hash=self.f.intent.intent_hash,reason=self.c.reason,expected_version=0)))
+        self.f.tx.commit.assert_called_once()
+
+    def test_job_owner_requires_explicit_version_and_does_not_accept_export_command(self):
+        for version in (None,True,-1,2**63):
+            with self.assertRaises(AuditExportCancelRequestError):self.job_command(expected_version=version)
+        with self.assertRaises(AuditExportCancelRequestError):self.service.request_job(self.c,idempotency_key=self.key)
+        with self.assertRaises(AuditExportCancelRequestError):self.service.request(self.job_command(),idempotency_key=self.key)
+        self.auth.require_in_transaction.assert_not_called()
+
+    def test_job_owner_missing_hint_does_not_authorize_or_write(self):
+        command=self.job_command();self.f.repo.peek_created_for_job.return_value=None
+        with self.assertRaises(AuditExportCancelRequestError) as caught:self.service.request_job(command,idempotency_key=self.key)
+        self.assertEqual(caught.exception.code,'RESOURCE_NOT_FOUND')
+        self.auth.require_in_transaction.assert_not_called();self.cancel.read_facts.assert_not_called()
+        self.f.tx.commit.assert_not_called()
+
+    def test_job_owner_wrong_accepted_job_rejects_before_cancel_or_receipt(self):
+        command=self.job_command(job_id=uuid4())
+        with self.assertRaises(AuditExportCancelRequestError):self.service.request_job(command,idempotency_key=self.key)
+        self.auth.require_in_transaction.assert_called_once()
+        self.cancel.read_facts.assert_not_called();self.receipts.reserve.assert_not_called()
+        self.f.tx.commit.assert_not_called()
+
+    def test_job_owner_stale_version_replay_remains_authorized_and_immutable(self):
+        command=self.job_command()
+        self.cancel.read_facts.side_effect=[replace(self.after,state='CANCELLED',lock_version=3)]
+        self.receipts.reserve.return_value=IdempotencyResult('V1_AUDIT_EXPORT_CANCEL',self.event,200)
+        self.assertEqual(self.service.request_job(command,idempotency_key=self.key),self.result)
+        self.assertEqual(self.auth.require_in_transaction.call_count,2)
+        self.cancel.request_cancel.assert_not_called();self.f.tx.commit.assert_not_called()

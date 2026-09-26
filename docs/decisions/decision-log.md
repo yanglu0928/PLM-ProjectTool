@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-266
+
+- Precode：Phase2/JOB-02-A02，前置A01/0043和原Audit取消授权/收据满足；详见job-02-a02-owner-cancel进度。无Schema/API/角色/依赖变动。
+- Decision：Audit owned不可变acceptance按JobId无锁预查原Root，同一取消UOW先当前原授权、后Root/pair锁并强核原受理JobId；强制显式expected_version，复用实际Root指纹，原export命令历史不改。不是generic未知Owner回退或HTTP公开许可。
+- Acceptance：强类型/绑定/当前权限/双Scope真实状态与旧入口同Key去重/过期版本拒绝/回滚；公开完整响应快照与HTTP另验。回滚撤新Owner入口保历史；结果待实际验证。
+- Evidence：1165无失败/2既有跳过；双Scope真实JobId取消/Worker确认、旧入口同Key去重、权限/指纹/过期版本/停用后重放拒绝十表无写、Audit故障回滚；原A01/发布回归及wheel通过。API-03仅冻结项目取消；GET才完整JobView，取消最小状态响应仍需首次强ETag版本，下一先CR补持久快照，不拼当前版本、不擅增Admin HTTP。
+
 ## DEC-20260927-265
 
 - Precode：Phase2/JOB-02-A01；输入冻结API-01/03、0043与原取消授权/事务/收据，前置PASS。涉及Jobs事实和Audit内部取消；Job/Audit/receipt实体无DDL，公开API与权限不变。CR-JOB-003实施前登记。
