@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/AUD-02-A04 新增Windows当前账户audit-list-cursor-v1只读来源，缺失/错误安全拒绝，无自动生成或其他key复用。Windows11后端793项无失败（2项环境跳过），真实唯一临时Vault丢失/恢复旧cursor验证并清理、四个GET数据库回归和开发wheel PASS。无Migration/API/角色/依赖/算法变化，升级无数据动作；正式运行账户供给/离线保管/平台装配/导出/可用包未完成，Server2025未验、Debian13暂不验证。
+
 - 2026-09-26：`0.1.0.dev0`/AUD-02-A03-P02 新增四个冻结审计GET可选Router，严格筛选/UTC窗口/同事务实际Actor游标、安全投影/no-store；普通默认404。Windows11后端790项无失败（2项环境跳过），隔离PostgreSQL真实Session/PM/Admin、Scope/双页/当前撤权/合成License拒绝与读无写、授权锁回归和开发wheel PASS。无Migration/Breaking API/角色/依赖变化，升级无动作；正式key/Windows组合/导出/可用包未完成，Server2025未验、Debian13暂不验证。
 
 - 2026-09-26：`0.1.0.dev0`/AUD-02-A03-P01 新增内部同事务受权搜索解析Port与API codec适配，先实际Session/角色/Scope后解析，不允许替换筛选/page_size；上下文携带有效搜索窗口。Windows11后端784项无失败（2项环境跳过），隔离PostgreSQL同事务项目/部署双页、默认窗口/当前撤权/读无写与A01授权锁回归、开发wheel PASS。无Migration/公开API/角色/依赖变化，升级无动作；HTTP/正式key供给/导出/可用包未完成，License合成，Server2025未验、Debian13暂不验证。

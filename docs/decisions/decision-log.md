@@ -3394,3 +3394,11 @@
 - Reason：冻结合同已要求范围上限但未固定默认窗口；双端日期避免续页单边默认值漂移，service同事务实际Session/角色校验足够，不独立读取身份作为授权。普通默认应用不装配。
 - Impact：可选HTTP、契约测试、增量接口实施说明；无Schema/Breaking API/角色/依赖变化。生产专用key供给和Windows组合后续验证。
 - Rollback：不注入Router，四路径404；无数据动作。
+
+## DEC-20260926-189
+
+- Date：2026-09-26；WBS：AUD-02-A04。
+- Decision：独立Audit游标签名key_ref为audit-list-cursor-v1，复用已验证Windows当前账户Credential Manager只读provider和加密离线备份生命周期。缺失/长度错误/provider异常统一拒绝启动，不自动生成、无环境变量/key明文文件fallback，不复用其他key。
+- Reason：签名游标需持续稳定专用密钥；恢复须保持旧cursor可验证，重新生成不等于恢复。当前运行账户的临时Vault验证不代表正式部署账户或Server验证。
+- Impact：新增entrypoint只读factory及unit/真实临时Vault恢复，无Schema/API/角色/依赖或安全算法变更。正式账户供给、口令独立保管和平台组合仍待。
+- Rollback：不装配新factory，路由保持未启用；临时测试只清理own UUID引用，不操作正式key。
