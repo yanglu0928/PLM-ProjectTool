@@ -15,7 +15,7 @@ spec=spec_from_file_location('_exhaustion_executor_fixture',Path(__file__).resol
 e=module_from_spec(spec);spec.loader.exec_module(e);fixture=e.fixture
 
 
-def exercise(v):
+def exercise(v,*,decorate_executor=None):
     database=e.create_worker_database_runtime(v['url']);db=v['db'];lost={'armed':False,'job':None}
     @contextmanager
     def uow():
@@ -43,6 +43,7 @@ def exercise(v):
         cancellation=e.AuditExportWorkerCancel(**cd),cancellation_verifier=e.AuditExportCancelVerification(completion_proofs=e.SqlAlchemyAuditExportCancelProof(),**cd),
         retry=e.AuditExportWorkerRetry(authority=deps['authority'],**fd),retry_verifier=e.AuditExportRetryVerification(retry_proofs=e.SqlAlchemyAuditExportRetryProof(),authority=deps['authority'],**fd),
         exhaustion=exhaustion,supervisor=supervisor)
+    if decorate_executor is not None:executor=decorate_executor(executor,fd)
     admission=AuditExportClaimAdmission(unit_of_work=uow,repository=v['repo'],queue=v['queue'],system_actor=v['system_actor'],supervisor=supervisor,
         claims=AuditExportClaims(repository=SqlAlchemyAuditExportClaimRepository()))
     tables=('job_jobs','job_leases','job_attempts','aud_events','aud_export_results','doc_file_objects')

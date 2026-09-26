@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-240
+
+- Precode：Phase2/P06-P05，CR-AUD-004/ADR011；前置耗尽安全失败已验，新增Jobs owned只读最早到期一个候选Port与Audit单候选收尾，不扩Schema/API/权限/依赖。
+- Decision：只取audit/AUDIT_EXPORT当前RUNNING/第三Attempt/max3、一致ACTIVE Lease/未完成Attempt且真实期限已到；无锁hint非授权，扫描前后identity，原Owner重验Root/pair/Worker-fence/期限/静止锁才安全FAILED与Audit同事务。确认异常只核真实源，不盲试或读取正文。
+- Evidence：6新unit/1081无失败（2既有Windows权限跳过）；实际PG-Vault双Scope候选与Worker-fence绑定、六表扫描无写/完成后无候选，受控收尾真实commit后确认故障恢复，P04拒绝/写后回滚/撤权/字节保留及原发布回归，开发wheel通过。
+- Risks/rollback：无Migration/API/依赖/数据升级，撤未公开装配保历史。单候选可能被坏源阻塞，公平/隔离/多Worker扫描/loop未验，下一P06-P06领取确认恢复；正式材料/质量/完整包/Gate未完成。
+
 ## DEC-20260927-239
 
 - Phase/WBS：Phase2/P04-P03-P06-P04，编码前CR-AUD-004耗尽政策已记录，前置P06-P03专属claim/真实来源已验。

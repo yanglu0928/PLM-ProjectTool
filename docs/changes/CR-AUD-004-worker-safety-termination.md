@@ -46,3 +46,5 @@ P06-P03专属领取准入内部PASS：实际bounded PG-Vault两ScopePENDING/授�
 P06-P04实施前耗尽政策：当前RUNNING匹配Worker/fence/一致ACTIVE Lease和未完成第三Attempt/max3、真实DB clock已到期才允许安全FAILED。预读到期→最小SYSTEM失败Audit固定AUDIT_EXPORT_ATTEMPTS_EXHAUSTED→identity后验→再次实际期限/三次检查并转换Job/EXPIRED Lease/完成Attempt→commit。与User/License无业务旁路，不强杀I/O，不删除字节，不沿用要求RELEASED/alive的旧失败证明；独立expired证明+唯一失败Audit核验确认丢失。无Schema/API/依赖扩张，撤未公开Owner保历史；扫描/循环另验。
 
 P06-P04内部PASS：实际PG双Scope三代真实到期/前代活租约错Worker拒绝、Audit与三表同UOW；Audit/state写后故障六表回滚、撤权仍正文拒绝但安全失败可用、真正commit后确认故障完整EXPIRED终态/唯一Audit核源恢复，无写重放/旧字节保留。1075无失败（2环境跳过）、旧执行器/发布/wheel通过。脚本首次相对路径问题修正重跑；非真实网络断线证明，扫描/领取确认恢复/loop/CLI/HTTP未完成，CR/Gate未关闭。
+
+P06-P05候选发现内部PASS：编码前策略另登记P05进度，Jobs仅固定Owner/type/current第三代一致ACTIVE Lease/未完成Attempt/实际期限的单候选无锁hint；扫描前后identity，收尾原Owner全部重验，不能用hint改状态。真实双Scope六表无写/真正确认恢复与完成后无候选、P04实际拒绝回滚/撤权/字节保留及原发布回归，1081无失败（2环境跳过）/wheel通过。公平并发/坏源隔离/领取确认/loop/CLI/HTTP仍待，CR/Gate未关闭。

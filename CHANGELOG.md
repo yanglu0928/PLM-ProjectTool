@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/P06-P05新增耗尽到期任务无锁单候选扫描与原安全Owner受控收尾；固定audit/AUDIT_EXPORT/current第三Attempt/max3/ACTIVE一致Lease及DB期限，hint非授权，前后identity，不直接写状态或读正文。6新unit/真实PG-Vault两Scope六表只读、正确Worker-fence、收尾后无候选/真实commit后确认恢复及旧发布链验证通过；1081项无失败（2Windows权限跳过）、开发wheel通过。Windows11，无Migration/API/依赖/数据升级，0042不变；撤未公开装配保历史回滚。领取确认恢复/公平并发/坏源隔离/主循环/CLI/HTTP、正式材料/质量/其他平台/Gate/可用安装包未完成。
+
 - 2026-09-27：`0.1.0.dev0`/P06-P04新增第三次真实到期耗尽的安全失败与最小SYSTEM审计同事务、EXPIRED终态核验及可选单命令执行器接线；无业务授权旁路/强杀/删除。8新unit、真实PostgreSQL双Scope三代到期/六表故障回滚/撤权正文拒绝/commit后确认故障及只读重放/旧字节保留通过；1075项无失败（2环境跳过），旧执行器/发布回归与开发wheel成功。兼容当前Windows11；无Migration/API/依赖变化，Schema仍0042，无数据升级，撤未公开Owner/可选装配保历史回滚。扫描/领取确认恢复/主循环/CLI/HTTP、正式材料/质量/其他平台/Gate及可用安装包待。
 
 - 2026-09-27：`0.1.0.dev0`/P06-P03新增审计专属实际领取与命令准入，保通用接口；无锁候选后原Root/pair/当前identity与实际Worker-fence活租约绑定，刷新旧对象缓存，不混领其他Owner、不静默耗尽FAILED。7新unit/真实bounded PG-Vault两ScopePENDING实际发布/5秒retry deadline/真实三代到期/第4次无写、独立Supervisor并发与写后回滚通过；1067无失败（2环境跳过），旧发布/wheel通过。Windows11，无Migration/API/依赖、0042，无数据升级，撤未装配准入保历史回滚。到期耗尽审计/领取确认恢复/主循环/CLI/HTTP/正式材料/三平台/质量/Gate/可用安装包待。
