@@ -61,3 +61,20 @@ class AuditExportMemberRow(Base):
 
 class AuditExportCaptureRow(Base):
     __table__ = captures
+
+
+acceptances = sa.Table("aud_export_acceptances", Base.metadata,
+    _col("export_id", _id, primary_key=True), _col("job_id", _id), _col("event_id", _id),
+    _col("request_audit_event_id", _id),
+    _col("accepted_at", _time, server_default=sa.text("statement_timestamp()")),
+    sa.ForeignKeyConstraint(["export_id"], ["plm.aud_exports.export_id"], name="fk_aud_export_acceptances__export_id__aud_exports"),
+    sa.ForeignKeyConstraint(["request_audit_event_id"], ["plm.aud_events.audit_event_id"], name="fk_aud_export_acceptances__audit_event__aud_events"),
+    sa.UniqueConstraint("job_id", name="uq_aud_export_acceptances__job_id"),
+    sa.UniqueConstraint("event_id", name="uq_aud_export_acceptances__event_id"),
+    sa.UniqueConstraint("request_audit_event_id", name="uq_aud_export_acceptances__request_audit_event_id"),
+    sa.CheckConstraint("isfinite(accepted_at) AND "+" AND ".join(c+"<>"+_zero for c in ("export_id","job_id","event_id","request_audit_event_id")), name="ck_aud_export_acceptances__shape"),
+)
+
+
+class AuditExportAcceptanceRow(Base):
+    __table__ = acceptances

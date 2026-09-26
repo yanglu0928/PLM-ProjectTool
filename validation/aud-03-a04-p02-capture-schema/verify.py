@@ -12,6 +12,7 @@ from psycopg import sql
 from alembic import command, op
 from alembic.autogenerate import compare_metadata
 from alembic.migration import MigrationContext
+from alembic.script import ScriptDirectory
 from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
@@ -30,6 +31,7 @@ def main():
         try:
             url = URL.create("postgresql+psycopg", username="poc_admin", host="127.0.0.1", port=55432, database=name)
             cfg = create_migration_config(url)
+            expected_head = ScriptDirectory.from_config(cfg).get_current_head()
             command.upgrade(cfg, "head"); command.downgrade(cfg, "20260926_0036"); command.upgrade(cfg, "head")
             engine = create_engine(url)
             try:
@@ -174,7 +176,7 @@ def main():
                 except RuntimeError as exc: assert "history exists; downgrade refused" in str(exc)
                 else:raise AssertionError("export history removed on down")
                 assert tuple(db.execute("SELECT * FROM plm.aud_exports ORDER BY export_id"))==before
-                assert db.execute("SELECT version_num FROM plm.alembic_version").fetchone()[0]=="20260926_0037"
+                assert db.execute("SELECT version_num FROM plm.alembic_version").fetchone()[0]==expected_head
             print("AUD-03-A04-P02 PASS: ORM parity, empty/data up/down/re-up, old Audit preserved, scope/filter/source/time checks, deferred seal/no partial commits, count/order/digest/empty/immutable guards, concurrent root lock/append rejection, history down refused. No actual full capture/auth/HTTP/production migration")
         finally:
             admin.execute("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=%s AND pid<>pg_backend_pid()",(name,))

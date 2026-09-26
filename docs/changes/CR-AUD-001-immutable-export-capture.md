@@ -29,6 +29,18 @@ P02执行结果：0037/ORM三表及实际源校验/同事务封口/不可变/并
 
 P03执行结果：单statement实际源选择/迟提交/回填/新增事件排除、原seal并发重放、caller故障/不commit回滚、Spec指纹/Scope绑定、小上限拒绝不截断和安全读回通过。823项后端无失败（2环境跳过）、P02回归与开发wheel通过，详见aud-03-a04-p03-capture.md。CR的A04存储验收完成，授权/Job/Worker/交付/性能仍待，整体IN_PROGRESS；无生产操作/公开POST。
 
+## A05-A03-P01实施前修订：不可变首次受理结果
+
+2026-09-26。A03核查证实0037意图不存Job/Event ID，而通用receipt只存单一typed Ref；Jobs owned行可变，A02 lookup能验证绑定但不能独立证明当前Job ID就是首次响应。不得只拿当前Queue Ref作为不可变首次结果。选择增量0038 aud_export_acceptances，唯一ExportRef关联own意图，固定首次job_id/event_id/request_audit_event_id/accepted_at；Job/Event是跨Owner opaque Ref，不跨模块读取或直接写Job表，实际存在/全绑定由A02公共Port在A03同事务核验。
+
+Audit own请求事件FK+唯一，插入前锁意图根，核验源事件是同Root原Trace/USER Actor/Scope/Project/SUCCESS/AUDIT_EXPORT_REQUESTED/受控purpose，目标必须为真实Job typed root jobs/JOB-01和固定job_id，before NULL/after PENDING，无target version。不将Export ID假称AuditEvent/AUD-01。事件时点/受理时点不早于请求；新acceptance不可更新/删除/truncate，Job/Event/Audit Ref各唯一防复用。只Schema校验不能证明Jobs实际存在或完整受权，因此不可提前放行POST。
+
+历史0037不追写；旧无acceptance意图不回填/猜Job ID，完整命令重放若receipt指向这种不完整历史则拒绝而不伪造首次结果。后续首次创建必须授权→receipt→Root→Queue→请求Audit→acceptance→receipt完成在同UOW，重复请求先当前授权再加载原acceptance，通过Jobs公开Port核对原ID而不创建/换Ref。
+
+0038空表可down：先ACCESS EXCLUSIVE锁acceptance再检查，有任何首次结果拒绝；离线down禁用，无生产操作。要求ORM parity、空/旧意图和审计数据up/down/re-up保留、错误绑定/来源/目的/时点/唯一/不可变、down并发写锁及有历史拒绝。原授权/Scope/API/角色/依赖不变；该分项完成后A03-P02真实原子命令验收，不能用Schema替代。
+
+P01执行结果：0038/ORM、真实独立Schema/旧Root与Audit保留/no backfill/完整源绑定/不可变/唯一/并发down锁/历史拒绝通过；839项无失败（2环境跳过）、四项相关真实回归和开发wheel通过。Job/Event refs为合成，完整命令实际关联/权限/receipt/Job/Audit原子仍待；详见aud-03-a05-a03-p01-acceptance-schema.md。CR整体仍IN_PROGRESS，无生产操作或POST。
+
 ## P02实施前SQL与锁序收敛
 
 新增aud_exports（不可变意图，显式安全字段，真实User/Project元数据FK）、aud_export_members（ExportRef+position主键、ExportRef+event唯一、真实event FK）、aud_export_captures（ExportRef唯一、实际时点/count/hash/version）。不用可变seal bool；capture行本身就是不可变封口。意图允许先提交等待Worker；成员必须和capture同事务提交，deferred成员约束拒绝未封口提交。
