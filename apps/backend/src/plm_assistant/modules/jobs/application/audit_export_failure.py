@@ -27,6 +27,21 @@ class AuditExportJobFailure:
             raise ValueError('Owned failure dependencies required')
         self._queue,self._leases=queue,leases
 
+    def inspect_current(self,transaction,*,request,refs,fencing_token,worker_ref):
+        if type(request) is not AuditExportJobRequest or type(refs) is not AuditExportJobRef:raise JobLeaseError('VALIDATION_FAILED')
+        try:
+            request.__post_init__();refs.__post_init__()
+            validate_checkpoint(job_id=refs.job_id,fencing_token=fencing_token,worker_ref=worker_ref)
+            actual=self._queue.find_export(transaction,request=request)
+            if type(actual) is not AuditExportJobRef or actual!=refs:raise JobLeaseError('JOB_STORE_UNAVAILABLE')
+            actual.__post_init__()
+            claim=AuditExportJobCompletion._claim(self._leases.check_current(transaction,job_id=refs.job_id,
+                fencing_token=fencing_token,worker_ref=worker_ref),request,refs,fencing_token)
+            if claim.attempt_no>3:raise JobLeaseError('JOB_STORE_UNAVAILABLE')
+            return claim
+        except JobLeaseError:raise
+        except Exception:raise JobLeaseError('JOB_STORE_UNAVAILABLE') from None
+
     def assert_failed(self,transaction,*,request,refs,fencing_token,worker_ref,error_code):
         """Only technical source verification; caller MUST verify owned Audit receipt."""
         if type(request) is not AuditExportJobRequest or type(refs) is not AuditExportJobRef:

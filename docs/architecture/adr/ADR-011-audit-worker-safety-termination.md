@@ -20,4 +20,6 @@ P03补充实测：提交确认丢失原源核验已通过内部证明；真实PG
 
 ## Migration / rollback / Trace
 
+2026-09-27/P05：重试并非撤权安全终止例外，必须当前原User业务权限前后通过；同Supervisor静止/SystemActor/原pair与当前活代的最小SYSTEM Audit同UOW。仅固定AUDIT_UNAVAILABLE，5/15秒退避，总三次；第三次FAILED，旧字节/尝试保留，新代重新授权。真实PG/Vault两Scope真实等待/新代新文件/回滚与拒绝矩阵、1037后端无失败（2环境跳过）/wheel通过。确认丢失/执行器/主循环及发行仍待，不修改前段仅终止Owner的历史边界。
+
 无Schema/API/依赖；撤未装配Owner保留状态/审计/字节，不复活失败或成功历史。Trace：V2.1 §3.5/API02强制Audit→P04-P02失败保留RUNNING→CR-AUD-004→P04-P03-P01/P02证据。接受及局部验证不等于Gate或可用安装包通过。

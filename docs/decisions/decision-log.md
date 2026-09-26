@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-234
+
+- Date/WBS：2026-09-27 / P04-P03-P05；Phase2，输入CR-AUD-004/ADR011；编码前政策/验收/回滚先记录。只做固定重试Owner，不绕过当前业务权限。
+- Decision：固定AUDIT_UNAVAILABLE白名单，attempt1/2后5/15秒，attempt3 FAILED；当前User权限前后检查、同Supervisor真实静止、SystemActor前后来源、原pair与Jobs owned当前活代事实、最小SYSTEM retry/失败Audit与技术转换同UOW。下一代重新claim/授权，新fileID保旧历史；成功/取消/过期/旧代不可改。
+- Evidence：6新unit/1037完整后端无失败（2既有环境跳过），真实PG-Vault两Scope真正5/15秒无提前claim、新代重新capture/render三新fileID旧字节保留、第三次FAILED与Audit一致；实际Audit/转换写后与后验授权/identity故障回滚，停User/License拒retry。旧发布/wheel通过，不声称网络断线或新并发竞争已验。
+- Risk/rollback：数据库不可写/identity缺失不猜已调度，静止锁不是I/O强杀；固定短退避不保证故障治愈。无Migration/API/依赖或生产升级；撤未装配Owner保历史。Next P05-P02重试确认丢失只读核验，再执行器/主循环；可用包/Gate与完整Scope未完成。
+
 ## DEC-20260927-233
 
 - Date/WBS：2026-09-27 / P04-P03-P04-P05；Phase2，CR-AUD-004/ADR011；前置首申请/活代ack/到期恢复/静止锁已验，编码前检查登记进度文件。

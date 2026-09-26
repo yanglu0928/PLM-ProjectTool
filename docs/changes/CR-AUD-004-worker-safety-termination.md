@@ -9,6 +9,8 @@
 
 错误政策需Owner明确固定：授权/License/上限等终止、可恢复基础故障限次retry，停止超时仍活跃的线程不能提前转换或重试；当前代已过期/被接管则不允许旧Worker改状态，取消只走既有首申请历史/确认/到期恢复，不造新申请。技术Port本身不选择业务retry策略或校验Audit权限。
 
+P05实施前策略补充：仅AUDIT_UNAVAILABLE可有限retry，attempt1/2后固定5/15秒，attempt3 FAILED；自由正文、未知错误、权限/License/内容损坏/上限和仍活线程不调度。原User当前业务权限必须前后有效，identity仅写SYSTEM追溯不授业务；实际当前代Port与重试Audit同UOW。原三次总尝试与冻结授权保持，旧文件/尝试保留，下一代新claim重新授权。未知基础故障不宣称已治愈，调度/执行器/确认丢失独立验收。
+
 偏差影响：内部安全终止的授权边界需单独实现/测试，原业务当前权检查不放宽；无新增DB/API/角色/权益/技术栈。旧文件和失败尝试永久保留，不删除/回填历史，不修改原冻结API。Rollback撤未装配终止Owner，保原技术状态/审计/字节；不复活FAILED/CANCELLED。
 
 验证计划：先Jobs原pair/current lease失败Port及caller整UOW回滚，再实际Owner受控identity与最小Audit；User/角色/License撤销、取消/过期/接管/成功拒改、同事务Audit故障回滚、确认丢失源核验。实际独立库/临时Vault/文件；正式材料/三平台/网络停机/质量/Gate/可用包仍待。不以CR记录或技术PortPASS宣称Owner政策已生效。
@@ -28,3 +30,5 @@ P04-P03当前活代后台确认内部PASS：真实首USER来源+当前SystemActo
 P04-P04严格当前代到期恢复内部PASS：首USER源+当前identity与最小SYSTEM恢复Audit、实际DB到期/当前Worker-fence一致Job-Lease-Attempt转换同UOW，实际两Scope短租约与写后回滚/错绑定/未到期/终态/裸技术源矩阵通过，首历史/字节/结果不变；1025无失败（2环境跳过）、原发布/wheel通过。旧通用恢复保留但执行Owner不采用。到期仅DB fencing非OS强杀；取消确认丢失/执行器/主循环/retry/HTTP未完成，CR/Gate保持未关闭。
 
 P04-P05取消确认丢失只读核验内部PASS：真实两Scope活期与到期commit后确认丢失，完整当前代终态技术事实+原首USER+唯一SYSTEM完成源+受控identity，多次八表无写；错绑定/类型/缺重复源拒绝，1031无失败（2环境跳过）、旧发布/wheel通过。无Mutation/commit/文件I/O/STALE推断，即时PENDING取消不属该Worker证明。retry/执行器/主循环/HTTP未完成，CR/Gate仍未关闭。
+
+P05重试Owner内部PASS：当前权限/SystemActor前后校验、原pair/活Lease、静止锁，固定白名单与5/15秒三次上限、最小SYSTEM Audit与转换同事务；实际两Scope真实等待/新代新文件旧字节保留/写后及后验故障回滚，1037无失败（2环境跳过）、旧发布/wheel通过。不把基础故障名称当治愈，重试确认丢失/执行器/主循环/HTTP未完成，CR/Gate不关闭。
