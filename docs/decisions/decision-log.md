@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-239
+
+- Phase/WBS：Phase2/P04-P03-P06-P04，编码前CR-AUD-004耗尽政策已记录，前置P06-P03专属claim/真实来源已验。
+- Decision：只允许当前第三Attempt/max3真实DB期限过期；最小SYSTEM审计、identity后验、最后实际到期再验和JobFAILED/LeaseEXPIRED/Attempt固定码同UOW。独立来源核验恢复真正commit后确认丢失；可选执行器装配共享实际Supervisor/identity。无User/License业务旁路、强杀或删除。
+- Evidence：8新unit，1075后端无失败（2既有权限跳过）；实际bounded PG-Vault双Scope三代到期/活租约前代错Worker拒绝、Audit/state写后故障六表回滚，撤权仍capture拒绝但安全收尾，实际commit后确认故障执行器恢复/无写重放/原字节保留；旧执行器/发布/wheel通过。首次脚本相对路径缺file_root修正重跑，不冒充实际网络断线。
+- Risk/rollback：无Migration/API/依赖，0042不改，无数据升级；撤未公开Owner/可选装配保历史，已失败不回RUNNING。下一P06-P05耗尽扫描，之后领取确认恢复/loop/CLI/HTTP；正式材料/质量/其他平台/可用包/Gate未完成。
+
 ## DEC-20260927-238
 
 - Date/WBS：2026-09-27 / P04-P03-P06-P03；Phase2，CR-AUD-004，编码前已记录通用混领/静默耗尽与反序锁差异，前置单命令执行器/真实来源已验。

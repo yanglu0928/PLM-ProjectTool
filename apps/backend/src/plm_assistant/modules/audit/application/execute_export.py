@@ -33,13 +33,26 @@ class AuditExportExecutionOutcome:
 
 
 class AuditExportExecutor:
-    def __init__(self,*,runner,reader,termination,termination_verifier,cancellation,cancellation_verifier,retry,retry_verifier,supervisor):
+    def __init__(self,*,runner,reader,termination,termination_verifier,cancellation,cancellation_verifier,retry,retry_verifier,supervisor,exhaustion=None):
         deps=(runner,reader,termination,termination_verifier,cancellation,cancellation_verifier,retry,retry_verifier)
         if (type(supervisor) is not AuditHeartbeatSupervisor or any(d is None or getattr(d,'_supervisor',None) is not supervisor for d in deps)
                 or getattr(reader,'_actor',None) is None
                 or any(getattr(d,'_actor',None) is not reader._actor for d in deps[2:])):
             raise ValueError('One actual supervisor and controlled safety identity required')
         self._runner,self._reader,self._term,self._term_proof,self._cancel,self._cancel_proof,self._retry,self._retry_proof=deps
+        if exhaustion is not None and (getattr(exhaustion,'_supervisor',None) is not supervisor or getattr(exhaustion,'_actor',None) is not reader._actor):
+            raise ValueError('Exhaustion must share actual supervisor and identity')
+        self._exhaustion=exhaustion
+
+    def _expire(self,c):
+        try:self._exhaustion.expire(c)
+        except Exception as exc:
+            try:return AuditExportExecutionOutcome(c,'FAILED',self._exhaustion.verify(c))
+            except Exception:
+                fresh=self._facts(c);resolved=self._resolved(c,fresh)
+                if resolved is not None:return resolved
+                raise self._safe(exc) from None
+        return AuditExportExecutionOutcome(c,'FAILED',self._exhaustion.verify(c))
 
     @staticmethod
     def _safe(exc):return AuditExportWorkerError(exc.code if isinstance(exc,AuditExportWorkerError) else 'AUDIT_UNAVAILABLE')
@@ -96,6 +109,8 @@ class AuditExportExecutor:
         if facts.state=='CANCEL_REQUESTED':return self._cancel_requested(c,facts)
         if facts.state=='RETRY_WAIT':return self._retry_receipt(c,facts.claim.attempt_no)
         if facts.state=='FAILED':
+            if facts.error_code=='AUDIT_EXPORT_ATTEMPTS_EXHAUSTED' and self._exhaustion is not None:
+                return AuditExportExecutionOutcome(c,'FAILED',self._exhaustion.verify(c))
             if facts.error_code in TERMINAL_REASONS:return AuditExportExecutionOutcome(c,'FAILED',self._term_proof.verify(c,reason_code=facts.error_code))
             if facts.error_code=='AUDIT_UNAVAILABLE':return self._retry_receipt(c,facts.claim.attempt_no)
             raise AuditExportWorkerError()
@@ -120,14 +135,20 @@ class AuditExportExecutor:
         try:
             facts=self._facts(command);resolved=self._resolved(command,facts)
             if resolved is not None:return resolved
-            if facts.state!='RUNNING' or not facts.lease_alive:raise AuditExportWorkerError('STALE_LEASE')
+            if facts.state!='RUNNING':raise AuditExportWorkerError('STALE_LEASE')
+            if not facts.lease_alive:
+                if facts.claim.attempt_no==3 and self._exhaustion is not None:return self._expire(command)
+                raise AuditExportWorkerError('STALE_LEASE')
             try:return AuditExportExecutionOutcome(command,'SUCCEEDED',self._runner.run(command))
             except Exception as exc:
                 error=self._safe(exc)
                 if error.code=='AUDIT_HEARTBEAT_STOP_TIMEOUT':raise error from None
                 fresh=self._facts(command);resolved=self._resolved(command,fresh)
                 if resolved is not None:return resolved
-                if fresh.state!='RUNNING' or not fresh.is_current or not fresh.lease_alive:raise AuditExportWorkerError('STALE_LEASE')
+                if fresh.state!='RUNNING' or not fresh.is_current:raise AuditExportWorkerError('STALE_LEASE')
+                if not fresh.lease_alive:
+                    if fresh.claim.attempt_no==3 and self._exhaustion is not None:return self._expire(command)
+                    raise AuditExportWorkerError('STALE_LEASE')
                 if error.code in TERMINAL_REASONS:return self._terminate(command,error.code)
                 if error.code=='AUDIT_UNAVAILABLE':return self._schedule_retry(command,fresh)
                 raise error from None

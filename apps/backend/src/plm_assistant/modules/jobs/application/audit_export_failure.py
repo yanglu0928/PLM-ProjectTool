@@ -28,6 +28,27 @@ class AuditExportJobFailure:
             raise ValueError('Owned failure dependencies required')
         self._queue,self._leases=queue,leases
 
+    def exhaustion(self,transaction,*,request,refs,fencing_token,worker_ref,mode):
+        if (type(request) is not AuditExportJobRequest or type(refs) is not AuditExportJobRef
+                or type(mode) is not str or mode not in {'CHECK','EXPIRE','VERIFY'}):raise JobLeaseError('VALIDATION_FAILED')
+        try:
+            request.__post_init__();refs.__post_init__()
+            validate_checkpoint(job_id=refs.job_id,fencing_token=fencing_token,worker_ref=worker_ref)
+            actual=self._queue.find_export(transaction,request=request)
+            if type(actual) is not AuditExportJobRef or actual!=refs:raise JobLeaseError('JOB_STORE_UNAVAILABLE')
+            actual.__post_init__()
+            method={'CHECK':self._leases.check_expired_exhausted,'EXPIRE':self._leases.expire_exhausted,'VERIFY':self._leases.check_exhausted_failed}[mode]
+            value=method(transaction,job_id=refs.job_id,fencing_token=fencing_token,worker_ref=worker_ref)
+            if mode=='VERIFY':
+                if type(value) is not FailedJobProof or value.error_code!='AUDIT_EXPORT_ATTEMPTS_EXHAUSTED':raise JobLeaseError('JOB_STORE_UNAVAILABLE')
+                value.__post_init__();claim=value.claim
+            else:claim=value
+            AuditExportJobCompletion._claim(claim,request,refs,fencing_token)
+            if claim.attempt_no!=3:raise JobLeaseError('JOB_STORE_UNAVAILABLE')
+            return value
+        except JobLeaseError:raise
+        except Exception:raise JobLeaseError('JOB_STORE_UNAVAILABLE') from None
+
     def assert_retry_transition(self,transaction,*,request,refs,fencing_token,worker_ref,attempt_no):
         if (type(request) is not AuditExportJobRequest or type(refs) is not AuditExportJobRef
                 or type(attempt_no) is not int or not 1<=attempt_no<=3):raise JobLeaseError('VALIDATION_FAILED')

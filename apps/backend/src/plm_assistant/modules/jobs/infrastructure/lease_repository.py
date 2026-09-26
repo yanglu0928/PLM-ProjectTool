@@ -17,6 +17,39 @@ from plm_assistant.modules.jobs.infrastructure.orm import JobAttemptRow, JobLeas
 
 
 class SqlAlchemyJobLeaseRepository:
+    def _expired_exhausted(self,transaction,job_id,fencing_token,worker_ref):
+        validate_checkpoint(job_id=job_id,fencing_token=fencing_token,worker_ref=worker_ref)
+        session=self._session(transaction);job,lease,attempt=self._current(session,job_id,fencing_token,worker_ref)
+        if (job.max_attempts!=3 or job.attempt_count!=3 or attempt.attempt_no!=3 or job.completed_at is not None
+                or job.lease_expires_at!=lease.lease_expires_at or attempt.error_code is not None):raise JobLeaseError('INCONSISTENT_LEASE')
+        now=self._now(session)
+        if lease.lease_expires_at>now:raise JobLeaseError('LEASE_NOT_EXPIRED')
+        return session,job,lease,attempt,now
+
+    def check_expired_exhausted(self,transaction,*,job_id,fencing_token,worker_ref):
+        _,job,_,_,_=self._expired_exhausted(transaction,job_id,fencing_token,worker_ref)
+        return self._claim(job)
+
+    def expire_exhausted(self,transaction,*,job_id,fencing_token,worker_ref):
+        session,job,lease,attempt,now=self._expired_exhausted(transaction,job_id,fencing_token,worker_ref)
+        lease.state='EXPIRED';attempt.completed_at=now;attempt.error_code='AUDIT_EXPORT_ATTEMPTS_EXHAUSTED'
+        job.state='FAILED';job.lease_expires_at=None;job.completed_at=now;session.flush()
+        return self._claim(job)
+
+    def check_exhausted_failed(self,transaction,*,job_id,fencing_token,worker_ref):
+        validate_checkpoint(job_id=job_id,fencing_token=fencing_token,worker_ref=worker_ref)
+        session=self._session(transaction)
+        job=session.scalar(select(JobRow).where(JobRow.job_id==job_id).with_for_update(of=JobRow))
+        if (job is None or job.state!='FAILED' or job.fencing_token!=fencing_token or job.max_attempts!=3
+                or job.attempt_count!=3 or job.lease_expires_at is not None or job.completed_at is None):raise JobLeaseError('STALE_LEASE')
+        lease=session.scalar(select(JobLeaseRow).where(JobLeaseRow.job_id==job_id,JobLeaseRow.fencing_token==fencing_token).with_for_update(of=JobLeaseRow))
+        attempt=self._attempt(session,job_id,fencing_token)
+        if (lease is None or lease.state!='EXPIRED' or lease.worker_ref!=worker_ref or attempt.worker_ref!=worker_ref
+                or attempt.attempt_no!=3 or attempt.error_code!='AUDIT_EXPORT_ATTEMPTS_EXHAUSTED'
+                or attempt.completed_at!=job.completed_at or not attempt.started_at<=job.completed_at
+                or lease.lease_expires_at>job.completed_at or lease.acquired_at>job.completed_at):raise JobLeaseError('INCONSISTENT_LEASE')
+        return FailedJobProof(self._claim(job),'AUDIT_EXPORT_ATTEMPTS_EXHAUSTED',job.completed_at)
+
     def read_execution_facts(self,transaction,*,job_id,fencing_token,worker_ref):
         validate_checkpoint(job_id=job_id,fencing_token=fencing_token,worker_ref=worker_ref)
         session=self._session(transaction)
