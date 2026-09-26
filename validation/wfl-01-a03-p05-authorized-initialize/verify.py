@@ -8,6 +8,14 @@ import psycopg
 from psycopg import sql
 from alembic import command
 from sqlalchemy.engine import URL
+from fastapi.testclient import TestClient
+from plm_assistant.entrypoints.api import create_app
+from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
+from plm_assistant.modules.auth.application.session_service import SessionService
+from plm_assistant.modules.auth.infrastructure.session_repository import SqlAlchemySessionRepository
+from plm_assistant.modules.auth.infrastructure.password_issue_access import SqlAlchemyPasswordIssueAccess
+from plm_assistant.modules.auth.infrastructure.scrypt_password import ScryptPasswordHasher
+from plm_assistant.modules.workflow.api.read_workflow import create_workflow_read_router
 
 from plm_assistant.modules.auth.infrastructure.project_write_access import SqlAlchemyProjectWriteAccess
 from plm_assistant.modules.auth.infrastructure.project_read_access import SqlAlchemyProjectReadAccess
@@ -76,6 +84,10 @@ def main():
             dependencies = dict(unit_of_work=runtime.unit_of_work, sessions=SqlAlchemyProjectWriteAccess(), projects=ProjectAuthorizationService(unit_of_work=runtime.unit_of_work, repository=SqlAlchemyProjectAuthorizationRepository()), license_guard=guard)
             service = ExistingWorkflowInitializationService(**dependencies, initializer=bootstrap)
             reads = WorkflowReadService(unit_of_work=runtime.unit_of_work, sessions=SqlAlchemyProjectReadAccess(), projects=dependencies["projects"], license_guard=guard, repository=SqlAlchemyWorkflowReadRepository())
+            http_sessions = SessionService(unit_of_work=runtime.unit_of_work, repository=SqlAlchemySessionRepository(), issue_access=SqlAlchemyPasswordIssueAccess(ScryptPasswordHasher()), audit=AuditService(SqlAlchemyAuditRepository()))
+            app = create_app(workflow_read_router=create_workflow_read_router(sessions=http_sessions, workflows=reads, origins=LoginOriginPolicy(["http://localhost"])))
+            def cookie(index=0): return {"cookie": "plm_session="+tokens[index].hex()}
+            path = f"/api/v1/projects/{projects[0]}/workflow"
             def read_request(index=0, project=None):
                 return WorkflowReadQuery(tokens[index], project or projects[0], uuid.uuid4())
             def read_denied(query, code):
@@ -113,6 +125,25 @@ def main():
             read_denied(read_request(), "LICENSE_OPERATION_DENIED")
             guard.enabled = True
             entered, release = Event(), Event()
+            with TestClient(app, base_url="http://localhost") as client:
+                for index in (0,1,2,5):
+                    response = client.get(path, headers=cookie(index))
+                    assert response.status_code == 200, response.text
+                    assert response.headers["etag"] == '"v0"' and response.headers["cache-control"] == "no-store"
+                    assert response.json()["data"]["workflow_id"] == str(ids[0])
+                    assert len(response.json()["data"]["stages"]) == 6
+                    assert "definition_fingerprint" not in response.text and "project_id" not in response.json()["data"]
+                for index in (3,4): assert client.get(path, headers=cookie(index)).status_code == 404
+                assert client.get(f"/api/v1/projects/{projects[1]}/workflow", headers=cookie(3)).status_code == 404
+                assert client.get(path).status_code == 401
+                assert client.get(path+"?extra=1", headers=cookie()).status_code == 400
+                assert client.get(path, headers=cookie() | {"host":"evil.invalid"}).status_code == 403
+                guard.enabled = False
+                assert client.get(path, headers=cookie()).status_code == 403
+                guard.enabled = True
+            with connect(name) as db:
+                assert db.execute("SELECT count(*) FROM plm.wfl_project_workflows").fetchone()[0] == 1
+                assert db.execute("SELECT count(*) FROM plm.aud_events WHERE action='WORKFLOW_INITIALIZED'").fetchone()[0] == 1
             class WaitingRepository:
                 def get(self, tx, project):
                     entered.set()
@@ -144,15 +175,20 @@ def main():
                 db.execute("UPDATE plm.prj_projects SET state='ARCHIVED',lock_version=lock_version+1 WHERE project_id=%s", (projects[0],))
             deny(request(), "PROJECT_ARCHIVED")
             assert reads.get(read_request()).state == "NOT_STARTED"
+            with TestClient(app, base_url="http://localhost") as client:
+                assert client.get(path, headers=cookie()).status_code == 200
             with connect(name) as db:
                 db.execute("UPDATE plm.auth_sessions SET revoked_at=statement_timestamp(),revoke_reason='TEST_REVOKED',lock_version=lock_version+1 WHERE user_id=%s", (pm,))
             deny(request(), "AUTH_ACCESS_DENIED")
             read_denied(read_request(), "AUTH_ACCESS_DENIED")
+            with TestClient(app, base_url="http://localhost") as client:
+                assert client.get(path, headers=cookie()).status_code == 401
             with connect(name) as db:
                 assert db.execute("SELECT workflow_state,current_stage_key FROM plm.wfl_project_workflows WHERE workflow_id=%s", (ids[0],)).fetchone() == ("NOT_STARTED", None)
                 assert db.execute("SELECT count(*) FROM plm.wfl_checklist_items WHERE item_state='PENDING'").fetchone()[0] == 12
             print("PASS: real Session/CSRF/project PM, cross-project/non-PM/admin/archived/revoked rejection, synthetic License denial, concurrent dedupe and Audit rollback; not HTTP or Gate")
             print("PASS: Workflow read snapshot, all four project roles, archived read, missing instance no initialization, cross-project/admin/session/License rejection; not HTTP")
+            print("PASS: opt-in Workflow GET real Session/PostgreSQL HTTP, safe projection/ETag/no-store, four roles/archived and errors; synthetic License, not production composition/Gate")
         finally:
             if runtime is not None: runtime.dispose()
             admin.execute("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=%s AND pid<>pg_backend_pid()", (name,))

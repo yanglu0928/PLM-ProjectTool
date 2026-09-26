@@ -3138,3 +3138,11 @@
 - Reason：多次 SELECT 可能拼出不同时间的阶段状态；只有早先权限检查而不保持事实锁，会允许后续已撤销身份消费投影。
 - Impact：Workflow 应用/Repository、一个内部权限策略锁标志及关联测试，无 Schema/API/依赖改变。事实锁现复用既有锁 Port，会串行同项目读取，性能另验，不宣称 P95 达标。
 - Rollback：不装配读服务；保留实例与历史，不写库或清空进度。
+
+## DEC-20260926-157
+
+- Date：2026-09-26；WBS：WFL-01-A04-P02。
+- Decision：WORKFLOW_GET 先 opt-in；HTTP 单独白名单投影并再次校验路径 ProjectId，成功回 trace/ETag/no-store，未知参数拒绝，错误复用已注册公共错误码。默认与生产组合本任务不挂载，不把缺实例读转换为写初始化。
+- Reason：安全字段与应用对象分离，防内部字段意外暴露/错误 Project 投影；冻结 GET 不要求 CSRF 写令牌，但必须可信 Host/Session 和真实项目授权。
+- Impact：可选 Router/create_app 注入及测试，无 Schema/依赖/Breaking API 变化。
+- Rollback：不注入 Router，保持 404；实例/历史不变。

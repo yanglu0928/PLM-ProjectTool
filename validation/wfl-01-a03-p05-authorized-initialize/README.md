@@ -7,3 +7,5 @@
 2026-09-26 实测 PASS；后端 630 项无失败（2 项环境跳过）。不是 HTTP、CLI、业务 Gate 或生产回填验收。
 
 WFL-01-A04-P01 扩展：加入 Workflow 单快照只读查询、四角色、归档读、无实例不写、跨项目/Admin/撤销/合成 License 拒绝，并在读取保持授权事实锁时验证成员撤权 timeout。2026-09-26 重跑 PASS，后端 636 项无失败（2 项环境跳过）；仍不是 HTTP/性能/Gate 验收。
+
+WFL-01-A04-P02 扩展：真实 SessionService/SessionRepo 的可选 Workflow GET、ETag/no-store/安全字段、四角色/归档/跨项目/Admin/缺实例/撤销/Host/query/合成 License 错误合同。2026-09-26 实测 PASS，后端 641 项无失败（2 项环境跳过）；不是生产组合/正式信任源/性能/Gate 验收。

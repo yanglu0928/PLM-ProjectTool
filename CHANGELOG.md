@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/WFL-01-A04-P02 新增冻结 WORKFLOW_GET 可选路由，显式阶段/清单状态投影、ETag/trace/no-store、Host/Session/权限/License 拒绝及内部异常脱敏。Windows 11 后端 641 项无失败（2 项环境跳过），真实 PostgreSQL/Session HTTP 和开发 wheel PASS。无 Migration/Breaking API/依赖变化，升级无动作；默认/生产组合未挂载，正式信任源/性能/Gate 未验，Server 2025 未验、Debian 13 暂不验证。
+
 - 2026-09-26：`0.1.0.dev0`/WFL-01-A04-P01 新增 Workflow 内部只读快照、V1/完整阶段清单/状态指针校验、四角色授权与 ETag；缺实例不初始化，并保持项目事实锁防撤权竞态。Windows 11 后端 636 项无失败（2 项环境跳过），隔离 PostgreSQL 四角色/归档/拒绝/并发锁和开发 wheel PASS。无 Migration/API/依赖变化，升级无动作；HTTP/性能/实际 Gate 未验，Server 2025 未验、Debian 13 暂不验证。
 
 - 2026-09-26：`0.1.0.dev0`/WFL-01-A03-P05 新增既有项目内部受权初始化，重新校验真实 Session/CSRF、锁定 PM 项目权限与 License，保持 NOT_STARTED/PENDING。Windows 11 后端 630 项无失败（2 项环境跳过），隔离 PostgreSQL 跨项目/非 PM/归档/撤销/合成 License 拒绝、并发/Audit 回滚和开发 wheel PASS。无 Migration/公开 API/依赖变化，升级无动作；未自动回填或提供 HTTP/CLI，不代表启动/Gate/生产发行通过，Server 2025 未验、Debian 13 暂不验证。

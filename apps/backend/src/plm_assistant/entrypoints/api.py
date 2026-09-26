@@ -36,6 +36,7 @@ def create_app(
     secret_rotate_router: APIRouter | None = None,
     secret_disable_router: APIRouter | None = None,
     project_read_router: APIRouter | None = None,
+    workflow_read_router: APIRouter | None = None,
     project_create_router: APIRouter | None = None,
     project_patch_router: APIRouter | None = None,
     project_archive_router: APIRouter | None = None,
@@ -109,6 +110,8 @@ def create_app(
         app.include_router(secret_disable_router)
     if project_read_router is not None:
         app.include_router(project_read_router)
+    if workflow_read_router is not None:
+        app.include_router(workflow_read_router)
     if project_create_router is not None:
         app.include_router(project_create_router)
     if project_patch_router is not None:
