@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A07-P01增加独立Jobs caller-UOW续租Port，严格坐标/时长、实际check→heartbeat→check保持完整claim，原checkpoint只读保留，无自commit/业务授权。5新unit/真实PG双Scope期限一致/并发/后置失败回滚/取消到期/真实接管拒旧代及原发布回归PASS；968后端无失败（2环境跳过）、开发wheel成功。Windows11验证，无Migration/API/依赖，head0042、无需数据升级；撤未装配入口保历史可回滚。受权Audit心跳/调度Worker/提交Job HTTP、正式账户/三平台/性能/质量/Gate/完整安装包仍待。
+
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A06-P03将审计结果/内容四GET接入Windows两显式平台模式，复用实际Owner公共Port/当前Session与License，默认/login-only和POST仍404，构造故障安全关闭dispose。实际PG双Scope260条详情/完整字节/权限/坏文件、三构造失败、旧Windows审计与上传Finalize回归PASS；963后端无失败（2环境跳过）、开发wheel成功。Windows11验证，Credential/License等信任合成，无Migration/依赖/新密钥，head0042；无需数据升级，重启显式模式，撤挂载保历史可回滚。Worker协调/心跳/提交Job接口、正式账户/三平台/代理/性能/质量/Gate和完整安装包仍待。
 
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A06-P02增加可选审计JSONL内容GET，当前Session/Scope真实完整快照+复制后二次授权；安全附件头、进程内有界名额、Response外层收尾、prepare/read取消保活跃线程名额并最终close/release。7新契约/ASGI生命周期与实际PG/文件双Scope/撤权/坏文件Audit及原子发布回归PASS；962后端无失败（2环境跳过）、开发wheel成功。Windows11验证，无Migration/依赖，head0042，无数据升级；卸载opt-in Router保历史可回滚。默认404；生产组合/真实代理/正式账户/三平台/性能/质量/Gate和安装包待，License合成。

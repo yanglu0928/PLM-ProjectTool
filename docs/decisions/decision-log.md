@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260926-221
+
+- Date/WBS：2026-09-26 / AUD-03-A06-A04-P03-A07-P01。
+- Finding：通用heartbeat自有UOW无法与Audit当前授权/Root/pair同事务，既有checkpoint必须保持只读。Decision：独立Jobs caller-UOW JobLeaseRenewal，前后当前实际claim重核、中间复用owned heartbeat，无自commit/跨Owner表/外部I/O，不用增大固定超时替代心跳；无Schema/API/权限基线调整。
+- Evidence：5新unit/968后端无失败（2环境跳过），真实PG双Scope续期、并发串行/期限一致、未commit/后置异常回滚、错Worker/fence/成功/取消/到期拒绝、实际接管旧代拒绝新代可续；原发布完整回归和wheel成功。
+- Risk/rollback：本项仅Jobs技术事实，不证明Audit权限或调度存活；撤未装配Port保历史。Next P02受权短事务心跳，再实际调度/Worker/提交Job接口；正式材料/三平台/性能/质量/Gate与完整程序包仍待。
+
 ## DEC-20260926-220
 
 - Date/WBS：2026-09-26 / AUD-03-A06-A04-P03-A06-P03；前置P01/P02增量契约与实际授权/字节/资源生命周期PASS。
