@@ -3410,3 +3410,11 @@
 - Reason：可选HTTP和当前账户来源已验证，正式组合仍需强制key前置，不能拿测试key或缺省生成继续运行。
 - Impact：组合根和相关测试fixture增加显式合成Audit key，不改变业务Scope/数据库/冻结API/角色/依赖。正式账户/License供给仍缺，不据合成组合放行生产Gate。
 - Rollback：回退组合根不挂载Audit；只读无数据变化。
+
+## DEC-20260926-191
+
+- Date：2026-09-26；WBS：AUD-03-A01。
+- Decision：导出POST前置未满足，先记录设计和实际Schema差异。冻结DM-04 Job允许DEPLOYMENT，当前0035 Job/Outbox仅GLOBAL/PROJECT；下一项先CR-JOB-001修正实现遗漏，不将部署导出映射GLOBAL绕过Scope。快照与Job/受权结果交付分别实现，当前不开放POST。
+- Reason：已有签名分页只是有界查询，不是跨页数据库快照；现有Job租约和Parse enqueue也不是审计导出受权入口或结果下载能力。
+- Impact：只新增设计/隔离库前置证据，本轮无生产代码/Schema/API/权限或基线实施变化。完整导出范围保留，前置缺口不是免验收或删除Scope。
+- Rollback：无生产变更；验证库只清理own UUID目标。后续CR必须保留原冻结版本并覆盖数据迁移/拒绝丢失的down/验证。

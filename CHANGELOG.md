@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/AUD-03-A01 完成导出前置设计与隔离数据库缺口复现：head0035 Job/Outbox不接受冻结模型已有DEPLOYMENT Scope。后续先CR-JOB-001恢复遗漏，不映射GLOBAL绕过；真正快照/幂等/Worker/安全交付仍待。仅文档/验证脚本，无生产程序/Migration/API/角色/依赖变化，升级无动作。本轮未重跑全量测试或标导出PASS；Server2025未验、Debian13暂不验证，正式可用包未完成。
+
 - 2026-09-26：`0.1.0.dev0`/AUD-02-A05 两种Windows显式平台挂载审计GET，独立Audit key缺失拒启，普通default/login-only404。Windows11后端794项无失败（2项环境跳过），真实数据库Session/PM/Admin/Scope分页与14个受影响集成回归、开发wheel PASS；License/key合成。无Migration/Breaking API/角色/依赖变更；升级显式平台须在实际运行账户供给audit-list-cursor-v1及保管恢复备份，否则拒启。正式供给/导出/可用包未完成，Server2025未验、Debian13暂不验证。
 
 - 2026-09-26：`0.1.0.dev0`/AUD-02-A04 新增Windows当前账户audit-list-cursor-v1只读来源，缺失/错误安全拒绝，无自动生成或其他key复用。Windows11后端793项无失败（2项环境跳过），真实唯一临时Vault丢失/恢复旧cursor验证并清理、四个GET数据库回归和开发wheel PASS。无Migration/API/角色/依赖/算法变化，升级无数据动作；正式运行账户供给/离线保管/平台装配/导出/可用包未完成，Server2025未验、Debian13暂不验证。
