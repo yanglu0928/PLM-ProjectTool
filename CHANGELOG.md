@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/P06-P12-B02真实Windows CLI独立后台子进程验证：临时Windows Credential/Vault identity+PG18当前Schema，双Scope文件/摘要/不可变结果/Job SUCCEEDED/Lease RELEASED/单Attempt和SYSTEM identity匹配；缺真实公钥与idle外部CTRL_BREAK六表无写，active只排空第一任务、第二未领取并由下一once完成。原发布回归通过，六子进程全部退出、临时凭据/库清理。License替身明确测试，Windows11，无生产代码/API/Migration/依赖/升级变化、不重建未变wheel，撤脚本回滚。正式来源/SCM/无限阻塞/公平隔离/未知恢复/HTTP/其他平台/完整包/Gate待。
+
 - 2026-09-27：`0.1.0.dev0`/P06-P12-B01修复已收到停止标志但桥线程未调度时可能再次领取的竞态：Loop每次Step前显式只读Probe、正常栈stop，原pending排空/最小handler保留。2新unit/1113通过（2既有跳过），长阻塞外部CTRL_BREAK释放后单次排空通过；开发wheel631428 bytes/SHA见进度。Windows11，无Migration/API/依赖/升级；撤内部扩展回滚。无限阻塞/真实PG子进程/SCM/其他平台/正式材料/完整包/Gate待。
 
 - 2026-09-27：`0.1.0.dev0`/P06-P12-A增加独立隐藏Windows Console外部CTRL_BREAK验证；严格限定本轮目标/发送器。可响应合成执行器idle停止/active单次排空通过；后端1111通过（2既有跳过）。首次活动长阻塞再次领取的失败保留，真实DB/文件阻塞与桥接竞态仍待。Windows11，仅验证脚本/文档，无生产包/API/Migration/依赖/升级变化；撤脚本回滚。P12-B/SCM/其他平台/正式材料/完整包/Gate未完成。

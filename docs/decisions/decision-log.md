@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-249
+
+- Precode：Phase2/P06-P12-B02，CR-AUD-004/P11/P12-B01，先记录aud-p06-p12-pg-child.md。
+- Decision：仅验证脚本映射临时Credential与Vault引用，真实Windows CLI/YAML/PG/固定Repo、独立隐藏Console；License替身显式测试，不改正式信任源，非秘密argv/env，无强杀。
+- Evidence：六个实际子进程、双Scope真实发布/摘要/AVAILABLE/RELEASED/单Attempt/同Vault SYSTEM identity；缺正式公钥与idle六表无写，active外部CTRL_BREAK只排空第一任务/第二未领取，再once完成；原发布回归通过，临时来源已清理。
+- Risk/rollback：无生产/API/Migration/依赖/升级改变，撤脚本保历史；非无限阻塞/SCM/正式License/完整包/Gate通过。下一P06-P13公平/坏源隔离。
+
 ## DEC-20260927-248
 
 - Precode：Phase2/P06-P12-B01，CR-AUD-004，P12-A已暴露停止桥接竞态；先记录aud-p06-p12-stop-boundary.md。

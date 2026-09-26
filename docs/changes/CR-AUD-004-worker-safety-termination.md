@@ -64,3 +64,5 @@ P06-P11实施前进度记录License普通runtime与Worker有界runtime冲突；�
 P06-P12-A外部隐藏Console限定目标与发送器后CTRL_BREAK，可响应合成idle/active路径通过；1111通过/2跳过。长阻塞合成路径首次发生再次领取，保留失败，测试分段等待不代表生产修复。真实PG子进程/阻塞/桥接竞态继续P12-B；CR/Gate未关闭。
 
 P06-P12-B01先记录后修复已处理标志的桥接竞态：Loop每Step前显式只读Probe，在正常执行栈stop，最小handler与已知pending排空不变；1113通过/2跳过、禁桥线程1执行1领取、恢复长等待外部CTRL_BREAK单次排空与wheel通过。无限阻塞/尚未处理信号/真实PG子进程/SCM仍待，CR/Gate不关闭。
+
+P06-P12-B02实际Windows CLI六个独立隐藏Console子进程、临时PG/Credential/Vault identity在明确测试License下双Scope实际文件发布/哈希/单Attempt/RELEASED/同SYSTEM actor；缺公钥与外部idle停止六表无写，active外部CTRL_BREAK仅排空第一任务/第二PENDING未领取，下一once成功。原发布回归通过、临时来源清理；正式License/SCM/无限阻塞/公平/未知恢复/HTTP/完整包/Gate仍待，CR不关闭。
