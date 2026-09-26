@@ -30,3 +30,5 @@ P13-P03-A01更新：独立scan_next与严格cursor/reservation已实现，单次
 P13-P03-A02更新：显式后台isolated准入/严格来源拒绝DTO、只在完整只读UOW后游标推进/常数内存，原入口默认和对外AUDIT_UNAVAILABLE保留；未知DB/identity/commit异常不吞，Loop按poll等待/计数，CLI数量不代表终态。1125通过/2既有跳过，实际双Scope malformed/zeroUUID/缺Root/错pair保持六表无写拒绝，后续实际发布、坏Job无Attempt，恢复合成来源可发布；原确认恢复/真实CLI停止回归及wheel通过。Acceptance审计源真实故障矩阵、耗尽坏源、复杂Lease、反向锁序实际40P01/全局公平仍待，CR不关闭。
 
 P13-P04更新：真实双Scope反向Root→Job与Worker Job→Root形成8个40P01，pg_blocking_pids核实际竞争；单次原有界重试成功，连续三次上限失败且六表无写，同实例竞争释放后单Attempt/RELEASED Lease/结果发布。真实2个55P03非死锁/非坏源拒绝、失败无写后恢复。只测试事务内检测时间协调，原生产limits不改，原发布回归通过；新锁序此矩阵内部关闭，不外推长期公平/耗尽坏源/Acceptance实际故障/复杂Lease/正式发行，CR保持打开。
+
+P13-P05更新：新增独立expiry/JobId只读scan及常数cursor，旧peek/run默认保留；后台显式耗尽隔离、Owner只读原源预检且不授终态权，仍原expire/verify/提交后证明。1130通过/2既有跳过，实际双Scope第三次到期malformed/缺Root/错pair精确reason六表无写，健康后续发布、坏Job/Lease/Attempt全行不变，恢复测试来源后原收尾/真实commit-lost-ack/旧字节仍通过；真实CLI停止/旧发布/wheel通过。长期混排、Acceptance审计真实矩阵/复杂Lease/预检竞争仍待，CR保持打开。

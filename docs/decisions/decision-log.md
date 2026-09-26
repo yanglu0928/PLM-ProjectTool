@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-255
+
+- Precode：Phase2/P06-P13-P05，CR-AUD-005，exhaustion-isolation进度先记录原单首候选风险/expiry游标/Owner只读原源预检和未知故障边界。
+- Decision：旧peek/run默认保留，后台显式只读scan+固定技术拒绝，常数cursor/实例锁，拒绝后下一轮优先Claim；Source预检不授expire权，原Owner最终重验/真实证明保留，DB/identity/Lease未知错继续关/脱敏。
+- Evidence：5新unit/1130通过（2既有跳过）；真实双Scope六场景第三次到期引用坏/缺Root/错pair精确reason，六表无写拒绝后健康任务发布，坏Job/Lease/Attempt全行不变；恢复合成源后原安全失败/actual commit-lost-ack/旧字节保留，真实CLI停止/旧发布/wheel635109通过。
+- Impact/rollback：无Migration/API/依赖/升级，撤显式接线/新Port保旧入口和历史；长期混排/Acceptance真实矩阵/复杂Lease/预检竞争待，CR/Gate/正式材料/完整包未关闭。下一P13-P06混合持续循环及实际分类收口。
+
 ## DEC-20260927-254
 
 - Precode：Phase2/P06-P13-P04，CR-AUD-005，在real-deadlock进度先登记局部检测时间/反向锁环、连续3次与55P03矩阵；不模拟错误取代真实PG证据。

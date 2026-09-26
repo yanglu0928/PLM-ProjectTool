@@ -8,6 +8,7 @@ from .heartbeat_coordinator import AuditHeartbeatSupervisor
 from plm_assistant.modules.jobs.application.audit_export_claim import AuditExportClaimCandidate,validate_claim_input
 from plm_assistant.modules.jobs.application.audit_export_enqueue import AuditExportJobRef,AuditExportEnqueueError
 from plm_assistant.modules.jobs.application.audit_export_scan import AuditExportScanCursor,AuditExportScanReservation
+from plm_assistant.modules.jobs.application.audit_export_exhaustion_scan import AuditExportExhaustionCursor
 from plm_assistant.modules.jobs.application.audit_export_complete import AuditExportJobCompletion
 from plm_assistant.modules.jobs.application.lease import ClaimedJob,JobLeaseError
 
@@ -33,11 +34,11 @@ class _UnconfirmedClaim(Exception):
 
 @dataclass(frozen=True,slots=True)
 class RejectedAuditExportSource:
-    cursor: AuditExportScanCursor
+    cursor: AuditExportScanCursor|AuditExportExhaustionCursor
     reason_code: str
 
     def __post_init__(self):
-        if type(self.cursor) is not AuditExportScanCursor:raise AuditExportWorkerError()
+        if type(self.cursor) not in (AuditExportScanCursor,AuditExportExhaustionCursor):raise AuditExportWorkerError()
         self.cursor.__post_init__()
         if type(self.reason_code) is not str or self.reason_code not in {
             'INVALID_EXPORT_REF','ROOT_MISSING','ROOT_MISMATCH','ACCEPTANCE_MISSING',

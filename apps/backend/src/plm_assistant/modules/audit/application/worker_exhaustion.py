@@ -2,10 +2,10 @@
 from uuid import UUID
 from .worker_termination import AuditExportWorkerTermination
 from .worker_capture import AuditExportCaptureCommand,AuditExportWorkerCapture,AuditExportWorkerError
-from .submit_export import AcceptedAuditExport,AuditExportSubmitService
+from .submit_export import AuditExportIntent,AcceptedAuditExport,AuditExportSubmitService,AuditExportSourceRejected
 from .public import AuditEventDraft
 from .verify_termination import VerifiedAuditExportTermination
-from plm_assistant.modules.jobs.application.audit_export_enqueue import AuditExportJobRef
+from plm_assistant.modules.jobs.application.audit_export_enqueue import AuditExportJobRef,AuditExportEnqueueError
 from plm_assistant.modules.jobs.application.audit_export_failure import AuditExportFailureResult
 from plm_assistant.modules.jobs.application.lease import ClaimedJob,JobLeaseError
 from plm_assistant.modules.jobs.application.failure_proof import FailedJobProof
@@ -20,6 +20,41 @@ class AuditExportWorkerExhaustion(AuditExportWorkerTermination):
 
     def expire(self,command):return self._invoke(command,verify=False)
     def verify(self,command):return self._invoke(command,verify=True)
+
+    def inspect_source(self,c):
+        """Only readonly original binding; never sufficient to expire a Lease."""
+        try:return self._inspect_source(c)
+        except AuditExportWorkerError:raise
+        except Exception:raise AuditExportWorkerError() from None
+
+    def _inspect_source(self,c):
+        if type(c) is not AuditExportCaptureCommand:raise AuditExportWorkerError('VALIDATION_FAILED')
+        c.__post_init__();identity=self._identity()
+        with self._supervisor.stopped(c),self._uow() as tx:
+            reason=None;intent=self._repo.get_created(tx,export_id=c.export_id)
+            if intent is None:reason='ROOT_MISSING'
+            elif type(intent) is not AuditExportIntent:raise AuditExportWorkerError()
+            elif intent.export_id!=c.export_id:reason='ROOT_MISMATCH'
+            else:
+                intent.__post_init__()
+                try:accepted=self._repo.get_accepted(tx,intent=intent)
+                except AuditExportSourceRejected as exc:
+                    reason=exc.reason_code;accepted=None
+                if reason is None:
+                    if accepted is None:reason='ACCEPTANCE_MISSING'
+                    elif type(accepted) is not AcceptedAuditExport:raise AuditExportWorkerError()
+                    elif accepted.intent!=intent or accepted.job_id!=c.job_id:reason='ACCEPTANCE_MISMATCH'
+                    else:
+                        accepted.__post_init__()
+                        try:actual=self._queue.find_export(tx,request=AuditExportSubmitService._queue_request(intent))
+                        except AuditExportEnqueueError as exc:
+                            if exc.code!='CONFLICT_STATE':raise
+                            actual=None
+                        if actual is None:reason='PAIR_MISMATCH'
+                        elif type(actual) is not AuditExportJobRef:raise AuditExportWorkerError()
+                        elif actual!=AuditExportJobRef(accepted.job_id,accepted.event_id):reason='PAIR_MISMATCH'
+            if self._identity()!=identity:raise AuditExportWorkerError('SYSTEM_ACTOR_UNAVAILABLE')
+            return reason
 
     def _invoke(self,command,*,verify):
         if type(command) is not AuditExportCaptureCommand:raise AuditExportWorkerError('VALIDATION_FAILED')

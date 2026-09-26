@@ -55,7 +55,10 @@ class AuditExportWorkerStep:
             for operation in order:
                 if self._stop.is_set():return AuditExportStepOutcome('STOPPED')
                 if operation=='SWEEP':
-                    result=self._sweep.run_next()
+                    result=self._sweep.run_next(isolate_sources=True)
+                    if type(result) is RejectedAuditExportSource:
+                        self._prefer_sweep=False
+                        return AuditExportStepOutcome('SOURCE_REJECTED',result)
                     if result is not None:
                         outcome=AuditExportStepOutcome('SWEEP_FAILED',result);self._prefer_sweep=False;return outcome
                 else:
