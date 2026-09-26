@@ -3463,3 +3463,12 @@
 - Impact：无新Schema/角色/Scope/公开API/依赖变化，不自动capture或运行Worker，不声明文件产出/任务完成。现有0038保留原引用；未装配内部命令，导出POST仍关闭。实际正式信任材料/质量/性能/Gate/完整可用包仍待。
 - Verification：真实双Scope首次全记录、同key新trace原结果且全表不变、同key异Spec拒绝、不同Actor/Scope namespace、归档PM/部署无项目旁路/撤权/CSRF/许可拒绝、并发单组受理、每阶段故障全回滚、真实40P01限次整UOW恢复及耗尽拒绝、缺历史/替换Job拒绝。
 - Rollback：撤未装配服务不删除/更改任何历史，0038含历史拒绝down，无生产/客户数据操作。
+
+## DEC-20260926-197
+
+- Date：2026-09-26；WBS：AUD-03-A06-A01 当前Worker权限。
+- Precode：Phase2；输入冻结API-02/DM-02与A03当前授权Port、A05实际受理；前置满足。模块Auth/Audit，仅Auth公共当前User事实与Audit应用授权，无新实体/Schema/API/依赖。验收真实当前事实锁、撤权/范围/归档维护/许可拒绝、无业务写；风险坐标伪造及锁序，Owner仍须先绑定持久Root与真实Job租约，本项不是完整Worker。
+- Decision：Auth提供非Session的当前enabled User/部署角色事实公共Port，在调用方事务锁User；Audit每次CAPTURE/RENDER/PUBLISH调用重新检查License与当前User及Project公开AUDIT_PROJECT_EXPORT权限。部署Admin不旁路项目成员。原Session注销/自然到期不自动取消已受理任务；原始凭据不持久化，真实当前身份禁用/撤权阻止执行。许可检查trace使用Export UUID仅为技术关联，不制造审计业务事实。
+- Impact：结果None不构造可跨事务复用权限证书；原request仅坐标，持久Export/acceptance绑定与Job Lease/fencing/取消由后续Owner编排实施，不能以本项放行HTTP/文件发布。User→Project/member/department锁持至调用方事务结束；Job锁反序仍须实际整UOW验证。
+- Verification：真实隔离库各stage/两Scope、disabled/非Admin/nonPM/member/department/跨项目/归档、Session注销仍当前权限有效、四事实锁与无业务写；License合成明确标注。单元错误映射/输入/绑定/无默认许可。
+- Rollback：撤未装配Port，无数据迁移、不删除历史、不操作生产。正式信任源/性能/三平台及Gate仍待。
