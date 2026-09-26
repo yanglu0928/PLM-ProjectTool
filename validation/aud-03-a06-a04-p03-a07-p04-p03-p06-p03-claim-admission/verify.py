@@ -53,7 +53,7 @@ def exercise(v):
         for scope in ('PROJECT','DEPLOYMENT'):
             accepted=pending(scope)
             class BrokenClaims:
-                def peek_next(self,*args,**kwargs):return claims.peek_next(*args,**kwargs)
+                def reserve_next(self,*args,**kwargs):return claims.reserve_next(*args,**kwargs)
                 def claim_target(self,*args,**kwargs):claims.claim_target(*args,**kwargs);raise RuntimeError('synthetic AFTER actual claim writes')
             reject(owner(claims=BrokenClaims()))
             class LostIdentity:

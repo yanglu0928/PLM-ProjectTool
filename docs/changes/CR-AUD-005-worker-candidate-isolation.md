@@ -1,6 +1,6 @@
 # CR-AUD-005：后台候选竞争与异常来源隔离
 
-日期：2026-09-27；状态：RECORDED / IMPLEMENTATION_PENDING；持续授权：AI自主执行规则V1.1，用户最新允许兼容偏差先记录后实施，不待逐项批准。来源：P06-P13-P01真实PG证据，原冻结64cdf09与CR-AUD-004历史保留，Gate未通过。
+日期：2026-09-27；状态：IN_PROGRESS / P02_LOCK_SKIP_INTERNAL_PASS / P03_SOURCE_ISOLATION_PENDING；持续授权：AI自主执行规则V1.1，用户最新允许兼容偏差先记录后实施，不待逐项批准。来源：P06-P13-P01真实PG证据，原冻结64cdf09与CR-AUD-004历史保留，Gate未通过。
 
 ## 冲突/证据
 
@@ -22,3 +22,5 @@
 ## 验收计划/尚未完成
 
 锁住队首时第二任务仍能被另一实际Worker领取/发布且队首无Attempt；释放后队首发布；双Scope、两Worker竞争、真实deadlock/rollback/commit丢失恢复回归。坏payload/缺Root/错pair/正常任务混排、持续循环/有界内存/不隐瞒故障与停止行为验证。全局公平不凭局部测试声称，需明确负载/优先级语义。P13-P02/P03均未实施，完整Scope/Gate/正式材料/发行仍待。
+
+P13-P02更新：已先记录后增加独立reserve_next，旧peek无锁保留；真实双Scope锁住优先head时后续正常发布/首无Attempt，两个只锁UOW候选不同且六表无写；1116通过/2跳过、原双Scope单claim竞争/到期/回滚/确认恢复及wheel通过。新版反向锁序真实40P01未制造，P03坏源、全局公平仍待，CR不关闭，前文未实施为原计划历史状态。

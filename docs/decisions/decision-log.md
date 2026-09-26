@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-251
+
+- Precode：Phase2/P06-P13-P02，CR-AUD-005先登记，aud-p06-p13-reservation.md检查原pair/identity/确认恢复保留与Job→Audit锁序风险。
+- Decision：独立reserve_next SELECT FOR UPDATE SKIP LOCKED只预留不写，在Root前取得；原无锁peek不变，原授权/pair/current identity/claim/commit与lost-ack恢复不改。
+- Evidence：3新unit/1116通过（2既有跳过）；实际双Scope两个只锁UOW不同候选/六表无写、锁优先head后续真实发布且首无Attempt、释放后首发布；原P03单claim竞争/回滚/代际与P06确认恢复通过、wheel631564/SHA见进度。
+- Risk/rollback：无Migration/API/依赖/升级，撤reservation接线保历史；新版反向锁序实际40P01未制造、坏源仍FAIL，CR-AUD-005/全局公平/Gate/完整包未关闭。
+
 ## DEC-20260927-250
 
 - Precode：Phase2/P06-P13-P01，先记录aud-p06-p13-queue-isolation.md，验证公平/坏源风险，不把缺陷复现当功能PASS。

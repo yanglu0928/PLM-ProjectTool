@@ -14,7 +14,7 @@ class ClaimAdmissionTests(TestCase):
     def setUp(self):
         f=fixture.WorkerTerminationTests();f.setUp();self.f=f
         self.claims=Mock();self.candidate=AuditExportClaimCandidate(f.f.cmd.job_id,f.f.cmd.export_id,0)
-        self.claims.peek_next.return_value=self.candidate;self.claims.claim_target.return_value=f.f.claim
+        self.claims.reserve_next.return_value=self.candidate;self.claims.claim_target.return_value=f.f.claim
         self.owner=AuditExportClaimAdmission(unit_of_work=f.f.uow,repository=f.f.repo,claims=self.claims,
             queue=f.f.queue,system_actor=f.actor,supervisor=f.supervisor)
 
@@ -24,11 +24,20 @@ class ClaimAdmissionTests(TestCase):
         self.f.f.tx.commit.assert_called_once();self.f.f.auth.assert_current.assert_not_called()
 
     def test_empty_and_bounded_eligibility_race_no_commit(self):
-        self.claims.peek_next.return_value=None
+        self.claims.reserve_next.return_value=None
         self.assertIsNone(self.owner.claim_next(worker_ref='worker'));self.f.f.tx.commit.assert_not_called()
-        self.claims.peek_next.return_value=self.candidate;self.claims.claim_target.return_value=None
+        self.claims.reserve_next.return_value=self.candidate;self.claims.claim_target.return_value=None
         self.assertIsNone(self.owner.claim_next(worker_ref='worker'))
         self.assertEqual(self.claims.claim_target.call_count,3);self.f.f.tx.commit.assert_not_called()
+
+    def test_reservation_before_root_never_falls_back_to_unlocked_hint(self):
+        calls=[]
+        self.claims.reserve_next.side_effect=lambda tx:(calls.append('reserve'),self.candidate)[1]
+        intent=self.f.f.repo.get_created.return_value
+        self.f.f.repo.get_created.side_effect=lambda tx,**kwargs:(calls.append('root'),intent)[1]
+        self.owner.claim_next(worker_ref=self.f.f.cmd.worker_ref)
+        self.assertEqual(calls,['reserve','root'])
+        self.claims.peek_next.assert_not_called()
 
     def test_invalid_input_and_foreign_root_never_claim(self):
         for worker,seconds in ((True,60),('worker',True),('worker',2),('bad worker',60)):

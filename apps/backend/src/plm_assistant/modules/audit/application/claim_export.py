@@ -63,7 +63,7 @@ class AuditExportClaimAdmission:
     def _claim(self,worker_ref,seconds):
         identity=self._identity()
         with self._uow() as tx:
-            candidate=self._claims.peek_next(tx)
+            candidate=self._claims.reserve_next(tx)
             if candidate is None:
                 if self._identity()!=identity:raise AuditExportWorkerError('SYSTEM_ACTOR_UNAVAILABLE')
                 return None

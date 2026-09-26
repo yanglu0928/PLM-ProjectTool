@@ -47,6 +47,17 @@ class AuditExportClaims:
         except JobLeaseError:raise
         except Exception:raise JobLeaseError('JOB_STORE_UNAVAILABLE') from None
 
+    def reserve_next(self,tx):
+        """Owned lock reservation, not a Claim or business authorization."""
+        try:
+            candidate=self._repo.reserve_next(tx)
+            if candidate is not None:
+                if type(candidate) is not AuditExportClaimCandidate:raise JobLeaseError('JOB_STORE_UNAVAILABLE')
+                candidate.__post_init__()
+            return candidate
+        except JobLeaseError:raise
+        except Exception:raise JobLeaseError('JOB_STORE_UNAVAILABLE') from None
+
     def check_target(self,tx,*,job_id,fencing_token,worker_ref):
         from .lease_checkpoint import validate_checkpoint
         validate_checkpoint(job_id=job_id,fencing_token=fencing_token,worker_ref=worker_ref)

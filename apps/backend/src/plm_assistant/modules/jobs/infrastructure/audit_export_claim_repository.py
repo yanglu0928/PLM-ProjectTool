@@ -37,6 +37,20 @@ class SqlAlchemyAuditExportClaimRepository:
         if str(export_id)!=raw:raise JobLeaseError('JOB_STORE_UNAVAILABLE')
         return AuditExportClaimCandidate(job.job_id,export_id,job.fencing_token)
 
+    def reserve_next(self,tx):
+        """Lock only one eligible Job before any upstream locks; never mutate."""
+        session=self._leases._session(tx);now=self._leases._now(session)
+        job=session.scalar(select(JobRow).where(*self._eligible(now))
+            .order_by(JobRow.priority.desc(),JobRow.available_at,JobRow.job_id).limit(1)
+            .with_for_update(of=JobRow,skip_locked=True).execution_options(populate_existing=True))
+        if job is None:return None
+        raw=job.payload_refs.get('export_id') if type(job.payload_refs) is dict else None
+        if type(raw) is not str:raise JobLeaseError('JOB_STORE_UNAVAILABLE')
+        try:export_id=UUID(raw)
+        except ValueError:raise JobLeaseError('JOB_STORE_UNAVAILABLE') from None
+        if str(export_id)!=raw:raise JobLeaseError('JOB_STORE_UNAVAILABLE')
+        return AuditExportClaimCandidate(job.job_id,export_id,job.fencing_token)
+
     def claim_target(self,tx,*,job_id,worker_ref,lease_seconds):
         validate_claim_input(worker_ref,lease_seconds)
         session=self._leases._session(tx);now=self._leases._now(session)

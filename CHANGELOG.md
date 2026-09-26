@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/P06-P13-P02按CR-AUD-005增加独立只锁候选reservation，SKIP LOCKED提前到Root/pair前，旧无锁peek保留；不写状态/不授正文权限。3新unit/1116通过（2既有跳过），真实PG双Scope锁优先head仍可发布后续/首无Attempt、两个reservation无写互斥及原单claim竞争/回滚/代际/确认恢复通过；wheel631564/SHA见进度。Windows11，无Migration/API/依赖/升级，撤新增Port接线回滚。反向锁序真实deadlock待、坏来源仍FAIL、全局公平/正式来源/完整包/Gate待。
+
 - 2026-09-27：`0.1.0.dev0`/P06-P13-P01实际PG确认调度缺陷：原pair行锁早于SKIP LOCKED，竞争队首55P03退出；损坏队首payload亦阻塞合法后续任务。两失败六表无写，恢复本轮合成来源后双方真实发布/原发布回归通过。登记CR-AUD-005计划候选reservation与坏源隔离；**功能隔离未通过，修复待实施**。Windows11，无生产代码/API/Migration/依赖/升级，撤验证脚本回滚；未重建未变wheel/未复跑全unit，其他正式材料/完整包/Gate待。
 
 - 2026-09-27：`0.1.0.dev0`/P06-P12-B02真实Windows CLI独立后台子进程验证：临时Windows Credential/Vault identity+PG18当前Schema，双Scope文件/摘要/不可变结果/Job SUCCEEDED/Lease RELEASED/单Attempt和SYSTEM identity匹配；缺真实公钥与idle外部CTRL_BREAK六表无写，active只排空第一任务、第二未领取并由下一once完成。原发布回归通过，六子进程全部退出、临时凭据/库清理。License替身明确测试，Windows11，无生产代码/API/Migration/依赖/升级变化、不重建未变wheel，撤脚本回滚。正式来源/SCM/无限阻塞/公平隔离/未知恢复/HTTP/其他平台/完整包/Gate待。
