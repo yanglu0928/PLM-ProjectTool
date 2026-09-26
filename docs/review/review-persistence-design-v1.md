@@ -33,6 +33,8 @@ PM 受权撤回只在 IN_REVIEW：保留所有已提交决定，剩余 Assignmen
 
 应用锁顺序应先当前身份/Project 授权事实，后 Subject Owner 身份/固定版本与 Review/Round；所有命令使用一致顺序，具体交叉 Owner 锁由应用 Port 前置验证，不能以描述代替死锁验收。锁获取/释放、决定/状态、事件/Audit/收据一事务；任一故障全回滚。最终 decide 与 withdraw 并发只有一个状态转换成功，不能丢失已决定历史或提前释放锁。
 
+后续受控服务的相对锁序已在 `review-read-authorization-design-v1.md`/`review-start-preconditions-v1.md` 细化：读取先 Review 再 Owner/固定 Round；送审先全部 reviewer Auth 共享锁再 Project/Review/Owner/Round，不在已持 Project 锁后才获取其他 reviewer 账户锁。完整跨 Owner 与成员写并发仍须实际验收，独立资格组件不替代完整链证明。
+
 拟从 0033 增量，不写旧 Gate/合成 UUID 的历史假 Review。先备份；空库 up/down/re-up、有其他模块数据升级/原值保留、GLOBAL FK/完整性/非法状态/并发/不可变/非空 down 必验。非空 owned 历史拒绝 down，应用可关闭新入口回滚并保留事实。
 
 RVW-02-A01 纯领域和 RVW-01-A02/0034 隔离数据库验收已完成。PENDING 枚举保留，当前 Schema 的可提交新 Round 必须原子完整 IN_REVIEW，不提供半套 PENDING 提交。尚未运行实际 API/权限/Subject Owner/覆盖率/性能验证，无公开 Review 接口，不判实际客户 Review/Gate PASS；后续接受控 Query/Owner/受权服务。

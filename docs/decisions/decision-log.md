@@ -3274,3 +3274,19 @@
 - Reason：身份创建不是送审，旧 Key 不能绕过撤权；原始创建 Ref 不含变化的 state/etag，可避免额外响应持久层。创建 version 只参与指纹，不误写为 Review 的 version Audit。
 - Impact：内部命令/owned Repository/Project 策略/单位与隔离验收，无 Migration/公开 API/角色/依赖变化；Owner/License 合成，不能标实际批准或身份锁 PASS。
 - Rollback：停用服务，保留 0034/不可变历史/审计/收据，禁止生产破坏性清理。
+
+## DEC-20260926-174
+
+- Date：2026-09-26；WBS：RVW-02-A02。
+- Decision：先锁真实 reviewer ENABLED 账户再核对 Project 活动成员/部门及明确服务器角色子集；此为基础资格，不替代具体 Subject Owner 逐人资格。送审完整路径另用共享 User Session/CSRF 校验，不能沿用先 actor 排他锁/Project 再 reviewer 的倒序。
+- Reason：数据库 FK/User 存在不等于有资格；冻结 Contract 不允许将 policy 字符串当授权，也不应静默限定全部 Review 为单一角色集合。账户与项目锁倒序可能引入死锁，须实际全链验收。
+- Impact：前置/窄基础资格组件设计，不改冻结 Schema/API/角色；实际政策/Owner 身份锁/完整 start 未完成。
+- Rollback：不装配新资格/start 服务，现有读/create 保持不变，历史保留。
+
+## DEC-20260926-175
+
+- Date：2026-09-26；WBS：RVW-02-A03。
+- Decision：Auth owned 仅返回已共享锁 ENABLED reviewer IDs；Project owned 复用当前成员/部门事实 Repository 锁读，验证 ACTIVE Project 与受控角色子集，保留调用方 Assignment 顺序、实际锁账户按 UUID 排序。无用户名/敏感值输出，无自动 Assignment/commit。
+- Reason：FK 或 User ID 不代表实时资格，成员/部门后来失效不能竞态逃过前置；此结果只证明必要资格，具体 Subject 资格另验。
+- Impact：Auth 窄查询、Project 内部基础资格服务与真实隔离验证，无 Schema/API/角色/依赖变化；完整送审、真实 Owner 和生产政策注册未完成。
+- Rollback：不调用新内部服务，保留既有 Project/Auth 与 Review 历史，无数据迁移。
