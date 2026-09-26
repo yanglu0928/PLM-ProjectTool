@@ -58,6 +58,8 @@ P03-A01：FileObject用途/归属及DocumentVersion/Upload防误绑Schema，真�
 
 ## 当前结果
 
+2026-09-26 P03-A04-P02：真实原submit/claim/capture/当前权限/Lease/plan→短事务128条页取固定源→事务外私有staging/actual fsync/独立Hash→最终权限/Lease/完整capture复核，双Scope empty/260多页/中文存储根/新事件排除PASS。实际页间撤权/取消/到期/源失败与合成ENOSPC/License撤销不发布，旧partial不覆盖及新代独立文件通过；930项无失败（2环境跳过）、计划/renderer/结果回归及开发wheel PASS。无Schema/API/依赖；无final/元数据/结果/Job成功/发布Audit/HTTP/心跳/性能，License合成，CR整体IN_PROGRESS。下一项真正原子发布。
+
 2026-09-26 P03-A04-P01：Jobs Audit专用caller-UOW完成公共Port，实际原request/pair/当前Lease/Claim→Job SUCCEEDED/Lease RELEASED/Attempt完成，双Scope/并发单完成/不提交及post-Audit故障回滚、check后实际到期拒绝与接管旧Worker拒绝、actual cancel-vs-complete两锁顺序PASS。926项无失败（2环境跳过）、旧lease/cancel/checkpoint/结果Repository回归与开发wheel PASS。无Schema/API/依赖；Export/权限/业务成果/File/SystemActor absent或合成、marker非Artifact；CR整体IN_PROGRESS。下一项真正有界文件渲染与Owner原子发布。
 
 2026-09-26 P03-A03-P04：own结果caller-UOW record/get及exact DTO，实际原Root/acceptance/完整capture/plan/发布Audit重核、共享纯canonical清单逐字节复核/双Scope empty/nonempty/真并发/原结果重放无写及真实Audit+结果故障整UOW回滚PASS。919项无失败（2环境跳过），0042/真实计划/renderer/实际文件元数据回归与开发wheel PASS。无Schema/API/依赖；Job/Lease/File/SystemActor/可信caller合成，实际Worker/文件/原子Job完成/HTTP仍待；CR整体IN_PROGRESS。下一项Jobs caller-UOW完成Port。

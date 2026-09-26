@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A04-P02接入真实Worker私有文件渲染，原授权/Job pair/Lease/capture/plan下短事务128条固定源页取，结束UOW后写文件/flush/fsync/独立Hash，再终验权限/租约/完整封口。真实双Scope empty/260多页/中文存储根/晚到事件排除、页间撤权/取消/到期/源失败/同代不覆盖及新代文件通过；磁盘故障/License撤销合成标注。930项无失败（2环境跳过）、关联回归/开发wheel PASS。Windows11验证，无Migration/API/依赖/升级，head0042；无发布final/元数据/结果/Job成功/HTTP/心跳/性能，正式三平台包待。
+
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A04-P01新增Audit专用Jobs caller-UOW完成Port，原pair/Scope/Trace/受控payload及当前Lease/Worker/fence完整重核，同事务技术完成，不自commit/回调或访问Audit/Document私有表。实际双Scope/真实并发、取消两阻塞顺序、到期/接管/不一致拒绝及caller Audit+marker故障回滚PASS；926项无失败（2环境跳过）、旧lease/cancel/checkpoint/结果回归及开发wheel通过。无Migration/API/依赖/升级；head0042、旧finish兼容；Windows11验证，Export/权限/File/结果/SystemActor合成或缺，真正Worker发布/HTTP及正式三平台包待。
 
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A03-P04增加内部审计结果DTO及caller-UOW record/get，原Root/acceptance/capture/plan/发布Audit精确绑定、共享canonical清单逐字节复核、原结果重放/并发单次changed，caller后置失败Audit+结果全回滚。真实双Scope empty/nonempty/完整filters与回归PASS；919项无失败（2环境跳过）、开发wheel成功。Windows11验证，无Migration/API/依赖/升级动作，head0042；Job/File/Lease/SystemActor/可信caller合成，真正文件/Job原子发布/HTTP、Server2025/Debian及可用发行包待。

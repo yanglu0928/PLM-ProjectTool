@@ -5,7 +5,7 @@ from ..application.render_export import AuditExportRenderItem,AuditExportRenderE
 from ..application.queries.audit_query import AuditEventView
 from .audit_read_repository import _session
 from .audit_orm import AuditEventRow
-from .export_orm import members
+from .export_orm import members,captures
 
 _FIELDS=("audit_event_id","occurred_at","trace_id","event_scope","target_project_id","actor_type","actor_id",
     "original_actor_id","action","outcome","target_owner_module","target_object_type","target_object_id",
@@ -13,6 +13,17 @@ _FIELDS=("audit_event_id","occurred_at","trace_id","event_scope","target_project
 
 
 class SqlAlchemyAuditExportRenderSource:
+    def read_page(self,transaction,*,export_id,after_position,page_size):
+        if (type(export_id) is not UUID or not export_id.int or type(after_position) is not int
+                or not 0<=after_position<=100000 or type(page_size) is not int or not 1<=page_size<=128):
+            raise AuditExportRenderError()
+        statement=select(members.c.position,*(getattr(AuditEventRow,field) for field in _FIELDS)).join(
+            AuditEventRow,members.c.event_id==AuditEventRow.audit_event_id).join(captures,
+            captures.c.export_id==members.c.export_id).where(members.c.export_id==export_id,
+            members.c.position>after_position).order_by(members.c.position).limit(page_size)
+        rows=_session(transaction).execute(statement).mappings().all()
+        return tuple(AuditExportRenderItem(row['position'],AuditEventView(**{field:row[field] for field in _FIELDS})) for row in rows)
+
     def iter_events(self,transaction,*,export_id):
         if type(export_id) is not UUID or not export_id.int:raise AuditExportRenderError()
         statement=select(members.c.position,*(getattr(AuditEventRow,field) for field in _FIELDS)).join(

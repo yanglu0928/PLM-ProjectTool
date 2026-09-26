@@ -52,18 +52,22 @@ class AuditExportWorkerRenderPlan(AuditExportWorkerCapture):
 
     def _plan(self,c):
         with self._uow() as tx:
-            intent,request,claim=self._authorized(tx,c,"RENDER")
-            capture=self._captures.read_capture(tx,request=request)
-            self._result(capture,intent)
-            result=self._plans.register(tx,intent=intent,capture=capture,claim=claim,worker_ref=c.worker_ref)
-            if type(result) is not AuditRenderPlan:raise AuditExportWorkerError()
-            result.__post_init__()
-            if ((result.export_id,result.job_id,result.fencing_token,result.attempt_no,result.worker_ref,
-                 result.member_count,result.membership_hash,result.membership_version)
-                    !=(intent.export_id,c.job_id,c.fencing_token,claim.attempt_no,c.worker_ref,
-                       capture.member_count,capture.membership_hash,capture.membership_version)
-                    or result.created_at<capture.captured_at):raise AuditExportWorkerError()
+            intent,request,claim,capture,result=self._prepared(tx,c)
             if self._authority.assert_current(tx,request=request) is not None:raise AuditExportWorkerError()
             if self._lease(tx,c,intent)!=claim:raise AuditExportWorkerError()
             tx.commit()
             return result
+
+    def _prepared(self,tx,c):
+        intent,request,claim=self._authorized(tx,c,"RENDER")
+        capture=self._captures.read_capture(tx,request=request)
+        self._result(capture,intent)
+        result=self._plans.register(tx,intent=intent,capture=capture,claim=claim,worker_ref=c.worker_ref)
+        if type(result) is not AuditRenderPlan:raise AuditExportWorkerError()
+        result.__post_init__()
+        if ((result.export_id,result.job_id,result.fencing_token,result.attempt_no,result.worker_ref,
+             result.member_count,result.membership_hash,result.membership_version)
+                !=(intent.export_id,c.job_id,c.fencing_token,claim.attempt_no,c.worker_ref,
+                   capture.member_count,capture.membership_hash,capture.membership_version)
+                or result.created_at<capture.captured_at):raise AuditExportWorkerError()
+        return intent,request,claim,capture,result

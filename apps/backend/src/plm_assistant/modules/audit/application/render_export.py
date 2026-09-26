@@ -46,6 +46,10 @@ class AuditExportRenderSourcePort(Protocol):
     def iter_events(self,transaction:object,*,export_id:UUID)->Iterable[AuditExportRenderItem]: ...
 
 
+class AuditExportRenderPagePort(Protocol):
+    def read_page(self,transaction:object,*,export_id:UUID,after_position:int,page_size:int)->tuple[AuditExportRenderItem,...]: ...
+
+
 def _stamp(value):return value.astimezone(timezone.utc).isoformat(timespec="microseconds").replace("+00:00","Z")
 def _json(value):return json.dumps(value,sort_keys=True,separators=(",",":"),ensure_ascii=False,allow_nan=False).encode("utf-8")+b"\n"
 def _encode(value):
