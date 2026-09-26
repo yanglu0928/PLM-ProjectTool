@@ -171,6 +171,39 @@ class ProjectCreateTests(unittest.TestCase):
         self.assertEqual(caught.exception.code, "CONFLICT_IDEMPOTENCY")
         self.assertEqual(self.state["commits"], 1)
 
+    def test_workflow_bootstrap_uses_authorized_actor_and_same_transaction_once(self):
+        calls = []
+        class Initializer:
+            def initialize_in_transaction(inner, tx, **kwargs):
+                calls.append((tx, kwargs))
+                return uuid.uuid4()
+        service = ProjectCreateService(
+            unit_of_work=lambda: Tx(self.state), access=self.access,
+            license_guard=Guard(self.state), repository=self.repo, audit=Audit(self.state),
+            receipts=Receipts(), workflow_initializer=Initializer(),
+        )
+        first = service.create_idempotent(self.command, idempotency_key="w"*16)
+        self.assertEqual(service.create_idempotent(self.command, idempotency_key="w"*16), first)
+        self.assertEqual(len(calls), 1)
+        self.assertIs(calls[0][0].state, self.state)
+        self.assertEqual(calls[0][1], dict(
+            project_id=first.project_id, actor_id=self.access.actor, trace_id=self.command.trace_id,
+        ))
+
+    def test_workflow_failure_prevents_project_audit_and_commit(self):
+        class Initializer:
+            def initialize_in_transaction(inner, tx, **kwargs):
+                raise RuntimeError("synthetic initializer failure")
+        service = ProjectCreateService(
+            unit_of_work=lambda: Tx(self.state), access=self.access,
+            license_guard=Guard(self.state), repository=self.repo, audit=Audit(self.state),
+            workflow_initializer=Initializer(),
+        )
+        with self.assertRaises(RuntimeError):
+            service.create(self.command)
+        self.assertNotIn("audit", self.state)
+        self.assertEqual(self.state["commits"], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

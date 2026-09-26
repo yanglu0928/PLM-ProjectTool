@@ -61,6 +61,8 @@ from plm_assistant.modules.auth.infrastructure.project_create_access import SqlA
 from plm_assistant.modules.project.infrastructure.authorized_projects import SqlAlchemyAuthorizedProjects
 from plm_assistant.modules.project.api.create_project import create_project_create_router
 from plm_assistant.modules.project.application.create_project import ProjectCreateService
+from plm_assistant.modules.workflow.application.initialize import WorkflowInitializationService
+from plm_assistant.modules.workflow.infrastructure.initialize_repository import SqlAlchemyWorkflowInitializationRepository
 from plm_assistant.modules.project.infrastructure.create_repository import SqlAlchemyProjectCreateRepository
 from plm_assistant.modules.project.api.patch_project import create_project_patch_router
 from plm_assistant.modules.project.api.archive_project import create_project_archive_router
@@ -302,6 +304,9 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 repository=SqlAlchemyProjectCreateRepository(),
                 audit=audit,
                 receipts=SqlAlchemyIdempotencyReceipts(),
+                workflow_initializer=WorkflowInitializationService(
+                    repository=SqlAlchemyWorkflowInitializationRepository(), audit=audit,
+                ),
             )
             project_create_router = create_project_create_router(
                 sessions=sessions, projects=project_creates, origins=origins,

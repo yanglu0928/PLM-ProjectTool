@@ -3114,3 +3114,11 @@
 - Reason：Project 创建、幂等收据、Workflow 与 Audit 需要一事务提交；NOT_STARTED 初始化不需要虚构 StageTransition 或业务 Review 结果。唯一项目天然重试不能替代公开命令的请求幂等。
 - Impact：Workflow 应用/Repository/测试，无 Schema/API/依赖变化，现有生产创建路径暂未改变。
 - Rollback：不装配初始化服务；历史实例保留，不删除或回写进度。
+
+## DEC-20260926-154
+
+- Date：2026-09-26；WBS：WFL-01-A03-P04。
+- Decision：ProjectCreateService 依公共 Protocol 调用 Workflow 同事务初始化，Windows 显式平台始终提供真实实现；Port 对旧隔离内部调用保留可选兼容，公开请求不能关闭。失败传播至调用方事务回滚，重放不重复 bootstrap。
+- Reason：不让 Project Repository 直接写 Workflow 表；权限与 License 已由原 Project 创建服务验证，可复用原收据事务。跨模块修改仅为当前必要接线。
+- Impact：应用 Port/组合与关联验证，无 Schema/API/外部依赖变化。已有 Project/未装配 Port 的内部路径仍需独立补齐，不据此声称全局恰一 Workflow。
+- Rollback：回退组合装配，不删除已创建 Workflow，历史与初始状态保留；后续新项目未补齐须记录缺项。

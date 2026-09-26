@@ -36,6 +36,11 @@ from plm_assistant.modules.project.application.create_project import (
 )
 from plm_assistant.modules.project.api.create_project import create_project_create_router
 from plm_assistant.modules.project.infrastructure.create_repository import SqlAlchemyProjectCreateRepository
+from plm_assistant.modules.workflow.application.initialize import WorkflowInitializationService
+from plm_assistant.modules.workflow.infrastructure.initialize_repository import SqlAlchemyWorkflowInitializationRepository
+from plm_assistant.modules.document.api.document_list_cursor import DocumentListCursorCodec
+from plm_assistant.modules.document.api.version_list_cursor import VersionListCursorCodec
+from plm_assistant.modules.document.api.parse_list_cursor import ParseListCursorCodec
 
 HOST, PORT, USER = "127.0.0.1", 55432, "poc_admin"
 CSRF, ADMIN_TOKEN, NONADMIN_TOKEN = b"c" * 32, b"a" * 32, b"n" * 32
@@ -103,13 +108,18 @@ def main():
                     rollback_manager_id = user(db, "Synthetic Rollback Manager", "NONE")
                     http_manager_id = user(db, "Synthetic HTTP Manager", "NONE")
                     production_manager_id = user(db, "Synthetic Production Manager", "NONE")
+                    initializer_failure_manager = user(db, "Synthetic Initializer Rollback", "NONE")
                     db.execute("UPDATE plm.auth_users SET state='DISABLED' WHERE user_id=%s", (disabled_id,))
                 guard = Guard()
                 kwargs = dict(unit_of_work=runtime.unit_of_work,
                               access=SqlAlchemyProjectCreateAccess(),
                               license_guard=guard,
                               repository=SqlAlchemyProjectCreateRepository(),
-                              clock=lambda: datetime.now(timezone.utc))
+                              clock=lambda: datetime.now(timezone.utc),
+                              workflow_initializer=WorkflowInitializationService(
+                                  repository=SqlAlchemyWorkflowInitializationRepository(),
+                                  audit=AuditService(SqlAlchemyAuditRepository()),
+                              ))
                 service = ProjectCreateService(**kwargs, audit=AuditService(SqlAlchemyAuditRepository()))
 
                 def cmd(code="P1", manager=manager_id, token=ADMIN_TOKEN, csrf=CSRF, dept=None):
@@ -136,6 +146,7 @@ def main():
                     assert d == ("DEFAULT", "默认部门"), d
                     assert m == (manager_id, "PROJECT_MANAGER", created.department_id), m
                     assert a == (admin_id, "PROJECT_CREATED", created.project_id), a
+                    assert db.execute("SELECT workflow_state,current_stage_key FROM plm.wfl_project_workflows WHERE project_id=%s", (created.project_id,)).fetchone() == ("NOT_STARTED", None)
                     assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE user_id=%s", (admin_id,)).fetchone()[0] == 0
                 denied(service, "PROJECT_CODE_CONFLICT", cmd("ｐ１", manager=other_id))
                 denied(service, "PROJECT_USER_ALREADY_ASSIGNED", cmd("P2", manager=manager_id))
@@ -148,6 +159,7 @@ def main():
                     raise AssertionError("Audit failure allowed")
                 with connect(name) as db:
                     assert db.execute("SELECT count(*) FROM plm.prj_projects WHERE project_code_normalized='p3'").fetchone()[0] == 0
+                    assert db.execute("SELECT count(*) FROM plm.aud_events WHERE action='WORKFLOW_INITIALIZED'").fetchone()[0] == 1
                 second = service.create(cmd("P2", manager=other_id, dept=DepartmentSeed("D2", "Second")))
                 with connect(name) as db:
                     assert db.execute("SELECT department_code FROM plm.prj_departments WHERE department_id=%s", (second.department_id,)).fetchone()[0] == "D2"
@@ -269,7 +281,13 @@ def main():
                            "plm_assistant.entrypoints.production_login.create_windows_project_member_cursor_codec",
                            return_value=MemberListCursorCodec(b"m" * 32)), patch(
                            "plm_assistant.entrypoints.production_login.create_windows_project_department_cursor_codec",
-                           return_value=DepartmentListCursorCodec(b"d" * 32)):
+                           return_value=DepartmentListCursorCodec(b"d" * 32)), patch(
+                           "plm_assistant.entrypoints.production_login.create_windows_document_list_cursor_codec",
+                           return_value=DocumentListCursorCodec(b"l" * 32)), patch(
+                           "plm_assistant.entrypoints.production_login.create_windows_document_version_cursor_codec",
+                           return_value=VersionListCursorCodec(b"v" * 32)), patch(
+                           "plm_assistant.entrypoints.production_login.create_windows_document_parse_cursor_codec",
+                           return_value=ParseListCursorCodec(b"p" * 32)):
                     production = create_production_platform_app(settings)
                     with TestClient(production, base_url="http://localhost") as client:
                         prod_headers = {
@@ -308,7 +326,42 @@ def main():
                         "SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='PROJECT_CREATED'",
                         (production_project_id,),
                     ).fetchone()[0] == 1
-                print("PASS: admin/CSRF/License, atomic bootstrap, concurrent/optional/Windows platform HTTP replay, Audit rollback")
+                    project_count = db.execute("SELECT count(*) FROM plm.prj_projects").fetchone()[0]
+                    assert db.execute("SELECT count(*) FROM plm.wfl_project_workflows").fetchone()[0] == project_count
+                    assert db.execute("SELECT count(*) FROM plm.aud_events WHERE action='WORKFLOW_INITIALIZED'").fetchone()[0] == project_count
+                    assert db.execute("SELECT count(*) FROM plm.wfl_stages").fetchone()[0] == project_count*6
+                    assert db.execute("SELECT count(*) FROM plm.wfl_checklist_items WHERE item_state='PENDING'").fetchone()[0] == project_count*12
+                    assert db.execute("SELECT count(*) FROM plm.wfl_project_workflows WHERE workflow_state<>'NOT_STARTED' OR current_stage_key IS NOT NULL").fetchone()[0] == 0
+                class FailAfterBootstrap:
+                    def initialize_in_transaction(self, transaction, **values):
+                        kwargs["workflow_initializer"].initialize_in_transaction(transaction, **values)
+                        raise RuntimeError("synthetic initializer failure")
+                with connect(name) as db:
+                    before_counts = tuple(db.execute(f"SELECT count(*) FROM plm.{table}").fetchone()[0] for table in (
+                        "prj_projects", "prj_departments", "prj_project_members", "wfl_project_workflows", "aud_events", "plt_idempotency_receipts",
+                    ))
+                bad_initializer = ProjectCreateService(
+                    **(kwargs | {"workflow_initializer": FailAfterBootstrap()}),
+                    audit=AuditService(SqlAlchemyAuditRepository()), receipts=receipts,
+                )
+                failure_command = cmd("P11", manager=initializer_failure_manager)
+                failure_key = str(uuid.uuid4())
+                try:
+                    bad_initializer.create_idempotent(failure_command, idempotency_key=failure_key)
+                except RuntimeError as exc:
+                    assert str(exc) == "synthetic initializer failure"
+                else:
+                    raise AssertionError("failed initializer committed Project")
+                with connect(name) as db:
+                    after_counts = tuple(db.execute(f"SELECT count(*) FROM plm.{table}").fetchone()[0] for table in (
+                        "prj_projects", "prj_departments", "prj_project_members", "wfl_project_workflows", "aud_events", "plt_idempotency_receipts",
+                    ))
+                    assert before_counts == after_counts
+                recovered_initializer = idempotent.create_idempotent(failure_command, idempotency_key=failure_key)
+                with connect(name) as db:
+                    assert db.execute("SELECT workflow_state FROM plm.wfl_project_workflows WHERE project_id=%s", (recovered_initializer.project_id,)).fetchone()[0] == "NOT_STARTED"
+                    assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_project_id=%s", (recovered_initializer.project_id,)).fetchone()[0] == 2
+                print("PASS: admin/CSRF/License, atomic Project+Workflow bootstrap, concurrent/optional/Windows platform HTTP replay, Audit/initializer rollback and same-key recovery")
             finally:
                 runtime.dispose()
         finally:

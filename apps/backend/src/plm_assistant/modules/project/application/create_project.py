@@ -84,6 +84,11 @@ class ProjectCreateReceiptPort(Protocol):
                  result: IdempotencyResult) -> None: ...
 
 
+class ProjectWorkflowInitializationPort(Protocol):
+    def initialize_in_transaction(self, transaction: object, *, project_id: uuid.UUID,
+                                  actor_id: uuid.UUID, trace_id: uuid.UUID) -> uuid.UUID: ...
+
+
 def _code(value: object) -> tuple[str, str]:
     if type(value) is not str:
         raise ProjectCreateError("VALIDATION_FAILED")
@@ -108,13 +113,17 @@ class ProjectCreateService:
     def __init__(self, *, unit_of_work: Callable[[], object], access: ProjectCreateAccessPort,
                  license_guard: LicenseGuardPort, repository: ProjectCreateRepositoryPort,
                  audit: AuditService, clock: Callable[[], datetime] | None = None,
-                 receipts: ProjectCreateReceiptPort | None = None) -> None:
+                 receipts: ProjectCreateReceiptPort | None = None,
+                 workflow_initializer: ProjectWorkflowInitializationPort | None = None) -> None:
         if any(value is None for value in (unit_of_work, access, license_guard, repository, audit)):
             raise ValueError("Project create dependencies are required")
         self._uow, self._access, self._guard = unit_of_work, access, license_guard
         self._repository, self._audit = repository, audit
         self._clock = clock or (lambda: datetime.now(timezone.utc))
         self._receipts = receipts
+        # Kept optional for earlier isolated Project-only internal callers.
+        # Production composition always supplies it; no user-controlled switch.
+        self._workflow_initializer = workflow_initializer
 
     def create(self, command: CreateProject) -> CreatedProject:
         code, norm, name, dept_code, dept_norm, dept_name = self._prepare(command)
@@ -201,6 +210,12 @@ class ProjectCreateService:
         )
         if type(created) is not CreatedProject:
             raise ProjectCreateError("PROJECT_CODE_CONFLICT")
+        if self._workflow_initializer is not None:
+            workflow_id = self._workflow_initializer.initialize_in_transaction(
+                tx, project_id=created.project_id, actor_id=actor, trace_id=command.trace_id,
+            )
+            if type(workflow_id) is not uuid.UUID or workflow_id.int == 0:
+                raise ProjectCreateError("PROJECT_UNAVAILABLE")
         self._audit.append(tx, AuditEventDraft(
             trace_id=command.trace_id, event_scope="PROJECT",
             target_project_id=created.project_id, actor_type="USER", actor_id=actor,
