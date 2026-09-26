@@ -36,7 +36,7 @@ def exercise(v):
         try:loop.run(max_steps=1)
         except AuditExportWorkerError as exc:return exc
         raise AssertionError('Expected scheduling gap no longer reproduced; update evidence')
-    first=second=None;payload=None
+    first=second=extra=None;payload=extra_payload=None
     try:
         claims=AuditExportClaims(repository=SqlAlchemyAuditExportClaimRepository())
         for scope in ('PROJECT','DEPLOYMENT'):
@@ -61,16 +61,33 @@ def exercise(v):
                     assert v['db'].execute('SELECT count(*) FROM plm.job_attempts WHERE job_id=%s',(first.job_id,)).fetchone()==(0,)
             second=pending(scope)
             v['db'].execute('UPDATE plm.job_jobs SET payload_refs=%s WHERE job_id=%s',(Jsonb(dict(payload,export_id='synthetic-malformed')),first.job_id))
+            extra=pending(scope)
+            extra_payload=v['db'].execute('SELECT payload_refs FROM plm.job_jobs WHERE job_id=%s',(extra.job_id,)).fetchone()[0]
+            v['db'].execute('UPDATE plm.job_jobs SET priority=50,payload_refs=%s WHERE job_id=%s',(Jsonb(dict(extra_payload,export_id='00000000-0000-0000-0000-000000000000')),extra.job_id))
             before=snapshot();rejected();assert snapshot()==before
+            cursor=None
+            for expected,reason in ((first.job_id,'INVALID_EXPORT_REF'),(extra.job_id,'INVALID_EXPORT_REF'),(second.job_id,None)):
+                with database.unit_of_work() as tx:
+                    value=claims.scan_next(tx,after=cursor)
+                    assert value.cursor.job_id==expected and value.reason_code==reason
+                    if reason is None:assert value.candidate.job_id==second.job_id
+                    else:assert value.candidate is None
+                    cursor=value.cursor
+                assert snapshot()==before
+            with database.unit_of_work() as tx:assert claims.scan_next(tx,after=cursor) is None
+            assert snapshot()==before
             assert v['db'].execute('SELECT state FROM plm.job_jobs WHERE job_id=%s',(second.job_id,)).fetchone()==('PENDING',)
             assert v['db'].execute('SELECT count(*) FROM plm.job_attempts WHERE job_id=%s',(second.job_id,)).fetchone()==(0,)
             v['db'].execute('UPDATE plm.job_jobs SET payload_refs=%s WHERE job_id=%s',(Jsonb(payload),first.job_id))
-            result=loop.run(max_steps=2);assert result.executed==2
+            v['db'].execute('UPDATE plm.job_jobs SET payload_refs=%s WHERE job_id=%s',(Jsonb(extra_payload),extra.job_id))
+            result=loop.run(max_steps=3);assert result.executed==3
             assert v['db'].execute('SELECT state FROM plm.job_jobs WHERE job_id IN (%s,%s)',(first.job_id,second.job_id)).fetchall()==[('SUCCEEDED',),('SUCCEEDED',)]
     finally:
         if first is not None and payload is not None:
             v['db'].execute('UPDATE plm.job_jobs SET payload_refs=%s WHERE job_id=%s',(Jsonb(payload),first.job_id))
+        if extra is not None and extra_payload is not None:
+            v['db'].execute('UPDATE plm.job_jobs SET payload_refs=%s WHERE job_id=%s',(Jsonb(extra_payload),extra.job_id))
         with loop.quiescent():database.dispose()
-    print('P13-P02 LOCK REGRESSION PASS: actual locked priority head skipped and valid second publishes; head remains pending/no attempt, unlock permits publication. Malformed head still blocks fresh valid second with six-table readonly failure; restored synthetic source permits publication. Full fairness/invalid-source isolation NOT PASS; CR-AUD-005 remains open.')
+    print('P13-P02 LOCK REGRESSION PASS and P03-A01 CURSOR PORT PASS: dualScope locked head skipped; explicit cursor visits malformed/zero UUID heads then valid candidate and end, six tables readonly. Old admission malformed head still refuses and blocks valid second; restored synthetic source permits publication. Cursor NOT wired into worker; full fairness/invalid-source isolation NOT PASS; CR-AUD-005 remains open.')
 
 if __name__=='__main__':fixture.main(exercise=exercise)

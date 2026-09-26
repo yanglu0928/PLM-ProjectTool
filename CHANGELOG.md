@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/P06-P13-P03-A01新增严格内部候选游标/只锁单候选scan_next，明确格式/零UUID引用错误分类，不返回原payload，原peek/reserve保留。3新unit/1119通过（2既有跳过），实际PG双Scope跨两坏ref到正常候选/末尾且六表无写、恢复来源后实际发布与原回归通过，wheel632733/SHA见进度。Windows11，无Migration/API/依赖/升级，撤新Port回滚。尚未接后台循环、Root/pair分类/诊断/真实deadlock未验，坏源整体仍FAIL/完整包/Gate待。
+
 - 2026-09-27：`0.1.0.dev0`/P06-P13-P02按CR-AUD-005增加独立只锁候选reservation，SKIP LOCKED提前到Root/pair前，旧无锁peek保留；不写状态/不授正文权限。3新unit/1116通过（2既有跳过），真实PG双Scope锁优先head仍可发布后续/首无Attempt、两个reservation无写互斥及原单claim竞争/回滚/代际/确认恢复通过；wheel631564/SHA见进度。Windows11，无Migration/API/依赖/升级，撤新增Port接线回滚。反向锁序真实deadlock待、坏来源仍FAIL、全局公平/正式来源/完整包/Gate待。
 
 - 2026-09-27：`0.1.0.dev0`/P06-P13-P01实际PG确认调度缺陷：原pair行锁早于SKIP LOCKED，竞争队首55P03退出；损坏队首payload亦阻塞合法后续任务。两失败六表无写，恢复本轮合成来源后双方真实发布/原发布回归通过。登记CR-AUD-005计划候选reservation与坏源隔离；**功能隔离未通过，修复待实施**。Windows11，无生产代码/API/Migration/依赖/升级，撤验证脚本回滚；未重建未变wheel/未复跑全unit，其他正式材料/完整包/Gate待。

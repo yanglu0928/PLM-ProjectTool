@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-252
+
+- Precode：Phase2/P06-P13-P03-A01，CR-AUD-005，先记录aud-p06-p13-source-cursor.md。范围仅Jobs owned Port，不跳过Root/身份/权限或猜终态。
+- Decision：新增scan_next/typed cursor与reservation，按priority降序/available_at和JobId升序keyset，单次SKIP LOCKED一候选；原peek/reserve保留。仅确定格式/零UUID返回固定INVALID_EXPORT_REF，DB异常原失败关闭，原始payload不返回/不打印。
+- Evidence：3新unit/1119通过/2既有跳过；真实双Scope跨两个坏ref到正常候选/末尾六表无写；旧admission仍坏源拒绝，恢复合成来源后实际发布及原发布回归通过；wheel632733/SHA见进度。
+- Risk/rollback：無Migration/API/依赖/升级，撤新Port保历史；未接Admission/Loop，坏源整体仍FAIL，Root/pair/诊断/锁序deadlock待，CR/Gate/完整包未关闭。
+
 ## DEC-20260927-251
 
 - Precode：Phase2/P06-P13-P02，CR-AUD-005先登记，aud-p06-p13-reservation.md检查原pair/identity/确认恢复保留与Job→Audit锁序风险。

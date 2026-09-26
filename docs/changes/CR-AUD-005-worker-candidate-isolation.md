@@ -24,3 +24,5 @@
 锁住队首时第二任务仍能被另一实际Worker领取/发布且队首无Attempt；释放后队首发布；双Scope、两Worker竞争、真实deadlock/rollback/commit丢失恢复回归。坏payload/缺Root/错pair/正常任务混排、持续循环/有界内存/不隐瞒故障与停止行为验证。全局公平不凭局部测试声称，需明确负载/优先级语义。P13-P02/P03均未实施，完整Scope/Gate/正式材料/发行仍待。
 
 P13-P02更新：已先记录后增加独立reserve_next，旧peek无锁保留；真实双Scope锁住优先head时后续正常发布/首无Attempt，两个只锁UOW候选不同且六表无写；1116通过/2跳过、原双Scope单claim竞争/到期/回滚/确认恢复及wheel通过。新版反向锁序真实40P01未制造，P03坏源、全局公平仍待，CR不关闭，前文未实施为原计划历史状态。
+
+P13-P03-A01更新：独立scan_next与严格cursor/reservation已实现，单次一个只锁候选，固定INVALID_EXPORT_REF分类；游标仅技术位置，不作为权限/Lease证明。1119通过/2既有跳过，实际双Scope格式错误/零UUID坏head→正常候选→末尾六表无写，旧admission继续关闭/仍未接线，开发wheel通过。Root/pair分类、游标循环与安全诊断、真实deadlock仍待，CR不关闭。

@@ -58,6 +58,20 @@ class AuditExportClaims:
         except JobLeaseError:raise
         except Exception:raise JobLeaseError('JOB_STORE_UNAVAILABLE') from None
 
+    def scan_next(self,tx,*,after=None):
+        from .audit_export_scan import AuditExportScanCursor,AuditExportScanReservation
+        if after is not None:
+            if type(after) is not AuditExportScanCursor:raise JobLeaseError('VALIDATION_FAILED')
+            after.__post_init__()
+        try:
+            value=self._repo.scan_next(tx,after=after)
+            if value is not None:
+                if type(value) is not AuditExportScanReservation:raise JobLeaseError('JOB_STORE_UNAVAILABLE')
+                value.__post_init__()
+            return value
+        except JobLeaseError:raise
+        except Exception:raise JobLeaseError('JOB_STORE_UNAVAILABLE') from None
+
     def check_target(self,tx,*,job_id,fencing_token,worker_ref):
         from .lease_checkpoint import validate_checkpoint
         validate_checkpoint(job_id=job_id,fencing_token=fencing_token,worker_ref=worker_ref)
