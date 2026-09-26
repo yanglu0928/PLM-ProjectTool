@@ -165,10 +165,11 @@ class AuthorizedAuditReadService:
             reason_code=view.reason_code,before_state=view.before_state,after_state=view.after_state)
         return replace(view,occurred_at=view.occurred_at.astimezone(timezone.utc))
 
-    def _page(self,page,project,search):
+    @classmethod
+    def _page(cls,page,project,search):
         if (type(page) is not AuditPage or type(page.items) is not tuple or len(page.items)>search.page_size
                 or type(page.has_more) is not bool):raise AuthorizedAuditReadError("AUDIT_UNAVAILABLE")
-        items=tuple(self._view(view,project) for view in page.items)
+        items=tuple(cls._view(view,project) for view in page.items)
         positions=[(v.occurred_at,v.audit_event_id) for v in items]
         if (len(set(v.audit_event_id for v in items))!=len(items)
                 or any(a<=b for a,b in zip(positions,positions[1:]))

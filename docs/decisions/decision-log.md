@@ -3386,3 +3386,11 @@
 - Reason：公开分页不能先信任客户端身份，也不应在独立事务取身份后查询；解码失败不触发仓库读取，当前授权先于游标格式错误。
 - Impact：内部Port/API适配与验证，旧list/get不变，无Schema/公开API/角色/依赖变化。默认日期是否显式仍由后续HTTP决定，正式密钥供给未实现。
 - Rollback：不装配解析适配，保留旧内部读取；无数据动作。
+
+## DEC-20260926-188
+
+- Date：2026-09-26；WBS：AUD-02-A03-P02。
+- Decision：四个冻结Audit GET仅opt-in Router，Cookie/可信Host、当前受权service及独立codec显式注入。白名单start_at/end_at（同时提供或同时省略）、page_size/cursor/action/outcome/actor_id/target_object_type/target_object_id/trace_id；默认24h UTC，明确范围最大31天，默认续页保留签名首窗。仅安全Actor/对象引用/code状态投影，不返回ORM/hint/正文。GET只读无ETag可变状态或Audit追加。
+- Reason：冻结合同已要求范围上限但未固定默认窗口；双端日期避免续页单边默认值漂移，service同事务实际Session/角色校验足够，不独立读取身份作为授权。普通默认应用不装配。
+- Impact：可选HTTP、契约测试、增量接口实施说明；无Schema/Breaking API/角色/依赖变化。生产专用key供给和Windows组合后续验证。
+- Rollback：不注入Router，四路径404；无数据动作。

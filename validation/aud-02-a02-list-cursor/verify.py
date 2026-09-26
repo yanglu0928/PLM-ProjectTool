@@ -16,7 +16,7 @@ f = module_from_spec(spec)
 spec.loader.exec_module(f)
 
 
-def main(*,resolved=False):
+def main(*,resolved=False,http=False):
     name, runtime = "auditcursor_" + uuid.uuid4().hex[:12], None
     with f.schema.connect("postgres") as admin:
         admin.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(name)))
@@ -74,6 +74,39 @@ def main(*,resolved=False):
                 at = codec.encode(**aa, position=ac.page.next_position)
                 ap = (service.list_resolved(aq,AuditCursorSearchResolver(codec,at)) if resolved else service.list_with_actor(replace(aq,search=codec.decode(at,**aa)))).page
                 assert {v.audit_event_id for v in ac.page.items + ap.items} == set(deployed)
+                if http:
+                    from fastapi.testclient import TestClient
+                    from plm_assistant.entrypoints.api import create_app
+                    from plm_assistant.modules.audit.api.read_events import create_audit_read_router
+                    from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
+                    app=create_app(audit_read_router=create_audit_read_router(reads=service,origins=LoginOriginPolicy(["http://localhost"]),cursors=codec,clock=lambda:now))
+                    path=f"/api/v1/projects/{project}/audit-events"
+                    headers={"Cookie":"plm_session="+session.hex()}
+                    ah={"Cookie":"plm_session="+admin_session.hex()}
+                    with TestClient(app,base_url="http://localhost") as client:
+                        first=client.get(path,headers=headers,params={"page_size":2})
+                        assert first.status_code==200 and first.headers["Cache-Control"]=="no-store"
+                        body=first.json()["data"]
+                        second=client.get(path,headers=headers,params={"page_size":2,"cursor":body["next_cursor"]})
+                        assert second.status_code==200
+                        records=body["items"]+second.json()["data"]["items"]
+                        assert len(records)==3 and {v["audit_event_id"] for v in records}=={str(v) for v in local}
+                        assert client.get(path+"/"+str(local[0]),headers=headers).status_code==200
+                        assert client.get(path+"/"+str(deployed[0]),headers=headers).status_code==404
+                        assert client.get(path,headers=ah).status_code==404
+                        assert client.get("/api/v1/admin/audit-events",headers=headers).status_code==401
+                        assert client.get("/api/v1/admin/audit-events",headers=ah).status_code==200
+                        assert client.get("/api/v1/admin/audit-events/"+str(deployed[0]),headers=ah).status_code==200
+                        assert client.get("/api/v1/admin/audit-events/"+str(local[0]),headers=ah).status_code==404
+                        assert client.get(path,headers=headers,params={"page_size":3,"cursor":body["next_cursor"]}).status_code==400
+                        assert client.get(path,headers=headers,params={"action":"SYNTHETIC_CURSOR_EVENT"}).status_code==200
+                        assert client.get(path,headers=headers,params={"action":"OTHER"}).json()["data"]["items"]==[]
+                        assert client.get(path,headers=headers,params={"start_at":search.start_at.isoformat(),"end_at":search.end_at.isoformat()}).status_code==200
+                        service._guard.enabled=False
+                        assert client.get(path,headers=headers).status_code==403
+                        assert client.get("/api/v1/admin/audit-events",headers=ah).status_code==403
+                        service._guard.enabled=True
+                        assert "actor_hint_digest" not in first.text and session.hex() not in first.text
                 # Valid integrity is not current authorization: each page rechecks actual facts.
                 db.execute("UPDATE plm.prj_project_members SET state='SUSPENDED',lock_version=lock_version+1 WHERE user_id=%s", (actor,))
                 decoded = codec.decode(cursor, **args)
@@ -91,9 +124,13 @@ def main(*,resolved=False):
                     assert exc.code == "AUTH_ACCESS_DENIED"
                 else:
                     raise AssertionError("cursor bypassed revoked Session")
+                if http:
+                    with TestClient(app,base_url="http://localhost") as client:
+                        assert client.get(path,headers=headers,params={"page_size":2,"cursor":body["next_cursor"]}).status_code==401
                 assert tuple(db.execute("SELECT * FROM plm.aud_events ORDER BY audit_event_id")) == before
-            label="AUD-02-A03-P01 same-UOW resolution" if resolved else "AUD-02-A02"
-            print(label+" PASS: signed actual-actor/scope/session/query/window keyset, PROJECT/DEPLOYMENT pages, new event outside saved window, current membership/session revocation, reads unchanged; synthetic License, no HTTP/key provisioning/MVCC snapshot")
+            label="AUD-02-A03-P02 opt-in HTTP" if http else "AUD-02-A03-P01 same-UOW resolution" if resolved else "AUD-02-A02"
+            pending="no production key provisioning/MVCC snapshot" if http else "no HTTP/key provisioning/MVCC snapshot"
+            print(label+" PASS: signed actual-actor/scope/session/query/window keyset, PROJECT/DEPLOYMENT pages, new event outside saved window, current membership/session revocation, reads unchanged; synthetic License, "+pending)
         finally:
             if runtime is not None:
                 runtime.dispose()
