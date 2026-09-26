@@ -1,6 +1,7 @@
 """Bounded in-process heartbeats; no Job claiming, publication or success inference."""
 import math
 import threading
+from contextlib import contextmanager
 from .worker_capture import AuditExportCaptureCommand, AuditExportWorkerError
 from plm_assistant.modules.jobs.application.lease import ClaimedJob
 
@@ -40,6 +41,25 @@ class AuditHeartbeatSupervisor:
         with self._lock:
             if self._jobs.get(handle._command.job_id) is handle:
                 self._jobs.pop(handle._command.job_id)
+
+    @contextmanager
+    def stopped(self, command):
+        """Short Owner UOW only; block restart in THIS supervisor, never kill I/O.
+
+        Caller must first return from synchronous work and stop its heartbeat.
+        Other processes remain constrained by actual Job/fence/Lease facts.
+        Do not join or perform file I/O while holding this lock.
+        """
+        if type(command) is not AuditExportCaptureCommand:
+            raise AuditExportWorkerError('VALIDATION_FAILED')
+        command.__post_init__()
+        with self._lock:
+            handle = self._jobs.get(command.job_id)
+            if handle is not None and handle._thread.is_alive():
+                raise AuditExportWorkerError('AUDIT_HEARTBEAT_STOP_TIMEOUT')
+            if handle is not None:
+                self._jobs.pop(command.job_id)
+            yield
 
 
 class _HeartbeatHandle:

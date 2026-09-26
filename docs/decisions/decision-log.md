@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260926-227
+
+- Date/WBS：2026-09-26 / P04-P03-P02；CR-AUD-004先登记、V2.1/总控/API02/ADR010基线核验完成，Jobs原pair/current失败Port/受控SystemActor前置PASS。仅内部安全失败终止，不扩大License恢复面或系统业务角色。
+- Decision：相同Supervisor短静止锁拒真实活心跳/阻止重启，当前identity→原Root/acceptance/pair→最小SYSTEM Audit→再次identity→actual Jobs alive generation FAILED最后→同UOW commit；5固定不可恢复原因，原User仅历史，无正文/文件/发布/续租。ADR011记录新边界；主同步I/O必须先返回，锁不是全局强杀。
+- Evidence：6新unit/1004无失败（2环境跳过）、真实PG临时Vault两Scope撤User/角色/License仍拒业务但终止唯一失败Audit，Audit与技术写后/identity故障回滚，成功取消过期接管旧代无写，实际活心跳拒收尾/停止后允许，私有字节保留/原发布/wheel通过。首轮测试错误均修正完整重跑记进度。
+- Risk/rollback：瞬时retry/取消/确认丢失/执行器未接线，正式信任源/Gate/安装包待；撤未装配Owner保历史，不复活终态。Next失败提交确认丢失原源核验，再取消Owner及安全接线。
+
 ## DEC-20260926-226
 
 - Date/WBS：2026-09-26 / P04-P03-P01；通用LeaseService自有事务不能与Owner审计原子，前置原pair/current/retry与单次执行已验。CR-AUD-004先登记撤权安全终止差异，不在本技术分项实现政策。
