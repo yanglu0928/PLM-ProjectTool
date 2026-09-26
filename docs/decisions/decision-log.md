@@ -3056,3 +3056,15 @@
 |Reason|冻结 DM-03 禁止受控关系成环，SC-02/03 明确无环留给 Application/transaction guard，不能以无上限触发器或仅单请求内检查代替并发写保护。|
 |Impact|Trace 基础设施 Guard、单元/隔离 PostgreSQL 并发测试；无 Schema、API、新依赖或业务事实写入。|
 |Rollback|停止调用尚未接生产写服务的 Guard；存量关系不变。|
+
+## DEC-20260926-148
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-148|
+|Date|2026-09-26|
+|WBS|TRC-01-A05-P02 内部 TraceLink 创建|
+|Decision|先实现与冻结 `TRACE_LINK_CREATE` 对齐的 PROJECT 用户路径：真实 Session/CSRF 与 ProjectManager/ImplementationMember 当前事实，在同一事务内证明双端固定版本、预留幂等收据、执行无环 Guard、插入活动边并追加 Audit。相同活动边由 PostgreSQL 唯一索引归一为原 LinkId，不产生第二条 Audit；同 Key 返回首次 LinkId。GLOBAL/Owner Service 自动写路径须在对应 Owner 身份合同具备后独立验收，不以测试伪造放行。|
+|Reason|当前仅 DOC-02 Owner 具备事务内真实证明，冻结 API 项目用户角色明确；通用服务可由已注册 Owner 渐进接入，同时禁止未知 Owner 或无权路径。|
+|Impact|Trace 应用/Repository 和测试；无 Schema、公开 API、外部依赖变化。内部 Project 用户路径完成不代表 Trace 全部 Owner 或生产 API 完成。|
+|Rollback|不装配内部创建服务；原 TraceLink 历史保留，既有只读与无环 Guard 不变。|

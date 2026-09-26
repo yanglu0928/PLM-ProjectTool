@@ -24,6 +24,7 @@ class _Policy:
 
 POLICIES: dict[str, _Policy] = {
     "PROJECT_GET": _Policy(ALL_MEMBERS, False),
+    "TRACE_LINK_CREATE": _Policy(frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
     "PROJECT_PATCH": _Policy(MANAGERS, True),
     "PROJECT_ARCHIVE": _Policy(MANAGERS, True),
     "PROJECT_MEMBER_LIST": _Policy(MEMBER_READERS, False),
