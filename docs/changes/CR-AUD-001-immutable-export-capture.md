@@ -24,3 +24,13 @@
 验证要求：P01规范向量/空集/时区等价/排序/重复/腐损/字段绑定；P02 ORM parity、真实空/旧数据up/down/re-up、不可变/源归属/完整性/锁竞争；P03晚提交/回填/重试/故障。无公开API/角色/依赖变化；新增结果下载API如需扩展冻结合同另建CR。Windows11先验，Server2025未验，Debian暂缓但目标保留。Gate3/质量/UAT/完整包仍未通过。
 
 当前状态：IMPLEMENTATION_IN_PROGRESS。不得将计划视为Schema或真实权限证据。
+
+P02执行结果：0037/ORM三表及实际源校验/同事务封口/不可变/并发/降级保护在独立PostgreSQL库通过；816项unit无失败（2项环境跳过）、Windows审计和Job部署真实回归、开发wheel通过。详见aud-03-a04-p02-capture-schema.md。P03单statement选择完整集合/晚提交及A05～A07权限/Worker/交付未完成，CR整体仍IN_PROGRESS。
+
+## P02实施前SQL与锁序收敛
+
+新增aud_exports（不可变意图，显式安全字段，真实User/Project元数据FK）、aud_export_members（ExportRef+position主键、ExportRef+event唯一、真实event FK）、aud_export_captures（ExportRef唯一、实际时点/count/hash/version）。不用可变seal bool；capture行本身就是不可变封口。意图允许先提交等待Worker；成员必须和capture同事务提交，deferred成员约束拒绝未封口提交。
+
+成员及capture插入先锁aud_exports对应行FOR UPDATE，持至事务结束。成员插入拒绝已有capture，核验源Scope/time及全部筛选，created_xid强制当前事务。capture插入重核全部成员来自当前事务、数量与连续位置、按time/UUID降序、来源摘要、capture不早于请求。先成员后capture；capture插入后同事务也不得再插成员。并发第二个capture/成员等待同一根锁并重查封口，数据库唯一键另行兜底；REPEATABLE READ旧快照存在serialization风险，正式runtime固定READ COMMITTED且P03须验，不把异常当成功。
+
+三个表UPDATE/DELETE/TRUNCATE均禁止。down固定父到子ACCESS EXCLUSIVE锁三个表，任何导出历史（包括待处理意图）拒绝；无历史可回退，不改原aud_events。P02验证成员形状/源Scope完整筛选/封口完整性/并发锁和迁移；单SQL选取真正完整集合及迟提交场景由P03验，Schema不能判断客户端故意漏选了一个合法事件，故不宣称此处已证明选择完整性。SQL成员摘要使用PostgreSQL18内置sha256(bytea)，无需pgcrypto新依赖；规范与P01逐字节比对。参考：https://www.postgresql.org/docs/18/functions-binarystring.html。

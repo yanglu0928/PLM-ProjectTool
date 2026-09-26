@@ -7,6 +7,7 @@ from unittest.mock import Mock,patch
 import psycopg
 from psycopg import sql
 from alembic import command,op
+from alembic.script import ScriptDirectory
 from sqlalchemy.engine import URL
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
@@ -28,6 +29,7 @@ def main():
         try:
             url=URL.create("postgresql+psycopg",username="poc_admin",host="127.0.0.1",port=55432,database=name)
             cfg=create_migration_config(url)
+            expected_head=ScriptDirectory.from_config(cfg).get_current_head()
             command.upgrade(cfg,"head");command.downgrade(cfg,"20260926_0035");command.upgrade(cfg,"head")
             command.downgrade(cfg,"20260926_0035")
             with f.schema.connect(name) as db:
@@ -59,7 +61,7 @@ def main():
                     try:command.downgrade(cfg,"20260926_0035")
                     except RuntimeError as exc:assert "history exists; downgrade refused" in str(exc)
                     else:raise AssertionError("deployment history silently downgraded")
-                    assert db.execute("SELECT version_num FROM plm.alembic_version").fetchone()[0]=="20260926_0036"
+                    assert db.execute("SELECT version_num FROM plm.alembic_version").fetchone()[0]==expected_head
                     assert db.execute(sql.SQL("SELECT scope FROM plm.{} WHERE {}=%s").format(sql.Identifier(table),sql.Identifier(pk)),(deployment_id,)).fetchone()[0]=="DEPLOYMENT"
                     # Remove only this owned synthetic row to test the other guard independently.
                     db.execute(sql.SQL("DELETE FROM plm.{} WHERE {}=%s").format(sql.Identifier(table),sql.Identifier(pk)),(deployment_id,))

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/AUD-03-A04-P02/CR-AUD-001 新增0037及Audit owned不可变意图/成员/capture三表ORM，真实源Scope/筛选、同事务封口/数量顺序摘要与并发追加拒绝。Win11后端816项无失败（2项环境跳过）、真实隔离迁移/旧Audit保留/ORM parity/并发历史保护、Windows审计及Job回归、开发wheel PASS。升级先备份维护到0037；含任何导出历史禁止down，离线down关闭。无API/角色/依赖变化，无生产迁移；真实完整capture/权限/文件导出/性能/正式包未完成，Server2025未验、Debian13暂缓。
+
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A04-P01/CR-AUD-001 实施前登记不可变导出/capture三表及迁移计划，新增纯领域成员摘要规范与安全拒绝规则。Windows11后端813项无失败（2项环境跳过），8项新unit与开发wheel PASS；不代表数据库capture/真实权限/文件导出完成。无Migration/API/角色/依赖变化，升级无动作；0037待实施，Server2025未验、Debian13暂缓，完整可用包/Gate仍未完成。
 
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A03 新增固定内部导出Spec/用途/Scope/时间与完整指纹、当前Worker权限Port合同；指纹/DTO不是授权或snapshot，实际Auth/Owner实现待。Windows11后端805项无失败（2项环境跳过），纯合同8项与开发wheel PASS，无新增真实权限/数据库/HTTP/文件验收。无Migration/API/角色/依赖变化，升级无动作；导出/正式包未完成，Server2025未验、Debian13暂不验证。
