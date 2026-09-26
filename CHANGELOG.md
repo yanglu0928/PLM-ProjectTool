@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/WFL-01-A03-P05 新增既有项目内部受权初始化，重新校验真实 Session/CSRF、锁定 PM 项目权限与 License，保持 NOT_STARTED/PENDING。Windows 11 后端 630 项无失败（2 项环境跳过），隔离 PostgreSQL 跨项目/非 PM/归档/撤销/合成 License 拒绝、并发/Audit 回滚和开发 wheel PASS。无 Migration/公开 API/依赖变化，升级无动作；未自动回填或提供 HTTP/CLI，不代表启动/Gate/生产发行通过，Server 2025 未验、Debian 13 暂不验证。
+
 - 2026-09-26：`0.1.0.dev0`/WFL-01-A03-P04 将 Workflow 公共初始化 Port 接入 Windows 显式平台 Project 创建事务，保持固定 NOT_STARTED/PENDING、一次审计及收据原子性。Windows 11 后端 625 项无失败（2 项环境跳过），隔离 PostgreSQL 真实 Session/授权/合成 License/HTTP 幂等/失败回滚和开发 wheel PASS。无 Migration/API/依赖变更，数据库需 0030；旧隔离内部调用保持可选兼容，已有 Project 未回填，启动/Gate/正式发行信任源未验，Server 2025 未验、Debian 13 暂不验证。
 
 - 2026-09-26：`0.1.0.dev0`/WFL-01-A03-P03 新增 Workflow 调用方同事务初始化及唯一项目去重，固定六阶段/十二项 PENDING 与初始化 Audit；重试不重置进度。Windows 11 后端 623 项无失败（2 项环境跳过），隔离 PostgreSQL 并发/回滚与开发 wheel PASS。无 Migration/API/依赖变化，升级无动作；调用方必须负责真实授权/License，生产 Project 创建接线与既有项目回填未实施，Server 2025 未验、Debian 13 暂不验证。

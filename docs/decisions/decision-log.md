@@ -3122,3 +3122,11 @@
 - Reason：不让 Project Repository 直接写 Workflow 表；权限与 License 已由原 Project 创建服务验证，可复用原收据事务。跨模块修改仅为当前必要接线。
 - Impact：应用 Port/组合与关联验证，无 Schema/API/外部依赖变化。已有 Project/未装配 Port 的内部路径仍需独立补齐，不据此声称全局恰一 Workflow。
 - Rollback：回退组合装配，不删除已创建 Workflow，历史与初始状态保留；后续新项目未补齐须记录缺项。
+
+## DEC-20260926-155
+
+- Date：2026-09-26；WBS：WFL-01-A03-P05。
+- Decision：既有项目初始化仅作为 PM 受权内部准备命令，引用冻结 WORKFLOW_START 的 PM/write 权限；先认证/License，再在写事务重新验证 Session 与锁定 Project/成员/部门，调用已验证 bootstrap。不得映射为 start HTTP 或自动按文档推断进度。
+- Reason：初始化物理结构不等于业务启动；只读 GET 不得顺手写库，全局管理员也不能凭部署身份获得项目操作权限。
+- Impact：应用命令及一个已有合同权限策略接线，无 Schema/API/依赖变化；无公开调用入口，无生产批量回填。
+- Rollback：不装配内部命令；保留已初始化实例与 Audit，不重置或删除历史。

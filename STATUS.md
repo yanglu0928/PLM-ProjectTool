@@ -3,7 +3,7 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 2：Platform Core|
-|Current WBS|`WFL-01-A03-P04 Project+Workflow 创建接线`（Windows 显式组合新项目同事务初始化/真实 Session 授权/合成 License 与回滚 PASS）|
+|Current WBS|`WFL-01-A03-P05 既有项目内部受权初始化`（真实 Session/CSRF/PM/项目隔离及合成 License/回滚 PASS；无公开命令）|
 |Current Status|PHASE_1_COMPLETE / DOC_03_A03_P04_P04_PRECONDITION_BLOCKED / DOC_02_A02_P01_INTERNAL_PASS / DOC_02_A02_P02_PRECONDITION_BLOCKED / DOC_03_A04_A03_P04_P03_CONTENT_HTTP_PASS / DOC_03_A04_A04_P01_JOB_SCHEMA_PASS / DOC_03_A04_A04_P02_JOB_LEASE_PASS / DOC_03_A04_A04_P03_OUTBOX_PASS / DOC_03_A04_A04_P04_P01_PARSE_QUEUE_PASS / DOC_03_A04_A04_P04_P02_COMMIT_INTERNAL_PASS / DOC_03_A04_A04_P04_P03_P01_ABORT_STATE_PASS / DOC_03_A04_A04_P04_P03_P02_PRECONDITION_BLOCKED / DOC_03_A04_A04_P04_P04_A01_FINALIZE_HTTP_PASS / DOC_03_A04_A04_P04_P04_A02_WINDOWS_COMPOSITION_PASS / DOC_03_A04_A04_P04_COMMIT_ABORT_IN_PROGRESS / DOC_01_A02_INTERNAL_PASS / DOC_01_A03_P01_CURSOR_PASS / DOC_01_A03_P02_HTTP_CONTRACT_PASS / DOC_01_A03_P03_HTTP_DB_PASS / DOC_01_A03_P04_WINDOWS_COMPOSITION_PASS / DOC_01_A04_P01_VERSION_INTERNAL_PASS / DOC_01_A04_P02_VERSION_CURSOR_PASS / DOC_01_A04_P03_VERSION_HTTP_CONTRACT_PASS / DOC_01_A04_P04_VERSION_HTTP_DB_PASS / DOC_01_A04_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P01_VERIFIED_SNAPSHOT_PASS / DOC_01_A05_P02_DOWNLOAD_SOURCE_PASS / DOC_01_A05_P03_PREPARE_DOWNLOAD_PASS / DOC_01_A05_P04_DOWNLOAD_HTTP_PASS / DOC_01_A05_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P06_DISCONNECT_CAPACITY_BOUNDED_PASS / DOC_03_A04_A04_P04_P03_P02_A01_GATE_ADAPTER_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P01_CONTENT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P02_COMMIT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P03_ABORT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P01_READONLY_INSPECTION_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A01_STORAGE_STEP_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A02_INTERNAL_CLEANUP_PASS / PLT_02_A07_P05_A09_CEREMONY_PENDING / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
 |Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03、DOC-03-A01、DOC-03-A02（限定范围）、DOC-03-A03-P01～P03（P03 内部合成验证）、DOC-03-A03-P04-P01～P03（内部合成验证）、DOC-03-A04-A01（Schema 验证）、DOC-03-A04-A02（内部合成验证）、DOC-01-A01、DOC-02-A01、DOC-02-A02-P01（内部合成验证） PASS|
@@ -13,8 +13,8 @@
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，DM-02 License 授权粒度经用户批准 CR-LIC-001 修订|
 |DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`；增量至 `20260926_0030` Workflow 四表结构（CR-WFL-002）；前序 0029 TraceLink、0028 ParseRecord、0027 Evidence 与 0001～0026 历史保留|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
-|Test Summary|WFL-01-A03-P04：Windows 11/Python 3.13 后端 625 项无失败（2 项既有符号链接环境跳过）；隔离 PostgreSQL 真实 Session/Admin/CSRF/合成 License、并发 HTTP 重放/Project+Workflow 同事务与失败回滚和开发 wheel PASS；不证明正式发行信任源或业务 Gate|
-|Next WBS|WFL-01-A03-P05 既有项目受权初始化前置/内部命令；Workflow GET/历史/Gate 待。Trace HTTP 待各 Owner 受权解析，EVD-01-A03-P02-A02 待 Phase 3 Parser，发行 Gate/Server 2025 待验证，Debian 13 暂不验证|
+|Test Summary|WFL-01-A03-P05：Windows 11/Python 3.13 后端 630 项无失败（2 项既有符号链接环境跳过）；隔离 PostgreSQL 真实 Session/CSRF/项目 PM、跨项目/非 PM/无成员 Admin/归档/撤销拒绝、合成 License 及并发/回滚、开发 wheel PASS；非生产回填/HTTP/Gate 验证|
+|Next WBS|WFL-01-A04-P01 Workflow 固定实例只读投影与项目授权查询；HTTP/历史/Gate 待。Trace HTTP 待各 Owner 受权解析，EVD-01-A03-P02-A02 待 Phase 3 Parser，发行 Gate/Server 2025 待验证，Debian 13 暂不验证|
 
 ## 自动执行策略
 
@@ -25,6 +25,7 @@
 
 ## 最近检查点
 
+- WFL-01-A03-P05 提供内部 PM 受权初始化：使用 WORKFLOW_START 对应管理权限准备 NOT_STARTED 结构，不执行 start 或自动回填。真实 Session/Project/CSRF/角色拒绝、合成 License/并发/审计回滚已验证；无公开 HTTP/CLI，真实发行信任源与完整 Gate 未具备。
 - WFL-01-A03-P04 已在 Windows 显式平台新建 Project 事务装配 Workflow 初始化，真实 Session/Admin/CSRF 与合成 License 拒绝、并发幂等、初始化/Audit 故障全链回滚已验证。已有 Project 和不装配 Port 的旧隔离内部调用仍未补齐，不能视为 Workflow 全链 PASS。
 - WFL-01-A03-P03 已完成供授权应用调用的内部同事务初始化（NOT_STARTED/PENDING），新实例一次 Audit，重复/并发收敛并不重置已有进度。入口自身不承担用户授权/License，尚未连接 Project 创建或既有项目回填；不能以合成内部调用方验收判真实权限/生产路径 PASS。
 - WFL-01-A03-P02 按 CR-WFL-002 落地四表 ORM/0030 及 deferred 结构保护，隔离 PostgreSQL 合成验证 PASS。当前没有生产 Workflow 实例或初始化接线，真实 Gate/历史/Audit/权限未具备；结构可表示通过状态不代表业务已批准，写 API 继续关闭。
