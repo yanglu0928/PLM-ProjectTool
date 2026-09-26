@@ -24,10 +24,24 @@ class ReviewPersistenceSchemaTests(unittest.TestCase):
         self.assertEqual(module.down_revision, "20260926_0033")
         metadata = sa.MetaData(naming_convention=orm.Base.metadata.naming_convention)
         tables = module._make_tables(lambda name, *args, **kwargs: sa.Table(name, metadata, *args, **kwargs))
+        # Frozen 0034 stays unchanged; apply the explicit additive 0035 delta
+        # to the expected schema rather than rewriting historical migrations.
+        delta = importlib.import_module("plm_assistant.migrations.versions.20260926_0035_review_withdrawal_reason")
+        self.assertEqual(delta.down_revision, module.revision)
+        tables[-1].append_column(sa.Column("withdrawal_reason", sa.Text(), nullable=True))
+        tables[-1].append_constraint(sa.CheckConstraint(delta._SHAPE, name=delta._CHECK))
         for old, runtime in zip(tables, orm._tables):
             self.assertEqual(set(old.c.keys()), set(runtime.c.keys()))
             self.assertEqual({c.name for c in old.constraints}, {c.name for c in runtime.constraints})
             self.assertEqual({i.name for i in old.indexes}, {i.name for i in runtime.indexes})
+
+    def test_withdrawal_reason_nullable_text_and_offline_loss_guard(self):
+        from unittest.mock import patch
+        delta = importlib.import_module("plm_assistant.migrations.versions.20260926_0035_review_withdrawal_reason")
+        self.assertTrue(orm.ReviewRoundEventRow.__table__.c.withdrawal_reason.nullable)
+        self.assertIsInstance(orm.ReviewRoundEventRow.__table__.c.withdrawal_reason.type, sa.Text)
+        with patch.object(delta.context, "is_offline_mode", return_value=True):
+            with self.assertRaisesRegex(RuntimeError, "offline"): delta.downgrade()
 
     def test_active_identity_indexes_and_append_atomicity_guards(self):
         module = importlib.import_module("plm_assistant.migrations.versions.20260926_0034_review_history")

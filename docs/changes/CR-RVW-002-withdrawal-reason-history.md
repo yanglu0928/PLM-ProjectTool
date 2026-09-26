@@ -1,6 +1,6 @@
 # CR-RVW-002：撤回原因历史完整性
 
-日期：2026-09-26；WBS：RVW-02-A06；状态：RECORDED_BEFORE_IMPLEMENTATION / 持續授权执行，数据库实施待下一任务。
+日期：2026-09-26；登记 WBS：RVW-02-A06；实施：RVW-02-A07。状态：IMPLEMENTED_SCHEMA_PASS；受权命令及实际 Owner 仍待。
 
 ## 来源与证据
 
@@ -22,4 +22,6 @@
 
 ## 验证计划与未完成项
 
-下一任务完成 ORM/migration/up/down/空库/有数据验证与查询回归；本轮仅登记，不能宣称 Schema PASS。随后受权决定/撤回测试必须覆盖原因重放一致、不同原因同 Key 冲突、Audit/receipt/Owner 故障全事务回滚、最终决定与撤回并发。无真实 Owner 不挂载 HTTP。
+RVW-02-A07 完成 ORM/0035/查询及空库/有数据 up/down/re-up 验证：旧原因 NULL 和旧字段保留、中文原因读回、空白/非撤回原因拒绝、历史不可变、含原因 down 拒绝 PASS。down 在同事务表排他锁下检查，防止并发新增原因丢失；0034 原文与原不可变触发器保留。详见 `docs/progress/rvw-02-a07-withdrawal-reason.md`。
+
+受权决定/撤回仍需原因幂等重放、不同原因同 Key 冲突、Audit/receipt/Owner 故障全回滚、最终决定/撤回并发测试。Schema 完成不等于实际客户批准或入口开放；无真实 Owner 不挂载 HTTP。

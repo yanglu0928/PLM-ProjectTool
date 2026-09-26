@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/RVW-02-A07/CR-RVW-002 新增 Review nullable withdrawal_reason/0035/固定查询，旧 NULL 保留、空白/非撤回拒绝、含原因 down 拒绝（表锁防并发丢失）。Windows 11 后端 743 项无失败（2 项环境跳过），隔离空/有数据 up/down/re-up/ORM/中文读回/历史不可变、Review/Workflow 回归及开发 wheel PASS。升级备份到0035；存在原因不能 down。无 API/角色/依赖变化，真实 Owner/受权命令/批准/正式安装包未完成，Server2025未验、Debian13暂不验证。
+
 - 2026-09-26：`0.1.0.dev0`/RVW-02-A06 增加决定/撤回前置设计及内部不可变单步交接 DTO/Owner Port，完整历史/Actor/轮次/UTC 绑定，明确实际 Owner 同事务消费与 Sources 重验。Windows 11 后端 742 项无失败（2 项环境跳过），开发 wheel PASS；本轮没有新增数据库/HTTP 验收。CR-RVW-002 登记撤回 reason 持久历史缺口，迁移待下一任务；无已实施 Migration/API/依赖变化，升级无新动作。真实 Owner/批准/命令/正式程序包未完成，Server 2025 未验、Debian 13 暂不验证。
 
 - 2026-09-26：`0.1.0.dev0`/RVW-02-A05-P02 新增内部受权幂等送审、真实 Session/CSRF 共享锁/PM/基础资格、账户预锁与当前 PM 后才报告资格错误、稳定原始 Ref 重放、真实死锁整事务最多三次执行。Windows 11 后端 737 项无失败（2 项环境跳过），隔离 PostgreSQL 权限/并发幂等/完整 Round-Audit-receipt/故障全回滚/真实 40P01 恢复、既有回归和开发 wheel PASS。无 Migration/API/角色/依赖变化，需 0034，升级无新动作；Owner/License 合成，真实身份锁/决定撤回/HTTP/正式包未完成，Server 2025 未验、Debian 13 暂不验证。

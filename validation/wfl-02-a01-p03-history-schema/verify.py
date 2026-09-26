@@ -273,7 +273,7 @@ def main():
             command.upgrade(config, "head")
             command.check(config)
             with connect(name) as db:
-                assert db.execute("SELECT version_num FROM plm.alembic_version").fetchone()[0] == "20260926_0034"
+                assert db.execute("SELECT version_num FROM plm.alembic_version").fetchone()[0] == "20260926_0035"
                 assert db.execute("SELECT count(*) FROM plm.wfl_stage_transitions").fetchone()[0] == 5
             print("PASS: 0031 three-table ORM parity, empty up/down/re-up and existing Workflow unchanged; all 36 stage pairs, five valid histories, waiver/global basis, rejection rollback, concurrent expected version, immutability/sealing and retained observed Evidence after revoke; synthetic Review/exception, not Gate/production")
         finally:

@@ -227,7 +227,7 @@ def main():
                 raise AssertionError("nonempty link down accepted")
             command.check(config)
             with connect(name) as db:
-                assert db.execute("SELECT version_num FROM plm.alembic_version").fetchone()[0] == "20260926_0034"
+                assert db.execute("SELECT version_num FROM plm.alembic_version").fetchone()[0] == "20260926_0035"
                 assert snapshot(db) == before
             print("WFL-02-A01-P05 PASS: 0033 ORM/empty/legacy upgrade-down-reup, fixed current PASS/WAIVED records/exact basis, reproof/rollback/concurrency/immutability/nonempty down; synthetic Review/exception, not actual Gate")
         finally:

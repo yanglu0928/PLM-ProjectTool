@@ -123,7 +123,8 @@ class SqlAlchemyReviewSnapshotReadRepository:
                 raise ReviewSnapshotReadError()
         try:
             withdrawal = None if not withdrawal_events else ReviewWithdrawalSnapshot(
-                withdrawal_events[0]["actor_id"], _utc(withdrawal_events[0]["occurred_at"]))
+                withdrawal_events[0]["actor_id"], _utc(withdrawal_events[0]["occurred_at"]),
+                withdrawal_events[0]["withdrawal_reason"])
             progress = ReviewRoundProgress(round_id, _utc(row["started_at"]), tuple(assigned), tuple(
                 ReviewDecisionSnapshot(d["decision_id"], round_id, d["reviewer_id"], ReviewDecisionKind(d["decision"]),
                     _utc(d["decided_at"]), d["comment"]) for d in decisions), withdrawal)

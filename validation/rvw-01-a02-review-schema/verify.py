@@ -311,7 +311,7 @@ def main():
             command.check(config)
             with connect(name) as db:
                 assert snapshot(db) == retained
-                assert db.execute("SELECT version_num FROM plm.alembic_version").fetchone()[0] == "20260926_0034"
+                assert db.execute("SELECT version_num FROM plm.alembic_version").fetchone()[0] == "20260926_0035"
             print("Review 0034 PASS: eight-table ORM/empty/existing upgrade, scopes/complete-set/history/withdrawal/ref facts and nonempty down; synthetic Subjects/reviewer identity only")
         finally:
             admin.execute("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=%s AND pid<>pg_backend_pid()", (name,))

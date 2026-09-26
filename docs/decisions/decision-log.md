@@ -3330,3 +3330,11 @@
 - Reason：Review owned 锁释放不等于业务锁正确释放，历史 Sources 观测不能代替当前批准事实；异步 best-effort 消费会留下不一致状态。
 - Impact：内部合同/测试与前置文档，无本轮 Schema/API/角色/依赖变化。AF-02 reason 持久缺口另登记 CR-RVW-002，保留 0034 原文与未知旧历史。
 - Rollback：不装配交接 Port，保留已有历史与送审路径；无数据动作。
+
+## DEC-20260926-181
+
+- Date：2026-09-26；WBS：RVW-02-A07 / CR-RVW-002。
+- Decision：0035给不可变WITHDRAWN事件加nullable原因，其他事件只能NULL；保留0034原文和未知历史。down同事务ACCESS EXCLUSIVE表锁检查，含原因及offline down拒绝。ORM/固定读回随0035。
+- Reason：冻结withdraw reason不得丢弃；无表锁EXISTS检查与删除列可能竞态丢失原因。
+- Impact：Review owned Schema/查询，历史Schema unit显式叠加新delta，四个head verifier跟随0035；API/角色/依赖不变。
+- Rollback：关闭未公开写入口；仅无原因库允许down，含历史保留新增列，禁止丢失回滚。

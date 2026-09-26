@@ -110,6 +110,8 @@ def _make_tables(create):
         *scope("rvw_events"), col("event_type"), col("actor_id", ident), col("trace_id", ident), col("occurred_at", time),
         col("before_lock_version", sa.BigInteger(), nullable=True), col("after_lock_version", sa.BigInteger()),
         col("result_state"), col("decision_id", ident, nullable=True),
+        col("withdrawal_reason", sa.Text(), nullable=True),
+        check("ck_rvw_events__withdrawal_reason", "withdrawal_reason IS NULL OR (event_type='WITHDRAWN' AND withdrawal_reason ~ '[^[:space:]]')"),
         fk("fk_rvw_events__round_review", ["review_round_id","review_id","scope","scope_project_key"], "rvw_review_rounds", ["review_round_id","review_id","scope","scope_project_key"]),
         fk("fk_rvw_events__actor", ["actor_id"], "auth_users", ["user_id"]),
         fk("fk_rvw_events__decision", ["decision_id","review_round_id"], "rvw_review_decisions", ["decision_id","review_round_id"]),
