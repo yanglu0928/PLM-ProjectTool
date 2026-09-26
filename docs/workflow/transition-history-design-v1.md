@@ -1,6 +1,6 @@
 # WFL-02 相邻迁移追加历史设计 V1
 
-日期 2026-09-26；0.1.0.dev0；CR-WFL-003；状态 DESIGN_ONLY，0031 尚未创建。
+日期 2026-09-26；0.1.0.dev0；CR-WFL-003；设计由 WFL-02-A01-P03/0031 实施，隔离 Schema 验证结果见进度报告；实际应用 Gate/Owner/历史写服务仍待。
 
 ## 数据结构
 
@@ -21,6 +21,7 @@ ReviewRound 的观测状态必须 APPROVED。APPROVED_EXCEPTION 必须 APPROVED�
 ## 提交完整性
 
 1. BEFORE INSERT 锁 Workflow 父行，防并发历史冲突；根行记录实际 actor/定义/阶段/版本，成功记录不承载失败尝试。
+   实施细化：根行先插入，要求当前 ACTIVE/from/before_lock 与权威实例相同；提交时要求 Workflow 指向 to、锁为 after、来源完成/目标 ACTIVE，且 Gate 项的 result 与当前清单状态一致。由此拒绝只写成功历史而不更新状态的半套事务；不是对实际客户 Gate 的证明。同一 Workflow 一次事务只推进一步。
 2. 每个 FORWARD 根恰有来源阶段两项 Gate，固定 key/required/策略，不能借用目标阶段或重复遗漏。
 3. 每项至少一条 EVIDENCE、一条 REVIEW_ROUND；PASS 不含 APPROVED_EXCEPTION、豁免列全空；WAIVED 有完整批准例外引用和 actor/reason/impact，不改写失败质量指标。
 4. refs 的类型/Scope/项目/状态/版本/摘要长度校验；Evidence FK保护身份。Review/例外没有目标表时，绝不据 SQL 插入成功宣称引用真实。
@@ -34,7 +35,7 @@ Workflow/当前 Stage/Checklist/Project/成员事实锁；重新校验 Session�
 
 首次 START 的历史/进入条件、Checklist 追加记录、最终 PLAN 完成 API、BLOCKED 恢复需后续独立任务；当前 FORWARD Shape/三表不得替代这些功能。原 Scope 保留。Owner 前置缺失时转 Review 等独立 Platform Core 任务，不跨 Phase 实现业务事实。
 
-## 数据库验收矩阵（全部待执行）
+## 数据库验收矩阵（P03 隔离合成结构已执行，实际 Owner/Gate/环境仍待）
 
 - ORM 与真实 SQL 反射 parity；空库全量 up/down/re-up；0030 有 Project/NOT_STARTED/合成 ACTIVE 升级，原状态与 Audit 均不变，无自动历史。
 - 合法相邻根+完整 Gate/ref 一次事务提交；全部 36 阶段 pair，仅五组合法；缺根/跨项目/父漂移/非法策略/缺项/多项/重复 refs/无依据豁免拒绝。

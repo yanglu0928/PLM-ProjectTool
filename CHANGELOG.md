@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/WFL-02-A01-P03/CR-WFL-003 新增 Transition/GateItem/typed refs 三表 ORM 和 Migration `0031`，结构/同事务状态/观测事实保护、成功历史防修改与提交后封口，非空降级拒绝。Windows 11 后端 652 项无失败（2 项环境跳过），PostgreSQL 空/有数据 up/down/re-up、36 阶段组合/并发/回滚/拒绝/历史与既有工作流回归、开发 wheel PASS。升级前备份到 0031；无 API/依赖/架构变化。真实 Review/例外/Checklist 历史/写服务/Gate 未具备；Server 2025 未验、Debian 13 暂不验证，不是正式安装包。
+
 - 2026-09-26：`0.1.0.dev0`/WFL-02-A01-P02/CR-WFL-003 记录迁移/Gate 追加三表设计、typed refs/观测事实、Evidence FK 与缺 Review 前置、提交后禁止追加子项、迁移/回滚和验收矩阵。仅文档，无 Migration/程序/API/依赖变化，升级无动作；本轮未运行数据库或程序验收，不代表历史 Schema/Gate PASS。
 
 - 2026-09-26：`0.1.0.dev0`/WFL-02-A01-P01 新增不可变成功相邻迁移/完整 Gate 清单快照形状，拒绝跳级、缺项、重复引用及不完整豁免。Windows 11 后端 649 项无失败（2 项环境跳过），开发 wheel PASS；无 Migration/API/依赖，升级无需动作。仅结构，不证明实际授权/引用批准/Gate；历史持久层/实际写命令/Server 2025 未验，Debian 13 暂不验证。

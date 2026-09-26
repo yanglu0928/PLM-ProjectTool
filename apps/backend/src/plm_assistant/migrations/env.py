@@ -30,6 +30,7 @@ from plm_assistant.modules.document.infrastructure import orm as document_orm  #
 from plm_assistant.modules.evidence.infrastructure import orm as evidence_orm  # noqa: F401 - register EVD-01 table
 from plm_assistant.modules.trace.infrastructure import orm as trace_orm  # noqa: F401 - register TRC-01 table
 from plm_assistant.modules.workflow.infrastructure import orm as workflow_orm  # noqa: F401 - register WFL-01 tables
+from plm_assistant.modules.workflow.infrastructure import history_orm  # noqa: F401 - register WFL-02 history
 from plm_assistant.modules.jobs.infrastructure import orm as jobs_orm  # noqa: F401 - register Job/Outbox tables
 
 

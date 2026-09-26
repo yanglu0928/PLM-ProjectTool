@@ -3170,3 +3170,11 @@
 - Reason：Evidence eligibility 可变，只有 UUID 无法还原当时依据；JSON 数组也不足以提供查询/FK/项目结构约束。
 - Impact：设计阶段，不创建 0031；无业务事实/API/依赖变化。Schema 增量与验证矩阵、缺 Owner 和 Checklist/START/完成前置见 CR。
 - Rollback：设计可调整但保留历史版本；实施后有数据禁止破坏性 down，应用不装配并保留记录。
+
+## DEC-20260926-161
+
+- Date：2026-09-26；WBS：WFL-02-A01-P03；CR：CR-WFL-003。
+- Decision：0031 新根先核对 ACTIVE/from/before，提交时核对 to/after/完整 Gate 项与当前结果/观测 Evidence；created_xid 由数据库强制写，子项只可在同事务追加。单次事务只推进一步。Review/例外缺目标表明确保留 Owner 前置，不把类型化 UUID 当实际批准。
+- Reason：避免成功历史与实例状态脱节、事后补写快照，以及引用可变状态造成历史漂移。首次多表 trigger 字段错误经合法路径验证发现并修复，拒绝测试只接受预期约束错误。
+- Impact：三表 Schema/ORM/metadata/验证，无公开 API/权限/依赖改变；真实业务 Gate 和 Checklist 历史尚缺。
+- Rollback：空历史可 down；非空拒绝破坏性 down，不装配应用服务并保留事实。

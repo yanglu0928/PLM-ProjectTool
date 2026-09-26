@@ -1,6 +1,6 @@
 # CR-WFL-003：迁移 Gate 快照的可查询依据历史
 
-日期 2026-09-26；WBS WFL-02-A01-P02；状态 DESIGN_RECORDED / IMPLEMENTATION_PENDING。
+日期 2026-09-26；设计 WBS WFL-02-A01-P02，实施 WFL-02-A01-P03；状态 SCHEMA_IMPLEMENTED / APPLICATION_PENDING。0031 三表与隔离结构验收已完成，实际 Owner/Gate/写服务未完成；见 P03 验证报告。
 授权：用户持续自主执行规则 V1.1；原冻结 `64cdf09`、CR-WFL-001/002 及所有既有 Migration 不覆盖。
 
 ## 证据与冲突
