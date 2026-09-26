@@ -11,6 +11,7 @@ from plm_assistant.entrypoints import windows_license_runtime as lic
 from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
 from plm_assistant.modules.platform.infrastructure.worker_database import WorkerDatabaseRuntime,WorkerDatabaseLimits
 from plm_assistant.modules.audit.application.worker_capture import AuditExportWorkerError
+from plm_assistant.modules.audit.application.worker_loop import AuditExportLoopResult
 
 
 class WindowsWorkerTests(TestCase):
@@ -40,9 +41,10 @@ class WindowsWorkerTests(TestCase):
         @contextmanager
         def quiet():yield
         loop.quiescent=quiet
-        with patch.object(cli.sys,'argv',['worker','bootstrap','--once']),patch.object(cli.Path,'resolve',return_value=Path.cwd()),patch.object(cli,'load_bootstrap_settings',return_value=self.settings),patch.object(cli,'create_windows_audit_worker',return_value=(db,loop)),patch.object(cli,'run_audit_worker_process',return_value=Mock(reason='LIMIT')),redirect_stdout(StringIO()) as output:
+        with patch.object(cli.sys,'argv',['worker','bootstrap','--once']),patch.object(cli.Path,'resolve',return_value=Path.cwd()),patch.object(cli,'load_bootstrap_settings',return_value=self.settings),patch.object(cli,'create_windows_audit_worker',return_value=(db,loop)),patch.object(cli,'run_audit_worker_process',return_value=AuditExportLoopResult('LIMIT',1,0,0,0,0,1)),redirect_stdout(StringIO()) as output:
             self.assertEqual(cli.main(),0)
         db.dispose.assert_called_once();self.assertIn('readiness not asserted',output.getvalue())
+        self.assertIn('sources rejected: 1; no terminal state asserted',output.getvalue())
 
     def test_real_live_heartbeat_blocks_quiescent_closure(self):
         f=fixture.WorkerLoopTests();f.setUp();sup=f.t.t.supervisor

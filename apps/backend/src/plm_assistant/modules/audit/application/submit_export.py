@@ -18,6 +18,14 @@ class AuditExportSubmitError(RuntimeError):
         super().__init__(code)
 
 
+class AuditExportSourceRejected(AuditExportSubmitError):
+    """Only explicit original-source inconsistency, never a store exception."""
+    def __init__(self,reason_code):
+        if reason_code!='ACCEPTANCE_SOURCE_INVALID':raise ValueError('Invalid source rejection')
+        self.reason_code=reason_code
+        super().__init__()  # Existing public-facing AUDIT_UNAVAILABLE is unchanged.
+
+
 def _id(value):return type(value) is UUID and value.int!=0
 def _time(value):return type(value) is datetime and value.tzinfo is not None and value.utcoffset() is not None
 

@@ -2,7 +2,7 @@
 from datetime import timezone
 from sqlalchemy import insert,select
 from sqlalchemy.exc import DBAPIError
-from ..application.submit_export import AuditExportIntent,AcceptedAuditExport,AuditExportSubmitError
+from ..application.submit_export import AuditExportIntent,AcceptedAuditExport,AuditExportSubmitError,AuditExportSourceRejected
 from ..application.export_contract import AuditExportSpec,EXPORT_FORMAT,EXPORT_POLICY_VERSION,EXPORT_PROJECTION_VERSION
 from plm_assistant.modules.jobs.application.audit_export_enqueue import AuditExportJobRef
 from .audit_read_repository import _session
@@ -64,7 +64,7 @@ class SqlAlchemyAuditExportSubmitRepository:
                 source.target_version_id,source.reason_code,source.before_state,source.after_state)
                 != (intent.trace_id,intent.spec.scope,intent.spec.project_id,"USER",intent.actor_id,
                     "AUDIT_EXPORT_REQUESTED","SUCCESS","jobs","JOB-01",row["job_id"],None,intent.spec.purpose,None,"PENDING")
-                or not intent.requested_at<=source.occurred_at<=row["accepted_at"]):raise AuditExportSubmitError()
+                or not intent.requested_at<=source.occurred_at<=row["accepted_at"]):raise AuditExportSourceRejected('ACCEPTANCE_SOURCE_INVALID')
         return AcceptedAuditExport(intent,row["job_id"],row["event_id"],row["request_audit_event_id"],row["accepted_at"].astimezone(timezone.utc))
 
     def record_acceptance(self,tx,*,intent,queue_ref,audit_event_id):

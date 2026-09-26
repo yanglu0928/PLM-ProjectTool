@@ -16,12 +16,13 @@ class AuditExportLoopResult:
     swept: int
     idle: int
     released: int
+    rejected: int=0
 
     def __post_init__(self):
-        counts=(self.steps,self.executed,self.swept,self.idle,self.released)
+        counts=(self.steps,self.executed,self.swept,self.idle,self.released,self.rejected)
         if (type(self.reason) is not str or self.reason not in {'STOPPED','LIMIT'}
                 or any(type(v) is not int or v<0 for v in counts)
-                or self.executed+self.swept+self.idle+self.released>self.steps):raise AuditExportWorkerError()
+                or self.executed+self.swept+self.idle+self.released+self.rejected>self.steps):raise AuditExportWorkerError()
 
 
 class AuditExportWorkerLoop:
@@ -51,7 +52,7 @@ class AuditExportWorkerLoop:
         if max_steps is not None and (type(max_steps) is not int or not 1<=max_steps<=100000):raise AuditExportWorkerError('VALIDATION_FAILED')
         if stop_requested is not None and not callable(stop_requested):raise AuditExportWorkerError('VALIDATION_FAILED')
         if not self._lock.acquire(blocking=False):raise AuditExportWorkerError('AUDIT_HEARTBEAT_CAPACITY')
-        steps=executed=swept=idle=released=0
+        steps=executed=swept=idle=released=rejected=0
         try:
             while max_steps is None or steps<max_steps:
                 if stop_requested is not None:
@@ -61,14 +62,17 @@ class AuditExportWorkerLoop:
                 value=self._step.step()
                 if type(value) is not AuditExportStepOutcome:raise AuditExportWorkerError()
                 value.__post_init__();steps+=1
-                if value.kind=='STOPPED':return AuditExportLoopResult('STOPPED',steps,executed,swept,idle,released)
+                if value.kind=='STOPPED':return AuditExportLoopResult('STOPPED',steps,executed,swept,idle,released,rejected)
                 if value.kind=='EXECUTED':executed+=1
                 elif value.kind=='SWEEP_FAILED':swept+=1
                 elif value.kind in {'LEASE_EXPIRED','SUPERSEDED'}:released+=1
+                elif value.kind=='SOURCE_REJECTED':
+                    rejected+=1
+                    if max_steps is None or steps<max_steps:self._wait_idle()
                 elif value.kind=='IDLE':
                     idle+=1
                     if max_steps is None or steps<max_steps:self._wait_idle()
-            return AuditExportLoopResult('LIMIT',steps,executed,swept,idle,released)
+            return AuditExportLoopResult('LIMIT',steps,executed,swept,idle,released,rejected)
         except AuditExportWorkerError:raise
         except Exception:raise AuditExportWorkerError() from None
         finally:self._lock.release()

@@ -26,3 +26,5 @@
 P13-P02更新：已先记录后增加独立reserve_next，旧peek无锁保留；真实双Scope锁住优先head时后续正常发布/首无Attempt，两个只锁UOW候选不同且六表无写；1116通过/2跳过、原双Scope单claim竞争/到期/回滚/确认恢复及wheel通过。新版反向锁序真实40P01未制造，P03坏源、全局公平仍待，CR不关闭，前文未实施为原计划历史状态。
 
 P13-P03-A01更新：独立scan_next与严格cursor/reservation已实现，单次一个只锁候选，固定INVALID_EXPORT_REF分类；游标仅技术位置，不作为权限/Lease证明。1119通过/2既有跳过，实际双Scope格式错误/零UUID坏head→正常候选→末尾六表无写，旧admission继续关闭/仍未接线，开发wheel通过。Root/pair分类、游标循环与安全诊断、真实deadlock仍待，CR不关闭。
+
+P13-P03-A02更新：显式后台isolated准入/严格来源拒绝DTO、只在完整只读UOW后游标推进/常数内存，原入口默认和对外AUDIT_UNAVAILABLE保留；未知DB/identity/commit异常不吞，Loop按poll等待/计数，CLI数量不代表终态。1125通过/2既有跳过，实际双Scope malformed/zeroUUID/缺Root/错pair保持六表无写拒绝，后续实际发布、坏Job无Attempt，恢复合成来源可发布；原确认恢复/真实CLI停止回归及wheel通过。Acceptance审计源真实故障矩阵、耗尽坏源、复杂Lease、反向锁序实际40P01/全局公平仍待，CR不关闭。

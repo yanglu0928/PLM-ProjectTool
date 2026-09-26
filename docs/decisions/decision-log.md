@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-253
+
+- Precode：Phase2/P06-P13-P03-A02，CR-AUD-005，先记录source-admission进度，原claim入口/API错误码保留，只接明确原源分类与技术诊断。
+- Decision：后台显式isolate_sources=True，实例锁/常数cursor在只读拒绝UOW退出后前移，正常claim/末尾清游标；SOURCE_REJECTED不写Job/Lease/Audit、不猜终态；Loop poll/拒绝数，CLI仅数量。未知DB/identity/commit仍原关闭/确认恢复。
+- Evidence：6新unit/1125通过（2既有跳过）；真实双Scope格式错/零UUID/缺Root/错pair拒绝六表无写，后续正常发布/坏Job PENDING无Attempt，恢复原测试来源可发布；旧确认恢复/真实Windows CLI停止回归，wheel633740/SHA见进度。
+- Risk/rollback：无Migration/API/依赖/升级，撤显式新接线保旧入口/冻结历史；对外AUDIT_UNAVAILABLE不改。Acceptance审计源真实矩阵/耗尽坏源/Lease不一致/反向锁序40P01/全局公平/正式材料/完整包/Gate待，CR不关闭。
+
 ## DEC-20260927-252
 
 - Precode：Phase2/P06-P13-P03-A01，CR-AUD-005，先记录aud-p06-p13-source-cursor.md。范围仅Jobs owned Port，不跳过Root/身份/权限或猜终态。

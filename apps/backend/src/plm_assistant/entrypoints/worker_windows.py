@@ -44,6 +44,7 @@ def main():
         result=run_audit_worker_process(loop,max_steps=1 if len(sys.argv)==3 else None)
         with loop.quiescent():database.dispose()
         database=None
+        if result.rejected:print('Audit candidate sources rejected: '+str(result.rejected)+'; no terminal state asserted.')
         if result.reason=='STOPPED':print('Audit worker stopped after draining known work.')
         elif len(sys.argv)==3 and result.reason=='LIMIT':print('One bounded audit worker step finished; service readiness not asserted.')
         else:raise RuntimeError()

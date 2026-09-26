@@ -1,11 +1,13 @@
 """Admit only actual accepted original Root/Job-Outbox; candidate never authorizes work."""
 from dataclasses import dataclass
 from uuid import UUID
+from threading import Lock
 from .worker_capture import AuditExportCaptureCommand,AuditExportWorkerError
-from .submit_export import AuditExportIntent,AcceptedAuditExport,AuditExportSubmitService
+from .submit_export import AuditExportIntent,AcceptedAuditExport,AuditExportSubmitService,AuditExportSourceRejected
 from .heartbeat_coordinator import AuditHeartbeatSupervisor
 from plm_assistant.modules.jobs.application.audit_export_claim import AuditExportClaimCandidate,validate_claim_input
-from plm_assistant.modules.jobs.application.audit_export_enqueue import AuditExportJobRef
+from plm_assistant.modules.jobs.application.audit_export_enqueue import AuditExportJobRef,AuditExportEnqueueError
+from plm_assistant.modules.jobs.application.audit_export_scan import AuditExportScanCursor,AuditExportScanReservation
 from plm_assistant.modules.jobs.application.audit_export_complete import AuditExportJobCompletion
 from plm_assistant.modules.jobs.application.lease import ClaimedJob,JobLeaseError
 
@@ -29,11 +31,25 @@ class _UnconfirmedClaim(Exception):
         super().__init__('AUDIT_UNAVAILABLE');self.result,self.identity=result,identity
 
 
+@dataclass(frozen=True,slots=True)
+class RejectedAuditExportSource:
+    cursor: AuditExportScanCursor
+    reason_code: str
+
+    def __post_init__(self):
+        if type(self.cursor) is not AuditExportScanCursor:raise AuditExportWorkerError()
+        self.cursor.__post_init__()
+        if type(self.reason_code) is not str or self.reason_code not in {
+            'INVALID_EXPORT_REF','ROOT_MISSING','ROOT_MISMATCH','ACCEPTANCE_MISSING',
+            'ACCEPTANCE_MISMATCH','ACCEPTANCE_SOURCE_INVALID','PAIR_MISMATCH'}:raise AuditExportWorkerError()
+
+
 class AuditExportClaimAdmission:
     def __init__(self,*,unit_of_work,repository,claims,queue,system_actor,supervisor):
         if any(d is None for d in (unit_of_work,repository,claims,queue,system_actor)) or type(supervisor) is not AuditHeartbeatSupervisor:
             raise ValueError('Owned admission dependencies required')
         self._uow,self._repo,self._claims,self._queue,self._actor,self._supervisor=unit_of_work,repository,claims,queue,system_actor,supervisor
+        self._cursor,self._scan_lock=None,Lock()
 
     def _identity(self):
         try:
@@ -42,12 +58,22 @@ class AuditExportClaimAdmission:
             return value
         except Exception:raise AuditExportWorkerError('SYSTEM_ACTOR_UNAVAILABLE') from None
 
-    def claim_next(self,*,worker_ref,lease_seconds=60):
+    def claim_next(self,*,worker_ref,lease_seconds=60,isolate_sources=False):
         try:validate_claim_input(worker_ref,lease_seconds)
         except JobLeaseError as exc:raise AuditExportWorkerError(exc.code) from None
+        if type(isolate_sources) is not bool:raise AuditExportWorkerError('VALIDATION_FAILED')
+        if not isolate_sources:return self._next(worker_ref,lease_seconds,False)
+        if not self._scan_lock.acquire(blocking=False):raise AuditExportWorkerError('AUDIT_HEARTBEAT_CAPACITY')
+        try:
+            result=self._next(worker_ref,lease_seconds,True)
+            self._cursor=result.cursor if type(result) is RejectedAuditExportSource else None
+            return result
+        finally:self._scan_lock.release()
+
+    def _next(self,worker_ref,lease_seconds,isolated):
         for attempt in range(3):
             try:
-                claimed=self._claim(worker_ref,lease_seconds)
+                claimed=self._claim(worker_ref,lease_seconds,isolated)
                 if claimed is False:continue  # Actual eligibility race; fresh UOW/candidate.
                 return claimed
             except _UnconfirmedClaim as exc:
@@ -60,10 +86,18 @@ class AuditExportClaimAdmission:
                 raise AuditExportWorkerError() from None
         return None  # Bounded contention, not a proof the entire queue is empty.
 
-    def _claim(self,worker_ref,seconds):
+    def _claim(self,worker_ref,seconds,isolated=False):
         identity=self._identity()
         with self._uow() as tx:
-            candidate=self._claims.reserve_next(tx)
+            reservation=None
+            if isolated:
+                reservation=self._claims.scan_next(tx,after=self._cursor)
+                if reservation is not None:
+                    if type(reservation) is not AuditExportScanReservation:raise AuditExportWorkerError()
+                    reservation.__post_init__()
+                    if reservation.candidate is None:return self._reject(reservation,identity,reservation.reason_code)
+                candidate=None if reservation is None else reservation.candidate
+            else:candidate=self._claims.reserve_next(tx)
             if candidate is None:
                 if self._identity()!=identity:raise AuditExportWorkerError('SYSTEM_ACTOR_UNAVAILABLE')
                 return None
@@ -72,12 +106,24 @@ class AuditExportClaimAdmission:
             hint=AuditExportCaptureCommand(candidate.export_id,candidate.job_id,candidate.current_fencing_token+1,worker_ref)
             with self._supervisor.stopped(hint):
                 intent=self._repo.get_created(tx,export_id=candidate.export_id)
+                if isolated and intent is None:return self._reject(reservation,identity,'ROOT_MISSING')
+                if isolated and type(intent) is AuditExportIntent and intent.export_id!=candidate.export_id:return self._reject(reservation,identity,'ROOT_MISMATCH')
                 if type(intent) is not AuditExportIntent or intent.export_id!=candidate.export_id:raise AuditExportWorkerError()
-                intent.__post_init__();accepted=self._repo.get_accepted(tx,intent=intent)
+                intent.__post_init__()
+                try:accepted=self._repo.get_accepted(tx,intent=intent)
+                except AuditExportSourceRejected as exc:
+                    if isolated and exc.reason_code=='ACCEPTANCE_SOURCE_INVALID':return self._reject(reservation,identity,exc.reason_code)
+                    raise
+                if isolated and accepted is None:return self._reject(reservation,identity,'ACCEPTANCE_MISSING')
+                if isolated and type(accepted) is AcceptedAuditExport and (accepted.intent!=intent or accepted.job_id!=candidate.job_id):return self._reject(reservation,identity,'ACCEPTANCE_MISMATCH')
                 if type(accepted) is not AcceptedAuditExport or accepted.intent!=intent or accepted.job_id!=candidate.job_id:raise AuditExportWorkerError()
                 accepted.__post_init__()
                 request=AuditExportSubmitService._queue_request(intent);refs=AuditExportJobRef(accepted.job_id,accepted.event_id)
-                actual=self._queue.find_export(tx,request=request)
+                try:actual=self._queue.find_export(tx,request=request)
+                except AuditExportEnqueueError as exc:
+                    if isolated and exc.code=='CONFLICT_STATE':return self._reject(reservation,identity,'PAIR_MISMATCH')
+                    raise
+                if isolated and (actual is None or type(actual) is AuditExportJobRef and actual!=refs):return self._reject(reservation,identity,'PAIR_MISMATCH')
                 if type(actual) is not AuditExportJobRef or actual!=refs:raise AuditExportWorkerError()
                 actual.__post_init__()
                 if self._identity()!=identity:raise AuditExportWorkerError('SYSTEM_ACTOR_UNAVAILABLE')
@@ -89,6 +135,10 @@ class AuditExportClaimAdmission:
                 try:tx.commit()
                 except Exception:raise _UnconfirmedClaim(result,identity) from None
                 return result
+
+    def _reject(self,reservation,identity,reason):
+        if self._identity()!=identity:raise AuditExportWorkerError('SYSTEM_ACTOR_UNAVAILABLE')
+        return RejectedAuditExportSource(reservation.cursor,reason)
 
     def _confirm(self,result,identity):
         result.__post_init__();c=result.command

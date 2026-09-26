@@ -2,7 +2,7 @@
 from dataclasses import dataclass,field
 from contextlib import contextmanager
 from threading import Event,Lock
-from .claim_export import ClaimedAuditExport
+from .claim_export import ClaimedAuditExport,RejectedAuditExportSource
 from .execute_export import AuditExportExecutionOutcome
 from .verify_termination import VerifiedAuditExportTermination
 from .worker_capture import AuditExportWorkerError
@@ -18,7 +18,8 @@ class AuditExportStepOutcome:
 
     def __post_init__(self):
         expected={'IDLE':type(None),'STOPPED':type(None),'EXECUTED':AuditExportExecutionOutcome,
-            'SWEEP_FAILED':VerifiedAuditExportTermination,'LEASE_EXPIRED':AuditExportExecutionFacts,'SUPERSEDED':AuditExportExecutionFacts}
+            'SWEEP_FAILED':VerifiedAuditExportTermination,'LEASE_EXPIRED':AuditExportExecutionFacts,'SUPERSEDED':AuditExportExecutionFacts,
+            'SOURCE_REJECTED':RejectedAuditExportSource}
         if type(self.kind) is not str or self.kind not in expected or type(self.value) is not expected[self.kind]:raise AuditExportWorkerError()
         if self.value is not None:self.value.__post_init__()
 
@@ -58,7 +59,10 @@ class AuditExportWorkerStep:
                     if result is not None:
                         outcome=AuditExportStepOutcome('SWEEP_FAILED',result);self._prefer_sweep=False;return outcome
                 else:
-                    claim=self._admission.claim_next(worker_ref=self._worker,lease_seconds=self._seconds)
+                    claim=self._admission.claim_next(worker_ref=self._worker,lease_seconds=self._seconds,isolate_sources=True)
+                    if type(claim) is RejectedAuditExportSource:
+                        self._prefer_sweep=True
+                        return AuditExportStepOutcome('SOURCE_REJECTED',claim)
                     if claim is not None:
                         if type(claim) is not ClaimedAuditExport:raise AuditExportWorkerError()
                         claim.__post_init__()

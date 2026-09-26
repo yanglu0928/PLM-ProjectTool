@@ -16,6 +16,8 @@ python -m plm_assistant.entrypoints.worker_windows C:\PLMTool\config\bootstrap.y
 
 退出码2：参数不支持；退出码1：配置/来源/运行或生命周期拒绝；退出码0：持续模式实际收到STOPPED，或--once实际达到一轮LIMIT且全部句柄静止后释放本进程数据库。LIMIT不是服务已停止或正式验收通过。
 
+P13明确坏引用/缺原Root/明确原pair不一致仅作为SOURCE_REJECTED技术拒绝，坏任务保持原状态、不产生Attempt；后台有界游标推进到正常候选，poll等待避免热循环。结束时若有拒绝仅输出固定数量，不代表坏任务已失败/成功/修复；原授权/身份/数据库故障与提交确认仍原失败关闭或原源确认恢复。复杂Lease/耗尽坏源和反向锁序死锁仍待验证，不把此机制作为任意数据库损坏自动恢复。
+
 停止信号由原适配器请求不再领取新任务并排空已知命令；不删除临时字节、不伪造取消/成功、不强杀线程。P12已在独立隐藏Windows Console实际外部CTRL_BREAK验证：真实临时PG/Credential/Vault identity、明确测试License下idle无写、active排空只一任务/第二任务未领取；每Step前检查已处理信号标志，避免桥线程调度竞态。长阻塞可能延迟Python处理信号，不保证无限阻塞可停止。外部Ctrl-C、Windows服务SCM/硬终止、正式信任材料仍未验证，不将本页作为生产服务安装或停机验收。
 
 发现活心跳时拒绝关闭数据库并返回静态错误；非daemon线程保持其生命周期，不以观察超时猜已退出。数据库升级/备份、正式私钥保管和离线恢复不由本CLI自动执行。完整产品/Server2025/Debian13发行及Gate3仍待。

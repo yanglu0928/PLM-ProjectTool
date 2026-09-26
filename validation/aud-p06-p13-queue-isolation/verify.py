@@ -33,7 +33,7 @@ def exercise(v):
     tables=('job_jobs','job_leases','job_attempts','aud_events','aud_export_results','doc_file_objects')
     def snapshot():return {t:tuple(v['db'].execute(sql.SQL('SELECT * FROM plm.{} ORDER BY 1').format(sql.Identifier(t)))) for t in tables}
     def rejected():
-        try:loop.run(max_steps=1)
+        try:loop._step._admission.claim_next(worker_ref='legacy-source-check')
         except AuditExportWorkerError as exc:return exc
         raise AssertionError('Expected scheduling gap no longer reproduced; update evidence')
     first=second=extra=None;payload=extra_payload=None
@@ -76,18 +76,40 @@ def exercise(v):
                 assert snapshot()==before
             with database.unit_of_work() as tx:assert claims.scan_next(tx,after=cursor) is None
             assert snapshot()==before
-            assert v['db'].execute('SELECT state FROM plm.job_jobs WHERE job_id=%s',(second.job_id,)).fetchone()==('PENDING',)
-            assert v['db'].execute('SELECT count(*) FROM plm.job_attempts WHERE job_id=%s',(second.job_id,)).fetchone()==(0,)
+            result=loop.run(max_steps=2)
+            assert (result.rejected,result.executed)==(2,0) and snapshot()==before
+            result=loop.run(max_steps=1);assert (result.rejected,result.executed)==(0,1)
+            assert v['db'].execute('SELECT state FROM plm.job_jobs WHERE job_id=%s',(second.job_id,)).fetchone()==('SUCCEEDED',)
+            for bad in (first,extra):
+                assert v['db'].execute('SELECT state FROM plm.job_jobs WHERE job_id=%s',(bad.job_id,)).fetchone()==('PENDING',)
+                assert v['db'].execute('SELECT count(*) FROM plm.job_attempts WHERE job_id=%s',(bad.job_id,)).fetchone()==(0,)
             v['db'].execute('UPDATE plm.job_jobs SET payload_refs=%s WHERE job_id=%s',(Jsonb(payload),first.job_id))
             v['db'].execute('UPDATE plm.job_jobs SET payload_refs=%s WHERE job_id=%s',(Jsonb(extra_payload),extra.job_id))
-            result=loop.run(max_steps=3);assert result.executed==3
+            result=loop.run(max_steps=2);assert result.executed==2
             assert v['db'].execute('SELECT state FROM plm.job_jobs WHERE job_id IN (%s,%s)',(first.job_id,second.job_id)).fetchall()==[('SUCCEEDED',),('SUCCEEDED',)]
+            for reason in ('ROOT_MISSING','PAIR_MISMATCH'):
+                bad=pending(scope);good=pending(scope)
+                original_payload,original_trace=v['db'].execute('SELECT payload_refs,trace_id FROM plm.job_jobs WHERE job_id=%s',(bad.job_id,)).fetchone()
+                try:
+                    v['db'].execute('UPDATE plm.job_jobs SET priority=100 WHERE job_id=%s',(bad.job_id,))
+                    if reason=='ROOT_MISSING':
+                        v['db'].execute('UPDATE plm.job_jobs SET payload_refs=%s WHERE job_id=%s',(Jsonb(dict(original_payload,export_id=str(uuid4()))),bad.job_id))
+                    else:v['db'].execute('UPDATE plm.job_jobs SET trace_id=%s WHERE job_id=%s',(str(uuid4()),bad.job_id))
+                    before=snapshot();value=loop._step.step()
+                    assert value.kind=='SOURCE_REJECTED' and value.value.reason_code==reason and snapshot()==before
+                    result=loop.run(max_steps=1);assert result.executed==1
+                    assert v['db'].execute('SELECT state FROM plm.job_jobs WHERE job_id=%s',(good.job_id,)).fetchone()==('SUCCEEDED',)
+                    assert v['db'].execute('SELECT state FROM plm.job_jobs WHERE job_id=%s',(bad.job_id,)).fetchone()==('PENDING',)
+                    assert v['db'].execute('SELECT count(*) FROM plm.job_attempts WHERE job_id=%s',(bad.job_id,)).fetchone()==(0,)
+                finally:
+                    v['db'].execute('UPDATE plm.job_jobs SET payload_refs=%s,trace_id=%s WHERE job_id=%s',(Jsonb(original_payload),original_trace,bad.job_id))
+                result=loop.run(max_steps=1);assert result.executed==1
     finally:
         if first is not None and payload is not None:
             v['db'].execute('UPDATE plm.job_jobs SET payload_refs=%s WHERE job_id=%s',(Jsonb(payload),first.job_id))
         if extra is not None and extra_payload is not None:
             v['db'].execute('UPDATE plm.job_jobs SET payload_refs=%s WHERE job_id=%s',(Jsonb(extra_payload),extra.job_id))
         with loop.quiescent():database.dispose()
-    print('P13-P02 LOCK REGRESSION PASS and P03-A01 CURSOR PORT PASS: dualScope locked head skipped; explicit cursor visits malformed/zero UUID heads then valid candidate and end, six tables readonly. Old admission malformed head still refuses and blocks valid second; restored synthetic source permits publication. Cursor NOT wired into worker; full fairness/invalid-source isolation NOT PASS; CR-AUD-005 remains open.')
+    print('P13-P03-A02 INTERNAL SOURCE ISOLATION PASS: actual dualScope Loop rejects malformed/zero export refs, missing Root and mismatched pair readonly; each bad Job stays PENDING/no Attempt while following valid Job publishes; restoring synthetic source permits original publication. Constant cursor, typed rejection/counts; legacy admission still fails closed. Lock skip/source cursor regressions pass. Arbitrary Lease/store faults, global fairness, reverse-lock deadlock, formal trust/package NOT proved; CR-AUD-005 stays open.')
 
 if __name__=='__main__':fixture.main(exercise=exercise)
