@@ -3487,3 +3487,12 @@
 - Precode：Phase2；输入冻结DM-04/API-03、A02-P01、CR-JOB-002；Job协作取消信息缺失已代码核查，先补必要Schema。模块Jobs，实体Job，新增三nullable字段，无API/权限授予/依赖。验收空/旧数据up/down/parity、不可猜回填/不可变取消信息/历史保护/并发降级锁。
 - Decision：0039沿CR-JOB-002补齐首次申请人/原因/UTC时点，首值固定、取消态不可复活/删除、有历史禁止truncate/down。旧全NULL保持，元数据不代表实际授权；完整取消Port在下一分项，不用Schema替代Worker/HTTP。
 - Risk/rollback：增量DDL锁需备份维护；含取消信息不可down，无信息可撤列；无生产迁移/自动删历史。错误与未知内容不公开原理由，Secret文本识别不能仅靠CHECK。正式Scope/Gate保持。
+
+## DEC-20260926-200
+
+- Date：2026-09-26；WBS：AUD-03-A06-A02-P02-A02。
+- Precode：Phase2；输入DM-04/API-03/0039/CR-JOB-002/A02-P01；前置满足。模块Jobs，既有Job/Lease/Attempt和AuditExport Queue公共坐标；无Schema/API/权限授予/依赖。一个问题：可信Owner caller-UOW实际取消请求/协作确认/到期恢复及完成竞争。
+- Decision：每次核对原Export Queue pair与精确首次Job/Event refs，不猜修复缺边或替换。PENDING/RETRY_WAIT在同事务REQUESTED→CANCELLED；RUNNING登记REQUESTED保留租约，当前未过期Worker/token可确认；失联后仅真实到期恢复EXPIRED，保留历史。首次申请信息不重写；已成功/失败返回原终态，不能伪装回滚，旧取消历史无来源失败关闭。
+- Authority：坐标/申请人FK/Worker不是业务权限。Owner必须先锁自己的持久Root/acceptance，重新当前授权；本项只Jobs公共Port，不自建UOW/commit/许可或Session鉴权。申请原因不回到结果/payload/Audit自由正文；拒空白/未规范/控制字符/超长，但不能保证合法文本不含Secret。失败映射固定code。
+- Locks/verification：Queue事务advisory→Job→Outbox，再Lease→Attempt；与finish Job锁串行，实际先取消拒发布、先完成拒伪回滚、同请求并发首次一次、确认/到期恢复竞争、故障全回滚/原数据/当前Worker/过期及缺来源验证。Worker短事务锁反序及完整Audit幂等/审计仍另验。
+- Rollback：撤未装配入口不删历史；0039含信息拒绝down；无生产操作/公开API，正式信任/性能/完整Worker/包仍待。

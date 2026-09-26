@@ -23,3 +23,5 @@ B：只改state并丢弃申请信息，或把原因塞Job payload/自由日志�
 状态IMPLEMENTATION_IN_PROGRESS。无生产操作或公开导出/取消API。
 
 P02-A01执行结果：0039/ORM、真实空/旧数据up/down/re-up/parity、旧NULL无回填、成组/申请人/原因/时点/状态约束、首次信息与Job技术身份/终态保护、delete/truncate拒绝、down实际竞争写锁及含历史拒绝通过。860项无失败（2环境跳过）、四项相关真实回归与开发wheel通过。详见docs/progress/aud-03-a06-a02-p02-a01-cancel-schema.md。合成元数据转换不是实际取消；P02-A02命令/确认/恢复及受权编排仍待，CR整体IN_PROGRESS，无生产操作。
+
+P02-A02执行结果：Jobs owned实际取消请求/当前Worker确认/数据库租约到期恢复、精确首次pair绑定、重复首信息保留、真实并发单次变化、故障回滚、两种顺序取消与finish竞争等待及终态副作用保留通过。866项无失败（2环境跳过）、Schema/原子提交回归与开发wheel通过；详见docs/progress/aud-03-a06-a02-p02-a02-cancel.md。原Export/当前用户授权/receipt/Audit及真实Artifact编排未接入，合成发布marker不冒充文件；CR整体IN_PROGRESS，无生产操作/公开取消API。
