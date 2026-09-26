@@ -11,3 +11,5 @@
 验收：Unit权限/绑定/异常/严格DTO、真实PG双ScopePENDING与SUCCEEDED、来源不一致与跨项目/失效会话/停用/非Admin拒绝无业务写入。前置满足后编码，测试失败须保留说明。迁移/API/依赖无变；回滚撤只读Service/Port和新策略，不影响旧写路径，保原版本及文档；正式公钥/发行/Gate3待。
 
 A01更新：内部Service/严格事实/Owner DTO、Jobs只读Repo、JOB_PROJECT_GET策略与实际Audit Owner Port已实现；1143无失败/2跳过，真实PG双ScopePENDING/RUNNING/SUCCEEDED与原Result、角色/原actor/跨项目/Admin/停用/未知Session/坏绑定拒绝六表无写，原发布回归通过。当前仅Audit Owner，非HTTP/完整JobView/ETag或正式部署PASS。初次测试构造边界与验证Worker属性错误在进度中保留；后续公开版本/Contract、Document及其他Owner、全Scope仍待，CR打开。
+
+A02-P02更新：0043真实版本前置后新增可选双ScopeGET/安全JobView/强vN与no-store，默认404；1150无失败/2跳过，实际PG/原Auth-Project-Audit Owner通过ASGI 8授权/13拒绝矩阵、状态/版本/结果逻辑引用、六业务表只读与原发布通过，条件请求不绕撤权。无已验细分progress/checkpoint/error则null，Document/其他Owner、Windows装配/完整Job模块待，CR仍IN_PROGRESS。首次脚本成功数量门槛误填10而实际8已在进度保留和更正。

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/JOB-01-A02-P02新增可选项目/admin任务详情GET、安全JobView/实际强vN/no-store；默认应用仍404，未知细分progress/checkpoint/error为null，结果仅逻辑引用不授内容权。Windows11后端1150无失败/2既有跳过、实际隔离PG-ASGI原授权链8成功/13拒绝/只读六表、真实状态/版本/原发布通过；条件请求不绕撤权。无新增Migration/依赖/升级（运行需前序0043），撤Router接线回滚；Windows装配/其他Owner/列表/If-Match/浏览器/正式环境/完整包/Gate待。
+
 - 2026-09-27：`0.1.0.dev0`/JOB-01-A02-P01按CR-JOB-002新增Migration0043与Job用户并发版本，统一数据库业务变化递增、纯心跳/无变化稳定，拒绝手动版本和溢出；ORM/read DTO同步，为冻结强v<version>合同补前置，不用Lease fencing代替。Windows11隔离PG空/有数据up/down/up旧业务保留、真实双Scopev0→领取v1→心跳稳定→发布v2通过；公开GET/If-Match仍未实现。升级需人工备份维护停机后0043，降级回旧代码并使ETag失效，旧业务历史保留；无依赖变化，无生产迁移，正式材料/完整Scope/Gate/完整包待。
 
 - 2026-09-27：`0.1.0.dev0`/JOB-01-A01新增内部任务安全详情、Jobs只读事实Repo、当前四角色/creator项目策略及显式Audit Owner原源投影；不返回payload/Lease/fencing/路径/Secret，不授正文下载权。Windows11后端1143无失败/2既有跳过；真实PG双Scope待执行/运行中/成功、结果原源及授权/隔离/停用/错来源拒绝六表无写，原发布回归通过。无Migration/API/依赖/升级，撤新只读接线回滚；公开GET/完整JobView/ETag/其他Owner/正式环境/Gate/完整包待。

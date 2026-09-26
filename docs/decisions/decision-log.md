@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-261
+
+- Precode：JOB-01-A02-P02 GET进度先记录，0043真实版本满足前置，原API-01/03路径/Scope/权限不改。
+- Decision：可选Router双Scope详情，原当前读取/Owner链、安全字段白名单、真实强vN/no-store；未知细分进度/检查点/原因null，不从payload猜。If-None-Match仍全授权，默认404；结果引用不授正文权。
+- Evidence：5新Contract/1150无失败/2跳过，真实PG/ASGI原链8授权/13拒绝、六业务表读不写/真实状态与版本/原发布通过，条件请求撤销Admin401。首次脚本成功门槛误填10已据完整矩阵改精确8/13，保失败说明。
+- Impact：无本轮Migration/依赖/权限变化、未接Windows组合；撤Router可选接线回滚，其他Owner/完整Jobs/If-Match/正式环境/浏览器/完整包/Gate待。下一A03 Windows显式装配后Audit POST。
+
 ## DEC-20260927-260
 
 - Precode：JOB-01-A02-P01/CR-JOB-002，冻结API-01明确强v<lock_version>，发现Job缺字段后先Schema版本，不发布hash/弱ETag假兼容。
