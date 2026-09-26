@@ -3354,3 +3354,11 @@
 - Reason：首次partial IN_REVIEW之后可终态甚至升版下一轮，根/轮次当前投影不是稳定首次响应。已有事件永久不可变，根首次计数可由round_no+前轮已封口lock_version之和+事件after_version还原，无需新快照表或改冻结HTTP。
 - Impact：内部Ref/Repository与测试调整，无Schema/API/角色/依赖变更；旧内部对象未公开，外部收据尚未创建，不需数据迁移。非命令STARTED/COMPLETED事件拒作重放Ref，跨项目/Actor/轮次绑定在后续入口继续核验。
 - Rollback：不装配受权入口，保留已提交事件和审计；无删除或原冻结内容覆盖。
+
+## DEC-20260926-184
+
+- Date：2026-09-26；WBS：RVW-02-A09-P02。
+- Decision：Project增加REVIEW_DECIDE四成员必要权限与REVIEW_WITHDRAW PM写策略，assigned reviewer和实际Subject权另验；复用Auth共享Session/CSRF。PROJECT→Review根→固定轮次→receipt，完成指向不可变命令事件的200收据；重放重验当前固定旧版访问，不再次consume/Audit或要求根仍旧版本。只识别实际40P01整UOW最多三次，其他失败拒绝。
+- Reason：角色不等于具体批准权，不能因旧receipt绕过撤权；首次结果不受后来终态/版本影响。恢复须在全部rollback后，不能只重跑INSERT。跨真实Owner锁序仍待，不以合成PASS声明全部路径无死锁。
+- Impact：内部受权命令/窄重放Port/现有Policy实现，无Schema/API/新角色/依赖变化；未知Owner关闭，不装配HTTP。
+- Rollback：不注册内部入口，保留事件/审计/receipt，关闭新操作但不删历史。

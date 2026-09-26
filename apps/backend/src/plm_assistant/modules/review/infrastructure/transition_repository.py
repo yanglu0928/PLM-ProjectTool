@@ -11,6 +11,7 @@ from ..domain.round_progress import ReviewRoundState, ReviewRoundProgress, _uuid
 
 class SqlAlchemyReviewTransitionRepository:
     _session = staticmethod(SqlAlchemyReviewStartRepository._session)
+    is_retryable_deadlock = staticmethod(SqlAlchemyReviewStartRepository.is_retryable_deadlock)
 
     def lock_transition_context(self, tx, *, project_id, review_id, round_id):
         session, root = self._session(tx), _tables[0]

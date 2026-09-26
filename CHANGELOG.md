@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/RVW-02-A09-P02 新增内部受权幂等决定/撤回，当前Session/CSRF/Project必要角色+assigned或PM、具体Owner检查、不可变事件receipt与旧版访问重验；重放不再次消费/审计，实际40P01整UOW最多三次。Windows11后端765项无失败（2项环境跳过），隔离权限/并发/异载荷冲突/撤权与消费/Audit/receipt全回滚、真实死锁恢复/相关回归/开发wheel PASS。无Migration/API/新角色/依赖变化，需0035，升级无新动作；Project新增两项冻结操作必要策略。Owner/License合成，无HTTP/实际客户批准或正式包，Server2025未验、Debian13暂不验证。
+
 - 2026-09-26：`0.1.0.dev0`/RVW-02-A09-P01 内部首次结果增加不可变命令event_id，历史Ref查询用决定前缀/完整集合/前轮封口计数准确还原首次状态、版本与时间，不受当前终态或后续Round影响。Windows11后端757项无失败（2项环境跳过），隔离数据库历史/Scope/非命令拒绝/读无写、决定撤回/受权送审回归及开发wheel PASS。无Migration/API/角色/依赖变化，需0035，升级无新动作；旧内部DTO未公开、外部收据尚未创建，不需数据迁移。P02受权幂等/实际Owner/批准/HTTP/正式包未完成，Server2025未验、Debian13暂不验证。
 
 - 2026-09-26：`0.1.0.dev0`/RVW-02-A08 增加可信调用方同事务决定/撤回 owned 持久化、固定历史重核、完整集合终态与真实 Audit；Owner 前后锁核验/终态消费/消费后重核，任一失败调用方整事务 rollback。Windows 11 后端751项无失败（2项环境跳过），隔离数据库原因/历史/并发单终态及消费/Audit故障全回滚、0035/送审回归和开发wheel PASS。无新增Migration/API/角色/依赖，需0035，升级无新动作。不自建UOW/commit/receipt/鉴权，Owner合成，真实客户批准/受权命令/HTTP/正式安装包未完成，Server2025未验、Debian13暂不验证。

@@ -3,7 +3,7 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 2：Platform Core|
-|Current WBS|`RVW-02-A09-P01 不可变首次决定/撤回结果`（事件 Ref/历史前缀/原始状态及计数还原 PASS；P02 受权幂等入口与实际 Owner 待实施）|
+|Current WBS|`RVW-02-A09-P02 受权幂等决定/撤回`（真实Session/Project/assigned或PM/owned/Audit/receipt与死锁恢复PASS；Owner/License合成，实际业务批准未验）|
 |Current Status|PHASE_1_COMPLETE / DOC_03_A03_P04_P04_PRECONDITION_BLOCKED / DOC_02_A02_P01_INTERNAL_PASS / DOC_02_A02_P02_PRECONDITION_BLOCKED / DOC_03_A04_A03_P04_P03_CONTENT_HTTP_PASS / DOC_03_A04_A04_P01_JOB_SCHEMA_PASS / DOC_03_A04_A04_P02_JOB_LEASE_PASS / DOC_03_A04_A04_P03_OUTBOX_PASS / DOC_03_A04_A04_P04_P01_PARSE_QUEUE_PASS / DOC_03_A04_A04_P04_P02_COMMIT_INTERNAL_PASS / DOC_03_A04_A04_P04_P03_P01_ABORT_STATE_PASS / DOC_03_A04_A04_P04_P03_P02_PRECONDITION_BLOCKED / DOC_03_A04_A04_P04_P04_A01_FINALIZE_HTTP_PASS / DOC_03_A04_A04_P04_P04_A02_WINDOWS_COMPOSITION_PASS / DOC_03_A04_A04_P04_COMMIT_ABORT_IN_PROGRESS / DOC_01_A02_INTERNAL_PASS / DOC_01_A03_P01_CURSOR_PASS / DOC_01_A03_P02_HTTP_CONTRACT_PASS / DOC_01_A03_P03_HTTP_DB_PASS / DOC_01_A03_P04_WINDOWS_COMPOSITION_PASS / DOC_01_A04_P01_VERSION_INTERNAL_PASS / DOC_01_A04_P02_VERSION_CURSOR_PASS / DOC_01_A04_P03_VERSION_HTTP_CONTRACT_PASS / DOC_01_A04_P04_VERSION_HTTP_DB_PASS / DOC_01_A04_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P01_VERIFIED_SNAPSHOT_PASS / DOC_01_A05_P02_DOWNLOAD_SOURCE_PASS / DOC_01_A05_P03_PREPARE_DOWNLOAD_PASS / DOC_01_A05_P04_DOWNLOAD_HTTP_PASS / DOC_01_A05_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P06_DISCONNECT_CAPACITY_BOUNDED_PASS / DOC_03_A04_A04_P04_P03_P02_A01_GATE_ADAPTER_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P01_CONTENT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P02_COMMIT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P03_ABORT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P01_READONLY_INSPECTION_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A01_STORAGE_STEP_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A02_INTERNAL_CLEANUP_PASS / PLT_02_A07_P05_A09_CEREMONY_PENDING / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
 |Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03、DOC-03-A01、DOC-03-A02（限定范围）、DOC-03-A03-P01～P03（P03 内部合成验证）、DOC-03-A03-P04-P01～P03（内部合成验证）、DOC-03-A04-A01（Schema 验证）、DOC-03-A04-A02（内部合成验证）、DOC-01-A01、DOC-02-A01、DOC-02-A02-P01（内部合成验证） PASS|
@@ -13,8 +13,8 @@
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，DM-02 License 授权粒度经用户批准 CR-LIC-001 修订|
 |DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`；增量至 `20260926_0035` 撤回原因（CR-RVW-002）、0034 Review 八表（CR-RVW-001）、0033 GateItem 固定 Checklist 记录关联（CR-WFL-004）、0032 Checklist 记录、0031 Transition/Gate（CR-WFL-003）、0030 Workflow（CR-WFL-002）、0029 TraceLink、0028 ParseRecord、0027 Evidence 与 0001～0026 历史保留|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
-|Test Summary|RVW-02-A09-P01 Windows 11/Python 3.13 后端757项无失败（2项环境跳过）；隔离PostgreSQL事件Ref在终态/后续轮次保持首次状态/计数/时间/Actor、历史前缀/Scope/非命令拒绝与读无写、既有决定撤回/受权送审回归及开发wheel PASS。本轮Owner合成，无新授权/receipt/HTTP/实际批准/Gate证明|
-|Next WBS|RVW-02-A09-P02 当前Session/CSRF/Project/assigned reviewer或PM权限与持久幂等决定/撤回内部入口，收据引用固定命令事件并重验当前旧版访问；完整Scope保留。缺真实Owner不挂载HTTP；发行Gate/Server2025待验证，Debian13暂不验证|
+|Test Summary|RVW-02-A09-P02 Windows11/Python3.13后端765项无失败（2项环境跳过）；隔离PostgreSQL真实Session/CSRF/Project/assigned或PM、并发不可变重放/异载荷冲突/撤权、owned/Audit/receipt/合成消费故障全回滚、实际40P01整事务重试；固定Ref/可信命令/送审回归与开发wheel PASS。Owner/License合成，无HTTP/实际客户批准/Gate证明|
+|Next WBS|RVW-02-A10 Review公开接线前置与Phase2依赖审计：确认实际Owner/完整状态投影/历史读取/公开合同缺口；不以合成Owner解锁业务或跨Gate，转可独立Platform Core任务。完整Scope保留；发行Gate/Server2025待验证，Debian13暂不验证|
 
 ## 自动执行策略
 
@@ -24,6 +24,8 @@
 - GitHub：允许在当前 Scope 和正确分支内自动 fetch、commit、push；禁止 force push、直接提交 main、覆盖未知远端修改或提交 Secret/客户数据。
 
 ## 最近检查点
+
+- RVW-02-A09-P02 已接当前Session/CSRF/Project角色、assigned reviewer或PM、不可变事件receipt与当前历史版本Owner重放权限；新命令完整结构/Audit/receipt同事务，消费/审计/收据失败全回滚；真实40P01整UOW限次恢复。无实际业务Owner/客户资格或正式License信任源，不挂HTTP、不标Gate通过。
 
 - RVW-02-A09-P01 已加入不可变命令事件Ref，用历史决定前缀/完整集合与前轮封口计数还原首次响应，不拿当前终态或根版本替代旧响应；后续新Round不改变旧结果，Scope/非STARTED或COMPLETED命令引用明确。查询不写库；权限/receipt入口与实际Owner仍待。
 

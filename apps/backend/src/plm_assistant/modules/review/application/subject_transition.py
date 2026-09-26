@@ -90,3 +90,12 @@ class ReviewSubjectTransitionPort(Protocol):
         A marker UUID/None response alone does not prove these operations happened.
         """
         ...
+    def require_transition_replay_access_in_transaction(self, tx: object, *, actor_id: UUID,
+                                                      review: object, result: object) -> None:
+        """Recheck CURRENT access to the result's fixed historical version.
+
+        No new qualification/approval/lock acquisition/release; old business
+        eligibility is not current access. Raise when unknown or denied, never
+        return a bool/UUID as proof. Caller separately rechecks Session/Project.
+        """
+        ...
