@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260926-222
+
+- Date/WBS：2026-09-26 / AUD-03-A06-A04-P03-A07-P02；P01技术续租前置PASS。
+- Decision：Audit新内部WorkerHeartbeat继承原capture检查以保User-first锁序/原Root/受理pair/current Lease，显式注入Jobs caller-UOW renewal后再授权/验期限commit；保持原三stage，无新增权限/Schema/API/依赖，不把Lease当授权，不挂HTTP或进行文件I/O。
+- Evidence：5unit/973后端无失败（2环境跳过），真实PG双Scope所有原stage、13表源历史无写、User/PM/部署角色/License/错Worker/跨Root误绑/终态取消/实际到期/真实接管拒旧代与新代续期、renew写后故障和后验许可拒绝回滚，原发布/wheel通过。
+- Risk/rollback：只证明短事务心跳，非周期调度/长任务运行；原死锁重试复用但本轮未新增独立真死锁注入。撤未装配服务保历史；Next有界协调/stop/失败传播/发布竞争，正式材料/三平台/质量/Gate/可用包仍待。
+
 ## DEC-20260926-221
 
 - Date/WBS：2026-09-26 / AUD-03-A06-A04-P03-A07-P01。
