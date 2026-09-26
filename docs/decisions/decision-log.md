@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260926-218
+
+- Date/WBS：2026-09-26 / AUD-03-A06-A04-P03-A06-P01。
+- Decision：先登记CR-AUD-003和非Breaking契约，保64cdf09；新增opt-in PROJECT/DEPLOYMENT成功结果详情，不复用普通DocumentVersion或静态URL，不序列化内部DTO/manifest。当前Session/License/实际PM或部署Admin由P03-A05真实源服务重核，路由二次验证坐标并显式安全投影。
+- Evidence：4新契约测试/955后端无失败（2环境跳过）、真实PG双Scope已发布260条来源和当前权限、跨范围/Admin旁路/License拒绝及无业务写、旧原子发布回归/wheel通过。无Migration/依赖，默认404，未挂生产组合。
+- Risk/rollback：移除opt-in路由即可，无历史删除；元数据不是物理完好证明，下载流/断连取消限额/P03装配/正式账户/三平台/Gate/可用包仍待。子任务分项验收不缩减原交付Scope。
+
 ## DEC-20260926-217
 
 - Date：2026-09-26；WBS：AUD-03-A06-A04-P03-A05。

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A06-P01按CR-AUD-003增加两项可选审计成功结果详情GET，当前Session/License/Scope实际来源+安全投影，无路径/内部manifest泄漏；原冻结API保留、默认404。4新契约/真实PG双Scope权限与无业务写及原子发布回归PASS；955后端无失败（2环境跳过）、开发wheel成功。Windows11验证，无Migration/依赖，head0042、无需数据升级；卸载路由保留历史可回滚。内容响应/生命周期/生产装配/正式账户/三平台/性能/质量/Gate与可用安装包待，License合成。
+
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A05增加当前Session/Scope下的成功导出来源读取与Document受控私有快照，原Job成功/结果/AVAILABLE来源核验、copy/hash在UOW外并返回前再次授权，坏文件最小受权Audit/保原历史。真实双Scope/跨范围拒绝/复制后Session撤销close、新PM读停用提交者历史PASS；951后端无失败（2环境跳过），单独Storage层128MiB物理Hash与普通100MB保持、旧下载/恢复回归/wheel成功。无Migration/API/依赖，head0042、无升级动作；HTTP/资源生命周期/正式账户/三平台/性能/Gate与可用安装包待，License合成。
 
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A04-P04增加真实来源恢复和内部成功重放，Document登记Hash/来源与原plan、Jobs成功Lease/Attempt只读核验，新Owner command-only重建；双Scope stage/final/实际linked恢复，成功并发无写、commit后合成确认丢失返回原结果、坏/缺来源/撤权取消过期拒绝，接管独立file保原capture通过。945后端无失败（2环境跳过）、发布/旧Jobs/File回归及开发wheel成功。无Migration/API/依赖，head0042、无升级动作；中断是合成非生产杀进程，License合成，HTTP/Session下载/心跳、正式账户/三平台恢复与可用包待。

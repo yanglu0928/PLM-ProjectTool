@@ -38,6 +38,7 @@ def create_app(
     project_read_router: APIRouter | None = None,
     workflow_read_router: APIRouter | None = None,
     audit_read_router: APIRouter | None = None,
+    audit_export_result_router: APIRouter | None = None,
     project_create_router: APIRouter | None = None,
     project_patch_router: APIRouter | None = None,
     project_archive_router: APIRouter | None = None,
@@ -115,6 +116,8 @@ def create_app(
         app.include_router(workflow_read_router)
     if audit_read_router is not None:
         app.include_router(audit_read_router)
+    if audit_export_result_router is not None:
+        app.include_router(audit_export_result_router)
     if project_create_router is not None:
         app.include_router(project_create_router)
     if project_patch_router is not None:
