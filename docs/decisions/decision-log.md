@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-254
+
+- Precode：Phase2/P06-P13-P04，CR-AUD-005，在real-deadlock进度先登记局部检测时间/反向锁环、连续3次与55P03矩阵；不模拟错误取代真实PG证据。
+- Decision：只验证脚本协调原UOW回滚后竞争释放，pg_blocking_pids核活阻塞；原真实分类器/3次上限不改，Worker生产timeouts保持原值。
+- Evidence：双Scope6场景，8实际40P01（1+3各Scope）单重试成功/三次失败六表无写后同实例发布单Attempt/RELEASED/结果，2实际55P03非死锁/非SOURCE_REJECTED、无写失败后恢复；原发布回归通过。此前1125/2跳过保留，本轮不声称重跑unit/wheel。
+- Impact/rollback：无生产/API/Migration/依赖/升级，撤脚本；耗尽坏源/Acceptance真实故障/复杂Lease/全局公平待，CR/正式材料/完整包/Gate未关闭。下一P13-P05耗尽坏源影响核查。
+
 ## DEC-20260927-253
 
 - Precode：Phase2/P06-P13-P03-A02，CR-AUD-005，先记录source-admission进度，原claim入口/API错误码保留，只接明确原源分类与技术诊断。

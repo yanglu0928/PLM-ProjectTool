@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/P06-P13-P04新增真实反向锁序验证：双Scope共8实际40P01，单死锁有界重试成功、连续3死锁严格上限失败且六表无写，同实例释放竞争后单Attempt/RELEASED Lease/结果；2实际55P03不是死锁/坏源，失败无写后恢复。原发布回归通过，Windows11，仅验证脚本/文档，无生产代码/API/Migration/依赖/升级，撤脚本回滚；未重跑未变unit/wheel。Acceptance实际故障/耗尽坏源/复杂Lease/长期公平/正式材料/SCM/完整包/Gate待。
+
 - 2026-09-27：`0.1.0.dev0`/P06-P13-P03-A02后台显式坏来源分类与有界游标推进，原claim默认入口/对外AUDIT_UNAVAILABLE保留；SOURCE_REJECTED不写坏任务/不猜终态，Loop poll和拒绝计数、CLI仅数量诊断。6新unit/1125通过（2既有跳过），实际PG双Scope坏引用/缺Root/错pair六表无写拒绝后正常任务发布，恢复测试来源后原任务可发布；原确认恢复/真实Windows CLI外部停止回归和wheel633740通过。Windows11，无Migration/API/依赖/升级，撤显式接线回滚。Acceptance真实故障矩阵/耗尽坏源/复杂Lease/新版deadlock/全局公平/正式材料/完整包/Gate待。
 
 - 2026-09-27：`0.1.0.dev0`/P06-P13-P03-A01新增严格内部候选游标/只锁单候选scan_next，明确格式/零UUID引用错误分类，不返回原payload，原peek/reserve保留。3新unit/1119通过（2既有跳过），实际PG双Scope跨两坏ref到正常候选/末尾且六表无写、恢复来源后实际发布与原回归通过，wheel632733/SHA见进度。Windows11，无Migration/API/依赖/升级，撤新Port回滚。尚未接后台循环、Root/pair分类/诊断/真实deadlock未验，坏源整体仍FAIL/完整包/Gate待。
