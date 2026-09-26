@@ -25,13 +25,11 @@ else:
     outcome=f.t.executor.execute.return_value
     def execute(command):
         print('ACTIVE',flush=True)
-        deadline=monotonic()+10
-        while not released.wait(.05):
-            assert monotonic()<deadline
+        assert released.wait(10)
         return outcome
     f.t.executor.execute.side_effect=execute
-with audit_worker_signals(loop):
-    print('READY',flush=True);started=monotonic();result=loop.run()
+with audit_worker_signals(loop) as stop_requested:
+    print('READY',flush=True);started=monotonic();result=loop.run(stop_requested=stop_requested)
 assert result.reason=='STOPPED' and signal.getsignal(signal.SIGBREAK) is before
 if sys.argv[1]=='idle':assert result.executed==0 and monotonic()-started<5
 else:

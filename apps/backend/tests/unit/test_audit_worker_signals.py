@@ -35,6 +35,20 @@ class WorkerSignalsTests(TestCase):
         self.assertEqual(run_audit_worker_process(self.loop,max_steps=1).reason,'LIMIT')
         self.assertIs(signal.getsignal(signal.SIGINT),previous)
 
+    def test_received_signal_no_reclaim_even_when_bridge_not_scheduled(self):
+        from unittest.mock import Mock
+        dormant=Mock(ident=1)
+        dormant.is_alive.return_value=False
+        outcome=self.t.t.executor.execute.return_value
+        def execute(command):
+            signal.getsignal(signal.SIGINT)(signal.SIGINT,None)
+            return outcome
+        self.t.t.executor.execute.side_effect=execute
+        with patch.object(adapter,'Thread',return_value=dormant):
+            result=run_audit_worker_process(self.loop,max_steps=3)
+        self.assertEqual((result.reason,result.executed),('STOPPED',1))
+        self.t.t.admission.claim_next.assert_called_once()
+
     def test_non_main_thread_and_nested_adapter_closed(self):
         with ThreadPoolExecutor(max_workers=1) as pool:
             with self.assertRaises(RuntimeError):pool.submit(run_audit_worker_process,self.loop,max_steps=1).result(timeout=2)

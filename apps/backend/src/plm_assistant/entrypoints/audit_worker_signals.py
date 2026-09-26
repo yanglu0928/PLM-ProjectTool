@@ -24,7 +24,7 @@ def audit_worker_signals(loop):
             previous=signal.getsignal(number)
             signal.signal(number,handler);installed.append((number,previous))
         bridge=Thread(target=relay,name='plm-audit-stop-relay',daemon=False);bridge.start()
-        yield
+        yield lambda: requested[0]
     finally:
         halt.set()
         if bridge is not None and bridge.ident is not None:
@@ -41,5 +41,6 @@ def audit_worker_signals(loop):
 def run_audit_worker_process(loop,*,max_steps=None):
     if max_steps is not None and (type(max_steps) is not int or not 1<=max_steps<=100000):raise ValueError('Bounded step count required')
     try:
-        with audit_worker_signals(loop):return loop.run(max_steps=max_steps)
+        with audit_worker_signals(loop) as stop_requested:
+            return loop.run(max_steps=max_steps,stop_requested=stop_requested)
     except Exception:raise RuntimeError('Audit worker process unavailable') from None

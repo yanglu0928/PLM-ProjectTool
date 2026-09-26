@@ -47,12 +47,17 @@ class AuditExportWorkerLoop:
             if remaining<=0:return
             self._wake.wait(min(.05,remaining))
 
-    def run(self,*,max_steps=None):
+    def run(self,*,max_steps=None,stop_requested=None):
         if max_steps is not None and (type(max_steps) is not int or not 1<=max_steps<=100000):raise AuditExportWorkerError('VALIDATION_FAILED')
+        if stop_requested is not None and not callable(stop_requested):raise AuditExportWorkerError('VALIDATION_FAILED')
         if not self._lock.acquire(blocking=False):raise AuditExportWorkerError('AUDIT_HEARTBEAT_CAPACITY')
         steps=executed=swept=idle=released=0
         try:
             while max_steps is None or steps<max_steps:
+                if stop_requested is not None:
+                    requested=stop_requested()
+                    if type(requested) is not bool:raise AuditExportWorkerError('VALIDATION_FAILED')
+                    if requested:self.request_stop()
                 value=self._step.step()
                 if type(value) is not AuditExportStepOutcome:raise AuditExportWorkerError()
                 value.__post_init__();steps+=1

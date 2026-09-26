@@ -48,6 +48,17 @@ class WorkerLoopTests(TestCase):
         for seconds in (True,0,float('nan'),float('inf'),61):
             with self.assertRaises(ValueError):AuditExportWorkerLoop(step=self.t.step,poll_seconds=seconds)
 
+    def test_stop_probe_closed_before_claim(self):
+        for probe in (False,lambda:1,lambda:None):
+            with self.assertRaises(AuditExportWorkerError):self.loop.run(max_steps=1,stop_requested=probe)
+        def fail():raise RuntimeError('private source')
+        with self.assertRaises(AuditExportWorkerError) as cm:self.loop.run(max_steps=1,stop_requested=fail)
+        self.assertEqual(str(cm.exception),'AUDIT_UNAVAILABLE')
+        self.t.admission.claim_next.assert_not_called()
+        result=self.loop.run(stop_requested=lambda:True)
+        self.assertEqual(result.reason,'STOPPED')
+        self.t.admission.claim_next.assert_not_called()
+
     def test_short_signal_wait_segments_preserve_poll_deadline(self):
         self.t.admission.claim_next.return_value=None;self.loop._seconds=.15
         original=self.loop._wake.wait;self.loop._wake.wait=Mock(wraps=original)

@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-248
+
+- Precode：Phase2/P06-P12-B01，CR-AUD-004，P12-A已暴露停止桥接竞态；先记录aud-p06-p12-stop-boundary.md。
+- Decision：signal context提供精确bool只读Probe；Loop每次Step前正常栈request_stop，handler仍只置标志，保桥线程唤醒idle与原pending排空。无Schema/API/依赖变化。
+- Evidence：禁桥线程确定性1执行/1领取STOPPED、Probe非法/异常无claim；1113通过/2既有跳过；恢复原长阻塞外部CTRL_BREAK测试通过，开发wheel631428/SHA见进度。
+- Risk/rollback：内部扩展可撤，原冻结保留；不解决无限阻塞或尚未处理的信号；真实PG子进程/SCM/正式材料/完整包/Gate待。
+
 ## DEC-20260927-247
 
 - Precode：Phase2/P06-P12-A，输入CR-AUD-004/P10/P11；独立外部Console验证先记录于docs/progress/aud-p06-p12-external-console.md。

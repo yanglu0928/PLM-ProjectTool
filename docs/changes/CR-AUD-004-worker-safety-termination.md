@@ -62,3 +62,5 @@ P06-P10编码前signal/桥线程政策与Loop兼容偏差分别在progress记录
 P06-P11实施前进度记录License普通runtime与Worker有界runtime冲突；保旧函数，新显式Worker同固定product/machine/integrity/_assemble，不变签名/权益/信任根。Windows CLI固定账户来源无秘密参数，Application全静止接口保护dispose，活线程拒绝/不强杀。1111无失败（2跳过）、临时Windows Credential/Vault+真实PG缺正式包内公钥失败关闭/六表不写与构造DB释放；明确合成License下Windows工厂process adapter两Scope物理发布/当前撤权安全失败/stop及静止资源关闭、原发布/wheel通过。正式来源/外部Console/SCM/网络黑洞/未知恢复/公平/HTTP待，CR/Gate不关闭。
 
 P06-P12-A外部隐藏Console限定目标与发送器后CTRL_BREAK，可响应合成idle/active路径通过；1111通过/2跳过。长阻塞合成路径首次发生再次领取，保留失败，测试分段等待不代表生产修复。真实PG子进程/阻塞/桥接竞态继续P12-B；CR/Gate未关闭。
+
+P06-P12-B01先记录后修复已处理标志的桥接竞态：Loop每Step前显式只读Probe，在正常执行栈stop，最小handler与已知pending排空不变；1113通过/2跳过、禁桥线程1执行1领取、恢复长等待外部CTRL_BREAK单次排空与wheel通过。无限阻塞/尚未处理信号/真实PG子进程/SCM仍待，CR/Gate不关闭。
