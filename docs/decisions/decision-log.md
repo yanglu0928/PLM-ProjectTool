@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-268
+
+- Precode：Phase2/JOB-02-A04，A01～A03/0044与冻结API-01/03前置满足，详见cancel-http进度。只可选项目HTTP，无Admin/Schema/依赖/角色变化。
+- Decision：Jobs显式Owner registry分派仅当前许可/Session后读hint、关闭只读事务后Owner原同事务再授权/绑定；Audit Adapter请求原JobId事务，严格首次版本非None。200状态/强ETag来自不可变收据，实时另GET，拒绝旧None而非猜值。
+- Acceptance：严格JSON/Origin/Cookie/CSRF/Key/If-Match、默认/Admin404、真实PG权限/隔离/重放/版本/回滚。默认与Windows尚不装配，回滚撤可选入口保历史。结果待实际验证。
+- Evidence：1177无失败/2跳过，真实PG-ASGI当前Auth/Audit Owner取消、HTTP同Key并发仅一次Audit、实际Worker当前v3 vs首次重放v2、当前权限/隔离/None/版本/指纹拒绝十一表无写、快照后故障回滚及分派后实际撤权Owner写UOW拒绝；原A03/发布与wheel通过。Admin仅取消Router404，原GET同挂405但无POST入口，首组合测试预期修正事实且不新增stub。下一只Windows write挂项目取消，正式材料/全Owner/Gate待。
+
 ## DEC-20260927-267
 
 - Precode：Phase2/JOB-02-A03，前置A01/A02/0043及原授权/收据已验；CR-JOB-004在编码前登记。Audit owned最小版本快照ORM/0044/up/down，既有Audit事件仍唯一状态与Actor/Job来源，无API/依赖/角色变更。

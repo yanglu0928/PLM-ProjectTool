@@ -42,6 +42,7 @@ def create_app(
     audit_export_download_router: APIRouter | None = None,
     audit_export_submit_router: APIRouter | None = None,
     job_detail_router: APIRouter | None = None,
+    job_cancel_router: APIRouter | None = None,
     project_create_router: APIRouter | None = None,
     project_patch_router: APIRouter | None = None,
     project_archive_router: APIRouter | None = None,
@@ -127,6 +128,8 @@ def create_app(
         app.include_router(audit_export_submit_router)
     if job_detail_router is not None:
         app.include_router(job_detail_router)
+    if job_cancel_router is not None:
+        app.include_router(job_cancel_router)
     if project_create_router is not None:
         app.include_router(project_create_router)
     if project_patch_router is not None:
