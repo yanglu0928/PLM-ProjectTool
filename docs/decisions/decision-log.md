@@ -3068,3 +3068,15 @@
 |Reason|当前仅 DOC-02 Owner 具备事务内真实证明，冻结 API 项目用户角色明确；通用服务可由已注册 Owner 渐进接入，同时禁止未知 Owner 或无权路径。|
 |Impact|Trace 应用/Repository 和测试；无 Schema、公开 API、外部依赖变化。内部 Project 用户路径完成不代表 Trace 全部 Owner 或生产 API 完成。|
 |Rollback|不装配内部创建服务；原 TraceLink 历史保留，既有只读与无环 Guard 不变。|
+
+## DEC-20260926-149
+
+|字段|内容|
+|---|---|
+|Decision ID|DEC-20260926-149|
+|Date|2026-09-26|
+|WBS|WFL-01-A01-P01 Workflow 定义形状|
+|Decision|先建立不含默认业务内容的版本化 WorkflowDefinition 纯领域结构，只校验阶段/清单唯一键、有序阶段、非空 GatePolicy 引用与状态枚举；正式六阶段 key、每阶段 Checklist/Evidence/Review Policy 由后续可追溯业务配置设计确定，不在此任务硬编码或写库。|
+|Reason|冻结 DM-02 给出了结构和不变量，但 API2-R04 明确正式 stage/checklist 配置尚未冻结。把合理推断的清单写进生产种子会误判 Gate。|
+|Impact|workflow 领域模块和单元测试；无 Schema/API/依赖/正式业务数据变更。|
+|Rollback|移除尚未被持久层使用的纯领域定义，不影响历史数据。|
