@@ -3146,3 +3146,11 @@
 - Reason：安全字段与应用对象分离，防内部字段意外暴露/错误 Project 投影；冻结 GET 不要求 CSRF 写令牌，但必须可信 Host/Session 和真实项目授权。
 - Impact：可选 Router/create_app 注入及测试，无 Schema/依赖/Breaking API 变化。
 - Rollback：不注入 Router，保持 404；实例/历史不变。
+
+## DEC-20260926-158
+
+- Date：2026-09-26；WBS：WFL-01-A04-P03。
+- Decision：Windows 两种显式平台模式复用已验证只读服务与原信任源启动检查；默认/仅登录继续不挂载，无 Workflow 写接口。
+- Reason：GET 组合不应创造另一套密钥/授权来源，缺信任源不允许降级。
+- Impact：组合及隔离验证，无 Schema/依赖/Breaking API；正式信任源和实际 Gate 仍待。
+- Rollback：撤销 Router 装配，保留所有实例和审计。

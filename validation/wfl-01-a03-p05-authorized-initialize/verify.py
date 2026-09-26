@@ -3,6 +3,11 @@ import hashlib
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from threading import Event
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from types import SimpleNamespace
+from contextlib import ExitStack
+from unittest.mock import patch
 
 import psycopg
 from psycopg import sql
@@ -16,6 +21,18 @@ from plm_assistant.modules.auth.infrastructure.session_repository import SqlAlch
 from plm_assistant.modules.auth.infrastructure.password_issue_access import SqlAlchemyPasswordIssueAccess
 from plm_assistant.modules.auth.infrastructure.scrypt_password import ScryptPasswordHasher
 from plm_assistant.modules.workflow.api.read_workflow import create_workflow_read_router
+from plm_assistant.entrypoints.production_login import (
+    create_production_login_app, create_production_platform_app,
+    create_production_platform_write_app, ProductionLoginStartupError,
+)
+from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
+from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
+from plm_assistant.modules.project.api.member_list_cursor import MemberListCursorCodec
+from plm_assistant.modules.project.api.department_list_cursor import DepartmentListCursorCodec
+from plm_assistant.modules.document.api.document_list_cursor import DocumentListCursorCodec
+from plm_assistant.modules.document.api.version_list_cursor import VersionListCursorCodec
+from plm_assistant.modules.document.api.parse_list_cursor import ParseListCursorCodec
+from plm_assistant.modules.document.infrastructure.upload_token import HmacUploadTokenIssuer
 
 from plm_assistant.modules.auth.infrastructure.project_write_access import SqlAlchemyProjectWriteAccess
 from plm_assistant.modules.auth.infrastructure.project_read_access import SqlAlchemyProjectReadAccess
@@ -144,6 +161,48 @@ def main():
             with connect(name) as db:
                 assert db.execute("SELECT count(*) FROM plm.wfl_project_workflows").fetchone()[0] == 1
                 assert db.execute("SELECT count(*) FROM plm.aud_events WHERE action='WORKFLOW_INITIALIZED'").fetchone()[0] == 1
+            with TemporaryDirectory(prefix="plm-wfl-get-") as temporary_root, ExitStack() as patches:
+                settings = BootstrapSettings(data_root=Path(temporary_root), trusted_origins=("http://localhost",))
+                prefix = "plm_assistant.entrypoints.production_login."
+                patches.enter_context(patch(prefix+"read_database_url", return_value=url))
+                patches.enter_context(patch("plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services", return_value=SimpleNamespace(guard=guard)))
+                for function, codec in (
+                    ("create_windows_secret_list_cursor_codec", SecretListCursorCodec(b"q"*32)),
+                    ("create_windows_project_member_cursor_codec", MemberListCursorCodec(b"m"*32)),
+                    ("create_windows_project_department_cursor_codec", DepartmentListCursorCodec(b"d"*32)),
+                    ("create_windows_document_list_cursor_codec", DocumentListCursorCodec(b"l"*32)),
+                    ("create_windows_document_version_cursor_codec", VersionListCursorCodec(b"v"*32)),
+                    ("create_windows_document_parse_cursor_codec", ParseListCursorCodec(b"p"*32)),
+                ):
+                    patches.enter_context(patch(prefix+function, return_value=codec))
+                patches.enter_context(patch("plm_assistant.entrypoints.windows_secret_write.create_windows_secret_write_service", return_value=object()))
+                patches.enter_context(patch(prefix+"create_windows_document_upload_token_issuer", return_value=HmacUploadTokenIssuer(provider=SimpleNamespace(resolve_key=lambda _ref: b"u"*32), key_ref="document-upload-token-v1")))
+                for closed in (create_app(), create_production_login_app(settings)):
+                    with TestClient(closed, base_url="http://localhost") as client:
+                        assert client.get(path, headers=cookie()).status_code == 404
+                for factory in (create_production_platform_app, create_production_platform_write_app):
+                    with TestClient(factory(settings), base_url="http://localhost") as client:
+                        for index in (0,1,2,5):
+                            result = client.get(path, headers=cookie(index))
+                            assert result.status_code == 200, result.text
+                            assert result.headers["etag"] == '"v0"'
+                            assert result.json()["data"]["workflow_id"] == str(ids[0])
+                        assert client.get(path, headers=cookie(4)).status_code == 404
+                        assert client.get(f"/api/v1/projects/{projects[1]}/workflow", headers=cookie()).status_code == 404
+                        guard.enabled = False
+                        assert client.get(path, headers=cookie()).status_code == 403
+                        guard.enabled = True
+                        assert client.post(path+":start", headers=cookie()).status_code == 404
+                        assert client.post(path+":transition", headers=cookie()).status_code == 404
+                    for missing in ("license", "cursor"):
+                        target = "plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services" if missing == "license" else prefix+"create_windows_secret_list_cursor_codec"
+                        with patch(target, side_effect=RuntimeError("synthetic missing trust")):
+                            try: factory(settings)
+                            except ProductionLoginStartupError: pass
+                            else: raise AssertionError("platform opened without required trust source")
+                with connect(name) as db:
+                    assert db.execute("SELECT count(*) FROM plm.wfl_project_workflows").fetchone()[0] == 1
+                    assert db.execute("SELECT count(*) FROM plm.aud_events WHERE action='WORKFLOW_INITIALIZED'").fetchone()[0] == 1
             class WaitingRepository:
                 def get(self, tx, project):
                     entered.set()
@@ -189,6 +248,7 @@ def main():
             print("PASS: real Session/CSRF/project PM, cross-project/non-PM/admin/archived/revoked rejection, synthetic License denial, concurrent dedupe and Audit rollback; not HTTP or Gate")
             print("PASS: Workflow read snapshot, all four project roles, archived read, missing instance no initialization, cross-project/admin/session/License rejection; not HTTP")
             print("PASS: opt-in Workflow GET real Session/PostgreSQL HTTP, safe projection/ETag/no-store, four roles/archived and errors; synthetic License, not production composition/Gate")
+            print("PASS: both Windows explicit platform compositions Workflow GET, default/login and write routes closed, missing synthetic trust fail-closed; formal trust/Gate not verified")
         finally:
             if runtime is not None: runtime.dispose()
             admin.execute("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=%s AND pid<>pg_backend_pid()", (name,))

@@ -8,6 +8,6 @@
 - Header：ETag 为当前 Workflow 锁版本，例如 `"v0"`；Cache-Control 为 no-store。不返回内部 lock_version 列、ProjectId 副本、fingerprint、GatePolicy/ReviewPolicy 内部引用、数据库/存储定位或原文。
 - 错误：缺失/失效 Session 401；可信 Host 或 License 拒绝 403；无权/跨项目/缺实例 404；非法参数 400；内部服务/畸形或错误项目投影 503。所有错误保持注册错误包络，不返回 traceback、内部错误详情或资源内容。
 - 缺实例不自动初始化、不写审计、不推断当前进度；定义版本与锁版本不同。GET 描述当前存储状态，不证明客户 Review/Gate。
-- 当前仅 opt-in Router 与 create_app 注入点。默认应用/Windows 生产组合尚不挂载；写/start/transition 路径仍未实现，不能凭读 API 关闭 Workflow/Gate。
+- WFL-01-A04-P03 已挂入 Windows 显式 `--platform` / `--platform-write` 组合，复用当前 Session/项目授权/License 和既有信任源检查。默认应用/仅登录组合仍不挂载；Workflow 写/start/transition 路径仍未实现，不能凭读 API 关闭 Workflow/Gate。缺信任源时拒绝启动，不降级为无保护读取。
 
 Windows 11/Python 3.13 后端 641 项无失败（2 项既有符号链接环境跳过）；真实 PostgreSQL/Session HTTP 与白名单/拒绝边界、开发 wheel PASS。合成 License 不证明正式发行信任源；Server 2025 未运行、Debian 13 暂不验证。
