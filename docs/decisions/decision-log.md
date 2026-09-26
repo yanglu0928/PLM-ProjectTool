@@ -3178,3 +3178,19 @@
 - Reason：避免成功历史与实例状态脱节、事后补写快照，以及引用可变状态造成历史漂移。首次多表 trigger 字段错误经合法路径验证发现并修复，拒绝测试只接受预期约束错误。
 - Impact：三表 Schema/ORM/metadata/验证，无公开 API/权限/依赖改变；真实业务 Gate 和 Checklist 历史尚缺。
 - Rollback：空历史可 down；非空拒绝破坏性 down，不装配应用服务并保留事实。
+
+## DEC-20260926-162
+
+- Date：2026-09-26；WBS：WFL-01-A05-P01；CR：CR-WFL-004。
+- Decision：Checklist 当前投影与每次不可变记录链分离；首次 PENDING，后续受控更正不退回 PENDING，保留 supersedes/依据与两个乐观锁序列。FAIL 可表达不足；PASS/WAIVED 服务端证明，豁免不改写质量通过。暂不用循环 latest FK，按唯一 Item 版本解析当前记录。
+- Reason：覆盖当前值无法保留来源，更正又是补充资料/撤销依据后的必要闭环。旧非初态无可信链不能伪造回填。
+- Impact：当前只设计；两表增量与 Gate→记录关联分步登记，公开 API 字段/架构/依赖不改变。
+- Rollback：不装配记录命令，保留既有历史；未来非空 down 拒绝。
+
+## DEC-20260926-163
+
+- Date：2026-09-26；WBS：WFL-01-A05-P02；CR：CR-WFL-004。
+- Decision：记录快照为纯 frozen 值对象，保留首次/更正父与两个独立锁序列；FAIL 不造理由或来源，正向结果最小依据形状不当事实证明。UUID/UTC/bigint 检查失败使用安全统一异常；实际链与 Scope/批准由未来受权同事务服务负责。
+- Reason：在 ORM/写命令前固定不可变形状，不让错误版本或自引用进入持久层设计；不扩展冻结请求字段或把未注册 Owner 当可信。
+- Impact：仅 Domain/测试/文档，无 Schema/API/依赖/权限改变。
+- Rollback：不使用新对象，旧事实/历史不变。
