@@ -4,6 +4,7 @@ from .audit_export_enqueue import AuditExportJobRequest, AuditExportJobRef
 from .audit_export_complete import AuditExportJobCompletion
 from .lease import ClaimedJob, JobLeaseError
 from .lease_checkpoint import validate_checkpoint
+from .failure_proof import FailedJobProof
 
 ERROR_CODES = frozenset({'AUDIT_UNAVAILABLE','AUDIT_EXPORT_CONTENT_UNAVAILABLE',
     'AUDIT_EXPORT_LIMIT_EXCEEDED','AUTH_ACCESS_DENIED','RESOURCE_NOT_FOUND','LICENSE_OPERATION_DENIED',
@@ -25,6 +26,29 @@ class AuditExportJobFailure:
         if queue is None or leases is None:
             raise ValueError('Owned failure dependencies required')
         self._queue,self._leases=queue,leases
+
+    def assert_failed(self,transaction,*,request,refs,fencing_token,worker_ref,error_code):
+        """Only technical source verification; caller MUST verify owned Audit receipt."""
+        if type(request) is not AuditExportJobRequest or type(refs) is not AuditExportJobRef:
+            raise JobLeaseError('VALIDATION_FAILED')
+        try:
+            request.__post_init__();refs.__post_init__()
+            validate_checkpoint(job_id=refs.job_id,fencing_token=fencing_token,worker_ref=worker_ref)
+        except Exception:raise JobLeaseError('VALIDATION_FAILED') from None
+        if type(error_code) is not str or error_code not in ERROR_CODES:raise JobLeaseError('VALIDATION_FAILED')
+        try:
+            actual=self._queue.find_export(transaction,request=request)
+            if type(actual) is not AuditExportJobRef or actual!=refs:raise JobLeaseError('JOB_STORE_UNAVAILABLE')
+            actual.__post_init__()
+            proof=self._leases.check_failed(transaction,job_id=refs.job_id,fencing_token=fencing_token,
+                worker_ref=worker_ref,error_code=error_code)
+            if type(proof) is not FailedJobProof:raise JobLeaseError('JOB_STORE_UNAVAILABLE')
+            proof.__post_init__()
+            claim=AuditExportJobCompletion._claim(proof.claim,request,refs,fencing_token)
+            if claim.attempt_no>3 or proof.error_code!=error_code:raise JobLeaseError('JOB_STORE_UNAVAILABLE')
+            return proof
+        except JobLeaseError:raise
+        except Exception:raise JobLeaseError('JOB_STORE_UNAVAILABLE') from None
 
     def fail_current(self,transaction,*,request,refs,fencing_token,worker_ref,error_code,retryable,delay_seconds=0):
         if type(request) is not AuditExportJobRequest or type(refs) is not AuditExportJobRef:

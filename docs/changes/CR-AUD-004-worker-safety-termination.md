@@ -18,3 +18,5 @@
 P02首先实现固定不可重试原因AUTH_ACCESS_DENIED/RESOURCE_NOT_FOUND/LICENSE_OPERATION_DENIED/AUDIT_EXPORT_LIMIT_EXCEEDED/AUDIT_EXPORT_CONTENT_UNAVAILABLE的当前活代FAILED及SYSTEM审计；瞬时错误retry、取消、到期恢复、丢失提交确认独立待验。要求与执行器相同Supervisor的短事务静止锁防止本实例心跳重启；该锁不是多进程全局证明，其他进程靠真实Job/fence/Lease拒绝。调用者只能在主执行同步I/O已返回后调用；不会自动终止线程或磁盘I/O。已有成功/取消/过期/新代均拒绝且审计回滚。
 
 实施证据：P01 caller-UOW技术Port及P02终止Owner/静止锁已真实PG/临时Vault验证（详细进度/ADR011）；1004后端无失败（2环境跳过），开发wheel成功。撤权业务拒绝保持、最小SYSTEM失败Audit同事务、所有后置故障回滚/旧代终态拒改。仅终止Owner内部通过，剩余取消/瞬时retry/提交确认丢失及主循环未通过；不把CR整体或Gate标PASS。
+
+P03追加证据：失败提交确认丢失只读核验内部PASS，真实commit后raise、完整原pair/当前失败Lease-Attempt/唯一Audit源读取，多次八表无写，技术FAILED缺错重复审计拒绝；1008无失败（2环境跳过），原终止发布/wheel通过。取消/retry/执行器/主循环尚待，CR整体不标PASS。

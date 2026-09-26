@@ -10,10 +10,33 @@ from sqlalchemy.orm import Session
 
 from plm_assistant.modules.jobs.application.lease import ClaimedJob, JobLeaseError
 from plm_assistant.modules.jobs.application.lease_checkpoint import validate_checkpoint
+from plm_assistant.modules.jobs.application.failure_proof import FailedJobProof
 from plm_assistant.modules.jobs.infrastructure.orm import JobAttemptRow, JobLeaseRow, JobRow
 
 
 class SqlAlchemyJobLeaseRepository:
+    def check_failed(self,transaction,*,job_id,fencing_token,worker_ref,error_code):
+        """No mutation: current terminal generation ended while its lease was alive.
+
+        Expiry/exhaustion failure and historical attempts are not this receipt.
+        """
+        validate_checkpoint(job_id=job_id,fencing_token=fencing_token,worker_ref=worker_ref)
+        if type(error_code) is not str or not error_code:raise JobLeaseError('VALIDATION_FAILED')
+        session=self._session(transaction)
+        job=session.execute(select(JobRow).where(JobRow.job_id==job_id).with_for_update(of=JobRow)).scalar_one_or_none()
+        if (job is None or job.state!='FAILED' or job.fencing_token!=fencing_token
+                or job.lease_expires_at is not None or job.completed_at is None):raise JobLeaseError('STALE_LEASE')
+        lease=session.execute(select(JobLeaseRow).where(JobLeaseRow.job_id==job_id,
+            JobLeaseRow.fencing_token==fencing_token).with_for_update(of=JobLeaseRow)).scalar_one_or_none()
+        attempt=self._attempt(session,job_id,fencing_token)
+        if (lease is None or lease.state!='RELEASED' or lease.worker_ref!=worker_ref
+                or attempt.worker_ref!=worker_ref or attempt.attempt_no!=job.attempt_count
+                or not 1<=attempt.attempt_no<=job.max_attempts or attempt.error_code!=error_code
+                or attempt.completed_at!=job.completed_at
+                or not attempt.started_at<=job.completed_at<lease.lease_expires_at
+                or lease.acquired_at>job.completed_at):raise JobLeaseError('INCONSISTENT_LEASE')
+        return FailedJobProof(self._claim(job),error_code,job.completed_at)
+
     def check_succeeded(self, transaction: object, *, job_id: uuid.UUID,
                         fencing_token: int, worker_ref: str) -> ClaimedJob:
         """Read terminal success facts; never accept an expired ACTIVE lease as success."""

@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260926-228
+
+- Date/WBS：2026-09-26 / P04-P03-P03；CR-AUD-004/ADR011和实际原pair/同UOW失败Owner前置PASS；单一问题为提交确认丢失后的原失败只读证明，无安全权限扩张。
+- Decision：Jobs owned当前FAILED/RELEASED Lease/同Attempt错误与完成时间证明，Audit owned唯一原Scope/trace/actor/target/原因/前后状态及时间证明，当前SystemActor/同Supervisor静止锁前后核验。业务Owner不读Jobs私有表，不根据错误文字或单一FAILED猜成功，不重复审计/重写终态；接口未接执行器。
+- Evidence：4新unit/1008后端无失败（2环境跳过）、真实PG双Scope actual commit THEN lost confirmation返回原失败/Audit，多次八表无写，RUNNING/成功/错绑定原因/技术FAILED无审计/错重复审计拒绝，原终止发布回归/wheel通过。unit Mock声明失败修复重跑记进度；取消/到期verify新矩阵没有额外执行，不借旧Owner证据扩大声明。
+- Risk/rollback：无Schema/API/依赖，撤未装配核验保历史；Next取消安全Owner，再retry/执行器/主循环；生产材料/三平台/Gate/安装包待。
+
 ## DEC-20260926-227
 
 - Date/WBS：2026-09-26 / P04-P03-P02；CR-AUD-004先登记、V2.1/总控/API02/ADR010基线核验完成，Jobs原pair/current失败Port/受控SystemActor前置PASS。仅内部安全失败终止，不扩大License恢复面或系统业务角色。

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/P04-P03-P03增加Jobs owned FAILED/RELEASED Lease/Attempt只读证明与Audit owned唯一最小SYSTEM失败事件核验；原Root/pair、代次/Worker/Scope/trace/原因/完成时间及当前SystemActor都真实绑定，不猜STALE或单一FAILED、不commit/重复写Audit。4新unit/真实PG双Scope真正commit后确认丢失、多次八表无写、缺错重复Audit/错绑定或原因/成功拒绝，原终止发布回归PASS；1008项无失败（2环境跳过），开发wheel成功。Windows11，无Migration/API/依赖、0042，无升级，撤未装配核验保历史可回滚；取消/retry/执行器主循环、正式材料/三平台/质量/Gate/可用安装包待。
+
 - 2026-09-26：`0.1.0.dev0`/P04-P03-P02按CR-AUD-004/ADR011新增内部固定原因安全终止Owner和同Supervisor短静止锁；撤权不得继续业务，但真实当前SystemActor/原Root/pair/活Lease可同UOW最小失败Audit+FAILED，拒活线程/阻止重启。6新unit/真实PG-Vault双Scope撤权/许可、Audit与技术写后故障/identity丢失整体回滚/终态取消过期接管旧代拒改、实际活心跳拒绝及原发布回归通过；1004无失败（2环境跳过），开发wheel成功。Windows11验证，无Migration/API/依赖，0042，无数据升级，撤未装配Owner保历史回滚。瞬时retry/取消/确认丢失/执行器主循环及正式信任源/三平台/质量/Gate/可用安装包待。
 
 - 2026-09-26：`0.1.0.dev0`/P04-P03-P01新增Jobs事务内审计导出失败Port，严格原pair/当前Lease/固定错误码及三次retry上限，无selfcommit；5新unit/真实PG双Scope失败、接管拒旧代、终态取消过期拒改、真实Audit插入后caller异常整UOW回滚与原发布回归通过，998项无失败（2环境跳过），开发wheel成功。Windows11验证；无Migration/API/依赖，head0042，无升级，撤未装配Port可回滚保历史。CR-AUD-004先登记但安全终止Owner未实施；正式账户/三平台/质量/Gate/可用安装包待。
