@@ -54,6 +54,21 @@ class SqlAlchemyReviewSnapshotReadRepository:
         order = table.c.round_no if index == 1 else table.c.reviewer_id if index in (2, 3) else list(table.primary_key.columns)[0]
         return session.execute(query.order_by(order)).mappings().all()
 
+    def get_round_subject_version(self, transaction, scope, project_id, review_id, round_id):
+        """Locate immutable version under root lock, before acquiring Owner/round locks."""
+        session = self._session(transaction, scope, project_id, review_id, round_id)
+        if self.get_review(transaction, scope, project_id, review_id) is None:
+            return None
+        table = _tables[1]
+        version = session.execute(select(table.c.subject_version_id).where(
+            table.c.review_id == review_id, table.c.review_round_id == round_id,
+            table.c.scope == scope,
+            table.c.project_id.is_(None) if project_id is None else table.c.project_id == project_id,
+        )).scalar_one_or_none()
+        if version is not None and (type(version) is not UUID or not version.int):
+            raise ReviewSnapshotReadError()
+        return version
+
     def get_round(self, transaction, scope, project_id, review_id, round_id):
         session = self._session(transaction, scope, project_id, review_id, round_id)
         identity = self.get_review(transaction, scope, project_id, review_id)

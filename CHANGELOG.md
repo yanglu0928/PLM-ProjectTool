@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/RVW-01-A05 新增内部 PROJECT Review 读服务及 Project REVIEW_GET 锁读策略，真实 Session/当前有效成员+主题身份/固定旧版授权，未知 Owner 默认拒绝，无部署管理员/GLOBAL 旁路。Windows 11 后端 704 项无失败（2 项环境跳过），隔离 PostgreSQL 权限/撤权锁/固定历史/无 Review 写入、既有回归与开发 wheel PASS；Owner/License 为合成协议。无 Migration/公开 API/角色/依赖变化，需 0034，升级无新动作；真实 Owner/审批/HTTP/正式包未完成，Server 2025 未验、Debian 13 暂不验证。
+
 - 2026-09-26：`0.1.0.dev0`/RVW-01-A04 完成 Review 两层读授权/固定旧版权限与相对锁序设计，真实 Owner 缺失阻塞公开接线，转内部默认拒绝服务；仅文档，无新程序测试/Migration/API/依赖或升级动作。
 
 - 2026-09-26：`0.1.0.dev0`/RVW-01-A03 新增受控事务 Review 身份/固定轮次与 Subject 快照查询 Port、不可变 DTO 和 Repository，保留完整决定/撤回/固定来源观测，区分当前身份与历史结果，拒绝缺快照或版本异常。Windows 11 后端 692 项无失败（2 项环境跳过），隔离 PostgreSQL Scope/历史/无写入/共享锁、Review 0034/Workflow 回归与开发 wheel PASS。无 Migration/API/依赖改变；需既有 0034，升级无新动作。真实 Subject Owner/受权服务/客户资格/正式程序包未完成，Server 2025 未验、Debian 13 暂不验证。

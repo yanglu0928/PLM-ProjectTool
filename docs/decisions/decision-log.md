@@ -3250,3 +3250,11 @@
 - Reason：冻结契约要求受权成员与真实固定 Subject；共享旧轮次意见不能绕过当前访问限制。
 - Impact：设计内部读服务及 Project→Review→Owner→Round 相对锁序，不改 Schema/API/角色/依赖；真实 Owner 和跨模块并发验收仍待。
 - Rollback：保持公开路由关闭，不使用新服务，保留历史。
+
+## DEC-20260926-171
+
+- Date：2026-09-26；WBS：RVW-01-A05。
+- Decision：REVIEW_GET 同事务锁读四角色当前 Project 事实；内部服务独立要求 Owner 身份与固定旧版两次授权。先在已锁 Review 下定位不可变 Version，再 Owner 授权，最后读取完整 Round，避免先返回旧意见或改变既定相对锁序。
+- Reason：未知 Owner/仅持 ID/旧决定不授予访问；服务凭据和身份不得由客户端证明替代。真实业务 Owner 未具备时不装配 HTTP。
+- Impact：Project 新内部锁读策略、Review read service/Version 定位 Port 与单位/隔离测试；无数据库/API/角色/依赖变化。真实 Owner 锁及端到端授权未验证，License 合成拒绝不代表正式信任源通过。
+- Rollback：停用内部服务/移除非公开策略，保留 0034 历史和冻结 API。
