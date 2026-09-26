@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/RVW-01-A07 新增内部 PM Review identity 创建、REVIEW_CREATE 当前权限、Owner 默认拒绝、稳定创建 Ref 与同事务 Audit/通用幂等。Windows 11 后端 712 项无失败（2 项环境跳过），隔离 PostgreSQL 真实 Session/CSRF/Project/Audit/receipt、并发重放/异内容冲突/完整故障回滚/后续状态变化和归档撤权拒绝、既有回归与开发 wheel PASS。无 Migration/公开 API/角色/依赖变化，需 0034，升级无新动作；Owner/License 合成，真实送审/审批/HTTP/正式程序包未完成，Server 2025 未验，Debian 13 暂不验证。
+
 - 2026-09-26：`0.1.0.dev0`/RVW-01-A06 完成 Review identity 内部创建/固定 Owner 前置、DRAFT 与送审分离、不可变 Ref 幂等与同事务审计设计；仅文档，无新程序验收/Migration/API/依赖，升级无动作。真实 Owner/创建命令尚未完成。
 
 - 2026-09-26：`0.1.0.dev0`/RVW-01-A05 新增内部 PROJECT Review 读服务及 Project REVIEW_GET 锁读策略，真实 Session/当前有效成员+主题身份/固定旧版授权，未知 Owner 默认拒绝，无部署管理员/GLOBAL 旁路。Windows 11 后端 704 项无失败（2 项环境跳过），隔离 PostgreSQL 权限/撤权锁/固定历史/无 Review 写入、既有回归与开发 wheel PASS；Owner/License 为合成协议。无 Migration/公开 API/角色/依赖变化，需 0034，升级无新动作；真实 Owner/审批/HTTP/正式包未完成，Server 2025 未验、Debian 13 暂不验证。

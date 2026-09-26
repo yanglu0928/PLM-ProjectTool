@@ -28,6 +28,7 @@ POLICIES: dict[str, _Policy] = {
     "WORKFLOW_START": _Policy(MANAGERS, True),
     "WORKFLOW_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "REVIEW_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
+    "REVIEW_CREATE": _Policy(MANAGERS, True),
     "TRACE_LINK_CREATE": _Policy(frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
     "PROJECT_PATCH": _Policy(MANAGERS, True),
     "PROJECT_ARCHIVE": _Policy(MANAGERS, True),

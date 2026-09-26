@@ -3266,3 +3266,11 @@
 - Reason：冻结模型根绑定逻辑身份，轮次才绑定版本；目前通用收据不保存动态响应，根创建字段已不可变，可避免无必要的新 Schema。旧 Key 不能绕过现有授权，未知 Owner 不猜测。
 - Impact：创建前置设计，无新代码/Migration/API/角色/依赖；真实 Owner 和创建服务仍待。保持现有每主题可有多 Review、活动 Subject 锁唯一语义，不擅自新增业务唯一性。
 - Rollback：不装配创建服务，保留冻结版本/0034/历史。
+
+## DEC-20260926-173
+
+- Date：2026-09-26；WBS：RVW-01-A07。
+- Decision：PROJECT 创建强制当前 PM/ACTIVE/Session/CSRF 与明确 Owner proof，DRAFT 根和 REVIEW_CREATED Audit/通用 receipt 同事务提交；重放由根不可变创建字段重建 Ref，并要求当前 Owner 访问权，不重验原版本待送审状态。
+- Reason：身份创建不是送审，旧 Key 不能绕过撤权；原始创建 Ref 不含变化的 state/etag，可避免额外响应持久层。创建 version 只参与指纹，不误写为 Review 的 version Audit。
+- Impact：内部命令/owned Repository/Project 策略/单位与隔离验收，无 Migration/公开 API/角色/依赖变化；Owner/License 合成，不能标实际批准或身份锁 PASS。
+- Rollback：停用服务，保留 0034/不可变历史/审计/收据，禁止生产破坏性清理。

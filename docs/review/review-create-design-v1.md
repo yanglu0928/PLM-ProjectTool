@@ -8,7 +8,7 @@
 
 Owner 在同事务核验当前 Actor 对逻辑主题的管理权、固定版本真实归属与创建资格，保持身份/版本授权事实锁，返回绑定 actor/project/type/id/version 的窄结构及服务器 policy_code。未知 Owner/错误绑定/跨 Scope/缺版本/无资格/不可用拒绝；客户端不能用 owner_module、任意策略或 UUID 替代。Review 不读写业务 Owner 内部表。
 
-CREATE 的 version 是当次 Owner 前置校验输入，不是已经锁定的送审 Snapshot；Review 根仍按冻结 DM 只绑定逻辑主题。未来 START_ROUND 必须重新核验当次固定版本、政策兼容、真实确认人资格、来源/内容快照和真实 Owner 身份锁，不复用创建时观测作为批准或版本锁。输入 version 及 source binding 保留于命令指纹/安全审计引用，不保存正文或生成假 Evidence。
+CREATE 的 version 是当次 Owner 前置校验输入，不是已经锁定的送审 Snapshot；Review 根仍按冻结 DM 只绑定逻辑主题。未来 START_ROUND 必须重新核验当次固定版本、政策兼容、真实确认人资格、来源/内容快照和真实 Owner 身份锁，不复用创建时观测作为批准或版本锁。输入 version 参与命令指纹；创建审计绑定新 Review，不能把业务 Version 冒充 Review 根的版本。只有 START 的实际固定 Snapshot 才持久保存送审 Version/来源，不保存正文或生成假 Evidence。
 
 ## 幂等与事务
 
