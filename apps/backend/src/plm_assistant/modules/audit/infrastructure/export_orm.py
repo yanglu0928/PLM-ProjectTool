@@ -78,3 +78,30 @@ acceptances = sa.Table("aud_export_acceptances", Base.metadata,
 
 class AuditExportAcceptanceRow(Base):
     __table__ = acceptances
+
+
+render_attempts = sa.Table("aud_export_render_attempts", Base.metadata,
+    _col("render_attempt_id", _id, primary_key=True, server_default=sa.text("uuidv7()")),
+    _col("export_id", _id), _col("job_id", _id), _col("fencing_token", sa.BigInteger()),
+    _col("attempt_no", sa.Integer()), _col("worker_ref"), _col("file_id", _id),
+    _col("member_count", sa.BigInteger()), _col("membership_hash"), _col("membership_version"),
+    _col("created_at", _time, server_default=sa.text("statement_timestamp()")),
+    sa.PrimaryKeyConstraint("render_attempt_id", name="pk_aud_export_render_attempts"),
+    sa.ForeignKeyConstraint(["export_id"], ["plm.aud_export_captures.export_id"], name="fk_aud_render_attempts__capture"),
+    sa.ForeignKeyConstraint(["export_id"], ["plm.aud_export_acceptances.export_id"], name="fk_aud_render_attempts__acceptance"),
+    sa.UniqueConstraint("job_id", "fencing_token", name="uq_aud_render_attempts__job_fence"),
+    sa.UniqueConstraint("file_id", name="uq_aud_render_attempts__file"),
+    sa.CheckConstraint("""render_attempt_id<>'00000000-0000-0000-0000-000000000000'::uuid
+ AND export_id<>'00000000-0000-0000-0000-000000000000'::uuid
+ AND job_id<>'00000000-0000-0000-0000-000000000000'::uuid
+ AND file_id<>'00000000-0000-0000-0000-000000000000'::uuid
+ AND fencing_token>0 AND attempt_no>0 AND member_count BETWEEN 0 AND 100000
+ AND worker_ref ~ '^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$'
+ AND membership_hash ~ '^[0-9a-f]{64}$'
+ AND membership_version='CAPTURE-MEMBERSHIP-V1' AND isfinite(created_at)""", name="ck_aud_render_attempts__shape"),
+    sa.Index("ix_aud_render_attempts__export_created", "export_id", "created_at"),
+)
+
+
+class AuditExportRenderAttemptRow(Base):
+    __table__ = render_attempts

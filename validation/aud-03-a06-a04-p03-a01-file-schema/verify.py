@@ -10,6 +10,7 @@ from psycopg import sql
 from alembic import command, op
 from alembic.autogenerate import compare_metadata
 from alembic.migration import MigrationContext
+from alembic.script import ScriptDirectory
 from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
@@ -147,7 +148,7 @@ def main():
                     with patch("alembic.op.execute",side_effect=locked): command.downgrade(cfg,"20260926_0039")
                 except RuntimeError as exc: assert "Audit file history exists" in str(exc)
                 else: raise AssertionError("Audit history lost on downgrade")
-                assert db.execute("SELECT version_num FROM plm.alembic_version").fetchone()==("20260926_0040",)
+                assert db.execute("SELECT version_num FROM plm.alembic_version").fetchone()==(ScriptDirectory.from_config(cfg).get_current_head(),)
                 assert tuple(db.execute("SELECT * FROM plm.doc_file_objects ORDER BY file_object_id"))==history
             print("P03-A01 PASS: actual empty/old DOCUMENT data up/down/reup/ORM parity; Audit Scope/usage/identity/state/history guards; actual same-PROJECT Upload/Version misbinding rejected and ordinary binding preserved; actual downgrade lock/history refusal. Synthetic owner UUID, no Export/Lease/File/HTTP delivery proof.")
         finally:

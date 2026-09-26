@@ -11,6 +11,7 @@ from psycopg.types.json import Jsonb
 from alembic import command,op
 from alembic.autogenerate import compare_metadata
 from alembic.migration import MigrationContext
+from alembic.script import ScriptDirectory
 from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
@@ -93,7 +94,7 @@ def main():
                     with patch("alembic.op.execute",side_effect=guarded_execute):command.downgrade(cfg,"20260926_0038")
                 except RuntimeError as exc:assert "history exists" in str(exc)
                 else:raise AssertionError("cancellation history lost on downgrade")
-                assert db.execute("SELECT version_num FROM plm.alembic_version").fetchone()[0]=="20260926_0039"
+                assert db.execute("SELECT version_num FROM plm.alembic_version").fetchone()[0]==ScriptDirectory.from_config(cfg).get_current_head()
                 assert tuple(db.execute("SELECT * FROM plm.job_jobs ORDER BY job_id"))==history
             print("AUD-03-A06-A02-P02-A01 PASS: actual empty/old-data upgrade/down/re-up/parity/no backfill; grouped User/reason/time/state constraints; first cancellation immutable including identity/delete/truncate/terminal; down real write lock and history refusal. Synthetic metadata transitions, NOT authorized cancel/ack/expiry recovery/Worker/API")
         finally:

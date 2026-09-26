@@ -58,6 +58,14 @@ P03-A01：FileObject用途/归属及DocumentVersion/Upload防误绑Schema，真�
 
 ## 当前结果
 
+2026-09-26 P03-A03-P01执行结果：0041不可变计划/ORM、实际own受理与封口源、时点/形状/原Job/唯一/真并发单代次计划/新代次独立file/历史down拒绝与实际写锁PASS；904项无失败（2环境跳过）、0040/0039/文件元数据真实回归和开发wheel PASS。Job/Lease/File refs合成，实际当前Worker计划命令/唯一成功结果/发布/HTTP仍待，CR整体IN_PROGRESS。无生产迁移；详见对应进度。
+
+### P03-A03-P01实施前精化：不可变渲染尝试
+
+新增0041 `aud_export_render_attempts`，Audit owned子记录，不新增公开Root/API。字段render_attempt_id、export_id、原job_id、fencing_token、attempt_no、worker_ref、唯一file_id、固定member_count/membership_hash/membership_version、created_at。每(job_id,fencing_token)最多一个尝试与file_id；同代数据库重试读回原计划，不另换路径，部分写失败走Job失败/重试取得新代次，不在同租约内覆盖旧文件。新代次独立file_id复用原capture。file_id在写入前预分配，是跨Owner opaque Ref，不要求尚未创建的FileObject存在。
+
+插入锁own Export根，要求实际acceptance/capture已存在，原job_id一致、源count/hash/version精确一致、时点有限且不早于请求/受理/封口；FK只连own capture/acceptance。UUID非零、token正BigInt、attempt正int、worker ASCII受控code。无私有Jobs/Document表读写，不把这些列/FK当真实当前Lease/Worker证明。UPDATE/DELETE/TRUNCATE全拒绝；0041空新表可down，先实际ACCESS EXCLUSIVE锁后检查，任何计划历史拒绝降级；离线down禁止，不回填旧Root或推测文件计划。完整caller当前授权/claim/Root/原pair/Lease→登记计划与后验在P02实现，未做不得标PASS。成功结果/manifest的独立Schema留下一分项，不用计划标成功。
+
 2026-09-26 P03-A02-P02执行结果：Document owned caller-UOW元数据登记/查读/可用转换Port，原文件身份/内容与单一状态来源重核、真并发单次变化、实际共享锁、真实文件与post-Audit整UOW回滚PASS；902项无失败（2环境跳过）、0040与旧上传回归/开发wheel PASS。无新Schema/API。Export UUID/可信caller合成，未接真正Root/Lease/Job/唯一结果或下载；CR整体IN_PROGRESS，详见对应进度。
 
 2026-09-26 P03-A02-P01执行结果：Document Application存储坐标/Hash Port与独立generated/audit Adapter，真实私有临时写/flush/fsync/Hash读回/不覆盖提升和final/实际linked恢复、损坏与扫描隔离PASS。新增14项，后端897项无失败（2环境跳过）、P01真实固定源内存字节与旧FilePublish回归/开发wheel PASS。无新Schema/API/生产操作。仅物理原语，元数据公共Port/真实Worker发布/下载待；ENOSPC模拟、未作满盘/空间性能/三平台证明。详见对应进度；整体IN_PROGRESS。

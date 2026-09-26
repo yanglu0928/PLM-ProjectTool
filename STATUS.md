@@ -3,7 +3,7 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 2：Platform Core|
-|Current WBS|`AUD-03-A06-A04-P03-A02-P02 文件元数据Port`（真实文件/元数据/状态来源/共享锁与caller-Audit原子回滚PASS；完整Worker发布待）|
+|Current WBS|`AUD-03-A06-A04-P03-A03-P01 渲染尝试Schema`（0041/源绑定/单代次单文件/历史保护PASS；实际Worker计划与结果发布待）|
 |Current Status|PHASE_1_COMPLETE / DOC_03_A03_P04_P04_PRECONDITION_BLOCKED / DOC_02_A02_P01_INTERNAL_PASS / DOC_02_A02_P02_PRECONDITION_BLOCKED / DOC_03_A04_A03_P04_P03_CONTENT_HTTP_PASS / DOC_03_A04_A04_P01_JOB_SCHEMA_PASS / DOC_03_A04_A04_P02_JOB_LEASE_PASS / DOC_03_A04_A04_P03_OUTBOX_PASS / DOC_03_A04_A04_P04_P01_PARSE_QUEUE_PASS / DOC_03_A04_A04_P04_P02_COMMIT_INTERNAL_PASS / DOC_03_A04_A04_P04_P03_P01_ABORT_STATE_PASS / DOC_03_A04_A04_P04_P03_P02_PRECONDITION_BLOCKED / DOC_03_A04_A04_P04_P04_A01_FINALIZE_HTTP_PASS / DOC_03_A04_A04_P04_P04_A02_WINDOWS_COMPOSITION_PASS / DOC_03_A04_A04_P04_COMMIT_ABORT_IN_PROGRESS / DOC_01_A02_INTERNAL_PASS / DOC_01_A03_P01_CURSOR_PASS / DOC_01_A03_P02_HTTP_CONTRACT_PASS / DOC_01_A03_P03_HTTP_DB_PASS / DOC_01_A03_P04_WINDOWS_COMPOSITION_PASS / DOC_01_A04_P01_VERSION_INTERNAL_PASS / DOC_01_A04_P02_VERSION_CURSOR_PASS / DOC_01_A04_P03_VERSION_HTTP_CONTRACT_PASS / DOC_01_A04_P04_VERSION_HTTP_DB_PASS / DOC_01_A04_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P01_VERIFIED_SNAPSHOT_PASS / DOC_01_A05_P02_DOWNLOAD_SOURCE_PASS / DOC_01_A05_P03_PREPARE_DOWNLOAD_PASS / DOC_01_A05_P04_DOWNLOAD_HTTP_PASS / DOC_01_A05_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P06_DISCONNECT_CAPACITY_BOUNDED_PASS / DOC_03_A04_A04_P04_P03_P02_A01_GATE_ADAPTER_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P01_CONTENT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P02_COMMIT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P03_ABORT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P01_READONLY_INSPECTION_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A01_STORAGE_STEP_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A02_INTERNAL_CLEANUP_PASS / PLT_02_A07_P05_A09_CEREMONY_PENDING / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
 |Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03、DOC-03-A01、DOC-03-A02（限定范围）、DOC-03-A03-P01～P03（P03 内部合成验证）、DOC-03-A03-P04-P01～P03（内部合成验证）、DOC-03-A04-A01（Schema 验证）、DOC-03-A04-A02（内部合成验证）、DOC-01-A01、DOC-02-A01、DOC-02-A02-P01（内部合成验证） PASS|
@@ -11,10 +11,10 @@
 |Pending User Decisions|LIC-03-A03 方案 A 已确定；当前无人工决策待办。客户数据外发、付款/额度重置和不可恢复生产操作不在持续授权内|
 |Architecture Version|`ARCH-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，License ADR-006 经用户批准 CR-LIC-001 修订|
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，DM-02 License 授权粒度经用户批准 CR-LIC-001 修订|
-|DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；原冻结64cdf09保留；增量至`20260926_0040` 内部审计FileObject用途/归属（CR-AUD-002），0001～0039历史不改写；无生产迁移|
+|DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；原冻结64cdf09保留；增量至`20260926_0041` 审计不可变渲染尝试（CR-AUD-002），0001～0040历史不改写；无生产迁移|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
-|Test Summary|AUD-03-A06-A04-P03-A02-P02 Windows11/Python3.13后端902项无失败（2环境跳过）；真实文件+caller-UOW元数据/状态来源/Audit与故障回滚、真并发首次单次变化/共享锁及0040/旧上传回归、开发wheel PASS。Export根/权限/Lease caller合成；实际完整Worker发布/性能未验，发行未完成|
-|Next WBS|AUD-03-A06-A04-P03-A03：Audit持久尝试/唯一结果Schema、原Job generation/capture/manifest绑定，随后实际Worker原子发布和访问再授权。POST关闭；真实Owner/质量/Gate/正式材料仍待，完整Scope保留，Server2025未验、Debian13暂缓|
+|Test Summary|AUD-03-A06-A04-P03-A03-P01 Windows11/Python3.13后端904项无失败（2环境跳过）；实际0041空/旧历史up/down/reup/parity/源绑定/真并发单计划/历史down锁保护、0040/0039/文件元数据回归和开发wheel PASS。Job/Lease/File refs合成；实际完整Worker发布/性能未验，发行未完成|
+|Next WBS|AUD-03-A06-A04-P03-A03-P02：真实当前权限/Root/原accepted pair/capture/Lease下Worker计划登记与原代次读回，再唯一结果/manifest Schema和实际Worker原子发布/访问再授权。POST关闭；真实Owner/质量/Gate/正式材料仍待，完整Scope保留，Server2025未验、Debian13暂缓|
 
 ## 自动执行策略
 
@@ -24,6 +24,8 @@
 - GitHub：允许在当前 Scope 和正确分支内自动 fetch、commit、push；禁止 force push、直接提交 main、覆盖未知远端修改或提交 Secret/客户数据。
 
 ## 最近检查点
+
+- P03-A03-P01/0041不可变渲染计划源绑定、单Job/token单file、新代次独立文件及真并发/历史down写锁拒绝通过；904项无失败。合成Job/Lease refs不能证明真正Worker，下一项P02实际公共Port/当前权限登记。
 
 - P03-A02-P02完成Document owned caller-UOW元数据，原内容/归属/首次事件重核、并发单次变化及共享锁、caller真实Audit故障全回滚；902项通过。合成Export不冒充真Root/权限/Lease，AVAILABLE不是成功结果，下一项持久尝试/结果Schema。
 

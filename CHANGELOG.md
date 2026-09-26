@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A03-P01新增0041 Audit不可变渲染尝试，固定原受理Job/封口来源、单Job/token文件计划及新代次独立file，禁止修改/删除/截断。真实空/旧历史up/down/reup/parity/真并发与历史down锁保护PASS；904项无失败（2环境跳过）、0040/0039/文件元数据回归/开发wheel通过。无API/依赖；需受控0040→0041升级，任何计划历史拒绝降级；无生产迁移。Job/Lease/File refs合成，实际计划命令/结果/发布/下载与正式包待。
+
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A02-P02增加Document owned caller-UOW审计文件元数据登记/查读/可用转换Port，精确归属/Hash/Size/版本/状态来源、原trace保持与重放无重复事件，已限制不复活。真实双Scope文件/临时库、真并发单次变化/共享锁、caller真实Audit后故障全回滚PASS；902项无失败（2环境跳过）、0040/旧上传回归及开发wheel通过。无Migration/API/依赖/升级动作；Export/权限/Lease caller合成，真正Job结果/Worker发布/下载与正式包待。
 
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P03-A02-P01新增Document owned审计文件存储Port和独立generated/audit区域，bounded私有staging/flush/fsync/完整Hash读回、不可覆盖提升及final/linked恢复，普通上传locators/扫描不变。14项新增真实临时文件/故障，897后端无失败（2环境跳过）、相关回归/开发wheel PASS。无Migration/API/依赖或升级动作，head0040不变；元数据/实际Worker发布/下载和正式包未完成，磁盘满模拟、性能与目标账户/三平台待。

@@ -3531,6 +3531,13 @@
 - Decision：实施前建立CR-AUD-002与ADR010，仅内部FileObject扩用途/DEPLOYMENT、Audit own尝试/结果；不伪造文档或插件、不重标Scope、不修改普通Upload/Parse/Output规则。Schema/锁序/迁移/历史down保护/存储恢复/实际权限/Lease/取消/下载验收逐项记录后实施。
 - Result/risk：本项是设计记录，尚无代码/Migration或运行验收，不标完整导出PASS；新路径/用途和旧链路误绑防护须真实DB+文件验证，含历史拒绝降级，正式信任/质量/目标账户/Gate仍待。
 
+## DEC-20260926-208 — P03-A03-P01编码前检查
+
+- Phase/WBS：Phase2/P03-A03-P01；前置0040及Document字节/元数据Port已验；输入CR-AUD-002/ADR010/0037～0038原源。Audit render attempt子记录/ORM/0041；无新HTTP/权限/依赖/生产操作。
+- Decision：实施前CR精化每Job/fencing单文件计划、固定capture摘要/原accepted Job与安全Worker坐标。DB仅证明own来源/形状/不可变，实际Job存在/当前权与Lease公共Port留P02；不跨模块读取表、计划file_id不伪造已存在的FileObject或成功结果。
+- Acceptance：空/旧accepted sealed历史up/down/re-up/ORM parity、双Scope来源绑定/缺capture或acceptance拒绝、UUID/token/worker/源/时点/唯一/immutability、真实并发同代单计划与down锁/有计划历史拒绝。无磁盘/真正Worker/下载证明。
+- Risk/rollback：不回填/删旧来源，任何计划历史拒绝down，离线危险down禁用；待结果Schema与完整权限/Lease/发布回归，Gate/完整包仍待。
+
 ## DEC-20260926-207 — P03-A02-P02编码前检查
 
 - Phase/WBS：Phase2/P03-A02-P02；输入0040/CR-AUD-002/ADR010/P01真实存储，前置满足。Document owned FileObject/StateEvent公共caller-UOW元数据Port；无Schema/API/依赖/权限变化。
