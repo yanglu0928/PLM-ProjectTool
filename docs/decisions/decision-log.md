@@ -3090,3 +3090,11 @@
 - Reason：冻结合同留下配置设计任务；最小配置可追溯，避免未经 Owner 事实验收就推进。
 - Impact：新增内部目录配置和测试，无 Schema/API/依赖变化；真实项目事实与原冻结提交不变。
 - Rollback：不装配配置；历史 V1 保留，未来修改发布新版本而非覆盖。
+
+## DEC-20260926-151
+
+- Date：2026-09-26；WBS：WFL-01-A02-P01。
+- Decision：冻结状态用 StrEnum 表达，迁移校验只处理 ACTIVE Workflow 的相邻定义目标、非归档与锁版本一致，不接收客户端 Gate 布尔值，不产生新状态。最终完成/BLOCKED 恢复独立设计，不新增虚构阶段 key。
+- Reason：冻结 API 只给目标 key 和 Gate 引用，真正证明必须从 Owner/Application Port 获取；纯校验不承担授权或事实证明。
+- Impact：workflow 领域与单元测试，无数据库/API/依赖变更，结构成功不代表业务 Gate 已通过。
+- Rollback：不装配该校验器；未持久化状态，无数据回滚需求。
