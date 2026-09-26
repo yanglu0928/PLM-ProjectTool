@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/P06-P09新增显式后台组合根及启动检查：有界PG18/完整current migration head/当前SystemActor，固定owned Repo与原Project/License/Document存储Port，同Supervisor；缺源/Schema/身份失败关闭，不创建密钥、线程、claim或关闭caller资源，启动不授License业务权限。4新unit/1099无失败（2环境权限跳过），真实PG-Vault双Scope完整组合Loop准入/heartbeat/发布/撤权失败/stop无写及旧发布回归/wheel通过。首次连接超时后确认PG原进程仍活/ready重跑通过，异常长测试耗时非性能证据。Windows11，无Migration/API/依赖/数据升级，0042保留；撤内部组合保历史回滚。正式来源/CLI信号/服务/公平隔离/未知恢复/HTTP、质量/其他平台/Gate/完整安装包待。
+
 - 2026-09-27：`0.1.0.dev0`/P06-P08新增后台有界/持续主循环、实例互斥及可中断空闲等待；stop只经原Step排空，实际返回STOPPED才报告停止，上限仅LIMIT；错误退出保pending，不自旋/强杀，常数聚合计数不缓存业务正文。5新unit/1095无失败（2Windows权限跳过），真实PG-Vault双Scope领取/周期heartbeat/发布/撤权拒绝经Loop执行、空及stop无写与旧发布回归通过；开发wheel成功。Windows11，无Migration/API/依赖/数据升级，0042保留；撤未公开装配保历史回滚。实际进程信号/服务组合/公平隔离/未知跨进程恢复/CLI/HTTP、正式材料/质量/其他平台/Gate/完整安装包待。
 
 - 2026-09-27：`0.1.0.dev0`/P06-P07新增有界后台单步：实例互斥、交替尝试耗尽收尾/正常领取、停止新准入但排空已知命令，异常保pending、实际静止Reader旧代/前两次期限仅释放本机调度引用，不猜终态/强杀/改DB。6新unit/1090无失败（2环境权限跳过），真实bounded PG-Vault双Scope实际领取/周期heartbeat/发布、空及stop六表不写、撤权安全失败及原发布回归通过；开发wheel成功。Windows11，无Migration/API/依赖/数据升级，0042保留，撤内部装配保历史回滚。调度交替和异常排空仅unit范围；全局公平/多Worker/主循环/CLI/HTTP、正式材料/质量/其他平台/Gate/可用安装包仍待。

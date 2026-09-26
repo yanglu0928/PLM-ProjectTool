@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-244
+
+- Precode：Phase2/P06-P09，CR-AUD-004/ADR011，前置原安全Owner/单步/Loop已验；实施前进度登记固定owned组合和启动失败关闭，无Schema/API/权限/技术栈变化。
+- Decision：显式WorkerDatabaseRuntime+current完整Migration head/当前SystemActor，固定真实Audit/Jobs Repo/同Supervisor及原Project/License/Document Port；不自动生成密钥、创建线程/领取任务或关闭caller数据库。License实时正文授权，不将有效License作为安全收尾启动前提，不声称正式信任已供给。
+- Evidence：4新unit/1099无失败（2环境权限跳过）；实际PG18/currenthead/临时Vault双Scope完整factory经Loop准入/周期heartbeat/发布/撤权安全失败/empty-stop无写及原发布/wheel通过。首次测试PG连接超时后确认原进程活且ready重跑通过，未重建；异常长测试耗时原因未验证，非性能证明。
+- Risk/rollback：无Migration/API/依赖/升级，0042不变；撤未公开组合保历史。正式来源/CLI信号/服务/公平隔离/未知恢复/质量/完整包/Gate仍待；下一P06-P10进程生命周期/信号适配。
+
 ## DEC-20260927-243
 
 - Precode：Phase2/P06-P08，CR-AUD-004/ADR011，前置P07已验，编码前progress规定Loop边界/停止非强杀，无Schema/API/权限/依赖变化。
