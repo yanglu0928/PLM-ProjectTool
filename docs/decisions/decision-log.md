@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-235
+
+- Date/WBS：2026-09-27 / P04-P03-P05-P02；Phase2，输入CR-AUD-004/ADR011，前置当前授权/固定重试Owner/真实三次政策已验，编码前检查登记。
+- Decision：原pair+实际历史Worker/fence RELEASED Lease/AUDIT_UNAVAILABLE Attempt与执行完成窗口唯一SYSTEM事件只读核验；尚等待校验实际deadline，已进新代校验实际下一Attempt启动与代次，历史收据不漂移也不授当前代权。第三次必须真实FAILED；当前User权限/identity前后有效，不commit/写审计/读文件、不猜STALE。
+- Evidence：5新unit/1042后端无失败（2既有环境跳过），真实PG临时Vault两Scope三次真正commit后返回故障、真实5/15秒新代claim/最终FAILED旧收据相同、多次八表无写；错绑定/尝试/缺重复源/User与License/第二identity拒绝，旧发布/wheel通过。不声称真实网络断线或新增并发竞争通过。
+- Risk/rollback：历史receipt不是当前Job.state，当前业务权或identity失效不能获receipt；无Migration/API/依赖或生产升级。撤未装配核验保历史。Next P04-P03-P06单命令执行器接线，后主循环/HTTP；可用包/Gate/完整Scope仍未完成。
+
 ## DEC-20260927-234
 
 - Date/WBS：2026-09-27 / P04-P03-P05；Phase2，输入CR-AUD-004/ADR011；编码前政策/验收/回滚先记录。只做固定重试Owner，不绕过当前业务权限。

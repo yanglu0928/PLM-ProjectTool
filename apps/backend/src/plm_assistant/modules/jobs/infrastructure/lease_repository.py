@@ -11,10 +11,45 @@ from sqlalchemy.orm import Session
 from plm_assistant.modules.jobs.application.lease import ClaimedJob, JobLeaseError
 from plm_assistant.modules.jobs.application.lease_checkpoint import validate_checkpoint
 from plm_assistant.modules.jobs.application.failure_proof import FailedJobProof
+from plm_assistant.modules.jobs.application.retry_proof import RetryTransitionProof
 from plm_assistant.modules.jobs.infrastructure.orm import JobAttemptRow, JobLeaseRow, JobRow
 
 
 class SqlAlchemyJobLeaseRepository:
+    def check_retry_transition(self,transaction,*,job_id,fencing_token,worker_ref,delay_seconds):
+        validate_checkpoint(job_id=job_id,fencing_token=fencing_token,worker_ref=worker_ref)
+        if type(delay_seconds) is not int or delay_seconds not in {0,5,15}:raise JobLeaseError('VALIDATION_FAILED')
+        session=self._session(transaction)
+        job=session.execute(select(JobRow).where(JobRow.job_id==job_id).with_for_update(of=JobRow)).scalar_one_or_none()
+        if job is None or job.fencing_token<fencing_token or job.max_attempts!=3:raise JobLeaseError('STALE_LEASE')
+        lease=session.execute(select(JobLeaseRow).where(JobLeaseRow.job_id==job_id,JobLeaseRow.fencing_token==fencing_token)
+            .with_for_update(of=JobLeaseRow)).scalar_one_or_none()
+        attempt=self._attempt(session,job_id,fencing_token)
+        if (lease is None or lease.state!='RELEASED' or lease.worker_ref!=worker_ref or attempt.worker_ref!=worker_ref
+                or attempt.completed_at is None or attempt.error_code!='AUDIT_UNAVAILABLE'
+                or not 1<=attempt.attempt_no<=3 or job.attempt_count<attempt.attempt_no
+                or not attempt.started_at<=attempt.completed_at<lease.lease_expires_at
+                or lease.acquired_at>attempt.completed_at):raise JobLeaseError('INCONSISTENT_LEASE')
+        expected_delay={1:5,2:15,3:0}[attempt.attempt_no]
+        if delay_seconds!=expected_delay:raise JobLeaseError('VALIDATION_FAILED')
+        available=attempt.completed_at+timedelta(seconds=delay_seconds) if delay_seconds else None
+        if attempt.attempt_no==3:
+            if (job.state!='FAILED' or job.fencing_token!=fencing_token or job.attempt_count!=3
+                    or job.lease_expires_at is not None or job.completed_at!=attempt.completed_at):raise JobLeaseError('STALE_LEASE')
+        elif job.fencing_token==fencing_token:
+            if (job.state not in {'RETRY_WAIT','CANCELLED'} or job.lease_expires_at is not None
+                    or job.attempt_count!=attempt.attempt_no or job.available_at!=available
+                    or (job.state=='RETRY_WAIT' and job.completed_at is not None)):
+                raise JobLeaseError('INCONSISTENT_LEASE')
+        else:
+            next_attempt=session.execute(select(JobAttemptRow).where(JobAttemptRow.job_id==job_id,
+                JobAttemptRow.attempt_no==attempt.attempt_no+1).with_for_update(of=JobAttemptRow)).scalar_one_or_none()
+            if (next_attempt is None or next_attempt.fencing_token<=fencing_token
+                    or next_attempt.fencing_token>job.fencing_token
+                    or next_attempt.started_at<available):raise JobLeaseError('INCONSISTENT_ATTEMPT')
+        claim=ClaimedJob(job.job_id,job.job_type,job.scope,job.project_id,dict(job.payload_refs),job.trace_id,fencing_token,attempt.attempt_no)
+        return RetryTransitionProof(claim,'RETRY_WAIT' if delay_seconds else 'FAILED',attempt.started_at,attempt.completed_at,available)
+
     def check_failed(self,transaction,*,job_id,fencing_token,worker_ref,error_code):
         """No mutation: current terminal generation ended while its lease was alive.
 

@@ -5,6 +5,7 @@ from .audit_export_complete import AuditExportJobCompletion
 from .lease import ClaimedJob, JobLeaseError
 from .lease_checkpoint import validate_checkpoint
 from .failure_proof import FailedJobProof
+from .retry_proof import RetryTransitionProof
 
 ERROR_CODES = frozenset({'AUDIT_UNAVAILABLE','AUDIT_EXPORT_CONTENT_UNAVAILABLE',
     'AUDIT_EXPORT_LIMIT_EXCEEDED','AUTH_ACCESS_DENIED','RESOURCE_NOT_FOUND','LICENSE_OPERATION_DENIED',
@@ -26,6 +27,24 @@ class AuditExportJobFailure:
         if queue is None or leases is None:
             raise ValueError('Owned failure dependencies required')
         self._queue,self._leases=queue,leases
+
+    def assert_retry_transition(self,transaction,*,request,refs,fencing_token,worker_ref,attempt_no):
+        if (type(request) is not AuditExportJobRequest or type(refs) is not AuditExportJobRef
+                or type(attempt_no) is not int or not 1<=attempt_no<=3):raise JobLeaseError('VALIDATION_FAILED')
+        try:
+            request.__post_init__();refs.__post_init__()
+            validate_checkpoint(job_id=refs.job_id,fencing_token=fencing_token,worker_ref=worker_ref)
+            actual=self._queue.find_export(transaction,request=request)
+            if type(actual) is not AuditExportJobRef or actual!=refs:raise JobLeaseError('JOB_STORE_UNAVAILABLE')
+            actual.__post_init__()
+            proof=self._leases.check_retry_transition(transaction,job_id=refs.job_id,fencing_token=fencing_token,
+                worker_ref=worker_ref,delay_seconds={1:5,2:15,3:0}[attempt_no])
+            if type(proof) is not RetryTransitionProof:raise JobLeaseError('JOB_STORE_UNAVAILABLE')
+            proof.__post_init__();claim=AuditExportJobCompletion._claim(proof.claim,request,refs,fencing_token)
+            if claim.attempt_no!=attempt_no or proof.state!=('FAILED' if attempt_no==3 else 'RETRY_WAIT'):raise JobLeaseError('JOB_STORE_UNAVAILABLE')
+            return proof
+        except JobLeaseError:raise
+        except Exception:raise JobLeaseError('JOB_STORE_UNAVAILABLE') from None
 
     def inspect_current(self,transaction,*,request,refs,fencing_token,worker_ref):
         if type(request) is not AuditExportJobRequest or type(refs) is not AuditExportJobRef:raise JobLeaseError('VALIDATION_FAILED')

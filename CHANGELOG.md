@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/P05-P02新增重试提交确认丢失只读核验，实际历史Worker/fence租约/Attempt/退避与唯一执行窗口SYSTEM源，当前权限/identity前后检查；下一代已claim及最终FAILED后原收据不漂移，不授当前代修改权。5新unit/实际PG-Vault两Scope三次commit后故障、真实等待/新代/八表无写及缺重复源/绑定/权限拒绝通过；1042无失败（2环境跳过），旧发布/wheel通过。Windows11，无Migration/API/依赖、0042，无数据升级，撤未装配核验保历史回滚。执行器/主循环/HTTP/正式材料/三平台/质量/Gate/可用安装包待。
+
 - 2026-09-27：`0.1.0.dev0`/P04-P03-P05新增固定基础故障重试Owner，当前权限前后校验、原pair/活代/SystemActor/静止锁与最小SYSTEM Audit同UOW；仅AUDIT_UNAVAILABLE、5/15秒退避、第三次FAILED，不覆盖旧文件。6新unit/真实PG-Vault两Scope真实等待无提前claim、新代新文件与旧字节保留、写后/后验故障回滚及终态/旧代/权限许可拒绝通过；1037无失败（2环境跳过），旧发布/wheel通过。Windows11，无Migration/API/依赖、0042，无数据升级，撤未装配Owner保历史回滚。重试确认丢失/执行器/主循环/HTTP/正式材料/三平台/质量/Gate/可用安装包待。
 
 - 2026-09-27：`0.1.0.dev0`/P04-P03-P04-P05新增取消提交确认丢失只读核验，原Job/Outbox/Scope/trace/payload、当前Worker/fence一致终态Lease/Attempt、唯一首USER与SYSTEM完成源及当前identity；活期和到期完成严格区分，不推断STALE成功、不重复写Audit。6新unit/真实PG-Vault两Scope两方式commit后故障与八表无写重读、错绑定/缺重复源/identity拒绝及旧发布通过；1031无失败（2环境跳过）、wheel成功。Windows11，无Migration/API/依赖、0042，无数据升级，撤未装配核验保历史回滚。retry/执行器/主循环/HTTP/正式材料/三平台/质量/Gate/可用安装包待。
