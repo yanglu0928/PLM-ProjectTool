@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P02 文件归属前置核查，4项只读兼容探测通过：既有GLOBAL/PROJECT保持支持、DEPLOYMENT存储与发布实际拒绝、ORM范围一致。普通OutputArtifact来源不可伪造，下一项专项CR后实现内部文件/结果契约；无生产代码/Migration/API/依赖变更，无升级动作。核查完成不等于导出文件交付通过，三平台/正式包仍待。
+
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A04-P01 增加固定member源安全canonical JSONL与独立manifest，Scope/全筛选/完整成员摘要和byte hash/size核对、128MiB/16KiB上限、短写/源异常与资源关闭；真实两Scope内存字节/新事件排除通过。880项无失败（2环境跳过）、Worker回归与开发wheel PASS；无Migration/API/依赖，需0039升级无新动作。未落盘或发布Artifact/公开下载/正式包，License合成，Server2025未验、Debian13暂缓。
 
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A03 接入真实已受理Worker固定来源事务，当前权限/原acceptance/原Job pair/租约前后核验、capture同UOW；重复并发/新事件/新generation原seal、撤权/实际取消/到期/故障及真实40P01有限恢复通过。873项无失败（2环境跳过）、相关回归与开发wheel PASS；无Migration/API/依赖变化，需0039升级无新动作。License合成，无渲染/Artifact/公开导出/正式包，Server2025未验、Debian13暂缓。

@@ -3514,3 +3514,9 @@
 - Authority：纯renderer和owned source Port不鉴权、不建UOW/commit、不授予文件交付；Owner须先实际权限/Root/原Job/Lease，再受控临时产物，完成发布前重新授权。失败可能已写部分字节，必须保持临时且不可下载/清理，不伪装文件I/O回滚。
 - Verification：规范向量/空集合/UTF8/LF/确定性、文件与成员hash区分、安全投影/筛选/范围、缺失/多项/重复/错序/错版本、短写/异常/超限、真实固定member源与新事件排除。摘要去重O(n)UUID内存保留，批量DB读取不声称常量内存或性能通过。
 - Rollback：撤未装配代码无历史变更；无Migration/API/Scope/依赖，正式Artifact/当前渲染权限/发布/下载/Gate/包仍待。
+# DEC-20260926-203
+
+- Date：2026-09-26；WBS：AUD-03-A06-A04-P02。
+- Precode：Phase2；前置P01安全渲染已验；输入冻结DM-03/04/API-02与0039；涉及Audit/Document/Jobs FileObject/结果归属；无新API/权限/Migration。只做实际入口只读探测与兼容核查，不实施范围变更。
+- Decision：核验GLOBAL/PROJECT入口保持支持、DEPLOYMENT存储/发布实际拒绝、ORM范围；普通OutputArtifact的项目/Plugin/DocumentVersion来源不能伪造。登记独立进度证据；下一任务先专项CR再内部DEPLOYMENT FileObject/Audit自有结果契约，保持普通Document/Upload/Parse范围。
+- Risk/rollback：探测不访问客户文件或修改数据库；不存在生产回滚。不得用拒绝探测PASS宣称导出交付PASS；没有实际文件/公开POST/发行验收。
