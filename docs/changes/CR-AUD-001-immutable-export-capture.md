@@ -43,6 +43,8 @@ P01执行结果：0038/ORM、真实独立Schema/旧Root与Audit保留/no backfil
 
 ## P02实施前SQL与锁序收敛
 
+A05-A03-P02执行结果（2026-09-26）：真实提交授权、receipt、Root、Jobs公共Queue、请求Audit、acceptance及receipt完成同UOW通过。重放先当前授权并核对原ID，缺失/替换/旧无acceptance历史拒绝而不修复；实际故障全回滚、竞争首次提交和PG40P01整UOW最多三次重新授权/耗尽无残留通过。后端847项无失败（2环境跳过）、相关真实回归与开发wheel通过，详见aud-03-a05-a03-p02-atomic-submit.md。License合成；无新Schema/生产操作/公开POST。Worker、Artifact交付、访问再授权和性能仍待，CR整体IN_PROGRESS。
+
 新增aud_exports（不可变意图，显式安全字段，真实User/Project元数据FK）、aud_export_members（ExportRef+position主键、ExportRef+event唯一、真实event FK）、aud_export_captures（ExportRef唯一、实际时点/count/hash/version）。不用可变seal bool；capture行本身就是不可变封口。意图允许先提交等待Worker；成员必须和capture同事务提交，deferred成员约束拒绝未封口提交。
 
 成员及capture插入先锁aud_exports对应行FOR UPDATE，持至事务结束。成员插入拒绝已有capture，核验源Scope/time及全部筛选，created_xid强制当前事务。capture插入重核全部成员来自当前事务、数量与连续位置、按time/UUID降序、来源摘要、capture不早于请求。先成员后capture；capture插入后同事务也不得再插成员。并发第二个capture/成员等待同一根锁并重查封口，数据库唯一键另行兜底；REPEATABLE READ旧快照存在serialization风险，正式runtime固定READ COMMITTED且P03须验，不把异常当成功。

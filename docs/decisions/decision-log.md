@@ -3453,3 +3453,13 @@
 - Impact：既有0037/Job Schema、公开API/角色/依赖不变；max_attempts固定Job3、Outbox5只是投递技术策略，不重复模型调用。A03主命令须授权→receipt→Audit根→Queue锁/行，并全UOW原子。Worker持Job锁再取Owner/当前权限的反序风险A06另验并使用整UOW有限重试，不宣称已有全链无死锁。
 - Verification：真实PG双Scope、最小引用/原Trace、并发首次同Ref、失败Outbox全UOW回滚、调用方不commit、终态重放不复活、错Actor/Scope/Project/Trace/policy/缺一行拒绝、只读lookup不创建，已有Parse范围及Job租约回归。Queue本项不以可信调用方测试冒充客户权限/Worker/HTTP。
 - Rollback：撤未装配公共Port不删已有Job/Outbox，无数据库升级/生产变更；普通导出POST仍关闭。
+
+## DEC-20260926-196
+
+- Date：2026-09-26；WBS：AUD-03-A05-A03-P02；输入CR-AUD-001/0038。
+- Decision：完整内部提交使用A01当前许可/Session/CSRF/PM或Admin、通用receipt、Audit own Root/0038首次结果和A02 Jobs公共Queue，在同UOW受理并202。receipt按实际Actor/Project/版本化Scope操作/key digest隔离，指纹用完整规范Spec，HTTP trace与凭据不参加业务载荷指纹或落Job。请求Audit目标是确实创建的jobs/JOB-01，reason仅受控purpose，Root/Queue原Trace固定，不把Export伪装AUD-01。
+- Replay：每次先当前权限/License再receipt；加载原不可变Root与acceptance，核对原Spec/Actor/Scope及Jobs公开lookup精确原Job/Event ID。缺受理记录/缺Job或被替换拒绝，不创建/修补历史，不用enqueue做replay。新HTTP trace不会改写首次结果，终态原Job不复活。
+- Atomicity：授权→receipt→Root→Queue→请求Audit→acceptance→receipt complete→commit。任一异常全UOW退出回滚。只有实际DBAPIError sqlstate40P01（含安全包装因果链）最多3次完整新UOW重试，每次重验当前权限/许可；不凭error字符串/一般503重试，不重试未知commit或网络异常。原User/Project与receipt/Root/Queue锁序在此检查；Worker反序需A06另验。
+- Impact：无新Schema/角色/Scope/公开API/依赖变化，不自动capture或运行Worker，不声明文件产出/任务完成。现有0038保留原引用；未装配内部命令，导出POST仍关闭。实际正式信任材料/质量/性能/Gate/完整可用包仍待。
+- Verification：真实双Scope首次全记录、同key新trace原结果且全表不变、同key异Spec拒绝、不同Actor/Scope namespace、归档PM/部署无项目旁路/撤权/CSRF/许可拒绝、并发单组受理、每阶段故障全回滚、真实40P01限次整UOW恢复及耗尽拒绝、缺历史/替换Job拒绝。
+- Rollback：撤未装配服务不删除/更改任何历史，0038含历史拒绝down，无生产/客户数据操作。

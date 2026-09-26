@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/AUD-03-A05-A03-P02 新增真实权限、receipt、Root、Job Queue、请求Audit和不可变acceptance同UOW内部提交，精确原引用重放、缺失或替换拒绝、有限实际死锁重新授权重试。847项无失败（2环境跳过）、隔离原子/并发/故障验证及相关回归、开发wheel PASS。需既有0038，无新增Migration/API/依赖或升级动作；License合成、Worker/HTTP/文件交付/正式包未完成，Server2025未验、Debian13暂缓。
+
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A05-A03-P01/CR-AUD-001 新增0038及不可变首次Job/Event/请求Audit引用结果，own Root/事件严格绑定、唯一及历史down保护，旧意图不猜测回填。Win11后端839项无失败（2环境跳过）、真实空/旧数据迁移/parity/源绑定/不可变/并发down及相关回归、开发wheel PASS。升级先备份到0038；含受理历史禁止down、离线down关闭。无API/角色/依赖变化，无生产操作；合成Job/Event refs不证明完整受理，原子命令/Worker/HTTP/正式包仍待，Server2025未验、Debian13暂缓。
 
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A05-A02 新增Jobs owned最小审计ExportRef/策略专用enqueue/lookup，同Export事务锁、完整固定绑定/Job Outbox pair、终态不复活。Win11后端836项无失败（2项环境跳过）、真实双Scope/并发同Ref/故障回滚/缺边篡改拒绝及Job/Outbox相关回归、开发wheel PASS。无Migration/API/角色/依赖变化，升级无数据动作；可信合成ExportRef测试不证明实际授权/根存在，完整提交/Worker/文件/HTTP/正式包未完成，Server2025未验、Debian13暂缓。
