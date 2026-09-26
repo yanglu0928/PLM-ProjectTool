@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260926-211
+
+- Date：2026-09-26；WBS：AUD-03-A06-A04-P03-A03-P04。
+- Decision：renderer和结果Repository共用纯canonical manifest构造；读写都从实际own Root/acceptance/capture/plan/发布Audit重新绑定，而不信输入DTO或结果行；同请求读回首次结果，替换pubAudit/计划/内容拒绝。
+- Reason：持久结果不能只是SQL行转DTO或相信Hash存在，需保持规范字节及来源且适配后续原子caller-UOW。
+- Impact：无Schema/API/依赖，Repository不鉴权/commit/文件I/O/跨Owner私有访问；无新增公开下载。
+- Rollback：撤应用代码，0042/不可变历史保留；真实SystemActor/Lease/文件/Job原子成功另验。
+
 ## DEC-20260926-210
 
 - Date：2026-09-26；WBS：AUD-03-A06-A04-P03-A03-P03。

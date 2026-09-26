@@ -14,6 +14,8 @@ from ..domain.capture_membership import CaptureMember,digest_members,MEMBERSHIP_
 
 MAX_EXPORT_BYTES=128*1024*1024
 MAX_LINE_BYTES=16*1024
+MAX_MANIFEST_BYTES=8192
+MANIFEST_VERSION="AUDIT-EXPORT-MANIFEST-V1"
 _FIELDS=("audit_event_id","occurred_at","trace_id","event_scope","target_project_id","actor_type","actor_id",
     "original_actor_id","action","outcome","target_owner_module","target_object_type","target_object_id",
     "target_version_id","reason_code","before_state","after_state")
@@ -111,12 +113,26 @@ class AuditExportRenderer:
             close=getattr(stream,"close",None)
             if callable(close):close()
         if membership.count!=capture.member_count or membership.sha256!=capture.membership_hash:raise AuditExportRenderError()
-        spec=intent.spec
-        manifest=dict(manifest_version="AUDIT-EXPORT-MANIFEST-V1",export_id=str(intent.export_id),actor_id=str(intent.actor_id),scope=spec.scope,project_id=_encode(spec.project_id),purpose=spec.purpose,
-            requested_at=_stamp(intent.requested_at),captured_at=_stamp(capture.captured_at),start_at=_stamp(spec.start_at),end_at=_stamp(spec.end_at),
-            filters=dict(action=spec.action,outcome=spec.outcome,actor_id=_encode(spec.actor_id),target_object_type=spec.target_object_type,
-                target_object_id=_encode(spec.target_object_id),trace_id=_encode(spec.trace_id)),intent_hash=intent.intent_hash,
-            policy_version=intent.policy_version,projection_version=intent.projection_version,format_version=intent.format_version,
-            membership_version=membership.version,member_count=membership.count,membership_sha256=membership.sha256,
-            file_sha256=digest.hexdigest(),byte_count=byte_count)
-        return RenderedAuditExport(intent.export_id,byte_count,digest.hexdigest(),membership.count,_json(manifest))
+        manifest=build_audit_export_manifest(intent,capture,file_sha256=digest.hexdigest(),byte_count=byte_count)
+        return RenderedAuditExport(intent.export_id,byte_count,digest.hexdigest(),membership.count,manifest)
+
+
+def build_audit_export_manifest(intent,capture,*,file_sha256,byte_count):
+    """Bounded safe canonical metadata only. Does not prove these bytes exist on disk."""
+    AuditExportRenderer._bound(intent,capture)
+    if (type(file_sha256) is not str or not fullmatch(r"[0-9a-f]{64}",file_sha256)
+            or type(byte_count) is not int or not 0<=byte_count<=MAX_EXPORT_BYTES
+            or (capture.member_count==0 and (byte_count!=0 or file_sha256!=hashlib.sha256(b'').hexdigest()))
+            or (capture.member_count>0 and byte_count<capture.member_count)):
+        raise AuditExportRenderError()
+    spec=intent.spec
+    manifest=dict(manifest_version=MANIFEST_VERSION,export_id=str(intent.export_id),actor_id=str(intent.actor_id),scope=spec.scope,project_id=_encode(spec.project_id),purpose=spec.purpose,
+        requested_at=_stamp(intent.requested_at),captured_at=_stamp(capture.captured_at),start_at=_stamp(spec.start_at),end_at=_stamp(spec.end_at),
+        filters=dict(action=spec.action,outcome=spec.outcome,actor_id=_encode(spec.actor_id),target_object_type=spec.target_object_type,
+            target_object_id=_encode(spec.target_object_id),trace_id=_encode(spec.trace_id)),intent_hash=intent.intent_hash,
+        policy_version=intent.policy_version,projection_version=intent.projection_version,format_version=intent.format_version,
+        membership_version=capture.membership_version,member_count=capture.member_count,membership_sha256=capture.membership_hash,
+        file_sha256=file_sha256,byte_count=byte_count)
+    encoded=_json(manifest)
+    if len(encoded)>MAX_MANIFEST_BYTES:raise AuditExportRenderError()
+    return encoded

@@ -58,6 +58,8 @@ P03-A01：FileObject用途/归属及DocumentVersion/Upload防误绑Schema，真�
 
 ## 当前结果
 
+2026-09-26 P03-A03-P04：own结果caller-UOW record/get及exact DTO，实际原Root/acceptance/完整capture/plan/发布Audit重核、共享纯canonical清单逐字节复核/双Scope empty/nonempty/真并发/原结果重放无写及真实Audit+结果故障整UOW回滚PASS。919项无失败（2环境跳过），0042/真实计划/renderer/实际文件元数据回归与开发wheel PASS。无Schema/API/依赖；Job/Lease/File/SystemActor/可信caller合成，实际Worker/文件/原子Job完成/HTTP仍待；CR整体IN_PROGRESS。下一项Jobs caller-UOW完成Port。
+
 2026-09-26 P03-A03-P03：0042 own不可变唯一成功结果、原计划/文件opaque/发布Audit字段与时点、独立重建完整规范manifest字节/摘要及空文件规则PASS；实际空/旧双Scope计划与旧Doc/Version up/down/reup/parity/并发/历史与down写锁验证，914项无失败（2环境跳过）、真实计划/旧文件元数据回归/开发wheel PASS。Job/File/SystemActor refs合成、清单内存bytes，未证明正式身份/实际文件/Job/Lease/原子发布/HTTP；CR整体IN_PROGRESS。结果Repository及真正Worker发布继续。
 
 ### P03-A03-P03实施前精化：唯一成功结果
