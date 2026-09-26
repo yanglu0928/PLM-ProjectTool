@@ -9,10 +9,25 @@ from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.orm import Session
 
 from plm_assistant.modules.jobs.application.lease import ClaimedJob, JobLeaseError
+from plm_assistant.modules.jobs.application.lease_checkpoint import validate_checkpoint
 from plm_assistant.modules.jobs.infrastructure.orm import JobAttemptRow, JobLeaseRow, JobRow
 
 
 class SqlAlchemyJobLeaseRepository:
+    def check_current(self, transaction: object, *, job_id: uuid.UUID,
+                      fencing_token: int, worker_ref: str) -> ClaimedJob:
+        validate_checkpoint(job_id=job_id, fencing_token=fencing_token, worker_ref=worker_ref)
+        session = self._session(transaction)
+        job, lease, attempt = self._current(session, job_id, fencing_token, worker_ref)
+        now = self._now(session)
+        if (job.lease_expires_at is None or job.lease_expires_at <= now
+                or lease.lease_expires_at <= now):
+            raise JobLeaseError("STALE_LEASE")
+        if (job.lease_expires_at != lease.lease_expires_at
+                or job.attempt_count != attempt.attempt_no):
+            raise JobLeaseError("INCONSISTENT_LEASE")
+        return self._claim(job)
+
     def claim_next(self, transaction: object, *, worker_ref: str,
                    lease_seconds: int) -> ClaimedJob | None:
         session = self._session(transaction)

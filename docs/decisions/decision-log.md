@@ -3472,3 +3472,11 @@
 - Impact：结果None不构造可跨事务复用权限证书；原request仅坐标，持久Export/acceptance绑定与Job Lease/fencing/取消由后续Owner编排实施，不能以本项放行HTTP/文件发布。User→Project/member/department锁持至调用方事务结束；Job锁反序仍须实际整UOW验证。
 - Verification：真实隔离库各stage/两Scope、disabled/非Admin/nonPM/member/department/跨项目/归档、Session注销仍当前权限有效、四事实锁与无业务写；License合成明确标注。单元错误映射/输入/绑定/无默认许可。
 - Rollback：撤未装配Port，无数据迁移、不删除历史、不操作生产。正式信任源/性能/三平台及Gate仍待。
+
+## DEC-20260926-198
+
+- Date：2026-09-26；WBS：AUD-03-A06-A02-P01。
+- Precode：Phase2；输入DM-04/API-03既有租约fencing与A06-A01；前置满足。模块Jobs；实体既有Job/Lease/Attempt；无公开API/Schema/角色/依赖变化。只解决caller事务内当前Lease检查，不实现取消命令或发布。
+- Decision：新增Jobs公共JobLeaseCheckpoint，精确nonzero UUID/positive int64 token/worker校验，调用owned repository锁Job→Lease→Attempt，当前RUNNING/对应worker/token/未完成attempt/一致attempt_no及到期时点/未到期才返回现存ClaimedJob。取消中及所有非RUNNING状态拒绝，不heartbeat/finish/commit，不提供跨事务凭据。Caller必须短事务，长I/O不得持锁，后续发布重新检查。
+- Verification：真实当前成功且全表不变、竞争三事实锁、错worker/token/ID、到期/实际接管、取消中及终态、篡改期限/attempt编号、caller故障回滚及原租约回归。取消状态用测试设置只证明拒绝，不冒充真实取消流程。Audit Root/actor/scope/acceptance绑定及锁反序由后续编排另验。
+- Risk/rollback：Lease不是业务授权；保留A01当前权限。锁内到期仍须发布时重验，不能声称初次检查永久有效。撤未装配入口无迁移/历史删除/生产操作；POST保持关闭。

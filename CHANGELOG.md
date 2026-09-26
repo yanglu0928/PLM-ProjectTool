@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A02-P01 增加Jobs事务内只检查当前租约公共Port，真实Job/Lease/Attempt锁、worker/fencing/到期/一致性与旧Worker拒绝通过，不续租/完成/commit。857项无失败（2环境跳过）、真实租约回归与开发wheel PASS；无Migration/API/依赖，升级无新动作。取消状态合成，真实取消/完整Worker/正式包未完成，Server2025未验、Debian13暂缓。
+
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A06-A01 增加Auth当前User事实公共Port与Audit异步三检查点实际权限检查；User/PM/成员/部门/Admin事实锁、撤权/范围/归档维护/无业务写验证通过，853项无失败（2环境跳过）、原子提交回归与开发wheel PASS。无Migration/API/依赖，升级需既有0038无新动作。Export坐标和License合成，Root/Lease/取消编排、文件发布及正式包未完成，Server2025未验、Debian13暂缓。
 
 - 2026-09-26：`0.1.0.dev0`/AUD-03-A05-A03-P02 新增真实权限、receipt、Root、Job Queue、请求Audit和不可变acceptance同UOW内部提交，精确原引用重放、缺失或替换拒绝、有限实际死锁重新授权重试。847项无失败（2环境跳过）、隔离原子/并发/故障验证及相关回归、开发wheel PASS。需既有0038，无新增Migration/API/依赖或升级动作；License合成、Worker/HTTP/文件交付/正式包未完成，Server2025未验、Debian13暂缓。
