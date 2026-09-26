@@ -3226,3 +3226,11 @@
 - Reason：DM-01/DM-02/AF-02 明确完整集合规则，API 摘要不能被解释成提前终结；当前没有实际 Review，Gate 需要真实批准来源。
 - Impact：设计八表（五既定+三个 owned 辅助）及纯 Domain；未有新 migration/API/依赖，不声明真实资格/Owner/Gate 已验。
 - Rollback：不装配新模块，未来 owned 历史非空不允许破坏性 down，原冻结/0033 保留。
+
+## DEC-20260926-168
+
+- Date：2026-09-26；WBS：RVW-01-A02；CR：CR-RVW-001。
+- Decision：0034 保持两 Aggregate/八 owned 表；Global 生成非空 Scope 键建立真实复合父键，完整 Round/决定/状态/事件/身份锁提交一致，终态不可改写。Trace 观测版本 0 明示无来源锁字段，以固定关系 tuple 摘要/当前状态重核替代虚构列。
+- Reason：nullable Project 会跳过普通复合 FK，首条 RETURN 不能提前解锁，旧观测与新批准不同；现有 Trace 不具锁/摘要列，不能冒充存在。首次 CHECK/CASE/脚本失败修复重验。
+- Impact：八表/0034/隔离验收，无冻结 API/角色/依赖变化；真实 Subject Owner/客户资格/审批服务仍未完成。
+- Rollback：空表 down 至 0033，非空 owned 历史拒绝；关闭新应用入口并保留事实。

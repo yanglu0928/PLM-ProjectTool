@@ -4,6 +4,8 @@
 
 实施检查点：RVW-02-A01 多人决定/撤回纯领域进度值已实现并完成单测/后端回归；状态 DOMAIN_IMPLEMENTED / SCHEMA_APPLICATION_PENDING。进度值不是完整 ReviewRound Aggregate，不能凭构造结果发布客户批准，详见本项报告。
 
+后续检查点：RVW-01-A02 已实施八表 ORM/独立 0034，状态 SCHEMA_IMPLEMENTED / APPLICATION_PENDING；隔离完整集合/历史/身份锁/Scope/并发/回滚验证见 A02 报告。TraceLink 来源无锁/摘要列的实施前细化已写入设计：观测版本 0 明确 SOURCE_NO_LOCK_V1，固定关系内容另算摘要，不伪称来源锁版本。上条设计/领域检查点作为历史保留；实际角色资格/主题 Owner/客户批准服务仍未验。
+
 ## 证据与时序澄清
 
 代码中尚无 Review 实现；Gate 的 REVIEW_ROUND UUID/APPROVED 为结构，不能当实际批准。SC-01 已要求 reviews/rounds/assignments/decisions/subject_snapshots，但缺运行中主题锁和状态变更追加事件的具体物理化。

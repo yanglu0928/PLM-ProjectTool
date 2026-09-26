@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-26：`0.1.0.dev0`/RVW-01-A02/CR-RVW-001 新增 Review 八表 ORM 与独立 Migration `0034`，GLOBAL 非空 Scope 复合键、完整轮次/所有人决定后汇总、不可变决定/固定 Subject 观测、身份锁/事件原子与封口。Windows 11 后端 684 项无失败（2 项环境跳过），隔离 PostgreSQL up/down/re-up/旧数据保持、Scope/决定撤回/并发/回滚/真实 Sources/拒绝/非空 down、既有 Workflow 回归与开发 wheel PASS。升级先备份到 0034，八表非空拒绝 down；无 API/角色/依赖变化。实际资格/Subject Owner/受权审批服务/正式安装包未完成，Server 2025 未验、Debian 13 暂不验证。
+
 - 2026-09-26：`0.1.0.dev0`/RVW-01-A01/RVW-02-A01/CR-RVW-001 登记统一 Review 八表/身份锁/历史设计，并实现多人决定不可变纯领域进度规则：所有人完成才汇总、每人一次最终决定、RETURN 实质意见、撤回保留历史和待处理人、终态封口。Windows 11 后端 681 项无失败（2 项环境跳过），三人所有组合/顺序及拒绝/不可变矩阵、开发 wheel PASS。无 Migration/API/依赖、升级无动作；Review Schema/真实资格/Owner/批准服务/安装包未完成，Server 2025 未验、Debian 13 暂不验证。
 
 - 2026-09-26：`0.1.0.dev0`/WFL-02-A01-P04/P05/CR-WFL-004 新增 GateItem 固定 ChecklistRecord 三字段/复合 FK 与独立 Migration `0033`，旧历史保持 NULL、新插入强制当前已提交记录、typed 依据精确集合和重观测不回退。Windows 11 后端 672 项无失败（2 项环境跳过），隔离 PostgreSQL 五阶段/十关联、旧数据 up/down/re-up、拒绝/并发/回滚/不可变/非空 down 和既有回归、开发 wheel PASS。升级先备份至 0033，新关联非空拒绝 down；无 API/角色/依赖变化。真实 Review/Owner/Gate 服务及正式安装包未完成，Server 2025 未验、Debian 13 暂不验证。

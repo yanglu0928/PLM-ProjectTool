@@ -1,6 +1,6 @@
 # Review owned 持久层设计 V1
 
-2026-09-26；RVW-01-A01；CR-RVW-001；设计完成，数据库/受权应用未实施。
+2026-09-26；RVW-01-A01；CR-RVW-001；设计由 RVW-01-A02/0034 实施，隔离 Schema 验收见 A02 报告；受权应用/真实 Subject Owner 尚未实施。
 
 ## Aggregate 与表
 
@@ -19,6 +19,8 @@
 
 Review.active_round_id 指向本父的 IN_REVIEW Round；非 IN_REVIEW 时为空，历史由独立 Round 查。循环引用需 deferred FK/提交核对，不以关闭 FK 解决。PENDING 为冻结内部状态，公开 start-round 原子产生完整 IN_REVIEW/Assignment/Snapshot/Lock，不暴露半套 pending。
 
+0034 实施前细化：现有 TraceLink 没有 lock_version/content_fingerprint 列，不能伪称读到了来源锁。TRACE_LINK refs 的 observed_lock_version 固定为 0（明确 SOURCE_NO_LOCK_V1），数据库对固定身份/Scope/源目标 Version/关系 tuple 的 JSONB 数组 UTF-8 文本计算 SHA-256，并锁真实 TraceLink/比对 ACTIVE 及内容；这不是 Trace 版本或签名。Evidence 则锁真实行、保存其实际锁版本/指纹。PROJECT Snapshot 只允许同项目 Trace 和同项目/显式 GLOBAL Evidence；GLOBAL Snapshot 只能 GLOBAL refs。后续服务仍需 Owner 受权解析，不凭 Hash 认定实际业务批准。
+
 ## 决定、撤回和再评审
 
 只允许当前 IN_REVIEW Round 的本轮 assigned reviewer 提交最终决定；实际 Actor 从 Session，不由请求决定。唯一 Assignment/Decision 防重复；重放走持久幂等，不能把新的 Key 当覆盖旧意见。已退回但有待处理人时保持 IN_REVIEW 与主题锁，全部完成才按所有决定汇总。终态不能再决定或撤回。
@@ -33,4 +35,4 @@ PM 受权撤回只在 IN_REVIEW：保留所有已提交决定，剩余 Assignmen
 
 拟从 0033 增量，不写旧 Gate/合成 UUID 的历史假 Review。先备份；空库 up/down/re-up、有其他模块数据升级/原值保留、GLOBAL FK/完整性/非法状态/并发/不可变/非空 down 必验。非空 owned 历史拒绝 down，应用可关闭新入口回滚并保留事实。
 
-未运行数据库/API/权限/Owner/覆盖率/性能验证；当前无 Migration/公开 Review 接口，不判 Review/Gate PASS。下一任务先实现/测试多人决定纯领域，再按本设计实施 Schema，实际 Owner/受权服务随后接入。
+RVW-02-A01 纯领域和 RVW-01-A02/0034 隔离数据库验收已完成。PENDING 枚举保留，当前 Schema 的可提交新 Round 必须原子完整 IN_REVIEW，不提供半套 PENDING 提交。尚未运行实际 API/权限/Subject Owner/覆盖率/性能验证，无公开 Review 接口，不判实际客户 Review/Gate PASS；后续接受控 Query/Owner/受权服务。

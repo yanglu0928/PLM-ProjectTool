@@ -3,7 +3,7 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 2：Platform Core|
-|Current WBS|`RVW-02-A01 多人决定/撤回进度规则`（纯 Domain PASS；Review Schema/实际资格/Owner/受权 Gate 命令待）|
+|Current WBS|`RVW-01-A02 Review 八表持久层`（0034/隔离 Schema PASS；实际资格/Subject Owner/受权审批及 Gate 命令待）|
 |Current Status|PHASE_1_COMPLETE / DOC_03_A03_P04_P04_PRECONDITION_BLOCKED / DOC_02_A02_P01_INTERNAL_PASS / DOC_02_A02_P02_PRECONDITION_BLOCKED / DOC_03_A04_A03_P04_P03_CONTENT_HTTP_PASS / DOC_03_A04_A04_P01_JOB_SCHEMA_PASS / DOC_03_A04_A04_P02_JOB_LEASE_PASS / DOC_03_A04_A04_P03_OUTBOX_PASS / DOC_03_A04_A04_P04_P01_PARSE_QUEUE_PASS / DOC_03_A04_A04_P04_P02_COMMIT_INTERNAL_PASS / DOC_03_A04_A04_P04_P03_P01_ABORT_STATE_PASS / DOC_03_A04_A04_P04_P03_P02_PRECONDITION_BLOCKED / DOC_03_A04_A04_P04_P04_A01_FINALIZE_HTTP_PASS / DOC_03_A04_A04_P04_P04_A02_WINDOWS_COMPOSITION_PASS / DOC_03_A04_A04_P04_COMMIT_ABORT_IN_PROGRESS / DOC_01_A02_INTERNAL_PASS / DOC_01_A03_P01_CURSOR_PASS / DOC_01_A03_P02_HTTP_CONTRACT_PASS / DOC_01_A03_P03_HTTP_DB_PASS / DOC_01_A03_P04_WINDOWS_COMPOSITION_PASS / DOC_01_A04_P01_VERSION_INTERNAL_PASS / DOC_01_A04_P02_VERSION_CURSOR_PASS / DOC_01_A04_P03_VERSION_HTTP_CONTRACT_PASS / DOC_01_A04_P04_VERSION_HTTP_DB_PASS / DOC_01_A04_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P01_VERIFIED_SNAPSHOT_PASS / DOC_01_A05_P02_DOWNLOAD_SOURCE_PASS / DOC_01_A05_P03_PREPARE_DOWNLOAD_PASS / DOC_01_A05_P04_DOWNLOAD_HTTP_PASS / DOC_01_A05_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P06_DISCONNECT_CAPACITY_BOUNDED_PASS / DOC_03_A04_A04_P04_P03_P02_A01_GATE_ADAPTER_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P01_CONTENT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P02_COMMIT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P03_ABORT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P01_READONLY_INSPECTION_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A01_STORAGE_STEP_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A02_INTERNAL_CLEANUP_PASS / PLT_02_A07_P05_A09_CEREMONY_PENDING / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
 |Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03、DOC-03-A01、DOC-03-A02（限定范围）、DOC-03-A03-P01～P03（P03 内部合成验证）、DOC-03-A03-P04-P01～P03（内部合成验证）、DOC-03-A04-A01（Schema 验证）、DOC-03-A04-A02（内部合成验证）、DOC-01-A01、DOC-02-A01、DOC-02-A02-P01（内部合成验证） PASS|
@@ -11,10 +11,10 @@
 |Pending User Decisions|LIC-03-A03 方案 A 已确定；当前无人工决策待办。客户数据外发、付款/额度重置和不可恢复生产操作不在持续授权内|
 |Architecture Version|`ARCH-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，License ADR-006 经用户批准 CR-LIC-001 修订|
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，DM-02 License 授权粒度经用户批准 CR-LIC-001 修订|
-|DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`；增量至 `20260926_0033` GateItem 固定 Checklist 记录关联（CR-WFL-004），0032 Checklist 记录、0031 Transition/Gate（CR-WFL-003）、0030 Workflow（CR-WFL-002）、0029 TraceLink、0028 ParseRecord、0027 Evidence 与 0001～0026 历史保留|
+|DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`；增量至 `20260926_0034` Review 八表（CR-RVW-001）、0033 GateItem 固定 Checklist 记录关联（CR-WFL-004）、0032 Checklist 记录、0031 Transition/Gate（CR-WFL-003）、0030 Workflow（CR-WFL-002）、0029 TraceLink、0028 ParseRecord、0027 Evidence 与 0001～0026 历史保留|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
-|Test Summary|RVW-02-A01 Windows 11/Python 3.13 后端 681 项无失败（2 项环境跳过）；多人所有决定组合/顺序等待全部完成、重复/跨轮/陌生人/畸形 RETURN/时间拒绝、撤回保留历史与待处理/终态不可变、开发 wheel PASS；无 Review 数据库/实际权限/Owner/HTTP/覆盖率/性能验证，不是客户批准或实际 Gate 证明|
-|Next WBS|RVW-01-A02 按八表设计实施 Review 持久层/迁移及真实数据库 Scope/完整轮次/状态/不可变验收，补 Gate 真实批准来源；START/完成/实际 Owner 仍待，原 Scope 保留。Trace HTTP 待各 Owner 受权解析，EVD-01-A03-P02-A02 待 Phase 3 Parser，发行 Gate/Server 2025 待验证，Debian 13 暂不验证|
+|Test Summary|RVW-01-A02 Windows 11/Python 3.13 后端 684 项无失败（2 项环境跳过）；隔离 PostgreSQL 0034 八表 up/down/re-up/旧数据不变、ORM parity/GLOBAL FK/完整轮次/多人汇总/撤回保留/主题锁/并发/回滚/观测/不可变/非空 down、既有 Workflow/Windows HTTP 回归、开发 wheel PASS；Subject/reviewer 资格合成，非实际客户批准/Owner 锁或 Gate 证明|
+|Next WBS|RVW-01-A03 受控事务 Review/固定 Round 与 Subject Snapshot 查询 Port，区分历史观测与实际批准证明；真实资格/Owner/受权审批命令、START/完成仍待，原 Scope 保留。Trace HTTP 待各 Owner 受权解析，EVD-01-A03-P02-A02 待 Phase 3 Parser，发行 Gate/Server 2025 待验证，Debian 13 暂不验证|
 
 ## 自动执行策略
 
@@ -24,6 +24,8 @@
 - GitHub：允许在当前 Scope 和正确分支内自动 fetch、commit、push；禁止 force push、直接提交 main、覆盖未知远端修改或提交 Secret/客户数据。
 
 ## 最近检查点
+
+- RVW-01-A02/0034 已落地八表、非空 Global Scope 父键、完整集合汇总/锁与事件原子、不可变/封口、Sources 当时事实与并发保护，隔离 Schema PASS。没有真实 Subject Owner/客户资格/审批命令；历史来源观测和合成 APPROVED 不能冒充现在批准或真实业务锁。
 
 - RVW-01-A01/CR-RVW-001 已登记 Review 历史/身份锁八表设计；RVW-02-A01 已实现所有处理人完成才汇总的不可变多人进度，首条 RETURN 不提前终结/释放锁，撤回保留旧决定和 pending。仅纯领域，Review Schema/实际 Owner/客户批准和公开接口尚未完成。
 
