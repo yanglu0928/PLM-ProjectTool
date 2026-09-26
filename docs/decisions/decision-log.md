@@ -3426,3 +3426,12 @@
 - Reason：所有输入需固定供未来幂等与capture，Job只最小ExportRef。异步任务不持Session Token；登出本身不伪装取消Job，停用账户/撤角色/成员必须拦Worker发布，结果访问另须实时Session/License。
 - Impact：仅内部请求/权限Port合同与unit/设计；实际Auth事实Port、Project导出维护策略与捕获/授权编排在后续实现，不对外挂载。本轮无Schema/API/角色/依赖/安全核心变更。
 - Rollback：不装配未完成导出，保留已有查询；无数据动作。
+
+## DEC-20260926-193
+
+- Date：2026-09-26；WBS：AUD-03-A04-P03；依据CR-AUD-001。
+- Decision：固定服务器AUDIT-EXPORT-POLICY-V1单集合最多100000成员，不接受客户端调大/字段列表/路径。实际capture单条带数据修改CTE的INSERT SELECT在READ COMMITTED statement snapshot按全部原Scope/窗口/筛选选取最多100001，超过上限抛错且不封口；调用方整事务回滚，不返回截断成功。上限是安全保护不是性能PASS，不减少导出需求；需要更大范围用户可调整窗口或后续新版本策略/实际性能评审。
+- Reason：SQL string_agg封口及排序占O(n)空间，不能无限制占用数据库；时间/UUID分页不提供完整snapshot。首次已seal仅验证并返回原metadata，不重新选事件，Job retry/generation不替换集合。
+- Impact：可信调用方事务Owner存储入口，不自建UOW/commit/鉴权/License/Lease；原Actor/Scope匹配是绑定不是权限证明。实际当前权限/幂等/Job在A05/A06，POST仍关闭。read-back检查版本/Spec指纹/原Source/顺序/count/hash/xid，未知版本或腐损拒绝。现有0001～0037/API/角色/依赖不变。
+- Verification：真实隔离PostgreSQL验证single statement集合、晚提交/回填/新事件、两调用者重放同一seal、完整筛选/Scope/空集合、故障整UOW回滚。上限拒绝机制用测试小上限验证，100000行/20并发/P95实际性能另验，不虚报。
+- Rollback：撤未装配存储入口不删历史；0037含历史仍拒绝down；无生产操作/客户数据外发。

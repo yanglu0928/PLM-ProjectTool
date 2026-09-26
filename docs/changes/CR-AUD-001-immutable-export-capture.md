@@ -27,6 +27,8 @@
 
 P02执行结果：0037/ORM三表及实际源校验/同事务封口/不可变/并发/降级保护在独立PostgreSQL库通过；816项unit无失败（2项环境跳过）、Windows审计和Job部署真实回归、开发wheel通过。详见aud-03-a04-p02-capture-schema.md。P03单statement选择完整集合/晚提交及A05～A07权限/Worker/交付未完成，CR整体仍IN_PROGRESS。
 
+P03执行结果：单statement实际源选择/迟提交/回填/新增事件排除、原seal并发重放、caller故障/不commit回滚、Spec指纹/Scope绑定、小上限拒绝不截断和安全读回通过。823项后端无失败（2环境跳过）、P02回归与开发wheel通过，详见aud-03-a04-p03-capture.md。CR的A04存储验收完成，授权/Job/Worker/交付/性能仍待，整体IN_PROGRESS；无生产操作/公开POST。
+
 ## P02实施前SQL与锁序收敛
 
 新增aud_exports（不可变意图，显式安全字段，真实User/Project元数据FK）、aud_export_members（ExportRef+position主键、ExportRef+event唯一、真实event FK）、aud_export_captures（ExportRef唯一、实际时点/count/hash/version）。不用可变seal bool；capture行本身就是不可变封口。意图允许先提交等待Worker；成员必须和capture同事务提交，deferred成员约束拒绝未封口提交。
