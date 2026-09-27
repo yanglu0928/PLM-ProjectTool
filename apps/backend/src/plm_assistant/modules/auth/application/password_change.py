@@ -35,13 +35,14 @@ class ChangePassword:
 
 
 class PasswordChangeService:
-    def __init__(self,*,unit_of_work,access,repository,results,replay_verifier,hasher,audit,receipts,clock=None):
+    def __init__(self,*,unit_of_work,access,repository,results,replay_verifier,hasher,audit,receipts,clock=None,capacity=None):
         if any(x is None for x in (unit_of_work,access,repository,results,replay_verifier,hasher,audit,receipts)):
             raise ValueError('Actual atomic password change dependencies required')
         self._uow,self._access,self._repo=unit_of_work,access,repository
         self._results,self._replay,self._hasher=results,replay_verifier,hasher
         self._audit,self._receipts=audit,receipts
         self._clock=clock or (lambda:datetime.now(timezone.utc))
+        self._capacity=capacity
 
     def _now(self):
         now=self._clock()
@@ -90,7 +91,8 @@ class PasswordChangeService:
                     for role in ('BEFORE','AFTER'):
                         history_sources[role]=self._results.password_source(preparation,result=prepared_result,role=role)
                         if type(history_sources[role]) is not PasswordHashResult:raise PasswordChangeError()
-            if not _CHANGE_KDF_SLOTS.acquire(timeout=5):raise PasswordChangeError()
+            capacity=self._capacity if self._capacity is not None else _CHANGE_KDF_SLOTS
+            if capacity.acquire(timeout=5) is not True:raise PasswordChangeError()
             try:
                 hashed=None;matched=None
                 if hint is None:
@@ -106,7 +108,7 @@ class PasswordChangeService:
                             historical_match=self._results.verify_password_source(source=history_sources[role],password=password)
                         if historical_match is False:raise PasswordChangeError('CONFLICT_IDEMPOTENCY')
                         if historical_match is not True:raise PasswordChangeError()
-            finally:_CHANGE_KDF_SLOTS.release()
+            finally:capacity.release()
             with self._uow() as tx:
                 if self._access.lock_deployment(tx) is not True:raise PasswordChangeError()
                 proof=self._actor(tx,command);actor=proof.user_view.user_id

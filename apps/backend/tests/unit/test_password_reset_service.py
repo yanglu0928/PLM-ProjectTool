@@ -139,3 +139,15 @@ class PasswordResetServiceTests(unittest.TestCase):
     def test_repr_and_error_never_echo_secret(self):
         self.assertNotIn('temporary password',repr(self.command()))
         self.assertEqual(str(PasswordResetError('Synthetic private password')),'AUTH_PASSWORD_RESET_UNAVAILABLE')
+
+    def test_explicit_capacity_is_strict_and_failure_releases_only_owned_budget(self):
+        for acquired in (False,1,True):
+            access=Mock();access.prove.return_value=self.actor()
+            gate=Mock();gate.acquire.return_value=acquired
+            hasher=Mock();hasher.hash_password.side_effect=RuntimeError('Synthetic private KDF')
+            owner=self.owner(access=access,hasher=hasher,capacity=gate);command=self.command()
+            with self.assertRaises(PasswordResetError):owner.reset(command,idempotency_key=str(uuid4()))
+            gate.acquire.assert_called_once_with(timeout=5)
+            if acquired is True:gate.release.assert_called_once()
+            else:gate.release.assert_not_called();hasher.hash_password.assert_not_called()
+            access.lock_deployment.assert_not_called();self.assertFalse(any(command.password.temporary_password))

@@ -15,6 +15,18 @@ from plm_assistant.modules.auth.application.ports.password_hash import PasswordH
 
 
 class PasswordChangeServiceTests(unittest.TestCase):
+    def test_explicit_capacity_strict_timeout_and_owned_error_release(self):
+        for acquired in (False,1,True):
+            access=self.access();access.verify_password_source.side_effect=RuntimeError('Synthetic private KDF')
+            gate=Mock();gate.acquire.return_value=acquired
+            service=self.service(access=access,capacity=gate);command=self.command()
+            with self.assertRaises(PasswordChangeError):service.change(command,idempotency_key=str(uuid4()))
+            gate.acquire.assert_called_once_with(timeout=5)
+            if acquired is True:gate.release.assert_called_once()
+            else:gate.release.assert_not_called();access.verify_password_source.assert_not_called()
+            access.lock_deployment.assert_not_called()
+            self.assertFalse(any(command.passwords.current_password));self.assertFalse(any(command.passwords.new_password))
+
     def actor(self):
         now=datetime.now(timezone.utc)
         return PasswordChangeActorProof(UserReadView(uuid4(),'Synthetic user','ENABLED','NONE',1,now,now,1),

@@ -40,13 +40,14 @@ class ResetPassword:
 
 
 class PasswordResetService:
-    def __init__(self,*,unit_of_work,access,repository,results,replay_verifier,hasher,audit,receipts,license_guard,clock=None):
+    def __init__(self,*,unit_of_work,access,repository,results,replay_verifier,hasher,audit,receipts,license_guard,clock=None,capacity=None):
         if any(x is None for x in (unit_of_work,access,repository,results,replay_verifier,hasher,audit,receipts,license_guard)):
             raise ValueError('Actual atomic password reset dependencies required')
         self._uow,self._access,self._repo=unit_of_work,access,repository
         self._results,self._replay,self._hasher=results,replay_verifier,hasher
         self._audit,self._receipts,self._guard=audit,receipts,license_guard
         self._clock=clock or (lambda:datetime.now(timezone.utc))
+        self._capacity=capacity
 
     def _now(self):
         now=self._clock()
@@ -111,7 +112,8 @@ class PasswordResetService:
                     if prepared_result.result_id!=hint.ref_id:raise PasswordResetError()
                     source=self._results.password_source(preparation,result=prepared_result)
                     if type(source) is not PasswordHashResult:raise PasswordResetError()
-            if not _RESET_HASH_SLOTS.acquire(timeout=5):raise PasswordResetError()
+            capacity=self._capacity if self._capacity is not None else _RESET_HASH_SLOTS
+            if capacity.acquire(timeout=5) is not True:raise PasswordResetError()
             try:
                 hashed=None
                 with memoryview(secret) as password:
@@ -123,7 +125,7 @@ class PasswordResetService:
                         if matched is False:raise PasswordResetError('CONFLICT_IDEMPOTENCY')
                         if matched is not True:raise PasswordResetError()
             finally:
-                _RESET_HASH_SLOTS.release()
+                capacity.release()
             with self._uow() as tx:
                 if self._access.lock_deployment(tx) is not True:raise PasswordResetError()
                 proof=self._actor(tx,command);actor=proof.user_view.user_id

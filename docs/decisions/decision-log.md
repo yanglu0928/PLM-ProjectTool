@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-334
+
+- Executed：1426 tests无失败/2既有跳过，容量严格bound/5秒timeout/owner配对/线程界/异常恢复及两个Service strictTrue/擦除通过；真实PG10reset+10change混合fresh/history各30 KDF、合计peak4/end0、20原结果与历史九表无写、旧Session失效，原atomic/发布/wheel752486通过。Windows工厂尚未注入/默认两个旧4兼容保留，不虚报全部Auth或HTTP性能；下一非敏感配置与进程唯一budget装配，原性能FAIL/CR/Gate开放，无Migration/API/依赖。
+
+- A03编码前设计见shared-capacity：先内部严格1..16/默认4/5秒共享预算及reset-change可信注入，活动总界/线程持有配对，权限-KDF-原事务不改；未注入保旧4，Windows配置/唯一进程装配另项，不能宣称全部Auth限额。单位/实际混合fresh-history待验，无Migration/API/依赖，原标准/CR008 OPEN。
+
 ## DEC-20260927-333
 
 - Executed：8与16独立进程顺序5×20全部成功/SQL空/history九表不写/计数与peak8或16/end0/timeout0/原state-publication通过，均最终exit1整体FAIL。8 fresh reset1076.548/change2148.421/history1135.454/2159.915ms，peak1210707968；16 fresh975.244/1618.757/history859.607/1616.897ms，peak2285113344。单KDF由4的约310ms增至8约365～395/16约476～493ms，等待减少但计算竞争/取锁排队增大。生产4不改，不以单轮reset PASS关闭整体；下一显式容量+reset/change共同预算设计/混合验证，防两个16独立gate误称总限额。无生产变更，unit/wheel未重跑，CR/Gate开放。
