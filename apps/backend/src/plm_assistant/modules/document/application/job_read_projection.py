@@ -5,10 +5,11 @@ from .parse_job_source import CommittedParseDocumentSource, DocumentParseSourceE
 
 
 class DocumentParseJobReadProjection:
-    def __init__(self, *, queue, sources):
+    def __init__(self, *, queue, sources, results=None):
         if queue is None or sources is None:
             raise ValueError('Actual Jobs and Document source Ports required')
         self._queue, self._sources = queue, sources
+        self._results = results
 
     def project(self, tx, *, facts, actor_id, project_role):
         try:
@@ -37,8 +38,14 @@ class DocumentParseJobReadProjection:
             if type(refs) is not ParseJobRef or refs != binding.refs:
                 raise JobReadError()
             if facts.state == 'SUCCEEDED':
-                # No ParseRecord result proof exists in this projection yet.
-                raise JobReadError()
+                if self._results is None: raise JobReadError()
+                from .parse_job_result import ParseJobResultSource
+                result = self._results.read(tx, facts=facts, source=source)
+                if type(result) is not ParseJobResultSource: raise JobReadError()
+                result.__post_init__()
+                if (result.job_id, result.document_version_id, result.scope, result.project_id) != (
+                    facts.job_id, request.document_version_id, facts.scope, facts.project_id): raise JobReadError()
+                return JobOwnerProjection(facts.job_id, False, 'DOCUMENT_PARSE', result.parse_record_id)
             return JobOwnerProjection(facts.job_id, False)
         except JobReadError:
             raise

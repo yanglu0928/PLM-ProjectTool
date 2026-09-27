@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/JOB-01-A04-P03成功ParseRecord/ResultRef owned只读证明及兼容DOCUMENT_PARSE逻辑记录ref，不猜文档版本或物理位置。1195后端无失败/2既有跳过，真实PG双Scope受约束合成历史/错源/重复成功十一表无写、原权限HTTP/File-Version限制/上传来源回归、开发wheel660423通过。无Migration/API路径/角色/依赖/升级变化（需0044），撤新结果Port/Owner分支/type回滚保历史；合成历史非实际Parser/Lease/结果字节/质量证明，成功授权HTTP/运行组合/完整包/Gate待。
+
 - 2026-09-27：`0.1.0.dev0`/JOB-01-A04-P03补真实当前Session/Project/Admin与双Scope原上传的可选GET验证；PM/IM/creator客户/Admin GLOBAL与撤权/跨域/License/真实File-Version限制、HTTP实际ETag/no-store/条件请求拒绝十三表无写通过，原上传/P02回归通过。本轮仅验证文档，无Migration/API/角色/依赖/升级；unit1191/2跳过沿用前轮非本轮重跑，wheel未跑。Credential TEST_ONLY与License/原上传Access合成，成功ParseRecord、运行装配及完整程序包/Gate未完成。
 
 - 2026-09-27：`0.1.0.dev0`/JOB-01-A04-P03内部Document Parse Job Owner以Document/Audit原来源后锁定Jobs完整pair，不猜SUCCEEDED结果。6新单位行为/全后端1191无失败（2既有跳过），真实PROJECT三次原提交九表无写及原上传回归通过。无Migration/API/角色/依赖变化，Schema仍0044，撤内部Owner回滚、历史保留；未装运行组合，当前Session/GLOBAL真实授权、成功ParseRecord/File-Version限制专项、正式包/Gate待，wheel本轮未运行。

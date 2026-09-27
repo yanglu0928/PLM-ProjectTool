@@ -1,5 +1,7 @@
 # Job详情运行Contract增量
 
+JOB-01-A04-P03（2026-09-27）：增加兼容的逻辑结果类型`DOCUMENT_PARSE`，id是经Document owned原源核验的`parse_record_id`，不是文档版本或私有ResultRef物理位置。SUCCEEDED要求唯一成功ParseRecord、精确原Job/Version/Scope、对应不可变ResultRef/hash/时间、已核提交来源与当前授权；缺失/歧义拒绝503，不返回猜测结果。原AUDIT_EXPORT和null不变，无新增路径/权限/Schema；此只读证明不代表Parser执行/实际结果字节完整性/质量验收。运行组合尚未注册Document Owner。
+
 JOB-02-A03（2026-09-27）首次版本前置已补：0044 append-only Audit取消版本快照，新JobId首次请求在原UOW保存实际lock_version；Worker确认推进后重放仍原state+原version。旧收据无快照保None，未来HTTP必须失败关闭，不能猜强ETag。冻结GET JobView不改，项目取消HTTP尚未挂载，Admin取消不自动新增；无本轮Breaking/权限变化，生产升级需0044备份维护门禁。
 
 JOB-02-A02（2026-09-27）内部Audit Owner支持JobId同UOW原源解析，强制expected_version；原当前授权/受理/pair与export入口指纹去重保持。无公开HTTP。API-03取消仅状态结果，GET才完整JobView；但API-01更新强ETag/首次重放需补取消首次lock_version快照，不能当前version拼旧state。冻结只有JOB_PROJECT_CANCEL，内部DEPLOYMENT不等新增JOB_ADMIN_CANCEL，若需HTTP另CR；其他Owner/完整Scope保留。

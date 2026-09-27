@@ -1,5 +1,10 @@
 # 自主决策记录
 
+## DEC-20260927-273
+
+- P03成功结果：依据已存在0028 ParseRecord/ResultRef，Document owned Port精确核唯一成功记录、不可变result metadata/hash、原source及当前JobFacts时间/scope/job/version。公开仅DOCUMENT_PARSE逻辑parse_record_id，兼容原result类型；不得猜文档版本为结果、直接查Jobs表或把合成历史当实际Parser执行。
+- Parse attempt为版本/profile序列，不猜Job attempt_count相等。无Schema/API路径/权限/依赖变化；增量文档留历史，撤新Port/Owner结果/type可回滚。实际Parser/Byte验证/质量/运行装配未由只读证明代替。
+
 ## DEC-20260927-272
 
 后续验收：同原不可变actor、实际Session/current Project/Admin facts经原只读Service与可选HTTP双Scope读取通过，File/Version限制只在临时库执行且不假恢复。十三表读不写，无生产实现/Schema变化；合成License和TEST_ONLY密码记录不冒充生产登录证明。成功ParseRecord/运行装配依然未验，P03不整体关闭。
