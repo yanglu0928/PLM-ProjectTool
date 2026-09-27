@@ -34,6 +34,9 @@ from plm_assistant.modules.audit.application.request_export_cancel import AuditE
 from plm_assistant.modules.audit.application.export_cancel_authorization import AuditExportCancelAuthorization
 from plm_assistant.modules.audit.infrastructure.export_cancel_sources import SqlAlchemyAuditExportCancelSources
 from plm_assistant.modules.jobs.application.authorized_read import AuthorizedJobReadService
+from plm_assistant.modules.jobs.application.authorized_list import AuthorizedJobListService
+from plm_assistant.modules.jobs.api.list_jobs import create_job_list_router
+from plm_assistant.entrypoints.windows_job_list_cursor import create_windows_job_list_cursor_codec
 from plm_assistant.modules.jobs.infrastructure.read_repository import SqlAlchemyJobReadRepository
 from plm_assistant.modules.audit.application.job_read_projection import AuditJobReadProjection
 from plm_assistant.modules.document.application.job_read_projection import DocumentParseJobReadProjection
@@ -264,6 +267,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         audit_export_download_router = None
         audit_export_submit_router = None
         job_detail_router = None
+        job_list_router = None
         job_cancel_router = None
         project_create_router = None
         project_patch_router = None
@@ -288,6 +292,16 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 create_windows_license_services,
             )
             licenses = create_windows_license_services(runtime, settings)
+            job_read_owners = {
+                ('audit','AUDIT_EXPORT'):AuditJobReadProjection(
+                    repository=SqlAlchemyAuditExportSubmitRepository(),
+                    queue=AuditExportJobQueue(SqlAlchemyAuditExportJobQueueRepository()),
+                    results=SqlAlchemyAuditExportResults()),
+                ('document','DOCUMENT_PARSE'):DocumentParseJobReadProjection(
+                    queue=ParseJobQueue(SqlAlchemyParseJobQueueRepository()),
+                    sources=DocumentParseSourceReader(repository=SqlAlchemyDocumentParseSources(),
+                        audit_sources=UploadCommitAuditSources(repository=SqlAlchemyUploadCommitAuditSources())),
+                    results=DocumentParseJobResults(repository=SqlAlchemyDocumentParseJobResults()))}
             job_detail_router = create_job_detail_router(
                 reads=AuthorizedJobReadService(
                     unit_of_work=runtime.unit_of_work,
@@ -296,21 +310,20 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                     projects=ProjectAuthorizationService(unit_of_work=runtime.unit_of_work,
                         repository=SqlAlchemyProjectAuthorizationRepository()),
                     license_guard=licenses.guard,repository=SqlAlchemyJobReadRepository(),
-                    owners={('audit','AUDIT_EXPORT'):AuditJobReadProjection(
-                        repository=SqlAlchemyAuditExportSubmitRepository(),
-                        queue=AuditExportJobQueue(SqlAlchemyAuditExportJobQueueRepository()),
-                        results=SqlAlchemyAuditExportResults()),
-                        ('document','DOCUMENT_PARSE'):DocumentParseJobReadProjection(
-                            queue=ParseJobQueue(SqlAlchemyParseJobQueueRepository()),
-                            sources=DocumentParseSourceReader(repository=SqlAlchemyDocumentParseSources(),
-                                audit_sources=UploadCommitAuditSources(repository=SqlAlchemyUploadCommitAuditSources())),
-                            results=DocumentParseJobResults(repository=SqlAlchemyDocumentParseJobResults()))},
+                    owners=job_read_owners,
                 ),origins=origins,
             )
             cursors = create_windows_secret_list_cursor_codec()
             member_cursors = create_windows_project_member_cursor_codec()
             department_cursors = create_windows_project_department_cursor_codec()
             audit_cursors = create_windows_audit_cursor_codec()
+            job_list_router = create_job_list_router(
+                reads=AuthorizedJobListService(unit_of_work=runtime.unit_of_work,
+                    project_access=SqlAlchemyProjectReadAccess(),deployment_access=SqlAlchemyDeploymentReadAccess(),
+                    projects=ProjectAuthorizationService(unit_of_work=runtime.unit_of_work,
+                        repository=SqlAlchemyProjectAuthorizationRepository()),
+                    license_guard=licenses.guard,repository=SqlAlchemyJobReadRepository(),owners=job_read_owners),
+                origins=origins,cursors=create_windows_job_list_cursor_codec())
             audit_read_router = create_audit_read_router(
                 reads=AuthorizedAuditReadService(
                     unit_of_work=runtime.unit_of_work,
@@ -707,6 +720,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             audit_export_download_router=audit_export_download_router,
             audit_export_submit_router=audit_export_submit_router,
             job_detail_router=job_detail_router,
+            job_list_router=job_list_router,
             job_cancel_router=job_cancel_router,
             project_create_router=project_create_router,
             project_patch_router=project_patch_router,

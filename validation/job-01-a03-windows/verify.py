@@ -4,6 +4,7 @@ from importlib.util import module_from_spec,spec_from_file_location
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
+from plm_assistant.modules.jobs.api.list_cursor import JobListCursorCodec as JobRegressionCursor
 from fastapi.testclient import TestClient
 from psycopg import sql
 from plm_assistant.entrypoints import production_login as production
@@ -35,6 +36,7 @@ def exercise(v):
                 ('create_windows_document_list_cursor_codec',old.trust.DocumentListCursorCodec(b'l'*32)),
                 ('create_windows_document_version_cursor_codec',old.trust.VersionListCursorCodec(b'v'*32)),
                 ('create_windows_document_parse_cursor_codec',old.trust.ParseListCursorCodec(b'p'*32)),
+                ('create_windows_job_list_cursor_codec', JobRegressionCursor(b'j' * 32)),
                 ('create_windows_audit_cursor_codec',old.trust.AuditListCursorCodec(b'a'*32)),
             ):trust.enter_context(patch(prefix+name,return_value=codec))
             trust.enter_context(patch('plm_assistant.entrypoints.windows_secret_write.create_windows_secret_write_service',return_value=object()))

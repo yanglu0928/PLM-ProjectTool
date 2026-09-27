@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch as mock_patch
+from plm_assistant.modules.jobs.api.list_cursor import JobListCursorCodec as JobRegressionCursor
 
 import psycopg
 from alembic import command
@@ -101,6 +102,7 @@ from types import SimpleNamespace as AuditRegressionKeys
 @audit_key_patch("plm_assistant.entrypoints.production_login.create_windows_document_list_cursor_codec",new=lambda:AuditRegressionDocumentCursor(b"l"*32))
 @audit_key_patch("plm_assistant.entrypoints.production_login.create_windows_document_version_cursor_codec",new=lambda:AuditRegressionVersionCursor(b"v"*32))
 @audit_key_patch("plm_assistant.entrypoints.production_login.create_windows_document_parse_cursor_codec",new=lambda:AuditRegressionParseCursor(b"p"*32))
+@audit_key_patch("plm_assistant.entrypoints.production_login.create_windows_job_list_cursor_codec", new=lambda: JobRegressionCursor(b"j" * 32))
 @audit_key_patch("plm_assistant.entrypoints.production_login.create_windows_audit_cursor_codec",new=lambda:AuditListCursorCodec(b"a"*32))
 def main():
     name = "prj01a06_" + uuid.uuid4().hex[:12]

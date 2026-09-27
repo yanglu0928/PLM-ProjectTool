@@ -8,6 +8,7 @@ from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 from contextlib import ExitStack
 from unittest.mock import patch
+from plm_assistant.modules.jobs.api.list_cursor import JobListCursorCodec as JobRegressionCursor
 
 import psycopg
 from psycopg import sql
@@ -92,6 +93,7 @@ from types import SimpleNamespace as AuditRegressionKeys
 @audit_key_patch("plm_assistant.entrypoints.production_login.create_windows_document_list_cursor_codec",new=lambda:AuditRegressionDocumentCursor(b"l"*32))
 @audit_key_patch("plm_assistant.entrypoints.production_login.create_windows_document_version_cursor_codec",new=lambda:AuditRegressionVersionCursor(b"v"*32))
 @audit_key_patch("plm_assistant.entrypoints.production_login.create_windows_document_parse_cursor_codec",new=lambda:AuditRegressionParseCursor(b"p"*32))
+@audit_key_patch("plm_assistant.entrypoints.production_login.create_windows_job_list_cursor_codec", new=lambda: JobRegressionCursor(b"j" * 32))
 @audit_key_patch("plm_assistant.entrypoints.production_login.create_windows_audit_cursor_codec",new=lambda:AuditListCursorCodec(b"a"*32))
 def main():
     name = "wflpm_" + uuid.uuid4().hex[:12]
@@ -189,6 +191,7 @@ def main():
                     ("create_windows_document_list_cursor_codec", DocumentListCursorCodec(b"l"*32)),
                     ("create_windows_document_version_cursor_codec", VersionListCursorCodec(b"v"*32)),
                     ("create_windows_document_parse_cursor_codec", ParseListCursorCodec(b"p"*32)),
+                    ('create_windows_job_list_cursor_codec', JobRegressionCursor(b'j' * 32)),
                 ):
                     patches.enter_context(patch(prefix+function, return_value=codec))
                 patches.enter_context(patch("plm_assistant.entrypoints.windows_secret_write.create_windows_secret_write_service", return_value=object()))

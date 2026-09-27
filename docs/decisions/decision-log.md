@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-279
+
+- Date/WBS：2026-09-27 / Phase2 JOB-01-A05-P05，前置P01～P04；仅显式Windows运行列表装配，不改Schema/冻结路径/角色/依赖。
+- Decision/Reason：详情和列表共享显式Audit/Document Owner来源；强制独立Job-list cursor来源，失败关闭不借别的密钥。20旧正向fixture显式供给测试codec，保原断言；不能把缺新依赖而提前失败视为原路径验证。
+- Impact/Tests：实际PG/双Factory/混排来源/稳定分页/权限License及十八表无写、新构造实际调用/释放、20旧脚本与1214后端无失败（2既有权限跳过）通过；wheel666922。无生产材料/三平台/性能/Parser/完整包/Gate证明。
+- Rollback：撤两显式平台list wiring，保详情/历史；上线需独立KeyRef正式供给备份，缺失拒绝不自动创建。继续Phase2重试前置核查。
+
 ## DEC-20260927-274
 ## DEC-20260927-275
 ## DEC-20260927-276

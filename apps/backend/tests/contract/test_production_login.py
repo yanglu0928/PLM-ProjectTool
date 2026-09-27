@@ -21,6 +21,7 @@ from plm_assistant.modules.project.api.department_list_cursor import DepartmentL
 from plm_assistant.modules.document.api.document_list_cursor import DocumentListCursorCodec
 from plm_assistant.modules.document.api.version_list_cursor import VersionListCursorCodec
 from plm_assistant.modules.document.api.parse_list_cursor import ParseListCursorCodec
+from plm_assistant.modules.jobs.api.list_cursor import JobListCursorCodec
 
 
 class ProductionLoginTests(unittest.TestCase):
@@ -45,6 +46,10 @@ class ProductionLoginTests(unittest.TestCase):
                 runtime.dispose.assert_called_once()
 
     def setUp(self) -> None:
+        self.enterContext(patch(
+            "plm_assistant.entrypoints.production_login.create_windows_job_list_cursor_codec",
+            return_value=JobListCursorCodec(b"j" * 32),
+        ))
         self.enterContext(patch(
             "plm_assistant.entrypoints.production_login.create_windows_audit_cursor_codec",
             return_value=AuditListCursorCodec(b"a"*32),
@@ -85,6 +90,29 @@ class ProductionLoginTests(unittest.TestCase):
                 with self.assertRaises(ProductionLoginStartupError) as exc:factory(self.settings(("http://localhost",)))
                 self.assertNotIn("sensitive",str(exc.exception))
             runtime.dispose.assert_called_once()
+
+    def test_job_list_dependencies_fail_closed_and_dispose_both_modes(self):
+        from contextlib import ExitStack
+        from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
+        prefix = "plm_assistant.entrypoints.production_login."
+        for factory in (create_production_platform_app, create_production_platform_write_app):
+            for dependency in ("create_windows_job_list_cursor_codec", "AuthorizedJobListService", "create_job_list_router"):
+                runtime = Mock(); runtime.is_ready.return_value = True
+                with ExitStack() as stack:
+                    for name, value in (
+                        ("read_database_url", "postgresql+psycopg://localhost/test"),
+                        ("create_database_runtime", runtime), ("_schema_current", True),
+                        ("create_windows_secret_list_cursor_codec", SecretListCursorCodec(b"q"*32)),
+                        ("create_windows_project_member_cursor_codec", MemberListCursorCodec(b"m"*32)),
+                        ("create_windows_project_department_cursor_codec", DepartmentListCursorCodec(b"d"*32)),
+                    ): stack.enter_context(patch(prefix+name, return_value=value))
+                    stack.enter_context(patch("plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services", return_value=Mock(guard=Mock())))
+                    failed = stack.enter_context(patch(prefix+dependency, side_effect=RuntimeError("private dependency detail")))
+                    with self.assertRaises(ProductionLoginStartupError) as caught:
+                        factory(self.settings(("http://localhost",)))
+                    self.assertNotIn("private", str(caught.exception))
+                    failed.assert_called_once()
+                runtime.dispose.assert_called_once()
 
     def test_empty_or_insecure_origin_never_reads_credential(self) -> None:
         with patch("plm_assistant.entrypoints.production_login.read_database_url") as reader:

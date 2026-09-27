@@ -1,5 +1,7 @@
 # CR-JOB-005：受权任务列表与安全分页
 
+P05更新：两Windows显式运行列表完成内部验收，与详情共享Audit/Document原源registry；专用KeyRef缺失拒绝启动，原测试正向fixture明确供给新独立测试codec，不引入生产回退。1214后端无失败/2既有跳过、实际双Factory混合来源/权限/分页十八表无写及20旧验证回归、开发wheel通过。原冻结版本不改，无Migration；正式账户密钥供给/三平台/性能/完整Owner仍待，CR与模块整体不关闭。
+
 2026-09-27 IN_PROGRESS；持续自主授权执行，Phase2/JOB-01-A05，原冻结API-03 JOB_PROJECT_LIST/JOB_ADMIN_LIST保持。前置：已验当前Auth/Project/License、Audit/Document原源与安全结果、0044；无Migration。
 
 方案：同UOW锁当前Session/User/Project/Member/Department，明确JOB_PROJECT_LIST策略（四角色，客户仅自身原actor）。Jobs owned查询仅registry明确owner/type、安全Job事实、Scope/Project/actor及稳定created_at/job_id倒序keyset，最多200条候选；每项经原Owner真来源投影/重新读取一致性。RESOURCE_NOT_FOUND资源隐藏可跳过，但一次仅扫描page_size候选，不做无界填满；next是最后消耗候选而非最后可见项，允许空页继续。错误源/未知异常整页静态失败，不能标部分成功。

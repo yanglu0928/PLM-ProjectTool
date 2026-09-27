@@ -1,5 +1,7 @@
 # Job列表运行Contract增量
 
+P05（2026-09-27）：列表已挂Windows两显式platform Factory，详情/列表共享Audit及Document安全Owner registry；独立job-list-cursor-v1强制依赖，未供给拒绝启动，无fallback。默认/login模式仍404。临时PostgreSQL双Factory/实际Audit发布-Doc提交/当前权限分页及缺依赖失败关闭通过；正式密钥/其他账户/Server2025/性能/全Owner未验证。下文P03和最初HTTP状态为历史，不覆盖本条。
+
 P03（2026-09-27）：Windows当前账户只读专用`job-list-cursor-v1` KeyRef入口与临时Vault失密/错误口令/防覆盖/原key恢复旧密文游标已验。正式运行账户通过既有交互生命周期独立供给/备份，运行时不能自动生成替代。尚未挂Windows列表，正式供给/其他账户/Server2025未验证。
 
 2026-09-27/API-01及API-03冻结基线保持，CR-JOB-005补实现与安全控制。

@@ -36,7 +36,7 @@ fixture = load('_mixed_list_audit_publication', 'aud-03-a06-a04-p03-a04-p03-publ
 doc = load('_mixed_list_doc_upload', 'doc-03-a04-a04-upload-commit')
 
 
-def exercise(v):
+def exercise(v, *, observe_runtime=None):
     db = v['db']; storage = doc.LocalFileStorage(v['file_root'])
     document_queue = doc.ParseJobQueue(doc.SqlAlchemyParseJobQueueRepository())
     documents = []
@@ -150,6 +150,7 @@ def exercise(v):
         assert client.get(path(project_q), params={'page_size': 200}, headers={'cookie': 'plm_session=' + project_q.session_token.hex()}).status_code == 503
         assert snapshot() == before
         db.execute('UPDATE plm.job_jobs SET actor_ref=%s WHERE job_id=%s', (v['users'][0], bad_job))
+    if observe_runtime is not None: observe_runtime(v)
     print('Mixed Job list PASS: actual Audit current-authority/Lease/file/result/publication and PROJECT/GLOBAL Document real source files share original Owner registry; PROJECT and admin GLOBAL+DEPLOYMENT pages complete/no duplicate/stable same-time UUID, RUNNING/PENDING then actual Audit SUCCEEDED logical refs, scope/customer/source restriction/License/bad actor refusal eighteen tables no read writes. Document available_at delay fixture-only to avoid original Audit-only claim. License/upload Access/test cursor injected; no Parser/Windows list runtime/performance/fullOwner/Gate/package claim.')
 
 
