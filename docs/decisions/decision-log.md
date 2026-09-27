@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-346
+
+- Executed：完整1467unit无失败/2既有跳过，四实际PG/Windows入口全部通过；密码1003/1017行98.623%、317/370分支85.676%，全Auth92.711%/75.975%，工厂362/369行8/10分支单列。exit1为分支门槛未达，原JSON/Hash保留，新Hash45c4d14a…；无生产/Schema/API/依赖变化，wheel/性能未跑。下一结果来源与真实current-final异常补证，不关闭安全/Gate。
+
+- Phase2/P07A05P03编码前检查见unified-coverage；复用原同轮完整unit和四真实PG/Windows测量，保21文件/Auth/工厂范围、旧JSON/Hash、新独立runtime与90%门槛。不改生产/Schema/API/算法/依赖；风险回滚先记，性能/正式信任/Gate/可用包待。
+
 ## DEC-20260927-345
 
 - Executed：7个参数化Access输入/事务方法，非法输入不SQL或verifier，固定错误与严格bool控制；1467完整测试无失败/2既有跳过，exit0。无生产/Schema/API/算法/依赖变化；coverage/四PG/wheel本批未跑，原Hash与82.432%保留。下一统一真实覆盖，90%/性能/正式信任/Gate/包待。
