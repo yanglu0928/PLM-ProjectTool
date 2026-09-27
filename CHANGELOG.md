@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/JOB-03-A01完成受控重试前置核查，实际双Windows/PG证实原Audit enqueue重放同Job/Event无写、当前成功Job retryable=false及用户retry POST405未注册，库无generation链。按自主授权先记录CR-JOB-006的新旧任务不可变链/首次结果/Owner授权方案，尚未实现Schema或重试。首轮404预期纠正实际GET-only405仅修验证器；生产/依赖/升级不变，全测试/wheel沿P05历史。下一Schema评审/实施，非完整包/Gate PASS。
+
 - 2026-09-27：`0.1.0.dev0`/JOB-01-A05-P05将任务列表接入两Windows显式platform，与详情共享Audit/Document registry，强制独立KeyRef，无fallback；default/login404。实际PG混合来源/双Factory分页权限/十八表无写与三依赖故障、20旧验证回归及1214后端无失败/2既有跳过、开发wheel666922通过。无Migration/新依赖/Breaking/License变化，兼容0044；升级需独立job-list-cursor-v1供给备份。回滚撤list wiring保历史。正式账户材料/三平台/性能/全Owner/完整包/Gate未完成。
 
 - 2026-09-27：`0.1.0.dev0`/JOB-01-A05-P04新增Audit实际Worker/Lease/文件/原结果发布与Document真上传在同库混合列表Service+HTTP验收：三Scope（PROJECT/DEPLOYMENT/GLOBAL）、同timestamp稳定keyset无重漏、原状态/逻辑ref、IM/creator客户/Admin隔离与受限/License/坏actor拒绝十八表无写，原发布回归通过。仅验证/文档，无生产/Schema/API/依赖/升级；unit1213/2跳过与wheel666815沿用P03未重跑，撤新增验证不影响历史。Doc available_at未来值仅fixture准入隔离，不是Parser执行。Windows列表挂载/正式材料/性能/全Owner/完整包/Gate待。

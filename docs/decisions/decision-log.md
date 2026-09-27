@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-280
+
+- Date/WBS：2026-09-27 / Phase2 JOB-03-A01内部重试前置切片，对应冻结Job受控重试，不新增Scope。
+- Evidence：Worker retry仅RUNNING原Lease；Audit enqueue实际回放相同原Job/Event不写；双Windows Factory当前成功Job retryable=false，retry POST405未注册。真实库无新旧generation链，直接开HTTP前置BLOCKED。
+- Decision：先CR-JOB-006选择Audit owned不可变新generation/新Job原源/首次结果与同事务收据；禁止复活终态/裸复制payload。仅新增设计和验证，保0044；下一Schema评审，不把本核查当重试功能PASS。
+- Tests/Risk/Rollback：实际临时库/双Factory原源和十八表无写、原混排/发布回归通过；首轮404假设纠正405 GET-only动态路由，不改生产。全后端/wheel为P05历史未重复。无生产回滚；未来lineage迁移必须阻止丢历史down、旧事实不改；其他Owner/正式材料/性能/Gate待。
+
 ## DEC-20260927-279
 
 - Date/WBS：2026-09-27 / Phase2 JOB-01-A05-P05，前置P01～P04；仅显式Windows运行列表装配，不改Schema/冻结路径/角色/依赖。

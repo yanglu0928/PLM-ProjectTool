@@ -20,7 +20,7 @@ def load(name, folder):
 mixed = load('_windows_job_list_mixed', 'job-01-a05-p04-mixed')
 old = load('_windows_job_list_old', 'job-01-a03-windows')
 
-def observe(v):
+def observe(v, *, observe_client=None):
     settings = BootstrapSettings(data_root=v['file_root'], trusted_origins=('http://localhost',))
     prefix = 'plm_assistant.entrypoints.production_login.'
     db = v['db']
@@ -52,6 +52,7 @@ def observe(v):
                         assert client.get(path, headers={'cookie':'plm_session='+token.hex()}).status_code == 404
             for factory in (production.create_production_platform_app, production.create_production_platform_write_app):
                 with TestClient(factory(settings), base_url='http://localhost') as client:
+                    if observe_client is not None: observe_client(v, client, snapshot)
                     for path, token, pid in contexts:
                         before = snapshot(); items=[]; seen=set(); cursor=None
                         while True:
