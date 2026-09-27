@@ -32,6 +32,7 @@ def create_app(
     session_logout_router: APIRouter | None = None,
     user_detail_router: APIRouter | None = None,
     user_list_router: APIRouter | None = None,
+    user_create_router: APIRouter | None = None,
     secret_metadata_router: APIRouter | None = None,
     secret_metadata_list_router: APIRouter | None = None,
     secret_create_router: APIRouter | None = None,
@@ -112,6 +113,8 @@ def create_app(
         app.include_router(user_detail_router)
     if user_list_router is not None:
         app.include_router(user_list_router)
+    if user_create_router is not None:
+        app.include_router(user_create_router)
     if secret_metadata_router is not None:
         app.include_router(secret_metadata_router)
     if secret_metadata_list_router is not None:

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/AUT-04-A09-P04新增可选冻结User创建POST、strict username/password write-only JSON/Session-CSRF/Key/安全201首View/Location/ETag；1304无失败（2既有跳过）、真PG HTTP原密码有效Session/同Key历史重放/冲突/权限输入拒绝六表不变与postAudit回滚、原P03/发布回归、开发wheel702043。无Migration/依赖/角色/Breaking，0046兼容，撤router保历史；default404/Windows未挂，正式供给/性能/三平台/完整管理/包/Gate待。下一仅显式Windows write装配。
+
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A09-P03新增当前Admin Session-CSRF受控原子User创建、同UOW receipt/Audit/first与原密码组合重放，保旧入口/NONE默认；1298无失败（2既有跳过）、真实同Key单身份/不同密码竞争、后续停用换密历史重放六表无写、九postwrite实际回滚/末尾撤Session-expiry/commit前后确认故障及同Key恢复、原密码/发布回归，开发wheel700157。无Migration/API/依赖/权限/升级变化，兼容0046；撤未装配入口保历史。License正向合成且原Guard独立UOW前后检查，不是业务License锁；HTTP/Windows写/正式供给/20并发/三平台/完整包/Gate待，下一可选创建HTTP。
 
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A09-P02新增只读原首次User结果/初始Credential1真实Scrypt重放密码核验，坏metadata与KDF异常静态不可用，不匹配冲突，各路径proof尽力清理；1290无失败（2既有跳过）、真实PG原密码/UTF8区别/后续改名停用换密仍原1/伪造拒绝六表无写及Schema/发布回归，开发wheel696766。无Migration/API/依赖/权限/升级变化，兼容0046；撤未装配Port保历史。仅技术密码一致性，不是当前Admin-CSRF/License或完整幂等/创建HTTP证明；P03须原子组合，正式供给/性能/三平台/完整包/Gate待。

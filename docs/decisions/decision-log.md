@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260927-297
+
+- Executed：六新Contract/1304无失败（2既有跳过），真PG HTTP201/强首ETag/同Key与密码用户名冲突/实际新凭据Session/后续停用v2对首201v1/权限格式拒绝六表无写与postAudit全回滚、原P03及发布回归/wheel702043通过。无Migration/权限/依赖/Breaking；默认404、Windows写装配和正式供给/性能/包未完。
+
+- Date/WBS：2026-09-27 / AUT-04-A09-P04，P03前置eef52f1；precode见对应progress。冻结API02未枚举创建body完整字段，细化为username/password（write-only），保显示username服务端canonical/角色默认NONE，无Breaking。
+- Decision：16KiB严格JSON/Origin-Host/Session-CSRF/Key，可选POST调用实际P03；共享Auth safeView投影并强制首次shape，Location/ETag/no-store；用户名冲突用已有CONFLICT_DUPLICATE，未知故障503。无Schema/权限/依赖，默认/Windows暂不挂。
+- Tests/Rollback/Risks：真实PG HTTP幂等/原密码/后续停用重放/权限/六表无写、contract输入/异常/清理；撤router保历史，框架秘密副本/性能/正式供给/完整包待。
+
 ## DEC-20260927-296
 
 - Executed：八新unit/1298无失败（2既有跳过）；真PG/Scrypt/currentAdmin-CSRF原子创建、同Key单身份/不同密码竞争冲突、后续停用换密返原view六表无写、九actual postwrite fault到达并回滚、末尾实际Session撤销/expiry及commit前/后确认故障/同Key恢复、原密码/发布回归/wheel700157通过。首轮commit proxy夹具错已修并加到达断言，无生产放宽；仅内部命令，HTTP/生产/性能/包待。
