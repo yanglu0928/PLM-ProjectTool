@@ -1,5 +1,7 @@
 # Job列表运行Contract增量
 
+P03（2026-09-27）：Windows当前账户只读专用`job-list-cursor-v1` KeyRef入口与临时Vault失密/错误口令/防覆盖/原key恢复旧密文游标已验。正式运行账户通过既有交互生命周期独立供给/备份，运行时不能自动生成替代。尚未挂Windows列表，正式供给/其他账户/Server2025未验证。
+
 2026-09-27/API-01及API-03冻结基线保持，CR-JOB-005补实现与安全控制。
 
 - 可选`GET /api/v1/projects/{project_id}/jobs`与`GET /api/v1/admin/jobs`，当前Session/License、Project membership及Owner来源逐页再核。项目PM/IM看受权metadata，客户仅原creator；Admin只GLOBAL/DEPLOYMENT、不绕项目。registry只支持已验证Owner，不猜其他Owner权限；完整Scope后续补齐。

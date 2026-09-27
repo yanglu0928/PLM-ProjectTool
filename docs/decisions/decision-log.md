@@ -3,6 +3,12 @@
 ## DEC-20260927-274
 ## DEC-20260927-275
 ## DEC-20260927-276
+## DEC-20260927-277
+
+- Phase2/P03固定Windows Job-list专用KeyRef只读入口，显式falsy resolver不走fallback；无Schema/API/权限/依赖/License变化。真实开发账户临时唯一Vault引用验证缺失/错误口令/禁止覆盖/加密备份原key恢复旧token，清理仅own引用及临时备份。
+- 1213后端/2既有跳过、单独3新测试全部ok、P02实际HTTP15成功/10拒绝/1空延续回归通过。非正式账户材料/异账户/Server2025/运行接线/发行证明；下一Audit-Document矩阵再Windows挂载。撤只读入口保历史回滚。
+
+## DEC-20260927-276
 
 - Phase2/P02按CR-JOB-005以既有cryptography AESGCM保护Job-list隐藏坐标、专用Key/family-Session-project-scope-size绑定；不把完整性保护当保密、游标不授权限。可选冻结双路径GET/no-store metadata、稀疏页允许继续，default404，Windows密钥供给未接。
 - 1210后端/2跳过、真实原列表Session/Scope/Source/分页矩阵经ASGI及十三表读不写、错context/tamper/密文不含坐标/恢复原key通过。无Schema/角色/依赖/Breaking；撤router/cursor可回滚保历史。测试key/License非生产；Audit/Windows/性能/完整Owner/Gate未完成。
