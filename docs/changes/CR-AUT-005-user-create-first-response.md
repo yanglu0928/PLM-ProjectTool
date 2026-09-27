@@ -1,6 +1,6 @@
 # CR-AUT-005：受控User创建首次响应与幂等
 
-2026-09-27 / IMPLEMENTATION_IN_PROGRESS，按用户持续自主授权执行；原冻结64cdf09与Migration0001～0045不追写。P01内部Schema/ORM/DTO及新增0046、P02原始Credential1只读/实际Scrypt密码技术证明已隔离验证，见相应progress；当前Admin Session-CSRF/License/完整请求receipt组合留P03。公开POST和原子命令未完成，CR整体不关闭。
+2026-09-27 / IMPLEMENTATION_IN_PROGRESS，按用户持续自主授权执行；原冻结64cdf09与Migration0001～0045不追写。P01新增0046/DTO、P02原始Credential1真实Scrypt证明、P03当前Admin Session-CSRF+receipt/Audit/first原子编排已隔离验证，见相应progress。LicenseGuard使用既有独立UOW前后核验，非业务同事务License锁；公开POST/Windows写/性能/正式供给未完成，CR整体不关闭。
 
 ## 来源与实际冲突
 

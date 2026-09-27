@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260927-296
+
+- Executed：八新unit/1298无失败（2既有跳过）；真PG/Scrypt/currentAdmin-CSRF原子创建、同Key单身份/不同密码竞争冲突、后续停用换密返原view六表无写、九actual postwrite fault到达并回滚、末尾实际Session撤销/expiry及commit前/后确认故障/同Key恢复、原密码/发布回归/wheel700157通过。首轮commit proxy夹具错已修并加到达断言，无生产放宽；仅内部命令，HTTP/生产/性能/包待。
+
+- Date/WBS：2026-09-27 / AUT-04-A09-P03，前置P01/P02同步ddd3f82，precode见对应progress。
+- Decision：新当前Session-CSRF/Admin命令同caller-UOW原子Auth/Audit/receipt/first；规范化非秘密fingerprint必须加原Credential1密码证明才能重放，当前权限/License结束再核，旧入口不动。复用现有Auth Admin-CSRF策略具名Adapter，无新权限。
+- Impact/Rollback/Risk：无Schema/API/依赖变，撤入口保历史；既有LicenseGuard自有UOW只证明前后检查，非业务同事务锁。KDF锁耗时/20并发/提交确认故障/正式供给/HTTP/完整包需真实后续证据。
+
 ## DEC-20260927-295
 
 - Executed：八新unit/1290无失败（2既有跳过）；实际PG+真实Scrypt原1密码/UTF8精确变化、后续改名停用换2仍原1重放技术证明，伪造源/坏metadata beforeKDF/实际KDF故障静态拒绝及六表无写/清理、原Schema和发布回归/wheel696766通过。当前授权/完整请求receipt原子创建仍P03，未挂HTTP或宣称完整登录/生产/包/Gate。
