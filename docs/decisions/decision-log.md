@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-281
+
+- Phase2/JOB-03-A02-P01，2026-09-27；前置重试核查/0044，CR-JOB-006先记录。只实现Audit不可变新old generation/首次版本Schema及DTO，无命令/API/角色/依赖变化。
+- Decision：Audit owned Root/Acceptance/Audit来源trigger逐坐标、query/policy及Scope/actor/trace/时序校验，不读取Jobs私表；实际Jobs FAILED/Attempt/expected_version由下一owned Port提供。首版本固定0且新旧Export/Job不同，源可有多个generation；通用receipt后续原子编排，不在Schema中伪造授权。
+- Risks/rollback：空表可down，有历史拒绝不可恢复drop；旧数据不补假来源，停入口回滚保历史。全部测试必须实际执行，Schema可合成Audit fixture但不据此宣称用户重试功能通过。
+
 ## DEC-20260927-280
 
 - Date/WBS：2026-09-27 / Phase2 JOB-03-A01内部重试前置切片，对应冻结Job受控重试，不新增Scope。

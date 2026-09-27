@@ -1,5 +1,7 @@
 # CR-JOB-006：Audit用户重试新generation
 
+P01（2026-09-27）：immutable Audit lineage/首次版本DTO及ORM/Migration0045内部完成，真实空/有数据up-down/错源-Query/不可变/回滚/有历史down拒绝、旧取消/Worker retry/Windows读取回归及1216后端无失败/2既有跳过、开发wheel669958通过。仅结构事实；Jobs实际FAILED/Attempt/expected_version与Owner当前授权/原子receipt/HTTP仍待。0044及64cdf09不改，未迁移生产；CR保持IN_PROGRESS，不得据此复活原Job或开API。
+
 2026-09-27 / PROPOSED_FOR_IMPLEMENTATION，按用户持续自主授权执行；原冻结64cdf09与0044历史不改，当前仅设计，尚无新Schema/命令实施或PASS。
 
 ## 来源与冲突

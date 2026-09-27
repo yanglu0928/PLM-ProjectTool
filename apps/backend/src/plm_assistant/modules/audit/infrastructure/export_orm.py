@@ -80,6 +80,29 @@ class AuditExportAcceptanceRow(Base):
     __table__ = acceptances
 
 
+retry_generations = sa.Table('aud_export_retry_generations', Base.metadata,
+    _col('new_export_id', _id, primary_key=True), _col('source_export_id', _id),
+    _col('source_job_id', _id), _col('source_failure_event_id', _id),
+    _col('new_job_id', _id), _col('new_event_id', _id), _col('retry_audit_event_id', _id),
+    _col('expected_source_version', sa.BigInteger()), _col('first_job_version', sa.BigInteger()),
+    _col('created_at', _time, server_default=sa.text('statement_timestamp()')),
+    sa.ForeignKeyConstraint(['new_export_id'], ['plm.aud_export_acceptances.export_id'], name='fk_aud_retry__new_acceptance'),
+    sa.ForeignKeyConstraint(['source_export_id'], ['plm.aud_export_acceptances.export_id'], name='fk_aud_retry__source_acceptance'),
+    sa.ForeignKeyConstraint(['source_failure_event_id'], ['plm.aud_events.audit_event_id'], name='fk_aud_retry__failure'),
+    sa.ForeignKeyConstraint(['retry_audit_event_id'], ['plm.aud_events.audit_event_id'], name='fk_aud_retry__audit'),
+    sa.UniqueConstraint('new_job_id', name='uq_aud_retry__new_job'),
+    sa.UniqueConstraint('new_event_id', name='uq_aud_retry__new_event'),
+    sa.UniqueConstraint('retry_audit_event_id', name='uq_aud_retry__audit'),
+    sa.CheckConstraint(' AND '.join(c+'<>'+_zero for c in
+        ('new_export_id','source_export_id','source_job_id','source_failure_event_id','new_job_id','new_event_id','retry_audit_event_id'))+
+        ' AND new_export_id<>source_export_id AND new_job_id<>source_job_id AND expected_source_version>=0 AND first_job_version=0 AND isfinite(created_at)', name='ck_aud_retry__shape'),
+)
+
+
+class AuditExportRetryGenerationRow(Base):
+    __table__ = retry_generations
+
+
 render_attempts = sa.Table("aud_export_render_attempts", Base.metadata,
     _col("render_attempt_id", _id, primary_key=True, server_default=sa.text("uuidv7()")),
     _col("export_id", _id), _col("job_id", _id), _col("fencing_token", sa.BigInteger()),

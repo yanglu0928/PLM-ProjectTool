@@ -24,9 +24,10 @@ def runtime(v, client, snapshot):
         assert snapshot()==before
     columns={r[0] for r in db.execute("SELECT column_name FROM information_schema.columns WHERE table_schema='plm' AND table_name='job_jobs'")}
     assert not columns.intersection({'source_job_id','original_job_id','retry_generation','parent_job_id'})
-    assert db.execute("SELECT to_regclass('plm.aud_export_retry_generations')").fetchone()[0] is None
+    # P01 now supplies the immutable table; it does not implement a retry command.
+    assert db.execute('SELECT count(*) FROM plm.aud_export_retry_generations').fetchone()==(0,)
     assert snapshot()==before
-    print('Retry precondition evidence PASS: real two Windows factories current successful Job retryable false/public retry405 GET-only path, original owned enqueue returns same immutable Job+event without writes; schema no dedicated generation lineage. User retry NOT implemented; automatic RUNNING Lease retry is not terminal user retry. CR-JOB-006 before new schema/owner command; no customer/production change.')
+    print('Retry precondition evidence PASS: real two Windows factories current successful Job retryable false/public retry405 GET-only path, original owned enqueue returns same immutable Job+event without writes; P01 lineage table present but empty, user retry command still NOT implemented. Automatic RUNNING Lease retry is not terminal user retry; no customer/production change.')
 
 if __name__=='__main__':
     windows.mixed.fixture.main(exercise=lambda v:windows.mixed.exercise(v,observe_runtime=lambda v:windows.observe(v,observe_client=runtime)))
