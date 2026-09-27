@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260927-299
+
+- Executed：7新unit/1312无失败（2既有跳过）、真PG规范化/禁用唯一/同版本竞争/新旧名称查找/no-op和stale、原Credential/Session/first/receipt保留和创建重放；权限与License拒绝六表不变、实际Audit写后/末尾License/真实Session撤销全回滚、不一致源拒绝、原发布回归/wheel705209。撤销夹具先缺原约束字段，修夹具重跑，不改生产安全。HTTP/正式供给/性能/三平台/包未完。
+
+- Date/WBS：2026-09-27 / AUT-04-A10-P01，编码前检查见对应progress；输入冻结User/SC-02/API-02及0046。
+- Decision：完整用户名修改复用原NFC/trim/casefold规范化；全局唯一含禁用身份，版本先于no-op；当前Admin-CSRF/License前后核验，变更与USER_NAME_CHANGED审计同事务。保留密码/状态/角色/Session及不可变首次创建历史。
+- Impact/Rollback/Risks：无Schema/依赖/权限或Breaking API变化，不开放HTTP。旧名称不是永久保留别名；登录改用新名称。源不一致拒绝，no-op不写；死锁/DB/提交确认故障安全拒绝，Guard非同业务事务锁。撤未接线服务不回写历史；实际测试待完成，不标发行PASS。
+
 ## DEC-20260927-298
 
 - Executed：1305无失败（2既有跳过）、actualWindows write HTTP完整创建重放和真登录Cookie/Session、NONE不能创建/七表无写、readonly405不构造新依赖/four write故障到达+unit dispose/default-login404/实际缺正式信任拒绝；旧User列表/Windows retry+混排及发布回归/wheel702222通过。修正仅validator冻结嵌套User字段断言，未改合同；正式供给/三平台/性能/安装包未验。

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/AUT-04-A10-P01新增内部名称PATCH当前Admin-CSRF/License前后控制、NFC/casefold全局唯一、版本/no-op及同事务安全Audit。1312无失败（2既有跳过），真PG竞争/禁用唯一/原凭据会话历史保留/创建重放、拒绝六表无写与写后故障回滚、原发布回归/wheel705209通过。无Migration/依赖/权限/Breaking，兼容0046；改名后使用新登录名，无旧别名承诺；撤服务保历史，不自动回写改名。HTTP/Windows接线/正式信任/性能/三平台/UI/可安装包/Gate待，下一可选PATCH HTTP。
+
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A09-P05仅Windows显式write接User创建完整链，readonly405/default-login404，无新Key/fallback；1305无失败（2既有跳过）、actualFactory完整创建/首次重放/真新账户登录Cookie-Session/NONE权限、七表无写/四构造fault与dispose/实际缺正式材料拒绝、旧User列表/Windows任务retry混排及发布回归、开发wheel702222。无Migration/依赖/角色/Breaking，沿0046维护备份要求；撤wiring保历史。P01～P05内部完成，正式供给/性能/三平台/完整管理/UI/质量/可安装包/Gate待；下一User显示名称PATCH前置。
 
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A09-P04新增可选冻结User创建POST、strict username/password write-only JSON/Session-CSRF/Key/安全201首View/Location/ETag；1304无失败（2既有跳过）、真PG HTTP原密码有效Session/同Key历史重放/冲突/权限输入拒绝六表不变与postAudit回滚、原P03/发布回归、开发wheel702043。无Migration/依赖/角色/Breaking，0046兼容，撤router保历史；default404/Windows未挂，正式供给/性能/三平台/完整管理/包/Gate待。下一仅显式Windows write装配。
