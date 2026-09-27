@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：0.1.0.dev0/P07-A20-P02新增真实PG名称来源六场景与九表回滚验证，原名称并发/末核及发布回归通过。首轮外键假设错误已记录修正，临时TEST_ONLY检查约束真实23514验证并确认回滚；无生产/Migration/API/依赖变化，兼容0049无升级。unit1524本项未重跑，coverage/性能/wheel未跑；下一完整覆盖复验，Gate/可用包待。
+
 - 2026-09-27：0.1.0.dev0/P07-A20-P01新增4项用户名称Repository防御性测试，完整1524unit/contract无失败、2既有跳过；非法ID/版本/名称来源前SQL拒绝、真实inactive Session与异常传播通过。无生产/Migration/API/权限/依赖变化，兼容0049无需升级；实际数据库P02待，coverage/性能/wheel未重跑，完整安全/Gate/可用包未通过。
 
 - 2026-09-27：0.1.0.dev0/P07-A19新增6参数化Login HTTP依赖/JSON-UTF8/Unicode/client/Service/投影拒绝及bytearray擦除方法，完整1520unit/contract无失败/2跳过；无Cookie/Token/私有详情/保持原通用500合同。仅HTTP合同，不冒充Session/SQL回滚；无生产/Migration/API规则/权限/算法/依赖变化，兼容0049无升级。coverage/14PG/wheel/性能未跑，旧84.717%与Hash保持；下一独立User name patch Repo，正式安全/性能FAIL/trust/Gate/可用包待。

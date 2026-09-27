@@ -1,5 +1,14 @@
 # 自主决策记录
 
+## DEC-20260927-368
+
+- Executed：修正后完整实际PG六场景及原名称/发布回归通过exit0；缺行/当前源/最大版本/重复/真实23514/时间倒退拒绝，九表退出回滚，TEST_ONLY约束确认撤销。无生产变化；unit1524本项未重跑，coverage/性能/wheel未跑，下一A21完整覆盖，Gate/可用包待。
+
+- 验证计划修正：首轮exit1为脚本外键假设错误，非生产故障；updated_by无FK，账号授权由上层负责。改为临时未提交UOW增加TEST_ONLY检查约束产生真实23514，保留既有约束，退出撤销DDL与故障数据，完整重跑。
+
+- Phase2/P07A20P02编码前检查见name-database-source；仅临时PG名称Repository实际缺行/错配/最大版本/唯一与其他IntegrityError/时间倒退和退出回滚。保留约束，不mock成功SQL。先记录后执行。
+- 无生产/Migration/API/权限/依赖变，无升级；仅自建临时库合成数据，未提交故障回滚并九表比对，原名称修改回归；coverage/性能/wheel另项，Gate/可用包待。
+
 ## DEC-20260927-367
 
 - Executed：新增4项参数化测试，完整1524unit/contract无失败/errors0/2既有跳过，21.643秒、exit0。前SQL非法来源拒绝、真实inactive Session与底层异常传播通过；未模拟成功SQL。生产/Migration/API/依赖无变；coverage/14PG/wheel/性能未跑，下一A20-P02实际数据库验证，Gate/可用包未通过。
