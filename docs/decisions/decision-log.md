@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260927-302
+
+- Executed：9新unit/1328无失败（2既有跳过），纯启停/版本/凭据/最后Admin规则与严格immutable首结果DTO通过，开发wheel708803。无DB/App/Session写/权限HTTP，未跑状态PG/HTTP集成，不标安全或完整功能PASS；CR-AUT006设计选定未整体实现，下一Schema0047。
+
+- Date/WBS：2026-09-27 / AUT-04-A11-P01，precode见progress；已核冻API I/M/A与User/Session约束，现有仅createfirst不能表示状态首次响应。
+- Decision：先CR-AUT006记录独立immutable statefirst+原receipt原子方案；纯转换/DTO先验。启停完整范围，最后Admin保护；自行停用有其他Admin时支持，不能直接跳过最终Auth，未来专用同事务证明。新增保护不是原冻结已确认条文。
+- Impact/Rollback/Tests：本轮无Schema/API/依赖变；撤未接线纯Domain/DTO保历史。类型/转换/版本/计数/source/time待unit，DB/App/全Session/自停用/并发/HTTP/生产未实现，不冒充安全PASS。
+
 ## DEC-20260927-301
 
 - Executed：1319无失败（2既有跳过），actualFactory名称PATCH真实HTTP全矩阵、旧登录401/新登录200同身份/原Session有效、NONE拒绝/首创建重放七表无写；readonly405不构造、三write构造fault实际到达/安全拒绝及unit dispose、default-login404/实际缺正式信任拒绝。旧Windows创建完整链与原发布/wheel706776回归通过；无Schema/依赖/权限/Key变化，正式供给/性能/三平台/UI/包待。
