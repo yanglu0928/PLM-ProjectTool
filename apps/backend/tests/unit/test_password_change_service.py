@@ -35,6 +35,7 @@ class PasswordChangeServiceTests(unittest.TestCase):
         deps=dict(unit_of_work=uow,access=Mock(),repository=Mock(),results=Mock(),replay_verifier=Mock(),
             hasher=Mock(),audit=Mock(),receipts=Mock())
         deps.update(overrides)
+        deps['receipts'].lookup_completed.return_value=None
         return PasswordChangeService(**deps)
 
     def command(self,before=b'Current password',after=b'New password'):

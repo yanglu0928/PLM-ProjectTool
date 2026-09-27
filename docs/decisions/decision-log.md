@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260927-331
+
+- Final：Windows change A04/reset A07两专门链依次exit0，实际普通/受限Cookie/登录/历史first/自reset-丢回执恢复及缺信任源/构造故障/原state-publication通过。完整功能内部PASS，性能仍FAIL，未执行生产升级/正式安全/UAT，不标程序包完成。
+
+- Executed：1419 tests无失败/2既有跳过；真实PG历史双KDF无锁/current源-new hash不调用、任一错密码冲突、logout/renew/disable/laterchange4拒绝/License-disabled可重放、peer first中途提交旧Session拒绝新login恢复，九表无额外写与原atomic/发布/wheel751532通过。20五组全成功/SQL错误空，history change P953220.477ms（原8114.279/6锁超时），resethistory1650.695/fresh1642.030/changefresh3157.216，整体exit1性能FAIL。下一阶段成本/资源剖析，原强度/标准/CR/Gate保留；Windows专门链待结束追加。
+
+- A04编码前检查见change-history：current Session短UOW取exact history双源、事务外4-slot真实双KDF，原global新身份/scope/reserve/fullfirst/双source/末核；miss最多一次退出后重准备，实际change撤旧Session必须拒旧请求。fresh原链/无Admin-License/构造兼容，无Migration/API/依赖/算法变，CR008延续，实际验证待。
+
 ## DEC-20260927-330
 
 - Executed：1414 tests无失败/2既有跳过，实际PG KDF时独立global/caller/Session锁、role/logout/renew/License撤回九表无额外写、目标actual reset4历史保留；actual first中途提交正确重放/错误密码冲突、一次回退与擦除通过。原atomic/Windows reset完整链/发布/wheel751120通过。20并发reset历史20成功/P951634.794ms（原6014.758），fresh1598.708ms；change历史仍14成功6actual55P03/8114.279ms，整体exit1 FAIL。无Migration/API/依赖，下一change历史编排，CR/Gate不关闭。

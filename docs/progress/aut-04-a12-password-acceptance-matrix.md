@@ -1,5 +1,7 @@
 # AUT-04-A12 密码流程验收矩阵（2026-09-27）
 
+最新P06A04P02A04：change历史双KDF事务外及fullfirst双来源/当前身份末核已验，1419 unit/实际PG竞争/peer提交撤旧Session-新login恢复通过。20五组全20成功，actual SQL错误为空，原六history global55P03消除；history change P95 3220.477ms/reset1650.695ms、fresh change3157.216/reset1642.030ms仍超1秒。两history九表不写，功能恢复不抵消性能FAIL；CR008/Gate开放，下一固定KDF成本与资源调度剖析，不降标准/强度。
+
 最新P06A04P02A03：reset历史KDF已事务外/4 slots、写事务新权/fullfirst-source末核、miss中途真实提交有界回退已验；1414 unit/实际PG竞争/Windows reset完整链通过。20历史reset20成功1634.794ms（原6014.758）；fresh reset1598.708ms、fresh change3195.512ms；未改change历史14成功6actual55P03/8114.279ms，两历史九表无写。完整性能仍FAIL，不能关闭本矩阵/CR008/Gate；下一change历史，不调整原1秒标准。
 
 输入CR-AUT007/008、冻结API02/64cdf09、Schema0049、实际进度及当前源码。内部验收不等于正式生产/完整Auth或Gate3完成。

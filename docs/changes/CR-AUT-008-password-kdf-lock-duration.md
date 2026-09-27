@@ -1,5 +1,7 @@
 # CR-AUT-008 密码计算与全局管理写锁排队
 
+2026-09-27/AUT-04-A12-P06-A04-P02-A04最新：change历史双源短UOW退出后4-slot真实双KDF，原global当前身份/reserve/fullfirst/双source/末核已实施，fresh链及无License-Admin语义保留。1419 unit/实际PG锁释放与身份竞争/真实peer提交后旧Session拒绝-新login恢复/原atomic-发布/wheel通过。20五组全20成功/SQL错误空，history change P95 3220.477ms（原8114.279/六55P03），history reset1650.695/fresh reset1642.030/change3157.216ms，两历史九表无写；功能恢复但整体性能仍FAIL/exit1。兼容0049无Migration/API/依赖，回滚原history保历史；下一成本/资源剖析及可证实优化，保强度与原1秒标准，CR OPEN。
+
 2026-09-27/AUT-04-A12-P06-A04-P02-A03最新：reset history两阶段已实施；真实Admin准备取scope/first/source、事务外4-slot KDF、原global新current权限/reserve/fullfirst/freshsource/final。miss中途另一actual reset提交后最多一次重新准备正确恢复原first/错密码conflict，无锁内KDF/额外写。1414 unit与实际PG撤权/Session竞争、原atomic/Windows reset完整链/发布/wheel通过。20历史reset20成功/P95 1634.794ms（原6014.758），fresh1598.708ms；change历史仍14成功6actual global55P03/8114.279ms，两历史九表无写。整体exit1 FAIL，CR OPEN，下一change历史；兼容0049无Migration/API/依赖，回滚保历史。完整风险/验证见progress/DEC330。
 
 2026-09-27/AUT-04-A12-P06-A04-P02-A02补充：reset/change历史first精确Credential源、无DB真实KDF、fresh full-first/source无KDF复核已内部通过；原verify兼容委托。1409 tests/实际PG reset2-change3-later4历史真实KDF/独立锁/READ ONLY末核/九表无写/原原子与发布/wheel通过，正向License合成。Service未接入，性能未重跑/上轮FAIL保留，CR OPEN；无Migration/API/依赖，回滚接口保历史，下一reset编排与bounded race后change，风险/计划见progress与DEC329。
