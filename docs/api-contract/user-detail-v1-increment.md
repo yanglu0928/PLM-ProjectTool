@@ -1,5 +1,7 @@
 # User管理详情运行Contract
 
+A03（2026-09-27）：详情GET现已挂Windows两显式platform readonly/write；default/login404。原Session/Admin/License，无新KeyRef或信任fallback；两实际Factory/PG当前权限与版本、五表无写及构造故障/实际缺正式材料拒绝已验，1259无失败/2既有跳过与旧Windows混排发布回归通过。正向信任合成，非正式供给/性能/三平台/完整管理面/包/Gate证明；下文A02“未挂”为历史。
+
 2026-09-27 / AUT-04-A02；冻结API-02/64cdf09保留。可选GET `/api/v1/admin/users/{user_id}`，默认404/Windows暂未挂。
 
 可信Host、唯一合法plm_session Cookie、当前有效Session，然后同UOW当前ENABLED DeploymentAdmin与License；不要求GET CSRF、不续Session、不写Audit/receipt。无管理权或未知目标404，Session过期/撤销401、Host/License403、query400、零UUID404/畸形UUID422、未知异常503 SYSTEM_UNAVAILABLE静态。

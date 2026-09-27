@@ -25,6 +25,9 @@ from plm_assistant.modules.jobs.application.audit_export_enqueue import AuditExp
 from plm_assistant.modules.jobs.infrastructure.audit_export_enqueue_repository import SqlAlchemyAuditExportJobQueueRepository
 from plm_assistant.modules.jobs.infrastructure.lease_repository import SqlAlchemyJobLeaseRepository
 from plm_assistant.modules.jobs.api.read_detail import create_job_detail_router
+from plm_assistant.modules.auth.api.user_detail import create_user_detail_router
+from plm_assistant.modules.auth.application.user_read import AuthorizedUserReadService
+from plm_assistant.modules.auth.infrastructure.user_read_repository import SqlAlchemyUserReadRepository
 from plm_assistant.modules.jobs.api.cancel import create_project_job_cancel_router
 from plm_assistant.modules.jobs.api.retry import create_job_retry_router
 from plm_assistant.modules.jobs.application.retry_request import JobRetryRequests
@@ -276,6 +279,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         audit_export_download_router = None
         audit_export_submit_router = None
         job_detail_router = None
+        user_detail_router = None
         job_list_router = None
         job_cancel_router = None
         job_retry_router = None
@@ -302,6 +306,10 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 create_windows_license_services,
             )
             licenses = create_windows_license_services(runtime, settings)
+            user_detail_router = create_user_detail_router(sessions=sessions,origins=origins,
+                reads=AuthorizedUserReadService(unit_of_work=runtime.unit_of_work,
+                    access=SqlAlchemyDeploymentReadAccess(),repository=SqlAlchemyUserReadRepository(),
+                    license_guard=licenses.guard))
             retry_projects = ProjectAuthorizationService(unit_of_work=runtime.unit_of_work,
                 repository=SqlAlchemyProjectAuthorizationRepository())
             retry_sources = AuditUserRetrySourceReader(
@@ -748,6 +756,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             audit_export_download_router=audit_export_download_router,
             audit_export_submit_router=audit_export_submit_router,
             job_detail_router=job_detail_router,
+            user_detail_router=user_detail_router,
             job_list_router=job_list_router,
             job_cancel_router=job_cancel_router,
             job_retry_router=job_retry_router,

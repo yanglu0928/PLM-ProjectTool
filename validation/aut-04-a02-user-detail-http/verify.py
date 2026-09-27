@@ -14,8 +14,8 @@ from plm_assistant.modules.auth.infrastructure.user_read_repository import SqlAl
 spec=spec_from_file_location('_user_http_internal',Path(__file__).resolve().parents[1]/'aut-04-a01-user-read'/'verify.py')
 internal=module_from_spec(spec);spec.loader.exec_module(internal)
 
-def exercise(v):
-    internal.exercise(v)
+def exercise(v,*,make_app=None,run_internal=True):
+    if run_internal:internal.exercise(v)
     db=v['db'];tables=('auth_users','auth_password_credentials','auth_sessions','aud_events','plt_idempotency_receipts')
     def snapshot():return {t:tuple(db.execute(sql.SQL('SELECT * FROM plm.{} ORDER BY 1').format(sql.Identifier(t)))) for t in tables}
     sessions=prod.SessionService(unit_of_work=v['uow'],repository=prod.SqlAlchemySessionRepository(),
@@ -25,6 +25,7 @@ def exercise(v):
         repository=SqlAlchemyUserReadRepository(),license_guard=v['guard'])
     app=create_app(user_detail_router=create_user_detail_router(sessions=sessions,reads=reads,
         origins=LoginOriginPolicy(['https://plm.example.test'])))
+    if make_app is not None:app=make_app()
     path='/api/v1/admin/users/'+str(v['users'][0])
     headers={'cookie':'plm_session='+v['tokens'][1].hex()}
     with TestClient(app,base_url='https://plm.example.test') as client:

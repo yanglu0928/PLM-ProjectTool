@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-288
+
+- Executed：1259后端无失败（2既有跳过），两真实Windows Factory完整User HTTP权限/版本/五表无写、三构造fault各模式明确被调用并dispose/实际缺正式材料拒绝、login/default404与旧Windows混排发布回归通过；wheel686148。无新Schema/KeyRef/依赖。正式信任合成；完整管理面/性能/Gate未完成。
+
+- Date/WBS：2026-09-27 / AUT-04-A03，A01/A02前置。两显式platform User详情使用原Auth Admin owned访问与License Guard，不新增供给fallback；login/default不挂。仅详情，列表/写任务独立。
+- Tests/Impact/Rollback：实际Factory/当前权限/元数据版本/五表无写/构造异常和缺正式信任拒绝半启动、旧路径回归；无Schema/API路径/依赖/角色变，撤接线保历史；正式供给/性能/三平台/完整管理面/包未验。
+
 ## DEC-20260927-287
 
 - Date/WBS：2026-09-27 / AUT-04-A02，前置A01真实Reader。可选冻结User GET仅explicit router，无默认/Windows装配，Session.validate区分失效401，当前非Admin/未知target404；不利用缓存绕当前授权。
