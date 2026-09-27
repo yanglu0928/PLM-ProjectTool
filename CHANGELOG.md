@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：0.1.0.dev0/AUT-04-A12-P07-A06-P03新增五实际链统一覆盖入口，1470unit无失败/2跳过与全部实际链通过；密码行99.017%/分支86.757%，全Auth92.831%/76.386%，工厂单列，exit1保90%缺口。完整范围/旧JSONHash不覆，新Hashd45e9dd3…；无生产/Migration/API/算法/依赖变化，兼容0049无升级，wheel/性能未跑。下一剩余边与现有拒绝用例逐边审计/实际缺口补测，不无证豁免；性能FAIL/Gate/可用包待。
+
 - 2026-09-27：0.1.0.dev0/AUT-04-A12-P07-A06-P02新增两实际Service最终核验故障入口，八live/count/User版本/SQL22012中止故障固定拒绝、九表全行回滚/旧Session保留/密码擦除，两实际commit/新Session及原发布回归通过，exit0。无生产/Migration/API/算法/依赖变化，兼容0049无升级；unit最近1470本批未跑，coverage/wheel/性能未跑，原85.676%与Hash保留。下一完整unit+五实际链统一覆盖，90%/性能FAIL/Gate/可用包待。
 
 - 2026-09-27：0.1.0.dev0/AUT-04-A12-P07-A06-P01新增3参数化Result输入/事务异常测试，12get-record-source-recheck底层故障与六非法角色等拒绝、不调用verifier或模拟成功SQL；完整1470unit无失败/2既有跳过。无生产/Migration/API/算法/依赖变化，兼容0049无升级；coverage/PG/wheel本批未跑，原85.676%与Hash保持。下一实际current-final异常回滚，90%/性能FAIL/Gate/可用包待。

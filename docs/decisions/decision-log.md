@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-349
+
+- Executed：1470完整unit无失败/2既有跳过，原四链+实际final链全通过；密码1007/1017行99.017%、321/370分支86.757%，全Auth92.831%/76.386%，工厂362/369行8/10分支单列，exit1为门槛未达。新Hashd45e9dd3…及旧JSON/Hash保留，无生产变更/wheel性能未跑。下一A07逐边审计对应现有用例和真实缺口，不无证认定不可达/工具误差，安全/性能/Gate/包待。
+
+- Phase2/P07A06P03编码前检查见final-coverage；同轮完整unit、原四链加新实际final链完整覆盖测量，保完整范围/90%与旧JSON/Hash，不改生产或把综合率替代分支。风险回滚先记，无生产/Schema/API/依赖变更，性能/正式trust/Gate/可用包待。
+
 ## DEC-20260927-348
 
 - Executed：两实际Service各四故障，共八实际final拒绝/九表全行回滚/原Session可用/密码擦除，actual SQL22012中止后固定Access错误；两正常commit/新Session控制与原双Scope发布回归通过，exit0。无生产变更，unit最近1470保留本批未跑，coverage/wheel/性能未跑。下一五实际链完整同轮覆盖，不关闭90%/性能/正式trust/Gate/包。
