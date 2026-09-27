@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-379
+
+- Executed：正常实际身份读取及7拒绝（6None、1 SQL22012→25P02）通过exit0，九表回滚/健康重读及原发布回归通过；无生产变更、不冒充Project权限或正式trust。unit1532本批未跑，完整coverage/性能/wheel未跑，下一A32完整17链覆盖，Gate/包待。
+
+- Phase2/P07A31编码前检查见project-read-source；真实临时PG正常当前uid、六None拒绝及一SQL22012→25P02原异常，九表回滚/健康重读；不mock成功SQL/停约束或扩Project权限。
+- 无生产/Migration/API/权限/依赖变，无升级；unit1532本批不重跑，完整coverage/性能/wheel另项，下一17链完整复验，Gate/包待。
+
 ## DEC-20260927-378
 
 - Executed：新增4方法、7token/5time/3Session/3缺来源拒绝，完整1532unit21.810秒无失败/errors0/2跳过、exit0；真实inactive不启动事务、原AttributeError保持，无成功SQL模拟/生产变更。coverage/实际链/性能/wheel未跑，下一A31真实数据库来源，Gate/包待。
