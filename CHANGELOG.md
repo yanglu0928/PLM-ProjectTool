@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：0.1.0.dev0/P07-A40完整1551unit无失败/2跳过、19实际链通过；完整Auth行97.575%/分支90.081%，原90%覆盖门槛通过/exit0，不代表全部安全或Gate关闭。行分母+3仅等价UserList布局/分支988保持，密码91.146%保持，factory8/10未达另列。新raw5e9391c0…保旧raw，无生产/Migration/API/依赖变，兼容0049无升级；性能/wheel未跑，下一工厂前置失败关闭，正式trust/性能FAIL/Gate/包待。
+
 - 2026-09-27：0.1.0.dev0/P07-A39新增3初始管理员Repo来源防御方法，1551unit无失败/2跳过；原临时PG初始化审计失败User0/并发单赢家/一Admin一Audit/真实scrypt通过并清理。无正式账户创建/生产/Migration/API/权限/依赖变，兼容0049无升级；完整coverage/性能/wheel未跑，下一19链完整安全复验，Gate/包待。
 
 - 2026-09-27：0.1.0.dev0/P07-A38新增7初始管理员Service依赖/命令/字符长度/claim/Hash/底层故障防御方法，1548unit无失败/2跳过，密码擦除/视图释放/UOW退出/noCommit通过。无正式账户创建、生产/Migration/API/权限/依赖变化，兼容0049无升级；完整coverage/性能/wheel未跑，下一DB来源验证，完整安全/Gate/包待。

@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-388
+
+- Executed：1551unit无失败/2跳过、19实际链全通过，完整Auth3300/3382行97.575%、890/988分支90.081%，门槛通过/exit0但不等于所有安全/生产/Gate通过。行分母+3仅UserList布局、分支988不变，密码91.146%保持，Windows factory8/10未达另列。新raw5e9391c0…旧c5cc7625…未变；性能/wheel未跑，下一A41工厂两个前置失败关闭，Gate/包待。
+
+- Phase2/P07A40编码前检查见bootstrap-coverage；完整unit+19实际链，全部Auth/密码/factory分列90%不变，独立runtime保旧raw，分母变化标注仅三UserList布局；不将安全本项当完整Gate/包完成。
+- 无生产/Migration/API/权限/依赖变，无升级；性能/wheel另项，正式trust/CR008 FAIL/Gate/包待。
+
 ## DEC-20260927-387
 
 - Executed：3新增方法，1551unit21.690秒无失败/errors0/2跳过；原临时PG初始化Audit失败User0、并发一Admin/一Audit/真实scrypt通过exit0并清理资源。无成功SQL模拟/正式账户/生产变化，不把count当九表证据；完整coverage/性能/wheel未跑，下一A40完整19链覆盖，Gate/包待。
