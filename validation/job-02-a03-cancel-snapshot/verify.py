@@ -101,7 +101,7 @@ def exercise(v):
         cause=getattr(exc,'orig',None);assert getattr(cause,'sqlstate',None)=='P0001'
     else:raise AssertionError('history-dropping downgrade accepted')
     assert snapshot(tables)==before
-    assert db.execute('SELECT version_num FROM plm.alembic_version').fetchone()==('20260927_0046',)
+    assert db.execute('SELECT version_num FROM plm.alembic_version').fetchone()==('20260927_0047',)
     print('JOB-02-A03 PASS: empty/populated up/down/re-up original ten tables preserved, ORM parity; dualScope actual first v2->Worker current v3 replay retains state+v2, legacy unknown version not guessed; invalid source/version/duplicate/update/delete/truncate reject, populated down refuses intact head; actual snapshot insert then fault rolls back eleven tables; stale/conflict/License refusals no writes. Synthetic License, no HTTP/production/Gate proof.')
 
 if __name__=='__main__':fixture.main(exercise=exercise)

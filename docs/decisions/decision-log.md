@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260927-303
+
+- Executed：1328无失败（2既有跳过），真空/有数据0046-47往返十一旧表保留/ORM一致；精确User/Credential/Audit/时间和未来accepted拒绝、真实2Session（含expired）撤销计数源/未撤销拒绝、插入后故障回滚/ENABLE零计数不复活、历史变更和非空down拒绝head完整；旧create/cancel/retry Schema及Windows名称/原发布回归/wheel711157通过。仅Schema/TEST_ONLY夹具，非当前权限/原子启停/完整包证明。
+
+- Date/WBS：2026-09-27 / AUT-04-A11-P02，precode见progress；CR-AUT006先记录、P0143fd926。
+- Decision：独立状态first表/ORM/0047精确User/Credential/Audit/time源，不修改0046；disable无active Session且撤销count对同updatedAt+USER_DISABLED源，enable0。immutable历史与非空down拒绝；不回填旧状态。
+- Impact/Rollback/Tests：新增Schema但不新增权限/API/依赖/Key；原冻结保留，升级备份停写，撤未接线入口保历史。空/有数据往返、source拒绝/真实Session计数/不可变/ORM/旧Schema回归待验；非App授权/状态原子/正式供给/完整包PASS。
+
 ## DEC-20260927-302
 
 - Executed：9新unit/1328无失败（2既有跳过），纯启停/版本/凭据/最后Admin规则与严格immutable首结果DTO通过，开发wheel708803。无DB/App/Session写/权限HTTP，未跑状态PG/HTTP集成，不标安全或完整功能PASS；CR-AUT006设计选定未整体实现，下一Schema0047。

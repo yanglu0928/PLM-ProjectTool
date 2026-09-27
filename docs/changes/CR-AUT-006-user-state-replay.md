@@ -1,6 +1,6 @@
 # CR-AUT-006 User启用/停用可靠命令
 
-日期：2026-09-27；版本0.1.0.dev0；状态DESIGN_SELECTED_DOMAIN_VERIFIED_PERSISTENCE_PENDING。
+日期：2026-09-27；版本0.1.0.dev0；状态SCHEMA_DOMAIN_VERIFIED_ATOMIC_COMMAND_PENDING。
 依据：用户2026-09-24/27持续授权；原冻结64cdf09及0001～0046保留。
 
 ## 来源与证据
@@ -27,10 +27,10 @@
 
 ## 迁移、回滚与验证计划
 
-计划新增0047和对应ORM，原0001～0046不追写；本轮不迁移生产、不新增表。空库及有数据0046→0047→0046→0047、原数据/ORM一致、源拒绝与不可变、非空降级拒绝需真实PG证明。升级人工备份/维护停写；有状态历史不得降级丢弃，回滚撤入口保数据库，生产故障按已验证备份人工恢复。
+已新增0047和对应ORM，原0001～0046不追写；未迁移生产。空库及有数据0046→0047→0046→0047、十一旧表/ORM一致、源拒绝与不可变、非空降级拒绝已真实PG验证。DISABLE count绑定同User updatedAt/USER_DISABLED源组，actual2Session含expired来源通过，future accepted拒绝。升级人工备份/维护停写；有状态历史不得降级丢弃，回滚撤入口保数据库，生产故障按已验证备份人工恢复。证据见P02progress/Schema增量；不是完整命令授权与原子性证明。
 
 后续内部命令验收：enable/disable、凭据0、普通/非Admin/CSRF/License、target历史/全Session、stale/Key冲突、同Key并发、启停后首响应、Admin互相停用/自行/最后Admin、实际Audit/receipt/result/Session写后故障全回滚、提交确认前后故障、新Session与停用竞争；再HTTP/Windows write、安全Cookie及真实新旧登录。20并发和三平台另验，不伪报。
 
 ## 当前范围与剩余风险
 
-本轮仅前置核查、纯Domain转换规则、严格首次结果DTO及测试；不是持久命令/当前Admin权限/全Session撤销实现。新Schema/实际DB/Application/API/Windows未完成，Gate3与正式发行不关闭。无新Key、依赖、角色、SSO或授权机制替换。License独立UOW前后检查仍不是业务License事务锁。
+已完成前置、纯Domain/严格首次结果DTO、0047/ORM及真实Schema来源/历史验证；不是持久命令/当前Admin权限/全Session撤销实现。Application/原子幂等/自停用/最后Admin/状态HTTP/Windows未完成，Gate3与正式发行不关闭。1328后端无失败（2既有跳过），旧Schema/Windows名称及发布回归通过；Schema使用TEST_ONLY身份夹具不证明真实认证。无新Key、依赖、角色、SSO或授权机制替换。License独立UOW前后检查仍不是业务License事务锁。

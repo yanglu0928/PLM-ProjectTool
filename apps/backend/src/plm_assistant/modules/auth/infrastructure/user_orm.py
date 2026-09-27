@@ -102,3 +102,42 @@ class UserCreateResultRow(Base):
     updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False)
     accepted_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False,
         server_default=text('statement_timestamp()'))
+
+
+class UserStateResultRow(Base):
+    """Auth-owned first state response and private audit/source coordinates."""
+    __tablename__='auth_user_state_results'
+    __table_args__=(
+        ForeignKeyConstraint(['user_id'],['plm.auth_users.user_id'],name='fk_auth_state__user'),
+        ForeignKeyConstraint(['actor_id'],['plm.auth_users.user_id'],name='fk_auth_state__actor'),
+        ForeignKeyConstraint(['audit_event_id'],['plm.aud_events.audit_event_id'],name='fk_auth_state__audit'),
+        UniqueConstraint('user_id','lock_version',name='uq_auth_state__user_version'),
+        UniqueConstraint('audit_event_id',name='uq_auth_state__audit'),
+        CheckConstraint(' AND '.join(c+"<>'00000000-0000-0000-0000-000000000000'::uuid" for c in
+            ('result_id','user_id','actor_id','audit_event_id','trace_id'))
+            + " AND char_length(username_display) BETWEEN 1 AND 255"
+            + " AND deployment_role IN ('NONE','DEPLOYMENT_ADMIN') AND credential_version>0"
+            + " AND expected_version BETWEEN 0 AND 9223372036854775806 AND lock_version>0"
+            + " AND lock_version-1=expected_version AND revoked_session_count>=0"
+            + " AND ((operation='ENABLE' AND account_state='ENABLED' AND revoked_session_count=0)"
+            + " OR (operation='DISABLE' AND account_state='DISABLED'))"
+            + " AND isfinite(created_at) AND isfinite(updated_at) AND isfinite(accepted_at)"
+            + " AND created_at<=updated_at AND updated_at<=accepted_at",name='ck_auth_state__shape'),
+    )
+    result_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True),primary_key=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True),nullable=False)
+    actor_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True),nullable=False)
+    audit_event_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True),nullable=False)
+    trace_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True),nullable=False)
+    operation: Mapped[str] = mapped_column(Text,nullable=False)
+    username_display: Mapped[str] = mapped_column(Text,nullable=False)
+    account_state: Mapped[str] = mapped_column(Text,nullable=False)
+    deployment_role: Mapped[str] = mapped_column(Text,nullable=False)
+    expected_version: Mapped[int] = mapped_column(BigInteger,nullable=False)
+    credential_version: Mapped[int] = mapped_column(BigInteger,nullable=False)
+    lock_version: Mapped[int] = mapped_column(BigInteger,nullable=False)
+    revoked_session_count: Mapped[int] = mapped_column(BigInteger,nullable=False)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True,precision=6),nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True,precision=6),nullable=False)
+    accepted_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True,precision=6),nullable=False,
+        server_default=text('statement_timestamp()'))
