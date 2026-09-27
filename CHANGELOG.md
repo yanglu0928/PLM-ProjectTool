@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/AUT-04-A08实际核查User创建冻结HTTP前置，旧内部Service缺当前Session-CSRF生产装配/原子receipt/不可变首次UserView，保持POST关闭；先记录CR-AUT-005的Auth owned首次结果与初始不可变Credential真实Scrypt重放密码验证方案，拒绝明文/快速密码摘要。仅设计，无代码/Migration/API/依赖/升级动作，未运行未来创建验收；1277/25旧回归为A07历史不外推，下一0046 Schema/ORM/source DTO实施。
+
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A07将User列表装入Windows两显式platform，强制独立user-list-cursor-v1无fallback；1277无失败（2既有跳过）、两actualFactory分页/真实item ETag/权限五表无写、三构造故障各模式dispose/实际固定User key缺失仍拒绝及25关联回归、wheel691255通过。无Migration/新依赖/角色/Breaking，0045兼容；升级须目标账户交互供给/备份新KeyRef，撤列表接线回滚保历史。正式供给/其他账户/性能/三平台/用户写/完整包/Gate待；下一用户创建幂等前置。
 
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A06新增Windows当前账户独立user-list-cursor-v1只读来源/缺失静态拒绝/无自动替代；3新测试/1276无失败（2既有跳过）、实际临时Vault失密/错口令/防覆盖/原key恢复旧token与自身清理、A05真HTTP及发布回归/wheel691195通过。无Migration/API挂载/新依赖/角色/升级动作，0045兼容；正式引用未供给，撤入口回滚保历史。下一列表装配将必需此独立Key，需交互供给/备份；正式账户/其他平台/性能/用户写/完整包/Gate待。

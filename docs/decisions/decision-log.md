@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-293
+
+- Date/WBS：2026-09-27 / AUT-04-A08，实际旧User创建无Session-CSRF生产装配/原子receipt/不可变首次UserView，先CR-AUT-005，公开POST暂不开，不标PASS。
+- Decision：receipt非秘密字段指纹+不可变初始Credential1真实Scrypt验证组合证明重放密码一致，拒绝仅username/明文或快速密码摘要；无需新增密码fingerprint密钥。Auth owned首次结果记录/FK/安全快照与原子命令后续实现，保原入口/冻结历史，默认新User NONE、不顺手提权。
+- Impact/Rollback/Tests：拟0046需正式Schema/ORM/空有数据up-down/不可变/来源/已有历史down拒绝，撤新入口保历史；真实Scrypt/当前Session-CSRF/Admin/License/同Key并发/密码变化冲突/停用历史重放不复活各子项实测。当前仅设计，无生产迁移或新命令PASS。
+
 ## DEC-20260927-292
 
 - Executed：1277无失败（2既有跳过）、两actualFactory真PG加密分页/每项ETag/当前权限五表无写、三dependency故障各模式实际调用/dispose、其他正向信任下实际固定User key缺失仍拒绝；default/login404。25相关实际验证入口exit0（23历史fixture补显式synthetic User key），wheel691255通过。新必需KeyRef升级/回滚已记，无生产fallback；正式账户/性能/完整管理面/Gate待。
