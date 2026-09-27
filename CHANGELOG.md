@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P06-A04-P01新增test-only8/16/20-slot实际Windows/PG/Scrypt校准及原4-slot历史20重放。新写全部20成功，但change P95仍约2.14/1.67/1.45秒；reset20-slot单轮0.96秒、process峰值工作集2.63GiB，未修改生产4。历史reset约6.01秒；change14成功/6实际global55P03约7.91秒，两组九表无写/first保持，旧状态/发布回归通过，验收脚本均exit1 FAIL。仅验证/文档，无生产代码/Migration/API/依赖/升级；unit/wheel未重跑，CR/Gate/安装包不关闭，下一历史源/KDF事务外修复。
+
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P06-A03新增change current不可变Credential精确源与事务外真实verify/new hash（4 slots），原global写UOW重新鉴权/源ID-version-flag绑定/self末核；历史原first双密码不被当前false提前拦截，无License门槛。1400 tests无失败（2既有跳过），真实PG锁释放/注销续期停用reset竞争无半写、原原子/Windows change-reset/发布及wheel749932通过。20并发三组全20成功、无SQL错误/20+20first，改密P95约3.18秒改善但与reset1.63秒均未达1秒。兼容0049，无Migration/API/依赖/生产升级；回滚保历史，性能/正式安全/完整包/Gate待。
 
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P06-A02将reset新hash移出DB事务及global写锁，预认证仅门槛、写事务真实重新授权及原全链保持；进程局部4-slot/5秒等待不弱化KDF。1393 tests无失败（2既有跳过），真实PG独立锁及撤权/logout/renew/target版本/License竞争无半写、原原子/Windows/发布回归与wheel749632通过。20并发reset20成功/P95约1.63秒（原5.65秒），仍未达1秒；change14成功/6锁超时未修复，性能FAIL保留。兼容0049，无Migration/API/依赖/生产升级；撤优化保历史，正式安全/完整包/Gate待。

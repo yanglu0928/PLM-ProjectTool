@@ -6,6 +6,8 @@ P06A02最新：reset新hash预计算已实施/真实PG边界与撤权竞争、�
 
 P06A03最新：本人change actual current不可变Credential source短UOW退出后verify/new hash及4-slot调度已实施；fresh写UOW重新身份/相同Credential ID/version/flag，历史仍original first双KDF。真实锁释放/注销续期停用实际reset竞争无额外写、原原子及Windows两链通过。20并发GET111.960ms/reset1631.262ms/change3178.707ms；三组全20成功，SQL错误空，20/20first与新凭据/旧Session一致。本轮功能恢复，但普通写P95仍FAIL，CR保持OPEN，下一有界资源校准及history锁段优化。
 
+P06A04P01最新：test-only8/16/20-slot顺序真实校准，新写均20成功/无SQL错误；reset P95 1110.913/1064.465/957.033ms，change2142.248/1674.781/1446.926ms，process峰值工作集约1.13/2.13/2.63GiB，均无slot等待超时。只reset20-slot单轮达标，整个普通写仍FAIL，生产4不改。另原4-slot历史reset20成功/P95 6014.758ms、change14成功6个实际global55P03/P95 7908.389ms，九表快照不写、first保持。下一优先历史KDF事务外source与最终重新授权，不以提高资源掩盖全局锁缺口；CR OPEN、无生产变更。
+
 ## 实际证据
 
 P06A01在Windows11、32逻辑CPU/约31.63GiB RAM、原SQLAlchemy默认pool5+overflow10、真实PG18/Scrypt、实际Windows写Factory的ASGI完整HTTP处理路径测试。20独立客户端同时放行，独立目标reset及本人change；正向License/密钥来源合成，无客户资料/秘密外发。

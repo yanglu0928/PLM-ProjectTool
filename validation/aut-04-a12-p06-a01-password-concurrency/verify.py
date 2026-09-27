@@ -36,7 +36,7 @@ async def batch(app,requests):
     return await asyncio.gather(*tasks)
 
 
-def extra(v,settings):
+def extra(v,settings,*,include_replay=False):
     hasher=m.ScryptPasswordHasher()
     sessions=m.SessionService(unit_of_work=v['uow'],repository=m.SqlAlchemySessionRepository(),
         issue_access=m.SqlAlchemyPasswordIssueAccess(hasher),audit=v['audit'],idempotency=m.SqlAlchemyIdempotencyReceipts())
@@ -90,7 +90,7 @@ def extra(v,settings):
         changes=[('POST','/api/v1/auth/password:change',headers(session),{'current_password':temporary,'new_password':normal})
             for session in restricted]
         changed=measure('change_fresh',changes,1000)
-        succeeded=0;rolled_back=0
+        succeeded=0;rolled_back=0;normal_sessions=[]
         for uid,session,response in zip(users,restricted,changed,strict=True):
             root=v['db'].execute('SELECT credential_version,lock_version FROM plm.auth_users WHERE user_id=%s',(uid,)).fetchone()
             first_count=v['db'].execute('SELECT count(*) FROM plm.auth_password_change_results WHERE user_id=%s',(uid,)).fetchone()[0]
@@ -99,7 +99,8 @@ def extra(v,settings):
                 try:sessions.validate(session.token)
                 except SessionError as exc:assert exc.code=='AUTH_SESSION_EXPIRED'
                 else:raise AssertionError('Restricted Session survived change')
-                assert sessions.validate(issue(uid,normal).token).credential_version==3
+                fresh=issue(uid,normal);normal_sessions.append(fresh)
+                assert sessions.validate(fresh.token).credential_version==3
                 succeeded+=1
             else:
                 assert response.json()['error']['code']=='SYSTEM_UNAVAILABLE'
@@ -114,6 +115,27 @@ def extra(v,settings):
         print('PASSWORD_CONCURRENCY_INTEGRITY '+json.dumps({'reset_firsts':reset_rows,'change_firsts':change_rows,
             'change_succeeded':succeeded,'failed_change_original_credential_and_session_retained':rolled_back},sort_keys=True))
         print('PASSWORD_CONCURRENCY_DATABASE_ERRORS '+json.dumps(database_errors,sort_keys=True))
+        if include_replay:
+            assert succeeded==20,'Historical calibration needs all twenty valid current normal identities'
+            tables=('auth_users','auth_password_credentials','auth_sessions','auth_user_create_results','auth_user_state_results',
+                'auth_password_change_results','auth_password_reset_results','aud_events','plt_idempotency_receipts')
+            def snap():return {table:tuple(v['db'].execute('SELECT * FROM plm.'+table+' ORDER BY 1')) for table in tables}
+            before=snap()
+            replayed=measure('reset_replay',resets,1000)
+            for first,response in zip(firsts,replayed,strict=True):
+                if response.status_code==200:
+                    assert response.json()['data']==first.json()['data'] and response.headers['etag']==first.headers['etag']
+                else:assert response.json()['error']['code']=='SYSTEM_UNAVAILABLE'
+            assert snap()==before
+            replay_changes=[(method,path,h|{'cookie':'plm_session='+fresh.token.hex(),'x-csrf-token':fresh.csrf_token.hex()},body)
+                for (method,path,h,body),fresh in zip(changes,normal_sessions,strict=True)]
+            replayed=measure('change_replay',replay_changes,1000)
+            for first,response in zip(changed,replayed,strict=True):
+                if response.status_code==200:assert response.json()['data']==first.json()['data']
+                else:assert response.json()['error']['code']=='SYSTEM_UNAVAILABLE'
+            assert snap()==before
+            print('PASSWORD_REPLAY_INTEGRITY nine tables unchanged; valid current normal Sessions; original firsts retained')
+            print('PASSWORD_REPLAY_DATABASE_ERRORS '+json.dumps(database_errors,sort_keys=True))
     OUTCOME.append(all(row['performance_pass'] for row in observations))
     print('PASSWORD_CONCURRENCY_SUMMARY '+json.dumps({'functional_pass':all(row['functional_all_200'] for row in observations),
         'performance_pass':all(row['performance_pass'] for row in observations),'reports':observations,

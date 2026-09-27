@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-327
+
+- Executed：8/16/20-slot实验新写全20成功/SQL空；reset1110.913/1064.465/957.033ms，change2142.248/1674.781/1446.926ms，process峰值工作集1208188928/2281807872/2818846720 bytes，活动峰值等于上限且slot等待0。生产4不改，不能靠单轮reset达标关闭整体性能。原4历史reset20成功6014.758ms/change14成功6个actual global55P03/7908.389ms，九表不写/first保持；所有运行末exit1 FAIL，旧状态/发布通过。下一readonly receipt hint/source detached历史KDF及最终完整重验；无生产变更，unit1400/wheel沿用上一轮未重跑。
+
+- P06A04P01编码前检查见progress：test-only8/16/20-slot分进程顺序比较固定KDF实际HTTP/正确性与peak working set，再原4-slot历史20重放/九表无写。production仍4、无Migration/API/依赖/权限变；阈值不变，全结果保留、失败非零，下一按实际证据决定调度/历史锁段修复。
+
 ## DEC-20260927-326
 
 - Final unit：1400 tests无失败（2既有跳过），change Service11 unit含真实5线程4-slot界及新hash失败无写/擦除；1398后补test再全量通过，生产源码不再改。
