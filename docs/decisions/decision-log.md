@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-386
+
+- Executed：新增7方法，1548unit21.805秒无失败/errors0/2跳过、exit0；输入/UTF8字符/claim/Hash来源/底层错误拒绝，密码擦除/UOW退出/noCommit及Memoryview release通过。无正式账户创建或生产变更，完整coverage/性能/wheel未跑，下一A39初始管理员DB适配来源与原临时库验证，Gate/包待。
+
+- Phase2/P07A38编码前检查见initial-admin-defensive；只内部Service合同/密码擦除，正式用户口令不代供给，底层RuntimeError沿原传播不假称统一固定码，Mock Port不冒充SQL。
+- 无生产/Migration/API/权限/依赖变，无升级；完整unit跑，实际初始管理员来源另项，完整coverage/性能/wheel另项，Gate/包待。
+
 ## DEC-20260927-385
 
 - Executed：七实际投影/同UOW当前改名禁用/真实22P02与22012→25P02通过exit0，九表回滚/健康重读及原发布回归通过。None不匹配、有效UUID字符串PG转换如实记录，不假称适配层校验/权限。无生产变化，unit1541本批未跑，coverage/性能/wheel未跑，下一A38初始管理员Service防御，Gate/包待。
