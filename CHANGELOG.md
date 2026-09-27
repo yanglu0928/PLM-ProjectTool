@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：0.1.0.dev0/P07-A18新增6参数化User读取依赖/clock/篡改Query-View/首末License/Access-UOW拒绝方法，无commit/已进UOW退出，完整1514unit/contract无失败/2既有跳过。仅Port合同不冒充SQL；无生产/Migration/API/权限/算法/依赖变化，兼容0049无升级。coverage/14PG/wheel/性能未跑，原84.717%与Hash保持；下一独立Login HTTP防御，正式安全/性能FAIL/trust/Gate/可用包待。
+
 - 2026-09-27：0.1.0.dev0/P07-A17新增7参数化Session HTTP依赖/异常/投影错配/logout非True安全响应方法，固定error+trace/无Set-Cookie/Token/私有详情，renew前拒绝无rotate，全量1508unit/contract无失败/2跳过。仅Port合同不冒充PG/TLS；无生产/Migration/API规则/权限/算法/依赖变化，兼容0049无升级。coverage/14PG/wheel/性能未跑，原84.717%与Hash保持，下一User read防御；正式安全/性能FAIL/trust/Gate/可用包待。
 
 - 2026-09-27：0.1.0.dev0/P07-A16完整1501unit无失败/2跳过、14实际PG/Windows/Vault链全通过；完整Auth行95.125%/分支84.717%，90%分支仍未达/exit1，密码91.146%保持/工厂另列。完整范围/分母/旧raw不变，新Hash7d6fbfc0…。无生产/Migration/API/权限/算法/依赖变化，兼容0049无升级；性能/wheel未跑。下一SessionHTTP拒绝与安全错误，完整安全/性能FAIL/正式trust/Gate/可用包待。

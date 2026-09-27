@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-365
+
+- Executed：6新增方法，1514unit/contract无失败/errors0/2既有跳过、exit0；四依赖/五clock/三Query/六View/首末License/三Access-UOW故障拒绝，无commit/已进UOW退出，仅Port证据。无生产变化，coverage/14PG/wheel/性能未跑，原84.717%与Hash保持。下一独立Login HTTP输入/来源拒绝，完整安全/正式trust/Gate/包待。
+
+- Phase2/P07A18编码前检查见user-read-defensive；仅User读取Service依赖/clock/篡改Query/View/首末License/Access及UOW异常拒绝，无commit/已进UOW闭合，Mock仅Port不冒充SQL授权或回滚。
+- 无生产/Schema/API/权限/算法/依赖变，撤测试无升级；完整unit实际跑，coverage/14PG/wheel/性能未跑，旧84.717%/Hash/90%保留，正式trust/Gate/可用包待。
+
 ## DEC-20260927-364
 
 - Executed：7新增参数化方法，1508unit/contract无失败/errors0/2既有跳过、exit0；三router八依赖、GET四/renew十一/logout七故障安全响应，固定error+trace、无Set-Cookie/Token/私有详情，renew前拒绝不rotate。仅Port合同不冒充PG/TLS，生产无变，coverage/14PG/wheel/性能未跑，原84.717%与Hash保持；下一独立User read Service，完整安全/Gate/包待。
