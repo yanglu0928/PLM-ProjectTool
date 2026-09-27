@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：0.1.0.dev0/P07-A39新增3初始管理员Repo来源防御方法，1551unit无失败/2跳过；原临时PG初始化审计失败User0/并发单赢家/一Admin一Audit/真实scrypt通过并清理。无正式账户创建/生产/Migration/API/权限/依赖变，兼容0049无升级；完整coverage/性能/wheel未跑，下一19链完整安全复验，Gate/包待。
+
 - 2026-09-27：0.1.0.dev0/P07-A38新增7初始管理员Service依赖/命令/字符长度/claim/Hash/底层故障防御方法，1548unit无失败/2跳过，密码擦除/视图释放/UOW退出/noCommit通过。无正式账户创建、生产/Migration/API/权限/依赖变化，兼容0049无升级；完整coverage/性能/wheel未跑，下一DB来源验证，完整安全/Gate/包待。
 
 - 2026-09-27：0.1.0.dev0/P07-A37真实PG七种成员名称投影、当前改名/禁用名称、两SQL错误传播及九表回滚/健康重读通过，原发布回归通过；None不匹配/有效UUID字符串数据库转换如实记录，非权限或前SQL校验承诺。无生产/Migration/API/依赖变，兼容0049无升级；unit1541本批未跑、coverage/性能/wheel未跑，下一初始管理员防御，Gate/包待。

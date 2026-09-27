@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-387
+
+- Executed：3新增方法，1551unit21.690秒无失败/errors0/2跳过；原临时PG初始化Audit失败User0、并发一Admin/一Audit/真实scrypt通过exit0并清理资源。无成功SQL模拟/正式账户/生产变化，不把count当九表证据；完整coverage/性能/wheel未跑，下一A40完整19链覆盖，Gate/包待。
+
+- Phase2/P07A39编码前检查见initial-admin-source；Repo来源防御/真实inactive合同+原自建临时PG初始化回归，证据范围保持（失败User count不冒充九表全行），不创建正式账户。
+- 无生产/Migration/API/权限/依赖变，无升级；完整unit跑，完整19链coverage/性能/wheel另项，保raw/90%，Gate/包待。
+
 ## DEC-20260927-386
 
 - Executed：新增7方法，1548unit21.805秒无失败/errors0/2跳过、exit0；输入/UTF8字符/claim/Hash来源/底层错误拒绝，密码擦除/UOW退出/noCommit及Memoryview release通过。无正式账户创建或生产变更，完整coverage/性能/wheel未跑，下一A39初始管理员DB适配来源与原临时库验证，Gate/包待。
