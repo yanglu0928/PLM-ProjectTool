@@ -1,5 +1,7 @@
 # CR-JOB-006：Audit用户重试新generation
 
+P03（2026-09-27）：当前Session/CSRF/Owner PM/Admin及合成License受权原子命令完成，实际第三失败→新Job→实际Worker文件成功、同Key并发唯一/历史版本0重放/原FAILED不变、新Key独立generation和十五表错误/写后故障回滚通过。1229后端无失败/2既有跳过、wheel677500；无Migration/API/依赖/角色变化。公开retryable/HTTP/Windows接线及其他Owner/性能/正式材料待，CR保持IN_PROGRESS。
+
 P02（2026-09-27）：原失败来源只读Port完成内部验收，真实Worker双Scope有界第三次失败的Job/Attempt/Lease/原SYSTEM Audit及版本绑定、错源/歧义/窗口拒绝十一表无写，1223后端无失败/2既有跳过及wheel674156通过。未新增Migration/API/角色/依赖，公开retryable仍False。历史SYSTEM事件按immutable来源核验，不要求持当前WorkerKey来读取；不授权当前业务操作。P03当前Auth/CSRF/License/receipt及新generation命令仍待，CR整体IN_PROGRESS。
 
 P01（2026-09-27）：immutable Audit lineage/首次版本DTO及ORM/Migration0045内部完成，真实空/有数据up-down/错源-Query/不可变/回滚/有历史down拒绝、旧取消/Worker retry/Windows读取回归及1216后端无失败/2既有跳过、开发wheel669958通过。仅结构事实；Jobs实际FAILED/Attempt/expected_version与Owner当前授权/原子receipt/HTTP仍待。0044及64cdf09不改，未迁移生产；CR保持IN_PROGRESS，不得据此复活原Job或开API。

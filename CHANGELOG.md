@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/JOB-03-A02-P03新增当前用户授权的Audit原子新代重试Service和immutable generation Repository。真实双Scope第三失败→新Job实际Worker成功、同Key并发唯一/首次版本0历史重放/旧FAILED不变、新Key新generation，错误授权/版本及写后故障十五表回滚；1229后端无失败/2既有跳过、开发wheel677500通过。无Migration/API/依赖/角色/升级变化，head0045；停未接线入口回滚保历史。HTTP/metadata retryable/Windows及其他Owner未接，正式材料/三平台/性能/完整包/Gate待。
+
 - 2026-09-27：`0.1.0.dev0`/JOB-03-A02-P02新增Jobs/Audit owned原失败只读Port及最小DTO，绑定原任务版本、第三真实Attempt/释放Lease和唯一SYSTEM失败Audit。实际双ScopeWorker5/15秒重试第三失败/来源-版本-歧义-窗口拒绝十一表无写、原Worker回滚及文件发布回归、新7unit/1223后端无失败/2既有跳过、开发wheel674156通过。无Migration/API/角色/依赖/升级变化，head0045；撤未接线Port回滚保历史。当前用户授权/CSRF/License/Receipt新任务命令及HTTP未完成，公开retryable保持False；正式账户/三平台/性能/完整包/Gate待。
 
 - 2026-09-27：`0.1.0.dev0`/JOB-03-A02-P01按CR-JOB-006新增Audit不可变重试generation/首次版本DTO及Migration0045。真实空/有数据up-down保旧表、错Query/来源/版本/时间及变更拒绝、回滚/有历史down安全拒绝、旧取消/Worker retry/双Windows读取回归及1216后端无失败/2既有跳过、开发wheel669958通过。trigger OLD别名冲突已修重验，无条件放宽。无新API/权限/依赖；升级须维护备份0045，有历史禁止丢弃down，停未装配入口回滚保历史。FAILED/原Attempt/授权/receipt命令/用户retryHTTP未完成，合成Audit非重试证明；正式材料/三平台/性能/完整包/Gate待。

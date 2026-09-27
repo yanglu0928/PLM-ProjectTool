@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260927-283
+
+- Executed：真实双Scope第三失败→并发受权新generation→新Worker实际文件成功→首次响应重放，旧终态不变；版本/Session/CSRF/Scope/角色/License及postAudit/lineage/receipt故障十五表回滚。1229后端无失败/2跳过、wheel677500；内部CSRF预期纠正ACCESS_DENIED、P02观察器改当前source零关系保全快照。HTTP/metadata待，不算完整包/Gate。
+
+- Date/WBS：2026-09-27 / Phase2 JOB-03-A02-P03；CR-JOB-006/0045/原失败Port前置完成。现Owner当前Session/CSRF/License及PM export/Admin授权逐次再核；无新角色/Schema/API/依赖。
+- Decision：同事务固定原源、receipt指纹含原Job/query/version，新Export/Job/Outbox/两Audit/Acceptance/immutable lineage原子保存，最后再授权。重放保首次Job/版本0而非当前状态；新Key才新generation，旧终态不变。不让通用Job权限覆盖更严格Owner规则。
+- Tests/Risk/Rollback：真实PG/Worker失败→新Worker成功/并发幂等/历史响应/授权/强版本/写后故障回滚；关未公开入口保历史。公开retryable/HTTP待后续，不把内部命令视完整交付。
+
 ## DEC-20260927-282
 
 - Executed：真实双ScopeWorker第三失败/版本/原pair/Audit及重复事件歧义-错误Attempt窗口拒绝十一表无写；7新unit/1223后端无失败（2既有权限跳过）、开发wheel674156与原Worker/文件发布回归通过。无Migration，未挂API/改retryable，下一P03当前授权+原子generation/receipt。只读来源PASS不是用户重试功能PASS。

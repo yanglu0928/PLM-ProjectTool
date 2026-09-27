@@ -70,7 +70,8 @@ def observe(v,accepted,c):
         uuid4(),accepted.intent.spec),idempotency_key=str(uuid4()))
     reject(pending,0,'JOB_NOT_RETRYABLE')
     db.execute("UPDATE plm.job_jobs SET available_at=statement_timestamp()+interval '1 year' WHERE job_id=%s",(pending.job_id,))
-    assert db.execute('SELECT count(*) FROM plm.aud_export_retry_generations').fetchone()==(0,)
+    assert db.execute('SELECT count(*) FROM plm.aud_export_retry_generations WHERE source_job_id=%s',
+        (accepted.job_id,)).fetchone()==(0,)
     print('User retry source PASS: real Worker third bounded AUDIT_UNAVAILABLE failure/RELEASED Lease/Attempt/current version and unique original SYSTEM failure Audit read through Jobs/Audit owned Ports; wrong version/type/actor/pair and PENDING refuse, eleven tables unchanged. No current Session/CSRF/License user command/new generation/HTTP/production/Gate proof.')
 
 if __name__=='__main__':worker.fixture.main(exercise=lambda v:worker.exercise(v,observe_failed=observe))
