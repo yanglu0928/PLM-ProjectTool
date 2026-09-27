@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-358
+
+- Executed：5参数化方法，record20/get4/DTO4/事务故障6/hash6拒绝；首次1491通过，复查坏盐用例实际改参数，精确修正盐字段后再次完整1491无失败/errors0/2既有跳过，exit0。不mock成功SQL，未调用verifier；仅P01 PASS，实际来源P02待。生产不改，coverage/12PG/wheel/性能未跑，原82.186%与Hash保持，Gate/包待。
+
+- Phase2/P07A13P01编码前检查见create-result-defensive；只Result Repo前SQL坐标/DTO拒绝及_session底层故障固定码，不mock成功SQL；实际缺行/原Credential和verifier来源P02真实PG另验。无生产/Schema/API/算法/依赖变化，撤测试无升级。
+- 完整unit实际跑，coverage/12PG/wheel/性能本批不跑，原82.186%/Hash/90%保持，正式trust/Gate/包待。
+
 ## DEC-20260927-357
 
 - Executed：新增6参数化方法，完整1486unit无失败/errors0/2既有跳过，exit0；九依赖/三收据/四重放/八写来源/四clock/十二hash合同拒绝，无commit/已进UOW闭合/密码擦除。仅Port证据，生产不改；coverage/12PG/wheel/性能未跑，原82.186%与Hash保持。下一Result Repo独立前SQL/异常与实际来源验证，正式trust/Gate/可用包待。
