@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-377
+
+- Executed：真实有效读取与8拒绝（7返回None、1 SQL22012→25P02原异常）通过exit0，九表全行回滚/健康重读及原发布回归通过；临时库/合成来源，无生产变更，不称Review全流程通过。unit1528本批未跑，完整coverage/性能/wheel未跑，下一A30 ProjectReadAccess，Gate/包待。
+
+- Phase2/P07A29编码前检查见review-access-source；实际临时PG当前用户/会话/CSRF、七拒绝场景和真实SQL22012后25P02传播，九表回滚与正常恢复读取；不mock成功SQL/停约束/改生产。
+- 无Migration/API/权限/依赖变，无升级；unit1528本项不重跑，完整coverage/性能/wheel另项，Gate/包待。
+
 ## DEC-20260927-376
 
 - Executed：新增3参数化方法，14个token-CSRF/5个time/5个事务来源拒绝通过，完整1528unit21.638秒无失败/errors0/2跳过、exit0；无成功SQL模拟、无生产变更。coverage/15链/性能/wheel未跑，下一A29实际数据库来源，Gate/包待。
