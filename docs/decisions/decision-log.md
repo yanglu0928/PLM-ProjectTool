@@ -2,6 +2,8 @@
 
 ## DEC-20260927-272
 
+后续验收：同原不可变actor、实际Session/current Project/Admin facts经原只读Service与可选HTTP双Scope读取通过，File/Version限制只在临时库执行且不假恢复。十三表读不写，无生产实现/Schema变化；合成License和TEST_ONLY密码记录不冒充生产登录证明。成功ParseRecord/运行装配依然未验，P03不整体关闭。
+
 - Phase2/JOB-01-A04-P03：内部Owner先组合Jobs hint、Document/Audit原源、锁定原Queue pair，当前权限留AuthorizedJobReadService同UOW；不把hint/source当授权。未知SUCCEEDED实际ParseRecord证明安全拒绝，下一补真实结果核验，不猜文档版本为结果。
 - 无Migration/API/角色/依赖变化；原Scope完整保留，尚未挂生产组合。内部PROJECT真实来源组合与1191后端/2既有跳过通过不代表当前Session、GLOBAL权限、Parser或整项P03完成。回滚撤内部Owner保历史。
 

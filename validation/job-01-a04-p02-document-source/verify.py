@@ -18,7 +18,7 @@ from plm_assistant.modules.audit.application.public import AuditEventDraft
 spec=spec_from_file_location('_document_source_fixture',Path(__file__).resolve().parents[1]/'doc-03-a04-a04-upload-commit'/'verify.py')
 fixture=module_from_spec(spec);spec.loader.exec_module(fixture)
 
-def exercise(v):
+def exercise(v,*,observe=None):
     queue=ParseJobQueue(SqlAlchemyParseJobQueueRepository())
     reader=DocumentParseSourceReader(repository=SqlAlchemyDocumentParseSources(),audit_sources=UploadCommitAuditSources(repository=SqlAlchemyUploadCommitAuditSources()))
     tables=('job_jobs','job_outbox_events','doc_upload_intents','doc_documents','doc_document_versions','doc_version_source_refs','doc_file_objects','aud_events','plt_idempotency_receipts')
@@ -61,6 +61,7 @@ def exercise(v):
             finally:db.execute('UPDATE plm.doc_documents SET document_state=%s,lock_version=lock_version+1 WHERE document_id=%s',(original,result.document_id))
         # First version is still valid when latest points to the successor.
         assert db.execute('SELECT latest_version_ref FROM plm.doc_documents WHERE document_id=%s',(v['first'].document_id,)).fetchone()==(v['second'].document_version_id,)
+        if observe is not None:observe(v,global_result)
         # A second actual append-only commit event is not guessed away by picking
         # a convenient matching record. Isolated fixture only, never production.
         with v['runtime'].unit_of_work() as tx:
