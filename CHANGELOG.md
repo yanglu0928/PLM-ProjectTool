@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/AUT-04-A10-P03仅Windows显式write接User名称PATCH原Service/Repo/router，无新Key/fallback；1319无失败（2既有跳过），actualFactory全HTTP矩阵、真实旧登录401/新名200同UUID/原Session有效、NONE拒绝和first重放七表不变、readonly405/三构造fault实际到达及dispose/default-login404/缺正式材料拒绝、旧Windows创建与原发布回归/wheel706776通过。无Migration/依赖/权限/Breaking，兼容0046；撤接线保历史，改名登录影响见增量合同。P01～P03内部完成，正式供给/性能/三平台/UI/可安装包/Gate待；下一enable/disable前置。
+
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A10-P02新增可选User名称PATCH HTTP，严格单username/Origin-Host/Session-CSRF/If-Match及safe200/ETag。1319无失败（2既有跳过），真PG版本/no-op/唯一/禁用状态保留/创建首响应对GET、权限格式许可拒绝六表无写与实际Audit后故障回滚、P01/发布回归/wheel706685通过。无Migration/依赖/权限/Breaking，兼容0046；撤router保历史，未知确认先GET不盲重试。默认404/Windows尚未挂载，正式信任/性能/三平台/UI/完整包/Gate待；下一仅write装配。
 
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A10-P01新增内部名称PATCH当前Admin-CSRF/License前后控制、NFC/casefold全局唯一、版本/no-op及同事务安全Audit。1312无失败（2既有跳过），真PG竞争/禁用唯一/原凭据会话历史保留/创建重放、拒绝六表无写与写后故障回滚、原发布回归/wheel705209通过。无Migration/依赖/权限/Breaking，兼容0046；改名后使用新登录名，无旧别名承诺；撤服务保历史，不自动回写改名。HTTP/Windows接线/正式信任/性能/三平台/UI/可安装包/Gate待，下一可选PATCH HTTP。

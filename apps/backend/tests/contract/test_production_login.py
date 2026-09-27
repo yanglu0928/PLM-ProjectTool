@@ -25,12 +25,13 @@ from plm_assistant.modules.jobs.api.list_cursor import JobListCursorCodec
 
 
 class ProductionLoginTests(unittest.TestCase):
-    def test_user_create_constructors_fail_closed_dispose_write_only(self):
+    def test_user_write_constructors_fail_closed_dispose_write_only(self):
         from contextlib import ExitStack
         from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
         prefix='plm_assistant.entrypoints.production_login.'
         for dependency in ('SqlAlchemyUserCreateResultRepository','UserCreateReplayVerifier',
-                           'ManagedUserCreateService','create_user_create_router'):
+                           'ManagedUserCreateService','create_user_create_router',
+                           'SqlAlchemyUserNamePatchRepository','UserNamePatchService','create_user_name_patch_router'):
             runtime=Mock();runtime.is_ready.return_value=True
             with ExitStack() as stack:
                 for name,value in (('read_database_url','postgresql+psycopg://localhost/test'),

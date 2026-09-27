@@ -28,6 +28,9 @@ from plm_assistant.modules.jobs.api.read_detail import create_job_detail_router
 from plm_assistant.modules.auth.api.user_detail import create_user_detail_router
 from plm_assistant.modules.auth.api.user_list import create_user_list_router
 from plm_assistant.modules.auth.api.user_create import create_user_create_router
+from plm_assistant.modules.auth.api.user_name_patch import create_user_name_patch_router
+from plm_assistant.modules.auth.application.user_name_patch import UserNamePatchService
+from plm_assistant.modules.auth.infrastructure.user_name_patch_repository import SqlAlchemyUserNamePatchRepository
 from plm_assistant.modules.auth.application.managed_user_create import ManagedUserCreateService
 from plm_assistant.modules.auth.application.user_create_replay import UserCreateReplayVerifier
 from plm_assistant.modules.auth.infrastructure.user_create_result_repository import SqlAlchemyUserCreateResultRepository
@@ -291,6 +294,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         user_detail_router = None
         user_list_router = None
         user_create_router = None
+        user_name_patch_router = None
         job_list_router = None
         job_cancel_router = None
         job_retry_router = None
@@ -611,6 +615,10 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 sessions=sessions, departments=department_deactivates, origins=origins,
             )
             if include_secret_write:
+                user_name_patch_router = create_user_name_patch_router(sessions=sessions, origins=origins,
+                    writes=UserNamePatchService(unit_of_work=runtime.unit_of_work,
+                        access=SqlAlchemyUserCreateAccess(), license_guard=licenses.guard,
+                        repository=SqlAlchemyUserNamePatchRepository(), audit=audit))
                 user_create_results = SqlAlchemyUserCreateResultRepository(verifier=verifier)
                 user_create_router = create_user_create_router(sessions=sessions,origins=origins,
                     writes=ManagedUserCreateService(unit_of_work=runtime.unit_of_work,
@@ -781,6 +789,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             user_detail_router=user_detail_router,
             user_list_router=user_list_router,
             user_create_router=user_create_router,
+            user_name_patch_router=user_name_patch_router,
             job_list_router=job_list_router,
             job_cancel_router=job_cancel_router,
             job_retry_router=job_retry_router,

@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260927-301
+
+- Executed：1319无失败（2既有跳过），actualFactory名称PATCH真实HTTP全矩阵、旧登录401/新登录200同身份/原Session有效、NONE拒绝/首创建重放七表无写；readonly405不构造、三write构造fault实际到达/安全拒绝及unit dispose、default-login404/实际缺正式信任拒绝。旧Windows创建完整链与原发布/wheel706776回归通过；无Schema/依赖/权限/Key变化，正式供给/性能/三平台/UI/包待。
+
+- Date/WBS：2026-09-27 / AUT-04-A10-P03，编码前检查见progress；P02 fff5e83真实HTTP通过。
+- Decision：User名称PATCH仅Windows显式write挂载，复用原UOW/Admin-CSRF/License/Audit；readonly GET-only405，login/default404，不新增Key或fallback。
+- Impact/Rollback/Tests：无Schema/依赖/权限变；撤接线保历史；actualFactory完整HTTP矩阵、新旧登录/原Session、构造fault真实到达/dispose/缺正式信任拒绝待验。正向合成材料，非正式供给/性能/三平台/包PASS。
+
 ## DEC-20260927-300
 
 - Executed：7新Contract/1319无失败（2既有跳过）；真Session-CSRF/PG PATCH安全200/版本及no-op、历史first201对currentGET、禁用名唯一与状态保留、权限输入License拒绝六表不变/实际Audit后故障回滚；P01与原发布回归/wheel706685通过。默认404，Windows/正式供给/性能/包待。
