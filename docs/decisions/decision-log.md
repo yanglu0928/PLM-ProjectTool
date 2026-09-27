@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-324
+
+- Executed：三轮真实20客户端Windows/PG/Scrypt GET P95约108～120ms，reset20成功但约5.6秒，change14成功/6个503约7.3秒；第三轮实际SQL六55P03都来自deployment advisory lock。失败六用户版本/凭据/原Session保持，无change first/Audit；成功14及20reset first计数真实一致、原Windows状态/发布通过。验收FAIL，CR-AUT008先登记比较/风险/回滚/验证及下一预计算设计，未改生产代码/Schema/依赖。unit1388沿用上一轮未重跑，完整CR/Gate不关闭。
+
+- P06A01编码前检查见progress；真实Windows Factory/PG/Scrypt、独立20异步客户端同步放行，完整HTTP GET/reset/change计时与数据库来源核对，nearest-rank P95/500ms与1000ms按原标准。正向trust合成，非实际网络/正式发行。只验证无生产变更；延迟失败如实登记，不降低KDF或去安全锁，下一按证据调整。
+
 ## DEC-20260927-323
 
 - Executed：Windows实际write完整PG/Scrypt HTTP矩阵、真实登录reset→旧Session/password401→受限登录change→正常新登录/原first恢复通过；六新增构造故障dispose一次/九表不变，readonly405/default-login404/缺正式材料拒绝、旧状态/发布回归及1388无失败（2跳过）/wheel749399通过。无Migration/依赖/生产升级，正向trust合成；CR/Gate未关闭，下一完整验收缺项与20并发前置。

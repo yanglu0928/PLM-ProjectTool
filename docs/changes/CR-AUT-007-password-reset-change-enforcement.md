@@ -1,6 +1,8 @@
 # CR-AUT-007 密码重置、强制改密与当前会话限制
 
-日期2026-09-27；版本0.1.0.dev0；状态RESTRICTED_SESSION_PROJECTION_VERIFIED_PASSWORD_FLOW_PENDING。
+日期2026-09-27；版本0.1.0.dev0；状态INTERNAL_PASSWORD_FLOW_VERIFIED_CONCURRENCY_FAIL_RELEASE_PENDING。
+
+P06A01最新：内部reset/change及Windows接口已实施，以下早期“未实现/关闭”段落保留历史。真实20并发GET达标；reset P95约5.6秒超标、change14成功/6实际global advisory lock 55P03→503，失败用户没有半写且原Session保持。CR-AUT008登记最小修复方向，完整验收矩阵见对应progress；本CR不关闭，正式供给/覆盖率/性能/三平台/UI/完整包仍待。
 
 P03A03进展：真实0048first Repository及前后Credential精确历史Scrypt来源通过；record服务器受理时间/固定profile、双密码匹配差异/伪造first/KDF异常、laterCredential历史保持、坏profile与实际caller写后回滚已PG验证，1359 tests无失败（2既有跳过）、原发布回归通过。转换仅TEST_ONLY，生产当前认证/原子Application和HTTP仍待，见P03A03progress；下一A12P04原子change。
 
