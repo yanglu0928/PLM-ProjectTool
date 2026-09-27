@@ -2,6 +2,7 @@
 from dataclasses import dataclass,field
 from datetime import datetime,timezone
 from uuid import UUID,uuid4
+from threading import BoundedSemaphore
 from .user_read import UserReadView,_id,_time
 from .user_state import UserStateActorProof
 from .password_reset_result import PasswordResetResult
@@ -11,6 +12,9 @@ from plm_assistant.modules.audit.application.public import AuditEventDraft
 from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
 from plm_assistant.modules.platform.application.idempotency import (
     IdempotencyScope,IdempotencyResult,IdempotencyError,validate_idempotency_key,canonical_payload_fingerprint)
+
+# Process-local bound for reset preparation, not a credential or authority cache.
+_RESET_HASH_SLOTS=BoundedSemaphore(4)
 
 
 class PasswordResetError(RuntimeError):
@@ -84,6 +88,16 @@ class PasswordResetService:
                 'must_change_password':True,'request_schema':1})
             op='V1_AUTH_USER_RESET_PASSWORD'
             self._guard.require_valid(trace_id=command.trace_id)
+            # This short proof only gates expensive work. Its UOW must be closed
+            # before hashing; the write UOW below obtains its own current proof.
+            with self._uow() as preparation:
+                self._actor(preparation,command)
+            if not _RESET_HASH_SLOTS.acquire(timeout=5):raise PasswordResetError()
+            try:
+                with memoryview(secret) as password:hashed=self._hasher.hash_password(password)
+                if type(hashed) is not PasswordHashResult:raise PasswordResetError()
+            finally:
+                _RESET_HASH_SLOTS.release()
             with self._uow() as tx:
                 if self._access.lock_deployment(tx) is not True:raise PasswordResetError()
                 proof=self._actor(tx,command);actor=proof.user_view.user_id
@@ -97,8 +111,6 @@ class PasswordResetService:
                         raise PasswordResetError()
                     self._final(tx,command,proof,result,changed=False)
                     return result
-                with memoryview(secret) as password:hashed=self._hasher.hash_password(password)
-                if type(hashed) is not PasswordHashResult:raise PasswordResetError()
                 view,oldid,before,count,newid=self._repo.reset(tx,user_id=command.user_id,
                     expected_version=command.expected_version,actor_id=actor,password_hash=hashed)
                 if type(view) is not UserReadView or type(before) is not UserReadView:raise PasswordResetError()

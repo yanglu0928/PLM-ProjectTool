@@ -2,6 +2,8 @@
 
 日期2026-09-27；版本0.1.0.dev0；状态CONFIRMED_FAILURE_DESIGN_PENDING_IMPLEMENTATION。来源用户持续授权、冻结64cdf09/CR-AUT007/0049、testing-rules普通写20并发P95<=1秒；保留原实现与冻结版本，不修改算法强度或验收标准。
 
+P06A02最新：reset新hash预计算已实施/真实PG边界与撤权竞争、原原子及Windows完整链通过。20并发reset20成功/P95 1634.810ms（原5653.504ms），仍未达1秒；change尚原实现，14成功/6实际55P03、P95 7559.374ms。旧状态/发布及失败无半写通过，整个CR仍FAIL/OPEN；以下拟选方向保留实施前历史，下一change和history优化，不降低标准。
+
 ## 实际证据
 
 P06A01在Windows11、32逻辑CPU/约31.63GiB RAM、原SQLAlchemy默认pool5+overflow10、真实PG18/Scrypt、实际Windows写Factory的ASGI完整HTTP处理路径测试。20独立客户端同时放行，独立目标reset及本人change；正向License/密钥来源合成，无客户资料/秘密外发。
@@ -20,6 +22,8 @@ P06A01在Windows11、32逻辑CPU/约31.63GiB RAM、原SQLAlchemy默认pool5+over
 4. 预认证、释放短只读事务后计算固定KDF，再进入原全局原子事务完整重验：作为下一分项设计方向。保持原锁序、first/receipt/Audit、全Session撤销、self专用末核、License前后和密码擦除；不缓存权利或持久化密码等价物。必须证明预计算绑定实际不可变Credential，事务内认证不因预计算被跳过，预处理撤权/凭据变化/Session续期或过期仍安全拒绝，历史重放不被“与最新密码不符”错误拦截。拟选不代表已实现或验证。
 
 ## 风险、迁移、回滚及验证计划
+
+P06A02实施前精化：先仅reset新临时密码hash；当前Admin-CSRF短UOW结束后计算，进程内固定4 slots/5秒有界等待，写事务仍原global锁+重新获取实际current proof/版本/receipt/全部末核。预proof不复用为授权；历史KDF暂仍原事务、每请求额外预hash，change不顺改。验证hash时原事务已退出/独立PG获取global及actor锁、预处理实际撤权/Session失效/目标版本变化和原完整链。局部resource界不声称整个Auth或跨进程已限流，20并发原标准保留。
 
 预处理可能引入TOCTOU、资源竞争、重放额外KDF及更多瞬时内存；需bounded资源策略与实际20并发测量，不引入缓存秘密、弱KDF、新认证机制或消息队列。正式编码前补完整proof生命周期/来源与两阶段事务边界设计及编码前检查。只选最小模块内调整，不顺改其他管理命令；如实保留仍未达标的结果。
 

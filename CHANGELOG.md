@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P06-A02将reset新hash移出DB事务及global写锁，预认证仅门槛、写事务真实重新授权及原全链保持；进程局部4-slot/5秒等待不弱化KDF。1393 tests无失败（2既有跳过），真实PG独立锁及撤权/logout/renew/target版本/License竞争无半写、原原子/Windows/发布回归与wheel749632通过。20并发reset20成功/P95约1.63秒（原5.65秒），仍未达1秒；change14成功/6锁超时未修复，性能FAIL保留。兼容0049，无Migration/API/依赖/生产升级；撤优化保历史，正式安全/完整包/Gate待。
+
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P06-A01新增真实Windows Factory/PG18/Scrypt20并发基线与完整密码验收矩阵。GET P95约108～120ms通过；reset约5.6秒超标、change14成功/6个503约7.3秒，实际六SQL55P03来自global advisory lock；失败凭据/User/Session保持且无first/Audit，原Windows状态/发布回归通过。密码并发验收FAIL，CR-AUT008记录原因/比较/预计算方向/风险/回滚，未实施优化或降低标准。无生产代码/Migration/API/依赖/升级，unit/wheel本轮未重跑；正式安全供给/性能/完整包/Gate未完成。
 
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P05-A07仅Windows显式write装配管理员reset。1388 tests无失败（2既有跳过），实际工厂PG/Scrypt完整HTTP矩阵、真实登录reset→旧Session/password401→临时受限登录change→正常新登录及历史first恢复、六构造fault安全dispose九表无写/readonly405/default-login404/缺正式材料拒绝，旧状态/发布/wheel749399通过。兼容0049，无Migration/依赖/生产升级，撤接线保历史。正向trust合成，正式材料/浏览器/20并发性能/三平台/完整包/Gate待。

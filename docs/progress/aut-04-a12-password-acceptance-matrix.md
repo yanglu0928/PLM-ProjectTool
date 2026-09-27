@@ -16,3 +16,5 @@
 |正式信任/目标账户/Server2025/Debian/UI/安装升级/UAT|根STATUS客观缺项仍在|未完成；Debian验证按用户延期但目标保留|
 
 本轮只验证/文档，无新生产代码/Migration/依赖/API规则变更；原冻结及历史保留。下一CR-AUT008预计算proof设计与有界资源/生命周期验证，不降低密码强度或删scope。完整项目交付继续推进，不以该矩阵代替程序包。
+
+P06A02增量：reset预认证结束后4-slot固定KDF/原写事务重新授权已实施，实际PG独立锁可用及撤权/logout/renew/目标版本/License拒绝九表无额外写，原原子/Windows/发布通过。最新20并发GET106.973ms、reset1634.810ms（20成功）、change7559.374ms（14成功/6个55P03），性能行仍FAIL，下一change及history；正式trust/覆盖率/浏览器/服务/三平台/包缺项不变。

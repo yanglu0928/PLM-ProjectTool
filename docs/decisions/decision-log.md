@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260927-325
+
+- Final unit：1393 tests无失败（2既有跳过），reset Service9 unit含实际5线程最多4活动hash；初次1392后补resource并发test再全量通过，无生产源码后改。
+
+- Executed：reset新hash事务外/4 slots实施；真实PG计算时global/actor/Session独立锁可取、角色/logout/renew/target disable/License竞争后九表无额外写，原原子reset及Windows/发布通过。20并发GET106.973ms、reset1634.810ms/20成功改善仍FAIL；change7559.374ms/14成功6个实际global55P03，未改change。wheel749632通过，无Migration/依赖/生产升级；下一change及历史，CR/Gate未关闭。
+
+- P06A02编码前检查见progress：reset预认证独立UOW退出后固定Scrypt（4 slots/最多5秒等待），原写UOW global锁/当前权/receipt/target expected/self末核仍全保留。预proof不是写权、不持久化密码，历史仍first KDF，change另项；无Migration/API/依赖。真实边界/撤权竞争及回归待，不预判性能通过。
+
 ## DEC-20260927-324
 
 - Executed：三轮真实20客户端Windows/PG/Scrypt GET P95约108～120ms，reset20成功但约5.6秒，change14成功/6个503约7.3秒；第三轮实际SQL六55P03都来自deployment advisory lock。失败六用户版本/凭据/原Session保持，无change first/Audit；成功14及20reset first计数真实一致、原Windows状态/发布通过。验收FAIL，CR-AUT008先登记比较/风险/回滚/验证及下一预计算设计，未改生产代码/Schema/依赖。unit1388沿用上一轮未重跑，完整CR/Gate不关闭。
