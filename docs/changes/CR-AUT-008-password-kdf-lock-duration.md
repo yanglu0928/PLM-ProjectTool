@@ -1,5 +1,7 @@
 # CR-AUT-008 密码计算与全局管理写锁排队
 
+2026-09-27/A06旧cost profiler已迁移真实Bootstrap16与原共享gate计时代理，不创建第二budget；五组20全成功/SQL0/history九表不写/计数正确、peak16/end0/timeouts0、原回归通过。P95 GET119.308/reset1006.003/change1604.868/history reset842.946/change1627.173ms，peak2285068288bytes；整体exit1 FAIL。双KDF/slot主耗时仍在，fresh global排队最高P95359.509ms但持有≤54.021ms；默认4保留，CR OPEN，不无限slots调参。下一独立安全覆盖率基线，未来接口/安全调整另CR；详情progress/DEC337。无生产/Migration/API/依赖变化。
+
 2026-09-27/A05：实际Windows10reset+10change共享混合fresh/history，4与16独立进程真Bootstrap配置；各批20成功/30KDF/peak4或16/end0/SQL0，历史九表无写/原first-Etag/旧Session失效及原回归通过。4 P95 2199.128/2507.062ms；16 1218.475/999.713ms，本轮history16临界PASS但fresh FAIL，两run exit1整体FAIL。默认4不改，CR OPEN；无生产/Migration/API/依赖变化。首次16外层默认配置冲突安全拒绝非性能测量，入口统一真实env后复验，完整追溯progress/DEC336；下一cost profiler迁移真实共享预算，不用legacy替换虚报容量。
 
 2026-09-27/A04结果：1430 tests与实际Windows多工厂同一预算/错误配置dispose九表不变/原HTTP与发布/wheel通过；默认reset/change共享4，非敏感配置严格1..16，改值需重启。混合HTTP/性能未验，原FAIL与CR OPEN保持；旧profiler替换legacy模块gate已不能控制显式工厂，需改真实配置后再测试，不虚报8/16结果。详见对应progress；无Migration/API/依赖/生产升级。

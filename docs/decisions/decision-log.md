@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-337
+
+- Executed：真实Bootstrap16/原共享gate委托计时，五组各20成功、SQL0/两history九表不写/first-版本-Session原完整性与Windows/发布回归通过，固定KDF+slot+global计数通过、peak16/end0/timeout0。P95 GET119.308/reset fresh1006.003/change fresh1604.868/reset history842.946/change history1627.173ms；processpeak2285068288bytes，整体exit1 FAIL。默认4不改，CR OPEN。成本与结论见progress，下一独立安全覆盖率基线，不无限调slots；无生产/Migration/API/依赖变更，unit/wheel未重跑。
+
+- Phase2/AUT-04-A12-P06-A04-P03-A06编码前检查见configured-profile。迁移旧测试剖析到真实Bootstrap共享预算，仅委托原gate计时不创建第二限额；五组实际计数/原完整性与性能验收，16独立进程一次。无生产/Schema/API/算法/依赖改变；风险回滚先记录，默认4/CR FAIL保留，后续转安全覆盖率避免无限资源试探。
+
 ## DEC-20260927-336
 
 - Executed：真实Windows配置4与16独立进程混合fresh/history每批20成功/30真实KDF/共享peak4或16/end0/SQL0，旧Session失效、原结果/reset ETag与九表历史不写、旧Windows与发布回归通过。4 P95 2199.128/2507.062ms；16 1218.475/999.713ms，fresh仍超1秒，两run exit1整体FAIL。首次16外层默认4冲突安全拒绝，已修整个fixture配置来源并复验，无生产gate重置。默认4不改；unit/wheel本轮未重跑，CR/Gate仍开放，下一真实成本工具迁移。

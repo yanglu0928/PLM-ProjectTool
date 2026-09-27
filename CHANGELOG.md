@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：0.1.0.dev0/AUT-04-A12-P06-A04-P03-A06迁移旧成本剖析到真实Bootstrap与原共享预算委托计时，独立16五组各20成功/SQL0/history九表不写/固定计数/peak16-end0-timeout0/原Windows与发布回归通过。P95 GET119.308ms/reset1006.003/change1604.868/history reset842.946/change1627.173，peak约2.13GiB；整体exit1性能FAIL，默认4不变，不无限调slots。无生产代码/Migration/API/依赖/升级，兼容0049，unit/wheel本轮未重跑；下一安全覆盖率基线，CR/Gate与可用包仍待。
+
 - 2026-09-27：0.1.0.dev0/AUT-04-A12-P06-A04-P03-A05新增实际Windows写工厂10reset+10change混合HTTP验证，真实配置4/16独立进程，各fresh/history20成功/30真KDF/共享峰值4或16/结束0/SQL0，原结果/历史九表不写/旧Session与原回归通过。4 P95约2.20/2.51秒，16约1.22/1.00秒（history999.713ms单轮PASS），两run整体exit1 FAIL；默认4不改，固定安全强度/原验收标准保持。无生产代码/Migration/API/依赖/升级；unit/wheel本轮未重跑，兼容0049，Gate与可用安装包未完成；下一旧成本工具迁移真实装配。
 
 - 2026-09-27：0.1.0.dev0/AUT-04-A12-P06-A04-P03-A04新增password_kdf_slots非敏感配置默认4/严格1..16与Windows写工厂进程唯一reset/change预算；多工厂同值共用，改值需重启，非法值安全拒绝且释放DB资源。1430 tests无失败/2既有跳过，实际Windows多工厂/配置冲突九表不变/原HTTP及发布回归、开发wheel753290通过。兼容0049，无Migration/API/依赖/生产升级；混合HTTP及整体性能尚待，原FAIL保持。不是全Auth/跨进程预算或可用安装包，CR/Gate未关闭。
