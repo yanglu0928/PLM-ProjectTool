@@ -1,5 +1,7 @@
 # CR-AUT-008 密码计算与全局管理写锁排队
 
+2026-09-27/A05：实际Windows10reset+10change共享混合fresh/history，4与16独立进程真Bootstrap配置；各批20成功/30KDF/peak4或16/end0/SQL0，历史九表无写/原first-Etag/旧Session失效及原回归通过。4 P95 2199.128/2507.062ms；16 1218.475/999.713ms，本轮history16临界PASS但fresh FAIL，两run exit1整体FAIL。默认4不改，CR OPEN；无生产/Migration/API/依赖变化。首次16外层默认配置冲突安全拒绝非性能测量，入口统一真实env后复验，完整追溯progress/DEC336；下一cost profiler迁移真实共享预算，不用legacy替换虚报容量。
+
 2026-09-27/A04结果：1430 tests与实际Windows多工厂同一预算/错误配置dispose九表不变/原HTTP与发布/wheel通过；默认reset/change共享4，非敏感配置严格1..16，改值需重启。混合HTTP/性能未验，原FAIL与CR OPEN保持；旧profiler替换legacy模块gate已不能控制显式工厂，需改真实配置后再测试，不虚报8/16结果。详见对应progress；无Migration/API/依赖/生产升级。
 
 2026-09-27/A04实施前补充：按持续授权采用非敏感Bootstrap password_kdf_slots默认4/1..16与Windows写工厂进程唯一reset/change预算；不同容量安全拒绝需重启。风险/迁移回滚/验收见progress aut-04-a12-p06-a04-p03-a04-process-composition与DEC335。无数据库/API/算法变化，性能FAIL与CR OPEN保持；尚未执行验证。

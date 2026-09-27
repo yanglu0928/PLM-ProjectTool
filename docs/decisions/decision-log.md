@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-336
+
+- Executed：真实Windows配置4与16独立进程混合fresh/history每批20成功/30真实KDF/共享peak4或16/end0/SQL0，旧Session失效、原结果/reset ETag与九表历史不写、旧Windows与发布回归通过。4 P95 2199.128/2507.062ms；16 1218.475/999.713ms，fresh仍超1秒，两run exit1整体FAIL。首次16外层默认4冲突安全拒绝，已修整个fixture配置来源并复验，无生产gate重置。默认4不改；unit/wheel本轮未重跑，CR/Gate仍开放，下一真实成本工具迁移。
+
+- Phase2 / AUT-04-A12-P06-A04-P03-A05；编码前检查、风险/回滚/验收见mixed-http进度。实际Windows写工厂10+10同时新写/历史，真实Bootstrap容量、真实KDF计数/总峰值/结束0，九表历史不写与原结果。无生产源码/Schema/API/权限/依赖变化，保持性能原1秒标准，运行结果待验。
+
 ## DEC-20260927-334
 
 - Executed：1426 tests无失败/2既有跳过，容量严格bound/5秒timeout/owner配对/线程界/异常恢复及两个Service strictTrue/擦除通过；真实PG10reset+10change混合fresh/history各30 KDF、合计peak4/end0、20原结果与历史九表无写、旧Session失效，原atomic/发布/wheel752486通过。Windows工厂尚未注入/默认两个旧4兼容保留，不虚报全部Auth或HTTP性能；下一非敏感配置与进程唯一budget装配，原性能FAIL/CR/Gate开放，无Migration/API/依赖。
