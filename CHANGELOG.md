@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P05-A06新增可选管理员reset POST、强If-Match/严格write-only JSON及安全User ETag/self Cookie恢复合同。1388 tests无失败（2既有跳过），真实PG/Scrypt normal/disabled/self、拒绝九表不变、真实change后历史重放、Audit回滚及self提交后末读503新认证原Key恢复、原发布/wheel749262通过。兼容0049，无Migration/依赖/生产升级；撤router保历史不复活Session。默认404，Windows下一项；正式trust/浏览器/性能/三平台/完整包/Gate未完成。
+
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P05-A05新增内部原子管理员reset Service/Repository，currentAdmin-CSRF/License前后/expected/固定true与全Session/Audit/first/receipt、自reset专用末核。1384 tests无失败（2既有跳过），真PG/Scrypt同不同Key竞争/三Session含expired撤销/真实change历史重放、disabled0保停用、四Port+三SQL/precommit/末License/实际角色撤销九表回滚及commit丢确认恢复、TEST_ONLY坏旧profile修复/唯一Admin self改密恢复，原发布/wheel747290通过。修正会话返回对象测试读取后完整复验。兼容0049，无Migration/API/依赖/生产升级；撤未挂入口保历史不回写Hash/复活Session。License合成，HTTP/Windows/性能/三平台/UI/包/Gate待，下一可选reset POST。
 
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P05-A04新增normal current Admin-CSRF及self首次reset专用末核Port。1380 tests无失败（2既有跳过），实际PG/Scrypt真实Admin与坏CSRF/NONE/other-self拒绝、同UOW实际first末核/伪造到期及意外身份变化拒绝、旧受限无新权及actualchange/newlogin恢复Admin，source/发布回归/wheel743224通过。兼容0049，无Migration/API/依赖/生产升级；撤未挂Port保历史。TEST_ONLY reset转换非License/原子reset/If-Match/收据/唯一Admin/HTTP证明；下一原子reset，完整包/Gate待。

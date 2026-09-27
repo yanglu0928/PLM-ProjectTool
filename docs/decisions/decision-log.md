@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-322
+
+- Executed：1388 tests无失败（2既有跳过）；实际PG/Scrypt-ASGI strict JSON/来源/Session-CSRF-Key/强If-Match拒绝九表不变，normal/disabled/self的凭据版本与User ETag分离，实际change后正常Admin原Key历史Cookie保留；实际Audit回滚及self提交后末读503真实change/新正常Admin恢复first，原发布/wheel749262通过。无Migration/依赖/生产升级；合成License，默认404，Windows下一项，CR/Gate不关闭。
+
+- P05A06编码前检查见progress；可选reset POST strict临时密码/true/来源/Session-CSRF-Key/强If-Match，正常Admin/License由原Service承担；公开仅版本，目标ETag用first User version非Credential版本，重放原ETag；self Cookie精确清除/normal新认证重放保留/未知末读503恢复。无Migration/依赖，真实矩阵待，Windows另项。
+
 ## DEC-20260927-321
 
 - Executed：1384 tests无失败（2既有跳过）；真PG/Scrypt同Key单first/不同Key版本竞争、三旧Session含expired撤销/受限登录/真实change后历史恢复/disabled0保停用；四Port+三SQL/precommit/末License及实际角色撤销九表回滚、commit丢确认恢复；TEST_ONLY坏旧profile实际reset修复、唯一Admin self末核false回滚/丢确认/旧受限无新权/License-disabled真change后normalAdmin原first恢复。修正IssuedSession测试读取后完整复验，原发布/wheel747290通过。无Migration/API/依赖，License合成/无HTTP性能发行证明，下一可选reset HTTP。

@@ -36,6 +36,7 @@ def create_app(
     user_name_patch_router: APIRouter | None = None,
     user_state_router: APIRouter | None = None,
     password_change_router: APIRouter | None = None,
+    password_reset_router: APIRouter | None = None,
     secret_metadata_router: APIRouter | None = None,
     secret_metadata_list_router: APIRouter | None = None,
     secret_create_router: APIRouter | None = None,
@@ -124,6 +125,8 @@ def create_app(
         app.include_router(user_state_router)
     if password_change_router is not None:
         app.include_router(password_change_router)
+    if password_reset_router is not None:
+        app.include_router(password_reset_router)
     if secret_metadata_router is not None:
         app.include_router(secret_metadata_router)
     if secret_metadata_list_router is not None:
