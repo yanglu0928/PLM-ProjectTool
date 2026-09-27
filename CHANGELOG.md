@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P04-A03新增可选改密POST及严格JSON/来源/Session-CSRF-Key，成功仅版本、失效旧Cookie清除/新认证历史重放保Cookie。1368 tests无失败（2既有跳过），实际PG/Scrypt普通及受限POST、拒绝八表不变/无License gate/提交后末读503新登录同Key恢复/default404、原发布/wheel735734通过。surrogate测试客户端预先失败改原始字节后安全422，未放宽检查。兼容0048，无Migration/依赖/生产升级；撤router保历史。Windows/UI/reset/性能/三平台/包/Gate待，下一写模式实际装配。
+
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P04-A02新增内部原子改密Service/Repository，同UOWCredential/User/全Session/Audit/first/receipt及专用末核，密码finally擦除。1365 tests无失败（2既有跳过），真PG/Scrypt含expired三Session撤销/新登录、当前认证历史重放、五Port+三SQL写后/precommit回滚、commit丢确认恢复、同不同Key并发单转换和受限源转normal、原发布/wheel733922通过。兼容0048，无Migration/API/依赖/生产升级；撤未挂入口保历史，不能回写旧密码或复活Session。HTTP/Windows/reset/性能/三平台/安装包/Gate待，下一可选改密HTTP。
 
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P04-A01新增普通/受限改密当前身份、真实原密码核验及首次变更专用末核。1361 tests无失败（2既有跳过），实际PG/Scrypt同UOW身份与末核、伪造/到期/旧Session拒绝，来源/回滚/发布回归及wheel730294通过。兼容0048，无Migration/API/依赖/生产升级；撤未挂Port保历史。TEST_ONLY转换非完整原子服务/HTTP/发行证明；UI/三平台/包/Gate待，下一P04A02原子change。

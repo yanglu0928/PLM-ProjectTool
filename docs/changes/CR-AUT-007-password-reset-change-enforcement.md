@@ -46,3 +46,5 @@ P02当前状态：Windows真实Token绑定currentFact投影接login/session GET/
 2026-09-27/P04A01：普通及受限当前身份/真原密码与本次首次变更专用末核已在实际隔离PG验证。末核不是失效Session通用授权，必须在首次执行原UOW提交前精确核原生命周期、实际first/trace和全Session撤销。下一原子Application及当前有效身份历史恢复；TEST_ONLY转换不能关闭本CR或Gate。
 
 2026-09-27/P04A02：内部实际原子change Service已完成PG/Scrypt当前认证、全Session撤销、Audit/first/receipt与末核/commit验证；真实写后及precommit回滚、commit丢确认新认证恢复、同/不同Key竞争与受限源转normal通过。历史重放须重新登录当前有效本人，不能使用旧Session授新写；原请求两密码只与first前后Credential真实KDF比对。公开HTTP/Cookie/Windows组合/reset/发行仍待，CR未关闭。
+
+2026-09-27/P04A03：可选冻结HTTP及Cookie/恢复合同真实PG-ASGI验证通过，见增量合同与progress；默认关闭，Windows实际组合/browser/reset/发行未完成，本CR不关闭。

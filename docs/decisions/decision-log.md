@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-315
+
+- Executed：1368 tests无失败（2既有跳过）；实际PG/Scrypt可选HTTP普通/受限转换、严格拒绝八表不变、无License gate、安全单版本响应/旧Cookie清除/旧401、新认证历史重放保Cookie/差异409、真实postcommit末读503再新登录同Key恢复/default404及原发布/wheel735734通过。surrogate夹具首轮httpx预先失败改原始字节验证422，无生产放宽。无Migration/依赖/生产升级；Windows/browser/reset/包/Gate未验，下一显式写装配。
+
+- P04A03编码前检查见progress；可选冻结改密POST，严格来源/唯一Cookie-CSRF-Key/有界JSON，当前本人普通或受限，无License/Admin/If-Match。安全单版本响应、首次明确失效清Cookie/当前新认证历史重放不清、末读unknown503登录后恢复。无Migration/依赖，测试待，Windows另项。
+
 ## DEC-20260927-314
 
 - Executed：1365 tests无失败（2既有跳过）；真PG/Scrypt原子变更、三Session含expired撤销、新登录/当前认证历史双密码恢复、差异拒绝八表不变；五Port+三SQL写后及precommit回滚、真实commit丢确认新登录恢复、同/不同Key两线程各单转换、受限源真正服务转normal，原发布/wheel733922通过。无HTTP/Migration/API/依赖/生产升级，内部PASS非完整包/Gate，下一可选改密HTTP。
