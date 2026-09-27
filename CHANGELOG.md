@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：0.1.0.dev0/AUT-04-A12-P07-A10-P01新增4参数化会话投影入口测试，全量1480unit无失败/2既有跳过；依赖/uid/真实未启动事务拒绝、token绑定优先且异常不fallback。无生产/Migration/API/权限/依赖变化，兼容0049无升级；源码无clock注入，纠正time计划不添加接口。仅P01通过，实际当前凭据/Project来源P02待，coverage/11PG/wheel/性能未跑，原80.162%与Hash保留，完整安全/Gate/可用包未完成。
+
 - 2026-09-27：0.1.0.dev0/AUT-04-A12-P07-A09新增6参数化Session拒绝测试，输入/clock/proof、CSRF/revoke/logout历史/admin锁失败无commit/后续写及UOW闭合、proof擦除；完整1476unit无失败/2既有跳过。仅Port合同测试不冒充PG，无生产/Migration/API/权限/算法/依赖变化，兼容0049无升级；coverage/11PG/wheel本批未跑，原80.162%与Hash保持。下一Session投影与统一实测，90%/性能FAIL/Gate/可用包待。
 
 - 2026-09-27：0.1.0.dev0/AUT-04-A12-P07-A08新增完整Auth同轮测量及独立90%退出检查，1470unit无失败/2跳过、11实际PG/Windows/Vault入口全通过；完整Auth行94.174%/分支80.162%，密码91.146%保留，工厂单列，exit1保全Auth缺口。文件/分母不删，旧rawHash不覆/newHashf6a57106…；无生产/Migration/API/权限/算法/依赖变化，兼容0049无升级，wheel/性能未跑。下一Session防御与无commit边界，性能FAIL/Gate/可用包待。

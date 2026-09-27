@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-354
+
+- Executed：4参数化方法、1480unit无失败/errors0/2既有跳过，exit0；入口和真实未开启事务拒绝、token绑定优先且失败无fallback。仅P01 PASS，实际PG当前凭据/Project来源留P02，不冒充SQL成功或A10整体完成；coverage/11PG/wheel/性能未跑。
+
+- Phase2/P07A10P01；编码前检查见session-projection进度。先做入口、真实未启动Session事务和token优先转接的拒绝合同；不mock成功SQL。源码无clock注入，纠正上一计划的time范围，实际Credential/Project来源保留P02真实PG，不标整个A10完成。
+- 无生产/Schema/API/权限/依赖变；仅新增测试，撤测试无升级。完整unit实际跑，coverage/11PG/wheel/性能本批不跑，原Hash/90%与性能FAIL/Gate/包待保留。
+
 ## DEC-20260927-353
 
 - Executed：新增6参数化Session方法，完整1476unit无失败/2既有跳过，exit0；输入/clock/proof事务前拒绝与擦除，CSRF/revoke/logout current-receipt/admin锁错误无后续写/Audit/complete/commit，UOW闭合。不模拟SQL成功，无生产变更；coverage/11PG/wheel本批未跑，原80.162%与Hash保持。下一Session投影与统一实测，90%/性能/Gate/包待。
