@@ -189,6 +189,16 @@ class UserStateServiceTests(unittest.TestCase):
                 self._deny_closed()
                 self.receipts.complete.assert_not_called()
 
+    def test_actor_proof_wrong_user_view_refuses_before_reservation(self):
+        for value in (None, object(), 'Synthetic wrong view'):
+            self.setUp()
+            object.__setattr__(self.proof, 'user_view', value)
+            with self.subTest(view_type=type(value).__name__):
+                self._deny_closed()
+                self.receipts.reserve.assert_not_called()
+                self.repo.change.assert_not_called()
+                self.audit.append.assert_not_called()
+
     def test_final_changed_proof_refuses_after_receipt_without_commit(self):
         changed = replace(self.proof, session_id=uuid4())
         self.access.prove.side_effect = [self.proof, changed]

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：0.1.0.dev0/P07-A26新增ActorProof非法用户View参数化拒绝测试，真实缺测分支42→50已覆盖；四其他拒绝坐标有实际异常但统计仍缺。完整1525unit无失败/2跳过，五方法coverage/trace两轮通过。无生产/Migration/API/依赖变，兼容0049无需升级；完整15链coverage/性能/wheel未跑，下一四guard等价布局验证，完整安全/Gate/可用包待。
+
 - 2026-09-27：0.1.0.dev0/P07-A25仅五个UserRead条件raise分行，与f936ff0 AST完全相等；1524unit无失败/2跳过及Windows实际详情链通过。文件61/61行、20/20分支，行分母+5/分支不变，统计映射改善非新增用例。无Migration/API/权限/依赖变，兼容0049无需升级；完整15链coverage/性能/wheel未跑，旧raw保留，下一状态异常坐标核查，完整安全/Gate/可用包待。
 
 - 2026-09-27：0.1.0.dev0/P07-A24三个既有UserRead方法coverage/trace两轮通过，五个缺失坐标的实际拒绝及noCommit/UOW退出已逐边证实；统计报告仍缺对应跳转。不修改生产或门槛、无Migration/API/依赖变，无升级。完整unit/15链coverage/性能/wheel未跑；下一五guard等价分行验收，完整安全/Gate/可用包待。

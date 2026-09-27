@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-374
+
+- Executed：新增1参数化方法三错误View，完整1525unit21.837秒无失败/errors0/2跳过；五方法coverage/trace两轮5/5通过，42→50新增真实拒绝已覆盖，其余四坐标拒绝已触发仍统计缺失。新rawe0a7580b…旧18ef6f24…未变，无生产变更，完整15链coverage/性能/wheel未跑，不推算完整Auth。下一A27四guard独立布局验收，Gate/包待。
+
+- Phase2/P07A26编码前检查见state-branch-audit；五边中ActorProof.user_view类型无直接拒绝用例，补单一合同；其余边逐一实际coverage/trace，不先假定布局问题。
+- 无生产/Migration/API/权限/依赖变，无升级；完整unit运行，完整15链coverage/性能/wheel另项，保旧raw/90%，Gate/包待。
+
 ## DEC-20260927-373
 
 - Executed：对f936ff0 AST相等，1524unit无失败/errors0/2跳过，Windows实际详情链通过exit0。文件61/61行、20/20分支，原56/56/15/20，行分母+5/分支不变，布局映射改善非新增用例。新raw40f6e859…旧18ef6f24…未变。完整15链coverage/性能/wheel未跑，下一A26 UserState异常坐标核查，Gate/包待。
