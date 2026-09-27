@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260927-292
+
+- Executed：1277无失败（2既有跳过）、两actualFactory真PG加密分页/每项ETag/当前权限五表无写、三dependency故障各模式实际调用/dispose、其他正向信任下实际固定User key缺失仍拒绝；default/login404。25相关实际验证入口exit0（23历史fixture补显式synthetic User key），wheel691255通过。新必需KeyRef升级/回滚已记，无生产fallback；正式账户/性能/完整管理面/Gate待。
+
+- Date/WBS：2026-09-27 / AUT-04-A07，A04～A06前置。两显式platform挂User列表，独立user-list-cursor-v1强制来源，不借已供给Job/Secret key。缺Source拒绝半启动并dispose。
+- Impact/Upgrade/Rollback：新必需KeyRef是显式平台升级前置，目标账户按原交互工具独立供给备份；撤列表接线回滚保历史，默认/login继续关闭。无Schema/角色/依赖/Breaking路径变；历史正向fixture需明确合成key补注入，禁止生产fallback。
+- Tests/Risks：两actualFactory真PG分页与实时权限/无写、三constructor/source故障/实际缺正式材料拒绝，相关历史Windows回归；不外推正式账户/三平台/性能/完整管理/包/Gate。
+
 ## DEC-20260927-291
 
 - Executed：3新测试/1276无失败（2既有跳过），实际本账户随机Vault失密/错误口令/防覆盖/恢复原key旧token/清理通过；A05真实PG HTTP和原发布回归/wheel691195通过。正式引用未供给、Windows列表尚未挂，无新Migration/依赖。

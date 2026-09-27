@@ -25,6 +25,26 @@ from plm_assistant.modules.jobs.api.list_cursor import JobListCursorCodec
 
 
 class ProductionLoginTests(unittest.TestCase):
+    def test_user_list_dependencies_fail_closed_dispose_both_modes(self):
+        from contextlib import ExitStack
+        from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
+        prefix='plm_assistant.entrypoints.production_login.'
+        for factory in (create_production_platform_app,create_production_platform_write_app):
+            for dependency in ('AuthorizedUserListService','create_user_list_router','create_windows_user_list_cursor_codec'):
+                runtime=Mock();runtime.is_ready.return_value=True
+                with ExitStack() as stack:
+                    for name,value in (('read_database_url','postgresql+psycopg://localhost/test'),
+                        ('create_database_runtime',runtime),('_schema_current',True),
+                        ('create_windows_secret_list_cursor_codec',SecretListCursorCodec(b'q'*32)),
+                        ('create_windows_project_member_cursor_codec',MemberListCursorCodec(b'm'*32)),
+                        ('create_windows_project_department_cursor_codec',DepartmentListCursorCodec(b'd'*32))):
+                        stack.enter_context(patch(prefix+name,return_value=value))
+                    stack.enter_context(patch('plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services',return_value=Mock(guard=Mock())))
+                    failed=stack.enter_context(patch(prefix+dependency,side_effect=RuntimeError('private user list failure')))
+                    with self.assertRaises(ProductionLoginStartupError) as caught:factory(self.settings(('http://localhost',)))
+                    self.assertNotIn('private',str(caught.exception));failed.assert_called_once()
+                runtime.dispose.assert_called_once()
+
     def test_user_detail_dependencies_fail_closed_and_dispose_both_modes(self):
         from contextlib import ExitStack
         from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
@@ -87,6 +107,9 @@ class ProductionLoginTests(unittest.TestCase):
                 runtime.dispose.assert_called_once()
 
     def setUp(self) -> None:
+        from plm_assistant.modules.auth.api.user_list_cursor import UserListCursorCodec
+        self.enterContext(patch('plm_assistant.entrypoints.production_login.create_windows_user_list_cursor_codec',
+            return_value=UserListCursorCodec(b'u'*32)))
         self.enterContext(patch(
             "plm_assistant.entrypoints.production_login.create_windows_job_list_cursor_codec",
             return_value=JobListCursorCodec(b"j" * 32),

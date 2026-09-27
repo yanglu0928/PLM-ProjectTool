@@ -6,6 +6,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 from plm_assistant.modules.jobs.api.list_cursor import JobListCursorCodec as JobRegressionCursor
+from plm_assistant.modules.auth.api.user_list_cursor import UserListCursorCodec as UserRegressionCursor
 from uuid import uuid4
 import hashlib
 from psycopg import sql
@@ -48,6 +49,7 @@ def exercise(v):
                     ('create_windows_document_list_cursor_codec',old.trust.DocumentListCursorCodec(b'l'*32)),
                     ('create_windows_document_version_cursor_codec',old.trust.VersionListCursorCodec(b'v'*32)),
                     ('create_windows_document_parse_cursor_codec',old.trust.ParseListCursorCodec(b'p'*32)),
+                    ('create_windows_user_list_cursor_codec', UserRegressionCursor(b'u' * 32)),
                     ('create_windows_job_list_cursor_codec', JobRegressionCursor(b'j' * 32)),
                     ('create_windows_audit_cursor_codec',old.trust.AuditListCursorCodec(b'a'*32)),
                 ):trust.enter_context(patch(prefix+name,return_value=codec))

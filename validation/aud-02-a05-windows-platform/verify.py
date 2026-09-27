@@ -6,6 +6,7 @@ from tempfile import TemporaryDirectory
 from types import SimpleNamespace
 from unittest.mock import patch
 from plm_assistant.modules.jobs.api.list_cursor import JobListCursorCodec as JobRegressionCursor
+from plm_assistant.modules.auth.api.user_list_cursor import UserListCursorCodec as UserRegressionCursor
 from fastapi.testclient import TestClient
 from plm_assistant.entrypoints.api import create_app
 from plm_assistant.entrypoints.production_login import create_production_login_app,create_production_platform_app,create_production_platform_write_app,ProductionLoginStartupError
@@ -37,6 +38,7 @@ def verify_platform(*,url,session,admin_session,project,local,deployed,guard):
             ("create_windows_document_list_cursor_codec",DocumentListCursorCodec(b"l"*32)),
             ("create_windows_document_version_cursor_codec",VersionListCursorCodec(b"v"*32)),
             ("create_windows_document_parse_cursor_codec",ParseListCursorCodec(b"p"*32)),
+            ('create_windows_user_list_cursor_codec', UserRegressionCursor(b'u' * 32)),
             ('create_windows_job_list_cursor_codec', JobRegressionCursor(b'j' * 32)),
             ("create_windows_audit_cursor_codec",AuditListCursorCodec(b"a"*32)),
         ):stack.enter_context(patch(prefix+name,return_value=codec))

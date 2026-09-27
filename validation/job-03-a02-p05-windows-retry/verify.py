@@ -9,6 +9,7 @@ from psycopg import sql
 from plm_assistant.entrypoints import production_login as prod
 from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
 from plm_assistant.modules.jobs.api.list_cursor import JobListCursorCodec
+from plm_assistant.modules.auth.api.user_list_cursor import UserListCursorCodec as UserRegressionCursor
 
 ROOT=Path(__file__).resolve().parents[1]
 def load(name,folder):
@@ -40,6 +41,7 @@ def observe(v,service,command,first,key,*,observe_client=None):
             ('create_windows_document_version_cursor_codec',old.old.old.trust.VersionListCursorCodec(b'v'*32)),
             ('create_windows_document_parse_cursor_codec',old.old.old.trust.ParseListCursorCodec(b'p'*32)),
             ('create_windows_audit_cursor_codec',old.old.old.trust.AuditListCursorCodec(b'a'*32)),
+            ('create_windows_user_list_cursor_codec', UserRegressionCursor(b'u' * 32)),
             ('create_windows_job_list_cursor_codec',JobListCursorCodec(b'j'*32))):
             trust.enter_context(patch(prefix+name,return_value=codec))
         trust.enter_context(patch('plm_assistant.entrypoints.windows_secret_write.create_windows_secret_write_service',return_value=object()))

@@ -1,5 +1,7 @@
 # User列表运行Contract
 
+A07（2026-09-27）：列表已挂两Windows显式platform，User详情与列表沿同当前Admin/License；必须目标账户user-list-cursor-v1，缺失/错误/Source异常拒绝半启动，无fallback。升级先按原交互工具独立供给及加密备份，撤列表接线可回滚依赖、不删除历史。1277无失败/2跳过、两真实Factory分页/每项真实ETag/权限五表无写、源与构造故障/实际缺固定User key拒绝、25关联验证回归通过。正向信任合成，正式供给/其他账户/性能/三平台/完整包/Gate未证明；下文未挂状态为历史。
+
 A06（2026-09-27）：Windows当前账户只读独立user-list-cursor-v1入口已验，无运行时创建/明文fallback；随机非正式临时Vault失密/错口令/防覆盖/恢复原key旧cipher与清理实际通过，1276无失败/2既有跳过。正式引用未供给，列表尚未挂；下一装配新增必需KeyRef，须先按原交互工具独立供给备份，不能把测试来源当正式信任。
 
 2026-09-27 / AUT-04-A05，冻结API-02 AUTH_USER_LIST/64cdf09保留。可选GET `/api/v1/admin/users`，default404/Windows尚未挂。
