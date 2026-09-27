@@ -1,5 +1,14 @@
 # 自主决策记录
 
+## DEC-20260927-355
+
+- Executed：重跑exit0，实际Session健康/缺记录/错用户，三fact与三Port注入拒绝，实际reset受限无Project；实际唯一约束拒绝第二活跃成员后原投影健康，十二表逐次不变。原dualScope空/260publication回归通过。歧义分支未达，unit最近1480本批未跑，coverage/性能/wheel未跑，下一完整12链统一实测；正式trust/Gate/包未完成。
+
+- Plan correction：首次实际第二活跃成员INSERT被uq_prj_members__user_active拒绝/exit1；原fixture清理。投影歧义分支未到达，不称通过；修正验证为实际约束拒绝/十二表不变/健康投影保持，不关约束、不mock成功SQL。该调整仅验证计划，无生产/冻结方案变化。
+
+- Phase2/P07A10P02编码前检查见session-source进度；复用owned实际PG/Vault/publication fixture，真实当前行/缺记录/Project歧义与实际reset受限投影；fact字段/Project坏Port明确故障注入，不mock成功SQL。十二表全行不变作为只读证据。
+- 无生产/Schema/API/算法/依赖变，撤验证无升级；原publication同轮回归，unit最近1480、coverage/性能/wheel本批未跑，90%/正式trust/Gate/包不冒充通过。
+
 ## DEC-20260927-354
 
 - Executed：4参数化方法、1480unit无失败/errors0/2既有跳过，exit0；入口和真实未开启事务拒绝、token绑定优先且失败无fallback。仅P01 PASS，实际PG当前凭据/Project来源留P02，不冒充SQL成功或A10整体完成；coverage/11PG/wheel/性能未跑。
