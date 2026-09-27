@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-380
+
+- Executed：1532unit无失败/2跳过，17实际链全通过；完整Auth3260/3379行96.478%、876/988分支88.664%，门槛未达/exit1。行分母+15仅已记录布局、分支988不变，变化含实际补测/链及统计映射。密码91.146%保持、factory另列，新rawc5cc7625…旧18ef6f24…未变；性能/wheel未跑，下一A33 UserList，Gate/包待。
+
+- Phase2/P07A32编码前检查见source-coverage；完整unit+17实际链，原完整Auth/密码/factory分列，90%不变，布局分母变化如实标注，新runtime保旧raw，不泛化功能PASS为Gate。
+- 无生产/Migration/API/权限/依赖变，无升级；性能/wheel另项，正式trust/CR008 FAIL/Gate/包待。
+
 ## DEC-20260927-379
 
 - Executed：正常实际身份读取及7拒绝（6None、1 SQL22012→25P02）通过exit0，九表回滚/健康重读及原发布回归通过；无生产变更、不冒充Project权限或正式trust。unit1532本批未跑，完整coverage/性能/wheel未跑，下一A32完整17链覆盖，Gate/包待。
