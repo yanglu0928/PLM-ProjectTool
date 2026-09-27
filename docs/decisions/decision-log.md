@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-382
+
+- Executed：三方法coverage/trace两轮3/3通过，guard57/59/61异常4/1/1次，实际拒绝到UOW55，原到68统计仍缺；noCommit/事务退出通过，仅三边不泛化其他缺口，无生产变更。完整1538/17链coverage/性能/wheel未跑，下一A35三guard等价分行，Gate/包待。
+
+- Phase2/P07A34编码前检查见list-branch-audit；仅UserList三个异常坐标独立coverage/trace，noCommit/事务退出，保旧raw/90%不收秘密，不先认定统计问题。
+- 无生产/Migration/API/权限/依赖变，无升级；完整1538/17链coverage/性能/wheel另项，Gate/包待。
+
 ## DEC-20260927-381
 
 - Executed：新增6参数化方法，完整1538unit21.806秒无失败/errors0/2跳过、exit0；依赖/clock/篡改Query-Page/首末License/Access-UOW拒绝，noCommit/已入事务闭合，仅Port证据。无生产变更，17链coverage/性能/wheel未跑，下一A34三异常坐标audit，Gate/包待。
