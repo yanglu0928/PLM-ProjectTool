@@ -17,4 +17,4 @@ pnpm build
 pnpm dev
 ```
 
-开发服务器只把相对路径 `/health` 代理到本机 FastAPI `127.0.0.1:8000`。前端不保存 Session Cookie、CSRF Token、API Key 或客户资料；后续认证实现中的 CSRF Token 也只能保存在内存。
+开发服务器将相对路径 `/health` 和 `/api/v1` 代理到本机 FastAPI `127.0.0.1:8000`，保原Host/Origin，不重写路径且显式关闭开发CORS。后端必须显式配置可信浏览器来源 `http://127.0.0.1:5173`；不要开启changeOrigin绕过检查，localhost/不同端口不自动互换。HTTP仅限loopback开发，生产须同源HTTPS部署，不使用此开发服务器。前端JS不读写Session Cookie或持久化CSRF/API Key；浏览器按原HttpOnly Cookie规则自动携带会话，CSRF仅内存。A03已验证真实代理和原来源策略，不代表真实PG认证/浏览器链完成。

@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-393
+
+- Executed：真实Vite/原OriginPolicy网络6请求及合成Cookie/CSRF/Key/body保留、无rewrite/CORS通过exit0；完整前端63/typecheck/build通过。首次Windows ESM路径与默认Vite CORS失败记录后修复，显式cors:false仅开发收紧，不改后端。无PG登录/真实浏览器证明，下一A04真实工厂网络链；无Migration/API/依赖，Gate/包待。
+
+- 2026-09-27/Phase2 AUT05A03实施前：固定Vite /api/v1→127.0.0.1:8000、保Host/Origin/Cookie/CSRF/Key，原健康代理保留。真实网络自有端口探针使用原LoginOriginPolicy，只来源门验证不造登录成功；测试target临时覆盖明示。无CORS/后端可信源自动配置/依赖/API/DB变化。
+- 前置/风险/验收/回滚见same-origin-proxy progress，正式服务须显式允许浏览器端口Origin，端口冲突不杀用户服务。下一实际PG与浏览器，性能FAIL/Gate/包保持。
+
 ## DEC-20260927-392
 
 - Executed：/login中文页面/导航接实际Client，新增11用例，最终63/63/typecheck/build通过，36modules/JS100160/CSS4124；初轮5Vue代理private-brand失败修复toRaw后完整复验，保留诊断。无后端/API/Schema/依赖变化；真实浏览器/服务器/改密未验，下一A03同源Origin/Host代理前置，CR008 FAIL/Gate/包待。
