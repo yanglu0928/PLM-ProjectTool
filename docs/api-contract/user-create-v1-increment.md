@@ -1,6 +1,6 @@
 # AUTH_USER_CREATE V1 实现增量
 
-2026-09-27 / CR-AUT-005 / AUT-04-A09-P04；原冻结64cdf09/API02保留。可选`POST /api/v1/admin/users`；当前Windows尚未挂载。
+2026-09-27 / CR-AUT-005 / AUT-04-A09-P04～P05；原冻结64cdf09/API02保留。`POST /api/v1/admin/users`可选实现，Windows仅显式platform-write挂载；platform只读GET-only405、default/login404。
 
 请求仅`username`（显示名称）和write-only `password`，均字符串；不接actor/canonical/deployment_role/query。单JSON Content-Type、严格UTF8/重复key/非标准常量、16KiB body、密码UTF8 1～1024 bytes且无NUL；用户名用原NFC/strip/casefold规则。Origin/Host、有效Session/CSRF、Idempotency-Key、当前ENABLED DeploymentAdmin、License必需，无If-Match创建前置。
 
@@ -10,4 +10,4 @@ scope当前actor+V1_AUTH_USER_CREATE+Key，非秘密指纹与原Credential1真�
 
 HTTP错误：401 AUTH_SESSION_EXPIRED，403 AUTH_CSRF_INVALID/ LICENSE_OPERATION_DENIED，404 RESOURCE_NOT_FOUND（非Admin），409 CONFLICT_DUPLICATE（用户名）/ CONFLICT_IDEMPOTENCY，400 REQUEST_MALFORMED，422 VALIDATION_FAILED，503 SYSTEM_UNAVAILABLE（来源/KDF/审计/事务故障含提交确认未知）。提交确认未知只能同Key重放取实际已提交首结果，不猜成功或改Key重建。
 
-Schema0046/P03原子和P04真实PG HTTP已验；默认404，Windows写接线/正式供给/性能/三平台/完整管理/最终包未完成。撤router回滚保原冻结/0046历史，无本轮Migration/新依赖/权限变化。
+Schema0046/P03原子、P04真实PG HTTP、P05实际Windows写创建/真实新账户登录及只读关闭已内部验证，正向信任明确Synthetic；正式供给/性能/三平台/完整管理/最终包未完成。撤router接线回滚保原冻结/0046历史，无P05 Migration/新依赖/权限变化。

@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260927-298
+
+- Executed：1305无失败（2既有跳过）、actualWindows write HTTP完整创建重放和真登录Cookie/Session、NONE不能创建/七表无写、readonly405不构造新依赖/four write故障到达+unit dispose/default-login404/实际缺正式信任拒绝；旧User列表/Windows retry+混排及发布回归/wheel702222通过。修正仅validator冻结嵌套User字段断言，未改合同；正式供给/三平台/性能/安装包未验。
+
+- Date/WBS：2026-09-27 / AUT-04-A09-P05，P04前置dc4da7a；precode见对应progress。
+- Decision：User创建只接Windows显式write，用当前原Scrypt与Auth actual repo/first/replay/currentAdmin/Audit/receipt/License，无新Key或fallback；readonly GET-only405，default/login404。
+- Impact/Rollback/Tests：无Schema/依赖/角色/Breaking变；撤新wiring保0046历史。actualFactory HTTP+真实新User登录、构造实际到达fault/dispose及缺正式信任拒绝/旧列表写回归；正向信任合成，正式账户/三平台/性能/包待。
+
 ## DEC-20260927-297
 
 - Executed：六新Contract/1304无失败（2既有跳过），真PG HTTP201/强首ETag/同Key与密码用户名冲突/实际新凭据Session/后续停用v2对首201v1/权限格式拒绝六表无写与postAudit全回滚、原P03及发布回归/wheel702043通过。无Migration/权限/依赖/Breaking；默认404、Windows写装配和正式供给/性能/包未完。

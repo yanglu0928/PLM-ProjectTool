@@ -27,6 +27,12 @@ from plm_assistant.modules.jobs.infrastructure.lease_repository import SqlAlchem
 from plm_assistant.modules.jobs.api.read_detail import create_job_detail_router
 from plm_assistant.modules.auth.api.user_detail import create_user_detail_router
 from plm_assistant.modules.auth.api.user_list import create_user_list_router
+from plm_assistant.modules.auth.api.user_create import create_user_create_router
+from plm_assistant.modules.auth.application.managed_user_create import ManagedUserCreateService
+from plm_assistant.modules.auth.application.user_create_replay import UserCreateReplayVerifier
+from plm_assistant.modules.auth.infrastructure.user_create_result_repository import SqlAlchemyUserCreateResultRepository
+from plm_assistant.modules.auth.infrastructure.user_create_access import SqlAlchemyUserCreateAccess
+from plm_assistant.modules.auth.infrastructure.user_repository import SqlAlchemyUserRepository
 from plm_assistant.modules.auth.application.user_list import AuthorizedUserListService
 from plm_assistant.entrypoints.windows_user_list_cursor import create_windows_user_list_cursor_codec
 from plm_assistant.modules.auth.application.user_read import AuthorizedUserReadService
@@ -284,6 +290,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         job_detail_router = None
         user_detail_router = None
         user_list_router = None
+        user_create_router = None
         job_list_router = None
         job_cancel_router = None
         job_retry_router = None
@@ -604,6 +611,13 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 sessions=sessions, departments=department_deactivates, origins=origins,
             )
             if include_secret_write:
+                user_create_results = SqlAlchemyUserCreateResultRepository(verifier=verifier)
+                user_create_router = create_user_create_router(sessions=sessions,origins=origins,
+                    writes=ManagedUserCreateService(unit_of_work=runtime.unit_of_work,
+                        access=SqlAlchemyUserCreateAccess(),license_guard=licenses.guard,
+                        users=SqlAlchemyUserRepository(),results=user_create_results,
+                        replay_verifier=UserCreateReplayVerifier(source=user_create_results),hasher=verifier,
+                        audit=audit,receipts=SqlAlchemyIdempotencyReceipts()))
                 job_retry_router = create_job_retry_router(
                     sessions=sessions,origins=origins,
                     retries=JobRetryRequests(reads=job_reads,sessions=sessions,license_guard=licenses.guard,
@@ -766,6 +780,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             job_detail_router=job_detail_router,
             user_detail_router=user_detail_router,
             user_list_router=user_list_router,
+            user_create_router=user_create_router,
             job_list_router=job_list_router,
             job_cancel_router=job_cancel_router,
             job_retry_router=job_retry_router,
