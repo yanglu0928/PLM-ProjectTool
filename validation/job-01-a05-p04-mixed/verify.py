@@ -36,7 +36,7 @@ fixture = load('_mixed_list_audit_publication', 'aud-03-a06-a04-p03-a04-p03-publ
 doc = load('_mixed_list_doc_upload', 'doc-03-a04-a04-upload-commit')
 
 
-def exercise(v, *, observe_runtime=None):
+def prepare_documents(v):
     db = v['db']; storage = doc.LocalFileStorage(v['file_root'])
     document_queue = doc.ParseJobQueue(doc.SqlAlchemyParseJobQueueRepository())
     documents = []
@@ -57,6 +57,12 @@ def exercise(v, *, observe_runtime=None):
         documents.append(original)
         # Fixture only: do not let the original Audit-only final claim consume a Parser Job.
         db.execute("UPDATE plm.job_jobs SET available_at=statement_timestamp()+interval '1 year' WHERE job_id=%s", (original.parse_job_id,))
+    return documents
+
+
+def exercise(v, *, observe_runtime=None):
+    db=v['db']; documents=prepare_documents(v)
+    document_queue = doc.ParseJobQueue(doc.SqlAlchemyParseJobQueueRepository())
     running = [v['prepare'](scope, 3) for scope in ('PROJECT', 'DEPLOYMENT')]
     owners = {('audit', 'AUDIT_EXPORT'): AuditJobReadProjection(repository=v['repo'], queue=v['queue'], results=v['results']),
         ('document', 'DOCUMENT_PARSE'): DocumentParseJobReadProjection(queue=document_queue,

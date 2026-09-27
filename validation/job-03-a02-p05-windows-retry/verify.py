@@ -18,14 +18,16 @@ def load(name,folder):
 http=load('_windows_retry_http','job-03-a02-p04-retry-http')
 old=load('_windows_retry_list','job-01-a05-p05-windows')
 
-def observe(v,service,command,first,key):
+def observe(v,service,command,first,key,*,observe_client=None):
     settings=BootstrapSettings(data_root=v['file_root'],trusted_origins=('https://plm.example.test',))
     prefix='plm_assistant.entrypoints.production_login.'
     db=v['db']; index=0 if command.scope=='PROJECT' else 1
     path=f'/api/v1/projects/{command.project_id}/jobs/{command.job_id}' if index==0 else f'/api/v1/admin/jobs/{command.job_id}'
     headers={'cookie':'plm_session='+v['tokens'][index].hex()}
     tables=('job_jobs','job_attempts','job_leases','job_outbox_events','aud_events','aud_exports',
-        'aud_export_acceptances','aud_export_retry_generations','plt_idempotency_receipts','aud_export_results')
+        'aud_export_acceptances','aud_export_retry_generations','plt_idempotency_receipts','aud_export_results',
+        'doc_upload_intents','doc_documents','doc_document_versions','doc_version_source_refs','doc_file_objects',
+        'auth_users','auth_sessions','prj_projects','prj_project_members','prj_departments')
     def snapshot():return {t:tuple(db.execute(sql.SQL('SELECT * FROM plm.{} ORDER BY 1').format(sql.Identifier(t)))) for t in tables}
     with ExitStack() as trust:
         trust.enter_context(patch(prefix+'read_database_url',return_value=v['url']))
@@ -62,6 +64,7 @@ def observe(v,service,command,first,key):
                     cursor=r.json()['data']['next_cursor']
                 assert found and snapshot()==before
                 if not expected:assert client.post(path+':retry',json={},headers=headers).status_code==405
+                if expected and observe_client is not None:observe_client(v,client,command,path,headers,snapshot)
                 if expected and index==0:
                     db.execute("UPDATE plm.prj_project_members SET project_role='IMPLEMENTATION_MEMBER' WHERE project_id=%s AND user_id=%s",(command.project_id,v['users'][0]))
                     try:

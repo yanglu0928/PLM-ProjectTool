@@ -1,5 +1,7 @@
 # JOB-03-A02-P05：Windows运行重试与安全提示
 
+P05-B（2026-09-27）已补齐内部矩阵，详见`job-03-a02-p05-b-retry-matrix.md`；真实Doc来源409/坏Attempt时间503/技术非临时false/客户creator与noncreator隔离/归档PM实际新Worker成功通过，1247无失败/2跳过与旧Windows混排发布回归通过。P05内部实现验收完成；以下P05-A未完成描述为历史。正式材料/性能/全Owner/三平台/完整包/Gate仍待。
+
 2026-09-27 Phase2编码前PASS；CR-JOB-006/0045/P01～P04真实原源-命令-HTTP已验。仅Windows写Factory挂retry及Audit safe metadata。readOnly/default/login无retry写入口，不新增Schema/角色/依赖。
 
 DEC285：复用详情安全Owner registry/Read Service；只有写模式Audit投影注入原失败Source及当前Project Export授权，PM/受权Admin才显示retryable，原失败Proof不满足时False，坏source静态失败不可假False。归档项目仍遵循已冻结Audit Export维护例外，不擅自取消。新信任源不足和构造错误不半启动。GET metadata不是CSRF/写许可，实际retry写UOW仍全核。

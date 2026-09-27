@@ -1,5 +1,7 @@
 # 任务受控重试运行Contract增量
 
+P05-B（2026-09-27）：真实PROJECT/GLOBAL Document上传Commit来源经Windows当前Owner读取后，retry精确409 JOB_NOT_RETRYABLE、20表全行无写；不假支持Parser重试。实际第三Attempt技术fixture非临时分类false/409，完成时间与Job/Lease不一致静态503 SYSTEM_UNAVAILABLE；恢复原事实true。creator实施/客户角色false且retry404，noncreator客户GET/retry404；归档PM维护例外实际新generation→Worker成功。1247无失败/2跳过/旧混排发布回归；P05内部完成，正式信任合成，非性能/三平台/完整包/Gate。下文P05-A/P04为历史。
+
 2026-09-27 / P05-A更新：Windows显式platform-write现挂上述双retry；默认/login不挂，platform只读GET使未知POST405。写模式Audit FAILED详情/列表只有当前PM Export或受权DEPLOYMENT Admin、原第三临时失败来源及版本一致才retryable=true；非FAILED/未注入Source/非PM/已知JOB_NOT_RETRYABLE为false，坏源/版本不一致静态失败，不伪装false。归档沿冻结Audit Export维护例外。提示不是写许可，命令仍在写UOW重新核授权/CSRF/License。实际双ScopeFactory→新Job→Worker成功/重放及旧混排通过，1247无失败/2跳过；正式信任合成。P05-B真实Doc409/坏源metadata/完整角色矩阵待；以下P04为历史，不覆盖本更新。
 
 2026-09-27 / JOB-03-A02-P04 / CR-JOB-006；原API-01/API-03冻结64cdf09保留。

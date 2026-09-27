@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/JOB-03-A02-P05-B补齐Windows真实Doc上传来源retry409、20表无写、原Attempt技术fixture非临时false/坏时间503、客户creator/noncreator隔离、归档PM新generation实际Worker成功；1247无失败/2既有跳过、旧Windows混排与发布回归。仅验收/夹具复用/文档，生产/Schema/API/依赖/升级不变，开发wheel沿P05-A未重建。P05内部完成；正式信任/性能/三平台/其他未来Owner/完整包/Gate未完成，回滚撤新验收保历史。下一Phase2 User管理面安全读模型。
+
 - 2026-09-27：`0.1.0.dev0`/JOB-03-A02-P05-A将retry仅接Windows显式写模式，Audit详情/列表按当前Export权限及实际第三失败原源显示提示，readonly false/POST405。真实两Scope新HTTP Job→Worker文件成功/原首次重放、PM降实施成员false/七构造拒绝无写、旧Windows混排与发布回归，1247后端无失败/2既有跳过，开发wheel682697通过。无Migration/依赖/角色/Breaking，兼容0045；升级无需新密钥、仍需既有正式信任供给，回滚撤接线保历史。P05-B真实Doc409/坏源metadata/归档客户完整矩阵待，不把内部检查点作为整体P05/CR/Gate/安装包PASS。
 
 - 2026-09-27：`0.1.0.dev0`/JOB-03-A02-P04新增可选冻结双Job retry POST、strict Origin/Session-CSRF/Key/IfMatch/空JSON，当前安全来源分派及Audit写UOW二次授权；补冻结JOB_NOT_RETRYABLE409。真实HTTP新Job→现Worker文件成功→GET当前与原202 PENDINGv0重放、精确不可重试/错误拒绝十五表无写、1239后端无失败/2既有跳过与开发wheel681969通过。无Migration/依赖/角色/Breaking/升级变化，head0045；撤可选入口回滚保历史。Windows/metadata未接、Doc409仅unit，正式材料/全Owner/三平台/性能/完整包/Gate待。
