@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-369
+
+- Executed：1524unit无失败/2既有跳过、15实际链全通过。完整Auth3232/3364行96.076%、852/988分支86.235%，90%分支未达/exit1；密码98.472%/91.146%保持、factory另列，范围/分母不改。新raw18ef6f24…、旧7d6fbfc0…重验未变。无生产变更，性能/wheel未跑；下一A22实际异常路径坐标核查，Gate/包待。
+
+- Phase2/P07A21编码前检查见name-coverage；完整unit/contract与15实际链，新runtime保旧raw，完整Auth行/分支各90%及分母不改，密码/factory另列。不把单项PASS当Gate关闭。
+- 无生产/Migration/API/权限/依赖变，无升级；性能/wheel不跑，正式trust/CR008 FAIL/Gate/可用包待。
+
 ## DEC-20260927-368
 
 - Executed：修正后完整实际PG六场景及原名称/发布回归通过exit0；缺行/当前源/最大版本/重复/真实23514/时间倒退拒绝，九表退出回滚，TEST_ONLY约束确认撤销。无生产变化；unit1524本项未重跑，coverage/性能/wheel未跑，下一A21完整覆盖，Gate/可用包待。
