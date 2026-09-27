@@ -132,7 +132,7 @@ def exercise(v):
     except Exception as exc: assert getattr(getattr(exc,'orig',None),'sqlstate',None)=='P0001'
     else:raise AssertionError('User first history discarded')
     assert snapshot()==before
-    assert db.execute('SELECT version_num FROM plm.alembic_version').fetchone()==('20260927_0048',)
+    assert db.execute('SELECT version_num FROM plm.alembic_version').fetchone()==('20260927_0049',)
     print('User first schema PASS: actual empty/populated up-down-re-up, ten old tables preserved/no backfill, '
         'ORM columns/FK/check/unique parity, real owned initial User/Credential/Audit source, invalid source/shape/time '
         'refused without writes, insert-fault rollback, immutable UPDATE/DELETE/TRUNCATE, later disable/rename '

@@ -54,3 +54,5 @@ P02当前状态：Windows真实Token绑定currentFact投影接login/session GET/
 P05A01实施前设计：reset first15字段记录result/user/actor/old-new Credential ID/version/原expected User version与new version/原target_state/Audit/trace/全Session撤销数/changedAt/acceptedAt。disabled保原状态、count可0；self目标允许但专用首次末核另验。重放仍须当前正常Admin/License/CSRF，原临时密码比对当次newCredential真Scrypt；自reset的受限临时登录先完成change恢复正常Admin，之后原reset Key可历史恢复。无密码快速摘要/新钥匙，原freeze保留，来源Schema/迁移与完整命令另步骤，不缩范围或提前关闭CR。
 
 2026-09-27/P05A01：纯first/proof实现与实际内存Scrypt单密码历史契约已验，1374后端测试无失败（2跳过）；source Schema设计标未实施，当前0048不变。非PG reset Repository/原子重置/当前Admin授权/HTTP证明，下一来源Schema与真实验证；整体CR仍未完成。
+
+2026-09-27/P05A02：0049/ORM独立15字段及完整DB source/immutability/down保护已真实隔离验收。空有数据/旧十三表保持、disabled0/self范围、坏源/Audit/时间/count/受限actor拒绝、实际回滚/并发及旧链通过，原0001～0048保留，无生产迁移。TEST_ONLY转换非真密码/当前认证或原子reset，下一实际Repository/Scrypt source；CR/Gate未关闭。

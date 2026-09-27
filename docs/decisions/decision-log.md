@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-318
+
+- Executed：1374 tests无失败（2既有跳过）；真实空有数据0048-49往返十三旧表/ORM一致、normal2含expired/disabled0/self source、坏actor/Audit/time/count/normal-after/other及self受限拒绝与实际写后回滚、独立PG并发单first/immutable/非空down保head49；五旧Schema/Windows改密及原发布/wheel740067通过。Audit夹具FAILURE提前拒绝改合法FAILED证明source拒绝，不放宽生产。无生产迁移/API/依赖，TEST_ONLY源非KDF/原子reset/授权，下一真实Repository/source。
+
+- P05A02编码前检查见progress；独立0049/ORM15字段reset first，current root/前后Credential/Admin actor/Audit/time/count真实source，disabled/count0/self保范围；other current normal/self before normal，来源不是当前Session-License授权。immutable/非空down，旧migration保留，无API/依赖；真实空有数据与来源/回滚/并发验收待。
+
 ## DEC-20260927-317
 
 - Executed：6新unit/1374 tests无失败（2既有跳过）；15字段enabled/disabled/self/count0与安全单版本、严格shape/UTF8边界/擦除/非bool异常，实际内存Scrypt原临时密码匹配/尾空格-后来密码冲突/伪造first拒绝，wheel737736通过。无PG/HTTP运行或Migration/API/依赖，source夹具非持久来源/授权；next Schema设计明确未实施，完整reset/Gate仍待。

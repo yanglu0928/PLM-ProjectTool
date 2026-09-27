@@ -181,3 +181,47 @@ class PasswordChangeResultRow(Base):
     changed_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True,precision=6),nullable=False)
     accepted_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True,precision=6),nullable=False,
         server_default=text('statement_timestamp()'))
+
+
+class PasswordResetResultRow(Base):
+    """Immutable administrator reset first, not current authorization."""
+    __tablename__='auth_password_reset_results'
+    __table_args__=(
+        ForeignKeyConstraint(['user_id'],['plm.auth_users.user_id'],name='fk_auth_reset__user'),
+        ForeignKeyConstraint(['actor_id'],['plm.auth_users.user_id'],name='fk_auth_reset__actor'),
+        ForeignKeyConstraint(['before_credential_id','user_id','before_credential_version'],
+            ['plm.auth_password_credentials.password_credential_id','plm.auth_password_credentials.user_id',
+             'plm.auth_password_credentials.credential_version'],name='fk_auth_reset__before'),
+        ForeignKeyConstraint(['credential_id','user_id','credential_version'],
+            ['plm.auth_password_credentials.password_credential_id','plm.auth_password_credentials.user_id',
+             'plm.auth_password_credentials.credential_version'],name='fk_auth_reset__after'),
+        ForeignKeyConstraint(['audit_event_id'],['plm.aud_events.audit_event_id'],name='fk_auth_reset__audit'),
+        UniqueConstraint('user_id','credential_version',name='uq_auth_reset__credential'),
+        UniqueConstraint('user_id','user_version',name='uq_auth_reset__user_version'),
+        UniqueConstraint('audit_event_id',name='uq_auth_reset__audit'),
+        CheckConstraint(' AND '.join(c+"<>'00000000-0000-0000-0000-000000000000'::uuid" for c in
+            ('result_id','user_id','actor_id','before_credential_id','credential_id','audit_event_id','trace_id'))
+            + ' AND before_credential_id<>credential_id'
+            + ' AND before_credential_version BETWEEN 1 AND 9223372036854775806'
+            + ' AND credential_version>1 AND credential_version-1=before_credential_version'
+            + ' AND before_user_version BETWEEN 0 AND 9223372036854775806'
+            + ' AND user_version>0 AND user_version-1=before_user_version AND revoked_session_count>=0'
+            + " AND target_state IN ('ENABLED','DISABLED')"
+            + ' AND isfinite(changed_at) AND isfinite(accepted_at) AND changed_at<=accepted_at',name='ck_auth_reset__shape'),
+    )
+    result_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True),primary_key=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True),nullable=False)
+    actor_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True),nullable=False)
+    before_credential_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True),nullable=False)
+    credential_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True),nullable=False)
+    before_credential_version: Mapped[int] = mapped_column(BigInteger,nullable=False)
+    credential_version: Mapped[int] = mapped_column(BigInteger,nullable=False)
+    before_user_version: Mapped[int] = mapped_column(BigInteger,nullable=False)
+    user_version: Mapped[int] = mapped_column(BigInteger,nullable=False)
+    target_state: Mapped[str] = mapped_column(Text,nullable=False)
+    audit_event_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True),nullable=False)
+    trace_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True),nullable=False)
+    revoked_session_count: Mapped[int] = mapped_column(BigInteger,nullable=False)
+    changed_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True,precision=6),nullable=False)
+    accepted_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True,precision=6),nullable=False,
+        server_default=text('statement_timestamp()'))

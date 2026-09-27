@@ -143,7 +143,7 @@ def exercise(v):
     try:a.command.downgrade(config,'20260927_0046')
     except Exception as exc:assert getattr(getattr(exc,'orig',None),'sqlstate',None)=='P0001'
     else:raise AssertionError('State history discarded')
-    assert snap()==before and db.execute('SELECT version_num FROM plm.alembic_version').fetchone()==('20260927_0048',)
+    assert snap()==before and db.execute('SELECT version_num FROM plm.alembic_version').fetchone()==('20260927_0049',)
     print('PASS state first schema: actual empty/populated up-down-up, eleven old tables preserved/no backfill, '
         'ORM columns/types/nullable/PK/FK/check/unique/default parity, precise User/Credential/Audit/time source, '
         'unrevoked Session rejection and exact two revoked including expired source/count, insert-fault rollback, '

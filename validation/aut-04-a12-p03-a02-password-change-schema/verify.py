@@ -157,8 +157,8 @@ def exercise(v):
     try:a.command.downgrade(cfg,'20260927_0047')
     except Exception as exc:assert getattr(getattr(exc,'orig',None),'sqlstate',None)=='P0001'
     else:raise AssertionError('Nonempty password history dropped')
-    assert snap()==before and db.execute('SELECT version_num FROM plm.alembic_version').fetchone()==('20260927_0048',)
-    print('PASS password change schema: real empty/populated0047-48 roundtrip preserves twelve old tables/no backfill; ORM parity; exact before/after Credential/User/self Audit/time/source and revoked count2 including expired/unrevoked refuses, invalid inputs rollback, actual insert-fault rollback, later User history immutable, update/delete/truncate and nonempty downgrade refuse head48. TEST_ONLY source, NOT real password/current-CSRF/atomic change/replay/HTTP/package proof.')
+    assert snap()==before and db.execute('SELECT version_num FROM plm.alembic_version').fetchone()==('20260927_0049',)
+    print('PASS password change schema: real empty/populated0047-current head roundtrip includes original0048 and preserves twelve old tables/no backfill; ORM parity; exact before/after Credential/User/self Audit/time/source and revoked count2 including expired/unrevoked refuses, invalid inputs rollback, actual insert-fault rollback, later User history immutable, update/delete/truncate and nonempty downgrade refuse intact current head. TEST_ONLY source, NOT real password/current-CSRF/atomic change/replay/HTTP/package proof.')
 
 
 if __name__=='__main__':f.main(exercise=exercise)

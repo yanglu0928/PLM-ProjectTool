@@ -2,6 +2,8 @@
 
 来源64cdf09/API02、CR-AUT007、DEC317。当前head仍0048；本文件不代表ORM/Migration已完成。原冻结及0001～0048保留。
 
+2026-09-27/P05A02实施更新：本设计已由独立0049/PasswordResetResultRow落实并真实验收；上段为P05A01历史设计状态，当前head0049，原0001～0048保留。验收证据见progress/P05A02，正式生产迁移未运行。DTO/DB来源并非真实密码/当前授权/原子reset证明。
+
 候选`auth_password_reset_results`15字段对应`PasswordResetResult`：result_id/user_id/actor_id/before_credential_id/credential_id/before_credential_version/credential_version/before_user_version/user_version/target_state/audit_event_id/trace_id/revoked_session_count/changed_at/accepted_at。result UUID PK，User/actor/Audit FK，前后Credential均(ID,User,version) triple FK；每User新Credential/User version及Audit唯一。accepted_at由DB statement_timestamp供给，不接受caller未来时间。
 
 形状：UUID非零、old/newCredential不同，Credential1..bigintmax加1，User0..bigintmax加1，count0..bigintmax（停用目标无Session仍可重置），target_state仅ENABLED/DISABLED；changed/accepted有限且changed<=accepted<=本次statement time。

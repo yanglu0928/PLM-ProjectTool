@@ -120,7 +120,7 @@ def exercise(v):
     except Exception as exc:assert getattr(getattr(exc,'orig',None),'sqlstate',None)=='P0001'
     else:raise AssertionError('History-dropping downgrade accepted')
     assert snapshot()==before
-    assert db.execute('SELECT version_num FROM plm.alembic_version').fetchone()==('20260927_0048',)
+    assert db.execute('SELECT version_num FROM plm.alembic_version').fetchone()==('20260927_0049',)
     print('Retry Schema PASS: actual empty/populated up/down/re-up preserve ten old tables; ORM parity, dualScope valid immutable lineage/first version, wrong coordinates/source/version/time/duplicates/change/truncate refuse, actual insert then fault rolls back, populated downgrade refuses intact current head. Failure/retry Audit directly synthetic and source RUNNING until fixture cleanup: schema NOT Jobs terminal/current permission proof. No retry Service/receipt/HTTP/formal account/Gate/package claim.')
 
 if __name__=='__main__':fixture.main(exercise=exercise)
