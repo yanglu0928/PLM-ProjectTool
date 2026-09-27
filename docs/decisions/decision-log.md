@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-378
+
+- Executed：新增4方法、7token/5time/3Session/3缺来源拒绝，完整1532unit21.810秒无失败/errors0/2跳过、exit0；真实inactive不启动事务、原AttributeError保持，无成功SQL模拟/生产变更。coverage/实际链/性能/wheel未跑，下一A31真实数据库来源，Gate/包待。
+
+- Phase2/P07A30编码前检查见project-read-defensive；非法token/time前来源拒绝、真实inactive Session不启动事务，缺session保持原AttributeError，不静默统一异常或更改datetime子类型合同。
+- 无生产/Migration/API/权限/依赖变化，无升级；完整unit实际跑，真实数据库另A31、coverage/性能/wheel另项，Gate/包待。
+
 ## DEC-20260927-377
 
 - Executed：真实有效读取与8拒绝（7返回None、1 SQL22012→25P02原异常）通过exit0，九表全行回滚/健康重读及原发布回归通过；临时库/合成来源，无生产变更，不称Review全流程通过。unit1528本批未跑，完整coverage/性能/wheel未跑，下一A30 ProjectReadAccess，Gate/包待。

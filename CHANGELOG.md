@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：0.1.0.dev0/P07-A30新增4项目读取Auth非法输入/真实inactive事务/缺来源异常防御方法，完整1532unit无失败/2跳过；保持原异常与时间类型合同，不mock成功SQL。无生产/Migration/API/权限/依赖变，兼容0049无升级；coverage/实际链/性能/wheel未跑，下一真实数据库来源，完整安全/Gate/包待。
+
 - 2026-09-27：0.1.0.dev0/P07-A29真实PG评审Auth来源正常读取与8拒绝、九表回滚/健康重读及原发布链通过；实际SQL22012后25P02原异常传播，不mock成功SQL或停约束。无生产/Migration/API/权限/依赖变，兼容0049无升级；unit最近1528本批未跑，完整coverage/性能/wheel未跑，下一项目读取身份来源，完整安全/Gate/包待。
 
 - 2026-09-27：0.1.0.dev0/P07-A28新增3项评审启动Auth来源非法token/CSRF/time与真实inactive Session防御测试，完整1528unit无失败/2跳过；非法输入不读Session、未启动事务拒绝且不启动事务。无生产/Migration/API/权限/依赖变化，兼容0049无升级；coverage/15链/性能/wheel未跑，下一真实数据库来源，完整安全/Gate/包待。
