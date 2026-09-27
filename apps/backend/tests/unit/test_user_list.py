@@ -2,9 +2,11 @@ import unittest
 from dataclasses import replace
 from datetime import datetime,timedelta
 from uuid import uuid4
+from unittest.mock import Mock
 from . import test_user_read as read_tests
 from plm_assistant.modules.auth.application.user_list import UserListQuery,UserListPage,AuthorizedUserListService
 from plm_assistant.modules.auth.application.user_read import UserReadError
+from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
 
 
 class UserListTests(unittest.TestCase):
@@ -56,3 +58,73 @@ class UserListTests(unittest.TestCase):
         self.repo.list.side_effect=None;self.guard.require_valid.side_effect=[None,RuntimeError('private guard')]
         with self.assertRaises(UserReadError):self.service.list(self.query)
         self.tx.commit.assert_not_called()
+
+    def _deny_list(self, code='AUTH_READ_UNAVAILABLE', entered=True):
+        with self.assertRaises(UserReadError) as caught:
+            self.service.list(self.query)
+        self.assertEqual(caught.exception.code, code)
+        self.tx.commit.assert_not_called()
+        if entered:
+            self.uow.return_value.__exit__.assert_called_once()
+
+    def test_all_dependencies_none_refuse_before_transaction(self):
+        deps = dict(unit_of_work=self.uow, access=self.access, repository=self.repo, license_guard=self.guard)
+        for field in deps:
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                AuthorizedUserListService(**(deps | {field: None}))
+        self.uow.assert_not_called()
+
+    def test_invalid_clock_or_clock_fault_refuses_before_identity_and_page(self):
+        for kind in ('none', 'bool', 'string', 'naive', 'fault'):
+            self.setUp()
+            if kind == 'fault':
+                self.service._clock = Mock(side_effect=RuntimeError('Synthetic private clock'))
+            else:
+                value = {'none': None, 'bool': True, 'string': 'Synthetic time', 'naive': datetime.now()}[kind]
+                self.service._clock = Mock(return_value=value)
+            with self.subTest(kind=kind):
+                self._deny_list()
+                self.access.authorized_admin.assert_not_called()
+                self.repo.list.assert_not_called()
+
+    def test_tampered_query_refuses_before_guard_and_transaction(self):
+        for field, value in (('session_token', b'x'), ('trace_id', None), ('page_size', True), ('before', [])):
+            self.setUp()
+            object.__setattr__(self.query, field, value)
+            with self.subTest(field=field):
+                self._deny_list('VALIDATION_FAILED', entered=False)
+                self.uow.assert_not_called()
+                self.guard.require_valid.assert_not_called()
+                self.repo.list.assert_not_called()
+
+    def test_tampered_page_is_revalidated_never_returned(self):
+        for field, value in (('items', []), ('items', (object(),)), ('has_more', 1),
+                             ('next_position', None), ('items', (self.view, self.view))):
+            self.setUp()
+            object.__setattr__(self.page, field, value)
+            with self.subTest(field=field, value_type=type(value).__name__):
+                self._deny_list()
+                self.assertEqual(self.guard.require_valid.call_count, 1)
+
+    def test_first_and_final_license_refuse_with_fixed_code(self):
+        for stage in ('first', 'final'):
+            self.setUp()
+            fault = RuntimeLicenseError('EXPIRED')
+            self.guard.require_valid.side_effect = fault if stage == 'first' else [None, fault]
+            with self.subTest(stage=stage):
+                self._deny_list('LICENSE_OPERATION_DENIED', entered=stage == 'final')
+                if stage == 'first':
+                    self.uow.assert_not_called()
+                    self.repo.list.assert_not_called()
+                else:
+                    self.repo.list.assert_called_once()
+
+    def test_access_and_transaction_faults_fixed_no_commit(self):
+        for kind in ('access', 'enter', 'exit'):
+            self.setUp()
+            if kind == 'access': self.access.authorized_admin.side_effect = RuntimeError('Synthetic private identity')
+            elif kind == 'enter': self.uow.return_value.__enter__.side_effect = RuntimeError('Synthetic private UOW enter')
+            else: self.uow.return_value.__exit__.side_effect = RuntimeError('Synthetic private UOW exit')
+            with self.subTest(kind=kind):
+                self._deny_list(entered=kind != 'enter')
+                if kind != 'exit': self.repo.list.assert_not_called()

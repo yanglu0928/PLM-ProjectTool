@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：0.1.0.dev0/P07-A33新增6用户列表Service依赖/clock/Query-Page/首末License/Access-UOW防御方法，完整1538unit无失败/2跳过；固定拒绝/noCommit/已入事务退出通过，仅Port不冒充SQL。无生产/Migration/API/权限/依赖变，兼容0049无升级；17链coverage/性能/wheel未跑，下一三异常坐标audit，完整安全/Gate/包待。
+
 - 2026-09-27：0.1.0.dev0/P07-A32完整1532unit无失败/2跳过、17实际链通过；完整Auth行96.478%/分支88.664%，90%分支未达/exit1。行分母+15仅等价布局、分支988不变，真实补测/链与映射变化分开记录；密码91.146%保持、factory另列。新rawc5cc7625…保旧raw，无生产/Migration/API/依赖变，兼容0049无升级；性能/wheel未跑，下一用户列表防御，Gate/包待。
 
 - 2026-09-27：0.1.0.dev0/P07-A31真实PG项目读取Auth正常认证/7拒绝、九表回滚/健康重读及原发布链通过；SQL22012后25P02原异常传播，不mock成功SQL或停约束。无生产/Migration/API/权限/依赖变，兼容0049无升级；unit最近1532本批未跑，完整coverage/性能/wheel未跑，下一17链安全覆盖复验，Gate/包待。

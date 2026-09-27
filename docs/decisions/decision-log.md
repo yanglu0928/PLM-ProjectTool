@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-381
+
+- Executed：新增6参数化方法，完整1538unit21.806秒无失败/errors0/2跳过、exit0；依赖/clock/篡改Query-Page/首末License/Access-UOW拒绝，noCommit/已入事务闭合，仅Port证据。无生产变更，17链coverage/性能/wheel未跑，下一A34三异常坐标audit，Gate/包待。
+
+- Phase2/P07A33编码前检查见user-list-defensive；仅UserList依赖/clock/Query-Page来源/首末License/Access-UOW拒绝，固定码/noCommit/已入事务闭合。mock Port不冒充SQL，异常坐标后逐边审计。
+- 无生产/Migration/API/权限/依赖变，无升级；完整unit实际跑，17链coverage/性能/wheel另项，原raw/90%保持，Gate/包待。
+
 ## DEC-20260927-380
 
 - Executed：1532unit无失败/2跳过，17实际链全通过；完整Auth3260/3379行96.478%、876/988分支88.664%，门槛未达/exit1。行分母+15仅已记录布局、分支988不变，变化含实际补测/链及统计映射。密码91.146%保持、factory另列，新rawc5cc7625…旧18ef6f24…未变；性能/wheel未跑，下一A33 UserList，Gate/包待。
