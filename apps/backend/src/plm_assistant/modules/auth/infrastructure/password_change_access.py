@@ -12,6 +12,7 @@ from .password_change_result_repository import SqlAlchemyPasswordChangeResults
 from ..application.user_read import UserReadView,_time,_id
 from ..application.password_change_actor import PasswordChangeActorProof
 from ..application.password_change_result import PasswordChangeResult
+from ..application.ports.password_hash import PasswordHashResult
 
 
 class PasswordChangeAccessError(RuntimeError):
@@ -47,9 +48,9 @@ class SqlAlchemyPasswordChangeAccess:
             return PasswordChangeActorProof(UserReadView(*row[:8]),*row[8:-1])
         except Exception:raise PasswordChangeAccessError() from None
 
-    def verify_current_password(self,tx,*,proof,password):
+    def current_password_source(self,tx,*,proof):
         try:
-            if type(proof) is not PasswordChangeActorProof or type(password) is not memoryview or not 1<=len(password)<=1024:
+            if type(proof) is not PasswordChangeActorProof:
                 raise PasswordChangeAccessError()
             proof.__post_init__()
             row=_session(tx).execute(select(Credential.password_hash,Credential.algorithm_id,Credential.parameter_set)
@@ -61,11 +62,22 @@ class SqlAlchemyPasswordChangeAccess:
                     Credential.must_change_password==proof.password_change_required)).one_or_none()
             if row is None:raise PasswordChangeAccessError()
             SqlAlchemyUserCreateResultRepository._validate_hash(row.password_hash,row.algorithm_id,row.parameter_set)
-            matched=self._verifier.verify_password(password,password_hash=row.password_hash,
-                algorithm_id=row.algorithm_id,parameter_set=row.parameter_set)
+            return PasswordHashResult(row.password_hash,row.algorithm_id,dict(row.parameter_set))
+        except Exception:raise PasswordChangeAccessError() from None
+
+    def verify_password_source(self,*,source,password):
+        try:
+            if type(source) is not PasswordHashResult or type(password) is not memoryview or not 1<=len(password)<=1024:
+                raise PasswordChangeAccessError()
+            SqlAlchemyUserCreateResultRepository._validate_hash(source.password_hash,source.algorithm_id,source.parameter_set)
+            matched=self._verifier.verify_password(password,password_hash=source.password_hash,
+                algorithm_id=source.algorithm_id,parameter_set=source.parameter_set)
             if type(matched) is not bool:raise PasswordChangeAccessError()
             return matched
         except Exception:raise PasswordChangeAccessError() from None
+
+    def verify_current_password(self,tx,*,proof,password):
+        return self.verify_password_source(source=self.current_password_source(tx,proof=proof),password=password)
 
     def require_changed(self,tx,*,proof,result,session_token,csrf_token,trace_id,now):
         if not self._inputs(session_token,csrf_token,now) or not _id(trace_id):return False

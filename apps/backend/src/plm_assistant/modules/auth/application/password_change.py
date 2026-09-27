@@ -2,6 +2,7 @@
 from dataclasses import dataclass,field
 from datetime import datetime,timezone
 from uuid import UUID,uuid4
+from threading import BoundedSemaphore
 from .user_read import _id,_time
 from .password_change_actor import PasswordChangeActorProof
 from .password_change_result import PasswordChangeResult
@@ -10,6 +11,8 @@ from .ports.password_hash import PasswordHashResult
 from plm_assistant.modules.audit.application.public import AuditEventDraft
 from plm_assistant.modules.platform.application.idempotency import (
     IdempotencyScope,IdempotencyResult,IdempotencyError,validate_idempotency_key,canonical_payload_fingerprint)
+
+_CHANGE_KDF_SLOTS=BoundedSemaphore(4)
 
 
 class PasswordChangeError(RuntimeError):
@@ -61,6 +64,20 @@ class PasswordChangeService:
             validate_idempotency_key(idempotency_key)
             fingerprint=canonical_payload_fingerprint({'request_schema':1})
             op='V1_AUTH_PASSWORD_CHANGE'
+            with self._uow() as preparation:
+                prepared=self._actor(preparation,command)
+                source=self._access.current_password_source(preparation,proof=prepared)
+                if type(source) is not PasswordHashResult:raise PasswordChangeError()
+            if not _CHANGE_KDF_SLOTS.acquire(timeout=5):raise PasswordChangeError()
+            try:
+                with memoryview(command.passwords.current_password) as password:
+                    matched=self._access.verify_password_source(source=source,password=password)
+                if type(matched) is not bool:raise PasswordChangeError()
+                hashed=None
+                if matched:
+                    with memoryview(command.passwords.new_password) as password:hashed=self._hasher.hash_password(password)
+                    if type(hashed) is not PasswordHashResult:raise PasswordChangeError()
+            finally:_CHANGE_KDF_SLOTS.release()
             with self._uow() as tx:
                 if self._access.lock_deployment(tx) is not True:raise PasswordChangeError()
                 proof=self._actor(tx,command);actor=proof.user_view.user_id
@@ -77,11 +94,12 @@ class PasswordChangeService:
                         raise PasswordChangeError()
                     if self._actor(tx,command)!=proof:raise PasswordChangeError('AUTH_ACCESS_DENIED')
                     return result
-                with memoryview(command.passwords.current_password) as password:
-                    matched=self._access.verify_current_password(tx,proof=proof,password=password)
+                if (proof.credential_id!=prepared.credential_id
+                    or proof.user_view.credential_version!=prepared.user_view.credential_version
+                    or proof.password_change_required!=prepared.password_change_required):
+                    raise PasswordChangeError('AUTH_ACCESS_DENIED')
                 if matched is False:raise PasswordChangeError('AUTH_INVALID_CREDENTIALS')
                 if matched is not True:raise PasswordChangeError()
-                with memoryview(command.passwords.new_password) as password:hashed=self._hasher.hash_password(password)
                 if type(hashed) is not PasswordHashResult:raise PasswordChangeError()
                 credential_id,changed_at,count=self._repo.change(tx,proof=proof,password_hash=hashed)
                 if not _id(credential_id) or not _time(changed_at) or type(count) is not int or count<1:

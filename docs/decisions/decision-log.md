@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260927-326
+
+- Final unit：1400 tests无失败（2既有跳过），change Service11 unit含真实5线程4-slot界及新hash失败无写/擦除；1398后补test再全量通过，生产源码不再改。
+
+- Executed：真实PG两个KDF阶段独立global/User/Session锁可取，logout/renew/disable/实际reset竞争九表无额外写、错误密码拒绝，普通/License-disabled及TEST_ONLY新角色实际fresh User版本正确。原原子change与Windows change/reset完整链、发布及wheel749932通过。20并发三组均20成功/SQL错误空/20+20first及旧Session失效，GET111.960/reset1631.262/change3178.707ms，普通写性能仍FAIL。无Migration/API/依赖，下一资源校准/history，CR/Gate不关闭。
+
+- P06A03编码前检查见progress；本人proof/current不可变Credential源短UOW关闭后固定KDF（4 slots/5秒），写事务新身份及相同Credential ID/version/flag再核；false只拒fresh，历史仍原first双密码真实KDF，noLicense保持。source只请求内隐藏DTO、不缓存权利，原self末核与原子链不省略。无Migration/API/依赖，真实验收待。
+
 ## DEC-20260927-325
 
 - Final unit：1393 tests无失败（2既有跳过），reset Service9 unit含实际5线程最多4活动hash；初次1392后补resource并发test再全量通过，无生产源码后改。
