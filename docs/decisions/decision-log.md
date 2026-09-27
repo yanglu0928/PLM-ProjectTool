@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-310
+
+- Executed：9新增unit/1357 tests无失败（2既有跳过），严格immutable first/最小公开响应/两密码独立匹配与冲突/非bool异常/全部缓冲擦除通过，实际Scrypt内存两凭据及交换/重复旧/UTF8空格差异通过；wheel723773。无本轮PG/HTTP运行，内存source非持久来源/原子改密证明，下一Schema A02。
+
+- A12P03A01 precode见progress；CR-AUT007内首次结果/source proof前置。私有前后Credential/User版本、Audit/trace与时间/撤销count，公开只新credential_version；重放两密码真来源分别验证，不保存明文/快速摘要/新Key，finally清缓冲。无Schema/HTTP/依赖、未授当前权限；后续A02持久来源再原子服务，完整改密Scope保留，测试待。
+
 ## DEC-20260927-309
 
 - Executed：1348 tests无失败（2既有跳过），Windows真实PG/Scrypt普通false及受限login/GET/renew true-NONE-空项目、ForbiddenProjects未调用/业务404、坏旧Token或错User拒绝、精确源503不回退/受限logout通过；原状态/发布回归及wheel721845通过。TEST_ONLY凭据追加非实际改密，完整密码流程/正式信任/包未完成。

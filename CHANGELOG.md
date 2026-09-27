@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P03-A01新增改密immutable first及前后密码重放source proof，公开仅credential_version，两缓冲finally擦除。9新unit/1357 tests无失败（2既有跳过），实际内存Scrypt两凭据匹配/交换-重复旧-UTF8尾空格差异验证及wheel723773通过。兼容0047，无Migration/依赖/API/生产升级；撤未挂Port保历史。无本轮PG/HTTP运行，内存source非持久源/原子换密证明；Schema/完整密码流程/UI/三平台/安装包/Gate待，下一first Schema/ORM来源与升降级验证。
+
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P02新增SessionView password_change_required boolean并接Windows真实Token/currentCredential投影；受限身份NONE/空项目、不查询Project，保留受限续期/退出。1348 tests无失败（2既有跳过），实际Windows PG/Scrypt普通false/受限login-GET-renew/业务404/坏旧Token绑定与精确源503不回退、原状态/发布回归/wheel721845通过。兼容0047，无Migration/依赖/生产升级；撤入口保历史，原冻结保留。合成信任/TEST_ONLY凭据非实际reset/change；完整改密/UI/三平台/安装包/Gate待，下一密码变更首结果前置与Schema。
 
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P01按CR-AUT007落实当前Credential严格事实及五业务Auth proof正常凭据限制。1346 tests无失败（2既有跳过），真PG/Scrypt受限会话五proof拒绝七表不变、精确fact/正常新Credential恢复与旧Session拒绝/历史保留、Windows状态和原发布回归通过。无Migration/依赖/公开API/生产升级，兼容0047；撤新增入口保历史，不公开未验reset绕过限制。公开受限身份投影/改密HTTP/UI/完整安全/三平台/包/Gate待，下一受限login/session投影。
