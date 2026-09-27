@@ -98,7 +98,8 @@ class UserStateService:
                 'expected_version':command.expected_version,'request_schema':1})
             self._guard.require_valid(trace_id=command.trace_id)
             with self._uow() as tx:
-                if self._access.lock_deployment(tx) is not True:raise UserStateError()
+                if self._access.lock_deployment(tx) is not True:
+                    raise UserStateError()
                 proof=self._actor(tx,command);actor=proof.user_view.user_id
                 op='V1_AUTH_USER_'+operation
                 scope=IdempotencyScope.from_key(actor_id=actor,project_id=None,operation=op,key=key)
@@ -108,7 +109,8 @@ class UserStateService:
                         raise UserStateError()
                     result=self._results.get(tx,result_id=replay.ref_id)
                     self._result(result,command,operation,actor)
-                    if result.result_id!=replay.ref_id:raise UserStateError()
+                    if result.result_id!=replay.ref_id:
+                        raise UserStateError()
                     self._final(tx,command,proof,result,changed=False)
                     return result
                 view,before,count=self._repo.change(tx,user_id=command.user_id,
@@ -117,14 +119,16 @@ class UserStateService:
                     or view.user_id!=command.user_id or view.lock_version!=command.expected_version+1
                     or view.account_state!=('ENABLED' if operation=='ENABLE' else 'DISABLED')
                     or type(count) is not int or not 0<=count<=9223372036854775807
-                    or operation=='ENABLE' and count!=0):raise UserStateError()
+                    or operation=='ENABLE' and count!=0):
+                    raise UserStateError()
                 view.__post_init__()
                 event=self._audit.append(tx,AuditEventDraft(trace_id=command.trace_id,event_scope='DEPLOYMENT',
                     target_project_id=None,actor_type='USER',actor_id=actor,original_actor_id=None,actor_hint_digest=None,
                     action='USER_ENABLED' if operation=='ENABLE' else 'USER_DISABLED',outcome='SUCCESS',
                     target_owner_module='auth',target_object_type='AUT-01',target_object_id=command.user_id,
                     before_state=before,after_state=view.account_state))
-                if not _id(event):raise UserStateError()
+                if not _id(event):
+                    raise UserStateError()
                 result=self._results.record(tx,view=view,actor_id=actor,audit_event_id=event,
                     trace_id=command.trace_id,operation=operation,expected_version=command.expected_version,
                     revoked_session_count=count)

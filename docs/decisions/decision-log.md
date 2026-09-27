@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-375
+
+- Executed：对be1d88f AST完全相等，1525unit无失败/2跳过、真实状态final来源/回滚及原发布链通过exit0。文件108/108行38/38分支，行分母+4/分支不变；相对旧33/38改善含A26新行为1边与本次布局映射4边。新raw0d251b1c…旧18ef6f24…未变，完整15链coverage/性能/wheel未跑，不推算全Auth；下一A28 ReviewStartAccess合同，Gate/包待。
+
+- Phase2/P07A27编码前检查见state-layout；仅四已审计guard raise分行，对原be1d88f AST等价，完整unit及实际状态final来源链实跑；布局统计不冒充新增用例，保旧raw/90%。
+- 无Migration/API/权限/算法/依赖变，无升级，可撤布局；完整15链coverage/性能/wheel另项，Gate/包待。
+
 ## DEC-20260927-374
 
 - Executed：新增1参数化方法三错误View，完整1525unit21.837秒无失败/errors0/2跳过；五方法coverage/trace两轮5/5通过，42→50新增真实拒绝已覆盖，其余四坐标拒绝已触发仍统计缺失。新rawe0a7580b…旧18ef6f24…未变，无生产变更，完整15链coverage/性能/wheel未跑，不推算完整Auth。下一A27四guard独立布局验收，Gate/包待。
