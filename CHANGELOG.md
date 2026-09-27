@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/AUT-04-A09-P01按CR-AUT-005新增Auth不可变首次UserView/原Credential1与创建Audit来源、严格DTO及0046；1282无失败（2既有跳过），真实空/有数据升降往返/旧表保留/ORM一致/来源拒绝/回滚/历史保护与旧取消-retrySchema/Windows列表及发布回归通过，开发wheel694351。无新API/依赖/权限，原0001～0045不追写；升级须备份停写0046，历史非空down拒绝，撤新入口保历史。TEST_ONLY只证明Schema，不是Scrypt/原子幂等/当前Admin-CSRF或创建HTTP；正式供给/性能/三平台/完整包/Gate待。下一原始凭据核验。
+
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A08实际核查User创建冻结HTTP前置，旧内部Service缺当前Session-CSRF生产装配/原子receipt/不可变首次UserView，保持POST关闭；先记录CR-AUT-005的Auth owned首次结果与初始不可变Credential真实Scrypt重放密码验证方案，拒绝明文/快速密码摘要。仅设计，无代码/Migration/API/依赖/升级动作，未运行未来创建验收；1277/25旧回归为A07历史不外推，下一0046 Schema/ORM/source DTO实施。
 
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A07将User列表装入Windows两显式platform，强制独立user-list-cursor-v1无fallback；1277无失败（2既有跳过）、两actualFactory分页/真实item ETag/权限五表无写、三构造故障各模式dispose/实际固定User key缺失仍拒绝及25关联回归、wheel691255通过。无Migration/新依赖/角色/Breaking，0045兼容；升级须目标账户交互供给/备份新KeyRef，撤列表接线回滚保历史。正式供给/其他账户/性能/三平台/用户写/完整包/Gate待；下一用户创建幂等前置。

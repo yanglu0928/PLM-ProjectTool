@@ -1,6 +1,6 @@
 # CR-AUT-005：受控User创建首次响应与幂等
 
-2026-09-27 / PROPOSED_FOR_IMPLEMENTATION，按用户持续自主授权执行设计及后续验证；原冻结64cdf09与Migration0001～0045不追写。当前仅设计，无新Schema/公开POST或验收PASS。
+2026-09-27 / IMPLEMENTATION_IN_PROGRESS，按用户持续自主授权执行；原冻结64cdf09与Migration0001～0045不追写。P01内部Schema/ORM/DTO及新增0046已隔离验证，见`docs/progress/aut-04-a09-p01-user-create-schema.md`；公开POST、实际密码核验/原子命令未完成，CR整体不关闭。
 
 ## 来源与实际冲突
 

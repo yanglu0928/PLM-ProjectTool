@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260927-294
+
+- Executed：5新unit/1282无失败（2既有跳过），实际PG空/有数据up-down-re-up十旧表保留、ORM parity/错误来源拒绝/真实插入回滚/三不可变/后续改名停用历史不变/非空down保0046；原retry/取消Schema及双Windows列表/发布回归、开发wheel694351通过。仅内部Schema，不是Scrypt/授权/原子幂等/HTTP/完整包证明。
+
+- Date/WBS：2026-09-27 / AUT-04-A09-P01；编码前检查见对应progress。前置CR-AUT-005，0045 head；仅Auth首次结果Schema/ORM/严格DTO，不挂POST。
+- Decision：复合FK原Credential1、原creator/Audit精确绑定与目标User行锁；首次ENABLED/NONE/version1/lock1安全快照、DB有限有序时间；无密码/hash/canonical/快速摘要，不回填旧User。不可变三触发器，历史非空down拒绝。
+- Impact/Rollback/Tests：新增0046不改旧迁移；空/有数据往返、ORM parity、错误源/时间/重复/变更/回滚/历史保护验证；Schema不是授权或密码证明。撤新入口保历史，实际Scrypt/Session-CSRF/原子receipt/HTTP及最终包待后续。
+
 ## DEC-20260927-293
 
 - Date/WBS：2026-09-27 / AUT-04-A08，实际旧User创建无Session-CSRF生产装配/原子receipt/不可变首次UserView，先CR-AUT-005，公开POST暂不开，不标PASS。

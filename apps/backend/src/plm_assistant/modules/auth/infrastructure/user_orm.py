@@ -67,3 +67,38 @@ class PasswordCredentialRow(Base):
     must_change_password: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
     changed_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False, server_default=text("statement_timestamp()"))
     changed_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+
+
+class UserCreateResultRow(Base):
+    """Private source coordinates and safe first response, never credential hashes."""
+    __tablename__ = 'auth_user_create_results'
+    __table_args__ = (
+        ForeignKeyConstraint(['user_id'], ['plm.auth_users.user_id'], name='fk_auth_create__user'),
+        ForeignKeyConstraint(['actor_id'], ['plm.auth_users.user_id'], name='fk_auth_create__actor'),
+        ForeignKeyConstraint(['credential_id', 'user_id', 'credential_version'],
+            ['plm.auth_password_credentials.password_credential_id', 'plm.auth_password_credentials.user_id',
+             'plm.auth_password_credentials.credential_version'], name='fk_auth_create__credential'),
+        ForeignKeyConstraint(['audit_event_id'], ['plm.aud_events.audit_event_id'], name='fk_auth_create__audit'),
+        UniqueConstraint('credential_id', name='uq_auth_create__credential'),
+        UniqueConstraint('audit_event_id', name='uq_auth_create__audit'),
+        CheckConstraint(" AND ".join(c+"<>'00000000-0000-0000-0000-000000000000'::uuid"
+            for c in ('user_id','credential_id','actor_id','audit_event_id','trace_id'))
+            + " AND user_id<>actor_id AND char_length(username_display) BETWEEN 1 AND 255"
+            + " AND account_state='ENABLED' AND deployment_role='NONE' AND credential_version=1 AND lock_version=1"
+            + " AND isfinite(created_at) AND isfinite(updated_at) AND isfinite(accepted_at)"
+            + " AND created_at<=updated_at AND updated_at<=accepted_at", name='ck_auth_create__shape'),
+    )
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    credential_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    actor_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    audit_event_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    trace_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    username_display: Mapped[str] = mapped_column(Text, nullable=False)
+    account_state: Mapped[str] = mapped_column(Text, nullable=False)
+    deployment_role: Mapped[str] = mapped_column(Text, nullable=False)
+    credential_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False)
+    accepted_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text('statement_timestamp()'))
