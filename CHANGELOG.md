@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/AUT-04-A01新增Auth内部当前Admin/License安全User详情与显式八列metadata Repository，禁用目标管理可见，密码/Session/canonical/retention不返回；无commit。6新unit/1253无失败（2既有跳过）、真实PG会话撤销/管理员降权停用/未知目标/License拒绝五表无写、原发布回归及开发wheel684687通过。无Migration/公开API/新依赖/权限，兼容0045/升级无动作；撤Reader调用回滚保历史。正式供给/HTTP/列表/用户启停重置等写幂等/锁竞争性能/三平台/完整包/Gate未完成。下一AUT-04-A02公开详情GET。
+
 - 2026-09-27：`0.1.0.dev0`/JOB-03-A02-P05-B补齐Windows真实Doc上传来源retry409、20表无写、原Attempt技术fixture非临时false/坏时间503、客户creator/noncreator隔离、归档PM新generation实际Worker成功；1247无失败/2既有跳过、旧Windows混排与发布回归。仅验收/夹具复用/文档，生产/Schema/API/依赖/升级不变，开发wheel沿P05-A未重建。P05内部完成；正式信任/性能/三平台/其他未来Owner/完整包/Gate未完成，回滚撤新验收保历史。下一Phase2 User管理面安全读模型。
 
 - 2026-09-27：`0.1.0.dev0`/JOB-03-A02-P05-A将retry仅接Windows显式写模式，Audit详情/列表按当前Export权限及实际第三失败原源显示提示，readonly false/POST405。真实两Scope新HTTP Job→Worker文件成功/原首次重放、PM降实施成员false/七构造拒绝无写、旧Windows混排与发布回归，1247后端无失败/2既有跳过，开发wheel682697通过。无Migration/依赖/角色/Breaking，兼容0045；升级无需新密钥、仍需既有正式信任供给，回滚撤接线保历史。P05-B真实Doc409/坏源metadata/归档客户完整矩阵待，不把内部检查点作为整体P05/CR/Gate/安装包PASS。

@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260927-286
+
+- Executed：6新unit/1253后端无失败（2既有跳过）、实际当前Session/Admin/目标停用可读与已撤Session/管理员降权停用/未知目标/License拒绝五表无写、原文件发布回归与wheel684687通过。撤销夹具初次缺合法reason/version被触发器拒绝，补齐原shape重验，不改保护。仅内部详情，HTTP/完整管理面/交叉锁性能待。
+
+- Date/WBS：2026-09-27 / Phase2 AUT-04-A01；P05内部收口后回到冻结User管理缺口。选独立最小投影/只读Repository，不复用创建Service或整行ORM响应；当前Admin与License每次再核。
+- Reason/Impact：已有User/Credential及生产Session，但缺管理详情读取；账户DISABLED仍是管理可见事实，不需读取密码表。无新Schema/API/角色/依赖，后续写幂等/列表/HTTP独立任务。
+- Rollback/Tests：撤新Reader调用保历史；单位权限/异常/字段边界及实际PG当前Admin/禁用目标/撤权/无写，不宣称完整管理面/性能/Gate。
+
 ## DEC-20260927-285
 
 - Executed P05-A：1247后端无失败/2既有跳过；真实双Scope Windows write HTTP新Job→实际Worker成功/首次v0重放、write/detail-list提示一致/readonlyfalse与405/PM降IMfalse/七构造拒绝无写，旧混排Windows/发布回归及wheel682697通过。首个角色fixture错名由Schema拒绝，修正正式名称完整重测。P05-B真实Doc无retry/坏源与非临时分类/归档和客户矩阵待，整体不标PASS。
