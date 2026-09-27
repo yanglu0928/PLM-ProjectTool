@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-372
+
+- Executed：三个方法coverage/独立trace两轮3/3通过，guard62/64/66/67/69异常4/3/1/1/1，实际到UOW60、到72统计坐标仍缺；noCommit/UOW退出通过。仅五边证据，不泛化其他缺口。无生产变化，下一A25五guard AST等价分行与完整unit/真实详情链，Gate/包待。
+
+- Phase2/P07A24编码前检查见read-branch-audit；逐边核对UserRead五缺失异常坐标，三个既有方法独立coverage/trace、noCommit/UOW退出，不收私有数据，不套用旧布局结论。
+- 无生产/Migration/API/权限/依赖变化，无升级；完整unit/15链coverage/性能/wheel另项，旧raw与90%保持，Gate/包待。
+
 ## DEC-20260927-371
 
 - Executed：六guard仅分行，对eeb6558 AST完全相等；完整1524unit无失败/2跳过、实际创建来源/原发布链通过exit0。文件108/108行、30/30分支100%，原102/102、24/30，行分母+6/分支分母不变；统计映射改善而非新增用例。新raw81ad2ba3…、旧18ef6f24…未变。完整15链coverage/性能/wheel未跑、不推算完整Auth；下一A24 UserRead逐边核查，Gate/包待。
