@@ -1,5 +1,10 @@
 # 自主决策记录
 
+## DEC-20260927-307
+
+- AUT-04-A12：实际隔离PG Credential2 must_change=true + 真Scrypt Session签发/校验/原Admin-CSRF proof仍成功，确认强制改密缺口，不标安全PASS；原Credential1保留、角色为TEST_ONLY，原发布回归通过。
+- 先CR-AUT007记录选定受限改密Session/当前凭据事实/业务Ports实时拒绝，先完成改密再公开reset；真前后凭据校验历史幂等，不持久化快速密码摘要。无本轮生产代码/Migration/依赖；下一A12P01，完整修复/HTTP/包未实现。
+
 ## DEC-20260927-306
 
 - Executed：1344 tests无失败（2既有跳过），actual Windows write Factory P04矩阵与HTTP创建/Scrypt登录/NONE拒绝/停用旧401/启用新200同UUID/旧不复活/首响应重放八表不变通过。readonly405/default-login404；五实际构造故障静态拒绝及dispose、缺正式信任拒绝，旧名称/原发布回归和wheel719469通过。初始readonly404误断言修正记录见progress；正式材料/性能/三平台/UI/包/Gate待。
