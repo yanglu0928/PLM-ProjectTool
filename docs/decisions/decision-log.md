@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-367
+
+- Executed：新增4项参数化测试，完整1524unit/contract无失败/errors0/2既有跳过，21.643秒、exit0。前SQL非法来源拒绝、真实inactive Session与底层异常传播通过；未模拟成功SQL。生产/Migration/API/依赖无变；coverage/14PG/wheel/性能未跑，下一A20-P02实际数据库验证，Gate/可用包未通过。
+
+- Phase2/P07A20P01编码前检查见name-adapter-defensive；仅名称Repo ID/version/Canonical来源前SQL拒绝、真实inactive事务与底层异常原传播；Domain错误不冒充Repo转换固定码、不mock成功SQL。真实缺行/原normalized/maxversion/IntegrityError另P02。
+- 无生产/Schema/API/权限/算法/依赖变，撤测试无升级；完整unit实跑，coverage/14PG/wheel/性能未跑，旧84.717%/raw/90%与Gate/包缺项保持。
+
 ## DEC-20260927-366
 
 - Executed：6新增方法，完整1520unit/contract无失败/errors0/2既有跳过、exit0；三依赖/六正文/两Unicode/两client/四Service/三投影故障拒绝，直接已分配buffer及Service attempt密码均清零，无Cookie/Token/私有详情。通用异常原500合同保持，不冒充SQL/Session回滚；生产无变，coverage/14PG/wheel/性能未跑，旧84.717%与Hash保留。下一独立User name patch Repo，Gate/包待。
