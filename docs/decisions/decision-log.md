@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-338
+
+- Executed：1433 tests无失败/2既有跳过，新增3项scrypt边界/后端错误，49/49行/12/12分支；密码21文件791/1017行77.778%与204/370分支55.135%，全Auth2738/3334行82.124%与576/974分支59.138%，Windows工厂355/369行7/10分支单列。真实coverage exit1未达90，不伪报PASS；中途1个verify固定字符串测试期望已修并全量重测。完整分母/原JSONHash/缺口见test-report。无生产/Schema/API/依赖变更，wheel未重跑；下一真实PG/Windows coverage补证，性能CR008 FAIL保持。
+
+- Phase2/AUT-04-A12-P07-A01编码前检查见security-coverage进度。使用已有本机coverage7.13.5测真实完整unit/contract分支与行，不新增生产依赖；密码全部相关API/Application/Infrastructure/进程容量计入明确范围，并独立报告全Auth。90%目标保持，无pragma/omit删路径；未实际执行的DB分支如实呈现，后续隔离PG补证。风险/回滚/安全输出先记，无生产/Schema/API变化，性能CR008仍FAIL。
+
 ## DEC-20260927-337
 
 - Executed：真实Bootstrap16/原共享gate委托计时，五组各20成功、SQL0/两history九表不写/first-版本-Session原完整性与Windows/发布回归通过，固定KDF+slot+global计数通过、peak16/end0/timeout0。P95 GET119.308/reset fresh1006.003/change fresh1604.868/reset history842.946/change history1627.173ms；processpeak2285068288bytes，整体exit1 FAIL。默认4不改，CR OPEN。成本与结论见progress，下一独立安全覆盖率基线，不无限调slots；无生产/Migration/API/依赖变更，unit/wheel未重跑。

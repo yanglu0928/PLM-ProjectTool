@@ -1,5 +1,7 @@
 # AUT-04-A12 密码流程验收矩阵（2026-09-27）
 
+最新P07A01真实coverage：1433 unit/contract无失败/2既有跳过，新增scrypt边界异常后49/49行12/12分支；密码21文件791/1017行77.778%、204/370分支55.135%，全Auth82.124%/59.138%，Windows工厂另355/369行7/10分支。覆盖率行仍未达90/exit1，不把测试数或单文件100%作为所有Auth安全PASS；下一真实PG与Windows场景coverage补证。完整报告含范围/分母/原JSONHash/首次错误修正，可追溯；性能FAIL/Gate未关闭。
+
 最新A04/A05：Windows非敏感配置默认4/严格1..16、进程唯一reset-change容量装配及不同配置dispose/九表不变已验；1430 unit为A04结果。A05真实Windows10+10混合fresh/history，4/16独立配置各20成功/30真KDF/peak4或16/end0/SQL0、原结果/历史九表无写/旧Session失效/原回归通过。4 P952199.128/2507.062ms；16 1218.475/999.713ms，history16单轮临界PASS但整体FAIL/exit1。默认4不改，原1秒标准/固定KDF/Gate缺项保持；下一旧cost profiler迁移真实配置/共享预算。当前功能通过不替代全部性能与正式服务持续负载。
 
 最新P06A04P02A04：change历史双KDF事务外及fullfirst双来源/当前身份末核已验，1419 unit/实际PG竞争/peer提交撤旧Session-新login恢复通过。20五组全20成功，actual SQL错误为空，原六history global55P03消除；history change P95 3220.477ms/reset1650.695ms、fresh change3157.216/reset1642.030ms仍超1秒。两history九表不写，功能恢复不抵消性能FAIL；CR008/Gate开放，下一固定KDF成本与资源调度剖析，不降标准/强度。
