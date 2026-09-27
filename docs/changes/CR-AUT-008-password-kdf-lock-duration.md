@@ -1,5 +1,7 @@
 # CR-AUT-008 密码计算与全局管理写锁排队
 
+2026-09-27/P08A01：相同16实际KDF上界的双计算诊断两轮反序、四批各20请求/40真KDF及计时后20新hash真核验，peak16/end0，串行P951672.890/1521.531ms，并行1275.076/1262.386ms。并行仅计算仍超1秒，未接生产；对照每计算lease不是生产整请求lease，executor排队不能混同许可等待。诊断exit0仅正确性，HTTP/history/最低硬件未测，CR仍OPEN/FAIL，原强度/默认4/指标/同步V1不变。下一同PhaseWeb登录客户端合同前置，未来资源或实现实质变化再做原HTTP复验，涉及接口/安全变更另CR。详情progress/test-report与DEC390。
+
 2026-09-27/A06旧cost profiler已迁移真实Bootstrap16与原共享gate计时代理，不创建第二budget；五组20全成功/SQL0/history九表不写/计数正确、peak16/end0/timeouts0、原回归通过。P95 GET119.308/reset1006.003/change1604.868/history reset842.946/change1627.173ms，peak2285068288bytes；整体exit1 FAIL。双KDF/slot主耗时仍在，fresh global排队最高P95359.509ms但持有≤54.021ms；默认4保留，CR OPEN，不无限slots调参。下一独立安全覆盖率基线，未来接口/安全调整另CR；详情progress/DEC337。无生产/Migration/API/依赖变化。
 
 2026-09-27/A05：实际Windows10reset+10change共享混合fresh/history，4与16独立进程真Bootstrap配置；各批20成功/30KDF/peak4或16/end0/SQL0，历史九表无写/原first-Etag/旧Session失效及原回归通过。4 P95 2199.128/2507.062ms；16 1218.475/999.713ms，本轮history16临界PASS但fresh FAIL，两run exit1整体FAIL。默认4不改，CR OPEN；无生产/Migration/API/依赖变化。首次16外层默认配置冲突安全拒绝非性能测量，入口统一真实env后复验，完整追溯progress/DEC336；下一cost profiler迁移真实共享预算，不用legacy替换虚报容量。

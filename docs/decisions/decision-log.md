@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260927-390
+
+- Executed：四批各20请求/40真实KDF及20结果真验证，peak16/end0；串行P951672.890/1521.531ms，并行1275.076/1262.386ms。诊断exit0，不含HTTP/history，未达1秒，不接并行候选。完整unit/集成/coverage/wheel未重跑，生产不变；保CR008 FAIL，转同PhaseWeb登录客户端合同前置。
+- Phase2 / AUT-04-A12-P08-A01；日期2026-09-27；实施前记录，状态EXECUTED。
+- 读取完整CR008/实际profiler/Service共享lease与固定Scrypt；只做20请求双计算串行/并行固定16实际KDF上限的合成成本诊断。无API/Schema/权限/安全机制/依赖/生产配置变化。
+- 原默认4不变，不用每请求16slot内再双线程造成32计算；本线程获取释放，全部计算结束后再擦除合成缓冲。不持久化秘密或外发。
+- 风险/回滚/验收先记录于docs/progress/aut-04-a12-p08-a01-kdf-pair-design.md；诊断不是HTTP PASS，CR008/性能FAIL/Gate保留。测量后决定候选是否值得正式接线，避免无限slots调参。
+
 ## DEC-20260927-389
 
 - Executed：2新增方法、1553unit无失败/2跳过，真实Windows登录链通过exit0；工厂364/369行98.645%、10/10分支100%，两前置guard覆盖、五CLI行未验保留，分母不变。新rawa30daa7e…旧5e9391c0…未变，完整19链Auth coverage/性能/wheel未重跑，无生产变更。下一P08A01 CR008固定KDF/同步V1性能设计，不降门槛或重复无改动压测，Gate/包待。

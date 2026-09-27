@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：0.1.0.dev0/P08A01新增固定KDF双计算调度诊断，四批20请求/40真实KDF与20新hash真核验，peak16/end0；并行P951275.076/1262.386ms仍超1秒，不接生产。诊断exit0不代表HTTP达标，CR008 OPEN/FAIL；无生产/API/Schema/权限/依赖变，兼容0049无升级。unit/coverage/HTTP/wheel未重跑，下一同PhaseWeb登录/会话客户端合同前置，完整包/Gate待。
+
 - 2026-09-27：0.1.0.dev0/P07-A41新增2Windows工厂错误配置/真实空Migration head拒绝方法，1553unit无失败/2跳过与真实登录链通过；工厂364/369行98.645%、10/10分支100%，五CLI行未验，分母不变。无生产/Migration/API/权限/依赖变，兼容0049无升级；新rawa30daa7e…保旧raw，完整19链Auth coverage/性能/wheel未重跑。下一CR008性能设计，正式trust/性能FAIL/Gate/包待。
 
 - 2026-09-27：0.1.0.dev0/P07-A40完整1551unit无失败/2跳过、19实际链通过；完整Auth行97.575%/分支90.081%，原90%覆盖门槛通过/exit0，不代表全部安全或Gate关闭。行分母+3仅等价UserList布局/分支988保持，密码91.146%保持，factory8/10未达另列。新raw5e9391c0…保旧raw，无生产/Migration/API/依赖变，兼容0049无升级；性能/wheel未跑，下一工厂前置失败关闭，正式trust/性能FAIL/Gate/包待。
