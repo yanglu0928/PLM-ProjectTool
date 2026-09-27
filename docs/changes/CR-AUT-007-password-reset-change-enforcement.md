@@ -2,6 +2,8 @@
 
 日期2026-09-27；版本0.1.0.dev0；状态RESTRICTED_SESSION_PROJECTION_VERIFIED_PASSWORD_FLOW_PENDING。
 
+P03A03进展：真实0048first Repository及前后Credential精确历史Scrypt来源通过；record服务器受理时间/固定profile、双密码匹配差异/伪造first/KDF异常、laterCredential历史保持、坏profile与实际caller写后回滚已PG验证，1359 tests无失败（2既有跳过）、原发布回归通过。转换仅TEST_ONLY，生产当前认证/原子Application和HTTP仍待，见P03A03progress；下一A12P04原子change。
+
 P03A02进展：新增0048/ORM thirteen-field改密first、前后Credential/User/self Audit/time/撤销Session计数源与历史保护；空有数据升降往返/ORM/坏源及must-change=true拒绝/回滚/非空down实际验证通过，1357 tests无失败（2既有跳过）、四旧Schema/Windows受限投影/原发布回归通过。0001～0047保留，无生产迁移或改密公开入口；Application/真实密码来源及原子幂等仍待，见Schema增量及P03A02progress。
 
 P03A01进展：严格不可变change first DTO和两项密码source proof已通过9新增unit/1357总测试（2既有跳过）及真实内存Scrypt匹配/差异验证；只公开credential_version，无快速摘要/明文持久化或新Key。当前未有first Schema/真实Repository/原子change服务，故CR整体不关闭；见P03A01progress。下一Schema/来源验证，完整Scope不缩成纯DTO。

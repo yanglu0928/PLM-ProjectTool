@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-312
+
+- Executed：1359 tests无失败（2既有跳过）；实际PG/Scrypt当次两凭据匹配/各错及伪造first/异常非bool拒绝八表不变、后来Credential3不替代历史、record坏profile回滚、合法实际first写后caller故障八表回滚及原Session保留；原发布回归/wheel727401通过。TEST_ONLY转换非生产当前认证/原子改密证明；下一A12P04。
+
+- A12P03A03 precode见progress；caller UOW get/record真实0048first、server acceptedAt、两Credential精确历史source+固定Scrypt预检与真实KDF，不授当前认证。无Migration/API/依赖/Key，撤未挂Port保历史；实际密码来源/异常/历史矩阵待验。
+
 ## DEC-20260927-311
 
 - Executed：1357 tests无失败（2既有跳过）；真实空/有数据0047-48往返十二旧表及ORM一致、前后Credential/User/self Audit/time/count2含expired/未撤销及must-change=true源拒绝、first写后回滚/历史immutable/非空down保head48；四旧Schema/Windows受限Session/原发布回归及wheel726009通过。首轮新ORM表登记遗漏修复保历史严格断言，见progress。Schema TEST_ONLY非原子换密或当前密码授权证明。
