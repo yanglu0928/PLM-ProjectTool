@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：0.1.0.dev0/P07-A25仅五个UserRead条件raise分行，与f936ff0 AST完全相等；1524unit无失败/2跳过及Windows实际详情链通过。文件61/61行、20/20分支，行分母+5/分支不变，统计映射改善非新增用例。无Migration/API/权限/依赖变，兼容0049无需升级；完整15链coverage/性能/wheel未跑，旧raw保留，下一状态异常坐标核查，完整安全/Gate/可用包待。
+
 - 2026-09-27：0.1.0.dev0/P07-A24三个既有UserRead方法coverage/trace两轮通过，五个缺失坐标的实际拒绝及noCommit/UOW退出已逐边证实；统计报告仍缺对应跳转。不修改生产或门槛、无Migration/API/依赖变，无升级。完整unit/15链coverage/性能/wheel未跑；下一五guard等价分行验收，完整安全/Gate/可用包待。
 
 - 2026-09-27：0.1.0.dev0/P07-A23仅六个用户创建条件raise分行，对eeb6558 AST完全相等；完整1524unit无失败/2跳过与真实创建来源/发布链通过。该文件108/108行、30/30分支100%，原行分母+6、分支分母不变；统计映射改善非新增行为测试。无Migration/API/权限/算法/依赖变化，兼容0049无需升级；完整15链coverage/性能/wheel未跑，旧raw保留，下一UserRead坐标核查，Gate/可用包待。

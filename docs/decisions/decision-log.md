@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-373
+
+- Executed：对f936ff0 AST相等，1524unit无失败/errors0/2跳过，Windows实际详情链通过exit0。文件61/61行、20/20分支，原56/56/15/20，行分母+5/分支不变，布局映射改善非新增用例。新raw40f6e859…旧18ef6f24…未变。完整15链coverage/性能/wheel未跑，下一A26 UserState异常坐标核查，Gate/包待。
+
+- Phase2/P07A25编码前检查见read-layout；仅A24已证实的五guard分行，原f936ff0 AST完全相同，完整unit及Windows真实详情链独立测量；统计映射改善不冒充新行为。
+- 无Migration/API/权限/依赖变，无升级；可撤布局，保旧raw/90%，完整15链coverage/性能/wheel另项，Gate/包待。
+
 ## DEC-20260927-372
 
 - Executed：三个方法coverage/独立trace两轮3/3通过，guard62/64/66/67/69异常4/3/1/1/1，实际到UOW60、到72统计坐标仍缺；noCommit/UOW退出通过。仅五边证据，不泛化其他缺口。无生产变化，下一A25五guard AST等价分行与完整unit/真实详情链，Gate/包待。

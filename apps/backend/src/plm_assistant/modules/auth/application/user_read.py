@@ -59,14 +59,19 @@ class AuthorizedUserReadService:
             self._guard.require_valid(trace_id=query.trace_id)
             with self._uow() as tx:
                 now=self._clock()
-                if not _time(now):raise UserReadError()
+                if not _time(now):
+                    raise UserReadError()
                 actor=self._access.authorized_admin(tx,session_token=query.session_token,now=now)
-                if not _id(actor):raise UserReadError('AUTH_ACCESS_DENIED')
+                if not _id(actor):
+                    raise UserReadError('AUTH_ACCESS_DENIED')
                 view=self._repo.get(tx,user_id=query.user_id)
-                if view is None:raise UserReadError('RESOURCE_NOT_FOUND')
-                if type(view) is not UserReadView:raise UserReadError()
+                if view is None:
+                    raise UserReadError('RESOURCE_NOT_FOUND')
+                if type(view) is not UserReadView:
+                    raise UserReadError()
                 view.__post_init__()
-                if view.user_id!=query.user_id:raise UserReadError()
+                if view.user_id!=query.user_id:
+                    raise UserReadError()
                 self._guard.require_valid(trace_id=query.trace_id)
                 return view
         except UserReadError:raise
