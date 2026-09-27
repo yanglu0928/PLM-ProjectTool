@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/JOB-01-A04-P03内部Document Parse Job Owner以Document/Audit原来源后锁定Jobs完整pair，不猜SUCCEEDED结果。6新单位行为/全后端1191无失败（2既有跳过），真实PROJECT三次原提交九表无写及原上传回归通过。无Migration/API/角色/依赖变化，Schema仍0044，撤内部Owner回滚、历史保留；未装运行组合，当前Session/GLOBAL真实授权、成功ParseRecord/File-Version限制专项、正式包/Gate待，wheel本轮未运行。
+
 - 2026-09-27：`0.1.0.dev0`/JOB-01-A04-P02新增Document owned上传/版本/文件/来源只读核验与Audit owned唯一原提交证明Port，不跨私有表，不授正文/解析权；修正P01误限32位版本为模型正bigint。Windows11后端1185无失败/2既有跳过；真实PROJECT新/后继/恢复与GLOBAL实际文件提交源匹配，旧Version有效/错Scope及引用/Doc限制/重复Audit拒绝九表无写、原Queue/提交/文件回归及wheel通过。无Migration/API/依赖/权限/升级，撤新Reader保历史；当前Session/Owner/Parser/部分状态专项/三平台/完整包/Gate待，原Access/License仍合成。
 
 - 2026-09-27：`0.1.0.dev0`/JOB-01-A04-P01补Jobs owned解析任务只读peek/find与严格Binding，不复用可能创建缺Job的enqueue，不扩大权限。Windows11后端1181无失败/2既有跳过；真实三次PROJECT上传提交来源精确读回、错引用/actor/trace拒绝八表无写，GLOBAL仅Queue元数据分支/缺Outbox拒绝，旧提交/文件回归及开发wheel通过。无Migration/API/依赖/升级，撤新Port回滚保历史。Document真实来源/当前权限/Owner装配/Parser执行/其他Owner/全Scope/三平台/完整包/Gate待，GLOBAL不冒充已提交文档。

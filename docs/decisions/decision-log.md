@@ -1,5 +1,10 @@
 # 自主决策记录
 
+## DEC-20260927-272
+
+- Phase2/JOB-01-A04-P03：内部Owner先组合Jobs hint、Document/Audit原源、锁定原Queue pair，当前权限留AuthorizedJobReadService同UOW；不把hint/source当授权。未知SUCCEEDED实际ParseRecord证明安全拒绝，下一补真实结果核验，不猜文档版本为结果。
+- 无Migration/API/角色/依赖变化；原Scope完整保留，尚未挂生产组合。内部PROJECT真实来源组合与1191后端/2既有跳过通过不代表当前Session、GLOBAL权限、Parser或整项P03完成。回滚撤内部Owner保历史。
+
 ## DEC-20260927-271
 
 - Precode：Phase2/JOB-01-A04-P02，前置P01 Queue/original Upload Commit成立；Doc版本源与Audit证明是该单问题必要依赖，不跨模块私有SQL，详见document-source进度。无Schema/API/依赖/角色变更。
