@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-384
+
+- Executed：新增3方法，1541unit21.763秒无失败/errors0/2跳过、exit0；错误/真实inactive来源、缺来源原AttributeError与真实active无bind空tuple通过，无成功SQL模拟/生产变更。17链coverage/性能/wheel未跑，下一A37真实名称/缺行/非法编号行为，Gate/包待。
+
+- Phase2/P07A36编码前检查见member-names-defensive；修正计划假设：适配层仅授权后最小名称投影、不承诺非法编号校验，不加新权限/静默过滤。测试原事务来源、真实inactive与active空tuple。
+- 无生产/Migration/API/权限/依赖变，无升级；完整unit跑，真实名称/非法编号SQL另A37，17链coverage/性能/wheel另项，Gate/包待。
+
 ## DEC-20260927-383
 
 - Executed：对4e2459e AST相等，1538unit无失败/2跳过、Windows实际列表链通过exit0，文件57/57行18/18分支；相对A32行分母+3/分支不变，改善含A33新增拒绝1边、本次映射3边。新rawc0963741…旧c5cc7625…未变，完整17链coverage/性能/wheel未跑，不推算全Auth。下一A36项目成员名称Auth来源，Gate/包待。
