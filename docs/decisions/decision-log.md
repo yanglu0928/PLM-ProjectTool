@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-362
+
+- Executed：实际缺User拒绝，八次真实Service final True→缺Session/time/proof/CSRF/User/live Session/other Admin拒绝或SQL22012+25P02，八次九表全行回滚/原Session保留；实际正常self-disable提交/准确撤销1 Session及原publication回归通过exit0。无生产变化，unit最近1501本批未跑，coverage/14链/wheel/性能未跑，旧82.186%与Hash保留；下一14链完整覆盖，正式trust/Gate/包待。
+
+- Phase2/P07A15P02编码前检查见state-final-source；真实Service self-disable后原final True，再八故障原源拒绝、九表回滚/旧Session保留，最后真提交。DTO/time/CSRF注入明确，与同UOW SQL User/Session/Admin变化区分；TEST_ONLY角色/合成License，不mock成功SQL/禁触发器。
+- 无生产/Schema/API/权限/算法/依赖变，撤验证无升级；原publication回归，unit1501本批不跑、coverage/14链/wheel/性能未跑，原raw/90%与正式trust/Gate/包缺项保持。
+
 ## DEC-20260927-361
 
 - Executed：4新增方法、完整1501unit无失败/errors0/2既有跳过，exit0；八非法ID/八错自停用来源/两篡改DTO在SQL前拒绝，真实inactive Session lock/change/final三路径抛原AuthTransactionError且仍无事务。无模拟成功SQL；仅P01 PASS，实际末核/九表回滚P02待。生产无变，coverage/13PG/wheel/性能未跑，旧82.186%与Hash保持，正式trust/Gate/包待。
