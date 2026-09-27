@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-389
+
+- Executed：2新增方法、1553unit无失败/2跳过，真实Windows登录链通过exit0；工厂364/369行98.645%、10/10分支100%，两前置guard覆盖、五CLI行未验保留，分母不变。新rawa30daa7e…旧5e9391c0…未变，完整19链Auth coverage/性能/wheel未重跑，无生产变更。下一P08A01 CR008固定KDF/同步V1性能设计，不降门槛或重复无改动压测，Gate/包待。
+
+- Phase2/P07A41编码前检查见factory-preconditions；两个已识别前置guard测试，三工厂错误配置不读凭据，真实空Alembic目录head None不入UOW；不mock成功SQL或head。完整unit/Windows登录链factory独立coverage。
+- 无生产/Migration/API/权限/依赖变，无升级，不代供正式信任；完整19链Auth coverage/性能/wheel另项，后继续CR008，Gate/包待。
+
 ## DEC-20260927-388
 
 - Executed：1551unit无失败/2跳过、19实际链全通过，完整Auth3300/3382行97.575%、890/988分支90.081%，门槛通过/exit0但不等于所有安全/生产/Gate通过。行分母+3仅UserList布局、分支988不变，密码91.146%保持，Windows factory8/10未达另列。新raw5e9391c0…旧c5cc7625…未变；性能/wheel未跑，下一A41工厂两个前置失败关闭，Gate/包待。
