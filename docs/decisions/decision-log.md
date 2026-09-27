@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-313
+
+- Executed：1361 tests无失败（2既有跳过）；实际PG/Scrypt普通与受限身份及当前原密码，同一转换UOW锁定身份/first后专用末核成功，伪造Token/CSRF/trace/flag/version/到期拒绝，旧Session无新认证；来源/回滚/发布回归及wheel730294通过。仅Auth前置，TEST_ONLY转换非原子Service/HTTP/包/Gate证明；下一P04A02。
+
+- P04A01 precode见progress；独立normal/restricted改密身份/真原密码与首次变更专用末核，不通过Admin proof、不将失效Session授新写。复用状态部署事务锁/5s等待，严格原生命周期/版本/CSRF/immutable first/count。无Schema/API/依赖，后续限定commit前调用；真实矩阵待验，非原子Service完成。
+
 ## DEC-20260927-312
 
 - Executed：1359 tests无失败（2既有跳过）；实际PG/Scrypt当次两凭据匹配/各错及伪造first/异常非bool拒绝八表不变、后来Credential3不替代历史、record坏profile回滚、合法实际first写后caller故障八表回滚及原Session保留；原发布回归/wheel727401通过。TEST_ONLY转换非生产当前认证/原子改密证明；下一A12P04。

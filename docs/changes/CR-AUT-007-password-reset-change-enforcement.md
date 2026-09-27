@@ -42,3 +42,5 @@ P02当前状态：Windows真实Token绑定currentFact投影接login/session GET/
 验收需真实Scrypt当前/新密码、强制改密受限登录与所有业务Port零授权、坏源/失密/CSRF/License/版本、全Session撤销与新登录、disabled/自重置/最后Admin可达性、同Key密码差异与并发、后来凭据变化首响应、实际写后/commit确认故障整体回滚或严格原结果恢复、HTTP Cookie/来源/错误无秘密、Windows actualFactory；20并发及三平台另验。不得只测试DTO或标志存储便宣称强制改密PASS。
 
 当前reset/change生产入口仍关闭，未完成安全机制，Gate3/安装包不关闭；无需逐项审批，但测试失败必须如实记录。
+
+2026-09-27/P04A01：普通及受限当前身份/真原密码与本次首次变更专用末核已在实际隔离PG验证。末核不是失效Session通用授权，必须在首次执行原UOW提交前精确核原生命周期、实际first/trace和全Session撤销。下一原子Application及当前有效身份历史恢复；TEST_ONLY转换不能关闭本CR或Gate。

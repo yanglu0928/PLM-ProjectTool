@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P04-A01新增普通/受限改密当前身份、真实原密码核验及首次变更专用末核。1361 tests无失败（2既有跳过），实际PG/Scrypt同UOW身份与末核、伪造/到期/旧Session拒绝，来源/回滚/发布回归及wheel730294通过。兼容0048，无Migration/API/依赖/生产升级；撤未挂Port保历史。TEST_ONLY转换非完整原子服务/HTTP/发行证明；UI/三平台/包/Gate待，下一P04A02原子change。
+
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P03-A03完成改密first caller-UOW Repository/服务器受理时间及真实历史双密码Scrypt来源/固定profile预检。1359 tests无失败（2既有跳过），真PG两密码匹配与差异/伪造first/KDF异常八表不变、laterCredential不代历史、坏profile及合法写后caller回滚/原会话保留、原发布回归/wheel727401通过。兼容0048，无新Migration/依赖/API/生产升级；撤未挂Port保历史。TEST_ONLY转换非当前认证/原子改密证明；完整密码流程/UI/三平台/包/Gate待，下一原子change Application。
 
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P03-A02新增0048/ORM改密first，前后Credential/User/self Audit/时间及全Session撤销count source/不可变与非空降级保护。1357 tests无失败（2既有跳过），真实空有数据往返十二旧表保持/ORM一致、坏源及must-change=true拒绝/写后回滚/历史保护、四旧Schema/Windows受限会话及发布回归/wheel726009通过。原0001～0047保留；无生产迁移/依赖/API/权限变化。升级备份停写0048，history非空不得down，撤入口保历史。TEST_ONLY schema非Scrypt/原子换密证明；真实来源/完整密码流程/UI/三平台/安装包/Gate待，下一first Repository与双密码真实来源。

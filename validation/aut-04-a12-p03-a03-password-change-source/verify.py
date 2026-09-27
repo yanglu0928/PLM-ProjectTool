@@ -16,7 +16,7 @@ spec=spec_from_file_location('_real_change_source',Path(__file__).resolve().pare
 m=module_from_spec(spec);spec.loader.exec_module(m)
 
 
-def exercise(v):
+def exercise(v,access_checks=False):
     db=v['db'];hasher=m.ScryptPasswordHasher();receipts=m.SqlAlchemyIdempotencyReceipts()
     createfirst=m.SqlAlchemyUserCreateResultRepository(verifier=hasher)
     creator=m.ManagedUserCreateService(unit_of_work=v['uow'],access=m.SqlAlchemyUserCreateAccess(),license_guard=v['guard'],
@@ -27,12 +27,26 @@ def exercise(v):
         'Synthetic real change source',bytearray(old)),idempotency_key=str(uuid4()))
     sessions=m.SessionService(unit_of_work=v['uow'],repository=m.SqlAlchemySessionRepository(),
         issue_access=m.SqlAlchemyPasswordIssueAccess(hasher),audit=v['audit'],idempotency=receipts)
-    sessions.issue(user_id=target.user_id,trace_id=uuid4(),proof=m.PasswordIssueProof(bytearray(old)))
+    initial=sessions.issue(user_id=target.user_id,trace_id=uuid4(),proof=m.PasswordIssueProof(bytearray(old)))
+    if access_checks:
+        from plm_assistant.modules.auth.infrastructure.password_change_access import SqlAlchemyPasswordChangeAccess
+        access=SqlAlchemyPasswordChangeAccess(verifier=hasher)
+        with v['uow']() as tx:
+            assert access.lock_deployment(tx) is True
+            actor=access.prove(tx,session_token=initial.token,csrf_token=initial.csrf_token,now=datetime.now(timezone.utc))
+            assert actor.user_view.user_id==target.user_id and actor.password_change_required is False
+            with memoryview(old) as password:assert access.verify_current_password(tx,proof=actor,password=password) is True
+            with memoryview(new) as password:assert access.verify_current_password(tx,proof=actor,password=password) is False
+            assert access.prove(tx,session_token=initial.token,csrf_token=b'?'*32,now=datetime.now(timezone.utc)) is None
     repo=SqlAlchemyPasswordChangeResults(verifier=hasher);replay=PasswordChangeReplayVerifier(source=repo)
     # TEST_ONLY transition sources in caller UOW; not a current-auth password change service.
     with memoryview(new) as view:hashed=hasher.hash_password(view)
     with v['uow']() as tx:
         uid=target.user_id
+        if access_checks:
+            assert access.lock_deployment(tx) is True
+            actor=access.prove(tx,session_token=initial.token,csrf_token=initial.csrf_token,now=datetime.now(timezone.utc))
+            with memoryview(old) as password:assert access.verify_current_password(tx,proof=actor,password=password) is True
         oldid=tx.session.execute(select(UserRow.active_password_credential_id).where(UserRow.user_id==uid).with_for_update()).scalar_one()
         newid=tx.session.execute(insert(PasswordCredentialRow).values(user_id=uid,credential_version=2,
             password_hash=hashed.password_hash,algorithm_id=hashed.algorithm_id,parameter_set=dict(hashed.parameter_set),
@@ -48,7 +62,19 @@ def exercise(v):
         draft=PasswordChangeResult(uuid4(),uid,oldid,newid,1,2,1,2,event,trace,count,changed,changed)
         first=repo.record(tx,draft=draft)
         assert first.accepted_at>=changed and first.accepted_at!=draft.accepted_at
+        if access_checks:
+            from datetime import timedelta
+            params=dict(proof=actor,result=first,session_token=initial.token,csrf_token=initial.csrf_token,
+                trace_id=trace,now=datetime.now(timezone.utc))
+            assert access.require_changed(tx,**params) is True
+            for bad in ({'csrf_token':b'?'*32},{'session_token':b'?'*32},{'trace_id':uuid4()},
+                {'proof':replace(actor,password_change_required=True)},
+                {'proof':replace(actor,session_version=actor.session_version+1)},
+                {'now':datetime.now(timezone.utc)+timedelta(days=1)}):
+                assert access.require_changed(tx,**(params|bad)) is False
         tx.commit()
+    if access_checks:
+        with v['uow']() as tx:assert access.prove(tx,session_token=initial.token,csrf_token=initial.csrf_token,now=datetime.now(timezone.utc)) is None
     tables=('auth_users','auth_password_credentials','auth_sessions','auth_user_create_results','auth_user_state_results',
         'auth_password_change_results','aud_events','plt_idempotency_receipts')
     def snap():return {t:tuple(db.execute(sql.SQL('SELECT * FROM plm.{} ORDER BY 1').format(sql.Identifier(t)))) for t in tables}
