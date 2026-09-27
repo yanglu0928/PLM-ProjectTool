@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/JOB-03-A02-P05-A将retry仅接Windows显式写模式，Audit详情/列表按当前Export权限及实际第三失败原源显示提示，readonly false/POST405。真实两Scope新HTTP Job→Worker文件成功/原首次重放、PM降实施成员false/七构造拒绝无写、旧Windows混排与发布回归，1247后端无失败/2既有跳过，开发wheel682697通过。无Migration/依赖/角色/Breaking，兼容0045；升级无需新密钥、仍需既有正式信任供给，回滚撤接线保历史。P05-B真实Doc409/坏源metadata/归档客户完整矩阵待，不把内部检查点作为整体P05/CR/Gate/安装包PASS。
+
 - 2026-09-27：`0.1.0.dev0`/JOB-03-A02-P04新增可选冻结双Job retry POST、strict Origin/Session-CSRF/Key/IfMatch/空JSON，当前安全来源分派及Audit写UOW二次授权；补冻结JOB_NOT_RETRYABLE409。真实HTTP新Job→现Worker文件成功→GET当前与原202 PENDINGv0重放、精确不可重试/错误拒绝十五表无写、1239后端无失败/2既有跳过与开发wheel681969通过。无Migration/依赖/角色/Breaking/升级变化，head0045；撤可选入口回滚保历史。Windows/metadata未接、Doc409仅unit，正式材料/全Owner/三平台/性能/完整包/Gate待。
 
 - 2026-09-27：`0.1.0.dev0`/JOB-03-A02-P03新增当前用户授权的Audit原子新代重试Service和immutable generation Repository。真实双Scope第三失败→新Job实际Worker成功、同Key并发唯一/首次版本0历史重放/旧FAILED不变、新Key新generation，错误授权/版本及写后故障十五表回滚；1229后端无失败/2既有跳过、开发wheel677500通过。无Migration/API/依赖/角色/升级变化，head0045；停未接线入口回滚保历史。HTTP/metadata retryable/Windows及其他Owner未接，正式材料/三平台/性能/完整包/Gate待。

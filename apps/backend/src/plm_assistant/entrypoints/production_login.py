@@ -26,6 +26,15 @@ from plm_assistant.modules.jobs.infrastructure.audit_export_enqueue_repository i
 from plm_assistant.modules.jobs.infrastructure.lease_repository import SqlAlchemyJobLeaseRepository
 from plm_assistant.modules.jobs.api.read_detail import create_job_detail_router
 from plm_assistant.modules.jobs.api.cancel import create_project_job_cancel_router
+from plm_assistant.modules.jobs.api.retry import create_job_retry_router
+from plm_assistant.modules.jobs.application.retry_request import JobRetryRequests
+from plm_assistant.modules.audit.application.job_retry_adapter import AuditJobRetryOwner
+from plm_assistant.modules.audit.application.request_user_retry import AuditUserRetryService
+from plm_assistant.modules.audit.application.user_retry_source import AuditUserRetrySourceReader
+from plm_assistant.modules.audit.infrastructure.user_retry_failure_source import SqlAlchemyAuditUserRetryFailureSources
+from plm_assistant.modules.audit.infrastructure.retry_generation_repository import SqlAlchemyAuditRetryGenerations
+from plm_assistant.modules.jobs.application.audit_user_retry_source import AuditUserRetryJobSources
+from plm_assistant.modules.jobs.infrastructure.audit_user_retry_source import SqlAlchemyAuditUserRetryJobSources
 from plm_assistant.modules.jobs.application.cancel_request import ProjectJobCancellation
 from plm_assistant.modules.jobs.application.audit_export_cancel import AuditExportCancellation
 from plm_assistant.modules.jobs.infrastructure.audit_export_cancel_repository import SqlAlchemyAuditExportCancellationRepository
@@ -269,6 +278,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         job_detail_router = None
         job_list_router = None
         job_cancel_router = None
+        job_retry_router = None
         project_create_router = None
         project_patch_router = None
         project_archive_router = None
@@ -292,18 +302,25 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 create_windows_license_services,
             )
             licenses = create_windows_license_services(runtime, settings)
+            retry_projects = ProjectAuthorizationService(unit_of_work=runtime.unit_of_work,
+                repository=SqlAlchemyProjectAuthorizationRepository())
+            retry_sources = AuditUserRetrySourceReader(
+                repository=SqlAlchemyAuditExportSubmitRepository(),
+                jobs=AuditUserRetryJobSources(queue=AuditExportJobQueue(SqlAlchemyAuditExportJobQueueRepository()),
+                    repository=SqlAlchemyAuditUserRetryJobSources()),
+                failures=SqlAlchemyAuditUserRetryFailureSources()) if include_secret_write else None
             job_read_owners = {
                 ('audit','AUDIT_EXPORT'):AuditJobReadProjection(
                     repository=SqlAlchemyAuditExportSubmitRepository(),
                     queue=AuditExportJobQueue(SqlAlchemyAuditExportJobQueueRepository()),
-                    results=SqlAlchemyAuditExportResults()),
+                    results=SqlAlchemyAuditExportResults(),retry_sources=retry_sources,
+                    retry_projects=retry_projects if include_secret_write else None),
                 ('document','DOCUMENT_PARSE'):DocumentParseJobReadProjection(
                     queue=ParseJobQueue(SqlAlchemyParseJobQueueRepository()),
                     sources=DocumentParseSourceReader(repository=SqlAlchemyDocumentParseSources(),
                         audit_sources=UploadCommitAuditSources(repository=SqlAlchemyUploadCommitAuditSources())),
                     results=DocumentParseJobResults(repository=SqlAlchemyDocumentParseJobResults()))}
-            job_detail_router = create_job_detail_router(
-                reads=AuthorizedJobReadService(
+            job_reads = AuthorizedJobReadService(
                     unit_of_work=runtime.unit_of_work,
                     project_access=SqlAlchemyProjectReadAccess(),
                     deployment_access=SqlAlchemyDeploymentReadAccess(),
@@ -311,8 +328,8 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                         repository=SqlAlchemyProjectAuthorizationRepository()),
                     license_guard=licenses.guard,repository=SqlAlchemyJobReadRepository(),
                     owners=job_read_owners,
-                ),origins=origins,
-            )
+                )
+            job_detail_router = create_job_detail_router(reads=job_reads,origins=origins)
             cursors = create_windows_secret_list_cursor_codec()
             member_cursors = create_windows_project_member_cursor_codec()
             department_cursors = create_windows_project_department_cursor_codec()
@@ -571,6 +588,17 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 sessions=sessions, departments=department_deactivates, origins=origins,
             )
             if include_secret_write:
+                job_retry_router = create_job_retry_router(
+                    sessions=sessions,origins=origins,
+                    retries=JobRetryRequests(reads=job_reads,sessions=sessions,license_guard=licenses.guard,
+                        owners={('audit','AUDIT_EXPORT'):AuditJobRetryOwner(requests=AuditUserRetryService(
+                            unit_of_work=runtime.unit_of_work,repository=SqlAlchemyAuditExportSubmitRepository(),
+                            authorization=AuditExportSubmitAuthorization(
+                                project_access=SqlAlchemyProjectWriteAccess(),deployment_access=SqlAlchemyLicenseImportAccess(),
+                                projects=retry_projects,license_guard=licenses.guard),
+                            sources=retry_sources,generations=SqlAlchemyAuditRetryGenerations(),
+                            receipts=SqlAlchemyIdempotencyReceipts(),queue=AuditExportJobQueue(SqlAlchemyAuditExportJobQueueRepository()),
+                            audit=audit))}))
                 job_cancel_router = create_project_job_cancel_router(
                     sessions=sessions,origins=origins,
                     cancellations=ProjectJobCancellation(
@@ -722,6 +750,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             job_detail_router=job_detail_router,
             job_list_router=job_list_router,
             job_cancel_router=job_cancel_router,
+            job_retry_router=job_retry_router,
             project_create_router=project_create_router,
             project_patch_router=project_patch_router,
             project_archive_router=project_archive_router,

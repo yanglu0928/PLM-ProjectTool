@@ -18,7 +18,7 @@ from plm_assistant.modules.jobs.api.read_detail import create_job_detail_router
 spec=spec_from_file_location('_http_retry_atomic',Path(__file__).resolve().parents[1]/'job-03-a02-p03-retry-command'/'verify.py')
 atomic=module_from_spec(spec);spec.loader.exec_module(atomic)
 
-def observe(v,service,command,first,key):
+def observe(v,service,command,first,key,*,make_app=None):
     sessions=prod.SessionService(unit_of_work=v['uow'],repository=prod.SqlAlchemySessionRepository(),
         issue_access=prod.SqlAlchemyPasswordIssueAccess(prod.ScryptPasswordHasher()),audit=v['audit'],
         idempotency=prod.SqlAlchemyIdempotencyReceipts())
@@ -30,6 +30,7 @@ def observe(v,service,command,first,key):
     dispatch=JobRetryRequests(reads=reads,sessions=sessions,license_guard=v['guard'],owners={('audit','AUDIT_EXPORT'):AuditJobRetryOwner(requests=service)})
     app=create_app(job_retry_router=create_job_retry_router(sessions=sessions,retries=dispatch,origins=origins),
         job_detail_router=create_job_detail_router(reads=reads,origins=origins))
+    if make_app is not None:app=make_app()
     db=v['db']
     tables=('job_jobs','job_attempts','job_leases','job_outbox_events','aud_events','aud_exports','aud_export_acceptances',
         'aud_export_retry_generations','plt_idempotency_receipts','doc_file_objects','aud_export_results',

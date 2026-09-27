@@ -1,5 +1,7 @@
 # CR-JOB-006：Audit用户重试新generation
 
+P05-A（2026-09-27）：仅Windows write接双retry、Audit当前权限/第三失败Source提示，实际两ScopeFactory新Job→Worker成功/首次重放、readonlyfalse/405、PM降实施成员false、七构造拒绝无写、旧Windows混排与发布回归；1247无失败/2既有跳过，开发wheel682697。无Migration/依赖/角色变化，原0045/冻结历史保留。P05-B真实Doc409/坏源metadata及归档客户完整矩阵待，正向信任合成；整体CR仍IN_PROGRESS，不宣称完整包/Gate完成。
+
 P04（2026-09-27）：冻结双retry HTTP/安全当前详情分派/Audit Adapter与原首次202映射完成内部验收。真实HTTP新Job→Worker文件成功→当前GET/首次PENDINGv0重放、精确JOB_NOT_RETRYABLE拒绝及十五表无写、1239后端无失败/2既有跳过与wheel681969。无Migration/新依赖/角色/Breaking，Windows及metadata retryable待，Doc无retry409仅unit非完整Owner；CR保持IN_PROGRESS。
 
 P03（2026-09-27）：当前Session/CSRF/Owner PM/Admin及合成License受权原子命令完成，实际第三失败→新Job→实际Worker文件成功、同Key并发唯一/历史版本0重放/原FAILED不变、新Key独立generation和十五表错误/写后故障回滚通过。1229后端无失败/2既有跳过、wheel677500；无Migration/API/依赖/角色变化。公开retryable/HTTP/Windows接线及其他Owner/性能/正式材料待，CR保持IN_PROGRESS。

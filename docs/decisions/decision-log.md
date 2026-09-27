@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260927-285
+
+- Executed P05-A：1247后端无失败/2既有跳过；真实双Scope Windows write HTTP新Job→实际Worker成功/首次v0重放、write/detail-list提示一致/readonlyfalse与405/PM降IMfalse/七构造拒绝无写，旧混排Windows/发布回归及wheel682697通过。首个角色fixture错名由Schema拒绝，修正正式名称完整重测。P05-B真实Doc无retry/坏源与非临时分类/归档和客户矩阵待，整体不标PASS。
+
+- Date/WBS：2026-09-27 / Phase2 JOB-03-A02-P05；CR-JOB-006/0045/P04前置。Windows仅显式write挂双retry，ReadOnly/default/login不放写。
+- Decision：写模式详情/列表共用Audit原失败Source和当前Project Export PM证明显示retryable，受权DEPLOYMENT Admin沿已验当前Admin事实；不把GET提示当CSRF权限。归档Audit Export维护例外仍遵循现冻结规则。缺source/构造/信任失败拒绝半启动，旧所有Owner registry保留。
+- Tests/Risks/Rollback：真实Factory/Scope/角色/原源/新Worker/重放/错误拒绝及旧路径回归；撤接线保历史。不关闭三平台/正式材料/完整Scope/Gate。
+
 ## DEC-20260927-284
 
 - Executed：双Scope真实HTTP新Job→Worker文件成功→GET当前与原PENDINGv0重放/十五表拒绝不写通过；用当前新Job ETag/新Key明确验证JOB_NOT_RETRYABLE，不误以幂等/版本冲突代替。5+5新测试/1239后端无失败（2跳过）及wheel681969；默认/Windows未挂、Doc unsupported只unit。下一运行与metadata。
