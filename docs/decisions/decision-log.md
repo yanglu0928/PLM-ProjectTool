@@ -4435,3 +4435,10 @@
 - Precode：Phase2；前置P01安全渲染已验；输入冻结DM-03/04/API-02与0039；涉及Audit/Document/Jobs FileObject/结果归属；无新API/权限/Migration。只做实际入口只读探测与兼容核查，不实施范围变更。
 - Decision：核验GLOBAL/PROJECT入口保持支持、DEPLOYMENT存储/发布实际拒绝、ORM范围；普通OutputArtifact的项目/Plugin/DocumentVersion来源不能伪造。登记独立进度证据；下一任务先专项CR再内部DEPLOYMENT FileObject/Audit自有结果契约，保持普通Document/Upload/Parse范围。
 - Risk/rollback：探测不访问客户文件或修改数据库；不存在生产回滚。不得用拒绝探测PASS宣称导出交付PASS；没有实际文件/公开POST/发行验收。
+## DEC-20260927-335
+
+- Executed：1430项tests无失败/2既有跳过，实际Windows多工厂同一reset/change预算、容量冲突/绕过类型拒绝、dispose一次与九表不变、原HTTP/模式/故障/发布回归和wheel753290通过。混合HTTP/性能未验，A05继续；原FAIL与CR OPEN，无Migration/API/依赖/生产升级，完整包未完成。
+
+- Phase2 / AUT-04-A12-P06-A04-P03-A04；前置A03内部共享容量已验证，输入CR-AUT-008/0049/冻结64cdf09。编码前检查见对应progress。
+- 在Windows写组合根注入进程唯一reset/change容量，非敏感Bootstrap默认4/严格1..16；不同配置必须重启，不新建第二预算。无API/Schema/权限/算法/依赖变化。
+- 风险、回滚与验收先记录；性能FAIL保持，实际Windows混合HTTP尚待验证，不冒充全Auth或跨进程限额。

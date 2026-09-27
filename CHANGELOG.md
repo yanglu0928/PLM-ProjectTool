@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：0.1.0.dev0/AUT-04-A12-P06-A04-P03-A04新增password_kdf_slots非敏感配置默认4/严格1..16与Windows写工厂进程唯一reset/change预算；多工厂同值共用，改值需重启，非法值安全拒绝且释放DB资源。1430 tests无失败/2既有跳过，实际Windows多工厂/配置冲突九表不变/原HTTP及发布回归、开发wheel753290通过。兼容0049，无Migration/API/依赖/生产升级；混合HTTP及整体性能尚待，原FAIL保持。不是全Auth/跨进程预算或可用安装包，CR/Gate未关闭。
+
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P06-A04-P03-A03新增内部1..16/默认4/固定5秒密码capacity与reset/change可信共享注入、持有线程释放配对；未注入保旧默认行为。1426 tests无失败/2既有跳过，真实PG10+10混合fresh/history各30KDF合计peak4/end0、first/九表无写/旧Session与原回归、wheel752486通过。兼容0049，无Migration/API/依赖/生产升级；Windows配置/工厂尚未接入、不是全部Auth或多进程预算，性能上轮FAIL保持，下一正式装配/混合验证，完整包/Gate待。
 
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P06-A04-P03-A02 test-only profiler新增4/8/16 CLI及实际slot峰值/最终释放检查；8/16顺序真实五组20全成功/SQL错误零/history九表无写，原回归通过。16本轮reset fresh/history P95约0.975/0.860秒，change约1.619/1.617秒仍FAIL，进程peak约2.13GiB（8约1.13GiB），两脚本均exit1。无生产代码/Migration/API/依赖/升级，生产4不改，unit/wheel未重跑；下一显式容量与混合共享预算设计，不用局部PASS替代完整性能/正式安全/程序包。

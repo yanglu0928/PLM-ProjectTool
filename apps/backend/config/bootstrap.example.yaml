@@ -4,5 +4,9 @@ bind_host: "127.0.0.1"
 bind_port: 8000
 data_root: "C:/PLMTool/data"
 log_level: "INFO"
+# Shared reset/change KDF slots per process; login/create are not included.
+# Strict integer 1..16. Changing requires restart; workers multiply the budget.
+# Higher capacity needs memory planning; this is not a performance guarantee.
+password_kdf_slots: 4
 # Set only after the operator selects a MAC actually present on this machine.
 # selected_mac: "02:11:22:33:44:55"

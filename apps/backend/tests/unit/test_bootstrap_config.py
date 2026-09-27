@@ -14,6 +14,27 @@ from plm_assistant.modules.platform.infrastructure.bootstrap_config import (
 
 
 class BootstrapConfigTests(unittest.TestCase):
+    def test_password_capacity_default_and_environment_override(self):
+        with patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(load_bootstrap_settings(self.yaml_file).password_kdf_slots, 4)
+        self.yaml_file.write_text(f'data_root: "{self.root.as_posix()}"\npassword_kdf_slots: 8\n', encoding='utf-8')
+        with patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(load_bootstrap_settings(self.yaml_file).password_kdf_slots, 8)
+        with patch.dict(os.environ, {'PLM_PASSWORD_KDF_SLOTS': '16'}, clear=True):
+            self.assertEqual(load_bootstrap_settings(self.yaml_file).password_kdf_slots, 16)
+
+    def test_password_capacity_rejects_coercion_and_out_of_bounds(self):
+        from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
+        for value in (True, False, 4.0, 0, 17, '04', '+4', ' 4', '4 ', '４', None):
+            with self.subTest(value=value), patch.dict(os.environ, {}, clear=True):
+                with self.assertRaises(ValueError):
+                    BootstrapSettings(data_root=self.root, password_kdf_slots=value)
+        for value in ('0', '17', '04', '4.0', '+4', ' 4', '４'):
+            with self.subTest(value=value), patch.dict(os.environ, {'PLM_PASSWORD_KDF_SLOTS': value}, clear=True):
+                with self.assertRaises(BootstrapConfigurationError) as caught:
+                    load_bootstrap_settings(self.yaml_file)
+                self.assertEqual(str(caught.exception), 'invalid bootstrap configuration')
+
     def setUp(self) -> None:
         self.temp_dir = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp_dir.cleanup)

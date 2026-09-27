@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from sqlalchemy import text
 
 from plm_assistant.entrypoints.api import create_app
+from plm_assistant.entrypoints.password_capacity import get_process_password_capacity
 from plm_assistant.entrypoints.windows_audit_list_cursor import create_windows_audit_cursor_codec
 from plm_assistant.modules.audit.api.read_events import create_audit_read_router
 from plm_assistant.modules.audit.application.authorized_read import AuthorizedAuditReadService
@@ -635,20 +636,22 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 sessions=sessions, departments=department_deactivates, origins=origins,
             )
             if include_secret_write:
+                password_capacity = get_process_password_capacity(slots=settings.password_kdf_slots)
                 password_reset_results = SqlAlchemyPasswordResetResults(verifier=verifier)
                 password_reset_router = create_password_reset_router(sessions=sessions, origins=origins,
                     writes=PasswordResetService(unit_of_work=runtime.unit_of_work,
                         access=SqlAlchemyPasswordResetAccess(verifier=verifier),
                         repository=SqlAlchemyPasswordResetRepository(), results=password_reset_results,
                         replay_verifier=PasswordResetReplayVerifier(source=password_reset_results), hasher=verifier,
-                        audit=audit, receipts=SqlAlchemyIdempotencyReceipts(), license_guard=licenses.guard))
+                        audit=audit, receipts=SqlAlchemyIdempotencyReceipts(), license_guard=licenses.guard,
+                        capacity=password_capacity))
                 password_change_results = SqlAlchemyPasswordChangeResults(verifier=verifier)
                 password_change_router = create_password_change_router(sessions=sessions,origins=origins,
                     writes=PasswordChangeService(unit_of_work=runtime.unit_of_work,
                         access=SqlAlchemyPasswordChangeAccess(verifier=verifier),
                         repository=SqlAlchemyPasswordChangeRepository(),results=password_change_results,
                         replay_verifier=PasswordChangeReplayVerifier(source=password_change_results),hasher=verifier,
-                        audit=audit,receipts=SqlAlchemyIdempotencyReceipts()))
+                        audit=audit,receipts=SqlAlchemyIdempotencyReceipts(),capacity=password_capacity))
                 user_state_router = create_user_state_router(sessions=sessions, origins=origins,
                     writes=UserStateService(unit_of_work=runtime.unit_of_work,
                         access=SqlAlchemyUserStateAccess(),repository=SqlAlchemyUserStateRepository(),

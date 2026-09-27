@@ -46,6 +46,16 @@ class BootstrapSettings(BaseSettings):
     log_level: LogLevel = LogLevel.INFO
     trusted_origins: tuple[str, ...] = ()
     selected_mac: str | None = None
+    password_kdf_slots: int = Field(default=4, ge=1, le=16)
+
+    @field_validator("password_kdf_slots", mode="before")
+    @classmethod
+    def validate_password_kdf_slots(cls, value: Any) -> int:
+        if type(value) is str and value in tuple(str(i) for i in range(1, 17)):
+            return int(value)
+        if type(value) is int and 1 <= value <= 16:
+            return value
+        raise ValueError("invalid password capacity configuration")
 
     @field_validator("bind_host")
     @classmethod
