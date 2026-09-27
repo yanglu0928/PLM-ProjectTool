@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from plm_assistant.modules.auth.infrastructure.session_orm import SessionRow
 from plm_assistant.modules.auth.infrastructure.user_orm import UserRow
+from .session_credential import normal_current_credential
 
 
 class SqlAlchemyProjectWriteAccess:
@@ -37,6 +38,7 @@ class SqlAlchemyProjectWriteAccess:
             SessionRow.absolute_expires_at > now,
             UserRow.state == "ENABLED",
             UserRow.credential_version == SessionRow.credential_version,
+            normal_current_credential(),
         ).with_for_update(of=(SessionRow, UserRow))).one_or_none()
         if row is None or not hmac.compare_digest(row.csrf_digest, hashlib.sha256(csrf_token).digest()):
             return None

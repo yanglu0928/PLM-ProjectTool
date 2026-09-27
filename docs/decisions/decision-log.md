@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-308
+
+- Executed：1346 tests无失败（2既有跳过），真PG/Scrypt must-change会话五原业务proof拒绝七表不变、精确currentFact，TEST_ONLY normalCredential3使旧Session拒绝/新Session正常且历史保留；Windows状态链及原发布回归通过。历史漏洞脚本改为反回归，e8349c5证据保留。公开身份投影/改密HTTP/完整安全流程未实现，下一P02，不标全包PASS。
+
+- AUT-04-A12-P01编码前检查见progress；CR-AUT007先登记。精确当前Credential事实及统一正常凭据谓词接部署读写/项目读写/Review五proof，Session身份不等于业务权限。无Schema/API/依赖变更，保正常登录；改密流程/reset不开放。真实权限矩阵/正常回归待验。
+
 ## DEC-20260927-307
 
 - AUT-04-A12：实际隔离PG Credential2 must_change=true + 真Scrypt Session签发/校验/原Admin-CSRF proof仍成功，确认强制改密缺口，不标安全PASS；原Credential1保留、角色为TEST_ONLY，原发布回归通过。

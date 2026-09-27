@@ -1,9 +1,11 @@
 # CR-AUT-007 密码重置、强制改密与当前会话限制
 
-日期2026-09-27；版本0.1.0.dev0；状态PRECONDITION_GAP_CONFIRMED_DESIGN_SELECTED_IMPLEMENTATION_PENDING。
+日期2026-09-27；版本0.1.0.dev0；状态INTERNAL_CREDENTIAL_RESTRICTION_VERIFIED_PUBLIC_FLOW_PENDING。
 授权依据：用户持续授权；保留冻结64cdf09/DM02/API02与原0001～0047，不静默替换原基线。
 
 ## 来源、冲突及实际证据
+
+- P01已新增严格current SessionCredentialFact及精确正常Credential谓词接五原Auth业务proof，实际must-change全部拒绝/七表不变、后来正常Credential新Session恢复而旧Session失效；1346 tests无失败（2既有跳过），Windows状态和原发布回归通过。公开login/session最小投影及完整改密/reset尚未实现；见P01progress。以下调查原证据对应e8349c5，原复现脚本已改为反回归，不抹去历史缺口。
 
 - 冻结AUTH_USER_RESET_PASSWORD要求当前Admin、Session/License/CSRF、幂等Key、强If-Match及Audit；输入temporary_password write-only、must_change_password=true，响应/收据不回显密码。AUTH_PASSWORD_CHANGE要求当前密码/新密码、Session/CSRF、Key和Audit，换密使旧凭据会话失效。
 - 当前PasswordCredential已有must_change_password列，但真实SqlAlchemyPasswordIssueAccess未读它；SessionRepository/SessionService和原Admin proof也未限制该标志。没有reset/change Application或HTTP。

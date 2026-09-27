@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from plm_assistant.modules.auth.infrastructure.session_orm import SessionRow
 from plm_assistant.modules.auth.infrastructure.user_orm import UserRow
+from .session_credential import normal_current_credential
 
 
 class SqlAlchemyLicenseImportAccess:
@@ -38,6 +39,7 @@ class SqlAlchemyLicenseImportAccess:
             UserRow.state == "ENABLED",
             UserRow.deployment_role == "DEPLOYMENT_ADMIN",
             UserRow.credential_version == SessionRow.credential_version,
+            normal_current_credential(),
         ).with_for_update(of=(SessionRow, UserRow))).one_or_none()
         if row is None:
             return None
