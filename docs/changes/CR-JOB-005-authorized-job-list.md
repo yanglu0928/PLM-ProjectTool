@@ -9,3 +9,5 @@
 当前registry只有Audit/Document，其他Owner未实现不得自动授元数据权；完整Owner/列表/重试/Outbox Scope保留。单项列表实现不能关闭整个Jobs模块或Gate3。公开分页页长不承诺填满，total_count未知不伪造。未来新增Owner明示安全Port后注册。
 
 风险：多Owner锁竞争、当前权限变化、坏原源、稀疏页/新插入项；不无限重试/追扫、不保证跨页快照、不缓存权限。回滚撤新list Service/Repo/策略/游标接线，保旧详情和所有历史；无Schema迁移。验收：current role/actor/path/Admin隔离、稳定同时间戳分页/无重漏/隐藏候选前进/拒绝无写、严格输入/错误静态、实际PG与HTTP及Windows正式信任拒绝、全后端；性能/三平台另验。
+
+P04更新：当前Service/keyset、AESGCM可选HTTP与Windows专用KeyRef/临时恢复已内部验证，实际Audit Worker文件发布+Document真上传在同库经当前Session/Owner registry混合列表/状态ref/相同timestamp/角色与坏源拒绝十八表无写通过。Windows列表运行装配仍待；完整Owner/性能/三平台/Gate不因局部内部PASS关闭CR。

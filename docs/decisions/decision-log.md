@@ -4,6 +4,12 @@
 ## DEC-20260927-275
 ## DEC-20260927-276
 ## DEC-20260927-277
+## DEC-20260927-278
+
+- Phase2/P04仅新增同库Audit真发布+Doc真提交混合列表验收，原CurrentSession/Project/Admin和两Owner Port不变。Document PENDING available_at在临时库延迟避免原Audit-only最后claim误领，无生产时序变化。timestamp统一仅fixture用于UUID稳定keyset。
+- 真实Worker Audit成功（不是SQL猜成功）/Doc PENDING、两Scope与Admin GLOBAL+DEPLOYMENT、IM/creator客户隔离/受限隐藏/License/坏actor拒绝十八表无写通过，原发布回归通过。无生产/Schema/API变化，unit/wheel沿用上轮未重跑；下一Windows列表挂载/失败关闭，CR/完整Scope/Gate待。
+
+## DEC-20260927-277
 
 - Phase2/P03固定Windows Job-list专用KeyRef只读入口，显式falsy resolver不走fallback；无Schema/API/权限/依赖/License变化。真实开发账户临时唯一Vault引用验证缺失/错误口令/禁止覆盖/加密备份原key恢复旧token，清理仅own引用及临时备份。
 - 1213后端/2既有跳过、单独3新测试全部ok、P02实际HTTP15成功/10拒绝/1空延续回归通过。非正式账户材料/异账户/Server2025/运行接线/发行证明；下一Audit-Document矩阵再Windows挂载。撤只读入口保历史回滚。

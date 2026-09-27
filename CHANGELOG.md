@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/JOB-01-A05-P04新增Audit实际Worker/Lease/文件/原结果发布与Document真上传在同库混合列表Service+HTTP验收：三Scope（PROJECT/DEPLOYMENT/GLOBAL）、同timestamp稳定keyset无重漏、原状态/逻辑ref、IM/creator客户/Admin隔离与受限/License/坏actor拒绝十八表无写，原发布回归通过。仅验证/文档，无生产/Schema/API/依赖/升级；unit1213/2跳过与wheel666815沿用P03未重跑，撤新增验证不影响历史。Doc available_at未来值仅fixture准入隔离，不是Parser执行。Windows列表挂载/正式材料/性能/全Owner/完整包/Gate待。
+
 - 2026-09-27：`0.1.0.dev0`/JOB-01-A05-P03新增Windows Job-list独立`job-list-cursor-v1`只读密钥入口，缺失/异常拒绝，无自动创建或明文fallback。1213后端无失败/2既有跳过、3新测试（实际本账户临时Vault供给/失密/错误口令/防覆盖/原key恢复旧token及清理）全ok，P02真实HTTP15成功/10拒绝/1空延续与原来源/上传回归、wheel666815通过。无Migration/API/权限/依赖/升级变化，撤新入口回滚保历史；正式引用未触碰/供给，正式账户/其他账户/Server2025未验，Audit混排/运行接线/完整包/Gate待。
 
 - 2026-09-27：`0.1.0.dev0`/JOB-01-A05-P02按CR-JOB-005新增专用AESGCM密文分页游标/query绑定及可选冻结项目/admin任务列表GET，隐藏坐标不公开、当前授权逐页再核、no-store/strict query。1210后端无失败/2既有跳过、篡改/错context-key/恢复/无明文坐标与真实Doc来源双Scope列表ASGI/稀疏空页/撤权坏源十三表无写、原来源/上传回归及wheel666121通过。无Migration/新依赖/角色/路径Breaking/升级；撤router/cursor回滚保历史。默认Windows未挂/专用密钥来源待，测试key/License非生产，Audit混排/性能/完整Owner/完整包/Gate待。
