@@ -64,3 +64,5 @@ P05A01实施前设计：reset first15字段记录result/user/actor/old-new Crede
 2026-09-27/P05A05：实际原子reset命令完成当前Admin-CSRF/合成License前后/target expected/固定true、Credential/root/全Session/Audit/first/receipt及self精确末核；真实同不同Key竞争/回滚/提交恢复、disabled0保状态、明确唯一Admin角色夹具self受限→License-disabled真change→normalAdmin原first恢复通过。真正坏旧profile修复也验证；原freeze与0049保留，无生产迁移。HTTP强If-Match/Cookie/Windows/正式License/性能/发行待，不关闭CR/Gate。
 
 2026-09-27/P05A06：可选冻结reset HTTP真实PG/Scrypt-ASGI通过，强If-Match/严格JSON/来源/Session-CSRF-Key、normal/disabled/self及历史User ETag、Audit回滚与self提交后末读503正常新认证原Key恢复。1388 tests无失败（2既有跳过），原发布/wheel通过。无Migration/依赖/生产升级；默认404，Windows实际装配下一项。合成信任不是正式License验收，完整CR/Gate保留。
+
+2026-09-27/P05A07：仅Windows显式write实际装配reset链及完整HTTP矩阵/真实登录强制改密链验证通过；六新增构造fault实际到达/dispose一次/九表无写、readonly405/default-login404/缺正式材料拒绝，旧状态/发布回归及1388无失败（2既有跳过）/wheel通过。无Migration/依赖/生产升级；正向trust合成，性能/完整安全验收/三平台/安装包未完成，下一汇总缺项及20并发性能前置，不关闭CR/Gate。

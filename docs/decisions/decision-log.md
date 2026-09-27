@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-323
+
+- Executed：Windows实际write完整PG/Scrypt HTTP矩阵、真实登录reset→旧Session/password401→受限登录change→正常新登录/原first恢复通过；六新增构造故障dispose一次/九表不变，readonly405/default-login404/缺正式材料拒绝、旧状态/发布回归及1388无失败（2跳过）/wheel749399通过。无Migration/依赖/生产升级，正向trust合成；CR/Gate未关闭，下一完整验收缺项与20并发前置。
+
+- P05A07编码前检查见progress；仅Windows显式write装配既有实际reset链、无测试回退，所有依赖构造失败原安全关闭；readonly/default/login保持不开放。无Migration/依赖/权限变化。真实factory HTTP与六依赖故障/正式材料缺失验收待，撤接线保历史。
+
 ## DEC-20260927-322
 
 - Executed：1388 tests无失败（2既有跳过）；实际PG/Scrypt-ASGI strict JSON/来源/Session-CSRF-Key/强If-Match拒绝九表不变，normal/disabled/self的凭据版本与User ETag分离，实际change后正常Admin原Key历史Cookie保留；实际Audit回滚及self提交后末读503真实change/新正常Admin恢复first，原发布/wheel749262通过。无Migration/依赖/生产升级；合成License，默认404，Windows下一项，CR/Gate不关闭。

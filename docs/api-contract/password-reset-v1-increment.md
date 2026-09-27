@@ -9,3 +9,5 @@
 重放需当前正常Admin/License/CSRF、原Key、原expected及原临时密码，与当次不可变新Credential实际Scrypt验证；后来改密不改变首次响应。旧及受限Session不授新管理写；self需临时登录后完成本人改密、再正常Admin登录恢复原Key。参数/密码差异409，权限/未知目标统一404，License403，输入422，未知错误固定503 SYSTEM_UNAVAILABLE。
 
 提交或末读503不得猜测回滚、盲换Key或复活旧Session；以当前正常Admin认证恢复原请求。真实PG/Scrypt-ASGI、Audit回滚及self提交后末读503恢复已验，详见A06 progress。Windows/browser/性能/正式信任/三平台/发行未验；无新Schema/依赖或破坏性API变更。
+
+2026-09-27/A07更新：Windows显式write实际装配与真实登录强制改密链、历史恢复和构造失败安全关闭已验证；readonly405/default-login404。正向信任合成，正式材料/browser/性能/三平台/发行未验，原冻结保留。

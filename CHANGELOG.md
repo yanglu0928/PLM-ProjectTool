@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P05-A07仅Windows显式write装配管理员reset。1388 tests无失败（2既有跳过），实际工厂PG/Scrypt完整HTTP矩阵、真实登录reset→旧Session/password401→临时受限登录change→正常新登录及历史first恢复、六构造fault安全dispose九表无写/readonly405/default-login404/缺正式材料拒绝，旧状态/发布/wheel749399通过。兼容0049，无Migration/依赖/生产升级，撤接线保历史。正向trust合成，正式材料/浏览器/20并发性能/三平台/完整包/Gate待。
+
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P05-A06新增可选管理员reset POST、强If-Match/严格write-only JSON及安全User ETag/self Cookie恢复合同。1388 tests无失败（2既有跳过），真实PG/Scrypt normal/disabled/self、拒绝九表不变、真实change后历史重放、Audit回滚及self提交后末读503新认证原Key恢复、原发布/wheel749262通过。兼容0049，无Migration/依赖/生产升级；撤router保历史不复活Session。默认404，Windows下一项；正式trust/浏览器/性能/三平台/完整包/Gate未完成。
 
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P05-A05新增内部原子管理员reset Service/Repository，currentAdmin-CSRF/License前后/expected/固定true与全Session/Audit/first/receipt、自reset专用末核。1384 tests无失败（2既有跳过），真PG/Scrypt同不同Key竞争/三Session含expired撤销/真实change历史重放、disabled0保停用、四Port+三SQL/precommit/末License/实际角色撤销九表回滚及commit丢确认恢复、TEST_ONLY坏旧profile修复/唯一Admin self改密恢复，原发布/wheel747290通过。修正会话返回对象测试读取后完整复验。兼容0049，无Migration/API/依赖/生产升级；撤未挂入口保历史不回写Hash/复活Session。License合成，HTTP/Windows/性能/三平台/UI/包/Gate待，下一可选reset POST。

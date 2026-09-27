@@ -31,6 +31,12 @@ from plm_assistant.modules.auth.api.user_create import create_user_create_router
 from plm_assistant.modules.auth.api.user_name_patch import create_user_name_patch_router
 from plm_assistant.modules.auth.api.user_state import create_user_state_router
 from plm_assistant.modules.auth.api.password_change import create_password_change_router
+from plm_assistant.modules.auth.api.password_reset import create_password_reset_router
+from plm_assistant.modules.auth.application.password_reset import PasswordResetService
+from plm_assistant.modules.auth.application.password_reset_replay import PasswordResetReplayVerifier
+from plm_assistant.modules.auth.infrastructure.password_reset_access import SqlAlchemyPasswordResetAccess
+from plm_assistant.modules.auth.infrastructure.password_reset_repository import SqlAlchemyPasswordResetRepository
+from plm_assistant.modules.auth.infrastructure.password_reset_result_repository import SqlAlchemyPasswordResetResults
 from plm_assistant.modules.auth.application.password_change import PasswordChangeService
 from plm_assistant.modules.auth.application.password_change_replay import PasswordChangeReplayVerifier
 from plm_assistant.modules.auth.infrastructure.password_change_access import SqlAlchemyPasswordChangeAccess
@@ -308,6 +314,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         user_name_patch_router = None
         user_state_router = None
         password_change_router = None
+        password_reset_router = None
         job_list_router = None
         job_cancel_router = None
         job_retry_router = None
@@ -628,6 +635,13 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 sessions=sessions, departments=department_deactivates, origins=origins,
             )
             if include_secret_write:
+                password_reset_results = SqlAlchemyPasswordResetResults(verifier=verifier)
+                password_reset_router = create_password_reset_router(sessions=sessions, origins=origins,
+                    writes=PasswordResetService(unit_of_work=runtime.unit_of_work,
+                        access=SqlAlchemyPasswordResetAccess(verifier=verifier),
+                        repository=SqlAlchemyPasswordResetRepository(), results=password_reset_results,
+                        replay_verifier=PasswordResetReplayVerifier(source=password_reset_results), hasher=verifier,
+                        audit=audit, receipts=SqlAlchemyIdempotencyReceipts(), license_guard=licenses.guard))
                 password_change_results = SqlAlchemyPasswordChangeResults(verifier=verifier)
                 password_change_router = create_password_change_router(sessions=sessions,origins=origins,
                     writes=PasswordChangeService(unit_of_work=runtime.unit_of_work,
@@ -817,6 +831,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             user_name_patch_router=user_name_patch_router,
             user_state_router=user_state_router,
             password_change_router=password_change_router,
+            password_reset_router=password_reset_router,
             job_list_router=job_list_router,
             job_cancel_router=job_cancel_router,
             job_retry_router=job_retry_router,
