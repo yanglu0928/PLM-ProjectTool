@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/AUT-04-A11-P05仅Windows显式write装配启停链，readonly405/default-login404、无信任fallback。1344 tests无失败（2既有跳过），actualFactory全HTTP矩阵/真实创建登录-停用旧401-启用新200同UUID-旧不复活-首响应重放、五构造fault实际dispose/缺正式信任拒绝、旧名称及原发布回归/wheel719469通过。兼容0047，无Migration/依赖/生产升级；撤接线保历史。合成正向信任，正式供给/性能/三平台/UI/安装包/Gate待；下一管理员重置密码前置。
+
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A11-P04新增可选冻结User启停POST，严格空body/Origin/Session-CSRF/Key/If-Match、安全首View与自停用当前Session判定清Cookie。1344 tests无失败（2既有跳过），真PG/Scrypt/ASGI重放/拒绝七表不变/Audit后回滚/旧401新Session历史重放不误清/提交后末读503原Key恢复、原发布回归/wheel719338通过。兼容0047，无Migration/依赖/生产升级；撤router保历史。默认404，Windows未挂，合成License/测试角色夹具，正式信任/性能/三平台/UI/安装包/Gate待；下一Windows write装配。
 
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A11-P03完成内部原子User启停、当前Admin-CSRF专用自停用末核、全未撤销Session撤销、Audit/first/receipt与历史重放。1336 tests无失败（2既有跳过），实际PG/Scrypt并发/七写后回滚/提交确认恢复/最后Admin/互停/55P03锁超时/登录竞争及原发布回归通过，开发wheel717520。兼容0047，无新Migration/依赖/权限或生产升级；回滚撤未接线服务保历史。合成License及显式TEST_ONLY角色夹具，HTTP/Windows/UI/性能/三平台/正式信任/安装包/Gate未通过；下一可选状态HTTP。

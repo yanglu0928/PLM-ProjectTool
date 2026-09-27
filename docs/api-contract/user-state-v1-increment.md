@@ -1,8 +1,8 @@
 # User状态命令实现增量（CR-AUT-006）
 
-2026-09-27 / 0.1.0.dev0 / OPTIONAL_HTTP_VERIFIED_WINDOWS_PENDING。
+2026-09-27 / 0.1.0.dev0 / WINDOWS_INTERNAL_COMPOSITION_VERIFIED。
 
-原冻结64cdf09与AUTH_USER_ENABLE/DISABLE合同保留；可选POST `/api/v1/admin/users/{user_id}:enable`、`:disable`已实现，默认应用404，Windows尚未挂载。
+原冻结64cdf09与AUTH_USER_ENABLE/DISABLE合同保留；可选POST `/api/v1/admin/users/{user_id}:enable`、`:disable`已实现，Windows仅显式platform-write安装；readonly405、默认/login404，无默认公开写操作。
 
 - 当前DeploymentAdmin Session、CSRF及License每次验证，重放也不例外；不接受客户端actor/count/proof。
 - 目标强资源版本参与命令，真实转换递增一次。新Key对已目标状态返回状态冲突，旧版本返回版本冲突；同Key不同目标或版本返回幂等冲突。
@@ -15,4 +15,4 @@ HTTP要求空body/无query、可信Origin-Host、当前Session-CSRF、合法Idem
 
 自行停用实际使当前Session失效才清除同Path的Secure/HttpOnly/SameSite Cookie；新认证恢复历史first不清新Cookie。提交后确认/Session复读不可用不能推断未执行，应保留原Key及原If-Match；权限恢复后可原Key取首响应，另GET辨当前状态，不盲重试新Key。
 
-验证证据：P03及`docs/progress/aut-04-a11-p04-user-state-http.md`。下一Windows write装配；UI/性能/正式信任与安装包未完成，无本轮Migration或依赖变化。
+验证证据：P03、P04及`docs/progress/aut-04-a11-p05-windows-user-state.md`。Windows实际组合通过，UI/性能/正式信任与安装包未完成，无本轮Migration或依赖变化。

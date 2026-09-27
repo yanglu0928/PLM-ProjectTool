@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-306
+
+- Executed：1344 tests无失败（2既有跳过），actual Windows write Factory P04矩阵与HTTP创建/Scrypt登录/NONE拒绝/停用旧401/启用新200同UUID/旧不复活/首响应重放八表不变通过。readonly405/default-login404；五实际构造故障静态拒绝及dispose、缺正式信任拒绝，旧名称/原发布回归和wheel719469通过。初始readonly404误断言修正记录见progress；正式材料/性能/三平台/UI/包/Gate待。
+
+- AUT-04-A11-P05：P04 f19e61f前置已验，编码前检查见progress；仅Windows显式write构造真实User状态依赖/router，原信任锚无fallback，readonly/login/default关闭。无Migration/依赖/权限变化，撤接线保历史；实际Factory/登录会话/构造故障矩阵待验，非生产/包PASS。
+
 ## DEC-20260927-305
 
 - Executed：1344 tests无失败（2既有跳过），实际PG/Scrypt/ASGI两命令/历史首响应/角色-CSRF-Origin-License-version-Key拒绝七表不变、实际Audit后回滚、自停用Cookie/旧401/新认证重放不删Cookie及提交后末读503原Key恢复通过，原发布回归与wheel719338通过；验证SQL字段修正记录见progress。Windows/正式信任/性能/包未验。

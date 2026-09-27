@@ -13,7 +13,7 @@ spec=spec_from_file_location('_state_http_atomic',Path(__file__).resolve().paren
 m=module_from_spec(spec);spec.loader.exec_module(m)
 
 
-def exercise(v):
+def exercise(v,make_app=None):
     db=v['db'];hasher=m.ScryptPasswordHasher();receipts=m.SqlAlchemyIdempotencyReceipts()
     firsts=m.SqlAlchemyUserCreateResultRepository(verifier=hasher)
     creator=m.ManagedUserCreateService(unit_of_work=v['uow'],access=m.SqlAlchemyUserCreateAccess(),license_guard=v['guard'],
@@ -34,8 +34,10 @@ def exercise(v):
         'cookie':'plm_session='+(v['tokens'][1] if token is None else token).hex(),
         'x-csrf-token':(m.fixture.base.auth.CSRF if csrf is None else csrf).hex(),
         'if-match':f'"v{version}"','idempotency-key':key or str(uuid4())}
-    def app(writes=service,session_port=sessions):return create_app(user_state_router=create_user_state_router(
-        sessions=session_port,writes=writes,origins=LoginOriginPolicy(['https://plm.example.test'])))
+    def app(writes=service,session_port=sessions):
+        if make_app is not None and writes is service and session_port is sessions:return make_app()
+        return create_app(user_state_router=create_user_state_router(
+            sessions=session_port,writes=writes,origins=LoginOriginPolicy(['https://plm.example.test'])))
     target=create('Synthetic state HTTP target');old=issue(target.user_id)
     path='/api/v1/admin/users/'+str(target.user_id);h=headers();key=h['idempotency-key']
     with TestClient(app(),base_url='https://plm.example.test') as client:

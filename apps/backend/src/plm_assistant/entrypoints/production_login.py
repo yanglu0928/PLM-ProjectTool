@@ -29,6 +29,11 @@ from plm_assistant.modules.auth.api.user_detail import create_user_detail_router
 from plm_assistant.modules.auth.api.user_list import create_user_list_router
 from plm_assistant.modules.auth.api.user_create import create_user_create_router
 from plm_assistant.modules.auth.api.user_name_patch import create_user_name_patch_router
+from plm_assistant.modules.auth.api.user_state import create_user_state_router
+from plm_assistant.modules.auth.application.user_state import UserStateService
+from plm_assistant.modules.auth.infrastructure.user_state_access import SqlAlchemyUserStateAccess
+from plm_assistant.modules.auth.infrastructure.user_state_repository import SqlAlchemyUserStateRepository
+from plm_assistant.modules.auth.infrastructure.user_state_result_repository import SqlAlchemyUserStateResultRepository
 from plm_assistant.modules.auth.application.user_name_patch import UserNamePatchService
 from plm_assistant.modules.auth.infrastructure.user_name_patch_repository import SqlAlchemyUserNamePatchRepository
 from plm_assistant.modules.auth.application.managed_user_create import ManagedUserCreateService
@@ -295,6 +300,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         user_list_router = None
         user_create_router = None
         user_name_patch_router = None
+        user_state_router = None
         job_list_router = None
         job_cancel_router = None
         job_retry_router = None
@@ -615,6 +621,11 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 sessions=sessions, departments=department_deactivates, origins=origins,
             )
             if include_secret_write:
+                user_state_router = create_user_state_router(sessions=sessions, origins=origins,
+                    writes=UserStateService(unit_of_work=runtime.unit_of_work,
+                        access=SqlAlchemyUserStateAccess(),repository=SqlAlchemyUserStateRepository(),
+                        results=SqlAlchemyUserStateResultRepository(),audit=audit,
+                        receipts=SqlAlchemyIdempotencyReceipts(),license_guard=licenses.guard))
                 user_name_patch_router = create_user_name_patch_router(sessions=sessions, origins=origins,
                     writes=UserNamePatchService(unit_of_work=runtime.unit_of_work,
                         access=SqlAlchemyUserCreateAccess(), license_guard=licenses.guard,
@@ -790,6 +801,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             user_list_router=user_list_router,
             user_create_router=user_create_router,
             user_name_patch_router=user_name_patch_router,
+            user_state_router=user_state_router,
             job_list_router=job_list_router,
             job_cancel_router=job_cancel_router,
             job_retry_router=job_retry_router,

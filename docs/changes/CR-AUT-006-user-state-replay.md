@@ -1,6 +1,8 @@
 # CR-AUT-006 User启用/停用可靠命令
 
-日期：2026-09-27；版本0.1.0.dev0；状态OPTIONAL_HTTP_VERIFIED_WINDOWS_PENDING（CR整体发行验收仍待）。
+日期：2026-09-27；版本0.1.0.dev0；状态WINDOWS_INTERNAL_COMPOSITION_VERIFIED（CR整体发行验收仍待）。
+
+P05进展：Windows仅显式write安装，实际Factory完整HTTP矩阵/真创建登录与停用启用会话行为/五构造故障dispose/readonly405/default-login404/缺正式材料拒绝通过。1344 tests无失败（2既有跳过），旧名称和原发布回归通过；正向合成信任非正式账户证明，20并发/三平台/UI/包/Gate仍待，见P05progress。以下前轮记录保留历史。
 
 P04进展：可选冻结状态POST、安全首View、当前认证和自停用Cookie、提交后末读503恢复已真实PG/Scrypt/ASGI验证；1344 tests无失败（2既有跳过），原发布回归通过。Windows尚未装配，详情与剩余限制见P04progress；下述P03记录保留历史。
 依据：用户2026-09-24/27持续授权；原冻结64cdf09及0001～0046保留。
