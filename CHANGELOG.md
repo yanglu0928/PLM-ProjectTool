@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P06-A04-P03 增加test-only真实密码成本剖析：固定KDF每次约310～321ms，4-slot等待P95 reset约1.15～1.18秒/change约2.42～2.45秒，global获取/持有均已降至毫秒级；五组20全成功/SQL错误零/history九表无写，原回归通过，但四写P95仍约1.62/3.18秒、脚本exit1 FAIL。仅验证文档、无生产代码/Migration/API/依赖/升级；unit/wheel未重跑，下一8/16-slot实际比较，原强度/标准/Gate缺项保留。
+
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P06-A04-P02-A04 change历史双密码KDF移出事务/global锁，exact first/BEFORE-AFTER源/当前身份/原写末核仍全保，miss最多一次重准备，不复活旧Session；无License-Admin门槛。1419 tests无失败/2既有跳过、实际PG历史锁与身份竞争/peer提交旧拒绝新login恢复/原atomic-发布/wheel751532通过。20五组全部成功/SQL错误零，history change约3.22秒（原8.11秒/六超时）与reset约1.65秒仍超1秒，整体FAIL。兼容0049，无Migration/API/依赖/生产升级，回滚旧history保历史；下一资源成本分析，正式安全/覆盖率/完整包/Gate待。
 
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P06-A04-P02-A03 reset历史读取first/source短UOW退出后4-slot真实KDF，原global当前权/receipt/fullfirst/source/末核保留；miss中途出现first只一次退出后再准备，无锁内KDF。1414 tests无失败/2既有跳过，实际撤权/logout/renew/License/后续reset4/正确与错密码race无额外写、原原子/Windows完整链/发布/wheel751120通过。20历史reset全成功/P951.63秒（原6.01），仍超1秒；change历史仍14成功/6锁超时，整体FAIL。兼容0049，无Migration/API/依赖/生产升级；回滚旧串行保历史，下一change历史及完整性能，正式安全/安装包/Gate待。

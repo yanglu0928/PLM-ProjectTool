@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-332
+
+- Executed：5×20全成功/无SQL错/九表history不写与原状态/发布通过，实际计数reset20 KDF/change40、20 global、20 slot成功。slot等待P95 resetfresh1181.524/changefresh2446.818/history1145.744/2423.986ms；每KDF约310～321ms，global获取P95 fresh≤38.314/history≤7.056、持有至UOW退出fresh≤24.823/history≤8.860ms。HTTP四写约1.62/3.18秒仍FAIL/实际exit1，processpeak674357248；生产未改，unit/wheel未重跑。下一test-only8/16 posthistory资源成本比较，不降算法/标准、不改DB锁，CR/Gate开放。
+
+- P03编码前检查见cost-profile：test-only包装实际KDF/slot/global锁/UOW成本，5×20原factory/PG正确性保留；静态阶段与聚合时长，不输出秘密/SQL/正文、不改4-slot/参数/API/Schema。计时有开销、不同分位数不相加；失败原exit1，按证据再选优化，CR008 OPEN。
+
 ## DEC-20260927-331
 
 - Final：Windows change A04/reset A07两专门链依次exit0，实际普通/受限Cookie/登录/历史first/自reset-丢回执恢复及缺信任源/构造故障/原state-publication通过。完整功能内部PASS，性能仍FAIL，未执行生产升级/正式安全/UAT，不标程序包完成。
