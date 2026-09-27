@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-321
+
+- Executed：1384 tests无失败（2既有跳过）；真PG/Scrypt同Key单first/不同Key版本竞争、三旧Session含expired撤销/受限登录/真实change后历史恢复/disabled0保停用；四Port+三SQL/precommit/末License及实际角色撤销九表回滚、commit丢确认恢复；TEST_ONLY坏旧profile实际reset修复、唯一Admin self末核false回滚/丢确认/旧受限无新权/License-disabled真change后normalAdmin原first恢复。修正IssuedSession测试读取后完整复验，原发布/wheel747290通过。无Migration/API/依赖，License合成/无HTTP性能发行证明，下一可选reset HTTP。
+
+- P05A05编码前检查见progress；原子reset actual Admin-CSRF/License前后/target expected/固定true，disabled/self保范围、Scrypt/Credential-root/allSession/Audit/first/receipt同UOW，self首次专用末核不跳过，历史恢复须正常Admin+当次临时密码。全密码finally擦除，无Migration/API/依赖；真实矩阵待。
+
 ## DEC-20260927-320
 
 - Executed：1380 tests无失败（2既有跳过）；实际PG/Scrypt current normalAdmin-CSRF/部署锁、wrongCSRF/NONE与other-self拒绝，同UOW TEST_ONLY self reset实际first专用末核成功，伪造/过期及意外改名角色停用拒绝/savepoint恢复，旧及受限会话无新管理权、actualchange/newlogin恢复Admin；source/发布回归/wheel743224通过。无Migration/API/依赖，未验唯一Admin/License/原子reset/receipt/HTTP，下一完整原子命令。

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P05-A05新增内部原子管理员reset Service/Repository，currentAdmin-CSRF/License前后/expected/固定true与全Session/Audit/first/receipt、自reset专用末核。1384 tests无失败（2既有跳过），真PG/Scrypt同不同Key竞争/三Session含expired撤销/真实change历史重放、disabled0保停用、四Port+三SQL/precommit/末License/实际角色撤销九表回滚及commit丢确认恢复、TEST_ONLY坏旧profile修复/唯一Admin self改密恢复，原发布/wheel747290通过。修正会话返回对象测试读取后完整复验。兼容0049，无Migration/API/依赖/生产升级；撤未挂入口保历史不回写Hash/复活Session。License合成，HTTP/Windows/性能/三平台/UI/包/Gate待，下一可选reset POST。
+
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P05-A04新增normal current Admin-CSRF及self首次reset专用末核Port。1380 tests无失败（2既有跳过），实际PG/Scrypt真实Admin与坏CSRF/NONE/other-self拒绝、同UOW实际first末核/伪造到期及意外身份变化拒绝、旧受限无新权及actualchange/newlogin恢复Admin，source/发布回归/wheel743224通过。兼容0049，无Migration/API/依赖/生产升级；撤未挂Port保历史。TEST_ONLY reset转换非License/原子reset/If-Match/收据/唯一Admin/HTTP证明；下一原子reset，完整包/Gate待。
 
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P05-A03新增caller-UOW reset first Repository/server acceptedAt及当次临时Credential真实Scrypt来源。1377 tests无失败（2既有跳过），真PG临时匹配/差异/伪造first/KDF异常非bool九表无写与擦除，later真正change到normal3保历史匹配/坏新profile及合法first后caller故障回滚保原会话、原发布/wheel741372通过。兼容0049，无Migration/API/依赖/生产升级；撤未挂Port保历史。TEST_ONLY reset转换非当前Admin/原子reset/receipt/HTTP证明；下一身份/self末核，完整包/Gate待。
