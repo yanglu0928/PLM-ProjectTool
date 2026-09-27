@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-317
+
+- Executed：6新unit/1374 tests无失败（2既有跳过）；15字段enabled/disabled/self/count0与安全单版本、严格shape/UTF8边界/擦除/非bool异常，实际内存Scrypt原临时密码匹配/尾空格-后来密码冲突/伪造first拒绝，wheel737736通过。无PG/HTTP运行或Migration/API/依赖，source夹具非持久来源/授权；next Schema设计明确未实施，完整reset/Gate仍待。
+
+- P05A01编码前检查见progress；reset first15字段含Admin actor/原target_state/expected与前后凭据，count可0，disabled不启用，自reset不禁。公开仅版本，历史临时密码source严格真KDF/boolean/finally擦除；pure proof不授当前Admin/License权。自reset受限→先change→正常Admin再历史恢复，非失效Session绕过。无Migration/API/依赖，验收待。
+
 ## DEC-20260927-316
 
 - Executed：1368 tests无失败（2既有跳过）；actualFactory真PG/Scrypt完整HTTP普通/受限矩阵、登录-Cookie jar改密清除-旧Session401/旧密码401-新login200同UUID、六构造fault实际dispose一次/八表不变、readonly/default/login404、旧Windows状态/缺正式材料拒绝与原发布/wheel735861通过。无Migration/API/依赖/生产升级，正向trust合成，非正式发行/Gate；下一reset前置。

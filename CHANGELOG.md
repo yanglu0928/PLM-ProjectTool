@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P05-A01新增管理员reset首次结果15字段及write-only临时密码历史Proof/Verifier，公开仅版本，支持disabled/count0/self契约。6新unit/1374 tests无失败（2既有跳过），实际内存Scrypt原临时密码匹配/尾空格和后来密码冲突/伪造first及异常严格拒绝/密码擦除、wheel737736通过。兼容0048，无Migration/API/依赖/生产升级；撤未挂纯Port保历史。本轮PG/HTTP未运行，Schema设计未实施，不能称reset可用或授权PASS；下一ORM/Migration与真实来源验证，完整包/Gate待。
+
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P04-A04仅Windows显式write装配改密链。1368 tests无失败（2既有跳过），actualFactory真PG/Scrypt完整HTTP普通/受限矩阵、登录改密Cookie jar清除/旧Session及旧密码401/新登录200同UUID、六新增构造fault dispose一次八表不变/readonly-default-login404、旧Windows状态/缺正式材料拒绝及原发布/wheel735861通过。兼容0048，无Migration/API/依赖/生产升级；撤接线保历史不复活Session。正向信任合成，正式供给/性能/browser/UI/Server2025/Debian/reset/安装包/Gate待，下一管理员reset前置。
 
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P04-A03新增可选改密POST及严格JSON/来源/Session-CSRF-Key，成功仅版本、失效旧Cookie清除/新认证历史重放保Cookie。1368 tests无失败（2既有跳过），实际PG/Scrypt普通及受限POST、拒绝八表不变/无License gate/提交后末读503新登录同Key恢复/default404、原发布/wheel735734通过。surrogate测试客户端预先失败改原始字节后安全422，未放宽检查。兼容0048，无Migration/依赖/生产升级；撤router保历史。Windows/UI/reset/性能/三平台/包/Gate待，下一写模式实际装配。
