@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/JOB-01-A05-P02按CR-JOB-005新增专用AESGCM密文分页游标/query绑定及可选冻结项目/admin任务列表GET，隐藏坐标不公开、当前授权逐页再核、no-store/strict query。1210后端无失败/2既有跳过、篡改/错context-key/恢复/无明文坐标与真实Doc来源双Scope列表ASGI/稀疏空页/撤权坏源十三表无写、原来源/上传回归及wheel666121通过。无Migration/新依赖/角色/路径Breaking/升级；撤router/cursor回滚保历史。默认Windows未挂/专用密钥来源待，测试key/License非生产，Audit混排/性能/完整Owner/完整包/Gate待。
+
 - 2026-09-27：`0.1.0.dev0`/JOB-01-A05-P01按CR-JOB-005新增当前授权任务列表内部Service/DTO、Jobs-only稳定keyset/有限候选及冻结LIST对应Project只读事实锁策略，客户仅原actor，受限候选空页可继续。1201后端无失败/2既有跳过，Document真实双Scope/三页同时间戳稳定/权限-坏源拒绝十三表无写、原上传/来源/权限HTTP回归及wheel663139通过。首轮矩阵26→27补新项保旧矩阵、重复撤Session测试拆独立会话，无保护降级。无Migration/API路由/依赖/升级；撤list/policy回滚保历史。公开游标需加密防泄露隐藏坐标，HTTP/Audit混排/完整Scope/Windows/性能/完整包/Gate待。
 
 - 2026-09-27：`0.1.0.dev0`/JOB-01-A04-P04将Document Parse Job只读Owner接两Windows显式platform，default/login404、原Audit保留。1195后端无失败/2既有跳过，真实Session双Scope成功metadata经HTTP/两Factory逻辑ref/ETag/no-store、权限拒绝十五表无写、七新构造故障及实际缺信任源失败关闭，旧Audit Windows/文件发布回归与wheel660575通过。首轮测试Guard异常型不符仅修验证器，无生产fallback。无Migration/API路径/角色/依赖/升级变化（需0044）；撤新registry/import回滚保历史。正向信任与Parser历史合成，非实际Parser/字节/正式发行/完整包/Gate。下一Phase2任务列表，Parser属于Phase3不越Gate。

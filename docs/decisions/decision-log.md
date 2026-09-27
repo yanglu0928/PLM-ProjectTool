@@ -2,6 +2,12 @@
 
 ## DEC-20260927-274
 ## DEC-20260927-275
+## DEC-20260927-276
+
+- Phase2/P02按CR-JOB-005以既有cryptography AESGCM保护Job-list隐藏坐标、专用Key/family-Session-project-scope-size绑定；不把完整性保护当保密、游标不授权限。可选冻结双路径GET/no-store metadata、稀疏页允许继续，default404，Windows密钥供给未接。
+- 1210后端/2跳过、真实原列表Session/Scope/Source/分页矩阵经ASGI及十三表读不写、错context/tamper/密文不含坐标/恢复原key通过。无Schema/角色/依赖/Breaking；撤router/cursor可回滚保历史。测试key/License非生产；Audit/Windows/性能/完整Owner/Gate未完成。
+
+## DEC-20260927-275
 
 - Phase2/JOB-01-A05-P01按CR-JOB-005实现同UOW当前list授权、registry原source、Jobs-only有限candidate/keyset、customer只原actor。不可见资源允许空页继续，内部position私有，HTTP前加密游标避免泄露隐藏坐标。
 - 原全权限矩阵加冻结LIST对应第27项、旧项保留；实际Session重复撤销测试碰immutable保护，仅拆独立会话不改DB。1201后端/2跳过及Document实际Scope分页/权限/坏源十三表无写通过；Audit/HTTP/游标/Windows/完整Scope待。无Schema或依赖变；撤内部list/policy回滚保详情和历史。
