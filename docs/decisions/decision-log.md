@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-341
+
+- Executed：A04-P01新增6参数化方法、reset9/change8缺依赖/13历史hint-first-source-actor违约/两类各4非法时间；未KDF/global/reserve/repo/commit，UOW闭合与擦除通过，最终1447unit无失败/2既有跳过。首次2个错op测试在DTO格式校验先拒绝，已改合法其他op并全量复验；再强化明确commit Spy并全量通过。无生产改动，coverage/PG/wheel本轮未跑，原79.189%不推算变更；A04-P02写后防御待，性能/90%/Gate/可用包未关闭。
+
+- Phase2/P07A04编码前检查见service-defensive。第一批仅Service缺依赖/历史hint-first-source/时间违约，模拟可信Port故障且断言无KDF/写/密码擦除；完整unit实际重跑，四实际PG及新覆盖率本批不重测，不推算PASS。生产/Schema/API/算法/依赖不改，风险回滚先记，下一写后repo/result/final-proof边界，性能与完整安全门槛保持。
+
 ## DEC-20260927-340
 
 - Executed：8个新HTTP防御参数化方法专门测试通过，1441unit无失败/2跳过、四真实PG/Windows入口通过。两个API行/branch100%，同一密码21文件982/1017行96.559%与293/370分支79.189%，全Auth92.082%/73.511%，工厂单列；exit1保留整体90%缺口，安全/性能/Gate未关闭。没有生产源码/Schema/API/依赖变化，原Hash保留，wheel未跑；下一Service可信Port违约与擦除测试，不用mock替代真实PG。

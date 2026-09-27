@@ -13,6 +13,45 @@ from plm_assistant.modules.platform.application.idempotency import IdempotencyRe
 
 
 class ChangeHistoryTests(unittest.TestCase):
+    def test_all_required_dependencies_reject_none(self):
+        deps = dict(unit_of_work=self.owner._uow, access=self.access, repository=self.repo,
+                    results=self.results, replay_verifier=self.replay, hasher=self.hasher,
+                    audit=Mock(), receipts=self.receipts)
+        for name in deps:
+            with self.subTest(dependency=name):
+                with self.assertRaises(ValueError): PasswordChangeService(**(deps | {name: None}))
+
+    def test_untrusted_history_coordinates_and_sources_refuse_before_kdf(self):
+        for fault in ('hint-type', 'hint-operation', 'hint-status', 'first-id', 'before-source', 'after-source', 'actor-type'):
+            with self.subTest(fault=fault):
+                self.setUp()
+                if fault == 'hint-type': self.receipts.lookup_completed.return_value = object()
+                elif fault == 'hint-operation': self.receipts.lookup_completed.return_value = IdempotencyResult('V1_AUTH_USER_RESET_PASSWORD', self.first.result_id, 200)
+                elif fault == 'hint-status': self.receipts.lookup_completed.return_value = IdempotencyResult(self.hint.ref_type, self.first.result_id, 201)
+                elif fault == 'first-id': self.receipts.lookup_completed.return_value = IdempotencyResult(self.hint.ref_type, uuid4(), 200)
+                elif fault == 'before-source': self.results.password_source.side_effect = [object(), self.source]
+                elif fault == 'after-source': self.results.password_source.side_effect = [self.source, object()]
+                else: self.access.prove.return_value = object()
+                with self.assertRaises(PasswordChangeError) as caught: self.run_change()
+                self.assertEqual(caught.exception.code, 'AUTH_PASSWORD_CHANGE_UNAVAILABLE')
+                self.hasher.hash_password.assert_not_called()
+                self.results.verify_password_source.assert_not_called()
+                self.access.verify_password_source.assert_not_called()
+                self.access.lock_deployment.assert_not_called()
+                self.receipts.reserve.assert_not_called(); self.repo.change.assert_not_called()
+                for tx in self.transactions: tx.commit.assert_not_called()
+                self.erased(); self.assertEqual(self.active, [])
+
+    def test_invalid_clock_refuses_without_kdf_or_write(self):
+        for value in (None, True, 'not a time', datetime.now()):
+            with self.subTest(value=type(value).__name__):
+                self.setUp(); self.owner._clock = lambda: value
+                with self.assertRaises(PasswordChangeError): self.run_change()
+                self.access.prove.assert_not_called(); self.hasher.hash_password.assert_not_called()
+                self.receipts.reserve.assert_not_called(); self.repo.change.assert_not_called()
+                for tx in self.transactions: tx.commit.assert_not_called()
+                self.erased()
+
     def setUp(self):
         now=datetime.now(timezone.utc);actor=uuid4()
         self.proof=PasswordChangeActorProof(UserReadView(actor,'Synthetic user','ENABLED','NONE',3,now,now,3),
@@ -21,10 +60,10 @@ class ChangeHistoryTests(unittest.TestCase):
         self.hint=IdempotencyResult('V1_AUTH_PASSWORD_CHANGE',self.first.result_id,200)
         self.source=PasswordHashResult('Synthetic source','SCRYPT',{})
         self.command=ChangePassword(b't'*32,b'c'*32,uuid4(),PasswordChangeProof(bytearray(b'Synthetic old'),bytearray(b'Synthetic new')))
-        self.active=[];self.events=[]
+        self.active=[];self.events=[];self.transactions=[]
         @contextmanager
         def uow():
-            tx=Mock();self.active.append(tx);self.events.append('enter')
+            tx=Mock();self.transactions.append(tx);self.active.append(tx);self.events.append('enter')
             try:yield tx
             finally:self.active.remove(tx);self.events.append('exit')
         self.access=Mock();self.access.prove.return_value=self.proof;self.access.lock_deployment.return_value=True

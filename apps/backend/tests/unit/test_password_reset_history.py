@@ -13,6 +13,44 @@ from plm_assistant.modules.platform.application.idempotency import IdempotencyRe
 
 
 class ResetHistoryTests(unittest.TestCase):
+    def test_all_required_dependencies_reject_none(self):
+        deps = dict(unit_of_work=self.owner._uow, access=self.access, repository=self.repo,
+                    results=self.results, replay_verifier=self.replay, hasher=self.hasher,
+                    audit=Mock(), receipts=self.receipts, license_guard=self.guard)
+        for name in deps:
+            with self.subTest(dependency=name):
+                with self.assertRaises(ValueError): PasswordResetService(**(deps | {name: None}))
+
+    def test_untrusted_history_coordinates_and_source_refuse_before_kdf(self):
+        for fault in ('hint-type', 'hint-operation', 'hint-status', 'first-id', 'source-type', 'actor-type'):
+            with self.subTest(fault=fault):
+                self.setUp()
+                if fault == 'hint-type': self.receipts.lookup_completed.return_value = object()
+                elif fault == 'hint-operation': self.receipts.lookup_completed.return_value = IdempotencyResult('V1_AUTH_PASSWORD_CHANGE', self.first.result_id, 200)
+                elif fault == 'hint-status': self.receipts.lookup_completed.return_value = IdempotencyResult(self.hint.ref_type, self.first.result_id, 201)
+                elif fault == 'first-id': self.receipts.lookup_completed.return_value = IdempotencyResult(self.hint.ref_type, uuid4(), 200)
+                elif fault == 'source-type': self.results.password_source.return_value = object()
+                else: self.access.prove.return_value = object()
+                with self.assertRaises(PasswordResetError) as caught: self.run_reset()
+                self.assertEqual(caught.exception.code, 'AUTH_PASSWORD_RESET_UNAVAILABLE')
+                self.hasher.hash_password.assert_not_called()
+                self.results.verify_password_source.assert_not_called()
+                self.access.lock_deployment.assert_not_called()
+                self.receipts.reserve.assert_not_called(); self.repo.reset.assert_not_called()
+                for tx in self.transactions: tx.commit.assert_not_called()
+                self.assertFalse(any(self.command.password.temporary_password))
+                self.assertEqual(self.active, [])
+
+    def test_invalid_clock_refuses_without_kdf_or_write(self):
+        for value in (None, True, 'not a time', datetime.now()):
+            with self.subTest(value=type(value).__name__):
+                self.setUp(); self.owner._clock = lambda: value
+                with self.assertRaises(PasswordResetError): self.run_reset()
+                self.access.prove.assert_not_called(); self.hasher.hash_password.assert_not_called()
+                self.receipts.reserve.assert_not_called(); self.repo.reset.assert_not_called()
+                for tx in self.transactions: tx.commit.assert_not_called()
+                self.assertFalse(any(self.command.password.temporary_password))
+
     def setUp(self):
         now=datetime.now(timezone.utc);actor=uuid4();target=uuid4()
         self.proof=UserStateActorProof(UserReadView(actor,'Synthetic Admin','ENABLED','DEPLOYMENT_ADMIN',1,now,now,1),
@@ -21,10 +59,10 @@ class ResetHistoryTests(unittest.TestCase):
         self.hint=IdempotencyResult('V1_AUTH_USER_RESET_PASSWORD',self.first.result_id,200)
         self.source=PasswordHashResult('Synthetic hash','SCRYPT',{})
         self.command=ResetPassword(b't'*32,b'c'*32,uuid4(),target,1,True,PasswordResetProof(bytearray(b'Synthetic temporary')))
-        self.active=[];self.events=[]
+        self.active=[];self.events=[];self.transactions=[]
         @contextmanager
         def uow():
-            tx=Mock();self.active.append(tx);self.events.append('enter')
+            tx=Mock();self.transactions.append(tx);self.active.append(tx);self.events.append('enter')
             try:yield tx
             finally:self.active.remove(tx);self.events.append('exit')
         self.access=Mock();self.access.prove.return_value=self.proof;self.access.lock_deployment.return_value=True
