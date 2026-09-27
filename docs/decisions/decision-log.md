@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260927-289
+
+- Executed：六新unit/1265无失败（2既有跳过）、实际PG七同timestamp UUID tie稳定分页/空末页/停用目标可见、撤会话角色License拒绝五表无写，旧Windows详情与原发布回归/wheel687737通过。首次test引用失败改package相对引用完整重跑，仅内部列表，非HTTP/性能/完整管理面。
+
+- Date/WBS：2026-09-27 / AUT-04-A04，固定User安全列表内部分页，沿A01 current Admin owned事实锁/License；目标仅metadata一次SQL快照，不共享锁整页，避免无必要全页锁与跨管理员列表锁序。
+- Decision/Impact：created_at/user_id倒序有界keyset/n+1，含DISABLED目标，严格typedPage排序/唯一/位置边界，每页实时授权。无Schema/依赖/角色/公开API；分页位置私有，公开cursor/来源/索引性能另任务。
+- Tests/Rollback：真PG同时间tie/完整分页/空末页/撤权无写/异常源unit，旧详情回归；撤服务保历史，非固定快照/性能/完整管理面/包/Gate证明。
+
 ## DEC-20260927-288
 
 - Executed：1259后端无失败（2既有跳过），两真实Windows Factory完整User HTTP权限/版本/五表无写、三构造fault各模式明确被调用并dispose/实际缺正式材料拒绝、login/default404与旧Windows混排发布回归通过；wheel686148。无新Schema/KeyRef/依赖。正式信任合成；完整管理面/性能/Gate未完成。

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/AUT-04-A04新增当前Admin安全User列表内部稳定keyset与严格typedPage/n+1界限，含停用目标/无Credential查询/无写；6新unit/1265无失败（2既有跳过）、真实七同时间UUID分页无重漏/空末页/撤权五表无写与旧Windows详情发布回归、开发wheel687737通过。无Migration/公开API/依赖/角色/升级动作，0045兼容、撤调用回滚保历史。公开游标/HTTP/Windows来源/索引性能/完整管理面/三平台/完整包/Gate待，下一可选User列表HTTP与加密cursor。
+
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A03将User详情GET装入Windows两显式platform，default/login404；原Session/Admin/License，无新KeyRef/fallback。1259无失败（2既有跳过）、两真实Factory权限/版本/五表无写、三构造fault各模式拒绝并dispose、实际缺正式材料拒绝/旧混排与发布回归、开发wheel686148通过。无Migration/依赖/角色/Breaking，0045兼容/升级沿已有信任要求；撤router接线回滚保历史。正式账户/列表/用户写/锁性能/三平台/完整包/Gate未完；下一安全User列表内部分页。
 
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A02新增可选冻结User详情GET、安全八字段/独立强ETag/no-store/nosniff，当前Session/Admin/License再核，非Admin/未知404、撤Session401、异常静态503；5新Contract/1258无失败（2既有跳过）、真实PG版本与密码版本分离/停用目标可读/缓存不绕撤权/五表无写及原发布回归、开发wheel686062通过。默认404/Windows未挂；无Migration/依赖/角色/Breaking/升级动作，撤router回滚保历史。正式供给/列表/管理写/性能/三平台/完整包/Gate待，下一Windows装配。
