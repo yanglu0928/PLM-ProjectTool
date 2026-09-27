@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/AUT-04-A02新增可选冻结User详情GET、安全八字段/独立强ETag/no-store/nosniff，当前Session/Admin/License再核，非Admin/未知404、撤Session401、异常静态503；5新Contract/1258无失败（2既有跳过）、真实PG版本与密码版本分离/停用目标可读/缓存不绕撤权/五表无写及原发布回归、开发wheel686062通过。默认404/Windows未挂；无Migration/依赖/角色/Breaking/升级动作，撤router回滚保历史。正式供给/列表/管理写/性能/三平台/完整包/Gate待，下一Windows装配。
+
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A01新增Auth内部当前Admin/License安全User详情与显式八列metadata Repository，禁用目标管理可见，密码/Session/canonical/retention不返回；无commit。6新unit/1253无失败（2既有跳过）、真实PG会话撤销/管理员降权停用/未知目标/License拒绝五表无写、原发布回归及开发wheel684687通过。无Migration/公开API/新依赖/权限，兼容0045/升级无动作；撤Reader调用回滚保历史。正式供给/HTTP/列表/用户启停重置等写幂等/锁竞争性能/三平台/完整包/Gate未完成。下一AUT-04-A02公开详情GET。
 
 - 2026-09-27：`0.1.0.dev0`/JOB-03-A02-P05-B补齐Windows真实Doc上传来源retry409、20表无写、原Attempt技术fixture非临时false/坏时间503、客户creator/noncreator隔离、归档PM新generation实际Worker成功；1247无失败/2既有跳过、旧Windows混排与发布回归。仅验收/夹具复用/文档，生产/Schema/API/依赖/升级不变，开发wheel沿P05-A未重建。P05内部完成；正式信任/性能/三平台/其他未来Owner/完整包/Gate未完成，回滚撤新验收保历史。下一Phase2 User管理面安全读模型。

@@ -1,5 +1,10 @@
 # 自主决策记录
 
+## DEC-20260927-287
+
+- Date/WBS：2026-09-27 / AUT-04-A02，前置A01真实Reader。可选冻结User GET仅explicit router，无默认/Windows装配，Session.validate区分失效401，当前非Admin/未知target404；不利用缓存绕当前授权。
+- Impact/Rollback/Tests：UserView仅既有安全metadata与独立lock_version ETag，GET无CSRF/写/Session续期，错误静态；无Schema/角色/依赖变，撤router回滚保历史。真实Session/权限/目标禁用/版本分离/无写及契约测试，正式材料/性能/完整包待。
+
 ## DEC-20260927-286
 
 - Executed：6新unit/1253后端无失败（2既有跳过）、实际当前Session/Admin/目标停用可读与已撤Session/管理员降权停用/未知目标/License拒绝五表无写、原文件发布回归与wheel684687通过。撤销夹具初次缺合法reason/version被触发器拒绝，补齐原shape重验，不改保护。仅内部详情，HTTP/完整管理面/交叉锁性能待。
