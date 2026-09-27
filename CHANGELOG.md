@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：0.1.0.dev0/P07-A15-P01新增4参数化状态适配层非法ID/八自停用来源/篡改DTO与真实inactive Session拒绝方法，全量1501unit无失败/2既有跳过。无模拟成功SQL，仅P01通过，真实当前行/末核/回滚P02待；无生产/Migration/API/权限/算法/依赖变化，兼容0049无升级。coverage/13PG/wheel/性能未跑，原82.186%与Hash保持，正式安全/性能FAIL/trust/Gate/可用包待。
+
 - 2026-09-27：0.1.0.dev0/P07-A14新增6参数化User状态Service依赖/clock-proof/receipt-first/Repo/first-Audit/final-proof拒绝方法，无commit/已进UOW闭合，全量1497unit无失败/2既有跳过。仅Port合同，不冒充SQL回滚；无生产/Migration/API/权限/算法/依赖变化，兼容0049无升级；coverage/13PG/wheel/性能未跑，原82.186%/Hash/90%保持。下一状态Access/Repo独立验证，正式安全/性能FAIL/trust/Gate/可用包待。
 
 - 2026-09-27：0.1.0.dev0/P07-A13-P02真实创建结果缺行/源比对/原密码True-False、明确verifier故障与三实际SQL22012拒绝，实际INSERT/get后None故障九表全行回滚/密码擦除及正常恢复、原publication回归通过exit0；首次验证异常类导入错误已修正并记录。无生产/Migration/API/权限/算法/依赖变化，兼容0049无升级；unit最近1491本批未跑，coverage/wheel/性能未跑，旧82.186%与Hash保持。下一User状态Service拒绝及13链统一实测，正式安全/性能FAIL/trust/Gate/可用包待。

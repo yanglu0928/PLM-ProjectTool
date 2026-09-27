@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-361
+
+- Executed：4新增方法、完整1501unit无失败/errors0/2既有跳过，exit0；八非法ID/八错自停用来源/两篡改DTO在SQL前拒绝，真实inactive Session lock/change/final三路径抛原AuthTransactionError且仍无事务。无模拟成功SQL；仅P01 PASS，实际末核/九表回滚P02待。生产无变，coverage/13PG/wheel/性能未跑，旧82.186%与Hash保持，正式trust/Gate/包待。
+
+- Phase2/P07A15P01编码前检查见state-adapter-defensive；仅Repo非法ID/Access错自停用来源及篡改DTO前SQL拒绝，真实未开启Session事务拒绝，不mock成功SQL；Adapter原AuthTransactionError传播，Service才固定码，不混淆层次。
+- 无生产/Schema/API/权限/算法/依赖变，撤测试无升级；完整unit跑，实际PG末核留P02，coverage/13PG/wheel/性能本批未跑，旧raw/90%与Gate/包缺项保持。
+
 ## DEC-20260927-360
 
 - Executed：6新增方法，1497unit无失败/errors0/2既有跳过、exit0；七依赖/六clock-proof/四收据-first/八Repo/五first-Audit来源/最终proof改变拒绝，无commit、已进UOW均退出；末核拒绝允许先complete但不提交，不冒充SQL回滚。生产不改，coverage/13PG/wheel/性能未跑，原82.186%与Hash保持；下一User状态Access/Repo独立拒绝，正式trust/Gate/包待。
