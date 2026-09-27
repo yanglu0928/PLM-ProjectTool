@@ -13,7 +13,7 @@ a=module_from_spec(spec);spec.loader.exec_module(a)
 m=a.m
 
 
-def exercise(v):
+def exercise(v,make_app=None):
     db=v['db'];hasher=m.ScryptPasswordHasher();receipts=m.SqlAlchemyIdempotencyReceipts()
     firsts=m.SqlAlchemyUserCreateResultRepository(verifier=hasher)
     creator=m.ManagedUserCreateService(unit_of_work=v['uow'],access=m.SqlAlchemyUserCreateAccess(),license_guard=v['guard'],
@@ -31,8 +31,10 @@ def exercise(v):
         hasher=hasher,audit=v['audit'],receipts=receipts)
     service=a.PasswordChangeService(**deps)
     def issue(password):return sessions.issue(user_id=uid,trace_id=uuid4(),proof=m.PasswordIssueProof(bytearray(password.encode())))
-    def app(writes=service,session_port=sessions):return create_app(password_change_router=create_password_change_router(
-        sessions=session_port,writes=writes,origins=LoginOriginPolicy(['https://plm.example.test'])))
+    def app(writes=service,session_port=sessions):
+        if make_app is not None and writes is service and session_port is sessions:return make_app()
+        return create_app(password_change_router=create_password_change_router(
+            sessions=session_port,writes=writes,origins=LoginOriginPolicy(['https://plm.example.test'])))
     def headers(session,key=None):return {'origin':'https://plm.example.test','cookie':'plm_session='+session.token.hex(),
         'x-csrf-token':session.csrf_token.hex(),'idempotency-key':key or str(uuid4())}
     tables=('auth_users','auth_password_credentials','auth_sessions','auth_user_create_results','auth_user_state_results',

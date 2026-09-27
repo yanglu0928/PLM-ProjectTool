@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-316
+
+- Executed：1368 tests无失败（2既有跳过）；actualFactory真PG/Scrypt完整HTTP普通/受限矩阵、登录-Cookie jar改密清除-旧Session401/旧密码401-新login200同UUID、六构造fault实际dispose一次/八表不变、readonly/default/login404、旧Windows状态/缺正式材料拒绝与原发布/wheel735861通过。无Migration/API/依赖/生产升级，正向trust合成，非正式发行/Gate；下一reset前置。
+
+- P04A04编码前检查见progress；仅Windows显式write装配原改密链，readonly/login/default关闭，原正式启动信任不放宽；当前proof/真实Scrypt/Audit/receipt同UOW，无Schema/API/依赖/权限变化。实际Factory/构造failure dispose及无材料拒绝待验，非正式发行证明。
+
 ## DEC-20260927-315
 
 - Executed：1368 tests无失败（2既有跳过）；实际PG/Scrypt可选HTTP普通/受限转换、严格拒绝八表不变、无License gate、安全单版本响应/旧Cookie清除/旧401、新认证历史重放保Cookie/差异409、真实postcommit末读503再新登录同Key恢复/default404及原发布/wheel735734通过。surrogate夹具首轮httpx预先失败改原始字节验证422，无生产放宽。无Migration/依赖/生产升级；Windows/browser/reset/包/Gate未验，下一显式写装配。

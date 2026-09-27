@@ -11,3 +11,5 @@
 坏Origin/CSRF403，失效Session/授权竞争401，错误当前密码401 AUTH_INVALID_CREDENTIALS，畸形请求400/密码或Key422，未知服务/输出/提交后末读503 SYSTEM_UNAVAILABLE，无秘密和猜测回滚。503后重新登录，再以同Key原两密码恢复；不得盲用旧Session或创建新Key重做未知提交。
 
 当前仅可选ASGI router，默认404，Windows生产组合尚未接线；浏览器UI、reset、正式来源/性能/三平台/发行未验，不代表完整Auth或Gate3。
+
+2026-09-27/P04A04：Windows显式platform-write已装配并实际PG/Scrypt/Factory验证；readonly/default/login仍404。上述“尚未接线”为前一检查点历史，当前以本条为准。正向启动信任为明确合成来源，不代表正式发行材料已供给，其他未验范围仍保留。

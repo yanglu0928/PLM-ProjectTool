@@ -48,3 +48,5 @@ P02当前状态：Windows真实Token绑定currentFact投影接login/session GET/
 2026-09-27/P04A02：内部实际原子change Service已完成PG/Scrypt当前认证、全Session撤销、Audit/first/receipt与末核/commit验证；真实写后及precommit回滚、commit丢确认新认证恢复、同/不同Key竞争与受限源转normal通过。历史重放须重新登录当前有效本人，不能使用旧Session授新写；原请求两密码只与first前后Credential真实KDF比对。公开HTTP/Cookie/Windows组合/reset/发行仍待，CR未关闭。
 
 2026-09-27/P04A03：可选冻结HTTP及Cookie/恢复合同真实PG-ASGI验证通过，见增量合同与progress；默认关闭，Windows实际组合/browser/reset/发行未完成，本CR不关闭。
+
+2026-09-27/P04A04：Windows显式write实际装配及登录/改密/旧Session密码拒绝/新登录、六构造故障安全dispose/关闭模式、正式材料缺失拒绝已验证；正向信任为合成，不是正式发行。reset仍未实现；下一原reset首次响应来源及Schema前置，整体CR/Gate不关闭。
