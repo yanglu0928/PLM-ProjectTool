@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260927-309
+
+- Executed：1348 tests无失败（2既有跳过），Windows真实PG/Scrypt普通false及受限login/GET/renew true-NONE-空项目、ForbiddenProjects未调用/业务404、坏旧Token或错User拒绝、精确源503不回退/受限logout通过；原状态/发布回归及wheel721845通过。TEST_ONLY凭据追加非实际改密，完整密码流程/正式信任/包未完成。
+
+- 补充：保留冻结Session续期，受限续期只轮换受限身份、不清当前Credential标志/不授业务权限，严格能力白名单加入SESSION_RENEW；不是将临时凭据换为正常凭据。
+
+- A12P02 precode见progress；CR-AUT007内非破坏boolean增量。login/GET/renew调用精确session projection，生产SQLview真实currentFact/共享锁绑定，无坏源fallback；required不读项目/输出NONE空项目，正常false。legacy opt-in adapter原resolve保兼容，无Schema/依赖，完整改密HTTP未完成，真实验收待。
+
 ## DEC-20260927-308
 
 - Executed：1346 tests无失败（2既有跳过），真PG/Scrypt must-change会话五原业务proof拒绝七表不变、精确currentFact，TEST_ONLY normalCredential3使旧Session拒绝/新Session正常且历史保留；Windows状态链及原发布回归通过。历史漏洞脚本改为反回归，e8349c5证据保留。公开身份投影/改密HTTP/完整安全流程未实现，下一P02，不标全包PASS。

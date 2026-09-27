@@ -12,7 +12,7 @@ from fastapi.responses import JSONResponse
 
 from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginError, LoginOriginPolicy
 from plm_assistant.modules.auth.application.session_service import SessionError, SessionService
-from plm_assistant.modules.auth.application.session_view import SessionViewPort
+from plm_assistant.modules.auth.application.session_view import SessionViewPort, resolve_session_view
 from plm_assistant.modules.platform.application.errors import ApplicationError
 from plm_assistant.modules.platform.application.idempotency import (
     IdempotencyError, validate_idempotency_key,
@@ -88,7 +88,7 @@ def create_session_read_router(*, sessions: SessionService, views: SessionViewPo
         except Exception:
             raise ApplicationError("SYSTEM_UNAVAILABLE") from None
         try:
-            view = await run_in_threadpool(views.resolve, principal.user_id)
+            view = await run_in_threadpool(resolve_session_view, views, principal.user_id, token)
             if view.user_id != principal.user_id:
                 raise RuntimeError("identity projection mismatch")
             public = view.public_data()
@@ -176,7 +176,7 @@ def create_session_renew_router(*, sessions: SessionService, views: SessionViewP
         # Project/identity projection must be available before the old token
         # is retired; otherwise a 503 would strand the browser without either.
         try:
-            view = await run_in_threadpool(views.resolve, principal.user_id)
+            view = await run_in_threadpool(resolve_session_view, views, principal.user_id, token)
             if view.user_id != principal.user_id:
                 raise RuntimeError("identity projection mismatch")
             public = view.public_data()

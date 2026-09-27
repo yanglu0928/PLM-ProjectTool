@@ -1,6 +1,8 @@
 # CR-AUT-007 密码重置、强制改密与当前会话限制
 
-日期2026-09-27；版本0.1.0.dev0；状态INTERNAL_CREDENTIAL_RESTRICTION_VERIFIED_PUBLIC_FLOW_PENDING。
+日期2026-09-27；版本0.1.0.dev0；状态RESTRICTED_SESSION_PROJECTION_VERIFIED_PASSWORD_FLOW_PENDING。
+
+P02当前状态：Windows真实Token绑定currentFact投影接login/session GET/renew；受限返回password_change_required=true、NONE和空项目，不查询项目reader；旧Token/错User拒绝，生产精确源失败503不回退。保留原续期功能仅轮换受限身份，不能解除改密限制或生成普通业务权限（DEC309补充）；能力规则同步SESSION_RENEW白名单。完整改密/reset路径仍待。
 授权依据：用户持续授权；保留冻结64cdf09/DM02/API02与原0001～0047，不静默替换原基线。
 
 ## 来源、冲突及实际证据

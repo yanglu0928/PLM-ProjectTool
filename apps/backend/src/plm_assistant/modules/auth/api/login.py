@@ -16,7 +16,7 @@ from plm_assistant.modules.auth.api.login_origin_policy import (
 from plm_assistant.modules.auth.application.login_service import (
     LoginAttempt, LoginError, LoginService,
 )
-from plm_assistant.modules.auth.application.session_view import SessionViewPort
+from plm_assistant.modules.auth.application.session_view import SessionViewPort, resolve_session_view
 from plm_assistant.modules.platform.application.errors import ApplicationError
 
 
@@ -70,7 +70,7 @@ def create_login_router(*, login: LoginService, origins: LoginOriginPolicy,
         finally:
             password[:] = b"\x00" * len(password)
         try:
-            view = await run_in_threadpool(views.resolve, issued.user_id)
+            view = await run_in_threadpool(resolve_session_view, views, issued.user_id, issued.token)
             if view.user_id != issued.user_id:
                 raise RuntimeError("identity projection mismatch")
             public = view.public_data()

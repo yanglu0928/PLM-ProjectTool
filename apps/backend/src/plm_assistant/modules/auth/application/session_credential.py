@@ -19,7 +19,7 @@ class SessionCredentialFact:
 
     def permits(self, capability):
         if type(capability) is not str or capability not in (
-            'PASSWORD_STATE','PASSWORD_CHANGE','LOGOUT','BUSINESS'):
+            'PASSWORD_STATE','PASSWORD_CHANGE','LOGOUT','SESSION_RENEW','BUSINESS'):
             return False
         self.__post_init__()
         return capability != 'BUSINESS' or self.password_change_required is False

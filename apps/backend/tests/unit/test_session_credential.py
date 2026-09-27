@@ -7,7 +7,7 @@ from plm_assistant.modules.auth.application.session_credential import SessionCre
 class SessionCredentialTests(unittest.TestCase):
     def test_restricted_and_normal_capabilities(self):
         fact=SessionCredentialFact(uuid4(),uuid4(),uuid4(),1,True)
-        for cap in ('PASSWORD_STATE','PASSWORD_CHANGE','LOGOUT'):self.assertTrue(fact.permits(cap))
+        for cap in ('PASSWORD_STATE','PASSWORD_CHANGE','LOGOUT','SESSION_RENEW'):self.assertTrue(fact.permits(cap))
         self.assertFalse(fact.permits('BUSINESS'))
         self.assertTrue(replace(fact,password_change_required=False).permits('BUSINESS'))
         for cap in ('ADMIN','business','',None,True):self.assertFalse(fact.permits(cap))

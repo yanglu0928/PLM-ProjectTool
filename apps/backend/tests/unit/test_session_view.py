@@ -17,9 +17,21 @@ class SessionViewTests(unittest.TestCase):
         self.assertEqual(view.public_data(), {
             "user": {"user_id": str(user), "username_display": "测试用户"},
             "deployment_role": "NONE",
+            "password_change_required": False,
             "authorized_projects": [{"project_id": str(project),
                                      "name": "项目甲", "role": "PROJECT_MANAGER"}],
         })
+
+    def test_restricted_never_projects_admin(self):
+        view=LoginSessionView(uuid.uuid4(),'Synthetic restricted','DEPLOYMENT_ADMIN',(
+            AuthorizedProjectSummary(uuid.uuid4(),'Must not disclose','PROJECT_MANAGER'),),True)
+        data=view.public_data()
+        self.assertEqual(data['deployment_role'],'NONE')
+        self.assertEqual(data['authorized_projects'],[])
+        self.assertIs(data['password_change_required'],True)
+
+    def test_password_flag_not_truthiness(self):
+        with self.assertRaises(ValueError):LoginSessionView(uuid.uuid4(),'Synthetic','NONE',(),1).public_data()
 
 
 if __name__ == "__main__":

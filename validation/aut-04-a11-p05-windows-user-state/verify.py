@@ -20,7 +20,7 @@ http=load('_win_state_http','aut-04-a11-p04-user-state-http')
 old=load('_win_state_old','aut-04-a10-p03-windows-user-name-patch')
 
 
-def exercise(v):
+def exercise(v,extra=None):
     settings=BootstrapSettings(data_root=v['file_root'],trusted_origins=('https://plm.example.test',))
     prefix='plm_assistant.entrypoints.production_login.'
     library=old.old.old.old.old.old.trust
@@ -67,6 +67,7 @@ def exercise(v):
                 assert client.get('/api/v1/auth/session',headers={'cookie':'plm_session='+cookie}).status_code==401
                 before=snap();replay=client.post(path+':disable',headers=stateh)
                 assert replay.status_code==200 and replay.json()['data']==first.json()['data'] and snap()==before
+            if extra is not None:extra(v,settings)
             for factory in (prod.create_production_platform_app,prod.create_production_platform_write_app):
                 for dep in ('SqlAlchemyUserStateAccess','SqlAlchemyUserStateRepository','SqlAlchemyUserStateResultRepository','UserStateService','create_user_state_router'):
                     before=snap()
