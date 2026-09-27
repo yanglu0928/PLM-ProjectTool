@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：0.1.0.dev0/AUT05A01新增Web Session客户端四原接口、同源Cookie/私有CSRF、受限/DTO、安全错误、互斥/超时/无重试、renew同User及原Key logout。前端52/52/typecheck/build通过，43新模拟fetch用例；未接页面/build未包含client，非真实浏览器/后端验收。无Migration/后端/API/依赖变，兼容0049无数据升级；GET无CSRF刷新写需重登。后端/coverage/性能/wheel未重跑，下一登录页面，CR008 FAIL/正式trust/Gate/包待。
+
 - 2026-09-27：0.1.0.dev0/P08A01新增固定KDF双计算调度诊断，四批20请求/40真实KDF与20新hash真核验，peak16/end0；并行P951275.076/1262.386ms仍超1秒，不接生产。诊断exit0不代表HTTP达标，CR008 OPEN/FAIL；无生产/API/Schema/权限/依赖变，兼容0049无升级。unit/coverage/HTTP/wheel未重跑，下一同PhaseWeb登录/会话客户端合同前置，完整包/Gate待。
 
 - 2026-09-27：0.1.0.dev0/P07-A41新增2Windows工厂错误配置/真实空Migration head拒绝方法，1553unit无失败/2跳过与真实登录链通过；工厂364/369行98.645%、10/10分支100%，五CLI行未验，分母不变。无生产/Migration/API/权限/依赖变，兼容0049无升级；新rawa30daa7e…保旧raw，完整19链Auth coverage/性能/wheel未重跑。下一CR008性能设计，正式trust/性能FAIL/Gate/包待。

@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260927-391
+
+- Executed：新增43客户端契约用例，完整前端52/52/typecheck/build通过；Cookie同源、CSRF私有内存、受限/DTO、renew同User、原Key logout、错误/超时/互斥/无重试。GET只读恢复需重登写；尚未接页面且build未包含client，不是实际服务器/浏览器PASS。无后端/Migration/API/依赖变化，下一AUT05A02页面，性能/正式trust/Gate/包待。
+
+- 2026-09-27 / Phase2 AUT-05-A01，实施前记录；仅既有Auth四接口Web客户端，不跨模块写数据，不含页面/管理/改密。本次Scope来自Phase2 Auth/SYS001，前置见session-client progress。
+- 同源Cookie自动携带，CSRF私有内存，strict受限/DTO与安全错误，客户端不是授权边界；单实例请求互斥/有界超时/不自动重试。失败清本地身份但不宣称服务器撤销。
+- GET无CSRF：刷新恢复只读身份，不伪造Token或浏览器持久化，写操作要求再次login；若未来免重登需另CR，不偷改冻结GET。无Migration/API/依赖/安全机制改变，正式trust/性能/Gate/包待。
+
 ## DEC-20260927-390
 
 - Executed：四批各20请求/40真实KDF及20结果真验证，peak16/end0；串行P951672.890/1521.531ms，并行1275.076/1262.386ms。诊断exit0，不含HTTP/history，未达1秒，不接并行候选。完整unit/集成/coverage/wheel未重跑，生产不变；保CR008 FAIL，转同PhaseWeb登录客户端合同前置。

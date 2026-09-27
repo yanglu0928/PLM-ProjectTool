@@ -6,6 +6,8 @@ Vue 3 + TypeScript + Vite 前端工程。源目录固定分为 `app`、`modules`
 
 WBS 1.03 已建立响应式 App Shell、首页、404、安全错误边界和服务就绪状态。当前没有业务页面、认证界面或可信权限判断。
 
+AUT-05-A01 已新增 `src/modules/auth/api/sessionClient.ts`，使用原登录/会话查询/续期/注销接口，Cookie由浏览器自动携带、CSRF仅私有内存。客户端投影不能代替服务器授权；GET不返回CSRF，因此刷新后仅能恢复只读身份，写操作需要重新登录。异常清本地状态不等于服务器会话已撤销，不自动重试写请求。当前尚未接入页面/实际浏览器，构建不会包含未导入客户端；下一AUT-05-A02接线。
+
 ```powershell
 pnpm install --frozen-lockfile
 pnpm test
