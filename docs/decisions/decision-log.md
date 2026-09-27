@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-290
+
+- Executed：3cursor+5Contract/1273无失败（2既有跳过）；实际PG加密完整多页/七同timestamp UUID稳定、跨真实Session页size/篡改/撤权限License拒绝五表无写，旧Windows详情与发布回归/wheel690520通过。公开列表可选/default404，Windows来源/挂载未完；无新Schema/依赖/角色。
+
+- Date/WBS：2026-09-27 / AUT-04-A05，前置A04实际稳定分页。选Auth独立AESGCM cursor，不跨模块复用Jobs内部code；既有cryptography依赖，无新组件。Session摘要/page_size/family绑定，nonce随机/位置密文，当前权限每页核验。
+- Impact/Rollback/Tests：可选冻结User列表GET、两query/no total/safe UserView，与详情共享投影；default/Windows暂不挂。无Schema/角色/依赖/Breaking，撤router保历史；真分页/权限/无写、cursor篡改跨context-key/恢复与源异常；正式来源/性能/全管理/包待。
+
 ## DEC-20260927-289
 
 - Executed：六新unit/1265无失败（2既有跳过）、实际PG七同timestamp UUID tie稳定分页/空末页/停用目标可见、撤会话角色License拒绝五表无写，旧Windows详情与原发布回归/wheel687737通过。首次test引用失败改package相对引用完整重跑，仅内部列表，非HTTP/性能/完整管理面。
