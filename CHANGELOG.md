@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：0.1.0.dev0/AUT-04-A12-P07-A05-P01新增4项参数化Repo输入测试，非法ID/版本/Hash-proof类型、change版本上限及非规范SCRYPT参数在数据库前拒绝，明确_session未调用；1460unit无失败/2既有跳过。无生产源码/Migration/API/算法/依赖/升级，兼容0049；coverage/四PG/wheel未重跑，最近82.432%分支不推算更新，原Hash保留。下一current proof/异常与统一真实覆盖复验，90%/性能FAIL/Gate/可用包仍待。
+
 - 2026-09-27：0.1.0.dev0/AUT-04-A12-P07-A04-P03新增4项参数化history防御，prepare/write first-hint-op-status-current错配拒绝、无repo/complete/commit、密码擦除/UOW闭合；1456unit无失败/2既有跳过。无生产源码/Migration/API/算法/依赖/升级，兼容0049；coverage/四PG/wheel本轮未跑，最近82.432%分支不推算更新，原Hash保留。下一适配器拒绝与实际覆盖复验，90%/性能FAIL/正式可用包/Gate仍待。
 
 - 2026-09-27：0.1.0.dev0/AUT-04-A12-P07-A04-P02新增5项参数化新写Service防御，正向唯一commit Spy可达、repo/first/final错配拒绝无commit/密码擦除；1452unit无失败/2既有跳过、同轮四实际PG/Windows通过。密码行97.443%/分支82.432%，全Auth92.352%/74.743%，exit1保90%缺口，Mock不能冒充真实SQL。无生产源码/Migration/API/算法/依赖/升级，兼容0049，wheel未跑，旧JSON/Hash保留；下一A04历史写防御，性能FAIL/Gate/可用包未完成。

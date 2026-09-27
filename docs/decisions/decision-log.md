@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-344
+
+- Executed：4参数化Repo输入方法，reset7非法输入/change3类型/2上限/两Repo各3参数profile（p=True也拒绝），明确_session未调用，无成功SQL模拟。1460unit无失败/2既有跳过，exit0；没有生产变更、coverage/PG/wheel本轮未跑，原82.432%与Hash保留。下一A05P02 current proof/transaction与安全异常，然后统一实际覆盖；90%/性能/Gate/包待。
+
+- Phase2/P07A05P01编码前检查见adapter-inputs。测试两个Repo非法参数/版本上限，明确_session/SQL未访问，不造SQL成功；完整unit实际跑，coverage/PG本批不推算，原报告/Hash保留。无生产/Schema/API/算法/依赖变更，风险回滚先记；下一适配器当前数据/异常与真实统一复验，90%/性能/Gate未通过。
+
 ## DEC-20260927-343
 
 - Executed：4参数化方法共reset准备4/写7与change准备2/写8场景，first/hint/op/status/current-final错配拒绝；准备无KDF/reserve、历史写已verify1或2次后无repo/complete/commit、UOW闭合/密码擦除。1456unit无失败/2既有跳过，exit0。无生产/Schema/API/依赖改变，coverage/PG/wheel本轮未跑，最近82.432%不推算更新；下一适配器拒绝与统一实际复验，90%/性能/Gate/包待。
