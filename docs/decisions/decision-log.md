@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-376
+
+- Executed：新增3参数化方法，14个token-CSRF/5个time/5个事务来源拒绝通过，完整1528unit21.638秒无失败/errors0/2跳过、exit0；无成功SQL模拟、无生产变更。coverage/15链/性能/wheel未跑，下一A29实际数据库来源，Gate/包待。
+
+- Phase2/P07A28编码前检查见review-access-defensive；仅Auth评审启动来源非法输入与真实inactive Session防御测试，不mock成功SQL，当前用户/CSRF实际SQL另A29。
+- 无生产/Migration/API/权限/依赖变，无升级；完整unit实际跑，coverage/15链/性能/wheel另项，保旧raw/90%，Gate/包待。
+
 ## DEC-20260927-375
 
 - Executed：对be1d88f AST完全相等，1525unit无失败/2跳过、真实状态final来源/回滚及原发布链通过exit0。文件108/108行38/38分支，行分母+4/分支不变；相对旧33/38改善含A26新行为1边与本次布局映射4边。新raw0d251b1c…旧18ef6f24…未变，完整15链coverage/性能/wheel未跑，不推算全Auth；下一A28 ReviewStartAccess合同，Gate/包待。

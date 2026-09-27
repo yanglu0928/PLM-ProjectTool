@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：0.1.0.dev0/P07-A28新增3项评审启动Auth来源非法token/CSRF/time与真实inactive Session防御测试，完整1528unit无失败/2跳过；非法输入不读Session、未启动事务拒绝且不启动事务。无生产/Migration/API/权限/依赖变化，兼容0049无升级；coverage/15链/性能/wheel未跑，下一真实数据库来源，完整安全/Gate/包待。
+
 - 2026-09-27：0.1.0.dev0/P07-A27仅四UserState guard等价分行，对be1d88f AST相同；1525unit无失败/2跳过，实际状态final来源/回滚链通过。文件108/108行38/38分支，行分母+4/分支不变；相对旧覆盖改善含上项新行为1边、本项布局映射4边。无Migration/API/权限/算法/依赖变，兼容0049无升级；完整15链coverage/性能/wheel未跑，下一评审身份来源合同，完整安全/Gate/包待。
 
 - 2026-09-27：0.1.0.dev0/P07-A26新增ActorProof非法用户View参数化拒绝测试，真实缺测分支42→50已覆盖；四其他拒绝坐标有实际异常但统计仍缺。完整1525unit无失败/2跳过，五方法coverage/trace两轮通过。无生产/Migration/API/依赖变，兼容0049无需升级；完整15链coverage/性能/wheel未跑，下一四guard等价布局验证，完整安全/Gate/可用包待。
