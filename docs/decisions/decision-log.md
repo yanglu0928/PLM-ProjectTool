@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-363
+
+- Executed：1501unit无失败/errors0/2既有跳过、14实际链全通过；完整Auth3200/3364行95.125%、837/988分支84.717%，false/exit1，综合92.762%不替代。密码91.146%保持、工厂8/10单列；完整范围/分母不变，旧a2fb0a38…复核不变，新7d6fbfc0…。下一Session HTTP拒绝与错误响应，性能/wheel未跑，正式trust/Gate/可用包待。
+
+- Phase2/P07A16编码前检查见state-coverage；完整unit/14实际链统一覆盖，保原完整Auth与密码范围/90%行AND分支/工厂单列，独立新runtime不覆旧Hash。无生产/Schema/API/算法/依赖变，撤入口无升级。
+- 实测前不推算比例，测试失败/覆盖不足都保exit1；性能/wheel本批不跑，正式trust/CR008 FAIL/Gate/可用包待。
+
 ## DEC-20260927-362
 
 - Executed：实际缺User拒绝，八次真实Service final True→缺Session/time/proof/CSRF/User/live Session/other Admin拒绝或SQL22012+25P02，八次九表全行回滚/原Session保留；实际正常self-disable提交/准确撤销1 Session及原publication回归通过exit0。无生产变化，unit最近1501本批未跑，coverage/14链/wheel/性能未跑，旧82.186%与Hash保留；下一14链完整覆盖，正式trust/Gate/包待。
