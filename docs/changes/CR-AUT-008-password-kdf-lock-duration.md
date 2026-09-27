@@ -34,3 +34,6 @@ P06A02实施前精化：先仅reset新临时密码hash；当前Admin-CSRF短UOW�
 预处理可能引入TOCTOU、资源竞争、重放额外KDF及更多瞬时内存；需bounded资源策略与实际20并发测量，不引入缓存秘密、弱KDF、新认证机制或消息队列。正式编码前补完整proof生命周期/来源与两阶段事务边界设计及编码前检查。只选最小模块内调整，不顺改其他管理命令；如实保留仍未达标的结果。
 
 预期无新Migration/API/依赖，保0049与原历史；回滚撤优化保持旧串行行为及已知性能FAIL，不回写密码或复活会话。实际覆盖当前普通/受限/自reset/唯一Admin/disabled、同不同Key竞争、KDF异常/非bool、预计算期间真实撤权/到期/版本变化、历史密码匹配、写后/precommit/丢确认，以及Windows完整HTTP与20并发正确性/P95。正式供给/TLS/实际浏览器/持续负载/三平台/包/Gate另验。本CR未关闭。
+# 2026-09-27 补充：AUT-04-A12-P06-A04-P02-A01
+
+仅新增 caller UOW 已完成收据只读提示，标量投影、无 autoflush/行锁/提交，strict scope/fingerprint，未知固定拒绝；不代表授权，不替代原 reserve/complete、first 历史来源、当前身份及末核。编码前风险与验证见对应 progress/DEC-328。1405 tests/真实PG只读可见性/锁竞争/九表无写及旧原子/发布回归、开发wheel通过；密码 Service 尚未调用，历史 KDF 锁段与性能 FAIL 保留。兼容0049无Migration/API/依赖，回滚撤未接入方法保历史；下一 detached first/Credential 及 Service 编排，CR/Gate 不关闭。

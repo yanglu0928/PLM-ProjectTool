@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from sqlalchemy import func, select, update
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from plm_assistant.modules.platform.application.idempotency import (
@@ -14,6 +15,45 @@ from plm_assistant.modules.platform.infrastructure.idempotency_orm import Idempo
 
 class SqlAlchemyIdempotencyReceipts:
     """Reserve and complete inside the caller's business/Audit transaction."""
+
+    def lookup_completed(self, uow: SqlAlchemyUnitOfWork, *, scope: IdempotencyScope,
+                         request_fingerprint: bytes) -> IdempotencyResult | None:
+        """Read a hint only; caller must recheck authority and reserve atomically.
+
+        A missing receipt is not permission to write. No row lock, autoflush or
+        commit is performed; scalar projection avoids cached ORM entity state.
+        """
+        if (type(scope) is not IdempotencyScope or type(request_fingerprint) is not bytes
+                or len(request_fingerprint) != 32):
+            raise IdempotencyError("VALIDATION_FAILED")
+        scope.__post_init__()
+        try:
+            row = uow.session.execute(
+                select(
+                    IdempotencyReceiptRow.state,
+                    IdempotencyReceiptRow.request_fingerprint,
+                    IdempotencyReceiptRow.result_ref_type,
+                    IdempotencyReceiptRow.result_ref_id,
+                    IdempotencyReceiptRow.result_status,
+                ).where(
+                    IdempotencyReceiptRow.actor_id == scope.actor_id,
+                    IdempotencyReceiptRow.project_id == scope.project_id,
+                    IdempotencyReceiptRow.operation == scope.operation,
+                    IdempotencyReceiptRow.key_digest == scope.key_digest,
+                ).execution_options(autoflush=False)
+            ).one_or_none()
+        except SQLAlchemyError:
+            raise IdempotencyError("SYSTEM_UNAVAILABLE") from None
+        if row is None:
+            return None
+        if row[0] != "COMPLETED" or type(row[1]) is not bytes or len(row[1]) != 32:
+            raise IdempotencyError("SYSTEM_UNAVAILABLE")
+        if row[1] != request_fingerprint:
+            raise IdempotencyError("CONFLICT_IDEMPOTENCY")
+        try:
+            return IdempotencyResult(row[2], row[3], row[4])
+        except IdempotencyError:
+            raise IdempotencyError("SYSTEM_UNAVAILABLE") from None
 
     def reserve(self, uow: SqlAlchemyUnitOfWork, *, scope: IdempotencyScope,
                 request_fingerprint: bytes) -> IdempotencyResult | None:

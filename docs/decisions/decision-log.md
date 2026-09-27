@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-328
+
+- Executed：1405 tests 无失败/2既有跳过，真实PG只读/未提交/回滚/原结果/锁定行20次查询/四scope/fingerprint/PENDING拒绝与九表无写通过；原reset prehash/原子真实change-history/发布通过，wheel750252通过。Service尚未调用，性能未重跑且上轮FAIL保留，下一历史source detached；无Migration/API/依赖，CR/Gate未关闭。
+
+- 编码前检查见 AUT-04-A12-P06-A04-P02-A01 progress。既有平台 receipt 增加只读已完成提示，标量 SELECT/no autoflush/no lock/no commit；strict scope/fingerprint 和静态失败，不作为权限或写授权。原 reserve/complete 不变，无 Migration/API/依赖；真实验证后记录，不关闭性能 CR/Gate。
+
 ## DEC-20260927-327
 
 - Executed：8/16/20-slot实验新写全20成功/SQL空；reset1110.913/1064.465/957.033ms，change2142.248/1674.781/1446.926ms，process峰值工作集1208188928/2281807872/2818846720 bytes，活动峰值等于上限且slot等待0。生产4不改，不能靠单轮reset达标关闭整体性能。原4历史reset20成功6014.758ms/change14成功6个actual global55P03/7908.389ms，九表不写/first保持；所有运行末exit1 FAIL，旧状态/发布通过。下一readonly receipt hint/source detached历史KDF及最终完整重验；无生产变更，unit1400/wheel沿用上一轮未重跑。
