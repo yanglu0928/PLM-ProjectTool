@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：0.1.0.dev0/AUT05A02新增中文/login与导航，实际SessionClient接线、显式登录/查询/续期/退出、pending防重/密码清理/只读重登与受限提示。最终前端63/63/typecheck/build PASS，36modules/JS100160/CSS4124含页面及client；修复Vue props代理私有字段兼容，初失败留档。无后端/Schema/API/依赖变，兼容0049无升级；成功fetch模拟，真实浏览器/后端/coverage/性能/wheel未验，改密/代理/正式trust/Gate/包待，下一A03同源前置。
+
 - 2026-09-27：0.1.0.dev0/AUT05A01新增Web Session客户端四原接口、同源Cookie/私有CSRF、受限/DTO、安全错误、互斥/超时/无重试、renew同User及原Key logout。前端52/52/typecheck/build通过，43新模拟fetch用例；未接页面/build未包含client，非真实浏览器/后端验收。无Migration/后端/API/依赖变，兼容0049无数据升级；GET无CSRF刷新写需重登。后端/coverage/性能/wheel未重跑，下一登录页面，CR008 FAIL/正式trust/Gate/包待。
 
 - 2026-09-27：0.1.0.dev0/P08A01新增固定KDF双计算调度诊断，四批20请求/40真实KDF与20新hash真核验，peak16/end0；并行P951275.076/1262.386ms仍超1秒，不接生产。诊断exit0不代表HTTP达标，CR008 OPEN/FAIL；无生产/API/Schema/权限/依赖变，兼容0049无升级。unit/coverage/HTTP/wheel未重跑，下一同PhaseWeb登录/会话客户端合同前置，完整包/Gate待。

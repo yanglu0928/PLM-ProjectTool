@@ -27,7 +27,8 @@ describe("AppShell", () => {
     await flushPromises();
 
     expect(wrapper.get("h1").text()).toContain("项目实施信息");
-    expect(wrapper.findAll("nav a")).toHaveLength(1);
+    expect(wrapper.findAll("nav a")).toHaveLength(2);
+    expect(wrapper.get('nav a[href="/login"]').text()).toBe("账户与登录");
     expect(wrapper.text()).not.toContain("客户项目列表");
   });
 
@@ -42,5 +43,18 @@ describe("AppShell", () => {
 
     expect(wrapper.get("h1").text()).toBe("没有找到这个页面");
     expect(wrapper.text()).not.toContain("/not-implemented");
+  });
+
+  it("mounts the login page through the real route without automatic login", async () => {
+    const fetcher = vi.fn().mockResolvedValue(readyResponse());
+    vi.stubGlobal("fetch", fetcher);
+    const router = createAppRouter(createMemoryHistory());
+    await router.push("/login");
+    await router.isReady();
+    const wrapper = mount(AppShell, { global: { plugins: [router] } });
+    await flushPromises();
+    expect(wrapper.get("h1").text()).toBe("登录项目实施辅助工具");
+    expect(fetcher.mock.calls.every(([url]) => url === "/health/ready")).toBe(true);
+    expect(wrapper.get('input[name="password"]').attributes("type")).toBe("password");
   });
 });

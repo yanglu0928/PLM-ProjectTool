@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-392
+
+- Executed：/login中文页面/导航接实际Client，新增11用例，最终63/63/typecheck/build通过，36modules/JS100160/CSS4124；初轮5Vue代理private-brand失败修复toRaw后完整复验，保留诊断。无后端/API/Schema/依赖变化；真实浏览器/服务器/改密未验，下一A03同源Origin/Host代理前置，CR008 FAIL/Gate/包待。
+
+- 2026-09-27 Phase2/AUT05A02实施前：Auth中文登录/当前身份页面，只接原Client及导航，不顺改后端/Origin/API。编码前/风险/回滚见login-page progress。
+- 单提交、操作开始清密码、卸载丢弃响应；显式查询恢复只读提示重登、受限身份提示改密尚待。Client不作为授权，失败不冒充服务器退出。无Migration/依赖，实际浏览器/后端链另验。
+
 ## DEC-20260927-391
 
 - Executed：新增43客户端契约用例，完整前端52/52/typecheck/build通过；Cookie同源、CSRF私有内存、受限/DTO、renew同User、原Key logout、错误/超时/互斥/无重试。GET只读恢复需重登写；尚未接页面且build未包含client，不是实际服务器/浏览器PASS。无后端/Migration/API/依赖变化，下一AUT05A02页面，性能/正式trust/Gate/包待。

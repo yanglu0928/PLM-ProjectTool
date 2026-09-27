@@ -7,6 +7,7 @@ import {
 
 import HomeView from "@/app/views/HomeView.vue";
 import NotFoundView from "@/app/views/NotFoundView.vue";
+import LoginView from "@/modules/auth/views/LoginView.vue";
 
 export function createAppRouter(
   history: RouterHistory = createWebHistory(),
@@ -18,6 +19,11 @@ export function createAppRouter(
         path: "/",
         name: "home",
         component: HomeView,
+      },
+      {
+        path: "/login",
+        name: "login",
+        component: LoginView,
       },
       {
         path: "/:pathMatch(.*)*",
