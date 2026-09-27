@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：0.1.0.dev0/P07-A17新增7参数化Session HTTP依赖/异常/投影错配/logout非True安全响应方法，固定error+trace/无Set-Cookie/Token/私有详情，renew前拒绝无rotate，全量1508unit/contract无失败/2跳过。仅Port合同不冒充PG/TLS；无生产/Migration/API规则/权限/算法/依赖变化，兼容0049无升级。coverage/14PG/wheel/性能未跑，原84.717%与Hash保持，下一User read防御；正式安全/性能FAIL/trust/Gate/可用包待。
+
 - 2026-09-27：0.1.0.dev0/P07-A16完整1501unit无失败/2跳过、14实际PG/Windows/Vault链全通过；完整Auth行95.125%/分支84.717%，90%分支仍未达/exit1，密码91.146%保持/工厂另列。完整范围/分母/旧raw不变，新Hash7d6fbfc0…。无生产/Migration/API/权限/算法/依赖变化，兼容0049无升级；性能/wheel未跑。下一SessionHTTP拒绝与安全错误，完整安全/性能FAIL/正式trust/Gate/可用包待。
 
 - 2026-09-27：0.1.0.dev0/P07-A15-P02实际self-disable八final True后source/time/CSRF/User/live Session/other Admin/SQL22012+25P02固定拒绝，九表全行回滚/旧Session保留；真实正常提交/准确撤销1 Session、缺User拒绝及原publication回归通过exit0。输入故障/实际SQL明确区分，TEST_ONLY角色/合成License，非生产信任证明。无生产/Migration/API/权限/算法/依赖变化，兼容0049无升级；unit最近1501本批未跑，coverage/wheel/性能未跑，原82.186%与Hash保持。下一14链完整覆盖，安全/性能FAIL/trust/Gate/可用包待。

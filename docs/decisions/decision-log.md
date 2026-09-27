@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-364
+
+- Executed：7新增参数化方法，1508unit/contract无失败/errors0/2既有跳过、exit0；三router八依赖、GET四/renew十一/logout七故障安全响应，固定error+trace、无Set-Cookie/Token/私有详情，renew前拒绝不rotate。仅Port合同不冒充PG/TLS，生产无变，coverage/14PG/wheel/性能未跑，原84.717%与Hash保持；下一独立User read Service，完整安全/Gate/包待。
+
+- Phase2/P07A17编码前检查见session-http-defensive；仅GET/renew/logout依赖/Port异常/投影错配/非True/logout错误固定合同与无Set-Cookie/trace不泄漏；Mock仅HTTP边界，不冒充SQL或Cookie浏览器运行。无生产/Schema/API/机制/依赖变，撤测试无升级。
+- 完整测试本批实际跑，14PG/coverage/wheel/性能未跑，原84.717%/raw/90%保留，不预报覆盖；正式trust/Gate/包待。
+
 ## DEC-20260927-363
 
 - Executed：1501unit无失败/errors0/2既有跳过、14实际链全通过；完整Auth3200/3364行95.125%、837/988分支84.717%，false/exit1，综合92.762%不替代。密码91.146%保持、工厂8/10单列；完整范围/分母不变，旧a2fb0a38…复核不变，新7d6fbfc0…。下一Session HTTP拒绝与错误响应，性能/wheel未跑，正式trust/Gate/可用包待。
