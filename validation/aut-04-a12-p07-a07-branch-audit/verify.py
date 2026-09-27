@@ -12,7 +12,6 @@ import coverage
 
 ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
-RUNTIME = ROOT / '.poc-runtime/auth-security-branch-audit'
 PRODUCTION = ROOT / 'apps/backend/src/plm_assistant/modules/auth/application/password_change.py'
 
 
@@ -24,6 +23,15 @@ def load(name, path):
 
 
 def main():
+    target = ast.parse(PRODUCTION.read_text(encoding='utf-8'))
+    service = next(node for node in target.body if isinstance(node, ast.ClassDef) and node.name == 'PasswordChangeService')
+    method = next(node for node in service.body if isinstance(node, ast.FunctionDef) and node.name == '_change')
+    guard = next(node for node in ast.walk(method) if isinstance(node, ast.If) and
+                 isinstance(node.test, ast.Compare) and ast.unparse(node.test) == 'type(source) is not PasswordHashResult')
+    guard_line, raise_line = guard.lineno, guard.body[0].lineno
+    # Keep the original compact-source evidence intact when validating the expanded source.
+    RUNTIME = ROOT / ('.poc-runtime/auth-security-branch-audit' if guard_line == raise_line
+                      else '.poc-runtime/auth-security-branch-audit-expanded')
     RUNTIME.mkdir(parents=True, exist_ok=True)
     tree = ast.parse((HERE / 'fixture.py').read_text(encoding='utf-8'))
     compact, expanded = [node for node in tree.body if isinstance(node, ast.FunctionDef)]
@@ -102,12 +110,6 @@ def main():
     tests = load('_existing_change_tests', ROOT / 'apps/backend/tests/unit/test_password_change_service.py')
     case_name = 'test_bad_source_or_truthy_verifier_never_reaches_global_lock'
     diagnostics = io.StringIO()
-    target = ast.parse(PRODUCTION.read_text(encoding='utf-8'))
-    service = next(node for node in target.body if isinstance(node, ast.ClassDef) and node.name == 'PasswordChangeService')
-    method = next(node for node in service.body if isinstance(node, ast.FunctionDef) and node.name == '_change')
-    guard = next(node for node in ast.walk(method) if isinstance(node, ast.If) and
-                 isinstance(node.test, ast.Compare) and ast.unparse(node.test) == 'type(source) is not PasswordHashResult')
-    guard_line = guard.lineno
     cov = coverage.Coverage(branch=True, source=[str(PRODUCTION.parent)],
                             data_file=str(RUNTIME / '.coverage-existing'))
     cov.start()
@@ -140,16 +142,18 @@ def main():
     finally:
         sys.settrace(previous)
     assert traced.wasSuccessful() and traced.testsRun == 1
-    exception_count = events.count(('exception', guard_line))
+    exception_count = events.count(('exception', raise_line))
     assert exception_count == 2, ('guard rejection trace count', exception_count)
+    if guard_line != raise_line:
+        assert not missed, ('Expanded guard still missing', missed)
     print('BRANCH_AUDIT ' + json.dumps(dict(python=sys.version.split()[0], coverage=coverage.__version__,
         ast_equal=True, both_inputs_equal=True, layout_missing=layout, retry_layout_missing=retry_layout,
         context_layout_missing=with_layout,
         context_compact_recorded=with_recorded,
-        existing_test=case_name, existing_pass=True, guard_line=guard_line,
+        existing_test=case_name, existing_pass=True, guard_line=guard_line, raise_line=raise_line,
         guard_exception_count=exception_count, guard_missing=missed,
         guard_recorded=recorded), sort_keys=True))
-    print('PASS audit executed; no production/refactoring/exclusion/threshold change; single guard evidence is not full safety or Gate proof')
+    print('PASS audit executed; audit itself does not edit production/exclusions/thresholds; single guard evidence is not full safety or Gate proof')
 
 
 if __name__ == '__main__':

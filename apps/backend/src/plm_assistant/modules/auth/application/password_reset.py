@@ -109,31 +109,40 @@ class PasswordResetService:
                         raise PasswordResetError()
                     prepared_result=self._results.get(preparation,result_id=hint.ref_id)
                     self._result(prepared_result,command,prepared_scope.actor_id)
-                    if prepared_result.result_id!=hint.ref_id:raise PasswordResetError()
+                    if prepared_result.result_id!=hint.ref_id:
+                        raise PasswordResetError()
                     source=self._results.password_source(preparation,result=prepared_result)
-                    if type(source) is not PasswordHashResult:raise PasswordResetError()
+                    if type(source) is not PasswordHashResult:
+                        raise PasswordResetError()
             capacity=self._capacity if self._capacity is not None else _RESET_HASH_SLOTS
-            if capacity.acquire(timeout=5) is not True:raise PasswordResetError()
+            if capacity.acquire(timeout=5) is not True:
+                raise PasswordResetError()
             try:
                 hashed=None
                 with memoryview(secret) as password:
                     if hint is None:
                         hashed=self._hasher.hash_password(password)
-                        if type(hashed) is not PasswordHashResult:raise PasswordResetError()
+                        if type(hashed) is not PasswordHashResult:
+                            raise PasswordResetError()
                     else:
                         matched=self._results.verify_password_source(source=source,password=password)
-                        if matched is False:raise PasswordResetError('CONFLICT_IDEMPOTENCY')
-                        if matched is not True:raise PasswordResetError()
+                        if matched is False:
+                            raise PasswordResetError('CONFLICT_IDEMPOTENCY')
+                        if matched is not True:
+                            raise PasswordResetError()
             finally:
                 capacity.release()
             with self._uow() as tx:
-                if self._access.lock_deployment(tx) is not True:raise PasswordResetError()
+                if self._access.lock_deployment(tx) is not True:
+                    raise PasswordResetError()
                 proof=self._actor(tx,command);actor=proof.user_view.user_id
                 scope=IdempotencyScope.from_key(actor_id=actor,project_id=None,operation=op,key=idempotency_key)
-                if scope!=prepared_scope:raise PasswordResetError('AUTH_ACCESS_DENIED')
+                if scope!=prepared_scope:
+                    raise PasswordResetError('AUTH_ACCESS_DENIED')
                 replay=self._receipts.reserve(tx,scope=scope,request_fingerprint=fingerprint)
                 if replay is not None:
-                    if hint is None:raise _ResetReplayAppeared()
+                    if hint is None:
+                        raise _ResetReplayAppeared()
                     if type(replay) is not IdempotencyResult or replay.ref_type!=op or replay.status_code!=200:
                         raise PasswordResetError()
                     result=self._results.get(tx,result_id=replay.ref_id);self._result(result,command,actor)
@@ -142,10 +151,12 @@ class PasswordResetService:
                     self._results.require_password_source(tx,result=result,source=source)
                     self._final(tx,command,proof,result,changed=False)
                     return result
-                if hint is not None or type(hashed) is not PasswordHashResult:raise PasswordResetError()
+                if hint is not None or type(hashed) is not PasswordHashResult:
+                    raise PasswordResetError()
                 view,oldid,before,count,newid=self._repo.reset(tx,user_id=command.user_id,
                     expected_version=command.expected_version,actor_id=actor,password_hash=hashed)
-                if type(view) is not UserReadView or type(before) is not UserReadView:raise PasswordResetError()
+                if type(view) is not UserReadView or type(before) is not UserReadView:
+                    raise PasswordResetError()
                 view.__post_init__();before.__post_init__()
                 if (view.user_id!=command.user_id or before.user_id!=command.user_id or before.lock_version!=command.expected_version
                     or view.lock_version!=before.lock_version+1 or view.credential_version!=before.credential_version+1

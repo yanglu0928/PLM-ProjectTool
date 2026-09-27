@@ -63,7 +63,8 @@ class PasswordChangeService:
         try:
             if (type(command) is not ChangePassword or not _id(command.trace_id)
                 or any(type(v) is not bytes or len(v)!=32 for v in (command.session_token,command.csrf_token))
-                or type(command.passwords) is not PasswordChangeProof):raise PasswordChangeError('VALIDATION_FAILED')
+                or type(command.passwords) is not PasswordChangeProof):
+                raise PasswordChangeError('VALIDATION_FAILED')
             for secret in (command.passwords.current_password,command.passwords.new_password):
                 if type(secret) is not bytearray or not 1<=len(secret)<=1024 or b'\x00' in secret:
                     raise PasswordChangeError('VALIDATION_FAILED')
@@ -80,62 +81,79 @@ class PasswordChangeService:
                 prepared_result=None;history_sources={}
                 if hint is None:
                     source=self._access.current_password_source(preparation,proof=prepared)
-                    if type(source) is not PasswordHashResult:raise PasswordChangeError()
+                    if type(source) is not PasswordHashResult:
+                        raise PasswordChangeError()
                 else:
                     if type(hint) is not IdempotencyResult or hint.ref_type!=op or hint.status_code!=200:
                         raise PasswordChangeError()
                     prepared_result=self._results.get(preparation,result_id=hint.ref_id)
                     if (type(prepared_result) is not PasswordChangeResult or prepared_result.user_id!=prepared_scope.actor_id
-                        or prepared_result.result_id!=hint.ref_id):raise PasswordChangeError()
+                        or prepared_result.result_id!=hint.ref_id):
+                        raise PasswordChangeError()
                     prepared_result.__post_init__()
                     for role in ('BEFORE','AFTER'):
                         history_sources[role]=self._results.password_source(preparation,result=prepared_result,role=role)
-                        if type(history_sources[role]) is not PasswordHashResult:raise PasswordChangeError()
+                        if type(history_sources[role]) is not PasswordHashResult:
+                            raise PasswordChangeError()
             capacity=self._capacity if self._capacity is not None else _CHANGE_KDF_SLOTS
-            if capacity.acquire(timeout=5) is not True:raise PasswordChangeError()
+            if capacity.acquire(timeout=5) is not True:
+                raise PasswordChangeError()
             try:
                 hashed=None;matched=None
                 if hint is None:
                     with memoryview(command.passwords.current_password) as password:
                         matched=self._access.verify_password_source(source=source,password=password)
-                    if type(matched) is not bool:raise PasswordChangeError()
+                    if type(matched) is not bool:
+                        raise PasswordChangeError()
                     if matched:
                         with memoryview(command.passwords.new_password) as password:hashed=self._hasher.hash_password(password)
-                        if type(hashed) is not PasswordHashResult:raise PasswordChangeError()
+                        if type(hashed) is not PasswordHashResult:
+                            raise PasswordChangeError()
                 else:
                     for role,secret in (('BEFORE',command.passwords.current_password),('AFTER',command.passwords.new_password)):
                         with memoryview(secret) as password:
                             historical_match=self._results.verify_password_source(source=history_sources[role],password=password)
-                        if historical_match is False:raise PasswordChangeError('CONFLICT_IDEMPOTENCY')
-                        if historical_match is not True:raise PasswordChangeError()
+                        if historical_match is False:
+                            raise PasswordChangeError('CONFLICT_IDEMPOTENCY')
+                        if historical_match is not True:
+                            raise PasswordChangeError()
             finally:capacity.release()
             with self._uow() as tx:
-                if self._access.lock_deployment(tx) is not True:raise PasswordChangeError()
+                if self._access.lock_deployment(tx) is not True:
+                    raise PasswordChangeError()
                 proof=self._actor(tx,command);actor=proof.user_view.user_id
                 scope=IdempotencyScope.from_key(actor_id=actor,project_id=None,operation=op,key=idempotency_key)
-                if scope!=prepared_scope:raise PasswordChangeError('AUTH_ACCESS_DENIED')
+                if scope!=prepared_scope:
+                    raise PasswordChangeError('AUTH_ACCESS_DENIED')
                 replay=self._receipts.reserve(tx,scope=scope,request_fingerprint=fingerprint)
                 if replay is not None:
-                    if hint is None:raise _ChangeReplayAppeared()
+                    if hint is None:
+                        raise _ChangeReplayAppeared()
                     if type(replay) is not IdempotencyResult or replay.ref_type!=op or replay.status_code!=200:
                         raise PasswordChangeError()
                     result=self._results.get(tx,result_id=replay.ref_id)
                     if type(result) is not PasswordChangeResult or result.user_id!=actor or result.result_id!=replay.ref_id:
                         raise PasswordChangeError()
                     result.__post_init__()
-                    if replay!=hint or result!=prepared_result:raise PasswordChangeError()
+                    if replay!=hint or result!=prepared_result:
+                        raise PasswordChangeError()
                     for role in ('BEFORE','AFTER'):
                         self._results.require_password_source(tx,result=result,role=role,source=history_sources[role])
-                    if self._actor(tx,command)!=proof:raise PasswordChangeError('AUTH_ACCESS_DENIED')
+                    if self._actor(tx,command)!=proof:
+                        raise PasswordChangeError('AUTH_ACCESS_DENIED')
                     return result
-                if hint is not None:raise PasswordChangeError()
+                if hint is not None:
+                    raise PasswordChangeError()
                 if (proof.credential_id!=prepared.credential_id
                     or proof.user_view.credential_version!=prepared.user_view.credential_version
                     or proof.password_change_required!=prepared.password_change_required):
                     raise PasswordChangeError('AUTH_ACCESS_DENIED')
-                if matched is False:raise PasswordChangeError('AUTH_INVALID_CREDENTIALS')
-                if matched is not True:raise PasswordChangeError()
-                if type(hashed) is not PasswordHashResult:raise PasswordChangeError()
+                if matched is False:
+                    raise PasswordChangeError('AUTH_INVALID_CREDENTIALS')
+                if matched is not True:
+                    raise PasswordChangeError()
+                if type(hashed) is not PasswordHashResult:
+                    raise PasswordChangeError()
                 credential_id,changed_at,count=self._repo.change(tx,proof=proof,password_hash=hashed)
                 if not _id(credential_id) or not _time(changed_at) or type(count) is not int or count<1:
                     raise PasswordChangeError()
@@ -149,7 +167,8 @@ class PasswordChangeService:
                     before.credential_version,before.credential_version+1,before.lock_version,before.lock_version+1,
                     event,command.trace_id,count,changed_at,changed_at)
                 result=self._results.record(tx,draft=draft)
-                if type(result) is not PasswordChangeResult:raise PasswordChangeError()
+                if type(result) is not PasswordChangeResult:
+                    raise PasswordChangeError()
                 result.__post_init__()
                 if any(getattr(result,k)!=getattr(draft,k) for k in draft.__dataclass_fields__ if k!='accepted_at'):
                     raise PasswordChangeError()

@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-351
+
+- Executed：两Service对c004980 AST完全相等；1470unit无失败/2跳过与五实际链全通过，密码1031/1047行98.472%、350/384分支91.146%本范围90%通过/exit0。分母增30行14分支、不删排除，明确排版改善非新增用例；全Auth92.717%/78.239%仍未达，工厂单列。旧Hash保留，新57390683…；guard新84/85异常2次且无该缺边，审计expanded目录独立。无Schema/API/算法/权限/依赖变化，wheel/性能未跑。下一A08完整Auth原实际链纳入与真实缺口，不关闭性能/正式trust/Gate/包。
+
+- Phase2/P07A07P02编码前检查见service-layout；基于局部复现仅两Service guard/raise分行，对c004980 AST等价为硬前置，完整unit/五PG/Windows+原完整范围覆盖，明确新行分母/非新增用例改善；不加排除、不改90%/生产机制/API/Schema/依赖。风险回滚先记，真实缺口与性能/正式trust/Gate/包待。
+
 ## DEC-20260927-350
 
 - Executed：原source类型拒绝用例coverage/trace各通过，guard83异常2次却实际83→75退出、报告列83→162未覆；普通及retry/finally对照无缺口，with最小例compact记录13→12/列13→15缺，AST等价expanded无该guard缺。只证明一个对应问题，不豁免全部缺边；无生产变更，完整unit/PG/coverage/wheel未重跑，原86.757%与旧Hash保留。下一两Service同模式分行/AST等价和完整实际复验，90%/性能/Gate/包待。
