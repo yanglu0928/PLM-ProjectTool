@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-394
+
+- Executed：原真实PG/Vault/Windows工厂2context已走Uvicorn/Vite/httpx，9GET/12POST及原登录/旋转/退出/重放竞争/审计计数全通过，响应无CORS；自有服务终止、库/角色count0与Vault不存在1168额外核查。最终网络exit0/前端63/typecheck/build通过，无真实浏览器/HTTPS/全应用证明；无生产/API/Migration/依赖变化，下一独立浏览器A05，CR008/Gate/包待。
+
+- 2026-09-27/Phase2 AUT05A04实施前：只适配原真实临时PG/Vault Login fixture走Uvicorn/Vite/httpx网络，无mock成功SQL/Service。固定本轮允许的实际Vite Origin及正向localhost映射显式记录，恶意来源保留；仅测试target改自有端口，生产不变。
+- 原default404/登录/会话/旋转/撤销/重放竞争/审计计数与cleanup保持；自有服务必须停止后清临时源，异常安全退出。编码前风险/回滚/验收见network-login进度；无API/Schema/依赖变，真实浏览器/正式trust/Gate/包待。
+
 ## DEC-20260927-393
 
 - Executed：真实Vite/原OriginPolicy网络6请求及合成Cookie/CSRF/Key/body保留、无rewrite/CORS通过exit0；完整前端63/typecheck/build通过。首次Windows ESM路径与默认Vite CORS失败记录后修复，显式cors:false仅开发收紧，不改后端。无PG登录/真实浏览器证明，下一A04真实工厂网络链；无Migration/API/依赖，Gate/包待。

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：0.1.0.dev0/AUT05A04真实PG/Vault/Windows登录工厂经Uvicorn/Vite21HTTP（9GET/12POST）原登录/Session/旋转/退出/重放竞争及审计计数通过，额外自有库/角色count0与Vault缺项1168。前端63/typecheck/build通过；验证后临时合成源已删除可重新生成，无生产变化。无后端/API/Schema/依赖变，兼容0049无升级；httpxCookie不是实际浏览器，browser/TLS/后端unit/coverage/性能/wheel未跑，下一A05浏览器，CR008 FAIL/Gate/包待。
+
 - 2026-09-27：0.1.0.dev0/AUT05A03新增Vite固定/api/v1→loopback8000开发代理，保Host/Origin/body/Cookie/CSRF/Key、无rewrite，发现默认开发CORS后显式关闭。真实Vite/原OriginPolicy网络六请求及前端63/typecheck/build通过；418探针非登录成功，实际PG/browser/后端unit/coverage/性能/wheel未跑。无API/后端/Schema/依赖变，兼容0049无DB升级；须显式配置浏览器Origin，下一A04真实工厂网络链，CR008 FAIL/Gate/包待。
 
 - 2026-09-27：0.1.0.dev0/AUT05A02新增中文/login与导航，实际SessionClient接线、显式登录/查询/续期/退出、pending防重/密码清理/只读重登与受限提示。最终前端63/63/typecheck/build PASS，36modules/JS100160/CSS4124含页面及client；修复Vue props代理私有字段兼容，初失败留档。无后端/Schema/API/依赖变，兼容0049无升级；成功fetch模拟，真实浏览器/后端/coverage/性能/wheel未验，改密/代理/正式trust/Gate/包待，下一A03同源前置。
