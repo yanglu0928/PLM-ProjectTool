@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-339
+
+- Executed：1433unit无失败/2既有跳过，真实reset-history+atomic/change-history+atomic/Windowsreset/Windowschange四入口全部通过；密码968/1017行95.182%、282/370分支76.216%，全Auth3056/3334行91.662%、705/974分支72.382%，工厂362/369行8/10分支单列。综合90.123%不抵消branch未达，exit1未关闭安全Gate；A01原Hash未覆盖，A02另目录/Hash与21全文件报告。无生产/Schema/API/依赖变更，wheel未跑，性能FAIL保持；下一按实际缺口补HTTP及Service异常防御。
+
+- Phase2/AUT-04-A12-P07-A02编码前检查与风险回滚见integration-coverage。保持A01基线及全21文件/Auth/工厂范围，同一插桩执行1433unit与真实PG reset/change history/atomic和Windows HTTP；结果另目录，不覆历史。固定输出失败入口/类型，未达90保持exit1，无生产/Schema/API/算法/依赖变更。性能CR008 FAIL与Gate缺项不变。
+
 ## DEC-20260927-338
 
 - Executed：1433 tests无失败/2既有跳过，新增3项scrypt边界/后端错误，49/49行/12/12分支；密码21文件791/1017行77.778%与204/370分支55.135%，全Auth2738/3334行82.124%与576/974分支59.138%，Windows工厂355/369行7/10分支单列。真实coverage exit1未达90，不伪报PASS；中途1个verify固定字符串测试期望已修并全量重测。完整分母/原JSONHash/缺口见test-report。无生产/Schema/API/依赖变更，wheel未重跑；下一真实PG/Windows coverage补证，性能CR008 FAIL保持。

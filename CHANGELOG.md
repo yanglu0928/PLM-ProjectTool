@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：0.1.0.dev0/AUT-04-A12-P07-A02扩展覆盖测量到四组真实PG reset/change历史与原子写、Windows HTTP，1433unit无失败/2既有跳过，四入口全部通过。密码行95.182%/分支76.216%，全Auth91.662%/72.382%，工厂单列；综合90.123%不能抵消分支不足，exit1保留安全缺口。原基线JSON/Hash不覆盖，新增独立报告；无生产源码/Migration/API/依赖/升级，兼容0049，wheel未跑。下一HTTP防御异常补测，性能CR008 FAIL与正式可用包/Gate未完成。
+
 - 2026-09-27：0.1.0.dev0/AUT-04-A12-P07-A01新增真实unit/contract安全coverage测量入口与3项scrypt无效输入/损坏Hash/后端异常测试，1433无失败/2既有跳过；scrypt行/分支100%，密码全21文件行77.778%/分支55.135%、全Auth82.124%/59.138%，工厂单列。exit1正确保留90%覆盖缺口，不用单文件通过关闭Gate；下一真实PG/Windows coverage。无生产源码/Migration/API/依赖/升级，兼容0049，wheel未重跑；性能CR008仍FAIL，完整包未完成。
 
 - 2026-09-27：0.1.0.dev0/AUT-04-A12-P06-A04-P03-A06迁移旧成本剖析到真实Bootstrap与原共享预算委托计时，独立16五组各20成功/SQL0/history九表不写/固定计数/peak16-end0-timeout0/原Windows与发布回归通过。P95 GET119.308ms/reset1006.003/change1604.868/history reset842.946/change1627.173，peak约2.13GiB；整体exit1性能FAIL，默认4不变，不无限调slots。无生产代码/Migration/API/依赖/升级，兼容0049，unit/wheel本轮未重跑；下一安全覆盖率基线，CR/Gate与可用包仍待。
