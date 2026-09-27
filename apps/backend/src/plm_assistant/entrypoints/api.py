@@ -44,6 +44,7 @@ def create_app(
     job_detail_router: APIRouter | None = None,
     job_list_router: APIRouter | None = None,
     job_cancel_router: APIRouter | None = None,
+    job_retry_router: APIRouter | None = None,
     project_create_router: APIRouter | None = None,
     project_patch_router: APIRouter | None = None,
     project_archive_router: APIRouter | None = None,
@@ -133,6 +134,8 @@ def create_app(
         app.include_router(job_list_router)
     if job_cancel_router is not None:
         app.include_router(job_cancel_router)
+    if job_retry_router is not None:
+        app.include_router(job_retry_router)
     if project_create_router is not None:
         app.include_router(project_create_router)
     if project_patch_router is not None:

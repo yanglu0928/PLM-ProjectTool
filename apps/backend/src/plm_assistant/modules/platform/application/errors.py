@@ -13,6 +13,7 @@ class ErrorSpec:
 # The common codes and HTTP meanings come from the frozen API-01 contract.
 # REQUEST_METHOD_NOT_ALLOWED is an additive code for the framework's 405.
 COMMON_ERRORS: dict[str, ErrorSpec] = {
+    'JOB_NOT_RETRYABLE': ErrorSpec('JOB_NOT_RETRYABLE',409,'此任务不允许重试。'),
     'AUDIT_EXPORT_SCOPE_INVALID': ErrorSpec('AUDIT_EXPORT_SCOPE_INVALID',422,'导出范围或用途不允许。'),
     "REQUEST_MALFORMED": ErrorSpec("REQUEST_MALFORMED", 400, "请求格式不正确。"),
     "REQUEST_METHOD_NOT_ALLOWED": ErrorSpec(

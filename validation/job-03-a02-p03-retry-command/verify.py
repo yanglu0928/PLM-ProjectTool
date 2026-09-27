@@ -17,7 +17,7 @@ spec=spec_from_file_location('_retry_command_source',Path(__file__).resolve().pa
 sources=module_from_spec(spec);spec.loader.exec_module(sources)
 worker=sources.worker
 
-def observe(v,accepted,c):
+def observe(v,accepted,c,*,observe_http=None):
     sources.observe(v,accepted,c)
     db=v['db']; a=worker.fixture.a
     source=AuditUserRetrySourceReader(repository=v['repo'],jobs=AuditUserRetryJobSources(queue=v['queue'],
@@ -95,6 +95,7 @@ def observe(v,accepted,c):
     before=snapshot();assert service.retry(command,idempotency_key=key)==first;assert snapshot()==before
     assert db.execute('SELECT * FROM plm.job_jobs WHERE job_id=%s',(accepted.job_id,)).fetchone()==original
     # Different key explicitly means a second generation; fixture keeps it unclaimed.
+    if observe_http is not None:observe_http(v,service,command,first,key)
     second=service.retry(command,idempotency_key=str(uuid4()))
     assert second.new_job_id!=first.new_job_id and second.source_job_id==first.source_job_id
     db.execute("UPDATE plm.job_jobs SET available_at=statement_timestamp()+interval '1 year' WHERE job_id=%s",(second.new_job_id,))

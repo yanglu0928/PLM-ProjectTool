@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260927-284
+
+- Executed：双Scope真实HTTP新Job→Worker文件成功→GET当前与原PENDINGv0重放/十五表拒绝不写通过；用当前新Job ETag/新Key明确验证JOB_NOT_RETRYABLE，不误以幂等/版本冲突代替。5+5新测试/1239后端无失败（2跳过）及wheel681969；默认/Windows未挂、Doc unsupported只unit。下一运行与metadata。
+
+- Phase2/JOB-03-A02-P04，2026-09-27；CR-JOB-006/API-03/0045/P03前置。可选双路径retry；严格空JSON，客户不得传Scope/Owner/路径。
+- Decision：当前Session-CSRF/License及现安全Job详情Source再显式Owner分派，Audit写UOW全授权；已知受权无retry Owner409、隐藏/未知404，不让hint或读权限代替写权限。运行目录补冻结JOB_NOT_RETRYABLE码；安全首次新JobRef/state-v0/时间/链接，不透传内部lineage。
+- Tests/Risk/Rollback：HTTP输入/错误/权限/实际Worker新成功后历史重放；默认和Windows此项未挂。撤可选Router/Adapter回滚保数据历史，公开retryable下一接线验证。
+
 ## DEC-20260927-283
 
 - Executed：真实双Scope第三失败→并发受权新generation→新Worker实际文件成功→首次响应重放，旧终态不变；版本/Session/CSRF/Scope/角色/License及postAudit/lineage/receipt故障十五表回滚。1229后端无失败/2跳过、wheel677500；内部CSRF预期纠正ACCESS_DENIED、P02观察器改当前source零关系保全快照。HTTP/metadata待，不算完整包/Gate。
