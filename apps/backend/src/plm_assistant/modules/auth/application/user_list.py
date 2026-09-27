@@ -54,11 +54,14 @@ class AuthorizedUserListService:
             self._guard.require_valid(trace_id=query.trace_id)
             with self._uow() as tx:
                 now=self._clock()
-                if not _time(now):raise UserReadError()
+                if not _time(now):
+                    raise UserReadError()
                 actor=self._access.authorized_admin(tx,session_token=query.session_token,now=now)
-                if not _id(actor):raise UserReadError('AUTH_ACCESS_DENIED')
+                if not _id(actor):
+                    raise UserReadError('AUTH_ACCESS_DENIED')
                 page=self._repo.list(tx,page_size=query.page_size,before=query.before)
-                if type(page) is not UserListPage:raise UserReadError()
+                if type(page) is not UserListPage:
+                    raise UserReadError()
                 page.__post_init__()
                 if (len(page.items)>query.page_size or page.has_more and len(page.items)!=query.page_size
                     or query.before is not None and any((item.created_at,item.user_id)>=query.before for item in page.items)):

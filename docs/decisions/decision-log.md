@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-383
+
+- Executed：对4e2459e AST相等，1538unit无失败/2跳过、Windows实际列表链通过exit0，文件57/57行18/18分支；相对A32行分母+3/分支不变，改善含A33新增拒绝1边、本次映射3边。新rawc0963741…旧c5cc7625…未变，完整17链coverage/性能/wheel未跑，不推算全Auth。下一A36项目成员名称Auth来源，Gate/包待。
+
+- Phase2/P07A35编码前检查见list-layout；仅三已审计guard等价分行，对原4e2459e AST相等，完整unit/Windows实际列表链与独立文件coverage实跑，保旧raw/90%，布局统计不冒充新用例。
+- 无Migration/API/权限/依赖变，无升级；完整17链coverage/性能/wheel另项，Gate/包待。
+
 ## DEC-20260927-382
 
 - Executed：三方法coverage/trace两轮3/3通过，guard57/59/61异常4/1/1次，实际拒绝到UOW55，原到68统计仍缺；noCommit/事务退出通过，仅三边不泛化其他缺口，无生产变更。完整1538/17链coverage/性能/wheel未跑，下一A35三guard等价分行，Gate/包待。
