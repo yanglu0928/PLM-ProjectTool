@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260927-291
+
+- Executed：3新测试/1276无失败（2既有跳过），实际本账户随机Vault失密/错误口令/防覆盖/恢复原key旧token/清理通过；A05真实PG HTTP和原发布回归/wheel691195通过。正式引用未供给、Windows列表尚未挂，无新Migration/依赖。
+
+- Date/WBS：2026-09-27 / AUT-04-A06，User-list cursor独立user-list-cursor-v1，只读当前Windows账户Vault来源；缺钥/异常必须拒绝，无自动替代。
+- Reason/Impact/Rollback：A05公开列表不能用测试key或借Job key作为生产信任；复用既有交互供给/备份机制，无Schema/新依赖/权限/API。停用新入口回滚保历史。
+- Tests/Risks：实际随机临时Vault引用先确认不存在、失密/错口令/防覆盖/原key恢复旧cipher并自身清理；正式引用不供给，不把本账户测试当目标运行账户/三平台/完整包PASS。
+
 ## DEC-20260927-290
 
 - Executed：3cursor+5Contract/1273无失败（2既有跳过）；实际PG加密完整多页/七同timestamp UUID稳定、跨真实Session页size/篡改/撤权限License拒绝五表无写，旧Windows详情与发布回归/wheel690520通过。公开列表可选/default404，Windows来源/挂载未完；无新Schema/依赖/角色。

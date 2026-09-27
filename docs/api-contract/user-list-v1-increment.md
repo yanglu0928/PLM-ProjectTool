@@ -1,5 +1,7 @@
 # User列表运行Contract
 
+A06（2026-09-27）：Windows当前账户只读独立user-list-cursor-v1入口已验，无运行时创建/明文fallback；随机非正式临时Vault失密/错口令/防覆盖/恢复原key旧cipher与清理实际通过，1276无失败/2既有跳过。正式引用未供给，列表尚未挂；下一装配新增必需KeyRef，须先按原交互工具独立供给备份，不能把测试来源当正式信任。
+
 2026-09-27 / AUT-04-A05，冻结API-02 AUTH_USER_LIST/64cdf09保留。可选GET `/api/v1/admin/users`，default404/Windows尚未挂。
 
 - 当前合法Session Cookie与可信Host、同UOW ENABLED DeploymentAdmin/License每页重新核；读取不续Session/不写Audit/receipt。DISABLED目标也可见，不新增管理权限。Session未知/撤销401，当前非Admin404，Host/License403，错误query/cursor400、非法页size422，未知源503 SYSTEM_UNAVAILABLE。

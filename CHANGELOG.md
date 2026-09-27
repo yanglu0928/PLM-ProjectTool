@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/AUT-04-A06新增Windows当前账户独立user-list-cursor-v1只读来源/缺失静态拒绝/无自动替代；3新测试/1276无失败（2既有跳过）、实际临时Vault失密/错口令/防覆盖/原key恢复旧token与自身清理、A05真HTTP及发布回归/wheel691195通过。无Migration/API挂载/新依赖/角色/升级动作，0045兼容；正式引用未供给，撤入口回滚保历史。下一列表装配将必需此独立Key，需交互供给/备份；正式账户/其他平台/性能/用户写/完整包/Gate待。
+
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A05新增独立加密User-list cursor与可选冻结列表GET、安全UserView/实时权限/严格query/no-store；3cursor+5Contract/1273无失败（2既有跳过）、真实PG完整稳定加密多页/撤权限/跨会话页size篡改拒绝五表无写、旧Windows详情与发布回归/wheel690520通过。无Migration/新依赖/角色/Breaking/升级动作，0045兼容；撤router回滚保历史。默认404/Windows未挂，独立Key来源与正式供给/索引性能/三平台/用户写/完整管理面/包/Gate待，下一Windows KeyRef来源及恢复。
 
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A04新增当前Admin安全User列表内部稳定keyset与严格typedPage/n+1界限，含停用目标/无Credential查询/无写；6新unit/1265无失败（2既有跳过）、真实七同时间UUID分页无重漏/空末页/撤权五表无写与旧Windows详情发布回归、开发wheel687737通过。无Migration/公开API/依赖/角色/升级动作，0045兼容、撤调用回滚保历史。公开游标/HTTP/Windows来源/索引性能/完整管理面/三平台/完整包/Gate待，下一可选User列表HTTP与加密cursor。
