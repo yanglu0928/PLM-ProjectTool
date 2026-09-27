@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-311
+
+- Executed：1357 tests无失败（2既有跳过）；真实空/有数据0047-48往返十二旧表及ORM一致、前后Credential/User/self Audit/time/count2含expired/未撤销及must-change=true源拒绝、first写后回滚/历史immutable/非空down保head48；四旧Schema/Windows受限Session/原发布回归及wheel726009通过。首轮新ORM表登记遗漏修复保历史严格断言，见progress。Schema TEST_ONLY非原子换密或当前密码授权证明。
+
+- A12P03A02 precode见progress；CR-AUT007内0048/ORM first13字段，精确前后Credential/User/Audit/Session时间与撤销计数source，immutable及非空down拒绝。原0001～0047保留，无权限/API/依赖或生产迁移；升级备份停写，撤入口保历史。真实空/有数据往返及源矩阵待验，不把Schema当原子改密PASS。
+
 ## DEC-20260927-310
 
 - Executed：9新增unit/1357 tests无失败（2既有跳过），严格immutable first/最小公开响应/两密码独立匹配与冲突/非bool异常/全部缓冲擦除通过，实际Scrypt内存两凭据及交换/重复旧/UTF8空格差异通过；wheel723773。无本轮PG/HTTP运行，内存source非持久来源/原子改密证明，下一Schema A02。

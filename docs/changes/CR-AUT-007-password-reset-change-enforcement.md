@@ -2,6 +2,8 @@
 
 日期2026-09-27；版本0.1.0.dev0；状态RESTRICTED_SESSION_PROJECTION_VERIFIED_PASSWORD_FLOW_PENDING。
 
+P03A02进展：新增0048/ORM thirteen-field改密first、前后Credential/User/self Audit/time/撤销Session计数源与历史保护；空有数据升降往返/ORM/坏源及must-change=true拒绝/回滚/非空down实际验证通过，1357 tests无失败（2既有跳过）、四旧Schema/Windows受限投影/原发布回归通过。0001～0047保留，无生产迁移或改密公开入口；Application/真实密码来源及原子幂等仍待，见Schema增量及P03A02progress。
+
 P03A01进展：严格不可变change first DTO和两项密码source proof已通过9新增unit/1357总测试（2既有跳过）及真实内存Scrypt匹配/差异验证；只公开credential_version，无快速摘要/明文持久化或新Key。当前未有first Schema/真实Repository/原子change服务，故CR整体不关闭；见P03A01progress。下一Schema/来源验证，完整Scope不缩成纯DTO。
 
 P02当前状态：Windows真实Token绑定currentFact投影接login/session GET/renew；受限返回password_change_required=true、NONE和空项目，不查询项目reader；旧Token/错User拒绝，生产精确源失败503不回退。保留原续期功能仅轮换受限身份，不能解除改密限制或生成普通业务权限（DEC309补充）；能力规则同步SESSION_RENEW白名单。完整改密/reset路径仍待。
