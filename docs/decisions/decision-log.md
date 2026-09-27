@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-340
+
+- Executed：8个新HTTP防御参数化方法专门测试通过，1441unit无失败/2跳过、四真实PG/Windows入口通过。两个API行/branch100%，同一密码21文件982/1017行96.559%与293/370分支79.189%，全Auth92.082%/73.511%，工厂单列；exit1保留整体90%缺口，安全/性能/Gate未关闭。没有生产源码/Schema/API/依赖变化，原Hash保留，wheel未跑；下一Service可信Port违约与擦除测试，不用mock替代真实PG。
+
+- Phase2/AUT-04-A12-P07-A03编码前检查见http-defensive-tests。按A02实际缺口测HTTP缺依赖/不可信principal-result/postcommit异常与secret擦除，测试替身不替代真实PG证据；全量unit+四实际集成覆盖重测、另目录保历史。无生产/Schema/API/权限/算法/依赖变化，性能FAIL与90%门槛/Gate缺项保留。
+
 ## DEC-20260927-339
 
 - Executed：1433unit无失败/2既有跳过，真实reset-history+atomic/change-history+atomic/Windowsreset/Windowschange四入口全部通过；密码968/1017行95.182%、282/370分支76.216%，全Auth3056/3334行91.662%、705/974分支72.382%，工厂362/369行8/10分支单列。综合90.123%不抵消branch未达，exit1未关闭安全Gate；A01原Hash未覆盖，A02另目录/Hash与21全文件报告。无生产/Schema/API/依赖变更，wheel未跑，性能FAIL保持；下一按实际缺口补HTTP及Service异常防御。

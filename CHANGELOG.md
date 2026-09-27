@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：0.1.0.dev0/AUT-04-A12-P07-A03新增8个HTTP异常防御参数化测试及独立全量覆盖入口；1441unit无失败/2既有跳过与四实际PG/Windows场景通过。身份/result违约固定拒绝、写后secret擦除、未知Session不猜测清Cookie，两个密码API行/分支100%；全密码分支79.189%仍未达90，安全验收exit1/性能FAIL保留。无生产源码/Migration/API/权限/算法/依赖变化，兼容0049无生产升级，wheel未跑，原报告/Hash保留；下一Service违约防御，可用包/Gate未完成。
+
 - 2026-09-27：0.1.0.dev0/AUT-04-A12-P07-A02扩展覆盖测量到四组真实PG reset/change历史与原子写、Windows HTTP，1433unit无失败/2既有跳过，四入口全部通过。密码行95.182%/分支76.216%，全Auth91.662%/72.382%，工厂单列；综合90.123%不能抵消分支不足，exit1保留安全缺口。原基线JSON/Hash不覆盖，新增独立报告；无生产源码/Migration/API/依赖/升级，兼容0049，wheel未跑。下一HTTP防御异常补测，性能CR008 FAIL与正式可用包/Gate未完成。
 
 - 2026-09-27：0.1.0.dev0/AUT-04-A12-P07-A01新增真实unit/contract安全coverage测量入口与3项scrypt无效输入/损坏Hash/后端异常测试，1433无失败/2既有跳过；scrypt行/分支100%，密码全21文件行77.778%/分支55.135%、全Auth82.124%/59.138%，工厂单列。exit1正确保留90%覆盖缺口，不用单文件通过关闭Gate；下一真实PG/Windows coverage。无生产源码/Migration/API/依赖/升级，兼容0049，wheel未重跑；性能CR008仍FAIL，完整包未完成。
