@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-350
+
+- Executed：原source类型拒绝用例coverage/trace各通过，guard83异常2次却实际83→75退出、报告列83→162未覆；普通及retry/finally对照无缺口，with最小例compact记录13→12/列13→15缺，AST等价expanded无该guard缺。只证明一个对应问题，不豁免全部缺边；无生产变更，完整unit/PG/coverage/wheel未重跑，原86.757%与旧Hash保留。下一两Service同模式分行/AST等价和完整实际复验，90%/性能/Gate/包待。
+
+- Phase2/P07A07P01编码前检查见branch-audit；现有拒绝用例独立coverage/line-exception trace与AST等价compact-expanded最小复现，不改生产或测量排除，不以一个复现替全部缺口豁免。安全坐标计数、独立runtime保旧Hash；风险回滚先记，90%/性能/Gate/可用包待。
+
 ## DEC-20260927-349
 
 - Executed：1470完整unit无失败/2既有跳过，原四链+实际final链全通过；密码1007/1017行99.017%、321/370分支86.757%，全Auth92.831%/76.386%，工厂362/369行8/10分支单列，exit1为门槛未达。新Hashd45e9dd3…及旧JSON/Hash保留，无生产变更/wheel性能未跑。下一A07逐边审计对应现有用例和真实缺口，不无证认定不可达/工具误差，安全/性能/Gate/包待。
