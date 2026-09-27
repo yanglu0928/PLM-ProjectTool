@@ -1,5 +1,7 @@
 # Job详情运行Contract增量
 
+JOB-01-A04-P04（2026-09-27）：Document Parse Owner已注册Windows两个显式platform运行组合，实际当前Session/原source/成功元数据Port；原Audit不变，default/login仍404。真实Factory/当前权限双Scope逻辑成功ref及实际缺信任源失败关闭已验，正向信任与Parser历史测试合成；不代表Phase3 Parser实际执行或生产发行。
+
 JOB-01-A04-P03（2026-09-27）：增加兼容的逻辑结果类型`DOCUMENT_PARSE`，id是经Document owned原源核验的`parse_record_id`，不是文档版本或私有ResultRef物理位置。SUCCEEDED要求唯一成功ParseRecord、精确原Job/Version/Scope、对应不可变ResultRef/hash/时间、已核提交来源与当前授权；缺失/歧义拒绝503，不返回猜测结果。原AUDIT_EXPORT和null不变，无新增路径/权限/Schema；此只读证明不代表Parser执行/实际结果字节完整性/质量验收。运行组合尚未注册Document Owner。
 
 JOB-02-A03（2026-09-27）首次版本前置已补：0044 append-only Audit取消版本快照，新JobId首次请求在原UOW保存实际lock_version；Worker确认推进后重放仍原state+原version。旧收据无快照保None，未来HTTP必须失败关闭，不能猜强ETag。冻结GET JobView不改，项目取消HTTP尚未挂载，Admin取消不自动新增；无本轮Breaking/权限变化，生产升级需0044备份维护门禁。

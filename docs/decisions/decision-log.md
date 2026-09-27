@@ -1,5 +1,10 @@
 # 自主决策记录
 
+## DEC-20260927-274
+
+- Phase2/P04仅Windows两显式platform注册Document Parse Job Owner、实际来源/结果/原Audit proof；原许可/当前权限、Audit Owner及default/login关闭保持。无Schema/API路径/依赖/角色改变。
+- 先成功授权HTTP，再实际Factory与构造故障/真实正式信任不可用验证。Parser历史合成不冒充Worker/字节/质量，Document取消/重试不在本项注册。回滚撤registry及imports保历史。
+
 ## DEC-20260927-273
 
 - P03成功结果：依据已存在0028 ParseRecord/ResultRef，Document owned Port精确核唯一成功记录、不可变result metadata/hash、原source及当前JobFacts时间/scope/job/version。公开仅DOCUMENT_PARSE逻辑parse_record_id，兼容原result类型；不得猜文档版本为结果、直接查Jobs表或把合成历史当实际Parser执行。

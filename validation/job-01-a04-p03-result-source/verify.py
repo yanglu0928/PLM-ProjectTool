@@ -15,7 +15,7 @@ spec = spec_from_file_location('_result_source_commits', Path(__file__).resolve(
 base = module_from_spec(spec); spec.loader.exec_module(base)
 
 
-def observe(v, global_result):
+def observe(v, global_result, *, observe_success=None):
     queue = base.ParseJobQueue(base.SqlAlchemyParseJobQueueRepository())
     sources = base.DocumentParseSourceReader(repository=base.SqlAlchemyDocumentParseSources(),
         audit_sources=base.UploadCommitAuditSources(repository=base.SqlAlchemyUploadCommitAuditSources()))
@@ -51,6 +51,7 @@ def observe(v, global_result):
                     except JobReadError: pass
                     else: raise AssertionError('Incorrect successful source accepted')
             assert snapshot() == before
+        if observe_success is not None: observe_success(v, global_result)
         # Schema permits another successful profile attempt; reader must refuse ambiguity.
         seed(global_result, 2)
         before = snapshot()

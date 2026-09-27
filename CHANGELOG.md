@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/JOB-01-A04-P04将Document Parse Job只读Owner接两Windows显式platform，default/login404、原Audit保留。1195后端无失败/2既有跳过，真实Session双Scope成功metadata经HTTP/两Factory逻辑ref/ETag/no-store、权限拒绝十五表无写、七新构造故障及实际缺信任源失败关闭，旧Audit Windows/文件发布回归与wheel660575通过。首轮测试Guard异常型不符仅修验证器，无生产fallback。无Migration/API路径/角色/依赖/升级变化（需0044）；撤新registry/import回滚保历史。正向信任与Parser历史合成，非实际Parser/字节/正式发行/完整包/Gate。下一Phase2任务列表，Parser属于Phase3不越Gate。
+
 - 2026-09-27：`0.1.0.dev0`/JOB-01-A04-P03成功ParseRecord/ResultRef owned只读证明及兼容DOCUMENT_PARSE逻辑记录ref，不猜文档版本或物理位置。1195后端无失败/2既有跳过，真实PG双Scope受约束合成历史/错源/重复成功十一表无写、原权限HTTP/File-Version限制/上传来源回归、开发wheel660423通过。无Migration/API路径/角色/依赖/升级变化（需0044），撤新结果Port/Owner分支/type回滚保历史；合成历史非实际Parser/Lease/结果字节/质量证明，成功授权HTTP/运行组合/完整包/Gate待。
 
 - 2026-09-27：`0.1.0.dev0`/JOB-01-A04-P03补真实当前Session/Project/Admin与双Scope原上传的可选GET验证；PM/IM/creator客户/Admin GLOBAL与撤权/跨域/License/真实File-Version限制、HTTP实际ETag/no-store/条件请求拒绝十三表无写通过，原上传/P02回归通过。本轮仅验证文档，无Migration/API/角色/依赖/升级；unit1191/2跳过沿用前轮非本轮重跑，wheel未跑。Credential TEST_ONLY与License/原上传Access合成，成功ParseRecord、运行装配及完整程序包/Gate未完成。

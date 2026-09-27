@@ -23,6 +23,8 @@ from plm_assistant.modules.document.infrastructure.parse_job_source import SqlAl
 from plm_assistant.modules.audit.application.upload_commit_source import UploadCommitAuditSources
 from plm_assistant.modules.audit.infrastructure.upload_commit_source import SqlAlchemyUploadCommitAuditSources
 from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
+from plm_assistant.modules.document.application.parse_job_result import DocumentParseJobResults
+from plm_assistant.modules.document.infrastructure.parse_job_result import SqlAlchemyDocumentParseJobResults
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = spec_from_file_location('_authority_upload_sources', ROOT / 'job-01-a04-p02-document-source' / 'verify.py')
@@ -31,7 +33,7 @@ authspec = spec_from_file_location('_authority_doc_users', ROOT / 'doc-01-a02-do
 auth = module_from_spec(authspec); authspec.loader.exec_module(auth)
 
 
-def observe(v, global_result):
+def observe(v, global_result, *, runtime_observer=None):
     queue = ParseJobQueue(SqlAlchemyParseJobQueueRepository())
     sources = DocumentParseSourceReader(repository=SqlAlchemyDocumentParseSources(),
         audit_sources=UploadCommitAuditSources(repository=SqlAlchemyUploadCommitAuditSources()))
@@ -40,7 +42,8 @@ def observe(v, global_result):
         project_access=SqlAlchemyProjectReadAccess(), deployment_access=SqlAlchemyDeploymentReadAccess(),
         projects=ProjectAuthorizationService(unit_of_work=v['runtime'].unit_of_work, repository=SqlAlchemyProjectAuthorizationRepository()),
         license_guard=guard, repository=SqlAlchemyJobReadRepository(),
-        owners={('document', 'DOCUMENT_PARSE'): DocumentParseJobReadProjection(queue=queue, sources=sources)})
+        owners={('document', 'DOCUMENT_PARSE'): DocumentParseJobReadProjection(queue=queue, sources=sources,
+            results=DocumentParseJobResults(repository=SqlAlchemyDocumentParseJobResults()))})
     router = create_job_detail_router(reads=reader, origins=LoginOriginPolicy(['https://plm.example.test']))
     with base.fixture.connect(v['name']) as db, TestClient(create_app(job_detail_router=router), base_url='https://plm.example.test') as client:
         token = b'P' * 32
@@ -57,7 +60,7 @@ def observe(v, global_result):
             db.execute('INSERT INTO plm.prj_project_members(project_id,user_id,department_id,project_role) VALUES(%s,%s,%s,%s)', (v['project'], user, dept, role))
         tables = ('job_jobs', 'job_outbox_events', 'doc_upload_intents', 'doc_documents', 'doc_document_versions',
             'doc_version_source_refs', 'doc_file_objects', 'aud_events', 'plt_idempotency_receipts',
-            'auth_users', 'auth_sessions', 'prj_project_members', 'prj_departments')
+            'auth_users', 'auth_sessions', 'prj_project_members', 'prj_departments', 'doc_parse_records', 'doc_parse_result_refs')
         def snapshot():
             return {t: tuple(db.execute(sql.SQL('SELECT * FROM plm.{} ORDER BY 1').format(sql.Identifier(t)))) for t in tables}
         def read(q):
@@ -66,12 +69,13 @@ def observe(v, global_result):
             assert response.status_code == 200
             data = response.json()['data']
             assert data['job_id'] == str(q.job_id) and data['scope'] == result.facts.scope
-            assert data['state'] == result.facts.state and data['result_ref'] is None
+            assert data['state'] == result.facts.state
+            assert data['result_ref'] == ({'type': result.owner.result_type, 'id': str(result.owner.result_id)} if result.owner.result_id else None)
             assert data['etag'] == response.headers['etag'] == f'"v{result.facts.lock_version}"'
             assert response.headers['cache-control'] == 'no-store'
             assert not any(key in data for key in ('actor_id', 'payload_refs', 'storage_locator', 'worker_ref', 'fencing_token'))
             assert snapshot() == before
-            assert result.facts.job_id == q.job_id and result.owner.result_id is None
+            assert result.facts.job_id == q.job_id
             return result
         def path(q):
             return f'/api/v1/projects/{q.project_id}/jobs/{q.job_id}' if q.project_id else f'/api/v1/admin/jobs/{q.job_id}'
@@ -106,6 +110,7 @@ def observe(v, global_result):
         db.execute("UPDATE plm.auth_users SET state='ENABLED' WHERE user_id=%s", (v['actor'],))
         global_q = JobGetQuery(admin_token, None, uuid4(), global_result.parse_job_id)
         read(global_q)
+        if runtime_observer is not None: runtime_observer(v, (q, global_q))
         deny(replace(global_q, session_token=token), 'AUTH_ACCESS_DENIED')
         deny(replace(global_q, project_id=v['project'], session_token=token), 'RESOURCE_NOT_FOUND')
         db.execute("UPDATE plm.auth_users SET deployment_role='NONE' WHERE user_id=%s", (admin,))
@@ -127,7 +132,7 @@ def observe(v, global_result):
             assert default.get(path(global_q)).status_code == 404
         assert client.get(path(global_q) + '?scope=PROJECT', headers={'cookie': 'plm_session=' + admin_token.hex()}).status_code == 400
         assert client.get(path(global_q), headers={'cookie': 'plm_session=' + admin_token.hex(), 'host': 'evil.test'}).status_code == 403
-    print('JOB-01-A04-P03 authority+HTTP PASS: actual Session/current PM-IM/creator customer and Admin GLOBAL over four real source commitments; revoked/disabled/member/department/admin/License/crossScope/ref/source restrictions reject thirteen tables no read writes, optional ASGI state/ETag/no-store/conditional refusal/default404. Credential TEST_ONLY and License synthetic; no login, SUCCEEDED ParseRecord/runtime/package/Gate claim.')
+    print('JOB-01-A04-P03 authority+HTTP PASS: actual Session/current PM-IM/creator customer and Admin GLOBAL over four real source commitments; revoked/disabled/member/department/admin/License/crossScope/ref/source restrictions reject fifteen tables no read writes, optional ASGI state/ETag/logical result/no-store/conditional refusal/default404. Credential TEST_ONLY and License synthetic; Parser history and runtime callback tested separately, no login/Parser execution/package/Gate claim.')
 
 
 if __name__ == '__main__':

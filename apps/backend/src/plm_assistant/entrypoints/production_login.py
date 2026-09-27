@@ -36,6 +36,13 @@ from plm_assistant.modules.audit.infrastructure.export_cancel_sources import Sql
 from plm_assistant.modules.jobs.application.authorized_read import AuthorizedJobReadService
 from plm_assistant.modules.jobs.infrastructure.read_repository import SqlAlchemyJobReadRepository
 from plm_assistant.modules.audit.application.job_read_projection import AuditJobReadProjection
+from plm_assistant.modules.document.application.job_read_projection import DocumentParseJobReadProjection
+from plm_assistant.modules.document.application.parse_job_source import DocumentParseSourceReader
+from plm_assistant.modules.document.infrastructure.parse_job_source import SqlAlchemyDocumentParseSources
+from plm_assistant.modules.document.application.parse_job_result import DocumentParseJobResults
+from plm_assistant.modules.document.infrastructure.parse_job_result import SqlAlchemyDocumentParseJobResults
+from plm_assistant.modules.audit.application.upload_commit_source import UploadCommitAuditSources
+from plm_assistant.modules.audit.infrastructure.upload_commit_source import SqlAlchemyUploadCommitAuditSources
 from plm_assistant.modules.audit.api.submit_export import create_audit_export_submit_router
 from plm_assistant.modules.audit.application.submit_export import AuditExportSubmitService
 from plm_assistant.modules.audit.application.export_submit_authorization import AuditExportSubmitAuthorization
@@ -292,7 +299,12 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                     owners={('audit','AUDIT_EXPORT'):AuditJobReadProjection(
                         repository=SqlAlchemyAuditExportSubmitRepository(),
                         queue=AuditExportJobQueue(SqlAlchemyAuditExportJobQueueRepository()),
-                        results=SqlAlchemyAuditExportResults())},
+                        results=SqlAlchemyAuditExportResults()),
+                        ('document','DOCUMENT_PARSE'):DocumentParseJobReadProjection(
+                            queue=ParseJobQueue(SqlAlchemyParseJobQueueRepository()),
+                            sources=DocumentParseSourceReader(repository=SqlAlchemyDocumentParseSources(),
+                                audit_sources=UploadCommitAuditSources(repository=SqlAlchemyUploadCommitAuditSources())),
+                            results=DocumentParseJobResults(repository=SqlAlchemyDocumentParseJobResults()))},
                 ),origins=origins,
             )
             cursors = create_windows_secret_list_cursor_codec()
