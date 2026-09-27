@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-319
+
+- Executed：3新unit/1377 tests无失败（2既有跳过）；真PG/Scrypt caller-UOW first/server acceptedAt/当次临时密码匹配，差异/伪造源/KDF异常非bool九表无写且擦除；later真正change转normal3仍历史临时匹配，坏新profile及合法first后caller故障全部回滚/原会话保留，原发布/wheel741372通过。TEST_ONLY reset转换非当前授权/原子reset/receipt/HTTP证明；无Migration/API/依赖，下一normal Admin身份与self专用末核。
+
+- P05A03编码前检查见progress；caller-UOW resetfirst get/record+server acceptedAt，当次newCredential精确true/actor/time/profile与真Scrypt历史source，不以currentCredential代历史、不持久密码等价物；oldHash不作重置前置（Admin可修复），旧ID/version由0049 source保障。无新Migration/API/依赖/授权，实际矩阵待验。
+
 ## DEC-20260927-318
 
 - Executed：1374 tests无失败（2既有跳过）；真实空有数据0048-49往返十三旧表/ORM一致、normal2含expired/disabled0/self source、坏actor/Audit/time/count/normal-after/other及self受限拒绝与实际写后回滚、独立PG并发单first/immutable/非空down保head49；五旧Schema/Windows改密及原发布/wheel740067通过。Audit夹具FAILURE提前拒绝改合法FAILED证明source拒绝，不放宽生产。无生产迁移/API/依赖，TEST_ONLY源非KDF/原子reset/授权，下一真实Repository/source。

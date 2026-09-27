@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P05-A03新增caller-UOW reset first Repository/server acceptedAt及当次临时Credential真实Scrypt来源。1377 tests无失败（2既有跳过），真PG临时匹配/差异/伪造first/KDF异常非bool九表无写与擦除，later真正change到normal3保历史匹配/坏新profile及合法first后caller故障回滚保原会话、原发布/wheel741372通过。兼容0049，无Migration/API/依赖/生产升级；撤未挂Port保历史。TEST_ONLY reset转换非当前Admin/原子reset/receipt/HTTP证明；下一身份/self末核，完整包/Gate待。
+
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P05-A02新增0049/ORM不可变管理员reset first15字段，精确当前目标/前后Credential/normal Admin actor或self前凭据/Audit/time/全撤销count及非空down保护。1374 tests无失败（2既有跳过），真实空有数据往返十三旧表/ORM一致、normal2含expired/disabled0/self、错误及受限源拒绝/合法写后回滚/独立PG并发单first、五旧Schema/Windows改密/原发布/wheel740067通过。Audit失败夹具枚举修正后source拒绝通过。保留0001～0048，无生产迁移/API/依赖；升级备份停写0049，有历史不down，撤入口保历史。TEST_ONLY源非真密码/原子reset证明；下一Repository/source，完整包/Gate待。
 
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P05-A01新增管理员reset首次结果15字段及write-only临时密码历史Proof/Verifier，公开仅版本，支持disabled/count0/self契约。6新unit/1374 tests无失败（2既有跳过），实际内存Scrypt原临时密码匹配/尾空格和后来密码冲突/伪造first及异常严格拒绝/密码擦除、wheel737736通过。兼容0048，无Migration/API/依赖/生产升级；撤未挂纯Port保历史。本轮PG/HTTP未运行，Schema设计未实施，不能称reset可用或授权PASS；下一ORM/Migration与真实来源验证，完整包/Gate待。
