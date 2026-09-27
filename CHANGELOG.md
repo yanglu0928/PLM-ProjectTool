@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：0.1.0.dev0/AUT-04-A12-P07-A06-P01新增3参数化Result输入/事务异常测试，12get-record-source-recheck底层故障与六非法角色等拒绝、不调用verifier或模拟成功SQL；完整1470unit无失败/2既有跳过。无生产/Migration/API/算法/依赖变化，兼容0049无升级；coverage/PG/wheel本批未跑，原85.676%与Hash保持。下一实际current-final异常回滚，90%/性能FAIL/Gate/可用包待。
+
 - 2026-09-27：0.1.0.dev0/AUT-04-A12-P07-A05-P03新增独立实际覆盖复验入口，完整1467unit无失败/2跳过、四实际PG/Windows通过；密码行98.623%/分支85.676%，全Auth92.711%/75.975%，工厂单列，exit1保90%缺口。原21文件/分母/旧JSON与Hash不覆，记录新Hash45c4d14a…；无生产/Migration/API/算法/依赖变化，兼容0049无升级，wheel/性能未跑。下一结果来源与真实current-final故障补证，性能FAIL/正式可用包/Gate待。
 
 - 2026-09-27：0.1.0.dev0/AUT-04-A12-P07-A05-P02新增7个参数化Access输入/事务异常测试，非法proof/token/时间/source不SQL或verifier、异常固定拒绝；1467unit无失败/2既有跳过。无生产/Migration/API/算法/依赖变化，兼容0049无升级；coverage/四PG/wheel未重跑，原82.432%与Hash保持。下一统一真实覆盖，90%/性能FAIL/正式信任/可用包/Gate待。

@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-347
+
+- Executed：3参数化Result方法覆盖12事务异常/六role-source与recheck/非法Result-draft-source组合，固定拒绝、无成功SQL模拟或verifier；完整1470unit无失败/2既有跳过。无生产变更，coverage/PG/wheel本批未跑，原85.676%与Hash保持。下一P02实际current-final与事务故障回滚，90%/性能/Gate/包待。
+
+- Phase2/P07A06P01编码前检查见result-faults；Result底层事务异常固定拒绝与非法role/result不SQL，复用既有正常Hash/strict bool测试，不造SQL成功，不改生产/Schema/API/算法/依赖。完整unit实际跑，coverage/PG本批不推算，旧Hash与90%门槛保留；风险回滚先记，下一真实current-final异常，性能/Gate/可用包待。
+
 ## DEC-20260927-346
 
 - Executed：完整1467unit无失败/2既有跳过，四实际PG/Windows入口全部通过；密码1003/1017行98.623%、317/370分支85.676%，全Auth92.711%/75.975%，工厂362/369行8/10分支单列。exit1为分支门槛未达，原JSON/Hash保留，新Hash45c4d14a…；无生产/Schema/API/依赖变化，wheel/性能未跑。下一结果来源与真实current-final异常补证，不关闭安全/Gate。
