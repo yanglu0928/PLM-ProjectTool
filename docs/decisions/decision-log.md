@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-353
+
+- Executed：新增6参数化Session方法，完整1476unit无失败/2既有跳过，exit0；输入/clock/proof事务前拒绝与擦除，CSRF/revoke/logout current-receipt/admin锁错误无后续写/Audit/complete/commit，UOW闭合。不模拟SQL成功，无生产变更；coverage/11PG/wheel本批未跑，原80.162%与Hash保持。下一Session投影与统一实测，90%/性能/Gate/包待。
+
+- Phase2/P07A09编码前检查见session-defensive；Session依赖/proof/ID/time/token、CSRF/revoke失败与logout历史违约、admin锁拒绝，明确无Audit/complete/commit及UOW闭合，规范Record仅Port控制不冒充SQL。完整unit实际跑，PG/coverage后续保同范围/旧Hash；无生产/Schema/API/机制/依赖变更，风险回滚先记，90%/性能/Gate/包待。
+
 ## DEC-20260927-352
 
 - Executed：1470完整unit无失败/2既有跳过，原五+六非密码实际入口共11全部通过；全Auth3168/3364行94.174%、792/988分支80.162%，密码91.146%保留，工厂8/10单列。新增ALL_AUTH独立90%检查false/exit1，不以综合90.993%或密码过线冒充全Auth通过；原Hash保留，新f6a57106…。无生产/Schema/API/依赖变化，wheel/性能未跑；下一A09 Session防御/no-commit边界，性能/正式trust/Gate/包待。
