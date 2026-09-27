@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-366
+
+- Executed：6新增方法，完整1520unit/contract无失败/errors0/2既有跳过、exit0；三依赖/六正文/两Unicode/两client/四Service/三投影故障拒绝，直接已分配buffer及Service attempt密码均清零，无Cookie/Token/私有详情。通用异常原500合同保持，不冒充SQL/Session回滚；生产无变，coverage/14PG/wheel/性能未跑，旧84.717%与Hash保留。下一独立User name patch Repo，Gate/包待。
+
+- Phase2/P07A19编码前检查见login-http-defensive；仅Login HTTP依赖/正文/Unicode/client/Service/投影拒绝和bytearray擦除，限定ASGI client输入与Mock Port，不模拟SQL；通用异常沿原SYSTEM_INTERNAL合同，不改生产或权限机制。
+- 无Schema/API/算法/依赖变，撤测试无升级；完整unit/contract实际跑，coverage/14PG/wheel/性能未跑，旧84.717%/raw/90%保持，正式trust/Gate/包待。
+
 ## DEC-20260927-365
 
 - Executed：6新增方法，1514unit/contract无失败/errors0/2既有跳过、exit0；四依赖/五clock/三Query/六View/首末License/三Access-UOW故障拒绝，无commit/已进UOW退出，仅Port证据。无生产变化，coverage/14PG/wheel/性能未跑，原84.717%与Hash保持。下一独立Login HTTP输入/来源拒绝，完整安全/正式trust/Gate/包待。
