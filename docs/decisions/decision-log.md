@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260927-282
+
+- Executed：真实双ScopeWorker第三失败/版本/原pair/Audit及重复事件歧义-错误Attempt窗口拒绝十一表无写；7新unit/1223后端无失败（2既有权限跳过）、开发wheel674156与原Worker/文件发布回归通过。无Migration，未挂API/改retryable，下一P03当前授权+原子generation/receipt。只读来源PASS不是用户重试功能PASS。
+
+- Date/WBS：2026-09-27 / Phase2 JOB-03-A02-P02，CR-JOB-006/0045前置完成，只新增只读原失败来源。
+- Decision：Jobs owned结合原queue绑定、expected_version、第三真实Attempt/释放Lease/既有终态retry proof返回最小技术DTO；Audit own精确唯一历史SYSTEM失败Audit（固定Scope/actor/trace/window）。不让Audit读Jobs表、不让坐标替代当前Auth/License，不要求读历史事件时持当前Worker身份key。
+- Validation/Risk：真实Worker5/15秒第三失败双Scope、原源/版本/状态拒绝无写、typed DTO与全后端；历史Audit proof不是新generation业务授权。新Port不挂HTTP，P03当前权限/receipt未完成；撤未接线Port回滚保历史。
+
 ## DEC-20260927-281
 
 - Phase2/JOB-03-A02-P01，2026-09-27；前置重试核查/0044，CR-JOB-006先记录。只实现Audit不可变新old generation/首次版本Schema及DTO，无命令/API/角色/依赖变化。

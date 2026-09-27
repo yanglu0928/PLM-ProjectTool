@@ -14,7 +14,7 @@ spec=spec_from_file_location('_worker_retry_fixture',Path(__file__).resolve().pa
 fixture=module_from_spec(spec);spec.loader.exec_module(fixture)
 
 
-def exercise(v):
+def exercise(v, *, observe_failed=None):
     db=v['db'];failure=AuditExportJobFailure(queue=v['queue'],leases=v['lease_repo'])
     deps=dict(unit_of_work=v['uow'],repository=v['repo'],queue=v['queue'],failure=failure,audit=v['audit'],
         authority=v['worker']._authority,system_actor=v['system_actor'],supervisor=AuditHeartbeatSupervisor(heartbeats=object()))
@@ -79,6 +79,7 @@ def exercise(v):
                 reject(c)
             for path,body in retained.items():assert path.read_bytes()==body
         assert len(set(file_ids))==3
+        if observe_failed is not None: observe_failed(v,accepted,c)
         assert db.execute("SELECT action,after_state FROM plm.aud_events WHERE target_object_id=%s AND action IN ('AUDIT_EXPORT_RETRY_SCHEDULED','AUDIT_EXPORT_FAILED') ORDER BY occurred_at",(original.job_id,)).fetchall()==[('AUDIT_EXPORT_RETRY_SCHEDULED','RETRY_WAIT'),('AUDIT_EXPORT_RETRY_SCHEDULED','RETRY_WAIT'),('AUDIT_EXPORT_FAILED','FAILED')]
         accepted,c,staged=v['prepare'](scope,0);v['worker'].publish(c,staged);reject(c)
         accepted,c,_=v['prepare'](scope,0,seconds=2);time.sleep(2.05);reject(c)

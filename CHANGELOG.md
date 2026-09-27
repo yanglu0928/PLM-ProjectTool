@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/JOB-03-A02-P02新增Jobs/Audit owned原失败只读Port及最小DTO，绑定原任务版本、第三真实Attempt/释放Lease和唯一SYSTEM失败Audit。实际双ScopeWorker5/15秒重试第三失败/来源-版本-歧义-窗口拒绝十一表无写、原Worker回滚及文件发布回归、新7unit/1223后端无失败/2既有跳过、开发wheel674156通过。无Migration/API/角色/依赖/升级变化，head0045；撤未接线Port回滚保历史。当前用户授权/CSRF/License/Receipt新任务命令及HTTP未完成，公开retryable保持False；正式账户/三平台/性能/完整包/Gate待。
+
 - 2026-09-27：`0.1.0.dev0`/JOB-03-A02-P01按CR-JOB-006新增Audit不可变重试generation/首次版本DTO及Migration0045。真实空/有数据up-down保旧表、错Query/来源/版本/时间及变更拒绝、回滚/有历史down安全拒绝、旧取消/Worker retry/双Windows读取回归及1216后端无失败/2既有跳过、开发wheel669958通过。trigger OLD别名冲突已修重验，无条件放宽。无新API/权限/依赖；升级须维护备份0045，有历史禁止丢弃down，停未装配入口回滚保历史。FAILED/原Attempt/授权/receipt命令/用户retryHTTP未完成，合成Audit非重试证明；正式材料/三平台/性能/完整包/Gate待。
 
 - 2026-09-27：`0.1.0.dev0`/JOB-03-A01完成受控重试前置核查，实际双Windows/PG证实原Audit enqueue重放同Job/Event无写、当前成功Job retryable=false及用户retry POST405未注册，库无generation链。按自主授权先记录CR-JOB-006的新旧任务不可变链/首次结果/Owner授权方案，尚未实现Schema或重试。首轮404预期纠正实际GET-only405仅修验证器；生产/依赖/升级不变，全测试/wheel沿P05历史。下一Schema评审/实施，非完整包/Gate PASS。
