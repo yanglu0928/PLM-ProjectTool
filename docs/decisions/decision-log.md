@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260927-295
+
+- Executed：八新unit/1290无失败（2既有跳过）；实际PG+真实Scrypt原1密码/UTF8精确变化、后续改名停用换2仍原1重放技术证明，伪造源/坏metadata beforeKDF/实际KDF故障静态拒绝及六表无写/清理、原Schema和发布回归/wheel696766通过。当前授权/完整请求receipt原子创建仍P03，未挂HTTP或宣称完整登录/生产/包/Gate。
+
+- Date/WBS：2026-09-27 / AUT-04-A09-P02，前置0046真实验证并推送0c0422d；precode见对应progress。
+- Decision：Auth只读原首次结果与Credential1固定source，私下严格SCRYPT V1 metadata检验再用原真实Verifier。坏源/格式/KDF故障不可用，精确UTF8密码不匹配才CONFLICT_IDEMPOTENCY；消费proof各路径尽力擦除，无hash公共DTO或新的摘要/key。
+- Impact/Rollback/Tests：无Schema/API/权限/依赖变；撤未装配Port保历史。真实Scrypt+目标后续改名停用换密后仍核原1/五表无写、伪造源/非法proof/Verifier异常验证；当前Session-CSRF/License/完整请求receipt仍P03，性能/生产供给/包未完成。
+
 ## DEC-20260927-294
 
 - Executed：5新unit/1282无失败（2既有跳过），实际PG空/有数据up-down-re-up十旧表保留、ORM parity/错误来源拒绝/真实插入回滚/三不可变/后续改名停用历史不变/非空down保0046；原retry/取消Schema及双Windows列表/发布回归、开发wheel694351通过。仅内部Schema，不是Scrypt/授权/原子幂等/HTTP/完整包证明。

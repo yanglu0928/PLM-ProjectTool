@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/AUT-04-A09-P02新增只读原首次User结果/初始Credential1真实Scrypt重放密码核验，坏metadata与KDF异常静态不可用，不匹配冲突，各路径proof尽力清理；1290无失败（2既有跳过）、真实PG原密码/UTF8区别/后续改名停用换密仍原1/伪造拒绝六表无写及Schema/发布回归，开发wheel696766。无Migration/API/依赖/权限/升级变化，兼容0046；撤未装配Port保历史。仅技术密码一致性，不是当前Admin-CSRF/License或完整幂等/创建HTTP证明；P03须原子组合，正式供给/性能/三平台/完整包/Gate待。
+
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A09-P01按CR-AUT-005新增Auth不可变首次UserView/原Credential1与创建Audit来源、严格DTO及0046；1282无失败（2既有跳过），真实空/有数据升降往返/旧表保留/ORM一致/来源拒绝/回滚/历史保护与旧取消-retrySchema/Windows列表及发布回归通过，开发wheel694351。无新API/依赖/权限，原0001～0045不追写；升级须备份停写0046，历史非空down拒绝，撤新入口保历史。TEST_ONLY只证明Schema，不是Scrypt/原子幂等/当前Admin-CSRF或创建HTTP；正式供给/性能/三平台/完整包/Gate待。下一原始凭据核验。
 
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A08实际核查User创建冻结HTTP前置，旧内部Service缺当前Session-CSRF生产装配/原子receipt/不可变首次UserView，保持POST关闭；先记录CR-AUT-005的Auth owned首次结果与初始不可变Credential真实Scrypt重放密码验证方案，拒绝明文/快速密码摘要。仅设计，无代码/Migration/API/依赖/升级动作，未运行未来创建验收；1277/25旧回归为A07历史不外推，下一0046 Schema/ORM/source DTO实施。
