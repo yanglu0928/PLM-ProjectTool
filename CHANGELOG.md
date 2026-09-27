@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：0.1.0.dev0/AUT-04-A12-P07-A08新增完整Auth同轮测量及独立90%退出检查，1470unit无失败/2跳过、11实际PG/Windows/Vault入口全通过；完整Auth行94.174%/分支80.162%，密码91.146%保留，工厂单列，exit1保全Auth缺口。文件/分母不删，旧rawHash不覆/newHashf6a57106…；无生产/Migration/API/权限/算法/依赖变化，兼容0049无升级，wheel/性能未跑。下一Session防御与无commit边界，性能FAIL/Gate/可用包待。
+
 - 2026-09-27：0.1.0.dev0/AUT-04-A12-P07-A07-P02仅两密码Service guard/raise分行，对c004980 AST完全相等；1470unit无失败/2跳过及五实际链全通过，原21密码行98.472%/分支91.146%本范围通过。分母增30行/14分支、无排除/范围缩减，统计改善含排版影响不是新增用例提升；完整Auth78.239%分支仍未达，工厂单列/Gate不关闭。新Hash57390683…、expanded审计证据与旧raw保留，无Migration/API/权限/算法/依赖变化，兼容0049无升级，wheel/性能未跑。下一全Auth已有实际链纳入与真实缺口，性能FAIL/可用包待。
 
 - 2026-09-27：0.1.0.dev0/AUT-04-A12-P07-A07-P01新增异常分支审计与三最小对照；既有source拒绝guard83两次异常实际83→75退出、报告列83→162，with示例AST等价compact仍列缺/expanded无缺，两输入行为相同。exit0，仅证明已检查坐标，不能豁免全部缺口；无生产/Migration/API/算法/依赖变化，兼容0049无升级。完整unit/PG/全量coverage/wheel本批未跑，原86.757%与Hash保持；下一两Service分行/AST等价及完整复验，90%/性能FAIL/Gate/可用包待。
