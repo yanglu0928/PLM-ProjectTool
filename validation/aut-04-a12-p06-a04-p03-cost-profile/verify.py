@@ -1,9 +1,10 @@
 """Test-only timing of real KDF, capacity wait and DB lock/UOW boundaries."""
 import json
 import math
+import argparse
 from importlib.util import module_from_spec,spec_from_file_location
 from pathlib import Path
-from threading import Lock,BoundedSemaphore
+from threading import Lock
 from time import perf_counter
 from unittest.mock import patch
 from plm_assistant.modules.auth.infrastructure.scrypt_password import ScryptPasswordHasher
@@ -27,17 +28,20 @@ class Profile:
 
 
 class Slots:
-    def __init__(self,profile):self.gate=BoundedSemaphore(4);self.profile=profile
+    def __init__(self,profile,size):self.gate=c.TrackedSlots(size);self.profile=profile
     def acquire(self,*,timeout):
         start=perf_counter()
         result=self.gate.acquire(timeout=timeout)
         self.profile.add('slot_wait_success' if result else 'slot_wait_timeout',perf_counter()-start)
         return result
     def release(self):self.gate.release()
+    def report(self):return self.gate.report()
 
 
-def main():
+def main(*,slots=4):
+    if type(slots) is not int or slots not in (4,8,16):raise ValueError('Unsupported test-only slot bound')
     profile=Profile();groups=iter(('session_get','reset_fresh','change_fresh','reset_replay','change_replay'));seen=[]
+    reset_slots=Slots(profile,slots);change_slots=Slots(profile,slots)
     batch=b.batch;hash_password=ScryptPasswordHasher.hash_password;verify_password=ScryptPasswordHasher.verify_password
     enter=SqlAlchemyUnitOfWork.__enter__;leave=SqlAlchemyUnitOfWork.__exit__;lock=SqlAlchemyUserStateAccess.lock_deployment
     async def measured_batch(app,requests):
@@ -48,7 +52,7 @@ def main():
             profile.add('batch_wall',perf_counter()-start)
             profile.group=None
             report=profile.report(name)
-            print('PASSWORD_COST_PROFILE '+json.dumps({'group':name,'concurrency':20,'production_slots':4,'stages':report},sort_keys=True))
+            print('PASSWORD_COST_PROFILE '+json.dumps({'group':name,'concurrency':20,'production_slots_unchanged':4,'test_slots':slots,'stages':report},sort_keys=True))
     def timed_hash(self,password):
         start=perf_counter()
         try:return hash_password(self,password)
@@ -76,7 +80,7 @@ def main():
         patch.object(ScryptPasswordHasher,'verify_password',timed_verify),\
         patch.object(SqlAlchemyUnitOfWork,'__enter__',timed_enter),patch.object(SqlAlchemyUnitOfWork,'__exit__',timed_leave),\
         patch.object(SqlAlchemyUserStateAccess,'lock_deployment',timed_lock),\
-        patch.object(c.password_reset,'_RESET_HASH_SLOTS',Slots(profile)),patch.object(c.password_change,'_CHANGE_KDF_SLOTS',Slots(profile)):
+        patch.object(c.password_reset,'_RESET_HASH_SLOTS',reset_slots),patch.object(c.password_change,'_CHANGE_KDF_SLOTS',change_slots):
         b.windows.http.m.fixture.main(exercise=lambda v:b.windows.exercise(v,extra=lambda ctx,settings:b.extra(ctx,settings,include_replay=True)))
     assert seen==['session_get','reset_fresh','change_fresh','reset_replay','change_replay']
     for group in seen:
@@ -87,10 +91,16 @@ def main():
             assert rows['slot_wait_success']['calls']==20 and 'slot_wait_timeout' not in rows
             assert rows['global_lock_acquire']['calls']==rows['global_lock_hold_until_uow_exit']['calls']==20
             assert sum(rows.get(kind,{}).get('calls',0) for kind in ('scrypt_hash','scrypt_verify'))==(40 if group.startswith('change') else 20)
+    for gate in (reset_slots,change_slots):
+        report=gate.report()
+        assert report['active']==0 and report['peak']<=slots and report['timeouts']==0
     print('PASSWORD_COST_PROFILE_SUMMARY '+json.dumps({'instrumentation_only':True,'production_changed':False,
+        'production_slots_unchanged':4,'test_slots':slots,'reset_slots':reset_slots.report(),'change_slots':change_slots.report(),
         'process_peak_working_set_bytes':c.peak_working_set(),'original_acceptance_pass':b.OUTCOME==[True],
         'scope':'stage sample percentiles are not additive; UOW count includes all endpoint identity and response reads; ASGI/synthetic trust not formal load'},sort_keys=True))
     if b.OUTCOME!=[True]:raise SystemExit('PASSWORD_COST_PROFILE FAIL: original performance thresholds remain')
 
 
-if __name__=='__main__':main()
+if __name__=='__main__':
+    parser=argparse.ArgumentParser();parser.add_argument('--slots',type=int,choices=(4,8,16),default=4)
+    main(slots=parser.parse_args().slots)

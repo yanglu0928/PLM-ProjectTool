@@ -1,5 +1,7 @@
 # CR-AUT-008 密码计算与全局管理写锁排队
 
+2026-09-27/P06A04P03A02：posthistory 8/16 test-only顺序成本比较已完成，五组全部20成功/SQL空/history九表不写/原回归通过；8 fresh reset1076.548/change2148.421/history1135.454/2159.915ms，peak1210707968 bytes；16 fresh975.244/1618.757/history859.607/1616.897ms，peak2285113344 bytes。reset单轮达标但change仍超1秒，两脚本exit1 FAIL；单KDF随着资源增加变慢/集中取锁排队增大，不能简单线性外推或全环境默认16。生产4不变；下一显式可恢复容量与reset/change共同进程预算设计/混合验收，避免独立16+16造成32活跃仍宣称总限额。无生产/Schema/API/依赖变更，原强度/标准/Scope与CR OPEN保留；详细progress/DEC333。
+
 2026-09-27/P06A04P03实际成本剖析：无生产变更，4-slot五组全20成功/SQL空、history九表不写。固定KDF P95约310～321ms，slot等待reset约1.15～1.18秒/change约2.42～2.45秒；global获取P95 fresh≤38.314/history≤7.056ms，获取后至UOW退出≤24.823/8.860ms。HTTP写仍约1.62/3.18秒，实际exit1 FAIL，计数assert/原回归通过；单位分位数不能相加，UOW包含身份/响应读取、计时有开销，processpeak674357248仅当前进程。下一8/16-slot posthistory测量比较，不调DB锁/降低KDF/放宽标准，CR OPEN；详细progress/DEC332可追溯。
 
 2026-09-27/AUT-04-A12-P06-A04-P02-A04最新：change历史双源短UOW退出后4-slot真实双KDF，原global当前身份/reserve/fullfirst/双source/末核已实施，fresh链及无License-Admin语义保留。1419 unit/实际PG锁释放与身份竞争/真实peer提交后旧Session拒绝-新login恢复/原atomic-发布/wheel通过。20五组全20成功/SQL错误空，history change P95 3220.477ms（原8114.279/六55P03），history reset1650.695/fresh reset1642.030/change3157.216ms，两历史九表无写；功能恢复但整体性能仍FAIL/exit1。兼容0049无Migration/API/依赖，回滚原history保历史；下一成本/资源剖析及可证实优化，保强度与原1秒标准，CR OPEN。

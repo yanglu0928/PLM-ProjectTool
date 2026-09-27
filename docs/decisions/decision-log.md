@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-333
+
+- Executed：8与16独立进程顺序5×20全部成功/SQL空/history九表不写/计数与peak8或16/end0/timeout0/原state-publication通过，均最终exit1整体FAIL。8 fresh reset1076.548/change2148.421/history1135.454/2159.915ms，peak1210707968；16 fresh975.244/1618.757/history859.607/1616.897ms，peak2285113344。单KDF由4的约310ms增至8约365～395/16约476～493ms，等待减少但计算竞争/取锁排队增大。生产4不改，不以单轮reset PASS关闭整体；下一显式容量+reset/change共同预算设计/混合验证，防两个16独立gate误称总限额。无生产变更，unit/wheel未重跑，CR/Gate开放。
+
+- A02编码前检查见slot-comparison：已修history后test-only成本profiler支持4/8/16，8和16各独立进程顺序跑完整五组，新增实际slot峰值/最终0/等待统计；固定KDF/原标准/生产4不变，无Migration/API/依赖。单轮tradeoff不自动改生产、不无限重复，实测后选择下一步骤，CR008 OPEN。
+
 ## DEC-20260927-332
 
 - Executed：5×20全成功/无SQL错/九表history不写与原状态/发布通过，实际计数reset20 KDF/change40、20 global、20 slot成功。slot等待P95 resetfresh1181.524/changefresh2446.818/history1145.744/2423.986ms；每KDF约310～321ms，global获取P95 fresh≤38.314/history≤7.056、持有至UOW退出fresh≤24.823/history≤8.860ms。HTTP四写约1.62/3.18秒仍FAIL/实际exit1，processpeak674357248；生产未改，unit/wheel未重跑。下一test-only8/16 posthistory资源成本比较，不降算法/标准、不改DB锁，CR/Gate开放。
