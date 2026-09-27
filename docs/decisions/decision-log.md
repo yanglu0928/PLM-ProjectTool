@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-348
+
+- Executed：两实际Service各四故障，共八实际final拒绝/九表全行回滚/原Session可用/密码擦除，actual SQL22012中止后固定Access错误；两正常commit/新Session控制与原双Scope发布回归通过，exit0。无生产变更，unit最近1470保留本批未跑，coverage/wheel/性能未跑。下一五实际链完整同轮覆盖，不关闭90%/性能/正式trust/Gate/包。
+
+- Phase2/P07A06P02编码前检查见current-final；两实际Service先正向final可达，再同UOW实际live/count/User版本/SQL22012中止故障；Access拒绝、九表全行回滚/Session可用/密码擦除及正常提交控制。仅隔离PG/合成身份，触发器不禁用，无生产/Schema/API/算法/依赖变化；风险回滚先記，随后统一coverage，不宣称完整安全/性能/Gate/包通过。
+
 ## DEC-20260927-347
 
 - Executed：3参数化Result方法覆盖12事务异常/六role-source与recheck/非法Result-draft-source组合，固定拒绝、无成功SQL模拟或verifier；完整1470unit无失败/2既有跳过。无生产变更，coverage/PG/wheel本批未跑，原85.676%与Hash保持。下一P02实际current-final与事务故障回滚，90%/性能/Gate/包待。
