@@ -1,6 +1,6 @@
 # CR-AUT-006 User启用/停用可靠命令
 
-日期：2026-09-27；版本0.1.0.dev0；状态SCHEMA_DOMAIN_VERIFIED_ATOMIC_COMMAND_PENDING。
+日期：2026-09-27；版本0.1.0.dev0；状态INTERNAL_ATOMIC_VERIFIED_HTTP_PENDING（CR整体发行验收仍待）。
 依据：用户2026-09-24/27持续授权；原冻结64cdf09及0001～0046保留。
 
 ## 来源与证据
@@ -33,4 +33,4 @@
 
 ## 当前范围与剩余风险
 
-已完成前置、纯Domain/严格首次结果DTO、0047/ORM及真实Schema来源/历史验证；不是持久命令/当前Admin权限/全Session撤销实现。Application/原子幂等/自停用/最后Admin/状态HTTP/Windows未完成，Gate3与正式发行不关闭。1328后端无失败（2既有跳过），旧Schema/Windows名称及发布回归通过；Schema使用TEST_ONLY身份夹具不证明真实认证。无新Key、依赖、角色、SSO或授权机制替换。License独立UOW前后检查仍不是业务License事务锁。
+已完成前置、纯Domain/严格首次结果DTO、0047/ORM及真实Schema来源/历史验证；P03新增持久内部原子命令、实际当前Admin-CSRF、全Session撤销、首响应与原收据、自停用末核和最后Admin保护。1336 tests无失败（2既有跳过），真实PG/Scrypt同Key竞争、写后/提交故障与恢复、互停/自停用/55P03超时/登录竞争及原发布回归通过，见P03progress。HTTP/Windows尚未接线，Gate3与正式发行不关闭。明确TEST_ONLY角色夹具及合成License不证明生产认证供给。无新Key、依赖、角色、SSO或授权机制替换。License独立UOW前后检查仍不是业务License事务锁；所有其他Auth锁序与性能尚待验证。

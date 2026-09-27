@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260927-304
+
+- Executed：1336 tests无失败（2既有跳过）；真实PG/Scrypt同Key启停/不可变首响应、全Session撤销和旧Session不复活、七个实际写后故障回滚、提交前后故障与原Key恢复、自停用及重新认证重放、最后Admin/互停竞争、实际55P03锁超时及登录竞争通过，原双Scope发布回归通过。开发wheel717520；HTTP/Windows/性能/正式信任/完整包待，证据及夹具修正见P03progress。
+
+- Date/WBS：2026-09-27 / AUT-04-A11-P03，precode见progress；P02实际0047/历史与旧回归87ad5b0。
+- Decision：新Auth状态部署事务锁先Admin/target、lock_timeout5s；严格实际当前Actor proof、自停用有另一Admin且原Session生命周期/Token-CSRF/撤销reason-time-version和User原凭据角色/预期更新专用末核。全Session含expired同User updatedAt撤销、Audit/first/receipt同UOW；current authority与License重放再核。
+- Impact/Rollback/Tests：无Migration/API/依赖/Key变化；撤未挂内部入口保0047历史。原Guard独立UOW，其他Auth锁竞争可能安全失败；真实并发/原子写后/commit确认/自停用/最后Admin/旧Session矩阵待验，不标正式权限/性能/完整包PASS。
+
 ## DEC-20260927-303
 
 - Executed：1328无失败（2既有跳过），真空/有数据0046-47往返十一旧表保留/ORM一致；精确User/Credential/Audit/时间和未来accepted拒绝、真实2Session（含expired）撤销计数源/未撤销拒绝、插入后故障回滚/ENABLE零计数不复活、历史变更和非空down拒绝head完整；旧create/cancel/retry Schema及Windows名称/原发布回归/wheel711157通过。仅Schema/TEST_ONLY夹具，非当前权限/原子启停/完整包证明。
