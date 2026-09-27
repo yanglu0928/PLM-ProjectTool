@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-385
+
+- Executed：七实际投影/同UOW当前改名禁用/真实22P02与22012→25P02通过exit0，九表回滚/健康重读及原发布回归通过。None不匹配、有效UUID字符串PG转换如实记录，不假称适配层校验/权限。无生产变化，unit1541本批未跑，coverage/性能/wheel未跑，下一A38初始管理员Service防御，Gate/包待。
+
+- Phase2/P07A37编码前检查见member-names-source；真实名称投影/当前变化/缺行与非法编号SQL行为，不添加适配层权限或静默过滤；九表回滚/真实22012→25P02、健康重读。
+- 无生产/Migration/API/权限/依赖变，无升级；unit1541本批不跑，完整coverage/性能/wheel另项，Gate/包待。
+
 ## DEC-20260927-384
 
 - Executed：新增3方法，1541unit21.763秒无失败/errors0/2跳过、exit0；错误/真实inactive来源、缺来源原AttributeError与真实active无bind空tuple通过，无成功SQL模拟/生产变更。17链coverage/性能/wheel未跑，下一A37真实名称/缺行/非法编号行为，Gate/包待。
