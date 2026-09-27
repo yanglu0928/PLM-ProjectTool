@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/AUT-04-A11-P04新增可选冻结User启停POST，严格空body/Origin/Session-CSRF/Key/If-Match、安全首View与自停用当前Session判定清Cookie。1344 tests无失败（2既有跳过），真PG/Scrypt/ASGI重放/拒绝七表不变/Audit后回滚/旧401新Session历史重放不误清/提交后末读503原Key恢复、原发布回归/wheel719338通过。兼容0047，无Migration/依赖/生产升级；撤router保历史。默认404，Windows未挂，合成License/测试角色夹具，正式信任/性能/三平台/UI/安装包/Gate待；下一Windows write装配。
+
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A11-P03完成内部原子User启停、当前Admin-CSRF专用自停用末核、全未撤销Session撤销、Audit/first/receipt与历史重放。1336 tests无失败（2既有跳过），实际PG/Scrypt并发/七写后回滚/提交确认恢复/最后Admin/互停/55P03锁超时/登录竞争及原发布回归通过，开发wheel717520。兼容0047，无新Migration/依赖/权限或生产升级；回滚撤未接线服务保历史。合成License及显式TEST_ONLY角色夹具，HTTP/Windows/UI/性能/三平台/正式信任/安装包/Gate未通过；下一可选状态HTTP。
 
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A11-P02按CR-AUT006新增0047/ORM不可变User状态first，精确User/Credential/Audit/time和撤销Session计数source，future受理拒绝/禁止历史变更及非空降级。1328无失败（2既有跳过），真空/有数据升降往返十一旧表保留/ORM一致、两Session含expired源计数/拒绝/故障回滚/后来状态保原first、旧create-cancel-retrySchema/Windows名称及发布回归/wheel711157通过。0001～0046不追写，无HTTP/依赖/权限变化/生产迁移；升级备份停写0047，history非空不down，撤入口保历史。TEST_ONLY schema夹具，完整启停/权限/原子Session/幂等/自停用/三平台/包/Gate待，下一原子内部命令。

@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-305
+
+- Executed：1344 tests无失败（2既有跳过），实际PG/Scrypt/ASGI两命令/历史首响应/角色-CSRF-Origin-License-version-Key拒绝七表不变、实际Audit后回滚、自停用Cookie/旧401/新认证重放不删Cookie及提交后末读503原Key恢复通过，原发布回归与wheel719338通过；验证SQL字段修正记录见progress。Windows/正式信任/性能/包未验。
+
+- AUT-04-A11-P04：编码前检查见progress，P039e9f9c3真实原子链为前置。可选冻结状态POST，空body/严格Key/If-Match/当前Session-CSRF/Origin，安全首View；状态冲突映射冻结AUTH_USER_DISABLED409。
+- 自停用实际当前Session复查才清Cookie，不根据历史结果误清重新启用后的新Session；确认读取故障静态503，原Key恢复。无Migration/依赖/Windows挂载；撤router保历史。真实HTTP和故障矩阵待验，不标PASS。
+
 ## DEC-20260927-304
 
 - Executed：1336 tests无失败（2既有跳过）；真实PG/Scrypt同Key启停/不可变首响应、全Session撤销和旧Session不复活、七个实际写后故障回滚、提交前后故障与原Key恢复、自停用及重新认证重放、最后Admin/互停竞争、实际55P03锁超时及登录竞争通过，原双Scope发布回归通过。开发wheel717520；HTTP/Windows/性能/正式信任/完整包待，证据及夹具修正见P03progress。

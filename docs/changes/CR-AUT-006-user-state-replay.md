@@ -1,6 +1,8 @@
 # CR-AUT-006 User启用/停用可靠命令
 
-日期：2026-09-27；版本0.1.0.dev0；状态INTERNAL_ATOMIC_VERIFIED_HTTP_PENDING（CR整体发行验收仍待）。
+日期：2026-09-27；版本0.1.0.dev0；状态OPTIONAL_HTTP_VERIFIED_WINDOWS_PENDING（CR整体发行验收仍待）。
+
+P04进展：可选冻结状态POST、安全首View、当前认证和自停用Cookie、提交后末读503恢复已真实PG/Scrypt/ASGI验证；1344 tests无失败（2既有跳过），原发布回归通过。Windows尚未装配，详情与剩余限制见P04progress；下述P03记录保留历史。
 依据：用户2026-09-24/27持续授权；原冻结64cdf09及0001～0046保留。
 
 ## 来源与证据

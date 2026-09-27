@@ -22,6 +22,7 @@ COMMON_ERRORS: dict[str, ErrorSpec] = {
     "AUTH_REQUIRED": ErrorSpec("AUTH_REQUIRED", 401, "请先登录。"),
     "AUTH_INVALID_CREDENTIALS": ErrorSpec("AUTH_INVALID_CREDENTIALS", 401, "用户名或密码不正确。"),
     "AUTH_SESSION_EXPIRED": ErrorSpec("AUTH_SESSION_EXPIRED", 401, "登录已失效。"),
+    "AUTH_USER_DISABLED": ErrorSpec("AUTH_USER_DISABLED", 409, "管理命令与用户当前状态冲突。"),
     "AUTH_CSRF_INVALID": ErrorSpec("AUTH_CSRF_INVALID", 403, "请求安全校验失败。"),
     "LICENSE_OPERATION_DENIED": ErrorSpec(
         "LICENSE_OPERATION_DENIED", 403, "当前许可不允许此操作。"
