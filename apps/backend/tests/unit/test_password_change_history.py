@@ -1,4 +1,5 @@
 import unittest
+from dataclasses import replace
 from unittest.mock import Mock
 from contextlib import contextmanager
 from datetime import datetime,timezone,timedelta
@@ -13,6 +14,35 @@ from plm_assistant.modules.platform.application.idempotency import IdempotencyRe
 
 
 class ChangeHistoryTests(unittest.TestCase):
+    def test_preparation_first_unknown_or_wrong_user_denies_before_kdf(self):
+        for result_type in ('unknown', 'wrong-user'):
+            with self.subTest(result=result_type):
+                self.setUp()
+                self.results.get.return_value = object() if result_type == 'unknown' else replace(self.first, user_id=uuid4())
+                with self.assertRaises(PasswordChangeError): self.run_change()
+                self.results.verify_password_source.assert_not_called(); self.receipts.reserve.assert_not_called()
+                self.repo.change.assert_not_called()
+                for tx in self.transactions: tx.commit.assert_not_called()
+                self.erased(); self.assertEqual(self.active, [])
+
+    def test_write_history_reserve_and_first_changes_never_commit(self):
+        for fault in ('missing', 'unknown', 'operation', 'status', 'first-id', 'first-trace', 'first-user', 'final-actor'):
+            with self.subTest(fault=fault):
+                self.setUp()
+                if fault == 'missing': self.receipts.reserve.return_value = None
+                elif fault == 'unknown': self.receipts.reserve.return_value = object()
+                elif fault == 'operation': self.receipts.reserve.return_value = IdempotencyResult('V1_AUTH_USER_RESET_PASSWORD', self.first.result_id, 200)
+                elif fault == 'status': self.receipts.reserve.return_value = IdempotencyResult(self.hint.ref_type, self.first.result_id, 201)
+                elif fault in ('first-id', 'first-trace', 'first-user'):
+                    field = {'first-id': 'result_id', 'first-trace': 'trace_id', 'first-user': 'user_id'}[fault]
+                    self.results.get.side_effect = [self.first, replace(self.first, **{field: uuid4()})]
+                else: self.access.prove.side_effect = [self.proof, self.proof, None]
+                with self.assertRaises(PasswordChangeError): self.run_change()
+                self.assertEqual(self.results.verify_password_source.call_count, 2)
+                self.repo.change.assert_not_called(); self.receipts.complete.assert_not_called()
+                for tx in self.transactions: tx.commit.assert_not_called()
+                self.assertEqual(len(self.transactions), 2); self.assertEqual(self.active, []); self.erased()
+
     def test_all_required_dependencies_reject_none(self):
         deps = dict(unit_of_work=self.owner._uow, access=self.access, repository=self.repo,
                     results=self.results, replay_verifier=self.replay, hasher=self.hasher,

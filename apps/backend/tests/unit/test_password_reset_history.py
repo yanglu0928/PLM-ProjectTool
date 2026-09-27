@@ -1,4 +1,5 @@
 import unittest
+from dataclasses import replace
 from unittest.mock import Mock, patch
 from contextlib import contextmanager
 from datetime import datetime, timezone, timedelta
@@ -13,6 +14,38 @@ from plm_assistant.modules.platform.application.idempotency import IdempotencyRe
 
 
 class ResetHistoryTests(unittest.TestCase):
+    def test_preparation_first_unknown_or_wrong_target_actor_version_denies(self):
+        for fault in ('unknown', 'target', 'actor', 'version'):
+            with self.subTest(fault=fault):
+                self.setUp()
+                result = object() if fault == 'unknown' else replace(self.first, **(
+                    {'user_id': uuid4()} if fault == 'target' else
+                    {'actor_id': uuid4()} if fault == 'actor' else {'before_user_version': 2, 'user_version': 3}))
+                self.results.get.return_value = result
+                with self.assertRaises(PasswordResetError): self.run_reset()
+                self.results.verify_password_source.assert_not_called(); self.receipts.reserve.assert_not_called()
+                self.repo.reset.assert_not_called()
+                for tx in self.transactions: tx.commit.assert_not_called()
+                self.assertEqual(self.active, []); self.assertFalse(any(self.command.password.temporary_password))
+
+    def test_write_history_reserve_and_first_changes_never_commit(self):
+        for fault in ('missing', 'unknown', 'operation', 'status', 'first-id', 'first-trace', 'final-actor'):
+            with self.subTest(fault=fault):
+                self.setUp()
+                if fault == 'missing': self.receipts.reserve.return_value = None
+                elif fault == 'unknown': self.receipts.reserve.return_value = object()
+                elif fault == 'operation': self.receipts.reserve.return_value = IdempotencyResult('V1_AUTH_PASSWORD_CHANGE', self.first.result_id, 200)
+                elif fault == 'status': self.receipts.reserve.return_value = IdempotencyResult(self.hint.ref_type, self.first.result_id, 201)
+                elif fault == 'first-id': self.results.get.side_effect = [self.first, replace(self.first, result_id=uuid4())]
+                elif fault == 'first-trace': self.results.get.side_effect = [self.first, replace(self.first, trace_id=uuid4())]
+                else: self.access.prove.side_effect = [self.proof, self.proof, None]
+                with self.assertRaises(PasswordResetError): self.run_reset()
+                self.results.verify_password_source.assert_called_once()
+                self.repo.reset.assert_not_called(); self.receipts.complete.assert_not_called()
+                for tx in self.transactions: tx.commit.assert_not_called()
+                self.assertEqual(len(self.transactions), 2); self.assertEqual(self.active, [])
+                self.assertFalse(any(self.command.password.temporary_password))
+
     def test_all_required_dependencies_reject_none(self):
         deps = dict(unit_of_work=self.owner._uow, access=self.access, repository=self.repo,
                     results=self.results, replay_verifier=self.replay, hasher=self.hasher,

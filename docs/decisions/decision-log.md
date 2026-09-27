@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-343
+
+- Executed：4参数化方法共reset准备4/写7与change准备2/写8场景，first/hint/op/status/current-final错配拒绝；准备无KDF/reserve、历史写已verify1或2次后无repo/complete/commit、UOW闭合/密码擦除。1456unit无失败/2既有跳过，exit0。无生产/Schema/API/依赖改变，coverage/PG/wheel本轮未跑，最近82.432%不推算更新；下一适配器拒绝与统一实际复验，90%/性能/Gate/包待。
+
+- Phase2/P07A04P03编码前检查见replay-defensive；历史prepare/write first-receipt坐标类型/op/status/current-final违约，明确未repo/commit/UOW闭合/擦除；只测可信Port错误，不冒充PG。完整unit重跑，coverage/PG本批不推算，旧Hash/范围保留，下一适配器与统一复验。无生产/Schema/API/算法/依赖改变，风险回滚先记，安全/性能/Gate未通过。
+
 ## DEC-20260927-342
 
 - Executed：5参数化方法新写正向控制/两Repo返回/first/final防御专测通过，明确无commit/擦除/UOW关闭；1452unit无失败/2跳过与同轮四实际PG/Windows全通过。密码991/1017行97.443%、305/370分支82.432%，全Auth92.352%/74.743%，工厂单列，exit1保90%缺口。无生产/Schema/API/依赖变化，旧Hash保留/wheel未跑；A04还有历史写hint-first违约，下一P03再适配器，不宣称整项完成，性能/安全/Gate/可用包待。
