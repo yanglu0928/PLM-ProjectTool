@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-356
+
+- Executed：1480unit無失败/errors0/2既有跳过，12实际链全通过；完整Auth3190/3364行94.828%、812/988分支82.186%，false/exit1，不用综合91.958%代替90%分支。密码91.146%保持、工厂8/10单列；旧Hash不变，新a2fb0a38…。生产/分母不变、性能/wheel未跑；下一仅User创建Service拒绝边界，不豁免全Auth/Gate/包。
+
+- Phase2/P07A11编码前检查见session-coverage；完整unit+12实际链同轮测量，保完整Auth/密码原范围/工厂单列与独立90%行和分支控制。新runtime保旧Hash，不改变生产或排除范围；无Schema/API/权限/依赖变，撤验证无升级。
+- 测试与覆盖结果待实测，客观失败保留；正式trust/性能CR008 FAIL/Gate/可用包仍待，不由本批合成信任回归代替发行。
+
 ## DEC-20260927-355
 
 - Executed：重跑exit0，实际Session健康/缺记录/错用户，三fact与三Port注入拒绝，实际reset受限无Project；实际唯一约束拒绝第二活跃成员后原投影健康，十二表逐次不变。原dualScope空/260publication回归通过。歧义分支未达，unit最近1480本批未跑，coverage/性能/wheel未跑，下一完整12链统一实测；正式trust/Gate/包未完成。

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：0.1.0.dev0/P07-A11新增独立完整Auth复验入口，1480unit无失败/2跳过与12实际PG/Windows/Vault链全通过；完整Auth行94.828%/分支82.186%，90%分支未达/exit1，密码91.146%保持，工厂单列。完整范围/分母/旧Hash不变、新a2fb0a38…；无生产/Migration/API/权限/依赖变化，兼容0049无升级，性能/wheel未跑。下一User创建Service防御，完整安全/CR008性能FAIL/正式trust/Gate/可用包未完成。
+
 - 2026-09-27：0.1.0.dev0/P07-A10-P02新增实际PG会话投影来源验证，当前源/缺记录/错用户、明确fact与Project故障注入、实际reset受限无Project与十二表无写/原publication回归通过。首次重复成员UniqueViolation/exit1如实保留，修正计划为实际唯一约束拒绝，不禁约束/冒充歧义分支覆盖；重跑exit0。无生产/Migration/API/权限/依赖变化，兼容0049无升级；unit最近1480本批未跑，coverage/wheel/性能未跑，完整安全/性能FAIL/正式trust/Gate/可用包待，下一12链统一实测。
 
 - 2026-09-27：0.1.0.dev0/AUT-04-A12-P07-A10-P01新增4参数化会话投影入口测试，全量1480unit无失败/2既有跳过；依赖/uid/真实未启动事务拒绝、token绑定优先且异常不fallback。无生产/Migration/API/权限/依赖变化，兼容0049无升级；源码无clock注入，纠正time计划不添加接口。仅P01通过，实际当前凭据/Project来源P02待，coverage/11PG/wheel/性能未跑，原80.162%与Hash保留，完整安全/Gate/可用包未完成。
