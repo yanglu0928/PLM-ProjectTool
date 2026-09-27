@@ -85,3 +85,112 @@ class UserStateServiceTests(unittest.TestCase):
         with self.assertRaises(UserStateError) as caught:self.service.disable(self.cmd,idempotency_key='Synthetic-key-123')
         self.assertEqual(str(caught.exception),'AUTH_STATE_UNAVAILABLE')
         self.assertEqual(str(UserStateError('private source')),'AUTH_STATE_UNAVAILABLE')
+
+    def _track_uow(self):
+        original = self.service._uow
+        self.boundaries = []
+        @contextmanager
+        def tracked():
+            self.boundaries.append('enter')
+            try:
+                with original() as tx:
+                    yield tx
+            finally:
+                self.boundaries.append('exit')
+        self.service._uow = tracked
+
+    def _deny_closed(self, code='AUTH_STATE_UNAVAILABLE'):
+        self._track_uow()
+        with self.assertRaises(UserStateError) as caught:
+            self.service.disable(self.cmd, idempotency_key='Synthetic-key-123')
+        self.assertEqual(caught.exception.code, code)
+        self.assertEqual(self.boundaries, ['enter', 'exit'])
+        self.tx.commit.assert_not_called()
+
+    def test_all_required_dependencies_refuse_none_before_uow(self):
+        uow = Mock()
+        dependencies = dict(unit_of_work=uow, access=self.access, repository=self.repo,
+            results=self.results, audit=self.audit, receipts=self.receipts, license_guard=self.guard)
+        for key in dependencies:
+            with self.subTest(dependency=key), self.assertRaises(ValueError):
+                UserStateService(**(dependencies | {key: None}))
+        uow.assert_not_called()
+
+    def test_clock_and_actor_proof_refuse_before_receipt(self):
+        for kind in ('none_time', 'bool_time', 'string_time', 'naive_time', 'wrong_proof', 'tampered_proof'):
+            self.setUp()
+            values = {'none_time': None, 'bool_time': True, 'string_time': 'Synthetic time',
+                      'naive_time': datetime.now()}
+            if kind in values:
+                self.service._clock = Mock(return_value=values[kind])
+            elif kind == 'wrong_proof':
+                self.access.prove.return_value = object()
+            else:
+                object.__setattr__(self.proof, 'session_version', True)
+            with self.subTest(kind=kind):
+                self._deny_closed()
+                if kind in values:
+                    self.access.prove.assert_not_called()
+                self.receipts.reserve.assert_not_called()
+                self.repo.change.assert_not_called()
+                self.audit.append.assert_not_called()
+
+    def test_receipt_type_status_and_result_reference_refuse_no_write(self):
+        for kind in ('type', 'status', 'reference', 'missing_result'):
+            self.setUp()
+            self.receipts.reserve.return_value = (object() if kind == 'type' else IdempotencyResult(
+                'V1_AUTH_USER_DISABLE', uuid4() if kind == 'reference' else self.result.result_id,
+                201 if kind == 'status' else 200))
+            if kind == 'missing_result':
+                self.results.get.return_value = None
+            with self.subTest(kind=kind):
+                self._deny_closed()
+                if kind in ('type', 'status'):
+                    self.results.get.assert_not_called()
+                self.repo.change.assert_not_called()
+                self.audit.append.assert_not_called()
+                self.receipts.complete.assert_not_called()
+
+    def test_change_response_contract_refuses_before_audit(self):
+        for kind in ('view_type', 'before', 'user', 'version', 'state', 'count_bool', 'count_negative', 'count_overflow'):
+            self.setUp()
+            view, before, count = self.view, 'ENABLED', 2
+            if kind == 'view_type': view = object()
+            elif kind == 'before': before = 'DISABLED'
+            elif kind == 'user': view = replace(view, user_id=uuid4())
+            elif kind == 'version': view = replace(view, lock_version=3)
+            elif kind == 'state': view = replace(view, account_state='ENABLED')
+            else: count = {'count_bool': True, 'count_negative': -1, 'count_overflow': 2**63}[kind]
+            self.repo.change.return_value = (view, before, count)
+            with self.subTest(kind=kind):
+                self._deny_closed()
+                self.audit.append.assert_not_called()
+                self.results.record.assert_not_called()
+                self.receipts.complete.assert_not_called()
+
+    def test_first_response_binding_and_invalid_audit_refuse_before_complete(self):
+        for kind in ('user', 'operation', 'expected_version', 'view', 'audit_id'):
+            self.setUp()
+            if kind == 'user':
+                self.results.record.return_value = replace(self.result,
+                    first_view=replace(self.view, user_id=uuid4()))
+            elif kind == 'operation':
+                self.results.record.return_value = replace(self.result, operation='ENABLE',
+                    first_view=replace(self.view, account_state='ENABLED'), revoked_session_count=0)
+            elif kind == 'expected_version':
+                self.results.record.return_value = replace(self.result, expected_version=2,
+                    first_view=replace(self.view, lock_version=3))
+            elif kind == 'view':
+                self.results.record.return_value = replace(self.result,
+                    first_view=replace(self.view, username_display='Synthetic mismatch'))
+            else:
+                self.audit.append.return_value = True
+            with self.subTest(kind=kind):
+                self._deny_closed()
+                self.receipts.complete.assert_not_called()
+
+    def test_final_changed_proof_refuses_after_receipt_without_commit(self):
+        changed = replace(self.proof, session_id=uuid4())
+        self.access.prove.side_effect = [self.proof, changed]
+        self._deny_closed('AUTH_ACCESS_DENIED')
+        self.receipts.complete.assert_called_once()

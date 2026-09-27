@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-360
+
+- Executed：6新增方法，1497unit无失败/errors0/2既有跳过、exit0；七依赖/六clock-proof/四收据-first/八Repo/五first-Audit来源/最终proof改变拒绝，无commit、已进UOW均退出；末核拒绝允许先complete但不提交，不冒充SQL回滚。生产不改，coverage/13PG/wheel/性能未跑，原82.186%与Hash保持；下一User状态Access/Repo独立拒绝，正式trust/Gate/包待。
+
+- Phase2/P07A14编码前检查见user-state-defensive；七依赖/clock/ActorProof/收据/Repo/first错误拒绝，无commit/UOW闭合，仅Service Port不冒充SQL。无生产/Schema/API/权限/算法/依赖变，撤测试无升级。
+- 完整unit实际跑，coverage/13PG/wheel/性能本批未跑，旧82.186%/raw/90%保留；实际Repo另任务，正式trust/Gate/包待。
+
 ## DEC-20260927-359
 
 - Executed：首次预期Service错误捕获时fixture未导出异常类导致AttributeError/exit1，直接导入正式异常类后重跑exit0；实际缺行/源比对、原密码True/False、四verifier故障、三SQL22012固定拒绝，实际insert/get后None故障九表全行回滚/密码擦除及同名称正常创建成功，原publication回归通过。无生产变化，unit最近1491本批未跑，coverage/性能/wheel未跑；下一独立User状态Service防御，13链统一覆盖后再测，不冒充全安全/Gate/包。
