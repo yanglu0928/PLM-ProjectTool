@@ -1,6 +1,12 @@
 # 自主决策记录
 
 ## DEC-20260927-274
+## DEC-20260927-275
+
+- Phase2/JOB-01-A05-P01按CR-JOB-005实现同UOW当前list授权、registry原source、Jobs-only有限candidate/keyset、customer只原actor。不可见资源允许空页继续，内部position私有，HTTP前加密游标避免泄露隐藏坐标。
+- 原全权限矩阵加冻结LIST对应第27项、旧项保留；实际Session重复撤销测试碰immutable保护，仅拆独立会话不改DB。1201后端/2跳过及Document实际Scope分页/权限/坏源十三表无写通过；Audit/HTTP/游标/Windows/完整Scope待。无Schema或依赖变；撤内部list/policy回滚保详情和历史。
+
+## DEC-20260927-274
 
 - Phase2/P04仅Windows两显式platform注册Document Parse Job Owner、实际来源/结果/原Audit proof；原许可/当前权限、Audit Owner及default/login关闭保持。无Schema/API路径/依赖/角色改变。
 - 先成功授权HTTP，再实际Factory与构造故障/真实正式信任不可用验证。Parser历史合成不冒充Worker/字节/质量，Document取消/重试不在本项注册。回滚撤registry及imports保历史。
