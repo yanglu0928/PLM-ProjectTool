@@ -1,5 +1,7 @@
 # CR-AUT-008 密码计算与全局管理写锁排队
 
+2026-09-27/AUT-04-A12-P06-A04-P02-A02补充：reset/change历史first精确Credential源、无DB真实KDF、fresh full-first/source无KDF复核已内部通过；原verify兼容委托。1409 tests/实际PG reset2-change3-later4历史真实KDF/独立锁/READ ONLY末核/九表无写/原原子与发布/wheel通过，正向License合成。Service未接入，性能未重跑/上轮FAIL保留，CR OPEN；无Migration/API/依赖，回滚接口保历史，下一reset编排与bounded race后change，风险/计划见progress与DEC329。
+
 日期2026-09-27；版本0.1.0.dev0；状态CONFIRMED_FAILURE_DESIGN_PENDING_IMPLEMENTATION。来源用户持续授权、冻结64cdf09/CR-AUT007/0049、testing-rules普通写20并发P95<=1秒；保留原实现与冻结版本，不修改算法强度或验收标准。
 
 P06A02最新：reset新hash预计算已实施/真实PG边界与撤权竞争、原原子及Windows完整链通过。20并发reset20成功/P95 1634.810ms（原5653.504ms），仍未达1秒；change尚原实现，14成功/6实际55P03、P95 7559.374ms。旧状态/发布及失败无半写通过，整个CR仍FAIL/OPEN；以下拟选方向保留实施前历史，下一change和history优化，不降低标准。

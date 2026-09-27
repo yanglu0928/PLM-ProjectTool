@@ -6,6 +6,7 @@ from .user_create_result_repository import SqlAlchemyUserCreateResultRepository
 from ..application.user_read import _id,_time
 from ..application.password_change_result import PasswordChangeResult
 from ..application.password_change_replay import PasswordChangeReplayError
+from ..application.ports.password_hash import PasswordHashResult
 
 FIELDS=('result_id','user_id','before_credential_id','credential_id','before_credential_version',
     'credential_version','before_user_version','user_version','audit_event_id','trace_id',
@@ -40,18 +41,44 @@ class SqlAlchemyPasswordChangeResults:
         except Exception:raise PasswordChangeReplayError() from None
 
     def verify_credential_password(self,transaction,*,result,role,password):
+        return self.verify_password_source(source=self.password_source(transaction,result=result,role=role),password=password)
+
+    def password_source(self,transaction,*,result,role):
+        """Detached exact BEFORE/AFTER source; not the latest User credential."""
         try:
-            if (type(result) is not PasswordChangeResult or type(role) is not str or role not in ('BEFORE','AFTER')
-                or type(password) is not memoryview or not 1<=len(password)<=1024):raise PasswordChangeReplayError()
+            if (type(result) is not PasswordChangeResult or type(role) is not str or role not in ('BEFORE','AFTER')):
+                raise PasswordChangeReplayError()
             result.__post_init__()
             if self.get(transaction,result_id=result.result_id)!=result:raise PasswordChangeReplayError()
             row=self._credential(transaction,result,role)
-            matched=self._verifier.verify_password(password,password_hash=row.password_hash,
-                algorithm_id=row.algorithm_id,parameter_set=row.parameter_set)
+            return PasswordHashResult(row.password_hash,row.algorithm_id,dict(row.parameter_set))
+        except PasswordChangeReplayError:raise
+        except Exception:raise PasswordChangeReplayError() from None
+
+    def verify_password_source(self,*,source,password):
+        """Real KDF without database access; no authority is cached."""
+        try:
+            self._validate_source(source)
+            if type(password) is not memoryview or not 1<=len(password)<=1024:raise PasswordChangeReplayError()
+            matched=self._verifier.verify_password(password,password_hash=source.password_hash,
+                algorithm_id=source.algorithm_id,parameter_set=source.parameter_set)
             if type(matched) is not bool:raise PasswordChangeReplayError()
             return matched
         except PasswordChangeReplayError:raise
         except Exception:raise PasswordChangeReplayError() from None
+
+    def require_password_source(self,transaction,*,result,role,source):
+        """Fresh exact first and source comparison; no KDF and no permission."""
+        try:
+            self._validate_source(source)
+            if self.password_source(transaction,result=result,role=role)!=source:raise PasswordChangeReplayError()
+        except PasswordChangeReplayError:raise
+        except Exception:raise PasswordChangeReplayError() from None
+
+    @staticmethod
+    def _validate_source(source):
+        if type(source) is not PasswordHashResult:raise PasswordChangeReplayError()
+        SqlAlchemyUserCreateResultRepository._validate_hash(source.password_hash,source.algorithm_id,source.parameter_set)
 
     @staticmethod
     def _credential(transaction,result,role):

@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-329
+
+- Executed：1409 tests无失败/2既有跳过；真实PG reset2/change3/later4后闭READ ONLY UOW历史真/最新false、六KDF独立锁可取，最后READ ONLY精确first/source无KDF、错role/source/trace拒绝九表无写；原reset原子及发布、wheel750773通过。Service未接入、性能未跑/上一FAIL保留，下一reset历史编排及bounded race，再change另项；无Migration/API/依赖，CR/Gate开放。
+
+- A02编码前检查见 historical-source progress：在既有 auth first Repository 分离 exact source/无DB verify/fresh require_source，复用隐藏 PasswordHashResult 副本，原 verify 委托保持；source非权限，原 Service本项不改，无Migration/API/依赖。CR008继续，测试待，不以接口通过代替历史20性能通过。
+
 ## DEC-20260927-328
 
 - Executed：1405 tests 无失败/2既有跳过，真实PG只读/未提交/回滚/原结果/锁定行20次查询/四scope/fingerprint/PENDING拒绝与九表无写通过；原reset prehash/原子真实change-history/发布通过，wheel750252通过。Service尚未调用，性能未重跑且上轮FAIL保留，下一历史source detached；无Migration/API/依赖，CR/Gate未关闭。

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P06-A04-P02-A02 分离reset/change精确历史Credential源、无DB真实KDF与fresh完整first/source复核；原verify委托兼容，不缓存权限。1409 tests无失败/2既有跳过，实际PG reset2/change3/later4历史KDF/独立锁/READ ONLY末核/九表无写、原reset原子/发布、wheel750773通过。兼容0049，无Migration/API/依赖/生产升级；回滚恢复旧verify保历史。Service未接入，历史锁段/性能FAIL/正式安全/完整包/Gate仍待，下一reset历史编排。
+
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P06-A04-P02-A01 增加已完成 receipt 只读提示（精确 scope/fingerprint、无锁/无 autoflush/无提交、固定错误），原 reserve/complete 保持。1405 tests 无失败/2既有跳过，真实PG READ ONLY/可见性/回滚/锁竞争/九表无写与原reset原子及发布回归、wheel750252通过。兼容0049，无Migration/API/依赖；回滚撤未接入的方法即可，密码历史锁段尚未修复、性能仍FAIL、正式信任/完整安装包/Gate待。
 
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P06-A04-P01新增test-only8/16/20-slot实际Windows/PG/Scrypt校准及原4-slot历史20重放。新写全部20成功，但change P95仍约2.14/1.67/1.45秒；reset20-slot单轮0.96秒、process峰值工作集2.63GiB，未修改生产4。历史reset约6.01秒；change14成功/6实际global55P03约7.91秒，两组九表无写/first保持，旧状态/发布回归通过，验收脚本均exit1 FAIL。仅验证/文档，无生产代码/Migration/API/依赖/升级；unit/wheel未重跑，CR/Gate/安装包不关闭，下一历史源/KDF事务外修复。

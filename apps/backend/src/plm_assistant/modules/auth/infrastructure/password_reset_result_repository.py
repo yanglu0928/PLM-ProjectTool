@@ -5,6 +5,7 @@ from .user_orm import PasswordResetResultRow as Row,PasswordCredentialRow as Cre
 from .user_create_result_repository import SqlAlchemyUserCreateResultRepository
 from ..application.password_reset_result import PasswordResetResult
 from ..application.password_reset_replay import PasswordResetReplayError
+from ..application.ports.password_hash import PasswordHashResult
 from ..application.user_read import _id,_time
 
 FIELDS=('result_id','user_id','actor_id','before_credential_id','credential_id','before_credential_version',
@@ -39,18 +40,43 @@ class SqlAlchemyPasswordResetResults:
         except Exception:raise PasswordResetReplayError() from None
 
     def verify_reset_password(self,transaction,*,result,password):
+        return self.verify_password_source(source=self.password_source(transaction,result=result),password=password)
+
+    def password_source(self,transaction,*,result):
+        """Detached exact historical source, never current authority or ORM state."""
         try:
-            if type(result) is not PasswordResetResult or type(password) is not memoryview or not 1<=len(password)<=1024:
-                raise PasswordResetReplayError()
+            if type(result) is not PasswordResetResult:raise PasswordResetReplayError()
             result.__post_init__()
             if self.get(transaction,result_id=result.result_id)!=result:raise PasswordResetReplayError()
             row=self._credential(transaction,result)
-            matched=self._verifier.verify_password(password,password_hash=row.password_hash,
-                algorithm_id=row.algorithm_id,parameter_set=row.parameter_set)
+            return PasswordHashResult(row.password_hash,row.algorithm_id,dict(row.parameter_set))
+        except PasswordResetReplayError:raise
+        except Exception:raise PasswordResetReplayError() from None
+
+    def verify_password_source(self,*,source,password):
+        """Real KDF with no transaction; the caller controls the resource bound."""
+        try:
+            self._validate_source(source)
+            if type(password) is not memoryview or not 1<=len(password)<=1024:raise PasswordResetReplayError()
+            matched=self._verifier.verify_password(password,password_hash=source.password_hash,
+                algorithm_id=source.algorithm_id,parameter_set=source.parameter_set)
             if type(matched) is not bool:raise PasswordResetReplayError()
             return matched
         except PasswordResetReplayError:raise
         except Exception:raise PasswordResetReplayError() from None
+
+    def require_password_source(self,transaction,*,result,source):
+        """Recheck actual immutable first/source, without KDF or authorization."""
+        try:
+            self._validate_source(source)
+            if self.password_source(transaction,result=result)!=source:raise PasswordResetReplayError()
+        except PasswordResetReplayError:raise
+        except Exception:raise PasswordResetReplayError() from None
+
+    @staticmethod
+    def _validate_source(source):
+        if type(source) is not PasswordHashResult:raise PasswordResetReplayError()
+        SqlAlchemyUserCreateResultRepository._validate_hash(source.password_hash,source.algorithm_id,source.parameter_set)
 
     @staticmethod
     def _credential(transaction,result):
