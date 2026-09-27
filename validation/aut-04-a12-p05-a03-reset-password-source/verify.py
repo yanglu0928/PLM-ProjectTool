@@ -16,7 +16,7 @@ spec=spec_from_file_location('_reset_source_atomic_change',Path(__file__).resolv
 a=module_from_spec(spec);spec.loader.exec_module(a);m=a.m
 
 
-def exercise(v):
+def exercise(v,access_checks=False):
     db=v['db'];hasher=m.ScryptPasswordHasher();receipts=m.SqlAlchemyIdempotencyReceipts()
     createfirst=m.SqlAlchemyUserCreateResultRepository(verifier=hasher)
     creator=m.ManagedUserCreateService(unit_of_work=v['uow'],access=m.SqlAlchemyUserCreateAccess(),license_guard=v['guard'],
@@ -30,10 +30,10 @@ def exercise(v):
         issue_access=m.SqlAlchemyPasswordIssueAccess(hasher),audit=v['audit'],idempotency=receipts)
     def issue(user,password):return sessions.issue(user_id=user,trace_id=uuid4(),proof=m.PasswordIssueProof(bytearray(password)))
     initial=issue(uid,old);repo=SqlAlchemyPasswordResetResults(verifier=hasher)
-    def transition(tx,user,hashed):
+    def transition(tx,user,hashed,admin=None):
         previous,oldid,version,state=tx.session.execute(select(UserRow.lock_version,UserRow.active_password_credential_id,
             UserRow.credential_version,UserRow.state).where(UserRow.user_id==user).with_for_update()).one()
-        actor=v['users'][1]
+        actor=v['users'][1] if admin is None else admin
         newid=tx.session.execute(insert(PasswordCredentialRow).values(user_id=user,credential_version=version+1,
             password_hash=hashed.password_hash,algorithm_id=hashed.algorithm_id,parameter_set=dict(hashed.parameter_set),
             must_change_password=True,changed_by=actor).returning(PasswordCredentialRow.password_credential_id)).scalar_one()
@@ -107,6 +107,58 @@ def exercise(v):
             raise RuntimeError('Synthetic post-record caller fault')
     except RuntimeError:pass
     assert reached and snap()==before and sessions.validate(fresh.token).user_id==uid
+    if access_checks:
+        from plm_assistant.modules.auth.infrastructure.password_reset_access import SqlAlchemyPasswordResetAccess
+        from datetime import timedelta
+        access=SqlAlchemyPasswordResetAccess(verifier=hasher)
+        with v['uow']() as tx:
+            assert access.lock_deployment(tx) is True
+            admin_proof=access.prove(tx,session_token=v['tokens'][1],csrf_token=m.fixture.base.auth.CSRF,now=datetime.now(timezone.utc))
+            assert admin_proof.user_view.user_id==v['users'][1]
+            assert access.prove(tx,session_token=v['tokens'][1],csrf_token=b'?'*32,now=datetime.now(timezone.utc)) is None
+            assert access.prove(tx,session_token=fresh.token,csrf_token=fresh.csrf_token,now=datetime.now(timezone.utc)) is None
+            assert access.require_self_reset(tx,proof=admin_proof,result=first,session_token=v['tokens'][1],
+                csrf_token=m.fixture.base.auth.CSRF,trace_id=first.trace_id,expected_version=first.before_user_version,
+                now=datetime.now(timezone.utc)) is False
+        own=create('Synthetic reset self access Admin')
+        # TEST_ONLY role promotion; reset is not yet implemented, current own Session is genuine Scrypt-issued.
+        db.execute("UPDATE plm.auth_users SET deployment_role='DEPLOYMENT_ADMIN',lock_version=lock_version+1 WHERE user_id=%s",(own.user_id,))
+        own_session=issue(own.user_id,old)
+        with v['uow']() as tx:
+            assert access.lock_deployment(tx) is True
+            proof=access.prove(tx,session_token=own_session.token,csrf_token=own_session.csrf_token,now=datetime.now(timezone.utc))
+            assert proof.user_view.user_id==own.user_id
+            own_first=repo.record(tx,draft=transition(tx,own.user_id,hashed,admin=own.user_id))
+            params=dict(proof=proof,result=own_first,session_token=own_session.token,csrf_token=own_session.csrf_token,
+                trace_id=own_first.trace_id,expected_version=proof.user_view.lock_version,now=datetime.now(timezone.utc))
+            assert access.require_self_reset(tx,**params) is True
+            for bad in ({'session_token':b'?'*32},{'csrf_token':b'?'*32},{'trace_id':uuid4()},
+                {'expected_version':params['expected_version']+1},{'proof':replace(proof,credential_id=uuid4())},
+                {'proof':replace(proof,session_version=proof.session_version+1)},
+                {'result':replace(own_first,revoked_session_count=own_first.revoked_session_count+1)},
+                {'now':datetime.now(timezone.utc)+timedelta(days=1)}):
+                assert access.require_self_reset(tx,**(params|bad)) is False
+            for changes in ({'username_display':'Synthetic unexpected renamed self'}, {'deployment_role':'NONE'}, {'state':'DISABLED'}):
+                savepoint=tx.session.begin_nested()
+                tx.session.execute(update(UserRow).where(UserRow.user_id==own.user_id).values(**changes,
+                    lock_version=UserRow.lock_version+1))
+                assert access.require_self_reset(tx,**params) is False
+                savepoint.rollback()
+                assert access.require_self_reset(tx,**params) is True
+            tx.commit()
+        with v['uow']() as tx:
+            assert access.prove(tx,session_token=own_session.token,csrf_token=own_session.csrf_token,now=datetime.now(timezone.utc)) is None
+        restricted=issue(own.user_id,temporary)
+        with v['uow']() as tx:
+            assert access.prove(tx,session_token=restricted.token,csrf_token=restricted.csrf_token,now=datetime.now(timezone.utc)) is None
+        own_change=change.change(a.ChangePassword(restricted.token,restricted.csrf_token,uuid4(),
+            a.PasswordChangeProof(bytearray(temporary),bytearray(normal))),idempotency_key=str(uuid4()))
+        assert own_change.credential_version==3
+        own_normal=issue(own.user_id,normal)
+        with v['uow']() as tx:
+            assert access.prove(tx,session_token=own_normal.token,csrf_token=own_normal.csrf_token,
+                now=datetime.now(timezone.utc)).user_view.user_id==own.user_id
+        print('PASS reset Admin access: actual current normal Admin-CSRF/deployment lock, wrongCSRF/NONE denied; genuine own identity same-UOW TEST_ONLY self reset first precise final true, forged token/CSRF/trace/expected/proof/count/expiry and changed name/role/state deny; old and restricted Admin no fresh authority; actual change restores normal Admin. No License/atomic reset/receipt/HTTP/package proof.')
     print('PASS real reset source: actual caller-UOW record/get server acceptedAt and original Credential2 PG/Scrypt match; password differences/forged first/KDF exception-truthy refuse nine tables unchanged/buffers erased. Later actual restricted change→normal Credential3/new login retains original temporary replay; bad new profile and legitimate record then caller fault roll back root/Session/Audit/first, current Session preserved. TEST_ONLY reset transition, NOT Admin-CSRF-License/IfMatch/atomic reset/receipt/HTTP/package proof.')
 
 

@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-320
+
+- Executed：1380 tests无失败（2既有跳过）；实际PG/Scrypt current normalAdmin-CSRF/部署锁、wrongCSRF/NONE与other-self拒绝，同UOW TEST_ONLY self reset实际first专用末核成功，伪造/过期及意外改名角色停用拒绝/savepoint恢复，旧及受限会话无新管理权、actualchange/newlogin恢复Admin；source/发布回归/wheel743224通过。无Migration/API/依赖，未验唯一Admin/License/原子reset/receipt/HTTP，下一完整原子命令。
+
+- P05A04编码前检查见progress；复用normal current Admin-CSRF proof和部署锁，独立self首次commit前精确末核actualfirst/expected/trace/原normal凭据/原生命周期与本次受限换密、全部Session撤销count。旧/受限Session不授新管理权，最后Admin经change可恢复，License前后另Service负责。无Migration/API/依赖，真实矩阵待。
+
 ## DEC-20260927-319
 
 - Executed：3新unit/1377 tests无失败（2既有跳过）；真PG/Scrypt caller-UOW first/server acceptedAt/当次临时密码匹配，差异/伪造源/KDF异常非bool九表无写且擦除；later真正change转normal3仍历史临时匹配，坏新profile及合法first后caller故障全部回滚/原会话保留，原发布/wheel741372通过。TEST_ONLY reset转换非当前授权/原子reset/receipt/HTTP证明；无Migration/API/依赖，下一normal Admin身份与self专用末核。

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P05-A04新增normal current Admin-CSRF及self首次reset专用末核Port。1380 tests无失败（2既有跳过），实际PG/Scrypt真实Admin与坏CSRF/NONE/other-self拒绝、同UOW实际first末核/伪造到期及意外身份变化拒绝、旧受限无新权及actualchange/newlogin恢复Admin，source/发布回归/wheel743224通过。兼容0049，无Migration/API/依赖/生产升级；撤未挂Port保历史。TEST_ONLY reset转换非License/原子reset/If-Match/收据/唯一Admin/HTTP证明；下一原子reset，完整包/Gate待。
+
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P05-A03新增caller-UOW reset first Repository/server acceptedAt及当次临时Credential真实Scrypt来源。1377 tests无失败（2既有跳过），真PG临时匹配/差异/伪造first/KDF异常非bool九表无写与擦除，later真正change到normal3保历史匹配/坏新profile及合法first后caller故障回滚保原会话、原发布/wheel741372通过。兼容0049，无Migration/API/依赖/生产升级；撤未挂Port保历史。TEST_ONLY reset转换非当前Admin/原子reset/receipt/HTTP证明；下一身份/self末核，完整包/Gate待。
 
 - 2026-09-27：`0.1.0.dev0`/AUT-04-A12-P05-A02新增0049/ORM不可变管理员reset first15字段，精确当前目标/前后Credential/normal Admin actor或self前凭据/Audit/time/全撤销count及非空down保护。1374 tests无失败（2既有跳过），真实空有数据往返十三旧表/ORM一致、normal2含expired/disabled0/self、错误及受限源拒绝/合法写后回滚/独立PG并发单first、五旧Schema/Windows改密/原发布/wheel740067通过。Audit失败夹具枚举修正后source拒绝通过。保留0001～0048，无生产迁移/API/依赖；升级备份停写0049，有历史不down，撤入口保历史。TEST_ONLY源非真密码/原子reset证明；下一Repository/source，完整包/Gate待。

@@ -58,3 +58,5 @@ P05A01实施前设计：reset first15字段记录result/user/actor/old-new Crede
 2026-09-27/P05A02：0049/ORM独立15字段及完整DB source/immutability/down保护已真实隔离验收。空有数据/旧十三表保持、disabled0/self范围、坏源/Audit/时间/count/受限actor拒绝、实际回滚/并发及旧链通过，原0001～0048保留，无生产迁移。TEST_ONLY转换非真密码/当前认证或原子reset，下一实际Repository/Scrypt source；CR/Gate未关闭。
 
 2026-09-27/P05A03：实际first Repository及当次temporary Credential真实Scrypt source已验，后续真正change到normal3仍原临时密码历史匹配；坏profile/实际合法first后caller故障回滚保原Session。无当前Admin/License/CSRF授权或原子reset/receipt/HTTP证明，下一normal Admin身份及self专用末核与原子Service；CR整体保留。
+
+2026-09-27/P05A04：current normalAdmin-CSRF与首次self reset精确末核已实际PG验证，原生命周期/实际first/原normalCredential/受限新凭据及预期撤销严格绑定；旧及受限Session不授新管理权，actualchange/newlogin恢复Admin。TEST_ONLY重置非完整原子Service/License/If-Match/receipt/唯一Admin/HTTP证明，下一完整命令，不关闭CR/Gate。
