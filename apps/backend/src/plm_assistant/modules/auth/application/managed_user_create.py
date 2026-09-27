@@ -60,9 +60,11 @@ class ManagedUserCreateService:
                         raise ManagedUserCreateError()
                     result=self._results.get(tx,user_id=replay.ref_id)
                     self._check_result(result,actor,username.display)
-                    if result.first_view.user_id!=replay.ref_id:raise ManagedUserCreateError()
+                    if result.first_view.user_id!=replay.ref_id:
+                        raise ManagedUserCreateError()
                     proven=self._replay.require_match(tx,result=result,proof=UserCreatePasswordProof(password))
-                    if proven!=result:raise ManagedUserCreateError()
+                    if proven!=result:
+                        raise ManagedUserCreateError()
                     self._final(tx,command,actor)
                     return result.first_view
                 view=memoryview(password)
@@ -71,8 +73,10 @@ class ManagedUserCreateService:
                 self._check_hash(hashed)
                 user=self._users.add_user(tx,username_display=username.display,
                     username_normalized=username.normalized,actor_id=actor)
-                if user is None:raise ManagedUserCreateError('AUTH_USERNAME_CONFLICT')
-                if not _id(user):raise ManagedUserCreateError()
+                if user is None:
+                    raise ManagedUserCreateError('AUTH_USERNAME_CONFLICT')
+                if not _id(user):
+                    raise ManagedUserCreateError()
                 credential=self._users.add_credential(tx,user_id=user,password_hash=hashed,actor_id=actor)
                 if not _id(credential) or self._users.activate_initial_credential(
                     tx,user_id=user,credential_id=credential,actor_id=actor) is not True:
@@ -81,12 +85,14 @@ class ManagedUserCreateService:
                     target_project_id=None,actor_type='USER',actor_id=actor,original_actor_id=None,
                     actor_hint_digest=None,action='USER_CREATED',outcome='SUCCESS',target_owner_module='auth',
                     target_object_type='AUT-01',target_object_id=user,after_state='ENABLED'))
-                if not _id(event):raise ManagedUserCreateError()
+                if not _id(event):
+                    raise ManagedUserCreateError()
                 result=self._results.record(tx,user_id=user,credential_id=credential,actor_id=actor,
                     audit_event_id=event,trace_id=command.trace_id)
                 self._check_result(result,actor,username.display)
                 if (result.first_view.user_id!=user or result.credential_id!=credential
-                    or result.audit_event_id!=event or result.trace_id!=command.trace_id):raise ManagedUserCreateError()
+                    or result.audit_event_id!=event or result.trace_id!=command.trace_id):
+                    raise ManagedUserCreateError()
                 self._receipts.complete(tx,scope=scope,result=IdempotencyResult(OPERATION,user,201))
                 self._final(tx,command,actor)
                 tx.commit()
