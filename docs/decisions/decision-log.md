@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-314
+
+- Executed：1365 tests无失败（2既有跳过）；真PG/Scrypt原子变更、三Session含expired撤销、新登录/当前认证历史双密码恢复、差异拒绝八表不变；五Port+三SQL写后及precommit回滚、真实commit丢确认新登录恢复、同/不同Key两线程各单转换、受限源真正服务转normal，原发布/wheel733922通过。无HTTP/Migration/API/依赖/生产升级，内部PASS非完整包/Gate，下一可选改密HTTP。
+
+- P04A02编码前检查见progress；本人normal/restricted Session-CSRF原子改密，无Admin/License/If-Match。固定本人receipt+非秘密schema fingerprint，首次精确末核/同事务commit，重放须当前有效认证及历史双密码真实KDF，原会话失效不授新写；密码finally擦除。无Migration/依赖/公开API，验证待。
+
 ## DEC-20260927-313
 
 - Executed：1361 tests无失败（2既有跳过）；实际PG/Scrypt普通与受限身份及当前原密码，同一转换UOW锁定身份/first后专用末核成功，伪造Token/CSRF/trace/flag/version/到期拒绝，旧Session无新认证；来源/回滚/发布回归及wheel730294通过。仅Auth前置，TEST_ONLY转换非原子Service/HTTP/包/Gate证明；下一P04A02。
