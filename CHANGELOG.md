@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：0.1.0.dev0/P07-A13-P02真实创建结果缺行/源比对/原密码True-False、明确verifier故障与三实际SQL22012拒绝，实际INSERT/get后None故障九表全行回滚/密码擦除及正常恢复、原publication回归通过exit0；首次验证异常类导入错误已修正并记录。无生产/Migration/API/权限/算法/依赖变化，兼容0049无升级；unit最近1491本批未跑，coverage/wheel/性能未跑，旧82.186%与Hash保持。下一User状态Service拒绝及13链统一实测，正式安全/性能FAIL/trust/Gate/可用包待。
+
 - 2026-09-27：0.1.0.dev0/P07-A13-P01新增5参数化创建结果前SQL/事务异常拒绝方法，非法坐标/DTO/hash与六底层故障固定码、不调用verifier/模拟成功SQL；坏盐测试定位复查修正后完整1491unit无失败/2既有跳过。无生产/Migration/API/权限/算法/依赖变化，兼容0049无升级；仅P01通过、实际SQL来源P02待。coverage/12PG/wheel/性能未跑，原82.186%与Hash保留，正式安全/性能FAIL/trust/Gate/可用包待。
 
 - 2026-09-27：0.1.0.dev0/P07-A12新增6参数化用户创建Service防御方法，全量1486unit无失败/2既有跳过；依赖/收据/first/proof/写来源/clock/hash合同拒绝，无commit/UOW闭合及密码擦除。仅Port合同，不冒充SQL；无生产/Migration/API/权限/算法/依赖变化，兼容0049无升级；coverage/12PG/wheel/性能未跑，原82.186%与Hash保持。下一Result Repo防御/实际来源，完整安全/性能FAIL/正式trust/Gate/可用包待。

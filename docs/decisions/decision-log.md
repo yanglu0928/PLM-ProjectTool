@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-359
+
+- Executed：首次预期Service错误捕获时fixture未导出异常类导致AttributeError/exit1，直接导入正式异常类后重跑exit0；实际缺行/源比对、原密码True/False、四verifier故障、三SQL22012固定拒绝，实际insert/get后None故障九表全行回滚/密码擦除及同名称正常创建成功，原publication回归通过。无生产变化，unit最近1491本批未跑，coverage/性能/wheel未跑；下一独立User状态Service防御，13链统一覆盖后再测，不冒充全安全/Gate/包。
+
+- Phase2/P07A13P02编码前检查见create-result-source；owned真实PG原Repo读取/写入/触发器、缺User/Credential/错DTO、verifier非bool/异常、实际SQL22012事务中止；真实insert/read后显式返回故障，Service全九表回滚及后续真成功，不mock成功SQL/禁触发器。
+- 无生产/Schema/API/算法/依赖变，撤验证无升级；原publication回归，unit1491为最近结果本批未跑，coverage/性能/wheel未跑，原raw/90%与正式trust/Gate/包缺项保持。
+
 ## DEC-20260927-358
 
 - Executed：5参数化方法，record20/get4/DTO4/事务故障6/hash6拒绝；首次1491通过，复查坏盐用例实际改参数，精确修正盐字段后再次完整1491无失败/errors0/2既有跳过，exit0。不mock成功SQL，未调用verifier；仅P01 PASS，实际来源P02待。生产不改，coverage/12PG/wheel/性能未跑，原82.186%与Hash保持，Gate/包待。
