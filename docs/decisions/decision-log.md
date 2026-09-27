@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-342
+
+- Executed：5参数化方法新写正向控制/两Repo返回/first/final防御专测通过，明确无commit/擦除/UOW关闭；1452unit无失败/2跳过与同轮四实际PG/Windows全通过。密码991/1017行97.443%、305/370分支82.432%，全Auth92.352%/74.743%，工厂单列，exit1保90%缺口。无生产/Schema/API/依赖变化，旧Hash保留/wheel未跑；A04还有历史写hint-first违约，下一P03再适配器，不宣称整项完成，性能/安全/Gate/可用包待。
+
+- Phase2/P07A04P02编码前检查见write-defensive。建立可实际成功的Service Port fixture，再故障注入repo/first/current-final防御，明确未commit/擦除/UOW关闭；不修改生产或冒充PG。完整unit后独立四实际集成coverage、保旧Hash/完整范围，90%与性能标准不变，风险回滚先记。
+
 ## DEC-20260927-341
 
 - Executed：A04-P01新增6参数化方法、reset9/change8缺依赖/13历史hint-first-source-actor违约/两类各4非法时间；未KDF/global/reserve/repo/commit，UOW闭合与擦除通过，最终1447unit无失败/2既有跳过。首次2个错op测试在DTO格式校验先拒绝，已改合法其他op并全量复验；再强化明确commit Spy并全量通过。无生产改动，coverage/PG/wheel本轮未跑，原79.189%不推算变更；A04-P02写后防御待，性能/90%/Gate/可用包未关闭。

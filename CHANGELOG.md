@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-27：0.1.0.dev0/AUT-04-A12-P07-A04-P02新增5项参数化新写Service防御，正向唯一commit Spy可达、repo/first/final错配拒绝无commit/密码擦除；1452unit无失败/2既有跳过、同轮四实际PG/Windows通过。密码行97.443%/分支82.432%，全Auth92.352%/74.743%，exit1保90%缺口，Mock不能冒充真实SQL。无生产源码/Migration/API/算法/依赖/升级，兼容0049，wheel未跑，旧JSON/Hash保留；下一A04历史写防御，性能FAIL/Gate/可用包未完成。
+
 - 2026-09-27：0.1.0.dev0/AUT-04-A12-P07-A04-P01新增6个Service准备阶段参数化测试：缺依赖、hint操作/status/first坐标/source/actor违约、非法时间均固定拒绝，未KDF/global/reserve/repo/commit与密码擦除/UOW闭合通过。最终1447unit无失败/2既有跳过；首次op测试格式错误已修并复验，不改生产校验。本轮coverage/四PG/wheel未跑，原79.189%分支实测保持，A04写后防御与90%验收待。无生产源码/Migration/API/算法/依赖/升级，兼容0049，性能FAIL与正式可用包/Gate仍待。
 
 - 2026-09-27：0.1.0.dev0/AUT-04-A12-P07-A03新增8个HTTP异常防御参数化测试及独立全量覆盖入口；1441unit无失败/2既有跳过与四实际PG/Windows场景通过。身份/result违约固定拒绝、写后secret擦除、未知Session不猜测清Cookie，两个密码API行/分支100%；全密码分支79.189%仍未达90，安全验收exit1/性能FAIL保留。无生产源码/Migration/API/权限/算法/依赖变化，兼容0049无生产升级，wheel未跑，原报告/Hash保留；下一Service违约防御，可用包/Gate未完成。
