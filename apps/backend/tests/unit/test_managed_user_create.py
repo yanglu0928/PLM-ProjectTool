@@ -102,3 +102,110 @@ class ManagedUserCreateTests(unittest.TestCase):
         self.results.get.return_value=replace(self.result,actor_id=uuid4())
         with self.assertRaises(ManagedUserCreateError):self.service.create(self.command,idempotency_key=self.key)
         self.replay.require_match.assert_not_called();self.tx.commit.assert_not_called()
+
+    def _assert_denied_closed_and_erased(self, code='AUTH_CREATE_UNAVAILABLE'):
+        with self.assertRaises(ManagedUserCreateError) as caught:
+            self.service.create(self.command, idempotency_key=self.key)
+        self.assertEqual(caught.exception.code, code)
+        self.tx.commit.assert_not_called()
+        self.assertFalse(any(self.command.password))
+        self.uow.return_value.__exit__.assert_called_once()
+
+    def test_all_required_dependencies_refuse_none(self):
+        dependencies = dict(unit_of_work=self.uow, access=self.access, license_guard=self.guard,
+            users=self.users, results=self.results, replay_verifier=self.replay, hasher=self.hasher,
+            audit=self.audit, receipts=self.receipts)
+        for key in dependencies:
+            with self.subTest(dependency=key), self.assertRaises(ValueError):
+                ManagedUserCreateService(**(dependencies | {key: None}))
+        self.uow.assert_not_called()
+
+    def test_malformed_receipts_refuse_before_result_or_hash(self):
+        for kind in ('type', 'operation', 'status'):
+            self.setUp()
+            receipt = (object() if kind == 'type' else IdempotencyResult(
+                'V1_OTHER_CREATE' if kind == 'operation' else OPERATION, self.user,
+                200 if kind == 'status' else 201))
+            self.receipts.reserve.return_value = receipt
+            with self.subTest(kind=kind):
+                self._assert_denied_closed_and_erased()
+                self.results.get.assert_not_called()
+                self.replay.require_match.assert_not_called()
+                self.users.add_user.assert_not_called()
+                self.hasher.hash_password.assert_not_called()
+                self.receipts.complete.assert_not_called()
+
+    def test_replay_result_identity_and_proof_return_refuse_no_write(self):
+        for kind in ('missing', 'display', 'receipt_user', 'proof_result'):
+            self.setUp()
+            self.receipts.reserve.return_value = IdempotencyResult(
+                OPERATION, uuid4() if kind == 'receipt_user' else self.user, 201)
+            if kind == 'missing':
+                self.results.get.return_value = None
+            elif kind == 'display':
+                self.results.get.return_value = replace(self.result,
+                    first_view=replace(self.result.first_view, username_display='Synthetic mismatch'))
+            elif kind == 'proof_result':
+                self.replay.require_match.return_value = None
+            with self.subTest(kind=kind):
+                self._assert_denied_closed_and_erased()
+                self.assertEqual(self.replay.require_match.call_count, int(kind == 'proof_result'))
+                self.hasher.hash_password.assert_not_called()
+                self.users.add_user.assert_not_called()
+                self.audit.append.assert_not_called()
+                self.receipts.complete.assert_not_called()
+
+    def test_write_source_identity_activation_and_first_coordinates_refuse(self):
+        for kind in ('user', 'credential', 'activation', 'audit', 'first_user',
+                     'first_credential', 'first_audit', 'first_trace'):
+            self.setUp()
+            if kind == 'user':
+                self.users.add_user.return_value = True
+            elif kind == 'credential':
+                self.users.add_credential.return_value = True
+            elif kind == 'activation':
+                self.users.activate_initial_credential.return_value = 1
+            elif kind == 'audit':
+                self.audit.append.return_value = True
+            elif kind == 'first_user':
+                self.results.record.return_value = replace(self.result,
+                    first_view=replace(self.result.first_view, user_id=uuid4()))
+            else:
+                field = {'first_credential': 'credential_id', 'first_audit': 'audit_event_id',
+                         'first_trace': 'trace_id'}[kind]
+                self.results.record.return_value = replace(self.result, **{field: uuid4()})
+            with self.subTest(kind=kind):
+                self._assert_denied_closed_and_erased()
+                self.receipts.complete.assert_not_called()
+                if kind in ('user', 'credential', 'activation'):
+                    self.audit.append.assert_not_called()
+
+    def test_invalid_clock_refuses_before_receipt_and_hash(self):
+        for value in (None, True, 'Synthetic time', datetime.now()):
+            self.setUp()
+            self.service._clock = Mock(return_value=value)
+            with self.subTest(clock_type=type(value).__name__):
+                self._assert_denied_closed_and_erased()
+                self.access.authorized_admin.assert_not_called()
+                self.receipts.reserve.assert_not_called()
+                self.hasher.hash_password.assert_not_called()
+
+    def test_hash_contract_wrong_types_keys_and_costs_refuse_before_user(self):
+        candidates = (None, PasswordHashResult('', 'SCRYPT', {'n': 1}),
+            PasswordHashResult('x', True, {'n': 1}),
+            PasswordHashResult('x', 'SCRYPT', None), PasswordHashResult('x', 'SCRYPT', {}),
+            PasswordHashResult('x', 'SCRYPT', {str(i): 1 for i in range(17)}),
+            PasswordHashResult('x', 'SCRYPT', {1: 1}),
+            PasswordHashResult('x', 'SCRYPT', {'非ASCII': 1}),
+            PasswordHashResult('x', 'SCRYPT', {'bad-key': 1}),
+            PasswordHashResult('x', 'SCRYPT', {'n': True}),
+            PasswordHashResult('x', 'SCRYPT', {'n': -1}),
+            PasswordHashResult('x', 'SCRYPT', {'n': 1_000_000_001}))
+        for index, candidate in enumerate(candidates):
+            self.setUp()
+            self.hasher.hash_password.return_value = candidate
+            with self.subTest(case=index):
+                self._assert_denied_closed_and_erased()
+                self.users.add_user.assert_not_called()
+                self.audit.append.assert_not_called()
+                self.receipts.complete.assert_not_called()

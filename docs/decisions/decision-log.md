@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-357
+
+- Executed：新增6参数化方法，完整1486unit无失败/errors0/2既有跳过，exit0；九依赖/三收据/四重放/八写来源/四clock/十二hash合同拒绝，无commit/已进UOW闭合/密码擦除。仅Port证据，生产不改；coverage/12PG/wheel/性能未跑，原82.186%与Hash保持。下一Result Repo独立前SQL/异常与实际来源验证，正式trust/Gate/可用包待。
+
+- Phase2/P07A12编码前检查见user-create-defensive；仅创建Service依赖/收据/first/写来源/clock/hash合同拒绝与无commit/UOW退出/密码擦除；沿现有unit规范DTO达分支，不mock成功SQL或冒充实际回滚。
+- 无生产/Schema/API/权限/算法/依赖变，撤测试无升级；完整unit实跑，coverage/12PG/wheel/性能本批不跑，原82.186%与Hash/90%保留，正式trust/Gate/可用包待。
+
 ## DEC-20260927-356
 
 - Executed：1480unit無失败/errors0/2既有跳过，12实际链全通过；完整Auth3190/3364行94.828%、812/988分支82.186%，false/exit1，不用综合91.958%代替90%分支。密码91.146%保持、工厂8/10单列；旧Hash不变，新a2fb0a38…。生产/分母不变、性能/wheel未跑；下一仅User创建Service拒绝边界，不豁免全Auth/Gate/包。
