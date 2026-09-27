@@ -17,6 +17,10 @@ from plm_assistant.modules.platform.application.idempotency import (
 _RESET_HASH_SLOTS=BoundedSemaphore(4)
 
 
+class _ResetReplayAppeared(Exception):
+    """Internal bounded retry signal, only after the write UOW has rolled back."""
+
+
 class PasswordResetError(RuntimeError):
     def __init__(self,code='AUTH_PASSWORD_RESET_UNAVAILABLE'):
         self.code=code if type(code) is str and code in ('AUTH_PASSWORD_RESET_UNAVAILABLE','VALIDATION_FAILED',
@@ -72,6 +76,9 @@ class PasswordResetService:
             raise PasswordResetError()
 
     def reset(self,command,*,idempotency_key):
+        return self._reset(command,idempotency_key=idempotency_key,race_retry=False)
+
+    def _reset(self,command,*,idempotency_key,race_retry):
         try:
             if (type(command) is not ResetPassword or not _id(command.trace_id) or not _id(command.user_id)
                 or any(type(v) is not bytes or len(v)!=32 for v in (command.session_token,command.csrf_token))
@@ -91,26 +98,49 @@ class PasswordResetService:
             # This short proof only gates expensive work. Its UOW must be closed
             # before hashing; the write UOW below obtains its own current proof.
             with self._uow() as preparation:
-                self._actor(preparation,command)
+                prepared_proof=self._actor(preparation,command)
+                prepared_scope=IdempotencyScope.from_key(actor_id=prepared_proof.user_view.user_id,
+                    project_id=None,operation=op,key=idempotency_key)
+                hint=self._receipts.lookup_completed(preparation,scope=prepared_scope,request_fingerprint=fingerprint)
+                prepared_result=source=None
+                if hint is not None:
+                    if type(hint) is not IdempotencyResult or hint.ref_type!=op or hint.status_code!=200:
+                        raise PasswordResetError()
+                    prepared_result=self._results.get(preparation,result_id=hint.ref_id)
+                    self._result(prepared_result,command,prepared_scope.actor_id)
+                    if prepared_result.result_id!=hint.ref_id:raise PasswordResetError()
+                    source=self._results.password_source(preparation,result=prepared_result)
+                    if type(source) is not PasswordHashResult:raise PasswordResetError()
             if not _RESET_HASH_SLOTS.acquire(timeout=5):raise PasswordResetError()
             try:
-                with memoryview(secret) as password:hashed=self._hasher.hash_password(password)
-                if type(hashed) is not PasswordHashResult:raise PasswordResetError()
+                hashed=None
+                with memoryview(secret) as password:
+                    if hint is None:
+                        hashed=self._hasher.hash_password(password)
+                        if type(hashed) is not PasswordHashResult:raise PasswordResetError()
+                    else:
+                        matched=self._results.verify_password_source(source=source,password=password)
+                        if matched is False:raise PasswordResetError('CONFLICT_IDEMPOTENCY')
+                        if matched is not True:raise PasswordResetError()
             finally:
                 _RESET_HASH_SLOTS.release()
             with self._uow() as tx:
                 if self._access.lock_deployment(tx) is not True:raise PasswordResetError()
                 proof=self._actor(tx,command);actor=proof.user_view.user_id
                 scope=IdempotencyScope.from_key(actor_id=actor,project_id=None,operation=op,key=idempotency_key)
+                if scope!=prepared_scope:raise PasswordResetError('AUTH_ACCESS_DENIED')
                 replay=self._receipts.reserve(tx,scope=scope,request_fingerprint=fingerprint)
                 if replay is not None:
+                    if hint is None:raise _ResetReplayAppeared()
                     if type(replay) is not IdempotencyResult or replay.ref_type!=op or replay.status_code!=200:
                         raise PasswordResetError()
                     result=self._results.get(tx,result_id=replay.ref_id);self._result(result,command,actor)
-                    if result.result_id!=replay.ref_id or self._replay.require_match(tx,result=result,proof=command.password)!=result:
+                    if replay!=hint or result!=prepared_result or result.result_id!=replay.ref_id:
                         raise PasswordResetError()
+                    self._results.require_password_source(tx,result=result,source=source)
                     self._final(tx,command,proof,result,changed=False)
                     return result
+                if hint is not None or type(hashed) is not PasswordHashResult:raise PasswordResetError()
                 view,oldid,before,count,newid=self._repo.reset(tx,user_id=command.user_id,
                     expected_version=command.expected_version,actor_id=actor,password_hash=hashed)
                 if type(view) is not UserReadView or type(before) is not UserReadView:raise PasswordResetError()
@@ -136,6 +166,9 @@ class PasswordResetService:
                 self._final(tx,command,proof,result,changed=True)
                 tx.commit()
                 return result
+        except _ResetReplayAppeared:
+            if race_retry:raise PasswordResetError() from None
+            return self._reset(command,idempotency_key=idempotency_key,race_retry=True)
         except PasswordResetError:raise
         except (PasswordResetReplayError,IdempotencyError) as exc:raise PasswordResetError(exc.code) from None
         except RuntimeLicenseError:raise PasswordResetError('LICENSE_OPERATION_DENIED') from None

@@ -26,6 +26,8 @@ class PasswordResetServiceTests(unittest.TestCase):
         def uow():self.entered=True;yield Mock()
         deps=dict(unit_of_work=uow,access=Mock(),repository=Mock(),results=Mock(),replay_verifier=Mock(),
             hasher=Mock(),audit=Mock(),receipts=Mock(),license_guard=Mock())
+        deps['receipts'].lookup_completed.return_value=None
+        if 'receipts' in overrides:overrides['receipts'].lookup_completed.return_value=None
         return PasswordResetService(**(deps|overrides))
 
     def command(self):return ResetPassword(b't'*32,b'c'*32,uuid4(),uuid4(),1,True,PasswordResetProof(bytearray(b'Synthetic temporary password')))

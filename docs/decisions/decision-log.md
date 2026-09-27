@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-330
+
+- Executed：1414 tests无失败/2既有跳过，实际PG KDF时独立global/caller/Session锁、role/logout/renew/License撤回九表无额外写、目标actual reset4历史保留；actual first中途提交正确重放/错误密码冲突、一次回退与擦除通过。原atomic/Windows reset完整链/发布/wheel751120通过。20并发reset历史20成功/P951634.794ms（原6014.758），fresh1598.708ms；change历史仍14成功6actual55P03/8114.279ms，整体exit1 FAIL。无Migration/API/依赖，下一change历史编排，CR/Gate不关闭。
+
+- A03编码前检查见reset-history：短实际Admin准备取scope/hint/fullfirst/exact source，4-slot事务外真实verify；原global新权限/reserve/first/source/final，miss竞争只一次退出后重新准备，不锁内KDF。保原fresh链/兼容构造/无Migration/API/依赖/算法变更，CR008持续；验证待，不能提前PASS。
+
 ## DEC-20260927-329
 
 - Executed：1409 tests无失败/2既有跳过；真实PG reset2/change3/later4后闭READ ONLY UOW历史真/最新false、六KDF独立锁可取，最后READ ONLY精确first/source无KDF、错role/source/trace拒绝九表无写；原reset原子及发布、wheel750773通过。Service未接入、性能未跑/上一FAIL保留，下一reset历史编排及bounded race，再change另项；无Migration/API/依赖，CR/Gate开放。
