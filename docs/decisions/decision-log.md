@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260927-345
+
+- Executed：7个参数化Access输入/事务方法，非法输入不SQL或verifier，固定错误与严格bool控制；1467完整测试无失败/2既有跳过，exit0。无生产/Schema/API/算法/依赖变化；coverage/四PG/wheel本批未跑，原Hash与82.432%保留。下一统一真实覆盖，90%/性能/正式信任/Gate/包待。
+
+- Phase2/P07A05P02编码前检查见access-inputs；授权输入与事务缺失/异常、安全错误不泄露及Session issue非法proof不SQL/verifier。不造SQL成功，不冒充PG；完整unit实际跑，后续统一覆盖与旧Hash保留。无生产/Schema/API/算法/依赖变化，风险回滚先记，90%/性能/Gate未通过。
+
 ## DEC-20260927-344
 
 - Executed：4参数化Repo输入方法，reset7非法输入/change3类型/2上限/两Repo各3参数profile（p=True也拒绝），明确_session未调用，无成功SQL模拟。1460unit无失败/2既有跳过，exit0；没有生产变更、coverage/PG/wheel本轮未跑，原82.432%与Hash保留。下一A05P02 current proof/transaction与安全异常，然后统一实际覆盖；90%/性能/Gate/包待。
