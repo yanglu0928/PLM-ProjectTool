@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260927-271
+
+- Precode：Phase2/JOB-01-A04-P02，前置P01 Queue/original Upload Commit成立；Doc版本源与Audit证明是该单问题必要依赖，不跨模块私有SQL，详见document-source进度。无Schema/API/依赖/角色变更。
+- Decision：Document owned Source锁并核真实上传/版本/文件/来源，Audit owned只读Port核唯一提交事件；不授当前权限/字节/解析结果。P01误用int32版本上限，实际Doc/Outbox bigint，先记录修正正bigint范围。
+- Acceptance：真实GLOBAL/PROJECT完整提交来源/旧版本/错引用与当前状态拒绝无写，Source无路径/正文，原提交/Queue回归。当前Session/Owner投影下一项，回滚撤新只读入口保历史；证据待追加。
+- Evidence：1185无失败/2跳过，真实PROJECT三次提交与GLOBAL实际私有文件staging/promotion/版本/原Audit/Job链通过，旧Version/错Scope/actor/version/trace/引用/Doc RESTRICTED/重复真实Audit来源拒绝九表无写，原P01/提交/文件与wheel通过。File/Version可见过滤已实现但专项实际限制未验，Access/License合成，不称当前Session/Parser执行/完整Owner通过；下一真实当前权限Owner投影。
+
 ## DEC-20260927-270
 
 - Precode：Phase2/JOB-01-A04-P01，原Upload Commit/Parse enqueue/0044前置已验；Document Owner缺Jobs owned只读绑定接口，停止直接复用enqueue，拆前置Port后继续，非删Owner Scope。

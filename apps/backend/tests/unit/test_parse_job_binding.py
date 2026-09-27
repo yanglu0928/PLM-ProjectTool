@@ -27,6 +27,7 @@ class ParseBindingTests(TestCase):
         self.assertEqual(str(caught.exception),'JOB_STORE_UNAVAILABLE')
         self.repo.enqueue_parse.assert_not_called()
     def test_strict_read_input_before_repository(self):
-        for values in (dict(version_no=True),dict(version_no=0),dict(version_no=2**31),dict(scope='PROJECT'),dict(trace_id=None)):
+        for values in (dict(version_no=True),dict(version_no=0),dict(version_no=2**63),dict(scope='PROJECT'),dict(trace_id=None)):
             with self.assertRaises(ParseEnqueueError):self.queue.find_parse(object(),request=replace(self.request,**values))
         self.repo.find_parse.assert_not_called()
+        self.assertEqual(ParseJobBinding(replace(self.request,version_no=2**63-1),self.refs).request.version_no,2**63-1)

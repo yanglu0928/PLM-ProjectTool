@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from plm_assistant.modules.jobs.application.parse_enqueue import (
-    ParseEnqueueError, ParseJobRef, ParseJobRequest,ParseJobBinding,_validate_read_request,
+    ParseEnqueueError, ParseJobRef, ParseJobRequest,ParseJobBinding,validate_parse_read_request,
 )
 from plm_assistant.modules.jobs.infrastructure.orm import JobRow, OutboxEventRow
 
@@ -46,7 +46,7 @@ class SqlAlchemyParseJobQueueRepository:
         return None if job is None else self._binding(session,job,lock=False)
 
     def find_parse(self,transaction,*,request):
-        _validate_read_request(request);session=self._session(transaction)
+        validate_parse_read_request(request);session=self._session(transaction)
         job=session.execute(select(JobRow).where(JobRow.owner_module=='document',JobRow.job_type=='DOCUMENT_PARSE',
             JobRow.scope==request.scope,JobRow.project_id==request.project_id,JobRow.idempotency_key==str(request.upload_id))
             .with_for_update(of=JobRow).execution_options(populate_existing=True)).scalar_one_or_none()

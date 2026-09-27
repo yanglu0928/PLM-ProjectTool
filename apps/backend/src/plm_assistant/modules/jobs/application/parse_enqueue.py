@@ -31,10 +31,10 @@ class ParseJobRef:
     event_id: uuid.UUID
 
 
-def _validate_read_request(request):
+def validate_parse_read_request(request):
     if (type(request) is not ParseJobRequest
         or any(type(v) is not uuid.UUID or not v.int for v in (request.upload_id,request.document_id,request.document_version_id,request.actor_id,request.trace_id))
-        or type(request.version_no) is not int or not 1<=request.version_no<=2147483647
+        or type(request.version_no) is not int or not 1<=request.version_no<=2**63-1
         or type(request.scope) is not str or request.scope not in ('GLOBAL','PROJECT')
         or request.scope=='GLOBAL' and request.project_id is not None
         or request.scope=='PROJECT' and (type(request.project_id) is not uuid.UUID or not request.project_id.int)):
@@ -47,7 +47,7 @@ class ParseJobBinding:
     request: ParseJobRequest
     refs: ParseJobRef
     def __post_init__(self):
-        try:_validate_read_request(self.request)
+        try:validate_parse_read_request(self.request)
         except ParseEnqueueError:raise ParseEnqueueError('JOB_STORE_UNAVAILABLE') from None
         if type(self.refs) is not ParseJobRef or any(type(v) is not uuid.UUID or not v.int for v in (self.refs.job_id,self.refs.event_id)):
             raise ParseEnqueueError('JOB_STORE_UNAVAILABLE')
@@ -78,7 +78,7 @@ class ParseJobQueue:
         except Exception:raise ParseEnqueueError('JOB_STORE_UNAVAILABLE') from None
 
     def find_parse(self,transaction,*,request):
-        _validate_read_request(request)
+        validate_parse_read_request(request)
         try:
             value=self._repository.find_parse(transaction,request=request)
             if value is None:return None
