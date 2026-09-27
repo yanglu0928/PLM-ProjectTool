@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260927-300
+
+- Executed：7新Contract/1319无失败（2既有跳过）；真Session-CSRF/PG PATCH安全200/版本及no-op、历史first201对currentGET、禁用名唯一与状态保留、权限输入License拒绝六表不变/实际Audit后故障回滚；P01与原发布回归/wheel706685通过。默认404，Windows/正式供给/性能/包待。
+
+- Date/WBS：2026-09-27 / AUT-04-A10-P02，precode见progress，P01 e26ce1b真PG通过。
+- Decision：可选冻结User PATCH细化单username输入，不接受canonical/actor/role；原严格JSON/Origin/Session-CSRF/If-Match/safeView，内部当前Admin/License再次授权。无幂等Key要求，不改变冻结API或生产装配。
+- Impact/Rollback/Risks：无Migration/依赖/权限变化；撤可选router保历史。未知提交确认GET核对，不盲重试；实际合同/PG测试待执行，Windows/正式信任/性能/三平台/包不标PASS。
+
 ## DEC-20260927-299
 
 - Executed：7新unit/1312无失败（2既有跳过）、真PG规范化/禁用唯一/同版本竞争/新旧名称查找/no-op和stale、原Credential/Session/first/receipt保留和创建重放；权限与License拒绝六表不变、实际Audit写后/末尾License/真实Session撤销全回滚、不一致源拒绝、原发布回归/wheel705209。撤销夹具先缺原约束字段，修夹具重跑，不改生产安全。HTTP/正式供给/性能/三平台/包未完。
