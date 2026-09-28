@@ -13,4 +13,4 @@
 |限流|复用PostgreSQL摘要计数桶，无原用户名存储；负责人+项目30次/5分钟，负责人+项目+规范用户名10次/5分钟。命中/未命中均计数，拒绝保留已消耗的负责人容量；无业务幂等Key，用户应在429后等待窗口而非盲重试|
 |缓存与副作用|`Cache-Control:no-store`、`X-Content-Type-Options:nosniff`；无成员/用户/Audit写入，限流桶写入；候选只是页面提示，原POST仍独立校验User/成员状态|
 
-默认应用不挂载此端点，`create_app`仅显式注入时开放；Windows生产组合接线留下一独立WBS。原先考虑GET查询串，因目标用户名可能进入URL历史/代理日志且跨站可耗额度，实施前收敛为带Origin/CSRF的POST。无Schema/Migration/依赖或升级步骤，兼容DB head0049；回滚撤可选路由/服务和本增量合同。合成HTTP/Unit与一次性PostgreSQL18全迁移实际Session/User/Project/Member/限流已验；正式目标账户/Server2025/Debian/HTTPS与浏览器流程未验。
+默认应用不挂载此端点，`create_app`仅显式注入时开放；`PRJ-05-A07-P03-A02` 已将其注入 Windows `--platform`/`--platform-write`，`--login` 仍为 404，缺现有信任源时组合整体拒绝启动。原先考虑GET查询串，因目标用户名可能进入URL历史/代理日志且跨站可耗额度，实施前收敛为带Origin/CSRF的POST。无Schema/Migration/依赖或升级步骤，兼容DB head0049；回滚撤生产组合根注入，A01可选合同保留。合成HTTP/Unit与一次性PostgreSQL18全迁移实际Session/User/Project/Member/限流及两种Windows显式组合已验；正式目标账户/Server2025/Debian/HTTPS与浏览器流程未验。

@@ -154,6 +154,7 @@ from plm_assistant.modules.project.api.patch_project import create_project_patch
 from plm_assistant.modules.project.api.archive_project import create_project_archive_router
 from plm_assistant.modules.project.api.read_members import create_project_member_read_router
 from plm_assistant.modules.project.api.create_member import create_project_member_create_router
+from plm_assistant.modules.project.api.member_candidates import create_project_member_candidate_router
 from plm_assistant.modules.project.api.patch_member import create_project_member_patch_router
 from plm_assistant.modules.project.api.change_member_state import create_project_member_state_router
 from plm_assistant.modules.project.api.read_departments import create_project_department_read_router
@@ -162,6 +163,7 @@ from plm_assistant.modules.project.api.patch_department import create_project_de
 from plm_assistant.modules.project.api.deactivate_department import create_project_department_deactivate_router
 from plm_assistant.modules.project.application.read_members import ProjectMemberReadService
 from plm_assistant.modules.project.application.create_member import ProjectMemberCreateService
+from plm_assistant.modules.project.application.member_candidates import ProjectMemberCandidateService
 from plm_assistant.modules.project.application.patch_member import ProjectMemberPatchService
 from plm_assistant.modules.project.application.change_member_state import ProjectMemberStateService
 from plm_assistant.modules.project.application.read_departments import ProjectDepartmentReadService
@@ -178,6 +180,8 @@ from plm_assistant.modules.project.infrastructure.department_patch_repository im
 from plm_assistant.modules.project.infrastructure.department_deactivate_repository import SqlAlchemyProjectDepartmentDeactivateRepository
 from plm_assistant.modules.auth.infrastructure.project_member_names import SqlAlchemyProjectMemberNames
 from plm_assistant.modules.auth.infrastructure.project_member_create_access import SqlAlchemyProjectMemberCreateAccess
+from plm_assistant.modules.auth.infrastructure.project_member_candidate_access import SqlAlchemyProjectMemberCandidateAccess
+from plm_assistant.modules.project.infrastructure.member_candidate_repository import SqlAlchemyMemberCandidateMembership
 from plm_assistant.modules.auth.infrastructure.project_member_patch_access import SqlAlchemyProjectMemberPatchAccess
 from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
 from plm_assistant.modules.project.application.write_project import ProjectWriteService
@@ -324,6 +328,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         project_archive_router = None
         project_member_read_router = None
         project_member_create_router = None
+        project_member_candidate_router = None
         project_member_patch_router = None
         project_member_state_router = None
         project_department_read_router = None
@@ -547,6 +552,20 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             )
             project_member_create_router = create_project_member_create_router(
                 sessions=sessions, members=member_creates, origins=origins,
+            )
+            member_candidates = ProjectMemberCandidateService(
+                unit_of_work=runtime.unit_of_work,
+                access=SqlAlchemyProjectMemberCandidateAccess(),
+                license_guard=licenses.guard,
+                authorization=ProjectAuthorizationService(
+                    unit_of_work=runtime.unit_of_work,
+                    repository=SqlAlchemyProjectAuthorizationRepository(),
+                ),
+                membership=SqlAlchemyMemberCandidateMembership(),
+                rate=SqlAlchemyLoginRateRepository(),
+            )
+            project_member_candidate_router = create_project_member_candidate_router(
+                sessions=sessions, candidates=member_candidates, origins=origins,
             )
             member_patches = ProjectMemberPatchService(
                 unit_of_work=runtime.unit_of_work,
@@ -843,6 +862,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             project_archive_router=project_archive_router,
             project_member_read_router=project_member_read_router,
             project_member_create_router=project_member_create_router,
+            project_member_candidate_router=project_member_candidate_router,
             project_member_patch_router=project_member_patch_router,
             project_member_state_router=project_member_state_router,
             project_department_read_router=project_department_read_router,

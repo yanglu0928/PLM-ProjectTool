@@ -93,7 +93,7 @@ def user(db, name, token=None, *, disabled=False, admin=False):
     return uid
 
 
-def main():
+def main(composition_check=None):
     with tempfile.TemporaryDirectory(prefix="prj_candidate_pg_") as scratch:
         install = Path(scratch) / "pgsql"
         for name in ("bin", "lib", "share"):
@@ -171,6 +171,9 @@ def main():
                     sessions=Sessions(tokens.values()), candidates=service,
                     origins=LoginOriginPolicy(["https://plm.example.test"]),
                 )
+                if composition_check is not None:
+                    composition_check(url=url, tokens=tokens, ids=ids, project_id=p1,
+                                      target_id=target, guard=guard)
                 with TestClient(create_app(project_member_candidate_router=router),
                                 base_url="https://plm.example.test") as client:
                     def get(name, username="Target", project=p1):

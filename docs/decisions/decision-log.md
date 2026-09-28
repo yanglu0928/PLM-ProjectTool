@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260928-438 — PRJ-05-A07-P03-A02 Windows 显式平台候选装配
+
+- Date/WBS：2026-09-28 / Phase2 PRJ-05-A07-P03-A02，沿用 CR-PRJ-006 和 A01 已验证增量合同。
+- Decision：只在 Windows `--platform` 与 `--platform-write` 已具备完整可信来源的组合根注入精确成员候选 Router，复用当前真实 PostgreSQL Session、License Guard、Project 创建授权、Auth-owned User 读取、Project-owned 成员归属读取及持久摘要限流。默认应用和 `--login` 不挂载；任何现有生产信任源失败则整个显式组合关闭，不降级为候选单独开放。
+- Impact/rollback/validation：不改变 Gate2 冻结接口、Schema、Migration、依赖或角色权限。风险是误挂载、跳过 Session/License 或信任源失败后部分路由仍发布；以两种显式模式的隔离 PostgreSQL 真实会话/权限/许可/限流、默认与 login 404、缺钥启动失败验证。回滚撤组合根传参及本任务测试，不删除 A01 的独立可选 API。
+
 ## DEC-20260928-437 — PRJ-05-A07-P03-A01 精确成员候选合同实施前
 
 - Date/WBS：2026-09-28 / Phase2 PRJ-05-A07-P03-A01，关联CR-PRJ-006。原`AUTH_USER_LIST`保持DeploymentAdmin专用；原`PROJECT_MEMBER_CREATE`仍须服务端实时核验。
