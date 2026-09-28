@@ -163,8 +163,9 @@ def main():
                 with source.connect(dbname) as db:
                     member = insert_user(db, "Synthetic Project Member", hashed.password_hash, hashed.algorithm_id)
                     admin_user = insert_user(db, "Synthetic Project Admin", hashed.password_hash, hashed.algorithm_id)
+                    create_mode = "--create-api-only" in sys.argv[1:] or "--create-browser" in sys.argv[1:]
                     manager = (insert_user(db, "Synthetic First Manager", hashed.password_hash, hashed.algorithm_id)
-                               if "--create-api-only" in sys.argv[1:] else None)
+                               if create_mode else None)
                     db.execute("UPDATE plm.auth_users SET deployment_role='DEPLOYMENT_ADMIN' WHERE user_id=%s", (admin_user,))
                     project = db.execute("INSERT INTO plm.prj_projects "
                         "(project_code,project_code_normalized,name,created_by) "
@@ -218,7 +219,8 @@ def main():
                         Thread(target=lambda: ready.put(proxy.stdout.readline().strip()), daemon=True).start()
                         if ready.get(timeout=15) != "OWNED_PROXY_READY":
                             raise RuntimeError("Owned proxy startup failed")
-                        print(f"PROJECT_BROWSER_READY {origin}/login OWNED={project} FOREIGN={foreign}", flush=True)
+                        print(f"PROJECT_BROWSER_READY {origin}/login OWNED={project} FOREIGN={foreign}"
+                              + (f" MANAGER={manager}" if create_mode else ""), flush=True)
                         if "--create-api-only" in sys.argv[1:]:
                             assert manager is not None
                             created = verify_create_http(origin, manager)
@@ -229,15 +231,17 @@ def main():
                             Thread(target=lambda: actions.put(sys.stdin.readline().strip()), daemon=True).start()
                             assert actions.get(timeout=900) == "VERIFY", "Browser verification not completed"
                         with source.connect(dbname) as db:
-                            expected = 3 if "--create-api-only" in sys.argv[1:] else 2
+                            expected = 3 if create_mode else 2
                             assert db.execute("SELECT count(*) FROM plm.prj_projects").fetchone()[0] == expected
                             session_count = db.execute("SELECT count(*) FROM plm.auth_sessions").fetchone()[0]
                             if "--api-only" in sys.argv[1:] or "--create-api-only" in sys.argv[1:]:
                                 assert session_count == 2
                             else:
-                                assert session_count >= 2
+                                assert session_count >= (1 if create_mode else 2)
                             assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE state='ACTIVE'").fetchone()[0] == (2 if expected == 3 else 1)
                             if expected == 3:
+                                if "--create-browser" in sys.argv[1:]:
+                                    created = db.execute("SELECT project_id FROM plm.prj_projects WHERE project_code_normalized='create-p04'").fetchone()[0]
                                 assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE project_id=%s AND user_id=%s AND project_role='PROJECT_MANAGER'", (created, manager)).fetchone()[0] == 1
                                 assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='PROJECT_CREATED'", (created,)).fetchone()[0] == 1
                                 assert db.execute("SELECT count(*) FROM plm.plt_idempotency_receipts WHERE result_ref_id=%s AND state='COMPLETED'", (created,)).fetchone()[0] == 1
