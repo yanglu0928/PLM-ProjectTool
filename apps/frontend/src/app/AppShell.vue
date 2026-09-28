@@ -24,6 +24,7 @@ provide(sessionClientKey, new SessionClient());
           <RouterLink to="/login">账户与登录</RouterLink>
           <RouterLink to="/projects">我的项目</RouterLink>
           <RouterLink to="/projects/new">创建项目</RouterLink>
+          <RouterLink to="/admin/users/new">创建账户</RouterLink>
         </nav>
         <ConnectionStatus />
       </div>

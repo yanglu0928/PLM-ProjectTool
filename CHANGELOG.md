@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-28：0.1.0.dev0/AUT-05-A10-P03新增部署管理员创建账户页面/入口、密码确认与即时清空、安全回执，以及未知结果锁原管理员/用户名/Key并重输原密码恢复；前端258测试/typecheck/build通过。兼容0049，无后端API/Migration/权限/依赖变化；真实User创建浏览器/PG、正式trust/HTTPS/CR008性能FAIL/Gate3/可用包仍待。
+
 - 2026-09-28：0.1.0.dev0/AUT-05-A10-P02新增管理员User创建前端客户端，NFC用户名/密码字节校验、201八字段白名单/初态/ETag/Location核验及确定/未知结果分流；前端249测试/typecheck/build通过。兼容0049，无后端API/Migration/权限/依赖变化；管理页面/真实写链及正式trust/HTTPS/CR008性能FAIL/Gate3/可用包仍待。
 
 - 2026-09-28：0.1.0.dev0/AUT-05-A10-P01增加固定管理员User创建路径的Auth私有CSRF单次写传输，16KiB/调用方原幂等Key/互斥/401清状态/不自动重试；前端219测试/typecheck/build通过。兼容0049，无后端API/Migration/权限/依赖变化；DTO/UI/真实User写链及正式trust/HTTPS/CR008性能FAIL/Gate3/可用包仍待。

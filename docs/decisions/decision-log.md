@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260928-415 — AUT-05-A10-P03 实施前
+
+- Phase/WBS：Phase2/AUT-05-A10-P03；Gate2已批准，冻结`AUTH_USER_CREATE`、后端Windows显式写组合、P01传输和P02安全客户端具备。仅Auth创建账户页面/路由/导航，不改实体、Schema、后端API/权限/依赖。
+- Decision：只有同实例正常DeploymentAdmin且保留内存CSRF时展示可提交表单；普通/受限/刷新只读零User创建请求。用户名和两次初始密码明确输入，确认相同后单次提交；调用`create`后立即清两项密码，不写持久存储或回显。201只展示用户名/User ID/状态，不显示初始密码，也不把新User提升Admin。未知结果锁原Admin ID/原NFC用户名/原Key，页面同账户有写状态、重输原密码且显式勾选后同Key重送；服务端验证密码一致。确定拒绝清尝试，幂等冲突停止页面内重试。刷新/离页原Key丢失须提示核对User/Audit后再操作，不自动新Key重试。
+- Risk/impact/rollback/validation：密码JS内存无法承诺绝对清零，但同步清表单值并不复制到恢复状态；同Key换密码导致冲突、创建已提交而响应丢失是主要风险。测试无身份/普通/受限零请求、两次密码、原Key/用户跨状态阻断、成功无密码/不提升Admin、确定/不确定分流及前端全量test/typecheck/build；真实Windows11网络/浏览器/PG另项。回滚撤页面/路由/导航/测试，无迁移。
+- Executed：新增`/admin/users/new`页面与入口，普通/受限/只读不显示写表单；输入两次密码并清空，成功仅显示User安全回执，未知结果锁原Admin/用户名/Key且重输原密码确认，确定拒绝释放尝试、幂等冲突阻断。9页面/路由场景，前端258测试/typecheck/build通过。无本项真实User写网络/浏览器/PG；下一P04。
+
 ## DEC-20260928-414 — AUT-05-A10-P02 实施前
 
 - Phase/WBS：Phase2/AUT-05-A10-P02；Gate2已批准，输入冻结API-02 `AUTH_USER_CREATE`、CR-AUT-005实现增量及P01固定写桥接。仅Auth前端User创建DTO/响应分类，不改实体/Schema/后端API/权限/依赖。
