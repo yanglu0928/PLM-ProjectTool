@@ -58,4 +58,45 @@ describe("AppShell", () => {
     expect(fetcher.mock.calls.every(([url]) => url === "/health/ready")).toBe(true);
     expect(wrapper.get('input[name="password"]').attributes("type")).toBe("password");
   });
+
+  it("keeps the same in-memory session across routes but not a new app instance", async () => {
+    const id = "01234567-89ab-4cde-8123-456789abcdef";
+    const auth = new Response(JSON.stringify({ data: {
+      user: { user_id: id, username_display: "Synthetic Member" }, deployment_role: "NONE",
+      password_change_required: true, authorized_projects: [],
+      absolute_expires_at: "2030-01-01T12:00:00Z", idle_expires_at: "2030-01-01T11:00:00Z",
+      csrf_token: "a".repeat(64),
+    }, trace_id: id }), { headers: { "Content-Type": "application/json" } });
+    const fetcher = vi.fn((url: string) => Promise.resolve(url === "/health/ready" ? readyResponse() : auth));
+    vi.stubGlobal("fetch", fetcher);
+    const router = createAppRouter(createMemoryHistory());
+    await router.push("/login");
+    await router.isReady();
+    const wrapper = mount(AppShell, { global: { plugins: [router] } });
+    await flushPromises();
+    await wrapper.get('input[name="username"]').setValue("Synthetic Member");
+    await wrapper.get('input[name="password"]').setValue("synthetic-only");
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+    expect(wrapper.text()).toContain("Synthetic Member");
+    expect(wrapper.find('form[aria-label="修改本人密码"]').exists()).toBe(true);
+    await router.push("/");
+    await flushPromises();
+    await router.push("/login");
+    await flushPromises();
+    expect(wrapper.text()).toContain("Synthetic Member");
+    expect(wrapper.find('form[aria-label="修改本人密码"]').exists()).toBe(true);
+    expect(fetcher.mock.calls.filter(([url]) => url === "/api/v1/auth/login")).toHaveLength(1);
+    expect(fetcher.mock.calls.filter(([url]) => url === "/api/v1/auth/session")).toHaveLength(0);
+    wrapper.unmount();
+
+    const freshRouter = createAppRouter(createMemoryHistory());
+    await freshRouter.push("/login");
+    await freshRouter.isReady();
+    const fresh = mount(AppShell, { global: { plugins: [freshRouter] } });
+    await flushPromises();
+    expect(fresh.find(".auth-identity").exists()).toBe(false);
+    expect(fresh.find('form[aria-label="修改本人密码"]').exists()).toBe(false);
+    fresh.unmount();
+  });
 });

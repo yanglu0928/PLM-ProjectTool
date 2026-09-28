@@ -1,8 +1,13 @@
 <script setup lang="ts">
+import { provide } from "vue";
 import { RouterLink, RouterView } from "vue-router";
 
 import AppErrorBoundary from "@/app/components/AppErrorBoundary.vue";
+import { SessionClient } from "@/modules/auth/api/sessionClient";
+import { sessionClientKey } from "@/modules/auth/api/sessionContext";
 import ConnectionStatus from "@/shared/components/ConnectionStatus.vue";
+
+provide(sessionClientKey, new SessionClient());
 </script>
 
 <template>

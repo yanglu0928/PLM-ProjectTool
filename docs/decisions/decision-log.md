@@ -1,5 +1,10 @@
 # 自主决策记录
 
+## DEC-20260928-401
+
+- AUT05A09实施前：登录页局部SessionClient随路由卸载丢内存CSRF，不能支持后续项目页连续交互。选AppShell实例级provide唯一客户端、LoginView注入并`toRaw`，保测试prop覆盖；新AppShell/刷新生成新客户端且不自动恢复写权限。仅内部前端状态生命周期，不改服务器Cookie/CSRF、API/权限/依赖。风险/回滚/测试见进度。
+- Executed：新Auth InjectionKey/AppShell提供及LoginView重入读取，跨路由同实例身份/写状态保留、重建实例无状态且无自动GET；前端86测试/typecheck/build通过。无Migration/API/依赖或服务端授权变，真实浏览器/PG本项未跑，下一项目入口独立接线。
+
 ## DEC-20260928-400
 
 - AUT05A08-P02实施前：后端改密成功撤销旧Session，503可能已提交。登录页只以服务器200视为成功；不确定时保原Key和UserID于组件内存、清全部密码/会话展示，同一用户重新登录后明确确认原两密码才可用原Key重送。异用户与409停止页面重试，刷新丢Key建议管理员核对。受限/普通都可用，刷新只读不可改，安全/回滚/验收详见进度；无API/Schema/权限扩张。

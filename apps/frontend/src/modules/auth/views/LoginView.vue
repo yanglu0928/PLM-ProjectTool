@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { onBeforeUnmount, ref, shallowRef, toRaw } from "vue";
+import { inject, onBeforeUnmount, ref, shallowRef, toRaw } from "vue";
 import { SessionClient, SessionClientError, type SessionView } from "@/modules/auth/api/sessionClient";
+import { sessionClientKey } from "@/modules/auth/api/sessionContext";
 
 const props = defineProps<{ client?: SessionClient }>();
 // Vue proxies cannot be used as `this` for a class with JS private fields.
-const api = props.client ? toRaw(props.client) : new SessionClient();
+const api = toRaw(props.client ?? inject(sessionClientKey, null) ?? new SessionClient());
 const username = ref("");
 const password = ref("");
 const currentPassword = ref("");
@@ -15,8 +16,8 @@ const retryKey = ref<string | null>(null);
 const retryUserId = ref<string | null>(null);
 const recoveryBlocked = ref(false);
 const busy = ref(false);
-const view = shallowRef<SessionView | null>(null);
-const canSubmit = ref(false);
+const view = shallowRef<SessionView | null>(api.view);
+const canSubmit = ref(api.canSubmit);
 const message = ref("");
 const error = ref("");
 let mounted = true;
