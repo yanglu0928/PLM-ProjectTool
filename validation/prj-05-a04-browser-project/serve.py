@@ -19,6 +19,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 import uvicorn
+import httpx
 from alembic import command
 from psycopg import sql
 from sqlalchemy.engine import URL
@@ -64,6 +65,34 @@ def insert_user(db, name: str, password_hash, algorithm_id: str):
     db.execute("UPDATE plm.auth_users SET credential_version=1,active_password_credential_id=%s,state='ENABLED' "
                "WHERE user_id=%s", (credential, user))
     return user
+
+
+def verify_http(origin: str, owned: uuid.UUID, foreign: uuid.UUID):
+    with httpx.Client(base_url=origin, timeout=20) as member:
+        assert member.get("/api/v1/projects").status_code == 401
+        login = member.post("/api/v1/auth/login", headers={"Origin": origin},
+            json={"username": "Synthetic Project Member", "password": "synthetic-project-only-password"})
+        assert login.status_code == 200, login.text
+        listing = member.get("/api/v1/projects")
+        assert listing.status_code == 200, listing.text
+        data = listing.json()["data"]
+        assert data["next_cursor"] is None and data["has_more"] is False
+        assert len(data["items"]) == 1 and data["items"][0]["project_id"] == str(owned)
+        detail = member.get(f"/api/v1/projects/{owned}")
+        assert detail.status_code == 200 and detail.headers["ETag"] == detail.json()["data"]["etag"]
+        assert detail.json()["data"]["project_id"] == str(owned)
+        rejected = member.get(f"/api/v1/projects/{foreign}")
+        assert rejected.status_code == 404 and rejected.json()["error"]["code"] == "RESOURCE_NOT_FOUND"
+        assert "Synthetic Foreign Project" not in rejected.text
+    with httpx.Client(base_url=origin, timeout=20) as admin:
+        login = admin.post("/api/v1/auth/login", headers={"Origin": origin},
+            json={"username": "Synthetic Project Admin", "password": "synthetic-project-only-password"})
+        assert login.status_code == 200 and login.json()["data"]["deployment_role"] == "DEPLOYMENT_ADMIN"
+        listing = admin.get("/api/v1/projects")
+        assert listing.status_code == 200 and listing.json()["data"]["items"] == []
+        rejected = admin.get(f"/api/v1/projects/{owned}")
+        assert rejected.status_code == 404 and rejected.json()["error"]["code"] == "RESOURCE_NOT_FOUND"
+    print("PROJECT_BROWSER_HTTP PASS: no Cookie401, member list/detail200, foreign404, admin empty/404", flush=True)
 
 
 def main():
@@ -148,14 +177,21 @@ def main():
                         if ready.get(timeout=15) != "OWNED_PROXY_READY":
                             raise RuntimeError("Owned proxy startup failed")
                         print(f"PROJECT_BROWSER_READY {origin}/login OWNED={project} FOREIGN={foreign}", flush=True)
-                        actions = queue.Queue()
-                        Thread(target=lambda: actions.put(sys.stdin.readline().strip()), daemon=True).start()
-                        assert actions.get(timeout=900) == "VERIFY", "Browser verification not completed"
+                        if "--api-only" in sys.argv[1:]:
+                            verify_http(origin, project, foreign)
+                        else:
+                            actions = queue.Queue()
+                            Thread(target=lambda: actions.put(sys.stdin.readline().strip()), daemon=True).start()
+                            assert actions.get(timeout=900) == "VERIFY", "Browser verification not completed"
                         with source.connect(dbname) as db:
                             assert db.execute("SELECT count(*) FROM plm.prj_projects").fetchone()[0] == 2
-                            assert db.execute("SELECT count(*) FROM plm.auth_sessions").fetchone()[0] >= 2
+                            session_count = db.execute("SELECT count(*) FROM plm.auth_sessions").fetchone()[0]
+                            if "--api-only" in sys.argv[1:]:
+                                assert session_count == 2
+                            else:
+                                assert session_count >= 2
                             assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE state='ACTIVE'").fetchone()[0] == 1
-                        print("PROJECT_BROWSER_DATABASE_COUNTS PASS: 2 projects, at least 2 sessions, 1 active member", flush=True)
+                        print(f"PROJECT_BROWSER_DATABASE_COUNTS PASS: 2 projects, {session_count} sessions, 1 active member", flush=True)
                 finally:
                     if proxy:
                         if proxy.poll() is None:
