@@ -110,7 +110,14 @@ a:focus-visible {
   gap: 1.25rem;
 }
 
-nav a {
+.primary-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.25rem;
+}
+
+.primary-nav a {
   text-underline-offset: 0.35rem;
 }
 

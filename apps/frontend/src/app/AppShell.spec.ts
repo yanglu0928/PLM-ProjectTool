@@ -28,6 +28,7 @@ describe("AppShell", () => {
 
     expect(wrapper.get("h1").text()).toContain("项目实施信息");
     expect(wrapper.findAll("nav a")).toHaveLength(2);
+    expect(wrapper.get('nav[aria-label="主导航"]').classes()).toContain("primary-nav");
     expect(wrapper.get('nav a[href="/login"]').text()).toBe("账户与登录");
     expect(wrapper.text()).not.toContain("客户项目列表");
   });

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-28：0.1.0.dev0/AUT05A07修登录页头导航相邻，专属Flex间距与窄屏换行；Windows11实际桌面及360px浏览器无水平溢出、键盘Tab可见焦点，前端66测试/typecheck/build通过。兼容现有0049，无API/后端/Migration/权限/依赖变化；静态页面检查未启动后端，不冒充再次登录验收。改密页面、正式信任/HTTPS、CR008性能、Gate3及可用包仍待。
+
 - 2026-09-28：0.1.0.dev0/AUT05A06依CR-AUT-009将Auth登录、会话GET、续期成功响应的过期时间统一为微秒精度UTC `Z`，保留同一瞬间与冻结字段/权限/Cookie/CSRF，拒绝无时区时间。15关联测试、后端全量1558无失败（2既有跳过）、真实PG/Uvicorn/Vite原9GET/12POST及三响应UTC断言、开发wheel构建通过；自有临时源清理。兼容现有0049无需升级，无依赖或API字段变更。正式HTTPS/信任、Server2025/Debian、CR008性能FAIL、Gate3及可使用包仍待。
 
 - 2026-09-28：0.1.0.dev0/AUT05A05修复浏览器原生fetch调用与PostgreSQL时区偏移会话时间解析，严格显式offset后归一化UTC；真实Windows11浏览器错密码/三登录/续期/两退出/刷新只读重登通过，临时PG计数4Session/3issued/1renewed/2revoked/2logout收据及自有源清理通过，前端66测试/typecheck/build通过。兼容现有0049无需Migration，原API/权限/依赖不变。首轮失败和900秒再启留档；服务端UTC合同一致性、导航间距、HTTPS/正式信任/Server2025/Debian/完整UAT及可用包未验，CR008性能仍FAIL/Gate3未过。

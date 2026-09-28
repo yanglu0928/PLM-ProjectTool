@@ -14,7 +14,7 @@ import ConnectionStatus from "@/shared/components/ConnectionStatus.vue";
         <p class="app-brand">项目实施辅助工具</p>
       </div>
       <div class="header-actions">
-        <nav aria-label="主导航">
+        <nav class="primary-nav" aria-label="主导航">
           <RouterLink to="/">首页</RouterLink>
           <RouterLink to="/login">账户与登录</RouterLink>
         </nav>
