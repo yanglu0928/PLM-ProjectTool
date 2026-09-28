@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-28：0.1.0.dev0/PRJ-05-A07-P03前置核查发现ProjectManager缺安全目标User候选，登记CR-PRJ-006；本次仅设计/阻塞记录，无程序、API运行、Schema/Migration/依赖变更或升级步骤，不标页面PASS。下一步受权候选解析，正式信任/Gate3/包仍待。
+
 - 2026-09-28：0.1.0.dev0/PRJ-05-A07-P02新增项目成员创建安全响应客户端，201请求/成员/ETag/Location绑定，明确拒绝与未确认结果分类，微秒时间核验及八字段安全投影；前端462项/typecheck/build通过。兼容DB0049，无后端API/Schema/Migration/依赖变化、无升级步骤；页面/实际浏览器PG、正式信任/其他平台/性能/质量/Gate3/包待。
 
 - 2026-09-28：0.1.0.dev0/PRJ-05-A07-P01新增项目成员创建固定前端POST桥，私有CSRF、原幂等Key、同源单次提交和超时不重发；前端430项/typecheck/build通过。兼容0049，无后端API/Schema/Migration/依赖变更、无升级步骤；响应解析/页面/实际写链与正式信任/Gate3/包待。

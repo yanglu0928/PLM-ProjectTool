@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260928-436 — PRJ-05-A07-P03 页面前置与 CR-PRJ-006
+
+- Date/WBS：2026-09-28 / Phase2 PRJ-05-A07-P03。冻结成员POST需目标User UUID，而项目负责人不能调用仅DeploymentAdmin可用的`AUTH_USER_LIST`。项目部门GET可供当前项目成员使用，前端尚无客户端。
+- Decision：页面不要求非技术用户手填UUID，也不扩大管理目录权限。按用户持续授权登记CR-PRJ-006，先实现当前有效ProjectManager精确用户名候选解析的非破坏性增量API与安全限流/统一未命中，再接部门ACTIVE选择和成员页面。原冻结API/后端POST不改；候选只是提示，提交仍由原服务端最终复核。
+- Impact/rollback/validation：当前页面前置BLOCKED，不把P01/P02客户端验收冒充页面可用。新端点泄露用户目录/跨项目旁路风险及独立权限、License、限流、真实PG测试列于CR；回滚撤增量端点/选择器，无Schema迁移。本次只记录设计与状态，未实现新增API。
+
 ## DEC-20260928-435 — PRJ-05-A07-P02 项目成员创建安全响应客户端实施前
 
 - Date/WBS：2026-09-28 / Phase2 PRJ-05-A07-P02。Gate2冻结`PROJECT_MEMBER_CREATE`、PRJ-04-A10-P01～P03实际后端合同、P01前端单次写传输已具备。仅新增Project模块响应客户端、复用只读成员安全投影与测试；不改业务权限、实体、后端、Schema/Migration、API合同或依赖。
