@@ -14,6 +14,8 @@ const messages = {
   AUTH_CSRF_INVALID: "登录状态已变化，请重新登录。",
   AUTH_RATE_LIMITED: "尝试过于频繁，请稍后再试。",
   AUTH_RELOGIN_REQUIRED: "请重新登录以继续此操作。",
+  VALIDATION_FAILED: "密码格式不符合要求。",
+  CONFLICT_IDEMPOTENCY: "此操作记录与本次输入不一致，请勿重复提交。",
   AUTH_CLIENT_BUSY: "正在处理登录操作，请稍候。",
   AUTH_CLIENT_UNAVAILABLE: "暂时无法确认登录状态，请重新登录。",
 } as const;
@@ -121,7 +123,8 @@ export class SessionClient {
       if (response.status !== 200) {
         const code = record(payload.error) ? payload.error.code : null;
         const expected: Record<string, number> = { AUTH_INVALID_CREDENTIALS: 401, AUTH_SESSION_EXPIRED: 401,
-          AUTH_CSRF_INVALID: 403, AUTH_RATE_LIMITED: 429 };
+          AUTH_CSRF_INVALID: 403, AUTH_RATE_LIMITED: 429, VALIDATION_FAILED: 422,
+          CONFLICT_IDEMPOTENCY: 409 };
         if (typeof code === "string" && Object.hasOwn(expected, code) && response.status === expected[code]) {
           throw new SessionClientError(code as SessionClientErrorCode);
         }
@@ -173,6 +176,32 @@ export class SessionClient {
         "X-CSRF-Token": token, "Idempotency-Key": idempotencyKey,
       });
       if (!record(data) || data.revoked !== true) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    });
+  }
+
+  async changePassword(currentPassword: string, newPassword: string, idempotencyKey: string): Promise<number> {
+    const validPassword = (value: unknown): value is string => {
+      if (typeof value !== "string" || value.includes("\0")) return false;
+      const size = new TextEncoder().encode(value).length;
+      return size >= 1 && size <= 1024;
+    };
+    if (!validPassword(currentPassword) || !validPassword(newPassword)) {
+      throw new SessionClientError("VALIDATION_FAILED");
+    }
+    if (typeof idempotencyKey !== "string" || !/^[\x20-\x7e]{16,128}$/.test(idempotencyKey)) {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    }
+    return this.#exclusive(async (token) => {
+      if (token === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
+      const data = await this.#request("/api/v1/auth/password:change", "POST", {
+        "Content-Type": "application/json", "X-CSRF-Token": token,
+        "Idempotency-Key": idempotencyKey,
+      }, JSON.stringify({ current_password: currentPassword, new_password: newPassword }));
+      if (!record(data) || !Number.isSafeInteger(data.credential_version)
+        || (data.credential_version as number) < 2) {
+        throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+      }
+      return data.credential_version as number;
     });
   }
 }

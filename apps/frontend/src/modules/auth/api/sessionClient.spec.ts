@@ -142,6 +142,69 @@ describe("SessionClient", () => {
     await expect(api.logout("synthetic-key-0001")).rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
   });
 
+  it.each([false, true])("changes password once with the original CSRF and caller key (restricted=%s)", async (restricted) => {
+    const initial = restricted ? session({ password_change_required: true, deployment_role: "NONE" }) : session();
+    const { api, fetcher } = client(response(initial), response({ credential_version: 2, internal: "not-public" }));
+    await api.login("user", "old-synthetic");
+    await expect(api.changePassword("旧密码", "新密码-123", "synthetic-change-0001")).resolves.toBe(2);
+    expect(fetcher.mock.calls[1]).toEqual(["/api/v1/auth/password:change", expect.objectContaining({
+      method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error",
+      headers: { Accept: "application/json", "Content-Type": "application/json",
+        "X-CSRF-Token": token, "Idempotency-Key": "synthetic-change-0001" },
+      body: JSON.stringify({ current_password: "旧密码", new_password: "新密码-123" }),
+    })]);
+    expect(api.view).toBeNull();
+    expect(api.canSubmit).toBe(false);
+    expect(JSON.stringify(api)).not.toContain("新密码-123");
+  });
+
+  it.each(["", "\0secret", "x".repeat(1025), "汉".repeat(342)])("rejects invalid password before request without losing active login", async (value) => {
+    const { api, fetcher } = client(response(session()));
+    await api.login("user", "synthetic-input");
+    await expect(api.changePassword(value, "new-secret", "synthetic-change-0001"))
+      .rejects.toMatchObject({ code: "VALIDATION_FAILED" });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(api.canSubmit).toBe(true);
+  });
+
+  it("rejects a malformed caller key before request and read-only sessions cannot change password", async () => {
+    const readOnly = session(); delete (readOnly as Partial<typeof readOnly>).csrf_token;
+    const { api, fetcher } = client(response(session()), response(readOnly));
+    await api.login("user", "synthetic-input");
+    await expect(api.changePassword("old", "new", "short"))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    expect(api.canSubmit).toBe(true);
+    await api.current();
+    await expect(api.changePassword("old", "new", "synthetic-change-0001"))
+      .rejects.toMatchObject({ code: "AUTH_RELOGIN_REQUIRED" });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([[409, "CONFLICT_IDEMPOTENCY"], [422, "VALIDATION_FAILED"],
+    [503, "SYSTEM_UNAVAILABLE"]] as const)("does not retry uncertain or rejected change %s %s", async (status, code) => {
+    const failed = new Response(JSON.stringify({ error: { code, message: "private" }, trace_id: id }),
+      { status, headers: { "Content-Type": "application/json" } });
+    const { api, fetcher } = client(response(session()), failed);
+    await api.login("user", "synthetic-input");
+    const error = await api.changePassword("old", "new", "synthetic-change-0001").catch((value: unknown) => value);
+    expect(error).toBeInstanceOf(SessionClientError);
+    if (!(error instanceof SessionClientError)) throw new Error("expected safe client error");
+    expect(String(error)).not.toContain("private");
+    expect(error.code).toBe(code === "SYSTEM_UNAVAILABLE" ? "AUTH_CLIENT_UNAVAILABLE" : code);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(api.view).toBeNull();
+    expect(api.canSubmit).toBe(false);
+  });
+
+  it.each([{}, { credential_version: 1 }, { credential_version: 2.5 },
+    { credential_version: "2" }])("fails closed on malformed change response %j", async (data) => {
+    const { api } = client(response(session()), response(data));
+    await api.login("user", "synthetic-input");
+    await expect(api.changePassword("old", "new", "synthetic-change-0001"))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    expect(api.view).toBeNull();
+  });
+
   it("rejects changed identity during renewal and discards the returned CSRF", async () => {
     const { api } = client(response(session()), response(session({
       user: { user_id: "11234567-89ab-4cde-8123-456789abcdef", username_display: "other" },
