@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-28：0.1.0.dev0/AUT-05-A13-P02新增管理员User改名安全响应客户端，绑定目标/名称/初始`v0`与no-op或`v+1`强ETag，区分确定拒绝和结果未知；首轮UUID校验笔误修复后前端353项/typecheck/build通过。兼容0049，无DB/API/Migration/依赖变更、无升级步骤；页面/真实浏览器/正式信任/Gate3/包待。
+
 - 2026-09-28：0.1.0.dev0/AUT-05-A13-P01新增管理员用户改名的固定前端 PATCH 传输桥，强`If-Match`、私有CSRF、同源单次请求和超时不盲重发；327项前端测试/typecheck/build通过。兼容0049，无后端API/Schema/Migration/依赖变更、无升级步骤；安全响应解析、页面和真实浏览器改名尚未完成，正式信任/Gate3/包待。
 
 - 2026-09-28：0.1.0.dev0/AUT-05-A12-P05-A02-A02新增仅测试用隔离浏览器User启停模式；Windows11合成管理员真实页面从`v0`停用至`v1`、再启用至`v2`，当前状态独立读取、旧成员Session撤销、两不可变结果及临时源清理通过，旧只读API回归通过。无生产API/Schema/Migration/依赖变更、无升级步骤；正式TLS/信任、Server2025/Debian、性能/质量/Gate3/程序包仍待。
