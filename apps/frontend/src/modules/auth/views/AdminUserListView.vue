@@ -69,6 +69,7 @@ onUnmounted(() => { mounted = false; });
         <li v-for="user in items" :key="user.user_id">
           <span>{{ user.username_display }}</span>
           <span>{{ user.account_state === 'ENABLED' ? '启用' : '停用' }} · {{ user.user_id }}</span>
+          <RouterLink :to="`/admin/users/${user.user_id}`">查看详情与状态</RouterLink>
         </li>
       </ul>
       <button v-if="cursor" type="button" :disabled="busy" @click="load(true)">加载更多用户</button>

@@ -62,6 +62,7 @@ describe("AdminUserListView", () => {
     expect(wrapper.find("script").exists()).toBe(false);
     expect(wrapper.html()).not.toContain("never-show");
     expect(wrapper.get('a[href="/admin/users/new"]').text()).toBe("创建账户");
+    expect(wrapper.get(`a[href="/admin/users/${otherId}"]`).text()).toBe("查看详情与状态");
     wrapper.unmount();
   });
 
