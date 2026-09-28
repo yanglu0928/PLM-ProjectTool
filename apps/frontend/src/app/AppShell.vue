@@ -23,6 +23,7 @@ provide(sessionClientKey, new SessionClient());
           <RouterLink to="/">首页</RouterLink>
           <RouterLink to="/login">账户与登录</RouterLink>
           <RouterLink to="/projects">我的项目</RouterLink>
+          <RouterLink to="/projects/new">创建项目</RouterLink>
         </nav>
         <ConnectionStatus />
       </div>
