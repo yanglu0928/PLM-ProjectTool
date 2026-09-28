@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260928-437 — PRJ-05-A07-P03-A01 精确成员候选合同实施前
+
+- Date/WBS：2026-09-28 / Phase2 PRJ-05-A07-P03-A01，关联CR-PRJ-006。原`AUTH_USER_LIST`保持DeploymentAdmin专用；原`PROJECT_MEMBER_CREATE`仍须服务端实时核验。
+- Decision：新增可选`POST /api/v1/projects/{project_id}/member-candidates:resolve`，固定JSON`{"username":"..."}`与私有CSRF；仅当前ACTIVE项目负责人经真实Session、License和`PROJECT_MEMBER_CREATE`同等授权后，在同一短事务内以Auth-owned Port精确读取ENABLED User，Project-owned Port检查无非REMOVED成员。无匹配/停用/已分配统一`200 data:{candidate:null}`，命中只给UserId/显示名，不公开他项目。读前通过现有PostgreSQL计数桶持久保留按负责人+项目30/5分钟、按负责人+项目+规范用户名10/5分钟容量；即使候选缺失也计数，429固定错误。`Cache-Control:no-store`。最初拟GET查询串，实施前安全复核发现用户名易进入URL历史/代理日志且跨站可消耗额度，故同一CR内收敛为带Origin/CSRF的POST；不表示写入成员，也不要求幂等Key。
+- Reason/impact/rollback/validation：用户名猜测风险以精确查询、当前负责人门禁、最小投影、统一未命中及跨进程限流约束；候选后身份/成员变化仍由原创建POST复核。非破坏性新增合同，不改原冻结文件、Schema/Migration或依赖；回滚撤可选路由/服务/适配器/增量合同。Unit、HTTP权限/异常及隔离PostgreSQL当前事实和限流测试后才标记A01 PASS；正式Windows组合装配另验。
+
 ## DEC-20260928-436 — PRJ-05-A07-P03 页面前置与 CR-PRJ-006
 
 - Date/WBS：2026-09-28 / Phase2 PRJ-05-A07-P03。冻结成员POST需目标User UUID，而项目负责人不能调用仅DeploymentAdmin可用的`AUTH_USER_LIST`。项目部门GET可供当前项目成员使用，前端尚无客户端。
