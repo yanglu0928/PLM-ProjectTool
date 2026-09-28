@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260928-431 — PRJ-05-A06-P01 项目成员只读前端客户端实施前
+
+- Date/WBS：2026-09-28 / Phase2 PRJ-05-A06-P01。Gate2、冻结`PROJECT_MEMBER_LIST`、后端Windows显式成员历史GET、现有ProjectReadClient前置已满足。只处理前端Project成员分页读取/安全投影及测试，不改实体、DB Schema/Migration、后端API、权限或依赖。
+- Decision：固定50条`page_size`，仅接受规范Project UUID和后端不透明签名cursor；对返回MemberView八个顶层安全字段及嵌套User/Department逐一验证并丢弃额外字段，分页状态/游标形状及重复ID失败关闭。浏览器仅相对同源Cookie GET/no-store/no redirect，超时不重试；服务端状态/错误只映射固定安全提示，不把响应正文或cursor载荷解释成客户端授权。独立页面另WBS。
+- Impact/rollback/validation：风险为误显示跨项目成员、使用过期cursor或服务端异常信息泄露；通过目标路径、分页、无网络非法输入/错误、字段白名单及timeout单次测试约束。回滚撤新增客户端/测试，不需Migration/升级；完成前跑前端test/typecheck/build。此项前端合同不替代浏览器+PG、正式TLS/License及Gate3。
+- Executed：新增前端只读Client与48个新测试场景；全前端410/410、typecheck、build exit0。无后端/API/Migration/权限/依赖变化；真实浏览器/PG页面集成仍待PRJ-05-A06后续任务。
+
 ## DEC-20260928-430 — AUT-05-A13-P04 管理员用户改名浏览器联调实施前
 
 - Date/WBS：2026-09-28 / Phase2 AUT-05-A13-P04。P03页面合同与现有后端Windows显式write改名链已通过；仅缺二者真实浏览器联调。涉及一次性合成Auth User、现有隔离浏览器夹具及临时PG，不改生产 API/Schema/实体/权限/依赖。
