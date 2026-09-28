@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-28：0.1.0.dev0/AUT-05-A11-P02完成Windows11本机合成浏览器/PG只读用户列表联调：匿名/普通用户受限、管理员两条安全投影/刷新、2个PG Session及临时库/角色/Vault清理通过。无生产代码/API/Schema/权限/依赖变更，兼容0049；实际50+分页、正式TLS/License信任、三平台/全UAT/Gate3/可用包待验。
+
 - 2026-09-28：0.1.0.dev0/AUT-05-A11-P01新增管理员用户只读列表页与导航，安全三字段投影、50条显式分页/刷新、空页和错误清旧；前端265测试/typecheck/build通过。兼容0049，无后端API/Migration/权限/依赖变化；真实浏览器/PG、User编辑/状态管理、正式trust/HTTPS/CR008性能FAIL/Gate3/可用包仍待。
 
 - 2026-09-28：0.1.0.dev0/AUT-05-A10-P04-A01加强并重跑Windows11隔离ASGI/PG User创建链：201八字段/初态/ETag/Location/UTC/密码不回显、原Key重放及新账户登录/普通角色拒绝、readonly关闭/构造故障，exit0，外部复查临时库0。兼容0049，无生产API/Migration/权限/依赖变化；浏览器新凭据提交未由AI执行，正式trust/HTTPS/CR008性能FAIL/Gate3/可用包仍待。
