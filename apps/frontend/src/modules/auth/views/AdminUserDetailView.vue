@@ -133,6 +133,7 @@ async function submit(action: UserStateAction) {
         <dt>部署角色</dt><dd>{{ current.deployment_role === 'DEPLOYMENT_ADMIN' ? '部署管理员' : '普通用户' }}</dd>
         <dt>当前版本</dt><dd>{{ current.etag }}</dd>
       </dl>
+      <p v-if="current && !pending"><RouterLink :to="`/admin/users/${current.user_id}/name`">修改用户名</RouterLink></p>
       <p v-if="pending" role="status">原操作：{{ pending.username }}，{{ pending.action === 'enable' ? '启用' : '停用' }}，原版本 {{ pending.etag }}。原操作标识只保存在本页内存；若刷新或离开，请先核对当前账户和审计，勿用新标识猜测重试。</p>
       <label v-if="pending && !recoveryBlocked">
         <input v-model="confirmRecovery" type="checkbox" name="confirm_original_user_state" :disabled="busy" />

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-28：0.1.0.dev0/AUT-05-A13-P03新增管理员User改名页面和详情入口，当前强ETag显式确认、200回执与独立当前GET分离、未知结果封锁页面内盲重试；前端362项/typecheck/build通过。兼容0049，无后端API/Schema/Migration/依赖变更、无升级步骤；实际浏览器/PG、正式信任/Gate3/包待。
+
 - 2026-09-28：0.1.0.dev0/AUT-05-A13-P02新增管理员User改名安全响应客户端，绑定目标/名称/初始`v0`与no-op或`v+1`强ETag，区分确定拒绝和结果未知；首轮UUID校验笔误修复后前端353项/typecheck/build通过。兼容0049，无DB/API/Migration/依赖变更、无升级步骤；页面/真实浏览器/正式信任/Gate3/包待。
 
 - 2026-09-28：0.1.0.dev0/AUT-05-A13-P01新增管理员用户改名的固定前端 PATCH 传输桥，强`If-Match`、私有CSRF、同源单次请求和超时不盲重发；327项前端测试/typecheck/build通过。兼容0049，无后端API/Schema/Migration/依赖变更、无升级步骤；安全响应解析、页面和真实浏览器改名尚未完成，正式信任/Gate3/包待。
