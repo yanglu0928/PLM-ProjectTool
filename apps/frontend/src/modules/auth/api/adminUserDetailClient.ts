@@ -17,7 +17,7 @@ export class AdminUserDetailError extends Error {
 }
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-const etagPattern = /^"v([1-9]\d*)"$/;
+const etagPattern = /^"v(0|[1-9]\d*)"$/;
 function record(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }

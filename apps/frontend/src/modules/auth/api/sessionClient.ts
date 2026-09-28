@@ -223,7 +223,7 @@ export class SessionClient {
     if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
     if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
     if (!identifier(userId) || (action !== "enable" && action !== "disable")
-      || typeof etag !== "string" || !/^"v[1-9]\d*"$/.test(etag)
+      || typeof etag !== "string" || !/^"v(?:0|[1-9]\d*)"$/.test(etag)
       || !Number.isSafeInteger(Number(etag.slice(2, -1)))
       || Number(etag.slice(2, -1)) >= Number.MAX_SAFE_INTEGER
       || typeof idempotencyKey !== "string" || !/^[\x20-\x7e]{16,128}$/.test(idempotencyKey)) {

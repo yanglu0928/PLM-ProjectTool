@@ -37,7 +37,7 @@ export class AdminUserStateError extends Error {
 }
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-const version = /^"v([1-9]\d*)"$/;
+const version = /^"v(0|[1-9]\d*)"$/;
 function record(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -62,7 +62,7 @@ export class AdminUserStateClient {
     const match = typeof etag === "string" ? version.exec(etag) : null;
     const prior = match ? Number(match[1]) : NaN;
     if (!identifier(userId) || (action !== "enable" && action !== "disable")
-      || !Number.isSafeInteger(prior) || prior < 1 || prior >= Number.MAX_SAFE_INTEGER
+      || !Number.isSafeInteger(prior) || prior < 0 || prior >= Number.MAX_SAFE_INTEGER
       || typeof idempotencyKey !== "string" || !/^[\x20-\x7e]{16,128}$/.test(idempotencyKey)) {
       throw new AdminUserStateError("USER_STATE_INVALID_INPUT");
     }

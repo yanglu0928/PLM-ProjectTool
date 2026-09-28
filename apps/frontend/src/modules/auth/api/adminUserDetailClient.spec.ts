@@ -39,6 +39,13 @@ describe("AdminUserDetailClient", () => {
     await expect(api.get(userId)).resolves.toMatchObject({ account_state: "DISABLED", credential_version: 0 });
   });
 
+  it("accepts the database initial strong v0 version", async () => {
+    const initial = { ...detail, etag: '"v0"' };
+    const fetcher = vi.fn().mockResolvedValue(response(initial, 200, { ETag: '"v0"' }));
+    await expect(new AdminUserDetailClient(fetcher as typeof fetch).get(userId))
+      .resolves.toMatchObject({ etag: '"v0"' });
+  });
+
   it.each(["", "../other", "00000000-0000-0000-0000-000000000000"])(
     "rejects invalid target %j without a request", async (target) => {
       const fetcher = vi.fn();
@@ -59,6 +66,7 @@ describe("AdminUserDetailClient", () => {
   });
 
   it.each([response({ ...detail, user_id: trace }), response({ ...detail, etag: '"v4"' }),
+    response({ ...detail, etag: '"v00"' }, 200, { ETag: '"v00"' }),
     response(detail, 200, { ETag: 'W/"v3"' }), response({ ...detail, account_state: "UNKNOWN" }),
     response({ ...detail, credential_version: 0 }), response({ ...detail, updated_at: "2026-09-28T07:00:00Z" }),
     error(503, "SYSTEM_UNAVAILABLE"), error(403, "RESOURCE_NOT_FOUND")])(

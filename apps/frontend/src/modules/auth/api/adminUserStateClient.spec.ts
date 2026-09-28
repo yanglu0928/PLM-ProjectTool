@@ -51,6 +51,14 @@ describe("AdminUserStateClient", () => {
     });
   });
 
+  it("accepts the initial v0 If-Match and binds the first v1 result", async () => {
+    const initialResult = { ...view, etag: '"v1"' };
+    const { session, api, fetcher } = auth([response(initialResult, 200, { ETag: '"v1"' })]);
+    await session.login("admin", "synthetic-only");
+    await expect(api.change(userId, "disable", '"v0"', key)).resolves.toMatchObject({ etag: '"v1"' });
+    expect(fetcher.mock.calls[1][1].headers["If-Match"]).toBe('"v0"');
+  });
+
   it.each([[401, "AUTH_SESSION_EXPIRED"], [403, "AUTH_CSRF_INVALID"],
     [403, "LICENSE_OPERATION_DENIED"], [404, "RESOURCE_NOT_FOUND"],
     [409, "AUTH_USER_DISABLED"], [409, "CONFLICT_VERSION"],
@@ -89,6 +97,8 @@ describe("AdminUserStateClient", () => {
     await expect(api.change("../admin", "disable", '"v1"', key))
       .rejects.toMatchObject({ code: "USER_STATE_INVALID_INPUT", uncertain: false });
     await expect(api.change(userId, "disable", '"v9007199254740991"', key))
+      .rejects.toMatchObject({ code: "USER_STATE_INVALID_INPUT", uncertain: false });
+    await expect(api.change(userId, "disable", '"v00"', key))
       .rejects.toMatchObject({ code: "USER_STATE_INVALID_INPUT", uncertain: false });
     await expect(api.change(userId, "disable", '"v1"', "short"))
       .rejects.toMatchObject({ code: "USER_STATE_INVALID_INPUT", uncertain: false });

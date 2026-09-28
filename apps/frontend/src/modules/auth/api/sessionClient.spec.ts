@@ -466,7 +466,7 @@ describe("SessionClient", () => {
       ["../other", "disable", '"v1"', "synthetic-user-state-0001"],
       [id, "delete" as "disable", '"v1"', "synthetic-user-state-0001"],
       [id, "enable", 'W/"v1"', "synthetic-user-state-0001"],
-      [id, "enable", '"v0"', "synthetic-user-state-0001"],
+      [id, "enable", '"v00"', "synthetic-user-state-0001"],
       [id, "enable", '"v9007199254740992"', "synthetic-user-state-0001"],
       [id, "enable", '"v9007199254740991"', "synthetic-user-state-0001"],
       [id, "enable", '"v1"', "short"],
