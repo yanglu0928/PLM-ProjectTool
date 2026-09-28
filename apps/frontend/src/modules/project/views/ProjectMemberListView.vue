@@ -73,6 +73,7 @@ const stateNames: Record<ProjectMemberView["state"], string> = {
     <h1 id="member-list-title">项目成员历史</h1>
     <p>可见范围由服务器按当前项目和角色实时确认；列表包含已移除的历史成员。</p>
     <p><RouterLink :to="{ name: 'project-detail', params: { projectId: route.params.projectId } }">返回项目详情</RouterLink></p>
+    <p><RouterLink :to="{ name: 'project-member-create', params: { projectId: route.params.projectId } }">添加项目成员</RouterLink></p>
     <template v-if="!identity">
       <p role="status">尚未读取当前身份。请先登录，或在账户页读取当前身份。</p>
       <RouterLink to="/login">前往账户与登录</RouterLink>
