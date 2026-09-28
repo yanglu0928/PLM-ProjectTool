@@ -39,9 +39,11 @@ function text(value: unknown): value is string {
   return typeof value === "string" && value.length > 0;
 }
 function instant(value: unknown): value is string {
-  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|\+00:00)$/.test(value)) return false;
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$/.test(value)) return false;
   const parsed = Date.parse(value);
-  return Number.isFinite(parsed) && new Date(parsed).toISOString().slice(0, 19) === value.slice(0, 19);
+  const calendar = Date.parse(value.slice(0, 19) + "Z");
+  return Number.isFinite(parsed) && Number.isFinite(calendar)
+    && new Date(calendar).toISOString().slice(0, 19) === value.slice(0, 19);
 }
 function parseView(data: unknown): SessionView {
   if (!record(data) || !record(data.user) || !identifier(data.user.user_id)
@@ -68,7 +70,8 @@ function parseView(data: unknown): SessionView {
     deployment_role: data.deployment_role as SessionView["deployment_role"],
     password_change_required: data.password_change_required,
     authorized_projects: Object.freeze(projects),
-    absolute_expires_at: data.absolute_expires_at, idle_expires_at: data.idle_expires_at,
+    absolute_expires_at: new Date(data.absolute_expires_at).toISOString(),
+    idle_expires_at: new Date(data.idle_expires_at).toISOString(),
   });
 }
 
@@ -103,7 +106,9 @@ export class SessionClient {
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
     try {
-      const response = await this.fetcher(path, { method, credentials: "same-origin", cache: "no-store",
+      // Do not invoke native Window.fetch with the SessionClient as its receiver.
+      const fetcher = this.fetcher;
+      const response = await fetcher(path, { method, credentials: "same-origin", cache: "no-store",
         redirect: "error", headers: { Accept: "application/json", ...headers }, body, signal: controller.signal });
       if (controller.signal.aborted) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
       if (response.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !== "application/json") {

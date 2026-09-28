@@ -47,6 +47,23 @@ describe("SessionClient", () => {
     expect(JSON.stringify(api)).not.toContain("synthetic-input");
   });
 
+  it("never binds a transport function to the SessionClient receiver", async () => {
+    const fetcher = function (this: unknown): Promise<Response> {
+      expect(this).toBeUndefined();
+      return Promise.resolve(response(session()));
+    } as typeof fetch;
+    const api = new SessionClient(fetcher);
+    await expect(api.login("user", "synthetic-input")).resolves.toMatchObject({ deployment_role: "DEPLOYMENT_ADMIN" });
+  });
+
+  it.each(["+08:00", "-04:00"])("normalizes valid database offset %s to UTC", async (offset) => {
+    const { api } = client(response(session({ absolute_expires_at: `2030-01-01T12:00:00${offset}`,
+      idle_expires_at: `2030-01-01T11:00:00.123456${offset}` })));
+    const view = await api.login("user", "synthetic-input");
+    expect(view.absolute_expires_at).toBe(new Date(`2030-01-01T12:00:00${offset}`).toISOString());
+    expect(view.idle_expires_at).toBe(new Date(`2030-01-01T11:00:00.123456${offset}`).toISOString());
+  });
+
   it("accepts restricted identity without inventing rights", async () => {
     const { api } = client(response(session({ password_change_required: true, deployment_role: "NONE" })));
     const view = await api.login("user", "synthetic-input");

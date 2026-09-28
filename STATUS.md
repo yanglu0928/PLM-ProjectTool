@@ -3,7 +3,7 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 2：Platform Core|
-|Current WBS|`AUT-05-A04`真实PG/Windows登录工厂经Uvicorn/Vite网络21请求通过，临时源清理核查；真实浏览器待|
+|Current WBS|`AUT-05-A05` Windows 11 独立合成真实浏览器登录/续期/退出/刷新只读重登及PG精确审计计数通过|
 |Current Status|PHASE_1_COMPLETE / DOC_03_A03_P04_P04_PRECONDITION_BLOCKED / DOC_02_A02_P01_INTERNAL_PASS / DOC_02_A02_P02_PRECONDITION_BLOCKED / DOC_03_A04_A03_P04_P03_CONTENT_HTTP_PASS / DOC_03_A04_A04_P01_JOB_SCHEMA_PASS / DOC_03_A04_A04_P02_JOB_LEASE_PASS / DOC_03_A04_A04_P03_OUTBOX_PASS / DOC_03_A04_A04_P04_P01_PARSE_QUEUE_PASS / DOC_03_A04_A04_P04_P02_COMMIT_INTERNAL_PASS / DOC_03_A04_A04_P04_P03_P01_ABORT_STATE_PASS / DOC_03_A04_A04_P04_P03_P02_PRECONDITION_BLOCKED / DOC_03_A04_A04_P04_P04_A01_FINALIZE_HTTP_PASS / DOC_03_A04_A04_P04_P04_A02_WINDOWS_COMPOSITION_PASS / DOC_03_A04_A04_P04_COMMIT_ABORT_IN_PROGRESS / DOC_01_A02_INTERNAL_PASS / DOC_01_A03_P01_CURSOR_PASS / DOC_01_A03_P02_HTTP_CONTRACT_PASS / DOC_01_A03_P03_HTTP_DB_PASS / DOC_01_A03_P04_WINDOWS_COMPOSITION_PASS / DOC_01_A04_P01_VERSION_INTERNAL_PASS / DOC_01_A04_P02_VERSION_CURSOR_PASS / DOC_01_A04_P03_VERSION_HTTP_CONTRACT_PASS / DOC_01_A04_P04_VERSION_HTTP_DB_PASS / DOC_01_A04_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P01_VERIFIED_SNAPSHOT_PASS / DOC_01_A05_P02_DOWNLOAD_SOURCE_PASS / DOC_01_A05_P03_PREPARE_DOWNLOAD_PASS / DOC_01_A05_P04_DOWNLOAD_HTTP_PASS / DOC_01_A05_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P06_DISCONNECT_CAPACITY_BOUNDED_PASS / DOC_03_A04_A04_P04_P03_P02_A01_GATE_ADAPTER_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P01_CONTENT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P02_COMMIT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P03_ABORT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P01_READONLY_INSPECTION_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A01_STORAGE_STEP_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A02_INTERNAL_CLEANUP_PASS / PLT_02_A07_P05_A09_CEREMONY_PENDING / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
 |Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03、DOC-03-A01、DOC-03-A02（限定范围）、DOC-03-A03-P01～P03（P03 内部合成验证）、DOC-03-A03-P04-P01～P03（内部合成验证）、DOC-03-A04-A01（Schema 验证）、DOC-03-A04-A02（内部合成验证）、DOC-01-A01、DOC-02-A01、DOC-02-A02-P01（内部合成验证） PASS|
@@ -13,8 +13,8 @@
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，DM-02 License 授权粒度经用户批准 CR-LIC-001 修订|
 |DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；原冻结64cdf09保留；增量至`20260927_0049` Auth resetfirst（CR-AUT-007），0001～0048不改写；无生产迁移|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
-|Test Summary|AUT05A04真实Windows工厂/PG/Vault经Uvicorn/Vite21HTTP/原Cookie-Session-竞争与审计计数通过；自有库角色count0/Vault1168，前端63/typecheck/build通过。httpxCookie非浏览器，browser/TLS/后端unit/coverage/性能/wheel未跑；CR008 FAIL/Gate/包待|
-|Next WBS|Phase2 AUT-05-A05：独立合成fixture下中文页面真实浏览器交互/视觉、自动HttpOnly Cookie、刷新只读重登/续期退出；不放宽原网络fixture审计计数。改密/正式trust/TLS/CR008性能FAIL/Gate/完整包仍待|
+|Test Summary|AUT05A05真实Windows11浏览器错密码/三登录/续期/两退出/刷新只读重登通过；临时PG精确4Session/3issued/1renewed/2revoked/2收据及自有服务/库/角色/Vault清理通过。前端66/typecheck/build通过；HTTPS/后端全量unit/coverage/性能/wheel本项未跑，CR008 FAIL/Gate/包待|
+|Next WBS|Phase2 AUT-05-A06：核对并修复Session服务端PG时区偏移输出与冻结UTC合同的不一致，先登记差异/验证计划；不修改冻结API结构。改密/正式trust/TLS/CR008性能FAIL/Gate/完整包仍待|
 
 ## 自动执行策略
 
@@ -24,6 +24,8 @@
 - GitHub：允许在当前 Scope 和正确分支内自动 fetch、commit、push；禁止 force push、直接提交 main、覆盖未知远端修改或提交 Secret/客户数据。
 
 ## 最近检查点
+
+- 2026-09-28/AUT05A05 首轮真实浏览器暴露native fetch receiver与PG偏移时间解析，修复并增加回归测试。新独立fixture经实际浏览器错密码/三登录/续期/两退出/刷新只读重登通过；PG精确4/3/1/2/2及服务/库/角色/Vault清理PASS，前端66/typecheck/build PASS。超时及运行器错误再启、首轮失败如实留档；仅Windows11 loopback合成，服务端UTC合同、正式HTTPS/信任/Server2025/Debian/Gate3/包待，下一A06先核服务端时区输出。
 
 - 2026-09-27/AUD-03-A07-P02仅Windows写模式装配导出POST，默认/login/readonly404；1155无失败/2跳过、实际Factory提交→任务GET→generic Worker/心跳/发布→结果下载摘要与size一致，重放/冲突/拒绝无写/单Attempt、构造故障/实际缺正式信任拒绝半启动、旧下载/原发布/wheel通过。无新Migration/依赖/权限，正向合成信任/后台在验证进程，非正式服务/UI/全Scope/完整包/GatePASS；下一取消expected_version前置。
 

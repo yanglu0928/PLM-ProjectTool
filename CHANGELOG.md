@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-28：0.1.0.dev0/AUT05A05修复浏览器原生fetch调用与PostgreSQL时区偏移会话时间解析，严格显式offset后归一化UTC；真实Windows11浏览器错密码/三登录/续期/两退出/刷新只读重登通过，临时PG计数4Session/3issued/1renewed/2revoked/2logout收据及自有源清理通过，前端66测试/typecheck/build通过。兼容现有0049无需Migration，原API/权限/依赖不变。首轮失败和900秒再启留档；服务端UTC合同一致性、导航间距、HTTPS/正式信任/Server2025/Debian/完整UAT及可用包未验，CR008性能仍FAIL/Gate3未过。
+
 - 2026-09-27：0.1.0.dev0/AUT05A04真实PG/Vault/Windows登录工厂经Uvicorn/Vite21HTTP（9GET/12POST）原登录/Session/旋转/退出/重放竞争及审计计数通过，额外自有库/角色count0与Vault缺项1168。前端63/typecheck/build通过；验证后临时合成源已删除可重新生成，无生产变化。无后端/API/Schema/依赖变，兼容0049无升级；httpxCookie不是实际浏览器，browser/TLS/后端unit/coverage/性能/wheel未跑，下一A05浏览器，CR008 FAIL/Gate/包待。
 
 - 2026-09-27：0.1.0.dev0/AUT05A03新增Vite固定/api/v1→loopback8000开发代理，保Host/Origin/body/Cookie/CSRF/Key、无rewrite，发现默认开发CORS后显式关闭。真实Vite/原OriginPolicy网络六请求及前端63/typecheck/build通过；418探针非登录成功，实际PG/browser/后端unit/coverage/性能/wheel未跑。无API/后端/Schema/依赖变，兼容0049无DB升级；须显式配置浏览器Origin，下一A04真实工厂网络链，CR008 FAIL/Gate/包待。

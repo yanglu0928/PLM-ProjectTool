@@ -1,5 +1,15 @@
 # 自主决策记录
 
+## DEC-20260928-396
+
+- Executed：AUT05A05 首轮浏览器暴露原生fetch receiver错误与PG时间偏移响应被客户端拒绝。前者改无receiver调用，后者仅接受严格显式RFC3339 offset并归一化为UTC，保持日历/期限校验；增添对应单测。原API/Schema/权限/依赖不变。首轮不合格与运行器/超时再启情况留在进度记录。
+- 新独立合成浏览器完成错密码、三次登录、一次续期、两次退出、刷新后只读重登；实际PG审计计数4/3/1/2及2收据准确通过，临时库/角色/Vault清理通过。仅Windows11/loopback开发代理，服务端UTC输出一致性、页头布局及正式HTTPS/信任/Gate/包仍待，下一独立任务处理。
+
+## DEC-20260927-395
+
+- 2026-09-27 Phase2/AUT05A05实施前：独立真实临时PG/Vault/User browser fixture+原Uvicorn/Vite/Client页面，UI工具按computer-use skill，合成固定密码仅自有loopback，不保存密码。原21请求fixture与计数不动。
+- 按预定浏览器操作验精确4Session/3issued/1renewed/2revoked，旧重登录Session未自动撤销如实记录，不放宽原服务语义。原API/Schema/依赖不变；900秒有界等待/自有进程及源清理，风险/回滚见browser-login进度，真实TLS/生产/Gate/包待。
+
 ## DEC-20260927-394
 
 - Executed：原真实PG/Vault/Windows工厂2context已走Uvicorn/Vite/httpx，9GET/12POST及原登录/旋转/退出/重放竞争/审计计数全通过，响应无CORS；自有服务终止、库/角色count0与Vault不存在1168额外核查。最终网络exit0/前端63/typecheck/build通过，无真实浏览器/HTTPS/全应用证明；无生产/API/Migration/依赖变化，下一独立浏览器A05，CR008/Gate/包待。
