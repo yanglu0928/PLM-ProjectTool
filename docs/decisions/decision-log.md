@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260928-426 — AUT-05-A12-P05-A02-A02 实施前
+
+- Date/WBS：2026-09-28 / Phase2 AUT-05-A12-P05-A02-A02。输入基线为冻结 API-02 `AUTH_USER_ENABLE/DISABLE`、现有 Windows11 真实 ASGI/PG 状态链与 A01 已通过的初始 `"v0"` 页面修补；前置 Gate2/Phase1 已满足。涉及 Auth 管理员 User 状态浏览器验收及测试夹具，不改生产实体/API/权限/Schema。
+- Decision：扩展原隔离浏览器夹具为显式 `--user-state-browser` 模式，继续随机本机端口/独立临时 PG 库与角色/合成 License/Vault；仅在该模式安装已有 Windows 显式 write Factory，并核合成管理员在真实浏览器对合成普通用户执行停用→服务端详情确认→启用→当前详情确认。默认只读模式及原 Project 验证不得受影响。HTTP loopback/合成 trust 不等于正式部署；不得操作真实账户。
+- Impact/rollback/validation：只改验证脚本、进度/版本说明，不改生产代码或数据迁移。若新模式失败，保留真实失败证据并停服务、清本次精确临时库/角色/Vault；回滚可撤新模式，原只读模式应仍 PASS。验收浏览器可见初始 `"v0"`、两次首次结果与独立当前详情，DB 最终 `ENABLED/v2`、测试会话撤销及自有资源清理；旧 `--api-only` 回归。未验证正式 TLS/信任/发行/Gate3。
+- Executed：真实浏览器合成Member不可读、Admin列表→详情`"v0"`→停用首次`"v1"`/当前停用→启用首次`"v2"`/当前启用均可见。`VERIFY` DB终态ENABLED/v2、旧Member Session撤销、两不可变结果、2项目/3Session/1成员及库/角色/Vault清理exit0；原`--api-only`回归exit0。生产代码/API/Schema/依赖未变；正式发行限制保留。
+
 ## DEC-20260928-425 — AUT-05-A12-P05-A02-A01 浏览器联调发现初始版本偏差
 
 - Date/WBS：2026-09-28 / Phase2 AUT-05-A12-P05-A02-A01。Windows11 隔离浏览器中合成普通用户被管理员页拦截、管理员列表可读，但点新建账户详情显示通用失败且重试一致。实际 GET 200、安全八字段与强 ETag 均为 `"v0"`；三个前端入口错误地只接受从 `"v1"` 开始，造成初始行详情不可读、首次启停提交也会被本地拒绝。数据库与其他资源已使用从 0 开始的 lock_version，非后端响应故障。
