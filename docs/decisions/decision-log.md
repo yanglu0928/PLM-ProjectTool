@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260928-442 — PRJ-05-A08-P01 成员 PATCH 私有会话传输
+
+- Date/WBS：2026-09-28 / Phase2 PRJ-05-A08-P01；输入 Gate2 冻结 `PROJECT_MEMBER_PATCH`、PRJ-04-A11-P01/P02 Windows 显式组合及 PRJ-05-A07 已验项目成员入口。
+- Decision：仅给内存 SessionClient 增加固定成员 PATCH 路径的受控单次传输，严格验证两个 UUID、强 `"vN"` If-Match 与非空有界 JSON 字符串，使用同源 Cookie、私有 CSRF、no-store 和禁重定向；401 清本地提交证明，其他未知网络结果不自动重试。该 PATCH 无冻结幂等 Key，结果不确定时后续业务客户端须先从服务器重读成员历史再决定，不凭旧版本再次提交。
+- Reason/impact/rollback/validation：保持冻结 API 与服务器实时权限不变。风险是路径注入、CSRF 泄漏、超时后重复变更或会话并发；以请求头/目标、非法输入零网络、401/503、互斥和超时单次测试及全前端构建验证。无 Schema/Migration/依赖变化；回滚撤该 SessionClient 方法和测试。
+
 ## DEC-20260928-441 — PRJ-05-A07-P03-A05 独立浏览器/PG 成员写链
 
 - Date/WBS：2026-09-28 / Phase2 PRJ-05-A07-P03-A05；A01～A04 已通过各自合同，A05 不以单元测试代替浏览器和数据库事实。

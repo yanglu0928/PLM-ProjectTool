@@ -247,6 +247,40 @@ export class SessionClient {
     }
   }
 
+  /** A member PATCH has no idempotency key; unknown outcomes require a fresh server read. */
+  async patchProjectMember(projectId: string, memberId: string, etag: string,
+    body: string): Promise<Response> {
+    if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
+    if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
+    if (!identifier(projectId) || !identifier(memberId)
+      || typeof etag !== "string" || !/^"v(0|[1-9]\d*)"$/.test(etag)
+      || !Number.isSafeInteger(Number(etag.slice(2, -1)))
+      || Number(etag.slice(2, -1)) >= Number.MAX_SAFE_INTEGER
+      || typeof body !== "string" || body.length === 0
+      || new TextEncoder().encode(body).length > 8192) {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    }
+    this.#busy = true;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      const fetcher = this.fetcher;
+      const response = await fetcher(`/api/v1/projects/${projectId}/members/${memberId}`, {
+        method: "PATCH", credentials: "same-origin", cache: "no-store", redirect: "error",
+        headers: { Accept: "application/json", "Content-Type": "application/json",
+          "X-CSRF-Token": this.#csrf, "If-Match": etag }, body, signal: controller.signal,
+      });
+      if (controller.signal.aborted) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+      if (response.status === 401) { this.#csrf = null; this.#view = null; }
+      return response;
+    } catch {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    } finally {
+      window.clearTimeout(timer);
+      this.#busy = false;
+    }
+  }
+
   postAdminUserCreate(body: string, idempotencyKey: string): Promise<Response> {
     return this.#postCommand("/api/v1/admin/users", body, idempotencyKey, 16384);
   }
