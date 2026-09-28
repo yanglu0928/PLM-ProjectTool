@@ -95,6 +95,46 @@ def verify_http(origin: str, owned: uuid.UUID, foreign: uuid.UUID):
     print("PROJECT_BROWSER_HTTP PASS: no Cookie401, member list/detail200, foreign404, admin empty/404", flush=True)
 
 
+def verify_create_http(origin: str, manager: uuid.UUID) -> uuid.UUID:
+    body = {"code": "CREATE-P04", "name": "Synthetic Created Project",
+            "initial_manager_user_id": str(manager)}
+    key = "synthetic-project-create-p04"
+    with httpx.Client(base_url=origin, timeout=20) as anonymous:
+        denied = anonymous.post("/api/v1/projects", headers={"Origin": origin,
+            "X-CSRF-Token": "a" * 64, "Idempotency-Key": key}, json=body)
+        assert denied.status_code == 401, denied.text
+    with httpx.Client(base_url=origin, timeout=20) as member:
+        login = member.post("/api/v1/auth/login", headers={"Origin": origin},
+            json={"username": "Synthetic Project Member", "password": "synthetic-project-only-password"})
+        assert login.status_code == 200, login.text
+        denied = member.post("/api/v1/projects", headers={"Origin": origin,
+            "X-CSRF-Token": login.json()["data"]["csrf_token"], "Idempotency-Key": key}, json=body)
+        assert denied.status_code == 404 and denied.json()["error"]["code"] == "RESOURCE_NOT_FOUND"
+    with httpx.Client(base_url=origin, timeout=20) as admin:
+        login = admin.post("/api/v1/auth/login", headers={"Origin": origin},
+            json={"username": "Synthetic Project Admin", "password": "synthetic-project-only-password"})
+        assert login.status_code == 200 and login.json()["data"]["deployment_role"] == "DEPLOYMENT_ADMIN"
+        users = admin.get("/api/v1/admin/users", params={"page_size": 50})
+        assert users.status_code == 200, users.text
+        candidate = next((item for item in users.json()["data"]["items"]
+                          if item["user_id"] == str(manager)), None)
+        assert candidate is not None and candidate["account_state"] == "ENABLED"
+        headers = {"Origin": origin, "X-CSRF-Token": login.json()["data"]["csrf_token"],
+                   "Idempotency-Key": key}
+        first = admin.post("/api/v1/projects", headers=headers, json=body)
+        replay = admin.post("/api/v1/projects", headers=headers, json=body)
+        assert first.status_code == replay.status_code == 201, (first.text, replay.text)
+        assert first.json()["data"] == replay.json()["data"]
+        created = uuid.UUID(first.json()["data"]["project_id"])
+        assert first.headers["ETag"] == '"v0"'
+        assert first.headers["Location"] == f"/api/v1/projects/{created}"
+        conflicting = admin.post("/api/v1/projects", headers=headers,
+                                 json={**body, "name": "Changed"})
+        assert conflicting.status_code == 409 and conflicting.json()["error"]["code"] == "CONFLICT_IDEMPOTENCY"
+        print("PROJECT_CREATE_HTTP PASS: anonymous401, member404, admin candidates200/create201/replay201/conflict409", flush=True)
+        return created
+
+
 def main():
     suffix = uuid.uuid4().hex[:12]
     dbname = role = "prj05a04_" + suffix
@@ -123,6 +163,8 @@ def main():
                 with source.connect(dbname) as db:
                     member = insert_user(db, "Synthetic Project Member", hashed.password_hash, hashed.algorithm_id)
                     admin_user = insert_user(db, "Synthetic Project Admin", hashed.password_hash, hashed.algorithm_id)
+                    manager = (insert_user(db, "Synthetic First Manager", hashed.password_hash, hashed.algorithm_id)
+                               if "--create-api-only" in sys.argv[1:] else None)
                     db.execute("UPDATE plm.auth_users SET deployment_role='DEPLOYMENT_ADMIN' WHERE user_id=%s", (admin_user,))
                     project = db.execute("INSERT INTO plm.prj_projects "
                         "(project_code,project_code_normalized,name,created_by) "
@@ -177,21 +219,29 @@ def main():
                         if ready.get(timeout=15) != "OWNED_PROXY_READY":
                             raise RuntimeError("Owned proxy startup failed")
                         print(f"PROJECT_BROWSER_READY {origin}/login OWNED={project} FOREIGN={foreign}", flush=True)
-                        if "--api-only" in sys.argv[1:]:
+                        if "--create-api-only" in sys.argv[1:]:
+                            assert manager is not None
+                            created = verify_create_http(origin, manager)
+                        elif "--api-only" in sys.argv[1:]:
                             verify_http(origin, project, foreign)
                         else:
                             actions = queue.Queue()
                             Thread(target=lambda: actions.put(sys.stdin.readline().strip()), daemon=True).start()
                             assert actions.get(timeout=900) == "VERIFY", "Browser verification not completed"
                         with source.connect(dbname) as db:
-                            assert db.execute("SELECT count(*) FROM plm.prj_projects").fetchone()[0] == 2
+                            expected = 3 if "--create-api-only" in sys.argv[1:] else 2
+                            assert db.execute("SELECT count(*) FROM plm.prj_projects").fetchone()[0] == expected
                             session_count = db.execute("SELECT count(*) FROM plm.auth_sessions").fetchone()[0]
-                            if "--api-only" in sys.argv[1:]:
+                            if "--api-only" in sys.argv[1:] or "--create-api-only" in sys.argv[1:]:
                                 assert session_count == 2
                             else:
                                 assert session_count >= 2
-                            assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE state='ACTIVE'").fetchone()[0] == 1
-                        print(f"PROJECT_BROWSER_DATABASE_COUNTS PASS: 2 projects, {session_count} sessions, 1 active member", flush=True)
+                            assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE state='ACTIVE'").fetchone()[0] == (2 if expected == 3 else 1)
+                            if expected == 3:
+                                assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE project_id=%s AND user_id=%s AND project_role='PROJECT_MANAGER'", (created, manager)).fetchone()[0] == 1
+                                assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='PROJECT_CREATED'", (created,)).fetchone()[0] == 1
+                                assert db.execute("SELECT count(*) FROM plm.plt_idempotency_receipts WHERE result_ref_id=%s AND state='COMPLETED'", (created,)).fetchone()[0] == 1
+                        print(f"PROJECT_BROWSER_DATABASE_COUNTS PASS: {expected} projects, {session_count} sessions, {expected - 1} active members", flush=True)
                 finally:
                     if proxy:
                         if proxy.poll() is None:

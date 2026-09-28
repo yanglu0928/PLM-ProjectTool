@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260928-411 — PRJ-05-A05-P04-A01 实施前
+
+- Phase/WBS：Phase2/PRJ-05-A05-P04-A01；P03前端合同通过，后端Project创建和Windows写工厂已有单独验证。此项仅扩原Windows11隔离PG/真实网络fixture的独立创建模式，检验页面所依赖的冻结Auth→User List→Project Create合同与SQL事实，不改业务代码/API/Schema/权限/依赖。
+- Decision：新临时库/角色/Vault合成License源及本地loopback Uvicorn/代理，新增未分配启用用户。管理员真实登录后查候选，再用同Cookie/CSRF/幂等Key创建，原Key重放只落一项目一负责人一审计，异正文冲突不增写；无Cookie/普通用户拒绝。精确查询项目/成员/审计/收据并自动清理自有源。合成信任只作内部Windows11证据，不冒充正式发行。
+- 风险/验证/回滚：中断可留下临时资源，使用唯一前缀和finally+外部复查；失败时不标PASS。回滚撤fixture增量，无数据迁移。下一独立真实浏览器UI链，正式trust/TLS/CR008/Gate3仍待。
+- Executed：新`--create-api-only`模式真实loopback Uvicorn/代理/PG：无Cookie401、普通成员404、管理员候选200/创建201/原Key重放201/异正文409；SQL 3项目/2会话/2有效成员、新负责人仅1/创建审计仅1/已完成收据仅1，fixture退出清库/角色/Vault；外部复查前缀库/角色0。原`--api-only`只读模式另轮回归exit0并清理。测试运行环境临时venv安装正式依赖和httpx；未改生产依赖。下一真实浏览器UI，不冒充正式信任/HTTPS/Gate通过。
+
 ## DEC-20260928-410 — PRJ-05-A05-P03-A02 实施前
 
 - Phase/WBS：Phase2/PRJ-05-A05-P03-A02；Gate2已批准，输入冻结PROJECT_CREATE、现有Session内存写桥接、项目创建客户端及P03-A01管理员用户候选GET。仅新增管理员创建页面/路由/入口，不变更实体、Schema、后端API、权限、依赖。
