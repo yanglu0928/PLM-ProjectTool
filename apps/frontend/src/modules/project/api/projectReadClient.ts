@@ -43,7 +43,7 @@ function instant(value: unknown): value is string {
   const parsed = Date.parse(value);
   return Number.isFinite(parsed) && new Date(parsed).toISOString().slice(0, 19) === value.slice(0, 19);
 }
-function parseProject(value: unknown): ProjectView {
+export function parseProject(value: unknown): ProjectView {
   if (!record(value) || !identifier(value.project_id) || typeof value.code !== "string" || !value.code.trim()
     || typeof value.name !== "string" || !value.name.trim()
     || (value.state !== "ACTIVE" && value.state !== "ARCHIVED")

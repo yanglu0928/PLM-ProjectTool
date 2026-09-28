@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260928-408 — PRJ-05-A05-P02 实施前
+
+- Phase/WBS：Phase2/PRJ-05-A05-P02；输入冻结PROJECT_CREATE、PRJ-04-A05后端实际合同、A05-P01内存CSRF单次桥接及A01安全ProjectView。仅前端Project API DTO/解析；无Schema/后端API/权限/依赖变化，Gate2前置满足。
+- Decision：调用方提供幂等Key并在重试时保留原Key/同一规范输入，Project客户端不生成Key、不自动重试。输入按服务端NFKC/去边空/长度/Unicode控制字符规则和规范UUID先校验；201必须校验JSON信封、ACTIVE/`"v0"`白名单ProjectView、请求与结果code/name、响应强ETag/Location严格匹配。401/403/404/409/422按状态码+已知错误码映射固定中文；503/传输失败/非预期状态或畸形201均视为可能已提交，抛带`uncertain`标志的安全错误而不回显原文。Auth仅提供CSRF传输，角色提示不是授权。
+- Reason/impact/rollback：防重建同一客户项目、避免错误响应泄露内部内容；不改变服务端冻结合同。风险为前端误判未知结果或错误重用Key；P03页面须锁定原用户/原规范正文/原Key并显式恢复，跨账户不可重试。回滚撤Project客户端与测试；无数据迁移。验收严格白名单、合同头/错误映射/零自动重试、前端全量test/typecheck/build；本项不标UI/实际写HTTP通过。
+- Executed：Project客户端白名单/本地规范化/201强ETag与Location/安全拒绝及未知结果分类、原调用方Key单次提交；26参数化场景，前端173/typecheck/build通过。有效只读会话零写测试经修正重跑。无页面或真实PG写证明，下一P03。
+
 ## DEC-20260928-407 — PRJ-05-A05-P01 实施前
 
 - Phase/WBS：Phase2/PRJ-05-A05-P01；输入冻结PROJECT_CREATE、原Auth仅内存CSRF/HttpOnly Cookie及PRJ-04-A05后端写组合，Gate2前置满足。前端Auth写传输桥接是项目创建客户端的必要前置；无实体/Schema/API/服务端权限/依赖变化。

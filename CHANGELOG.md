@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-28：0.1.0.dev0/PRJ-05-A05-P02新增项目创建前端客户端：负责人UUID与项目/部门规范化校验、原Key单次请求、201白名单/强ETag/Location一致性、固定业务拒绝与不确定结果标志；前端173测试/typecheck/build通过。兼容0049，无Migration/后端API/权限/依赖变化或升级。客户端未接页面/真实PG写链，正式信任/HTTPS/CR008性能FAIL/Gate3/可用包仍待。
+
 - 2026-09-28：0.1.0.dev0/PRJ-05-A05-P01增加固定项目创建路径的Auth内存CSRF受控写桥接，同源单次POST/调用方原幂等Key/互斥/超时、401清本地证明、不自动重试或公开Token；前端147测试/typecheck/build通过。兼容0049，无Migration/后端API/权限/依赖变化或升级；项目创建DTO/UI/真实写网络尚待，正式信任/HTTPS/CR008性能FAIL/Gate3/可用包仍待。
 
 - 2026-09-28：0.1.0.dev0/PRJ-05-A04-P02为项目浏览器fixture增加独立真实HTTP/PG自动补验，成员列表/详情200、外项目404、管理员空列表200/详情404及终态2项目/2会话/1有效成员通过，退出自动清理与外部复查库/角色/Vault为0。合并前轮真实浏览器观察后仅Windows11合成联调PASS，原中断留史；无生产/API/Schema/权限/依赖变化或升级，正式信任/HTTPS/Server2025/Debian/CR008性能FAIL/Gate3/可用包仍待。
