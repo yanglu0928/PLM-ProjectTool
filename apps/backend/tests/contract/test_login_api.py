@@ -18,12 +18,13 @@ class FakeLogin:
     def __init__(self) -> None:
         self.calls = []
         self.error = None
+        self.offset = timezone.utc
 
     def login(self, attempt):
         self.calls.append((attempt.username, attempt.client_ip, attempt.trace_id))
         if self.error:
             raise LoginError(self.error)
-        now = datetime.now(timezone.utc)
+        now = datetime.now(timezone.utc).astimezone(self.offset)
         return IssuedSession(uuid.uuid4(), uuid.uuid4(), b"t" * 32, b"c" * 32,
                              now + timedelta(hours=8), now + timedelta(minutes=30))
 
@@ -74,6 +75,14 @@ class LoginApiTests(unittest.TestCase):
                                    json={"username": "alice", "password": "password"})
         self.assertEqual(response.status_code, 200)
         self.assertNotIn("Secure", response.headers["set-cookie"])
+
+    def test_login_expiry_from_offset_source_is_utc_z(self):
+        self.login.offset = timezone(timedelta(hours=8))
+        response = self.client.post("/api/v1/auth/login", headers=self.headers,
+                                    json={"username": "alice", "password": "synthetic"})
+        self.assertEqual(response.status_code, 200)
+        for key in ("absolute_expires_at", "idle_expires_at"):
+            self.assertRegex(response.json()["data"][key], r"^\d{4}-\d\d-\d\dT.*\.\d{6}Z$")
 
     def test_untrusted_origin_and_bad_body_never_call_service(self):
         for headers, data in (({}, {"username": "a", "password": "b"}),

@@ -13,6 +13,7 @@ from fastapi.responses import JSONResponse
 from plm_assistant.modules.auth.api.login_origin_policy import (
     LoginOriginError, LoginOriginPolicy,
 )
+from plm_assistant.modules.auth.api.session_time import utc_session_instant
 from plm_assistant.modules.auth.application.login_service import (
     LoginAttempt, LoginError, LoginService,
 )
@@ -81,8 +82,8 @@ def create_login_router(*, login: LoginService, origins: LoginOriginPolicy,
                              int((issued.idle_expires_at - now).total_seconds())))
         response = JSONResponse({"data": {
             **public,
-            "absolute_expires_at": issued.absolute_expires_at.isoformat(),
-            "idle_expires_at": issued.idle_expires_at.isoformat(),
+            "absolute_expires_at": utc_session_instant(issued.absolute_expires_at),
+            "idle_expires_at": utc_session_instant(issued.idle_expires_at),
             "csrf_token": issued.csrf_token.hex(),
         }, "trace_id": request.state.trace_id},
             headers={"Cache-Control": "no-store"})

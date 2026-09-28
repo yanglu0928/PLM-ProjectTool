@@ -1,6 +1,7 @@
 """Original real PG/Vault login acceptance, replacing only ASGI transport."""
 import queue
 import ctypes
+import re
 from contextlib import redirect_stdout
 from io import StringIO
 import socket
@@ -31,6 +32,8 @@ def main():
     proxy_port = free_port()
     origin = f"http://127.0.0.1:{proxy_port}"
     requests = {"GET": 0, "POST": 0}
+    utc_expiries = {"/api/v1/auth/login": 0, "/api/v1/auth/session": 0,
+                    "/api/v1/auth/session:renew": 0}
     contexts = []
     owned_databases = set()
     deleted_targets = []
@@ -92,6 +95,12 @@ def main():
             response = self.client.request(method, path, headers=headers, **kwargs)
             requests[method] += 1
             assert response.headers.get("access-control-allow-origin") is None
+            if response.status_code == 200 and path in utc_expiries:
+                data = response.json()["data"]
+                for field in ("absolute_expires_at", "idle_expires_at"):
+                    assert re.fullmatch(r"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{6}Z", data[field]), (
+                        "Auth Session response must use the frozen UTC wire format")
+                utc_expiries[path] += 1
             return response
 
         def get(self, path, **kwargs):
@@ -136,6 +145,7 @@ def main():
             patch.object(original, "delete_test_credential", side_effect=tracked_delete):
             original.main()
     assert len(contexts) == 2 and requests["POST"] >= 12 and requests["GET"] >= 7
+    assert all(count > 0 for count in utc_expiries.values()), "All three Auth responses must be exercised"
     assert len(owned_databases) == len(deleted_targets) == 1
     with actual_connect("postgres") as admin:
         for name in owned_databases:
@@ -152,7 +162,8 @@ def main():
             library.CredFree(pointer)
         assert not found and ctypes.get_last_error() == 1168, "Owned Vault target still exists or absence not verified"
     print(f"NETWORK_LOGIN PASS: two real Uvicorn/Vite contexts, {requests['GET']} GET/{requests['POST']} POST; "
-        "original PG/Vault/Cookie/CSRF/replay/concurrent/Audit assertions; owned sources cleaned; not browser/TLS/production trust")
+        "three Auth expiry projections UTC-Z; original PG/Vault/Cookie/CSRF/replay/concurrent/Audit assertions; "
+        "owned sources cleaned; not browser/TLS/production trust")
 
 
 if __name__ == "__main__":

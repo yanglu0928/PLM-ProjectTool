@@ -11,6 +11,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import JSONResponse
 
 from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginError, LoginOriginPolicy
+from plm_assistant.modules.auth.api.session_time import utc_session_instant
 from plm_assistant.modules.auth.application.session_service import SessionError, SessionService
 from plm_assistant.modules.auth.application.session_view import SessionViewPort, resolve_session_view
 from plm_assistant.modules.platform.application.errors import ApplicationError
@@ -96,8 +97,8 @@ def create_session_read_router(*, sessions: SessionService, views: SessionViewPo
             raise ApplicationError("SYSTEM_UNAVAILABLE") from None
         return JSONResponse({"data": {
             **public,
-            "absolute_expires_at": principal.absolute_expires_at.isoformat(),
-            "idle_expires_at": principal.idle_expires_at.isoformat(),
+            "absolute_expires_at": utc_session_instant(principal.absolute_expires_at),
+            "idle_expires_at": utc_session_instant(principal.idle_expires_at),
         }, "trace_id": request.state.trace_id}, headers={"Cache-Control": "no-store"})
 
     return router
@@ -196,8 +197,8 @@ def create_session_renew_router(*, sessions: SessionService, views: SessionViewP
                              int((issued.idle_expires_at - now).total_seconds())))
         response = JSONResponse({"data": {
             **public,
-            "absolute_expires_at": issued.absolute_expires_at.isoformat(),
-            "idle_expires_at": issued.idle_expires_at.isoformat(),
+            "absolute_expires_at": utc_session_instant(issued.absolute_expires_at),
+            "idle_expires_at": utc_session_instant(issued.idle_expires_at),
             "csrf_token": issued.csrf_token.hex(),
         }, "trace_id": request.state.trace_id}, headers={"Cache-Control": "no-store"})
         response.set_cookie(

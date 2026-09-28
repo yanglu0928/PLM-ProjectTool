@@ -1,5 +1,10 @@
 # 自主决策记录
 
+## DEC-20260928-397
+
+- AUT05A06实施前：冻结API时间为RFC3339 UTC `Z`，A05真实PG/浏览器发现会话GET/续期可返回`+08:00`；三个Auth HTTP响应均直接`isoformat()`。依持续授权登记`CR-AUT-009`，选只在Auth响应投影统一UTC，不改变时刻/Session数据或冻结字段。naive拒绝、正负offset/真实PG及原安全链回归，兼容/风险/回滚见CR；实施和测试结果随后补记。
+- Executed：三响应共享严格UTC formatter；15关联测试、1558全量无失败/2既有跳过，原9GET/12POST真实PG网络链与新UTC断言通过，自有源清理、开发wheel通过。无Migration/API字段/权限/依赖变，Gate3/完整包/正式HTTPS及三平台不据此通过。
+
 ## DEC-20260928-396
 
 - Executed：AUT05A05 首轮浏览器暴露原生fetch receiver错误与PG时间偏移响应被客户端拒绝。前者改无receiver调用，后者仅接受严格显式RFC3339 offset并归一化为UTC，保持日历/期限校验；增添对应单测。原API/Schema/权限/依赖不变。首轮不合格与运行器/超时再启情况留在进度记录。

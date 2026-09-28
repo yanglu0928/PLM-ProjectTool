@@ -24,13 +24,14 @@ class FakeSessions:
         self.user_id = uuid.uuid4()
         self.valid = True
         self.renew_calls = 0
+        self.offset = timezone.utc
 
     def validate(self, token: bytes, *, csrf_token: bytes, require_csrf: bool) -> SessionPrincipal:
         if not self.valid or token != OLD_TOKEN:
             raise SessionError("AUTH_SESSION_EXPIRED")
         if not require_csrf or csrf_token != OLD_CSRF:
             raise SessionError("AUTH_ACCESS_DENIED")
-        now = datetime.now(timezone.utc)
+        now = datetime.now(timezone.utc).astimezone(self.offset)
         return SessionPrincipal(uuid.uuid4(), self.user_id, 1,
                                 now + timedelta(hours=8), now + timedelta(minutes=30))
 
@@ -39,7 +40,7 @@ class FakeSessions:
             raise SessionError("AUTH_SESSION_EXPIRED")
         self.valid = False
         self.renew_calls += 1
-        now = datetime.now(timezone.utc)
+        now = datetime.now(timezone.utc).astimezone(self.offset)
         return IssuedSession(uuid.uuid4(), self.user_id, NEW_TOKEN, NEW_CSRF,
                              now + timedelta(hours=8), now + timedelta(minutes=30))
 
@@ -100,6 +101,13 @@ class SessionRenewApiTests(unittest.TestCase):
         self.assertEqual(self.sessions.renew_calls, 0)
         self.views.fail = False
         self.assertEqual(self.client.post("/api/v1/auth/session:renew", headers=self.headers).status_code, 200)
+
+    def test_renew_expiry_from_offset_source_is_utc_z(self) -> None:
+        self.sessions.offset = timezone(-timedelta(hours=4))
+        response = self.client.post("/api/v1/auth/session:renew", headers=self.headers)
+        self.assertEqual(response.status_code, 200)
+        for key in ("absolute_expires_at", "idle_expires_at"):
+            self.assertRegex(response.json()["data"][key], r"^\d{4}-\d\d-\d\dT.*\.\d{6}Z$")
 
 
 if __name__ == "__main__":

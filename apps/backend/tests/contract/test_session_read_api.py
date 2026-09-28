@@ -18,12 +18,13 @@ class FakeSessions:
         self.user_id = uuid.uuid4()
         self.calls: list[bytes] = []
         self.fail = False
+        self.offset = timezone.utc
 
     def validate(self, token: bytes) -> SessionPrincipal:
         self.calls.append(token)
         if self.fail:
             raise SessionError("AUTH_SESSION_EXPIRED")
-        now = datetime.now(timezone.utc)
+        now = datetime.now(timezone.utc).astimezone(self.offset)
         return SessionPrincipal(uuid.uuid4(), self.user_id, 1,
                                 now + timedelta(hours=8), now + timedelta(minutes=30))
 
@@ -71,6 +72,13 @@ class SessionReadApiTests(unittest.TestCase):
         response = self.client.get("/api/v1/auth/session", headers={"cookie": self.cookie})
         self.assertEqual(response.status_code, 401)
         self.assertNotIn("set-cookie", response.headers)
+
+    def test_database_offset_expiry_is_projected_as_utc_z(self) -> None:
+        self.sessions.offset = timezone(timedelta(hours=8))
+        response = self.client.get("/api/v1/auth/session", headers={"cookie": self.cookie})
+        self.assertEqual(response.status_code, 200)
+        for key in ("absolute_expires_at", "idle_expires_at"):
+            self.assertRegex(response.json()["data"][key], r"^\d{4}-\d\d-\d\dT.*\.\d{6}Z$")
 
     def test_untrusted_origin_rejected_before_cookie_lookup(self) -> None:
         response = self.client.get("/api/v1/auth/session", headers={
