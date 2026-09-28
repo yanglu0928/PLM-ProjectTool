@@ -5,6 +5,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createAppRouter } from "@/app/router";
 import { SessionClient } from "@/modules/auth/api/sessionClient";
 import { ProjectMemberReadClient } from "@/modules/project/api/projectMemberReadClient";
+import { ProjectMemberChoicesClient } from "@/modules/project/api/projectMemberChoicesClient";
+import { ProjectMemberPatchClient, ProjectMemberPatchError } from "@/modules/project/api/projectMemberPatchClient";
 import ProjectMemberListView from "./ProjectMemberListView.vue";
 
 const id = "01234567-89ab-4cde-8123-456789abcdef";
@@ -12,8 +14,8 @@ const otherId = "11234567-89ab-4cde-8123-456789abcdef";
 const memberId = "21234567-89ab-4cde-8123-456789abcdef";
 const cursor = `${"a".repeat(40)}.${"b".repeat(43)}`;
 const entry = { member_id: memberId, user: { user_id: "31234567-89ab-4cde-8123-456789abcdef", display_name: "成员甲" },
-  role: "PROJECT_MANAGER", department: { department_id: "41234567-89ab-4cde-8123-456789abcdef", name: "研发部" },
-  state: "ACTIVE", effective_at: "2026-09-28T08:30:00Z", ended_at: null, etag: '"v0"' };
+  role: "PROJECT_MANAGER" as const, department: { department_id: "41234567-89ab-4cde-8123-456789abcdef", name: "研发部" },
+  state: "ACTIVE" as const, effective_at: "2026-09-28T08:30:00Z", ended_at: null, etag: '"v0"' };
 function response(data: unknown): Response {
   return new Response(JSON.stringify({ data, trace_id: id }), { status: 200,
     headers: { "Content-Type": "application/json" } });
@@ -22,22 +24,25 @@ function failure(status: number, code: string): Response {
   return new Response(JSON.stringify({ error: { code, message: "private details" }, trace_id: id }),
     { status, headers: { "Content-Type": "application/json" } });
 }
-async function session(restricted = false): Promise<SessionClient> {
+async function session(restricted = false, manager = false): Promise<SessionClient> {
   const api = new SessionClient(vi.fn().mockResolvedValue(response({
     user: { user_id: id, username_display: "合成用户" }, deployment_role: "NONE",
-    password_change_required: restricted, authorized_projects: [],
+    password_change_required: restricted, authorized_projects: manager
+      ? [{ project_id: id, name: "项目", role: "PROJECT_MANAGER" }] : [],
     absolute_expires_at: "2030-01-01T12:00:00Z", idle_expires_at: "2030-01-01T11:00:00Z",
     csrf_token: "a".repeat(64),
   })) as typeof fetch);
   await api.login("user", "synthetic-only");
   return api;
 }
-async function view(auth: SessionClient, path: string, fetcher: typeof fetch) {
+async function view(auth: SessionClient, path: string, fetcher: typeof fetch,
+  choices?: ProjectMemberChoicesClient, patcher?: ProjectMemberPatchClient) {
   const router = createAppRouter(createMemoryHistory());
   await router.push(path);
   await router.isReady();
   const wrapper = mount(ProjectMemberListView, {
-    props: { session: auth, members: new ProjectMemberReadClient(fetcher) }, global: { plugins: [router] },
+    props: { session: auth, members: new ProjectMemberReadClient(fetcher), choices, patcher },
+    global: { plugins: [router] },
   });
   await flushPromises();
   return { wrapper, router };
@@ -135,6 +140,110 @@ describe("ProjectMemberListView", () => {
     await flushPromises();
     expect(wrapper.get('[role="alert"]').text()).toContain("暂时无法读取");
     expect(wrapper.text()).not.toContain("成员甲");
+    wrapper.unmount();
+  });
+
+  it("offers no mutation to a reader and never loads department choices", async () => {
+    const auth = await session();
+    const choices = new ProjectMemberChoicesClient(auth);
+    const departments = vi.spyOn(choices, "activeDepartments");
+    const fetcher = vi.fn().mockImplementation(() => Promise.resolve(response({ items: [entry], next_cursor: null, has_more: false })));
+    const { wrapper } = await view(auth, `/projects/${id}/members`, fetcher as typeof fetch, choices);
+    expect(wrapper.text()).not.toContain("修改角色或部门");
+    expect(departments).not.toHaveBeenCalled();
+    wrapper.unmount();
+  });
+
+  it("requires current member, active department and explicit confirmation before one PATCH", async () => {
+    const auth = await session(false, true);
+    const choices = new ProjectMemberChoicesClient(auth);
+    vi.spyOn(choices, "activeDepartments").mockResolvedValue([
+      { department_id: entry.department.department_id, code: "DEV", name: "研发部" },
+    ]);
+    const patcher = new ProjectMemberPatchClient(auth);
+    const patch = vi.spyOn(patcher, "patch").mockResolvedValue({ ...entry, role: "CUSTOMER_MEMBER", etag: '"v1"' });
+    const fetcher = vi.fn().mockImplementation(() => Promise.resolve(response({ items: [entry], next_cursor: null, has_more: false })));
+    const { wrapper } = await view(auth, `/projects/${id}/members`, fetcher as typeof fetch, choices, patcher);
+    await wrapper.get("li button").trigger("click");
+    await flushPromises();
+    expect(wrapper.text()).toContain(entry.user.user_id);
+    expect(wrapper.text()).toContain('版本 "v0"');
+    expect(wrapper.get("form button[type=submit]").attributes("disabled")).toBeDefined();
+    await wrapper.get("#member-edit-role").setValue("CUSTOMER_MEMBER");
+    await wrapper.get('input[name="confirm_member_patch"]').setValue(true);
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+    expect(patch).toHaveBeenCalledTimes(1);
+    expect(patch).toHaveBeenCalledWith(id, entry,
+      { role: "CUSTOMER_MEMBER", department_id: entry.department.department_id });
+    expect(wrapper.text()).toContain("本次写入回执");
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    wrapper.unmount();
+  });
+
+  it("locks further writes on uncertain result while allowing read-only reconciliation", async () => {
+    const auth = await session(false, true);
+    const choices = new ProjectMemberChoicesClient(auth);
+    vi.spyOn(choices, "activeDepartments").mockResolvedValue([
+      { department_id: entry.department.department_id, code: "DEV", name: "研发部" },
+    ]);
+    const patcher = new ProjectMemberPatchClient(auth);
+    const patch = vi.spyOn(patcher, "patch").mockRejectedValue(new ProjectMemberPatchError("PROJECT_MEMBER_PATCH_UNCERTAIN"));
+    const fetcher = vi.fn().mockImplementation(() => Promise.resolve(response({ items: [entry], next_cursor: null, has_more: false })));
+    const { wrapper } = await view(auth, `/projects/${id}/members`, fetcher as typeof fetch, choices, patcher);
+    await wrapper.get("li button").trigger("click"); await flushPromises();
+    await wrapper.get("#member-edit-role").setValue("CUSTOMER_MEMBER");
+    await wrapper.get('input[name="confirm_member_patch"]').setValue(true);
+    await wrapper.get("form").trigger("submit"); await flushPromises();
+    expect(patch).toHaveBeenCalledTimes(1);
+    expect(wrapper.text()).toContain("已停止本页后续提交");
+    expect(wrapper.find("li button").exists()).toBe(false);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    wrapper.unmount();
+  });
+
+  it("requires fresh selection after a known version conflict", async () => {
+    const auth = await session(false, true);
+    const choices = new ProjectMemberChoicesClient(auth);
+    vi.spyOn(choices, "activeDepartments").mockResolvedValue([
+      { department_id: entry.department.department_id, code: "DEV", name: "研发部" },
+    ]);
+    const patcher = new ProjectMemberPatchClient(auth);
+    const patch = vi.spyOn(patcher, "patch").mockRejectedValue(new ProjectMemberPatchError("CONFLICT_VERSION"));
+    const fetcher = vi.fn().mockImplementation(() => Promise.resolve(response({ items: [entry], next_cursor: null, has_more: false })));
+    const { wrapper } = await view(auth, `/projects/${id}/members`, fetcher as typeof fetch, choices, patcher);
+    await wrapper.get("li button").trigger("click"); await flushPromises();
+    await wrapper.get("#member-edit-role").setValue("CUSTOMER_MEMBER");
+    await wrapper.get('input[name="confirm_member_patch"]').setValue(true);
+    await wrapper.get("form").trigger("submit"); await flushPromises();
+    expect(wrapper.text()).toContain("重新读取后再决定");
+    expect(wrapper.find("form").exists()).toBe(false);
+    expect(wrapper.find("li button").exists()).toBe(true);
+    expect(patch).toHaveBeenCalledTimes(1);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    wrapper.unmount();
+  });
+
+  it("drops a late PATCH receipt after project navigation", async () => {
+    const auth = await session(false, true);
+    const choices = new ProjectMemberChoicesClient(auth);
+    vi.spyOn(choices, "activeDepartments").mockResolvedValue([
+      { department_id: entry.department.department_id, code: "DEV", name: "研发部" },
+    ]);
+    let resolvePatch!: (value: typeof entry) => void;
+    const patcher = new ProjectMemberPatchClient(auth);
+    vi.spyOn(patcher, "patch").mockImplementation(() => new Promise((resolve) => { resolvePatch = resolve; }));
+    const fetcher = vi.fn().mockResolvedValueOnce(response({ items: [entry], next_cursor: null, has_more: false }))
+      .mockResolvedValueOnce(response({ items: [], next_cursor: null, has_more: false }));
+    const { wrapper, router } = await view(auth, `/projects/${id}/members`, fetcher as typeof fetch, choices, patcher);
+    await wrapper.get("li button").trigger("click"); await flushPromises();
+    await wrapper.get("#member-edit-role").setValue("CUSTOMER_MEMBER");
+    await wrapper.get('input[name="confirm_member_patch"]').setValue(true);
+    await wrapper.get("form").trigger("submit");
+    await router.push(`/projects/${otherId}/members`); await flushPromises();
+    resolvePatch(entry); await flushPromises();
+    expect(wrapper.text()).not.toContain("本次写入回执");
+    expect(wrapper.text()).toContain("没有成员记录");
     wrapper.unmount();
   });
 });
