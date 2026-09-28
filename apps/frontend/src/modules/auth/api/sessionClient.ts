@@ -251,6 +251,43 @@ export class SessionClient {
     }
   }
 
+  /** Name PATCH has no idempotency key; an uncertain response must be reconciled by GET. */
+  async patchAdminUserName(userId: string, etag: string, username: string): Promise<Response> {
+    if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
+    if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
+    if (!identifier(userId) || typeof etag !== "string" || !/^"v(?:0|[1-9]\d*)"$/.test(etag)
+      || !Number.isSafeInteger(Number(etag.slice(2, -1)))
+      || Number(etag.slice(2, -1)) >= Number.MAX_SAFE_INTEGER
+      || typeof username !== "string" || !username.trim()
+      || Array.from(username.normalize("NFC").trim()).length > 255) {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    }
+    const body = JSON.stringify({ username });
+    if (new TextEncoder().encode(body).length > 16_384) {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    }
+    this.#busy = true;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      const fetcher = this.fetcher;
+      const response = await fetcher(`/api/v1/admin/users/${userId}`, {
+        method: "PATCH", credentials: "same-origin", cache: "no-store", redirect: "error",
+        headers: { Accept: "application/json", "Content-Type": "application/json",
+          "X-CSRF-Token": this.#csrf, "If-Match": etag }, body, signal: controller.signal,
+      });
+      if (controller.signal.aborted) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+      if (response.status === 401) { this.#csrf = null; this.#view = null; }
+      return response;
+    } catch {
+      // The write may have committed before the connection failed; caller must GET before deciding.
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    } finally {
+      window.clearTimeout(timer);
+      this.#busy = false;
+    }
+  }
+
   async changePassword(currentPassword: string, newPassword: string, idempotencyKey: string): Promise<number> {
     const validPassword = (value: unknown): value is string => {
       if (typeof value !== "string" || value.includes("\0")) return false;

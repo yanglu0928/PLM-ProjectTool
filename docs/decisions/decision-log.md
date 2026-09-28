@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260928-427 — AUT-05-A13-P01 用户改名受控前端传输实施前
+
+- Date/WBS：2026-09-28 / Phase2 AUT-05-A13-P01。输入为 Gate2 冻结 API-02 `AUTH_USER_PATCH`、现有 Windows 显式 write Factory 和安全 User 详情 GET；前置已满足。涉及前端 Auth `SessionClient`，实体仍为 User；只接固定 `PATCH /api/v1/admin/users/{user_id}` 名称字段，无新权限/API/Schema/依赖。
+- Decision：会话桥只接收规范目标 UUID、强当前 ETag、单个用户名字符串，按固定 `{"username":...}` JSON 单次 PATCH；私有内存 CSRF、同源 Cookie、no-store、禁止重定向和超时约束与既有状态命令一致。401 清本地写证明；网络/超时不自动重试，不把未知结果解释为未提交。页面/响应验证另列 A13-P02/P03；仅凭桥不宣称改名可用。客户端可做保守输入界限，但最终 NFC/去边/唯一性由服务端判定。
+- Impact/rollback/validation：非 Breaking、无后端/DB/角色变更。回滚仅撤新方法/测试，当前页面无入口；需测合法初始 `"v0"`、固定路径/请求头/body、拒绝非法目标/弱或超限版本/大正文、缺新鲜 CSRF、401、超时单次且不泄密，并跑前端全套/typecheck/build。改名后旧名登录失效是原已冻结行为，不在桥中猜测结果。
+- Executed：新增 `SessionClient.patchAdminUserName` 固定单次 PATCH/私有 CSRF/强版本/受限 JSON；四组新合同测试覆盖 `"v0"`、零网络拒绝、401 与超时互斥。前端327/327、typecheck/build exit0。未接响应客户端或页面，实际 HTTP/浏览器不以此项宣称通过。
+
 ## DEC-20260928-426 — AUT-05-A12-P05-A02-A02 实施前
 
 - Date/WBS：2026-09-28 / Phase2 AUT-05-A12-P05-A02-A02。输入基线为冻结 API-02 `AUTH_USER_ENABLE/DISABLE`、现有 Windows11 真实 ASGI/PG 状态链与 A01 已通过的初始 `"v0"` 页面修补；前置 Gate2/Phase1 已满足。涉及 Auth 管理员 User 状态浏览器验收及测试夹具，不改生产实体/API/权限/Schema。

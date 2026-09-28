@@ -515,4 +515,66 @@ describe("SessionClient", () => {
     expect(fetcher).toHaveBeenCalledTimes(2);
     expect(api.canSubmit).toBe(true);
   });
+
+  it("sends only the frozen User name PATCH with initial v0 and private CSRF", async () => {
+    const reply = response({ user_id: id, username_display: "新名称" });
+    const { api, fetcher } = client(response(session()), reply);
+    await api.login("admin", "synthetic-only");
+    await expect(api.patchAdminUserName(id, '"v0"', "新名称")).resolves.toBe(reply);
+    expect(fetcher.mock.calls[1]).toEqual([`/api/v1/admin/users/${id}`, {
+      method: "PATCH", credentials: "same-origin", cache: "no-store", redirect: "error",
+      headers: { Accept: "application/json", "Content-Type": "application/json",
+        "X-CSRF-Token": token, "If-Match": '"v0"' },
+      body: JSON.stringify({ username: "新名称" }), signal: expect.any(AbortSignal),
+    }]);
+    expect(api.canSubmit).toBe(true);
+    expect(JSON.stringify(api)).not.toContain(token);
+  });
+
+  it("rejects malformed User name PATCH input without network", async () => {
+    const { api, fetcher } = client(response(session()));
+    await api.login("admin", "synthetic-only");
+    for (const [target, version, name] of [
+      ["../other", '"v0"', "新名称"], [id, 'W/"v0"', "新名称"],
+      [id, '"v00"', "新名称"], [id, '"v9007199254740991"', "新名称"],
+      [id, '"v0"', "  "], [id, '"v0"', "a".repeat(256)],
+    ]) {
+      await expect(api.patchAdminUserName(target, version, name))
+        .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    }
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("requires a fresh write proof and clears it on User name PATCH 401", async () => {
+    const readOnly = session(); delete (readOnly as Partial<typeof readOnly>).csrf_token;
+    const { api: viewer, fetcher: viewerFetcher } = client(response(readOnly));
+    await viewer.current();
+    await expect(viewer.patchAdminUserName(id, '"v0"', "新名称"))
+      .rejects.toMatchObject({ code: "AUTH_RELOGIN_REQUIRED" });
+    expect(viewerFetcher).toHaveBeenCalledTimes(1);
+    const { api, fetcher } = client(response(session()), new Response("{}", { status: 401 }));
+    await api.login("admin", "synthetic-only");
+    await expect(api.patchAdminUserName(id, '"v0"', "新名称")).resolves.toHaveProperty("status", 401);
+    expect(api.view).toBeNull();
+    expect(api.canSubmit).toBe(false);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not retry an uncertain timed-out name PATCH or start a second command", async () => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn().mockResolvedValueOnce(response(session()))
+      .mockImplementationOnce((_path: string, options: RequestInit) => new Promise((_done, reject) => {
+        options.signal?.addEventListener("abort", () => reject(new Error("synthetic timeout")));
+      }));
+    const api = new SessionClient(fetcher as typeof fetch, 100);
+    await api.login("admin", "synthetic-only");
+    const pending = expect(api.patchAdminUserName(id, '"v0"', "新名称"))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    await expect(api.postProjectCreate("{}", "synthetic-project-0001"))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_BUSY" });
+    await vi.advanceTimersByTimeAsync(101);
+    await pending;
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(api.canSubmit).toBe(true);
+  });
 });
