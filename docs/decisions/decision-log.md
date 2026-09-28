@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260928-413 — AUT-05-A10-P01 实施前
+
+- Phase/WBS：Phase2/AUT-05-A10-P01；Gate2已批准，冻结API-02 `AUTH_USER_CREATE`、CR-AUT-005和Windows显式platform-write后端P05已具备。仅前端Auth SessionClient固定管理员User创建路径的受控传输，不变更实体/Schema/后端API/权限/依赖。
+- Decision：复用现有会话客户端的私有CSRF、同源Cookie/Origin及单次写互斥语义，将固定POST `/api/v1/admin/users`作为第二条精确允许的写路径；不公开任意URL/Token/通用写入口。调用方持原幂等Key及正文并负责对未知结果同Key恢复，传输层不自动重试；401清本地身份/CSRF，503/超时/传输失败不推断提交成功。16KiB正文上限和有效Key预检，绝不记录请求正文。
+- Reason/impact/rollback/validation：管理UI须创建新负责人账户，不能要求用户手工入库；密码只能经原同源受控通道，不可导入一般fetch或持久状态。风险为响应丢失后的重复创建与跨路径扩权，分别以原Key保留及精确路径/权限服务端重核控制。回滚撤本条受控方法与测试，无迁移。验证请求形状、401/超时/互斥/无CSRF零请求、全量前端test/typecheck/build；本项不称客户端解析/页面/真实写链完成。
+- Executed：将原项目创建传输抽成两个精确路径的私有共用写方法，新增`postAdminUserCreate`仅`/api/v1/admin/users`、16KiB上限；CSRF仍私有，不暴露通用URL。7新参数化场景，前端219测试/typecheck/build通过；未跑本项真实User创建HTTP或页面。无Migration/后端API/依赖变化，下一P02。
+
 ## DEC-20260928-412 — PRJ-05-A05-P04-A02 实施前
 
 - Phase/WBS：Phase2/PRJ-05-A05-P04-A02；P03前端合同及P04-A01真实HTTP/PG通过。仅扩自有Windows11隔离fixture的真实浏览器模式，使用全新临时库/角色/Vault、loopback Vite与Uvicorn，新增未归属启用合成负责人；不变更生产业务/Schema/API/权限/依赖。

@@ -363,4 +363,83 @@ describe("SessionClient", () => {
     expect(api.canSubmit).toBe(true);
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
+
+  it("posts only the fixed Admin User create endpoint with private CSRF and caller key", async () => {
+    const created = response({ user_id: id }, 201);
+    const { api, fetcher } = client(response(session()), created);
+    await api.login("user", "synthetic-only");
+    const body = JSON.stringify({ username: "Synthetic Manager", password: "synthetic-password" });
+    await expect(api.postAdminUserCreate(body, "synthetic-user-create-0001")).resolves.toBe(created);
+    expect(fetcher.mock.calls[1]).toEqual(["/api/v1/admin/users", expect.objectContaining({
+      method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error", body,
+      headers: { Accept: "application/json", "Content-Type": "application/json",
+        "X-CSRF-Token": token, "Idempotency-Key": "synthetic-user-create-0001" },
+    })]);
+    expect(JSON.stringify(api)).not.toContain(token);
+    expect(JSON.stringify(api)).not.toContain("synthetic-password");
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not submit Admin User create without fresh in-memory CSRF", async () => {
+    const readOnly = session(); delete (readOnly as Partial<typeof readOnly>).csrf_token;
+    const { api, fetcher } = client(response(readOnly));
+    await expect(api.postAdminUserCreate("{}", "synthetic-user-create-0001"))
+      .rejects.toMatchObject({ code: "AUTH_RELOGIN_REQUIRED" });
+    await api.current();
+    await expect(api.postAdminUserCreate("{}", "synthetic-user-create-0001"))
+      .rejects.toMatchObject({ code: "AUTH_RELOGIN_REQUIRED" });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["", "x".repeat(16_385)])("rejects unsupported Admin User body size before network", async (body) => {
+    const { api, fetcher } = client(response(session()));
+    await api.login("user", "synthetic-only");
+    await expect(api.postAdminUserCreate(body, "synthetic-user-create-0001"))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("clears Admin User write proof on 401 but retains it on uncertain 503", async () => {
+    const { api, fetcher } = client(response(session()), new Response("{}", { status: 503 }),
+      new Response("{}", { status: 401 }));
+    await api.login("user", "synthetic-only");
+    await api.postAdminUserCreate("{}", "synthetic-user-create-0001");
+    expect(api.canSubmit).toBe(true);
+    await api.postAdminUserCreate("{}", "synthetic-user-create-0001");
+    expect(api.view).toBeNull();
+    expect(api.canSubmit).toBe(false);
+    expect(fetcher).toHaveBeenCalledTimes(3);
+  });
+
+  it("holds Auth exclusivity during Admin User create", async () => {
+    let resolve!: (response: Response) => void;
+    const fetcher = vi.fn().mockResolvedValueOnce(response(session()))
+      .mockReturnValueOnce(new Promise<Response>((done) => { resolve = done; }));
+    const api = new SessionClient(fetcher as typeof fetch);
+    await api.login("user", "synthetic-only");
+    const pending = api.postAdminUserCreate("{}", "synthetic-user-create-0001");
+    await expect(api.postProjectCreate("{}", "synthetic-project-0001"))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_BUSY" });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    resolve(response({ user_id: id }, 201));
+    await pending;
+    expect(api.canSubmit).toBe(true);
+  });
+
+  it("aborts Admin User create timeout once without rotating identity", async () => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn().mockResolvedValueOnce(response(session()))
+      .mockImplementationOnce((_path: string, options: RequestInit) => new Promise((_done, reject) => {
+        options.signal?.addEventListener("abort", () => reject(new Error("private transport failure")));
+      }));
+    const api = new SessionClient(fetcher as typeof fetch, 100);
+    await api.login("user", "synthetic-only");
+    const pending = expect(api.postAdminUserCreate("{}", "synthetic-user-create-0001"))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    await vi.advanceTimersByTimeAsync(101);
+    await pending;
+    expect(api.view?.user.user_id).toBe(id);
+    expect(api.canSubmit).toBe(true);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
 });
