@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-28：0.1.0.dev0/AUT-05-A10-P04-A01加强并重跑Windows11隔离ASGI/PG User创建链：201八字段/初态/ETag/Location/UTC/密码不回显、原Key重放及新账户登录/普通角色拒绝、readonly关闭/构造故障，exit0，外部复查临时库0。兼容0049，无生产API/Migration/权限/依赖变化；浏览器新凭据提交未由AI执行，正式trust/HTTPS/CR008性能FAIL/Gate3/可用包仍待。
+
 - 2026-09-28：0.1.0.dev0/AUT-05-A10-P03新增部署管理员创建账户页面/入口、密码确认与即时清空、安全回执，以及未知结果锁原管理员/用户名/Key并重输原密码恢复；前端258测试/typecheck/build通过。兼容0049，无后端API/Migration/权限/依赖变化；真实User创建浏览器/PG、正式trust/HTTPS/CR008性能FAIL/Gate3/可用包仍待。
 
 - 2026-09-28：0.1.0.dev0/AUT-05-A10-P02新增管理员User创建前端客户端，NFC用户名/密码字节校验、201八字段白名单/初态/ETag/Location核验及确定/未知结果分流；前端249测试/typecheck/build通过。兼容0049，无后端API/Migration/权限/依赖变化；管理页面/真实写链及正式trust/HTTPS/CR008性能FAIL/Gate3/可用包仍待。

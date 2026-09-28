@@ -2,6 +2,7 @@
 from contextlib import ExitStack
 from importlib.util import module_from_spec,spec_from_file_location
 from pathlib import Path
+from datetime import datetime,timezone
 from types import SimpleNamespace
 from unittest.mock import patch
 from uuid import uuid4
@@ -52,7 +53,17 @@ def exercise(v):
                 client=('127.0.0.1',51000)) as client:
                 created=client.post('/api/v1/admin/users',headers=headers,json=body)
                 assert created.status_code==201,(created.status_code,created.text)
-                uid=created.json()['data']['user_id']
+                data=created.json()['data'];uid=data['user_id']
+                assert set(data)=={'user_id','username_display','account_state','deployment_role',
+                    'credential_version','created_at','updated_at','etag'}
+                assert data['username_display']==body['username'] and data['account_state']=='ENABLED'
+                assert data['deployment_role']=='NONE' and data['credential_version']==1 and data['etag']=='"v1"'
+                assert created.headers['ETag']=='"v1"' and created.headers['Location']=='/api/v1/admin/users/'+uid
+                assert created.headers['Cache-Control']=='no-store' and created.headers.get('set-cookie') is None
+                for field in ('created_at','updated_at'):
+                    stamp=data[field]
+                    assert stamp.endswith('Z') and datetime.fromisoformat(stamp.replace('Z','+00:00')).utcoffset()==timezone.utc.utcoffset(None)
+                assert body['password'] not in created.text and 'password_hash' not in created.text
                 logged=client.post('/api/v1/auth/login',headers={'origin':headers['origin']},json=body)
                 assert logged.status_code==200,(logged.status_code,logged.text)
                 assert logged.json()['data']['user']['user_id']==uid and logged.json()['data']['deployment_role']=='NONE'
@@ -67,6 +78,7 @@ def exercise(v):
                 assert denied.status_code==404 and snapshot()==before
                 before=snapshot();replayed=client.post('/api/v1/admin/users',headers=headers,json=body)
                 assert replayed.status_code==201 and replayed.json()['data']==created.json()['data']
+                assert replayed.headers['ETag']==created.headers['ETag'] and replayed.headers['Location']==created.headers['Location']
                 assert snapshot()==before
             # GET route remains in read-only mode; POST must not mount there.
             before=snapshot()

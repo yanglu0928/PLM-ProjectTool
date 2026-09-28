@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260928-416 — AUT-05-A10-P04-A01 实施前
+
+- Phase/WBS：Phase2/AUT-05-A10-P04-A01；P01～P03前端合同完成，原AUT-04-A09-P05 Windows User创建后端隔离验证已具备。此项仅加强/重跑原隔离ASGI+PG验证，让当前前端八字段/头/UTC/密码不回显合同与实际Windows显式写Factory同源；无生产实体/Schema/API/权限/依赖改动。
+- Decision：复用全新唯一`publication_`临时PG/Vault合成材料，原管理员Session-CSRF创建、同Key重放/冲突、新账户登录/普通用户拒绝和readonly关闭矩阵；增加精确201八字段、ETag/Location/UTC、安全无密码与无Set-Cookie断言。退出后外部复查临时数据库前缀；不把ASGI TestClient冒充实际浏览器或TLS/正式信任。浏览器UI新凭据输入遵Computer Use规则留人工/独立安全验收，不以绕过UI规则替代。
+- 风险/验证/回滚：原验证链庞大但已有历史，用少量断言防回归；任务中断需核自有库/Vault，不动生产。回滚撤新增验证断言，无迁移。验收验证脚本exit0、原矩阵、精确元数据与清理；正式trust/性能/三平台/Gate不关闭。
+- Executed：原Windows User创建隔离验证增加首次201恰好八字段、ENABLED/NONE/credential1/v1、ETag/Location/no-store/无Set-Cookie、UTC时间与密码不回显、原Key重放头一致断言；实际PG/ASGI/真实Scrypt与新账户登录、普通用户拒绝、readonly405、缺正式信任拒绝链整体exit0，外部复查`publication_%`临时库0。未执行浏览器新凭据表单提交，依Computer Use安全边界留人工/独立验收；不把本项描述为实际HTTPS网络或可用包。
+
 ## DEC-20260928-415 — AUT-05-A10-P03 实施前
 
 - Phase/WBS：Phase2/AUT-05-A10-P03；Gate2已批准，冻结`AUTH_USER_CREATE`、后端Windows显式写组合、P01传输和P02安全客户端具备。仅Auth创建账户页面/路由/导航，不改实体、Schema、后端API/权限/依赖。
