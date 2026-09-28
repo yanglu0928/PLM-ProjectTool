@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260928-414 — AUT-05-A10-P02 实施前
+
+- Phase/WBS：Phase2/AUT-05-A10-P02；Gate2已批准，输入冻结API-02 `AUTH_USER_CREATE`、CR-AUT-005实现增量及P01固定写桥接。仅Auth前端User创建DTO/响应分类，不改实体/Schema/后端API/权限/依赖。
+- Decision：调用方提供原幂等Key；客户端按NFC/去边空/Unicode控制字符/显示长度做保守验证，密码仅验证UTF8 1～1024 bytes且不含NUL，规范化/大小写唯一性最终由服务端判定。单次提交后201必须核合法信封、八字段白名单、初始ENABLED/NONE/credential1/强v1、Location/ETag及请求用户名一致；不得回传密码、Hash、Cookie、内部字段。已知状态码+错误码的401/403/404/409/400/422为确定拒绝；503、断线、畸形201或未知结果均标不确定，不自行重试/改Key。客户端不持有密码；后续页面在结果不确定时清输入并要求同账户重新输入原密码，原Key原用户名锁定。
+- Reason/impact/rollback/validation：服务端User创建幂等重放验证原密码，不可用普通同Key重放推断成功；需把确定/不确定结果明确交给UI，避免重复账号。前端casefold无法等价Python，拒绝自行生成canonical，保留服务端为唯一事实。风险为不同Unicode边界、未知成功、跨账号恢复；保守输入和响应核验、UI原Key流程及服务端重核。回滚撤客户端/测试，无迁移。验收白名单、密码无回显、201头/日期/状态、错误映射、单次未知、全量前端test/typecheck/build；不冒充完整UI或真实写链。
+- Executed：新增`AdminUserCreateClient`，单次受控POST、NFC/展示名与密码字节预检、201初态/ETag/Location/UTC核验、八字段冻结投影、确定与不确定错误分流；不储存密码/Key且不自动重试。新增30参数化场景，前端249测试/typecheck/build通过；无本项真实浏览器/PG或后端全量，下一P03页面。
+
 ## DEC-20260928-413 — AUT-05-A10-P01 实施前
 
 - Phase/WBS：Phase2/AUT-05-A10-P01；Gate2已批准，冻结API-02 `AUTH_USER_CREATE`、CR-AUT-005和Windows显式platform-write后端P05已具备。仅前端Auth SessionClient固定管理员User创建路径的受控传输，不变更实体/Schema/后端API/权限/依赖。

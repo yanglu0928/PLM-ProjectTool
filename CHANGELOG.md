@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-28：0.1.0.dev0/AUT-05-A10-P02新增管理员User创建前端客户端，NFC用户名/密码字节校验、201八字段白名单/初态/ETag/Location核验及确定/未知结果分流；前端249测试/typecheck/build通过。兼容0049，无后端API/Migration/权限/依赖变化；管理页面/真实写链及正式trust/HTTPS/CR008性能FAIL/Gate3/可用包仍待。
+
 - 2026-09-28：0.1.0.dev0/AUT-05-A10-P01增加固定管理员User创建路径的Auth私有CSRF单次写传输，16KiB/调用方原幂等Key/互斥/401清状态/不自动重试；前端219测试/typecheck/build通过。兼容0049，无后端API/Migration/权限/依赖变化；DTO/UI/真实User写链及正式trust/HTTPS/CR008性能FAIL/Gate3/可用包仍待。
 
 - 2026-09-28：0.1.0.dev0/PRJ-05-A05-P04-A02扩Windows11隔离fixture真实浏览器模式，合成管理员登录→选启用负责人→创建确认，终态PG新增项目/负责人/审计/收据各1并清测试源；原只读模式回归。浏览器关闭调用中断且PG异常停机后自动恢复，外部复查临时库/角色0，异常如实留档。兼容0049，无生产API/Schema/权限/依赖变或升级；正式信任/HTTPS/CR008性能FAIL/Gate3/可用包仍待。
