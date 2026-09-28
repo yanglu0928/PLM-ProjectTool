@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260928-439 — PRJ-05-A07-P03-A03 前端候选与部门安全选择
+
+- Date/WBS：2026-09-28 / Phase2 PRJ-05-A07-P03-A03；前置 CR-PRJ-006 A01/A02 已在 Windows 11 隔离 PG 通过。只处理前端客户端，不提前声明页面或浏览器验收。
+- Decision：候选 POST 必须经 SessionClient 私有 CSRF、同源单次传输，不用 URL 查询、不自动重试、不带幂等 Key；响应只接受单个最小候选或统一空值。部门沿既有 GET 固定 50 条分页，游标逐页读取且有上限，仅返回 ACTIVE 选项，不从成员历史或管理目录推断部门。候选与部门数据只用于页面选择，成员创建 POST 仍实时复核。
+- Impact/rollback/validation：无后端/Schema/权限变更；风险是过期/跨项目候选、异常分页、响应夹带私有字段与 CSRF 暴露。以前端传输/投影/权限错误/分页/失效测试、全量 typecheck/build 验收；回滚撤本次前端读取客户端和 SessionClient 专用传输方法。
+
 ## DEC-20260928-438 — PRJ-05-A07-P03-A02 Windows 显式平台候选装配
 
 - Date/WBS：2026-09-28 / Phase2 PRJ-05-A07-P03-A02，沿用 CR-PRJ-006 和 A01 已验证增量合同。

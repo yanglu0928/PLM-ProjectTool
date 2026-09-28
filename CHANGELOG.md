@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-28：0.1.0.dev0/PRJ-05-A07-P03-A03新增前端私有CSRF单次候选POST与仅ACTIVE部门分页选择客户端，统一空候选/安全投影、坏页/重复拒绝；前端468项/typecheck/build通过。兼容DB0049，无后端API/Schema/Migration/依赖或升级变化，撤客户端可回滚；成员页面/真实浏览器PG、正式信任/其他平台/性能/质量/Gate3/包待。
+
 - 2026-09-28：0.1.0.dev0/PRJ-05-A07-P03-A02将CR-PRJ-006精确成员候选POST装入Windows两种显式平台组合；默认/仅登录模式仍404，缺信任源整体关闭。隔离PostgreSQL18真实Session/权限/许可/CSRF与1566项后端测试（2跳过）、开发wheel通过。兼容DB0049，无Schema/Migration/依赖升级，撤组合注入可回滚；正式目标账户信任、Server2025/Debian、浏览器/性能/质量/Gate3/可用包待。
 
 - 2026-09-28：0.1.0.dev0/PRJ-05-A07-P03-A01按CR-PRJ-006新增成员精确用户名候选可选POST，Origin/CSRF及当前项目负责人权限、统一未命中和PostgreSQL摘要限流；初拟GET因URL泄露/跨站额度风险改POST。全后端1566项OK（2跳过）、隔离PG18真实权限/限流、开发wheel通过。DB兼容0049，无Schema/Migration/依赖升级；原冻结API不改，默认/Windows平台组合尚未挂载，正式信任/其他平台/性能/Gate3/包待。

@@ -218,6 +218,35 @@ export class SessionClient {
     return this.#postCommand(`/api/v1/projects/${projectId}/members`, body, idempotencyKey, 8192);
   }
 
+  /** Exact candidate lookup consumes a durable rate bucket; never retry automatically. */
+  async resolveProjectMemberCandidate(projectId: string, body: string): Promise<Response> {
+    if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
+    if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
+    if (!identifier(projectId) || typeof body !== "string" || body.length === 0
+      || new TextEncoder().encode(body).length > 1024) {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    }
+    this.#busy = true;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      const fetcher = this.fetcher;
+      const response = await fetcher(`/api/v1/projects/${projectId}/member-candidates:resolve`, {
+        method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error",
+        headers: { Accept: "application/json", "Content-Type": "application/json",
+          "X-CSRF-Token": this.#csrf }, body, signal: controller.signal,
+      });
+      if (controller.signal.aborted) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+      if (response.status === 401) { this.#csrf = null; this.#view = null; }
+      return response;
+    } catch {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    } finally {
+      window.clearTimeout(timer);
+      this.#busy = false;
+    }
+  }
+
   postAdminUserCreate(body: string, idempotencyKey: string): Promise<Response> {
     return this.#postCommand("/api/v1/admin/users", body, idempotencyKey, 16384);
   }
