@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260928-432 — PRJ-05-A06-P02 项目成员历史页面实施前
+
+- Date/WBS：2026-09-28 / Phase2 PRJ-05-A06-P02。P01安全只读客户端与冻结`PROJECT_MEMBER_LIST`、现有项目详情页已具备；仅新增前端Project成员历史页面、项目详情入口和路由/测试，不改后端、实体、Schema/Migration、权限或依赖。
+- Decision：登录且非改密受限身份才能发请求；不以Session摘要角色猜测授权，服务端每次GET复核ProjectManager/CustomerManager权限。固定50条分页，下一页从P01不透明cursor读取；切换项目/失败清空旧成员与cursor，迟到请求按路由代次丢弃，重复成员跨页拒绝，服务端字符串仅文本展示。详情入口不扩大服务端权限。
+- Impact/rollback/validation：风险为路由切换后旧项目成员残留、过期cursor续页或无权用户可见数据；页面合同验证无身份/受限零请求、成功/分页/空结果、安全拒绝清旧、路由迟到结果，跑全前端test/typecheck/build。回滚撤页面/路由/详情入口，无升级；实际浏览器/PG及正式信任另项验收。
+- Executed：新增页面、路由与项目详情入口及8个页面场景；前端418/418、typecheck/build exit0。实际浏览器/PG、正式信任/其他平台和Gate3未验，不将页面合同冒充真实授权验收。
+
 ## DEC-20260928-431 — PRJ-05-A06-P01 项目成员只读前端客户端实施前
 
 - Date/WBS：2026-09-28 / Phase2 PRJ-05-A06-P01。Gate2、冻结`PROJECT_MEMBER_LIST`、后端Windows显式成员历史GET、现有ProjectReadClient前置已满足。只处理前端Project成员分页读取/安全投影及测试，不改实体、DB Schema/Migration、后端API、权限或依赖。

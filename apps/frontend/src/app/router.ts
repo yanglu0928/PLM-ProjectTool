@@ -11,6 +11,7 @@ import LoginView from "@/modules/auth/views/LoginView.vue";
 import ProjectListView from "@/modules/project/views/ProjectListView.vue";
 import ProjectDetailView from "@/modules/project/views/ProjectDetailView.vue";
 import ProjectCreateView from "@/modules/project/views/ProjectCreateView.vue";
+import ProjectMemberListView from "@/modules/project/views/ProjectMemberListView.vue";
 import AdminUserCreateView from "@/modules/auth/views/AdminUserCreateView.vue";
 import AdminUserListView from "@/modules/auth/views/AdminUserListView.vue";
 import AdminUserDetailView from "@/modules/auth/views/AdminUserDetailView.vue";
@@ -61,6 +62,11 @@ export function createAppRouter(
         path: "/admin/users/:userId/name",
         name: "admin-user-name",
         component: AdminUserNameView,
+      },
+      {
+        path: "/projects/:projectId/members",
+        name: "project-members",
+        component: ProjectMemberListView,
       },
       {
         path: "/projects/:projectId",

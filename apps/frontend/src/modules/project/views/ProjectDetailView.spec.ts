@@ -59,6 +59,7 @@ describe("ProjectDetailView", () => {
     expect(wrapper.text()).toContain("<img src=x>");
     expect(wrapper.find("img").exists()).toBe(false);
     expect(wrapper.get('dl[aria-label="当前授权项目详情"]')).toBeTruthy();
+    expect(wrapper.get('a[href="/projects/' + id + '/members"]').text()).toContain("成员历史");
     expect(fetcher).toHaveBeenCalledTimes(1);
     expect(fetcher.mock.calls[0][0]).toBe(`/api/v1/projects/${id}`);
     wrapper.unmount();
