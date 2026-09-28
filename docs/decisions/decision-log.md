@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260928-443 — PRJ-05-A08-P02 成员 PATCH 业务响应客户端
+
+- Date/WBS：2026-09-28 / Phase2 PRJ-05-A08-P02；前置 P01 私有传输及 PRJ-04-A11 后端合同 PASS。
+- Decision：客户端以已读取成员安全快照（含强 ETag）加部分角色/部门期望输入构造严格 JSON；只有 200 固定信封、同一成员/User、未改状态/生效历史、期望角色/部门及 ETag 为原值或加一时才确认。无变化可返回原版本；版本/权限等已知拒绝单独分类。网络超时、未知状态、坏 JSON/投影或不匹配的成功回执均为结果不确定，后续 UI 必须重新读取成员历史而非用旧版本重试。原冻结 API 不变，不加幂等 Key。
+- Reason/impact/rollback/validation：防止页面把别人成员或后端异常回执显示为成功。单元覆盖输入零网络、确定拒绝、不可判定结果和安全投影；全前端测试/typecheck/build 验收。无 Schema/Migration/依赖变；回滚撤本客户端与测试，P01 传输保留。
+
 ## DEC-20260928-442 — PRJ-05-A08-P01 成员 PATCH 私有会话传输
 
 - Date/WBS：2026-09-28 / Phase2 PRJ-05-A08-P01；输入 Gate2 冻结 `PROJECT_MEMBER_PATCH`、PRJ-04-A11-P01/P02 Windows 显式组合及 PRJ-05-A07 已验项目成员入口。

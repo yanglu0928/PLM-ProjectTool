@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-28：0.1.0.dev0/PRJ-05-A08-P02新增项目成员角色/部门 PATCH 安全业务客户端：限定请求字段、绑定目标身份/状态/期望变化与强ETag，明确拒绝与未知结果分离，不自动重试；前端485项/typecheck/build通过。兼容DB0049、冻结API不变，无Schema/Migration/依赖/数据升级；页面及真实浏览器/PG、正式信任/其他平台/性能/质量/Gate3/包待。
+
 - 2026-09-28：0.1.0.dev0/PRJ-05-A08-P01新增成员角色/部门 PATCH 固定前端传输：双目标UUID、强 If-Match、私有CSRF、同源单次与401清证明/超时未知结果不重发；前端479项/typecheck/build通过。兼容DB0049，无后端API/Schema/Migration/权限/依赖或数据升级；业务响应、页面及真实浏览器/PG待，正式信任/其他平台/性能/质量/Gate3/包待。
 
 - 2026-09-28：0.1.0.dev0/PRJ-05-A07-P03-A05修复部门读取原生fetch调用接收者问题，补回归并完成Windows11实际浏览器/隔离PostgreSQL成员创建；SQL成员/Audit/幂等收据各一、API重放/冲突及既有三模式回归通过，前端475项/typecheck/build通过，测试资源清理并恢复PoC PG停止状态。兼容DB0049，无后端API/Schema/Migration/依赖升级，前端静态资源需更新；合成信任非正式发行，Server2025/Debian、HTTPS、性能/质量/Gate3/程序包待。
