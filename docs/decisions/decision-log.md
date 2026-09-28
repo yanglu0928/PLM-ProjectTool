@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260928-421 — AUT-05-A12-P03 实施前
+
+- Date/WBS：2026-09-28 / Phase2 AUT-05-A12-P03；P01状态传输/P02安全响应通过，冻结API-02 `AUTH_USER_GET`和既有Windows显式read组合可用。列表只投影三字段，无强ETag，故原拟P03状态页面必须先拆出详情GET前置；不改变业务Scope/API，只调整内部执行顺序，页面顺延P04。
+- Decision：新增Auth前端管理员User详情只读客户端，固定`GET /api/v1/admin/users/{user_id}`、同源Cookie/no-store/禁止重定向、单次超时、请求前规范UUID；仅接受安全8字段、返回ID绑定、强ETag与响应头一致、UTC有序时间，错误码仅安全文案。详情是读取时点事实，不能用列表行猜版本，也不能据详情替代写请求服务端重核。
+- Impact/rollback/validation：仅前端Auth客户端/测试及进度，数据库/后端API/权限/依赖不变；撤新文件即可回滚。验收固定请求、安全投影、坏头/字段拒绝、权限/License/网络失败、前端test/typecheck/build。真实浏览器/PG留页面联调任务。
+- Executed：新增User详情只读客户端及17个测试场景，安全八字段与目标/强ETag/UTC绑定，停用且credential0仅只读呈现；前端309/309、typecheck/build通过。首轮构建仅新文件ETag类型未收窄失败，修正后全套重跑通过。未本项实际浏览器/PG，下一P04页面使用该真实详情版本。
+
 ## DEC-20260928-420 — AUT-05-A12-P02 实施前
 
 - Date/WBS：2026-09-28 / Phase2 AUT-05-A12-P02；输入冻结API-02 `AUTH_USER_ENABLE/DISABLE`、CR-AUT-006安全首次结果和P01私有状态POST。只新增Auth前端状态响应客户端/测试，不变实体、Schema/Migration、后端API/权限/依赖。
