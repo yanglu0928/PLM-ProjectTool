@@ -26,6 +26,14 @@ async function submit(wrapper: ReturnType<typeof setup>["wrapper"]) {
   await wrapper.get("form").trigger("submit");
   await flushPromises();
 }
+async function submitChange(wrapper: ReturnType<typeof setup>["wrapper"], current = "old-synthetic",
+                            next = "new-synthetic", confirmation = next) {
+  await wrapper.get('input[name="current_password"]').setValue(current);
+  await wrapper.get('input[name="new_password"]').setValue(next);
+  await wrapper.get('input[name="confirm_password"]').setValue(confirmation);
+  await wrapper.get('form[aria-label="修改本人密码"]').trigger("submit");
+  await flushPromises();
+}
 
 describe("LoginView", () => {
   afterEach(() => vi.unstubAllGlobals());
@@ -41,6 +49,7 @@ describe("LoginView", () => {
     await submit(wrapper);
     expect(wrapper.text()).toContain("登录成功");
     expect(wrapper.text()).toContain("部署管理员");
+    expect(wrapper.get('form[aria-label="修改本人密码"]')).toBeTruthy();
     expect((wrapper.get('input[name="password"]').element as HTMLInputElement).value).toBe("");
     expect(wrapper.html()).not.toContain("synthetic-input");
     expect(wrapper.html()).not.toContain("a".repeat(64));
@@ -56,9 +65,78 @@ describe("LoginView", () => {
   it("shows restricted state instead of admin/project rights", async () => {
     const { wrapper } = setup(response(payload(true)));
     await submit(wrapper);
-    expect(wrapper.text()).toContain("改密页面尚待接入");
+    expect(wrapper.text()).toContain("请使用上方表单修改密码");
+    expect(wrapper.get('form[aria-label="修改本人密码"]')).toBeTruthy();
     expect(wrapper.text()).not.toContain("部署角色：部署管理员");
     expect(wrapper.text()).not.toContain("授权项目：");
+  });
+  it("changes a restricted user's password once, clears inputs and requires re-login", async () => {
+    const { wrapper, fetcher } = setup(response(payload(true)), response({ credential_version: 2 }));
+    await submit(wrapper);
+    await submitChange(wrapper);
+    expect(wrapper.text()).toContain("密码修改已确认");
+    expect(wrapper.find('form[aria-label="修改本人密码"]').exists()).toBe(false);
+    expect(wrapper.find(".auth-identity").exists()).toBe(false);
+    expect(wrapper.html()).not.toContain("old-synthetic");
+    expect(wrapper.html()).not.toContain("new-synthetic");
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(fetcher.mock.calls[1][0]).toBe("/api/v1/auth/password:change");
+  });
+  it("rejects confirmation mismatch without a request or losing the active session", async () => {
+    const { wrapper, fetcher } = setup(response(payload(true)));
+    await submit(wrapper);
+    await submitChange(wrapper, "old-synthetic", "new-synthetic", "different");
+    expect(wrapper.get('[role="alert"]').text()).toContain("两次输入的新密码不一致");
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(wrapper.find(".auth-identity").exists()).toBe(true);
+  });
+  it("retains only the original key after uncertainty and requires same-user re-login and explicit recovery", async () => {
+    const unavailable = new Response(JSON.stringify({ error: { code: "SYSTEM_UNAVAILABLE" }, trace_id: id }),
+      { status: 503, headers: { "Content-Type": "application/json" } });
+    const { wrapper, fetcher } = setup(response(payload(true)), unavailable,
+      response(payload(true)), response({ credential_version: 2 }));
+    await submit(wrapper);
+    await submitChange(wrapper);
+    expect(wrapper.text()).toContain("改密结果无法确认");
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(wrapper.find('form[aria-label="修改本人密码"]').exists()).toBe(false);
+    await submit(wrapper);
+    const change = wrapper.get('form[aria-label="修改本人密码"]');
+    expect(change.get('button[type="submit"]').attributes("disabled")).toBeDefined();
+    await change.get('input[name="current_password"]').setValue("old-synthetic");
+    await change.get('input[name="new_password"]').setValue("new-synthetic");
+    await change.get('input[name="confirm_password"]').setValue("new-synthetic");
+    expect(change.get('button[type="submit"]').attributes("disabled")).toBeDefined();
+    await change.get('input[name="confirm_original_attempt"]').setValue(true);
+    await change.trigger("submit");
+    await flushPromises();
+    expect(fetcher).toHaveBeenCalledTimes(4);
+    expect(fetcher.mock.calls[3][1].headers["Idempotency-Key"])
+      .toBe(fetcher.mock.calls[1][1].headers["Idempotency-Key"]);
+    expect(wrapper.text()).toContain("密码修改已确认");
+  });
+  it("blocks recovery under another user after an uncertain result", async () => {
+    const unavailable = new Response(JSON.stringify({ error: { code: "SYSTEM_UNAVAILABLE" }, trace_id: id }),
+      { status: 503, headers: { "Content-Type": "application/json" } });
+    const other = payload(true); other.user.user_id = "11234567-89ab-4cde-8123-456789abcdef";
+    const { wrapper, fetcher } = setup(response(payload(true)), unavailable, response(other));
+    await submit(wrapper);
+    await submitChange(wrapper);
+    await submit(wrapper);
+    expect(wrapper.text()).toContain("当前登录账户与原改密账户不同");
+    expect(wrapper.get('form[aria-label="修改本人密码"] button[type="submit"]').attributes("disabled")).toBeDefined();
+    expect(fetcher).toHaveBeenCalledTimes(3);
+  });
+  it("stops page retries when the server reports a historical idempotency conflict", async () => {
+    const conflict = new Response(JSON.stringify({ error: { code: "CONFLICT_IDEMPOTENCY" }, trace_id: id }),
+      { status: 409, headers: { "Content-Type": "application/json" } });
+    const { wrapper, fetcher } = setup(response(payload(true)), conflict, response(payload(true)));
+    await submit(wrapper);
+    await submitChange(wrapper);
+    expect(wrapper.text()).toContain("已停止页面内重试");
+    await submit(wrapper);
+    expect(wrapper.get('form[aria-label="修改本人密码"] button[type="submit"]').attributes("disabled")).toBeDefined();
+    expect(fetcher).toHaveBeenCalledTimes(3);
   });
   it("restores read-only identity with explicit relogin and disabled writes", async () => {
     const { wrapper } = setup(response(payload(false, false)));

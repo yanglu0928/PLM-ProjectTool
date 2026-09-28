@@ -7,13 +7,28 @@ const props = defineProps<{ client?: SessionClient }>();
 const api = props.client ? toRaw(props.client) : new SessionClient();
 const username = ref("");
 const password = ref("");
+const currentPassword = ref("");
+const newPassword = ref("");
+const confirmPassword = ref("");
+const confirmOriginalAttempt = ref(false);
+const retryKey = ref<string | null>(null);
+const retryUserId = ref<string | null>(null);
+const recoveryBlocked = ref(false);
 const busy = ref(false);
 const view = shallowRef<SessionView | null>(null);
 const canSubmit = ref(false);
 const message = ref("");
 const error = ref("");
 let mounted = true;
-onBeforeUnmount(() => { mounted = false; password.value = ""; });
+onBeforeUnmount(() => {
+  mounted = false;
+  password.value = "";
+  currentPassword.value = "";
+  newPassword.value = "";
+  confirmPassword.value = "";
+  retryKey.value = null;
+  retryUserId.value = null;
+});
 
 async function perform(action: () => Promise<unknown>, success: string) {
   if (busy.value) return;
@@ -52,6 +67,58 @@ function renew() {
 function logout() {
   return perform(() => api.logout(crypto.randomUUID()), "已退出当前会话。");
 }
+async function changePassword() {
+  if (busy.value || !view.value || !canSubmit.value || recoveryBlocked.value) return;
+  const userId = view.value.user.user_id;
+  if (retryKey.value && (retryUserId.value !== userId || !confirmOriginalAttempt.value)) return;
+  if (newPassword.value !== confirmPassword.value) {
+    error.value = "两次输入的新密码不一致。";
+    return;
+  }
+  const current = currentPassword.value;
+  const next = newPassword.value;
+  const wasRecovery = retryKey.value !== null;
+  const key = retryKey.value ?? crypto.randomUUID();
+  busy.value = true;
+  view.value = null;
+  canSubmit.value = false;
+  error.value = "";
+  message.value = "";
+  confirmOriginalAttempt.value = false;
+  retryKey.value = key;
+  retryUserId.value = userId;
+  try {
+    const pending = api.changePassword(current, next, key);
+    currentPassword.value = "";
+    newPassword.value = "";
+    confirmPassword.value = "";
+    await pending;
+    if (mounted) {
+      retryKey.value = null;
+      retryUserId.value = null;
+      message.value = "密码修改已确认。请使用新密码重新登录后继续。";
+    }
+  } catch (failure) {
+    if (mounted) {
+      if (failure instanceof SessionClientError && failure.code === "CONFLICT_IDEMPOTENCY") {
+        recoveryBlocked.value = true;
+        error.value = "改密记录与输入不一致，已停止页面内重试。请联系部署管理员核对。";
+      } else if (wasRecovery || !(failure instanceof SessionClientError)
+        || failure.code === "AUTH_CLIENT_UNAVAILABLE") {
+        error.value = "改密结果无法确认。请勿创建新操作；在本页重新登录同一账户，再输入与本次完全相同的两项密码并确认后恢复。";
+      } else {
+        retryKey.value = null;
+        retryUserId.value = null;
+        error.value = failure.message;
+      }
+    }
+  } finally {
+    currentPassword.value = "";
+    newPassword.value = "";
+    confirmPassword.value = "";
+    if (mounted) busy.value = false;
+  }
+}
 </script>
 
 <template>
@@ -74,10 +141,29 @@ function logout() {
       <button type="button" :disabled="busy || !canSubmit" @click="logout">退出登录</button>
     </div>
     <p v-if="!canSubmit && !busy">刷新或离开此页面后，安全令牌不会保留。读取当前身份仅恢复只读显示；续期、退出和其他提交操作需重新登录。</p>
+    <p v-if="retryKey" role="status">改密恢复标识只保留在本页内存中；请勿刷新或离开。若已离开，请联系部署管理员核对结果，不要猜测是否成功。</p>
+    <p v-if="retryKey && view && retryUserId !== view.user.user_id" role="alert">当前登录账户与原改密账户不同，不能恢复该操作。</p>
+    <form v-if="view && canSubmit" class="change-form" aria-label="修改本人密码" @submit.prevent="changePassword">
+      <h2>修改本人密码</h2>
+      <p>修改成功后须使用新密码重新登录。当前密码、新密码和安全令牌不会保存到浏览器持久存储。</p>
+      <label for="change-current-password">当前密码</label>
+      <input id="change-current-password" v-model="currentPassword" name="current_password" type="password" autocomplete="current-password" required :disabled="busy || recoveryBlocked" />
+      <label for="change-new-password">新密码</label>
+      <input id="change-new-password" v-model="newPassword" name="new_password" type="password" autocomplete="new-password" required :disabled="busy || recoveryBlocked" />
+      <label for="change-confirm-password">确认新密码</label>
+      <input id="change-confirm-password" v-model="confirmPassword" name="confirm_password" type="password" autocomplete="new-password" required :disabled="busy || recoveryBlocked" />
+      <label v-if="retryKey && !recoveryBlocked" class="recovery-confirm">
+        <input v-model="confirmOriginalAttempt" type="checkbox" name="confirm_original_attempt" :disabled="busy || retryUserId !== view.user.user_id" />
+        我确认重新输入的是上次尝试完全相同的当前密码和新密码，并复用原操作记录。
+      </label>
+      <button type="submit" :disabled="busy || recoveryBlocked || !currentPassword || !newPassword || !confirmPassword || !!(retryKey && (!confirmOriginalAttempt || retryUserId !== view.user.user_id))">
+        {{ retryKey ? '恢复原改密操作' : '修改密码' }}
+      </button>
+    </form>
     <section v-if="view" aria-labelledby="identity-title" class="auth-identity">
       <h2 id="identity-title">当前身份</h2>
       <p>用户名：{{ view.user.username_display }}</p>
-      <p v-if="view.password_change_required" role="status">此账户需要修改密码，目前只能使用受限会话。改密页面尚待接入，不能进入项目业务。</p>
+      <p v-if="view.password_change_required" role="status">此账户需要修改密码，目前只能使用受限会话。{{ canSubmit ? '请使用上方表单修改密码' : '请重新登录后修改密码' }}，完成前不能进入项目业务。</p>
       <template v-else>
         <p>部署角色：{{ view.deployment_role === 'DEPLOYMENT_ADMIN' ? '部署管理员' : '普通用户' }}</p>
         <p>授权项目：{{ view.authorized_projects.length }} 个</p>
@@ -99,6 +185,10 @@ input:focus-visible { outline: 3px solid #e09f3e; outline-offset: 2px; }
 button:disabled { cursor: not-allowed; opacity: .55; }
 .auth-actions { display: flex; gap: .6rem; flex-wrap: wrap; }
 .auth-identity { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #d6ded7; }
+.change-form { border-top: 1px solid #d6ded7; padding-top: 1rem; }
+.change-form h2 { margin: 0; }
+.change-form .recovery-confirm { display: flex; align-items: flex-start; gap: .6rem; line-height: 1.5; }
+.change-form .recovery-confirm input { width: auto; min-height: auto; margin-top: .3rem; }
 [role="alert"] { color: #a21d25; }
 p { line-height: 1.65; }
 </style>
