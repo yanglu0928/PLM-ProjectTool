@@ -49,7 +49,7 @@ function instant(value: unknown): value is string {
   const parsed = Date.parse(value);
   return Number.isFinite(parsed) && new Date(parsed).toISOString().slice(0, 19) === value.slice(0, 19);
 }
-function member(value: unknown): ProjectMemberView {
+export function parseProjectMember(value: unknown): ProjectMemberView {
   if (!record(value) || !identifier(value.member_id) || !record(value.user)
     || !identifier(value.user.user_id) || typeof value.user.display_name !== "string"
     || !value.user.display_name.trim() || !roles.has(value.role as string)
@@ -115,7 +115,7 @@ export class ProjectMemberReadClient {
         || (!data.has_more && data.next_cursor !== null)) {
         throw new ProjectMemberReadError("PROJECT_MEMBER_CLIENT_UNAVAILABLE");
       }
-      const items = data.items.map(member);
+      const items = data.items.map(parseProjectMember);
       if (new Set(items.map((item) => item.member_id)).size !== items.length) {
         throw new ProjectMemberReadError("PROJECT_MEMBER_CLIENT_UNAVAILABLE");
       }

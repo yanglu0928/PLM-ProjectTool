@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260928-435 — PRJ-05-A07-P02 项目成员创建安全响应客户端实施前
+
+- Date/WBS：2026-09-28 / Phase2 PRJ-05-A07-P02。Gate2冻结`PROJECT_MEMBER_CREATE`、PRJ-04-A10-P01～P03实际后端合同、P01前端单次写传输已具备。仅新增Project模块响应客户端、复用只读成员安全投影与测试；不改业务权限、实体、后端、Schema/Migration、API合同或依赖。
+- Decision：本地白名单构造请求并校验Project/User/Department UUID、角色、可选UTC时间及原幂等Key；仅`201`且Trace、成员八字段、初始ACTIVE/`"v0"`、请求User/Role/Department/显式生效时间、ETag和Location一致时返回冻结安全投影。仅服务端状态与已知错误码匹配时认定明确拒绝；其他状态、畸形/不匹配回执、网络或超时一律“结果未确认”，不自动重试/换Key或把原始错误披露给UI。
+- Impact/rollback/validation：风险为不完整回执被误认成功、服务端已提交却由客户端换Key重复创建、微秒时间比较被毫秒精度掩盖。测试覆盖安全投影、确定/未知分类、非法输入零网络、单次提交及微秒边界；回滚撤客户端及只读解析器导出，无数据库步骤。页面和实际浏览器/PG写链独立验收，不以合成客户端测试代替。
+- Executed：前端462项测试、typecheck、build exit0；无正式信任/Server2025/Debian、实际浏览器或PG写入验收。
+
 ## DEC-20260928-434 — PRJ-05-A07-P01 项目成员创建受控前端传输实施前
 
 - Date/WBS：2026-09-28 / Phase2 PRJ-05-A07-P01。Gate2冻结`PROJECT_MEMBER_CREATE`、后端PRJ-04-A10-P01～P03持久幂等/Windows显式写组合、既有SessionClient写命令桥均已具备。仅在前端Auth会话客户端增加该固定POST传输与测试；不改业务权限、后端、实体、Schema/Migration、API合同或依赖。
