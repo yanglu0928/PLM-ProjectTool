@@ -172,6 +172,38 @@ def verify_member_http(origin: str, owned: uuid.UUID, foreign: uuid.UUID):
     print("PROJECT_MEMBER_BROWSER_HTTP PASS: viewer/admin404, manager50+2, removed history, foreign404, cursor binding400", flush=True)
 
 
+def verify_member_create_http(origin: str, project: uuid.UUID, target: uuid.UUID,
+                              department: uuid.UUID):
+    route = f"/api/v1/projects/{project}/member-candidates:resolve"
+    with httpx.Client(base_url=origin, timeout=20) as anonymous:
+        assert anonymous.post(route, headers={"Origin": origin},
+                              json={"username": "Synthetic Candidate Target"}).status_code == 401
+    with httpx.Client(base_url=origin, timeout=20) as manager:
+        login = manager.post("/api/v1/auth/login", headers={"Origin": origin},
+            json={"username": "Synthetic Project Member", "password": "synthetic-project-only-password"})
+        assert login.status_code == 200, login.text
+        csrf = login.json()["data"]["csrf_token"]
+        headers = {"Origin": origin, "X-CSRF-Token": csrf}
+        exact = manager.post(route, headers=headers, json={"username": "Synthetic Candidate Target"})
+        assert exact.status_code == 200 and exact.json()["data"]["candidate"]["user_id"] == str(target), exact.text
+        missing = manager.post(route, headers=headers, json={"username": "Synthetic Nobody"})
+        assert missing.status_code == 200 and missing.json()["data"] == {"candidate": None}
+        page = manager.get(f"/api/v1/projects/{project}/departments", params={"page_size": 50})
+        assert page.status_code == 200, page.text
+        active = [item for item in page.json()["data"]["items"] if item["state"] == "ACTIVE"]
+        assert len(active) == 1 and active[0]["department_id"] == str(department)
+        body = {"user_id": str(target), "role": "IMPLEMENTATION_MEMBER", "department_id": str(department)}
+        create_headers = {**headers, "Idempotency-Key": "synthetic-member-create-a05"}
+        first = manager.post(f"/api/v1/projects/{project}/members", headers=create_headers, json=body)
+        replay = manager.post(f"/api/v1/projects/{project}/members", headers=create_headers, json=body)
+        assert first.status_code == replay.status_code == 201, (first.text, replay.text)
+        assert first.json()["data"] == replay.json()["data"]
+        conflict = manager.post(f"/api/v1/projects/{project}/members", headers=create_headers,
+                                json={**body, "role": "CUSTOMER_MEMBER"})
+        assert conflict.status_code == 409 and conflict.json()["error"]["code"] == "CONFLICT_IDEMPOTENCY"
+    print("PROJECT_MEMBER_CREATE_HTTP PASS: anonymous401, exact/miss, ACTIVE department, create/replay201/conflict409", flush=True)
+
+
 def main():
     suffix = uuid.uuid4().hex[:12]
     dbname = role = "prj05a04_" + suffix
@@ -203,9 +235,11 @@ def main():
                     create_mode = "--create-api-only" in sys.argv[1:] or "--create-browser" in sys.argv[1:]
                     state_mode = "--user-state-browser" in sys.argv[1:]
                     name_mode = "--user-name-browser" in sys.argv[1:]
+                    member_create_mode = ("--member-create-browser" in sys.argv[1:]
+                                          or "--member-create-api-only" in sys.argv[1:])
                     member_mode = ("--member-browser" in sys.argv[1:]
                                    or "--member-api-only" in sys.argv[1:])
-                    if sum((create_mode, state_mode, name_mode, member_mode)) > 1:
+                    if sum((create_mode, state_mode, name_mode, member_mode, member_create_mode)) > 1:
                         raise ValueError("Browser write modes must be exclusive")
                     manager = (insert_user(db, "Synthetic First Manager", hashed.password_hash, hashed.algorithm_id)
                                if create_mode else None)
@@ -219,6 +253,12 @@ def main():
                     department = db.execute("INSERT INTO plm.prj_departments "
                         "(project_id,department_code,department_code_normalized,name) "
                         "VALUES (%s,'D1','d1','Synthetic Department') RETURNING department_id", (project,)).fetchone()[0]
+                    target_user = (insert_user(db, "Synthetic Candidate Target", hashed.password_hash, hashed.algorithm_id)
+                                   if member_create_mode else None)
+                    if member_create_mode:
+                        db.execute("INSERT INTO plm.prj_departments "
+                            "(project_id,department_code,department_code_normalized,name,state) "
+                            "VALUES (%s,'OLD','old','Synthetic Inactive Department','INACTIVE')", (project,))
                     db.execute("INSERT INTO plm.prj_project_members "
                         "(project_id,user_id,department_id,project_role) "
                         "VALUES (%s,%s,%s,'PROJECT_MANAGER')", (project, member, department))
@@ -290,6 +330,7 @@ def main():
                             raise RuntimeError("Owned proxy startup failed")
                         print(f"PROJECT_BROWSER_READY {origin}/login OWNED={project} FOREIGN={foreign}"
                               + (f" MANAGER={manager}" if create_mode else "")
+                              + (f" CANDIDATE={target_user}" if member_create_mode else "")
                               + (f" USER_STATE_TARGET={member}" if state_mode else "")
                               + (f" USER_NAME_TARGET={member}" if name_mode else ""), flush=True)
                         if "--create-api-only" in sys.argv[1:]:
@@ -299,6 +340,9 @@ def main():
                             verify_http(origin, project, foreign)
                         elif "--member-api-only" in sys.argv[1:]:
                             verify_member_http(origin, project, foreign)
+                        elif "--member-create-api-only" in sys.argv[1:]:
+                            assert target_user is not None
+                            verify_member_create_http(origin, project, target_user, department)
                         else:
                             actions = queue.Queue()
                             Thread(target=lambda: actions.put(sys.stdin.readline().strip()), daemon=True).start()
@@ -307,14 +351,30 @@ def main():
                             expected = 3 if create_mode else 2
                             assert db.execute("SELECT count(*) FROM plm.prj_projects").fetchone()[0] == expected
                             session_count = db.execute("SELECT count(*) FROM plm.auth_sessions").fetchone()[0]
-                            if "--api-only" in sys.argv[1:] or "--create-api-only" in sys.argv[1:]:
+                            if "--member-create-api-only" in sys.argv[1:]:
+                                assert session_count == 1
+                            elif "--api-only" in sys.argv[1:] or "--create-api-only" in sys.argv[1:]:
                                 assert session_count == 2
                             elif "--member-api-only" in sys.argv[1:]:
                                 assert session_count == 3
                             else:
                                 assert session_count >= (1 if create_mode else 2)
-                            active_expected = 51 if member_mode else (2 if expected == 3 else 1)
+                            active_expected = 51 if member_mode else (2 if expected == 3 or member_create_mode else 1)
                             assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE state='ACTIVE'").fetchone()[0] == active_expected
+                            if member_create_mode:
+                                assert target_user is not None
+                                member_created = db.execute("SELECT project_member_id,department_id,project_role,state "
+                                    "FROM plm.prj_project_members WHERE project_id=%s AND user_id=%s",
+                                    (project, target_user)).fetchone()
+                                assert member_created is not None and member_created[1:] == (
+                                    department, "IMPLEMENTATION_MEMBER", "ACTIVE")
+                                assert db.execute("SELECT count(*) FROM plm.aud_events "
+                                    "WHERE target_object_id=%s AND action='PROJECT_MEMBER_CREATED'",
+                                    (member_created[0],)).fetchone()[0] == 1
+                                assert db.execute("SELECT count(*) FROM plm.plt_idempotency_receipts "
+                                    "WHERE result_ref_id=%s AND operation='V1_PROJECT_MEMBER_CREATE' "
+                                    "AND state='COMPLETED'", (member_created[0],)).fetchone()[0] == 1
+                                print("PROJECT_MEMBER_CREATE_DATABASE PASS: one member/Audit/receipt, ACTIVE department", flush=True)
                             if member_mode:
                                 assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE project_id=%s", (project,)).fetchone()[0] == 52
                                 assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE project_id=%s AND state='REMOVED'", (project,)).fetchone()[0] == 1

@@ -102,7 +102,8 @@ export class ProjectMemberChoicesClient {
       try {
         const query = new URLSearchParams({ page_size: "50" });
         if (after !== null) query.set("cursor", after);
-        const response = await this.fetcher(`/api/v1/projects/${projectId}/departments?${query}`, {
+        const fetcher = this.fetcher;
+        const response = await fetcher(`/api/v1/projects/${projectId}/departments?${query}`, {
           method: "GET", credentials: "same-origin", cache: "no-store", redirect: "error",
           headers: { Accept: "application/json" }, signal: controller.signal,
         });

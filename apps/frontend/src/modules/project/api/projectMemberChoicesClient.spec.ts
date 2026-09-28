@@ -90,6 +90,15 @@ describe("ProjectMemberChoicesClient", () => {
     expect(session.view).toBeNull();
   });
 
+  it("calls the department fetch function without a client receiver", async () => {
+    const fetcher = vi.fn(function (this: unknown) {
+      expect(this).toBeUndefined();
+      return Promise.resolve(reply({ items: [], next_cursor: null, has_more: false }));
+    });
+    const api = new ProjectMemberChoicesClient(new SessionClient(), fetcher as typeof fetch);
+    await expect(api.activeDepartments(project)).resolves.toEqual([]);
+  });
+
   it("rejects repeated cursor, duplicate department, malformed envelope and permission errors", async () => {
     const item = { department_id: department, code: "DEV", name: "研发", state: "ACTIVE" };
     // Use a direct fetcher because department reads do not require the SessionClient to log in.
