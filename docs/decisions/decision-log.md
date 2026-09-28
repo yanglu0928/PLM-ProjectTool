@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260928-420 — AUT-05-A12-P02 实施前
+
+- Date/WBS：2026-09-28 / Phase2 AUT-05-A12-P02；输入冻结API-02 `AUTH_USER_ENABLE/DISABLE`、CR-AUT-006安全首次结果和P01私有状态POST。只新增Auth前端状态响应客户端/测试，不变实体、Schema/Migration、后端API/权限/依赖。
+- Decision：响应只投影冻结安全8字段，强制绑定目标ID、请求动作的首次状态和If-Match版本+1、强ETag与UTC有序时间；不向前端传播密码/hash/内部撤销计数或服务端错误详情。明确状态码+错误码才归为确定拒绝，503/异常/畸形成功视为结果未知，保留调用方原目标/Key/If-Match；不据历史first推断当前状态或自行停用后当前Cookie是否已撤销。传输版边界收紧为版本必须可安全递增。
+- Reason/impact/rollback/validation：后端可返回首次不可变历史，不能把它当当前GET；网络丢确认时新Key重试会改变业务。回滚撤新客户端及测试，不涉及迁移；验证安全投影、历史版、所有确定错误映射、未知结果、无写权限零网络、frontend test/typecheck/build。实际PG/browser留后续独立任务。
+- Executed：新增状态响应客户端、安全8字段不可变投影、目标/动作/版本/ETag/UTC绑定与明确错误分流；新增21合同场景，前端292/292、typecheck/build通过。首轮因新客户端UUID正则少一段且返回类型未收窄失败，修正后重跑通过；P01传输版边界加拒绝MAX_SAFE_INTEGER以保证版本可递增。未本项进行真实HTTP/PG/浏览器，下一P03页面交互。
+
 ## DEC-20260928-419 — AUT-05-A12-P01 实施前
 
 - Date/WBS：2026-09-28 / Phase2 AUT-05-A12-P01；Gate2已批准，冻结API-02 `AUTH_USER_ENABLE/DISABLE`、CR-AUT-006及Windows显式write组合已验证。仅前端Auth SessionClient增加两条固定User状态POST传输，不改生产实体、Schema、Migration、后端API/权限/依赖。

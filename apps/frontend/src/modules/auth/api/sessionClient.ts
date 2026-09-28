@@ -225,6 +225,7 @@ export class SessionClient {
     if (!identifier(userId) || (action !== "enable" && action !== "disable")
       || typeof etag !== "string" || !/^"v[1-9]\d*"$/.test(etag)
       || !Number.isSafeInteger(Number(etag.slice(2, -1)))
+      || Number(etag.slice(2, -1)) >= Number.MAX_SAFE_INTEGER
       || typeof idempotencyKey !== "string" || !/^[\x20-\x7e]{16,128}$/.test(idempotencyKey)) {
       throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
     }
