@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260928-430 — AUT-05-A13-P04 管理员用户改名浏览器联调实施前
+
+- Date/WBS：2026-09-28 / Phase2 AUT-05-A13-P04。P03页面合同与现有后端Windows显式write改名链已通过；仅缺二者真实浏览器联调。涉及一次性合成Auth User、现有隔离浏览器夹具及临时PG，不改生产 API/Schema/实体/权限/依赖。
+- Decision：为原只读/状态浏览器夹具增加互斥的显式`--user-name-browser`写模式，复用随机loopback端口/临时库角色/Vault/合成License。只改合成Member用户名，浏览器Admin登录→详情`"v0"`→改名页面确认→写回执与独立详情`"v1"`；然后用旧名登录应拒，新名登录应成功。脚本终态查同UUID/new display/canonical/v1、固定改名Audit恰一条，并清自有源。原`--api-only`模式另回归。
+- Impact/rollback/validation：只有验证夹具与记录变更；若浏览器或夹具中断，核精准临时库/角色/Vault并保留失败，不虚报。回滚可撤新模式。此轮仅本机HTTP/合成信任，不替代正式TLS、真实License、Server2025/Debian或发行Gate。
+- Executed/evidence：首轮启动时本机既有 PostgreSQL 18 服务已停止，夹具退出1、尚未创建临时库；核查服务状态和 `prj05a04_` 临时库为0后，在原数据目录用 `pg_ctl` 启动，WAL自动恢复完成。停止原因未证实，未当作产品缺陷或虚报首轮通过。恢复后 Windows11 隔离浏览器 Admin 实际见目标 `v0`，显式确认改名，首次回执与独立当前 GET 均为同 UUID/新名称/`v1`；退出 Admin 后旧名称登录被拒，新名称登录成功。夹具 `VERIFY` exit0：SQL 同用户 `ENABLED/v1`、`USER_NAME_CHANGED` 恰1条、2项目/2会话/1有效成员，临时服务/库/角色/Vault 清理通过。原 `--api-only` 回归 exit0。无生产迁移、API 或权限变化；正式信任/其他平台/Gate3 保持未通过。
+
 ## DEC-20260928-429 — AUT-05-A13-P03 管理员用户改名页面实施前
 
 - Date/WBS：2026-09-28 / Phase2 AUT-05-A13-P03。P01单次PATCH桥、P02安全响应、已验User详情GET及冻结`AUTH_USER_PATCH`已具备。单一问题是使管理员可从User详情安全改展示/登录名；涉及前端Auth页面/路由及User当前视图，不改后端实体/API/Schema/权限/依赖。部署管理员仍需当前不受改密限制身份与新鲜可写Session，服务端复核是最终授权。

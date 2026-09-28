@@ -166,8 +166,9 @@ def main():
                     admin_user = insert_user(db, "Synthetic Project Admin", hashed.password_hash, hashed.algorithm_id)
                     create_mode = "--create-api-only" in sys.argv[1:] or "--create-browser" in sys.argv[1:]
                     state_mode = "--user-state-browser" in sys.argv[1:]
-                    if state_mode and create_mode:
-                        raise ValueError("User state browser mode cannot create Projects")
+                    name_mode = "--user-name-browser" in sys.argv[1:]
+                    if sum((create_mode, state_mode, name_mode)) > 1:
+                        raise ValueError("Browser write modes must be exclusive")
                     manager = (insert_user(db, "Synthetic First Manager", hashed.password_hash, hashed.algorithm_id)
                                if create_mode else None)
                     db.execute("UPDATE plm.auth_users SET deployment_role='DEPLOYMENT_ADMIN' WHERE user_id=%s", (admin_user,))
@@ -202,7 +203,7 @@ def main():
                             ("create_windows_audit_cursor_codec", AuditListCursorCodec(b"a" * 32)),
                         ):
                             stack.enter_context(patch(prefix + name, return_value=codec))
-                        if state_mode:
+                        if state_mode or name_mode:
                             stack.enter_context(patch(
                                 "plm_assistant.entrypoints.windows_secret_write.create_windows_secret_write_service",
                                 return_value=object()))
@@ -211,7 +212,7 @@ def main():
                                     provider=SimpleNamespace(resolve_key=lambda ref: b"u" * 32),
                                     key_ref="synthetic-browser-upload-token")))
                         with redirect_stdout(logs):
-                            factory = (production.create_production_platform_write_app if state_mode
+                            factory = (production.create_production_platform_write_app if state_mode or name_mode
                                        else production.create_production_platform_app)
                             app = factory(settings, credential_target=target)
                         sock = socket.socket()
@@ -235,7 +236,8 @@ def main():
                             raise RuntimeError("Owned proxy startup failed")
                         print(f"PROJECT_BROWSER_READY {origin}/login OWNED={project} FOREIGN={foreign}"
                               + (f" MANAGER={manager}" if create_mode else "")
-                              + (f" USER_STATE_TARGET={member}" if state_mode else ""), flush=True)
+                              + (f" USER_STATE_TARGET={member}" if state_mode else "")
+                              + (f" USER_NAME_TARGET={member}" if name_mode else ""), flush=True)
                         if "--create-api-only" in sys.argv[1:]:
                             assert manager is not None
                             created = verify_create_http(origin, manager)
@@ -265,6 +267,11 @@ def main():
                                 assert db.execute("SELECT count(*) FROM plm.auth_sessions WHERE user_id=%s AND revoked_at IS NOT NULL", (member,)).fetchone()[0] >= 1
                                 assert db.execute("SELECT count(*) FROM plm.auth_user_state_results WHERE user_id=%s", (member,)).fetchone()[0] == 2
                                 print("USER_STATE_BROWSER_DATABASE PASS: target ENABLED/v2, old member session revoked, two immutable results", flush=True)
+                            if name_mode:
+                                renamed = "Synthetic Project Renamed Member"
+                                assert db.execute("SELECT username_display,username_normalized,state,lock_version FROM plm.auth_users WHERE user_id=%s", (member,)).fetchone() == (renamed, renamed.lower(), "ENABLED", 1)
+                                assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='USER_NAME_CHANGED'", (member,)).fetchone()[0] == 1
+                                print("USER_NAME_BROWSER_DATABASE PASS: same user renamed/v1, one audit event", flush=True)
                         print(f"PROJECT_BROWSER_DATABASE_COUNTS PASS: {expected} projects, {session_count} sessions, {expected - 1} active members", flush=True)
                 finally:
                     if proxy:
