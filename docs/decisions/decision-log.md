@@ -1,5 +1,10 @@
 # 自主决策记录
 
+## DEC-20260928-402
+
+- PRJ-05-A01 实施前：冻结 PROJECT_LIST/GET 已由后端 Windows 显式组合提供，前端缺只读传输合同。选择 Project 模块独立客户端与白名单 DTO，不触碰 Auth/后端/Schema；列表遵守当前单项目上限，详情严格核对请求 ID 与强 ETag。服务端 Session/License/成员授权是唯一权限来源，管理员身份不等同项目可见权。风险/回滚与验收见进度，不新增 CR 或改写冻结合同。
+- Executed：37 新项目客户端测试；前端 123/123、typecheck/build 最终通过。首次测试/类型检查失败为测试代码问题，修正后重跑；没有页面或本项真实浏览器/PG，不宣称项目入口可用或 Gate 通过。无 Migration/API/权限/依赖变化，下一 PRJ-05-A02。
+
 ## DEC-20260928-401
 
 - AUT05A09实施前：登录页局部SessionClient随路由卸载丢内存CSRF，不能支持后续项目页连续交互。选AppShell实例级provide唯一客户端、LoginView注入并`toRaw`，保测试prop覆盖；新AppShell/刷新生成新客户端且不自动恢复写权限。仅内部前端状态生命周期，不改服务器Cookie/CSRF、API/权限/依赖。风险/回滚/测试见进度。

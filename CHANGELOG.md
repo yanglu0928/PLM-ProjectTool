@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-28：0.1.0.dev0/PRJ-05-A01新增项目列表/详情前端只读客户端，同源Cookie/no-store单次GET、白名单DTO及详情ID/强ETag一致性、固定安全错误；遵守当前单成员最多一项目合同。37新测试，前端123/typecheck/build通过。兼容既有0049，无Migration/后端API/权限/依赖变化或升级动作。客户端尚未接页面、未作本项真实网络/浏览器验收；正式信任/HTTPS、CR008性能FAIL、Gate3/可用包仍待。
+
 - 2026-09-28：0.1.0.dev0/AUT05A09改为AppShell实例级内存SessionClient共享，路由离开/返回保持原登录状态，新实例/刷新不恢复CSRF也不自动网络查询；不使用浏览器持久存储。前端86测试/typecheck/build通过。兼容0049，无后端/API/Schema/权限/依赖变化；本项未跑真实浏览器/PG，改密浏览器最终提交仍待人工，正式信任/HTTPS/CR008性能/Gate3/包未完成。
 
 - 2026-09-28：0.1.0.dev0/AUT05A08-P02新增普通/受限本人改密表单、确认密码、立即清输入、成功强制重登提示，以及503未知结果原Key/同用户重登恢复、异用户和409安全阻断。前端85测试/typecheck/build通过；原Windows真实PG改密HTTP与旧Session失效/新密码登录/提交后503同Key恢复exit0，自有临时库count0。兼容0049，无后端/API/Schema/权限/依赖变化。按computer-use Skill未代用户执行浏览器最终改密提交，因此只标内部通过、浏览器提交待人工验收；正式信任/HTTPS、CR008性能FAIL、Gate3/程序包仍待。
