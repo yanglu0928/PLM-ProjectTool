@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-28：0.1.0.dev0/PRJ-05-A05-P03-A01新增管理员用户候选列表客户端，单次同源GET、50条显式分页/有界游标、姓名/ID/启停白名单与安全错误；前端205测试/typecheck/build通过。兼容0049，无Migration/后端API/权限/依赖变化或升级；页面/真实写链未接，正式信任/HTTPS/CR008性能FAIL/Gate3/可用包仍待。
+
 - 2026-09-28：0.1.0.dev0/PRJ-05-A05-P02新增项目创建前端客户端：负责人UUID与项目/部门规范化校验、原Key单次请求、201白名单/强ETag/Location一致性、固定业务拒绝与不确定结果标志；前端173测试/typecheck/build通过。兼容0049，无Migration/后端API/权限/依赖变化或升级。客户端未接页面/真实PG写链，正式信任/HTTPS/CR008性能FAIL/Gate3/可用包仍待。
 
 - 2026-09-28：0.1.0.dev0/PRJ-05-A05-P01增加固定项目创建路径的Auth内存CSRF受控写桥接，同源单次POST/调用方原幂等Key/互斥/超时、401清本地证明、不自动重试或公开Token；前端147测试/typecheck/build通过。兼容0049，无Migration/后端API/权限/依赖变化或升级；项目创建DTO/UI/真实写网络尚待，正式信任/HTTPS/CR008性能FAIL/Gate3/可用包仍待。

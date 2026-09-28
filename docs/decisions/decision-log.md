@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260928-409 — PRJ-05-A05-P03-A01 实施前
+
+- Phase/WBS：Phase2/PRJ-05-A05-P03-A01；输入冻结AUTH_USER_LIST、AUT-04-A07 Windows显式只读组合、PRJ-05-A05-P02创建客户端；Gate2前置满足。仅前端Auth管理员User列表GET安全投影，供后续负责人选择；无实体/Schema/后端API/权限/依赖变化。
+- Decision：单次同源Cookie/no-store/无CSRF GET，固定50页、受控不透明cursor、严格信封与User ID/启停状态/名称，白名单投影。仅向页面提供启用账户候选，列表不提供当前项目归属，绝不提前宣称“可任命”；创建时后端`lock_eligible_manager`和成员唯一约束为最终事实。无身份/非Admin/受限会话在后续页面零请求，本客户端不自行授予权限。确定401/403/404安全固定提示，未知结果统一不可用；不自动翻页/重试。
+- Reason/impact/rollback：避免手工UUID造成不可用表单，同时避免将账户启用等同项目资格。风险为多页候选和过时状态；页面需显式加载更多，提交失败展示服务端安全拒绝。回滚撤客户端/测试，不迁移。验收分页/游标/白名单/错误与超时单次、前端test/typecheck/build；不冒充完整选择器或创建链。
+- Executed：新增管理员User列表同源单次GET、50条显式分页与opaque cursor约束、严格信封和启停/名称/ID安全投影，未知错误/超时不重试且不显示原始消息。新增32个参数化场景，前端205测试/typecheck/build通过；初次build因测试中unknown类型未收窄失败，修复并重跑通过。未接UI、未跑本项真实HTTP或PG写链；下一P03-A02。
+
 ## DEC-20260928-408 — PRJ-05-A05-P02 实施前
 
 - Phase/WBS：Phase2/PRJ-05-A05-P02；输入冻结PROJECT_CREATE、PRJ-04-A05后端实际合同、A05-P01内存CSRF单次桥接及A01安全ProjectView。仅前端Project API DTO/解析；无Schema/后端API/权限/依赖变化，Gate2前置满足。
