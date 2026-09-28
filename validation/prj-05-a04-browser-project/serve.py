@@ -1,0 +1,199 @@
+"""Owned Windows browser/PG fixture for read-only Project UI verification."""
+
+from __future__ import annotations
+
+import ctypes
+import queue
+import socket
+import subprocess
+import sys
+import tempfile
+import uuid
+from contextlib import ExitStack, redirect_stdout
+from importlib.util import module_from_spec, spec_from_file_location
+from io import StringIO
+from pathlib import Path
+from threading import Thread
+from time import monotonic, sleep
+from types import SimpleNamespace
+from unittest.mock import patch
+
+import uvicorn
+from alembic import command
+from psycopg import sql
+from sqlalchemy.engine import URL
+
+from plm_assistant.entrypoints import production_login as production
+from plm_assistant.modules.audit.api.list_cursor import AuditListCursorCodec
+from plm_assistant.modules.auth.api.user_list_cursor import UserListCursorCodec
+from plm_assistant.modules.document.api.document_list_cursor import DocumentListCursorCodec
+from plm_assistant.modules.document.api.parse_list_cursor import ParseListCursorCodec
+from plm_assistant.modules.document.api.version_list_cursor import VersionListCursorCodec
+from plm_assistant.modules.jobs.api.list_cursor import JobListCursorCodec
+from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
+from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
+from plm_assistant.modules.project.api.department_list_cursor import DepartmentListCursorCodec
+from plm_assistant.modules.project.api.member_list_cursor import MemberListCursorCodec
+
+
+ROOT = Path(__file__).resolve().parents[2]
+spec = spec_from_file_location("_owned_source", ROOT / "validation/aut-03-a07-p03-production-login/verify.py")
+source = module_from_spec(spec)
+spec.loader.exec_module(source)
+
+
+class SyntheticGuard:
+    def require_valid(self, *, trace_id):
+        assert isinstance(trace_id, uuid.UUID)
+        return object()
+
+
+def reserve_port():
+    with socket.socket() as candidate:
+        candidate.bind(("127.0.0.1", 0))
+        return candidate.getsockname()[1]
+
+
+def insert_user(db, name: str, password_hash, algorithm_id: str):
+    user = db.execute("INSERT INTO plm.auth_users(username_display,username_normalized) "
+                      "VALUES (%s,%s) RETURNING user_id", (name, name.lower())).fetchone()[0]
+    credential = db.execute("INSERT INTO plm.auth_password_credentials "
+        "(user_id,credential_version,password_hash,algorithm_id,parameter_set) "
+        "VALUES (%s,1,%s,%s,%s::jsonb) RETURNING password_credential_id",
+        (user, password_hash, algorithm_id, '{"n":131072,"r":8,"p":1,"dklen":32}')).fetchone()[0]
+    db.execute("UPDATE plm.auth_users SET credential_version=1,active_password_credential_id=%s,state='ENABLED' "
+               "WHERE user_id=%s", (credential, user))
+    return user
+
+
+def main():
+    suffix = uuid.uuid4().hex[:12]
+    dbname = role = "prj05a04_" + suffix
+    target = "PLMProjectTool/Test-" + str(uuid.uuid4())
+    role_secret = uuid.uuid4().hex + uuid.uuid4().hex
+    port = reserve_port()
+    origin = f"http://127.0.0.1:{port}"
+    proxy = server = thread = sock = None
+    logs = StringIO()
+    with source.connect("postgres") as admin:
+        admin.execute(sql.SQL("CREATE ROLE {} LOGIN PASSWORD {}").format(sql.Identifier(role), sql.Literal(role_secret)))
+        try:
+            admin.execute(sql.SQL("CREATE DATABASE {} OWNER {}").format(sql.Identifier(dbname), sql.Identifier(role)))
+            try:
+                url = URL.create("postgresql+psycopg", username=role, password=role_secret,
+                                 host=source.HOST, port=source.PORT, database=dbname)
+                with source.connect(dbname) as db:
+                    db.execute("CREATE EXTENSION IF NOT EXISTS vector")
+                command.upgrade(source.create_migration_config(url), "head")
+                clear = bytearray(b"synthetic-project-only-password")
+                try:
+                    with memoryview(clear) as view:
+                        hashed = source.ScryptPasswordHasher().hash_password(view)
+                finally:
+                    clear[:] = b"\x00" * len(clear)
+                with source.connect(dbname) as db:
+                    member = insert_user(db, "Synthetic Project Member", hashed.password_hash, hashed.algorithm_id)
+                    admin_user = insert_user(db, "Synthetic Project Admin", hashed.password_hash, hashed.algorithm_id)
+                    db.execute("UPDATE plm.auth_users SET deployment_role='DEPLOYMENT_ADMIN' WHERE user_id=%s", (admin_user,))
+                    project = db.execute("INSERT INTO plm.prj_projects "
+                        "(project_code,project_code_normalized,name,created_by) "
+                        "VALUES ('OWNED','owned','Synthetic Owned Project',%s) RETURNING project_id", (member,)).fetchone()[0]
+                    foreign = db.execute("INSERT INTO plm.prj_projects "
+                        "(project_code,project_code_normalized,name,created_by) "
+                        "VALUES ('FOREIGN','foreign','Synthetic Foreign Project',%s) RETURNING project_id", (admin_user,)).fetchone()[0]
+                    department = db.execute("INSERT INTO plm.prj_departments "
+                        "(project_id,department_code,department_code_normalized,name) "
+                        "VALUES (%s,'D1','d1','Synthetic Department') RETURNING department_id", (project,)).fetchone()[0]
+                    db.execute("INSERT INTO plm.prj_project_members "
+                        "(project_id,user_id,department_id,project_role) "
+                        "VALUES (%s,%s,%s,'PROJECT_MANAGER')", (project, member, department))
+                source.write_database_url(url.render_as_string(hide_password=False), target=target)
+                try:
+                    with tempfile.TemporaryDirectory(prefix="plm-project-browser-") as directory, ExitStack() as stack:
+                        settings = BootstrapSettings(data_root=Path(directory), trusted_origins=(origin,))
+                        prefix = "plm_assistant.entrypoints.production_login."
+                        stack.enter_context(patch("plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services",
+                                                  return_value=SimpleNamespace(guard=SyntheticGuard())))
+                        for name, codec in (
+                            ("create_windows_secret_list_cursor_codec", SecretListCursorCodec(b"q" * 32)),
+                            ("create_windows_project_member_cursor_codec", MemberListCursorCodec(b"m" * 32)),
+                            ("create_windows_project_department_cursor_codec", DepartmentListCursorCodec(b"d" * 32)),
+                            ("create_windows_document_list_cursor_codec", DocumentListCursorCodec(b"l" * 32)),
+                            ("create_windows_document_version_cursor_codec", VersionListCursorCodec(b"v" * 32)),
+                            ("create_windows_document_parse_cursor_codec", ParseListCursorCodec(b"p" * 32)),
+                            ("create_windows_user_list_cursor_codec", UserListCursorCodec(b"u" * 32)),
+                            ("create_windows_job_list_cursor_codec", JobListCursorCodec(b"j" * 32)),
+                            ("create_windows_audit_cursor_codec", AuditListCursorCodec(b"a" * 32)),
+                        ):
+                            stack.enter_context(patch(prefix + name, return_value=codec))
+                        with redirect_stdout(logs):
+                            app = production.create_production_platform_app(settings, credential_target=target)
+                        sock = socket.socket()
+                        sock.bind(("127.0.0.1", 0))
+                        sock.listen(128)
+                        server = uvicorn.Server(uvicorn.Config(app, log_level="critical", access_log=False,
+                            proxy_headers=False, lifespan="on", timeout_graceful_shutdown=5))
+                        thread = Thread(target=lambda: server.run(sockets=[sock]), daemon=False)
+                        thread.start()
+                        deadline = monotonic() + 15
+                        while not server.started:
+                            if not thread.is_alive() or monotonic() > deadline:
+                                raise RuntimeError("Owned backend startup failed")
+                            sleep(.05)
+                        proxy = subprocess.Popen(["node", str(ROOT / "validation/aut-05-a04-network-login/start-proxy.mjs"),
+                            str(port), str(sock.getsockname()[1])], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                            stderr=subprocess.DEVNULL, text=True, creationflags=subprocess.CREATE_NO_WINDOW)
+                        ready = queue.Queue()
+                        Thread(target=lambda: ready.put(proxy.stdout.readline().strip()), daemon=True).start()
+                        if ready.get(timeout=15) != "OWNED_PROXY_READY":
+                            raise RuntimeError("Owned proxy startup failed")
+                        print(f"PROJECT_BROWSER_READY {origin}/login OWNED={project} FOREIGN={foreign}", flush=True)
+                        actions = queue.Queue()
+                        Thread(target=lambda: actions.put(sys.stdin.readline().strip()), daemon=True).start()
+                        assert actions.get(timeout=900) == "VERIFY", "Browser verification not completed"
+                        with source.connect(dbname) as db:
+                            assert db.execute("SELECT count(*) FROM plm.prj_projects").fetchone()[0] == 2
+                            assert db.execute("SELECT count(*) FROM plm.auth_sessions").fetchone()[0] >= 2
+                            assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE state='ACTIVE'").fetchone()[0] == 1
+                        print("PROJECT_BROWSER_DATABASE_COUNTS PASS: 2 projects, at least 2 sessions, 1 active member", flush=True)
+                finally:
+                    if proxy:
+                        if proxy.poll() is None:
+                            try:
+                                proxy.stdin.write("STOP\n")
+                                proxy.stdin.flush()
+                                proxy.wait(timeout=10)
+                            except (BrokenPipeError, subprocess.TimeoutExpired):
+                                proxy.kill()
+                                proxy.wait(timeout=10)
+                        proxy.stdin.close()
+                        proxy.stdout.close()
+                    if server:
+                        server.should_exit = True
+                    if thread:
+                        thread.join(timeout=10)
+                        assert not thread.is_alive(), "Owned backend did not stop"
+                    if sock:
+                        sock.close()
+                    source.delete_test_credential(target)
+            finally:
+                admin.execute("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=%s AND pid<>pg_backend_pid()", (dbname,))
+                admin.execute(sql.SQL("DROP DATABASE {}").format(sql.Identifier(dbname)))
+        finally:
+            admin.execute(sql.SQL("DROP ROLE {}").format(sql.Identifier(role)))
+        assert admin.execute("SELECT count(*) FROM pg_database WHERE datname=%s", (dbname,)).fetchone()[0] == 0
+        assert admin.execute("SELECT count(*) FROM pg_roles WHERE rolname=%s", (role,)).fetchone()[0] == 0
+    library = ctypes.WinDLL("Advapi32", use_last_error=True)
+    library.CredReadW.argtypes = [ctypes.c_wchar_p, ctypes.c_ulong, ctypes.c_ulong, ctypes.POINTER(ctypes.c_void_p)]
+    library.CredReadW.restype = ctypes.c_int
+    pointer = ctypes.c_void_p()
+    found = library.CredReadW(target, 1, 0, ctypes.byref(pointer))
+    if found:
+        library.CredFree.argtypes = [ctypes.c_void_p]
+        library.CredFree(pointer)
+    assert not found and ctypes.get_last_error() == 1168
+    print("PROJECT_BROWSER_FIXTURE_CLEANUP PASS: owned services stopped; database/role absent; Vault absence1168", flush=True)
+
+
+if __name__ == "__main__":
+    main()
