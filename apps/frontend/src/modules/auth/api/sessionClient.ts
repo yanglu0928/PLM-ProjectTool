@@ -179,8 +179,8 @@ export class SessionClient {
     });
   }
 
-  /** Two exact frozen command paths; the CSRF token never leaves this client. */
-  async #postCommand(path: "/api/v1/projects" | "/api/v1/admin/users", body: string,
+  /** Frozen create command paths; the CSRF token never leaves this client. */
+  async #postCommand(path: "/api/v1/projects" | "/api/v1/admin/users" | `/api/v1/projects/${string}/members`, body: string,
     idempotencyKey: string, maxBodyBytes: number): Promise<Response> {
     if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
     if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
@@ -211,6 +211,11 @@ export class SessionClient {
 
   postProjectCreate(body: string, idempotencyKey: string): Promise<Response> {
     return this.#postCommand("/api/v1/projects", body, idempotencyKey, 8192);
+  }
+
+  async postProjectMemberCreate(projectId: string, body: string, idempotencyKey: string): Promise<Response> {
+    if (!identifier(projectId)) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    return this.#postCommand(`/api/v1/projects/${projectId}/members`, body, idempotencyKey, 8192);
   }
 
   postAdminUserCreate(body: string, idempotencyKey: string): Promise<Response> {

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { SessionClient, SessionClientError } from "./sessionClient";
 
 const id = "01234567-89ab-4cde-8123-456789abcdef";
+const projectId = "11234567-89ab-4cde-8123-456789abcdef";
 const token = "a".repeat(64);
 function session(extra: Record<string, unknown> = {}) {
   return { user: { user_id: id, username_display: "测试用户" }, deployment_role: "DEPLOYMENT_ADMIN",
@@ -356,6 +357,92 @@ describe("SessionClient", () => {
     const api = new SessionClient(fetcher as typeof fetch, 100);
     await api.login("user", "synthetic-only");
     const pending = expect(api.postProjectCreate("{}", "synthetic-project-0001"))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    await vi.advanceTimersByTimeAsync(101);
+    await pending;
+    expect(api.view?.user.user_id).toBe(id);
+    expect(api.canSubmit).toBe(true);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it("posts only the target Project Member create endpoint with private CSRF and caller key", async () => {
+    const created = response({ member_id: id }, 201);
+    const { api, fetcher } = client(response(session()), created);
+    await api.login("manager", "synthetic-only");
+    const body = JSON.stringify({ user_id: id, role: "CUSTOMER_MEMBER", department_id: id });
+    await expect(api.postProjectMemberCreate(projectId, body, "synthetic-member-create-0001"))
+      .resolves.toBe(created);
+    expect(fetcher.mock.calls[1]).toEqual([`/api/v1/projects/${projectId}/members`, expect.objectContaining({
+      method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error", body,
+      headers: { Accept: "application/json", "Content-Type": "application/json",
+        "X-CSRF-Token": token, "Idempotency-Key": "synthetic-member-create-0001" },
+    })]);
+    expect(JSON.stringify(api)).not.toContain(token);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it.each(["", "../admin", projectId.toUpperCase(), "00000000-0000-0000-0000-000000000000"])(
+    "rejects unsafe Project Member path without network: %s", async (target) => {
+      const { api, fetcher } = client(response(session()));
+      await api.login("manager", "synthetic-only");
+      await expect(api.postProjectMemberCreate(target, "{}", "synthetic-member-create-0001"))
+        .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+      expect(fetcher).toHaveBeenCalledTimes(1);
+    });
+
+  it.each([["", "synthetic-member-create-0001"], ["x".repeat(8193), "synthetic-member-create-0001"],
+    ["{}", "short"]])("rejects unsupported Project Member body or key before network", async (body, key) => {
+    const { api, fetcher } = client(response(session()));
+    await api.login("manager", "synthetic-only");
+    await expect(api.postProjectMemberCreate(projectId, body, key))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not submit Project Member create without fresh in-memory CSRF", async () => {
+    const readOnly = session(); delete (readOnly as Partial<typeof readOnly>).csrf_token;
+    const { api, fetcher } = client(response(readOnly));
+    await api.current();
+    await expect(api.postProjectMemberCreate(projectId, "{}", "synthetic-member-create-0001"))
+      .rejects.toMatchObject({ code: "AUTH_RELOGIN_REQUIRED" });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("clears Project Member write proof on 401 but retains it on uncertain 503", async () => {
+    const { api, fetcher } = client(response(session()), new Response("{}", { status: 503 }),
+      new Response("{}", { status: 401 }));
+    await api.login("manager", "synthetic-only");
+    await api.postProjectMemberCreate(projectId, "{}", "synthetic-member-create-0001");
+    expect(api.canSubmit).toBe(true);
+    await api.postProjectMemberCreate(projectId, "{}", "synthetic-member-create-0001");
+    expect(api.view).toBeNull();
+    expect(api.canSubmit).toBe(false);
+    expect(fetcher).toHaveBeenCalledTimes(3);
+  });
+
+  it("keeps Auth commands exclusive while Project Member create is in flight", async () => {
+    let resolve!: (response: Response) => void;
+    const fetcher = vi.fn().mockResolvedValueOnce(response(session()))
+      .mockReturnValueOnce(new Promise<Response>((done) => { resolve = done; }));
+    const api = new SessionClient(fetcher as typeof fetch);
+    await api.login("manager", "synthetic-only");
+    const pending = api.postProjectMemberCreate(projectId, "{}", "synthetic-member-create-0001");
+    await expect(api.renew()).rejects.toMatchObject({ code: "AUTH_CLIENT_BUSY" });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    resolve(response({ member_id: id }, 201));
+    await pending;
+    expect(api.canSubmit).toBe(true);
+  });
+
+  it("aborts an uncertain Project Member create timeout once without dropping identity", async () => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn().mockResolvedValueOnce(response(session()))
+      .mockImplementationOnce((_path: string, options: RequestInit) => new Promise((_done, reject) => {
+        options.signal?.addEventListener("abort", () => reject(new Error("private timeout")));
+      }));
+    const api = new SessionClient(fetcher as typeof fetch, 100);
+    await api.login("manager", "synthetic-only");
+    const pending = expect(api.postProjectMemberCreate(projectId, "{}", "synthetic-member-create-0001"))
       .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
     await vi.advanceTimersByTimeAsync(101);
     await pending;

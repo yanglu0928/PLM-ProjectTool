@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260928-434 — PRJ-05-A07-P01 项目成员创建受控前端传输实施前
+
+- Date/WBS：2026-09-28 / Phase2 PRJ-05-A07-P01。Gate2冻结`PROJECT_MEMBER_CREATE`、后端PRJ-04-A10-P01～P03持久幂等/Windows显式写组合、既有SessionClient写命令桥均已具备。仅在前端Auth会话客户端增加该固定POST传输与测试；不改业务权限、后端、实体、Schema/Migration、API合同或依赖。
+- Decision：新增`postProjectMemberCreate(projectId,body,key)`，规范Project UUID、8KiB JSON字符串和可打印16～128字节原幂等Key本地校验；与现有会话命令共用私有CSRF、同源Cookie/no-store/禁止重定向、超时Abort及互斥。401清内存证明；网络超时或响应不明不自动重试、不旋转Key。此层仅返回原Response，不分析201/错误或声明业务成功；后续安全响应客户端/页面独立任务。
+- Impact/rollback/validation：风险为拼接不可信路径、意外泄露CSRF、双提交或不确定结果下产生重复成员；以无效输入零网络、固定路径/header/body、并发互斥、401和超时单次测试约束。回滚撤方法/测试，不涉及数据库升级。前端test/typecheck/build后归档；浏览器/PG写链与正式License/TLS另验。
+- Executed：新增SessionClient固定成员POST方法及12个测试用例，全前端430/430、typecheck/build exit0。前端只交付原Response，业务结果仍待P02解析；页面与真实HTTP/PG写链未验。
+
 ## DEC-20260928-433 — PRJ-05-A06-P03 成员历史隔离浏览器联调实施前
 
 - Date/WBS：2026-09-28 / Phase2 PRJ-05-A06-P03。冻结`PROJECT_MEMBER_LIST`、P01客户端/P02页面、后端Windows显式只读组合均已具备；仅扩展自有一次性PG/Vault/loopback浏览器夹具的互斥模式，不改生产API/Schema/权限/依赖。
