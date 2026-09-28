@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-28：0.1.0.dev0/AUT-05-A12-P05-A01在Windows11重跑实际隔离ASGI/PG User启停链：停用撤销旧会话、启用新登录、原Key首次结果/拒绝/关闭模式通过，临时publication库0。首轮本机PG服务停止导致连接超时，原目录WAL恢复后重跑通过，原因未证实；无生产代码/API/Schema/依赖变化，浏览器页面/正式信任/性能/Gate3/包待。
+
 - 2026-09-28：0.1.0.dev0/AUT-05-A12-P04新增管理员用户详情/启停页面、列表入口、当前强ETag与显式确认、未知结果原Key恢复及首次结果/当前状态分离；前端320测试/typecheck/build通过。兼容0049，无后端API/Schema/Migration/权限/依赖变化；真实浏览器/PG、正式信任/性能/Gate3/包待。
 
 - 2026-09-28：0.1.0.dev0/AUT-05-A12-P03新增管理员User详情GET安全客户端，固定目标/强ETag/UTC及八字段白名单，用服务端版本作为后续启停页面输入；前端309测试/typecheck/build通过。兼容0049，无后端API/Schema/Migration/权限/依赖变化；UI/真实浏览器/正式信任/Gate3/包待。

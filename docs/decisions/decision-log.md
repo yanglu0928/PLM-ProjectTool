@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260928-423 — AUT-05-A12-P05-A01 实施前
+
+- Date/WBS：2026-09-28 / Phase2 AUT-05-A12-P05-A01；A12-P04页面合同通过，冻结Auth User状态API与既有Windows11隔离Factory/PG验证脚本具备。本项仅重跑当前代码的真实ASGI/PG状态链及资源清理，作为前端页面后端依赖回归；不修改生产代码/API/Schema/权限/依赖。
+- Decision：复用原`validation/aut-04-a11-p05-windows-user-state/verify.py`随机隔离库/合成License与真Scrypt链，核创建→普通用户拒绝→管理员停用/旧Session失效→启用/新Session→原Key首次重放，并核readonly/default关闭、构造失败与缺正式材料拒绝。与真实浏览器页面验收分离；本项不把合成信任或后端脚本当成UI/TLS/生产发行证明。
+- Risk/rollback/validation：脚本生成临时PG库/角色及服务，结束须核自有清理；若中断外部复查精确前缀，不清未知资源。无迁移/代码回滚。验收脚本exit0与自有临时源不存在；实际浏览器交互另项追踪。
+- Executed：首轮测试在连接`127.0.0.1:55432`时超时，`pg_ctl status`证实本机PostgreSQL未运行，非User状态断言失败。检视旧PID/进程及日志后，使用原Data目录/原loopback端口启动；日志记录此前非正常停机并自动恢复，`publication_%`和旧浏览器临时库catalog为0。重跑原脚本exit0：真Factory/ASGI/隔离PG/Scrypt创建、普通用户拒绝、停用旧会话401/禁登录、启用新会话200/旧仍401、原Key不可变first、readonly405/default404、构造故障与缺正式材料拒绝；原双Scope发布回归亦PASS。事后`publication_%`库0且PG仍运行。停机原因未确证，正式稳定性/浏览器页面/生产信任未因此PASS。
+
 ## DEC-20260928-422 — AUT-05-A12-P04 实施前
 
 - Date/WBS：2026-09-28 / Phase2 AUT-05-A12-P04；Gate2冻结`AUTH_USER_GET/ENABLE/DISABLE`、CR-AUT-006及A12-P01～P03传输/响应/详情前端合同已具备。仅新增Auth User详情与启停页面、列表详情入口/路由和组件测试；不改实体、Schema、Migration、后端API/权限/依赖。
