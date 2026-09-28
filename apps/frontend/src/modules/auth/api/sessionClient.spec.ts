@@ -281,4 +281,86 @@ describe("SessionClient", () => {
   it.each([0, -1, 30_001, 1.5, NaN])("rejects invalid client timeout %s", (timeout) => {
     expect(() => new SessionClient(fetch, timeout)).toThrow(SessionClientError);
   });
+
+  it("posts one scoped Project bootstrap request with private CSRF and original caller key", async () => {
+    const created = response({ project_id: id }, 201);
+    const { api, fetcher } = client(response(session()), created);
+    await api.login("user", "synthetic-only");
+    const body = JSON.stringify({ code: "DEMO", name: "演示", initial_manager_user_id: id });
+    await expect(api.postProjectCreate(body, "synthetic-project-0001")).resolves.toBe(created);
+    expect(fetcher.mock.calls[1]).toEqual(["/api/v1/projects", expect.objectContaining({
+      method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error", body,
+      headers: { Accept: "application/json", "Content-Type": "application/json",
+        "X-CSRF-Token": token, "Idempotency-Key": "synthetic-project-0001" },
+    })]);
+    expect(api.view?.user.user_id).toBe(id);
+    expect(api.canSubmit).toBe(true);
+    expect(JSON.stringify(api)).not.toContain(token);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not submit Project create from a missing or read-only local session", async () => {
+    const readOnly = session(); delete (readOnly as Partial<typeof readOnly>).csrf_token;
+    const { api, fetcher } = client(response(readOnly));
+    await expect(api.postProjectCreate("{}", "synthetic-project-0001"))
+      .rejects.toMatchObject({ code: "AUTH_RELOGIN_REQUIRED" });
+    await api.current();
+    await expect(api.postProjectCreate("{}", "synthetic-project-0001"))
+      .rejects.toMatchObject({ code: "AUTH_RELOGIN_REQUIRED" });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["short", "x".repeat(129), "key-with-a-newline\n0001"])(
+    "rejects invalid Project create key before sending %j", async (key) => {
+      const { api, fetcher } = client(response(session()));
+      await api.login("user", "synthetic-only");
+      await expect(api.postProjectCreate("{}", key)).rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+      expect(fetcher).toHaveBeenCalledTimes(1);
+      expect(api.canSubmit).toBe(true);
+    });
+
+  it("clears local write proof on Project create 401 but preserves it for an uncertain 503", async () => {
+    const unauthorized = new Response("{}", { status: 401 });
+    const unavailable = new Response("{}", { status: 503 });
+    const { api, fetcher } = client(response(session()), unavailable, unauthorized);
+    await api.login("user", "synthetic-only");
+    await api.postProjectCreate("{}", "synthetic-project-0001");
+    expect(api.canSubmit).toBe(true);
+    await api.postProjectCreate("{}", "synthetic-project-0001");
+    expect(api.view).toBeNull();
+    expect(api.canSubmit).toBe(false);
+    expect(fetcher).toHaveBeenCalledTimes(3);
+  });
+
+  it("holds auth mutation exclusivity while Project create is in flight", async () => {
+    let resolve!: (response: Response) => void;
+    const fetcher = vi.fn().mockResolvedValueOnce(response(session()))
+      .mockReturnValueOnce(new Promise<Response>((done) => { resolve = done; }));
+    const api = new SessionClient(fetcher as typeof fetch);
+    await api.login("user", "synthetic-only");
+    const pending = api.postProjectCreate("{}", "synthetic-project-0001");
+    expect(api.canSubmit).toBe(false);
+    await expect(api.renew()).rejects.toMatchObject({ code: "AUTH_CLIENT_BUSY" });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    resolve(response({ project_id: id }, 201));
+    await pending;
+    expect(api.canSubmit).toBe(true);
+  });
+
+  it("aborts an uncertain Project create timeout once without dropping the original session", async () => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn().mockResolvedValueOnce(response(session()))
+      .mockImplementationOnce((_path: string, options: RequestInit) => new Promise((_done, reject) => {
+        options.signal?.addEventListener("abort", () => reject(new Error("private transport failure")));
+      }));
+    const api = new SessionClient(fetcher as typeof fetch, 100);
+    await api.login("user", "synthetic-only");
+    const pending = expect(api.postProjectCreate("{}", "synthetic-project-0001"))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    await vi.advanceTimersByTimeAsync(101);
+    await pending;
+    expect(api.view?.user.user_id).toBe(id);
+    expect(api.canSubmit).toBe(true);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
 });

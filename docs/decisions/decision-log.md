@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260928-407 — PRJ-05-A05-P01 实施前
+
+- Phase/WBS：Phase2/PRJ-05-A05-P01；输入冻结PROJECT_CREATE、原Auth仅内存CSRF/HttpOnly Cookie及PRJ-04-A05后端写组合，Gate2前置满足。前端Auth写传输桥接是项目创建客户端的必要前置；无实体/Schema/API/服务端权限/依赖变化。
+- Decision：在SessionClient增加仅接受现有`POST /api/v1/projects`的受控单次JSON提交方法，CSRF始终由会话客户端注入且不公开getter，使用同源Cookie、no-store、禁止重定向、原调用方幂等键、互斥和超时。请求返回原Response供后续Project模块白名单解析；401清本地身份/CSRF，其他结果不推断服务端提交成功、不自动重试，维持同账户原Key恢复能力。刷新后无CSRF立即拒绝，服务器仍负责Admin/License/Manager授权。后续需要其他写路径时逐项扩受控路径，不能暗中开放任意URL。
+- Reason/impact/rollback：不把CSRF复制到页面或持久存储，也不把Auth摘要当授权；会话客户端仅耦合冻结路径，不依赖Project实体。风险为网络未知结果与后续页面误换Key，留P02/P03按原Key恢复；回滚撤桥接/测试，不迁移数据。验收同源请求形状、受限只读零请求、busy互斥、401清状态、超时无重试、前端全量test/typecheck/build。
+- Executed：固定路径单次POST、不公开CSRF、原Key和互斥/超时/401清状态实现；8新场景，前端147测试/typecheck/build PASS。未接Project DTO/UI或跑真实写HTTP，不宣称创建可用。
+
 ## DEC-20260928-406
 
 - PRJ-05-A04-P02：原浏览器fixture被轮次切换中断，浏览器行为证据保留而终态SQL缺失。选择在同一独立验证脚本增加`--api-only`自动退出模式，以新临时库做真实HTTP原始状态码/SQL精确计数/自动收尾；两轮证据分开说明，不伪造为同一次运行。无生产/API/Schema/权限/依赖变更，回滚撤该验证分支；风险是合成License不等于正式发行。

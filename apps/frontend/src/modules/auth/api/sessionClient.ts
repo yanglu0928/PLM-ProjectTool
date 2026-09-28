@@ -179,6 +179,35 @@ export class SessionClient {
     });
   }
 
+  /** Scoped write transport for the frozen Project bootstrap endpoint; no CSRF getter. */
+  async postProjectCreate(body: string, idempotencyKey: string): Promise<Response> {
+    if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
+    if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
+    if (typeof body !== "string" || new TextEncoder().encode(body).length > 8192 || body.length === 0
+      || typeof idempotencyKey !== "string" || !/^[\x20-\x7e]{16,128}$/.test(idempotencyKey)) {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    }
+    this.#busy = true;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      const fetcher = this.fetcher;
+      const response = await fetcher("/api/v1/projects", { method: "POST", credentials: "same-origin",
+        cache: "no-store", redirect: "error", headers: { Accept: "application/json",
+          "Content-Type": "application/json", "X-CSRF-Token": this.#csrf,
+          "Idempotency-Key": idempotencyKey }, body, signal: controller.signal });
+      if (controller.signal.aborted) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+      if (response.status === 401) { this.#csrf = null; this.#view = null; }
+      return response;
+    } catch {
+      // A timed-out idempotent command may have committed; do not retry or rotate its key here.
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    } finally {
+      window.clearTimeout(timer);
+      this.#busy = false;
+    }
+  }
+
   async changePassword(currentPassword: string, newPassword: string, idempotencyKey: string): Promise<number> {
     const validPassword = (value: unknown): value is string => {
       if (typeof value !== "string" || value.includes("\0")) return false;
