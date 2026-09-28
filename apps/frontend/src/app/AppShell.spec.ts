@@ -27,9 +27,10 @@ describe("AppShell", () => {
     await flushPromises();
 
     expect(wrapper.get("h1").text()).toContain("项目实施信息");
-    expect(wrapper.findAll("nav a")).toHaveLength(2);
+    expect(wrapper.findAll("nav a")).toHaveLength(3);
     expect(wrapper.get('nav[aria-label="主导航"]').classes()).toContain("primary-nav");
     expect(wrapper.get('nav a[href="/login"]').text()).toBe("账户与登录");
+    expect(wrapper.get('nav a[href="/projects"]').text()).toBe("我的项目");
     expect(wrapper.text()).not.toContain("客户项目列表");
   });
 
@@ -98,5 +99,37 @@ describe("AppShell", () => {
     expect(fresh.find(".auth-identity").exists()).toBe(false);
     expect(fresh.find('form[aria-label="修改本人密码"]').exists()).toBe(false);
     fresh.unmount();
+  });
+
+  it("reaches the authorized project list after login without treating the Auth summary as project data", async () => {
+    const id = "01234567-89ab-4cde-8123-456789abcdef";
+    const auth = new Response(JSON.stringify({ data: {
+      user: { user_id: id, username_display: "合成用户" }, deployment_role: "NONE",
+      password_change_required: false,
+      authorized_projects: [{ project_id: id, name: "摘要项目", role: "PROJECT_MANAGER" }],
+      absolute_expires_at: "2030-01-01T12:00:00Z", idle_expires_at: "2030-01-01T11:00:00Z",
+      csrf_token: "a".repeat(64),
+    }, trace_id: id }), { headers: { "Content-Type": "application/json" } });
+    const list = new Response(JSON.stringify({ data: { items: [], next_cursor: null, has_more: false }, trace_id: id }),
+      { headers: { "Content-Type": "application/json" } });
+    const fetcher = vi.fn((url: string) => Promise.resolve(url === "/health/ready" ? readyResponse()
+      : url === "/api/v1/auth/login" ? auth : list));
+    vi.stubGlobal("fetch", fetcher);
+    const router = createAppRouter(createMemoryHistory());
+    await router.push("/login");
+    await router.isReady();
+    const wrapper = mount(AppShell, { global: { plugins: [router] } });
+    await flushPromises();
+    await wrapper.get('input[name="username"]').setValue("user");
+    await wrapper.get('input[name="password"]').setValue("synthetic-only");
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+    await router.push("/projects");
+    await flushPromises();
+    expect(wrapper.get("h1").text()).toBe("我的项目");
+    expect(wrapper.text()).toContain("当前没有可查看的项目");
+    expect(wrapper.text()).not.toContain("摘要项目");
+    expect(fetcher.mock.calls.filter(([url]) => url === "/api/v1/projects")).toHaveLength(1);
+    wrapper.unmount();
   });
 });

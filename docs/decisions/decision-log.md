@@ -1,5 +1,10 @@
 # 自主决策记录
 
+## DEC-20260928-403
+
+- PRJ-05-A02实施前：选择独立 `/projects` 只读列表页，以 AppShell 原 SessionClient 的内存身份作为发起条件，实际项目展示仅接实时 PROJECT_LIST；不从 Auth 授权摘要生成项目卡片，也不在该页自动 GET Session 恢复写权限。受限改密/无身份零项目请求；读错误清空旧列表。无 API/Schema/权限/依赖变化、无 CR；风险/回滚/验收详见进度。
+- Executed：7新页面/跨路由测试，前端131/typecheck/build通过；Auth摘要有项目而服务端返回空页时页面保持空。真实浏览器/PG/正式信任未跑，本项只标页面合同通过，下一 PRJ-05-A03 详情。
+
 ## DEC-20260928-402
 
 - PRJ-05-A01 实施前：冻结 PROJECT_LIST/GET 已由后端 Windows 显式组合提供，前端缺只读传输合同。选择 Project 模块独立客户端与白名单 DTO，不触碰 Auth/后端/Schema；列表遵守当前单项目上限，详情严格核对请求 ID 与强 ETag。服务端 Session/License/成员授权是唯一权限来源，管理员身份不等同项目可见权。风险/回滚与验收见进度，不新增 CR 或改写冻结合同。

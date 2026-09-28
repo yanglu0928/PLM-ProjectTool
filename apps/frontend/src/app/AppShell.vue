@@ -22,6 +22,7 @@ provide(sessionClientKey, new SessionClient());
         <nav class="primary-nav" aria-label="主导航">
           <RouterLink to="/">首页</RouterLink>
           <RouterLink to="/login">账户与登录</RouterLink>
+          <RouterLink to="/projects">我的项目</RouterLink>
         </nav>
         <ConnectionStatus />
       </div>
