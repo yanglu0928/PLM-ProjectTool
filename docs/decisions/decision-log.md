@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260928-419 — AUT-05-A12-P01 实施前
+
+- Date/WBS：2026-09-28 / Phase2 AUT-05-A12-P01；Gate2已批准，冻结API-02 `AUTH_USER_ENABLE/DISABLE`、CR-AUT-006及Windows显式write组合已验证。仅前端Auth SessionClient增加两条固定User状态POST传输，不改生产实体、Schema、Migration、后端API/权限/依赖。
+- Decision：仅接受规范非零UUID、`"vN"`强ETag、调用方原幂等Key和`enable|disable`枚举；空body且不发Content-Type，私有内存CSRF、同源Cookie/no-store/redirect-error、10秒受控超时、单次请求及Auth互斥。401清本地证明；其他状态和未知网络/超时不自动重试、不推断未执行。传输层不因self-disable的历史200盲清当前新Session，响应解释留独立客户端任务。
+- Reason/impact/rollback/validation：已有后端状态命令但前端无受控写桥接；泛化任意URL/Body会扩大调用面。强版本/原Key防止非预期状态转换，服务端继续逐次重核Session/License/CSRF/权限。回滚撤方法和测试，无迁移；验证请求精确形状、无证明零请求、错误/互斥/超时/401、frontend test/typecheck/build。正式浏览器/PG、状态DTO和管理UI另验。
+- Executed：新增固定启停POST传输及6项合同测试，请求不发送body/Content-Type，原Key/强If-Match/私有CSRF不出客户端，401清本地证明，超时单次停止而保留原会话。前端271/271、typecheck/build通过；未本项进行真实HTTP/PG或UI端到端，下一P02解析安全响应和确定/未知结果。
+
 ## DEC-20260928-418 — AUT-05-A11-P02 实施前
 
 - Phase/WBS：Phase2/AUT-05-A11-P02；P01用户列表页面合同及现有Windows11隔离浏览器/PG夹具已具备。本项只运行既有两合成用户夹具，在本机浏览器验证匿名、普通用户及部署管理员的列表入口，不改生产代码/Schema/API/权限/依赖。

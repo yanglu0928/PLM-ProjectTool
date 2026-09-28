@@ -442,4 +442,76 @@ describe("SessionClient", () => {
     expect(api.canSubmit).toBe(true);
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
+
+  it.each(["enable", "disable"])("posts only the frozen %s User state command with an empty body", async (action) => {
+    const result = response({ user_id: id, account_state: action === "enable" ? "ENABLED" : "DISABLED" });
+    const { api, fetcher } = client(response(session()), result);
+    await api.login("admin", "synthetic-only");
+    await expect(api.postAdminUserState(id, action as "enable" | "disable", '"v17"',
+      "synthetic-user-state-0001")).resolves.toBe(result);
+    expect(fetcher.mock.calls[1]).toEqual([`/api/v1/admin/users/${id}:${action}`, {
+      method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error",
+      headers: { Accept: "application/json", "X-CSRF-Token": token,
+        "Idempotency-Key": "synthetic-user-state-0001", "If-Match": '"v17"' },
+      signal: expect.any(AbortSignal),
+    }]);
+    expect(api.canSubmit).toBe(true);
+    expect(JSON.stringify(api)).not.toContain(token);
+  });
+
+  it("rejects invalid User state path, version, action and key without network", async () => {
+    const { api, fetcher } = client(response(session()));
+    await api.login("admin", "synthetic-only");
+    const invalid: Array<[string, "enable" | "disable", string, string]> = [
+      ["../other", "disable", '"v1"', "synthetic-user-state-0001"],
+      [id, "delete" as "disable", '"v1"', "synthetic-user-state-0001"],
+      [id, "enable", 'W/"v1"', "synthetic-user-state-0001"],
+      [id, "enable", '"v0"', "synthetic-user-state-0001"],
+      [id, "enable", '"v9007199254740992"', "synthetic-user-state-0001"],
+      [id, "enable", '"v1"', "short"],
+    ];
+    for (const args of invalid) {
+      await expect(api.postAdminUserState(...args)).rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    }
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("requires a fresh CSRF token for User state commands", async () => {
+    const readOnly = session(); delete (readOnly as Partial<typeof readOnly>).csrf_token;
+    const { api, fetcher } = client(response(readOnly));
+    await api.current();
+    await expect(api.postAdminUserState(id, "disable", '"v1"', "synthetic-user-state-0001"))
+      .rejects.toMatchObject({ code: "AUTH_RELOGIN_REQUIRED" });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps original write proof on uncertain User state result but clears it on 401", async () => {
+    const { api, fetcher } = client(response(session()), new Response("{}", { status: 503 }),
+      new Response("{}", { status: 401 }));
+    await api.login("admin", "synthetic-only");
+    await api.postAdminUserState(id, "disable", '"v1"', "synthetic-user-state-0001");
+    expect(api.canSubmit).toBe(true);
+    await api.postAdminUserState(id, "disable", '"v1"', "synthetic-user-state-0001");
+    expect(api.view).toBeNull();
+    expect(api.canSubmit).toBe(false);
+    expect(fetcher).toHaveBeenCalledTimes(3);
+  });
+
+  it("allows no overlapping Auth command and never retries timed-out User state POST", async () => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn().mockResolvedValueOnce(response(session()))
+      .mockImplementationOnce((_path: string, options: RequestInit) => new Promise((_done, reject) => {
+        options.signal?.addEventListener("abort", () => reject(new Error("synthetic timeout")));
+      }));
+    const api = new SessionClient(fetcher as typeof fetch, 100);
+    await api.login("admin", "synthetic-only");
+    const pending = expect(api.postAdminUserState(id, "disable", '"v1"', "synthetic-user-state-0001"))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    await expect(api.postProjectCreate("{}", "synthetic-project-0001"))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_BUSY" });
+    await vi.advanceTimersByTimeAsync(101);
+    await pending;
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(api.canSubmit).toBe(true);
+  });
 });
