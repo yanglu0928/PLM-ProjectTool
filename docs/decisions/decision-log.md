@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260928-433 — PRJ-05-A06-P03 成员历史隔离浏览器联调实施前
+
+- Date/WBS：2026-09-28 / Phase2 PRJ-05-A06-P03。冻结`PROJECT_MEMBER_LIST`、P01客户端/P02页面、后端Windows显式只读组合均已具备；仅扩展自有一次性PG/Vault/loopback浏览器夹具的互斥模式，不改生产API/Schema/权限/依赖。
+- Decision：合成ProjectManager、ImplementationMember及50条额外成员历史，其中最后一条为REMOVED；浏览器先验普通成员详情可读而成员历史不可读，再验负责人50条首页/2条续页与移除历史。独立`--member-api-only`核实际HTTP状态、跨项目404、不同`page_size`游标拒绝与清理。临时数据库/角色/Vault由夹具统一回收，SQL核52条历史/51条ACTIVE及测试Session。
+- Impact/rollback/validation：风险是PG服务停止、浏览器轮次切换导致验证进程中断或临时源残留；先核精确环境和命名源，完成时必须`VERIFY` exit0与自动清理，异常则以原进程/精确资源核实，不虚报。测试模式可撤，无Migration/升级。仅Windows11 loopback合成License，不替代正式信任、Server2025/Debian、性能/Gate3。
+- Precondition observation：本轮开始本机既有PG18服务已停止；从原数据目录启动，日志显示WAL自动恢复并就绪，`prj05a04_%`临时库为0；再次停止的原因未证实，不能将此环境事件记为产品通过或缺陷结论。
+- Executed/evidence：`--member-api-only` exit0：普通成员/无成员管理员成员历史404、负责人50+2/含一移除、外项目404、换page_size游标400，SQL52历史/51有效/3会话并自动清理。实际IAB：合成实施成员可见OWNED详情，但成员历史统一无权；合成负责人首页50条，下一页显示`Synthetic History 48/49`，最后一条“已移除”。`--member-browser` `VERIFY` exit0：SQL52历史/51有效/2会话，服务/库/角色/Vault清理通过；旧`--api-only`回归exit0，外部复查临时库0。无生产变更；正式信任/其他平台/性能/Gate3仍未验。
+
 ## DEC-20260928-432 — PRJ-05-A06-P02 项目成员历史页面实施前
 
 - Date/WBS：2026-09-28 / Phase2 PRJ-05-A06-P02。P01安全只读客户端与冻结`PROJECT_MEMBER_LIST`、现有项目详情页已具备；仅新增前端Project成员历史页面、项目详情入口和路由/测试，不改后端、实体、Schema/Migration、权限或依赖。

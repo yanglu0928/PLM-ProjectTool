@@ -136,6 +136,42 @@ def verify_create_http(origin: str, manager: uuid.UUID) -> uuid.UUID:
         return created
 
 
+def verify_member_http(origin: str, owned: uuid.UUID, foreign: uuid.UUID):
+    with httpx.Client(base_url=origin, timeout=20) as viewer:
+        login = viewer.post("/api/v1/auth/login", headers={"Origin": origin},
+            json={"username": "Synthetic Project Viewer", "password": "synthetic-project-only-password"})
+        assert login.status_code == 200, login.text
+        assert viewer.get(f"/api/v1/projects/{owned}").status_code == 200
+        denied = viewer.get(f"/api/v1/projects/{owned}/members?page_size=50")
+        assert denied.status_code == 404 and denied.json()["error"]["code"] == "RESOURCE_NOT_FOUND"
+    with httpx.Client(base_url=origin, timeout=20) as admin:
+        login = admin.post("/api/v1/auth/login", headers={"Origin": origin},
+            json={"username": "Synthetic Project Admin", "password": "synthetic-project-only-password"})
+        assert login.status_code == 200, login.text
+        assert admin.get(f"/api/v1/projects/{owned}/members?page_size=50").status_code == 404
+    with httpx.Client(base_url=origin, timeout=20) as manager:
+        login = manager.post("/api/v1/auth/login", headers={"Origin": origin},
+            json={"username": "Synthetic Project Member", "password": "synthetic-project-only-password"})
+        assert login.status_code == 200, login.text
+        first = manager.get(f"/api/v1/projects/{owned}/members?page_size=50")
+        assert first.status_code == 200, first.text
+        page = first.json()["data"]
+        assert len(page["items"]) == 50 and page["has_more"] is True and page["next_cursor"]
+        second = manager.get(f"/api/v1/projects/{owned}/members", params={"page_size": 50, "cursor": page["next_cursor"]})
+        assert second.status_code == 200, second.text
+        tail = second.json()["data"]
+        assert len(tail["items"]) == 2 and tail["has_more"] is False and tail["next_cursor"] is None
+        items = page["items"] + tail["items"]
+        assert len({item["member_id"] for item in items}) == 52
+        assert sum(item["state"] == "REMOVED" for item in items) == 1
+        assert not any("password_hash" in str(item) for item in items)
+        assert manager.get(f"/api/v1/projects/{foreign}/members?page_size=50").status_code == 404
+        wrong_size = manager.get(f"/api/v1/projects/{owned}/members",
+            params={"page_size": 20, "cursor": page["next_cursor"]})
+        assert wrong_size.status_code == 400, wrong_size.text
+    print("PROJECT_MEMBER_BROWSER_HTTP PASS: viewer/admin404, manager50+2, removed history, foreign404, cursor binding400", flush=True)
+
+
 def main():
     suffix = uuid.uuid4().hex[:12]
     dbname = role = "prj05a04_" + suffix
@@ -167,7 +203,9 @@ def main():
                     create_mode = "--create-api-only" in sys.argv[1:] or "--create-browser" in sys.argv[1:]
                     state_mode = "--user-state-browser" in sys.argv[1:]
                     name_mode = "--user-name-browser" in sys.argv[1:]
-                    if sum((create_mode, state_mode, name_mode)) > 1:
+                    member_mode = ("--member-browser" in sys.argv[1:]
+                                   or "--member-api-only" in sys.argv[1:])
+                    if sum((create_mode, state_mode, name_mode, member_mode)) > 1:
                         raise ValueError("Browser write modes must be exclusive")
                     manager = (insert_user(db, "Synthetic First Manager", hashed.password_hash, hashed.algorithm_id)
                                if create_mode else None)
@@ -184,6 +222,22 @@ def main():
                     db.execute("INSERT INTO plm.prj_project_members "
                         "(project_id,user_id,department_id,project_role) "
                         "VALUES (%s,%s,%s,'PROJECT_MANAGER')", (project, member, department))
+                    if member_mode:
+                        viewer = insert_user(db, "Synthetic Project Viewer", hashed.password_hash, hashed.algorithm_id)
+                        db.execute("INSERT INTO plm.prj_project_members "
+                            "(project_id,user_id,department_id,project_role) "
+                            "VALUES (%s,%s,%s,'IMPLEMENTATION_MEMBER')", (project, viewer, department))
+                        for index in range(50):
+                            history_user = insert_user(db, f"Synthetic History {index:02d}",
+                                                       hashed.password_hash, hashed.algorithm_id)
+                            historical = db.execute("INSERT INTO plm.prj_project_members "
+                                "(project_id,user_id,department_id,project_role) "
+                                "VALUES (%s,%s,%s,'CUSTOMER_MEMBER') RETURNING project_member_id",
+                                (project, history_user, department)).fetchone()[0]
+                            if index == 49:
+                                db.execute("UPDATE plm.prj_project_members SET state='REMOVED', "
+                                    "ended_at=clock_timestamp(), lock_version=1 WHERE project_member_id=%s",
+                                    (historical,))
                 source.write_database_url(url.render_as_string(hide_password=False), target=target)
                 try:
                     with tempfile.TemporaryDirectory(prefix="plm-project-browser-") as directory, ExitStack() as stack:
@@ -243,6 +297,8 @@ def main():
                             created = verify_create_http(origin, manager)
                         elif "--api-only" in sys.argv[1:]:
                             verify_http(origin, project, foreign)
+                        elif "--member-api-only" in sys.argv[1:]:
+                            verify_member_http(origin, project, foreign)
                         else:
                             actions = queue.Queue()
                             Thread(target=lambda: actions.put(sys.stdin.readline().strip()), daemon=True).start()
@@ -253,9 +309,16 @@ def main():
                             session_count = db.execute("SELECT count(*) FROM plm.auth_sessions").fetchone()[0]
                             if "--api-only" in sys.argv[1:] or "--create-api-only" in sys.argv[1:]:
                                 assert session_count == 2
+                            elif "--member-api-only" in sys.argv[1:]:
+                                assert session_count == 3
                             else:
                                 assert session_count >= (1 if create_mode else 2)
-                            assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE state='ACTIVE'").fetchone()[0] == (2 if expected == 3 else 1)
+                            active_expected = 51 if member_mode else (2 if expected == 3 else 1)
+                            assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE state='ACTIVE'").fetchone()[0] == active_expected
+                            if member_mode:
+                                assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE project_id=%s", (project,)).fetchone()[0] == 52
+                                assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE project_id=%s AND state='REMOVED'", (project,)).fetchone()[0] == 1
+                                print("PROJECT_MEMBER_BROWSER_DATABASE PASS: 52 history, 51 active, one removed", flush=True)
                             if expected == 3:
                                 if "--create-browser" in sys.argv[1:]:
                                     created = db.execute("SELECT project_id FROM plm.prj_projects WHERE project_code_normalized='create-p04'").fetchone()[0]
@@ -272,7 +335,7 @@ def main():
                                 assert db.execute("SELECT username_display,username_normalized,state,lock_version FROM plm.auth_users WHERE user_id=%s", (member,)).fetchone() == (renamed, renamed.lower(), "ENABLED", 1)
                                 assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='USER_NAME_CHANGED'", (member,)).fetchone()[0] == 1
                                 print("USER_NAME_BROWSER_DATABASE PASS: same user renamed/v1, one audit event", flush=True)
-                        print(f"PROJECT_BROWSER_DATABASE_COUNTS PASS: {expected} projects, {session_count} sessions, {expected - 1} active members", flush=True)
+                        print(f"PROJECT_BROWSER_DATABASE_COUNTS PASS: {expected} projects, {session_count} sessions, {active_expected} active members", flush=True)
                 finally:
                     if proxy:
                         if proxy.poll() is None:
