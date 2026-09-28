@@ -55,7 +55,7 @@ onUnmounted(() => { mounted = false; });
       <p v-if="page && page.items.length === 0" role="status">当前没有可查看的项目。部署管理员身份本身不授予项目成员权限。</p>
       <ul v-if="page && page.items.length" aria-label="当前授权项目">
         <li v-for="project in page.items" :key="project.project_id">
-          <strong>{{ project.name }}</strong>
+          <RouterLink :to="{ name: 'project-detail', params: { projectId: project.project_id } }">{{ project.name }}</RouterLink>
           <span>编号：{{ project.code }} · {{ project.state === 'ACTIVE' ? '进行中' : '已归档' }}</span>
         </li>
       </ul>

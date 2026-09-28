@@ -9,6 +9,7 @@ import HomeView from "@/app/views/HomeView.vue";
 import NotFoundView from "@/app/views/NotFoundView.vue";
 import LoginView from "@/modules/auth/views/LoginView.vue";
 import ProjectListView from "@/modules/project/views/ProjectListView.vue";
+import ProjectDetailView from "@/modules/project/views/ProjectDetailView.vue";
 
 export function createAppRouter(
   history: RouterHistory = createWebHistory(),
@@ -30,6 +31,11 @@ export function createAppRouter(
         path: "/projects",
         name: "projects",
         component: ProjectListView,
+      },
+      {
+        path: "/projects/:projectId",
+        name: "project-detail",
+        component: ProjectDetailView,
       },
       {
         path: "/:pathMatch(.*)*",
