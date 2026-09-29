@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260929-468 — PRJ-05-A14-P04 Windows 11 项目归档端到端
+
+- Date/WBS：2026-09-29 / Phase2 PRJ-05-A14-P04。P01～P03、后端 PRJ-04-A08-P03 与现有隔离浏览器/PG 夹具前置满足。
+- Decision：增加互斥 archive API-only/browser 合成验收模式；仅归档每轮随机库中的 OWNED 项目，验证匿名/非负责人/CSRF/外项目/缺版本拒绝、首次 200/同 Key 重放/Key 冲突及独立 GET。浏览器从我的项目进入授权详情，核明确单向影响与勾选，确认后仅显示首次回执，再独立刷新读取 ARCHIVED 且无再归档入口。SQL 核 OWNED ARCHIVED/v1、FOREIGN ACTIVE/v0、单 Audit/完成收据、原成员不被误删；随机库/角色/Vault 精确清理。原 PoC PostgreSQL 启停状态另行核查，异常不虚报正常关闭。
+- Impact/rollback/validation：只改自有隔离验收夹具/进度，不改生产 API/Schema/权限/依赖。风险为误碰非临时项目或本机 PG 异常中止，以唯一临时库、固定合成项目和最终存在性检查控制；回滚撤新 fixture 模式。正式信任/其他平台/性能/Gate 独立验收。
+- Executed：Windows 11 API-only 与实际 IAB 浏览器两轮独立随机库均 exit0。HTTP 匿名/非负责人/缺 CSRF/跨项目/缺 If-Match 拒绝、首次 200 与同 Key 重放、异版本同 Key 冲突及独立详情 GET 通过；浏览器显式确认后先见首次回执，再刷新见 ARCHIVED 且无归档入口。SQL 两轮均核 OWNED ARCHIVED/v1、FOREIGN ACTIVE/v0、负责人保留及恰一 Audit/收据；临时数据库/角色/Vault 精确清理。PoC PG 启动前处于停止，验收后确认运行并正常 fast stop 恢复停止；启动时有可能残留旧 PID 提示，原因未证实。无生产 API/Schema/权限/依赖变更，不据此关闭正式信任、其他平台、性能质量、Gate3 或程序包验收。
+
 ## DEC-20260929-467 — PRJ-05-A14-P03 项目归档显式确认界面
 
 - Date/WBS：2026-09-29 / Phase2 PRJ-05-A14-P03。P01/P02、安全项目详情 GET 与冻结归档合同前置满足；只能从服务器详情读取 ACTIVE 项目与强版本，不使用路由参数当实体证明。

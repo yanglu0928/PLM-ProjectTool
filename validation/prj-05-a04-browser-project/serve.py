@@ -136,6 +136,50 @@ def verify_create_http(origin: str, manager: uuid.UUID) -> uuid.UUID:
         return created
 
 
+def verify_archive_http(origin: str, owned: uuid.UUID, foreign: uuid.UUID):
+    route = f"/api/v1/projects/{owned}:archive"
+    key = "synthetic-project-archive-0001"
+    with httpx.Client(base_url=origin, timeout=20) as anonymous:
+        assert anonymous.post(route, headers={"Origin": origin,
+            "If-Match": '"v0"', "Idempotency-Key": key}).status_code == 401
+    with httpx.Client(base_url=origin, timeout=20) as admin:
+        login = admin.post("/api/v1/auth/login", headers={"Origin": origin},
+            json={"username": "Synthetic Project Admin", "password": "synthetic-project-only-password"})
+        assert login.status_code == 200
+        denied = admin.post(route, headers={"Origin": origin,
+            "X-CSRF-Token": login.json()["data"]["csrf_token"],
+            "If-Match": '"v0"', "Idempotency-Key": key})
+        assert denied.status_code == 404, denied.text
+    with httpx.Client(base_url=origin, timeout=20) as manager:
+        login = manager.post("/api/v1/auth/login", headers={"Origin": origin},
+            json={"username": "Synthetic Project Member", "password": "synthetic-project-only-password"})
+        assert login.status_code == 200
+        headers = {"Origin": origin, "X-CSRF-Token": login.json()["data"]["csrf_token"],
+                   "If-Match": '"v0"', "Idempotency-Key": key}
+        assert manager.post(route, headers={"Origin": origin,
+            "If-Match": '"v0"', "Idempotency-Key": key}).status_code == 403
+        denied = manager.post(f"/api/v1/projects/{foreign}:archive", headers=headers)
+        assert denied.status_code == 404, denied.text
+        missing = manager.post(route, headers={"Origin": origin,
+            "X-CSRF-Token": headers["X-CSRF-Token"], "Idempotency-Key": key})
+        assert missing.status_code == 428, missing.text
+        first = manager.post(route, headers=headers)
+        replay = manager.post(route, headers=headers)
+        assert first.status_code == replay.status_code == 200, (first.text, replay.text)
+        assert first.headers["ETag"] == replay.headers["ETag"] == '"v1"'
+        assert first.json()["data"] == replay.json()["data"]
+        result = first.json()["data"]
+        assert result["project_id"] == str(owned) and result["code"] == "OWNED"
+        assert result["name"] == "Synthetic Owned Project" and result["state"] == "ARCHIVED"
+        assert result["etag"] == '"v1"'
+        conflict = manager.post(route, headers={**headers, "If-Match": '"v1"'})
+        assert conflict.status_code == 409 and conflict.json()["error"]["code"] == "CONFLICT_IDEMPOTENCY", conflict.text
+        detail = manager.get(f"/api/v1/projects/{owned}")
+        assert detail.status_code == 200 and detail.headers["ETag"] == '"v1"', detail.text
+        assert detail.json()["data"]["state"] == "ARCHIVED"
+    print("PROJECT_ARCHIVE_HTTP PASS: anonymous401/admin404/CSRF403/foreign404/IfMatch428/200-replay/key-conflict409/detail", flush=True)
+
+
 def verify_member_http(origin: str, owned: uuid.UUID, foreign: uuid.UUID):
     with httpx.Client(base_url=origin, timeout=20) as viewer:
         login = viewer.post("/api/v1/auth/login", headers={"Origin": origin},
@@ -475,6 +519,7 @@ def main():
                     member = insert_user(db, "Synthetic Project Member", hashed.password_hash, hashed.algorithm_id)
                     admin_user = insert_user(db, "Synthetic Project Admin", hashed.password_hash, hashed.algorithm_id)
                     create_mode = "--create-api-only" in sys.argv[1:] or "--create-browser" in sys.argv[1:]
+                    archive_mode = "--archive-api-only" in sys.argv[1:] or "--archive-browser" in sys.argv[1:]
                     state_mode = "--user-state-browser" in sys.argv[1:]
                     name_mode = "--user-name-browser" in sys.argv[1:]
                     member_create_mode = ("--member-create-browser" in sys.argv[1:]
@@ -493,7 +538,7 @@ def main():
                                                   or "--department-deactivate-api-only" in sys.argv[1:])
                     member_mode = ("--member-browser" in sys.argv[1:]
                                    or "--member-api-only" in sys.argv[1:])
-                    if sum((create_mode, state_mode, name_mode, member_mode, member_create_mode,
+                    if sum((create_mode, archive_mode, state_mode, name_mode, member_mode, member_create_mode,
                             member_patch_mode, member_state_mode, department_history_mode,
                             department_create_mode, department_patch_mode,
                             department_deactivate_mode)) > 1:
@@ -632,6 +677,8 @@ def main():
                         if "--create-api-only" in sys.argv[1:]:
                             assert manager is not None
                             created = verify_create_http(origin, manager)
+                        elif "--archive-api-only" in sys.argv[1:]:
+                            verify_archive_http(origin, project, foreign)
                         elif "--api-only" in sys.argv[1:]:
                             verify_http(origin, project, foreign)
                         elif "--member-api-only" in sys.argv[1:]:
@@ -666,6 +713,10 @@ def main():
                                 assert session_count == 1
                             elif "--api-only" in sys.argv[1:] or "--create-api-only" in sys.argv[1:]:
                                 assert session_count == 2
+                            elif archive_mode and "--archive-browser" in sys.argv[1:]:
+                                assert session_count >= 1
+                            elif archive_mode:
+                                assert session_count == 2
                             elif "--member-api-only" in sys.argv[1:]:
                                 assert session_count == 3
                             elif member_patch_mode:
@@ -694,6 +745,20 @@ def main():
                                 assert session_count >= (1 if create_mode else 2)
                             active_expected = 51 if member_mode else (2 if expected == 3 or member_create_mode or member_patch_mode else 1)
                             assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE state='ACTIVE'").fetchone()[0] == active_expected
+                            if archive_mode:
+                                assert db.execute("SELECT state,lock_version FROM plm.prj_projects WHERE project_id=%s",
+                                    (project,)).fetchone() == ("ARCHIVED", 1)
+                                assert db.execute("SELECT state,lock_version FROM plm.prj_projects WHERE project_id=%s",
+                                    (foreign,)).fetchone() == ("ACTIVE", 0)
+                                assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE project_id=%s "
+                                    "AND project_role='PROJECT_MANAGER' AND state='ACTIVE'",
+                                    (project,)).fetchone()[0] == 1
+                                assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s "
+                                    "AND action='PROJECT_ARCHIVED'", (project,)).fetchone()[0] == 1
+                                assert db.execute("SELECT count(*) FROM plm.plt_idempotency_receipts "
+                                    "WHERE operation='V1_PROJECT_ARCHIVE' AND state='COMPLETED' "
+                                    "AND result_ref_id=%s", (project,)).fetchone()[0] == 1
+                                print("PROJECT_ARCHIVE_DATABASE PASS: owned ARCHIVED/v1, foreign ACTIVE/v0, manager retained, one Audit/receipt", flush=True)
                             if member_create_mode:
                                 assert target_user is not None
                                 member_created = db.execute("SELECT project_member_id,department_id,project_role,state "

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-29：0.1.0.dev0/PRJ-05-A14-P04完成 Windows 11 隔离合成项目归档 HTTP/浏览器/PG 验收：权限/CSRF/跨项目/版本及原 Key 重放与冲突、显式确认、首次回执和独立 ARCHIVED 重读；SQL 单 Audit/完成收据、负责人保留与随机资源清理均 PASS。兼容 DB0049/冻结 API，无生产程序/Schema/Migration/依赖或升级变化；PoC PG 恢复原停止，启动旧 PID 提示原因未证实。正式信任/其他平台/性能质量/Gate3/可用包待。
+
 - 2026-09-29：0.1.0.dev0/PRJ-05-A14-P03项目详情新增负责人单向归档显式确认；成功或未知均清旧详情、首次回执与当前 GET 分离，未知原Key恢复须重读原ACTIVE/同版本，冲突锁页并丢弃跨项目迟到结果。前端720项/typecheck/build通过。兼容DB0049/冻结API，无Schema/Migration/依赖或升级变化；实际浏览器PG、正式信任/其他平台/性能质量/Gate3/包待。
 
 - 2026-09-29：0.1.0.dev0/PRJ-05-A14-P02新增项目归档首次回执安全客户端：ACTIVE原项目/强版/原Key、ARCHIVED/v+1及原字段/响应ETag绑定，同Key重放不冒充当前状态，已知拒绝、伪成功与未知/断线分流；前端715项/typecheck/build通过。兼容DB0049/冻结API，无Schema/Migration/依赖或升级变化；确认页/浏览器PG、正式信任/其他平台/性能质量/Gate3/包待。
