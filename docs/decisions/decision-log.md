@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260929-447 — PRJ-05-A09-P02 成员状态首次回执客户端
+
+- Date/WBS：2026-09-29 / Phase2 PRJ-05-A09-P02；P01 传输及冻结三状态后端首次快照/幂等合同已具备。
+- Decision：使用已读取成员安全快照加动作/原幂等 Key 校验请求；仅合规 200、同一成员/User、角色/部门/生效时间保持、目标状态及 vN→vN+1/响应 ETag 一致时返回明确命名的 first receipt。REMOVED 要有 ended_at，其他状态无 ended_at；回执不宣称当前状态。401/权限/版本/状态/幂等冲突等已知拒绝单独分类；超时、503、坏 JSON/投影等为未知，调用方保留原动作/Key/版本，不能直接新建请求。
+- Impact/rollback/validation：不改冻结 API/Schema/权限/依赖。测试输入零网络、三动作、重放首次回执、已知拒绝/未知结果与伪造响应；全前端测试/typecheck/build。风险是回执后其他管理员再次变更，P03 页面必须另行重读当前历史；回滚撤本客户端和测试，P01 传输保留。
+
 ## DEC-20260929-446 — PRJ-05-A09-P01 成员状态命令私有传输
 
 - Date/WBS：2026-09-29 / Phase2 PRJ-05-A09-P01；冻结 `PROJECT_MEMBER_SUSPEND/RESUME/REMOVE`、PRJ-04-A12-P03 Windows 显式组合和现有 SessionClient 前置满足。
