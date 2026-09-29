@@ -5,6 +5,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createAppRouter } from "@/app/router";
 import { SessionClient } from "@/modules/auth/api/sessionClient";
 import { ProjectDepartmentReadClient } from "@/modules/project/api/projectDepartmentReadClient";
+import { ProjectDepartmentPatchClient, ProjectDepartmentPatchError } from
+  "@/modules/project/api/projectDepartmentPatchClient";
 import ProjectDepartmentListView from "./ProjectDepartmentListView.vue";
 
 const id = "01234567-89ab-4cde-8123-456789abcdef";
@@ -31,12 +33,12 @@ async function session(restricted = false, manager = false): Promise<SessionClie
   await api.login("user", "synthetic-only");
   return api;
 }
-async function view(auth: SessionClient, fetcher: typeof fetch) {
+async function view(auth: SessionClient, fetcher: typeof fetch, patcher?: ProjectDepartmentPatchClient) {
   const router = createAppRouter(createMemoryHistory());
   await router.push(`/projects/${id}/departments`);
   await router.isReady();
   const wrapper = mount(ProjectDepartmentListView, { props: { session: auth,
-    departments: new ProjectDepartmentReadClient(fetcher) }, global: { plugins: [router] } });
+    departments: new ProjectDepartmentReadClient(fetcher), patcher }, global: { plugins: [router] } });
   await flushPromises();
   return { wrapper, router };
 }
@@ -127,6 +129,89 @@ describe("ProjectDepartmentListView", () => {
     finish(response({ items: [entry], next_cursor: null, has_more: false }));
     await flushPromises();
     expect(wrapper.text()).not.toContain("研发部");
+    expect(wrapper.text()).toContain("当前项目没有部门记录");
+    wrapper.unmount();
+  });
+
+  it("offers edit only for active departments to a current manager", async () => {
+    const inactive = { ...entry, department_id: otherId, state: "INACTIVE" };
+    const fetcher = vi.fn().mockImplementation(() => Promise.resolve(
+      response({ items: [entry, inactive], next_cursor: null, has_more: false })));
+    const reader = await view(await session(), fetcher as typeof fetch);
+    expect(reader.wrapper.findAll("button").map((button) => button.text())).not.toContain("修改此部门");
+    reader.wrapper.unmount();
+    const manager = await view(await session(false, true), fetcher as typeof fetch);
+    expect(manager.wrapper.findAll("button").filter((button) => button.text() === "修改此部门")).toHaveLength(1);
+    manager.wrapper.unmount();
+  });
+
+  it("requires fresh confirmation after editing and submits the read snapshot once", async () => {
+    const auth = await session(false, true);
+    const patcher = new ProjectDepartmentPatchClient(auth);
+    const patch = vi.spyOn(patcher, "patch").mockResolvedValue({ ...entry, name: "新研发部", etag: '"v1"' });
+    const fetcher = vi.fn().mockResolvedValue(response({ items: [entry], next_cursor: null, has_more: false }));
+    const { wrapper } = await view(auth, fetcher as typeof fetch, patcher);
+    await wrapper.get("li button").trigger("click");
+    await wrapper.get("#department-edit-name").setValue("新研发部");
+    expect(wrapper.get('button[type="submit"]').attributes("disabled")).toBeDefined();
+    await wrapper.get('form input[type="checkbox"]').setValue(true);
+    await wrapper.get("#department-edit-code").setValue("NEW");
+    expect(wrapper.get('button[type="submit"]').attributes("disabled")).toBeDefined();
+    await wrapper.get('form input[type="checkbox"]').setValue(true);
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+    expect(patch).toHaveBeenCalledExactlyOnceWith(id, entry, { code: "NEW", name: "新研发部" });
+    expect(wrapper.text()).toContain("本次修改回执");
+    expect(wrapper.text()).toContain("不是当前状态证明");
+    expect(wrapper.text()).not.toContain("编号：RD");
+    expect(wrapper.find('button[type="submit"]').exists()).toBe(false);
+    wrapper.unmount();
+  });
+
+  it("locks unknown results until an independent history refresh succeeds", async () => {
+    const auth = await session(false, true);
+    const patcher = new ProjectDepartmentPatchClient(auth);
+    const patch = vi.spyOn(patcher, "patch").mockRejectedValueOnce(
+      new ProjectDepartmentPatchError("PROJECT_DEPARTMENT_PATCH_UNCERTAIN"));
+    const fetcher = vi.fn().mockResolvedValueOnce(response({ items: [entry], next_cursor: null, has_more: false }))
+      .mockResolvedValueOnce(failure(503, "SYSTEM_UNAVAILABLE"))
+      .mockResolvedValueOnce(response({ items: [{ ...entry, name: "服务器当前值", etag: '"v1"' }],
+        next_cursor: null, has_more: false }));
+    const { wrapper } = await view(auth, fetcher as typeof fetch, patcher);
+    await wrapper.get("li button").trigger("click");
+    await wrapper.get("#department-edit-name").setValue("新研发部");
+    await wrapper.get('form input[type="checkbox"]').setValue(true);
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+    expect(wrapper.text()).toContain("勿直接重试");
+    expect(wrapper.find("li button").exists()).toBe(false);
+    await wrapper.get("button").trigger("click");
+    await flushPromises();
+    expect(wrapper.text()).toContain("成功重新读取部门历史前");
+    await wrapper.get("button").trigger("click");
+    await flushPromises();
+    expect(wrapper.text()).toContain("服务器当前值");
+    expect(wrapper.find("li button").exists()).toBe(true);
+    expect(patch).toHaveBeenCalledTimes(1);
+    wrapper.unmount();
+  });
+
+  it("drops a late PATCH receipt when the project changes", async () => {
+    const auth = await session(false, true);
+    const patcher = new ProjectDepartmentPatchClient(auth);
+    let finish!: (value: typeof entry) => void;
+    const patch = vi.spyOn(patcher, "patch").mockReturnValueOnce(new Promise((resolve) => { finish = resolve; }));
+    const fetcher = vi.fn().mockResolvedValueOnce(response({ items: [entry], next_cursor: null, has_more: false }))
+      .mockResolvedValueOnce(response({ items: [], next_cursor: null, has_more: false }));
+    const { wrapper, router } = await view(auth, fetcher as typeof fetch, patcher);
+    await wrapper.get("li button").trigger("click");
+    await wrapper.get('form input[type="checkbox"]').setValue(true);
+    await wrapper.get("form").trigger("submit");
+    await router.push(`/projects/${otherId}/departments`);
+    finish({ ...entry, etag: '"v1"' });
+    await flushPromises();
+    expect(patch).toHaveBeenCalledTimes(1);
+    expect(wrapper.text()).not.toContain("本次修改回执");
     expect(wrapper.text()).toContain("当前项目没有部门记录");
     wrapper.unmount();
   });
