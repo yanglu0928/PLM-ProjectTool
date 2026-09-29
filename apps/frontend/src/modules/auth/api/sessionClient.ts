@@ -180,7 +180,8 @@ export class SessionClient {
   }
 
   /** Frozen create command paths; the CSRF token never leaves this client. */
-  async #postCommand(path: "/api/v1/projects" | "/api/v1/admin/users" | `/api/v1/projects/${string}/members`, body: string,
+  async #postCommand(path: "/api/v1/projects" | "/api/v1/admin/users"
+    | `/api/v1/projects/${string}/members` | `/api/v1/projects/${string}/departments`, body: string,
     idempotencyKey: string, maxBodyBytes: number): Promise<Response> {
     if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
     if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
@@ -216,6 +217,11 @@ export class SessionClient {
   async postProjectMemberCreate(projectId: string, body: string, idempotencyKey: string): Promise<Response> {
     if (!identifier(projectId)) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
     return this.#postCommand(`/api/v1/projects/${projectId}/members`, body, idempotencyKey, 8192);
+  }
+
+  async postProjectDepartmentCreate(projectId: string, body: string, idempotencyKey: string): Promise<Response> {
+    if (!identifier(projectId)) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    return this.#postCommand(`/api/v1/projects/${projectId}/departments`, body, idempotencyKey, 8192);
   }
 
   /** Exact candidate lookup consumes a durable rate bucket; never retry automatically. */

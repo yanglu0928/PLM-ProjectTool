@@ -451,6 +451,91 @@ describe("SessionClient", () => {
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
 
+  it("posts only the fixed Project Department endpoint with private CSRF and original key", async () => {
+    const created = response({ department_id: id }, 201);
+    const { api, fetcher } = client(response(session()), created);
+    await api.login("manager", "synthetic-only");
+    const body = JSON.stringify({ code: "RD", name: "研发部" });
+    await expect(api.postProjectDepartmentCreate(projectId, body, "synthetic-department-0001"))
+      .resolves.toBe(created);
+    expect(fetcher.mock.calls[1]).toEqual([`/api/v1/projects/${projectId}/departments`, expect.objectContaining({
+      method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error", body,
+      headers: { Accept: "application/json", "Content-Type": "application/json",
+        "X-CSRF-Token": token, "Idempotency-Key": "synthetic-department-0001" },
+    })]);
+    expect(JSON.stringify(api)).not.toContain(token);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it.each(["", "../admin", projectId.toUpperCase(), "00000000-0000-0000-0000-000000000000"])(
+    "rejects unsafe Project Department path without network: %s", async (target) => {
+      const { api, fetcher } = client(response(session()));
+      await api.login("manager", "synthetic-only");
+      await expect(api.postProjectDepartmentCreate(target, "{}", "synthetic-department-0001"))
+        .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+      expect(fetcher).toHaveBeenCalledTimes(1);
+    });
+
+  it.each([["", "synthetic-department-0001"], ["x".repeat(8193), "synthetic-department-0001"],
+    ["{}", "short"]])("rejects bad Project Department body or key before network", async (body, key) => {
+    const { api, fetcher } = client(response(session()));
+    await api.login("manager", "synthetic-only");
+    await expect(api.postProjectDepartmentCreate(projectId, body, key))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("requires an in-memory CSRF proof for Project Department creation", async () => {
+    const readOnly = session(); delete (readOnly as Partial<typeof readOnly>).csrf_token;
+    const { api, fetcher } = client(response(readOnly));
+    await api.current();
+    await expect(api.postProjectDepartmentCreate(projectId, "{}", "synthetic-department-0001"))
+      .rejects.toMatchObject({ code: "AUTH_RELOGIN_REQUIRED" });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("clears Department write proof on 401 but retains it on uncertain 503", async () => {
+    const { api, fetcher } = client(response(session()), new Response("{}", { status: 503 }),
+      new Response("{}", { status: 401 }));
+    await api.login("manager", "synthetic-only");
+    await api.postProjectDepartmentCreate(projectId, "{}", "synthetic-department-0001");
+    expect(api.canSubmit).toBe(true);
+    await api.postProjectDepartmentCreate(projectId, "{}", "synthetic-department-0001");
+    expect(api.view).toBeNull();
+    expect(api.canSubmit).toBe(false);
+    expect(fetcher).toHaveBeenCalledTimes(3);
+  });
+
+  it("keeps Auth operations exclusive while Department create is pending", async () => {
+    let resolve!: (response: Response) => void;
+    const fetcher = vi.fn().mockResolvedValueOnce(response(session()))
+      .mockReturnValueOnce(new Promise<Response>((done) => { resolve = done; }));
+    const api = new SessionClient(fetcher as typeof fetch);
+    await api.login("manager", "synthetic-only");
+    const pending = api.postProjectDepartmentCreate(projectId, "{}", "synthetic-department-0001");
+    await expect(api.renew()).rejects.toMatchObject({ code: "AUTH_CLIENT_BUSY" });
+    resolve(response({ department_id: id }, 201));
+    await pending;
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it("aborts an uncertain Department create timeout once without dropping identity", async () => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn().mockResolvedValueOnce(response(session()))
+      .mockImplementationOnce((_path: string, options: RequestInit) => new Promise((_done, reject) => {
+        options.signal?.addEventListener("abort", () => reject(new Error("private timeout")));
+      }));
+    const api = new SessionClient(fetcher as typeof fetch, 100);
+    await api.login("manager", "synthetic-only");
+    const pending = expect(api.postProjectDepartmentCreate(projectId, "{}", "synthetic-department-0001"))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    await vi.advanceTimersByTimeAsync(101);
+    await pending;
+    expect(api.view?.user.user_id).toBe(id);
+    expect(api.canSubmit).toBe(true);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
   it("posts only the fixed Admin User create endpoint with private CSRF and caller key", async () => {
     const created = response({ user_id: id }, 201);
     const { api, fetcher } = client(response(session()), created);

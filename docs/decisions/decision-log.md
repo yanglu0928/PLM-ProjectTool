@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260929-453 — PRJ-05-A11-P01 部门创建私有前端传输
+
+- Date/WBS：2026-09-29 / Phase2 PRJ-05-A11-P01；冻结 Department POST、PRJ-04-A14-P03 Windows 显式组合、前端私有 SessionClient 均已具备。
+- Decision：只在 SessionClient 增加规范 Project UUID 的固定部门 POST 路径，使用既有同源 Cookie/私有 CSRF/原调用方 Idempotency-Key、8192字节 JSON Body 上限与单次超时。401 清写证明；网络未知不自动重发或换 Key。DTO、首次结果和页面另 WBS。
+- Impact/rollback/validation：无后端 API/Schema/Migration/权限/依赖改变；撤新增方法及测试即可回滚。验证固定路径/头、坏 ID/Body/Key 零网络、只读会话/401/503、互斥和超时，并跑全前端测试/typecheck/build。
+- Executed：2026-09-29，固定路径/头、坏输入/无写证明零网络、401/503、互斥和超时用例通过；前端575项、typecheck、build PASS。业务响应和实际浏览器/PG待后续独立任务。
+
 ## DEC-20260929-452 — PRJ-05-A10-P03 Windows 11 部门历史端到端
 
 - Date/WBS：2026-09-29 / Phase2 PRJ-05-A10-P03；P01/P02与PRJ-04-A13-P04前置满足。自有浏览器/PG随机隔离 fixture，仅合成信任源。
