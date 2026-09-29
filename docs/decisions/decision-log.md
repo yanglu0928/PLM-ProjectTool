@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260929-466 — PRJ-05-A14-P02 项目归档首次回执安全客户端
+
+- Date/WBS：2026-09-29 / Phase2 PRJ-05-A14-P02。P01 固定传输、冻结 PROJECT_ARCHIVE、后端 PRJ-04-A08 与 Project 只读投影前置满足。
+- Decision：仅接受原项目 ACTIVE 安全投影、强版本及原幂等 Key；200 必须绑定原 Project ID/编号/名称/创建时间、ARCHIVED、版本 +1 与响应强 ETag。业务返回显式 `is_current_state_proof:false`，同 Key 重放仅作首次操作回执；已知 HTTP/错误码一致映射，伪成功、坏信封、断线与未知状态不得自动重发或更换 Key。
+- Impact/rollback/validation：只增前端业务客户端/测试，不改 API/Schema/权限/依赖。风险为单向归档回执误当实时状态或未知结果用新 Key 再次提交，使用原项目字段/版本绑定、首次语义和失败关闭控制；回滚撤客户端，P01 传输保留。前端测试/typecheck/build；确认页面和浏览器/PG 另项。
+- Executed：2026-09-29，原 ACTIVE/强版/原 Key、归档 ID/编号/名称/创建时间/ARCHIVED/v+1 与响应 ETag 绑定；同 Key 重放标记非当前证明，已知拒绝/伪成功/断线分离。前端 715 项/typecheck/build PASS；页面与实际浏览器/PG 另项。
+
 ## DEC-20260929-465 — PRJ-05-A14-P01 项目归档固定前端传输
 
 - Date/WBS：2026-09-29 / Phase2 PRJ-05-A14-P01。冻结 PROJECT_ARCHIVE、后端 PRJ-04-A08-P03、ProjectReadClient 及现有 SessionClient 前置满足。

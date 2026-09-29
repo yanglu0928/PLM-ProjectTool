@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-29：0.1.0.dev0/PRJ-05-A14-P02新增项目归档首次回执安全客户端：ACTIVE原项目/强版/原Key、ARCHIVED/v+1及原字段/响应ETag绑定，同Key重放不冒充当前状态，已知拒绝、伪成功与未知/断线分流；前端715项/typecheck/build通过。兼容DB0049/冻结API，无Schema/Migration/依赖或升级变化；确认页/浏览器PG、正式信任/其他平台/性能质量/Gate3/包待。
+
 - 2026-09-29：0.1.0.dev0/PRJ-05-A14-P01新增项目归档固定前端POST传输：规范Project ID、强If-Match、原幂等Key、空Body、私有CSRF、同源单次提交、401清证明与超时不重发；前端687项/typecheck/build通过。兼容DB0049/冻结API，无后端/Schema/Migration/依赖或升级变化；安全回执/页面/浏览器PG、正式信任/其他平台/性能质量/Gate3/包待。
 
 - 2026-09-29：0.1.0.dev0/PRJ-05-A13-P04完成Windows11隔离合成部门停用HTTP/浏览器/PG验收：在用拒绝、FREE/v0明确确认→首次v1回执→独立历史已停用，SQL单Audit/不可变结果/完成收据及两轮随机资源清理通过。首轮夹具收据关联断言错误已修并全新重跑。兼容DB0049/冻结API，无生产程序/Schema/Migration/依赖或升级变化；本地PoC PG结束时已意外停止、原因未证实，正式信任/其他平台/性能质量/Gate3/包待。
