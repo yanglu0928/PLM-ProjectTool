@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260929-488 — DOC-05-A05-P04 内容 SHA-256 与 200 回执安全客户端
+
+- Date/WBS：2026-09-29 / Phase2 DOC-05-A05-P04。冻结 `DOCUMENT_UPLOAD_CONTENT`、P02 短时意图结果与 P03 私有 PUT 前置满足。
+- Decision/Reason：用浏览器 Web Crypto 对同一不可变 Blob 计算 SHA-256，摘要成功且令牌仍未过期才调用 P03；严核 200 的项目 Upload ID、大小、摘要、detected MIME、trace/no-store，仅返回安全白名单。已知 4xx 拒绝与网络/伪 200 未知结果区分，不自动重传。无 Web Crypto/Hash 失败在网络前明确失败。首版最多 100 MB 摘要需 `arrayBuffer()`，记录峰值内存风险，实际浏览器另验。
+- Impact/rollback/validation plan：仅 Document 前端业务客户端/测试；无 API/Schema/Migration/权限/依赖变化，撤新增实现即可回滚。定向测试 SHA/原 Blob、到期/异常/权限/伪响应/不重传，前端全量/typecheck/build；真实网络 `Content-Length`、文件字节、解析和内存性能另验。
+
 ## DEC-20260929-487 — DOC-05-A05-P03 项目上传内容私有 PUT 传输
 
 - Date/WBS：2026-09-29 / Phase2 DOC-05-A05-P03。P01/P02 与后端 `DOCUMENT_UPLOAD_CONTENT` 可选 Router 均已具备；冻结内容流协议要求项目/上传 ID、Cookie/CSRF、短时 token、Content SHA-256 和长度限额。
