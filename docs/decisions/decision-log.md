@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260929-462 — PRJ-05-A13-P02 部门停用首次回执安全客户端
+
+- Date/WBS：2026-09-29 / Phase2 PRJ-05-A13-P02。P01传输、冻结停用合同、CR-PRJ-005及部门历史安全投影前置满足。
+- Decision：只允许ACTIVE原部门、强安全版本和原幂等Key；200响应必须绑定原部门ID/编码/名称/创建时间、INACTIVE及v+1强ETag。返回显式`is_current_state_proof:false`，同Key重放只能是不可变首次回执。明确错误仅按HTTP/码一致映射（含在用409），未知与断线保留原Key/ETag，不生成新请求。
+- Impact/rollback/validation：仅前端业务客户端/测试，无API/Schema/权限/依赖变化。风险为误认重放为当前状态或伪成功，严格投影与原输入/版本绑定；回滚撤客户端。前端测试/typecheck/build，页面和真实浏览器/PG另项。
+- Executed：2026-09-29，ACTIVE原值/强版本/原Key、INACTIVE/v1强ETag与ID/编号/名称/创建时间绑定、同Key重放仍非当前证明、在用部门409、伪回执/未知/断线边界验证通过；前端679项/typecheck/build PASS。页面/实际浏览器PG另项。
+
 ## DEC-20260929-461 — PRJ-05-A13-P01 部门停用固定前端传输
 
 - Date/WBS：2026-09-29 / Phase2 PRJ-05-A13-P01。冻结PROJECT_DEPARTMENT_DEACTIVATE、后端PRJ-04-A16-P03、既有SessionClient和CR-PRJ-005前置满足。

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-29：0.1.0.dev0/PRJ-05-A13-P02新增部门停用安全业务回执客户端：ACTIVE原部门/强版本/原Key、INACTIVE/v+1及字段/响应ETag绑定，同Key重放不冒充当前状态，在用409与未知/断线分流；前端679项/typecheck/build通过。兼容DB0049/冻结API，无Schema/Migration/依赖或升级变化；页面/浏览器PG、正式信任/其他平台/性能质量/Gate3/包待。
+
 - 2026-09-29：0.1.0.dev0/PRJ-05-A13-P01新增部门停用固定前端POST传输：规范双ID、强If-Match、原幂等Key、空Body、私有CSRF、同源单次提交、401清证明和超时不自动重试；前端652项/typecheck/build通过。兼容DB0049/冻结API，无后端/Schema/Migration/依赖或升级变化；业务响应/页面/浏览器PG、正式信任/其他平台/性能质量/Gate3/包待。
 
 - 2026-09-29：0.1.0.dev0/PRJ-05-A12-P04完成Windows 11隔离合成部门PATCH HTTP/浏览器/PG验收：权限/CSRF/跨项目、强版本冲突与无变化、显式确认回执/独立历史刷新；SQL NEW/v1、单Audit、无PATCH收据及随机资源清理均PASS。兼容DB0049/冻结API，无生产程序/Schema/Migration/依赖或升级变化；正式信任、其他平台、性能/质量/Gate3/可用包待。
