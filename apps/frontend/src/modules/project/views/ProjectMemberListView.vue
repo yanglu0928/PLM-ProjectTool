@@ -7,13 +7,17 @@ import { sessionClientKey } from "@/modules/auth/api/sessionContext";
 import { ProjectMemberReadClient, ProjectMemberReadError, type ProjectMemberView } from "@/modules/project/api/projectMemberReadClient";
 import { ProjectMemberChoicesClient, MemberChoicesError, type ActiveDepartment } from "@/modules/project/api/projectMemberChoicesClient";
 import { ProjectMemberPatchClient, ProjectMemberPatchError } from "@/modules/project/api/projectMemberPatchClient";
+import { ProjectMemberStateClient, ProjectMemberStateError,
+  type ProjectMemberStateAction, type ProjectMemberStateFirstReceipt } from "@/modules/project/api/projectMemberStateClient";
 
 const props = defineProps<{ session?: SessionClient; members?: ProjectMemberReadClient;
-  choices?: ProjectMemberChoicesClient; patcher?: ProjectMemberPatchClient }>();
+  choices?: ProjectMemberChoicesClient; patcher?: ProjectMemberPatchClient;
+  stateClient?: ProjectMemberStateClient }>();
 const session = toRaw(props.session ?? inject(sessionClientKey, null) ?? new SessionClient());
 const members = toRaw(props.members ?? new ProjectMemberReadClient());
 const choices = toRaw(props.choices ?? new ProjectMemberChoicesClient(session));
 const patcher = toRaw(props.patcher ?? new ProjectMemberPatchClient(session));
+const stateClient = toRaw(props.stateClient ?? new ProjectMemberStateClient(session));
 const identity = session.view;
 const route = useRoute();
 function projectId() { return typeof route.params.projectId === "string" ? route.params.projectId : ""; }
@@ -30,14 +34,79 @@ const confirm = ref(false);
 const reviewRequired = ref(false);
 const firstResult = ref<ProjectMemberView | null>(null);
 const notice = ref("");
+const stateEditor = ref<{ readonly before: ProjectMemberView; readonly action: ProjectMemberStateAction } | null>(null);
+const stateConfirm = ref(false);
+const confirmOriginal = ref(false);
+const statePending = ref<{ readonly project: string; readonly actor: string;
+  readonly before: ProjectMemberView; readonly action: ProjectMemberStateAction; readonly key: string } | null>(null);
+const firstStateReceipt = ref<ProjectMemberStateFirstReceipt | null>(null);
 let generation = 0;
 let mounted = true;
 
 function canEdit() {
-  return mounted && !reviewRequired.value && session.canSubmit
+  return mounted && !reviewRequired.value && !statePending.value && session.canSubmit
     && identity?.user.user_id === session.view?.user.user_id
     && !identity?.password_change_required
     && !!session.view?.authorized_projects.some((item) => item.project_id === projectId() && item.role === "PROJECT_MANAGER");
+}
+function canRecoverState() {
+  return mounted && !reviewRequired.value && !!statePending.value && session.canSubmit
+    && statePending.value.project === projectId()
+    && statePending.value.actor === session.view?.user.user_id
+    && !session.view?.password_change_required
+    && !!session.view?.authorized_projects.some((item) => item.project_id === projectId() && item.role === "PROJECT_MANAGER");
+}
+function allowedAction(item: ProjectMemberView, action: ProjectMemberStateAction) {
+  return (action === "suspend" && item.state === "ACTIVE")
+    || (action === "resume" && item.state === "SUSPENDED")
+    || (action === "remove" && item.state !== "REMOVED");
+}
+function openStateEditor(item: ProjectMemberView, action: ProjectMemberStateAction) {
+  if (!canEdit() || busy.value || !allowedAction(item, action)
+    || !items.value.some((entry) => entry.member_id === item.member_id && entry.etag === item.etag)) return;
+  editor.value = null; confirm.value = false;
+  stateEditor.value = Object.freeze({ before: item, action });
+  stateConfirm.value = false; notice.value = ""; error.value = "";
+}
+async function submitState() {
+  if (busy.value || reviewRequired.value) return;
+  const recovery = statePending.value;
+  if (recovery && (!canRecoverState() || !confirmOriginal.value)) return;
+  if (!recovery && (!stateEditor.value || !canEdit() || !stateConfirm.value)) return;
+  const attempt = recovery ?? (() => {
+    const selected = stateEditor.value;
+    const actor = session.view?.user.user_id;
+    return selected && actor ? Object.freeze({ project: projectId(), actor,
+      before: selected.before, action: selected.action, key: crypto.randomUUID() }) : null;
+  })();
+  if (!attempt) return;
+  const request = ++generation;
+  statePending.value = attempt;
+  stateEditor.value = null; stateConfirm.value = false; confirmOriginal.value = false;
+  busy.value = true; notice.value = ""; error.value = "";
+  let reconcile = false;
+  try {
+    const receipt = await stateClient.change(attempt.project, attempt.before, attempt.action, attempt.key);
+    if (!mounted || request !== generation || attempt.project !== projectId()) return;
+    firstStateReceipt.value = receipt;
+    statePending.value = null;
+    notice.value = "本次状态命令有首次回执；下方重新读取的成员历史才用于核对当前状态。";
+    reconcile = true;
+  } catch (failure) {
+    if (!mounted || request !== generation || attempt.project !== projectId()) return;
+    if (!(failure instanceof ProjectMemberStateError) || failure.uncertain) {
+      notice.value = "状态命令结果无法确认。原目标、动作、版本和操作记录保留在本页；核对成员历史/审计后，明确勾选才能按原记录恢复，勿生成新操作。";
+    } else if (failure.code === "CONFLICT_IDEMPOTENCY") {
+      statePending.value = null;
+      reviewRequired.value = true;
+      notice.value = "原操作记录与请求冲突，已停止本页后续提交。请核对成员历史和审计。";
+    } else {
+      statePending.value = null;
+      notice.value = `服务器拒绝本次状态命令：${failure.message} 当前历史将重新读取。`;
+    }
+    reconcile = true;
+  } finally { if (mounted && request === generation) busy.value = false; }
+  if (reconcile) await load(null, true);
 }
 watch([role, departmentId], () => { confirm.value = false; });
 
@@ -46,7 +115,7 @@ async function openEditor(item: ProjectMemberView) {
     || !items.value.some((entry) => entry.member_id === item.member_id && entry.etag === item.etag)) return;
   const request = ++generation;
   busy.value = true; error.value = ""; notice.value = "";
-  editor.value = null; departments.value = []; confirm.value = false;
+  editor.value = null; stateEditor.value = null; departments.value = []; confirm.value = false;
   try {
     const active = await choices.activeDepartments(projectId());
     if (!mounted || request !== generation || !canEdit()) return;
@@ -99,7 +168,7 @@ async function load(cursor: string | null, replace: boolean) {
   busy.value = true;
   error.value = "";
   if (replace) {
-    editor.value = null; departments.value = []; confirm.value = false;
+    editor.value = null; stateEditor.value = null; departments.value = []; confirm.value = false;
     items.value = []; nextCursor.value = null; loaded.value = false;
   }
   try {
@@ -127,6 +196,11 @@ async function load(cursor: string | null, replace: boolean) {
 watch(() => route.params.projectId, () => {
   generation += 1;
   editor.value = null;
+  stateEditor.value = null;
+  statePending.value = null;
+  stateConfirm.value = false;
+  confirmOriginal.value = false;
+  firstStateReceipt.value = null;
   departments.value = [];
   confirm.value = false;
   reviewRequired.value = false;
@@ -147,6 +221,9 @@ const roleNames: Record<ProjectMemberView["role"], string> = {
 };
 const stateNames: Record<ProjectMemberView["state"], string> = {
   ACTIVE: "有效", SUSPENDED: "暂停", REMOVED: "已移除",
+};
+const actionNames: Record<ProjectMemberStateAction, string> = {
+  suspend: "暂停", resume: "恢复", remove: "移除",
 };
 </script>
 
@@ -171,7 +248,9 @@ const stateNames: Record<ProjectMemberView["state"], string> = {
       <p v-if="error" role="alert">{{ error }}</p>
       <p v-if="notice" role="alert">{{ notice }}</p>
       <p v-if="firstResult" role="status">本次写入回执：{{ firstResult.user.display_name }} · {{ roleNames[firstResult.role] }} · {{ firstResult.department.name }} · {{ firstResult.etag }}。这不是当前状态证明。</p>
+      <p v-if="firstStateReceipt" role="status">本次状态命令首次回执：{{ firstStateReceipt.first_result.user.display_name }} · {{ stateNames[firstStateReceipt.first_result.state] }} · {{ firstStateReceipt.first_result.etag }}。它不是当前状态证明。</p>
       <p v-if="reviewRequired" role="status">本页已停止后续成员修改。核对审计与当前历史后，重新进入页面作新决定。</p>
+      <p v-if="statePending" role="status">原操作仅保留在本页内存。离开或刷新后如仍不确定，先核对历史和审计，勿使用新操作记录重做。</p>
       <p v-if="loaded && items.length === 0" role="status">当前项目没有成员记录。</p>
       <ul v-if="items.length" aria-label="项目成员历史">
         <li v-for="item in items" :key="item.member_id">
@@ -180,6 +259,9 @@ const stateNames: Record<ProjectMemberView["state"], string> = {
           <span>生效：<time :datetime="item.effective_at">{{ new Date(item.effective_at).toLocaleString('zh-CN') }}</time></span>
           <span v-if="item.ended_at">结束：<time :datetime="item.ended_at">{{ new Date(item.ended_at).toLocaleString('zh-CN') }}</time></span>
           <button v-if="canEdit() && item.state !== 'REMOVED'" type="button" :disabled="busy" @click="openEditor(item)">修改角色或部门</button>
+          <button v-if="canEdit() && item.state === 'ACTIVE'" type="button" :disabled="busy" @click="openStateEditor(item, 'suspend')">暂停成员</button>
+          <button v-if="canEdit() && item.state === 'SUSPENDED'" type="button" :disabled="busy" @click="openStateEditor(item, 'resume')">恢复成员</button>
+          <button v-if="canEdit() && item.state !== 'REMOVED'" type="button" :disabled="busy" @click="openStateEditor(item, 'remove')">移除成员</button>
         </li>
       </ul>
       <form v-if="editor && canEdit()" aria-label="修改项目成员" @submit.prevent="submitPatch">
@@ -201,6 +283,22 @@ const stateNames: Record<ProjectMemberView["state"], string> = {
         <label><input v-model="confirm" type="checkbox" name="confirm_member_patch" :disabled="busy" />我已核对目标成员、当前版本、目标角色和有效部门</label>
         <button type="submit" :disabled="busy || !confirm || !departmentId || (role === editor.role && departmentId === editor.department.department_id)">提交修改</button>
         <button type="button" :disabled="busy" @click="editor = null">取消</button>
+      </form>
+      <form v-if="stateEditor && canEdit()" aria-label="更改成员状态" @submit.prevent="submitState">
+        <h2>{{ actionNames[stateEditor.action] }}项目成员</h2>
+        <p>目标：{{ stateEditor.before.user.display_name }}（{{ stateEditor.before.user.user_id }}）</p>
+        <p>当前：{{ roleNames[stateEditor.before.role] }} · {{ stateEditor.before.department.name }} · {{ stateNames[stateEditor.before.state] }}，版本 {{ stateEditor.before.etag }}</p>
+        <p v-if="stateEditor.action === 'remove'">移除后保留历史，但不能在本页直接恢复此成员。</p>
+        <label><input v-model="stateConfirm" type="checkbox" name="confirm_member_state" :disabled="busy" />我已核对目标、当前版本，并确认{{ actionNames[stateEditor.action] }}成员</label>
+        <button type="submit" :disabled="busy || !stateConfirm">提交{{ actionNames[stateEditor.action] }}</button>
+        <button type="button" :disabled="busy" @click="stateEditor = null">取消</button>
+      </form>
+      <form v-if="statePending && canRecoverState()" aria-label="恢复原状态命令" @submit.prevent="submitState">
+        <h2>按原操作记录恢复</h2>
+        <p>原目标：{{ statePending.before.user.display_name }}（{{ statePending.before.user.user_id }}）；原动作：{{ actionNames[statePending.action] }}；原版本：{{ statePending.before.etag }}。</p>
+        <p>请先核对当前历史与审计。重放使用原操作记录，返回的也可能只是首次回执。</p>
+        <label><input v-model="confirmOriginal" type="checkbox" name="confirm_original_state" :disabled="busy" />我确认按原目标、动作、版本和操作记录恢复</label>
+        <button type="submit" :disabled="busy || !confirmOriginal">按原操作记录重试</button>
       </form>
       <button v-if="nextCursor" type="button" :disabled="busy" @click="load(nextCursor, false)">读取下一页</button>
     </template>

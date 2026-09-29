@@ -7,6 +7,7 @@ import { SessionClient } from "@/modules/auth/api/sessionClient";
 import { ProjectMemberReadClient } from "@/modules/project/api/projectMemberReadClient";
 import { ProjectMemberChoicesClient } from "@/modules/project/api/projectMemberChoicesClient";
 import { ProjectMemberPatchClient, ProjectMemberPatchError } from "@/modules/project/api/projectMemberPatchClient";
+import { ProjectMemberStateClient, ProjectMemberStateError } from "@/modules/project/api/projectMemberStateClient";
 import ProjectMemberListView from "./ProjectMemberListView.vue";
 
 const id = "01234567-89ab-4cde-8123-456789abcdef";
@@ -36,12 +37,13 @@ async function session(restricted = false, manager = false): Promise<SessionClie
   return api;
 }
 async function view(auth: SessionClient, path: string, fetcher: typeof fetch,
-  choices?: ProjectMemberChoicesClient, patcher?: ProjectMemberPatchClient) {
+  choices?: ProjectMemberChoicesClient, patcher?: ProjectMemberPatchClient,
+  stateClient?: ProjectMemberStateClient) {
   const router = createAppRouter(createMemoryHistory());
   await router.push(path);
   await router.isReady();
   const wrapper = mount(ProjectMemberListView, {
-    props: { session: auth, members: new ProjectMemberReadClient(fetcher), choices, patcher },
+    props: { session: auth, members: new ProjectMemberReadClient(fetcher), choices, patcher, stateClient },
     global: { plugins: [router] },
   });
   await flushPromises();
@@ -243,6 +245,108 @@ describe("ProjectMemberListView", () => {
     await router.push(`/projects/${otherId}/members`); await flushPromises();
     resolvePatch(entry); await flushPromises();
     expect(wrapper.text()).not.toContain("本次写入回执");
+    expect(wrapper.text()).toContain("没有成员记录");
+    wrapper.unmount();
+  });
+
+  it("requires explicit target/version confirmation before one state command and separates first receipt", async () => {
+    const auth = await session(false, true);
+    const states = new ProjectMemberStateClient(auth);
+    const suspended = { ...entry, state: "SUSPENDED" as const, etag: '"v1"' };
+    const change = vi.spyOn(states, "change").mockResolvedValue({
+      first_result: suspended, is_current_state_proof: false,
+    });
+    const fetcher = vi.fn().mockResolvedValueOnce(response({ items: [entry], next_cursor: null, has_more: false }))
+      .mockResolvedValueOnce(response({ items: [suspended], next_cursor: null, has_more: false }));
+    const { wrapper } = await view(auth, `/projects/${id}/members`, fetcher as typeof fetch,
+      undefined, undefined, states);
+    await wrapper.get("li button:nth-of-type(2)").trigger("click");
+    expect(wrapper.text()).toContain('版本 "v0"');
+    expect(wrapper.get('form[aria-label="更改成员状态"] button[type=submit]').attributes("disabled")).toBeDefined();
+    await wrapper.get('input[name="confirm_member_state"]').setValue(true);
+    await wrapper.get('form[aria-label="更改成员状态"]').trigger("submit"); await flushPromises();
+    expect(change).toHaveBeenCalledTimes(1);
+    expect(change.mock.calls[0]?.slice(0, 3)).toEqual([id, entry, "suspend"]);
+    expect(change.mock.calls[0]?.[3]).toMatch(/^[0-9a-f-]{36}$/);
+    expect(wrapper.text()).toContain("本次状态命令首次回执");
+    expect(wrapper.text()).toContain("它不是当前状态证明");
+    expect(wrapper.text()).toContain("暂停 · 研发部");
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    wrapper.unmount();
+  });
+
+  it("retains original action, version and Key on uncertain result and requires explicit original retry", async () => {
+    const auth = await session(false, true);
+    const states = new ProjectMemberStateClient(auth);
+    const suspended = { ...entry, state: "SUSPENDED" as const, etag: '"v1"' };
+    const change = vi.spyOn(states, "change")
+      .mockRejectedValueOnce(new ProjectMemberStateError("PROJECT_MEMBER_STATE_UNCERTAIN"))
+      .mockResolvedValueOnce({ first_result: suspended, is_current_state_proof: false });
+    const fetcher = vi.fn().mockImplementation(() => Promise.resolve(response({
+      items: [entry], next_cursor: null, has_more: false,
+    })));
+    const { wrapper } = await view(auth, `/projects/${id}/members`, fetcher as typeof fetch,
+      undefined, undefined, states);
+    await wrapper.get("li button:nth-of-type(2)").trigger("click");
+    await wrapper.get('input[name="confirm_member_state"]').setValue(true);
+    await wrapper.get('form[aria-label="更改成员状态"]').trigger("submit"); await flushPromises();
+    expect(change).toHaveBeenCalledTimes(1);
+    expect(wrapper.text()).toContain("原目标、动作、版本和操作记录保留");
+    expect(wrapper.find("li button").exists()).toBe(false);
+    expect(wrapper.get('form[aria-label="恢复原状态命令"] button[type=submit]').attributes("disabled")).toBeDefined();
+    await wrapper.get('input[name="confirm_original_state"]').setValue(true);
+    await wrapper.get('form[aria-label="恢复原状态命令"]').trigger("submit"); await flushPromises();
+    expect(change).toHaveBeenCalledTimes(2);
+    expect(change.mock.calls[1]).toEqual(change.mock.calls[0]);
+    expect(wrapper.text()).toContain("本次状态命令首次回执");
+    wrapper.unmount();
+  });
+
+  it("states removal keeps history and blocks resuming removed members", async () => {
+    const auth = await session(false, true);
+    const fetcher = vi.fn().mockResolvedValue(response({ items: [entry], next_cursor: null, has_more: false }));
+    const { wrapper } = await view(auth, `/projects/${id}/members`, fetcher as typeof fetch);
+    await wrapper.get("li button:nth-of-type(3)").trigger("click");
+    expect(wrapper.text()).toContain("不能在本页直接恢复");
+    expect(wrapper.get('form[aria-label="更改成员状态"] button[type=submit]').attributes("disabled")).toBeDefined();
+    wrapper.unmount();
+  });
+
+  it("locks all writes after original idempotency conflict", async () => {
+    const auth = await session(false, true);
+    const states = new ProjectMemberStateClient(auth);
+    const change = vi.spyOn(states, "change")
+      .mockRejectedValue(new ProjectMemberStateError("CONFLICT_IDEMPOTENCY"));
+    const fetcher = vi.fn().mockImplementation(() => Promise.resolve(response({
+      items: [entry], next_cursor: null, has_more: false,
+    })));
+    const { wrapper } = await view(auth, `/projects/${id}/members`, fetcher as typeof fetch,
+      undefined, undefined, states);
+    await wrapper.get("li button:nth-of-type(2)").trigger("click");
+    await wrapper.get('input[name="confirm_member_state"]').setValue(true);
+    await wrapper.get('form[aria-label="更改成员状态"]').trigger("submit"); await flushPromises();
+    expect(change).toHaveBeenCalledTimes(1);
+    expect(wrapper.text()).toContain("已停止本页后续提交");
+    expect(wrapper.find("li button").exists()).toBe(false);
+    expect(wrapper.find('form[aria-label="恢复原状态命令"]').exists()).toBe(false);
+    wrapper.unmount();
+  });
+
+  it("drops a late state receipt after project navigation", async () => {
+    const auth = await session(false, true);
+    const states = new ProjectMemberStateClient(auth);
+    let resolveState!: (value: { first_result: typeof entry; is_current_state_proof: false }) => void;
+    vi.spyOn(states, "change").mockImplementation(() => new Promise((resolve) => { resolveState = resolve; }));
+    const fetcher = vi.fn().mockResolvedValueOnce(response({ items: [entry], next_cursor: null, has_more: false }))
+      .mockResolvedValueOnce(response({ items: [], next_cursor: null, has_more: false }));
+    const { wrapper, router } = await view(auth, `/projects/${id}/members`, fetcher as typeof fetch,
+      undefined, undefined, states);
+    await wrapper.get("li button:nth-of-type(2)").trigger("click");
+    await wrapper.get('input[name="confirm_member_state"]').setValue(true);
+    await wrapper.get('form[aria-label="更改成员状态"]').trigger("submit");
+    await router.push(`/projects/${otherId}/members`); await flushPromises();
+    resolveState({ first_result: entry, is_current_state_proof: false }); await flushPromises();
+    expect(wrapper.text()).not.toContain("本次状态命令首次回执");
     expect(wrapper.text()).toContain("没有成员记录");
     wrapper.unmount();
   });
