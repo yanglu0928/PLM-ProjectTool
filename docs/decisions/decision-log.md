@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260929-485 — DOC-05-A05-P01 项目上传意图的前端私有会话桥接
+
+- Date/WBS：2026-09-29 / Phase2 DOC-05-A05-P01。输入为冻结 `DOCUMENT_UPLOAD_CREATE`、已实现的可选项目上传意图 HTTP、现有 SessionClient 私有 CSRF/互斥/幂等命令通道；Gate 2 与前置满足。
+- Decision/Reason：只新增固定 PROJECT Scope 的 UploadIntent POST 传输入口，调用方提供原请求体与原幂等键；复用私有 CSRF、同源 Cookie、超时一次和 401 清本地写证明。GLOBAL、文件内容 PUT、Commit/Abort 和页面拆成后续独立任务，避免把传输桥接误报为可用上传。
+- Impact/rollback/validation plan：无冻结 API、Schema、Migration、权限或依赖变化；撤新增方法即可回滚。验证项目 ID/Key/体积拒绝、只发固定路径、Session 缺证明、401、超时与互斥；定向及全量前端测试、typecheck/build。正式信任源和真实文件/解析链另行验证。
+
 ## DEC-20260929-484 — DOC-05-A04-P03 真实隔离文件浏览器/PG 下载验收
 
 - Date/WBS：2026-09-29 / Phase2 DOC-05-A04-P03。冻结下载 GET、后端已实现 verified snapshot/流式响应及 P01/P02 前端地址与入口满足前置。

@@ -300,6 +300,64 @@ describe("SessionClient", () => {
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
 
+  it("posts one fixed Project UploadIntent with private CSRF and the original key", async () => {
+    const created = response({ upload_id: id }, 201);
+    const { api, fetcher } = client(response(session()), created);
+    await api.login("user", "synthetic-only");
+    const body = JSON.stringify({ purpose: "SOURCE", category: "SOLUTION", title: "测试", display_name: "test.pdf" });
+    await expect(api.postProjectDocumentUploadCreate(projectId, body, "synthetic-upload-0001")).resolves.toBe(created);
+    expect(fetcher.mock.calls[1]).toEqual([`/api/v1/projects/${projectId}/document-uploads`,
+      expect.objectContaining({ method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error",
+        headers: { Accept: "application/json", "Content-Type": "application/json",
+          "X-CSRF-Token": token, "Idempotency-Key": "synthetic-upload-0001" }, body,
+        signal: expect.any(AbortSignal) })]);
+    expect(JSON.stringify(api)).not.toContain(token);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it("rejects invalid UploadIntent project, key and oversized body before transport", async () => {
+    const { api, fetcher } = client(response(session()));
+    await api.login("user", "synthetic-only");
+    for (const project of ["../other", "00000000-0000-0000-0000-000000000000", projectId.toUpperCase()]) {
+      await expect(api.postProjectDocumentUploadCreate(project, "{}", "synthetic-upload-0001"))
+        .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    }
+    await expect(api.postProjectDocumentUploadCreate(projectId, "{}", "short"))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    await expect(api.postProjectDocumentUploadCreate(projectId, "x".repeat(8193), "synthetic-upload-0001"))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("requires writable Session and clears proof on UploadIntent 401", async () => {
+    const { api, fetcher } = client(response(session()), new Response("{}", { status: 401 }));
+    await expect(api.postProjectDocumentUploadCreate(projectId, "{}", "synthetic-upload-0001"))
+      .rejects.toMatchObject({ code: "AUTH_RELOGIN_REQUIRED" });
+    await api.login("user", "synthetic-only");
+    await expect(api.postProjectDocumentUploadCreate(projectId, "{}", "synthetic-upload-0001"))
+      .resolves.toMatchObject({ status: 401 });
+    expect(api.canSubmit).toBe(false);
+    expect(api.view).toBeNull();
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps UploadIntent exclusive and does not replay an uncertain timeout", async () => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn().mockResolvedValueOnce(response(session()))
+      .mockImplementationOnce((_path: string, options: RequestInit) => new Promise((_done, reject) => {
+        options.signal?.addEventListener("abort", () => reject(new Error("synthetic transport failure")));
+      }));
+    const api = new SessionClient(fetcher as typeof fetch, 100);
+    await api.login("user", "synthetic-only");
+    const pending = expect(api.postProjectDocumentUploadCreate(projectId, "{}", "synthetic-upload-0001"))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    await expect(api.renew()).rejects.toMatchObject({ code: "AUTH_CLIENT_BUSY" });
+    await vi.advanceTimersByTimeAsync(101);
+    await pending;
+    expect(api.canSubmit).toBe(true);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
   it("does not submit Project create from a missing or read-only local session", async () => {
     const readOnly = session(); delete (readOnly as Partial<typeof readOnly>).csrf_token;
     const { api, fetcher } = client(response(readOnly));

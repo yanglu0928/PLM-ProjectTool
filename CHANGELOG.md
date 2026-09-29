@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-29：0.1.0.dev0/DOC-05-A05-P01 增加 PROJECT Document UploadIntent 固定路径的前端私有 Session/CSRF/原幂等键传输桥接；定向 139、前端全量 845 项及 typecheck/build PASS。兼容冻结 `/api/v1`/DB0049，无后端 API/Schema/Migration/权限/依赖或升级变化；业务响应校验、内容 PUT、Commit/Abort、上传 UI、真实解析、正式信任/Gate3/程序包待完成。
+
 - 2026-09-29：0.1.0.dev0/DOC-05-A04-P03 Windows 11 隔离真实文件下载 API/PG 与浏览器验收：50 字节合成文件的浏览器下载 SHA-256 与原文一致，附件/no-store/nosniff、匿名/跨项目/Range 拒绝及随机库/角色/Vault/临时文件清理完整 exit0。IAB 首轮新标签事件不可观测，改同标签并重建；前端 841 项/typecheck/build PASS。兼容冻结 `/api/v1`/DB0049，无后端 API/Schema/Migration/依赖或升级变化；过期错误页 UX、正式信任/其他平台/性能质量/Gate3/可用包待验。
 
 - 2026-09-29：0.1.0.dev0/DOC-05-A04-P02 在已受权的可用版本行提供原生附件下载入口，未加载/空态无链接且前端不缓存正文；视图定向 10、全量 841 项/typecheck/build PASS。兼容冻结 `/api/v1`/DB0049，无后端 API/Schema/Migration/依赖或升级变化；真实文件浏览器下载、正式信任/其他平台/Gate3/可用包待验。

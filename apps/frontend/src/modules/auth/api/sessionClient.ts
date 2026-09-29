@@ -181,7 +181,8 @@ export class SessionClient {
 
   /** Frozen create command paths; the CSRF token never leaves this client. */
   async #postCommand(path: "/api/v1/projects" | "/api/v1/admin/users"
-    | `/api/v1/projects/${string}/members` | `/api/v1/projects/${string}/departments`, body: string,
+    | `/api/v1/projects/${string}/members` | `/api/v1/projects/${string}/departments`
+    | `/api/v1/projects/${string}/document-uploads`, body: string,
     idempotencyKey: string, maxBodyBytes: number): Promise<Response> {
     if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
     if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
@@ -212,6 +213,12 @@ export class SessionClient {
 
   postProjectCreate(body: string, idempotencyKey: string): Promise<Response> {
     return this.#postCommand("/api/v1/projects", body, idempotencyKey, 8192);
+  }
+
+  /** Project UploadIntent only; content and finalize require separate guarded transports. */
+  postProjectDocumentUploadCreate(projectId: string, body: string, idempotencyKey: string): Promise<Response> {
+    if (!identifier(projectId)) return Promise.reject(new SessionClientError("AUTH_CLIENT_UNAVAILABLE"));
+    return this.#postCommand(`/api/v1/projects/${projectId}/document-uploads`, body, idempotencyKey, 8192);
   }
 
   /** Project PATCH has no idempotency key; an unknown outcome requires a fresh GET. */
