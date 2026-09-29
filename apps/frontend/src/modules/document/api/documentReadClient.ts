@@ -1,0 +1,163 @@
+/** Authorized Document metadata only; content and storage locations never enter this client. */
+export type DocumentScope = { readonly kind: "PROJECT"; readonly projectId: string } | { readonly kind: "GLOBAL" };
+
+export interface DocumentView {
+  readonly document_id: string;
+  readonly scope: "PROJECT" | "GLOBAL";
+  readonly category: "CONTRACTUAL" | "PROJECT_RECORD" | "STANDARD_CAPABILITY" | "REFERENCE_MATERIAL"
+    | "TEMPLATE" | "GENERATED_ARTIFACT" | "OTHER";
+  readonly subtype: string | null;
+  readonly title: string;
+  readonly display_name: string;
+  readonly state: "ACTIVE" | "ARCHIVED";
+  readonly latest_version_ref: string | null;
+  readonly effective_version_ref: string | null;
+  readonly created_at: string;
+  readonly etag: string;
+}
+
+export interface DocumentPage {
+  readonly items: readonly DocumentView[];
+  readonly next_cursor: string | null;
+  readonly has_more: boolean;
+}
+
+const messages = {
+  DOCUMENT_INVALID_SCOPE: "文档范围或项目标识无效。",
+  DOCUMENT_INVALID_ID: "文档标识无效。",
+  DOCUMENT_INVALID_CURSOR: "文档列表翻页位置无效，请从第一页重新读取。",
+  AUTH_SESSION_EXPIRED: "会话已失效，请重新登录。",
+  LICENSE_OPERATION_DENIED: "当前许可不允许读取文档。",
+  RESOURCE_NOT_FOUND: "文档不存在或无权查看。",
+  DOCUMENT_CLIENT_UNAVAILABLE: "暂时无法读取文档，请稍后重试。",
+} as const;
+export type DocumentReadErrorCode = keyof typeof messages;
+export class DocumentReadError extends Error {
+  constructor(readonly code: DocumentReadErrorCode) {
+    super(messages[code]); this.name = "DocumentReadError";
+  }
+}
+
+const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+const cursorToken = /^[A-Za-z0-9_-]{1,512}\.[A-Za-z0-9_-]{43}$/;
+const strongEtag = /^"v(0|[1-9][0-9]*)"$/;
+const categories = new Set(["CONTRACTUAL", "PROJECT_RECORD", "STANDARD_CAPABILITY", "REFERENCE_MATERIAL",
+  "TEMPLATE", "GENERATED_ARTIFACT", "OTHER"]);
+function record(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function identifier(value: unknown): value is string {
+  return typeof value === "string" && uuid.test(value)
+    && value !== "00000000-0000-0000-0000-000000000000";
+}
+function label(value: unknown, max: number): value is string {
+  return typeof value === "string" && value.length > 0 && value.length <= max
+    && value.trim() === value && !/\p{C}/u.test(value);
+}
+function instant(value: unknown): value is string {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z$/.test(value)) return false;
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) && new Date(parsed).toISOString().slice(0, 19) === value.slice(0, 19);
+}
+function safeVersion(value: string): boolean {
+  return strongEtag.test(value) && Number.isSafeInteger(Number(value.slice(2, -1)));
+}
+function base(scope: DocumentScope): string {
+  if (!record(scope)) throw new DocumentReadError("DOCUMENT_INVALID_SCOPE");
+  if (scope.kind === "GLOBAL" && Object.keys(scope).length === 1) return "/api/v1/global/documents";
+  if (scope.kind === "PROJECT" && Object.keys(scope).length === 2 && identifier(scope.projectId)) {
+    return `/api/v1/projects/${scope.projectId}/documents`;
+  }
+  throw new DocumentReadError("DOCUMENT_INVALID_SCOPE");
+}
+export function parseDocument(value: unknown, scope: DocumentScope): DocumentView {
+  if (!record(value) || !identifier(value.document_id) || value.scope !== scope.kind
+    || typeof value.category !== "string" || !categories.has(value.category)
+    || (value.subtype !== null && !label(value.subtype, 128))
+    || (value.category === "OTHER" && value.subtype === null)
+    || !label(value.title, 255) || !label(value.display_name, 255)
+    || (value.state !== "ACTIVE" && value.state !== "ARCHIVED")
+    || (value.latest_version_ref !== null && !identifier(value.latest_version_ref))
+    || (value.effective_version_ref !== null && !identifier(value.effective_version_ref))
+    || (value.effective_version_ref !== null && value.latest_version_ref === null)
+    || !instant(value.created_at) || typeof value.etag !== "string" || !safeVersion(value.etag)) {
+    throw new DocumentReadError("DOCUMENT_CLIENT_UNAVAILABLE");
+  }
+  return Object.freeze({ document_id: value.document_id, scope: scope.kind,
+    category: value.category as DocumentView["category"], subtype: value.subtype,
+    title: value.title, display_name: value.display_name, state: value.state,
+    latest_version_ref: value.latest_version_ref, effective_version_ref: value.effective_version_ref,
+    created_at: value.created_at, etag: value.etag });
+}
+
+export class DocumentReadClient {
+  constructor(private readonly fetcher: typeof fetch = fetch, private readonly timeoutMs = 10_000) {
+    if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 30_000) {
+      throw new DocumentReadError("DOCUMENT_CLIENT_UNAVAILABLE");
+    }
+  }
+
+  async #get(path: string): Promise<{ data: unknown; etag: string | null }> {
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      const fetcher = this.fetcher;
+      const response = await fetcher(path, { method: "GET", credentials: "same-origin", cache: "no-store",
+        redirect: "error", headers: { Accept: "application/json" }, signal: controller.signal });
+      if (controller.signal.aborted || response.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !== "application/json") {
+        throw new DocumentReadError("DOCUMENT_CLIENT_UNAVAILABLE");
+      }
+      const payload: unknown = await response.json();
+      if (controller.signal.aborted || !record(payload) || !identifier(payload.trace_id)) {
+        throw new DocumentReadError("DOCUMENT_CLIENT_UNAVAILABLE");
+      }
+      if (response.status !== 200) {
+        const code = record(payload.error) ? payload.error.code : null;
+        const expected: Record<string, number> = { AUTH_SESSION_EXPIRED: 401,
+          LICENSE_OPERATION_DENIED: 403, RESOURCE_NOT_FOUND: 404 };
+        if (typeof code === "string" && Object.hasOwn(expected, code) && response.status === expected[code]) {
+          throw new DocumentReadError(code as DocumentReadErrorCode);
+        }
+        throw new DocumentReadError("DOCUMENT_CLIENT_UNAVAILABLE");
+      }
+      return { data: payload.data, etag: response.headers.get("etag") };
+    } catch (failure) {
+      if (failure instanceof DocumentReadError) throw failure;
+      throw new DocumentReadError("DOCUMENT_CLIENT_UNAVAILABLE");
+    } finally { window.clearTimeout(timer); }
+  }
+
+  async list(scope: DocumentScope, cursor: string | null = null): Promise<DocumentPage> {
+    const path = base(scope);
+    if (cursor !== null && (typeof cursor !== "string" || !cursorToken.test(cursor))) {
+      throw new DocumentReadError("DOCUMENT_INVALID_CURSOR");
+    }
+    const query = new URLSearchParams({ page_size: "50" });
+    if (cursor !== null) query.set("cursor", cursor);
+    const { data } = await this.#get(`${path}?${query}`);
+    if (!record(data) || !Array.isArray(data.items) || data.items.length > 50
+      || typeof data.has_more !== "boolean"
+      || (data.has_more && (data.items.length === 0 || typeof data.next_cursor !== "string"
+        || !cursorToken.test(data.next_cursor) || data.next_cursor === cursor))
+      || (!data.has_more && data.next_cursor !== null)) {
+      throw new DocumentReadError("DOCUMENT_CLIENT_UNAVAILABLE");
+    }
+    const items = data.items.map((item) => parseDocument(item, scope));
+    if (new Set(items.map((item) => item.document_id)).size !== items.length) {
+      throw new DocumentReadError("DOCUMENT_CLIENT_UNAVAILABLE");
+    }
+    return Object.freeze({ items: Object.freeze(items),
+      next_cursor: data.has_more ? data.next_cursor as string : null, has_more: data.has_more });
+  }
+
+  async get(scope: DocumentScope, documentId: string): Promise<DocumentView> {
+    const path = base(scope);
+    if (!identifier(documentId)) throw new DocumentReadError("DOCUMENT_INVALID_ID");
+    const { data, etag } = await this.#get(`${path}/${documentId}`);
+    const document = parseDocument(data, scope);
+    if (document.document_id !== documentId || document.etag !== etag) {
+      throw new DocumentReadError("DOCUMENT_CLIENT_UNAVAILABLE");
+    }
+    return document;
+  }
+}

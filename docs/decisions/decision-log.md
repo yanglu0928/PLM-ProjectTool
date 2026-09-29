@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260929-473 — DOC-05-A01-P01 Document 元数据只读客户端
+
+- Date/WBS：2026-09-29 / Phase2 DOC-05-A01-P01。冻结 API-02 `DOCUMENT_LIST/GET`，后端 DOC-01-A02/A03-P01～P04 已有授权读取及 Windows 显式组合；Review/Workflow 写链真实 Owner 与 Phase3 解析证据前置未满足，选择独立可交付的 Document 前端读取任务。
+- Decision：先实现固定 PROJECT/GLOBAL 双 Scope 元数据列表与详情的安全客户端，不增加用户可控路径或内容读取。服务端仍为唯一权限源；客户端限制同源 GET、响应字段、Scope/ID/强 ETag、游标与错误投影。页面与浏览器/PG 验收另列任务，避免把单元合同误称端到端。
+- Impact/rollback/validation：仅新增前端 Document API 客户端/测试，无冻结 API/Schema/Migration/后端权限/依赖变化，删除新增文件可回滚。风险为跨项目或异常响应展示，以失败关闭校验和后续页面迟到结果防护控制。实现后 46 定向、802 全量测试、typecheck/build PASS；首轮 UUID 正则及 TS scope 类型问题均已修复并全量重跑。正式浏览器/PG、目标账户信任、其他平台与 Gate 3 未验。
+
 ## DEC-20260929-472 — PRJ-05-A15-P04 Windows 11 项目名称更新端到端
 
 - Date/WBS：2026-09-29 / Phase2 PRJ-05-A15-P04。P01～P03、后端 PRJ-04-A07 与现有隔离浏览器/PG 夹具前置满足。
