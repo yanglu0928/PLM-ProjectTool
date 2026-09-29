@@ -4,14 +4,15 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createAppRouter } from "@/app/router";
 import { SessionClient } from "@/modules/auth/api/sessionClient";
-import { ProjectReadClient } from "@/modules/project/api/projectReadClient";
+import { ProjectReadClient, type ProjectView } from "@/modules/project/api/projectReadClient";
 import { ProjectArchiveClient, ProjectArchiveError,
   type ProjectArchiveFirstReceipt } from "@/modules/project/api/projectArchiveClient";
+import { ProjectPatchClient, ProjectPatchError } from "@/modules/project/api/projectPatchClient";
 import ProjectDetailView from "./ProjectDetailView.vue";
 
 const id = "01234567-89ab-4cde-8123-456789abcdef";
 const otherId = "11234567-89ab-4cde-8123-456789abcdef";
-const project = { project_id: id, code: "TEST", name: "合成项目", state: "ACTIVE",
+const project: ProjectView = { project_id: id, code: "TEST", name: "合成项目", state: "ACTIVE",
   created_at: "2026-09-28T08:30:00Z", etag: '"v0"' };
 function response(data: unknown, etag?: string) {
   return new Response(JSON.stringify({ data, trace_id: id }),
@@ -33,12 +34,12 @@ async function session(restricted = false, manager = false): Promise<SessionClie
   return api;
 }
 async function view(auth: SessionClient, path: string, fetcher: typeof fetch,
-  archiver?: ProjectArchiveClient) {
+  archiver?: ProjectArchiveClient, patcher?: ProjectPatchClient) {
   const router = createAppRouter(createMemoryHistory());
   await router.push(path);
   await router.isReady();
   const wrapper = mount(ProjectDetailView, { props: { session: auth,
-    projects: new ProjectReadClient(fetcher), archiver },
+    projects: new ProjectReadClient(fetcher), archiver, patcher },
     global: { plugins: [router] } });
   await flushPromises();
   return { wrapper, router };
@@ -126,6 +127,113 @@ describe("ProjectDetailView", () => {
     expect(archived.wrapper.text()).toContain("已归档");
     expect(archived.wrapper.text()).not.toContain("归档此项目");
     archived.wrapper.unmount();
+  });
+
+  it("offers name edit only to the current manager of an active project", async () => {
+    const fetcher = vi.fn().mockImplementation(() => Promise.resolve(response(project, project.etag)));
+    const reader = await view(await session(), `/projects/${id}`, fetcher as typeof fetch);
+    expect(reader.wrapper.text()).not.toContain("修改项目名称");
+    reader.wrapper.unmount();
+    const auth = await session(false, true);
+    const manager = await view(auth, `/projects/${id}`, fetcher as typeof fetch);
+    expect(manager.wrapper.text()).toContain("修改项目名称");
+    manager.wrapper.unmount();
+    const archived = await view(auth, `/projects/${id}`, vi.fn().mockResolvedValue(
+      response({ ...project, state: "ARCHIVED", etag: '"v1"' }, '"v1"')) as typeof fetch);
+    expect(archived.wrapper.text()).not.toContain("修改项目名称");
+    archived.wrapper.unmount();
+  });
+
+  it("requires name confirmation and separates PATCH receipt from a fresh project GET", async () => {
+    const auth = await session(false, true);
+    const patcher = new ProjectPatchClient(auth);
+    const patch = vi.spyOn(patcher, "patch").mockResolvedValue({ ...project, name: "新项目", etag: '"v1"' });
+    const fetcher = vi.fn().mockResolvedValueOnce(response(project, project.etag))
+      .mockResolvedValueOnce(response({ ...project, name: "新项目", etag: '"v1"' }, '"v1"'));
+    const { wrapper } = await view(auth, `/projects/${id}`, fetcher as typeof fetch, undefined, patcher);
+    await wrapper.findAll("button").find((button) => button.text() === "修改项目名称")!.trigger("click");
+    expect(wrapper.text()).toContain("不修改项目编号");
+    expect(wrapper.text()).not.toContain("归档此项目");
+    expect(wrapper.get('form button[type="submit"]').attributes("disabled")).toBeDefined();
+    await wrapper.get('form input[type="text"]').setValue("新项目");
+    await wrapper.get('form input[type="checkbox"]').setValue(true);
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+    expect(patch.mock.calls[0]).toEqual([id, project, "新项目"]);
+    expect(wrapper.text()).toContain("本次名称修改回执");
+    expect(wrapper.text()).toContain("不是独立的当前状态证明");
+    expect(wrapper.find("dl").exists()).toBe(false);
+    await wrapper.findAll("button").find((button) => button.text() === "刷新项目详情")!.trigger("click");
+    await flushPromises();
+    expect(wrapper.get("dl").text()).toContain("新项目");
+    expect(wrapper.text()).not.toContain("本次名称修改回执");
+    wrapper.unmount();
+  });
+
+  it("resets name confirmation when edited and allows the same name only after confirmation", async () => {
+    const auth = await session(false, true);
+    const patcher = new ProjectPatchClient(auth);
+    const patch = vi.spyOn(patcher, "patch").mockResolvedValue({ ...project, etag: '"v1"' });
+    const { wrapper } = await view(auth, `/projects/${id}`,
+      vi.fn().mockResolvedValue(response(project, project.etag)) as typeof fetch, undefined, patcher);
+    await wrapper.findAll("button").find((button) => button.text() === "修改项目名称")!.trigger("click");
+    await wrapper.get('form input[type="checkbox"]').setValue(true);
+    await wrapper.get('form input[type="text"]').setValue("临时名称");
+    expect(wrapper.get('form input[type="checkbox"]').element).toHaveProperty("checked", false);
+    await wrapper.get('form input[type="text"]').setValue(project.name);
+    await wrapper.get('form input[type="checkbox"]').setValue(true);
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+    expect(patch).toHaveBeenCalledWith(id, project, project.name);
+    wrapper.unmount();
+  });
+
+  it("clears stale detail after a known refusal or uncertain PATCH and requires fresh read", async () => {
+    for (const code of ["CONFLICT_VERSION", "PROJECT_PATCH_UNCERTAIN"] as const) {
+      const auth = await session(false, true);
+      const patcher = new ProjectPatchClient(auth);
+      const patch = vi.spyOn(patcher, "patch").mockRejectedValue(new ProjectPatchError(code));
+      const fetcher = vi.fn().mockResolvedValueOnce(response(project, project.etag))
+        .mockResolvedValueOnce(failure(503, "SYSTEM_UNAVAILABLE"))
+        .mockResolvedValueOnce(response(project, project.etag));
+      const { wrapper } = await view(auth, `/projects/${id}`, fetcher as typeof fetch, undefined, patcher);
+      await wrapper.findAll("button").find((button) => button.text() === "修改项目名称")!.trigger("click");
+      await wrapper.get('form input[type="checkbox"]').setValue(true);
+      await wrapper.get("form").trigger("submit");
+      await flushPromises();
+      expect(wrapper.find("dl").exists()).toBe(false);
+      expect(wrapper.text()).toContain(code === "CONFLICT_VERSION" ? "项目信息已变化" : "结果无法确认");
+      expect(wrapper.text()).not.toContain("修改项目名称");
+      await wrapper.get("button").trigger("click");
+      await flushPromises();
+      expect(wrapper.find("dl").exists()).toBe(false);
+      await wrapper.get("button").trigger("click");
+      await flushPromises();
+      expect(wrapper.get("dl").text()).toContain(project.name);
+      expect(patch).toHaveBeenCalledTimes(1);
+      wrapper.unmount();
+    }
+  });
+
+  it("discards a name PATCH result after switching projects", async () => {
+    const auth = await session(false, true);
+    const patcher = new ProjectPatchClient(auth);
+    let finish!: (value: ProjectView) => void;
+    vi.spyOn(patcher, "patch").mockReturnValue(new Promise((resolve) => { finish = resolve; }));
+    const fetcher = vi.fn().mockResolvedValueOnce(response(project, project.etag))
+      .mockResolvedValueOnce(failure(404, "RESOURCE_NOT_FOUND"));
+    const { wrapper, router } = await view(auth, `/projects/${id}`, fetcher as typeof fetch, undefined, patcher);
+    await wrapper.findAll("button").find((button) => button.text() === "修改项目名称")!.trigger("click");
+    await wrapper.get('form input[type="checkbox"]').setValue(true);
+    await wrapper.get("form").trigger("submit");
+    await router.push(`/projects/${otherId}`);
+    await flushPromises();
+    finish({ ...project, name: "迟到名称", etag: '"v1"' });
+    await flushPromises();
+    expect(wrapper.text()).not.toContain("迟到名称");
+    expect(wrapper.text()).not.toContain("本次名称修改回执");
+    expect(wrapper.get('[role="alert"]').text()).toContain("项目不存在或无权查看");
+    wrapper.unmount();
   });
 
   it("requires explicit impact confirmation, then separates first receipt from current detail", async () => {

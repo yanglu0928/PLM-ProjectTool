@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260929-471 — PRJ-05-A15-P03 项目名称更新显式确认页面
+
+- Date/WBS：2026-09-29 / Phase2 PRJ-05-A15-P03。冻结 `PROJECT_PATCH`、P01/P02、ProjectReadClient 与现有项目详情前置满足。
+- Decision：项目详情只给当前 ProjectManager 的 ACTIVE 项目显示名称修改入口；展示原项目编号/版本，输入名称后要求显式勾选，提交仅使用原项目详情和原版本。PATCH 无幂等 Key，成功或未知均清旧详情、禁止直接重试，显示回执只作本次结果且独立 GET 后才恢复当前展示。归档与名称修改编辑/提交互斥；路由切换/卸载丢弃迟到结果，不跨项目显示。
+- Impact/rollback/validation：仅 Project 前端视图/测试，无后端 API、Schema、Migration、权限、依赖变更；回滚可撤名称编辑 UI，保留 P01/P02。风险是写成功但浏览器断线或响应不明，对此不自动重发，提示先重读并核对审计；已知拒绝也清旧详情。验收负责人/非负责人、确认门槛、同名/目标名、first/current 分离、失败/未知与跨项目迟到结果，全量前端/typecheck/build；浏览器/PG 另项。
+- Executed：ProjectDetailView 增加负责人 ACTIVE 项目名称修改显式确认，归档与改名互斥；提交后清旧详情，成功回执标非独立当前状态，已知拒绝/未知均要求重新读取，跨项目迟到结果丢弃。前端 756/756、typecheck、build PASS；首轮测试全过但测试样本 TypeScript `state` 推断过宽，修正测试类型后完整重跑。无生产 API/Schema/Migration/权限/依赖变化，浏览器/PG 下一分项。
+
 ## DEC-20260929-470 — PRJ-05-A15-P02 项目名称更新安全业务客户端
 
 - Date/WBS：2026-09-29 / Phase2 PRJ-05-A15-P02。P01、冻结 `PROJECT_PATCH`、后端 PRJ-04-A06/A07 与 ProjectReadClient 前置满足。

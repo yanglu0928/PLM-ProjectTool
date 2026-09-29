@@ -7,12 +7,14 @@ import { sessionClientKey } from "@/modules/auth/api/sessionContext";
 import { ProjectReadClient, ProjectReadError, type ProjectView } from "@/modules/project/api/projectReadClient";
 import { ProjectArchiveClient, ProjectArchiveError,
   type ProjectArchiveFirstReceipt } from "@/modules/project/api/projectArchiveClient";
+import { ProjectPatchClient, ProjectPatchError } from "@/modules/project/api/projectPatchClient";
 
 const props = defineProps<{ session?: SessionClient; projects?: ProjectReadClient;
-  archiver?: ProjectArchiveClient }>();
+  archiver?: ProjectArchiveClient; patcher?: ProjectPatchClient }>();
 const session = toRaw(props.session ?? inject(sessionClientKey, null) ?? new SessionClient());
 const projects = toRaw(props.projects ?? new ProjectReadClient());
 const archiver = toRaw(props.archiver ?? new ProjectArchiveClient(session));
+const patcher = toRaw(props.patcher ?? new ProjectPatchClient(session));
 const identity = session.view;
 const route = useRoute();
 const project = ref<ProjectView | null>(null);
@@ -20,6 +22,10 @@ const busy = ref(false);
 const writeBusy = ref(false);
 const error = ref("");
 const archiveEditor = ref<ProjectView | null>(null);
+const nameEditor = ref<ProjectView | null>(null);
+const draftName = ref("");
+const nameConfirmed = ref(false);
+const nameReceipt = ref<ProjectView | null>(null);
 const archiveConfirmed = ref(false);
 const confirmOriginal = ref(false);
 const pending = ref<{ readonly project: string; readonly actor: string;
@@ -48,6 +54,7 @@ async function load() {
   const projectId = typeof route.params.projectId === "string" ? route.params.projectId : "";
   project.value = null;
   archiveEditor.value = null; archiveConfirmed.value = false; confirmOriginal.value = false;
+  nameEditor.value = null; draftName.value = ""; nameConfirmed.value = false;
   error.value = "";
   busy.value = true;
   try {
@@ -56,6 +63,7 @@ async function load() {
     project.value = result;
     requireFreshRead.value = false;
     receipt.value = null;
+    nameReceipt.value = null;
   } catch (failure) {
     if (!mounted || current !== generation) return;
     error.value = failure instanceof ProjectReadError
@@ -66,11 +74,46 @@ async function load() {
 }
 function startArchive() {
   if (!canArchive() || busy.value || writeBusy.value || requireFreshRead.value
-    || receipt.value || pending.value || blocked.value || !project.value
+    || receipt.value || pending.value || blocked.value || nameEditor.value || nameReceipt.value || !project.value
     || project.value.state !== "ACTIVE") return;
   archiveEditor.value = Object.freeze({ ...project.value });
   archiveConfirmed.value = false;
   error.value = "";
+}
+function startNameEdit() {
+  if (!canArchive() || busy.value || writeBusy.value || requireFreshRead.value
+    || receipt.value || pending.value || blocked.value || archiveEditor.value || nameReceipt.value
+    || !project.value || project.value.state !== "ACTIVE") return;
+  nameEditor.value = Object.freeze({ ...project.value });
+  draftName.value = project.value.name;
+  nameConfirmed.value = false;
+  error.value = "";
+}
+async function submitName() {
+  if (!canArchive() || busy.value || writeBusy.value || requireFreshRead.value
+    || receipt.value || pending.value || blocked.value || archiveEditor.value
+    || !nameEditor.value || !nameConfirmed.value || !sameCurrentProject(nameEditor.value)) return;
+  const attempt = Object.freeze({ project: nameEditor.value.project_id,
+    actor: identity!.user.user_id, before: nameEditor.value, name: draftName.value });
+  const current = ++generation;
+  nameEditor.value = null; nameConfirmed.value = false;
+  writeBusy.value = true; requireFreshRead.value = true; error.value = "";
+  try {
+    const result = await patcher.patch(attempt.project, attempt.before, attempt.name);
+    if (!mounted || current !== generation || route.params.projectId !== attempt.project
+      || !canArchive() || session.view?.user.user_id !== attempt.actor) return;
+    nameReceipt.value = result;
+  } catch (failure) {
+    if (!mounted || current !== generation || route.params.projectId !== attempt.project) return;
+    error.value = failure instanceof ProjectPatchError && !failure.uncertain
+      ? failure.message + " 请重新读取项目详情后再决定。"
+      : "名称修改结果无法确认。旧项目详情已清除；先重新读取项目并核对审计，勿直接重试。";
+  } finally {
+    if (mounted && current === generation) {
+      project.value = null;
+      writeBusy.value = false;
+    }
+  }
 }
 function canRecover() {
   const attempt = pending.value;
@@ -80,7 +123,8 @@ function canRecover() {
     && attempt.actor === session.view?.user.user_id && sameCurrentProject(attempt.before);
 }
 async function submitArchive() {
-  if (busy.value || writeBusy.value || requireFreshRead.value || blocked.value) return;
+  if (busy.value || writeBusy.value || requireFreshRead.value || blocked.value
+    || nameEditor.value || nameReceipt.value) return;
   const recovery = pending.value;
   if (recovery && (!canRecover() || !confirmOriginal.value)) return;
   if (!recovery && (!canArchive() || !archiveEditor.value || !archiveConfirmed.value
@@ -118,10 +162,13 @@ async function submitArchive() {
   }
 }
 
+watch(draftName, () => { nameConfirmed.value = false; });
+
 watch(() => route.params.projectId, () => {
   generation += 1;
   project.value = null; error.value = ""; busy.value = false; writeBusy.value = false;
   archiveEditor.value = null; archiveConfirmed.value = false; confirmOriginal.value = false;
+  nameEditor.value = null; draftName.value = ""; nameConfirmed.value = false; nameReceipt.value = null;
   pending.value = null; receipt.value = null; blocked.value = false; requireFreshRead.value = false;
   void load();
 }, { immediate: true });
@@ -147,7 +194,8 @@ onUnmounted(() => { mounted = false; generation += 1; pending.value = null; });
       <p v-if="error" role="alert">{{ error }}</p>
       <p v-if="blocked" role="alert">原操作记录冲突，已停止本页后续归档；请核对项目详情和审计。</p>
       <p v-if="receipt" role="status">本次归档首次回执：{{ receipt.first_result.name }}（{{ receipt.first_result.code }}）· {{ receipt.first_result.etag }}。这不是当前状态证明，请刷新项目详情重新读取。</p>
-      <p v-if="requireFreshRead && !receipt" role="status">旧项目详情已清除。成功重新读取项目详情前，不能再次操作。</p>
+      <p v-if="nameReceipt" role="status">本次名称修改回执：{{ nameReceipt.name }}（{{ nameReceipt.code }}）· {{ nameReceipt.etag }}。这不是独立的当前状态证明，请刷新项目详情重新读取。</p>
+      <p v-if="requireFreshRead && !receipt && !nameReceipt" role="status">旧项目详情已清除。成功重新读取项目详情前，不能再次操作。</p>
       <p v-if="pending" role="status">原归档操作仅保留在本页内存。离页后若结果仍不确定，先核对项目详情和审计，勿生成新操作记录。</p>
       <dl v-if="project" aria-label="当前授权项目详情">
         <dt>名称</dt><dd>{{ project.name }}</dd>
@@ -157,8 +205,17 @@ onUnmounted(() => { mounted = false; generation += 1; pending.value = null; });
       </dl>
       <p v-if="project"><RouterLink :to="{ name: 'project-members', params: { projectId: project.project_id } }">查看项目成员历史</RouterLink></p>
       <p v-if="project"><RouterLink :to="{ name: 'project-departments', params: { projectId: project.project_id } }">查看项目部门历史</RouterLink></p>
-      <button v-if="project?.state === 'ACTIVE' && canArchive() && !requireFreshRead && !receipt && !pending && !blocked"
+      <button v-if="project?.state === 'ACTIVE' && canArchive() && !requireFreshRead && !receipt && !pending && !blocked && !nameEditor && !nameReceipt"
         type="button" :disabled="busy || writeBusy" @click="startArchive">归档此项目</button>
+      <button v-if="project?.state === 'ACTIVE' && canArchive() && !requireFreshRead && !receipt && !pending && !blocked && !archiveEditor && !nameReceipt"
+        type="button" :disabled="busy || writeBusy" @click="startNameEdit">修改项目名称</button>
+      <form v-if="nameEditor && canArchive() && !requireFreshRead && !blocked" @submit.prevent="submitName">
+        <h2>修改项目名称：{{ nameEditor.name }}（{{ nameEditor.code }}）</h2>
+        <p>基于刚读取的 {{ nameEditor.etag }} 版本。仅修改显示名称，不修改项目编号；提交结果不明确时，请先重新读取并核对审计，勿直接重试。</p>
+        <label>新名称 <input v-model="draftName" type="text" required maxlength="255" :disabled="writeBusy" /></label>
+        <label><input v-model="nameConfirmed" type="checkbox" :disabled="writeBusy" />我已核对项目编号、原版本和新名称</label>
+        <button type="submit" :disabled="busy || writeBusy || !nameConfirmed">{{ writeBusy ? '正在提交…' : '确认修改名称' }}</button>
+      </form>
       <form v-if="archiveEditor && canArchive() && !requireFreshRead && !blocked" @submit.prevent="submitArchive">
         <h2>归档项目：{{ archiveEditor.name }}（{{ archiveEditor.code }}）</h2>
         <p>基于刚读取的 {{ archiveEditor.etag }} 版本。归档后项目保留只读历史，但禁止新写入与任务；首版没有普通反归档入口。</p>
