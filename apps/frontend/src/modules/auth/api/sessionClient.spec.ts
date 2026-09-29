@@ -880,6 +880,72 @@ describe("SessionClient", () => {
     expect(api.canSubmit).toBe(true);
   });
 
+  it("sends exact empty-body department deactivation with original v0 and Key", async () => {
+    const key = "synthetic-department-deactivate-0001";
+    const reply = response({ department_id: id });
+    const { api, fetcher } = client(response(session()), reply);
+    await api.login("manager", "synthetic-only");
+    await expect(api.postProjectDepartmentDeactivate(projectId, id, '"v0"', key)).resolves.toBe(reply);
+    expect(fetcher.mock.calls[1]).toEqual([`/api/v1/projects/${projectId}/departments/${id}:deactivate`, {
+      method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error",
+      headers: { Accept: "application/json", "X-CSRF-Token": token,
+        "Idempotency-Key": key, "If-Match": '"v0"' }, signal: expect.any(AbortSignal),
+    }]);
+    expect(JSON.stringify(api)).not.toContain(token);
+  });
+
+  it("rejects unsafe department deactivation identifiers, version and Key before network", async () => {
+    const { api, fetcher } = client(response(session()));
+    await api.login("manager", "synthetic-only");
+    const key = "synthetic-department-deactivate-0001";
+    for (const [project, department, etag, attemptKey] of [
+      ["../admin", id, '"v0"', key], [projectId, "../other", '"v0"', key],
+      [projectId, id, 'W/"v0"', key], [projectId, id, '"v00"', key],
+      [projectId, id, '"v9007199254740991"', key], [projectId, id, '"v0"', "short"],
+      [projectId, id, '"v0"', "x".repeat(129)], [projectId, id, '"v0"', "x".repeat(15) + "\n"],
+    ]) {
+      await expect(api.postProjectDepartmentDeactivate(project, department, etag, attemptKey))
+        .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    }
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("requires write proof and clears it only on deactivation 401", async () => {
+    const readOnly = session(); delete (readOnly as Partial<typeof readOnly>).csrf_token;
+    const { api: viewer, fetcher: viewerFetcher } = client(response(readOnly));
+    await viewer.current();
+    await expect(viewer.postProjectDepartmentDeactivate(projectId, id, '"v0"', "synthetic-department-deactivate-0001"))
+      .rejects.toMatchObject({ code: "AUTH_RELOGIN_REQUIRED" });
+    expect(viewerFetcher).toHaveBeenCalledTimes(1);
+    const { api, fetcher } = client(response(session()), new Response("{}", { status: 503 }),
+      new Response("{}", { status: 401 }));
+    await api.login("manager", "synthetic-only");
+    await api.postProjectDepartmentDeactivate(projectId, id, '"v0"', "synthetic-department-deactivate-0001");
+    expect(api.canSubmit).toBe(true);
+    await api.postProjectDepartmentDeactivate(projectId, id, '"v0"', "synthetic-department-deactivate-0001");
+    expect(api.canSubmit).toBe(false);
+    expect(api.view).toBeNull();
+    expect(fetcher).toHaveBeenCalledTimes(3);
+  });
+
+  it("does not retry a timed-out department deactivation or overlap another command", async () => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn().mockResolvedValueOnce(response(session()))
+      .mockImplementationOnce((_path: string, options: RequestInit) => new Promise((_done, reject) => {
+        options.signal?.addEventListener("abort", () => reject(new Error("synthetic timeout")));
+      }));
+    const api = new SessionClient(fetcher as typeof fetch, 100);
+    await api.login("manager", "synthetic-only");
+    const pending = expect(api.postProjectDepartmentDeactivate(projectId, id, '"v0"',
+      "synthetic-department-deactivate-0001")).rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    await expect(api.postProjectCreate("{}", "synthetic-project-0001"))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_BUSY" });
+    await vi.advanceTimersByTimeAsync(101);
+    await pending;
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(api.canSubmit).toBe(true);
+  });
+
   it.each(["suspend", "resume", "remove"] as const)("sends exact empty-body member %s command", async (action) => {
     const key = "synthetic-member-state-0001";
     const reply = response({ member_id: id });

@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260929-461 — PRJ-05-A13-P01 部门停用固定前端传输
+
+- Date/WBS：2026-09-29 / Phase2 PRJ-05-A13-P01。冻结PROJECT_DEPARTMENT_DEACTIVATE、后端PRJ-04-A16-P03、既有SessionClient和CR-PRJ-005前置满足。
+- Decision：仅加私有 `POST /api/v1/projects/{project_id}/departments/{department_id}:deactivate` 传输；双规范UUID、强且安全整数If-Match、16～128可打印ASCII原幂等Key、无Body/无Content-Type、同源Cookie/私有CSRF、单次发送。401清本地会话证明；断线/超时结果未知，业务层须保留原Key/If-Match，不生成新Key重试。本项不解析业务响应或增加页面。
+- Impact/rollback/validation：仅Auth transport和单元测试，无API/Schema/权限/依赖变化。风险为提交已成功但连接断开；回滚移除方法/测试。前端测试/typecheck/build，真实浏览器/PG另项。
+- Executed：2026-09-29，固定双ID/强ETag/原Key/空Body、私有CSRF/同源/单次发送、401清证明与超时互斥验证通过；前端652项/typecheck/build PASS。业务响应/页面和实际浏览器/PG另项。
+
 ## DEC-20260929-460 — PRJ-05-A12-P04 Windows 11 部门更新端到端
 
 - Date/WBS：2026-09-29 / Phase2 PRJ-05-A12-P04。P01～P03、后端PRJ-04-A15-P02前置满足，复用自有随机PG/Vault/浏览器夹具与合成信任源。
