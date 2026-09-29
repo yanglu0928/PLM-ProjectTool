@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-29：0.1.0.dev0/PRJ-05-A15-P01新增项目名称 PATCH 固定前端传输：规范 Project ID/强 If-Match、私有 CSRF、同源单次请求，401 清证明且未知结果不自动重试；前端 724 项/typecheck/build 通过。兼容 DB0049/冻结 API，无后端/Schema/Migration/依赖或升级变化；业务响应/页面/浏览器PG、正式信任/其他平台/性能质量/Gate3/可用包待。
+
 - 2026-09-29：0.1.0.dev0/PRJ-05-A14-P04完成 Windows 11 隔离合成项目归档 HTTP/浏览器/PG 验收：权限/CSRF/跨项目/版本及原 Key 重放与冲突、显式确认、首次回执和独立 ARCHIVED 重读；SQL 单 Audit/完成收据、负责人保留与随机资源清理均 PASS。兼容 DB0049/冻结 API，无生产程序/Schema/Migration/依赖或升级变化；PoC PG 恢复原停止，启动旧 PID 提示原因未证实。正式信任/其他平台/性能质量/Gate3/可用包待。
 
 - 2026-09-29：0.1.0.dev0/PRJ-05-A14-P03项目详情新增负责人单向归档显式确认；成功或未知均清旧详情、首次回执与当前 GET 分离，未知原Key恢复须重读原ACTIVE/同版本，冲突锁页并丢弃跨项目迟到结果。前端720项/typecheck/build通过。兼容DB0049/冻结API，无Schema/Migration/依赖或升级变化；实际浏览器PG、正式信任/其他平台/性能质量/Gate3/包待。

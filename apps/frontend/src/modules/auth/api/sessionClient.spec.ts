@@ -365,6 +365,71 @@ describe("SessionClient", () => {
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
 
+  it("sends only the frozen Project PATCH path with v0, private CSRF and no idempotency key", async () => {
+    const body = JSON.stringify({ name: "更新项目" });
+    const reply = response({ project_id: projectId });
+    const { api, fetcher } = client(response(session()), reply);
+    await api.login("manager", "synthetic-only");
+    await expect(api.patchProject(projectId, '"v0"', body)).resolves.toBe(reply);
+    expect(fetcher.mock.calls[1]).toEqual([`/api/v1/projects/${projectId}`, {
+      method: "PATCH", credentials: "same-origin", cache: "no-store", redirect: "error",
+      headers: { Accept: "application/json", "Content-Type": "application/json",
+        "X-CSRF-Token": token, "If-Match": '"v0"' }, body, signal: expect.any(AbortSignal),
+    }]);
+    expect(JSON.stringify(api)).not.toContain(token);
+  });
+
+  it("rejects unsafe Project PATCH path, version or body without network", async () => {
+    const { api, fetcher } = client(response(session()));
+    await api.login("manager", "synthetic-only");
+    for (const [project, version, body] of [
+      ["../admin", '"v0"', "{}"], [projectId.toUpperCase(), '"v0"', "{}"],
+      [projectId, 'W/"v0"', "{}"], [projectId, '"v00"', "{}"],
+      [projectId, '"v9007199254740991"', "{}"], [projectId, '"v0"', ""],
+      [projectId, '"v0"', "中".repeat(2731)],
+    ]) {
+      await expect(api.patchProject(project, version, body))
+        .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    }
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("requires CSRF and clears Project PATCH proof on 401, not 503", async () => {
+    const readOnly = session(); delete (readOnly as Partial<typeof readOnly>).csrf_token;
+    const { api: viewer, fetcher: viewerFetcher } = client(response(readOnly));
+    await viewer.current();
+    await expect(viewer.patchProject(projectId, '"v0"', "{}"))
+      .rejects.toMatchObject({ code: "AUTH_RELOGIN_REQUIRED" });
+    expect(viewerFetcher).toHaveBeenCalledTimes(1);
+    const { api, fetcher } = client(response(session()), new Response("{}", { status: 503 }),
+      new Response("{}", { status: 401 }));
+    await api.login("manager", "synthetic-only");
+    await api.patchProject(projectId, '"v0"', "{}");
+    expect(api.canSubmit).toBe(true);
+    await api.patchProject(projectId, '"v0"', "{}");
+    expect(api.canSubmit).toBe(false);
+    expect(api.view).toBeNull();
+    expect(fetcher).toHaveBeenCalledTimes(3);
+  });
+
+  it("does not retry a timed-out Project PATCH or overlap another command", async () => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn().mockResolvedValueOnce(response(session()))
+      .mockImplementationOnce((_path: string, options: RequestInit) => new Promise((_done, reject) => {
+        options.signal?.addEventListener("abort", () => reject(new Error("synthetic timeout")));
+      }));
+    const api = new SessionClient(fetcher as typeof fetch, 100);
+    await api.login("manager", "synthetic-only");
+    const pending = expect(api.patchProject(projectId, '"v0"', "{}"))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    await expect(api.postProjectCreate("{}", "synthetic-project-0001"))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_BUSY" });
+    await vi.advanceTimersByTimeAsync(101);
+    await pending;
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(api.canSubmit).toBe(true);
+  });
+
   it("posts only the frozen empty-body Project archive with original version, key and private CSRF", async () => {
     const archived = response({ project_id: projectId, state: "ARCHIVED" });
     const { api, fetcher } = client(response(session()), archived);

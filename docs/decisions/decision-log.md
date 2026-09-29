@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260929-469 — PRJ-05-A15-P01 项目名称更新固定前端传输
+
+- Date/WBS：2026-09-29 / Phase2 PRJ-05-A15-P01。冻结 `PROJECT_PATCH`、后端 PRJ-04-A06/A07、现有 SessionClient 前置满足；只处理一个无幂等 Key 的项目名称 PATCH 通道。
+- Decision：只加私有 `PATCH /api/v1/projects/{project_id}` 传输，规范 UUID、强且安全整数版本、非空有界 JSON body、同源 Cookie/私有 CSRF、无自动重试；401 清本地会话证明，失败或超时返回不确定，后续业务客户端必须先独立 GET 核对。本项不解析成功载荷或增加页面，不允许修改 ProjectCode。
+- Impact/rollback/validation：无 DB/后端 API/权限/依赖变化；回滚撤该前端方法和测试。风险为无 Key 写后断线误判未提交，以单次请求、不自动重试及后续 GET 恢复控制。验收单测验证固定路径/头、非法输入、401/503 与超时互斥，并跑前端全量/typecheck/build；正式浏览器/PG 留后续分项。
+- Executed：新增 SessionClient 单次项目 PATCH 与 4 项传输合同；前端 724/724、typecheck、build PASS。只校验传输输入与原始 Response，不解析名称业务结果；无 Migration/后端 API/权限/依赖变化，实际浏览器/PG 留后续分项。
+
 ## DEC-20260929-468 — PRJ-05-A14-P04 Windows 11 项目归档端到端
 
 - Date/WBS：2026-09-29 / Phase2 PRJ-05-A14-P04。P01～P03、后端 PRJ-04-A08-P03 与现有隔离浏览器/PG 夹具前置满足。
