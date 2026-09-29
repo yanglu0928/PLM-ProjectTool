@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-29：0.1.0.dev0/DOC-05-A02-P02 完成 Windows 11 隔离合成项目 Document 元数据详情浏览器/PG 验收：受权列表入口→详情显示安全字段/`"v0"`→刷新重读，SQL 数量及随机库/角色/Vault 清理 exit0。仅验收夹具/记录，兼容 DB0049/冻结 `/api/v1`，无生产 Schema/Migration/依赖或升级变化；正式信任/其他平台/性能质量/Gate3/可用包待验。
+
 - 2026-09-29：0.1.0.dev0/DOC-05-A02-P01 新增项目 Document 元数据详情页及列表入口：直达受权 GET、安全字段/强 ETag、刷新清旧与跨路由迟到结果隔离；前端 814 项/typecheck/build 通过。兼容 DB0049/冻结 `/api/v1`，无后端 API/Schema/Migration/依赖或升级变化；实际浏览器/PG、正式信任/其他平台/Gate3/可用包待验。
 
 - 2026-09-29：0.1.0.dev0/DOC-05-A01-P03-A02 完成 Windows 11 隔离合成浏览器/PG 项目文档历史验收：受权项目入口、50→51 续页、刷新回 50、受限/外项目不可见，SQL 与随机库/角色/Vault 清理第二轮 exit0。兼容 DB0049/冻结 `/api/v1`，仅验收夹具/记录，无生产 Schema/Migration/依赖或升级变化；首次中断导致 PoC PG crash recovery，根因未证实且临时残留已精确清理。正式信任/其他平台/性能质量/Gate3/可用包仍待。

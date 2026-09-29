@@ -627,7 +627,8 @@ def main():
                     department_deactivate_mode = ("--department-deactivate-browser" in sys.argv[1:]
                                                   or "--department-deactivate-api-only" in sys.argv[1:])
                     document_history_mode = ("--document-history-api-only" in sys.argv[1:]
-                                             or "--document-history-browser" in sys.argv[1:])
+                                             or "--document-history-browser" in sys.argv[1:]
+                                             or "--document-detail-browser" in sys.argv[1:])
                     member_mode = ("--member-browser" in sys.argv[1:]
                                    or "--member-api-only" in sys.argv[1:])
                     if sum((create_mode, archive_mode, project_patch_mode, state_mode, name_mode, member_mode, member_create_mode,
@@ -856,7 +857,8 @@ def main():
                                 assert session_count >= 1
                             elif department_deactivate_mode:
                                 assert session_count == 2
-                            elif document_history_mode and "--document-history-browser" in sys.argv[1:]:
+                            elif document_history_mode and ("--document-history-browser" in sys.argv[1:]
+                                                            or "--document-detail-browser" in sys.argv[1:]):
                                 assert session_count >= 1
                             elif document_history_mode:
                                 assert session_count == 3

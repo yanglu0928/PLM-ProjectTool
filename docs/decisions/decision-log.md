@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260929-478 — DOC-05-A02-P02 文档详情实际浏览器验收
+
+- Date/WBS：2026-09-29 / Phase2 DOC-05-A02-P02。P01 前端合同、P03-A01/A02 列表 API/浏览器 PG 合成验收及后端详情 GET 前置满足。
+- Decision/Reason：复用每轮随机库中的合成 Document 元数据，新增互斥 detail-browser 验收模式；浏览器从受权项目列表进入文档详情，刷新后仍读取服务端。只校验元数据、强 ETag 与权限边界，不引入文件内容或客户资料。
+- Impact/rollback/validation plan：仅测试夹具/进度，不改生产 API/Schema/Migration/权限/依赖；撤模式可回滚。浏览器 UI 与临时库 SQL/角色/Vault 清理均须通过；如进程中断，精确核残留并重跑，不把局部 UI 观察当完整 exit0。正式信任、其他平台、质量/性能 Gate 另验。
+- Executed：Windows 11 合成成员从项目列表→文档历史→首条详情，显示服务端元数据与 `"v0"`；页面刷新后仍显示且无错误。独立隔离夹具 exit0，SQL 51 ACTIVE+1 RESTRICTED/FOREIGN1、随机库/角色/Vault 清理；PoC PG 恢复原停止。无生产 API/Schema/Migration/权限/依赖变化，不关闭正式信任/其他平台/性能质量/Gate3。
+
 ## DEC-20260929-477 — DOC-05-A02-P01 项目 Document 元数据详情页
 
 - Date/WBS：2026-09-29 / Phase2 DOC-05-A02-P01。冻结 `DOCUMENT_GET`、后端受权详情/强 ETag、前端 P01 安全客户端及 P02 项目列表前置满足。
