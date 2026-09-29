@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260929-474 — DOC-05-A01-P02 项目 Document 历史只读页面
+
+- Date/WBS：2026-09-29 / Phase2 DOC-05-A01-P02。P01 安全客户端及冻结 `DOCUMENT_LIST`、Windows 显式读取组合前置满足。
+- Decision：先给已受权项目接入元数据历史路由/入口/列表，只显示服务端投影的元数据；不把会话项目摘要当读取权限证明，最终由每次 Document API 裁决。不在本项加入 GLOBAL 管理入口、文档详情、上传或下载。失败/权限丧失清旧列表，项目切换/卸载丢弃迟到响应，跨页重复拒绝整页。
+- Impact/rollback/validation：仅新增 Document 页面/测试并修改前端路由、项目详情入口，无后端/DB/API/权限/依赖变化；撤路由/入口/页面可回滚。页面定向 6/6，前端全量 808/808、typecheck/build PASS。风险为旧项目资料误显，以清旧和代际检查控制；实际浏览器/PG、目标账户正式信任和 Gate 3 未验，P03 单列。
+
 ## DEC-20260929-473 — DOC-05-A01-P01 Document 元数据只读客户端
 
 - Date/WBS：2026-09-29 / Phase2 DOC-05-A01-P01。冻结 API-02 `DOCUMENT_LIST/GET`，后端 DOC-01-A02/A03-P01～P04 已有授权读取及 Windows 显式组合；Review/Workflow 写链真实 Owner 与 Phase3 解析证据前置未满足，选择独立可交付的 Document 前端读取任务。

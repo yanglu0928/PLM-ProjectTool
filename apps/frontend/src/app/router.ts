@@ -19,6 +19,7 @@ import AdminUserCreateView from "@/modules/auth/views/AdminUserCreateView.vue";
 import AdminUserListView from "@/modules/auth/views/AdminUserListView.vue";
 import AdminUserDetailView from "@/modules/auth/views/AdminUserDetailView.vue";
 import AdminUserNameView from "@/modules/auth/views/AdminUserNameView.vue";
+import ProjectDocumentListView from "@/modules/document/views/ProjectDocumentListView.vue";
 
 export function createAppRouter(
   history: RouterHistory = createWebHistory(),
@@ -65,6 +66,11 @@ export function createAppRouter(
         path: "/admin/users/:userId/name",
         name: "admin-user-name",
         component: AdminUserNameView,
+      },
+      {
+        path: "/projects/:projectId/documents",
+        name: "project-documents",
+        component: ProjectDocumentListView,
       },
       {
         path: "/projects/:projectId/departments/new",

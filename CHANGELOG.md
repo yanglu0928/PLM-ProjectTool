@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-29：0.1.0.dev0/DOC-05-A01-P02 项目详情接入 Document 元数据历史页：50 条续页/刷新、ACTIVE/ARCHIVED 状态、拒绝清旧、跨页去重与切项目迟到响应隔离；前端 808 项/typecheck/build 通过。兼容 DB0049/冻结 `/api/v1`，无 Schema/Migration/依赖或升级变化；Windows 11 实际浏览器/PG、正式信任/其他平台、Gate3/可用包待验。
+
 - 2026-09-29：执行纪律/方案 A 再确认：持续按计划开发至可用程序包，原方案不兼容的偏差先建 Change Request 再自主实施、验证及同步 GitHub；保留客观 Gate 和安全边界。仅规则/追溯更新，无运行时/Schema/API/依赖或升级变化。
 
 - 2026-09-29：0.1.0.dev0/DOC-05-A01-P01 新增 PROJECT/GLOBAL Document 元数据列表与详情只读客户端：固定同源路径、50 条游标、Scope/ID/强 ETag 绑定、失败关闭及敏感字段剥离；前端 802 项/typecheck/build 通过。兼容 DB0049/冻结 `/api/v1`，无 Schema/Migration/依赖或升级变化；页面、实际浏览器/PG、正式信任/其他平台、Gate3/可用程序包待验。

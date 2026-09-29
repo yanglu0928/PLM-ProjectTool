@@ -205,6 +205,7 @@ onUnmounted(() => { mounted = false; generation += 1; pending.value = null; });
       </dl>
       <p v-if="project"><RouterLink :to="{ name: 'project-members', params: { projectId: project.project_id } }">查看项目成员历史</RouterLink></p>
       <p v-if="project"><RouterLink :to="{ name: 'project-departments', params: { projectId: project.project_id } }">查看项目部门历史</RouterLink></p>
+      <p v-if="project"><RouterLink :to="{ name: 'project-documents', params: { projectId: project.project_id } }">查看项目文档历史</RouterLink></p>
       <button v-if="project?.state === 'ACTIVE' && canArchive() && !requireFreshRead && !receipt && !pending && !blocked && !nameEditor && !nameReceipt"
         type="button" :disabled="busy || writeBusy" @click="startArchive">归档此项目</button>
       <button v-if="project?.state === 'ACTIVE' && canArchive() && !requireFreshRead && !receipt && !pending && !blocked && !archiveEditor && !nameReceipt"
