@@ -28,10 +28,11 @@ function failure(status: number, code: string): Response {
   return new Response(JSON.stringify({ error: { code, message: "private details" }, trace_id: projectId }),
     { status, headers: { "Content-Type": "application/json" } });
 }
-async function session(restricted = false): Promise<SessionClient> {
+async function session(restricted = false, role: string | null = null): Promise<SessionClient> {
   const api = new SessionClient(vi.fn().mockResolvedValue(response({
     user: { user_id: projectId, username_display: "合成用户" }, deployment_role: "NONE",
-    password_change_required: restricted, authorized_projects: [],
+    password_change_required: restricted,
+    authorized_projects: role ? [{ project_id: projectId, name: "演示项目", role }] : [],
     absolute_expires_at: "2030-01-01T12:00:00Z", idle_expires_at: "2030-01-01T11:00:00Z",
     csrf_token: "a".repeat(64),
   })) as typeof fetch);
@@ -77,6 +78,21 @@ describe("ProjectDocumentDetailView", () => {
     expect(wrapper.text()).not.toContain("secret-location");
     expect(wrapper.text()).toContain("仅展示服务器授权的元数据");
     wrapper.unmount();
+  });
+
+  it("links ACTIVE Document version upload only for a writable current project role", async () => {
+    const fetcher = vi.fn().mockResolvedValue(response(entry));
+    const writer = await view(await session(false, "IMPLEMENTATION_MEMBER"), fetcher as typeof fetch);
+    expect(writer.wrapper.get(`a[href="/projects/${projectId}/documents/${documentId}/upload"]`).text())
+      .toBe("上传此文档的新版本");
+    writer.wrapper.unmount();
+    const reader = await view(await session(false, "CUSTOMER_MEMBER"), fetcher as typeof fetch);
+    expect(reader.wrapper.find(`a[href="/projects/${projectId}/documents/${documentId}/upload"]`).exists()).toBe(false);
+    reader.wrapper.unmount();
+    const archived = await view(await session(false, "PROJECT_MANAGER"),
+      vi.fn().mockResolvedValue(response({ ...entry, state: "ARCHIVED" })) as typeof fetch);
+    expect(archived.wrapper.find(`a[href="/projects/${projectId}/documents/${documentId}/upload"]`).exists()).toBe(false);
+    archived.wrapper.unmount();
   });
 
   it("hides denied documents and does not leak server details", async () => {

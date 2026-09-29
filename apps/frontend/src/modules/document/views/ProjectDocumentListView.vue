@@ -11,6 +11,12 @@ const session = toRaw(props.session ?? inject(sessionClientKey, null) ?? new Ses
 const documents = toRaw(props.documents ?? new DocumentReadClient());
 const identity = session.view;
 const route = useRoute();
+const writeRoles = new Set(["PROJECT_MANAGER", "IMPLEMENTATION_MEMBER", "CUSTOMER_MANAGER"]);
+function mayUpload() {
+  return !!identity && !identity.password_change_required && session.canSubmit
+    && session.view?.user.user_id === identity.user.user_id
+    && session.view.authorized_projects.some((item) => item.project_id === route.params.projectId && writeRoles.has(item.role));
+}
 const items = ref<readonly DocumentView[]>([]);
 const nextCursor = ref<string | null>(null);
 const loaded = ref(false);
@@ -70,6 +76,7 @@ onUnmounted(() => { mounted = false; generation += 1; });
       <RouterLink to="/login">前往账户与登录</RouterLink>
     </template>
     <template v-else>
+      <p v-if="mayUpload()"><RouterLink :to="{ name: 'project-document-upload', params: { projectId: route.params.projectId } }">上传新文档</RouterLink></p>
       <button type="button" :disabled="busy" @click="load(null, true)">{{ busy ? '正在读取…' : '刷新文档列表' }}</button>
       <p v-if="busy" role="status">正在确认项目文档访问权限…</p>
       <p v-if="error" role="alert">{{ error }}</p>

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-30：0.1.0.dev0/DOC-05-A05-P07 增加项目文档新建/升版上传页面、历史/详情入口与阶段化确认/未知原键恢复/显式终止；视图定向 26、前端全量 970 项/typecheck/build PASS。复查修复 401 后页面滞留处理中问题。兼容冻结 `/api/v1`/DB0049，无后端 API/Schema/Migration/权限/依赖或升级变化；Windows 11 实际浏览器/PG 文件与 Parse、100 MB 内存/耗时、正式信任/Gate3/包待。
+
 - 2026-09-30：0.1.0.dev0/DOC-05-A05-P06 新增项目上传 Commit/Abort 安全业务回执：新建/升版和父 ETag、201 版本/Parse Job/Location、200 清理待办、首次结果非当前状态标记与错误/未知分离；定向 44、前端全量 960 项/typecheck/build PASS。首轮 UUID 校验正则错误导致 31 个定向失败，修正后补测并全量重跑。兼容冻结 `/api/v1`/DB0049，无后端 API/Schema/Migration/权限/依赖或升级变化；上传 UI/实际文件浏览器PG/Parse、正式信任/Gate3/包待。
 
 - 2026-09-29：0.1.0.dev0/DOC-05-A05-P05 增加 PROJECT Document 上传 Commit/Abort 私有空体命令传输、升版强 If-Match、原幂等键及不自动重传；定向 149、前端全量 916 项/typecheck/build PASS。兼容冻结 `/api/v1`/DB0049，无后端 API/Schema/Migration/权限/依赖或升级变化；业务回执、UI/真实上传/Parse、正式信任/Gate3/包待。

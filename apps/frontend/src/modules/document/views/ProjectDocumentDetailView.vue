@@ -11,6 +11,12 @@ const session = toRaw(props.session ?? inject(sessionClientKey, null) ?? new Ses
 const documents = toRaw(props.documents ?? new DocumentReadClient());
 const identity = session.view;
 const route = useRoute();
+const writeRoles = new Set(["PROJECT_MANAGER", "IMPLEMENTATION_MEMBER", "CUSTOMER_MANAGER"]);
+function mayUpload() {
+  return !!identity && !identity.password_change_required && session.canSubmit
+    && session.view?.user.user_id === identity.user.user_id
+    && session.view.authorized_projects.some((item) => item.project_id === route.params.projectId && writeRoles.has(item.role));
+}
 const document = ref<DocumentView | null>(null);
 const busy = ref(false);
 const error = ref("");
@@ -122,6 +128,8 @@ onUnmounted(() => { mounted = false; generation += 1; clearVersions(); });
         <dt>创建时间</dt><dd><time :datetime="document.created_at">{{ new Date(document.created_at).toLocaleString('zh-CN') }}</time></dd>
         <dt>元数据版本</dt><dd>{{ document.etag }}</dd>
       </dl>
+      <p v-if="document?.state === 'ACTIVE' && mayUpload()"><RouterLink :to="{ name: 'project-document-version-upload',
+        params: { projectId: route.params.projectId, documentId: document.document_id } }">上传此文档的新版本</RouterLink></p>
       <section v-if="document" aria-labelledby="document-versions-title">
         <h2 id="document-versions-title">可用版本历史</h2>
         <p>仅列出当前有权读取且状态为可用的版本。下载由服务器重新检查权限与文件完整性；这里不提供文内预览或定位。</p>

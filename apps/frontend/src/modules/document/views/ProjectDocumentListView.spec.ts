@@ -22,10 +22,11 @@ function failure(status: number, code: string): Response {
   return new Response(JSON.stringify({ error: { code, message: "private details" }, trace_id: id }),
     { status, headers: { "Content-Type": "application/json" } });
 }
-async function session(restricted = false): Promise<SessionClient> {
+async function session(restricted = false, role: string | null = null): Promise<SessionClient> {
   const api = new SessionClient(vi.fn().mockResolvedValue(response({
     user: { user_id: id, username_display: "合成用户" }, deployment_role: "NONE",
-    password_change_required: restricted, authorized_projects: [],
+    password_change_required: restricted,
+    authorized_projects: role ? [{ project_id: id, name: "演示项目", role }] : [],
     absolute_expires_at: "2030-01-01T12:00:00Z", idle_expires_at: "2030-01-01T11:00:00Z",
     csrf_token: "a".repeat(64),
   })) as typeof fetch);
@@ -68,6 +69,16 @@ describe("ProjectDocumentListView", () => {
     expect(fetcher.mock.calls[0]?.[0]).toBe(`/api/v1/projects/${id}/documents?page_size=50`);
     expect(wrapper.text()).not.toContain("storage_locator");
     wrapper.unmount();
+  });
+
+  it("shows the new Document upload entry only to a current writable project role", async () => {
+    const fetcher = vi.fn().mockResolvedValue(response({ items: [], next_cursor: null, has_more: false }));
+    const writer = await view(await session(false, "PROJECT_MANAGER"), fetcher as typeof fetch);
+    expect(writer.wrapper.get(`a[href="/projects/${id}/documents/new"]`).text()).toBe("上传新文档");
+    writer.wrapper.unmount();
+    const reader = await view(await session(false, "CUSTOMER_MEMBER"), fetcher as typeof fetch);
+    expect(reader.wrapper.find(`a[href="/projects/${id}/documents/new"]`).exists()).toBe(false);
+    reader.wrapper.unmount();
   });
 
   it("loads next page then refreshes from the beginning", async () => {

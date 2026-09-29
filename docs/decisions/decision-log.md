@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260930-491 — DOC-05-A05-P07 项目文档新建/升版上传页面
+
+- Date/WBS：2026-09-30 / Phase2 DOC-05-A05-P07。冻结上传四步协议、Windows 显式路由、P01～P06 客户端及项目 Document 历史/详情页前置具备。
+- Decision/Reason：独立页面覆盖新建和升版两模式，入口分别来自项目文档历史与受权详情；升版先独立 GET ACTIVE 文档与原强 ETag/最新版本引用。用户明确选择文件/目的/类别并确认后，同一次操作按 Create→Content→Commit 连续执行；各阶段保留原文件与原 Key，未知结果停住，仅在用户核对后显式复用原阶段，不生成新 Key；确定性内容/Commit 拒绝进入显式 Abort。Commit 首次回执只展示为本次结果，要求独立重读当前文档。
+- Impact/rollback/validation plan：只增 Document 页面、路由、历史/详情入口与页面测试；不改变后端 API/Schema/Migration/权限/依赖，撤页面/路由即可回滚。测试无会话/无项目写角色、模式/输入、阶段调用顺序、未知恢复原键、Abort、跨项目迟到结果清除与首次回执非当前状态。实际浏览器/PG/真实文件/Parser Worker 后续单独验收；不把页面合同视为发行可用。
+
 ## DEC-20260930-490 — DOC-05-A05-P06 上传 Commit/Abort 安全业务回执
 
 - Date/WBS：2026-09-30 / Phase2 DOC-05-A05-P06。冻结 `DOCUMENT_UPLOAD_COMMIT/ABORT`、后端 201/200 合同、P05 空体私有传输及 P04 已收内容回执满足前置。
