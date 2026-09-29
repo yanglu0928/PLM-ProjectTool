@@ -1,0 +1,89 @@
+---
+name: plm-project-development
+description: Execute architecture, PoC, implementation, testing, packaging, and deployment work for the PLM project implementation assistant while enforcing its locked V2.1 baseline, phase gates, traceability, and reporting contracts. Use for all engineering work in this repository; do not use it to reinterpret or expand the product scope.
+---
+
+# PLM Project Development
+
+本 Skill 将《PLM项目实施辅助工具软件开发实施方案 V2.1》作为最高业务与技术基线，将《AI开发总控指令与 Skill 规范 V1.1》作为执行约束。原始文档始终是事实来源；本 Skill 只负责路由和执行，不替代原文。
+
+## 开始任务
+
+1. 读取两份根目录基线文档。
+2. 识别当前 Phase、WBS、前置条件、输入基线及验收标准。
+3. 检查 `docs/architecture/adr/`、冻结数据模型、冻结 API Contract 和相关模块文档是否存在。
+4. 读取下方与任务相关的参考文件。
+5. 若前置 Gate 未通过，不进入后续阶段；完成仍被允许的验证或文档工作。
+
+## 当前项目状态
+
+- 业务范围和技术选型已满足冻结条件。
+- 正式开发启动条件尚未满足。
+- 下一阶段是 Phase 0 技术 PoC。
+- Phase 0 完成之前可以编写 PoC 代码，但不得大规模开发正式业务模块。
+
+## 参考文件路由
+
+- 涉及模块边界、依赖、AI/RAG、Trace、Review 或数据流时，读取 [architecture.md](references/architecture.md)。
+- 涉及语言、框架、数据库、文档处理、插件、License 或部署平台选型时，读取 [technology-baseline.md](references/technology-baseline.md)。
+- 涉及编码、数据库/API 变更、版本、异常、安全、Git 或 ADR 时，读取 [development-rules.md](references/development-rules.md)。
+- 涉及测试设计、验收、Definition of Done 或质量 Gate 时，读取 [testing-rules.md](references/testing-rules.md)。
+- 涉及 Phase 0 或任何技术可行性结论时，读取 [poc-rules.md](references/poc-rules.md)。
+- 涉及安装、升级、打包、交付、三平台或 Release Gate 时，读取 [release-rules.md](references/release-rules.md)。
+
+## 决策规则
+
+优先级：用户最新明确变更 > 正式锁定方案 > 已冻结 ADR > 已冻结数据模型/API Contract > 当前阶段设计 > AI 建议。
+
+只有用户明确表示“修改已锁定方案”时，才能修改正式基线。发现问题时，输出风险、证据、影响和变更建议，等待确认；不得自行替换技术或业务规则。
+
+不要把“合理推断”“待验证”或 AI 生成内容写成“已验证”。技术可行性只有在对应 PoC 具备完整记录并 PASS 后才能确认。
+
+## 编码前检查
+
+任何正式编码前，先输出并确认：
+
+```text
+当前Phase：
+当前WBS：
+输入基线：
+前置任务：
+涉及模块：
+涉及实体：
+涉及API：
+涉及权限：
+验收标准：
+风险：
+```
+
+前置未完成时停止该任务，不以临时代码绕过 Gate。
+
+## 执行边界
+
+- 一个任务只解决一个可验收问题；把“开发某模块”拆成实体、接口、权限、版本和测试等独立任务。
+- 不跨 Phase，不跨层顺手实现，不擅自扩大 P0 Scope。
+- 保持 UI → API → Application Service → Domain → Repository/Gateway 的依赖方向。
+- 正式业务事实必须来自结构化对象和人工确认；AI 输出只是建议。
+- 正式 Requirement、Prototype、Solution Section、WBS Task 必须具有可反向查询的 TraceLink。
+
+## 默认响应合同
+
+开发执行型任务默认使用：
+
+```text
+【当前阶段】
+【当前任务】
+【基线检查】PASS / BLOCKED
+【本次目标】
+【输入】
+【实施步骤】
+【预计修改文件】
+【验收标准】
+【风险】
+【执行结果】
+【测试结果】
+【遗留问题】
+【下一任务】
+```
+
+完成一个任务后，必须明确 Changed、Files、Migration、API、Tests、Result、Known Issues、Next。若用户只要求简短状态，可压缩篇幅，但不得省略阻塞、失败或未验证事实。
