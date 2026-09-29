@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260929-472 — PRJ-05-A15-P04 Windows 11 项目名称更新端到端
+
+- Date/WBS：2026-09-29 / Phase2 PRJ-05-A15-P04。P01～P03、后端 PRJ-04-A07 与现有隔离浏览器/PG 夹具前置满足。
+- Decision：增加互斥项目名称 PATCH API-only/browser 合成验收模式，只修改每轮随机库的 OWNED 项目。HTTP 检查匿名/非负责人/CSRF/跨项目/缺版本、v0→v1/旧版冲突/同名仍 v2 与独立 GET；浏览器从当前项目详情确认新名称，先看本次回执，再独立刷新当前详情。SQL 核 OWNED 名称/版本、FOREIGN 未变、每次实际提交的 Audit 数及 PATCH 无幂等收据；随机库/角色/Vault 精确清理。PoC PG 原启停状态另行核查。
+- Impact/rollback/validation：只改自有合成验收夹具与记录，无生产 API/Schema/权限/依赖变化；回滚撤新模式。风险是非目标数据被修改或 PG 异常停机，以随机库/固定合成 ID、最终存在性和启停检查控制。正式信任/其他平台/性能/Gate 独立验收。
+- Executed：Windows 11 API-only 与实际 IAB 两轮随机库均 exit0。HTTP 匿名/非负责人/缺 CSRF/跨项目/缺 If-Match/非法 Body 拒绝，首次改名 `v1`、旧版冲突、同名再写 `v2`、独立 GET 通过；浏览器先见本次回执，再独立刷新见新名称。SQL 核 API-only OWNED `ACTIVE/v2`、2 Audit，浏览器 OWNED `ACTIVE/v1`、1 Audit，FOREIGN 未变、无 PATCH 收据；两轮临时库/角色/Vault 清理通过。PoC PG 测试前停止，启动成功，验收后已无进程；日志末尾无本轮正常关闭记录，停机原因未证实，不把关闭过程标 PASS。无生产 API/Schema/权限/依赖变更，不关闭正式信任/其他平台/性能质量/Gate3。
+
 ## DEC-20260929-471 — PRJ-05-A15-P03 项目名称更新显式确认页面
 
 - Date/WBS：2026-09-29 / Phase2 PRJ-05-A15-P03。冻结 `PROJECT_PATCH`、P01/P02、ProjectReadClient 与现有项目详情前置满足。

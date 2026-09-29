@@ -180,6 +180,50 @@ def verify_archive_http(origin: str, owned: uuid.UUID, foreign: uuid.UUID):
     print("PROJECT_ARCHIVE_HTTP PASS: anonymous401/admin404/CSRF403/foreign404/IfMatch428/200-replay/key-conflict409/detail", flush=True)
 
 
+def verify_project_patch_http(origin: str, owned: uuid.UUID, foreign: uuid.UUID):
+    route = f"/api/v1/projects/{owned}"
+    body = {"name": "Synthetic Renamed Project"}
+    with httpx.Client(base_url=origin, timeout=20) as anonymous:
+        assert anonymous.patch(route, headers={"Origin": origin, "If-Match": '"v0"'}, json=body).status_code == 401
+    with httpx.Client(base_url=origin, timeout=20) as admin:
+        login = admin.post("/api/v1/auth/login", headers={"Origin": origin},
+            json={"username": "Synthetic Project Admin", "password": "synthetic-project-only-password"})
+        assert login.status_code == 200
+        denied = admin.patch(route, headers={"Origin": origin,
+            "X-CSRF-Token": login.json()["data"]["csrf_token"], "If-Match": '"v0"'}, json=body)
+        assert denied.status_code == 404, denied.text
+    with httpx.Client(base_url=origin, timeout=20) as manager:
+        login = manager.post("/api/v1/auth/login", headers={"Origin": origin},
+            json={"username": "Synthetic Project Member", "password": "synthetic-project-only-password"})
+        assert login.status_code == 200
+        headers = {"Origin": origin, "X-CSRF-Token": login.json()["data"]["csrf_token"],
+                   "If-Match": '"v0"'}
+        assert manager.patch(route, headers={"Origin": origin, "If-Match": '"v0"'}, json=body).status_code == 403
+        denied = manager.patch(f"/api/v1/projects/{foreign}", headers=headers, json=body)
+        assert denied.status_code == 404, denied.text
+        missing = manager.patch(route, headers={"Origin": origin,
+            "X-CSRF-Token": headers["X-CSRF-Token"]}, json=body)
+        assert missing.status_code == 428, missing.text
+        malformed = manager.patch(route, headers=headers, json={"code": "OTHER"})
+        assert malformed.status_code == 400, malformed.text
+        first = manager.patch(route, headers=headers, json=body)
+        assert first.status_code == 200 and first.headers["ETag"] == '"v1"', first.text
+        assert first.json()["data"]["project_id"] == str(owned)
+        assert first.json()["data"]["code"] == "OWNED"
+        assert first.json()["data"]["name"] == body["name"]
+        assert first.json()["data"]["state"] == "ACTIVE"
+        assert first.json()["data"]["etag"] == '"v1"'
+        stale = manager.patch(route, headers=headers, json=body)
+        assert stale.status_code == 409 and stale.json()["error"]["code"] == "CONFLICT_VERSION", stale.text
+        same = manager.patch(route, headers={**headers, "If-Match": '"v1"'}, json=body)
+        assert same.status_code == 200 and same.headers["ETag"] == '"v2"', same.text
+        assert same.json()["data"]["name"] == body["name"]
+        detail = manager.get(route)
+        assert detail.status_code == 200 and detail.headers["ETag"] == '"v2"', detail.text
+        assert detail.json()["data"]["name"] == body["name"]
+    print("PROJECT_PATCH_HTTP PASS: anonymous401/admin404/CSRF403/foreign404/IfMatch428/body400/v1/stale409/same-v2/detail", flush=True)
+
+
 def verify_member_http(origin: str, owned: uuid.UUID, foreign: uuid.UUID):
     with httpx.Client(base_url=origin, timeout=20) as viewer:
         login = viewer.post("/api/v1/auth/login", headers={"Origin": origin},
@@ -520,6 +564,8 @@ def main():
                     admin_user = insert_user(db, "Synthetic Project Admin", hashed.password_hash, hashed.algorithm_id)
                     create_mode = "--create-api-only" in sys.argv[1:] or "--create-browser" in sys.argv[1:]
                     archive_mode = "--archive-api-only" in sys.argv[1:] or "--archive-browser" in sys.argv[1:]
+                    project_patch_mode = ("--project-patch-api-only" in sys.argv[1:]
+                                          or "--project-patch-browser" in sys.argv[1:])
                     state_mode = "--user-state-browser" in sys.argv[1:]
                     name_mode = "--user-name-browser" in sys.argv[1:]
                     member_create_mode = ("--member-create-browser" in sys.argv[1:]
@@ -538,7 +584,7 @@ def main():
                                                   or "--department-deactivate-api-only" in sys.argv[1:])
                     member_mode = ("--member-browser" in sys.argv[1:]
                                    or "--member-api-only" in sys.argv[1:])
-                    if sum((create_mode, archive_mode, state_mode, name_mode, member_mode, member_create_mode,
+                    if sum((create_mode, archive_mode, project_patch_mode, state_mode, name_mode, member_mode, member_create_mode,
                             member_patch_mode, member_state_mode, department_history_mode,
                             department_create_mode, department_patch_mode,
                             department_deactivate_mode)) > 1:
@@ -679,6 +725,8 @@ def main():
                             created = verify_create_http(origin, manager)
                         elif "--archive-api-only" in sys.argv[1:]:
                             verify_archive_http(origin, project, foreign)
+                        elif "--project-patch-api-only" in sys.argv[1:]:
+                            verify_project_patch_http(origin, project, foreign)
                         elif "--api-only" in sys.argv[1:]:
                             verify_http(origin, project, foreign)
                         elif "--member-api-only" in sys.argv[1:]:
@@ -716,6 +764,10 @@ def main():
                             elif archive_mode and "--archive-browser" in sys.argv[1:]:
                                 assert session_count >= 1
                             elif archive_mode:
+                                assert session_count == 2
+                            elif project_patch_mode and "--project-patch-browser" in sys.argv[1:]:
+                                assert session_count >= 1
+                            elif project_patch_mode:
                                 assert session_count == 2
                             elif "--member-api-only" in sys.argv[1:]:
                                 assert session_count == 3
@@ -759,6 +811,22 @@ def main():
                                     "WHERE operation='V1_PROJECT_ARCHIVE' AND state='COMPLETED' "
                                     "AND result_ref_id=%s", (project,)).fetchone()[0] == 1
                                 print("PROJECT_ARCHIVE_DATABASE PASS: owned ARCHIVED/v1, foreign ACTIVE/v0, manager retained, one Audit/receipt", flush=True)
+                            if project_patch_mode:
+                                expected_name = ("Synthetic Browser Renamed Project" if "--project-patch-browser" in sys.argv[1:]
+                                                 else "Synthetic Renamed Project")
+                                expected_version = 1 if "--project-patch-browser" in sys.argv[1:] else 2
+                                assert db.execute("SELECT project_code,name,state,lock_version FROM plm.prj_projects "
+                                    "WHERE project_id=%s", (project,)).fetchone() == (
+                                    "OWNED", expected_name, "ACTIVE", expected_version)
+                                assert db.execute("SELECT name,state,lock_version FROM plm.prj_projects "
+                                    "WHERE project_id=%s", (foreign,)).fetchone() == (
+                                    "Synthetic Foreign Project", "ACTIVE", 0)
+                                assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s "
+                                    "AND action='PROJECT_PATCHED'", (project,)).fetchone()[0] == expected_version
+                                assert db.execute("SELECT count(*) FROM plm.plt_idempotency_receipts "
+                                    "WHERE operation LIKE 'V1_PROJECT_PATCH%%'").fetchone()[0] == 0
+                                print(f"PROJECT_PATCH_DATABASE PASS: owned ACTIVE/v{expected_version}, foreign unchanged, "
+                                      f"{expected_version} Audit, no PATCH receipt", flush=True)
                             if member_create_mode:
                                 assert target_user is not None
                                 member_created = db.execute("SELECT project_member_id,department_id,project_role,state "
