@@ -137,7 +137,7 @@ onUnmounted(() => { mounted = false; generation += 1; clearVersions(); });
             <span> · {{ item.detected_mime }} · {{ item.size_bytes }} 字节</span>
             <span> · <time :datetime="item.created_at">{{ new Date(item.created_at).toLocaleString('zh-CN') }}</time></span>
             <span> · <a :href="documents.contentUrl({ kind: 'PROJECT', projectId: String(route.params.projectId) },
-              document.document_id, item.document_version_id)" target="_blank" rel="noopener noreferrer">
+              document.document_id, item.document_version_id)">
               下载版本 {{ item.version_no }}
             </a></span>
             <details><summary>完整性元数据</summary>

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-29：0.1.0.dev0/DOC-05-A04-P03 Windows 11 隔离真实文件下载 API/PG 与浏览器验收：50 字节合成文件的浏览器下载 SHA-256 与原文一致，附件/no-store/nosniff、匿名/跨项目/Range 拒绝及随机库/角色/Vault/临时文件清理完整 exit0。IAB 首轮新标签事件不可观测，改同标签并重建；前端 841 项/typecheck/build PASS。兼容冻结 `/api/v1`/DB0049，无后端 API/Schema/Migration/依赖或升级变化；过期错误页 UX、正式信任/其他平台/性能质量/Gate3/可用包待验。
+
 - 2026-09-29：0.1.0.dev0/DOC-05-A04-P02 在已受权的可用版本行提供原生附件下载入口，未加载/空态无链接且前端不缓存正文；视图定向 10、全量 841 项/typecheck/build PASS。兼容冻结 `/api/v1`/DB0049，无后端 API/Schema/Migration/依赖或升级变化；真实文件浏览器下载、正式信任/其他平台/Gate3/可用包待验。
 
 - 2026-09-29：0.1.0.dev0/DOC-05-A04-P01 新增 DocumentVersion 固定同源受权下载地址构造，不在前端整包缓存流式文件；定向 69、前端全量 841 项/typecheck/build PASS。兼容冻结 `/api/v1`/DB0049，无后端 API/Schema/Migration/依赖或升级变化；UI 入口、真实文件/浏览器下载、正式信任/其他平台/Gate3/可用包待验。

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ctypes
+import hashlib
 import queue
 import socket
 import subprocess
@@ -36,6 +37,7 @@ from plm_assistant.modules.platform.infrastructure.bootstrap_config import Boots
 from plm_assistant.modules.project.api.department_list_cursor import DepartmentListCursorCodec
 from plm_assistant.modules.project.api.member_list_cursor import MemberListCursorCodec
 from plm_assistant.modules.document.infrastructure.upload_token import HmacUploadTokenIssuer
+from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -603,6 +605,31 @@ def verify_document_version_http(origin: str, project: uuid.UUID, foreign: uuid.
     print("DOCUMENT_VERSION_HTTP PASS: anonymous401/foreign404, AVAILABLE metadata list/detail, no locator", flush=True)
 
 
+def verify_document_download_http(origin: str, project: uuid.UUID, foreign: uuid.UUID,
+                                  document_id: uuid.UUID, version_id: uuid.UUID,
+                                  content: bytes):
+    route = f"/api/v1/projects/{project}/documents/{document_id}/versions/{version_id}/content"
+    with httpx.Client(base_url=origin, timeout=20) as anonymous:
+        assert anonymous.get(route).status_code == 401
+    with httpx.Client(base_url=origin, timeout=20) as member:
+        login = member.post("/api/v1/auth/login", headers={"Origin": origin},
+            json={"username": "Synthetic Project Member", "password": "synthetic-project-only-password"})
+        assert login.status_code == 200, login.text
+        response = member.get(route)
+        assert response.status_code == 200, response.text
+        assert response.content == content and hashlib.sha256(response.content).digest() == hashlib.sha256(content).digest()
+        assert response.headers["content-length"] == str(len(content))
+        assert response.headers["content-type"].startswith("text/plain")
+        assert response.headers["content-disposition"] == f'attachment; filename="document-{version_id}.bin"'
+        assert response.headers["cache-control"] == "no-store"
+        assert response.headers["x-content-type-options"] == "nosniff"
+        cross = member.get(f"/api/v1/projects/{foreign}/documents/{document_id}/versions/{version_id}/content")
+        assert cross.status_code == 404 and cross.json()["error"]["code"] == "RESOURCE_NOT_FOUND"
+        ranged = member.get(route, headers={"Range": "bytes=0-1"})
+        assert ranged.status_code == 400 and ranged.json()["error"]["code"] == "REQUEST_MALFORMED"
+    print("DOCUMENT_DOWNLOAD_HTTP PASS: real bytes/hash, attachment/no-store/nosniff, anonymous401/foreign404/range400", flush=True)
+
+
 def main():
     suffix = uuid.uuid4().hex[:12]
     dbname = role = "prj05a04_" + suffix
@@ -655,9 +682,14 @@ def main():
                                              or "--document-history-browser" in sys.argv[1:]
                                              or "--document-detail-browser" in sys.argv[1:]
                                              or "--document-version-api-only" in sys.argv[1:]
-                                             or "--document-version-browser" in sys.argv[1:])
+                                             or "--document-version-browser" in sys.argv[1:]
+                                             or "--document-download-api-only" in sys.argv[1:]
+                                             or "--document-download-browser" in sys.argv[1:])
                     document_version_mode = ("--document-version-api-only" in sys.argv[1:]
                                              or "--document-version-browser" in sys.argv[1:])
+                    document_download_mode = ("--document-download-api-only" in sys.argv[1:]
+                                              or "--document-download-browser" in sys.argv[1:])
+                    download_document_id = download_version_id = None
                     member_mode = ("--member-browser" in sys.argv[1:]
                                    or "--member-api-only" in sys.argv[1:])
                     if sum((create_mode, archive_mode, project_patch_mode, state_mode, name_mode, member_mode, member_create_mode,
@@ -697,7 +729,10 @@ def main():
                                 "(scope,project_id,document_category,title,original_display_name,created_by) "
                                 "VALUES ('PROJECT',%s,'PROJECT_RECORD',%s,%s,%s) RETURNING document_id",
                                 (project, f"Synthetic Browser Document {index:02d}",
-                                 f"synthetic-{index:02d}.pdf", member)).fetchone()[0]
+                                 ("synthetic-00.txt" if document_download_mode and index == 0
+                                  else f"synthetic-{index:02d}.pdf"), member)).fetchone()[0]
+                            if document_download_mode and index == 0:
+                                download_document_id = document_id
                             if document_version_mode:
                                 file_id = db.execute("INSERT INTO plm.doc_file_objects "
                                     "(scope,project_id,storage_class,storage_locator,original_name_metadata,"
@@ -774,6 +809,35 @@ def main():
                 try:
                     with tempfile.TemporaryDirectory(prefix="plm-project-browser-") as directory, ExitStack() as stack:
                         settings = BootstrapSettings(data_root=Path(directory), trusted_origins=(origin,))
+                        download_content = b"PLM Project Tool isolated document download proof\n"
+                        if document_download_mode:
+                            assert download_document_id is not None
+                            storage = LocalFileStorage(settings.data_root)
+                            file_id = uuid.uuid4()
+                            stage, final = storage.locators(scope="PROJECT", project_id=project,
+                                                            file_object_id=file_id)
+                            digest = hashlib.sha256(download_content).digest()
+                            with storage.reserve_staging(stage) as stream:
+                                stream.write(download_content)
+                            storage.publish_verified(stage, final, expected_sha256=digest,
+                                                     expected_size=len(download_content), max_bytes=100_000_000)
+                            with source.connect(dbname) as db:
+                                db.execute("INSERT INTO plm.doc_file_objects "
+                                    "(file_object_id,scope,project_id,storage_class,storage_locator,"
+                                    "original_name_metadata,created_by,file_state,sha256,size_bytes,"
+                                    "detected_mime,available_at) VALUES (%s,'PROJECT',%s,'PERSISTENT',%s,"
+                                    "'synthetic-00.txt',%s,'AVAILABLE',%s,%s,'text/plain',"
+                                    "clock_timestamp()+interval '1 minute')",
+                                    (file_id, project, final, member, digest, len(download_content)))
+                                download_version_id = db.execute("INSERT INTO plm.doc_document_versions "
+                                    "(document_id,scope,project_id,version_no,file_object_id,content_sha256,"
+                                    "size_bytes,detected_mime,created_by) VALUES "
+                                    "(%s,'PROJECT',%s,1,%s,%s,%s,'text/plain',%s) "
+                                    "RETURNING document_version_id",
+                                    (download_document_id, project, file_id, digest, len(download_content), member)).fetchone()[0]
+                                db.execute("UPDATE plm.doc_documents SET latest_version_ref=%s,"
+                                    "effective_version_ref=%s,lock_version=1 WHERE document_id=%s",
+                                    (download_version_id, download_version_id, download_document_id))
                         prefix = "plm_assistant.entrypoints.production_login."
                         stack.enter_context(patch("plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services",
                                                   return_value=SimpleNamespace(guard=SyntheticGuard())))
@@ -861,6 +925,10 @@ def main():
                             verify_document_history_http(origin, project, foreign)
                         elif "--document-version-api-only" in sys.argv[1:]:
                             verify_document_version_http(origin, project, foreign)
+                        elif "--document-download-api-only" in sys.argv[1:]:
+                            assert download_document_id is not None and download_version_id is not None
+                            verify_document_download_http(origin, project, foreign,
+                                download_document_id, download_version_id, download_content)
                         else:
                             actions = queue.Queue()
                             Thread(target=lambda: actions.put(sys.stdin.readline().strip()), daemon=True).start()
@@ -907,9 +975,10 @@ def main():
                                 assert session_count == 2
                             elif document_history_mode and ("--document-history-browser" in sys.argv[1:]
                                                             or "--document-detail-browser" in sys.argv[1:]
-                                                            or "--document-version-browser" in sys.argv[1:]):
+                                                            or "--document-version-browser" in sys.argv[1:]
+                                                            or "--document-download-browser" in sys.argv[1:]):
                                 assert session_count >= 1
-                            elif document_version_mode:
+                            elif document_version_mode or document_download_mode:
                                 assert session_count == 1
                             elif document_history_mode:
                                 assert session_count == 3
@@ -1067,6 +1136,13 @@ def main():
                                 assert db.execute("SELECT count(*) FROM plm.doc_document_versions "
                                     "WHERE project_id=%s", (foreign,)).fetchone()[0] == 0
                                 print("DOCUMENT_VERSION_DATABASE PASS: 51 matching AVAILABLE metadata, foreign 0", flush=True)
+                            if document_download_mode:
+                                assert db.execute("SELECT count(*) FROM plm.doc_document_versions "
+                                    "WHERE project_id=%s AND availability_state='AVAILABLE'",
+                                    (project,)).fetchone()[0] == 1
+                                assert db.execute("SELECT count(*) FROM plm.doc_document_versions "
+                                    "WHERE project_id=%s", (foreign,)).fetchone()[0] == 0
+                                print("DOCUMENT_DOWNLOAD_DATABASE PASS: one real-file-backed AVAILABLE version, foreign 0", flush=True)
                         print(f"PROJECT_BROWSER_DATABASE_COUNTS PASS: {expected} projects, {session_count} sessions, {active_expected} active members", flush=True)
                 finally:
                     if proxy:
@@ -1104,6 +1180,7 @@ def main():
         library.CredFree.argtypes = [ctypes.c_void_p]
         library.CredFree(pointer)
     assert not found and ctypes.get_last_error() == 1168
+    assert not Path(directory).exists(), "Temporary file root was not cleaned"
     print("PROJECT_BROWSER_FIXTURE_CLEANUP PASS: owned services stopped; database/role absent; Vault absence1168", flush=True)
 
 

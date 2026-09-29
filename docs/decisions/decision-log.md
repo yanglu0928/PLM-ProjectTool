@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260929-484 — DOC-05-A04-P03 真实隔离文件浏览器/PG 下载验收
+
+- Date/WBS：2026-09-29 / Phase2 DOC-05-A04-P03。冻结下载 GET、后端已实现 verified snapshot/流式响应及 P01/P02 前端地址与入口满足前置。
+- Decision/Reason：在现有随机库/临时 data root 夹具中通过受控 LocalFileStorage 写入非客户合成文本文件，记录真实 SHA-256/大小及 AVAILABLE FileObject/Version；先做 HTTP 字节/附件头/拒绝，再从实际浏览器版本行触发下载。原合成版本元数据无真实文件，不能复用其可见性作为下载证据。
+- Impact/rollback/validation plan：仅验证夹具/进度，不改生产 API/Schema/Migration/权限/依赖；撤模式即可回滚。要求每轮随机库/角色/Vault/临时文件清理及原 PoC PG 状态恢复。浏览器若无法可靠获得下载字节，必须将该层证据界定为“触发成功”而非字节校验 PASS；正式信任/三平台另验。
+- Deviation before repair：首轮浏览器点击 `target=_blank` 的下载链接只在 IAB 建立未归属当前 session 的新标签，原标签的下载事件等待 15 秒超时；不能据此宣称下载成功。为完成实际可验证下载，在本 WBS 中改为同标签原生附件链接，重跑前端及浏览器；取舍是受权失败时浏览器可能显示服务端错误页，保留回退到文档详情的能力并列入已知问题。原 P02 记录保留，不追写已推送提交。
+- Executed：隔离 LocalFileStorage 写入 50 字节合成文本，真实 FileObject/Version、HTTP 下载字节与 SHA-256、附件头、匿名 401/外项目 404/Range 400、随机库/角色/Vault/临时文件根清理完整 exit0。改同标签后前端 841 项/typecheck/build PASS，Windows 11 IAB 从受权项目版本行触发下载事件，浏览器保存文件 SHA-256 为 `72e5df2e4b099d1736bd7031192212402f3b74f56db444a99040f608dc1201d1`，与夹具原文一致；同页保持。事后读 Downloads 发现首轮新标签也保存了同摘要文件，故首轮是“事件不可观测”而非下载失败。两份仅含合成内容的测试下载已移到回收站，可恢复；IAB 临时标签最终关闭操作被中断，不能宣称浏览器标签已清理。PoC PostgreSQL fast stop 还原。正式信任/三平台/文内定位仍未验。
+
 ## DEC-20260929-483 — DOC-05-A04-P02 版本行原生附件下载入口
 
 - Date/WBS：2026-09-29 / Phase2 DOC-05-A04-P02。P01 固定同源下载地址与 P03 实际版本历史 UI、冻结 `DOCUMENT_VERSION_DOWNLOAD` 及后端受权流式接口满足前置。

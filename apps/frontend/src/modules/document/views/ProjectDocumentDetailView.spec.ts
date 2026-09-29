@@ -140,8 +140,7 @@ describe("ProjectDocumentDetailView", () => {
     const download = wrapper.get('a[href*="/content"]');
     expect(download.attributes("href")).toBe(
       `/api/v1/projects/${projectId}/documents/${documentId}/versions/${versionId}/content`);
-    expect(download.attributes("target")).toBe("_blank");
-    expect(download.attributes("rel")).toBe("noopener noreferrer");
+    expect(download.attributes("target")).toBeUndefined();
     expect(download.text()).toContain("下载版本 2");
     expect(fetcher).toHaveBeenCalledTimes(2);
     wrapper.unmount();
