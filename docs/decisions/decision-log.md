@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260929-452 — PRJ-05-A10-P03 Windows 11 部门历史端到端
+
+- Date/WBS：2026-09-29 / Phase2 PRJ-05-A10-P03；P01/P02与PRJ-04-A13-P04前置满足。自有浏览器/PG随机隔离 fixture，仅合成信任源。
+- Decision：独立 department-history 模式种入52条部门含末页INACTIVE，API-only核匿名/外项目/非成员拒绝及50+2分页，浏览器从项目详情进入部门页并加载更多；SQL核最终数据不变，清理随机库/角色/Vault与自有服务，恢复PoC PG原停止状态。不把合成验收外推到正式信任/Gate3。
+- Impact/rollback/validation：仅验证脚本及进度，无生产程序/API/Schema/权限/依赖变化；中断风险用唯一资源名和精确清理控制。失败不标PASS；回滚撤独立 fixture 模式。
+- Executed：2026-09-29，首轮 API-only 审计列名错误、首轮浏览器旧Session数量断言错误分别修复并重跑；最终 HTTP/PG 50+2/一条停用与浏览器续页均通过，SQL 52/1/零部门写，随机资源清理 exit0，PoC PG恢复原停止。正式信任/其他平台/性能/质量/Gate未验。
+
 ## DEC-20260929-451 — PRJ-05-A10-P02 部门历史只读页面
 
 - Date/WBS：2026-09-29 / Phase2 PRJ-05-A10-P02；P01安全客户端、Project详情路由与冻结 Department GET 前置已满足。

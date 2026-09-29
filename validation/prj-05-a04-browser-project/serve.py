@@ -285,6 +285,35 @@ def verify_member_state_http(origin: str, project: uuid.UUID, foreign: uuid.UUID
     print("PROJECT_MEMBER_STATE_HTTP PASS: anonymous401/admin404/CSRF403/foreign404/suspend-replay-v1/key-conflict409/resume-v2/remove-v3/history", flush=True)
 
 
+def verify_department_history_http(origin: str, project: uuid.UUID, foreign: uuid.UUID):
+    route = f"/api/v1/projects/{project}/departments"
+    with httpx.Client(base_url=origin, timeout=20) as anonymous:
+        assert anonymous.get(route, params={"page_size": 50}).status_code == 401
+    with httpx.Client(base_url=origin, timeout=20) as admin:
+        login = admin.post("/api/v1/auth/login", headers={"Origin": origin},
+            json={"username": "Synthetic Project Admin", "password": "synthetic-project-only-password"})
+        assert login.status_code == 200
+        assert admin.get(route, params={"page_size": 50}).status_code == 404
+    with httpx.Client(base_url=origin, timeout=20) as manager:
+        login = manager.post("/api/v1/auth/login", headers={"Origin": origin},
+            json={"username": "Synthetic Project Member", "password": "synthetic-project-only-password"})
+        assert login.status_code == 200
+        assert manager.get(f"/api/v1/projects/{foreign}/departments", params={"page_size": 50}).status_code == 404
+        first = manager.get(route, params={"page_size": 50})
+        assert first.status_code == 200, first.text
+        page = first.json()["data"]
+        assert len(page["items"]) == 50 and page["has_more"] and page["next_cursor"]
+        second = manager.get(route, params={"page_size": 50, "cursor": page["next_cursor"]})
+        assert second.status_code == 200, second.text
+        last = second.json()["data"]
+        assert len(last["items"]) == 2 and not last["has_more"] and last["next_cursor"] is None
+        rows = page["items"] + last["items"]
+        assert len({item["department_id"] for item in rows}) == 52
+        assert sum(item["state"] == "INACTIVE" for item in rows) == 1
+        assert next(item for item in rows if item["code"] == "OLD")["state"] == "INACTIVE"
+    print("PROJECT_DEPARTMENT_HISTORY_HTTP PASS: anonymous401/admin404/foreign404/50+2/one inactive", flush=True)
+
+
 def main():
     suffix = uuid.uuid4().hex[:12]
     dbname = role = "prj05a04_" + suffix
@@ -322,10 +351,12 @@ def main():
                                          or "--member-patch-api-only" in sys.argv[1:])
                     member_state_mode = ("--member-state-browser" in sys.argv[1:]
                                          or "--member-state-api-only" in sys.argv[1:])
+                    department_history_mode = ("--department-history-browser" in sys.argv[1:]
+                                               or "--department-history-api-only" in sys.argv[1:])
                     member_mode = ("--member-browser" in sys.argv[1:]
                                    or "--member-api-only" in sys.argv[1:])
                     if sum((create_mode, state_mode, name_mode, member_mode, member_create_mode,
-                            member_patch_mode, member_state_mode)) > 1:
+                            member_patch_mode, member_state_mode, department_history_mode)) > 1:
                         raise ValueError("Browser write modes must be exclusive")
                     manager = (insert_user(db, "Synthetic First Manager", hashed.password_hash, hashed.algorithm_id)
                                if create_mode else None)
@@ -339,6 +370,16 @@ def main():
                     department = db.execute("INSERT INTO plm.prj_departments "
                         "(project_id,department_code,department_code_normalized,name) "
                         "VALUES (%s,'D1','d1','Synthetic Department') RETURNING department_id", (project,)).fetchone()[0]
+                    if department_history_mode:
+                        for index in range(50):
+                            code = f"H{index:02d}"
+                            db.execute("INSERT INTO plm.prj_departments "
+                                "(project_id,department_code,department_code_normalized,name) "
+                                "VALUES (%s,%s,%s,%s)",
+                                (project, code, code.lower(), f"Synthetic History Department {index:02d}"))
+                        db.execute("INSERT INTO plm.prj_departments "
+                            "(project_id,department_code,department_code_normalized,name,state) "
+                            "VALUES (%s,'OLD','old','Synthetic Inactive Department','INACTIVE')", (project,))
                     target_user = (insert_user(db, "Synthetic Candidate Target", hashed.password_hash, hashed.algorithm_id)
                                    if member_create_mode else None)
                     patch_target = (insert_user(db, "Synthetic Patch Target", hashed.password_hash, hashed.algorithm_id)
@@ -459,6 +500,8 @@ def main():
                         elif "--member-state-api-only" in sys.argv[1:]:
                             assert state_member is not None
                             verify_member_state_http(origin, project, foreign, state_member)
+                        elif "--department-history-api-only" in sys.argv[1:]:
+                            verify_department_history_http(origin, project, foreign)
                         else:
                             actions = queue.Queue()
                             Thread(target=lambda: actions.put(sys.stdin.readline().strip()), daemon=True).start()
@@ -478,6 +521,10 @@ def main():
                             elif member_state_mode and "--member-state-browser" in sys.argv[1:]:
                                 assert session_count >= 1
                             elif member_state_mode:
+                                assert session_count == 2
+                            elif department_history_mode and "--department-history-browser" in sys.argv[1:]:
+                                assert session_count >= 1
+                            elif department_history_mode:
                                 assert session_count == 2
                             else:
                                 assert session_count >= (1 if create_mode else 2)
@@ -516,6 +563,14 @@ def main():
                                     "('V1_PROJECT_MEMBER_SUSPEND','V1_PROJECT_MEMBER_RESUME','V1_PROJECT_MEMBER_REMOVE') "
                                     "AND state='COMPLETED'").fetchone()[0] == 3
                                 print("PROJECT_MEMBER_STATE_DATABASE PASS: removed/v3, three Audit, three completed receipts", flush=True)
+                            if department_history_mode:
+                                assert db.execute("SELECT count(*) FROM plm.prj_departments WHERE project_id=%s",
+                                    (project,)).fetchone()[0] == 52
+                                assert db.execute("SELECT count(*) FROM plm.prj_departments WHERE project_id=%s "
+                                    "AND state='INACTIVE'", (project,)).fetchone()[0] == 1
+                                assert db.execute("SELECT count(*) FROM plm.aud_events "
+                                    "WHERE action LIKE 'PROJECT_DEPARTMENT_%'").fetchone()[0] == 0
+                                print("PROJECT_DEPARTMENT_HISTORY_DATABASE PASS: 52 rows, one inactive, no writes", flush=True)
                             if member_mode:
                                 assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE project_id=%s", (project,)).fetchone()[0] == 52
                                 assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE project_id=%s AND state='REMOVED'", (project,)).fetchone()[0] == 1
