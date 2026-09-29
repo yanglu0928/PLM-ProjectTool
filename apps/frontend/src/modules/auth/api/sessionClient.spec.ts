@@ -427,6 +427,78 @@ describe("SessionClient", () => {
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
 
+  it.each(["commit", "abort"] as const)("sends one empty-body Project upload %s with private CSRF and original key", async (action) => {
+    const uploadId = "21234567-89ab-4cde-8123-456789abcdef";
+    const reply = response({ upload_id: uploadId }, action === "commit" ? 201 : 200);
+    const { api, fetcher } = client(response(session()), reply);
+    await api.login("user", "synthetic-only");
+    const key = `synthetic-${action}-0001`;
+    if (action === "commit") {
+      await expect(api.postProjectDocumentUploadCommit(projectId, uploadId, key, '"v0"')).resolves.toBe(reply);
+    } else {
+      await expect(api.postProjectDocumentUploadAbort(projectId, uploadId, key)).resolves.toBe(reply);
+    }
+    expect(fetcher.mock.calls[1]).toEqual([`/api/v1/projects/${projectId}/document-uploads/${uploadId}:${action}`,
+      { method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error",
+        headers: { Accept: "application/json", "X-CSRF-Token": token, "Idempotency-Key": key,
+          ...(action === "commit" ? { "If-Match": '"v0"' } : {}) }, signal: expect.any(AbortSignal) }]);
+    expect(fetcher.mock.calls[1][1]).not.toHaveProperty("body");
+    expect(fetcher.mock.calls[1][1].headers).not.toHaveProperty("Content-Type");
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it("omits If-Match for a new Document upload Commit", async () => {
+    const { api, fetcher } = client(response(session()), response({ upload_id: id }, 201));
+    await api.login("user", "synthetic-only");
+    await api.postProjectDocumentUploadCommit(projectId, id, "synthetic-commit-0001");
+    expect(fetcher.mock.calls[1][1].headers).not.toHaveProperty("If-Match");
+  });
+
+  it("rejects malformed upload finalize IDs, key and parent ETag before network", async () => {
+    const { api, fetcher } = client(response(session()));
+    await api.login("user", "synthetic-only");
+    await expect(api.postProjectDocumentUploadCommit("../other", id, "synthetic-commit-0001"))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    await expect(api.postProjectDocumentUploadAbort(projectId, "bad", "synthetic-abort-0001"))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    await expect(api.postProjectDocumentUploadAbort(projectId, id, "short"))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    for (const etag of ["v0", '"v01"', '"v9007199254740991"']) {
+      await expect(api.postProjectDocumentUploadCommit(projectId, id, "synthetic-commit-0001", etag))
+        .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    }
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("requires writable Session and clears local proof on finalize 401", async () => {
+    const { api, fetcher } = client(response(session()), new Response("{}", { status: 401 }));
+    await expect(api.postProjectDocumentUploadAbort(projectId, id, "synthetic-abort-0001"))
+      .rejects.toMatchObject({ code: "AUTH_RELOGIN_REQUIRED" });
+    await api.login("user", "synthetic-only");
+    await expect(api.postProjectDocumentUploadAbort(projectId, id, "synthetic-abort-0001"))
+      .resolves.toMatchObject({ status: 401 });
+    expect(api.canSubmit).toBe(false);
+    expect(api.view).toBeNull();
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it("holds upload finalize exclusive and aborts at its deadline without replay", async () => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn().mockResolvedValueOnce(response(session()))
+      .mockImplementationOnce((_path: string, options: RequestInit) => new Promise((_done, reject) => {
+        options.signal?.addEventListener("abort", () => reject(new Error("synthetic network failure")));
+      }));
+    const api = new SessionClient(fetcher as typeof fetch);
+    await api.login("user", "synthetic-only");
+    const pending = expect(api.postProjectDocumentUploadCommit(projectId, id, "synthetic-commit-0001", '"v0"'))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    await expect(api.renew()).rejects.toMatchObject({ code: "AUTH_CLIENT_BUSY" });
+    await vi.advanceTimersByTimeAsync(60_001);
+    await pending;
+    expect(api.canSubmit).toBe(true);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
   it("does not submit Project create from a missing or read-only local session", async () => {
     const readOnly = session(); delete (readOnly as Partial<typeof readOnly>).csrf_token;
     const { api, fetcher } = client(response(readOnly));

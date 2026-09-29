@@ -257,6 +257,50 @@ export class SessionClient {
     }
   }
 
+  async #postProjectUploadFinalize(projectId: string, uploadId: string, action: "commit" | "abort",
+    idempotencyKey: string, etag: string | null): Promise<Response> {
+    if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
+    if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
+    if (!identifier(projectId) || !identifier(uploadId)
+      || typeof idempotencyKey !== "string" || !/^[\x20-\x7e]{16,128}$/.test(idempotencyKey)
+      || (etag !== null && (action !== "commit" || !/^"v(?:0|[1-9]\d*)"$/.test(etag)
+        || !Number.isSafeInteger(Number(etag.slice(2, -1)))
+        || Number(etag.slice(2, -1)) >= Number.MAX_SAFE_INTEGER))) {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    }
+    this.#busy = true;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), 60_000);
+    try {
+      const headers: Record<string, string> = { Accept: "application/json", "X-CSRF-Token": this.#csrf,
+        "Idempotency-Key": idempotencyKey };
+      if (etag !== null) headers["If-Match"] = etag;
+      const fetcher = this.fetcher;
+      const response = await fetcher(`/api/v1/projects/${projectId}/document-uploads/${uploadId}:${action}`, {
+        method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error",
+        headers, signal: controller.signal,
+      });
+      if (controller.signal.aborted) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+      if (response.status === 401) { this.#csrf = null; this.#view = null; }
+      return response;
+    } catch {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    } finally {
+      window.clearTimeout(timer);
+      this.#busy = false;
+    }
+  }
+
+  postProjectDocumentUploadCommit(projectId: string, uploadId: string,
+    idempotencyKey: string, parentEtag: string | null = null): Promise<Response> {
+    return this.#postProjectUploadFinalize(projectId, uploadId, "commit", idempotencyKey, parentEtag);
+  }
+
+  postProjectDocumentUploadAbort(projectId: string, uploadId: string,
+    idempotencyKey: string): Promise<Response> {
+    return this.#postProjectUploadFinalize(projectId, uploadId, "abort", idempotencyKey, null);
+  }
+
   /** Project PATCH has no idempotency key; an unknown outcome requires a fresh GET. */
   async patchProject(projectId: string, etag: string, body: string): Promise<Response> {
     if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");

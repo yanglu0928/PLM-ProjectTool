@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-29：0.1.0.dev0/DOC-05-A05-P05 增加 PROJECT Document 上传 Commit/Abort 私有空体命令传输、升版强 If-Match、原幂等键及不自动重传；定向 149、前端全量 916 项/typecheck/build PASS。兼容冻结 `/api/v1`/DB0049，无后端 API/Schema/Migration/权限/依赖或升级变化；业务回执、UI/真实上传/Parse、正式信任/Gate3/包待。
+
 - 2026-09-29：0.1.0.dev0/DOC-05-A05-P04 新增 PROJECT 上传内容 Web Crypto SHA-256、短时意图复核、200 大小/摘要/MIME 安全回执与已知/未知结果分离；定向 30、前端全量 910 项/typecheck/build PASS。首轮测试类型构建失败修正后完整重跑。兼容冻结 `/api/v1`/DB0049，无后端 API/Schema/Migration/权限/依赖或升级变化；真实浏览器文件链及 100 MB 内存/耗时、Commit/Abort/UI/Parse、正式信任/Gate3/包待。
 
 - 2026-09-29：0.1.0.dev0/DOC-05-A05-P03 增加项目文档上传内容的私有 PUT 通道：固定路径、同源 Cookie/CSRF、短时 token/SHA、1～100 MB Blob、互斥/401/超时一次；定向 143、前端全量 880 项/typecheck/build PASS。兼容冻结 `/api/v1`/DB0049，无后端 API/Schema/Migration/权限/依赖或升级变化；浏览器实际 `Content-Length`/字节、SHA 计算/200 回执、Commit/Abort、UI/真实解析、正式信任/Gate3/包待。

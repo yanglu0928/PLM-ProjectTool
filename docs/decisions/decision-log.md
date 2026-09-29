@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260929-489 — DOC-05-A05-P05 项目上传终结命令私有传输
+
+- Date/WBS：2026-09-29 / Phase2 DOC-05-A05-P05。P01～P04 与后端可选 `DOCUMENT_UPLOAD_COMMIT/ABORT`、冻结项目路径/Session/CSRF/幂等合同满足前置。
+- Decision/Reason：Commit 和 Abort 共用空体私有传输，但公开为两个固定动作；项目/上传 UUID、原幂等键、Commit 可选强 If-Match 在发网前校验。Abort 禁止携带 If-Match，Commit 升版调用方后续必须传父文档原 ETag；不在传输层猜测新建/升版。超时、连接断开、401 分别保留原键、不自动重发、清本地写证明。
+- Impact/rollback/validation plan：仅 SessionClient/定向测试、无 API/Schema/Migration/权限/依赖变化；撤新增方法即可回滚。覆盖固定路径/头/空体、坏 ID/Key/ETag、未登录/401、互斥/超时，再跑前端全量/typecheck/build。业务回执、UI/真实文件与解析另验。
+
 ## DEC-20260929-488 — DOC-05-A05-P04 内容 SHA-256 与 200 回执安全客户端
 
 - Date/WBS：2026-09-29 / Phase2 DOC-05-A05-P04。冻结 `DOCUMENT_UPLOAD_CONTENT`、P02 短时意图结果与 P03 私有 PUT 前置满足。
