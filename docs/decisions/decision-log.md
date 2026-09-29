@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260929-470 — PRJ-05-A15-P02 项目名称更新安全业务客户端
+
+- Date/WBS：2026-09-29 / Phase2 PRJ-05-A15-P02。P01、冻结 `PROJECT_PATCH`、后端 PRJ-04-A06/A07 与 ProjectReadClient 前置满足。
+- Decision：仅接受单字段名称输入，经 NFKC/trim、1～255 字符且无控制字符后提交。原 ACTIVE Project ID/编号/创建时间/强版本与 200 项目回执绑定；后端即使同名 PATCH 也固定版本 +1，因此不可复用部门同值不增版规则。响应只保留安全 ProjectView，响应头 ETag 必须完全一致。已知拒绝按状态+码映射；伪成功、错码/状态、断线和未知服务器错误全部不确定，须独立 GET 核对，禁止自动重试。
+- Impact/rollback/validation：只加 Project 业务客户端/测试，不改冻结 API、DB、权限、依赖；回滚撤客户端与测试，P01 保留。验证输入/身份/字段/版本绑定、已知拒绝和未知、首尾数据分离，前端全量/typecheck/build；实际浏览器/PG 下一分项。
+- Executed：新增 ProjectPatchClient 与 27 项业务客户端测试；前端 751/751、typecheck、build PASS。后端同名亦版本 +1 的实际合同已覆盖；无 Schema/Migration/后端 API/权限/依赖变化。页面和实际浏览器/PG 下一分项。
+
 ## DEC-20260929-469 — PRJ-05-A15-P01 项目名称更新固定前端传输
 
 - Date/WBS：2026-09-29 / Phase2 PRJ-05-A15-P01。冻结 `PROJECT_PATCH`、后端 PRJ-04-A06/A07、现有 SessionClient 前置满足；只处理一个无幂等 Key 的项目名称 PATCH 通道。

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-29：0.1.0.dev0/PRJ-05-A15-P02新增项目名称更新安全业务客户端：NFKC 单字段、ACTIVE 原项目/强版本与 200 的 ID/编号/创建时间/目标名称、`v+1` 和响应 ETag 严格绑定；已知拒绝与伪成功/断线的不确定结果分流。前端 751 项/typecheck/build 通过。兼容 DB0049/冻结 API，无 Schema/Migration/依赖或升级变化；页面/浏览器PG、正式信任/其他平台/性能质量/Gate3/可用包待。
+
 - 2026-09-29：0.1.0.dev0/PRJ-05-A15-P01新增项目名称 PATCH 固定前端传输：规范 Project ID/强 If-Match、私有 CSRF、同源单次请求，401 清证明且未知结果不自动重试；前端 724 项/typecheck/build 通过。兼容 DB0049/冻结 API，无后端/Schema/Migration/依赖或升级变化；业务响应/页面/浏览器PG、正式信任/其他平台/性能质量/Gate3/可用包待。
 
 - 2026-09-29：0.1.0.dev0/PRJ-05-A14-P04完成 Windows 11 隔离合成项目归档 HTTP/浏览器/PG 验收：权限/CSRF/跨项目/版本及原 Key 重放与冲突、显式确认、首次回执和独立 ARCHIVED 重读；SQL 单 Audit/完成收据、负责人保留与随机资源清理均 PASS。兼容 DB0049/冻结 API，无生产程序/Schema/Migration/依赖或升级变化；PoC PG 恢复原停止，启动旧 PID 提示原因未证实。正式信任/其他平台/性能质量/Gate3/可用包待。
