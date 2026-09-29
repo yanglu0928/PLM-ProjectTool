@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-29：0.1.0.dev0/PRJ-05-A13-P03新增部门停用负责人显式确认页面；首次回执与当前历史分离，未知结果仅在原部门/版本成功重读后按原Key恢复，幂等冲突锁页并丢弃跨项目迟到结果。前端683项/typecheck/build通过。兼容DB0049/冻结API，无Schema/Migration/依赖或升级变化；实际浏览器PG、正式信任/其他平台/性能质量/Gate3/包待。
+
 - 2026-09-29：0.1.0.dev0/PRJ-05-A13-P02新增部门停用安全业务回执客户端：ACTIVE原部门/强版本/原Key、INACTIVE/v+1及字段/响应ETag绑定，同Key重放不冒充当前状态，在用409与未知/断线分流；前端679项/typecheck/build通过。兼容DB0049/冻结API，无Schema/Migration/依赖或升级变化；页面/浏览器PG、正式信任/其他平台/性能质量/Gate3/包待。
 
 - 2026-09-29：0.1.0.dev0/PRJ-05-A13-P01新增部门停用固定前端POST传输：规范双ID、强If-Match、原幂等Key、空Body、私有CSRF、同源单次提交、401清证明和超时不自动重试；前端652项/typecheck/build通过。兼容DB0049/冻结API，无后端/Schema/Migration/依赖或升级变化；业务响应/页面/浏览器PG、正式信任/其他平台/性能质量/Gate3/包待。

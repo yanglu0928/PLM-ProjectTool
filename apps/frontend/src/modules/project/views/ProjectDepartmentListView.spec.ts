@@ -7,6 +7,9 @@ import { SessionClient } from "@/modules/auth/api/sessionClient";
 import { ProjectDepartmentReadClient } from "@/modules/project/api/projectDepartmentReadClient";
 import { ProjectDepartmentPatchClient, ProjectDepartmentPatchError } from
   "@/modules/project/api/projectDepartmentPatchClient";
+import { ProjectDepartmentDeactivateClient, ProjectDepartmentDeactivateError,
+  type ProjectDepartmentDeactivateFirstReceipt } from
+  "@/modules/project/api/projectDepartmentDeactivateClient";
 import ProjectDepartmentListView from "./ProjectDepartmentListView.vue";
 
 const id = "01234567-89ab-4cde-8123-456789abcdef";
@@ -33,12 +36,13 @@ async function session(restricted = false, manager = false): Promise<SessionClie
   await api.login("user", "synthetic-only");
   return api;
 }
-async function view(auth: SessionClient, fetcher: typeof fetch, patcher?: ProjectDepartmentPatchClient) {
+async function view(auth: SessionClient, fetcher: typeof fetch, patcher?: ProjectDepartmentPatchClient,
+  deactivator?: ProjectDepartmentDeactivateClient) {
   const router = createAppRouter(createMemoryHistory());
   await router.push(`/projects/${id}/departments`);
   await router.isReady();
   const wrapper = mount(ProjectDepartmentListView, { props: { session: auth,
-    departments: new ProjectDepartmentReadClient(fetcher), patcher }, global: { plugins: [router] } });
+    departments: new ProjectDepartmentReadClient(fetcher), patcher, deactivator }, global: { plugins: [router] } });
   await flushPromises();
   return { wrapper, router };
 }
@@ -212,6 +216,130 @@ describe("ProjectDepartmentListView", () => {
     await flushPromises();
     expect(patch).toHaveBeenCalledTimes(1);
     expect(wrapper.text()).not.toContain("本次修改回执");
+    expect(wrapper.text()).toContain("当前项目没有部门记录");
+    wrapper.unmount();
+  });
+
+  it("offers stop only for active departments to a current manager, with explicit confirmation", async () => {
+    const inactive = { ...entry, department_id: otherId, state: "INACTIVE" };
+    const fetcher = vi.fn().mockImplementation(() => Promise.resolve(
+      response({ items: [entry, inactive], next_cursor: null, has_more: false })));
+    const reader = await view(await session(), fetcher as typeof fetch);
+    expect(reader.wrapper.text()).not.toContain("停用此部门");
+    reader.wrapper.unmount();
+    const auth = await session(false, true);
+    const deactivator = new ProjectDepartmentDeactivateClient(auth);
+    const stop = vi.spyOn(deactivator, "deactivate").mockResolvedValue({
+      first_result: { ...entry, state: "INACTIVE", etag: '"v1"' }, is_current_state_proof: false,
+    });
+    const manager = await view(auth, fetcher as typeof fetch, undefined, deactivator);
+    expect(manager.wrapper.findAll("li button").filter((button) => button.text() === "停用此部门"))
+      .toHaveLength(1);
+    await manager.wrapper.findAll("li button").find((button) => button.text() === "停用此部门")!.trigger("click");
+    expect(manager.wrapper.text()).toContain("若仍有成员使用此部门");
+    expect(manager.wrapper.get('form button[type="submit"]').attributes("disabled")).toBeDefined();
+    await manager.wrapper.get('form input[type="checkbox"]').setValue(true);
+    await manager.wrapper.get('form').trigger("submit");
+    await flushPromises();
+    expect(stop).toHaveBeenCalledTimes(1);
+    expect(stop.mock.calls[0]?.[0]).toBe(id);
+    expect(stop.mock.calls[0]?.[1]).toEqual(entry);
+    expect(stop.mock.calls[0]?.[2]).toMatch(/^[0-9a-f-]{36}$/);
+    expect(manager.wrapper.text()).toContain("本次停用首次回执");
+    expect(manager.wrapper.text()).toContain("不是当前状态证明");
+    expect(manager.wrapper.text()).not.toContain("编号：RD");
+    manager.wrapper.unmount();
+  });
+
+  it("keeps the original key after unknown result and permits recovery only after a matching fresh read", async () => {
+    const auth = await session(false, true);
+    const deactivator = new ProjectDepartmentDeactivateClient(auth);
+    const stop = vi.spyOn(deactivator, "deactivate")
+      .mockRejectedValueOnce(new ProjectDepartmentDeactivateError("PROJECT_DEPARTMENT_DEACTIVATE_UNCERTAIN"))
+      .mockResolvedValueOnce({ first_result: { ...entry, state: "INACTIVE", etag: '"v1"' },
+        is_current_state_proof: false });
+    const fetcher = vi.fn().mockResolvedValueOnce(response({ items: [entry], next_cursor: null, has_more: false }))
+      .mockResolvedValueOnce(failure(503, "SYSTEM_UNAVAILABLE"))
+      .mockResolvedValueOnce(response({ items: [entry], next_cursor: null, has_more: false }));
+    const { wrapper } = await view(auth, fetcher as typeof fetch, undefined, deactivator);
+    await wrapper.findAll("li button").find((button) => button.text() === "停用此部门")!.trigger("click");
+    await wrapper.get('form input[type="checkbox"]').setValue(true);
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+    expect(wrapper.text()).toContain("停用结果无法确认");
+    expect(wrapper.text()).not.toContain("编号：RD");
+    expect(wrapper.get('form button[type="submit"]').attributes("disabled")).toBeDefined();
+    await wrapper.get("button").trigger("click");
+    await flushPromises();
+    expect(wrapper.get('form button[type="submit"]').attributes("disabled")).toBeDefined();
+    await wrapper.get("button").trigger("click");
+    await flushPromises();
+    expect(wrapper.text()).toContain("编号：RD");
+    expect(wrapper.findAll("li button").some((button) => button.text() === "停用此部门")).toBe(false);
+    await wrapper.get('form input[type="checkbox"]').setValue(true);
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+    expect(stop).toHaveBeenCalledTimes(2);
+    expect(stop.mock.calls[1]).toEqual(stop.mock.calls[0]);
+    expect(wrapper.text()).toContain("本次停用首次回执");
+    wrapper.unmount();
+  });
+
+  it("rejects original-key recovery when independent history changed and locks after key conflict", async () => {
+    const auth = await session(false, true);
+    const deactivator = new ProjectDepartmentDeactivateClient(auth);
+    const stop = vi.spyOn(deactivator, "deactivate")
+      .mockRejectedValueOnce(new ProjectDepartmentDeactivateError("PROJECT_DEPARTMENT_DEACTIVATE_UNCERTAIN"));
+    const fetcher = vi.fn().mockResolvedValueOnce(response({ items: [entry], next_cursor: null, has_more: false }))
+      .mockResolvedValueOnce(response({ items: [{ ...entry, state: "INACTIVE", etag: '"v1"' }],
+        next_cursor: null, has_more: false }));
+    const { wrapper } = await view(auth, fetcher as typeof fetch, undefined, deactivator);
+    await wrapper.findAll("li button").find((button) => button.text() === "停用此部门")!.trigger("click");
+    await wrapper.get('form input[type="checkbox"]').setValue(true);
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+    await wrapper.get("button").trigger("click");
+    await flushPromises();
+    expect(wrapper.text()).toContain("已停用");
+    expect(wrapper.get('form button[type="submit"]').attributes("disabled")).toBeDefined();
+    expect(stop).toHaveBeenCalledTimes(1);
+    wrapper.unmount();
+
+    const conflictStop = vi.spyOn(deactivator, "deactivate")
+      .mockRejectedValueOnce(new ProjectDepartmentDeactivateError("CONFLICT_IDEMPOTENCY"));
+    conflictStop.mockClear();
+    const conflictFetcher = vi.fn().mockImplementation(() => Promise.resolve(
+      response({ items: [entry], next_cursor: null, has_more: false })));
+    const conflict = await view(auth, conflictFetcher as typeof fetch, undefined, deactivator);
+    await conflict.wrapper.findAll("li button").find((button) => button.text() === "停用此部门")!.trigger("click");
+    await conflict.wrapper.get('form input[type="checkbox"]').setValue(true);
+    await conflict.wrapper.get("form").trigger("submit");
+    await flushPromises();
+    await conflict.wrapper.get("button").trigger("click");
+    await flushPromises();
+    expect(conflict.wrapper.text()).toContain("已停止本页后续停用");
+    expect(conflict.wrapper.text()).not.toContain("停用此部门");
+    expect(conflictStop).toHaveBeenCalledTimes(1);
+    conflict.wrapper.unmount();
+  });
+
+  it("discards a late stop receipt after changing projects", async () => {
+    const auth = await session(false, true);
+    const deactivator = new ProjectDepartmentDeactivateClient(auth);
+    let finish!: (value: ProjectDepartmentDeactivateFirstReceipt) => void;
+    const stop = vi.spyOn(deactivator, "deactivate")
+      .mockReturnValueOnce(new Promise((resolve) => { finish = resolve; }));
+    const fetcher = vi.fn().mockResolvedValueOnce(response({ items: [entry], next_cursor: null, has_more: false }))
+      .mockResolvedValueOnce(response({ items: [], next_cursor: null, has_more: false }));
+    const { wrapper, router } = await view(auth, fetcher as typeof fetch, undefined, deactivator);
+    await wrapper.findAll("li button").find((button) => button.text() === "停用此部门")!.trigger("click");
+    await wrapper.get('form input[type="checkbox"]').setValue(true);
+    await wrapper.get("form").trigger("submit");
+    await router.push(`/projects/${otherId}/departments`);
+    finish({ first_result: { ...entry, state: "INACTIVE", etag: '"v1"' }, is_current_state_proof: false });
+    await flushPromises();
+    expect(stop).toHaveBeenCalledTimes(1);
+    expect(wrapper.text()).not.toContain("本次停用首次回执");
     expect(wrapper.text()).toContain("当前项目没有部门记录");
     wrapper.unmount();
   });
