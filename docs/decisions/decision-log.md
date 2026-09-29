@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260929-476 — DOC-05-A01-P03-A02 浏览器完整复验与异常清理
+
+- Date/WBS：2026-09-29 / Phase2 DOC-05-A01-P03-A02。P01/P02/A01 与 Windows 隔离夹具前置满足。
+- Decision/Reason：增加独立 `--document-history-browser` 模式，浏览器仅用临时合成项目资料，校验从受权项目入口到 50+1 分页及刷新。首次真实 UI 已可见，但会话切换中断导致夹具未完成且 PoC PG 异常停止，不能据此标 PASS；先精确回收残留随机库/角色/唯一 Test 凭据，再用新随机库完整重跑。停机根因不推断。
+- Impact/rollback/validation：仅验收夹具/记录，不改正式 API/Schema/Migration/权限/依赖；撤 browser 模式可回滚。第二轮 UI 50→51→50、受限/外项目不可见，夹具 SQL/清理 exit0，PoC PG 正常恢复停止。首轮 crash recovery 与停机根因保留为已知问题；正式信任、其他平台、性能质量/Gate3 未验。
+
 ## DEC-20260929-475 — DOC-05-A01-P03-A01 独立 API/PG 验收
 
 - Date/WBS：2026-09-29 / Phase2 DOC-05-A01-P03-A01。Document 前端 P01/P02 与后端 Windows 显式读取组合、现有随机库/角色/Vault 隔离夹具前置满足；P03 原拟 API/PG + 实际浏览器整体验收。
