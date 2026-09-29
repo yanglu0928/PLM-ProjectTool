@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260929-450 — PRJ-05-A10-P01 部门历史只读客户端
+
+- Date/WBS：2026-09-29 / Phase2 PRJ-05-A10-P01；冻结 Department 列表合同、PRJ-04-A13-P04 Windows 显式装配与现有前端项目读取前置满足。
+- Decision：独立于成员选择用的 ACTIVE 部门列表，新增固定50条 Department 历史页读取客户端，保留 INACTIVE、强 ETag/UTC时间与安全字段；项目/游标校验、同源 Cookie、单次超时、错误合同及分页异常均失败关闭。此项不创建 UI 或写命令，权限由服务器实时裁决。
+- Impact/rollback/validation：仅 Project 前端客户端/测试与进度，无 API/Schema/权限/依赖变化。历史可能跨页变化，客户端不声称快照一致；回滚撤新增读取客户端。全量前端测试/typecheck/build验证，实际浏览器/PG另项。
+- Executed：2026-09-29，固定50条安全投影、INACTIVE历史、游标/错误/超时/异常测试通过；前端557项、typecheck、build PASS。实际浏览器/PG与正式信任未验。
+
 ## DEC-20260929-449 — PRJ-05-A09-P04 Windows 11 成员三状态端到端
 
 - Date/WBS：2026-09-29 / Phase2 PRJ-05-A09-P04；P01～P03 与后端 PRJ-04-A12-P03 前置已满足。复用自有浏览器/PG fixture，仅合成信任源。
