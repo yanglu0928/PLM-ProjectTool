@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260929-477 — DOC-05-A02-P01 项目 Document 元数据详情页
+
+- Date/WBS：2026-09-29 / Phase2 DOC-05-A02-P01。冻结 `DOCUMENT_GET`、后端受权详情/强 ETag、前端 P01 安全客户端及 P02 项目列表前置满足。
+- Decision/Reason：从项目 Document 历史行进入独立只读详情；直达路由也只以服务器 GET 为授权来源，不因 URL 或列表缓存获得权限。仅展示已校验的安全元数据，不提供文件正文、下载、版本历史或 GLOBAL 管理入口。刷新清旧详情，项目/Document 路由变化丢弃迟到响应。
+- Impact/rollback/validation plan：仅前端路由/视图/列表入口和测试，无后端 API、Schema/Migration、权限或依赖变化；回滚撤新路由/视图/入口，P01/P02 保留。风险是跨项目旧资料误显，以代际与 ID/Scope/ETag 校验控制。验收页面单测、全量前端/typecheck/build；实际浏览器/PG 另列任务，正式信任和 Gate3 不借本项放行。
+- Executed：项目文档行新增详情入口，直达详情页只使用当前服务端 GET 投影；刷新先清旧、拒绝/ETag 错配失败关闭、跨项目及文档迟到结果丢弃。定向 12/12、前端全量 814/814、typecheck/build PASS；实际浏览器/PG 下一分项。无后端 API/Schema/Migration/权限/依赖变更。
+
 ## DEC-20260929-476 — DOC-05-A01-P03-A02 浏览器完整复验与异常清理
 
 - Date/WBS：2026-09-29 / Phase2 DOC-05-A01-P03-A02。P01/P02/A01 与 Windows 隔离夹具前置满足。

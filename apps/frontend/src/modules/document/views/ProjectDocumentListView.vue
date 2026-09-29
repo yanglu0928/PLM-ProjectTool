@@ -76,7 +76,7 @@ onUnmounted(() => { mounted = false; generation += 1; });
       <p v-if="loaded && items.length === 0" role="status">当前项目没有可见文档记录。</p>
       <ul v-if="items.length" aria-label="项目文档历史">
         <li v-for="item in items" :key="item.document_id">
-          <strong>{{ item.title }}</strong>
+          <strong><RouterLink :to="{ name: 'project-document-detail', params: { projectId: route.params.projectId, documentId: item.document_id } }">{{ item.title }}</RouterLink></strong>
           <span>文件名：{{ item.display_name }} · 分类：{{ item.category }} · {{ item.state === 'ACTIVE' ? '有效' : '已归档' }}</span>
           <span>创建：<time :datetime="item.created_at">{{ new Date(item.created_at).toLocaleString('zh-CN') }}</time></span>
           <span>元数据版本：{{ item.etag }}</span>

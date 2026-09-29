@@ -63,6 +63,7 @@ describe("ProjectDocumentListView", () => {
     expect(wrapper.text()).toContain("调研记录");
     expect(wrapper.text()).toContain("旧方案");
     expect(wrapper.text()).toContain("已归档");
+    expect(wrapper.get(`a[href$="/documents/${docId}"]`).text()).toBe("调研记录");
     expect(wrapper.text()).toContain("不含文档正文");
     expect(fetcher.mock.calls[0]?.[0]).toBe(`/api/v1/projects/${id}/documents?page_size=50`);
     expect(wrapper.text()).not.toContain("storage_locator");
