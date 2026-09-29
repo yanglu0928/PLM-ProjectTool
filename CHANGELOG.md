@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-29：0.1.0.dev0/DOC-05-A05-P02 增加 PROJECT Document UploadIntent 新建/升版安全业务客户端，白名单短时令牌回执、确定性拒绝/未知区分和不自动重试；定向 31、前端全量 876 项/typecheck/build PASS。首轮 11 个错误映射测试因夹具结构错误失败，修后全量重跑。兼容冻结 `/api/v1`/DB0049，无后端 API/Schema/Migration/权限/依赖或升级变化；内容 PUT、Commit/Abort、上传 UI、真实解析、正式信任/Gate3/包待。
+
 - 2026-09-29：0.1.0.dev0/DOC-05-A05-P01 增加 PROJECT Document UploadIntent 固定路径的前端私有 Session/CSRF/原幂等键传输桥接；定向 139、前端全量 845 项及 typecheck/build PASS。兼容冻结 `/api/v1`/DB0049，无后端 API/Schema/Migration/权限/依赖或升级变化；业务响应校验、内容 PUT、Commit/Abort、上传 UI、真实解析、正式信任/Gate3/程序包待完成。
 
 - 2026-09-29：0.1.0.dev0/DOC-05-A04-P03 Windows 11 隔离真实文件下载 API/PG 与浏览器验收：50 字节合成文件的浏览器下载 SHA-256 与原文一致，附件/no-store/nosniff、匿名/跨项目/Range 拒绝及随机库/角色/Vault/临时文件清理完整 exit0。IAB 首轮新标签事件不可观测，改同标签并重建；前端 841 项/typecheck/build PASS。兼容冻结 `/api/v1`/DB0049，无后端 API/Schema/Migration/依赖或升级变化；过期错误页 UX、正式信任/其他平台/性能质量/Gate3/可用包待验。

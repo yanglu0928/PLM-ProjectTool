@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260929-486 — DOC-05-A05-P02 项目 UploadIntent 安全业务客户端
+
+- Date/WBS：2026-09-29 / Phase2 DOC-05-A05-P02。P01 固定私有 Session/CSRF/Key 传输与冻结 `DOCUMENT_UPLOAD_CREATE`、后端 PROJECT UploadIntent 201 合同已具备。
+- Decision/Reason：新建 Document 与既有 Document 升版用显式互斥输入类型；业务客户端先规范字段/Key，再按固定 Project ID 调用 P01，严格校验 JSON/trace、201 的 UUID/token/未过期 UTC/Location/no-store，只返回白名单短时结果。确定性拒绝按状态/错误码映射；断线、伪成功或未知回执一律标“结果未知”，不自动换 Key 重试。
+- Impact/rollback/validation plan：仅新建 Document 前端业务客户端与测试；无冻结 API、Schema、Migration、权限或依赖变更，撤新增文件可回滚。测试覆盖输入、成功、拒绝、伪响应、超时及令牌不落存储；前端全量/typecheck/build。Token 在后续内容 PUT 使用，当前不做 UI/文件/解析验收。
+
 ## DEC-20260929-485 — DOC-05-A05-P01 项目上传意图的前端私有会话桥接
 
 - Date/WBS：2026-09-29 / Phase2 DOC-05-A05-P01。输入为冻结 `DOCUMENT_UPLOAD_CREATE`、已实现的可选项目上传意图 HTTP、现有 SessionClient 私有 CSRF/互斥/幂等命令通道；Gate 2 与前置满足。
