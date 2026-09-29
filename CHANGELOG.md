@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-29：0.1.0.dev0/PRJ-05-A09-P01新增成员暂停/恢复/移除固定前端 POST 传输：双 UUID、强If-Match、原幂等Key、私有CSRF、空Body/单次发送，401清证明、未知结果不自动重试；前端496项/typecheck/build通过。兼容DB0049/冻结API，无Schema/Migration/依赖/数据升级；响应客户端、页面与真实浏览器PG待，正式信任/其他平台/性能/质量/Gate3/包待。
+
 - 2026-09-29：0.1.0.dev0/PRJ-05-A08-P04补 Windows11 合成浏览器与隔离PostgreSQL成员角色/部门PATCH验证模式；真实HTTP权限/CSRF/跨项目/强版本/同值操作及浏览器v0→v1、SQL单次变更和审计、临时资源清理通过。仅验证脚本变更，兼容DB0049/冻结API，无Schema/Migration/依赖/数据升级；正式信任/Server2025/Debian/HTTPS/性能/质量/Gate3/包待。
 
 - 2026-09-28：0.1.0.dev0/PRJ-05-A08-P03在项目成员历史中新增角色/部门修改确认页，限当前项目负责人、ACTIVE部门与非移除成员；已知拒绝刷新，未知结果锁写并提示审计对账，跨项目迟到回执丢弃。前端490项/typecheck/build通过。兼容DB0049/冻结API，无Schema/Migration/依赖/数据升级；真实浏览器PG、正式信任/其他平台/性能/质量/Gate3/包待。

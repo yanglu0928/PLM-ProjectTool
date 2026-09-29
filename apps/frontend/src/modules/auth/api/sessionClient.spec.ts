@@ -729,4 +729,71 @@ describe("SessionClient", () => {
     expect(fetcher).toHaveBeenCalledTimes(2);
     expect(api.canSubmit).toBe(true);
   });
+
+  it.each(["suspend", "resume", "remove"] as const)("sends exact empty-body member %s command", async (action) => {
+    const key = "synthetic-member-state-0001";
+    const reply = response({ member_id: id });
+    const { api, fetcher } = client(response(session()), reply);
+    await api.login("manager", "synthetic-only");
+    await expect(api.postProjectMemberState(projectId, id, action, '"v0"', key)).resolves.toBe(reply);
+    expect(fetcher.mock.calls[1]).toEqual([`/api/v1/projects/${projectId}/members/${id}:${action}`, {
+      method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error",
+      headers: { Accept: "application/json", "X-CSRF-Token": token,
+        "Idempotency-Key": key, "If-Match": '"v0"' }, signal: expect.any(AbortSignal),
+    }]);
+    expect(JSON.stringify(api)).not.toContain(token);
+  });
+
+  it("rejects unsafe member state path, action, version and key without network", async () => {
+    const { api, fetcher } = client(response(session()));
+    await api.login("manager", "synthetic-only");
+    const key = "synthetic-member-state-0001";
+    for (const [project, member, action, etag, attemptKey] of [
+      ["../admin", id, "suspend", '"v0"', key], [projectId, "../other", "resume", '"v0"', key],
+      [projectId, id, "delete", '"v0"', key], [projectId, id, "remove", 'W/"v0"', key],
+      [projectId, id, "suspend", '"v00"', key],
+      [projectId, id, "suspend", '"v9007199254740991"', key],
+      [projectId, id, "suspend", '"v0"', "short"],
+    ]) {
+      await expect(api.postProjectMemberState(project, member,
+        action as "suspend", etag, attemptKey)).rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    }
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("requires fresh CSRF and clears member state proof on 401 but not 503", async () => {
+    const readOnly = session(); delete (readOnly as Partial<typeof readOnly>).csrf_token;
+    const { api: viewer, fetcher: viewerFetcher } = client(response(readOnly));
+    await viewer.current();
+    await expect(viewer.postProjectMemberState(projectId, id, "suspend", '"v0"', "synthetic-member-state-0001"))
+      .rejects.toMatchObject({ code: "AUTH_RELOGIN_REQUIRED" });
+    expect(viewerFetcher).toHaveBeenCalledTimes(1);
+    const { api, fetcher } = client(response(session()), new Response("{}", { status: 503 }),
+      new Response("{}", { status: 401 }));
+    await api.login("manager", "synthetic-only");
+    await api.postProjectMemberState(projectId, id, "suspend", '"v0"', "synthetic-member-state-0001");
+    expect(api.canSubmit).toBe(true);
+    await api.postProjectMemberState(projectId, id, "suspend", '"v0"', "synthetic-member-state-0001");
+    expect(api.canSubmit).toBe(false);
+    expect(api.view).toBeNull();
+    expect(fetcher).toHaveBeenCalledTimes(3);
+  });
+
+  it("does not retry timed-out member state command or overlap another write", async () => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn().mockResolvedValueOnce(response(session()))
+      .mockImplementationOnce((_path: string, options: RequestInit) => new Promise((_done, reject) => {
+        options.signal?.addEventListener("abort", () => reject(new Error("synthetic timeout")));
+      }));
+    const api = new SessionClient(fetcher as typeof fetch, 100);
+    await api.login("manager", "synthetic-only");
+    const pending = expect(api.postProjectMemberState(projectId, id, "remove", '"v0"',
+      "synthetic-member-state-0001")).rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    await expect(api.postProjectCreate("{}", "synthetic-project-0001"))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_BUSY" });
+    await vi.advanceTimersByTimeAsync(101);
+    await pending;
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(api.canSubmit).toBe(true);
+  });
 });

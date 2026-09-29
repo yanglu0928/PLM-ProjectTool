@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260929-446 — PRJ-05-A09-P01 成员状态命令私有传输
+
+- Date/WBS：2026-09-29 / Phase2 PRJ-05-A09-P01；冻结 `PROJECT_MEMBER_SUSPEND/RESUME/REMOVE`、PRJ-04-A12-P03 Windows 显式组合和现有 SessionClient 前置满足。
+- Decision：只在内存 SessionClient 增精确三种成员状态 POST 路径，两个规范 UUID、强 If-Match、原调用方幂等键、私有 CSRF、同源 Cookie、空 Body、单次发送；401 清提交证明，其他网络未知不自动重试/换 Key。业务 DTO、首次回执与当前状态分离及页面留后续 WBS。
+- Reason/impact/rollback/validation：防路径注入、CSRF/Key 泄漏、状态写重复和客户端越权。新增固定路径/头/无Body、坏输入零网络、401/503、互斥与超时一次测试及全前端构建。无 Schema/Migration/后端 API/权限/依赖变化；回滚撤本方法和测试。
+
 ## DEC-20260928-445 — PRJ-05-A08-P04 Windows 11 成员 PATCH 端到端验证
 
 - Date/WBS：2026-09-28 / Phase2 PRJ-05-A08-P04；P01～P03 合同与 Windows 显式写组合前置已通过。使用现有自有 Windows 浏览器/PG fixture；正式发行信任源和其他平台不在本项范围。
