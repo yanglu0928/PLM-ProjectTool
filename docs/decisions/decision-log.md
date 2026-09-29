@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260929-454 — PRJ-05-A11-P02 部门创建首次结果安全客户端
+
+- Date/WBS：2026-09-29 / Phase2 PRJ-05-A11-P02；P01传输与冻结Department201响应及P01只读安全投影前置满足。
+- Decision：NFKC规范编码/名称并固定仅二字段Body；仅201且trace/Department安全投影、原输入一致、ACTIVE/`"v0"`、ETag/Location精确一致时接收首次结果，明确标记不是当前状态证明。同Key重放仍为首次结果；已知拒绝与网络/坏响应未知分离，未知时调用者保留原输入/Key，不自动重发。
+- Impact/rollback/validation：仅前端业务客户端/测试，无API/Schema/权限/依赖变化；撤新增客户端可回滚，P01传输保留。验证坏输入零网络、成功/重放/伪造响应、已知状态码、未知/超时以及全前端测试/typecheck/build；页面与浏览器/PG另项。
+- Executed：2026-09-29，正常/同Key首次回执、坏输入零网络、伪201、已知拒绝/未知及无写证明测试通过；前端604项、typecheck、build PASS。页面与实际浏览器/PG未验。
+
 ## DEC-20260929-453 — PRJ-05-A11-P01 部门创建私有前端传输
 
 - Date/WBS：2026-09-29 / Phase2 PRJ-05-A11-P01；冻结 Department POST、PRJ-04-A14-P03 Windows 显式组合、前端私有 SessionClient 均已具备。
