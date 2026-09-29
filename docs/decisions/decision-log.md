@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260929-457 — PRJ-05-A12-P01 部门更新固定前端传输
+
+- Date/WBS：2026-09-29 / Phase2 PRJ-05-A12-P01。冻结 PROJECT_DEPARTMENT_PATCH、后端 PRJ-04-A15-P02 与现有 SessionClient 为输入；Gate2 与前置写/只读链已满足。
+- Decision：仅加私有 `PATCH /api/v1/projects/{project_id}/departments/{department_id}` 传输，双规范 UUID、强且安全整数版本、非空有界 JSON body、同源 Cookie/私有 CSRF、无自动重试/无幂等 Key；401 清会话证明，失败或超时返回不确定，由后续业务客户端先 GET 复核。当前任务不解析业务响应或新增页面。
+- Impact/rollback/validation：仅 Auth transport 和单元测试，未改冻结 API、Schema、权限或依赖。风险为超时已提交却误重发，调用层明确不得重试；回滚移除方法/测试。验证前端测试、typecheck/build；实际浏览器/PG 另项。
+- Executed：2026-09-29，固定双 ID/强版本/8192 字节上限、CSRF/同源/不重试/401 清证明和超时 busy 互斥验证通过；前端 617 项、typecheck、build PASS。业务响应和实际浏览器/PG 另项。
+
 ## DEC-20260929-456 — PRJ-05-A11-P04 Windows 11 部门创建端到端
 
 - Date/WBS：2026-09-29 / Phase2 PRJ-05-A11-P04；P01～P03与后端PRJ-04-A14-P03前置满足，复用自有随机PG/Vault/浏览器夹具，仅合成信任源。
