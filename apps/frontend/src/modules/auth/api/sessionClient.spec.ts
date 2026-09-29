@@ -358,6 +358,75 @@ describe("SessionClient", () => {
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
 
+  it("PUTs one known-length Blob to the fixed project upload path with private proof", async () => {
+    const uploadId = "21234567-89ab-4cde-8123-456789abcdef";
+    const proof = "u".repeat(43);
+    const digest = "b".repeat(64);
+    const content = new Blob(["synthetic content"], { type: "text/plain" });
+    const received = response({ upload_id: uploadId, size_bytes: content.size });
+    const { api, fetcher } = client(response(session()), received);
+    await api.login("user", "synthetic-only");
+    await expect(api.putProjectDocumentUploadContent(projectId, uploadId, proof, digest, content)).resolves.toBe(received);
+    expect(fetcher.mock.calls[1]).toEqual([`/api/v1/projects/${projectId}/document-uploads/${uploadId}/content`,
+      expect.objectContaining({ method: "PUT", credentials: "same-origin", cache: "no-store",
+        redirect: "error", body: content, signal: expect.any(AbortSignal),
+        headers: { Accept: "application/json", "Content-Type": "application/octet-stream",
+          "X-CSRF-Token": token, "X-Upload-Token": proof, "X-Content-SHA256": digest } })]);
+    expect(fetcher.mock.calls[1][1].headers).not.toHaveProperty("Content-Length");
+    expect(JSON.stringify(api)).not.toContain(proof);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it("rejects invalid Content PUT claims and Blob size before network", async () => {
+    const { api, fetcher } = client(response(session()));
+    await api.login("user", "synthetic-only");
+    const content = new Blob(["synthetic"]);
+    const oversized = new Blob(["synthetic"]);
+    Object.defineProperty(oversized, "size", { value: 100_000_001 });
+    for (const [project, upload, proof, digest, file] of [
+      ["../other", id, "u".repeat(43), "b".repeat(64), content],
+      [projectId, "bad", "u".repeat(43), "b".repeat(64), content],
+      [projectId, id, "bad", "b".repeat(64), content],
+      [projectId, id, "u".repeat(43), "B".repeat(64), content],
+      [projectId, id, "u".repeat(43), "b".repeat(64), new Blob([])],
+      [projectId, id, "u".repeat(43), "b".repeat(64), oversized],
+    ] as const) {
+      await expect(api.putProjectDocumentUploadContent(project, upload, proof, digest, file))
+        .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    }
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("requires writable Session and clears local proof on Content PUT 401", async () => {
+    const { api, fetcher } = client(response(session()), new Response("{}", { status: 401 }));
+    const content = new Blob(["synthetic"]);
+    await expect(api.putProjectDocumentUploadContent(projectId, id, "u".repeat(43), "b".repeat(64), content))
+      .rejects.toMatchObject({ code: "AUTH_RELOGIN_REQUIRED" });
+    await api.login("user", "synthetic-only");
+    await expect(api.putProjectDocumentUploadContent(projectId, id, "u".repeat(43), "b".repeat(64), content))
+      .resolves.toMatchObject({ status: 401 });
+    expect(api.canSubmit).toBe(false);
+    expect(api.view).toBeNull();
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it("holds Content PUT exclusive and aborts at its upload deadline without replay", async () => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn().mockResolvedValueOnce(response(session()))
+      .mockImplementationOnce((_path: string, options: RequestInit) => new Promise((_done, reject) => {
+        options.signal?.addEventListener("abort", () => reject(new Error("synthetic network failure")));
+      }));
+    const api = new SessionClient(fetcher as typeof fetch);
+    await api.login("user", "synthetic-only");
+    const pending = expect(api.putProjectDocumentUploadContent(projectId, id, "u".repeat(43),
+      "b".repeat(64), new Blob(["synthetic"]))).rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    await expect(api.renew()).rejects.toMatchObject({ code: "AUTH_CLIENT_BUSY" });
+    await vi.advanceTimersByTimeAsync(300_001);
+    await pending;
+    expect(api.canSubmit).toBe(true);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
   it("does not submit Project create from a missing or read-only local session", async () => {
     const readOnly = session(); delete (readOnly as Partial<typeof readOnly>).csrf_token;
     const { api, fetcher } = client(response(readOnly));

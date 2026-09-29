@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260929-487 — DOC-05-A05-P03 项目上传内容私有 PUT 传输
+
+- Date/WBS：2026-09-29 / Phase2 DOC-05-A05-P03。P01/P02 与后端 `DOCUMENT_UPLOAD_CONTENT` 可选 Router 均已具备；冻结内容流协议要求项目/上传 ID、Cookie/CSRF、短时 token、Content SHA-256 和长度限额。
+- Decision/Reason：只为 PROJECT Scope 增加 SessionClient 私有 PUT 通道。调用方提供已计算的 SHA-256 与有明确长度的 Blob；前端先校验 ID/token/hash/大小，固定同源路径、`application/octet-stream`、私有 CSRF、`X-Upload-Token` 和 `X-Content-SHA256`，单次请求且可中止，401 清写证明。浏览器 Fetch API 禁止脚本设置 `Content-Length`，Fetch 标准会为已知长度请求体生成该头；不伪造手动设置或改写冻结后端合同（https://fetch.spec.whatwg.org/）。
+- Impact/rollback/validation plan：无 API/Schema/Migration/权限/依赖变更；撤新方法即可回滚。单元合同覆盖固定路径/头、Blob 大小、非法值、失去写证明、401、互斥、超时；全量前端/typecheck/build。实际浏览器/HTTP `Content-Length`、文件 Hash、Commit/解析链另行验证，当前不得宣称上传可用。
+
 ## DEC-20260929-486 — DOC-05-A05-P02 项目 UploadIntent 安全业务客户端
 
 - Date/WBS：2026-09-29 / Phase2 DOC-05-A05-P02。P01 固定私有 Session/CSRF/Key 传输与冻结 `DOCUMENT_UPLOAD_CREATE`、后端 PROJECT UploadIntent 201 合同已具备。

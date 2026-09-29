@@ -30,6 +30,8 @@ export class SessionClientError extends Error {
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const csrf = /^[0-9a-f]{64}$/;
+const uploadToken = /^[A-Za-z0-9_-]{43}$/;
+const sha256 = /^[0-9a-f]{64}$/;
 const projectRoles = new Set(["PROJECT_MANAGER", "IMPLEMENTATION_MEMBER", "CUSTOMER_MANAGER", "CUSTOMER_MEMBER"]);
 function record(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -219,6 +221,40 @@ export class SessionClient {
   postProjectDocumentUploadCreate(projectId: string, body: string, idempotencyKey: string): Promise<Response> {
     if (!identifier(projectId)) return Promise.reject(new SessionClientError("AUTH_CLIENT_UNAVAILABLE"));
     return this.#postCommand(`/api/v1/projects/${projectId}/document-uploads`, body, idempotencyKey, 8192);
+  }
+
+  /** Bounded single Content PUT. Blob gives Fetch a known length; scripts cannot set Content-Length. */
+  async putProjectDocumentUploadContent(projectId: string, uploadId: string, proof: string,
+    contentSha256: string, content: Blob): Promise<Response> {
+    if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
+    if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
+    if (!identifier(projectId) || !identifier(uploadId) || typeof proof !== "string"
+      || !uploadToken.test(proof) || typeof contentSha256 !== "string" || !sha256.test(contentSha256)
+      || !(content instanceof Blob) || !Number.isSafeInteger(content.size)
+      || content.size < 1 || content.size > 100_000_000) {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    }
+    this.#busy = true;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), 300_000);
+    try {
+      const fetcher = this.fetcher;
+      const response = await fetcher(`/api/v1/projects/${projectId}/document-uploads/${uploadId}/content`, {
+        method: "PUT", credentials: "same-origin", cache: "no-store", redirect: "error",
+        headers: { Accept: "application/json", "Content-Type": "application/octet-stream",
+          "X-CSRF-Token": this.#csrf, "X-Upload-Token": proof, "X-Content-SHA256": contentSha256 },
+        body: content, signal: controller.signal,
+      });
+      if (controller.signal.aborted) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+      if (response.status === 401) { this.#csrf = null; this.#view = null; }
+      return response;
+    } catch {
+      // Content can already have been received when the connection fails; never replay implicitly.
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    } finally {
+      window.clearTimeout(timer);
+      this.#busy = false;
+    }
   }
 
   /** Project PATCH has no idempotency key; an unknown outcome requires a fresh GET. */

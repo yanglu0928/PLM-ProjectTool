@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-29：0.1.0.dev0/DOC-05-A05-P03 增加项目文档上传内容的私有 PUT 通道：固定路径、同源 Cookie/CSRF、短时 token/SHA、1～100 MB Blob、互斥/401/超时一次；定向 143、前端全量 880 项/typecheck/build PASS。兼容冻结 `/api/v1`/DB0049，无后端 API/Schema/Migration/权限/依赖或升级变化；浏览器实际 `Content-Length`/字节、SHA 计算/200 回执、Commit/Abort、UI/真实解析、正式信任/Gate3/包待。
+
 - 2026-09-29：0.1.0.dev0/DOC-05-A05-P02 增加 PROJECT Document UploadIntent 新建/升版安全业务客户端，白名单短时令牌回执、确定性拒绝/未知区分和不自动重试；定向 31、前端全量 876 项/typecheck/build PASS。首轮 11 个错误映射测试因夹具结构错误失败，修后全量重跑。兼容冻结 `/api/v1`/DB0049，无后端 API/Schema/Migration/权限/依赖或升级变化；内容 PUT、Commit/Abort、上传 UI、真实解析、正式信任/Gate3/包待。
 
 - 2026-09-29：0.1.0.dev0/DOC-05-A05-P01 增加 PROJECT Document UploadIntent 固定路径的前端私有 Session/CSRF/原幂等键传输桥接；定向 139、前端全量 845 项及 typecheck/build PASS。兼容冻结 `/api/v1`/DB0049，无后端 API/Schema/Migration/权限/依赖或升级变化；业务响应校验、内容 PUT、Commit/Abort、上传 UI、真实解析、正式信任/Gate3/程序包待完成。
