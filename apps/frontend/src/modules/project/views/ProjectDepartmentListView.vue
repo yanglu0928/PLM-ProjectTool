@@ -19,6 +19,12 @@ const busy = ref(false);
 const error = ref("");
 let generation = 0;
 let mounted = true;
+function canCreate() {
+  return mounted && !!identity && !identity.password_change_required && session.canSubmit
+    && session.view?.user.user_id === identity.user.user_id
+    && !!session.view?.authorized_projects.some((item) => item.project_id === route.params.projectId
+      && item.role === "PROJECT_MANAGER");
+}
 
 async function load(cursor: string | null = null, replace = false) {
   if (!mounted || !identity || identity.password_change_required || busy.value) return;
@@ -59,6 +65,7 @@ onUnmounted(() => { mounted = false; generation += 1; });
     <h1 id="department-list-title">项目部门历史</h1>
     <p>可见范围由服务器按当前项目实时确认；列表包含已停用部门，跨页内容不代表同一时刻的快照。</p>
     <p><RouterLink :to="{ name: 'project-detail', params: { projectId: route.params.projectId } }">返回项目详情</RouterLink></p>
+    <p v-if="canCreate()"><RouterLink :to="{ name: 'project-department-create', params: { projectId: route.params.projectId } }">创建项目部门</RouterLink></p>
     <template v-if="!identity">
       <p role="status">尚未读取当前身份。请先登录，或在账户页读取当前身份。</p>
       <RouterLink to="/login">前往账户与登录</RouterLink>

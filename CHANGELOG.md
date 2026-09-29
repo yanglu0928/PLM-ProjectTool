@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-29：0.1.0.dev0/PRJ-05-A11-P03新增部门创建确认页面与负责人入口，未知结果原输入/Key恢复、冲突锁页、first/current分离及切项目迟到结果丢弃；前端613项/typecheck通过，首次Windows构建进程异常退出、单独完整build重跑通过。兼容DB0049/冻结API，无Schema/Migration/依赖或升级变化；浏览器PG、正式信任/其他平台/性能/质量/Gate3/包待。
+
 - 2026-09-29：0.1.0.dev0/PRJ-05-A11-P02新增部门创建安全业务客户端，NFKC二字段输入、201首次结果与原输入/强ETag/Location绑定、重放不冒充当前状态，已知拒绝/未知分流；前端604项/typecheck/build通过。兼容DB0049/冻结API，无Schema/Migration/依赖或升级变化；页面/浏览器PG、正式信任/其他平台/性能/质量/Gate3/包待。
 
 - 2026-09-29：0.1.0.dev0/PRJ-05-A11-P01新增部门创建固定前端 POST 传输，规范Project路径、私有CSRF、原幂等Key、同源单次提交，401清证明/未知结果不自动重发；前端575项/typecheck/build通过。兼容DB0049/冻结API，无Schema/Migration/依赖或升级变化；业务响应、页面和浏览器PG、正式信任/其他平台/性能/质量/Gate3/包待。

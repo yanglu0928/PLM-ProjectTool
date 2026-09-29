@@ -20,10 +20,11 @@ function failure(status: number, code: string): Response {
   return new Response(JSON.stringify({ error: { code, message: "private details" }, trace_id: id }),
     { status, headers: { "Content-Type": "application/json" } });
 }
-async function session(restricted = false): Promise<SessionClient> {
+async function session(restricted = false, manager = false): Promise<SessionClient> {
   const api = new SessionClient(vi.fn().mockResolvedValue(response({
     user: { user_id: id, username_display: "合成用户" }, deployment_role: "NONE",
-    password_change_required: restricted, authorized_projects: [],
+    password_change_required: restricted, authorized_projects: manager
+      ? [{ project_id: id, name: "项目", role: "PROJECT_MANAGER" }] : [],
     absolute_expires_at: "2030-01-01T12:00:00Z", idle_expires_at: "2030-01-01T11:00:00Z",
     csrf_token: "a".repeat(64),
   })) as typeof fetch);
@@ -64,6 +65,16 @@ describe("ProjectDepartmentListView", () => {
     expect(wrapper.text()).toContain("跨页内容不代表同一时刻的快照");
     expect(fetcher).toHaveBeenCalledTimes(1);
     wrapper.unmount();
+  });
+
+  it("shows the create entry only to a current manager with a write session", async () => {
+    const fetcher = vi.fn().mockResolvedValue(response({ items: [], next_cursor: null, has_more: false }));
+    const reader = await view(await session(), fetcher as typeof fetch);
+    expect(reader.wrapper.text()).not.toContain("创建项目部门");
+    reader.wrapper.unmount();
+    const manager = await view(await session(false, true), fetcher as typeof fetch);
+    expect(manager.wrapper.get('a[href$="/departments/new"]').text()).toBe("创建项目部门");
+    manager.wrapper.unmount();
   });
 
   it("loads the next page and refreshes from the beginning", async () => {
