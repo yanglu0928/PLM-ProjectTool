@@ -5,6 +5,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createAppRouter } from "@/app/router";
 import { SessionClient } from "@/modules/auth/api/sessionClient";
 import { ProjectReadClient } from "@/modules/project/api/projectReadClient";
+import { ProjectArchiveClient, ProjectArchiveError,
+  type ProjectArchiveFirstReceipt } from "@/modules/project/api/projectArchiveClient";
 import ProjectDetailView from "./ProjectDetailView.vue";
 
 const id = "01234567-89ab-4cde-8123-456789abcdef";
@@ -19,21 +21,24 @@ function failure(status: number, code: string) {
   return new Response(JSON.stringify({ error: { code, message: "private details" }, trace_id: id }),
     { status, headers: { "Content-Type": "application/json" } });
 }
-async function session(restricted = false): Promise<SessionClient> {
+async function session(restricted = false, manager = false): Promise<SessionClient> {
   const api = new SessionClient(vi.fn().mockResolvedValue(response({
     user: { user_id: id, username_display: "合成用户" }, deployment_role: "NONE",
-    password_change_required: restricted, authorized_projects: [],
+    password_change_required: restricted, authorized_projects: manager
+      ? [{ project_id: id, name: "合成项目", role: "PROJECT_MANAGER" }] : [],
     absolute_expires_at: "2030-01-01T12:00:00Z", idle_expires_at: "2030-01-01T11:00:00Z",
     csrf_token: "a".repeat(64),
   })) as typeof fetch);
   await api.login("user", "synthetic-only");
   return api;
 }
-async function view(auth: SessionClient, path: string, fetcher: typeof fetch) {
+async function view(auth: SessionClient, path: string, fetcher: typeof fetch,
+  archiver?: ProjectArchiveClient) {
   const router = createAppRouter(createMemoryHistory());
   await router.push(path);
   await router.isReady();
-  const wrapper = mount(ProjectDetailView, { props: { session: auth, projects: new ProjectReadClient(fetcher) },
+  const wrapper = mount(ProjectDetailView, { props: { session: auth,
+    projects: new ProjectReadClient(fetcher), archiver },
     global: { plugins: [router] } });
   await flushPromises();
   return { wrapper, router };
@@ -103,6 +108,144 @@ describe("ProjectDetailView", () => {
     const { wrapper } = await view(await session(), `/projects/${id}`, fetcher as typeof fetch);
     expect(wrapper.get('[role="alert"]').text()).toContain("暂时无法读取项目");
     expect(wrapper.find("dl").exists()).toBe(false);
+    wrapper.unmount();
+  });
+
+  it("offers one-way archive only to the current manager of an active project", async () => {
+    const fetcher = vi.fn().mockImplementation(() => Promise.resolve(response(project, project.etag)));
+    const reader = await view(await session(), `/projects/${id}`, fetcher as typeof fetch);
+    expect(reader.wrapper.text()).not.toContain("归档此项目");
+    reader.wrapper.unmount();
+    const auth = await session(false, true);
+    const manager = await view(auth, `/projects/${id}`, fetcher as typeof fetch);
+    expect(manager.wrapper.get("button").text()).toContain("刷新项目详情");
+    expect(manager.wrapper.text()).toContain("归档此项目");
+    manager.wrapper.unmount();
+    const archived = await view(auth, `/projects/${id}`, vi.fn().mockResolvedValue(
+      response({ ...project, state: "ARCHIVED", etag: '"v1"' }, '"v1"')) as typeof fetch);
+    expect(archived.wrapper.text()).toContain("已归档");
+    expect(archived.wrapper.text()).not.toContain("归档此项目");
+    archived.wrapper.unmount();
+  });
+
+  it("requires explicit impact confirmation, then separates first receipt from current detail", async () => {
+    const auth = await session(false, true);
+    const archiver = new ProjectArchiveClient(auth);
+    const archive = vi.spyOn(archiver, "archive").mockResolvedValue({
+      first_result: { ...project, state: "ARCHIVED", etag: '"v1"' }, is_current_state_proof: false,
+    });
+    const fetcher = vi.fn().mockResolvedValueOnce(response(project, project.etag))
+      .mockResolvedValueOnce(response({ ...project, state: "ARCHIVED", etag: '"v1"' }, '"v1"'));
+    const { wrapper } = await view(auth, `/projects/${id}`, fetcher as typeof fetch, archiver);
+    await wrapper.findAll("button").find((button) => button.text() === "归档此项目")!.trigger("click");
+    expect(wrapper.text()).toContain("首版没有普通反归档入口");
+    expect(wrapper.get('form button[type="submit"]').attributes("disabled")).toBeDefined();
+    await wrapper.get('form input[type="checkbox"]').setValue(true);
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+    expect(archive).toHaveBeenCalledTimes(1);
+    expect(archive.mock.calls[0]?.[0]).toBe(id);
+    expect(archive.mock.calls[0]?.[1]).toEqual(project);
+    expect(archive.mock.calls[0]?.[2]).toMatch(/^[0-9a-f-]{36}$/);
+    expect(wrapper.text()).toContain("本次归档首次回执");
+    expect(wrapper.text()).toContain("不是当前状态证明");
+    expect(wrapper.find("dl").exists()).toBe(false);
+    await wrapper.get("button").trigger("click");
+    await flushPromises();
+    expect(wrapper.text()).toContain("已归档");
+    expect(wrapper.text()).not.toContain("归档此项目");
+    expect(wrapper.text()).not.toContain("本次归档首次回执");
+    wrapper.unmount();
+  });
+
+  it("retains only the original key after unknown result and requires matching fresh detail", async () => {
+    const auth = await session(false, true);
+    const archiver = new ProjectArchiveClient(auth);
+    const archive = vi.spyOn(archiver, "archive")
+      .mockRejectedValueOnce(new ProjectArchiveError("PROJECT_ARCHIVE_UNCERTAIN"))
+      .mockResolvedValueOnce({ first_result: { ...project, state: "ARCHIVED", etag: '"v1"' },
+        is_current_state_proof: false });
+    const fetcher = vi.fn().mockResolvedValueOnce(response(project, project.etag))
+      .mockResolvedValueOnce(failure(503, "SYSTEM_UNAVAILABLE"))
+      .mockResolvedValueOnce(response(project, project.etag));
+    const { wrapper } = await view(auth, `/projects/${id}`, fetcher as typeof fetch, archiver);
+    await wrapper.findAll("button").find((button) => button.text() === "归档此项目")!.trigger("click");
+    await wrapper.get('form input[type="checkbox"]').setValue(true);
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+    expect(wrapper.text()).toContain("归档结果无法确认");
+    expect(wrapper.find("dl").exists()).toBe(false);
+    expect(wrapper.get('form button[type="submit"]').attributes("disabled")).toBeDefined();
+    await wrapper.get("button").trigger("click");
+    await flushPromises();
+    expect(wrapper.get('form button[type="submit"]').attributes("disabled")).toBeDefined();
+    await wrapper.get("button").trigger("click");
+    await flushPromises();
+    expect(wrapper.text()).toContain("进行中");
+    expect(wrapper.findAll("button").some((button) => button.text() === "归档此项目")).toBe(false);
+    await wrapper.get('form input[type="checkbox"]').setValue(true);
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+    expect(archive).toHaveBeenCalledTimes(2);
+    expect(archive.mock.calls[1]).toEqual(archive.mock.calls[0]);
+    expect(wrapper.text()).toContain("本次归档首次回执");
+    wrapper.unmount();
+  });
+
+  it("does not recover against changed history and keeps a key-conflict lock after refresh", async () => {
+    const auth = await session(false, true);
+    const archiver = new ProjectArchiveClient(auth);
+    const archive = vi.spyOn(archiver, "archive")
+      .mockRejectedValueOnce(new ProjectArchiveError("PROJECT_ARCHIVE_UNCERTAIN"));
+    const fetcher = vi.fn().mockResolvedValueOnce(response(project, project.etag))
+      .mockResolvedValueOnce(response({ ...project, name: "已改名", etag: '"v1"' }, '"v1"'));
+    const { wrapper } = await view(auth, `/projects/${id}`, fetcher as typeof fetch, archiver);
+    await wrapper.findAll("button").find((button) => button.text() === "归档此项目")!.trigger("click");
+    await wrapper.get('form input[type="checkbox"]').setValue(true);
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+    await wrapper.get("button").trigger("click");
+    await flushPromises();
+    expect(wrapper.text()).toContain("已改名");
+    expect(wrapper.get('form button[type="submit"]').attributes("disabled")).toBeDefined();
+    expect(archive).toHaveBeenCalledTimes(1);
+    wrapper.unmount();
+
+    archive.mockRejectedValueOnce(new ProjectArchiveError("CONFLICT_IDEMPOTENCY"));
+    archive.mockClear();
+    const sameFetcher = vi.fn().mockImplementation(() => Promise.resolve(response(project, project.etag)));
+    const conflict = await view(auth, `/projects/${id}`, sameFetcher as typeof fetch, archiver);
+    await conflict.wrapper.findAll("button").find((button) => button.text() === "归档此项目")!.trigger("click");
+    await conflict.wrapper.get('form input[type="checkbox"]').setValue(true);
+    await conflict.wrapper.get("form").trigger("submit");
+    await flushPromises();
+    await conflict.wrapper.get("button").trigger("click");
+    await flushPromises();
+    expect(conflict.wrapper.text()).toContain("已停止本页后续归档");
+    expect(conflict.wrapper.text()).not.toContain("归档此项目");
+    expect(archive).toHaveBeenCalledTimes(1);
+    conflict.wrapper.unmount();
+  });
+
+  it("discards a late archive receipt when the project changes", async () => {
+    const auth = await session(false, true);
+    const archiver = new ProjectArchiveClient(auth);
+    let finish!: (value: ProjectArchiveFirstReceipt) => void;
+    const archive = vi.spyOn(archiver, "archive")
+      .mockReturnValueOnce(new Promise((resolve) => { finish = resolve; }));
+    const fetcher = vi.fn().mockResolvedValueOnce(response(project, project.etag))
+      .mockResolvedValueOnce(response({ ...project, project_id: otherId, name: "其他项目" }, project.etag));
+    const { wrapper, router } = await view(auth, `/projects/${id}`, fetcher as typeof fetch, archiver);
+    await wrapper.findAll("button").find((button) => button.text() === "归档此项目")!.trigger("click");
+    await wrapper.get('form input[type="checkbox"]').setValue(true);
+    await wrapper.get("form").trigger("submit");
+    await router.push(`/projects/${otherId}`);
+    finish({ first_result: { ...project, state: "ARCHIVED", etag: '"v1"' }, is_current_state_proof: false });
+    await flushPromises();
+    expect(archive).toHaveBeenCalledTimes(1);
+    expect(wrapper.text()).not.toContain("本次归档首次回执");
+    expect(wrapper.text()).toContain("其他项目");
+    expect(wrapper.text()).not.toContain("合成项目");
     wrapper.unmount();
   });
 });

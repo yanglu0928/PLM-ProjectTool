@@ -5,35 +5,127 @@ import { RouterLink, useRoute } from "vue-router";
 import { SessionClient } from "@/modules/auth/api/sessionClient";
 import { sessionClientKey } from "@/modules/auth/api/sessionContext";
 import { ProjectReadClient, ProjectReadError, type ProjectView } from "@/modules/project/api/projectReadClient";
+import { ProjectArchiveClient, ProjectArchiveError,
+  type ProjectArchiveFirstReceipt } from "@/modules/project/api/projectArchiveClient";
 
-const props = defineProps<{ session?: SessionClient; projects?: ProjectReadClient }>();
+const props = defineProps<{ session?: SessionClient; projects?: ProjectReadClient;
+  archiver?: ProjectArchiveClient }>();
 const session = toRaw(props.session ?? inject(sessionClientKey, null) ?? new SessionClient());
 const projects = toRaw(props.projects ?? new ProjectReadClient());
+const archiver = toRaw(props.archiver ?? new ProjectArchiveClient(session));
 const identity = session.view;
 const route = useRoute();
 const project = ref<ProjectView | null>(null);
 const busy = ref(false);
+const writeBusy = ref(false);
 const error = ref("");
+const archiveEditor = ref<ProjectView | null>(null);
+const archiveConfirmed = ref(false);
+const confirmOriginal = ref(false);
+const pending = ref<{ readonly project: string; readonly actor: string;
+  readonly before: ProjectView; readonly key: string } | null>(null);
+const receipt = ref<ProjectArchiveFirstReceipt | null>(null);
+const blocked = ref(false);
+const requireFreshRead = ref(false);
 let generation = 0;
+let mounted = true;
 
-watch(() => route.params.projectId, async (value) => {
+function canArchive() {
+  return mounted && !!identity && !identity.password_change_required && session.canSubmit
+    && session.view?.user.user_id === identity.user.user_id
+    && !!session.view?.authorized_projects.some((item) => item.project_id === route.params.projectId
+      && item.role === "PROJECT_MANAGER");
+}
+function sameCurrentProject(before: ProjectView) {
+  const current = project.value;
+  return !!current && current.project_id === before.project_id && current.state === "ACTIVE"
+    && current.code === before.code && current.name === before.name
+    && current.created_at === before.created_at && current.etag === before.etag;
+}
+async function load() {
+  if (!mounted || !identity || identity.password_change_required || busy.value || writeBusy.value) return;
   const current = ++generation;
+  const projectId = typeof route.params.projectId === "string" ? route.params.projectId : "";
   project.value = null;
+  archiveEditor.value = null; archiveConfirmed.value = false; confirmOriginal.value = false;
   error.value = "";
-  busy.value = false;
-  if (!identity || identity.password_change_required) return;
   busy.value = true;
   try {
-    const result = await projects.get(typeof value === "string" ? value : "");
-    if (current === generation) project.value = result;
+    const result = await projects.get(projectId);
+    if (!mounted || current !== generation) return;
+    project.value = result;
+    requireFreshRead.value = false;
+    receipt.value = null;
   } catch (failure) {
-    if (current === generation) error.value = failure instanceof ProjectReadError
+    if (!mounted || current !== generation) return;
+    error.value = failure instanceof ProjectReadError
       ? failure.message : "暂时无法读取项目，请稍后重试。";
   } finally {
-    if (current === generation) busy.value = false;
+    if (mounted && current === generation) busy.value = false;
   }
+}
+function startArchive() {
+  if (!canArchive() || busy.value || writeBusy.value || requireFreshRead.value
+    || receipt.value || pending.value || blocked.value || !project.value
+    || project.value.state !== "ACTIVE") return;
+  archiveEditor.value = Object.freeze({ ...project.value });
+  archiveConfirmed.value = false;
+  error.value = "";
+}
+function canRecover() {
+  const attempt = pending.value;
+  return !!attempt && canArchive() && !busy.value && !writeBusy.value
+    && !requireFreshRead.value && !blocked.value
+    && attempt.project === route.params.projectId
+    && attempt.actor === session.view?.user.user_id && sameCurrentProject(attempt.before);
+}
+async function submitArchive() {
+  if (busy.value || writeBusy.value || requireFreshRead.value || blocked.value) return;
+  const recovery = pending.value;
+  if (recovery && (!canRecover() || !confirmOriginal.value)) return;
+  if (!recovery && (!canArchive() || !archiveEditor.value || !archiveConfirmed.value
+    || !sameCurrentProject(archiveEditor.value))) return;
+  const attempt = recovery ?? Object.freeze({ project: route.params.projectId as string,
+    actor: identity!.user.user_id, before: archiveEditor.value!, key: crypto.randomUUID() });
+  const current = ++generation;
+  pending.value = attempt;
+  archiveEditor.value = null; archiveConfirmed.value = false; confirmOriginal.value = false;
+  writeBusy.value = true; error.value = "";
+  try {
+    const first = await archiver.archive(attempt.project, attempt.before, attempt.key);
+    if (!mounted || current !== generation || route.params.projectId !== attempt.project
+      || !canArchive() || session.view?.user.user_id !== attempt.actor) return;
+    receipt.value = first;
+    pending.value = null;
+    requireFreshRead.value = true;
+  } catch (failure) {
+    if (!mounted || current !== generation || route.params.projectId !== attempt.project) return;
+    requireFreshRead.value = true;
+    if (!(failure instanceof ProjectArchiveError) || failure.uncertain) {
+      error.value = "归档结果无法确认。原项目、版本和操作记录保留在本页；先核对项目详情与审计，勿生成新操作记录。";
+    } else if (failure.code === "CONFLICT_IDEMPOTENCY") {
+      pending.value = null; blocked.value = true;
+      error.value = "原操作记录与请求冲突，已停止本页后续归档。请核对项目详情和审计。";
+    } else {
+      pending.value = null;
+      error.value = failure.message + " 请重新读取项目详情后再决定。";
+    }
+  } finally {
+    if (mounted && current === generation) {
+      project.value = null;
+      writeBusy.value = false;
+    }
+  }
+}
+
+watch(() => route.params.projectId, () => {
+  generation += 1;
+  project.value = null; error.value = ""; busy.value = false; writeBusy.value = false;
+  archiveEditor.value = null; archiveConfirmed.value = false; confirmOriginal.value = false;
+  pending.value = null; receipt.value = null; blocked.value = false; requireFreshRead.value = false;
+  void load();
 }, { immediate: true });
-onUnmounted(() => { generation += 1; });
+onUnmounted(() => { mounted = false; generation += 1; pending.value = null; });
 </script>
 
 <template>
@@ -50,8 +142,13 @@ onUnmounted(() => { generation += 1; });
       <RouterLink to="/login">前往账户与登录</RouterLink>
     </template>
     <template v-else>
+      <button type="button" :disabled="busy || writeBusy" @click="load()">{{ busy ? '正在读取…' : '刷新项目详情' }}</button>
       <p v-if="busy" role="status">正在确认当前项目访问权限…</p>
       <p v-if="error" role="alert">{{ error }}</p>
+      <p v-if="blocked" role="alert">原操作记录冲突，已停止本页后续归档；请核对项目详情和审计。</p>
+      <p v-if="receipt" role="status">本次归档首次回执：{{ receipt.first_result.name }}（{{ receipt.first_result.code }}）· {{ receipt.first_result.etag }}。这不是当前状态证明，请刷新项目详情重新读取。</p>
+      <p v-if="requireFreshRead && !receipt" role="status">旧项目详情已清除。成功重新读取项目详情前，不能再次操作。</p>
+      <p v-if="pending" role="status">原归档操作仅保留在本页内存。离页后若结果仍不确定，先核对项目详情和审计，勿生成新操作记录。</p>
       <dl v-if="project" aria-label="当前授权项目详情">
         <dt>名称</dt><dd>{{ project.name }}</dd>
         <dt>编号</dt><dd>{{ project.code }}</dd>
@@ -60,6 +157,20 @@ onUnmounted(() => { generation += 1; });
       </dl>
       <p v-if="project"><RouterLink :to="{ name: 'project-members', params: { projectId: project.project_id } }">查看项目成员历史</RouterLink></p>
       <p v-if="project"><RouterLink :to="{ name: 'project-departments', params: { projectId: project.project_id } }">查看项目部门历史</RouterLink></p>
+      <button v-if="project?.state === 'ACTIVE' && canArchive() && !requireFreshRead && !receipt && !pending && !blocked"
+        type="button" :disabled="busy || writeBusy" @click="startArchive">归档此项目</button>
+      <form v-if="archiveEditor && canArchive() && !requireFreshRead && !blocked" @submit.prevent="submitArchive">
+        <h2>归档项目：{{ archiveEditor.name }}（{{ archiveEditor.code }}）</h2>
+        <p>基于刚读取的 {{ archiveEditor.etag }} 版本。归档后项目保留只读历史，但禁止新写入与任务；首版没有普通反归档入口。</p>
+        <label><input v-model="archiveConfirmed" type="checkbox" :disabled="writeBusy" />我已核对当前项目，并确认理解归档后的单向影响</label>
+        <button type="submit" :disabled="busy || writeBusy || !archiveConfirmed">{{ writeBusy ? '正在提交…' : '确认归档项目' }}</button>
+      </form>
+      <form v-if="pending && canArchive() && !blocked" @submit.prevent="submitArchive">
+        <h2>核对原归档操作</h2>
+        <p>原项目：{{ pending.before.name }}（{{ pending.before.code }}）· {{ pending.before.etag }}。仅当详情重读仍为原 ACTIVE 版本时，才可按原操作记录恢复；否则请核对审计。</p>
+        <label><input v-model="confirmOriginal" type="checkbox" :disabled="busy || writeBusy || !canRecover()" />我确认只复用原项目、版本和操作记录</label>
+        <button type="submit" :disabled="busy || writeBusy || !confirmOriginal || !canRecover()">按原操作记录恢复归档</button>
+      </form>
     </template>
   </section>
 </template>
@@ -70,5 +181,6 @@ onUnmounted(() => { generation += 1; });
 .project-detail dl { display: grid; grid-template-columns: minmax(5rem, auto) 1fr; gap: .65rem 1rem; }
 .project-detail dt { font-weight: 700; }
 .project-detail dd { margin: 0; overflow-wrap: anywhere; }
+.project-detail form { display: grid; gap: .7rem; margin-top: 1rem; }
 .project-detail [role="alert"] { color: #a21d25; }
 </style>
