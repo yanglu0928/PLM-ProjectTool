@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260929-458 — PRJ-05-A12-P02 部门更新安全业务客户端
+
+- Date/WBS：2026-09-29 / Phase2 PRJ-05-A12-P02。P01传输、冻结PATCH合同、后端PRJ-04-A15与部门历史安全投影前置满足。
+- Decision：一次更新只允许 code/name 中至少一项并按服务端 NFKC/trim 有界规范化；只接受 ACTIVE 原部门与强版本。200 必须绑定原部门 ID/创建时间/ACTIVE、目标字段、未改字段、响应强ETag与预期版本增量（无变化保持）；明确错误仅按已知 HTTP/码匹配，其他及断线均视未知，须重读历史，不自动重试。
+- Impact/rollback/validation：仅前端业务客户端/测试，无API/Schema/权限/依赖变化。风险为伪成功误确认或未知重试；回滚移除客户端。前端测试/typecheck/build；实际页面和浏览器/PG另项。
+- Executed：2026-09-29，原部门/ACTIVE/强版本、NFKC字段、无变化v0与变更v1、伪ID/创建时间/状态/字段/ETag、明确拒绝与未知边界测试通过；前端644项/typecheck/build PASS。页面/真实PG另项。
+
 ## DEC-20260929-457 — PRJ-05-A12-P01 部门更新固定前端传输
 
 - Date/WBS：2026-09-29 / Phase2 PRJ-05-A12-P01。冻结 PROJECT_DEPARTMENT_PATCH、后端 PRJ-04-A15-P02 与现有 SessionClient 为输入；Gate2 与前置写/只读链已满足。
