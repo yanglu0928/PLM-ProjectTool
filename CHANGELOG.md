@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-29：0.1.0.dev0/DOC-05-A01-P03-A01 增加 Windows 11 隔离合成 Document API/PG 验收夹具：真实 Session、匿名/非成员/跨项目拒绝、51 条 50+1 签名游标与跨会话拒绝、详情强 ETag、受限对照及随机资源清理 exit0。仅测试夹具/记录，兼容 DB0049/冻结 `/api/v1`，无生产代码/Schema/Migration/依赖或升级变化；浏览器因工具安全限制未验证，正式信任/其他平台/Gate3/可用包待验。
+
 - 2026-09-29：0.1.0.dev0/DOC-05-A01-P02 项目详情接入 Document 元数据历史页：50 条续页/刷新、ACTIVE/ARCHIVED 状态、拒绝清旧、跨页去重与切项目迟到响应隔离；前端 808 项/typecheck/build 通过。兼容 DB0049/冻结 `/api/v1`，无 Schema/Migration/依赖或升级变化；Windows 11 实际浏览器/PG、正式信任/其他平台、Gate3/可用包待验。
 
 - 2026-09-29：执行纪律/方案 A 再确认：持续按计划开发至可用程序包，原方案不兼容的偏差先建 Change Request 再自主实施、验证及同步 GitHub；保留客观 Gate 和安全边界。仅规则/追溯更新，无运行时/Schema/API/依赖或升级变化。

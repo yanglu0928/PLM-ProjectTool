@@ -534,6 +534,50 @@ def verify_department_deactivate_http(origin: str, project: uuid.UUID, foreign: 
     print("PROJECT_DEPARTMENT_DEACTIVATE_HTTP PASS: anonymous401/admin404/CSRF403/foreign404/IfMatch428/in-use409/200-replay/key-conflict409/history", flush=True)
 
 
+def verify_document_history_http(origin: str, project: uuid.UUID, foreign: uuid.UUID):
+    route = f"/api/v1/projects/{project}/documents"
+    with httpx.Client(base_url=origin, timeout=20) as anonymous:
+        assert anonymous.get(route).status_code == 401
+    with httpx.Client(base_url=origin, timeout=20) as admin:
+        login = admin.post("/api/v1/auth/login", headers={"Origin": origin},
+            json={"username": "Synthetic Project Admin", "password": "synthetic-project-only-password"})
+        assert login.status_code == 200
+        denied = admin.get(route)
+        assert denied.status_code == 404 and denied.json()["error"]["code"] == "RESOURCE_NOT_FOUND", denied.text
+    with httpx.Client(base_url=origin, timeout=20) as member:
+        login = member.post("/api/v1/auth/login", headers={"Origin": origin},
+            json={"username": "Synthetic Project Member", "password": "synthetic-project-only-password"})
+        assert login.status_code == 200, login.text
+        first = member.get(route, params={"page_size": 50})
+        assert first.status_code == 200, first.text
+        page = first.json()["data"]
+        assert len(page["items"]) == 50 and page["has_more"] and page["next_cursor"]
+        assert all(item["scope"] == "PROJECT" and item["category"] == "PROJECT_RECORD" for item in page["items"])
+        assert all("storage_locator" not in item and "content" not in item for item in page["items"])
+        second = member.get(route, params={"page_size": 50, "cursor": page["next_cursor"]})
+        assert second.status_code == 200, second.text
+        end = second.json()["data"]
+        assert len(end["items"]) == 1 and not end["has_more"] and end["next_cursor"] is None
+        ids = [item["document_id"] for item in page["items"] + end["items"]]
+        assert len(set(ids)) == 51
+        assert {item["title"] for item in page["items"] + end["items"]} == {
+            f"Synthetic Browser Document {index:02d}" for index in range(51)}
+        denied = member.get(f"/api/v1/projects/{foreign}/documents")
+        assert denied.status_code == 404 and denied.json()["error"]["code"] == "RESOURCE_NOT_FOUND", denied.text
+        cross = member.get(f"/api/v1/projects/{foreign}/documents/{ids[0]}")
+        assert cross.status_code == 404
+        detail = member.get(f"{route}/{ids[0]}")
+        assert detail.status_code == 200 and detail.headers["ETag"] == detail.json()["data"]["etag"]
+        assert detail.json()["data"]["document_id"] == ids[0]
+        with httpx.Client(base_url=origin, timeout=20) as other_session:
+            login = other_session.post("/api/v1/auth/login", headers={"Origin": origin},
+                json={"username": "Synthetic Project Member", "password": "synthetic-project-only-password"})
+            assert login.status_code == 200
+            bad_cursor = other_session.get(route, params={"page_size": 50, "cursor": page["next_cursor"]})
+            assert bad_cursor.status_code == 400, bad_cursor.text
+    print("DOCUMENT_HISTORY_HTTP PASS: anonymous401/admin404/foreign404, 50+1 signed cursor, detail ETag, session-bound cursor", flush=True)
+
+
 def main():
     suffix = uuid.uuid4().hex[:12]
     dbname = role = "prj05a04_" + suffix
@@ -582,12 +626,13 @@ def main():
                                              or "--department-patch-api-only" in sys.argv[1:])
                     department_deactivate_mode = ("--department-deactivate-browser" in sys.argv[1:]
                                                   or "--department-deactivate-api-only" in sys.argv[1:])
+                    document_history_mode = "--document-history-api-only" in sys.argv[1:]
                     member_mode = ("--member-browser" in sys.argv[1:]
                                    or "--member-api-only" in sys.argv[1:])
                     if sum((create_mode, archive_mode, project_patch_mode, state_mode, name_mode, member_mode, member_create_mode,
                             member_patch_mode, member_state_mode, department_history_mode,
                             department_create_mode, department_patch_mode,
-                            department_deactivate_mode)) > 1:
+                            department_deactivate_mode, document_history_mode)) > 1:
                         raise ValueError("Browser write modes must be exclusive")
                     manager = (insert_user(db, "Synthetic First Manager", hashed.password_hash, hashed.algorithm_id)
                                if create_mode else None)
@@ -615,6 +660,21 @@ def main():
                         db.execute("INSERT INTO plm.prj_departments "
                             "(project_id,department_code,department_code_normalized,name,state) "
                             "VALUES (%s,'OLD','old','Synthetic Inactive Department','INACTIVE')", (project,))
+                    if document_history_mode:
+                        for index in range(51):
+                            db.execute("INSERT INTO plm.doc_documents "
+                                "(scope,project_id,document_category,title,original_display_name,created_by) "
+                                "VALUES ('PROJECT',%s,'PROJECT_RECORD',%s,%s,%s)",
+                                (project, f"Synthetic Browser Document {index:02d}",
+                                 f"synthetic-{index:02d}.pdf", member))
+                        db.execute("INSERT INTO plm.doc_documents "
+                            "(scope,project_id,document_category,title,original_display_name,created_by,document_state) "
+                            "VALUES ('PROJECT',%s,'PROJECT_RECORD','Synthetic Restricted Document','restricted.pdf',%s,'RESTRICTED')",
+                            (project, member))
+                        db.execute("INSERT INTO plm.doc_documents "
+                            "(scope,project_id,document_category,title,original_display_name,created_by) "
+                            "VALUES ('PROJECT',%s,'PROJECT_RECORD','Synthetic Foreign Document','foreign.pdf',%s)",
+                            (foreign, admin_user))
                     target_user = (insert_user(db, "Synthetic Candidate Target", hashed.password_hash, hashed.algorithm_id)
                                    if member_create_mode else None)
                     patch_target = (insert_user(db, "Synthetic Patch Target", hashed.password_hash, hashed.algorithm_id)
@@ -749,6 +809,8 @@ def main():
                         elif "--department-deactivate-api-only" in sys.argv[1:]:
                             assert free_department is not None
                             verify_department_deactivate_http(origin, project, foreign, department, free_department)
+                        elif "--document-history-api-only" in sys.argv[1:]:
+                            verify_document_history_http(origin, project, foreign)
                         else:
                             actions = queue.Queue()
                             Thread(target=lambda: actions.put(sys.stdin.readline().strip()), daemon=True).start()
@@ -793,6 +855,8 @@ def main():
                                 assert session_count >= 1
                             elif department_deactivate_mode:
                                 assert session_count == 2
+                            elif document_history_mode:
+                                assert session_count == 3
                             else:
                                 assert session_count >= (1 if create_mode else 2)
                             active_expected = 51 if member_mode else (2 if expected == 3 or member_create_mode or member_patch_mode else 1)
@@ -929,6 +993,14 @@ def main():
                                 assert db.execute("SELECT username_display,username_normalized,state,lock_version FROM plm.auth_users WHERE user_id=%s", (member,)).fetchone() == (renamed, renamed.lower(), "ENABLED", 1)
                                 assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s AND action='USER_NAME_CHANGED'", (member,)).fetchone()[0] == 1
                                 print("USER_NAME_BROWSER_DATABASE PASS: same user renamed/v1, one audit event", flush=True)
+                            if document_history_mode:
+                                assert db.execute("SELECT count(*) FROM plm.doc_documents WHERE project_id=%s "
+                                    "AND document_state='ACTIVE'", (project,)).fetchone()[0] == 51
+                                assert db.execute("SELECT count(*) FROM plm.doc_documents WHERE project_id=%s "
+                                    "AND document_state='RESTRICTED'", (project,)).fetchone()[0] == 1
+                                assert db.execute("SELECT count(*) FROM plm.doc_documents WHERE project_id=%s",
+                                    (foreign,)).fetchone()[0] == 1
+                                print("DOCUMENT_HISTORY_DATABASE PASS: owned 51 ACTIVE + 1 RESTRICTED, foreign 1", flush=True)
                         print(f"PROJECT_BROWSER_DATABASE_COUNTS PASS: {expected} projects, {session_count} sessions, {active_expected} active members", flush=True)
                 finally:
                     if proxy:

@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260929-475 — DOC-05-A01-P03-A01 独立 API/PG 验收
+
+- Date/WBS：2026-09-29 / Phase2 DOC-05-A01-P03-A01。Document 前端 P01/P02 与后端 Windows 显式读取组合、现有随机库/角色/Vault 隔离夹具前置满足；P03 原拟 API/PG + 实际浏览器整体验收。
+- Decision/Reason：浏览器工具无法可靠确认 Chrome URL 而按安全策略终止，不能把 API/PG 证据扩展成浏览器 PASS。将已独立完成的真实 Session、临时 PostgreSQL、50+1 签名游标与权限隔离验收登记为 A01；浏览器另列 A02，未验证不放行。只保留 `--document-history-api-only` 正式夹具模式，未测试的 browser flag 不纳入提交。
+- Impact/rollback/validation：仅合成验收夹具与记录，无冻结 API/Schema/Migration/权限/依赖变化；撤新 API-only 模式可回滚。Python 语法、完整 API/PG 夹具 exit0，临时库/角色/Vault 清理通过，PoC PG 恢复原停止。风险为正式信任和浏览器行为尚未验证，A02/Gate3 维持未完成。
+
 ## DEC-20260929-474 — DOC-05-A01-P02 项目 Document 历史只读页面
 
 - Date/WBS：2026-09-29 / Phase2 DOC-05-A01-P02。P01 安全客户端及冻结 `DOCUMENT_LIST`、Windows 显式读取组合前置满足。
