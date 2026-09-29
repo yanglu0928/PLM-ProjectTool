@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260929-449 — PRJ-05-A09-P04 Windows 11 成员三状态端到端
+
+- Date/WBS：2026-09-29 / Phase2 PRJ-05-A09-P04；P01～P03 与后端 PRJ-04-A12-P03 前置已满足。复用自有浏览器/PG fixture，仅合成信任源。
+- Decision：独立 member-state 模式建立随机 PostgreSQL 库/角色、Vault测试凭据、一个负责人和一个目标成员；API-only 验匿名、CSRF、非负责人/跨项目、原 Key重放与异输入冲突；浏览器按暂停→恢复→移除操作，核对每次首次回执和重读当前历史、最终移除仍有历史。SQL 验 v3、三条状态 Audit、三份完成收据；清理自有资源并恢复原 PG 服务状态。不同模式测试不同随机资源，不将合成证据当生产信任/Gate3。
+- Impact/rollback/validation：只修改验证脚本及进度，无实体/Schema/API/权限/依赖变更。风险是本机服务原停止、会话中断造成残留、浏览器会话丢失；先记原状态，使用唯一命名、结束精确清理。失败不标 PASS；回滚撤 fixture 模式。
+- Executed：2026-09-29，API-only HTTP/PG exit 0；真实浏览器暂停→恢复→移除，各次 first receipt 与当前历史分开显示，最终 SQL REMOVED/v3、三条 Audit、三份完成收据，资源清理 exit 0。PoC PG 恢复原停止状态；正式信任、其他平台、性能/质量与 Gate 未验。
+
 ## DEC-20260929-448 — PRJ-05-A09-P03 成员状态确认页面
 
 - Date/WBS：2026-09-29 / Phase2 PRJ-05-A09-P03；P01/P02、成员历史列表与后端冻结三状态命令均已具备。无单成员 GET，继续从已读取历史选择目标。

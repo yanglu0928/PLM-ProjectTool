@@ -237,6 +237,54 @@ def verify_member_patch_http(origin: str, project: uuid.UUID, foreign: uuid.UUID
     print("PROJECT_MEMBER_PATCH_HTTP PASS: anonymous401/admin404/CSRF403/foreign404/change200-v1/stale409/no-op200-v1", flush=True)
 
 
+def verify_member_state_http(origin: str, project: uuid.UUID, foreign: uuid.UUID,
+                             target: uuid.UUID):
+    route = f"/api/v1/projects/{project}/members/{target}"
+    with httpx.Client(base_url=origin, timeout=20) as anonymous:
+        assert anonymous.post(route + ":suspend", headers={"Origin": origin,
+            "If-Match": '"v0"', "Idempotency-Key": "synthetic-state-suspend-0001"}).status_code == 401
+    with httpx.Client(base_url=origin, timeout=20) as admin:
+        login = admin.post("/api/v1/auth/login", headers={"Origin": origin},
+            json={"username": "Synthetic Project Admin", "password": "synthetic-project-only-password"})
+        assert login.status_code == 200
+        denied = admin.post(route + ":suspend", headers={"Origin": origin,
+            "X-CSRF-Token": login.json()["data"]["csrf_token"], "If-Match": '"v0"',
+            "Idempotency-Key": "synthetic-state-suspend-0001"})
+        assert denied.status_code == 404, denied.text
+    with httpx.Client(base_url=origin, timeout=20) as manager:
+        login = manager.post("/api/v1/auth/login", headers={"Origin": origin},
+            json={"username": "Synthetic Project Member", "password": "synthetic-project-only-password"})
+        assert login.status_code == 200, login.text
+        csrf = login.json()["data"]["csrf_token"]
+        headers = {"Origin": origin, "X-CSRF-Token": csrf,
+                   "If-Match": '"v0"', "Idempotency-Key": "synthetic-state-suspend-0001"}
+        assert manager.post(route + ":suspend", headers={"Origin": origin,
+            "If-Match": '"v0"', "Idempotency-Key": headers["Idempotency-Key"]}).status_code == 403
+        denied = manager.post(f"/api/v1/projects/{foreign}/members/{target}:suspend", headers=headers)
+        assert denied.status_code == 404, denied.text
+        first = manager.post(route + ":suspend", headers=headers)
+        replay = manager.post(route + ":suspend", headers=headers)
+        assert first.status_code == replay.status_code == 200, (first.text, replay.text)
+        assert first.headers["ETag"] == replay.headers["ETag"] == '"v1"'
+        assert first.json()["data"] == replay.json()["data"]
+        assert first.json()["data"]["state"] == "SUSPENDED"
+        conflict = manager.post(route + ":suspend", headers={**headers, "If-Match": '"v1"'})
+        assert conflict.status_code == 409 and conflict.json()["error"]["code"] == "CONFLICT_IDEMPOTENCY", conflict.text
+        resumed = manager.post(route + ":resume", headers={**headers,
+            "If-Match": '"v1"', "Idempotency-Key": "synthetic-state-resume-0001"})
+        assert resumed.status_code == 200 and resumed.headers["ETag"] == '"v2"', resumed.text
+        assert resumed.json()["data"]["state"] == "ACTIVE"
+        removed = manager.post(route + ":remove", headers={**headers,
+            "If-Match": '"v2"', "Idempotency-Key": "synthetic-state-remove-0001"})
+        assert removed.status_code == 200 and removed.headers["ETag"] == '"v3"', removed.text
+        assert removed.json()["data"]["state"] == "REMOVED" and removed.json()["data"]["ended_at"]
+        history = manager.get(f"/api/v1/projects/{project}/members", params={"page_size": 50})
+        assert history.status_code == 200, history.text
+        target_row = next(item for item in history.json()["data"]["items"] if item["member_id"] == str(target))
+        assert target_row["state"] == "REMOVED" and target_row["etag"] == '"v3"'
+    print("PROJECT_MEMBER_STATE_HTTP PASS: anonymous401/admin404/CSRF403/foreign404/suspend-replay-v1/key-conflict409/resume-v2/remove-v3/history", flush=True)
+
+
 def main():
     suffix = uuid.uuid4().hex[:12]
     dbname = role = "prj05a04_" + suffix
@@ -272,10 +320,12 @@ def main():
                                           or "--member-create-api-only" in sys.argv[1:])
                     member_patch_mode = ("--member-patch-browser" in sys.argv[1:]
                                          or "--member-patch-api-only" in sys.argv[1:])
+                    member_state_mode = ("--member-state-browser" in sys.argv[1:]
+                                         or "--member-state-api-only" in sys.argv[1:])
                     member_mode = ("--member-browser" in sys.argv[1:]
                                    or "--member-api-only" in sys.argv[1:])
                     if sum((create_mode, state_mode, name_mode, member_mode, member_create_mode,
-                            member_patch_mode)) > 1:
+                            member_patch_mode, member_state_mode)) > 1:
                         raise ValueError("Browser write modes must be exclusive")
                     manager = (insert_user(db, "Synthetic First Manager", hashed.password_hash, hashed.algorithm_id)
                                if create_mode else None)
@@ -300,6 +350,9 @@ def main():
                             "(project_id,department_code,department_code_normalized,name) "
                             "VALUES (%s,'D2','d2','Synthetic Patch Department') RETURNING department_id",
                             (project,)).fetchone()[0]
+                    state_target = (insert_user(db, "Synthetic State Target", hashed.password_hash, hashed.algorithm_id)
+                                    if member_state_mode else None)
+                    state_member = None
                     if member_create_mode:
                         db.execute("INSERT INTO plm.prj_departments "
                             "(project_id,department_code,department_code_normalized,name,state) "
@@ -312,6 +365,11 @@ def main():
                             "(project_id,user_id,department_id,project_role) "
                             "VALUES (%s,%s,%s,'IMPLEMENTATION_MEMBER') RETURNING project_member_id",
                             (project, patch_target, department)).fetchone()[0]
+                    if member_state_mode:
+                        state_member = db.execute("INSERT INTO plm.prj_project_members "
+                            "(project_id,user_id,department_id,project_role) "
+                            "VALUES (%s,%s,%s,'IMPLEMENTATION_MEMBER') RETURNING project_member_id",
+                            (project, state_target, department)).fetchone()[0]
                     if member_mode:
                         viewer = insert_user(db, "Synthetic Project Viewer", hashed.password_hash, hashed.algorithm_id)
                         db.execute("INSERT INTO plm.prj_project_members "
@@ -382,6 +440,7 @@ def main():
                               + (f" MANAGER={manager}" if create_mode else "")
                               + (f" CANDIDATE={target_user}" if member_create_mode else "")
                               + (f" PATCH_TARGET={patch_member} PATCH_DEPARTMENT={patch_department}" if member_patch_mode else "")
+                              + (f" STATE_TARGET={state_member}" if member_state_mode else "")
                               + (f" USER_STATE_TARGET={member}" if state_mode else "")
                               + (f" USER_NAME_TARGET={member}" if name_mode else ""), flush=True)
                         if "--create-api-only" in sys.argv[1:]:
@@ -397,6 +456,9 @@ def main():
                         elif "--member-patch-api-only" in sys.argv[1:]:
                             assert patch_member is not None and patch_department is not None
                             verify_member_patch_http(origin, project, foreign, patch_member, patch_department)
+                        elif "--member-state-api-only" in sys.argv[1:]:
+                            assert state_member is not None
+                            verify_member_state_http(origin, project, foreign, state_member)
                         else:
                             actions = queue.Queue()
                             Thread(target=lambda: actions.put(sys.stdin.readline().strip()), daemon=True).start()
@@ -413,6 +475,10 @@ def main():
                                 assert session_count == 3
                             elif member_patch_mode:
                                 assert session_count >= 1
+                            elif member_state_mode and "--member-state-browser" in sys.argv[1:]:
+                                assert session_count >= 1
+                            elif member_state_mode:
+                                assert session_count == 2
                             else:
                                 assert session_count >= (1 if create_mode else 2)
                             active_expected = 51 if member_mode else (2 if expected == 3 or member_create_mode or member_patch_mode else 1)
@@ -438,6 +504,18 @@ def main():
                                 assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s "
                                     "AND action='PROJECT_MEMBER_PATCHED'", (patch_member,)).fetchone()[0] == 1
                                 print("PROJECT_MEMBER_PATCH_DATABASE PASS: one role/department change, v1, one Audit", flush=True)
+                            if member_state_mode:
+                                assert db.execute("SELECT state,lock_version,ended_at IS NOT NULL FROM plm.prj_project_members "
+                                    "WHERE project_member_id=%s", (state_member,)).fetchone() == ("REMOVED", 3, True)
+                                assert db.execute("SELECT action,count(*) FROM plm.aud_events WHERE target_object_id=%s "
+                                    "AND action IN ('PROJECT_MEMBER_SUSPENDED','PROJECT_MEMBER_RESUMED','PROJECT_MEMBER_REMOVED') "
+                                    "GROUP BY action ORDER BY action", (state_member,)).fetchall() == [
+                                    ("PROJECT_MEMBER_REMOVED", 1), ("PROJECT_MEMBER_RESUMED", 1),
+                                    ("PROJECT_MEMBER_SUSPENDED", 1)]
+                                assert db.execute("SELECT count(*) FROM plm.plt_idempotency_receipts WHERE operation IN "
+                                    "('V1_PROJECT_MEMBER_SUSPEND','V1_PROJECT_MEMBER_RESUME','V1_PROJECT_MEMBER_REMOVE') "
+                                    "AND state='COMPLETED'").fetchone()[0] == 3
+                                print("PROJECT_MEMBER_STATE_DATABASE PASS: removed/v3, three Audit, three completed receipts", flush=True)
                             if member_mode:
                                 assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE project_id=%s", (project,)).fetchone()[0] == 52
                                 assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE project_id=%s AND state='REMOVED'", (project,)).fetchone()[0] == 1
