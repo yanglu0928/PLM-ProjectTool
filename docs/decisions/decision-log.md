@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260930-492 — DOC-05-A05-P08-A01 隔离网络 API/PG/真实文件验收拆分
+
+- Date/WBS：2026-09-30 / Phase2 DOC-05-A05-P08-A01。P01～P07 客户端/页面合同与既有 Windows 写组合 `validation/doc-03-a04-a04-upload-finalize-platform/verify.py` 满足前置；该既有脚本使用 TestClient，不证明真实网络浏览器长度头。
+- Decision/Reason：先扩展已验证的随机库/角色/Vault/临时文件根网络夹具，以真实 HTTP 与 PostgreSQL/LocalFileStorage 核验 PROJECT 新建/升版的 Create→Content→Commit、短时 token、Content-Length/Hash、下载字节、Parse Job 入队、Audit/幂等/跨项目拒绝及清理；实际浏览器在 P08-A02 单独核验，不能将 A01 外推为浏览器 PASS。Parser Worker 的实际处理亦另列，不把入队视为解析完成。
+- Impact/rollback/validation plan：仅隔离 `validation/` 夹具和进度，无生产 API/Schema/Migration/权限/依赖变化，撤新增模式可回滚。验证随机资源精确清理与原 PoC PG 状态恢复；任一失败保留日志，不伪称 PASS。正式信任源/其他 OS/性能/Gate3 不在本项结论中。
+
 ## DEC-20260930-491 — DOC-05-A05-P07 项目文档新建/升版上传页面
 
 - Date/WBS：2026-09-30 / Phase2 DOC-05-A05-P07。冻结上传四步协议、Windows 显式路由、P01～P06 客户端及项目 Document 历史/详情页前置具备。

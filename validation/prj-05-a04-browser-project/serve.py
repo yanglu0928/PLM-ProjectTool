@@ -630,6 +630,146 @@ def verify_document_download_http(origin: str, project: uuid.UUID, foreign: uuid
     print("DOCUMENT_DOWNLOAD_HTTP PASS: real bytes/hash, attachment/no-store/nosniff, anonymous401/foreign404/range400", flush=True)
 
 
+def verify_document_upload_http(origin: str, project: uuid.UUID, foreign: uuid.UUID,
+                                dbname: str, data_root: Path):
+    """Real loopback HTTP plus isolated PG/file proof; browser UI is a separate test."""
+    base = f"/api/v1/projects/{project}/document-uploads"
+    content_one = b"%PDF-1.7\nPLM synthetic network upload v1\n%%EOF\n"
+    content_two = b"%PDF-1.7\nPLM synthetic network upload v2\n%%EOF\n"
+    body = {"purpose": "SOURCE", "category": "PROJECT_RECORD", "title": "Synthetic Network Upload",
+            "display_name": "synthetic-upload.pdf", "size_hint_bytes": len(content_one),
+            "mime_hint": "application/pdf"}
+
+    def create(client, csrf, key, payload):
+        result = client.post(base, headers={"Origin": origin, "X-CSRF-Token": csrf,
+            "Idempotency-Key": key}, json=payload)
+        assert result.status_code == 201, result.text
+        assert result.headers["Cache-Control"] == "no-store"
+        created = result.json()["data"]
+        assert result.headers["Location"] == base + "/" + created["upload_id"]
+        assert len(created["upload_token"]) == 43
+        return created
+
+    def stage(client, csrf, created, content):
+        route = base + "/" + created["upload_id"] + "/content"
+        request = client.build_request("PUT", route, headers={"Origin": origin,
+            "X-CSRF-Token": csrf, "X-Upload-Token": created["upload_token"],
+            "X-Content-SHA256": hashlib.sha256(content).hexdigest(),
+            "Content-Type": "application/octet-stream"}, content=content)
+        assert request.headers["Content-Length"] == str(len(content))
+        result = client.send(request)
+        assert result.status_code == 200, result.text
+        assert result.headers["Cache-Control"] == "no-store"
+        data = result.json()["data"]
+        assert data["upload_id"] == created["upload_id"]
+        assert data["size_bytes"] == len(content)
+        assert data["sha256"] == hashlib.sha256(content).hexdigest()
+        assert data["detected_mime"] == "application/pdf"
+        return data
+
+    with httpx.Client(base_url=origin, timeout=30) as anonymous:
+        denied = anonymous.post(base, headers={"Origin": origin,
+            "X-CSRF-Token": "a" * 64, "Idempotency-Key": "synthetic-upload-anon-01"}, json=body)
+        assert denied.status_code == 401, denied.text
+    with httpx.Client(base_url=origin, timeout=30) as admin:
+        login = admin.post("/api/v1/auth/login", headers={"Origin": origin},
+            json={"username": "Synthetic Project Admin", "password": "synthetic-project-only-password"})
+        assert login.status_code == 200, login.text
+        denied = admin.post(base, headers={"Origin": origin,
+            "X-CSRF-Token": login.json()["data"]["csrf_token"],
+            "Idempotency-Key": "synthetic-upload-admin-01"}, json=body)
+        assert denied.status_code == 404, denied.text
+    with httpx.Client(base_url=origin, timeout=30) as member:
+        login = member.post("/api/v1/auth/login", headers={"Origin": origin},
+            json={"username": "Synthetic Project Member", "password": "synthetic-project-only-password"})
+        assert login.status_code == 200, login.text
+        csrf = login.json()["data"]["csrf_token"]
+        no_csrf = member.post(base, headers={"Origin": origin,
+            "Idempotency-Key": "synthetic-upload-nocsrf-01"}, json=body)
+        assert no_csrf.status_code == 403, no_csrf.text
+        foreign_create = member.post(f"/api/v1/projects/{foreign}/document-uploads",
+            headers={"Origin": origin, "X-CSRF-Token": csrf,
+                "Idempotency-Key": "synthetic-upload-foreign-01"}, json=body)
+        assert foreign_create.status_code == 404, foreign_create.text
+
+        first = create(member, csrf, "synthetic-upload-create-v1", body)
+        first_data = stage(member, csrf, first, content_one)
+        route = base + "/" + first["upload_id"] + ":commit"
+        headers = {"Origin": origin, "X-CSRF-Token": csrf,
+                   "Idempotency-Key": "synthetic-upload-commit-v1"}
+        committed = member.post(route, headers=headers)
+        replay = member.post(route, headers=headers)
+        assert committed.status_code == replay.status_code == 201, (committed.text, replay.text)
+        assert committed.json()["data"] == replay.json()["data"]
+        result = committed.json()["data"]
+        assert result["upload_id"] == first["upload_id"] and result["version_no"] == 1
+        document_id = result["document_id"]
+        detail_path = f"/api/v1/projects/{project}/documents/{document_id}"
+        detail = member.get(detail_path)
+        assert detail.status_code == 200, detail.text
+        parent_etag = detail.headers["ETag"]
+        assert parent_etag == '"v1"'
+        downloaded = member.get(detail_path + f"/versions/{result['document_version_id']}/content")
+        assert downloaded.status_code == 200 and downloaded.content == content_one, downloaded.text
+
+        second_body = {"purpose": "SOURCE", "display_name": "synthetic-upload-v2.pdf",
+                       "size_hint_bytes": len(content_two), "mime_hint": "application/pdf",
+                       "document_id": document_id,
+                       "supersedes_version_id": result["document_version_id"]}
+        second = create(member, csrf, "synthetic-upload-create-v2", second_body)
+        second_data = stage(member, csrf, second, content_two)
+        second_commit = member.post(base + "/" + second["upload_id"] + ":commit",
+            headers={"Origin": origin, "X-CSRF-Token": csrf,
+                "Idempotency-Key": "synthetic-upload-commit-v2", "If-Match": parent_etag})
+        assert second_commit.status_code == 201, second_commit.text
+        second_result = second_commit.json()["data"]
+        assert second_result["document_id"] == document_id and second_result["version_no"] == 2
+        assert second_result["document_version_id"] != result["document_version_id"]
+        downloaded_two = member.get(detail_path + f"/versions/{second_result['document_version_id']}/content")
+        assert downloaded_two.status_code == 200 and downloaded_two.content == content_two, downloaded_two.text
+        stale = member.post(base + "/" + second["upload_id"] + ":commit",
+            headers={"Origin": origin, "X-CSRF-Token": csrf,
+                "Idempotency-Key": "synthetic-upload-commit-new-key", "If-Match": parent_etag})
+        assert stale.status_code == 409, stale.text
+
+        stopped = create(member, csrf, "synthetic-upload-create-abort", body)
+        stage(member, csrf, stopped, content_one)
+        abort_path = base + "/" + stopped["upload_id"] + ":abort"
+        abort_headers = {"Origin": origin, "X-CSRF-Token": csrf,
+                         "Idempotency-Key": "synthetic-upload-abort-key"}
+        aborted = member.post(abort_path, headers=abort_headers)
+        abort_replay = member.post(abort_path, headers=abort_headers)
+        assert aborted.status_code == abort_replay.status_code == 200
+        assert aborted.json()["data"] == abort_replay.json()["data"]
+        assert aborted.json()["data"]["cleanup_pending"] is True
+
+    with source.connect(dbname) as db:
+        rows = db.execute("SELECT d.document_id,v.document_version_id,v.version_no,f.storage_locator,"
+            "f.sha256,f.size_bytes,f.file_state FROM plm.doc_documents d "
+            "JOIN plm.doc_document_versions v ON v.document_id=d.document_id "
+            "JOIN plm.doc_file_objects f ON f.file_object_id=v.file_object_id "
+            "WHERE d.document_id=%s ORDER BY v.version_no", (uuid.UUID(document_id),)).fetchall()
+        assert len(rows) == 2 and [item[2] for item in rows] == [1, 2]
+        for row, content, staged in zip(rows, (content_one, content_two), (first_data, second_data)):
+            assert row[0] == uuid.UUID(document_id) and row[6] == "AVAILABLE"
+            assert row[4] == hashlib.sha256(content).digest() and row[5] == len(content)
+            locator = row[3]
+            assert locator.startswith(f"projects/{project.hex}/objects/")
+            physical = data_root / locator
+            assert physical.is_file() and physical.read_bytes() == content
+            assert staged["sha256"] == hashlib.sha256(content).hexdigest()
+        assert db.execute("SELECT count(*) FROM plm.job_jobs WHERE job_type='DOCUMENT_PARSE' "
+            "AND job_id IN (%s,%s)", (uuid.UUID(result["parse_job_id"]),
+                                     uuid.UUID(second_result["parse_job_id"]))).fetchone()[0] == 2
+        assert db.execute("SELECT count(*) FROM plm.aud_events WHERE action='DOCUMENT_UPLOAD_COMMIT'").fetchone()[0] == 2
+        assert db.execute("SELECT count(*) FROM plm.aud_events WHERE action='DOCUMENT_UPLOAD_ABORT'").fetchone()[0] == 1
+        assert db.execute("SELECT state FROM plm.doc_upload_intents WHERE upload_id=%s",
+            (uuid.UUID(stopped["upload_id"]),)).fetchone() == ("ABORTED",)
+        assert db.execute("SELECT count(*) FROM plm.doc_document_versions WHERE project_id=%s",
+            (foreign,)).fetchone()[0] == 0
+    print("DOCUMENT_UPLOAD_NETWORK PASS: real HTTP length/hash, v1/v2/abort, downloads, PG files/jobs/audit, isolation", flush=True)
+
+
 def main():
     suffix = uuid.uuid4().hex[:12]
     dbname = role = "prj05a04_" + suffix
@@ -689,13 +829,15 @@ def main():
                                              or "--document-version-browser" in sys.argv[1:])
                     document_download_mode = ("--document-download-api-only" in sys.argv[1:]
                                               or "--document-download-browser" in sys.argv[1:])
+                    document_upload_mode = "--document-upload-api-only" in sys.argv[1:]
                     download_document_id = download_version_id = None
                     member_mode = ("--member-browser" in sys.argv[1:]
                                    or "--member-api-only" in sys.argv[1:])
                     if sum((create_mode, archive_mode, project_patch_mode, state_mode, name_mode, member_mode, member_create_mode,
                             member_patch_mode, member_state_mode, department_history_mode,
                             department_create_mode, department_patch_mode,
-                            department_deactivate_mode, document_history_mode)) > 1:
+                            department_deactivate_mode, document_history_mode,
+                            document_upload_mode)) > 1:
                         raise ValueError("Browser write modes must be exclusive")
                     manager = (insert_user(db, "Synthetic First Manager", hashed.password_hash, hashed.algorithm_id)
                                if create_mode else None)
@@ -853,7 +995,7 @@ def main():
                             ("create_windows_audit_cursor_codec", AuditListCursorCodec(b"a" * 32)),
                         ):
                             stack.enter_context(patch(prefix + name, return_value=codec))
-                        if state_mode or name_mode:
+                        if state_mode or name_mode or document_upload_mode:
                             stack.enter_context(patch(
                                 "plm_assistant.entrypoints.windows_secret_write.create_windows_secret_write_service",
                                 return_value=object()))
@@ -862,7 +1004,7 @@ def main():
                                     provider=SimpleNamespace(resolve_key=lambda ref: b"u" * 32),
                                     key_ref="synthetic-browser-upload-token")))
                         with redirect_stdout(logs):
-                            factory = (production.create_production_platform_write_app if state_mode or name_mode
+                            factory = (production.create_production_platform_write_app if state_mode or name_mode or document_upload_mode
                                        else production.create_production_platform_app)
                             app = factory(settings, credential_target=target)
                         sock = socket.socket()
@@ -929,6 +1071,8 @@ def main():
                             assert download_document_id is not None and download_version_id is not None
                             verify_document_download_http(origin, project, foreign,
                                 download_document_id, download_version_id, download_content)
+                        elif "--document-upload-api-only" in sys.argv[1:]:
+                            verify_document_upload_http(origin, project, foreign, dbname, settings.data_root)
                         else:
                             actions = queue.Queue()
                             Thread(target=lambda: actions.put(sys.stdin.readline().strip()), daemon=True).start()
@@ -980,6 +1124,8 @@ def main():
                                 assert session_count >= 1
                             elif document_version_mode or document_download_mode:
                                 assert session_count == 1
+                            elif document_upload_mode:
+                                assert session_count == 2
                             elif document_history_mode:
                                 assert session_count == 3
                             else:
