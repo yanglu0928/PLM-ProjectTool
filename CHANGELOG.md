@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-29：0.1.0.dev0/DOC-05-A04-P01 新增 DocumentVersion 固定同源受权下载地址构造，不在前端整包缓存流式文件；定向 69、前端全量 841 项/typecheck/build PASS。兼容冻结 `/api/v1`/DB0049，无后端 API/Schema/Migration/依赖或升级变化；UI 入口、真实文件/浏览器下载、正式信任/其他平台/Gate3/可用包待验。
+
 - 2026-09-29：0.1.0.dev0/DOC-05-A03-P03 完成 Windows 11 隔离合成 DocumentVersion API/PG 与实际浏览器验收：受权版本元数据展示、刷新清旧/重读、匿名/外项目拒绝、51 条匹配元数据及随机库/角色/Vault 清理完整 exit0；夹具首两轮 SHA 类型/Session 断言失败已修复重跑。仅验收夹具/记录，兼容 DB0049/冻结 `/api/v1`，无生产 Schema/Migration/依赖或升级变化；真实文件下载/正式信任/其他平台/性能质量/Gate3/可用包待验。
 
 - 2026-09-29：0.1.0.dev0/DOC-05-A03-P02 项目 Document 详情加入按需可用版本历史、续页/空态及刷新/跨路由结果隔离，不提供正文或下载；视图定向 10、前端全量 839 项/typecheck/build PASS。兼容冻结 `/api/v1`/DB0049，无后端 API/Schema/Migration/依赖或升级变化；实际浏览器/PG、正式信任/其他平台/Gate3/可用包待验。

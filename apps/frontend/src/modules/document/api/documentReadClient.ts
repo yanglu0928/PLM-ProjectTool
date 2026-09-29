@@ -238,4 +238,12 @@ export class DocumentReadClient {
     }
     return version;
   }
+
+  /** Fixed same-origin attachment URL; server rechecks Session, scope, License and file integrity. */
+  contentUrl(scope: DocumentScope, documentId: string, versionId: string): string {
+    const path = base(scope);
+    if (!identifier(documentId)) throw new DocumentReadError("DOCUMENT_INVALID_ID");
+    if (!identifier(versionId)) throw new DocumentReadError("DOCUMENT_INVALID_VERSION_ID");
+    return `${path}/${documentId}/versions/${versionId}/content`;
+  }
 }

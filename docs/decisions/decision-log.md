@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260929-482 — DOC-05-A04-P01 受权版本下载固定地址合同
+
+- Date/WBS：2026-09-29 / Phase2 DOC-05-A04-P01。冻结 `DOCUMENT_VERSION_DOWNLOAD`、后端 Windows 11 合成流式 GET、版本客户端和历史 UI 已有前置。
+- Decision/Reason：提供只生成 PROJECT/GLOBAL 固定同源 `/content` 地址的前端方法；不携带 token、文件路径或查询参数，也不把 100MB 流式响应在前端整包转 Blob。后续 UI 以浏览器原生附件请求调用，服务端继续负责 Session/Project/License/完整性校验。
+- Impact/rollback/validation plan：仅 Document 前端 API/测试，无后端 API/Schema/Migration/权限/依赖变化；撤方法即可回滚。验证合法路径、恶意/不合法 scope 和 ID 在网络前拒绝、无请求副作用；全量前端回归。真实文件浏览器下载另验，不能用合成元数据替代。
+- Executed：`DocumentReadClient.contentUrl` 只返回固定同源受权流式 GET 地址，PROJECT/GLOBAL 严格分开；非法 Scope/Document/Version ID 本地失败，不含凭据或查询。定向 69、前端全量 841 项/typecheck/build PASS。尚无 UI 入口、真实文件/浏览器下载证据。
+
 ## DEC-20260929-481 — DOC-05-A03-P03 版本历史隔离浏览器/PG 验收
 
 - Date/WBS：2026-09-29 / Phase2 DOC-05-A03-P03。P01/P02 前端合同、冻结版本读 API 与 Windows 11 合成后端版本读链前置满足。

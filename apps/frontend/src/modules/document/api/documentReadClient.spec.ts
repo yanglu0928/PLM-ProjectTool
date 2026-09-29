@@ -143,6 +143,24 @@ describe("DocumentReadClient", () => {
     expect(String(error)).not.toContain("PRIVATE_BACKEND_ERROR");
   });
 
+  it("builds only fixed same-origin attachment paths without network or credentials in URL", () => {
+    const { api, fetcher } = client();
+    expect(api.contentUrl(project, documentId, versionId)).toBe(
+      `/api/v1/projects/${projectId}/documents/${documentId}/versions/${versionId}/content`);
+    expect(api.contentUrl(globalScope, documentId, versionId)).toBe(
+      `/api/v1/global/documents/${documentId}/versions/${versionId}/content`);
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it("rejects hostile download scope or identifiers before constructing an address", () => {
+    const { api, fetcher } = client();
+    expect(() => api.contentUrl({ kind: "PROJECT", projectId: "../other" }, documentId, versionId))
+      .toThrow(DocumentReadError);
+    expect(() => api.contentUrl(project, "../other", versionId)).toThrow(DocumentReadError);
+    expect(() => api.contentUrl(project, documentId, "../other")).toThrow(DocumentReadError);
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
   it.each([{ kind: "GLOBAL", projectId }, { kind: "PROJECT", projectId: "../admin" },
     { kind: "PROJECT", projectId: projectId.toUpperCase() }, { kind: "anything" }])(
     "rejects arbitrary or malformed scope without network %#", async (scope) => {
