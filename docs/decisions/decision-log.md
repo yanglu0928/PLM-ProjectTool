@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260928-445 — PRJ-05-A08-P04 Windows 11 成员 PATCH 端到端验证
+
+- Date/WBS：2026-09-28 / Phase2 PRJ-05-A08-P04；P01～P03 合同与 Windows 显式写组合前置已通过。使用现有自有 Windows 浏览器/PG fixture；正式发行信任源和其他平台不在本项范围。
+- Decision：扩展 fixture 独立 member-patch 模式，在随机 PostgreSQL 库/角色、临时 Vault 凭据、合成负责人/目标用户/两个 ACTIVE 部门下，由真实浏览器通过成员历史页提交角色/部门变更；另用真实 HTTP 对版本冲突、权限/CSRF/跨项目和 no-op 核对，SQL 查单成员版本及 Audit。只对自有随机资源清理。失败不得标 PASS 或外推 Gate3。
+- Impact/rollback/validation：验证脚本和可能发现的前端缺陷限本模块处理；无基线/Migration/API/依赖变化。预期风险是本机 PG 原停止、浏览器环境与 fixture 登录路径，先记录原状态，启动测试服务后恢复。验收前端测试/typecheck/build、HTTP/浏览器/SQL、资源清理，回滚撤验证模式。
+- Executed：2026-09-29，API-only HTTP/PG exit0；首轮浏览器 v1 与列表成功但旧Session断言失败，修正后重跑。中断遗留的精确随机测试库/角色/Vault凭据经核验后清理；最终浏览器/SQL/清理 exit0，PoC PG 原停止状态恢复。正式信任/其他平台/性能/Gate未验。
+
 ## DEC-20260928-444 — PRJ-05-A08-P03 成员角色/部门修改页面
 
 - Date/WBS：2026-09-28 / Phase2 PRJ-05-A08-P03；前置 P01/P02、成员历史列表及 ACTIVE 部门客户端 PASS，冻结 PATCH 无单独成员 GET。

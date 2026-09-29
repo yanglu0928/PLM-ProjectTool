@@ -204,6 +204,39 @@ def verify_member_create_http(origin: str, project: uuid.UUID, target: uuid.UUID
     print("PROJECT_MEMBER_CREATE_HTTP PASS: anonymous401, exact/miss, ACTIVE department, create/replay201/conflict409", flush=True)
 
 
+def verify_member_patch_http(origin: str, project: uuid.UUID, foreign: uuid.UUID,
+                             target: uuid.UUID, department: uuid.UUID):
+    route = f"/api/v1/projects/{project}/members/{target}"
+    body = {"role": "CUSTOMER_MEMBER", "department_id": str(department)}
+    with httpx.Client(base_url=origin, timeout=20) as anonymous:
+        assert anonymous.patch(route, headers={"Origin": origin, "If-Match": '"v0"'}, json=body).status_code == 401
+    with httpx.Client(base_url=origin, timeout=20) as admin:
+        login = admin.post("/api/v1/auth/login", headers={"Origin": origin},
+            json={"username": "Synthetic Project Admin", "password": "synthetic-project-only-password"})
+        assert login.status_code == 200
+        denied = admin.patch(route, headers={"Origin": origin,
+            "X-CSRF-Token": login.json()["data"]["csrf_token"], "If-Match": '"v0"'}, json=body)
+        assert denied.status_code == 404, denied.text
+    with httpx.Client(base_url=origin, timeout=20) as manager:
+        login = manager.post("/api/v1/auth/login", headers={"Origin": origin},
+            json={"username": "Synthetic Project Member", "password": "synthetic-project-only-password"})
+        assert login.status_code == 200, login.text
+        csrf = login.json()["data"]["csrf_token"]
+        headers = {"Origin": origin, "X-CSRF-Token": csrf, "If-Match": '"v0"'}
+        assert manager.patch(route, headers={"Origin": origin, "If-Match": '"v0"'}, json=body).status_code == 403
+        foreign_result = manager.patch(f"/api/v1/projects/{foreign}/members/{target}", headers=headers, json=body)
+        assert foreign_result.status_code == 404, foreign_result.text
+        first = manager.patch(route, headers=headers, json=body)
+        assert first.status_code == 200 and first.headers["ETag"] == '"v1"', first.text
+        assert first.json()["data"]["role"] == "CUSTOMER_MEMBER"
+        assert first.json()["data"]["department"]["department_id"] == str(department)
+        stale = manager.patch(route, headers=headers, json=body)
+        assert stale.status_code == 409 and stale.json()["error"]["code"] == "CONFLICT_VERSION", stale.text
+        no_op = manager.patch(route, headers={**headers, "If-Match": '"v1"'}, json=body)
+        assert no_op.status_code == 200 and no_op.headers["ETag"] == '"v1"', no_op.text
+    print("PROJECT_MEMBER_PATCH_HTTP PASS: anonymous401/admin404/CSRF403/foreign404/change200-v1/stale409/no-op200-v1", flush=True)
+
+
 def main():
     suffix = uuid.uuid4().hex[:12]
     dbname = role = "prj05a04_" + suffix
@@ -237,9 +270,12 @@ def main():
                     name_mode = "--user-name-browser" in sys.argv[1:]
                     member_create_mode = ("--member-create-browser" in sys.argv[1:]
                                           or "--member-create-api-only" in sys.argv[1:])
+                    member_patch_mode = ("--member-patch-browser" in sys.argv[1:]
+                                         or "--member-patch-api-only" in sys.argv[1:])
                     member_mode = ("--member-browser" in sys.argv[1:]
                                    or "--member-api-only" in sys.argv[1:])
-                    if sum((create_mode, state_mode, name_mode, member_mode, member_create_mode)) > 1:
+                    if sum((create_mode, state_mode, name_mode, member_mode, member_create_mode,
+                            member_patch_mode)) > 1:
                         raise ValueError("Browser write modes must be exclusive")
                     manager = (insert_user(db, "Synthetic First Manager", hashed.password_hash, hashed.algorithm_id)
                                if create_mode else None)
@@ -255,6 +291,15 @@ def main():
                         "VALUES (%s,'D1','d1','Synthetic Department') RETURNING department_id", (project,)).fetchone()[0]
                     target_user = (insert_user(db, "Synthetic Candidate Target", hashed.password_hash, hashed.algorithm_id)
                                    if member_create_mode else None)
+                    patch_target = (insert_user(db, "Synthetic Patch Target", hashed.password_hash, hashed.algorithm_id)
+                                    if member_patch_mode else None)
+                    patch_department = None
+                    patch_member = None
+                    if member_patch_mode:
+                        patch_department = db.execute("INSERT INTO plm.prj_departments "
+                            "(project_id,department_code,department_code_normalized,name) "
+                            "VALUES (%s,'D2','d2','Synthetic Patch Department') RETURNING department_id",
+                            (project,)).fetchone()[0]
                     if member_create_mode:
                         db.execute("INSERT INTO plm.prj_departments "
                             "(project_id,department_code,department_code_normalized,name,state) "
@@ -262,6 +307,11 @@ def main():
                     db.execute("INSERT INTO plm.prj_project_members "
                         "(project_id,user_id,department_id,project_role) "
                         "VALUES (%s,%s,%s,'PROJECT_MANAGER')", (project, member, department))
+                    if member_patch_mode:
+                        patch_member = db.execute("INSERT INTO plm.prj_project_members "
+                            "(project_id,user_id,department_id,project_role) "
+                            "VALUES (%s,%s,%s,'IMPLEMENTATION_MEMBER') RETURNING project_member_id",
+                            (project, patch_target, department)).fetchone()[0]
                     if member_mode:
                         viewer = insert_user(db, "Synthetic Project Viewer", hashed.password_hash, hashed.algorithm_id)
                         db.execute("INSERT INTO plm.prj_project_members "
@@ -331,6 +381,7 @@ def main():
                         print(f"PROJECT_BROWSER_READY {origin}/login OWNED={project} FOREIGN={foreign}"
                               + (f" MANAGER={manager}" if create_mode else "")
                               + (f" CANDIDATE={target_user}" if member_create_mode else "")
+                              + (f" PATCH_TARGET={patch_member} PATCH_DEPARTMENT={patch_department}" if member_patch_mode else "")
                               + (f" USER_STATE_TARGET={member}" if state_mode else "")
                               + (f" USER_NAME_TARGET={member}" if name_mode else ""), flush=True)
                         if "--create-api-only" in sys.argv[1:]:
@@ -343,6 +394,9 @@ def main():
                         elif "--member-create-api-only" in sys.argv[1:]:
                             assert target_user is not None
                             verify_member_create_http(origin, project, target_user, department)
+                        elif "--member-patch-api-only" in sys.argv[1:]:
+                            assert patch_member is not None and patch_department is not None
+                            verify_member_patch_http(origin, project, foreign, patch_member, patch_department)
                         else:
                             actions = queue.Queue()
                             Thread(target=lambda: actions.put(sys.stdin.readline().strip()), daemon=True).start()
@@ -357,9 +411,11 @@ def main():
                                 assert session_count == 2
                             elif "--member-api-only" in sys.argv[1:]:
                                 assert session_count == 3
+                            elif member_patch_mode:
+                                assert session_count >= 1
                             else:
                                 assert session_count >= (1 if create_mode else 2)
-                            active_expected = 51 if member_mode else (2 if expected == 3 or member_create_mode else 1)
+                            active_expected = 51 if member_mode else (2 if expected == 3 or member_create_mode or member_patch_mode else 1)
                             assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE state='ACTIVE'").fetchone()[0] == active_expected
                             if member_create_mode:
                                 assert target_user is not None
@@ -375,6 +431,13 @@ def main():
                                     "WHERE result_ref_id=%s AND operation='V1_PROJECT_MEMBER_CREATE' "
                                     "AND state='COMPLETED'", (member_created[0],)).fetchone()[0] == 1
                                 print("PROJECT_MEMBER_CREATE_DATABASE PASS: one member/Audit/receipt, ACTIVE department", flush=True)
+                            if member_patch_mode:
+                                assert db.execute("SELECT department_id,project_role,state,lock_version FROM plm.prj_project_members "
+                                    "WHERE project_member_id=%s", (patch_member,)).fetchone() == (
+                                    patch_department, "CUSTOMER_MEMBER", "ACTIVE", 1)
+                                assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s "
+                                    "AND action='PROJECT_MEMBER_PATCHED'", (patch_member,)).fetchone()[0] == 1
+                                print("PROJECT_MEMBER_PATCH_DATABASE PASS: one role/department change, v1, one Audit", flush=True)
                             if member_mode:
                                 assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE project_id=%s", (project,)).fetchone()[0] == 52
                                 assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE project_id=%s AND state='REMOVED'", (project,)).fetchone()[0] == 1
