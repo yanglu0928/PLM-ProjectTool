@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260930-490 — DOC-05-A05-P06 上传 Commit/Abort 安全业务回执
+
+- Date/WBS：2026-09-30 / Phase2 DOC-05-A05-P06。冻结 `DOCUMENT_UPLOAD_COMMIT/ABORT`、后端 201/200 合同、P05 空体私有传输及 P04 已收内容回执满足前置。
+- Decision/Reason：新建与既有 Document 升版显式区分；Commit 仅在可信的内容回执结构/ID 与目标匹配时提交，升版携带父 Document 原强 ETag，201 要绑定 Upload ID、Document/Version/Parse Job UUID、正整数版本号及精确 Location。Abort 仅返回 ABORTED/cleanup_pending 安全状态；两者回执都是首次命令结果而非当前资源证明，页面须另行 GET。确定性拒绝按 HTTP 状态/错误码映射；断线、503、畸形或伪成功为未知，保留原 Key、不自动重试。
+- Impact/rollback/validation plan：仅新增 Document 前端业务客户端及测试，无 API/Schema/Migration/权限/依赖变化；撤新增文件可回滚。验证输入、首次/重放结果绑定、权限/License/版本/内容故障、错误结构、Location/no-store 与未知行为；定向/全量/typecheck/build。真实 PG/浏览器/Parse、正式信任与发行另验。
+
 ## DEC-20260929-489 — DOC-05-A05-P05 项目上传终结命令私有传输
 
 - Date/WBS：2026-09-29 / Phase2 DOC-05-A05-P05。P01～P04 与后端可选 `DOCUMENT_UPLOAD_COMMIT/ABORT`、冻结项目路径/Session/CSRF/幂等合同满足前置。
