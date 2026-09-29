@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-29：0.1.0.dev0/PRJ-05-A10-P02新增项目部门历史页面和详情入口，显示有效/停用记录，固定50条刷新/续页，失败/重复/切项目清旧；前端563项/typecheck/build通过。兼容DB0049/冻结API，无Schema/Migration/依赖或升级变化；实际浏览器PG、正式信任/其他平台/性能/质量/Gate3/可用包待。
+
 - 2026-09-29：0.1.0.dev0/PRJ-05-A10-P01新增部门历史只读客户端，固定50条分页、安全投影含停用部门、强ETag、同源Cookie、异常失败关闭；前端557项/typecheck/build通过。兼容DB0049/冻结API，无Schema/Migration/依赖或升级变化；页面/实际浏览器PG、正式信任/其他平台/性能/质量/Gate3/可用包待。
 
 - 2026-09-29：0.1.0.dev0/PRJ-05-A09-P04完成 Windows 11 隔离合成浏览器与 PostgreSQL 成员暂停/恢复/移除端到端验证；HTTP 权限/CSRF/跨项目/幂等与 SQL 三条 Audit/收据、最终 REMOVED/v3、临时资源清理均 PASS。兼容 DB0049/冻结 API，无生产程序、Schema/Migration/依赖或升级变化；正式信任、其他平台、性能/质量/Gate3/可用包仍待。

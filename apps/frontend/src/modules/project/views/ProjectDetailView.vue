@@ -59,6 +59,7 @@ onUnmounted(() => { generation += 1; });
         <dt>创建时间</dt><dd><time :datetime="project.created_at">{{ new Date(project.created_at).toLocaleString('zh-CN') }}</time></dd>
       </dl>
       <p v-if="project"><RouterLink :to="{ name: 'project-members', params: { projectId: project.project_id } }">查看项目成员历史</RouterLink></p>
+      <p v-if="project"><RouterLink :to="{ name: 'project-departments', params: { projectId: project.project_id } }">查看项目部门历史</RouterLink></p>
     </template>
   </section>
 </template>
