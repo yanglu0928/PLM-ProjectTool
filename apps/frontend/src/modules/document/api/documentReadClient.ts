@@ -22,9 +22,29 @@ export interface DocumentPage {
   readonly has_more: boolean;
 }
 
+/** AVAILABLE version metadata only; no file locator, content, or download URL. */
+export interface DocumentVersionView {
+  readonly document_version_id: string;
+  readonly version_no: number;
+  readonly content_sha256: string;
+  readonly size_bytes: number;
+  readonly detected_mime: string;
+  readonly availability_state: "AVAILABLE";
+  readonly supersedes_version_ref: string | null;
+  readonly created_at: string;
+  readonly integrity_checked_at: string | null;
+}
+
+export interface DocumentVersionPage {
+  readonly items: readonly DocumentVersionView[];
+  readonly next_cursor: string | null;
+  readonly has_more: boolean;
+}
+
 const messages = {
   DOCUMENT_INVALID_SCOPE: "文档范围或项目标识无效。",
   DOCUMENT_INVALID_ID: "文档标识无效。",
+  DOCUMENT_INVALID_VERSION_ID: "文档版本标识无效。",
   DOCUMENT_INVALID_CURSOR: "文档列表翻页位置无效，请从第一页重新读取。",
   AUTH_SESSION_EXPIRED: "会话已失效，请重新登录。",
   LICENSE_OPERATION_DENIED: "当前许可不允许读取文档。",
@@ -41,6 +61,7 @@ export class DocumentReadError extends Error {
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const cursorToken = /^[A-Za-z0-9_-]{1,512}\.[A-Za-z0-9_-]{43}$/;
 const strongEtag = /^"v(0|[1-9][0-9]*)"$/;
+const sha256 = /^[0-9a-f]{64}$/;
 const categories = new Set(["CONTRACTUAL", "PROJECT_RECORD", "STANDARD_CAPABILITY", "REFERENCE_MATERIAL",
   "TEMPLATE", "GENERATED_ARTIFACT", "OTHER"]);
 function record(value: unknown): value is Record<string, unknown> {
@@ -88,6 +109,24 @@ export function parseDocument(value: unknown, scope: DocumentScope): DocumentVie
     title: value.title, display_name: value.display_name, state: value.state,
     latest_version_ref: value.latest_version_ref, effective_version_ref: value.effective_version_ref,
     created_at: value.created_at, etag: value.etag });
+}
+
+export function parseDocumentVersion(value: unknown): DocumentVersionView {
+  if (!record(value) || !identifier(value.document_version_id)
+    || typeof value.version_no !== "number" || !Number.isSafeInteger(value.version_no) || value.version_no <= 0
+    || typeof value.content_sha256 !== "string" || !sha256.test(value.content_sha256)
+    || typeof value.size_bytes !== "number" || !Number.isSafeInteger(value.size_bytes) || value.size_bytes < 0
+    || !label(value.detected_mime, 255) || value.availability_state !== "AVAILABLE"
+    || (value.supersedes_version_ref !== null && !identifier(value.supersedes_version_ref))
+    || !instant(value.created_at)
+    || (value.integrity_checked_at !== null && !instant(value.integrity_checked_at))) {
+    throw new DocumentReadError("DOCUMENT_CLIENT_UNAVAILABLE");
+  }
+  return Object.freeze({ document_version_id: value.document_version_id,
+    version_no: value.version_no, content_sha256: value.content_sha256,
+    size_bytes: value.size_bytes, detected_mime: value.detected_mime,
+    availability_state: "AVAILABLE", supersedes_version_ref: value.supersedes_version_ref,
+    created_at: value.created_at, integrity_checked_at: value.integrity_checked_at });
 }
 
 export class DocumentReadClient {
@@ -159,5 +198,44 @@ export class DocumentReadClient {
       throw new DocumentReadError("DOCUMENT_CLIENT_UNAVAILABLE");
     }
     return document;
+  }
+
+  async listVersions(scope: DocumentScope, documentId: string,
+                     cursor: string | null = null): Promise<DocumentVersionPage> {
+    const path = base(scope);
+    if (!identifier(documentId)) throw new DocumentReadError("DOCUMENT_INVALID_ID");
+    if (cursor !== null && (typeof cursor !== "string" || !cursorToken.test(cursor))) {
+      throw new DocumentReadError("DOCUMENT_INVALID_CURSOR");
+    }
+    const query = new URLSearchParams({ page_size: "50" });
+    if (cursor !== null) query.set("cursor", cursor);
+    const { data } = await this.#get(`${path}/${documentId}/versions?${query}`);
+    if (!record(data) || !Array.isArray(data.items) || data.items.length > 50
+      || typeof data.has_more !== "boolean"
+      || (data.has_more && (data.items.length === 0 || typeof data.next_cursor !== "string"
+        || !cursorToken.test(data.next_cursor) || data.next_cursor === cursor))
+      || (!data.has_more && data.next_cursor !== null)) {
+      throw new DocumentReadError("DOCUMENT_CLIENT_UNAVAILABLE");
+    }
+    const items = data.items.map(parseDocumentVersion);
+    if (new Set(items.map((item) => item.document_version_id)).size !== items.length
+      || items.some((item, index) => index > 0 && item.version_no >= items[index - 1]!.version_no)) {
+      throw new DocumentReadError("DOCUMENT_CLIENT_UNAVAILABLE");
+    }
+    return Object.freeze({ items: Object.freeze(items),
+      next_cursor: data.has_more ? data.next_cursor as string : null, has_more: data.has_more });
+  }
+
+  async getVersion(scope: DocumentScope, documentId: string,
+                   versionId: string): Promise<DocumentVersionView> {
+    const path = base(scope);
+    if (!identifier(documentId)) throw new DocumentReadError("DOCUMENT_INVALID_ID");
+    if (!identifier(versionId)) throw new DocumentReadError("DOCUMENT_INVALID_VERSION_ID");
+    const { data } = await this.#get(`${path}/${documentId}/versions/${versionId}`);
+    const version = parseDocumentVersion(data);
+    if (version.document_version_id !== versionId) {
+      throw new DocumentReadError("DOCUMENT_CLIENT_UNAVAILABLE");
+    }
+    return version;
   }
 }

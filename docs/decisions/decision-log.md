@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260929-479 — DOC-05-A03-P01 DocumentVersion 前端只读客户端
+
+- Date/WBS：2026-09-29 / Phase2 DOC-05-A03-P01。输入为冻结 `DOCUMENT_VERSION_LIST/GET`、后端受权只返回 AVAILABLE 版本的读合同、现有 Document 元数据客户端；Gate 2 与前置读链满足。
+- Decision/Reason：在既有 `DocumentReadClient` 增加明确项目/GLOBAL 路径的版本列表及详情读取；只投影签名哈希、大小、MIME、可用状态、前驱与时间等安全元数据，不包含本地路径、正文或下载 URL。沿用固定每页 50 与受控游标，不自行推断内容已能下载。
+- Impact/rollback/validation plan：仅前端 Document API 与测试，不改冻结 `/api/v1`、后端、权限、Schema/Migration/依赖。回滚客户端方法即可；定向单测及全量前端测试/typecheck/build，并确认错误信息不泄漏响应正文。正式浏览器/PG、发行信任与三平台另验。
+- Executed：新增固定 PROJECT/GLOBAL 版本列表与详情调用、AVAILABLE 安全投影、50 条签名游标分页、版本降序/标识/数值/哈希/时间校验；异常统一关闭。定向 67、前端全量 835 项、typecheck/build PASS。仅客户端合同，实际浏览器/PG 与正式信任仍待。
+
 ## DEC-20260929-478 — DOC-05-A02-P02 文档详情实际浏览器验收
 
 - Date/WBS：2026-09-29 / Phase2 DOC-05-A02-P02。P01 前端合同、P03-A01/A02 列表 API/浏览器 PG 合成验收及后端详情 GET 前置满足。
