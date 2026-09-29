@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-29：0.1.0.dev0/PRJ-05-A11-P04完成Windows 11隔离合成部门创建HTTP/浏览器/PG验收，含权限/CSRF/跨项目、201原Key重放及异载荷冲突、首次回执和历史独立重读；SQL一新增ACTIVE/v0部门、审计与完成收据、临时资源清理均PASS。兼容DB0049/冻结API，无生产程序/Schema/Migration/依赖或升级变化；正式信任、其他平台、性能/质量/Gate3/可用包待。
+
 - 2026-09-29：0.1.0.dev0/PRJ-05-A11-P03新增部门创建确认页面与负责人入口，未知结果原输入/Key恢复、冲突锁页、first/current分离及切项目迟到结果丢弃；前端613项/typecheck通过，首次Windows构建进程异常退出、单独完整build重跑通过。兼容DB0049/冻结API，无Schema/Migration/依赖或升级变化；浏览器PG、正式信任/其他平台/性能/质量/Gate3/包待。
 
 - 2026-09-29：0.1.0.dev0/PRJ-05-A11-P02新增部门创建安全业务客户端，NFKC二字段输入、201首次结果与原输入/强ETag/Location绑定、重放不冒充当前状态，已知拒绝/未知分流；前端604项/typecheck/build通过。兼容DB0049/冻结API，无Schema/Migration/依赖或升级变化；页面/浏览器PG、正式信任/其他平台/性能/质量/Gate3/包待。

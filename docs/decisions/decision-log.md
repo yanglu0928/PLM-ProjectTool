@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260929-456 — PRJ-05-A11-P04 Windows 11 部门创建端到端
+
+- Date/WBS：2026-09-29 / Phase2 PRJ-05-A11-P04；P01～P03与后端PRJ-04-A14-P03前置满足，复用自有随机PG/Vault/浏览器夹具，仅合成信任源。
+- Decision：独立department-create API-only和browser模式，HTTP核匿名/非负责人/CSRF/外项目及201/原Key重放/异载荷冲突；浏览器从部门历史入口明确确认创建，再重读历史。SQL验仅一新部门、单Audit与完成收据，清理自有进程/库/角色/Vault并恢复原PG停止状态；失败不标PASS。
+- Impact/rollback/validation：只改验收脚本/进度，无生产API/Schema/权限/依赖。风险为本机PG服务启动及中断残留，使用唯一资源名和精确清理；回滚撤新fixture模式。正式信任/三平台/性能/Gate仍独立验收。
+- Executed：2026-09-29，API-only隔离HTTP/PG和实际IAB浏览器/PG均PASS。浏览器由部门历史进入创建、勾选确认，获得NEW/v0首次回执，再返回历史独立读到NEW；SQL仅一条新增ACTIVE/v0、单Audit及完成收据。两轮随机测试库/角色/Vault清理exit0，原PoC PostgreSQL恢复停止。未验证正式信任/其他平台/Gate。
+
 ## DEC-20260929-455 — PRJ-05-A11-P03 部门创建确认页面
 
 - Date/WBS：2026-09-29 / Phase2 PRJ-05-A11-P03；P01/P02客户端、部门历史页与后端冻结创建合同前置满足。
