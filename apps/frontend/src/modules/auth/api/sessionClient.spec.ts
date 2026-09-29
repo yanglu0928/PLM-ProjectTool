@@ -365,6 +365,75 @@ describe("SessionClient", () => {
     expect(fetcher).toHaveBeenCalledTimes(2);
   });
 
+  it("posts only the frozen empty-body Project archive with original version, key and private CSRF", async () => {
+    const archived = response({ project_id: projectId, state: "ARCHIVED" });
+    const { api, fetcher } = client(response(session()), archived);
+    await api.login("manager", "synthetic-only");
+    const key = "synthetic-project-archive-0001";
+    await expect(api.postProjectArchive(projectId, '"v7"', key)).resolves.toBe(archived);
+    expect(fetcher.mock.calls[1]).toEqual([`/api/v1/projects/${projectId}:archive`, {
+      method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error",
+      headers: { Accept: "application/json", "X-CSRF-Token": token,
+        "Idempotency-Key": key, "If-Match": '"v7"' }, signal: expect.any(AbortSignal),
+    }]);
+    expect(JSON.stringify(api)).not.toContain(token);
+    expect(api.canSubmit).toBe(true);
+  });
+
+  it("rejects unsafe Project archive path, version and key without network", async () => {
+    const { api, fetcher } = client(response(session()));
+    await api.login("manager", "synthetic-only");
+    for (const [project, etag, key] of [
+      ["../other", '"v0"', "synthetic-project-archive-0001"],
+      [projectId.toUpperCase(), '"v0"', "synthetic-project-archive-0001"],
+      [projectId, 'W/"v0"', "synthetic-project-archive-0001"],
+      [projectId, '"v00"', "synthetic-project-archive-0001"],
+      [projectId, '"v9007199254740991"', "synthetic-project-archive-0001"],
+      [projectId, '"v0"', "short"],
+      [projectId, '"v0"', "synthetic-project-archive\n0001"],
+    ]) {
+      await expect(api.postProjectArchive(project, etag, key))
+        .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    }
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("requires fresh Project archive write proof, retaining it on unknown result and clearing on 401", async () => {
+    const readOnly = session(); delete (readOnly as Partial<typeof readOnly>).csrf_token;
+    const { api: viewer, fetcher: viewerFetcher } = client(response(readOnly));
+    await viewer.current();
+    await expect(viewer.postProjectArchive(projectId, '"v0"', "synthetic-project-archive-0001"))
+      .rejects.toMatchObject({ code: "AUTH_RELOGIN_REQUIRED" });
+    expect(viewerFetcher).toHaveBeenCalledTimes(1);
+    const { api, fetcher } = client(response(session()), new Response("{}", { status: 503 }),
+      new Response("{}", { status: 401 }));
+    await api.login("manager", "synthetic-only");
+    await api.postProjectArchive(projectId, '"v0"', "synthetic-project-archive-0001");
+    expect(api.canSubmit).toBe(true);
+    await api.postProjectArchive(projectId, '"v0"', "synthetic-project-archive-0001");
+    expect(api.view).toBeNull();
+    expect(api.canSubmit).toBe(false);
+    expect(fetcher).toHaveBeenCalledTimes(3);
+  });
+
+  it("does not overlap or retry a timed-out Project archive command", async () => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn().mockResolvedValueOnce(response(session()))
+      .mockImplementationOnce((_path: string, options: RequestInit) => new Promise((_done, reject) => {
+        options.signal?.addEventListener("abort", () => reject(new Error("synthetic timeout")));
+      }));
+    const api = new SessionClient(fetcher as typeof fetch, 100);
+    await api.login("manager", "synthetic-only");
+    const pending = expect(api.postProjectArchive(projectId, '"v0"', "synthetic-project-archive-0001"))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    await expect(api.postProjectCreate("{}", "synthetic-project-create-0001"))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_BUSY" });
+    await vi.advanceTimersByTimeAsync(101);
+    await pending;
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(api.canSubmit).toBe(true);
+  });
+
   it("posts only the target Project Member create endpoint with private CSRF and caller key", async () => {
     const created = response({ member_id: id }, 201);
     const { api, fetcher } = client(response(session()), created);

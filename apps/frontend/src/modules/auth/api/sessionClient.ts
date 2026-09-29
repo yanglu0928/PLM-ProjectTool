@@ -214,6 +214,37 @@ export class SessionClient {
     return this.#postCommand("/api/v1/projects", body, idempotencyKey, 8192);
   }
 
+  /** Empty-body one-way archive; an uncertain result retains the original Key/If-Match. */
+  async postProjectArchive(projectId: string, etag: string, idempotencyKey: string): Promise<Response> {
+    if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
+    if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
+    if (!identifier(projectId) || typeof etag !== "string" || !/^"v(?:0|[1-9]\d*)"$/.test(etag)
+      || !Number.isSafeInteger(Number(etag.slice(2, -1)))
+      || Number(etag.slice(2, -1)) >= Number.MAX_SAFE_INTEGER
+      || typeof idempotencyKey !== "string" || !/^[\x20-\x7e]{16,128}$/.test(idempotencyKey)) {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    }
+    this.#busy = true;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      const fetcher = this.fetcher;
+      const response = await fetcher(`/api/v1/projects/${projectId}:archive`, {
+        method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error",
+        headers: { Accept: "application/json", "X-CSRF-Token": this.#csrf,
+          "Idempotency-Key": idempotencyKey, "If-Match": etag }, signal: controller.signal,
+      });
+      if (controller.signal.aborted) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+      if (response.status === 401) { this.#csrf = null; this.#view = null; }
+      return response;
+    } catch {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    } finally {
+      window.clearTimeout(timer);
+      this.#busy = false;
+    }
+  }
+
   async postProjectMemberCreate(projectId: string, body: string, idempotencyKey: string): Promise<Response> {
     if (!identifier(projectId)) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
     return this.#postCommand(`/api/v1/projects/${projectId}/members`, body, idempotencyKey, 8192);

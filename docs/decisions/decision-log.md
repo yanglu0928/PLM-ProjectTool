@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260929-465 — PRJ-05-A14-P01 项目归档固定前端传输
+
+- Date/WBS：2026-09-29 / Phase2 PRJ-05-A14-P01。冻结 PROJECT_ARCHIVE、后端 PRJ-04-A08-P03、ProjectReadClient 及现有 SessionClient 前置满足。
+- Decision：仅新增私有 `POST /api/v1/projects/{project_id}:archive` 固定传输，规范 Project UUID、强且安全整数 If-Match、16～128 可打印原幂等 Key、空 Body/无 Content-Type、同源 Cookie/CSRF、单次发送。401 清本地会话证明；断线/超时结果未知，业务层必须保留原 Key/If-Match，不自动生成新 Key。本项不解析业务回执、不提供归档按钮。
+- Impact/rollback/validation：仅 Auth transport 与单元测试，无 API/Schema/权限/依赖变化。风险为提交已成功但连接断开；回滚撤方法/测试。前端测试/typecheck/build，回执/页面/实际浏览器 PG 另项。
+- Executed：2026-09-29，固定 Project UUID/强 If-Match/原 Key/空正文、私有 CSRF/同源单次提交、401 清证明与超时互斥验证通过；前端 687 项/typecheck/build PASS。业务回执、确认页及实际浏览器/PG 另项。
+
 ## DEC-20260929-464 — PRJ-05-A13-P04 Windows 11 部门停用端到端
 
 - Date/WBS：2026-09-29 / Phase2 PRJ-05-A13-P04。P01～P03、后端 PRJ-04-A16-P03 与既有隔离浏览器/PG 夹具前置满足。
