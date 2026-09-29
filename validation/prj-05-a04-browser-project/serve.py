@@ -578,6 +578,31 @@ def verify_document_history_http(origin: str, project: uuid.UUID, foreign: uuid.
     print("DOCUMENT_HISTORY_HTTP PASS: anonymous401/admin404/foreign404, 50+1 signed cursor, detail ETag, session-bound cursor", flush=True)
 
 
+def verify_document_version_http(origin: str, project: uuid.UUID, foreign: uuid.UUID):
+    with httpx.Client(base_url=origin, timeout=20) as member:
+        assert member.get(f"/api/v1/projects/{project}/documents").status_code == 401
+        login = member.post("/api/v1/auth/login", headers={"Origin": origin},
+            json={"username": "Synthetic Project Member", "password": "synthetic-project-only-password"})
+        assert login.status_code == 200, login.text
+        listing = member.get(f"/api/v1/projects/{project}/documents", params={"page_size": 50})
+        assert listing.status_code == 200, listing.text
+        document_id = listing.json()["data"]["items"][0]["document_id"]
+        route = f"/api/v1/projects/{project}/documents/{document_id}/versions"
+        result = member.get(route, params={"page_size": 50})
+        assert result.status_code == 200, result.text
+        page = result.json()["data"]
+        assert len(page["items"]) == 1 and page["next_cursor"] is None and not page["has_more"]
+        item = page["items"][0]
+        assert item["version_no"] == 1 and item["availability_state"] == "AVAILABLE"
+        assert item["content_sha256"] == "a" * 64 and item["size_bytes"] == 7
+        assert "storage_locator" not in item and "content" not in item
+        detail = member.get(f"{route}/{item['document_version_id']}")
+        assert detail.status_code == 200 and detail.json()["data"] == item
+        denied = member.get(f"/api/v1/projects/{foreign}/documents/{document_id}/versions")
+        assert denied.status_code == 404 and denied.json()["error"]["code"] == "RESOURCE_NOT_FOUND"
+    print("DOCUMENT_VERSION_HTTP PASS: anonymous401/foreign404, AVAILABLE metadata list/detail, no locator", flush=True)
+
+
 def main():
     suffix = uuid.uuid4().hex[:12]
     dbname = role = "prj05a04_" + suffix
@@ -628,7 +653,11 @@ def main():
                                                   or "--department-deactivate-api-only" in sys.argv[1:])
                     document_history_mode = ("--document-history-api-only" in sys.argv[1:]
                                              or "--document-history-browser" in sys.argv[1:]
-                                             or "--document-detail-browser" in sys.argv[1:])
+                                             or "--document-detail-browser" in sys.argv[1:]
+                                             or "--document-version-api-only" in sys.argv[1:]
+                                             or "--document-version-browser" in sys.argv[1:])
+                    document_version_mode = ("--document-version-api-only" in sys.argv[1:]
+                                             or "--document-version-browser" in sys.argv[1:])
                     member_mode = ("--member-browser" in sys.argv[1:]
                                    or "--member-api-only" in sys.argv[1:])
                     if sum((create_mode, archive_mode, project_patch_mode, state_mode, name_mode, member_mode, member_create_mode,
@@ -664,11 +693,28 @@ def main():
                             "VALUES (%s,'OLD','old','Synthetic Inactive Department','INACTIVE')", (project,))
                     if document_history_mode:
                         for index in range(51):
-                            db.execute("INSERT INTO plm.doc_documents "
+                            document_id = db.execute("INSERT INTO plm.doc_documents "
                                 "(scope,project_id,document_category,title,original_display_name,created_by) "
-                                "VALUES ('PROJECT',%s,'PROJECT_RECORD',%s,%s,%s)",
+                                "VALUES ('PROJECT',%s,'PROJECT_RECORD',%s,%s,%s) RETURNING document_id",
                                 (project, f"Synthetic Browser Document {index:02d}",
-                                 f"synthetic-{index:02d}.pdf", member))
+                                 f"synthetic-{index:02d}.pdf", member)).fetchone()[0]
+                            if document_version_mode:
+                                file_id = db.execute("INSERT INTO plm.doc_file_objects "
+                                    "(scope,project_id,storage_class,storage_locator,original_name_metadata,"
+                                    "created_by,file_state,sha256,size_bytes,detected_mime,available_at) "
+                                    "VALUES ('PROJECT',%s,'PERSISTENT',%s,%s,%s,'AVAILABLE',%s,7,"
+                                    "'application/pdf',clock_timestamp()+interval '1 minute') RETURNING file_object_id",
+                                    (project, f"synthetic/{uuid.uuid4().hex}", f"synthetic-{index:02d}.pdf",
+                                     member, bytes.fromhex("a" * 64))).fetchone()[0]
+                                version_id = db.execute("INSERT INTO plm.doc_document_versions "
+                                    "(document_id,scope,project_id,version_no,file_object_id,content_sha256,"
+                                    "size_bytes,detected_mime,created_by) "
+                                    "VALUES (%s,'PROJECT',%s,1,%s,%s,7,'application/pdf',%s) "
+                                    "RETURNING document_version_id",
+                                    (document_id, project, file_id, bytes.fromhex("a" * 64), member)).fetchone()[0]
+                                db.execute("UPDATE plm.doc_documents SET latest_version_ref=%s,"
+                                    "effective_version_ref=%s,lock_version=1 WHERE document_id=%s",
+                                    (version_id, version_id, document_id))
                         db.execute("INSERT INTO plm.doc_documents "
                             "(scope,project_id,document_category,title,original_display_name,created_by,document_state) "
                             "VALUES ('PROJECT',%s,'PROJECT_RECORD','Synthetic Restricted Document','restricted.pdf',%s,'RESTRICTED')",
@@ -813,6 +859,8 @@ def main():
                             verify_department_deactivate_http(origin, project, foreign, department, free_department)
                         elif "--document-history-api-only" in sys.argv[1:]:
                             verify_document_history_http(origin, project, foreign)
+                        elif "--document-version-api-only" in sys.argv[1:]:
+                            verify_document_version_http(origin, project, foreign)
                         else:
                             actions = queue.Queue()
                             Thread(target=lambda: actions.put(sys.stdin.readline().strip()), daemon=True).start()
@@ -858,8 +906,11 @@ def main():
                             elif department_deactivate_mode:
                                 assert session_count == 2
                             elif document_history_mode and ("--document-history-browser" in sys.argv[1:]
-                                                            or "--document-detail-browser" in sys.argv[1:]):
+                                                            or "--document-detail-browser" in sys.argv[1:]
+                                                            or "--document-version-browser" in sys.argv[1:]):
                                 assert session_count >= 1
+                            elif document_version_mode:
+                                assert session_count == 1
                             elif document_history_mode:
                                 assert session_count == 3
                             else:
@@ -1006,6 +1057,16 @@ def main():
                                 assert db.execute("SELECT count(*) FROM plm.doc_documents WHERE project_id=%s",
                                     (foreign,)).fetchone()[0] == 1
                                 print("DOCUMENT_HISTORY_DATABASE PASS: owned 51 ACTIVE + 1 RESTRICTED, foreign 1", flush=True)
+                            if document_version_mode:
+                                assert db.execute("SELECT count(*) FROM plm.doc_document_versions v "
+                                    "JOIN plm.doc_file_objects f ON f.file_object_id=v.file_object_id "
+                                    "WHERE v.project_id=%s AND v.availability_state='AVAILABLE' "
+                                    "AND f.file_state='AVAILABLE' AND f.sha256=v.content_sha256 "
+                                    "AND f.size_bytes=v.size_bytes AND f.detected_mime=v.detected_mime",
+                                    (project,)).fetchone()[0] == 51
+                                assert db.execute("SELECT count(*) FROM plm.doc_document_versions "
+                                    "WHERE project_id=%s", (foreign,)).fetchone()[0] == 0
+                                print("DOCUMENT_VERSION_DATABASE PASS: 51 matching AVAILABLE metadata, foreign 0", flush=True)
                         print(f"PROJECT_BROWSER_DATABASE_COUNTS PASS: {expected} projects, {session_count} sessions, {active_expected} active members", flush=True)
                 finally:
                     if proxy:

@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260929-481 — DOC-05-A03-P03 版本历史隔离浏览器/PG 验收
+
+- Date/WBS：2026-09-29 / Phase2 DOC-05-A03-P03。P01/P02 前端合同、冻结版本读 API 与 Windows 11 合成后端版本读链前置满足。
+- Decision/Reason：扩展既有每轮随机库浏览器夹具，给首条合成项目 Document 构造一条文件元数据匹配、状态 AVAILABLE 的不可变版本；通过受权项目页面按需展示该版本，不创建或外发客户文件。将 API/SQL 归属及拒绝、UI 显示和临时资源清理作为同一验收闭环。
+- Impact/rollback/validation plan：仅验收夹具/进度，无生产 API/Schema/Migration/权限/依赖变更；移除模式即可回滚。先运行独立 API/PG，再实际浏览器，要求完整 exit0 和随机库/角色/Vault 清理。合成信任不代表正式目标账户或三平台 PASS。
+- Executed：首轮因合成 SHA-256 按 64 字符而非 32 字节入库违反 DB check；改为 `bytes.fromhex`。第二轮 API/PG 成功但会话数预期沿用旧模式而断言失败；收紧为本模式 1 Session。第三轮 API/PG 完整 exit0：匿名 401/跨项目 404、版本列表/详情 AVAILABLE 安全投影、51 个版本与文件元数据匹配、库/角色/Vault 清理。第四轮 Windows 11 实际 IAB：合成成员从项目→文档历史→详情按需加载版本 1/MIME/大小/哈希，详情刷新清旧、再次读取成功，最终完整夹具 exit0；PoC PG fast stop 还原。仅合成元数据，未创建真实文件内容，不支持以此证明下载。
+
 ## DEC-20260929-480 — DOC-05-A03-P02 项目 Document 版本历史界面
 
 - Date/WBS：2026-09-29 / Phase2 DOC-05-A03-P02。输入为 P01 安全版本客户端、P02 Document 详情及冻结 `DOCUMENT_VERSION_LIST`；Gate 2/后端受权读链满足。
