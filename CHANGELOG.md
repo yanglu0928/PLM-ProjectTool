@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-29：0.1.0.dev0/PRJ-05-A12-P04完成Windows 11隔离合成部门PATCH HTTP/浏览器/PG验收：权限/CSRF/跨项目、强版本冲突与无变化、显式确认回执/独立历史刷新；SQL NEW/v1、单Audit、无PATCH收据及随机资源清理均PASS。兼容DB0049/冻结API，无生产程序/Schema/Migration/依赖或升级变化；正式信任、其他平台、性能/质量/Gate3/可用包待。
+
 - 2026-09-29：0.1.0.dev0/PRJ-05-A12-P03在部门历史页新增ACTIVE负责人行内更新和显式确认；成功/未知均清旧列表，独立重读解锁，跨项目迟到结果丢弃。前端648项/typecheck/build通过；首轮测试夹具复用已消费响应体失败，修复后完整重跑。兼容DB0049/冻结API，无Schema/Migration/依赖或升级变化；实际浏览器PG、正式信任/其他平台/性能质量/Gate3/包待。
 
 - 2026-09-29：0.1.0.dev0/PRJ-05-A12-P02新增部门更新安全业务客户端：NFKC字段、ACTIVE强版本、响应原ID/时间/字段/ETag与版本增量绑定、明确拒绝/未知结果分流；前端644项/typecheck/build通过。兼容DB0049/冻结API，无Schema/Migration/依赖或升级变化；页面/浏览器PG、正式信任/其他平台/性能质量/Gate3/包待。

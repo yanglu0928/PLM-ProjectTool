@@ -354,6 +354,48 @@ def verify_department_create_http(origin: str, project: uuid.UUID, foreign: uuid
     print("PROJECT_DEPARTMENT_CREATE_HTTP PASS: anonymous401/admin404/CSRF403/foreign404/201-replay-v0/key-conflict409/history", flush=True)
 
 
+def verify_department_patch_http(origin: str, project: uuid.UUID, foreign: uuid.UUID,
+                                 department: uuid.UUID):
+    route = f"/api/v1/projects/{project}/departments/{department}"
+    body = {"code": "NEW", "name": "Synthetic Patched Department"}
+    with httpx.Client(base_url=origin, timeout=20) as anonymous:
+        assert anonymous.patch(route, headers={"Origin": origin, "If-Match": '"v0"'}, json=body).status_code == 401
+    with httpx.Client(base_url=origin, timeout=20) as admin:
+        login = admin.post("/api/v1/auth/login", headers={"Origin": origin},
+            json={"username": "Synthetic Project Admin", "password": "synthetic-project-only-password"})
+        assert login.status_code == 200
+        denied = admin.patch(route, headers={"Origin": origin,
+            "X-CSRF-Token": login.json()["data"]["csrf_token"], "If-Match": '"v0"'}, json=body)
+        assert denied.status_code == 404, denied.text
+    with httpx.Client(base_url=origin, timeout=20) as manager:
+        login = manager.post("/api/v1/auth/login", headers={"Origin": origin},
+            json={"username": "Synthetic Project Member", "password": "synthetic-project-only-password"})
+        assert login.status_code == 200
+        headers = {"Origin": origin, "X-CSRF-Token": login.json()["data"]["csrf_token"],
+                   "If-Match": '"v0"'}
+        assert manager.patch(route, headers={"Origin": origin, "If-Match": '"v0"'}, json=body).status_code == 403
+        denied = manager.patch(f"/api/v1/projects/{foreign}/departments/{department}",
+            headers=headers, json=body)
+        assert denied.status_code == 404, denied.text
+        missing = manager.patch(route, headers={"Origin": origin,
+            "X-CSRF-Token": headers["X-CSRF-Token"]}, json=body)
+        assert missing.status_code == 428, missing.text
+        first = manager.patch(route, headers=headers, json=body)
+        assert first.status_code == 200 and first.headers["ETag"] == '"v1"', first.text
+        result = first.json()["data"]
+        assert result["department_id"] == str(department) and result["code"] == "NEW"
+        assert result["name"] == body["name"] and result["state"] == "ACTIVE"
+        stale = manager.patch(route, headers=headers, json=body)
+        assert stale.status_code == 409 and stale.json()["error"]["code"] == "CONFLICT_VERSION", stale.text
+        same = manager.patch(route, headers={**headers, "If-Match": '"v1"'}, json=body)
+        assert same.status_code == 200 and same.headers["ETag"] == '"v1"', same.text
+        history = manager.get(f"/api/v1/projects/{project}/departments", params={"page_size": 50})
+        assert history.status_code == 200, history.text
+        assert any(item["department_id"] == str(department) and item["code"] == "NEW"
+                   and item["etag"] == '"v1"' for item in history.json()["data"]["items"])
+    print("PROJECT_DEPARTMENT_PATCH_HTTP PASS: anonymous401/admin404/CSRF403/foreign404/IfMatch428/v1/stale409/noop-v1/history", flush=True)
+
+
 def main():
     suffix = uuid.uuid4().hex[:12]
     dbname = role = "prj05a04_" + suffix
@@ -395,11 +437,13 @@ def main():
                                                or "--department-history-api-only" in sys.argv[1:])
                     department_create_mode = ("--department-create-browser" in sys.argv[1:]
                                               or "--department-create-api-only" in sys.argv[1:])
+                    department_patch_mode = ("--department-patch-browser" in sys.argv[1:]
+                                             or "--department-patch-api-only" in sys.argv[1:])
                     member_mode = ("--member-browser" in sys.argv[1:]
                                    or "--member-api-only" in sys.argv[1:])
                     if sum((create_mode, state_mode, name_mode, member_mode, member_create_mode,
                             member_patch_mode, member_state_mode, department_history_mode,
-                            department_create_mode)) > 1:
+                            department_create_mode, department_patch_mode)) > 1:
                         raise ValueError("Browser write modes must be exclusive")
                     manager = (insert_user(db, "Synthetic First Manager", hashed.password_hash, hashed.algorithm_id)
                                if create_mode else None)
@@ -547,6 +591,8 @@ def main():
                             verify_department_history_http(origin, project, foreign)
                         elif "--department-create-api-only" in sys.argv[1:]:
                             verify_department_create_http(origin, project, foreign)
+                        elif "--department-patch-api-only" in sys.argv[1:]:
+                            verify_department_patch_http(origin, project, foreign, department)
                         else:
                             actions = queue.Queue()
                             Thread(target=lambda: actions.put(sys.stdin.readline().strip()), daemon=True).start()
@@ -574,6 +620,10 @@ def main():
                             elif department_create_mode and "--department-create-browser" in sys.argv[1:]:
                                 assert session_count >= 1
                             elif department_create_mode:
+                                assert session_count == 2
+                            elif department_patch_mode and "--department-patch-browser" in sys.argv[1:]:
+                                assert session_count >= 1
+                            elif department_patch_mode:
                                 assert session_count == 2
                             else:
                                 assert session_count >= (1 if create_mode else 2)
@@ -632,6 +682,17 @@ def main():
                                     "WHERE result_ref_id=%s AND operation='V1_PROJECT_DEPARTMENT_CREATE' "
                                     "AND state='COMPLETED'", (created_department[0],)).fetchone()[0] == 1
                                 print("PROJECT_DEPARTMENT_CREATE_DATABASE PASS: one new ACTIVE/v0 department, Audit, receipt", flush=True)
+                            if department_patch_mode:
+                                assert db.execute("SELECT department_code,department_code_normalized,name,state,lock_version "
+                                    "FROM plm.prj_departments WHERE department_id=%s", (department,)).fetchone() == (
+                                    "NEW", "new", "Synthetic Patched Department", "ACTIVE", 1)
+                                assert db.execute("SELECT count(*) FROM plm.prj_departments WHERE project_id=%s",
+                                    (project,)).fetchone()[0] == 1
+                                assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s "
+                                    "AND action='PROJECT_DEPARTMENT_PATCHED'", (department,)).fetchone()[0] == 1
+                                assert db.execute("SELECT count(*) FROM plm.plt_idempotency_receipts "
+                                    "WHERE operation LIKE 'V1_PROJECT_DEPARTMENT_PATCH%%'").fetchone()[0] == 0
+                                print("PROJECT_DEPARTMENT_PATCH_DATABASE PASS: target NEW/v1, one Audit, no PATCH receipt", flush=True)
                             if member_mode:
                                 assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE project_id=%s", (project,)).fetchone()[0] == 52
                                 assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE project_id=%s AND state='REMOVED'", (project,)).fetchone()[0] == 1

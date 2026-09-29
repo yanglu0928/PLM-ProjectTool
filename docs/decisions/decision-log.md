@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260929-460 — PRJ-05-A12-P04 Windows 11 部门更新端到端
+
+- Date/WBS：2026-09-29 / Phase2 PRJ-05-A12-P04。P01～P03、后端PRJ-04-A15-P02前置满足，复用自有随机PG/Vault/浏览器夹具与合成信任源。
+- Decision：独立department-patch API-only和browser模式；HTTP核匿名/非负责人/CSRF/外项目、强版本、真实变更v1、旧版冲突、无变化不增版本。浏览器从已授权部门历史选择ACTIVE条目、改字段后明确确认、核本次回执并独立刷新；SQL核目标编号/名称/v1、单Audit、无幂等收据。关闭自有服务并精确清理随机库/角色/Vault，恢复原PG停止状态；失败不标PASS。
+- Impact/rollback/validation：只改验收脚本/进度，无生产API/Schema/权限/依赖变化。风险为本机PG启动及中断残留，用唯一资源名和精确清理；回滚移除新fixture模式。正式信任/其他平台/性能/Gate独立验收。
+- Executed：2026-09-29，API-only隔离HTTP/PG及实际IAB浏览器/PG均PASS。浏览器从历史选择ACTIVE部门、改编号/名称、勾选确认，获得v1回执后独立刷新读到新值；SQL目标NEW/v1、一条PATCH Audit、无PATCH收据。两轮随机库/角色/Vault清理exit0，原PoC PostgreSQL恢复停止。正式信任/其他平台/Gate未验。
+
 ## DEC-20260929-459 — PRJ-05-A12-P03 部门历史内显式更新
 
 - Date/WBS：2026-09-29 / Phase2 PRJ-05-A12-P03。P01/P02、部门历史页、冻结PATCH合同前置满足。后端没有单部门GET，页面从授权历史GET取得当前条目与强ETag，不使用可伪造路由状态。
