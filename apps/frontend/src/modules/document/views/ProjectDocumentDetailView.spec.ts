@@ -12,9 +12,14 @@ const otherProjectId = "11234567-89ab-4cde-8123-456789abcdef";
 const documentId = "21234567-89ab-4cde-8123-456789abcdef";
 const otherDocumentId = "31234567-89ab-4cde-8123-456789abcdef";
 const versionId = "41234567-89ab-4cde-8123-456789abcdef";
+const olderVersionId = "51234567-89ab-4cde-8123-456789abcdef";
+const cursor = `${"a".repeat(40)}.${"b".repeat(43)}`;
 const entry = { document_id: documentId, scope: "PROJECT", category: "PROJECT_RECORD", subtype: "会议纪要",
   title: "项目调研记录", display_name: "调研记录.pdf", state: "ACTIVE", latest_version_ref: versionId,
   effective_version_ref: versionId, created_at: "2026-09-29T02:00:00Z", etag: '"v1"' };
+const version = { document_version_id: versionId, version_no: 2, content_sha256: "a".repeat(64),
+  size_bytes: 4096, detected_mime: "application/pdf", availability_state: "AVAILABLE",
+  supersedes_version_ref: olderVersionId, created_at: "2026-09-29T02:00:00Z", integrity_checked_at: null };
 function response(data: unknown, etag = '"v1"'): Response {
   return new Response(JSON.stringify({ data, trace_id: projectId }), { status: 200,
     headers: { "Content-Type": "application/json", ETag: etag } });
@@ -41,6 +46,11 @@ async function view(auth: SessionClient, fetcher: typeof fetch, path = `/project
     documents: new DocumentReadClient(fetcher) }, global: { plugins: [router] } });
   await flushPromises();
   return { wrapper, router };
+}
+function versionButton(wrapper: Awaited<ReturnType<typeof view>>["wrapper"]) {
+  const button = wrapper.findAll("button").find((item) => /查看版本历史|继续加载版本/.test(item.text()));
+  if (!button) throw new Error("version button missing");
+  return button;
 }
 
 describe("ProjectDocumentDetailView", () => {
@@ -109,6 +119,79 @@ describe("ProjectDocumentDetailView", () => {
     finish(response(entry));
     await flushPromises();
     expect(wrapper.text()).not.toContain("项目调研记录");
+    expect(wrapper.get('[role="alert"]').text()).toContain("无权查看");
+    wrapper.unmount();
+  });
+
+  it("loads available versions on demand without exposing server-only fields", async () => {
+    const fetcher = vi.fn().mockResolvedValueOnce(response(entry))
+      .mockResolvedValueOnce(response({ items: [{ ...version, storage_locator: "private" }],
+        next_cursor: null, has_more: false }));
+    const { wrapper } = await view(await session(), fetcher as typeof fetch);
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    await versionButton(wrapper).trigger("click");
+    await flushPromises();
+    expect(fetcher.mock.calls[1]?.[0]).toBe(
+      `/api/v1/projects/${projectId}/documents/${documentId}/versions?page_size=50`);
+    expect(wrapper.text()).toContain("版本 2");
+    expect(wrapper.text()).toContain("application/pdf");
+    expect(wrapper.text()).not.toContain("private");
+    expect(wrapper.find('a[href*="/content"]').exists()).toBe(false);
+    wrapper.unmount();
+  });
+
+  it("renders an explicit empty state and a safe server error", async () => {
+    const fetcher = vi.fn().mockResolvedValueOnce(response(entry))
+      .mockResolvedValueOnce(response({ items: [], next_cursor: null, has_more: false }));
+    const empty = await view(await session(), fetcher as typeof fetch);
+    await versionButton(empty.wrapper).trigger("click");
+    await flushPromises();
+    expect(empty.wrapper.text()).toContain("暂无可用版本");
+    empty.wrapper.unmount();
+
+    const denied = vi.fn().mockResolvedValueOnce(response(entry))
+      .mockResolvedValueOnce(failure(404, "RESOURCE_NOT_FOUND"));
+    const inaccessible = await view(await session(), denied as typeof fetch);
+    await versionButton(inaccessible.wrapper).trigger("click");
+    await flushPromises();
+    expect(inaccessible.wrapper.get('[role="alert"]').text()).toContain("无权查看");
+    expect(inaccessible.wrapper.text()).not.toContain("private details");
+    inaccessible.wrapper.unmount();
+  });
+
+  it("appends a descending next page and clears history on document refresh", async () => {
+    const older = { ...version, document_version_id: olderVersionId, version_no: 1,
+      supersedes_version_ref: null };
+    const fetcher = vi.fn().mockResolvedValueOnce(response(entry))
+      .mockResolvedValueOnce(response({ items: [version], next_cursor: cursor, has_more: true }))
+      .mockResolvedValueOnce(response({ items: [older], next_cursor: null, has_more: false }))
+      .mockResolvedValueOnce(response(entry));
+    const { wrapper } = await view(await session(), fetcher as typeof fetch);
+    await versionButton(wrapper).trigger("click");
+    await flushPromises();
+    await versionButton(wrapper).trigger("click");
+    await flushPromises();
+    expect(fetcher.mock.calls[2]?.[0]).toContain(`cursor=${cursor}`);
+    expect(wrapper.findAll("ol li")).toHaveLength(2);
+    await wrapper.get("button").trigger("click");
+    await flushPromises();
+    expect(wrapper.find("ol").exists()).toBe(false);
+    expect(wrapper.text()).toContain("查看版本历史");
+    wrapper.unmount();
+  });
+
+  it("discards a late version response after a route change", async () => {
+    let finish!: (value: Response) => void;
+    const fetcher = vi.fn().mockResolvedValueOnce(response(entry))
+      .mockReturnValueOnce(new Promise<Response>((resolve) => { finish = resolve; }))
+      .mockResolvedValueOnce(failure(404, "RESOURCE_NOT_FOUND"));
+    const { wrapper, router } = await view(await session(), fetcher as typeof fetch);
+    await versionButton(wrapper).trigger("click");
+    await router.push(`/projects/${otherProjectId}/documents/${otherDocumentId}`);
+    await flushPromises();
+    finish(response({ items: [version], next_cursor: null, has_more: false }));
+    await flushPromises();
+    expect(wrapper.text()).not.toContain("版本 2");
     expect(wrapper.get('[role="alert"]').text()).toContain("无权查看");
     wrapper.unmount();
   });

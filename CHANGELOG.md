@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-29：0.1.0.dev0/DOC-05-A03-P02 项目 Document 详情加入按需可用版本历史、续页/空态及刷新/跨路由结果隔离，不提供正文或下载；视图定向 10、前端全量 839 项/typecheck/build PASS。兼容冻结 `/api/v1`/DB0049，无后端 API/Schema/Migration/依赖或升级变化；实际浏览器/PG、正式信任/其他平台/Gate3/可用包待验。
+
 - 2026-09-29：0.1.0.dev0/DOC-05-A03-P01 新增 DocumentVersion 安全只读前端客户端（固定项目/GLOBAL 路径、50 条签名游标、AVAILABLE 元数据与失败关闭）；定向 67、前端全量 835 项/typecheck/build PASS。兼容冻结 `/api/v1`/DB0049，无后端 API/Schema/Migration/依赖或升级变化；版本 UI、实际浏览器/PG、正式信任/其他平台/Gate3/可用包待验。
 
 - 2026-09-29：0.1.0.dev0/DOC-05-A02-P02 完成 Windows 11 隔离合成项目 Document 元数据详情浏览器/PG 验收：受权列表入口→详情显示安全字段/`"v0"`→刷新重读，SQL 数量及随机库/角色/Vault 清理 exit0。仅验收夹具/记录，兼容 DB0049/冻结 `/api/v1`，无生产 Schema/Migration/依赖或升级变化；正式信任/其他平台/性能质量/Gate3/可用包待验。

@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260929-480 — DOC-05-A03-P02 项目 Document 版本历史界面
+
+- Date/WBS：2026-09-29 / Phase2 DOC-05-A03-P02。输入为 P01 安全版本客户端、P02 Document 详情及冻结 `DOCUMENT_VERSION_LIST`；Gate 2/后端受权读链满足。
+- Decision/Reason：在受权项目 Document 详情页增加按需加载的 AVAILABLE 版本历史、续页和明确空态；不提供尚未验收的下载/正文入口。详情刷新、路由切换及身份不匹配时清旧数据并废弃迟到结果，保留固定项目范围。
+- Impact/rollback/validation plan：只改 Document 前端视图/测试；无 API/Schema/Migration/权限/依赖变化。可撤回版本历史 panel；定向视图测试、前端全量/typecheck/build。实际浏览器/PG 另做独立验收，不把 UI 合同记为正式信任通过。
+- Executed：文档详情增加按需版本历史、50 条续页、空态与元数据说明，刷新/跨路由废弃旧数据和迟到结果；不提供正文/下载。视图定向 10、前端全量 839 项及 typecheck/build PASS。浏览器/PG 对该 UI 未验。
+
 ## DEC-20260929-479 — DOC-05-A03-P01 DocumentVersion 前端只读客户端
 
 - Date/WBS：2026-09-29 / Phase2 DOC-05-A03-P01。输入为冻结 `DOCUMENT_VERSION_LIST/GET`、后端受权只返回 AVAILABLE 版本的读合同、现有 Document 元数据客户端；Gate 2 与前置读链满足。

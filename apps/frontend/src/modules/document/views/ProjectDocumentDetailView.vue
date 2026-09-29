@@ -4,7 +4,7 @@ import { RouterLink, useRoute } from "vue-router";
 
 import { SessionClient } from "@/modules/auth/api/sessionClient";
 import { sessionClientKey } from "@/modules/auth/api/sessionContext";
-import { DocumentReadClient, DocumentReadError, type DocumentView } from "@/modules/document/api/documentReadClient";
+import { DocumentReadClient, DocumentReadError, type DocumentVersionView, type DocumentView } from "@/modules/document/api/documentReadClient";
 
 const props = defineProps<{ session?: SessionClient; documents?: DocumentReadClient }>();
 const session = toRaw(props.session ?? inject(sessionClientKey, null) ?? new SessionClient());
@@ -14,8 +14,23 @@ const route = useRoute();
 const document = ref<DocumentView | null>(null);
 const busy = ref(false);
 const error = ref("");
+const versions = ref<readonly DocumentVersionView[]>([]);
+const versionsLoaded = ref(false);
+const versionsBusy = ref(false);
+const versionsError = ref("");
+const versionCursor = ref<string | null>(null);
 let generation = 0;
+let versionGeneration = 0;
 let mounted = true;
+
+function clearVersions() {
+  versionGeneration += 1;
+  versions.value = [];
+  versionsLoaded.value = false;
+  versionsBusy.value = false;
+  versionsError.value = "";
+  versionCursor.value = null;
+}
 
 function mayRead() {
   return mounted && !!identity && !identity.password_change_required
@@ -26,6 +41,7 @@ async function load() {
   const current = ++generation;
   const projectId = typeof route.params.projectId === "string" ? route.params.projectId : "";
   const documentId = typeof route.params.documentId === "string" ? route.params.documentId : "";
+  clearVersions();
   document.value = null;
   busy.value = true;
   error.value = "";
@@ -41,19 +57,47 @@ async function load() {
   } finally { if (mounted && current === generation) busy.value = false; }
 }
 
+async function loadVersions() {
+  if (!mayRead() || !document.value || versionsBusy.value || versionsLoaded.value && !versionCursor.value) return;
+  const projectId = typeof route.params.projectId === "string" ? route.params.projectId : "";
+  const documentId = document.value.document_id;
+  const cursor = versionCursor.value;
+  const current = ++versionGeneration;
+  versionsBusy.value = true;
+  versionsError.value = "";
+  try {
+    const page = await documents.listVersions({ kind: "PROJECT", projectId }, documentId, cursor);
+    if (!mounted || current !== versionGeneration || route.params.projectId !== projectId
+      || route.params.documentId !== documentId || document.value?.document_id !== documentId || !mayRead()) return;
+    const previous = cursor ? versions.value : [];
+    if (page.items.some((item) => previous.some((earlier) => earlier.document_version_id === item.document_version_id
+        || item.version_no >= earlier.version_no))) {
+      throw new DocumentReadError("DOCUMENT_CLIENT_UNAVAILABLE");
+    }
+    versions.value = [...previous, ...page.items];
+    versionsLoaded.value = true;
+    versionCursor.value = page.next_cursor;
+  } catch (failure) {
+    if (!mounted || current !== versionGeneration || route.params.projectId !== projectId
+      || route.params.documentId !== documentId) return;
+    versionsError.value = failure instanceof DocumentReadError ? failure.message : "暂时无法读取版本，请稍后重试。";
+  } finally { if (mounted && current === versionGeneration) versionsBusy.value = false; }
+}
+
 watch([() => route.params.projectId, () => route.params.documentId], () => {
   generation += 1;
+  clearVersions();
   document.value = null; busy.value = false; error.value = "";
   void load();
 }, { immediate: true });
-onUnmounted(() => { mounted = false; generation += 1; });
+onUnmounted(() => { mounted = false; generation += 1; clearVersions(); });
 </script>
 
 <template>
   <section class="document-detail" aria-labelledby="document-detail-title" :aria-busy="busy">
     <p class="section-kicker">项目资料</p>
     <h1 id="document-detail-title">项目文档详情</h1>
-    <p>当前页面仅展示服务器授权的元数据；文件正文、版本和下载将由各自的受权入口提供。</p>
+    <p>当前页面仅展示服务器授权的元数据；文件正文和下载将由各自的受权入口提供。</p>
     <p><RouterLink :to="{ name: 'project-documents', params: { projectId: route.params.projectId } }">返回项目文档历史</RouterLink></p>
     <template v-if="!identity">
       <p role="status">尚未读取当前身份。请先登录，或在账户页读取当前身份。</p>
@@ -78,6 +122,32 @@ onUnmounted(() => { mounted = false; generation += 1; });
         <dt>创建时间</dt><dd><time :datetime="document.created_at">{{ new Date(document.created_at).toLocaleString('zh-CN') }}</time></dd>
         <dt>元数据版本</dt><dd>{{ document.etag }}</dd>
       </dl>
+      <section v-if="document" aria-labelledby="document-versions-title">
+        <h2 id="document-versions-title">可用版本历史</h2>
+        <p>仅列出当前有权读取且状态为可用的版本元数据；此处不提供文件正文或下载。</p>
+        <button v-if="!versionsLoaded" type="button" :disabled="versionsBusy" @click="loadVersions()">
+          {{ versionsBusy ? '正在读取版本…' : '查看版本历史' }}
+        </button>
+        <p v-if="versionsBusy" role="status">正在读取受权版本…</p>
+        <p v-if="versionsError" role="alert">{{ versionsError }}</p>
+        <p v-if="versionsLoaded && versions.length === 0">暂无可用版本。</p>
+        <ol v-if="versions.length" aria-label="可用版本历史">
+          <li v-for="item in versions" :key="item.document_version_id">
+            <strong>版本 {{ item.version_no }}</strong>
+            <span> · {{ item.detected_mime }} · {{ item.size_bytes }} 字节</span>
+            <span> · <time :datetime="item.created_at">{{ new Date(item.created_at).toLocaleString('zh-CN') }}</time></span>
+            <details><summary>完整性元数据</summary>
+              <dl><dt>版本引用</dt><dd>{{ item.document_version_id }}</dd>
+                <dt>SHA-256</dt><dd>{{ item.content_sha256 }}</dd>
+                <dt>前驱版本引用</dt><dd>{{ item.supersedes_version_ref ?? '暂无' }}</dd>
+                <dt>完整性检查时间</dt><dd>{{ item.integrity_checked_at ?? '暂无' }}</dd></dl>
+            </details>
+          </li>
+        </ol>
+        <button v-if="versionCursor" type="button" :disabled="versionsBusy" @click="loadVersions()">
+          {{ versionsBusy ? '正在读取版本…' : '继续加载版本' }}
+        </button>
+      </section>
     </template>
   </section>
 </template>
@@ -88,5 +158,6 @@ onUnmounted(() => { mounted = false; generation += 1; });
 .document-detail dl { display: grid; grid-template-columns: minmax(8rem, auto) 1fr; gap: .65rem 1rem; }
 .document-detail dt { font-weight: 700; }
 .document-detail dd { margin: 0; overflow-wrap: anywhere; }
+.document-detail li { margin-block: .8rem; overflow-wrap: anywhere; }
 .document-detail [role="alert"] { color: #a21d25; }
 </style>
