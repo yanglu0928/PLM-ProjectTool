@@ -396,6 +396,56 @@ def verify_department_patch_http(origin: str, project: uuid.UUID, foreign: uuid.
     print("PROJECT_DEPARTMENT_PATCH_HTTP PASS: anonymous401/admin404/CSRF403/foreign404/IfMatch428/v1/stale409/noop-v1/history", flush=True)
 
 
+def verify_department_deactivate_http(origin: str, project: uuid.UUID, foreign: uuid.UUID,
+                                      occupied: uuid.UUID, free: uuid.UUID):
+    route = f"/api/v1/projects/{project}/departments/{free}:deactivate"
+    key = "synthetic-department-deactivate-0001"
+    with httpx.Client(base_url=origin, timeout=20) as anonymous:
+        assert anonymous.post(route, headers={"Origin": origin, "If-Match": '"v0"',
+            "Idempotency-Key": key}).status_code == 401
+    with httpx.Client(base_url=origin, timeout=20) as admin:
+        login = admin.post("/api/v1/auth/login", headers={"Origin": origin},
+            json={"username": "Synthetic Project Admin", "password": "synthetic-project-only-password"})
+        assert login.status_code == 200
+        denied = admin.post(route, headers={"Origin": origin,
+            "X-CSRF-Token": login.json()["data"]["csrf_token"], "If-Match": '"v0"',
+            "Idempotency-Key": key})
+        assert denied.status_code == 404, denied.text
+    with httpx.Client(base_url=origin, timeout=20) as manager:
+        login = manager.post("/api/v1/auth/login", headers={"Origin": origin},
+            json={"username": "Synthetic Project Member", "password": "synthetic-project-only-password"})
+        assert login.status_code == 200
+        headers = {"Origin": origin, "X-CSRF-Token": login.json()["data"]["csrf_token"],
+                   "If-Match": '"v0"', "Idempotency-Key": key}
+        assert manager.post(route, headers={"Origin": origin, "If-Match": '"v0"',
+            "Idempotency-Key": key}).status_code == 403
+        denied = manager.post(f"/api/v1/projects/{foreign}/departments/{free}:deactivate",
+            headers=headers)
+        assert denied.status_code == 404, denied.text
+        missing = manager.post(route, headers={"Origin": origin,
+            "X-CSRF-Token": headers["X-CSRF-Token"], "Idempotency-Key": key})
+        assert missing.status_code == 428, missing.text
+        occupied_route = f"/api/v1/projects/{project}/departments/{occupied}:deactivate"
+        in_use = manager.post(occupied_route, headers={**headers,
+            "Idempotency-Key": "synthetic-department-in-use-0001"})
+        assert in_use.status_code == 409 and in_use.json()["error"]["code"] == "PROJECT_DEPARTMENT_IN_USE", in_use.text
+        first = manager.post(route, headers=headers)
+        replay = manager.post(route, headers=headers)
+        assert first.status_code == replay.status_code == 200, (first.text, replay.text)
+        assert first.headers["ETag"] == replay.headers["ETag"] == '"v1"'
+        assert first.json()["data"] == replay.json()["data"]
+        result = first.json()["data"]
+        assert result["department_id"] == str(free) and result["code"] == "FREE"
+        assert result["state"] == "INACTIVE" and result["etag"] == '"v1"'
+        conflict = manager.post(route, headers={**headers, "If-Match": '"v1"'})
+        assert conflict.status_code == 409 and conflict.json()["error"]["code"] == "CONFLICT_IDEMPOTENCY", conflict.text
+        history = manager.get(f"/api/v1/projects/{project}/departments", params={"page_size": 50})
+        assert history.status_code == 200, history.text
+        assert any(item["department_id"] == str(free) and item["state"] == "INACTIVE"
+                   and item["etag"] == '"v1"' for item in history.json()["data"]["items"])
+    print("PROJECT_DEPARTMENT_DEACTIVATE_HTTP PASS: anonymous401/admin404/CSRF403/foreign404/IfMatch428/in-use409/200-replay/key-conflict409/history", flush=True)
+
+
 def main():
     suffix = uuid.uuid4().hex[:12]
     dbname = role = "prj05a04_" + suffix
@@ -439,11 +489,14 @@ def main():
                                               or "--department-create-api-only" in sys.argv[1:])
                     department_patch_mode = ("--department-patch-browser" in sys.argv[1:]
                                              or "--department-patch-api-only" in sys.argv[1:])
+                    department_deactivate_mode = ("--department-deactivate-browser" in sys.argv[1:]
+                                                  or "--department-deactivate-api-only" in sys.argv[1:])
                     member_mode = ("--member-browser" in sys.argv[1:]
                                    or "--member-api-only" in sys.argv[1:])
                     if sum((create_mode, state_mode, name_mode, member_mode, member_create_mode,
                             member_patch_mode, member_state_mode, department_history_mode,
-                            department_create_mode, department_patch_mode)) > 1:
+                            department_create_mode, department_patch_mode,
+                            department_deactivate_mode)) > 1:
                         raise ValueError("Browser write modes must be exclusive")
                     manager = (insert_user(db, "Synthetic First Manager", hashed.password_hash, hashed.algorithm_id)
                                if create_mode else None)
@@ -457,6 +510,10 @@ def main():
                     department = db.execute("INSERT INTO plm.prj_departments "
                         "(project_id,department_code,department_code_normalized,name) "
                         "VALUES (%s,'D1','d1','Synthetic Department') RETURNING department_id", (project,)).fetchone()[0]
+                    free_department = (db.execute("INSERT INTO plm.prj_departments "
+                        "(project_id,department_code,department_code_normalized,name) "
+                        "VALUES (%s,'FREE','free','Synthetic Free Department') RETURNING department_id",
+                        (project,)).fetchone()[0] if department_deactivate_mode else None)
                     if department_history_mode:
                         for index in range(50):
                             code = f"H{index:02d}"
@@ -568,6 +625,7 @@ def main():
                               + (f" MANAGER={manager}" if create_mode else "")
                               + (f" CANDIDATE={target_user}" if member_create_mode else "")
                               + (f" PATCH_TARGET={patch_member} PATCH_DEPARTMENT={patch_department}" if member_patch_mode else "")
+                              + (f" DEACTIVATE_TARGET={free_department}" if department_deactivate_mode else "")
                               + (f" STATE_TARGET={state_member}" if member_state_mode else "")
                               + (f" USER_STATE_TARGET={member}" if state_mode else "")
                               + (f" USER_NAME_TARGET={member}" if name_mode else ""), flush=True)
@@ -593,6 +651,9 @@ def main():
                             verify_department_create_http(origin, project, foreign)
                         elif "--department-patch-api-only" in sys.argv[1:]:
                             verify_department_patch_http(origin, project, foreign, department)
+                        elif "--department-deactivate-api-only" in sys.argv[1:]:
+                            assert free_department is not None
+                            verify_department_deactivate_http(origin, project, foreign, department, free_department)
                         else:
                             actions = queue.Queue()
                             Thread(target=lambda: actions.put(sys.stdin.readline().strip()), daemon=True).start()
@@ -624,6 +685,10 @@ def main():
                             elif department_patch_mode and "--department-patch-browser" in sys.argv[1:]:
                                 assert session_count >= 1
                             elif department_patch_mode:
+                                assert session_count == 2
+                            elif department_deactivate_mode and "--department-deactivate-browser" in sys.argv[1:]:
+                                assert session_count >= 1
+                            elif department_deactivate_mode:
                                 assert session_count == 2
                             else:
                                 assert session_count >= (1 if create_mode else 2)
@@ -693,6 +758,24 @@ def main():
                                 assert db.execute("SELECT count(*) FROM plm.plt_idempotency_receipts "
                                     "WHERE operation LIKE 'V1_PROJECT_DEPARTMENT_PATCH%%'").fetchone()[0] == 0
                                 print("PROJECT_DEPARTMENT_PATCH_DATABASE PASS: target NEW/v1, one Audit, no PATCH receipt", flush=True)
+                            if department_deactivate_mode:
+                                assert free_department is not None
+                                assert db.execute("SELECT state,lock_version FROM plm.prj_departments "
+                                    "WHERE department_id=%s", (free_department,)).fetchone() == ("INACTIVE", 1)
+                                assert db.execute("SELECT state,lock_version FROM plm.prj_departments "
+                                    "WHERE department_id=%s", (department,)).fetchone() == ("ACTIVE", 0)
+                                assert db.execute("SELECT count(*) FROM plm.prj_departments WHERE project_id=%s",
+                                    (project,)).fetchone()[0] == 2
+                                assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s "
+                                    "AND action='PROJECT_DEPARTMENT_DEACTIVATED'", (free_department,)).fetchone()[0] == 1
+                                assert db.execute("SELECT count(*) FROM plm.prj_department_deactivate_results "
+                                    "WHERE department_id=%s", (free_department,)).fetchone()[0] == 1
+                                assert db.execute("SELECT count(*) FROM plm.plt_idempotency_receipts r "
+                                    "JOIN plm.prj_department_deactivate_results d ON d.result_id=r.result_ref_id "
+                                    "WHERE r.operation='V1_PROJECT_DEPARTMENT_DEACTIVATE' "
+                                    "AND r.state='COMPLETED' AND d.department_id=%s",
+                                    (free_department,)).fetchone()[0] == 1
+                                print("PROJECT_DEPARTMENT_DEACTIVATE_DATABASE PASS: free INACTIVE/v1, occupied ACTIVE/v0, one Audit/result/receipt", flush=True)
                             if member_mode:
                                 assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE project_id=%s", (project,)).fetchone()[0] == 52
                                 assert db.execute("SELECT count(*) FROM plm.prj_project_members WHERE project_id=%s AND state='REMOVED'", (project,)).fetchone()[0] == 1

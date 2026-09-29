@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260929-464 — PRJ-05-A13-P04 Windows 11 部门停用端到端
+
+- Date/WBS：2026-09-29 / Phase2 PRJ-05-A13-P04。P01～P03、后端 PRJ-04-A16-P03 与既有隔离浏览器/PG 夹具前置满足。
+- Decision：新增互斥 department-deactivate API-only/browser 验收模式，合成负责人所用部门验证在用 409，另建无成员 ACTIVE 部门验证匿名/非负责人/CSRF/外项目/缺版本、首次 200/同 Key 重放/Key 冲突、独立历史读取；浏览器从已授权部门历史选择无成员 ACTIVE 条目，明确勾选后停用并独立刷新。SQL 核目标 INACTIVE/v1、单 Audit、不可变结果和完成收据，随机数据库/角色/Vault 精确清理，恢复原 PostgreSQL 状态；失败不标 PASS。
+- Impact/rollback/validation：仅隔离验收夹具及进度，不改生产 API/Schema/权限/依赖。风险为误停用负责人所用部门或中断留下测试资源，以独立无成员部门、随机资源名和最终清理控制；回滚移除新 fixture 模式。正式信任/其他平台/性能/Gate 独立验收。
+- Executed：2026-09-29，API-only 经首轮测试断言误用部门 ID 作收据结果 ID，按既有结果快照外键修正后完整重跑 exit0；匿名/权限/CSRF/版本/在用409、首次/重放/冲突/历史及 SQL 一审计/结果/收据通过。实际 IAB 从历史选 FREE/v0、明确勾选、首回执后独立刷新见 INACTIVE，browser fixture exit0；两轮自有库/角色/Vault 均清理。原 PG 开始前停止，结束检查亦停止；尝试正常 stop 时已无进程，日志末尾未解释停机原因，不能将关闭路径标为已验证。
+
 ## DEC-20260929-463 — PRJ-05-A13-P03 部门停用确认界面
 
 - Date/WBS：2026-09-29 / Phase2 PRJ-05-A13-P03。P01/P02、部门历史页和冻结停用合同前置满足；从服务器授权历史取得当前ACTIVE条目及强版本，不使用任意路由快照。
