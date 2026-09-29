@@ -124,7 +124,7 @@ onUnmounted(() => { mounted = false; generation += 1; clearVersions(); });
       </dl>
       <section v-if="document" aria-labelledby="document-versions-title">
         <h2 id="document-versions-title">可用版本历史</h2>
-        <p>仅列出当前有权读取且状态为可用的版本元数据；此处不提供文件正文或下载。</p>
+        <p>仅列出当前有权读取且状态为可用的版本。下载由服务器重新检查权限与文件完整性；这里不提供文内预览或定位。</p>
         <button v-if="!versionsLoaded" type="button" :disabled="versionsBusy" @click="loadVersions()">
           {{ versionsBusy ? '正在读取版本…' : '查看版本历史' }}
         </button>
@@ -136,6 +136,10 @@ onUnmounted(() => { mounted = false; generation += 1; clearVersions(); });
             <strong>版本 {{ item.version_no }}</strong>
             <span> · {{ item.detected_mime }} · {{ item.size_bytes }} 字节</span>
             <span> · <time :datetime="item.created_at">{{ new Date(item.created_at).toLocaleString('zh-CN') }}</time></span>
+            <span> · <a :href="documents.contentUrl({ kind: 'PROJECT', projectId: String(route.params.projectId) },
+              document.document_id, item.document_version_id)" target="_blank" rel="noopener noreferrer">
+              下载版本 {{ item.version_no }}
+            </a></span>
             <details><summary>完整性元数据</summary>
               <dl><dt>版本引用</dt><dd>{{ item.document_version_id }}</dd>
                 <dt>SHA-256</dt><dd>{{ item.content_sha256 }}</dd>

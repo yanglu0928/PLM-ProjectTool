@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260929-483 — DOC-05-A04-P02 版本行原生附件下载入口
+
+- Date/WBS：2026-09-29 / Phase2 DOC-05-A04-P02。P01 固定同源下载地址与 P03 实际版本历史 UI、冻结 `DOCUMENT_VERSION_DOWNLOAD` 及后端受权流式接口满足前置。
+- Decision/Reason：仅在服务端返回的 AVAILABLE 版本行展示原生附件链接，由浏览器对固定 GET 发起请求、服务端重新核 Session/Project/License/完整性；新标签保留当前详情页处理过期或拒绝错误。不在前端缓存最多 100MB 内容，也不把下载称为文内定位/预览。
+- Impact/rollback/validation plan：只改 Document 详情视图/测试，无 API/Schema/Migration/权限/依赖变化；撤链接即可回滚。验证安全同源 href、未加载/空态无链接及无内容型 fetch；定向/全量前端测试与构建。真实文件浏览器下载须在后续隔离任务单独证明。
+- Executed：受权版本行显示“下载版本 N”同源附件链接，`target=_blank`/`noopener noreferrer` 保留当前页面；未加载或空版本不生成内容链接，元数据页不请求文件正文。视图定向 10、前端全量 841 项/typecheck/build PASS；真实文件点击未验。
+
 ## DEC-20260929-482 — DOC-05-A04-P01 受权版本下载固定地址合同
 
 - Date/WBS：2026-09-29 / Phase2 DOC-05-A04-P01。冻结 `DOCUMENT_VERSION_DOWNLOAD`、后端 Windows 11 合成流式 GET、版本客户端和历史 UI 已有前置。

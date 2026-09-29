@@ -129,6 +129,7 @@ describe("ProjectDocumentDetailView", () => {
         next_cursor: null, has_more: false }));
     const { wrapper } = await view(await session(), fetcher as typeof fetch);
     expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(wrapper.find('a[href*="/content"]').exists()).toBe(false);
     await versionButton(wrapper).trigger("click");
     await flushPromises();
     expect(fetcher.mock.calls[1]?.[0]).toBe(
@@ -136,7 +137,13 @@ describe("ProjectDocumentDetailView", () => {
     expect(wrapper.text()).toContain("版本 2");
     expect(wrapper.text()).toContain("application/pdf");
     expect(wrapper.text()).not.toContain("private");
-    expect(wrapper.find('a[href*="/content"]').exists()).toBe(false);
+    const download = wrapper.get('a[href*="/content"]');
+    expect(download.attributes("href")).toBe(
+      `/api/v1/projects/${projectId}/documents/${documentId}/versions/${versionId}/content`);
+    expect(download.attributes("target")).toBe("_blank");
+    expect(download.attributes("rel")).toBe("noopener noreferrer");
+    expect(download.text()).toContain("下载版本 2");
+    expect(fetcher).toHaveBeenCalledTimes(2);
     wrapper.unmount();
   });
 
@@ -147,6 +154,7 @@ describe("ProjectDocumentDetailView", () => {
     await versionButton(empty.wrapper).trigger("click");
     await flushPromises();
     expect(empty.wrapper.text()).toContain("暂无可用版本");
+    expect(empty.wrapper.find('a[href*="/content"]').exists()).toBe(false);
     empty.wrapper.unmount();
 
     const denied = vi.fn().mockResolvedValueOnce(response(entry))
