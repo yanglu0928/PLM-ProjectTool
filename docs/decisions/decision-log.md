@@ -5762,3 +5762,8 @@
 
 - Phase/WBS：Phase2 / PLT-MAINT-01-A05-P03；编码前检查见 progress。Parser Loop 注入可选 admission 协议，把一次 expired-cancel 扫描、领取及 OCR 执行放在同一共享锁窗口；idle sleep 在锁外，停止和异常自动释放。Parser 业务模块不直接依赖 PG Adapter。
 - Windows 进程显式接线和真实 OCR/失联验证后续独立 WBS；不改变既有 Document/Jobs/Audit 事务与权限，连接丢失非 OS 静止证明。
+
+## DEC-20260930-535 — Windows Parser 复用 Worker 专用准入资源
+
+- Phase/WBS：Phase2 / PLT-MAINT-01-A05-P04；编码前检查见 progress。Windows Parser 从当前账户 Vault URL 创建显式 Worker runtime 专用准入 Engine，复用 A05-P03 Loop Port；由既有进程生命周期在静止后统一释放。
+- 不更改现有 OCR/Job/Document Owner 与外部合同；正式账户/Server2025、连接失联后的进程退出与恢复演练保留为后续验收。

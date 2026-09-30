@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A05-P04 Windows Parser 进程显式装配专用 PG18 准入 Engine；隔离 PG18/合成信任/真实离线 OCR 子进程下 MAINTENANCE 阻止待处理 Job、RUNNING 成功解析且执行期持共享锁。后端1673（3既有跳过）、wheel PASS。无 Schema/API/依赖/生产迁移；中文路径模型加载已登记 CR-PAR-005，正式账户/Server2025、失联后 OS 静止与 Gate3/发行包仍待。
+
 - 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A05-P03 Parser Loop 新增可选单轮共享准入，涵盖取消恢复扫描与解析步骤，空闲等待不持锁。隔离 PG18 双连接排他竞争与 MAINTENANCE 拒新扫描、后端1673（3既有跳过）、wheel PASS。无 Schema/API/依赖/生产迁移；Windows 进程尚未接线，长 OCR 失联、目标账户/OS 静止及 Gate3/发行包仍待。
 
 - 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A05-P02 Windows Audit Worker 装配独立单连接 PG18 共享准入 Engine，构造失败与静止退出均释放；隔离 PG18 临时 Windows Vault/合成 License 的真实导出 Step 验证持锁、MAINTENANCE 拒新领取及业务无变化。后端1671（3既有跳过）、wheel PASS。无 Schema/API/依赖/生产迁移；正式账户/公钥、Server2025、长 I/O 失联、Parser/OS 静止和 Gate3/发行包仍待。

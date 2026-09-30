@@ -108,6 +108,7 @@ class ParserWorkerWindowsTests(unittest.TestCase):
                 parser_ocr_recognition_model_dir=location,
                 parser_ocr_model_fingerprint="a" * 64)
             database = Mock()
+            database.maintenance_admission = object()
             guard = object()
             actor = SimpleNamespace(assert_current=Mock(return_value=uuid.uuid4()))
             loop = object()
@@ -126,6 +127,11 @@ class ParserWorkerWindowsTests(unittest.TestCase):
                 self.assertEqual(compose.call_args.kwargs["license_guard"], guard)
                 self.assertEqual(compose.call_args.kwargs["system_actor"], actor)
                 self.assertEqual(compose.call_args.kwargs["data_root"], location)
+                self.assertEqual(compose.call_args.kwargs["maintenance_admission"],
+                                 database.maintenance_admission)
+                self.assertEqual(
+                    parser_worker_windows.create_worker_database_runtime.call_args.kwargs,
+                    {"maintenance_admission": True})
                 database.dispose.assert_not_called()
 
     def test_construction_failure_disposes_unstarted_database(self):

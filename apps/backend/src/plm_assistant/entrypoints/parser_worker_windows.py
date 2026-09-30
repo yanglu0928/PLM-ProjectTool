@@ -29,7 +29,8 @@ def create_windows_parser_worker(settings: BootstrapSettings):
         raise RuntimeError("Windows Parser worker unavailable")
     database = None
     try:
-        database = create_worker_database_runtime(read_database_url())
+        database = create_worker_database_runtime(read_database_url(),
+            maintenance_admission=True)
         license_services = create_windows_worker_license_services(database, settings)
         actor = create_windows_system_actor()
         actor.assert_current()
@@ -44,7 +45,8 @@ def create_windows_parser_worker(settings: BootstrapSettings):
         loop = create_parser_worker(database=database, projects=projects,
             license_guard=license_services.guard, system_actor=actor,
             data_root=settings.data_root, ocr_engine=engine,
-            settings=ParserWorkerSettings("parser-" + uuid4().hex))
+            settings=ParserWorkerSettings("parser-" + uuid4().hex),
+            maintenance_admission=database.maintenance_admission)
         return database, loop
     except Exception:
         if database is not None:

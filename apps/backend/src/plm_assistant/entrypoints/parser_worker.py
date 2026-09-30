@@ -80,7 +80,8 @@ def _current_schema(database: WorkerDatabaseRuntime) -> bool:
 
 def create_parser_worker(*, database: WorkerDatabaseRuntime, projects,
                          license_guard, system_actor, data_root: Path,
-                         ocr_engine, settings: ParserWorkerSettings) -> ParserWorkerLoop:
+                         ocr_engine, settings: ParserWorkerSettings,
+                         maintenance_admission=None) -> ParserWorkerLoop:
     """Own no supplied resource; reject ambiguous/partial startup before work."""
     if (type(database) is not WorkerDatabaseRuntime
             or type(settings) is not ParserWorkerSettings
@@ -147,4 +148,5 @@ def create_parser_worker(*, database: WorkerDatabaseRuntime, projects,
         candidates=ExpiredParserCancelCandidates(repository=SqlAlchemyParserCancelScanRepository()),
         recovery=recovery, system_actor=system_actor)
     return ParserWorkerLoop(step=worker, sweep=sweep,
-        poll_seconds=settings.poll_seconds)
+        poll_seconds=settings.poll_seconds,
+        maintenance_admission=maintenance_admission)

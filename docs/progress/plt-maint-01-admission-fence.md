@@ -99,3 +99,12 @@
 风险/回滚：OCR 长 I/O 中连接意外丢失不会自动杀止进程，仍需发布前复核和 OS 退出证明；Windows 生产进程需后续独立接线。无 Migration/API/依赖；回滚不装配该可选 Port。
 
 结果：A05-P03 Parser Loop 可选单轮共享准入内部 PASS。一次取消到期扫描与 Parser Step 处于同一准入窗口，停机/异常会退出窗口，idle wait 在锁外。隔离 PG18 双连接验证扫描及 Step 均拒绝排他锁、完成后释放；MAINTENANCE 下扫描/领取计数均不增加。单元新增2、后端全量1673（3既有跳过）、wheel PASS，随机测试库清理。Windows Parser 进程尚未注入，真实 OCR 长 I/O/失联、目标账户及 OS 静止未验；A05/维护模式/Gate3/发行包不通过。
+
+## A05-P04 编码前检查：Windows Parser Worker 装配
+
+当前 Phase：Phase 2 Platform Core。当前 WBS：PLT-MAINT-01-A05-P04。输入基线：CR-PLT-004/ADR-012、A05-P03 Parser Loop Port、A05-P02 WorkerDatabaseRuntime 专用准入 Engine、现有 Windows Parser 启动/模型信任链。前置 Loop 与 Audit 组合内部 PASS；正式公钥/部署账户及 Server2025 未供给。
+涉及模块：Parser 显式组合与 Windows 进程入口；不改 OCR 引擎、Job/Document/Audit Owner 或公开 API。涉及实体：维护状态只读，无 Schema。涉及权限：当前账户 Vault、SystemActor、License/User/Project 原检查不变。
+验收标准：入口从同一次当前账户 Vault URL 创建并拥有准入 Engine，向 Parser Loop 传递；构造失败/静止退出释放；真实隔离 PG18 与合成文件的 Worker 运行中持锁、MAINTENANCE 下不扫描/领取，原 CLI 合同和全量回归/wheel PASS。
+风险/回滚：连接意外释放、OCR 长 I/O/正式公钥/目标账户 ACL/OS 进程退出与 Server2025 仍须单独验证。无 Migration/API/依赖；可通过停用组合装配回滚，不抹除维护历史。
+
+结果：A05-P04 Windows11 隔离进程组合内部 PASS。Windows Parser 由同一次当前账户 Vault URL 装配专用准入 Engine，显式传入 Loop，进程静止后释放；单元入口传递/失败清理通过。隔离 PG18、合成 License/SystemActor、真实离线 PP-OCRv5 模型及独立 Windows 子进程下，MAINTENANCE 时待处理 Job 保持 PENDING，恢复 RUNNING 后扫描 PDF 产出唯一 OCR_LINE/ResultRef、Job SUCCEEDED；父进程观察到 OCR 子进程持共享锁。后端1673（3既有跳过）、wheel PASS，随机库清理。仓库中文路径模型初始化失败、ASCII 缓存路径成功的发行偏差另记 CR-PAR-005；正式公钥/目标账户/Server2025、连接丢失后 OS 静止和性能未验，A05/维护模式/Gate3/发行包不通过。

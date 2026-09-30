@@ -6,6 +6,7 @@ import io
 import json
 import multiprocessing
 import os
+import time
 import uuid
 from dataclasses import replace
 from importlib.util import module_from_spec, spec_from_file_location
@@ -21,6 +22,7 @@ from plm_assistant.entrypoints.parser_worker_signals import run_parser_worker_pr
 from plm_assistant.modules.document.infrastructure.parse_result_storage import LocalParseResultStorage
 from plm_assistant.modules.parser.infrastructure.paddle_ocr import _model_fingerprint
 from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
+from plm_assistant.modules.platform.infrastructure.maintenance_admission import MAINTENANCE_LOCK_KEY
 
 
 spec = spec_from_file_location("_parser_os_fixture",
@@ -107,10 +109,40 @@ def exercise(v):
         assert bad_reason is None and bad_published is None and bad_error is not None
         assert db.execute("SELECT state FROM plm.job_jobs WHERE job_id=%s",
             (ref.parse_job_id,)).fetchone()[0] == "PENDING"
+        db.execute("UPDATE plm.plt_maintenance_state SET state='MAINTENANCE',"
+                   "lock_version=lock_version+1 WHERE state_id=1")
+        blocked = context.SimpleQueue()
+        blocked_process = context.Process(target=worker_child, args=(v["url"],
+            str(v["root"]), v["actor"], str(det), str(rec), fingerprint, blocked))
+        blocked_process.start()
+        blocked_process.join(30)
+        if blocked_process.is_alive():
+            blocked_process.terminate()
+            blocked_process.join(5)
+            raise AssertionError("synthetic maintenance child timed out")
+        assert blocked_process.exitcode == 0, blocked_process.exitcode
+        blocked_reason, blocked_published, blocked_error = blocked.get()
+        assert blocked_reason is None and blocked_published is None and blocked_error is not None
+        assert db.execute("SELECT state FROM plm.job_jobs WHERE job_id=%s",
+            (ref.parse_job_id,)).fetchone()[0] == "PENDING"
+        db.execute("UPDATE plm.plt_maintenance_state SET state='RUNNING',"
+                   "lock_version=lock_version+1 WHERE state_id=1")
         output = context.SimpleQueue()
         process = context.Process(target=worker_child, args=(v["url"],
             str(v["root"]), v["actor"], str(det), str(rec), fingerprint, output))
         process.start()
+        observed_lock = False
+        deadline = time.monotonic() + 60
+        while process.is_alive() and time.monotonic() < deadline:
+            acquired = db.execute("SELECT pg_try_advisory_lock(%s)",
+                (MAINTENANCE_LOCK_KEY,)).fetchone()[0]
+            if acquired:
+                assert db.execute("SELECT pg_advisory_unlock(%s)",
+                    (MAINTENANCE_LOCK_KEY,)).fetchone()[0] is True
+            else:
+                observed_lock = True
+                break
+            time.sleep(.02)
         process.join(90)
         if process.is_alive():
             process.terminate()  # Synthetic test cleanup only, never production stop.
@@ -120,6 +152,7 @@ def exercise(v):
         reason, published, error = output.get()
         assert error is None, error
         assert (reason, published) == ("LIMIT", 1), (reason, published)
+        assert observed_lock, "real OCR worker never showed admission lock"
         assert db.execute("SELECT state FROM plm.job_jobs WHERE job_id=%s",
             (ref.parse_job_id,)).fetchone()[0] == "SUCCEEDED"
         row = db.execute("SELECT r.parse_result_ref_id,r.storage_locator,r.sha256,"
@@ -137,6 +170,8 @@ def exercise(v):
                    for node in parsed["nodes"]), parsed["nodes"]
         print("PAR-01-A05-P01-P05-A02-P03-A03: independent Windows process, "
               "actual local model/scanned PDF, unique verified OCR result PASS")
+        print("PLT-MAINT-01-A05-P04 PASS: maintenance refused queued Parser "
+              "work; running Windows OCR process held shared admission lock")
 
     fixture.exercise(v, extra=extra)
 
