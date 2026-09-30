@@ -5713,3 +5713,9 @@
 - Phase/WBS：Phase2 / PLT-MAINT-01-A02；前置 `CR-PLT-004` A01 已登记，编码前检查见对应 progress。仅新增 Platform 单行状态 ORM/Migration，不提前接 API/Worker 或声明停写。
 - 选型：`state_id=1` 固定行、RUNNING/MAINTENANCE、单调 lock_version 与数据库变更时间；触发器拒绝 DELETE/TRUNCATE 与跳版/同态更新。首次升级插入 RUNNING/v0，不回填业务表。只有无维护历史时允许 down。
 - 验收/回滚：隔离 PG18 空/有数据 up/down/re-up、约束与 ORM parity；有历史 down 拒绝。生产迁移前人工备份/停写；正式 admission 全覆盖未实现前，表状态不是并发安全证明。
+
+## DEC-20260930-526 — 维护准入锁与静止证明分离
+
+- Phase/WBS：Phase2 / PLT-MAINT-01-A03-P01；编码前检查见对应 progress。CR-PLT-004 补记连接丢失窗口：会话锁释放不能证明仍运行的 OCR/上传进程已退出，禁止把取得排他锁当作备份许可。
+- 本项只实现共享准入与状态读取，专用 PG18 会话持锁覆盖调用者窗口，状态 MAINTENANCE/缺失/DB 错误失败关闭；状态切换/正式 API 与 Worker 接线、OS 进程退出证明另做。无 API/Schema/权限变化。
+- 风险：连接池容量及意外失联仍须真实并发验证，后续维护命令必须附加进程清单/退出证据。当前 Port 不等于可用维护模式。

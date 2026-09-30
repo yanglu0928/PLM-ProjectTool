@@ -18,3 +18,12 @@
 风险：此表单独不能阻止并发请求/Worker，直到共享/排他锁与所有生产入口挂载后才可作为停写证明。只改 Schema，迁移前需人工备份并停写；回滚仅无历史的隔离环境可测试，生产不承诺自动降级。
 
 结果：A02 Windows11 隔离 PostgreSQL18 Schema PASS。新 `20260930_0051` 增量只增单行 `plm.plt_maintenance_state`，默认 RUNNING/v0；数据库约束及触发器拒绝第二行、跳版/同态更新、DELETE/TRUNCATE，允许 RUNNING→MAINTENANCE→RUNNING 每次版本+1；有历史的 downgrade 拒绝且状态/迁移版本保留。空库 head→0050→head、有原 Auth 数据0050→head、ORM parity、后端全量1657（3既有跳过）、wheel 含 ORM/Migration PASS。隔离数据库删除、PoC PG 恢复停止；未迁移生产库。没有 admission Port、生产路由或 Worker 接线，此单行状态绝非维护静止证明，整体 PLT-MAINT-01/DOC-03 前置/Gate3仍未通过。
+
+## A03-P01 编码前检查：只读共享准入 Port
+
+当前 Phase：Phase 2 Platform Core。当前 WBS：PLT-MAINT-01-A03-P01。输入基线：`CR-PLT-004` 含连接丢失修订、DB0051/ORM、ADR007/008。前置 A02 Schema 内部 PASS；正式 API/Worker 未接入。
+涉及模块：Platform PostgreSQL 专用短连接/会话级共享 advisory 锁与状态读取 Port；不写状态、不打开维护操作。涉及实体：只读 `plt_maintenance_state`。涉及 API/权限：无公开 API，不授权操作员切换。
+验收标准：PG18/0051 RUNNING 下取得共享锁并保持至调用者外部窗口退出；MAINTENANCE/缺行/错库/锁竞争/DB失联失败关闭；释放共享锁与连接，不把连接丢失解释为静止。真实 PG18 双连接并发及单元回归、wheel。
+风险：持有独立连接增加容量；长 I/O 中连接断开可使锁提前释放，完整静止证明须后续进程退出门禁，不能凭本项关闭维护模式。无 Schema/API/依赖变化，回滚停用未接入 Port。
+
+结果：A03-P01 Windows11 内部 PASS。`PostgresMaintenanceAdmission` 仅接受 PG18，并在专用会话取共享 advisory 锁、读 DB0051 RUNNING 行后结束事务、保持会话锁贯穿调用者窗口，退出显式解锁/关闭；MAINTENANCE、排他锁竞争、旧 Schema/错库拒绝。隔离 PostgreSQL18 双连接验证两个共享并行、排他不可取得、释放后可取得、调用者异常不被遮盖且连接池不遗留锁；模拟杀死持锁 backend 时退出报错并证明排他方可取得锁，故不能以锁释放声称外部 I/O 已停止。单元2、后端全量1659（3既有跳过）、wheel PASS，随机库清理且 PoC PG 恢复停止。尚无排他状态命令、Audit、生产 API/Worker 接线或 OS 进程退出证明；A03 整体/维护模式/Gate3不通过。

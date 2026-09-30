@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A03-P01 新增 PG18 只读共享维护准入 Port，RUNNING 下专用会话持锁覆盖调用者窗口，MAINTENANCE/排他竞争/错库/旧 Schema 失败关闭；隔离 PG18 双连接与连接丢失、单元2、后端1659（3既有跳过）、wheel PASS。无新 Migration/API/权限/依赖及生产升级；当前只提供内部 Port，未接排他命令、生产 API/Worker 或 OS 静止证明，维护模式/Gate3/发行包仍待。
+
 - 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A02 新增 DB Migration `20260930_0051` 与 Platform ORM 的单行持久维护状态，RUNNING/v0 初态、版本/状态约束、删除/截断拒绝；隔离 PG18 空/有数据升级、无历史降级与有历史降级拒绝、后端1657（3既有跳过）、wheel包含 PASS。原 `/api/v1`、0050、权限及依赖不变；生产升级需先人工备份停写，本轮未执行。共享/排他 admission、生产 API/Worker 接线与 Gate3仍待，不能仅凭状态表进入维护模式。
 
 - 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A01 登记维护模式停写专项 `CR-PLT-004`：现有按上传 ID 的锁与 Worker 协作停止不足以证明全局静止，规划 PostgreSQL 持久状态及跨 API/Worker 的会话级准入栅栏。仅设计与验收计划，未改运行代码/API/Schema/依赖或生产数据；迁移和全覆盖验收未完成，DOC-03 前置/Gate3/发行包继续阻塞。
