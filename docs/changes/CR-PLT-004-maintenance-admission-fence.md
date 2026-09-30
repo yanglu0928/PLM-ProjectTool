@@ -75,3 +75,7 @@ ADR-007/008 和冻结安全边界要求升级顺序为人工备份→维护模�
 2026-09-30 A06-P02-P03-P02-A02 前置差异：SCM 骨架只首次报告 `STOP_PENDING`/30 秒 wait hint，Audit 导出与 heartbeat 可能更久；不能靠一次状态更新推断正常停止。选择在停止等待期间周期性更新 checkpoint，Audit runner 仅在原 Loop 返回 `STOPPED`、heartbeat `quiescent` 且 DB 已释放后完成；未证实静止不清理标记、不授权备份。实施/验证结果后补，CR 保持 OPEN。
 
 2026-09-30 A06-P02-P03-P02-A02 结果：Windows Audit SCM runner 已接现有专用 Worker 组合；STOP 唤醒轮询/已知工作 drain、心跳 `quiescent` 与 DB dispose 后才正常退出，长待停状态每10秒续报 checkpoint。Windows11 合成活跃工作、心跳延迟/失败启动和标记对账定向20、后端1704（3跳过）、wheel PASS。未实装 SCM/正式目标账户，未验证真实长导出/失联或 Server2025；Parser runner 及 OS/句柄/DB 会话静止证据仍缺，不能触发生产备份/迁移，CR 继续 OPEN。
+
+2026-09-30 A06-P02-P03-P02-A03 前置差异：Parser Step 续租 heartbeat 当前为 daemon 且 `quiescent()` 仅检查 Step 锁；`close()` 超时后 Step 可释放锁，单凭 Loop 静止可能误报。修订为非 daemon 续租线程并记录当前线程，Step 静止检查拒绝活线程；服务入口仅在 Loop/线程静止、DB 已释放后结束。兼容性：不改 API/Schema/Job 语义，异常时进程保持可见而非后台线程被强退；可能延长服务停止时间，SCM 待停续报。回滚保留原 CLI/不启用新服务入口，不能回退安全检查后仍宣称静止。验证计划：活跃/延迟心跳、异常路径、服务状态与全量回归；正式 OCR 子进程/目标账户/Server2025 后验，CR OPEN。
+
+2026-09-30 A06-P02-P03-P02-A03 结果：Parser 续租 heartbeat 改为非 daemon，并由 Step `quiescent()` 额外拒绝存活线程；Windows SCM Parser runner 复用现有可信源/离线模型组合，协作 STOP 后等待 Loop、heartbeat 与 DB 静止才返回。Windows11 合成活跃解析、延迟 heartbeat、启动失败/标记及角色对账定向32、后端1708（3跳过）、wheel PASS。首次全量旧测试将 Parser 误视为未开放角色，按新接线修正预期后全量通过。未实装 SCM、未实测目标账户/真实长 OCR/子进程及 Server2025；不触发生产备份/迁移，CR 保持 OPEN。

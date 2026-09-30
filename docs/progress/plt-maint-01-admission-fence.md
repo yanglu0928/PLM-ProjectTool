@@ -178,6 +178,16 @@
 
 结果：A06-P02-P03-P02-A02 Windows11 内部 PASS。`service_windows AUDIT_WORKER <absolute-bootstrap.yaml>` 复用原 Windows Audit 组合，在运行标记与停止桥建立后显式 ready；STOP 立即请求 Loop 协作停止，已知工作返回 STOPPED、heartbeat quiescent、DB dispose 后 runner 才退出，自有标记随正常退出移除。未静止时继续等待而非伪报 STOPPED；SCM `STOP_PENDING` 每10秒续报 checkpoint。合成活跃工作、心跳迟延、启动失败、角色标记对账定向20与后端1704（3既有跳过）、wheel PASS。未安装真实服务；正式账户/公钥、长真实导出/连接失联、Server2025 与 Parser 未验，CR/Gate3/包仍 OPEN。
 
+## A06-P02-P03-P02-A03 编码前检查：Windows Parser SCM runner
+
+当前 Phase：Phase 2 Platform Core。当前 WBS：PLT-MAINT-01-A06-P02-P03-P02-A03。输入基线：ADR-013/CR-PLT-004、P03-P01 SCM 状态机、P02-A02 Audit runner、原 Windows Parser CLI 的当前账户 Vault/License/SystemActor/准入/OCR 模型组合。前置 Worker/Loop 存在且仅内部 PASS，正式 SCM/目标账户未验。
+涉及模块：Platform Parser 服务入口及 Parser Step 停止静止判断，不改业务规则、Schema、API 或第三方依赖。实体：SCM stop event、已有 Parser Loop/运行标记，无持久实体。权限：现有目标账户来源，失败关闭，不安装服务。
+验收标准：组合/标记/停止桥成功后才 ready；STOP 协作唤醒 Loop、当前解析完成或受控取消后才返回；`quiescent()` 不仅检查工作锁，还须拒绝仍存活的续租 heartbeat，DB dispose/标记移除均在静止之后；长等待续报 STOP_PENDING。合成活跃解析、心跳延迟/异常、错误启动及角色对账，后端全量与 wheel。
+风险/回滚：Paddle/OCR 下层可能启动未登记的子进程，正式 SCM/Server2025/目标账户及长 OCR/失联/OS 句柄仍待实机确认；不能凭本项许可备份/迁移。无 Migration/API/依赖；回滚不启用 Parser SCM 入口，保留原 CLI；心跳检查属安全增强。
+
+结果：A06-P02-P03-P02-A03 Windows11 内部 PASS。`service_windows PARSER_WORKER <absolute-bootstrap.yaml>` 复用现有 Parser 组合，标记和停止桥建立后才 ready；STOP 请求协作唤醒 Loop，当前 Step/heartbeat 静止后释放 DB，正常结束移除自有标记。旧 Step 的 daemon heartbeat/仅锁静止误判风险已在 CR-PLT-004 预记并改为非 daemon 线程与存活检查；若线程仍活则服务保持 STOP_PENDING，不能报正常退出。合成活跃工作/心跳延迟/启动失败、角色标记对账定向32、后端1708（3既有跳过）、wheel PASS。真实 SCM/目标账户/长 OCR 子进程/Server2025 与 OS 静止未验，CR/Gate3/包继续 OPEN。
+
+
 ## PAR-01-A05-P06-P01 编码前检查：Windows OCR 模型路径可诊断限制
 
 当前 Phase：Phase 2 Platform Core。当前 WBS：PAR-01-A05-P06-P01。输入基线：CR-PAR-005 方案 A、现有 `OfflinePaddleOcr` 模型四文件指纹与 Windows Worker 启动链。前置同字节模型中文/ASCII 路径差异与底层异常已在本机复现；正式安装器/目标账户仍缺。

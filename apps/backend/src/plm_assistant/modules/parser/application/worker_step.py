@@ -126,7 +126,7 @@ class _LeaseHeartbeats:
         self._failed = Event()
         self._cancelled = Event()
         self._thread = Thread(target=self._run, name="parser-lease-heartbeat",
-                              daemon=True)
+                              daemon=False)
         self._started = False
 
     def start(self) -> None:
@@ -166,6 +166,9 @@ class _LeaseHeartbeats:
         if self._failed.is_set():
             raise ParserWorkerError("PARSER_HEARTBEAT_UNAVAILABLE")
 
+    def is_alive(self) -> bool:
+        return self._started and self._thread.is_alive()
+
 
 class ParserWorkerStep:
     def __init__(self, *, leases: LeasePort, preparer: PreparePort,
@@ -196,6 +199,7 @@ class ParserWorkerStep:
         self._stop = Event()
         self._lock = Lock()
         self._poisoned = False
+        self._active_heartbeats: _LeaseHeartbeats | None = None
 
     def request_stop(self) -> None:
         self._stop.set()
@@ -206,6 +210,9 @@ class ParserWorkerStep:
         if not self._lock.acquire(blocking=False):
             raise ParserWorkerError("PARSER_WORKER_BUSY")
         try:
+            if (self._active_heartbeats is not None
+                    and self._active_heartbeats.is_alive()):
+                raise ParserWorkerError("PARSER_HEARTBEAT_UNAVAILABLE")
             yield
         finally:
             self._lock.release()
@@ -231,6 +238,7 @@ class ParserWorkerStep:
                                              self._worker_ref)
                 heartbeats = _LeaseHeartbeats(self._leases, command,
                     self._lease_seconds, self._heartbeat_interval)
+                self._active_heartbeats = heartbeats
                 heartbeats.start()
                 started = None
                 stage = "PREPARE"

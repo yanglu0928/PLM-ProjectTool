@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A06-P02-P03-P02-A03 新增 Windows Parser Worker SCM runner，复用目标账户 Vault/License/SystemActor/PG 准入与固定离线 OCR 模型组合；STOP 协作等待当前解析/heartbeat 静止，释放 DB 后清理自有标记。修正 Step 续租线程 daemon 与 `quiescent()` 仅锁检查导致的潜在静止误判（CR-PLT-004）；异常活线程保留进程可见。Windows11 合成活跃解析/心跳延迟/失败启动与角色对账定向32、后端1708（3既有跳过）、wheel PASS。无 Schema/API/新依赖/生产安装或升级；未安装服务入口可停用、保留旧 CLI，但安全静止检查不应单独回退。真实 SCM/目标账户/长 OCR 子进程/Server2025 与 Gate3/发行包待，不能据内部测试许可备份/迁移。
+
 - 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A06-P02-P03-P02-A02 新增 Windows Audit Worker SCM runner，复用目标账户 Vault/License/SystemActor/PG 准入装配，STOP 请求唤醒轮询并等待已知工作与 heartbeat 静止，之后释放 DB/清理自有标记；长 STOP_PENDING 周期更新 checkpoint。Windows11 合成活跃工作/心跳迟延/启动失败及标记角色对账定向20、后端1704（3既有跳过）、wheel PASS。无 Schema/API/新依赖/生产安装或升级；可停用未安装的新服务入口并保留原 CLI 回滚。真实 SCM/目标账户/长导出、Parser、Server2025 与 Gate3/发行包待，不能据内部测试许可备份/迁移。
 
 - 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A06-P02-P03-P02-A01 新增 Windows API SCM runner，延后生产重依赖导入并固定完整 platform-write、loopback 与现有运行标记；仅 Uvicorn lifespan/socket 真就绪才报告 RUNNING，STOP 后正常清理。Windows11 合成 FastAPI 真实 HTTP/停止/标记及非 loopback/错误角色/工厂故障、后端1699（3既有跳过）、wheel PASS。无 Migration/API/依赖/安装或升级动作；可禁用未装配服务入口回滚、保留原 CLI。正式 SCM/账户/License、长流、Audit/Parser、Server2025、Gate3/发行包待。

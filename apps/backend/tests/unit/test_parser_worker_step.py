@@ -132,6 +132,19 @@ class ParserWorkerStepTests(unittest.TestCase):
             worker.step()
         self.assertEqual(error.exception.code, "PARSER_WORKER_STOPPED")
 
+    def test_quiescent_rejects_a_lingering_heartbeat(self) -> None:
+        worker = self.worker()
+        heartbeat = Mock()
+        heartbeat.is_alive.return_value = True
+        worker._active_heartbeats = heartbeat
+        with self.assertRaises(ParserWorkerError) as error:
+            with worker.quiescent():
+                self.fail("live heartbeat must not grant quiescence")
+        self.assertEqual(error.exception.code, "PARSER_HEARTBEAT_UNAVAILABLE")
+        heartbeat.is_alive.return_value = False
+        with worker.quiescent():
+            pass
+
     def test_image_requires_explicit_offline_engine(self) -> None:
         image = VerifiedParserInput(choose_parser_profile(ParserInputVersion(
             uuid.uuid4(), hashlib.sha256(b"image").digest(), 5, "image/png")),

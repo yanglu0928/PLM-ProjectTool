@@ -26,7 +26,7 @@ _ROLE_ENTRY = {
         r"plm_assistant[./\\]entrypoints[./\\]"
         r"(?:serve_windows(?:\.py)?\b|service_windows(?:\.py)?\s+API\b)", re.I),
     "AUDIT_WORKER": re.compile(r"plm_assistant[./\\]entrypoints[./\\](?:worker_windows(?:\.py)?|service_windows(?:\.py)?\s+AUDIT_WORKER)\b", re.I),
-    "PARSER_WORKER": re.compile(r"plm_assistant[./\\]entrypoints[./\\]parser_worker_windows(?:\.py)?\b", re.I),
+    "PARSER_WORKER": re.compile(r"plm_assistant[./\\]entrypoints[./\\](?:parser_worker_windows(?:\.py)?|service_windows(?:\.py)?\s+PARSER_WORKER)\b", re.I),
 }
 _FIELDS = frozenset({"schema_version", "role", "pid", "registered_at_utc",
                      "package_version", "code_sha256", "owner_sid",
