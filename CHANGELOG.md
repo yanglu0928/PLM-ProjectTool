@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P01 新增 OCR 离线输入/候选缺项审计，重核 Ghostscript10.08安装包、OCRmyPDF17.12.1旧PoC wheel、四份tessdata与Paddle det/rec模型固定 Hash；Tesseract仅已安装exe/版本可核，最新候选五类均缺；合成2/2 PASS，部署状态仍 INCOMPLETE。无 Migration/API/依赖/正式安装升级变化；仅 Win11 本机证据，可撤工具/忽略 JSON 回滚。Tesseract安装包、Paddle上游revision、ASCII路径、AGPL公开源码与三平台/Gate仍待，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P08 新增 Windows 候选原生文件与官方 Python embed/93固定 wheel 的精确字节来源对账；250/250匹配、3/3 合成测试通过，识别共享 msvcp140 DLL 的 `.data/platlib` 安装映射。无 Migration/API/依赖/安装升级变化，仅当前 Win11 非发行候选；撤工具/忽略 JSON 可回滚。Ghostscript/Tesseract/OCRmyPDF 不在候选，PyMuPDF/Ghostscript 许可、DLL传递依赖和三平台离线验收仍待，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P07 将前端六份精确 LICENSE 文件并入独立 Windows11 非发行候选，17,364 载荷 Hash 全数回读、全新解包/私有运行时导入/93发行元数据 PASS，定向2/2。无 Migration/API/依赖/正式安装升级变化；仅本机 Win11，可撤新工具/忽略目录回滚，旧包保留。原生/系统组件、本产品许可、完整法律审核与 Gate/UAT 仍待，`release_eligible=false`，不得发行。
