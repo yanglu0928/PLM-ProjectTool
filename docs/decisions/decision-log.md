@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260930-493 — DOC-05-A05-P08-A02 Windows 11 实际浏览器上传
+
+- Date/WBS：2026-09-30 / Phase2 DOC-05-A05-P08-A02。前置 P08-A01 网络/PG/文件 exit0 与 P07 页面合同；冻结 `/api/v1`/DB0049 不变。涉及 Document UploadIntent、FileObject、Version、Parse Job/Audit，仅在每轮随机隔离库和临时文件根验收。
+- Decision/Reason：在既有本机浏览器夹具增加独立 `--document-upload-browser` 模式，用两份仓库内非客户合成 PDF 经真实页面新建/升版，核页面状态、浏览器实际内容请求与受权文档读取；退出时 SQL/物理文件/Job/Audit 与随机资源清理断言。P08-A01 的 HTTPX 不能替代浏览器；Worker 解析完成、100MB 峰值内存/性能和正式信任另验。
+- Risk/rollback/validation：浏览器文件选择属 UI 上传动作，先取得本次明确授权再执行；无客户文件/外网。只改验证夹具和进度，撤模式及两份合成夹具可回滚；保留失败和修复过程，不能把未执行的浏览器结论标 PASS。无生产 API/Schema/Migration/权限/依赖或升级变化。
+
 ## DEC-20260930-492 — DOC-05-A05-P08-A01 隔离网络 API/PG/真实文件验收拆分
 
 - Date/WBS：2026-09-30 / Phase2 DOC-05-A05-P08-A01。P01～P07 客户端/页面合同与既有 Windows 写组合 `validation/doc-03-a04-a04-upload-finalize-platform/verify.py` 满足前置；该既有脚本使用 TestClient，不证明真实网络浏览器长度头。

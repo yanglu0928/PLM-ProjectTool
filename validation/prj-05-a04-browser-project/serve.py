@@ -829,7 +829,8 @@ def main():
                                              or "--document-version-browser" in sys.argv[1:])
                     document_download_mode = ("--document-download-api-only" in sys.argv[1:]
                                               or "--document-download-browser" in sys.argv[1:])
-                    document_upload_mode = "--document-upload-api-only" in sys.argv[1:]
+                    document_upload_mode = ("--document-upload-api-only" in sys.argv[1:]
+                                            or "--document-upload-browser" in sys.argv[1:])
                     download_document_id = download_version_id = None
                     member_mode = ("--member-browser" in sys.argv[1:]
                                    or "--member-api-only" in sys.argv[1:])
@@ -1124,6 +1125,8 @@ def main():
                                 assert session_count >= 1
                             elif document_version_mode or document_download_mode:
                                 assert session_count == 1
+                            elif "--document-upload-browser" in sys.argv[1:]:
+                                assert session_count >= 1
                             elif document_upload_mode:
                                 assert session_count == 2
                             elif document_history_mode:
@@ -1289,6 +1292,27 @@ def main():
                                 assert db.execute("SELECT count(*) FROM plm.doc_document_versions "
                                     "WHERE project_id=%s", (foreign,)).fetchone()[0] == 0
                                 print("DOCUMENT_DOWNLOAD_DATABASE PASS: one real-file-backed AVAILABLE version, foreign 0", flush=True)
+                            if "--document-upload-browser" in sys.argv[1:]:
+                                versions = db.execute("SELECT v.document_id,v.version_no,f.storage_locator,f.sha256,f.size_bytes "
+                                    "FROM plm.doc_document_versions v JOIN plm.doc_file_objects f "
+                                    "ON f.file_object_id=v.file_object_id WHERE v.project_id=%s "
+                                    "AND v.availability_state='AVAILABLE' AND f.file_state='AVAILABLE' "
+                                    "ORDER BY v.version_no", (project,)).fetchall()
+                                assert len(versions) == 2 and [v[1] for v in versions] == [1, 2]
+                                assert versions[0][0] == versions[1][0]
+                                for version, expected_name in zip(versions, ("synthetic-upload-v1.pdf", "synthetic-upload-v2.pdf")):
+                                    _, _, locator, digest, size = version
+                                    content = (settings.data_root / locator).read_bytes()
+                                    expected_content = (Path(__file__).parent / expected_name).read_bytes()
+                                    assert content == expected_content
+                                    assert len(content) == size and hashlib.sha256(content).digest() == digest
+                                assert db.execute("SELECT count(*) FROM plm.job_jobs "
+                                    "WHERE job_type='DOCUMENT_PARSE' AND project_id=%s", (project,)).fetchone()[0] == 2
+                                assert db.execute("SELECT count(*) FROM plm.aud_events "
+                                    "WHERE action='DOCUMENT_UPLOAD_COMMIT'").fetchone()[0] == 2
+                                assert db.execute("SELECT count(*) FROM plm.doc_document_versions "
+                                    "WHERE project_id=%s", (foreign,)).fetchone()[0] == 0
+                                print("DOCUMENT_UPLOAD_BROWSER_DATABASE PASS: two disk-backed versions, two parse jobs/audits, foreign zero", flush=True)
                         print(f"PROJECT_BROWSER_DATABASE_COUNTS PASS: {expected} projects, {session_count} sessions, {active_expected} active members", flush=True)
                 finally:
                     if proxy:
