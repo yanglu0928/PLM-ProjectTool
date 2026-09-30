@@ -33,3 +33,5 @@ POC-01 使用 UB Mannheim Tesseract 5.4.0.20240606；其 [发布者 Release](htt
 将固定 tessdata_best 四语言数据放到 ASCII 目录后，5.5.3 语言探测恢复；再补安装包自带 `configs`、`tessconfigs` 和 `pdf.ttf`，OCRmyPDF17.12.1 `--deskew` + Ghostscript10.08.0 的 PDF/A-2b 执行 exit 0。然而原 PoC 五个术语中标题最后一个“具”识别成“只”，仅 4/5；用**同一** ASCII tessdata/配置、脚本、字体、合成 PDF 及其他依赖切回本机 5.4，5/5 PASS。此为当前固定样本的可复现版本质量差异，不代表广义中文准确率结论。5.5.3 不能凭“流程跑通”继承 5.4 的质量验收。
 
 调整验证计划：先在不更换模型、不放宽 5/5 门槛的前提下比较 5.5.3 的 PSM/OEM 等小范围配置；若不能稳定达到旧版样本与后续独立样本门槛，不选 5.5.3 发行。选回 5.4 时须单独权衡旧版安全修复缺口及 Authenticode 例外；官方 5.5.3 的后续安全修复不能忽略。未完成安全和质量双门禁时维持 `release_eligible=false`，不默认选容易通过的窄方案。
+
+参数对照已完成：5.5.3 的 PSM3/4 在旧合成页 5/5，PSM6/11 为 4/5，全部 PDF/A-2b/deskew exit0；5.4/PSM6 同条件 5/5。旧默认仍保留；不能基于一个页面选生产 PSM，需要独立多版面/低质量样本与人工标签回归。中文路径错误进一步定位为 tessdata 绝对路径，ASCII 模型仅复制 `.traineddata` 又缺 `configs/hocr`；正式离线装配必须包含运行配置并限制目录写权限。

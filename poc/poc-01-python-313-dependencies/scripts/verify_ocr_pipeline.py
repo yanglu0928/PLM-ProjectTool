@@ -81,6 +81,7 @@ def main() -> int:
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--output-type", choices=("pdf", "pdfa-2"), default="pdf")
     parser.add_argument("--deskew", action="store_true")
+    parser.add_argument("--tesseract-pagesegmode", type=int, choices=(3, 4, 6, 11), default=6)
     args = parser.parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -121,7 +122,7 @@ def main() -> int:
         "--oversample",
         "400",
         "--tesseract-pagesegmode",
-        "6",
+        str(args.tesseract_pagesegmode),
     ]
     if args.deskew:
         command.append("--deskew")
@@ -155,6 +156,7 @@ def main() -> int:
         },
         "output_type": args.output_type,
         "deskew": args.deskew,
+        "tesseract_pagesegmode": args.tesseract_pagesegmode,
         "pdfa_validated": (
             "Output file is a PDF/A-2b (as expected)" in completed.stderr
             if args.output_type == "pdfa-2"
