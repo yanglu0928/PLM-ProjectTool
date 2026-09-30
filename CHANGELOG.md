@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P04-P02-P02 记录正式 Windows 模型 ACL 前置阻塞：本会话非提升、`C:\PLMTool` 未建、独立 Parser 服务账户未确认；未执行 ACL/安装变更，无 Migration/API/依赖或兼容性声明变化。后续由真实管理员及服务账户验证只读/拒写、Hash、切换/回退；当前 `release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P04-P02-P01 新增固定上游 revision/对象与运行时指纹的 Paddle det/rec 非发行离线旁包构建、归档回读工具；Windows11 新 ASCII 目录解包 10/10 Hash 与嵌入式 Python/Paddle 合成 PNG/混合 PDF OCR PASS，定向4/4。无 Migration/API/依赖/生产配置或安装变化，旧包保留，可撤独立工具及本机忽略旁包回滚。正式 ACL/服务账户、Tesseract 来源许可/签名、真实质量及三平台/Gate 待，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P04-P01 PoC OCR 验证器新增可选密集/表格/轻微倾斜版面（默认标准未变），同版面渲染像素一致；Windows11 5.5.3/PSM3 四版面合成术语20/20、PDF/A-2b/deskew exit0，推荐进入后续候选但未改生产配置。5.4/PSM6标准回归5/5；精确 MSYS2/JAR 来源因无当次构建清单保持阻塞。无产品 API/Schema/依赖变化，可撤可选版面回滚；真实质量、签名/许可、正式安装及Gate待，`release_eligible=false`。
