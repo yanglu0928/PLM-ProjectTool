@@ -41,6 +41,28 @@ export interface DocumentVersionPage {
   readonly has_more: boolean;
 }
 
+/** A fixed-version parse attempt is status metadata, not parsed content or Evidence. */
+export interface DocumentParseRecordView {
+  readonly parse_record_id: string;
+  readonly parser_profile: string;
+  readonly parser_version: string;
+  readonly parse_state: "PENDING" | "RUNNING" | "SUCCEEDED" | "FAILED" | "CANCELLED";
+  readonly attempt_no: number;
+  readonly job_ref: string;
+  readonly result_ref: string | null;
+  readonly error_code: string | null;
+  readonly retryable: boolean | null;
+  readonly created_at: string;
+  readonly started_at: string | null;
+  readonly completed_at: string | null;
+}
+
+export interface DocumentParseRecordPage {
+  readonly items: readonly DocumentParseRecordView[];
+  readonly next_cursor: string | null;
+  readonly has_more: boolean;
+}
+
 const messages = {
   DOCUMENT_INVALID_SCOPE: "文档范围或项目标识无效。",
   DOCUMENT_INVALID_ID: "文档标识无效。",
@@ -60,8 +82,10 @@ export class DocumentReadError extends Error {
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const cursorToken = /^[A-Za-z0-9_-]{1,512}\.[A-Za-z0-9_-]{43}$/;
+const parseCursorToken = /^[A-Za-z0-9_-]{1,1024}\.[A-Za-z0-9_-]{43}$/;
 const strongEtag = /^"v(0|[1-9][0-9]*)"$/;
 const sha256 = /^[0-9a-f]{64}$/;
+const errorCode = /^[A-Z][A-Z0-9_]{0,63}$/;
 const categories = new Set(["CONTRACTUAL", "PROJECT_RECORD", "STANDARD_CAPABILITY", "REFERENCE_MATERIAL",
   "TEMPLATE", "GENERATED_ARTIFACT", "OTHER"]);
 function record(value: unknown): value is Record<string, unknown> {
@@ -127,6 +151,43 @@ export function parseDocumentVersion(value: unknown): DocumentVersionView {
     size_bytes: value.size_bytes, detected_mime: value.detected_mime,
     availability_state: "AVAILABLE", supersedes_version_ref: value.supersedes_version_ref,
     created_at: value.created_at, integrity_checked_at: value.integrity_checked_at });
+}
+
+function parseDocumentParseRecord(value: unknown): DocumentParseRecordView {
+  if (!record(value) || !identifier(value.parse_record_id)
+    || !label(value.parser_profile, 128) || !label(value.parser_version, 64)
+    || typeof value.parse_state !== "string"
+    || !["PENDING", "RUNNING", "SUCCEEDED", "FAILED", "CANCELLED"].includes(value.parse_state)
+    || typeof value.attempt_no !== "number" || !Number.isSafeInteger(value.attempt_no) || value.attempt_no <= 0
+    || !identifier(value.job_ref)
+    || (value.result_ref !== null && !identifier(value.result_ref))
+    || (value.error_code !== null && (typeof value.error_code !== "string" || !errorCode.test(value.error_code)))
+    || (value.retryable !== null && typeof value.retryable !== "boolean")
+    || !instant(value.created_at)
+    || (value.started_at !== null && !instant(value.started_at))
+    || (value.completed_at !== null && !instant(value.completed_at))) {
+    throw new DocumentReadError("DOCUMENT_CLIENT_UNAVAILABLE");
+  }
+  const state = value.parse_state;
+  if (state === "PENDING" && (value.started_at !== null || value.completed_at !== null
+      || value.result_ref !== null || value.error_code !== null || value.retryable !== null)
+    || state === "RUNNING" && (value.started_at === null || value.completed_at !== null
+      || value.result_ref !== null || value.error_code !== null || value.retryable !== null)
+    || state === "SUCCEEDED" && (value.started_at === null || value.completed_at === null
+      || value.result_ref === null || value.error_code !== null || value.retryable !== false)
+    || state === "FAILED" && (value.started_at === null || value.completed_at === null
+      || value.result_ref !== null || value.error_code === null || typeof value.retryable !== "boolean")
+    || state === "CANCELLED" && (value.completed_at === null || value.result_ref !== null
+      || value.error_code !== null || value.retryable !== false)
+    || value.started_at !== null && value.completed_at !== null
+      && Date.parse(value.completed_at as string) < Date.parse(value.started_at as string)) {
+    throw new DocumentReadError("DOCUMENT_CLIENT_UNAVAILABLE");
+  }
+  return Object.freeze({ parse_record_id: value.parse_record_id, parser_profile: value.parser_profile,
+    parser_version: value.parser_version, parse_state: state as DocumentParseRecordView["parse_state"],
+    attempt_no: value.attempt_no, job_ref: value.job_ref, result_ref: value.result_ref,
+    error_code: value.error_code, retryable: value.retryable, created_at: value.created_at,
+    started_at: value.started_at, completed_at: value.completed_at });
 }
 
 export class DocumentReadClient {
@@ -237,6 +298,32 @@ export class DocumentReadClient {
       throw new DocumentReadError("DOCUMENT_CLIENT_UNAVAILABLE");
     }
     return version;
+  }
+
+  async listParses(scope: DocumentScope, documentId: string, versionId: string,
+                   cursor: string | null = null): Promise<DocumentParseRecordPage> {
+    const path = base(scope);
+    if (!identifier(documentId)) throw new DocumentReadError("DOCUMENT_INVALID_ID");
+    if (!identifier(versionId)) throw new DocumentReadError("DOCUMENT_INVALID_VERSION_ID");
+    if (cursor !== null && (typeof cursor !== "string" || !parseCursorToken.test(cursor))) {
+      throw new DocumentReadError("DOCUMENT_INVALID_CURSOR");
+    }
+    const query = new URLSearchParams({ page_size: "50" });
+    if (cursor !== null) query.set("cursor", cursor);
+    const { data } = await this.#get(`${path}/${documentId}/versions/${versionId}/parses?${query}`);
+    if (!record(data) || !Array.isArray(data.items) || data.items.length > 50
+      || typeof data.has_more !== "boolean"
+      || data.has_more && (data.items.length === 0 || typeof data.next_cursor !== "string"
+        || !parseCursorToken.test(data.next_cursor) || data.next_cursor === cursor)
+      || !data.has_more && data.next_cursor !== null) {
+      throw new DocumentReadError("DOCUMENT_CLIENT_UNAVAILABLE");
+    }
+    const items = data.items.map(parseDocumentParseRecord);
+    if (new Set(items.map((item) => item.parse_record_id)).size !== items.length) {
+      throw new DocumentReadError("DOCUMENT_CLIENT_UNAVAILABLE");
+    }
+    return Object.freeze({ items: Object.freeze(items),
+      next_cursor: data.has_more ? data.next_cursor as string : null, has_more: data.has_more });
   }
 
   /** Fixed same-origin attachment URL; server rechecks Session, scope, License and file integrity. */

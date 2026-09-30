@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260930-494 — DOC-05-A06-P01 固定版本 ParseRecord 只读客户端
+
+- Date/WBS：2026-09-30 / Phase2 DOC-05-A06-P01。P08-A02 浏览器文件操作待确认，但后端 `DOC-04-A05` 已在 Windows 显式组合实现冻结 `DOCUMENT_PARSE_LIST`；现有前端 DocumentReadClient 具固定 Scope/Document/Version 路径与安全 GET。此独立只读项不依赖浏览器上传或 Phase3 Worker。
+- Decision/Reason：在 DocumentReadClient 中增加 PROJECT/GLOBAL 固定版本 ParseRecord 分页读取与严格安全投影，仅显示状态/尝试/Job 引用和必要时间、错误码，不返回物理路径或原始解析结果。验证 Session 受权仍由后端承担，客户端只做输入及响应防御；入队/`PENDING` 不能写成解析成功。
+- Impact/rollback/validation：仅前端 Document API/测试与进度，不改冻结 API、Schema/Migration、权限、技术栈或依赖；撤新增方法可回滚。测试非法 Scope/ID/cursor 不发网、双 Scope 固定路径、最多 50 条/游标、状态时间形状/重复/脱敏、401/403/404/非预期错误及超时，前端全量/typecheck/build；页面与真实浏览器/PG 另验。正式 Parse Worker、精确 Evidence Locator、Gate3/可用包不因本项通过。
+- Executed：新增固定版本 ParseRecord 安全客户端和独立测试。首轮 1006 项测试通过但新测试夹具 TypeScript 返回类型报错，标注后 typecheck/build/全量 1006 项均 exit0；未运行真实浏览器/PG 或 Worker，不升级 Gate。
+
 ## DEC-20260930-493 — DOC-05-A05-P08-A02 Windows 11 实际浏览器上传
 
 - Date/WBS：2026-09-30 / Phase2 DOC-05-A05-P08-A02。前置 P08-A01 网络/PG/文件 exit0 与 P07 页面合同；冻结 `/api/v1`/DB0049 不变。涉及 Document UploadIntent、FileObject、Version、Parse Job/Audit，仅在每轮随机隔离库和临时文件根验收。
