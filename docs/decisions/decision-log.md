@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260930-508 — PAR-01-A04-P02-P03-P01 旧 JobAttempt 事实证明
+
+- Date/WBS：2026-09-30 / Phase 2 依赖前置 PAR-01-A04-P02-P03-P01。输入为 Gate2 冻结的 DOC-04 ParseRecord 连续尝试序号、现有 Job lease/fencing 状态机、P02-P02 首次原子成功发布；前置均满足。涉及 Jobs Application DTO 与已有 Lease Repository 的只读证明，不写 Document 表；无 API、权限、ORM/Migration、依赖或外发变化。
+- 编码前检查：当前 Phase2；目标仅证明当前 DOCUMENT_PARSE 活租约之前每代 JobAttempt 均已终结、顺序连续、Lease 与 Attempt 身份/时间一致。验收为真实 PostgreSQL18 第一次过期→第二次领取后证明；当前租约错代/过期、历史行缺失/篡改必须失败关闭，单元及后端全量、wheel 均通过。
+- Decision/Reason：Jobs Owner 在当前 Job 行锁和 lease 检查下返回最小化不可变 `ClosedJobAttempt` 元组，按 attempt_no 严格 1..N-1 排列；Document 后续凭该证明终结旧 ParseRecord 或补记未启动尝试。不能由 Document 直接读 Jobs 私有表，也不能从最新 attempt_no 猜测历史。此子任务只建立证明，不把重试启动标 PASS。
+- Impact/Rollback：不修改冻结 schema/公开 Contract；撤销未装配内部证明即可回滚。风险为旧 Lease/Attempt 数据异常导致新解析被拒绝，优先保留历史等待修复而不伪造。P03 整体、Worker 和 Gate3 仍 INCOMPLETE。
+- Executed：Jobs 自有 `ClosedJobAttempt` 不可变证明及当前行锁下的逐代连续性、旧 Lease/Attempt 身份和时间检查已实现。定向2、Python3.13 后端全量1611（3既有跳过）、Windows11 隔离 PostgreSQL18 第1→2→3次过期接管/旧代拒绝/篡改拒绝、wheel PASS；随机库清理且 PoC PG 恢复停止。仅证明历史，尚不写旧 ParseRecord 或启动重试。
+
 ## DEC-20260930-507 — PAR-01-A04-P02-P02 当前租约 ParseResult 原子成功发布
 
 - Date/WBS：2026-09-30 / Phase 2 依赖前置 PAR-01-A04-P02-P02；A04-P01 受控结果字节、P02-P01 首次 RUNNING ParseRecord 均已通过。输入冻结 DOC-04 Schema、Job Lease 和 `DocumentParseJobResults` 的时间顺序约束。

@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-09-30：0.1.0.dev0/PAR-01-A04-P02-P03-P01 新增 Jobs 自有的当前租约前驱尝试证明，逐代核对错误码、Lease 状态/时间和 fencing，拒绝缺失/篡改/旧代。定向2、Python3.13后端全量1611（3既有跳过）、Windows11隔离PG18三代过期接管及异常拒绝、wheel PASS。兼容冻结 `/api/v1`/DB0049，无 ORM/Migration、公开 API、权限、依赖或升级操作；Document 解析历史对账、正式 Worker、Gate3及可用包仍待。
+
 - 2026-09-30：0.1.0.dev0/PAR-01-A04-P02-P02 增加首次解析 Attempt 当前租约的 ParseResult 原子发布，受控文件实读/Hash/大小核验后同事务写 ResultRef、升 ParseRecord、追加真实 Audit、完成 Job；失败全部回滚数据库，文件孤儿保持不可见。定向3、Python3.13后端全量1609（3既有跳过）、Windows11隔离PG18真实触发器及晚期失败回滚、wheel PASS。兼容冻结 `/api/v1`/DB0049，无新 ORM/Migration、公开 API、权限、依赖或升级操作；正式 Worker 尚未装配，重试/崩溃恢复、Evidence、Gate3及可用包仍待。
 
 本文件记录 PLM 项目实施辅助工具的可交付变更。正式版本发布时，应将 `Unreleased` 内容归入对应版本，并补充版本号、发布日期、兼容性、安装或升级要求、Migration、已知问题和验证结果。

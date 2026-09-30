@@ -8,7 +8,9 @@ from datetime import timedelta
 from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.orm import Session
 
-from plm_assistant.modules.jobs.application.lease import ClaimedJob, JobLeaseError
+from plm_assistant.modules.jobs.application.lease import (
+    ClaimedJob, ClosedJobAttempt, JobLeaseError,
+)
 from plm_assistant.modules.jobs.application.lease_checkpoint import validate_checkpoint
 from plm_assistant.modules.jobs.application.failure_proof import FailedJobProof
 from plm_assistant.modules.jobs.application.retry_proof import RetryTransitionProof
@@ -162,6 +164,63 @@ class SqlAlchemyJobLeaseRepository:
                 or job.attempt_count != attempt.attempt_no):
             raise JobLeaseError("INCONSISTENT_LEASE")
         return self._claim(job)
+
+    def closed_attempts_for_current(self, transaction: object, *, job_id: uuid.UUID,
+                                    fencing_token: int,
+                                    worker_ref: str) -> tuple[ClosedJobAttempt, ...]:
+        """Prove every predecessor while holding the current Job row lock."""
+        validate_checkpoint(job_id=job_id, fencing_token=fencing_token,
+                            worker_ref=worker_ref)
+        session = self._session(transaction)
+        job, lease, current = self._current(session, job_id, fencing_token, worker_ref)
+        now = self._now(session)
+        if (job.owner_module != "document" or job.job_type != "DOCUMENT_PARSE"
+                or job.attempt_count != current.attempt_no
+                or not 1 <= current.attempt_no <= job.max_attempts
+                or job.lease_expires_at is None or job.lease_expires_at <= now
+                or lease.lease_expires_at != job.lease_expires_at
+                or lease.lease_expires_at <= now):
+            raise JobLeaseError("STALE_LEASE")
+        attempts = session.scalars(select(JobAttemptRow).where(
+            JobAttemptRow.job_id == job_id,
+            JobAttemptRow.attempt_no < current.attempt_no,
+        ).order_by(JobAttemptRow.attempt_no)).all()
+        leases = session.scalars(select(JobLeaseRow).where(
+            JobLeaseRow.job_id == job_id,
+            JobLeaseRow.fencing_token < fencing_token,
+        )).all()
+        if (len(attempts) != current.attempt_no - 1
+                or len(leases) != len(attempts)
+                or [row.attempt_no for row in attempts]
+                   != list(range(1, current.attempt_no))):
+            raise JobLeaseError("INCONSISTENT_ATTEMPT")
+        by_token = {row.fencing_token: row for row in leases}
+        if len(by_token) != len(leases):
+            raise JobLeaseError("INCONSISTENT_ATTEMPT")
+        result: list[ClosedJobAttempt] = []
+        previous_token = 0
+        for row in attempts:
+            old_lease = by_token.pop(row.fencing_token, None)
+            if (old_lease is None or row.fencing_token <= previous_token
+                    or row.worker_ref != old_lease.worker_ref
+                    or row.completed_at is None or row.error_code is None
+                    or row.started_at > row.completed_at
+                    or row.completed_at > current.started_at
+                    or old_lease.acquired_at > row.started_at
+                    or old_lease.state not in {"EXPIRED", "RELEASED"}
+                    or (old_lease.state == "EXPIRED"
+                        and (row.error_code != "LEASE_EXPIRED"
+                             or row.completed_at < old_lease.lease_expires_at))
+                    or (old_lease.state == "RELEASED"
+                        and row.completed_at >= old_lease.lease_expires_at)):
+                raise JobLeaseError("INCONSISTENT_ATTEMPT")
+            result.append(ClosedJobAttempt(row.attempt_no, row.fencing_token,
+                                           old_lease.state, row.completed_at,
+                                           row.error_code))
+            previous_token = row.fencing_token
+        if by_token:
+            raise JobLeaseError("INCONSISTENT_ATTEMPT")
+        return tuple(result)
 
     def claim_next(self, transaction: object, *, worker_ref: str,
                    lease_seconds: int) -> ClaimedJob | None:

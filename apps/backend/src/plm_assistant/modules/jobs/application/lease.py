@@ -5,6 +5,7 @@ from __future__ import annotations
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
+from datetime import datetime
 from re import fullmatch
 from typing import Protocol
 
@@ -25,6 +26,28 @@ class ClaimedJob:
     trace_id: str
     fencing_token: int
     attempt_no: int
+
+
+@dataclass(frozen=True, slots=True)
+class ClosedJobAttempt:
+    """Jobs-owned proof of one predecessor to a live leased attempt."""
+
+    attempt_no: int
+    fencing_token: int
+    lease_state: str
+    completed_at: datetime
+    error_code: str
+
+    def __post_init__(self) -> None:
+        if (type(self.attempt_no) is not int or self.attempt_no < 1
+                or type(self.fencing_token) is not int or self.fencing_token < 1
+                or self.lease_state not in {"EXPIRED", "RELEASED"}
+                or type(self.completed_at) is not datetime
+                or self.completed_at.tzinfo is None
+                or self.completed_at.utcoffset() is None
+                or type(self.error_code) is not str
+                or not fullmatch(r"[A-Z][A-Z0-9_]{0,63}", self.error_code)):
+            raise JobLeaseError("INCONSISTENT_ATTEMPT")
 
 
 class JobLeaseRepositoryPort(Protocol):
