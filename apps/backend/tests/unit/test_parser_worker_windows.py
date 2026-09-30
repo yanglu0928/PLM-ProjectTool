@@ -28,9 +28,11 @@ class ParserWorkerWindowsTests(unittest.TestCase):
              patch.object(parser_worker_windows.sys, "argv",
                    ["parser-worker", __file__, "--once"]), \
              patch.object(parser_worker_windows, "load_bootstrap_settings",
-                   return_value=object()), \
+                   return_value=SimpleNamespace(data_root=Path(__file__).parent)), \
              patch.object(parser_worker_windows, "create_windows_parser_worker",
                    return_value=(database, loop)), \
+             patch.object(parser_worker_windows, "register_runtime_process",
+                   return_value=nullcontext()), \
              patch.object(parser_worker_windows, "run_parser_worker_process",
                    return_value=SimpleNamespace(reason="LIMIT")) as run:
             self.assertEqual(parser_worker_windows.main(), 0)

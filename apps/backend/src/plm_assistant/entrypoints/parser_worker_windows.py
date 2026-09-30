@@ -15,6 +15,7 @@ from plm_assistant.modules.platform.infrastructure.bootstrap_config import (
 )
 from plm_assistant.modules.platform.infrastructure.windows_database_credential import read_database_url
 from plm_assistant.modules.platform.infrastructure.worker_database import create_worker_database_runtime
+from plm_assistant.modules.platform.infrastructure.runtime_process_identity import register_runtime_process
 from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
 from plm_assistant.modules.project.infrastructure.authorization_repository import SqlAlchemyProjectAuthorizationRepository
 
@@ -67,11 +68,12 @@ def main():
     try:
         settings = load_bootstrap_settings(Path(sys.argv[1]).resolve(strict=True))
         database, loop = create_windows_parser_worker(settings)
-        result = run_parser_worker_process(loop,
-            max_cycles=1 if len(sys.argv) == 3 else None)
-        with loop.quiescent():
-            database.dispose()
-        database = None
+        with register_runtime_process("PARSER_WORKER", settings.data_root):
+            result = run_parser_worker_process(loop,
+                max_cycles=1 if len(sys.argv) == 3 else None)
+            with loop.quiescent():
+                database.dispose()
+            database = None
         if result.reason == "STOPPED":
             print("Parser worker stopped after draining known work.")
         elif len(sys.argv) == 3 and result.reason == "LIMIT":

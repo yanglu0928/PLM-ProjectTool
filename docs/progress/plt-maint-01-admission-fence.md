@@ -126,6 +126,15 @@
 
 结果：A06-P02-P01 Windows11 只读诊断内部 PASS。CLI 从指定部署 SID、绝对本地运行目录及已知产品入口三路识别候选，仅输出 PID/理由与不可读计数，固定 `DIAGNOSTIC_ONLY` 和 `backup_or_migration_authorized=false`；命令行/路径不外发。首次逐进程 CIM Owner 查询超过30秒按预期失败关闭，改用一次 CIM 元数据快照+原生只读 Token SID 后，本机约380进程在0.7秒完成，当前开发账户的大量进程正确列为候选、不可读206；这不是目标专用部署账户验收。合成分类/脱敏/非Windows单元4，后端全量1678（3既有跳过）、wheel PASS。服务定义、目标账户/Server2025、版本/子进程/句柄/DB会话证明仍缺，不能据本项允许备份/迁移或关闭 CR/Gate3。
 
+## A06-P02-P02-P01 编码前检查：进程自报版本身份
+
+当前 Phase：Phase 2 Platform Core。当前 WBS：PLT-MAINT-01-A06-P02-P02-P01。输入基线：CR-PLT-004/ADR-012、A06-P02-P01 OS 候选枚举、Windows 三个显式常驻入口、当前 backend `0.1.0.dev0` 版本与 wheel。前置候选枚举仅诊断内部 PASS；正式 SCM/部署账户不存在，本项不能出具停写证明。
+涉及模块：Platform 私有进程身份标记与三个 Windows 入口生命周期，不改业务 Owner、数据库或公开 API。涉及实体：运行时短期 JSON 标记（角色、PID、登记时间、包版本、代码树 SHA-256、OS SID、可执行路径；无 Secret）。涉及 API：无。涉及权限：继承已受控 data_root 目录 ACL；本项不声称目标账户 ACL 已验。
+验收标准：三个入口在配置验证后、运行窗口开始前登记（Worker 在组合成功后；API 的 Uvicorn 应用工厂在窗口内执行），正常静止退出删除；异常/崩溃留下可识别陈旧标记；不可写/目录重解析点/元数据不符失败关闭。合成双进程和真实 Windows 11 PID/SID/版本/摘要交叉验证，单元、全回归、wheel。
+风险/回滚：自报标记可陈旧/伪造，代码树摘要不能证明服务身份或文件句柄收敛；正式安装目录 ACL、SCM 服务名与二进制签名/版本握手后续独立验收。无 Migration/API/依赖；回滚停用标记组合并保留已有诊断文件供人工核查，不盲删用户数据。
+
+结果：A06-P02-P02-P01 Windows11 内部 PASS。API、Audit、Parser 三入口在运行窗口登记角色/PID/UTC/包版本/代码树 SHA-256/当前 SID/可执行路径/随机 nonce；正常退出仅删除本次内容和 inode 均匹配的标记，异常退出保留对账。不可用/重解析目录、版本不符和非法角色拒绝。原生双子进程验收实际 Python PID（虚拟环境启动器 PID 可能不同）、Token SID、版本、摘要与可执行路径，正常退出删除、模拟崩溃残留；后端全量1684（3既有跳过）、wheel PASS。测试首轮发现代码摘要根目录误指 modules，改为完整 plm_assistant 包后复验通过。此项仅为自报诊断；同账户可伪造/篡改、运行中代码可变，尚无正式 SCM/目标账户 ACL/Server2025/文件句柄/DB 会话证明，不能允许备份或迁移，CR-PLT-004/Gate3/发行继续 OPEN。
+
 ## PAR-01-A05-P06-P01 编码前检查：Windows OCR 模型路径可诊断限制
 
 当前 Phase：Phase 2 Platform Core。当前 WBS：PAR-01-A05-P06-P01。输入基线：CR-PAR-005 方案 A、现有 `OfflinePaddleOcr` 模型四文件指纹与 Windows Worker 启动链。前置同字节模型中文/ASCII 路径差异与底层异常已在本机复现；正式安装器/目标账户仍缺。

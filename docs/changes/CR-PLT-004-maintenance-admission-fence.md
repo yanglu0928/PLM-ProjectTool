@@ -61,3 +61,5 @@ ADR-007/008 和冻结安全边界要求升级顺序为人工备份→维护模�
 2026-09-30 A06-P01：生产入口静态矩阵记于 `docs/progress/plt-maint-01-entrypoint-inventory.md`。正式 Windows API 三模式与双 Worker 已装共享门禁；首次 Admin 初始化与 Alembic 仍是独立特权写入口，OS Vault/Secret 变更不受 PG 锁管。缺正式服务定义、版本/PID 进程清单、受控 Migration 执行器与旧版进程拒绝证据，不能把 A05 双 Worker PASS 当作停写证明，CR OPEN。
 
 2026-09-30 A06-P02-P01：Windows 只读进程候选诊断按部署 SID、运行根与产品入口分类并脱敏输出，约380进程本机采样、后端1678（3跳过）、wheel PASS。曾因逐进程 CIM Owner 超时失败关闭，改用一次 CIM+只读 Token SID。该诊断恒不授予备份/迁移，缺目标账户/SCM/版本/句柄/DB会话证明，CR OPEN。
+
+2026-09-30 A06-P02-P02-P01：Windows 三常驻入口增加自报进程身份标记，API 配置验证后、双 Worker 组合成功后登记；异常保留、正常仅清理自有标记。Windows11 原生双子进程交叉核对实际 Python PID/Token SID/包版本/完整代码摘要，后端1684（3跳过）、wheel PASS。首轮代码摘要根目录错误已修正并复验。标记可陈旧或被同账户伪造，仅作诊断，不能推断 OS 静止或允许备份/迁移；下一项只读交叉核验，SCM/目标账户 ACL/Server2025/句柄/DB 会话仍待，CR OPEN。

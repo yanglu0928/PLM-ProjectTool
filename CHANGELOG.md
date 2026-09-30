@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A06-P02-P02-P01 Windows API/Audit/Parser 新增短期进程身份标记（角色/PID/UTC/包版本/代码 SHA-256/SID/可执行路径/nonce），配置或登记失败拒绝运行，正常静止退出仅清理自有标记、异常留下对账。Windows11 原生双进程 PID/SID/版本/摘要及正常/崩溃行为、后端1684（3既有跳过）、wheel PASS。无 Schema/API/新依赖/生产迁移；升级时须确保受控 data_root 可写且非重解析目录，回滚可停用新入口并保留陈旧标记人工核查。已知同账户伪造、代码运行时变化与正式 SCM/目标 ACL/Server2025/句柄/DB 会话未验，标记不授权备份/迁移，Gate3/发行包待。
+
 - 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A06-P02-P01 新增 Windows 只读进程候选诊断，按部署账户 SID、运行目录与产品入口分类，输出仅 PID/原因及不可读计数；永不输出备份许可。Windows11 本机约380进程采样、单元4、后端1678（3既有跳过）、wheel PASS。无 Schema/API/依赖/生产迁移；正式 SCM 服务、目标账户/Server2025、版本/句柄/DB会话证据和 Gate3/发行包仍待。
 
 - 2026-09-30：0.1.0.dev0/PAR-01-A05-P06-P01 Windows OCR Adapter 对非 ASCII 模型路径启动前固定拒绝，避免底层 Paddle 空 JSON 错误；同字节 ASCII 模型仍通过真实 PNG/混合 PDF OCR。后端1674（3既有跳过）、wheel PASS。无 Schema/API/依赖/生产迁移；这是明确限制而非中文路径全兼容，正式受控安装目录/ACL、Server2025 和 CR-PAR-005/Gate3/发行仍待。

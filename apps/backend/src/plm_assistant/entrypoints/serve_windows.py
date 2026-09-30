@@ -13,6 +13,7 @@ from plm_assistant.entrypoints.production_login import (
     create_production_platform_write_app,
 )
 from plm_assistant.modules.platform.infrastructure.bootstrap_config import load_bootstrap_settings
+from plm_assistant.modules.platform.infrastructure.runtime_process_identity import register_runtime_process
 
 
 def main() -> int:
@@ -30,13 +31,14 @@ def main() -> int:
             else create_production_platform_app if len(sys.argv) == 3
             else create_production_login_app
         )
-        uvicorn.run(
-            lambda: app_factory(settings),
-            factory=True, host=settings.bind_host, port=settings.bind_port,
-            log_level=settings.log_level.value.lower(),
-            workers=1,
-            proxy_headers=False, forwarded_allow_ips="",
-        )
+        with register_runtime_process("API", settings.data_root):
+            uvicorn.run(
+                lambda: app_factory(settings),
+                factory=True, host=settings.bind_host, port=settings.bind_port,
+                log_level=settings.log_level.value.lower(),
+                workers=1,
+                proxy_headers=False, forwarded_allow_ips="",
+            )
         return 0
     except Exception:
         print("Production server unavailable; configuration or credential rejected.", file=sys.stderr)

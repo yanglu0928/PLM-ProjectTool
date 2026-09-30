@@ -9,6 +9,7 @@ from plm_assistant.entrypoints.windows_system_actor import create_windows_system
 from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings,load_bootstrap_settings
 from plm_assistant.modules.platform.infrastructure.windows_database_credential import read_database_url
 from plm_assistant.modules.platform.infrastructure.worker_database import create_worker_database_runtime
+from plm_assistant.modules.platform.infrastructure.runtime_process_identity import register_runtime_process
 from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
 from plm_assistant.modules.project.infrastructure.authorization_repository import SqlAlchemyProjectAuthorizationRepository
 from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage
@@ -42,9 +43,10 @@ def main():
     try:
         settings=load_bootstrap_settings(Path(sys.argv[1]).resolve(strict=True))
         database,loop=create_windows_audit_worker(settings)
-        result=run_audit_worker_process(loop,max_steps=1 if len(sys.argv)==3 else None)
-        with loop.quiescent():database.dispose()
-        database=None
+        with register_runtime_process('AUDIT_WORKER',settings.data_root):
+            result=run_audit_worker_process(loop,max_steps=1 if len(sys.argv)==3 else None)
+            with loop.quiescent():database.dispose()
+            database=None
         if result.rejected:print('Audit candidate sources rejected: '+str(result.rejected)+'; no terminal state asserted.')
         if result.reason=='STOPPED':print('Audit worker stopped after draining known work.')
         elif len(sys.argv)==3 and result.reason=='LIMIT':print('One bounded audit worker step finished; service readiness not asserted.')
