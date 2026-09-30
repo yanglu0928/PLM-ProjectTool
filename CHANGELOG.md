@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A06-P02-P03-P03-A02-P01 新增 Windows 固定单角色 SCM 手动安装器，原生 CreateServiceW 使用显式非内置账户及交互密码，不经 shell/argv/env；不自动启动、不覆盖或删除现有服务。模拟 SCM 成功/拒权/已存在/非法参数及原生绑定定向4、后端1715（3既有跳过）、wheel PASS。本机服务清单仍为空、未调用真实 SCM 写入。无 Schema/API/依赖/生产升级；未使用时可撤入口，已创建服务必须人工核对精确归属并受控回退。正式管理员/目标账户 Vault、ACL、License、真实启停/静止、Server2025 和 Gate3/发行包待；Python 密码原字符串内存零化不作保证。
+
 - 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A06-P02-P03-P03-A01 新增 Windows SCM 只读命令计划入口，按固定 API/Audit/Parser 角色、绝对存在的解释器/非 Secret 配置和 Windows 参数引用产生三份 binary path；配置要求 loopback/data_root/Parser 模型坐标齐备。输出明确 `PLAN_ONLY`、未安装、未验账户/运行时且不授权备份/迁移。Windows11 定向3、后端1711（3既有跳过）、wheel PASS。无 Schema/API/依赖/生产安装/升级；可移除该独立入口回滚。所选解释器包内容、模型真实指纹、SCM/目标账户/Server2025 及 Gate3/发行包仍未验证。
 
 - 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A06-P02-P03-P02-A03 新增 Windows Parser Worker SCM runner，复用目标账户 Vault/License/SystemActor/PG 准入与固定离线 OCR 模型组合；STOP 协作等待当前解析/heartbeat 静止，释放 DB 后清理自有标记。修正 Step 续租线程 daemon 与 `quiescent()` 仅锁检查导致的潜在静止误判（CR-PLT-004）；异常活线程保留进程可见。Windows11 合成活跃解析/心跳延迟/失败启动与角色对账定向32、后端1708（3既有跳过）、wheel PASS。无 Schema/API/新依赖/生产安装或升级；未安装服务入口可停用、保留旧 CLI，但安全静止检查不应单独回退。真实 SCM/目标账户/长 OCR 子进程/Server2025 与 Gate3/发行包待，不能据内部测试许可备份/迁移。

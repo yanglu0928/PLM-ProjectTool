@@ -27,3 +27,5 @@
 2026-09-30/A06-P02-P03-P02-A01：新增未安装的 `python -m plm_assistant.entrypoints.service_windows API <absolute-bootstrap.yaml>`。仅 API 角色已接 SCM 状态机与 full platform-write runner；Windows11 合成 ASGI 真实 loopback HTTP/停止验证，Audit/Parser 角色仍静态拒绝。此入口不能替代原三个正式 CLI 的生产清单，直到隔离 SCM 安装、目标账户/信任源、长流与进程静止验收完成；只读候选/标记识别新增 API 服务命令行，报告仍无备份许可。
 
 2026-09-30/A06-P02-P03-P02-A02/A03 后续状态：API/Audit/Parser 三角色均已接入 `service_windows`，Audit/Parser 的 Windows11 合成 STOP、工作/heartbeat 静止、DB 释放与标记对账内部通过；上段“仅 API 已接”的表述是其当时历史检查点，不代表当前状态。P03-P03-A01 只读命令计划不安装 SCM，三角色仍未在目标账户或 Server2025 实机运行。旧 CLI 与服务入口均须列入正式进程/版本/句柄/DB 会话静止检查；不能据内部测试授权备份或迁移。
+
+2026-09-30/A06-P02-P03-P03-A02-P01 新增显式单角色原生 SCM 安装器，仅用于后续受控管理员验收，不是运行进程或停写证据。当前非管理员会话未运行安装，本机三固定服务名仍不存在；入口清单的实际生产 PID/版本/账户及句柄/DB 会话列仍待目标环境填写，旧版 CLI/未知进程不能因此忽略。

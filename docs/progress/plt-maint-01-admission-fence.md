@@ -198,6 +198,16 @@
 结果：A06-P02-P03-P03-A01 Windows11 只读内部 PASS。新增 `service_plan_windows <absolute-python.exe> <absolute-bootstrap.yaml>`，在绝对存在的路径、非 Secret 配置、loopback 与 Parser 模型坐标/目录齐全时，使用 Windows 标准命令行引用生成三固定服务名的独立 binary path。输出固定 `PLAN_ONLY`、`scm_installed=false`、`runtime_and_account_verified=false` 与 `backup_or_migration_authorized=false`；无 SCM 写入或服务安装。中文/空格路径与缺失字段/非法配置定向3、后端1711（3既有跳过）、wheel PASS。工具不验证所选解释器确实包含本包、模型内容/指纹或目标账户，P03 实机安装/静止仍待。
 
 
+## A06-P02-P03-P03-A02-P01 编码前检查：Windows SCM 固定角色安装器
+
+当前 Phase：Phase 2 Platform Core。当前 WBS：PLT-MAINT-01-A06-P02-P03-P03-A02-P01。输入基线：ADR-013/CR-PLT-004、三角色内部 runner、P03-A01 只读命令计划、Microsoft CreateServiceW/OpenSCManagerW 文档。真实 P03-A02 实机启停仍因当前会话无管理员权限/目标账户与发行材料而不可验；本项只实现受控安装入口并以注入式 SCM 单元验证，不宣称实际安装。
+涉及模块：Platform Windows SCM 安装工具；无业务实体、Schema、API 或新依赖。实体：三个固定服务名/单角色 binary path/显式目标账户与手动启动配置。权限：管理员才可创建服务；账户密码必须交互读取、不在 argv/env/日志，不默认 LocalSystem；不自动启动/卸载/覆盖已有服务。
+验收标准：固定角色和经 P03-A01 验证的路径；仅 `SERVICE_WIN32_OWN_PROCESS`、手动启动，CreateServiceW 失败关闭，SCM/服务 handle 均正确释放；现有服务拒绝覆盖。模拟 API 正反例与无权限真实环境不创建服务检查，后端全量和 wheel。
+风险/回滚：目标账户 Vault/License/ACL、服务登录权限和真实 SCM 启停/静止仍待；创建成功后若后续检查失败，不能自动 DeleteService，应人工确认精确归属后处理。Python 交互密码在进程内短暂存在但不写 argv/env/文件/日志；正式发行安全验收另做。无 DB 迁移/API 变化；未运行安装器不改变系统，已创建服务须受控停用并核验后再删除。
+
+结果：A06-P02-P03-P03-A02-P01 安装器内部 PASS。新增显式 `--install` 单角色入口，用 Python 3.13 标准库 `ctypes` 调本机 `OpenSCManagerW/CreateServiceW`；固定服务名、`SERVICE_WIN32_OWN_PROCESS`/手动启动、显式非内置账户，交互密码不经 argv/env/shell，缓冲区调用后清零。只复用 P03-A01 的完整配置/路径计划；CreateServiceW 失败时不覆盖/删除现有服务，不自动启动。模拟成功/名称已存在或拒权/非法参数与原生绑定定向4、后端1715（3既有跳过）、wheel PASS。当前本机三款 PLM 服务仍不存在，未对真实 SCM 执行写入；Python 原始密码字符串无法承诺内存零化，正式账户权限/登录与启停/静止验收仍待，P03-A02 总项不得 PASS。
+
+
 ## PAR-01-A05-P06-P01 编码前检查：Windows OCR 模型路径可诊断限制
 
 当前 Phase：Phase 2 Platform Core。当前 WBS：PAR-01-A05-P06-P01。输入基线：CR-PAR-005 方案 A、现有 `OfflinePaddleOcr` 模型四文件指纹与 Windows Worker 启动链。前置同字节模型中文/ASCII 路径差异与底层异常已在本机复现；正式安装器/目标账户仍缺。

@@ -38,3 +38,5 @@ Microsoft 官方接口依据：[Service entry point](https://learn.microsoft.com
 2026-09-30 进展：P03-P01 状态机骨架与 P03-P02-A01 API runner 已内部验证。API 用 Uvicorn 0.53.0 实际监听完成状态发 ready，合成 FastAPI Windows11 HTTP/lifespan/停止/标记退出 PASS。Audit/Parser runner、真实 SCM 注册/账户/目标信任源/长连接和 Server2025 仍未验，不能因 API 合成结果提升整个 ADR 状态为运行时 PASS。
 
 2026-09-30 后续进展：P03-P02-A02/A03 已接 Audit 与 Parser runner，Windows11 合成 STOP/工作排空/heartbeat 静止/DB 释放及标记结果通过；Parser daemon heartbeat 静止风险按 CR-PLT-004 先记后修。P03-P03-A01 新增只读三角色 binary path 命令计划（`PLAN_ONLY`），未修改 SCM。当前非管理员会话仍无法完成 P03 真实安装/启停/账户/资源静止验收；本 ADR 保持 `PARTIALLY_IMPLEMENTED / NOT_SCM_VALIDATED`，不得以内部测试或命令计划替代实机证据。
+
+2026-09-30 安装器进展：P03-P03-A02-P01 新增显式单角色手动安装入口，原生 CreateServiceW 从交互提示取得密码，不放入 `sc.exe` 命令行；模拟 SCM 与原生 API binding 内部验证通过，未调用真实 SCM 写入。Windows11 开发会话无管理员权限，本机仍无三款 PLM 服务；目标账户 ACL/Vault/License、服务启动/停止与资源静止仍未验，ADR 状态不提升。API 合同依据：[CreateServiceW](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-createservicew)、[OpenSCManagerW](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-openscmanagerw)。
