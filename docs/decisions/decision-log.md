@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260930-509 — PAR-01-A04-P02-P03-P02 同一 Job 旧 ParseRecord 对账与新尝试启动
+
+- Date/WBS：2026-09-30 / Phase2 依赖前置 PAR-01-A04-P02-P03-P02。输入为冻结 DOC-04 连续 ParseRecord 尝试序号、P03-P01 Jobs 旧代证明、P02-P01 首次启动及真实 PG 触发器；Gate2 已通过。涉及 Parser Application、Document 自有 ParseRecord DTO/Repository、Jobs 只读证明及 Audit 追加；不涉及公开 API/权限、ORM/Migration、依赖或客户数据外发。
+- 编码前检查/目标：只处理同一 DOCUMENT_PARSE Job 的第2/3代后台租约；重核当前租约/Outbox/固定 Document 来源，按旧代证明将遗留 RUNNING 变 FAILED、未启动代补记 PENDING→CANCELLED，然后 PENDING→RUNNING 启动当前代；全流程一笔短事务，审计每个被对账的旧记录。已有终态只能逐字段吻合，不得覆盖成功或其他 Job 的历史。现有 `StartedParseAttempt` 内部合同需允许 1..3，不变更冻结公开 Contract。
+- 方案比较/决策：不把旧 RUNNING 直接复用为新代，也不跳过缺失旧代（均违反冻结保留/连续性）；采用 Jobs 证明驱动 Document 对账，Document 不直接查 Jobs 表。当前仅同一 Job 原有代数，另一个 Job 的用户主动重试存在全局 ParseRecord 序号与新 Job attempt_no 起点不同的问题，另立任务分析，不能冒称已支持。
+- 验收/风险/回滚：隔离 PG18 真实触发器验证旧 RUNNING、未启动、第三代、同代幂等、旧代/跨 Job/来源异常与 Audit 失败回滚；定向/后端全量/wheel。旧记录的 FAILED 完成时间采用 Jobs 原代完成事实；未启动代 CANCELLED 完成时间为补记时间并保留原 Job 尝试证明，不能伪称当时生成了 ParseRecord。可撤未装配新服务/Repository；历史不可删、Gate3不变。成功发布第2/3代、正式 Worker 和用户主动重试仍待后续任务。
+- Executed：新增内部 `StartRetryParseAttempt` 与 Document `start_retry`；同一 Job 当前 lease/Outbox/Document 来源及旧 Jobs 证明重核后，旧 RUNNING→FAILED 或未启动 PENDING→CANCELLED、当前 PENDING→RUNNING 与每条旧历史真实 Audit 同一短事务。定向3、Python3.13 后端全量1614（3既有跳过）、Windows11 隔离 PG18 旧 RUNNING、未启动、第三代、幂等、旧代拒绝及 Audit失败回滚、wheel PASS；随机库清理、PoC PG 恢复停止。跨 Job 主动重试与第2/3代成功发布未验，不关闭 P03/Gate3。
+
 ## DEC-20260930-508 — PAR-01-A04-P02-P03-P01 旧 JobAttempt 事实证明
 
 - Date/WBS：2026-09-30 / Phase 2 依赖前置 PAR-01-A04-P02-P03-P01。输入为 Gate2 冻结的 DOC-04 ParseRecord 连续尝试序号、现有 Job lease/fencing 状态机、P02-P02 首次原子成功发布；前置均满足。涉及 Jobs Application DTO 与已有 Lease Repository 的只读证明，不写 Document 表；无 API、权限、ORM/Migration、依赖或外发变化。

@@ -47,8 +47,24 @@ class StartedParseAttempt:
                     self.parse_record_id, self.job_id, self.document_version_id))
                 or type(self.parser_profile) is not str or not self.parser_profile
                 or type(self.parser_version) is not str or not self.parser_version
-                or type(self.attempt_no) is not int or self.attempt_no != 1
+                or type(self.attempt_no) is not int or not 1 <= self.attempt_no <= 3
                 or type(self.started_at) is not datetime
                 or self.started_at.tzinfo is None
                 or self.started_at.utcoffset() is None):
             raise ParseAttemptError()
+
+
+@dataclass(frozen=True, slots=True)
+class ReconciledParseAttempt:
+    parse_record_id: uuid.UUID
+    attempt_no: int
+    before_state: str
+    after_state: str
+
+    def __post_init__(self) -> None:
+        if (type(self.parse_record_id) is not uuid.UUID or self.parse_record_id.int == 0
+                or type(self.attempt_no) is not int or not 1 <= self.attempt_no <= 2
+                or (self.before_state, self.after_state) not in {
+                    ("RUNNING", "FAILED"), ("PENDING", "CANCELLED")
+                }):
+            raise ParseAttemptError("VALIDATION_FAILED")
