@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A05 依据 CR-PKG-003 构造独立 MSYS2 Tesseract5.5.3-1 非发行候选；固定包 Hash、35本地PE静态闭包、四版面 OCRmyPDF PDF/A-2b/deskew 合成术语20/20、定向拒错2项 PASS。无 Migration/API/正式依赖/安装变化，可弃用新隔离目录回滚，旧官方候选不变。动态装载/签名/传递许可/真实质量/目标账户/Server2025/Gate3仍待，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A04 Debian13 `gcc-mingw-w64-x86-64-posix-runtime 14.2.0-19+27+b1` 官方 `.deb` SHA 与公布值一致，两份 GCC DLL 与官方 Tesseract 安装资产逐字节匹配；配套 base 包 `copyright` Hash 定位，新增2行 Debian 证据及篡改拒绝脚本。总精确匹配32/33，仅 `libtesseract-5.dll` 未证；不推断实际构建主机或许可发行通过。无 Migration/API/正式依赖/安装变化，可撤新审计与忽略归档回滚；动态依赖/AGPL/目标平台/Gate 待，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A04 扩展 Tesseract 33 DLL 精确来源矩阵：官方安装资产33/33 Hash 重核，MSYS2 历史包30/33字节匹配；27项包内定位许可文本、3项用精确版本源码包与上游 tar 补证许可文本，另3项精确包来源未证。新增33行来源、41行包内许可及7行源码补证CSV，审计脚本支持包归档Hash与多条许可声明。无 Migration/API/正式依赖/安装变化，Windows11非发行审计；可撤审计增量及本机忽略包回滚。GCC/Tesseract来源缺口、完整许可通知、动态依赖、三平台/Gate待，`release_eligible=false`。
