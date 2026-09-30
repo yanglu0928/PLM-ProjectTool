@@ -1,4 +1,5 @@
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from threading import Event
 from time import monotonic
 from unittest import TestCase
@@ -67,3 +68,33 @@ class WorkerLoopTests(TestCase):
         self.assertGreaterEqual(monotonic()-started,.14)
         self.assertGreaterEqual(self.loop._wake.wait.call_count,2)
         self.assertTrue(all(0<c.args[0]<=.05 for c in self.loop._wake.wait.call_args_list))
+
+    def test_maintenance_admission_covers_step_not_idle_wait(self):
+        self.t.admission.claim_next.return_value=None
+
+        class Gate:
+            held=False
+            entries=0
+            exits=0
+
+            @contextmanager
+            def admit(self):
+                self.held=True;self.entries+=1
+                try:yield object()
+                finally:self.held=False;self.exits+=1
+
+        gate=Gate();original=self.t.step.step
+        def step():
+            self.assertTrue(gate.held)
+            return original()
+        self.t.step.step=step
+        loop=AuditExportWorkerLoop(step=self.t.step,poll_seconds=.05,
+                                   maintenance_admission=gate)
+        original_wait=loop._wait_idle
+        def wait_idle():
+            self.assertFalse(gate.held)
+            original_wait()
+        loop._wait_idle=wait_idle
+        result=loop.run(max_steps=2)
+        self.assertEqual((result.reason,result.idle),('LIMIT',2))
+        self.assertEqual((gate.entries,gate.exits,gate.held),(2,2,False))

@@ -5747,3 +5747,8 @@
 
 - Phase/WBS：Phase2 / PLT-MAINT-01-A04-P02；`CR-PLT-004` 补充 GET 副作用。Document 版本正文和 Audit Export 正文四个 GET 路由在错误路径可提交 Audit，不能作为无锁只读请求。
 - 选择精确路径族准入，覆盖完整响应流及后台收口；其余 GET/健康仍可用。现有公开 GET 合同不变；需真实 PG 路由拒绝和下载路径回归，生产组合尚未装配时不宣称全覆盖。
+
+## DEC-20260930-532 — Audit Worker 单步窗口持共享锁
+
+- Phase/WBS：Phase2 / PLT-MAINT-01-A05-P01；编码前检查见 progress。向 Audit Worker Loop 注入可选 admission 协议，覆盖一次 `step()` 的扫尾/领取/执行和现有 heartbeat 同步收口；idle sleep 不持锁。Audit 模块不直接依赖 Platform 具体 PG Adapter。
+- Windows 正式组合接线与真实 PG18 跨进程验收后续单独完成；本项不改变 Audit Owner、Lease、权限或公开 API。连接失联非静止证明，仍需 OS 进程退出和发布前复核。

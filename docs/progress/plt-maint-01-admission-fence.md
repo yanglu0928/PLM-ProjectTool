@@ -72,3 +72,12 @@
 风险/回滚：独立连接池按并发/长下载容量规划，不能用一次性测试宣称 20 并发 P95；连接意外丢失后业务持久化前仍需额外复核，OS 进程退出证明保留。无新 Migration/公开 API/依赖；回滚不装配生产中间件，维护历史不删除。
 
 结果：A04-P02 Windows11 隔离生产组合内部 PASS。修正中间件使 Document 版本正文和 Audit Export 正文四个 GET content 路由持共享锁，其他纯读 GET/健康不占锁；三个显式 Windows 组合均注入独立有界 PG18 Engine（最多20专用连接、2秒池/连接等待）并随 lifespan 清理。隔离 PG18 `0051`、合成信任源下，三组合 RUNNING 真实 scrypt 管理员登录200，MAINTENANCE 登录503/健康200/Session GET 可读；写组合上传 POST 与四种 GET content 均503。旧纯契约测试改为显式准入替身，真实 PG 验证保留；后端全量1668（3既有跳过）、wheel PASS，随机库清理且 PoC PG 恢复停止。正式目标账户与 Server2025/Debian、20并发性能、连接丢失后业务发布复核、双 Worker/OS 静止仍待，A04 整体及维护模式/Gate3不通过。
+
+## A05-P01 编码前检查：Audit Worker 单步共享准入
+
+当前 Phase：Phase 2 Platform Core。当前 WBS：PLT-MAINT-01-A05-P01。输入基线：CR-PLT-004/ADR-012、Audit Worker Loop/Step 与 A03-P01 PG18 共享 Port。前置 API 显式组合内部验证已通过；Audit Worker 可独立接线，但未装配生产 Windows 进程时只能内部 PASS。
+涉及模块：Audit Worker 调度循环可选 admission Port，不改 Claim/Executor/Owner 业务事务。涉及实体：仅只读维护状态与会话锁。涉及 API：无。涉及权限：原 SystemActor/User/Project/License 不变。
+验收标准：每次 step 领取/执行/扫尾期间持共享锁，idle 等待不占锁；维护状态/排他竞争拒绝下一步，停止及异常能释放；严格原 Loop 类型与既有执行回归；真实 PG18 竞态、后端全量和 wheel。
+风险/回滚：若连接意外释放，当前文件 I/O 仍可能继续，OS 进程退出证明和持久化前连接复核另验；长导出持独立连接增加容量。无 Schema/API/依赖；未接 Windows 组合时回滚不注入 gate。
+
+结果：A05-P01 Audit Loop 内部 PASS。新增可选 admission 协议，仅在 `step()` 的扫描/领取/执行窗口持锁；idle sleep 无锁，原 Loop/Step 类型不变。隔离 PG18 + 合成 Audit Step 并发验证当前 step 排他锁被拒、完成后可取得、MAINTENANCE 阻止新 claim；单元 idle 不持锁，后端全量1669（3既有跳过）、wheel PASS；随机库清理与 PoC PG 恢复停止。尚未 Windows Audit Worker 入口注入、真实导出长 I/O/失联/进程退出验证；整体 A05/维护模式/Gate3不通过。

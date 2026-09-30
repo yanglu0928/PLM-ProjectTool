@@ -49,3 +49,5 @@ ADR-007/008 和冻结安全边界要求升级顺序为人工备份→维护模�
 2026-09-30 路由审计发现 `Document` 版本正文 GET 的 `_record_integrity_failure` 与 Audit Export 正文 GET 的 `record_content_failure` 可在完整性/内容故障时写 Audit。A04-P01 原“全部 GET 只读”假设对此不成立；若这些 GET 绕过 admission，维护状态下仍可能新增审计事件。选择在 ASGI 外层将上述四个现有 GET content 路由一并视作有写副作用的窗口，其他经审计的 GET/健康仍可读取。基线差异仅为内部准入策略，不改冻结 GET 业务合同/Schema；性能影响限于文件流下载并须实测。回滚不装配生产中间件；验证需覆盖四个路径的锁、MAINTENANCE 拒绝、非 content GET 放行，以及真实服务组合。未完成前不能宣称 A04 全覆盖。
 
 2026-09-30 A04-P02：四个 GET content 路由已准入，Windows 三种显式生产组合都注入独立有界 PG18 Engine 并在 lifespan 清理；隔离 PG18 合成信任源下 RUNNING 真实管理员登录200、MAINTENANCE 登录/上传/四 GET content 503，而健康/Session GET 仍可用。后端1668（3跳过）、wheel PASS；旧无数据库路由契约测试显式注入准入替身，真实 PG 验证独立保留。目标账户/Server2025/Debian、20并发 P95、失联后的外部 I/O 与双 Worker/OS 静止仍未验证，CR OPEN。
+
+2026-09-30 A05-P01：Audit Loop 可选单步 admission 在隔离 PG18 合成 Step 证明 step 持锁/idle 不持锁、排他竞争与 MAINTENANCE 拒新 claim，后端1669（3跳过）、wheel PASS。尚未 Windows Audit Worker 组合和真实导出 I/O 验收，不可宣称双 Worker 已覆盖或取得静止。

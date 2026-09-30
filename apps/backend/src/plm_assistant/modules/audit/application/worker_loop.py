@@ -4,8 +4,14 @@ from contextlib import contextmanager
 from math import isfinite
 from threading import Event,Lock
 from time import monotonic
+from typing import Protocol
+from contextlib import AbstractContextManager
 from .worker_step import AuditExportWorkerStep,AuditExportStepOutcome
 from .worker_capture import AuditExportWorkerError
+
+
+class AuditStepAdmission(Protocol):
+    def admit(self) -> AbstractContextManager[object]: ...
 
 
 @dataclass(frozen=True,slots=True)
@@ -26,10 +32,13 @@ class AuditExportLoopResult:
 
 
 class AuditExportWorkerLoop:
-    def __init__(self,*,step,poll_seconds=1.0):
-        if type(step) is not AuditExportWorkerStep or type(poll_seconds) not in (int,float) or not .05<=poll_seconds<=60 or not isfinite(poll_seconds):
+    def __init__(self,*,step,poll_seconds=1.0,maintenance_admission: AuditStepAdmission | None=None):
+        if (type(step) is not AuditExportWorkerStep or type(poll_seconds) not in (int,float)
+                or not .05<=poll_seconds<=60 or not isfinite(poll_seconds)
+                or maintenance_admission is not None and not callable(getattr(maintenance_admission,'admit',None))):
             raise ValueError('Owned step and bounded finite poll required')
         self._step,self._seconds,self._wake,self._lock=step,poll_seconds,Event(),Lock()
+        self._maintenance_admission=maintenance_admission
 
     def request_stop(self):
         self._step.request_stop();self._wake.set()
@@ -59,7 +68,11 @@ class AuditExportWorkerLoop:
                     requested=stop_requested()
                     if type(requested) is not bool:raise AuditExportWorkerError('VALIDATION_FAILED')
                     if requested:self.request_stop()
-                value=self._step.step()
+                if self._maintenance_admission is None:
+                    value=self._step.step()
+                else:
+                    with self._maintenance_admission.admit():
+                        value=self._step.step()
                 if type(value) is not AuditExportStepOutcome:raise AuditExportWorkerError()
                 value.__post_init__();steps+=1
                 if value.kind=='STOPPED':return AuditExportLoopResult('STOPPED',steps,executed,swept,idle,released,rejected)
