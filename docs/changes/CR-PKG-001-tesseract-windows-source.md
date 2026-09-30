@@ -27,3 +27,9 @@ POC-01 使用 UB Mannheim Tesseract 5.4.0.20240606；其 [发布者 Release](htt
 官方 5.5.3 解包 CLI 在中文仓库路径下 `--version` 与短图像 OCR 成功，但将同路径下 `tessdata_best` 提供给 OCRmyPDF17.12.1 的 PDF/A-2b、`--deskew` 合成链时，Tesseract 语言列表探测报 `filesystem error: Cannot convert character sequence: Illegal byte sequence`，OCRmyPDF exit 3。当前不能判定是 exe、tessdata、子进程传参或环境变量的哪一段非 ASCII 路径触发；不继承 5.4 PoC 的 deskew PASS。
 
 所选诊断/调整：在不改 OCRmyPDF/冻结 API 的前提下，分别对 exe 和 tessdata 做固定 Hash 的 ASCII 测试路径对照；若证实路径约束，正式 Windows 发行的 OCR 系统组件与模型都须置于受控 ASCII 目录并限制普通用户写入，配置启动时失败关闭。复制仅限 Git 忽略的合成隔离目录，原安装、旧 PoC 与数据库不变；失败可撤隔离目录。必须重跑语言列表、PDF/A-2b/deskew、中文术语与目标账户/Server2025，不把短图像 OCR 当完整链路。
+
+## 2026-10-01 同条件 OCR 质量回退
+
+将固定 tessdata_best 四语言数据放到 ASCII 目录后，5.5.3 语言探测恢复；再补安装包自带 `configs`、`tessconfigs` 和 `pdf.ttf`，OCRmyPDF17.12.1 `--deskew` + Ghostscript10.08.0 的 PDF/A-2b 执行 exit 0。然而原 PoC 五个术语中标题最后一个“具”识别成“只”，仅 4/5；用**同一** ASCII tessdata/配置、脚本、字体、合成 PDF 及其他依赖切回本机 5.4，5/5 PASS。此为当前固定样本的可复现版本质量差异，不代表广义中文准确率结论。5.5.3 不能凭“流程跑通”继承 5.4 的质量验收。
+
+调整验证计划：先在不更换模型、不放宽 5/5 门槛的前提下比较 5.5.3 的 PSM/OEM 等小范围配置；若不能稳定达到旧版样本与后续独立样本门槛，不选 5.5.3 发行。选回 5.4 时须单独权衡旧版安全修复缺口及 Authenticode 例外；官方 5.5.3 的后续安全修复不能忽略。未完成安全和质量双门禁时维持 `release_eligible=false`，不默认选容易通过的窄方案。
