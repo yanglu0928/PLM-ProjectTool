@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260930-497 — PAR-01-A01 生产 Parser 输入与策略合同
+
+- Date/WBS：2026-09-30 / Phase 2 依赖前置 PAR-01-A01；依据 `CR-PAR-001`，不调整 Gate 3 结论。
+- Decision/Reason：在 Parser 自有 Application 合同中对不可变 DocumentVersion ID、SHA-256、大小和检测 MIME 建立严格输入描述与固定版本 profile 选择；PDF 保留正文优先/OCR 按需，扫描/图片由 PaddleOCR 主链、辅助链待真实执行验证。此项不读取文件、不执行 OCR、不创建 SUCCEEDED ParseRecord。
+- Impact/rollback/validation：无数据库/API/权限/新依赖；独立模块可撤。校验支持格式、畸形/伪造输入和不变性，后端回归与 wheel；后续 Worker 必须经 Document 授权快照复核摘要和 Job fencing，不能用本合同推断真实解析或 Evidence 精确定位。
+- Executed：新增 Parser 自有固定版本输入与九种已接受 MIME 的版本化策略选择、失败关闭测试；定向 3、Python 3.13 后端全量 1569 项（2 项既有跳过）、隔离 wheel 构建与模块打包检查通过。默认 Python 3.14 缺项目导入/依赖、虚拟环境无 `setuptools` 的非隔离构建失败均在正确环境/隔离构建重跑，不冒称 Worker 已运行。
+
 ## DEC-20260930-496 — DOC-05-A06-P03 隔离浏览器 ParseRecord 只读验收
 
 - Date/WBS：2026-09-30 / Phase2 DOC-05-A06-P03。前置 A06-P01/P02 前端合同、DOC-04-A05 Windows Parse 列表组合、A04-P03 真文件下载夹具均已验证；P08-A02 的文件 UI 上传确认仍待，本项只读且不进行文件选择/上传。
