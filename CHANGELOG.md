@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A01 登记维护模式停写专项 `CR-PLT-004`：现有按上传 ID 的锁与 Worker 协作停止不足以证明全局静止，规划 PostgreSQL 持久状态及跨 API/Worker 的会话级准入栅栏。仅设计与验收计划，未改运行代码/API/Schema/依赖或生产数据；迁移和全覆盖验收未完成，DOC-03 前置/Gate3/发行包继续阻塞。
+
 - 2026-09-30：0.1.0.dev0/PAR-01-A05-P01-P05-A02-P03-A03 增加 Windows 独立 OS 进程真实 OCR 验证：错误模型指纹启动拒绝且 Job 不变；正确本地模型处理已提交合成扫描 PDF，唯一 OCR_LINE/ParseResultRef、Job SUCCEEDED，父进程核实结果文件 Hash/大小/指纹。无本轮生产代码、Migration/API/依赖变化；运行环境为隔离 PG18 与合成 License/SystemActor，正式账户、物理断网、维护模式、Server2025/Debian、Gate3及发行包仍待。
 
 - 2026-09-30：0.1.0.dev0/CR-PAR-004 将 PyYAML 依赖固定为6.0.2，并显式固定 PaddleX3.7.2，解决 PaddleOCR3.7.0 的传递依赖冲突。Windows11 Python3.13隔离环境 `pip check` 无冲突、真实本地 PP-OCRv5 模型合成 PNG/混合PDF OCR、后端1657（3既有跳过）和 wheel 元数据 PASS。API/Schema/权限及数据升级不变；离线全依赖 wheelhouse/目标系统安装、正式进程与 Gate3 仍待。

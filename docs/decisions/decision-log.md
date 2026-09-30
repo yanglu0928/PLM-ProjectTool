@@ -5701,3 +5701,9 @@
 - Phase/WBS：Phase2 / PAR-01-A05-P01-P05-A02-P03-A02。非敏感 Bootstrap 新增三项可选模型坐标供独立 Parser Worker 使用，API/Audit Worker 既有配置保持可启动。Parser Worker 必须三项齐备、指纹通过真实模型校验，禁止无模型隐式降级或在线下载。
 - Windows 进程只从当前账户数据库凭据、正式 License/SystemActor Vault Port 装配；命令行只接 Bootstrap 文件路径与可选 `--once`。信号回调不做数据库或磁盘工作，由桥接线程请求停止，静止后才 dispose；不实现强杀假承诺。
 - 此项不提供 API 级维护停写栅栏。维护模式的跨 API/Worker 栅栏需另立前置任务并验证，不能凭 CLI 正常停止关闭 Gate。无 Schema/API/权限变更，回滚为停用 CLI/移除可选非敏感配置，已提交 Job/Audit 保留。
+
+## DEC-20260930-524 — 维护停写栅栏专项前置
+
+- Phase/WBS：Phase2 / PLT-MAINT-01-A01。2026-09-30 核查现有按 UploadId 的本地锁与 Audit/Parser 协作停止均不足以阻止所有生产 API 新写；原 DOC-03 生产停写阻塞继续有效。
+- 决策：先按 `CR-PLT-004` 设计会话级 PostgreSQL 共享/排他 admission 与持久维护状态，分步覆盖 Schema、Platform Port、生产 API、两类 Worker 和独立维护命令。未实现并验证全覆盖前禁止据此进行生产物理清理/升级或关闭 Gate。
+- 风险：长 I/O 持有专用连接增加容量要求；旧进程混跑会绕过新门禁。迁移/回滚和真实跨进程验收条件详见 CR。
