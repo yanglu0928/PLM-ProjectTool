@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A06-P01 增加生产 API/双 Worker、维护 CLI、首次管理员、Alembic 与 OS Vault 工具的静态写入口/静止矩阵，明确独立特权写入口和缺失的服务/PID/版本证明。纯文档，无代码/Schema/API/依赖/升级动作；沿用 A05-P04 后端1673（3既有跳过）与 wheel 结果，不声称本项新增动态验证。Windows11/Server2025/正式账户 OS 静止、Gate3/发行包仍待。
+
 - 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A05-P04 Windows Parser 进程显式装配专用 PG18 准入 Engine；隔离 PG18/合成信任/真实离线 OCR 子进程下 MAINTENANCE 阻止待处理 Job、RUNNING 成功解析且执行期持共享锁。后端1673（3既有跳过）、wheel PASS。无 Schema/API/依赖/生产迁移；中文路径模型加载已登记 CR-PAR-005，正式账户/Server2025、失联后 OS 静止与 Gate3/发行包仍待。
 
 - 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A05-P03 Parser Loop 新增可选单轮共享准入，涵盖取消恢复扫描与解析步骤，空闲等待不持锁。隔离 PG18 双连接排他竞争与 MAINTENANCE 拒新扫描、后端1673（3既有跳过）、wheel PASS。无 Schema/API/依赖/生产迁移；Windows 进程尚未接线，长 OCR 失联、目标账户/OS 静止及 Gate3/发行包仍待。

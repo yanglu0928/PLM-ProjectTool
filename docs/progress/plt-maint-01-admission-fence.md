@@ -108,3 +108,11 @@
 风险/回滚：连接意外释放、OCR 长 I/O/正式公钥/目标账户 ACL/OS 进程退出与 Server2025 仍须单独验证。无 Migration/API/依赖；可通过停用组合装配回滚，不抹除维护历史。
 
 结果：A05-P04 Windows11 隔离进程组合内部 PASS。Windows Parser 由同一次当前账户 Vault URL 装配专用准入 Engine，显式传入 Loop，进程静止后释放；单元入口传递/失败清理通过。隔离 PG18、合成 License/SystemActor、真实离线 PP-OCRv5 模型及独立 Windows 子进程下，MAINTENANCE 时待处理 Job 保持 PENDING，恢复 RUNNING 后扫描 PDF 产出唯一 OCR_LINE/ResultRef、Job SUCCEEDED；父进程观察到 OCR 子进程持共享锁。后端1673（3既有跳过）、wheel PASS，随机库清理。仓库中文路径模型初始化失败、ASCII 缓存路径成功的发行偏差另记 CR-PAR-005；正式公钥/目标账户/Server2025、连接丢失后 OS 静止和性能未验，A05/维护模式/Gate3/发行包不通过。
+
+## A06-P01 编码前检查：生产进程与独立写入口清单
+
+当前 Phase：Phase 2 Platform Core。当前 WBS：PLT-MAINT-01-A06-P01。输入基线：CR-PLT-004/ADR-012、A04 API 接线、A05 双 Worker 接线、仓库当前 Python Composition Root 与 Alembic env。前置双 Worker Windows11 内部 PASS；目标部署清单/服务管理器尚无正式发行配置。本项只出入口证据矩阵，不实施不受控停服或生产迁移。
+涉及模块：Platform/Release 运行入口清单与维护流程，不改 Owner 事务/API/Schema。验收标准：以源码枚举 HTTP、两 Worker、运维 CLI、首次初始化、Alembic、Vault 工具及开发工厂，区分应用数据写/OS 凭据写/DDL/只读；每种说明门禁、运行条件、静止证据和未覆盖风险，供下一 WBS 装配/进程验收使用。
+风险/回滚：静态扫描不证明实际部署进程、Windows Service/Server2025/Debian、外部脚本或旧版应用已退出；不把矩阵当 Gate3/备份许可。文档可追溯修订，无运行迁移。
+
+结果：A06-P01 静态入口矩阵完成，详见 `docs/progress/plt-maint-01-entrypoint-inventory.md`。明确正式 Windows API 三模式与 Audit/Parser 两 Worker 已接共享准入，但首次管理员初始化和 Alembic 是独立特权写入口，OS Vault/Secret 变更也不受 PG 锁管；裸工厂不得当生产入口。仓库未见正式服务定义、进程/PID/版本握手、Debian 组合及统一受控 Migration 执行器；旧版/未知进程可绕过。该项只完成清单，不作真实进程静止证明，CR-PLT-004/Gate3/发行继续 OPEN。
