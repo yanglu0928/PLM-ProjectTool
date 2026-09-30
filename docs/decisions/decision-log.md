@@ -5707,3 +5707,9 @@
 - Phase/WBS：Phase2 / PLT-MAINT-01-A01。2026-09-30 核查现有按 UploadId 的本地锁与 Audit/Parser 协作停止均不足以阻止所有生产 API 新写；原 DOC-03 生产停写阻塞继续有效。
 - 决策：先按 `CR-PLT-004` 设计会话级 PostgreSQL 共享/排他 admission 与持久维护状态，分步覆盖 Schema、Platform Port、生产 API、两类 Worker 和独立维护命令。未实现并验证全覆盖前禁止据此进行生产物理清理/升级或关闭 Gate。
 - 风险：长 I/O 持有专用连接增加容量要求；旧进程混跑会绕过新门禁。迁移/回滚和真实跨进程验收条件详见 CR。
+
+## DEC-20260930-525 — 维护状态0051编码前决定
+
+- Phase/WBS：Phase2 / PLT-MAINT-01-A02；前置 `CR-PLT-004` A01 已登记，编码前检查见对应 progress。仅新增 Platform 单行状态 ORM/Migration，不提前接 API/Worker 或声明停写。
+- 选型：`state_id=1` 固定行、RUNNING/MAINTENANCE、单调 lock_version 与数据库变更时间；触发器拒绝 DELETE/TRUNCATE 与跳版/同态更新。首次升级插入 RUNNING/v0，不回填业务表。只有无维护历史时允许 down。
+- 验收/回滚：隔离 PG18 空/有数据 up/down/re-up、约束与 ORM parity；有历史 down 拒绝。生产迁移前人工备份/停写；正式 admission 全覆盖未实现前，表状态不是并发安全证明。
