@@ -188,6 +188,16 @@
 结果：A06-P02-P03-P02-A03 Windows11 内部 PASS。`service_windows PARSER_WORKER <absolute-bootstrap.yaml>` 复用现有 Parser 组合，标记和停止桥建立后才 ready；STOP 请求协作唤醒 Loop，当前 Step/heartbeat 静止后释放 DB，正常结束移除自有标记。旧 Step 的 daemon heartbeat/仅锁静止误判风险已在 CR-PLT-004 预记并改为非 daemon 线程与存活检查；若线程仍活则服务保持 STOP_PENDING，不能报正常退出。合成活跃工作/心跳延迟/启动失败、角色标记对账定向32、后端1708（3既有跳过）、wheel PASS。真实 SCM/目标账户/长 OCR 子进程/Server2025 与 OS 静止未验，CR/Gate3/包继续 OPEN。
 
 
+## A06-P02-P03-P03-A01 编码前检查：Windows SCM 只读命令计划
+
+当前 Phase：Phase 2 Platform Core。当前 WBS：PLT-MAINT-01-A06-P02-P03-P03-A01。输入基线：ADR-013/CR-PLT-004、三角色已接的 `service_windows` 与固定服务名、Windows11 非管理员会话。前置 P03-P02 三角色内部 PASS；P03 实机安装验收因当前会话中完整性级别/管理员组 deny-only 且本机无 PLM 服务而尚未满足。
+涉及模块：Platform Windows 服务部署计划，只生成只读精确命令，不修改 SCM、账户、ACL、数据库或文件。实体：三角色固定服务名/解释器/非敏感 bootstrap 路径；无业务实体。API：无。权限：普通本机用户可做只读检查；正式安装仍需要受控管理员和目标账户。
+验收标准：只接受 Windows 绝对且实际存在的 `python.exe` 与受控非 Secret bootstrap YAML，精确生成三角色独立 SCM binary path；空间/中文路径可正确引用，禁止角色/路径注入；输出明确 `PLAN_ONLY`、未安装、不得许可备份/迁移。失败固定错误，不回显配置内容。Windows11 单元正反例、全后端与 wheel。
+风险/回滚：静态命令计划不能证明解释器/包版本、目标账户 Vault/License、真实 SCM 启停或 OS 静止；不得把 plan 当安装脚本。无 Schema/API/依赖，撤 CLI 可回滚；后续 P03 实机验收仍 OPEN。
+
+结果：A06-P02-P03-P03-A01 Windows11 只读内部 PASS。新增 `service_plan_windows <absolute-python.exe> <absolute-bootstrap.yaml>`，在绝对存在的路径、非 Secret 配置、loopback 与 Parser 模型坐标/目录齐全时，使用 Windows 标准命令行引用生成三固定服务名的独立 binary path。输出固定 `PLAN_ONLY`、`scm_installed=false`、`runtime_and_account_verified=false` 与 `backup_or_migration_authorized=false`；无 SCM 写入或服务安装。中文/空格路径与缺失字段/非法配置定向3、后端1711（3既有跳过）、wheel PASS。工具不验证所选解释器确实包含本包、模型内容/指纹或目标账户，P03 实机安装/静止仍待。
+
+
 ## PAR-01-A05-P06-P01 编码前检查：Windows OCR 模型路径可诊断限制
 
 当前 Phase：Phase 2 Platform Core。当前 WBS：PAR-01-A05-P06-P01。输入基线：CR-PAR-005 方案 A、现有 `OfflinePaddleOcr` 模型四文件指纹与 Windows Worker 启动链。前置同字节模型中文/ASCII 路径差异与底层异常已在本机复现；正式安装器/目标账户仍缺。

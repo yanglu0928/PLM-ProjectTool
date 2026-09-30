@@ -25,3 +25,5 @@
 2026-09-30/A06-P02-P02-P02：新增只读交叉核验入口 `python -m plm_assistant.entrypoints.process_identity_inventory_windows <deployment-account-SID> <absolute-runtime-root> <absolute-data-root>`。它读取自报标记并与一次 OS 候选快照比对 PID、创建时间、SID、可执行路径、入口命令行、包版本及代码摘要；只输出 PID/角色/状态和未匹配候选，不输出原命令行或路径。未知/冲突/无标记仍是诊断；`OBSERVED_MATCH` 也不证明快照后进程仍运行或已静止，不授权备份/迁移。后续必须核验正式 SCM 身份、账户 ACL、文件句柄/DB 会话和 Server2025。
 
 2026-09-30/A06-P02-P03-P02-A01：新增未安装的 `python -m plm_assistant.entrypoints.service_windows API <absolute-bootstrap.yaml>`。仅 API 角色已接 SCM 状态机与 full platform-write runner；Windows11 合成 ASGI 真实 loopback HTTP/停止验证，Audit/Parser 角色仍静态拒绝。此入口不能替代原三个正式 CLI 的生产清单，直到隔离 SCM 安装、目标账户/信任源、长流与进程静止验收完成；只读候选/标记识别新增 API 服务命令行，报告仍无备份许可。
+
+2026-09-30/A06-P02-P03-P02-A02/A03 后续状态：API/Audit/Parser 三角色均已接入 `service_windows`，Audit/Parser 的 Windows11 合成 STOP、工作/heartbeat 静止、DB 释放与标记对账内部通过；上段“仅 API 已接”的表述是其当时历史检查点，不代表当前状态。P03-P03-A01 只读命令计划不安装 SCM，三角色仍未在目标账户或 Server2025 实机运行。旧 CLI 与服务入口均须列入正式进程/版本/句柄/DB 会话静止检查；不能据内部测试授权备份或迁移。

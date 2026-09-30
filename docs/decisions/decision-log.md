@@ -5803,3 +5803,8 @@
 
 - Phase/WBS：Phase2 / PLT-MAINT-01-A06-P02-P03-P02-A03。Parser Step 续租线程改非 daemon，记住当前线程并在 `quiescent()` 中拒绝活线程；SCM runner 复用原 Windows Parser 组合和离线模型，STOP 协作等待解析/续租/DB 释放。未知 OCR 下层子进程不据此宣布已静止。
 - 理由：原 `close()` 超时后 Step 锁可释放，但续租线程仍活，锁单独不是完整退出证据。影响限 Worker 安全关闭及 Windows 服务入口，无 Schema/API/新依赖；回滚不启用新服务入口，保留 CLI，不能移除安全检查后继续宣称静止。真实 SCM/目标账户/长 OCR/Server2025 待验。
+
+## DEC-20260930-543 — SCM 实机受权限阻塞时先生成只读精确命令计划
+
+- Phase/WBS：Phase2 / PLT-MAINT-01-A06-P02-P03-P03-A01。当前 Windows11 会话为中完整性级别、管理员组仅 deny-only，未见三款 PLM 服务，因此不尝试创建/修改 SCM。先用独立只读工具生成三固定服务的 `service_windows` 启动命令计划，严格校验解释器/配置路径并显式标记非安装、非停写证据。
+- 理由：直接在无权限会话尝试真实安装无法取得 P03 验收证据，也不应把现有服务或账户误改。影响限发行准备，不改变业务/API/Schema/依赖；回滚删除未执行的计划工具即可。P03 实机安装、目标账户和资源静止继续待验。
