@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A04 扩展 Tesseract 33 DLL 精确来源矩阵：官方安装资产33/33 Hash 重核，MSYS2 历史包30/33字节匹配；27项包内定位许可文本、3项用精确版本源码包与上游 tar 补证许可文本，另3项精确包来源未证。新增33行来源、41行包内许可及7行源码补证CSV，审计脚本支持包归档Hash与多条许可声明。无 Migration/API/正式依赖/安装变化，Windows11非发行审计；可撤审计增量及本机忽略包回滚。GCC/Tesseract来源缺口、完整许可通知、动态依赖、三平台/Gate待，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A04 新增 Tesseract 静态图33 DLL 包内精确字节/许可位置审计；33/33官方解包 Hash 复核，官方 MSYS2 历史 `curl-winssl 8.21.0-2` 与 `libcurl-4.dll`、`expat 2.8.2-1` 与 `libexpat-1.dll` 精确匹配，MIT 声明和 LICENSE/COPYING SHA 定位，`curl-winssl 8.21.0-1` 同版本不同字节排除。无 Migration/API/正式依赖/安装变化，Windows11 本机非发行审计；可撤工具及忽略候选包回滚。其余31 DLL、动态依赖、完整通知/AGPL、目标平台与 Gate 待，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A03 新增 AMD64 PE 静态导入图工具，识别 Tesseract5.5.3 CLI 34本地二进制（含33 DLL）、22根 DLL/6安装器 DLL 不在静态图；隔离 ASCII 子集34/34 Hash、版本/4语言及四版面 OCRmyPDF PDF/A-2b/deskew 术语20/20 PASS，合成PE测试2/2。无 Migration/API/正式依赖或安装变化，旧旁包保留、隔离目录可弃用回滚。动态依赖/33 DLL 精确许可、签名/AGPL/ACL/三平台/Gate待，`release_eligible=false`。

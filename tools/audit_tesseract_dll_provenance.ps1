@@ -18,19 +18,40 @@ foreach ($dir in $ExtractedPackageDirs) {
     }
     $info = @{}
     foreach ($line in Get-Content -LiteralPath $infoPath) {
-        if ($line -match '^([^#= ]+) = (.+)$' -and -not $info.ContainsKey($Matches[1])) {
-            $info[$Matches[1]] = $Matches[2]
+        if ($line -match '^([^#= ]+) = (.+)$') {
+            $key = $Matches[1]
+            $value = $Matches[2]
+            if ($key -eq 'license') {
+                if (-not $info.ContainsKey($key)) { $info[$key] = @() }
+                $info[$key] += $value
+            } elseif (-not $info.ContainsKey($key)) {
+                $info[$key] = $value
+            }
         }
     }
     foreach ($key in 'pkgname', 'pkgver', 'license') {
         if (-not $info.ContainsKey($key)) { throw "Missing $key in $infoPath" }
     }
+    $officialArchiveName = "$($info.pkgname)-$($info.pkgver)-any.pkg.tar.zst"
+    $archiveDir = Split-Path (Split-Path $root -Parent) -Parent
+    $archiveNames = @(
+        $officialArchiveName,
+        "msys2-candidate-$(($info.pkgname -replace '^mingw-w64-x86_64-', ''))-$($info.pkgver)-any.pkg.tar.zst"
+    )
+    $archivePath = $null
+    foreach ($archiveName in $archiveNames) {
+        $path = Join-Path $archiveDir $archiveName
+        if (Test-Path -LiteralPath $path -PathType Leaf) { $archivePath = $path; break }
+    }
+    if (-not $archivePath) { throw "Missing source package archive: $officialArchiveName" }
     $licenses = @(Get-ChildItem -LiteralPath (Join-Path $root 'mingw64/share/licenses') -File -Recurse -ErrorAction SilentlyContinue)
     $candidates += [pscustomobject]@{
         root = $root
         pkgname = $info.pkgname
         pkgver = $info.pkgver
-        declared_license = $info.license
+        archive_filename = $officialArchiveName
+        archive_sha256 = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash.ToLowerInvariant()
+        declared_license = @($info.license)
         license_files = @($licenses | ForEach-Object {
             [pscustomobject]@{
                 relative_path = [System.IO.Path]::GetRelativePath($root, $_.FullName).Replace('\', '/')
@@ -54,6 +75,8 @@ foreach ($name in @($graph.needed_local_files | Where-Object { $_ -like '*.dll' 
         $entry = [pscustomobject]@{
             pkgname = $pkg.pkgname
             pkgver = $pkg.pkgver
+            archive_filename = $pkg.archive_filename
+            archive_sha256 = $pkg.archive_sha256
             binary_sha256 = $candidateSha
             declared_license = $pkg.declared_license
             license_files = $pkg.license_files
@@ -67,7 +90,13 @@ foreach ($name in @($graph.needed_local_files | Where-Object { $_ -like '*.dll' 
         file_version_resource = $version.FileVersion
         exact_package_matches = @($matches)
         rejected_package_candidates = @($rejected)
-        status = if ($matches.Count -gt 0) { 'EXACT_BINARY_MATCH_LICENSE_TEXT_LOCATED' } else { 'EXACT_PACKAGE_AND_LICENSE_UNRESOLVED' }
+        status = if ($matches.Count -eq 0) {
+            'EXACT_PACKAGE_AND_LICENSE_UNRESOLVED'
+        } elseif (@($matches | Where-Object { $_.license_files.Count -gt 0 }).Count -gt 0) {
+            'EXACT_BINARY_MATCH_LICENSE_TEXT_LOCATED'
+        } else {
+            'EXACT_BINARY_MATCH_LICENSE_TEXT_MISSING'
+        }
     }
 }
 
@@ -78,6 +107,8 @@ $result = [ordered]@{
     static_graph_is_not_dynamic_dependency_proof = $true
     dll_count = $rows.Count
     exact_match_count = @($rows | Where-Object { $_.exact_package_matches.Count -gt 0 }).Count
+    matched_license_text_located_count = @($rows | Where-Object { $_.status -eq 'EXACT_BINARY_MATCH_LICENSE_TEXT_LOCATED' }).Count
+    matched_license_text_missing_count = @($rows | Where-Object { $_.status -eq 'EXACT_BINARY_MATCH_LICENSE_TEXT_MISSING' }).Count
     rows = $rows
 }
 $json = $result | ConvertTo-Json -Depth 10
