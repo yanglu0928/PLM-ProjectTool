@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P03-P03-P02 新增官方 Tesseract5.5.3 NSIS 全新解包/139文件逐项 Hash 清单审计，61 DLL/4 JAR；仅顶层 Apache LICENSE 和 1 JAR 内嵌许可文件可在包内定位，来源/法律审查未完成。定向合成测试 PASS；无产品 API/Schema/依赖/安装变化，审计工具和忽略证据可撤。签名、质量、传递许可、目标环境/Gate待，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P03-P03-P01 PoC 验证器新增可选 Tesseract PSM（默认仍 6）；Win11 官方5.5.3 在 ASCII tessdata/完整 configs 下 PDF/A-2b+deskew 四组均 exit0，无编码异常，但旧单页 PSM6/11仅4/5，PSM3/4为5/5；5.4/PSM6控制组5/5。无产品 API/Schema/依赖变化，可撤可选参数回滚。不可据单页改生产默认；签名/第三方许可/独立质量/目标环境/Gate待，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P03-P02 官方 Tesseract 5.5.3 NSIS 非安装式解包 139 文件，包内 AMD64 CLI 版本与合成中英 OCR 本机通过；未执行安装器或测试 OCRmyPDF deskew。无产品程序、依赖、Migration/API 变化，隔离目录可撤且原系统安装不变；签名、第三方 DLL 许可、正式 ACL/Server2025/Gate 待，`release_eligible=false`。
