@@ -21,3 +21,9 @@ POC-01 使用 UB Mannheim Tesseract 5.4.0.20240606；其 [发布者 Release](htt
 官方 5.5.3 GitHub Release API 登记 Windows 安装资产 `tesseract-ocr-w64-setup-5.5.3.20260724.exe` 26,573,224 字节、SHA-256 `bee9e3434bd94fd65387d9be28cd467a41f61b1275383b55b0f59a1331270ae4`；本机下载字节逐项相同。Release tag 页面显示提交者 GPG 签名已验证，但 Git tag 签名不直接签署二进制。该资产 Authenticode 也返回 `UnknownError/NotTimeValid`：与 5.4 相同的 Universität Mannheim 签名证书 2023-12-10 到期，而时间戳证书起于 2026-06。不能把它写成有效代码签名。
 
 修订选择：仍优先 A 的官方 5.5.3，但将官方 Release API 的资产 digest 固定校验、HTTPS 来源、仓库/tag 身份、当地 Defender 扫描和隔离目录实测作为**替代来源控制**，不是 Authenticode PASS。先执行非生产隔离验证；若 Defender、文件清单或运行异常，立即拒绝。发行并包前还须完成许可/传递依赖、目标环境和专项安全评审；未满足即维持 `release_eligible=false`。B 的第三方 5.4 包不再作为优先候选，C 自行构建保留为后备。撤销替代方案只需删除未发行候选/测试目录，不动既有程序或数据库。
+
+## 2026-10-01 中文绝对路径复验差异
+
+官方 5.5.3 解包 CLI 在中文仓库路径下 `--version` 与短图像 OCR 成功，但将同路径下 `tessdata_best` 提供给 OCRmyPDF17.12.1 的 PDF/A-2b、`--deskew` 合成链时，Tesseract 语言列表探测报 `filesystem error: Cannot convert character sequence: Illegal byte sequence`，OCRmyPDF exit 3。当前不能判定是 exe、tessdata、子进程传参或环境变量的哪一段非 ASCII 路径触发；不继承 5.4 PoC 的 deskew PASS。
+
+所选诊断/调整：在不改 OCRmyPDF/冻结 API 的前提下，分别对 exe 和 tessdata 做固定 Hash 的 ASCII 测试路径对照；若证实路径约束，正式 Windows 发行的 OCR 系统组件与模型都须置于受控 ASCII 目录并限制普通用户写入，配置启动时失败关闭。复制仅限 Git 忽略的合成隔离目录，原安装、旧 PoC 与数据库不变；失败可撤隔离目录。必须重跑语言列表、PDF/A-2b/deskew、中文术语与目标账户/Server2025，不把短图像 OCR 当完整链路。
