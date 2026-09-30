@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A05-P02 Windows Audit Worker 装配独立单连接 PG18 共享准入 Engine，构造失败与静止退出均释放；隔离 PG18 临时 Windows Vault/合成 License 的真实导出 Step 验证持锁、MAINTENANCE 拒新领取及业务无变化。后端1671（3既有跳过）、wheel PASS。无 Schema/API/依赖/生产迁移；正式账户/公钥、Server2025、长 I/O 失联、Parser/OS 静止和 Gate3/发行包仍待。
+
 - 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A05-P01 Audit Worker Loop 新增可选单步共享准入协议，step 扫描/领取/执行持锁、idle 等待不持锁；隔离 PG18 排他竞争/MAINTENANCE 拒绝、单元、后端1669（3既有跳过）、wheel PASS。无 Schema/API/依赖/生产迁移；Windows 进程尚未注入，真实导出/失联/OS 静止与 Gate3/发行包仍待。
 
 - 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A04-P02 修正四类有错误路径 Audit 写入的 GET content 下载准入，并在 Windows 登录/只读平台/写平台三种显式生产组合装入独立有界 PG18 共享准入 Engine。隔离库 RUNNING 真管理员登录200、MAINTENANCE 登录/上传/四 GET 下载503、健康/纯读 GET 可用；后端1668（3既有跳过）、wheel PASS。无 Schema/冻结 API 路径/依赖/生产迁移；正式目标账户、性能、Worker/OS 静止和 Gate3/发行包仍待。

@@ -81,3 +81,12 @@
 风险/回滚：若连接意外释放，当前文件 I/O 仍可能继续，OS 进程退出证明和持久化前连接复核另验；长导出持独立连接增加容量。无 Schema/API/依赖；未接 Windows 组合时回滚不注入 gate。
 
 结果：A05-P01 Audit Loop 内部 PASS。新增可选 admission 协议，仅在 `step()` 的扫描/领取/执行窗口持锁；idle sleep 无锁，原 Loop/Step 类型不变。隔离 PG18 + 合成 Audit Step 并发验证当前 step 排他锁被拒、完成后可取得、MAINTENANCE 阻止新 claim；单元 idle 不持锁，后端全量1669（3既有跳过）、wheel PASS；随机库清理与 PoC PG 恢复停止。尚未 Windows Audit Worker 入口注入、真实导出长 I/O/失联/进程退出验证；整体 A05/维护模式/Gate3不通过。
+
+## A05-P02 编码前检查：Windows Audit Worker 进程装配
+
+当前 Phase：Phase 2 Platform Core。当前 WBS：PLT-MAINT-01-A05-P02。输入基线：CR-PLT-004/ADR-012、A05-P01 Audit Loop 可选准入、当前账户 Windows DB Vault 与 WorkerDatabaseRuntime 资源生命周期。前置 A05-P01 内部 PASS；Parser Worker 尚未接线。
+涉及模块：Platform Worker runtime 的可选独立 PG18 admission Engine 资源所有权、Windows Audit Worker 装配；不改 Audit Owner 事务。涉及实体/API：无 Schema/公开 API 变更。涉及权限：SystemActor、License/User/Project 原检查保留；维护状态新增过程准入，不替代业务授权。
+验收标准：Windows 显式 Worker 入口只从当前 OS 账户 Vault URL 建立受限准入 Engine，构造失败和静止退出均释放；RUNNING 下真实导出 Step/窗口、MAINTENANCE 拒绝新领取、并发排他竞争；现有 CLI 契约/真实 PG 回归、wheel。
+风险/回滚：目标账户 Vault 独占、Server2025/长期导出/连接失联仍需验；Parser 独立进程尚无门禁，维护整体仍不可启用。无 Migration/公开 API/依赖；停用装配并恢复匹配版本程序，不清除维护历史。
+
+结果：A05-P02 Windows11 隔离组合内部 PASS。WorkerDatabaseRuntime 仅显式请求时创建独立单连接准入 Engine，构造失败及静止退出释放；Windows Audit Worker 同一次当前账户 Vault URL 装配并向 Loop 注入。真实 PG18、临时 Windows Vault 凭据与 SystemActor、合成 License 下的实际导出 Step 验证共享锁覆盖文件发布窗口，排他锁不能进入；MAINTENANCE 下 Worker 拒绝下一步且业务表快照不变。后端全量1671（3既有跳过）、wheel PASS；临时凭据与随机库清理。正式发行公钥/目标部署账户 ACL、Server2025、长导出失联和 OS 进程退出未验，Parser 仍未接门禁，A05/维护模式/Gate3/发行包不通过。

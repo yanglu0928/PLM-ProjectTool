@@ -19,13 +19,14 @@ def create_windows_audit_worker(settings):
     if sys.platform!='win32' or type(settings) is not BootstrapSettings:raise RuntimeError('Windows audit worker unavailable')
     database=None
     try:
-        database=create_worker_database_runtime(read_database_url())
+        database=create_worker_database_runtime(read_database_url(),maintenance_admission=True)
         license_services=create_windows_worker_license_services(database,settings)
         actor=create_windows_system_actor();actor.assert_current()
         projects=ProjectAuthorizationService(unit_of_work=database.unit_of_work,repository=SqlAlchemyProjectAuthorizationRepository())
         storage=LocalAuditExportFileStorage(LocalFileStorage(settings.data_root))
         loop=create_audit_export_worker(database=database,projects=projects,license_guard=license_services.guard,system_actor=actor,storage=storage,
-            settings=AuditWorkerSettings('audit-'+uuid4().hex))
+            settings=AuditWorkerSettings('audit-'+uuid4().hex),
+            maintenance_admission=database.maintenance_admission)
         return database,loop
     except Exception:
         if database is not None:

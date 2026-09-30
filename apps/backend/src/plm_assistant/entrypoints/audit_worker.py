@@ -76,7 +76,8 @@ def _schema_current(database):
         return tx.session.execute(text('SELECT version_num FROM plm.alembic_version')).scalars().all()==[expected]
 
 
-def create_audit_export_worker(*,database,projects,license_guard,system_actor,storage,settings):
+def create_audit_export_worker(*,database,projects,license_guard,system_actor,storage,settings,
+                               maintenance_admission=None):
     if type(database) is not WorkerDatabaseRuntime or type(settings) is not AuditWorkerSettings:raise ValueError('Explicit worker runtime/settings required')
     settings.__post_init__()
     for obj,names in ((projects,('require_in_transaction',)),(license_guard,('require_valid',)),(system_actor,('assert_current',)),
@@ -110,4 +111,5 @@ def create_audit_export_worker(*,database,projects,license_guard,system_actor,st
     admission=AuditExportClaimAdmission(unit_of_work=uow,repository=repo,claims=AuditExportClaims(repository=SqlAlchemyAuditExportClaimRepository()),queue=queue,system_actor=system_actor,supervisor=supervisor)
     sweep=AuditExportExhaustionSweep(unit_of_work=uow,candidates=AuditExportExhaustionCandidates(repository=SqlAlchemyAuditExportExhaustionScanRepository()),system_actor=system_actor,exhaustion=exhaustion)
     step=AuditExportWorkerStep(admission=admission,executor=executor,sweep=sweep,worker_ref=settings.worker_ref,lease_seconds=settings.lease_seconds)
-    return AuditExportWorkerLoop(step=step,poll_seconds=settings.poll_seconds)
+    return AuditExportWorkerLoop(step=step,poll_seconds=settings.poll_seconds,
+                                 maintenance_admission=maintenance_admission)

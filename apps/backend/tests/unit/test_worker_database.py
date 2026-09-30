@@ -1,6 +1,7 @@
 from dataclasses import replace
 from unittest import TestCase
 from unittest.mock import Mock, MagicMock, patch
+from sqlalchemy import create_engine
 from plm_assistant.modules.platform.infrastructure.database import DatabaseEngineOptions
 from plm_assistant.modules.platform.infrastructure.worker_database import (
     WorkerDatabaseLimits,WorkerDatabaseRuntime,create_worker_database_runtime,
@@ -51,3 +52,29 @@ class WorkerDatabaseTests(TestCase):
         worker=WorkerDatabaseRuntime(runtime=self.runtime,limits=self.limits)
         self.tx.session.connection.side_effect=RuntimeError('synthetic private URL')
         self.assertFalse(worker.is_ready());worker.dispose();self.runtime.dispose.assert_called_once()
+
+    def test_explicit_maintenance_engine_owned_and_disposed(self):
+        engine=create_engine('sqlite://')
+        try:
+            with patch('plm_assistant.modules.platform.infrastructure.worker_database.create_database_runtime',
+                       return_value=self.runtime),patch(
+                       'plm_assistant.modules.platform.infrastructure.worker_database.create_engine',
+                       return_value=engine),patch.object(engine,'dispose',wraps=engine.dispose) as dispose:
+                worker=create_worker_database_runtime('postgresql+psycopg://localhost/synthetic',
+                                                       maintenance_admission=True)
+                self.assertIsNotNone(worker.maintenance_admission)
+                worker.dispose()
+                dispose.assert_called_once()
+            self.runtime.dispose.assert_called_once()
+        finally:
+            engine.dispose()
+
+    def test_failed_maintenance_engine_constructor_disposes_worker_runtime(self):
+        with patch('plm_assistant.modules.platform.infrastructure.worker_database.create_database_runtime',
+                   return_value=self.runtime),patch(
+                   'plm_assistant.modules.platform.infrastructure.worker_database.create_engine',
+                   side_effect=RuntimeError('synthetic construction failure')):
+            with self.assertRaises(RuntimeError):
+                create_worker_database_runtime('postgresql+psycopg://localhost/synthetic',
+                                               maintenance_admission=True)
+        self.runtime.dispose.assert_called_once()

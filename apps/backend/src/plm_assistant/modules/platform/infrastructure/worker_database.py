@@ -1,8 +1,9 @@
 """Explicit Worker-only PG18 limits; ordinary HTTP runtime defaults unchanged."""
 from contextlib import contextmanager
 from dataclasses import dataclass
-from sqlalchemy import text
+from sqlalchemy import Engine, create_engine, text
 from .database import DatabaseEngineOptions, create_database_runtime
+from .maintenance_admission import PostgresMaintenanceAdmission
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,11 +31,15 @@ class WorkerDatabaseLimits:
 
 
 class WorkerDatabaseRuntime:
-    def __init__(self, *, runtime, limits):
-        if runtime is None or type(limits) is not WorkerDatabaseLimits:
+    def __init__(self, *, runtime, limits, maintenance_engine: Engine | None = None):
+        if (runtime is None or type(limits) is not WorkerDatabaseLimits
+                or maintenance_engine is not None and not isinstance(maintenance_engine, Engine)):
             raise ValueError('Worker runtime and strict limits required')
         limits.__post_init__()
         self._runtime,self._limits=runtime,limits
+        self._maintenance_engine=maintenance_engine
+        self.maintenance_admission=(PostgresMaintenanceAdmission(maintenance_engine)
+                                    if maintenance_engine is not None else None)
 
     @contextmanager
     def unit_of_work(self):
@@ -63,15 +68,36 @@ class WorkerDatabaseRuntime:
             return False
 
     def dispose(self):
-        self._runtime.dispose()
+        try:
+            if self._maintenance_engine is not None:
+                self._maintenance_engine.dispose()
+        finally:
+            self._runtime.dispose()
 
 
-def create_worker_database_runtime(database_url, *, limits=None):
+def create_worker_database_runtime(database_url, *, limits=None,
+                                   maintenance_admission: bool = False):
     limits=limits if limits is not None else WorkerDatabaseLimits()
-    if type(limits) is not WorkerDatabaseLimits:
+    if type(limits) is not WorkerDatabaseLimits or type(maintenance_admission) is not bool:
         raise ValueError('Strict Worker limits required')
     limits.__post_init__()
     runtime=create_database_runtime(database_url,options=DatabaseEngineOptions(
         pool_size=limits.pool_size,max_overflow=limits.max_overflow,
         pool_timeout_seconds=limits.pool_timeout_seconds,connect_timeout_seconds=limits.connect_timeout_seconds))
-    return WorkerDatabaseRuntime(runtime=runtime,limits=limits)
+    maintenance_engine=None
+    try:
+        if maintenance_admission:
+            maintenance_engine=create_engine(
+                database_url, pool_pre_ping=True, pool_size=1, max_overflow=0,
+                pool_timeout=limits.pool_timeout_seconds, pool_recycle=1800,
+                pool_reset_on_return='rollback', isolation_level='READ COMMITTED',
+                connect_args={'connect_timeout':limits.connect_timeout_seconds,
+                              'application_name':'plm-worker-maintenance-admission'},
+                hide_parameters=True)
+        return WorkerDatabaseRuntime(runtime=runtime,limits=limits,
+                                     maintenance_engine=maintenance_engine)
+    except Exception:
+        if maintenance_engine is not None:
+            maintenance_engine.dispose()
+        runtime.dispose()
+        raise

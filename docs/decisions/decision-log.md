@@ -5752,3 +5752,8 @@
 
 - Phase/WBS：Phase2 / PLT-MAINT-01-A05-P01；编码前检查见 progress。向 Audit Worker Loop 注入可选 admission 协议，覆盖一次 `step()` 的扫尾/领取/执行和现有 heartbeat 同步收口；idle sleep 不持锁。Audit 模块不直接依赖 Platform 具体 PG Adapter。
 - Windows 正式组合接线与真实 PG18 跨进程验收后续单独完成；本项不改变 Audit Owner、Lease、权限或公开 API。连接失联非静止证明，仍需 OS 进程退出和发布前复核。
+
+## DEC-20260930-533 — Worker runtime 显式拥有独立准入 Engine
+
+- Phase/WBS：Phase2 / PLT-MAINT-01-A05-P02；编码前检查见 progress。WorkerDatabaseRuntime 仅在显式开启时创建一个独立 PG18 admission Engine，并与业务 runtime 同属 Worker 资源，静止退出/启动失败一起释放。Windows Audit Worker 从同一次当前账户 Vault URL 构造，传给 A05-P01 Loop；默认 Worker runtime/测试保持不启用。
+- 连接池最多1个专用准入连接，单 Worker 一轮串行；Heartbeat 使用现有业务连接。无新 Schema/API/依赖；目标 OS 账户/Server2025 和失联静止证明继续保留。

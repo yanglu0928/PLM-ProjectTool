@@ -13,6 +13,8 @@ from plm_assistant.entrypoints import worker_windows as cli
 from plm_assistant.entrypoints.audit_worker_signals import run_audit_worker_process
 from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
 from plm_assistant.modules.platform.infrastructure.windows_database_credential import read_database_url,write_database_url,DatabaseCredentialError
+from plm_assistant.modules.platform.infrastructure.maintenance_admission import MAINTENANCE_LOCK_KEY
+from plm_assistant.modules.audit.application.worker_capture import AuditExportWorkerError
 
 spec=spec_from_file_location('_windows_worker_step_fixture',Path(__file__).resolve().parents[1]/'aud-03-a06-a04-p03-a07-p04-p03-p06-p07-worker-step'/'verify.py')
 p=module_from_spec(spec);spec.loader.exec_module(p)
@@ -29,8 +31,8 @@ def exercise(v):
     settings=BootstrapSettings(data_root=v['file_root'],selected_mac='00-11-22-33-44-55')
     original_database=cli.create_worker_database_runtime;original_storage=cli.LocalAuditExportFileStorage
     created=[];loops=[];disposed=[]
-    def database(secret):
-        db=original_database(secret);created.append(db);original_uow=db.unit_of_work;original_dispose=db.dispose
+    def database(secret,**kwargs):
+        db=original_database(secret,**kwargs);created.append(db);original_uow=db.unit_of_work;original_dispose=db.dispose
         @contextmanager
         def counted():
             with original_uow() as tx:
@@ -50,7 +52,10 @@ def exercise(v):
         return Guarded()
     def decorate(unused):
         db,loop=cli.create_windows_audit_worker(settings);loops.append((db,loop));step=loop._step;original=step.step;values=[]
-        def counted():value=original();values.append(value);return value
+        assert loop._maintenance_admission is db.maintenance_admission and db.maintenance_admission is not None
+        def counted():
+            assert v['db'].execute('SELECT pg_try_advisory_lock(%s)',(MAINTENANCE_LOCK_KEY,)).fetchone()[0] is False
+            value=original();values.append(value);return value
         step.step=counted
         class Wrapped:
             def request_stop(self):loop.request_stop()
@@ -75,6 +80,16 @@ def exercise(v):
             else:raise AssertionError('fixture expected unprovisioned packaged product key; re-evaluate formal state')
             with patch.object(cli,'create_windows_worker_license_services',return_value=SimpleNamespace(guard=v['guard'])),patch.object(cli,'create_windows_system_actor',return_value=v['system_actor']),patch.object(cli,'LocalAuditExportFileStorage',side_effect=storage):
                 p.exercise(v,decorate_step=decorate)
+            before=snapshot()
+            v['db'].execute("UPDATE plm.plt_maintenance_state SET state='MAINTENANCE',lock_version=lock_version+1 WHERE state_id=1")
+            try:
+                for db,loop in loops:
+                    try:loop.run(max_steps=1)
+                    except AuditExportWorkerError:pass
+                    else:raise AssertionError('Audit Worker ran in MAINTENANCE')
+                assert snapshot()==before
+            finally:
+                v['db'].execute("UPDATE plm.plt_maintenance_state SET state='RUNNING',lock_version=lock_version+1 WHERE state_id=1")
             for db,loop in loops:
                 with loop.quiescent():db.dispose()
     finally:

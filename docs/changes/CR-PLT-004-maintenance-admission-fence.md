@@ -51,3 +51,5 @@ ADR-007/008 和冻结安全边界要求升级顺序为人工备份→维护模�
 2026-09-30 A04-P02：四个 GET content 路由已准入，Windows 三种显式生产组合都注入独立有界 PG18 Engine 并在 lifespan 清理；隔离 PG18 合成信任源下 RUNNING 真实管理员登录200、MAINTENANCE 登录/上传/四 GET content 503，而健康/Session GET 仍可用。后端1668（3跳过）、wheel PASS；旧无数据库路由契约测试显式注入准入替身，真实 PG 验证独立保留。目标账户/Server2025/Debian、20并发 P95、失联后的外部 I/O 与双 Worker/OS 静止仍未验证，CR OPEN。
 
 2026-09-30 A05-P01：Audit Loop 可选单步 admission 在隔离 PG18 合成 Step 证明 step 持锁/idle 不持锁、排他竞争与 MAINTENANCE 拒新 claim，后端1669（3跳过）、wheel PASS。尚未 Windows Audit Worker 组合和真实导出 I/O 验收，不可宣称双 Worker 已覆盖或取得静止。
+
+2026-09-30 A05-P02：Windows Audit Worker 从当前账户 Vault URL 构造专用单连接准入 Engine，向 Loop 注入并随 Worker 释放；隔离 PG18 临时 Vault/合成 License 的真实导出 Step 持共享锁、排他竞争拒绝，MAINTENANCE 不领取且业务快照不变。后端1671（3跳过）、wheel PASS。正式公钥/部署账户 ACL、长 I/O 失联、Server2025、Parser Worker 与 OS 退出未验证，CR 继续 OPEN。
