@@ -49,6 +49,65 @@ class _Sweep:
 
 
 class ParserWorkerLoopTests(unittest.TestCase):
+    def test_maintenance_admission_covers_sweep_and_step_not_idle(self):
+        step, sweep = _Step(), _Sweep()
+        step.release.set()
+
+        class Gate:
+            held = False
+            entries = 0
+            exits = 0
+
+            @contextmanager
+            def admit(self):
+                self.held = True
+                self.entries += 1
+                try:
+                    yield object()
+                finally:
+                    self.held = False
+                    self.exits += 1
+
+        gate = Gate()
+        original_sweep, original_step = sweep.run_next, step.step
+
+        def checked_sweep():
+            self.assertTrue(gate.held)
+            return original_sweep()
+
+        def checked_step():
+            self.assertTrue(gate.held)
+            return original_step()
+
+        sweep.run_next, step.step = checked_sweep, checked_step
+        loop = ParserWorkerLoop(step=step, sweep=sweep, poll_seconds=.05,
+                                maintenance_admission=gate)
+        original_wait = loop._stop.wait
+        def checked_wait(seconds):
+            self.assertFalse(gate.held)
+            return original_wait(seconds)
+        loop._stop.wait = checked_wait
+        result = loop.run(max_cycles=2)
+        self.assertEqual((result.reason, result.cycles), ("LIMIT", 2))
+        self.assertEqual((gate.entries, gate.exits, gate.held), (2, 2, False))
+
+    def test_maintenance_admission_failure_prevents_sweep_and_step(self):
+        step, sweep = _Step(), _Sweep()
+
+        class RefusingGate:
+            @contextmanager
+            def admit(self):
+                raise RuntimeError("synthetic refusal")
+                yield
+
+        loop = ParserWorkerLoop(step=step, sweep=sweep,
+                                maintenance_admission=RefusingGate())
+        with self.assertRaises(RuntimeError):
+            loop.run(max_cycles=1)
+        self.assertEqual((sweep.calls, step.calls), (0, 0))
+        with loop.quiescent():
+            pass
+
     def test_bounded_cycle_sweeps_and_claims_once(self):
         step, sweep = _Step(), _Sweep(ParserCancelSweepOutcome("RECOVERED", uuid.uuid4()))
         step.release.set()

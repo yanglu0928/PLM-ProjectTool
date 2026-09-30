@@ -2,13 +2,18 @@
 
 from __future__ import annotations
 
-from contextlib import contextmanager
+from contextlib import AbstractContextManager, contextmanager, nullcontext
 from dataclasses import dataclass
 from math import isfinite
 from threading import Event, Lock
+from typing import Protocol
 
 from .sweep_expired_cancel import ParserCancelSweepOutcome
 from .worker_step import ParserWorkerError, ParserWorkerStepOutcome
+
+
+class ParserCycleAdmission(Protocol):
+    def admit(self) -> AbstractContextManager[object]: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -31,16 +36,20 @@ class ParserLoopResult:
 
 
 class ParserWorkerLoop:
-    def __init__(self, *, step, sweep, poll_seconds: float = 1.0) -> None:
+    def __init__(self, *, step, sweep, poll_seconds: float = 1.0,
+                 maintenance_admission: ParserCycleAdmission | None = None) -> None:
         if (step is None or sweep is None
                 or any(not callable(getattr(step, name, None))
                        for name in ("step", "request_stop", "quiescent"))
                 or not callable(getattr(sweep, "run_next", None))
                 or type(poll_seconds) not in (int, float)
-                or not isfinite(poll_seconds) or not .05 <= poll_seconds <= 60):
+                or not isfinite(poll_seconds) or not .05 <= poll_seconds <= 60
+                or maintenance_admission is not None
+                and not callable(getattr(maintenance_admission, "admit", None))):
             raise ValueError("Owned Parser step, sweep and finite poll required")
         self._step, self._sweep = step, sweep
         self._seconds = poll_seconds
+        self._maintenance_admission = maintenance_admission
         self._stop, self._lock = Event(), Lock()
 
     def request_stop(self) -> None:
@@ -69,31 +78,34 @@ class ParserWorkerLoop:
                 if self._stop.is_set():
                     return ParserLoopResult("STOPPED", cycles, published, failed,
                                             cancelled, recovered, superseded)
-                cycles += 1
-                scan = self._sweep.run_next()
-                if type(scan) is not ParserCancelSweepOutcome:
-                    raise ParserWorkerError("PARSER_SWEEP_INVALID")
-                scan.__post_init__()
-                if scan.kind == "RECOVERED":
-                    recovered += 1
-                elif scan.kind == "SUPERSEDED":
-                    superseded += 1
-                if self._stop.is_set():
-                    return ParserLoopResult("STOPPED", cycles, published, failed,
-                                            cancelled, recovered, superseded)
-                result = self._step.step()
-                if type(result) is not ParserWorkerStepOutcome:
-                    raise ParserWorkerError("PARSER_STEP_INVALID")
-                result.__post_init__()
-                if result.kind == "PUBLISHED":
-                    published += 1
-                elif result.kind == "FAILED":
-                    failed += 1
-                elif result.kind == "CANCELLED":
-                    cancelled += 1
-                elif result.kind == "STOPPED":
-                    return ParserLoopResult("STOPPED", cycles, published, failed,
-                                            cancelled, recovered, superseded)
+                admission = (self._maintenance_admission.admit()
+                    if self._maintenance_admission is not None else nullcontext())
+                with admission:
+                    cycles += 1
+                    scan = self._sweep.run_next()
+                    if type(scan) is not ParserCancelSweepOutcome:
+                        raise ParserWorkerError("PARSER_SWEEP_INVALID")
+                    scan.__post_init__()
+                    if scan.kind == "RECOVERED":
+                        recovered += 1
+                    elif scan.kind == "SUPERSEDED":
+                        superseded += 1
+                    if self._stop.is_set():
+                        return ParserLoopResult("STOPPED", cycles, published, failed,
+                                                cancelled, recovered, superseded)
+                    result = self._step.step()
+                    if type(result) is not ParserWorkerStepOutcome:
+                        raise ParserWorkerError("PARSER_STEP_INVALID")
+                    result.__post_init__()
+                    if result.kind == "PUBLISHED":
+                        published += 1
+                    elif result.kind == "FAILED":
+                        failed += 1
+                    elif result.kind == "CANCELLED":
+                        cancelled += 1
+                    elif result.kind == "STOPPED":
+                        return ParserLoopResult("STOPPED", cycles, published, failed,
+                                                cancelled, recovered, superseded)
                 if scan.kind == "IDLE" and result.kind == "IDLE":
                     self._stop.wait(self._seconds)
             return ParserLoopResult("LIMIT", cycles, published, failed,

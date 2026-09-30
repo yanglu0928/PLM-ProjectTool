@@ -53,3 +53,5 @@ ADR-007/008 和冻结安全边界要求升级顺序为人工备份→维护模�
 2026-09-30 A05-P01：Audit Loop 可选单步 admission 在隔离 PG18 合成 Step 证明 step 持锁/idle 不持锁、排他竞争与 MAINTENANCE 拒新 claim，后端1669（3跳过）、wheel PASS。尚未 Windows Audit Worker 组合和真实导出 I/O 验收，不可宣称双 Worker 已覆盖或取得静止。
 
 2026-09-30 A05-P02：Windows Audit Worker 从当前账户 Vault URL 构造专用单连接准入 Engine，向 Loop 注入并随 Worker 释放；隔离 PG18 临时 Vault/合成 License 的真实导出 Step 持共享锁、排他竞争拒绝，MAINTENANCE 不领取且业务快照不变。后端1671（3跳过）、wheel PASS。正式公钥/部署账户 ACL、长 I/O 失联、Server2025、Parser Worker 与 OS 退出未验证，CR 继续 OPEN。
+
+2026-09-30 A05-P03：Parser Loop 可选单轮 admission 已把取消到期扫描及 OCR Step 纳入同一共享锁窗口，idle wait 不持锁；隔离 PG18 排他竞争/MAINTENANCE 在扫描前拒绝、后端1673（3跳过）与 wheel PASS。尚未 Windows Parser 进程接线、长 OCR I/O/连接失联/OS 静止验证，CR OPEN。

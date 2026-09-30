@@ -90,3 +90,12 @@
 风险/回滚：目标账户 Vault 独占、Server2025/长期导出/连接失联仍需验；Parser 独立进程尚无门禁，维护整体仍不可启用。无 Migration/公开 API/依赖；停用装配并恢复匹配版本程序，不清除维护历史。
 
 结果：A05-P02 Windows11 隔离组合内部 PASS。WorkerDatabaseRuntime 仅显式请求时创建独立单连接准入 Engine，构造失败及静止退出释放；Windows Audit Worker 同一次当前账户 Vault URL 装配并向 Loop 注入。真实 PG18、临时 Windows Vault 凭据与 SystemActor、合成 License 下的实际导出 Step 验证共享锁覆盖文件发布窗口，排他锁不能进入；MAINTENANCE 下 Worker 拒绝下一步且业务表快照不变。后端全量1671（3既有跳过）、wheel PASS；临时凭据与随机库清理。正式发行公钥/目标部署账户 ACL、Server2025、长导出失联和 OS 进程退出未验，Parser 仍未接门禁，A05/维护模式/Gate3/发行包不通过。
+
+## A05-P03 编码前检查：Parser Worker 单轮共享准入
+
+当前 Phase：Phase 2 Platform Core。当前 WBS：PLT-MAINT-01-A05-P03。输入基线：CR-PLT-004/ADR-012、A03-P01 PG18 共享 Port、现有 Parser Loop 扫描/领取/执行/空闲等待语义。前置 Audit Worker 装配已内部 PASS；Parser Windows 进程仍未装配维护门禁，本项只做 Loop 可选 Port。
+涉及模块：Parser 调度循环，不改 Document/Jobs/Audit Owner、OCR 引擎或公开 API。涉及实体：仅读维护状态，不增 Schema。涉及权限：现有 SystemActor/当前 User/Project/License 继续判断；共享准入不替代业务授权。
+验收标准：一轮 expired-cancel 扫描及 parse step 均持同一共享锁，stop/异常释放，idle sleep 无锁；MAINTENANCE 与排他竞争拒绝新扫描/领取；原无注入行为不退化；隔离 PG18 并发、单元、全回归与 wheel。
+风险/回滚：OCR 长 I/O 中连接意外丢失不会自动杀止进程，仍需发布前复核和 OS 退出证明；Windows 生产进程需后续独立接线。无 Migration/API/依赖；回滚不装配该可选 Port。
+
+结果：A05-P03 Parser Loop 可选单轮共享准入内部 PASS。一次取消到期扫描与 Parser Step 处于同一准入窗口，停机/异常会退出窗口，idle wait 在锁外。隔离 PG18 双连接验证扫描及 Step 均拒绝排他锁、完成后释放；MAINTENANCE 下扫描/领取计数均不增加。单元新增2、后端全量1673（3既有跳过）、wheel PASS，随机测试库清理。Windows Parser 进程尚未注入，真实 OCR 长 I/O/失联、目标账户及 OS 静止未验；A05/维护模式/Gate3/发行包不通过。

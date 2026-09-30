@@ -5757,3 +5757,8 @@
 
 - Phase/WBS：Phase2 / PLT-MAINT-01-A05-P02；编码前检查见 progress。WorkerDatabaseRuntime 仅在显式开启时创建一个独立 PG18 admission Engine，并与业务 runtime 同属 Worker 资源，静止退出/启动失败一起释放。Windows Audit Worker 从同一次当前账户 Vault URL 构造，传给 A05-P01 Loop；默认 Worker runtime/测试保持不启用。
 - 连接池最多1个专用准入连接，单 Worker 一轮串行；Heartbeat 使用现有业务连接。无新 Schema/API/依赖；目标 OS 账户/Server2025 和失联静止证明继续保留。
+
+## DEC-20260930-534 — Parser 每轮扫描与执行同锁准入
+
+- Phase/WBS：Phase2 / PLT-MAINT-01-A05-P03；编码前检查见 progress。Parser Loop 注入可选 admission 协议，把一次 expired-cancel 扫描、领取及 OCR 执行放在同一共享锁窗口；idle sleep 在锁外，停止和异常自动释放。Parser 业务模块不直接依赖 PG Adapter。
+- Windows 进程显式接线和真实 OCR/失联验证后续独立 WBS；不改变既有 Document/Jobs/Audit 事务与权限，连接丢失非 OS 静止证明。
