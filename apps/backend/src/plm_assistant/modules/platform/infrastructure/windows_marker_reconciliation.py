@@ -22,7 +22,9 @@ _FILE_NAME = re.compile(r"(api|audit_worker|parser_worker)-([1-9][0-9]*)-([a-f0-
 _SID = re.compile(r"S-\d-\d+(?:-\d+)+\Z", re.ASCII)
 _SHA = re.compile(r"[a-f0-9]{64}\Z")
 _ROLE_ENTRY = {
-    "API": re.compile(r"plm_assistant[./\\]entrypoints[./\\]serve_windows(?:\.py)?\b", re.I),
+    "API": re.compile(
+        r"plm_assistant[./\\]entrypoints[./\\]"
+        r"(?:serve_windows(?:\.py)?\b|service_windows(?:\.py)?\s+API\b)", re.I),
     "AUDIT_WORKER": re.compile(r"plm_assistant[./\\]entrypoints[./\\]worker_windows(?:\.py)?\b", re.I),
     "PARSER_WORKER": re.compile(r"plm_assistant[./\\]entrypoints[./\\]parser_worker_windows(?:\.py)?\b", re.I),
 }

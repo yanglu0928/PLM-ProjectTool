@@ -5788,3 +5788,8 @@
 
 - Phase/WBS：Phase2 / PLT-MAINT-01-A06-P02-P03。直接 `sc.exe create` 指向普通 Python CLI 不满足 SCM 协议；外部 WinSW/NSSM 增加供应链/许可与父子 PID 对账。选择 Python3.13 标准库 `ctypes` 的单角色独立进程宿主路线，先做可注入状态机及 Windows11 实机 PoC，再处理三角色与安装器。详细比较、服务账户/错误/回滚见 ADR-013 与 CR-PLT-004。
 - 影响：无新依赖、Schema、API 或技术栈变更；服务宿主运行就绪与 STOPPED 必须由真实 SCM/PID/资源退出验证，设计不是 PASS。当前会话非管理员，不能安装或删除服务；失败回滚为不启用新宿主，旧 CLI/标记/审计保留。
+
+## DEC-20260930-540 — API 服务仅在 Uvicorn 实际监听后就绪
+
+- Phase/WBS：Phase2 / PLT-MAINT-01-A06-P02-P03-P02-A01。`service_windows` API 角色复用既有 bootstrap 与完整 Windows platform-write 工厂，延后重依赖导入到 SCM ServiceMain；使用 Uvicorn `Server.serve()` 的监听完成状态触发显式 ready，SCM stop event 请求正常 shutdown/lifespan 清理，标记覆盖该完整运行窗口。未知角色暂拒绝，不把 Audit/Parser 伪装为已接线。
+- 理由：只在工厂创建时报告 RUNNING 会误判 socket 绑定失败；现有 `uvicorn.run` 信号 CLI 与 SCM STOP 生命周期不同。影响仅 Windows 入口，无 API/Schema/新依赖；回滚禁用服务入口保留旧 CLI。真实 SCM/目标账户/长流收敛仍待验。

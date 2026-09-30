@@ -14,7 +14,7 @@ from pathlib import Path, PureWindowsPath
 _SID = re.compile(r"S-\d-\d+(?:-\d+)+\Z", re.ASCII)
 _PRODUCT_ENTRY = re.compile(
     r"plm_assistant[./\\]entrypoints[./\\]"
-    r"(?:serve_windows|worker_windows|parser_worker_windows|"
+    r"(?:serve_windows|service_windows|worker_windows|parser_worker_windows|"
     r"maintenance_windows|bootstrap_admin)\b", re.IGNORECASE)
 _MAX_SNAPSHOT_BYTES = 16 * 1024 * 1024
 

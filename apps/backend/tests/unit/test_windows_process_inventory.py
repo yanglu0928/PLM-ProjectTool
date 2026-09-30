@@ -32,6 +32,9 @@ class WindowsProcessInventoryTests(unittest.TestCase):
                                "python -m plm_assistant.entrypoints.process_inventory_windows"),
             ProcessObservation(5, "notepad.exe", "S-1-5-18",
                                "C:\\Windows\\notepad.exe", "notepad.exe"),
+            ProcessObservation(6, "python.exe", "S-1-5-18",
+                               "D:\\Other\\python.exe",
+                               "python -m plm_assistant.entrypoints.service_windows API C:/config.yaml"),
         )
         result = assess_processes(processes, deployment_sid=SID,
             runtime_root=PureWindowsPath("C:/PLMTool"), observer_pid=4)
@@ -40,6 +43,7 @@ class WindowsProcessInventoryTests(unittest.TestCase):
             (1, ("DEPLOYMENT_ACCOUNT",)),
             (2, ("RUNTIME_ROOT",)),
             (3, ("PRODUCT_ENTRYPOINT",)),
+            (6, ("PRODUCT_ENTRYPOINT",)),
         ])
         self.assertEqual(result.unreadable_processes, 1)
 

@@ -1,6 +1,6 @@
 # ADR-013：Windows SCM 原生服务宿主与进程身份
 
-日期：2026-09-30；状态：`ACCEPTED_FOR_IMPLEMENTATION / NOT_RUNTIME_VALIDATED`；关联 `CR-PLT-004`、`ADR-012`、`PLT-MAINT-01-A06-P02-P03`。本 ADR 不追写 Gate 2 冻结提交 `64cdf09`。
+日期：2026-09-30；状态：`PARTIALLY_IMPLEMENTED / NOT_SCM_VALIDATED`；关联 `CR-PLT-004`、`ADR-012`、`PLT-MAINT-01-A06-P02-P03`。本 ADR 不追写 Gate 2 冻结提交 `64cdf09`。
 
 ## 背景
 
@@ -34,3 +34,5 @@ Windows 三个现有生产入口为前台 Python CLI。它们可以做受控准�
 没有 DB Migration 或 `/api/v1` 变化。旧 CLI 保留为受控诊断/手工模式，服务宿主在实机验收前不取代它们；回滚可停用未投产的新宿主与精确服务定义，保留数据库、运行标记和审计。目标账户 Credential Manager/权限、OCR 子进程树、TLS 代理与网络监听仍须独立验收。任何服务安装/卸载不在本设计任务执行。
 
 Microsoft 官方接口依据：[Service entry point](https://learn.microsoft.com/en-us/windows/win32/services/service-entry-point)、[ServiceMain](https://learn.microsoft.com/en-us/windows/win32/services/service-servicemain-function)、[Service state transitions](https://learn.microsoft.com/en-us/windows/win32/services/service-status-transitions)、[Control handler](https://learn.microsoft.com/en-us/windows/win32/services/service-control-handler-function)、[Service programs](https://learn.microsoft.com/en-us/windows/win32/services/service-programs)。这些文档规定了 dispatcher、状态回报及快速返回的 STOP 处理器；具体 Python 宿主可行性仍需本项目实测。
+
+2026-09-30 进展：P03-P01 状态机骨架与 P03-P02-A01 API runner 已内部验证。API 用 Uvicorn 0.53.0 实际监听完成状态发 ready，合成 FastAPI Windows11 HTTP/lifespan/停止/标记退出 PASS。Audit/Parser runner、真实 SCM 注册/账户/目标信任源/长连接和 Server2025 仍未验，不能因 API 合成结果提升整个 ADR 状态为运行时 PASS。

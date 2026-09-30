@@ -161,6 +161,14 @@
 
 结果：A06-P02-P03-P01 Windows11 最小接口内部 PASS。标准库 `ctypes` 实现固定三角色名的原生 dispatcher/handler/ServiceStatus 骨架，状态机仅在 runner 显式就绪后报告 RUNNING，STOP 控制请求设置协作事件、STOP_PENDING 可递增 checkpoint，未就绪/意外返回/runner 或状态报告故障均不能报正常停止。单元5包含真实 Windows 非 SCM 子进程调用预期拒绝；后端1695（3既有跳过）、wheel PASS。未实现 API/Worker runner、SCM 安装/启动/停止，也未验证目标账户、非 daemon/OCR 子进程和资源退出；此结果不是正式服务或停写 PASS，下一 P03-P02 接入三角色并验证实际就绪/收敛。
 
+## A06-P02-P03-P02-A01 编码前检查：Windows API SCM runner
+
+当前 Phase：Phase 2 Platform Core。当前 WBS：PLT-MAINT-01-A06-P02-P03-P02-A01。输入基线：ADR-013/CR-PLT-004、P03-P01 状态机、现有 `serve_windows` 的 loopback/平台写组合与运行标记。前置状态机仅内部 PASS；正式服务安装/目标账户仍待。本项只接 API，Audit/Parser 后续独立任务。
+涉及模块：Platform Windows API 服务入口，不改业务路由/Owner、数据库或公开 API。实体：SCM stop event 与原运行标记，无业务持久实体。权限：沿现有目标账户 Vault/License 信任源，缺失失败关闭；不创建或安装服务。验收标准：SCM 入口快速分派，配置及生产写 app/lifespan/socket 完成后才报告 RUNNING；STOP 请求令 Uvicorn 排空并完成 lifespan，退出后清理自有标记；启动异常/意外退出/非 loopback 不报就绪。Windows11 合成 ASGI 实际 loopback HTTP/stop/标记测试，原 CLI 回归、全后端与 wheel。
+风险/回滚：目标账户真实凭据/公钥、SCM 服务控制、HTTP 活跃流/长请求、Server2025 未验；原生 host 的真实启动需后续管理员隔离验证。无 Migration/API/依赖；可停用新服务入口回退保留旧 CLI 与审计，不得据合成测试许可备份/迁移。
+
+结果：A06-P02-P03-P02-A01 Windows11 内部 PASS。新增未安装的 `service_windows API <absolute-bootstrap.yaml>` 入口，重依赖在 SCM 回调内加载，固定复用完整 platform-write 生产工厂和 loopback 检查。Uvicorn 0.53.0 `Server.started` 于 lifespan 与 socket bind 后才使 ready 回报；STOP event 请求正常 shutdown，`asyncio.run` 等待服务退出后清理自有标记。合成 FastAPI 真实 127.0.0.1 HTTP/lifespan/标记退出、非 loopback/工厂异常/错误角色与 read-only 候选识别验证通过；后端1699（3既有跳过）、wheel PASS。正式 License/目标账户信任源、真实 SCM 启停/长连接、双 Worker/Server2025 尚未验；下一 Audit/Parser runner，整体 CR/Gate3/发行仍 OPEN。
+
 ## PAR-01-A05-P06-P01 编码前检查：Windows OCR 模型路径可诊断限制
 
 当前 Phase：Phase 2 Platform Core。当前 WBS：PAR-01-A05-P06-P01。输入基线：CR-PAR-005 方案 A、现有 `OfflinePaddleOcr` 模型四文件指纹与 Windows Worker 启动链。前置同字节模型中文/ASCII 路径差异与底层异常已在本机复现；正式安装器/目标账户仍缺。

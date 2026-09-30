@@ -69,3 +69,5 @@ ADR-007/008 和冻结安全边界要求升级顺序为人工备份→维护模�
 2026-09-30 A06-P02-P03：正式 SCM 服务身份前置发现现有三个 Windows CLI 无 dispatcher/handler/状态回报，不能只用 `sc.exe create` 包装成服务。ADR-013 比较直接 CLI、外部包装器及无新增依赖的 Python3.13 原生宿主，选最后者进入分阶段可行性验证；每角色单独 SCM 进程，同 PID 对账与协作停止，不能在就绪前报告 RUNNING 或资源未静止时报告 STOPPED。原 CLI 保留，服务账户/安装器/Windows11 与 Server2025 SCM 实测、OCR 子进程/句柄/DB 会话待验；当前非管理员环境只完成方案，不安装服务，CR 保持 OPEN。
 
 2026-09-30 A06-P02-P03-P01：原生 SCM dispatcher/handler/status 的未公开基础设施骨架和显式就绪状态机已通过单元5、Windows11 非 SCM 子进程拒绝、后端1695（3跳过）及 wheel。此时尚无三角色 runner/正式服务注册与进程静止验收，绝不将骨架或 `STOPPED` 单独作为备份/迁移许可；当前非管理员环境无法实机安装，CR 继续 OPEN。
+
+2026-09-30 A06-P02-P03-P02-A01：API SCM runner 与 full platform-write 组合接线，合成 FastAPI 在 Windows11 真实 loopback socket/lifespan 就绪后才报告 RUNNING，STOP 后完成 Uvicorn shutdown 并移除自有标记；错误角色、非 loopback 和工厂异常拒绝。后端1699（3跳过）、wheel PASS。原生 SCM 实装/正式账户/License/长流和双 Worker 未验，仅内部链路，不能授予备份/迁移或关闭 CR。

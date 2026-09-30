@@ -87,6 +87,12 @@ class MarkerReconciliationTests(unittest.TestCase):
         self.assertEqual(self.check((record(),),
                                     (process(command="python -m other"),))
                          .findings[0].status, "IDENTITY_MISMATCH")
+        self.assertEqual(self.check((record(),),
+            (process(command="python -m plm_assistant.entrypoints.service_windows API C:/config.yaml"),))
+            .findings[0].status, "OBSERVED_MATCH")
+        self.assertEqual(self.check((record(),),
+            (process(command="python -m plm_assistant.entrypoints.service_windows AUDIT_WORKER C:/config.yaml"),))
+            .findings[0].status, "IDENTITY_MISMATCH")
 
     def test_native_bounded_marker_reader_rejects_invalid_and_never_deletes(self):
         if sys.platform != "win32":

@@ -16,7 +16,7 @@
 |ADR-010|内部审计导出文件归属|ACCEPTED_UNDER_CONTINUOUS_AUTHORIZATION / IMPLEMENTATION_PENDING|CR-AUD-002 / Audit交付|
 |ADR-011|审计 Worker 停止边界 / 受控 SystemActor（历史同号两份，待编号整理）|Accepted with remaining release gates|Phase 2 / Release|
 |ADR-012|维护准入与进程静止分离|ACCEPTED_UNDER_CR_PLT_004 / PARTIALLY_IMPLEMENTED|CR-PLT-004 / Gate 3|
-|ADR-013|Windows SCM 原生服务宿主与进程身份|ACCEPTED_FOR_IMPLEMENTATION / NOT_RUNTIME_VALIDATED|CR-PLT-004 / Release|
+|ADR-013|Windows SCM 原生服务宿主与进程身份|PARTIALLY_IMPLEMENTED / NOT_SCM_VALIDATED|CR-PLT-004 / Release|
 
 ## 变更规则
 
