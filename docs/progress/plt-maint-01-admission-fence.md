@@ -152,6 +152,15 @@
 
 结果：A06-P02-P03 方案与边界已记录于 ADR-013。官方 SCM 文档确认普通 CLI 不具备 dispatcher/handler/状态合同；选择不引入新组件的 Python 3.13 `ctypes` 原生独立服务宿主作为待验证实现路线。当前账户非管理员且本机无 PLM 服务，本项只完成设计，不把 P03-P01～P04 编码和实机验收写为 PASS。下一 P03-P01 实现可注入的最小状态机；CR-PLT-004/Gate3/发行仍 OPEN。
 
+## A06-P02-P03-P01 编码前检查：最小 SCM dispatcher 与生命周期状态机
+
+当前 Phase：Phase 2 Platform Core。当前 WBS：PLT-MAINT-01-A06-P02-P03-P01。输入基线：ADR-013/CR-PLT-004、Python3.13/Windows11、现有三角色入口。前置 ADR-013 已记录并同步；正式安装/目标账户不具备，本项不得注册服务或宣称 SCM 实机 PASS。
+涉及模块：Platform 基础设施 Windows 原生服务接口；不接 API/Worker 业务。实体：内存服务状态/停止事件，不新增持久实体。API：无。权限：仅读取当前系统接口，不修改 SCM 服务数据库；以后安装器和账户 ACL 单列任务。
+验收标准：固定三角色服务名、标准库 Win32 dispatcher/handler/状态结构；注册后报告 START_PENDING，只有 runner 显式就绪才 RUNNING；STOP 回调仅请求停止并快速返回，STOP_PENDING 可更新 checkpoint，runner 完成才 STOPPED；未就绪、意外退出与报告失败不能伪报正常。单元验证状态顺序/重复 STOP/异常，Windows11 非 SCM 调用预期拒绝、后端全量与 wheel。
+风险/回滚：Python `ctypes` 回调和真实 SCM 交互仍须管理员隔离安装验证；本项测试桩与错误路径不足以证明服务可运行。无 Migration/API/依赖；回滚不装配该未公开宿主，保留原 CLI、标记与审计。
+
+结果：A06-P02-P03-P01 Windows11 最小接口内部 PASS。标准库 `ctypes` 实现固定三角色名的原生 dispatcher/handler/ServiceStatus 骨架，状态机仅在 runner 显式就绪后报告 RUNNING，STOP 控制请求设置协作事件、STOP_PENDING 可递增 checkpoint，未就绪/意外返回/runner 或状态报告故障均不能报正常停止。单元5包含真实 Windows 非 SCM 子进程调用预期拒绝；后端1695（3既有跳过）、wheel PASS。未实现 API/Worker runner、SCM 安装/启动/停止，也未验证目标账户、非 daemon/OCR 子进程和资源退出；此结果不是正式服务或停写 PASS，下一 P03-P02 接入三角色并验证实际就绪/收敛。
+
 ## PAR-01-A05-P06-P01 编码前检查：Windows OCR 模型路径可诊断限制
 
 当前 Phase：Phase 2 Platform Core。当前 WBS：PAR-01-A05-P06-P01。输入基线：CR-PAR-005 方案 A、现有 `OfflinePaddleOcr` 模型四文件指纹与 Windows Worker 启动链。前置同字节模型中文/ASCII 路径差异与底层异常已在本机复现；正式安装器/目标账户仍缺。
