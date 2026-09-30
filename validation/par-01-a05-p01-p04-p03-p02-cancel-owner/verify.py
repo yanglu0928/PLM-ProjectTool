@@ -73,7 +73,7 @@ class Guard:
         return object()
 
 
-def exercise(v):
+def exercise(v, *, extra=None):
     project, actor, runtime, name = v["project"], v["actor"], v["runtime"], v["name"]
     csrf = b"c" * 32
     with fixture.connect(name) as db:
@@ -275,6 +275,9 @@ def exercise(v):
             assert retry_response.status_code == 200, retry_response.text
             assert (retry_response.json()["data"]["state"],
                     retry_response.headers["etag"]) == ("CANCELLED", '"v4"')
+            if extra is not None:
+                extra(v, db=db, client=client, lease=lease, headers=headers,
+                      path=path, body=body, snapshot=snapshot)
             db.execute("UPDATE plm.auth_users SET state='DISABLED' WHERE user_id=%s", (actor,))
             try:
                 reject(client, first_job, first_headers, 401)

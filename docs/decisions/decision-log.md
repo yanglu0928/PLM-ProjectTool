@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260930-517 — Parser 取消过期恢复与只读确认
+
+- Date/WBS：2026-09-30 / Phase2 `PAR-01-A05-P01-P04-P03-P03`；输入 ADR-007、CR-PAR-001/002、P04-P02 活租约协作取消与 P03-P02 用户申请。前置满足，Gate3不变。
+- Decision：`CANCEL_REQUESTED` 不属于普通 Parser 领取候选，不能等待通用 `claim_next_parse` 自行恢复。新增 Jobs-owned 当前代真实到期 Port，Parser 编排在同 UOW 内核 USER 首申请、Document 当前记录、SYSTEM Audit 与 Job/Lease/Attempt；恢复候选只是 hint，执行时重新锁定来源和数据库时间。确认丢失只读核验终态及唯一审计，不复做转换或猜测提交结果。
+- Impact/Rollback：无 Schema/API/权限/依赖扩张。合成身份仅测试内部能力；正式 SystemActor/独立进程及其他环境仍待。撤未装配恢复入口可回退，已提交取消历史必须保留；真实过期、旧代、零写拒绝、故障回滚和全量/wheel通过才关闭本项。
+
 ## DEC-20260930-516 — Parser 项目取消 Owner 接入顺序
 
 - Date/WBS：2026-09-30 / Phase2 `PAR-01-A05-P01-P04-P03-P02`。输入 API-03 项目取消、CR-PAR-002 版本快照、Document 实际上传来源与已有 Worker 协作取消；前置满足。涉及 Project/Document/Jobs/Audit/Platform 的应用 Port，不改冻结 API 或新依赖。

@@ -373,6 +373,80 @@ class SqlAlchemyJobLeaseRepository:
         session.flush()
         return claim
 
+    def expired_parse_cancel_facts(self, transaction: object, *, job_id: uuid.UUID,
+                                   fencing_token: int, worker_ref: str):
+        """Lock the current generation; PostgreSQL time, not a scheduler hint, decides expiry."""
+        validate_checkpoint(job_id=job_id, fencing_token=fencing_token,
+                            worker_ref=worker_ref)
+        session = self._session(transaction)
+        job = session.scalar(select(JobRow).where(JobRow.job_id == job_id)
+            .with_for_update(of=JobRow).execution_options(populate_existing=True))
+        if (job is None or (job.owner_module, job.job_type, job.scope)
+                != ("document", "DOCUMENT_PARSE", "PROJECT")
+                or job.state != "CANCEL_REQUESTED" or job.fencing_token != fencing_token
+                or job.completed_at is not None or not 1 <= job.attempt_count <= job.max_attempts <= 3):
+            raise JobLeaseError("STALE_LEASE")
+        lease = self._lease(session, job_id, fencing_token)
+        attempt = self._attempt(session, job_id, fencing_token)
+        now = self._now(session)
+        if (lease.worker_ref != worker_ref or attempt.worker_ref != worker_ref
+                or lease.state != "ACTIVE" or attempt.attempt_no != job.attempt_count
+                or attempt.completed_at is not None or attempt.error_code is not None
+                or job.lease_expires_at is None
+                or job.lease_expires_at != lease.lease_expires_at
+                or job.lease_expires_at > now or job.cancel_requested_by is None
+                or job.cancel_reason is None or job.cancel_requested_at is None
+                or job.cancel_requested_at < lease.acquired_at):
+            raise JobLeaseError("STALE_LEASE")
+        return self._claim(job), job.cancel_requested_by, job.cancel_requested_at
+
+    def recover_expired_parse_cancel(self, transaction: object, *, job_id: uuid.UUID,
+                                     fencing_token: int, worker_ref: str) -> ClaimedJob:
+        claim, _, _ = self.expired_parse_cancel_facts(transaction, job_id=job_id,
+            fencing_token=fencing_token, worker_ref=worker_ref)
+        session = self._session(transaction)
+        job = session.get(JobRow, job_id)
+        lease = self._lease(session, job_id, fencing_token)
+        attempt = self._attempt(session, job_id, fencing_token)
+        now = self._now(session)
+        lease.state = "EXPIRED"
+        attempt.completed_at = now
+        attempt.error_code = "JOB_CANCELLED"
+        job.state = "CANCELLED"
+        job.lease_expires_at = None
+        job.completed_at = now
+        session.flush()
+        return claim
+
+    def recovered_parse_cancel_facts(self, transaction: object, *, job_id: uuid.UUID,
+                                     fencing_token: int, worker_ref: str):
+        """Read-only exact terminal generation, including original cancellation metadata."""
+        validate_checkpoint(job_id=job_id, fencing_token=fencing_token,
+                            worker_ref=worker_ref)
+        session = self._session(transaction)
+        job = session.scalar(select(JobRow).where(JobRow.job_id == job_id))
+        lease = session.scalar(select(JobLeaseRow).where(
+            JobLeaseRow.job_id == job_id, JobLeaseRow.fencing_token == fencing_token))
+        attempt = session.scalar(select(JobAttemptRow).where(
+            JobAttemptRow.job_id == job_id, JobAttemptRow.fencing_token == fencing_token))
+        if (job is None or lease is None or attempt is None
+                or (job.owner_module, job.job_type, job.scope) !=
+                    ("document", "DOCUMENT_PARSE", "PROJECT")
+                or job.state != "CANCELLED" or job.fencing_token != fencing_token
+                or job.lease_expires_at is not None or job.completed_at is None
+                or not 1 <= job.attempt_count <= job.max_attempts <= 3
+                or lease.state != "EXPIRED" or lease.worker_ref != worker_ref
+                or attempt.worker_ref != worker_ref
+                or attempt.attempt_no != job.attempt_count
+                or attempt.completed_at is None or attempt.error_code != "JOB_CANCELLED"
+                or attempt.completed_at != job.completed_at
+                or job.completed_at < lease.lease_expires_at
+                or job.cancel_requested_by is None or job.cancel_reason is None
+                or job.cancel_requested_at is None
+                or job.cancel_requested_at < lease.acquired_at):
+            raise JobLeaseError("STALE_LEASE")
+        return self._claim(job), job.cancel_requested_by, job.cancel_requested_at, job.completed_at
+
     def finish(self, transaction: object, *, job_id: uuid.UUID,
                fencing_token: int, worker_ref: str) -> ClaimedJob:
         session = self._session(transaction)

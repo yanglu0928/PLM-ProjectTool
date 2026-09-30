@@ -11,6 +11,27 @@ class ParseCancelAuditSourceError(RuntimeError):
 
 
 class SqlAlchemyParseCancelAuditSources:
+    def verified_recovery(self, tx, *, job_id, project_id, document_version_id,
+                          trace_id, original_actor_id, requested_at, completed_at):
+        rows = _session(tx).scalars(select(AuditEventRow).where(
+            AuditEventRow.action == "DOCUMENT_PARSE_CANCEL_RECOVERED",
+            AuditEventRow.target_owner_module == "jobs",
+            AuditEventRow.target_object_type == "JOB-01",
+            AuditEventRow.target_object_id == job_id).limit(2)).all()
+        if len(rows) != 1:
+            raise ParseCancelAuditSourceError()
+        event = rows[0]
+        if (event.event_scope != "PROJECT" or event.target_project_id != project_id
+                or event.trace_id != trace_id or event.actor_type != "SYSTEM"
+                or event.actor_id is None or event.original_actor_id != original_actor_id
+                or event.actor_hint_digest is not None or event.outcome != "SUCCESS"
+                or event.target_version_id != document_version_id
+                or event.before_state != "CANCEL_REQUESTED"
+                or event.after_state != "CANCELLED" or event.reason_code != "LEASE_EXPIRED"
+                or event.occurred_at < requested_at or event.occurred_at > completed_at):
+            raise ParseCancelAuditSourceError()
+        return event.audit_event_id
+
     @staticmethod
     def _bound(event, *, job_id, project_id):
         if (event is None or event.event_scope != "PROJECT" or event.target_project_id != project_id

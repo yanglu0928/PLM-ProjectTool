@@ -12,6 +12,37 @@ from .orm import ParseRecordRow
 
 
 class SqlAlchemyParseCancelRepository:
+    def verified_cancelled_current(self, tx: object, *, request: ParseCancelRequest
+                                   ) -> CancelledParseAttempt | None:
+        """Read-only proof: absence is legal, but a present row must be exact terminal."""
+        try:
+            if type(request) is not ParseCancelRequest or request.started is not None:
+                raise ParseCancelError("VALIDATION_FAILED")
+            request.__post_init__()
+            session = tx.session
+            if not isinstance(session, Session) or not session.in_transaction():
+                raise ParseCancelError()
+            rows = session.scalars(select(ParseRecordRow).where(
+                ParseRecordRow.job_ref == request.job_id,
+                ParseRecordRow.attempt_no == request.attempt_no)).all()
+            if not rows:
+                return None
+            if len(rows) != 1:
+                raise ParseCancelError()
+            row = rows[0]
+            if (row.parse_state != "CANCELLED" or row.lock_version != 2
+                    or row.started_at is None or row.completed_at is None
+                    or row.result_ref is not None or row.result_sha256 is not None
+                    or row.error_code != "JOB_CANCELLED" or row.retryable is not False
+                    or (row.document_version_id, row.scope, row.project_id)
+                    != (request.document_version_id, request.scope, request.project_id)):
+                raise ParseCancelError()
+            return CancelledParseAttempt(row.parse_record_id, row.completed_at)
+        except ParseCancelError:
+            raise
+        except Exception:
+            raise ParseCancelError() from None
+
     def cancel_current(self, tx: object, *, request: ParseCancelRequest
                        ) -> CancelledParseAttempt | None:
         try:
