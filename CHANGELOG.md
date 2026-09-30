@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-09-30：0.1.0.dev0/PAR-01-A05-P01-P04-P03-P01 新增 Parser 取消首次响应的 Jobs-owned 不可变版本表与 Migration `0050`，由真实 PROJECT/DOCUMENT_PARSE USER Audit 事件限定来源，不混用 Audit Export 专属表。Windows11 隔离 PostgreSQL18 空/有数据升降级、非法来源/修改及含历史降级拒绝，后端全量1632（3既有跳过）、wheel包含PASS。兼容冻结 `/api/v1`，无公开 API、权限或依赖变化；生产升级须备份停写且含历史不可降级，当前未执行。用户取消 Owner/HTTP、过期恢复、Gate3和可用包仍待。
+
 - 2026-09-30：0.1.0.dev0/PAR-01-A05-P01-P04-P02 Parser Worker 在安全检查点协作取消，Document ParseRecord/Audit/Job 当前租约同事务收口；不确定 Start 回执以 Document 当前记录核对，取消不发布结果。Worker定向12、Python3.13后端全量1631（3既有跳过）、Windows11隔离 PG18/真实文件抽取中取消及独立 PG18 未启动/晚期失败回滚、wheel PASS。兼容冻结 `/api/v1`/DB0049，无 ORM/Migration、公开 API、权限、新依赖或升级操作；需现有 PostgreSQL18，用户请求 Owner/过期恢复/独立进程、Gate3及可用包仍待。
 
 - 2026-09-30：0.1.0.dev0/PAR-01-A05-P01-P04-P01 新增 Jobs 内部 Parser 取消状态心跳和当前租约确认：RUNNING 正常续租，CANCEL_REQUESTED 返回状态且不续租；旧代、过期及其他 Owner 不能确认。Jobs Lease 定向5、Python3.13后端全量1628（3既有跳过）、Windows11隔离 PG18 状态/租约验证、wheel PASS。兼容冻结 `/api/v1`/DB0049，无 ORM/Migration、公开 API、权限、新依赖或升级操作；Worker/Document/Audit 取消收口与用户请求 Owner 未接，Gate3和可用包仍待。

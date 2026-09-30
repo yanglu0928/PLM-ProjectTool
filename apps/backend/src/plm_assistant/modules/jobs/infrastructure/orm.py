@@ -5,11 +5,24 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import BigInteger, CheckConstraint, ForeignKeyConstraint, Index, Integer, Text, UniqueConstraint, text
+from sqlalchemy import BigInteger, CheckConstraint, Column, ForeignKeyConstraint, Index, Integer, Table, Text, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from plm_assistant.modules.platform.infrastructure.orm import Base
+
+
+parse_cancel_versions = Table(
+    "job_parse_cancel_versions", Base.metadata,
+    Column("audit_event_id", UUID(as_uuid=True), primary_key=True, nullable=False),
+    Column("lock_version", BigInteger, nullable=False),
+    ForeignKeyConstraint(["audit_event_id"], ["plm.aud_events.audit_event_id"],
+                         name="fk_job_parse_cancel_versions__audit"),
+    CheckConstraint(
+        "audit_event_id<>'00000000-0000-0000-0000-000000000000'::uuid AND lock_version>=0",
+        name="ck_job_parse_cancel_versions__shape",
+    ),
+)
 
 
 class JobRow(Base):

@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260930-515 — PAR-01-A05-P01-P04-P03-P01 Parser 取消首响应版本表
+
+- Date/WBS：2026-09-30 / Phase2 `PAR-01-A05-P01-P04-P03-P01`。输入冻结 API-03、CR-PAR-001、已有 P04-P01/P02 Worker 协作取消与 CR-PAR-002；前置 PASS。涉及 Jobs ORM/Schema 与 Audit 事件来源，不变更 `/api/v1`、用户权限、License 或依赖。
+- 差异/方案：通用幂等收据只有结果引用，Audit 事件无 `lock_version`；Worker 后续终结会改变当前版本。不能用当前 Job 版本构造首次重放，也不能混用 Audit Export 专属表。新增独立 `job_parse_cancel_versions`，只存事件 ID 与首版本；0050 限制项目 Parser USER 取消事件来源并保护不可变历史，含历史 downgrade 拒绝。原冻结基线不追写。
+- 验收/回滚：空库及已有 Job 升降级、来源/不可变/非空降级拒绝，PG18 PASS；后端1632（3跳过）/开发 wheel PASS。未装配 Owner，可回退应用入口并保留表；正式生产升级/历史恢复另验。P02 再接实际当前授权与同事务幂等响应，P03 处理过期/崩溃；Gate3不变。
+
 ## DEC-20260930-514 — PAR-01-A05-P01-P04 Parser 协作取消分层
 
 - Date/WBS：2026-09-30 / Phase2 `PAR-01-A05-P01-P04`，先 `P04-P01` Jobs 当前租约取消识别/确认，再 `P04-P02` Document/Audit 同事务与 Worker 检查点。输入 ADR-007 的协作取消、冻结 Job `CANCEL_REQUESTED`、现有 Audit Owner 取消状态机和 P02/P03 Parser Worker；Gate2及前置满足。涉及 Jobs/Parser/Document/Audit 内部 Port，不增公开 API/权限、Schema/Migration、依赖或外发。
