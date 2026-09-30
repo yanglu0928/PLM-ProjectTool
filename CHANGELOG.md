@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A06-P02-P03-P03-A02-P02-A01 新增 Windows 原生 SCM 只读固定服务清单与脱敏 CLI；仅报告安装/类型/启动方式/状态及 RUNNING 非零报告 PID，失败不输出部分清单，恒 `DIAGNOSTIC_ONLY` 且不授权备份/迁移。Windows11 本机三服务均未安装，原生缺失服务及合成定向5、后端1722（3既有跳过）、wheel PASS。无 Schema/API/依赖/服务写入或生产升级；可撤诊断入口回滚。真实已安装服务 QueryServiceConfigW/QueryServiceStatusEx 成功路径、目标账户/OS静止、Server2025、Gate3/发行包仍待。
+
 - 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A06-P02-P03-P03-A02-P01-R1 修补 Windows SCM 安装器身份检查：要求目标 `python.exe` 与当前安装器进程为同一文件、Python3.13 x64、发行元数据版本与包代码版本相同；在密码提示与 SCM 打开前拒绝误选。Windows11 定向6、后端1717（3既有跳过）、wheel PASS。无 Schema/API/依赖/生产安装或升级；需用目标解释器运行安装器，不建议撤除该失败关闭检查。包签名、正式目标账户/ACL/Vault、真实 SCM 启停、Server2025、Gate3/发行包仍未验证。
 
 - 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A06-P02-P03-P03-A02-P01 新增 Windows 固定单角色 SCM 手动安装器，原生 CreateServiceW 使用显式非内置账户及交互密码，不经 shell/argv/env；不自动启动、不覆盖或删除现有服务。模拟 SCM 成功/拒权/已存在/非法参数及原生绑定定向4、后端1715（3既有跳过）、wheel PASS。本机服务清单仍为空、未调用真实 SCM 写入。无 Schema/API/依赖/生产升级；未使用时可撤入口，已创建服务必须人工核对精确归属并受控回退。正式管理员/目标账户 Vault、ACL、License、真实启停/静止、Server2025 和 Gate3/发行包待；Python 密码原字符串内存零化不作保证。

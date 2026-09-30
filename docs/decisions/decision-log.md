@@ -5813,3 +5813,8 @@
 
 - Phase/WBS：Phase2 / PLT-MAINT-01-A06-P02-P03-P03-A02-P01。只允许三个固定角色、P03-A01 校验的本地绝对路径和显式非内置部署账户；调用 OpenSCManagerW/CreateServiceW 创建独立进程、手动启动服务。密码仅交互读取并以 API 参数传递，不进入 argv/env/`sc.exe` 命令行；失败不覆盖或自动删除服务，不自动启动。
 - 理由：`sc.exe create` 把账户密码放在命令行会增加泄露风险；原生 API 可直接传账户凭据并明确 access/start/type。影响限安装入口，无业务/API/Schema/依赖；未运行时撤入口即可回滚，真实创建后的回退需核对精确服务归属/状态由受控管理员操作。当前非管理员会话只做模拟验证，正式 SCM/账户/ACL/启停仍待。
+
+## DEC-20260930-545 — SCM 查询与资源静止许可分离
+
+- Phase/WBS：Phase2 / PLT-MAINT-01-A06-P02-P03-P03-A02-P02-A01。只读 Win32 API 查询固定服务名的配置和状态，输出脱敏摘要。`RUNNING` 以外状态的 `dwProcessId` 不作可信 PID；STOPPED 不当作资源静止。该快照不授予备份/迁移，后续须同次 OS 进程/标记、句柄与 DB 会话收敛证据。
+- 理由：Microsoft QueryServiceStatusEx 文档明确 STOP_PENDING PID 可能无效、STOPPED PID 永远无效，QueryServiceConfigW 返回的是保存配置而非运行中配置的强保证。影响仅诊断工具，无 Schema/API/依赖；回滚撤只读工具即可。真实服务/目标账户/Server2025 待验。

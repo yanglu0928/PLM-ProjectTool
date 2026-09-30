@@ -218,6 +218,16 @@
 结果：A06-P02-P03-P03-A02-P01-R1 Windows11 内部 PASS。安装器在密码提示和 `OpenSCManagerW` 前验证目标绝对 `python.exe` 与当前进程 `sys.executable` 指向同一文件、Python 3.13 x64，以及已安装的 `plm-project-tool-backend` 元数据版本等于包内 `__version__`。不同解释器、缺包、版本/位数不合均固定拒绝；原只读计划仍明确 `runtime_and_account_verified=false`。定向6、后端1717（3既有跳过）、wheel PASS。未调用真实 SCM/服务账户，包签名/目标账户/OCR/OS 静止仍待；P03-A02 总项保持未验。
 
 
+## A06-P02-P03-P03-A02-P02-A01 编码前检查：原生 SCM 只读快照
+
+当前 Phase：Phase 2 Platform Core。当前 WBS：PLT-MAINT-01-A06-P02-P03-P03-A02-P02-A01。输入基线：ADR-013/CR-PLT-004、P03-A01 命令计划/P03-A02-P01 安装器及 Windows 服务固定名；Microsoft QueryServiceConfigW/QueryServiceStatusEx 文档。真实安装/启停在当前非管理员且无目标账户会话仍受阻，本项只做只读诊断。
+涉及模块：Platform Windows SCM 查询基础设施/CLI；不改服务、账户、ACL、文件、DB、公开 API。实体：三固定服务的 SCM 类型、启动方式、binary path、账户、状态与报告 PID；无业务实体。权限：SC_MANAGER_CONNECT 与 SERVICE_QUERY_CONFIG/STATUS，只读；缺服务可报 NOT_INSTALLED，权限/错误失败关闭。
+验收标准：Win32 Unicode 原生查询固定服务名，限界配置缓冲区，读取状态/报告 PID；仅 RUNNING 的 PID 可作为有效观察，STOP_PENDING/STOPPED 不把报告 PID 当进程退出证明。CLI 不输出路径/账户/Secret，始终 `DIAGNOSTIC_ONLY` 且 `backup_or_migration_authorized=false`。合成固定角色/边界/失败与本机不存在服务的原生只读验证、全后端及 wheel。
+风险/回滚：SCM 配置表示下次启动配置，运行中可能不同；单次快照存在竞态，不含 OS PID/SID、标记、文件句柄/DB 会话证据。无 Migration/API/依赖，撤诊断入口可回滚，不能据其运行或备份/迁移。
+
+结果：Windows11 内部只读 PASS。三个固定服务名经原生 OpenSCManagerW/OpenServiceW 查询均为未安装，与此前清单一致；不存在服务时未进入 QueryServiceConfigW/QueryServiceStatusEx，故这两个 API 的真实成功路径尚未验。无 SCM 写入。合成状态、角色不匹配、失败关闭、敏感路径/账户脱敏及原生缺失服务查询定向5、后端1722（3既有跳过）、wheel PASS。报告固定 `DIAGNOSTIC_ONLY`/`backup_or_migration_authorized=false`，仅 RUNNING 且非零时显示报告 PID；`STOP_PENDING/STOPPED` 的 PID 不作为退出证据。真实已安装服务的正向 SCM 配置/运行状态、目标账户、OS PID/SID、句柄、DB 会话和 Server2025 仍未验证；P03-A02/CR-PLT-004/Gate3/发行继续 OPEN。
+
+
 ## PAR-01-A05-P06-P01 编码前检查：Windows OCR 模型路径可诊断限制
 
 当前 Phase：Phase 2 Platform Core。当前 WBS：PAR-01-A05-P06-P01。输入基线：CR-PAR-005 方案 A、现有 `OfflinePaddleOcr` 模型四文件指纹与 Windows Worker 启动链。前置同字节模型中文/ASCII 路径差异与底层异常已在本机复现；正式安装器/目标账户仍缺。

@@ -25,6 +25,8 @@
 
 ## 最近检查点
 
+- 2026-09-30/PLT-MAINT-01-A06-P02-P03-P03-A02-P02-A01 Windows11 原生 SCM 固定名只读清单：本机三服务均未安装，无 SCM 写入；合成配置/状态/敏感字段脱敏及真实缺失服务查询定向5、后端1722（3跳过）、wheel PASS。真实已安装服务的 QueryServiceConfigW/QueryServiceStatusEx 成功路径、目标账户/进程/句柄/DB 会话及 Server2025 未验；恒不授予备份/迁移，P03-A02/Gate3/程序包待。
+
 - 2026-09-30/PLT-MAINT-01-A06-P02-P03-P03-A02-P01-R1 安装器现拒绝非当前解释器、非 Python3.13 x64、缺失/不匹配包元数据；密码提示/SCM 前失败关闭。定向6、后端1717（3跳过）、wheel PASS。真实 SCM/目标账户/包签名及资源静止仍未验，P03-A02/Gate3/包待。
 
 - 2026-09-30/PLT-MAINT-01-A06-P02-P03-P03-A02-P01 Windows 原生单角色手动 SCM 安装器模拟/绑定内部 PASS，后端1715（3跳过）、wheel PASS；密码不进 argv/env/日志，缓冲区归零，但 Python 原字符串内存不能保证零化。当前账户未写真实 SCM、三服务仍不存在，目标账户/ACL/Vault/License、启停和静止未验；P03-A02/Gate3/发行包待。
