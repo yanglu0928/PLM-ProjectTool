@@ -57,3 +57,12 @@ Windows11 隔离 PG18/真实已提交合成文件/HTTP 用户取消：在 Audit 
 风险：缺正式维护停写栅栏，运行中的 API 仍可接新 Job；进程信号停止不能等同升级维护模式。跨平台 Debian 入口留后续独立任务，不假定 Windows 源适用。无 Migration/API 改动；回滚禁用新 CLI，保留已有数据。
 
 结果：A02-P03-A02 Windows11 内部 PASS。Bootstrap 示例新增可选的两绝对模型目录与小写 SHA-256 复合指纹；Parser CLI 必须三者齐备，实例化 `OfflinePaddleOcr` 时强制关闭模型源检查并由适配器验证实际模型指纹。沿用 Windows 当前账户 DB、License、SystemActor 来源；信号回调仅写本地停止请求，桥接线程协作停止，`quiescent` 后释放 DB。定向6、Python3.13 后端全量1657（3既有跳过）、wheel PASS。此轮仅合成 Port/信号单元，不曾以正式账户运行独立 OS 进程，也未重新验证真实模型断网和维护停写；因此 P03/P05 与 Gate3 仍未通过。
+
+## A02-P03-A03 编码前检查：隔离 Windows OS 进程与真实 OCR
+
+当前 Phase：Phase 2 Platform Core。当前 WBS：PAR-01-A05-P01-P05-A02-P03-A03。
+输入基线：Gate2/ADR007/011、A02-P03-A01/A02、CR-PAR-004 依赖锁定；前置本机 PG18/PP-OCRv5 det+rec 缓存可用。涉及模块：仅验证脚本和进程组合，必要缺陷修正回归；不改实体/API/权限。
+验收标准：在独立 spawn OS 进程中加载真实离线 OCR 模型，经已提交的合成扫描 PDF→Job 领取→OCR→ParseResultRef/Job 成功，父进程从持久库/物理结果复核；缺/错指纹及异常不能误报成功，资源清理；全量回归/构建。
+风险：测试使用隔离 PG、合成 License/SystemActor Port 和本机模型，不能证明正式账户 Vault、物理断网、Server2025/Debian 或升级维护模式。测试超时时只能终止本轮合成进程并标失败，不声称生产协作停止。无生产迁移；失败时保留 P03/Gate3 未通过。
+
+结果：A02-P03-A03 Windows11 隔离 OS 进程/真实 OCR 内部 PASS。测试先以错误复合指纹启动独立子进程，入口拒绝且 Job 仍 PENDING；再以相同本机 PP-OCRv5 模型的正确指纹启动，已提交合成扫描 PDF 由真实模型产出 `OCR_LINE: PROJECT SCOPE APPROVED`，Job SUCCEEDED、唯一 ResultRef，父进程独立重开物理结果文件并核 Hash/Size/模型指纹。PostgreSQL18 临时库及文件自动清理，PoC PG 恢复原停止状态。此项以测试替身注入 License/SystemActor 和隔离 DB URL；当前账户正式 Vault 来源、物理断网、维护停写及 Server2025/Debian 均未验证，不能关闭 P03/P05/Gate3。

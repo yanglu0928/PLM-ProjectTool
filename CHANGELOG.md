@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-09-30：0.1.0.dev0/PAR-01-A05-P01-P05-A02-P03-A03 增加 Windows 独立 OS 进程真实 OCR 验证：错误模型指纹启动拒绝且 Job 不变；正确本地模型处理已提交合成扫描 PDF，唯一 OCR_LINE/ParseResultRef、Job SUCCEEDED，父进程核实结果文件 Hash/大小/指纹。无本轮生产代码、Migration/API/依赖变化；运行环境为隔离 PG18 与合成 License/SystemActor，正式账户、物理断网、维护模式、Server2025/Debian、Gate3及发行包仍待。
+
 - 2026-09-30：0.1.0.dev0/CR-PAR-004 将 PyYAML 依赖固定为6.0.2，并显式固定 PaddleX3.7.2，解决 PaddleOCR3.7.0 的传递依赖冲突。Windows11 Python3.13隔离环境 `pip check` 无冲突、真实本地 PP-OCRv5 模型合成 PNG/混合PDF OCR、后端1657（3既有跳过）和 wheel 元数据 PASS。API/Schema/权限及数据升级不变；离线全依赖 wheelhouse/目标系统安装、正式进程与 Gate3 仍待。
 
 - 2026-09-30：0.1.0.dev0/PAR-01-A05-P01-P05-A02-P03-A02 新增 Windows Parser CLI、非敏感离线 OCR 模型路径/指纹配置和协作式进程信号收敛；继续使用当前账户 DB/License/SystemActor 受控来源，静止前不释放数据库。定向6、Python3.13 后端全量1657（3既有跳过）、wheel PASS。兼容原 `/api/v1`/DB0050，Bootstrap 可选字段不影响现有 API/Audit Worker；无 Migration/新依赖/生产升级。正式账户真实 OS 进程、断网 OCR、维护模式、Server2025/Debian、Gate3/发行包仍待。
