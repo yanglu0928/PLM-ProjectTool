@@ -87,7 +87,8 @@ class PublishParserResult:
             plan = prepared.plan
             if (plan != choose_parser_profile(plan.source)
                     or (prepared.job_id, prepared.fencing_token, prepared.attempt_no)
-                       != (command.job_id, command.fencing_token, 1)
+                       != (command.job_id, command.fencing_token, started.attempt_no)
+                    or prepared.attempt_no not in (1, 2, 3)
                     or (started.job_id, started.document_version_id,
                         started.parser_profile, started.parser_version)
                        != (command.job_id, plan.source.document_version_id,
@@ -117,7 +118,8 @@ class PublishParserResult:
                 if (type(claim) is not ClaimedJob or type(binding) is not ParseJobBinding
                         or claim.job_id != command.job_id
                         or claim.fencing_token != command.fencing_token
-                        or claim.attempt_no != 1 or claim.job_type != "DOCUMENT_PARSE"):
+                    or claim.attempt_no != prepared.attempt_no
+                    or claim.job_type != "DOCUMENT_PARSE"):
                     raise ParserPublishError()
                 binding.__post_init__()
                 request = binding.request
@@ -139,7 +141,8 @@ class PublishParserResult:
                 published = self._results.publish_success(tx, request=ParseSuccessRequest(
                     started.parse_record_id, command.job_id,
                     request.document_version_id, request.scope, request.project_id,
-                    plan.parser_profile, plan.parser_version, 1, stored))
+                    plan.parser_profile, plan.parser_version,
+                    prepared.attempt_no, stored))
                 if (type(published) is not PublishedParseResult
                         or (published.parse_record_id, published.result_ref_id)
                         != (started.parse_record_id, stored.result_ref_id)):

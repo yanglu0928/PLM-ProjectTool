@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260930-510 — PAR-01-A04-P02-P03-P03 第2/3代当前租约原子成功发布
+
+- Date/WBS：2026-09-30 / Phase2 依赖前置 PAR-01-A04-P02-P03-P03。输入冻结 DOC-04 ResultRef/ParseRecord/Job 时间与身份约束、P02-P02 首代真实原子发布、P03-P02 同一 Job 第2/3代启动均已验证。涉及 Parser 发布 Application 合同及 Document 自有内部请求验证；无 ORM/Migration、公开 API、权限、依赖或外发变化。
+- 编码前检查/目标：将当前硬编码首代的成功发布条件扩为当前第1～3代，并强制 `prepared`、`started`、Jobs 当前 Claim、Document ParseRecord 的 attempt_no 完全相等。私有文件实读/Hash、Outbox/固定 Version/模型证明、ResultRef→ParseRecord→Audit→Job 完成顺序保持不变；旧 fencing、旧 ParseRecord、改变来源及审计/最终 Job 失败仍全部拒绝或回滚。
+- 方案/风险/回滚：复用已有原子事务与冻结触发器，不开第二条“重试快速成功”路径。真实隔离 PG18 分别验证第2和第3代结果发布、旧代拒绝、唯一成功引用/时间顺序，单元/后端全量/wheel；不重新解释跨 Job 用户主动重试。撤销本次内部代数扩展即可回退到首代；已成功结果历史不可删。正式 Worker/崩溃恢复与 Gate3 仍待。
+- Executed：`StoredParseResult`/`ParseSuccessRequest` 与 `PublishParserResult` 仅放宽第1～3代，同时强制 prepared/started/current Claim/Document 行同代。定向5、Python3.13 后端全量1616（3既有跳过）、Windows11 隔离 PG18 第2与第3代真实文件→ResultRef/ParseRecord/真实 Audit/Job 成功、旧第2代在第三代下拒绝、时间顺序和唯一结果引用、wheel PASS；扩大原 P03-P02 隔离验证脚本作联合回归，随机库清理/PG恢复停止。跨 Job 用户主动重试、正式 Worker/崩溃恢复、Gate3仍待。
+
 ## DEC-20260930-509 — PAR-01-A04-P02-P03-P02 同一 Job 旧 ParseRecord 对账与新尝试启动
 
 - Date/WBS：2026-09-30 / Phase2 依赖前置 PAR-01-A04-P02-P03-P02。输入为冻结 DOC-04 连续 ParseRecord 尝试序号、P03-P01 Jobs 旧代证明、P02-P01 首次启动及真实 PG 触发器；Gate2 已通过。涉及 Parser Application、Document 自有 ParseRecord DTO/Repository、Jobs 只读证明及 Audit 追加；不涉及公开 API/权限、ORM/Migration、依赖或客户数据外发。

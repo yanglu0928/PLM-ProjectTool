@@ -4,6 +4,7 @@ import hashlib
 import io
 import unittest
 import uuid
+from dataclasses import replace
 from datetime import datetime, timezone
 from unittest.mock import Mock
 
@@ -117,6 +118,34 @@ class PublishParserResultTests(unittest.TestCase):
         self.audit.append.assert_called_once()
         self.leases.finish.assert_called_once()
         self.assertEqual(self.events, ["commit"])
+
+    def test_second_and_third_generation_publish_only_matching_attempt(self) -> None:
+        for number in (2, 3):
+            with self.subTest(attempt_no=number):
+                self.command = ParserInputCommand(self.job_id, number,
+                                                  f"parser-worker-{number}")
+                self.prepared.fencing_token = number
+                self.prepared.attempt_no = number
+                self.started = replace(self.started, attempt_no=number)
+                self.claim = replace(self.claim, fencing_token=number,
+                                     attempt_no=number)
+                self.leases.check_current.return_value = self.claim
+                self.leases.finish.return_value = self.claim
+                self.assertEqual(self.publish(), self.published)
+                request = self.results.publish_success.call_args.kwargs["request"]
+                self.assertEqual(request.attempt_no, number)
+                self.assertTrue(self.transactions[-1].committed)
+
+    def test_old_parse_record_cannot_publish_on_new_generation(self) -> None:
+        self.prepared.fencing_token = 2
+        self.prepared.attempt_no = 2
+        self.command = ParserInputCommand(self.job_id, 2, "parser-worker-2")
+        self.claim = replace(self.claim, fencing_token=2, attempt_no=2)
+        self.leases.check_current.return_value = self.claim
+        with self.assertRaises(ParserPublishError) as error:
+            self.publish()
+        self.assertEqual(error.exception.code, "PARSER_RESULT_MISMATCH")
+        self.assertFalse(self.transactions)
 
     def test_tamper_stale_final_lease_and_audit_failure_never_commit(self) -> None:
         self.storage.read_verified.return_value = b"tampered"

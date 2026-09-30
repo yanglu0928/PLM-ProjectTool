@@ -41,3 +41,5 @@ V2.1 将 Parser/OCR Worker 放在 Phase 3，但 Phase 2 的 EVD-01 Evidence 精�
 2026-09-30 后续：PAR-01-A04-P02-P03-P01 已证明当前租约前每代 JobAttempt 的终结事实、连续顺序和 Lease 一致性；Document 旧 ParseRecord 对账与新尝试启动尚未执行，不把此证明等同于重试支持，Gate3 不变。
 
 2026-09-30 后续：PAR-01-A04-P02-P03-P02 已在同一 Job 的第2/3代验证旧 ParseRecord 对账、新代 RUNNING 启动、真实 Audit 与异常回滚；冻结 Schema V1 不变。新 Job 的用户主动重试、后代成功结果发布及正式 Worker 未完成，P03/Gate3 不关闭。
+
+2026-09-30 后续：PAR-01-A04-P02-P03-P03 已在隔离 PG18 验证同一 Job 第2/3代的真实私有结果文件原子成功发布及旧代拒绝。后台过期接管链具备内部启动/发布能力；跨 Job 用户主动 retry 与正式 Worker loop/取消/失败/崩溃恢复、Evidence、质量及 Gate3 尚未完成。

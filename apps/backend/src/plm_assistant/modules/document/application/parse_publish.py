@@ -59,7 +59,7 @@ class ParseSuccessRequest:
                     (type(self.project_id) is not uuid.UUID or self.project_id.int == 0))
                 or type(self.parser_profile) is not str or not self.parser_profile
                 or type(self.parser_version) is not str or not self.parser_version
-                or type(self.attempt_no) is not int or self.attempt_no != 1
+                or type(self.attempt_no) is not int or not 1 <= self.attempt_no <= 3
                 or type(self.file) is not StoredParseResult):
             raise ParsePublishError("VALIDATION_FAILED")
         self.file.__post_init__()

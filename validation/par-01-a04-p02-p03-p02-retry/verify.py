@@ -5,8 +5,10 @@ from __future__ import annotations
 import hashlib
 import io
 import os
+import tempfile
 import uuid
 from datetime import datetime, timezone
+from pathlib import Path
 
 import psycopg
 from alembic import command
@@ -29,6 +31,12 @@ from plm_assistant.modules.document.application.parse_job_source import (
 from plm_assistant.modules.document.infrastructure.parse_attempt_repository import (
     SqlAlchemyParseAttemptRepository,
 )
+from plm_assistant.modules.document.infrastructure.parse_publish_repository import (
+    SqlAlchemyParsePublishRepository,
+)
+from plm_assistant.modules.document.infrastructure.parse_result_storage import (
+    LocalParseResultStorage,
+)
 from plm_assistant.modules.jobs.application.parse_enqueue import (
     ParseJobBinding, ParseJobRef, ParseJobRequest,
 )
@@ -38,11 +46,15 @@ from plm_assistant.modules.jobs.infrastructure.lease_repository import (
 from plm_assistant.modules.parser.application.prepare_input import (
     ParserInputCommand, VerifiedParserInput,
 )
+from plm_assistant.modules.parser.application.extract_textual import extract_textual
 from plm_assistant.modules.parser.application.profile_selection import (
     ParserInputVersion, choose_parser_profile,
 )
 from plm_assistant.modules.parser.application.start_retry_attempt import (
     StartRetryParseAttempt,
+)
+from plm_assistant.modules.parser.application.publish_result import (
+    ParserPublishError, PublishParserResult,
 )
 from plm_assistant.modules.platform.infrastructure.database import SqlAlchemyUnitOfWork
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
@@ -151,6 +163,7 @@ def main() -> None:
             engine = create_engine(url)
             uow = lambda: SqlAlchemyUnitOfWork(sessionmaker(engine))
             leases, attempts = SqlAlchemyJobLeaseRepository(), SqlAlchemyParseAttemptRepository()
+            results = SqlAlchemyParsePublishRepository()
             audit = AuditService(SqlAlchemyAuditRepository())
             try:
                 with connect(name) as db:
@@ -235,7 +248,8 @@ def main() -> None:
                                       ).fetchone()[0] == 1
                     expire(db, job_id=job, fencing_token=second.fencing_token)
                 third = claim("parser-3")
-                assert start(third).attempt_no == 3
+                started_third = start(third)
+                assert started_third.attempt_no == 3
                 try:
                     start(second)
                 except ParseAttemptError as exc:
@@ -252,6 +266,51 @@ def main() -> None:
                                     (3, "RUNNING", None)]
                     assert db.execute("SELECT count(*) FROM plm.aud_events"
                                       ).fetchone()[0] == 2
+                def publish(claimed, started, *, target_job, target_binding,
+                            target_source, target_plan, storage,
+                            worker_ref=None):
+                    prepared = VerifiedParserInput(target_plan, target_job,
+                        claimed.fencing_token, claimed.attempt_no, io.BytesIO(RAW))
+                    parsed = extract_textual(prepared)
+                    stored = storage.write_once(scope="PROJECT", project_id=project,
+                        result_ref_id=uuid.uuid4(), content=parsed.canonical_bytes())
+                    publisher = PublishParserResult(unit_of_work=uow, leases=leases,
+                        queue=Queue(target_binding), documents=Documents(target_source),
+                        storage=storage, results=results, audit=audit,
+                        system_actor_id=actor)
+                    return publisher.publish(command=ParserInputCommand(target_job,
+                        claimed.fencing_token,
+                        worker_ref or f"parser-{claimed.attempt_no}"),
+                        prepared=prepared, started=started, parsed=parsed,
+                        stored=stored)
+                with tempfile.TemporaryDirectory() as directory:
+                    storage = LocalParseResultStorage(Path(directory))
+                    try:
+                        publish(second, started_second, target_job=job,
+                            target_binding=binding, target_source=source,
+                            target_plan=plan, storage=storage)
+                    except ParserPublishError as exc:
+                        assert exc.code == "STALE_LEASE"
+                    else:
+                        raise AssertionError("old Parser result published")
+                    published_third = publish(third, started_third, target_job=job,
+                        target_binding=binding, target_source=source,
+                        target_plan=plan, storage=storage)
+                    assert published_third.parse_record_id == started_third.parse_record_id
+                with connect(name) as db:
+                    row = db.execute(
+                        "SELECT p.parse_state,p.result_ref,r.created_at,p.completed_at,"
+                        "j.completed_at,j.state FROM plm.doc_parse_records p "
+                        "JOIN plm.doc_parse_result_refs r ON r.parse_result_ref_id=p.result_ref "
+                        "JOIN plm.job_jobs j ON j.job_id=p.job_ref "
+                        "WHERE p.parse_record_id=%s", (started_third.parse_record_id,),
+                    ).fetchone()
+                    assert row[0] == "SUCCEEDED" and row[1] == published_third.result_ref_id
+                    assert row[2] <= row[3] <= row[4] and row[5] == "SUCCEEDED"
+                    assert db.execute("SELECT count(*) FROM plm.doc_parse_result_refs"
+                                      ).fetchone()[0] == 1
+                    assert db.execute("SELECT count(*) FROM plm.aud_events"
+                                      ).fetchone()[0] == 3
                     missing_job, missing_binding, missing_source, missing_plan = create_case(
                         db, actor=actor, project=project, code="missing")
                 with uow() as tx:
@@ -288,8 +347,26 @@ def main() -> None:
                     assert missing_rows == [(1, "CANCELLED", None, 1),
                                             (2, "RUNNING", None, 1)]
                     assert db.execute("SELECT count(*) FROM plm.aud_events"
-                                      ).fetchone()[0] == 3
-                print("PAR-01-A04-P02-P03-P02 PostgreSQL retry reconciliation PASS")
+                                      ).fetchone()[0] == 4
+                with tempfile.TemporaryDirectory() as directory:
+                    published_second = publish(missing_second, missing_started,
+                        target_job=missing_job, target_binding=missing_binding,
+                        target_source=missing_source, target_plan=missing_plan,
+                        storage=LocalParseResultStorage(Path(directory)),
+                        worker_ref="missing-2")
+                    assert published_second.parse_record_id == missing_started.parse_record_id
+                with connect(name) as db:
+                    assert db.execute("SELECT parse_state FROM plm.doc_parse_records "
+                                      "WHERE parse_record_id=%s",
+                                      (missing_started.parse_record_id,)
+                                      ).fetchone()[0] == "SUCCEEDED"
+                    assert db.execute("SELECT state FROM plm.job_jobs WHERE job_id=%s",
+                                      (missing_job,)).fetchone()[0] == "SUCCEEDED"
+                    assert db.execute("SELECT count(*) FROM plm.doc_parse_result_refs"
+                                      ).fetchone()[0] == 2
+                    assert db.execute("SELECT count(*) FROM plm.aud_events"
+                                      ).fetchone()[0] == 5
+                print("PAR-01-A04-P02-P03-P02/P03 PostgreSQL retry and publication PASS")
             finally:
                 engine.dispose()
         finally:
