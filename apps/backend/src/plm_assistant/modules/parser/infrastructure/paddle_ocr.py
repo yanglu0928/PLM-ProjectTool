@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import os
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -34,6 +35,11 @@ class OfflinePaddleOcr:
             raise PaddleOcrError("OCR_MODEL_FINGERPRINT_INVALID")
         det = _model_dir(detection_model_dir)
         rec = _model_dir(recognition_model_dir)
+        # Paddle 3.3.1 on Windows fails to read inference.json beneath a
+        # non-ASCII absolute path even when identical model bytes load from
+        # an ASCII path. Do not enter the third-party predictor with that path.
+        if sys.platform == "win32" and (not str(det).isascii() or not str(rec).isascii()):
+            raise PaddleOcrError("OCR_MODEL_PATH_UNSUPPORTED")
         try:
             self.model_fingerprint = _model_fingerprint(det, rec)
         except OSError:

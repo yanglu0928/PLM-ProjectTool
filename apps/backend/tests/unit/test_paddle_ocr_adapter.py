@@ -59,6 +59,27 @@ class PaddleOcrAdapterTests(unittest.TestCase):
                                      expected_model_fingerprint=original)
             self.assertEqual(error.exception.code, "OCR_MODEL_INTEGRITY_MISMATCH")
 
+    def test_windows_non_ascii_model_path_fails_before_predictor(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory) / "中文模型"
+            det, rec = root / "det", root / "rec"
+            det.mkdir(parents=True)
+            rec.mkdir()
+            for folder in (det, rec):
+                for name in ("config.json", "inference.json", "inference.pdiparams",
+                             "inference.yml"):
+                    (folder / name).write_bytes(name.encode())
+            fingerprint = _model_fingerprint(det, rec)
+            with patch.dict(os.environ, {"PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK": "True"}), \
+                 patch("paddleocr.PaddleOCR") as predictor, \
+                 patch("plm_assistant.modules.parser.infrastructure.paddle_ocr.sys.platform", "win32"):
+                with self.assertRaises(PaddleOcrError) as error:
+                    OfflinePaddleOcr(detection_model_dir=det,
+                                     recognition_model_dir=rec,
+                                     expected_model_fingerprint=fingerprint)
+                self.assertEqual(error.exception.code, "OCR_MODEL_PATH_UNSUPPORTED")
+                predictor.assert_not_called()
+
     def test_image_bounds_and_result_coordinates(self) -> None:
         adapter = object.__new__(OfflinePaddleOcr)
         adapter._engine = _Engine({

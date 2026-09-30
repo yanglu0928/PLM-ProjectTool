@@ -116,3 +116,11 @@
 风险/回滚：静态扫描不证明实际部署进程、Windows Service/Server2025/Debian、外部脚本或旧版应用已退出；不把矩阵当 Gate3/备份许可。文档可追溯修订，无运行迁移。
 
 结果：A06-P01 静态入口矩阵完成，详见 `docs/progress/plt-maint-01-entrypoint-inventory.md`。明确正式 Windows API 三模式与 Audit/Parser 两 Worker 已接共享准入，但首次管理员初始化和 Alembic 是独立特权写入口，OS Vault/Secret 变更也不受 PG 锁管；裸工厂不得当生产入口。仓库未见正式服务定义、进程/PID/版本握手、Debian 组合及统一受控 Migration 执行器；旧版/未知进程可绕过。该项只完成清单，不作真实进程静止证明，CR-PLT-004/Gate3/发行继续 OPEN。
+
+## PAR-01-A05-P06-P01 编码前检查：Windows OCR 模型路径可诊断限制
+
+当前 Phase：Phase 2 Platform Core。当前 WBS：PAR-01-A05-P06-P01。输入基线：CR-PAR-005 方案 A、现有 `OfflinePaddleOcr` 模型四文件指纹与 Windows Worker 启动链。前置同字节模型中文/ASCII 路径差异与底层异常已在本机复现；正式安装器/目标账户仍缺。
+涉及模块：Parser OCR Adapter 的 Windows 启动前路径检查，不改 OCR 结果、业务权限、数据库或 API。验收标准：Windows 非 ASCII 模型目录在 Paddle 初始化前固定错误码拒绝、无网络下载或 Job 领取；ASCII 原链与真实 OCR 保持，通过后端全量与 wheel；非 Windows 平台不受此 Windows 专属限制。
+风险/回滚：本项是显式限制，不是任意中文路径支持；正式发行须安装于受控 ASCII 目录并核权限/内容/Server2025，CR-PAR-005 未因此关闭。回滚移除路径检查将恢复不可诊断的 Paddle 初始化失败，不建议单独回滚；无 Migration/API/依赖。
+
+结果：PAR-01-A05-P06-P01 Windows11 内部 PASS。两套模型 det/rec 的四个指纹文件逐一 SHA-256 相同；直接 PaddleOCR 对中文路径在 `create_predictor` 抛空 JSON parse error，ASCII 路径成功。Adapter 现在对 Windows 非 ASCII 绝对模型路径在模型指纹/Paddle 初始化前固定 `OCR_MODEL_PATH_UNSUPPORTED`；单元证实不调用预测器，ASCII 路径真实合成 PNG 与原生/扫描混合 PDF OCR PASS。后端全量1674（3既有跳过）、wheel PASS。此项仅使限制显式可诊断，正式受控 ASCII 安装目录 ACL/模型校验、Server2025 和全离线包未验，CR-PAR-005/Gate3/发行继续 OPEN。
