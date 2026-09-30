@@ -224,15 +224,32 @@ class SqlAlchemyJobLeaseRepository:
 
     def claim_next(self, transaction: object, *, worker_ref: str,
                    lease_seconds: int) -> ClaimedJob | None:
+        return self._claim_next_filtered(transaction, worker_ref=worker_ref,
+                                         lease_seconds=lease_seconds,
+                                         parse_only=False)
+
+    def claim_next_parse(self, transaction: object, *, worker_ref: str,
+                         lease_seconds: int) -> ClaimedJob | None:
+        return self._claim_next_filtered(transaction, worker_ref=worker_ref,
+                                         lease_seconds=lease_seconds,
+                                         parse_only=True)
+
+    def _claim_next_filtered(self, transaction: object, *, worker_ref: str,
+                             lease_seconds: int, parse_only: bool) -> ClaimedJob | None:
         session = self._session(transaction)
         # Limit one claim per transaction. Exhausted jobs are terminalized before
         # trying the next row, so they cannot starve a ready job indefinitely.
         for _ in range(100):
             now = self._now(session)
-            job = session.execute(select(JobRow).where(or_(
+            conditions = [or_(
                 and_(JobRow.state.in_(("PENDING", "RETRY_WAIT")), JobRow.available_at <= now),
                 and_(JobRow.state == "RUNNING", JobRow.lease_expires_at <= now),
-            )).order_by(JobRow.priority.desc(), JobRow.available_at, JobRow.job_id)
+            )]
+            if parse_only:
+                conditions.extend((JobRow.owner_module == "document",
+                                   JobRow.job_type == "DOCUMENT_PARSE"))
+            job = session.execute(select(JobRow).where(*conditions)
+                .order_by(JobRow.priority.desc(), JobRow.available_at, JobRow.job_id)
                 .limit(1).with_for_update(of=JobRow, skip_locked=True)).scalar_one_or_none()
             if job is None:
                 return None

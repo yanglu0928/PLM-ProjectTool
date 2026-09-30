@@ -9,6 +9,9 @@ class _UnusedRepository:
     def claim_next(self, *args, **kwargs):
         raise AssertionError("invalid command reached repository")
 
+    def claim_next_parse(self, *args, **kwargs):
+        raise AssertionError("invalid command reached repository")
+
 
 class JobLeaseValidationTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -24,6 +27,12 @@ class JobLeaseValidationTests(unittest.TestCase):
         for seconds in (0, 3601):
             with self.subTest(seconds=seconds), self.assertRaises(JobLeaseError):
                 self.service.claim_next(worker_ref="worker-1", lease_seconds=seconds)
+
+    def test_parse_claim_rejects_invalid_input_before_transaction(self) -> None:
+        for worker, seconds in (("", 60), ("worker", 0), ("worker", 3601)):
+            with self.subTest(worker=worker, seconds=seconds), self.assertRaises(JobLeaseError):
+                self.service.claim_next_parse(worker_ref=worker,
+                                              lease_seconds=seconds)
 
 
 if __name__ == "__main__":

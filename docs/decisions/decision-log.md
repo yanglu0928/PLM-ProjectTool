@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260930-511 — PAR-01-A05-P01-P01 Parser Worker 定向 Job 领取
+
+- Date/WBS：2026-09-30 / Phase2 依赖前置 PAR-01-A05-P01-P01。输入为冻结模块化单体/Jobs Owner、现有通用 Job Lease、Document ParseJob 入队及 CR-PAR-001 解析前置时序；Gate2与前置均满足。涉及 Jobs Application/Repository 内部领取，不涉及 Parser 内容、Document 表、公开 API/权限、ORM/Migration、依赖或数据外发。
+- 编码前检查/目标：当前通用 `JobLeaseService.claim_next` 会领取任何 Job 类型，Parser Worker 不可调用它。新增 Jobs-owned `claim_next_parse`，仅在相同事务/行锁/fencing 下选择 `owner_module=document` 且 `job_type=DOCUMENT_PARSE`，过期接管/达到最大尝试的既有逻辑不变。验收为混合队列中只领取 Parse、非 Parse 行与 Lease/Attempt 全不变、过期接管和空队列行为、后端全量与 wheel。
+- 方案比较/决策：不在 Parser 领取后再筛类型（会消耗其他 Owner 的 Job）；复用原 Jobs Repository 核心领取实现并在 SQL 候选查询加 Owner 过滤，保留通用领取语义不变。服务新增显式方法而不扩公开 API。可撤新方法回滚，未装配 Worker；未知混合队列数据一律不跨 Owner 修正。P01整体、正式 Worker/心跳/失败/取消、Gate3均未完成。
+- Executed：Jobs Service/Repository 新增定向 `claim_next_parse`，保留通用领取实现与过期接管逻辑。定向3、Python3.13 后端全量1617（3既有跳过）、Windows11隔离 PG18 高优先级 Audit+Parse 混合队列、Parse 过期接管、Audit 行/Lease/Attempt 不变与通用领取回归、wheel PASS；随机库清理/PoC PG 恢复停止。正式 Worker 仍未接线，P01整体与 Gate3不关闭。
+
 ## DEC-20260930-510 — PAR-01-A04-P02-P03-P03 第2/3代当前租约原子成功发布
 
 - Date/WBS：2026-09-30 / Phase2 依赖前置 PAR-01-A04-P02-P03-P03。输入冻结 DOC-04 ResultRef/ParseRecord/Job 时间与身份约束、P02-P02 首代真实原子发布、P03-P02 同一 Job 第2/3代启动均已验证。涉及 Parser 发布 Application 合同及 Document 自有内部请求验证；无 ORM/Migration、公开 API、权限、依赖或外发变化。

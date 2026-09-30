@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-09-30：0.1.0.dev0/PAR-01-A05-P01-P01 新增 Jobs 内部 Parser 专用 Job 领取，SQL 候选只选 document/DOCUMENT_PARSE，沿用原行锁/fencing/过期接管；通用领取不变。定向3、Python3.13后端全量1617（3既有跳过）、Windows11隔离PG18混合队列/过期接管/非Parse零写及wheel PASS。兼容冻结 `/api/v1`/DB0049，无 ORM/Migration、公开 API、权限、依赖或升级操作；正式 Worker 执行/心跳/失败/取消、Gate3及可用包仍待。
+
 - 2026-09-30：0.1.0.dev0/PAR-01-A04-P02-P03-P03 将已验首代 ParseResult 成功发布扩展至同一 Job 第2/3代，要求所有输入/记录/当前租约代数一致，仍在一笔事务中写 ResultRef、ParseRecord、Audit 和 Job。定向5、Python3.13后端全量1616（3既有跳过）、Windows11隔离PG18两种后代真实文件/旧代拒绝/时间顺序/唯一引用及wheel PASS。兼容冻结 `/api/v1`/DB0049，无 ORM/Migration、公开 API、权限、依赖或升级操作；跨 Job 用户主动重试、正式 Worker、Gate3及可用包仍待。
 
 - 2026-09-30：0.1.0.dev0/PAR-01-A04-P02-P03-P02 增加同一 DOCUMENT_PARSE Job 第2/3代旧解析历史对账与当前尝试启动：旧 RUNNING→FAILED，未启动代补记 CANCELLED，真实 Audit 与状态转换同事务。定向3、Python3.13后端全量1614（3既有跳过）、Windows11隔离PG18真实触发器/审计失败回滚/幂等及wheel PASS。兼容冻结 `/api/v1`/DB0049，无 ORM/Migration、公开 API、权限、依赖或升级操作；后代成功发布、跨 Job 用户重试、正式 Worker、Gate3及可用包仍待。

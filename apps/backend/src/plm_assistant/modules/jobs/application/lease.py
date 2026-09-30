@@ -53,6 +53,8 @@ class ClosedJobAttempt:
 class JobLeaseRepositoryPort(Protocol):
     def claim_next(self, transaction: object, *, worker_ref: str,
                    lease_seconds: int) -> ClaimedJob | None: ...
+    def claim_next_parse(self, transaction: object, *, worker_ref: str,
+                         lease_seconds: int) -> ClaimedJob | None: ...
     def heartbeat(self, transaction: object, *, job_id: uuid.UUID,
                   fencing_token: int, worker_ref: str, lease_seconds: int) -> None: ...
     def finish(self, transaction: object, *, job_id: uuid.UUID,
@@ -79,6 +81,18 @@ class JobLeaseService:
         with self._unit_of_work() as tx:
             result = self._repository.claim_next(tx, worker_ref=worker_ref,
                                                  lease_seconds=lease_seconds)
+            tx.commit()
+            return result
+
+    def claim_next_parse(self, *, worker_ref: str,
+                         lease_seconds: int) -> ClaimedJob | None:
+        """Parser-only admission; never claim another Owner's ready Job."""
+        self._validate_worker(worker_ref)
+        if not 1 <= lease_seconds <= 3600:
+            raise JobLeaseError("INVALID_LEASE_DURATION")
+        with self._unit_of_work() as tx:
+            result = self._repository.claim_next_parse(
+                tx, worker_ref=worker_ref, lease_seconds=lease_seconds)
             tx.commit()
             return result
 
