@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
+from typing import Protocol
 
 from sqlalchemy import text
 from sqlalchemy.engine import Engine
@@ -28,23 +29,31 @@ class MaintenanceTransitionReceipt:
     audit_event_id: uuid.UUID
 
 
-class PostgresMaintenanceTransition:
-    """Caller owns Engine and must authenticate/authorize operator separately."""
+class MaintenanceOperatorAccess(Protocol):
+    def authorized_admin(self, transaction: object, *, session_token: bytes,
+                         csrf_token: bytes, now: datetime) -> uuid.UUID | None: ...
 
-    def __init__(self, engine: Engine) -> None:
-        if not isinstance(engine, Engine):
-            raise ValueError("Explicit PostgreSQL transition engine required")
+
+class PostgresMaintenanceTransition:
+    """Caller owns Engine; Auth verifies current Admin in the state transaction."""
+
+    def __init__(self, engine: Engine, *, access: MaintenanceOperatorAccess) -> None:
+        if not isinstance(engine, Engine) or access is None:
+            raise ValueError("Explicit PostgreSQL engine and Auth access required")
         self._engine = engine
+        self._access = access
         self._audit = AuditService(SqlAlchemyAuditRepository())
 
     def change(self, *, target: str, expected_version: int,
-               operator_id: uuid.UUID, wait_ms: int = 1000) -> MaintenanceTransitionReceipt:
+               session_token: bytes, csrf_token: bytes,
+               wait_ms: int = 1000) -> MaintenanceTransitionReceipt:
         if target not in ("RUNNING", "MAINTENANCE"):
             raise ValueError("Invalid maintenance target")
         if type(expected_version) is not int or expected_version < 0:
             raise ValueError("Invalid maintenance version")
-        if type(operator_id) is not uuid.UUID or operator_id.int == 0:
-            raise ValueError("Authenticated operator ID required")
+        if (type(session_token) is not bytes or len(session_token) != 32
+                or type(csrf_token) is not bytes or len(csrf_token) != 32):
+            raise ValueError("Authenticated session and CSRF required")
         if type(wait_ms) is not int or not 1 <= wait_ms <= 30_000:
             raise ValueError("Invalid maintenance wait")
         previous = "RUNNING" if target == "MAINTENANCE" else "MAINTENANCE"
@@ -67,6 +76,11 @@ class PostgresMaintenanceTransition:
                 return Session(bind=connection, autoflush=False, autobegin=False)
 
             with SqlAlchemyUnitOfWork(session_factory) as uow:
+                operator_id = self._access.authorized_admin(
+                    uow, session_token=session_token, csrf_token=csrf_token,
+                    now=datetime.now(timezone.utc))
+                if type(operator_id) is not uuid.UUID or operator_id.int == 0:
+                    raise MaintenanceAdmissionError("MAINTENANCE_ACCESS_DENIED")
                 row = uow.session.execute(text(
                     "UPDATE plm.plt_maintenance_state SET state=:target, "
                     "lock_version=lock_version+1 WHERE state_id=1 AND state=:previous "

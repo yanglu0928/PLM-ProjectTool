@@ -5725,3 +5725,8 @@
 - Phase/WBS：Phase2 / PLT-MAINT-01-A03-P02；编码前检查见 progress。排他状态切换与 Audit USER 成功事件同事务，沿用 DB0051 和 AuditService，不开放普通用户 API/CLI。
 - 入口须在后续 WBS 独立验证操作员身份及部署权限；此 Port 的 UUID 参数不构成认证。共享准入、全部生产进程和 OS 退出证明未完成时，即使状态成功切换亦禁止备份/迁移或宣称静止。
 - 使用有限锁等待、失败关闭；维护状态可恢复但历史不删除，版本持续递增。无新 Schema/API/依赖；旧版进程仍是发行阻塞。
+
+## DEC-20260930-528 — 维护转换操作员必须在同事务证明
+
+- Phase/WBS：Phase2 / PLT-MAINT-01-A03-P03-P01；编码前检查见 progress。A03-P02 的 UUID 输入不足以证明操作员授权，禁止生产装配。复用 Auth 当前 Session+CSRF+DeploymentAdmin 校验，在排他锁下、状态/Audit 同一事务内解析 actor，不接受调用方自称 UUID。
+- 该证明不等于 OS 部署账户限制或进程静止；CLI/服务权限和完整停写仍分步验收。无 API/Schema/依赖变化。

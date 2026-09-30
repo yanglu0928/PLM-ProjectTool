@@ -36,3 +36,12 @@
 风险与回滚：锁被失联连接释放不证明 OS 进程退出，转换即使成功也不构成备份许可；上线前需全入口接线和进程退出证明。无 Schema/API/依赖变化；回滚不装配此 Port，测试库按隔离生命周期删除。
 
 结果：A03-P02 内部 PASS。`PostgresMaintenanceTransition` 在 PG18 专用会话有限等待排他 advisory 锁，事务内更新 DB0051 状态/版本并经 AuditService 写 USER 成功事件，随后显式解锁；旧版本/同态重复拒绝，审计失败回滚。隔离 PG18 双连接验证未结束共享窗口时 50ms 超时拒绝、状态仍 RUNNING；释放后进入 MAINTENANCE/v1 并阻止新准入，再退出 RUNNING/v2；两条 Audit 前后态/操作员一致，审计故障零状态变化且连接池无锁泄漏。验证脚本三次通过，单元2、后端全量1661（3既有跳过）、wheel PASS；随机库清理且 PoC PG 恢复停止。操作员 UUID 在本 Port 中尚未认证/授权，无生产 CLI/API 装配、双 Worker 接线与 OS 退出证明，维护模式/Gate3不通过。
+
+## A03-P03-P01 编码前检查：转换事务内操作员权限
+
+当前 Phase：Phase 2 Platform Core。当前 WBS：PLT-MAINT-01-A03-P03-P01。输入基线：CR-PLT-004、A03-P02 转换 Port、Auth 已有 `SqlAlchemyLicenseImportAccess` 的 Session+CSRF+当前 DeploymentAdmin 核验。前置 A03-P02 内部 PASS；尚无受控 CLI/生产装配。
+涉及模块：Platform 转换 Port 与 Auth 既有访问适配器，不新建权限规则。涉及实体：原状态与 Audit，Auth User/Session 锁定读取。涉及 API：无公开 API 变化。权限：将外部传入任意 UUID 改为同一状态转换事务内从当前 Session+CSRF 解析操作员，拒绝停用/撤权/过期/改密待处理账户。
+验收标准：真实 PG18 合成 Admin Session 可进入/退出，错误 CSRF、非 Admin、停用/撤销等拒绝且状态/Audit 零变；共享锁超时、审计回滚和旧版本合同回归，全量后端、wheel。
+风险与回滚：认证只验证应用内 Admin，不证明当前 OS 部署账户或旧版进程静止；CLI/部署限制和 OS 退出证据后续独立处理。无 Schema/API/依赖变更；回滚不装配 Port，保留历史变更记录。
+
+结果：A03-P03-P01 内部 PASS。排他转换 Port 不再接受调用方自称操作员 UUID；在同一 Session 状态/Audit 事务中复用 Auth 的当前 Session+CSRF+DeploymentAdmin 锁定核验，解析真实 USER actor。隔离 PG18 合成管理员能进 MAINTENANCE/v1 与恢复 RUNNING/v2；错误 Session/CSRF、非管理员、停用账户、撤销 Session 均拒绝且状态/Audit 无新增；共享锁超时、旧版本与 Audit 故障回滚复验通过。后端全量1661（3既有跳过）、wheel PASS，随机库清理、PoC PG 恢复停止。尚无 OS 部署账户限制或受控 CLI，不能让运营侧执行切换；后续 A03-P03-P02 和 A04/A05/A06 继续。

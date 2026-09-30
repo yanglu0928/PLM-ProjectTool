@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A03-P03-P01 修订内部排他转换操作员证明：移除调用方 UUID，改由同一状态/Audit 事务内的当前 Session+CSRF+DeploymentAdmin 核验解析 actor。隔离 PG18 正/负权限矩阵、共享锁/回滚复验，后端1661（3既有跳过）、wheel PASS。无新 Schema/API/依赖/生产迁移；OS 受控入口、生产全覆盖、静止证明与 Gate3/发行包仍待。
+
 - 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A03-P02 新增 PG18 内部排他维护状态转换 Port，限时等待共享窗口，DB0051 状态与 Audit USER 事件同事务；隔离 PG18 双连接三次、审计故障回滚、单元2、后端1661（3既有跳过）、wheel PASS。无新 Schema/API/依赖/生产迁移；操作员认证与部署授权、生产 API/Worker 全覆盖和 OS 进程退出证明未完成，此 Port 尚未装配，维护模式/Gate3/发行包仍待。
 
 - 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A03-P01 新增 PG18 只读共享维护准入 Port，RUNNING 下专用会话持锁覆盖调用者窗口，MAINTENANCE/排他竞争/错库/旧 Schema 失败关闭；隔离 PG18 双连接与连接丢失、单元2、后端1659（3既有跳过）、wheel PASS。无新 Migration/API/权限/依赖及生产升级；当前只提供内部 Port，未接排他命令、生产 API/Worker 或 OS 静止证明，维护模式/Gate3/发行包仍待。
