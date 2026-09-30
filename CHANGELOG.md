@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P01 新增 A07 候选与 A01 93 wheel 精确名称/版本/Hash、许可元数据及通知文件 Hash 对账工具；93/93 一致，原 wheel 91/93 有可识别文件，合成5/5 PASS。发现 `et_xmlfile`/`openpyxl` 文件未进入候选载荷；`bce-python-sdk` 与自有 wheel 缺原 wheel 许可文本。无 Migration/API/依赖/安装升级变化，兼容性仅当前 Win11 本地证据；撤独立工具/忽略输出可回滚。产品许可、上游精确版本、前端/原生组件与法律审查未完成，`release_eligible=false`，不得发行。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A07 新增 Windows11 私有运行时+前端非发行候选组装及归档解包复验；17,206 载荷文件 SHA-256 回读、全新目录清洁路径后端导入/93发行元数据通过，合成6/6。生成93项第三方元数据清单但全部 `REVIEW_REQUIRED`，`bce-python-sdk` 与本产品 wheel 当前无可识别许可标记。无 Migration/API/依赖版本或生产升级变化；兼容性仅本机 Win11，旧 ZIP 不改，新忽略目录可经路径核对回滚。正式许可审查、信任源、DB/OCR/Plugin、安装升级、Server2025/Debian13及 Gate/UAT 未验；`release_eligible=false`，不得发行。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A06 新增 Windows11 官方嵌入式 Python 与 93 wheel 的私有旁装验证，93 发行元数据、本包/原生依赖/Windows 服务入口导入及清洁 PATH 二次导入 PASS；2/2 坏运行时 Hash/不完整 wheelhouse 输入拒绝。无 Migration/API/依赖版本或生产升级变化；兼容性仅当前 Win11 本机，实验目录 Git 忽略，可撤脚本和经路径核对的实验目录回滚。尚无 OCR 模型推理、正式服务/License/DB/物理断网/第三方许可总表、Server2025/Debian13/Gate/UAT；`release_eligible=false` 不变。
