@@ -12,9 +12,9 @@ import os
 import re
 import stat
 import uuid
-from dataclasses import dataclass
 from pathlib import Path
 
+from plm_assistant.modules.document.application.parse_publish import StoredParseResult
 from .local_storage import _checked_directory, _checked_file, _is_reparse
 
 
@@ -29,25 +29,6 @@ _MAX_BYTES = 100_000_000
 class ParseResultStorageError(RuntimeError):
     def __init__(self) -> None:
         super().__init__("private parse result storage unavailable")
-
-
-@dataclass(frozen=True, slots=True)
-class StoredParseResult:
-    result_ref_id: uuid.UUID
-    storage_locator: str
-    sha256: bytes
-    size_bytes: int
-
-    def __post_init__(self) -> None:
-        if (type(self.result_ref_id) is not uuid.UUID or self.result_ref_id.int == 0
-                or type(self.storage_locator) is not str
-                or _LOCATOR.fullmatch(self.storage_locator) is None
-                or self.storage_locator.startswith("temp/")
-                or self.storage_locator.split("/")[-1] != f"{self.result_ref_id.hex}.json"
-                or type(self.sha256) is not bytes or len(self.sha256) != 32
-                or type(self.size_bytes) is not int
-                or not 1 <= self.size_bytes <= _MAX_BYTES):
-            raise ParseResultStorageError()
 
 
 class LocalParseResultStorage:

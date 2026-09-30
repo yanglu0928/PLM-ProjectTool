@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260930-507 — PAR-01-A04-P02-P02 当前租约 ParseResult 原子成功发布
+
+- Date/WBS：2026-09-30 / Phase 2 依赖前置 PAR-01-A04-P02-P02；A04-P01 受控结果字节、P02-P01 首次 RUNNING ParseRecord 均已通过。输入冻结 DOC-04 Schema、Job Lease 和 `DocumentParseJobResults` 的时间顺序约束。
+- 编码前检查：涉及 Parser Application 协调、Document 自有 ParseResultRef/ParseRecord Repository、Jobs 现有当前租约/完成 Port 和 Audit 同事务追加；无新 ORM/Migration、公开 API、权限或 AI 外发。验收为字节/模型/源版本/Job/Outbox/租约完全绑定，Hash/大小实读，结果引用先于 ParseRecord/Job 完成，陈旧代、篡改、Audit失败一律回滚 DB 成功。
+- 决策：不使用 `JobLeaseService.finish(publish callback)`（它先设置 Job 完成时间，若回调再建 ResultRef 会违反结果时间 ≤ Job 完成时间的已冻结读取不变量）。改为单短事务中先 `check_current` 锁当前 Job，复核 Outbox 和 Document 来源，Document 插入不可变 ResultRef→升 RUNNING ParseRecord 为 SUCCEEDED→追加 Audit，最后调用同一 Jobs Repository 的 `finish` 再核租约并设置更晚的 Job 完成时间，然后一次提交。任何错误回滚全部 DB 状态；事先写盘的孤儿保留私有，不自动发布或删除。
+- 风险/回滚：当前仅首次 Attempt；过期/取消/重试历史对账仍需独立实现。文件与 DB 非单一事务，正式 Worker 恢复必须验证孤儿/损坏；发布后 Evidence 授权读取仍未实现。仅新增未装配端口/服务可回滚，不删历史，不关闭 Gate3。
+- Executed：Document 所有的结果证明/Repository 与 Parser 发布协调已实现；私有字节实读复验、当前 lease/Outbox/Document 固定来源重核、ResultRef→ParseRecord→真实 Audit→Job 完成均在一笔短事务中。定向3、Python3.13 后端全量1609（3既有跳过）、Windows11 隔离 PostgreSQL18 真实触发器/审计及两处晚期失败回滚、wheel PASS。PoC 端口55432被本机代理占用，验证改用55434，不改生产端口。仅首次 Attempt，尚未组合正式 Worker，Gate3不变。
+
 ## DEC-20260930-506 — PAR-01-A04-P02-P01 首次解析 Attempt 的 PENDING→RUNNING
 
 - Date/WBS：2026-09-30 / Phase 2 依赖前置 PAR-01-A04-P02-P01；A03 候选解析和 A04-P01 私有结果文件已通过，冻结 DB Schema V1 的 ParseRecord 触发器要求 INSERT PENDING、随后 RUNNING，且同版本/profile/parser_version 的 attempt 序号连续。

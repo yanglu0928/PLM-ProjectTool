@@ -35,3 +35,5 @@ V2.1 将 Parser/OCR Worker 放在 Phase 3，但 Phase 2 的 EVD-01 Evidence 精�
 2026-09-30 后续：PAR-01-A04-P01 已完成结构化结果文件的私有一次性写入与复验，沿用冻结 Schema V1 的结果引用形状；DB/Job/ParseRecord fenced 发布尚未完成，孤儿不等于成功，Gate 不变。
 
 2026-09-30 后续：PAR-01-A04-P02-P01 已真实验证首次当前租约的 ParseRecord PENDING→RUNNING，不包含成功结果发布或重试历史；A04-P02 整体未关闭，Gate 不变。
+
+2026-09-30 后续：PAR-01-A04-P02-P02 已在隔离 PostgreSQL18 验证首个 RUNNING Attempt 的 ResultRef、ParseRecord、真实 Audit 与 Job 在当前 lease 下原子成功发布及失败回滚。私有文件与数据库仍非同一事务，过期重试历史、正式 Worker 组合和受权 Evidence 待独立处理；A04-P02 整体及 Gate3 不关闭。
