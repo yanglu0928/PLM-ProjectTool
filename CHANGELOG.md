@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-30：0.1.0.dev0/PAR-01-A02-P01 新增 Document 自有内部 Parser 输入元数据读取，复用已提交上传/Audit 来源证明，同事务复核固定 Version/File 摘要、大小、MIME 与私有相对 locator；修正旧来源 SQL 将用户用途误固定为 `SOURCE_UPLOAD` 的错误。首轮真实 PG 失败后修复重跑；定向 7、后端全量 1572（2 项既有跳过）、真实 Windows11 隔离上传/PG 来源及伪造 actor 拒绝、wheel 构建 PASS。兼容冻结 `/api/v1`/DB0049，无 ORM/Migration、公开 API、权限、依赖或升级变化；当前 Worker lease/物理字节复验/真实解析、正式信任/Gate3/可用包待。
+
 - 2026-09-30：0.1.0.dev0/PAR-01-A01 按 CR-PAR-001 前置正式 Parser 的固定版本输入及版本化格式策略合同；PDF 文本优先/OCR 按需、图片 OCR 主链策略，仅作规划不执行解析。定向 3、Python 3.13 后端全量 1569 项（2 项既有跳过）、隔离 wheel 构建及打包检查 PASS；初始错误 Python 环境/非隔离构建失败均修正重跑。兼容冻结 `/api/v1`/DB0049，无生产 API、Schema/Migration、权限、依赖或升级变化。受权文件复验、真实 OCR/Worker、结果发布、Evidence 精确定位、正式信任/Gate3/可用包仍待。
 
 - 2026-09-30：0.1.0.dev0/DOC-05-A06-P03 Windows 11 隔离真实浏览器/HTTP/PG 验证固定版本 ParseRecord 按需显示、刷新、2+1 游标和匿名/非成员/跨项目拒绝；SQL 三条合成 PENDING、同 Job/版本及随机资源清理 exit0。前两轮夹具 Job refs/会话断言问题已修复并完整重跑。兼容冻结 `/api/v1`/DB0049，仅验证夹具/记录，无生产 API/Schema/Migration/权限/依赖或升级变化；浏览器文件上传、Worker/真实解析、正式信任、其他平台、Gate3/可用包仍待。

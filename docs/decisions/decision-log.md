@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260930-498 — PAR-01-A02-P01 Document 拥有的 Parser 输入元数据 Port
+
+- Date/WBS：2026-09-30 / Phase 2 依赖前置 PAR-01-A02-P01；`CR-PAR-001` 已记录时序调整，PAR-01-A01 格式策略合同通过。
+- Decision/Reason：复用 Document `CommittedParseDocumentSource` 的上传提交与 Audit 原始证明，在同一调用方事务内增加内部 `read_input`，仅向受控 Parser Worker 的下一层提供固定 DocumentVersion 对应 FileObject 的哈希、大小、检测 MIME 和私有相对 locator；不通过用户 Cookie，也不公开至 HTTP。后续 Worker 必须先核当前 Job lease/Outbox 并在文件读取后复核，单独 DTO 不是授权凭据。
+- Impact/rollback/validation：只改 Document Application/Repository 内部读取与测试，不改 Schema/Migration、冻结 API 或角色。回滚可撤方法/DTO；验证严格来源绑定、错误脱敏、畸形/路径拒绝及正确 Python3.13 全量回归，真实 PG/物理快照留下一子项，不能将元数据视为已验证文件字节。
+- 实施中偏差：首轮真实上传后的读取被旧 `purpose_code='SOURCE_UPLOAD'` 检查拒绝，而上传 API 将用户声明用途（如 `PROJECT_RECORD`）保存为 `purpose_code`；该码不是来源类型。选择保留 COMMITTED Intent、固定 Version/File、`source_metadata/source_ref='UPLOAD'` 和 Audit 的检查，移除错误的单值用途限制；重跑 PostgreSQL 验证正常与伪造主体拒绝，不改变冻结字段/公开合同。
+- Executed：Document 内部新增 `DocumentParseInputSource` 与 `read_input`、SQLAlchemy 同事务固定 File/Version 元数据复核，并修正用途码误判。定向 7、Python3.13 后端全量 1572（2 既有跳过）、真实隔离 PG 上传后来源元数据/Audit/伪造 actor 拒绝、wheel 构建 PASS；首轮 PG 失败已记录并修复重跑。真实文件快照/租约双检与 Parser Worker 未实现，P01 仅内部元数据 Port PASS。
+
 ## DEC-20260930-497 — PAR-01-A01 生产 Parser 输入与策略合同
 
 - Date/WBS：2026-09-30 / Phase 2 依赖前置 PAR-01-A01；依据 `CR-PAR-001`，不调整 Gate 3 结论。

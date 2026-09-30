@@ -22,6 +22,11 @@ from plm_assistant.entrypoints.production_login import (
     create_production_platform_write_app,
 )
 from plm_assistant.modules.document.infrastructure.upload_token import HmacUploadTokenIssuer
+from plm_assistant.modules.document.application.parse_job_source import DocumentParseSourceReader,DocumentParseSourceError
+from plm_assistant.modules.document.infrastructure.parse_job_source import SqlAlchemyDocumentParseSources
+from plm_assistant.modules.audit.application.upload_commit_source import UploadCommitAuditSources
+from plm_assistant.modules.audit.infrastructure.upload_commit_source import SqlAlchemyUploadCommitAuditSources
+from plm_assistant.modules.jobs.application.parse_enqueue import ParseJobRequest
 from plm_assistant.modules.document.api.document_list_cursor import DocumentListCursorCodec
 from plm_assistant.modules.document.api.version_list_cursor import VersionListCursorCodec
 from plm_assistant.modules.document.api.parse_list_cursor import ParseListCursorCodec
@@ -29,6 +34,7 @@ from plm_assistant.modules.license.application.runtime_guard import RuntimeLicen
 from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
 from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
+from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.project.api.department_list_cursor import DepartmentListCursorCodec
 from plm_assistant.modules.project.api.member_list_cursor import MemberListCursorCodec
 
@@ -198,6 +204,35 @@ def main():
                     assert client.post(commit_path, headers=headers(pm_token, "finalize-commit-other-01")).status_code == 409
 
                     parsed = first.json()["data"]
+                    with connect(name) as db:
+                        job_trace = db.execute("SELECT trace_id FROM plm.job_jobs WHERE job_id=%s",
+                            (uuid.UUID(parsed["parse_job_id"]),)).fetchone()[0]
+                    request = ParseJobRequest(uuid.UUID(committed["upload_id"]),
+                        uuid.UUID(parsed["document_id"]), uuid.UUID(parsed["document_version_id"]),
+                        parsed["version_no"], "PROJECT", project, pm, uuid.UUID(job_trace))
+                    runtime = create_database_runtime(url)
+                    try:
+                        source_reader = DocumentParseSourceReader(repository=SqlAlchemyDocumentParseSources(),
+                            audit_sources=UploadCommitAuditSources(repository=SqlAlchemyUploadCommitAuditSources()))
+                        with runtime.unit_of_work() as tx:
+                            fixed_input = source_reader.read_input(tx, request=request)
+                            assert fixed_input.committed.request == request
+                            assert fixed_input.content_sha256 == hashlib.sha256(content).digest()
+                            assert fixed_input.size_bytes == len(content)
+                            assert fixed_input.detected_mime == "application/pdf"
+                            assert not fixed_input.storage_locator.startswith("temp/")
+                            try:
+                                source_reader.read_input(tx, request=ParseJobRequest(
+                                    request.upload_id, request.document_id, request.document_version_id,
+                                    request.version_no, request.scope, request.project_id,
+                                    outsider, request.trace_id))
+                            except DocumentParseSourceError:
+                                pass
+                            else:
+                                raise AssertionError("forged actor must not read Parser input")
+                    finally:
+                        runtime.dispose()
+                    print("PARSER_INPUT_DATABASE PASS: committed immutable metadata, upload Audit, forged actor denied")
                     parse_path = (f"/api/v1/projects/{project}/documents/"
                                   f"{parsed['document_id']}/versions/"
                                   f"{parsed['document_version_id']}/parses")

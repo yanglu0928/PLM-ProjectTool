@@ -2,10 +2,25 @@
 from sqlalchemy import select
 from .read_repository import _session
 from .orm import DocumentRow,UploadIntentRow,FileObjectRow,DocumentVersionRow,DocumentVersionSourceRefRow
-from ..application.parse_job_source import CommittedParseDocumentSource,DocumentParseSourceError as Error
+from ..application.parse_job_source import CommittedParseDocumentSource,DocumentParseInputSource,DocumentParseSourceError as Error
 from plm_assistant.modules.jobs.application.parse_enqueue import validate_parse_read_request
 
 class SqlAlchemyDocumentParseSources:
+    def get_input(self,tx,*,request):
+        """Recheck the committed source inside the caller's transaction."""
+        source=self.get(tx,request=request)
+        if source is None:return None
+        session=_session(tx)
+        file=session.scalar(select(FileObjectRow).where(FileObjectRow.file_object_id==source.file_object_id)
+            .with_for_update(read=True,of=FileObjectRow).execution_options(populate_existing=True))
+        version=session.scalar(select(DocumentVersionRow).where(DocumentVersionRow.document_version_id==request.document_version_id)
+            .with_for_update(read=True,of=DocumentVersionRow).execution_options(populate_existing=True))
+        if (file is None or version is None or file.file_state!='AVAILABLE' or version.availability_state!='AVAILABLE'
+            or (file.file_object_id,file.sha256,file.size_bytes,file.detected_mime)
+                !=(version.file_object_id,version.content_sha256,version.size_bytes,version.detected_mime)):
+            raise Error()
+        return DocumentParseInputSource(source,file.storage_locator,file.sha256,file.size_bytes,file.detected_mime)
+
     def get(self,tx,*,request):
         validate_parse_read_request(request);session=_session(tx)
         def row(kind,id_column,value):return session.scalar(select(kind).where(id_column==value).with_for_update(read=True,of=kind).execution_options(populate_existing=True))
@@ -14,8 +29,8 @@ class SqlAlchemyDocumentParseSources:
             return None
         intent=row(UploadIntentRow,UploadIntentRow.upload_id,request.upload_id)
         if intent is None:return None
-        if (intent.state,intent.purpose_code,intent.scope,intent.project_id,intent.actor_id,intent.committed_document_id,intent.document_version_id)!= (
-            'COMMITTED','SOURCE_UPLOAD',request.scope,request.project_id,request.actor_id,request.document_id,request.document_version_id):raise Error()
+        if (intent.state,intent.scope,intent.project_id,intent.actor_id,intent.committed_document_id,intent.document_version_id)!= (
+            'COMMITTED',request.scope,request.project_id,request.actor_id,request.document_id,request.document_version_id):raise Error()
         file=row(FileObjectRow,FileObjectRow.file_object_id,intent.file_object_id)
         version=row(DocumentVersionRow,DocumentVersionRow.document_version_id,request.document_version_id)
         if file is None or version is None:raise Error()
