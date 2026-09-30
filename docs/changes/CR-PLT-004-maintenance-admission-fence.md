@@ -71,3 +71,7 @@ ADR-007/008 和冻结安全边界要求升级顺序为人工备份→维护模�
 2026-09-30 A06-P02-P03-P01：原生 SCM dispatcher/handler/status 的未公开基础设施骨架和显式就绪状态机已通过单元5、Windows11 非 SCM 子进程拒绝、后端1695（3跳过）及 wheel。此时尚无三角色 runner/正式服务注册与进程静止验收，绝不将骨架或 `STOPPED` 单独作为备份/迁移许可；当前非管理员环境无法实机安装，CR 继续 OPEN。
 
 2026-09-30 A06-P02-P03-P02-A01：API SCM runner 与 full platform-write 组合接线，合成 FastAPI 在 Windows11 真实 loopback socket/lifespan 就绪后才报告 RUNNING，STOP 后完成 Uvicorn shutdown 并移除自有标记；错误角色、非 loopback 和工厂异常拒绝。后端1699（3跳过）、wheel PASS。原生 SCM 实装/正式账户/License/长流和双 Worker 未验，仅内部链路，不能授予备份/迁移或关闭 CR。
+
+2026-09-30 A06-P02-P03-P02-A02 前置差异：SCM 骨架只首次报告 `STOP_PENDING`/30 秒 wait hint，Audit 导出与 heartbeat 可能更久；不能靠一次状态更新推断正常停止。选择在停止等待期间周期性更新 checkpoint，Audit runner 仅在原 Loop 返回 `STOPPED`、heartbeat `quiescent` 且 DB 已释放后完成；未证实静止不清理标记、不授权备份。实施/验证结果后补，CR 保持 OPEN。
+
+2026-09-30 A06-P02-P03-P02-A02 结果：Windows Audit SCM runner 已接现有专用 Worker 组合；STOP 唤醒轮询/已知工作 drain、心跳 `quiescent` 与 DB dispose 后才正常退出，长待停状态每10秒续报 checkpoint。Windows11 合成活跃工作、心跳延迟/失败启动和标记对账定向20、后端1704（3跳过）、wheel PASS。未实装 SCM/正式目标账户，未验证真实长导出/失联或 Server2025；Parser runner 及 OS/句柄/DB 会话静止证据仍缺，不能触发生产备份/迁移，CR 继续 OPEN。

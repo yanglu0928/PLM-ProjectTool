@@ -169,6 +169,15 @@
 
 结果：A06-P02-P03-P02-A01 Windows11 内部 PASS。新增未安装的 `service_windows API <absolute-bootstrap.yaml>` 入口，重依赖在 SCM 回调内加载，固定复用完整 platform-write 生产工厂和 loopback 检查。Uvicorn 0.53.0 `Server.started` 于 lifespan 与 socket bind 后才使 ready 回报；STOP event 请求正常 shutdown，`asyncio.run` 等待服务退出后清理自有标记。合成 FastAPI 真实 127.0.0.1 HTTP/lifespan/标记退出、非 loopback/工厂异常/错误角色与 read-only 候选识别验证通过；后端1699（3既有跳过）、wheel PASS。正式 License/目标账户信任源、真实 SCM 启停/长连接、双 Worker/Server2025 尚未验；下一 Audit/Parser runner，整体 CR/Gate3/发行仍 OPEN。
 
+## A06-P02-P03-P02-A02 编码前检查：Windows Audit SCM runner
+
+当前 Phase：Phase 2 Platform Core。当前 WBS：PLT-MAINT-01-A06-P02-P03-P02-A02。输入基线：ADR-013/CR-PLT-004、P03-P01 原生 SCM 状态机、现有 Windows Audit CLI 的同账户 Vault/License/SystemActor/准入组合与 `AuditExportWorkerLoop`。前置 API runner 仅内部 PASS；Audit 需独立接线，正式 SCM/目标账户仍待。
+涉及模块：Platform 服务入口与 Audit Worker 生命周期，不改 Audit 业务规则/Owner、Schema 或公开 API。实体：SCM stop event、Audit Loop、已有运行标记，无新业务持久实体。权限：仅目标 OS 账户的原 Vault/License 来源，缺失失败关闭，不装服务。
+验收标准：组合/标记/停止桥均成功后才 ready；STOP 立即请求协作停止，不强杀，已知工作排空后 `STOPPED`，`quiescent()` 确认无活跃 heartbeat 再释放 DB/清理标记；长 STOP_PENDING 持续 checkpoint。定向测试 idle/active/启动失败/未静止，不伪报正常；后端全量与 wheel。
+风险/回滚：SCM 真实服务/目标账户/Server2025 与导出长 I/O/失联仍待；若无法证明静止，保持 STOP_PENDING/进程可见，不调用危险清理。无 Migration/API/依赖，回滚禁用未安装服务入口保留旧 CLI 与标记/审计。
+
+结果：A06-P02-P03-P02-A02 Windows11 内部 PASS。`service_windows AUDIT_WORKER <absolute-bootstrap.yaml>` 复用原 Windows Audit 组合，在运行标记与停止桥建立后显式 ready；STOP 立即请求 Loop 协作停止，已知工作返回 STOPPED、heartbeat quiescent、DB dispose 后 runner 才退出，自有标记随正常退出移除。未静止时继续等待而非伪报 STOPPED；SCM `STOP_PENDING` 每10秒续报 checkpoint。合成活跃工作、心跳迟延、启动失败、角色标记对账定向20与后端1704（3既有跳过）、wheel PASS。未安装真实服务；正式账户/公钥、长真实导出/连接失联、Server2025 与 Parser 未验，CR/Gate3/包仍 OPEN。
+
 ## PAR-01-A05-P06-P01 编码前检查：Windows OCR 模型路径可诊断限制
 
 当前 Phase：Phase 2 Platform Core。当前 WBS：PAR-01-A05-P06-P01。输入基线：CR-PAR-005 方案 A、现有 `OfflinePaddleOcr` 模型四文件指纹与 Windows Worker 启动链。前置同字节模型中文/ASCII 路径差异与底层异常已在本机复现；正式安装器/目标账户仍缺。

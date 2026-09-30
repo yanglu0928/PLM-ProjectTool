@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A06-P02-P03-P02-A02 新增 Windows Audit Worker SCM runner，复用目标账户 Vault/License/SystemActor/PG 准入装配，STOP 请求唤醒轮询并等待已知工作与 heartbeat 静止，之后释放 DB/清理自有标记；长 STOP_PENDING 周期更新 checkpoint。Windows11 合成活跃工作/心跳迟延/启动失败及标记角色对账定向20、后端1704（3既有跳过）、wheel PASS。无 Schema/API/新依赖/生产安装或升级；可停用未安装的新服务入口并保留原 CLI 回滚。真实 SCM/目标账户/长导出、Parser、Server2025 与 Gate3/发行包待，不能据内部测试许可备份/迁移。
+
 - 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A06-P02-P03-P02-A01 新增 Windows API SCM runner，延后生产重依赖导入并固定完整 platform-write、loopback 与现有运行标记；仅 Uvicorn lifespan/socket 真就绪才报告 RUNNING，STOP 后正常清理。Windows11 合成 FastAPI 真实 HTTP/停止/标记及非 loopback/错误角色/工厂故障、后端1699（3既有跳过）、wheel PASS。无 Migration/API/依赖/安装或升级动作；可禁用未装配服务入口回滚、保留原 CLI。正式 SCM/账户/License、长流、Audit/Parser、Server2025、Gate3/发行包待。
 
 - 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A06-P02-P03-P01 新增未公开 Windows 原生 SCM dispatcher/handler/状态机基础设施，固定 API/Audit/Parser 三服务名；仅显式就绪才 RUNNING、STOP 协作事件与待停 checkpoint，未就绪/异常/报告故障不能正常 STOPPED。Windows11 单元5（含非 SCM 调用拒绝）、后端1695（3既有跳过）、wheel PASS。无 Schema/API/新依赖/安装或升级动作；可不装配新宿主回滚，原 CLI 保留。三角色 runner、管理员隔离 SCM 实测、目标账户/Server2025、OCR/句柄/DB 会话静止及 Gate3/发行包待。

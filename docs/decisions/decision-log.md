@@ -5793,3 +5793,8 @@
 
 - Phase/WBS：Phase2 / PLT-MAINT-01-A06-P02-P03-P02-A01。`service_windows` API 角色复用既有 bootstrap 与完整 Windows platform-write 工厂，延后重依赖导入到 SCM ServiceMain；使用 Uvicorn `Server.serve()` 的监听完成状态触发显式 ready，SCM stop event 请求正常 shutdown/lifespan 清理，标记覆盖该完整运行窗口。未知角色暂拒绝，不把 Audit/Parser 伪装为已接线。
 - 理由：只在工厂创建时报告 RUNNING 会误判 socket 绑定失败；现有 `uvicorn.run` 信号 CLI 与 SCM STOP 生命周期不同。影响仅 Windows 入口，无 API/Schema/新依赖；回滚禁用服务入口保留旧 CLI。真实 SCM/目标账户/长流收敛仍待验。
+
+## DEC-20260930-541 — Audit 服务停止窗口保持 SCM 待停心跳
+
+- Phase/WBS：Phase2 / PLT-MAINT-01-A06-P02-P03-P02-A02。Audit SCM runner 使用既有 Windows 组合、运行标记、Loop `request_stop`/`run`/`quiescent`；停止桥只发送协作请求，长时间导出由非 daemon 状态线程每 10 秒更新 `STOP_PENDING` checkpoint。仅 `STOPPED` 结果且准入/heartbeat 静止、DB 已释放后返回；不强杀或以 DB 断线猜静止。
+- 理由：原状态机只报一次 30 秒 wait hint，长导出可超时；原 CLI 信号桥依赖主线程，不可在 SCM ServiceMain 复用。影响限服务宿主内部，无 Schema/API/新依赖；回滚不启用 Audit 服务入口，保留原 CLI。SCM 实机/目标账户与故障注入仍待验。

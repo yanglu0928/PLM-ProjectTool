@@ -5,6 +5,7 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+from time import sleep
 import unittest
 
 from plm_assistant.modules.platform.infrastructure.windows_service_dispatcher import (
@@ -76,6 +77,22 @@ class WindowsServiceDispatcherTests(unittest.TestCase):
 
         self.assertFalse(failed_status.run(stop_with_failed_report))
         self.assertEqual(reports[-1][0:3], (STOPPED, 0, 1))
+
+    def test_long_stop_keeps_checkpoint_advancing_until_runner_returns(self):
+        reports = []
+        service = _ServiceLifecycle(lambda *values: reports.append(values),
+                                    pending_tick_seconds=.02)
+
+        def workload(stop, ready):
+            ready()
+            service.request_stop()
+            sleep(.13)  # A synthetic in-flight operation that drains later.
+
+        self.assertTrue(service.run(workload))
+        pending = [item[3] for item in reports if item[0] == STOP_PENDING]
+        self.assertGreaterEqual(len(pending), 2)
+        self.assertEqual(pending, sorted(pending))
+        self.assertEqual(reports[-1][0:3], (STOPPED, 0, 0))
 
     def test_dispatcher_rejects_unknown_role(self):
         with self.assertRaises(WindowsServiceDispatcherError):

@@ -95,10 +95,10 @@ class WindowsApiServiceTests(unittest.TestCase):
             self.assertFalse(ready.is_set())
             self.assertEqual(len(_read_markers(root)), 1)  # Crash evidence, not clearance.
 
-    def test_only_api_role_is_exposed_until_workers_are_wired(self):
+    def test_parser_role_remains_unexposed_until_runner_is_wired(self):
         with patch.object(service_windows.sys, "platform", "win32"), \
              patch.object(service_windows.sys, "argv",
-                          ["service_windows", "AUDIT_WORKER", "C:/config.yaml"]), \
+                          ["service_windows", "PARSER_WORKER", "C:/config.yaml"]), \
              patch.object(service_windows, "run_windows_service") as dispatcher:
             self.assertEqual(service_windows.main(), 2)
             dispatcher.assert_not_called()

@@ -92,7 +92,10 @@ class MarkerReconciliationTests(unittest.TestCase):
             .findings[0].status, "OBSERVED_MATCH")
         self.assertEqual(self.check((record(),),
             (process(command="python -m plm_assistant.entrypoints.service_windows AUDIT_WORKER C:/config.yaml"),))
-            .findings[0].status, "IDENTITY_MISMATCH")
+            .findings[0].status, "IDENTITY_MISMATCH")  # API marker cannot match Audit role.
+        self.assertEqual(self.check((record(role="AUDIT_WORKER"),),
+            (process(command="python -m plm_assistant.entrypoints.service_windows AUDIT_WORKER C:/config.yaml"),))
+            .findings[0].status, "OBSERVED_MATCH")
 
     def test_native_bounded_marker_reader_rejects_invalid_and_never_deletes(self):
         if sys.platform != "win32":

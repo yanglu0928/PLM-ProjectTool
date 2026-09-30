@@ -5,7 +5,7 @@ from __future__ import annotations
 import ctypes
 import sys
 from ctypes import wintypes
-from threading import Event, Lock
+from threading import Event, Lock, Thread
 from typing import Callable
 
 
@@ -32,8 +32,13 @@ class WindowsServiceDispatcherError(RuntimeError):
 class _ServiceLifecycle:
     """Workload must own quiescence; this state machine does not infer it."""
 
-    def __init__(self, report: Callable[[int, int, int, int], None]) -> None:
+    def __init__(self, report: Callable[[int, int, int, int], None],
+                 *, pending_tick_seconds: float = 10.0) -> None:
+        if (type(pending_tick_seconds) not in (int, float)
+                or not .01 <= pending_tick_seconds <= 30):
+            raise WindowsServiceDispatcherError()
         self._report = report
+        self._pending_tick_seconds = pending_tick_seconds
         self._lock = Lock()
         self.stop_event = Event()
         self.state = None
@@ -84,22 +89,44 @@ class _ServiceLifecycle:
             self._safe_report(STOP_PENDING, 0, 0, self.checkpoint)
 
     def run(self, workload: Callable[[Event, Callable[[], None]], None]) -> bool:
+        halt = Event()
+        progress_thread = None
+
+        def progress() -> None:
+            while not halt.wait(.05):
+                if self.stop_event.is_set():
+                    break
+            while not halt.wait(self._pending_tick_seconds):
+                try:
+                    self.stop_pending_tick()
+                except BaseException:
+                    self.report_failed = True
+                    return
+
         try:
             self._transition(START_PENDING)
+            progress_thread = Thread(target=progress,
+                                     name="plm-service-stop-progress", daemon=False)
+            progress_thread.start()
             workload(self.stop_event, self.mark_ready)
             if (not self.ready or not self.stop_event.is_set()
                     or self.report_failed):
                 raise WindowsServiceDispatcherError()
-            self._transition(STOPPED)
-            return True
+            success = True
         except BaseException:
-            # A runner that reports success before quiescence violates its contract;
-            # callers must not interpret this status alone as OS/handle clearance.
-            try:
-                self._transition(STOPPED, error=1)
-            except BaseException:
-                pass
+            success = False
+        finally:
+            halt.set()
+            if progress_thread is not None and progress_thread.ident is not None:
+                progress_thread.join()  # Never report STOPPED while reporter may be live.
+        if self.report_failed:
+            success = False
+        try:
+            # Runner contract: return/raise only after all owned resources quiesce.
+            self._transition(STOPPED, error=0 if success else 1)
+        except BaseException:
             return False
+        return success
 
 
 def run_windows_service(role: str,
