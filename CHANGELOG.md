@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P02-A02 扩展可选联合 OCR 轮子的一次性嵌入式旁装，保持旧93包入口；Windows11 官方 Python3.13.15 私有运行时106发行元数据/清洁 PATH 导入、合成表格 PDF/A-2b/`--deskew` 术语5/5 PASS，旧路径负例2/2及联合输入越界拒绝。无 Migration/API/正式依赖/生产安装变化；旧候选未覆盖，新忽略目录可弃用回滚。原生组件仍借用 PoC 路径，许可/ACL/真实质量/三平台/Gate 待，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P02-A01 按 CR-PKG-002 保留后端 `charset-normalizer 3.5.2`，联合固定 93 后端+13 OCR 新轮子；106/106 Hash、全新 Windows3.13 x64 无索引同时安装、`pip check`/产品与 OCR 导入 PASS，越界输入拒绝。无 Migration/API/正式依赖或安装变化，可撤新工具/忽略联合目录且旧包不变。嵌入式 CLI、系统 OCR/ACL/许可/Gate 未验，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P01 新增 OCRmyPDF17.12.1 Windows3.13 x64 离线 wheel 闭包构建工具，PoC 来源109/109 Hash、选中26/26 Hash、全新 venv 无索引安装/`pip check`/导入 PASS；非3.13与坏格式清单前置拒绝。无 Migration/API/正式依赖或安装变化，旧候选保留；可撤工具/忽略本地输出回滚。嵌入式运行时尚缺13包，系统 OCR/ACL/许可/目标环境/Gate 待，`release_eligible=false`。

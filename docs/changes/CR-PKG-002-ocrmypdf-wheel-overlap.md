@@ -1,6 +1,6 @@
 # CR-PKG-002：OCRmyPDF 与后端 wheel 闭包的单版本冲突
 
-状态：OPEN；日期：2026-10-01；Phase 2 / `PLT-PKG-01-A08-P09-P05-P02`。依据用户 V1.1 持续授权先记录，再实施可撤回的非发行候选；不改 Gate 2 原冻结内容。
+状态：`RESOLVED_FOR_NON_RELEASE_CANDIDATE`（正式发行仍待 Gate）；日期：2026-10-01；Phase 2 / `PLT-PKG-01-A08-P09-P05-P02`。依据用户 V1.1 持续授权先记录，再实施可撤回的非发行候选；不改 Gate 2 原冻结内容。
 
 ## 来源与证据
 
@@ -17,3 +17,5 @@ P05-P01 从 POC-01 的 109-wheel 固定来源选出 OCRmyPDF17.12.1 的 26-wheel
 发行约束：此版本选择不解决 Tesseract/Ghostscript 原生来源、无效签名、AGPL/产品许可、受控 ACL/服务账户、真实独立质量或三平台验收，`release_eligible=false`。
 
 2026-10-01/P05-P02-A01：按 A 逐件验 93+26 来源，唯一冲突确为 `charset_normalizer`；构造 106-wheel 联合集并在全新 Python3.13 x64 venv 无索引同时安装产品后端和 OCRmyPDF17.12.1，`pip check`、版本/导入通过。尚未嵌入运行时或执行 PDF/A-2b/`--deskew`，故 CR 保持 OPEN，发行状态不变。
+
+2026-10-01/P05-P02-A02：联合106-wheel 一次性旁装至新官方嵌入式 Python，106 项元数据/私有导入/无 pip、干净 PATH PASS；显式接入本机 Tesseract/Ghostscript/ASCII tessdata 后，表格合成 PDF 的 PDF/A-2b、`--deskew`、术语5/5 PASS。`charset-normalizer 3.5.2` 保持不变。该特定版本冲突在非发行候选中解决，但原生组件、许可、正式 ACL、独立质量和三平台发行仍未通过；不得将 CR 状态解读为 Release Gate 通过。
