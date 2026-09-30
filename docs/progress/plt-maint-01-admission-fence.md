@@ -27,3 +27,12 @@
 风险：持有独立连接增加容量；长 I/O 中连接断开可使锁提前释放，完整静止证明须后续进程退出门禁，不能凭本项关闭维护模式。无 Schema/API/依赖变化，回滚停用未接入 Port。
 
 结果：A03-P01 Windows11 内部 PASS。`PostgresMaintenanceAdmission` 仅接受 PG18，并在专用会话取共享 advisory 锁、读 DB0051 RUNNING 行后结束事务、保持会话锁贯穿调用者窗口，退出显式解锁/关闭；MAINTENANCE、排他锁竞争、旧 Schema/错库拒绝。隔离 PostgreSQL18 双连接验证两个共享并行、排他不可取得、释放后可取得、调用者异常不被遮盖且连接池不遗留锁；模拟杀死持锁 backend 时退出报错并证明排他方可取得锁，故不能以锁释放声称外部 I/O 已停止。单元2、后端全量1659（3既有跳过）、wheel PASS，随机库清理且 PoC PG 恢复停止。尚无排他状态命令、Audit、生产 API/Worker 接线或 OS 进程退出证明；A03 整体/维护模式/Gate3不通过。
+
+## A03-P02 编码前检查：排他状态转换内部 Port
+
+当前 Phase：Phase 2 Platform Core。当前 WBS：PLT-MAINT-01-A03-P02。输入基线：CR-PLT-004、DB0051、A03-P01 共享准入、现有 AuditService/UnitOfWork。前置 A03-P01 内部 PASS；全部生产入口尚未接线，因此本项只能是不可对外开放的内部能力。
+涉及模块：Platform 状态转换 Port 和 Audit 写入；不改 API、Schema、Worker 或生产装配。涉及实体：单行维护状态和不可变 AuditEvent。权限：Port 仅接受由后续受控入口提供的非零已认证操作员 UUID；本项不伪称完成操作员认证/授权。
+验收标准：PG18 专用会话排他锁限时等待、共享窗口未释放时拒绝；状态转换与 Audit USER 成功事件同事务；重复请求、反向状态、超时/数据库错误失败关闭且不泄漏锁；真实 PG18 双连接、后端回归和 wheel。
+风险与回滚：锁被失联连接释放不证明 OS 进程退出，转换即使成功也不构成备份许可；上线前需全入口接线和进程退出证明。无 Schema/API/依赖变化；回滚不装配此 Port，测试库按隔离生命周期删除。
+
+结果：A03-P02 内部 PASS。`PostgresMaintenanceTransition` 在 PG18 专用会话有限等待排他 advisory 锁，事务内更新 DB0051 状态/版本并经 AuditService 写 USER 成功事件，随后显式解锁；旧版本/同态重复拒绝，审计失败回滚。隔离 PG18 双连接验证未结束共享窗口时 50ms 超时拒绝、状态仍 RUNNING；释放后进入 MAINTENANCE/v1 并阻止新准入，再退出 RUNNING/v2；两条 Audit 前后态/操作员一致，审计故障零状态变化且连接池无锁泄漏。验证脚本三次通过，单元2、后端全量1661（3既有跳过）、wheel PASS；随机库清理且 PoC PG 恢复停止。操作员 UUID 在本 Port 中尚未认证/授权，无生产 CLI/API 装配、双 Worker 接线与 OS 退出证明，维护模式/Gate3不通过。

@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A03-P02 新增 PG18 内部排他维护状态转换 Port，限时等待共享窗口，DB0051 状态与 Audit USER 事件同事务；隔离 PG18 双连接三次、审计故障回滚、单元2、后端1661（3既有跳过）、wheel PASS。无新 Schema/API/依赖/生产迁移；操作员认证与部署授权、生产 API/Worker 全覆盖和 OS 进程退出证明未完成，此 Port 尚未装配，维护模式/Gate3/发行包仍待。
+
 - 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A03-P01 新增 PG18 只读共享维护准入 Port，RUNNING 下专用会话持锁覆盖调用者窗口，MAINTENANCE/排他竞争/错库/旧 Schema 失败关闭；隔离 PG18 双连接与连接丢失、单元2、后端1659（3既有跳过）、wheel PASS。无新 Migration/API/权限/依赖及生产升级；当前只提供内部 Port，未接排他命令、生产 API/Worker 或 OS 静止证明，维护模式/Gate3/发行包仍待。
 
 - 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A02 新增 DB Migration `20260930_0051` 与 Platform ORM 的单行持久维护状态，RUNNING/v0 初态、版本/状态约束、删除/截断拒绝；隔离 PG18 空/有数据升级、无历史降级与有历史降级拒绝、后端1657（3既有跳过）、wheel包含 PASS。原 `/api/v1`、0050、权限及依赖不变；生产升级需先人工备份停写，本轮未执行。共享/排他 admission、生产 API/Worker 接线与 Gate3仍待，不能仅凭状态表进入维护模式。
