@@ -75,6 +75,9 @@ from plm_assistant.modules.audit.application.job_cancel_adapter import AuditJobC
 from plm_assistant.modules.audit.application.request_export_cancel import AuditExportCancelRequestService
 from plm_assistant.modules.audit.application.export_cancel_authorization import AuditExportCancelAuthorization
 from plm_assistant.modules.audit.infrastructure.export_cancel_sources import SqlAlchemyAuditExportCancelSources
+from plm_assistant.modules.audit.infrastructure.parse_cancel_sources import SqlAlchemyParseCancelAuditSources
+from plm_assistant.modules.document.application.request_parse_cancel import DocumentParseJobCancelOwner
+from plm_assistant.modules.jobs.infrastructure.parse_cancel_repository import SqlAlchemyParseCancellationRepository
 from plm_assistant.modules.jobs.application.authorized_read import AuthorizedJobReadService
 from plm_assistant.modules.jobs.application.authorized_list import AuthorizedJobListService
 from plm_assistant.modules.jobs.api.list_jobs import create_job_list_router
@@ -712,7 +715,23 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                                         repository=SqlAlchemyProjectAuthorizationRepository()),license_guard=licenses.guard),
                                 cancellations=AuditExportCancellation(repository=SqlAlchemyAuditExportCancellationRepository()),
                                 receipts=SqlAlchemyIdempotencyReceipts(),sources=SqlAlchemyAuditExportCancelSources(),audit=audit,
-                            ))},
+                            )),
+                            ('document','DOCUMENT_PARSE'):DocumentParseJobCancelOwner(
+                                unit_of_work=runtime.unit_of_work,
+                                queue=ParseJobQueue(SqlAlchemyParseJobQueueRepository()),
+                                sources=DocumentParseSourceReader(
+                                    repository=SqlAlchemyDocumentParseSources(),
+                                    audit_sources=UploadCommitAuditSources(
+                                        repository=SqlAlchemyUploadCommitAuditSources())),
+                                project_access=SqlAlchemyProjectWriteAccess(),
+                                projects=ProjectAuthorizationService(
+                                    unit_of_work=runtime.unit_of_work,
+                                    repository=SqlAlchemyProjectAuthorizationRepository()),
+                                license_guard=licenses.guard,
+                                cancellations=SqlAlchemyParseCancellationRepository(),
+                                receipts=SqlAlchemyIdempotencyReceipts(),
+                                audit_sources=SqlAlchemyParseCancelAuditSources(), audit=audit,
+                            )},
                     ),
                 )
                 audit_export_submit_router = create_audit_export_submit_router(

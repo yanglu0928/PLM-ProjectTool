@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260930-516 — Parser 项目取消 Owner 接入顺序
+
+- Date/WBS：2026-09-30 / Phase2 `PAR-01-A05-P01-P04-P03-P02`。输入 API-03 项目取消、CR-PAR-002 版本快照、Document 实际上传来源与已有 Worker 协作取消；前置满足。涉及 Project/Document/Jobs/Audit/Platform 的应用 Port，不改冻结 API 或新依赖。
+- Decision：现有 Job 通用路由只作 Owner dispatch hint。Parser Owner 事务内重新查当前 Session/License/项目角色和原上传创建者、Document 版本/Audit 上传来源，再按 Job/Outbox 实际绑定加锁；Jobs 自有取消变更，Audit 自有首 USER 事件，0050 记录首次版本，Platform 收据同事务完成。先验来源再锁 Job，减小与上传提交相反锁序风险；deadlock 仅幂等重试完整事务，不从部分状态猜成功。
+- Impact/Rollback：仅新增 Parser Owner 与 Project 授权操作，不扩项目 Admin 旁路；已提交取消事实不可删除。卸载 Owner 保留表/事件/收据可回退应用；真实 PG/HTTP 权限、幂等、故障回滚后才宣称 P02 PASS。Gate3/包不变。
+
 ## DEC-20260930-515 — PAR-01-A05-P01-P04-P03-P01 Parser 取消首响应版本表
 
 - Date/WBS：2026-09-30 / Phase2 `PAR-01-A05-P01-P04-P03-P01`。输入冻结 API-03、CR-PAR-001、已有 P04-P01/P02 Worker 协作取消与 CR-PAR-002；前置 PASS。涉及 Jobs ORM/Schema 与 Audit 事件来源，不变更 `/api/v1`、用户权限、License 或依赖。

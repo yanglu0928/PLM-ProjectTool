@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-09-30：0.1.0.dev0/PAR-01-A05-P01-P04-P03-P02 将 Parser 当前用户取消 Owner 接入冻结 Job Cancel API 与 Windows 显式写组合；真实 Document 上传来源、当前项目创建者或 PM、License/Session/CSRF、Job/Outbox 绑定与首次 Audit/版本/幂等收据同事务。Windows11 隔离 PG18/HTTP 的 PENDING、RETRY_WAIT、RUNNING、终态、并发首响应/撤权/回滚与写组合验证，后端1635（3既有跳过）、wheel PASS。兼容 `/api/v1` 与 DB0050，无本轮 Migration/新依赖；使用前需备份停写升级0050，正式信任源/Server2025/Debian、过期恢复、Gate3及可用包仍待。
+
 - 2026-09-30：0.1.0.dev0/PAR-01-A05-P01-P04-P03-P01 新增 Parser 取消首次响应的 Jobs-owned 不可变版本表与 Migration `0050`，由真实 PROJECT/DOCUMENT_PARSE USER Audit 事件限定来源，不混用 Audit Export 专属表。Windows11 隔离 PostgreSQL18 空/有数据升降级、非法来源/修改及含历史降级拒绝，后端全量1632（3既有跳过）、wheel包含PASS。兼容冻结 `/api/v1`，无公开 API、权限或依赖变化；生产升级须备份停写且含历史不可降级，当前未执行。用户取消 Owner/HTTP、过期恢复、Gate3和可用包仍待。
 
 - 2026-09-30：0.1.0.dev0/PAR-01-A05-P01-P04-P02 Parser Worker 在安全检查点协作取消，Document ParseRecord/Audit/Job 当前租约同事务收口；不确定 Start 回执以 Document 当前记录核对，取消不发布结果。Worker定向12、Python3.13后端全量1631（3既有跳过）、Windows11隔离 PG18/真实文件抽取中取消及独立 PG18 未启动/晚期失败回滚、wheel PASS。兼容冻结 `/api/v1`/DB0049，无 ORM/Migration、公开 API、权限、新依赖或升级操作；需现有 PostgreSQL18，用户请求 Owner/过期恢复/独立进程、Gate3及可用包仍待。
