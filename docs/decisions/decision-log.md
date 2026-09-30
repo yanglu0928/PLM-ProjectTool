@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260930-502 — PAR-01-A03-P03 PDF 原生正文页内定位
+
+- Date/WBS：2026-09-30 / Phase 2 依赖前置 PAR-01-A03-P03；固定版本快照及结构化候选结果前置通过，Gate 3 不变。
+- 编码前检查：仅 Parser 内部 PDF 抽取、页内 TEXT_RANGE 位置、生产 PyMuPDF 依赖与测试；无 Schema/Migration、公开 API、权限或正式 Evidence。输入为当前租约已验证的私有字节快照；结果仍需 Worker 重新 fencing 才能发布。
+- Decision：沿用 POC-01 Windows/Python3.13 已验证 `PyMuPDF==1.28.2`。逐页 `get_text("text")` 的 NFC/LF 规范化文本按非空行记 page_no、字符区间与 SHA-256 指纹；不猜自动标题/表格或物理视觉框。空 PDF、加密、损坏、超限失败关闭；任一无文本页返回 `PARSER_OCR_REQUIRED`，不把混合扫描 PDF 部分标成功。下一分项接 OCR 后再调整组合策略。
+- 风险/回滚/验证：页内字符范围可用相同 parser_version 重放，但不是高亮坐标；后续受权 resolver/Viewer 要做页跳转和原文定位实测。撤新模块与依赖即可回滚。测试合成 PDF 双页重放、无文本页、损坏/Hash/格式拒绝，全量回归与 wheel；PoC/正式发布的 PyMuPDF 授权义务仍须纳入发行合规复核，不能以单元 PASS 代替。
+- Executed：双页合成原生文本 PDF 逐行页内位置及指纹重放、混合空/无文本页 OCR_REQUIRED、损坏 PDF/篡改快照拒绝定向3；Python3.13 后端全量1591（2既有跳过）、开发wheel构建 PASS。当前任何无文本页均需OCR，包含真正空白页；尚未实现 bbox 高亮、表格、OCR、Worker/发布，发行许可未审结。
+
 ## DEC-20260930-501 — PAR-01-A03-P02 Office 来源位置与依赖
 
 - Date/WBS：2026-09-30 / Phase 2 依赖前置 PAR-01-A03-P02；PAR-01-A03-P01 结构化结果、CR-PAR-001 和固定版本输入已通过，Gate 3 不变。

@@ -44,6 +44,28 @@ class TextRangePosition:
 
 
 @dataclass(frozen=True, slots=True)
+class PdfTextRangePosition:
+    page_no: int
+    start_offset: int
+    end_offset: int
+    normalized_fingerprint: str
+
+    def __post_init__(self) -> None:
+        if (type(self.page_no) is not int or self.page_no <= 0
+                or type(self.start_offset) is not int or self.start_offset < 0
+                or type(self.end_offset) is not int or self.end_offset <= self.start_offset
+                or type(self.normalized_fingerprint) is not str
+                or len(self.normalized_fingerprint) != 64
+                or any(char not in "0123456789abcdef" for char in self.normalized_fingerprint)):
+            raise ParserResultError("PARSER_POSITION_INVALID")
+
+    def to_locator(self) -> dict[str, object]:
+        return {"locator_type": "TEXT_RANGE", "page_no": self.page_no,
+                "start_offset": self.start_offset, "end_offset": self.end_offset,
+                "normalized_fingerprint": self.normalized_fingerprint}
+
+
+@dataclass(frozen=True, slots=True)
 class CsvCellPosition:
     row_no: int
     column_no: int
@@ -132,18 +154,19 @@ class ParsedNode:
     node_id: str
     kind: str
     text: str = field(repr=False)
-    position: (TextRangePosition | CsvCellPosition | ParagraphPosition
+    position: (TextRangePosition | PdfTextRangePosition | CsvCellPosition | ParagraphPosition
                | TableCellPosition | SlideShapePosition | SheetCellPosition)
 
     def __post_init__(self) -> None:
         if (type(self.node_id) is not str or not self.node_id
                 or len(self.node_id) > 256 or type(self.kind) is not str
-                or self.kind not in ("TEXT_LINE", "CSV_CELL", "DOCX_PARAGRAPH",
+                or self.kind not in ("TEXT_LINE", "PDF_TEXT_LINE", "CSV_CELL", "DOCX_PARAGRAPH",
                                      "DOCX_TABLE_CELL", "PPTX_SHAPE", "PPTX_TABLE_CELL",
                                      "XLSX_CELL")
                 or type(self.text) is not str
                 or type(self.position) is not {
                     "TEXT_LINE": TextRangePosition,
+                    "PDF_TEXT_LINE": PdfTextRangePosition,
                     "CSV_CELL": CsvCellPosition,
                     "DOCX_PARAGRAPH": ParagraphPosition,
                     "DOCX_TABLE_CELL": TableCellPosition,
@@ -172,12 +195,14 @@ class ParsedResult:
                 or self.document_version_id.int == 0
                 or type(self.source_sha256) is not bytes or len(self.source_sha256) != 32
                 or type(self.parser_profile) is not str
-                or self.parser_profile not in ("PLAIN_TEXT", "CSV", "DOCX", "PPTX", "XLSX")
+                or self.parser_profile not in ("PLAIN_TEXT", "CSV", "DOCX", "PPTX", "XLSX",
+                                               "PDF_TEXT_THEN_OCR")
                 or self.parser_version != "1" or self.schema_version != _SCHEMA_VERSION
                 or type(self.nodes) is not tuple
                 or any(type(node) is not ParsedNode for node in self.nodes)
                 or any(node.kind not in {
                     "PLAIN_TEXT": ("TEXT_LINE",), "CSV": ("CSV_CELL",),
+                    "PDF_TEXT_THEN_OCR": ("PDF_TEXT_LINE",),
                     "DOCX": ("DOCX_PARAGRAPH", "DOCX_TABLE_CELL"),
                     "PPTX": ("PPTX_SHAPE", "PPTX_TABLE_CELL"),
                     "XLSX": ("XLSX_CELL",),

@@ -25,3 +25,5 @@ V2.1 将 Parser/OCR Worker 放在 Phase 3，但 Phase 2 的 EVD-01 Evidence 精�
 2026-09-30 后续：PAR-01-A03-P01 已完成纯文本/CSV 的真实抽取、类型化可重放源位置及版本化候选结果。3200万字符或10万节点以上显式失败，绝不截断为成功；该限制与其余格式、Worker、受权Evidence定位仍需后续任务处理，不改变 Gate 结论。
 
 2026-09-30 后续：PAR-01-A03-P02 已完成合成 DOCX/PPTX/XLSX 的真实抽取与类型化位置；沿用 POC-01 已验证的 Office 依赖版本，增加 ZIP/扫描上限。仍非受权 Evidence 复验，且不改变 Gate 结论。
+
+2026-09-30 后续：PAR-01-A03-P03 已完成合成原生 PDF 文本逐页位置；任一无文本页失败并要求 OCR，不标部分成功。正式许可、OCR/Worker/发布与受权定位、Gate 仍待。

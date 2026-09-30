@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-30：0.1.0.dev0/PAR-01-A03-P03 加入 PoC 已验证的 PyMuPDF1.28.2，原生文本 PDF 逐页抽取与规范化字符区间/指纹可重放候选位置；无文本页显式要求 OCR，不发布部分成功。定向3、Python3.13后端全量1591（2既有跳过）、wheel PASS。兼容冻结 `/api/v1`/DB0049，无 ORM/Migration、公开 API、权限或升级操作；安装新增 PyMuPDF 依赖，发行许可需复核。真正空白页现亦触发 OCR；bbox/表格/OCR、客户文件、Worker/正式Evidence/Gate3/可用包未完成。
+
 - 2026-09-30：0.1.0.dev0/PAR-01-A03-P02 加入生产 Office 解析依赖固定版本，DOCX/PPTX/XLSX 合成文件真实抽取并保留段落、表格格、幻灯片形状与工作表单元格位置；ZIP 安全预检、合并格去重、稀疏工作表扫描上限及公式不执行。定向6、Python3.13后端全量1588（2既有跳过）、wheel依赖元数据PASS。兼容冻结 `/api/v1`/DB0049，无 ORM/Migration、公开 API、权限或升级操作；安装需拉取三项新依赖。自动分页、真实客户 Office、Worker/正式 Evidence、正式信任/Gate3/可用包未完成。
 
 - 2026-09-30：0.1.0.dev0/PAR-01-A03-P01 增加固定版本私有快照的 UTF-8-SIG 纯文本/逗号 CSV 真实抽取与版本化候选结果；文本以规范化字符区间和 SHA-256、CSV 以逻辑 `CSV` 表 A1 单元格保留可重放源位置。定向4、Python3.13后端全量1582（2既有跳过）、wheel包含和diff检查PASS。兼容冻结 `/api/v1`/DB0049，无 ORM/Migration、公开 API、权限、新依赖或升级操作；3200万字符/10万节点超限显式失败。Worker/结果发布、Office/PDF/OCR、受权Evidence定位与正式信任/Gate3/可用包未完成。
