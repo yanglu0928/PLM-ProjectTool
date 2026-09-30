@@ -5783,3 +5783,8 @@
 
 - Phase/WBS：Phase2 / PLT-MAINT-01-A06-P02-P02-P02。采用独立只读核验器，复用现有 OS CIM/Token 快照；严格限界读取受控 data_root 下的标记，不以标记存在或缺失推断进程安全。仅报告无 Secret 的状态、PID/角色与未知计数；任何冲突不自动终止进程或授权备份/迁移。
 - 理由：自报标记独立于 OS 进程状态，必须核对真实 PID/SID/可执行文件、入口命令行及当前包版本/摘要；快照仍非原子，旧版/改名进程和同账户伪造仍需 SCM/ACL/句柄证据。影响限 Platform 诊断；无 Schema/API/依赖。回滚移除核验器与入口，不清理既有标记。
+
+## DEC-20260930-539 — Windows 三角色采用待验证原生 SCM 宿主
+
+- Phase/WBS：Phase2 / PLT-MAINT-01-A06-P02-P03。直接 `sc.exe create` 指向普通 Python CLI 不满足 SCM 协议；外部 WinSW/NSSM 增加供应链/许可与父子 PID 对账。选择 Python3.13 标准库 `ctypes` 的单角色独立进程宿主路线，先做可注入状态机及 Windows11 实机 PoC，再处理三角色与安装器。详细比较、服务账户/错误/回滚见 ADR-013 与 CR-PLT-004。
+- 影响：无新依赖、Schema、API 或技术栈变更；服务宿主运行就绪与 STOPPED 必须由真实 SCM/PID/资源退出验证，设计不是 PASS。当前会话非管理员，不能安装或删除服务；失败回滚为不启用新宿主，旧 CLI/标记/审计保留。

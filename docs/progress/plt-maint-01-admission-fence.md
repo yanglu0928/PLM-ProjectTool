@@ -144,6 +144,14 @@
 
 结果：A06-P02-P02-P02 Windows11 内部 PASS。新增独立只读 CLI 和有界严格标记读取器；OS CIM 快照补采 UTC 创建时间，核对 PID/SID/路径/已知入口命令行/版本/代码摘要，识别陈旧、PID 复用、冲突、不可读和不匹配。报告不输出路径或命令行，恒 `DIAGNOSTIC_ONLY`/`backup_or_migration_authorized=false`；合成正向匹配及负例、原生 Windows 子进程使用未知 `-c` 入口时真实拒绝匹配，正常退出标记移除。后端全量1690（3既有跳过）、wheel PASS。原生已知入口正向握手尚待正式服务配置；快照竞态、同账户伪造、SCM/目标账户 ACL/Server2025/句柄/DB 会话未验，CR-PLT-004/Gate3/发行继续 OPEN。
 
+## A06-P02-P03 编码前检查：Windows SCM 服务身份与受控启停方案
+
+当前 Phase：Phase 2 Platform Core。当前 WBS：PLT-MAINT-01-A06-P02-P03。输入基线：CR-PLT-004、ADR-012、三 Windows 常驻入口及 A06-P02-P02 标记/OS 诊断。前置仅为诊断内部 PASS，正式服务定义不存在；本项是架构/实施合同，不安装生产服务。
+涉及模块：Platform/Release 的 Windows 服务宿主与生命周期，不改业务 Owner、数据库或公开 API。涉及实体：SCM 服务配置、服务状态/PID/账户与原运行标记；无新业务持久实体。涉及 API：无。涉及权限：正式服务账户/ACL 待目标环境供给；当前开发会话非管理员，不能宣称 SCM 安装验收。
+验收标准：比较直接 CLI、外部包装器和原生宿主；固定服务名与 PID 归属、配置/就绪/协作停止/错误/回滚合同、Windows11/Server2025 分阶段验收及未知进程失败关闭；形成可追溯 ADR/CR 与下一编码任务。风险：Python 原生 SCM 调用、Uvicorn 就绪、OCR 子进程与服务账户凭据尚未实测；无 Migration/API/依赖，本项不出具备份/迁移许可。
+
+结果：A06-P02-P03 方案与边界已记录于 ADR-013。官方 SCM 文档确认普通 CLI 不具备 dispatcher/handler/状态合同；选择不引入新组件的 Python 3.13 `ctypes` 原生独立服务宿主作为待验证实现路线。当前账户非管理员且本机无 PLM 服务，本项只完成设计，不把 P03-P01～P04 编码和实机验收写为 PASS。下一 P03-P01 实现可注入的最小状态机；CR-PLT-004/Gate3/发行仍 OPEN。
+
 ## PAR-01-A05-P06-P01 编码前检查：Windows OCR 模型路径可诊断限制
 
 当前 Phase：Phase 2 Platform Core。当前 WBS：PAR-01-A05-P06-P01。输入基线：CR-PAR-005 方案 A、现有 `OfflinePaddleOcr` 模型四文件指纹与 Windows Worker 启动链。前置同字节模型中文/ASCII 路径差异与底层异常已在本机复现；正式安装器/目标账户仍缺。
