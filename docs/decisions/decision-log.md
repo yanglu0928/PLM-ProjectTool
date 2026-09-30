@@ -5848,3 +5848,8 @@
 
 - 日期/Phase/WBS：2026-10-01 / Phase2 / PLT-PKG-01-A05。选择 Python 官方 3.13.15 AMD64 embeddable ZIP 作为 Windows 私有运行时候选，固定发布页 SHA-256 并保留许可/版权通知；不复制开发机 Python 安装、不把第三方 wheel 直接当作嵌入式解释器可运行证明。
 - 理由：嵌入式包为官方针对应用随附的发行形式，但不含 pip/Microsoft C Runtime；第三方包需由应用安装器旁装并验证。与 A04 已有 venv 安装不同，后续要单独证明 vendored 包、原生扩展和服务启动。仅内部打包形式选择，无冻结架构/Schema/API/技术栈变化；回滚撤未发行候选工具和忽略产物。未通过第三方许可清单、目标系统实测、完整安装/升级前不改变 `release_eligible=false`。
+
+## DEC-20261001-552 — 非发行归档仅含运行所需文件且许可清单保持待审
+
+- 日期/Phase/WBS：2026-10-01 / Phase2 / PLT-PKG-01-A07。新建独立候选 ZIP，只纳入 A06 私有 runtime（排除运行后生成的 `__pycache__` 与构建机 `packages/bin`）、A02 dist 和非 Secret bootstrap；生成逐文件 SHA-256、完整归档回读与从 ZIP 全新解包导入。第三方元数据清单对全部 93 项固定 `REVIEW_REQUIRED`，不凭 `License-Expression` 或许可证文件存在推定法律合规。
+- 理由：旧 A03 候选缺 Python runtime，新 A06 已证明本机私有导入；旧/新来源仍非同一正式发行检查点，第三方/前端许可证及系统组件还缺。影响仅发行准备工具和 Git 忽略二进制，不改业务/API/Schema/技术栈；回滚可撤新工具与经确认路径的实验归档，不触碰旧 A03。正式发行需重建同源制品、逐项许可审查和三平台完整验收。
