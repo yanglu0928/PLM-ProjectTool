@@ -5828,3 +5828,8 @@
 
 - 日期/Phase/WBS：2026-09-30 / Phase2 / PLT-MAINT-01-A06-P02-P03-P03-A02-P02-A02。由只读命令计划产生期望 binary path，以明确目标账户和固定 own-process/manual-start/normal-error 参数比较 SCM 保存配置；任何缺失或差异均给固定原因码，不输出命令行、账户或路径，不把配置匹配当作运行时/静止证明。
 - 理由：[Microsoft QUERY_SERVICE_CONFIGW](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/ns-winsvc-query_service_configw) 列出这些保存配置字段；它们可用于安装定义对账，但不证明当前进程。大小写或账户名称规范化不猜测等价，首次采用严格字节级相等以避免错误放行；合法但表示不同的配置须受控调查。影响限只读 Platform 诊断，无 Schema/API/依赖/SCM 写入；可撤对账工具回滚，原服务和数据不变。
+
+## DEC-20260930-548 — 现行后端 Windows 离线 wheel 集合只接受二进制依赖
+
+- 日期/Phase/WBS：2026-09-30 / Phase2 / PLT-PKG-01-A01。沿 POC-01 已验证的 Windows Python3.13 方法，构建当前后端 wheel、解析其已锁版本依赖并仅下载 wheel，不允许源包现场编译；产物及 SHA-256 留在被 Git 忽略的本地构建目录，版本库仅记录脚本和脱敏验证摘要。以全新虚拟环境执行 `--no-index` 安装、`pip check`、最小导入与元数据版本检查。
+- 理由：POC-01 的 109 文件 wheelhouse 证明当时输入，但当前 `apps/backend/pyproject.toml` 已有新依赖，不能直接当现版本完整发行集合。影响限打包前置，无架构/Schema/API/依赖版本变化；失败时保留诊断、不可标离线 PASS；回滚撤脚本和新生成的忽略产物，不触碰已安装系统或生产数据。此次 Windows11 成功也不代表物理断网、Server2025/Debian13 或完整发行 Gate 通过。
