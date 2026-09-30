@@ -47,3 +47,13 @@ Windows11 隔离 PG18/真实已提交合成文件/HTTP 用户取消：在 Audit 
 风险：正式 Windows 运行账户材料、OCR 配置供给、维护模式及 Signal 尚未接线；本子项只形成可注入组合，不宣称可发行进程。无 Schema/API/依赖迁移；回滚停用未挂载组合，保留 Job/Audit 历史。
 
 结果：A02-P03-A01 Windows11 内部 PASS。组合根拒绝缺失或无效 Worker runtime/Migration/身份/License/本地数据根/离线 OCR 引擎；把现有 Auth、Project、Document、Audit、Jobs 和 Parser Port 接成一条真实流程。隔离 PostgreSQL18/真实已提交合成 PDF 的一次 Worker 调度发布唯一 ParseResultRef/Job SUCCEEDED；首轮旧夹具的假 PDF 因 `PARSER_PDF_INVALID` 正常失败，改用真实合成 PDF 后重跑通过。单元2、Python3.13 后端全量1651（3既有跳过）、wheel PASS。此集成验的是文本页，OCR 使用绕过初始化的内部假引擎，不是 OCR 模型/断网验收；正式目标账户和维护停写栅栏仍缺，不能关闭 P03/Gate3。
+
+## A02-P03-A02 编码前检查：Windows 进程入口
+
+当前 Phase：Phase 2 Platform Core。当前 WBS：PAR-01-A05-P01-P05-A02-P03-A02。
+输入基线：Gate2/ADR-007/011、已验 Windows Audit Worker 信号模式、Parser 显式组合根与离线 PaddleOCR 模型指纹。前置任务：P03-A01 内部 PASS。
+涉及模块：Parser Windows 进程入口和非敏感 Bootstrap 配置；既有 DB/License/SystemActor/Project 受控来源。涉及实体/API/权限：无新增持久实体、公开 API 或角色；不传 Secret 到参数/环境。
+验收标准：显式配置模型目录与指纹，缺少/损坏/不匹配则启动失败；模型源检查强制离线；SIGINT/SIGTERM/SIGBREAK 只请求协作停止，当前任务静止前不释放 DB；一次模式有界。单元、完整回归和 wheel；真实 PostgreSQL/模型/账户与独立 OS 进程验证分别记录。
+风险：缺正式维护停写栅栏，运行中的 API 仍可接新 Job；进程信号停止不能等同升级维护模式。跨平台 Debian 入口留后续独立任务，不假定 Windows 源适用。无 Migration/API 改动；回滚禁用新 CLI，保留已有数据。
+
+结果：A02-P03-A02 Windows11 内部 PASS。Bootstrap 示例新增可选的两绝对模型目录与小写 SHA-256 复合指纹；Parser CLI 必须三者齐备，实例化 `OfflinePaddleOcr` 时强制关闭模型源检查并由适配器验证实际模型指纹。沿用 Windows 当前账户 DB、License、SystemActor 来源；信号回调仅写本地停止请求，桥接线程协作停止，`quiescent` 后释放 DB。定向6、Python3.13 后端全量1657（3既有跳过）、wheel PASS。此轮仅合成 Port/信号单元，不曾以正式账户运行独立 OS 进程，也未重新验证真实模型断网和维护停写；因此 P03/P05 与 Gate3 仍未通过。

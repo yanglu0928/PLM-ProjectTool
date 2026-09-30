@@ -47,6 +47,24 @@ class BootstrapSettings(BaseSettings):
     trusted_origins: tuple[str, ...] = ()
     selected_mac: str | None = None
     password_kdf_slots: int = Field(default=4, ge=1, le=16)
+    parser_ocr_detection_model_dir: Path | None = None
+    parser_ocr_recognition_model_dir: Path | None = None
+    parser_ocr_model_fingerprint: str | None = None
+
+    @field_validator("parser_ocr_detection_model_dir", "parser_ocr_recognition_model_dir")
+    @classmethod
+    def validate_parser_model_dir(cls, value: Path | None) -> Path | None:
+        if value is not None and not value.is_absolute():
+            raise ValueError("absolute Parser OCR model directory required")
+        return value
+
+    @field_validator("parser_ocr_model_fingerprint")
+    @classmethod
+    def validate_parser_model_fingerprint(cls, value: str | None) -> str | None:
+        if value is not None and (len(value) != 64 or
+                any(char not in "0123456789abcdef" for char in value)):
+            raise ValueError("invalid Parser OCR fingerprint")
+        return value
 
     @field_validator("password_kdf_slots", mode="before")
     @classmethod

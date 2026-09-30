@@ -5695,3 +5695,9 @@
 - Phase/WBS：Phase2 / PAR-01-A05-P01-P05-A02-P03-A01；编码前检查见进程进度文档。前置已验，但正式维护停写栅栏缺失，因此把组合根与发行级进程验收拆开，不改 Gate2 基线。
 - 决策：仅以明确注入的 PG18 Worker runtime、Project/License/动态 SystemActor、数据根与离线 OCR 引擎装配既有 Parser Ports；启动前核数据库当前 Migration/身份/License。禁止从环境变量或命令行隐式取 Secret 或模型，缺受控源即失败关闭。
 - 风险/回滚/验证：工厂本身不证明正式账户、维护模式、信号或断网 OCR；先用隔离 PG/已提交合成上传验证真实调用链，后续独立接 Windows CLI 与维护栅栏。无数据迁移，回滚为停用未接入工厂。
+
+## DEC-20260930-523 — Parser Windows 离线 OCR 进程配置
+
+- Phase/WBS：Phase2 / PAR-01-A05-P01-P05-A02-P03-A02。非敏感 Bootstrap 新增三项可选模型坐标供独立 Parser Worker 使用，API/Audit Worker 既有配置保持可启动。Parser Worker 必须三项齐备、指纹通过真实模型校验，禁止无模型隐式降级或在线下载。
+- Windows 进程只从当前账户数据库凭据、正式 License/SystemActor Vault Port 装配；命令行只接 Bootstrap 文件路径与可选 `--once`。信号回调不做数据库或磁盘工作，由桥接线程请求停止，静止后才 dispose；不实现强杀假承诺。
+- 此项不提供 API 级维护停写栅栏。维护模式的跨 API/Worker 栅栏需另立前置任务并验证，不能凭 CLI 正常停止关闭 Gate。无 Schema/API/权限变更，回滚为停用 CLI/移除可选非敏感配置，已提交 Job/Audit 保留。

@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-09-30：0.1.0.dev0/PAR-01-A05-P01-P05-A02-P03-A02 新增 Windows Parser CLI、非敏感离线 OCR 模型路径/指纹配置和协作式进程信号收敛；继续使用当前账户 DB/License/SystemActor 受控来源，静止前不释放数据库。定向6、Python3.13 后端全量1657（3既有跳过）、wheel PASS。兼容原 `/api/v1`/DB0050，Bootstrap 可选字段不影响现有 API/Audit Worker；无 Migration/新依赖/生产升级。正式账户真实 OS 进程、断网 OCR、维护模式、Server2025/Debian、Gate3/发行包仍待。
+
 - 2026-09-30：0.1.0.dev0/PAR-01-A05-P01-P05-A02-P03-A01 新增显式 Parser Worker 组合根，连接既有当前 User/Project/License、动态 SystemActor、Document/Audit/Jobs 与离线 OCR Port，启动拒绝缺失/过期 Schema 或信任源。Windows11 隔离 PG18/真实已提交合成文本 PDF 领 Job→唯一结果发布、单元2、后端全量1651（3既有跳过）、wheel PASS。兼容冻结 `/api/v1`/DB0050，无 Migration/新依赖/生产升级；OCR 模型断网、正式账户、维护模式/信号、Server2025/Debian、Gate3/发行包仍待。
 
 - 2026-09-30：0.1.0.dev0/PAR-01-A05-P01-P05-A02-P02 新增 Parser 有界调度循环与静止资源释放门禁，每轮最多恢复一条到期取消并执行一个 Job，停止后不再领取。定向15、Python3.13 后端全量1649（3既有跳过）、wheel PASS。兼容冻结 `/api/v1`/DB0050，无 Migration/新依赖或生产升级；独立进程/正式账户/OCR模型、Server2025/Debian、Gate3及可用包仍待。

@@ -10,3 +10,10 @@ log_level: "INFO"
 password_kdf_slots: 4
 # Set only after the operator selects a MAC actually present on this machine.
 # selected_mac: "02:11:22:33:44:55"
+# Parser Worker only: all three non-sensitive values are required for its
+# offline OCR startup. Copy vetted PP-OCRv5 model files into these directories;
+# record the composite SHA-256 fingerprint from the approved model manifest.
+# No automatic download or guessed fingerprint is permitted.
+# parser_ocr_detection_model_dir: "C:/PLMTool/app/models/PP-OCRv5_mobile_det"
+# parser_ocr_recognition_model_dir: "C:/PLMTool/app/models/PP-OCRv5_mobile_rec"
+# parser_ocr_model_fingerprint: "<64 lowercase hex characters>"
