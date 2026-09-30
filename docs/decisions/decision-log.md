@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260930-499 — PAR-01-A02-P02 当前租约下的受控文件快照
+
+- Date/WBS：2026-09-30 / Phase 2 依赖前置 PAR-01-A02-P02；CR-PAR-001、A01 profile 合同和 A02-P01 Document 来源元数据 Port 已完成，Gate 3 不因此提前通过。
+- Decision/Reason：Worker 输入只接受当前 Job fencing token/worker_ref，短事务中依次核 Job Lease、DOCUMENT_PARSE Job/Outbox 绑定与 Document 原上传/Audit/固定文件元数据；事务外由既有 LocalFileStorage 完整复制并核 Hash/大小，之后第二短事务复核相同三方事实。仅向 Parser 返回已验证私有字节流与 profile，不返回 locator。失配关闭并记录独立完整性 Audit；长解析期间由未来 Worker 心跳，结果发布仍须再做 fencing。
+- Impact/rollback/validation：不新增 API/Schema/Migration/权限/依赖；撤新 Parser 服务与验证接线可回滚。定向验证伪造/过期租约、Outbox/Document 漂移、Hash 失配关闭并审计、快照关闭，真实 PG/文件正常链与租约失败链、全量回归和 wheel。不得把“可取得解析输入”写为 OCR/Worker 已运行或 Evidence 定位成功。
+- Executed：新增 `PrepareParserInput` 两次短事务核租约/队列/来源、事务外受控快照及完整性 Audit；定向 6、后端全量 1578（2 既有跳过）、真实隔离 PG/文件正常字节、错误 fencing token、篡改拒绝与 Audit、wheel 包含均 PASS。仅手动领取合成 Job 验证输入，未启动正式 Worker、心跳或发布 ParseRecord。
+
 ## DEC-20260930-498 — PAR-01-A02-P01 Document 拥有的 Parser 输入元数据 Port
 
 - Date/WBS：2026-09-30 / Phase 2 依赖前置 PAR-01-A02-P01；`CR-PAR-001` 已记录时序调整，PAR-01-A01 格式策略合同通过。

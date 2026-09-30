@@ -27,6 +27,17 @@ from plm_assistant.modules.document.infrastructure.parse_job_source import SqlAl
 from plm_assistant.modules.audit.application.upload_commit_source import UploadCommitAuditSources
 from plm_assistant.modules.audit.infrastructure.upload_commit_source import SqlAlchemyUploadCommitAuditSources
 from plm_assistant.modules.jobs.application.parse_enqueue import ParseJobRequest
+from plm_assistant.modules.jobs.application.parse_enqueue import ParseJobQueue
+from plm_assistant.modules.jobs.infrastructure.parse_enqueue_repository import SqlAlchemyParseJobQueueRepository
+from plm_assistant.modules.jobs.application.lease import JobLeaseService
+from plm_assistant.modules.jobs.application.lease_checkpoint import JobLeaseCheckpoint
+from plm_assistant.modules.jobs.infrastructure.lease_repository import SqlAlchemyJobLeaseRepository
+from plm_assistant.modules.parser.application.prepare_input import (
+    ParserInputCommand, ParserInputError, PrepareParserInput,
+)
+from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage
+from plm_assistant.modules.audit.application.public import AuditService
+from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
 from plm_assistant.modules.document.api.document_list_cursor import DocumentListCursorCodec
 from plm_assistant.modules.document.api.version_list_cursor import VersionListCursorCodec
 from plm_assistant.modules.document.api.parse_list_cursor import ParseListCursorCodec
@@ -230,9 +241,45 @@ def main():
                                 pass
                             else:
                                 raise AssertionError("forged actor must not read Parser input")
+                        lease_repository = SqlAlchemyJobLeaseRepository()
+                        claim = JobLeaseService(unit_of_work=runtime.unit_of_work,
+                            repository=lease_repository).claim_next(
+                                worker_ref="synthetic-parser-1", lease_seconds=120)
+                        assert claim is not None and claim.job_id == uuid.UUID(parsed["parse_job_id"])
+                        parser_inputs = PrepareParserInput(unit_of_work=runtime.unit_of_work,
+                            leases=JobLeaseCheckpoint(repository=lease_repository),
+                            queue=ParseJobQueue(SqlAlchemyParseJobQueueRepository()),
+                            documents=source_reader, storage=LocalFileStorage(Path(temporary_root)),
+                            audit=AuditService(SqlAlchemyAuditRepository()), system_actor_id=outsider)
+                        command_input = ParserInputCommand(claim.job_id, claim.fencing_token,
+                            "synthetic-parser-1")
+                        with parser_inputs.prepare(command_input) as verified:
+                            assert verified.stream.read() == content
+                            assert verified.plan.source.content_sha256 == hashlib.sha256(content).digest()
+                            assert verified.plan.parser_profile == "PDF_TEXT_THEN_OCR"
+                        try:
+                            parser_inputs.prepare(ParserInputCommand(claim.job_id,
+                                claim.fencing_token + 1, "synthetic-parser-1"))
+                        except ParserInputError as exc:
+                            assert exc.code == "STALE_LEASE", exc.code
+                        else:
+                            raise AssertionError("stale Parser lease must not open content")
+                        private_file = Path(temporary_root).joinpath(*fixed_input.storage_locator.split("/"))
+                        assert private_file.resolve().is_relative_to(Path(temporary_root).resolve())
+                        private_file.write_bytes(b"tampered synthetic bytes")
+                        try:
+                            parser_inputs.prepare(command_input)
+                        except ParserInputError as exc:
+                            assert exc.code == "FILE_INTEGRITY_MISMATCH", exc.code
+                        else:
+                            raise AssertionError("tampered Parser input must not be exposed")
+                        with connect(name) as db:
+                            assert db.execute("SELECT count(*) FROM plm.aud_events WHERE "
+                                "action='DOCUMENT_PARSE_INTEGRITY_FAILED' AND target_version_id=%s",
+                                (request.document_version_id,)).fetchone() == (1,)
                     finally:
                         runtime.dispose()
-                    print("PARSER_INPUT_DATABASE PASS: committed immutable metadata, upload Audit, forged actor denied")
+                    print("PARSER_INPUT_DATABASE PASS: current fenced lease, verified file bytes, stale/tamper denied and audited")
                     parse_path = (f"/api/v1/projects/{project}/documents/"
                                   f"{parsed['document_id']}/versions/"
                                   f"{parsed['document_version_id']}/parses")
