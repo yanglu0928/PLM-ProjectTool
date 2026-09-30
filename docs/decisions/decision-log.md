@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260930-512 — PAR-01-A05-P01-P02 Parser Worker 单步成功链与续租
+
+- Date/WBS：2026-09-30 / Phase2 依赖前置 PAR-01-A05-P01-P02。输入 CR-PAR-001 时序调整、Jobs 专用领取 P01、受控输入快照 A02、九类格式候选解析 A03、Document ParseRecord 启动/结果原子发布 A04；Gate2 已通过。涉及 Parser Application 的单步执行/格式分派和 Jobs 现有短事务心跳 Port，不增加 API、权限、ORM/Migration、依赖或外发。
+- 编码前检查/目标：只处理受限 `DOCUMENT_PARSE` Job 的一个成功执行步骤：领取→当前租约输入快照→第1/2/3代启动→真实格式抽取→私有结果写一次→最终续租→fenced 同事务发布；长格式处理时后台定时心跳，心跳异常后禁止发布并停止当前 Worker 再领取。输入快照始终关闭，绝不持数据库事务跨文件/OCR 操作；重入同一 Worker 实例拒绝。图片/混合 PDF 需要显式离线 OCR Engine，未供给时失败关闭；纯文本 PDF 可走原生文本链。
+- 方案/风险/回滚：组合已验服务，不让 Worker 绕过 Document/Jobs Port；与本实例同一 WorkerRef 的心跳线程只用独立短事务，退出须停线并校验，再同步续租后发布。解析/IO/DB异常暂保留 RUNNING Job 等待租约过期，且本实例停止再次领取；显式失败分类/重试/取消、崩溃确认对账与守护进程另列子项，不能把本项称为完整 Worker。实测合成短/长运行、真实 PG/文件/Audit/当前租约及异常拒发布、后端全量/wheel；仅内部服务，撤销未装配 Worker 可回滚，孤儿文件不可见，Gate3不变。
+- Executed：`ParserWorkerStep` 接入 Parse 定向领取、当前 lease 快照、第1/2/3代启动、九类 profile 分派、私有结果一次写及 fenced 原子发布；后台短事务心跳与同步最终续租，失败毒化本 Worker 实例。定向4、Python3.13 后端全量1621（3既有跳过）、Windows11隔离 PostgreSQL18/真实本地文件合成长解析心跳、ResultRef/ParseRecord/Job/Audit 成功及空队列、wheel PASS；验证脚本初轮两处错误断言已修正后完整重跑，随机库清理并恢复 PoC PG 停止。真实 PG 夹具的 Queue/Document 源为内部桩，不声称浏览器上传来源已在此验证；未装配独立进程/失败关闭/取消/崩溃恢复，Gate3 不变。
+
 ## DEC-20260930-511 — PAR-01-A05-P01-P01 Parser Worker 定向 Job 领取
 
 - Date/WBS：2026-09-30 / Phase2 依赖前置 PAR-01-A05-P01-P01。输入为冻结模块化单体/Jobs Owner、现有通用 Job Lease、Document ParseJob 入队及 CR-PAR-001 解析前置时序；Gate2与前置均满足。涉及 Jobs Application/Repository 内部领取，不涉及 Parser 内容、Document 表、公开 API/权限、ORM/Migration、依赖或数据外发。
