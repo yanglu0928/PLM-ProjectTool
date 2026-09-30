@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260930-495 — DOC-05-A06-P02 项目版本解析状态界面
+
+- Date/WBS：2026-09-30 / Phase2 DOC-05-A06-P02。P01 固定版本 ParseRecord 安全只读客户端已验证并同步；项目 Document 详情/版本历史已有受权入口。P08-A02 浏览器上传仍待确认，但只读状态面板可独立实施。
+- Decision/Reason：在当前文档的每个可用版本行增加按需解析状态面板，一次只显示一个版本的受权 ParseRecord；切版本、切项目/文档、刷新与失败要清旧结果/阻断迟到响应。提供 50 条续页与显式刷新，不自动轮询或暗示解析 Job 已完成。仅显示服务器安全投影的状态/尝试/Job、结果引用和时间，不显示解析正文、物理路径或无权错误细节。
+- Impact/rollback/validation：只修改项目文档详情 Vue 与定向测试，无新路由、后端 API、Schema/Migration、权限或依赖变化；可撤面板回滚。测试入口按需、双版本切换/迟到、刷新、空态/续页、拒绝清旧/401、路由变化/会话失效、没有原始内容泄漏；全量前端测试/typecheck/build。实际 Windows 浏览器/PG 与 Worker 处理另验，不能外推 Gate3 或 UAT。
+- Executed：新增单版本按需解析面板、续页/刷新及切换代际保护，401/404 清旧；定向 6 与全量 1012 项/typecheck/build PASS。未运行实际浏览器/PG，不宣称 Worker/Locator/Gate 通过。
+
 ## DEC-20260930-494 — DOC-05-A06-P01 固定版本 ParseRecord 只读客户端
 
 - Date/WBS：2026-09-30 / Phase2 DOC-05-A06-P01。P08-A02 浏览器文件操作待确认，但后端 `DOC-04-A05` 已在 Windows 显式组合实现冻结 `DOCUMENT_PARSE_LIST`；现有前端 DocumentReadClient 具固定 Scope/Document/Version 路径与安全 GET。此独立只读项不依赖浏览器上传或 Phase3 Worker。

@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-30：0.1.0.dev0/DOC-05-A06-P02 项目文档版本详情增加按需 ParseRecord 状态面板、续页/刷新、切版本及路由迟到丢弃、401/404 清旧；明示入队/处理不等于正式 Evidence。前端全量 1012 项/typecheck/build PASS。兼容冻结 `/api/v1`/DB0049，无后端 API/Schema/Migration/权限/依赖或升级变化；实际浏览器/PG、Worker/正式信任/Gate3/可用包仍待。
+
 - 2026-09-30：0.1.0.dev0/DOC-05-A06-P01 增加固定文档版本 ParseRecord 安全只读客户端：双 Scope 路径、独立游标、50 条分页、状态/Job/时间白名单及畸形/拒绝失败关闭。前端全量 1006 项、typecheck/build PASS；首轮测试夹具类型报错已修复重跑。兼容冻结 `/api/v1`/DB0049，无后端 API/Schema/Migration/权限/依赖或升级变化；页面/实际浏览器PG、Worker/精确 Evidence、正式信任/Gate3/可用包仍待。
 
 - 2026-09-30：0.1.0.dev0/DOC-05-A05-P08-A02 预备独立 Windows 11 浏览器上传夹具与两份纯合成 PDF，退出时拟核同一文档两版磁盘字节/摘要、Parse 入队、Audit 和隔离。静态检查及原网络模式回归 PASS；实际 IAB 合成登录并到上传表单，未选文件，界面操作中断后精确清理残留临时资源。文件上传未获确认、未运行，状态 INCOMPLETE，不能记浏览器 PASS。兼容冻结 `/api/v1`/DB0049，无生产 API/Schema/Migration/权限/依赖或升级变化；正式信任/其他平台/性能/Gate 3/可用包待验。

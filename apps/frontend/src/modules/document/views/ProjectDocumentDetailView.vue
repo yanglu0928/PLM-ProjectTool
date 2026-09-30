@@ -4,7 +4,8 @@ import { RouterLink, useRoute } from "vue-router";
 
 import { SessionClient } from "@/modules/auth/api/sessionClient";
 import { sessionClientKey } from "@/modules/auth/api/sessionContext";
-import { DocumentReadClient, DocumentReadError, type DocumentVersionView, type DocumentView } from "@/modules/document/api/documentReadClient";
+import { DocumentReadClient, DocumentReadError, type DocumentParseRecordView,
+  type DocumentVersionView, type DocumentView } from "@/modules/document/api/documentReadClient";
 
 const props = defineProps<{ session?: SessionClient; documents?: DocumentReadClient }>();
 const session = toRaw(props.session ?? inject(sessionClientKey, null) ?? new SessionClient());
@@ -25,12 +26,30 @@ const versionsLoaded = ref(false);
 const versionsBusy = ref(false);
 const versionsError = ref("");
 const versionCursor = ref<string | null>(null);
+const parseVersion = ref<DocumentVersionView | null>(null);
+const parses = ref<readonly DocumentParseRecordView[]>([]);
+const parsesLoaded = ref(false);
+const parsesBusy = ref(false);
+const parsesError = ref("");
+const parseCursor = ref<string | null>(null);
 let generation = 0;
 let versionGeneration = 0;
+let parseGeneration = 0;
 let mounted = true;
+
+function clearParses() {
+  parseGeneration += 1;
+  parseVersion.value = null;
+  parses.value = [];
+  parsesLoaded.value = false;
+  parsesBusy.value = false;
+  parsesError.value = "";
+  parseCursor.value = null;
+}
 
 function clearVersions() {
   versionGeneration += 1;
+  clearParses();
   versions.value = [];
   versionsLoaded.value = false;
   versionsBusy.value = false;
@@ -88,6 +107,52 @@ async function loadVersions() {
       || route.params.documentId !== documentId) return;
     versionsError.value = failure instanceof DocumentReadError ? failure.message : "暂时无法读取版本，请稍后重试。";
   } finally { if (mounted && current === versionGeneration) versionsBusy.value = false; }
+}
+
+function showParses(version: DocumentVersionView) {
+  if (!mayRead() || !document.value
+    || !versions.value.some((item) => item.document_version_id === version.document_version_id)) return;
+  clearParses();
+  parseVersion.value = version;
+  void loadParses();
+}
+
+async function loadParses(refresh = false) {
+  if (!mayRead() || !document.value || !parseVersion.value || parsesBusy.value) return;
+  if (refresh) {
+    parseGeneration += 1;
+    parses.value = []; parsesLoaded.value = false; parseCursor.value = null;
+  } else if (parsesLoaded.value && !parseCursor.value) return;
+  const projectId = typeof route.params.projectId === "string" ? route.params.projectId : "";
+  const documentId = document.value.document_id;
+  const versionId = parseVersion.value.document_version_id;
+  const cursor = parseCursor.value;
+  const current = ++parseGeneration;
+  parsesBusy.value = true;
+  parsesError.value = "";
+  try {
+    const page = await documents.listParses({ kind: "PROJECT", projectId }, documentId, versionId, cursor);
+    if (!mounted || current !== parseGeneration || route.params.projectId !== projectId
+      || route.params.documentId !== documentId || document.value?.document_id !== documentId
+      || parseVersion.value?.document_version_id !== versionId || !mayRead()) return;
+    const previous = cursor ? parses.value : [];
+    if (page.items.some((item) => previous.some((earlier) => earlier.parse_record_id === item.parse_record_id))) {
+      throw new DocumentReadError("DOCUMENT_CLIENT_UNAVAILABLE");
+    }
+    parses.value = [...previous, ...page.items];
+    parsesLoaded.value = true;
+    parseCursor.value = page.next_cursor;
+  } catch (failure) {
+    if (!mounted || current !== parseGeneration || route.params.projectId !== projectId
+      || route.params.documentId !== documentId) return;
+    parses.value = []; parsesLoaded.value = false; parseCursor.value = null;
+    parsesError.value = failure instanceof DocumentReadError ? failure.message : "暂时无法读取解析状态，请稍后重试。";
+  } finally { if (mounted && current === parseGeneration) parsesBusy.value = false; }
+}
+
+function parseStateLabel(state: DocumentParseRecordView["parse_state"]): string {
+  return { PENDING: "待处理", RUNNING: "处理中", SUCCEEDED: "处理完成", FAILED: "处理失败",
+    CANCELLED: "已取消" }[state];
 }
 
 watch([() => route.params.projectId, () => route.params.documentId], () => {
@@ -148,6 +213,7 @@ onUnmounted(() => { mounted = false; generation += 1; clearVersions(); });
               document.document_id, item.document_version_id)">
               下载版本 {{ item.version_no }}
             </a></span>
+            <span> · <button type="button" @click="showParses(item)">查看版本 {{ item.version_no }} 解析状态</button></span>
             <details><summary>完整性元数据</summary>
               <dl><dt>版本引用</dt><dd>{{ item.document_version_id }}</dd>
                 <dt>SHA-256</dt><dd>{{ item.content_sha256 }}</dd>
@@ -156,6 +222,35 @@ onUnmounted(() => { mounted = false; generation += 1; clearVersions(); });
             </details>
           </li>
         </ol>
+        <section v-if="parseVersion && mayRead()" aria-labelledby="document-parses-title">
+          <h3 id="document-parses-title">版本 {{ parseVersion.version_no }} 的解析记录</h3>
+          <p>仅显示固定版本的受权任务状态；待处理不表示解析完成，处理完成也不表示 Evidence 已核定或可文内定位。</p>
+          <button type="button" :disabled="parsesBusy" @click="loadParses(true)">
+            {{ parsesBusy ? '正在读取解析状态…' : '刷新解析状态' }}
+          </button>
+          <p v-if="parsesBusy" role="status">正在读取受权解析记录…</p>
+          <p v-if="parsesError" role="alert">{{ parsesError }}</p>
+          <p v-if="parsesLoaded && parses.length === 0">暂无解析记录。</p>
+          <ol v-if="parses.length" aria-label="固定版本解析记录">
+            <li v-for="item in parses" :key="item.parse_record_id">
+              <strong>{{ parseStateLabel(item.parse_state) }}</strong>
+              <span> · 第 {{ item.attempt_no }} 次尝试 · {{ item.parser_profile }} / {{ item.parser_version }}</span>
+              <span> · <time :datetime="item.created_at">{{ new Date(item.created_at).toLocaleString('zh-CN') }}</time></span>
+              <details><summary>任务元数据</summary><dl>
+                <dt>解析记录</dt><dd>{{ item.parse_record_id }}</dd>
+                <dt>任务引用</dt><dd>{{ item.job_ref }}</dd>
+                <dt>结果引用</dt><dd>{{ item.result_ref ?? '暂无' }}</dd>
+                <dt>错误代码</dt><dd>{{ item.error_code ?? '暂无' }}</dd>
+                <dt>可重试</dt><dd>{{ item.retryable === null ? '未确定' : item.retryable ? '是' : '否' }}</dd>
+                <dt>开始时间</dt><dd>{{ item.started_at ?? '暂无' }}</dd>
+                <dt>结束时间</dt><dd>{{ item.completed_at ?? '暂无' }}</dd>
+              </dl></details>
+            </li>
+          </ol>
+          <button v-if="parseCursor" type="button" :disabled="parsesBusy" @click="loadParses()">
+            {{ parsesBusy ? '正在读取解析状态…' : '继续加载解析记录' }}
+          </button>
+        </section>
         <button v-if="versionCursor" type="button" :disabled="versionsBusy" @click="loadVersions()">
           {{ versionsBusy ? '正在读取版本…' : '继续加载版本' }}
         </button>
