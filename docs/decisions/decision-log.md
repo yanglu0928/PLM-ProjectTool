@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260930-500 — PAR-01-A03-P01 文本与 CSV 可重放结构化定位
+
+- Date/WBS：2026-09-30 / Phase 2 依赖前置 PAR-01-A03-P01；输入为 CR-PAR-001、PAR-01-A01 profile 和 A02-P02 当前租约下受控字节快照。Gate 3 未通过。
+- 编码前检查：只涉及 Parser Application 内部 ParsedResult/Node 与纯文本、CSV 抽取；实体为固定 DocumentVersion、受控输入快照和候选解析节点；不改 ORM/Migration、公开 API、角色权限或依赖。节点绝不自动成为 Evidence/正式业务事实。
+- Decision：纯文本按 UTF-8-SIG、统一 CRLF/CR 为 LF，在固定版本的规范化全文中使用非空行字符区间及 SHA-256 指纹定位；CSV 按标准逗号方言逐单元格产出逻辑 `CSV` sheet 的 A1 坐标，保留引号内换行。结构化结果采用版本化、确定性序列化，源摘要和大小重新核对；编码错误、CSV 错误、超出安全上限或不匹配 profile 一律失败，不产出部分成功。后续 Office/PDF/OCR 可扩展位置变体，但不在本项混入。
+- 风险/回滚/验证：CSV 的 `CSV` 是固定逻辑 sheet 标识，后续受权 Evidence resolver 必须重读同一 DocumentVersion 才能把坐标确认为实际证据；文本偏移基于规范化文本而非原字节，需同版本/同 parser_version 重放。可撤新增 Parser 内部模块回滚，无数据迁移。测试 BOM/中文/CRLF、引号内换行/单元格位置、摘要/类型/编码/输出上限拒绝、稳定序列化及全量回归；尚不声称 Worker 心跳、结果发布或 Evidence 点击定位通过。
+- Executed：新增结构化候选结果和 TEXT_RANGE/SHEET_RANGE 类型化位置、严格 UTF-8-SIG 文本/逗号 CSV 真实抽取。定向 4、Python3.13 后端全量 1582 项（2 既有跳过）、开发 wheel 构建/包含、diff 检查 PASS；冻结 EvidenceLocator 格式校验仅证明形状兼容，不证明 DocumentVersion 内容或用户权限。安全上限为规范化前 3200 万字符及 10 万节点，超限显式失败，不截断成功；尚无 Worker/ParseRecord 发布、Office/PDF/OCR 与受权定位体验。
+
 ## DEC-20260930-499 — PAR-01-A02-P02 当前租约下的受控文件快照
 
 - Date/WBS：2026-09-30 / Phase 2 依赖前置 PAR-01-A02-P02；CR-PAR-001、A01 profile 合同和 A02-P01 Document 来源元数据 Port 已完成，Gate 3 不因此提前通过。
