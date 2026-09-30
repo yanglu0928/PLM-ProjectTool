@@ -23,6 +23,7 @@ from plm_assistant.modules.jobs.application.parse_enqueue import (
 from .profile_selection import (
     ParserInputVersion, ParserProfileError, ParserProfilePlan, choose_parser_profile,
 )
+from .system_actor_binding import ParserSystemActorBinding
 
 
 class ParserInputError(RuntimeError):
@@ -92,14 +93,15 @@ class PrepareParserInput:
     def __init__(self, *, unit_of_work: Callable[[], object], leases: ParserLeasePort,
                  queue: ParserQueuePort, documents: ParserDocumentPort,
                  storage: ParserStoragePort, audit: ParserAuditPort,
-                 system_actor_id: uuid.UUID) -> None:
+                 system_actor_id: uuid.UUID | None = None,
+                 system_actor: object | None = None) -> None:
         if (any(value is None for value in (unit_of_work, leases, queue, documents,
-                                            storage, audit))
-                or type(system_actor_id) is not uuid.UUID or system_actor_id.int == 0):
+                                            storage, audit))):
             raise ValueError("Parser input dependencies are required")
         self._uow, self._leases, self._queue = unit_of_work, leases, queue
         self._documents, self._storage, self._audit = documents, storage, audit
-        self._system_actor_id = system_actor_id
+        self._system_actor = ParserSystemActorBinding(
+            system_actor_id=system_actor_id, system_actor=system_actor)
 
     def prepare(self, command: ParserInputCommand) -> VerifiedParserInput:
         if type(command) is not ParserInputCommand:
@@ -182,12 +184,13 @@ class PrepareParserInput:
     def _record_integrity_failure(self, source: DocumentParseInputSource) -> None:
         request = source.committed.request
         try:
+            identity = self._system_actor.capture()
             with self._uow() as tx:
                 self._audit.append(tx, AuditEventDraft(
                     trace_id=request.trace_id,
                     event_scope="PROJECT" if request.scope == "PROJECT" else "DEPLOYMENT",
                     target_project_id=request.project_id,
-                    actor_type="SYSTEM", actor_id=self._system_actor_id,
+                    actor_type="SYSTEM", actor_id=identity,
                     original_actor_id=request.actor_id, actor_hint_digest=None,
                     action="DOCUMENT_PARSE_INTEGRITY_FAILED", outcome="FAILED",
                     target_owner_module="document", target_object_type="DOC-03",
@@ -195,6 +198,7 @@ class PrepareParserInput:
                     target_version_id=request.document_version_id,
                     reason_code="FILE_INTEGRITY_MISMATCH",
                 ))
+                self._system_actor.assert_same(identity)
                 tx.commit()
         except Exception:
             raise ParserInputError() from None

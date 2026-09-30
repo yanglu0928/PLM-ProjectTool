@@ -17,6 +17,7 @@ from plm_assistant.modules.jobs.application.lease import (
 from plm_assistant.modules.jobs.application.parse_enqueue import ParseJobBinding
 
 from .prepare_input import ParserInputCommand, VerifiedParserInput
+from .system_actor_binding import ParserSystemActorBinding
 from .profile_selection import ParserInputVersion, choose_parser_profile
 
 
@@ -52,14 +53,16 @@ class AuditPort(Protocol):
 class StartRetryParseAttempt:
     def __init__(self, *, unit_of_work: Callable[[], object], leases: LeasePort,
                  queue: QueuePort, documents: DocumentPort, attempts: AttemptPort,
-                 audit: AuditPort, system_actor_id: uuid.UUID) -> None:
+                 audit: AuditPort, system_actor_id: uuid.UUID | None = None,
+                 system_actor: object | None = None) -> None:
         if (any(value is None for value in (unit_of_work, leases, queue,
-                                            documents, attempts, audit))
-                or type(system_actor_id) is not uuid.UUID or system_actor_id.int == 0):
+                                            documents, attempts, audit))):
             raise ValueError("Parser retry dependencies required")
         self._uow, self._leases, self._queue = unit_of_work, leases, queue
         self._documents, self._attempts = documents, attempts
-        self._audit, self._system_actor_id = audit, system_actor_id
+        self._audit = audit
+        self._system_actor = ParserSystemActorBinding(
+            system_actor_id=system_actor_id, system_actor=system_actor)
 
     def start(self, command: ParserInputCommand,
               prepared: VerifiedParserInput) -> StartedParseAttempt:
@@ -71,6 +74,7 @@ class StartRetryParseAttempt:
             raise ParseAttemptError("VALIDATION_FAILED")
         try:
             command.__post_init__()
+            identity = self._system_actor.capture()
             plan = prepared.plan
             if plan != choose_parser_profile(plan.source) or prepared.stream.closed:
                 raise ParseAttemptError("PARSER_INPUT_CHANGED")
@@ -129,7 +133,7 @@ class StartRetryParseAttempt:
                         trace_id=request.trace_id,
                         event_scope="PROJECT" if request.scope == "PROJECT" else "DEPLOYMENT",
                         target_project_id=request.project_id,
-                        actor_type="SYSTEM", actor_id=self._system_actor_id,
+                        actor_type="SYSTEM", actor_id=identity,
                         original_actor_id=request.actor_id, actor_hint_digest=None,
                         action="DOCUMENT_PARSE_ATTEMPT_RECONCILED", outcome="SUCCESS",
                         target_owner_module="document", target_object_type="DOC-04",
@@ -139,6 +143,7 @@ class StartRetryParseAttempt:
                     ))
                     if type(event_id) is not uuid.UUID or event_id.int == 0:
                         raise ParseAttemptError()
+                self._system_actor.assert_same(identity)
                 tx.commit()
                 return started
         except ParseAttemptError:

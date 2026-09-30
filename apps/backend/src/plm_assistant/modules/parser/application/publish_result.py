@@ -16,6 +16,7 @@ from plm_assistant.modules.jobs.application.lease import ClaimedJob, JobLeaseErr
 from plm_assistant.modules.jobs.application.parse_enqueue import ParseJobBinding
 
 from .prepare_input import ParserInputCommand, VerifiedParserInput
+from .system_actor_binding import ParserSystemActorBinding
 from .profile_selection import ParserInputVersion, choose_parser_profile
 from .structured_result import ParsedResult
 
@@ -61,14 +62,16 @@ class PublishParserResult:
     def __init__(self, *, unit_of_work: Callable[[], object], leases: LeasePort,
                  queue: QueuePort, documents: DocumentPort,
                  storage: ResultStoragePort, results: PublishPort,
-                 audit: AuditPort, system_actor_id: uuid.UUID) -> None:
+                 audit: AuditPort, system_actor_id: uuid.UUID | None = None,
+                 system_actor: object | None = None) -> None:
         if (any(value is None for value in (unit_of_work, leases, queue,
-                                            documents, storage, results, audit))
-                or type(system_actor_id) is not uuid.UUID or system_actor_id.int == 0):
+                                            documents, storage, results, audit))):
             raise ValueError("Parser publication dependencies required")
         self._uow, self._leases, self._queue = unit_of_work, leases, queue
         self._documents, self._storage, self._results = documents, storage, results
-        self._audit, self._system_actor_id = audit, system_actor_id
+        self._audit = audit
+        self._system_actor = ParserSystemActorBinding(
+            system_actor_id=system_actor_id, system_actor=system_actor)
 
     def publish(self, *, command: ParserInputCommand, prepared: VerifiedParserInput,
                 started: StartedParseAttempt, parsed: ParsedResult,
@@ -84,6 +87,7 @@ class PublishParserResult:
             started.__post_init__()
             parsed.__post_init__()
             stored.__post_init__()
+            identity = self._system_actor.capture()
             plan = prepared.plan
             if (plan != choose_parser_profile(plan.source)
                     or (prepared.job_id, prepared.fencing_token, prepared.attempt_no)
@@ -152,7 +156,7 @@ class PublishParserResult:
                     trace_id=request.trace_id,
                     event_scope="PROJECT" if request.scope == "PROJECT" else "DEPLOYMENT",
                     target_project_id=request.project_id,
-                    actor_type="SYSTEM", actor_id=self._system_actor_id,
+                    actor_type="SYSTEM", actor_id=identity,
                     original_actor_id=request.actor_id, actor_hint_digest=None,
                     action="DOCUMENT_PARSE_SUCCEEDED", outcome="SUCCESS",
                     target_owner_module="document", target_object_type="DOC-04",
@@ -166,6 +170,7 @@ class PublishParserResult:
                     fencing_token=command.fencing_token, worker_ref=command.worker_ref)
                 if type(finished) is not ClaimedJob or finished != claim:
                     raise ParserPublishError()
+                self._system_actor.assert_same(identity)
                 tx.commit()
                 return published
         except ParserPublishError:

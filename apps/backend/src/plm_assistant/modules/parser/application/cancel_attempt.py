@@ -17,6 +17,7 @@ from plm_assistant.modules.jobs.application.lease import (
 from plm_assistant.modules.jobs.application.parse_enqueue import ParseJobBinding
 
 from .prepare_input import ParserInputCommand
+from .system_actor_binding import ParserSystemActorBinding
 
 
 class ParserCancellationError(RuntimeError):
@@ -62,13 +63,14 @@ class AuditPort(Protocol):
 class AcknowledgeParserCancel:
     def __init__(self, *, unit_of_work: Callable[[], object], leases: LeasePort,
                  queue: QueuePort, documents: DocumentPort, audit: AuditPort,
-                 system_actor_id: uuid.UUID) -> None:
-        if (any(value is None for value in (unit_of_work, leases, queue, documents, audit))
-                or type(system_actor_id) is not uuid.UUID or system_actor_id.int == 0):
+                 system_actor_id: uuid.UUID | None = None,
+                 system_actor: object | None = None) -> None:
+        if any(value is None for value in (unit_of_work, leases, queue, documents, audit)):
             raise ValueError("Parser cancellation dependencies required")
         self._uow, self._leases, self._queue = unit_of_work, leases, queue
         self._documents, self._audit = documents, audit
-        self._system_actor_id = system_actor_id
+        self._system_actor = ParserSystemActorBinding(
+            system_actor_id=system_actor_id, system_actor=system_actor)
 
     def acknowledge(self, *, command: ParserInputCommand,
                     started: StartedParseAttempt | None) -> ParserCancellationOutcome:
@@ -77,6 +79,7 @@ class AcknowledgeParserCancel:
             raise ParserCancellationError("VALIDATION_FAILED")
         try:
             command.__post_init__()
+            identity = self._system_actor.capture()
             with self._uow() as tx:
                 pulse = self._leases.pulse_parse(tx, job_id=command.job_id,
                     fencing_token=command.fencing_token,
@@ -112,7 +115,7 @@ class AcknowledgeParserCancel:
                     trace_id=request.trace_id,
                     event_scope="PROJECT" if request.scope == "PROJECT" else "DEPLOYMENT",
                     target_project_id=request.project_id,
-                    actor_type="SYSTEM", actor_id=self._system_actor_id,
+                    actor_type="SYSTEM", actor_id=identity,
                     original_actor_id=request.actor_id, actor_hint_digest=None,
                     action="DOCUMENT_PARSE_CANCELLED", outcome="SUCCESS",
                     target_owner_module="document",
@@ -130,6 +133,7 @@ class AcknowledgeParserCancel:
                     worker_ref=command.worker_ref)
                 if type(closed) is not ClaimedJob or closed != claim:
                     raise ParserCancellationError()
+                self._system_actor.assert_same(identity)
                 tx.commit()
                 return ParserCancellationOutcome(command.job_id, record_id)
         except ParserCancellationError:

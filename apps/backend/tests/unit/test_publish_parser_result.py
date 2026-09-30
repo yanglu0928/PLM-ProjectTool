@@ -7,6 +7,7 @@ import uuid
 from dataclasses import replace
 from datetime import datetime, timezone
 from unittest.mock import Mock
+from types import SimpleNamespace
 
 from plm_assistant.modules.document.application.parse_attempt import StartedParseAttempt
 from plm_assistant.modules.document.application.parse_job_source import (
@@ -118,6 +119,21 @@ class PublishParserResultTests(unittest.TestCase):
         self.audit.append.assert_called_once()
         self.leases.finish.assert_called_once()
         self.assertEqual(self.events, ["commit"])
+
+    def test_controlled_actor_change_after_audit_blocks_commit(self) -> None:
+        actor = SimpleNamespace(assert_current=Mock())
+        original, changed = uuid.uuid4(), uuid.uuid4()
+        actor.assert_current.side_effect = (original, changed)
+        service = PublishParserResult(unit_of_work=self.service()._uow,
+            leases=self.leases, queue=self.queue, documents=self.documents,
+            storage=self.storage, results=self.results, audit=self.audit,
+            system_actor=actor)
+        with self.assertRaises(ParserPublishError):
+            service.publish(command=self.command, prepared=self.prepared,
+                started=self.started, parsed=self.parsed, stored=self.stored)
+        self.assertEqual(self.audit.append.call_args.args[1].actor_id, original)
+        self.assertFalse(self.transactions[-1].committed)
+        self.assertEqual(actor.assert_current.call_count, 2)
 
     def test_second_and_third_generation_publish_only_matching_attempt(self) -> None:
         for number in (2, 3):

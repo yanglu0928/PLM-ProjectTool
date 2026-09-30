@@ -15,6 +15,7 @@ from plm_assistant.modules.jobs.application.lease import ClaimedJob, JobLeaseErr
 from plm_assistant.modules.jobs.application.parse_enqueue import ParseJobBinding
 
 from .prepare_input import ParserInputCommand
+from .system_actor_binding import ParserSystemActorBinding
 
 FATAL_CODES = frozenset({
     "PARSER_INPUT_INVALID", "PARSER_INPUT_CHANGED", "FILE_INTEGRITY_MISMATCH",
@@ -89,13 +90,14 @@ class AuditPort(Protocol):
 class FailParserAttempt:
     def __init__(self, *, unit_of_work: Callable[[], object], leases: LeasePort,
                  queue: QueuePort, documents: DocumentPort, audit: AuditPort,
-                 system_actor_id: uuid.UUID) -> None:
-        if (any(value is None for value in (unit_of_work, leases, queue, documents, audit))
-                or type(system_actor_id) is not uuid.UUID or system_actor_id.int == 0):
+                 system_actor_id: uuid.UUID | None = None,
+                 system_actor: object | None = None) -> None:
+        if any(value is None for value in (unit_of_work, leases, queue, documents, audit)):
             raise ValueError("Parser failure dependencies required")
         self._uow, self._leases, self._queue = unit_of_work, leases, queue
         self._documents, self._audit = documents, audit
-        self._system_actor_id = system_actor_id
+        self._system_actor = ParserSystemActorBinding(
+            system_actor_id=system_actor_id, system_actor=system_actor)
 
     def fail(self, *, command: ParserInputCommand, started: StartedParseAttempt | None,
              error_code: str, retryable: bool, delay_seconds: int
@@ -110,6 +112,7 @@ class FailParserAttempt:
             raise ParserFailureError("VALIDATION_FAILED")
         try:
             command.__post_init__()
+            identity = self._system_actor.capture()
             if started is not None:
                 started.__post_init__()
             with self._uow() as tx:
@@ -148,7 +151,7 @@ class FailParserAttempt:
                     trace_id=request.trace_id,
                     event_scope="PROJECT" if request.scope == "PROJECT" else "DEPLOYMENT",
                     target_project_id=request.project_id,
-                    actor_type="SYSTEM", actor_id=self._system_actor_id,
+                    actor_type="SYSTEM", actor_id=identity,
                     original_actor_id=request.actor_id, actor_hint_digest=None,
                     action="DOCUMENT_PARSE_FAILED", outcome="FAILED",
                     target_owner_module="document",
@@ -167,6 +170,7 @@ class FailParserAttempt:
                     delay_seconds=delay_seconds)
                 if state not in {"RETRY_WAIT", "FAILED"}:
                     raise ParserFailureError()
+                self._system_actor.assert_same(identity)
                 tx.commit()
                 return ParserFailureOutcome(state, record_id)
         except ParserFailureError:

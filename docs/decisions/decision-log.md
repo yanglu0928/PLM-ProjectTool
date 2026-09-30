@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260930-519 — Parser 进程须动态复核 SystemActor
+
+- Date/WBS：2026-09-30 / Phase2 `PAR-01-A05-P01-P05`；输入 ADR-007/011、既有 Parser Worker Step 和 Windows 受控 SystemActor。前置功能链内部 PASS，正式进程尚未装配。
+- Decision：不把构造时读取的 UUID 当成持续有效身份。Parser 关键状态提交前重验同一受控 Vault 身份；进程入口显式装配 WorkerDatabase/License/Project/Storage/Identity，失败关闭，不复用 HTTP Session 或隐式 Secret 环境变量。先验证正式组合，再标进程 PASS。
+- Reason/Impact/Rollback：长解析期间 Vault 材料可能失效或改变，启动时唯一检查不足。此为 ADR-011 的实现补齐，不改变安全机制、Schema/API/技术栈；停独立入口可回退，已写审计保留。需 Windows11 真实运行、故障注入、全量与 wheel 证据；Server2025/Debian 仍另验。
+
 ## DEC-20260930-518 — Parser 过期取消扫描与恢复分离
 
 - Date/WBS：2026-09-30 / Phase2 `PAR-01-A05-P01-P04-P03-P04`；输入 ADR-007/011 和 P03 已验原子恢复。前置满足，Gate3 不变。
