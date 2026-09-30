@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A04 新增 Windows11 非发行候选 ZIP 重新解包/逐文件验哈及全新 Python3.13 x64 venv 无索引重装验证脚本，97/97 载荷、93 wheel、`pip check`/核心导入 PASS；3/3 越界、重名和非白名单 ZIP 负例解包前拒绝。无 Migration/API/依赖版本或生产升级变化；兼容性仅本机 Windows11，回滚可撤验证工具及经路径核对的本地忽略演练目录。缺正式运行时/安装器、DB/OCR/License/服务账户与 HTTPS、Plugin/升级工具、物理断网/Server2025/Debian13/Gate/UAT；`release_eligible=false`，不得发行。
+
 - 2026-09-30：0.1.0.dev0/POC-03-G3-A01 新增 Gate 3 新留出集本地精确重叠预检，按问题、证据块、同文档来源定位、正文 Hash 对比提供的历史数据集；仅输出计数与文件哈希，5 项合成单元测试通过，旧 50 条自比正确 FAIL。无 Migration/API/生产依赖或升级步骤，Windows11 Python3.13 本地可运行；撤脚本与模块可回滚。已知限制：历史暴露清单仍需补全，语义近似与人工标签不能由此证明；全量 POC03 测试因当前系统 Python 缺 `openpyxl`/`jsonschema` 未通过环境前置。旧质量 48%/74% FAIL、Gate3 与正式程序包阻断不变。
 
 - 2026-09-30：0.1.0.dev0/PLT-PKG-01-A03 新增 Windows11 非发行候选载荷组装与双向 SHA-256 校验工具；后端93 wheel、前端3 dist、非敏感配置示例1文件，入包97/97 Hash 复核，ZIP 247,855,179 字节并含 manifest/清单。`release_eligible=false`，不运行安装/迁移，不改 Schema/API/依赖；可撤组装工具及 Git 忽略本地候选目录回滚。兼容性仅 Windows11 开发候选；正式 License 公钥、运行时/DB/OCR、HTTPS/服务账户、Plugin/安装升级、Server2025/Debian13 与 Gate/UAT 未验，禁止将候选 ZIP 当可用程序包发行。
