@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-09-30：0.1.0.dev0/PAR-01-A05-P01-P04-P03-P04 增加 Parser 过期取消 Job 的 PostgreSQL 时间有序候选扫描及单步恢复调度；候选仅为 hint，原恢复 Owner 再核当前代/来源，提交回执不确定仅只读确认。Windows11 隔离 PG18/HTTP 实际合成上传两 Job、有/无解析记录、身份失效和竞争验证，后端1638（3既有跳过）、wheel PASS。兼容冻结 `/api/v1`/DB0050，无 Migration、新依赖或生产升级；独立进程装配、正式账户信任源、Server2025/Debian、Gate3及可用包仍待。
+
 - 2026-09-30：0.1.0.dev0/PAR-01-A05-P01-P04-P03-P03 新增 Parser 取消请求到期后的当前代数据库恢复与提交确认丢失只读核验；Document ParseRecord（如已启动）、Audit SYSTEM 事件及 Job/Lease/Attempt 同事务终止。Windows 11 隔离 PostgreSQL18/真实合成上传与 HTTP 用户请求验证活租约/错误代数拒绝、两种记录状态、双后置故障回滚、唯一事件与重放；后端1635（3既有跳过）、wheel PASS。兼容冻结 `/api/v1`/DB0050，无本轮 Migration、权限、依赖变化或生产升级；独立进程调度/正式 SystemActor、Server2025/Debian、Gate3和可用包仍待。
 
 - 2026-09-30：0.1.0.dev0/PAR-01-A05-P01-P04-P03-P02 将 Parser 当前用户取消 Owner 接入冻结 Job Cancel API 与 Windows 显式写组合；真实 Document 上传来源、当前项目创建者或 PM、License/Session/CSRF、Job/Outbox 绑定与首次 Audit/版本/幂等收据同事务。Windows11 隔离 PG18/HTTP 的 PENDING、RETRY_WAIT、RUNNING、终态、并发首响应/撤权/回滚与写组合验证，后端1635（3既有跳过）、wheel PASS。兼容 `/api/v1` 与 DB0050，无本轮 Migration/新依赖；使用前需备份停写升级0050，正式信任源/Server2025/Debian、过期恢复、Gate3及可用包仍待。

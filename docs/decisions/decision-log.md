@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260930-518 — Parser 过期取消扫描与恢复分离
+
+- Date/WBS：2026-09-30 / Phase2 `PAR-01-A05-P01-P04-P03-P04`；输入 ADR-007/011 和 P03 已验原子恢复。前置满足，Gate3 不变。
+- Decision：Jobs 只按数据库时间返回当前过期取消的只读候选与稳定游标；Parser 单步调度持有同一受控 SystemActor，遇竞争后依原 `RecoverExpiredParserCancel` 的当前代/来源检查或只读终态证明。候选仅为 hint，不给扫描者写权限；独立进程组合另项验收。
+- Impact/Rollback：不改 Schema/API/权限/依赖；小批有界轮询防坏来源永远占据队首。停用调度即可回退应用，已提交取消历史不变。真实 PG/HTTP、竞争及故障测试后才标内部 PASS。
+
 ## DEC-20260930-517 — Parser 取消过期恢复与只读确认
 
 - Date/WBS：2026-09-30 / Phase2 `PAR-01-A05-P01-P04-P03-P03`；输入 ADR-007、CR-PAR-001/002、P04-P02 活租约协作取消与 P03-P02 用户申请。前置满足，Gate3不变。

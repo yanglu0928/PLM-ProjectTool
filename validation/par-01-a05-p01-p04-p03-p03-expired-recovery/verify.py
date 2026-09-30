@@ -35,7 +35,7 @@ spec.loader.exec_module(owner)
 owner.fixture.PORT = int(os.environ.get("PLM_POC_PG_PORT", "55434"))
 
 
-def exercise(v):
+def exercise(v, *, after=None):
     def extra(v, *, db, client, lease, headers, path, body, snapshot):
         leases = SqlAlchemyJobLeaseRepository()
         audit = AuditService(SqlAlchemyAuditRepository())
@@ -167,6 +167,10 @@ def exercise(v):
         print("PAR-01-A05-P01-P04-P03-P03: actual expiry, foreign/fence denial, "
               "Audit/last-step rollback, with/without ParseRecord recovery, "
               "read-only receipt and replay PASS")
+        if after is not None:
+            after(v, db=db, client=client, lease=lease, service=service,
+                  headers=headers, path=path, body=body, snapshot=snapshot,
+                  create=create, system_actor=system)
 
     owner.exercise(v, extra=extra)
 

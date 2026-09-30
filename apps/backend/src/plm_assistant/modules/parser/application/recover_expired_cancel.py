@@ -103,6 +103,7 @@ class RecoverExpiredParserCancel:
         if type(command) is not ParserInputCommand:
             raise ParserCancellationError("VALIDATION_FAILED")
         command.__post_init__()
+        identity = self._identity()
         try:
             with self._uow() as tx:
                 claim, requester, requested_at, completed_at = (
@@ -135,10 +136,13 @@ class RecoverExpiredParserCancel:
                 event_id = self._cancellations.verified_recovery(tx,
                     job_id=command.job_id, project_id=request.project_id,
                     document_version_id=request.document_version_id,
-                    trace_id=request.trace_id, original_actor_id=requester,
+                    trace_id=request.trace_id, actor_id=identity,
+                    original_actor_id=requester,
                     requested_at=requested_at, completed_at=completed_at)
                 if type(event_id) is not uuid.UUID or event_id.int == 0:
                     raise ParserCancellationError()
+                if self._identity() != identity:
+                    raise ParserCancellationError("SYSTEM_ACTOR_UNAVAILABLE")
                 return ParserCancellationOutcome(command.job_id,
                     cancelled.parse_record_id if cancelled is not None else None)
         except ParserCancellationError:
