@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A03 新增 AMD64 PE 静态导入图工具，识别 Tesseract5.5.3 CLI 34本地二进制（含33 DLL）、22根 DLL/6安装器 DLL 不在静态图；隔离 ASCII 子集34/34 Hash、版本/4语言及四版面 OCRmyPDF PDF/A-2b/deskew 术语20/20 PASS，合成PE测试2/2。无 Migration/API/正式依赖或安装变化，旧旁包保留、隔离目录可弃用回滚。动态依赖/33 DLL 精确许可、签名/AGPL/ACL/三平台/Gate待，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A02 新增 Windows11 非发行 OCR 原生/模型旁包构建与校验；固定 Tesseract139、Ghostscript654、tessdata4、Paddle10 来源，807/807归档和全新 ASCII 解包 Hash 通过，合成表格 PDF/A-2b/`--deskew` 术语5/5及 Paddle PNG/混合PDF PASS，越界/冒充发行2/2拒绝。无 Migration/API/正式依赖或安装变化，旧候选不覆盖，可弃用新本机忽略 ZIP 回滚。原生许可/签名、AGPL公开源码、ACL/三平台/Gate待，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A01 新增 Ghostscript10.08.0 portable 来源审计，固定官方安装包独立解包与现有654/654文件 SHA-256 一致、CLI版本及 `doc/COPYING` AGPLv3文本回读 PASS；合成正例/篡改/额外文件拒绝。无 Migration/API/正式依赖/安装变化，可撤工具及忽略清单回滚。源码公开与许可审查、原生组件/ACL/三平台/Gate待，`release_eligible=false`。
