@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P03 生成保留旧包的新 Windows11 非发行候选，将 A08-P02 的 152 份原 wheel 许可材料并入；新 ZIP 17,358 载荷 Hash 全数回读、全新解包导入/93发行元数据/152材料存在通过，定向2/2。无 Migration/API/依赖/正式安装升级变更；仅本机 Win11，撤新工具/忽略目录可回滚。`bce-python-sdk` 精确许可文本、产品许可、前端/原生组件与法律审核仍待，`release_eligible=false`，不得发行。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P02 增加非发行 wheel 许可文件 sidecar 构建/回读工具，原 wheel Hash 复核后保全 152 份文件及逐件/来源 Hash，7/7 合成测试通过。仅本机 Win11 证据，无 Migration/API/依赖、安装升级变更；旧 A07 ZIP 不改，可撤新工具及本地忽略归档回滚。`bce-python-sdk`、产品许可、前端/原生组件与法律审查待，sidecar 尚未并入安装包，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P01 新增 A07 候选与 A01 93 wheel 精确名称/版本/Hash、许可元数据及通知文件 Hash 对账工具；93/93 一致，原 wheel 91/93 有可识别文件，合成5/5 PASS。发现 `et_xmlfile`/`openpyxl` 文件未进入候选载荷；`bce-python-sdk` 与自有 wheel 缺原 wheel 许可文本。无 Migration/API/依赖/安装升级变化，兼容性仅当前 Win11 本地证据；撤独立工具/忽略输出可回滚。产品许可、上游精确版本、前端/原生组件与法律审查未完成，`release_eligible=false`，不得发行。
