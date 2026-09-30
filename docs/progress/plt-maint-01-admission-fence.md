@@ -238,6 +238,16 @@
 结果：Windows11 原生只读正向 PASS。本机 `EventLog` 确认已安装且运行；内部仅测试用查询函数对其原生 QueryServiceConfigW/QueryServiceStatusEx 成功，服务类型、启动方式、错误控制、非空路径/账户、运行状态与非零 PID 解析通过，测试未输出路径/账户。公开入口角色白名单不变；三个 PLM 服务仍未安装，故不宣称产品服务实机验收。定向6、后端1723（3既有跳过）、wheel PASS。P03-A02/CR/Gate3 仍 OPEN。
 
 
+## A06-P02-P03-P03-A02-P02-A02 编码前检查：固定服务安装配置只读对账
+
+当前 Phase：Phase 2 Platform Core。当前 WBS：PLT-MAINT-01-A06-P02-P03-P03-A02-P02-A02。输入基线：ADR-013、CR-PLT-004、DEC-547、P03-A01 固定命令计划与 A02-P02-A01/R1 原生 SCM 配置读取。前置的读取及系统服务正向路径已内部通过；三个 PLM 服务尚未安装，本任务不代替实机安装/启停。
+涉及模块：Platform Windows 部署诊断；实体为三个固定服务的保存配置，不新建业务实体/Schema/API。权限：只读文件路径和 SCM 配置/状态，显式期望目标账户作为内存参数，不读密码、不打印账户/路径；不申请 SCM 写权。
+验收标准：从已有只读计划取得角色的精确 binary path，核对 SCM name、own-process 类型、manual start、normal error、binary path 和预期账户；缺服务/任一差异失败关闭并给固定不含敏感值的原因码。配置匹配只记 `CONFIG_MATCH_DIAGNOSTIC_ONLY` 且 `backup_or_migration_authorized=false`；合成正反例、本机三服务缺失路径、后端全量与 wheel。
+风险/回滚：SCM 保存配置不证明运行中配置、SID/PID/标记、资源静止；账户表示不一致时严格拒绝，后续正式环境若需等价规范化另记证据/CR。无 Migration/API/依赖或 SCM 写入，可撤对账入口回滚；P03-A02/Gate3 仍 OPEN。
+
+结果：A02-P02-A02 Windows11 内部只读 PASS。复用固定服务计划生成期望命令，逐项比较 own-process/manual-start/normal-error、完整 binary path 和显式目标账户；缺服务、每一字段差异与查询错误均失败关闭，只返回固定原因码。CLI 交互隐藏预期账户，报告不含路径、账户或 PID，任何结果均 `backup_or_migration_authorized=false`。合成正反例及当前本机 PLM 三服务仍缺失的原生路径定向6、后端1729（3既有跳过）、wheel PASS。真实 PLM 已安装服务匹配、目标账户/启停/进程与标记、文件句柄及 DB 会话静止仍待；配置匹配不提升 P03-A02/CR/Gate3 状态。
+
+
 ## PAR-01-A05-P06-P01 编码前检查：Windows OCR 模型路径可诊断限制
 
 当前 Phase：Phase 2 Platform Core。当前 WBS：PAR-01-A05-P06-P01。输入基线：CR-PAR-005 方案 A、现有 `OfflinePaddleOcr` 模型四文件指纹与 Windows Worker 启动链。前置同字节模型中文/ASCII 路径差异与底层异常已在本机复现；正式安装器/目标账户仍缺。

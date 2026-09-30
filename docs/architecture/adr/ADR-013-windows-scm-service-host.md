@@ -44,3 +44,5 @@ Microsoft 官方接口依据：[Service entry point](https://learn.microsoft.com
 2026-09-30 只读诊断进展：P03-P03-A02-P02-A01 使用固定服务名调用原生 SCM 查询，读取安装配置、当前状态及报告 PID；CLI 不输出配置路径/账户，且仅把 RUNNING 的非零 PID 作为观察值而非归属证明。本机三服务均未安装，真实已安装服务正向、目标账户与资源静止仍待；ADR 状态不提升。接口依据：[QueryServiceConfigW](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-queryserviceconfigw)、[QueryServiceStatusEx](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/nf-winsvc-queryservicestatusex)。
 
 2026-09-30 后续验证：P03-P03-A02-P02-A01-R1 在不改动服务的条件下，将内部只读查询用于本机已安装的 Windows EventLog 服务；原生配置/状态成功路径通过，公开产品查询仍严格限三个固定角色。此结果仅验证 Win32 适配器正向读取，不替代 PLM 服务安装、目标账户、PID 归属或资源静止验收，ADR 状态继续 `PARTIALLY_IMPLEMENTED / NOT_SCM_VALIDATED`。
+
+2026-09-30 配置对账：A02-P02-A02 将 P03-A01 期望启动命令与 SCM 保存配置的服务类型、启动方式、错误策略、binary path 和账户逐项精确比较；缺失/不匹配仅出固定码，绝不把配置相同当作当前运行进程或静止证明。当前 PLM 服务未安装，故只通过合成匹配/差异与原生缺失路径；正式目标账户的实机对账仍待，ADR 状态不提升。

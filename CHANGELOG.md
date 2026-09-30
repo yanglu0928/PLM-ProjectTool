@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A06-P02-P03-P03-A02-P02-A02 新增 Windows 固定服务 SCM 保存配置只读对账入口：与已校验命令计划比较 own-process、手动启动、normal error、完整 binary path 和交互输入的期望账户；缺服务/差异仅报固定原因码，不回显路径、账户或 PID，永不授权备份/迁移。Windows11 合成正反例及原生缺失服务定向6、后端1729（3既有跳过）、wheel PASS。无 Schema/API/依赖/服务写入或生产升级；可撤独立入口回滚。真实 PLM 服务匹配、目标账户/启停/静止、Server2025、Gate3/发行包仍待。
+
 - 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A06-P02-P03-P03-A02-P02-A01-R1 为 Windows SCM 只读适配增加内部已安装服务测试路径；本机 EventLog 的原生 QueryServiceConfigW/QueryServiceStatusEx 成功读取与结构解析通过，不修改服务或输出账户/路径。公开 PLM 固定角色、诊断级报告及无备份/迁移许可不变；定向6、后端1723（3既有跳过）、wheel PASS。无 Schema/API/依赖/生产升级，内部测试 seam 可撤回滚。三个 PLM 服务仍未安装，真实目标账户/启停/资源静止、Server2025、Gate3/发行包待。
 
 - 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A06-P02-P03-P03-A02-P02-A01 新增 Windows 原生 SCM 只读固定服务清单与脱敏 CLI；仅报告安装/类型/启动方式/状态及 RUNNING 非零报告 PID，失败不输出部分清单，恒 `DIAGNOSTIC_ONLY` 且不授权备份/迁移。Windows11 本机三服务均未安装，原生缺失服务及合成定向5、后端1722（3既有跳过）、wheel PASS。无 Schema/API/依赖/服务写入或生产升级；可撤诊断入口回滚。真实已安装服务 QueryServiceConfigW/QueryServiceStatusEx 成功路径、目标账户/OS静止、Server2025、Gate3/发行包仍待。

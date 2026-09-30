@@ -5823,3 +5823,8 @@
 
 - 日期/Phase/WBS：2026-09-30 / Phase2 / PLT-MAINT-01-A06-P02-P03-P03-A02-P02-A01-R1。公开 `read_service_observation` 继续只允许三个固定 PLM 角色；内部提取 `_read_name`，仅在测试中对系统 EventLog 服务执行只读配置/状态查询，不把它纳入产品清单或诊断许可。
 - 理由：本机 PLM 服务均不存在，先前原生测试只能验证 OpenServiceW 的缺失路径，无法验证 QueryServiceConfigW/QueryServiceStatusEx 成功绑定。影响限内部适配和测试，无 Schema/API/依赖/服务修改；回滚撤提取/测试，保留公开固定角色查询。系统服务正向结果不证明 PLM 目标账户、PID 归属或资源静止。
+
+## DEC-20260930-547 — 服务配置对账采取全字段精确失败关闭
+
+- 日期/Phase/WBS：2026-09-30 / Phase2 / PLT-MAINT-01-A06-P02-P03-P03-A02-P02-A02。由只读命令计划产生期望 binary path，以明确目标账户和固定 own-process/manual-start/normal-error 参数比较 SCM 保存配置；任何缺失或差异均给固定原因码，不输出命令行、账户或路径，不把配置匹配当作运行时/静止证明。
+- 理由：[Microsoft QUERY_SERVICE_CONFIGW](https://learn.microsoft.com/en-us/windows/win32/api/winsvc/ns-winsvc-query_service_configw) 列出这些保存配置字段；它们可用于安装定义对账，但不证明当前进程。大小写或账户名称规范化不猜测等价，首次采用严格字节级相等以避免错误放行；合法但表示不同的配置须受控调查。影响限只读 Platform 诊断，无 Schema/API/依赖/SCM 写入；可撤对账工具回滚，原服务和数据不变。
