@@ -45,3 +45,12 @@
 风险与回滚：认证只验证应用内 Admin，不证明当前 OS 部署账户或旧版进程静止；CLI/部署限制和 OS 退出证据后续独立处理。无 Schema/API/依赖变更；回滚不装配 Port，保留历史变更记录。
 
 结果：A03-P03-P01 内部 PASS。排他转换 Port 不再接受调用方自称操作员 UUID；在同一 Session 状态/Audit 事务中复用 Auth 的当前 Session+CSRF+DeploymentAdmin 锁定核验，解析真实 USER actor。隔离 PG18 合成管理员能进 MAINTENANCE/v1 与恢复 RUNNING/v2；错误 Session/CSRF、非管理员、停用账户、撤销 Session 均拒绝且状态/Audit 无新增；共享锁超时、旧版本与 Audit 故障回滚复验通过。后端全量1661（3既有跳过）、wheel PASS，随机库清理、PoC PG 恢复停止。尚无 OS 部署账户限制或受控 CLI，不能让运营侧执行切换；后续 A03-P03-P02 和 A04/A05/A06 继续。
+
+## A03-P03-P02 编码前检查：Windows 本机受控操作入口
+
+当前 Phase：Phase 2 Platform Core。当前 WBS：PLT-MAINT-01-A03-P03-P02。输入基线：CR-PLT-004、A03-P03-P01 同事务 Auth 证明、现有 Windows 当前账户 DB Credential Manager 来源及 LoginService/SessionService。前置内部排他能力/身份核验 PASS；生产 API/Worker 未接 admission，故不允许据本入口判定备份可开始。
+涉及模块：本机 Windows 运维 CLI 组合，不改登录、状态、Audit、DB Schema 或公开 API。涉及实体：短期 Session、维护状态/Audit 复用。涉及权限：仅交互式当前 Windows 账户可读取其自身已配置 DB Vault 凭据，操作员另输入当前应用管理员用户名/隐藏密码；不接收 URL/密码/Token 的 CLI 参数或环境变量。OS 账户独占凭据的部署 ACL 须在正式账户验证。
+验收标准：CLI 参数/非交互输入拒绝；短期 Session 不输出 Token，现时管理员身份在转换事务重验；状态冲突/共享锁/登录失败固定错误且无切换；成功进入/退出的返回值和 Session 收口；隔离 PG18 真实合成账号执行链、后端回归与 wheel。
+风险与回滚：独立 CLI 即使可切换状态，尚无全部 API/Worker admission 与 OS 退出证据，不构成备份/迁移许可；正式账户 Vault 隔离、Windows Server 2025 与 Debian 入口仍待。无新 Schema/API/依赖；停用未启用 CLI 可回滚程序，维护历史状态不能删除。
+
+结果：A03-P03-P02 Windows11 内部组合 PASS。`maintenance_windows` 仅本地交互、仅当前账户 Vault DB 凭据；运维用户名与隐藏口令经既有 scrypt/限流 LoginService 取得五分钟 Session，再经排他 Port 当前管理员同事务复验。隔离 PG18 正式 scrypt 初始管理员合成链验证 enter v0→MAINTENANCE/v1、旧版本拒绝、exit v1→RUNNING/v2，两条 USER Audit，错误口令无状态变化、全部创建 Session 已撤销，密码 bytearray 擦除。CLI 非 Windows/额外 Secret 参数先于 Vault 读取拒绝；后端全量1663（3既有跳过）、wheel 含 CLI PASS；随机库清理、PoC PG 恢复停止。未验证指定 OS 部署账户 Vault 独占、Server2025/Debian 工具、生产进程全覆盖及静止，故仅内部 PASS；生产切换/备份仍禁止。

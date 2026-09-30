@@ -5730,3 +5730,9 @@
 
 - Phase/WBS：Phase2 / PLT-MAINT-01-A03-P03-P01；编码前检查见 progress。A03-P02 的 UUID 输入不足以证明操作员授权，禁止生产装配。复用 Auth 当前 Session+CSRF+DeploymentAdmin 校验，在排他锁下、状态/Audit 同一事务内解析 actor，不接受调用方自称 UUID。
 - 该证明不等于 OS 部署账户限制或进程静止；CLI/服务权限和完整停写仍分步验收。无 API/Schema/依赖变化。
+
+## DEC-20260930-529 — 本机维护工具双重信任来源
+
+- Phase/WBS：Phase2 / PLT-MAINT-01-A03-P03-P02；编码前检查见 progress。Windows 工具只从当前 OS 登录账户 Credential Manager 取现有 DB URL，要求交互式终端和应用管理员隐藏口令，复用生产 Auth 限流/Session 证明；不把数据库 URL 或凭据放在命令行/环境变量。
+- 状态仍由内部排他 Port 同事务重核 Admin，Session 使用短时限且操作后撤销。账号专属 Vault 配置与服务账户 ACL 必须在目标系统验证；工具输出不宣称 OS 进程已静止，未接生产全入口前禁止备份/迁移。
+- 影响：增加运维 CLI，不改公开 API/Schema/依赖；失败时保留可审计的状态/Audit，按版本重新读取判断，不自动回滚生产数据。

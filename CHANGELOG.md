@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A03-P03-P02 新增 Windows 本机交互式维护工具：当前账户 Credential Manager DB 来源、隐藏管理员口令、既有 Auth 限流登录、五分钟 Session、排他切换后撤销，不接收 Secret 命令行/环境参数。隔离 PG18 真实 scrypt 合成管理员 enter/exit、错误口令/旧版本、Audit 与 Session 收口，后端1663（3既有跳过）、wheel 含入口 PASS。无 Schema/API/依赖/生产迁移；目标账户 Vault ACL、Server2025/Debian 工具、生产 API/Worker 全覆盖与 OS 静止未验，维护模式/Gate3/发行包仍待。
+
 - 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A03-P03-P01 修订内部排他转换操作员证明：移除调用方 UUID，改由同一状态/Audit 事务内的当前 Session+CSRF+DeploymentAdmin 核验解析 actor。隔离 PG18 正/负权限矩阵、共享锁/回滚复验，后端1661（3既有跳过）、wheel PASS。无新 Schema/API/依赖/生产迁移；OS 受控入口、生产全覆盖、静止证明与 Gate3/发行包仍待。
 
 - 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A03-P02 新增 PG18 内部排他维护状态转换 Port，限时等待共享窗口，DB0051 状态与 Audit USER 事件同事务；隔离 PG18 双连接三次、审计故障回滚、单元2、后端1661（3既有跳过）、wheel PASS。无新 Schema/API/依赖/生产迁移；操作员认证与部署授权、生产 API/Worker 全覆盖和 OS 进程退出证明未完成，此 Port 尚未装配，维护模式/Gate3/发行包仍待。
