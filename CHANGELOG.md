@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P02-A01 按 CR-PKG-002 保留后端 `charset-normalizer 3.5.2`，联合固定 93 后端+13 OCR 新轮子；106/106 Hash、全新 Windows3.13 x64 无索引同时安装、`pip check`/产品与 OCR 导入 PASS，越界输入拒绝。无 Migration/API/正式依赖或安装变化，可撤新工具/忽略联合目录且旧包不变。嵌入式 CLI、系统 OCR/ACL/许可/Gate 未验，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P01 新增 OCRmyPDF17.12.1 Windows3.13 x64 离线 wheel 闭包构建工具，PoC 来源109/109 Hash、选中26/26 Hash、全新 venv 无索引安装/`pip check`/导入 PASS；非3.13与坏格式清单前置拒绝。无 Migration/API/正式依赖或安装变化，旧候选保留；可撤工具/忽略本地输出回滚。嵌入式运行时尚缺13包，系统 OCR/ACL/许可/目标环境/Gate 待，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P04-P02-P02 记录正式 Windows 模型 ACL 前置阻塞：本会话非提升、`C:\PLMTool` 未建、独立 Parser 服务账户未确认；未执行 ACL/安装变更，无 Migration/API/依赖或兼容性声明变化。后续由真实管理员及服务账户验证只读/拒写、Hash、切换/回退；当前 `release_eligible=false`。
