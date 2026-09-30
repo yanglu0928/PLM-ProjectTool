@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260930-503 — PAR-01-A03-P04-P01 离线 PaddleOCR 主链适配器
+
+- Date/WBS：2026-09-30 / Phase 2 依赖前置 PAR-01-A03-P04-P01。PAR-01-A03-P03 已将无文本 PDF 明确标记 OCR_REQUIRED；本项只建真实离线 OCR 主链适配器及图像区域 DTO，不发布 ParseRecord。
+- 编码前检查：输入为本机 POC-05 Windows11 已验证 PaddleOCR/PaddlePaddle CPU 运行时与 PP-OCRv5 mobile det/rec 模型；涉及 Parser 基础设施层的模型加载、OCR 候选文本/归一化像素框，无数据库/API/权限、客户数据或外发。验收为显式本地模型加载、合成图片真实识别与 bbox、畸形/缺模型拒绝和后端回归。
+- Decision：沿用 POC-01 固定版本 PaddleOCR3.7.0/PaddlePaddle3.3.1/Numpy2.3.5/Pillow12.3.0；启用 CPU `enable_mkldnn=False`，仅接受操作员指定的两个本地模型目录，读取关键模型文件 Hash 形成非路径指纹。直接传内存 RGB ndarray，不创建源图片临时文件；OCR 返回行文本/置信度/归一化 bbox。运行环境须显式禁止模型源在线检查；不得把无识别行当成功。Tesseract 仍只作后续辅助链，不替代主模型。
+- 风险/回滚：Paddle 依赖和模型较大，正式发行须校验模型 Hash、许可及目标账户的离线恢复；模型目录本身不入 Git/包。撤适配器与依赖即可回滚，无 Migration。此项真实合成图片识别不等于扫描 PDF/OCR 质量 Golden Dataset 或正式 Evidence。
+- Executed：本机 Windows11 PoC 离线环境用显式本地 PP-OCRv5 mobile det/rec 模型真实识别合成 `PROJECT SCOPE APPROVED`，返回一条归一化区域框；模型复合 SHA-256 为 `511580fe3e72fe1759ce18ac05d5454eee88865303603631be644a4978889cf4`（不含模型文件/路径）。首次 WindowsPath 精确类型判断误拒绝，改为 Path 子类检查并完整重跑。补强预期指纹匹配、离线开关、文件完整性、图像/输出边界；定向4、Python3.13 后端全量1595（2既有跳过）、wheel模块与依赖元数据 PASS。未物理断网/实际扫描PDF、未接 Worker/结果发布、目标账户/发行许可证仍待。
+
 ## DEC-20260930-502 — PAR-01-A03-P03 PDF 原生正文页内定位
 
 - Date/WBS：2026-09-30 / Phase 2 依赖前置 PAR-01-A03-P03；固定版本快照及结构化候选结果前置通过，Gate 3 不变。

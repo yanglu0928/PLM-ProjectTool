@@ -27,3 +27,5 @@ V2.1 将 Parser/OCR Worker 放在 Phase 3，但 Phase 2 的 EVD-01 Evidence 精�
 2026-09-30 后续：PAR-01-A03-P02 已完成合成 DOCX/PPTX/XLSX 的真实抽取与类型化位置；沿用 POC-01 已验证的 Office 依赖版本，增加 ZIP/扫描上限。仍非受权 Evidence 复验，且不改变 Gate 结论。
 
 2026-09-30 后续：PAR-01-A03-P03 已完成合成原生 PDF 文本逐页位置；任一无文本页失败并要求 OCR，不标部分成功。正式许可、OCR/Worker/发布与受权定位、Gate 仍待。
+
+2026-09-30 后续：PAR-01-A03-P04-P01 已用 PoC 已验证离线模型完成生产 PaddleOCR 主链适配器的合成图片推理，模型指纹、边界与生产依赖被固定；尚未作为正式解析结果发布，不改变 Gate 结论。
