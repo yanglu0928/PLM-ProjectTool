@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260930-501 — PAR-01-A03-P02 Office 来源位置与依赖
+
+- Date/WBS：2026-09-30 / Phase 2 依赖前置 PAR-01-A03-P02；PAR-01-A03-P01 结构化结果、CR-PAR-001 和固定版本输入已通过，Gate 3 不变。
+- 编码前检查：只修改 Parser 内部 Office 抽取、结果位置变体、生产依赖和测试；输入固定 DocumentVersion 的当前租约已验证私有快照；涉及 DOCX/PPTX/XLSX 候选节点，不改数据库、公开 API、权限、AI Provider 或正式 Evidence。验收为合成 Office 文件的正文与可重放源坐标、恶意/损坏 ZIP 拒绝、版本/摘要一致、全量回归和 wheel。
+- Decision：沿用 POC-01 Windows/Python3.13 已验证的 `python-docx==1.2.0`、`python-pptx==1.0.2`、`openpyxl==3.1.5` 纳入正式后端；DOCX 正文按 XML body 顺序用 PARAGRAPH，表格逐格用 TABLE_CELL；PPTX 文字形状用 SLIDE_SHAPE、表格单元格用带 slide/shape 的 TABLE_CELL anchor；XLSX 公式原文/单元格用 SHEET_RANGE，禁止执行公式或外部链接。物理页码不猜测。ZIP 预检限制数量、展开总量、恶意路径及加密项，解析节点/文本输出超限显式失败。
+- 风险/回滚：单元格合并、PPTX 表格与可视层次、自动分页/渲染并非本项证明；后续受权 resolver 必须重读固定版本才能对位置作 Evidence 断言。撤新增模块和三项依赖即可回滚，无迁移。Windows Server/Debian、真实客户 Office、结果发布与点击定位未验。
+- Executed：三种 Office 合成真文件正文/位置、DOCX 合并单元格左上去重、XLSX 稀疏大范围先拒绝、ZIP 损坏/恶意路径及摘要失配均通过；定向 6、Python3.13 后端全量 1588（2 既有跳过）、开发 wheel 包含模块与三项依赖元数据、diff 检查 PASS。仅证明固定合成文件与定位形状，不声称 Office 自动分页/真实客户文件/受权 Evidence Viewer。
+
 ## DEC-20260930-500 — PAR-01-A03-P01 文本与 CSV 可重放结构化定位
 
 - Date/WBS：2026-09-30 / Phase 2 依赖前置 PAR-01-A03-P01；输入为 CR-PAR-001、PAR-01-A01 profile 和 A02-P02 当前租约下受控字节快照。Gate 3 未通过。

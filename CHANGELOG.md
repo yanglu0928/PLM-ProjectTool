@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-30：0.1.0.dev0/PAR-01-A03-P02 加入生产 Office 解析依赖固定版本，DOCX/PPTX/XLSX 合成文件真实抽取并保留段落、表格格、幻灯片形状与工作表单元格位置；ZIP 安全预检、合并格去重、稀疏工作表扫描上限及公式不执行。定向6、Python3.13后端全量1588（2既有跳过）、wheel依赖元数据PASS。兼容冻结 `/api/v1`/DB0049，无 ORM/Migration、公开 API、权限或升级操作；安装需拉取三项新依赖。自动分页、真实客户 Office、Worker/正式 Evidence、正式信任/Gate3/可用包未完成。
+
 - 2026-09-30：0.1.0.dev0/PAR-01-A03-P01 增加固定版本私有快照的 UTF-8-SIG 纯文本/逗号 CSV 真实抽取与版本化候选结果；文本以规范化字符区间和 SHA-256、CSV 以逻辑 `CSV` 表 A1 单元格保留可重放源位置。定向4、Python3.13后端全量1582（2既有跳过）、wheel包含和diff检查PASS。兼容冻结 `/api/v1`/DB0049，无 ORM/Migration、公开 API、权限、新依赖或升级操作；3200万字符/10万节点超限显式失败。Worker/结果发布、Office/PDF/OCR、受权Evidence定位与正式信任/Gate3/可用包未完成。
 
 - 2026-09-30：0.1.0.dev0/PAR-01-A02-P02 新增当前租约/Job-Outbox/固定 Document 来源双短事务验证及事务外受控文件字节快照，失配关闭并审计。定向 6、Python3.13 后端全量 1578（2 既有跳过）、Windows11 隔离 PostgreSQL/真实合成 PDF 正常字节、错误 fencing、篡改拒绝和完整性 Audit、wheel 构建/包含 PASS。兼容冻结 `/api/v1`/DB0049，无 ORM/Migration、公开 API、权限、依赖或升级变化；真实 Parser/OCR Worker、心跳/结果发布、Evidence 精确定位、正式信任/Gate3/可用包仍待。
