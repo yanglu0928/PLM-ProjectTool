@@ -85,6 +85,7 @@ def audit_frontend(frontend_run: Path) -> dict:
         key = (metadata["name"], metadata["version"])
         item = package_modules.setdefault(key, {
             "name": key[0], "version": key[1], "declared_license": metadata.get("license"),
+            "local_package_path": package_root.relative_to(app).as_posix(),
             "source_modules": [], "license_files": [], "review_status": "REVIEW_REQUIRED",
         })
         item["source_modules"].append({
@@ -110,6 +111,7 @@ def audit_frontend(frontend_run: Path) -> dict:
             raise ValueError("direct dependency identity mismatch")
         direct_dependencies.append({
             "name": name, "version": requested, "declared_license": metadata.get("license"),
+            "local_package_path": root.relative_to(app).as_posix(),
             "mapped_into_bundle": (name, requested) in package_modules,
             "license_files": [
                 {"name": p.name, "sha256": sha256(p.read_bytes())}

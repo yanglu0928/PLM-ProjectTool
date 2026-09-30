@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P06 新增六个精确前端包 LICENSE 原文/Hash 非发行补充归档，6/6 回读、定向5/5 PASS；A08-P05 证据增加本地包路径供来源复核。无 Migration/API/依赖/正式安装升级变化；仅 Win11 A02 隔离源码，撤工具/忽略归档可回滚。许可文本尚未并入候选，原生/系统组件、本产品许可和法律审核仍待，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P05 新增前端冻结 dist/锁与 sourcemap 审计构建、映射源码/本地包、六包精确许可文件 Hash 核对；3个 dist 一致，第三方7文件/5映射包及直接 vue 入口包留证，合成3/3 PASS。无 Migration/API/依赖/正式安装升级变化；仅 Win11 A02 源检查点，审计构建在忽略目录可撤。冻结 dist 未携带许可正文，未覆盖原生/系统组件、生成代码与完整法律审查，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P04 核对 `bce-python-sdk 0.9.79` PyPI 官方 wheel/sdist SHA-256 与 209 个共同 Python 源文件逐件一致，确认两发行产物均无独立许可文件；记录旧式 Apache 2.0 元数据及源码头证据，不作许可合规结论。纯文档/来源核查，无 Migration/API/依赖/安装升级变化；仅当前 Win11 本机，撤忽略的源码副本即可回滚。前端/原生组件、本产品许可与法律审查仍待，`release_eligible=false`。
