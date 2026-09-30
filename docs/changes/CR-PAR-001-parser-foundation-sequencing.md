@@ -31,3 +31,5 @@ V2.1 将 Parser/OCR Worker 放在 Phase 3，但 Phase 2 的 EVD-01 Evidence 精�
 2026-09-30 后续：PAR-01-A03-P04-P01 已用 PoC 已验证离线模型完成生产 PaddleOCR 主链适配器的合成图片推理，模型指纹、边界与生产依赖被固定；尚未作为正式解析结果发布，不改变 Gate 结论。
 
 2026-09-30 后续：PAR-01-A03-P04-P02 已以真实本地模型在无落盘合成 PNG/混合 PDF 上跑通候选抽取；OCR 区域/置信度/模型指纹已固定，但仍不具备结果持久发布、受权 Evidence 或客户资料质量结论，Gate 不变。
+
+2026-09-30 后续：PAR-01-A04-P01 已完成结构化结果文件的私有一次性写入与复验，沿用冻结 Schema V1 的结果引用形状；DB/Job/ParseRecord fenced 发布尚未完成，孤儿不等于成功，Gate 不变。

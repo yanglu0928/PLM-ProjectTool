@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260930-505 — PAR-01-A04-P01 ParseResult 私有一次性存储
+
+- Date/WBS：2026-09-30 / Phase 2 依赖前置 PAR-01-A04-P01；A03 已生成版本化 canonical JSON 候选；冻结 DB Schema V1 已有 `doc_parse_result_refs` 的相对 locator、Hash、大小和 Schema 版本，尚无正式结果物理写入器。Gate 3 未通过。
+- 编码前检查：只涉及 Document 拥有的结果物理存储适配器及验证测试，不更改 ORM/Migration、公开 API、角色权限或 Job/ParseRecord 状态。输入必须是 Parser 内部候选规范字节、预分配结果 UUID、Scope/Project 坐标；调用者仍须完成当前租约/Document 来源复核并在数据库事务发布。
+- Decision：在 Document 私有 data_root 的专用 `results` 命名空间，以作用域/项目/结果 UUID 生成不可客户端指定的相对 locator；受控同卷 staging 写入、flush/fsync、hash/size 后无覆盖提升，最终文件按 Hash/size 重开验证。数据库发布失败后未引用文件保留为不可见孤儿，后续独立恢复/清理，不在本项做危险删除。绝不返回绝对路径给 HTTP/外部调用。
+- 风险/回滚/验证：文件系统提升与数据库提交非单一事务，后续 P02 必须先写盘再在短事务中核 fencing/来源并发布；崩溃孤儿不得自动当成功。撤未装配适配器可回滚，不删历史结果。测试跨 Scope 相对定位、真实字节/重开/不可覆盖、坏摘要与路径污染、源目录符号链接/重解析拒绝、写入失败可恢复；性能/目标账户 ACL/Server2025/Debian 尚待。
+- Executed：新增 Document 私有 `results` 命名空间的唯一 UUID、同卷无覆盖提升、文件 flush/fsync、SHA/大小复验与作用域绑定重开。定向4（目录符号链接因本机账户权限跳过1，普通文件伪目录拒绝通过）、Python3.13 后端全量1603（3跳过）、wheel PASS。首轮 GLOBAL 自身被测试误判跨 Scope 导致1失败，修正夹具后完整重跑。未写 `doc_parse_result_refs`、未接 Job/ParseRecord，失败时孤儿仍私有且保留；目标账户 ACL/电源故障恢复未验。
+
 ## DEC-20260930-504 — PAR-01-A03-P04-P02 扫描 PDF/图片 OCR 候选位置
 
 - Date/WBS：2026-09-30 / Phase 2 依赖前置 PAR-01-A03-P04-P02；A02-P02 受控固定版本快照、P03 原生 PDF、P04-P01 离线主链已通过，Gate 3 仍未通过。
