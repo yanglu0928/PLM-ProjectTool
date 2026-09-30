@@ -12,8 +12,9 @@ from plm_assistant.modules.document.application.parse_attempt import StartedPars
 from plm_assistant.modules.document.application.parse_publish import (
     PublishedParseResult, StoredParseResult,
 )
-from plm_assistant.modules.jobs.application.lease import ClaimedJob
+from plm_assistant.modules.jobs.application.lease import ClaimedJob, ParserLeasePulse
 
+from .cancel_attempt import ParserCancellationOutcome
 from .fail_attempt import ParserFailureOutcome, classify_parser_failure
 from .extract_ocr import extract_ocr
 from .extract_office import extract_office
@@ -29,28 +30,37 @@ class ParserWorkerError(RuntimeError):
         super().__init__(code)
 
 
+class ParserCancelRequested(ParserWorkerError):
+    def __init__(self) -> None:
+        super().__init__("PARSER_CANCEL_REQUESTED")
+
+
 @dataclass(frozen=True, slots=True)
 class ParserWorkerStepOutcome:
     kind: str
     published: PublishedParseResult | None = None
     failed: ParserFailureOutcome | None = None
+    cancelled: ParserCancellationOutcome | None = None
 
     def __post_init__(self) -> None:
-        if (self.kind not in {"IDLE", "STOPPED", "PUBLISHED", "FAILED"}
+        if (self.kind not in {"IDLE", "STOPPED", "PUBLISHED", "FAILED", "CANCELLED"}
                 or (self.kind == "PUBLISHED") != (type(self.published) is PublishedParseResult)
-                or (self.kind == "FAILED") != (type(self.failed) is ParserFailureOutcome)):
+                or (self.kind == "FAILED") != (type(self.failed) is ParserFailureOutcome)
+                or (self.kind == "CANCELLED") != (type(self.cancelled) is ParserCancellationOutcome)):
             raise ParserWorkerError()
         if self.published is not None:
             self.published.__post_init__()
         if self.failed is not None:
             self.failed.__post_init__()
+        if self.cancelled is not None:
+            self.cancelled.__post_init__()
 
 
 class LeasePort(Protocol):
     def claim_next_parse(self, *, worker_ref: str, lease_seconds: int
                          ) -> ClaimedJob | None: ...
-    def heartbeat(self, *, job_id: uuid.UUID, fencing_token: int,
-                  worker_ref: str, lease_seconds: int) -> None: ...
+    def pulse_parse(self, *, job_id: uuid.UUID, fencing_token: int,
+                    worker_ref: str, lease_seconds: int) -> ParserLeasePulse: ...
 
 
 class PreparePort(Protocol):
@@ -80,6 +90,12 @@ class FailurePort(Protocol):
              retryable: bool, delay_seconds: int) -> ParserFailureOutcome: ...
 
 
+class CancellationPort(Protocol):
+    def acknowledge(self, *, command: ParserInputCommand,
+                    started: StartedParseAttempt | None
+                    ) -> ParserCancellationOutcome: ...
+
+
 def extract_by_profile(prepared: VerifiedParserInput, *, ocr_engine: object | None
                        ) -> ParsedResult:
     """Use every verified profile's real extractor; OCR is explicit and offline."""
@@ -107,6 +123,7 @@ class _LeaseHeartbeats:
         self._lease_seconds, self._interval_seconds = lease_seconds, interval_seconds
         self._stop = Event()
         self._failed = Event()
+        self._cancelled = Event()
         self._thread = Thread(target=self._run, name="parser-lease-heartbeat",
                               daemon=True)
         self._started = False
@@ -118,10 +135,16 @@ class _LeaseHeartbeats:
     def _run(self) -> None:
         while not self._stop.wait(self._interval_seconds):
             try:
-                self._leases.heartbeat(job_id=self._command.job_id,
+                pulse = self._leases.pulse_parse(job_id=self._command.job_id,
                     fencing_token=self._command.fencing_token,
                     worker_ref=self._command.worker_ref,
                     lease_seconds=self._lease_seconds)
+                if type(pulse) is not ParserLeasePulse:
+                    raise ParserWorkerError("PARSER_HEARTBEAT_UNAVAILABLE")
+                if pulse.state == "CANCEL_REQUESTED":
+                    self._cancelled.set()
+                    self._stop.set()
+                    return
             except Exception:
                 self._failed.set()
                 self._stop.set()
@@ -130,6 +153,8 @@ class _LeaseHeartbeats:
     def check(self) -> None:
         if self._failed.is_set():
             raise ParserWorkerError("PARSER_HEARTBEAT_UNAVAILABLE")
+        if self._cancelled.is_set():
+            raise ParserCancelRequested()
 
     def close(self) -> None:
         self._stop.set()
@@ -137,18 +162,20 @@ class _LeaseHeartbeats:
             self._thread.join(timeout=5)
             if self._thread.is_alive():
                 raise ParserWorkerError("PARSER_HEARTBEAT_UNAVAILABLE")
-        self.check()
+        if self._failed.is_set():
+            raise ParserWorkerError("PARSER_HEARTBEAT_UNAVAILABLE")
 
 
 class ParserWorkerStep:
     def __init__(self, *, leases: LeasePort, preparer: PreparePort,
                  first: StartPort, retry: StartPort, storage: StoragePort,
-                 publisher: PublishPort, failure: FailurePort, worker_ref: str,
+                 publisher: PublishPort, failure: FailurePort,
+                 cancellation: CancellationPort, worker_ref: str,
                  lease_seconds: int = 60, heartbeat_interval_seconds: float = 10,
                  ocr_engine: object | None = None,
                  extractor: Callable[[VerifiedParserInput], ParsedResult] | None = None) -> None:
         if any(value is None for value in (leases, preparer, first, retry,
-                                            storage, publisher, failure)):
+                                            storage, publisher, failure, cancellation)):
             raise ValueError("Parser Worker dependencies required")
         if (type(worker_ref) is not str
                 or not fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,127}", worker_ref)
@@ -160,6 +187,7 @@ class ParserWorkerStep:
         self._first, self._retry = first, retry
         self._storage, self._publisher = storage, publisher
         self._failure = failure
+        self._cancellation = cancellation
         self._worker_ref, self._lease_seconds = worker_ref, lease_seconds
         self._heartbeat_interval = heartbeat_interval_seconds
         self._extractor = extractor or (
@@ -219,25 +247,35 @@ class ParserWorkerStep:
                         heartbeats.close()
                         # A short final renewal bridges file fsync and fenced DB publication.
                         stage = "PUBLISH"
-                        self._leases.heartbeat(job_id=claim.job_id,
+                        pulse = self._leases.pulse_parse(job_id=claim.job_id,
                             fencing_token=claim.fencing_token, worker_ref=self._worker_ref,
                             lease_seconds=self._lease_seconds)
+                        if type(pulse) is not ParserLeasePulse:
+                            raise ParserWorkerError("PARSER_HEARTBEAT_UNAVAILABLE")
+                        if pulse.state == "CANCEL_REQUESTED":
+                            raise ParserCancelRequested()
                         published = self._publisher.publish(command=command,
                             prepared=prepared, started=started, parsed=parsed,
                             stored=stored)
                         return ParserWorkerStepOutcome("PUBLISHED", published)
                 except Exception as error:
-                    # Never reinterpret a potentially committed publication, an
-                    # uncertain Start transaction, or a lost lease as failure.
-                    if stage in {"START", "PUBLISH"} or heartbeats._failed.is_set():
-                        raise
                     heartbeats.close()
-                    code, retryable, delay = classify_parser_failure(
-                        error, attempt_no=claim.attempt_no)
-                    self._leases.heartbeat(job_id=claim.job_id,
+                    # An uncertain Start/Publish receipt is never guessed; the
+                    # current Job row decides whether cancellation can win.
+                    pulse = self._leases.pulse_parse(job_id=claim.job_id,
                         fencing_token=claim.fencing_token,
                         worker_ref=self._worker_ref,
                         lease_seconds=self._lease_seconds)
+                    if type(pulse) is not ParserLeasePulse:
+                        raise ParserWorkerError("PARSER_HEARTBEAT_UNAVAILABLE")
+                    if pulse.state == "CANCEL_REQUESTED":
+                        cancelled = self._cancellation.acknowledge(
+                            command=command, started=started)
+                        return ParserWorkerStepOutcome("CANCELLED", cancelled=cancelled)
+                    if stage in {"START", "PUBLISH"}:
+                        raise error
+                    code, retryable, delay = classify_parser_failure(
+                        error, attempt_no=claim.attempt_no)
                     failed = self._failure.fail(command=command, started=started,
                         error_code=code, retryable=retryable,
                         delay_seconds=delay)

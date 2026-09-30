@@ -51,3 +51,5 @@ V2.1 将 Parser/OCR Worker 放在 Phase 3，但 Phase 2 的 EVD-01 Evidence 精�
 2026-09-30 后续：PAR-01-A05-P01-P03 已在隔离 PG18 验证当前租约下已启动 ParseRecord/Job/Audit 的原子失败、重试/终止与回滚，真实文件 Worker 的非法编码也完成失败链。未启动错误不伪造 ParseRecord；状态呈现、协作取消、崩溃恢复、独立进程和 Gate3 尚待。
 
 2026-09-30 后续：PAR-01-A05-P01-P04-P01 增加 Jobs 内部 Parser 取消识别/当前租约确认，真实 PG18 证明请求后不续租并拒绝旧代/过期/其他 Owner；尚未接 Worker/Document/Audit 或用户请求 Owner，不称完整取消。
+
+2026-09-30 后续：PAR-01-A05-P01-P04-P02 已将取消识别接入 Worker 安全点，并在当前租约下同事务取消 Document ParseRecord、Audit 和 Job。真实文件/PG 长抽取取消不产生结果引用；用户请求授权 Owner、过期恢复及独立进程仍待，不称端到端取消或 Gate3 通过。

@@ -12,7 +12,8 @@ from plm_assistant.modules.document.application.parse_attempt import StartedPars
 from plm_assistant.modules.document.application.parse_publish import (
     PublishedParseResult, StoredParseResult,
 )
-from plm_assistant.modules.jobs.application.lease import ClaimedJob
+from plm_assistant.modules.jobs.application.lease import ClaimedJob, ParserLeasePulse
+from plm_assistant.modules.parser.application.cancel_attempt import ParserCancellationOutcome
 from plm_assistant.modules.parser.application.prepare_input import VerifiedParserInput
 from plm_assistant.modules.parser.application.profile_selection import (
     ParserInputVersion, choose_parser_profile,
@@ -31,15 +32,21 @@ class _Lease:
         self.claim = claim
         self.heartbeats = 0
         self.fail_heartbeat = False
+        self.cancel_requested = False
+        self.last = None
 
     def claim_next_parse(self, *, worker_ref, lease_seconds):
         value, self.claim = self.claim, None
+        if value is not None:
+            self.last = value
         return value
 
-    def heartbeat(self, *, job_id, fencing_token, worker_ref, lease_seconds):
+    def pulse_parse(self, *, job_id, fencing_token, worker_ref, lease_seconds):
         self.heartbeats += 1
         if self.fail_heartbeat:
             raise RuntimeError("synthetic DB outage")
+        return ParserLeasePulse(self.last,
+            "CANCEL_REQUESTED" if self.cancel_requested else "RUNNING")
 
 
 class _Storage:
@@ -64,8 +71,8 @@ class ParserWorkerStepTests(unittest.TestCase):
         self.claim = ClaimedJob(self.job_id, "DOCUMENT_PARSE", "PROJECT",
             self.project_id, {}, str(uuid.uuid4()), 1, 1)
         self.lease = _Lease(self.claim)
-        self.preparer, self.first, self.retry, self.publisher, self.failure = (
-            Mock(), Mock(), Mock(), Mock(), Mock())
+        self.preparer, self.first, self.retry, self.publisher, self.failure, self.cancellation = (
+            Mock(), Mock(), Mock(), Mock(), Mock(), Mock())
         self.preparer.prepare.side_effect = lambda command: VerifiedParserInput(
             self.plan, self.job_id, command.fencing_token,
             self.claim.attempt_no, io.BytesIO(self.raw))
@@ -77,12 +84,15 @@ class ParserWorkerStepTests(unittest.TestCase):
             uuid.uuid4(), datetime.now(timezone.utc))
         self.publisher.publish.return_value = self.published
         self.failure.fail.return_value = ParserFailureOutcome("FAILED", self.started.parse_record_id)
+        self.cancellation.acknowledge.return_value = ParserCancellationOutcome(
+            self.job_id, self.started.parse_record_id)
         self.storage = _Storage()
 
     def worker(self, *, extractor=None) -> ParserWorkerStep:
         return ParserWorkerStep(leases=self.lease, preparer=self.preparer,
             first=self.first, retry=self.retry, storage=self.storage,
-            publisher=self.publisher, failure=self.failure, worker_ref="parser-test",
+            publisher=self.publisher, failure=self.failure,
+            cancellation=self.cancellation, worker_ref="parser-test",
             lease_seconds=6, heartbeat_interval_seconds=0.1,
             extractor=extractor)
 
@@ -117,6 +127,7 @@ class ParserWorkerStepTests(unittest.TestCase):
         self.assertEqual(error.exception.code, "PARSER_HEARTBEAT_UNAVAILABLE")
         self.publisher.publish.assert_not_called()
         self.failure.fail.assert_not_called()
+        self.cancellation.acknowledge.assert_not_called()
         with self.assertRaises(ParserWorkerError) as error:
             worker.step()
         self.assertEqual(error.exception.code, "PARSER_WORKER_STOPPED")
@@ -183,6 +194,42 @@ class ParserWorkerStepTests(unittest.TestCase):
         with self.assertRaises(ParserWorkerError) as stopped:
             worker.step()
         self.assertEqual(stopped.exception.code, "PARSER_WORKER_STOPPED")
+
+    def test_cancel_during_extraction_discards_result_and_acknowledges(self) -> None:
+        def slow(prepared):
+            self.lease.cancel_requested = True
+            time.sleep(0.25)
+            return extract_by_profile(prepared, ocr_engine=None)
+        worker = self.worker(extractor=slow)
+        result = worker.step()
+        self.assertEqual(result.kind, "CANCELLED")
+        self.assertEqual(result.cancelled.job_id, self.job_id)
+        self.cancellation.acknowledge.assert_called_once()
+        self.assertEqual(self.cancellation.acknowledge.call_args.kwargs["started"],
+                         self.started)
+        self.publisher.publish.assert_not_called()
+        self.assertEqual(self.storage.writes, 0)
+
+    def test_cancel_racing_publication_only_acks_if_job_still_requests_it(self) -> None:
+        def lose_publication(**_kwargs):
+            self.lease.cancel_requested = True
+            raise RuntimeError("synthetic publication race")
+        self.publisher.publish.side_effect = lose_publication
+        result = self.worker().step()
+        self.assertEqual(result.kind, "CANCELLED")
+        self.cancellation.acknowledge.assert_called_once()
+        self.failure.fail.assert_not_called()
+
+    def test_cancel_racing_attempt_start_checks_database_record(self) -> None:
+        def lose_start(*_args, **_kwargs):
+            self.lease.cancel_requested = True
+            raise RuntimeError("synthetic uncertain start receipt")
+        self.first.start.side_effect = lose_start
+        self.cancellation.acknowledge.return_value = ParserCancellationOutcome(
+            self.job_id, self.started.parse_record_id)
+        result = self.worker().step()
+        self.assertEqual(result.kind, "CANCELLED")
+        self.assertIsNone(self.cancellation.acknowledge.call_args.kwargs["started"])
 
 
 if __name__ == "__main__":

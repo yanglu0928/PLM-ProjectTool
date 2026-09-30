@@ -19,9 +19,11 @@ from plm_assistant.modules.audit.application.audit_service import AuditService
 from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
 from plm_assistant.modules.document.application.parse_attempt import StartedParseAttempt
 from plm_assistant.modules.document.infrastructure.parse_failure_repository import SqlAlchemyParseFailureRepository
+from plm_assistant.modules.document.infrastructure.parse_cancel_repository import SqlAlchemyParseCancelRepository
 from plm_assistant.modules.jobs.application.parse_enqueue import ParseJobBinding, ParseJobRef, ParseJobRequest
 from plm_assistant.modules.jobs.infrastructure.lease_repository import SqlAlchemyJobLeaseRepository
 from plm_assistant.modules.parser.application.fail_attempt import FailParserAttempt, ParserFailureError
+from plm_assistant.modules.parser.application.cancel_attempt import AcknowledgeParserCancel, ParserCancellationError
 from plm_assistant.modules.parser.application.prepare_input import ParserInputCommand
 from plm_assistant.modules.platform.infrastructure.database import SqlAlchemyUnitOfWork
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
@@ -58,6 +60,17 @@ class FailingFinish:
 
     def retry_or_fail(self, tx, **kwargs):
         raise RuntimeError("synthetic late Job failure")
+
+
+class FailingCancelAck:
+    def __init__(self):
+        self.real = SqlAlchemyJobLeaseRepository()
+
+    def pulse_parse(self, tx, **kwargs):
+        return self.real.pulse_parse(tx, **kwargs)
+
+    def acknowledge_parse_cancel(self, tx, **kwargs):
+        raise RuntimeError("synthetic late cancel failure")
 
 
 def create_case(db, *, actor, project, queue: Queue, index: int,
@@ -134,6 +147,8 @@ def main() -> None:
                                          index=3, start_record=False))
                 cases.append(create_case(db, actor=actor, project=project, queue=queue,
                                          index=4))
+                cases.append(create_case(db, actor=actor, project=project, queue=queue,
+                                         index=5, start_record=False))
             engine = create_engine(url)
             uow = lambda: SqlAlchemyUnitOfWork(sessionmaker(engine))
             def service(audit, *, leases=None):
@@ -142,6 +157,12 @@ def main() -> None:
                     documents=SqlAlchemyParseFailureRepository(), audit=audit,
                     system_actor_id=actor)
             real = service(AuditService(SqlAlchemyAuditRepository()))
+            def cancel_service(audit, *, leases=None):
+                return AcknowledgeParserCancel(unit_of_work=uow,
+                    leases=leases or SqlAlchemyJobLeaseRepository(), queue=queue,
+                    documents=SqlAlchemyParseCancelRepository(), audit=audit,
+                    system_actor_id=actor)
+            real_cancel = cancel_service(AuditService(SqlAlchemyAuditRepository()))
             for index, (job, record, started) in enumerate(cases):
                 command_input = ParserInputCommand(job, 1, "parser-failure-proof")
                 if index == 2:
@@ -158,6 +179,29 @@ def main() -> None:
                                           (job,)).fetchone()[0] == "RUNNING"
                         assert db.execute("SELECT parse_state FROM plm.doc_parse_records "
                                           "WHERE parse_record_id=%s", (record,)).fetchone()[0] == "RUNNING"
+                        db.execute("UPDATE plm.job_jobs SET cancel_requested_by=%s,"
+                            "cancel_reason='Synthetic cancel',"
+                            "cancel_requested_at=statement_timestamp(),"
+                            "state='CANCEL_REQUESTED' WHERE job_id=%s", (actor, job))
+                    try:
+                        cancel_service(FailingAudit()).acknowledge(command=command_input,
+                                                                   started=started)
+                    except ParserCancellationError:
+                        pass
+                    else:
+                        raise AssertionError("cancel Audit failure did not roll back")
+                    with connect(name) as db:
+                        assert db.execute("SELECT state FROM plm.job_jobs WHERE job_id=%s",
+                                          (job,)).fetchone()[0] == "CANCEL_REQUESTED"
+                        assert db.execute("SELECT parse_state FROM plm.doc_parse_records "
+                                          "WHERE parse_record_id=%s", (record,)).fetchone()[0] == "RUNNING"
+                    done = real_cancel.acknowledge(command=command_input, started=started)
+                    assert done.parse_record_id == record
+                    with connect(name) as db:
+                        assert db.execute("SELECT state FROM plm.job_jobs WHERE job_id=%s",
+                                          (job,)).fetchone()[0] == "CANCELLED"
+                        assert db.execute("SELECT parse_state FROM plm.doc_parse_records "
+                                          "WHERE parse_record_id=%s", (record,)).fetchone()[0] == "CANCELLED"
                     continue
                 if index == 3:
                     outcome = real.fail(command=command_input, started=None,
@@ -191,6 +235,41 @@ def main() -> None:
                                           "WHERE parse_record_id=%s", (record,)).fetchone()[0] == "RUNNING"
                         assert db.execute("SELECT count(*) FROM plm.aud_events"
                                           ).fetchone()[0] == before_audit
+                        db.execute("UPDATE plm.job_jobs SET cancel_requested_by=%s,"
+                            "cancel_reason='Synthetic cancel',"
+                            "cancel_requested_at=statement_timestamp(),"
+                            "state='CANCEL_REQUESTED' WHERE job_id=%s", (actor, job))
+                    try:
+                        cancel_service(AuditService(SqlAlchemyAuditRepository()),
+                            leases=FailingCancelAck()).acknowledge(
+                                command=command_input, started=None)
+                    except ParserCancellationError:
+                        pass
+                    else:
+                        raise AssertionError("late cancel Job failure did not roll back")
+                    with connect(name) as db:
+                        assert db.execute("SELECT state FROM plm.job_jobs WHERE job_id=%s",
+                                          (job,)).fetchone()[0] == "CANCEL_REQUESTED"
+                        assert db.execute("SELECT parse_state FROM plm.doc_parse_records "
+                                          "WHERE parse_record_id=%s", (record,)).fetchone()[0] == "RUNNING"
+                        assert db.execute("SELECT count(*) FROM plm.aud_events"
+                                          ).fetchone()[0] == before_audit
+                    done = real_cancel.acknowledge(command=command_input, started=None)
+                    assert done.parse_record_id == record
+                    continue
+                if index == 5:
+                    with connect(name) as db:
+                        db.execute("UPDATE plm.job_jobs SET cancel_requested_by=%s,"
+                            "cancel_reason='Synthetic pre-start cancel',"
+                            "cancel_requested_at=statement_timestamp(),"
+                            "state='CANCEL_REQUESTED' WHERE job_id=%s", (actor, job))
+                    done = real_cancel.acknowledge(command=command_input, started=None)
+                    assert done.parse_record_id is None
+                    with connect(name) as db:
+                        assert db.execute("SELECT state FROM plm.job_jobs WHERE job_id=%s",
+                                          (job,)).fetchone()[0] == "CANCELLED"
+                        assert db.execute("SELECT count(*) FROM plm.doc_parse_records "
+                                          "WHERE job_ref=%s", (job,)).fetchone()[0] == 0
                     continue
                 retryable = index == 1
                 outcome = real.fail(command=command_input, started=started,
@@ -214,7 +293,7 @@ def main() -> None:
                     assert exc.code == "STALE_LEASE"
                 else:
                     raise AssertionError("old lease changed terminal state")
-            print("PASS: PG18 fatal/retry/pre-start atomicity, stale lease, Audit/late Job rollback")
+            print("PASS: PG18 failure/cancel atomicity, uncertain-start record lookup, stale lease and rollback")
         finally:
             if engine is not None:
                 engine.dispose()

@@ -25,6 +25,7 @@ from plm_assistant.modules.document.application.parse_job_source import (
 )
 from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage
 from plm_assistant.modules.document.infrastructure.parse_attempt_repository import SqlAlchemyParseAttemptRepository
+from plm_assistant.modules.document.infrastructure.parse_cancel_repository import SqlAlchemyParseCancelRepository
 from plm_assistant.modules.document.infrastructure.parse_failure_repository import SqlAlchemyParseFailureRepository
 from plm_assistant.modules.document.infrastructure.parse_publish_repository import SqlAlchemyParsePublishRepository
 from plm_assistant.modules.document.infrastructure.parse_result_storage import LocalParseResultStorage
@@ -32,6 +33,7 @@ from plm_assistant.modules.jobs.application.lease import JobLeaseService
 from plm_assistant.modules.jobs.application.parse_enqueue import ParseJobBinding, ParseJobRef, ParseJobRequest
 from plm_assistant.modules.jobs.infrastructure.lease_repository import SqlAlchemyJobLeaseRepository
 from plm_assistant.modules.parser.application.prepare_input import PrepareParserInput
+from plm_assistant.modules.parser.application.cancel_attempt import AcknowledgeParserCancel
 from plm_assistant.modules.parser.application.fail_attempt import FailParserAttempt
 from plm_assistant.modules.parser.application.publish_result import PublishParserResult
 from plm_assistant.modules.parser.application.start_attempt import StartFirstParseAttempt
@@ -146,12 +148,16 @@ def main() -> None:
                 failure = FailParserAttempt(unit_of_work=uow, leases=leases_repo,
                     queue=queue, documents=SqlAlchemyParseFailureRepository(),
                     audit=audit, system_actor_id=actor)
+                cancellation = AcknowledgeParserCancel(unit_of_work=uow,
+                    leases=leases_repo, queue=queue,
+                    documents=SqlAlchemyParseCancelRepository(),
+                    audit=audit, system_actor_id=actor)
                 def slow_extract(prepared):
                     time.sleep(0.45)
                     return extract_by_profile(prepared, ocr_engine=None)
                 worker = ParserWorkerStep(leases=lease_service, preparer=preparer,
                     first=first, retry=retry, storage=result_store, publisher=publisher,
-                    failure=failure,
+                    failure=failure, cancellation=cancellation,
                     worker_ref="parser-worker-proof", lease_seconds=6,
                     heartbeat_interval_seconds=0.1, extractor=slow_extract)
                 outcome = worker.step()
@@ -231,7 +237,74 @@ def main() -> None:
                             "FAILED", "PARSER_TEXT_ENCODING_INVALID")
                     assert db.execute("SELECT count(*) FROM plm.doc_parse_result_refs"
                                       ).fetchone()[0] == 1
-                print("PASS: PG18/file Worker success heartbeat and invalid text atomic failure")
+                cancel_raw = b"Cancelable synthetic text\n"
+                cancel_digest = hashlib.sha256(cancel_raw).digest()
+                file_id3 = uuid.uuid4()
+                stage3, locator3 = file_store.locators(scope="PROJECT", project_id=project,
+                                                        file_object_id=file_id3)
+                with file_store.reserve_staging(stage3) as stream:
+                    stream.write(cancel_raw)
+                    stream.flush()
+                    os.fsync(stream.fileno())
+                file_store.promote(stage3, locator3)
+                with connect(name) as db:
+                    document3 = db.execute("INSERT INTO plm.doc_documents(scope,project_id,"
+                        "document_category,title,original_display_name,created_by) VALUES "
+                        "('PROJECT',%s,'PROJECT_RECORD','Cancelable','cancel.txt',%s) "
+                        "RETURNING document_id", (project, actor)).fetchone()[0]
+                    db.execute("INSERT INTO plm.doc_file_objects(file_object_id,scope,project_id,"
+                        "storage_class,storage_locator,original_name_metadata,created_by,file_state,"
+                        "sha256,size_bytes,detected_mime,available_at) VALUES "
+                        "(%s,'PROJECT',%s,'PERSISTENT',%s,'cancel.txt',%s,'AVAILABLE',%s,%s,"
+                        "'text/plain',statement_timestamp())",
+                        (file_id3, project, locator3, actor, cancel_digest, len(cancel_raw)))
+                    with db.transaction():
+                        version3 = db.execute("INSERT INTO plm.doc_document_versions(document_id,scope,"
+                            "project_id,version_no,file_object_id,content_sha256,size_bytes,detected_mime,"
+                            "source_metadata,created_by) VALUES (%s,'PROJECT',%s,1,%s,%s,%s,"
+                            "'text/plain',%s,%s) RETURNING document_version_id",
+                            (document3, project, file_id3, cancel_digest, len(cancel_raw),
+                             Jsonb({}), actor)).fetchone()[0]
+                        db.execute("UPDATE plm.doc_documents SET latest_version_ref=%s,"
+                            "effective_version_ref=%s WHERE document_id=%s",
+                            (version3, version3, document3))
+                    trace3 = uuid.uuid4()
+                    job3 = db.execute("INSERT INTO plm.job_jobs(owner_module,job_type,scope,"
+                        "project_id,actor_ref,trace_id,payload_refs,idempotency_key,max_attempts) "
+                        "VALUES ('document','DOCUMENT_PARSE','PROJECT',%s,%s,%s,%s,"
+                        "'worker-cancel-proof',3) RETURNING job_id",
+                        (project, actor, str(trace3), Jsonb({"document_id": str(document3),
+                         "document_version_id": str(version3)}))).fetchone()[0]
+                request3 = ParseJobRequest(uuid.uuid4(), document3, version3, 1,
+                                           "PROJECT", project, actor, trace3)
+                queue.binding = ParseJobBinding(request3, ParseJobRef(job3, uuid.uuid4()))
+                documents.source = DocumentParseInputSource(
+                    CommittedParseDocumentSource(request3, file_id3, datetime.now(timezone.utc)),
+                    locator3, cancel_digest, len(cancel_raw), "text/plain")
+                def cancel_during_extract(prepared):
+                    with connect(name) as db:
+                        db.execute("UPDATE plm.job_jobs SET cancel_requested_by=%s,"
+                            "cancel_reason='Synthetic cancel',"
+                            "cancel_requested_at=statement_timestamp(),"
+                            "state='CANCEL_REQUESTED' WHERE job_id=%s", (actor, job3))
+                    time.sleep(0.3)
+                    return extract_by_profile(prepared, ocr_engine=None)
+                cancel_worker = ParserWorkerStep(leases=lease_service, preparer=preparer,
+                    first=first, retry=retry, storage=result_store, publisher=publisher,
+                    failure=failure, cancellation=cancellation,
+                    worker_ref="parser-worker-cancel-proof", lease_seconds=6,
+                    heartbeat_interval_seconds=0.1, extractor=cancel_during_extract)
+                cancelled = cancel_worker.step()
+                assert cancelled.kind == "CANCELLED" and cancelled.cancelled is not None
+                assert cancelled.cancelled.job_id == job3
+                with connect(name) as db:
+                    assert db.execute("SELECT state FROM plm.job_jobs WHERE job_id=%s",
+                                      (job3,)).fetchone()[0] == "CANCELLED"
+                    assert db.execute("SELECT parse_state,error_code FROM plm.doc_parse_records "
+                        "WHERE job_ref=%s", (job3,)).fetchone() == ("CANCELLED", "JOB_CANCELLED")
+                    assert db.execute("SELECT count(*) FROM plm.doc_parse_result_refs"
+                                      ).fetchone()[0] == 1
+                print("PASS: PG18/file Worker success, fatal failure and cooperative cancellation")
         finally:
             if engine is not None:
                 engine.dispose()

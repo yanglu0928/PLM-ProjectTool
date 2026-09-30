@@ -6,6 +6,8 @@
 - 冲突/方案：现有通用 `heartbeat` 仅允许 RUNNING，若请求方将 Job 改成 CANCEL_REQUESTED，Parser 后台线程会误报心跳不可用并停止，而无 Job/ParseRecord 取消终结。不能让 Parser 直写 Jobs 表，也不能把取消按失败重试。选择 Jobs 自有 `pulse_parse`：RUNNING 续租，CANCEL_REQUESTED 只回报并停止续租，保留有限原租约供 Worker 在下一个安全检查点确认；已过期则留给独立恢复，不因线程仍活着续租无限期。Jobs `acknowledge_parse_cancel` 仅在当前 token/Worker/活租约、原请求三字段、正确 Owner/JobType 下关闭 Job/Lease/Attempt，供后续 Parser 同 UOW 调用。
 - 验收/回滚：P01 在真实 PG18 证明 RUNNING 续租、CANCEL_REQUESTED 不续租、当前代可确认、旧 token/其他 Owner/过期拒写及 Audit 常规心跳不变；P02 再验证 Document/Audit/Jobs 同事务与 Worker 安全点。原取消请求授权 Owner 尚只为 Audit Export，Parser 用户请求入口另列后续，不能将 P01/P02 称为端到端用户取消。撤销未装配新 Port 可回滚；已确认终态历史不可回退，Gate3不变。
 - P01 Executed：Jobs Service/Repository 新增 Parser 专用 `pulse_parse` 和仅供 Caller UOW 的当前租约确认；不改通用 heartbeat/Audit 语义。定向 Jobs Lease5、Python3.13 后端全量1628（3既有跳过）、Windows11 隔离 PG18 RUNNING 续租、请求取消后不续租、当前确认/旧或过期拒绝/其他 Owner 不可用、wheel PASS；随机库清理/PoC PG恢复停止。仅 Jobs 内部能力，P04整体未完成，Parser Worker 还未调用新 Port。
+- P02 编码前补充：当前 Phase2，前置 P01/P03 已通过；只接 Parser Worker 的协作取消安全点和 Document/Audit/Jobs 原子确认，不改客户可调用取消 Owner。若启动写的提交回执不确定，Document 自有 Repository 按当前 Job/代数/固定版本查找现有 RUNNING 记录并取消，不以本地 `started is None` 推断数据库不存在；缺记录时只取消 Job/Audit，不伪造解析历史。心跳读到请求立即停止续租并标记，长同步操作返回后才收口；取消后结果文件可能成为不可见孤儿，留清理任务。确认必须在租约未过期且当前 token/Worker、原绑定有效时；并发发布以 Job 行锁序判唯一终态。验收含真实 PG 与文件、取消前/处理中/发布竞争、旧代/到期/审计及末端失败回滚、全量/wheel。
+- P02 Executed：`ParserWorkerStep` 改用 Parser 专用 pulse，在抽取与发布安全点识别取消并停止续租；Document 自有当前 Job/代数 ParseRecord 核对 `RUNNING→CANCELLED`，即使 Start 回执不确定也不漏已提交记录，缺记录不伪造。Parser 编排 Document/Audit/Jobs 在同一短事务确认。Worker定向12、Python3.13 后端全量1631（3既有跳过）、Windows11隔离 PG18/真实文件抽取中取消无新结果、独立 PG18 启动回执不确定核对/未启动/审计与末端 Job 失败回滚、wheel PASS；随机库清理/PoC PG恢复停止。用户请求 Owner/正式 API、过期取消恢复和独立进程仍未接线；P04整体/Gate3不关闭。
 
 ## DEC-20260930-513 — PAR-01-A05-P01-P03 Parser Worker 失败分类与事务收口
 
