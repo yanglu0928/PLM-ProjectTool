@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import hashlib
 import hmac
-import math
 import os
-from dataclasses import dataclass, field
 from pathlib import Path
 
 import numpy as np
+
+from plm_assistant.modules.parser.application.ocr_contract import OcrLine, OcrResultError
 
 
 _MODEL_FILES = ("config.json", "inference.json", "inference.pdiparams", "inference.yml")
@@ -20,24 +20,6 @@ class PaddleOcrError(RuntimeError):
     def __init__(self, code: str) -> None:
         self.code = code
         super().__init__(code)
-
-
-@dataclass(frozen=True, slots=True)
-class OcrLine:
-    text: str = field(repr=False)
-    confidence: float
-    bbox: tuple[float, float, float, float]
-
-    def __post_init__(self) -> None:
-        if (type(self.text) is not str or not self.text.strip()
-                or not math.isfinite(self.confidence)
-                or not 0 <= self.confidence <= 1
-                or len(self.bbox) != 4
-                or any(not math.isfinite(value) or not 0 <= value <= 1
-                       for value in self.bbox)
-                or self.bbox[0] >= self.bbox[2]
-                or self.bbox[1] >= self.bbox[3]):
-            raise PaddleOcrError("OCR_RESULT_INVALID")
 
 
 class OfflinePaddleOcr:
@@ -108,6 +90,8 @@ class OfflinePaddleOcr:
                 if len(lines) > 100_000:
                     raise PaddleOcrError("OCR_RESULT_LIMIT_EXCEEDED")
             return tuple(lines)
+        except OcrResultError:
+            raise PaddleOcrError("OCR_RESULT_INVALID") from None
         except PaddleOcrError:
             raise
         except Exception:

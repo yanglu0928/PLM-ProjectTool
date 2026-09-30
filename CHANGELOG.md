@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-30：0.1.0.dev0/PAR-01-A03-P04-P02 固定版本 PNG/JPEG/多帧 TIFF 与混合 PDF 接入离线 OCR 主链，OCR 行保存页内 bbox/置信度/模型指纹；原生 PDF 页保留文字范围，任一页失败不发布部分成功。定向4、Python3.13后端全量1599（2既有跳过）、wheel和本机真实离线模型的无落盘合成 PNG/混合PDF脚本 PASS。兼容冻结 `/api/v1`/DB0049，无 ORM/Migration、公开 API、权限或升级操作；EXIF 非默认方向和无文字页显式失败。客户扫描质量、Worker/持久结果/正式Evidence、目标账户/发行许可/Gate3/可用包未完成。
+
 - 2026-09-30：0.1.0.dev0/PAR-01-A03-P04-P01 加入固定版本 PaddleOCR/PaddlePaddle/Numpy/Pillow 生产依赖和离线 CPU 主链适配器；仅加载显式本地模型，要求预期模型 SHA-256 指纹匹配，输出 OCR 行/置信度/归一化区域。Windows11 合成图片真实识别、定向4、Python3.13后端全量1595（2既有跳过）、wheel包含PASS；首次 WindowsPath 类型误拒绝已修复重跑。兼容冻结 `/api/v1`/DB0049，无 ORM/Migration、公开 API、权限或升级操作；安装需四项依赖及独立供给模型。扫描PDF/图片ParseResult、目标账户离线恢复/许可、Worker/正式Evidence/Gate3/可用包未完成。
 
 - 2026-09-30：0.1.0.dev0/PAR-01-A03-P03 加入 PoC 已验证的 PyMuPDF1.28.2，原生文本 PDF 逐页抽取与规范化字符区间/指纹可重放候选位置；无文本页显式要求 OCR，不发布部分成功。定向3、Python3.13后端全量1591（2既有跳过）、wheel PASS。兼容冻结 `/api/v1`/DB0049，无 ORM/Migration、公开 API、权限或升级操作；安装新增 PyMuPDF 依赖，发行许可需复核。真正空白页现亦触发 OCR；bbox/表格/OCR、客户文件、Worker/正式Evidence/Gate3/可用包未完成。

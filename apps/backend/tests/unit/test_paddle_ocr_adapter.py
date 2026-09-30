@@ -11,6 +11,7 @@ import numpy as np
 from plm_assistant.modules.parser.infrastructure.paddle_ocr import (
     OfflinePaddleOcr, OcrLine, PaddleOcrError, _model_fingerprint,
 )
+from plm_assistant.modules.parser.application.ocr_contract import OcrResultError
 
 
 class _Engine:
@@ -78,11 +79,11 @@ class PaddleOcrAdapterTests(unittest.TestCase):
         self.assertEqual(error.exception.code, "OCR_RESULT_INVALID")
 
     def test_invalid_line_never_becomes_candidate(self) -> None:
-        with self.assertRaises(PaddleOcrError):
+        with self.assertRaises(OcrResultError):
             OcrLine("", 0.9, (0.1, 0.1, 0.9, 0.9))
-        with self.assertRaises(PaddleOcrError):
+        with self.assertRaises(OcrResultError):
             OcrLine("text", 1.2, (0.1, 0.1, 0.9, 0.9))
-        with self.assertRaises(PaddleOcrError):
+        with self.assertRaises(OcrResultError):
             OcrLine("text", 0.9, (0.8, 0.1, 0.2, 0.9))
 
 

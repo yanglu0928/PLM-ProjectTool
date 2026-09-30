@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260930-504 — PAR-01-A03-P04-P02 扫描 PDF/图片 OCR 候选位置
+
+- Date/WBS：2026-09-30 / Phase 2 依赖前置 PAR-01-A03-P04-P02；A02-P02 受控固定版本快照、P03 原生 PDF、P04-P01 离线主链已通过，Gate 3 仍未通过。
+- 编码前检查：只涉及 Parser Application 的 PDF/PNG/JPEG/TIFF 分页扫描、候选节点和页内 bbox/模型身份；不改 ORM/Migration、公开 API、权限或正式 Evidence。OCR 结果须经当前 Worker fencing 再发布，此项不接 Worker。
+- Decision：图片经 Pillow 验格式/尺寸/方向后转 RGB 内存数组；多帧 TIFF 逐页处理。PDF 用 PyMuPDF 按固定倍率仅渲染无原生文本页，其余页保留 P03 原生字符范围；任何页 OCR 无文本/异常/超限都使整个候选结果失败。OCR 区域按 PAGE+归一化 bbox、置信度与显式模型复合 SHA-256 固定；无源文件路径、模型目录或临时图片进入结果。源摘要和大小在读取时重核。原生/识别文字都仅为候选，不自动形成 Evidence 或已确认业务事实。
+- 风险/回滚/验证：bbox 是 OCR 区域不是逐字高亮；EXIF 非默认方向暂失败，避免 Viewer 坐标歧义。真正空白 PDF 页会要求 OCR 并可能失败。大图/页数/累计像素与输出节点有限额，超限不截断成功。撤新增应用模块和 DTO 增量即可回滚，无数据迁移。单元覆盖图片/多页混合/篡改/无文本/格式与定位，真实本机离线模型合成扫描文件与全量回归；客户资料/生产 Worker/Gate3 不在本项结论内。
+- Executed：PNG/双页 TIFF、原生文字+扫描页混合 PDF 候选节点及 PAGE bbox/置信度/模型 Hash，错误 MIME、EXIF 方向、篡改/无 OCR 行失败关闭；定向4、Python3.13 后端全量1599（2既有跳过）、wheel PASS。`verify_parser_ocr_synthetic.py` 在本机 Windows11 PoC 离线运行时用真实模型复跑合成 PNG 1 条和混合 PDF 原生1/OCR1 条，exit0；全部内存生成、无客户文件/外发。无现有客户扫描件质量复验、Worker/持久发布/Viewer、发行许可或 Gate3 结论。
+
 ## DEC-20260930-503 — PAR-01-A03-P04-P01 离线 PaddleOCR 主链适配器
 
 - Date/WBS：2026-09-30 / Phase 2 依赖前置 PAR-01-A03-P04-P01。PAR-01-A03-P03 已将无文本 PDF 明确标记 OCR_REQUIRED；本项只建真实离线 OCR 主链适配器及图像区域 DTO，不发布 ParseRecord。
