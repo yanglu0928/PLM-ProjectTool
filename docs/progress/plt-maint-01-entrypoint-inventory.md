@@ -19,3 +19,5 @@
 源码可见的正式常驻写进程为 API、Audit Worker、Parser Worker，Windows11 内部组合均已注入共享准入；首次初始化与 Alembic 是独立的特权写入口，不应被误判为“所有写操作都自动受栅栏保护”。`secret_key_recovery` 等 OS 凭据变更不受数据库锁约束，需要在进程停止之后执行。当前仓库未发现正式 Windows 服务定义、可核验的安装/卸载与版本/PID 清单、Debian systemd 组合或统一受控 Migration 执行器；PoC 脚本不等于发行服务定义。任何历史版本或用户自行启动的 Python 进程也可能绕过新准入。
 
 下一 WBS 应先制定受控进程清单与版本握手，再在 Windows11/Server2025 对服务停止、子进程/线程退出、文件句柄收敛及排他状态做真实演练；对旧版/未知 PID/失联窗口失败关闭。迁移必须只有在上述证据满足后进入，且回滚为停服、人工备份恢复匹配代码/DB，不能盲降有维护历史的 Schema。Server2025 远程通道及正式部署账户尚未验证，Debian13 当前按用户要求暂不实机验证，但仍是正式兼容目标。A06-P01 是静态清单，不关闭 CR-PLT-004、Gate3 或发行门槛。
+
+2026-09-30/A06-P02-P01：新增只读 Windows 候选进程诊断 `python -m plm_assistant.entrypoints.process_inventory_windows <deployment-account-SID> <absolute-runtime-root>`。仅在当前账户有足够读取权限时收集 PID/拥有者 SID/路径/命令行，报告只包含候选 PID/匹配原因及不可读计数，恒为 `DIAGNOSTIC_ONLY` 且明确 `backup_or_migration_authorized=false`。Windows11 开发账户约380进程本机快照 PASS，但因不是独立部署账户、无正式 SCM 服务/版本/句柄/DB会话证明，不得用本工具零候选输出替代停写验收。

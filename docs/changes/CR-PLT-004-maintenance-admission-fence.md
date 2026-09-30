@@ -59,3 +59,5 @@ ADR-007/008 和冻结安全边界要求升级顺序为人工备份→维护模�
 2026-09-30 A05-P04：Windows Parser 从当前账户 Vault URL 装配准入 Engine 并传 Loop；隔离 PG18 合成信任、独立 Windows 进程真实 PP-OCRv5/扫描 PDF 下，MAINTENANCE 保持 Job PENDING，恢复后成功 OCR，父进程观察到共享锁。后端1673（3跳过）、wheel PASS。中文路径模型加载失败另记 CR-PAR-005；正式目标账户/Server2025、连接意外释放及 OS 静止/性能仍未验，CR OPEN。
 
 2026-09-30 A06-P01：生产入口静态矩阵记于 `docs/progress/plt-maint-01-entrypoint-inventory.md`。正式 Windows API 三模式与双 Worker 已装共享门禁；首次 Admin 初始化与 Alembic 仍是独立特权写入口，OS Vault/Secret 变更不受 PG 锁管。缺正式服务定义、版本/PID 进程清单、受控 Migration 执行器与旧版进程拒绝证据，不能把 A05 双 Worker PASS 当作停写证明，CR OPEN。
+
+2026-09-30 A06-P02-P01：Windows 只读进程候选诊断按部署 SID、运行根与产品入口分类并脱敏输出，约380进程本机采样、后端1678（3跳过）、wheel PASS。曾因逐进程 CIM Owner 超时失败关闭，改用一次 CIM+只读 Token SID。该诊断恒不授予备份/迁移，缺目标账户/SCM/版本/句柄/DB会话证明，CR OPEN。

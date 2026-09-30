@@ -5767,3 +5767,9 @@
 
 - Phase/WBS：Phase2 / PLT-MAINT-01-A05-P04；编码前检查见 progress。Windows Parser 从当前账户 Vault URL 创建显式 Worker runtime 专用准入 Engine，复用 A05-P03 Loop Port；由既有进程生命周期在静止后统一释放。
 - 不更改现有 OCR/Job/Document Owner 与外部合同；正式账户/Server2025、连接失联后的进程退出与恢复演练保留为后续验收。
+
+## DEC-20260930-536 — OS 进程只读候选盘点不作静止结论
+
+- Phase/WBS：Phase2 / PLT-MAINT-01-A06-P02-P01。以 Windows CIM 读取 PID、拥有者 SID、可执行路径和命令行，仅在进程内分类；对外只给候选 PID/理由及不可见计数，绝不打印命令行/Secret。部署账户 SID、运行目录及已知模块任一匹配即候选。
+- 未能读取拥有者/命令行、旧版进程移址及未知服务定义均不能由零候选反推安全。当前结果固定 `DIAGNOSTIC_ONLY`，不自动执行停服/备份/迁移；正式 SCM/版本/句柄证据另验。无新依赖/API/Schema，回滚独立诊断入口。
+- 实测修正：逐进程 CIM `GetOwnerSid` 在本机约 379 进程时超过 30 秒，改为 CIM 一次读取进程元数据、Windows 原生只读 Token API 获取 SID；输出契约及安全边界不变。首轮超时明确失败关闭，不作为 PASS。

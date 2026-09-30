@@ -117,6 +117,15 @@
 
 结果：A06-P01 静态入口矩阵完成，详见 `docs/progress/plt-maint-01-entrypoint-inventory.md`。明确正式 Windows API 三模式与 Audit/Parser 两 Worker 已接共享准入，但首次管理员初始化和 Alembic 是独立特权写入口，OS Vault/Secret 变更也不受 PG 锁管；裸工厂不得当生产入口。仓库未见正式服务定义、进程/PID/版本握手、Debian 组合及统一受控 Migration 执行器；旧版/未知进程可绕过。该项只完成清单，不作真实进程静止证明，CR-PLT-004/Gate3/发行继续 OPEN。
 
+## A06-P02-P01 编码前检查：Windows 只读进程候选盘点
+
+当前 Phase：Phase 2 Platform Core。当前 WBS：PLT-MAINT-01-A06-P02-P01。输入基线：CR-PLT-004/ADR-012、A06-P01 入口清单及 Windows 当前进程只读 CIM 接口。前置静态清单完成；正式服务/目标账户/安装根尚未配置，本任务不得输出“备份许可”。
+涉及模块：Platform Windows 只读诊断入口，不改 API/Worker 业务、维护状态或数据库。涉及实体：OS 进程观察值、候选 PID/理由的脱敏报告；不新增持久实体。涉及 API：无。涉及权限：当前 OS 调用者仅能读取其有权查看的进程；不可枚举/不可识别一律标记未知，不能宣称静止。
+验收标准：按指定部署账户 SID、受控运行目录和已知入口模块识别候选，保留未知/不可见状态；报告不含命令行/环境/Secret；非 Windows 和 CIM 故障失败关闭；合成分类测试、Windows11 实际只读枚举与 wheel。
+风险/回滚：CIM 不保证识别改名/移址旧版程序，任何零候选结果仍仅为诊断，不构成服务退出/文件句柄收敛/版本握手证明；不停止进程、不触碰生产数据。回滚删除独立诊断入口，无 Migration/API/依赖。
+
+结果：A06-P02-P01 Windows11 只读诊断内部 PASS。CLI 从指定部署 SID、绝对本地运行目录及已知产品入口三路识别候选，仅输出 PID/理由与不可读计数，固定 `DIAGNOSTIC_ONLY` 和 `backup_or_migration_authorized=false`；命令行/路径不外发。首次逐进程 CIM Owner 查询超过30秒按预期失败关闭，改用一次 CIM 元数据快照+原生只读 Token SID 后，本机约380进程在0.7秒完成，当前开发账户的大量进程正确列为候选、不可读206；这不是目标专用部署账户验收。合成分类/脱敏/非Windows单元4，后端全量1678（3既有跳过）、wheel PASS。服务定义、目标账户/Server2025、版本/子进程/句柄/DB会话证明仍缺，不能据本项允许备份/迁移或关闭 CR/Gate3。
+
 ## PAR-01-A05-P06-P01 编码前检查：Windows OCR 模型路径可诊断限制
 
 当前 Phase：Phase 2 Platform Core。当前 WBS：PAR-01-A05-P06-P01。输入基线：CR-PAR-005 方案 A、现有 `OfflinePaddleOcr` 模型四文件指纹与 Windows Worker 启动链。前置同字节模型中文/ASCII 路径差异与底层异常已在本机复现；正式安装器/目标账户仍缺。
