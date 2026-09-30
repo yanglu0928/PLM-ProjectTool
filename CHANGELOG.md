@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A05 增加 Python 官方 3.13.15 AMD64 嵌入式运行时的固定来源/Hash、ZIP 结构、许可文件、解释器身份及私有路径检查；正确 ZIP 34 文件、SHA-256 与发布页一致，2/2 错名称/坏 Hash 负例拒绝。兼容性仅 Windows11 来源验证；无 Migration/API/依赖版本或生产升级，撤工具与被忽略的验证目录可回滚。嵌入式包无 pip，第三方 wheel/原生扩展、Microsoft C Runtime 在其他目标机、Server2025/Debian13、正式安装/升级/Gate/UAT 均未验；不改 `release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A04 新增 Windows11 非发行候选 ZIP 重新解包/逐文件验哈及全新 Python3.13 x64 venv 无索引重装验证脚本，97/97 载荷、93 wheel、`pip check`/核心导入 PASS；3/3 越界、重名和非白名单 ZIP 负例解包前拒绝。无 Migration/API/依赖版本或生产升级变化；兼容性仅本机 Windows11，回滚可撤验证工具及经路径核对的本地忽略演练目录。缺正式运行时/安装器、DB/OCR/License/服务账户与 HTTPS、Plugin/升级工具、物理断网/Server2025/Debian13/Gate/UAT；`release_eligible=false`，不得发行。
 
 - 2026-09-30：0.1.0.dev0/POC-03-G3-A01 新增 Gate 3 新留出集本地精确重叠预检，按问题、证据块、同文档来源定位、正文 Hash 对比提供的历史数据集；仅输出计数与文件哈希，5 项合成单元测试通过，旧 50 条自比正确 FAIL。无 Migration/API/生产依赖或升级步骤，Windows11 Python3.13 本地可运行；撤脚本与模块可回滚。已知限制：历史暴露清单仍需补全，语义近似与人工标签不能由此证明；全量 POC03 测试因当前系统 Python 缺 `openpyxl`/`jsonschema` 未通过环境前置。旧质量 48%/74% FAIL、Gate3 与正式程序包阻断不变。

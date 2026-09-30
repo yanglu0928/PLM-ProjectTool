@@ -5843,3 +5843,8 @@
 
 - 日期/Phase/WBS：2026-09-30 / Phase2 / PLT-PKG-01-A03。只把已验证 SHA-256 的当前 Windows11 后端 wheelhouse、前端 dist 和非 Secret bootstrap 示例复制到新建候选目录，生成逐文件 Hash 清单及 `release_eligible=false` 阻断列表；不加入本地 Secret/客户资料/开发者私钥/测试 License，不触发安装或 Migration。
 - 理由：A01/A02 分别证明当前后端/前端依赖可由本机离线包管理器重建，但二者尚未合并，正式公钥、Python 运行时、PostgreSQL/pgvector、OCR 系统组件/模型、HTTPS 宿主/安装升级工具与三平台验收仍缺。先建立防篡改和缺项可见的载荷基础，避免误发半成品。影响限打包工具及忽略制品，无 Schema/API/技术栈变化；可撤脚本/候选目录回滚，不能将候选标记为正式交付。
+
+## DEC-20261001-551 — Windows 私有 Python 运行时候选采用官方嵌入式发行包
+
+- 日期/Phase/WBS：2026-10-01 / Phase2 / PLT-PKG-01-A05。选择 Python 官方 3.13.15 AMD64 embeddable ZIP 作为 Windows 私有运行时候选，固定发布页 SHA-256 并保留许可/版权通知；不复制开发机 Python 安装、不把第三方 wheel 直接当作嵌入式解释器可运行证明。
+- 理由：嵌入式包为官方针对应用随附的发行形式，但不含 pip/Microsoft C Runtime；第三方包需由应用安装器旁装并验证。与 A04 已有 venv 安装不同，后续要单独证明 vendored 包、原生扩展和服务启动。仅内部打包形式选择，无冻结架构/Schema/API/技术栈变化；回滚撤未发行候选工具和忽略产物。未通过第三方许可清单、目标系统实测、完整安装/升级前不改变 `release_eligible=false`。
