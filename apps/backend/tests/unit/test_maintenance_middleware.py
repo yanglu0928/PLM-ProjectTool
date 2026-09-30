@@ -6,6 +6,7 @@ from fastapi.responses import StreamingResponse
 from fastapi.testclient import TestClient
 
 from plm_assistant.entrypoints.api import create_app
+from plm_assistant.modules.platform.api.maintenance_middleware import _requires_admission
 from plm_assistant.modules.platform.infrastructure.maintenance_admission import (
     MaintenanceAdmissionError,
 )
@@ -32,6 +33,21 @@ class FakeAdmission:
 
 
 class MaintenanceMiddlewareTests(unittest.TestCase):
+    def test_audited_download_gets_are_write_windows(self):
+        routes = (
+            "/api/v1/projects/p/documents/d/versions/v/content",
+            "/api/v1/global/documents/d/versions/v/content",
+            "/api/v1/projects/p/audit-exports/e/content",
+            "/api/v1/admin/audit-exports/e/content",
+        )
+        for path in routes:
+            with self.subTest(path=path):
+                self.assertTrue(_requires_admission({"method": "GET", "path": path}))
+        for path in ("/health/live", "/api/v1/projects/p/documents/d",
+                     "/api/v1/admin/audit-exports/e", "/api/v1/other/content"):
+            with self.subTest(path=path):
+                self.assertFalse(_requires_admission({"method": "GET", "path": path}))
+
     def test_write_gate_covers_body_stream_response_and_background(self):
         gate = FakeAdmission()
         observed = []

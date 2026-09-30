@@ -5742,3 +5742,8 @@
 - Phase/WBS：Phase2 / PLT-MAINT-01-A04-P01；编码前检查见 progress。选择可选纯 ASGI middleware 包住非安全方法完整请求生命周期，包括上传正文 receive 与响应后台工作结束；Trace 外层保证拒绝响应仍有 trace_id。默认开发 app 不注入，正式组合接线另验。
 - 失败返回固定 503 `SYSTEM_UNAVAILABLE`，不泄露维护状态/数据库错误；GET/HEAD/OPTIONS 暂按只读处理，后续需审计实际路由副作用。此中间件不代替业务权限或 OS 进程退出证据。
 - 无 Schema/冻结 API 路由/依赖变更；引入独立 PG 连接容量和同步短时开销，性能和目标环境须验收；回滚移除可选注入。
+
+## DEC-20260930-531 — 有错误路径写入的 GET 下载同样准入
+
+- Phase/WBS：Phase2 / PLT-MAINT-01-A04-P02；`CR-PLT-004` 补充 GET 副作用。Document 版本正文和 Audit Export 正文四个 GET 路由在错误路径可提交 Audit，不能作为无锁只读请求。
+- 选择精确路径族准入，覆盖完整响应流及后台收口；其余 GET/健康仍可用。现有公开 GET 合同不变；需真实 PG 路由拒绝和下载路径回归，生产组合尚未装配时不宣称全覆盖。

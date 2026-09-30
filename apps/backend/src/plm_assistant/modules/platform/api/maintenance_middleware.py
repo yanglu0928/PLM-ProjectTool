@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from contextlib import AbstractContextManager
+import re
 from typing import Protocol
 
 from starlette.responses import JSONResponse
@@ -21,6 +22,25 @@ class MaintenanceAdmissionPort(Protocol):
     def admit(self) -> AbstractContextManager[object]: ...
 
 
+_AUDITED_GET_CONTENT = tuple(re.compile(pattern) for pattern in (
+    r"/api/v1/projects/[^/]+/documents/[^/]+/versions/[^/]+/content",
+    r"/api/v1/global/documents/[^/]+/versions/[^/]+/content",
+    r"/api/v1/projects/[^/]+/audit-exports/[^/]+/content",
+    r"/api/v1/admin/audit-exports/[^/]+/content",
+))
+
+
+def _requires_admission(scope: Scope) -> bool:
+    method = scope.get("method", "GET").upper()
+    if method in ("HEAD", "OPTIONS"):
+        return False
+    if method == "GET":
+        path = scope.get("path", "")
+        return any(pattern.fullmatch(path) is not None
+                   for pattern in _AUDITED_GET_CONTENT)
+    return True
+
+
 class MaintenanceAdmissionMiddleware:
     """Hold one admission across request body, response and Starlette background work."""
 
@@ -31,8 +51,7 @@ class MaintenanceAdmissionMiddleware:
         self.admission = admission
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if (scope["type"] != "http"
-                or scope.get("method", "GET").upper() in ("GET", "HEAD", "OPTIONS")):
+        if scope["type"] != "http" or not _requires_admission(scope):
             await self.app(scope, receive, send)
             return
         response_started = False

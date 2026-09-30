@@ -63,3 +63,12 @@
 风险与回滚：同步 PG 准入可能短时占用事件循环，须给独立 Engine 有界连接/池超时并在性能门槛验收；会话失联时外部 I/O 可继续，仍需进程退出证明。当前只做中间件，不宣称生产 API 已全覆盖；回滚不注入该中间件。
 
 结果：A04-P01 可选 ASGI middleware 内部 PASS。`create_app` 仅显式注入才启用，Trace 外层保证失败响应仍有 trace_id；非安全 HTTP 方法的共享准入覆盖请求正文流、响应流及 Starlette 后台任务，异常时释放；MAINTENANCE 返回固定503 `SYSTEM_UNAVAILABLE`，GET/HEAD/OPTIONS 不占锁。隔离 PG18/ASGI 并发证明写请求阻止排他、完成后释放，MAINTENANCE 阻止业务调用而 GET/健康仍可访问。单元4、后端全量1667（3既有跳过）、wheel PASS；随机库清理、PoC PG 恢复停止。尚未生产组合接线、GET副作用矩阵/性能/DB失联外部I/O处理，不能声称 A04 整体或停写证明完成。
+
+## A04-P02 编码前检查：生产组合与 GET 副作用覆盖
+
+当前 Phase：Phase 2 Platform Core。当前 WBS：PLT-MAINT-01-A04-P02。输入基线：CR-PLT-004 的 GET 副作用修订、ADR-012、A04-P01 中间件、Windows 三种显式生产组合。前置中间件内部 PASS；正式信任锚/目标 OS 账户仍未供给，只能隔离合成验收。
+涉及模块：Platform ASGI 路由准入策略与 Windows 显式生产组合；不改 Document/Audit 业务 Owner。涉及实体：无 Schema。涉及 API：保持冻结路径/响应；非安全方法及四个有错误路径 Audit 写的 GET content 下载持共享锁，健康与纯读 GET 放行。涉及权限：原 Session/CSRF/License/Project 继续为最终业务授权；维护状态先拒绝。
+验收标准：路由矩阵与四 GET 下载准入、生产组合所有模式注入有界独立 PG18 Engine；MAINTENANCE 下登录、上传/管理写与下载拒绝、健康/纯读 GET 可用；RUNNING 下现有链不退化；资源在 lifespan 释放，真实 PG18/HTTP、回归和 wheel。
+风险/回滚：独立连接池按并发/长下载容量规划，不能用一次性测试宣称 20 并发 P95；连接意外丢失后业务持久化前仍需额外复核，OS 进程退出证明保留。无新 Migration/公开 API/依赖；回滚不装配生产中间件，维护历史不删除。
+
+结果：A04-P02 Windows11 隔离生产组合内部 PASS。修正中间件使 Document 版本正文和 Audit Export 正文四个 GET content 路由持共享锁，其他纯读 GET/健康不占锁；三个显式 Windows 组合均注入独立有界 PG18 Engine（最多20专用连接、2秒池/连接等待）并随 lifespan 清理。隔离 PG18 `0051`、合成信任源下，三组合 RUNNING 真实 scrypt 管理员登录200，MAINTENANCE 登录503/健康200/Session GET 可读；写组合上传 POST 与四种 GET content 均503。旧纯契约测试改为显式准入替身，真实 PG 验证保留；后端全量1668（3既有跳过）、wheel PASS，随机库清理且 PoC PG 恢复停止。正式目标账户与 Server2025/Debian、20并发性能、连接丢失后业务发布复核、双 Worker/OS 静止仍待，A04 整体及维护模式/Gate3不通过。

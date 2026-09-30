@@ -5,7 +5,7 @@ from __future__ import annotations
 from alembic.config import Config
 from alembic.script import ScriptDirectory
 from fastapi import FastAPI
-from sqlalchemy import text
+from sqlalchemy import create_engine, text
 
 from plm_assistant.entrypoints.api import create_app
 from plm_assistant.entrypoints.password_capacity import get_process_password_capacity
@@ -133,6 +133,7 @@ from plm_assistant.modules.platform.infrastructure.secret_metadata_repository im
 )
 from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
 from plm_assistant.modules.platform.infrastructure.database import DatabaseRuntime, create_database_runtime
+from plm_assistant.modules.platform.infrastructure.maintenance_admission import PostgresMaintenanceAdmission
 from plm_assistant.modules.platform.infrastructure.migration import MIGRATION_PACKAGE
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
 from plm_assistant.modules.platform.infrastructure.windows_database_credential import (
@@ -273,9 +274,19 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         runtime = create_database_runtime(database_url)
     except Exception:
         raise ProductionLoginStartupError() from None
+    maintenance_engine = None
     try:
         if not runtime.is_ready() or not _schema_current(runtime):
             raise ProductionLoginStartupError()
+        maintenance_engine = create_engine(
+            database_url, pool_pre_ping=True, pool_size=20, max_overflow=0,
+            pool_timeout=2, pool_recycle=1800,
+            pool_reset_on_return="rollback", isolation_level="READ COMMITTED",
+            connect_args={"connect_timeout": 2,
+                          "application_name": "plm-maintenance-admission"},
+            hide_parameters=True,
+        )
+        maintenance_admission = PostgresMaintenanceAdmission(maintenance_engine)
         audit = AuditService(SqlAlchemyAuditRepository())
         verifier = ScryptPasswordHasher()
         sessions = SessionService(
@@ -848,6 +859,12 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                     sessions=sessions, origins=origins,
                     commit_factory=commit_service, abort_factory=abort_service,
                 )
+        def shutdown() -> None:
+            try:
+                maintenance_engine.dispose()
+            finally:
+                runtime.dispose()
+
         return create_app(
             readiness_checks=(runtime.is_ready,),
             login_router=router,
@@ -895,8 +912,11 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             document_version_read_router=document_version_read_router,
             document_parse_read_router=document_parse_read_router,
             document_download_router=document_download_router,
-            shutdown_callback=runtime.dispose,
+            maintenance_admission=maintenance_admission,
+            shutdown_callback=shutdown,
         )
     except Exception:
+        if maintenance_engine is not None:
+            maintenance_engine.dispose()
         runtime.dispose()
         raise ProductionLoginStartupError() from None

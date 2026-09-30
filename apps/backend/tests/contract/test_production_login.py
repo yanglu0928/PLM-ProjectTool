@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+from contextlib import contextmanager
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -22,6 +23,14 @@ from plm_assistant.modules.document.api.document_list_cursor import DocumentList
 from plm_assistant.modules.document.api.version_list_cursor import VersionListCursorCodec
 from plm_assistant.modules.document.api.parse_list_cursor import ParseListCursorCodec
 from plm_assistant.modules.jobs.api.list_cursor import JobListCursorCodec
+
+
+class _ContractMaintenanceAdmission:
+    """Route-only tests have no PG; real gate is proven by PG validation."""
+
+    @contextmanager
+    def admit(self):
+        yield object()
 
 
 class ProductionLoginTests(unittest.TestCase):
@@ -128,6 +137,13 @@ class ProductionLoginTests(unittest.TestCase):
                 runtime.dispose.assert_called_once()
 
     def setUp(self) -> None:
+        self.maintenance_engine = Mock()
+        self.enterContext(patch(
+            'plm_assistant.entrypoints.production_login.create_engine',
+            return_value=self.maintenance_engine))
+        self.enterContext(patch(
+            'plm_assistant.entrypoints.production_login.PostgresMaintenanceAdmission',
+            return_value=_ContractMaintenanceAdmission()))
         from plm_assistant.modules.auth.api.user_list_cursor import UserListCursorCodec
         self.enterContext(patch('plm_assistant.entrypoints.production_login.create_windows_user_list_cursor_codec',
             return_value=UserListCursorCodec(b'u'*32)))
@@ -282,6 +298,7 @@ class ProductionLoginTests(unittest.TestCase):
                                    json={"username": "a", "password": "b"})
             self.assertEqual(response.status_code, 403)
         runtime.dispose.assert_called_once()
+        self.maintenance_engine.dispose.assert_called_once()
 
     def test_windows_launcher_passes_nonsecret_settings_to_factory(self) -> None:
         settings = self.settings(("http://localhost",))
