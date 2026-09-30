@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20260930-520 — Parser 异步现时授权口
+
+- Date/WBS：2026-09-30 / Phase2 `PAR-01-A05-P01-P05-A02-P01`；输入 ADR-007/011 与 CR-PAR-003，原冻结权限和上传角色保持。
+- Decision：新增 Project 内部 `DOCUMENT_PARSE_PROCESS` 操作并沿现有上传角色；Parser 准备及最终发布通过 Auth/Project/License 公共 Application Port 复核原用户，不靠 SYSTEM 身份提权。取消/失败清理不因用户撤权禁止。
+- Reason/Impact/Rollback：只验旧上传来源不足以防长任务期间撤权。无公开 API/Schema/依赖变更；停未装配 Worker 可撤入口，已提交历史保留。真实拒绝/回滚和正常链验证后才记内部 PASS。
+
 ## DEC-20260930-519 — Parser 进程须动态复核 SystemActor
 
 - Date/WBS：2026-09-30 / Phase2 `PAR-01-A05-P01-P05`；输入 ADR-007/011、既有 Parser Worker Step 和 Windows 受控 SystemActor。前置功能链内部 PASS，正式进程尚未装配。

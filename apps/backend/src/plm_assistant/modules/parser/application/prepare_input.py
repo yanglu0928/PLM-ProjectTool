@@ -140,29 +140,29 @@ class PrepareParserInput:
                       ) -> tuple[DocumentParseInputSource, ParserProfilePlan, int]:
         try:
             with self._uow() as tx:
+                binding = self._queue.peek_parse_for_job(tx, job_id=command.job_id)
+                if type(binding) is not ParseJobBinding or binding.refs.job_id != command.job_id:
+                    raise ParserInputError()
+                binding.__post_init__()
+                request = binding.request
+                source = self._documents.read_input(tx, request=request)
+                if (type(source) is not DocumentParseInputSource
+                        or source.committed.request != request):
+                    raise ParserInputError()
+                source.__post_init__()
                 claim = self._leases.check_current(tx, job_id=command.job_id,
                     fencing_token=command.fencing_token, worker_ref=command.worker_ref)
-                binding = self._queue.peek_parse_for_job(tx, job_id=command.job_id)
-                if (type(claim) is not ClaimedJob or type(binding) is not ParseJobBinding
-                        or binding.refs.job_id != command.job_id
-                        or claim.job_id != command.job_id
+                if (type(claim) is not ClaimedJob or claim.job_id != command.job_id
                         or claim.fencing_token != command.fencing_token
                         or claim.job_type != "DOCUMENT_PARSE"
                         or type(claim.attempt_no) is not int or not 1 <= claim.attempt_no <= 3):
                     raise ParserInputError()
-                binding.__post_init__()
-                request = binding.request
                 if (claim.scope, claim.project_id, claim.trace_id, claim.payload_refs) != (
                     request.scope, request.project_id, str(request.trace_id),
                     {"document_id": str(request.document_id),
                      "document_version_id": str(request.document_version_id)},
                 ):
                     raise ParserInputError()
-                source = self._documents.read_input(tx, request=request)
-                if (type(source) is not DocumentParseInputSource
-                        or source.committed.request != request):
-                    raise ParserInputError()
-                source.__post_init__()
                 plan = choose_parser_profile(ParserInputVersion(
                     request.document_version_id, source.content_sha256,
                     source.size_bytes, source.detected_mime,

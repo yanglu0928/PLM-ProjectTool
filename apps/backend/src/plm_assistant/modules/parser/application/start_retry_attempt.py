@@ -79,27 +79,28 @@ class StartRetryParseAttempt:
             if plan != choose_parser_profile(plan.source) or prepared.stream.closed:
                 raise ParseAttemptError("PARSER_INPUT_CHANGED")
             with self._uow() as tx:
-                claim = self._leases.check_current(tx, job_id=command.job_id,
-                    fencing_token=command.fencing_token, worker_ref=command.worker_ref)
                 binding = self._queue.peek_parse_for_job(tx, job_id=command.job_id)
-                if (type(claim) is not ClaimedJob or type(binding) is not ParseJobBinding
-                        or claim.job_id != command.job_id
-                        or claim.fencing_token != command.fencing_token
-                        or claim.attempt_no != prepared.attempt_no
-                        or claim.job_type != "DOCUMENT_PARSE"):
+                if type(binding) is not ParseJobBinding or binding.refs.job_id != command.job_id:
                     raise ParseAttemptError()
                 binding.__post_init__()
                 request = binding.request
-                if ((claim.scope, claim.project_id, claim.trace_id, claim.payload_refs)
-                        != (request.scope, request.project_id, str(request.trace_id),
-                            {"document_id": str(request.document_id),
-                             "document_version_id": str(request.document_version_id)})):
-                    raise ParseAttemptError()
                 source = self._documents.read_input(tx, request=request)
                 if (type(source) is not DocumentParseInputSource
                         or source.committed.request != request):
                     raise ParseAttemptError()
                 source.__post_init__()
+                claim = self._leases.check_current(tx, job_id=command.job_id,
+                    fencing_token=command.fencing_token, worker_ref=command.worker_ref)
+                if (type(claim) is not ClaimedJob or claim.job_id != command.job_id
+                        or claim.fencing_token != command.fencing_token
+                        or claim.attempt_no != prepared.attempt_no
+                        or claim.job_type != "DOCUMENT_PARSE"):
+                    raise ParseAttemptError()
+                if ((claim.scope, claim.project_id, claim.trace_id, claim.payload_refs)
+                        != (request.scope, request.project_id, str(request.trace_id),
+                            {"document_id": str(request.document_id),
+                             "document_version_id": str(request.document_version_id)})):
+                    raise ParseAttemptError()
                 expected = ParserInputVersion(request.document_version_id,
                     source.content_sha256, source.size_bytes, source.detected_mime)
                 if plan != choose_parser_profile(expected):
