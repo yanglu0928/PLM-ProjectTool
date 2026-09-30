@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P03-P01 建立 CR-PKG-001 后固定 Tesseract 官方 5.5.3 Windows 安装资产：26,573,224 字节/SHA-256 与官方 Release API digest 一致，本机 Defender 定向扫描无检出；Authenticode 同样因旧证书超期未通过，未执行/并包。无 Migration/API/程序/依赖变化，可撤 Git 忽略下载文件；隔离安装、许可/依赖、OCRmyPDF兼容、Server2025/Gate待，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P02-P03 从 UB Mannheim GitHub Release 获取 Tesseract 5.4 x64 安装包，50,175,248 字节/SHA-256 与发布者资产及 Microsoft winget 固定清单一致；Authenticode 因签名证书有效期失败，未执行/并包。无程序、Migration、API、依赖或正式安装升级变化；仅本机忽略制品，可按固定文件撤销。签名替代控制、正式 ACL、Server2025、AGPL/Gate 仍待，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P02-P02 Windows11 新 ASCII 目录模型源/目标10/10 SHA-256一致，嵌入式 Python3.13/PaddleOCR 合成 PNG 与混合 PDF 真实 OCR exit0；仅测试目录，ACL 继承用户写权限，不能作发行目标。无程序、Migration、API 或依赖变化；原候选不变。正式只读 ACL、Server2025、Tesseract安装包 Hash/签名、系统 OCR 集成和 Gate 仍待，`release_eligible=false`。
