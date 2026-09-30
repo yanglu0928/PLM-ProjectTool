@@ -23,6 +23,7 @@ import uvicorn
 import httpx
 from alembic import command
 from psycopg import sql
+from psycopg.types.json import Jsonb
 from sqlalchemy.engine import URL
 
 from plm_assistant.entrypoints import production_login as production
@@ -770,6 +771,38 @@ def verify_document_upload_http(origin: str, project: uuid.UUID, foreign: uuid.U
     print("DOCUMENT_UPLOAD_NETWORK PASS: real HTTP length/hash, v1/v2/abort, downloads, PG files/jobs/audit, isolation", flush=True)
 
 
+def verify_document_parse_http(origin: str, project: uuid.UUID, foreign: uuid.UUID,
+                               document_id: uuid.UUID, version_id: uuid.UUID,
+                               expected_ids: tuple[uuid.UUID, ...]):
+    route = f"/api/v1/projects/{project}/documents/{document_id}/versions/{version_id}/parses"
+    with httpx.Client(base_url=origin, timeout=20) as anonymous:
+        assert anonymous.get(route + "?page_size=2").status_code == 401
+    with httpx.Client(base_url=origin, timeout=20) as admin:
+        login = admin.post("/api/v1/auth/login", headers={"Origin": origin},
+            json={"username": "Synthetic Project Admin", "password": "synthetic-project-only-password"})
+        assert login.status_code == 200, login.text
+        assert admin.get(route + "?page_size=2").status_code == 404
+    with httpx.Client(base_url=origin, timeout=20) as member:
+        login = member.post("/api/v1/auth/login", headers={"Origin": origin},
+            json={"username": "Synthetic Project Member", "password": "synthetic-project-only-password"})
+        assert login.status_code == 200, login.text
+        first = member.get(route + "?page_size=2")
+        assert first.status_code == 200 and first.headers["Cache-Control"] == "no-store", first.text
+        data = first.json()["data"]
+        assert len(data["items"]) == 2 and data["has_more"] and data["next_cursor"]
+        second = member.get(route, params={"page_size": 2, "cursor": data["next_cursor"]})
+        assert second.status_code == 200, second.text
+        tail = second.json()["data"]
+        assert len(tail["items"]) == 1 and not tail["has_more"] and tail["next_cursor"] is None
+        items = data["items"] + tail["items"]
+        assert {uuid.UUID(item["parse_record_id"]) for item in items} == set(expected_ids)
+        assert all(item["parse_state"] == "PENDING" and item["result_ref"] is None for item in items)
+        assert all("storage_locator" not in item and "result_sha256" not in item for item in items)
+        foreign_route = f"/api/v1/projects/{foreign}/documents/{document_id}/versions/{version_id}/parses"
+        assert member.get(foreign_route).status_code == 404
+    print("DOCUMENT_PARSE_NETWORK PASS: real Session, 2+1 cursor, pending-only safe projection, isolation", flush=True)
+
+
 def main():
     suffix = uuid.uuid4().hex[:12]
     dbname = role = "prj05a04_" + suffix
@@ -824,14 +857,21 @@ def main():
                                              or "--document-version-api-only" in sys.argv[1:]
                                              or "--document-version-browser" in sys.argv[1:]
                                              or "--document-download-api-only" in sys.argv[1:]
-                                             or "--document-download-browser" in sys.argv[1:])
+                                             or "--document-download-browser" in sys.argv[1:]
+                                             or "--document-parse-api-only" in sys.argv[1:]
+                                             or "--document-parse-browser" in sys.argv[1:])
                     document_version_mode = ("--document-version-api-only" in sys.argv[1:]
                                              or "--document-version-browser" in sys.argv[1:])
                     document_download_mode = ("--document-download-api-only" in sys.argv[1:]
-                                              or "--document-download-browser" in sys.argv[1:])
+                                              or "--document-download-browser" in sys.argv[1:]
+                                              or "--document-parse-api-only" in sys.argv[1:]
+                                              or "--document-parse-browser" in sys.argv[1:])
+                    document_parse_mode = ("--document-parse-api-only" in sys.argv[1:]
+                                           or "--document-parse-browser" in sys.argv[1:])
                     document_upload_mode = ("--document-upload-api-only" in sys.argv[1:]
                                             or "--document-upload-browser" in sys.argv[1:])
                     download_document_id = download_version_id = None
+                    parse_record_ids: tuple[uuid.UUID, ...] = ()
                     member_mode = ("--member-browser" in sys.argv[1:]
                                    or "--member-api-only" in sys.argv[1:])
                     if sum((create_mode, archive_mode, project_patch_mode, state_mode, name_mode, member_mode, member_create_mode,
@@ -981,6 +1021,25 @@ def main():
                                 db.execute("UPDATE plm.doc_documents SET latest_version_ref=%s,"
                                     "effective_version_ref=%s,lock_version=1 WHERE document_id=%s",
                                     (download_version_id, download_version_id, download_document_id))
+                                if document_parse_mode:
+                                    job = db.execute("INSERT INTO plm.job_jobs "
+                                        "(owner_module,job_type,scope,project_id,actor_ref,trace_id,"
+                                        "payload_refs,idempotency_key,max_attempts) VALUES "
+                                        "('document','DOCUMENT_PARSE','PROJECT',%s,%s,%s,%s,"
+                                        "'synthetic-parse-read',3) RETURNING job_id",
+                                        (project, member, str(uuid.uuid4()), Jsonb({
+                                            "document_id": str(download_document_id),
+                                            "document_version_id": str(download_version_id),
+                                        }))).fetchone()[0]
+                                    records = []
+                                    for attempt in (1, 2, 3):
+                                        records.append(db.execute("INSERT INTO plm.doc_parse_records "
+                                            "(document_version_id,scope,project_id,parser_profile,"
+                                            "parser_version,job_ref,attempt_no) VALUES "
+                                            "(%s,'PROJECT',%s,'SYNTHETIC_METADATA','1',%s,%s) "
+                                            "RETURNING parse_record_id",
+                                            (download_version_id, project, job, attempt)).fetchone()[0])
+                                    parse_record_ids = tuple(records)
                         prefix = "plm_assistant.entrypoints.production_login."
                         stack.enter_context(patch("plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services",
                                                   return_value=SimpleNamespace(guard=SyntheticGuard())))
@@ -1072,6 +1131,10 @@ def main():
                             assert download_document_id is not None and download_version_id is not None
                             verify_document_download_http(origin, project, foreign,
                                 download_document_id, download_version_id, download_content)
+                        elif "--document-parse-api-only" in sys.argv[1:]:
+                            assert download_document_id is not None and download_version_id is not None
+                            verify_document_parse_http(origin, project, foreign,
+                                download_document_id, download_version_id, parse_record_ids)
                         elif "--document-upload-api-only" in sys.argv[1:]:
                             verify_document_upload_http(origin, project, foreign, dbname, settings.data_root)
                         else:
@@ -1121,8 +1184,11 @@ def main():
                             elif document_history_mode and ("--document-history-browser" in sys.argv[1:]
                                                             or "--document-detail-browser" in sys.argv[1:]
                                                             or "--document-version-browser" in sys.argv[1:]
-                                                            or "--document-download-browser" in sys.argv[1:]):
+                                                            or "--document-download-browser" in sys.argv[1:]
+                                                            or "--document-parse-browser" in sys.argv[1:]):
                                 assert session_count >= 1
+                            elif "--document-parse-api-only" in sys.argv[1:]:
+                                assert session_count == 2
                             elif document_version_mode or document_download_mode:
                                 assert session_count == 1
                             elif "--document-upload-browser" in sys.argv[1:]:
@@ -1292,6 +1358,17 @@ def main():
                                 assert db.execute("SELECT count(*) FROM plm.doc_document_versions "
                                     "WHERE project_id=%s", (foreign,)).fetchone()[0] == 0
                                 print("DOCUMENT_DOWNLOAD_DATABASE PASS: one real-file-backed AVAILABLE version, foreign 0", flush=True)
+                            if document_parse_mode:
+                                assert download_version_id is not None
+                                rows = db.execute("SELECT parse_record_id,parse_state,job_ref,result_ref "
+                                    "FROM plm.doc_parse_records WHERE document_version_id=%s",
+                                    (download_version_id,)).fetchall()
+                                assert len(rows) == 3 and {row[0] for row in rows} == set(parse_record_ids)
+                                assert all(row[1] == "PENDING" and row[3] is None for row in rows)
+                                assert len({row[2] for row in rows}) == 1
+                                assert db.execute("SELECT count(*) FROM plm.doc_parse_records "
+                                    "WHERE project_id=%s", (foreign,)).fetchone()[0] == 0
+                                print("DOCUMENT_PARSE_DATABASE PASS: three synthetic PENDING attempts, real file-backed version, foreign zero", flush=True)
                             if "--document-upload-browser" in sys.argv[1:]:
                                 versions = db.execute("SELECT v.document_id,v.version_no,f.storage_locator,f.sha256,f.size_bytes "
                                     "FROM plm.doc_document_versions v JOIN plm.doc_file_objects f "

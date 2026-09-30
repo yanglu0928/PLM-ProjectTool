@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260930-496 — DOC-05-A06-P03 隔离浏览器 ParseRecord 只读验收
+
+- Date/WBS：2026-09-30 / Phase2 DOC-05-A06-P03。前置 A06-P01/P02 前端合同、DOC-04-A05 Windows Parse 列表组合、A04-P03 真文件下载夹具均已验证；P08-A02 的文件 UI 上传确认仍待，本项只读且不进行文件选择/上传。
+- Decision/Reason：复用随机库/角色/Vault/临时文件根夹具的真实文件支撑 DocumentVersion，在该固定版本下仅插入合成 PENDING ParseRecord/Job 元数据；独立 API-only 和 IAB 页面两份证据，浏览器由项目详情→文档历史→详情→版本→解析状态，验证按需状态、固定版本和安全投影。PENDING 不冒充 Worker 消费/解析成功，文件实际下载也不在本项重复验收。
+- Impact/rollback/validation：只扩验证夹具、进度/版本说明，不改生产 API/Schema/Migration/权限/依赖；撤新增模式可回滚。随机资源/真实文件精确清理、匿名/跨项目拒绝、游标页与浏览器 UI/SQL 核对；失败留真实记录，不能由 API-only 外推浏览器 PASS。正式信任/Server2025/Debian/性能/Gate3/可用包不在本项关闭。
+- Executed：API-only 首轮被 DB Job 载荷约束拒绝，补齐固定 Document/Version refs；第二轮仅会话计数断言误设为 1，修为实际 Admin+Member 两会话后重跑 exit0。实际 IAB 合成成员经项目→文档→可用版本打开面板，看到同一固定版本三次 PENDING 尝试，刷新仍为三条；SQL/文件及随机库、角色、Vault 清理 exit0。未执行浏览器文件上传或 Worker 消费。
+
 ## DEC-20260930-495 — DOC-05-A06-P02 项目版本解析状态界面
 
 - Date/WBS：2026-09-30 / Phase2 DOC-05-A06-P02。P01 固定版本 ParseRecord 安全只读客户端已验证并同步；项目 Document 详情/版本历史已有受权入口。P08-A02 浏览器上传仍待确认，但只读状态面板可独立实施。
