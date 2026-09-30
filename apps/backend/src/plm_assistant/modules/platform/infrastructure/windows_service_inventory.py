@@ -95,12 +95,18 @@ class _NativeServiceQuery:
         self._api = api
 
     def read(self, role: str) -> ServiceObservation | None:
+        values = self._read_name(SERVICE_NAMES[role])
+        return (ServiceObservation(role, SERVICE_NAMES[role], *values)
+                if values is not None else None)
+
+    def _read_name(self, service_name: str) -> tuple[int, int, int, str, str, int, int] | None:
+        """Private read-only primitive; public callers remain fixed-role only."""
         manager = service = None
         try:
             manager = self._api.OpenSCManagerW(None, None, SC_MANAGER_CONNECT)
             if not manager:
                 raise WindowsServiceInventoryError()
-            service = self._api.OpenServiceW(manager, SERVICE_NAMES[role],
+            service = self._api.OpenServiceW(manager, service_name,
                 SERVICE_QUERY_CONFIG | SERVICE_QUERY_STATUS)
             if not service:
                 if ctypes.get_last_error() == ERROR_SERVICE_DOES_NOT_EXIST:
@@ -128,8 +134,8 @@ class _NativeServiceQuery:
                                                   ctypes.byref(needed)):
                 raise WindowsServiceInventoryError()
             value = config.contents
-            return ServiceObservation(
-                role, SERVICE_NAMES[role], value.service_type, value.start_type,
+            return (
+                value.service_type, value.start_type,
                 value.error_control, value.binary_path or "",
                 value.start_account or "", status.state, status.pid)
         except WindowsServiceInventoryError:

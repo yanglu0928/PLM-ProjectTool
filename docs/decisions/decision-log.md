@@ -5818,3 +5818,8 @@
 
 - Phase/WBS：Phase2 / PLT-MAINT-01-A06-P02-P03-P03-A02-P02-A01。只读 Win32 API 查询固定服务名的配置和状态，输出脱敏摘要。`RUNNING` 以外状态的 `dwProcessId` 不作可信 PID；STOPPED 不当作资源静止。该快照不授予备份/迁移，后续须同次 OS 进程/标记、句柄与 DB 会话收敛证据。
 - 理由：Microsoft QueryServiceStatusEx 文档明确 STOP_PENDING PID 可能无效、STOPPED PID 永远无效，QueryServiceConfigW 返回的是保存配置而非运行中配置的强保证。影响仅诊断工具，无 Schema/API/依赖；回滚撤只读工具即可。真实服务/目标账户/Server2025 待验。
+
+## DEC-20260930-546 — 用系统已安装服务验证私有 SCM 查询内核
+
+- 日期/Phase/WBS：2026-09-30 / Phase2 / PLT-MAINT-01-A06-P02-P03-P03-A02-P02-A01-R1。公开 `read_service_observation` 继续只允许三个固定 PLM 角色；内部提取 `_read_name`，仅在测试中对系统 EventLog 服务执行只读配置/状态查询，不把它纳入产品清单或诊断许可。
+- 理由：本机 PLM 服务均不存在，先前原生测试只能验证 OpenServiceW 的缺失路径，无法验证 QueryServiceConfigW/QueryServiceStatusEx 成功绑定。影响限内部适配和测试，无 Schema/API/依赖/服务修改；回滚撤提取/测试，保留公开固定角色查询。系统服务正向结果不证明 PLM 目标账户、PID 归属或资源静止。

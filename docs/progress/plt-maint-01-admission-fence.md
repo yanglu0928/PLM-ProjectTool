@@ -228,6 +228,16 @@
 结果：Windows11 内部只读 PASS。三个固定服务名经原生 OpenSCManagerW/OpenServiceW 查询均为未安装，与此前清单一致；不存在服务时未进入 QueryServiceConfigW/QueryServiceStatusEx，故这两个 API 的真实成功路径尚未验。无 SCM 写入。合成状态、角色不匹配、失败关闭、敏感路径/账户脱敏及原生缺失服务查询定向5、后端1722（3既有跳过）、wheel PASS。报告固定 `DIAGNOSTIC_ONLY`/`backup_or_migration_authorized=false`，仅 RUNNING 且非零时显示报告 PID；`STOP_PENDING/STOPPED` 的 PID 不作为退出证据。真实已安装服务的正向 SCM 配置/运行状态、目标账户、OS PID/SID、句柄、DB 会话和 Server2025 仍未验证；P03-A02/CR-PLT-004/Gate3/发行继续 OPEN。
 
 
+## A06-P02-P03-P03-A02-P02-A01-R1 编码前检查：SCM 已安装服务只读正向验证
+
+当前 Phase：Phase 2 Platform Core。当前 WBS：PLT-MAINT-01-A06-P02-P03-P03-A02-P02-A01-R1。输入基线：ADR-013/DEC-545、A02-P02-A01 的固定名只读库存及其明确的原生成功路径缺口。前置为本机存在 Windows EventLog 服务；仅把它作为系统 API 只读测试夹具，不纳入产品服务清单或停写判断。
+涉及模块：Platform Windows SCM 查询适配及其测试；无业务实体、数据库、公开 API、新依赖或服务配置修改。实体：内部原生配置/状态快照；公开入口仍只接受三固定 PLM 服务名。权限：SC_MANAGER_CONNECT、SERVICE_QUERY_CONFIG/STATUS，不请求写权限。
+验收标准：用本机已安装的 EventLog 服务实测 QueryServiceConfigW 与 QueryServiceStatusEx 成功路径，检查结构解析/状态/PID，不打印路径或账户；原固定 PLM 服务查询、脱敏 CLI/失败关闭与全后端回归及 wheel 保持通过。无此服务或权限时明确记未验证，不虚报 PASS。
+风险/回滚：系统服务配置可能变动，正向 API 测试不证明 PLM 服务安装/账户/PID 归属、句柄或 DB 静止；仅提取内部查询函数便于测试，不扩大公开角色，回滚撤内部提取与测试。P03-A02/Gate3 仍 OPEN。
+
+结果：Windows11 原生只读正向 PASS。本机 `EventLog` 确认已安装且运行；内部仅测试用查询函数对其原生 QueryServiceConfigW/QueryServiceStatusEx 成功，服务类型、启动方式、错误控制、非空路径/账户、运行状态与非零 PID 解析通过，测试未输出路径/账户。公开入口角色白名单不变；三个 PLM 服务仍未安装，故不宣称产品服务实机验收。定向6、后端1723（3既有跳过）、wheel PASS。P03-A02/CR/Gate3 仍 OPEN。
+
+
 ## PAR-01-A05-P06-P01 编码前检查：Windows OCR 模型路径可诊断限制
 
 当前 Phase：Phase 2 Platform Core。当前 WBS：PAR-01-A05-P06-P01。输入基线：CR-PAR-005 方案 A、现有 `OfflinePaddleOcr` 模型四文件指纹与 Windows Worker 启动链。前置同字节模型中文/ASCII 路径差异与底层异常已在本机复现；正式安装器/目标账户仍缺。

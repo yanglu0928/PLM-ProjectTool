@@ -93,6 +93,21 @@ class WindowsServiceInventoryTests(unittest.TestCase):
                 if value.state != RUNNING:
                     self.assertIsNone(value.running_pid)
 
+    def test_native_installed_system_service_config_and_status_read_only(self):
+        # EventLog is a Windows-owned fixture; never alter or expose its config.
+        values = inv._NativeServiceQuery()._read_name("EventLog")
+        if values is None:
+            self.skipTest("EventLog not installed on this Windows host")
+        service_type, start_type, error_control, path, account, state, pid = values
+        self.assertGreater(service_type, 0)
+        self.assertGreaterEqual(start_type, 0)
+        self.assertGreaterEqual(error_control, 0)
+        self.assertTrue(path)
+        self.assertTrue(account)
+        self.assertGreater(state, 0)
+        if state == RUNNING:
+            self.assertGreater(pid, 0)
+
 
 if __name__ == "__main__":
     unittest.main()
