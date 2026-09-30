@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from contextlib import contextmanager
 from dataclasses import dataclass
 from re import fullmatch
 from threading import Event, Lock, Thread
@@ -198,6 +199,16 @@ class ParserWorkerStep:
 
     def request_stop(self) -> None:
         self._stop.set()
+
+    @contextmanager
+    def quiescent(self):
+        """Hold the execution slot while the caller releases owned resources."""
+        if not self._lock.acquire(blocking=False):
+            raise ParserWorkerError("PARSER_WORKER_BUSY")
+        try:
+            yield
+        finally:
+            self._lock.release()
 
     def step(self) -> ParserWorkerStepOutcome:
         if not self._lock.acquire(blocking=False):

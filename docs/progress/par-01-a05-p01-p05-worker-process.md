@@ -26,3 +26,13 @@ Windows11 隔离 PG18/真实已提交合成文件/HTTP 用户取消：在 Audit 
 结果：P05-A02-P01 Windows11 内部 PASS。`ParserCurrentAuthority` 经 Auth 当前启用 User、Project 新内部 `DOCUMENT_PARSE_PROCESS`（角色同上传）、License Guard 验原 actor/trace；GLOBAL 只允许部署管理员。`AuthorizedParserInputSource` 在每次准备/启动/最终发布的调用者事务中先验权再读不可变上传来源；这些 Parser 流程调整为先源/权限后 Job 锁，保持与用户取消 Owner 同向。取消/失败清理不依赖新授权口。
 
 隔离 PostgreSQL18/实际合成上传的首代 Parser：User 停用时最终发布零写，Project 成员暂停时重新准备拒绝，License 失效时最终发布零写；恢复后相同当前租约发布唯一 ParseResultRef/Job SUCCEEDED。GLOBAL 管理员/项目四角色/归档/License 单元矩阵与后端全量 1646（3 既有跳过）、wheel PASS。合成 License/账户仅内部证明，正式信任锚和 Windows 独立进程/Server2025/Debian 尚未验；P05 整体仍 INCOMPLETE。异步撤权可耗尽既有有界 Job 尝试，后续运营策略需在 Worker 组合/Retry 任务明确，不得显示为解析成功。
+
+## A02-P02 编码前检查：有界 Worker 调度循环
+
+当前 Phase：Phase 2 Platform Core。当前 WBS：PAR-01-A05-P01-P05-A02-P02。
+输入基线：Gate 2、ADR-007/011、CR-PAR-003、已验 ParserWorkerStep 与到期取消 Sweep。前置任务：A02-P01 已通过；独立进程入口尚未装配。
+涉及模块：Parser 应用层调度，不涉及新持久化实体、Schema、公开 API、角色或依赖。
+验收标准：每轮最多一扫一领；取消候选不使正常 Job 永久饥饿；停止请求后无新扫描/领取；并发运行和未退出时资源释放失败关闭；故障不吞没、无强杀假设。以单元测试验证，随后才接真实进程组合。
+风险：单步长解析无法即时中断，只能等待现有租约心跳和解析结束；进程退出不能将仍运行任务误报为安全静止。回滚为停用未接入的循环，无数据迁移。
+
+结果：调度层 Windows11 内部 PASS。每轮一条到期取消候选及一个 Parser Job，双空闲有界轮询；停止时当前单步自然收敛，`quiescent` 拒绝活跃调度/执行。定向15、Python3.13 后端全量1649（3既有跳过）、wheel PASS。尚未接真实 Worker 组合、运行账户、OCR模型或数据库维护信号；因此 P05 独立进程及 Gate3 均未通过。

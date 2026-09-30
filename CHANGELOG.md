@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-09-30：0.1.0.dev0/PAR-01-A05-P01-P05-A02-P02 新增 Parser 有界调度循环与静止资源释放门禁，每轮最多恢复一条到期取消并执行一个 Job，停止后不再领取。定向15、Python3.13 后端全量1649（3既有跳过）、wheel PASS。兼容冻结 `/api/v1`/DB0050，无 Migration/新依赖或生产升级；独立进程/正式账户/OCR模型、Server2025/Debian、Gate3及可用包仍待。
+
 - 2026-09-30：0.1.0.dev0/PAR-01-A05-P01-P05-A02-P01 新增 Parser 异步现时 User/Project/License 授权 Port 与内部 `DOCUMENT_PARSE_PROCESS` 操作（角色同上传），每次准备/启动/最终发布均重新核验；清理性取消/失败不阻塞。Windows11 隔离 PG18/真实合成上传撤权/License 失效拒绝、恢复后唯一发布及单元角色矩阵、后端1646（3既有跳过）、wheel PASS。兼容冻结 `/api/v1`/DB0050，无 Migration/依赖/生产数据升级；正式进程/目标账户/Server2025/Debian、Gate3及可用包仍待。
 
 - 2026-09-30：0.1.0.dev0/PAR-01-A05-P01-P05-A01 Parser 关键结果发布、失败、取消、后代启动及完整性审计支持受控 SystemActor 动态 Port，在提交前重新确认同一身份；旧内部固定 UUID 构造兼容保留。Windows11 隔离 PG18/真实合成上传证明 Audit 写后身份改变时整事务回滚、恢复身份后成功，后端1642（3既有跳过）、wheel PASS。兼容冻结 `/api/v1`/DB0050，无 Migration/依赖/生产数据升级；正式 Worker/目标账户/Server2025/Debian、Gate3及可用包仍待。
