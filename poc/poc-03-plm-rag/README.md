@@ -357,3 +357,13 @@ POC-03 的基础链路已完成；50 条独立留出集证明 P03-A11 Top-5 为 
 
 - 批准的 Phase 0 替代方案：冻结本轮 50 条及其 98.00%/48.00%/74.00% 结果；采用双来源证据、Prompt v3、Evidence Selector 和强制人工确认；在 Gate 3/UAT 使用全新独立留出集复验。
 - 不得降低质量门槛、事后按模型输出改标签、泄露期望答案到 Prompt，或擅自引入独立向量库和本地模型。
+
+## Gate 3 新留出集本地独立性预检
+
+`scripts/check_holdout_independence.py` 仅在本地读取新候选集和**所有已暴露**的历史数据集，不调用外部 AI；失败时以非零状态退出。运行示例：
+
+```powershell
+py -3.13 poc/poc-03-plm-rag/scripts/check_holdout_independence.py --candidate <新集.json> --prior <旧留出集.json> --prior <校准集.json>
+```
+
+报告只包含计数、布尔值与输入文件 SHA-256，不含问题、客户正文或来源定位。旧批次的 `HO-0001` 等 CaseId 可以在新批次重用，但同一批内不能重复；问题、证据 ChunkId、同文档定位和正文 Hash 与历史集重合会失败。必须提供完整历史暴露清单；仅字符串精确匹配不能证明语义独立或人工标签正确。预检 PASS 不是 Gate 3、真实质量或客户资料外发授权。
