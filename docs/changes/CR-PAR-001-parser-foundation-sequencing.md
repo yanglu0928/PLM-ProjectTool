@@ -33,3 +33,5 @@ V2.1 将 Parser/OCR Worker 放在 Phase 3，但 Phase 2 的 EVD-01 Evidence 精�
 2026-09-30 后续：PAR-01-A03-P04-P02 已以真实本地模型在无落盘合成 PNG/混合 PDF 上跑通候选抽取；OCR 区域/置信度/模型指纹已固定，但仍不具备结果持久发布、受权 Evidence 或客户资料质量结论，Gate 不变。
 
 2026-09-30 后续：PAR-01-A04-P01 已完成结构化结果文件的私有一次性写入与复验，沿用冻结 Schema V1 的结果引用形状；DB/Job/ParseRecord fenced 发布尚未完成，孤儿不等于成功，Gate 不变。
+
+2026-09-30 后续：PAR-01-A04-P02-P01 已真实验证首次当前租约的 ParseRecord PENDING→RUNNING，不包含成功结果发布或重试历史；A04-P02 整体未关闭，Gate 不变。

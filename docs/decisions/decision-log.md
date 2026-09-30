@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20260930-506 — PAR-01-A04-P02-P01 首次解析 Attempt 的 PENDING→RUNNING
+
+- Date/WBS：2026-09-30 / Phase 2 依赖前置 PAR-01-A04-P02-P01；A03 候选解析和 A04-P01 私有结果文件已通过，冻结 DB Schema V1 的 ParseRecord 触发器要求 INSERT PENDING、随后 RUNNING，且同版本/profile/parser_version 的 attempt 序号连续。
+- 编码前检查：只实现当前首次 DOCUMENT_PARSE Job 租约对应的 Document ParseRecord 启动；涉及 Job lease/Outbox Application Port、Document 来源 Port 与 ParseRecord Repository，当前无公开 API/权限、Schema/Migration、结果发布或正式 Evidence。验收为来源/lease/fencing 绑定、PostgreSQL 真实触发器状态转换、重复同租约幂等、错误租约/跨版本拒绝及后端回归。
+- Decision：首次 Attempt 必须先取得 A02 已验证输入快照，后以短事务重核当前 Job/Outbox/Document 固定来源；Document Repository 对固定 Version 加锁，只允许 `attempt_no=1` 和无同 profile/version 历史，插入 PENDING 并在同事务升为 RUNNING/lock_version1。重复当前同一 Job 的 RUNNING 返回原记录，不改历史。不得把此分项视作重试支持；第二/第三次尝试与上一条运行记录的失败对账单独实现，再允许 Worker 启动解析。
+- 风险/回滚：文件快照与记录启动间仍有时间窗，后续 Worker 必须心跳/取消检查，成功发布再 fencing；真实 DB 测试不能代替完整 Worker/崩溃恢复。可撤未装配服务/Repository 回滚，历史 ParseRecord 不得删除。Gate3 不变。
+- Executed：新增 Parser 短事务协调与 Document 自有 DTO/Repository，固定来源/租约/Outbox 重核后按冻结触发器插入 PENDING→RUNNING；仅 `attempt_no=1`，同 Job 同代幂等，其他 Job/过期租约/变更来源失败关闭。定向3、Python3.13后端全量1606（3既有跳过）、真实隔离PostgreSQL18触发器/1行/幂等/冲突验证、wheel包含PASS；随机数据库清理，PoC PG恢复停止。尚无重试历史对账、结果引用/Job成功同事务发布，故 P02 整体未完成。
+
 ## DEC-20260930-505 — PAR-01-A04-P01 ParseResult 私有一次性存储
 
 - Date/WBS：2026-09-30 / Phase 2 依赖前置 PAR-01-A04-P01；A03 已生成版本化 canonical JSON 候选；冻结 DB Schema V1 已有 `doc_parse_result_refs` 的相对 locator、Hash、大小和 Schema 版本，尚无正式结果物理写入器。Gate 3 未通过。

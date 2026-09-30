@@ -4,6 +4,8 @@
 
 ## Unreleased
 
+- 2026-09-30：0.1.0.dev0/PAR-01-A04-P02-P01 新增首个当前租约 ParseRecord 启动：复核 Job/Outbox/固定 Document 来源，在 PostgreSQL 冻结触发器下同事务 PENDING→RUNNING，重复同代幂等。定向3、Python3.13后端全量1606（3既有跳过）、Windows11隔离PG18真实触发器/冲突及wheel PASS；随机库清理并恢复PoC PG停止。兼容冻结 `/api/v1`/DB0049，无 ORM/Migration、公开 API、权限、依赖或升级操作；第二/三次重试、结果/Job同事务成功发布、Worker/Evidence/Gate3/可用包待。
+
 - 2026-09-30：0.1.0.dev0/PAR-01-A04-P01 增加 Document 私有 ParseResult 一次性文件存储、作用域绑定相对 locator、同卷无覆盖提升与 Hash/大小重开验收。定向4（目录符号链接因账户权限跳过1）、Python3.13后端全量1603（3跳过）、wheel PASS；首轮测试夹具跨Scope误判已修复重跑。兼容冻结 `/api/v1`/DB0049，无 ORM/Migration、公开 API、权限、依赖或升级操作。孤儿文件保留不可见，结果 DB/Job fenced 发布、目标账户/崩溃恢复、正式Evidence/Gate3/可用包未完成。
 
 - 2026-09-30：0.1.0.dev0/PAR-01-A03-P04-P02 固定版本 PNG/JPEG/多帧 TIFF 与混合 PDF 接入离线 OCR 主链，OCR 行保存页内 bbox/置信度/模型指纹；原生 PDF 页保留文字范围，任一页失败不发布部分成功。定向4、Python3.13后端全量1599（2既有跳过）、wheel和本机真实离线模型的无落盘合成 PNG/混合PDF脚本 PASS。兼容冻结 `/api/v1`/DB0049，无 ORM/Migration、公开 API、权限或升级操作；EXIF 非默认方向和无文字页显式失败。客户扫描质量、Worker/持久结果/正式Evidence、目标账户/发行许可/Gate3/可用包未完成。
