@@ -1,6 +1,6 @@
 # CR-PKG-001：Windows Tesseract 离线发行来源调整
 
-状态：OPEN / VALIDATION_IN_PROGRESS；日期：2026-10-01；Phase 2 / PLT-PKG-01-A08-P09-P03。Gate 2 技术栈 Tesseract 不变；本 CR 仅调整 Windows 离线发行二进制的来源/版本，不追写 POC-01 或 ADR-001 的 5.4 历史验证。
+状态：OPEN / SOURCE_PINNED_SIGNATURE_EXCEPTION_UNDER_REVIEW；日期：2026-10-01；Phase 2 / PLT-PKG-01-A08-P09-P03。Gate 2 技术栈 Tesseract 不变；本 CR 仅调整 Windows 离线发行二进制的来源/版本，不追写 POC-01 或 ADR-001 的 5.4 历史验证。
 
 ## 来源、冲突与方案
 
@@ -15,3 +15,9 @@ POC-01 使用 UB Mannheim Tesseract 5.4.0.20240606；其 [发布者 Release](htt
 原历史 5.4 PoC、已安装开发机程序和非发行候选保持不动。若 A 通过，发行包固定 5.5.3 x64 及其 Hash/许可证，并在目标部署中作为新系统依赖；不自动升级或覆盖用户机器已有 Tesseract。若验证失败，拒绝并包，保留 5.4 PoC 与现有安装，回滚仅撤新候选与测试目录，不回滚业务数据库。
 
 验证顺序：上游资产清单 → 下载字节/Hash/Authenticode → 许可/原生依赖清单 → 隔离安装及版本、tessdata_best 中英/OCRmyPDF `--deskew` 中文 Windows 输出编码 → 与 Ghostscript/Paddle 的合成 OCR 链 → Windows11/Server2025 清洁目标目录与账户 ACL/离线复装 → 发行安全与许可审查。未经过对应阶段不得宣称兼容或 Release PASS。无 DB/API/产品权限变化；可能改变 OCR 结果，需记录质量回归。旧候选始终 `release_eligible=false`。
+
+## 2026-10-01 上游资产核查及安全差异
+
+官方 5.5.3 GitHub Release API 登记 Windows 安装资产 `tesseract-ocr-w64-setup-5.5.3.20260724.exe` 26,573,224 字节、SHA-256 `bee9e3434bd94fd65387d9be28cd467a41f61b1275383b55b0f59a1331270ae4`；本机下载字节逐项相同。Release tag 页面显示提交者 GPG 签名已验证，但 Git tag 签名不直接签署二进制。该资产 Authenticode 也返回 `UnknownError/NotTimeValid`：与 5.4 相同的 Universität Mannheim 签名证书 2023-12-10 到期，而时间戳证书起于 2026-06。不能把它写成有效代码签名。
+
+修订选择：仍优先 A 的官方 5.5.3，但将官方 Release API 的资产 digest 固定校验、HTTPS 来源、仓库/tag 身份、当地 Defender 扫描和隔离目录实测作为**替代来源控制**，不是 Authenticode PASS。先执行非生产隔离验证；若 Defender、文件清单或运行异常，立即拒绝。发行并包前还须完成许可/传递依赖、目标环境和专项安全评审；未满足即维持 `release_eligible=false`。B 的第三方 5.4 包不再作为优先候选，C 自行构建保留为后备。撤销替代方案只需删除未发行候选/测试目录，不动既有程序或数据库。
