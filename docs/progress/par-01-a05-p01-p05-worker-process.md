@@ -36,3 +36,14 @@ Windows11 隔离 PG18/真实已提交合成文件/HTTP 用户取消：在 Audit 
 风险：单步长解析无法即时中断，只能等待现有租约心跳和解析结束；进程退出不能将仍运行任务误报为安全静止。回滚为停用未接入的循环，无数据迁移。
 
 结果：调度层 Windows11 内部 PASS。每轮一条到期取消候选及一个 Parser Job，双空闲有界轮询；停止时当前单步自然收敛，`quiescent` 拒绝活跃调度/执行。定向15、Python3.13 后端全量1649（3既有跳过）、wheel PASS。尚未接真实 Worker 组合、运行账户、OCR模型或数据库维护信号；因此 P05 独立进程及 Gate3 均未通过。
+
+## A02-P03-A01 编码前检查：显式 Parser Worker 组合根
+
+当前 Phase：Phase 2 Platform Core。当前 WBS：PAR-01-A05-P01-P05-A02-P03-A01。
+输入基线：Gate2、ADR-007/011、CR-PAR-003、已验当前权限/Worker 单步/过期取消/调度层。
+前置任务：A02-P01/P02 内部 PASS。正式维护停写栅栏尚缺，本子项不关闭 P03 或 Gate3。
+涉及模块：Parser 进程组合根，既有 Auth/Project/License/Document/Audit/Jobs 公共 Port；不改变各 Owner 的表。涉及实体：只连接既有 Job/Lease/Attempt/Document ParseRecord/AuditEvent；不新增。涉及 API：无。涉及权限：必须注入动态 SystemActor、当前原 User/Project/License；OCR 必须是显式离线受检引擎，不允许隐式模型下载。
+验收标准：只接受 PG18 当前 Migration 的 WorkerDatabaseRuntime、实际数据根、受控身份/许可/项目 Port、显式 OCR；缺一拒绝。组合后真实隔离 PG 与合成已提交上传运行一个 Job 并发布；Secret 不从 argv/env 进入工厂。单元、回归、wheel。
+风险：正式 Windows 运行账户材料、OCR 配置供给、维护模式及 Signal 尚未接线；本子项只形成可注入组合，不宣称可发行进程。无 Schema/API/依赖迁移；回滚停用未挂载组合，保留 Job/Audit 历史。
+
+结果：A02-P03-A01 Windows11 内部 PASS。组合根拒绝缺失或无效 Worker runtime/Migration/身份/License/本地数据根/离线 OCR 引擎；把现有 Auth、Project、Document、Audit、Jobs 和 Parser Port 接成一条真实流程。隔离 PostgreSQL18/真实已提交合成 PDF 的一次 Worker 调度发布唯一 ParseResultRef/Job SUCCEEDED；首轮旧夹具的假 PDF 因 `PARSER_PDF_INVALID` 正常失败，改用真实合成 PDF 后重跑通过。单元2、Python3.13 后端全量1651（3既有跳过）、wheel PASS。此集成验的是文本页，OCR 使用绕过初始化的内部假引擎，不是 OCR 模型/断网验收；正式目标账户和维护停写栅栏仍缺，不能关闭 P03/Gate3。
