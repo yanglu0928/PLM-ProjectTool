@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P08 新增 Windows 候选原生文件与官方 Python embed/93固定 wheel 的精确字节来源对账；250/250匹配、3/3 合成测试通过，识别共享 msvcp140 DLL 的 `.data/platlib` 安装映射。无 Migration/API/依赖/安装升级变化，仅当前 Win11 非发行候选；撤工具/忽略 JSON 可回滚。Ghostscript/Tesseract/OCRmyPDF 不在候选，PyMuPDF/Ghostscript 许可、DLL传递依赖和三平台离线验收仍待，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P07 将前端六份精确 LICENSE 文件并入独立 Windows11 非发行候选，17,364 载荷 Hash 全数回读、全新解包/私有运行时导入/93发行元数据 PASS，定向2/2。无 Migration/API/依赖/正式安装升级变化；仅本机 Win11，可撤新工具/忽略目录回滚，旧包保留。原生/系统组件、本产品许可、完整法律审核与 Gate/UAT 仍待，`release_eligible=false`，不得发行。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P06 新增六个精确前端包 LICENSE 原文/Hash 非发行补充归档，6/6 回读、定向5/5 PASS；A08-P05 证据增加本地包路径供来源复核。无 Migration/API/依赖/正式安装升级变化；仅 Win11 A02 隔离源码，撤工具/忽略归档可回滚。许可文本尚未并入候选，原生/系统组件、本产品许可和法律审核仍待，`release_eligible=false`。
