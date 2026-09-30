@@ -60,9 +60,10 @@ class WindowsServiceInstallTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             python, bootstrap = self.paths(directory)
             fake = FakeSCM()
-            installer.install_fixed_service(
-                "AUDIT_WORKER", python, bootstrap, ".\\plmtool", "synthetic-pass",
-                scm=fake)
+            with patch.object(installer.sys, "executable", str(python)):
+                installer.install_fixed_service(
+                    "AUDIT_WORKER", python, bootstrap, ".\\plmtool",
+                    "synthetic-pass", scm=fake)
             self.assertEqual(fake.calls[0], "open")
             manager, name, command, account = fake.calls[1]
             self.assertEqual((manager, name, account),
@@ -76,17 +77,19 @@ class WindowsServiceInstallTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             python, bootstrap = self.paths(directory)
             duplicate = FakeSCM(service=None)
-            with self.assertRaises(installer.WindowsServiceInstallError):
-                installer.install_fixed_service(
-                    "API", python, bootstrap, ".\\plmtool", "not-logged",
-                    scm=duplicate)
+            with patch.object(installer.sys, "executable", str(python)):
+                with self.assertRaises(installer.WindowsServiceInstallError):
+                    installer.install_fixed_service(
+                        "API", python, bootstrap, ".\\plmtool", "not-logged",
+                        scm=duplicate)
             self.assertEqual(duplicate.calls[-1], ("close", 11))
             self.assertEqual(duplicate.password_buffer.value, "")
             denied = FakeSCM(manager=None)
-            with self.assertRaises(installer.WindowsServiceInstallError):
-                installer.install_fixed_service(
-                    "API", python, bootstrap, ".\\plmtool", "not-logged",
-                    scm=denied)
+            with patch.object(installer.sys, "executable", str(python)):
+                with self.assertRaises(installer.WindowsServiceInstallError):
+                    installer.install_fixed_service(
+                        "API", python, bootstrap, ".\\plmtool", "not-logged",
+                        scm=denied)
             self.assertEqual(denied.calls, ["open"])
 
     def test_rejects_builtin_account_role_and_password_in_argv(self):
@@ -108,6 +111,43 @@ class WindowsServiceInstallTests(unittest.TestCase):
                               SimpleNamespace(isatty=lambda: True)), \
                  redirect_stderr(io.StringIO()):
                 self.assertEqual(installer.main(), 2)
+
+    def test_rejects_other_interpreter_and_bad_package_before_prompt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            python, bootstrap = self.paths(directory)
+            fake = FakeSCM()
+            with self.assertRaises(installer.WindowsServiceInstallError):
+                installer.install_fixed_service(
+                    "API", python, bootstrap, ".\\plmtool", "synthetic",
+                    scm=fake)
+            self.assertEqual(fake.calls, [])
+            with patch.object(installer.sys, "executable", str(python)), \
+                 patch.object(installer.metadata, "version", return_value="wrong"):
+                with self.assertRaises(installer.WindowsServiceInstallError):
+                    installer.install_fixed_service(
+                        "API", python, bootstrap, ".\\plmtool", "synthetic",
+                        scm=fake)
+            with patch.object(installer.sys, "executable", str(python)), \
+                 patch.object(installer.struct, "calcsize", return_value=4):
+                with self.assertRaises(installer.WindowsServiceInstallError):
+                    installer.verify_installer_runtime(python)
+            with patch.object(installer.sys, "executable", str(python)), \
+                 patch.object(installer.metadata, "version",
+                              side_effect=installer.metadata.PackageNotFoundError):
+                with self.assertRaises(installer.WindowsServiceInstallError):
+                    installer.verify_installer_runtime(python)
+            self.assertEqual(fake.calls, [])
+            with patch.object(installer.sys, "argv", ["install", "--install", "API",
+                 str(python), str(bootstrap), ".\\plmtool"]), \
+                 patch.object(installer.sys, "stdin",
+                              SimpleNamespace(isatty=lambda: True)), \
+                 patch.object(installer.getpass, "getpass") as prompt, \
+                 redirect_stderr(io.StringIO()):
+                self.assertEqual(installer.main(), 1)
+            prompt.assert_not_called()
+
+    def test_current_interpreter_package_version_is_valid(self):
+        installer.verify_installer_runtime(Path(sys.executable))
 
     def test_native_api_binding_is_available_without_creating_service(self):
         native = installer._NativeServiceControl()

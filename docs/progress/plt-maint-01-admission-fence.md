@@ -208,6 +208,16 @@
 结果：A06-P02-P03-P03-A02-P01 安装器内部 PASS。新增显式 `--install` 单角色入口，用 Python 3.13 标准库 `ctypes` 调本机 `OpenSCManagerW/CreateServiceW`；固定服务名、`SERVICE_WIN32_OWN_PROCESS`/手动启动、显式非内置账户，交互密码不经 argv/env/shell，缓冲区调用后清零。只复用 P03-A01 的完整配置/路径计划；CreateServiceW 失败时不覆盖/删除现有服务，不自动启动。模拟成功/名称已存在或拒权/非法参数与原生绑定定向4、后端1715（3既有跳过）、wheel PASS。当前本机三款 PLM 服务仍不存在，未对真实 SCM 执行写入；Python 原始密码字符串无法承诺内存零化，正式账户权限/登录与启停/静止验收仍待，P03-A02 总项不得 PASS。
 
 
+## A06-P02-P03-P03-A02-P01-R1 编码前检查：安装器解释器身份修补
+
+当前 Phase：Phase 2 Platform Core。当前 WBS：PLT-MAINT-01-A06-P02-P03-P03-A02-P01-R1。输入基线：ADR-013/DEC-544、P03-A01 只读计划及 P03-A02-P01 固定角色安装器。审查发现原计划仅检查目标文件名 `python.exe`/存在性，安装器可在用户误选其他解释器时创建无法启动或错误版本服务；真实 SCM 尚未安装。
+涉及模块：Platform Windows 安装器验证，不改服务角色、账户策略、Schema、公开 API 或依赖。实体：本进程解释器、Python 版本/位数和本包发行元数据；无持久实体。权限：仍不接触 SCM/账户 Secret 直到验证完成。
+验收标准：目标解释器必须与当前执行安装器的 Python 可核验为同一文件；当前进程须 Python 3.13 x64，包元数据版本与 `plm_assistant.__version__` 相符；缺元数据、路径错误/不同解释器、版本/位数不合均在密码提示及 SCM 打开前固定拒绝。定向负例、后端全量和 wheel。
+风险/回滚：同一解释器与版本只防止误选，不能证明部署包未篡改、目标账户权限、模型实际内容或 SCM 生命周期；后续发行仍需包摘要/签名和实机验收。无 Migration/API/升级动作；不应单独回退此失败关闭检查。
+
+结果：A06-P02-P03-P03-A02-P01-R1 Windows11 内部 PASS。安装器在密码提示和 `OpenSCManagerW` 前验证目标绝对 `python.exe` 与当前进程 `sys.executable` 指向同一文件、Python 3.13 x64，以及已安装的 `plm-project-tool-backend` 元数据版本等于包内 `__version__`。不同解释器、缺包、版本/位数不合均固定拒绝；原只读计划仍明确 `runtime_and_account_verified=false`。定向6、后端1717（3既有跳过）、wheel PASS。未调用真实 SCM/服务账户，包签名/目标账户/OCR/OS 静止仍待；P03-A02 总项保持未验。
+
+
 ## PAR-01-A05-P06-P01 编码前检查：Windows OCR 模型路径可诊断限制
 
 当前 Phase：Phase 2 Platform Core。当前 WBS：PAR-01-A05-P06-P01。输入基线：CR-PAR-005 方案 A、现有 `OfflinePaddleOcr` 模型四文件指纹与 Windows Worker 启动链。前置同字节模型中文/ASCII 路径差异与底层异常已在本机复现；正式安装器/目标账户仍缺。

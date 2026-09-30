@@ -4,11 +4,15 @@ from __future__ import annotations
 
 import ctypes
 import getpass
+import os
 import re
+import struct
 import sys
 from ctypes import wintypes
+from importlib import metadata
 from pathlib import Path
 
+from plm_assistant import __version__
 from plm_assistant.entrypoints.service_plan_windows import (
     WindowsServicePlanError, build_service_plan,
 )
@@ -27,6 +31,20 @@ _ACCOUNT = re.compile(r"(?:\.|[A-Za-z0-9_.-]{1,64})\\[A-Za-z0-9_.\-$]{1,64}\Z")
 class WindowsServiceInstallError(RuntimeError):
     def __init__(self) -> None:
         super().__init__("WINDOWS_SERVICE_INSTALL_UNAVAILABLE")
+
+
+def verify_installer_runtime(python_exe: Path) -> None:
+    """The installer must run from the exact interpreter it registers."""
+    try:
+        if (sys.platform != "win32" or sys.version_info[:2] != (3, 13)
+                or struct.calcsize("P") != 8
+                or not isinstance(python_exe, Path)
+                or not python_exe.is_absolute()
+                or not os.path.samefile(python_exe, sys.executable)
+                or metadata.version("plm-project-tool-backend") != __version__):
+            raise WindowsServiceInstallError()
+    except (OSError, metadata.PackageNotFoundError):
+        raise WindowsServiceInstallError() from None
 
 
 class _NativeServiceControl:
@@ -72,6 +90,7 @@ def install_fixed_service(role: str, python_exe: Path, bootstrap_yaml: Path,
         raise WindowsServiceInstallError()
     try:
         plan = build_service_plan(python_exe, bootstrap_yaml)
+        verify_installer_runtime(python_exe)
     except WindowsServicePlanError:
         raise WindowsServiceInstallError() from None
     command = next(item["binary_path"] for item in plan["service_commands"]
@@ -123,6 +142,7 @@ def main() -> int:
     try:
         role, python_exe, bootstrap_yaml, account = sys.argv[2:]
         build_service_plan(Path(python_exe), Path(bootstrap_yaml))
+        verify_installer_runtime(Path(python_exe))
         if not _ACCOUNT.fullmatch(account):
             raise WindowsServiceInstallError()
         password = getpass.getpass("Service account password: ")
