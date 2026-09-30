@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A04-P01 新增可选纯 ASGI 写请求共享准入，覆盖正文/响应/后台任务完整窗口；维护/锁/DB 错误固定 503 并带 trace_id，默认 app 行为不变。隔离 PG18 并发 HTTP/维护拒绝、单元4、后端1667（3既有跳过）、wheel PASS。无 Schema/公开路由/依赖/生产迁移；正式生产组合尚未接线，GET 副作用与性能、连接丢失/OS 静止及 Gate3/发行包仍待。
+
 - 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A03-P03-P02 新增 Windows 本机交互式维护工具：当前账户 Credential Manager DB 来源、隐藏管理员口令、既有 Auth 限流登录、五分钟 Session、排他切换后撤销，不接收 Secret 命令行/环境参数。隔离 PG18 真实 scrypt 合成管理员 enter/exit、错误口令/旧版本、Audit 与 Session 收口，后端1663（3既有跳过）、wheel 含入口 PASS。无 Schema/API/依赖/生产迁移；目标账户 Vault ACL、Server2025/Debian 工具、生产 API/Worker 全覆盖与 OS 静止未验，维护模式/Gate3/发行包仍待。
 
 - 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A03-P03-P01 修订内部排他转换操作员证明：移除调用方 UUID，改由同一状态/Audit 事务内的当前 Session+CSRF+DeploymentAdmin 核验解析 actor。隔离 PG18 正/负权限矩阵、共享锁/回滚复验，后端1661（3既有跳过）、wheel PASS。无新 Schema/API/依赖/生产迁移；OS 受控入口、生产全覆盖、静止证明与 Gate3/发行包仍待。

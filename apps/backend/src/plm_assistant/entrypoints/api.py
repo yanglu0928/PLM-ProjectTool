@@ -10,6 +10,9 @@ from plm_assistant import __version__
 from plm_assistant.modules.platform.api.error_handlers import install_error_handlers
 from plm_assistant.modules.platform.api.health import create_health_router
 from plm_assistant.modules.platform.api.trace_middleware import TraceMiddleware
+from plm_assistant.modules.platform.api.maintenance_middleware import (
+    MaintenanceAdmissionMiddleware, MaintenanceAdmissionPort,
+)
 from plm_assistant.modules.platform.application.health import (
     HealthService,
     ReadinessCheck,
@@ -71,6 +74,7 @@ def create_app(
     document_version_read_router: APIRouter | None = None,
     document_parse_read_router: APIRouter | None = None,
     document_download_router: APIRouter | None = None,
+    maintenance_admission: MaintenanceAdmissionPort | None = None,
     shutdown_callback: Callable[[], None] | None = None,
 ) -> FastAPI:
     """Create one isolated API application instance.
@@ -103,6 +107,9 @@ def create_app(
     )
     app.state.health_service = health_service
     app.state.loggers = loggers or StructuredLoggers()
+    if maintenance_admission is not None:
+        app.add_middleware(MaintenanceAdmissionMiddleware,
+                           admission=maintenance_admission)
     app.add_middleware(TraceMiddleware, loggers=app.state.loggers)
     install_error_handlers(app)
     app.include_router(create_health_router(health_service))

@@ -41,3 +41,5 @@ ADR-007/008 和冻结安全边界要求升级顺序为人工备份→维护模�
 2026-09-30 A03-P03-P01 后续修订：移除 A03-P02 原调用方 UUID 输入，在排他锁与状态/Audit 同一事务复用 Auth 当前 Session+CSRF+部署管理员核验。隔离 PG18 管理员成功、错误凭据/非管理员/停用/撤销拒绝且零状态/Audit 变化，后端1661（3跳过）、wheel PASS。原提交保持历史可追溯；受控 OS 部署入口及全进程静止证明未完成，仍禁止生产切换/备份。
 
 2026-09-30 A03-P03-P02：Windows 本机交互工具复用当前 OS 账户 DB Vault 来源和现有 scrypt/限流登录，短期 Session 经转换事务现时重验并撤销；隔离 PG18 管理员 enter/exit、错误口令/旧版本及审计证明、后端1663（3跳过）、wheel PASS。目标部署账户 Credential Manager 独占和 Server2025/Debian 未验，未接所有生产入口；工具成功输出也明确不授予备份/迁移许可。架构追溯 `ADR-012`，整体 CR 继续 OPEN。
+
+2026-09-30 A04-P01：可选纯 ASGI 共享 admission 中间件在隔离 PG18 真实并发 HTTP 窗口和合成响应流/后台任务验证，MAINTENANCE 下写请求先于业务拒绝、GET/健康保持；后端1667（3跳过）、wheel PASS。正式 Windows 生产组合尚未注入；同步准入性能、GET 副作用与连接丢失后外部 I/O 仍待，整体 CR OPEN。

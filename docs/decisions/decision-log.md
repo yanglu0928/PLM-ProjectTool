@@ -5736,3 +5736,9 @@
 - Phase/WBS：Phase2 / PLT-MAINT-01-A03-P03-P02；编码前检查见 progress。Windows 工具只从当前 OS 登录账户 Credential Manager 取现有 DB URL，要求交互式终端和应用管理员隐藏口令，复用生产 Auth 限流/Session 证明；不把数据库 URL 或凭据放在命令行/环境变量。
 - 状态仍由内部排他 Port 同事务重核 Admin，Session 使用短时限且操作后撤销。账号专属 Vault 配置与服务账户 ACL 必须在目标系统验证；工具输出不宣称 OS 进程已静止，未接生产全入口前禁止备份/迁移。
 - 影响：增加运维 CLI，不改公开 API/Schema/依赖；失败时保留可审计的状态/Audit，按版本重新读取判断，不自动回滚生产数据。
+
+## DEC-20260930-530 — 写请求在 ASGI 外层持共享准入
+
+- Phase/WBS：Phase2 / PLT-MAINT-01-A04-P01；编码前检查见 progress。选择可选纯 ASGI middleware 包住非安全方法完整请求生命周期，包括上传正文 receive 与响应后台工作结束；Trace 外层保证拒绝响应仍有 trace_id。默认开发 app 不注入，正式组合接线另验。
+- 失败返回固定 503 `SYSTEM_UNAVAILABLE`，不泄露维护状态/数据库错误；GET/HEAD/OPTIONS 暂按只读处理，后续需审计实际路由副作用。此中间件不代替业务权限或 OS 进程退出证据。
+- 无 Schema/冻结 API 路由/依赖变更；引入独立 PG 连接容量和同步短时开销，性能和目标环境须验收；回滚移除可选注入。

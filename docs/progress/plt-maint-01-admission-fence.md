@@ -54,3 +54,12 @@
 风险与回滚：独立 CLI 即使可切换状态，尚无全部 API/Worker admission 与 OS 退出证据，不构成备份/迁移许可；正式账户 Vault 隔离、Windows Server 2025 与 Debian 入口仍待。无新 Schema/API/依赖；停用未启用 CLI 可回滚程序，维护历史状态不能删除。
 
 结果：A03-P03-P02 Windows11 内部组合 PASS。`maintenance_windows` 仅本地交互、仅当前账户 Vault DB 凭据；运维用户名与隐藏口令经既有 scrypt/限流 LoginService 取得五分钟 Session，再经排他 Port 当前管理员同事务复验。隔离 PG18 正式 scrypt 初始管理员合成链验证 enter v0→MAINTENANCE/v1、旧版本拒绝、exit v1→RUNNING/v2，两条 USER Audit，错误口令无状态变化、全部创建 Session 已撤销，密码 bytearray 擦除。CLI 非 Windows/额外 Secret 参数先于 Vault 读取拒绝；后端全量1663（3既有跳过）、wheel 含 CLI PASS；随机库清理、PoC PG 恢复停止。未验证指定 OS 部署账户 Vault 独占、Server2025/Debian 工具、生产进程全覆盖及静止，故仅内部 PASS；生产切换/备份仍禁止。
+
+## A04-P01 编码前检查：ASGI 写窗口准入中间件
+
+当前 Phase：Phase 2 Platform Core。当前 WBS：PLT-MAINT-01-A04-P01。输入基线：CR-PLT-004、ADR-012、A03-P01 共享 Port、现有 `create_app` 与 Trace/Error 响应合同。前置共享 Port PG18 内部 PASS；正式生产组合尚未接线，本项只做可选中间件与生命周期验收。
+涉及模块：Platform ASGI middleware 与 `create_app` 可选注入；不更改业务 Owner 或生产组合。涉及实体：不新增，仅读维护状态。涉及 API：冻结 `/api/v1` 路由不变；非 GET/HEAD/OPTIONS 的 HTTP 请求在路由前取得共享锁，覆盖请求正文流与响应/后台任务结束；失败统一 503 `SYSTEM_UNAVAILABLE` 带 trace_id。涉及权限：不替代原 Session/CSRF/License/Project 授权。
+验收标准：合成异步流/后台任务证明锁持续至 ASGI 完成、异常释放、GET/健康无锁，MAINTENANCE/排他竞争/DB 错误失败关闭；默认 app 无注入不改变行为；后端全量与 wheel。
+风险与回滚：同步 PG 准入可能短时占用事件循环，须给独立 Engine 有界连接/池超时并在性能门槛验收；会话失联时外部 I/O 可继续，仍需进程退出证明。当前只做中间件，不宣称生产 API 已全覆盖；回滚不注入该中间件。
+
+结果：A04-P01 可选 ASGI middleware 内部 PASS。`create_app` 仅显式注入才启用，Trace 外层保证失败响应仍有 trace_id；非安全 HTTP 方法的共享准入覆盖请求正文流、响应流及 Starlette 后台任务，异常时释放；MAINTENANCE 返回固定503 `SYSTEM_UNAVAILABLE`，GET/HEAD/OPTIONS 不占锁。隔离 PG18/ASGI 并发证明写请求阻止排他、完成后释放，MAINTENANCE 阻止业务调用而 GET/健康仍可访问。单元4、后端全量1667（3既有跳过）、wheel PASS；随机库清理、PoC PG 恢复停止。尚未生产组合接线、GET副作用矩阵/性能/DB失联外部I/O处理，不能声称 A04 整体或停写证明完成。
