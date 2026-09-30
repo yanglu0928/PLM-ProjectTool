@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260930-513 — PAR-01-A05-P01-P03 Parser Worker 失败分类与事务收口
+
+- Date/WBS：2026-09-30 / Phase2 `PAR-01-A05-P01-P03`。前置 A05-P01-P02 单步成功与续租 PASS；输入为 ADR-007 至少一次/有界重试、DM-03 ParseRecord 历史和现有 Jobs `retry_or_fail`。涉及 Parser Application、Document 自有 ParseRecord 失败 Port、Jobs 当前租约与 Audit；无公开 API/权限/ORM/Migration/依赖或外发。
+- 编码前检查：目标是对本 Worker 已持有的当前 `DOCUMENT_PARSE` 租约，按固定安全错误类别执行有限重试或最终失败；若 ParseRecord 已 RUNNING，Document `RUNNING→FAILED`、Audit 和 Jobs `RETRY_WAIT/FAILED` 在同一短事务提交，任一失败整体回滚。准备输入/启动之前尚无 ParseRecord 的失败只关闭当前 Job attempt 并追加 Audit，不伪造已启动 Document 事实，后续代的既有对账会补记未启动代。旧/过期 lease 与来源不符必须拒写。
+- 选择/影响：已知格式/数据/配置错误不可重试；受控 IO/瞬时服务错误可重试，采用小范围有界退避，最大代数由现有 Job 执行。心跳失败、未知提交结果、租约失效或审计/数据库不可用不二次推断为可安全关闭，停止本 Worker 等待租约恢复；异常内容不得入 Audit。先 Document 行锁与安全错误码、后同 UOW Audit 和 Jobs 状态，沿用原先 Jobs 锁序。无 Schema 升级；可回滚尚未装配的内部服务，但历史失败记录不可删除。验证定向/PG18真实事务和回滚/后端全量/wheel；Gate3不变，取消/崩溃恢复和独立进程另列后续。
+- Executed：Document 自有 `RUNNING→FAILED` Repository、Parser 固定错误分类与同事务 Document/Audit/Jobs 失败 Port 已接单步 Worker；可重试退避 5/15 秒且仅 Jobs 原有最大代数决定终态，未启动无 ParseRecord 的错误只结束 Job Attempt 并审计。心跳/Start 或结果发布不确定状态不推测失败、Worker 实例毒化。定向 Worker 9、Python3.13 后端全量1626（3既有跳过）、Windows11隔离 PG18 真实文件 Worker 成功+错误编码失败、独立 PG18 致命/可重试/未启动/旧租约拒绝/Audit 与末端 Job 失败回滚、wheel PASS；随机数据库清理、PoC PG恢复停止。无运行时独立进程/取消/崩溃恢复；终态前无 ParseRecord 的用户状态呈现需后续收口，Gate3不变。
+
 ## DEC-20260930-512 — PAR-01-A05-P01-P02 Parser Worker 单步成功链与续租
 
 - Date/WBS：2026-09-30 / Phase2 依赖前置 PAR-01-A05-P01-P02。输入 CR-PAR-001 时序调整、Jobs 专用领取 P01、受控输入快照 A02、九类格式候选解析 A03、Document ParseRecord 启动/结果原子发布 A04；Gate2 已通过。涉及 Parser Application 的单步执行/格式分派和 Jobs 现有短事务心跳 Port，不增加 API、权限、ORM/Migration、依赖或外发。

@@ -20,6 +20,10 @@ from plm_assistant.modules.parser.application.profile_selection import (
 from plm_assistant.modules.parser.application.worker_step import (
     ParserWorkerError, ParserWorkerStep, extract_by_profile,
 )
+from plm_assistant.modules.parser.application.fail_attempt import (
+    ParserFailureOutcome, classify_parser_failure,
+)
+from plm_assistant.modules.parser.application.prepare_input import ParserInputError
 
 
 class _Lease:
@@ -60,8 +64,8 @@ class ParserWorkerStepTests(unittest.TestCase):
         self.claim = ClaimedJob(self.job_id, "DOCUMENT_PARSE", "PROJECT",
             self.project_id, {}, str(uuid.uuid4()), 1, 1)
         self.lease = _Lease(self.claim)
-        self.preparer, self.first, self.retry, self.publisher = (
-            Mock(), Mock(), Mock(), Mock())
+        self.preparer, self.first, self.retry, self.publisher, self.failure = (
+            Mock(), Mock(), Mock(), Mock(), Mock())
         self.preparer.prepare.side_effect = lambda command: VerifiedParserInput(
             self.plan, self.job_id, command.fencing_token,
             self.claim.attempt_no, io.BytesIO(self.raw))
@@ -72,12 +76,13 @@ class ParserWorkerStepTests(unittest.TestCase):
         self.published = PublishedParseResult(self.started.parse_record_id,
             uuid.uuid4(), datetime.now(timezone.utc))
         self.publisher.publish.return_value = self.published
+        self.failure.fail.return_value = ParserFailureOutcome("FAILED", self.started.parse_record_id)
         self.storage = _Storage()
 
     def worker(self, *, extractor=None) -> ParserWorkerStep:
         return ParserWorkerStep(leases=self.lease, preparer=self.preparer,
             first=self.first, retry=self.retry, storage=self.storage,
-            publisher=self.publisher, worker_ref="parser-test",
+            publisher=self.publisher, failure=self.failure, worker_ref="parser-test",
             lease_seconds=6, heartbeat_interval_seconds=0.1,
             extractor=extractor)
 
@@ -111,6 +116,7 @@ class ParserWorkerStepTests(unittest.TestCase):
             worker.step()
         self.assertEqual(error.exception.code, "PARSER_HEARTBEAT_UNAVAILABLE")
         self.publisher.publish.assert_not_called()
+        self.failure.fail.assert_not_called()
         with self.assertRaises(ParserWorkerError) as error:
             worker.step()
         self.assertEqual(error.exception.code, "PARSER_WORKER_STOPPED")
@@ -122,6 +128,61 @@ class ParserWorkerStepTests(unittest.TestCase):
         with self.assertRaises(ParserWorkerError) as error:
             extract_by_profile(image, ocr_engine=None)
         self.assertEqual(error.exception.code, "PARSER_OCR_ENGINE_REQUIRED")
+
+    def test_deterministic_extractor_failure_closes_current_attempt(self) -> None:
+        from plm_assistant.modules.parser.application.structured_result import ParserResultError
+        def fail(_prepared):
+            raise ParserResultError("PARSER_TEXT_ENCODING_INVALID")
+        result = self.worker(extractor=fail).step()
+        self.assertEqual(result.kind, "FAILED")
+        self.assertEqual(self.failure.fail.call_args.kwargs["error_code"],
+                         "PARSER_TEXT_ENCODING_INVALID")
+        self.assertFalse(self.failure.fail.call_args.kwargs["retryable"])
+        self.publisher.publish.assert_not_called()
+
+    def test_preparation_failure_closes_job_without_inventing_parse_record(self) -> None:
+        self.preparer.prepare.side_effect = ParserInputError("FILE_INTEGRITY_MISMATCH")
+        self.failure.fail.return_value = ParserFailureOutcome("FAILED", None)
+        result = self.worker().step()
+        self.assertEqual(result.kind, "FAILED")
+        self.assertIsNone(self.failure.fail.call_args.kwargs["started"])
+        self.assertEqual(self.failure.fail.call_args.kwargs["error_code"],
+                         "FILE_INTEGRITY_MISMATCH")
+        self.assertFalse(self.failure.fail.call_args.kwargs["retryable"])
+
+    def test_failure_classification_is_fixed_and_bounded(self) -> None:
+        from plm_assistant.modules.parser.application.structured_result import ParserResultError
+        self.assertEqual(classify_parser_failure(
+            ParserResultError("PARSER_OCR_FAILED"), attempt_no=2),
+            ("PARSER_OCR_FAILED", True, 15))
+        self.assertEqual(classify_parser_failure(
+            RuntimeError("secret user content"), attempt_no=3),
+            ("PARSER_RUNTIME_UNAVAILABLE", True, 0))
+
+    def test_transient_extractor_failure_requests_bounded_retry(self) -> None:
+        from plm_assistant.modules.parser.application.structured_result import ParserResultError
+        def fail(_prepared):
+            raise ParserResultError("PARSER_OCR_FAILED")
+        self.failure.fail.return_value = ParserFailureOutcome(
+            "RETRY_WAIT", self.started.parse_record_id)
+        worker = self.worker(extractor=fail)
+        result = worker.step()
+        self.assertEqual(result.failed.job_state, "RETRY_WAIT")
+        self.assertEqual(self.failure.fail.call_args.kwargs["delay_seconds"], 5)
+        self.assertTrue(self.failure.fail.call_args.kwargs["retryable"])
+        self.assertEqual(worker.step().kind, "IDLE")
+
+    def test_failure_closure_unavailable_poison_worker(self) -> None:
+        from plm_assistant.modules.parser.application.structured_result import ParserResultError
+        def fail(_prepared):
+            raise ParserResultError("PARSER_OCR_FAILED")
+        self.failure.fail.side_effect = RuntimeError("synthetic DB outage")
+        worker = self.worker(extractor=fail)
+        with self.assertRaises(ParserWorkerError):
+            worker.step()
+        with self.assertRaises(ParserWorkerError) as stopped:
+            worker.step()
+        self.assertEqual(stopped.exception.code, "PARSER_WORKER_STOPPED")
 
 
 if __name__ == "__main__":

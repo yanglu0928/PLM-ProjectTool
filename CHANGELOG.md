@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-09-30：0.1.0.dev0/PAR-01-A05-P01-P03 新增 Parser Worker 失败分类与当前租约下 Document ParseRecord/Audit/Jobs 同事务失败，已知输入/格式错误终止、短暂错误按 5/15 秒有界重试；未启动尝试不伪造解析记录。Worker定向9、Python3.13后端全量1626（3既有跳过）、Windows11隔离 PG18 文件 Worker 错编码失败及致命/重试/旧租约/Audit与末端Job失败回滚、wheel PASS。兼容冻结 `/api/v1`/DB0049，无 ORM/Migration、公开 API、权限、新依赖或升级操作；需现有 PostgreSQL18，终态前无 ParseRecord 的状态呈现、取消/崩溃恢复/独立进程、Gate3/可用包待完成。
+
 - 2026-09-30：0.1.0.dev0/PAR-01-A05-P01-P02 新增 Parser Worker 单步成功链，真实格式分派、持续心跳、最后续租及 fenced 发布；失败关闭当前实例。定向4、Python3.13后端全量1621（3既有跳过）、Windows11隔离 PG18/真实文件长解析心跳与原子成功、wheel PASS。兼容冻结 `/api/v1`/DB0049，无 ORM/Migration、公开 API、权限、新依赖或升级操作；需现有 PostgreSQL18/私有文件目录，仍未接独立进程/失败分类/取消/恢复，正式 Evidence、Gate3和可用包未完成。
 
 - 2026-09-30：0.1.0.dev0/PAR-01-A05-P01-P01 新增 Jobs 内部 Parser 专用 Job 领取，SQL 候选只选 document/DOCUMENT_PARSE，沿用原行锁/fencing/过期接管；通用领取不变。定向3、Python3.13后端全量1617（3既有跳过）、Windows11隔离PG18混合队列/过期接管/非Parse零写及wheel PASS。兼容冻结 `/api/v1`/DB0049，无 ORM/Migration、公开 API、权限、依赖或升级操作；正式 Worker 执行/心跳/失败/取消、Gate3及可用包仍待。

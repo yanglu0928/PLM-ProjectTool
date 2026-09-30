@@ -47,3 +47,5 @@ V2.1 将 Parser/OCR Worker 放在 Phase 3，但 Phase 2 的 EVD-01 Evidence 精�
 2026-09-30 后续：PAR-01-A05-P01-P01 已为 Parser Worker 增加 Jobs 自有的 DOCUMENT_PARSE 定向领取，真实混合队列未消耗其他 Owner Job；仅领取入口，不代表 Worker 已执行解析或具备心跳/取消/失败处理，Gate3不变。
 
 2026-09-30 后续：PAR-01-A05-P01-P02 已在 Windows11 隔离 PG18 和真实本地文件上验证一次 Parser Worker 成功执行与长任务心跳，成功发布受租约保护；仅内部 Queue/Document 源桩，未装配独立守护进程及失败分类/取消/恢复，不把单步成功当完整 Worker、Gate3 或发行通过。
+
+2026-09-30 后续：PAR-01-A05-P01-P03 已在隔离 PG18 验证当前租约下已启动 ParseRecord/Job/Audit 的原子失败、重试/终止与回滚，真实文件 Worker 的非法编码也完成失败链。未启动错误不伪造 ParseRecord；状态呈现、协作取消、崩溃恢复、独立进程和 Gate3 尚待。

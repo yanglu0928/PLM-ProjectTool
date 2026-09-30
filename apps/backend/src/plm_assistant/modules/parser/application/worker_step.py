@@ -14,6 +14,7 @@ from plm_assistant.modules.document.application.parse_publish import (
 )
 from plm_assistant.modules.jobs.application.lease import ClaimedJob
 
+from .fail_attempt import ParserFailureOutcome, classify_parser_failure
 from .extract_ocr import extract_ocr
 from .extract_office import extract_office
 from .extract_pdf_text import extract_pdf_text
@@ -32,13 +33,17 @@ class ParserWorkerError(RuntimeError):
 class ParserWorkerStepOutcome:
     kind: str
     published: PublishedParseResult | None = None
+    failed: ParserFailureOutcome | None = None
 
     def __post_init__(self) -> None:
-        if (self.kind not in {"IDLE", "STOPPED", "PUBLISHED"}
-                or (self.kind == "PUBLISHED") != (type(self.published) is PublishedParseResult)):
+        if (self.kind not in {"IDLE", "STOPPED", "PUBLISHED", "FAILED"}
+                or (self.kind == "PUBLISHED") != (type(self.published) is PublishedParseResult)
+                or (self.kind == "FAILED") != (type(self.failed) is ParserFailureOutcome)):
             raise ParserWorkerError()
         if self.published is not None:
             self.published.__post_init__()
+        if self.failed is not None:
+            self.failed.__post_init__()
 
 
 class LeasePort(Protocol):
@@ -67,6 +72,12 @@ class PublishPort(Protocol):
                 prepared: VerifiedParserInput, started: StartedParseAttempt,
                 parsed: ParsedResult, stored: StoredParseResult
                 ) -> PublishedParseResult: ...
+
+
+class FailurePort(Protocol):
+    def fail(self, *, command: ParserInputCommand,
+             started: StartedParseAttempt | None, error_code: str,
+             retryable: bool, delay_seconds: int) -> ParserFailureOutcome: ...
 
 
 def extract_by_profile(prepared: VerifiedParserInput, *, ocr_engine: object | None
@@ -132,12 +143,12 @@ class _LeaseHeartbeats:
 class ParserWorkerStep:
     def __init__(self, *, leases: LeasePort, preparer: PreparePort,
                  first: StartPort, retry: StartPort, storage: StoragePort,
-                 publisher: PublishPort, worker_ref: str,
+                 publisher: PublishPort, failure: FailurePort, worker_ref: str,
                  lease_seconds: int = 60, heartbeat_interval_seconds: float = 10,
                  ocr_engine: object | None = None,
                  extractor: Callable[[VerifiedParserInput], ParsedResult] | None = None) -> None:
         if any(value is None for value in (leases, preparer, first, retry,
-                                            storage, publisher)):
+                                            storage, publisher, failure)):
             raise ValueError("Parser Worker dependencies required")
         if (type(worker_ref) is not str
                 or not fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,127}", worker_ref)
@@ -148,6 +159,7 @@ class ParserWorkerStep:
         self._leases, self._preparer = leases, preparer
         self._first, self._retry = first, retry
         self._storage, self._publisher = storage, publisher
+        self._failure = failure
         self._worker_ref, self._lease_seconds = worker_ref, lease_seconds
         self._heartbeat_interval = heartbeat_interval_seconds
         self._extractor = extractor or (
@@ -181,6 +193,8 @@ class ParserWorkerStep:
                 heartbeats = _LeaseHeartbeats(self._leases, command,
                     self._lease_seconds, self._heartbeat_interval)
                 heartbeats.start()
+                started = None
+                stage = "PREPARE"
                 try:
                     with self._preparer.prepare(command) as prepared:
                         heartbeats.check()
@@ -190,17 +204,21 @@ class ParserWorkerStep:
                                 != (claim.job_id, claim.fencing_token, claim.attempt_no)):
                             raise ParserWorkerError("PARSER_INPUT_CHANGED")
                         starter = self._first if claim.attempt_no == 1 else self._retry
+                        stage = "START"
                         started = starter.start(command, prepared)
                         heartbeats.check()
+                        stage = "EXTRACT"
                         parsed = self._extractor(prepared)
                         if type(parsed) is not ParsedResult:
                             raise ParserWorkerError("PARSER_RESULT_INVALID")
                         heartbeats.check()
+                        stage = "STORE"
                         stored = self._storage.write_once(scope=claim.scope,
                             project_id=claim.project_id, result_ref_id=uuid.uuid4(),
                             content=parsed.canonical_bytes())
                         heartbeats.close()
                         # A short final renewal bridges file fsync and fenced DB publication.
+                        stage = "PUBLISH"
                         self._leases.heartbeat(job_id=claim.job_id,
                             fencing_token=claim.fencing_token, worker_ref=self._worker_ref,
                             lease_seconds=self._lease_seconds)
@@ -208,6 +226,22 @@ class ParserWorkerStep:
                             prepared=prepared, started=started, parsed=parsed,
                             stored=stored)
                         return ParserWorkerStepOutcome("PUBLISHED", published)
+                except Exception as error:
+                    # Never reinterpret a potentially committed publication, an
+                    # uncertain Start transaction, or a lost lease as failure.
+                    if stage in {"START", "PUBLISH"} or heartbeats._failed.is_set():
+                        raise
+                    heartbeats.close()
+                    code, retryable, delay = classify_parser_failure(
+                        error, attempt_no=claim.attempt_no)
+                    self._leases.heartbeat(job_id=claim.job_id,
+                        fencing_token=claim.fencing_token,
+                        worker_ref=self._worker_ref,
+                        lease_seconds=self._lease_seconds)
+                    failed = self._failure.fail(command=command, started=started,
+                        error_code=code, retryable=retryable,
+                        delay_seconds=delay)
+                    return ParserWorkerStepOutcome("FAILED", failed=failed)
                 finally:
                     heartbeats.close()
             except ParserWorkerError:

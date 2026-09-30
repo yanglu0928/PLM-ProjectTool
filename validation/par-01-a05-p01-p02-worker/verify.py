@@ -25,12 +25,14 @@ from plm_assistant.modules.document.application.parse_job_source import (
 )
 from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage
 from plm_assistant.modules.document.infrastructure.parse_attempt_repository import SqlAlchemyParseAttemptRepository
+from plm_assistant.modules.document.infrastructure.parse_failure_repository import SqlAlchemyParseFailureRepository
 from plm_assistant.modules.document.infrastructure.parse_publish_repository import SqlAlchemyParsePublishRepository
 from plm_assistant.modules.document.infrastructure.parse_result_storage import LocalParseResultStorage
 from plm_assistant.modules.jobs.application.lease import JobLeaseService
 from plm_assistant.modules.jobs.application.parse_enqueue import ParseJobBinding, ParseJobRef, ParseJobRequest
 from plm_assistant.modules.jobs.infrastructure.lease_repository import SqlAlchemyJobLeaseRepository
 from plm_assistant.modules.parser.application.prepare_input import PrepareParserInput
+from plm_assistant.modules.parser.application.fail_attempt import FailParserAttempt
 from plm_assistant.modules.parser.application.publish_result import PublishParserResult
 from plm_assistant.modules.parser.application.start_attempt import StartFirstParseAttempt
 from plm_assistant.modules.parser.application.start_retry_attempt import StartRetryParseAttempt
@@ -141,11 +143,15 @@ def main() -> None:
                 publisher = PublishParserResult(unit_of_work=uow, leases=leases_repo,
                     queue=queue, documents=documents, storage=result_store,
                     results=SqlAlchemyParsePublishRepository(), audit=audit, system_actor_id=actor)
+                failure = FailParserAttempt(unit_of_work=uow, leases=leases_repo,
+                    queue=queue, documents=SqlAlchemyParseFailureRepository(),
+                    audit=audit, system_actor_id=actor)
                 def slow_extract(prepared):
                     time.sleep(0.45)
                     return extract_by_profile(prepared, ocr_engine=None)
                 worker = ParserWorkerStep(leases=lease_service, preparer=preparer,
                     first=first, retry=retry, storage=result_store, publisher=publisher,
+                    failure=failure,
                     worker_ref="parser-worker-proof", lease_seconds=6,
                     heartbeat_interval_seconds=0.1, extractor=slow_extract)
                 outcome = worker.step()
@@ -170,7 +176,62 @@ def main() -> None:
                                       ).fetchone()[0] == 1
                     assert db.execute("SELECT count(*) FROM plm.aud_events"
                                       ).fetchone()[0] >= 1
-                print("PASS: actual PG18 claim/heartbeat, verified local input, extract, write-once result, fenced DB publish, audit, idle")
+                invalid = b"\xff"
+                invalid_digest = hashlib.sha256(invalid).digest()
+                file_id2 = uuid.uuid4()
+                stage2, locator2 = file_store.locators(scope="PROJECT", project_id=project,
+                                                        file_object_id=file_id2)
+                with file_store.reserve_staging(stage2) as stream:
+                    stream.write(invalid)
+                    stream.flush()
+                    os.fsync(stream.fileno())
+                file_store.promote(stage2, locator2)
+                with connect(name) as db:
+                    document2 = db.execute("INSERT INTO plm.doc_documents(scope,project_id,"
+                        "document_category,title,original_display_name,created_by) VALUES "
+                        "('PROJECT',%s,'PROJECT_RECORD','Invalid text','invalid.txt',%s) "
+                        "RETURNING document_id", (project, actor)).fetchone()[0]
+                    db.execute("INSERT INTO plm.doc_file_objects(file_object_id,scope,project_id,"
+                        "storage_class,storage_locator,original_name_metadata,created_by,file_state,"
+                        "sha256,size_bytes,detected_mime,available_at) VALUES "
+                        "(%s,'PROJECT',%s,'PERSISTENT',%s,'invalid.txt',%s,'AVAILABLE',%s,%s,"
+                        "'text/plain',statement_timestamp())",
+                        (file_id2, project, locator2, actor, invalid_digest, len(invalid)))
+                    with db.transaction():
+                        version2 = db.execute("INSERT INTO plm.doc_document_versions(document_id,scope,"
+                            "project_id,version_no,file_object_id,content_sha256,size_bytes,detected_mime,"
+                            "source_metadata,created_by) VALUES (%s,'PROJECT',%s,1,%s,%s,%s,"
+                            "'text/plain',%s,%s) RETURNING document_version_id",
+                            (document2, project, file_id2, invalid_digest, len(invalid),
+                             Jsonb({}), actor)).fetchone()[0]
+                        db.execute("UPDATE plm.doc_documents SET latest_version_ref=%s,"
+                            "effective_version_ref=%s WHERE document_id=%s",
+                            (version2, version2, document2))
+                    trace2 = uuid.uuid4()
+                    job2 = db.execute("INSERT INTO plm.job_jobs(owner_module,job_type,scope,"
+                        "project_id,actor_ref,trace_id,payload_refs,idempotency_key,max_attempts) "
+                        "VALUES ('document','DOCUMENT_PARSE','PROJECT',%s,%s,%s,%s,"
+                        "'worker-failure-proof',3) RETURNING job_id",
+                        (project, actor, str(trace2), Jsonb({"document_id": str(document2),
+                         "document_version_id": str(version2)}))).fetchone()[0]
+                request2 = ParseJobRequest(uuid.uuid4(), document2, version2, 1,
+                                           "PROJECT", project, actor, trace2)
+                queue.binding = ParseJobBinding(request2, ParseJobRef(job2, uuid.uuid4()))
+                documents.source = DocumentParseInputSource(
+                    CommittedParseDocumentSource(request2, file_id2, datetime.now(timezone.utc)),
+                    locator2, invalid_digest, len(invalid), "text/plain")
+                failed = worker.step()
+                assert failed.kind == "FAILED" and failed.failed is not None
+                assert failed.failed.job_state == "FAILED"
+                with connect(name) as db:
+                    assert db.execute("SELECT state FROM plm.job_jobs WHERE job_id=%s",
+                                      (job2,)).fetchone()[0] == "FAILED"
+                    assert db.execute("SELECT parse_state,error_code FROM plm.doc_parse_records "
+                        "WHERE job_ref=%s", (job2,)).fetchone() == (
+                            "FAILED", "PARSER_TEXT_ENCODING_INVALID")
+                    assert db.execute("SELECT count(*) FROM plm.doc_parse_result_refs"
+                                      ).fetchone()[0] == 1
+                print("PASS: PG18/file Worker success heartbeat and invalid text atomic failure")
         finally:
             if engine is not None:
                 engine.dispose()
