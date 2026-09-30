@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-09-30：0.1.0.dev0/PLT-PKG-01-A03 新增 Windows11 非发行候选载荷组装与双向 SHA-256 校验工具；后端93 wheel、前端3 dist、非敏感配置示例1文件，入包97/97 Hash 复核，ZIP 247,855,179 字节并含 manifest/清单。`release_eligible=false`，不运行安装/迁移，不改 Schema/API/依赖；可撤组装工具及 Git 忽略本地候选目录回滚。兼容性仅 Windows11 开发候选；正式 License 公钥、运行时/DB/OCR、HTTPS/服务账户、Plugin/安装升级、Server2025/Debian13 与 Gate/UAT 未验，禁止将候选 ZIP 当可用程序包发行。
+
 - 2026-09-30：0.1.0.dev0/PLT-PKG-01-A02 新增 Windows11 前端冻结锁独立 store 离线构建脚本，以两份全新 Git 源隔离在线取包与 `--offline --frozen-lockfile` 验证；Node24/pnpm11.19.0，离线阶段复用157包/下载0，44文件/1012测试、类型检查、Vite 生产构建及 dist 3/3 Hash 复核 PASS。兼容性仅 Windows11 包管理器离线模式；无 Schema/API/依赖版本/生产升级变化，可撤脚本与被忽略本地产物回滚。未物理断网、未验证 Server2025/Debian13、HTTPS静态部署及完整交付包，Gate3/Release 仍待。
 
 - 2026-09-30：0.1.0.dev0/PLT-PKG-01-A01 新增 Windows11 当前后端 wheel-only 离线依赖准备脚本，独立构建目录与 SHA-256 清单；93 wheel/251,474,584 字节，93/93 Hash 复核，Python3.13 x64 全新 venv `--no-index` 安装、`pip check`、核心导入 PASS。兼容性仅 Windows11 本机现行解析；无 Schema/API/依赖版本变化或生产升级，回滚撤脚本和本地忽略构建物。已知限制：传递依赖未来解析未锁定，未物理断网、未验证 Server2025/Debian13、前端、OCR 系统组件/模型、PostgreSQL、License/信任源与完整离线包；Gate3/Release 待。

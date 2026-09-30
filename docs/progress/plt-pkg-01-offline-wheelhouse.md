@@ -46,3 +46,28 @@
 - Node `v24.17.0`、pnpm `11.19.0`；在线冻结锁阶段下载 157 包，第二份全新源目录 `pnpm install --offline --frozen-lockfile` 复用 157 包、下载 0 包。lockfile SHA-256 前后均为 `96ab30bab617bb1349eaf81a4143b22e57a6c3fc8500a06306c81e20c19fb468`。
 - 离线装配后 Vitest 44 文件/1012 测试通过，`vue-tsc`/`tsc` 类型检查与 Vite 8.3.0 生产构建通过。dist 3 文件、319,425 字节；3/3 SHA-256 复算一致，清单文件 SHA-256 `9bbaa8aed5fd8a1628a6376b1a9e9dd7956faa5ff149832b67263008e4dc3a96`。
 - 结论：`WINDOWS11_FRONTEND_PNPM_OFFLINE_PASS`，仅证明本机固定 Node/pnpm 与锁文件下包管理器离线模式可从准备好的 store 重建并构建。在线阶段使用网络；未物理断网，也未验 Windows Server2025/Debian13、正式同源 HTTPS 静态部署、后端信任/License 或完整端到端程序包；Gate3/Release 均保持 OPEN。
+
+## A03 编码前检查：Windows 11 候选载荷及缺项清单
+
+当前 Phase：Phase 2 Platform Core（发行准备，不进入 Gate6）。当前 WBS：PLT-PKG-01-A03。输入基线：A01 后端 93 wheel/Hash 与 A02 前端 3 dist/Hash、DEC-550、V2.1 离线交付最小产物。前置：两次本机包管理器离线检查 PASS；正式服务/信任锚未齐备，因此只能组装非发行候选。
+
+涉及模块：仅打包工具与候选目录，不改业务实体、数据库 Schema、公开 API 或依赖版本。实体：后端依赖、前端静态文件、非敏感配置示例、逐文件哈希和阻断清单；不得包含本地密钥/客户数据/日志/虚拟环境。
+
+权限：普通本地文件读取及新建被忽略的 artifacts 子目录，无 SCM、数据库、生产安装/升级写入。验收：先逐条校验 A01/A02 源 Hash 与文件数量，拒绝越界/意外文件；仅复制明确白名单文件，装配后重算 Hash 并生成 manifest，固定 `release_eligible=false`、列明欠缺的运行时/系统组件/信任源/实机验收。任何错误不生成可误认的正式包。
+
+风险/回滚：源制品来自不同开发检查点，虽应用代码未变但不能认定为同一次正式发行；未含正式公钥、运行时和安装器。候选目录必须与发行目录名称显著区分，不用于客户环境。撤工具及本次新建忽略目录即可回滚；无 Migration 执行或业务数据影响。
+
+## A03 Windows 11 候选载荷结果
+
+复现命令（从仓库根目录，对 A01/A02 的本地运行目录执行）：
+
+```powershell
+& .\tools\assemble_windows11_candidate_payload.ps1 `
+  -BackendRunRoot '<A01 Windows11 backend run directory>' `
+  -FrontendRunRoot '<A02 Windows11 frontend run directory>'
+```
+
+- 本地忽略目录：`artifacts/package-prep/windows11/candidate-20260930-233546-75a50316/`。其中 `NOT-FOR-RELEASE-windows11-candidate.zip` 为 247,855,179 字节，SHA-256 `674d6dd94f8656482f983f72e2565f4ad98ad7364ef401c398e105b8a2096d9e`；大型二进制不提交 Git。
+- 入包前 A01 的 93 条 wheel Hash、A02 的 3 条 dist Hash 逐条验证；入包后 97 个文件（93 wheel、3 dist、1 非 Secret bootstrap 示例）/97 条 Hash 复算一致。ZIP 列表确认 `payload/`、`payload-sha256sums.txt` 和 `manifest.json` 都在包内。后端 wheel 中 Migration `20260930_0051` 可列出，未运行任何 Migration。
+- `manifest.json` 固定 `kind=WINDOWS11_DEVELOPMENT_CANDIDATE_PAYLOAD`、`release_eligible=false`；列明 Python 运行时/安装器、PostgreSQL18/pgvector、OCR 系统组件/已批准模型、正式 License 公钥/客户 License、HTTPS/服务账户、Plugin、升级工具、三平台隔离验收和 Gate/UAT 仍缺。当前正式产品公钥资源并未随 wheel 供给，不能把测试公钥填入或将此包启动为正式客户实例。
+- 结论：`PLT-PKG-01-A03 CANDIDATE_PAYLOAD_INTEGRITY_PASS / RELEASE_BLOCKED`。这只验证允许的开发制品在 Windows11 上能被完整、脱敏地组合与追溯，不证明安装、运行、升级、质量或正式发行。A01/A02 源代码检查点不同，正式发行需从同一已冻结提交重新构建并做完整验收。

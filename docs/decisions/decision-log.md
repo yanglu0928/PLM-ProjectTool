@@ -5838,3 +5838,8 @@
 
 - 日期/Phase/WBS：2026-09-30 / Phase2 / PLT-PKG-01-A02。以 `git archive HEAD` 取当前已提交前端源，在新目录在线 `pnpm install --frozen-lockfile` 填充独立 store；另一份无 node_modules 的新源目录执行 `pnpm install --offline --frozen-lockfile`、测试、类型检查和构建。检查 lockfile 前后 Hash 与 dist Hash 清单；不复用当前开发 `node_modules`。
 - 理由：现有开发目录构建通过不能证明依赖可从可搬运 store 重建；独立两阶段避免已安装依赖掩盖缺包。影响限打包前置和本地忽略制品，无业务/API/Schema/技术栈或依赖变更；失败不得称离线构建通过。回滚撤脚本与本次新建目录，当前前端工作树/历史文件不动。`--offline` 不等于物理断网，也不代表 Server2025/Debian13、静态站点部署或完整发行验收。
+
+## DEC-20260930-550 — 候选载荷仅组装可校验开发制品并列出发行缺项
+
+- 日期/Phase/WBS：2026-09-30 / Phase2 / PLT-PKG-01-A03。只把已验证 SHA-256 的当前 Windows11 后端 wheelhouse、前端 dist 和非 Secret bootstrap 示例复制到新建候选目录，生成逐文件 Hash 清单及 `release_eligible=false` 阻断列表；不加入本地 Secret/客户资料/开发者私钥/测试 License，不触发安装或 Migration。
+- 理由：A01/A02 分别证明当前后端/前端依赖可由本机离线包管理器重建，但二者尚未合并，正式公钥、Python 运行时、PostgreSQL/pgvector、OCR 系统组件/模型、HTTPS 宿主/安装升级工具与三平台验收仍缺。先建立防篡改和缺项可见的载荷基础，避免误发半成品。影响限打包工具及忽略制品，无 Schema/API/技术栈变化；可撤脚本/候选目录回滚，不能将候选标记为正式交付。
