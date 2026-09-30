@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P02-P02 Windows11 新 ASCII 目录模型源/目标10/10 SHA-256一致，嵌入式 Python3.13/PaddleOCR 合成 PNG 与混合 PDF 真实 OCR exit0；仅测试目录，ACL 继承用户写权限，不能作发行目标。无程序、Migration、API 或依赖变化；原候选不变。正式只读 ACL、Server2025、Tesseract安装包 Hash/签名、系统 OCR 集成和 Gate 仍待，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P02-P01 锁定 Paddle det/rec 两个上游 revision，8 个运行文件与 2 个 README 的 Git/LFS 对象及本地缓存标记 10/10 核对通过；审计正例/错 revision/篡改测试通过。无 Migration/API/依赖/安装升级变化；Windows11 本机来源验证，可移除工具/忽略证据回滚。Tesseract 发布目录可见但主机连接超时，安装包 Hash/签名未验；ASCII 目标路径、AGPL 合规、三平台和 Gate 均待，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P01 新增 OCR 离线输入/候选缺项审计，重核 Ghostscript10.08安装包、OCRmyPDF17.12.1旧PoC wheel、四份tessdata与Paddle det/rec模型固定 Hash；Tesseract仅已安装exe/版本可核，最新候选五类均缺；合成2/2 PASS，部署状态仍 INCOMPLETE。无 Migration/API/依赖/正式安装升级变化；仅 Win11 本机证据，可撤工具/忽略 JSON 回滚。Tesseract安装包、Paddle上游revision、ASCII路径、AGPL公开源码与三平台/Gate仍待，`release_eligible=false`。
