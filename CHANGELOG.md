@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P04-P01 PoC OCR 验证器新增可选密集/表格/轻微倾斜版面（默认标准未变），同版面渲染像素一致；Windows11 5.5.3/PSM3 四版面合成术语20/20、PDF/A-2b/deskew exit0，推荐进入后续候选但未改生产配置。5.4/PSM6标准回归5/5；精确 MSYS2/JAR 来源因无当次构建清单保持阻塞。无产品 API/Schema/依赖变化，可撤可选版面回滚；真实质量、签名/许可、正式安装及Gate待，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P03-P03-P03-P01 核对 Tesseract 官方5.5.3固定 tag 的 NSIS 构建脚本/递归依赖脚本 Git blob，列出12个直接MSYS2包、显式GCC运行时；当前61 DLL中21个仅名称/来源族对应，精确字节版本与许可未验。无程序/Migration/API/依赖变化，撤来源族文档可回滚；签名、传递许可、质量/目标环境/Gate待，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P03-P03-P02 新增官方 Tesseract5.5.3 NSIS 全新解包/139文件逐项 Hash 清单审计，61 DLL/4 JAR；仅顶层 Apache LICENSE 和 1 JAR 内嵌许可文件可在包内定位，来源/法律审查未完成。定向合成测试 PASS；无产品 API/Schema/依赖/安装变化，审计工具和忽略证据可撤。签名、质量、传递许可、目标环境/Gate待，`release_eligible=false`。

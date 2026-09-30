@@ -55,15 +55,28 @@ def find_font() -> Path:
     return font
 
 
-def generate_scanned_pdf(path: Path) -> None:
+def generate_scanned_pdf(path: Path, layout: str = "standard") -> None:
     image = Image.new("RGB", (2480, 3508), "white")
     draw = ImageDraw.Draw(image)
     title_font = ImageFont.truetype(str(find_font()), 104)
     body_font = ImageFont.truetype(str(find_font()), 82)
-    draw.text((180, 260), EXPECTED_TERMS[0], font=title_font, fill="black")
-    draw.text((180, 620), EXPECTED_TERMS[1], font=body_font, fill="black")
-    draw.text((180, 900), f"{EXPECTED_TERMS[2]}：{EXPECTED_TERMS[3]}", font=body_font, fill="black")
-    draw.text((180, 1180), EXPECTED_TERMS[4], font=body_font, fill="black")
+    if layout == "table":
+        draw.text((180, 230), EXPECTED_TERMS[0], font=title_font, fill="black")
+        draw.rectangle((160, 520, 2300, 1600), outline="black", width=5)
+        draw.line((1200, 520, 1200, 1600), fill="black", width=5)
+        draw.line((160, 1000, 2300, 1000), fill="black", width=5)
+        draw.text((240, 650), EXPECTED_TERMS[1], font=body_font, fill="black")
+        draw.text((1270, 650), EXPECTED_TERMS[2], font=body_font, fill="black")
+        draw.text((1270, 1120), EXPECTED_TERMS[3], font=body_font, fill="black")
+        draw.text((240, 1120), EXPECTED_TERMS[4], font=body_font, fill="black")
+    else:
+        positions = (260, 620, 900, 1180) if layout != "dense" else (180, 420, 590, 760)
+        draw.text((180, positions[0]), EXPECTED_TERMS[0], font=title_font, fill="black")
+        draw.text((180, positions[1]), EXPECTED_TERMS[1], font=body_font, fill="black")
+        draw.text((180, positions[2]), f"{EXPECTED_TERMS[2]}：{EXPECTED_TERMS[3]}", font=body_font, fill="black")
+        draw.text((180, positions[3]), EXPECTED_TERMS[4], font=body_font, fill="black")
+    if layout == "skewed":
+        image = image.rotate(2.0, resample=Image.Resampling.BICUBIC, fillcolor="white")
     image.save(path, "PDF", resolution=300.0)
 
 
@@ -82,6 +95,7 @@ def main() -> int:
     parser.add_argument("--output-type", choices=("pdf", "pdfa-2"), default="pdf")
     parser.add_argument("--deskew", action="store_true")
     parser.add_argument("--tesseract-pagesegmode", type=int, choices=(3, 4, 6, 11), default=6)
+    parser.add_argument("--layout", choices=("standard", "dense", "table", "skewed"), default="standard")
     args = parser.parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -99,7 +113,7 @@ def main() -> int:
     if args.output_type == "pdfa-2" and ghostscript is None:
         raise RuntimeError("Ghostscript executable was not found")
 
-    generate_scanned_pdf(input_pdf)
+    generate_scanned_pdf(input_pdf, args.layout)
     env = os.environ.copy()
     executable_dirs = [tesseract.parent]
     if ghostscript:
@@ -157,6 +171,7 @@ def main() -> int:
         "output_type": args.output_type,
         "deskew": args.deskew,
         "tesseract_pagesegmode": args.tesseract_pagesegmode,
+        "layout": args.layout,
         "pdfa_validated": (
             "Output file is a PDF/A-2b (as expected)" in completed.stderr
             if args.output_type == "pdfa-2"
