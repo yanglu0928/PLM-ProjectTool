@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P04 核对 `bce-python-sdk 0.9.79` PyPI 官方 wheel/sdist SHA-256 与 209 个共同 Python 源文件逐件一致，确认两发行产物均无独立许可文件；记录旧式 Apache 2.0 元数据及源码头证据，不作许可合规结论。纯文档/来源核查，无 Migration/API/依赖/安装升级变化；仅当前 Win11 本机，撤忽略的源码副本即可回滚。前端/原生组件、本产品许可与法律审查仍待，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P03 生成保留旧包的新 Windows11 非发行候选，将 A08-P02 的 152 份原 wheel 许可材料并入；新 ZIP 17,358 载荷 Hash 全数回读、全新解包导入/93发行元数据/152材料存在通过，定向2/2。无 Migration/API/依赖/正式安装升级变更；仅本机 Win11，撤新工具/忽略目录可回滚。`bce-python-sdk` 精确许可文本、产品许可、前端/原生组件与法律审核仍待，`release_eligible=false`，不得发行。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P02 增加非发行 wheel 许可文件 sidecar 构建/回读工具，原 wheel Hash 复核后保全 152 份文件及逐件/来源 Hash，7/7 合成测试通过。仅本机 Win11 证据，无 Migration/API/依赖、安装升级变更；旧 A07 ZIP 不改，可撤新工具及本地忽略归档回滚。`bce-python-sdk`、产品许可、前端/原生组件与法律审查待，sidecar 尚未并入安装包，`release_eligible=false`。
