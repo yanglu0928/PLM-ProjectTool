@@ -84,4 +84,4 @@ $json = $result | ConvertTo-Json -Depth 10
 $outDir = Split-Path -Parent $OutputPath
 if ($outDir) { New-Item -ItemType Directory -Force -Path $outDir | Out-Null }
 Set-Content -LiteralPath $OutputPath -Value $json -Encoding utf8
-$result | Select-Object dll_count, exact_match_count, release_eligible
+[pscustomobject]$result | Select-Object dll_count, exact_match_count, release_eligible
