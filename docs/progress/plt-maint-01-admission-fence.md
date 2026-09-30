@@ -135,6 +135,15 @@
 
 结果：A06-P02-P02-P01 Windows11 内部 PASS。API、Audit、Parser 三入口在运行窗口登记角色/PID/UTC/包版本/代码树 SHA-256/当前 SID/可执行路径/随机 nonce；正常退出仅删除本次内容和 inode 均匹配的标记，异常退出保留对账。不可用/重解析目录、版本不符和非法角色拒绝。原生双子进程验收实际 Python PID（虚拟环境启动器 PID 可能不同）、Token SID、版本、摘要与可执行路径，正常退出删除、模拟崩溃残留；后端全量1684（3既有跳过）、wheel PASS。测试首轮发现代码摘要根目录误指 modules，改为完整 plm_assistant 包后复验通过。此项仅为自报诊断；同账户可伪造/篡改、运行中代码可变，尚无正式 SCM/目标账户 ACL/Server2025/文件句柄/DB 会话证明，不能允许备份或迁移，CR-PLT-004/Gate3/发行继续 OPEN。
 
+## A06-P02-P02-P02 编码前检查：Windows 自报标记与 OS 候选交叉核验
+
+当前 Phase：Phase 2 Platform Core。当前 WBS：PLT-MAINT-01-A06-P02-P02-P02。输入基线：CR-PLT-004/ADR-012、A06-P02-P01 只读 OS 候选、A06-P02-P02-P01 进程自报标记。两前置均为 Windows11 内部 PASS；正式 SCM/目标账户/Server2025 不具备，仍不得出具备份或迁移许可。
+涉及模块：Platform Windows 只读诊断；不改 API/Worker 业务或数据库。实体：进程观察值与不可信本地 JSON 标记，不新增持久业务实体。API：无。权限：调用者只读 OS 进程和其有权读取的受控 data_root；任何不可见、重解析、畸形或冲突均保持未知/失败关闭。
+验收标准：受限读取标记目录，核对 schema/文件名/PID/角色/SID/可执行路径/包版本/当前代码摘要，与同次 OS 快照的 PID、SID、路径和已知入口命令行交叉；输出仅脱敏状态/计数，恒 `DIAGNOSTIC_ONLY` 和 `backup_or_migration_authorized=false`。测试涵盖匹配、陈旧、PID 复用/篡改、不可见、目录异常及 Windows11 活子进程；后端全量与 wheel。
+风险/回滚：快照与标记不是原子且同账户可伪造，当前代码文件也可能变化；本项绝不证明 SCM 身份、句柄/DB 会话或静止。无 Migration/API/依赖，回滚移除只读交叉核验入口并保留标记供人工对账。
+
+结果：A06-P02-P02-P02 Windows11 内部 PASS。新增独立只读 CLI 和有界严格标记读取器；OS CIM 快照补采 UTC 创建时间，核对 PID/SID/路径/已知入口命令行/版本/代码摘要，识别陈旧、PID 复用、冲突、不可读和不匹配。报告不输出路径或命令行，恒 `DIAGNOSTIC_ONLY`/`backup_or_migration_authorized=false`；合成正向匹配及负例、原生 Windows 子进程使用未知 `-c` 入口时真实拒绝匹配，正常退出标记移除。后端全量1690（3既有跳过）、wheel PASS。原生已知入口正向握手尚待正式服务配置；快照竞态、同账户伪造、SCM/目标账户 ACL/Server2025/句柄/DB 会话未验，CR-PLT-004/Gate3/发行继续 OPEN。
+
 ## PAR-01-A05-P06-P01 编码前检查：Windows OCR 模型路径可诊断限制
 
 当前 Phase：Phase 2 Platform Core。当前 WBS：PAR-01-A05-P06-P01。输入基线：CR-PAR-005 方案 A、现有 `OfflinePaddleOcr` 模型四文件指纹与 Windows Worker 启动链。前置同字节模型中文/ASCII 路径差异与底层异常已在本机复现；正式安装器/目标账户仍缺。

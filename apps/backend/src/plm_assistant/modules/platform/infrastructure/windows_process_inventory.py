@@ -28,6 +28,7 @@ $rows = @(
             name = [string]$process.Name
             executable_path = $process.ExecutablePath
             command_line = $process.CommandLine
+            created_at_utc = if ($process.CreationDate) { $process.CreationDate.ToUniversalTime().ToString('o') } else { $null }
         }
     }
 )
@@ -47,6 +48,7 @@ class ProcessObservation:
     owner_sid: str | None
     executable_path: str | None = field(repr=False)
     command_line: str | None = field(repr=False)
+    created_at_utc: str | None = field(default=None, repr=False)
 
 
 @dataclass(frozen=True, slots=True)
@@ -84,7 +86,9 @@ def assess_processes(observations: tuple[ProcessObservation, ...], *,
                 or process.executable_path is not None
                 and type(process.executable_path) is not str
                 or process.command_line is not None
-                and type(process.command_line) is not str):
+                and type(process.command_line) is not str
+                or process.created_at_utc is not None
+                and type(process.created_at_utc) is not str):
             raise WindowsProcessInventoryError()
         if process.pid == observer_pid:
             continue  # This read-only diagnostic is intentionally running.
@@ -130,6 +134,7 @@ def collect_windows_processes() -> tuple[ProcessObservation, ...]:
         return tuple(ProcessObservation(
             pid=row["pid"], name=row["name"], owner_sid=owner_sid(row["pid"]),
             executable_path=row["executable_path"], command_line=row["command_line"],
+            created_at_utc=row["created_at_utc"],
         ) for row in rows)
     except Exception:
         # Never disclose a process command line, local path or PowerShell output.
