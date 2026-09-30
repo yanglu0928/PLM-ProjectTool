@@ -25,6 +25,8 @@
 
 ## 最近检查点
 
+- 2026-09-30/CR-PAR-004 Windows11 隔离 OCR 环境发现 PaddleX3.7.2 精确要求 PyYAML6.0.2，与项目6.0.3冲突；登记 CR 后对齐并固定传递依赖。`pip check` 无冲突，真实 PP-OCRv5 离线显式模型合成 PNG/混合PDF PASS；后端全量1657（3既有跳过）、wheel 元数据 PASS。物理断网 wheelhouse/独立正式进程/三平台未验，CR 发行结论仍待。
+
 - 2026-09-30/PAR01-A05-P01-P05-A02-P03-A02 Windows Parser CLI 接当前账户 DB/License/SystemActor、显式离线 OCR 模型路径及指纹、SIGINT/SIGTERM/SIGBREAK 协作停止；6项定向、后端全量1657（3既有跳过）、wheel PASS。真实独立进程/正式账户与维护模式未验证，P03/P05/Gate3/包仍待。
 
 - 2026-09-30/PAR01-A05-P01-P05-A02-P03-A01 显式 Parser Worker 组合根接 Auth/Project/License/SystemActor、Document/Audit/Jobs 与离线 OCR 引擎 Port；真实隔离 PostgreSQL18/已提交合成文本 PDF 领 Job→唯一 ParseResultRef/Job成功 PASS。首轮假 PDF 按预期解析失败，换真实合成文件后重跑；单元2、后端全量1651（3既有跳过）、wheel PASS。正式 OCR 模型断网、目标账户、维护模式及进程信号未验证，Gate3/可用包仍待。
