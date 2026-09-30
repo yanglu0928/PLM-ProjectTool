@@ -29,6 +29,19 @@ class ClaimedJob:
 
 
 @dataclass(frozen=True, slots=True)
+class ParserLeasePulse:
+    """A current Parser generation is either renewed or cooperatively cancelling."""
+
+    claim: ClaimedJob
+    state: str
+
+    def __post_init__(self) -> None:
+        if type(self.claim) is not ClaimedJob or self.claim.job_type != "DOCUMENT_PARSE" \
+                or self.state not in {"RUNNING", "CANCEL_REQUESTED"}:
+            raise JobLeaseError("INCONSISTENT_LEASE")
+
+
+@dataclass(frozen=True, slots=True)
 class ClosedJobAttempt:
     """Jobs-owned proof of one predecessor to a live leased attempt."""
 
@@ -57,6 +70,9 @@ class JobLeaseRepositoryPort(Protocol):
                          lease_seconds: int) -> ClaimedJob | None: ...
     def heartbeat(self, transaction: object, *, job_id: uuid.UUID,
                   fencing_token: int, worker_ref: str, lease_seconds: int) -> None: ...
+    def pulse_parse(self, transaction: object, *, job_id: uuid.UUID,
+                    fencing_token: int, worker_ref: str,
+                    lease_seconds: int) -> ParserLeasePulse: ...
     def finish(self, transaction: object, *, job_id: uuid.UUID,
                fencing_token: int, worker_ref: str) -> ClaimedJob: ...
     def retry_or_fail(self, transaction: object, *, job_id: uuid.UUID,
@@ -105,6 +121,21 @@ class JobLeaseService:
             self._repository.heartbeat(tx, job_id=job_id, fencing_token=fencing_token,
                                        worker_ref=worker_ref, lease_seconds=lease_seconds)
             tx.commit()
+
+    def pulse_parse(self, *, job_id: uuid.UUID, fencing_token: int,
+                    worker_ref: str, lease_seconds: int) -> ParserLeasePulse:
+        self._validate_worker(worker_ref)
+        if not 1 <= lease_seconds <= 3600:
+            raise JobLeaseError("INVALID_LEASE_DURATION")
+        with self._unit_of_work() as tx:
+            pulse = self._repository.pulse_parse(tx, job_id=job_id,
+                fencing_token=fencing_token, worker_ref=worker_ref,
+                lease_seconds=lease_seconds)
+            if type(pulse) is not ParserLeasePulse:
+                raise JobLeaseError("INCONSISTENT_LEASE")
+            pulse.__post_init__()
+            tx.commit()
+            return pulse
 
     def finish(self, *, job_id: uuid.UUID, fencing_token: int,
                worker_ref: str, publish: Callable[[object, ClaimedJob], None]) -> None:

@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20260930-514 — PAR-01-A05-P01-P04 Parser 协作取消分层
+
+- Date/WBS：2026-09-30 / Phase2 `PAR-01-A05-P01-P04`，先 `P04-P01` Jobs 当前租约取消识别/确认，再 `P04-P02` Document/Audit 同事务与 Worker 检查点。输入 ADR-007 的协作取消、冻结 Job `CANCEL_REQUESTED`、现有 Audit Owner 取消状态机和 P02/P03 Parser Worker；Gate2及前置满足。涉及 Jobs/Parser/Document/Audit 内部 Port，不增公开 API/权限、Schema/Migration、依赖或外发。
+- 冲突/方案：现有通用 `heartbeat` 仅允许 RUNNING，若请求方将 Job 改成 CANCEL_REQUESTED，Parser 后台线程会误报心跳不可用并停止，而无 Job/ParseRecord 取消终结。不能让 Parser 直写 Jobs 表，也不能把取消按失败重试。选择 Jobs 自有 `pulse_parse`：RUNNING 续租，CANCEL_REQUESTED 只回报并停止续租，保留有限原租约供 Worker 在下一个安全检查点确认；已过期则留给独立恢复，不因线程仍活着续租无限期。Jobs `acknowledge_parse_cancel` 仅在当前 token/Worker/活租约、原请求三字段、正确 Owner/JobType 下关闭 Job/Lease/Attempt，供后续 Parser 同 UOW 调用。
+- 验收/回滚：P01 在真实 PG18 证明 RUNNING 续租、CANCEL_REQUESTED 不续租、当前代可确认、旧 token/其他 Owner/过期拒写及 Audit 常规心跳不变；P02 再验证 Document/Audit/Jobs 同事务与 Worker 安全点。原取消请求授权 Owner 尚只为 Audit Export，Parser 用户请求入口另列后续，不能将 P01/P02 称为端到端用户取消。撤销未装配新 Port 可回滚；已确认终态历史不可回退，Gate3不变。
+- P01 Executed：Jobs Service/Repository 新增 Parser 专用 `pulse_parse` 和仅供 Caller UOW 的当前租约确认；不改通用 heartbeat/Audit 语义。定向 Jobs Lease5、Python3.13 后端全量1628（3既有跳过）、Windows11 隔离 PG18 RUNNING 续租、请求取消后不续租、当前确认/旧或过期拒绝/其他 Owner 不可用、wheel PASS；随机库清理/PoC PG恢复停止。仅 Jobs 内部能力，P04整体未完成，Parser Worker 还未调用新 Port。
+
 ## DEC-20260930-513 — PAR-01-A05-P01-P03 Parser Worker 失败分类与事务收口
 
 - Date/WBS：2026-09-30 / Phase2 `PAR-01-A05-P01-P03`。前置 A05-P01-P02 单步成功与续租 PASS；输入为 ADR-007 至少一次/有界重试、DM-03 ParseRecord 历史和现有 Jobs `retry_or_fail`。涉及 Parser Application、Document 自有 ParseRecord 失败 Port、Jobs 当前租约与 Audit；无公开 API/权限/ORM/Migration/依赖或外发。

@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import unittest
+import uuid
 
-from plm_assistant.modules.jobs.application.lease import JobLeaseError, JobLeaseService
+from plm_assistant.modules.jobs.application.lease import (
+    ClaimedJob, JobLeaseError, JobLeaseService, ParserLeasePulse,
+)
 
 
 class _UnusedRepository:
@@ -33,6 +36,18 @@ class JobLeaseValidationTests(unittest.TestCase):
             with self.subTest(worker=worker, seconds=seconds), self.assertRaises(JobLeaseError):
                 self.service.claim_next_parse(worker_ref=worker,
                                               lease_seconds=seconds)
+
+    def test_parse_pulse_rejects_invalid_input_before_transaction(self) -> None:
+        for worker, seconds in (("", 60), ("worker", 0), ("worker", 3601)):
+            with self.subTest(worker=worker, seconds=seconds), self.assertRaises(JobLeaseError):
+                self.service.pulse_parse(job_id=uuid.uuid4(), fencing_token=1,
+                                         worker_ref=worker, lease_seconds=seconds)
+
+    def test_parse_pulse_rejects_other_job_type(self) -> None:
+        claim = ClaimedJob(uuid.uuid4(), "AUDIT_EXPORT", "PROJECT", uuid.uuid4(),
+                           {}, str(uuid.uuid4()), 1, 1)
+        with self.assertRaises(JobLeaseError):
+            ParserLeasePulse(claim, "RUNNING")
 
 
 if __name__ == "__main__":
