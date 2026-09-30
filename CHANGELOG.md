@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-09-30：0.1.0.dev0/PLT-PKG-01-A02 新增 Windows11 前端冻结锁独立 store 离线构建脚本，以两份全新 Git 源隔离在线取包与 `--offline --frozen-lockfile` 验证；Node24/pnpm11.19.0，离线阶段复用157包/下载0，44文件/1012测试、类型检查、Vite 生产构建及 dist 3/3 Hash 复核 PASS。兼容性仅 Windows11 包管理器离线模式；无 Schema/API/依赖版本/生产升级变化，可撤脚本与被忽略本地产物回滚。未物理断网、未验证 Server2025/Debian13、HTTPS静态部署及完整交付包，Gate3/Release 仍待。
+
 - 2026-09-30：0.1.0.dev0/PLT-PKG-01-A01 新增 Windows11 当前后端 wheel-only 离线依赖准备脚本，独立构建目录与 SHA-256 清单；93 wheel/251,474,584 字节，93/93 Hash 复核，Python3.13 x64 全新 venv `--no-index` 安装、`pip check`、核心导入 PASS。兼容性仅 Windows11 本机现行解析；无 Schema/API/依赖版本变化或生产升级，回滚撤脚本和本地忽略构建物。已知限制：传递依赖未来解析未锁定，未物理断网、未验证 Server2025/Debian13、前端、OCR 系统组件/模型、PostgreSQL、License/信任源与完整离线包；Gate3/Release 待。
 
 - 2026-09-30：0.1.0.dev0/PLT-MAINT-01-A06-P02-P03-P03-A02-P02-A02 新增 Windows 固定服务 SCM 保存配置只读对账入口：与已校验命令计划比较 own-process、手动启动、normal error、完整 binary path 和交互输入的期望账户；缺服务/差异仅报固定原因码，不回显路径、账户或 PID，永不授权备份/迁移。Windows11 合成正反例及原生缺失服务定向6、后端1729（3既有跳过）、wheel PASS。无 Schema/API/依赖/服务写入或生产升级；可撤独立入口回滚。真实 PLM 服务匹配、目标账户/启停/静止、Server2025、Gate3/发行包仍待。

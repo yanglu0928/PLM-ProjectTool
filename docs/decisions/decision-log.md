@@ -5833,3 +5833,8 @@
 
 - 日期/Phase/WBS：2026-09-30 / Phase2 / PLT-PKG-01-A01。沿 POC-01 已验证的 Windows Python3.13 方法，构建当前后端 wheel、解析其已锁版本依赖并仅下载 wheel，不允许源包现场编译；产物及 SHA-256 留在被 Git 忽略的本地构建目录，版本库仅记录脚本和脱敏验证摘要。以全新虚拟环境执行 `--no-index` 安装、`pip check`、最小导入与元数据版本检查。
 - 理由：POC-01 的 109 文件 wheelhouse 证明当时输入，但当前 `apps/backend/pyproject.toml` 已有新依赖，不能直接当现版本完整发行集合。影响限打包前置，无架构/Schema/API/依赖版本变化；失败时保留诊断、不可标离线 PASS；回滚撤脚本和新生成的忽略产物，不触碰已安装系统或生产数据。此次 Windows11 成功也不代表物理断网、Server2025/Debian13 或完整发行 Gate 通过。
+
+## DEC-20260930-549 — 前端离线构建使用冻结 lockfile 与独立 pnpm store
+
+- 日期/Phase/WBS：2026-09-30 / Phase2 / PLT-PKG-01-A02。以 `git archive HEAD` 取当前已提交前端源，在新目录在线 `pnpm install --frozen-lockfile` 填充独立 store；另一份无 node_modules 的新源目录执行 `pnpm install --offline --frozen-lockfile`、测试、类型检查和构建。检查 lockfile 前后 Hash 与 dist Hash 清单；不复用当前开发 `node_modules`。
+- 理由：现有开发目录构建通过不能证明依赖可从可搬运 store 重建；独立两阶段避免已安装依赖掩盖缺包。影响限打包前置和本地忽略制品，无业务/API/Schema/技术栈或依赖变更；失败不得称离线构建通过。回滚撤脚本与本次新建目录，当前前端工作树/历史文件不动。`--offline` 不等于物理断网，也不代表 Server2025/Debian13、静态站点部署或完整发行验收。
