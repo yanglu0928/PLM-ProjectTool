@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A02 新增 Windows11 非发行 OCR 原生/模型旁包构建与校验；固定 Tesseract139、Ghostscript654、tessdata4、Paddle10 来源，807/807归档和全新 ASCII 解包 Hash 通过，合成表格 PDF/A-2b/`--deskew` 术语5/5及 Paddle PNG/混合PDF PASS，越界/冒充发行2/2拒绝。无 Migration/API/正式依赖或安装变化，旧候选不覆盖，可弃用新本机忽略 ZIP 回滚。原生许可/签名、AGPL公开源码、ACL/三平台/Gate待，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A01 新增 Ghostscript10.08.0 portable 来源审计，固定官方安装包独立解包与现有654/654文件 SHA-256 一致、CLI版本及 `doc/COPYING` AGPLv3文本回读 PASS；合成正例/篡改/额外文件拒绝。无 Migration/API/正式依赖/安装变化，可撤工具及忽略清单回滚。源码公开与许可审查、原生组件/ACL/三平台/Gate待，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P02-A02 扩展可选联合 OCR 轮子的一次性嵌入式旁装，保持旧93包入口；Windows11 官方 Python3.13.15 私有运行时106发行元数据/清洁 PATH 导入、合成表格 PDF/A-2b/`--deskew` 术语5/5 PASS，旧路径负例2/2及联合输入越界拒绝。无 Migration/API/正式依赖/生产安装变化；旧候选未覆盖，新忽略目录可弃用回滚。原生组件仍借用 PoC 路径，许可/ACL/真实质量/三平台/Gate 待，`release_eligible=false`。
