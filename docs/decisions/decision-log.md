@@ -6096,3 +6096,11 @@
 - 理由/影响/回滚/验证计划：防止跨会话、跨项目和改页大小重放，且同一时间戳分页不漏/不重。仅 Evidence API 内部 Codec，无 Schema/Migration、冻结 API Breaking Change 或第三方依赖；未挂载可移除回滚。验证合法往返、逐字段篡改、跨会话/Scope/页大小、非规范编码及UTC位置；未执行不记 PASS。
 
 - 执行结果：独立 HMAC-SHA256 Codec 已实现，位置时间规范化为 UTC 微秒，解码时重算规范 token 并拒绝篡改/跨会话、项目、Scope、页大小或密钥。定向 3 项通过；当前账户密钥引用、公开 GET/生产装配和 Gate3 均未完成。无 Migration/公开 API 变化。
+
+## DEC-20261001-595 — Evidence 元数据 GET 采用可选挂载和最小投影
+
+- 日期/Phase/WBS：2026-10-01 / Phase2 / EVD-01-A03-P04-A02-P02。输入冻结 EVIDENCE_LIST/GET、A01 受权元数据 Port 和 P01 独立签名游标；前置 PASS。
+- 决策：新增项目/全局两组明确 GET 路由，严格 Host、Session、License/项目权限、查询参数和游标绑定；列表返回受限显示摘录，详情仅返回必要 EvidenceView 字段，不返回物理路径/正文。路由只可选注入 `create_app`，正式 Windows 组合须等待专用密钥目标账户来源和独立验收后再装配。
+- 理由/影响/回滚/验证计划：避免未供给专用密钥时默认打开读取路径；非 Breaking 实现冻结 API，无 Schema/Migration/新依赖。可撤可选路由并保留历史记录回滚；验证默认 404、项目/全局权限、分页及恶意游标/未知参数、License 失败和隔离 PostgreSQL 真实记录。未执行不记 PASS。
+
+- 执行结果：两组明确列表/详情路由已作为可选注入，列表短摘录、详情最小字段与强 ETag，默认应用仍404。HTTP合同4项覆盖双页、默认关闭、全局路径、Session/篡改/未知查询、License/资源错误；隔离PG18真实Evidence记录和底层真实Session/Project权限、合成HTTP Session边界的分页/跨项目/License链路通过。正式当前账户密钥与生产组合未接线；Gate3不变。

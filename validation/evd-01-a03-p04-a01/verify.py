@@ -12,11 +12,17 @@ from pathlib import Path
 
 import psycopg
 from alembic import command
+from fastapi.testclient import TestClient
 from psycopg.types.json import Jsonb
 from sqlalchemy.engine import URL
 
 from plm_assistant.modules.auth.infrastructure.deployment_read_access import SqlAlchemyDeploymentReadAccess
 from plm_assistant.modules.auth.infrastructure.project_read_access import SqlAlchemyProjectReadAccess
+from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
+from plm_assistant.modules.auth.application.session_service import SessionError
+from plm_assistant.entrypoints.api import create_app
+from plm_assistant.modules.evidence.api.list_cursor import EvidenceListCursorCodec
+from plm_assistant.modules.evidence.api.read_evidence import create_evidence_read_router
 from plm_assistant.modules.evidence.application.read_evidence import EvidenceReadError, EvidenceReadQuery, EvidenceReadService
 from plm_assistant.modules.evidence.infrastructure.read_repository import SqlAlchemyEvidenceReadRepository
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
@@ -39,6 +45,17 @@ class Guard:
             from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
             raise RuntimeLicenseError("EXPIRED")
         return object()
+
+
+class Sessions:
+    def validate(self, token):
+        if token not in (b"p" * 32, b"o" * 32, b"a" * 32):
+            raise SessionError("AUTH_SESSION_EXPIRED")
+        return object()
+
+
+def headers(token: bytes) -> dict[str, str]:
+    return {"cookie": "plm_session=" + token.hex()}
 
 
 def user(db, name: str, token: bytes, *, admin: bool = False):
@@ -180,9 +197,32 @@ def verify(port: int) -> None:
             assert error.code == "LICENSE_OPERATION_DENIED"
         else:
             raise AssertionError("expired License read Evidence")
+        guard.enabled = True
+        router = create_evidence_read_router(
+            sessions=Sessions(), evidence=service,
+            origins=LoginOriginPolicy(["http://localhost"]),
+            cursors=EvidenceListCursorCodec(b"e" * 32),
+        )
+        path = f"/api/v1/projects/{project}/evidence"
+        with TestClient(create_app(evidence_read_router=router),
+                        base_url="http://localhost") as client:
+            first = client.get(path + "?page_size=1", headers=headers(pm_token))
+            assert first.status_code == 200, first.text
+            cursor = first.json()["data"]["next_cursor"]
+            assert cursor
+            second = client.get(path + "?page_size=1&cursor=" + cursor,
+                                headers=headers(pm_token))
+            assert second.status_code == 200, second.text
+            assert second.json()["data"]["items"][0]["evidence_id"] != first.json()["data"]["items"][0]["evidence_id"]
+            detail = client.get(path + "/" + str(ids[0]), headers=headers(pm_token))
+            assert detail.status_code == 200 and "display_excerpt" not in detail.json()["data"]
+            assert client.get(path, headers=headers(outsider_token)).status_code == 404
+            assert client.get("/api/v1/global/evidence", headers=headers(admin_token)).status_code == 200
+            guard.enabled = False
+            assert client.get(path, headers=headers(pm_token)).status_code == 403
     finally:
         runtime.dispose()
-    print("PASS: isolated PG18 Evidence metadata keyset, Session/project isolation, admin and License")
+    print("PASS: isolated PG18 Evidence metadata internal+HTTP keyset, Session/project isolation, admin and License")
 
 
 def main() -> None:
