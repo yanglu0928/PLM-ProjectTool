@@ -6074,3 +6074,9 @@
 - 日期/Phase/WBS：2026-10-01 / Phase2 / EVD-01-A03-P03-A03。输入冻结 API-02 项目/全局 `EVIDENCE_CREATE`、S/L/C/I/A 控制、内部候选创建 PASS。选择两条明确路径的可选 FastAPI 路由，沿用现有可信 Origin、Session/CSRF、Idempotency-Key、严格 JSON 与安全响应；默认应用不挂载，生产组合根不接线。请求字段只含固定 Document/Version、typed locator、显示标签/可选摘录、可选 ParseRecord，不接收 actor/scope/eligibility 由客户端伪造。新增冻结错误码的运行映射；来源 SHA 漂移对外使用 `EVIDENCE_FINGERPRINT_MISMATCH`。
 - 理由/影响：先验证 HTTP 合同与数据库写链，避免在正式信任源缺失时开放生产入口。仅可选路由、入口注入点、错误码与上一步内部来源漂移码校正；无 Schema/Migration、新依赖或冻结 API Breaking Change。回滚为撤销可选装配，默认 404 与既有历史记录不变。
 - 验证：HTTP 合同 4 项覆盖默认关闭、项目/全局 201、Origin/Session/CSRF/Key、畸形/权限/License 映射；隔离 PostgreSQL18 合成 Session/Access 下的 HTTP→Service→Evidence/Receipt/Audit 创建/重放、撤权 404 和审计失败回滚；后端 1,755 项（3 既有跳过）通过。正式真实 Session/Document 来源组合、Windows Server 2025/Debian、正式 License 信任源及 Gate3 未验。
+
+## DEC-20261001-592 — Evidence 只在 Windows 显式写组合挂载
+
+- 日期/Phase/WBS：2026-10-01 / Phase2 / EVD-01-A03-P03-A04。输入 A02 内部候选创建、A03 可选 HTTP 及现有 DocumentRead/PrepareDownload/固定ParseResult私有存储、Auth Session/项目角色、License Guard、Audit/收据。选择仅在 `--platform-write` 的受信任组合中装配 Evidence 创建；默认登录专用与 `--platform` 只读不挂载。Document 文件和 Parser 私有结果都经 Document 所有的应用 Port 获取，Evidence 不直连 Document 表或路径。没有新环境变量、Secret 提供方式、Schema/API/依赖变化。
+- 原因/影响/回滚：复用已有生产组合信任门禁，避免半装配入口；若目标账户密钥/License/数据根不可用，原组合根仍按既有失败关闭。回滚仅撤销新路由装配并保留历史 Evidence/Audit；不物理删除业务数据。
+- 验证：全新隔离 PostgreSQL18 合成用户、真实 Session/CSRF 数据、PROJECT PM/外部用户、真实磁盘 Document、成功 ParseRecord/私有 Parser 结果、合成 License/Windows Vault 游标源；显式写模式整文档与真实节点 201、同 Key 重放、单条 Audit、外部用户和降权后重放404、License403，默认/只读404。临时库/文件/进程停止清理。仅 Windows11 合成信任源；正式目标账户凭据、公钥/可信时间、Server2025/Debian、性能与 Gate3 未验。

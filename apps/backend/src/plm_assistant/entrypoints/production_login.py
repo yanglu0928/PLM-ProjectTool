@@ -201,6 +201,15 @@ from plm_assistant.modules.document.api.download_version import create_document_
 from plm_assistant.modules.document.application.read_documents import DocumentReadService
 from plm_assistant.modules.document.application.prepare_download import PrepareDownloadService
 from plm_assistant.modules.document.infrastructure.read_repository import SqlAlchemyDocumentReadRepository
+from plm_assistant.modules.document.application.read_parse_result import DocumentParseResultReadService
+from plm_assistant.modules.document.infrastructure.parse_result_read_repository import SqlAlchemyParseResultReadRepository
+from plm_assistant.modules.document.infrastructure.parse_result_storage import LocalParseResultStorage
+from plm_assistant.modules.evidence.api.create_evidence import create_evidence_create_router
+from plm_assistant.modules.evidence.application.create_access import EvidenceCreateAccess
+from plm_assistant.modules.evidence.application.create_evidence import EvidenceCreateService
+from plm_assistant.modules.evidence.application.document_source_proof import DocumentEvidenceProofService
+from plm_assistant.modules.evidence.application.parsed_node_proof import ParsedNodeEvidenceProofService
+from plm_assistant.modules.evidence.infrastructure.create_repository import SqlAlchemyEvidenceCreateRepository
 from plm_assistant.modules.document.application.create_upload_intent import CreateUploadIntentService
 from plm_assistant.modules.document.application.upload_access import DocumentUploadAccess
 from plm_assistant.modules.document.infrastructure.upload_intent_repository import SqlAlchemyUploadIntentRepository
@@ -356,6 +365,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         document_version_read_router = None
         document_parse_read_router = None
         document_download_router = None
+        evidence_create_router = None
         if include_secret_read:
             from plm_assistant.entrypoints.windows_license_runtime import (
                 create_windows_license_services,
@@ -669,6 +679,38 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 sessions=sessions, departments=department_deactivates, origins=origins,
             )
             if include_secret_write:
+                evidence_downloads = PrepareDownloadService(
+                    reader=document_reads, storage=LocalFileStorage(settings.data_root),
+                    unit_of_work=runtime.unit_of_work, audit=audit,
+                )
+                evidence_results = DocumentParseResultReadService(
+                    documents=evidence_downloads,
+                    metadata=SqlAlchemyParseResultReadRepository(),
+                    storage=LocalParseResultStorage(settings.data_root),
+                    unit_of_work=runtime.unit_of_work,
+                )
+
+                def evidence_service(token: bytes, csrf: bytes) -> EvidenceCreateService:
+                    return EvidenceCreateService(
+                        unit_of_work=runtime.unit_of_work,
+                        access=EvidenceCreateAccess(
+                            session_token=token, csrf_token=csrf,
+                            session_access=SqlAlchemyProjectWriteAccess(),
+                            admin_access=SqlAlchemyLicenseImportAccess(),
+                            project_facts=SqlAlchemyProjectAuthorizationRepository(),
+                        ),
+                        versions=document_reads,
+                        document_proof=DocumentEvidenceProofService(
+                            document_snapshots=evidence_downloads,
+                        ),
+                        node_proof=ParsedNodeEvidenceProofService(results=evidence_results),
+                        repository=SqlAlchemyEvidenceCreateRepository(),
+                        receipts=SqlAlchemyIdempotencyReceipts(), audit=audit,
+                    )
+
+                evidence_create_router = create_evidence_create_router(
+                    sessions=sessions, origins=origins, service_factory=evidence_service,
+                )
                 password_capacity = get_process_password_capacity(slots=settings.password_kdf_slots)
                 password_reset_results = SqlAlchemyPasswordResetResults(verifier=verifier)
                 password_reset_router = create_password_reset_router(sessions=sessions, origins=origins,
@@ -912,6 +954,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             document_version_read_router=document_version_read_router,
             document_parse_read_router=document_parse_read_router,
             document_download_router=document_download_router,
+            evidence_create_router=evidence_create_router,
             maintenance_admission=maintenance_admission,
             shutdown_callback=shutdown,
         )

@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/EVD-01-A03-P03-A04 将 Evidence 候选创建装入 Windows 显式写组合，复用 Document 固定下载/私有解析结果、当前 Session/角色、License 与 Audit/收据；登录专用和只读模式仍 404。兼容性：无公开 API Breaking Change、Schema/依赖不变；升级：无 Migration。验证：隔离 PostgreSQL18 合成信任源下整文档/真实解析节点 201、重放、权限/License 拒绝、临时资源清理；后端 1,755 项（3 既有跳过）及 wheel SHA-256 `34747bb8…` 通过。已知问题：正式目标账户信任材料、Server2025/Debian、性能和Gate3未通过。
+
 - 2026-10-01：0.1.0.dev0/EVD-01-A03-P03-A03 增加可选 Evidence 候选 POST（项目/全局明确路径），固定版本/typed locator、Session/CSRF/幂等及安全 201 投影；默认应用仍 404，生产组合未挂载。校正来源摘要漂移为冻结错误码。兼容性：非 Breaking、无 Schema/依赖变化；升级：无 Migration。验证：HTTP 合同4项、隔离PostgreSQL18合成HTTP写链及后端1,755项（3既有跳过）通过。已知问题：正式 Session/Document/License 组合、目标平台与Gate3未通过。
 
 - 2026-10-01：0.1.0.dev0/EVD-01-A03-P03-A02 增加 Evidence Candidate 内部原子创建：来源证明、写事务权限/固定版本复核、幂等收据与 Audit；节点证明绑定源 SHA，重放保持原 CANDIDATE 响应。兼容性：仅内部接口，无公开 API/Schema/依赖变化。升级：无 Migration，既有数据不改。验证：定向 5、隔离 PostgreSQL18 创建/重放/撤权/审计回滚、后端 1,751 项（3 既有跳过）通过。已知问题：正式 Session 组合、HTTP 接线、安装/平台/Gate3 未通过。
