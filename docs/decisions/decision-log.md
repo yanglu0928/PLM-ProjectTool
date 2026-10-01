@@ -6133,3 +6133,10 @@
 - 证据：冻结模型禁止模板独立成为客户事实，冻结资格 API 却没有 Binding 用途；当前 Evidence 事务也缺受权 Document 类别/固定版本 Port。
 - 决定：先补 Document 同事务来源事实 Port。首版模板只保留候选/结构参考或判为不合格，不允许直接升为 ELIGIBLE；非模板资格必须复验当前来源、权限与固定版本。原冻结提交不追写，后续实现和验收分别登记。
 - 影响/回滚：不变更公开 API 或现有行；后续若有历史模板 ELIGIBLE，只读清点并人工复核，不自动改写。可关闭尚未开放的资格路由，保留审计历史。当前仅完成决策，Gate 3 不变。
+
+# DEC-20261001-600：资格未知回执采用原操作者收据回查
+
+- Date/WBS：2026-10-01 / EVD-01-A04-P03-A08-P06；CR：[CR-EVD-004](../changes/CR-EVD-004-eligibility-operation-lookup.md)。
+- Decision：以请求体中的原操作号，在当前 Session/CSRF/License/角色/Evidence Scope 复验后只读查询同 actor/project/operation 的已完成收据；未见收据只能返回 `UNCONFIRMED`。不扩大 CustomerManager 审计权限，不在浏览器持久化理由或自动重发。
+- Reason/Impact：现有 Audit 无操作号，当前 Evidence 状态不是首次回执；新路径是 V1 非 Breaking API Scope 增量，原冻结提交不变。
+- Rollback/Verification：关闭可选路由并保留历史；按 CR 验收只读、权限、并发、事务、HTTP/平台/前端及真实浏览器。当前仅设计登记，不标实现 PASS。
