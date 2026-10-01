@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P18-A02 新增随包默认健康API与前端静态文件隔离HTTP烟测；21,103件布局Hash后live/ready 200/UP、默认Project 404，index/JS/CSS网络字节与文件一致，子进程退出，单元2/2。首次HTTP头大小写误判已修正并重跑。兼容性：无正式API/Schema/Migration/SCM变化，可撤脚本回滚；生产组合、HTTPS/License/业务UAT/Server2025/Gate仍待，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P18-A01 新增随包Alembic空库验证工具：固定ZIP/隔离安装布局21,103件Hash、临时PG18空库迁移到`20260930_0051`、vector0.8.6和72张表回读、停机清理PASS，单元3/3。兼容性：不修改ORM/Migration/API/服务/现有DB，可弃用验证工具回滚；正式有数据升级、备份恢复、License/许可、Server2025/质量/Gate仍待，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P17 新增Windows非发行候选到隔离安装布局的显式映射与全量验证；21,103项复制/读盘Hash、PP-OCRv5模型指纹、嵌入式后端与PG18.6/Tesseract5.5.3/Ghostscript10.08.0、三服务只读计划通过，单元2/2。首次脏暂存和目标回读索引错误均失败关闭，修正后新目录全程重跑通过。兼容性：原ZIP/正式安装/API/Schema/Migration不变，弃用临时目录可回滚；目标账户/License/许可源码/正式服务/Server2025/Gate仍待，`release_eligible=false`。
