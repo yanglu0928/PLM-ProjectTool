@@ -5909,3 +5909,7 @@
 ## DEC-20261001-565 — 离线候选到Windows安装目录使用显式逐族映射
 
 - 日期/Phase/WBS：2026-10-01 / Phase2 / PLT-PKG-01-A09-P17。候选根含 `runtime/pgsql/frontend/ocr/config/third-party-licenses`，而Windows服务配置模板引用 `C:\PLMTool\app\models`；选择明确映射：Python→`runtime/python`、PG→`runtime/pgsql`、前端→`app/frontend`、OCR模型→`app/models`、Tesseract/Ghostscript→`app/ocr`、配置→`config`、许可文本→`app/third-party-licenses`。先仅在新ASCII Temp目录复制并按原载荷逐件Hash；只生成纯合成 `bootstrap.rehearsal.yaml` 验证服务命令计划，不改 `C:\PLMTool`、SCM、数据库或正式License。理由：直接原样解包无法满足模型配置目录，隐式搬运会使安装清单无法追踪。影响仅非发行装配验证；正式安装器须复用已验映射并另行核ACL/账户/签名。回滚弃用新临时装配目录及工具，历史ZIP/冻结Schema/API保持不变。
+
+## DEC-20261001-566 — HTTPS同源边界候选须独立于三个PLM应用服务
+
+- 日期/Phase/WBS：2026-10-01 / Phase2 / PLT-PKG-01-A09-P18-A03；正式差异见`CR-PKG-005`。P18-A02证明静态文件和默认API在两loopback端口各自可用，但前端相对API路径与同源Cookie、冻结HTTPS边界在当前包内没有共同入口。选择先验证跨平台Caddy作为**独立Web边界候选**，保留API回环和三个PLM应用服务角色；不把Vite开发代理或标准库HTTP服务器当正式部署。理由：避免破坏现有Auth Host/Origin与安全监听边界；新增依赖/第四项外部服务的版本、许可、证书/ACL和离线三平台验收须单独完成。回滚弃用未投产PoC与新候选，不修改P15历史、冻结API/Schema；任何生产操作另需备份/服务静止。
