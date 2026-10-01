@@ -17,6 +17,8 @@
 
 [原始来源字节核验](../progress/plt-pkg-01-a09-p45-a02-native-license-source-bytes.md)已从固定 MSYS2 包/上游源码归档读回全部 61 条矩阵文本，得到 42 个不同正文哈希；这是新候选侧载的技术输入，尚未改旧包或形成已批准的原生 NOTICE。
 
+[P45-A03 新非发行候选](../progress/plt-pkg-01-a09-p45-a03-native-ocr-notice-candidate.md)已另行侧载 42 份去重原文及 61 条逐组件映射，原 P43 候选及本草案的基准 SHA 不变。该技术材料仍未取得许可证适用性、产品最终 NOTICE 或发行法律审结；新候选的 `release_eligible=false`。
+
 第三方证据目录共有 190 个文件，其中包括许可证文本、SBOM 与校验文本；“190”不是已审结的许可证数量。源码目录有 Caddy、Go 标准库和 Ghostscript 三份归档。候选字节和数量的复核见 [发行证据差异记录](../progress/plt-pkg-01-a09-p43-a06-release-obligation-delta.md)；[Caddy 149 项审阅队列](../progress/plt-pkg-01-a09-p29-caddy-sbom-review-queue.csv)和[34 项原生 PE 矩阵](../progress/plt-pkg-01-a08-p09-p05-p03-a07-p03-no-jbig-license-evidence.csv)保留逐项来源。
 
 ## Python 通知材料的明确缺口
