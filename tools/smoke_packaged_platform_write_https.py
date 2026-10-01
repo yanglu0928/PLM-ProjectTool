@@ -107,15 +107,18 @@ def _wait_http(client: httpx.Client, path: str, process: subprocess.Popen, *, se
     raise ValueError("packaged production child did not become ready")
 
 
-def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Path) -> dict:
+def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Path, *,
+          layout_verifier=None, layout_rehearser=None) -> dict:
     if sys.platform != "win32" or Path(r"C:\PLMTool").exists():
         raise ValueError("Windows isolated smoke only")
-    verified = verify_layout(candidate, source, stage, pristine)
+    check_layout = layout_verifier or verify_layout
+    place_layout = layout_rehearser or rehearse
+    verified = check_layout(candidate, source, stage, pristine)
     targets = [DEFAULT_TARGET, *("PLMProjectTool/SecretKey/" + ref for ref in KEY_REFS)]
     if any(credential_exists(name) for name in targets):
         raise ValueError("a fixed current-account product Vault target already exists")
-    placed = rehearse(candidate, source, stage, target)
-    if verify_layout(candidate, source, stage, target) != verified:
+    place_layout(candidate, source, stage, target)
+    if check_layout(candidate, source, stage, target) != verified:
         raise ValueError("fresh synthetic layout differs before trust injection")
     target = target.resolve(strict=True)
     public_file = target / PUBLIC_KEY_RELATIVE

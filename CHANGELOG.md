@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P45-A07 新原生OCR通知候选随包Python/Caddy/临时PG18合成HTTPS登录200、Session200、无License Project403，临时进程/文件及Vault目标清理通过；真实退出0、定向新旧4/4。兼容性：仅Windows11隔离演练，原P42默认验收行为不变，无业务API/Schema/Migration/SCM/正式安装变化，`release_eligible=false`。升级：无迁移。已知问题：正式公钥/License/证书/服务账户、产品最终LICENSE/NOTICE及法律审结、Server2025/Gate仍待。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P45-A06 新原生OCR通知候选经21,161目标全量Hash先验后，包内API＋Caddy合成回环HTTPS首页/2资源、健康200、默认API404、SPA200、错Host421通过；真实退出0、定向1/1且子进程停止。兼容性：仅Windows11隔离读链，无API/Schema/Migration/SCM/正式安装变化，`release_eligible=false`。升级：无迁移。已知问题：生产登录授权链、正式证书/信任源、产品最终LICENSE/NOTICE及法律审结、Server2025/Gate仍待。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P45-A05 新原生OCR通知候选独立布局21,161目标逐项映射/Hash验证，61条归属映射可检索42份许可原文，包内Python/PG18.6/Caddy2.11.4/Ghostscript10.08.0与合成Caddyfile验证通过；真实退出0、定向2/2。兼容性：仅Windows11隔离布局，无API/Schema/Migration/SCM/正式安装变化，`release_eligible=false`。升级：无迁移。已知问题：正式HTTPS、产品最终LICENSE/NOTICE及法律审结、信任源/Server2025/Gate仍待。
