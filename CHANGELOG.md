@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P21-A02 新增固定Caddy合成HTTPS下真实生产登录组合根验证：21,103件Hash、临时PG18/Vault、Session/审计原断言及Host/Origin/CSRF/Cookie标志通过，GET9/POST12，唯一临时来源清理回读。兼容性：只增非发行验证脚本，不改API/Schema/SCM/旧包；正式证书/账户、SSE、许可/三平台/Gate未验，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P21-A01 更正P20错误Host仅状态200且空正文的误述；Caddy同端口兜底站点对错误Host返回421、重复Host返回400，固定包21,103件及原静态/API/SPA HTTPS路由复验通过，单元2/2。兼容性：只改非发行PoC配置与探针，无正式包/API/Schema/SCM/DB变更；生产认证/证书/目标环境/Gate未验，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P20 新增固定Caddy与随包布局的合成HTTPS回环同源路由PoC；21,103件Hash、index/JS/CSS、health200、API404、SPA深链通过，单元2/2。兼容性：无正式包/API/Schema/SCM/数据库变化，临时证书清理、可撤工具回滚；错误Host状态200（后续P21确认空正文并以兜底421修正）、生产认证/CSRF/SSE/证书/许可/目标平台与Gate未验，`release_eligible=false`。

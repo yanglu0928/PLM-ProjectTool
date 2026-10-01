@@ -40,4 +40,6 @@
 
 2026-10-01/P21-A01纠正与实施：P20仅采集错误Host状态码；最小回显探针证明该200为空正文，原“首页返回”结论撤回。按本CR的显式拒绝要求，在固定`localhost`站点外增同端口无主机名兜底站点返回421；重复Host由HTTP服务器拒绝400。固定包21,103件重验及合成HTTPS完整重跑通过；该结果仅覆盖合成回环Host路由，不涵盖生产登录/Origin/证书/目标账户。
 
+2026-10-01/P21-A02增量证据：固定包与Caddy字节审计后，在唯一临时PG18/Windows Vault目标上，以真实生产登录组合根通过合成Caddy HTTPS做登录/Session/审计原断言及错误Host421、错误Origin403、Cookie Secure/HttpOnly/SameSite、缺CSRF403；临时库/角色/Vault与子进程清理回读。SSE、正式证书/License、目标账户/Server2025/Debian、NOTICE和UAT仍未验。
+
 官方依据：[Caddy许可仓库](https://github.com/caddyserver/caddy)、[反向代理及Host处理](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy)、[静态文件](https://caddyserver.com/docs/caddyfile/directives/file_server)、[SPA与API路由](https://caddyserver.com/docs/caddyfile/patterns)、[自有TLS证书](https://caddyserver.com/docs/caddyfile/directives/tls)、[Windows服务](https://caddyserver.com/docs/running)。
