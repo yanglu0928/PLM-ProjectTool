@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261001-579 — 资格回查只进入显式平台写组合
+
+- Date/WBS：2026-10-01 / `EVD-01-A04-P03-A08-P11`；输入 CR-EVD-004、P10 可选 HTTP、现有 Windows 平台组合。
+- Decision：在 `--platform-write` 内复用当前授权/收据/UOW 服务并挂载只读回查 POST；默认应用、登录专用和只读组合保持关闭。虽为无业务写入的 POST，仍以现有资格写模式为首版明确入口，避免扩大部署 Scope。
+- Reason/Impact/Rollback：合成真实 PG 验证正常回查及授权拒绝，未改 DB/API 冻结原版；停用可选注入即可回滚，历史收据不删除。前端/浏览器和正式信任仍独立验收。
+
 ## DEC-20261001-578 — Evidence 候选创建的证明与写事务顺序
 
 - Date/WBS：2026-10-01 / `EVD-01-A03-P03-A01`；输入冻结 EVIDENCE_CREATE、现有创建权限 Port、Document `get_version_for_trace` 与两种来源证明 Port。

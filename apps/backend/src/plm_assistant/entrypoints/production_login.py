@@ -208,10 +208,12 @@ from plm_assistant.modules.evidence.api.create_evidence import create_evidence_c
 from plm_assistant.modules.evidence.api.read_evidence import create_evidence_read_router
 from plm_assistant.modules.evidence.api.view_evidence import create_evidence_viewer_router
 from plm_assistant.modules.evidence.api.set_eligibility import create_evidence_eligibility_router
+from plm_assistant.modules.evidence.api.lookup_eligibility_operation import create_evidence_eligibility_operation_lookup_router
 from plm_assistant.modules.evidence.application.create_access import EvidenceCreateAccess
 from plm_assistant.modules.evidence.application.create_evidence import EvidenceCreateService
 from plm_assistant.modules.evidence.application.eligibility_access import EvidenceEligibilityAccess
 from plm_assistant.modules.evidence.application.set_eligibility import EvidenceEligibilityService
+from plm_assistant.modules.evidence.application.lookup_eligibility_operation import EvidenceEligibilityOperationLookupService
 from plm_assistant.modules.evidence.application.read_evidence import EvidenceReadService
 from plm_assistant.modules.evidence.application.view_evidence import EvidenceViewerService
 from plm_assistant.modules.evidence.application.document_source_proof import DocumentEvidenceProofService
@@ -381,6 +383,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         evidence_read_router = None
         evidence_viewer_router = None
         evidence_eligibility_router = None
+        evidence_eligibility_operation_lookup_router = None
         if include_secret_read:
             from plm_assistant.entrypoints.windows_license_runtime import (
                 create_windows_license_services,
@@ -778,6 +781,25 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                     sessions=sessions, origins=origins,
                     service_factory=eligibility_service,
                 )
+
+                def eligibility_lookup_service(token: bytes, csrf: bytes) -> EvidenceEligibilityOperationLookupService:
+                    return EvidenceEligibilityOperationLookupService(
+                        unit_of_work=runtime.unit_of_work,
+                        access=EvidenceEligibilityAccess(
+                            session_token=token, csrf_token=csrf,
+                            session_access=SqlAlchemyProjectWriteAccess(),
+                            admin_access=SqlAlchemyLicenseImportAccess(),
+                            project_facts=SqlAlchemyProjectAuthorizationRepository(),
+                        ),
+                        evidence=SqlAlchemyEvidenceEligibilityRepository(),
+                        receipts=SqlAlchemyIdempotencyReceipts(),
+                        license_guard=licenses.guard,
+                    )
+
+                evidence_eligibility_operation_lookup_router = create_evidence_eligibility_operation_lookup_router(
+                    sessions=sessions, origins=origins,
+                    service_factory=eligibility_lookup_service,
+                )
                 password_capacity = get_process_password_capacity(slots=settings.password_kdf_slots)
                 password_reset_results = SqlAlchemyPasswordResetResults(verifier=verifier)
                 password_reset_router = create_password_reset_router(sessions=sessions, origins=origins,
@@ -1025,6 +1047,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             evidence_read_router=evidence_read_router,
             evidence_viewer_router=evidence_viewer_router,
             evidence_eligibility_router=evidence_eligibility_router,
+            evidence_eligibility_operation_lookup_router=evidence_eligibility_operation_lookup_router,
             maintenance_admission=maintenance_admission,
             shutdown_callback=shutdown,
         )

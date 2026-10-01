@@ -229,6 +229,9 @@ def verify(port: int, scratch: Path) -> None:
                                headers={**headers(pm_token, "evd-login-elig-001"),
                                         "if-match": '"v0"'},
                                json=eligibility_body).status_code == 404
+            assert client.post(endpoint + "/" + str(uuid.uuid4()) + ":lookup-eligibility-operation",
+                               headers=headers(pm_token, "evd-login-lookup-001"),
+                               json={"operation_key": "evd-login-elig-001"}).status_code == 404
         with TestClient(read_only, base_url="http://localhost") as client:
             assert client.post(endpoint, headers=headers(pm_token, "evd-read-closed-001"),
                                json=body).status_code == 405
@@ -243,6 +246,7 @@ def verify(port: int, scratch: Path) -> None:
             assert first.json()["data"] == replay.json()["data"]
             assert first.json()["data"]["content_fingerprint"] == digest.hex()
             eligibility_path = endpoint + "/" + first.json()["data"]["evidence_id"] + ":set-eligibility"
+            lookup_path = endpoint + "/" + first.json()["data"]["evidence_id"] + ":lookup-eligibility-operation"
             eligibility_headers = {**headers(pm_token, "evd-write-elig-001"),
                                    "if-match": '"v0"'}
             decided = client.post(eligibility_path, headers=eligibility_headers,
@@ -252,6 +256,18 @@ def verify(port: int, scratch: Path) -> None:
             assert decided.status_code == repeated.status_code == 200, (decided.text, repeated.text)
             assert decided.json()["data"] == repeated.json()["data"]
             assert decided.headers["etag"] == '"v1"'
+            lookup_headers = {key: value for key, value in headers(pm_token, "evd-lookup-001").items()
+                              if key != "idempotency-key"}
+            completed = client.post(lookup_path, headers=lookup_headers,
+                                    json={"operation_key": "evd-write-elig-001"})
+            assert completed.status_code == 200, completed.text
+            assert completed.json()["data"] == {"status": "COMPLETED",
+                "evidence_id": first.json()["data"]["evidence_id"], "first_status_code": 200}
+            unknown = client.post(lookup_path, headers=lookup_headers,
+                                  json={"operation_key": "evd-lookup-missing-001"})
+            assert unknown.status_code == 200 and unknown.json()["data"] == {"status": "UNCONFIRMED"}
+            assert client.post(lookup_path, headers=headers(outsider_token, "evd-lookup-outside"),
+                               json={"operation_key": "evd-write-elig-001"}).status_code == 404
             assert client.post(eligibility_path,
                                headers={**headers(outsider_token, "evd-write-elig-outsider"),
                                         "if-match": '"v1"'},
@@ -284,6 +300,8 @@ def verify(port: int, scratch: Path) -> None:
             outsider = client.post(endpoint, headers=headers(outsider_token, "evd-outsider-001"), json=body)
             assert outsider.status_code == 404, outsider.text
             guard.enabled = False
+            assert client.post(lookup_path, headers=lookup_headers,
+                               json={"operation_key": "evd-write-elig-001"}).status_code == 403
             denied = client.post(endpoint, headers=headers(pm_token, "evd-license-deny-001"), json=body)
             assert denied.status_code == 403, denied.text
             assert client.get(viewer_path, headers=headers(pm_token,
@@ -297,6 +315,8 @@ def verify(port: int, scratch: Path) -> None:
             assert demoted.status_code == 404, demoted.text
             assert client.post(eligibility_path, headers=eligibility_headers,
                                json=eligibility_body).status_code == 404
+            assert client.post(lookup_path, headers=lookup_headers,
+                               json={"operation_key": "evd-write-elig-001"}).status_code == 404
         with TestClient(read_only, base_url="http://localhost") as client:
             detail = client.get(endpoint + "/" + first.json()["data"]["evidence_id"],
                                 headers=headers(pm_token, "evd-read-002"))
@@ -304,6 +324,9 @@ def verify(port: int, scratch: Path) -> None:
             read_only_decision = client.post(eligibility_path, headers=eligibility_headers,
                                              json=eligibility_body)
             assert read_only_decision.status_code == 405, read_only_decision.status_code
+            read_only_lookup = client.post(lookup_path, headers=lookup_headers,
+                                           json={"operation_key": "evd-write-elig-001"})
+            assert read_only_lookup.status_code in (404, 405), read_only_lookup.status_code
             assert client.get(node_viewer_path, headers=headers(pm_token,
                                                                 "evd-viewer-demoted-001")).status_code == 200
             path.write_bytes(content[:-1] + b"!")
@@ -346,7 +369,7 @@ def verify(port: int, scratch: Path) -> None:
                           "AND action='EVIDENCE_CREATED'", (evidence_id,)).fetchone()[0] == 1
         assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s "
                           "AND action='EVIDENCE_ELIGIBILITY_SET'", (evidence_id,)).fetchone()[0] == 1
-    print("PASS: isolated PG18 Windows Evidence create/read/Viewer/eligibility, fixed source, content URL, tamper/revocation/role/License isolation")
+    print("PASS: isolated PG18 Windows Evidence create/read/Viewer/eligibility/receipt lookup, fixed source, content URL, tamper/revocation/role/License isolation")
 
 
 def main() -> None:
