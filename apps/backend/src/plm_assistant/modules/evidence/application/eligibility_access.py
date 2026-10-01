@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+import hmac
 from collections.abc import Callable
 from datetime import datetime, timezone
 from typing import Protocol
@@ -51,7 +52,8 @@ class EvidenceEligibilityAccess:
 
     def require_in_transaction(self, transaction: object, *, actor_id: uuid.UUID,
                                scope: str, project_id: uuid.UUID | None,
-                               operation: str) -> None:
+                               operation: str, session_token: bytes,
+                               csrf_token: bytes) -> None:
         if (transaction is None or type(actor_id) is not uuid.UUID or actor_id.int == 0
                 or operation != "V1_EVIDENCE_SET_ELIGIBILITY"
                 or scope not in ("GLOBAL", "PROJECT")
@@ -59,6 +61,10 @@ class EvidenceEligibilityAccess:
                 or scope == "PROJECT" and (
                     type(project_id) is not uuid.UUID or project_id.int == 0)):
             raise EvidenceEligibilityAccessError("RESOURCE_NOT_FOUND")
+        if (type(session_token) is not bytes or type(csrf_token) is not bytes
+                or not hmac.compare_digest(session_token, self._session_token)
+                or not hmac.compare_digest(csrf_token, self._csrf_token)):
+            raise EvidenceEligibilityAccessError("AUTH_ACCESS_DENIED")
         now = self._clock()
         if type(now) is not datetime or now.tzinfo is None or now.utcoffset() is None:
             raise EvidenceEligibilityAccessError("AUTH_ACCESS_DENIED")

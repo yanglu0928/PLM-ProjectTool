@@ -50,6 +50,7 @@ class EvidenceEligibilityAccessTests(unittest.TestCase):
             object(), actor_id=self.actor, scope=scope,
             project_id=self.project_id if project_id is None and scope == "PROJECT"
             else project_id, operation="V1_EVIDENCE_SET_ELIGIBILITY",
+            session_token=b"s" * 32, csrf_token=b"c" * 32,
         )
 
     def test_project_manager_and_customer_manager_are_current_deciders(self):
@@ -85,8 +86,15 @@ class EvidenceEligibilityAccessTests(unittest.TestCase):
         with self.assertRaises(EvidenceEligibilityAccessError) as caught:
             self.access.require_in_transaction(
                 object(), actor_id=self.actor, scope="GLOBAL", project_id=self.project_id,
-                operation="V1_EVIDENCE_SET_ELIGIBILITY")
+                operation="V1_EVIDENCE_SET_ELIGIBILITY",
+                session_token=b"s" * 32, csrf_token=b"c" * 32)
         self.assertEqual(caught.exception.code, "RESOURCE_NOT_FOUND")
+        with self.assertRaises(EvidenceEligibilityAccessError) as caught:
+            self.access.require_in_transaction(
+                object(), actor_id=self.actor, scope="PROJECT", project_id=self.project_id,
+                operation="V1_EVIDENCE_SET_ELIGIBILITY",
+                session_token=b"s" * 32, csrf_token=b"x" * 32)
+        self.assertEqual(caught.exception.code, "AUTH_ACCESS_DENIED")
 
 
 if __name__ == "__main__":

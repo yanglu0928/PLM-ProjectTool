@@ -16,3 +16,4 @@ class LockedEvidenceEligibility:
     content_fingerprint: bytes = field(repr=False)
     eligibility_state: str
     lock_version: int
+    eligibility_reason: str | None = None

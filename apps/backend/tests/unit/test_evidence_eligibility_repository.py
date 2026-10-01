@@ -29,7 +29,7 @@ class EvidenceEligibilityRepositoryTests(unittest.TestCase):
             evidence_id=self.evidence_id, scope="PROJECT", project_id=self.project_id,
             document_id=self.document_id, document_version_id=self.version_id,
             content_fingerprint=b"a" * 32, eligibility_state="CANDIDATE",
-            lock_version=4,
+            lock_version=4, eligibility_reason=None,
         )
         session = Mock()
         session.execute.return_value.scalar_one_or_none.return_value = row

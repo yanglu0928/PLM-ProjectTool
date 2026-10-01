@@ -35,6 +35,7 @@ class SqlAlchemyEvidenceEligibilityRepository:
             row.evidence_id, row.scope, row.project_id,
             row.document_id, row.document_version_id,
             row.content_fingerprint, row.eligibility_state, row.lock_version,
+            row.eligibility_reason,
         )
 
     def decide(self, transaction: object, *, locked: LockedEvidenceEligibility,
