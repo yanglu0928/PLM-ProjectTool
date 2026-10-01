@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-597 — Workflow 启动先做受权事务内的原子状态写
+
+- Date/WBS：2026-10-02 / `WFL-01-A06-P01`；输入冻结 DM-02/API-02、六阶段 V1、Schema 0030 与已验证的实例初始化/GET。
+- Decision：Workflow 自有 Repository 仅在调用方已持当前权限的事务中锁定根、核完整初态与 `expected_version=0`，把首阶段 HANDOVER 与根状态/版本同事务更新；不在此层模拟 Gate、客户审批、幂等回执或公开请求。版本不匹配、已启动及不完整快照分别拒绝，不做隐式初始化。
+- Reason/Impact/Rollback：先建立可由后续受权命令复用的原子事实边界，避免前端或 API 直接改状态；无 Schema/API/依赖变化。未装配公开入口，可撤 Repository 调用回滚代码；已真实启动的历史不得由代码回滚重置。
+
 ## DEC-20261002-596 — Evidence 原集成矩阵复用但锁定随包运行来源
 
 - Date/WBS：2026-10-02 / `PLT-PKG-01-A09-P48-A05`；输入当前候选/暂存 SHA 和既有 `EVD-01-A04-P03-A05` 临时PG/ASGI矩阵。
