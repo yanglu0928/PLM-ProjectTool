@@ -46,4 +46,6 @@
 
 2026-10-01/P22增量证据：新非发行ZIP在P15原21,103项外，逐件加入Caddy可执行文件/许可/README/SBOM/checksums/buildable source及占位模板，共21,110项；整包及独立逐件验证通过。原P15不覆盖，未装服务或证书；完整NOTICE/其他组件源码义务、模板目标渲染和正式发行仍开放。
 
+2026-10-01/P23增量证据：P22 ZIP全新ASCII Temp清洁解包21,110件、落盘/源包重核通过，包内模板以合成证书和随机端口渲染通过真实Caddy validate/同源HTTPS静态/API/SPA/错误Host421。正式域名证书、目标ACL/账户及SCM安装仍未执行。
+
 官方依据：[Caddy许可仓库](https://github.com/caddyserver/caddy)、[反向代理及Host处理](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy)、[静态文件](https://caddyserver.com/docs/caddyfile/directives/file_server)、[SPA与API路由](https://caddyserver.com/docs/caddyfile/patterns)、[自有TLS证书](https://caddyserver.com/docs/caddyfile/directives/tls)、[Windows服务](https://caddyserver.com/docs/running)。

@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P23 新增非发行Caddy候选清洁解包与模板HTTPS验证：21,110件逐件/落盘/源回读，包内模板合成证书实际Caddy validate、静态/API/SPA/错误Host烟测通过，新单元4/4及旧回归4/4。兼容性：无产品API/Schema/Migration/SCM变更；仅临时回环PoC，正式域名证书、账户/许可/三平台/Gate仍待，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P22 新建不覆盖P15的统一+PG18+Caddy非发行ZIP，21,110项/639,617,127字节，含官方二进制、Apache-2.0文本、SBOM/checksums/buildable source和占位模板；整包/逐件独立验证及单元4/4。兼容性：不改产品API/Schema/SCM/旧包，无证书私钥或正式安装；完整NOTICE/清洁解包/目标账户/三平台/Gate未验，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P21-A03 新增固定Caddy合成HTTPS的SSE传输验证：首帧完整且未延迟、no-cache、错误Host421与断线取消通过，固定包21,103件复核。兼容性：仅非发行内存测试路由，无正式API/Schema/SCM/包变更；产品SSE/证书/目标账户/许可/三平台/Gate未验，`release_eligible=false`。
