@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P38 新增固定P33布局的正式Windows安装只读阻断检查器，21,115件新隔离布局Hash后列出缺目标账户/DNS证书/正式公钥及六项未验证条件；定向单元4/4。兼容性：无API/Schema/Migration/SCM或正式安装变更，Windows11/Server2025目标不变、Debian13实机暂缓；`release_eligible=false`。升级说明：无需迁移。已知问题：正式账户/证书/License、许可法律、服务恢复及目标平台验收未完成。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P37 新布局21,115件Hash后以包内Caddy/PG18和临时Vault目标复跑仓库生产登录组合，GET9/POST12、Cookie/CSRF/Host/Origin/Session/Audit及临时源清理PASS，定向新旧单元2/2。兼容性：旧适配器验证函数改为调用时解析，默认行为不变；无产品API/Schema/Migration/SCM/正式安装变更，随包正式生产模式未验，`release_eligible=false`。升级说明：无需迁移。已知问题：正式License/账户/证书与NOTICE/Gate未完成。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P36 新Caddy＋Go源码布局21,115项Hash先验后，包内合成HTTPS静态2资源/健康200/API404/SPA200/错Host421回归，子进程/证书清理，定向单元2/2。兼容性：不改API/Schema/Migration/SCM/正式安装；生产认证/信任源/NOTICE/目标平台/Gate未验，`release_eligible=false`。升级说明：无需迁移。已知问题：正式运行链仍待。
