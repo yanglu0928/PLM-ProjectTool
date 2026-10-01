@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P03 统一非发行候选在Windows11 ASCII清洁解包目录完成四种合成PDF的OCRmyPDF17.12.1/`--deskew`/PDF/A-2b，20/20术语通过；中文安装路径下Tesseract语言列举退出3，已登记为当前候选安装路径限制。兼容性：本项无程序/API/Migration变更，正式安装器须在后续限制ASCII路径或经修复复验；真实质量、Server2025/Debian13、NOTICE/签名/License与Gate仍待，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P02 新增Windows11统一非发行合包及长路径清洁解包核验工具；固定输入生成461,974,579字节、19,449件候选ZIP，106项Python元数据、34项无JBIG Tesseract，ZIP与第二份清洁解包逐件Hash通过，单测4/4及核心导入/原生版本烟测通过。兼容性：不改API/Schema/安装路径，不覆盖旧候选；回滚弃用Git忽略产物。NOTICE/对应源码、签名/License、安装升级/目标账户、真实OCR质量、Server2025/Debian13及Gate仍待，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P01 固定 Windows11 统一非发行候选的五类输入及源Hash/数量/替换规则；34项无JBIG PE逐件Hash与矩阵一致，106项运行时元数据齐全。兼容性：尚未生成新包，产品/API/Migration/旧候选不变；若后续输入缺失/不一致即拒绝组装。NOTICE、签名、质量、目标账户/平台及Gate仍待，`release_eligible=false`。

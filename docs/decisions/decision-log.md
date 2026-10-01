@@ -5877,3 +5877,7 @@
 ## DEC-20261001-557 — 统一候选只复用旧包已核实的前端/配置/许可材料，替换运行时和Tesseract
 
 - 日期/Phase/WBS：2026-10-01 / Phase2 / PLT-PKG-01-A09-P01。固定五类本地输入及哈希；新包沿用旧候选的前端、示例配置和既有许可文件，不沿用93项运行时及顶层清单；以106项OCR运行时替换，旧OCR原生ZIP只取Ghostscript和tessdata，以34项无JBIG PE替换其旧Tesseract，其余模型来自固定模型ZIP。理由是旧Tesseract带JBIG依赖且旧Python少13项；混装或沿用旧manifest会使声明与实际字节不符。仅产生新非发行产物，历史候选不覆盖；逐件Hash/清洁解包失败即放弃新产物，许可/源码义务仍单独开放。
+
+## DEC-20261001-558 — 当前Windows统一候选需ASCII安装路径，非ASCII路径不冒充可用
+
+- 日期/Phase/WBS：2026-10-01 / Phase2 / PLT-PKG-01-A09-P03。同一候选在中文仓库路径下Tesseract语言列举因字符转换退出3，ASCII新解包路径下四份合成PDF/A-2b/deskew均5/5通过；因此当前候选安装/升级流程应显式限制路径为ASCII，现行建议`C:\PLMTool`不受此限制。理由：仅修改Python输出编码无法解决原生Tesseract filesystem路径转换；无正式安装器可修改，先记录兼容限制并在后续入口失败关闭。若未来采用可核源的新Tesseract修复，须复跑四版面与非ASCII路径；不改冻结API/Schema，旧候选不覆盖，`release_eligible=false`。
