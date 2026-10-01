@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261001-573 — 离线 OCR 合成来源定位验证
+
+- Date/WBS：2026-10-01 / `EVD-01-A03-P02-A02-P03-P03-P02`；输入既有 PP-OCRv5 离线适配器、Parser OCR 节点、Evidence 固定结果证明和原生 PDF P01 PASS。
+- Decision：使用仓库已有的本地模型字节复制到临时 ASCII 路径，禁止下载；仅用新建合成 PNG/扫描 PDF 实际调用模型，回查归一化 PAGE bbox 与已知绘字/嵌图区域，再做 Evidence 节点证明。模型、字体、输入路径由参数显式传入，不写客户材料。
+- Reason/Impact/Rollback：区分真实 OCR 与假 Engine 契约测试，且避开已知中文模型路径限制。仅新增验证脚本/记录，无生产 API/Schema/权限/依赖变化；移除临时副本即可回退，脚本结果以实际运行决定，不把合成质量推广到客户文档。
+
 ## DEC-20261001-572 — PDF 原生文本定位与 OCR 边界分项验收
 
 - Date/WBS：2026-10-01 / `EVD-01-A03-P02-A02-P03-P03-P01`；输入 Parser PDF 原生文本节点、Evidence 固定结果证明及前一项 Office 合成定位验证。

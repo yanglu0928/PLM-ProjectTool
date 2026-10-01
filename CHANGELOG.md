@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/EVD-01-A03-P02-A02-P03-P03-P02 当前离线模型真实识别合成PNG与扫描PDF单行文本，归一化PAGE框与已知区域相交、Evidence固定节点证明；验证exit0、OCR定向4/4。兼容性：仅新增验证脚本/记录，无生产代码/API/Schema/依赖或发行包变化。升级：无。已知问题：中文/多页/复杂扫描精度、正式信任组合、目标平台及Gate3未验。
+
 - 2026-10-01：0.1.0.dev0/EVD-01-A03-P02-A02-P03-P03-P01 合成原生文本PDF实际落盘解析，独立同版本PyMuPDF页码/字符区间回查与Evidence证明通过；空白页要求OCR、源篡改拒绝，验证exit0、PDF定向3/3。兼容性：仅新增验证脚本和记录，无生产代码/API/Schema/依赖变更。升级：无。已知问题：扫描PDF/图片真实OCR、复杂布局、正式组合与Gate3仍待。
 
 - 2026-10-01：0.1.0.dev0/EVD-01-A03-P02-A02-P03-P02 实际落盘合成DOCX/PPTX/XLSX由Parser生成节点，并由独立Office读取库按段落/表格/Shape/Sheet位置回查、Evidence定位证明；验证脚本exit0、Office定向6/6。兼容性：仅验证脚本，无程序/API/Schema变更。升级：无。已知问题：Microsoft Office GUI、复杂布局、PDF/OCR、正式授权组合仍待。
