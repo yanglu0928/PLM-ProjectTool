@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P01 固定 Windows11 统一非发行候选的五类输入及源Hash/数量/替换规则；34项无JBIG PE逐件Hash与矩阵一致，106项运行时元数据齐全。兼容性：尚未生成新包，产品/API/Migration/旧候选不变；若后续输入缺失/不一致即拒绝组装。NOTICE、签名、质量、目标账户/平台及Gate仍待，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A07-P03-P04-P02-A02-P02 正式升级入口前置核查：本机无目标安装与三项PLM服务，现有SCM/进程快照仅诊断级，不把合成备份/维护锁结果冒充现场停写或Migration放行；转向106项OCR运行时与旧93项候选的独立合包。兼容性：无正式程序/API/Migration/安装变化，保留旧候选和历史记录；目标账户/Server2025/备份恢复/NOTICE与Gate仍待，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A07-P03-P04-P02-A02-P01 将FileObject预检的PG18会话排他锁抽为可跨扫描与后续升级门禁持续持有的窗口；维护版本可复核，正常/异常退出释放，原一次性CLI合同不变。Windows11单元6/6、隔离PG18双连接/完整Schema0051与合成备份恢复第三轮通过。兼容性：无API/Schema/正式安装变化；可撤新窗口封装回滚。正式备份/OS进程静止/目标账户/升级执行/许可/Gate仍待，`release_eligible=false`。
