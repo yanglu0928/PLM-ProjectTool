@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P08 新增Windows统一候选许可/源码证据机读差异审计；旧93项版本不变、新13项内嵌25份文本但独立侧载0/13、34项PE来源Hash吻合但发行义务未复核，Ghostscript AGPL文本在包内而对应源码目录/项目LICENSE/NOTICE仍缺。单元4/4及真实字节审计通过。兼容性：无程序/API/Schema/安装变化；撤新报告/脚本可回滚。合规与Gate未通过，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P07 新增Windows统一非发行候选隔离暂存工具，只接受Temp下新ASCII目录；复制前、写入时、落盘后与末次源ZIP身份均核验。真实19,449件暂存/落盘Hash通过、单测4/4，正式`C:\PLMTool`/服务/Migration未触动。兼容性：无API/Schema/正式安装变化；测试目录可核对后清理。NOTICE/源码、PG18离线输入、正式License/签名、目标账户/平台与Gate仍待，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P06 新增固定Windows统一候选的只读安装计划，先验ASCII根、ZIP身份/非发行声明/19,449件Hash，再列开放门禁，始终`install_authorized=false`；真实候选核验和单测4/4通过。兼容性：无安装、API、Schema/Migration或服务变化；换候选需更新固定Hash与证据，撤工具可回滚。NOTICE、License、数据库/服务/目标账户、真实质量与Gate未闭合，`release_eligible=false`。

@@ -1,0 +1,273 @@
+{
+  "baseline_sha256": "6b42945167c4d93330a058f0550a4f8dfd26277287c7a7cf07c536ce400fd77a",
+  "candidate_sha256": "da285e1c88d45f195d141f5eb6cba5f887f019063f4547a0a54ecae78c251bff",
+  "corresponding_source_payload_file_count": 0,
+  "existing_python_distributions_unchanged": 93,
+  "ghostscript_agpl_text": {
+    "path": "payload/ocr/ghostscript/doc/COPYING",
+    "sha256": "57c8ff33c9c0cfc3ef00e650a1cc910d7ee479a8bc509f6c9209a7c2a11399d6"
+  },
+  "historical_standalone_notice_file_count": 152,
+  "native_matrix_sha256": "a16312f5a322e21ad1f818fa7848a6f2b8f9f000add3b893f2b3a1e02fed15bc",
+  "native_pe_count": 34,
+  "native_release_obligations_reviewed_count": 0,
+  "new_python_distributions": [
+    {
+      "corresponding_source_in_candidate": false,
+      "embedded_notice_files": [
+        {
+          "path": "payload/runtime/packages/defusedxml-0.7.1.dist-info/LICENSE",
+          "sha256": "b80ce9da8c42a1f91079627fbbe2bf27210ae108a0ffe5f077d5b08e076c24c8"
+        }
+      ],
+      "metadata_license_expression": "",
+      "name": "defusedxml",
+      "review_status": "REVIEW_REQUIRED",
+      "standalone_notice_sidecar_present": false,
+      "version": "0.7.1"
+    },
+    {
+      "corresponding_source_in_candidate": false,
+      "embedded_notice_files": [
+        {
+          "path": "payload/runtime/packages/fonttools-4.65.0.dist-info/licenses/LICENSE",
+          "sha256": "22bef80697ecfaa17f97e62b9a26dfa12820be05583e8dd12ad169b241274c99"
+        },
+        {
+          "path": "payload/runtime/packages/fonttools-4.65.0.dist-info/licenses/LICENSE.external",
+          "sha256": "b082a5f86775b2641f01bccb8b9c82908481de5f502bb254b1e13bfc2a9f303d"
+        }
+      ],
+      "metadata_license_expression": "",
+      "name": "fonttools",
+      "review_status": "REVIEW_REQUIRED",
+      "standalone_notice_sidecar_present": false,
+      "version": "4.65.0"
+    },
+    {
+      "corresponding_source_in_candidate": false,
+      "embedded_notice_files": [
+        {
+          "path": "payload/runtime/packages/fpdf2-2.8.8.dist-info/licenses/LICENSE",
+          "sha256": "f97bc4bb9b7ae8a653941073678b5c7775e8de44a01c3bcc21e7cdc148b90e61"
+        }
+      ],
+      "metadata_license_expression": "LGPL-3.0-only",
+      "name": "fpdf2",
+      "review_status": "REVIEW_REQUIRED",
+      "standalone_notice_sidecar_present": false,
+      "version": "2.8.8"
+    },
+    {
+      "corresponding_source_in_candidate": false,
+      "embedded_notice_files": [
+        {
+          "path": "payload/runtime/packages/img2pdf-0.6.3.dist-info/licenses/LICENSE",
+          "sha256": "e3a994d82e644b03a792a930f574002658412f62407f5fee083f2555c5f23118"
+        }
+      ],
+      "metadata_license_expression": "",
+      "name": "img2pdf",
+      "review_status": "REVIEW_REQUIRED",
+      "standalone_notice_sidecar_present": false,
+      "version": "0.6.3"
+    },
+    {
+      "corresponding_source_in_candidate": false,
+      "embedded_notice_files": [
+        {
+          "path": "payload/runtime/packages/markdown_it_py-4.2.0.dist-info/licenses/LICENSE",
+          "sha256": "4a2260d6e2cd0f5a151a1e86dbfe7d3ed552b1e2beabf9941c1ba5c49cbce484"
+        },
+        {
+          "path": "payload/runtime/packages/markdown_it_py-4.2.0.dist-info/licenses/LICENSE.markdown-it",
+          "sha256": "792c48c5a849a15fdf9e37e8bcf9e6d1dd13b32b46c642a748a0a46a9919d473"
+        }
+      ],
+      "metadata_license_expression": "",
+      "name": "markdown-it-py",
+      "review_status": "REVIEW_REQUIRED",
+      "standalone_notice_sidecar_present": false,
+      "version": "4.2.0"
+    },
+    {
+      "corresponding_source_in_candidate": false,
+      "embedded_notice_files": [
+        {
+          "path": "payload/runtime/packages/mdurl-0.1.2.dist-info/LICENSE",
+          "sha256": "7c605df6e28667a9603118e98274f64a49ce3eed0d26fccce9534a345e0ef955"
+        }
+      ],
+      "metadata_license_expression": "",
+      "name": "mdurl",
+      "review_status": "REVIEW_REQUIRED",
+      "standalone_notice_sidecar_present": false,
+      "version": "0.1.2"
+    },
+    {
+      "corresponding_source_in_candidate": false,
+      "embedded_notice_files": [
+        {
+          "path": "payload/runtime/packages/ocrmypdf-17.12.1.dist-info/licenses/LICENSE",
+          "sha256": "1f256ecad192880510e84ad60474eab7589218784b9a50bc7ceee34c2b91f1d5"
+        }
+      ],
+      "metadata_license_expression": "MPL-2.0",
+      "name": "ocrmypdf",
+      "review_status": "REVIEW_REQUIRED",
+      "standalone_notice_sidecar_present": false,
+      "version": "17.12.1"
+    },
+    {
+      "corresponding_source_in_candidate": false,
+      "embedded_notice_files": [
+        {
+          "path": "payload/runtime/packages/pdfminer_six-20260107.dist-info/licenses/LICENSE",
+          "sha256": "f01e5d699a33766b5caf4a5099f2856aba4f3f75ea1df05dc0572b34b4bea8f2"
+        }
+      ],
+      "metadata_license_expression": "MIT",
+      "name": "pdfminer.six",
+      "review_status": "REVIEW_REQUIRED",
+      "standalone_notice_sidecar_present": false,
+      "version": "20260107"
+    },
+    {
+      "corresponding_source_in_candidate": false,
+      "embedded_notice_files": [
+        {
+          "path": "payload/runtime/packages/pikepdf-10.13.0.post1.dist-info/licenses/LICENSE.txt",
+          "sha256": "1f256ecad192880510e84ad60474eab7589218784b9a50bc7ceee34c2b91f1d5"
+        },
+        {
+          "path": "payload/runtime/packages/pikepdf-10.13.0.post1.dist-info/licenses/third-party-licenses/GCC-exception-3.1.txt",
+          "sha256": "9d6b43ce4d8de0c878bf16b54d8e7a10d9bd42b75178153e3af6a815bdc90f74"
+        },
+        {
+          "path": "payload/runtime/packages/pikepdf-10.13.0.post1.dist-info/licenses/third-party-licenses/GPL-3.0.txt",
+          "sha256": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+        },
+        {
+          "path": "payload/runtime/packages/pikepdf-10.13.0.post1.dist-info/licenses/third-party-licenses/README.md",
+          "sha256": "7af47da6bfd971da0f307c583f3d75d52a18fdb8eeb687ff3273898aa8cfa61e"
+        },
+        {
+          "path": "payload/runtime/packages/pikepdf-10.13.0.post1.dist-info/licenses/third-party-licenses/libjpeg-turbo-README.ijg.txt",
+          "sha256": "75815e3bf6484201a3c3d17a1bbf10f2e8e3237f84df10a2357ea896db2a81d6"
+        },
+        {
+          "path": "payload/runtime/packages/pikepdf-10.13.0.post1.dist-info/licenses/third-party-licenses/libjpeg-turbo.txt",
+          "sha256": "ba6bceebcba0fdd35488477c2cca8c4632ce82c74dbfbc87d886ce6fc4433579"
+        },
+        {
+          "path": "payload/runtime/packages/pikepdf-10.13.0.post1.dist-info/licenses/third-party-licenses/microsoft-visual-cpp-runtime.txt",
+          "sha256": "116b4e8ee0885dbc69828206586d7ecf05abe1bd66aaad26b4db7b22840d5012"
+        },
+        {
+          "path": "payload/runtime/packages/pikepdf-10.13.0.post1.dist-info/licenses/third-party-licenses/openssl.txt",
+          "sha256": "7d5450cb2d142651b8afa315b5f238efc805dad827d91ba367d8516bc9d49e7a"
+        },
+        {
+          "path": "payload/runtime/packages/pikepdf-10.13.0.post1.dist-info/licenses/third-party-licenses/qpdf.txt",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "path": "payload/runtime/packages/pikepdf-10.13.0.post1.dist-info/licenses/third-party-licenses/zlib.txt",
+          "sha256": "845efc77857d485d91fb3e0b884aaa929368c717ae8186b66fe1ed2495753243"
+        }
+      ],
+      "metadata_license_expression": "MPL-2.0",
+      "name": "pikepdf",
+      "review_status": "REVIEW_REQUIRED",
+      "standalone_notice_sidecar_present": false,
+      "version": "10.13.0.post1"
+    },
+    {
+      "corresponding_source_in_candidate": false,
+      "embedded_notice_files": [
+        {
+          "path": "payload/runtime/packages/pluggy-1.6.0.dist-info/licenses/LICENSE",
+          "sha256": "d6b65e6c213a5d0b577911d34d6e5949b9f59d76c238c5071a2f3fc16cfb2606"
+        }
+      ],
+      "metadata_license_expression": "",
+      "name": "pluggy",
+      "review_status": "REVIEW_REQUIRED",
+      "standalone_notice_sidecar_present": false,
+      "version": "1.6.0"
+    },
+    {
+      "corresponding_source_in_candidate": false,
+      "embedded_notice_files": [
+        {
+          "path": "payload/runtime/packages/pygments-2.21.0.dist-info/licenses/AUTHORS",
+          "sha256": "71a83872ad82f57be692cf827e048e2cd51d45169cfa1ea3f28706d97a872c0f"
+        },
+        {
+          "path": "payload/runtime/packages/pygments-2.21.0.dist-info/licenses/LICENSE",
+          "sha256": "a9d66f1d526df02e29dce73436d34e56e8632f46c275bbdffc70569e882f9f17"
+        }
+      ],
+      "metadata_license_expression": "BSD-2-Clause",
+      "name": "Pygments",
+      "review_status": "REVIEW_REQUIRED",
+      "standalone_notice_sidecar_present": false,
+      "version": "2.21.0"
+    },
+    {
+      "corresponding_source_in_candidate": false,
+      "embedded_notice_files": [
+        {
+          "path": "payload/runtime/packages/rich-15.0.0.dist-info/licenses/LICENSE",
+          "sha256": "deed7c17a4318158190a3ea239cc879a5a50271cebb98ae7025f48fbe58dca15"
+        }
+      ],
+      "metadata_license_expression": "",
+      "name": "rich",
+      "review_status": "REVIEW_REQUIRED",
+      "standalone_notice_sidecar_present": false,
+      "version": "15.0.0"
+    },
+    {
+      "corresponding_source_in_candidate": false,
+      "embedded_notice_files": [
+        {
+          "path": "payload/runtime/packages/uharfbuzz-0.56.1.dist-info/licenses/LICENSE",
+          "sha256": "1eb85fc97224598dad1852b5d6483bbcf0aa8608790dcc657a5a2a761ae9c8c6"
+        }
+      ],
+      "metadata_license_expression": "",
+      "name": "uharfbuzz",
+      "review_status": "REVIEW_REQUIRED",
+      "standalone_notice_sidecar_present": false,
+      "version": "0.56.1"
+    }
+  ],
+  "open_actions": [
+    "approve product license and provide root LICENSE/NOTICE",
+    "reconcile exact applicable terms, copyright notices and source for 34 native PE files",
+    "materialize standalone notices and source-delivery method for 13 added Python distributions",
+    "supply exact Ghostscript corresponding source/build-install materials and confirm public source access",
+    "verify model license text/provenance and final combined-work obligations",
+    "obtain qualified legal review before any external release"
+  ],
+  "paddle_model_readmes": [
+    {
+      "metadata_license": "apache-2.0",
+      "path": "payload/ocr/models/PP-OCRv5_mobile_det/README.md",
+      "separate_model_license_text_in_candidate": false,
+      "sha256": "4cc20ad6d41af86b3ce9885ffb0956e152574a2eb14179aeb07fd2d3956161ca"
+    },
+    {
+      "metadata_license": "apache-2.0",
+      "path": "payload/ocr/models/PP-OCRv5_mobile_rec/README.md",
+      "separate_model_license_text_in_candidate": false,
+      "sha256": "b02727443cef4904a9ee12accdfaf66fcbada7b93a1a05c40dde7582291ba28c"
+    }
+  ],
+  "product_license_file_present": false,
+  "product_notice_file_present": false,
+  "release_eligible": false,
+  "schema_version": "plm.windows-unified-license-gaps.v1",
+  "status": "EVIDENCE_GAPS_IDENTIFIED_NOT_LEGAL_CLEARANCE"
+}
