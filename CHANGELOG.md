@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A06-P03 新增 Windows 非发行模块观察脚本，合成中文 PNG/TIFF/JPEG 三格式退出0、随包35/35/System32 23/意外路径0；ETW LoadImage因当前账户拒绝而未执行完整跟踪。无 Migration/API/正式依赖/安装变化，可撤脚本与忽略试验目录回滚。短暂动态加载/许可/签名/目标账户/Server2025/Gate3仍未证，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A06-P02 非发行 PE 审计加入 AMD64 延迟导入/畸形属性拒绝，候选35 PE延迟导入0，重建文件集合与A05相同；单次中文OCR运行模块采样随包35/35、System32 23，定向8项PASS。无 Migration/API/正式依赖/安装变化，可撤审计增量与新隔离目录回滚。短暂/未测输入动态加载及签名/许可/目标系统仍未证，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A06-P01 新增 MSYS2 Tesseract候选35行许可证据矩阵与重建工具：包/二进制Hash逐项重核，32项包内许可文本Hash、3项承接A04源码文本路径，30旧字节相同/2不同/3新增；定向2项PASS。无 Migration/API/正式依赖/安装变化，可撤工具与矩阵回滚。许可证适用关系、源代码/NOTICE义务、动态加载/签名/目标系统仍未审查，`release_eligible=false`。

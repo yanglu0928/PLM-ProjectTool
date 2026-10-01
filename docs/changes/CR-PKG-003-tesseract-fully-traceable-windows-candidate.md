@@ -27,3 +27,5 @@ CR-PKG-001 原优先评估 Tesseract 官方 5.5.3 Windows 安装资产。本机�
 2026-10-01 A06-P01 建立 35 项许可证据矩阵：32 项包内文本 Hash 重核、3 项 A04 源码文本引用，所有发行义务仍为 `NO`。详见 [A06-P01 记录](../progress/plt-pkg-01-a08-p09-p05-p03-a06-p01-license-evidence.md)；不得据此将方案 B 标记为发行许可通过。
 
 2026-10-01 A06-P02 增加 PE 延迟导入读取，新候选 35 个 PE 延迟导入边数 0；一次中文 OCR 运行采样到随包 35/35 模块，另23个均在系统目录。详见 [A06-P02 记录](../progress/plt-pkg-01-a08-p09-p05-p03-a06-p02-delay-runtime-boundary.md)。短暂/其他输入动态加载仍未证，发行决策保持开放。
+
+2026-10-01 A06-P03 增加可重复的 PNG/TIFF/JPEG 模块采样，三次均随包35/35、System32 23、意外路径0；系统级 ETW LoadImage 因当前非提升账户 `Access is denied` 未建立。详见 [A06-P03 记录](../progress/plt-pkg-01-a08-p09-p05-p03-a06-p03-multiformat-module-observation.md)。短时/其他格式动态加载仍阻断发行证明。
