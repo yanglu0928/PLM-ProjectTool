@@ -30,6 +30,10 @@ from plm_assistant.modules.auth.infrastructure.project_write_access import SqlAl
 from plm_assistant.modules.document.application.read_documents import DocumentReadService
 from plm_assistant.modules.document.infrastructure.read_repository import SqlAlchemyDocumentReadRepository
 from plm_assistant.modules.evidence.application.eligibility_access import EvidenceEligibilityAccess
+from plm_assistant.modules.evidence.application.lookup_eligibility_operation import (
+    EvidenceEligibilityLookupError, EvidenceEligibilityOperationLookupService,
+    LookupEvidenceEligibilityOperation,
+)
 from plm_assistant.modules.evidence.api.set_eligibility import create_evidence_eligibility_router
 from plm_assistant.modules.evidence.application.set_eligibility import (
     EvidenceEligibilityCommandError, EvidenceEligibilityService, SetEvidenceEligibility,
@@ -80,6 +84,15 @@ def expect(code, action):
         assert error.code == code, (code, error.code)
     else:
         raise AssertionError(f"expected {code}")
+
+
+def expect_lookup(code, action):
+    try:
+        action()
+    except EvidenceEligibilityLookupError as error:
+        assert error.code == code, (code, error.code)
+    else:
+        raise AssertionError(f"expected lookup {code}")
 
 
 def insert_user(db, token, csrf):
@@ -204,6 +217,17 @@ def verify(port):
         )
         service = EvidenceEligibilityService(
             **common, audit=AuditService(SqlAlchemyAuditRepository()))
+        lookups = EvidenceEligibilityOperationLookupService(
+            unit_of_work=runtime.unit_of_work, access=access,
+            evidence=common["repository"], receipts=common["receipts"],
+            license_guard=guard,
+        )
+
+        def lookup(evidence, key, project_id=project):
+            return lookups.lookup(LookupEvidenceEligibilityOperation(
+                actor, token, csrf, uuid.uuid4(), "PROJECT", project_id,
+                evidence, key,
+            ))
 
         def request(evidence, state="ELIGIBLE", reason="人工核对原始调研记录"):
             return SetEvidenceEligibility(
@@ -214,6 +238,14 @@ def verify(port):
         item = request(actual)
         first = service.set(item, idempotency_key="eligibility-pg-0001")
         assert first.etag == '"v1"' and first.eligibility_state == "ELIGIBLE"
+        completed = lookup(actual, "eligibility-pg-0001")
+        assert completed.status == "COMPLETED" and completed.evidence_id == actual
+        assert completed.first_status_code == 200
+        assert lookup(actual, "eligibility-pg-missing").status == "UNCONFIRMED"
+        expect_lookup("CONFLICT_IDEMPOTENCY", lambda: lookup(
+            template, "eligibility-pg-0001"))
+        expect_lookup("RESOURCE_NOT_FOUND", lambda: lookup(
+            foreign_case, "eligibility-pg-0001"))
         assert service.set(item, idempotency_key="eligibility-pg-0001") == first
         expect("CONFLICT_VERSION", lambda: service.set(
             item, idempotency_key="eligibility-pg-0002"))
@@ -222,9 +254,20 @@ def verify(port):
         expect("RESOURCE_NOT_FOUND", lambda: service.set(
             request(foreign_case), idempotency_key="eligibility-pg-foreign"))
         guard.enabled = False
+        expect_lookup("LICENSE_OPERATION_DENIED", lambda: lookup(
+            actual, "eligibility-pg-0001"))
         expect("LICENSE_OPERATION_DENIED", lambda: service.set(
             request(revoked_case), idempotency_key="eligibility-pg-license"))
         guard.enabled = True
+        with psycopg.connect(host="127.0.0.1", port=port, user=HELPER.USER,
+                             dbname="postgres", autocommit=True) as db:
+            db.execute("UPDATE plm.prj_projects SET state='ARCHIVED' WHERE project_id=%s", (project,))
+        assert lookup(actual, "eligibility-pg-0001").status == "COMPLETED"
+        expect("PROJECT_ARCHIVED", lambda: service.set(
+            request(revoked_case), idempotency_key="eligibility-pg-archived"))
+        with psycopg.connect(host="127.0.0.1", port=port, user=HELPER.USER,
+                             dbname="postgres", autocommit=True) as db:
+            db.execute("UPDATE plm.prj_projects SET state='ACTIVE' WHERE project_id=%s", (project,))
         with psycopg.connect(host="127.0.0.1", port=port, user=HELPER.USER,
                              dbname="postgres", autocommit=True) as db:
             db.execute(
@@ -315,7 +358,8 @@ def verify(port):
             )
         expect("RESOURCE_NOT_FOUND", lambda: service.set(
             item, idempotency_key="eligibility-pg-0001"))
-        print("PASS: isolated PG18 source/eligibility/HTTP replay, single concurrent winner, template/cross-project/revoked/License denial, Audit rollback, role revoke")
+        expect_lookup("RESOURCE_NOT_FOUND", lambda: lookup(actual, "eligibility-pg-0001"))
+        print("PASS: isolated PG18 source/eligibility/HTTP replay, read-only receipt lookup, single concurrent winner, template/cross-project/revoked/License denial, Audit rollback, role revoke")
     finally:
         runtime.dispose()
 

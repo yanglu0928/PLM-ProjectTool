@@ -24,6 +24,26 @@ class EvidenceEligibilityRepositoryTests(unittest.TestCase):
             self.document_id, self.version_id, b"a" * 32, "CANDIDATE", 4,
         )
 
+    def test_exists_is_scoped_minimal_read_without_lock_or_flush(self):
+        session = Mock()
+        session.execute.return_value.scalar_one_or_none.return_value = self.evidence_id
+        with patch("plm_assistant.modules.evidence.infrastructure.eligibility_repository._session",
+                   return_value=session):
+            self.assertTrue(self.repository.exists(object(), scope="PROJECT",
+                                                    project_id=self.project_id,
+                                                    evidence_id=self.evidence_id))
+            session.execute.return_value.scalar_one_or_none.return_value = None
+            self.assertFalse(self.repository.exists(object(), scope="PROJECT",
+                                                     project_id=self.project_id,
+                                                     evidence_id=self.evidence_id))
+        statement = session.execute.call_args.args[0]
+        sql = str(statement.compile(dialect=postgresql.dialect()))
+        self.assertTrue(sql.startswith("SELECT"))
+        self.assertNotIn("FOR UPDATE", sql)
+        self.assertNotIn("content_fingerprint", sql)
+        self.assertIn("evd_evidence_records.project_id =", sql)
+        self.assertFalse(statement.get_execution_options()["autoflush"])
+
     def test_lock_scopes_row_and_uses_for_update(self):
         row = SimpleNamespace(
             evidence_id=self.evidence_id, scope="PROJECT", project_id=self.project_id,

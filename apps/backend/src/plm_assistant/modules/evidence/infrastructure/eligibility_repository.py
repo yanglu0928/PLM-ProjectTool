@@ -19,6 +19,18 @@ def _session(transaction: object) -> Session:
 
 
 class SqlAlchemyEvidenceEligibilityRepository:
+    def exists(self, transaction: object, *, scope: str,
+               project_id: uuid.UUID | None, evidence_id: uuid.UUID) -> bool:
+        """Prove the scoped Evidence identity without loading private content or locking it."""
+        found = _session(transaction).execute(
+            select(EvidenceRow.evidence_id).where(
+                EvidenceRow.evidence_id == evidence_id,
+                EvidenceRow.scope == scope,
+                EvidenceRow.project_id == project_id,
+            ).execution_options(autoflush=False),
+        ).scalar_one_or_none()
+        return found == evidence_id
+
     def lock(self, transaction: object, *, scope: str,
              project_id: uuid.UUID | None,
              evidence_id: uuid.UUID) -> LockedEvidenceEligibility | None:

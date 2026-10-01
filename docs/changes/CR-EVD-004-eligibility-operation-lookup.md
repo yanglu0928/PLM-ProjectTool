@@ -1,6 +1,8 @@
 # CR-EVD-004：Evidence 资格操作结果精确回查
 
-日期：2026-10-01；来源：`EVD-01-A04-P03-A08-P06` 前置核查；状态：`DESIGN_RECORDED / IMPLEMENTATION_PENDING`。原 Gate 2 API Contract 冻结提交 `64cdf09` 不修改。
+日期：2026-10-01；来源：`EVD-01-A04-P03-A08-P06` 前置核查；状态：`INTERNAL_PG_VERIFIED / HTTP_AND_UI_PENDING`。原 Gate 2 API Contract 冻结提交 `64cdf09` 不修改。
+
+实施检查点：P07 收据只读查询、P08 当前身份边界、P09 scoped Evidence→原操作者收据内部服务已在 Windows11/隔离 PostgreSQL18 验证；公开路由、平台组合和前端仍未实现，CR 不关闭。证据见 [P09](../progress/evd-01-a04-p03-a08-p09-internal-lookup.md)。
 
 ## 冲突与证据
 
