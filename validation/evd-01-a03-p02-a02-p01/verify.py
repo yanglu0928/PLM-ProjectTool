@@ -32,6 +32,10 @@ from plm_assistant.modules.document.infrastructure.parse_result_read_repository 
     SqlAlchemyParseResultReadRepository,
 )
 from plm_assistant.modules.document.infrastructure.parse_result_storage import LocalParseResultStorage
+from plm_assistant.modules.evidence.application.parsed_node_proof import ParsedNodeEvidenceProofService
+from plm_assistant.modules.parser.application.structured_result import (
+    ParsedNode, ParsedResult, TextRangePosition,
+)
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
 
@@ -124,11 +128,12 @@ def verify(port: int, scratch: Path) -> None:
         db.execute("UPDATE plm.doc_parse_records SET parse_state='RUNNING',"
                    "started_at=statement_timestamp(),lock_version=1 WHERE parse_record_id=%s", (record,))
         result_id = uuid.uuid4()
-        payload = json.dumps({
-            "schema_version": "1", "document_version_id": str(version),
-            "source_sha256": source_sha.hex(), "parser_profile": "PLAIN_TEXT",
-            "parser_version": "1", "nodes": [],
-        }, sort_keys=True, separators=(",", ":")).encode()
+        payload = ParsedResult(
+            document_version_id=version, source_sha256=source_sha,
+            parser_profile="PLAIN_TEXT", parser_version="1",
+            nodes=(ParsedNode("synthetic-1", "TEXT_LINE", "Synthetic",
+                              TextRangePosition(0, 9, hashlib.sha256(b"Synthetic").hexdigest())),),
+        ).canonical_bytes()
         data_root = scratch / "private-results"
         data_root.mkdir()
         storage = LocalParseResultStorage(data_root)
@@ -177,6 +182,13 @@ def verify(port: int, scratch: Path) -> None:
         result = service.read(query, document_id=document,
                               document_version_id=version, parse_record_id=record)
         assert result.content == payload and result.result_ref_id == result_id
+        locator = json.loads(payload)["nodes"][0]["source_locator"]
+        evidence_proof = ParsedNodeEvidenceProofService(results=service).prove(
+            query, document_id=document, document_version_id=version,
+            parse_record_id=record, locator=locator,
+        )
+        assert (evidence_proof.node_id == "synthetic-1"
+                and evidence_proof.content_fingerprint == hashlib.sha256(b"Synthetic").digest())
         snapshots.allowed = False
         try:
             service.read(query, document_id=document,
@@ -195,7 +207,7 @@ def verify(port: int, scratch: Path) -> None:
         else:
             raise AssertionError("tampered private result accepted")
         print("PASS: isolated PostgreSQL 18 success/failure records, scoped metadata, "
-              "private result hash, revoked synthetic reader and tamper rejection")
+              "private result hash, exact Evidence node, revoked synthetic reader and tamper rejection")
     finally:
         runtime.dispose()
 

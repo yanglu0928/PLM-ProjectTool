@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/EVD-01-A03-P02-A02-P02 新增 Evidence 内部解析节点精确位置证明，唯一节点/固定来源与 STRUCTURED_NODE 身份匹配；定向7/7、隔离PG18合成Parser结果、后端1,743项（3既有跳过）及wheel通过。兼容性：无公开API/Schema/权限变化。升级：无迁移。已知问题：真实格式与SECTION位置、正式Evidence创建/组合和Gate3仍待。
+
 - 2026-10-01：0.1.0.dev0/EVD-01-A03-P02-A02-P01 增加 Document 内部固定 ParseResult 受权读取 Port，文件快照/成功记录/ResultRef/私有字节前后复核；定向7/7、隔离PG18真实文件、后端1,736项（3既有跳过）及wheel构建通过。兼容性：无公开API/Schema/权限或发行包变化。升级：无迁移。已知问题：Evidence节点定位、正式组合授权、目标平台与Gate3未完成。
 
 - 2026-10-01：0.1.0.dev0/EVD-01-A03-P02-A02 只读复查 Parser→Evidence 精确定位前置，纠正下一 WBS：Parser 输入/结果链已存在，剩余关键缺口是 Document 所有的受权固定 ParseResult 读取 Port。兼容性：仅进度文档，无代码/API/Schema/发行包变化。升级：无。验证：静态核查；新行为测试未运行。已知问题：SECTION/STRUCTURED_NODE 与各型真实证明、Gate3仍待。

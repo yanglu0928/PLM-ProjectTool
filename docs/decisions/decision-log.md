@@ -6001,3 +6001,9 @@
 - 日期/Phase/WBS：2026-10-01 / Phase2 / EVD-01-A03-P02-A02-P01。编码前选择在 Document 内部建立独立读取 Port：现有 DocumentReadService 先验当前用户/Scope/固定版本，Document 私有仓储只返回成功 ParseRecord 与精确 ResultRef 元数据；私有存储按 Hash/大小回读后，再复核用户授权、来源元数据和结果元数据是否相同。结果字节不经公开 API、不给物理路径，不让 Evidence 直接读 Document 表。理由：单靠 ParseRecord 成功状态或裸结果路径无法防止撤权、跨项目、版本漂移及结果篡改。影响/回滚：无 Schema/Migration/API/权限扩张，仅内部 Port；未装配时可撤代码，既有 ParseRecord 不改。验证计划为成功/伪造/篡改/撤权/漂移单元、实际 PG18 元数据查询与后端回归；未执行项不得记 PASS。
 
 - 执行修正：原计划只复核 Document 元数据不能证明源文件真实字节，最终改为在结果读取前后调用现有 `PrepareDownloadService` 受权且完整性已验快照；Document 私有仓储和结果文件校验边界不变。定向7、隔离PG18成功/失败记录与真实私有结果篡改、后端1736（3既有跳过）及wheel通过。集成授权快照仍为合成 Port，未宣称真实生产账户组合或Evidence精确定位PASS；撤销新Port即可回滚，Schema/API不变。
+
+## DEC-20261001-587 — Evidence 节点位置只按受权结果精确匹配
+
+- 日期/Phase/WBS：2026-10-01 / Phase2 / EVD-01-A03-P02-A02-P02。选择由 Evidence Application 调用 Document 固定结果 Port，在结构化结果内找到且仅找到一条与请求 Locator 完全匹配的真实节点；STRUCTURED_NODE 还必须绑定当前 ParseRecordId 和 NodeId。正文指纹只取被证实节点原文，不沿用整文档 Hash；Parser 未产出的 SECTION 不降级为段落或文档。理由：类型合法不代表位置真实，多个节点复用同一位置会使引用歧义。影响/回滚：仅独立内部证明 Port，无公开 API/Schema/权限扩张；未装配时可撤代码。验证计划覆盖节点类型映射、错误、歧义、跨版本及上游授权失败；真实格式与完整 Gate 另验。
+
+- 执行结果：定向7项、隔离PG18中Parser规范合成节点→私有文件/成功记录→Document受权结果→Evidence精确证明、后端1743项（3既有跳过）和wheel均通过；错误/歧义/撤权/篡改失败关闭。真实格式、实际账户授权组合、SECTION及完整Gate尚无证据，不能据内部PASS上推。无Migration/API，撤销未装配服务即可回滚。
