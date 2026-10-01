@@ -40,6 +40,10 @@ from plm_assistant.modules.document.infrastructure.parse_result_read_repository 
 from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage
 from plm_assistant.modules.document.infrastructure.parse_result_storage import LocalParseResultStorage
 from plm_assistant.modules.document.infrastructure.read_repository import SqlAlchemyDocumentReadRepository
+from plm_assistant.modules.evidence.infrastructure.fixed_source_repository import (
+    SqlAlchemyEvidenceFixedSourceRepository,
+)
+from plm_assistant.modules.evidence.infrastructure.orm import EvidenceRow
 from plm_assistant.modules.evidence.application.parsed_node_proof import ParsedNodeEvidenceProofService
 from plm_assistant.modules.parser.application.structured_result import (
     ParsedNode, ParsedResult, TextRangePosition,
@@ -184,10 +188,87 @@ def verify(port: int, scratch: Path) -> None:
                    "completed_at=statement_timestamp(),error_code='PARSER_TEST_FAILED',"
                    "retryable=false,lock_version=2 WHERE parse_record_id=%s",
                    (failed_record,))
+        source_locator = json.loads(payload)["nodes"][0]["source_locator"]
+        evidence = db.execute(
+            "INSERT INTO plm.evd_evidence_records(scope,project_id,document_id,"
+            "document_version_id,source_parse_record_id,locator_type,locator_payload,"
+            "content_fingerprint,display_label,created_by) VALUES "
+            "('PROJECT',%s,%s,%s,%s,'TEXT_RANGE',%s,%s,'Synthetic node',%s) "
+            "RETURNING evidence_id",
+            (project, document, version, record, Jsonb(source_locator),
+             hashlib.sha256(b"Synthetic").digest(), actor),
+        ).fetchone()[0]
+        candidate = db.execute(
+            "INSERT INTO plm.evd_evidence_records(scope,project_id,document_id,"
+            "document_version_id,locator_type,locator_payload,content_fingerprint,"
+            "display_label,created_by) VALUES "
+            "('PROJECT',%s,%s,%s,'DOCUMENT',%s,%s,'Candidate',%s) "
+            "RETURNING evidence_id",
+            (project, document, version, Jsonb({"locator_type": "DOCUMENT"}),
+             source_sha, actor),
+        ).fetchone()[0]
+        db.execute(
+            "UPDATE plm.evd_evidence_records SET eligibility_state='ELIGIBLE',"
+            "eligibility_reason='Synthetic review',updated_by=%s,"
+            "lock_version=lock_version+1 WHERE evidence_id=%s",
+            (actor, evidence),
+        )
 
     runtime = create_database_runtime(url)
     try:
         metadata = SqlAlchemyParseResultReadRepository()
+        evidence_sources = SqlAlchemyEvidenceFixedSourceRepository()
+        with runtime.unit_of_work() as tx:
+            assert evidence_sources.get_for_trace(
+                tx, scope="PROJECT", project_id=uuid.uuid4(),
+                evidence_id=evidence,
+            ) is None
+            assert evidence_sources.get_for_trace(
+                tx, scope="PROJECT", project_id=project,
+                evidence_id=candidate,
+            ) is None
+            cached = tx.session.get(EvidenceRow, evidence)
+            assert cached is not None and cached.lock_version == 1
+            with psycopg.connect(host="127.0.0.1", port=port, user=USER,
+                                 dbname="postgres", autocommit=True) as changer:
+                changer.execute(
+                    "UPDATE plm.evd_evidence_records SET eligibility_reason='Refreshed',"
+                    "updated_by=%s,lock_version=lock_version+1 WHERE evidence_id=%s",
+                    (actor, evidence),
+                )
+            locked_evidence = evidence_sources.get_for_trace(
+                tx, scope="PROJECT", project_id=project, evidence_id=evidence,
+            )
+            assert locked_evidence is not None
+            assert locked_evidence.lock_version == 2
+            assert locked_evidence.source_parse_record_id == record
+            assert locked_evidence.locator == source_locator
+            assert locked_evidence.content_fingerprint == hashlib.sha256(b"Synthetic").digest()
+            assert cached.lock_version == 2
+            with psycopg.connect(host="127.0.0.1", port=port, user=USER,
+                                 dbname="postgres", autocommit=True) as rival:
+                try:
+                    rival.execute(
+                        "SELECT 1 FROM plm.evd_evidence_records WHERE evidence_id=%s "
+                        "FOR UPDATE NOWAIT", (evidence,),
+                    )
+                except psycopg.Error as error:
+                    assert error.sqlstate == "55P03"
+                else:
+                    raise AssertionError("fixed Evidence row was not held")
+        with psycopg.connect(host="127.0.0.1", port=port, user=USER,
+                             dbname="postgres", autocommit=True) as changer:
+            changer.execute(
+                "UPDATE plm.evd_evidence_records SET eligibility_state='REVOKED',"
+                "eligibility_reason='Synthetic revoke',updated_by=%s,"
+                "lock_version=lock_version+1 WHERE evidence_id=%s",
+                (actor, evidence),
+            )
+        with runtime.unit_of_work() as tx:
+            assert evidence_sources.get_for_trace(
+                tx, scope="PROJECT", project_id=project,
+                evidence_id=evidence,
+            ) is None
         with runtime.unit_of_work() as tx:
             assert metadata.get(tx, scope="PROJECT", project_id=uuid.uuid4(),
                                 document_version_id=version, parse_record_id=record) is None
@@ -338,7 +419,8 @@ def verify(port: int, scratch: Path) -> None:
             assert error.code == "FILE_INTEGRITY_MISMATCH"
         else:
             raise AssertionError("tampered private result accepted")
-        print("PASS: isolated PostgreSQL 18 success/failure records, scoped metadata, "
+        print("PASS: isolated PostgreSQL 18 current ELIGIBLE Evidence lock/scope/"
+              "cache refresh/revoke, success/failure ParseRecords, scoped metadata, "
               "caller-transaction Document/Version/File/ParseRecord/ResultRef share locks, "
               "actual private file and result hashes, "
               "exact Evidence node, revoked synthetic reader and tamper rejection")

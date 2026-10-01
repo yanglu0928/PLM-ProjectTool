@@ -6291,3 +6291,12 @@
 - Impact/Rollback：只新增内部 Document Port 与测试，无公开 API、Schema 或数据迁移；可不装配后续 Evidence Owner，Checklist/Gate 写入口保持关闭。GLOBAL 项目经理窄标准引用授权、Evidence 资格/locator 和 Review/例外 Owner 均另行实现，本任务不宣称完整端到端 PASS。
 - Verification：单元覆盖同事务调用/权限失败/版本或解析元数据漂移/物理文件或解析字节篡改/无解析情形，隔离 PG18 验证真实源锁与组合结果，后端全量回归和 wheel 构建。若任一复验失败，返回稳定错误码且不泄露正文或路径。
 - Result：内部组合 Port 定向 6/6（含原读取回归共 16/16）；隔离 PG18 对五张来源表的第二连接 NOWAIT 均 55P03，实际本地文件/解析 JSON 哈希、错误 Scope/失败记录、撤权与篡改拒绝通过；后端全量 1838 通过/3 跳过，开发 wheel 构建 PASS。仅 Document Port，Evidence Owner 与窄 GLOBAL 策略未接，Checklist/Gate 写仍关闭。
+
+# DEC-20261002-604：Evidence 当前可引用来源采用独立只读共享锁快照
+
+- Date/WBS：2026-10-02 / `WFL-01-A07-P04-A01`；来源 `CR-WFL-005`。
+- Decision：Evidence 模块增加单独的内部 `get_for_trace` 来源仓储入口，调用方事务对精确 Evidence 行执行 `FOR SHARE OF` 并刷新 ORM identity map；只接纳指定 Scope/Project 且当前 `ELIGIBLE` 的行，输出固定 Document/Version/ParseRecord、locator、fingerprint 与 lock version。普通 Evidence `get/list` 和资格状态变更入口不改，不在此处证明 locator 所指物理内容。
+- Reason：现有 Eligibility `lock` 用于写决策且不含定位与固定解析来源；普通 Read 非事务锁。独立只读入口避免把创建时曾经 ELIGIBLE 或缓存中的旧事实当成 Workflow 提交时仍有效的来源，并减少对人工作业锁语义的影响。
+- Impact/Rollback：内部 DTO/仓储增量，无 API、Schema、Migration、权限或数据迁移；不装配下游 Owner 即可回滚。下一任务仍须授权、Document 物理证明和 locator/fingerprint 比对，尤其窄 GLOBAL 标准引用；Checklist/Gate 写入口关闭。
+- Verification：单元验证 SQL 共享锁、Scope/Project/ELIGIBLE 条件和非活动事务拒绝；隔离 PG18 验证当前资格、缓存刷新、第二连接 NOWAIT 冲突及事务释放后更新、错误范围/撤销拒绝；全量后端与 wheel。任何缺项不宣称完整 Owner PASS。
+- Result：定向 2/2；隔离 PostgreSQL 18 中 Scope 错配/CANDIDATE/REVOKED 均不可读，已加载 ORM 旧实例刷新至新 lock_version，第二连接 `FOR UPDATE NOWAIT` 得到 55P03，事务释放后状态修改成功；后端全量 1840 通过/3 跳过，开发 wheel 构建 PASS。物理来源及项目经理窄 GLOBAL 权限仍在后续任务。

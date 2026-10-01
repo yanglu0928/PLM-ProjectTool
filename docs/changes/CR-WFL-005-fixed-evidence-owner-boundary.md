@@ -21,3 +21,5 @@
 分任务验证 Document 固定 DocumentVersion/ParseRecord 同事务受锁读取与实际文件 Hash、Evidence locator/fingerprint/当前 ELIGIBLE 复核、PROJECT 跨项目隔离、GLOBAL 标准类别 PM 引用但普通 GLOBAL 读取仍拒绝、非标准/模板/撤权/失效/篡改/并发/回滚、零正文或路径泄漏。再与 Workflow 当前 Checklist/Stage/Project/Session/CSRF/License/Audit/收据合成集成，并补真实 Review/例外 Owner；未齐之前不开放 PASS/WAIVED/Gate。Server 2025/Debian、正式信任、浏览器/UAT/性能/Gate 仍按独立证据验收。
 
 2026-10-02 部分实施：`WFL-01-A07-P03-A01/A02` 已完成 Document 固定元数据共享锁和内部实际文件/解析字节证明，见 `docs/progress/wfl-01-a07-p03-a02-document-fixed-proof.md`。此 CR 整体仍为 `IMPLEMENTATION_PENDING`：Evidence Owner、窄 GLOBAL 策略和其他实际 Owner 尚未闭合，Checklist/Gate 写路由继续关闭。
+
+2026-10-02 后续部分实施：`WFL-01-A07-P04-A01` 完成 Evidence 当前 ELIGIBLE 行的调用方事务共享锁及固定元数据快照；详见 `docs/progress/wfl-01-a07-p04-a01-evidence-current-source-lock.md`。仍未把该快照与 Document 物理证明/定位器合并，CR 整体状态不变。

@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/WFL-01-A07-P04-A01 新增Evidence当前ELIGIBLE固定记录调用方事务共享锁内部读取，包含固定版本、ParseRecord、locator、fingerprint及版本，旧ORM身份缓存强制刷新。兼容性：内部DTO/仓储增量，无公开API/Schema/依赖变化。升级：无迁移，现有Evidence历史不改写。验证：定向2、隔离PG18范围/候选/撤销/旧缓存/锁竞争及释放后修改、后端全量1840通过/3跳过、开发wheel PASS。已知问题：Document证明与locator/fingerprint尚未在Evidence Owner组合，窄GLOBAL授权、Review/例外Owner、正式信任/法律/浏览器/目标平台/UAT/Gate未完成，程序包仍非发行。
+
 - 2026-10-02：0.1.0.dev0/WFL-01-A07-P03-A02 增加Document固定来源内部证明Port，将调用方事务中的受权版本与可选解析记录锁，和实际私有文件/解析结果哈希复验绑定。兼容性：内部Port及读取新鲜度修正，无公开API/Schema/依赖变化。升级：无需迁移，尚未接入Evidence或开放Checklist写。验证：定向16、隔离PG18五表锁/真实私有文件与解析结果/篡改撤权、后端全量1838通过/3跳过、开发wheel PASS。已知问题：窄GLOBAL标准引用、Evidence/Review/例外Owner、正式信任/法律/浏览器/目标平台/UAT/Gate仍未完成，当前包非发行。
 
 - 2026-10-02：0.1.0.dev0/WFL-01-A07-P03-A01 Document ParseRecord/ResultRef 增加调用方事务固定来源共享锁读取，普通读取不变。兼容性：内部仓储增量，无公开 API/Schema/依赖变化。升级：无需迁移；Checklist 写入口继续关闭。验证：定向2、实际隔离PG18双表锁/范围/失败来源及哈希/撤权/篡改回归、后端全量1832通过/3跳过、开发wheel构建PASS。已知问题：应用级文件/解析内容/权限同事务组合、Evidence/Review/例外Owner、正式信任/浏览器/三平台/UAT/Gate仍未完成。
