@@ -55,7 +55,7 @@ async function view(auth: SessionClient, listFetcher: typeof fetch, viewerFetche
 }
 
 describe("ProjectEvidenceListView", () => {
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => { vi.restoreAllMocks(); window.sessionStorage.clear(); });
 
   it("does not load without identity or before required password change", async () => {
     const listFetcher = vi.fn();
@@ -197,6 +197,7 @@ describe("ProjectEvidenceListView", () => {
     expect(eligibility.set.mock.calls[0]?.[1]).toEqual(expect.objectContaining({ etag: '"v0"' }));
     expect(eligibility.set.mock.calls[0]?.[2]).toEqual(descriptor);
     expect(eligibility.set.mock.calls[0]?.[5]).toMatch(/^[\x20-\x7e]{16,128}$/);
+    expect(window.sessionStorage.length).toBe(0);
     expect(wrapper.text()).toContain("回执不代表当前状态");
     wrapper.unmount();
   });
@@ -248,9 +249,61 @@ describe("ProjectEvidenceListView", () => {
     expect(wrapper.find("form").exists()).toBe(false);
     await wrapper.findAll("button").find((button) => button.text() === "刷新证据列表")!.trigger("click");
     await flushPromises();
-    expect(wrapper.text()).toContain("刷新列表后提醒仍保留");
+    expect(wrapper.text()).toContain("刷新页面后提醒仍保留");
     expect(wrapper.text()).toContain("操作号");
     expect(eligibility.set).toHaveBeenCalledOnce();
+    wrapper.unmount();
+    const reloaded = await view(await session(), listFetcher as typeof fetch,
+      viewerFetcher as typeof fetch, undefined, eligibility as unknown as EvidenceEligibilityClient);
+    expect(reloaded.wrapper.text()).toContain("刷新页面后提醒仍保留");
+    expect(reloaded.wrapper.text()).toContain(evidenceId);
+    await reloaded.wrapper.findAll("button").find((button) => button.text() === "定位原文")!.trigger("click");
+    await flushPromises();
+    expect(reloaded.wrapper.findAll("button").some((button) => button.text() === "准备人工确认"))
+      .toBe(false);
+    expect(eligibility.set).toHaveBeenCalledOnce();
+    reloaded.wrapper.unmount();
+  });
+
+  it("does not send a decision if its operation key cannot be saved", async () => {
+    const listFetcher = vi.fn().mockResolvedValue(response({ items: [item], next_cursor: null,
+      has_more: false }));
+    const viewerFetcher = vi.fn().mockResolvedValue(response(descriptor));
+    const eligibility = { current: vi.fn().mockResolvedValue({ evidence_id: evidenceId,
+      document_id: documentId, document_version_id: versionId,
+      eligibility_state: "CANDIDATE", etag: '"v0"' }), set: vi.fn() };
+    const { wrapper } = await view(await session(), listFetcher as typeof fetch,
+      viewerFetcher as typeof fetch, undefined, eligibility as unknown as EvidenceEligibilityClient);
+    await wrapper.findAll("button").find((button) => button.text() === "定位原文")!.trigger("click");
+    await flushPromises();
+    await wrapper.findAll("button").find((button) => button.text() === "准备人工确认")!.trigger("click");
+    await flushPromises();
+    await wrapper.find('input[value="INELIGIBLE"]').setValue();
+    await wrapper.get("textarea").setValue("原文不足以支持此判断");
+    await wrapper.find('input[type="checkbox"]').setValue(true);
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("storage disabled"); });
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+    expect(wrapper.text()).toContain("资格提交已关闭");
+    expect(eligibility.set).not.toHaveBeenCalled();
+    wrapper.unmount();
+  });
+
+  it("fails closed on a malformed saved operation instead of replacing its key", async () => {
+    window.sessionStorage.setItem(`plm.evidence.eligibility.pending.${projectId}`, "not-json");
+    const listFetcher = vi.fn().mockResolvedValue(response({ items: [item], next_cursor: null,
+      has_more: false }));
+    const viewerFetcher = vi.fn().mockResolvedValue(response(descriptor));
+    const eligibility = { current: vi.fn(), set: vi.fn() };
+    const { wrapper } = await view(await session(), listFetcher as typeof fetch,
+      viewerFetcher as typeof fetch, undefined, eligibility as unknown as EvidenceEligibilityClient);
+    expect(wrapper.text()).toContain("待核对记录无效");
+    await wrapper.findAll("button").find((button) => button.text() === "定位原文")!.trigger("click");
+    await flushPromises();
+    expect(wrapper.findAll("button").some((button) => button.text() === "准备人工确认"))
+      .toBe(false);
+    expect(eligibility.current).not.toHaveBeenCalled();
+    expect(eligibility.set).not.toHaveBeenCalled();
     wrapper.unmount();
   });
 });

@@ -40,7 +40,48 @@ const decisionError = ref("");
 const decisionReceipt = ref<EvidenceEligibilityFirstReceipt | null>(null);
 const decisionKey = ref<string | null>(null);
 const decisionUncertain = ref(false);
-const unresolved = ref<{ actorId: string; projectId: string; evidenceId: string; key: string } | null>(null);
+type PendingDecision = { actorId: string; projectId: string; evidenceId: string; key: string };
+const pendingStorageKey = identity ? `plm.evidence.eligibility.pending.${identity.user.user_id}` : "";
+const pendingId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+function pendingRecord(value: unknown): value is PendingDecision {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const entry = value as Record<string, unknown>;
+  return entry.actorId === identity?.user.user_id
+    && typeof entry.projectId === "string" && pendingId.test(entry.projectId)
+    && typeof entry.evidenceId === "string" && pendingId.test(entry.evidenceId)
+    && typeof entry.key === "string" && /^[\x20-\x7e]{16,128}$/.test(entry.key);
+}
+const pendingStorageError = ref(false);
+function readPending(): PendingDecision | null {
+  if (!pendingStorageKey) return null;
+  try {
+    const saved = window.sessionStorage.getItem(pendingStorageKey);
+    if (saved === null) return null;
+    const parsed: unknown = JSON.parse(saved);
+    if (pendingRecord(parsed)) return parsed;
+  } catch { /* Invalid or inaccessible storage must not silently authorize a new decision. */ }
+  pendingStorageError.value = true;
+  return null;
+}
+const unresolved = ref<PendingDecision | null>(readPending());
+function savePending(value: PendingDecision): boolean {
+  if (!pendingStorageKey || pendingStorageError.value || unresolved.value) return false;
+  try {
+    window.sessionStorage.setItem(pendingStorageKey, JSON.stringify(value));
+    if (window.sessionStorage.getItem(pendingStorageKey) !== JSON.stringify(value)) return false;
+    unresolved.value = value;
+    return true;
+  } catch { pendingStorageError.value = true; return false; }
+}
+function clearPending(value: PendingDecision): boolean {
+  if (!pendingStorageKey) return false;
+  try {
+    if (window.sessionStorage.getItem(pendingStorageKey) !== JSON.stringify(value)) return false;
+    window.sessionStorage.removeItem(pendingStorageKey);
+    unresolved.value = null;
+    return true;
+  } catch { pendingStorageError.value = true; return false; }
+}
 let generation = 0;
 let selectionGeneration = 0;
 let previewGeneration = 0;
@@ -70,8 +111,7 @@ function mayDecide(): boolean {
   const project = projectId();
   const role = identity?.authorized_projects.find((entry) => entry.project_id === project)?.role;
   return mayRead() && !!selected.value && (role === "PROJECT_MANAGER" || role === "CUSTOMER_MANAGER")
-    && !(unresolved.value?.projectId === project
-      && unresolved.value.actorId === session.view?.user.user_id)
+    && !pendingStorageError.value && !unresolved.value
     && items.value.some((item) => item.evidence_id === selected.value?.evidence_id
       && item.eligibility_state === "CANDIDATE");
 }
@@ -108,23 +148,31 @@ async function submitDecision() {
   const project = projectId();
   const currentSelection = selectionGeneration;
   const key = crypto.randomUUID();
+  const pending = { actorId: identity!.user.user_id, projectId: project,
+    evidenceId: before.evidence_id, key };
+  if (!savePending(pending)) {
+    decisionError.value = "无法安全保存本次操作号，资格请求未发送；请检查浏览器会话存储。";
+    return;
+  }
   decisionKey.value = key; decisionBusy.value = true; decisionError.value = "";
   try {
     const receipt = await eligibility.set(project, before, view, target, justification, key);
     if (!mounted || currentSelection !== selectionGeneration || projectId() !== project
       || selected.value !== view || !mayRead()) return;
+    if (!clearPending(pending)) {
+      decisionUncertain.value = true;
+      decisionError.value = "提交回执已收到，但无法清除待核对操作；请核对当前资格与审计，勿重复提交。";
+      return;
+    }
     decisionReceipt.value = receipt; decisionCurrent.value = null;
-    unresolved.value = null;
   } catch (failure) {
     if (mounted && currentSelection === selectionGeneration) {
       decisionError.value = failure instanceof EvidenceEligibilityClientError
         ? failure.message : "资格提交结果暂无法确认，请核对当前状态和审计。";
       decisionUncertain.value = !(failure instanceof EvidenceEligibilityClientError)
         || failure.code === "EVIDENCE_ELIGIBILITY_UNCERTAIN";
-      if (decisionUncertain.value) unresolved.value = {
-        actorId: identity!.user.user_id, projectId: project, evidenceId: before.evidence_id, key,
-      };
-      else decisionKey.value = null;
+      if (!decisionUncertain.value && clearPending(pending)) decisionKey.value = null;
+      else decisionUncertain.value = true;
     }
   } finally { if (mounted && currentSelection === selectionGeneration) decisionBusy.value = false; }
 }
@@ -297,10 +345,10 @@ onUnmounted(() => { mounted = false; generation += 1; clearSelection(); });
         </li>
       </ol>
       <button v-if="cursor" type="button" :disabled="busy" @click="load()">继续加载证据</button>
-      <p v-if="unresolved && unresolved.projectId === projectId()
-        && unresolved.actorId === session.view?.user.user_id" role="alert">
-        一项资格提交结果尚未确认（证据 {{ unresolved.evidenceId }}，操作号 {{ unresolved.key }}）。
-        刷新列表后提醒仍保留；请核对当前资格与审计，勿换新操作号重复提交。
+      <p v-if="pendingStorageError" role="alert">浏览器会话存储不可用或待核对记录无效；资格提交已关闭，避免丢失操作号。请检查浏览器环境并核对审计。</p>
+      <p v-if="unresolved && unresolved.actorId === session.view?.user.user_id" role="alert">
+        一项资格提交结果尚未确认（项目 {{ unresolved.projectId }}，证据 {{ unresolved.evidenceId }}，操作号 {{ unresolved.key }}）。
+        刷新页面后提醒仍保留；请核对当前资格与审计，勿换新操作号重复提交。
       </p>
       <p v-if="selectedError" role="alert">{{ selectedError }}</p>
       <section v-if="selected" aria-labelledby="evidence-location-title">
