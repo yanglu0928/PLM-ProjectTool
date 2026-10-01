@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A07-P03-P03 增加无JBIG运行时升级前只读TIFF/BigTIFF元数据预检PoC；真实合成JBIG压缩样本阻断、普通样本放行、缺文件失败关闭，大小端/多页/SubIFD/畸形单元测试3/3 PASS。兼容性：JBIG压缩TIFF不再支持，新脚本未接正式安装/存量清单，不改API/Migration/正式产品路径；可撤脚本回滚。完整数据清单/升级演练、NOTICE/许可证、目标平台/Gate仍待，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A07-P03-P02 新增无JBIG Tesseract 34 PE许可证据重建工具、34行CSV及通知字段草案；候选34/34 Hash对静态图、33项旧包逐字节一致、1项源码构建libtiff单列，重复生成相同SHA，定向3/3 PASS。兼容性：仅非发行审计，无正式安装/API/Migration变化；旧35行历史保留，可撤新矩阵回滚。LICENSE/NOTICE、具体许可适用/源码交付、签名/动态装载/目标系统/升级JBIG处置仍待，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A07-P03-P01 对无JBIG候选34 PE许可义务分流：33项旧证据待逐字节复核、新libtiff源码许可Hash定位，13项含GPL/LGPL/Apache/双许可包级声明须逐项核条款与源码；根目录暂无项目 LICENSE/NOTICE。仅文档，不改程序/API/Migration/安装；旧证据保留，可撤本记录回滚。静态数量34及源码Hash核对完成，法律/Notice/公开/目标系统仍待，`release_eligible=false`。
