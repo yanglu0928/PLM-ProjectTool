@@ -10,6 +10,8 @@ P11 已仅在 Windows `--platform-write` 显式组合挂载该路由；隔离 PG
 
 P12 项目前端只读回查客户端及 Session 传输已通过合同/全量测试，见 [P12](../progress/evd-01-a04-p03-a08-p12-frontend-lookup-client.md)；页面尚未接入，GLOBAL Admin 前端、真实浏览器及正式目标信任源仍未验，CR 不关闭。
 
+P13 项目证据页已接入原 Key 回查→受权当前 GET→人工清除提醒，见 [P13](../progress/evd-01-a04-p03-a08-p13-ui-lookup-recovery.md)；前句为 P12 当时检查点。浏览器及正式目标信任源仍未验，CR 不关闭。
+
 ## 冲突与证据
 
 冻结 `EVIDENCE_SET_ELIGIBILITY` 要求持久幂等，现有内部命令把 Evidence、Audit 与收据同事务提交。浏览器在 POST 后断线/刷新可能拿不到回执；前端已先保存操作号并停止换号重试。冻结 `AUDIT_PROJECT_LIST` 仅 ProjectManager 可用，审计事件不包含 Idempotency-Key；CustomerManager 也能提交资格，却不能据 Audit 精确核对自己的操作。当前读取 API 只返回 Evidence 的**当前**资格，不能将某次操作号与已提交结果对应。若仅凭当前状态/审计时间推断，可能把另一位操作者的裁定误认作本次成功；若清除提醒再换 Key，可能造成重复命令或误导用户。

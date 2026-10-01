@@ -11,15 +11,19 @@ import { EvidenceEligibilityClient, EvidenceEligibilityClientError,
   type CurrentEvidenceEligibility, type EvidenceEligibilityFirstReceipt } from "@/modules/evidence/api/evidenceEligibilityClient";
 import { EvidenceEligibilityAuditClient, EvidenceEligibilityAuditError,
   type EvidenceEligibilityAuditEvent } from "@/modules/evidence/api/evidenceEligibilityAuditClient";
+import { EvidenceEligibilityOperationLookupClient, EvidenceEligibilityOperationLookupError,
+  type EvidenceEligibilityOperationLookup } from "@/modules/evidence/api/evidenceEligibilityOperationLookupClient";
 
 const props = defineProps<{ session?: SessionClient; listClient?: EvidenceListClient;
   viewerClient?: EvidenceViewerClient; eligibilityClient?: EvidenceEligibilityClient;
-  eligibilityAuditClient?: EvidenceEligibilityAuditClient; previewFetch?: typeof fetch }>();
+  eligibilityAuditClient?: EvidenceEligibilityAuditClient;
+  eligibilityLookupClient?: EvidenceEligibilityOperationLookupClient; previewFetch?: typeof fetch }>();
 const session = toRaw(props.session ?? inject(sessionClientKey, null) ?? new SessionClient());
 const lists = toRaw(props.listClient ?? new EvidenceListClient());
 const viewers = toRaw(props.viewerClient ?? new EvidenceViewerClient());
 const eligibility = toRaw(props.eligibilityClient ?? new EvidenceEligibilityClient(session));
 const eligibilityAudits = toRaw(props.eligibilityAuditClient ?? new EvidenceEligibilityAuditClient(session));
+const eligibilityLookup = toRaw(props.eligibilityLookupClient ?? new EvidenceEligibilityOperationLookupClient(session));
 const previewFetch = props.previewFetch ?? fetch;
 const identity = session.view;
 const route = useRoute();
@@ -67,6 +71,59 @@ function readPending(): PendingDecision | null {
   return null;
 }
 const unresolved = ref<PendingDecision | null>(readPending());
+const lookupResult = ref<EvidenceEligibilityOperationLookup | null>(null);
+const lookupCurrent = ref<CurrentEvidenceEligibility | null>(null);
+const lookupBusy = ref(false);
+const lookupError = ref("");
+let lookupGeneration = 0;
+function clearLookup() {
+  lookupGeneration += 1; lookupResult.value = null; lookupCurrent.value = null;
+  lookupBusy.value = false; lookupError.value = "";
+}
+function mayLookupPending(): boolean {
+  const pending = unresolved.value;
+  const role = session.view?.authorized_projects.find((item) => item.project_id === pending?.projectId)?.role;
+  return mayRead() && !!pending && pending.actorId === session.view?.user.user_id
+    && pending.projectId === projectId() && !pendingStorageError.value
+    && (role === "PROJECT_MANAGER" || role === "CUSTOMER_MANAGER");
+}
+async function lookupPending() {
+  const pending = unresolved.value;
+  if (!mayLookupPending() || !pending || lookupBusy.value) return;
+  clearLookup();
+  const current = ++lookupGeneration;
+  lookupBusy.value = true;
+  try {
+    const result = await eligibilityLookup.lookup(pending.projectId, pending.evidenceId, pending.key);
+    if (!mounted || current !== lookupGeneration || unresolved.value !== pending
+      || !mayLookupPending()) return;
+    if (result.status === "COMPLETED") {
+      const evidence = await eligibility.current(pending.projectId, pending.evidenceId);
+      if (!mounted || current !== lookupGeneration || unresolved.value !== pending
+        || !mayLookupPending() || evidence.evidence_id !== pending.evidenceId) return;
+      lookupCurrent.value = evidence;
+    }
+    lookupResult.value = result;
+  } catch (failure) {
+    if (mounted && current === lookupGeneration) {
+      lookupError.value = failure instanceof EvidenceEligibilityOperationLookupError
+        || failure instanceof EvidenceEligibilityClientError
+        ? failure.message : "暂时无法核对原操作；请保留操作号，不要重新提交。";
+    }
+  } finally { if (mounted && current === lookupGeneration) lookupBusy.value = false; }
+}
+function confirmLookup() {
+  const pending = unresolved.value;
+  if (!pending || !mayLookupPending() || lookupBusy.value
+    || lookupResult.value?.status !== "COMPLETED"
+    || lookupResult.value.evidence_id !== pending.evidenceId
+    || lookupCurrent.value?.evidence_id !== pending.evidenceId) return;
+  if (!clearPending(pending)) {
+    lookupError.value = "无法清除待核对操作；请保留原操作号并检查浏览器会话存储。";
+    return;
+  }
+  clearLookup(); clearAudit();
+}
 const auditItems = ref<readonly EvidenceEligibilityAuditEvent[]>([]);
 const auditCursor = ref<string | null>(null);
 const auditLoaded = ref(false);
@@ -141,6 +198,7 @@ function clearSelection() {
   selectionGeneration += 1;
   clearPreview();
   clearDecision();
+  clearLookup();
   selected.value = null;
   selectedBusy.value = null;
   selectedError.value = "";
@@ -397,6 +455,25 @@ onUnmounted(() => { mounted = false; generation += 1; clearSelection(); clearAud
         一项资格提交结果尚未确认（项目 {{ unresolved.projectId }}，证据 {{ unresolved.evidenceId }}，操作号 {{ unresolved.key }}）。
         刷新页面后提醒仍保留；请核对当前资格与审计，勿换新操作号重复提交。
       </p>
+      <section v-if="unresolved && unresolved.projectId === projectId()" aria-label="按操作号精确回查">
+        <template v-if="mayLookupPending()">
+          <button type="button" :disabled="lookupBusy" @click="lookupPending()">
+            {{ lookupBusy ? '正在回查原操作…' : '按原操作号回查' }}
+          </button>
+          <p v-if="lookupError" role="alert">{{ lookupError }}</p>
+          <p v-if="lookupResult?.status === 'UNCONFIRMED'" role="status">
+            尚不能确认原操作是否提交。请保留操作号，不要换号重试；可稍后再次回查。
+          </p>
+          <template v-if="lookupResult?.status === 'COMPLETED' && lookupCurrent">
+            <p role="status">原操作已有完成收据；这只证明原操作提交，不代表当前资格。</p>
+            <p>受权重新读取的当前资格：{{ lookupCurrent.eligibility_state === 'ELIGIBLE' ? '可用'
+              : lookupCurrent.eligibility_state === 'INELIGIBLE' ? '不可用'
+              : lookupCurrent.eligibility_state === 'REVOKED' ? '已撤销' : '待核定' }}（{{ lookupCurrent.etag }}）。</p>
+            <button type="button" @click="confirmLookup()">已核对当前资格，清除待核对提醒</button>
+          </template>
+        </template>
+        <p v-else>当前身份无权回查原操作；操作号将保留，请联系项目负责人或客户经理。</p>
+      </section>
       <section v-if="unresolved && unresolved.projectId === projectId()" aria-label="资格操作审计回查">
         <template v-if="mayReadPendingAudit()">
           <button type="button" :disabled="auditBusy" @click="loadPendingAudit(false)">

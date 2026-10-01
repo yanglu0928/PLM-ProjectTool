@@ -8,6 +8,7 @@ import { EvidenceListClient } from "@/modules/evidence/api/evidenceListClient";
 import { EvidenceViewerClient } from "@/modules/evidence/api/evidenceViewerClient";
 import { EvidenceEligibilityClient, EvidenceEligibilityClientError } from "@/modules/evidence/api/evidenceEligibilityClient";
 import { EvidenceEligibilityAuditClient } from "@/modules/evidence/api/evidenceEligibilityAuditClient";
+import { EvidenceEligibilityOperationLookupClient } from "@/modules/evidence/api/evidenceEligibilityOperationLookupClient";
 import ProjectEvidenceListView from "./ProjectEvidenceListView.vue";
 
 const projectId = "01234567-89ab-4cde-8123-456789abcdef";
@@ -44,13 +45,14 @@ async function session(restricted = false, role = "PROJECT_MANAGER"): Promise<Se
 }
 async function view(auth: SessionClient, listFetcher: typeof fetch, viewerFetcher: typeof fetch,
                     previewFetch?: typeof fetch, eligibilityClient?: EvidenceEligibilityClient,
-                    eligibilityAuditClient?: EvidenceEligibilityAuditClient) {
+                    eligibilityAuditClient?: EvidenceEligibilityAuditClient,
+                    eligibilityLookupClient?: EvidenceEligibilityOperationLookupClient) {
   const router = createAppRouter(createMemoryHistory());
   await router.push(`/projects/${projectId}/evidence`);
   await router.isReady();
   const wrapper = mount(ProjectEvidenceListView, { props: { session: auth,
     listClient: new EvidenceListClient(listFetcher), viewerClient: new EvidenceViewerClient(viewerFetcher),
-    previewFetch, eligibilityClient, eligibilityAuditClient },
+    previewFetch, eligibilityClient, eligibilityAuditClient, eligibilityLookupClient },
   global: { plugins: [router] } });
   await flushPromises();
   return { wrapper, router };
@@ -356,5 +358,66 @@ describe("ProjectEvidenceListView", () => {
     expect(wrapper.text()).toContain("不能证明操作未提交");
     expect(wrapper.text()).toContain("操作号");
     wrapper.unmount();
+  });
+
+  it("checks the original receipt and then current Evidence before manual reminder clearance", async () => {
+    const pendingKey = `plm.evidence.eligibility.pending.${projectId}`;
+    window.sessionStorage.setItem(pendingKey, JSON.stringify({ actorId: projectId,
+      projectId, evidenceId, key: "k".repeat(16) }));
+    const listFetcher = vi.fn().mockResolvedValue(response({ items: [item], next_cursor: null,
+      has_more: false }));
+    const lookup = { lookup: vi.fn().mockResolvedValue({ status: "COMPLETED", evidence_id: evidenceId,
+      first_status_code: 200, is_current_state_proof: false }) };
+    const eligibility = { current: vi.fn().mockResolvedValue({ evidence_id: evidenceId,
+      document_id: documentId, document_version_id: versionId,
+      eligibility_state: "REVOKED", etag: '"v2"' }), set: vi.fn() };
+    const { wrapper } = await view(await session(false, "CUSTOMER_MANAGER"), listFetcher as typeof fetch,
+      vi.fn() as typeof fetch, undefined, eligibility as unknown as EvidenceEligibilityClient,
+      undefined, lookup as unknown as EvidenceEligibilityOperationLookupClient);
+    await wrapper.findAll("button").find((button) => button.text() === "按原操作号回查")!.trigger("click");
+    await flushPromises();
+    expect(lookup.lookup).toHaveBeenCalledWith(projectId, evidenceId, "k".repeat(16));
+    expect(eligibility.current).toHaveBeenCalledWith(projectId, evidenceId);
+    expect(wrapper.text()).toContain("原操作已有完成收据");
+    expect(wrapper.text()).toContain("当前资格：已撤销");
+    expect(window.sessionStorage.getItem(pendingKey)).not.toBeNull();
+    await wrapper.findAll("button").find((button) => button.text() === "已核对当前资格，清除待核对提醒")!
+      .trigger("click");
+    expect(window.sessionStorage.getItem(pendingKey)).toBeNull();
+    expect(eligibility.set).not.toHaveBeenCalled();
+    wrapper.unmount();
+  });
+
+  it("retains the original key on unconfirmed result, current read failure and insufficient role", async () => {
+    const pendingKey = `plm.evidence.eligibility.pending.${projectId}`;
+    window.sessionStorage.setItem(pendingKey, JSON.stringify({ actorId: projectId,
+      projectId, evidenceId, key: "k".repeat(16) }));
+    const listFetcher = vi.fn().mockResolvedValue(response({ items: [item], next_cursor: null,
+      has_more: false }));
+    const lookup = { lookup: vi.fn().mockResolvedValueOnce({ status: "UNCONFIRMED",
+      is_current_state_proof: false }).mockResolvedValueOnce({ status: "COMPLETED",
+      evidence_id: evidenceId, first_status_code: 200, is_current_state_proof: false }) };
+    const eligibility = { current: vi.fn().mockRejectedValue(new EvidenceEligibilityClientError(
+      "EVIDENCE_ELIGIBILITY_UNCERTAIN")), set: vi.fn() };
+    const { wrapper } = await view(await session(), listFetcher as typeof fetch,
+      vi.fn() as typeof fetch, undefined, eligibility as unknown as EvidenceEligibilityClient,
+      undefined, lookup as unknown as EvidenceEligibilityOperationLookupClient);
+    await wrapper.findAll("button").find((button) => button.text() === "按原操作号回查")!.trigger("click");
+    await flushPromises();
+    expect(wrapper.text()).toContain("尚不能确认原操作是否提交");
+    expect(eligibility.current).not.toHaveBeenCalled();
+    expect(window.sessionStorage.getItem(pendingKey)).not.toBeNull();
+    await wrapper.findAll("button").find((button) => button.text() === "按原操作号回查")!.trigger("click");
+    await flushPromises();
+    expect(wrapper.text()).toContain("提交结果暂无法确认");
+    expect(wrapper.text()).not.toContain("已核对当前资格，清除待核对提醒");
+    expect(window.sessionStorage.getItem(pendingKey)).not.toBeNull();
+    wrapper.unmount();
+    const denied = await view(await session(false, "CUSTOMER_MEMBER"), listFetcher as typeof fetch,
+      vi.fn() as typeof fetch, undefined, eligibility as unknown as EvidenceEligibilityClient,
+      undefined, lookup as unknown as EvidenceEligibilityOperationLookupClient);
+    expect(denied.wrapper.text()).toContain("当前身份无权回查原操作");
+    expect(lookup.lookup).toHaveBeenCalledTimes(2);
+    denied.wrapper.unmount();
   });
 });
