@@ -5939,3 +5939,7 @@
 ## DEC-20261001-571 — bce许可证通用正文仅作为复用审阅候选
 
 - 日期/Phase/WBS：2026-10-01 / Phase2 / PLT-PKG-01-A09-P43-A08。固定bce-python-sdk 0.9.79原wheel/sdist、P43候选及P33/P22谱系后，元数据声明Apache License 2.0，原wheel/sdist与候选均无bce独立通知；候选中Caddy侧载的通用Apache-2.0正文与官方正文同SHA-256。选择记录“现有正文可复用审阅”而不复制同字节文件或静默修改固定候选。理由：正文相同只证明文本可用，不证明bce版权归属、专属通知或组合发行义务。风险/回滚：只增只读审计及文档，可撤工具，历史包不变；合格法律复核/最终NOTICE、正式信任源和Gate仍开放，`release_eligible=false`。
+
+## DEC-20261001-572 — 许可表达式空项按材料位置分类而不自动定性
+
+- 日期/Phase/WBS：2026-10-01 / Phase2 / PLT-PKG-01-A09-P43-A09。先固定P43/P33/P22与原生矩阵，再逐一核对60项空 `license_expression` 的名称/版本、精确包内 `METADATA`、嵌入通知及独立侧载；把材料分为 `EMBEDDED`、`SIDECAR_ONLY`、`NO_DISTRIBUTION_NOTICE`，若两类材料同时存在以嵌入类记录并仍保留侧载路径。理由：空元数据字段不能直接等同缺许可证，文本存在也不能等同许可义务完成。影响/回滚：只读工具和审阅清单可撤，固定候选/API/Schema/生产安装不变；所有行继续 `REVIEW_REQUIRED`，法律复核和最终NOTICE仍阻断发行。

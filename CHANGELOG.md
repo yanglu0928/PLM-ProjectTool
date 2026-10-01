@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P43-A09 新增60项Python第三方许可表达式空值的精确METADATA/通知材料映射清单和只读审计；57项嵌入、2项仅侧载、1项无专属通知，定向5/5、真实候选审计PASS。兼容性：无发行包/API/Schema/SCM变化，`release_eligible=false`。升级：无迁移。已知问题：全部仍待法律复核，产品LICENSE/最终NOTICE、正式信任源/目标平台/Gate未完成。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P43-A08 精确核对bce-python-sdk 0.9.79原wheel/sdist、候选元数据和官方Apache-2.0文本；候选内Caddy侧载全文可作为共用文本审阅候选，但bce专属归属/通知尚缺，定向3/3、真实固定包审计PASS。兼容性：只增只读工具与审阅记录，无发行包/API/Schema/SCM变化，`release_eligible=false`。升级：无迁移。已知问题：产品级LICENSE/最终NOTICE及合格法律复核、正式信任源/目标平台/Gate未完成。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P43-A07 新增第三方NOTICE审阅草案与只读输入审计；106个Python分发包分为自有1/第三方105，第三方60项许可表达式元数据空、`bce-python-sdk`候选内独立通知材料缺失，定向3/3、真实固定包审计PASS。兼容性：仅审阅材料，无包/API/Schema/SCM变化，`release_eligible=false`。升级：无迁移。已知问题：产品LICENSE/最终NOTICE和合格法律复核、正式信任源/目标平台/Gate未完成。
