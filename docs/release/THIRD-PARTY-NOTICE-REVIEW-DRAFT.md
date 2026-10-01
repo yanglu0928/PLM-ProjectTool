@@ -15,6 +15,8 @@
 
 [34 项原生 PE 精确材料映射](../progress/plt-pkg-01-a09-p45-a01-native-pe-review-inputs.md)已确认各二进制字节与来源矩阵一致；矩阵的 61 条许可文本记录未形成候选内的原生组件专属通知。其他 Python 包材料中偶有相同正文，不可替代原生 PE 归属映射。
 
+[原始来源字节核验](../progress/plt-pkg-01-a09-p45-a02-native-license-source-bytes.md)已从固定 MSYS2 包/上游源码归档读回全部 61 条矩阵文本，得到 42 个不同正文哈希；这是新候选侧载的技术输入，尚未改旧包或形成已批准的原生 NOTICE。
+
 第三方证据目录共有 190 个文件，其中包括许可证文本、SBOM 与校验文本；“190”不是已审结的许可证数量。源码目录有 Caddy、Go 标准库和 Ghostscript 三份归档。候选字节和数量的复核见 [发行证据差异记录](../progress/plt-pkg-01-a09-p43-a06-release-obligation-delta.md)；[Caddy 149 项审阅队列](../progress/plt-pkg-01-a09-p29-caddy-sbom-review-queue.csv)和[34 项原生 PE 矩阵](../progress/plt-pkg-01-a08-p09-p05-p03-a07-p03-no-jbig-license-evidence.csv)保留逐项来源。
 
 ## Python 通知材料的明确缺口
