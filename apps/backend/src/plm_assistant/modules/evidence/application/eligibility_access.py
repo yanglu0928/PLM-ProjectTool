@@ -1,4 +1,4 @@
-"""Current write identity for human Evidence eligibility decisions."""
+"""Current identity for human Evidence eligibility writes and receipt lookups."""
 
 from __future__ import annotations
 
@@ -55,7 +55,10 @@ class EvidenceEligibilityAccess:
                                operation: str, session_token: bytes,
                                csrf_token: bytes) -> None:
         if (transaction is None or type(actor_id) is not uuid.UUID or actor_id.int == 0
-                or operation != "V1_EVIDENCE_SET_ELIGIBILITY"
+                or operation not in (
+                    "V1_EVIDENCE_SET_ELIGIBILITY",
+                    "V1_EVIDENCE_ELIGIBILITY_OPERATION_LOOKUP",
+                )
                 or scope not in ("GLOBAL", "PROJECT")
                 or scope == "GLOBAL" and project_id is not None
                 or scope == "PROJECT" and (
@@ -87,5 +90,7 @@ class EvidenceEligibilityAccess:
             if (type(facts) is not ProjectActorFacts
                     or facts.project_role not in _PROJECT_DECIDERS):
                 raise EvidenceEligibilityAccessError("RESOURCE_NOT_FOUND")
-            if facts.project_state != "ACTIVE":
+            if facts.project_state not in ("ACTIVE", "ARCHIVED"):
+                raise EvidenceEligibilityAccessError("RESOURCE_NOT_FOUND")
+            if facts.project_state == "ARCHIVED" and operation == "V1_EVIDENCE_SET_ELIGIBILITY":
                 raise EvidenceEligibilityAccessError("PROJECT_ARCHIVED")

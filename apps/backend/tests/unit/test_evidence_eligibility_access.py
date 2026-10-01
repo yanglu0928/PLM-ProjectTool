@@ -45,11 +45,12 @@ class EvidenceEligibilityAccessTests(unittest.TestCase):
             project_facts=self.project,
         )
 
-    def _require(self, scope="PROJECT", project_id=None):
+    def _require(self, scope="PROJECT", project_id=None,
+                 operation="V1_EVIDENCE_SET_ELIGIBILITY"):
         self.access.require_in_transaction(
             object(), actor_id=self.actor, scope=scope,
             project_id=self.project_id if project_id is None and scope == "PROJECT"
-            else project_id, operation="V1_EVIDENCE_SET_ELIGIBILITY",
+            else project_id, operation=operation,
             session_token=b"s" * 32, csrf_token=b"c" * 32,
         )
 
@@ -95,6 +96,39 @@ class EvidenceEligibilityAccessTests(unittest.TestCase):
                 operation="V1_EVIDENCE_SET_ELIGIBILITY",
                 session_token=b"s" * 32, csrf_token=b"x" * 32)
         self.assertEqual(caught.exception.code, "AUTH_ACCESS_DENIED")
+
+    def test_lookup_is_current_actor_only_and_archived_read_is_allowed(self):
+        lookup = "V1_EVIDENCE_ELIGIBILITY_OPERATION_LOOKUP"
+        for role in ("PROJECT_MANAGER", "CUSTOMER_MANAGER"):
+            self.project.role = role
+            self.project.state = "ARCHIVED"
+            self._require(operation=lookup)
+            self.assertTrue(self.project.lock)
+        for role in ("IMPLEMENTATION_MEMBER", "CUSTOMER_MEMBER", None):
+            self.project.role = role
+            with self.assertRaises(EvidenceEligibilityAccessError) as caught:
+                self._require(operation=lookup)
+            self.assertEqual(caught.exception.code, "RESOURCE_NOT_FOUND")
+        self.project.role = "PROJECT_MANAGER"
+        self.session.user = uuid.uuid4()
+        with self.assertRaises(EvidenceEligibilityAccessError) as caught:
+            self._require(operation=lookup)
+        self.assertEqual(caught.exception.code, "AUTH_ACCESS_DENIED")
+        self.session.user = self.actor
+        self.admin.user = self.actor
+        self._require("GLOBAL", operation=lookup)
+        self.admin.user = None
+        with self.assertRaises(EvidenceEligibilityAccessError):
+            self._require("GLOBAL", operation=lookup)
+
+    def test_lookup_rejects_unknown_operation_and_invalid_project_state(self):
+        with self.assertRaises(EvidenceEligibilityAccessError) as caught:
+            self._require(operation="V1_UNREGISTERED")
+        self.assertEqual(caught.exception.code, "RESOURCE_NOT_FOUND")
+        self.project.state = "UNEXPECTED"
+        with self.assertRaises(EvidenceEligibilityAccessError) as caught:
+            self._require(operation="V1_EVIDENCE_ELIGIBILITY_OPERATION_LOOKUP")
+        self.assertEqual(caught.exception.code, "RESOURCE_NOT_FOUND")
 
 
 if __name__ == "__main__":
