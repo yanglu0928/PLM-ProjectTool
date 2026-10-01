@@ -6013,3 +6013,9 @@
 - 日期/Phase/WBS：2026-10-01 / Phase2 / EVD-01-A03-P02-A02-P03-P01。输入 Parser 固定策略/文本与 CSV 真实字节解析、Document 结果 Port 和 Evidence 节点证明；只验证纯合成临时文件，不外发客户资料。前置 P01/P02 内部 PASS。涉及 Parser/Evidence 已有合同及验证脚本，不增公开 API、实体、权限、Schema/Migration 或依赖。验收为文本 UTF-8/BOM/CRLF 的字符区间可回切且指纹一致、CSV 引号跨行与 A1 单元格可回查、空单元格不能成为有效 Evidence 但不拖垮同表非空节点、来源 Hash/歧义失败关闭。风险：只覆盖两种格式，不代替 Office/PDF/OCR 的精度或真实业务授权；回滚为停用新增验证，既有历史不变。
 
 - 执行结果：真实临时合成TXT/CSV文件经Parser实际读取并逐节点回查，中文BOM/CRLF、跨行CSV、空单元格、源文件改写拒绝通过。修复Evidence将空CSV节点错误扩散为整份不可用，并按Parser Profile限定节点类型；定向8、后端1744（3既有跳过）、wheel通过。只覆盖两格式，正式账户/Office/PDF/OCR/Gate仍待；无API/Schema/迁移。
+
+## DEC-20261001-589 — Office 三格式从实际文件独立回查节点位置
+
+- 日期/Phase/WBS：2026-10-01 / Phase2 / EVD-01-A03-P02-A02-P03-P02。输入现有 DOCX/PPTX/XLSX Parser、已验 Document→Evidence 内部节点证明及已冻结 Locator 合同；前置文本/CSV 局部格式验证通过。仅生成临时纯合成 Office 文件，用独立 Office 读取库按段落、表格、形状、工作表单元格回查 Parser 节点，再核 Evidence 直接/结构化位置，不用客户文件或外部服务。不改生产实体、API、权限、Schema/Migration、依赖；风险是库级打开不等于 Microsoft Office 实际 GUI/UAT，也不能推及 PDF/OCR 或正式账户。回滚为停用验证脚本，历史证据保留。
+
+- 执行结果：三份临时Office文件真实落盘/Parser读取后，DOCX段落/表格、PPTX形状/单元格、XLSX中文工作表/公式位置分别用独立库回查并经Evidence定位证明；脚本exit0、Office定向6/6。仅合成Python库范围，不据此记Microsoft Office GUI、真实客户文档或Gate3通过；无程序/Schema/API变更。

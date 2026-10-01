@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/EVD-01-A03-P02-A02-P03-P02 实际落盘合成DOCX/PPTX/XLSX由Parser生成节点，并由独立Office读取库按段落/表格/Shape/Sheet位置回查、Evidence定位证明；验证脚本exit0、Office定向6/6。兼容性：仅验证脚本，无程序/API/Schema变更。升级：无。已知问题：Microsoft Office GUI、复杂布局、PDF/OCR、正式授权组合仍待。
+
 - 2026-10-01：0.1.0.dev0/EVD-01-A03-P02-A02-P03-P01 TXT/CSV 实际落盘合成文件的字符区间和A1位置回查通过；修复空CSV节点导致整份结果误拒绝，增加Profile/节点类型约束。定向8/8、后端1,744项（3既有跳过）及wheel通过。兼容性：内部Evidence边界，无API/Schema变化。升级：无。已知问题：Office/PDF/OCR及正式授权组合未验。
 
 - 2026-10-01：0.1.0.dev0/EVD-01-A03-P02-A02-P02 新增 Evidence 内部解析节点精确位置证明，唯一节点/固定来源与 STRUCTURED_NODE 身份匹配；定向7/7、隔离PG18合成Parser结果、后端1,743项（3既有跳过）及wheel通过。兼容性：无公开API/Schema/权限变化。升级：无迁移。已知问题：真实格式与SECTION位置、正式Evidence创建/组合和Gate3仍待。
