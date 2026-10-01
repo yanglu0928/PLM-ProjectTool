@@ -19,6 +19,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tools"))
 from scan_fileobject_jbig_upgrade import (  # noqa: E402
     LocalFileStorage, MAINTENANCE_LOCK_KEY, PreflightUnavailable, audit,
+    maintenance_window,
 )
 from tools.tests.test_scan_tiff_jbig_preflight import classic  # noqa: E402
 
@@ -126,7 +127,33 @@ def main() -> int:
                                         {"key": MAINTENANCE_LOCK_KEY}) is True
                     other.commit()
             assert audit(engine, storage)["status"] == "CLEAR"
-        print("isolated PostgreSQL18 FileObject TIFF preflight: clear/JBIG/incomplete/hash/state/fence PASS")
+            with maintenance_window(engine) as window:
+                assert window.scan(storage)["status"] == "CLEAR"
+                window.verify()
+                with engine.connect() as other:
+                    assert other.scalar(text("SELECT pg_try_advisory_lock_shared(:key)"),
+                                        {"key": MAINTENANCE_LOCK_KEY}) is False
+                    other.rollback()
+            with engine.connect() as other:
+                assert other.scalar(text("SELECT pg_try_advisory_lock_shared(:key)"),
+                                    {"key": MAINTENANCE_LOCK_KEY}) is True
+                other.commit()
+                assert other.scalar(text("SELECT pg_advisory_unlock_shared(:key)"),
+                                    {"key": MAINTENANCE_LOCK_KEY}) is True
+                other.commit()
+            try:
+                with maintenance_window(engine):
+                    raise RuntimeError("synthetic upgrade step failed")
+            except RuntimeError:
+                pass
+            with engine.connect() as other:
+                assert other.scalar(text("SELECT pg_try_advisory_lock_shared(:key)"),
+                                    {"key": MAINTENANCE_LOCK_KEY}) is True
+                other.commit()
+                assert other.scalar(text("SELECT pg_advisory_unlock_shared(:key)"),
+                                    {"key": MAINTENANCE_LOCK_KEY}) is True
+                other.commit()
+        print("isolated PostgreSQL18 FileObject TIFF preflight: clear/JBIG/incomplete/hash/state/held-fence PASS")
         return 0
     finally:
         engine.dispose()

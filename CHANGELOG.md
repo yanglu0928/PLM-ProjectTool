@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A07-P03-P04-P02-A02-P01 将FileObject预检的PG18会话排他锁抽为可跨扫描与后续升级门禁持续持有的窗口；维护版本可复核，正常/异常退出释放，原一次性CLI合同不变。Windows11单元6/6、隔离PG18双连接/完整Schema0051与合成备份恢复第三轮通过。兼容性：无API/Schema/正式安装变化；可撤新窗口封装回滚。正式备份/OS进程静止/目标账户/升级执行/许可/Gate仍待，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A07-P03-P04-P02-A01 新增完整Schema0051上的纯合成备份/阻断/恢复演练脚本；PostgreSQL dump、data、config、License占位四类材料两轮Hash/恢复通过，JBIG命中后Schema不变，受损隔离副本与恢复副本可区分。无正式API/ORM/Migration/安装变化，旧数据不改；可撤测试脚本与忽略合成产物回滚。正式升级入口、人工备份/原机恢复、目标账户与服务静止/Server2025/许可/Gate仍待，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A07-P03-P04-P01 新增维护锁保护的FileObject全量TIFF/JBIG离线预检内核：数据库只读快照、逐文件安全定位及Hash/大小核查、流式枚举、非维护/锁占用/未完成状态失败关闭；仅汇总计数。Windows11单元6/6、隔离PG18.6最小表六情景、完整迁移Schema0051合成JBIG阻断PASS。兼容性：未改正式API/ORM/Migration/Parser或现有数据；此工具尚未集成正式升级器，可撤新增工具回滚。正式目标账户、备份/进程静止/恢复演练、许可/NOTICE、Server2025与Gate仍待，`release_eligible=false`。

@@ -10,12 +10,13 @@ import argparse
 import json
 import sys
 import uuid
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterator
 
 from sqlalchemy import create_engine, text
-from sqlalchemy.engine import Engine
+from sqlalchemy.engine import Connection, Engine
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "apps" / "backend" / "src"))
@@ -102,10 +103,76 @@ def inspect_record(row: Any, storage: LocalFileStorage) -> str:
         return "UNKNOWN"
 
 
-def audit(engine: Engine, storage: LocalFileStorage) -> dict[str, Any]:
-    """Hold the Platform maintenance session fence across one DB/file scan."""
-    if not isinstance(engine, Engine) or not isinstance(storage, LocalFileStorage):
-        raise PreflightUnavailable("preflight dependencies unavailable")
+class MaintenanceWindow:
+    """One held session fence; no method authorizes OS or backup requirements."""
+
+    def __init__(self, connection: Connection, lock_version: int) -> None:
+        self._connection = connection
+        self._lock_version = lock_version
+
+    def verify(self) -> None:
+        try:
+            row = self._connection.execute(STATE_SQL).one_or_none()
+            if (row is None or row.state != "MAINTENANCE"
+                    or row.lock_version != self._lock_version):
+                raise PreflightUnavailable("maintenance state changed")
+            self._connection.commit()
+        except PreflightUnavailable:
+            self._connection.rollback()
+            raise
+        except Exception:
+            self._connection.rollback()
+            raise PreflightUnavailable("maintenance state unavailable") from None
+
+    def scan(self, storage: LocalFileStorage) -> dict[str, Any]:
+        if not isinstance(storage, LocalFileStorage):
+            raise PreflightUnavailable("storage unavailable")
+        connection = self._connection
+        try:
+            connection.exec_driver_sql("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
+            state = connection.execute(STATE_SQL).one_or_none()
+            if (state is None or state.state != "MAINTENANCE"
+                    or state.lock_version != self._lock_version):
+                raise PreflightUnavailable("maintenance state changed")
+            expected = connection.scalar(text(
+                "SELECT count(*) FROM plm.doc_file_objects WHERE usage_kind='DOCUMENT'"))
+            if type(expected) is not int or expected < 0:
+                raise PreflightUnavailable("FileObject inventory count unavailable")
+            counts = Counts()
+            rows = connection.execution_options(stream_results=True, yield_per=1000).execute(READ_SQL)
+            try:
+                for row in rows:
+                    counts = counts.add("registered")
+                    outcome = inspect_record(row, storage)
+                    if outcome == "TERMINAL_SKIP":
+                        counts = counts.add("terminal_skipped")
+                    elif outcome == "UNKNOWN":
+                        counts = counts.add("unknown")
+                    else:
+                        counts = counts.add("verified")
+                        column = {"TIFF_CLEAR": "tiff_clear", "JBIG": "jbig",
+                                  "NON_TIFF": "non_tiff"}[outcome]
+                        counts = counts.add(column)
+            finally:
+                rows.close()
+            if counts.registered != expected:
+                raise PreflightUnavailable("FileObject inventory count changed")
+            connection.commit()
+            self.verify()
+            return counts.report()
+        except PreflightUnavailable:
+            connection.rollback()
+            raise
+        except Exception:
+            connection.rollback()
+            raise PreflightUnavailable("FileObject preflight unavailable") from None
+
+
+@contextmanager
+def maintenance_window(engine: Engine) -> Iterator[MaintenanceWindow]:
+    """Keep the same exclusive PostgreSQL session lock across caller operations."""
+    if not isinstance(engine, Engine):
+        raise PreflightUnavailable("PostgreSQL engine unavailable")
     connection = None
     locked = False
     try:
@@ -118,40 +185,12 @@ def audit(engine: Engine, storage: LocalFileStorage) -> dict[str, Any]:
         connection.commit()
         if not locked:
             raise PreflightUnavailable("maintenance fence busy")
-        connection.exec_driver_sql("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY")
         state = connection.execute(STATE_SQL).one_or_none()
         if state is None or state.state != "MAINTENANCE":
             raise PreflightUnavailable("maintenance mode required")
         version = state.lock_version
-        expected = connection.scalar(text(
-            "SELECT count(*) FROM plm.doc_file_objects WHERE usage_kind='DOCUMENT'"))
-        if type(expected) is not int or expected < 0:
-            raise PreflightUnavailable("FileObject inventory count unavailable")
-        counts = Counts()
-        rows = connection.execution_options(stream_results=True, yield_per=1000).execute(READ_SQL)
-        try:
-            for row in rows:
-                counts = counts.add("registered")
-                outcome = inspect_record(row, storage)
-                if outcome == "TERMINAL_SKIP":
-                    counts = counts.add("terminal_skipped")
-                elif outcome == "UNKNOWN":
-                    counts = counts.add("unknown")
-                else:
-                    counts = counts.add("verified")
-                    column = {"TIFF_CLEAR": "tiff_clear", "JBIG": "jbig",
-                              "NON_TIFF": "non_tiff"}[outcome]
-                    counts = counts.add(column)
-        finally:
-            rows.close()
-        if counts.registered != expected:
-            raise PreflightUnavailable("FileObject inventory count changed")
         connection.commit()
-        after = connection.execute(STATE_SQL).one_or_none()
-        if after is None or after.state != "MAINTENANCE" or after.lock_version != version:
-            raise PreflightUnavailable("maintenance state changed")
-        connection.commit()
-        return counts.report()
+        yield MaintenanceWindow(connection, version)
     except PreflightUnavailable:
         raise
     except Exception:
@@ -169,6 +208,12 @@ def audit(engine: Engine, storage: LocalFileStorage) -> dict[str, Any]:
                         raise PreflightUnavailable("maintenance fence release failed")
             finally:
                 connection.close()
+
+
+def audit(engine: Engine, storage: LocalFileStorage) -> dict[str, Any]:
+    """One-shot read-only scan, preserving the existing CLI behavior."""
+    with maintenance_window(engine) as window:
+        return window.scan(storage)
 
 
 def main() -> int:
