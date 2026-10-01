@@ -77,6 +77,7 @@ def create_app(
     evidence_create_router: APIRouter | None = None,
     evidence_read_router: APIRouter | None = None,
     evidence_viewer_router: APIRouter | None = None,
+    evidence_eligibility_router: APIRouter | None = None,
     maintenance_admission: MaintenanceAdmissionPort | None = None,
     shutdown_callback: Callable[[], None] | None = None,
 ) -> FastAPI:
@@ -212,4 +213,6 @@ def create_app(
         app.include_router(evidence_read_router)
     if evidence_viewer_router is not None:
         app.include_router(evidence_viewer_router)
+    if evidence_eligibility_router is not None:
+        app.include_router(evidence_eligibility_router)
     return app
