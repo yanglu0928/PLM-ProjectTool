@@ -1,6 +1,8 @@
 # 版本说明
 
-- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P20 新增固定Caddy与随包布局的合成HTTPS回环同源路由PoC；21,103件Hash、index/JS/CSS、health200、API404、SPA深链通过，单元2/2。兼容性：无正式包/API/Schema/SCM/数据库变化，临时证书清理、可撤工具回滚；错误Host静态页仍200、生产认证/CSRF/SSE/证书/许可/目标平台与Gate未验，`release_eligible=false`。
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P21-A01 更正P20错误Host仅状态200且空正文的误述；Caddy同端口兜底站点对错误Host返回421、重复Host返回400，固定包21,103件及原静态/API/SPA HTTPS路由复验通过，单元2/2。兼容性：只改非发行PoC配置与探针，无正式包/API/Schema/SCM/DB变更；生产认证/证书/目标环境/Gate未验，`release_eligible=false`。
+
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P20 新增固定Caddy与随包布局的合成HTTPS回环同源路由PoC；21,103件Hash、index/JS/CSS、health200、API404、SPA深链通过，单元2/2。兼容性：无正式包/API/Schema/SCM/数据库变化，临时证书清理、可撤工具回滚；错误Host状态200（后续P21确认空正文并以兜底421修正）、生产认证/CSRF/SSE/证书/许可/目标平台与Gate未验，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P19 按CR-PKG-005新增Caddy v2.11.4 Windows AMD64官方离线四资产只读固定审计，逐件SHA-256/发布SHA-512、EXE/Apache-2.0文本/149组件SBOM/源码归档对应通过；单元3/3。并记录用户10月1日对方案A持续执行纪律的再确认。兼容性：不改旧ZIP、API/Schema/SCM；可撤审计工具回滚；HTTPS集成/完整许可/正式证书/目标平台及Gate未验，`release_eligible=false`。
 

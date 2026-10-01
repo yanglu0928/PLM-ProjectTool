@@ -38,4 +38,6 @@
 
 2026-10-01/P19～P20增量证据：官方Caddy v2.11.4 Windows AMD64四资产/源码/SBOM输入已固定，隔离合成HTTPS静态/API/SPA路由通过，但对显式不可信Host的首页请求仍返回200。曾试的额外Host匹配未证明拒绝，故不纳入正式配置；须在P21查清Caddy/HTTP请求语义及生产登录Host/Origin边界，再验Cookie/CSRF/SSE。其他发行风险不变。
 
+2026-10-01/P21-A01纠正与实施：P20仅采集错误Host状态码；最小回显探针证明该200为空正文，原“首页返回”结论撤回。按本CR的显式拒绝要求，在固定`localhost`站点外增同端口无主机名兜底站点返回421；重复Host由HTTP服务器拒绝400。固定包21,103件重验及合成HTTPS完整重跑通过；该结果仅覆盖合成回环Host路由，不涵盖生产登录/Origin/证书/目标账户。
+
 官方依据：[Caddy许可仓库](https://github.com/caddyserver/caddy)、[反向代理及Host处理](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy)、[静态文件](https://caddyserver.com/docs/caddyfile/directives/file_server)、[SPA与API路由](https://caddyserver.com/docs/caddyfile/patterns)、[自有TLS证书](https://caddyserver.com/docs/caddyfile/directives/tls)、[Windows服务](https://caddyserver.com/docs/running)。

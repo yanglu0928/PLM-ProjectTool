@@ -9,3 +9,5 @@
 失败与安全观察保留：第一次Caddyfile把block写在同一行导致`validate`拒绝，修复后重跑。第二次代理在API ready前请求，出现502；增加API就绪门禁后重跑。随后用显式不可信Host请求首页仍返回200；尝试额外`not host`和`not header Host`匹配均未在此PoC形成可证实拒绝，已撤回未验证的规则并保留观察值`untrusted_host_status=200`。这**不是**Host安全通过，原因与生产登录策略的实际表现须在P21独立审查，不能仅依赖本站点名作结论。未测生产登录、Cookie/CSRF、SSE、正式证书/ACL、目标账户/SCM、Windows Server2025/Debian13与客户UAT。完整第三方许可仍需审查，`release_eligible=false`，Gate不变。
 
 回滚为撤销非发行PoC工具/临时配置；历史P15/冻结API/Schema保持不变。下一项P21先查明Host校验与后端真实Origin边界，再继续同源认证及SSE，若有安全缺口按CR-PKG-005修订并复验。
+
+后续更正（P21-A01/2026-10-01）：本项只记录了错误Host的**状态码**200，未读取正文；“静态首页返回”属于超出证据的误述。最小探针确认原Caddy配置未匹配任何站点时返回200**空正文**，没有泄露index；P21-A01新增同端口兜底站点明确返回421，并在完整随包PoC复验。保留本项原始失败记录以供追溯。

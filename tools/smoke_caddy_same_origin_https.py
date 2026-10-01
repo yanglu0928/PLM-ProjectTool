@@ -61,7 +61,10 @@ def caddyfile(frontend: Path, cert: Path, key: Path, api_port: int, https_port: 
             f"        root * \"{frontend}\"\n"
             "        try_files {path} /index.html\n"
             "        file_server\n"
-            "    }\n}\n")
+            "    }\n}\n"
+            f"https://:{https_port} {{\n"
+            f"    tls \"{cert}\" \"{key}\"\n"
+            "    respond \"Misdirected Request\" 421\n}\n")
 
 
 def synthetic_certificate(cert: Path, key: Path) -> None:
@@ -89,15 +92,15 @@ def fetch(url: str, context: ssl.SSLContext) -> tuple[int, bytes, dict[str, str]
         return error.code, error.read(), {k.lower(): v for k, v in error.headers.items()}
 
 
-def wrong_host_status(port: int, context: ssl.SSLContext) -> int:
+def host_status(port: int, context: ssl.SSLContext, hosts: list[str]) -> tuple[int, bytes]:
     connection = http.client.HTTPSConnection("localhost", port, context=context, timeout=3)
     try:
         connection.putrequest("GET", "/", skip_host=True)
-        connection.putheader("Host", "untrusted.example.test")
+        for host in hosts:
+            connection.putheader("Host", host)
         connection.endheaders()
         response = connection.getresponse()
-        response.read()
-        return response.status
+        return response.status, response.read(256)
     finally:
         connection.close()
 
@@ -172,21 +175,26 @@ def smoke(layout: Path, candidate: Path, caddy_inputs: Path) -> dict:
             live_status, live_body, _ = fetch(base + "/health/live", context)
             absent_api, absent_body, _ = fetch(base + "/api/v1/projects", context)
             unknown_api, unknown_body, _ = fetch(base + "/api/v2/synthetic", context)
-            bad_host = wrong_host_status(https_port, context)
+            bad_host, bad_host_body = host_status(https_port, context, ["untrusted.example.test"])
+            duplicate_host, _ = host_status(https_port, context, [f"localhost:{https_port}", "untrusted.example.test"])
             if (deep_status != 200 or deep_body != page or ready_status != 200
                     or ready_body != b'{"status":"UP"}' or headers.get("cache-control") != "no-store"
                     or live_status != 200 or live_body != b'{"status":"UP"}'
                     or absent_api != 404 or b"<html" in absent_body.lower()
-                    or unknown_api != 404 or b"<html" in unknown_body.lower()):
+                    or unknown_api != 404 or b"<html" in unknown_body.lower()
+                    or bad_host != 421 or bad_host_body != b"Misdirected Request"
+                    or duplicate_host != 400):
                 raise ValueError("HTTPS same-origin route or host boundary rejected: "
                                  f"deep={deep_status}, ready={ready_status}, live={live_status}, "
                                  f"api={absent_api}, unknown_api={unknown_api}, bad_host={bad_host}, "
+                                 f"duplicate_host={duplicate_host}, "
                                  f"ready_body={ready_body[:80]!r}, live_body={live_body[:80]!r}")
-            return {"status": "SYNTHETIC_CADDY_HTTPS_ROUTING_PASS_HOST_OPEN", "release_eligible": False,
+            return {"status": "SYNTHETIC_CADDY_HTTPS_HOST_BOUNDARY_PASS", "release_eligible": False,
                     "payload_file_count": count, "frontend_asset_count": len(assets),
                     "health_ready": 200, "health_live": 200, "default_api_route": absent_api,
                     "unknown_api_route": unknown_api, "spa_deep_link": deep_status,
-                    "untrusted_host_status": bad_host, "host_rejection_verified": False,
+                    "untrusted_host_status": bad_host, "duplicate_host_status": duplicate_host,
+                    "host_rejection_verified": True,
                     "synthetic_tls_only": True,
                     "production_login_verified": False, "sse_verified": False,
                     "children_stopped": True}

@@ -16,6 +16,8 @@ class CaddySameOriginTests(unittest.TestCase):
         self.assertIn("@unknown_api path /api /api/*", config)
         self.assertIn("try_files {path} /index.html", config)
         self.assertIn("reverse_proxy 127.0.0.1:20481", config)
+        self.assertIn("https://:20482", config)
+        self.assertIn('respond "Misdirected Request" 421', config)
 
     def test_unsafe_path_or_shared_port_rejected(self) -> None:
         with self.assertRaises(ValueError):
