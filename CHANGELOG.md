@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P43-A03 按CR-PKG-006新建含Ghostscript 10.08.0官方源码/LICENSE的非发行Windows候选ZIP，748,147,289字节/SHA `764d2f84c8da9fa8a58a521026502f397dcb0602a3e48e9ac702c8e95a9cb7a5`；P33原21,112项不变、只增2项，独立谱系验真及定向6/6通过。兼容性：运行载荷/API/Schema/SCM不变，仅Windows11候选，`release_eligible=false`。升级：无迁移。已知问题：清洁解包、完整NOTICE/法律复核、正式信任源/目标平台/Gate未完成。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P43-A02 经BITS取得并验真Artifex官方Ghostscript 10.08.0源码归档，69,197,208字节/SHA `c20492bc8ebb96c87fa2e52a0926e1cda8cde95d66145e018ac713fed5da38cf`；固定P33谱系/AGPL文本/归档9398项核对PASS，定向3/3。兼容性：仅审计工具，无候选/API/Schema/SCM变更，`release_eligible=false`。升级：无迁移。已知问题：源码未入候选、不可据此推断法律合规；正式信任源、目标平台与Gate仍待。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P43-A01 固定Ghostscript 10.08.0官方Windows x64安装器与同版源码归档SHA-256/来源；两次下载停滞，完整归档未取得，不计源码义务PASS。兼容性：只增来源证据，无包/API/Schema/SCM变化，`release_eligible=false`。升级说明：无迁移。已知问题：对应源码、产品级LICENSE/NOTICE及法律审查、正式信任源/平台/Gate未完成。
