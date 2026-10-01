@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P45-A04 新原生OCR通知候选在新ASCII Temp目录21,158载荷＋3元数据逐件Hash/文件全集、61映射至42正文回读通过，定向2/2。修复首轮预检大小写集合误比并另选新目录重跑。兼容性：仅增非发行候选kind与隔离暂存工具，无API/Schema/SCM/正式安装变化，`release_eligible=false`。升级：无迁移。已知问题：独立布局运行链、产品最终LICENSE/NOTICE及法律审结、正式信任源/Server2025/Gate仍待。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P45-A03 按`CR-PKG-007`生成新原生OCR许可材料非发行候选ZIP（652,122,261字节/SHA `30c9d59852af7e7a9360c4e6f36eff815eb134c481b5908786898b315426bf98`），P43原21,114项逐件不变，新增42正文＋映射＋README；构建/独立核验及定向3/3＋3/3通过。兼容性：仅Windows11审阅候选，无API/Schema/SCM/正式安装变化，`release_eligible=false`。升级：无迁移。已知问题：清洁解包、产品最终LICENSE/NOTICE及合格法律复核、正式信任源/Server2025/Gate仍待。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P45-A02 原生OCR 61条许可证据从固定原始包/上游源码归档逐条读回并匹配SHA，42个不同文本Hash、34个归档；真实审计和定向4/4通过。兼容性：只增只读工具/清单，无发行包/API/Schema/SCM变化，`release_eligible=false`。升级：无迁移。已知问题：专属侧载、最终NOTICE/法律复核、正式信任源/平台/Gate仍未完成。

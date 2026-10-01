@@ -16,4 +16,6 @@ P43 包含 34 个已核字节的原生 OCR PE，但没有对应组件的专属�
 
 ## 实施与验证记录
 
-P45-A03 构建新的本地忽略区 ZIP（不覆盖 P43）：652,122,261 字节，SHA-256 `30c9d59852af7e7a9360c4e6f36eff815eb134c481b5908786898b315426bf98`。载荷 21,158 项，原 P43 的 21,114 项逐件哈希不变；仅新增 42 份去重正文、61 条记录的审阅映射与 README，共 44 项。构建检查及独立核验退出 0，两组定向单元各 3/3。所有 `release_eligible`、`legal_clearance`、`installation_performed`、`service_registration_performed` 标志仍为 false。清洁解包留待 P45-A04；本记录不是法律或发行验收结论。
+P45-A03 构建新的本地忽略区 ZIP（不覆盖 P43）：652,122,261 字节，SHA-256 `30c9d59852af7e7a9360c4e6f36eff815eb134c481b5908786898b315426bf98`。载荷 21,158 项，原 P43 的 21,114 项逐件哈希不变；仅新增 42 份去重正文、61 条记录的审阅映射与 README，共 44 项。构建检查及独立核验退出 0，两组定向单元各 3/3。所有 `release_eligible`、`legal_clearance`、`installation_performed`、`service_registration_performed` 标志仍为 false。本记录不是法律或发行验收结论。
+
+P45-A04 已在新的 ASCII Temp 子目录完成 21,158 项载荷和三元数据的清洁解包、文件全集与逐件 Hash 读回，以及 61 条映射至 42 份原文的再次核对，真实退出 0。首轮仅因暂存工具的大小写归一化集合比较错误在写入前失败；修复后使用另一全新目录通过，详见[验证记录](../progress/plt-pkg-01-a09-p45-a04-native-ocr-notice-clean-extract.md)。这不改变发行与法律门禁。
