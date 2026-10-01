@@ -574,6 +574,38 @@ export class SessionClient {
     }
   }
 
+  /** Global-admin human Evidence decision; caller retains the original Key on uncertainty. */
+  async postGlobalEvidenceEligibility(evidenceId: string, etag: string,
+    idempotencyKey: string, body: string): Promise<Response> {
+    if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
+    if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
+    if (!identifier(evidenceId) || typeof etag !== "string"
+      || !/^"v(?:0|[1-9]\d*)"$/.test(etag)
+      || !Number.isSafeInteger(Number(etag.slice(2, -1)))
+      || Number(etag.slice(2, -1)) >= Number.MAX_SAFE_INTEGER
+      || typeof idempotencyKey !== "string" || !/^[\x20-\x7e]{16,128}$/.test(idempotencyKey)
+      || typeof body !== "string" || body.length === 0
+      || new TextEncoder().encode(body).length > 8192) {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    }
+    this.#busy = true;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      const response = await this.fetcher(`/api/v1/global/evidence/${evidenceId}:set-eligibility`, {
+        method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error",
+        headers: { Accept: "application/json", "Content-Type": "application/json",
+          "X-CSRF-Token": this.#csrf, "Idempotency-Key": idempotencyKey,
+          "If-Match": etag }, body, signal: controller.signal,
+      });
+      if (controller.signal.aborted) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+      if (response.status === 401) { this.#csrf = null; this.#view = null; }
+      return response;
+    } catch {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    } finally { window.clearTimeout(timer); this.#busy = false; }
+  }
+
   /** Read-only receipt lookup; the original operation key is confined to the JSON body. */
   async postEvidenceEligibilityOperationLookup(projectId: string, evidenceId: string,
     operationKey: string): Promise<Response> {

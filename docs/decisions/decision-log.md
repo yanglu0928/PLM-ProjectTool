@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261001-585 — GLOBAL 写入复用严格首次回执但隔离 Viewer Scope
+
+- Date/WBS：2026-10-01 / `EVD-01-A04-P03-A08-P17`；输入冻结 GLOBAL 资格 POST、项目客户端与 P16 管理员只读页。
+- Decision：在独立管理员 Session 传输中复用现有资格命令校验/回执解析，写前额外核对 Viewer 内容 URL 与 GLOBAL 固定 DocumentVersion；项目命令也维持项目 URL 绑定。页面未保存原 Key 前不开放写按钮。
+- Reason/Impact/Rollback：避免跨 Scope 来源混用或断线后换 Key；无 API/Schema 变化，停用新调用即可回退。
+
 ## DEC-20261001-584 — GLOBAL Evidence 页面先完成受权只读定位
 
 - Date/WBS：2026-10-01 / `EVD-01-A04-P03-A08-P16`；输入冻结 GLOBAL List/Get/Viewer 与 P14/P15 客户端。

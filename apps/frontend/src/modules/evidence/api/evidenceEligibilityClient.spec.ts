@@ -16,6 +16,9 @@ const viewer = { evidence_id: evidenceId, document_id: documentId,
   display_label: "全文", short_preview: null,
   content_url: `/api/v1/projects/${projectId}/documents/${documentId}/versions/${versionId}/content`,
 } as EvidenceViewerDescriptor;
+const globalViewer = { ...viewer,
+  content_url: `/api/v1/global/documents/${documentId}/versions/${versionId}/content`,
+} as EvidenceViewerDescriptor;
 const current = { evidence_id: evidenceId, document_id: documentId,
   document_version_id: versionId, eligibility_state: "CANDIDATE" as const,
   etag: '"v0"' };
@@ -45,6 +48,49 @@ const globalSessionView = () => response({ user: { user_id: projectId, username_
 });
 
 describe("EvidenceEligibilityClient", () => {
+  it("sends one global human decision with current ETag, CSRF and original Key", async () => {
+    const post = response({ evidence_id: evidenceId, eligibility_state: "INELIGIBLE",
+      eligibility_reason: "核对后不适用", etag: '"v1"' }, '"v1"');
+    const fetcher = vi.fn().mockResolvedValueOnce(globalSessionView()).mockResolvedValueOnce(post);
+    const client = new EvidenceEligibilityClient(await auth(fetcher as typeof fetch),
+      fetcher as typeof fetch);
+    const result = await client.setGlobal(current, globalViewer, "INELIGIBLE",
+      "核对后不适用", "k".repeat(16));
+    expect(result).toEqual({ evidence_id: evidenceId, eligibility_state: "INELIGIBLE",
+      eligibility_reason: "核对后不适用", etag: '"v1"', is_current_state_proof: false });
+    const [url, options] = fetcher.mock.calls[1] as [string, RequestInit];
+    expect(url).toBe(`/api/v1/global/evidence/${evidenceId}:set-eligibility`);
+    expect(options).toEqual(expect.objectContaining({ method: "POST", credentials: "same-origin",
+      body: JSON.stringify({ eligibility_state: "INELIGIBLE", reason: "核对后不适用" }),
+      headers: expect.objectContaining({ "If-Match": '"v0"',
+        "Idempotency-Key": "k".repeat(16), "X-CSRF-Token": "a".repeat(64) }) }));
+  });
+
+  it("rejects global write without admin or with a project-scoped Viewer", async () => {
+    const projectFetcher = vi.fn().mockResolvedValueOnce(sessionView());
+    const projectClient = new EvidenceEligibilityClient(await auth(projectFetcher as typeof fetch),
+      projectFetcher as typeof fetch);
+    await expect(projectClient.setGlobal(current, globalViewer, "ELIGIBLE", "核对后适用",
+      "k".repeat(16))).rejects.toMatchObject({ code: "EVIDENCE_ELIGIBILITY_INVALID" });
+    expect(projectFetcher).toHaveBeenCalledTimes(1);
+
+    const globalFetcher = vi.fn().mockResolvedValueOnce(globalSessionView());
+    const globalClient = new EvidenceEligibilityClient(await auth(globalFetcher as typeof fetch),
+      globalFetcher as typeof fetch);
+    await expect(globalClient.setGlobal(current, viewer, "ELIGIBLE", "核对后适用",
+      "k".repeat(16))).rejects.toMatchObject({ code: "EVIDENCE_ELIGIBILITY_INVALID" });
+    expect(globalFetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("retains uncertainty after a global transport failure without retry", async () => {
+    const fetcher = vi.fn().mockResolvedValueOnce(globalSessionView())
+      .mockRejectedValueOnce(new TypeError("network gone"));
+    const client = new EvidenceEligibilityClient(await auth(fetcher as typeof fetch),
+      fetcher as typeof fetch);
+    await expect(client.setGlobal(current, globalViewer, "ELIGIBLE", "核对后适用",
+      "k".repeat(16))).rejects.toMatchObject({ code: "EVIDENCE_ELIGIBILITY_UNCERTAIN" });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
   it("reads global current Evidence only for a deployment admin with strong ETag", async () => {
     const fetcher = vi.fn().mockResolvedValueOnce(globalSessionView())
       .mockResolvedValueOnce(response({ ...current, eligibility_state: "REVOKED",

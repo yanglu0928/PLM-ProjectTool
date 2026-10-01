@@ -134,23 +134,43 @@ export class EvidenceEligibilityClient {
   async set(projectId: string, before: CurrentEvidenceEligibility,
     verified: EvidenceViewerDescriptor, target: "ELIGIBLE" | "INELIGIBLE",
     justification: string, key: string): Promise<EvidenceEligibilityFirstReceipt> {
+    if (!id(projectId)) throw new EvidenceEligibilityClientError("EVIDENCE_ELIGIBILITY_INVALID");
+    return this.#set(`/api/v1/projects/${projectId}`, before, verified, target, justification, key,
+      () => this.session.postEvidenceEligibility(projectId, before.evidence_id, before.etag, key,
+        JSON.stringify({ eligibility_state: target, reason: justification })));
+  }
+
+  async setGlobal(before: CurrentEvidenceEligibility, verified: EvidenceViewerDescriptor,
+    target: "ELIGIBLE" | "INELIGIBLE", justification: string,
+    key: string): Promise<EvidenceEligibilityFirstReceipt> {
+    if (this.session.view?.deployment_role !== "DEPLOYMENT_ADMIN"
+      || this.session.view.password_change_required) {
+      throw new EvidenceEligibilityClientError("EVIDENCE_ELIGIBILITY_INVALID");
+    }
+    return this.#set("/api/v1/global", before, verified, target, justification, key,
+      () => this.session.postGlobalEvidenceEligibility(before.evidence_id, before.etag, key,
+        JSON.stringify({ eligibility_state: target, reason: justification })));
+  }
+
+  async #set(scopeBase: string, before: CurrentEvidenceEligibility,
+    verified: EvidenceViewerDescriptor, target: "ELIGIBLE" | "INELIGIBLE",
+    justification: string, key: string,
+    send: () => Promise<Response>): Promise<EvidenceEligibilityFirstReceipt> {
     const prior = version(before?.etag);
-    if (!id(projectId) || !id(before?.evidence_id) || !id(before?.document_id)
+    if (!id(before?.evidence_id) || !id(before?.document_id)
       || !id(before?.document_version_id) || before.eligibility_state !== "CANDIDATE"
       || prior === null || !id(verified?.evidence_id)
       || verified.evidence_id !== before.evidence_id
       || verified.document_id !== before.document_id
       || verified.document_version_id !== before.document_version_id
+      || verified.content_url !== `${scopeBase}/documents/${before.document_id}/versions/${before.document_version_id}/content`
       || (target !== "ELIGIBLE" && target !== "INELIGIBLE")
       || !reason(justification) || !/^[\x20-\x7e]{16,128}$/.test(key)) {
       throw new EvidenceEligibilityClientError("EVIDENCE_ELIGIBILITY_INVALID");
     }
     let response: Response;
     try {
-      response = await this.session.postEvidenceEligibility(
-        projectId, before.evidence_id, before.etag, key,
-        JSON.stringify({ eligibility_state: target, reason: justification }),
-      );
+      response = await send();
     } catch (failure) {
       if (failure instanceof SessionClientError && failure.code === "AUTH_RELOGIN_REQUIRED") {
         throw new EvidenceEligibilityClientError("AUTH_RELOGIN_REQUIRED");

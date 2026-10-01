@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/EVD-01-A04-P03-A08-P17 新增 GLOBAL 管理员人工资格受控前端客户端与固定来源 Scope 核对；页面写入口尚未开放。兼容性：前端方法增量，无 API/Schema/依赖变化。升级：待页面先持久保存原操作号，再接写入；无迁移。验证：定向9项、全量前端1,060项、typecheck/build PASS。已知问题：GLOBAL 页面写入/恢复、真实浏览器、正式信任及Gate3未验。
+
 - 2026-10-01：0.1.0.dev0/EVD-01-A04-P03-A08-P16 新增 DeploymentAdmin 全局 Evidence 受权只读列表、固定来源定位和当前资格展示入口。兼容性：前端路由/导航增量，无 API/Schema/依赖变化。升级：需已挂载 GLOBAL Evidence 后端读/Viewer，未要求迁移。验证：全量前端1,057项、typecheck/build PASS。已知问题：GLOBAL 人工资格写入/回查入口、真实浏览器、正式信任及Gate3未验。
 
 - 2026-10-01：0.1.0.dev0/EVD-01-A04-P03-A08-P15 增加 DeploymentAdmin 专用 GLOBAL Evidence 当前强ETag读取，供历史资格操作收据后的状态核对。兼容性：前端方法增量，无 API/Schema/依赖变化。升级：后续全局页面接入；无迁移。验证：定向6项、前端全量1,051项、typecheck/build PASS。已知问题：全局页面、真实浏览器、正式目标信任及Gate3未验。
