@@ -50,4 +50,6 @@
 
 2026-10-01/P24增量证据：固定ZIP 21,110载荷+3清单建立21,113条确定性目标映射（SHA-256 `e30dc7732d78883c0b09be0911e0b16ade98c95b0af38008164fdc665c515ed4`），Windows大小写冲突0。Caddy候选独立Web边界与ADR-013三应用服务分开；真实账户、证书来源/ACL、许可法律及服务恢复仍保持门禁。本项纯只读，未把文件放入正式安装根或注册SCM。
 
+2026-10-01/P25增量证据：在独立ASCII Temp布局复制/读回P22全21,113目标，来源ZIP/清洁暂存末次重验；OCR模型、嵌入式Python/PG/Caddy版本及合成证书模板实际`caddy validate`通过。该布局未做HTTPS真实网络、登录、目标账户/证书或SCM服务测试，仍非发行；`C:\PLMTool`不变。
+
 官方依据：[Caddy许可仓库](https://github.com/caddyserver/caddy)、[反向代理及Host处理](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy)、[静态文件](https://caddyserver.com/docs/caddyfile/directives/file_server)、[SPA与API路由](https://caddyserver.com/docs/caddyfile/patterns)、[自有TLS证书](https://caddyserver.com/docs/caddyfile/directives/tls)、[Windows服务](https://caddyserver.com/docs/running)。
