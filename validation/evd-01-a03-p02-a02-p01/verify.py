@@ -26,7 +26,7 @@ from plm_assistant.modules.document.application.prepare_download import (
     DownloadError, PrepareDownloadService, VerifiedDownload,
 )
 from plm_assistant.modules.document.application.prove_fixed_source import (
-    DocumentFixedSourceProofService, FixedSourceProofError,
+    DocumentFixedSourceProofService,
 )
 from plm_assistant.modules.document.application.read_documents import (
     DocumentReadQuery, DocumentReadService,
@@ -42,6 +42,9 @@ from plm_assistant.modules.document.infrastructure.parse_result_storage import L
 from plm_assistant.modules.document.infrastructure.read_repository import SqlAlchemyDocumentReadRepository
 from plm_assistant.modules.evidence.infrastructure.fixed_source_repository import (
     SqlAlchemyEvidenceFixedSourceRepository,
+)
+from plm_assistant.modules.evidence.application.fixed_project_source import (
+    EvidenceFixedProjectQuery, EvidenceFixedProjectSourceService, EvidenceFixedSourceError,
 )
 from plm_assistant.modules.evidence.infrastructure.orm import EvidenceRow
 from plm_assistant.modules.evidence.application.parsed_node_proof import ParsedNodeEvidenceProofService
@@ -256,19 +259,6 @@ def verify(port: int, scratch: Path) -> None:
                     assert error.sqlstate == "55P03"
                 else:
                     raise AssertionError("fixed Evidence row was not held")
-        with psycopg.connect(host="127.0.0.1", port=port, user=USER,
-                             dbname="postgres", autocommit=True) as changer:
-            changer.execute(
-                "UPDATE plm.evd_evidence_records SET eligibility_state='REVOKED',"
-                "eligibility_reason='Synthetic revoke',updated_by=%s,"
-                "lock_version=lock_version+1 WHERE evidence_id=%s",
-                (actor, evidence),
-            )
-        with runtime.unit_of_work() as tx:
-            assert evidence_sources.get_for_trace(
-                tx, scope="PROJECT", project_id=project,
-                evidence_id=evidence,
-            ) is None
         with runtime.unit_of_work() as tx:
             assert metadata.get(tx, scope="PROJECT", project_id=uuid.uuid4(),
                                 document_version_id=version, parse_record_id=record) is None
@@ -353,6 +343,44 @@ def verify(port: int, scratch: Path) -> None:
             documents=reader, downloads=downloads,
             parse_metadata=metadata, parse_results=actual_results,
         )
+        owner = EvidenceFixedProjectSourceService(
+            sessions=Session(), projects=Project(), evidence=evidence_sources,
+            documents=proof_service,
+        )
+        owner_query = EvidenceFixedProjectQuery(b"s" * 32, uuid.uuid4(), project)
+        with runtime.unit_of_work() as tx:
+            observed = owner.prove(tx, owner_query, evidence)
+            assert observed.evidence_id == evidence
+            assert observed.source_parse_record_id == record
+            assert observed.observed_lock_version == 2
+            assert observed.content_fingerprint == hashlib.sha256(b"Synthetic").digest()
+            with psycopg.connect(host="127.0.0.1", port=port, user=USER,
+                                 dbname="postgres", autocommit=True) as rival:
+                for table, identity, value in (
+                    ("evd_evidence_records", "evidence_id", evidence),
+                    ("doc_documents", "document_id", document),
+                    ("doc_document_versions", "document_version_id", version),
+                    ("doc_file_objects", "file_object_id", file_id),
+                    ("doc_parse_records", "parse_record_id", record),
+                    ("doc_parse_result_refs", "parse_result_ref_id", result_id),
+                ):
+                    try:
+                        rival.execute(
+                            sql.SQL("SELECT 1 FROM plm.{} WHERE {}=%s FOR UPDATE NOWAIT").format(
+                                sql.Identifier(table), sql.Identifier(identity)), (value,),
+                        )
+                    except psycopg.Error as error:
+                        assert error.sqlstate == "55P03", (table, error.sqlstate)
+                    else:
+                        raise AssertionError(f"Owner did not hold {table}")
+        with runtime.unit_of_work() as tx:
+            try:
+                owner.prove(tx, EvidenceFixedProjectQuery(
+                    b"s" * 32, uuid.uuid4(), uuid.uuid4()), evidence)
+            except EvidenceFixedSourceError as error:
+                assert error.code == "RESOURCE_NOT_FOUND"
+            else:
+                raise AssertionError("cross-project Evidence accepted")
         with runtime.unit_of_work() as tx:
             whole = proof_service.prove(
                 tx, query, document_id=document, document_version_id=version,
@@ -386,15 +414,52 @@ def verify(port: int, scratch: Path) -> None:
         (file_root / final).write_bytes(b"x" * len(source_bytes))
         try:
             with runtime.unit_of_work() as tx:
-                proof_service.prove(
-                    tx, query, document_id=document, document_version_id=version,
-                    parse_record_id=record,
-                )
-        except FixedSourceProofError as error:
-            assert error.code == "FILE_INTEGRITY_MISMATCH"
+                owner.prove(tx, owner_query, evidence)
+        except EvidenceFixedSourceError as error:
+            assert error.code == "EVIDENCE_FINGERPRINT_MISMATCH"
         else:
-            raise AssertionError("tampered physical source accepted")
+            raise AssertionError("Owner accepted tampered physical source")
         (file_root / final).write_bytes(source_bytes)
+        (data_root / stored.storage_locator).write_bytes(payload[:-1] + b"!")
+        try:
+            with runtime.unit_of_work() as tx:
+                owner.prove(tx, owner_query, evidence)
+        except EvidenceFixedSourceError as error:
+            assert error.code == "EVIDENCE_FINGERPRINT_MISMATCH"
+        else:
+            raise AssertionError("Owner accepted tampered parsed result")
+        (data_root / stored.storage_locator).write_bytes(payload)
+        with psycopg.connect(host="127.0.0.1", port=port, user=USER,
+                             dbname="postgres", autocommit=True) as changer:
+            changer.execute(
+                "UPDATE plm.evd_evidence_records SET eligibility_state='REVOKED',"
+                "eligibility_reason='Synthetic revoke',updated_by=%s,"
+                "lock_version=lock_version+1 WHERE evidence_id=%s",
+                (actor, evidence),
+            )
+        with runtime.unit_of_work() as tx:
+            assert evidence_sources.get_for_trace(
+                tx, scope="PROJECT", project_id=project,
+                evidence_id=evidence,
+            ) is None
+            try:
+                owner.prove(tx, owner_query, evidence)
+            except EvidenceFixedSourceError as error:
+                assert error.code == "RESOURCE_NOT_FOUND"
+            else:
+                raise AssertionError("Owner accepted revoked Evidence")
+        with psycopg.connect(host="127.0.0.1", port=port, user=USER,
+                             dbname="postgres", autocommit=True) as changer:
+            changer.execute(
+                "UPDATE plm.evd_evidence_records SET eligibility_state='ELIGIBLE',"
+                "eligibility_reason='Synthetic whole file review',updated_by=%s,"
+                "lock_version=lock_version+1 WHERE evidence_id=%s",
+                (actor, candidate),
+            )
+        with runtime.unit_of_work() as tx:
+            whole_observed = owner.prove(tx, owner_query, candidate)
+            assert whole_observed.content_fingerprint == source_sha
+            assert whole_observed.source_parse_record_id is None
         locator = json.loads(payload)["nodes"][0]["source_locator"]
         evidence_proof = ParsedNodeEvidenceProofService(results=service).prove(
             query, document_id=document, document_version_id=version,
@@ -419,7 +484,8 @@ def verify(port: int, scratch: Path) -> None:
             assert error.code == "FILE_INTEGRITY_MISMATCH"
         else:
             raise AssertionError("tampered private result accepted")
-        print("PASS: isolated PostgreSQL 18 current ELIGIBLE Evidence lock/scope/"
+        print("PASS: isolated PostgreSQL 18 PROJECT Evidence Owner/locator/fingerprint/"
+              "physical bytes/six-row transaction lock, current ELIGIBLE Evidence lock/scope/"
               "cache refresh/revoke, success/failure ParseRecords, scoped metadata, "
               "caller-transaction Document/Version/File/ParseRecord/ResultRef share locks, "
               "actual private file and result hashes, "

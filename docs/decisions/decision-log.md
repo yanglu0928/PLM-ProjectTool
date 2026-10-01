@@ -6300,3 +6300,12 @@
 - Impact/Rollback：内部 DTO/仓储增量，无 API、Schema、Migration、权限或数据迁移；不装配下游 Owner 即可回滚。下一任务仍须授权、Document 物理证明和 locator/fingerprint 比对，尤其窄 GLOBAL 标准引用；Checklist/Gate 写入口关闭。
 - Verification：单元验证 SQL 共享锁、Scope/Project/ELIGIBLE 条件和非活动事务拒绝；隔离 PG18 验证当前资格、缓存刷新、第二连接 NOWAIT 冲突及事务释放后更新、错误范围/撤销拒绝；全量后端与 wheel。任何缺项不宣称完整 Owner PASS。
 - Result：定向 2/2；隔离 PostgreSQL 18 中 Scope 错配/CANDIDATE/REVOKED 均不可读，已加载 ORM 旧实例刷新至新 lock_version，第二连接 `FOR UPDATE NOWAIT` 得到 55P03，事务释放后状态修改成功；后端全量 1840 通过/3 跳过，开发 wheel 构建 PASS。物理来源及项目经理窄 GLOBAL 权限仍在后续任务。
+
+# DEC-20261002-605：PROJECT Evidence Owner 复用受锁 Document 结果并原位核对定位指纹
+
+- Date/WBS：2026-10-02 / `WFL-01-A07-P04-A02`；来源 `CR-WFL-005`。
+- Decision：Evidence Application 增加仅供调用方写事务使用的 PROJECT 来源 Owner。先用当前 Session 与 ProjectId 锁定 ACTIVE 项目经理，再读取同项目当前 ELIGIBLE Evidence 共享锁快照；调用 Document 固定来源 Port 在相同事务验证 DocumentVersion/File 与可选 ParseRecord/ResultRef 及物理字节。解析节点复用现有 Evidence locator/节点校验逻辑对 Document 已验证的结果字节做原位证明，不再独立打开一套来源；整文档只接收 `DOCUMENT` 且无 ParseRecord。比较最终 locator、指纹、固定版本与受锁记录，向下游仅返回最小观测事实。
+- Reason：普通 Evidence Viewer 跨独立事务，不能作为 Checklist 提交时的来源凭证；重复读取 Parser 字节也可能脱离已锁事实。此组合维护模块边界：Document 证明物理来源，Evidence 验证定位器/指纹，Project/Session 提供当前调用者权限。
+- Impact/Rollback：内部 Application Port 与既有解析节点校验复用，无 API、Schema、Migration 或普通读取授权变化；可不装配后续 Workflow。GLOBAL 标准引用另有窄授权任务，Review/例外 Owner 未齐前 Checklist/Gate 写继续关闭。
+- Verification：单元覆盖全链正反例/隐私；隔离 PG18 的真实事务、真实私有文件及解析结果，撤权/篡改/并发拒绝；后端全量与 wheel。无客户或生产数据。
+- Result：新增 Owner 单元 6/6、既有节点解析回归合计 15/15；隔离 PostgreSQL 18 合成 PROJECT 节点与整文档均通过，Owner 持 Evidence/Document/Version/File/ParseRecord/ResultRef 六行共享锁，跨项目、源文件/解析结果篡改与撤销拒绝；后端全量 1846 通过/3 跳过，开发 wheel PASS。会话/角色在单元与已检查假端口验证，尚未装配实际 Workflow/生产 Session；窄 GLOBAL 与 Review/例外 Owner 仍开放。

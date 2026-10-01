@@ -23,3 +23,5 @@
 2026-10-02 部分实施：`WFL-01-A07-P03-A01/A02` 已完成 Document 固定元数据共享锁和内部实际文件/解析字节证明，见 `docs/progress/wfl-01-a07-p03-a02-document-fixed-proof.md`。此 CR 整体仍为 `IMPLEMENTATION_PENDING`：Evidence Owner、窄 GLOBAL 策略和其他实际 Owner 尚未闭合，Checklist/Gate 写路由继续关闭。
 
 2026-10-02 后续部分实施：`WFL-01-A07-P04-A01` 完成 Evidence 当前 ELIGIBLE 行的调用方事务共享锁及固定元数据快照；详见 `docs/progress/wfl-01-a07-p04-a01-evidence-current-source-lock.md`。仍未把该快照与 Document 物理证明/定位器合并，CR 整体状态不变。
+
+2026-10-02 后续部分实施：`WFL-01-A07-P04-A02` 已把 PROJECT Evidence 当前资格、Document 固定物理来源与 locator/fingerprint 在调用方事务组合；详见 `docs/progress/wfl-01-a07-p04-a02-project-evidence-owner.md`。窄 GLOBAL 标准引用、真实 Workflow 写链及 Review/例外 Owner 仍未完成，本 CR 不关闭。

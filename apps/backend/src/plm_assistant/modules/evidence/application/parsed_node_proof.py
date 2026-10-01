@@ -92,14 +92,8 @@ class ParsedNodeEvidenceProofService:
         kind = canonical["locator_type"]
         if kind == "DOCUMENT":
             raise EvidenceNodeProofError()
-        if kind == "STRUCTURED_NODE":
-            if canonical["parse_record_id"] != str(parse_record_id):
-                raise EvidenceNodeProofError("RESOURCE_NOT_FOUND")
-            requested_source = canonical["source_locator"]
-            requested_node = canonical["node_id"]
-        else:
-            requested_source = canonical
-            requested_node = None
+        if kind == "STRUCTURED_NODE" and canonical["parse_record_id"] != str(parse_record_id):
+            raise EvidenceNodeProofError("RESOURCE_NOT_FOUND")
         try:
             result = self._results.read(
                 query, document_id=document_id,
@@ -110,6 +104,32 @@ class ParsedNodeEvidenceProofService:
             raise EvidenceNodeProofError(error.code) from None
         except Exception:
             raise EvidenceNodeProofError() from None
+        return self.prove_verified(result, document_version_id=document_version_id,
+                                   parse_record_id=parse_record_id, locator=canonical)
+
+    @staticmethod
+    def prove_verified(result: VerifiedParseResult, *, document_version_id: uuid.UUID,
+                       parse_record_id: uuid.UUID,
+                       locator: object) -> EvidenceParsedNodeProof:
+        """Resolve a locator against Document's already verified fixed result."""
+        if (type(document_version_id) is not uuid.UUID or document_version_id.int == 0
+                or type(parse_record_id) is not uuid.UUID or parse_record_id.int == 0):
+            raise EvidenceNodeProofError("VALIDATION_FAILED")
+        try:
+            canonical = validate_evidence_locator(locator)
+        except EvidenceLocatorError:
+            raise EvidenceNodeProofError("EVIDENCE_LOCATOR_INVALID") from None
+        kind = canonical["locator_type"]
+        if kind == "DOCUMENT":
+            raise EvidenceNodeProofError()
+        if kind == "STRUCTURED_NODE":
+            if canonical["parse_record_id"] != str(parse_record_id):
+                raise EvidenceNodeProofError("RESOURCE_NOT_FOUND")
+            requested_source = canonical["source_locator"]
+            requested_node = canonical["node_id"]
+        else:
+            requested_source = canonical
+            requested_node = None
         if (type(result) is not VerifiedParseResult
                 or result.parse_record_id != parse_record_id
                 or result.document_version_id != document_version_id
