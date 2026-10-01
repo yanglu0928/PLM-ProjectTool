@@ -6274,3 +6274,11 @@
 - Impact/Rollback：仅测试工具、验证脚本及记录；不改变产品 API、Schema、依赖、包或正式账户。可关闭可选回调并保留基础脚本；无数据迁移。回调输入/返回值不得记录私钥、密码、客户数据。
 - Verification：错误候选/缺回调/回调返回畸形拒绝；完整 ZIP SHA/布局哈希、HTTPS 初态/首启/同 Key 重放/权限与 CSRF 拒绝、单份 Audit/收据、无 StageTransition，合成 Vault/进程/目录清理。若合成信任或测试环境失败，不宣称 Gate/浏览器通过。
 - Result：成对回调/畸形签名拒绝单元与原基础防护共 5/5；固定当前 ZIP 的双布局/包内 Python、PG18、Caddy 及合成 License 经外部 HTTPS 完成 Workflow GET 初态、START、同 Key 重放、CSRF/新 Key 拒绝和单 Audit/收据，清理标志及事后目录/进程复查 PASS。仅合成 Windows 11；正式信任/浏览器/Gate 均未验，详见 `docs/progress/wfl-01-a08-p07-packaged-licensed-https.md`。
+
+# DEC-20261002-602：ParseRecord 固定来源采用调用方事务共享锁
+
+- Date/WBS：2026-10-02 / `WFL-01-A07-P03-A01`；来源 `CR-WFL-005`。
+- Decision：在 Document-owned `SqlAlchemyParseResultReadRepository` 增加与普通 `get` 分离的 `get_for_trace`。复用同一 Scope/Project/DocumentVersion/成功 ParseRecord 与 ResultRef 完整条件，但在**调用方已开启的事务**对两行执行 PostgreSQL `FOR SHARE OF`，并强制刷新 ORM 已加载对象。只返回最小固定元数据，绝不输出存储路径到 Workflow/API。
+- Reason：现有 `get` 是普通只读，独立事务无法阻止固定来源在 Workflow 记录提交前变化；把仓储锁入口单独命名能避免普通列表读意外加锁，同时为后续 Document 应用 Port 提供可组合事实。
+- Impact/Rollback：无 Schema、公开 API、依赖或既有 `get` 行为变化；未接 Workflow。可撤独立入口并维持 Checklist 写路由关闭。验证 SQL 锁形、项目/状态范围、无活跃事务拒绝及实际 PG18 并发阻断；后续应用 Port 仍需真实文件/解析内容哈希和权限重验，本任务不宣称完整 Owner。
+- Result：新单元 2/2、隔离 PG18 对 ParseRecord 与 ResultRef 的第二连接 `FOR UPDATE NOWAIT` 均返回 55P03；原解析结果完整性/撤权/篡改矩阵回归退出 0，后端全量 1832 通过/3 跳过，本地 wheel PASS。仅仓储锁入口，应用 Owner 仍待接。

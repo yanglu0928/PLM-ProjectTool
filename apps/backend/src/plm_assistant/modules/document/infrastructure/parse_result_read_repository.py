@@ -16,22 +16,41 @@ class SqlAlchemyParseResultReadRepository:
     def get(self, transaction: object, *, scope: str, project_id: uuid.UUID | None,
             document_version_id: uuid.UUID,
             parse_record_id: uuid.UUID) -> FixedParseResultSource | None:
-        pair = _session(transaction).execute(
-            select(ParseRecordRow, ParseResultRefRow).join(
-                ParseResultRefRow,
-                ParseResultRefRow.parse_record_id == ParseRecordRow.parse_record_id,
-            ).where(
-                ParseRecordRow.parse_record_id == parse_record_id,
-                ParseRecordRow.document_version_id == document_version_id,
-                ParseRecordRow.scope == scope,
-                ParseRecordRow.project_id == project_id,
-                ParseRecordRow.parse_state == "SUCCEEDED",
-                ParseRecordRow.result_ref == ParseResultRefRow.parse_result_ref_id,
-                ParseRecordRow.result_sha256 == ParseResultRefRow.sha256,
-                ParseRecordRow.error_code.is_(None),
-                ParseRecordRow.retryable.is_(False),
-            ),
-        ).one_or_none()
+        return self._get(transaction, scope=scope, project_id=project_id,
+                         document_version_id=document_version_id,
+                         parse_record_id=parse_record_id, for_trace=False)
+
+    def get_for_trace(self, transaction: object, *, scope: str,
+                      project_id: uuid.UUID | None, document_version_id: uuid.UUID,
+                      parse_record_id: uuid.UUID) -> FixedParseResultSource | None:
+        """Hold both fixed source rows in the caller's transaction until commit."""
+        return self._get(transaction, scope=scope, project_id=project_id,
+                         document_version_id=document_version_id,
+                         parse_record_id=parse_record_id, for_trace=True)
+
+    @staticmethod
+    def _get(transaction: object, *, scope: str, project_id: uuid.UUID | None,
+             document_version_id: uuid.UUID, parse_record_id: uuid.UUID,
+             for_trace: bool) -> FixedParseResultSource | None:
+        statement = select(ParseRecordRow, ParseResultRefRow).join(
+            ParseResultRefRow,
+            ParseResultRefRow.parse_record_id == ParseRecordRow.parse_record_id,
+        ).where(
+            ParseRecordRow.parse_record_id == parse_record_id,
+            ParseRecordRow.document_version_id == document_version_id,
+            ParseRecordRow.scope == scope,
+            ParseRecordRow.project_id == project_id,
+            ParseRecordRow.parse_state == "SUCCEEDED",
+            ParseRecordRow.result_ref == ParseResultRefRow.parse_result_ref_id,
+            ParseRecordRow.result_sha256 == ParseResultRefRow.sha256,
+            ParseRecordRow.error_code.is_(None),
+            ParseRecordRow.retryable.is_(False),
+        )
+        if for_trace:
+            statement = statement.with_for_update(
+                read=True, of=(ParseRecordRow, ParseResultRefRow),
+            ).execution_options(populate_existing=True)
+        pair = _session(transaction).execute(statement).one_or_none()
         if pair is None:
             return None
         record, result = pair

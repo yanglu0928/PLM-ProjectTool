@@ -18,6 +18,7 @@ from pathlib import Path
 
 import psycopg
 from alembic import command
+from psycopg import sql
 from psycopg.types.json import Jsonb
 from sqlalchemy.engine import URL
 
@@ -173,6 +174,36 @@ def verify(port: int, scratch: Path) -> None:
                                 document_version_id=uuid.uuid4(), parse_record_id=record) is None
             assert metadata.get(tx, scope="PROJECT", project_id=project,
                                 document_version_id=version, parse_record_id=failed_record) is None
+        with runtime.unit_of_work() as tx:
+            fixed = metadata.get_for_trace(
+                tx, scope="PROJECT", project_id=project,
+                document_version_id=version, parse_record_id=record,
+            )
+            assert fixed is not None and fixed.result_ref_id == result_id
+            assert metadata.get_for_trace(
+                tx, scope="PROJECT", project_id=uuid.uuid4(),
+                document_version_id=version, parse_record_id=record,
+            ) is None
+            assert metadata.get_for_trace(
+                tx, scope="PROJECT", project_id=project,
+                document_version_id=version, parse_record_id=failed_record,
+            ) is None
+            with psycopg.connect(host="127.0.0.1", port=port, user=USER,
+                                 dbname="postgres", autocommit=True) as rival:
+                for table, identity, value in (
+                    ("doc_parse_records", "parse_record_id", record),
+                    ("doc_parse_result_refs", "parse_result_ref_id", result_id),
+                ):
+                    try:
+                        rival.execute(
+                            sql.SQL("SELECT 1 FROM plm.{} WHERE {}=%s FOR UPDATE NOWAIT").format(
+                                sql.Identifier(table), sql.Identifier(identity)),
+                            (value,),
+                        )
+                    except psycopg.Error as error:
+                        assert error.sqlstate == "55P03", (table, error.sqlstate)
+                    else:
+                        raise AssertionError(f"fixed {table} row was not held by caller transaction")
         snapshots = Snapshots(version_id=version, project_id=project, content=source_bytes)
         service = DocumentParseResultReadService(
             documents=snapshots, metadata=metadata, storage=storage,
@@ -207,7 +238,8 @@ def verify(port: int, scratch: Path) -> None:
         else:
             raise AssertionError("tampered private result accepted")
         print("PASS: isolated PostgreSQL 18 success/failure records, scoped metadata, "
-              "private result hash, exact Evidence node, revoked synthetic reader and tamper rejection")
+              "caller-transaction ParseRecord/ResultRef share locks, private result hash, "
+              "exact Evidence node, revoked synthetic reader and tamper rejection")
     finally:
         runtime.dispose()
 
