@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P09 新增13项OCR Python许可文本独立非发行侧载生成器；固定统一候选与差异清单，25/25原字节Hash及ZIP回读通过，单测4/4。兼容性：旧/统一程序包、API、Schema与正式安装不变；旁包可弃用回滚。尚未并入统一ZIP，不含对应源码或法律放行，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P08 新增Windows统一候选许可/源码证据机读差异审计；旧93项版本不变、新13项内嵌25份文本但独立侧载0/13、34项PE来源Hash吻合但发行义务未复核，Ghostscript AGPL文本在包内而对应源码目录/项目LICENSE/NOTICE仍缺。单元4/4及真实字节审计通过。兼容性：无程序/API/Schema/安装变化；撤新报告/脚本可回滚。合规与Gate未通过，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P07 新增Windows统一非发行候选隔离暂存工具，只接受Temp下新ASCII目录；复制前、写入时、落盘后与末次源ZIP身份均核验。真实19,449件暂存/落盘Hash通过、单测4/4，正式`C:\PLMTool`/服务/Migration未触动。兼容性：无API/Schema/正式安装变化；测试目录可核对后清理。NOTICE/源码、PG18离线输入、正式License/签名、目标账户/平台与Gate仍待，`release_eligible=false`。
