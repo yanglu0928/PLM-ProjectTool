@@ -1,6 +1,6 @@
 # CR-PKG-004：Windows Tesseract 候选去除 JBIG-KIT 直接依赖
 
-状态：`APPROVED_FOR_ISOLATED_SOURCE_BUILD_POC / RELEASE_OPEN`；日期：2026-10-01；来源：Phase 2 / `PLT-PKG-01-A08-P09-P05-P03-A07-P01`。依据 V1.1 持续授权先记录后实施。该 CR 不改写 Gate 2、原官方 Tesseract 安装资产或 CR-PKG-003。
+状态：`ISOLATED_SOURCE_BUILD_POC_PASS / RELEASE_OPEN`；日期：2026-10-01；来源：Phase 2 / `PLT-PKG-01-A08-P09-P05-P03-A07-P01～P02`。依据 V1.1 持续授权先记录后实施。该 CR 不改写 Gate 2、原官方 Tesseract 安装资产或 CR-PKG-003。
 
 ## 冲突及证据
 
@@ -19,3 +19,7 @@ CR-PKG-003 的新 MSYS2 5.5.3 非发行候选在 35 个本地 PE 中包含 `libj
 无数据库 Migration、冻结 API、License 机制或产品架构变化。若未来采用新构建，Windows OCR 旁包、Third Party Notices、SBOM、升级差异及 TIFF JBIG 限制需同版本更新；已有用户数据/文档中如存在 JBIG 压缩 TIFF，升级前必须识别并给出转换或阻断方案。不得静默丢弃此格式。隔离 PoC 失败则弃用新编译产物，保留原 CR-PKG-003 候选且继续阻断发行，不回滚用户数据。
 
 实施验收：固定 4.7.2 源码与构建输入 Hash；关闭 JBIG 的实际构建日志和输出可复核；PE 普通/延迟图无 `libjbig-0.dll` 且无未解析新依赖；Windows11 与 Server2025 指定账户多格式 OCR/deskew/PDF-A、负例 JBIG TIFF、真实质量与性能；许可证/源代码/NOTICE/签名及离线安装升级 Gate。任何一项缺证不把新候选标记 `release_eligible=true`。本 CR 不是最终法律意见，法律/发行义务仍须专门核对。
+
+## 2026-10-01 隔离 PoC 检查点
+
+固定源码以 `--disable-jbig` 两次独立构建；libtiff 测试两轮各 105/105 PASS、412 个导出名与旧版相同，静态闭包从 35 减至 34 个本地 PE，Windows 11 四类合成 PDF OCR/PDF-A 术语 20/20。两 DLL 原始 Hash 不同，屏蔽三处 PE 时间戳/校验和后其余字节一致；不宣称发行级可复现。JBIG TIFF 旧/新 `tiffcp` 呈预期解码能力差异；Tesseract CLI 均退出 0 并报读图失败，因此应用层负例未成立。详见 `docs/progress/plt-pkg-01-a08-p09-p05-p03-a07-p02-libtiff-no-jbig-build.md`。其他许可/源代码通知、签名信任、完整动态装载、真实质量/性能、Server 2025/正式账户及离线安装升级仍待；`release_eligible=false`。
