@@ -56,4 +56,6 @@
 
 2026-10-01/P26-A02增量证据：新布局Hash重验后，以布局内Caddy及PG18、临时Vault目标/合成HTTPS复用原生产登录组合断言，GET9/POST12、Cookie/CSRF/Host/Origin、Session/Project/Audit通过并完成临时源清理。API应用对象仍由仓库验证代码构建，并非包内生产模式进程；不可据此关闭随包生产信任源与正式安装门禁。
 
+2026-10-01/P32后续来源规划：P29～P31确认Caddy 145项vendor模块有源码归档内154份许可样本，但Go 1.26.3标准库源码不在P22候选。Go官方下载页提供的`go1.26.3.src.tar.gz`已在Git忽略目录以官方SHA-256 `1c646875d0aa8799133184ed57cf79ff24bdefe8c8820470602a9d3d6d9192b8`验证。P33拟**新建非发行候选**加入该固定源码及许可文本，不覆盖P22；仅补技术可追溯性，不推定法律放行。迁移/回滚：无运行数据迁移，弃用新候选即可回到P22；验证需整包/新增项逐件Hash、清洁解包、配置/运行布局回归，Gate维持开放。
+
 官方依据：[Caddy许可仓库](https://github.com/caddyserver/caddy)、[反向代理及Host处理](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy)、[静态文件](https://caddyserver.com/docs/caddyfile/directives/file_server)、[SPA与API路由](https://caddyserver.com/docs/caddyfile/patterns)、[自有TLS证书](https://caddyserver.com/docs/caddyfile/directives/tls)、[Windows服务](https://caddyserver.com/docs/running)。

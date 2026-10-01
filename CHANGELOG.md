@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P32 从Go官方固定`go1.26.3.src.tar.gz` 34,119,059字节/SHA `1c646875d0aa8799133184ed57cf79ff24bdefe8c8820470602a9d3d6d9192b8`，核VERSION、LICENSE及11,468个标准库源码常规文件，与Caddy工具链版本一致；定向单元2/2、真实审计PASS。兼容性：只新增被忽略本地来源与审计代码，不改P22/API/Schema/Migration/SCM；源码尚未入新包，法律/信任源/Gate未完成，`release_eligible=false`。升级说明：无需迁移。已知问题：正式NOTICE及发行合规仍待。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P31 核Caddy四项非vendor SBOM组件：根LICENSE与随包字节一致、根Go/Caddy版本与SBOM相符、二进制SHA完全一致；主模块伪版本和Go标准库独立源码在本候选未证，定向单元1/1及真实包核查PASS。兼容性：仅只读证据，无API/Schema/Migration/SCM/包改动；法律审查/正式信任源/Gate未完成，`release_eligible=false`。升级说明：无需迁移。已知问题：下游NOTICE及Go源码出处待核。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P30 固定Caddy源码与SBOM/队列核对145个vendor Go模块版本/PURL，并生成154份直属许可样本路径/Hash CSV（SHA `1a771e5056c96c1d66b979765fefdbb6c5d55c6cf82fb210dc2daec0e78e7abb`），定向单元2/2及真实包映射PASS。兼容性：仅发行来源证据，无API/Schema/Migration/SCM/包改动；4项非vendor来源及法律审查未完成，`release_eligible=false`。升级说明：无需迁移。已知问题：完整NOTICE、正式信任源与Gate待验。
