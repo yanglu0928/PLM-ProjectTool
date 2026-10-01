@@ -5983,3 +5983,7 @@
 ## DEC-20261001-582 — 暂停重复合成包验证并转向发行阻断关闭
 
 - 日期/Phase/WBS：2026-10-01 / Phase2 / PLT-PKG-01-A09-P46-A01。只读核对P45候选SHA/manifest及仓库发行证据后，确认候选仍缺产品级LICENSE/NOTICE、正式信任和目标平台/质量/Gate验收；`payload/runtime/LICENSE.txt`不能作为产品许可文件。选择先以当前候选整理产品级NOTICE审阅输入及逐门禁证据，而非继续增加同等合成冒烟次数。理由：P45-A03～A07已证明技术完整性与Windows11隔离启动，重复相同范围不能消除发行阻断。影响/回滚：仅审计文档/优先级，不改候选、API、Schema、SCM或正式环境；如新证据推翻分类，更新登记而不追写既有验证，`release_eligible=false`。
+
+## DEC-20261001-583 — 原生 OCR 许可原字节另行同步为审阅输入
+
+- 日期/Phase/WBS：2026-10-01 / Phase2 / PLT-PKG-01-A09-P46-A02。固定P45候选及祖先谱系先验后，将其原生OCR 42份文本、61条映射和README的精确字节导出到受版本控制的审阅目录，另写P45专属草案；P43历史NOTICE草案不改其固定基准。理由：仅存在于本机Git忽略区的大ZIP无法供远端审阅，且原文共享不能丢掉逐PE归属。影响/回滚：审阅源字节44项/354,131字节可从Git撤销但不改候选；无API/Schema/SCM/正式安装变化，所有`NO`/`REVIEW_REQUIRED`与`release_eligible=false`保持，法律签核仍待。

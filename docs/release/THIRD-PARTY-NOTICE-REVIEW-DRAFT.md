@@ -2,6 +2,8 @@
 
 本草案供产品负责人和合格法律审阅人员核对离线发行材料。它基于 Windows 11 非发行候选 SHA-256 `764d2f84c8da9fa8a58a521026502f397dcb0602a3e48e9ac702c8e95a9cb7a5` 的实际文件及已跟踪审计矩阵；**不是最终 NOTICE、许可声明或发行批准**，不得直接放入交付包。当前既无产品级 `LICENSE`，也无产品级 `NOTICE`，且候选明确标记 `release_eligible=false`。
 
+此页保留 P43 历史候选的审阅基线；包含原生 OCR 42 份正文与 61 条映射的新 P45 候选另见[当前候选审阅草案](THIRD-PARTY-NOTICE-REVIEW-DRAFT-P45.md)及[可直接读取的原文字节](native-ocr-p45-review-inputs/REVIEW.md)。两个候选均不可发行，不应把新材料反写到旧 ZIP 的事实中。
+
 ## 已具备的材料与仍需复核的范围
 
 |组件范围|候选内已定位的证据|审阅未完成的事项|
