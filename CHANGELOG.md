@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/PLT-PKG-01-A09-P50-A02 新非发行候选完成包内合成HTTPS/License与Job取消链烟测。兼容性：无产品API/Schema/依赖变化，仍非正式安装器。升级：不碰现有数据/服务；正式升级需独立备份与恢复演练。验证：21,181文件双布局同Hash，包内Python/Caddy/PG18启动、登录/会话200、无License项目403、包内Job取消矩阵及临时资源清理，ZIP SHA不变。已知问题：正式信任/法律、真实浏览器/外部HTTP Job写、Server2025/Debian、AI质量/性能/UAT及Gate仍未通过，`release_eligible=false`。
+
 - 2026-10-02：0.1.0.dev0/PLT-PKG-01-A09-P50-A01 重建含Job人工取消页面的当前应用Windows11非发行候选，唯一SHA `5fc5d8e2…b320d`（本地Git忽略区）。兼容性：前端增量，源后端API/Schema/依赖不变，仍非正式安装器。升级：不得覆盖正式根；既有0052须独立备份与迁移演练。验证：21,178项清洁解包/全哈希、前端三资产同字节、包内Python导入PASS。已知问题：此新包运行链、正式信任/法律、真实浏览器、Server2025/Debian、AI质量/性能/UAT/Gate未通过，`release_eligible=false`。
 
 - 2026-10-02：0.1.0.dev0/JOB-02-A06-P04 一次性PG Runner新增固定Job取消矩阵选择，包内Python/PG18.6复跑原Windows写组合取消链。兼容性：验证工具增量，默认read矩阵及产品API/Schema不变。升级：无迁移；正式用户库未触碰。验证：防护单元3/3、实际隔离PG/ASGI矩阵退出0、临时服务及目录清理。已知问题：非真实浏览器/外部HTTP，旧ZIP未含新前端；正式信任/法律/三平台/AI质量/UAT/Gate未通过，不可发行。
