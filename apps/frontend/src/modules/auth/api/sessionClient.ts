@@ -376,7 +376,7 @@ export class SessionClient {
       || Number(etag.slice(2, -1)) >= Number.MAX_SAFE_INTEGER
       || typeof idempotencyKey !== "string" || !/^[\x20-\x7e]{16,128}$/.test(idempotencyKey)
       || normalizedReason.length < 1 || normalizedReason.length > 1024
-      || /[\x00-\x1f\x7f]/.test(normalizedReason)) {
+      || /\p{C}/u.test(normalizedReason)) {
       throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
     }
     const body = JSON.stringify({ reason: normalizedReason });

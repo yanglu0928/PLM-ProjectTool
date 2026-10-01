@@ -725,6 +725,7 @@ describe("SessionClient", () => {
       [projectId, id, '"v1"', "short", "reason"],
       [projectId, id, '"v1"', key, "  "],
       [projectId, id, '"v1"', key, "reason\ninside"],
+      [projectId, id, '"v1"', key, "reason\u200binside"],
       [projectId, id, '"v1"', key, "x".repeat(1025)],
     ]) {
       await expect(api.postProjectJobCancel(project, job, etag, operation, reason))
