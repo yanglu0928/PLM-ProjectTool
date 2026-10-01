@@ -2,7 +2,7 @@
 
 日期：2026-10-02；来源：`PLT-PKG-01-A09-P47-A01` 当前可使用程序包前置核查；状态：`RECORDED / IMPLEMENTATION_OPEN`。原固定候选、原 Gate 2 提交和既有发行阻断记录均不追写。
 
-P47-A02 已完成派生构建器的合成安全合同 7/7；P47-A03 已完成真实父 ZIP 派生、21,178件清洁解包和包内 Python 导入，见 [P47-A03](../progress/plt-pkg-01-a09-p47-a03-current-app-candidate-extract.md)。随包 PG18/HTTPS 与正式发行仍未验，状态保持 OPEN。
+P47-A02 已完成派生构建器的合成安全合同 7/7；P47-A03 已完成真实父 ZIP 派生、21,178件清洁解包和包内 Python 导入，见 [P47-A03](../progress/plt-pkg-01-a09-p47-a03-current-app-candidate-extract.md)；P47-A04 完成临时双库随包0052迁移，见 [P47-A04](../progress/plt-pkg-01-a09-p47-a04-packaged-migration.md)。隔离 HTTPS/License 与正式发行仍未验，状态保持 OPEN。
 
 ## 冲突与证据
 
