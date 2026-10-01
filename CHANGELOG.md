@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P35 P33新候选在独立ASCII布局复制/读回21,115目标，映射SHA `d4072ed23558da5026911fad3575ee8b4d67944814b58096b6587c1bf9908580`，Go源码/LICENSE、模型指纹、Python/PG/Caddy与合成证书模板validate通过，定向单元1/1。兼容性：无API/Schema/Migration/SCM/正式安装改动；新布局HTTPS网络、正式信任源/法律/三平台/Gate未验，`release_eligible=false`。升级说明：无需迁移。已知问题：完整NOTICE与发行验收未完成。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P34 P33新ZIP在全新ASCII临时目录清洁解包21,112载荷、三清单及全量Hash回读，Go源码VERSION/LICENSE与随包文本一致，源末次复验PASS；新旧暂存单元4/4。兼容性：无API/Schema/Migration/SCM改动，正式安装/数据库未动；新目标布局/运行、NOTICE/信任源/三平台/Gate待验，`release_eligible=false`。升级说明：无需迁移。已知问题：发行合规未放行。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P33 新建不覆盖P22的统一＋PG18＋Caddy＋Go源码非发行ZIP，675,167,309字节/SHA `85424ce4f58f277355bfb69f89cd980fe18d1fd865ff2e5fe4b9483c9747b1cc`；21,112载荷中原21,110项不变、仅增固定Go源码与LICENSE，构建/独立全量验真及单元3/3 PASS。兼容性：无产品API/Schema/Migration/SCM变更，旧P22保留；尚未清洁解包/正式安装/法律放行，`release_eligible=false`。升级说明：无需迁移。已知问题：完整NOTICE、信任源、目标平台与Gate待验。

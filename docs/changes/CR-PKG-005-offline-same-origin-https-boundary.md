@@ -62,4 +62,6 @@
 
 2026-10-01/P34增量证据：P33新ZIP在全新ASCII Temp目录解包21,112载荷并全量落盘Hash/文件集回读，Go源码归档`go1.26.3`及随包LICENSE字节一致、源末次复验PASS。正式安装根/SCM/数据库未改；新布局与运行验证仍待，发行法律门禁开放。
 
+2026-10-01/P35增量证据：新候选21,112载荷＋三清单在全新ASCII Temp安装布局映射/复制/全量Hash读回21,115目标，映射SHA-256 `d4072ed23558da5026911fad3575ee8b4d67944814b58096b6587c1bf9908580`，Go源码/LICENSE、模型指纹及包内Python/PG/Caddy和模板合成证书validate通过。新布局实际HTTPS网络、正式账户/证书与法律发行仍待；`C:\PLMTool`未建。
+
 官方依据：[Caddy许可仓库](https://github.com/caddyserver/caddy)、[反向代理及Host处理](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy)、[静态文件](https://caddyserver.com/docs/caddyfile/directives/file_server)、[SPA与API路由](https://caddyserver.com/docs/caddyfile/patterns)、[自有TLS证书](https://caddyserver.com/docs/caddyfile/directives/tls)、[Windows服务](https://caddyserver.com/docs/running)。
