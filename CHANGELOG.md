@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A07-P03-P04-P02-A01 新增完整Schema0051上的纯合成备份/阻断/恢复演练脚本；PostgreSQL dump、data、config、License占位四类材料两轮Hash/恢复通过，JBIG命中后Schema不变，受损隔离副本与恢复副本可区分。无正式API/ORM/Migration/安装变化，旧数据不改；可撤测试脚本与忽略合成产物回滚。正式升级入口、人工备份/原机恢复、目标账户与服务静止/Server2025/许可/Gate仍待，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A07-P03-P04-P01 新增维护锁保护的FileObject全量TIFF/JBIG离线预检内核：数据库只读快照、逐文件安全定位及Hash/大小核查、流式枚举、非维护/锁占用/未完成状态失败关闭；仅汇总计数。Windows11单元6/6、隔离PG18.6最小表六情景、完整迁移Schema0051合成JBIG阻断PASS。兼容性：未改正式API/ORM/Migration/Parser或现有数据；此工具尚未集成正式升级器，可撤新增工具回滚。正式目标账户、备份/进程静止/恢复演练、许可/NOTICE、Server2025与Gate仍待，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A07-P03-P03 增加无JBIG运行时升级前只读TIFF/BigTIFF元数据预检PoC；真实合成JBIG压缩样本阻断、普通样本放行、缺文件失败关闭，大小端/多页/SubIFD/畸形单元测试3/3 PASS。兼容性：JBIG压缩TIFF不再支持，新脚本未接正式安装/存量清单，不改API/Migration/正式产品路径；可撤脚本回滚。完整数据清单/升级演练、NOTICE/许可证、目标平台/Gate仍待，`release_eligible=false`。

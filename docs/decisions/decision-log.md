@@ -5858,3 +5858,8 @@
 
 - 日期/Phase/WBS：2026-10-01 / Phase2 / PLT-PKG-01-A08-P09-P05-P03-A07-P03-P04。只读预检使用与 Platform 维护转换相同的 PostgreSQL advisory 排他锁，确认 `plt_maintenance_state=MAINTENANCE` 后，遍历全部登记的 `DOCUMENT` FileObject；采用已有 LocalFileStorage 的 Hash/大小校验快照，随后只读 TIFF 元数据。输出只含汇总计数与阻断状态，不导出客户路径/正文。
 - 理由：单独指定 TIFF 文件容易漏掉改扩展名或多页文件，也不能证明存量覆盖；DB 登记清单与存储校验须一致，维护锁在扫描期间阻止正常 Admission 与状态切换。该锁仍不能证明所有非受管进程已停写，正式升级须另有服务/进程静止及人工备份证据。影响仅离线预检工具，无 Schema/API/正式 Parser 变化；回滚撤工具，不改 FileObject 或数据。
+
+## DEC-20261001-554 — 升级恢复先在完整 Schema 隔离副本证明四类备份
+
+- 日期/Phase/WBS：2026-10-01 / Phase2 / PLT-PKG-01-A08-P09-P05-P03-A07-P03-P04-P02-A01。以空库迁移至0051的本机独立PG18和纯合成 FileObject，分别保存 PostgreSQL dump、data、config、license 占位文件并逐件 Hash；JBIG 命中后不做升级动作，另在全新数据库/目录演练恢复与受损副本对照。
+- 理由：单看预检返回阻断，无法验证发生升级故障时备份是否可读、业务元数据与本地文件是否一致。此项只证明隔离副本可恢复，不能替代正式人工备份、目标账户/进程静止、原机恢复及完整升级工具。影响仅测试脚本/忽略合成输出，无 Schema/API/正式安装变化；回滚撤脚本和验证输出，不影响既有程序与数据。
