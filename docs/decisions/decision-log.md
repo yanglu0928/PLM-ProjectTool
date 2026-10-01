@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261001-580 — 回查客户端不代替当前 Evidence GET
+
+- Date/WBS：2026-10-01 / `EVD-01-A04-P03-A08-P12`；输入 CR-EVD-004 和 Windows 显式组合已验合同。
+- Decision：项目 PM/CustomerManager 客户端只发原 Key Body 和当前 CSRF；`COMPLETED`/`UNCONFIRMED` 均标记 `is_current_state_proof: false`，不自动重发或换 Key。页面单独做 GET/Viewer 恢复。
+- Reason/Impact/Rollback：历史收据只能证明原操作提交，不能证明当前资格或授权未变化；独立客户端无既有页面行为变更，停用调用即可回退。
+
 ## DEC-20261001-579 — 资格回查只进入显式平台写组合
 
 - Date/WBS：2026-10-01 / `EVD-01-A04-P03-A08-P11`；输入 CR-EVD-004、P10 可选 HTTP、现有 Windows 平台组合。
