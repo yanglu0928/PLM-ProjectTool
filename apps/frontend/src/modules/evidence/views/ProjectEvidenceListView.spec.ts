@@ -40,12 +40,14 @@ async function session(restricted = false): Promise<SessionClient> {
   await auth.login("user", "synthetic-only");
   return auth;
 }
-async function view(auth: SessionClient, listFetcher: typeof fetch, viewerFetcher: typeof fetch) {
+async function view(auth: SessionClient, listFetcher: typeof fetch, viewerFetcher: typeof fetch,
+                    previewFetch?: typeof fetch) {
   const router = createAppRouter(createMemoryHistory());
   await router.push(`/projects/${projectId}/evidence`);
   await router.isReady();
   const wrapper = mount(ProjectEvidenceListView, { props: { session: auth,
-    listClient: new EvidenceListClient(listFetcher), viewerClient: new EvidenceViewerClient(viewerFetcher) },
+    listClient: new EvidenceListClient(listFetcher), viewerClient: new EvidenceViewerClient(viewerFetcher),
+    previewFetch },
   global: { plugins: [router] } });
   await flushPromises();
   return { wrapper, router };
@@ -99,6 +101,68 @@ describe("ProjectEvidenceListView", () => {
     await flushPromises();
     expect(wrapper.get("[role=alert]").text()).toContain("完整性验证未通过");
     expect(wrapper.find(`a[href="${descriptor.content_url}"]`).exists()).toBe(false);
+    wrapper.unmount();
+  });
+
+  it("loads only the verified fixed PDF as a bounded page-level blob and revokes it", async () => {
+    const listFetcher = vi.fn().mockResolvedValue(response({ items: [item], next_cursor: null,
+      has_more: false }));
+    const viewerFetcher = vi.fn().mockResolvedValue(response(descriptor));
+    const pdf = new Uint8Array(120); pdf.set(new TextEncoder().encode("%PDF-1.7"));
+    const previewFetch = vi.fn().mockResolvedValue(new Response(pdf, { status: 200,
+      headers: { "Content-Type": "application/pdf", "Content-Length": "120" } }));
+    const create = vi.fn().mockReturnValue("blob:https://plm.example.test/fixed");
+    const revoke = vi.fn();
+    Object.defineProperty(URL, "createObjectURL", { configurable: true, value: create });
+    Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: revoke });
+    const { wrapper } = await view(await session(), listFetcher as typeof fetch,
+      viewerFetcher as typeof fetch, previewFetch as typeof fetch);
+    await wrapper.findAll("button").find((button) => button.text() === "定位原文")!.trigger("click");
+    await flushPromises();
+    await wrapper.findAll("button").find((button) => button.text() === "预览固定版本 PDF")!.trigger("click");
+    await flushPromises();
+    expect(previewFetch).toHaveBeenCalledExactlyOnceWith(descriptor.content_url,
+      expect.objectContaining({ credentials: "same-origin", redirect: "error",
+        headers: { Accept: "application/pdf" } }));
+    expect(wrapper.get("iframe").attributes("src")).toBe("blob:https://plm.example.test/fixed#page=2");
+    expect(wrapper.get("iframe").attributes("sandbox")).toBe("allow-same-origin");
+    wrapper.unmount();
+    expect(revoke).toHaveBeenCalledWith("blob:https://plm.example.test/fixed");
+  });
+
+  it("keeps the fixed download when PDF inline preview is too large", async () => {
+    const listFetcher = vi.fn().mockResolvedValue(response({ items: [item], next_cursor: null,
+      has_more: false }));
+    const viewerFetcher = vi.fn().mockResolvedValue(response({ ...descriptor, size_bytes: 20_000_001 }));
+    const previewFetch = vi.fn();
+    const { wrapper } = await view(await session(), listFetcher as typeof fetch,
+      viewerFetcher as typeof fetch, previewFetch as typeof fetch);
+    await wrapper.findAll("button").find((button) => button.text() === "定位原文")!.trigger("click");
+    await flushPromises();
+    await wrapper.findAll("button").find((button) => button.text() === "预览固定版本 PDF")!.trigger("click");
+    await flushPromises();
+    expect(previewFetch).not.toHaveBeenCalled();
+    expect(wrapper.find("iframe").exists()).toBe(false);
+    expect(wrapper.text()).toContain("超过 20 MB");
+    expect(wrapper.find(`a[href="${descriptor.content_url}"]`).exists()).toBe(true);
+    wrapper.unmount();
+  });
+
+  it("rejects wrong PDF response type without embedding bytes", async () => {
+    const listFetcher = vi.fn().mockResolvedValue(response({ items: [item], next_cursor: null,
+      has_more: false }));
+    const viewerFetcher = vi.fn().mockResolvedValue(response(descriptor));
+    const previewFetch = vi.fn().mockResolvedValue(new Response("not a PDF", { status: 200,
+      headers: { "Content-Type": "text/plain", "Content-Length": "9" } }));
+    const { wrapper } = await view(await session(), listFetcher as typeof fetch,
+      viewerFetcher as typeof fetch, previewFetch as typeof fetch);
+    await wrapper.findAll("button").find((button) => button.text() === "定位原文")!.trigger("click");
+    await flushPromises();
+    await wrapper.findAll("button").find((button) => button.text() === "预览固定版本 PDF")!.trigger("click");
+    await flushPromises();
+    expect(wrapper.find("iframe").exists()).toBe(false);
+    expect(wrapper.text()).toContain("PDF 页级预览不可用");
+    expect(wrapper.find(`a[href="${descriptor.content_url}"]`).exists()).toBe(true);
     wrapper.unmount();
   });
 });

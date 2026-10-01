@@ -29,3 +29,5 @@
 后续可选 Viewer HTTP 合同已通过 3 项定向、后端 1,776 项（3 既有跳过）和 wheel SHA-256 `6f2a1cdc…`；默认仍关闭。它返回已有受权内容接口的相对 URL，而该接口目前按附件下载，不能据此宣称浏览器内精确定位。真实 PostgreSQL/Windows 显式装配与前端仍待，本 CR 保持 OPEN。
 
 Windows 显式只读/写组合的隔离 PostgreSQL 18 合成链现已通过：真实 Session/Project 下固定整文档/节点 Viewer、受权内容 URL 原字节、角色/License 拒绝、私有文件/ParseResult 篡改 409、DocumentVersion 撤销后 Viewer 404 且历史元数据仍可读。后端 1,776 项（3 既有跳过）、wheel SHA-256 `ec54bee4…` 通过。正式目标账户、前端精确展示、Server 2025/Debian 和 Gate 3 未验，本 CR 保持 OPEN。
+
+前端项目证据列表/“定位原文”按钮及 PDF 20MB 内页级预览尝试的合同测试已通过；精确高亮未实现，Office/Excel 仅展示固定位置与下载。computer-use 本机运行时初始化报缺少资源，未能完成真实浏览器 PDF 内置查看器与 `#page`/sandbox 验收；该缺项不以 jsdom 替代。正式账户/目标平台/Gate 3 仍待，本 CR 保持 OPEN。

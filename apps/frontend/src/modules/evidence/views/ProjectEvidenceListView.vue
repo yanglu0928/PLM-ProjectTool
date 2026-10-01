@@ -9,10 +9,11 @@ import { EvidenceViewerClient, EvidenceViewerClientError,
   type EvidenceViewerDescriptor } from "@/modules/evidence/api/evidenceViewerClient";
 
 const props = defineProps<{ session?: SessionClient; listClient?: EvidenceListClient;
-  viewerClient?: EvidenceViewerClient }>();
+  viewerClient?: EvidenceViewerClient; previewFetch?: typeof fetch }>();
 const session = toRaw(props.session ?? inject(sessionClientKey, null) ?? new SessionClient());
 const lists = toRaw(props.listClient ?? new EvidenceListClient());
 const viewers = toRaw(props.viewerClient ?? new EvidenceViewerClient());
+const previewFetch = props.previewFetch ?? fetch;
 const identity = session.view;
 const route = useRoute();
 const items = ref<readonly EvidenceSummary[]>([]);
@@ -23,8 +24,13 @@ const error = ref("");
 const selected = ref<EvidenceViewerDescriptor | null>(null);
 const selectedBusy = ref<string | null>(null);
 const selectedError = ref("");
+const pdfUrl = ref<string | null>(null);
+const previewBusy = ref(false);
+const previewError = ref("");
 let generation = 0;
 let selectionGeneration = 0;
+let previewGeneration = 0;
+let previewController: AbortController | null = null;
 let mounted = true;
 
 function projectId(): string { return typeof route.params.projectId === "string" ? route.params.projectId : ""; }
@@ -34,9 +40,78 @@ function mayRead(): boolean {
 }
 function clearSelection() {
   selectionGeneration += 1;
+  clearPreview();
   selected.value = null;
   selectedBusy.value = null;
   selectedError.value = "";
+}
+function clearPreview() {
+  previewGeneration += 1;
+  previewController?.abort(); previewController = null;
+  if (pdfUrl.value) URL.revokeObjectURL(pdfUrl.value.split("#")[0]!);
+  pdfUrl.value = null; previewBusy.value = false; previewError.value = "";
+}
+function pageNumber(view: EvidenceViewerDescriptor): number | null {
+  const locator = view.locator.locator_type === "STRUCTURED_NODE"
+    ? view.locator.source_locator : view.locator;
+  if (!locator || typeof locator !== "object" || Array.isArray(locator)) return null;
+  const source = locator as Record<string, unknown>;
+  if ((source.locator_type === "PAGE" || source.locator_type === "TEXT_RANGE")
+    && typeof source.page_no === "number" && Number.isSafeInteger(source.page_no)
+    && source.page_no > 0) return source.page_no;
+  return null;
+}
+async function previewPdf() {
+  const view = selected.value;
+  if (!mayRead() || !view || view.detected_mime !== "application/pdf" || previewBusy.value) return;
+  clearPreview();
+  if (view.size_bytes === 0 || view.size_bytes > 20_000_000) {
+    previewError.value = "文件为空或超过 20 MB，暂不在浏览器预览；可下载固定版本查看。";
+    return;
+  }
+  const current = ++previewGeneration;
+  const project = projectId();
+  const controller = new AbortController();
+  previewController = controller; previewBusy.value = true;
+  const timer = window.setTimeout(() => controller.abort(), 30_000);
+  try {
+    const response = await previewFetch(view.content_url, { method: "GET", credentials: "same-origin",
+      cache: "no-store", redirect: "error", headers: { Accept: "application/pdf" },
+      signal: controller.signal });
+    const length = response.headers.get("content-length");
+    if (!response.ok || response.status !== 200
+      || response.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !== "application/pdf"
+      || length === null || Number(length) !== view.size_bytes || !response.body) {
+      throw new Error("invalid PDF response");
+    }
+    const bytes = new Uint8Array(view.size_bytes);
+    const reader = response.body.getReader();
+    let received = 0;
+    try {
+      while (true) {
+        const part = await reader.read();
+        if (part.done) break;
+        if (received + part.value.byteLength > bytes.byteLength) throw new Error("PDF response exceeds fixed size");
+        bytes.set(part.value, received);
+        received += part.value.byteLength;
+      }
+    } finally { reader.releaseLock(); }
+    if (received !== view.size_bytes) throw new Error("PDF response length mismatch");
+    if (!mounted || current !== previewGeneration || projectId() !== project
+      || selected.value !== view || !mayRead()) return;
+    const objectUrl = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+    const page = pageNumber(view);
+    pdfUrl.value = page === null ? objectUrl : `${objectUrl}#page=${page}`;
+  } catch {
+    if (mounted && current === previewGeneration) {
+      previewError.value = "PDF 页级预览不可用；请下载固定版本查看，勿将预览失败视为原文已核验失效。";
+    }
+  } finally {
+    window.clearTimeout(timer);
+    if (mounted && current === previewGeneration) {
+      previewBusy.value = false; previewController = null;
+    }
+  }
 }
 async function load(refresh = false) {
   if (!mayRead() || busy.value) return;
@@ -66,6 +141,7 @@ async function load(refresh = false) {
 async function locate(item: EvidenceSummary) {
   if (!mayRead() || !items.value.some((entry) => entry.evidence_id === item.evidence_id)) return;
   const project = projectId();
+  clearPreview();
   const current = ++selectionGeneration;
   selected.value = null; selectedError.value = ""; selectedBusy.value = item.evidence_id;
   try {
@@ -147,6 +223,15 @@ onUnmounted(() => { mounted = false; generation += 1; clearSelection(); });
           <template v-if="selected.short_preview"><dt>短提示</dt><dd>{{ selected.short_preview }}</dd></template>
         </dl>
         <p>当前位置由来源定位证明；浏览器内的精确高亮尚未提供。下载时服务器会再次验证权限与文件完整性。</p>
+        <template v-if="selected.detected_mime === 'application/pdf'">
+          <button type="button" :disabled="previewBusy" @click="previewPdf()">
+            {{ previewBusy ? '正在准备页级预览…' : '预览固定版本 PDF' }}
+          </button>
+          <p>浏览器支持时{{ pageNumber(selected) === null ? '从首页打开' : `尝试跳转至第 ${pageNumber(selected)} 页` }}；不保证精确高亮。</p>
+          <p v-if="previewError" role="alert">{{ previewError }}</p>
+          <iframe v-if="pdfUrl" :src="pdfUrl" title="固定版本 PDF 页级预览"
+            sandbox="allow-same-origin" referrerpolicy="no-referrer" class="pdf-preview" />
+        </template>
         <p><a :href="selected.content_url">下载固定版本原文</a></p>
         <p><RouterLink :to="{ name: 'project-document-detail', params: {
           projectId: route.params.projectId, documentId: selected.document_id } }">查看文档版本历史</RouterLink></p>
@@ -164,4 +249,5 @@ onUnmounted(() => { mounted = false; generation += 1; clearSelection(); });
 .evidence-list dt { font-weight: 700; }
 .evidence-list dd { margin: 0; overflow-wrap: anywhere; }
 .evidence-list [role="alert"] { color: #a21d25; }
+.pdf-preview { width: 100%; height: 36rem; border: 1px solid #b7c4d3; }
 </style>
