@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/EVD-01-A03-P04-A02-P04 Windows 显式平台读/写模式在独立游标密钥可用时挂载 Evidence GET，缺钥仅该能力404，既有Document等路由保持；登录专用不挂。兼容性：新增冻结GET实现，无 Schema/依赖变化；只读模式同路径POST由404变标准405，仍不可写。升级：无Migration，正式目标账户须供给并备份独立密钥。验证：隔离PG18合成密钥/真实Session/Project写后读、缺钥拒绝、降权/License隔离，后端1,769项（3既有跳过）及wheel SHA-256 `c86937f2…` 通过。已知问题：正式密钥/账户、Viewer、Server2025/Debian及Gate3未通过。
+
 - 2026-10-01：0.1.0.dev0/EVD-01-A03-P04-A02-P03 增加 Evidence 游标 Windows 当前账户 Vault 只读密钥工厂，固定独立引用且缺钥失败关闭。兼容性：内部装配来源，无 API/Schema/依赖变化；升级：无 Migration，正式目标账户须另行供给与备份。验证：定向2项含临时随机 Vault 目标丢失/加密备份恢复与清理，后端1,769项（3既有跳过）及wheel SHA-256 `cd32d115…` 通过。已知问题：正式引用/目标账户供给、生产 GET 组合、Viewer/Gate3仍待。
 
 - 2026-10-01：0.1.0.dev0/EVD-01-A03-P04-A02-P02 增加可选 Evidence 项目/全局列表与详情 GET，列表独立签名分页及短摘录、详情最小投影/ETag，默认模式继续404。兼容性：冻结 API 的非 Breaking 实现，无 Schema/依赖变化；升级：无 Migration。验证：HTTP合同4项、隔离PG18合成HTTP边界＋真实Session/Project底层读取、后端1,767项（3既有跳过）及wheel SHA-256 `cdd29d17…` 通过。已知问题：专用密钥目标账户来源、Windows正式组合、Viewer与Gate3未完成。

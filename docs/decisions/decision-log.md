@@ -6112,3 +6112,11 @@
 - 理由/影响/回滚/验证计划：保持游标签名密钥独立并防止未供给时悄然开放 GET。仅新 Windows 工厂/测试，不改 Schema、冻结 API 或第三方依赖；撤销未装配工厂可回滚。验证固定引用选择、缺钥失败、临时 Vault 丢失与备份恢复后旧 token 解码；未执行不记 PASS。
 
 - 执行结果：固定引用只读工厂已实现；定向2项含 Windows 当前账户临时随机目标的加密备份、删除、恢复与原 cursor 解码，测试目标最终删除。未读取、创建或覆盖正式 `evidence-list-cursor-v1`；正式目标账户备份/恢复未验，生产接线仍待。
+
+## DEC-20261001-597 — Evidence 读取组合缺独立密钥时仅关闭该路由
+
+- 日期/Phase/WBS：2026-10-01 / Phase2 / EVD-01-A03-P04-A02-P04。输入 Evidence 可选 GET、Windows 独立密钥工厂与现有显式平台组合；正式 Evidence 固定引用尚未供给。
+- 决策：在 Windows `--platform`/`--platform-write` 组合中尝试解析 Evidence 独立游标签名密钥；可用时挂载受权列表/详情，不可用时 Evidence GET 保持404，不影响既有 Document/Project 等路由启动。此为单能力 fail-closed；不得复用其他密钥或自动生成测试材料。默认登录专用模式仍不尝试挂载。
+- 理由/影响/回滚/验证计划：直接使整个已部署平台因新增 Evidence 功能缺钥而无法启动会破坏既有能力；仅关闭未完成密钥供给的新能力更符合逐模块交付和安全边界。无 Schema/Migration/API Breaking Change；回滚撤 Evidence 注入，历史记录保留。隔离PG18合成密钥下验真实Session/项目权限与分页；缺钥时 GET404、旧路由不退化。正式目标账户密钥和恢复依旧 Release 阻断，不据合成验收放行Gate3。
+
+- 执行结果：Windows 显式平台读/写模式在 Evidence 密钥可解析时挂载 GET，缺钥仅该 GET404，Document GET200 保持；登录专用模式不挂。隔离PG18合成当前账户密钥、真实Session/Project和Evidence写后读取、CustomerMember降权保留读取、外部用户/License拒绝通过。因只读模式已存在同路径GET，未挂POST时返回标准405而非旧404；方法仍关闭，冻结API明确GET/POST分别受控。临时库/文件停止清理；正式目标账户密钥、Server2025/Debian/Gate3仍未验。

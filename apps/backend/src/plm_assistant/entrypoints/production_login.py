@@ -205,11 +205,17 @@ from plm_assistant.modules.document.application.read_parse_result import Documen
 from plm_assistant.modules.document.infrastructure.parse_result_read_repository import SqlAlchemyParseResultReadRepository
 from plm_assistant.modules.document.infrastructure.parse_result_storage import LocalParseResultStorage
 from plm_assistant.modules.evidence.api.create_evidence import create_evidence_create_router
+from plm_assistant.modules.evidence.api.read_evidence import create_evidence_read_router
 from plm_assistant.modules.evidence.application.create_access import EvidenceCreateAccess
 from plm_assistant.modules.evidence.application.create_evidence import EvidenceCreateService
+from plm_assistant.modules.evidence.application.read_evidence import EvidenceReadService
 from plm_assistant.modules.evidence.application.document_source_proof import DocumentEvidenceProofService
 from plm_assistant.modules.evidence.application.parsed_node_proof import ParsedNodeEvidenceProofService
 from plm_assistant.modules.evidence.infrastructure.create_repository import SqlAlchemyEvidenceCreateRepository
+from plm_assistant.modules.evidence.infrastructure.read_repository import SqlAlchemyEvidenceReadRepository
+from plm_assistant.entrypoints.windows_evidence_list_cursor import (
+    ProductionEvidenceCursorStartupError, create_windows_evidence_list_cursor_codec,
+)
 from plm_assistant.modules.document.application.create_upload_intent import CreateUploadIntentService
 from plm_assistant.modules.document.application.upload_access import DocumentUploadAccess
 from plm_assistant.modules.document.infrastructure.upload_intent_repository import SqlAlchemyUploadIntentRepository
@@ -366,6 +372,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         document_parse_read_router = None
         document_download_router = None
         evidence_create_router = None
+        evidence_read_router = None
         if include_secret_read:
             from plm_assistant.entrypoints.windows_license_runtime import (
                 create_windows_license_services,
@@ -462,6 +469,22 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 ),
                 origins=origins,
             )
+            try:
+                evidence_cursors = create_windows_evidence_list_cursor_codec()
+            except ProductionEvidenceCursorStartupError:
+                evidence_cursors = None
+            if evidence_cursors is not None:
+                evidence_read_router = create_evidence_read_router(
+                    sessions=sessions, origins=origins, cursors=evidence_cursors,
+                    evidence=EvidenceReadService(
+                        unit_of_work=runtime.unit_of_work,
+                        session_access=SqlAlchemyProjectReadAccess(),
+                        admin_access=SqlAlchemyDeploymentReadAccess(),
+                        project_facts=SqlAlchemyProjectAuthorizationRepository(),
+                        license_guard=licenses.guard,
+                        repository=SqlAlchemyEvidenceReadRepository(),
+                    ),
+                )
             export_reads = AuditExportContentReader(
                 unit_of_work=runtime.unit_of_work,
                 project_access=SqlAlchemyProjectReadAccess(),
@@ -955,6 +978,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             document_parse_read_router=document_parse_read_router,
             document_download_router=document_download_router,
             evidence_create_router=evidence_create_router,
+            evidence_read_router=evidence_read_router,
             maintenance_admission=maintenance_admission,
             shutdown_callback=shutdown,
         )

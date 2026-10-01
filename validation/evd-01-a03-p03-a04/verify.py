@@ -35,6 +35,8 @@ from plm_assistant.modules.document.api.version_list_cursor import VersionListCu
 from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage
 from plm_assistant.modules.document.infrastructure.parse_result_storage import LocalParseResultStorage
 from plm_assistant.modules.document.infrastructure.upload_token import HmacUploadTokenIssuer
+from plm_assistant.modules.evidence.api.list_cursor import EvidenceListCursorCodec
+from plm_assistant.entrypoints.windows_evidence_list_cursor import ProductionEvidenceCursorStartupError
 from plm_assistant.modules.jobs.api.list_cursor import JobListCursorCodec
 from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
 from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
@@ -194,6 +196,7 @@ def verify(port: int, scratch: Path) -> None:
         "create_windows_user_list_cursor_codec": UserListCursorCodec(b"u" * 32),
         "create_windows_job_list_cursor_codec": JobListCursorCodec(b"j" * 32),
         "create_windows_audit_cursor_codec": AuditListCursorCodec(b"a" * 32),
+        "create_windows_evidence_list_cursor_codec": EvidenceListCursorCodec(b"e" * 32),
     }
     issuer = HmacUploadTokenIssuer(provider=SimpleNamespace(resolve_key=lambda _ref: b"u" * 32),
                                    key_ref="document-upload-token-v1")
@@ -211,6 +214,9 @@ def verify(port: int, scratch: Path) -> None:
         login_only = create_production_login_app(settings)
         read_only = create_production_platform_app(settings)
         write = create_production_platform_write_app(settings)
+        with patch("plm_assistant.entrypoints.production_login.create_windows_evidence_list_cursor_codec",
+                   side_effect=ProductionEvidenceCursorStartupError()):
+            missing_key = create_production_platform_app(settings)
         body = {"document_id": str(document), "document_version_id": str(version),
                 "locator": {"locator_type": "DOCUMENT"}, "display_label": "Full document"}
         endpoint = f"/api/v1/projects/{project}/evidence"
@@ -219,13 +225,20 @@ def verify(port: int, scratch: Path) -> None:
                                json=body).status_code == 404
         with TestClient(read_only, base_url="http://localhost") as client:
             assert client.post(endpoint, headers=headers(pm_token, "evd-read-closed-001"),
-                               json=body).status_code == 404
+                               json=body).status_code == 405
+        with TestClient(missing_key, base_url="http://localhost") as client:
+            assert client.get(endpoint, headers=headers(pm_token, "evd-missing-key-001")).status_code == 404
+            assert client.get(f"/api/v1/projects/{project}/documents/{document}",
+                              headers=headers(pm_token, "evd-missing-key-001")).status_code == 200
         with TestClient(write, base_url="http://localhost") as client:
             first = client.post(endpoint, headers=headers(pm_token, "evd-create-write-001"), json=body)
             replay = client.post(endpoint, headers=headers(pm_token, "evd-create-write-001"), json=body)
             assert first.status_code == replay.status_code == 201, (first.text, replay.text)
             assert first.json()["data"] == replay.json()["data"]
             assert first.json()["data"]["content_fingerprint"] == digest.hex()
+            listed = client.get(endpoint + "?page_size=1", headers=headers(pm_token, "evd-read-001"))
+            assert listed.status_code == 200, listed.text
+            assert listed.json()["data"]["items"][0]["evidence_id"] == first.json()["data"]["evidence_id"]
             node_body = {**body, "locator": position.to_locator(),
                          "parse_record_id": str(parse_record),
                          "display_label": "Text line"}
@@ -244,6 +257,10 @@ def verify(port: int, scratch: Path) -> None:
                            "WHERE project_id=%s AND user_id=%s", (project, pm))
             demoted = client.post(endpoint, headers=headers(pm_token, "evd-create-write-001"), json=body)
             assert demoted.status_code == 404, demoted.text
+        with TestClient(read_only, base_url="http://localhost") as client:
+            detail = client.get(endpoint + "/" + first.json()["data"]["evidence_id"],
+                                headers=headers(pm_token, "evd-read-002"))
+            assert detail.status_code == 200, detail.text  # Customer member retains read rights.
     with psycopg.connect(host="127.0.0.1", port=port, user=HELPER.USER,
                          dbname="postgres") as db:
         evidence_id = uuid.UUID(first.json()["data"]["evidence_id"])
@@ -252,7 +269,7 @@ def verify(port: int, scratch: Path) -> None:
                           (evidence_id,)).fetchone()[0] == 1
         assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s "
                           "AND action='EVIDENCE_CREATED'", (evidence_id,)).fetchone()[0] == 1
-    print("PASS: isolated PG18 actual Windows composition Document+parsed node Evidence, replay, 404 isolation, License deny")
+    print("PASS: isolated PG18 Windows Evidence create+read composition, missing-key GET closed, role/License isolation")
 
 
 def main() -> None:
