@@ -1,6 +1,6 @@
 # CR-EVD-001 DOCX 标题来源的 SECTION 定位
 
-日期：2026-10-01。状态：Parser V2 来源节点、Evidence 内部证明与隔离 PostgreSQL V1/V2 共存已验证；升级排空及正式授权组合待后续 WBS。来源：Gate 2 冻结的数据模型要求 `SECTION` 指向可重放的章节路径或标题锚点；`EVD-01-A03-P02-A02-P03-P04-A02` 前置核查发现当前 Parser 只发出 DOCX 段落/表格节点，Evidence 对 SECTION 一律拒绝。冻结提交 `64cdf09` 保留，不追写。
+日期：2026-10-01。状态：Parser V2 来源节点、Evidence 内部证明与隔离 PostgreSQL V1/V2 共存已验证；升级排空前置核查因正式服务/目标账户缺失而阻塞，正式授权组合亦待。来源：Gate 2 冻结的数据模型要求 `SECTION` 指向可重放的章节路径或标题锚点；`EVD-01-A03-P02-A02-P03-P04-A02` 前置核查发现当前 Parser 只发出 DOCX 段落/表格节点，Evidence 对 SECTION 一律拒绝。冻结提交 `64cdf09` 保留，不追写。
 
 ## 冲突与证据
 
@@ -22,4 +22,4 @@
 
 ## 未关闭事项
 
-Parser V2 标题节点已通过合成落盘 DOCX 回查、定向 10 项、后端全量 1,745 项（3 既有跳过）和开发 wheel；Evidence SECTION 内部证明经落盘 DOCX、定向 9 项、全后端 1,746 项（3 既有跳过）及 wheel 通过。隔离 PostgreSQL 18 对同一 DocumentVersion 的 V1/V2 成功结果共存、撤权/跨项目/篡改失败关闭验证 exit0。旧 RUNNING 作业升级排空、正式客户文档、复杂章节层级、其他格式 SECTION、Windows Server 2025/Debian 13、正式信任与 Gate 3 仍待各自证据。本 CR 整体尚未关闭。
+Parser V2 标题节点已通过合成落盘 DOCX 回查、定向 10 项、后端全量 1,745 项（3 既有跳过）和开发 wheel；Evidence SECTION 内部证明经落盘 DOCX、定向 9 项、全后端 1,746 项（3 既有跳过）及 wheel 通过。隔离 PostgreSQL 18 对同一 DocumentVersion 的 V1/V2 成功结果共存、撤权/跨项目/篡改失败关闭验证 exit0。本机只读 SCM 库存显示三项 PLM 服务均未安装，旧 RUNNING 作业升级排空不能实机验证；正式客户文档、复杂章节层级、其他格式 SECTION、Windows Server 2025/Debian 13、正式信任与 Gate 3 仍待各自证据。本 CR 整体尚未关闭。
