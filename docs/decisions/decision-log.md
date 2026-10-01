@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261001-583 — GLOBAL 历史回查须另取当前强 ETag
+
+- Date/WBS：2026-10-01 / `EVD-01-A04-P03-A08-P15`；输入冻结 GLOBAL EVIDENCE_GET、P14 原操作收据客户端。
+- Decision：扩展现有 Evidence 资格客户端的 GLOBAL 当前 GET，必须是 DeploymentAdmin 会话，匹配 EvidenceId 和响应强 ETag；项目身份不借全局路径。复用当前状态解析，不根据历史收据推断状态。
+- Reason/Impact/Rollback：历史收据与当前资格可能不同；方法独立且未接 UI，无数据库/API 差异，停用调用即可回退。
+
 ## DEC-20261001-582 — GLOBAL 回查客户端不得借项目角色
 
 - Date/WBS：2026-10-01 / `EVD-01-A04-P03-A08-P14`；输入 CR-EVD-004 双 Scope 与 P12 项目客户端。

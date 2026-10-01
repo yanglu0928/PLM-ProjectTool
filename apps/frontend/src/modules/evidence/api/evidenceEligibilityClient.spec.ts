@@ -38,8 +38,41 @@ const sessionView = () => response({ user: { user_id: projectId, username_displa
   absolute_expires_at: "2030-01-01T12:00:00Z", idle_expires_at: "2030-01-01T11:00:00Z",
   csrf_token: "a".repeat(64),
 });
+const globalSessionView = () => response({ user: { user_id: projectId, username_display: "全局管理员" },
+  deployment_role: "DEPLOYMENT_ADMIN", password_change_required: false,
+  authorized_projects: [], absolute_expires_at: "2030-01-01T12:00:00Z",
+  idle_expires_at: "2030-01-01T11:00:00Z", csrf_token: "a".repeat(64),
+});
 
 describe("EvidenceEligibilityClient", () => {
+  it("reads global current Evidence only for a deployment admin with strong ETag", async () => {
+    const fetcher = vi.fn().mockResolvedValueOnce(globalSessionView())
+      .mockResolvedValueOnce(response({ ...current, eligibility_state: "REVOKED",
+        etag: '"v2"' }, '"v2"'));
+    const client = new EvidenceEligibilityClient(await auth(fetcher as typeof fetch),
+      fetcher as typeof fetch);
+    expect(await client.currentGlobal(evidenceId)).toEqual({ ...current,
+      eligibility_state: "REVOKED", etag: '"v2"' });
+    expect(fetcher.mock.calls[1]?.[0]).toBe(`/api/v1/global/evidence/${evidenceId}`);
+    expect(fetcher.mock.calls[1]?.[1]).toEqual(expect.objectContaining({
+      method: "GET", credentials: "same-origin", cache: "no-store", redirect: "error" }));
+  });
+
+  it("refuses the global path for a project-only identity and mismatched ETag", async () => {
+    const projectFetcher = vi.fn().mockResolvedValueOnce(sessionView());
+    const projectClient = new EvidenceEligibilityClient(await auth(projectFetcher as typeof fetch),
+      projectFetcher as typeof fetch);
+    await expect(projectClient.currentGlobal(evidenceId)).rejects.toMatchObject({
+      code: "EVIDENCE_ELIGIBILITY_INVALID" });
+    expect(projectFetcher).toHaveBeenCalledTimes(1);
+
+    const globalFetcher = vi.fn().mockResolvedValueOnce(globalSessionView())
+      .mockResolvedValueOnce(response(current, '"v1"'));
+    const globalClient = new EvidenceEligibilityClient(await auth(globalFetcher as typeof fetch),
+      globalFetcher as typeof fetch);
+    await expect(globalClient.currentGlobal(evidenceId)).rejects.toMatchObject({
+      code: "EVIDENCE_ELIGIBILITY_UNCERTAIN" });
+  });
   it("fetches current strong ETag and sends one bounded human decision", async () => {
     const post = response({ evidence_id: evidenceId, eligibility_state: "ELIGIBLE",
       eligibility_reason: "人工核对实际调研记录", etag: '"v1"' }, '"v1"');

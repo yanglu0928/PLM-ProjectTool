@@ -82,11 +82,26 @@ export class EvidenceEligibilityClient {
       || this.session.view.password_change_required) {
       throw new EvidenceEligibilityClientError("EVIDENCE_ELIGIBILITY_INVALID");
     }
-    const actor = this.session.view.user.user_id;
+    return this.#current(`/api/v1/projects/${projectId}/evidence/${evidenceId}`,
+      evidenceId, this.session.view.user.user_id);
+  }
+
+  async currentGlobal(evidenceId: string): Promise<CurrentEvidenceEligibility> {
+    if (!id(evidenceId) || !this.session.view
+      || this.session.view.password_change_required
+      || this.session.view.deployment_role !== "DEPLOYMENT_ADMIN") {
+      throw new EvidenceEligibilityClientError("EVIDENCE_ELIGIBILITY_INVALID");
+    }
+    return this.#current(`/api/v1/global/evidence/${evidenceId}`,
+      evidenceId, this.session.view.user.user_id);
+  }
+
+  async #current(path: string, evidenceId: string,
+    actor: string): Promise<CurrentEvidenceEligibility> {
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
     try {
-      const response = await this.fetcher(`/api/v1/projects/${projectId}/evidence/${evidenceId}`, {
+      const response = await this.fetcher(path, {
         method: "GET", credentials: "same-origin", cache: "no-store", redirect: "error",
         headers: { Accept: "application/json" }, signal: controller.signal,
       });
