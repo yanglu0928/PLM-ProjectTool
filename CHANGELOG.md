@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/EVD-01-A04-P03-A05 增加全新临时PG18/pgvector资格端到端验证脚本。兼容性：仅验证资产，无运行时变更。升级：无需迁移。验证：Windows11隔离PG18真实来源/资格/HTTP、模板/跨项目/撤销/License拒绝、Audit回滚与撤权退出0，临时实例停止清理。已知问题：正式组合、并发、Server2025/Debian及Gate3未验。
+
 - 2026-10-01：0.1.0.dev0/EVD-01-A04-P03-A04 增加默认关闭的 Evidence 资格 POST 可选路由，严格可信来源、Session/CSRF、Idempotency-Key、强 If-Match 与最小 Body/响应。兼容性：实现冻结 `/api/v1` 路径，无 Breaking Change/Schema 变更。升级：正式组合需独立验证后才注入。验证：HTTP合同4项、后端全量1797项通过/3跳过、wheel构建通过；真实PG/平台未验。已知问题：正式路由仍关闭，Gate3未通过。
 
 - 2026-10-01：0.1.0.dev0/EVD-01-A04-P03-A03 增加 Evidence 人工首次资格内部命令：同事务当前授权/来源复验、模板阻断、条件版本写入、Audit及幂等收据；补命令 token/CSRF 绑定核验。兼容性：无公开 API/Schema 变化。升级：无需迁移。验证：后端全量1793项通过/3跳过、wheel构建通过；实际PG18事务及HTTP未验。已知问题：资格路由仍关闭、Gate3未通过。
