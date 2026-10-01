@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/WFL-01-A08-P05 从干净提交71375e9f派生含当前Workflow的Windows11非发行候选，ZIP SHA `6b0cd497…887acb`，仅本地Git忽略区保存。兼容性：保留固定父包第三方/运行时，沿用0052，无本项新API/Schema/依赖。升级：不覆盖现有安装，正式升级仍需备份/维护/迁移/恢复演练。验证：21,182项清洁解包全哈希、前后端同字节、随包Python/PG18实际Workflow平台双模式启动矩阵通过，临时集群清理。已知问题：正式LICENSE/NOTICE与信任源、真实浏览器、Server2025/Debian断网安装升级、AI质量/性能/UAT/Gate未通过，`release_eligible=false`。
+
 - 2026-10-02：0.1.0.dev0/WFL-01-A08-P04 项目详情增加六阶段 Workflow 页面及经理首启确认、原操作持久保护。兼容性：前端新路由，冻结后端API/Schema/依赖不变。升级：重建前端，无数据迁移。验证：页面6项、前端全量1194项/typecheck/build PASS。已知问题：真实浏览器/当前包更新、正式信任/法律、A07 Owner/StageGate、Server2025/Debian、UAT/Gate3开放，现有ZIP不可发行。
 
 - 2026-10-02：0.1.0.dev0/WFL-01-A08-P03 新增 Workflow START 首次结果安全回执客户端，强制与当前GET分离。兼容性：未接页面，原API/Schema/依赖不变。升级：重建前端，无迁移。验证：新增13、前端全量1188项/typecheck/build通过。已知问题：页面/浏览器、正式信任、A07 Owner/Gate、三平台/UAT/Gate3仍开放；现有非发行ZIP未含本项。
