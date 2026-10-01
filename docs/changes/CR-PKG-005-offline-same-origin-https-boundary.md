@@ -64,4 +64,6 @@
 
 2026-10-01/P35增量证据：新候选21,112载荷＋三清单在全新ASCII Temp安装布局映射/复制/全量Hash读回21,115目标，映射SHA-256 `d4072ed23558da5026911fad3575ee8b4d67944814b58096b6587c1bf9908580`，Go源码/LICENSE、模型指纹及包内Python/PG/Caddy和模板合成证书validate通过。新布局实际HTTPS网络、正式账户/证书与法律发行仍待；`C:\PLMTool`未建。
 
+2026-10-01/P36增量证据：P35新布局21,115项全量Hash后，用新包内Caddy/API与合成证书实际HTTPS验证首页/两项资源、健康200、默认API404、SPA200、错误Host421，子进程/证书清理。此为默认API路由烟测，生产登录及正式信任仍待。
+
 官方依据：[Caddy许可仓库](https://github.com/caddyserver/caddy)、[反向代理及Host处理](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy)、[静态文件](https://caddyserver.com/docs/caddyfile/directives/file_server)、[SPA与API路由](https://caddyserver.com/docs/caddyfile/patterns)、[自有TLS证书](https://caddyserver.com/docs/caddyfile/directives/tls)、[Windows服务](https://caddyserver.com/docs/running)。

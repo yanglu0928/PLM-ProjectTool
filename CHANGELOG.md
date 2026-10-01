@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P36 新Caddy＋Go源码布局21,115项Hash先验后，包内合成HTTPS静态2资源/健康200/API404/SPA200/错Host421回归，子进程/证书清理，定向单元2/2。兼容性：不改API/Schema/Migration/SCM/正式安装；生产认证/信任源/NOTICE/目标平台/Gate未验，`release_eligible=false`。升级说明：无需迁移。已知问题：正式运行链仍待。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P35 P33新候选在独立ASCII布局复制/读回21,115目标，映射SHA `d4072ed23558da5026911fad3575ee8b4d67944814b58096b6587c1bf9908580`，Go源码/LICENSE、模型指纹、Python/PG/Caddy与合成证书模板validate通过，定向单元1/1。兼容性：无API/Schema/Migration/SCM/正式安装改动；新布局HTTPS网络、正式信任源/法律/三平台/Gate未验，`release_eligible=false`。升级说明：无需迁移。已知问题：完整NOTICE与发行验收未完成。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P34 P33新ZIP在全新ASCII临时目录清洁解包21,112载荷、三清单及全量Hash回读，Go源码VERSION/LICENSE与随包文本一致，源末次复验PASS；新旧暂存单元4/4。兼容性：无API/Schema/Migration/SCM改动，正式安装/数据库未动；新目标布局/运行、NOTICE/信任源/三平台/Gate待验，`release_eligible=false`。升级说明：无需迁移。已知问题：发行合规未放行。

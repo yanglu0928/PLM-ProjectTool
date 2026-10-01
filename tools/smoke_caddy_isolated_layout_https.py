@@ -63,8 +63,8 @@ def verify_layout(candidate: Path, stage: Path, layout: Path) -> dict:
     return {"mapping_sha256": mapping_sha256, "file_count": len(mapping)}
 
 
-def smoke(candidate: Path, stage: Path, layout: Path) -> dict:
-    verified = verify_layout(candidate, stage, layout)
+def smoke(candidate: Path, stage: Path, layout: Path, *, layout_verifier=verify_layout) -> dict:
+    verified = layout_verifier(candidate, stage, layout)
     layout = layout.resolve(strict=True)
     runtime = layout / "runtime/python"
     frontend = layout / "app/frontend/dist"
