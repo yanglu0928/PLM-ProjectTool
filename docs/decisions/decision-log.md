@@ -6061,3 +6061,10 @@
 - 日期/Phase/WBS：2026-10-01 / Phase2 / EVD-01-A03-P02-A02-P03-P02。输入现有 DOCX/PPTX/XLSX Parser、已验 Document→Evidence 内部节点证明及已冻结 Locator 合同；前置文本/CSV 局部格式验证通过。仅生成临时纯合成 Office 文件，用独立 Office 读取库按段落、表格、形状、工作表单元格回查 Parser 节点，再核 Evidence 直接/结构化位置，不用客户文件或外部服务。不改生产实体、API、权限、Schema/Migration、依赖；风险是库级打开不等于 Microsoft Office 实际 GUI/UAT，也不能推及 PDF/OCR 或正式账户。回滚为停用验证脚本，历史证据保留。
 
 - 执行结果：三份临时Office文件真实落盘/Parser读取后，DOCX段落/表格、PPTX形状/单元格、XLSX中文工作表/公式位置分别用独立库回查并经Evidence定位证明；脚本exit0、Office定向6/6。仅合成Python库范围，不据此记Microsoft Office GUI、真实客户文档或Gate3通过；无程序/Schema/API变更。
+
+## DEC-20261001-590 — Evidence 候选创建同事务与重放原响应
+
+- 日期/Phase/WBS：2026-10-01 / Phase2 / EVD-01-A03-P03-A02。输入 Gate2 冻结 Evidence Candidate、API-02 EVIDENCE_CREATE、现有 Document 固定版本/来源证明、Evidence 表、通用幂等收据及 Audit。编码前核对这些前置均存在；本次只完成内部 Service/Repository，不挂公开 HTTP。
+- 决策：先在受权读取中证明整文档或解析节点，再于写事务重验当前 Session/CSRF/角色和固定 AVAILABLE 版本；整文档比较版本 SHA，节点证明另携带源文件 SHA 并比较。收据 reserve、Evidence insert、Audit append、收据 complete 同一事务提交。重放重新验证权限/来源，只返回同一 ID 与固定首次 `CANDIDATE` 响应；标签/摘录/位置/指纹须与原记录一致，后续资格状态不能污染原创建响应。不增加新 Schema 或改冻结 API。
+- 理由/影响：防止证明与写入之间来源或权限漂移、重复 Evidence/Audit 及后续状态影响重放。仅 Evidence Application/Repository 与内部解析节点证明 DTO 增源 SHA；无 Migration、公开 API、架构或外部依赖变更。回滚为停用未装配的内部创建服务/仓储，已写历史 Evidence 不物理删除。
+- 验证：单元 5 项覆盖创建/重放、撤权、Audit 回滚、节点源摘要漂移和输入拒绝；隔离 PostgreSQL 18 实际插入/收据/Audit 重放与失败回滚通过，临时库停止清理；全后端 1,751 项（3 既有跳过）通过。真实 Session/CSRF 组合、公开 HTTP、目标账户/三平台、Gate3 仍待，不得由合成 Access 推定生产授权通过。

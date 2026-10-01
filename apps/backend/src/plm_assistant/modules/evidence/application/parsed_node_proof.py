@@ -57,6 +57,7 @@ class EvidenceParsedNodeProof:
     locator: dict[str, object]
     content_fingerprint: bytes = field(repr=False)
     precision: str = "PARSED_NODE"
+    source_sha256: bytes = field(default=b"", repr=False)
 
 
 class AuthorizedResultPort(Protocol):
@@ -171,6 +172,7 @@ class ParsedNodeEvidenceProofService:
             raise EvidenceNodeProofError() from None
         return EvidenceParsedNodeProof(
             document_version_id, parse_record_id, node_id, canonical, digest,
+            source_sha256=result.source_sha256,
         )
 
 
