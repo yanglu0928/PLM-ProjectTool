@@ -11,6 +11,7 @@
 *.sh text eol=lf
 *.ps1 text eol=crlf
 deploy/windows/Caddyfile.template text eol=lf
+docs/progress/plt-pkg-01-a09-p29-caddy-sbom-review-queue.csv text eol=lf
 
 *.pdf binary
 *.docx binary

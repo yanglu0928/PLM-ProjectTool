@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P29 固定Caddy CycloneDX SBOM生成149项组件审查CSV，148项SBOM许可字段空、2项无PURL、1项无版本，队列SHA `3b72ab936c13ff04aff00b2bfae2002c17a00430734943725efc2c5712aca232`，定向单元2/2与真实包构建PASS。兼容性：只读发行证据，无API/Schema/Migration/SCM/候选包改动；不推断法律结论，`release_eligible=false`。升级说明：无需迁移。已知问题：下游NOTICE及正式信任源仍待。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P28 新候选发行证据盘点：固定ZIP全量Hash后确认OCR许可侧载25、Caddy源码1、产品级LICENSE/NOTICE 0、Ghostscript对应源码未定位，Caddy/PG/前端/原生组件审查状态仍开放；定向单元2/2。兼容性：只读审计，无API/Schema/Migration/SCM/包改动；法律放行、正式信任源/目标平台/Gate未完成，`release_eligible=false`。升级说明：无需迁移。已知问题：对应源码与完整声明待补。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P27 新候选随包生产入口信任前置检查：21,113文件Hash重验，公钥资源与当前账户默认数据库Vault目标缺失，`--platform-write`固定错误退出且端口未绑定，定向单元1/1。兼容性：不改业务API/Schema/Migration/SCM，无正式凭据或数据库连接；仅失败关闭PASS，正式信任源、NOTICE、目标平台/Gate仍阻断，`release_eligible=false`。升级说明：无需迁移。已知问题：尚无正式可启动生产组合。
