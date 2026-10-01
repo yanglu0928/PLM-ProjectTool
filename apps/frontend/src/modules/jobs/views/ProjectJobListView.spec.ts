@@ -58,6 +58,7 @@ describe("ProjectJobListView", () => {
     const { wrapper } = await view(await session(), fetcher as typeof fetch);
     expect(wrapper.text()).toContain("DOCUMENT_PARSE · RUNNING");
     expect(wrapper.text()).toContain(jobId);
+    expect(wrapper.get(`a[href="/projects/${id}/jobs/${jobId}"]`).text()).toBe(jobId);
     expect(wrapper.text()).not.toContain("secret");
     expect(wrapper.find("form").exists()).toBe(false);
     expect(fetcher.mock.calls[0][0]).toBe(`/api/v1/projects/${id}/jobs?page_size=50`);

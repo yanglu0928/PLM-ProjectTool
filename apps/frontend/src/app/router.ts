@@ -26,6 +26,7 @@ import ProjectEvidenceListView from "@/modules/evidence/views/ProjectEvidenceLis
 import GlobalEvidenceListView from "@/modules/evidence/views/GlobalEvidenceListView.vue";
 import ProjectJobListView from "@/modules/jobs/views/ProjectJobListView.vue";
 import AdminJobListView from "@/modules/jobs/views/AdminJobListView.vue";
+import ProjectJobDetailView from "@/modules/jobs/views/ProjectJobDetailView.vue";
 
 export function createAppRouter(
   history: RouterHistory = createWebHistory(),
@@ -77,6 +78,11 @@ export function createAppRouter(
         path: "/projects/:projectId/evidence",
         name: "project-evidence",
         component: ProjectEvidenceListView,
+      },
+      {
+        path: "/projects/:projectId/jobs/:jobId",
+        name: "project-job-detail",
+        component: ProjectJobDetailView,
       },
       {
         path: "/projects/:projectId/jobs",
