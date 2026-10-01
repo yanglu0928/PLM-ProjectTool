@@ -159,7 +159,7 @@ class EvidenceCreateServiceTests(unittest.TestCase):
                                        view.integrity_checked_at)
 
         self.state.get_version_for_trace = drift
-        with self.assertRaisesRegex(EvidenceCreateError, "EVIDENCE_RESOLUTION_UNAVAILABLE"):
+        with self.assertRaisesRegex(EvidenceCreateError, "EVIDENCE_FINGERPRINT_MISMATCH"):
             self.service.create(command, idempotency_key=self.key)
         self.assertEqual(self.state.audit_calls, 0)
 

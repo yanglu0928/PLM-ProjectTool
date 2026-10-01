@@ -74,6 +74,7 @@ def create_app(
     document_version_read_router: APIRouter | None = None,
     document_parse_read_router: APIRouter | None = None,
     document_download_router: APIRouter | None = None,
+    evidence_create_router: APIRouter | None = None,
     maintenance_admission: MaintenanceAdmissionPort | None = None,
     shutdown_callback: Callable[[], None] | None = None,
 ) -> FastAPI:
@@ -203,4 +204,6 @@ def create_app(
         app.include_router(document_parse_read_router)
     if document_download_router is not None:
         app.include_router(document_download_router)
+    if evidence_create_router is not None:
+        app.include_router(evidence_create_router)
     return app

@@ -159,13 +159,13 @@ class EvidenceCreateService:
                 if locator["locator_type"] == "DOCUMENT" and not hmac.compare_digest(
                     version.content_sha256, proof.content_fingerprint.hex()
                 ):
-                    raise EvidenceCreateError("EVIDENCE_RESOLUTION_UNAVAILABLE")
+                    raise EvidenceCreateError("EVIDENCE_FINGERPRINT_MISMATCH")
                 if (type(proof) is EvidenceParsedNodeProof and (
                         type(proof.source_sha256) is not bytes
                         or len(proof.source_sha256) != 32
                         or not hmac.compare_digest(version.content_sha256,
                                                    proof.source_sha256.hex()))):
-                    raise EvidenceCreateError("EVIDENCE_RESOLUTION_UNAVAILABLE")
+                    raise EvidenceCreateError("EVIDENCE_FINGERPRINT_MISMATCH")
                 scope = IdempotencyScope.from_key(
                     actor_id=command.actor_id, project_id=command.project_id,
                     operation="V1_EVIDENCE_CREATE", key=idempotency_key,

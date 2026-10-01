@@ -12,14 +12,20 @@ from pathlib import Path
 
 import psycopg
 from alembic import command
+from fastapi.testclient import TestClient
 from psycopg.types.json import Jsonb
 from sqlalchemy.engine import URL
 
 from plm_assistant.modules.audit.application.public import AuditService
 from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
+from plm_assistant.entrypoints.api import create_app
+from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
+from plm_assistant.modules.auth.application.session_service import SessionError
 from plm_assistant.modules.document.application.read_documents import DocumentVersionView
 from plm_assistant.modules.evidence.application.create_evidence import CreateEvidence, EvidenceCreateService
+from plm_assistant.modules.evidence.application.create_access import EvidenceCreateAccessError
 from plm_assistant.modules.evidence.application.document_source_proof import EvidenceDocumentProof
+from plm_assistant.modules.evidence.api.create_evidence import create_evidence_create_router
 from plm_assistant.modules.evidence.infrastructure.create_repository import SqlAlchemyEvidenceCreateRepository
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
@@ -38,7 +44,7 @@ class Access:
 
     def require_in_transaction(self, *_args, **_kwargs):
         if not self.allowed:
-            raise RuntimeError("authorization revoked")
+            raise EvidenceCreateAccessError("RESOURCE_NOT_FOUND")
 
 
 class Versions:
@@ -68,6 +74,16 @@ class NoNodes:
 class FailingAudit:
     def append(self, *_args, **_kwargs):
         raise RuntimeError("audit failure")
+
+
+class Sessions:
+    def __init__(self, actor):
+        self.actor = actor
+
+    def validate(self, token, *, csrf_token, require_csrf):
+        if token != b"s" * 32 or csrf_token != b"c" * 32 or require_csrf is not True:
+            raise SessionError("AUTH_SESSION_EXPIRED")
+        return type("Principal", (), {"user_id": self.actor})()
 
 
 def verify(port: int) -> None:
@@ -117,8 +133,8 @@ def verify(port: int) -> None:
         access.allowed = False
         try:
             service.create(command_value, idempotency_key=key)
-        except RuntimeError as error:
-            assert str(error) == "authorization revoked"
+        except EvidenceCreateAccessError as error:
+            assert error.code == "RESOURCE_NOT_FOUND"
         else:
             raise AssertionError("revoked replay accepted")
         access.allowed = True
@@ -133,9 +149,34 @@ def verify(port: int) -> None:
             assert db.execute("SELECT count(*) FROM plm.evd_evidence_records").fetchone()[0] == 1
             assert db.execute("SELECT count(*) FROM plm.plt_idempotency_receipts "
                               "WHERE operation='V1_EVIDENCE_CREATE'").fetchone()[0] == 1
+        router = create_evidence_create_router(
+            sessions=Sessions(actor), origins=LoginOriginPolicy(["https://plm.example.test"]),
+            service_factory=lambda _token, _csrf: service,
+        )
+        headers = {
+            "origin": "https://plm.example.test",
+            "cookie": "plm_session=" + (b"s" * 32).hex(),
+            "x-csrf-token": (b"c" * 32).hex(),
+            "idempotency-key": "evidence-create-http-001",
+        }
+        body = {"document_id": str(document), "document_version_id": str(version),
+                "locator": {"locator_type": "DOCUMENT"}, "display_label": "Full document"}
+        path = f"/api/v1/projects/{project}/evidence"
+        with TestClient(create_app(evidence_create_router=router),
+                        base_url="https://plm.example.test") as client:
+            posted = client.post(path, headers=headers, json=body)
+            retried = client.post(path, headers=headers, json=body)
+            assert posted.status_code == retried.status_code == 201
+            assert posted.json()["data"] == retried.json()["data"]
+            access.allowed = False
+            assert client.post(path, headers=headers, json=body).status_code == 404
+            access.allowed = True
+        with psycopg.connect(host="127.0.0.1", port=port, user=HELPER.USER, dbname="postgres") as db:
+            assert db.execute("SELECT count(*) FROM plm.evd_evidence_records").fetchone()[0] == 2
+            assert db.execute("SELECT count(*) FROM plm.aud_events WHERE action='EVIDENCE_CREATED'").fetchone()[0] == 2
     finally:
         runtime.dispose()
-    print("PASS: isolated PG18 Evidence 201 replay, single Audit, revoked replay denied, Audit rollback")
+    print("PASS: isolated PG18 internal+HTTP Evidence 201 replay, single Audit per create, revoked replay denied, Audit rollback")
 
 
 def main() -> None:

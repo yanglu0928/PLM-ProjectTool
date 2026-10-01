@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/EVD-01-A03-P03-A03 增加可选 Evidence 候选 POST（项目/全局明确路径），固定版本/typed locator、Session/CSRF/幂等及安全 201 投影；默认应用仍 404，生产组合未挂载。校正来源摘要漂移为冻结错误码。兼容性：非 Breaking、无 Schema/依赖变化；升级：无 Migration。验证：HTTP 合同4项、隔离PostgreSQL18合成HTTP写链及后端1,755项（3既有跳过）通过。已知问题：正式 Session/Document/License 组合、目标平台与Gate3未通过。
+
 - 2026-10-01：0.1.0.dev0/EVD-01-A03-P03-A02 增加 Evidence Candidate 内部原子创建：来源证明、写事务权限/固定版本复核、幂等收据与 Audit；节点证明绑定源 SHA，重放保持原 CANDIDATE 响应。兼容性：仅内部接口，无公开 API/Schema/依赖变化。升级：无 Migration，既有数据不改。验证：定向 5、隔离 PostgreSQL18 创建/重放/撤权/审计回滚、后端 1,751 项（3 既有跳过）通过。已知问题：正式 Session 组合、HTTP 接线、安装/平台/Gate3 未通过。
 
 - 2026-10-01：0.1.0.dev0/EVD-01-A03-P03-A01 静态核查候选Evidence创建的证明与同事务复核前置，确认Document现有调用方UOW Port可用于写入前来源锁定；仅文档/决策，无生产代码/API/Schema/依赖变化。升级：无。验证：静态合同核查，未运行新功能测试。已知问题：创建Service/收据/Audit、HTTP/正式组合和Gate3待实现。

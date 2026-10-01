@@ -6068,3 +6068,9 @@
 - 决策：先在受权读取中证明整文档或解析节点，再于写事务重验当前 Session/CSRF/角色和固定 AVAILABLE 版本；整文档比较版本 SHA，节点证明另携带源文件 SHA 并比较。收据 reserve、Evidence insert、Audit append、收据 complete 同一事务提交。重放重新验证权限/来源，只返回同一 ID 与固定首次 `CANDIDATE` 响应；标签/摘录/位置/指纹须与原记录一致，后续资格状态不能污染原创建响应。不增加新 Schema 或改冻结 API。
 - 理由/影响：防止证明与写入之间来源或权限漂移、重复 Evidence/Audit 及后续状态影响重放。仅 Evidence Application/Repository 与内部解析节点证明 DTO 增源 SHA；无 Migration、公开 API、架构或外部依赖变更。回滚为停用未装配的内部创建服务/仓储，已写历史 Evidence 不物理删除。
 - 验证：单元 5 项覆盖创建/重放、撤权、Audit 回滚、节点源摘要漂移和输入拒绝；隔离 PostgreSQL 18 实际插入/收据/Audit 重放与失败回滚通过，临时库停止清理；全后端 1,751 项（3 既有跳过）通过。真实 Session/CSRF 组合、公开 HTTP、目标账户/三平台、Gate3 仍待，不得由合成 Access 推定生产授权通过。
+
+## DEC-20261001-591 — Evidence 创建 HTTP 只作为可选装配
+
+- 日期/Phase/WBS：2026-10-01 / Phase2 / EVD-01-A03-P03-A03。输入冻结 API-02 项目/全局 `EVIDENCE_CREATE`、S/L/C/I/A 控制、内部候选创建 PASS。选择两条明确路径的可选 FastAPI 路由，沿用现有可信 Origin、Session/CSRF、Idempotency-Key、严格 JSON 与安全响应；默认应用不挂载，生产组合根不接线。请求字段只含固定 Document/Version、typed locator、显示标签/可选摘录、可选 ParseRecord，不接收 actor/scope/eligibility 由客户端伪造。新增冻结错误码的运行映射；来源 SHA 漂移对外使用 `EVIDENCE_FINGERPRINT_MISMATCH`。
+- 理由/影响：先验证 HTTP 合同与数据库写链，避免在正式信任源缺失时开放生产入口。仅可选路由、入口注入点、错误码与上一步内部来源漂移码校正；无 Schema/Migration、新依赖或冻结 API Breaking Change。回滚为撤销可选装配，默认 404 与既有历史记录不变。
+- 验证：HTTP 合同 4 项覆盖默认关闭、项目/全局 201、Origin/Session/CSRF/Key、畸形/权限/License 映射；隔离 PostgreSQL18 合成 Session/Access 下的 HTTP→Service→Evidence/Receipt/Audit 创建/重放、撤权 404 和审计失败回滚；后端 1,755 项（3 既有跳过）通过。正式真实 Session/Document 来源组合、Windows Server 2025/Debian、正式 License 信任源及 Gate3 未验。

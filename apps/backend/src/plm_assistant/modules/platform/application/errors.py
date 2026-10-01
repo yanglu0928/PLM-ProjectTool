@@ -48,6 +48,8 @@ COMMON_ERRORS: dict[str, ErrorSpec] = {
         "FILE_CONTENT_UNAVAILABLE", 503, "文件内容暂不可用。"
     ),
     "VALIDATION_FAILED": ErrorSpec("VALIDATION_FAILED", 422, "请求内容不符合要求。"),
+    "EVIDENCE_LOCATOR_INVALID": ErrorSpec("EVIDENCE_LOCATOR_INVALID", 422, "证据定位无效。"),
+    "EVIDENCE_FINGERPRINT_MISMATCH": ErrorSpec("EVIDENCE_FINGERPRINT_MISMATCH", 409, "证据来源内容已变化。"),
     "PLATFORM_SECRET_PURPOSE_INVALID": ErrorSpec(
         "PLATFORM_SECRET_PURPOSE_INVALID", 422, "Secret 用途或使用方不受支持。"
     ),
