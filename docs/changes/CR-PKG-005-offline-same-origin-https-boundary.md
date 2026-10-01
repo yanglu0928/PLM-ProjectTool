@@ -52,4 +52,6 @@
 
 2026-10-01/P25增量证据：在独立ASCII Temp布局复制/读回P22全21,113目标，来源ZIP/清洁暂存末次重验；OCR模型、嵌入式Python/PG/Caddy版本及合成证书模板实际`caddy validate`通过。该布局未做HTTPS真实网络、登录、目标账户/证书或SCM服务测试，仍非发行；`C:\PLMTool`不变。
 
+2026-10-01/P26-A01增量证据：P25隔离布局21,113目标全量Hash重验后，以包内Caddy/API和合成证书实际HTTPS验证静态首页/两项资源、健康200、默认API404、SPA深链200、错Host421；子进程及临时证书清理。生产登录/Session/CSRF/审计尚未在新布局复验，留P26-A02，不因本项静态烟测关闭认证门禁。
+
 官方依据：[Caddy许可仓库](https://github.com/caddyserver/caddy)、[反向代理及Host处理](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy)、[静态文件](https://caddyserver.com/docs/caddyfile/directives/file_server)、[SPA与API路由](https://caddyserver.com/docs/caddyfile/patterns)、[自有TLS证书](https://caddyserver.com/docs/caddyfile/directives/tls)、[Windows服务](https://caddyserver.com/docs/running)。
