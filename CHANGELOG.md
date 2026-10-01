@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P07 新增Windows统一非发行候选隔离暂存工具，只接受Temp下新ASCII目录；复制前、写入时、落盘后与末次源ZIP身份均核验。真实19,449件暂存/落盘Hash通过、单测4/4，正式`C:\PLMTool`/服务/Migration未触动。兼容性：无API/Schema/正式安装变化；测试目录可核对后清理。NOTICE/源码、PG18离线输入、正式License/签名、目标账户/平台与Gate仍待，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P06 新增固定Windows统一候选的只读安装计划，先验ASCII根、ZIP身份/非发行声明/19,449件Hash，再列开放门禁，始终`install_authorized=false`；真实候选核验和单测4/4通过。兼容性：无安装、API、Schema/Migration或服务变化；换候选需更新固定Hash与证据，撤工具可回滚。NOTICE、License、数据库/服务/目标账户、真实质量与Gate未闭合，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P05 只读盘点Windows离线安装入口：明确候选文件/安装根/单角色SCM注册/数据库升级已有资产与缺口，下一步先做非发行只读安装计划。兼容性：无程序、API、Migration或系统安装变化；完整安装、NOTICE/源码、签名/License、目标账户与发行Gate仍待，`release_eligible=false`。
