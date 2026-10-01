@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/EVD-01-A03-P04-A02-P03 增加 Evidence 游标 Windows 当前账户 Vault 只读密钥工厂，固定独立引用且缺钥失败关闭。兼容性：内部装配来源，无 API/Schema/依赖变化；升级：无 Migration，正式目标账户须另行供给与备份。验证：定向2项含临时随机 Vault 目标丢失/加密备份恢复与清理，后端1,769项（3既有跳过）及wheel SHA-256 `cd32d115…` 通过。已知问题：正式引用/目标账户供给、生产 GET 组合、Viewer/Gate3仍待。
+
 - 2026-10-01：0.1.0.dev0/EVD-01-A03-P04-A02-P02 增加可选 Evidence 项目/全局列表与详情 GET，列表独立签名分页及短摘录、详情最小投影/ETag，默认模式继续404。兼容性：冻结 API 的非 Breaking 实现，无 Schema/依赖变化；升级：无 Migration。验证：HTTP合同4项、隔离PG18合成HTTP边界＋真实Session/Project底层读取、后端1,767项（3既有跳过）及wheel SHA-256 `cdd29d17…` 通过。已知问题：专用密钥目标账户来源、Windows正式组合、Viewer与Gate3未完成。
 
 - 2026-10-01：0.1.0.dev0/EVD-01-A03-P04-A02-P01 增加 Evidence 列表独立签名游标，绑定当前 Session、Scope/Project、页大小及 UTC 微秒 keyset 位置；篡改和非规范 token 失败关闭。兼容性：内部 Codec，无公开 API/Schema/依赖变化；升级：无 Migration。验证：定向3项、后端1,763项（3既有跳过）及wheel SHA-256 `ebf7d71e…` 通过。已知问题：当前账户游标密钥供给、公开 GET、Viewer 与Gate3未完成。
