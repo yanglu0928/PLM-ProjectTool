@@ -108,29 +108,38 @@ def _wait_http(client: httpx.Client, path: str, process: subprocess.Popen, *, se
 
 
 def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Path, *,
-          layout_verifier=None, layout_rehearser=None) -> dict:
+          layout_verifier=None, layout_rehearser=None,
+          synthetic_license_document_factory=None, licensed_https_probe=None) -> dict:
     if sys.platform != "win32" or Path(r"C:\PLMTool").exists():
         raise ValueError("Windows isolated smoke only")
+    if (synthetic_license_document_factory is None) != (licensed_https_probe is None):
+        raise ValueError("synthetic licensed HTTPS callbacks must be paired")
     check_layout = layout_verifier or verify_layout
     place_layout = layout_rehearser or rehearse
     verified = check_layout(candidate, source, stage, pristine)
     targets = [DEFAULT_TARGET, *("PLMProjectTool/SecretKey/" + ref for ref in KEY_REFS)]
     if any(credential_exists(name) for name in targets):
         raise ValueError("a fixed current-account product Vault target already exists")
+    private = Ed25519PrivateKey.generate()
+    public = private.public_key().public_bytes(serialization.Encoding.Raw,
+                                                 serialization.PublicFormat.Raw)
+    selected_mac = sorted(windows_local_macs())[0]
+    signed_document = (synthetic_license_document_factory(private, selected_mac)
+                       if synthetic_license_document_factory is not None else None)
+    del private
+    if synthetic_license_document_factory is not None and (
+            type(signed_document) is not bytes or not 1 <= len(signed_document) <= 16384):
+        raise ValueError("synthetic signed document rejected")
     place_layout(candidate, source, stage, target)
     if check_layout(candidate, source, stage, target) != verified:
         raise ValueError("fresh synthetic layout differs before trust injection")
     target = target.resolve(strict=True)
     public_file = target / PUBLIC_KEY_RELATIVE
     public_file.parent.mkdir(exist_ok=True)
-    private = Ed25519PrivateKey.generate()
-    public = private.public_key().public_bytes(serialization.Encoding.Raw,
-                                                 serialization.PublicFormat.Raw)
     public_file.write_text(json.dumps({
         "schema_version": "plm.product-public-key.v1", "product_code": PRODUCT_CODE,
         "key_ref": PRODUCT_KEY_REF, "public_key": base64.b64encode(public).decode("ascii"),
     }, sort_keys=True), encoding="ascii")
-    del private
     (target / "SYNTHETIC-TRUST-NOT-FOR-RELEASE.txt").write_text(
         "Synthetic public trust fixture only; this layout is not the fixed release candidate.\n",
         encoding="ascii")
@@ -206,7 +215,7 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
             f'bind_host: "127.0.0.1"\nbind_port: {api_port}\n'
             f'data_root: "{api_data.as_posix()}"\nlog_level: "ERROR"\n'
             f'trusted_origins: ["{origin}"]\n'
-            f'selected_mac: "{sorted(windows_local_macs())[0]}"\n', encoding="ascii")
+            f'selected_mac: "{selected_mac}"\n', encoding="ascii")
         env = {name: value for name, value in os.environ.items() if not name.upper().startswith("PLM_")}
         env.pop("PYTHONPATH", None)
         env["PATH"] = os.pathsep.join((str(target / "runtime/python"), str(pg),
@@ -250,6 +259,13 @@ def smoke(candidate: Path, source: Path, stage: Path, pristine: Path, target: Pa
             project = client.get("/api/v1/projects")
             if project.status_code == 404 or project.status_code < 400:
                 raise ValueError("unlicensed protected Project route not closed")
+            if licensed_https_probe is not None:
+                def connect_db():
+                    return psycopg.connect(host="127.0.0.1", port=pg_port, user=role,
+                                          password=password, dbname=database, autocommit=True)
+                licensed_https_probe(client=client, connect_db=connect_db,
+                                     user_id=user, signed_document=signed_document,
+                                     selected_mac=selected_mac, login=login, origin=origin)
         outcome = {"status": "SYNTHETIC_PACKAGED_PLATFORM_WRITE_HTTPS_PASS",
                 "release_eligible": False, "fixed_candidate_unmodified": True,
                 "synthetic_layout_file_count_before_injection": verified["file_count"],

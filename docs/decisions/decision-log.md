@@ -6265,3 +6265,12 @@
 - Decision：以请求体中的原操作号，在当前 Session/CSRF/License/角色/Evidence Scope 复验后只读查询同 actor/project/operation 的已完成收据；未见收据只能返回 `UNCONFIRMED`。不扩大 CustomerManager 审计权限，不在浏览器持久化理由或自动重发。
 - Reason/Impact：现有 Audit 无操作号，当前 Evidence 状态不是首次回执；新路径是 V1 非 Breaking API Scope 增量，原冻结提交不变。
 - Rollback/Verification：关闭可选路由并保留历史；按 CR 验收只读、权限、并发、事务、HTTP/平台/前端及真实浏览器。当前仅设计登记，不标实现 PASS。
+
+# DEC-20261002-601：复用非发行包 HTTPS 生命周期做持证 Workflow 网络验收
+
+- Date/WBS：2026-10-02 / `WFL-01-A08-P07`。
+- Decision：在既有固定候选双隔离布局、包内 Python/PG18/Caddy/Vault 生命周期脚本上增加**仅测试用的可选回调**。回调在进程内瞬时签发合成 License 文档，测试脚本删除私钥引用后才进入运行链；基础烟测默认路径保持不变。持证回调只在一次性数据库种入合成 License/Project/Workflow，随后经外部 HTTPS 调用 GET/START 并核 DB Audit/收据。
+- Reason：复制整个安装/凭据/进程/清理逻辑会产生第二套不一致的安全边界；调用既有纯测试扩展点使固定候选不变，仍能隔离客观网络链路。合成签名不构成正式发行信任或客户业务事实。
+- Impact/Rollback：仅测试工具、验证脚本及记录；不改变产品 API、Schema、依赖、包或正式账户。可关闭可选回调并保留基础脚本；无数据迁移。回调输入/返回值不得记录私钥、密码、客户数据。
+- Verification：错误候选/缺回调/回调返回畸形拒绝；完整 ZIP SHA/布局哈希、HTTPS 初态/首启/同 Key 重放/权限与 CSRF 拒绝、单份 Audit/收据、无 StageTransition，合成 Vault/进程/目录清理。若合成信任或测试环境失败，不宣称 Gate/浏览器通过。
+- Result：成对回调/畸形签名拒绝单元与原基础防护共 5/5；固定当前 ZIP 的双布局/包内 Python、PG18、Caddy 及合成 License 经外部 HTTPS 完成 Workflow GET 初态、START、同 Key 重放、CSRF/新 Key 拒绝和单 Audit/收据，清理标志及事后目录/进程复查 PASS。仅合成 Windows 11；正式信任/浏览器/Gate 均未验，详见 `docs/progress/wfl-01-a08-p07-packaged-licensed-https.md`。

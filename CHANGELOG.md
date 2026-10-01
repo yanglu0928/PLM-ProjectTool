@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/WFL-01-A08-P07 当前非发行候选通过合成持证 Workflow 外部 HTTPS GET/START 网络烟测。兼容性：仅验证工具增加默认关闭的成对回调，无产品 API/Schema/依赖变更。升级：不触碰现有安装或数据库，无迁移。验证：防护单元5/5、固定候选双布局、包内 Python/Caddy/PG18、GET v0、START v1/重放/CSRF/冲突、单份 Audit/收据及临时资源清理 PASS，ZIP SHA不变。已知问题：真实浏览器、正式 License/法律、Server2025/Debian 断网安装升级、AI质量/性能/UAT/Gate未通过，`release_eligible=false`。
+
 - 2026-10-02：0.1.0.dev0/WFL-01-A08-P06 当前非发行候选的隔离外部 HTTPS 基础烟测通过；旧候选验收工具更新为固定 21,182 载荷并核 Workflow 路由布局。兼容性：仅测试工具，无产品 API/Schema/依赖变化。升级：不触碰正式安装/数据，无迁移。验证：错误候选单元1/1、包内 Python/Caddy/PG18 合成 HTTPS 登录/会话200、无 License 项目403、临时资源清理与 ZIP 哈希不变。已知问题：computer-use 初始化 `kernel assets`/os error 3，未做真实浏览器或持证 Workflow 外部 HTTP；正式法律/信任、三平台/UAT/Gate仍开放，`release_eligible=false`。
 
 - 2026-10-02：0.1.0.dev0/WFL-01-A08-P05 从干净提交71375e9f派生含当前Workflow的Windows11非发行候选，ZIP SHA `6b0cd497…887acb`，仅本地Git忽略区保存。兼容性：保留固定父包第三方/运行时，沿用0052，无本项新API/Schema/依赖。升级：不覆盖现有安装，正式升级仍需备份/维护/迁移/恢复演练。验证：21,182项清洁解包全哈希、前后端同字节、随包Python/PG18实际Workflow平台双模式启动矩阵通过，临时集群清理。已知问题：正式LICENSE/NOTICE与信任源、真实浏览器、Server2025/Debian断网安装升级、AI质量/性能/UAT/Gate未通过，`release_eligible=false`。

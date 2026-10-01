@@ -54,7 +54,8 @@ def _inputs(candidate: Path, stage: Path, expected_sha256: str) -> tuple[dict[st
 
 
 def smoke(candidate: Path, stage: Path, pristine: Path, target: Path,
-          expected_sha256: str) -> dict[str, object]:
+          expected_sha256: str, *, synthetic_license_document_factory=None,
+          licensed_https_probe=None) -> dict[str, object]:
     validate_output_root(pristine)
     validate_output_root(target)
     if pristine == target or stage in {pristine, target}:
@@ -87,7 +88,9 @@ def smoke(candidate: Path, stage: Path, pristine: Path, target: Path,
     try:
         result = original_smoke(candidate, candidate, stage, pristine, target,
                                 layout_verifier=check_layout,
-                                layout_rehearser=place_layout)
+                                layout_rehearser=place_layout,
+                                synthetic_license_document_factory=synthetic_license_document_factory,
+                                licensed_https_probe=licensed_https_probe)
         if (result.get("synthetic_layout_file_count_before_injection") != COUNT + len(META)
                 or result.get("fixed_candidate_unmodified") is not True
                 or result.get("synthetic_vault_targets_absent") is not True
