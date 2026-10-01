@@ -6080,3 +6080,11 @@
 - 日期/Phase/WBS：2026-10-01 / Phase2 / EVD-01-A03-P03-A04。输入 A02 内部候选创建、A03 可选 HTTP 及现有 DocumentRead/PrepareDownload/固定ParseResult私有存储、Auth Session/项目角色、License Guard、Audit/收据。选择仅在 `--platform-write` 的受信任组合中装配 Evidence 创建；默认登录专用与 `--platform` 只读不挂载。Document 文件和 Parser 私有结果都经 Document 所有的应用 Port 获取，Evidence 不直连 Document 表或路径。没有新环境变量、Secret 提供方式、Schema/API/依赖变化。
 - 原因/影响/回滚：复用已有生产组合信任门禁，避免半装配入口；若目标账户密钥/License/数据根不可用，原组合根仍按既有失败关闭。回滚仅撤销新路由装配并保留历史 Evidence/Audit；不物理删除业务数据。
 - 验证：全新隔离 PostgreSQL18 合成用户、真实 Session/CSRF 数据、PROJECT PM/外部用户、真实磁盘 Document、成功 ParseRecord/私有 Parser 结果、合成 License/Windows Vault 游标源；显式写模式整文档与真实节点 201、同 Key 重放、单条 Audit、外部用户和降权后重放404、License403，默认/只读404。临时库/文件/进程停止清理。仅 Windows11 合成信任源；正式目标账户凭据、公钥/可信时间、Server2025/Debian、性能与 Gate3 未验。
+
+## DEC-20261001-593 — Evidence 元数据读取与来源 Viewer 分离
+
+- 日期/Phase/WBS：2026-10-01 / Phase2 / EVD-01-A03-P04-A01。输入冻结 EVIDENCE_LIST/GET/VIEWER、DM-03 Evidence 历史保留、现有 Evidence 表与 Auth/Project/License 读取 Port；A02～A04 已完成候选创建。
+- 决策：本项只建 Evidence 所有的受权元数据列表/详情 Port，按当前 Session、GLOBAL DeploymentAdmin 或 PROJECT 当前成员、License 和资源 Scope/ProjectId 过滤；分页以 `(created_at,evidence_id)` 稳定 keyset。列表/详情保留历史 Evidence 元数据（包括来源版本已撤销的可解释记录），不返回物理路径、正文或直接宣称来源可打开。Viewer 另项重新验证固定 DocumentVersion/定位指纹后才给受权 descriptor。
+- 理由/影响/回滚/验证计划：历史 Evidence 不能被来源撤销抹去，但只持 ID 不等于有读取权限。仅内部读取服务/仓储，不改 Schema、冻结 API 或生产组合；可撤销未挂载 Port 回滚。验证项目隔离、全局角色、分页同时间戳、License 与异常失败关闭，并用隔离 PostgreSQL18 真实记录复验。未执行结果不记 PASS。
+
+- 执行结果：内部 Service/Repository 已按当前 Session、Scope、PROJECT 四类成员/GLOBAL 管理员与 License 过滤，`(created_at,evidence_id)` keyset 读取，历史 Evidence 不因来源版本状态被元数据接口抹除；不输出文件路径/正文。定向 5 项、隔离 PostgreSQL18 真实 Session 与 3 个同时间戳记录逐页、跨项目/非成员/License 失败关闭通过；临时库停机清理。公开 HTTP/签名 cursor/Viewer 尚未完成，Gate3 不变。

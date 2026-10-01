@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/EVD-01-A03-P04-A01 增加 Evidence 内部受权元数据列表/详情及稳定 keyset，区分历史记录读取与后续 Viewer 来源证明。兼容性：内部 Port，无公开 API/Schema/依赖变化；升级：无 Migration。验证：定向5项、隔离 PostgreSQL18 真实 Session/项目隔离/管理员/同时间戳分页/License 拒绝、后端1,760项（3既有跳过）及wheel SHA-256 `83bc33ff…` 通过。已知问题：公开 GET/签名游标、Viewer 精确定位、正式信任材料与Gate3未通过。
+
 - 2026-10-01：0.1.0.dev0/EVD-01-A03-P03-A04 将 Evidence 候选创建装入 Windows 显式写组合，复用 Document 固定下载/私有解析结果、当前 Session/角色、License 与 Audit/收据；登录专用和只读模式仍 404。兼容性：无公开 API Breaking Change、Schema/依赖不变；升级：无 Migration。验证：隔离 PostgreSQL18 合成信任源下整文档/真实解析节点 201、重放、权限/License 拒绝、临时资源清理；后端 1,755 项（3 既有跳过）及 wheel SHA-256 `34747bb8…` 通过。已知问题：正式目标账户信任材料、Server2025/Debian、性能和Gate3未通过。
 
 - 2026-10-01：0.1.0.dev0/EVD-01-A03-P03-A03 增加可选 Evidence 候选 POST（项目/全局明确路径），固定版本/typed locator、Session/CSRF/幂等及安全 201 投影；默认应用仍 404，生产组合未挂载。校正来源摘要漂移为冻结错误码。兼容性：非 Breaking、无 Schema/依赖变化；升级：无 Migration。验证：HTTP 合同4项、隔离PostgreSQL18合成HTTP写链及后端1,755项（3既有跳过）通过。已知问题：正式 Session/Document/License 组合、目标平台与Gate3未通过。
