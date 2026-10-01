@@ -48,4 +48,6 @@
 
 2026-10-01/P23增量证据：P22 ZIP全新ASCII Temp清洁解包21,110件、落盘/源包重核通过，包内模板以合成证书和随机端口渲染通过真实Caddy validate/同源HTTPS静态/API/SPA/错误Host421。正式域名证书、目标ACL/账户及SCM安装仍未执行。
 
+2026-10-01/P24增量证据：固定ZIP 21,110载荷+3清单建立21,113条确定性目标映射（SHA-256 `e30dc7732d78883c0b09be0911e0b16ade98c95b0af38008164fdc665c515ed4`），Windows大小写冲突0。Caddy候选独立Web边界与ADR-013三应用服务分开；真实账户、证书来源/ACL、许可法律及服务恢复仍保持门禁。本项纯只读，未把文件放入正式安装根或注册SCM。
+
 官方依据：[Caddy许可仓库](https://github.com/caddyserver/caddy)、[反向代理及Host处理](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy)、[静态文件](https://caddyserver.com/docs/caddyfile/directives/file_server)、[SPA与API路由](https://caddyserver.com/docs/caddyfile/patterns)、[自有TLS证书](https://caddyserver.com/docs/caddyfile/directives/tls)、[Windows服务](https://caddyserver.com/docs/running)。

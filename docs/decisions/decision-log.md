@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261001-571 — 新候选安装映射与独立Web服务边界
+
+- Date/WBS：2026-10-01 / `PLT-PKG-01-A09-P24`；输入P22/P23固定候选、ADR-013、`CR-PKG-005`。
+- Decision：对21,110项载荷和三项清单建立确定性目标映射；Caddy安置于`runtime/caddy`，其对应源码置于`app/third-party-sources`，既有目录映射不改。`PLMProjectToolWeb`仅作独立Web边界候选，ADR-013三项应用服务保持原名原数；无目标账户/证书/ACL/NOTICE时只输出计划，禁止正式安装与SCM操作。
+- Reason/Impact/Rollback：确保离线新候选可审计且不把合成HTTPS当生产信任源。无API/Schema/数据迁移/正式服务变更；停用新计划脚本即可回退，P15/P22保留。真实全包映射、大小写冲突与只读门禁验证后仍仅记非发行PASS。
+
 ## DEC-20260930-520 — Parser 异步现时授权口
 
 - Date/WBS：2026-09-30 / Phase2 `PAR-01-A05-P01-P05-A02-P01`；输入 ADR-007/011 与 CR-PAR-003，原冻结权限和上传角色保持。
