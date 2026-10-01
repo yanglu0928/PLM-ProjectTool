@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/WFL-01-A06-P02 增加 Workflow 受权、幂等、审计的内部启动命令，保证同 Key 返回首次固定 V1 结果。兼容性：无公开 API/Schema/依赖变化。升级：无需新迁移；已有实例不会自动启动。验证：新单元8、后端全量1824通过/3跳过，一次性PG18真实Session/权限/收据/Audit回滚/并发PASS。已知问题：启动HTTP/正式组合、首阶段Gate、正式License信任、Server2025/Debian、性能/UAT/Gate3未完成；现有非发行ZIP未含本项。
+
 - 2026-10-02：0.1.0.dev0/WFL-01-A06-P01 新增 Workflow 首阶段事务内启动持久层，仅允许受权调用方后续装配。兼容性：无公开 API/Schema/依赖变化；原六阶段定义与0030结构不变。升级：无新迁移，既有实例不自动启动。验证：一次性PG18提交/回滚/版本/状态/双写者及清理PASS，后端全量1816项通过/3跳过、开发wheel构建PASS。已知问题：受权命令/幂等/Audit/HTTP与真实Gate未接，正式信任/法律/三平台/AI质量/UAT/Gate3仍开放；当前非发行ZIP不含此变更。
 
 - 2026-10-02：0.1.0.dev0/PLT-PKG-01-A09-P50-A02 新非发行候选完成包内合成HTTPS/License与Job取消链烟测。兼容性：无产品API/Schema/依赖变化，仍非正式安装器。升级：不碰现有数据/服务；正式升级需独立备份与恢复演练。验证：21,181文件双布局同Hash，包内Python/Caddy/PG18启动、登录/会话200、无License项目403、包内Job取消矩阵及临时资源清理，ZIP SHA不变。已知问题：正式信任/法律、真实浏览器/外部HTTP Job写、Server2025/Debian、AI质量/性能/UAT及Gate仍未通过，`release_eligible=false`。

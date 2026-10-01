@@ -6,16 +6,11 @@ from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from plm_assistant.modules.workflow.application.read_workflow import WorkflowView
+from plm_assistant.modules.workflow.application.start_errors import WorkflowStartRepositoryError
 from plm_assistant.modules.workflow.domain.catalog_v1 import six_stage_definition
 from plm_assistant.modules.workflow.domain.fingerprint import definition_fingerprint
 from plm_assistant.modules.workflow.infrastructure.orm import ProjectWorkflowRow, StageRow
 from plm_assistant.modules.workflow.infrastructure.read_repository import SqlAlchemyWorkflowReadRepository
-
-
-class WorkflowStartRepositoryError(RuntimeError):
-    def __init__(self, code: str) -> None:
-        self.code = code
-        super().__init__(code)
 
 
 class SqlAlchemyWorkflowStartRepository:

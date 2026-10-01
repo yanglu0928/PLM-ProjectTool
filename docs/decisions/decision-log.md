@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-598 — Workflow START 重放保留首次固定结果语义
+
+- Date/WBS：2026-10-02 / `WFL-01-A06-P02`；输入 API-01 同 Key 原结果要求、固定六阶段定义 V1、Schema 0030 与通用持久收据。
+- Decision：启动首次只允许 NOT_STARTED/v0→ACTIVE/HANDOVER/v1，收据保存 actor/project/operation/key 与原请求版本指纹、WorkflowId。重放先重新验证当前 Session/PM/License 和根身份/定义/已启动事实，再由**固定 V1 初态定义**重构首次 WorkflowView(v1)；不返回可能已推进的当前 Workflow，不增可变快照列。若来源无法证明，失败关闭。
+- Reason/Impact/Rollback：固定 V1 起点在本版本内是确定的，可保原结果而不复制全量当前状态；后续定义变更须用新 operation 版本/CR，不得重解释旧收据。无新 Schema/API/依赖；撤内部命令保留既有收据/Audit 历史，不修改冻结基线或伪称正式Gate已批准。
+
 ## DEC-20261002-597 — Workflow 启动先做受权事务内的原子状态写
 
 - Date/WBS：2026-10-02 / `WFL-01-A06-P01`；输入冻结 DM-02/API-02、六阶段 V1、Schema 0030 与已验证的实例初始化/GET。
