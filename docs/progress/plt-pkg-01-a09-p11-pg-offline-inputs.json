@@ -1,0 +1,67 @@
+{
+  "formal_installer_verified": false,
+  "fresh_offline_install_in_this_audit": false,
+  "historical_poc_bundle_cache_file_count": 5,
+  "historical_poc_bundle_release_reusable": false,
+  "historical_poc_bundle_sha256": "79acfd9c050676189b3030ede5b63353f6ec2922c9989c4655519c4e80ade03f",
+  "historical_runtime_archive_sha256": "67869cf66d6395cf9395b5ac2b640a5af00d6980911dacbfcead409f5f5f3d0d",
+  "known_gaps": [
+    "PoC bundle contains test code/cache and is not a customer release package",
+    "prepare minimal exact runtime with third-party notices and source provenance",
+    "supply formal installer/ACL/service account/config and backup/upgrade workflow",
+    "verify Windows 11 and Windows Server 2025 release account end-to-end",
+    "Debian 13 verification deferred by user but remains a target"
+  ],
+  "local_runtime_evidence": [
+    {
+      "path": "lib/vector.dll",
+      "sha256": "e070cdd11882ddc2560d0ae242aab323b49f5f876481345c3bece9fe5bba2fd4",
+      "size_bytes": 280064
+    },
+    {
+      "path": "share/extension/vector.control",
+      "sha256": "a54161fa561100fdc4ad31adec51f2841ca9d05496f1ddca818df87c58709cbe",
+      "size_bytes": 149
+    },
+    {
+      "path": "share/extension/vector--0.8.6.sql",
+      "sha256": "1e4d2de57f0a16c5c2b259d77655aecf9c740713beae4ac4b511549fceb6aafb",
+      "size_bytes": 32089
+    },
+    {
+      "path": "server_license.txt",
+      "sha256": "39294f3f5b41533b307e118ee37c356f32cbc7746fc97e8b91f1b49a9068a24e",
+      "size_bytes": 1388
+    }
+  ],
+  "offline_assets": [
+    {
+      "name": "postgresql-18.6-1-windows-x64.exe",
+      "sha256": "cae561e98d09f3f4a1a95759249240f86f66d71dcf33d14b6f7be894078401d1",
+      "size_bytes": 375833688
+    },
+    {
+      "name": "postgresql-18.6-1-windows-x64-binaries.zip",
+      "sha256": "fbe23da234ee31547bf8a36d29dfd81e82b849df2d2b78d2eecb43d360252f8c",
+      "size_bytes": 343808005
+    },
+    {
+      "name": "pgvector-0.8.6.zip",
+      "sha256": "250f5f488a5e512c8781c338608dfac32ae34f97088970a1b5bb8f5be797caf8",
+      "size_bytes": 214357
+    },
+    {
+      "name": "vs_BuildTools-17.14.41.exe",
+      "sha256": "37bb0fb429d163ecebd272a865d11a37b906d152bef960da2ddb29c2e2fd6eeb",
+      "size_bytes": 4473792
+    }
+  ],
+  "pgvector_source_commit": "8ee86c96f0fd72390f890aa8a336fda6d3ab4c6c",
+  "pgvector_source_license_sha256": "8e9a3fcc1aae0eba1d07bf8eb27de9a055baecdf1a31390cf6f2af1ab73c1802",
+  "pgvector_version": "0.8.6",
+  "platform": "Windows x86-64",
+  "postgresql_version": "18.6",
+  "release_eligible": false,
+  "schema_version": "plm.postgresql18-pgvector-windows-inputs.v1",
+  "status": "OFFLINE_INPUT_BYTES_VERIFIED_NOT_RELEASE_READY"
+}
