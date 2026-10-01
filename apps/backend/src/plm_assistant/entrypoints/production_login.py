@@ -206,9 +206,11 @@ from plm_assistant.modules.document.infrastructure.parse_result_read_repository 
 from plm_assistant.modules.document.infrastructure.parse_result_storage import LocalParseResultStorage
 from plm_assistant.modules.evidence.api.create_evidence import create_evidence_create_router
 from plm_assistant.modules.evidence.api.read_evidence import create_evidence_read_router
+from plm_assistant.modules.evidence.api.view_evidence import create_evidence_viewer_router
 from plm_assistant.modules.evidence.application.create_access import EvidenceCreateAccess
 from plm_assistant.modules.evidence.application.create_evidence import EvidenceCreateService
 from plm_assistant.modules.evidence.application.read_evidence import EvidenceReadService
+from plm_assistant.modules.evidence.application.view_evidence import EvidenceViewerService
 from plm_assistant.modules.evidence.application.document_source_proof import DocumentEvidenceProofService
 from plm_assistant.modules.evidence.application.parsed_node_proof import ParsedNodeEvidenceProofService
 from plm_assistant.modules.evidence.infrastructure.create_repository import SqlAlchemyEvidenceCreateRepository
@@ -373,6 +375,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         document_download_router = None
         evidence_create_router = None
         evidence_read_router = None
+        evidence_viewer_router = None
         if include_secret_read:
             from plm_assistant.entrypoints.windows_license_runtime import (
                 create_windows_license_services,
@@ -459,15 +462,38 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 sessions=sessions, documents=document_reads,
                 origins=origins, cursors=parse_cursors,
             )
+            document_downloads = PrepareDownloadService(
+                reader=document_reads, storage=LocalFileStorage(settings.data_root),
+                unit_of_work=runtime.unit_of_work, audit=audit,
+            )
             document_download_router = create_document_download_router(
-                sessions=sessions,
-                downloads=PrepareDownloadService(
-                    reader=document_reads,
-                    storage=LocalFileStorage(settings.data_root),
-                    unit_of_work=runtime.unit_of_work,
-                    audit=audit,
+                sessions=sessions, downloads=document_downloads, origins=origins,
+            )
+            evidence_reads = EvidenceReadService(
+                unit_of_work=runtime.unit_of_work,
+                session_access=SqlAlchemyProjectReadAccess(),
+                admin_access=SqlAlchemyDeploymentReadAccess(),
+                project_facts=SqlAlchemyProjectAuthorizationRepository(),
+                license_guard=licenses.guard,
+                repository=SqlAlchemyEvidenceReadRepository(),
+            )
+            evidence_results_for_viewer = DocumentParseResultReadService(
+                documents=document_downloads,
+                metadata=SqlAlchemyParseResultReadRepository(),
+                storage=LocalParseResultStorage(settings.data_root),
+                unit_of_work=runtime.unit_of_work,
+            )
+            evidence_viewer_router = create_evidence_viewer_router(
+                sessions=sessions, origins=origins,
+                viewer=EvidenceViewerService(
+                    evidence=evidence_reads, versions=document_reads,
+                    document_proof=DocumentEvidenceProofService(
+                        document_snapshots=document_downloads,
+                    ),
+                    node_proof=ParsedNodeEvidenceProofService(
+                        results=evidence_results_for_viewer,
+                    ),
                 ),
-                origins=origins,
             )
             try:
                 evidence_cursors = create_windows_evidence_list_cursor_codec()
@@ -476,14 +502,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             if evidence_cursors is not None:
                 evidence_read_router = create_evidence_read_router(
                     sessions=sessions, origins=origins, cursors=evidence_cursors,
-                    evidence=EvidenceReadService(
-                        unit_of_work=runtime.unit_of_work,
-                        session_access=SqlAlchemyProjectReadAccess(),
-                        admin_access=SqlAlchemyDeploymentReadAccess(),
-                        project_facts=SqlAlchemyProjectAuthorizationRepository(),
-                        license_guard=licenses.guard,
-                        repository=SqlAlchemyEvidenceReadRepository(),
-                    ),
+                    evidence=evidence_reads,
                 )
             export_reads = AuditExportContentReader(
                 unit_of_work=runtime.unit_of_work,
@@ -979,6 +998,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             document_download_router=document_download_router,
             evidence_create_router=evidence_create_router,
             evidence_read_router=evidence_read_router,
+            evidence_viewer_router=evidence_viewer_router,
             maintenance_admission=maintenance_admission,
             shutdown_callback=shutdown,
         )

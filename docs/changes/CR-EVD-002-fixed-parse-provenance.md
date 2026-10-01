@@ -27,3 +27,5 @@
 2026-10-01 检查点：`0052`/ORM、创建与重放已实施；隔离 PostgreSQL 18 空/有数据 up/down、旧行不变、新写入来源约束与危险降级拒绝、Windows 合成 Session/Project 的整文档及文本节点写后读/同 Key 重放、后端 1,769 项（3 既有跳过）及 wheel SHA-256 `e07221c4…` 通过。内部 Viewer 编排随后通过 4 项定向及后端 1,773 项（3 既有跳过）、wheel SHA-256 `c9dd8793…`，但真实 PostgreSQL Viewer/公开 HTTP/浏览器、正式目标账户或生产迁移尚未验证，本 CR 保持 OPEN。
 
 后续可选 Viewer HTTP 合同已通过 3 项定向、后端 1,776 项（3 既有跳过）和 wheel SHA-256 `6f2a1cdc…`；默认仍关闭。它返回已有受权内容接口的相对 URL，而该接口目前按附件下载，不能据此宣称浏览器内精确定位。真实 PostgreSQL/Windows 显式装配与前端仍待，本 CR 保持 OPEN。
+
+Windows 显式只读/写组合的隔离 PostgreSQL 18 合成链现已通过：真实 Session/Project 下固定整文档/节点 Viewer、受权内容 URL 原字节、角色/License 拒绝、私有文件/ParseResult 篡改 409、DocumentVersion 撤销后 Viewer 404 且历史元数据仍可读。后端 1,776 项（3 既有跳过）、wheel SHA-256 `ec54bee4…` 通过。正式目标账户、前端精确展示、Server 2025/Debian 和 Gate 3 未验，本 CR 保持 OPEN。

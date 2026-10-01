@@ -236,6 +236,13 @@ def verify(port: int, scratch: Path) -> None:
             assert first.status_code == replay.status_code == 201, (first.text, replay.text)
             assert first.json()["data"] == replay.json()["data"]
             assert first.json()["data"]["content_fingerprint"] == digest.hex()
+            viewer_path = endpoint + "/" + first.json()["data"]["evidence_id"] + "/viewer"
+            viewer = client.get(viewer_path, headers=headers(pm_token, "evd-viewer-document-001"))
+            assert viewer.status_code == 200, viewer.text
+            assert viewer.json()["data"]["precision"] == "DOCUMENT"
+            assert viewer.json()["data"]["document_version_id"] == str(version)
+            content_url = viewer.json()["data"]["content_url"]
+            assert client.get(content_url, headers=headers(pm_token, "evd-viewer-content-001")).content == content
             listed = client.get(endpoint + "?page_size=1", headers=headers(pm_token, "evd-read-001"))
             assert listed.status_code == 200, listed.text
             assert listed.json()["data"]["items"][0]["evidence_id"] == first.json()["data"]["evidence_id"]
@@ -247,11 +254,20 @@ def verify(port: int, scratch: Path) -> None:
             assert node.json()["data"]["content_fingerprint"] == digest.hex()
             node_replay = client.post(endpoint, headers=headers(pm_token, "evd-create-node-001"), json=node_body)
             assert node_replay.status_code == 201 and node_replay.json()["data"] == node.json()["data"]
+            node_viewer_path = endpoint + "/" + node.json()["data"]["evidence_id"] + "/viewer"
+            node_viewer = client.get(node_viewer_path, headers=headers(pm_token, "evd-viewer-node-001"))
+            assert node_viewer.status_code == 200, node_viewer.text
+            assert node_viewer.json()["data"]["precision"] == "PARSED_NODE"
+            assert node_viewer.json()["data"]["locator"] == position.to_locator()
+            assert client.get(node_viewer_path, headers=headers(outsider_token,
+                                                                "evd-viewer-outsider-001")).status_code == 404
             outsider = client.post(endpoint, headers=headers(outsider_token, "evd-outsider-001"), json=body)
             assert outsider.status_code == 404, outsider.text
             guard.enabled = False
             denied = client.post(endpoint, headers=headers(pm_token, "evd-license-deny-001"), json=body)
             assert denied.status_code == 403, denied.text
+            assert client.get(viewer_path, headers=headers(pm_token,
+                                                           "evd-viewer-license-001")).status_code == 403
             guard.enabled = True
             with psycopg.connect(host="127.0.0.1", port=port, user=HELPER.USER,
                                  dbname="postgres", autocommit=True) as db:
@@ -263,6 +279,33 @@ def verify(port: int, scratch: Path) -> None:
             detail = client.get(endpoint + "/" + first.json()["data"]["evidence_id"],
                                 headers=headers(pm_token, "evd-read-002"))
             assert detail.status_code == 200, detail.text  # Customer member retains read rights.
+            assert client.get(node_viewer_path, headers=headers(pm_token,
+                                                                "evd-viewer-demoted-001")).status_code == 200
+            path.write_bytes(content[:-1] + b"!")
+            assert client.get(viewer_path, headers=headers(pm_token,
+                                                           "evd-viewer-tamper-001")).status_code == 409
+            path.write_bytes(content)
+            result_path = data_root / stored.storage_locator
+            result_bytes = result_path.read_bytes()
+            result_path.write_bytes(result_bytes[:-1] + b"!")
+            assert client.get(node_viewer_path, headers=headers(pm_token,
+                                                                "evd-viewer-result-tamper-001")).status_code == 409
+            result_path.write_bytes(result_bytes)
+        with TestClient(missing_key, base_url="http://localhost") as client:
+            assert client.get(viewer_path, headers=headers(pm_token,
+                                                           "evd-viewer-no-cursor-001")).status_code == 200
+        with psycopg.connect(host="127.0.0.1", port=port, user=HELPER.USER,
+                             dbname="postgres", autocommit=True) as db:
+            db.execute("UPDATE plm.doc_documents SET effective_version_ref=NULL WHERE document_id=%s",
+                       (document,))
+            db.execute("UPDATE plm.doc_document_versions SET availability_state='REVOKED' "
+                       "WHERE document_version_id=%s", (version,))
+        with TestClient(read_only, base_url="http://localhost") as client:
+            revoked = client.get(viewer_path, headers=headers(pm_token,
+                                                              "evd-viewer-revoked-001"))
+            assert revoked.status_code == 404, (revoked.status_code, revoked.text)
+            assert client.get(endpoint + "/" + first.json()["data"]["evidence_id"],
+                              headers=headers(pm_token, "evd-read-revoked-001")).status_code == 200
     with psycopg.connect(host="127.0.0.1", port=port, user=HELPER.USER,
                          dbname="postgres") as db:
         evidence_id = uuid.UUID(first.json()["data"]["evidence_id"])
@@ -276,7 +319,7 @@ def verify(port: int, scratch: Path) -> None:
                           ).fetchone()[0] == parse_record
         assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s "
                           "AND action='EVIDENCE_CREATED'", (evidence_id,)).fetchone()[0] == 1
-    print("PASS: isolated PG18 Windows Evidence create+read composition, missing-key GET closed, role/License isolation")
+    print("PASS: isolated PG18 Windows Evidence create/read/Viewer, fixed source, content URL, tamper/revocation/role/License isolation")
 
 
 def main() -> None:
