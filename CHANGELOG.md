@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P06 新增固定Windows统一候选的只读安装计划，先验ASCII根、ZIP身份/非发行声明/19,449件Hash，再列开放门禁，始终`install_authorized=false`；真实候选核验和单测4/4通过。兼容性：无安装、API、Schema/Migration或服务变化；换候选需更新固定Hash与证据，撤工具可回滚。NOTICE、License、数据库/服务/目标账户、真实质量与Gate未闭合，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P05 只读盘点Windows离线安装入口：明确候选文件/安装根/单角色SCM注册/数据库升级已有资产与缺口，下一步先做非发行只读安装计划。兼容性：无程序、API、Migration或系统安装变化；完整安装、NOTICE/源码、签名/License、目标账户与发行Gate仍待，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P04 新增Windows安装根ASCII/安全路径前置校验；`C:\PLMTool`通过，中文/UNC/相对/不安全路径拒绝，单测2/2。兼容性：尚未接入正式安装/升级工具，不改API/Schema/现有程序；回滚撤独立校验工具。NOTICE、签名/License、正式安装/升级、目标平台及Gate仍待，`release_eligible=false`。
