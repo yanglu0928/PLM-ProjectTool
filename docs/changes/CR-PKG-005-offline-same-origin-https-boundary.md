@@ -42,4 +42,6 @@
 
 2026-10-01/P21-A02增量证据：固定包与Caddy字节审计后，在唯一临时PG18/Windows Vault目标上，以真实生产登录组合根通过合成Caddy HTTPS做登录/Session/审计原断言及错误Host421、错误Origin403、Cookie Secure/HttpOnly/SameSite、缺CSRF403；临时库/角色/Vault与子进程清理回读。SSE、正式证书/License、目标账户/Server2025/Debian、NOTICE和UAT仍未验。
 
+2026-10-01/P21-A03增量证据：固定Caddy合成HTTPS对内存注入的纯测试SSE路由完成首帧完整/非延迟转发、no-cache、错误Host421、客户端断线后上游取消；不等于产品实际AI SSE验收。正式证书/账户、NOTICE与三平台发行门禁仍开放。
+
 官方依据：[Caddy许可仓库](https://github.com/caddyserver/caddy)、[反向代理及Host处理](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy)、[静态文件](https://caddyserver.com/docs/caddyfile/directives/file_server)、[SPA与API路由](https://caddyserver.com/docs/caddyfile/patterns)、[自有TLS证书](https://caddyserver.com/docs/caddyfile/directives/tls)、[Windows服务](https://caddyserver.com/docs/running)。
