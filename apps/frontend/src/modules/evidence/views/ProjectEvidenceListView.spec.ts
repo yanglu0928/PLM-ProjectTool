@@ -7,6 +7,7 @@ import { SessionClient } from "@/modules/auth/api/sessionClient";
 import { EvidenceListClient } from "@/modules/evidence/api/evidenceListClient";
 import { EvidenceViewerClient } from "@/modules/evidence/api/evidenceViewerClient";
 import { EvidenceEligibilityClient, EvidenceEligibilityClientError } from "@/modules/evidence/api/evidenceEligibilityClient";
+import { EvidenceEligibilityAuditClient } from "@/modules/evidence/api/evidenceEligibilityAuditClient";
 import ProjectEvidenceListView from "./ProjectEvidenceListView.vue";
 
 const projectId = "01234567-89ab-4cde-8123-456789abcdef";
@@ -42,13 +43,14 @@ async function session(restricted = false, role = "PROJECT_MANAGER"): Promise<Se
   return auth;
 }
 async function view(auth: SessionClient, listFetcher: typeof fetch, viewerFetcher: typeof fetch,
-                    previewFetch?: typeof fetch, eligibilityClient?: EvidenceEligibilityClient) {
+                    previewFetch?: typeof fetch, eligibilityClient?: EvidenceEligibilityClient,
+                    eligibilityAuditClient?: EvidenceEligibilityAuditClient) {
   const router = createAppRouter(createMemoryHistory());
   await router.push(`/projects/${projectId}/evidence`);
   await router.isReady();
   const wrapper = mount(ProjectEvidenceListView, { props: { session: auth,
     listClient: new EvidenceListClient(listFetcher), viewerClient: new EvidenceViewerClient(viewerFetcher),
-    previewFetch, eligibilityClient },
+    previewFetch, eligibilityClient, eligibilityAuditClient },
   global: { plugins: [router] } });
   await flushPromises();
   return { wrapper, router };
@@ -304,6 +306,55 @@ describe("ProjectEvidenceListView", () => {
       .toBe(false);
     expect(eligibility.current).not.toHaveBeenCalled();
     expect(eligibility.set).not.toHaveBeenCalled();
+    wrapper.unmount();
+  });
+
+  it("shows scoped read-only audit to PM without clearing a pending operation", async () => {
+    const pendingKey = `plm.evidence.eligibility.pending.${projectId}`;
+    window.sessionStorage.setItem(pendingKey, JSON.stringify({ actorId: projectId,
+      projectId, evidenceId, key: "k".repeat(16) }));
+    const listFetcher = vi.fn().mockResolvedValue(response({ items: [item],
+      next_cursor: null, has_more: false }));
+    const viewerFetcher = vi.fn().mockResolvedValue(response(descriptor));
+    const audit = { list: vi.fn().mockResolvedValue({ items: [{ audit_event_id: traceId,
+      occurred_at: "2026-10-01T04:00:00Z", trace_id: traceId, after_state: "ELIGIBLE" }],
+    next_cursor: null, has_more: false }) };
+    const { wrapper } = await view(await session(), listFetcher as typeof fetch,
+      viewerFetcher as typeof fetch, undefined, undefined,
+      audit as unknown as EvidenceEligibilityAuditClient);
+    await wrapper.findAll("button").find((button) => button.text() === "核对资格审计")!.trigger("click");
+    await flushPromises();
+    expect(audit.list).toHaveBeenCalledWith(projectId, evidenceId, null);
+    expect(wrapper.text()).toContain("资格变为可用");
+    expect(wrapper.text()).toContain("不能据此自动认定此请求成功");
+    expect(window.sessionStorage.getItem(pendingKey)).not.toBeNull();
+    expect(wrapper.text()).toContain("操作号");
+    wrapper.unmount();
+
+    const denied = await view(await session(false, "CUSTOMER_MANAGER"), listFetcher as typeof fetch,
+      viewerFetcher as typeof fetch, undefined, undefined,
+      audit as unknown as EvidenceEligibilityAuditClient);
+    expect(denied.wrapper.text()).toContain("仅项目负责人可读");
+    expect(denied.wrapper.findAll("button").some((button) => button.text() === "核对资格审计"))
+      .toBe(false);
+    expect(audit.list).toHaveBeenCalledOnce();
+    denied.wrapper.unmount();
+  });
+
+  it("does not interpret no audit results as a failed submission", async () => {
+    window.sessionStorage.setItem(`plm.evidence.eligibility.pending.${projectId}`,
+      JSON.stringify({ actorId: projectId, projectId, evidenceId, key: "k".repeat(16) }));
+    const listFetcher = vi.fn().mockResolvedValue(response({ items: [item],
+      next_cursor: null, has_more: false }));
+    const audit = { list: vi.fn().mockResolvedValue({ items: [], next_cursor: null,
+      has_more: false }) };
+    const { wrapper } = await view(await session(), listFetcher as typeof fetch,
+      vi.fn() as typeof fetch, undefined, undefined,
+      audit as unknown as EvidenceEligibilityAuditClient);
+    await wrapper.findAll("button").find((button) => button.text() === "核对资格审计")!.trigger("click");
+    await flushPromises();
+    expect(wrapper.text()).toContain("不能证明操作未提交");
+    expect(wrapper.text()).toContain("操作号");
     wrapper.unmount();
   });
 });

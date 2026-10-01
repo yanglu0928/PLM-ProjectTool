@@ -9,14 +9,17 @@ import { EvidenceViewerClient, EvidenceViewerClientError,
   type EvidenceViewerDescriptor } from "@/modules/evidence/api/evidenceViewerClient";
 import { EvidenceEligibilityClient, EvidenceEligibilityClientError,
   type CurrentEvidenceEligibility, type EvidenceEligibilityFirstReceipt } from "@/modules/evidence/api/evidenceEligibilityClient";
+import { EvidenceEligibilityAuditClient, EvidenceEligibilityAuditError,
+  type EvidenceEligibilityAuditEvent } from "@/modules/evidence/api/evidenceEligibilityAuditClient";
 
 const props = defineProps<{ session?: SessionClient; listClient?: EvidenceListClient;
   viewerClient?: EvidenceViewerClient; eligibilityClient?: EvidenceEligibilityClient;
-  previewFetch?: typeof fetch }>();
+  eligibilityAuditClient?: EvidenceEligibilityAuditClient; previewFetch?: typeof fetch }>();
 const session = toRaw(props.session ?? inject(sessionClientKey, null) ?? new SessionClient());
 const lists = toRaw(props.listClient ?? new EvidenceListClient());
 const viewers = toRaw(props.viewerClient ?? new EvidenceViewerClient());
 const eligibility = toRaw(props.eligibilityClient ?? new EvidenceEligibilityClient(session));
+const eligibilityAudits = toRaw(props.eligibilityAuditClient ?? new EvidenceEligibilityAuditClient(session));
 const previewFetch = props.previewFetch ?? fetch;
 const identity = session.view;
 const route = useRoute();
@@ -64,6 +67,47 @@ function readPending(): PendingDecision | null {
   return null;
 }
 const unresolved = ref<PendingDecision | null>(readPending());
+const auditItems = ref<readonly EvidenceEligibilityAuditEvent[]>([]);
+const auditCursor = ref<string | null>(null);
+const auditLoaded = ref(false);
+const auditBusy = ref(false);
+const auditError = ref("");
+let auditGeneration = 0;
+function clearAudit() {
+  auditGeneration += 1; auditItems.value = []; auditCursor.value = null;
+  auditLoaded.value = false; auditBusy.value = false; auditError.value = "";
+}
+function mayReadPendingAudit(): boolean {
+  const pending = unresolved.value;
+  return mayRead() && !!pending && pending.actorId === session.view?.user.user_id
+    && pending.projectId === projectId()
+    && session.view?.authorized_projects.find((item) => item.project_id === pending.projectId)?.role
+      === "PROJECT_MANAGER";
+}
+async function loadPendingAudit(next = false) {
+  const pending = unresolved.value;
+  if (!mayReadPendingAudit() || !pending || auditBusy.value || (next && !auditCursor.value)) return;
+  const cursor = next ? auditCursor.value : null;
+  const current = ++auditGeneration;
+  auditBusy.value = true; auditError.value = "";
+  if (!next) { auditItems.value = []; auditCursor.value = null; auditLoaded.value = false; }
+  try {
+    const page = await eligibilityAudits.list(pending.projectId, pending.evidenceId, cursor);
+    if (!mounted || current !== auditGeneration || unresolved.value !== pending
+      || !mayReadPendingAudit()) return;
+    const seen = new Set(auditItems.value.map((item) => item.audit_event_id));
+    if (page.items.some((item) => seen.has(item.audit_event_id))) {
+      throw new EvidenceEligibilityAuditError("EVIDENCE_AUDIT_UNAVAILABLE");
+    }
+    auditItems.value = [...auditItems.value, ...page.items];
+    auditCursor.value = page.next_cursor; auditLoaded.value = true;
+  } catch (failure) {
+    if (mounted && current === auditGeneration) {
+      auditError.value = failure instanceof EvidenceEligibilityAuditError
+        ? failure.message : "暂时无法核对资格审计；请保留操作号，不要重复提交。";
+    }
+  } finally { if (mounted && current === auditGeneration) auditBusy.value = false; }
+}
 function savePending(value: PendingDecision): boolean {
   if (!pendingStorageKey || pendingStorageError.value || unresolved.value) return false;
   try {
@@ -164,6 +208,7 @@ async function submitDecision() {
       decisionError.value = "提交回执已收到，但无法清除待核对操作；请核对当前资格与审计，勿重复提交。";
       return;
     }
+    clearAudit();
     decisionReceipt.value = receipt; decisionCurrent.value = null;
   } catch (failure) {
     if (mounted && currentSelection === selectionGeneration) {
@@ -171,7 +216,9 @@ async function submitDecision() {
         ? failure.message : "资格提交结果暂无法确认，请核对当前状态和审计。";
       decisionUncertain.value = !(failure instanceof EvidenceEligibilityClientError)
         || failure.code === "EVIDENCE_ELIGIBILITY_UNCERTAIN";
-      if (!decisionUncertain.value && clearPending(pending)) decisionKey.value = null;
+      if (!decisionUncertain.value && clearPending(pending)) {
+        decisionKey.value = null; clearAudit();
+      }
       else decisionUncertain.value = true;
     }
   } finally { if (mounted && currentSelection === selectionGeneration) decisionBusy.value = false; }
@@ -308,10 +355,10 @@ function position(view: EvidenceViewerDescriptor): string {
 }
 watch(() => route.params.projectId, () => {
   generation += 1; items.value = []; cursor.value = null; loaded.value = false;
-  busy.value = false; error.value = ""; clearSelection();
+  busy.value = false; error.value = ""; clearSelection(); clearAudit();
   void load();
 }, { immediate: true });
-onUnmounted(() => { mounted = false; generation += 1; clearSelection(); });
+onUnmounted(() => { mounted = false; generation += 1; clearSelection(); clearAudit(); });
 </script>
 
 <template>
@@ -350,6 +397,24 @@ onUnmounted(() => { mounted = false; generation += 1; clearSelection(); });
         一项资格提交结果尚未确认（项目 {{ unresolved.projectId }}，证据 {{ unresolved.evidenceId }}，操作号 {{ unresolved.key }}）。
         刷新页面后提醒仍保留；请核对当前资格与审计，勿换新操作号重复提交。
       </p>
+      <section v-if="unresolved && unresolved.projectId === projectId()" aria-label="资格操作审计回查">
+        <template v-if="mayReadPendingAudit()">
+          <button type="button" :disabled="auditBusy" @click="loadPendingAudit(false)">
+            {{ auditBusy ? '正在读取资格审计…' : '核对资格审计' }}
+          </button>
+          <p v-if="auditError" role="alert">{{ auditError }}</p>
+          <p v-if="auditLoaded && auditItems.length === 0" role="status">默认最近24小时未查到匹配事件；这不能证明操作未提交，请保留操作号。</p>
+          <ol v-if="auditItems.length" aria-label="资格审计事件">
+            <li v-for="event in auditItems" :key="event.audit_event_id">
+              {{ event.occurred_at }}：资格变为{{ event.after_state === 'ELIGIBLE' ? '可用' : '不可用' }}；
+              审计 {{ event.audit_event_id }}，追踪 {{ event.trace_id }}。
+            </li>
+          </ol>
+          <button v-if="auditCursor" type="button" :disabled="auditBusy" @click="loadPendingAudit(true)">继续加载资格审计</button>
+          <p v-if="auditLoaded">审计事件不包含本次操作号，不能据此自动认定此请求成功或清除待核对提醒。</p>
+        </template>
+        <p v-else>项目资格审计仅项目负责人可读；请联系项目负责人核对，当前操作号会保留。</p>
+      </section>
       <p v-if="selectedError" role="alert">{{ selectedError }}</p>
       <section v-if="selected" aria-labelledby="evidence-location-title">
         <h2 id="evidence-location-title">已核验的原文位置</h2>
