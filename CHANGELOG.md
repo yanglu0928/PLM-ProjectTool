@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P26-A02 新布局包内Caddy+PG18下复跑仓库生产登录组合真实PG/Vault合成HTTPS断言，GET9/POST12、Cookie/CSRF/Host/Origin/Session/Audit及临时源清理PASS，定向单元1/1。兼容性：原P21测试默认行为保持；无API/Schema/Migration/SCM变更，包内生产API进程/正式信任源仍未验，`release_eligible=false`。升级说明：无需迁移。已知问题：发行License、证书、账户与服务恢复未完成。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P26-A01 新Caddy隔离布局全21,113文件Hash重验及包内HTTPS静态/API/SPA/错误Host烟测通过，定向单元1/1。兼容性：无产品API/Schema/Migration/SCM变更，仅合成回环；新布局生产登录、正式证书/账户、NOTICE、三平台/Gate待验，`release_eligible=false`。升级说明：无需迁移，不可正式安装。已知问题：正式信任源与服务恢复未完成。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P25 新Caddy候选在隔离ASCII临时根落地21,113文件并全量Hash读回，随布局Python/PG/Caddy/OCR指纹与模板合成证书validate通过，定向单元2/2。兼容性：无API/Schema/Migration/SCM变更，正式根/数据库未改；本布局HTTPS真实网络/目标账户/证书/NOTICE/三平台/Gate待验，`release_eligible=false`。升级说明：无需迁移，非发行布局不得正式使用。已知问题：生产信任源和安装器未完成。

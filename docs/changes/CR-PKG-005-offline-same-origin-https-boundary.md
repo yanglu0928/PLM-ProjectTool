@@ -54,4 +54,6 @@
 
 2026-10-01/P26-A01增量证据：P25隔离布局21,113目标全量Hash重验后，以包内Caddy/API和合成证书实际HTTPS验证静态首页/两项资源、健康200、默认API404、SPA深链200、错Host421；子进程及临时证书清理。生产登录/Session/CSRF/审计尚未在新布局复验，留P26-A02，不因本项静态烟测关闭认证门禁。
 
+2026-10-01/P26-A02增量证据：新布局Hash重验后，以布局内Caddy及PG18、临时Vault目标/合成HTTPS复用原生产登录组合断言，GET9/POST12、Cookie/CSRF/Host/Origin、Session/Project/Audit通过并完成临时源清理。API应用对象仍由仓库验证代码构建，并非包内生产模式进程；不可据此关闭随包生产信任源与正式安装门禁。
+
 官方依据：[Caddy许可仓库](https://github.com/caddyserver/caddy)、[反向代理及Host处理](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy)、[静态文件](https://caddyserver.com/docs/caddyfile/directives/file_server)、[SPA与API路由](https://caddyserver.com/docs/caddyfile/patterns)、[自有TLS证书](https://caddyserver.com/docs/caddyfile/directives/tls)、[Windows服务](https://caddyserver.com/docs/running)。

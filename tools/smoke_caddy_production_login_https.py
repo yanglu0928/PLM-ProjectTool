@@ -41,10 +41,12 @@ def _load_original() -> object:
     return module
 
 
-def smoke(layout: Path, candidate: Path, caddy_inputs: Path) -> dict:
-    count = verify_layout(layout, candidate)
-    audit_caddy(caddy_inputs)
-    caddy = caddy_inputs / "expanded/caddy.exe"
+def smoke(layout: Path, candidate: Path, caddy_inputs: Path, *,
+          layout_verifier=verify_layout, boundary_audit=audit_caddy,
+          caddy_relative: str = "expanded/caddy.exe", config_builder=caddyfile) -> dict:
+    count = layout_verifier(layout, candidate)
+    boundary_audit(caddy_inputs)
+    caddy = caddy_inputs / caddy_relative
     if digest(caddy) != EXE_SHA256:
         raise ValueError("pinned Caddy executable changed")
     layout = layout.resolve(strict=True)
@@ -94,7 +96,7 @@ def smoke(layout: Path, candidate: Path, caddy_inputs: Path) -> dict:
                 root = Path(self.temp.name)
                 cert, key, config = root / "cert.pem", root / "key.pem", root / "Caddyfile"
                 synthetic_certificate(cert, key)
-                config.write_text(caddyfile(frontend, cert, key, api_port, https_port), encoding="ascii")
+                config.write_text(config_builder(frontend, cert, key, api_port, https_port), encoding="ascii")
                 validated = subprocess.run([str(caddy), "validate", "--config", str(config)],
                                            capture_output=True, text=True, errors="replace", timeout=15)
                 if validated.returncode:
