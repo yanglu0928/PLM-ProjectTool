@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P45-A06 新原生OCR通知候选经21,161目标全量Hash先验后，包内API＋Caddy合成回环HTTPS首页/2资源、健康200、默认API404、SPA200、错Host421通过；真实退出0、定向1/1且子进程停止。兼容性：仅Windows11隔离读链，无API/Schema/Migration/SCM/正式安装变化，`release_eligible=false`。升级：无迁移。已知问题：生产登录授权链、正式证书/信任源、产品最终LICENSE/NOTICE及法律审结、Server2025/Gate仍待。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P45-A05 新原生OCR通知候选独立布局21,161目标逐项映射/Hash验证，61条归属映射可检索42份许可原文，包内Python/PG18.6/Caddy2.11.4/Ghostscript10.08.0与合成Caddyfile验证通过；真实退出0、定向2/2。兼容性：仅Windows11隔离布局，无API/Schema/Migration/SCM/正式安装变化，`release_eligible=false`。升级：无迁移。已知问题：正式HTTPS、产品最终LICENSE/NOTICE及法律审结、信任源/Server2025/Gate仍待。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P45-A04 新原生OCR通知候选在新ASCII Temp目录21,158载荷＋3元数据逐件Hash/文件全集、61映射至42正文回读通过，定向2/2。修复首轮预检大小写集合误比并另选新目录重跑。兼容性：仅增非发行候选kind与隔离暂存工具，无API/Schema/SCM/正式安装变化，`release_eligible=false`。升级：无迁移。已知问题：独立布局运行链、产品最终LICENSE/NOTICE及法律审结、正式信任源/Server2025/Gate仍待。
