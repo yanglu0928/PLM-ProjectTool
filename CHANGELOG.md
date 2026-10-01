@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/EVD-01-A03-P04-A03-P06-P01 增加前端 EvidenceViewerClient，固定 Evidence/DocumentVersion/内容 URL、九类 typed locator 白名单及安全错误提示。兼容性：独立客户端，未改变既有页面/API/Schema。升级：无迁移；需后续证据列表与定位页接入。验证：4项定向、前端全量1,016项、typecheck/build PASS。已知问题：尚无可点击入口，浏览器定位/目标平台/UAT未验证。
+
 - 2026-10-01：0.1.0.dev0/EVD-01-A03-P04-A03-P05-P02 Windows 显式平台读/写组合挂载受权 Evidence Viewer，独立于列表 cursor 密钥；默认/登录专用保持关闭。兼容性：实现冻结 GET，无 Schema/依赖变化。升级：需 `0052`、当前账户正式信任源及已授权 Document 内容/ParseResult。验证：隔离 PG18 合成真实 Session/Project/License 的固定整文档与节点、content URL、撤权/篡改/版本撤销边界、后端1,776项（3既有跳过）、wheel SHA-256 `ec54bee4…` PASS。已知问题：当前 content GET 为附件下载，前端精准展示及正式账户/Server2025/Debian/Gate3尚未验。
 
 - 2026-10-01：0.1.0.dev0/EVD-01-A03-P04-A03-P05-P01 新增可选冻结 EVIDENCE_VIEWER GET 的安全投影、项目/全局相对受权内容 URL 与失败关闭错误映射。兼容性：默认未挂载，既有 API/Schema 不变。升级：须在真实授权组合中注入 Viewer/Document 下载服务。验证：3项 HTTP 合同、后端1,776项（3既有跳过）、wheel SHA-256 `6f2a1cdc…` PASS。已知问题：真实PG链、Windows显式组合和浏览器内定位尚未验；当前 content URL 对应附件下载，非精确高亮。
