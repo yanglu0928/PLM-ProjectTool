@@ -28,6 +28,7 @@ import ProjectJobListView from "@/modules/jobs/views/ProjectJobListView.vue";
 import AdminJobListView from "@/modules/jobs/views/AdminJobListView.vue";
 import ProjectJobDetailView from "@/modules/jobs/views/ProjectJobDetailView.vue";
 import AdminJobDetailView from "@/modules/jobs/views/AdminJobDetailView.vue";
+import ProjectWorkflowView from "@/modules/workflow/views/ProjectWorkflowView.vue";
 
 export function createAppRouter(
   history: RouterHistory = createWebHistory(),
@@ -74,6 +75,11 @@ export function createAppRouter(
         path: "/admin/users/:userId/name",
         name: "admin-user-name",
         component: AdminUserNameView,
+      },
+      {
+        path: "/projects/:projectId/workflow",
+        name: "project-workflow",
+        component: ProjectWorkflowView,
       },
       {
         path: "/projects/:projectId/evidence",

@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/WFL-01-A08-P04 项目详情增加六阶段 Workflow 页面及经理首启确认、原操作持久保护。兼容性：前端新路由，冻结后端API/Schema/依赖不变。升级：重建前端，无数据迁移。验证：页面6项、前端全量1194项/typecheck/build PASS。已知问题：真实浏览器/当前包更新、正式信任/法律、A07 Owner/StageGate、Server2025/Debian、UAT/Gate3开放，现有ZIP不可发行。
+
 - 2026-10-02：0.1.0.dev0/WFL-01-A08-P03 新增 Workflow START 首次结果安全回执客户端，强制与当前GET分离。兼容性：未接页面，原API/Schema/依赖不变。升级：重建前端，无迁移。验证：新增13、前端全量1188项/typecheck/build通过。已知问题：页面/浏览器、正式信任、A07 Owner/Gate、三平台/UAT/Gate3仍开放；现有非发行ZIP未含本项。
 
 - 2026-10-02：0.1.0.dev0/WFL-01-A08-P02 新增 Workflow START 前端私有Session/CSRF/原强ETag/Key空体传输方法。兼容性：未接页面、API/Schema/依赖不变。升级：前端重建，无迁移。验证：新增4、前端全量1175项/typecheck/build通过。已知问题：回执/页面/真实浏览器、正式信任、A07 Owner/Gate、Server2025/Debian及Gate3未完成；当前非发行包未含本项。
