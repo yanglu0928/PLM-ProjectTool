@@ -5853,3 +5853,8 @@
 
 - 日期/Phase/WBS：2026-10-01 / Phase2 / PLT-PKG-01-A07。新建独立候选 ZIP，只纳入 A06 私有 runtime（排除运行后生成的 `__pycache__` 与构建机 `packages/bin`）、A02 dist 和非 Secret bootstrap；生成逐文件 SHA-256、完整归档回读与从 ZIP 全新解包导入。第三方元数据清单对全部 93 项固定 `REVIEW_REQUIRED`，不凭 `License-Expression` 或许可证文件存在推定法律合规。
 - 理由：旧 A03 候选缺 Python runtime，新 A06 已证明本机私有导入；旧/新来源仍非同一正式发行检查点，第三方/前端许可证及系统组件还缺。影响仅发行准备工具和 Git 忽略二进制，不改业务/API/Schema/技术栈；回滚可撤新工具与经确认路径的实验归档，不触碰旧 A03。正式发行需重建同源制品、逐项许可审查和三平台完整验收。
+
+## DEC-20261001-553 — TIFF 升级预检先锁维护态并核 FileObject 字节
+
+- 日期/Phase/WBS：2026-10-01 / Phase2 / PLT-PKG-01-A08-P09-P05-P03-A07-P03-P04。只读预检使用与 Platform 维护转换相同的 PostgreSQL advisory 排他锁，确认 `plt_maintenance_state=MAINTENANCE` 后，遍历全部登记的 `DOCUMENT` FileObject；采用已有 LocalFileStorage 的 Hash/大小校验快照，随后只读 TIFF 元数据。输出只含汇总计数与阻断状态，不导出客户路径/正文。
+- 理由：单独指定 TIFF 文件容易漏掉改扩展名或多页文件，也不能证明存量覆盖；DB 登记清单与存储校验须一致，维护锁在扫描期间阻止正常 Admission 与状态切换。该锁仍不能证明所有非受管进程已停写，正式升级须另有服务/进程静止及人工备份证据。影响仅离线预检工具，无 Schema/API/正式 Parser 变化；回滚撤工具，不改 FileObject 或数据。

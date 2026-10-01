@@ -36,6 +36,13 @@ def read_at(stream: BinaryIO, size: int, offset: int, length: int) -> bytes:
 def inspect(path: Path) -> bool:
     """Return True if an image IFD uses ISO JBIG; reject unreadable metadata."""
     with path.open("rb") as stream:
+        return inspect_stream(stream)
+
+
+def inspect_stream(stream: BinaryIO) -> bool:
+    """Inspect an already verified, seekable private byte snapshot."""
+    original = stream.tell()
+    try:
         stream.seek(0, 2)
         size = stream.tell()
         header = read_at(stream, size, 0, 8)
@@ -104,6 +111,8 @@ def inspect(path: Path) -> bool:
                     if sub:
                         queue.append(sub)
         return False
+    finally:
+        stream.seek(original)
 
 
 def main() -> int:

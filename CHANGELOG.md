@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A07-P03-P04-P01 新增维护锁保护的FileObject全量TIFF/JBIG离线预检内核：数据库只读快照、逐文件安全定位及Hash/大小核查、流式枚举、非维护/锁占用/未完成状态失败关闭；仅汇总计数。Windows11单元6/6、隔离PG18.6最小表六情景、完整迁移Schema0051合成JBIG阻断PASS。兼容性：未改正式API/ORM/Migration/Parser或现有数据；此工具尚未集成正式升级器，可撤新增工具回滚。正式目标账户、备份/进程静止/恢复演练、许可/NOTICE、Server2025与Gate仍待，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A07-P03-P03 增加无JBIG运行时升级前只读TIFF/BigTIFF元数据预检PoC；真实合成JBIG压缩样本阻断、普通样本放行、缺文件失败关闭，大小端/多页/SubIFD/畸形单元测试3/3 PASS。兼容性：JBIG压缩TIFF不再支持，新脚本未接正式安装/存量清单，不改API/Migration/正式产品路径；可撤脚本回滚。完整数据清单/升级演练、NOTICE/许可证、目标平台/Gate仍待，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A07-P03-P02 新增无JBIG Tesseract 34 PE许可证据重建工具、34行CSV及通知字段草案；候选34/34 Hash对静态图、33项旧包逐字节一致、1项源码构建libtiff单列，重复生成相同SHA，定向3/3 PASS。兼容性：仅非发行审计，无正式安装/API/Migration变化；旧35行历史保留，可撤新矩阵回滚。LICENSE/NOTICE、具体许可适用/源码交付、签名/动态装载/目标系统/升级JBIG处置仍待，`release_eligible=false`。
