@@ -14,6 +14,7 @@ from package_windows_unified_candidate import safe_name
 ALLOWED_KINDS = {
     "WINDOWS11_UNIFIED_DEVELOPMENT_CANDIDATE",
     "WINDOWS11_UNIFIED_NOTICED_DEVELOPMENT_CANDIDATE",
+    "WINDOWS_PG18_PGVECTOR_RUNTIME_NON_RELEASE",
 }
 
 def windows_long_path(path: Path) -> str:
