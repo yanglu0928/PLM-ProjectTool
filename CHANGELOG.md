@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P14 新增Windows统一候选+PG18旁包只读组合计划；两份固定非发行ZIP及21,103件包内载荷Hash通过，大小写路径冲突0，机读报告SHA `6741b716c886f9128bf6c2bca6a60ff2f83ae3c07eefa82d521d6ee2348761ef`，单元2/2。兼容性：只读审计，无合并ZIP/安装、API/Schema/Migration变化；可撤新工具/报告回滚。许可/源码、正式License/签名/服务账户/目标平台/Gate仍待，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P13 新增P12 Windows PG旁包隔离合成烟测入口：再次核1,629件Hash，临时ASCII数据目录/loopback随机端口下完成PG18.6、vector0.8.6、HNSW和最近邻查询，退出停机并清理临时数据；定向单元5/5。首次捕获管道继承造成超时，正常停机后改启动输出处理并全程重跑通过。兼容性：无API/Schema/Migration/正式服务变化；仅测试入口可撤，生产认证、服务账户、Server2025、NOTICE/法律/Gate仍待，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P12 新增PG18.6/pgvector0.8.6 Windows最小非发行运行旁包：仅 `bin/lib/share` 和服务器/命令行/pgvector原始许可，共1,629件；ZIP 56,565,724字节，SHA-256 `d0e038b43240369f7cd66396c34cd8e56d5a7a5a51ae3bc6f5fc41783baa7fd9`，ZIP/新ASCII目录全量Hash、版本/向量核心字节PASS，单元3/3。兼容性：不安装/启动数据库、不改API/Schema/Migration或旧PoC；可弃用Git忽略ZIP回滚。隔离功能、正式安装/服务账户/Server2025、NOTICE/源码/法律/Gate仍待，`release_eligible=false`。
