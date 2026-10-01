@@ -35,6 +35,9 @@ from plm_assistant.modules.evidence.application.lookup_eligibility_operation imp
     LookupEvidenceEligibilityOperation,
 )
 from plm_assistant.modules.evidence.api.set_eligibility import create_evidence_eligibility_router
+from plm_assistant.modules.evidence.api.lookup_eligibility_operation import (
+    create_evidence_eligibility_operation_lookup_router,
+)
 from plm_assistant.modules.evidence.application.set_eligibility import (
     EvidenceEligibilityCommandError, EvidenceEligibilityService, SetEvidenceEligibility,
 )
@@ -291,6 +294,11 @@ def verify(port):
             origins=LoginOriginPolicy(["https://plm.example.test"]),
             service_factory=lambda _token, _csrf: service,
         )
+        lookup_router = create_evidence_eligibility_operation_lookup_router(
+            sessions=Sessions(actor),
+            origins=LoginOriginPolicy(["https://plm.example.test"]),
+            service_factory=lambda _token, _csrf: lookups,
+        )
         headers = {
             "origin": "https://plm.example.test",
             "cookie": "plm_session=" + token.hex(),
@@ -300,7 +308,8 @@ def verify(port):
         }
         path = f"/api/v1/projects/{project}/evidence/{http_case}:set-eligibility"
         body = {"eligibility_state": "ELIGIBLE", "reason": "人工核对合成记录"}
-        with TestClient(create_app(evidence_eligibility_router=router),
+        with TestClient(create_app(evidence_eligibility_router=router,
+                                   evidence_eligibility_operation_lookup_router=lookup_router),
                         base_url="https://plm.example.test") as client:
             posted = client.post(path, headers=headers, json=body)
             replayed = client.post(path, headers=headers, json=body)
@@ -310,6 +319,25 @@ def verify(port):
             assert client.post(path, headers={k: v for k, v in headers.items()
                                               if k != "x-csrf-token"},
                                json=body).status_code == 403
+            lookup_path = (f"/api/v1/projects/{project}/evidence/"
+                           f"{http_case}:lookup-eligibility-operation")
+            lookup_headers = {key: value for key, value in headers.items()
+                              if key not in ("idempotency-key", "if-match")}
+            completed_http = client.post(
+                lookup_path, headers=lookup_headers,
+                json={"operation_key": "eligibility-http-0001"},
+            )
+            assert completed_http.status_code == 200, completed_http.text
+            assert completed_http.json()["data"] == {
+                "status": "COMPLETED", "evidence_id": str(http_case),
+                "first_status_code": 200,
+            }
+            unknown_http = client.post(
+                lookup_path, headers=lookup_headers,
+                json={"operation_key": "eligibility-http-missing"},
+            )
+            assert unknown_http.status_code == 200, unknown_http.text
+            assert unknown_http.json()["data"] == {"status": "UNCONFIRMED"}
 
         barrier = Barrier(2)
 
