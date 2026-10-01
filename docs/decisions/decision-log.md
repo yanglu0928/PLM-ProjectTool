@@ -5995,3 +5995,9 @@
 ## DEC-20261001-585 — 精确定位任务重入并更正旧任务指针
 
 - 日期/Phase/WBS：2026-10-01 / Phase2 / EVD-01-A03-P02-A02。复核发现 PAR-01-A02 已完成，旧 EVD 精确定位前置中“无正式 Parser 结果”也已过时；选择下一项先建立 Document 所有的受权固定 ParseResult 读取 Port，再按真实节点类型逐项证明，不让 Evidence 直读物理路径或复用整文档 Hash 冒充精确位置。理由：现有 Parser/Document 已有成功结果和带定位节点，但 Evidence 仍只证明 DOCUMENT；SECTION/STRUCTURED_NODE 不能由已存在节点自动推定。影响/回滚：本次只读核查与任务指针修正，无代码/API/Schema/环境变化，旧结论当时的证据保留，Gate3不变。
+
+## DEC-20261001-586 — Document 内部固定解析结果双重受权读取
+
+- 日期/Phase/WBS：2026-10-01 / Phase2 / EVD-01-A03-P02-A02-P01。编码前选择在 Document 内部建立独立读取 Port：现有 DocumentReadService 先验当前用户/Scope/固定版本，Document 私有仓储只返回成功 ParseRecord 与精确 ResultRef 元数据；私有存储按 Hash/大小回读后，再复核用户授权、来源元数据和结果元数据是否相同。结果字节不经公开 API、不给物理路径，不让 Evidence 直接读 Document 表。理由：单靠 ParseRecord 成功状态或裸结果路径无法防止撤权、跨项目、版本漂移及结果篡改。影响/回滚：无 Schema/Migration/API/权限扩张，仅内部 Port；未装配时可撤代码，既有 ParseRecord 不改。验证计划为成功/伪造/篡改/撤权/漂移单元、实际 PG18 元数据查询与后端回归；未执行项不得记 PASS。
+
+- 执行修正：原计划只复核 Document 元数据不能证明源文件真实字节，最终改为在结果读取前后调用现有 `PrepareDownloadService` 受权且完整性已验快照；Document 私有仓储和结果文件校验边界不变。定向7、隔离PG18成功/失败记录与真实私有结果篡改、后端1736（3既有跳过）及wheel通过。集成授权快照仍为合成 Port，未宣称真实生产账户组合或Evidence精确定位PASS；撤销新Port即可回滚，Schema/API不变。
