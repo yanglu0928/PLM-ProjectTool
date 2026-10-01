@@ -27,6 +27,7 @@ class SqlAlchemyEvidenceCreateRepository:
             scope=command.scope, project_id=command.project_id,
             document_id=command.document_id,
             document_version_id=command.document_version_id,
+            source_parse_record_id=command.parse_record_id,
             locator_type=locator["locator_type"], locator_payload=locator,
             content_fingerprint=fingerprint, display_label=command.display_label,
             display_excerpt=command.display_excerpt, eligibility_state="CANDIDATE",
@@ -42,6 +43,7 @@ class SqlAlchemyEvidenceCreateRepository:
             EvidenceRow.created_at, EvidenceRow.content_fingerprint,
             EvidenceRow.locator_payload, EvidenceRow.display_label,
             EvidenceRow.display_excerpt,
+            EvidenceRow.source_parse_record_id,
         ).where(
             EvidenceRow.evidence_id == evidence_id,
             EvidenceRow.scope == command.scope,
@@ -52,6 +54,7 @@ class SqlAlchemyEvidenceCreateRepository:
         )).one_or_none()
         if row is None or (row.content_fingerprint != fingerprint
                            or row.locator_payload != locator
+                           or row.source_parse_record_id != command.parse_record_id
                            or row.display_label != command.display_label
                            or row.display_excerpt != command.display_excerpt):
             return None

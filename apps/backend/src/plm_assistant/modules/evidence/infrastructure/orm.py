@@ -29,6 +29,8 @@ class EvidenceRow(Base):
                              name="fk_evd_evidence__creator", ondelete="NO ACTION"),
         ForeignKeyConstraint(["updated_by"], ["plm.auth_users.user_id"],
                              name="fk_evd_evidence__updater", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["source_parse_record_id"], ["plm.doc_parse_records.parse_record_id"],
+                             name="fk_evd_evidence__source_parse", ondelete="NO ACTION"),
         CheckConstraint("(scope='GLOBAL' AND project_id IS NULL) OR (scope='PROJECT' AND project_id IS NOT NULL)",
                         name="ck_evd_evidence__scope_project"),
         CheckConstraint(f"locator_type IN ({_LOCATOR_TYPES})", name="ck_evd_evidence__locator_type"),
@@ -56,6 +58,7 @@ class EvidenceRow(Base):
     project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     document_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     document_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    source_parse_record_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     locator_type: Mapped[str] = mapped_column(Text, nullable=False)
     locator_schema_version: Mapped[int] = mapped_column(Integer, nullable=False,
                                                          server_default=text("1"))

@@ -245,6 +245,8 @@ def verify(port: int, scratch: Path) -> None:
             node = client.post(endpoint, headers=headers(pm_token, "evd-create-node-001"), json=node_body)
             assert node.status_code == 201, node.text
             assert node.json()["data"]["content_fingerprint"] == digest.hex()
+            node_replay = client.post(endpoint, headers=headers(pm_token, "evd-create-node-001"), json=node_body)
+            assert node_replay.status_code == 201 and node_replay.json()["data"] == node.json()["data"]
             outsider = client.post(endpoint, headers=headers(outsider_token, "evd-outsider-001"), json=body)
             assert outsider.status_code == 404, outsider.text
             guard.enabled = False
@@ -267,6 +269,11 @@ def verify(port: int, scratch: Path) -> None:
         assert db.execute("SELECT count(*) FROM plm.evd_evidence_records").fetchone()[0] == 2
         assert db.execute("SELECT count(*) FROM plm.evd_evidence_records WHERE evidence_id=%s",
                           (evidence_id,)).fetchone()[0] == 1
+        assert db.execute("SELECT source_parse_record_id FROM plm.evd_evidence_records "
+                          "WHERE evidence_id=%s", (evidence_id,)).fetchone()[0] is None
+        assert db.execute("SELECT source_parse_record_id FROM plm.evd_evidence_records "
+                          "WHERE evidence_id=%s", (uuid.UUID(node.json()["data"]["evidence_id"]),)
+                          ).fetchone()[0] == parse_record
         assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s "
                           "AND action='EVIDENCE_CREATED'", (evidence_id,)).fetchone()[0] == 1
     print("PASS: isolated PG18 Windows Evidence create+read composition, missing-key GET closed, role/License isolation")
