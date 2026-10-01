@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P43-A05 新Ghostscript源码非发行候选在独立ASCII Temp布局21,117项逐件Hash/映射回读、Go/Ghostscript源码/许可、OCR模型、包内Python/PG/Caddy/Ghostscript版本与合成Caddy模板通过，定向1/1。兼容性：仅Windows11隔离布局，无API/Schema/SCM/正式安装变化，`release_eligible=false`。升级：无迁移。已知问题：产品NOTICE/法律、正式信任源、目标平台/Gate未完成。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P43-A04 新Ghostscript源码非发行候选在独立ASCII Temp目录清洁解包21,114载荷＋三metadata并全量Hash/文件集/源码许可内外回读PASS，定向2/2。兼容性：仅Windows11隔离暂存，无运行/API/Schema/SCM变化，`release_eligible=false`。升级：无迁移。已知问题：布局运行、完整NOTICE/法律审查、正式信任源/目标平台/Gate未完成。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P43-A03 按CR-PKG-006新建含Ghostscript 10.08.0官方源码/LICENSE的非发行Windows候选ZIP，748,147,289字节/SHA `764d2f84c8da9fa8a58a521026502f397dcb0602a3e48e9ac702c8e95a9cb7a5`；P33原21,112项不变、只增2项，独立谱系验真及定向6/6通过。兼容性：运行载荷/API/Schema/SCM不变，仅Windows11候选，`release_eligible=false`。升级：无迁移。已知问题：清洁解包、完整NOTICE/法律复核、正式信任源/目标平台/Gate未完成。

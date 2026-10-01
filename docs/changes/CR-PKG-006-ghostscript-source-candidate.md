@@ -27,3 +27,5 @@ P33 包含 Ghostscript 10.08.0 Windows x64 运行载荷及 `doc/COPYING`，但�
 2026-10-01/P43-A03 实施证据：新建不覆盖 P33 的非发行 ZIP，748,147,289 字节/SHA-256 `764d2f84c8da9fa8a58a521026502f397dcb0602a3e48e9ac702c8e95a9cb7a5`；原 21,112 项载荷全量不变，仅增同版官方源码和源包 LICENSE 至 21,114 项。构建及独立全量谱系验证 PASS、定向 6/6。尚未清洁解包或完成产品 NOTICE/法律复核；`release_eligible=false`。
 
 2026-10-01/P43-A04 增量证据：P43-A03 新 ZIP 在全新 ASCII Temp 直属目录清洁解包 21,114 载荷＋三份 metadata，逐项 Hash/文件全集/源码和 LICENSE 内部同字节/来源末次复核 PASS，定向 2/2。暂存非正式安装；运行布局和完整法律义务仍待，`release_eligible=false`。
+
+2026-10-01/P43-A05 增量证据：新 ZIP/暂存全量先验后，独立 ASCII Temp 布局 21,117 目标文件复制/全量 Hash、精确映射、Ghostscript/Go 源与许可、模型指纹、随包 Python/PG/Caddy/Ghostscript 版本及合成 Caddyfile validate PASS，定向 1/1。首次系统 Python 缺依赖在复制前失败，换随包 Python 完整重跑。正式 HTTPS 登录、产品 NOTICE/法律审核、目标环境 Gate 仍待，`release_eligible=false`。
