@@ -19,6 +19,7 @@ from verify_windows_unified_extract import verify
 
 
 KIND = "WINDOWS_PG18_PGVECTOR_RUNTIME_NON_RELEASE"
+COMBINED_KIND = "WINDOWS11_UNIFIED_PG18_DEVELOPMENT_CANDIDATE"
 
 
 def check_stage(root: Path) -> Path:
@@ -28,7 +29,10 @@ def check_stage(root: Path) -> Path:
         raise ValueError("PG sidecar smoke requires an isolated Temp child")
     if not str(resolved).isascii():
         raise ValueError("PG sidecar smoke requires an ASCII path")
-    verify(resolved, expected_kind=KIND)
+    candidate_kind = json.loads((resolved / "manifest.json").read_text(encoding="utf-8")).get("kind")
+    if candidate_kind not in {KIND, COMBINED_KIND}:
+        raise ValueError("PG smoke candidate kind rejected")
+    verify(resolved, expected_kind=candidate_kind)
     pg_root = resolved / "payload" / "pgsql"
     for name in ("initdb.exe", "pg_ctl.exe", "psql.exe", "postgres.exe"):
         if not (pg_root / "bin" / name).is_file():

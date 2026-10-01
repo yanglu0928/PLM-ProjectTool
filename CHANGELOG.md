@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P15 从P10统一候选/P12 PG旁包生成21,103件Windows11非发行组合ZIP，518,659,603字节，SHA-256 `c54a7862872d402a6c9763287a508dc63dd602049f93aa6097e5a8e8e0766ef2`；重建manifest/双来源第三方库存，ZIP和全新ASCII解包逐件Hash、隔离PG18/vector/HNSW合成查询与停机清理PASS，单元4/4。兼容性：旧ZIP/API/Schema/Migration/正式安装不变，可弃用Git忽略新ZIP回滚；OCR真实质量、许可/源码、License/签名、服务账户/Server2025和Gate仍待，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P14 新增Windows统一候选+PG18旁包只读组合计划；两份固定非发行ZIP及21,103件包内载荷Hash通过，大小写路径冲突0，机读报告SHA `6741b716c886f9128bf6c2bca6a60ff2f83ae3c07eefa82d521d6ee2348761ef`，单元2/2。兼容性：只读审计，无合并ZIP/安装、API/Schema/Migration变化；可撤新工具/报告回滚。许可/源码、正式License/签名/服务账户/目标平台/Gate仍待，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P13 新增P12 Windows PG旁包隔离合成烟测入口：再次核1,629件Hash，临时ASCII数据目录/loopback随机端口下完成PG18.6、vector0.8.6、HNSW和最近邻查询，退出停机并清理临时数据；定向单元5/5。首次捕获管道继承造成超时，正常停机后改启动输出处理并全程重跑通过。兼容性：无API/Schema/Migration/正式服务变化；仅测试入口可撤，生产认证、服务账户、Server2025、NOTICE/法律/Gate仍待，`release_eligible=false`。

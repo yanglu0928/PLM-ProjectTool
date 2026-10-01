@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -22,6 +23,7 @@ class PgSidecarSmokeTests(unittest.TestCase):
         with tempfile.TemporaryDirectory(prefix="plm-pg18-stage-unit-") as temp:
             root = Path(temp)
             (root / "payload" / "pgsql" / "bin").mkdir(parents=True)
+            (root / "manifest.json").write_text(json.dumps({"kind": "WINDOWS_PG18_PGVECTOR_RUNTIME_NON_RELEASE"}), encoding="utf-8")
             with patch("smoke_windows_pg18_sidecar.verify") as verify:
                 with self.assertRaisesRegex(ValueError, "executable missing"):
                     check_stage(root)
