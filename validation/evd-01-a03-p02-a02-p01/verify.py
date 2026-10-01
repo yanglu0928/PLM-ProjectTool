@@ -23,22 +23,30 @@ from psycopg.types.json import Jsonb
 from sqlalchemy.engine import URL
 
 from plm_assistant.modules.document.application.prepare_download import (
-    DownloadError, VerifiedDownload,
+    DownloadError, PrepareDownloadService, VerifiedDownload,
 )
-from plm_assistant.modules.document.application.read_documents import DocumentReadQuery
+from plm_assistant.modules.document.application.prove_fixed_source import (
+    DocumentFixedSourceProofService, FixedSourceProofError,
+)
+from plm_assistant.modules.document.application.read_documents import (
+    DocumentReadQuery, DocumentReadService,
+)
 from plm_assistant.modules.document.application.read_parse_result import (
     DocumentParseResultReadService, ParseResultReadError,
 )
 from plm_assistant.modules.document.infrastructure.parse_result_read_repository import (
     SqlAlchemyParseResultReadRepository,
 )
+from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage
 from plm_assistant.modules.document.infrastructure.parse_result_storage import LocalParseResultStorage
+from plm_assistant.modules.document.infrastructure.read_repository import SqlAlchemyDocumentReadRepository
 from plm_assistant.modules.evidence.application.parsed_node_proof import ParsedNodeEvidenceProofService
 from plm_assistant.modules.parser.application.structured_result import (
     ParsedNode, ParsedResult, TextRangePosition,
 )
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
+from plm_assistant.modules.project.application.authorization import ProjectActorFacts
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -81,6 +89,10 @@ def verify(port: int, scratch: Path) -> None:
     command.upgrade(create_migration_config(url), "head")
     source_bytes = b"Synthetic fixed document for Evidence result read."
     source_sha = hashlib.sha256(source_bytes).digest()
+    file_id = uuid.uuid4()
+    file_root = scratch / "private-documents"
+    file_root.mkdir()
+    file_storage = LocalFileStorage(file_root)
     with psycopg.connect(host="127.0.0.1", port=port, user=USER,
                          dbname="postgres", autocommit=True) as db:
         actor = db.execute(
@@ -91,19 +103,28 @@ def verify(port: int, scratch: Path) -> None:
             "INSERT INTO plm.prj_projects(project_code,project_code_normalized,name,created_by) "
             "VALUES ('EVDR','evdr','Evidence read',%s) RETURNING project_id", (actor,),
         ).fetchone()[0]
+        staging, final = LocalFileStorage.locators(
+            scope="PROJECT", project_id=project, file_object_id=file_id,
+        )
+        with file_storage.reserve_staging(staging) as stream:
+            stream.write(source_bytes)
+        file_storage.publish_verified(
+            staging, final, expected_sha256=source_sha,
+            expected_size=len(source_bytes), max_bytes=100_000_000,
+        )
         document = db.execute(
             "INSERT INTO plm.doc_documents(scope,project_id,document_category,title,"
             "original_display_name,created_by) VALUES "
             "('PROJECT',%s,'PROJECT_RECORD','Evidence','synthetic.txt',%s) "
             "RETURNING document_id", (project, actor),
         ).fetchone()[0]
-        file_id = db.execute(
-            "INSERT INTO plm.doc_file_objects(scope,project_id,storage_class,storage_locator,"
+        db.execute(
+            "INSERT INTO plm.doc_file_objects(file_object_id,scope,project_id,storage_class,storage_locator,"
             "original_name_metadata,created_by,file_state,sha256,size_bytes,detected_mime,available_at) "
-            "VALUES ('PROJECT',%s,'PERSISTENT','synthetic/only','synthetic.txt',%s,"
-            "'AVAILABLE',%s,%s,'text/plain',statement_timestamp()) RETURNING file_object_id",
-            (project, actor, source_sha, len(source_bytes)),
-        ).fetchone()[0]
+            "VALUES (%s,'PROJECT',%s,'PERSISTENT',%s,'synthetic.txt',%s,"
+            "'AVAILABLE',%s,%s,'text/plain',statement_timestamp())",
+            (file_id, project, final, actor, source_sha, len(source_bytes)),
+        )
         version = db.execute(
             "INSERT INTO plm.doc_document_versions(document_id,scope,project_id,version_no,"
             "file_object_id,content_sha256,size_bytes,detected_mime,source_metadata,created_by) "
@@ -213,6 +234,86 @@ def verify(port: int, scratch: Path) -> None:
         result = service.read(query, document_id=document,
                               document_version_id=version, parse_record_id=record)
         assert result.content == payload and result.result_ref_id == result_id
+        class Session:
+            def authenticated_user(self, _tx, *, session_token, now):
+                return actor
+
+        class Admin:
+            def authorized_admin(self, _tx, *, session_token, now):
+                return None
+
+        class Project:
+            def actor_facts(self, _tx, *, user_id, project_id, lock=False):
+                return ProjectActorFacts("ACTIVE", "PROJECT_MANAGER") if (
+                    user_id == actor and project_id == project) else None
+
+        class Guard:
+            def require_valid(self, *, trace_id):
+                return object()
+
+        class Audit:
+            def append(self, _tx, _event):
+                return uuid.uuid4()
+
+        reader = DocumentReadService(
+            unit_of_work=runtime.unit_of_work, session_access=Session(),
+            admin_access=Admin(), project_facts=Project(), license_guard=Guard(),
+            repository=SqlAlchemyDocumentReadRepository(),
+        )
+        downloads = PrepareDownloadService(
+            reader=reader, storage=file_storage, unit_of_work=runtime.unit_of_work,
+            audit=Audit(),
+        )
+        actual_results = DocumentParseResultReadService(
+            documents=downloads, metadata=metadata, storage=storage,
+            unit_of_work=runtime.unit_of_work,
+        )
+        proof_service = DocumentFixedSourceProofService(
+            documents=reader, downloads=downloads,
+            parse_metadata=metadata, parse_results=actual_results,
+        )
+        with runtime.unit_of_work() as tx:
+            whole = proof_service.prove(
+                tx, query, document_id=document, document_version_id=version,
+            )
+            parsed_proof = proof_service.prove(
+                tx, query, document_id=document, document_version_id=version,
+                parse_record_id=record,
+            )
+            assert whole.facts.content_sha256 == source_sha.hex()
+            assert parsed_proof.parse_content == payload
+            assert parsed_proof.result_ref_id == result_id
+            with psycopg.connect(host="127.0.0.1", port=port, user=USER,
+                                 dbname="postgres", autocommit=True) as rival:
+                for table, identity, value in (
+                    ("doc_documents", "document_id", document),
+                    ("doc_document_versions", "document_version_id", version),
+                    ("doc_file_objects", "file_object_id", file_id),
+                    ("doc_parse_records", "parse_record_id", record),
+                    ("doc_parse_result_refs", "parse_result_ref_id", result_id),
+                ):
+                    try:
+                        rival.execute(
+                            sql.SQL("SELECT 1 FROM plm.{} WHERE {}=%s FOR UPDATE NOWAIT").format(
+                                sql.Identifier(table), sql.Identifier(identity)),
+                            (value,),
+                        )
+                    except psycopg.Error as error:
+                        assert error.sqlstate == "55P03", (table, error.sqlstate)
+                    else:
+                        raise AssertionError(f"fixed {table} row was not held")
+        (file_root / final).write_bytes(b"x" * len(source_bytes))
+        try:
+            with runtime.unit_of_work() as tx:
+                proof_service.prove(
+                    tx, query, document_id=document, document_version_id=version,
+                    parse_record_id=record,
+                )
+        except FixedSourceProofError as error:
+            assert error.code == "FILE_INTEGRITY_MISMATCH"
+        else:
+            raise AssertionError("tampered physical source accepted")
+        (file_root / final).write_bytes(source_bytes)
         locator = json.loads(payload)["nodes"][0]["source_locator"]
         evidence_proof = ParsedNodeEvidenceProofService(results=service).prove(
             query, document_id=document, document_version_id=version,
@@ -238,7 +339,8 @@ def verify(port: int, scratch: Path) -> None:
         else:
             raise AssertionError("tampered private result accepted")
         print("PASS: isolated PostgreSQL 18 success/failure records, scoped metadata, "
-              "caller-transaction ParseRecord/ResultRef share locks, private result hash, "
+              "caller-transaction Document/Version/File/ParseRecord/ResultRef share locks, "
+              "actual private file and result hashes, "
               "exact Evidence node, revoked synthetic reader and tamper rejection")
     finally:
         runtime.dispose()

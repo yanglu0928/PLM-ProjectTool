@@ -6282,3 +6282,12 @@
 - Reason：现有 `get` 是普通只读，独立事务无法阻止固定来源在 Workflow 记录提交前变化；把仓储锁入口单独命名能避免普通列表读意外加锁，同时为后续 Document 应用 Port 提供可组合事实。
 - Impact/Rollback：无 Schema、公开 API、依赖或既有 `get` 行为变化；未接 Workflow。可撤独立入口并维持 Checklist 写路由关闭。验证 SQL 锁形、项目/状态范围、无活跃事务拒绝及实际 PG18 并发阻断；后续应用 Port 仍需真实文件/解析内容哈希和权限重验，本任务不宣称完整 Owner。
 - Result：新单元 2/2、隔离 PG18 对 ParseRecord 与 ResultRef 的第二连接 `FOR UPDATE NOWAIT` 均返回 55P03；原解析结果完整性/撤权/篡改矩阵回归退出 0，后端全量 1832 通过/3 跳过，本地 wheel PASS。仅仓储锁入口，应用 Owner 仍待接。
+
+# DEC-20261002-603：Document 固定来源证明组合受锁事实与物理字节复验
+
+- Date/WBS：2026-10-02 / `WFL-01-A07-P03-A02`；来源 `CR-WFL-005`。
+- Decision：Document Application Port 先在调用方事务获取受权 Document/Version/File 事实及可选 ParseRecord/ResultRef 共享锁，再调用既有受权物理快照/解析结果读取复验；所有固定 ID、Scope/Project、源与结果摘要、解析器元数据必须与受锁事实一致。内部结果只返回最小来源事实和隐藏 repr 的解析字节，不返回文件路径。无 ParseRecord 时仍验证实际文件；有 ParseRecord 时复用现有解析读取对文件、解析 JSON 和结果字节的双读/哈希校验。
+- Reason：避免在 Workflow 跨模块复制 Document 授权/存储校验；锁定数据库事实直到调用方提交，独立物理读取的结果只能在同一锁定事实下被接受。文件系统无法参与数据库锁，此 Port 表示读取时通过哈希的物理快照，不承诺提交后的文件永不变化。
+- Impact/Rollback：只新增内部 Document Port 与测试，无公开 API、Schema 或数据迁移；可不装配后续 Evidence Owner，Checklist/Gate 写入口保持关闭。GLOBAL 项目经理窄标准引用授权、Evidence 资格/locator 和 Review/例外 Owner 均另行实现，本任务不宣称完整端到端 PASS。
+- Verification：单元覆盖同事务调用/权限失败/版本或解析元数据漂移/物理文件或解析字节篡改/无解析情形，隔离 PG18 验证真实源锁与组合结果，后端全量回归和 wheel 构建。若任一复验失败，返回稳定错误码且不泄露正文或路径。
+- Result：内部组合 Port 定向 6/6（含原读取回归共 16/16）；隔离 PG18 对五张来源表的第二连接 NOWAIT 均 55P03，实际本地文件/解析 JSON 哈希、错误 Scope/失败记录、撤权与篡改拒绝通过；后端全量 1838 通过/3 跳过，开发 wheel 构建 PASS。仅 Document Port，Evidence Owner 与窄 GLOBAL 策略未接，Checklist/Gate 写仍关闭。

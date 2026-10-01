@@ -61,7 +61,7 @@ class SqlAlchemyDocumentReadRepository:
         row = _session(transaction).execute(
             self._visible(scope, project_id).where(
                 DocumentRow.document_id == document_id,
-            ),
+            ).execution_options(populate_existing=True),
         ).scalar_one_or_none()
         return None if row is None else _view(row)
 
@@ -119,6 +119,7 @@ class SqlAlchemyDocumentReadRepository:
             DocumentRow.project_id == project_id,
             DocumentRow.document_state.in_(("ACTIVE", "ARCHIVED")),
         ).with_for_update(read=True, of=(DocumentRow, DocumentVersionRow, FileObjectRow))
+        statement = statement.execution_options(populate_existing=True)
         row = _session(transaction).execute(statement).scalar_one_or_none()
         return None if row is None else _version_view(row)
 
