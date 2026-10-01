@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P43-A07 新增第三方NOTICE审阅草案与只读输入审计；106个Python分发包分为自有1/第三方105，第三方60项许可表达式元数据空、`bce-python-sdk`候选内独立通知材料缺失，定向3/3、真实固定包审计PASS。兼容性：仅审阅材料，无包/API/Schema/SCM变化，`release_eligible=false`。升级：无迁移。已知问题：产品LICENSE/最终NOTICE和合格法律复核、正式信任源/目标平台/Gate未完成。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P43-A06 新Ghostscript源码候选发行证据只读分类：3源码归档、190第三方证据侧载、产品LICENSE/NOTICE 0、34项原生PE义务未复核，Python/前端/Caddy/PG/Ghostscript法律状态均开放；真实审计和定向3/3通过。兼容性：无包/API/Schema/SCM变化，`release_eligible=false`。升级：无迁移。已知问题：产品级许可/NOTICE、合格法律签核与正式信任源/目标平台/Gate未完成。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P43-A05 新Ghostscript源码非发行候选在独立ASCII Temp布局21,117项逐件Hash/映射回读、Go/Ghostscript源码/许可、OCR模型、包内Python/PG/Caddy/Ghostscript版本与合成Caddy模板通过，定向1/1。兼容性：仅Windows11隔离布局，无API/Schema/SCM/正式安装变化，`release_eligible=false`。升级：无迁移。已知问题：产品NOTICE/法律、正式信任源、目标平台/Gate未完成。
