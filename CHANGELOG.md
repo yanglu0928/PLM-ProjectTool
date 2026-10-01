@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P40 新装待发布目录增加无敏感数据同卷intent标记，新增只读发现与仅有效未完成残件的可逆隔离；子进程强退恢复等定向6项/P39回归4项及真实P33 21,115件重落地/独立Hash PASS。兼容性：仅Windows11隔离流程，业务API/Schema/Migration/SCM/正式根不变，`release_eligible=false`。升级说明：无迁移、不适用已有安装升级。已知问题：断电耐久性、正式账户/证书/License/法律/平台/Gate未验。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P39 新增非发行Windows新装文件同卷私有复制/全Hash读回后目录发布工具；固定P33候选21,115件实测及独立复验PASS，定向单元4/4。兼容性：仅Windows11隔离文件落地，不改API/Schema/Migration/SCM/正式根；Server2025和Debian13未验证，`release_eligible=false`。升级说明：不适用于升级、无数据迁移。已知问题：强杀/断电遗留待发布目录恢复、正式信任源/法律/平台/Gate仍未完成。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P38 新增固定P33布局的正式Windows安装只读阻断检查器，21,115件新隔离布局Hash后列出缺目标账户/DNS证书/正式公钥及六项未验证条件；定向单元4/4。兼容性：无API/Schema/Migration/SCM或正式安装变更，Windows11/Server2025目标不变、Debian13实机暂缓；`release_eligible=false`。升级说明：无需迁移。已知问题：正式账户/证书/License、许可法律、服务恢复及目标平台验收未完成。

@@ -24,6 +24,20 @@ from rehearse_windows_unified_pg18_layout import _copy_checked, validate_output_
 from verify_windows_unified_caddy_go_source_candidate import ARCHIVE_SHA256, verify as verify_candidate
 from verify_windows_unified_extract import verify as verify_stage
 
+INTENT_SUFFIX = ".intent.json"
+
+
+def _write_intent(partial: Path, target: Path) -> Path:
+    """Leave a non-secret sibling receipt so a crashed copy can be identified."""
+    marker = Path(str(partial) + INTENT_SUFFIX)
+    body = {"schema_version": 1, "partial_name": partial.name,
+            "target_root": str(target), "candidate_sha256": ARCHIVE_SHA256}
+    with marker.open("x", encoding="ascii") as stream:
+        json.dump(body, stream, sort_keys=True)
+        stream.flush()
+        os.fsync(stream.fileno())
+    return marker
+
 
 def _assert_private_partial(path: Path, parent: Path) -> None:
     if (path.parent.resolve(strict=True) != parent or not path.name.startswith("plm-p39-partial-")
@@ -43,8 +57,10 @@ def _copy_and_publish(stage: Path, target: Path, mapping: dict[str, str],
     validate_output_root(target)
     parent = target.parent.resolve(strict=True)
     partial = Path(tempfile.mkdtemp(prefix="plm-p39-partial-", dir=parent))
+    marker = Path(str(partial) + INTENT_SUFFIX)
     committed = False
     try:
+        _write_intent(partial, target)
         for index, (source, destination) in enumerate(sorted(mapping.items())):
             if fail_after is not None and index >= fail_after:
                 raise RuntimeError("injected copy interruption")
@@ -64,14 +80,22 @@ def _copy_and_publish(stage: Path, target: Path, mapping: dict[str, str],
             raise ValueError("new install target appeared before publication")
         os.rename(partial, target)  # Same-volume Windows rename; never replace an existing root.
         committed = True
+        try:
+            marker.unlink()
+            marker_retained = False
+        except OSError:
+            marker_retained = True
         return {"status": "NON_RELEASE_ATOMIC_FILE_PLACEMENT_PASS",
                 "release_eligible": False, "formal_install_performed": False,
                 "target_file_count": len(mapping), "services_changed": False,
-                "database_started": False, "migration_executed": False}
+                "database_started": False, "migration_executed": False,
+                "recovery_marker_retained": marker_retained}
     finally:
         if not committed and partial.exists():
             _assert_private_partial(partial, parent)
             shutil.rmtree(partial)
+        if not committed and marker.is_file() and not marker.is_symlink():
+            marker.unlink()
 
 
 def rehearse(candidate: Path, source: Path, stage: Path, target: Path) -> dict:
