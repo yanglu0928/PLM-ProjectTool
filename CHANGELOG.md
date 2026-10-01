@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P44-A01 定位 Windows Server 2025 VMware 宿主 NAT 网卡地址与配置不一致，登记 `CR-ENV-001` 的恢复/回滚计划；虚拟机已正常关机恢复原状态。兼容性：无程序/API/Schema/发行包或宿主网卡修改，Server 2025 未通过安装验收，`release_eligible=false`。升级：无迁移。验证：VM启动/Tools取址/四端口/宿主地址及权限只读检查；已知问题：需管理员权限恢复VMnet8后重验，正式NOTICE/信任源/Gate仍未完成。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P43-A10 形成105项Python第三方完整许可材料审阅输入；新增45项声明与精确METADATA及包内License-File逐项匹配，合并60项无重漏，定向4/4及回归5/5、真实固定候选审计PASS。兼容性：无发行包/API/Schema/SCM变化，`release_eligible=false`。升级：无迁移。已知问题：全部仍待合格法律复核，产品LICENSE/最终NOTICE、正式信任源/目标平台/Gate未完成。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P43-A09 新增60项Python第三方许可表达式空值的精确METADATA/通知材料映射清单和只读审计；57项嵌入、2项仅侧载、1项无专属通知，定向5/5、真实候选审计PASS。兼容性：无发行包/API/Schema/SCM变化，`release_eligible=false`。升级：无迁移。已知问题：全部仍待法律复核，产品LICENSE/最终NOTICE、正式信任源/目标平台/Gate未完成。
