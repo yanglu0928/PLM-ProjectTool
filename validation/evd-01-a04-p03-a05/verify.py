@@ -7,8 +7,10 @@ import shutil
 import subprocess
 import tempfile
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
+from threading import Barrier
 
 import psycopg
 from alembic import command
@@ -169,6 +171,8 @@ def verify(port):
             db, actor=actor, project=project, category="PROJECT_RECORD", label="httpcase")
         _, revoked_version, revoked_case = insert_source(
             db, actor=actor, project=project, category="PROJECT_RECORD", label="revoked")
+        _, _, concurrent_case = insert_source(
+            db, actor=actor, project=project, category="PROJECT_RECORD", label="concurrent")
         foreign_project = db.execute(
             "INSERT INTO plm.prj_projects(project_code,project_code_normalized,name,created_by) "
             "VALUES ('ELIG2','elig2','Foreign Synthetic',%s) RETURNING project_id",
@@ -263,6 +267,31 @@ def verify(port):
             assert client.post(path, headers={k: v for k, v in headers.items()
                                               if k != "x-csrf-token"},
                                json=body).status_code == 403
+
+        barrier = Barrier(2)
+
+        class ConcurrentAccess:
+            def require_in_transaction(self, *_args, **_kwargs):
+                barrier.wait(timeout=10)
+
+        concurrent = EvidenceEligibilityService(
+            **{**common, "access": ConcurrentAccess()},
+            audit=AuditService(SqlAlchemyAuditRepository()),
+        )
+
+        def race(index):
+            try:
+                result = concurrent.set(
+                    request(concurrent_case, reason=f"合成并发复核 {index}"),
+                    idempotency_key=f"eligibility-race-{index:04d}",
+                )
+                return ("SUCCESS", result.etag)
+            except EvidenceEligibilityCommandError as error:
+                return (error.code, None)
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            outcomes = list(executor.map(race, (1, 2)))
+        assert sorted(code for code, _ in outcomes) == ["CONFLICT_VERSION", "SUCCESS"], outcomes
         with psycopg.connect(host="127.0.0.1", port=port, user=HELPER.USER,
                              dbname="postgres", autocommit=True) as db:
             assert db.execute(
@@ -271,18 +300,22 @@ def verify(port):
             ).fetchone() == ("CANDIDATE", 0)
             assert db.execute(
                 "SELECT count(*) FROM plm.aud_events WHERE action='EVIDENCE_ELIGIBILITY_SET'",
-            ).fetchone()[0] == 3
+            ).fetchone()[0] == 4
             assert db.execute(
                 "SELECT count(*) FROM plm.plt_idempotency_receipts "
                 "WHERE operation='V1_EVIDENCE_SET_ELIGIBILITY'",
-            ).fetchone()[0] == 3
+            ).fetchone()[0] == 4
+            assert db.execute(
+                "SELECT eligibility_state,lock_version FROM plm.evd_evidence_records "
+                "WHERE evidence_id=%s", (concurrent_case,),
+            ).fetchone() == ("ELIGIBLE", 1)
             db.execute(
                 "UPDATE plm.prj_project_members SET state='SUSPENDED' "
                 "WHERE project_id=%s AND user_id=%s", (project, actor),
             )
         expect("RESOURCE_NOT_FOUND", lambda: service.set(
             item, idempotency_key="eligibility-pg-0001"))
-        print("PASS: isolated PG18 source/eligibility/HTTP replay, template/cross-project/revoked/License denial, Audit rollback, role revoke")
+        print("PASS: isolated PG18 source/eligibility/HTTP replay, single concurrent winner, template/cross-project/revoked/License denial, Audit rollback, role revoke")
     finally:
         runtime.dispose()
 
