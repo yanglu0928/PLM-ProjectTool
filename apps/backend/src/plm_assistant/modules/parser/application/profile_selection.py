@@ -77,4 +77,6 @@ def choose_parser_profile(source: ParserInputVersion) -> ParserProfilePlan:
     if choice is None:
         raise ParserProfileError("PARSER_FORMAT_UNSUPPORTED")
     profile, policy, components = choice
-    return ParserProfilePlan(source, profile, _PROFILE_VERSION, policy, components)
+    # DOCX v2 adds source-backed heading nodes; v1 records remain immutable.
+    version = "2" if profile == "DOCX" else _PROFILE_VERSION
+    return ParserProfilePlan(source, profile, version, policy, components)

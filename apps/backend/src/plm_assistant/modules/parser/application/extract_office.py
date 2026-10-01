@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import io
+import re
 import zipfile
 
 from docx import Document
@@ -19,7 +20,7 @@ from .prepare_input import VerifiedParserInput
 from .profile_selection import choose_parser_profile
 from .structured_result import (
     ParagraphPosition, ParsedNode, ParsedResult, ParserResultError,
-    SheetCellPosition, SlideShapePosition, TableCellPosition,
+    SectionPosition, SheetCellPosition, SlideShapePosition, TableCellPosition,
 )
 
 
@@ -103,10 +104,16 @@ def _docx_nodes(raw: bytes, nodes: _NodeCollector) -> None:
     for child in document.element.body.iterchildren():
         if isinstance(child, CT_P):
             paragraph_index += 1
-            value = Paragraph(child, document).text
+            paragraph = Paragraph(child, document)
+            value = paragraph.text
             if value.strip():
                 nodes.append(ParsedNode(f"p:{paragraph_index}", "DOCX_PARAGRAPH",
                                           value, ParagraphPosition(paragraph_index)))
+                heading = re.fullmatch(r"Heading([1-9])", paragraph.style.style_id)
+                if heading is not None:
+                    nodes.append(ParsedNode(
+                        f"heading:{paragraph_index}", "DOCX_SECTION", value,
+                        SectionPosition(f"word/heading/{heading.group(1)}/{paragraph_index}")))
         elif isinstance(child, CT_Tbl):
             table_index += 1
             table = Table(child, document)

@@ -5,8 +5,10 @@ import io
 import unittest
 import uuid
 import zipfile
+from dataclasses import replace
 
 from docx import Document
+from docx.enum.style import WD_STYLE_TYPE
 from openpyxl import Workbook
 from pptx import Presentation
 from pptx.util import Inches
@@ -17,7 +19,9 @@ from plm_assistant.modules.parser.application.prepare_input import VerifiedParse
 from plm_assistant.modules.parser.application.profile_selection import (
     ParserInputVersion, choose_parser_profile,
 )
-from plm_assistant.modules.parser.application.structured_result import ParserResultError
+from plm_assistant.modules.parser.application.structured_result import (
+    ParserResultError, SectionPosition,
+)
 
 
 _MIMES = {
@@ -54,6 +58,37 @@ class ExtractOfficeTests(unittest.TestCase):
                          {"locator_type": "TABLE_CELL", "table_anchor": "word/table/1",
                           "row_no": 1, "column_no": 1})
         self._assert_replay(prepared, parsed)
+
+    def test_docx_v2_only_builtin_nonempty_headings_emit_sections(self) -> None:
+        document = Document()
+        document.add_paragraph("范围", style="Heading 1")
+        document.add_paragraph("普通正文")
+        document.add_paragraph("", style="Heading 2")
+        custom = document.styles.add_style("CustomHeading", WD_STYLE_TYPE.PARAGRAPH)
+        document.add_paragraph("自定义样式", style=custom)
+        document.add_paragraph("范围", style="Heading 2")
+        stream = io.BytesIO()
+        document.save(stream)
+        prepared = self.prepared(stream.getvalue(), "DOCX")
+        parsed = extract_office(prepared)
+        self.assertEqual(parsed.parser_version, "2")
+        sections = [node for node in parsed.nodes if node.kind == "DOCX_SECTION"]
+        self.assertEqual([(node.text, node.position.to_locator()) for node in sections], [
+            ("范围", {"locator_type": "SECTION", "section_path": "word/heading/1/1"}),
+            ("范围", {"locator_type": "SECTION", "section_path": "word/heading/2/5"}),
+        ])
+        paragraphs = [node for node in parsed.nodes if node.kind == "DOCX_PARAGRAPH"]
+        self.assertEqual(len(paragraphs), 4)
+        self.assertEqual([node.node_id for node in sections], ["heading:1", "heading:5"])
+        self._assert_replay(prepared, parsed)
+        old = replace(parsed, parser_version="1", nodes=tuple(paragraphs))
+        self.assertEqual(old.parser_version, "1")
+        with self.assertRaises(ParserResultError):
+            replace(parsed, parser_version="1")
+        for bad in ("word/heading/0/1", "word/heading/1/0", "word/heading/10/1",
+                    "word/heading/1/a"):
+            with self.subTest(path=bad), self.assertRaises(ParserResultError):
+                SectionPosition(bad)
 
     def test_pptx_slide_shape_and_table_cell(self) -> None:
         presentation = Presentation()

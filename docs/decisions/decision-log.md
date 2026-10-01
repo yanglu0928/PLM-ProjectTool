@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261001-575 — DOCX V2 标题节点与独立解析版本
+
+- Date/WBS：2026-10-01 / `EVD-01-A03-P02-A02-P03-P04-A03`；输入 `CR-EVD-001`、Parser V1 profile/result 及 DOCX 抽取器。
+- Decision：仅 DOCX 的新计划使用 Parser Version 2；V1 DOCX 结果继续可构造/读取，但不新增标题节点。V2 为非空内置 Heading 1～9 段落在原段落节点之外追加 `DOCX_SECTION`，section_path 按样式级别和正文段落序号编码为 `word/heading/<level>/<paragraph_index>`，重复标题也唯一。普通/自定义/空标题不推断。
+- Reason/Impact/Rollback：内容版本变化必须与旧结果区分；节点保留原段落位置且无 API/Schema 变化。部署时先使旧 Parser Worker 静止，待 RUNNING 的 V1 尝试收尾或按原恢复流程显式处理后启用 V2；不能把运行中的旧尝试悄悄改版。回滚关闭 V2 新作业并保留已发布字节；旧代码不会消费 V2 新作业，故需先静止/排空再回滚。以单元、真实DOCX回放、全后端与wheel验收。
+
 ## DEC-20261001-574 — 多页 PDF 中文扫描页定位验证
 
 - Date/WBS：2026-10-01 / `EVD-01-A03-P02-A02-P03-P04-A01`；输入原生文本 PDF P01 和真实离线 OCR P02 合成验收、冻结 Evidence PAGE/TEXT_RANGE 契约。

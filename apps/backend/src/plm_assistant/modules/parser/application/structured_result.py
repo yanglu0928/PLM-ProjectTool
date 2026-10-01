@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import re
 import uuid
 from dataclasses import dataclass, field
 
@@ -118,6 +119,21 @@ class ParagraphPosition:
 
 
 @dataclass(frozen=True, slots=True)
+class SectionPosition:
+    """Built-in DOCX heading level and stable body paragraph index."""
+
+    section_path: str
+
+    def __post_init__(self) -> None:
+        if (type(self.section_path) is not str or len(self.section_path) > 1024
+                or re.fullmatch(r"word/heading/[1-9]/[1-9][0-9]*", self.section_path) is None):
+            raise ParserResultError("PARSER_POSITION_INVALID")
+
+    def to_locator(self) -> dict[str, object]:
+        return {"locator_type": "SECTION", "section_path": self.section_path}
+
+
+@dataclass(frozen=True, slots=True)
 class TableCellPosition:
     table_anchor: str
     row_no: int
@@ -174,14 +190,14 @@ class ParsedNode:
     kind: str
     text: str = field(repr=False)
     position: (TextRangePosition | PdfTextRangePosition | PageBoxPosition
-               | CsvCellPosition | ParagraphPosition
+               | CsvCellPosition | ParagraphPosition | SectionPosition
                | TableCellPosition | SlideShapePosition | SheetCellPosition)
     confidence: float | None = None
 
     def __post_init__(self) -> None:
         if (type(self.node_id) is not str or not self.node_id
                 or len(self.node_id) > 256 or type(self.kind) is not str
-                or self.kind not in ("TEXT_LINE", "PDF_TEXT_LINE", "OCR_LINE", "CSV_CELL", "DOCX_PARAGRAPH",
+                or self.kind not in ("TEXT_LINE", "PDF_TEXT_LINE", "OCR_LINE", "CSV_CELL", "DOCX_PARAGRAPH", "DOCX_SECTION",
                                      "DOCX_TABLE_CELL", "PPTX_SHAPE", "PPTX_TABLE_CELL",
                                      "XLSX_CELL")
                 or type(self.text) is not str
@@ -191,6 +207,7 @@ class ParsedNode:
                     "OCR_LINE": PageBoxPosition,
                     "CSV_CELL": CsvCellPosition,
                     "DOCX_PARAGRAPH": ParagraphPosition,
+                    "DOCX_SECTION": SectionPosition,
                     "DOCX_TABLE_CELL": TableCellPosition,
                     "PPTX_SHAPE": SlideShapePosition,
                     "PPTX_TABLE_CELL": TableCellPosition,
@@ -229,17 +246,20 @@ class ParsedResult:
                 or type(self.parser_profile) is not str
                 or self.parser_profile not in ("PLAIN_TEXT", "CSV", "DOCX", "PPTX", "XLSX",
                                                "PDF_TEXT_THEN_OCR", "IMAGE_OCR")
-                or self.parser_version != "1" or self.schema_version != _SCHEMA_VERSION
+                or self.parser_version not in (("1", "2") if self.parser_profile == "DOCX" else ("1",))
+                or self.schema_version != _SCHEMA_VERSION
                 or type(self.nodes) is not tuple
                 or any(type(node) is not ParsedNode for node in self.nodes)
-                or any(node.kind not in {
+                or any(node.kind not in ({
                     "PLAIN_TEXT": ("TEXT_LINE",), "CSV": ("CSV_CELL",),
                     "PDF_TEXT_THEN_OCR": ("PDF_TEXT_LINE", "OCR_LINE"),
                     "IMAGE_OCR": ("OCR_LINE",),
                     "DOCX": ("DOCX_PARAGRAPH", "DOCX_TABLE_CELL"),
                     "PPTX": ("PPTX_SHAPE", "PPTX_TABLE_CELL"),
                     "XLSX": ("XLSX_CELL",),
-                }[self.parser_profile] for node in self.nodes)
+                }[self.parser_profile] + (("DOCX_SECTION",) if self.parser_profile == "DOCX"
+                                       and self.parser_version == "2" else ()))
+                       for node in self.nodes)
                 or (any(node.kind == "OCR_LINE" for node in self.nodes)
                     != (self.ocr_model_fingerprint is not None))
                 or (self.ocr_model_fingerprint is not None

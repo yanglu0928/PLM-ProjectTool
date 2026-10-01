@@ -30,7 +30,7 @@ class ParserProfileSelectionTests(unittest.TestCase):
                 plan = choose_parser_profile(source)
                 self.assertIs(plan.source, source)
                 self.assertEqual((plan.parser_profile, plan.ocr_policy), expected)
-                self.assertEqual(plan.parser_version, "1")
+                self.assertEqual(plan.parser_version, "2" if plan.parser_profile == "DOCX" else "1")
                 self.assertIsInstance(plan.component_order, tuple)
                 self.assertGreater(len(plan.component_order), 0)
         self.assertEqual(choose_parser_profile(self.source("image/png")).component_order[0], "PaddleOCR")
