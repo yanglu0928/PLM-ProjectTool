@@ -21,7 +21,7 @@ from smoke_caddy_isolated_layout_https import verify_layout
 
 
 DATABASE_CREDENTIAL_TARGET = "PLMProjectTool/Database"
-PUBLIC_KEY_RELATIVE = "runtime/python/Lib/site-packages/plm_assistant/modules/license/trust/product_public_key.json"
+PUBLIC_KEY_RELATIVE = "runtime/python/packages/plm_assistant/modules/license/trust/product_public_key.json"
 
 
 def database_credential_present() -> bool:

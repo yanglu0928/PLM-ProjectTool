@@ -68,4 +68,6 @@
 
 2026-10-01/P37增量证据：新布局全量Hash后，经新包内Caddy/PG18与临时Vault目标合成HTTPS复跑原生产登录组合，GET9/POST12、Cookie/CSRF/Host/Origin/Session/Project/Audit通过且临时源清理。API对象仍由仓库验证代码装配，非P33随包正式生产模式；目标账户/证书、SCM与法律发行Gate不因此关闭。
 
+2026-10-01/P42增量证据及诊断纠正：原生产预检公钥资源路径误写为`runtime/python/Lib/site-packages`，已按P33嵌入式`runtime/python/packages`修正并回归。固定P33与21,115件初始布局重验后，仅在另建Temp布局注入合成公钥，随包Python实际`--platform-write`进程经临时PG18/包内Caddy HTTPS登录200、Session200、错误Host421/Origin403、无License Project403；临时进程/文件及13个Vault目标清理回读。该测试未供给正式公钥、有效License、目标账户或客户证书，不能关闭正式安装和法律/Gate阻断。
+
 官方依据：[Caddy许可仓库](https://github.com/caddyserver/caddy)、[反向代理及Host处理](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy)、[静态文件](https://caddyserver.com/docs/caddyfile/directives/file_server)、[SPA与API路由](https://caddyserver.com/docs/caddyfile/patterns)、[自有TLS证书](https://caddyserver.com/docs/caddyfile/directives/tls)、[Windows服务](https://caddyserver.com/docs/running)。

@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P42 随包Python生产写模式经包内PG18/Caddy合成HTTPS完成登录200、Session200、错误Host421/Origin403及无License Project403；独立清理临时进程/文件/13个Vault目标，定向8/8。更正预检公钥位置为实际嵌入式`runtime/python/packages`，固定P33候选未改。兼容性：仅Windows11隔离合成验证，无API/Schema/Migration/SCM/正式根变更，`release_eligible=false`。升级说明：无数据迁移，不适用已有安装升级。已知问题：正式公钥/凭据/证书、有效License、法律NOTICE/Ghostscript、Server2025/Debian13及Gate/UAT未验。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P41 新增离线新装统一命令，正式`install`模式真实固定包门禁退出1；`rehearse`在新Temp目标21,115件落地并独立Hash复验，单元6/6。兼容性：仅Windows11非发行编排，无API/Schema/Migration/SCM/正式根变更；Server2025/Debian13未验，`release_eligible=false`。升级说明：不适用于已有安装升级。已知问题：正式安装路径与信任源/法律/目标平台Gate仍未完成。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P40 新装待发布目录增加无敏感数据同卷intent标记，新增只读发现与仅有效未完成残件的可逆隔离；子进程强退恢复等定向6项/P39回归4项及真实P33 21,115件重落地/独立Hash PASS。兼容性：仅Windows11隔离流程，业务API/Schema/Migration/SCM/正式根不变，`release_eligible=false`。升级说明：无迁移、不适用已有安装升级。已知问题：断电耐久性、正式账户/证书/License/法律/平台/Gate未验。
