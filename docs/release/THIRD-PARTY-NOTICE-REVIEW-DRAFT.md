@@ -13,6 +13,8 @@
 |前端|6 份独立许可侧载|逐项核对实际生产依赖与归属通知；当前标记仍是 `REVIEW_REQUIRED`。|
 |原生 OCR 依赖与模型|34 项原生 PE 的来源/许可证据矩阵，Paddle 模型说明文件|34 项 `release_obligations_reviewed` 均为 `NO`；模型与随包字节、归属和通知仍需逐项复核。|
 
+[34 项原生 PE 精确材料映射](../progress/plt-pkg-01-a09-p45-a01-native-pe-review-inputs.md)已确认各二进制字节与来源矩阵一致；矩阵的 61 条许可文本记录未形成候选内的原生组件专属通知。其他 Python 包材料中偶有相同正文，不可替代原生 PE 归属映射。
+
 第三方证据目录共有 190 个文件，其中包括许可证文本、SBOM 与校验文本；“190”不是已审结的许可证数量。源码目录有 Caddy、Go 标准库和 Ghostscript 三份归档。候选字节和数量的复核见 [发行证据差异记录](../progress/plt-pkg-01-a09-p43-a06-release-obligation-delta.md)；[Caddy 149 项审阅队列](../progress/plt-pkg-01-a09-p29-caddy-sbom-review-queue.csv)和[34 项原生 PE 矩阵](../progress/plt-pkg-01-a08-p09-p05-p03-a07-p03-no-jbig-license-evidence.csv)保留逐项来源。
 
 ## Python 通知材料的明确缺口
