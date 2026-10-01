@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P43-A02 经BITS取得并验真Artifex官方Ghostscript 10.08.0源码归档，69,197,208字节/SHA `c20492bc8ebb96c87fa2e52a0926e1cda8cde95d66145e018ac713fed5da38cf`；固定P33谱系/AGPL文本/归档9398项核对PASS，定向3/3。兼容性：仅审计工具，无候选/API/Schema/SCM变更，`release_eligible=false`。升级：无迁移。已知问题：源码未入候选、不可据此推断法律合规；正式信任源、目标平台与Gate仍待。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P43-A01 固定Ghostscript 10.08.0官方Windows x64安装器与同版源码归档SHA-256/来源；两次下载停滞，完整归档未取得，不计源码义务PASS。兼容性：只增来源证据，无包/API/Schema/SCM变化，`release_eligible=false`。升级说明：无迁移。已知问题：对应源码、产品级LICENSE/NOTICE及法律审查、正式信任源/平台/Gate未完成。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P42 随包Python生产写模式经包内PG18/Caddy合成HTTPS完成登录200、Session200、错误Host421/Origin403及无License Project403；独立清理临时进程/文件/13个Vault目标，定向8/8。更正预检公钥位置为实际嵌入式`runtime/python/packages`，固定P33候选未改。兼容性：仅Windows11隔离合成验证，无API/Schema/Migration/SCM/正式根变更，`release_eligible=false`。升级说明：无数据迁移，不适用已有安装升级。已知问题：正式公钥/凭据/证书、有效License、法律NOTICE/Ghostscript、Server2025/Debian13及Gate/UAT未验。
