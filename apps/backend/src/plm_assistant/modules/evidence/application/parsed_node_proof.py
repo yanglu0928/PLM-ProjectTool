@@ -24,6 +24,7 @@ _KIND_LOCATOR = {
     "OCR_LINE": "PAGE",
     "CSV_CELL": "SHEET_RANGE",
     "DOCX_PARAGRAPH": "PARAGRAPH",
+    "DOCX_SECTION": "SECTION",
     "DOCX_TABLE_CELL": "TABLE_CELL",
     "PPTX_SHAPE": "SLIDE_SHAPE",
     "PPTX_TABLE_CELL": "TABLE_CELL",
@@ -32,12 +33,14 @@ _KIND_LOCATOR = {
 _PROFILE_KINDS = {
     "PLAIN_TEXT": frozenset({"TEXT_LINE"}),
     "CSV": frozenset({"CSV_CELL"}),
-    "DOCX": frozenset({"DOCX_PARAGRAPH", "DOCX_TABLE_CELL"}),
+    "DOCX": frozenset({"DOCX_PARAGRAPH", "DOCX_SECTION", "DOCX_TABLE_CELL"}),
     "PPTX": frozenset({"PPTX_SHAPE", "PPTX_TABLE_CELL"}),
     "XLSX": frozenset({"XLSX_CELL"}),
     "PDF_TEXT_THEN_OCR": frozenset({"PDF_TEXT_LINE", "OCR_LINE"}),
     "IMAGE_OCR": frozenset({"OCR_LINE"}),
 }
+_PROFILE_VERSIONS = {profile: frozenset({"1", "2"}) if profile == "DOCX"
+                     else frozenset({"1"}) for profile in _PROFILE_KINDS}
 
 
 class EvidenceNodeProofError(RuntimeError):
@@ -86,7 +89,7 @@ class ParsedNodeEvidenceProofService:
         except EvidenceLocatorError:
             raise EvidenceNodeProofError("EVIDENCE_LOCATOR_INVALID") from None
         kind = canonical["locator_type"]
-        if kind in ("DOCUMENT", "SECTION"):
+        if kind == "DOCUMENT":
             raise EvidenceNodeProofError()
         if kind == "STRUCTURED_NODE":
             if canonical["parse_record_id"] != str(parse_record_id):
@@ -126,7 +129,8 @@ class ParsedNodeEvidenceProofService:
                 or payload.get("parser_profile") != result.parser_profile
                 or payload.get("parser_version") != result.parser_version
                 or type(payload.get("nodes")) is not list
-                or result.parser_profile not in _PROFILE_KINDS):
+                or result.parser_profile not in _PROFILE_KINDS
+                or result.parser_version not in _PROFILE_VERSIONS[result.parser_profile]):
             raise EvidenceNodeProofError()
         matched: list[tuple[str, str]] = []
         seen_ids: set[str] = set()
@@ -147,6 +151,15 @@ class ParsedNodeEvidenceProofService:
                 raise EvidenceNodeProofError() from None
             if source["locator_type"] != _KIND_LOCATOR[node_kind]:
                 raise EvidenceNodeProofError()
+            if node_kind == "DOCX_SECTION":
+                parts = source["section_path"].split("/")
+                if (result.parser_version != "2" or len(parts) != 4
+                        or parts[:2] != ["word", "heading"]
+                        or parts[2] not in tuple(str(level) for level in range(1, 10))
+                        or not parts[3].isascii() or not parts[3].isdecimal()
+                        or str(int(parts[3])) != parts[3] or int(parts[3]) <= 0
+                        or node_id != f"heading:{parts[3]}"):
+                    raise EvidenceNodeProofError()
             if text and source == requested_source and (requested_node is None or node_id == requested_node):
                 matched.append((node_id, text))
         if len(matched) != 1:

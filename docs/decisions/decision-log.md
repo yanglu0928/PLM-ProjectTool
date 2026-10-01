@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261001-576 — Evidence SECTION 仅认固定 DOCX V2 标题节点
+
+- Date/WBS：2026-10-01 / `EVD-01-A03-P02-A02-P03-P04-A04`；输入 `CR-EVD-001` 和已验证的 DOCX Parser V2 `DOCX_SECTION` 节点。
+- Decision：沿现有 Document 受权固定 ParseResult Port 证明 SECTION；仅接受 DOCX Version 2 的 `DOCX_SECTION`、规范 `word/heading/<level>/<paragraph_index>` 路径及一致节点ID，单一匹配才通过。DOCUMENT 仍走原全文证明；旧 V1、普通段落和其他格式 SECTION 失败关闭。
+- Reason/Impact/Rollback：避免空泛 SECTION 标签获得业务证据地位；无公开 API/Schema/权限/依赖变更。停用新分支即可回退，V2 已存结果保留不可改；定向/负例、落盘回查、后端全量和wheel验收。
+
 ## DEC-20261001-575 — DOCX V2 标题节点与独立解析版本
 
 - Date/WBS：2026-10-01 / `EVD-01-A03-P02-A02-P03-P04-A03`；输入 `CR-EVD-001`、Parser V1 profile/result 及 DOCX 抽取器。

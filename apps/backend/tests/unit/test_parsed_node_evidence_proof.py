@@ -36,6 +36,7 @@ class ParsedNodeProofTests(TestCase):
         self.document_id, self.version_id, self.record_id = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
         self.query = DocumentReadQuery(b"s" * 32, uuid.uuid4(), "PROJECT", uuid.uuid4())
         self.profile = "PLAIN_TEXT"
+        self.version = "1"
         self.source = {"locator_type": "TEXT_RANGE", "section_path": "plain-text-root",
                        "start_offset": 0, "end_offset": 5,
                        "normalized_fingerprint": "a" * 64}
@@ -48,10 +49,10 @@ class ParsedNodeProofTests(TestCase):
         source_hash = b"x" * 32
         payload = {"schema_version": "1", "document_version_id": str(self.version_id),
                    "source_sha256": source_hash.hex(), "parser_profile": self.profile,
-                   "parser_version": "1", "nodes": self.nodes}
+                   "parser_version": self.version, "nodes": self.nodes}
         content = json.dumps(payload, separators=(",", ":")).encode()
         return VerifiedParseResult(self.record_id, self.version_id, uuid.uuid4(),
-                                   self.profile, "1", source_hash,
+                                   self.profile, self.version, source_hash,
                                    hashlib.sha256(content).digest(), content)
 
     def prove(self, locator):
@@ -79,12 +80,42 @@ class ParsedNodeProofTests(TestCase):
                 self.prove(item)
             self.assertEqual(caught.exception.code, code)
 
-    def test_unproduced_section_and_document_rejected_before_port(self):
-        for locator in ({"locator_type": "SECTION", "section_path": "A"},
-                        {"locator_type": "DOCUMENT"}):
-            with self.assertRaisesRegex(EvidenceNodeProofError, "EVIDENCE_RESOLUTION_UNAVAILABLE"):
-                self.prove(locator)
+    def test_unproduced_section_and_document_rejected(self):
+        with self.assertRaisesRegex(EvidenceNodeProofError, "EVIDENCE_RESOLUTION_UNAVAILABLE"):
+            self.prove({"locator_type": "DOCUMENT"})
         self.assertEqual(self.port.calls, 0)
+        with self.assertRaisesRegex(EvidenceNodeProofError, "EVIDENCE_RESOLUTION_UNAVAILABLE"):
+            self.prove({"locator_type": "SECTION", "section_path": "A"})
+        self.assertEqual(self.port.calls, 1)
+
+    def test_docx_v2_section_exact_node_only(self):
+        self.profile = "DOCX"
+        self.version = "2"
+        section = {"locator_type": "SECTION", "section_path": "word/heading/2/5"}
+        self.nodes = [{"node_id": "heading:5", "kind": "DOCX_SECTION", "text": "范围",
+                       "source_locator": section}]
+        self.port.value = self._result()
+        self.assertEqual(self.prove(section).node_id, "heading:5")
+        structured = {"locator_type": "STRUCTURED_NODE",
+                      "parse_record_id": str(self.record_id), "node_id": "heading:5",
+                      "source_locator": section}
+        self.assertEqual(self.prove(structured).node_id, "heading:5")
+        for wrong in ({"locator_type": "SECTION", "section_path": "word/heading/2/4"},
+                      {"locator_type": "PARAGRAPH", "paragraph_index": 5}):
+            with self.subTest(wrong=wrong), self.assertRaises(EvidenceNodeProofError):
+                self.prove(wrong)
+        for version, node_id, path in (
+            ("1", "heading:5", section),
+            ("2", "heading:4", section),
+            ("2", "heading:5", {"locator_type": "SECTION", "section_path": "word/heading/0/5"}),
+        ):
+            with self.subTest(version=version, node_id=node_id, path=path):
+                self.version = version
+                self.nodes[0]["node_id"] = node_id
+                self.nodes[0]["source_locator"] = path
+                self.port.value = self._result()
+                with self.assertRaises(EvidenceNodeProofError):
+                    self.prove(path)
 
     def test_wrong_or_ambiguous_position_fails(self):
         wrong = dict(self.source, start_offset=1)

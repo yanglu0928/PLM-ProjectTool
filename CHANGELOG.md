@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/EVD-01-A03-P02-A02-P03-P04-A04 Evidence仅从DOCX V2固定结果中的真实标题节点证明SECTION；合成落盘回查及普通段落拒绝、定向9项、后端1746项（3既有跳过）与wheel通过。兼容性：内部证明扩展，旧V1段落仍可读；公开API/Schema/依赖不变。升级：遵守CR-EVD-001的旧作业静止/排空，无Migration。已知问题：PG跨版共存、真实Session/正式组合和Gate3未验。
+
 - 2026-10-01：0.1.0.dev0/EVD-01-A03-P02-A02-P03-P04-A03 按CR-EVD-001为DOCX新增独立Parser V2内置Heading章节来源节点，保留旧段落和V1结果；落盘DOCX锚点回查、定向10项、后端1745项（3既有跳过）及wheel通过。兼容性：仅内部解析结果版本，公开API/Schema/依赖不变。升级：先静止/排空旧RUNNING Parser尝试；无Migration。已知问题：Evidence SECTION证明、隔离PG跨版共存、正式信任及Gate3仍待。
 
 - 2026-10-01：0.1.0.dev0/EVD-01-A03-P02-A02-P03-P04-A02 只读核查 SECTION 来源缺口并登记 CR-EVD-001，拟用独立 DOCX Parser V2 内置标题节点，保留 V1 历史。兼容性：本项仅文档，无代码/API/Schema变化。升级：无。验证：静态代码与冻结模型核查，未运行新功能测试。已知问题：SECTION 仍未实现，Gate3/发行不变。
