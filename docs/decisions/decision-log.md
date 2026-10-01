@@ -6120,3 +6120,9 @@
 - 理由/影响/回滚/验证计划：直接使整个已部署平台因新增 Evidence 功能缺钥而无法启动会破坏既有能力；仅关闭未完成密钥供给的新能力更符合逐模块交付和安全边界。无 Schema/Migration/API Breaking Change；回滚撤 Evidence 注入，历史记录保留。隔离PG18合成密钥下验真实Session/项目权限与分页；缺钥时 GET404、旧路由不退化。正式目标账户密钥和恢复依旧 Release 阻断，不据合成验收放行Gate3。
 
 - 执行结果：Windows 显式平台读/写模式在 Evidence 密钥可解析时挂载 GET，缺钥仅该 GET404，Document GET200 保持；登录专用模式不挂。隔离PG18合成当前账户密钥、真实Session/Project和Evidence写后读取、CustomerMember降权保留读取、外部用户/License拒绝通过。因只读模式已存在同路径GET，未挂POST时返回标准405而非旧404；方法仍关闭，冻结API明确GET/POST分别受控。临时库/文件停止清理；正式目标账户密钥、Server2025/Debian/Gate3仍未验。
+# DEC-20261001-598：Viewer 必须固定创建时的 ParseRecord
+
+- 来源：`EVD-01-A03-P04-A03-P01` 前置核查；正式偏差见 [CR-EVD-002](../changes/CR-EVD-002-fixed-parse-provenance.md)。
+- 证据：非 `DOCUMENT` 创建需要 `parse_record_id` 并证明，但 Evidence 表未保存；同一 DocumentVersion 允许多次成功解析，最新结果无法作为旧证据的唯一来源。
+- 决定：新增内部 nullable 固定来源列；新非整文档证据同事务持久化，Viewer 只复验该来源；旧无确定来源记录失败关闭，绝不猜测回填。公开冻结 locator/API 不变。
+- 状态：决策已记录，Schema/代码/测试尚未完成；Gate 3 不变。
