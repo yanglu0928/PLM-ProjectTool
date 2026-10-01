@@ -364,6 +364,46 @@ export class SessionClient {
     }
   }
 
+  /** Project Job cancellation: one request only; the receipt is not current Job state proof. */
+  async postProjectJobCancel(projectId: string, jobId: string, etag: string,
+    idempotencyKey: string, reason: string): Promise<Response> {
+    if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
+    if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
+    const normalizedReason = typeof reason === "string" ? reason.trim() : "";
+    if (!identifier(projectId) || !identifier(jobId)
+      || typeof etag !== "string" || !/^"v(?:0|[1-9]\d*)"$/.test(etag)
+      || !Number.isSafeInteger(Number(etag.slice(2, -1)))
+      || Number(etag.slice(2, -1)) >= Number.MAX_SAFE_INTEGER
+      || typeof idempotencyKey !== "string" || !/^[\x20-\x7e]{16,128}$/.test(idempotencyKey)
+      || normalizedReason.length < 1 || normalizedReason.length > 1024
+      || /[\x00-\x1f\x7f]/.test(normalizedReason)) {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    }
+    const body = JSON.stringify({ reason: normalizedReason });
+    if (new TextEncoder().encode(body).length > 8192) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    this.#busy = true;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      const fetcher = this.fetcher;
+      const response = await fetcher(`/api/v1/projects/${projectId}/jobs/${jobId}:cancel`, {
+        method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error",
+        headers: { Accept: "application/json", "Content-Type": "application/json",
+          "X-CSRF-Token": this.#csrf, "Idempotency-Key": idempotencyKey, "If-Match": etag },
+        body, signal: controller.signal,
+      });
+      if (controller.signal.aborted) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+      if (response.status === 401) { this.#csrf = null; this.#view = null; }
+      return response;
+    } catch {
+      // An uncertain cancellation may already be committed; retain original Key/ETag with the caller.
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    } finally {
+      window.clearTimeout(timer);
+      this.#busy = false;
+    }
+  }
+
   async postProjectMemberCreate(projectId: string, body: string, idempotencyKey: string): Promise<Response> {
     if (!identifier(projectId)) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
     return this.#postCommand(`/api/v1/projects/${projectId}/members`, body, idempotencyKey, 8192);

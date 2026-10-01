@@ -698,6 +698,77 @@ describe("SessionClient", () => {
     expect(api.canSubmit).toBe(true);
   });
 
+  it("posts Project Job cancel with private CSRF, original version, key and bounded reason", async () => {
+    const receipt = response({ job_id: id, state: "CANCEL_REQUESTED", etag: '"v2"' });
+    const { api, fetcher } = client(response(session()), receipt);
+    await api.login("manager", "synthetic-only");
+    const key = "synthetic-job-cancel-0001";
+    await expect(api.postProjectJobCancel(projectId, id, '"v1"', key, "  用户请求取消  ")).resolves.toBe(receipt);
+    expect(fetcher.mock.calls[1]).toEqual([`/api/v1/projects/${projectId}/jobs/${id}:cancel`, {
+      method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error",
+      headers: { Accept: "application/json", "Content-Type": "application/json", "X-CSRF-Token": token,
+        "Idempotency-Key": key, "If-Match": '"v1"' },
+      body: JSON.stringify({ reason: "用户请求取消" }), signal: expect.any(AbortSignal),
+    }]);
+    expect(JSON.stringify(api)).not.toContain(token);
+  });
+
+  it("rejects invalid Project Job cancellation inputs without network", async () => {
+    const { api, fetcher } = client(response(session()));
+    await api.login("manager", "synthetic-only");
+    const key = "synthetic-job-cancel-0001";
+    for (const [project, job, etag, operation, reason] of [
+      ["../other", id, '"v1"', key, "reason"],
+      [projectId, id.toUpperCase(), '"v1"', key, "reason"],
+      [projectId, id, 'W/"v1"', key, "reason"],
+      [projectId, id, '"v9007199254740991"', key, "reason"],
+      [projectId, id, '"v1"', "short", "reason"],
+      [projectId, id, '"v1"', key, "  "],
+      [projectId, id, '"v1"', key, "reason\ninside"],
+      [projectId, id, '"v1"', key, "x".repeat(1025)],
+    ]) {
+      await expect(api.postProjectJobCancel(project, job, etag, operation, reason))
+        .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    }
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("requires a write session and clears it on 401, but retains it after an unknown result", async () => {
+    const readOnly = session(); delete (readOnly as Partial<typeof readOnly>).csrf_token;
+    const { api: viewer, fetcher: viewerFetcher } = client(response(readOnly));
+    await viewer.current();
+    await expect(viewer.postProjectJobCancel(projectId, id, '"v1"', "synthetic-job-cancel-0001", "reason"))
+      .rejects.toMatchObject({ code: "AUTH_RELOGIN_REQUIRED" });
+    expect(viewerFetcher).toHaveBeenCalledTimes(1);
+    const { api, fetcher } = client(response(session()), new Response("{}", { status: 503 }),
+      new Response("{}", { status: 401 }));
+    await api.login("manager", "synthetic-only");
+    await api.postProjectJobCancel(projectId, id, '"v1"', "synthetic-job-cancel-0001", "reason");
+    expect(api.canSubmit).toBe(true);
+    await api.postProjectJobCancel(projectId, id, '"v1"', "synthetic-job-cancel-0001", "reason");
+    expect(api.canSubmit).toBe(false);
+    expect(api.view).toBeNull();
+    expect(fetcher).toHaveBeenCalledTimes(3);
+  });
+
+  it("does not overlap or retry a timed-out Project Job cancellation", async () => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn().mockResolvedValueOnce(response(session()))
+      .mockImplementationOnce((_path: string, options: RequestInit) => new Promise((_done, reject) => {
+        options.signal?.addEventListener("abort", () => reject(new Error("synthetic timeout")));
+      }));
+    const api = new SessionClient(fetcher as typeof fetch, 100);
+    await api.login("manager", "synthetic-only");
+    const pending = expect(api.postProjectJobCancel(projectId, id, '"v1"', "synthetic-job-cancel-0001", "reason"))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    await expect(api.postProjectJobCancel(projectId, id, '"v1"', "synthetic-job-cancel-0001", "reason"))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_BUSY" });
+    await vi.advanceTimersByTimeAsync(101);
+    await pending;
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(api.canSubmit).toBe(true);
+  });
+
   it("posts only the target Project Member create endpoint with private CSRF and caller key", async () => {
     const created = response({ member_id: id }, 201);
     const { api, fetcher } = client(response(session()), created);
