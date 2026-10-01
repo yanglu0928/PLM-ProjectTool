@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/EVD-01-A03-P02-A02 只读复查 Parser→Evidence 精确定位前置，纠正下一 WBS：Parser 输入/结果链已存在，剩余关键缺口是 Document 所有的受权固定 ParseResult 读取 Port。兼容性：仅进度文档，无代码/API/Schema/发行包变化。升级：无。验证：静态核查；新行为测试未运行。已知问题：SECTION/STRUCTURED_NODE 与各型真实证明、Gate3仍待。
+
 - 2026-10-01：0.1.0.dev0/POC-03-R12-A01 为新留出集选材增加旧 50 条来源锁的 ChunkId、正文指纹及定位排重，缺字段失败关闭；单元 6/6 PASS。本地真实选材因合同 0/7、技术协议 1/8 缺口按预期 FAIL，未生成新锁或质量结果。兼容性：仅 PoC 辅助工具，无生产 API/Schema/发行包变更。升级：无迁移。已知问题：新材料、人工确认、当轮外发授权及 Gate 3 质量复验仍待，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P46-A02 将固定P45候选的原生OCR许可审阅输入44源文件/354,131字节及P45专属NOTICE草案同步至仓库；42文本/61映射逐条Hash回读无误，导出工具单元2/2、真实退出0。兼容性：仅审阅材料与工具，无发行ZIP/API/Schema/Migration/SCM变化，`release_eligible=false`。升级：无迁移。已知问题：产品最终LICENSE/NOTICE及法律审结、正式信任源、目标平台/Gate仍待。

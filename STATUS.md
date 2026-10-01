@@ -14,7 +14,7 @@
 |DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；原冻结64cdf09保留；增量至`20260930_0051` Platform 维护状态（CR-PLT-004），原0050 Parser 取消快照保留；无生产迁移|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
 |Test Summary|DOC05A05-P07 三视图定向26、前端全量970项/typecheck/build PASS；DOC05A05-P06 定向44、前端全量960项/typecheck/build PASS；DOC05A05-P05 定向149、前端全量916项/typecheck/build PASS；DOC05A05-P04 定向30、前端全量910项/typecheck/build PASS；DOC05A05-P03 定向143、前端全量880项/typecheck/build PASS；DOC05A05-P02 定向31、前端全量876项/typecheck/build PASS；DOC05A05-P01 SessionClient 定向139、前端全量845项/typecheck/build PASS；A05真实浏览器/PG审计、A06 Auth UTC-Z真实网络与后端1558无失败/2跳过、A07导航浏览器；A08-P02前端85及真实PG改密HTTP内部链通过、浏览器最终提交待人工；A09前端86跨路由合同；PRJ05A01客户端123、A02列表131、A03详情139；A04真实浏览器及独立HTTP/PG合成读链通过；PRJ05A05-P01前端147桥接、P02前端173创建客户端、P03-A01候选读取205、P03-A02创建页面212/typecheck/build合同；P04真实IAB/PG创建通过。AUT05A10-P01前端219私有User写桥接、P02前端249安全客户端、P03前端258页面合同；P04-A01隔离ASGI/PG写链通过。AUT05A11-P01前端265/typecheck/build用户只读页合同通过，P02 Windows11本机合成浏览器/PG匿名/普通用户拦截、Admin两用户列表/刷新及临时资源清理通过。AUT05A12-P01前端271状态传输合同，P02前端292状态响应合同，P03前端309详情强ETag合同，P04前端320/typecheck/build启停页面合同通过；P05-A01实际Windows11隔离ASGI/PG User启停/会话/历史重放和临时源清理exit0（首轮PG服务停止，恢复后重跑）。AUT05A13-P01～P03前端362/typecheck/build，P04隔离浏览器同用户改名v0→v1、旧名拒绝/新名登录及SQL一审计、临时清理和原只读API回归exit0（首轮PG服务停止，恢复后重跑）。新凭据浏览器提交待人工，正式HTTPS/信任/性能/三平台/全UAT仍未验，CR008 FAIL/Gate/包待|
-|Next WBS|`PAR-01-A02` 推进不依赖新质量集的受权固定版本 Parser 输入 Port 与真实文件复验；`POC-03-R12` 待新增合格合同/技术协议材料后重试，外部模型调用需当轮授权|
+|Next WBS|`EVD-01-A03-P02-A02-P01` 建立 Document 所有的受权固定 ParseResult 读取 Port，供 Evidence 后续精确定位证明；`POC-03-R12` 待新增合格合同/技术协议材料后重试，外部模型调用需当轮授权|
 
 ## 自动执行策略
 
@@ -24,6 +24,8 @@
 - GitHub：允许在当前 Scope 和正确分支内自动 fetch、commit、push；禁止 force push、直接提交 main、覆盖未知远端修改或提交 Secret/客户数据。
 
 ## 最近检查点
+
+- 2026-10-01/EVD-01-A03-P02-A02 只读复核旧前置：Parser 规范节点/私有结果与Document成功记录已存在，旧“尚无正式Parser结果”证据过时；Evidence仍只有DOCUMENT全文证明，缺受权固定结果读取Port，SECTION未独立发出。仅更新后续任务，不将精确定位或Gate3记PASS。
 
 - 2026-10-01/POC-03-R12-A01 旧50条来源锁的ChunkId/正文指纹/同文档定位已纳入新选材排重，单元6/6 PASS；真实本地选材识别803已见ChunkId，标准能力423/33、实际调研325/2，但合同0/7、技术协议1/8，按预期FAIL、未写新锁；无客户数据外发。Gate 3/质量保持OPEN，独立Phase2工作继续。
 
