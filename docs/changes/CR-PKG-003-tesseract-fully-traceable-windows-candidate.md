@@ -23,3 +23,5 @@ CR-PKG-001 原优先评估 Tesseract 官方 5.5.3 Windows 安装资产。本机�
 ## 非发行验证进展
 
 2026-10-01 A05 在 Windows 11 固定包 Hash、35 个本地 PE 静态闭包和四版面 PDF/A-2b/`--deskew` 合成术语 20/20 PASS；定向篡改拒绝和不可覆盖旧输出 2 项 PASS。详见 [A05 记录](../progress/plt-pkg-01-a08-p09-p05-p03-a05-msys2-tesseract-poc.md)。这仅满足方案 B 的第一阶段，不改变本 CR 的 `RELEASE_DECISION_OPEN`；许可/动态依赖/签名/真实质量/目标系统仍待。
+
+2026-10-01 A06-P01 建立 35 项许可证据矩阵：32 项包内文本 Hash 重核、3 项 A04 源码文本引用，所有发行义务仍为 `NO`。详见 [A06-P01 记录](../progress/plt-pkg-01-a08-p09-p05-p03-a06-p01-license-evidence.md)；不得据此将方案 B 标记为发行许可通过。
