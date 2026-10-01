@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/EVD-01-A03-P04-A03-P05-P01 新增可选冻结 EVIDENCE_VIEWER GET 的安全投影、项目/全局相对受权内容 URL 与失败关闭错误映射。兼容性：默认未挂载，既有 API/Schema 不变。升级：须在真实授权组合中注入 Viewer/Document 下载服务。验证：3项 HTTP 合同、后端1,776项（3既有跳过）、wheel SHA-256 `6f2a1cdc…` PASS。已知问题：真实PG链、Windows显式组合和浏览器内定位尚未验；当前 content URL 对应附件下载，非精确高亮。
+
 - 2026-10-01：0.1.0.dev0/EVD-01-A03-P04-A03-P04 增加内部受权 Viewer descriptor，固定 DocumentVersion/ParseRecord 并重新证明位置与内容指纹；缺来源或撤销源失败关闭。兼容性：无公开 API/Schema 变化；升级：使用前须先升至0052并装配当前权限/Document证明服务。验证：4项定向、后端1,773项（3既有跳过）、wheel SHA-256 `c9dd8793…` PASS。已知问题：公开 Viewer HTTP、真实PG集成、浏览器定位、正式账户/目标平台及Gate3未通过。
 
 - 2026-10-01：0.1.0.dev0/EVD-01-A03-P04-A03-P02～P03 按 CR-EVD-002 新增 Evidence 内部固定 ParseRecord 引用、0052 迁移和创建/重放一致性检查。兼容性：冻结公开 API 不变；旧 Evidence 不改写，旧无确定来源的 Viewer 仍关闭。升级：只在隔离 PG18 验证空/有数据 up/down；存在新来源历史时降级拒绝，正式库迁移前须停写/备份/演练。验证：隔离 PG18 Schema/Windows 写后读与节点同 Key 重放、后端1,769项（3既有跳过）、wheel SHA-256 `e07221c4…` PASS。已知问题：Viewer 尚未实现，正式目标账户、Server2025/Debian及Gate3未通过。

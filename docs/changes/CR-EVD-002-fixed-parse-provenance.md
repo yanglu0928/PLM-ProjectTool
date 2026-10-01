@@ -25,3 +25,5 @@
 执行 ORM/Alembic up/down、空库/有数据迁移、外键/状态/不可变保护、创建同事务/幂等重放、跨批次与跨项目失败关闭、Document 撤销与源字节/ParseResult 篡改失败关闭、后端回归和 wheel。随后单独实现内部 Viewer descriptor、可选 HTTP、Windows 组合与前端定位。旧非结构化证据仍可能没有可恢复的解析来源；Viewer 返回稳定不可用错误，不猜测。正式运行账户、Server 2025/Debian、真实文档、性能和 Gate 3 仍需各自证据。
 
 2026-10-01 检查点：`0052`/ORM、创建与重放已实施；隔离 PostgreSQL 18 空/有数据 up/down、旧行不变、新写入来源约束与危险降级拒绝、Windows 合成 Session/Project 的整文档及文本节点写后读/同 Key 重放、后端 1,769 项（3 既有跳过）及 wheel SHA-256 `e07221c4…` 通过。内部 Viewer 编排随后通过 4 项定向及后端 1,773 项（3 既有跳过）、wheel SHA-256 `c9dd8793…`，但真实 PostgreSQL Viewer/公开 HTTP/浏览器、正式目标账户或生产迁移尚未验证，本 CR 保持 OPEN。
+
+后续可选 Viewer HTTP 合同已通过 3 项定向、后端 1,776 项（3 既有跳过）和 wheel SHA-256 `6f2a1cdc…`；默认仍关闭。它返回已有受权内容接口的相对 URL，而该接口目前按附件下载，不能据此宣称浏览器内精确定位。真实 PostgreSQL/Windows 显式装配与前端仍待，本 CR 保持 OPEN。
