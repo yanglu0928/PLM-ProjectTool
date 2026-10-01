@@ -7,12 +7,16 @@ import { sessionClientKey } from "@/modules/auth/api/sessionContext";
 import { EvidenceListClient, EvidenceListError, type EvidenceSummary } from "@/modules/evidence/api/evidenceListClient";
 import { EvidenceViewerClient, EvidenceViewerClientError,
   type EvidenceViewerDescriptor } from "@/modules/evidence/api/evidenceViewerClient";
+import { EvidenceEligibilityClient, EvidenceEligibilityClientError,
+  type CurrentEvidenceEligibility, type EvidenceEligibilityFirstReceipt } from "@/modules/evidence/api/evidenceEligibilityClient";
 
 const props = defineProps<{ session?: SessionClient; listClient?: EvidenceListClient;
-  viewerClient?: EvidenceViewerClient; previewFetch?: typeof fetch }>();
+  viewerClient?: EvidenceViewerClient; eligibilityClient?: EvidenceEligibilityClient;
+  previewFetch?: typeof fetch }>();
 const session = toRaw(props.session ?? inject(sessionClientKey, null) ?? new SessionClient());
 const lists = toRaw(props.listClient ?? new EvidenceListClient());
 const viewers = toRaw(props.viewerClient ?? new EvidenceViewerClient());
+const eligibility = toRaw(props.eligibilityClient ?? new EvidenceEligibilityClient(session));
 const previewFetch = props.previewFetch ?? fetch;
 const identity = session.view;
 const route = useRoute();
@@ -27,6 +31,16 @@ const selectedError = ref("");
 const pdfUrl = ref<string | null>(null);
 const previewBusy = ref(false);
 const previewError = ref("");
+const decisionCurrent = ref<CurrentEvidenceEligibility | null>(null);
+const decisionTarget = ref<"ELIGIBLE" | "INELIGIBLE" | null>(null);
+const decisionReason = ref("");
+const decisionAttested = ref(false);
+const decisionBusy = ref(false);
+const decisionError = ref("");
+const decisionReceipt = ref<EvidenceEligibilityFirstReceipt | null>(null);
+const decisionKey = ref<string | null>(null);
+const decisionUncertain = ref(false);
+const unresolved = ref<{ actorId: string; projectId: string; evidenceId: string; key: string } | null>(null);
 let generation = 0;
 let selectionGeneration = 0;
 let previewGeneration = 0;
@@ -41,9 +55,78 @@ function mayRead(): boolean {
 function clearSelection() {
   selectionGeneration += 1;
   clearPreview();
+  clearDecision();
   selected.value = null;
   selectedBusy.value = null;
   selectedError.value = "";
+}
+function clearDecision() {
+  decisionCurrent.value = null; decisionTarget.value = null; decisionReason.value = "";
+  decisionAttested.value = false; decisionBusy.value = false;
+  decisionError.value = ""; decisionReceipt.value = null;
+  decisionKey.value = null; decisionUncertain.value = false;
+}
+function mayDecide(): boolean {
+  const project = projectId();
+  const role = identity?.authorized_projects.find((entry) => entry.project_id === project)?.role;
+  return mayRead() && !!selected.value && (role === "PROJECT_MANAGER" || role === "CUSTOMER_MANAGER")
+    && !(unresolved.value?.projectId === project
+      && unresolved.value.actorId === session.view?.user.user_id)
+    && items.value.some((item) => item.evidence_id === selected.value?.evidence_id
+      && item.eligibility_state === "CANDIDATE");
+}
+async function prepareDecision() {
+  const view = selected.value;
+  if (!mayDecide() || !view || decisionBusy.value || decisionUncertain.value) return;
+  const currentSelection = selectionGeneration;
+  const project = projectId();
+  decisionBusy.value = true; decisionError.value = ""; decisionReceipt.value = null;
+  try {
+    const current = await eligibility.current(project, view.evidence_id);
+    if (!mounted || currentSelection !== selectionGeneration || projectId() !== project
+      || selected.value !== view || !mayRead()) return;
+    if (current.document_id !== view.document_id
+      || current.document_version_id !== view.document_version_id
+      || current.eligibility_state !== "CANDIDATE") {
+      throw new EvidenceEligibilityClientError("EVIDENCE_ELIGIBILITY_INVALID");
+    }
+    decisionCurrent.value = current;
+  } catch (failure) {
+    if (mounted && currentSelection === selectionGeneration) {
+      decisionError.value = failure instanceof EvidenceEligibilityClientError
+        ? failure.message : "暂时无法准备资格确认，请重新核对原文。";
+    }
+  } finally { if (mounted && currentSelection === selectionGeneration) decisionBusy.value = false; }
+}
+async function submitDecision() {
+  const view = selected.value;
+  const before = decisionCurrent.value;
+  const target = decisionTarget.value;
+  const justification = decisionReason.value;
+  if (!mayDecide() || !view || !before || !target || !decisionAttested.value
+    || decisionBusy.value || decisionUncertain.value || !session.canSubmit) return;
+  const project = projectId();
+  const currentSelection = selectionGeneration;
+  const key = crypto.randomUUID();
+  decisionKey.value = key; decisionBusy.value = true; decisionError.value = "";
+  try {
+    const receipt = await eligibility.set(project, before, view, target, justification, key);
+    if (!mounted || currentSelection !== selectionGeneration || projectId() !== project
+      || selected.value !== view || !mayRead()) return;
+    decisionReceipt.value = receipt; decisionCurrent.value = null;
+    unresolved.value = null;
+  } catch (failure) {
+    if (mounted && currentSelection === selectionGeneration) {
+      decisionError.value = failure instanceof EvidenceEligibilityClientError
+        ? failure.message : "资格提交结果暂无法确认，请核对当前状态和审计。";
+      decisionUncertain.value = !(failure instanceof EvidenceEligibilityClientError)
+        || failure.code === "EVIDENCE_ELIGIBILITY_UNCERTAIN";
+      if (decisionUncertain.value) unresolved.value = {
+        actorId: identity!.user.user_id, projectId: project, evidenceId: before.evidence_id, key,
+      };
+      else decisionKey.value = null;
+    }
+  } finally { if (mounted && currentSelection === selectionGeneration) decisionBusy.value = false; }
 }
 function clearPreview() {
   previewGeneration += 1;
@@ -142,6 +225,7 @@ async function locate(item: EvidenceSummary) {
   if (!mayRead() || !items.value.some((entry) => entry.evidence_id === item.evidence_id)) return;
   const project = projectId();
   clearPreview();
+  clearDecision();
   const current = ++selectionGeneration;
   selected.value = null; selectedError.value = ""; selectedBusy.value = item.evidence_id;
   try {
@@ -213,6 +297,11 @@ onUnmounted(() => { mounted = false; generation += 1; clearSelection(); });
         </li>
       </ol>
       <button v-if="cursor" type="button" :disabled="busy" @click="load()">继续加载证据</button>
+      <p v-if="unresolved && unresolved.projectId === projectId()
+        && unresolved.actorId === session.view?.user.user_id" role="alert">
+        一项资格提交结果尚未确认（证据 {{ unresolved.evidenceId }}，操作号 {{ unresolved.key }}）。
+        刷新列表后提醒仍保留；请核对当前资格与审计，勿换新操作号重复提交。
+      </p>
       <p v-if="selectedError" role="alert">{{ selectedError }}</p>
       <section v-if="selected" aria-labelledby="evidence-location-title">
         <h2 id="evidence-location-title">已核验的原文位置</h2>
@@ -235,6 +324,34 @@ onUnmounted(() => { mounted = false; generation += 1; clearSelection(); });
         <p><a :href="selected.content_url">下载固定版本原文</a></p>
         <p><RouterLink :to="{ name: 'project-document-detail', params: {
           projectId: route.params.projectId, documentId: selected.document_id } }">查看文档版本历史</RouterLink></p>
+        <section v-if="mayDecide()" aria-labelledby="evidence-decision-title">
+          <h3 id="evidence-decision-title">人工核定证据资格</h3>
+          <p>先核对上方固定版本原文。业务表单模板只能作结构或问题参考，不能独立确认为客户现状；AI 建议和短提示均不是正式事实。</p>
+          <button v-if="!decisionCurrent && !decisionReceipt && !decisionUncertain" type="button"
+            :disabled="decisionBusy" @click="prepareDecision()">
+            {{ decisionBusy ? '正在读取当前资格…' : '准备人工确认' }}
+          </button>
+          <form v-if="decisionCurrent" @submit.prevent="submitDecision()">
+            <p>当前资格：待核定。请根据原文决定，说明具体核对依据；不要仅填写“已确认”。</p>
+            <fieldset :disabled="decisionBusy || decisionUncertain">
+              <legend>资格结论</legend>
+              <label><input v-model="decisionTarget" type="radio" value="ELIGIBLE"> 可用：已核对实际来源</label>
+              <label><input v-model="decisionTarget" type="radio" value="INELIGIBLE"> 不可用：来源或用途不足</label>
+            </fieldset>
+            <label for="evidence-decision-reason">人工确认理由</label>
+            <textarea id="evidence-decision-reason" v-model="decisionReason" maxlength="1024" rows="4"
+              placeholder="写明核对的实际调研记录、具体位置及可用/不可用原因；如与模板冲突，请说明实际记录。" />
+            <label><input v-model="decisionAttested" type="checkbox"> 我已核对固定版本原文，以上是我的人工判断</label>
+            <button type="submit" :disabled="decisionBusy || decisionUncertain || !decisionTarget
+              || !decisionAttested || !decisionReason.trim() || !session.canSubmit">
+              {{ decisionBusy ? '正在提交…' : '提交资格裁定' }}
+            </button>
+          </form>
+          <p v-if="decisionReceipt" role="status">首次提交回执：{{ decisionReceipt.eligibility_state === 'ELIGIBLE' ? '可用' : '不可用' }}。
+            回执不代表当前状态；请刷新证据列表并核对审计。</p>
+          <p v-if="decisionError" role="alert">{{ decisionError }}</p>
+          <p v-if="decisionUncertain && decisionKey" role="status">本次操作号：{{ decisionKey }}。请先重新读取资格和审计；不要换新操作号重复提交。</p>
+        </section>
       </section>
     </template>
   </section>
@@ -250,4 +367,6 @@ onUnmounted(() => { mounted = false; generation += 1; clearSelection(); });
 .evidence-list dd { margin: 0; overflow-wrap: anywhere; }
 .evidence-list [role="alert"] { color: #a21d25; }
 .pdf-preview { width: 100%; height: 36rem; border: 1px solid #b7c4d3; }
+.evidence-list fieldset { display: grid; gap: .5rem; margin: 1rem 0; }
+.evidence-list textarea { display: block; width: 100%; max-width: 100%; margin: .5rem 0 1rem; }
 </style>
