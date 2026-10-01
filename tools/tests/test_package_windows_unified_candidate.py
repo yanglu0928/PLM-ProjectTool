@@ -58,6 +58,8 @@ class UnifiedCandidateTests(unittest.TestCase):
             }))
             (root / "third-party-inventory.json").write_text("{}")
             self.assertEqual(verify(root)["status"], "CLEAN_EXTRACT_HASH_PASS")
+            with self.assertRaisesRegex(ValueError, "not a non-release"):
+                verify(root, expected_kind="WINDOWS11_UNIFIED_NOTICED_DEVELOPMENT_CANDIDATE")
             payload.write_bytes(b"tampered")
             with self.assertRaisesRegex(ValueError, "hash mismatch"):
                 verify(root)

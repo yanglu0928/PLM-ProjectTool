@@ -11,15 +11,21 @@ from pathlib import Path
 
 from package_windows_unified_candidate import safe_name
 
+ALLOWED_KINDS = {
+    "WINDOWS11_UNIFIED_DEVELOPMENT_CANDIDATE",
+    "WINDOWS11_UNIFIED_NOTICED_DEVELOPMENT_CANDIDATE",
+}
 
 def windows_long_path(path: Path) -> str:
     absolute = str(path.resolve())
     return "\\\\?\\" + absolute if os.name == "nt" and not absolute.startswith("\\\\?\\") else absolute
 
 
-def verify(root: Path) -> dict:
+def verify(root: Path, *, expected_kind: str = "WINDOWS11_UNIFIED_DEVELOPMENT_CANDIDATE") -> dict:
+    if expected_kind not in ALLOWED_KINDS:
+        raise ValueError("unknown candidate kind")
     manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
-    if manifest.get("kind") != "WINDOWS11_UNIFIED_DEVELOPMENT_CANDIDATE" or manifest.get("release_eligible") is not False:
+    if manifest.get("kind") != expected_kind or manifest.get("release_eligible") is not False:
         raise ValueError("not a non-release unified candidate")
     lines = (root / "payload-sha256sums.txt").read_text(encoding="ascii").splitlines()
     expected: dict[str, str] = {}
@@ -50,8 +56,10 @@ def verify(root: Path) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", required=True, type=Path)
+    parser.add_argument("--expected-kind", choices=sorted(ALLOWED_KINDS),
+                        default="WINDOWS11_UNIFIED_DEVELOPMENT_CANDIDATE")
     args = parser.parse_args()
-    print(json.dumps(verify(args.root), ensure_ascii=False))
+    print(json.dumps(verify(args.root, expected_kind=args.expected_kind), ensure_ascii=False))
     return 0
 
 
