@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261001-574 — 多页 PDF 中文扫描页定位验证
+
+- Date/WBS：2026-10-01 / `EVD-01-A03-P02-A02-P03-P04-A01`；输入原生文本 PDF P01 和真实离线 OCR P02 合成验收、冻结 Evidence PAGE/TEXT_RANGE 契约。
+- Decision：用临时合成 PDF 的一页原生文字与一页中文扫描图验证逐页分流、中文 OCR 与 PAGE 坐标；使用现有离线模型临时 ASCII 副本，不下载、不触碰客户材料。SECTION 是缺乏来源节点的独立问题，另列后续任务。
+- Reason/Impact/Rollback：防止单页英文 OCR 结果被外推到常见中文多页文档。只增验证脚本与记录，无生产 API/Schema/权限/依赖变更；删临时文件即可回退，识别失败则登记实际结果并调整测试覆盖，不虚报质量。
+
 ## DEC-20261001-573 — 离线 OCR 合成来源定位验证
 
 - Date/WBS：2026-10-01 / `EVD-01-A03-P02-A02-P03-P03-P02`；输入既有 PP-OCRv5 离线适配器、Parser OCR 节点、Evidence 固定结果证明和原生 PDF P01 PASS。
