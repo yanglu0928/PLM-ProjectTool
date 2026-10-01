@@ -6126,3 +6126,10 @@
 - 证据：非 `DOCUMENT` 创建需要 `parse_record_id` 并证明，但 Evidence 表未保存；同一 DocumentVersion 允许多次成功解析，最新结果无法作为旧证据的唯一来源。
 - 决定：新增内部 nullable 固定来源列；新非整文档证据同事务持久化，Viewer 只复验该来源；旧无确定来源记录失败关闭，绝不猜测回填。公开冻结 locator/API 不变。
 - 状态：决策已记录，Schema/代码/测试尚未完成；Gate 3 不变。
+
+# DEC-20261001-599：模板 Evidence 首版资格必须按来源用途保守处理
+
+- 来源：`EVD-01-A04-P01` 编码前核查；正式偏差见 [CR-EVD-003](../changes/CR-EVD-003-template-eligibility-context.md)。
+- 证据：冻结模型禁止模板独立成为客户事实，冻结资格 API 却没有 Binding 用途；当前 Evidence 事务也缺受权 Document 类别/固定版本 Port。
+- 决定：先补 Document 同事务来源事实 Port。首版模板只保留候选/结构参考或判为不合格，不允许直接升为 ELIGIBLE；非模板资格必须复验当前来源、权限与固定版本。原冻结提交不追写，后续实现和验收分别登记。
+- 影响/回滚：不变更公开 API 或现有行；后续若有历史模板 ELIGIBLE，只读清点并人工复核，不自动改写。可关闭尚未开放的资格路由，保留审计历史。当前仅完成决策，Gate 3 不变。
