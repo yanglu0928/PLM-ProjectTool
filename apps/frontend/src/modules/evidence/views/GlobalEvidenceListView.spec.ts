@@ -1,6 +1,6 @@
 import { flushPromises, mount } from "@vue/test-utils";
 import { createMemoryHistory } from "vue-router";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createAppRouter } from "@/app/router";
 import { SessionClient } from "@/modules/auth/api/sessionClient";
@@ -46,6 +46,84 @@ async function view(admin: boolean, lists: object, viewers: object, eligibility:
 }
 
 describe("GlobalEvidenceListView", () => {
+  afterEach(() => { vi.restoreAllMocks(); window.sessionStorage.clear(); });
+
+  it("saves a global operation key before the human POST and clears it on a verified receipt", async () => {
+    const lists = { list: vi.fn().mockResolvedValue({ items: [item], next_cursor: null, has_more: false }) };
+    const viewers = { get: vi.fn().mockResolvedValue(descriptor) };
+    const eligibility = { currentGlobal: vi.fn().mockResolvedValue({ evidence_id: evidenceId,
+      document_id: documentId, document_version_id: versionId,
+      eligibility_state: "CANDIDATE", etag: '"v0"' }),
+    setGlobal: vi.fn().mockImplementation(async () => {
+      expect(window.sessionStorage.length).toBe(1);
+      return { evidence_id: evidenceId, eligibility_state: "ELIGIBLE",
+        eligibility_reason: "核对标准说明第2页", etag: '"v1"', is_current_state_proof: false };
+    }) };
+    const wrapper = await view(true, lists, viewers, eligibility);
+    await wrapper.findAll("button").find((button) => button.text() === "定位固定原文")!.trigger("click");
+    await flushPromises();
+    const submit = wrapper.findAll("button").find((button) => button.text() === "提交资格裁定")!;
+    expect(submit.attributes("disabled")).toBeDefined();
+    await wrapper.find('input[value="ELIGIBLE"]').setValue();
+    await wrapper.get("textarea").setValue("核对标准说明第2页");
+    await wrapper.find('input[type="checkbox"]').setValue(true);
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+    expect(eligibility.setGlobal).toHaveBeenCalledOnce();
+    expect(eligibility.setGlobal.mock.calls[0]?.[0]).toMatchObject({ etag: '"v0"' });
+    expect(eligibility.setGlobal.mock.calls[0]?.[1]).toEqual(descriptor);
+    expect(eligibility.setGlobal.mock.calls[0]?.[4]).toMatch(/^[\x20-\x7e]{16,128}$/);
+    expect(window.sessionStorage.length).toBe(0);
+    expect(wrapper.text()).toContain("回执不代表当前状态");
+    wrapper.unmount();
+  });
+
+  it("retains an uncertain global key across a page reload and blocks new decisions", async () => {
+    const lists = { list: vi.fn().mockResolvedValue({ items: [item], next_cursor: null, has_more: false }) };
+    const viewers = { get: vi.fn().mockResolvedValue(descriptor) };
+    const eligibility = { currentGlobal: vi.fn().mockResolvedValue({ evidence_id: evidenceId,
+      document_id: documentId, document_version_id: versionId,
+      eligibility_state: "CANDIDATE", etag: '"v0"' }),
+    setGlobal: vi.fn().mockRejectedValue(new Error("network gone")) };
+    const wrapper = await view(true, lists, viewers, eligibility);
+    await wrapper.findAll("button").find((button) => button.text() === "定位固定原文")!.trigger("click");
+    await flushPromises();
+    await wrapper.find('input[value="INELIGIBLE"]').setValue();
+    await wrapper.get("textarea").setValue("实际来源不支持");
+    await wrapper.find('input[type="checkbox"]').setValue(true);
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+    expect(wrapper.text()).toContain("结果尚未确认");
+    expect(window.sessionStorage.length).toBe(1);
+    wrapper.unmount();
+    const reloaded = await view(true, lists, viewers, eligibility);
+    expect(reloaded.text()).toContain("一项 GLOBAL 资格操作结果尚未确认");
+    await reloaded.findAll("button").find((button) => button.text() === "定位固定原文")!.trigger("click");
+    await flushPromises();
+    expect(reloaded.find("form").exists()).toBe(false);
+    expect(eligibility.setGlobal).toHaveBeenCalledOnce();
+    reloaded.unmount();
+  });
+
+  it("does not send a global decision when operation storage fails", async () => {
+    const lists = { list: vi.fn().mockResolvedValue({ items: [item], next_cursor: null, has_more: false }) };
+    const viewers = { get: vi.fn().mockResolvedValue(descriptor) };
+    const eligibility = { currentGlobal: vi.fn().mockResolvedValue({ evidence_id: evidenceId,
+      document_id: documentId, document_version_id: versionId,
+      eligibility_state: "CANDIDATE", etag: '"v0"' }), setGlobal: vi.fn() };
+    const wrapper = await view(true, lists, viewers, eligibility);
+    await wrapper.findAll("button").find((button) => button.text() === "定位固定原文")!.trigger("click");
+    await flushPromises();
+    await wrapper.find('input[value="ELIGIBLE"]').setValue();
+    await wrapper.get("textarea").setValue("核对标准说明");
+    await wrapper.find('input[type="checkbox"]').setValue(true);
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("storage unavailable"); });
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+    expect(eligibility.setGlobal).not.toHaveBeenCalled();
+    expect(wrapper.text()).toContain("资格请求未发送");
+    wrapper.unmount();
+  });
   it("makes no Evidence request for a non-admin identity", async () => {
     const lists = { list: vi.fn() }; const viewers = { get: vi.fn() };
     const eligibility = { currentGlobal: vi.fn() };

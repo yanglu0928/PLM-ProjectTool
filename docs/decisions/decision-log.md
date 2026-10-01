@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-586 — GLOBAL 人工资格提交前保存最小原操作号
+
+- Date/WBS：2026-10-02 / `EVD-01-A04-P03-A08-P18`；输入 P16 受权页面、P17 GLOBAL 命令和 CR-EVD-004 的不确定回执边界。
+- Decision：在请求前将当前 actor、GLOBAL EvidenceId、原操作 Key 存入同源 sessionStorage 并读回；存储失败不发送，未知结果保留并阻新裁定。理由/正文不存入浏览器会话；完成回执不当当前状态。
+- Reason/Impact/Rollback：断线后防止换 Key 重复裁定；仅 UI 状态增量，无后端/API/Schema 变更，停用表单即可回退，历史记录不删除。
+
 ## DEC-20261001-585 — GLOBAL 写入复用严格首次回执但隔离 Viewer Scope
 
 - Date/WBS：2026-10-01 / `EVD-01-A04-P03-A08-P17`；输入冻结 GLOBAL 资格 POST、项目客户端与 P16 管理员只读页。

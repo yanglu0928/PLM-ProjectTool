@@ -8,7 +8,7 @@ import { EvidenceListClient, EvidenceListError, type EvidenceSummary } from "@/m
 import { EvidenceViewerClient, EvidenceViewerClientError,
   type EvidenceViewerDescriptor } from "@/modules/evidence/api/evidenceViewerClient";
 import { EvidenceEligibilityClient, EvidenceEligibilityClientError,
-  type CurrentEvidenceEligibility } from "@/modules/evidence/api/evidenceEligibilityClient";
+  type CurrentEvidenceEligibility, type EvidenceEligibilityFirstReceipt } from "@/modules/evidence/api/evidenceEligibilityClient";
 
 const props = defineProps<{ session?: SessionClient; listClient?: EvidenceListClient;
   viewerClient?: EvidenceViewerClient; eligibilityClient?: EvidenceEligibilityClient }>();
@@ -26,6 +26,56 @@ const selected = ref<EvidenceViewerDescriptor | null>(null);
 const current = ref<CurrentEvidenceEligibility | null>(null);
 const selectedBusy = ref(false);
 const selectedError = ref("");
+type GlobalPendingDecision = { actorId: string; evidenceId: string; key: string };
+const pendingStorageKey = actorId ? `plm.evidence.global.eligibility.pending.${actorId}` : "";
+const pendingId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+const pendingStorageError = ref(false);
+function pendingRecord(value: unknown): value is GlobalPendingDecision {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const entry = value as Record<string, unknown>;
+  return entry.actorId === actorId && typeof entry.evidenceId === "string"
+    && pendingId.test(entry.evidenceId) && typeof entry.key === "string"
+    && /^[\x20-\x7e]{16,128}$/.test(entry.key);
+}
+function readPending(): GlobalPendingDecision | null {
+  if (!pendingStorageKey) return null;
+  try {
+    const saved = window.sessionStorage.getItem(pendingStorageKey);
+    if (saved === null) return null;
+    const parsed: unknown = JSON.parse(saved);
+    if (pendingRecord(parsed)) return parsed;
+  } catch { /* Invalid or inaccessible storage must close write admission. */ }
+  pendingStorageError.value = true;
+  return null;
+}
+const unresolved = ref<GlobalPendingDecision | null>(readPending());
+function savePending(value: GlobalPendingDecision): boolean {
+  if (!pendingStorageKey || pendingStorageError.value || unresolved.value) return false;
+  try {
+    const encoded = JSON.stringify(value);
+    window.sessionStorage.setItem(pendingStorageKey, encoded);
+    if (window.sessionStorage.getItem(pendingStorageKey) !== encoded) {
+      pendingStorageError.value = true; return false;
+    }
+    unresolved.value = value; return true;
+  } catch { pendingStorageError.value = true; return false; }
+}
+function clearPending(value: GlobalPendingDecision): boolean {
+  if (!pendingStorageKey) return false;
+  try {
+    if (window.sessionStorage.getItem(pendingStorageKey) !== JSON.stringify(value)) {
+      pendingStorageError.value = true; return false;
+    }
+    window.sessionStorage.removeItem(pendingStorageKey);
+    unresolved.value = null; return true;
+  } catch { pendingStorageError.value = true; return false; }
+}
+const decisionTarget = ref<"ELIGIBLE" | "INELIGIBLE" | null>(null);
+const decisionReason = ref("");
+const decisionAttested = ref(false);
+const decisionBusy = ref(false);
+const decisionError = ref("");
+const decisionReceipt = ref<EvidenceEligibilityFirstReceipt | null>(null);
 let mounted = true;
 let generation = 0;
 let selectionGeneration = 0;
@@ -38,6 +88,48 @@ function mayRead(): boolean {
 function clearSelection() {
   selectionGeneration += 1; selected.value = null; current.value = null;
   selectedBusy.value = false; selectedError.value = "";
+  decisionTarget.value = null; decisionReason.value = ""; decisionAttested.value = false;
+  decisionBusy.value = false; decisionError.value = ""; decisionReceipt.value = null;
+}
+function mayDecide(): boolean {
+  return mayRead() && !!selected.value && current.value?.evidence_id === selected.value.evidence_id
+    && current.value.eligibility_state === "CANDIDATE"
+    && !unresolved.value && !pendingStorageError.value && !decisionReceipt.value;
+}
+async function submitDecision() {
+  const view = selected.value;
+  const before = current.value;
+  const target = decisionTarget.value;
+  const justification = decisionReason.value;
+  if (!mayDecide() || !view || !before || !target || !decisionAttested.value
+    || decisionBusy.value || !session.canSubmit) return;
+  const request = selectionGeneration;
+  const pending = { actorId: actorId!, evidenceId: before.evidence_id, key: crypto.randomUUID() };
+  if (!savePending(pending)) {
+    decisionError.value = "无法安全保存本次操作号，资格请求未发送；请检查浏览器会话存储。";
+    return;
+  }
+  decisionBusy.value = true; decisionError.value = "";
+  try {
+    const receipt = await eligibility.setGlobal(before, view, target, justification, pending.key);
+    if (!mounted || request !== selectionGeneration || !mayRead() || selected.value !== view) return;
+    if (!clearPending(pending)) {
+      decisionError.value = "已收到提交回执，但待核对记录无法清除；请保留操作号并核对当前资格。";
+      return;
+    }
+    current.value = null; decisionReceipt.value = receipt;
+  } catch (failure) {
+    if (mounted && request === selectionGeneration) {
+      decisionError.value = failure instanceof EvidenceEligibilityClientError
+        ? failure.message : "资格提交结果暂无法确认；请保留操作号。";
+      if (failure instanceof EvidenceEligibilityClientError
+        && failure.code !== "EVIDENCE_ELIGIBILITY_UNCERTAIN") {
+        if (!clearPending(pending)) {
+          decisionError.value = "拒绝结果已返回，但无法清除待核对记录；请保留操作号。";
+        }
+      }
+    }
+  } finally { if (mounted && request === selectionGeneration) decisionBusy.value = false; }
 }
 async function load(refresh = false) {
   if (!mayRead() || busy.value || !refresh && loaded.value && !cursor.value) return;
@@ -104,6 +196,9 @@ onUnmounted(() => { mounted = false; generation += 1; clearSelection(); });
     </template>
     <template v-else>
       <button type="button" :disabled="busy" @click="load(true)">刷新全局证据</button>
+      <p v-if="pendingStorageError" role="alert">浏览器会话存储不可用或待核对记录无效；资格提交已关闭，避免丢失操作号。</p>
+      <p v-if="unresolved" role="alert">一项 GLOBAL 资格操作结果尚未确认（证据 {{ unresolved.evidenceId }}，操作号 {{ unresolved.key }}）。
+        请保留原操作号，勿换号重复提交；后续按原号回查。</p>
       <p v-if="busy" role="status">正在读取全局证据…</p>
       <p v-if="error" role="alert">{{ error }}</p>
       <p v-if="loaded && items.length === 0">暂无全局证据。</p>
@@ -126,7 +221,27 @@ onUnmounted(() => { mounted = false; generation += 1; clearSelection(); });
           : current.eligibility_state === 'REVOKED' ? '已撤销' : '待核定' }}（{{ current.etag }}）。</p>
         <p>来源精度：{{ selected.precision === 'DOCUMENT' ? '整文档' : '解析节点' }}；此页不提供精确高亮。</p>
         <p><a :href="selected.content_url">下载受权固定版本原文</a></p>
+        <section v-if="mayDecide()" aria-label="GLOBAL 人工资格确认">
+          <h3>人工核定全局证据资格</h3>
+          <p>先核对固定版本原文。模板与 AI 建议不能自动成为正式业务事实；请写明实际核对依据。</p>
+          <form @submit.prevent="submitDecision()">
+            <fieldset :disabled="decisionBusy">
+              <legend>资格结论</legend>
+              <label><input v-model="decisionTarget" type="radio" value="ELIGIBLE"> 可用</label>
+              <label><input v-model="decisionTarget" type="radio" value="INELIGIBLE"> 不可用</label>
+            </fieldset>
+            <label for="global-evidence-reason">人工确认理由</label>
+            <textarea id="global-evidence-reason" v-model="decisionReason" maxlength="1024" rows="4"
+              placeholder="写明固定原文中的具体依据以及可用或不可用原因。" />
+            <label><input v-model="decisionAttested" type="checkbox"> 我已核对固定版本原文，以上是我的人工判断</label>
+            <button type="submit" :disabled="decisionBusy || !decisionTarget || !decisionReason.trim()
+              || !decisionAttested || !session.canSubmit">{{ decisionBusy ? '正在提交…' : '提交资格裁定' }}</button>
+          </form>
+        </section>
       </section>
+      <p v-if="decisionReceipt" role="status">首次提交回执：{{ decisionReceipt.eligibility_state === 'ELIGIBLE' ? '可用' : '不可用' }}。
+        回执不代表当前状态，请刷新列表核对。</p>
+      <p v-if="decisionError" role="alert">{{ decisionError }}</p>
     </template>
   </section>
 </template>
