@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P19 按CR-PKG-005新增Caddy v2.11.4 Windows AMD64官方离线四资产只读固定审计，逐件SHA-256/发布SHA-512、EXE/Apache-2.0文本/149组件SBOM/源码归档对应通过；单元3/3。并记录用户10月1日对方案A持续执行纪律的再确认。兼容性：不改旧ZIP、API/Schema/SCM；可撤审计工具回滚；HTTPS集成/完整许可/正式证书/目标平台及Gate未验，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P18-A03 核查随包前端相对API/同源Cookie与回环API之间缺正式HTTPS共同入口，先登记CR-PKG-005/DEC-566，选择独立Caddy作为待固定与隔离PoC的跨平台边界候选。兼容性：没有下载/安装新依赖，不改原ZIP/API/Schema/SCM；弃用未实施候选即可回滚。正式证书、许可/源码、目标账户/三平台/业务UAT和Gate未验，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P18-A02 新增随包默认健康API与前端静态文件隔离HTTP烟测；21,103件布局Hash后live/ready 200/UP、默认Project 404，index/JS/CSS网络字节与文件一致，子进程退出，单元2/2。首次HTTP头大小写误判已修正并重跑。兼容性：无正式API/Schema/Migration/SCM变化，可撤脚本回滚；生产组合、HTTPS/License/业务UAT/Server2025/Gate仍待，`release_eligible=false`。

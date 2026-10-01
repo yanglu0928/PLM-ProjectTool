@@ -5913,3 +5913,7 @@
 ## DEC-20261001-566 — HTTPS同源边界候选须独立于三个PLM应用服务
 
 - 日期/Phase/WBS：2026-10-01 / Phase2 / PLT-PKG-01-A09-P18-A03；正式差异见`CR-PKG-005`。P18-A02证明静态文件和默认API在两loopback端口各自可用，但前端相对API路径与同源Cookie、冻结HTTPS边界在当前包内没有共同入口。选择先验证跨平台Caddy作为**独立Web边界候选**，保留API回环和三个PLM应用服务角色；不把Vite开发代理或标准库HTTP服务器当正式部署。理由：避免破坏现有Auth Host/Origin与安全监听边界；新增依赖/第四项外部服务的版本、许可、证书/ACL和离线三平台验收须单独完成。回滚弃用未投产PoC与新候选，不修改P15历史、冻结API/Schema；任何生产操作另需备份/服务静止。
+
+## DEC-20261001-567 — Caddy先固定官方完整离线证据而不立即入包
+
+- 日期/Phase/WBS：2026-10-01 / Phase2 / PLT-PKG-01-A09-P19；依`CR-PKG-005`。固定官方`v2.11.4` Windows AMD64 ZIP/SBOM、buildable source及checksums四资产，核对发布 SHA-256 与逐件 SHA-512，并检查 EXE/许可/SBOM/源码对应；Windows输入审计已PASS。选择下一步先隔离HTTPS同源PoC、再做完整NOTICE/目标账户/三平台发行审查，不重写旧P15非发行ZIP。理由：字节可信不能代替路由/安全/法律与客户证书验证；可撤回候选而保留原冻结架构/API/Schema。具体结果见P19记录。
