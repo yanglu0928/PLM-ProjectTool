@@ -35,6 +35,7 @@ class ParsedNodeProofTests(TestCase):
     def setUp(self):
         self.document_id, self.version_id, self.record_id = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
         self.query = DocumentReadQuery(b"s" * 32, uuid.uuid4(), "PROJECT", uuid.uuid4())
+        self.profile = "PLAIN_TEXT"
         self.source = {"locator_type": "TEXT_RANGE", "section_path": "plain-text-root",
                        "start_offset": 0, "end_offset": 5,
                        "normalized_fingerprint": "a" * 64}
@@ -46,11 +47,11 @@ class ParsedNodeProofTests(TestCase):
     def _result(self):
         source_hash = b"x" * 32
         payload = {"schema_version": "1", "document_version_id": str(self.version_id),
-                   "source_sha256": source_hash.hex(), "parser_profile": "PLAIN_TEXT",
+                   "source_sha256": source_hash.hex(), "parser_profile": self.profile,
                    "parser_version": "1", "nodes": self.nodes}
         content = json.dumps(payload, separators=(",", ":")).encode()
         return VerifiedParseResult(self.record_id, self.version_id, uuid.uuid4(),
-                                   "PLAIN_TEXT", "1", source_hash,
+                                   self.profile, "1", source_hash,
                                    hashlib.sha256(content).digest(), content)
 
     def prove(self, locator):
@@ -120,22 +121,38 @@ class ParsedNodeProofTests(TestCase):
 
     def test_supported_parser_positions(self):
         samples = (
-            ("PDF_TEXT_LINE", self.source),
-            ("OCR_LINE", {"locator_type": "PAGE", "page_no": 1, "bbox": [0.1, 0.1, 0.9, 0.9]}),
-            ("CSV_CELL", {"locator_type": "SHEET_RANGE", "sheet_name": "CSV",
+            ("PDF_TEXT_THEN_OCR", "PDF_TEXT_LINE", self.source),
+            ("IMAGE_OCR", "OCR_LINE", {"locator_type": "PAGE", "page_no": 1, "bbox": [0.1, 0.1, 0.9, 0.9]}),
+            ("CSV", "CSV_CELL", {"locator_type": "SHEET_RANGE", "sheet_name": "CSV",
                           "start_cell": "A1", "end_cell": "A1"}),
-            ("DOCX_PARAGRAPH", {"locator_type": "PARAGRAPH", "paragraph_index": 1}),
-            ("DOCX_TABLE_CELL", {"locator_type": "TABLE_CELL", "table_anchor": "t1",
+            ("DOCX", "DOCX_PARAGRAPH", {"locator_type": "PARAGRAPH", "paragraph_index": 1}),
+            ("DOCX", "DOCX_TABLE_CELL", {"locator_type": "TABLE_CELL", "table_anchor": "t1",
                                  "row_no": 1, "column_no": 2}),
-            ("PPTX_SHAPE", {"locator_type": "SLIDE_SHAPE", "slide_no": 1, "shape_id": "s1"}),
-            ("PPTX_TABLE_CELL", {"locator_type": "TABLE_CELL", "table_anchor": "t2",
+            ("PPTX", "PPTX_SHAPE", {"locator_type": "SLIDE_SHAPE", "slide_no": 1, "shape_id": "s1"}),
+            ("PPTX", "PPTX_TABLE_CELL", {"locator_type": "TABLE_CELL", "table_anchor": "t2",
                                  "row_no": 1, "column_no": 1}),
-            ("XLSX_CELL", {"locator_type": "SHEET_RANGE", "sheet_name": "Sheet1",
+            ("XLSX", "XLSX_CELL", {"locator_type": "SHEET_RANGE", "sheet_name": "Sheet1",
                            "start_cell": "B2", "end_cell": "B2"}),
         )
-        for kind, locator in samples:
+        for profile, kind, locator in samples:
             with self.subTest(kind=kind):
+                self.profile = profile
                 self.nodes[0]["kind"] = kind
                 self.nodes[0]["source_locator"] = locator
                 self.port.value = self._result()
                 self.assertEqual(self.prove(locator).node_id, "n-1")
+
+    def test_csv_empty_cell_does_not_invalidate_nonempty_neighbor(self):
+        self.profile = "CSV"
+        empty = {"locator_type": "SHEET_RANGE", "sheet_name": "CSV",
+                 "start_cell": "A1", "end_cell": "A1"}
+        filled = {"locator_type": "SHEET_RANGE", "sheet_name": "CSV",
+                  "start_cell": "B1", "end_cell": "B1"}
+        self.nodes = [
+            {"node_id": "r1c1", "kind": "CSV_CELL", "text": "", "source_locator": empty},
+            {"node_id": "r1c2", "kind": "CSV_CELL", "text": "value", "source_locator": filled},
+        ]
+        self.port.value = self._result()
+        self.assertEqual(self.prove(filled).node_id, "r1c2")
+        with self.assertRaises(EvidenceNodeProofError):
+            self.prove(empty)

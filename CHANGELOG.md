@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/EVD-01-A03-P02-A02-P03-P01 TXT/CSV 实际落盘合成文件的字符区间和A1位置回查通过；修复空CSV节点导致整份结果误拒绝，增加Profile/节点类型约束。定向8/8、后端1,744项（3既有跳过）及wheel通过。兼容性：内部Evidence边界，无API/Schema变化。升级：无。已知问题：Office/PDF/OCR及正式授权组合未验。
+
 - 2026-10-01：0.1.0.dev0/EVD-01-A03-P02-A02-P02 新增 Evidence 内部解析节点精确位置证明，唯一节点/固定来源与 STRUCTURED_NODE 身份匹配；定向7/7、隔离PG18合成Parser结果、后端1,743项（3既有跳过）及wheel通过。兼容性：无公开API/Schema/权限变化。升级：无迁移。已知问题：真实格式与SECTION位置、正式Evidence创建/组合和Gate3仍待。
 
 - 2026-10-01：0.1.0.dev0/EVD-01-A03-P02-A02-P01 增加 Document 内部固定 ParseResult 受权读取 Port，文件快照/成功记录/ResultRef/私有字节前后复核；定向7/7、隔离PG18真实文件、后端1,736项（3既有跳过）及wheel构建通过。兼容性：无公开API/Schema/权限或发行包变化。升级：无迁移。已知问题：Evidence节点定位、正式组合授权、目标平台与Gate3未完成。

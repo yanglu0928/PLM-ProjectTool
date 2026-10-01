@@ -6007,3 +6007,9 @@
 - 日期/Phase/WBS：2026-10-01 / Phase2 / EVD-01-A03-P02-A02-P02。选择由 Evidence Application 调用 Document 固定结果 Port，在结构化结果内找到且仅找到一条与请求 Locator 完全匹配的真实节点；STRUCTURED_NODE 还必须绑定当前 ParseRecordId 和 NodeId。正文指纹只取被证实节点原文，不沿用整文档 Hash；Parser 未产出的 SECTION 不降级为段落或文档。理由：类型合法不代表位置真实，多个节点复用同一位置会使引用歧义。影响/回滚：仅独立内部证明 Port，无公开 API/Schema/权限扩张；未装配时可撤代码。验证计划覆盖节点类型映射、错误、歧义、跨版本及上游授权失败；真实格式与完整 Gate 另验。
 
 - 执行结果：定向7项、隔离PG18中Parser规范合成节点→私有文件/成功记录→Document受权结果→Evidence精确证明、后端1743项（3既有跳过）和wheel均通过；错误/歧义/撤权/篡改失败关闭。真实格式、实际账户授权组合、SECTION及完整Gate尚无证据，不能据内部PASS上推。无Migration/API，撤销未装配服务即可回滚。
+
+## DEC-20261001-588 — 文本与 CSV 实际来源位置逐项复验
+
+- 日期/Phase/WBS：2026-10-01 / Phase2 / EVD-01-A03-P02-A02-P03-P01。输入 Parser 固定策略/文本与 CSV 真实字节解析、Document 结果 Port 和 Evidence 节点证明；只验证纯合成临时文件，不外发客户资料。前置 P01/P02 内部 PASS。涉及 Parser/Evidence 已有合同及验证脚本，不增公开 API、实体、权限、Schema/Migration 或依赖。验收为文本 UTF-8/BOM/CRLF 的字符区间可回切且指纹一致、CSV 引号跨行与 A1 单元格可回查、空单元格不能成为有效 Evidence 但不拖垮同表非空节点、来源 Hash/歧义失败关闭。风险：只覆盖两种格式，不代替 Office/PDF/OCR 的精度或真实业务授权；回滚为停用新增验证，既有历史不变。
+
+- 执行结果：真实临时合成TXT/CSV文件经Parser实际读取并逐节点回查，中文BOM/CRLF、跨行CSV、空单元格、源文件改写拒绝通过。修复Evidence将空CSV节点错误扩散为整份不可用，并按Parser Profile限定节点类型；定向8、后端1744（3既有跳过）、wheel通过。只覆盖两格式，正式账户/Office/PDF/OCR/Gate仍待；无API/Schema/迁移。

@@ -29,6 +29,15 @@ _KIND_LOCATOR = {
     "PPTX_TABLE_CELL": "TABLE_CELL",
     "XLSX_CELL": "SHEET_RANGE",
 }
+_PROFILE_KINDS = {
+    "PLAIN_TEXT": frozenset({"TEXT_LINE"}),
+    "CSV": frozenset({"CSV_CELL"}),
+    "DOCX": frozenset({"DOCX_PARAGRAPH", "DOCX_TABLE_CELL"}),
+    "PPTX": frozenset({"PPTX_SHAPE", "PPTX_TABLE_CELL"}),
+    "XLSX": frozenset({"XLSX_CELL"}),
+    "PDF_TEXT_THEN_OCR": frozenset({"PDF_TEXT_LINE", "OCR_LINE"}),
+    "IMAGE_OCR": frozenset({"OCR_LINE"}),
+}
 
 
 class EvidenceNodeProofError(RuntimeError):
@@ -116,7 +125,8 @@ class ParsedNodeEvidenceProofService:
                 or payload.get("source_sha256") != result.source_sha256.hex()
                 or payload.get("parser_profile") != result.parser_profile
                 or payload.get("parser_version") != result.parser_version
-                or type(payload.get("nodes")) is not list):
+                or type(payload.get("nodes")) is not list
+                or result.parser_profile not in _PROFILE_KINDS):
             raise EvidenceNodeProofError()
         matched: list[tuple[str, str]] = []
         seen_ids: set[str] = set()
@@ -126,8 +136,9 @@ class ParsedNodeEvidenceProofService:
             node_id, node_kind, text = node["node_id"], node["kind"], node["text"]
             if (type(node_id) is not str or not node_id or len(node_id) > 256
                     or any(ord(char) < 32 for char in node_id)
-                    or node_id in seen_ids or type(text) is not str or not text
-                    or type(node_kind) is not str or node_kind not in _KIND_LOCATOR):
+                    or node_id in seen_ids or type(text) is not str
+                    or type(node_kind) is not str
+                    or node_kind not in _PROFILE_KINDS[result.parser_profile]):
                 raise EvidenceNodeProofError()
             seen_ids.add(node_id)
             try:
@@ -136,7 +147,7 @@ class ParsedNodeEvidenceProofService:
                 raise EvidenceNodeProofError() from None
             if source["locator_type"] != _KIND_LOCATOR[node_kind]:
                 raise EvidenceNodeProofError()
-            if source == requested_source and (requested_node is None or node_id == requested_node):
+            if text and source == requested_source and (requested_node is None or node_id == requested_node):
                 matched.append((node_id, text))
         if len(matched) != 1:
             raise EvidenceNodeProofError()
