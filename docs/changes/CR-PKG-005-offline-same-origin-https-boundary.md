@@ -34,6 +34,8 @@
 
 ## 剩余风险
 
-当前无固定Caddy二进制、发行许可复核、客户证书/目标账户、Windows Server2025实际服务或Debian实机环境；Ghostscript公开源码/产品许可另有独立阻断。此CR不改变P15`release_eligible=false`或Gate状态。
+当前已固定Caddy Windows AMD64输入但尚无发行许可复核、客户证书/目标账户、Windows Server2025实际服务或Debian实机环境；Ghostscript公开源码/产品许可另有独立阻断。此CR不改变P15`release_eligible=false`或Gate状态。
+
+2026-10-01/P19～P20增量证据：官方Caddy v2.11.4 Windows AMD64四资产/源码/SBOM输入已固定，隔离合成HTTPS静态/API/SPA路由通过，但对显式不可信Host的首页请求仍返回200。曾试的额外Host匹配未证明拒绝，故不纳入正式配置；须在P21查清Caddy/HTTP请求语义及生产登录Host/Origin边界，再验Cookie/CSRF/SSE。其他发行风险不变。
 
 官方依据：[Caddy许可仓库](https://github.com/caddyserver/caddy)、[反向代理及Host处理](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy)、[静态文件](https://caddyserver.com/docs/caddyfile/directives/file_server)、[SPA与API路由](https://caddyserver.com/docs/caddyfile/patterns)、[自有TLS证书](https://caddyserver.com/docs/caddyfile/directives/tls)、[Windows服务](https://caddyserver.com/docs/running)。
