@@ -1,0 +1,167 @@
+<script setup lang="ts">
+import { inject, onUnmounted, ref, toRaw, watch } from "vue";
+import { RouterLink, useRoute } from "vue-router";
+
+import { SessionClient } from "@/modules/auth/api/sessionClient";
+import { sessionClientKey } from "@/modules/auth/api/sessionContext";
+import { EvidenceListClient, EvidenceListError, type EvidenceSummary } from "@/modules/evidence/api/evidenceListClient";
+import { EvidenceViewerClient, EvidenceViewerClientError,
+  type EvidenceViewerDescriptor } from "@/modules/evidence/api/evidenceViewerClient";
+
+const props = defineProps<{ session?: SessionClient; listClient?: EvidenceListClient;
+  viewerClient?: EvidenceViewerClient }>();
+const session = toRaw(props.session ?? inject(sessionClientKey, null) ?? new SessionClient());
+const lists = toRaw(props.listClient ?? new EvidenceListClient());
+const viewers = toRaw(props.viewerClient ?? new EvidenceViewerClient());
+const identity = session.view;
+const route = useRoute();
+const items = ref<readonly EvidenceSummary[]>([]);
+const cursor = ref<string | null>(null);
+const loaded = ref(false);
+const busy = ref(false);
+const error = ref("");
+const selected = ref<EvidenceViewerDescriptor | null>(null);
+const selectedBusy = ref<string | null>(null);
+const selectedError = ref("");
+let generation = 0;
+let selectionGeneration = 0;
+let mounted = true;
+
+function projectId(): string { return typeof route.params.projectId === "string" ? route.params.projectId : ""; }
+function mayRead(): boolean {
+  return mounted && !!identity && !identity.password_change_required
+    && session.view?.user.user_id === identity.user.user_id;
+}
+function clearSelection() {
+  selectionGeneration += 1;
+  selected.value = null;
+  selectedBusy.value = null;
+  selectedError.value = "";
+}
+async function load(refresh = false) {
+  if (!mayRead() || busy.value) return;
+  if (refresh) {
+    generation += 1; items.value = []; cursor.value = null; loaded.value = false;
+    clearSelection();
+  } else if (loaded.value && !cursor.value) return;
+  const project = projectId();
+  const after = cursor.value;
+  const current = ++generation;
+  busy.value = true; error.value = "";
+  try {
+    const page = await lists.list({ kind: "PROJECT", projectId: project }, after);
+    if (!mounted || current !== generation || projectId() !== project || !mayRead()) return;
+    const previous = after ? items.value : [];
+    if (page.items.some((item) => previous.some((older) => older.evidence_id === item.evidence_id))) {
+      throw new EvidenceListError("EVIDENCE_LIST_UNAVAILABLE");
+    }
+    items.value = [...previous, ...page.items];
+    cursor.value = page.next_cursor;
+    loaded.value = true;
+  } catch (failure) {
+    if (!mounted || current !== generation || projectId() !== project) return;
+    error.value = failure instanceof EvidenceListError ? failure.message : "暂时无法读取证据，请稍后重试。";
+  } finally { if (mounted && current === generation) busy.value = false; }
+}
+async function locate(item: EvidenceSummary) {
+  if (!mayRead() || !items.value.some((entry) => entry.evidence_id === item.evidence_id)) return;
+  const project = projectId();
+  const current = ++selectionGeneration;
+  selected.value = null; selectedError.value = ""; selectedBusy.value = item.evidence_id;
+  try {
+    const view = await viewers.get({ kind: "PROJECT", projectId: project }, item.evidence_id);
+    if (!mounted || current !== selectionGeneration || projectId() !== project || !mayRead()) return;
+    if (view.document_id !== item.document_id || view.document_version_id !== item.document_version_id) {
+      throw new EvidenceViewerClientError("EVIDENCE_CLIENT_UNAVAILABLE");
+    }
+    selected.value = view;
+  } catch (failure) {
+    if (!mounted || current !== selectionGeneration || projectId() !== project) return;
+    selectedError.value = failure instanceof EvidenceViewerClientError
+      ? failure.message : "暂时无法定位原文，请稍后重试。";
+  } finally { if (mounted && current === selectionGeneration) selectedBusy.value = null; }
+}
+function position(view: EvidenceViewerDescriptor): string {
+  const locator = view.locator.locator_type === "STRUCTURED_NODE"
+    ? view.locator.source_locator : view.locator;
+  if (!locator || typeof locator !== "object" || Array.isArray(locator)) return view.display_label;
+  const source = locator as Record<string, unknown>;
+  if (source.locator_type === "PAGE" || source.locator_type === "TEXT_RANGE" && typeof source.page_no === "number") {
+    return `第 ${source.page_no} 页`;
+  }
+  if (source.locator_type === "SECTION") return `章节 ${source.section_path}`;
+  if (source.locator_type === "SHEET_RANGE") return `工作表 ${source.sheet_name} · ${source.start_cell}:${source.end_cell}`;
+  if (source.locator_type === "SLIDE_SHAPE") return `第 ${source.slide_no} 张幻灯片`;
+  if (source.locator_type === "PARAGRAPH") return source.paragraph_index
+    ? `第 ${source.paragraph_index} 段` : `段落锚点 ${source.stable_anchor}`;
+  if (source.locator_type === "TABLE_CELL") return `表格 ${source.table_anchor} · 第 ${source.row_no} 行、第 ${source.column_no} 列`;
+  if (source.locator_type === "DOCUMENT") return "整份文档";
+  return view.display_label;
+}
+watch(() => route.params.projectId, () => {
+  generation += 1; items.value = []; cursor.value = null; loaded.value = false;
+  busy.value = false; error.value = ""; clearSelection();
+  void load();
+}, { immediate: true });
+onUnmounted(() => { mounted = false; generation += 1; clearSelection(); });
+</script>
+
+<template>
+  <section class="evidence-list" aria-labelledby="evidence-list-title" :aria-busy="busy">
+    <p class="section-kicker">项目资料</p>
+    <h1 id="evidence-list-title">项目证据</h1>
+    <p>先查看证据的短提示。点击“定位原文”后，系统会重新核验权限、固定文档版本及来源指纹；短提示不是权威正文。</p>
+    <p><RouterLink :to="{ name: 'project-detail', params: { projectId: route.params.projectId } }">返回项目</RouterLink></p>
+    <template v-if="!identity">
+      <p role="status">尚未读取当前身份。请先登录，或在账户页读取当前身份。</p>
+      <RouterLink to="/login">前往账户与登录</RouterLink>
+    </template>
+    <template v-else-if="identity.password_change_required">
+      <p role="status">当前账户须先修改密码，暂不能读取项目证据。</p>
+      <RouterLink to="/login">前往账户与登录</RouterLink>
+    </template>
+    <template v-else>
+      <button type="button" :disabled="busy" @click="load(true)">{{ busy ? '正在读取…' : '刷新证据列表' }}</button>
+      <p v-if="busy" role="status">正在确认项目证据访问权限…</p>
+      <p v-if="error" role="alert">{{ error }}</p>
+      <p v-if="loaded && items.length === 0">暂无证据。</p>
+      <ol v-if="items.length" aria-label="项目证据列表">
+        <li v-for="item in items" :key="item.evidence_id">
+          <strong>{{ item.display_label }}</strong>
+          <span> · {{ item.eligibility_state === 'CANDIDATE' ? '待核定' : item.eligibility_state === 'ELIGIBLE'
+            ? '可用' : item.eligibility_state === 'INELIGIBLE' ? '不可用' : '已撤销' }}</span>
+          <p v-if="item.display_excerpt">{{ item.display_excerpt }}</p>
+          <button type="button" :disabled="selectedBusy !== null" @click="locate(item)">
+            {{ selectedBusy === item.evidence_id ? '正在核验原文…' : '定位原文' }}
+          </button>
+        </li>
+      </ol>
+      <button v-if="cursor" type="button" :disabled="busy" @click="load()">继续加载证据</button>
+      <p v-if="selectedError" role="alert">{{ selectedError }}</p>
+      <section v-if="selected" aria-labelledby="evidence-location-title">
+        <h2 id="evidence-location-title">已核验的原文位置</h2>
+        <dl>
+          <dt>位置</dt><dd>{{ position(selected) }}</dd>
+          <dt>固定文档版本</dt><dd>第 {{ selected.document_version_no }} 版</dd>
+          <dt>来源证明</dt><dd>{{ selected.precision === 'DOCUMENT' ? '整文档已核验' : '解析节点已核验' }}</dd>
+          <template v-if="selected.short_preview"><dt>短提示</dt><dd>{{ selected.short_preview }}</dd></template>
+        </dl>
+        <p>当前位置由来源定位证明；浏览器内的精确高亮尚未提供。下载时服务器会再次验证权限与文件完整性。</p>
+        <p><a :href="selected.content_url">下载固定版本原文</a></p>
+        <p><RouterLink :to="{ name: 'project-document-detail', params: {
+          projectId: route.params.projectId, documentId: selected.document_id } }">查看文档版本历史</RouterLink></p>
+      </section>
+    </template>
+  </section>
+</template>
+
+<style scoped>
+.evidence-list { max-width: 48rem; margin: 1rem auto; padding: 1.5rem; background: #fff; border-radius: 1rem; }
+.evidence-list p { line-height: 1.65; }
+.evidence-list ol { padding-left: 1.4rem; }
+.evidence-list li { margin-block: 1rem; overflow-wrap: anywhere; }
+.evidence-list dl { display: grid; grid-template-columns: minmax(8rem, auto) 1fr; gap: .65rem 1rem; }
+.evidence-list dt { font-weight: 700; }
+.evidence-list dd { margin: 0; overflow-wrap: anywhere; }
+.evidence-list [role="alert"] { color: #a21d25; }
+</style>
