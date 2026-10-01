@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261001-578 — Evidence 候选创建的证明与写事务顺序
+
+- Date/WBS：2026-10-01 / `EVD-01-A03-P03-A01`；输入冻结 EVIDENCE_CREATE、现有创建权限 Port、Document `get_version_for_trace` 与两种来源证明 Port。
+- Decision：先在 Document 受权固定结果链证明 Locator；在 Evidence 创建同一 UOW 中重新检查当前 Session/CSRF/角色和 Document 固定可用版本（复用 `get_version_for_trace`），然后同事务完成幂等收据、CANDIDATE 记录与强制 Audit。读取 Proof 不持久化用户输入正文；失效/撤权时整个写事务失败关闭。
+- Reason/Impact/Rollback：证明完成与写入之间有时间窗，单独凭旧证明无法保证当前可用；现有 Document 公共 Application Port 已可提供调用方 UOW 内锁定复核，无需 Evidence 直查 Document 表。此次只读核查不变 API/Schema；后续分内部写服务、隔离PG、可选HTTP与平台组合逐项验收。
+
 ## DEC-20261001-577 — DOCX V1/V2 固定结果共存隔离复验
 
 - Date/WBS：2026-10-01 / `EVD-01-A03-P02-A02-P03-P04-A05`；输入 `CR-EVD-001`、Document 受权固定结果 Port 及 V2 SECTION 证明。
