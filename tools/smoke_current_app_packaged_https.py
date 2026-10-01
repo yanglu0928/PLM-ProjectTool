@@ -19,7 +19,7 @@ from verify_windows_unified_extract import verify as verify_stage
 
 
 KIND = "WINDOWS11_CURRENT_APP_NON_RELEASE_CANDIDATE"
-COUNT = 21178
+COUNT = 21182
 
 
 def _inputs(candidate: Path, stage: Path, expected_sha256: str) -> tuple[dict[str, str], dict[str, str], str]:
@@ -46,7 +46,9 @@ def _inputs(candidate: Path, stage: Path, expected_sha256: str) -> tuple[dict[st
             mapping.get("payload/runtime/packages/plm_assistant/modules/evidence/api/lookup_eligibility_operation.py") !=
             "runtime/python/packages/plm_assistant/modules/evidence/api/lookup_eligibility_operation.py" or
             mapping.get("payload/runtime/packages/plm_assistant/migrations/versions/20261001_0052_evidence_parse_provenance.py") !=
-            "runtime/python/packages/plm_assistant/migrations/versions/20261001_0052_evidence_parse_provenance.py"):
+            "runtime/python/packages/plm_assistant/migrations/versions/20261001_0052_evidence_parse_provenance.py" or
+            mapping.get("payload/runtime/packages/plm_assistant/modules/workflow/api/start_workflow.py") !=
+            "runtime/python/packages/plm_assistant/modules/workflow/api/start_workflow.py"):
         raise ValueError("current app layout mapping differs")
     return hashes, mapping, mapping_sha
 
