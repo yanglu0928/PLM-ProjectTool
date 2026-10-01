@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P28 新候选发行证据盘点：固定ZIP全量Hash后确认OCR许可侧载25、Caddy源码1、产品级LICENSE/NOTICE 0、Ghostscript对应源码未定位，Caddy/PG/前端/原生组件审查状态仍开放；定向单元2/2。兼容性：只读审计，无API/Schema/Migration/SCM/包改动；法律放行、正式信任源/目标平台/Gate未完成，`release_eligible=false`。升级说明：无需迁移。已知问题：对应源码与完整声明待补。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P27 新候选随包生产入口信任前置检查：21,113文件Hash重验，公钥资源与当前账户默认数据库Vault目标缺失，`--platform-write`固定错误退出且端口未绑定，定向单元1/1。兼容性：不改业务API/Schema/Migration/SCM，无正式凭据或数据库连接；仅失败关闭PASS，正式信任源、NOTICE、目标平台/Gate仍阻断，`release_eligible=false`。升级说明：无需迁移。已知问题：尚无正式可启动生产组合。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P26-A02 新布局包内Caddy+PG18下复跑仓库生产登录组合真实PG/Vault合成HTTPS断言，GET9/POST12、Cookie/CSRF/Host/Origin/Session/Audit及临时源清理PASS，定向单元1/1。兼容性：原P21测试默认行为保持；无API/Schema/Migration/SCM变更，包内生产API进程/正式信任源仍未验，`release_eligible=false`。升级说明：无需迁移。已知问题：发行License、证书、账户与服务恢复未完成。
