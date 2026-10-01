@@ -5905,3 +5905,7 @@
 ## DEC-20261001-564 — 新组合包仅替换顶层声明，不继承旧候选“缺PG”语义
 
 - 日期/Phase/WBS：2026-10-01 / Phase2 / PLT-PKG-01-A09-P15。把P10/P12的21,103件原载荷保留，重建manifest与双来源许可库存，明确已有PG18运行字节但尚未正式安装/服务/许可发行。理由：沿用P10旧manifest中的“缺PG”会与新内容矛盾，直接删除所有缺口又会虚报发行完成。源ZIP/计划/新ZIP各固定Hash，新包仅非发行；若清单或门禁需调整，保留本版并另建修订包，回滚弃新候选，不改旧候选/Schema/API/既有DB。
+
+## DEC-20261001-565 — 离线候选到Windows安装目录使用显式逐族映射
+
+- 日期/Phase/WBS：2026-10-01 / Phase2 / PLT-PKG-01-A09-P17。候选根含 `runtime/pgsql/frontend/ocr/config/third-party-licenses`，而Windows服务配置模板引用 `C:\PLMTool\app\models`；选择明确映射：Python→`runtime/python`、PG→`runtime/pgsql`、前端→`app/frontend`、OCR模型→`app/models`、Tesseract/Ghostscript→`app/ocr`、配置→`config`、许可文本→`app/third-party-licenses`。先仅在新ASCII Temp目录复制并按原载荷逐件Hash；只生成纯合成 `bootstrap.rehearsal.yaml` 验证服务命令计划，不改 `C:\PLMTool`、SCM、数据库或正式License。理由：直接原样解包无法满足模型配置目录，隐式搬运会使安装清单无法追踪。影响仅非发行装配验证；正式安装器须复用已验映射并另行核ACL/账户/签名。回滚弃用新临时装配目录及工具，历史ZIP/冻结Schema/API保持不变。
