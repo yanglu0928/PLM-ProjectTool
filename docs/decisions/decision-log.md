@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-589 — 派生候选仅替换受控应用归属路径
+
+- Date/WBS：2026-10-02 / `PLT-PKG-01-A09-P47-A02`；输入 CR-PKG-008 与 P45 固定父包/哈希清单。
+- Decision：父包第三方/运行时/OCR/PG/Caddy 载荷只读逐件验证并原样传递；完整替换 wheel 的 `plm_assistant` 与对应 dist-info，以及前端 dist，输出新唯一非发行 ZIP/全量哈希/来源字段。CLI 要求干净 HEAD；不修改父包。
+- Reason/Impact/Rollback：避免同版号旧文件残留与第三方来源漂移；仅开发工具/候选，弃用派生 ZIP 即可回退，Gate 不据此放行。
+
 ## DEC-20261002-588 — 旧固定 ZIP 不代表当前源码交付物
 
 - Date/WBS：2026-10-02 / `PLT-PKG-01-A09-P47-A01`；输入 P45 SHA 固定 ZIP 与当前已提交应用源码。

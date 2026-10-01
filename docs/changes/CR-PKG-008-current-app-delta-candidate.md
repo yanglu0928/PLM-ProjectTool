@@ -2,6 +2,8 @@
 
 日期：2026-10-02；来源：`PLT-PKG-01-A09-P47-A01` 当前可使用程序包前置核查；状态：`RECORDED / IMPLEMENTATION_OPEN`。原固定候选、原 Gate 2 提交和既有发行阻断记录均不追写。
 
+P47-A02 已完成派生构建器的合成安全合同 7/7；真实父 ZIP 派生、清洁解包和随包运行仍未验，见 [P47-A02](../progress/plt-pkg-01-a09-p47-a02-current-app-candidate-builder.md)。状态保持 OPEN。
+
 ## 冲突与证据
 
 Windows 11 原生 OCR 通知非发行 ZIP 位于 Git 忽略区，重新计算 SHA-256 为 `30c9d59852af7e7a9360c4e6f36eff815eb134c481b5908786898b315426bf98`，与 P45 记录一致。它的 `manifest.json` 为 `version=0.1.0.dev0`、`release_eligible=false`、`legal_clearance=false`。只读检查 ZIP 清单：前端资产为 `index-1aZZs5xp.js`，当前 `pnpm build` 为 `index-BwItlzAE.js`；包内无 Evidence `lookup_eligibility_operation.py` API/应用服务，Evidence 子树仅 8 个文件；包内 Migration 最高 `0051`，当前源码已到 `20261001_0052_evidence_parse_provenance.py`。当前分支提交 `25106908`。即旧 ZIP 完整但不含已验证的后续应用功能和 Schema，不能当作当前程序包或 UAT 产物。
