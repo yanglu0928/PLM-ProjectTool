@@ -38,6 +38,7 @@ seed = module_from_spec(spec)
 spec.loader.exec_module(seed)
 cluster = seed.cluster
 fixture = seed.fixture
+composition_check = None
 
 
 def _matrix() -> None:
@@ -144,6 +145,8 @@ def _matrix() -> None:
                                   "FROM plm.wfl_project_workflows WHERE workflow_id=%s",
                                   (workflow_id,)).fetchone() == ("ACTIVE", "HANDOVER", 1)
                 assert db.execute("SELECT count(*) FROM plm.wfl_stage_transitions").fetchone()[0] == 0
+            if composition_check is not None:
+                composition_check(url, name, guard)
             print("Workflow start HTTP PASS: opt-in ASGI/PG18 real Session/CSRF/PM/"
                   "initial/replay/error contract/one Audit; default 404 and no Gate", flush=True)
         finally:

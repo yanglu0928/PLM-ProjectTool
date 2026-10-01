@@ -150,8 +150,11 @@ from plm_assistant.modules.project.api.create_project import create_project_crea
 from plm_assistant.modules.project.application.create_project import ProjectCreateService
 from plm_assistant.modules.workflow.application.initialize import WorkflowInitializationService
 from plm_assistant.modules.workflow.application.read_workflow import WorkflowReadService
+from plm_assistant.modules.workflow.application.start_workflow import WorkflowStartService
 from plm_assistant.modules.workflow.infrastructure.read_repository import SqlAlchemyWorkflowReadRepository
 from plm_assistant.modules.workflow.api.read_workflow import create_workflow_read_router
+from plm_assistant.modules.workflow.api.start_workflow import create_workflow_start_router
+from plm_assistant.modules.workflow.infrastructure.start_repository import SqlAlchemyWorkflowStartRepository
 from plm_assistant.modules.workflow.infrastructure.initialize_repository import SqlAlchemyWorkflowInitializationRepository
 from plm_assistant.modules.project.infrastructure.create_repository import SqlAlchemyProjectCreateRepository
 from plm_assistant.modules.project.api.patch_project import create_project_patch_router
@@ -345,6 +348,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         secret_disable_router = None
         project_read_router = None
         workflow_read_router = None
+        workflow_start_router = None
         audit_read_router = None
         audit_export_result_router = None
         audit_export_download_router = None
@@ -564,6 +568,22 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                         unit_of_work=runtime.unit_of_work,
                         repository=SqlAlchemyProjectAuthorizationRepository(),
                     ), license_guard=licenses.guard, repository=SqlAlchemyWorkflowReadRepository(),
+                ),
+            )
+            workflow_start_reader = SqlAlchemyWorkflowReadRepository()
+            workflow_start_router = create_workflow_start_router(
+                sessions=sessions, origins=origins,
+                workflows=WorkflowStartService(
+                    unit_of_work=runtime.unit_of_work,
+                    sessions=SqlAlchemyProjectWriteAccess(),
+                    projects=ProjectAuthorizationService(
+                        unit_of_work=runtime.unit_of_work,
+                        repository=SqlAlchemyProjectAuthorizationRepository(),
+                    ),
+                    license_guard=licenses.guard,
+                    starter=SqlAlchemyWorkflowStartRepository(reader=workflow_start_reader),
+                    reader=workflow_start_reader,
+                    receipts=SqlAlchemyIdempotencyReceipts(), audit=audit,
                 ),
             )
             project_creates = ProjectCreateService(
@@ -1009,6 +1029,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             secret_disable_router=secret_disable_router,
             project_read_router=project_read_router,
             workflow_read_router=workflow_read_router,
+            workflow_start_router=workflow_start_router,
             audit_read_router=audit_read_router,
             audit_export_result_router=audit_export_result_router,
             audit_export_download_router=audit_export_download_router,

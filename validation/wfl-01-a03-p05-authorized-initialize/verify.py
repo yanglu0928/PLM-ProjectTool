@@ -214,7 +214,9 @@ def main():
                         guard.enabled = False
                         assert client.get(path, headers=cookie()).status_code == 403
                         guard.enabled = True
-                        assert client.post(path+":start", headers=cookie()).status_code == 404
+                        # Later WFL-01-A06-P04 mounts start only in explicit platform modes;
+                        # this no-CSRF probe must now fail before any Workflow write.
+                        assert client.post(path+":start", headers=cookie()).status_code == 403
                         assert client.post(path+":transition", headers=cookie()).status_code == 404
                     for missing in ("license", "cursor"):
                         target = "plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services" if missing == "license" else prefix+"create_windows_secret_list_cursor_codec"
@@ -270,7 +272,7 @@ def main():
             print("PASS: real Session/CSRF/project PM, cross-project/non-PM/admin/archived/revoked rejection, synthetic License denial, concurrent dedupe and Audit rollback; not HTTP or Gate")
             print("PASS: Workflow read snapshot, all four project roles, archived read, missing instance no initialization, cross-project/admin/session/License rejection; not HTTP")
             print("PASS: opt-in Workflow GET real Session/PostgreSQL HTTP, safe projection/ETag/no-store, four roles/archived and errors; synthetic License, not production composition/Gate")
-            print("PASS: both Windows explicit platform compositions Workflow GET, default/login and write routes closed, missing synthetic trust fail-closed; formal trust/Gate not verified")
+            print("PASS: both Windows explicit platform compositions Workflow GET, default/login and transition route closed; start without CSRF denied, missing synthetic trust fail-closed; formal trust/Gate not verified")
         finally:
             if runtime is not None: runtime.dispose()
             admin.execute("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname=%s AND pid<>pg_backend_pid()", (name,))
