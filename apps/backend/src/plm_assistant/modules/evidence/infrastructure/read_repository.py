@@ -27,6 +27,7 @@ def _view(row: EvidenceRow) -> EvidenceView:
         row.display_label, row.display_excerpt,
         row.eligibility_state, row.created_at,
         f'"v{row.lock_version}"',
+        row.source_parse_record_id,
     )
 
 

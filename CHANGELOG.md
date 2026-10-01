@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/EVD-01-A03-P04-A03-P04 增加内部受权 Viewer descriptor，固定 DocumentVersion/ParseRecord 并重新证明位置与内容指纹；缺来源或撤销源失败关闭。兼容性：无公开 API/Schema 变化；升级：使用前须先升至0052并装配当前权限/Document证明服务。验证：4项定向、后端1,773项（3既有跳过）、wheel SHA-256 `c9dd8793…` PASS。已知问题：公开 Viewer HTTP、真实PG集成、浏览器定位、正式账户/目标平台及Gate3未通过。
+
 - 2026-10-01：0.1.0.dev0/EVD-01-A03-P04-A03-P02～P03 按 CR-EVD-002 新增 Evidence 内部固定 ParseRecord 引用、0052 迁移和创建/重放一致性检查。兼容性：冻结公开 API 不变；旧 Evidence 不改写，旧无确定来源的 Viewer 仍关闭。升级：只在隔离 PG18 验证空/有数据 up/down；存在新来源历史时降级拒绝，正式库迁移前须停写/备份/演练。验证：隔离 PG18 Schema/Windows 写后读与节点同 Key 重放、后端1,769项（3既有跳过）、wheel SHA-256 `e07221c4…` PASS。已知问题：Viewer 尚未实现，正式目标账户、Server2025/Debian及Gate3未通过。
 
 - 2026-10-01：0.1.0.dev0/EVD-01-A03-P04-A03-P01 登记 CR-EVD-002，Viewer 需持久化创建时已证明的 ParseRecord 身份；旧记录不猜测回填。兼容性：仅决策/任务状态，无程序、数据库或公开 API 行为变化。升级：后续独立迁移验证后方可启用新写入。验证：只读模型/代码核查，功能尚未 PASS。已知问题：旧非结构化证据缺固定来源、正式信任源/目标平台/Gate 3 未通过。

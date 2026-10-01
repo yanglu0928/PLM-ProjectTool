@@ -40,6 +40,7 @@ class EvidenceView:
     eligibility_state: str
     created_at: datetime
     etag: str
+    source_parse_record_id: uuid.UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)
