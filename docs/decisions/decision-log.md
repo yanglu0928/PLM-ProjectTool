@@ -1,5 +1,10 @@
 # 自主决策记录
 
+## DEC-20261002-599 — Checklist Record 缺业务 Owner 时保持写入口关闭
+
+- Date/WBS：2026-10-02 / `WFL-01-A07-P01`；输入冻结 `WORKFLOW_CHECKLIST_RECORD`、CR-WFL-004、`EVIDENCE_FIXED_PROJECT_V1`/Review/Exception Owner 约束。
+- Decision：不把现有 UUID/静态快照或 AI 推断当正式 Evidence/Review/受权例外事实，不开放 PASS/WAIVED 写接口；优先补齐真实 Owner 验证，转向独立 Workflow 前端可读/启动任务。理由、备选与迁移/回滚/验证见进度记录。本项标前置阻塞，不标 Gate 或 A07 完成。
+
 ## DEC-20261002-598 — Workflow START 重放保留首次固定结果语义
 
 - Date/WBS：2026-10-02 / `WFL-01-A06-P02`；输入 API-01 同 Key 原结果要求、固定六阶段定义 V1、Schema 0030 与通用持久收据。

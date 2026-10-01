@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/WFL-01-A07-P01 记录 Checklist 写入前置阻塞与 Owner 依赖。兼容性：仅决策/状态文档，无程序/API/Schema/依赖变化。升级：无迁移。验证：冻结合同、六阶段配置及现有 Owner/记录代码只读核对。已知问题：完整记录/StageGate不可用，不将静态 UUID 或 AI 判断算正式业务通过；转独立前端任务。
+
 - 2026-10-02：0.1.0.dev0/WFL-01-A06-P04 在 Windows 显式 platform/platform-write 组合开放受控 Workflow 首阶段启动，默认/login-only仍关闭。兼容性：既有冻结API、Schema和依赖不变；旧验证脚本无CSRF预期调整为403。升级：无迁移，需既有0015/0030；正式目标账户信任源独立供给。验证：一次性PG18平台双模式首次/重放/拒绝/失败关闭与旧Workflow矩阵PASS，全量/构建见任务记录。已知问题：正式信任、StageGate、真实浏览器、Server2025/Debian、性能/UAT/Gate3和非发行包更新仍未完成。
 
 - 2026-10-02：0.1.0.dev0/WFL-01-A06-P03 增加可选 `WORKFLOW_START` HTTP 路由与安全白名单响应。兼容性：冻结 `/api/v1` 路径/控制实现，无破坏性变更、新Schema或依赖；默认应用仍不挂载。升级：现有0015/0030适用，无新迁移。验证：HTTP单元6、一次性PG18真实Session/CSRF/PM/收据/Audit/错误码合成ASGI通过，全量/构建见任务记录。已知问题：正式Windows组合、License信任、StageGate、Server2025/Debian、真实浏览器/UAT/Gate3未完成；非发行ZIP未含本项。
