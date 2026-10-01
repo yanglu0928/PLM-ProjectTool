@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/JOB-01-A06-P04 新增 Job 详情前端只读客户端，分项目/Admin 入口并核 Job/Project/强 ETag。兼容性：客户端未接页面，原 UI/API/Schema 不变。升级：无迁移，依赖现有显式 Job 详情后端。验证：定向15、前端全量1,116项、typecheck/build PASS。已知问题：详情页面/真实浏览器/正式信任、三平台、法律及Gate3未验。
+
 - 2026-10-02：0.1.0.dev0/JOB-01-A06-P03 新增 DeploymentAdmin Job 只读列表页面和主导航，GLOBAL/DEPLOYMENT Scope 筛选、撤权清旧数据。兼容性：前端路由增量，原 API/Schema/权限不变。升级：重建前端，无迁移；依赖显式后端与独立 Job 游标密钥。验证：定向5、前端全量1,101项、typecheck/build PASS。已知问题：真实浏览器/正式信任、Job详情、三平台、法律及Gate3未验。
 
 - 2026-10-02：0.1.0.dev0/JOB-01-A06-P02 项目详情新增 Job 只读列表入口与安全分页视图。兼容性：前端路由增量，原 API/Schema/权限不变。升级：重建前端，无数据迁移。验证：定向5、全量前端1,096项、typecheck/build PASS。已知问题：真实浏览器/正式信任、管理员列表/详情、Server2025/Debian、法律与Gate3未验。

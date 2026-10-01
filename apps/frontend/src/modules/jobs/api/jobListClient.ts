@@ -49,7 +49,7 @@ function instant(value: unknown): value is string {
   const parsed = Date.parse(value);
   return Number.isFinite(parsed) && new Date(parsed).toISOString().slice(0, 19) === value.slice(0, 19);
 }
-function parseItem(value: unknown, projectId: string | null, scope: string | null): JobListItem {
+export function parseJobItem(value: unknown, projectId: string | null, scope: string | null): JobListItem {
   if (!record(value) || !identifier(value.job_id) || typeof value.job_type !== "string" || !namePattern.test(value.job_type)
     || typeof value.owner_module !== "string" || !namePattern.test(value.owner_module)
     || typeof value.scope !== "string" || !scopes.has(value.scope)
@@ -125,7 +125,7 @@ export class JobListClient {
       if (!record(data) || !Array.isArray(data.items) || data.items.length > pageSize || typeof data.has_more !== "boolean"
         || (data.has_more && (typeof data.next_cursor !== "string" || !cursorPattern.test(data.next_cursor) || data.items.length === 0))
         || (!data.has_more && data.next_cursor !== null)) throw new JobListError("JOB_LIST_UNAVAILABLE");
-      const items = Object.freeze(data.items.map((item: unknown) => parseItem(item, projectId, scope)));
+      const items = Object.freeze(data.items.map((item: unknown) => parseJobItem(item, projectId, scope)));
       if (new Set(items.map(item => item.job_id)).size !== items.length) throw new JobListError("JOB_LIST_UNAVAILABLE");
       return Object.freeze({ items, next_cursor: data.next_cursor as string | null, has_more: data.has_more });
     } catch (error) {
