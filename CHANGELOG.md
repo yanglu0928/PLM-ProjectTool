@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P13 新增P12 Windows PG旁包隔离合成烟测入口：再次核1,629件Hash，临时ASCII数据目录/loopback随机端口下完成PG18.6、vector0.8.6、HNSW和最近邻查询，退出停机并清理临时数据；定向单元5/5。首次捕获管道继承造成超时，正常停机后改启动输出处理并全程重跑通过。兼容性：无API/Schema/Migration/正式服务变化；仅测试入口可撤，生产认证、服务账户、Server2025、NOTICE/法律/Gate仍待，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P12 新增PG18.6/pgvector0.8.6 Windows最小非发行运行旁包：仅 `bin/lib/share` 和服务器/命令行/pgvector原始许可，共1,629件；ZIP 56,565,724字节，SHA-256 `d0e038b43240369f7cd66396c34cd8e56d5a7a5a51ae3bc6f5fc41783baa7fd9`，ZIP/新ASCII目录全量Hash、版本/向量核心字节PASS，单元3/3。兼容性：不安装/启动数据库、不改API/Schema/Migration或旧PoC；可弃用Git忽略ZIP回滚。隔离功能、正式安装/服务账户/Server2025、NOTICE/源码/法律/Gate仍待，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P11 新增PG18.6/pgvector0.8.6 Windows离线输入只读审计：4份下载资产、运行DLL/SQL/许可文本、pgvector源码提交与旧PoC bundle/内层ZIP精确核对通过；单测3/3。兼容性：无DB安装/迁移/API/Schema变化；旧bundle含5项测试缓存，不作为客户包。正式最小包、目标账户/Server2025产品验收、NOTICE/License/三平台Gate仍待，`release_eligible=false`。
