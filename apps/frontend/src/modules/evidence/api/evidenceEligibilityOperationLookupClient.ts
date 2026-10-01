@@ -46,10 +46,30 @@ export class EvidenceEligibilityOperationLookupClient {
     if (typeof operationKey !== "string" || !/^[\x20-\x7e]{16,128}$/.test(operationKey)) {
       throw new EvidenceEligibilityOperationLookupError("EVIDENCE_LOOKUP_INVALID");
     }
+    return this.#perform(evidenceId, actorId,
+      this.session.postEvidenceEligibilityOperationLookup(projectId, evidenceId, operationKey));
+  }
+
+  async lookupGlobal(evidenceId: string,
+    operationKey: string): Promise<EvidenceEligibilityOperationLookup> {
+    const view = this.session.view;
+    const actorId = view?.user.user_id;
+    if (!id(evidenceId) || !id(actorId) || view?.password_change_required
+      || view?.deployment_role !== "DEPLOYMENT_ADMIN") {
+      throw new EvidenceEligibilityOperationLookupError("EVIDENCE_LOOKUP_DENIED");
+    }
+    if (typeof operationKey !== "string" || !/^[\x20-\x7e]{16,128}$/.test(operationKey)) {
+      throw new EvidenceEligibilityOperationLookupError("EVIDENCE_LOOKUP_INVALID");
+    }
+    return this.#perform(evidenceId, actorId,
+      this.session.postGlobalEvidenceEligibilityOperationLookup(evidenceId, operationKey));
+  }
+
+  async #perform(evidenceId: string, actorId: string,
+    request: Promise<Response>): Promise<EvidenceEligibilityOperationLookup> {
     let response: Response;
     try {
-      response = await this.session.postEvidenceEligibilityOperationLookup(
-        projectId, evidenceId, operationKey);
+      response = await request;
     } catch (failure) {
       if (failure instanceof SessionClientError && failure.code === "AUTH_RELOGIN_REQUIRED") {
         throw new EvidenceEligibilityOperationLookupError("AUTH_RELOGIN_REQUIRED");

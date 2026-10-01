@@ -15,10 +15,11 @@ function error(status: number, code: string): Response {
   return new Response(JSON.stringify({ error: { code }, trace_id: traceId }), { status,
     headers: { "Content-Type": "application/json", "Cache-Control": "no-store" } });
 }
-function sessionView(role = "PROJECT_MANAGER"): Response {
+function sessionView(role = "PROJECT_MANAGER", deploymentRole = "NONE"): Response {
   return response({ user: { user_id: actorId, username_display: "复核员" },
-    deployment_role: "NONE", password_change_required: false,
-    authorized_projects: [{ project_id: projectId, name: "演示", role }],
+    deployment_role: deploymentRole, password_change_required: false,
+    authorized_projects: deploymentRole === "DEPLOYMENT_ADMIN" ? []
+      : [{ project_id: projectId, name: "演示", role }],
     absolute_expires_at: "2030-01-01T12:00:00Z", idle_expires_at: "2030-01-01T11:00:00Z",
     csrf_token: "a".repeat(64) });
 }
@@ -90,5 +91,30 @@ describe("EvidenceEligibilityOperationLookupClient", () => {
       code: "EVIDENCE_LOOKUP_DENIED" });
     await expect(client.lookup(projectId, evidenceId, key)).rejects.toMatchObject({
       code: "EVIDENCE_LOOKUP_UNAVAILABLE" });
+  });
+
+  it("uses only the global path for a deployment admin without project bypass", async () => {
+    const fetcher = vi.fn().mockResolvedValueOnce(sessionView("PROJECT_MANAGER", "DEPLOYMENT_ADMIN"))
+      .mockResolvedValueOnce(response({ status: "COMPLETED", evidence_id: evidenceId,
+        first_status_code: 200 }));
+    const client = new EvidenceEligibilityOperationLookupClient(await auth(fetcher as typeof fetch));
+    await expect(client.lookup(projectId, evidenceId, key)).rejects.toMatchObject({
+      code: "EVIDENCE_LOOKUP_DENIED" });
+    expect(await client.lookupGlobal(evidenceId, key)).toEqual({ status: "COMPLETED",
+      evidence_id: evidenceId, first_status_code: 200, is_current_state_proof: false });
+    const [url, options] = fetcher.mock.calls[1] as [string, RequestInit];
+    expect(url).toBe(`/api/v1/global/evidence/${evidenceId}:lookup-eligibility-operation`);
+    expect(url).not.toContain(key);
+    expect(options).toEqual(expect.objectContaining({ method: "POST", credentials: "same-origin",
+      body: JSON.stringify({ operation_key: key }), headers: { Accept: "application/json",
+        "Content-Type": "application/json", "X-CSRF-Token": "a".repeat(64) } }));
+  });
+
+  it("does not send a global lookup for a project-only actor", async () => {
+    const fetcher = vi.fn().mockResolvedValueOnce(sessionView());
+    const client = new EvidenceEligibilityOperationLookupClient(await auth(fetcher as typeof fetch));
+    await expect(client.lookupGlobal(evidenceId, key)).rejects.toMatchObject({
+      code: "EVIDENCE_LOOKUP_DENIED" });
+    expect(fetcher).toHaveBeenCalledTimes(1);
   });
 });

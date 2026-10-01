@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261001-582 — GLOBAL 回查客户端不得借项目角色
+
+- Date/WBS：2026-10-01 / `EVD-01-A04-P03-A08-P14`；输入 CR-EVD-004 双 Scope 与 P12 项目客户端。
+- Decision：GLOBAL 客户端仅 DeploymentAdmin 当前会话，单独全局路径；项目 PM/CustomerManager 仍仅项目路径。共用最小回执解析，但不混同两套权限或当前状态。
+- Reason/Impact/Rollback：与后端 Scope 隔离一致；只新增未接 UI 的前端方法，停用调用即可回退，无数据迁移。
+
 ## DEC-20261001-581 — 历史收据完成后人工确认清除待核对记录
 
 - Date/WBS：2026-10-01 / `EVD-01-A04-P03-A08-P13`；输入 CR-EVD-004、P12 前端回查客户端及现有会话操作号锁。
