@@ -25,6 +25,8 @@
 
 [60 项精确材料映射](../progress/plt-pkg-01-a09-p43-a09-python-license-gap-review.md)进一步区分 57 项有嵌入通知、2 项仅有独立侧载、1 项无该分发包专属通知；旧式 `License` 字段与许可证分类器只作为辅助线索。该分类不推定这些文本已覆盖全部子组件、归属或发行义务。
 
+[105 项完整 Python 审阅输入](../progress/plt-pkg-01-a09-p43-a10-python-105-review-inputs.md)已将另外 45 项的 `License-Expression` 和 `License-File` 逐包核对并合并前述 60 项；102 项有嵌入材料、2 项仅侧载、1 项无专属材料。此清单便于逐组件复核，但所有行仍标记 `REVIEW_REQUIRED`，不能替代最终产品级通知或法律签核。
+
 ## 发布前必须明确的决定和证据
 
 产品负责人及合格法律审阅人员应先确定本产品的对外许可与分发模式，并据此确认 Ghostscript、其他第三方组件和本产品代码之间的适用边界。Artifex 的[许可说明](https://artifex.com/licensing)将其产品描述为 AGPL 与商业双许可，并对其所述服务及集成场景提出源码披露条件；[AGPL 原文](https://artifex.com/licensing/gnu-agpl-v3)列出具体条款。本草案不推断公开 GitHub 源码本身足以满足这些条款，也不替用户购买或签署商业授权。
