@@ -76,7 +76,7 @@ onUnmounted(() => { mounted = false; generation += 1; });
       <ul v-if="items.length" aria-label="部署运行任务">
         <li v-for="item in items" :key="item.job_id">
           <strong>{{ item.job_type }} · {{ item.state }}</strong>
-          <span>范围：{{ item.scope }} · 任务号：{{ item.job_id }}</span>
+          <span>范围：{{ item.scope }} · 任务号：<RouterLink :to="{ name: 'admin-job-detail', params: { jobId: item.job_id } }">{{ item.job_id }}</RouterLink></span>
           <span>创建：<time :datetime="item.created_at">{{ new Date(item.created_at).toLocaleString('zh-CN') }}</time></span>
           <span>尝试：{{ item.attempt_count }} · 版本：{{ item.etag }}</span>
           <span v-if="item.completed_at">完成：<time :datetime="item.completed_at">{{ new Date(item.completed_at).toLocaleString('zh-CN') }}</time></span>

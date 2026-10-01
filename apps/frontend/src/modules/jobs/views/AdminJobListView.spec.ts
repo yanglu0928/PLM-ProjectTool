@@ -57,6 +57,7 @@ describe("AdminJobListView", () => {
     const wrapper = await view(await session(true), fetcher as typeof fetch);
     expect(fetcher.mock.calls[0][0]).toBe("/api/v1/admin/jobs?page_size=50");
     expect(wrapper.text()).toContain(globalId);
+    expect(wrapper.get(`a[href="/admin/jobs/${globalId}"]`).text()).toBe(globalId);
     expect(wrapper.text()).not.toContain("secret");
     expect(wrapper.find("form").exists()).toBe(false);
     wrapper.unmount();
