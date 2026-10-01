@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/WFL-01-A07-P02 登记 CR-WFL-005：固定 Evidence Owner 缺同事务解析来源证明及窄 GLOBAL 标准引用授权，Checklist 写入口继续关闭。兼容性：仅设计/追溯文档，无产品 API/Schema/依赖变化。升级：无迁移。验证：冻结 Workflow 与 Evidence/Document 现有受权 Port 静态核查；未运行新业务测试。已知问题：Document/Evidence Owner 与 Review/例外 Owner 待实现，浏览器/正式信任/三平台/UAT/Gate仍未通过。
+
 - 2026-10-02：0.1.0.dev0/WFL-01-A08-P07 当前非发行候选通过合成持证 Workflow 外部 HTTPS GET/START 网络烟测。兼容性：仅验证工具增加默认关闭的成对回调，无产品 API/Schema/依赖变更。升级：不触碰现有安装或数据库，无迁移。验证：防护单元5/5、固定候选双布局、包内 Python/Caddy/PG18、GET v0、START v1/重放/CSRF/冲突、单份 Audit/收据及临时资源清理 PASS，ZIP SHA不变。已知问题：真实浏览器、正式 License/法律、Server2025/Debian 断网安装升级、AI质量/性能/UAT/Gate未通过，`release_eligible=false`。
 
 - 2026-10-02：0.1.0.dev0/WFL-01-A08-P06 当前非发行候选的隔离外部 HTTPS 基础烟测通过；旧候选验收工具更新为固定 21,182 载荷并核 Workflow 路由布局。兼容性：仅测试工具，无产品 API/Schema/依赖变化。升级：不触碰正式安装/数据，无迁移。验证：错误候选单元1/1、包内 Python/Caddy/PG18 合成 HTTPS 登录/会话200、无 License 项目403、临时资源清理与 ZIP 哈希不变。已知问题：computer-use 初始化 `kernel assets`/os error 3，未做真实浏览器或持证 Workflow 外部 HTTP；正式法律/信任、三平台/UAT/Gate仍开放，`release_eligible=false`。
