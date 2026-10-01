@@ -22,6 +22,7 @@ MATRICES = (
     ("validation/job-01-a05-p05-windows/verify.py", "Windows Job list PASS:"),
     ("validation/job-01-a04-p04-windows/verify.py", "Document Windows factories PASS:"),
 )
+CANCEL_MATRIX = (("validation/job-02-a05-windows-cancel/verify.py", "JOB-02-A05 PASS:"),)
 
 
 def _command(args: list[str], *, timeout: int = 90) -> str:
@@ -47,7 +48,10 @@ def _safe_run_dir(run: Path, temp_root: Path) -> bool:
     return target.parent == root and target.name.startswith(PREFIX) and target != root and target.is_dir()
 
 
-def verify(*, repo: Path, pg_bin: Path, python: Path, temp_root: Path) -> None:
+def verify(*, repo: Path, pg_bin: Path, python: Path, temp_root: Path,
+           matrix_set: str = "read") -> None:
+    if matrix_set not in ("read", "cancel"):
+        raise ValueError("Only the fixed Jobs read or cancel matrix is allowed")
     repo = repo.resolve(strict=True)
     pg_bin = pg_bin.resolve(strict=True)
     python = python.resolve(strict=True)
@@ -56,7 +60,8 @@ def verify(*, repo: Path, pg_bin: Path, python: Path, temp_root: Path) -> None:
         raise ValueError("ASCII existing PG binary and temporary roots required")
     if not (pg_bin / "initdb.exe").is_file() or not (pg_bin / "pg_ctl.exe").is_file() or not python.is_file():
         raise ValueError("PG18 and Python executables required")
-    if any(not (repo / relative).is_file() for relative, _ in MATRICES):
+    matrices = MATRICES if matrix_set == "read" else CANCEL_MATRIX
+    if any(not (repo / relative).is_file() for relative, _ in matrices):
         raise ValueError("Jobs validation matrix missing")
     if _command([str(pg_bin / "pg_ctl.exe"), "--version"]) != "pg_ctl (PostgreSQL) 18.6":
         raise ValueError("Expected PostgreSQL 18.6 runtime")
@@ -77,7 +82,7 @@ def verify(*, repo: Path, pg_bin: Path, python: Path, temp_root: Path) -> None:
         if started.returncode:
             details = log.read_text(encoding="utf-8", errors="replace")[-1200:] if log.is_file() else ""
             raise RuntimeError(f"Isolated PG start failed: {details}")
-        for relative, marker in MATRICES:
+        for relative, marker in matrices:
             result = _command([str(python), str(repo / relative)], timeout=900)
             if marker not in result:
                 raise RuntimeError(f"{relative} exited without its completion marker")
@@ -106,8 +111,10 @@ def main() -> int:
     parser.add_argument("--pg-bin", type=Path, required=True)
     parser.add_argument("--python", type=Path, required=True)
     parser.add_argument("--temp-root", type=Path, required=True)
+    parser.add_argument("--matrix-set", choices=("read", "cancel"), default="read")
     args = parser.parse_args()
-    verify(repo=args.repo, pg_bin=args.pg_bin, python=args.python, temp_root=args.temp_root)
+    verify(repo=args.repo, pg_bin=args.pg_bin, python=args.python, temp_root=args.temp_root,
+           matrix_set=args.matrix_set)
     return 0
 
 

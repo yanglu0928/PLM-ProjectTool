@@ -31,6 +31,15 @@ class RunnerGuards(unittest.TestCase):
                 verify(repo=repo, pg_bin=root, python=Path(sys.executable), temp_root=root)
             self.assertEqual(list(root.iterdir()), [])
 
+    def test_arbitrary_matrix_is_rejected_before_start(self):
+        with tempfile.TemporaryDirectory(prefix="plm-job-runner-test-") as folder:
+            root = Path(folder)
+            repo = Path(__file__).resolve().parents[2]
+            with self.assertRaisesRegex(ValueError, "fixed Jobs"):
+                verify(repo=repo, pg_bin=root, python=Path(sys.executable), temp_root=root,
+                       matrix_set="arbitrary")
+            self.assertEqual(list(root.iterdir()), [])
+
 
 if __name__ == "__main__":
     unittest.main()
