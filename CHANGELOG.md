@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/PLT-PKG-01-A09-P48-A02 新增当前非发行候选第三方材料继承只读审计及 NOTICE 审阅差异稿。兼容性：无产品/API/Schema/依赖变更。升级：无迁移。验证：两 ZIP 完整 SHA、20,573保留文件/库存、后端18依赖、原生OCR 61映射/42正文和105第三方 Python 材料身份核对退出0；定向2项通过。已知问题：产品LICENSE/NOTICE、前端新 dist 最终归属及法律签核、正式信任/安装/Gate仍开放，`release_eligible=false`。
+
 - 2026-10-02：0.1.0.dev0/PLT-PKG-01-A09-P48-A01 只读核对当前非发行候选的来源、迁移及发行缺口，登记正式交付门禁仍阻断。兼容性：无程序变更。升级：不可将当前 ZIP 用于正式覆盖安装。验证：ZIP manifest/产品级许可文件/0052 清单与现有证据逐项复核。已知问题：产品 LICENSE/NOTICE、正式信任、Server2025/Debian、浏览器、AI质量、正式安装/升级和 Gate 未通过；候选仍 `release_eligible=false`。
 
 - 2026-10-02：0.1.0.dev0/PLT-PKG-01-A09-P47-A05 新增当前非发行候选双隔离布局/合成 HTTPS/License 失败关闭烟测。兼容性：仅测试工具，无产品 API/Schema 变化。升级：先从固定 SHA 候选清洁解包，测试副本不用于正式安装。验证：D盘21,181目标文件全量映射/Hash，包内Python/Caddy/PG18启动，登录与会话200、无License项目403、合成Vault/进程/临时文件清理通过，定向单元1项通过。已知问题：初次C盘Temp空间不足并遗留首个清洁暂存（策略拒绝删除）；正式信任/法律/三平台/浏览器/UAT/Gate仍未通过，`release_eligible=false`。
