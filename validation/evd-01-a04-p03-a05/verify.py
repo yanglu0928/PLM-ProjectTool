@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import argparse
 import hashlib
 import shutil
 import subprocess
@@ -13,6 +14,7 @@ from pathlib import Path
 from threading import Barrier
 
 import psycopg
+import plm_assistant
 from alembic import command
 from fastapi.testclient import TestClient
 from psycopg.types.json import Jsonb
@@ -392,17 +394,26 @@ def verify(port):
         runtime.dispose()
 
 
-def main():
+def main(packaged_pg: Path | None = None):
+    pg_source = packaged_pg if packaged_pg is not None else HELPER.PG_SOURCE
+    if packaged_pg is not None and (not packaged_pg.is_dir() or packaged_pg.is_symlink()
+                                    or not (packaged_pg / "bin/pg_ctl.exe").is_file()
+                                    or not (packaged_pg / "lib/vector.dll").is_file()):
+        raise ValueError("packaged PostgreSQL source unavailable")
+    if packaged_pg is not None and not Path(plm_assistant.__file__).resolve().is_relative_to(
+            (packaged_pg.resolve() / ".." / "runtime/packages").resolve()):
+        raise ValueError("Evidence validation is not importing packaged application")
     scratch = Path(tempfile.mkdtemp(prefix="plm-evd-elig-pg-"))
     if not str(scratch).isascii():
         raise RuntimeError("ASCII temporary PostgreSQL path required")
     install = scratch / "pgsql"
     for name in ("bin", "lib", "share"):
-        shutil.copytree(HELPER.PG_SOURCE / name, install / name)
-    shutil.copy2(HELPER.VECTOR_SOURCE / "vector.dll", install / "lib/vector.dll")
-    shutil.copy2(HELPER.VECTOR_SOURCE / "vector.control", install / "share/extension/vector.control")
-    for path in (HELPER.VECTOR_SOURCE / "sql").glob("vector--*.sql"):
-        shutil.copy2(path, install / "share/extension" / path.name)
+        shutil.copytree(pg_source / name, install / name)
+    if packaged_pg is None:
+        shutil.copy2(HELPER.VECTOR_SOURCE / "vector.dll", install / "lib/vector.dll")
+        shutil.copy2(HELPER.VECTOR_SOURCE / "vector.control", install / "share/extension/vector.control")
+        for path in (HELPER.VECTOR_SOURCE / "sql").glob("vector--*.sql"):
+            shutil.copy2(path, install / "share/extension" / path.name)
     bin_dir, data, log = install / "bin", scratch / "data", scratch / "postgres.log"
     port, started = HELPER.free_port(), False
     try:
@@ -424,4 +435,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--packaged-pg", type=Path)
+    main(parser.parse_args().packaged_pg)

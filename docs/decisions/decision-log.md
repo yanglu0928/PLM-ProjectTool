@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-596 — Evidence 原集成矩阵复用但锁定随包运行来源
+
+- Date/WBS：2026-10-02 / `PLT-PKG-01-A09-P48-A05`；输入当前候选/暂存 SHA 和既有 `EVD-01-A04-P03-A05` 临时PG/ASGI矩阵。
+- Decision：保留原验证脚本默认PoC模式，仅新增可选随包PG路径；该模式须核被导入的 `plm_assistant` 位于随包 Python packages，包装器先验候选/暂存并后验临时目录与ZIP未变。
+- Reason/Impact/Rollback：用原有完整矩阵检验当前包实际字节，同时避免复制测试逻辑/误用开发源码；仅测试工具，弃用可选入口即可回退，正式环境/Gate不据此放行。
+
 ## DEC-20261002-595 — Alembic env 不作为独立可导入业务模块
 
 - Date/WBS：2026-10-02 / `PLT-PKG-01-A09-P48-A04`；输入包内586模块枚举、首次普通导入 `migrations.env` 的 `context.config` 异常，以及 P47-A04 随包真实迁移通过。
