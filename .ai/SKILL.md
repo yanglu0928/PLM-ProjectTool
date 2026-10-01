@@ -5,8 +5,8 @@
 ## 启动顺序
 
 1. 读取根目录 `STATUS.md`，定位当前 Phase、WBS、阻塞项和下一任务。
-2. 读取根目录 `AI自主执行与最小人工确认规则 V1.0.md`。
-3. 读取 `skills/plm-project-development/SKILL.md`。
+2. 读取根目录 `AI自主执行与最小人工确认规则 V1.1.md`（继承未覆盖的 V1.0 条款）。
+3. 读取 `.ai/skills/plm-project-development/SKILL.md`。
 4. 只读取当前任务所需的 Skill 参考文件、ADR、数据模型、API Contract 或模块文档。
 5. 基线变化、Gate 或 L3 事件才重新读取相应正式基线全文。
 

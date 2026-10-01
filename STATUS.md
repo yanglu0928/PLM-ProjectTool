@@ -25,6 +25,8 @@
 
 ## 最近检查点
 
+- 2026-10-02/CR-EXEC-001 用户再次选择 A，持续执行至可用程序包、偏差前置记录后自主实施并同步GitHub；AGENTS、V1.1、CR及执行入口已对齐。无产品API/Schema/依赖变化；正式Gate/安全边界不变。
+
 - 2026-10-02/WFL-01-A06-P02 内部Workflow启动命令以当前PM/Session/CSRF/License、通用持久收据和Audit同事务护栏启动首阶段；重放保首次V1视图。一次性PG18真实授权/冲突/回滚/并发PASS，后端全量1824通过/3跳过，无新Schema/API/依赖。公开HTTP、正式信任/Gate仍开放。
 
 - 2026-10-02/WFL-01-A06-P01 Workflow自有Repository同事务独占根、核固定初态、首阶段HANDOVER与根ACTIVE/v1原子更新；真实一次性PG18回滚/提交/冲突/双写者/清理PASS，输入单元2、后端全量1816通过/3跳过，开发wheel PASS。首次全量测试发现根错误导致导入失败，正确包根重跑通过。无Audit/公开入口/Gate事实/新Migration，正式发行仍开放。
