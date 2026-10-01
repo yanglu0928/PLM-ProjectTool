@@ -6088,3 +6088,11 @@
 - 理由/影响/回滚/验证计划：历史 Evidence 不能被来源撤销抹去，但只持 ID 不等于有读取权限。仅内部读取服务/仓储，不改 Schema、冻结 API 或生产组合；可撤销未挂载 Port 回滚。验证项目隔离、全局角色、分页同时间戳、License 与异常失败关闭，并用隔离 PostgreSQL18 真实记录复验。未执行结果不记 PASS。
 
 - 执行结果：内部 Service/Repository 已按当前 Session、Scope、PROJECT 四类成员/GLOBAL 管理员与 License 过滤，`(created_at,evidence_id)` keyset 读取，历史 Evidence 不因来源版本状态被元数据接口抹除；不输出文件路径/正文。定向 5 项、隔离 PostgreSQL18 真实 Session 与 3 个同时间戳记录逐页、跨项目/非成员/License 失败关闭通过；临时库停机清理。公开 HTTP/签名 cursor/Viewer 尚未完成，Gate3 不变。
+
+## DEC-20261001-594 — Evidence 列表游标采用独立签名密钥
+
+- 日期/Phase/WBS：2026-10-01 / Phase2 / EVD-01-A03-P04-A02-P01。输入 Evidence 元数据 keyset PASS、冻结 API 分页/Scope/Session 控制和现有 Document 游标设计。
+- 决策：游标保存版本、Evidence 专属 family、Scope/Project、Session 摘要、查询页大小摘要及 `(created_at,evidence_id)`，以 Evidence 专用 32 字节 HMAC-SHA256 密钥签名；编码为无路径/正文/明文 Session 的 URL-safe token。当前账户密钥引用另项供给与备份验证，不复用 Document/其他游标密钥；生产路由接线前必须可解析，否则失败关闭。
+- 理由/影响/回滚/验证计划：防止跨会话、跨项目和改页大小重放，且同一时间戳分页不漏/不重。仅 Evidence API 内部 Codec，无 Schema/Migration、冻结 API Breaking Change 或第三方依赖；未挂载可移除回滚。验证合法往返、逐字段篡改、跨会话/Scope/页大小、非规范编码及UTC位置；未执行不记 PASS。
+
+- 执行结果：独立 HMAC-SHA256 Codec 已实现，位置时间规范化为 UTC 微秒，解码时重算规范 token 并拒绝篡改/跨会话、项目、Scope、页大小或密钥。定向 3 项通过；当前账户密钥引用、公开 GET/生产装配和 Gate3 均未完成。无 Migration/公开 API 变化。
