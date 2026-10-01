@@ -698,6 +698,75 @@ describe("SessionClient", () => {
     expect(api.canSubmit).toBe(true);
   });
 
+  it("posts only an empty Workflow start with private CSRF and original v0/Key", async () => {
+    const first = response({ workflow_id: id, state: "ACTIVE", etag: '"v1"' });
+    const { api, fetcher } = client(response(session()), first);
+    await api.login("manager", "synthetic-only");
+    const key = "synthetic-workflow-start-0001";
+    await expect(api.postProjectWorkflowStart(projectId, '"v0"', key)).resolves.toBe(first);
+    expect(fetcher.mock.calls[1]).toEqual([`/api/v1/projects/${projectId}/workflow:start`, {
+      method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error",
+      headers: { Accept: "application/json", "X-CSRF-Token": token,
+        "Idempotency-Key": key, "If-Match": '"v0"' }, signal: expect.any(AbortSignal),
+    }]);
+    expect(JSON.stringify(api)).not.toContain(token);
+    expect(api.canSubmit).toBe(true);
+  });
+
+  it("rejects Workflow start unsafe scope, stale version and bad Key before network", async () => {
+    const { api, fetcher } = client(response(session()));
+    await api.login("manager", "synthetic-only");
+    for (const [project, etag, key] of [
+      ["../other", '"v0"', "synthetic-workflow-start-0001"],
+      [projectId.toUpperCase(), '"v0"', "synthetic-workflow-start-0001"],
+      [projectId, '"v1"', "synthetic-workflow-start-0001"],
+      [projectId, 'W/"v0"', "synthetic-workflow-start-0001"],
+      [projectId, '"v0"', "short"],
+      [projectId, '"v0"', "synthetic-workflow\nstart-0001"],
+    ]) {
+      await expect(api.postProjectWorkflowStart(project, etag, key))
+        .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    }
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("requires current Workflow start write proof, retains original on unknown and clears on 401", async () => {
+    const readOnly = session(); delete (readOnly as Partial<typeof readOnly>).csrf_token;
+    const { api: viewer, fetcher: viewerFetcher } = client(response(readOnly));
+    await viewer.current();
+    await expect(viewer.postProjectWorkflowStart(projectId, '"v0"', "synthetic-workflow-start-0001"))
+      .rejects.toMatchObject({ code: "AUTH_RELOGIN_REQUIRED" });
+    expect(viewerFetcher).toHaveBeenCalledTimes(1);
+    const { api, fetcher } = client(response(session()), new Response("{}", { status: 503 }),
+      new Response("{}", { status: 401 }));
+    await api.login("manager", "synthetic-only");
+    await api.postProjectWorkflowStart(projectId, '"v0"', "synthetic-workflow-start-0001");
+    expect(api.canSubmit).toBe(true);
+    await api.postProjectWorkflowStart(projectId, '"v0"', "synthetic-workflow-start-0001");
+    expect(api.view).toBeNull();
+    expect(api.canSubmit).toBe(false);
+    expect(fetcher).toHaveBeenCalledTimes(3);
+  });
+
+  it("never overlaps or automatically retries a timed-out Workflow start", async () => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn().mockResolvedValueOnce(response(session()))
+      .mockImplementationOnce((_path: string, options: RequestInit) => new Promise((_done, reject) => {
+        options.signal?.addEventListener("abort", () => reject(new Error("synthetic timeout")));
+      }));
+    const api = new SessionClient(fetcher as typeof fetch, 100);
+    await api.login("manager", "synthetic-only");
+    const pending = expect(api.postProjectWorkflowStart(projectId, '"v0"',
+      "synthetic-workflow-start-0001"))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    await expect(api.postProjectWorkflowStart(projectId, '"v0"', "synthetic-workflow-start-0001"))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_BUSY" });
+    await vi.advanceTimersByTimeAsync(101);
+    await pending;
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(api.canSubmit).toBe(true);
+  });
+
   it("posts Project Job cancel with private CSRF, original version, key and bounded reason", async () => {
     const receipt = response({ job_id: id, state: "CANCEL_REQUESTED", etag: '"v2"' });
     const { api, fetcher } = client(response(session()), receipt);

@@ -364,6 +364,36 @@ export class SessionClient {
     }
   }
 
+  /** Workflow START only accepts the original v0 read and Key; never retries an uncertain result. */
+  async postProjectWorkflowStart(projectId: string, etag: string,
+    idempotencyKey: string): Promise<Response> {
+    if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
+    if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
+    if (!identifier(projectId) || etag !== '"v0"'
+      || typeof idempotencyKey !== "string" || !/^[\x20-\x7e]{16,128}$/.test(idempotencyKey)) {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    }
+    this.#busy = true;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      const fetcher = this.fetcher;
+      const response = await fetcher(`/api/v1/projects/${projectId}/workflow:start`, {
+        method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error",
+        headers: { Accept: "application/json", "X-CSRF-Token": this.#csrf,
+          "Idempotency-Key": idempotencyKey, "If-Match": etag }, signal: controller.signal,
+      });
+      if (controller.signal.aborted) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+      if (response.status === 401) { this.#csrf = null; this.#view = null; }
+      return response;
+    } catch {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    } finally {
+      window.clearTimeout(timer);
+      this.#busy = false;
+    }
+  }
+
   /** Project Job cancellation: one request only; the receipt is not current Job state proof. */
   async postProjectJobCancel(projectId: string, jobId: string, etag: string,
     idempotencyKey: string, reason: string): Promise<Response> {
