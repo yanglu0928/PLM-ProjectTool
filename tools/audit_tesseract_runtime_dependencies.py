@@ -35,7 +35,7 @@ def _name(data: bytes, offset: int) -> str:
     return result.casefold()
 
 
-def pe_imports(path: Path) -> set[str]:
+def pe_import_tables(path: Path) -> tuple[set[str], set[str]]:
     data = path.read_bytes()
     try:
         if data[:2] != b"MZ":
@@ -65,24 +65,49 @@ def pe_imports(path: Path) -> set[str]:
 
         directory_count = _u32(data, optional + 108)
         if directory_count < 2:
-            return set()
+            return set(), set()
         import_rva, import_size = struct.unpack_from("<II", data, optional + 120)
         result = set()
         if import_rva and import_size:
-            start = offset(import_rva, 20)
             for index in range(min(import_size // 20, 4096)):
-                descriptor = start + index * 20
-                if descriptor + 20 > len(data):
-                    raise ValueError("PE import descriptor outside file")
+                descriptor = offset(import_rva + index * 20, 20)
                 values = struct.unpack_from("<IIIII", data, descriptor)
                 if not any(values):
                     break
                 result.add(_name(data, offset(values[3])))
             else:
                 raise ValueError("PE import descriptor terminator missing")
-        return result
+        delay = set()
+        if directory_count >= 14:
+            if optional_size < 224:
+                raise ValueError("PE delay import directory outside optional header")
+            delay_rva, delay_size = struct.unpack_from("<II", data, optional + 216)
+            if delay_rva or delay_size:
+                if delay_size < 32:
+                    raise ValueError("PE delay import directory too small")
+                image_base = struct.unpack_from("<Q", data, optional + 24)[0]
+                for index in range(min(delay_size // 32, 4096)):
+                    descriptor = offset(delay_rva + index * 32, 32)
+                    values = struct.unpack_from("<IIIIIIII", data, descriptor)
+                    if not any(values):
+                        break
+                    attributes, name = values[:2]
+                    if attributes & ~1:
+                        raise ValueError("PE delay import attributes unsupported")
+                    if not attributes & 1:
+                        if name < image_base:
+                            raise ValueError("PE delay import VA below image base")
+                        name -= image_base
+                    delay.add(_name(data, offset(name)))
+                else:
+                    raise ValueError("PE delay import descriptor terminator missing")
+        return result, delay
     except struct.error as error:
         raise ValueError("PE file truncated") from error
+
+
+def pe_imports(path: Path) -> set[str]:
+    return pe_import_tables(path)[0]
 
 
 def audit(root: Path) -> dict:
@@ -94,11 +119,14 @@ def audit(root: Path) -> dict:
     needed = {"tesseract.exe"}
     external = set()
     imports_by_file = {}
+    delay_imports_by_file = {}
     pending = ["tesseract.exe"]
     while pending:
         name = pending.pop()
-        imports = pe_imports(files[name])
+        normal_imports, delayed_imports = pe_import_tables(files[name])
+        imports = normal_imports | delayed_imports
         imports_by_file[name] = sorted(imports)
+        delay_imports_by_file[name] = sorted(delayed_imports)
         for imported in imports:
             if imported in files:
                 if imported not in needed:
@@ -117,6 +145,7 @@ def audit(root: Path) -> dict:
         "non_root_dlls_not_in_static_graph": non_root_dlls,
         "external_import_names": sorted(external),
         "imports_by_file": imports_by_file,
+        "delay_imports_by_file": delay_imports_by_file,
         "needed_sha256": {name: hashlib.sha256(files[name].read_bytes()).hexdigest()
                           for name in sorted(needed)},
     }

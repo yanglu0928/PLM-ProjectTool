@@ -12,7 +12,7 @@ import json
 import shutil
 from pathlib import Path
 
-from audit_tesseract_runtime_dependencies import pe_imports
+from audit_tesseract_runtime_dependencies import pe_import_tables
 
 
 SYSTEM_DLLS = {
@@ -115,7 +115,8 @@ def build(matrix_path: Path, package_dir: Path, tessdata_source: Path, output: P
     pending = ["tesseract.exe"]
     external = set()
     while pending:
-        for name in sorted(pe_imports(needed[pending.pop()][0])):
+        normal, delayed = pe_import_tables(needed[pending.pop()][0])
+        for name in sorted(normal | delayed):
             if name in sources and name not in needed:
                 needed[name] = sources[name]
                 pending.append(name)

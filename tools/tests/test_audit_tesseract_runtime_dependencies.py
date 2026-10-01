@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from audit_tesseract_runtime_dependencies import audit, pe_imports
+from audit_tesseract_runtime_dependencies import audit, pe_imports, pe_import_tables
 
 
 def minimal_amd64_pe(import_name: str | None) -> bytes:
@@ -30,6 +30,15 @@ def minimal_amd64_pe(import_name: str | None) -> bytes:
     return bytes(data)
 
 
+def minimal_delay_pe(delay_name: str, attributes: int = 1) -> bytes:
+    data = bytearray(minimal_amd64_pe(None))
+    optional = 0x98
+    struct.pack_into("<II", data, optional + 216, 0x1080, 64)
+    struct.pack_into("<II", data, 0x280, attributes, 0x10D0)
+    data[0x2D0:0x2D0 + len(delay_name) + 1] = delay_name.encode("ascii") + b"\0"
+    return bytes(data)
+
+
 class TesseractPeImportTests(unittest.TestCase):
     def test_recursive_local_imports_and_external_names(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
@@ -49,6 +58,23 @@ class TesseractPeImportTests(unittest.TestCase):
             path.write_bytes(b"not a PE")
             with self.assertRaisesRegex(ValueError, "not a PE"):
                 pe_imports(path)
+
+    def test_delay_import_adds_local_dependency(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / "tesseract.exe").write_bytes(minimal_delay_pe("LATE.dll"))
+            (root / "late.dll").write_bytes(minimal_amd64_pe(None))
+            self.assertEqual(pe_import_tables(root / "tesseract.exe"), (set(), {"late.dll"}))
+            result = audit(root)
+            self.assertEqual(result["needed_local_files"], ["late.dll", "tesseract.exe"])
+            self.assertEqual(result["delay_imports_by_file"]["tesseract.exe"], ["late.dll"])
+
+    def test_delay_import_bad_attributes_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "bad.exe"
+            path.write_bytes(minimal_delay_pe("late.dll", attributes=3))
+            with self.assertRaisesRegex(ValueError, "attributes unsupported"):
+                pe_import_tables(path)
 
 
 if __name__ == "__main__":
