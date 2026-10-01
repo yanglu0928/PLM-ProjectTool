@@ -15,6 +15,7 @@ from poc03_rag.holdout_lock import (  # noqa: E402
     HoldoutQuotaError,
     build_holdout_lock,
     collect_contaminated_chunk_ids,
+    collect_prior_lock_exposure,
     load_json_lines,
     load_partitioned_chunks,
 )
@@ -36,6 +37,7 @@ def main() -> int:
     parser.add_argument("--prompt-payload", type=Path, required=True)
     parser.add_argument("--review-package", type=Path, required=True)
     parser.add_argument("--retrieval-cache", type=Path, action="append", default=[])
+    parser.add_argument("--prior-holdout-lock", type=Path, action="append", default=[])
     parser.add_argument("--project-id", default="POC03-SOURCE-CORPUS")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--report", type=Path, required=True)
@@ -51,6 +53,10 @@ def main() -> int:
         review_package,
         retrieval_rows,
     )
+    prior_ids, prior_text_hashes, prior_locators = collect_prior_lock_exposure(
+        load_json(path) for path in args.prior_holdout_lock
+    )
+    contaminated.update(prior_ids)
     chunks = [
         chunk
         for parsed_root in args.parsed_root
@@ -61,6 +67,8 @@ def main() -> int:
             chunks,
             contaminated,
             project_id=args.project_id,
+            prior_text_hashes=prior_text_hashes,
+            prior_locators=prior_locators,
         )
     except HoldoutQuotaError as error:
         report = {
@@ -73,6 +81,8 @@ def main() -> int:
                 "eligible_counts": dict(sorted(error.eligible_counts.items())),
                 "shortages": error.shortages,
                 "contaminated_chunk_count": len(contaminated),
+                "prior_holdout_lock_count": len(args.prior_holdout_lock),
+                "prior_holdout_chunk_count": len(prior_ids),
             },
             "checks": {
                 "all_source_type_quotas_met": False,
@@ -85,16 +95,15 @@ def main() -> int:
                 "source_locators_committed": False,
                 "lock_file_committed": False,
             },
-            "known_limit": (
-                "At least one new survey source is required. Reusing exposed survey chunks would "
-                "invalidate the independent holdout."
-            ),
+            "known_limit": "One or more source quotas lack unexposed eligible evidence; no new lock was written.",
             "conclusion": "Independent holdout source lock failed closed because a source quota is unavailable.",
         }
         write_json(args.report, report)
         print(json.dumps(report, ensure_ascii=False, indent=2))
         return 1
     report["generated_at"] = datetime.now().astimezone().isoformat()
+    report["summary"]["prior_holdout_lock_count"] = len(args.prior_holdout_lock)
+    report["summary"]["prior_holdout_chunk_count"] = len(prior_ids)
     report["conclusion"] = (
         "Independent holdout sources are locked and ready for human-authored queries and labels."
         if report["status"] == "PASS"

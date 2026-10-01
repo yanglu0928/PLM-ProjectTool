@@ -76,6 +76,38 @@ def collect_contaminated_chunk_ids(
     return contaminated
 
 
+def collect_prior_lock_exposure(
+    locks: Iterable[dict[str, Any]],
+) -> tuple[set[str], set[str], dict[str, set[str]]]:
+    """Collect prior holdout evidence without returning customer content."""
+    chunk_ids: set[str] = set()
+    text_hashes: set[str] = set()
+    locators: dict[str, set[str]] = defaultdict(set)
+    for lock in locks:
+        candidates = lock.get("candidates")
+        if not isinstance(candidates, list) or not candidates:
+            raise ValueError("each prior holdout lock must contain candidates")
+        for candidate in candidates:
+            if not isinstance(candidate, dict):
+                raise ValueError("prior holdout candidates must be objects")
+            chunk_id = str(candidate.get("chunk_id") or "")
+            text_hash = str(candidate.get("text_sha256") or "").lower()
+            document_id = str(candidate.get("document_id") or "")
+            source_locators = candidate.get("source_locators")
+            if (
+                not chunk_id
+                or not text_hash
+                or not document_id
+                or not isinstance(source_locators, list)
+                or not source_locators
+            ):
+                raise ValueError("prior holdout candidate evidence is incomplete")
+            chunk_ids.add(chunk_id)
+            text_hashes.add(text_hash)
+            locators[document_id].update(str(value) for value in source_locators)
+    return chunk_ids, text_hashes, dict(locators)
+
+
 def _stable_order(seed: str, chunk_id: str) -> str:
     return hashlib.sha256(f"{seed}|{chunk_id}".encode("utf-8")).hexdigest()
 
@@ -107,10 +139,14 @@ def build_holdout_lock(
     *,
     project_id: str,
     quotas: dict[str, int] | None = None,
+    prior_text_hashes: set[str] | None = None,
+    prior_locators: dict[str, set[str]] | None = None,
     min_chars: int = 160,
     seed: str = "poc03-holdout-v1",
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     quotas = dict(quotas or DEFAULT_QUOTAS)
+    prior_text_hashes = {value.lower() for value in (prior_text_hashes or set())}
+    prior_locators = prior_locators or {}
     chunks_by_id = {str(chunk["chunk_id"]): chunk for chunk in chunks}
     contaminated_locators: dict[str, set[str]] = defaultdict(set)
     for chunk_id in contaminated_ids:
@@ -143,7 +179,13 @@ def build_holdout_lock(
         if locators & contaminated_locators.get(document_id, set()):
             exclusion_counts["overlapping_source_locator"] += 1
             continue
+        if locators & prior_locators.get(document_id, set()):
+            exclusion_counts["prior_holdout_locator"] += 1
+            continue
         text_hash = str(chunk.get("text_sha256") or "")
+        if text_hash.lower() in prior_text_hashes:
+            exclusion_counts["prior_holdout_text"] += 1
+            continue
         if not text_hash or text_hash in seen_text_hashes:
             exclusion_counts["duplicate_text"] += 1
             continue
@@ -212,7 +254,7 @@ def build_holdout_lock(
             "chunk_id_disjoint": True,
             "source_locator_disjoint": True,
             "document_disjoint": False,
-            "document_disjoint_reason": "All 29 available source documents already appear in the calibration set.",
+            "document_disjoint_reason": "Document-level independence is evaluated below.",
         },
         "candidates": candidates,
     }
@@ -228,8 +270,8 @@ def build_holdout_lock(
         "All selected documents are disjoint from prior exposure."
         if not overlapping_documents
         else (
-            "Legacy standard, contract or technical-agreement sources cannot be fully separated at document "
-            "level; the lock enforces unseen chunks and source locators. Actual survey records are new sources."
+            "Some selected sources overlap prior exposure at document level; the lock enforces unseen "
+            "chunks and source locators. Survey records must be assessed against every prior holdout."
         )
     )
     report = {
@@ -257,6 +299,13 @@ def build_holdout_lock(
                 )
                 for candidate in candidates
             ),
+            "prior_holdout_text_disjoint": all(
+                candidate["text_sha256"].lower() not in prior_text_hashes for candidate in candidates
+            ),
+            "prior_holdout_locators_disjoint": all(
+                not (set(candidate["source_locators"]) & prior_locators.get(candidate["document_id"], set()))
+                for candidate in candidates
+            ),
             "unique_selected_text": len({candidate["text_sha256"] for candidate in candidates}) == len(candidates),
             "survey_candidates_use_actual_records": all(
                 candidate["evidence_role"] == ACTUAL_SURVEY_RECORD_ROLE
@@ -276,9 +325,8 @@ def build_holdout_lock(
             "survey_form_templates": "REFERENCE_ONLY_NOT_ELIGIBLE_FOR_HOLDOUT_QUOTA",
         },
         "known_limit": (
-            "Legacy standard, contract and technical-agreement documents overlap the calibration corpus at "
-            "document level. The lock therefore enforces unseen cases, queries, chunks and source locators for "
-            "those sources; survey candidates are drawn only from new actual customer discovery records."
+            "Exact chunk, text and locator exclusion cannot prove semantic independence. New queries and labels "
+            "require separate review before quality acceptance."
         ),
     }
     if not all(report["checks"].values()):

@@ -12,6 +12,7 @@ from poc03_rag.holdout_lock import (  # noqa: E402
     HoldoutQuotaError,
     build_holdout_lock,
     collect_contaminated_chunk_ids,
+    collect_prior_lock_exposure,
 )
 
 
@@ -32,6 +33,35 @@ def make_chunk(source: str, document: str, index: int, locator: str | None = Non
 
 
 class HoldoutLockTests(unittest.TestCase):
+    def test_prior_lock_exposure_excludes_id_text_and_locator(self) -> None:
+        prior = make_chunk("SURVEY", "SL-001", 1)
+        old_lock = {"candidates": [{
+            "chunk_id": prior["chunk_id"],
+            "text_sha256": prior["text_sha256"],
+            "document_id": prior["document_id"],
+            "source_locators": prior["source_locators"],
+        }]}
+        ids, hashes, locators = collect_prior_lock_exposure([old_lock])
+        same_text = make_chunk("SURVEY", "SL-002", 2)
+        same_text["text_sha256"] = prior["text_sha256"]
+        same_locator = make_chunk("SURVEY", "SL-001", 3, locator=prior["source_locators"][0])
+        clean = make_chunk("SURVEY", "SL-003", 4)
+        lock, report = build_holdout_lock(
+            [prior, same_text, same_locator, clean],
+            ids,
+            project_id="P",
+            quotas={"SURVEY": 1},
+            prior_text_hashes=hashes,
+            prior_locators=locators,
+        )
+        self.assertEqual([candidate["chunk_id"] for candidate in lock["candidates"]], [clean["chunk_id"]])
+        self.assertTrue(report["checks"]["prior_holdout_text_disjoint"])
+        self.assertTrue(report["checks"]["prior_holdout_locators_disjoint"])
+
+    def test_incomplete_prior_lock_fails_closed(self) -> None:
+        with self.assertRaisesRegex(ValueError, "incomplete"):
+            collect_prior_lock_exposure([{"candidates": [{"chunk_id": "A"}]}])
+
     def test_contamination_union_includes_all_prior_exposure_channels(self) -> None:
         contaminated = collect_contaminated_chunk_ids(
             {"cases": [{"expected_relevant_chunk_ids": ["A"]}]},
