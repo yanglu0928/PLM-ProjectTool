@@ -7,6 +7,7 @@ import { SessionClient } from "@/modules/auth/api/sessionClient";
 import { EvidenceListClient } from "@/modules/evidence/api/evidenceListClient";
 import { EvidenceViewerClient } from "@/modules/evidence/api/evidenceViewerClient";
 import { EvidenceEligibilityClient } from "@/modules/evidence/api/evidenceEligibilityClient";
+import { EvidenceEligibilityOperationLookupClient } from "@/modules/evidence/api/evidenceEligibilityOperationLookupClient";
 import GlobalEvidenceListView from "./GlobalEvidenceListView.vue";
 
 const actorId = "01234567-89ab-4cde-8123-456789abcdef";
@@ -35,18 +36,67 @@ async function session(admin: boolean): Promise<SessionClient> {
   await result.login("user", "synthetic-only");
   return result;
 }
-async function view(admin: boolean, lists: object, viewers: object, eligibility: object) {
+async function view(admin: boolean, lists: object, viewers: object, eligibility: object,
+                    lookup?: object) {
   const router = createAppRouter(createMemoryHistory());
   await router.push("/admin/evidence"); await router.isReady();
   const wrapper = mount(GlobalEvidenceListView, { props: { session: await session(admin),
     listClient: lists as EvidenceListClient, viewerClient: viewers as EvidenceViewerClient,
-    eligibilityClient: eligibility as EvidenceEligibilityClient }, global: { plugins: [router] } });
+    eligibilityClient: eligibility as EvidenceEligibilityClient,
+    eligibilityLookupClient: lookup as EvidenceEligibilityOperationLookupClient | undefined },
+  global: { plugins: [router] } });
   await flushPromises();
   return wrapper;
 }
 
 describe("GlobalEvidenceListView", () => {
   afterEach(() => { vi.restoreAllMocks(); window.sessionStorage.clear(); });
+
+  it("requires the original receipt and a fresh current GET before manual reminder clearance", async () => {
+    const pendingKey = `plm.evidence.global.eligibility.pending.${actorId}`;
+    window.sessionStorage.setItem(pendingKey, JSON.stringify({ actorId, evidenceId, key: "k".repeat(16) }));
+    const lists = { list: vi.fn().mockResolvedValue({ items: [item], next_cursor: null, has_more: false }) };
+    const lookup = { lookupGlobal: vi.fn().mockResolvedValue({ status: "COMPLETED",
+      evidence_id: evidenceId, first_status_code: 200, is_current_state_proof: false }) };
+    const eligibility = { currentGlobal: vi.fn().mockResolvedValue({ evidence_id: evidenceId,
+      document_id: documentId, document_version_id: versionId,
+      eligibility_state: "REVOKED", etag: '"v2"' }), setGlobal: vi.fn() };
+    const wrapper = await view(true, lists, { get: vi.fn() }, eligibility, lookup);
+    await wrapper.findAll("button").find((button) => button.text() === "按原操作号回查")!.trigger("click");
+    await flushPromises();
+    expect(lookup.lookupGlobal).toHaveBeenCalledWith(evidenceId, "k".repeat(16));
+    expect(eligibility.currentGlobal).toHaveBeenCalledWith(evidenceId);
+    expect(wrapper.text()).toContain("仅证明历史提交");
+    expect(wrapper.text()).toContain("当前资格：已撤销");
+    expect(window.sessionStorage.getItem(pendingKey)).not.toBeNull();
+    await wrapper.findAll("button").find((button) => button.text() === "已核对当前资格，清除待核对提醒")!
+      .trigger("click");
+    expect(window.sessionStorage.getItem(pendingKey)).toBeNull();
+    expect(eligibility.setGlobal).not.toHaveBeenCalled();
+    wrapper.unmount();
+  });
+
+  it("keeps the global operation locked on unconfirmed receipt or current GET failure", async () => {
+    const pendingKey = `plm.evidence.global.eligibility.pending.${actorId}`;
+    window.sessionStorage.setItem(pendingKey, JSON.stringify({ actorId, evidenceId, key: "k".repeat(16) }));
+    const lists = { list: vi.fn().mockResolvedValue({ items: [item], next_cursor: null, has_more: false }) };
+    const lookup = { lookupGlobal: vi.fn().mockResolvedValueOnce({ status: "UNCONFIRMED",
+      is_current_state_proof: false }).mockResolvedValueOnce({ status: "COMPLETED",
+      evidence_id: evidenceId, first_status_code: 200, is_current_state_proof: false }) };
+    const eligibility = { currentGlobal: vi.fn().mockRejectedValue(new Error("read failed")),
+      setGlobal: vi.fn() };
+    const wrapper = await view(true, lists, { get: vi.fn() }, eligibility, lookup);
+    await wrapper.findAll("button").find((button) => button.text() === "按原操作号回查")!.trigger("click");
+    await flushPromises();
+    expect(wrapper.text()).toContain("尚不能确认原操作是否提交");
+    expect(eligibility.currentGlobal).not.toHaveBeenCalled();
+    await wrapper.findAll("button").find((button) => button.text() === "按原操作号回查")!.trigger("click");
+    await flushPromises();
+    expect(wrapper.text()).toContain("暂时无法核对原操作");
+    expect(wrapper.text()).not.toContain("已核对当前资格，清除待核对提醒");
+    expect(window.sessionStorage.getItem(pendingKey)).not.toBeNull();
+    wrapper.unmount();
+  });
 
   it("saves a global operation key before the human POST and clears it on a verified receipt", async () => {
     const lists = { list: vi.fn().mockResolvedValue({ items: [item], next_cursor: null, has_more: false }) };

@@ -9,13 +9,17 @@ import { EvidenceViewerClient, EvidenceViewerClientError,
   type EvidenceViewerDescriptor } from "@/modules/evidence/api/evidenceViewerClient";
 import { EvidenceEligibilityClient, EvidenceEligibilityClientError,
   type CurrentEvidenceEligibility, type EvidenceEligibilityFirstReceipt } from "@/modules/evidence/api/evidenceEligibilityClient";
+import { EvidenceEligibilityOperationLookupClient, EvidenceEligibilityOperationLookupError,
+  type EvidenceEligibilityOperationLookup } from "@/modules/evidence/api/evidenceEligibilityOperationLookupClient";
 
 const props = defineProps<{ session?: SessionClient; listClient?: EvidenceListClient;
-  viewerClient?: EvidenceViewerClient; eligibilityClient?: EvidenceEligibilityClient }>();
+  viewerClient?: EvidenceViewerClient; eligibilityClient?: EvidenceEligibilityClient;
+  eligibilityLookupClient?: EvidenceEligibilityOperationLookupClient }>();
 const session = toRaw(props.session ?? inject(sessionClientKey, null) ?? new SessionClient());
 const lists = toRaw(props.listClient ?? new EvidenceListClient());
 const viewers = toRaw(props.viewerClient ?? new EvidenceViewerClient());
 const eligibility = toRaw(props.eligibilityClient ?? new EvidenceEligibilityClient(session));
+const eligibilityLookup = toRaw(props.eligibilityLookupClient ?? new EvidenceEligibilityOperationLookupClient(session));
 const actorId = session.view?.user.user_id;
 const items = ref<readonly EvidenceSummary[]>([]);
 const cursor = ref<string | null>(null);
@@ -49,6 +53,52 @@ function readPending(): GlobalPendingDecision | null {
   return null;
 }
 const unresolved = ref<GlobalPendingDecision | null>(readPending());
+const lookupResult = ref<EvidenceEligibilityOperationLookup | null>(null);
+const lookupCurrent = ref<CurrentEvidenceEligibility | null>(null);
+const lookupBusy = ref(false);
+const lookupError = ref("");
+let lookupGeneration = 0;
+function clearLookup() {
+  lookupGeneration += 1; lookupResult.value = null; lookupCurrent.value = null;
+  lookupBusy.value = false; lookupError.value = "";
+}
+async function lookupPending() {
+  const pending = unresolved.value;
+  if (!mayRead() || !pending || pending.actorId !== actorId
+    || pendingStorageError.value || lookupBusy.value) return;
+  clearLookup();
+  const request = ++lookupGeneration;
+  lookupBusy.value = true;
+  try {
+    const result = await eligibilityLookup.lookupGlobal(pending.evidenceId, pending.key);
+    if (!mounted || request !== lookupGeneration || unresolved.value !== pending || !mayRead()) return;
+    if (result.status === "COMPLETED") {
+      const state = await eligibility.currentGlobal(pending.evidenceId);
+      if (!mounted || request !== lookupGeneration || unresolved.value !== pending
+        || !mayRead() || state.evidence_id !== pending.evidenceId) return;
+      lookupCurrent.value = state;
+    }
+    lookupResult.value = result;
+  } catch (failure) {
+    if (mounted && request === lookupGeneration) {
+      lookupError.value = failure instanceof EvidenceEligibilityOperationLookupError
+        || failure instanceof EvidenceEligibilityClientError
+        ? failure.message : "暂时无法核对原操作；请保留操作号，不要重新提交。";
+    }
+  } finally { if (mounted && request === lookupGeneration) lookupBusy.value = false; }
+}
+function confirmLookup() {
+  const pending = unresolved.value;
+  if (!pending || !mayRead() || pendingStorageError.value || lookupBusy.value
+    || lookupResult.value?.status !== "COMPLETED"
+    || lookupResult.value.evidence_id !== pending.evidenceId
+    || lookupCurrent.value?.evidence_id !== pending.evidenceId) return;
+  if (!clearPending(pending)) {
+    lookupError.value = "无法清除待核对操作；请保留原操作号并检查浏览器会话存储。";
+    return;
+  }
+  clearLookup();
+}
 function savePending(value: GlobalPendingDecision): boolean {
   if (!pendingStorageKey || pendingStorageError.value || unresolved.value) return false;
   try {
@@ -90,6 +140,7 @@ function clearSelection() {
   selectedBusy.value = false; selectedError.value = "";
   decisionTarget.value = null; decisionReason.value = ""; decisionAttested.value = false;
   decisionBusy.value = false; decisionError.value = ""; decisionReceipt.value = null;
+  clearLookup();
 }
 function mayDecide(): boolean {
   return mayRead() && !!selected.value && current.value?.evidence_id === selected.value.evidence_id
@@ -198,7 +249,23 @@ onUnmounted(() => { mounted = false; generation += 1; clearSelection(); });
       <button type="button" :disabled="busy" @click="load(true)">刷新全局证据</button>
       <p v-if="pendingStorageError" role="alert">浏览器会话存储不可用或待核对记录无效；资格提交已关闭，避免丢失操作号。</p>
       <p v-if="unresolved" role="alert">一项 GLOBAL 资格操作结果尚未确认（证据 {{ unresolved.evidenceId }}，操作号 {{ unresolved.key }}）。
-        请保留原操作号，勿换号重复提交；后续按原号回查。</p>
+        请保留原操作号，勿换号重复提交。</p>
+      <section v-if="unresolved" aria-label="GLOBAL 原操作号回查">
+        <button type="button" :disabled="lookupBusy || pendingStorageError" @click="lookupPending()">
+          {{ lookupBusy ? '正在回查原操作…' : '按原操作号回查' }}
+        </button>
+        <p v-if="lookupError" role="alert">{{ lookupError }}</p>
+        <p v-if="lookupResult?.status === 'UNCONFIRMED'" role="status">
+          尚不能确认原操作是否提交；请保留原操作号，勿换号重试，可稍后再次回查。
+        </p>
+        <template v-if="lookupResult?.status === 'COMPLETED' && lookupCurrent">
+          <p role="status">原操作已有完成收据；这仅证明历史提交，不代表当前资格。</p>
+          <p>受权重新读取的当前资格：{{ lookupCurrent.eligibility_state === 'ELIGIBLE' ? '可用'
+            : lookupCurrent.eligibility_state === 'INELIGIBLE' ? '不可用'
+            : lookupCurrent.eligibility_state === 'REVOKED' ? '已撤销' : '待核定' }}（{{ lookupCurrent.etag }}）。</p>
+          <button type="button" @click="confirmLookup()">已核对当前资格，清除待核对提醒</button>
+        </template>
+      </section>
       <p v-if="busy" role="status">正在读取全局证据…</p>
       <p v-if="error" role="alert">{{ error }}</p>
       <p v-if="loaded && items.length === 0">暂无全局证据。</p>

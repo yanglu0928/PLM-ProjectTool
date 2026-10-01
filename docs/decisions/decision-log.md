@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-587 — GLOBAL 操作恢复需历史与当前双证据
+
+- Date/WBS：2026-10-02 / `EVD-01-A04-P03-A08-P19`；输入 CR-EVD-004 与 P18 保存的原操作号。
+- Decision：仅原操作者当前 DeploymentAdmin 可用原 Key 回查；完成收据后再 GET 当前 GLOBAL Evidence/强 ETag。未知或读取失败不清除锁，完成且当前读取成功后也由用户显式点击清除。
+- Reason/Impact/Rollback：历史已提交并不代表当前资格未发生变化；仅前端页面状态增量，停用入口即可回退，收据历史保留。
+
 ## DEC-20261002-586 — GLOBAL 人工资格提交前保存最小原操作号
 
 - Date/WBS：2026-10-02 / `EVD-01-A04-P03-A08-P18`；输入 P16 受权页面、P17 GLOBAL 命令和 CR-EVD-004 的不确定回执边界。

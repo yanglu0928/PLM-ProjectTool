@@ -14,6 +14,8 @@ P13 项目证据页已接入原 Key 回查→受权当前 GET→人工清除提�
 
 P14 GLOBAL DeploymentAdmin 前端客户端已通过合同/全量测试，见 [P14](../progress/evd-01-a04-p03-a08-p14-global-lookup-client.md)；全局页面未接入，浏览器和正式信任源仍未验，CR 不关闭。
 
+P15～P19 已增加 GLOBAL 当前 GET、受权页面、请求前 Key 保存及精确恢复入口，见 [P19](../progress/evd-01-a04-p03-a08-p19-global-lookup-recovery.md)；前句为 P14 当时检查点保留。项目与 GLOBAL 组件测试通过，但浏览器/正式信任与 Gate3仍未验，CR 不关闭。
+
 ## 冲突与证据
 
 冻结 `EVIDENCE_SET_ELIGIBILITY` 要求持久幂等，现有内部命令把 Evidence、Audit 与收据同事务提交。浏览器在 POST 后断线/刷新可能拿不到回执；前端已先保存操作号并停止换号重试。冻结 `AUDIT_PROJECT_LIST` 仅 ProjectManager 可用，审计事件不包含 Idempotency-Key；CustomerManager 也能提交资格，却不能据 Audit 精确核对自己的操作。当前读取 API 只返回 Evidence 的**当前**资格，不能将某次操作号与已提交结果对应。若仅凭当前状态/审计时间推断，可能把另一位操作者的裁定误认作本次成功；若清除提醒再换 Key，可能造成重复命令或误导用户。
