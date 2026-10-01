@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/PLT-PKG-01-A09-P47-A05 新增当前非发行候选双隔离布局/合成 HTTPS/License 失败关闭烟测。兼容性：仅测试工具，无产品 API/Schema 变化。升级：先从固定 SHA 候选清洁解包，测试副本不用于正式安装。验证：D盘21,181目标文件全量映射/Hash，包内Python/Caddy/PG18启动，登录与会话200、无License项目403、合成Vault/进程/临时文件清理通过，定向单元1项通过。已知问题：初次C盘Temp空间不足并遗留首个清洁暂存（策略拒绝删除）；正式信任/法律/三平台/浏览器/UAT/Gate仍未通过，`release_eligible=false`。
+
 - 2026-10-02：0.1.0.dev0/PLT-PKG-01-A09-P47-A04 新增当前候选随包 PostgreSQL 18 迁移一次性演练工具。兼容性：仅验证工具，无生产 API/Schema 新改动。升级：真实随包 Python 从0051升级0052，保留已有配置记录，安全降级再升级及另一个空库直升；未操作客户库。验证：实际临时集群退出0、pgvector 0.8.6、边界单元1项通过。已知问题：Evidence 已有记录专项升级、HTTPS/License、正式安装/证书/法律、Server2025/Debian、浏览器/UAT/Gate仍开放，`release_eligible=false`。
 
 - 2026-10-02：0.1.0.dev0/PLT-PKG-01-A09-P47-A03 以固定父候选和干净提交构建当前应用独立非发行 Windows ZIP，新增通用清洁解包验证种类与独立暂存工具。兼容性：仅验证工具/候选，无运行 API/Schema 变更。升级：不可用于正式覆盖安装；随包迁移0052仍须独立数据库演练。验证：全量21,178载荷清洁解包/哈希及随包Python导入通过、定向单元1项通过。已知问题：随包PG18/HTTPS、正式证书/License、产品LICENSE/NOTICE、Server2025/Debian、浏览器/UAT/Gate仍开放，`release_eligible=false`。
