@@ -44,4 +44,6 @@
 
 2026-10-01/P21-A03增量证据：固定Caddy合成HTTPS对内存注入的纯测试SSE路由完成首帧完整/非延迟转发、no-cache、错误Host421、客户端断线后上游取消；不等于产品实际AI SSE验收。正式证书/账户、NOTICE与三平台发行门禁仍开放。
 
+2026-10-01/P22增量证据：新非发行ZIP在P15原21,103项外，逐件加入Caddy可执行文件/许可/README/SBOM/checksums/buildable source及占位模板，共21,110项；整包及独立逐件验证通过。原P15不覆盖，未装服务或证书；完整NOTICE/其他组件源码义务、模板目标渲染和正式发行仍开放。
+
 官方依据：[Caddy许可仓库](https://github.com/caddyserver/caddy)、[反向代理及Host处理](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy)、[静态文件](https://caddyserver.com/docs/caddyfile/directives/file_server)、[SPA与API路由](https://caddyserver.com/docs/caddyfile/patterns)、[自有TLS证书](https://caddyserver.com/docs/caddyfile/directives/tls)、[Windows服务](https://caddyserver.com/docs/running)。

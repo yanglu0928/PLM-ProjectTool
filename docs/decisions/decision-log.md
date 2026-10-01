@@ -5925,3 +5925,7 @@
 ## DEC-20261001-569 — HTTPS认证验收复用原真实PG/Vault断言并替换传输层
 
 - 日期/Phase/WBS：2026-10-01 / Phase2 / PLT-PKG-01-A09-P21-A02。为避免另写一个缩小版“登录成功”探针，保留`AUT-03-A07-P03`原有数据库/凭据/Session/审计断言，只把`TestClient`替成真正的Caddy HTTPS→回环Uvicorn传输，且PG使用新临时集群及唯一Vault目标。加错误Host/Origin/缺CSRF/Cookie标志与清理回读；结果仅合成Win11，非正式服务账户/客户证书/Gate。回滚撤销验证脚本，不改产品API/Schema或历史候选包。
+
+## DEC-20261001-570 — Caddy进入新非发行全量候选而不改P15
+
+- 日期/Phase/WBS：2026-10-01 / Phase2 / PLT-PKG-01-A09-P22，依`CR-PKG-005`。从固定P15的21,103项逐件原字节复制，在新ZIP追加七项已固定Caddy二进制/许可/README/SBOM/checksums/buildable source及非敏感模板，重建顶层Hash/库存/非发行manifest。选择全量新候选便于后续清洁解包/安装映射验收，旧P15保持可追溯；不把整包Hash PASS升级为法律/安装/正式证书/Gate PASS。回滚弃用新候选，原冻结架构/API/Schema不改。

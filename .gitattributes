@@ -10,6 +10,7 @@
 *.toml text eol=lf
 *.sh text eol=lf
 *.ps1 text eol=crlf
+deploy/windows/Caddyfile.template text eol=lf
 
 *.pdf binary
 *.docx binary
