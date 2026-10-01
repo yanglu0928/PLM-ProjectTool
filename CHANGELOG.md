@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A07-P03-P01 对无JBIG候选34 PE许可义务分流：33项旧证据待逐字节复核、新libtiff源码许可Hash定位，13项含GPL/LGPL/Apache/双许可包级声明须逐项核条款与源码；根目录暂无项目 LICENSE/NOTICE。仅文档，不改程序/API/Migration/安装；旧证据保留，可撤本记录回滚。静态数量34及源码Hash核对完成，法律/Notice/公开/目标系统仍待，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A07-P02 增加无 JBIG libtiff4.7.2 隔离构建与 PE 重建等价审计工具；两次源码构建各 105/105 PASS、412 导出名与旧版一致、静态图 34 本地 PE、Windows11 四版面合成 OCR/PDF-A 20/20。原始 DLL Hash 因 PE 元数据不同，屏蔽三字段后其余字节一致；JBIG TIFF `tiffcp` 不再可解码。兼容性：此格式能力收缩需升级前识别/转换或阻断；当前无正式安装/API/Migration 变化，旧资产保留，可弃用隔离产物回滚。工具定向测试2/2及前置拒错2/2 PASS；许可/签名/动态装载/真实质量/Server2025/安装升级仍待，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A07-P01 发现新Windows Tesseract候选 `libtiff-6.dll` 直接导入 GPL-2.0 `libjbig-0.dll`，登记 CR-PKG-004，在隔离PoC中选同版libtiff关闭JBIG构建验证。无程序/Migration/API/正式依赖/安装变化，旧候选和冻结基线保留；法律适用、无JBIG构建/兼容/质量、其他许可/签名/目标系统未验，`release_eligible=false`。
