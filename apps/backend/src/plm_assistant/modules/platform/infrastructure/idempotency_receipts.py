@@ -16,6 +16,41 @@ from plm_assistant.modules.platform.infrastructure.idempotency_orm import Idempo
 class SqlAlchemyIdempotencyReceipts:
     """Reserve and complete inside the caller's business/Audit transaction."""
 
+    def lookup_result(self, uow: SqlAlchemyUnitOfWork, *, scope: IdempotencyScope) -> IdempotencyResult | None:
+        """Read a completed result for an already authorized actor-scoped operation.
+
+        Absence is inconclusive: another transaction may still be committing.
+        This method never reserves, locks, flushes or commits. The caller must
+        prove current Session/role/resource ownership before invoking it.
+        """
+        if type(scope) is not IdempotencyScope:
+            raise IdempotencyError("VALIDATION_FAILED")
+        scope.__post_init__()
+        try:
+            row = uow.session.execute(
+                select(
+                    IdempotencyReceiptRow.state,
+                    IdempotencyReceiptRow.result_ref_type,
+                    IdempotencyReceiptRow.result_ref_id,
+                    IdempotencyReceiptRow.result_status,
+                ).where(
+                    IdempotencyReceiptRow.actor_id == scope.actor_id,
+                    IdempotencyReceiptRow.project_id == scope.project_id,
+                    IdempotencyReceiptRow.operation == scope.operation,
+                    IdempotencyReceiptRow.key_digest == scope.key_digest,
+                ).execution_options(autoflush=False)
+            ).one_or_none()
+        except SQLAlchemyError:
+            raise IdempotencyError("SYSTEM_UNAVAILABLE") from None
+        if row is None:
+            return None
+        if row[0] != "COMPLETED":
+            raise IdempotencyError("SYSTEM_UNAVAILABLE")
+        try:
+            return IdempotencyResult(row[1], row[2], row[3])
+        except IdempotencyError:
+            raise IdempotencyError("SYSTEM_UNAVAILABLE") from None
+
     def lookup_completed(self, uow: SqlAlchemyUnitOfWork, *, scope: IdempotencyScope,
                          request_fingerprint: bytes) -> IdempotencyResult | None:
         """Read a hint only; caller must recheck authority and reserve atomically.

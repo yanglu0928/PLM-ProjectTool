@@ -68,3 +68,54 @@ class LookupTests(unittest.TestCase):
         with self.assertRaises(IdempotencyError) as caught:
             self.lookup()
         self.assertEqual(str(caught.exception), 'SYSTEM_UNAVAILABLE')
+
+
+class ResultLookupTests(unittest.TestCase):
+    def setUp(self):
+        self.scope = IdempotencyScope(uuid4(), uuid4(), 'V1_EVIDENCE_SET_ELIGIBILITY', b'k'*32)
+        self.result = IdempotencyResult('V1_EVIDENCE_ELIGIBILITY', uuid4(), 200)
+        self.row = ('COMPLETED', self.result.ref_type, self.result.ref_id, 200)
+        self.statements = []
+        def execute(statement):
+            self.statements.append(statement)
+            return SimpleNamespace(one_or_none=lambda: self.row)
+        self.uow = SimpleNamespace(session=SimpleNamespace(execute=execute))
+
+    def lookup(self, scope=None):
+        return SqlAlchemyIdempotencyReceipts().lookup_result(
+            self.uow, scope=self.scope if scope is None else scope)
+
+    def test_select_is_scoped_and_read_only(self):
+        self.assertEqual(self.lookup(), self.result)
+        statement = self.statements[0]
+        sql = str(statement.compile(dialect=postgresql.dialect()))
+        self.assertTrue(sql.startswith('SELECT'))
+        self.assertNotIn('FOR UPDATE', sql)
+        for column in ('actor_id', 'project_id', 'operation', 'key_digest'):
+            self.assertIn(column, sql)
+        self.assertNotIn('request_fingerprint', sql)
+        self.assertFalse(statement.get_execution_options()['autoflush'])
+
+    def test_absent_is_inconclusive(self):
+        self.row = None
+        self.assertIsNone(self.lookup())
+
+    def test_pending_or_corrupt_result_fails_closed(self):
+        for row in (('PENDING', None, None, None),
+                    ('COMPLETED', 'invalid', self.result.ref_id, 200),
+                    ('COMPLETED', self.result.ref_type, self.result.ref_id, True)):
+            self.row = row
+            with self.assertRaises(IdempotencyError) as caught:
+                self.lookup()
+            self.assertEqual(caught.exception.code, 'SYSTEM_UNAVAILABLE')
+
+    def test_bad_scope_and_database_error_do_not_expose_details(self):
+        with self.assertRaises(IdempotencyError):
+            self.lookup(scope=SimpleNamespace())
+        self.assertEqual(self.statements, [])
+        def execute(statement):
+            raise SQLAlchemyError('synthetic private driver details')
+        self.uow.session.execute = execute
+        with self.assertRaises(IdempotencyError) as caught:
+            self.lookup()
+        self.assertEqual(str(caught.exception), 'SYSTEM_UNAVAILABLE')
