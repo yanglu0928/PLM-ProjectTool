@@ -19,8 +19,11 @@ from smoke_caddy_production_login_https import smoke as original_smoke
 from smoke_staged_caddy_template import render
 
 
-def smoke(candidate: Path, stage: Path, layout: Path) -> dict:
-    verified = verify_layout(candidate, stage, layout)
+def smoke(candidate: Path, stage: Path, layout: Path, *,
+          layout_verifier=None, expected_file_count: int = 21113,
+          payload_count: int = 21110,
+          result_status: str = "NON_RELEASE_CADDY_LAYOUT_PRODUCTION_LOGIN_HTTPS_PASS") -> dict:
+    verified = (layout_verifier or verify_layout)(candidate, stage, layout)
     layout = layout.resolve(strict=True)
     caddy = layout / "runtime/caddy/caddy.exe"
     template = layout / "config/Caddyfile.template"
@@ -40,10 +43,11 @@ def smoke(candidate: Path, stage: Path, layout: Path) -> dict:
                             boundary_audit=audit_boundary,
                             caddy_relative="runtime/caddy/caddy.exe",
                             config_builder=config_builder)
-    if result["payload_file_count"] != 21113 or not result["vault_target_unique_and_absence_verified"]:
+    if (result["payload_file_count"] != expected_file_count
+            or not result["vault_target_unique_and_absence_verified"]):
         raise ValueError("layout login acceptance incomplete")
-    return {**result, "status": "NON_RELEASE_CADDY_LAYOUT_PRODUCTION_LOGIN_HTTPS_PASS",
-            "payload_file_count": 21110, "verified_layout_file_count": 21113,
+    return {**result, "status": result_status,
+            "payload_file_count": payload_count, "verified_layout_file_count": expected_file_count,
             "mapping_sha256": verified["mapping_sha256"],
             "packaged_api_binary_exercised": False, "formal_install_performed": False,
             "services_changed": False}

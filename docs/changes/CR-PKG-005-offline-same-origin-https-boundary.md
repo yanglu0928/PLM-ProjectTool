@@ -66,4 +66,6 @@
 
 2026-10-01/P36增量证据：P35新布局21,115项全量Hash后，用新包内Caddy/API与合成证书实际HTTPS验证首页/两项资源、健康200、默认API404、SPA200、错误Host421，子进程/证书清理。此为默认API路由烟测，生产登录及正式信任仍待。
 
+2026-10-01/P37增量证据：新布局全量Hash后，经新包内Caddy/PG18与临时Vault目标合成HTTPS复跑原生产登录组合，GET9/POST12、Cookie/CSRF/Host/Origin/Session/Project/Audit通过且临时源清理。API对象仍由仓库验证代码装配，非P33随包正式生产模式；目标账户/证书、SCM与法律发行Gate不因此关闭。
+
 官方依据：[Caddy许可仓库](https://github.com/caddyserver/caddy)、[反向代理及Host处理](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy)、[静态文件](https://caddyserver.com/docs/caddyfile/directives/file_server)、[SPA与API路由](https://caddyserver.com/docs/caddyfile/patterns)、[自有TLS证书](https://caddyserver.com/docs/caddyfile/directives/tls)、[Windows服务](https://caddyserver.com/docs/running)。
