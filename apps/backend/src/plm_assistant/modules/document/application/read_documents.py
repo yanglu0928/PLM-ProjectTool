@@ -108,6 +108,19 @@ class DocumentDownloadSource:
     detected_mime: str
 
 
+@dataclass(frozen=True, slots=True)
+class DocumentEvidenceSourceFacts:
+    """Minimal current source facts for a caller-owned write transaction."""
+
+    document_id: uuid.UUID
+    document_version_id: uuid.UUID
+    scope: str
+    project_id: uuid.UUID | None
+    document_category: str
+    document_state: str
+    content_sha256: str
+
+
 class DocumentReadSessionPort(Protocol):
     def authenticated_user(self, transaction: object, *, session_token: bytes,
                            now: datetime) -> uuid.UUID | None: ...
@@ -293,6 +306,51 @@ class DocumentReadService:
             if type(view) is not DocumentVersionView:
                 raise DocumentReadError("RESOURCE_NOT_FOUND")
             return view
+        except DocumentReadError:
+            raise
+        except RuntimeLicenseError:
+            raise DocumentReadError("LICENSE_OPERATION_DENIED") from None
+        except Exception:
+            raise DocumentReadError("DOCUMENT_UNAVAILABLE") from None
+
+    def get_source_facts_for_evidence(
+            self, transaction: object, query: DocumentReadQuery,
+            document_id: uuid.UUID,
+            document_version_id: uuid.UUID) -> DocumentEvidenceSourceFacts:
+        """Prove category and fixed available version in the same authorized transaction."""
+        self._validate_query(query)
+        if (transaction is None or type(document_id) is not uuid.UUID
+                or document_id.int == 0 or type(document_version_id) is not uuid.UUID
+                or document_version_id.int == 0):
+            raise DocumentReadError("RESOURCE_NOT_FOUND")
+        try:
+            self._guard.require_valid(trace_id=query.trace_id)
+            self._authorize(transaction, query, lock_project=True)
+            version = self._repository.get_version_for_trace(
+                transaction, scope=query.scope, project_id=query.project_id,
+                document_id=document_id, document_version_id=document_version_id,
+            )
+            if (type(version) is not DocumentVersionView
+                    or version.document_id != document_id
+                    or version.document_version_id != document_version_id
+                    or version.availability_state != "AVAILABLE"):
+                raise DocumentReadError("RESOURCE_NOT_FOUND")
+            document = self._repository.get(
+                transaction, scope=query.scope, project_id=query.project_id,
+                document_id=document_id,
+            )
+            if (type(document) is not DocumentView
+                    or document.document_id != document_id
+                    or document.scope != query.scope
+                    or document.project_id != query.project_id
+                    or document.document_state not in ("ACTIVE", "ARCHIVED")
+                    or type(document.document_category) is not str):
+                raise DocumentReadError("RESOURCE_NOT_FOUND")
+            return DocumentEvidenceSourceFacts(
+                document_id, document_version_id, query.scope, query.project_id,
+                document.document_category, document.document_state,
+                version.content_sha256,
+            )
         except DocumentReadError:
             raise
         except RuntimeLicenseError:
