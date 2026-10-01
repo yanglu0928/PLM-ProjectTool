@@ -220,9 +220,15 @@ def verify(port: int, scratch: Path) -> None:
         body = {"document_id": str(document), "document_version_id": str(version),
                 "locator": {"locator_type": "DOCUMENT"}, "display_label": "Full document"}
         endpoint = f"/api/v1/projects/{project}/evidence"
+        eligibility_body = {"eligibility_state": "ELIGIBLE",
+                            "reason": "人工核对合成原始记录"}
         with TestClient(login_only, base_url="http://localhost") as client:
             assert client.post(endpoint, headers=headers(pm_token, "evd-login-closed-001"),
                                json=body).status_code == 404
+            assert client.post(endpoint + "/" + str(uuid.uuid4()) + ":set-eligibility",
+                               headers={**headers(pm_token, "evd-login-elig-001"),
+                                        "if-match": '"v0"'},
+                               json=eligibility_body).status_code == 404
         with TestClient(read_only, base_url="http://localhost") as client:
             assert client.post(endpoint, headers=headers(pm_token, "evd-read-closed-001"),
                                json=body).status_code == 405
@@ -236,6 +242,20 @@ def verify(port: int, scratch: Path) -> None:
             assert first.status_code == replay.status_code == 201, (first.text, replay.text)
             assert first.json()["data"] == replay.json()["data"]
             assert first.json()["data"]["content_fingerprint"] == digest.hex()
+            eligibility_path = endpoint + "/" + first.json()["data"]["evidence_id"] + ":set-eligibility"
+            eligibility_headers = {**headers(pm_token, "evd-write-elig-001"),
+                                   "if-match": '"v0"'}
+            decided = client.post(eligibility_path, headers=eligibility_headers,
+                                  json=eligibility_body)
+            repeated = client.post(eligibility_path, headers=eligibility_headers,
+                                   json=eligibility_body)
+            assert decided.status_code == repeated.status_code == 200, (decided.text, repeated.text)
+            assert decided.json()["data"] == repeated.json()["data"]
+            assert decided.headers["etag"] == '"v1"'
+            assert client.post(eligibility_path,
+                               headers={**headers(outsider_token, "evd-write-elig-outsider"),
+                                        "if-match": '"v1"'},
+                               json=eligibility_body).status_code == 404
             viewer_path = endpoint + "/" + first.json()["data"]["evidence_id"] + "/viewer"
             viewer = client.get(viewer_path, headers=headers(pm_token, "evd-viewer-document-001"))
             assert viewer.status_code == 200, viewer.text
@@ -275,10 +295,15 @@ def verify(port: int, scratch: Path) -> None:
                            "WHERE project_id=%s AND user_id=%s", (project, pm))
             demoted = client.post(endpoint, headers=headers(pm_token, "evd-create-write-001"), json=body)
             assert demoted.status_code == 404, demoted.text
+            assert client.post(eligibility_path, headers=eligibility_headers,
+                               json=eligibility_body).status_code == 404
         with TestClient(read_only, base_url="http://localhost") as client:
             detail = client.get(endpoint + "/" + first.json()["data"]["evidence_id"],
                                 headers=headers(pm_token, "evd-read-002"))
             assert detail.status_code == 200, detail.text  # Customer member retains read rights.
+            read_only_decision = client.post(eligibility_path, headers=eligibility_headers,
+                                             json=eligibility_body)
+            assert read_only_decision.status_code == 405, read_only_decision.status_code
             assert client.get(node_viewer_path, headers=headers(pm_token,
                                                                 "evd-viewer-demoted-001")).status_code == 200
             path.write_bytes(content[:-1] + b"!")
@@ -319,7 +344,9 @@ def verify(port: int, scratch: Path) -> None:
                           ).fetchone()[0] == parse_record
         assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s "
                           "AND action='EVIDENCE_CREATED'", (evidence_id,)).fetchone()[0] == 1
-    print("PASS: isolated PG18 Windows Evidence create/read/Viewer, fixed source, content URL, tamper/revocation/role/License isolation")
+        assert db.execute("SELECT count(*) FROM plm.aud_events WHERE target_object_id=%s "
+                          "AND action='EVIDENCE_ELIGIBILITY_SET'", (evidence_id,)).fetchone()[0] == 1
+    print("PASS: isolated PG18 Windows Evidence create/read/Viewer/eligibility, fixed source, content URL, tamper/revocation/role/License isolation")
 
 
 def main() -> None:

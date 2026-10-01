@@ -207,13 +207,17 @@ from plm_assistant.modules.document.infrastructure.parse_result_storage import L
 from plm_assistant.modules.evidence.api.create_evidence import create_evidence_create_router
 from plm_assistant.modules.evidence.api.read_evidence import create_evidence_read_router
 from plm_assistant.modules.evidence.api.view_evidence import create_evidence_viewer_router
+from plm_assistant.modules.evidence.api.set_eligibility import create_evidence_eligibility_router
 from plm_assistant.modules.evidence.application.create_access import EvidenceCreateAccess
 from plm_assistant.modules.evidence.application.create_evidence import EvidenceCreateService
+from plm_assistant.modules.evidence.application.eligibility_access import EvidenceEligibilityAccess
+from plm_assistant.modules.evidence.application.set_eligibility import EvidenceEligibilityService
 from plm_assistant.modules.evidence.application.read_evidence import EvidenceReadService
 from plm_assistant.modules.evidence.application.view_evidence import EvidenceViewerService
 from plm_assistant.modules.evidence.application.document_source_proof import DocumentEvidenceProofService
 from plm_assistant.modules.evidence.application.parsed_node_proof import ParsedNodeEvidenceProofService
 from plm_assistant.modules.evidence.infrastructure.create_repository import SqlAlchemyEvidenceCreateRepository
+from plm_assistant.modules.evidence.infrastructure.eligibility_repository import SqlAlchemyEvidenceEligibilityRepository
 from plm_assistant.modules.evidence.infrastructure.read_repository import SqlAlchemyEvidenceReadRepository
 from plm_assistant.entrypoints.windows_evidence_list_cursor import (
     ProductionEvidenceCursorStartupError, create_windows_evidence_list_cursor_codec,
@@ -376,6 +380,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         evidence_create_router = None
         evidence_read_router = None
         evidence_viewer_router = None
+        evidence_eligibility_router = None
         if include_secret_read:
             from plm_assistant.entrypoints.windows_license_runtime import (
                 create_windows_license_services,
@@ -753,6 +758,26 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 evidence_create_router = create_evidence_create_router(
                     sessions=sessions, origins=origins, service_factory=evidence_service,
                 )
+
+                def eligibility_service(token: bytes, csrf: bytes) -> EvidenceEligibilityService:
+                    return EvidenceEligibilityService(
+                        unit_of_work=runtime.unit_of_work,
+                        access=EvidenceEligibilityAccess(
+                            session_token=token, csrf_token=csrf,
+                            session_access=SqlAlchemyProjectWriteAccess(),
+                            admin_access=SqlAlchemyLicenseImportAccess(),
+                            project_facts=SqlAlchemyProjectAuthorizationRepository(),
+                        ),
+                        source_facts=document_reads,
+                        repository=SqlAlchemyEvidenceEligibilityRepository(),
+                        receipts=SqlAlchemyIdempotencyReceipts(),
+                        license_guard=licenses.guard, audit=audit,
+                    )
+
+                evidence_eligibility_router = create_evidence_eligibility_router(
+                    sessions=sessions, origins=origins,
+                    service_factory=eligibility_service,
+                )
                 password_capacity = get_process_password_capacity(slots=settings.password_kdf_slots)
                 password_reset_results = SqlAlchemyPasswordResetResults(verifier=verifier)
                 password_reset_router = create_password_reset_router(sessions=sessions, origins=origins,
@@ -999,6 +1024,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             evidence_create_router=evidence_create_router,
             evidence_read_router=evidence_read_router,
             evidence_viewer_router=evidence_viewer_router,
+            evidence_eligibility_router=evidence_eligibility_router,
             maintenance_admission=maintenance_admission,
             shutdown_callback=shutdown,
         )
