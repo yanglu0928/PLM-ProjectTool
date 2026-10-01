@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261001-577 — DOCX V1/V2 固定结果共存隔离复验
+
+- Date/WBS：2026-10-01 / `EVD-01-A03-P02-A02-P03-P04-A05`；输入 `CR-EVD-001`、Document 受权固定结果 Port 及 V2 SECTION 证明。
+- Decision：在单次临时 PostgreSQL 18 与私有结果目录中，为同一合成 DOCX DocumentVersion 建立分开的 V1/V2 Job、成功 ParseRecord 和 ResultRef，按两版本分别受权读回并证明段落/章节；跨项目、撤权和私有结果篡改必须失败。只用已验的受控快照替身，不伪称生产 Session。
+- Reason/Impact/Rollback：验证文本版本列/唯一约束和不改写历史的真实共存；仅验证脚本及报告，无生产代码/API/Schema/依赖变更，临时库停止后清理。旧运行作业升级排空留独立验收，避免用数据库共存代替运行时兼容。
+
 ## DEC-20261001-576 — Evidence SECTION 仅认固定 DOCX V2 标题节点
 
 - Date/WBS：2026-10-01 / `EVD-01-A03-P02-A02-P03-P04-A04`；输入 `CR-EVD-001` 和已验证的 DOCX Parser V2 `DOCX_SECTION` 节点。
