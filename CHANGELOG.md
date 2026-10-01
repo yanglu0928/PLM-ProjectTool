@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/PLT-PKG-01-A09-P48-A01 只读核对当前非发行候选的来源、迁移及发行缺口，登记正式交付门禁仍阻断。兼容性：无程序变更。升级：不可将当前 ZIP 用于正式覆盖安装。验证：ZIP manifest/产品级许可文件/0052 清单与现有证据逐项复核。已知问题：产品 LICENSE/NOTICE、正式信任、Server2025/Debian、浏览器、AI质量、正式安装/升级和 Gate 未通过；候选仍 `release_eligible=false`。
+
 - 2026-10-02：0.1.0.dev0/PLT-PKG-01-A09-P47-A05 新增当前非发行候选双隔离布局/合成 HTTPS/License 失败关闭烟测。兼容性：仅测试工具，无产品 API/Schema 变化。升级：先从固定 SHA 候选清洁解包，测试副本不用于正式安装。验证：D盘21,181目标文件全量映射/Hash，包内Python/Caddy/PG18启动，登录与会话200、无License项目403、合成Vault/进程/临时文件清理通过，定向单元1项通过。已知问题：初次C盘Temp空间不足并遗留首个清洁暂存（策略拒绝删除）；正式信任/法律/三平台/浏览器/UAT/Gate仍未通过，`release_eligible=false`。
 
 - 2026-10-02：0.1.0.dev0/PLT-PKG-01-A09-P47-A04 新增当前候选随包 PostgreSQL 18 迁移一次性演练工具。兼容性：仅验证工具，无生产 API/Schema 新改动。升级：真实随包 Python 从0051升级0052，保留已有配置记录，安全降级再升级及另一个空库直升；未操作客户库。验证：实际临时集群退出0、pgvector 0.8.6、边界单元1项通过。已知问题：Evidence 已有记录专项升级、HTTPS/License、正式安装/证书/法律、Server2025/Debian、浏览器/UAT/Gate仍开放，`release_eligible=false`。

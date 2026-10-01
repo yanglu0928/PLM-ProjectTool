@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-593 — 技术候选通过不提升发行 Gate
+
+- Date/WBS：2026-10-02 / `PLT-PKG-01-A09-P48-A01`；输入当前候选 SHA、P47-A03～A05 实际证据与 P46-A01 旧候选发行阻断清单。
+- Decision：将新候选的技术合成链记为已验证，但产品级 LICENSE/NOTICE、正式信任、目标平台、浏览器/UAT、AI质量和安装升级仍独立保持 OPEN；不修改 ZIP 的 `release_eligible=false` 或关闭 CR-PKG-008/Gate。
+- Reason/Impact/Rollback：避免以新 ZIP 字节完整和合成登录替代正式发行证据；仅审计记录，无运行行为，撤销本判断需新证据而非删除历史。
+
 ## DEC-20261002-592 — 隔离 HTTPS 演练暂存迁至 D 盘
 
 - Date/WBS：2026-10-02 / `PLT-PKG-01-A09-P47-A05`；输入 C 盘 Temp 复制 `Errno 28`、D 盘约 448 GB 空闲、新候选 SHA 固定。
