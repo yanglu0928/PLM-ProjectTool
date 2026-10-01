@@ -19,6 +19,8 @@
 
 新的[通知输入核对工具](../../tools/audit_notice_draft_inputs.py)把本产品后端从 106 个分发包中剔除，得到 105 个第三方包。下列三项没有嵌入式通知文件：`bce-python-sdk`、`et_xmlfile`、`openpyxl`。后两项另有固定候选中的独立 wheel 许可侧载；`bce-python-sdk 0.9.79` 在该候选内未找到独立通知材料。此前对其[精确版本源码与声明的核查](../progress/plt-pkg-01-a08-p04-bce-exact-source.md)不能代替适用于该发行物的许可文本审阅。
 
+[bce 精确材料复核](../progress/plt-pkg-01-a09-p43-a08-bce-license-text-reuse.md)确认：候选已有一份 `payload/third-party-licenses/caddy/LICENSE`，内容与 Apache 官方 2.0 正文逐字节一致；bce 的包元数据声明 Apache License 2.0。因此可把这份现有通用正文列为 bce 文本复用的**审阅候选**，无需在现阶段复制一份相同字节。该文件仍以 Caddy 路径侧载，不能据此声称 bce 的归属映射、专属通知或最终发行许可义务已经满足。
+
 另有 60 个第三方包的 `license_expression` 元数据为空。这不等于它们没有许可证；只表示不能从该字段直接确定通知内容。工具逐名输出清单，审阅时须结合包内文件、已侧载文本及确切版本来源逐项确认。上述 105 个第三方包的既有 `review_status` 均仍为 `REVIEW_REQUIRED`。
 
 ## 发布前必须明确的决定和证据

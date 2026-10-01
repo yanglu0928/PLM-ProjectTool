@@ -5935,3 +5935,7 @@
 ## DEC-20261001-570 — Caddy进入新非发行全量候选而不改P15
 
 - 日期/Phase/WBS：2026-10-01 / Phase2 / PLT-PKG-01-A09-P22，依`CR-PKG-005`。从固定P15的21,103项逐件原字节复制，在新ZIP追加七项已固定Caddy二进制/许可/README/SBOM/checksums/buildable source及非敏感模板，重建顶层Hash/库存/非发行manifest。选择全量新候选便于后续清洁解包/安装映射验收，旧P15保持可追溯；不把整包Hash PASS升级为法律/安装/正式证书/Gate PASS。回滚弃用新候选，原冻结架构/API/Schema不改。
+
+## DEC-20261001-571 — bce许可证通用正文仅作为复用审阅候选
+
+- 日期/Phase/WBS：2026-10-01 / Phase2 / PLT-PKG-01-A09-P43-A08。固定bce-python-sdk 0.9.79原wheel/sdist、P43候选及P33/P22谱系后，元数据声明Apache License 2.0，原wheel/sdist与候选均无bce独立通知；候选中Caddy侧载的通用Apache-2.0正文与官方正文同SHA-256。选择记录“现有正文可复用审阅”而不复制同字节文件或静默修改固定候选。理由：正文相同只证明文本可用，不证明bce版权归属、专属通知或组合发行义务。风险/回滚：只增只读审计及文档，可撤工具，历史包不变；合格法律复核/最终NOTICE、正式信任源和Gate仍开放，`release_eligible=false`。
