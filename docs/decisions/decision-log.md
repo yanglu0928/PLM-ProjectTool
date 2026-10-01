@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261001-584 — GLOBAL Evidence 页面先完成受权只读定位
+
+- Date/WBS：2026-10-01 / `EVD-01-A04-P03-A08-P16`；输入冻结 GLOBAL List/Get/Viewer 与 P14/P15 客户端。
+- Decision：将原计划的全局页面拆成只读浏览定位、人工资格写入、原操作号恢复三个可分别验收的 WBS；本项只发布 DeploymentAdmin 只读入口。Viewer 固定来源与当前 GET 版本一致前不展示内容 URL。
+- Reason/Impact/Rollback：没有由页面发起的原操作号时提供恢复按钮会误导用户输入不明 Key；分项不变更合同或权限，移除路由即可回退 UI。
+
 ## DEC-20261001-583 — GLOBAL 历史回查须另取当前强 ETag
 
 - Date/WBS：2026-10-01 / `EVD-01-A04-P03-A08-P15`；输入冻结 GLOBAL EVIDENCE_GET、P14 原操作收据客户端。

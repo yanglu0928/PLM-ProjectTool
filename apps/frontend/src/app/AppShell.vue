@@ -26,6 +26,7 @@ provide(sessionClientKey, new SessionClient());
           <RouterLink to="/projects/new">创建项目</RouterLink>
           <RouterLink to="/admin/users/new">创建账户</RouterLink>
           <RouterLink to="/admin/users">用户管理</RouterLink>
+          <RouterLink to="/admin/evidence">全局证据</RouterLink>
         </nav>
         <ConnectionStatus />
       </div>

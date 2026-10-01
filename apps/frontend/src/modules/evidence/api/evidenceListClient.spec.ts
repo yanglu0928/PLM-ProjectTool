@@ -24,6 +24,13 @@ function client(...results: Response[]) {
 describe("EvidenceListClient", () => {
   afterEach(() => vi.restoreAllMocks());
 
+  it("uses the isolated global list path without a project identifier", async () => {
+    const { api, fetcher } = client(response({ items: [entry], has_more: false,
+      next_cursor: null }));
+    expect((await api.list({ kind: "GLOBAL" })).items).toEqual([entry]);
+    expect(fetcher.mock.calls[0]?.[0]).toBe("/api/v1/global/evidence?page_size=50");
+  });
+
   it("lists minimal safe summaries and strips internal fields", async () => {
     const { api, fetcher } = client(response({ items: [{ ...entry, content_fingerprint: "x".repeat(64),
       locator: { locator_type: "PAGE", page_no: 2 }, storage_locator: "private/path" }],

@@ -17,7 +17,7 @@ describe("AppShell", () => {
     vi.unstubAllGlobals();
   });
 
-  it("renders the foundation home without unimplemented business navigation", async () => {
+  it("renders the foundation home with implemented navigation", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(readyResponse()));
     const router = createAppRouter(createMemoryHistory());
     await router.push("/");
@@ -27,10 +27,11 @@ describe("AppShell", () => {
     await flushPromises();
 
     expect(wrapper.get("h1").text()).toContain("项目实施信息");
-    expect(wrapper.findAll("nav a")).toHaveLength(6);
+    expect(wrapper.findAll("nav a")).toHaveLength(7);
     expect(wrapper.get('nav[aria-label="主导航"]').classes()).toContain("primary-nav");
     expect(wrapper.get('nav a[href="/login"]').text()).toBe("账户与登录");
     expect(wrapper.get('nav a[href="/projects"]').text()).toBe("我的项目");
+    expect(wrapper.get('nav a[href="/admin/evidence"]').text()).toBe("全局证据");
     expect(wrapper.text()).not.toContain("客户项目列表");
   });
 
