@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-595 — Alembic env 不作为独立可导入业务模块
+
+- Date/WBS：2026-10-02 / `PLT-PKG-01-A09-P48-A04`；输入包内586模块枚举、首次普通导入 `migrations.env` 的 `context.config` 异常，以及 P47-A04 随包真实迁移通过。
+- Decision：依赖匹配与585普通模块导入均须无错误；仅精确排除 `plm_assistant.migrations.env` 的普通导入，仍要求其在 Alembic 实际升级/降级链中验收，不泛化跳过其他模块。
+- Reason/Impact/Rollback：Alembic env 需运行上下文，直接 import 不是正确入口；仅审计边界调整，无产品行为变化，可弃用审计工具回退，不改变迁移证据或 Gate。
+
 ## DEC-20261002-594 — 新应用包复用旧第三方审阅输入但不复用法律结论
 
 - Date/WBS：2026-10-02 / `PLT-PKG-01-A09-P48-A02`；输入 P45/P47 固定 SHA、第三方库存及原有 P43/P45 审阅材料。
