@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A07-P01 发现新Windows Tesseract候选 `libtiff-6.dll` 直接导入 GPL-2.0 `libjbig-0.dll`，登记 CR-PKG-004，在隔离PoC中选同版libtiff关闭JBIG构建验证。无程序/Migration/API/正式依赖/安装变化，旧候选和冻结基线保留；法律适用、无JBIG构建/兼容/质量、其他许可/签名/目标系统未验，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A06-P03 新增 Windows 非发行模块观察脚本，合成中文 PNG/TIFF/JPEG 三格式退出0、随包35/35/System32 23/意外路径0；ETW LoadImage因当前账户拒绝而未执行完整跟踪。无 Migration/API/正式依赖/安装变化，可撤脚本与忽略试验目录回滚。短暂动态加载/许可/签名/目标账户/Server2025/Gate3仍未证，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A06-P02 非发行 PE 审计加入 AMD64 延迟导入/畸形属性拒绝，候选35 PE延迟导入0，重建文件集合与A05相同；单次中文OCR运行模块采样随包35/35、System32 23，定向8项PASS。无 Migration/API/正式依赖/安装变化，可撤审计增量与新隔离目录回滚。短暂/未测输入动态加载及签名/许可/目标系统仍未证，`release_eligible=false`。
