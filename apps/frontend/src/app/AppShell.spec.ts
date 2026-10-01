@@ -27,11 +27,12 @@ describe("AppShell", () => {
     await flushPromises();
 
     expect(wrapper.get("h1").text()).toContain("项目实施信息");
-    expect(wrapper.findAll("nav a")).toHaveLength(7);
+    expect(wrapper.findAll("nav a")).toHaveLength(8);
     expect(wrapper.get('nav[aria-label="主导航"]').classes()).toContain("primary-nav");
     expect(wrapper.get('nav a[href="/login"]').text()).toBe("账户与登录");
     expect(wrapper.get('nav a[href="/projects"]').text()).toBe("我的项目");
     expect(wrapper.get('nav a[href="/admin/evidence"]').text()).toBe("全局证据");
+    expect(wrapper.get('nav a[href="/admin/jobs"]').text()).toBe("部署任务");
     expect(wrapper.text()).not.toContain("客户项目列表");
   });
 
