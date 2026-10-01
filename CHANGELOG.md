@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P02 新增Windows11统一非发行合包及长路径清洁解包核验工具；固定输入生成461,974,579字节、19,449件候选ZIP，106项Python元数据、34项无JBIG Tesseract，ZIP与第二份清洁解包逐件Hash通过，单测4/4及核心导入/原生版本烟测通过。兼容性：不改API/Schema/安装路径，不覆盖旧候选；回滚弃用Git忽略产物。NOTICE/对应源码、签名/License、安装升级/目标账户、真实OCR质量、Server2025/Debian13及Gate仍待，`release_eligible=false`。
+
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A09-P01 固定 Windows11 统一非发行候选的五类输入及源Hash/数量/替换规则；34项无JBIG PE逐件Hash与矩阵一致，106项运行时元数据齐全。兼容性：尚未生成新包，产品/API/Migration/旧候选不变；若后续输入缺失/不一致即拒绝组装。NOTICE、签名、质量、目标账户/平台及Gate仍待，`release_eligible=false`。
 
 - 2026-10-01：0.1.0.dev0/PLT-PKG-01-A08-P09-P05-P03-A07-P03-P04-P02-A02-P02 正式升级入口前置核查：本机无目标安装与三项PLM服务，现有SCM/进程快照仅诊断级，不把合成备份/维护锁结果冒充现场停写或Migration放行；转向106项OCR运行时与旧93项候选的独立合包。兼容性：无正式程序/API/Migration/安装变化，保留旧候选和历史记录；目标账户/Server2025/备份恢复/NOTICE与Gate仍待，`release_eligible=false`。
