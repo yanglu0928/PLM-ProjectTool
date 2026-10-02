@@ -44,6 +44,9 @@ from plm_assistant.modules.trace.application.query_bounded_graph import (
 from plm_assistant.modules.trace.application.page_graph import (
     TraceGraphCursorCodec, TraceGraphPageService,
 )
+from plm_assistant.modules.trace.application.revoke_link import (
+    RevokeTraceLink, TraceRevokeError, TraceRevokeService,
+)
 from plm_assistant.modules.trace.application.target_proof import (
     TraceProofQuery, TraceResourceVersionRef, TraceTargetProofError,
     TraceTargetProofService,
@@ -51,6 +54,7 @@ from plm_assistant.modules.trace.application.target_proof import (
 from plm_assistant.modules.trace.domain.link_shape import TraceEdgeShape, TraceVersionRef
 from plm_assistant.modules.trace.infrastructure.create_repository import SqlAlchemyTraceCreateRepository
 from plm_assistant.modules.trace.infrastructure.query_repository import SqlAlchemyTraceAdjacencyRepository
+from plm_assistant.modules.trace.infrastructure.revoke_repository import SqlAlchemyTraceRevokeRepository
 from plm_assistant.modules.trace.infrastructure.cycle_guard import (
     SqlAlchemyTraceCycleGuard, TraceCycleError,
 )
@@ -335,7 +339,8 @@ def verify():
                 pool.submit(concurrent_create, pm_token, "trace-concurrent-key-1"),
                 pool.submit(concurrent_create, im_token, "trace-concurrent-key-2"),
             )
-            assert futures[0].result(timeout=10) == futures[1].result(timeout=10)
+            concurrent_result = futures[0].result(timeout=10)
+            assert concurrent_result == futures[1].result(timeout=10)
         with connect(name) as db:
             assert db.execute("SELECT count(*) FROM plm.trc_links").fetchone()[0] == 2
             assert db.execute(
@@ -492,6 +497,104 @@ def verify():
                 "SELECT count(*) FROM plm.plt_idempotency_receipts "
                 "WHERE operation='V1_TRACE_LINK_CREATE'",
             ).fetchone()[0] == 5
+        def revoker(audit):
+            return TraceRevokeService(
+                unit_of_work=runtime.unit_of_work,
+                sessions=SqlAlchemyProjectWriteAccess(), projects=auth,
+                license_guard=guard,
+                repository=SqlAlchemyTraceRevokeRepository(),
+                receipts=SqlAlchemyIdempotencyReceipts(), audit=audit,
+            )
+        revoke = revoker(AuditService(SqlAlchemyAuditRepository()))
+        restricted_cmd = RevokeTraceLink(
+            pm_token, CSRF, uuid.uuid4(), project_id,
+            concurrent_result.trace_link_id, 0,
+        )
+        for denied, expected in (
+            (RevokeTraceLink(customer_token, CSRF, uuid.uuid4(), project_id,
+                             concurrent_result.trace_link_id, 0), "RESOURCE_NOT_FOUND"),
+            (RevokeTraceLink(im_token, CSRF, uuid.uuid4(), project_id,
+                             concurrent_result.trace_link_id, 0), "RESOURCE_NOT_FOUND"),
+            (RevokeTraceLink(other_pm_token, CSRF, uuid.uuid4(), project_id,
+                             concurrent_result.trace_link_id, 0), "RESOURCE_NOT_FOUND"),
+            (RevokeTraceLink(pm_token, b"x" * 32, uuid.uuid4(), project_id,
+                             concurrent_result.trace_link_id, 0), "AUTH_ACCESS_DENIED"),
+            (RevokeTraceLink(pm_token, CSRF, uuid.uuid4(), other_project,
+                             concurrent_result.trace_link_id, 0), "RESOURCE_NOT_FOUND"),
+            (RevokeTraceLink(pm_token, CSRF, uuid.uuid4(), project_id,
+                             concurrent_result.trace_link_id, 1), "CONFLICT_VERSION"),
+        ):
+            try:
+                revoke.revoke(denied, idempotency_key="trace-revoke-denied-001")
+            except TraceRevokeError as exc:
+                assert exc.code == expected
+            else:
+                raise AssertionError("unauthorized or stale Trace revoke accepted")
+        guard.enabled = False
+        try:
+            revoke.revoke(restricted_cmd, idempotency_key="trace-revoke-license-001")
+        except TraceRevokeError as exc:
+            assert exc.code == "LICENSE_OPERATION_DENIED"
+        else:
+            raise AssertionError("expired License revoked TraceLink")
+        guard.enabled = True
+        restricted_result = revoke.revoke(
+            restricted_cmd, idempotency_key="trace-revoke-first-001",
+        )
+        assert restricted_result.trace_link_id == concurrent_result.trace_link_id
+        assert restricted_result.lock_version == 1
+        assert revoke.revoke(
+            restricted_cmd, idempotency_key="trace-revoke-first-001",
+        ) == restricted_result
+        try:
+            revoke.revoke(restricted_cmd, idempotency_key="trace-revoke-second-001")
+        except TraceRevokeError as exc:
+            assert exc.code == "CONFLICT_VERSION"
+        else:
+            raise AssertionError("second TraceLink revoke accepted")
+        rollback_created = creator.create(
+            CreateTraceLink(pm_token, CSRF, uuid.uuid4(), rollback_edge),
+            idempotency_key="trace-create-for-revoke-001",
+        )
+        rollback_command = RevokeTraceLink(
+            pm_token, CSRF, uuid.uuid4(), project_id,
+            rollback_created.trace_link_id, 0,
+        )
+        try:
+            revoker(FailingAudit()).revoke(
+                rollback_command, idempotency_key="trace-revoke-audit-fail-001",
+            )
+        except TraceRevokeError as exc:
+            assert exc.code == "TRACE_UNAVAILABLE"
+        else:
+            raise AssertionError("Trace revoke audit failure committed")
+        first_command = RevokeTraceLink(
+            pm_token, CSRF, uuid.uuid4(), project_id,
+            first_result.trace_link_id, 0,
+        )
+        barrier = Barrier(2)
+        def concurrent_revoke():
+            barrier.wait(timeout=5)
+            return revoke.revoke(first_command, idempotency_key="trace-revoke-race-001")
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futures = (pool.submit(concurrent_revoke), pool.submit(concurrent_revoke))
+            assert futures[0].result(timeout=15) == futures[1].result(timeout=15)
+        with connect(name) as db:
+            assert db.execute(
+                "SELECT count(*) FROM plm.trc_links WHERE link_state='REVOKED' "
+                "AND lock_version=1",
+            ).fetchone()[0] == 2
+            assert db.execute(
+                "SELECT link_state,lock_version FROM plm.trc_links "
+                "WHERE trace_link_id=%s", (rollback_created.trace_link_id,),
+            ).fetchone() == ("ACTIVE", 0)
+            assert db.execute(
+                "SELECT count(*) FROM plm.aud_events WHERE action='TRACE_LINK_REVOKED'",
+            ).fetchone()[0] == 2
+            assert db.execute(
+                "SELECT count(*) FROM plm.plt_idempotency_receipts "
+                "WHERE operation='V1_TRACE_LINK_REVOKE'",
+            ).fetchone()[0] == 2
             db.execute("UPDATE plm.prj_projects SET state='ARCHIVED' WHERE project_id=%s",
                        (project_id,))
         try:
@@ -501,7 +604,7 @@ def verify():
             assert exc.code == "PROJECT_ARCHIVED"
         else:
             raise AssertionError("archived project accepted Trace write")
-        print("PASS: Trace create/replay/Audit, authorized graph pages and stale cursor on revoked neighbor")
+        print("PASS: Trace create/graph and PM revoke authorization, replay, race, Audit rollback")
     finally:
         if runtime is not None:
             runtime.dispose()

@@ -47,7 +47,7 @@ class ProjectAuthorizationTests(unittest.TestCase):
                                     operation=operation, resource_id=resource_id)
 
     def test_matrix_exact_for_four_roles(self):
-        self.assertEqual(len(POLICIES), 30)
+        self.assertEqual(len(POLICIES), 31)
         self.assertEqual(POLICIES['DOCUMENT_PARSE_PROCESS'].roles,
                          {'PROJECT_MANAGER', 'IMPLEMENTATION_MEMBER', 'CUSTOMER_MANAGER'})
         self.assertTrue(POLICIES['DOCUMENT_PARSE_PROCESS'].write)
@@ -88,6 +88,8 @@ class ProjectAuthorizationTests(unittest.TestCase):
         self.assertEqual(POLICIES["TRACE_LINK_CREATE"].roles,
                          {"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"})
         self.assertTrue(POLICIES["TRACE_LINK_CREATE"].write)
+        self.assertEqual(POLICIES["TRACE_LINK_REVOKE"].roles, {"PROJECT_MANAGER"})
+        self.assertTrue(POLICIES["TRACE_LINK_REVOKE"].write)
         self.assertEqual(POLICIES["TRACE_GRAPH_READ"].roles, ALL_MEMBERS)
         self.assertFalse(POLICIES["TRACE_GRAPH_READ"].write)
         self.assertTrue(POLICIES["TRACE_GRAPH_READ"].lock_reads)

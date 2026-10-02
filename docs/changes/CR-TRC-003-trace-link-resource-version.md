@@ -20,3 +20,5 @@
 验证空库 up/down、含历史 up、历史版本回填、终态一次自增、绕过修改/重复终态拒绝、有数据安全 down 与终态 down 拒绝；随后单元/隔离 PostgreSQL/后端回归与 wheel。P02 只修 Schema，不开启撤销路由；P03 内部命令必须当前 License/Session/CSRF/ProjectManager、行锁、If-Match、持久幂等与 Audit 同事务验证。关系 Owner 身份尚未定义，首个用户路径仅 PM，其他授权路径保持关闭。正式 License、三平台、Gate 3/发行仍按客观证据另验。
 
 2026-10-02 P02 结果：增量 `20261002_0053` 在一次性 PostgreSQL 18 空库、含ACTIVE及含REVOKED/SUPERSEDED历史的三库执行；版本回填/终态自增/非法改写/可安全降级及终态拒绝降级均通过。P03业务命令和公开撤销仍未实现。完整后端/构建结果见P02进度记录。
+
+2026-10-02 P03 结果：PROJECT当前ProjectManager内部撤销在真实Session/CSRF/License、项目行锁、原v0、通用持久收据及Audit同事务下完成；同Key并发仅一终态/一审计/一收据，审计失败回滚。无新Schema/API/依赖；关系Owner及公开HTTP仍关闭。正式信任、目标平台与Gate未因此通过。

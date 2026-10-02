@@ -6379,3 +6379,12 @@
 - Impact/Rollback：仅Trace ORM与0053 migration，无公开API/新依赖；空库/未转换数据可down，已有终态数据不做有损down，改走备份/正向修复。P02不开放撤销命令。
 - Verification Plan：真实PG18空库head→0052→head、含ACTIVE+两种终态数据0052→head、触发器非法直改/重复转换拒绝、终态down拒绝、有ACTIVE数据down/up；全量后端与wheel。未测试生产迁移与三平台发行。
 - Result：一次性PG18三库空库/ACTIVE/REVOKED/SUPERSEDED升降级及守卫PASS，Alembic ORM差异检查无新操作；首轮验证脚本误查public版本表，修正为plm后重跑通过。原迁移Head单元断言随0053更新后，后端全量1885运行/3跳过；开发wheel SHA-256 `70602728cb93c47ce4e37048c325e79e0876d13d1d19d2adf22ef8ec2083dbf2`。仅Schema，不判撤销/HTTP/发行通过。
+
+# DEC-20261002-614：TraceLink 撤销允许当前项目经理清理项目关系
+
+- Date/WBS：2026-10-02 / `TRC-01-A07-P03`；输入冻结API-02 ProjectManager撤销权限、0053资源版本及既有同事务收据/Audit。
+- Decision：首个内部撤销命令只支持PROJECT关系和当前ProjectManager；先当前License、Session/CSRF、项目策略，再锁定精确ProjectId+TraceLinkId行。对已知项目关系，撤销是缩小图可见性的维护操作，不要求两端已失效资源仍可读取；仅返回LinkId与首次终态版本，不投影端点。持久收据在行归属核实后且版本/状态检查前预留，使同Key同载荷历史重放保持首次结果；新Key在旧版本/终态拒绝。状态/版本由数据库触发器一次转换，Audit/收据同事务提交；关系Owner路径和公开HTTP不装配。
+- Reason：依赖当前端点再次可读会使已撤权/受限的历史边不可撤销；项目经理对本项目关系有冻结授权，但不能因此读取端点内容。先锁行并核当前PM可防跨项目枚举；收据在状态检查前重放保证未知结果可安全恢复。
+- Impact/Rollback：内部Trace命令/Repository及Project操作策略增量，复用0053/通用收据，无新Schema/Migration或公开API。未装配命令即可回滚；已撤销边保留历史不可恢复为ACTIVE，只能以新边表达后续业务关系。
+- Verification Plan：单元验证无权/跨项目/缺Key/错版本/终态、同Key与不同载荷、License/Session/CSRF；一次性PG18验证行锁并发、一次状态转换/一审计一收据、审计失败回滚及项目归属；后端全量/wheel。不以内部通过替代HTTP/UAT/Gate验收。
+- Result：定向撤销单元4/4、项目授权策略7/7，原Trace自启动隔离PG18矩阵扩展受限端点PM清理、非经理/跨项目/CSRF/License/版本拒绝、同Key并发和Audit失败回滚PASS；后端全量1889运行/3跳过、开发wheel SHA-256 `36465601c896ab3d562e774d1acbac965dbc565e8b3b672475a817944fee4f32`。首轮全量原策略数量断言30失配，增新操作后更新为31并重跑通过。公开HTTP、关系Owner及正式目标环境未验。
