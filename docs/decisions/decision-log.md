@@ -7068,3 +7068,11 @@
 - Reason：先预览后批准、可撤销当前资格与不可改写的调用证据是不同责任；反向使用Task快照会伪造批准源。
 - Impact/Rollback：新增0068/0069计划与Project权限Operation，不改冻结URL/DTO；空表可降，历史非空拒降。
 - Verification：本项静态核对API-03、SC-01、0064～0067与现有代码，确认权威聚合缺失；无运行测试或外发。
+
+# DEC-20261003-707：Egress Preview 以不可变根和语义去重来源固定授权边界
+
+- Date/WBS：2026-10-03 / `AI-04-A04-P02`；依据 CR-AI-013、冻结 `EGRESS_PREVIEW_CREATE/GET`。
+- Decision：Schema0068 将 Preview 和有序 SourceRef 均实施为只追加历史；数据类别/风险代码与来源语义键分别去重。Provider/Config/Region、AVAILABLE Model、Scope/Project和非零身份在数据库守卫中失败关闭。
+- Reason：授权必须针对可重现的唯一来源集和确定厂商路由；重复条目会使数量/指纹语义不稳定，修改旧 Preview 会改写批准依据。
+- Impact/Rollback：增量 Schema0068，不改冻结 API/依赖；空表可降0067，有历史时向前修复或受控备份恢复。未打开公开路由或外发。
+- Verification：Win11隔离PG18.6 up/down/re-up、drift、Provider/Model/Region、集合/UUID、来源Scope/去重/不可变及非空拒降PASS；后端2111运行/3跳过，wheel `9f7f479e00258503511e43238d637662bc5ed772608798f183dc7d867c32c01e`。

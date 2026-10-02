@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A04-P02 新增Schema0068 EgressPreview Root与不可变SourceRef，由PG保护Provider/Config/AVAILABLE Model/Region、Scope/Project、集合/语义来源去重、非零UUID、指纹/上限/时间及只追加历史。兼容性：0067后增量，不改冻结API/依赖，仅Win11验证。升级/回滚：空表可降0067，有历史拒降并向前修复或受控恢复。验证：PG18.6空库升降重升/drift/负例、后端2111运行/3跳过PASS；开发wheel SHA-256 `9f7f479e00258503511e43238d637662bc5ed772608798f183dc7d867c32c01e`。已知问题：0069 Authorization/撤销、服务/HTTP/真实外发、Gate3/UAT/可用包待完成。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A04-P01 登记CR-AI-013：冻结EGRESS Preview/Get/Authorize/Revoke尚无权威聚合，Task内消费快照不能代替授权源；决定分离Preview/SourceRef、Authorization/撤销历史和Task Snapshot，按0068/0069分片实施。兼容性/升级/回滚：本项仅追溯记录，无程序、Schema、API、依赖或数据变化。验证：静态核对API-03/SC-01/0064～0067，无运行测试。已知问题：0068/0069、服务/HTTP/真实外发、Gate3/UAT/可用包待。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A03-P08 新增AITask内部原子创建、EgressAuthorization Owner契约与PostgreSQL仓储；全组Input Owner解析、完整授权快照校验后同事务写Task/Job/Outbox/Input/Snapshot/Audit/Receipt，同Key精确恢复原Task+Job。兼容性：复用0065～0067，无新Schema/API/依赖，未挂载公开路由。升级/回滚：停止后续组合即回退运行入口，历史不删除。验证：单元5、Win11隔离PG18.6原子链/重放/冲突/Audit故障回滚，后端2111运行/3跳过；开发wheel SHA-256 `d7978d74ee11f263ed25bd45fb8386cc178bfce4b14e8dbd75052e4dc88e0129`。已知问题：正式Egress Preview/Authorization聚合、HTTP/真实外发、Gate3/UAT/可用包待。
