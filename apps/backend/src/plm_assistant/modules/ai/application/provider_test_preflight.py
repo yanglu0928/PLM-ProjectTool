@@ -60,6 +60,19 @@ class ProviderTestPreflightService:
     def preflight(self, *, job_id: uuid.UUID, fencing_token: int,
                   worker_ref: str, trace_id: uuid.UUID) -> ProviderTestPreflightSnapshot:
         try:
+            with self._uow() as tx:
+                return self.check_locked(tx, job_id=job_id, fencing_token=fencing_token,
+                                         worker_ref=worker_ref, trace_id=trace_id)
+        except ProviderTestPreflightError:
+            raise
+        except Exception:
+            raise ProviderTestPreflightError("AI_PROVIDER_UNAVAILABLE") from None
+
+    def check_locked(self, transaction: object, *, job_id: uuid.UUID,
+                     fencing_token: int, worker_ref: str,
+                     trace_id: uuid.UUID) -> ProviderTestPreflightSnapshot:
+        """Recheck inside caller UOW; locks remain held through caller commit."""
+        try:
             validate_checkpoint(job_id=job_id, fencing_token=fencing_token, worker_ref=worker_ref)
         except JobLeaseError:
             raise ProviderTestPreflightError("JOB_LEASE_LOST") from None
@@ -67,32 +80,32 @@ class ProviderTestPreflightService:
             raise ProviderTestPreflightError("VALIDATION_FAILED")
         try:
             self._guard.require_valid(trace_id=trace_id)
-            with self._uow() as tx:
-                claim = self._claims.check_current(
-                    tx, job_id=job_id, fencing_token=fencing_token, worker_ref=worker_ref,
-                )
-                if claim.trace_id != trace_id:
-                    raise ProviderTestPreflightError("JOB_STORE_UNAVAILABLE")
-                current = self._source.lock_current(tx, provider_id=claim.provider_id)
-                if (type(current) is not CurrentProviderTestSource
-                        or current.state not in {"CONFIGURED", "SUSPENDED", "ACTIVE"}
-                        or current.config_id != claim.config_id
-                        or current.configuration.config_version != claim.config_version
-                        or current.configuration.provider_id != claim.provider_id):
-                    raise ProviderTestPreflightError("AI_PROVIDER_CONFIG_CHANGED")
-                try:
-                    plan = self._registry.plan(current.configuration)
-                    fingerprint = probe_policy_sha256(current.configuration, plan)
-                except ProbePolicyError:
-                    raise ProviderTestPreflightError("AI_PROVIDER_POLICY_CHANGED") from None
-                if fingerprint != claim.policy_sha256 or plan.probe_id != claim.probe_id:
-                    raise ProviderTestPreflightError("AI_PROVIDER_POLICY_CHANGED")
-                version = self._secret.active_provider_key_version(
-                    tx, secret_ref=plan.secret_ref,
-                )
-                if version != claim.secret_version_id:
-                    raise ProviderTestPreflightError("AI_PROVIDER_SECRET_CHANGED")
-            # Guard is checked again after the short database transaction;
+            claim = self._claims.check_current(
+                transaction, job_id=job_id, fencing_token=fencing_token,
+                worker_ref=worker_ref,
+            )
+            if claim.trace_id != trace_id:
+                raise ProviderTestPreflightError("JOB_STORE_UNAVAILABLE")
+            current = self._source.lock_current(transaction, provider_id=claim.provider_id)
+            if (type(current) is not CurrentProviderTestSource
+                    or current.state not in {"CONFIGURED", "SUSPENDED", "ACTIVE"}
+                    or current.config_id != claim.config_id
+                    or current.configuration.config_version != claim.config_version
+                    or current.configuration.provider_id != claim.provider_id):
+                raise ProviderTestPreflightError("AI_PROVIDER_CONFIG_CHANGED")
+            try:
+                plan = self._registry.plan(current.configuration)
+                fingerprint = probe_policy_sha256(current.configuration, plan)
+            except ProbePolicyError:
+                raise ProviderTestPreflightError("AI_PROVIDER_POLICY_CHANGED") from None
+            if fingerprint != claim.policy_sha256 or plan.probe_id != claim.probe_id:
+                raise ProviderTestPreflightError("AI_PROVIDER_POLICY_CHANGED")
+            version = self._secret.active_provider_key_version(
+                transaction, secret_ref=plan.secret_ref,
+            )
+            if version != claim.secret_version_id:
+                raise ProviderTestPreflightError("AI_PROVIDER_SECRET_CHANGED")
+            # Recheck the external guard after collecting locked DB facts;
             # even this snapshot is not permission to transmit later.
             self._guard.require_valid(trace_id=trace_id)
             return ProviderTestPreflightSnapshot(claim, plan)

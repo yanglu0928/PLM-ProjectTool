@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-01-A05-P04-A04-P01 新增 Provider Test 内部成功结果与 Job/Lease/Attempt 同事务发布，发布前再次锁定当前配置/策略/Secret/fencing。兼容性：无 Schema/依赖/Breaking API。升级：复用 0055，不需新迁移；未启用生产 Worker，撤内部调用可回退且历史保留。验证：Win11 临时 PG18 真实成功/旧 fencing/Secret 停用/配置升版/失败回滚；后端1967运行/3跳过，开发 wheel SHA-256 `1e77801ef9b78e1fc8c1561347e9646ca36e2279bbf1647ed1fb33a0c75ecc96`。已知问题：P02 失败/重试/审计、真实外发/正式信任/质量/三平台/Gate/UAT/可用程序包仍待。
+
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P04-A03-P02 新增内部 Provider Test 单次钉 IP HTTPS 固定探针、发送前后事实复核与精确版本 Secret 使用；仅测试专用入口可访问本机合成 TLS。兼容性：无 Schema/依赖/Breaking API。升级：无需迁移，未装配生产 Worker；撤内部调用可回退。验证：Win11 本机合成 TLS/临时 CA、未受信证书/重定向/过大/非法/超时及缓冲清零，后端1963运行/3跳过，开发 wheel SHA-256 `c0887ada21cb92f74a8c513363bbbe61f6e76f64d50680e4c61dacb4a508ebe1`。已知问题：发送和状态变化的时序窗口需 A04 终态重验；结果发布/生产 Worker/真实厂商外发、正式信任/质量/三平台/Gate/UAT/可用程序包未完成。
 
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P04-A03-P01 SecretResolver 内部信封新增精确 SecretVersionId，可选预期版本在解密前失败关闭；旧调用保持兼容，无网络外发。兼容性：无 Migration、依赖或 Breaking API。升级：无需数据库迁移；撤新增参数调用可回退，Secret 历史保留。验证：Win11 隔离 PG18.6 真实版本轮换、旧版本拒绝与缓冲清零，后端1957运行/3跳过；开发wheel SHA-256 `929de2d77529833b0607566652e7110e9a333d7d689b50a6a5dc5fd65effa210`。已知问题：A03-P02 受限传输/发送前重验、A04 结果发布、真实外发/正式信任/质量/三平台/Gate/UAT/可用程序包待完成。
