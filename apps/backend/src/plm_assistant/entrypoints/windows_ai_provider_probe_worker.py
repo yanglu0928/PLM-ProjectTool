@@ -11,6 +11,7 @@ from plm_assistant.entrypoints.windows_secret_write import SECRET_MASTER_KEY_REF
 from plm_assistant.entrypoints.windows_system_actor import create_windows_system_actor
 from plm_assistant.modules.ai.application.probe_audit import ProviderProbeAudit
 from plm_assistant.modules.ai.application.provider_probe_worker import ProviderProbeOneShotWorker
+from plm_assistant.modules.ai.application.provider_probe_worker_loop import ProviderProbeWorkerLoop
 from plm_assistant.modules.ai.application.provider_test_preflight import ProviderTestPreflightService
 from plm_assistant.modules.ai.application.publish_provider_probe_failure import ProviderProbeFailurePublisher
 from plm_assistant.modules.ai.application.publish_provider_probe_success import ProviderProbeSuccessPublisher
@@ -97,6 +98,28 @@ def create_windows_ai_provider_probe_worker(settings: BootstrapSettings):
             ),
         )
         return database, worker
+    except Exception:
+        if database is not None:
+            try:
+                database.dispose()
+            except Exception:
+                pass
+        raise WindowsAIProviderProbeWorkerStartupError() from None
+
+
+def create_windows_ai_provider_probe_loop(settings: BootstrapSettings):
+    """Compose a dormant, maintenance-admitted loop; caller owns lifecycle."""
+    database = None
+    try:
+        database, worker = create_windows_ai_provider_probe_worker(settings)
+        admission = database.maintenance_admission
+        if admission is None or not callable(getattr(admission, "admit", None)):
+            raise WindowsAIProviderProbeWorkerStartupError()
+        loop = ProviderProbeWorkerLoop(
+            worker=worker, worker_ref="ai-probe-" + uuid.uuid4().hex,
+            maintenance_admission=admission,
+        )
+        return database, loop
     except Exception:
         if database is not None:
             try:

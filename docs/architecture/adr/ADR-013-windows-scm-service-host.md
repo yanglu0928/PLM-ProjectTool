@@ -46,3 +46,5 @@ Microsoft 官方接口依据：[Service entry point](https://learn.microsoft.com
 2026-09-30 后续验证：P03-P03-A02-P02-A01-R1 在不改动服务的条件下，将内部只读查询用于本机已安装的 Windows EventLog 服务；原生配置/状态成功路径通过，公开产品查询仍严格限三个固定角色。此结果仅验证 Win32 适配器正向读取，不替代 PLM 服务安装、目标账户、PID 归属或资源静止验收，ADR 状态继续 `PARTIALLY_IMPLEMENTED / NOT_SCM_VALIDATED`。
 
 2026-09-30 配置对账：A02-P02-A02 将 P03-A01 期望启动命令与 SCM 保存配置的服务类型、启动方式、错误策略、binary path 和账户逐项精确比较；缺失/不匹配仅出固定码，绝不把配置相同当作当前运行进程或静止证明。当前 PLM 服务未安装，故只通过合成匹配/差异与原生缺失路径；正式目标账户的实机对账仍待，ADR 状态不提升。
+
+2026-10-02 后续增量 CR-AI-003：Provider Test 不得复用 Audit/Parser 服务角色；选择第四独立 AI Provider Worker 固定角色，原三角色保持。A01 已在隔离 PG18 组装未发布的维护循环并验证本机合成任务链；尚未加入 SCM 名单/命令计划/安装器/盘点，也未验目标账户或真实外发。本 ADR 仍 `PARTIALLY_IMPLEMENTED / NOT_SCM_VALIDATED`，原三角色合同不追写；A02/A03 才更新运行/运维证据。

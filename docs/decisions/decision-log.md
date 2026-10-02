@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261002-662 — AI Provider Worker 必须独立于现有三种 Windows 服务
+
+- Date/WBS：2026-10-02 / `AI-01-A05-P05-A03-P04-P02-A03-P03`；依据 CR-AI-003、ADR-007/012/013、现有固定三角色 SCM 清单。
+- Decision：选择第四个固定 `AI_PROVIDER_WORKER`，原三角色不改变；先 A01 装配可信 Worker+维护循环，再 A02 同步宿主/身份/服务命令与只读盘点，A03 真实目标账户验收。只完成前序时不得输出第四个可安装命令或挂公开 Test。
+- Reason：复用 Audit/Parser 角色会混合 Vault/网络权限和停写证据；只增加名称则会生成不可运行命令。
+- Impact/Rollback：ADR-013 增量、运维清单扩展；无 DB/API/依赖变化。未投产可撤新增角色，已投产须先停新任务/服务并保留历史 Job/Audit，不自动删除 SCM。
+- Verification：A01 定向9、隔离 PG18 持锁的真实合成 Job/Secret/TLS/结果、后端2025运行/3跳过及 wheel PASS；A02/A03、真实外发/目标账户/SCM 实机/Gate 开放。
+
 ## DEC-20261002-661 — Provider 探针绝对时限与租约预算
 
 - Date/WBS：2026-10-02 / `AI-01-A05-P05-A03-P04-P02-A03-P02`；依据 CR-AI-002、ADR-007、当前 `PinnedHttpsProbeTransport` 与 Worker 60 秒租约。

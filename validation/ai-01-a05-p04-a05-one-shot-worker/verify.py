@@ -20,6 +20,7 @@ from plm_assistant.modules.ai.application.create_provider import AIProviderCreat
 from plm_assistant.modules.ai.application.probe_audit import ProviderProbeAudit
 from plm_assistant.modules.ai.application.probe_policy import EndpointProbePolicy, EndpointProbeRegistry
 from plm_assistant.modules.ai.application.provider_probe_worker import ProviderProbeOneShotWorker
+from plm_assistant.modules.ai.application.provider_probe_worker_loop import ProviderProbeWorkerLoop
 from plm_assistant.modules.ai.application.provider_test_preflight import ProviderTestPreflightService
 from plm_assistant.modules.ai.application.publish_provider_probe_failure import ProviderProbeFailurePublisher
 from plm_assistant.modules.ai.application.publish_provider_probe_success import ProviderProbeSuccessPublisher
@@ -44,6 +45,8 @@ from plm_assistant.modules.platform.infrastructure.database import create_databa
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
 from plm_assistant.modules.platform.infrastructure.secret_store_reader import SqlAlchemyEncryptedSecretStore
+from plm_assistant.modules.platform.infrastructure.maintenance_admission import MAINTENANCE_LOCK_KEY
+from plm_assistant.modules.platform.infrastructure.worker_database import create_worker_database_runtime
 
 
 root = Path(__file__).parents[1]
@@ -63,7 +66,7 @@ SecretAudit = tls_helpers["Audit"]
 SYNTHETIC_KEY = tls_helpers["SYNTHETIC_KEY"]
 
 
-def main(*, persistent_secret_audit=False):
+def main(*, persistent_secret_audit=False, maintenance_loop=False):
     name = "ai01a05p04a05_" + uuid.uuid4().hex[:10]
     token = b"a" * 32
     with tempfile.TemporaryDirectory(prefix="plm-one-shot-probe-tls-") as temp:
@@ -84,7 +87,8 @@ def main(*, persistent_secret_audit=False):
                     url = URL.create("postgresql+psycopg", username=USER, host=HOST,
                                      port=PORT, database=name)
                     command.upgrade(create_migration_config(url), "head")
-                    runtime = create_database_runtime(url)
+                    runtime = (create_worker_database_runtime(url, maintenance_admission=True)
+                               if maintenance_loop else create_database_runtime(url))
                     try:
                         with connect(name) as db:
                             actor = seed_user(db, token)
@@ -161,6 +165,32 @@ def main(*, persistent_secret_audit=False):
                             ),
                         )
 
+                        if maintenance_loop:
+                            class CapturingWorker:
+                                result = None
+
+                                def run_once(self, *, worker_ref):
+                                    with connect(name) as control:
+                                        assert control.execute(
+                                            "SELECT pg_try_advisory_lock(%s)",
+                                            (MAINTENANCE_LOCK_KEY,),
+                                        ).fetchone()[0] is False
+                                    self.result = worker.run_once(worker_ref=worker_ref)
+                                    return self.result
+
+                            capturing = CapturingWorker()
+                            loop = ProviderProbeWorkerLoop(
+                                worker=capturing, worker_ref="synthetic-worker",
+                                maintenance_admission=runtime.maintenance_admission,
+                                poll_seconds=.05,
+                            )
+
+                        def cycle():
+                            if not maintenance_loop:
+                                return worker.run_once(worker_ref="synthetic-worker")
+                            loop.run(max_cycles=1)
+                            return capturing.result
+
                         def submit():
                             trace = uuid.uuid4()
                             job = submitter.submit(SubmitAIProviderTest(
@@ -168,10 +198,10 @@ def main(*, persistent_secret_audit=False):
                             ))
                             return job, trace
 
-                        assert worker.run_once(worker_ref="synthetic-worker").state == "IDLE"
+                        assert cycle().state == "IDLE"
                         assert not Handler.captured
                         first, trace1 = submit()
-                        result = worker.run_once(worker_ref="synthetic-worker")
+                        result = cycle()
                         assert result.state == "SUCCEEDED" and result.job_id == first.job_id
                         assert result.result_id is not None and len(Handler.captured) == 1
                         path, host, authorization, raw = Handler.captured[-1]
@@ -189,12 +219,12 @@ def main(*, persistent_secret_audit=False):
                             assert db.execute("SELECT count(*) FROM plm.aud_events WHERE trace_id=%s AND action='AI_PROVIDER_TEST_SUCCEEDED'", (trace1,)).fetchone()[0] == 1
                             if persistent_secret_audit:
                                 assert db.execute("SELECT actor_type,actor_id,original_actor_id,target_version_id FROM plm.aud_events WHERE trace_id=%s AND action='AI_PROVIDER_SECRET_ACCESS'", (trace1,)).fetchone() == ("SYSTEM", uuid.UUID(int=1), actor, version)
-                        assert worker.run_once(worker_ref="synthetic-worker").state == "IDLE"
+                        assert cycle().state == "IDLE"
                         assert len(Handler.captured) == 1
 
                         Handler.mode = "redirect"
                         second, trace2 = submit()
-                        result = worker.run_once(worker_ref="synthetic-worker")
+                        result = cycle()
                         assert result.state == "FAILED" and result.job_id == second.job_id
                         assert len(Handler.captured) == 2
                         with connect(name) as db:
