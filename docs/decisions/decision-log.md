@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-647 — Provider Test 用固定 HTTPS 目标与测试专用合成入口
+
+- Date/WBS：2026-10-02 / `AI-01-A05-P04-A03-P02`；输入 CR-AI-002、固定无客户探针、P04-A02 当前事实预检、P04-A03-P01 精确 SecretVersionId。生产依赖未包含 HTTP 客户端。
+- Decision：使用 Python 3.13 标准库建立单次 HTTPS 探针：受控策略的完整 URL 仅允许 HTTPS/FQDN/固定路径；生产 DNS 所有候选地址须为 global IP，连接钉住所选 IP，TLS SNI/证书仍验证原域名。无代理、无重定向、固定 POST/极小 JSON 探针、短超时与有界响应；发送前再做 License/配置/SecretVersion/fencing 预检，通过 SecretResolver 的精确版本读取合成 Key，发送后再次检查租约。测试专用子类仅在 validation 使用回环地址/临时 CA，不挂生产组合。只返回安全结果码，不保存响应正文或原始异常。
+- Reason/Impact/Rollback：避免新依赖与普通 HTTP 客户端对代理、重定向和 DNS 重绑定的隐式行为；本机 TLS 合成验证可不触及真实厂商。无 Schema/API/依赖变化；撤内部 Adapter 调用可回退，既有 Job/Secret/Audit 历史保留。执行与发布仍分开，任何真实外发须独立范围授权与发行审查。
+
 ## DEC-20261002-646 — SecretResolver 增加可选精确版本约束
 
 - Date/WBS：2026-10-02 / `AI-01-A05-P04-A03-P01`；输入 DEC-20261002-645、SecretResolver 当前信封缺 SecretVersionId。

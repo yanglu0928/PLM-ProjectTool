@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-01-A05-P04-A03-P02 新增内部 Provider Test 单次钉 IP HTTPS 固定探针、发送前后事实复核与精确版本 Secret 使用；仅测试专用入口可访问本机合成 TLS。兼容性：无 Schema/依赖/Breaking API。升级：无需迁移，未装配生产 Worker；撤内部调用可回退。验证：Win11 本机合成 TLS/临时 CA、未受信证书/重定向/过大/非法/超时及缓冲清零，后端1963运行/3跳过，开发 wheel SHA-256 `c0887ada21cb92f74a8c513363bbbe61f6e76f64d50680e4c61dacb4a508ebe1`。已知问题：发送和状态变化的时序窗口需 A04 终态重验；结果发布/生产 Worker/真实厂商外发、正式信任/质量/三平台/Gate/UAT/可用程序包未完成。
+
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P04-A03-P01 SecretResolver 内部信封新增精确 SecretVersionId，可选预期版本在解密前失败关闭；旧调用保持兼容，无网络外发。兼容性：无 Migration、依赖或 Breaking API。升级：无需数据库迁移；撤新增参数调用可回退，Secret 历史保留。验证：Win11 隔离 PG18.6 真实版本轮换、旧版本拒绝与缓冲清零，后端1957运行/3跳过；开发wheel SHA-256 `929de2d77529833b0607566652e7110e9a333d7d689b50a6a5dc5fd65effa210`。已知问题：A03-P02 受限传输/发送前重验、A04 结果发布、真实外发/正式信任/质量/三平台/Gate/UAT/可用程序包待完成。
 
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P04-A02 新增 Provider Test 执行前 License/当前配置/SecretVersion/策略/fencing 预检，并统一提交与预检的策略摘要；不解密 Secret、不联网、不授予外发许可。兼容性：无 Migration、依赖或 Breaking API。升级：复用 0055 及现有表，撤内部预检调用可回退；历史 Job/Lease 保留。验证：Win11 隔离 PG18.6 实际 Secret 轮换/配置升版、许可/策略/旧租约拒绝；后端1955运行/3跳过，开发wheel SHA-256 `225e71f6623c7deecb37b9f55476d5351502f8d16be789dc94f759691539c8bd`。已知问题：A03 版本绑定 Secret/受限传输、A04 结果发布、真实外发/正式信任/质量/三平台/Gate/UAT/可用程序包待完成。
