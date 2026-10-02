@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-01-A03-P03-A03 Provider 创建201 HTTP仅挂入Windows显式 `--platform-write`，读平台POST405、默认/登录POST404；缺写依赖整体失败关闭。兼容性：无 Schema/依赖/Breaking API。升级：需0054及目标账户正式数据库/License/Secret/游标钥信任源；撤组合代码可回滚，历史不删除。验证：Win11隔离PG18/ASGI真实Session/重放/权限/License/Audit与缺依赖合同，后端1926运行/3跳过；开发wheel SHA-256 `678c794080f69e4c422d4e1e5478b900c5df6af1ce3136976ae9c0151c9e9619`。已知问题：正式信任、PATCH/Test/激活/外发、质量、三平台/Gate/UAT/可用包及旧平台脚本夹具回归仍待。
+
 - 2026-10-02：0.1.0.dev0/AI-01-A03-P03-A02 增加冻结 Provider 创建的可选201 HTTP，只收 SecretRef 与受控元数据，返回首版脱敏 ProviderView/ETag；默认及Windows正式组合保持关闭。兼容性：无 Schema/依赖/Breaking API。升级：需已有0054，显式注入 Router 才开放；不注入可回退。验证：Win11隔离ASGI/PG18真实Session/管理员/License/Secret/重放/撤权与定向合同3项、后端1925运行/3跳过；开发wheel SHA-256 `5ecb0d46d4d00e92e9f03b13026374492e981f3ff99c649f1b1a6550d08a20c1`。已知问题：Windows写组合/正式账户信任、Provider测试/激活/外发、质量、三平台/Gate/UAT/可用程序包仍未完成；旧平台脚本夹具待重跑。
 
 - 2026-10-02：0.1.0.dev0/AI-01-A03-P03-A01 为冻结 Provider 创建 `201 ProviderView` 增加内部首版不可变脱敏视图入口，同 Key 重放不读取已变化的当前配置；旧 UUID 入口保留。兼容性：无 Schema/依赖/公开 API 变化。升级：需已有0054；无新迁移。验证：Win11隔离PG18首次/重放/后续配置与Secret变化/缺视图原子回滚、旧创建/追加回归，后端1922运行/3跳过；开发wheel SHA-256 `aaa8fb02a4856c1fe3a7408d2f036d3f018c215ac35cf5985bff3ad86ce53132`。已知问题：创建HTTP、正式目标账户信任/外发、质量、三平台/Gate/UAT/可用程序包仍未完成。

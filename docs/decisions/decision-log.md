@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-633 — Provider 创建仅 Windows 显式写平台装配
+
+- Date/WBS：2026-10-02 / `AI-01-A03-P03-A03`；输入已验证可选 Provider POST、当前 Windows `--platform-write` 的 Secret/License 信任组合。
+- Decision：仅在 `include_secret_write` 分支创建 `AIProviderCreateService` 并挂入 POST Router，复用该分支既有 Session、License Guard、PG UoW、Secret证明、收据、Audit；只读平台模式不构造写服务，默认/登录模式不挂载。任一创建依赖失败则写平台整体启动失败并释放运行时，不静默丢失写路由。
+- Reason/Impact/Rollback：维持显式最小暴露，未验证正式信任源不作为生产就绪；无 Schema/公开API/依赖变化。撤组合注入即可代码回滚，已提交的Provider历史不删除。只读模式同一路径已有GET，未挂载POST时由框架返回405而非404；需在验证与版本说明明确。
+
 ## DEC-20261002-632 — Provider 创建 HTTP 仅可选注入
 
 - Date/WBS：2026-10-02 / `AI-01-A03-P03-A02`；输入冻结 API-01/API-03 与 A01 原始 ProviderView。

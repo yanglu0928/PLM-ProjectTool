@@ -6,4 +6,4 @@
 
 成功返回 `201`、`data: ProviderView`、`trace_id` 与同值 `X-Trace-Id`，并带 `ETag: "v0"`、资源 `Location`、`Cache-Control: no-store`。只返回受控端点策略、区域、外发类别、能力、固定遮罩 SecretRef、状态/配置版本/ETag；不回显 Secret 全值、密文或供应商内部响应。Provider 初态仅 `CONFIGURED`，创建不执行连通性测试、激活、AI 调用或客户数据外发。同一 actor/key/规范化 payload 返回原始首版响应；同 key 异载荷409。
 
-错误按冻结 Envelope：格式400、会话401、CSRF403、无管理员权限404、License403、幂等冲突409、输入422、不可用 Secret/Provider503。默认应用与当前 Windows 平台组合未挂载此写 Router，返回404；待后续正式组合任务验证后才开放。
+错误按冻结 Envelope：格式400、会话401、CSRF403、无管理员权限404、License403、幂等冲突409、输入422、不可用 Secret/Provider503。`AI-01-A03-P03-A03` 后仅 Windows 显式 `--platform-write` 挂载此写 Router；默认/登录模式POST404，`--platform` 同一路径已有GET、POST返回405，均不可创建。正式目标账户信任材料仍须独立供给/验证。

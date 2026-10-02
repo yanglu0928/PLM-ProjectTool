@@ -99,6 +99,10 @@ from plm_assistant.entrypoints.windows_ai_provider_list_cursor import create_win
 from plm_assistant.modules.ai.api.provider_metadata import create_ai_provider_read_router
 from plm_assistant.modules.ai.application.provider_metadata import AIProviderMetadataService
 from plm_assistant.modules.ai.infrastructure.provider_metadata_repository import SqlAlchemyAIProviderMetadataRepository
+from plm_assistant.modules.ai.api.create_provider import create_ai_provider_create_router
+from plm_assistant.modules.ai.application.create_provider import AIProviderCreateService
+from plm_assistant.modules.ai.infrastructure.provider_create_repository import SqlAlchemyAIProviderCreateRepository
+from plm_assistant.modules.platform.infrastructure.ai_provider_secret_proof import SqlAlchemyAIProviderSecretProof
 from plm_assistant.entrypoints.windows_project_member_cursor import create_windows_project_member_cursor_codec
 from plm_assistant.entrypoints.windows_project_department_cursor import create_windows_project_department_cursor_codec
 from plm_assistant.entrypoints.windows_document_upload_token import create_windows_document_upload_token_issuer
@@ -351,6 +355,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         secret_rotate_router = None
         secret_disable_router = None
         ai_provider_read_router = None
+        ai_provider_create_router = None
         project_read_router = None
         workflow_read_router = None
         workflow_start_router = None
@@ -930,6 +935,18 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 writes = create_windows_secret_write_service(
                     runtime, license_guard=licenses.guard,
                 )
+                ai_provider_create_router = create_ai_provider_create_router(
+                    sessions=sessions, origins=origins,
+                    providers=AIProviderCreateService(
+                        unit_of_work=runtime.unit_of_work,
+                        access=SqlAlchemyLicenseImportAccess(),
+                        license_guard=licenses.guard,
+                        secret_proof=SqlAlchemyAIProviderSecretProof(),
+                        repository=SqlAlchemyAIProviderCreateRepository(),
+                        receipts=SqlAlchemyIdempotencyReceipts(),
+                        audit=audit,
+                    ),
+                )
                 secret_create_router = create_secret_create_router(
                     sessions=sessions, writes=writes, origins=origins,
                 )
@@ -1044,6 +1061,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             secret_rotate_router=secret_rotate_router,
             secret_disable_router=secret_disable_router,
             ai_provider_read_router=ai_provider_read_router,
+            ai_provider_create_router=ai_provider_create_router,
             project_read_router=project_read_router,
             workflow_read_router=workflow_read_router,
             workflow_start_router=workflow_start_router,
