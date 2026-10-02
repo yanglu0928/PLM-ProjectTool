@@ -12,6 +12,8 @@ from psycopg import sql
 from sqlalchemy.engine import URL
 
 from plm_assistant.modules.ai.application.provider_test_job_read_projection import ProviderTestJobReadProjection
+from plm_assistant.modules.ai.application.probe_policy import EndpointProbePolicy, EndpointProbeRegistry, probe_policy_sha256
+from plm_assistant.modules.ai.domain.provider_configuration import ProviderCapability, ProviderConfiguration, ProviderKind
 from plm_assistant.modules.ai.infrastructure.provider_test_job_read import SqlAlchemyProviderTestJobReadRepository
 from plm_assistant.modules.auth.infrastructure.deployment_read_access import SqlAlchemyDeploymentReadAccess
 from plm_assistant.modules.jobs.application.ai_provider_test_enqueue import AIProviderTestJobQueue, AIProviderTestJobRequest
@@ -37,7 +39,7 @@ def expect(code, call):
         raise AssertionError(f"expected {code}")
 
 
-def main():
+def main(after_success=None):
     name = "ai01a05p05a01_" + uuid.uuid4().hex[:10]
     token = b"a" * 32
     with connect("postgres") as admin:
@@ -50,8 +52,16 @@ def main():
                 with connect(name) as db:
                     actor = seed_user(db, token)
                 queue = AIProviderTestJobQueue(SqlAlchemyAIProviderTestJobQueueRepository())
-                request = AIProviderTestJobRequest(uuid.uuid4(), uuid.uuid4(), uuid.uuid4(),
-                    1, uuid.uuid4(), actor, uuid.uuid4(), b"p" * 32)
+                provider_id, config_id, secret, secret_version = (uuid.uuid4() for _ in range(4))
+                config = ProviderConfiguration(provider_id, 1, ProviderKind.OPENAI_COMPATIBLE,
+                    "Synthetic Read", "endpoint.synthetic.v1", secret, "cn-beijing", "SYNTHETIC",
+                    frozenset({ProviderCapability.CHAT}))
+                policies = EndpointProbeRegistry({"endpoint.synthetic.v1": EndpointProbePolicy(
+                    "endpoint.synthetic.v1", ProviderKind.OPENAI_COMPATIBLE,
+                    "https://probe.example.test/v1/chat", "synthetic-chat", "cn-beijing", "SYNTHETIC")})
+                digest = probe_policy_sha256(config, policies.plan(config))
+                request = AIProviderTestJobRequest(uuid.uuid4(), provider_id, config_id,
+                    1, secret_version, actor, uuid.uuid4(), digest)
                 with runtime.unit_of_work() as tx:
                     ref = queue.enqueue(tx, request=request)
                     tx.commit()
@@ -88,7 +98,6 @@ def main():
                 result_id = uuid.uuid4()
                 with connect(name) as db:
                     with db.transaction():
-                        secret = uuid.uuid4()
                         db.execute("INSERT INTO plm.plt_secret_records(secret_record_id,purpose,allowed_consumer,created_by) VALUES (%s,'AI_PROVIDER_KEY','AI_PROVIDER_ADAPTER',%s)", (secret, actor))
                         db.execute("INSERT INTO plm.plt_secret_versions(secret_version_id,secret_record_id,version_no,encrypted_payload,encryption_metadata,key_provider_ref,created_by) VALUES (%s,%s,1,%s,'{}'::jsonb,'synthetic-only',%s)", (request.secret_version_id, secret, b"x", actor))
                         db.execute("INSERT INTO plm.ai_providers(ai_provider_id,current_config_version_ref,created_by) VALUES (%s,%s,%s)", (request.provider_id, request.config_id, actor))
@@ -97,6 +106,10 @@ def main():
                 detail = reader.get(query)
                 assert (detail.facts.state, detail.owner.result_type, detail.owner.result_id) == (
                     "SUCCEEDED", "AI_PROVIDER_TEST", result_id)
+                if after_success is not None:
+                    after_success(runtime=runtime, name=name, actor=actor, request=request,
+                                  ref=ref, guard=guard, token=token, result_id=result_id,
+                                  policies=policies, secret=secret)
                 guard.enabled = False
                 expect("LICENSE_OPERATION_DENIED", lambda: reader.get(query))
                 print("PASS: PG18 admin authority, immutable pair, success result binding, no missing proof or secret exposure")

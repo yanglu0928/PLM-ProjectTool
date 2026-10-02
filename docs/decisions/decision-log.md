@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-652 — 激活资格只认当前事务内最新终态探针证明
+
+- Date/WBS：2026-10-02 / `AI-01-A05-P05-A02`；输入冻结 DM-04/API-03、CR-AI-002、P05-A01 历史结果读取与 P04 当前事实预检。此项为内部证明，不执行激活或真实网络外发。
+- Decision：提供供后续激活命令在同一 PostgreSQL 事务内调用的证明服务：先重验 License、锁定当前 Provider/config 与当前 ACTIVE SecretVersion、重新计算受控策略摘要，再读取该 Provider 最新终态结果（按 observed_at、结果 ID 降序），核对 Job/Outbox 原始绑定、SUCCEEDED 及配置/SecretVersion/策略。任何较新的失败证明、配置升版、Secret 轮换/停用或策略变更都拒绝，不能回退挑选旧成功。结果仅作为待激活的内部资格快照；调用者还需同事务授权、版本检查、状态更新、Audit/收据与最终 License 重验。
+- Reason/Impact/Rollback：历史成功引用不足以证明当前环境，也不得因新的失败结果忽略风险。无 Schema/API/依赖变化；撤内部服务调用即可回滚，append-only 历史保留。隔离 PG18 验证成功、失效和事务只读行为，后续激活状态机独立验收。
+
 ## DEC-20261002-651 — Provider Test Job 结果仅作同事务受权历史投影
 
 - Date/WBS：2026-10-02 / `AI-01-A05-P05-A01`；输入冻结 API-03 JobView、CR-AI-002、已验的 Job/Outbox 与不可变探针结果。前置满足；不变更冻结响应、Schema 或权限。

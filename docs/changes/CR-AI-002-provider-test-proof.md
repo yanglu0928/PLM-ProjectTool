@@ -1,6 +1,6 @@
 # CR-AI-002：Provider 连通性测试的安全解析与持久证明
 
-日期：2026-10-02；状态：部分实施（P01～P03、P04-A01～A05、P05-A01 内部验证；P05 激活/生产守护/真实外发未完成）；来源：`AI-01-A05` 前置核查；原冻结 Gate 2 提交 `64cdf09` 保留。
+日期：2026-10-02；状态：部分实施（P01～P03、P04-A01～A05、P05-A01/A02 内部验证；激活命令/生产守护/真实外发未完成）；来源：`AI-01-A05` 前置核查；原冻结 Gate 2 提交 `64cdf09` 保留。
 
 ## 来源、冲突与证据
 
@@ -60,3 +60,5 @@
 2026-10-02 P04-A05 按 DEC-20261002-650 增加纯内部单次 Worker；Windows 11 临时 PG18 与本机合成 TLS 串起真实 Job/Outbox/SecretStore、预检、固定 POST、结果及 Audit，验证 IDLE、成功和重定向失败。测试端点与合成解密器只在 validation；没有进程守护、正式 Windows 装配或真实外发。P04 内部链可进入 P05，但整体 AI-01-A05 和 Gate 3 不标 PASS。
 
 2026-10-02 P05-A01 按 DEC-20261002-651 扩展冻结 JobView 的内部 Owner 结果枚举与 Windows 组合。历史 SUCCEEDED 仅经当前管理员 Session/License 授权且 Job/Outbox/结果/配置版本/SecretVersion/策略/attempt/fencing 同事务核对后返回安全结果引用；失败与未完成不暴露证明内容。无 Schema/Breaking API/依赖变更，撤 Owner 注册可回滚且历史保留。Win11 隔离 PG18 与后端全量回归通过；该历史结果不是当前激活资格，P05-A02 和正式 HTTP/外发仍待。
+
+2026-10-02 P05-A02 按 DEC-20261002-652 增加供未来激活命令在同一事务调用的当前资格证明。锁定当前 Provider，重验 License、ACTIVE SecretVersion、受控策略摘要，只接受该 Provider 最新终态结果为 SUCCEEDED 且原 Job/Outbox、配置与版本完整匹配；较新的失败不能被旧成功绕过。Windows 11 隔离 PG18 验证策略/配置/Secret 变动和新失败均拒绝；无 Schema/API/依赖变化，保留全部历史。后续 P05-A03 内部激活命令仍须实现管理员授权、并发版本、幂等、Audit、状态原子提交；本项不将 Provider 置 ACTIVE。
