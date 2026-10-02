@@ -8,7 +8,9 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Protocol
 
-from plm_assistant.modules.ai.application.probe_policy import EndpointProbeRegistry, ProbePolicyError
+from plm_assistant.modules.ai.application.probe_policy import (
+    EndpointProbeRegistry, ProbePolicyError, probe_policy_sha256,
+)
 from plm_assistant.modules.ai.domain.provider_configuration import ProviderConfiguration
 from plm_assistant.modules.audit.application.public import AuditEventDraft, AuditService
 from plm_assistant.modules.jobs.application.ai_provider_test_enqueue import (
@@ -139,13 +141,7 @@ class AIProviderTestSubmitService:
                 )
                 if type(secret_version) is not uuid.UUID or not secret_version.int:
                     raise AIProviderTestSubmitError("AI_PROVIDER_SECRET_UNAVAILABLE")
-                policy_sha = canonical_payload_fingerprint({
-                    "probe_id": plan.probe_id, "policy_ref": plan.policy_ref,
-                    "endpoint_url": plan.endpoint_url, "model_key": plan.model_key,
-                    "provider_kind": current.configuration.kind.value,
-                    "data_region": current.configuration.data_region,
-                    "egress_class": current.configuration.egress_class,
-                })
+                policy_sha = probe_policy_sha256(current.configuration, plan)
                 request = AIProviderTestJobRequest(
                     submission_id=uuid.UUID(new_uuid7()), provider_id=command.provider_id,
                     config_id=current.config_id, config_version=current.configuration.config_version,

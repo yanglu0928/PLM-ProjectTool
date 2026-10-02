@@ -38,3 +38,7 @@
 2026-10-02 P04 实施拆分：按 DEC-20261002-644 先做 A01 专属领取/fencing，随后 A02 许可/当前配置/Secret/策略重验、A03 受限合成 Adapter、A04 不可变结果与终态发布。无技术栈/Schema/API 改动；期间 Worker 循环仍关闭，任何领取证据不代表实际连通。
 
 2026-10-02 P04-A01 已在 Windows 11 隔离 PG 验证双 Worker 专属领取、非 AI Job 排除、过期租约与 fencing、回滚及畸形队列失败关闭。P04-A02～A04 和真实外发仍未实施，不能把 Job 领取报告为探针/许可通过。
+
+2026-10-02 P04-A02 核查发现现有 SecretResolver 信封不携带 SecretVersionId。按 DEC-20261002-645，先实现不解密、不联网的当前版本/许可/策略/fencing 预检；A03 另实现版本绑定 Secret 使用及发送前重验，预检不授予外发权限。该调整在 CR-AI-002 既有范围内，无 Schema/API 变化。
+
+2026-10-02 P04-A02 已在 Windows 11 隔离 PG 验证当前租约、License 拒绝、策略变化、Secret 停用/轮换、Provider 配置实际升版失败关闭；未产生结果或网络调用。版本绑定 Secret 使用和出站安全仍待 A03，不提前开放 Worker。

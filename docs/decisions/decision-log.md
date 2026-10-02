@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-645 — Provider Test 预检不是外发许可
+
+- Date/WBS：2026-10-02 / `AI-01-A05-P04-A02`；输入 CR-AI-002、P04-A01 专属领取、现有 SecretResolver 信封未携带 SecretVersionId 的事实。
+- Decision：执行前先以当前 License Guard、Jobs fencing checkpoint、Provider 当前配置行锁、受控策略摘要与 ACTIVE SecretVersionId 完整比对首次 Job 快照；返回仅内存的预检计划，不解密 Secret、不联网、不改变 Job 状态。将策略摘要算法收敛为 AI 统一函数，避免提交与执行计算漂移。预检不是可跨事务复用的外发凭证；A03 需设计版本绑定的 Secret 使用和发送前重验，不凭本项打开 Worker 循环。
+- Reason/Impact/Rollback：仅有 SecretVersion 号无法防止轮换后错用新密文；配置或策略变化后旧 Job 不能继续执行。无 Schema/API/依赖变化，撤内部预检调用可回退；已存在 Job/Lease 保留，失败状态处理在 A04。
+
 ## DEC-20261002-644 — Provider Test Worker 先建立专属领取与 fencing
 
 - Date/WBS：2026-10-02 / `AI-01-A05-P04-A01`；输入 CR-AI-002、P03 原子队列、现有 Job Lease/Attempt 规则。

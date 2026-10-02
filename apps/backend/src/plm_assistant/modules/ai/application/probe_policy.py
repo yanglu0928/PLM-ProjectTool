@@ -13,6 +13,7 @@ from urllib.parse import urlsplit
 from plm_assistant.modules.ai.domain.provider_configuration import (
     ProviderCapability, ProviderConfiguration, ProviderKind,
 )
+from plm_assistant.modules.platform.application.idempotency import canonical_payload_fingerprint
 
 
 _REFERENCE = re.compile(r"[A-Za-z][A-Za-z0-9._:-]{0,127}\Z")
@@ -128,3 +129,21 @@ class EndpointProbeRegistry:
             model_key=policy.model_key,
             secret_ref=config.secret_ref,
         )
+
+
+def probe_policy_sha256(config: ProviderConfiguration, plan: ProviderProbePlan) -> bytes:
+    """Canonical trusted policy fingerprint shared by submit and preflight."""
+    if (type(config) is not ProviderConfiguration or type(plan) is not ProviderProbePlan
+            or plan.provider_id != config.provider_id
+            or plan.config_version != config.config_version
+            or plan.policy_ref != config.endpoint_policy_ref
+            or plan.secret_ref != config.secret_ref):
+        raise ProbePolicyError()
+    plan.__post_init__()
+    return canonical_payload_fingerprint({
+        "probe_id": plan.probe_id, "policy_ref": plan.policy_ref,
+        "endpoint_url": plan.endpoint_url, "model_key": plan.model_key,
+        "provider_kind": config.kind.value,
+        "data_region": config.data_region,
+        "egress_class": config.egress_class,
+    })
