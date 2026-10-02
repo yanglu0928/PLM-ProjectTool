@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-01-A05-P01 新增 Provider Test 离线受控端点策略与固定无客户探针计划，未知引用/配置错配/非 HTTPS 或含凭据、查询、片段等 URL 失败关闭；仅 OpenAI-compatible CHAT，未外发。兼容性：无 Schema、依赖、公开 API 或现有组合变化。升级：无需迁移；撤内部合同可回滚。验证：定向6项、后端1938运行/3跳过、开发wheel SHA-256 `190589d1cea1b168e20c9ce9ea666f26029d88a0c1c9f5f3513598a1fcfc0fa3`。已知问题：正式策略来源、DNS/IP 出站防护、TestRun/Job/Worker、真实厂商连通、质量/三平台/Gate/UAT/可用程序包均待完成。
+
 - 2026-10-02：0.1.0.dev0/AI-01-A05 前置核查完成，登记 CR-AI-002：冻结的 Provider Test 必须异步 202 JobRef，需先补受控端点策略、当前配置绑定证明、Job Owner 与受限 Worker；真实外发保持关闭。兼容性/升级：本次无程序、Schema、依赖或 API 改动，无需升级。验证：静态核对冻结 API-03/DM-04、当前 Provider/Job ORM/SecretResolver；未执行新运行时测试。已知问题：A05 功能本身、正式信任源、真实连通、质量、三平台/Gate/UAT/可用程序包仍待完成；下项 P01。
 
 - 2026-10-02：0.1.0.dev0/AI-01-A03-P04-A02-P03 将现有 Provider PATCH 仅挂入 Windows 显式 `--platform-write`，缺写依赖整体失败关闭；默认/登录 404、只读平台 405。兼容性：无 Schema、依赖或 Breaking API 变化。升级：需既有 0054 和目标账户正式信任源；撤组合注入可回滚，历史配置/收据/审计保留。验证：Win11 隔离 PG18/ASGI 真实 Session、ETag/重放/权限/License/Audit，组合合同30项、后端1932运行/3跳过，开发 wheel SHA-256 `7adf3fd729dc3e91213e527d1de74d3da6ed2254f63ed3df23d2bc6e13d453f9`。已知问题：正式信任源、Provider测试/激活/外发、质量、Server2025/Debian/Gate/UAT/可用程序包和39份旧平台脚本夹具回归仍待。

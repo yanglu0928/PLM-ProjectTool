@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-639 — Provider Test 探针计划由受控策略精确解析
+
+- Date/WBS：2026-10-02 / `AI-01-A05-P01`；输入冻结固定无客户探针、CR-AI-002 和现有符号化 EndpointPolicyRef。
+- Decision：AI 内部仅接受预注入的不可变端点策略 registry，以配置中的精确引用查找；策略固定 Provider Kind、区域、外发类别、HTTPS URL 与探针模型标识。P01 只返回离线、无 Key/客户正文的固定探针计划；未知/错配/非 HTTPS、URL 注入均失败关闭。生产策略来源、DNS/IP 出站检查和实际适配器留后项，不把本合同当成网络安全完成。
+- Reason/Impact/Rollback：阻止直接从 Provider 配置的符号化引用拼接任意目标，同时保持后续受限 Adapter 可扩展。无 DB/API/依赖变化；撤内部纯合同即可回滚，未发生外发或数据迁移。
+
 ## DEC-20261002-638 — Provider Test 按冻结异步合同拆分安全前置
 
 - Date/WBS：2026-10-02 / `AI-01-A05`；冻结 API-03 为 202 JobRef、固定无客户探针，DM-04 要求可绑定当前配置的连通证明；当前实现缺端点策略解析、TestRun、AI Job Owner 和 Adapter。
