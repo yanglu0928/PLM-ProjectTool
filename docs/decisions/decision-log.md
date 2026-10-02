@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261002-667 — 模型只读平台组合使用独立当前账户 Vault 游标密钥
+
+- Date/WBS：2026-10-02 / `AI-02-A04`；依据 A03 可选只读路由、既有 Provider 游标正式来源及 Windows 平台显式读组合。
+- Decision：固定 `ai-model-list-cursor-v1` 独立 KeyRef，只读当前进程账户 Vault；缺失/非32字节/异常时显式平台组合启动失败关闭，登录专用模式仍不挂模型路由。密钥不自动生成、不复用 Provider/Secret/其他游标。当前仅合成测试账户密钥，正式目标账户材料仍待供给。
+- Reason：若直接复用 Provider key，会破坏资源隔离及恢复边界；若静默生成，则重启后游标失效且无法审计恢复。
+- Impact/Rollback：仅增加 Windows AI 模型只读组合，不改 Schema/冻结 API/依赖或模型调用；停用显式路由并保留历史 Model/Audit 可回退。
+- Verification：当前账户临时引用丢失/备份恢复、平台合同双显式模式挂载及缺钥关闭、A03 隔离 PG18 独立服务读取、后端2044运行/3跳过及开发wheel通过。A04 尚未做平台组合+PG端到端；正式目标账户/Server2025/Debian/Gate 仍未验证。
+
 ## DEC-20261002-666 — AIModel 只读投影独立分页游标并显式标注质量未评估
 
 - Date/WBS：2026-10-02 / `AI-02-A03`；依据冻结 API-03 模型 LIST/GET、DM-04 模型可用与质量不等价、Schema 0057、现有 Provider 管理只读入口。

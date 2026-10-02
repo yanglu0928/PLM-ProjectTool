@@ -98,9 +98,13 @@ from plm_assistant.modules.audit.application.submit_export import AuditExportSub
 from plm_assistant.modules.audit.application.export_submit_authorization import AuditExportSubmitAuthorization
 from plm_assistant.entrypoints.windows_secret_list_cursor import create_windows_secret_list_cursor_codec
 from plm_assistant.entrypoints.windows_ai_provider_list_cursor import create_windows_ai_provider_list_cursor_codec
+from plm_assistant.entrypoints.windows_ai_model_list_cursor import create_windows_ai_model_list_cursor_codec
 from plm_assistant.modules.ai.api.provider_metadata import create_ai_provider_read_router
 from plm_assistant.modules.ai.application.provider_metadata import AIProviderMetadataService
 from plm_assistant.modules.ai.infrastructure.provider_metadata_repository import SqlAlchemyAIProviderMetadataRepository
+from plm_assistant.modules.ai.api.model_metadata import create_ai_model_read_router
+from plm_assistant.modules.ai.application.model_metadata import AIModelMetadataService
+from plm_assistant.modules.ai.infrastructure.model_metadata_repository import SqlAlchemyAIModelMetadataRepository
 from plm_assistant.modules.ai.api.create_provider import create_ai_provider_create_router
 from plm_assistant.modules.ai.application.create_provider import AIProviderCreateService
 from plm_assistant.modules.ai.infrastructure.provider_create_repository import SqlAlchemyAIProviderCreateRepository
@@ -360,6 +364,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         secret_rotate_router = None
         secret_disable_router = None
         ai_provider_read_router = None
+        ai_model_read_router = None
         ai_provider_create_router = None
         ai_provider_patch_router = None
         project_read_router = None
@@ -449,6 +454,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             job_detail_router = create_job_detail_router(reads=job_reads,origins=origins)
             cursors = create_windows_secret_list_cursor_codec()
             ai_provider_cursors = create_windows_ai_provider_list_cursor_codec()
+            ai_model_cursors = create_windows_ai_model_list_cursor_codec()
             member_cursors = create_windows_project_member_cursor_codec()
             department_cursors = create_windows_project_department_cursor_codec()
             audit_cursors = create_windows_audit_cursor_codec()
@@ -578,6 +584,16 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                     license_guard=licenses.guard,
                     repository=SqlAlchemyAIProviderMetadataRepository(),
                     cursors=ai_provider_cursors,
+                ),
+            )
+            ai_model_read_router = create_ai_model_read_router(
+                sessions=sessions, origins=origins,
+                models=AIModelMetadataService(
+                    unit_of_work=runtime.unit_of_work,
+                    access=SqlAlchemyDeploymentReadAccess(),
+                    license_guard=licenses.guard,
+                    repository=SqlAlchemyAIModelMetadataRepository(),
+                    cursors=ai_model_cursors,
                 ),
             )
             project_reads = ProjectReadService(
@@ -1081,6 +1097,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             secret_rotate_router=secret_rotate_router,
             secret_disable_router=secret_disable_router,
             ai_provider_read_router=ai_provider_read_router,
+            ai_model_read_router=ai_model_read_router,
             ai_provider_create_router=ai_provider_create_router,
             ai_provider_patch_router=ai_provider_patch_router,
             project_read_router=project_read_router,

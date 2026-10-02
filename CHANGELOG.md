@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-02-A04 新增 Windows 当前账户模型独立游标 Vault KeyRef 与两个显式平台模式 AIModel GET/LIST 装配；缺钥安全拒绝启动，登录专用模式仍404。兼容性：无 Schema/依赖/Breaking API/外发变化。升级/回滚：正式目标账户须单独供给并备份 `ai-model-list-cursor-v1` 32字节密钥；撤显式路由可回退，保留历史数据。验证：Win11 临时凭据失密/恢复、平台合同及后端2044运行/3跳过，开发 wheel SHA-256 `0047eb7252cf58d2621a7ff464684bdaa0b14ac9e6e3ffc19dbc4fa2d0b8aee3`；A03 服务独立隔离PG18已验。已知问题：正式目标账户密钥未供给、A04 平台+PG端到端/Server2025/Debian、模型创建/状态 API、真实模型调用、Gate/UAT/可用包未验。
+
 - 2026-10-02：0.1.0.dev0/AI-02-A03 新增管理员 AIModel 元数据 GET/LIST 可选路由、独立 Session/page 绑定 HMAC keyset 游标，质量状态始终 `NOT_EVALUATED`，不返回 Secret。兼容性：复用0057，无新依赖、Breaking API 或外发；生产路由默认404。升级/回滚：无需迁移；显式注入且提供独立32字节密钥后才开放，撤注入可回退，历史数据保留。验证：Win11 隔离 PG18 实际权限/许可/分页/撤权/投影、单元与合同6项、后端2041运行/3跳过；开发 wheel SHA-256 `285b20f78d92366ee3b77fa7d790449824230d3e074a8d49439face9b34fdf0c`。已知问题：目标账户正式密钥来源/路由装配、创建/状态 API、真实模型调用、三平台/Gate/UAT/可用包未验。
 
 - 2026-10-02：0.1.0.dev0/AI-02-A02 新增 AIModel 内部首次登记：管理员 Session/CSRF、License、Provider 能力核对，SUSPENDED 初态、持久同 Key 重放及 Model/能力/Audit/收据原子提交；未证明的质量引用拒绝。兼容性：复用0057，无公开 API、迁移或新依赖，不开启外部调用。升级/回滚：无需新迁移；未挂载内部入口可撤，有历史时保留模型及审计收据。验证：Win11 单元3项、隔离 PG18.6 真实事务/并发/回滚、后端2035运行/3跳过，开发 wheel SHA-256 `a25716a89929f2469ab578a7c6b4337b92fdb3c0d872d62fbd87ac9dd26244d0`。已知问题：质量证明关联、公开模型 API/状态、真实模型/三平台/Gate/UAT/可用包未验。
