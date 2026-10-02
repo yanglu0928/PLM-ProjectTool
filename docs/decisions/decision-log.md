@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-636 — Provider PATCH HTTP 保持冻结If-Match且幂等键可选
+
+- Date/WBS：2026-10-02 / `AI-01-A03-P04-A02-P02`；输入冻结 API-01 PATCH部分DTO/If-Match、API-03 PATCH控制S,L,C,M,A（未列I），内部P01要求事务收据键。
+- Decision：新增显式可选PATCH Router，强If-Match必需，正文只接受六种受控非空变更字段且至少一种，Kind不可变；客户端Idempotency-Key非必需，缺省时服务器生成只用于该事务的随机键，有合法Header时支持稳定同Key重放。响应固定200配置版本+强ETag；默认与现有Windows平台组合暂不挂载。无Key的重复请求按If-Match并发规则冲突，不承诺原响应重放。
+- Reason/Impact/Rollback：不把内部持久收据要求误转为冻结合同之外的强制客户端Header，同时保留自愿重放能力。无Schema/依赖/Breaking变更；撤可选Router即可代码回滚，历史版本/审计/收据保留。
+
 ## DEC-20261002-635 — Provider PATCH 部分字段在锁内合并且按原始变更集幂等
 
 - Date/WBS：2026-10-02 / `AI-01-A03-P04-A02-P01`；输入冻结 API-01 PATCH缺失字段不修改/If-Match及API-03 Provider PATCH，现有追加服务只接受完整配置。

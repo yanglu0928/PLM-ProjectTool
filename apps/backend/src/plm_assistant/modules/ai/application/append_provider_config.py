@@ -195,7 +195,7 @@ class AIProviderAppendService:
                     )
                 current = self._repo.lock_current(tx, provider_id=command.provider_id)
                 if current is None:
-                    raise AIProviderAppendError("AI_PROVIDER_UNAVAILABLE")
+                    raise AIProviderAppendError("RESOURCE_NOT_FOUND")
                 if current.state not in ("CONFIGURED", "SUSPENDED"):
                     raise AIProviderAppendError("AI_PROVIDER_STATE_CONFLICT")
                 if current.lock_version != command.expected_lock_version:
