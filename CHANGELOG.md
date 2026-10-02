@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A03-P04 前置检查确认 Windows 组合缺正式受控探针策略来源，激活路由不挂载并保持 404；按 CR-AI-002 拆出 P04-P01。兼容性/升级：本次仅记录，无程序/Schema/API/依赖变化，不需升级或回滚。验证：静态核对组合依赖；未运行新增功能测试。已知问题：策略来源、Test/Worker 正式接线、生产信任/出站、Gate/UAT/可用包待完成。
+
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A03-P03 新增 Provider 激活可选 HTTP，可信 Origin/Session/CSRF、强 If-Match、必填幂等 Key，返回不可变首次 `200 ACTIVE`/ETag。兼容性：默认应用 404；无 Schema、依赖或 Breaking API 变化。升级：需已有 0056；仅显式注入路由开放，撤注入可回退且历史记录保留。验证：Win11 隔离 PG18/ASGI 许可拒绝、激活、Audit、暂停后重放/版本冲突 PASS；合同4项，后端2001运行/3跳过；开发 wheel SHA-256 `a2886c9f248456184f810c1254df55e9df73f27cfba3678046cc805025c9bfff`。已知问题：Windows 正式组合、生产 Worker/真实外发、正式信任、质量/三平台/Gate/UAT/可用包仍待。
 
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A03-P02 新增 Provider 内部受权激活命令：当前管理员、License、配置/Secret/策略/最新探针、强版本检查，ACTIVE/Audit/首次快照/收据同事务提交；同 Key 保留原结果。兼容性：复用 0056，无新 Schema/依赖/Breaking API。升级：无需新增迁移；撤内部命令可回退，历史不删除。验证：Win11 隔离 PG18 双并发/权限/许可/Secret/暂停后重放/审计故障回滚 PASS，后端1997运行/3跳过；开发 wheel SHA-256 `42c8c814b980d8ca622c81431950c504fb0f76559abda19dc8ef3e38717272a9`。已知问题：公开激活 HTTP、Windows 正式组合、生产 Worker/真实外发、三平台/Gate/UAT/可用包仍待。

@@ -70,3 +70,5 @@
 2026-10-02 P05-A03-P02 按 DEC-20261002-654 完成内部同事务受权激活。当前管理员/License/最新成功探针/强版本通过才由 CONFIGURED 或 SUSPENDED 更新 ACTIVE；USER Audit、0056 首次快照、通用收据与状态同事务提交。历史同 Key 重放只读首次快照，不再改当前状态，后续暂停仍返回原始 v1；不同 Key/version 不绕过冲突。Windows 11 隔离 PG18 双并发、普通用户、License/Secret 失效和 Audit 失败回滚通过，后端 1997 运行/3 跳过。无新 Schema/API/依赖；撤命令入口可回退而保留历史。公开 HTTP、正式组合与真实外发尚未验证。
 
 2026-10-02 P05-A03-P03 按 DEC-20261002-655 新增可选 HTTP 激活边界，200 只投影不可变首次 ACTIVE/ETag，不重读现时行以免暂停后的历史重放失真。冻结 API-03 不变，无 Schema/依赖/外发；Windows 11 隔离 ASGI/PG18 许可拒绝、激活/Audit、暂停后重放和新 Key 冲突 PASS，后端 2001 运行/3 跳过。默认与当前 Windows 组合未挂载；下一项显式写模式接线，正式信任/Worker/质量/Gate 仍待。
+
+2026-10-02 P05-A03-P04 前置核查：`production_login` 当前只有 Provider 创建/配置 PATCH，既无 `EndpointProbeRegistry` 的正式受控部署来源，亦无 Provider Test 正式提交/Worker 接线。激活服务若直接由空或合成策略注入，将永久拒绝或把测试策略误作生产资格。比较：硬编码供应商地址（不选，变更/出站治理失控）、复用验证脚本合成 registry（不选，测试信任误入生产）、先实现独立受控策略来源及缺失失败关闭，再按同一来源接 Test/Worker/Activate（选）。因此 P04 暂为 PRECONDITION_BLOCKED，入口保持 404；拆出 P04-P01 策略来源与回滚/安全验证，随后重检 P04，不改冻结 API/Schema，也不触发真实外发。正式目标账户策略文件/权限与生产出站仍须另验，不能以隔离来源代替。
