@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-641 — Provider Test 异步提交先建立受信 Job/Outbox 对
+
+- Date/WBS：2026-10-02 / `AI-01-A05-P03-A01`；输入冻结 AI_PROVIDER_TEST `202 JobRef`、DM-04 Job/Outbox 至少一次与 CR-AI-002。
+- Decision：将 P03 拆为 Job/Outbox 原子队列 A01、管理员授权/同事务收据与 Audit A02、可选 202 HTTP A03。A01 的 Job payload 仅含 Provider/配置/Secret版本引用、固定 probe id 与策略摘要，不存 URL、Key、客户正文；使用独立 submission UUID 将同一 Job/Outbox 对绑定，重复查验全部固定字段，异常只报告安全错误。队列不自行授权、提交事务或启动 Worker。
+- Reason/Impact/Rollback：受信队列与业务权限分层，不把仅有 Job 行或 Outbox 行误报为已受理请求。无 Schema/公开 API/新依赖，已验证队列可由后续受权服务组合；撤调用即回滚，已有 Job/Outbox 历史保留。
+
 ## DEC-20261002-640 — Provider Test 结果只记录不可变版本证明
 
 - Date/WBS：2026-10-02 / `AI-01-A05-P02`；输入 CR-AI-002、冻结 DM-04 的当前配置连通证明及 0054 Provider/Secret/Job 关系。
