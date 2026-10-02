@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-01-A03-P01 新增内部管理员受权 AIProvider 首版创建，Secret 用途/有效版本同事务证明，持久幂等与 Audit 原子提交。兼容性：仅内部新增，不改公开 API/Schema/依赖；不激活或外发。升级：需先执行0054；无新迁移，历史不物理删除。验证：Win11隔离PG18合成License、真实Session/权限/Secret/并发重放与Audit失败回滚，后端1909运行/3跳过，开发 wheel SHA-256 `e00d6490aa2d49ceac368892e843f4809e1e97ec7cd461d65e5f810dac956acd`。已知问题：配置追加、公开CRUD、正式信任/主钥、模型路由/逐次外发、AI质量、三平台/Gate/UAT及可用包未完成。
+
 - 2026-10-02：0.1.0.dev0/AI-01-A02 按 CR-AI-001 增加 AIProvider 根与不可变配置版本双表、复合当前指针和安全降级。兼容性：内部 Schema 增量，既有 `/api/v1`/依赖不变；未提供 Provider Service/激活/外发。升级：先备份并迁移至 `20261002_0054`；已有 Provider 历史不可普通降级，生产迁移未执行。验证：Win11 隔离PG18空库及既有数据升降/约束/历史/Alembic check、后端1907运行/3跳过、开发 wheel SHA-256 `856a4007c223058ed5035861d3bf45d69b2b364fa8c20ddcf3e8ece53384bc16`。已知问题：Secret用途/权限/许可/审计应用层、连接与逐次外发授权、AI质量、三平台/Gate/UAT和可用包仍待。
 
 - 2026-10-02：0.1.0.dev0/AI-01-A01 增加纯 Domain 的 AIProvider 配置版本合同、冻结 Provider/能力种类与安全校验。兼容性：内部新增，不改变既有 API/Schema/依赖；没有 Provider 激活或外发。升级：无迁移，现有部署无需操作。验证：定向5、后端1907运行/3跳过、开发 wheel SHA-256 `4383e7e4609a7f52afc1792a5e74ed2999fb75dc51c477f9749e53dc92e28825`。已知问题：持久化、真实 Secret/License/权限装配、连接/逐次外发授权、POC-03 质量、真实业务 Owner、三平台/Gate/UAT/可用包仍待。

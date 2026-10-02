@@ -6464,3 +6464,11 @@
 - Reason：避免跨 Provider 指针、无痕覆盖配置或丢失历史；将受权运行证明留给 AI Application，维持模块所有权。
 - Impact/Rollback：ORM、迁移0054、隔离验证及固定迁移/表清单测试；不改 `/api/v1`、技术栈/依赖或客户数据。空表 downgrade 至0053；有历史须向前修复。
 - Verification：Win11 隔离PG18空/有数据升级及空库降级、字段/FK/追加历史/非空降级、Alembic drift 0；后端1907运行/3跳过；wheel SHA-256 `856a4007c223058ed5035861d3bf45d69b2b364fa8c20ddcf3e8ece53384bc16`。正式迁移/Service/Gate/三平台未验。
+
+# DEC-20261002-624：Provider 创建和配置追加分步验收
+
+- Date/WBS：2026-10-02 / `AI-01-A03-P01`；依据冻结 API-03 CREATE/PATCH、DM-04 的配置版本和 A02 迁移。
+- Decision：A03 拆 P01 首次 CONFIGURED 创建与 P02 现有 Provider 配置追加。P01 只在当前管理员/CSRF/License 下同事务证明 Secret 用途与有效版本，插入首版、Audit、持久收据；重放可返回历史 ID，但不证明现时 Secret 可用或激活。P02 单独处理强版本/状态/历史切换，ACTIVE 不能直接改当前配置。
+- Reason：创建的初始身份/幂等与 PATCH 的状态锁和乐观并发不同，合并验收易把“可配置”误报为“可使用/已外发”。
+- Impact/Rollback：内部 Application/AI Repository 和 Platform 自有 Secret 证明适配器，无 Schema/API/依赖变化；未公开装配即可停止。已提交的历史记录不物理回滚，纠正用后续版本。
+- Verification：定向2、Win11隔离PG18权限/许可端口/Secret/并发收据/Audit失败回滚/停用后历史重放与角色撤销拒绝、后端1909运行/3跳过、wheel SHA-256 `e00d6490aa2d49ceac368892e843f4809e1e97ec7cd461d65e5f810dac956acd`。正式License/外发/HTTP/三平台/Gate未验。
