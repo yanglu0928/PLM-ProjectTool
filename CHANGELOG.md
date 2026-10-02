@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A04-P03 新增Schema0069 EgressAuthorization Root、不可变撤销事件和Authorize/Revoke首次结果；Preview边界只能缩小，Provider/Config/Model需当前可用，延迟触发器强制首次结果与撤销历史成套原子落库及`AUTHORIZED@0→REVOKED@1`。兼容性：0068后增量，不改冻结API/依赖，仅Win11验证。升级/回滚：空表可降0068，有历史拒降。验证：PG18.6空库往返/已有Preview升级/drift/负例、后端2111运行/3跳过PASS；开发wheel SHA-256 `a9f4e426e9e132960da559d8e2a931493f6fb978742f234bde33304d99785700`。首轮PL/pgSQL变量名及夹具引号缺陷已修正并全量重跑。已知问题：Application/HTTP/真实外发、Gate3/UAT/可用包待完成。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A04-P02 新增Schema0068 EgressPreview Root与不可变SourceRef，由PG保护Provider/Config/AVAILABLE Model/Region、Scope/Project、集合/语义来源去重、非零UUID、指纹/上限/时间及只追加历史。兼容性：0067后增量，不改冻结API/依赖，仅Win11验证。升级/回滚：空表可降0067，有历史拒降并向前修复或受控恢复。验证：PG18.6空库升降重升/drift/负例、后端2111运行/3跳过PASS；开发wheel SHA-256 `9f7f479e00258503511e43238d637662bc5ed772608798f183dc7d867c32c01e`。已知问题：0069 Authorization/撤销、服务/HTTP/真实外发、Gate3/UAT/可用包待完成。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A04-P01 登记CR-AI-013：冻结EGRESS Preview/Get/Authorize/Revoke尚无权威聚合，Task内消费快照不能代替授权源；决定分离Preview/SourceRef、Authorization/撤销历史和Task Snapshot，按0068/0069分片实施。兼容性/升级/回滚：本项仅追溯记录，无程序、Schema、API、依赖或数据变化。验证：静态核对API-03/SC-01/0064～0067，无运行测试。已知问题：0068/0069、服务/HTTP/真实外发、Gate3/UAT/可用包待。

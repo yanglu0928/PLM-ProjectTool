@@ -1,6 +1,6 @@
 # CR-AI-013：Egress Preview/Authorization 正式授权聚合
 
-日期：2026-10-03；状态：依 V1.1 持续授权登记，0068 已实施，0069 及应用切片待继续；关联冻结 API-03 `EGRESS_PREVIEW_CREATE/GET/AUTHORIZE/REVOKE`、DM-04、SC-01/02、CR-AI-011/012；原 Gate 2 冻结提交 `64cdf09` 不改。WBS `AI-04-A04-P01～P02`。
+日期：2026-10-03；状态：依 V1.1 持续授权登记，0068～0069 已实施，应用切片待继续；关联冻结 API-03 `EGRESS_PREVIEW_CREATE/GET/AUTHORIZE/REVOKE`、DM-04、SC-01/02、CR-AI-011/012；原 Gate 2 冻结提交 `64cdf09` 不改。WBS `AI-04-A04-P01～P03`。
 
 缺口与证据：冻结 API 要求每个逻辑外发操作先生成不发送数据的 EgressPreview，再由 ProjectManager/CustomerManager 且满足部署策略的主体显式授权，并支持撤销。当前仓库只有 AITask 内不可变消费快照，无 Preview/Authorization 权威根、来源明细、批准或撤销历史、首次幂等结果。SC-01 的 AI-04 物理映射也仅列 Task/Invocation owned tables。消费快照不能反向冒充批准来源。
 
@@ -15,3 +15,5 @@
 验证与切片：P02 只实现0068 Preview/SourceRef Schema与PG18升降/历史/不可变/跨项目/指纹边界；P03 实现0069 Authorization/撤销历史；P04～P06 分别实现Preview内部创建/读取、Authorize/Revoke与Task Owner投影；之后再做可选HTTP和Windows显式组合。无客户数据外发。
 
 P02结果：已实现ORM/Migration0068。Preview 与 SourceRef 不可改写，Provider/Config/Region 及 AVAILABLE Model 由 PostgreSQL 守卫核验，集合项和语义来源必须唯一，Scope/Project、UUID、指纹、定量上限和时间窗口均失败关闭。Win11/PG18.6 空库升降重升、drift、负例与非空拒降 PASS；后端2111运行/3跳过、wheel PASS。无生产迁移、HTTP或外发。
+
+P03结果：已实现ORM/Migration0069。Authorization 只能在当前 ACTIVE Provider/Config 和 AVAILABLE Model 上缩小 Preview 边界，并以 `AUTHORIZED@0→REVOKED@1` 单向迁移。延迟约束触发器强制批准/撤销与各自首次结果成套原子提交。Win11/PG18.6升降重升、已有Preview升级、drift、权限形状/越界/历史/非空拒降PASS；后端2111运行/3跳过、wheel PASS。首轮PL/pgSQL变量名和夹具引号问题已修正并全量重跑；无生产迁移、HTTP或外发。

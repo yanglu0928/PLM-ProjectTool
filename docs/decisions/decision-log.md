@@ -7076,3 +7076,11 @@
 - Reason：授权必须针对可重现的唯一来源集和确定厂商路由；重复条目会使数量/指纹语义不稳定，修改旧 Preview 会改写批准依据。
 - Impact/Rollback：增量 Schema0068，不改冻结 API/依赖；空表可降0067，有历史时向前修复或受控备份恢复。未打开公开路由或外发。
 - Verification：Win11隔离PG18.6 up/down/re-up、drift、Provider/Model/Region、集合/UUID、来源Scope/去重/不可变及非空拒降PASS；后端2111运行/3跳过，wheel `9f7f479e00258503511e43238d637662bc5ed772608798f183dc7d867c32c01e`。
+
+# DEC-20261003-708：Egress批准与撤销首次结果必须成套原子落库
+
+- Date/WBS：2026-10-03 / `AI-04-A04-P03`；依据 CR-AI-013、冻结 `EGRESS_AUTHORIZE/REVOKE`。
+- Decision：Authorization Root 固化可缩小的 Preview 边界，只允许 `AUTHORIZED@0→REVOKED@1`；撤销事实和 Authorize/Revoke 首次响应各自使用不可变表。延迟约束触发器要求新Authorization必有AuthorizeResult，REVOKED必同时有唯一Revocation和RevokeResult。
+- Reason：通用幂等收据只能指向一个 UUID，而可变 Root 无法重放首次 AUTHORIZED 响应；独立结果可保留原响应，延迟约束又防止只改状态或只写事件。
+- Impact/Rollback：增量Schema0069，不改冻结API/依赖；空表可降0068，有历史时向前修复或受控恢复。当前角色/原批准者/部署策略由后续应用服务重验。
+- Verification：Win11隔离PG18.6空库往返、已有0068升级、drift、越界/过期/角色/缺结果授权、不完整撤销、单向/不可变/拒降PASS；后端2111运行/3跳过，wheel `a9f4e426e9e132960da559d8e2a931493f6fb978742f234bde33304d99785700`。首轮迁移变量名和夹具引号缺陷已修正并全量重跑。
