@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A05-P02 按CR-AI-014新增Schema0070与ORM，AITask可持久化不可变PromptTemplate/Version和有界最小参数SHA-256快照；完整快照由数据库校验当前ACTIVE版本、task type、Output Schema、RAG Policy、JSON形态/边界和摘要。兼容性：旧Task及P03前关闭的内部旧链保留四列全NULL，无公开API、依赖或外发变化；不把NULL路径视为可执行。升级/回滚：备份停写后0069→0070；无完整历史可降，有完整历史拒降并须向前修复/受控恢复。验证：Win11/PG18.6空库/历史库升降重升、drift及约束负例，后端2136运行/3跳过PASS；开发wheel SHA-256 `a6e14f401ffc911cf84091c685e932f76eff74d611ad97e8b484caa18af22c7a`。已知问题：P03 Task Policy/Prompt Owner、新写完整快照、HTTP/读取、Worker发送前重验、正式信任、Server2025、Gate3/UAT/交付包待完成。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A05-P01 核对AI Task创建/读取冻结合同，登记CR-AI-014：现有创建未锁定PromptTemplate/PromptVersion且无最小业务参数，不得直接开放HTTP。兼容性/升级/回滚：本项仅文档与决策，无程序/Schema/API/依赖变化；后续0070将保留旧NULL历史。验证：静态对照冻结API/数据模型和现有代码，未运行新测试。已知问题：0070、Task Policy/Prompt Owner、HTTP/读取、Worker发送前重验、正式信任、Gate3/UAT/交付包待完成。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A04-P09 新增严格非敏感Bootstrap Egress策略源，转换为不可变Preview/Approval策略，并仅在有策略的Windows显式`--platform-write`组合挂载四路由；默认/登录/只读及写模式缺策略仍404。兼容性：无Schema/依赖/Breaking API；仅Win11验证，Debian按用户要求跳过。升级/回滚：受控配置并重启启用，移除配置并重启恢复404，历史保留。验证：单元6、生产组合合同32、Win11/PG18.6真实HTTP/数据库链、后端2136运行/3跳过PASS；开发wheel SHA-256 `7eeafd306f5d45efd283fdc3c1d9919090afa585ece13f4737bf99d1be6cfe5e`。已知问题：正式发行信任、Server2025、真实Provider/发送前撤销重验、Gate3/UAT/最终程序包待完成。

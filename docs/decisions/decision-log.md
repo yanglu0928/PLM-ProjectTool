@@ -7140,3 +7140,11 @@
 - Reason：Worker时再解析活动Prompt会使提交与执行版本漂移；任意JSON参数则可以绕过InputRef/Egress治理传递客户正文。
 - Impact/Rollback：需CR-AI-014/Schema0070增量修订，原0063～0069和冻结提交保留；空新历史可降级，有新Task拒绝降级。本项仅记录，尚未实施Schema/API。
 - Verification：静态对照冻结合同、AITask服务/ORM/Repository、Prompt和Egress Owner；未运行新测试。
+
+# DEC-20261003-716：Schema0070以全空或完整快照实现分阶段兼容
+
+- Date/WBS：2026-10-03 / `AI-04-A05-P02`；依据 CR-AI-014、DEC-715。
+- Decision：0070先增加PromptTemplate/Version与有界参数快照，数据库仅接受四列全空或完整；完整快照必须引用当前ACTIVE版本并匹配Task类型、Output Schema与RAG Policy，且创建后不可改。旧行与尚未公开的旧内部链暂保留全NULL，P03负责让应用新写完整并拒绝执行NULL历史。
+- Reason：直接将四列设为NOT NULL会破坏0069历史及当前原子创建链；在Task Policy/Prompt Owner尚未落地时猜测回填又会伪造业务事实。分片迁移可先建立可验证防线，同时不虚报入口已启用。
+- Impact/Rollback：增量Schema0070、ORM和迁移合同；无公开API/依赖变化。无完整快照可降0069；有完整历史拒降并向前修复或受控恢复。
+- Verification：Win11/PG18.6空库/历史库up-down-re-up、drift、Prompt/策略/JSON/摘要/不可变/拒降PASS；后端2136运行/3跳过，wheel `a6e14f401ffc911cf84091c685e932f76eff74d611ad97e8b484caa18af22c7a`。两次开发期验证分别发现变量歧义及JSON检查顺序并修正，最终全量重跑。

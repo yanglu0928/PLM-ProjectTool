@@ -35,6 +35,11 @@ class AITaskRow(Base):
                              name="fk_ai_tasks__requester", ondelete="NO ACTION"),
         ForeignKeyConstraint(["job_ref"], ["plm.job_jobs.job_id"],
                              name="fk_ai_tasks__job", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["prompt_template_ref", "prompt_version_no"],
+            ["plm.ai_prompt_versions.prompt_template_id", "plm.ai_prompt_versions.version_no"],
+            name="fk_ai_tasks__prompt_version", ondelete="NO ACTION",
+        ),
         UniqueConstraint("ai_task_id", "scope", "project_id",
                          name="uq_ai_tasks__identity_scope", postgresql_nulls_not_distinct=True),
         CheckConstraint("ai_task_id <> '00000000-0000-0000-0000-000000000000'::uuid "
@@ -70,11 +75,22 @@ class AITaskRow(Base):
                         name="ck_ai_tasks__time"),
         CheckConstraint("error_code IS NULL OR error_code ~ '^[A-Z][A-Z0-9_]{0,63}$'",
                         name="ck_ai_tasks__error"),
+        CheckConstraint(
+            "(prompt_template_ref IS NULL AND prompt_version_no IS NULL "
+            "AND task_parameters IS NULL AND task_parameters_fingerprint IS NULL) OR "
+            "(prompt_template_ref IS NOT NULL "
+            "AND prompt_template_ref<>'00000000-0000-0000-0000-000000000000'::uuid "
+            "AND prompt_version_no BETWEEN 1 AND 9223372036854775807 "
+            "AND jsonb_typeof(task_parameters)='object' "
+            "AND octet_length(task_parameters_fingerprint)=32)",
+            name="ck_ai_tasks__submission_snapshot",
+        ),
         Index("ix_ai_tasks__project_state", "project_id", "task_state",
               text("requested_at DESC"), text("ai_task_id DESC")),
         Index("ix_ai_tasks__requester", "requested_by", text("requested_at DESC")),
         Index("uq_ai_tasks__job_ref", "job_ref", unique=True,
               postgresql_where=text("job_ref IS NOT NULL")),
+        Index("ix_ai_tasks__prompt_version", "prompt_template_ref", "prompt_version_no"),
     )
 
     ai_task_id: Mapped[uuid.UUID] = mapped_column(
@@ -88,6 +104,10 @@ class AITaskRow(Base):
     prompt_policy_ref: Mapped[str] = mapped_column(Text, nullable=False)
     output_schema_ref: Mapped[str] = mapped_column(Text, nullable=False)
     context_policy_ref: Mapped[str] = mapped_column(Text, nullable=False)
+    prompt_template_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    prompt_version_no: Mapped[int | None] = mapped_column(BigInteger)
+    task_parameters: Mapped[dict | None] = mapped_column(JSONB)
+    task_parameters_fingerprint: Mapped[bytes | None] = mapped_column(LargeBinary)
     task_state: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'QUEUED'"))
     suggestion_state: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'NONE'"))
     accepted_domain_module: Mapped[str | None] = mapped_column(Text)
