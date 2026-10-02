@@ -7028,3 +7028,19 @@
 - Reason：边验证边调用会在后续重复/畸形引用时产生不必要的授权读取；预校验避免部分副作用。显式Owner避免AI模块猜测跨域表结构或绕过Owner权限。
 - Impact/Rollback：无Schema/API/依赖变化；停止组合Resolver即可回滚。Project授权矩阵增加冻结已定义的AI_TASK_CREATE角色，不开放入口。
 - Verification：定向13项和后端2106运行/3跳过PASS；wheel SHA-256 `895c2b4de673045ceb3db79e21edca79d850a61fcecdf2ad7f46c94f13991e46`。真实Task创建/外发未执行。
+
+# DEC-20261002-702：AITask 作为幂等根反查唯一不可变 Job
+
+- Date/WBS：2026-10-02 / `AI-04-A03-P04`；依据 CR-AI-011、冻结 `AI_TASK_CREATE`。
+- Decision：通用幂等收据继续只指向 AITask；0066 为迁移后新 Task 强制唯一非空 JobRef 并纳入不可变守卫，从 Task 精确恢复首次 JobRef。旧 NULL 只保留历史，不猜测回填。
+- Reason：避免改动全平台收据合同，同时满足 202 Task+Job 稳定重放与一对一关系。
+- Impact/Rollback：增量 Schema0066，不改冻结API/依赖；有新绑定时拒绝降级。P05 实施与验证。
+- Verification：本项为静态合同/Schema/收据核对，未执行新运行测试。
+
+# DEC-20261002-703：外发授权只能由独立 Owner 产生快照
+
+- Date/WBS：2026-10-02 / `AI-04-A03-P04`；依据 CR-AI-011、冻结 `EGRESS_*`。
+- Decision：AITask 创建只接收 AuthorizationRef，由显式 EgressAuthorization Owner 在同事务内返回已批准、同 Scope/Project/用途、未过期未撤销的完整快照。请求 DTO、AI 输出和测试夹具不能代替 Owner；当前正式聚合未实现时失败关闭并保持公开路由404。
+- Reason：批准主体、时间、数据边界与撤销状态是正式业务事实，不得由 AI 模块猜测或自我授权。
+- Impact/Rollback：P06 可实现 Port/内部创建，但 Egress Owner 生产实现前不开放 API；无 Schema/API 冻结内容改写。
+- Verification：静态搜索确认当前仅有0064 Task 内快照表，无 Egress Preview/Authorization 生产聚合或可组合 Owner。
