@@ -13,6 +13,7 @@ from sqlalchemy.exc import IntegrityError
 from plm_assistant.modules.ai.domain.model_definition import (
     AIModelDefinition, AIModelDefinitionError, AIModelKind,
 )
+from plm_assistant.modules.ai.application.model_metadata import AIModelMetadataView
 from plm_assistant.modules.audit.application.audit_service import AuditService
 from plm_assistant.modules.audit.domain.audit_event import AuditEventDraft
 from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
@@ -63,6 +64,8 @@ class AIModelCreateRepositoryPort(Protocol):
     def belongs_to_provider(self, transaction: object, *, model_id: uuid.UUID,
                             provider_id: uuid.UUID) -> bool: ...
 
+    def initial_view(self, transaction: object, *, model_id: uuid.UUID) -> AIModelMetadataView | None: ...
+
 
 class AIModelReceiptPort(Protocol):
     def reserve(self, transaction: object, *, scope: IdempotencyScope,
@@ -85,6 +88,18 @@ class AIModelCreateService:
         self._clock = clock or (lambda: datetime.now(timezone.utc))
 
     def create(self, command: CreateAIModel) -> uuid.UUID:
+        result = self._create(command, include_view=False)
+        if type(result) is not uuid.UUID:
+            raise AIModelCreateError("AI_MODEL_UNAVAILABLE")
+        return result
+
+    def create_view(self, command: CreateAIModel) -> AIModelMetadataView:
+        result = self._create(command, include_view=True)
+        if type(result) is not AIModelMetadataView:
+            raise AIModelCreateError("AI_MODEL_UNAVAILABLE")
+        return result
+
+    def _create(self, command: CreateAIModel, *, include_view: bool) -> uuid.UUID | AIModelMetadataView:
         if (type(command) is not CreateAIModel
                 or type(command.session_token) is not bytes or len(command.session_token) != 32
                 or type(command.csrf_token) is not bytes or len(command.csrf_token) != 32
@@ -132,6 +147,11 @@ class AIModelCreateService:
                             or not self._repo.belongs_to_provider(
                                 tx, model_id=replay.ref_id, provider_id=definition.provider_id)):
                         raise AIModelCreateError("AI_MODEL_UNAVAILABLE")
+                    if include_view:
+                        view = self._repo.initial_view(tx, model_id=replay.ref_id)
+                        if type(view) is not AIModelMetadataView:
+                            raise AIModelCreateError("AI_MODEL_UNAVAILABLE")
+                        return view
                     return replay.ref_id
                 if not self._repo.provider_accepts(tx, definition=definition):
                     raise AIModelCreateError("AI_MODEL_PROVIDER_UNAVAILABLE")
@@ -147,8 +167,12 @@ class AIModelCreateService:
                 self._receipts.complete(tx, scope=scope, result=IdempotencyResult(
                     "V1_AI_MODEL_CREATE", definition.model_id, 201,
                 ))
+                if include_view:
+                    view = self._repo.initial_view(tx, model_id=definition.model_id)
+                    if type(view) is not AIModelMetadataView:
+                        raise AIModelCreateError("AI_MODEL_UNAVAILABLE")
                 tx.commit()
-                return definition.model_id
+                return view if include_view else definition.model_id
         except AIModelCreateError:
             raise
         except RuntimeLicenseError:

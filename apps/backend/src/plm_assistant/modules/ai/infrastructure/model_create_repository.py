@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import uuid
+from dataclasses import replace
 
 from sqlalchemy import insert, select
 from sqlalchemy.orm import Session
 
 from plm_assistant.modules.ai.domain.model_definition import AIModelDefinition, AIModelKind
+from plm_assistant.modules.ai.application.model_metadata import AIModelMetadataView
 from plm_assistant.modules.ai.infrastructure.model_orm import AIModelCapabilityRow, AIModelRow
 from plm_assistant.modules.ai.infrastructure.provider_orm import AIProviderConfigVersionRow, AIProviderRow
 
@@ -72,3 +74,16 @@ class SqlAlchemyAIModelCreateRepository:
                 AIModelRow.ai_model_id == model_id, AIModelRow.ai_provider_id == provider_id,
             ).execution_options(autoflush=False)
         ).scalar_one_or_none() == model_id
+
+    def initial_view(self, transaction: object, *, model_id: uuid.UUID) -> AIModelMetadataView | None:
+        if type(model_id) is not uuid.UUID or model_id.int == 0:
+            return None
+        from plm_assistant.modules.ai.infrastructure.model_metadata_repository import _views
+        model = _session(transaction).execute(
+            select(AIModelRow).where(AIModelRow.ai_model_id == model_id)
+            .execution_options(autoflush=False)
+        ).scalar_one_or_none()
+        if model is None:
+            return None
+        current = _views(transaction, [model])[0]
+        return replace(current, quality_profile_refs=(), state="SUSPENDED", lock_version=0)

@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261002-668 — AIModel 创建首次响应固定为初态投影
+
+- Date/WBS：2026-10-02 / `AI-02-A05`；依据冻结 `AI_MODEL_CREATE` 201 ModelView、A02 持久幂等收据与 A03 安全投影。
+- Decision：可选 HTTP 创建复用 A02 受权事务，返回模型不可变语义及初态 `SUSPENDED`/`"v0"`、空质量引用；同 Key 历史重放保持原 201 投影，不以当前模型状态/后来质量引用冒充首次响应。严格 JSON、Origin、Session/CSRF、Key，默认路由关闭。
+- Reason：避免重放因后续模型状态变化产生非确定 201，也不把未核实质量写成已评估。
+- Impact/Rollback：增 AI 创建服务初态投影与可选 HTTP；无 Schema/依赖/外发或冻结 API Breaking Change。撤可选路由可回退，历史模型/收据/Audit 保留。
+- Verification：定向合同3项、Win11 隔离 PG18 首次201/状态及质量引用变化后历史重放/权限/License/Audit、后端2047运行/3跳过及开发wheel通过。未额外重复并发证明，A02 内部命令同 Key 并发已验；生产组合、真实质量和发行仍待。
+
 ## DEC-20261002-667 — 模型只读平台组合使用独立当前账户 Vault 游标密钥
 
 - Date/WBS：2026-10-02 / `AI-02-A04`；依据 A03 可选只读路由、既有 Provider 游标正式来源及 Windows 平台显式读组合。
