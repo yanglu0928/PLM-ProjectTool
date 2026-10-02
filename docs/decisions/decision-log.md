@@ -6423,3 +6423,11 @@
 - Impact/Rollback：仅记录前置，无代码/API/Schema/数据变化，升级无迁移；P04/P05 分别验证后才可显式注入 Router，默认/正式组合仍关闭。
 - Verification：冻结合同/Owner/Service 静态核查，无新业务测试，内部 P02 PASS 不扩大为 HTTP、Gate 或发行 PASS。
 - P04 Result：仅注册DOC-02的原始三字段内部入口，在当前命令事务解析Owner Scope/Project；Receipt基于原始输入，重放重验当前身份/许可/旧边但不重新要求新端点可读。Win11隔离PG18来源变RESTRICTED后同Key安全重放与原Trace链PASS，后端1897运行/3跳过、开发wheel SHA-256 `29a227016ed0e5501e4f4cfec3741cbffa989353e146eadff47cbb85a0ce1fa0`。HTTP/正式装配/Gate仍关闭。
+
+# DEC-20261002-619：Trace supersede HTTP只投影新边引用
+
+- Date/WBS：2026-10-02 / `TRC-01-A08-P05`；输入冻结API-01/02、P04同事务三字段解析和P03前置。
+- Decision：显式可选冻结POST路径，Body只含source/target三字段ResourceVersionRef及relation_type；禁止Owner/Scope/Project由客户端提供。严格Origin/Session/CSRF/强If-Match/Key/有界唯一JSON。201只投影新trace_link_id和新边ETag `"v0"`，不回显端点或旧边内部状态。默认与Windows正式组合不注入Router。
+- Reason：冻结结果为replacement，替代边是新资源，旧边由数据库一次终态v1；新资源ETag不能误标旧边v1。最小投影避免以HTTP暴露未复验的端点内容。
+- Impact/Rollback：仅可选Trace Router/应用工厂参数，无Schema/Migration/依赖变化；不注入即关闭，历史已替换状态不反写。正式装配及关系Owner另验。
+- Verification Plan/Result：合同3覆盖201/新ETag/输入安全/默认404；Windows11隔离PG18真实ASGI/Session的PM、非经理、许可、版本、同Key重放与单替换收据PASS，后端1900运行/3跳过，开发wheel SHA-256 `4442f5503acecfaf616147ed3772fe7c59e3789696d0e46c623162b4dccf1fc1`。正式信任/三平台/Gate不判PASS。

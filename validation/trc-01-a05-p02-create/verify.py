@@ -59,6 +59,7 @@ from plm_assistant.modules.trace.application.supersede_link import (
     TraceSupersedeService,
 )
 from plm_assistant.modules.trace.api.revoke_link import create_trace_revoke_router
+from plm_assistant.modules.trace.api.supersede_link import create_trace_supersede_router
 from plm_assistant.modules.trace.application.target_proof import (
     TraceProofQuery, TracePublicEdgeResolver, TraceResourceVersionRef,
     TraceTargetProofError,
@@ -809,12 +810,6 @@ def verify():
             public_change, idempotency_key="trace-supersede-public-refs-001",
         )
         with connect(name) as db:
-            db.execute("UPDATE plm.doc_file_objects SET file_state='RESTRICTED' "
-                       "WHERE file_object_id=%s", (first_file,))
-        assert supersede.supersede_refs(
-            public_change, idempotency_key="trace-supersede-public-refs-001",
-        ) == public_result
-        with connect(name) as db:
             assert db.execute(
                 "SELECT link_state,lock_version,superseded_by_ref FROM plm.trc_links "
                 "WHERE trace_link_id=%s", (colliding_old.trace_link_id,),
@@ -823,6 +818,73 @@ def verify():
                 "SELECT link_state,lock_version FROM plm.trc_links "
                 "WHERE trace_link_id=%s", (public_result.replacement_id,),
             ).fetchone() == ("ACTIVE", 0)
+        supersede_router = create_trace_supersede_router(
+            sessions=http_sessions, supersedes=supersede,
+            origins=LoginOriginPolicy(["http://localhost"]),
+        )
+        supersede_path = (f"/api/v1/projects/{project_id}/trace-links/"
+                          f"{existing_target.trace_link_id}:supersede")
+        supersede_headers = {
+            "origin": "http://localhost",
+            "cookie": "plm_session=" + pm_token.hex(),
+            "x-csrf-token": CSRF.hex(),
+            "idempotency-key": "trace-http-supersede-001",
+            "if-match": '"v0"',
+        }
+        supersede_body = {
+            "source": {"resource_type": "DOC-02", "resource_id": str(doc_id),
+                       "version_id": str(first)},
+            "target": {"resource_type": "DOC-02", "resource_id": str(doc_id),
+                       "version_id": str(second)},
+            "relation_type": "VALIDATES",
+        }
+        with TestClient(create_app(), base_url="http://localhost") as closed:
+            assert closed.post(supersede_path, headers=supersede_headers,
+                               json=supersede_body).status_code == 404
+        with TestClient(create_app(trace_supersede_router=supersede_router),
+                        base_url="http://localhost") as client:
+            def post_supersede(headers, status, code=None, path=supersede_path,
+                               body=supersede_body):
+                response = client.post(path, headers=headers, json=body)
+                assert response.status_code == status, response.text
+                if code is not None:
+                    assert response.json()["error"]["code"] == code, response.text
+                return response
+            post_supersede(supersede_headers | {
+                "cookie": "plm_session=" + customer_token.hex(),
+            }, 404, "RESOURCE_NOT_FOUND")
+            post_supersede({key: value for key, value in supersede_headers.items()
+                            if key != "if-match"}, 428, "CONFLICT_VERSION_REQUIRED")
+            guard.enabled = False
+            post_supersede(supersede_headers, 403, "LICENSE_OPERATION_DENIED")
+            guard.enabled = True
+            first_http_supersede = post_supersede(supersede_headers, 201)
+            replacement_id = uuid.UUID(first_http_supersede.json()["data"]["trace_link_id"])
+            assert first_http_supersede.headers["etag"] == '"v0"'
+            assert post_supersede(supersede_headers, 201).json()["data"] == (
+                first_http_supersede.json()["data"])
+            post_supersede(supersede_headers | {
+                "idempotency-key": "trace-http-supersede-002",
+            }, 409, "CONFLICT_VERSION")
+        with connect(name) as db:
+            assert db.execute(
+                "SELECT link_state,lock_version,superseded_by_ref FROM plm.trc_links "
+                "WHERE trace_link_id=%s", (existing_target.trace_link_id,),
+            ).fetchone() == ("SUPERSEDED", 1, replacement_id)
+            assert db.execute(
+                "SELECT count(*) FROM plm.aud_events "
+                "WHERE action='TRACE_LINK_SUPERSEDED'",
+            ).fetchone()[0] == 3
+            assert db.execute(
+                "SELECT count(*) FROM plm.plt_idempotency_receipts "
+                "WHERE operation='V1_TRACE_LINK_SUPERSEDE' AND state='COMPLETED'",
+            ).fetchone()[0] == 3
+            db.execute("UPDATE plm.doc_file_objects SET file_state='RESTRICTED' "
+                       "WHERE file_object_id=%s", (first_file,))
+        assert supersede.supersede_refs(
+            public_change, idempotency_key="trace-supersede-public-refs-001",
+        ) == public_result
+        with connect(name) as db:
             db.execute("UPDATE plm.prj_projects SET state='ARCHIVED' WHERE project_id=%s",
                        (project_id,))
         try:
@@ -832,7 +894,7 @@ def verify():
             assert exc.code == "PROJECT_ARCHIVED"
         else:
             raise AssertionError("archived project accepted Trace write")
-        print("PASS: Trace create/graph, PM revoke HTTP and raw-ref atomic supersede/PG chain")
+        print("PASS: Trace create/graph, PM revoke and opt-in supersede HTTP/PG chain")
     finally:
         if runtime is not None:
             runtime.dispose()
