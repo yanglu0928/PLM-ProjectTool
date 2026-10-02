@@ -15,3 +15,5 @@
 安全边界：不得将真实 Prompt、客户数据、Key、Golden 答案、日志或测试凭据提交到 Git；本项测试仅合成无敏感文本。Release/Gate 3 不因本 CR 自动通过。
 
 P01 结果：Win11 隔离 PG18 空库升降级、有 PromptVersion 历史升级、Alembic drift=0、缺复合版本/坏指纹/坏乐观版本/重复结果、历史更新删除截断、非空降级拒绝均通过；无生产迁移或运行命令。全量回归与构建记录见 `docs/progress/ai-03-a04-p01-version-result-schema.md`。
+
+P02 结果：内部增版/结果/Audit/收据原子链在 Win11 隔离 PG18 用纯合成模板与合成准入端口验证；缺或错误指纹准入、权限/许可、并发同 Key、历史重放、退役、Audit 回滚通过。生产内容准入来源和公开 HTTP 未装配；完整验证见 `docs/progress/ai-03-a04-p02-version-append.md`。
