@@ -7052,3 +7052,11 @@
 - Reason：0064现有列不足以证明Invocation未更换Model、源或扩大载荷；把边界放在Job JSON/日志或推迟到Invocation均无法作为完整批准证据。
 - Impact/Rollback：新列兼容旧NULL历史，新行强制完整；不改冻结API/技术栈，有完整新快照拒绝降级。0067已实施。
 - Verification：Win11隔离PG18.6空/遗留升降重升、drift、Model/角色/边界/不可变/拒降PASS；后端2106运行/3跳过，wheel `4550d75d6d8961ce493637a56b618e3c32132d4aee7caf5b58d4144146ce9589`。
+
+# DEC-20261003-705：AITask首次创建以Task为幂等根原子写入七类记录
+
+- Date/WBS：2026-10-03 / `AI-04-A03-P08`；依据 CR-AI-010～012、Schema0065～0067。
+- Decision：先全组解析Input Owner，再由Egress Owner返回完整授权快照；源集合指纹精确一致后，同事务写Task/Job/Outbox/Input/Snapshot/Audit/Receipt。收据指向Task，重放从Task不可变JobRef恢复原202。
+- Reason：防止部分入队、伪造授权、重放重复审计或返回新Job；也不扩展全平台单UUID收据合同。
+- Impact/Rollback：新增内部Application/Repository，无Schema/API/依赖变化；未挂载组合根，可停止注入回退，已有历史保留。
+- Verification：单元5，Win11隔离PG18.6真实原子链/重放/冲突/Audit失败回滚，后端2111运行/3跳过，wheel `d7978d74ee11f263ed25bd45fb8386cc178bfce4b14e8dbd75052e4dc88e0129`。

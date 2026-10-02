@@ -13,3 +13,5 @@
 验证计划：P04 登记边界；P05 在 Win11/PostgreSQL18 验证0066空库与旧 NULL 历史升降重升、新 Task 缺 Job/重用 Job/更换 Job 拒绝、正确绑定、drift 和有新数据拒降；P06 实现授权 Owner Port 与同事务 Task/Job/Outbox/Input/Snapshot/Receipt 内部创建，验证重放、并发、授权缺失/过期/撤销/跨项目、Owner/Audit 失败全回滚。正式 Egress 聚合、真实外发、公开 HTTP 和三平台另行客观验收。
 
 P05结果：ORM/Migration0066已实施；Win11隔离PostgreSQL18.6空库与旧NULL历史升降重升、drift=0、缺Job/错Owner/复用/换绑拒绝、正确绑定与非空历史拒降全部PASS。首轮夹具JSONB未显式适配而在业务断言前停止，修正后完整重跑。后端2106运行/3跳过PASS；开发wheel SHA-256 `56e45841582d8e764b53a78426e9a43171f2924aa86cd509a0a61419e5cd658f`。无真实外发/API/生产迁移。
+
+P08结果：在CR-AI-012/Schema0067补齐快照后，已实现Egress Owner Port契约与AITask/Job/Outbox/Input/Snapshot/Audit/Receipt同事务内部创建；同Key从Task反查唯一Job。单元5、Win11隔离PG18.6原子链/精确重放/冲突/Audit故障回滚、后端2111运行/3跳过与wheel均PASS。正式Egress聚合尚无，因此不挂载HTTP，无真实外发。
