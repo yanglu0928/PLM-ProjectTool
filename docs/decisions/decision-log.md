@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261002-670 — Model 状态结果只保存首次非 AVAILABLE 转移
+
+- Date/WBS：2026-10-02 / `AI-02-A08-P01`；依据 CR-AI-005、冻结 API-03、当前通用收据与 Provider 激活结果模式。
+- Decision：AI 自有不可变状态结果表只允许 `SUSPEND`/`RETIRE`，固定转移 `AVAILABLE→SUSPENDED`、`AVAILABLE/SUSPENDED→RETIRED`；保存 before/result、expected/result lock_version、actor、trace、Audit，留存首次响应证据。当前不开放 AVAILABLE，后续须单独证明 Provider/质量前置。
+- Reason：限制状态表本身的可表达范围，防止通过插入“AVAILABLE 结果”绕过上层验收；保障历史重放与审计一致。
+- Impact/Rollback：普通增量0058/ORM，原0057与冻结提交不变；空结果可降级，有历史必须向前修复。
+- Verification：Win11 隔离 PG18 空/有数据升级、空表 down/re-up、状态/版本 `23514`、历史保护、非空降级拒绝、ORM drift=0；后端2047运行/3跳过及开发wheel通过。正式生产迁移未执行。
+
 ## DEC-20261002-669 — 模型创建只装配显式 Windows 写模式
 
 - Date/WBS：2026-10-02 / `AI-02-A06`；依据 A05 可选 POST 与现有 `--platform-write` 信任组合。
