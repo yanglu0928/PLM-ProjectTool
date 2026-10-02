@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261002-665 — 模型首次登记复用管理员受权收据，质量引用先拒绝未证明值
+
+- Date/WBS：2026-10-02 / `AI-02-A02`；依据冻结 DM-04/API-03、Schema 0057、现有 AIProvider 创建链。
+- Decision：内部模型创建在当前部署管理员 Session/CSRF 与 License 检查后，以 actor-scoped 收据、Provider 当前配置/能力证明、模型/能力行、Audit 同一 PostgreSQL 事务提交；初态固定 SUSPENDED。相同 Key/载荷重放原 ModelId，换载荷冲突；重复语义由数据库唯一键拒绝。质量引用虽然 Schema 可保存，本项在无独立质量 Owner 证明适配器前拒绝非空输入，不伪造质量通过；后续独立受权关联命令再处理。
+- Reason：避免未验证质量字符串直接影响模型路由；Provider 的名称和配置存在不等于外发/质量可用。保留历史幂等结果，Provider 后续退休不抹去原登记。
+- Impact/Rollback：新增 AI 模块内部 Domain/Application/Repository，不开 API/Worker/模型调用，无 Schema/依赖变化；未生产调用可撤内部入口，有历史模型时保留 Model/Audit/收据并向前修复。
+- Verification：Windows11 定向单元3项、隔离 PG18.6 真实 Session/CSRF/Provider 能力/License/重放/并发/审计回滚、后端2035运行/3跳过、开发 wheel PASS。真实质量证明、模型可用/外发和 Gate3 仍待。
+
 ## DEC-20261002-664 — AIModel 语义身份与能力声明分离且不可原地改写
 
 - Date/WBS：2026-10-02 / `AI-02-A01`；依据冻结 DM-04、SC-01 `ai_models`/两个子表、API-03 模型语义身份与 RAG 重建规则。
