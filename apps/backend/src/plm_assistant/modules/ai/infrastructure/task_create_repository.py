@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import insert, select
+from sqlalchemy import Text, cast, insert, literal, select
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Session
 
 from plm_assistant.modules.ai.application.create_task import (
@@ -51,9 +52,15 @@ class SqlAlchemyAITaskCreateRepository:
             ai_task_id=task_id, scope="PROJECT", project_id=request.project_id,
             task_type=request.task_type, requested_by=request.requested_by,
             input_fingerprint=request.input_fingerprint,
-            prompt_policy_ref=request.prompt_policy_ref,
-            output_schema_ref=request.output_schema_ref,
-            context_policy_ref=request.context_policy_ref,
+            prompt_policy_ref=request.prompt.policy_ref,
+            output_schema_ref=request.prompt.output_schema_ref,
+            context_policy_ref=request.prompt.context_policy_ref,
+            prompt_template_ref=request.prompt.prompt_template_ref,
+            prompt_version_no=request.prompt.prompt_version_no,
+            task_parameters=cast(
+                literal(request.prompt.task_parameters_json, type_=Text), JSONB,
+            ),
+            task_parameters_fingerprint=request.prompt.task_parameters_fingerprint,
             job_ref=job_id, trace_id=request.trace_id,
         ))
         for ordinal, item in enumerate(request.inputs, 1):

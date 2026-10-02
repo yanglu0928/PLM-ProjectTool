@@ -1,6 +1,6 @@
 # CR-AI-014：AI Task 提交策略、Prompt版本与最小参数快照
 
-日期：2026-10-03；状态：依 V1.1 持续授权登记，P02已实施，P03～P05待继续；关联冻结 API-03 `AI_TASK_CREATE/GET`、DM-04、Schema0063～0070、CR-AI-010～013；原 Gate 2 冻结提交 `64cdf09` 不改。WBS `AI-04-A05`。
+日期：2026-10-03；状态：依 V1.1 持续授权登记，P02～P03已实施，P04～P05待继续；关联冻结 API-03 `AI_TASK_CREATE/GET`、DM-04、Schema0063～0070、CR-AI-010～013；原 Gate 2 冻结提交 `64cdf09` 不改。WBS `AI-04-A05`。
 
 ## 缺口与证据
 
@@ -27,3 +27,7 @@ P02实现ORM/Migration0070，验证空库、有0069历史、up/down/re-up、Prom
 ## P02实施结果
 
 Migration0070、AITask ORM和迁移head合同已落地。Windows 11 / PostgreSQL 18.6 空库与历史库升级/降级/重升级、漂移、Prompt/策略/参数/摘要/不可变/拒降均PASS；后端2136运行/3跳过及wheel通过。开发中发现并修正PL/pgSQL变量歧义与非对象JSON判断顺序，最终均从头重跑。无公开API、真实Provider调用或客户数据外发；P03前不把全NULL兼容路径视为可执行新Task。
+
+## P03实施结果
+
+版本化Task Policy已严格绑定task type、PromptTemplate、purpose、Output/RAG引用和有界标量参数；Prompt Owner在创建事务锁定当前ACTIVE版本并由PostgreSQL规范化JSONB与计算摘要。内部新Task通过现有原子链写入完整0070快照，purpose与当前Egress Authorization精确一致；Prompt退役后新建失败，历史重放保留。Win11/PG18.6真实链、后端2140运行/3跳过及wheel通过。首轮发现JSON文本双重编码并修正为Text→JSONB显式转换后全量重跑。公开路由、部署策略来源和Worker执行仍未开启。

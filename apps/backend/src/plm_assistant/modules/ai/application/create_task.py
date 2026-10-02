@@ -13,6 +13,10 @@ from plm_assistant.modules.ai.application.input_resolution import (
     AIInputResolutionError, AIInputResolutionQuery, AIInputResourceVersionRef,
     AIInputVersionResolver, AIResolvedInputVersionRef,
 )
+from plm_assistant.modules.ai.application.task_submission_policy import (
+    AITaskPromptOwner, AITaskPromptOwnerError, AITaskPromptSnapshot,
+    AITaskSubmissionPolicyError, AITaskSubmissionPolicyRegistry,
+)
 from plm_assistant.modules.audit.application.public import AuditEventDraft, AuditService
 from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
 from plm_assistant.modules.platform.application.idempotency import (
@@ -58,6 +62,7 @@ class CreateAITask:
     prompt_policy_ref: str
     output_schema_ref: str
     context_policy_ref: str
+    task_parameters: dict[str, object] = field(repr=False)
     egress_authorization_ref: uuid.UUID
 
 
@@ -100,9 +105,7 @@ class AITaskPersistenceRequest:
     requested_by: uuid.UUID
     trace_id: uuid.UUID
     input_fingerprint: bytes = field(repr=False)
-    prompt_policy_ref: str
-    output_schema_ref: str
-    context_policy_ref: str
+    prompt: AITaskPromptSnapshot
     inputs: tuple[AIResolvedInputVersionRef, ...]
     egress: AuthorizedEgressSnapshot
 
@@ -153,13 +156,17 @@ class AITaskCreateService:
     def __init__(self, *, unit_of_work: Callable[[], object], access: AITaskCreateAccessPort,
                  license_guard: LicenseGuardPort, authorization: ProjectAuthorizationService,
                  input_resolver: AIInputVersionResolver, egress_owner: EgressAuthorizationOwnerPort,
+                 task_policies: AITaskSubmissionPolicyRegistry,
+                 prompt_owner: AITaskPromptOwner,
                  repository: AITaskCreateRepositoryPort, receipts: AITaskCreateReceiptPort,
                  audit: AuditService, clock: Callable[[], datetime] | None = None) -> None:
         if any(value is None for value in (unit_of_work, access, license_guard, authorization,
-                                           input_resolver, egress_owner, repository, receipts, audit)):
+                                           input_resolver, egress_owner, task_policies,
+                                           prompt_owner, repository, receipts, audit)):
             raise ValueError("AI Task create dependencies required")
         self._uow, self._access, self._guard = unit_of_work, access, license_guard
         self._authorization, self._inputs, self._egress = authorization, input_resolver, egress_owner
+        self._task_policies, self._prompt_owner = task_policies, prompt_owner
         self._repository, self._receipts, self._audit = repository, receipts, audit
         self._clock = clock or (lambda: datetime.now(timezone.utc))
 
@@ -175,6 +182,7 @@ class AITaskCreateService:
                 "prompt_policy_ref": command.prompt_policy_ref,
                 "output_schema_ref": command.output_schema_ref,
                 "context_policy_ref": command.context_policy_ref,
+                "task_parameters": command.task_parameters,
                 "egress_authorization_ref": str(command.egress_authorization_ref),
             })
             self._guard.require_valid(trace_id=command.trace_id)
@@ -196,6 +204,13 @@ class AITaskCreateService:
                     if type(result) is not CreatedAITask:
                         raise AITaskCreateError("AI_TASK_UNAVAILABLE")
                     return result
+                policy = self._task_policies.resolve(
+                    reference=command.prompt_policy_ref, task_type=command.task_type,
+                    output_schema_ref=command.output_schema_ref,
+                    context_policy_ref=command.context_policy_ref,
+                    parameters=command.task_parameters,
+                )
+                prompt = self._prompt_owner.resolve_current(tx, policy=policy)
                 inputs = self._inputs.resolve_all(
                     tx, AIInputResolutionQuery(command.session_token, command.trace_id),
                     command.project_id, command.input_refs,
@@ -208,10 +223,11 @@ class AITaskCreateService:
                     ),
                 )
                 self._validate_egress(command, egress, source_fingerprint, now)
+                if prompt.purpose_ref != egress.purpose_ref:
+                    raise AITaskCreateError("AI_TASK_POLICY_INVALID")
                 request = AITaskPersistenceRequest(
                     command.project_id, command.task_type, actor, command.trace_id,
-                    source_fingerprint, command.prompt_policy_ref, command.output_schema_ref,
-                    command.context_policy_ref, inputs, egress,
+                    source_fingerprint, prompt, inputs, egress,
                 )
                 result = self._repository.create(tx, request=request)
                 if type(result) is not CreatedAITask:
@@ -238,6 +254,10 @@ class AITaskCreateService:
             raise AITaskCreateError(exc.code) from None
         except EgressAuthorizationOwnerError as exc:
             raise AITaskCreateError(exc.code) from None
+        except AITaskSubmissionPolicyError as exc:
+            raise AITaskCreateError(exc.code) from None
+        except AITaskPromptOwnerError as exc:
+            raise AITaskCreateError(exc.code) from None
         except IdempotencyError as exc:
             raise AITaskCreateError(exc.code) from None
         except RuntimeLicenseError:
@@ -258,6 +278,11 @@ class AITaskCreateService:
                     command.prompt_policy_ref, command.output_schema_ref,
                     command.context_policy_ref,
                 ))
+                or type(command.task_parameters) is not dict
+                or len(command.task_parameters) > 16
+                or any(type(key) is not str or not re.fullmatch(r"[a-z][a-z0-9_]{0,63}", key)
+                       or type(value) not in (str, int, bool)
+                       for key, value in command.task_parameters.items())
                 or type(command.egress_authorization_ref) is not uuid.UUID
                 or not command.egress_authorization_ref.int):
             raise AITaskCreateError("VALIDATION_FAILED")

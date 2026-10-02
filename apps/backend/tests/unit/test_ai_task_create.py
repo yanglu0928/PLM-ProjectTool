@@ -11,6 +11,10 @@ from plm_assistant.modules.ai.application.create_task import (
 from plm_assistant.modules.ai.application.input_resolution import (
     AIInputResourceVersionRef, AIResolvedInputVersionRef,
 )
+from plm_assistant.modules.ai.application.task_submission_policy import (
+    AITaskParameterField, AITaskPromptSnapshot, AITaskSubmissionPolicy,
+    AITaskSubmissionPolicyRegistry,
+)
 from plm_assistant.modules.platform.application.idempotency import IdempotencyResult
 
 
@@ -51,6 +55,11 @@ class _Egress:
     def resolve_authorized(self, *_args, **_kwargs): self.calls += 1; return self.snapshot
 
 
+class _PromptOwner:
+    def __init__(self, snapshot): self.snapshot = snapshot; self.calls = 0
+    def resolve_current(self, *_args, **_kwargs): self.calls += 1; return self.snapshot
+
+
 class _Repository:
     def __init__(self, result): self.result = result; self.creates = 0; self.replays = 0
     def create(self, *_args, **_kwargs): self.creates += 1; return self.result
@@ -72,10 +81,25 @@ class AITaskCreateTests(unittest.TestCase):
     def setUp(self):
         self.now = datetime(2026, 10, 2, 12, tzinfo=timezone.utc)
         self.actor, self.project = uuid.uuid4(), uuid.uuid4()
+        self.prompt_template = uuid.uuid4()
         public = AIInputResourceVersionRef("DOC-02", uuid.uuid4(), uuid.uuid4())
         self.command = CreateAITask(
             b"s" * 32, b"c" * 32, uuid.uuid4(), self.project, "GAP_ANALYSIS",
-            (public,), "prompt.gap.v1", "schema.gap.v1", "context.gap.v1", uuid.uuid4(),
+            (public,), "prompt.gap.v1", "schema.gap.v1", "context.gap.v1",
+            {"language": "zh-CN", "max_items": 50}, uuid.uuid4(),
+        )
+        self.policies = AITaskSubmissionPolicyRegistry({"prompt.gap.v1": AITaskSubmissionPolicy(
+            "prompt.gap.v1", 1, "GAP_ANALYSIS", self.prompt_template,
+            "gap.analysis.v1", "schema.gap.v1", "context.gap.v1",
+            (AITaskParameterField("language", "STRING", True, 16,
+                                  allowed_values=("zh-CN", "en-US")),
+             AITaskParameterField("max_items", "INTEGER", False,
+                                  minimum=1, maximum=100)),
+        )})
+        self.prompt = AITaskPromptSnapshot(
+            self.prompt_template, 1, "prompt.gap.v1", 1, "gap.analysis.v1",
+            "schema.gap.v1", "context.gap.v1",
+            '{"language": "zh-CN", "max_items": 50}', b"q" * 32,
         )
         self.resolved = (AIResolvedInputVersionRef(
             "DOC-02", "document", "DOCUMENT_VERSION", public.resource_id,
@@ -95,20 +119,25 @@ class AITaskCreateTests(unittest.TestCase):
         self.uow, self.authz = _Uow(), _Authorization()
         self.inputs = _Inputs(self.resolved)
         self.egress = _Egress(snapshot or self.snapshot)
+        self.prompt_owner = _PromptOwner(self.prompt)
         self.repo, self.receipts, self.audit = (
             _Repository(self.created), _Receipts(receipt), _Audit(),
         )
         return AITaskCreateService(
             unit_of_work=self.uow, access=_Access(self.actor), license_guard=_Guard(),
             authorization=self.authz, input_resolver=self.inputs,
-            egress_owner=self.egress, repository=self.repo,
+            egress_owner=self.egress, task_policies=self.policies,
+            prompt_owner=self.prompt_owner, repository=self.repo,
             receipts=self.receipts, audit=self.audit, clock=lambda: self.now,
         )
 
     def test_atomic_create_completes_task_receipt(self):
         result = self.service().create(self.command, idempotency_key="A" * 16)
         self.assertEqual(result, self.created)
-        self.assertEqual((self.repo.creates, self.inputs.calls, self.egress.calls), (1, 1, 1))
+        self.assertEqual(
+            (self.repo.creates, self.prompt_owner.calls, self.inputs.calls, self.egress.calls),
+            (1, 1, 1, 1),
+        )
         self.assertEqual(self.receipts.completed, [
             IdempotencyResult("V1_AI_TASK_CREATE", self.created.ai_task_id, 202),
         ])
@@ -120,7 +149,11 @@ class AITaskCreateTests(unittest.TestCase):
         result = self.service(receipt=receipt).create(self.command, idempotency_key="B" * 16)
         self.assertEqual(result, self.created)
         self.assertEqual((self.repo.replays, self.repo.creates), (1, 0))
-        self.assertEqual((self.inputs.calls, self.egress.calls, len(self.audit.events)), (0, 0, 0))
+        self.assertEqual(
+            (self.prompt_owner.calls, self.inputs.calls, self.egress.calls,
+             len(self.audit.events)),
+            (0, 0, 0, 0),
+        )
         self.assertFalse(self.uow.items[0].committed)
 
     def test_source_set_mismatch_fails_closed(self):
@@ -161,7 +194,8 @@ class AITaskCreateTests(unittest.TestCase):
             self.command.session_token, self.command.csrf_token, self.command.trace_id,
             self.command.project_id, "FREE_FORM", self.command.input_refs,
             self.command.prompt_policy_ref, self.command.output_schema_ref,
-            self.command.context_policy_ref, self.command.egress_authorization_ref,
+            self.command.context_policy_ref, self.command.task_parameters,
+            self.command.egress_authorization_ref,
         )
         with self.assertRaises(AITaskCreateError) as raised:
             self.service().create(invalid, idempotency_key="E" * 16)

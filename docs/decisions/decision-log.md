@@ -7148,3 +7148,11 @@
 - Reason：直接将四列设为NOT NULL会破坏0069历史及当前原子创建链；在Task Policy/Prompt Owner尚未落地时猜测回填又会伪造业务事实。分片迁移可先建立可验证防线，同时不虚报入口已启用。
 - Impact/Rollback：增量Schema0070、ORM和迁移合同；无公开API/依赖变化。无完整快照可降0069；有完整历史拒降并向前修复或受控恢复。
 - Verification：Win11/PG18.6空库/历史库up-down-re-up、drift、Prompt/策略/JSON/摘要/不可变/拒降PASS；后端2136运行/3跳过，wheel `a6e14f401ffc911cf84091c685e932f76eff74d611ad97e8b484caa18af22c7a`。两次开发期验证分别发现变量歧义及JSON检查顺序并修正，最终全量重跑。
+
+# DEC-20261003-717：Task Policy分型参数并由PostgreSQL形成Prompt提交摘要
+
+- Date/WBS：2026-10-03 / `AI-04-A05-P03`；依据 CR-AI-014、Schema0070。
+- Decision：部署注入的版本化Task Policy精确绑定task type、PromptTemplate、purpose、Output Schema、RAG policy和严格标量参数Schema；Prompt Owner在同一创建事务锁定当前ACTIVE版本。应用负责参数允许集，PostgreSQL负责JSONB规范化与SHA-256，最终快照随Task原子写入。Policy purpose必须等于当前Egress Authorization purpose。
+- Reason：任意JSON会成为客户正文旁路；Python JSON编码与PostgreSQL `jsonb::text`不完全同构，不能由不同运行时各自声称同一摘要；提交后再解析活动Prompt则会造成版本漂移。
+- Impact/Rollback：内部CreateAITask新增参数及强制Policy/Prompt Owner依赖，复用0070，无新迁移/公开API/依赖/外发。停止后续组合可回退应用，完整Task历史保留。
+- Verification：定向16、Win11/PG18.6严格参数/锁定Prompt/数据库摘要/原子链/重放/退役和不匹配拒绝、后端2140运行/3跳过PASS；wheel `c214a8a277f9ef8521b68a62930b389053d105891c87bf68b4963fb2c1c215a8`。首轮双重JSON编码被数据库拒绝，修正Text→JSONB后从新库完整重跑。
