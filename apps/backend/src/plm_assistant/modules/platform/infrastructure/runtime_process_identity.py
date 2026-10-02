@@ -19,7 +19,7 @@ from plm_assistant import __version__
 from .windows_process_inventory import _windows_sid_reader
 
 
-_ROLES = frozenset({"API", "AUDIT_WORKER", "PARSER_WORKER"})
+_ROLES = frozenset({"API", "AUDIT_WORKER", "PARSER_WORKER", "AI_PROVIDER_WORKER"})
 _REPARSE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
 
 

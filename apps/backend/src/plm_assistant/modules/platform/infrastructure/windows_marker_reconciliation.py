@@ -18,7 +18,7 @@ from .windows_process_inventory import ProcessAssessment, ProcessObservation
 
 
 _REPARSE = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0x400)
-_FILE_NAME = re.compile(r"(api|audit_worker|parser_worker)-([1-9][0-9]*)-([a-f0-9]{32})\.json\Z")
+_FILE_NAME = re.compile(r"(api|audit_worker|parser_worker|ai_provider_worker)-([1-9][0-9]*)-([a-f0-9]{32})\.json\Z")
 _SID = re.compile(r"S-\d-\d+(?:-\d+)+\Z", re.ASCII)
 _SHA = re.compile(r"[a-f0-9]{64}\Z")
 _ROLE_ENTRY = {
@@ -27,6 +27,7 @@ _ROLE_ENTRY = {
         r"(?:serve_windows(?:\.py)?\b|service_windows(?:\.py)?\s+API\b)", re.I),
     "AUDIT_WORKER": re.compile(r"plm_assistant[./\\]entrypoints[./\\](?:worker_windows(?:\.py)?|service_windows(?:\.py)?\s+AUDIT_WORKER)\b", re.I),
     "PARSER_WORKER": re.compile(r"plm_assistant[./\\]entrypoints[./\\](?:parser_worker_windows(?:\.py)?|service_windows(?:\.py)?\s+PARSER_WORKER)\b", re.I),
+    "AI_PROVIDER_WORKER": re.compile(r"plm_assistant[./\\]entrypoints[./\\]service_windows(?:\.py)?\s+AI_PROVIDER_WORKER\b", re.I),
 }
 _FIELDS = frozenset({"schema_version", "role", "pid", "registered_at_utc",
                      "package_version", "code_sha256", "owner_sid",

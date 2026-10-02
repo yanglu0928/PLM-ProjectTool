@@ -36,9 +36,11 @@ def assess_fixed_service(role: str, python_exe: Path, bootstrap_yaml: Path,
         raise WindowsServiceAssessmentError()
     try:
         plan = build_service_plan(python_exe, bootstrap_yaml)
-        expected_command = next(
+        expected_command = next((
             item["binary_path"] for item in plan["service_commands"]
-            if item["role"] == role)
+            if item["role"] == role), None)
+        if expected_command is None:
+            raise WindowsServiceAssessmentError()
         observed = read_service_observation(role, reader=reader)
     except (WindowsServicePlanError, WindowsServiceInventoryError):
         raise WindowsServiceAssessmentError() from None
@@ -72,7 +74,7 @@ def main() -> int:
     if (sys.platform != "win32" or len(sys.argv) != 5 or sys.argv[1] != "--assess"
             or sys.argv[2] not in SERVICE_NAMES or not sys.stdin.isatty()):
         print("Usage: python -m plm_assistant.entrypoints.service_assessment_windows "
-              "--assess {API|AUDIT_WORKER|PARSER_WORKER} "
+              "--assess {API|AUDIT_WORKER|PARSER_WORKER|AI_PROVIDER_WORKER} "
               "<absolute-python.exe> <absolute-bootstrap.yaml>", file=sys.stderr)
         return 2
     try:

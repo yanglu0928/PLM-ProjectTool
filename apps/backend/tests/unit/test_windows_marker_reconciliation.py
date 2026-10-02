@@ -99,6 +99,9 @@ class MarkerReconciliationTests(unittest.TestCase):
         self.assertEqual(self.check((record(role="PARSER_WORKER"),),
             (process(command="python -m plm_assistant.entrypoints.service_windows PARSER_WORKER C:/config.yaml"),))
             .findings[0].status, "OBSERVED_MATCH")
+        self.assertEqual(self.check((record(role="AI_PROVIDER_WORKER"),),
+            (process(command="python -m plm_assistant.entrypoints.service_windows AI_PROVIDER_WORKER C:/config.yaml"),))
+            .findings[0].status, "OBSERVED_MATCH")
 
     def test_native_bounded_marker_reader_rejects_invalid_and_never_deletes(self):
         if sys.platform != "win32":

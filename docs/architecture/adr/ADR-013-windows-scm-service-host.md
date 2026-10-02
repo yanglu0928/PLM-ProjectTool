@@ -48,3 +48,5 @@ Microsoft 官方接口依据：[Service entry point](https://learn.microsoft.com
 2026-09-30 配置对账：A02-P02-A02 将 P03-A01 期望启动命令与 SCM 保存配置的服务类型、启动方式、错误策略、binary path 和账户逐项精确比较；缺失/不匹配仅出固定码，绝不把配置相同当作当前运行进程或静止证明。当前 PLM 服务未安装，故只通过合成匹配/差异与原生缺失路径；正式目标账户的实机对账仍待，ADR 状态不提升。
 
 2026-10-02 后续增量 CR-AI-003：Provider Test 不得复用 Audit/Parser 服务角色；选择第四独立 AI Provider Worker 固定角色，原三角色保持。A01 已在隔离 PG18 组装未发布的维护循环并验证本机合成任务链；尚未加入 SCM 名单/命令计划/安装器/盘点，也未验目标账户或真实外发。本 ADR 仍 `PARTIALLY_IMPLEMENTED / NOT_SCM_VALIDATED`，原三角色合同不追写；A02/A03 才更新运行/运维证据。
+
+2026-10-02 CR-AI-003 A02：第四角色 `AI_PROVIDER_WORKER` 已接固定 SCM 名称、宿主、运行标记、条件性命令计划、安装器、只读盘点和对账；无有效受控策略时不列 AI 命令，旧三角色计划不变。Windows11 模拟 STOP 排空、全量测试和原生只读盘点通过，本机四服务均未安装。此为后续增量，不追写原三角色合同；A03 真实 SCM 目标账户/启动停止与资源静止未验，ADR 仍 `PARTIALLY_IMPLEMENTED / NOT_SCM_VALIDATED`。

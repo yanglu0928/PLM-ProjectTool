@@ -48,7 +48,7 @@ def build_inventory(roles: tuple[str, ...] = tuple(SERVICE_NAMES)) -> dict:
 def main() -> int:
     if len(sys.argv) != 2 or sys.argv[1] not in (*SERVICE_NAMES, "ALL"):
         print("Usage: python -m plm_assistant.entrypoints.service_inventory_windows "
-              "{API|AUDIT_WORKER|PARSER_WORKER|ALL}", file=sys.stderr)
+              "{API|AUDIT_WORKER|PARSER_WORKER|AI_PROVIDER_WORKER|ALL}", file=sys.stderr)
         return 2
     try:
         roles = tuple(SERVICE_NAMES) if sys.argv[1] == "ALL" else (sys.argv[1],)

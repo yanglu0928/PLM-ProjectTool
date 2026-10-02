@@ -93,8 +93,10 @@ def install_fixed_service(role: str, python_exe: Path, bootstrap_yaml: Path,
         verify_installer_runtime(python_exe)
     except WindowsServicePlanError:
         raise WindowsServiceInstallError() from None
-    command = next(item["binary_path"] for item in plan["service_commands"]
-                   if item["role"] == role)
+    command = next((item["binary_path"] for item in plan["service_commands"]
+                    if item["role"] == role), None)
+    if command is None:
+        raise WindowsServiceInstallError()
     try:
         control = scm if scm is not None else _NativeServiceControl()
     except Exception:
@@ -135,7 +137,7 @@ def main() -> int:
             or sys.argv[1] != "--install" or sys.argv[2] not in SERVICE_NAMES
             or not sys.stdin.isatty()):
         print("Usage: python -m plm_assistant.entrypoints.service_install_windows "
-              "--install {API|AUDIT_WORKER|PARSER_WORKER} "
+              "--install {API|AUDIT_WORKER|PARSER_WORKER|AI_PROVIDER_WORKER} "
               "<absolute-python.exe> <absolute-bootstrap.yaml> <account>",
               file=sys.stderr)
         return 2

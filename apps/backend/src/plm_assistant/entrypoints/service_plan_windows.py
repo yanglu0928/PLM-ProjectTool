@@ -14,6 +14,7 @@ from plm_assistant.modules.platform.infrastructure.bootstrap_config import (
 from plm_assistant.modules.platform.infrastructure.windows_service_dispatcher import (
     SERVICE_NAMES,
 )
+from plm_assistant.entrypoints.ai_probe_policy import create_deployment_ai_probe_registry
 
 
 class WindowsServicePlanError(RuntimeError):
@@ -34,7 +35,7 @@ def _regular_absolute_file(path: Path, *, names: tuple[str, ...] | None = None) 
 
 
 def build_service_plan(python_exe: Path, bootstrap_yaml: Path) -> dict:
-    """Emit three fixed commands, never a clearance or a mutation instruction."""
+    """Emit runnable fixed-role plans only; never a clearance or mutation."""
     if sys.platform != "win32":
         raise WindowsServicePlanError()
     interpreter = _regular_absolute_file(python_exe, names=("python.exe",))
@@ -51,6 +52,8 @@ def build_service_plan(python_exe: Path, bootstrap_yaml: Path) -> dict:
                        for value in (settings.parser_ocr_detection_model_dir,
                                      settings.parser_ocr_recognition_model_dir))):
             raise WindowsServicePlanError()
+        if settings.ai_probe_policies:
+            create_deployment_ai_probe_registry(settings)
     except Exception:
         raise WindowsServicePlanError() from None
     return {
@@ -65,6 +68,7 @@ def build_service_plan(python_exe: Path, bootstrap_yaml: Path) -> dict:
                  "plm_assistant.entrypoints.service_windows", role,
                  str(bootstrap)))}
             for role, name in SERVICE_NAMES.items()
+            if role != "AI_PROVIDER_WORKER" or settings.ai_probe_policies
         ],
     }
 

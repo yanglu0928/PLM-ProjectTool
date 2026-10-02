@@ -97,7 +97,7 @@ class WindowsServiceDispatcherTests(unittest.TestCase):
     def test_dispatcher_rejects_unknown_role(self):
         with self.assertRaises(WindowsServiceDispatcherError):
             run_windows_service("UNKNOWN", lambda stop, ready: None)
-        self.assertEqual(len(set(SERVICE_NAMES.values())), 3)
+        self.assertEqual(len(set(SERVICE_NAMES.values())), 4)
 
     @unittest.skipUnless(sys.platform == "win32", "native Windows only")
     def test_native_dispatcher_outside_scm_fails_without_installing(self):

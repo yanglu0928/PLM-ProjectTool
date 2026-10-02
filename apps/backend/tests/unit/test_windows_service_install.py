@@ -41,7 +41,7 @@ class FakeSCM:
 
 @unittest.skipUnless(sys.platform == "win32", "Windows SCM only")
 class WindowsServiceInstallTests(unittest.TestCase):
-    def paths(self, directory):
+    def paths(self, directory, *, ai_policy=False):
         root = Path(directory) / "中文 package space"
         root.mkdir()
         python = root / "python.exe"
@@ -53,7 +53,15 @@ class WindowsServiceInstallTests(unittest.TestCase):
             f"data_root: {json.dumps(str(root))}\n"
             f"parser_ocr_detection_model_dir: {json.dumps(str(root / 'det'))}\n"
             f"parser_ocr_recognition_model_dir: {json.dumps(str(root / 'rec'))}\n"
-            f"parser_ocr_model_fingerprint: {'a' * 64}\n", encoding="utf-8")
+            f"parser_ocr_model_fingerprint: {'a' * 64}\n"
+            + ("ai_probe_policies:\n"
+               "  - reference: endpoint.synthetic.v1\n"
+               "    kind: OPENAI_COMPATIBLE\n"
+               "    endpoint_url: https://probe.example.test/v1/chat/completions\n"
+               "    model_key: synthetic-chat\n"
+               "    data_region: cn-beijing\n"
+               "    egress_class: EXTERNAL_APPROVAL_REQUIRED\n"
+               if ai_policy else ""), encoding="utf-8")
         return python, bootstrap
 
     def test_single_role_manual_service_and_password_scrub(self):
@@ -71,6 +79,28 @@ class WindowsServiceInstallTests(unittest.TestCase):
             self.assertIn("service_windows AUDIT_WORKER", command)
             self.assertNotIn("synthetic-pass", command)
             self.assertEqual(fake.calls[-2:], [("close", 22), ("close", 11)])
+            self.assertEqual(fake.password_buffer.value, "")
+
+    def test_ai_role_requires_policy_before_scm_and_is_manual_only(self):
+        with tempfile.TemporaryDirectory() as directory:
+            python, bootstrap = self.paths(directory)
+            fake = FakeSCM()
+            with patch.object(installer.sys, "executable", str(python)):
+                with self.assertRaises(installer.WindowsServiceInstallError):
+                    installer.install_fixed_service(
+                        "AI_PROVIDER_WORKER", python, bootstrap, ".\\plmtool",
+                        "synthetic-pass", scm=fake)
+            self.assertEqual(fake.calls, [])
+        with tempfile.TemporaryDirectory() as directory:
+            python, bootstrap = self.paths(directory, ai_policy=True)
+            fake = FakeSCM()
+            with patch.object(installer.sys, "executable", str(python)):
+                installer.install_fixed_service(
+                    "AI_PROVIDER_WORKER", python, bootstrap, ".\\plmtool",
+                    "synthetic-pass", scm=fake)
+            self.assertEqual(fake.calls[1][1], SERVICE_NAMES["AI_PROVIDER_WORKER"])
+            self.assertIn("service_windows AI_PROVIDER_WORKER", fake.calls[1][2])
+            self.assertNotIn("synthetic-pass", fake.calls[1][2])
             self.assertEqual(fake.password_buffer.value, "")
 
     def test_existing_name_or_access_denied_is_not_overwritten(self):

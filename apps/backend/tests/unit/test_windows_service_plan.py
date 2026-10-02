@@ -19,7 +19,7 @@ from plm_assistant.modules.platform.infrastructure.windows_service_dispatcher im
 
 @unittest.skipUnless(sys.platform == "win32", "Windows-only SCM plan")
 class WindowsServicePlanTests(unittest.TestCase):
-    def paths(self, directory: str):
+    def paths(self, directory: str, *, ai_policy: bool = False):
         root = Path(directory) / "中文 install space"
         root.mkdir()
         python = root / "python.exe"
@@ -33,7 +33,15 @@ class WindowsServicePlanTests(unittest.TestCase):
             f"data_root: {json.dumps(str(root))}\n"
             f"parser_ocr_detection_model_dir: {json.dumps(str(detection))}\n"
             f"parser_ocr_recognition_model_dir: {json.dumps(str(recognition))}\n"
-            f"parser_ocr_model_fingerprint: {'a' * 64}\n",
+            f"parser_ocr_model_fingerprint: {'a' * 64}\n"
+            + ("ai_probe_policies:\n"
+               "  - reference: endpoint.synthetic.v1\n"
+               "    kind: OPENAI_COMPATIBLE\n"
+               "    endpoint_url: https://probe.example.test/v1/chat/completions\n"
+               "    model_key: synthetic-chat\n"
+               "    data_region: cn-beijing\n"
+               "    egress_class: EXTERNAL_APPROVAL_REQUIRED\n"
+               if ai_policy else ""),
                           encoding="utf-8")
         return python, config
 
@@ -47,7 +55,9 @@ class WindowsServicePlanTests(unittest.TestCase):
             self.assertFalse(result["backup_or_migration_authorized"])
             entries = result["service_commands"]
             self.assertEqual([(item["role"], item["service_name"])
-                              for item in entries], list(SERVICE_NAMES.items()))
+                              for item in entries],
+                             [(role, name) for role, name in SERVICE_NAMES.items()
+                              if role != "AI_PROVIDER_WORKER"])
             for item in entries:
                 self.assertIn('"' + str(python) + '"', item["binary_path"])
                 self.assertIn('"' + str(config) + '"', item["binary_path"])
@@ -83,6 +93,24 @@ class WindowsServicePlanTests(unittest.TestCase):
             result = json.loads(output.getvalue())
             self.assertEqual(result["status"], "PLAN_ONLY")
             self.assertEqual(len(result["service_commands"]), 3)
+
+    def test_valid_policy_adds_only_fixed_ai_command(self):
+        with tempfile.TemporaryDirectory() as directory:
+            python, config = self.paths(directory, ai_policy=True)
+            result = plan.build_service_plan(python, config)
+            self.assertEqual([(item["role"], item["service_name"])
+                              for item in result["service_commands"]],
+                             list(SERVICE_NAMES.items()))
+            self.assertFalse(result["backup_or_migration_authorized"])
+
+    def test_invalid_ai_policy_never_emits_plan(self):
+        with tempfile.TemporaryDirectory() as directory:
+            python, config = self.paths(directory, ai_policy=True)
+            config.write_text(config.read_text(encoding="utf-8").replace(
+                "https://probe.example.test/v1/chat/completions",
+                "http://127.0.0.1/v1/chat/completions"), encoding="utf-8")
+            with self.assertRaises(plan.WindowsServicePlanError):
+                plan.build_service_plan(python, config)
 
 
 if __name__ == "__main__":

@@ -13,6 +13,7 @@ SERVICE_NAMES = {
     "API": "PLMProjectToolApi",
     "AUDIT_WORKER": "PLMProjectToolAuditWorker",
     "PARSER_WORKER": "PLMProjectToolParserWorker",
+    "AI_PROVIDER_WORKER": "PLMProjectToolAIProviderWorker",
 }
 START_PENDING = 2
 STOP_PENDING = 3
