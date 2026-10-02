@@ -6309,3 +6309,11 @@
 - Impact/Rollback：内部 Application Port 与既有解析节点校验复用，无 API、Schema、Migration 或普通读取授权变化；可不装配后续 Workflow。GLOBAL 标准引用另有窄授权任务，Review/例外 Owner 未齐前 Checklist/Gate 写继续关闭。
 - Verification：单元覆盖全链正反例/隐私；隔离 PG18 的真实事务、真实私有文件及解析结果，撤权/篡改/并发拒绝；后端全量与 wheel。无客户或生产数据。
 - Result：新增 Owner 单元 6/6、既有节点解析回归合计 15/15；隔离 PostgreSQL 18 合成 PROJECT 节点与整文档均通过，Owner 持 Evidence/Document/Version/File/ParseRecord/ResultRef 六行共享锁，跨项目、源文件/解析结果篡改与撤销拒绝；后端全量 1846 通过/3 跳过，开发 wheel PASS。会话/角色在单元与已检查假端口验证，尚未装配实际 Workflow/生产 Session；窄 GLOBAL 与 Review/例外 Owner 仍开放。
+
+# DEC-20261002-606：GLOBAL 标准引用以独立内部 Port 验证而不放宽普通读取
+
+- Date/WBS：2026-10-02 / `WFL-01-A07-P04-A03`；来源 `CR-WFL-005`。
+- Decision：Document 模块新增只供受控业务引用的 GLOBAL 标准证明 Port，以当前 Session 和目标 ACTIVE 项目的 PROJECT_MANAGER 身份入调用方事务；仅查询并锁定 GLOBAL `STANDARD_CAPABILITY` 的 Document/Version/File 与可选 ParseRecord/ResultRef，校验实际私有文件和解析结果字节，输出不含路径的固定来源事实。Evidence 模块按同一项目经理身份锁定当前 GLOBAL ELIGIBLE 行、调用该 Document Port 并核 locator/fingerprint，最终返回目标 ProjectId 与 GLOBAL 来源的最小观测事实。普通 GLOBAL list/get/download 的 DeploymentAdmin 校验不改，不给 PM 通用文档正文。
+- Reason：借用普通 GLOBAL 读取要求给项目经理部署管理员权限，会扩大信息边界；仅存 UUID 或仅验证 DB 元数据不足以证明来源完整。独立 Port 让来源证明在调用方事务内且不公开通用浏览能力。
+- Impact/Rollback：内部 Application/DTO 增量，不改 API、Schema、数据或既有 GLOBAL 读取；若失败不装配 Workflow 并保持 Checklist/Gate 写关闭。只认 `STANDARD_CAPABILITY`，其他类别继续拒绝。验证合成 PG18/本地存储、权限及篡改，再处理真实 Workflow/Review/例外 Owner；正式信任和目标环境另验。
+- Result：新单元 6/6，隔离 PostgreSQL 18 合成 GLOBAL 整文档及固定解析节点持六表共享锁、普通 GLOBAL 项目经理读取仍拒绝，跨项目/撤销/实际文件及解析字节篡改失败关闭；后端全量 1852 通过/3 跳过，开发 wheel PASS。仅内部来源证明，实际 Workflow 写链、Review/例外 Owner 与正式目标环境仍未验。

@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/WFL-01-A07-P04-A03 增加项目经理对GLOBAL `STANDARD_CAPABILITY` 的窄内部固定来源证明及Evidence Owner，不放宽普通GLOBAL列表/详情/下载。兼容性：内部Application Port增量，无公开API/Schema/依赖变化。升级：无迁移，历史证据不改写。验证：单元6、隔离PG18整文档与解析节点六表锁/普通GLOBAL拒绝/跨项目/撤销/实际文件和解析篡改、后端全量1852通过/3跳过、开发wheel PASS。已知问题：未装配实际Workflow写链，Review/例外Owner、正式License/法律、目标平台/UAT/Gate及可用发行包仍未完成。
+
 - 2026-10-02：0.1.0.dev0/WFL-01-A07-P04-A02 增加PROJECT Evidence固定来源内部Owner：同调用方事务复验当前Session/ACTIVE项目经理、ELIGIBLE证据、Document/Version/File/ParseRecord/ResultRef及实际文件/解析定位指纹；原节点校验复用已验证结果字节。兼容性：内部Application Port，无公开API/Schema/依赖变化。升级：无需迁移，未装配Checklist写。验证：定向15、隔离PG18六行锁/整文档与节点/跨项目/撤销/双篡改、后端全量1846通过/3跳过、开发wheel PASS。已知问题：真实Session/Workflow装配、窄GLOBAL标准引用、Review/例外Owner、正式信任/法律/浏览器/目标平台/UAT/Gate未完成，当前程序包非发行。
 
 - 2026-10-02：0.1.0.dev0/WFL-01-A07-P04-A01 新增Evidence当前ELIGIBLE固定记录调用方事务共享锁内部读取，包含固定版本、ParseRecord、locator、fingerprint及版本，旧ORM身份缓存强制刷新。兼容性：内部DTO/仓储增量，无公开API/Schema/依赖变化。升级：无迁移，现有Evidence历史不改写。验证：定向2、隔离PG18范围/候选/撤销/旧缓存/锁竞争及释放后修改、后端全量1840通过/3跳过、开发wheel PASS。已知问题：Document证明与locator/fingerprint尚未在Evidence Owner组合，窄GLOBAL授权、Review/例外Owner、正式信任/法律/浏览器/目标平台/UAT/Gate未完成，程序包仍非发行。

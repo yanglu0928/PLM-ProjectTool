@@ -28,8 +28,11 @@ from plm_assistant.modules.document.application.prepare_download import (
 from plm_assistant.modules.document.application.prove_fixed_source import (
     DocumentFixedSourceProofService,
 )
+from plm_assistant.modules.document.application.prove_global_standard import (
+    GlobalStandardReferenceProofService,
+)
 from plm_assistant.modules.document.application.read_documents import (
-    DocumentReadQuery, DocumentReadService,
+    DocumentReadError, DocumentReadQuery, DocumentReadService,
 )
 from plm_assistant.modules.document.application.read_parse_result import (
     DocumentParseResultReadService, ParseResultReadError,
@@ -45,6 +48,9 @@ from plm_assistant.modules.evidence.infrastructure.fixed_source_repository impor
 )
 from plm_assistant.modules.evidence.application.fixed_project_source import (
     EvidenceFixedProjectQuery, EvidenceFixedProjectSourceService, EvidenceFixedSourceError,
+)
+from plm_assistant.modules.evidence.application.fixed_global_standard_source import (
+    EvidenceFixedGlobalStandardService, StandardEvidenceQuery, StandardEvidenceError,
 )
 from plm_assistant.modules.evidence.infrastructure.orm import EvidenceRow
 from plm_assistant.modules.evidence.application.parsed_node_proof import ParsedNodeEvidenceProofService
@@ -216,6 +222,112 @@ def verify(port: int, scratch: Path) -> None:
             "lock_version=lock_version+1 WHERE evidence_id=%s",
             (actor, evidence),
         )
+        standard_bytes = b"Synthetic global standard source."
+        standard_sha = hashlib.sha256(standard_bytes).digest()
+        standard_file_id = uuid.uuid4()
+        standard_stage, standard_final = LocalFileStorage.locators(
+            scope="GLOBAL", project_id=None, file_object_id=standard_file_id,
+        )
+        with file_storage.reserve_staging(standard_stage) as stream:
+            stream.write(standard_bytes)
+        file_storage.publish_verified(
+            standard_stage, standard_final, expected_sha256=standard_sha,
+            expected_size=len(standard_bytes), max_bytes=100_000_000,
+        )
+        standard_document = db.execute(
+            "INSERT INTO plm.doc_documents(scope,document_category,title,"
+            "original_display_name,created_by) VALUES "
+            "('GLOBAL','STANDARD_CAPABILITY','Synthetic Standard','standard.txt',%s) "
+            "RETURNING document_id", (actor,),
+        ).fetchone()[0]
+        db.execute(
+            "INSERT INTO plm.doc_file_objects(file_object_id,scope,storage_class,"
+            "storage_locator,original_name_metadata,created_by,file_state,sha256,"
+            "size_bytes,detected_mime,available_at) VALUES "
+            "(%s,'GLOBAL','PERSISTENT',%s,'standard.txt',%s,'AVAILABLE',%s,%s,"
+            "'text/plain',statement_timestamp())",
+            (standard_file_id, standard_final, actor, standard_sha, len(standard_bytes)),
+        )
+        standard_version = db.execute(
+            "INSERT INTO plm.doc_document_versions(document_id,scope,version_no,"
+            "file_object_id,content_sha256,size_bytes,detected_mime,source_metadata,"
+            "created_by) VALUES (%s,'GLOBAL',1,%s,%s,%s,'text/plain',%s,%s) "
+            "RETURNING document_version_id",
+            (standard_document, standard_file_id, standard_sha,
+             len(standard_bytes), Jsonb({}), actor),
+        ).fetchone()[0]
+        db.execute(
+            "UPDATE plm.doc_documents SET latest_version_ref=%s,effective_version_ref=%s "
+            "WHERE document_id=%s",
+            (standard_version, standard_version, standard_document),
+        )
+        standard_job = db.execute(
+            "INSERT INTO plm.job_jobs(owner_module,job_type,scope,actor_ref,trace_id,"
+            "payload_refs,idempotency_key,max_attempts) VALUES "
+            "('document','DOCUMENT_PARSE','GLOBAL',%s,%s,%s,'standard-parse-job',3) "
+            "RETURNING job_id",
+            (actor, str(uuid.uuid4()), Jsonb({
+                "document_id": str(standard_document),
+                "document_version_id": str(standard_version),
+            })),
+        ).fetchone()[0]
+        standard_record = db.execute(
+            "INSERT INTO plm.doc_parse_records(document_version_id,scope,"
+            "parser_profile,parser_version,job_ref,attempt_no) VALUES "
+            "(%s,'GLOBAL','PLAIN_TEXT','1',%s,1) RETURNING parse_record_id",
+            (standard_version, standard_job),
+        ).fetchone()[0]
+        db.execute(
+            "UPDATE plm.doc_parse_records SET parse_state='RUNNING',"
+            "started_at=statement_timestamp(),lock_version=1 WHERE parse_record_id=%s",
+            (standard_record,),
+        )
+        standard_payload = ParsedResult(
+            document_version_id=standard_version, source_sha256=standard_sha,
+            parser_profile="PLAIN_TEXT", parser_version="1",
+            nodes=(ParsedNode("standard-line", "TEXT_LINE", "Standard",
+                              TextRangePosition(0, 8, hashlib.sha256(b"Standard").hexdigest())),),
+        ).canonical_bytes()
+        standard_result_id = uuid.uuid4()
+        standard_stored = storage.write_once(
+            scope="GLOBAL", project_id=None, result_ref_id=standard_result_id,
+            content=standard_payload,
+        )
+        db.execute(
+            "INSERT INTO plm.doc_parse_result_refs(parse_result_ref_id,parse_record_id,"
+            "storage_locator,result_schema_version,sha256,size_bytes) "
+            "VALUES (%s,%s,%s,1,%s,%s)",
+            (standard_result_id, standard_record, standard_stored.storage_locator,
+             standard_stored.sha256, standard_stored.size_bytes),
+        )
+        db.execute(
+            "UPDATE plm.doc_parse_records SET parse_state='SUCCEEDED',"
+            "completed_at=statement_timestamp(),result_ref=%s,result_sha256=%s,"
+            "retryable=false,lock_version=2 WHERE parse_record_id=%s",
+            (standard_result_id, standard_stored.sha256, standard_record),
+        )
+        standard_locator = json.loads(standard_payload)["nodes"][0]["source_locator"]
+        standard_evidence_ids = []
+        for kind, locator, fingerprint, parse_id in (
+                ("DOCUMENT", {"locator_type": "DOCUMENT"}, standard_sha, None),
+                ("TEXT_RANGE", standard_locator,
+                 hashlib.sha256(b"Standard").digest(), standard_record)):
+            identity = db.execute(
+                "INSERT INTO plm.evd_evidence_records(scope,document_id,"
+                "document_version_id,source_parse_record_id,locator_type,"
+                "locator_payload,content_fingerprint,display_label,created_by) "
+                "VALUES ('GLOBAL',%s,%s,%s,%s,%s,%s,'Synthetic standard',%s) "
+                "RETURNING evidence_id",
+                (standard_document, standard_version, parse_id, kind,
+                 Jsonb(locator), fingerprint, actor),
+            ).fetchone()[0]
+            db.execute(
+                "UPDATE plm.evd_evidence_records SET eligibility_state='ELIGIBLE',"
+                "eligibility_reason='Synthetic standard review',updated_by=%s,"
+                "lock_version=lock_version+1 WHERE evidence_id=%s",
+                (actor, identity),
+            )
+            standard_evidence_ids.append(identity)
 
     runtime = create_database_runtime(url)
     try:
@@ -348,6 +460,99 @@ def verify(port: int, scratch: Path) -> None:
             documents=proof_service,
         )
         owner_query = EvidenceFixedProjectQuery(b"s" * 32, uuid.uuid4(), project)
+        standard_proof = GlobalStandardReferenceProofService(
+            sessions=Session(), projects=Project(), license_guard=Guard(),
+            documents=SqlAlchemyDocumentReadRepository(), files=file_storage,
+            parses=metadata, parse_bytes=storage,
+        )
+        standard_owner = EvidenceFixedGlobalStandardService(
+            sessions=Session(), projects=Project(), evidence=evidence_sources,
+            standards=standard_proof,
+        )
+        standard_query = StandardEvidenceQuery(b"s" * 32, uuid.uuid4(), project)
+        try:
+            reader.get(
+                DocumentReadQuery(b"s" * 32, uuid.uuid4(), "GLOBAL", None),
+                standard_document,
+            )
+        except DocumentReadError as error:
+            assert error.code == "RESOURCE_NOT_FOUND"
+        else:
+            raise AssertionError("PROJECT_MANAGER gained ordinary GLOBAL read")
+        with runtime.unit_of_work() as tx:
+            whole_standard = standard_owner.prove(
+                tx, standard_query, standard_evidence_ids[0],
+            )
+            parsed_standard = standard_owner.prove(
+                tx, standard_query, standard_evidence_ids[1],
+            )
+            assert whole_standard.content_fingerprint == standard_sha
+            assert parsed_standard.content_fingerprint == hashlib.sha256(b"Standard").digest()
+            assert parsed_standard.source_parse_record_id == standard_record
+            with psycopg.connect(host="127.0.0.1", port=port, user=USER,
+                                 dbname="postgres", autocommit=True) as rival:
+                for table, identity, value in (
+                    ("evd_evidence_records", "evidence_id", standard_evidence_ids[1]),
+                    ("doc_documents", "document_id", standard_document),
+                    ("doc_document_versions", "document_version_id", standard_version),
+                    ("doc_file_objects", "file_object_id", standard_file_id),
+                    ("doc_parse_records", "parse_record_id", standard_record),
+                    ("doc_parse_result_refs", "parse_result_ref_id", standard_result_id),
+                ):
+                    try:
+                        rival.execute(
+                            sql.SQL("SELECT 1 FROM plm.{} WHERE {}=%s FOR UPDATE NOWAIT").format(
+                                sql.Identifier(table), sql.Identifier(identity)), (value,),
+                        )
+                    except psycopg.Error as error:
+                        assert error.sqlstate == "55P03", (table, error.sqlstate)
+                    else:
+                        raise AssertionError(f"GLOBAL standard Owner did not hold {table}")
+        (file_root / standard_final).write_bytes(b"x" * len(standard_bytes))
+        try:
+            with runtime.unit_of_work() as tx:
+                standard_owner.prove(tx, standard_query, standard_evidence_ids[1])
+        except StandardEvidenceError as error:
+            assert error.code == "EVIDENCE_FINGERPRINT_MISMATCH"
+        else:
+            raise AssertionError("tampered GLOBAL standard file accepted")
+        (file_root / standard_final).write_bytes(standard_bytes)
+        (data_root / standard_stored.storage_locator).write_bytes(
+            standard_payload[:-1] + b"!",
+        )
+        try:
+            with runtime.unit_of_work() as tx:
+                standard_owner.prove(tx, standard_query, standard_evidence_ids[1])
+        except StandardEvidenceError as error:
+            assert error.code == "EVIDENCE_FINGERPRINT_MISMATCH"
+        else:
+            raise AssertionError("tampered GLOBAL standard parse accepted")
+        (data_root / standard_stored.storage_locator).write_bytes(standard_payload)
+        try:
+            with runtime.unit_of_work() as tx:
+                standard_owner.prove(
+                    tx, StandardEvidenceQuery(b"s" * 32, uuid.uuid4(), uuid.uuid4()),
+                    standard_evidence_ids[1],
+                )
+        except StandardEvidenceError as error:
+            assert error.code == "RESOURCE_NOT_FOUND"
+        else:
+            raise AssertionError("GLOBAL standard reference accepted unrelated project")
+        with psycopg.connect(host="127.0.0.1", port=port, user=USER,
+                             dbname="postgres", autocommit=True) as changer:
+            changer.execute(
+                "UPDATE plm.evd_evidence_records SET eligibility_state='REVOKED',"
+                "eligibility_reason='Synthetic standard revoke',updated_by=%s,"
+                "lock_version=lock_version+1 WHERE evidence_id=%s",
+                (actor, standard_evidence_ids[1]),
+            )
+        try:
+            with runtime.unit_of_work() as tx:
+                standard_owner.prove(tx, standard_query, standard_evidence_ids[1])
+        except StandardEvidenceError as error:
+            assert error.code == "RESOURCE_NOT_FOUND"
+        else:
+            raise AssertionError("GLOBAL standard reference accepted revoked Evidence")
         with runtime.unit_of_work() as tx:
             observed = owner.prove(tx, owner_query, evidence)
             assert observed.evidence_id == evidence
@@ -484,7 +689,8 @@ def verify(port: int, scratch: Path) -> None:
             assert error.code == "FILE_INTEGRITY_MISMATCH"
         else:
             raise AssertionError("tampered private result accepted")
-        print("PASS: isolated PostgreSQL 18 PROJECT Evidence Owner/locator/fingerprint/"
+        print("PASS: isolated PostgreSQL 18 PROJECT and narrow GLOBAL standard Owners, "
+              "ordinary GLOBAL PM read denied, exact locator/fingerprint/"
               "physical bytes/six-row transaction lock, current ELIGIBLE Evidence lock/scope/"
               "cache refresh/revoke, success/failure ParseRecords, scoped metadata, "
               "caller-transaction Document/Version/File/ParseRecord/ResultRef share locks, "
