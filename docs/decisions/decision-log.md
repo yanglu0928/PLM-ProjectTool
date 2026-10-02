@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261002-657 — Provider Test API/Worker 同源装配分三步验收
+
+- Date/WBS：2026-10-02 / `AI-01-A05-P05-A03-P04-P02`；输入 CR-AI-002、P04-P01 部署策略、已有单次 Worker 与 Windows 服务计划。
+- Decision：先建不公开的受控策略 Test 提交 Router 工厂（A01），再建同策略的 Windows 单次 Worker 组合及受控执行边界（A02），最后在两者就绪时验证并开放显式写模式的 Test 路由/生命周期（A03）；原激活 P04 在这之前仍关闭。
+- Reason：当前正式服务计划没有 Provider Test Worker；若先公开 Test，异步 Job 无消费者。两进程必须使用同一受控策略摘要，不能采用不同合成注入。
+- Impact/Rollback：仅执行顺序/组合层拆分，冻结 API/Schema/技术栈不变；撤工厂/路由即可回退，已有 Job/结果历史不删除。无真实外发授权。
+- Verification：A01 Win11 隔离 ASGI/PG18 缺策略失败、202 Job/Outbox/Audit与重放通过；后端2006运行/3跳过、开发 wheel PASS。A02/A03 未实施，本决策不判 P02/P04/Gate PASS。
+
 ## DEC-20261002-656 — 部署 Bootstrap 显式提供非秘密探针策略快照
 
 - Date/WBS：2026-10-02 / `AI-01-A05-P05-A03-P04-P01`；依据 CR-AI-002 和现有 `EndpointProbePolicy/Registry`。

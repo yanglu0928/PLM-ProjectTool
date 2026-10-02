@@ -74,3 +74,7 @@
 2026-10-02 P05-A03-P04 前置核查：`production_login` 当前只有 Provider 创建/配置 PATCH，既无 `EndpointProbeRegistry` 的正式受控部署来源，亦无 Provider Test 正式提交/Worker 接线。激活服务若直接由空或合成策略注入，将永久拒绝或把测试策略误作生产资格。比较：硬编码供应商地址（不选，变更/出站治理失控）、复用验证脚本合成 registry（不选，测试信任误入生产）、先实现独立受控策略来源及缺失失败关闭，再按同一来源接 Test/Worker/Activate（选）。因此 P04 暂为 PRECONDITION_BLOCKED，入口保持 404；拆出 P04-P01 策略来源与回滚/安全验证，随后重检 P04，不改冻结 API/Schema，也不触发真实外发。正式目标账户策略文件/权限与生产出站仍须另验，不能以隔离来源代替。
 
 2026-10-02 P05-A03-P04-P01 按 DEC-20261002-656 用现有 Bootstrap 非秘密 YAML 承载受控策略列表，并严格转为进程内不可变 Registry；没有配置或无效时工厂固定失败。Windows 11 实际 YAML/固定计划、重复/额外 Secret 字段、不安全 URL 和不支持类型测试 PASS，后端2006运行/3跳过。没有正式 Test/Worker/Activate 装配或真实外发；P04 保持阻塞，下一项同源组合。
+
+2026-10-02 P05-A03-P04-P02 范围拆分：Windows 现有服务计划仅 Web、Audit Worker、Parser Worker；Provider Test 单次 Worker 只在隔离脚本内组合。直接公开 `:test` 会接受 Job 却没有正式消费者。按 DEC-20261002-657 拆 A01 受控策略 Test 提交工厂（不挂路由）、A02 同策略单次 Worker 工厂与安全运行边界、A03 在两者具备后装配/验收公开路由及生命周期。API-03 冻结 202 JobRef 不变，原 P04 激活路由继续关闭。失败关闭及历史 Job/结果保留；此拆分不授权真实厂商外发。
+
+2026-10-02 P05-A03-P04-P02-A01 Windows 提交组合工厂已验证，但不向生产应用注入路由；受控 Bootstrap 策略缺失时固定失败，隔离 ASGI/PG18 真管理员/License、Job/Outbox/Audit/收据与历史重放通过。后端2006运行/3跳过。仍缺 Worker 的同源/目标账户网络和安全生命周期，不能据此开启 :test 或 :activate。
