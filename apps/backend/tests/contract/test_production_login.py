@@ -509,6 +509,7 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(client.get("/api/v1/admin/secrets").status_code, 401)
             self.assertEqual(client.get("/api/v1/admin/ai/models").status_code, 401)
             self.assertEqual(client.post("/api/v1/admin/ai/models").status_code, 405)
+            self.assertEqual(client.post("/api/v1/admin/ai/models/00000000-0000-0000-0000-000000000001:set-state").status_code, 405)
             self.assertEqual(client.get("/api/v1/admin/audit-events").status_code,401)
             self.assertEqual(client.get("/api/v1/projects/00000000-0000-0000-0000-000000000001/audit-events").status_code,401)
             self.assertEqual(client.get("/api/v1/admin/secrets/" + "1" * 36).status_code, 422)
@@ -753,6 +754,7 @@ class ProductionLoginTests(unittest.TestCase):
         with TestClient(app, base_url="http://localhost") as client:
             self.assertEqual(client.post("/api/v1/admin/secrets").status_code, 403)
             self.assertEqual(client.post("/api/v1/admin/ai/models").status_code, 403)
+            self.assertEqual(client.post("/api/v1/admin/ai/models/00000000-0000-0000-0000-000000000001:set-state").status_code, 403)
             self.assertEqual(client.get("/api/v1/projects").status_code, 401)
             self.assertEqual(client.post("/api/v1/projects").status_code, 403)
             self.assertEqual(client.post("/api/v1/global/document-uploads").status_code, 403)

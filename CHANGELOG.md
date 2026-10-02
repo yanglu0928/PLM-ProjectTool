@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-02-A08-P04 将模型安全 `:set-state` 仅接 Windows 显式写平台，登录404、只读POST405；AVAILABLE 持续拒绝，无厂商外发。兼容性：无 Schema/依赖/Breaking API 变化。升级/回滚：复用0058及现有目标账户信任，撤状态路由组合可回退，历史模型/结果/Audit 保留。验证：Win11 隔离 PG18 三模式真实200暂停/退役/重放/GET、许可/权限/缺钥关闭、后端2052运行/3跳过；首轮合成夹具漏能力行引起安全GET503，补齐后通过；开发 wheel SHA-256 `494a3e3b8e53ad1667cd3920599b498e63a4abdb62b935e03a85e15a6f1c6d32`。已知问题：正式目标账户、质量 Owner/AVAILABLE、Server2025/Debian、Gate/UAT/可用包未验。
+
 - 2026-10-02：0.1.0.dev0/AI-02-A08-P03 新增可选模型 `:set-state` POST，严格强 If-Match/Session/CSRF/Origin/幂等及目标态，只允许 SUSPENDED/RETIRED，AVAILABLE 422；默认/生产组合不挂载。兼容性：复用0058，无新依赖、Breaking API 或外发。升级/回滚：无需新迁移，撤可选路由可回退，历史结果保留。验证：Win11 合同3、隔离 PG18 实际200/重放/权限/许可/版本/审计、后端2052运行/3跳过；开发 wheel SHA-256 `e61e081c1dd205ff3e7988c1ef064b743ebff6e54da76c262b52262f70d66f81`。已知问题：Windows 显式写装配、质量 Owner/AVAILABLE、正式目标账户/三平台/Gate/UAT/可用包待。
 
 - 2026-10-02：0.1.0.dev0/AI-02-A08-P02 新增 AIModel 内部 SUSPEND/RETIRE 受权状态命令，强版本/许可/当前管理员、同事务 Audit/收据/0058 不可变结果及跨后续状态的原响应重放；AVAILABLE 不接纳。兼容性：复用0058，无新依赖、公开 API 或外发。升级/回滚：先升0058；未挂内部入口可撤，有历史状态结果时保留并向前修复。验证：Win11 隔离 PG18 真实并发/权限/版本/重放/故障回滚/撤权、单元2、后端2049运行/3跳过；开发 wheel SHA-256 `5f6568b37f37447146be14a5ad65028546b84e116cf23370a68a4ad0311fa546`。已知问题：可选 HTTP/Windows 装配、正式目标账户、质量 Owner/AVAILABLE、三平台/Gate/UAT/可用包待。

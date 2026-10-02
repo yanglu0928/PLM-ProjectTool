@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261002-673 — 模型安全状态只挂 Windows 显式写平台
+
+- Date/WBS：2026-10-02 / `AI-02-A08-P04`；依据 P03 可选路由与现有 `--platform-write` 信任组合。
+- Decision：仅显式 Windows 写模式注入 Model `:set-state`，登录模式404、读平台 POST405；沿用同账户数据库/License/Session/Audit/收据，AVAILABLE 在 HTTP 与内部命令双层关闭。
+- Reason：安全停止/退役属于受控管理写操作，不能扩展只读模式或被误解为生产模型可调用。
+- Impact/Rollback：仅 Windows 组合根增加路由，无 Schema/依赖/冻结 API 或出站变化；撤装配可回退，历史状态/审计保留。
+- Verification：Win11 隔离 PG18 登录404/读模式405/写模式200、先暂停后退役及原响应重放/GET、AVAILABLE422、权限/License/缺模型游标钥关闭通过；后端2052运行/3跳过及开发wheel通过。正式目标账户及发行仍待。
+
 ## DEC-20261002-672 — Model `:set-state` 请求显式目标态且只开放安全转移
 
 - Date/WBS：2026-10-02 / `AI-02-A08-P03`；依据冻结 API-03、P02 内部命令与通用强 If-Match 合同。
