@@ -3,7 +3,9 @@ from __future__ import annotations
 import unittest
 import uuid
 from dataclasses import replace
+from datetime import datetime, timezone
 
+from plm_assistant.modules.ai.application.provider_list_cursor import ProviderListCursorCodec
 from plm_assistant.modules.ai.application.provider_metadata import (
     AIProviderMetadataError, AIProviderMetadataQuery, AIProviderMetadataService,
     AIProviderMetadataView,
@@ -37,6 +39,37 @@ class AIProviderMetadataTests(unittest.TestCase):
         self.assertEqual(view.etag, '"v7"')
         self.assertFalse(hasattr(view, "secret_ref"))
         self.assertNotIn("s" * 32, repr(self.query))
+
+    def test_list_requires_dedicated_cursor_key_and_bounded_page(self) -> None:
+        with self.assertRaises(ValueError):
+            ProviderListCursorCodec(b"short")
+        with self.assertRaises(AIProviderMetadataError) as caught:
+            self.service.list_page(self.query)
+        self.assertEqual(caught.exception.code, "AI_PROVIDER_UNAVAILABLE")
+        for size in (0, 201, True):
+            with self.subTest(size=size), self.assertRaises(AIProviderMetadataError) as caught:
+                self.service.list_page(self.query, page_size=size)
+            self.assertEqual(caught.exception.code, "VALIDATION_FAILED")
+
+    def test_cursor_binds_family_session_size_and_position(self) -> None:
+        codec = ProviderListCursorCodec(b"k" * 32)
+        position = datetime(2026, 10, 2, tzinfo=timezone.utc)
+        provider_id = uuid.uuid4()
+        token = codec.encode(session_token=b"s" * 32, page_size=2,
+                             created_at=position, provider_id=provider_id)
+        self.assertEqual(codec.decode(token, session_token=b"s" * 32, page_size=2),
+                         (position, provider_id))
+        for changed in (token[:-1] + ("A" if token[-1] != "A" else "B"), "garbage"):
+            with self.assertRaises(ValueError):
+                codec.decode(changed, session_token=b"s" * 32, page_size=2)
+        with self.assertRaises(ValueError):
+            codec.decode(token, session_token=b"x" * 32, page_size=2)
+        with self.assertRaises(ValueError):
+            codec.decode(token, session_token=b"s" * 32, page_size=3)
+        with self.assertRaises(ValueError):
+            ProviderListCursorCodec(b"z" * 32).decode(
+                token, session_token=b"s" * 32, page_size=2,
+            )
 
 
 if __name__ == "__main__":

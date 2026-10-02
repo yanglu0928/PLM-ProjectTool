@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import select
+from datetime import datetime
 
-from plm_assistant.modules.ai.application.provider_metadata import AIProviderMetadataView
+from sqlalchemy import select, tuple_
+
+from plm_assistant.modules.ai.application.provider_metadata import AIProviderMetadataEntry, AIProviderMetadataView
 from plm_assistant.modules.ai.domain.provider_configuration import ProviderCapability, ProviderKind
 from plm_assistant.modules.ai.infrastructure.provider_create_repository import _session
 from plm_assistant.modules.ai.infrastructure.provider_orm import AIProviderConfigVersionRow, AIProviderRow
@@ -27,6 +29,7 @@ _DETAIL_FIELDS = (
     AIProviderRow.provider_state,
     AIProviderConfigVersionRow.config_version_no,
     AIProviderRow.lock_version,
+    AIProviderRow.created_at,
 )
 
 
@@ -67,3 +70,27 @@ class SqlAlchemyAIProviderMetadataRepository:
             .execution_options(autoflush=False)
         ).one_or_none()
         return _view(row) if row is not None else None
+
+    def list_page(self, transaction: object, *, after: tuple[datetime, uuid.UUID] | None,
+                  limit: int) -> list[AIProviderMetadataEntry]:
+        if (type(limit) is not int or not 1 <= limit <= 201
+                or (after is not None and (
+                    type(after) is not tuple or len(after) != 2
+                    or not isinstance(after[0], datetime) or after[0].tzinfo is None
+                    or after[0].utcoffset() is None
+                    or type(after[1]) is not uuid.UUID or after[1].int == 0))):
+            raise ValueError("invalid Provider list page")
+        statement = select(*_DETAIL_FIELDS).select_from(AIProviderRow).join(
+            AIProviderConfigVersionRow,
+            (AIProviderRow.current_config_version_ref
+             == AIProviderConfigVersionRow.provider_config_version_id)
+            & (AIProviderRow.ai_provider_id == AIProviderConfigVersionRow.ai_provider_id),
+        )
+        if after is not None:
+            statement = statement.where(tuple_(
+                AIProviderRow.created_at, AIProviderRow.ai_provider_id,
+            ) < after)
+        rows = _session(transaction).execute(statement.order_by(
+            AIProviderRow.created_at.desc(), AIProviderRow.ai_provider_id.desc(),
+        ).limit(limit).execution_options(autoflush=False)).all()
+        return [AIProviderMetadataEntry(row.created_at, _view(row)) for row in rows]

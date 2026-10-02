@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-627 — Provider 列表使用专用签名游标
+
+- Date/WBS：2026-10-02 / `AI-01-A04-P02`；输入冻结 API-01 列表游标规则、API-03 `AI_PROVIDER_LIST`、DM-04 与 P01 安全投影。
+- Decision：内部列表按不可变 `(created_at, provider_id)` 降序 keyset，最大页长 200；游标使用独立 32 字节密钥签名，绑定家族、当前 Session 摘要、页长与位置，每页重验当前管理员/License。复用 P01 显式安全列投影，不 SELECT Secret 密文；正式目标账户密钥供给与 HTTP 装配分别验收。
+- Reason/Impact/Rollback：避免 offset 漂移、跨会话/跨资源游标误用及共享签名密钥。无 Schema/API/依赖变化；不装配列表入口即可回退，既有 Provider 历史不变。
+
 ## DEC-20261002-626 — Provider 安全读取拆分详情与列表
 
 - Date/WBS：2026-10-02 / `AI-01-A04-P01`；输入冻结 API-03 `AI_PROVIDER_GET/LIST`、DM-04、现有0054与管理员只读 Session Port。
