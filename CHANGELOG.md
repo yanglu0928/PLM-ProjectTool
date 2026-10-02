@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A03-P04-P02-A03-P04 公开 Provider Test/Activate 路由前置复核维持 `PRECONDITION_BLOCKED`，当前组合不开放路由、不入队或外发。兼容性：无代码、Schema、API、依赖变化。升级/回滚：无需操作；A03 真实 Worker/同源信任验收后再显式装配。验证：静态组合核查、四服务原生只读盘点均未安装。已知问题：真实目标账户、正式外发、Gate/UAT/可用包待验。
+
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A03-P04-P02-A03-P03-A03 Windows11 真实 SCM 验收前置审查记录为 `PRECONDITION_BLOCKED`，未安装/启动服务或外发。兼容性：无代码、Schema、API、依赖变化。升级/回滚：无需操作；目标账户材料及受控管理员会话就绪后重做实机验收。验证：当前 Medium Integrity、管理员 deny-only，四服务原生只读盘点均未安装。已知问题：目标账户 Vault/License/ACL/CA、真实服务启停/静止、Server2025/Debian、Gate/UAT/可用包仍待。
 
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A03-P04-P02-A03-P03-A02 依据 CR-AI-003 增加独立 Windows AI Provider Worker 固定服务角色、进程标记、宿主 STOP 排空与条件性计划/安装/盘点/对账；无受控策略时保留原三角色命令并拒绝 AI 安装。兼容性：无 Schema、公开 API 或新依赖，旧部署不自动增加服务。升级：目标账户材料/受控策略齐备后方可单独安装第四服务；回滚前若已投产须先停新任务并对账 Job/Audit，不能自动删除。验证：Win11 定向模拟、后端2032运行/3跳过、只读本机盘点四服务未安装、开发 wheel SHA-256 `daf5c7ceae5e3925d4986bf0ef0e9440732e6e2576aa8599975373c67fd57aee`。已知问题：真实 SCM/目标账户/长 I/O 静止、正式外发、Server2025/Debian、Gate/UAT/可用包未验。
