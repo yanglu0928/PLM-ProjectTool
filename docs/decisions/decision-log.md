@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261002-664 — AIModel 语义身份与能力声明分离且不可原地改写
+
+- Date/WBS：2026-10-02 / `AI-02-A01`；依据冻结 DM-04、SC-01 `ai_models`/两个子表、API-03 模型语义身份与 RAG 重建规则。
+- Decision：模型主表固定 Provider、受控 key、kind、revision、Embedding dimension，初态 `SUSPENDED`；能力声明与质量证明引用分别放 `ai_model_capabilities`、`ai_quality_profile_refs`，均为只增不可改历史。主表只允许后续任务受权改变 state/lock，语义字段不可原地更新；当前不开放 API/模型调用。
+- Reason：避免 Embedding 维度或模型修订原地变化后复用既有向量；Provider 可用或配置存在均不证明模型质量与外发授权。初态暂停防止未测试模型被路由。
+- Impact/Rollback：普通增量 Schema/ORM/Migration，复用既有 PostgreSQL 18/SQLAlchemy/Alembic，无公开 API/依赖变更；空表可降级，有模型历史时拒绝物理降级。版本/能力变化创建新模型身份并由后续受权命令处理；不可复制旧质量证明。
+- Verification：隔离 PostgreSQL 18.6 空库 up/down/re-up、有 Provider 历史升级、非法维度/重复语义/跨 Provider/历史修改拒绝、ORM 漂移 0 已通过；后端全量结果见本项进度记录。Gate 3/真实模型调用仍未验证。
+
 ## DEC-20261002-663 — 第四服务命令只在受控策略有效时列入计划
 
 - Date/WBS：2026-10-02 / `AI-01-A05-P05-A03-P04-P02-A03-P03-A02`；依据 CR-AI-003、ADR-013、现有三角色 `PLAN_ONLY` 合同。
