@@ -6803,3 +6803,10 @@
 - Reason：同 Key 重放可能发生于后续暂停/改版之后，当前行不能代表首次响应。最小状态投影符合冻结的 `200 ACTIVE`，且不泄露配置/Secret。
 - Impact/Rollback：仅 AI API、应用可选路由、合同测试和增量文档；无 Schema、依赖、生产挂载或外发。移除可选路由可回退，历史激活/Audit/收据保留。
 - Verification：合同4项；Win11 隔离 ASGI/PG18 许可拒绝、激活/Audit、暂停后原结果重放及新 Key 版本冲突 PASS；后端2001运行/3跳过、开发 wheel 通过。生产组合、正式信任与 Gate 3 未验。
+# DEC-20261002-674：Prompt Schema 活动指针与不可变历史设计
+
+- Date/WBS：2026-10-02 / `AI-03-A01`；依据冻结 DM AI-03、SC-01/02 与 API-03。
+- Decision：Prompt 根/子表分离，以同模板复合 FK 管理活动版本；版本号在根行锁下单调分配，子版本历史由数据库拒绝原地更改/删除；非空降级拒绝。Schema 前置设计先固定验收矩阵，ORM/Migration 留给 `AI-03-A02`。
+- Reason：防止跨模板激活、并发重号和历史 Invocation 无法解释；不将正文/Secret 放普通日志，也不把数据库约束误认为语义安全审查。
+- Impact/Rollback：本项仅设计文档，无数据库/API/依赖变更，可由后续可追溯设计修订回退；后续迁移只能对空表降级，保留历史。
+- Verification：冻结文档、迁移头和现有 AI ORM 静态核对；运行迁移/测试留待 A02，不标通过。
