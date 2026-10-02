@@ -7116,3 +7116,11 @@
 - Reason：Preview本身只追加且没有可变lock_version，不能丢弃冻结合同的M控制，也不能用普通整数ETag替代完整内容指纹；双重条件兼顾统一HTTP并发合同和授权精确性。
 - Impact/Rollback：无Schema/依赖/Breaking API变化；撤去可选Router注入即恢复404，既有Preview/Authorization历史不删除。未装入生产组合且不执行外发。
 - Verification：合同5项覆盖默认关闭、四路径、安全投影/严格输入/权限前置/错误映射；后端2130运行/3跳过，wheel `e83a9586fe28193ccd4ca201e5665525e6c534bad0ec4f1c9afd1973e6209bd9`。
+
+# DEC-20261003-713：Egress Windows 组合要求显式策略并分流读写 Session
+
+- Date/WBS：2026-10-03 / `AI-04-A04-P08`；依据 CR-AI-013、冻结 EGRESS 控制标记。
+- Decision：组合工厂不读取隐式默认策略，调用方必须同时注入Preview Policy与Approval Policy；GET使用无CSRF的项目读Session验证，三项写操作使用项目写Session+CSRF验证。当前生产组合在正式策略来源实现前继续不挂路由。
+- Reason：一个仅支持CSRF的写适配器无法实现冻结GET合同；而把测试许可策略硬编码为生产默认会绕过逐次外发治理。显式依赖使缺项直接启动失败，读写分流保持各自锁和CSRF语义。
+- Impact/Rollback：新增Auth适配器和Windows组合工厂，无Schema/依赖/Breaking API；停止调用工厂即回退，历史记录不变。P08还修复幂等HTTP投影不得要求首次业务trace等于当前请求trace。
+- Verification：Win11/PG18.6真实Session/Project/Document Owner及六类Egress记录、三Audit/三Receipt链路，重放/隔离/撤销/许可拒绝PASS；合同5、后端2130运行/3跳过；wheel `d1533684503661409b357c5a567091bd01acab693b4da4b0f2645e75f2fff093`。

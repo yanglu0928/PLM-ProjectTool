@@ -419,7 +419,6 @@ def create_ai_egress_router(*, sessions: SessionService, previews: EgressPreview
         except Exception:
             raise ApplicationError("SYSTEM_UNAVAILABLE") from None
         if (type(result) is not EgressAuthorizeResult
-                or result.trace_id != uuid.UUID(request.state.trace_id)
                 or result.authorization.project_id != project_id
                 or result.authorization.preview_id != preview_id):
             raise ApplicationError("SYSTEM_UNAVAILABLE")
@@ -465,7 +464,6 @@ def create_ai_egress_router(*, sessions: SessionService, previews: EgressPreview
             raise ApplicationError("SYSTEM_UNAVAILABLE") from None
         if (type(result) is not EgressRevokeResult
                 or result.authorization_id != authorization_id
-                or result.trace_id != uuid.UUID(request.state.trace_id)
                 or result.state != "REVOKED" or result.lock_version != 1):
             raise ApplicationError("SYSTEM_UNAVAILABLE")
         etag = f'"v{result.lock_version}"'

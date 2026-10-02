@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A04-P08 新增关闭默认入口的Windows Egress组合工厂与读写Session分流适配器；Win11/PG18.6贯通真实Session/Project/Document Owner、Preview/Authorize/Revoke、Audit/Receipt和历史重放，并修复首次业务trace与重放请求trace误比较导致的503。兼容性：复用0068/0069，无新Schema/依赖/Breaking API；正式生产组合仍不挂载。升级/回滚：先受控升0069并提供正式Preview/Approval策略与信任后才可装配；停止调用工厂即可回退，历史保留。验证：P07合同5、P08隔离脚本、后端2130运行/3跳过PASS；开发wheel SHA-256 `d1533684503661409b357c5a567091bd01acab693b4da4b0f2645e75f2fff093`。已知问题：正式策略来源/生产挂载、Server2025/Debian、真实外发、Gate3/UAT/可用包待完成。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A04-P07 新增可选 Egress Preview创建/读取、Authorize、Revoke HTTP合同；严格Origin/Session/CSRF/幂等/强ETag、JSON/UUID/指纹/UTC校验和安全元数据投影，默认及当前生产组合四路径404。兼容性：复用0068/0069及既有服务，无新Schema/依赖/Breaking API，仅Win11合同验证。升级/回滚：先受控升0069并完成正式策略/信任组合后才可显式装配；撤Router恢复404，历史保留。验证：合同5、后端2130运行/3跳过PASS；开发wheel SHA-256 `e83a9586fe28193ccd4ca201e5665525e6c534bad0ec4f1c9afd1973e6209bd9`。已知问题：真实PG HTTP组合、Windows生产装配、Server2025/Debian、真实外发、Gate3/UAT/可用包待完成。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A04-P06 新增EgressAuthorization Owner当前有效投影与AITask接入；锁定根并验证AUTHORIZED@0、Project/operation/有效期/Source集合、受信Task→Purpose及当前Provider/Config/Model路由，规范化完整授权指纹后才生成Task快照。兼容性：复用0067，无新Schema/依赖/Breaking API，仅Win11验证。升级/回滚：需先受控升至0069；未挂公开入口，停止组合即可回退，已建Task历史保留。验证：定向14、PG18.6真实Purpose/Source/过期/撤销/Project拒绝、Task七类原子链/重放、后端2125运行/3跳过PASS；开发wheel SHA-256 `ad6e4a017f425c8a58bf6fc1643add7bf2a70c87998869548ae9a360f5ce687c`。夹具时钟与Job表名问题已修正并完整重跑。已知问题：Purpose正式配置/Worker发送前重验、HTTP/生产组合/真实外发、Gate3/UAT/可用包待完成。

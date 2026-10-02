@@ -76,7 +76,7 @@ class Authorizations:
         self.authorize_command, self.key = command, idempotency_key
         if self.failure:
             raise EgressAuthorizationError(self.failure)
-        return EgressAuthorizeResult(uuid.uuid4(), self.view, uuid.uuid4(), command.trace_id)
+        return EgressAuthorizeResult(uuid.uuid4(), self.view, uuid.uuid4(), uuid.uuid4())
 
     def revoke(self, command: RevokeEgress, *, idempotency_key: str) -> EgressRevokeResult:
         self.revoke_command, self.key = command, idempotency_key
@@ -84,7 +84,7 @@ class Authorizations:
             raise EgressAuthorizationError(self.failure)
         return EgressRevokeResult(
             uuid.uuid4(), command.authorization_id, uuid.uuid4(), uuid.uuid4(),
-            "ProjectManager", uuid.uuid4(), command.trace_id, "REVOKED", 1, NOW,
+            "ProjectManager", uuid.uuid4(), uuid.uuid4(), "REVOKED", 1, NOW,
         )
 
 

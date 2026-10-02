@@ -1,6 +1,6 @@
 # CR-AI-013：Egress Preview/Authorization 正式授权聚合
 
-日期：2026-10-03；状态：依 V1.1 持续授权登记，0068～0069、内部服务、Task Owner及可选HTTP合同已实施，真实数据库HTTP组合与生产组合等切片待继续；关联冻结 API-03 `EGRESS_PREVIEW_CREATE/GET/AUTHORIZE/REVOKE`、DM-04、SC-01/02、CR-AI-011/012；原 Gate 2 冻结提交 `64cdf09` 不改。WBS `AI-04-A04-P01～P07`。
+日期：2026-10-03；状态：依 V1.1 持续授权登记，0068～0069、内部服务、Task Owner、可选HTTP及Windows 11隔离数据库组合已实施；正式部署策略来源与生产挂载待继续；关联冻结 API-03 `EGRESS_PREVIEW_CREATE/GET/AUTHORIZE/REVOKE`、DM-04、SC-01/02、CR-AI-011/012；原 Gate 2 冻结提交 `64cdf09` 不改。WBS `AI-04-A04-P01～P08`。
 
 缺口与证据：冻结 API 要求每个逻辑外发操作先生成不发送数据的 EgressPreview，再由 ProjectManager/CustomerManager 且满足部署策略的主体显式授权，并支持撤销。当前仓库只有 AITask 内不可变消费快照，无 Preview/Authorization 权威根、来源明细、批准或撤销历史、首次幂等结果。SC-01 的 AI-04 物理映射也仅列 Task/Invocation owned tables。消费快照不能反向冒充批准来源。
 
@@ -25,3 +25,5 @@ P05结果：已实现 Project Authorize/Revoke 内部服务及仓储，强制Pro
 P06结果：已实现锁定当前Authorization、Provider/Config/Model路由与受信Task→Purpose的Owner投影，并正式满足AITask已有Port。撤销、过期、SourceRef指纹或Project不一致的新Task失败关闭；同Key已完成Task仅重放原Task/Job。Win11/PG18.6真实Task七类原子链与上述负例PASS，定向14、后端2125运行/3跳过PASS，wheel SHA-256 `ad6e4a017f425c8a58bf6fc1643add7bf2a70c87998869548ae9a360f5ce687c`。首轮合成时钟、次轮Job表名夹具问题已修正并完整重跑；无新Schema、HTTP或外发。
 
 P07结果：已实现四条冻结路径的单一可选HTTP Router，严格执行Session/License应用链、Origin/CSRF/幂等/强ETag、精确JSON与安全投影；Authorize以`If-Match: "v0"`绑定不可变Preview版本，并以正文Preview指纹绑定具体内容，Revoke只接受Authorization v0。默认应用与当前生产组合四路径均404。合同5、后端2130运行/3跳过、wheel SHA-256 `e83a9586fe28193ccd4ca201e5665525e6c534bad0ec4f1c9afd1973e6209bd9` PASS；无Schema、依赖、真实PG HTTP组合或外发。
+
+P08结果：新增只有完整显式依赖才可构造的Windows Egress组合工厂和读/写Session分流适配器；当前生产组合仍未挂载。Win11/PG18.6真实Session、Project角色、DocumentVersion Owner、Preview/Authorization/Audit/Receipt HTTP链及重放/隔离/撤销/License拒绝PASS。首轮发现P07将首次结果trace与当前重放trace错误比较导致503，移除该非业务等值要求并补合同后完整重跑。后端2130运行/3跳过、wheel SHA-256 `d1533684503661409b357c5a567091bd01acab693b4da4b0f2645e75f2fff093` PASS；信任/策略为合成注入，无外发。
