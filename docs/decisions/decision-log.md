@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261002-658 — Provider 探针密钥访问以受权快照绑定独立审计事务
+
+- Date/WBS：2026-10-02 / `AI-01-A05-P05-A03-P04-P02-A02-P01`；输入 CR-AI-002、`SecretResolver` 审计 Port、ADR-007 SystemActor/原 actor/trace 继承及 Audit 事件约束。
+- Decision：新增仅供探针 Worker 的上下文绑定 Secret 访问审计适配器。调用方须用已重验的 `ProviderTestPreflightSnapshot` 限定 Job/SecretRef/SecretVersion/原用户/trace；`record_access` 严格匹配当前作用域和 `AI_PROVIDER_ADAPTER`，在独立短事务写 `SYSTEM`、原用户、Secret 版本目标的 append-only Audit 并提交，成功返回后才允许 `SecretResolver` 交付明文。缺上下文/身份/数据库/审计均拒绝；不使用 no-op 或猜测主体。
+- Reason：SecretResolver 现有 Port 不携带 Job 身份，直接写无主体事件会丢失因果关系。作用域快照是已有受权事实，ContextVar 仅在同步 Worker 调用栈内绑定并复位，不能从请求或全局默认值构造。
+- Impact/Rollback：增加内部适配器与测试，不改 Schema/公开 API/技术栈或默认 Worker 装配；撤未装配适配器即可回退，已写 Audit 保留。调用方在正式 Worker 装配任务中接入作用域并重新验收。
+- Verification：Win11 定向3项、隔离 PG18 SYSTEM/原用户/SecretVersion/trace 审计落库、故障清零拒绝 PASS；后端2009运行/3跳过、开发 wheel 通过。不以适配器存在宣称真实外发或 Worker/Gate 通过。
+
 ## DEC-20261002-657 — Provider Test API/Worker 同源装配分三步验收
 
 - Date/WBS：2026-10-02 / `AI-01-A05-P05-A03-P04-P02`；输入 CR-AI-002、P04-P01 部署策略、已有单次 Worker 与 Windows 服务计划。

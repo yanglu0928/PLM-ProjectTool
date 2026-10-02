@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A03-P04-P02-A02-P01 新增 Provider 探针 Secret 访问审计适配器，以受权 Job 快照绑定 SYSTEM/原用户/SecretVersion/trace，审计先于明文交付且失败关闭。兼容性：内部未装配，无 Schema/API/依赖变化。升级：无需迁移；撤适配器可回退，既有 Audit 事件保留。验证：Win11 定向3、隔离 PG18 审计落库/故障清零拒绝、后端2009运行/3跳过，开发 wheel SHA-256 `a27c9505aaab37ed62546cc9adfa873253ebb90a12f98f68de981477344611af`。已知问题：Runner/Windows Worker 未接入；正式 Vault/目标账户/出站、三平台/Gate/UAT/可用包未验。
+
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A03-P04-P02-A02 前置核查确定正式 Worker 缺 Secret 访问审计适配器；按 CR-AI-002 拆 A02-P01，Worker 与 Test 公开路由保持关闭。兼容性/升级：仅文档和排期记录，无程序/Schema/API/依赖变化。验证：静态核对 `SecretResolver` Port、隔离 Worker 夹具及 Audit 主体要求，未运行新业务测试。已知问题：正式访问审计/Worker 同源组合、真实外发和发行 Gate 待完成。
 
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A03-P04-P02-A01 新增 Windows Provider Test 提交组合工厂，复用受控策略、Session/License/Secret 证明及真实 Job/Outbox/Audit/收据；暂不挂公开路由。兼容性：默认及当前 Windows 入口仍 404；无 Schema、依赖或 Breaking API。升级：无需新迁移；撤工厂可回退，历史 Job 保留。验证：Win11 隔离 ASGI/PG18 默认关闭、缺策略/许可拒绝、202 与同 Key 重放 PASS；后端2006运行/3跳过，开发 wheel SHA-256 `6414171596dd60e3c6b4fb2f112b95141da7209c2fdc029f19585579c4419f0e`。已知问题：Worker/生命周期、路由挂载、正式信任/出站、三平台/Gate/UAT/可用包仍待。
