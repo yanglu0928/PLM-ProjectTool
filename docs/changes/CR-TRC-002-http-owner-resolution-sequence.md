@@ -22,3 +22,5 @@
 2026-10-02 检查点：内部单跳/有界多跳及合成密钥游标已分别在 `TRC-01-A06-P01/P02` 验证；`P03-P01` 增加 Windows 当前账户独立 Trace 图游标 KeyRef 只读来源并以**临时测试引用**验证备份恢复。正式目标账户密钥未供给；业务 Owner 仍仅有 `document/DOC-02`，冻结三字段引用的通用 Scope/Project 解析未齐，故本 CR 的公开 HTTP 时序阻塞不变，不宣称 Gate/发行通过。
 
 2026-10-02 `TRC-01-A06-P03-P02` 复核：API-02 的图 GET 与创建 POST 共用三字段 `ResourceVersionRef`，图 GET 的路径 ProjectId 也不能替代根资源真实 Scope。代码注册仅 `document/DOC-02` 固定版本证明；Capability/Handover/Survey/Requirement/Prototype/Solution/Plan/Output 没有可用的正式 Owner 解析。保持通用图 GET、创建 POST 关闭，P02 状态为 `PRECONDITION_BLOCKED`。按方案 B 将真实 Owner 解析逐个拆出，先实施 Document 的内部固定版本解析，不以单一 Owner 完成冒充通用 HTTP 验收。无冻结合同或历史数据变更；回滚为不装配新增内部解析 Port。
+
+2026-10-02 `TRC-01-A09-P01` 复核：A08-P04 已有内部 DOC-02 三字段 Resolver，但创建 Service 仍接收已解析边且在收据前证明端点。方案 B 的通用 HTTP 时序未改变；先做内部创建事务内解析、显式 License 与历史安全重放，不以单一 Owner 开放正式 POST。无本项 Schema/API 改动或新测试 PASS，详见 `docs/progress/trc-01-a09-p01-create-ref-precheck.md`。

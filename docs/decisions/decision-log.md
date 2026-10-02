@@ -6431,3 +6431,11 @@
 - Reason：冻结结果为replacement，替代边是新资源，旧边由数据库一次终态v1；新资源ETag不能误标旧边v1。最小投影避免以HTTP暴露未复验的端点内容。
 - Impact/Rollback：仅可选Trace Router/应用工厂参数，无Schema/Migration/依赖变化；不注入即关闭，历史已替换状态不反写。正式装配及关系Owner另验。
 - Verification Plan/Result：合同3覆盖201/新ETag/输入安全/默认404；Windows11隔离PG18真实ASGI/Session的PM、非经理、许可、版本、同Key重放与单替换收据PASS，后端1900运行/3跳过，开发wheel SHA-256 `4442f5503acecfaf616147ed3772fe7c59e3789696d0e46c623162b4dccf1fc1`。正式信任/三平台/Gate不判PASS。
+
+# DEC-20261002-620：Trace 创建的原始引用与历史收据先于端点新证明
+
+- Date/WBS：2026-10-02 / `TRC-01-A09-P01`；输入冻结 API-02、CR-TRC-002、内部创建 A05-P02 与三字段 Resolver A08-P04。
+- Decision：通用创建 HTTP 继续关闭；P02 内部入口先当前 License/Session/CSRF/Project，再按原始三字段/关系预留持久收据。历史同 Key 只在当前授权与结果归属重验后返回原 LinkId，不要求失效端点重新可读；首次写入才同事务 Owner 解析/证明、验环、去重创建和 Audit。已解析内部命令保留并遵守相同重放顺序。
+- Reason：客户端 Scope/Owner 不是冻结输入，独立预解析会失去提交时的受锁证明；当前收据前端点证明使未知结果重试在来源失效后不可恢复，移动顺序又要求显式 License 避免历史路径绕过。
+- Impact/Rollback：P01 仅记录设计，无代码/API/Schema/数据修改。P02 仅内部 Trace/许可 Port 调整，不装配新入口即可停止；旧收据及关系历史保留。其他 Owner 与正式 HTTP 按 CR-TRC-002 后续验收。
+- Verification Plan：P02 单元与隔离 PG18 首次/同Key端点变受限后重放、过期 License/撤权/跨项目拒绝、异载荷冲突、并发去重与 Audit 失败回滚；后端回归与 wheel。P01 仅静态核查，未运行新业务测试。
