@@ -7132,3 +7132,11 @@
 - Reason：Provider探针策略含endpoint且不表达逐次外发边界，不能复用；将测试放行策略写死在生产组合会绕过部署治理。显式策略快照可审查、可重启回滚且不泄露客户数据。
 - Impact/Rollback：无Schema/依赖/Breaking API；受控修改Bootstrap并重启启用，移除配置并重启恢复404，既有不可变授权历史保留。
 - Verification：单元6、生产组合合同32、Win11/PG18.6 Bootstrap策略真实Egress链、后端2136运行/3跳过PASS；wheel `7eeafd306f5d45efd283fdc3c1d9919090afa585ece13f4737bf99d1be6cfe5e`。
+
+# DEC-20261003-715：AI Task提交必须锁定Prompt版本并使用分型最小参数
+
+- Date/WBS：2026-10-03 / `AI-04-A05-P01`；依据冻结 API-03/DM-04与 CR-AI-014。
+- Decision：不直接对现有三个字符串策略引用开放HTTP。先用0070固定PromptTemplate/PromptVersion和受Task Policy分型约束的最小参数及其SHA-256；新Task必须完整，旧NULL历史不回填且不可执行。
+- Reason：Worker时再解析活动Prompt会使提交与执行版本漂移；任意JSON参数则可以绕过InputRef/Egress治理传递客户正文。
+- Impact/Rollback：需CR-AI-014/Schema0070增量修订，原0063～0069和冻结提交保留；空新历史可降级，有新Task拒绝降级。本项仅记录，尚未实施Schema/API。
+- Verification：静态对照冻结合同、AITask服务/ORM/Repository、Prompt和Egress Owner；未运行新测试。
