@@ -30,6 +30,7 @@ from plm_assistant.modules.jobs.infrastructure import orm as jobs_orm  # noqa: F
 from plm_assistant.modules.platform.infrastructure import maintenance_orm  # noqa: F401
 from plm_assistant.modules.ai.infrastructure import provider_orm  # noqa: F401
 from plm_assistant.modules.ai.infrastructure import model_orm  # noqa: F401
+from plm_assistant.modules.ai.infrastructure import prompt_orm  # noqa: F401
 
 
 class OrmMetadataTests(unittest.TestCase):
@@ -50,7 +51,7 @@ class OrmMetadataTests(unittest.TestCase):
         self.assertIn('plm.auth_password_change_results', Base.metadata.tables)
         self.assertIn('plm.auth_password_reset_results', Base.metadata.tables)
         # Keep the historical inventory assertion independent of the new Auth history.
-        historical_metadata = set(Base.metadata.tables) - {'plm.auth_user_create_results','plm.auth_user_state_results','plm.auth_password_change_results','plm.auth_password_reset_results', 'plm.job_parse_cancel_versions', 'plm.plt_maintenance_state', 'plm.ai_providers', 'plm.ai_provider_config_versions', 'plm.ai_provider_probe_results', 'plm.ai_provider_activation_results', 'plm.ai_models', 'plm.ai_model_capabilities', 'plm.ai_quality_profile_refs', 'plm.ai_model_state_results'}
+        historical_metadata = set(Base.metadata.tables) - {'plm.auth_user_create_results','plm.auth_user_state_results','plm.auth_password_change_results','plm.auth_password_reset_results', 'plm.job_parse_cancel_versions', 'plm.plt_maintenance_state', 'plm.ai_providers', 'plm.ai_provider_config_versions', 'plm.ai_provider_probe_results', 'plm.ai_provider_activation_results', 'plm.ai_models', 'plm.ai_model_capabilities', 'plm.ai_quality_profile_refs', 'plm.ai_model_state_results', 'plm.ai_prompt_templates', 'plm.ai_prompt_versions'}
         self.assertIn('plm.ai_providers', Base.metadata.tables)
         self.assertIn('plm.ai_provider_config_versions', Base.metadata.tables)
         self.assertIn('plm.ai_provider_probe_results', Base.metadata.tables)
@@ -59,6 +60,8 @@ class OrmMetadataTests(unittest.TestCase):
         self.assertIn('plm.ai_model_capabilities', Base.metadata.tables)
         self.assertIn('plm.ai_quality_profile_refs', Base.metadata.tables)
         self.assertIn('plm.ai_model_state_results', Base.metadata.tables)
+        self.assertIn('plm.ai_prompt_templates', Base.metadata.tables)
+        self.assertIn('plm.ai_prompt_versions', Base.metadata.tables)
         self.assertIn('plm.job_parse_cancel_versions', Base.metadata.tables)
         self.assertIn('plm.plt_maintenance_state', Base.metadata.tables)
         for table in (export_orm.exports, export_orm.members, export_orm.captures, export_orm.acceptances):
