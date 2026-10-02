@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261002-672 — Model `:set-state` 请求显式目标态且只开放安全转移
+
+- Date/WBS：2026-10-02 / `AI-02-A08-P03`；依据冻结 API-03、P02 内部命令与通用强 If-Match 合同。
+- Decision：可选 POST 严格接收 `{"state":"SUSPENDED"}` 或 `{"state":"RETIRED"}`，映射内部 SUSPEND/RETIRE；强 If-Match、Origin/CSRF、幂等键必填，正文有界且禁止额外/重复字段。AVAILABLE 返回受控验证错误，默认/生产组合不挂载。
+- Reason：冻结路径承载目标态，但当前真实 Provider/质量前置不足，不允许把已定义的 AVAILABLE 当成当前可执行能力。
+- Impact/Rollback：只增 AI 可选 HTTP 和 `create_app` 注入，无 Schema/依赖/出站或 Breaking API 变化；撤注入可回退，历史结果保留。
+- Verification：合同3项、Win11 隔离 PG18 真实200/历史重放/版本/权限/许可/审计与 AVAILABLE 拒绝、后端2052运行/3跳过、开发wheel通过；正式 Windows 装配由 P04 验证。
+
 ## DEC-20261002-671 — Model 安全状态命令按操作分离幂等域
 
 - Date/WBS：2026-10-02 / `AI-02-A08-P02`；依据 CR-AI-004/005、Schema0058、现有 Provider 激活与通用收据模式。

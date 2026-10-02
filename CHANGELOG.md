@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-02-A08-P03 新增可选模型 `:set-state` POST，严格强 If-Match/Session/CSRF/Origin/幂等及目标态，只允许 SUSPENDED/RETIRED，AVAILABLE 422；默认/生产组合不挂载。兼容性：复用0058，无新依赖、Breaking API 或外发。升级/回滚：无需新迁移，撤可选路由可回退，历史结果保留。验证：Win11 合同3、隔离 PG18 实际200/重放/权限/许可/版本/审计、后端2052运行/3跳过；开发 wheel SHA-256 `e61e081c1dd205ff3e7988c1ef064b743ebff6e54da76c262b52262f70d66f81`。已知问题：Windows 显式写装配、质量 Owner/AVAILABLE、正式目标账户/三平台/Gate/UAT/可用包待。
+
 - 2026-10-02：0.1.0.dev0/AI-02-A08-P02 新增 AIModel 内部 SUSPEND/RETIRE 受权状态命令，强版本/许可/当前管理员、同事务 Audit/收据/0058 不可变结果及跨后续状态的原响应重放；AVAILABLE 不接纳。兼容性：复用0058，无新依赖、公开 API 或外发。升级/回滚：先升0058；未挂内部入口可撤，有历史状态结果时保留并向前修复。验证：Win11 隔离 PG18 真实并发/权限/版本/重放/故障回滚/撤权、单元2、后端2049运行/3跳过；开发 wheel SHA-256 `5f6568b37f37447146be14a5ad65028546b84e116cf23370a68a4ad0311fa546`。已知问题：可选 HTTP/Windows 装配、正式目标账户、质量 Owner/AVAILABLE、三平台/Gate/UAT/可用包待。
 
 - 2026-10-02：0.1.0.dev0/AI-02-A08-P01 依据 CR-AI-005 新增 AIModel 安全状态首次结果 ORM 与 Migration `20261002_0058`，仅允许 SUSPEND/RETIRE 快照，版本/Audit 关联及历史保护；不开放 AVAILABLE。兼容性：0057 后增量表，无依赖/公开 API/出站变化。升级/回滚：备份后升0058；空结果表可降0057，有历史拒绝物理降级、保留数据向前修复。验证：Win11 隔离 PG18 空/有数据升级、空表down/re-up、非法状态/版本、历史保护、ORM漂移0；后端2047运行/3跳过，开发 wheel SHA-256 `54efb04e2ec13ba60f1a501b33205a928163906cccaec89c2791e6980c5aecdf`。已知问题：内部状态命令/HTTP/平台组合、正式生产迁移/目标账户、质量 Owner/AVAILABLE、三平台/Gate/UAT/可用包待。

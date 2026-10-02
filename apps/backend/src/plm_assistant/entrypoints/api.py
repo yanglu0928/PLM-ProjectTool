@@ -48,6 +48,7 @@ def create_app(
     ai_provider_read_router: APIRouter | None = None,
     ai_model_read_router: APIRouter | None = None,
     ai_model_create_router: APIRouter | None = None,
+    ai_model_state_router: APIRouter | None = None,
     ai_provider_create_router: APIRouter | None = None,
     ai_provider_patch_router: APIRouter | None = None,
     ai_provider_test_router: APIRouter | None = None,
@@ -166,6 +167,8 @@ def create_app(
         app.include_router(ai_model_read_router)
     if ai_model_create_router is not None:
         app.include_router(ai_model_create_router)
+    if ai_model_state_router is not None:
+        app.include_router(ai_model_state_router)
     if ai_provider_create_router is not None:
         app.include_router(ai_provider_create_router)
     if ai_provider_patch_router is not None:
