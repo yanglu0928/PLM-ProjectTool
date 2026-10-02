@@ -6977,3 +6977,11 @@
 - Reason：避免把安全退役后的历史版本误标为仍可调用，并防止普通管理列表泄露模板正文或跨会话游标复用。
 - Impact/Rollback：无 Schema/API/依赖变化；内部服务可停止装配，数据库不变。
 - Verification：单元4、Win11隔离PG18三状态/分页/安全投影、后端2094运行/3跳过、开发wheel通过；公开HTTP和正式账户未验。
+
+# DEC-20261002-696：Prompt 只读 HTTP 保持显式注入
+
+- Date/WBS：2026-10-02 / `AI-03-A07-P03`；依据冻结 `AI_PROMPT_LIST/GET`、DEC-695。
+- Decision：新增可选 LIST/GET Router，由组合根显式注入；默认应用与当前生产组合仍404。采用 Session/可信 Host/License、独立游标、最小元数据与详情强 ETag，不开放模板正文读取。
+- Reason：先验证冻结接口的权限与投影，避免在缺正式游标签名密钥和发行信任时静默开放生产入口。
+- Impact/Rollback：无Schema/依赖/Breaking API变化；撤Router恢复404，数据不变。
+- Verification：合同3、Win11隔离PG18真实ASGI分页/ETag/三状态/权限/许可/撤销/无正文、后端2097运行/3跳过、开发wheel通过；正式组合尚未挂载。

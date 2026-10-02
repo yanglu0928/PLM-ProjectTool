@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-03-A07-P03 新增可选Prompt LIST/GET HTTP，安全元数据分页、详情强ETag、默认404。兼容性：不改冻结路径，无Schema/依赖/Breaking API，仅Win11隔离验证。升级/回滚：正式游标密钥与平台信任就绪后才可显式装配；撤Router恢复404，无数据迁移。验证：合同3、隔离PG18实际ASGI三状态/分页/权限/License/撤销/无正文、后端2097运行/3跳过，开发wheel SHA-256 `4865b13026d5e820ee6aebddcc64a270a3f039509dd842baedeadbd14b532b7a`。已知问题：正式密钥/组合/信任、Server2025/Debian、Invocation、Gate3/UAT/可用包未过。
+
 - 2026-10-02：0.1.0.dev0/AI-03-A07-P02 新增Prompt专属签名分页游标和内部元数据只读服务/仓储，DRAFT/RETIRED不输出活动版本，SQL不读取正文。兼容性：无新Schema/依赖/Breaking API，仅Win11隔离验证。升级/回滚：无数据迁移，停止装配内部服务即可；正式目标账户密钥另验。验证：单元4、隔离PG18三状态/分页/正文不投影、后端2094运行/3跳过，开发wheel SHA-256 `135071a33833a5e6e18f86da39d8e64be704e3cc2e0140a1281ae3b84d51a9e7`。已知问题：公开HTTP/正式密钥及信任、Invocation、Server2025/Debian、Gate3/UAT/可用包未过。
 
 - 2026-10-02：0.1.0.dev0/AI-03-A07-P01 完成Prompt LIST/GET只读前置核查，明确元数据投影、RETIRED历史指针与专属游标边界。兼容性/升级/回滚：仅文档，无程序、Schema、API或依赖变化。验证：冻结合同/数据模型/ORM及现有Model只读链静态核查，未执行新运行测试。已知问题：Prompt只读实现/专属密钥/平台装配、Invocation、正式信任、Gate3/UAT/可用包待。
