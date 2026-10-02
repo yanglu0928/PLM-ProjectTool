@@ -6334,3 +6334,12 @@
 - Impact/Rollback：仅内部读取 Application/Repository 及项目只读操作策略，无 Schema/Migration/外部 API/依赖变更；不装配该服务即可回滚。旧边不迁移，历史继续保留。
 - Verification Plan：单元覆盖起点/项目/License拒绝、两端撤权、跨项目、未注册 Owner、错误/异常、候选窗口；隔离 PG18 验证 ACTIVE/Scope/方向/上限与当前权限。全量后端和 wheel 后判内部任务结果；不声称多跳、HTTP、目标平台或 Gate 通过。
 - Result：内部单跳单元6/6、隔离PG18真实会话/上下游/项目隔离/撤权隐藏/License拒绝及旧创建回归PASS；全量后端1863运行/3跳过、开发wheel PASS。首次全量旧策略总数断言失败，更新矩阵后重跑通过；未挂公开图API。
+
+# DEC-20261002-609：Trace 多跳遍历采用同事务 BFS 与显式资源预算
+
+- Date/WBS：2026-10-02 / `TRC-01-A06-P02-P01`；输入冻结 Trace Graph 最大深度/节点与逐节点授权、P01 单跳受权读取。
+- Decision：在一次 Session/License/Project 授权事务里从已证明起点按广度优先遍历；每条候选边继续证明两端。节点去重防环；原始候选每节点最多 101 条、返回节点最多 500、返回边另设最多 2000 的安全预算，触及预算或过滤无权边均标 `truncated`。不返回无权节点身份/计数，异常不降级成空图。稳定游标/页作为 P02-P02 单独任务，在其完成前不挂公开图 API。
+- Reason：跨事务拼接单跳结果会让授权与图状态漂移；无限广度/密图会耗尽数据库与响应资源。额外边预算属于内部安全上限，未改变冻结公开参数。
+- Impact/Rollback：内部 Trace Application 增量，无公开 API/Schema/Migration/依赖及历史数据变更；不装配多跳服务即可回滚。此结果是有界部分图，不代替完整可续页图或客户业务事实。
+- Verification Plan：单元验证多跳顺序、环、深度、节点与边上限、隐藏节点与根撤权、项目/License/Owner错误；隔离PG18验真实多跳/撤权。后端全量与wheel通过后只判内部遍历PASS。
+- Result：定向7项、隔离PG18两跳/深度/撤权隐藏及旧创建回归PASS；边预算孤立节点缺陷已修复并重测；后端1870运行/3跳过、开发wheel PASS。稳定游标/公开图API仍未完成。

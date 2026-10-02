@@ -38,6 +38,9 @@ from plm_assistant.modules.trace.application.create_link import (
 from plm_assistant.modules.trace.application.query_one_hop import (
     TraceOneHopQuery, TraceOneHopService, TraceQueryError,
 )
+from plm_assistant.modules.trace.application.query_bounded_graph import (
+    TraceBoundedGraphQuery, TraceBoundedGraphService,
+)
 from plm_assistant.modules.trace.application.target_proof import (
     TraceTargetProofError, TraceTargetProofService,
 )
@@ -228,6 +231,12 @@ def verify():
             license_guard=guard, proofs=proofs,
             repository=SqlAlchemyTraceAdjacencyRepository(),
         )
+        graph = TraceBoundedGraphService(
+            unit_of_work=runtime.unit_of_work,
+            sessions=SqlAlchemyProjectReadAccess(), projects=auth,
+            license_guard=guard, proofs=proofs,
+            repository=SqlAlchemyTraceAdjacencyRepository(),
+        )
         ref = lambda version: TraceVersionRef(
             "document", "DOC-02", doc_id, version, "PROJECT", project_id,
         )
@@ -278,6 +287,18 @@ def verify():
             relation_type="REFINES", limit=1,
         ))
         assert len(limited.links) == 1 and limited.links[0].edge == concurrent_edge
+        graph_result = graph.query(TraceBoundedGraphQuery(
+            customer_token, uuid.uuid4(), project_id, ref(first), "DOWNSTREAM",
+        ))
+        assert graph_result.nodes == (ref(first), ref(second), ref(third))
+        assert tuple(link.edge for link in graph_result.links) == (edge, concurrent_edge)
+        assert not graph_result.truncated
+        depth_one = graph.query(TraceBoundedGraphQuery(
+            pm_token, uuid.uuid4(), project_id, ref(first), "DOWNSTREAM",
+            max_depth=1,
+        ))
+        assert depth_one.nodes == (ref(first), ref(second))
+        assert tuple(link.edge for link in depth_one.links) == (edge,)
         try:
             reader.query(TraceOneHopQuery(
                 other_pm_token, uuid.uuid4(), project_id, ref(first), "DOWNSTREAM",
@@ -315,6 +336,12 @@ def verify():
             pm_token, uuid.uuid4(), project_id, ref(second), "DOWNSTREAM",
         ))
         assert hidden.links == () and hidden.truncated
+        hidden_graph = graph.query(TraceBoundedGraphQuery(
+            pm_token, uuid.uuid4(), project_id, ref(first), "DOWNSTREAM",
+        ))
+        assert hidden_graph.nodes == (ref(first), ref(second))
+        assert tuple(link.edge for link in hidden_graph.links) == (edge,)
+        assert hidden_graph.truncated
         unavailable = TraceEdgeShape(ref(first), ref(third), "REFINES")
         try:
             creator.create(CreateTraceLink(pm_token, CSRF, uuid.uuid4(), unavailable),
@@ -380,7 +407,7 @@ def verify():
             assert exc.code == "PROJECT_ARCHIVED"
         else:
             raise AssertionError("archived project accepted Trace write")
-        print("PASS: Trace create/replay/Audit and authorized one-hop direction, scope and hidden neighbor")
+        print("PASS: Trace create/replay/Audit and authorized one-hop/bounded BFS, scope and hidden neighbor")
     finally:
         if runtime is not None:
             runtime.dispose()
