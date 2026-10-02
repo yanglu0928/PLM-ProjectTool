@@ -21,7 +21,8 @@ class MigrationContractTests(unittest.TestCase):
                 "postgresql+psycopg://app@127.0.0.1/plm"
             )
         )
-        self.assertEqual(scripts.get_heads(), ["20261002_0060"])
+        self.assertEqual(scripts.get_heads(), ["20261002_0061"])
+        self.assertEqual(scripts.get_revision('20261002_0061').down_revision,'20261002_0060')
         self.assertEqual(scripts.get_revision('20261002_0060').down_revision,'20261002_0059')
         self.assertEqual(scripts.get_revision('20261002_0059').down_revision,'20261002_0058')
         self.assertEqual(scripts.get_revision('20261002_0058').down_revision,'20261002_0057')

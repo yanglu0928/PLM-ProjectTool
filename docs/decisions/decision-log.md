@@ -6895,3 +6895,11 @@
 - Reason：通用收据无复合版本/ETag，Prompt 根可继续切换或退役，不能把现态冒充首次 200。
 - Impact/Rollback：原冻结 `64cdf09` 不变；下一项需要 ORM/Migration0061，历史数据写入后 down 应拒绝。无本项代码/API变更。
 - Verification：对照冻结 API、Prompt ORM/Schema0059/0060 与通用收据静态核查；新运行测试未执行，下一项隔离PG18验证。
+
+# DEC-20261002-686：Prompt 激活结果只存首次最小快照
+
+- Date/WBS：2026-10-02 / `AI-03-A05-P02`；依据 CR-AI-008。
+- Decision：Schema0061 保存模板/版本复合归属、固定 ACTIVE 状态、操作者/Audit/Trace 与前后 lock_version，不复制 Prompt 正文或当前可变根；非空结果表拒绝 down，历史不可更新/删除/截断。
+- Reason：足以由 UUID 收据恢复原 200/version/ETag，同时避免 Secret/客户正文重复落表；未来同一版本可再次激活，故不对 template/version 加唯一约束。
+- Impact/Rollback：AI ORM/Alembic 增量，无 API 变化；有结果后只能前向修复或受控备份恢复。
+- Verification：Win11 隔离 PG18 空/有历史升降与约束/不可变、drift=0；首轮2个旧版测试断言修正后全量2082运行/3跳过、开发wheel通过。内部服务未验。

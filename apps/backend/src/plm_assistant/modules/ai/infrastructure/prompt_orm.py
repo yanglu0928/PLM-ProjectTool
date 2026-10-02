@@ -137,3 +137,47 @@ class PromptVersionCreateResultRow(Base):
     )
     created_xid: Mapped[int] = mapped_column(BigInteger, nullable=False,
                                              server_default=text("txid_current()"))
+
+
+class PromptActivationResultRow(Base):
+    __tablename__ = "ai_prompt_activation_results"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["prompt_template_id", "version_no"],
+            ["plm.ai_prompt_versions.prompt_template_id", "plm.ai_prompt_versions.version_no"],
+            name="fk_ai_prompt_activation_results__version", ondelete="NO ACTION",
+        ),
+        UniqueConstraint("audit_event_id", name="uq_ai_prompt_activation_results__audit"),
+        CheckConstraint(
+            "result_id <> '00000000-0000-0000-0000-000000000000'::uuid "
+            "AND prompt_template_id <> '00000000-0000-0000-0000-000000000000'::uuid "
+            "AND actor_id <> '00000000-0000-0000-0000-000000000000'::uuid "
+            "AND audit_event_id <> '00000000-0000-0000-0000-000000000000'::uuid "
+            "AND trace_id <> '00000000-0000-0000-0000-000000000000'::uuid "
+            "AND version_no > 0 AND state = 'ACTIVE' "
+            "AND expected_lock_version BETWEEN 0 AND 9223372036854775806 "
+            "AND lock_version = expected_lock_version + 1 "
+            "AND created_xid > 0 AND isfinite(accepted_at)",
+            name="ck_ai_prompt_activation_results__shape",
+        ),
+    )
+
+    result_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    prompt_template_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    version_no: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    actor_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("plm.auth_users.user_id", ondelete="NO ACTION"), nullable=False,
+    )
+    audit_event_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("plm.aud_events.audit_event_id", ondelete="NO ACTION"), nullable=False,
+    )
+    trace_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    state: Mapped[str] = mapped_column(Text, nullable=False)
+    expected_lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    accepted_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+    created_xid: Mapped[int] = mapped_column(BigInteger, nullable=False,
+                                             server_default=text("txid_current()"))
