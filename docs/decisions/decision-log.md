@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-654 — Provider 激活在单事务写状态、Audit、快照与收据
+
+- Date/WBS：2026-10-02 / `AI-01-A05-P05-A03-P02`；输入冻结 API-03、CR-AI-002、P05-A02 当前证明、Schema 0056。前置满足；本项仅内部命令，公开 HTTP/正式 Worker 另验。
+- Decision：先验当前管理员 Session/CSRF，再验 License；写事务内再次验管理员，按 actor/操作/Key 原子预留通用幂等收据。已有收据仅经原 actor/Provider/期望版本和 Audit 绑定的不可变快照重放，不更新当前行。新命令锁定当前配置/Secret/最新成功探针，要求 CONFIGURED 或 SUSPENDED 且锁版本精确匹配，条件更新为 ACTIVE，再同事务写 USER Audit、首次响应快照和收据；提交前重验 License。任一步失败整笔回滚。不同 Key 不允许对已 ACTIVE 的 Provider 隐式再激活。
+- Reason/Impact/Rollback：防止撤权、配置/Secret 变化、旧证明、并发或后续暂停导致的错误激活/重放。无新 Schema/API/依赖；撤内部命令入口可回退，已提交 Provider/Audit/快照历史保留，不物理删除。Windows 11 隔离 PG18 验证真实权限、幂等、并发/版本、证明失效和回滚。
+
 ## DEC-20261002-653 — Provider 激活先存不可变首次响应，再执行命令
 
 - Date/WBS：2026-10-02 / `AI-01-A05-P05-A03-P01`；输入冻结 API-03 的 200 ACTIVE/幂等要求、CR-AI-002、P05-A02 当前证明与平台通用收据。核查发现通用收据仅有 `ref_type/ref_id/status`，不保留原始 Provider lock_version；若激活后再暂停，重放时从当前行生成响应会变成错误版本或错误状态。

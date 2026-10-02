@@ -44,6 +44,7 @@ class ProviderActivationProof:
     result_id: uuid.UUID
     job_id: uuid.UUID
     lock_version: int
+    state: str
 
 
 class _Current(Protocol):
@@ -104,7 +105,7 @@ class ProviderActivationProofService:
             self._guard.require_valid(trace_id=trace_id)
             return ProviderActivationProof(provider_id, current.config_id, version,
                                            latest.result_id, latest.job_id,
-                                           current.lock_version)
+                                           current.lock_version, current.state)
         except ProviderActivationProofError:
             raise
         except RuntimeLicenseError:

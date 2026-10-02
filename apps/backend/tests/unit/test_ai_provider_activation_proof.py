@@ -50,9 +50,9 @@ class ProviderActivationProofTests(unittest.TestCase):
     def test_current_success_is_only_an_internal_same_uow_snapshot(self):
         proof = self.require()
         self.assertEqual((proof.provider_id, proof.config_id, proof.secret_version_id,
-                          proof.result_id, proof.job_id, proof.lock_version),
+                          proof.result_id, proof.job_id, proof.lock_version, proof.state),
                          (self.provider, self.config_id, self.secret_version,
-                          self.result, self.job, 0))
+                          self.result, self.job, 0, "CONFIGURED"))
         self.source.lock_current.assert_called_once_with(self.tx, provider_id=self.provider)
         self.secrets.active_provider_key_version.assert_called_once_with(self.tx,
                                                                           secret_ref=self.secret_ref)

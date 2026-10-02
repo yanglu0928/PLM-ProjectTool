@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A03-P02 新增 Provider 内部受权激活命令：当前管理员、License、配置/Secret/策略/最新探针、强版本检查，ACTIVE/Audit/首次快照/收据同事务提交；同 Key 保留原结果。兼容性：复用 0056，无新 Schema/依赖/Breaking API。升级：无需新增迁移；撤内部命令可回退，历史不删除。验证：Win11 隔离 PG18 双并发/权限/许可/Secret/暂停后重放/审计故障回滚 PASS，后端1997运行/3跳过；开发 wheel SHA-256 `42c8c814b980d8ca622c81431950c504fb0f76559abda19dc8ef3e38717272a9`。已知问题：公开激活 HTTP、Windows 正式组合、生产 Worker/真实外发、三平台/Gate/UAT/可用包仍待。
+
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A03-P01 增加不可变 Provider 激活首次响应快照 Schema 0056，绑定 Provider/config/探针、actor/Audit 和原始锁版本，供未来同 Key 200 ACTIVE/ETag 重放。兼容性：增量表及探针身份复合唯一键，无 Breaking API 或依赖变化。升级：备份后 0055→0056；空表可 down，有历史快照拒绝降级。验证：Win11 隔离 PG18 空/有数据升降级、归属、不可变、ORM 漂移 0；后端1992运行/3跳过，开发 wheel SHA-256 `c0766e1873bcbd62927f85f7f4f32ad5b9e8913827c721f9ffc32b8f4ba945d4`。已知问题：激活命令/API/正式组合、生产 Worker/真实外发、三平台/Gate/UAT/可用包待完成。
 
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A02 新增当前 Provider 激活资格内部证明，仅接纳最新终态成功且当前配置、SecretVersion、受控端点策略及 Job/Outbox 绑定仍一致的结果。兼容性：无 Schema、依赖或 Breaking API 变化。升级：无需迁移；撤内部服务调用可回退，历史结果保留。验证：Win11 隔离 PG18 真实当前/配置变化/Secret 停用轮换/策略变化/较新失败 PASS，后端 1992 运行/3 跳过；开发 wheel SHA-256 `f4aaa7d735211f39bd5db66c33b8bd756ac12e4ae1010afb593df701a7254951`。已知问题：内部资格证明尚未接激活命令或公开 API；生产 Worker/真实外发、三平台/Gate/UAT/可用包未完成。
