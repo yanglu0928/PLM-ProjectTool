@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261002-660 — Provider Worker 生命周期分步进入正式组合
+
+- Date/WBS：2026-10-02 / `AI-01-A05-P05-A03-P04-P02-A03-P01`；依据 CR-AI-002、ADR-007/012/013、现有三角色 SCM 与单次 Provider Worker。
+- Decision：P02-A03 先拆 P01 为单线程、协作停止、持 PostgreSQL 维护共享锁覆盖整个 `run_once` 的 Worker Loop；P02 独立处理系统 DNS 时限/租约窗口，P03 再通过 Change Request 扩展第四个固定 SCM 角色和只读运维证据，P04 才在同源策略/服务就绪条件下挂 Test 路由。P01 不注册进程、不运行网络或开放路由。
+- Reason：把单次工厂直接当成常驻服务，会在维护转换/停止期间继续领取任务；把 AI 角色塞进现有 Audit/Parser 服务会混淆进程身份与出站权限。无界 DNS 解析也使停止完成时间不可证明。
+- Impact/Rollback：仅内部应用编排增量；无 Schema/API/依赖变更。撤未装配 Loop 可回退，历史 Job/Audit 保留。SCM 固定角色变动先登记独立 CR，再实施；真实外发仍须逐次范围授权。
+- Verification：P01 定向4、隔离 PG18 维护锁/状态转移、后端2018运行/3跳过、开发 wheel PASS；A03/P04/Gate 保持开放。
+
 ## DEC-20261002-659 — Windows 探针 Worker 构建时锁定策略与审计信任源
 
 - Date/WBS：2026-10-02 / `AI-01-A05-P05-A03-P04-P02-A02-P02`；依据 CR-AI-002、A02-P01 Secret 审计、现有单次 Worker 与 Windows 受控信任链。

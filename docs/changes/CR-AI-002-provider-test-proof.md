@@ -84,3 +84,7 @@
 2026-10-02 P05-A03-P04-P02-A02-P01 按 DEC-20261002-658 完成受权快照作用域审计适配器；系统身份/原请求用户/Secret 版本/trace 严格匹配，独立短事务先写 Audit 再交付明文。Win11 隔离 PG18 落库、审计故障拒绝并清零与后端2009运行/3跳过通过。Runner 仍需显式绑定该作用域和 trace；Windows Worker/正式 Vault/目标出站未装配，A02/P02/P04/Gate 仍开放。
 
 2026-10-02 P05-A03-P04-P02-A02-P02 按 DEC-20261002-659 将首次预检快照及 trace 绑定到 Runner，审计绑定故障在开启 Transport 前拒绝；Windows 未挂载 Worker 工厂从同一 Bootstrap 策略、当前账户 DB/License/SYSTEM Actor/Vault 主钥装配真实 SecretStore、审计及钉 IP HTTPS Transport，失败释放新建连接。Win11 隔离 PG18/本机 TLS 验证成功与失败均记录 Secret 访问主体/原用户/版本；定向8、后端2014运行/3跳过及 wheel 通过。工厂未运行或注册，未验证正式账户信任、真实厂商外发、维护模式下服务生命周期；P02-A03/P04/Gate 仍开放。
+
+2026-10-02 P05-A03-P04-P02-A03 拆分：现有 SCM 固定三角色及自报进程身份不包含 AI Provider Worker，直接复用 Audit/Parser 角色会混淆出站权限与停机枚举；生产 Transport 的 OS DNS 解析也无确定上限，不能凭单次 Worker 声称有界停止。按 DEC-20261002-660 先做 P01 维护共享锁覆盖单次循环与协作收敛；P02 处理解析/租约时限，P03 单独 CR 增量第四角色及发行/运维清单，P04 在服务就绪与同源策略前提下才挂 Test 路由。未取得本轮真实 Secret 外发授权，不发送到厂商。
+
+2026-10-02 P05-A03-P04-P02-A03-P01 已完成内部循环，固定 WorkerRef、一个线程串行领取、在共享维护锁内覆盖 `run_once` 完整网络/发布窗口；STOP 可唤醒 IDLE 并等待当前轮结束，忙时 `quiescent` 拒绝。Win11 新隔离 PG18 证实排他锁在轮内不可得、轮后释放、MAINTENANCE 阻止下一轮；定向4、后端2018运行/3跳过、开发 wheel PASS。未把 Loop 接入生产工厂/SCM，DNS 上限、目标账户、真实外发/服务角色与 Test/Activate 路由仍待。
