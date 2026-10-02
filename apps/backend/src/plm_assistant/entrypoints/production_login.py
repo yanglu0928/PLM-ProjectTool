@@ -105,6 +105,9 @@ from plm_assistant.modules.ai.infrastructure.provider_metadata_repository import
 from plm_assistant.modules.ai.api.model_metadata import create_ai_model_read_router
 from plm_assistant.modules.ai.application.model_metadata import AIModelMetadataService
 from plm_assistant.modules.ai.infrastructure.model_metadata_repository import SqlAlchemyAIModelMetadataRepository
+from plm_assistant.modules.ai.api.create_model import create_ai_model_create_router
+from plm_assistant.modules.ai.application.create_model import AIModelCreateService
+from plm_assistant.modules.ai.infrastructure.model_create_repository import SqlAlchemyAIModelCreateRepository
 from plm_assistant.modules.ai.api.create_provider import create_ai_provider_create_router
 from plm_assistant.modules.ai.application.create_provider import AIProviderCreateService
 from plm_assistant.modules.ai.infrastructure.provider_create_repository import SqlAlchemyAIProviderCreateRepository
@@ -365,6 +368,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         secret_disable_router = None
         ai_provider_read_router = None
         ai_model_read_router = None
+        ai_model_create_router = None
         ai_provider_create_router = None
         ai_provider_patch_router = None
         project_read_router = None
@@ -971,6 +975,17 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                         audit=audit,
                     ),
                 )
+                ai_model_create_router = create_ai_model_create_router(
+                    sessions=sessions, origins=origins,
+                    models=AIModelCreateService(
+                        unit_of_work=runtime.unit_of_work,
+                        access=SqlAlchemyLicenseImportAccess(),
+                        license_guard=licenses.guard,
+                        repository=SqlAlchemyAIModelCreateRepository(),
+                        receipts=SqlAlchemyIdempotencyReceipts(),
+                        audit=audit,
+                    ),
+                )
                 ai_provider_patch_router = create_ai_provider_patch_router(
                     sessions=sessions, origins=origins,
                     providers=AIProviderAppendService(
@@ -1098,6 +1113,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             secret_disable_router=secret_disable_router,
             ai_provider_read_router=ai_provider_read_router,
             ai_model_read_router=ai_model_read_router,
+            ai_model_create_router=ai_model_create_router,
             ai_provider_create_router=ai_provider_create_router,
             ai_provider_patch_router=ai_provider_patch_router,
             project_read_router=project_read_router,

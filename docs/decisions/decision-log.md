@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261002-669 — 模型创建只装配显式 Windows 写模式
+
+- Date/WBS：2026-10-02 / `AI-02-A06`；依据 A05 可选 POST 与现有 `--platform-write` 信任组合。
+- Decision：模型 POST 仅在显式写平台组合挂载，复用同账户 PG/License/Session/Audit/收据；登录专用及只读平台均不开放创建。初态仍 SUSPENDED，装配不赋予模型可路由/外发资格。
+- Reason：将管理写操作限制在已有受控写组合，不扩大只读模式权限；模型登记与质量/Provider 可用相互独立。
+- Impact/Rollback：仅 Windows 组合根增加路由，无 Schema/依赖/冻结 API 或数据外发变化；撤写路由组合可回退，历史模型与审计保留。
+- Verification：Win11 隔离 PG18 三模式404/405/201与同 Key重放/GET、权限/License、缺模型游标钥关闭通过；后端2047运行/3跳过及开发wheel通过。正式目标账户与发行仍待。
+
 ## DEC-20261002-668 — AIModel 创建首次响应固定为初态投影
 
 - Date/WBS：2026-10-02 / `AI-02-A05`；依据冻结 `AI_MODEL_CREATE` 201 ModelView、A02 持久幂等收据与 A03 安全投影。
