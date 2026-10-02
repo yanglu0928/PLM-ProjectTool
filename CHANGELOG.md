@@ -1,5 +1,9 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/TRC-01-A06-P03-P03 新增DOC-02冻结三字段引用的Document Owner内部Scope/Project及固定版本解析，保留现有Session/License授权和同事务证明。兼容性：内部只读Port/组合增量，公开API/Schema/依赖不变。升级：无迁移，不装配即可回滚。验证：新单元6、隔离PG18真实PROJECT/GLOBAL/拒绝及旧Trace回归、后端1885运行/3跳过、开发wheel PASS。已知问题：其他业务Owner、正式游标Key、通用图HTTP/三平台/性能/UAT/Gate与可用发行包未完成。
+
+- 2026-10-02：0.1.0.dev0/TRC-01-A06-P03-P02 登记通用Trace图HTTP的真实Owner Scope解析前置阻塞，继续按CR-TRC-002逐Owner实现。兼容性：纯记录，公开API/Schema/依赖不变。升级：无迁移。验证：冻结API-02与实际Owner注册静态核查；未运行新业务测试。已知问题：DOC-02以外Owner、正式图游标密钥、图HTTP、Gate与可用发行包未完成。
+
 - 2026-10-02：0.1.0.dev0/TRC-01-A06-P03-P01 增加 Windows 当前账户专用 Trace 图游标 KeyRef 只读来源，缺钥/错长/异常失败关闭；仅唯一临时测试引用完成加密备份、失密和恢复旧游标。兼容性：入口增量，无公开API/Schema/依赖变化。升级：当前模式无需供给；未来挂正式图HTTP前需实际目标账户独立供给、离线备份与恢复演练，未执行正式供给。验证：定向3、真实Win11临时Vault、后端1879运行/3跳过、开发wheel PASS。已知问题：通用Owner Scope解析/图HTTP、正式信任/法律/Server2025/Debian、性能/UAT/Gate与可用发行包未完成。
 
 - 2026-10-02：0.1.0.dev0/TRC-01-A06-P02-P02 新增Trace有界图内部AES-GCM安全游标，按当前授权每页重算并对图变化拒绝续页；仅投影本页受权节点，保留基础图截断标记。兼容性：内部Application/Codec增量，无公开API/Schema/依赖变化。升级：无迁移，正式目标账户须独立供给/备份游标密钥，合成测试密钥不可用于生产。验证：单元6、隔离PG18两页/撤权旧游标拒绝/新截断图、后端1876运行/3跳过、开发wheel PASS。已知问题：通用Owner Scope解析、公开HTTP、正式密钥/信任/法律、目标平台/UAT/Gate与可用发行包仍缺。

@@ -121,6 +121,16 @@ class DocumentEvidenceSourceFacts:
     content_sha256: str
 
 
+@dataclass(frozen=True, slots=True)
+class DocumentTraceIdentity:
+    """Owner-private scope lookup; never an independent authorization proof."""
+
+    document_id: uuid.UUID
+    document_version_id: uuid.UUID
+    scope: str
+    project_id: uuid.UUID | None
+
+
 class DocumentReadSessionPort(Protocol):
     def authenticated_user(self, transaction: object, *, session_token: bytes,
                            now: datetime) -> uuid.UUID | None: ...
@@ -156,6 +166,8 @@ class DocumentReadRepositoryPort(Protocol):
     def get_version_for_trace(self, transaction: object, *, scope: str,
                               project_id: uuid.UUID | None, document_id: uuid.UUID,
                               document_version_id: uuid.UUID) -> DocumentVersionView | None: ...
+    def get_trace_identity(self, transaction: object, *, document_id: uuid.UUID,
+                           document_version_id: uuid.UUID) -> DocumentTraceIdentity | None: ...
     def list_parses(self, transaction: object, *, scope: str,
                     project_id: uuid.UUID | None, document_version_id: uuid.UUID,
                     before: tuple[datetime, uuid.UUID] | None,
@@ -306,6 +318,50 @@ class DocumentReadService:
             if type(view) is not DocumentVersionView:
                 raise DocumentReadError("RESOURCE_NOT_FOUND")
             return view
+        except DocumentReadError:
+            raise
+        except RuntimeLicenseError:
+            raise DocumentReadError("LICENSE_OPERATION_DENIED") from None
+        except Exception:
+            raise DocumentReadError("DOCUMENT_UNAVAILABLE") from None
+
+    def resolve_version_for_trace(
+            self, transaction: object, *, session_token: bytes, trace_id: uuid.UUID,
+            path_project_id: uuid.UUID, document_id: uuid.UUID,
+            document_version_id: uuid.UUID) -> DocumentTraceIdentity:
+        """Resolve a frozen three-field ref inside the caller's transaction."""
+        if (transaction is None or type(path_project_id) is not uuid.UUID
+                or path_project_id.int == 0 or type(document_id) is not uuid.UUID
+                or document_id.int == 0 or type(document_version_id) is not uuid.UUID
+                or document_version_id.int == 0):
+            raise DocumentReadError("RESOURCE_NOT_FOUND")
+        if (type(session_token) is not bytes or len(session_token) != 32
+                or type(trace_id) is not uuid.UUID or trace_id.int == 0):
+            raise DocumentReadError("VALIDATION_FAILED")
+        try:
+            self._guard.require_valid(trace_id=trace_id)
+            identity = self._repository.get_trace_identity(
+                transaction, document_id=document_id,
+                document_version_id=document_version_id,
+            )
+            if (type(identity) is not DocumentTraceIdentity
+                    or identity.document_id != document_id
+                    or identity.document_version_id != document_version_id
+                    or identity.scope not in ("GLOBAL", "PROJECT")
+                    or identity.scope == "GLOBAL" and identity.project_id is not None
+                    or identity.scope == "PROJECT" and identity.project_id != path_project_id):
+                raise DocumentReadError("RESOURCE_NOT_FOUND")
+            query = DocumentReadQuery(
+                session_token, trace_id, identity.scope, identity.project_id,
+            )
+            version = self.get_version_for_trace(
+                transaction, query, document_id, document_version_id,
+            )
+            if (version.document_id != document_id
+                    or version.document_version_id != document_version_id
+                    or version.availability_state != "AVAILABLE"):
+                raise DocumentReadError("RESOURCE_NOT_FOUND")
+            return identity
         except DocumentReadError:
             raise
         except RuntimeLicenseError:

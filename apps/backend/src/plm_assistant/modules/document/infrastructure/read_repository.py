@@ -9,7 +9,7 @@ from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
 
 from plm_assistant.modules.document.application.read_documents import (
-    DocumentDownloadSource, DocumentPage, DocumentVersionPage,
+    DocumentDownloadSource, DocumentPage, DocumentTraceIdentity, DocumentVersionPage,
     DocumentVersionView, DocumentView, ParseRecordPage, ParseRecordView,
 )
 from plm_assistant.modules.document.infrastructure.orm import (
@@ -122,6 +122,27 @@ class SqlAlchemyDocumentReadRepository:
         statement = statement.execution_options(populate_existing=True)
         row = _session(transaction).execute(statement).scalar_one_or_none()
         return None if row is None else _version_view(row)
+
+    def get_trace_identity(self, transaction: object, *, document_id: uuid.UUID,
+                           document_version_id: uuid.UUID) -> DocumentTraceIdentity | None:
+        row = _session(transaction).execute(
+            select(DocumentRow).join(
+                DocumentVersionRow,
+                DocumentVersionRow.document_id == DocumentRow.document_id,
+            ).where(
+                DocumentRow.document_id == document_id,
+                DocumentVersionRow.document_version_id == document_version_id,
+                DocumentRow.scope == DocumentVersionRow.scope,
+                DocumentRow.project_id.is_not_distinct_from(DocumentVersionRow.project_id),
+                DocumentRow.document_state.in_(("ACTIVE", "ARCHIVED")),
+            ).with_for_update(read=True, of=(DocumentRow, DocumentVersionRow))
+            .execution_options(populate_existing=True),
+        ).scalar_one_or_none()
+        if row is None:
+            return None
+        return DocumentTraceIdentity(
+            document_id, document_version_id, row.scope, row.project_id,
+        )
 
     def list_parses(self, transaction: object, *, scope: str,
                     project_id: uuid.UUID | None, document_version_id: uuid.UUID,

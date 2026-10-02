@@ -45,7 +45,8 @@ from plm_assistant.modules.trace.application.page_graph import (
     TraceGraphCursorCodec, TraceGraphPageService,
 )
 from plm_assistant.modules.trace.application.target_proof import (
-    TraceTargetProofError, TraceTargetProofService,
+    TraceProofQuery, TraceResourceVersionRef, TraceTargetProofError,
+    TraceTargetProofService,
 )
 from plm_assistant.modules.trace.domain.link_shape import TraceEdgeShape, TraceVersionRef
 from plm_assistant.modules.trace.infrastructure.create_repository import SqlAlchemyTraceCreateRepository
@@ -81,10 +82,10 @@ def connect(name):
                            autocommit=True)
 
 
-def create_user(db, name, token):
+def create_user(db, name, token, role="NONE"):
     user_id = db.execute(
         "INSERT INTO plm.auth_users(username_display,username_normalized,deployment_role) "
-        "VALUES (%s,%s,'NONE') RETURNING user_id", (name, name.lower()),
+        "VALUES (%s,%s,%s) RETURNING user_id", (name, name.lower(), role),
     ).fetchone()[0]
     credential = db.execute(
         "INSERT INTO plm.auth_password_credentials"
@@ -154,14 +155,17 @@ def verify():
         url = URL.create("postgresql+psycopg", username=USER, host=HOST,
                          port=PORT, database=name)
         command.upgrade(create_migration_config(url), "head")
-        pm_token, customer_token, im_token, other_pm_token = (
-            b"p" * 32, b"u" * 32, b"i" * 32, b"z" * 32,
+        pm_token, customer_token, im_token, other_pm_token, admin_token = (
+            b"p" * 32, b"u" * 32, b"i" * 32, b"z" * 32, b"a" * 32,
         )
         with connect(name) as db:
             pm = create_user(db, "Trace PM", pm_token)
             customer = create_user(db, "Trace Customer", customer_token)
             implementer = create_user(db, "Trace Implementer", im_token)
             other_pm = create_user(db, "Trace Other PM", other_pm_token)
+            deployment_admin = create_user(
+                db, "Trace Deployment Admin", admin_token, "DEPLOYMENT_ADMIN",
+            )
             project_id = db.execute(
                 "INSERT INTO plm.prj_projects(project_code,project_code_normalized,name,created_by) "
                 "VALUES ('TR1','tr1','Trace Project',%s) RETURNING project_id", (pm,),
@@ -203,6 +207,28 @@ def verify():
                 second, _ = create_version(db, doc_id, project_id, pm, 2, first)
             with db.transaction():
                 third, third_file = create_version(db, doc_id, project_id, pm, 3, second)
+            global_doc = db.execute(
+                "INSERT INTO plm.doc_documents(scope,project_id,document_category,title,"
+                "original_display_name,created_by) VALUES "
+                "('GLOBAL',NULL,'STANDARD_CAPABILITY','Trace global','global.pdf',%s) "
+                "RETURNING document_id", (deployment_admin,),
+            ).fetchone()[0]
+            global_file = db.execute(
+                "INSERT INTO plm.doc_file_objects(scope,project_id,storage_class,"
+                "storage_locator,original_name_metadata,created_by,file_state,sha256,"
+                "size_bytes,detected_mime,available_at) VALUES "
+                "('GLOBAL',NULL,'PERSISTENT',%s,'global.pdf',%s,'AVAILABLE',%s,7,"
+                "'application/pdf',%s) RETURNING file_object_id",
+                (f"synthetic/{uuid.uuid4().hex}", deployment_admin, HASH,
+                 datetime.now(timezone.utc) + timedelta(minutes=1)),
+            ).fetchone()[0]
+            global_version = db.execute(
+                "INSERT INTO plm.doc_document_versions(document_id,scope,project_id,"
+                "version_no,file_object_id,content_sha256,size_bytes,detected_mime,created_by) "
+                "VALUES (%s,'GLOBAL',NULL,1,%s,%s,7,'application/pdf',%s) "
+                "RETURNING document_version_id",
+                (global_doc, global_file, HASH, deployment_admin),
+            ).fetchone()[0]
         runtime = create_database_runtime(url)
         guard = Guard()
         documents = DocumentReadService(
@@ -212,9 +238,43 @@ def verify():
             project_facts=SqlAlchemyProjectAuthorizationRepository(),
             license_guard=guard, repository=SqlAlchemyDocumentReadRepository(),
         )
+        document_owner = DocumentVersionTraceOwner(documents)
         proofs = TraceTargetProofService({
-            ("document", "DOC-02"): DocumentVersionTraceOwner(documents),
+            ("document", "DOC-02"): document_owner,
         })
+        def resolved(token, path_project, document, version):
+            with runtime.unit_of_work() as transaction:
+                return document_owner.resolve(
+                    transaction, TraceProofQuery(token, uuid.uuid4()), path_project,
+                    TraceResourceVersionRef("DOC-02", document, version),
+                )
+        assert resolved(pm_token, project_id, doc_id, first) == TraceVersionRef(
+            "document", "DOC-02", doc_id, first, "PROJECT", project_id,
+        )
+        assert resolved(admin_token, project_id, global_doc, global_version) == TraceVersionRef(
+            "document", "DOC-02", global_doc, global_version, "GLOBAL", None,
+        )
+        for token, path, document, version in (
+            (other_pm_token, project_id, doc_id, first),
+            (pm_token, other_project, doc_id, first),
+            (pm_token, project_id, doc_id, uuid.uuid4()),
+            (pm_token, project_id, global_doc, global_version),
+        ):
+            try:
+                resolved(token, path, document, version)
+            except TraceTargetProofError as exc:
+                assert exc.code == "RESOURCE_NOT_FOUND"
+            else:
+                raise AssertionError("unproved three-field Document ref resolved")
+        with connect(name) as db:
+            db.execute("UPDATE plm.doc_file_objects SET file_state='RESTRICTED' "
+                       "WHERE file_object_id=%s", (global_file,))
+        try:
+            resolved(admin_token, project_id, global_doc, global_version)
+        except TraceTargetProofError as exc:
+            assert exc.code == "RESOURCE_NOT_FOUND"
+        else:
+            raise AssertionError("unavailable GLOBAL version resolved")
         auth = ProjectAuthorizationService(
             unit_of_work=runtime.unit_of_work,
             repository=SqlAlchemyProjectAuthorizationRepository(),
@@ -394,6 +454,12 @@ def verify():
         else:
             raise AssertionError("cross-project DocumentVersion became Trace target")
         guard.enabled = False
+        try:
+            resolved(pm_token, project_id, doc_id, first)
+        except TraceTargetProofError as exc:
+            assert exc.code == "LICENSE_OPERATION_DENIED"
+        else:
+            raise AssertionError("expired License resolved Document version")
         try:
             reader.query(TraceOneHopQuery(
                 pm_token, uuid.uuid4(), project_id, ref(first), "DOWNSTREAM",

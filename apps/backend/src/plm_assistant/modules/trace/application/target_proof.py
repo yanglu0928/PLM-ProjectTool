@@ -22,6 +22,15 @@ class TraceProofQuery:
 
 
 @dataclass(frozen=True, slots=True)
+class TraceResourceVersionRef:
+    """The frozen public three-field reference before an Owner resolves scope."""
+
+    resource_type: str
+    resource_id: uuid.UUID
+    version_id: uuid.UUID
+
+
+@dataclass(frozen=True, slots=True)
 class TraceTargetProof:
     ref: TraceVersionRef
 

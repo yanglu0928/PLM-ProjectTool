@@ -6361,3 +6361,12 @@
 - Impact/Rollback：仅组合入口和测试，无Schema/Migration/API/依赖/历史数据变更；不装配入口即可回滚。通用图HTTP仍因 CR-TRC-002 的Owner解析缺口关闭。
 - Verification Plan：假Port精确引用/缺失/错长/异常单元，Windows11唯一临时Vault引用做加密备份、删失、错口令拒绝、恢复后旧游标可解；最后清理仅自己的测试凭据，不触碰正式引用。全量回归与wheel通过后只判本机来源PASS。
 - Result：定向3/3、Windows11当前账户唯一临时Vault凭据供给/加密备份/删失/错口令拒绝/恢复旧游标/最终清理PASS；后端1879运行/3跳过、开发wheel PASS。正式KeyRef未供给，通用图HTTP未装配。
+
+# DEC-20261002-612：DOC-02 三字段引用由 Document Owner 在同事务解析
+
+- Date/WBS：2026-10-02 / `TRC-01-A06-P03-P03`；`P03-P02` 通用图HTTP前置核查BLOCKED，依据CR-TRC-002逐Owner实施。
+- Decision：Document Owner 仅对冻结三字段DOC-02引用做内部解析：由Document自有仓储在调用方事务内只读定位真实Scope/Project，若PROJECT必须与路径ProjectId相等；随后沿现有当前Session/License/Document授权及固定Version/File受锁证明，返回内部完整TraceVersionRef。身份定位结果不对HTTP单独投影；未注册类型/失配/无权统一失败关闭。GLOBAL仍走原Document Admin授权，不把路径ProjectId推断为Scope。
+- Reason：客户端没有Scope字段，不能靠猜测或添加冻结合同外必填字段；Trace模块不得直接查询Document私有表。此项只建立一个真实Owner，不宣称通用HTTP完成。
+- Impact/Rollback：Document内部只读Port及Trace组合层增量，无公开API、Schema/Migration、依赖或历史数据改写；不装配解析Port即可回滚。未来其他Owner各自接线并验全套网络安全合同后方可开放通用HTTP。
+- Verification Plan：单元验证同事务精确传参、PROJECT/GLOBAL授权、错误Scope/Project/Version/无权与异常掩码；隔离PG18验证真实Document/Version/File和当前Session权限，后端全量及wheel。正式目标账户密钥/三平台/性能/UAT/Gate另验。
+- Result：新单元6项、Trace Owner定向总7及Document解析4均PASS；隔离PG18现有Trace创建/图验证扩展真实PROJECT/GLOBAL、跨项目/无权/不存在版本、受限File与过期License拒绝后PASS；后端全量1885运行/3跳过，开发wheel SHA-256 `84a2bbcf14532c70d15ac4d28dd321cec8b6775d97a8e783399cb6a8bc32ec9b`。通用HTTP仍关闭，其他Owner及正式密钥未验。

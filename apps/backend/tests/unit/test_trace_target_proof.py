@@ -7,10 +7,10 @@ from datetime import datetime, timezone
 
 from plm_assistant.entrypoints.trace_document_owner import DocumentVersionTraceOwner
 from plm_assistant.modules.document.application.read_documents import (
-    DocumentReadError, DocumentVersionView,
+    DocumentReadError, DocumentTraceIdentity, DocumentVersionView,
 )
 from plm_assistant.modules.trace.application.target_proof import (
-    TraceProofQuery, TraceTargetProof, TraceTargetProofError,
+    TraceProofQuery, TraceResourceVersionRef, TraceTargetProof, TraceTargetProofError,
     TraceTargetProofService,
 )
 from plm_assistant.modules.trace.domain.link_shape import TraceEdgeShape, TraceVersionRef
@@ -32,6 +32,15 @@ class _Documents:
         self.calls = []
         self.error = None
         self.mismatch = False
+
+    def resolve_version_for_trace(self, transaction, **kwargs):
+        self.calls.append((transaction, kwargs))
+        if self.error:
+            raise DocumentReadError(self.error)
+        return DocumentTraceIdentity(
+            kwargs["document_id"], kwargs["document_version_id"],
+            "PROJECT", kwargs["path_project_id"],
+        )
 
     def get_version_for_trace(self, transaction, query, document_id, version_id):
         self.calls.append((transaction, query, document_id, version_id))
@@ -116,6 +125,43 @@ class TraceTargetProofTests(unittest.TestCase):
         with self.assertRaises(TraceTargetProofError) as caught:
             bridge.prove(self.transaction, self.query, self.source)
         self.assertEqual(caught.exception.code, "TRACE_UNAVAILABLE")
+
+    def test_document_bridge_resolves_frozen_triplet_without_guessing_scope(self) -> None:
+        documents = _Documents()
+        bridge = DocumentVersionTraceOwner(documents)
+        public = TraceResourceVersionRef(
+            "DOC-02", self.source.object_id, self.source.version_id,
+        )
+        resolved = bridge.resolve(
+            self.transaction, self.query, self.source.project_id, public,
+        )
+        self.assertEqual(resolved, self.source)
+        self.assertEqual(documents.calls[0][0], self.transaction)
+        self.assertEqual(documents.calls[0][1]["path_project_id"],
+                         self.source.project_id)
+        self.assertNotIn("scope", documents.calls[0][1])
+        with self.assertRaises(TraceTargetProofError) as caught:
+            bridge.resolve(self.transaction, self.query, self.source.project_id,
+                           replace(public, resource_type="REQ-03"))
+        self.assertEqual(caught.exception.code, "RESOURCE_NOT_FOUND")
+        self.assertEqual(len(documents.calls), 1)
+
+    def test_document_bridge_resolve_masks_owner_errors(self) -> None:
+        documents = _Documents()
+        bridge = DocumentVersionTraceOwner(documents)
+        public = TraceResourceVersionRef(
+            "DOC-02", self.source.object_id, self.source.version_id,
+        )
+        for code, expected in (
+            ("RESOURCE_NOT_FOUND", "RESOURCE_NOT_FOUND"),
+            ("AUTH_ACCESS_DENIED", "RESOURCE_NOT_FOUND"),
+            ("LICENSE_OPERATION_DENIED", "LICENSE_OPERATION_DENIED"),
+            ("DOCUMENT_UNAVAILABLE", "TRACE_UNAVAILABLE"),
+        ):
+            documents.error = code
+            with self.subTest(code=code), self.assertRaises(TraceTargetProofError) as caught:
+                bridge.resolve(self.transaction, self.query, self.source.project_id, public)
+            self.assertEqual(caught.exception.code, expected)
 
 
 if __name__ == "__main__":
