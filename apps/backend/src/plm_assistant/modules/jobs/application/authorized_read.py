@@ -63,7 +63,7 @@ class JobOwnerProjection:
     def __post_init__(self):
         if (not _id(self.job_id) or type(self.retryable) is not bool
             or (self.result_type,self.result_id)!=(None,None)
-            and (type(self.result_type) is not str or self.result_type not in ('AUDIT_EXPORT','DOCUMENT_PARSE') or not _id(self.result_id))):raise JobReadError()
+            and (type(self.result_type) is not str or self.result_type not in ('AUDIT_EXPORT','DOCUMENT_PARSE','AI_PROVIDER_TEST') or not _id(self.result_id))):raise JobReadError()
 
 @dataclass(frozen=True,slots=True)
 class JobDetail:

@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A01 将 Provider Test 接入部署管理员 Job 安全读取，同事务核对原 Job/Outbox 与不可变结果归属，仅成功状态给历史结果引用。兼容性：无 Schema、依赖或 Breaking API 变化。升级：复用 0055；撤 Owner 注册可回退，历史数据保留。验证：Win11 隔离 PG18 实际权限/错配/缺证明/成功/License 失效 PASS，后端 1987 运行/3 跳过；开发 wheel SHA-256 `0ff067c507c68a6fbacaa787ba668dc88341e0c08395605862d9b56395902fc0`。已知问题：历史结果不是当前激活许可；P05-A02 激活重验、正式 HTTP/生产 Worker/真实外发/三平台/Gate/UAT/可用包仍待。
+
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P04-A05 新增 Provider Test 单次 Worker 内部编排，串接领取、固定探针及成功/失败原子发布；无任务为 IDLE。兼容性：无 Schema/依赖/Breaking API。升级：复用 0055，默认未装配生产 Worker，撤内部入口可回退。验证：Win11 临时 PG18/本机合成 TLS 完整 IDLE/成功/失败/SecretVersion/Audit 链，后端1982运行/3跳过；开发 wheel SHA-256 `7e44d2645fde8f1d8e0f56551376c749f62f3ca652f7550864f1fcc1653fc17d`。已知问题：P05 受权读取/激活/Windows 组合、生产守护/真实外发/正式信任/质量/三平台/Gate/UAT/可用程序包仍未完成。
 
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P04-A04-P02 新增 Provider Test 失败安全码分类、两次有界退避与最终不可变 FAILED 结果；每次尝试及成功终态增加同事务受控 SYSTEM Audit。兼容性：无 Schema/依赖/Breaking API。升级：复用 0055，未装配 Worker；撤内部调用可回退，历史保留。验证：Win11 临时 PG18 三轮实际领取/结果唯一/旧 fencing/非重试失败/审计回滚和成功回归，后端1974运行/3跳过；开发 wheel SHA-256 `4ed4cbd3cf98875714dca398cc61c1d83b4b30a133759fe4dffc651fe769e900`。已知问题：P04-A05 Worker 组合、P05 读取/激活/Windows 组合、正式信任/真实外发/质量/三平台/Gate/UAT/可用程序包仍未完成。

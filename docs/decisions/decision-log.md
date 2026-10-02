@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-651 — Provider Test Job 结果仅作同事务受权历史投影
+
+- Date/WBS：2026-10-02 / `AI-01-A05-P05-A01`；输入冻结 API-03 JobView、CR-AI-002、已验的 Job/Outbox 与不可变探针结果。前置满足；不变更冻结响应、Schema 或权限。
+- Decision：将 `('ai','AI_PROVIDER_TEST')` 接入既有部署管理员 Job 读取 Owner registry。Owner 在同一只读事务核对 Job 原始 actor/scope、严格 Job/Outbox 快照、结果的 Job/Provider/配置/SecretVersion/策略/attempt/fencing 绑定；仅 SUCCEEDED 且唯一成功结果时返回 `AI_PROVIDER_TEST` 资源引用。失败结果只作一致性证明，不公开错误详情；未完成/取消不公开结果。此历史引用不代表配置仍为当前或允许激活；当前激活资格另列 P05-A02。
+- Risk/Rollback：畸形或缺失绑定失败关闭，不传 payload、Key、URL、Lease 或探针正文。撤 Owner 注册可回退，Job/结果历史保留；无需数据库迁移。按既有 JobDetail 权限与结果引用合同验证。
+
 ## DEC-20261002-650 — Provider Test 先接单次受控 Worker，不挂生产循环
 
 - Date/WBS：2026-10-02 / `AI-01-A05-P04-A05`；输入 CR-AI-002、P04-A01～A04 的领取/预检/探针/发布。现有这些组件彼此独立，没有一条完整的 Job 到结果链。

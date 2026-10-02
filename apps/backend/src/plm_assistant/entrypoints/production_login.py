@@ -85,6 +85,8 @@ from plm_assistant.entrypoints.windows_job_list_cursor import create_windows_job
 from plm_assistant.modules.jobs.infrastructure.read_repository import SqlAlchemyJobReadRepository
 from plm_assistant.modules.audit.application.job_read_projection import AuditJobReadProjection
 from plm_assistant.modules.document.application.job_read_projection import DocumentParseJobReadProjection
+from plm_assistant.modules.ai.application.provider_test_job_read_projection import ProviderTestJobReadProjection
+from plm_assistant.modules.ai.infrastructure.provider_test_job_read import SqlAlchemyProviderTestJobReadRepository
 from plm_assistant.modules.document.application.parse_job_source import DocumentParseSourceReader
 from plm_assistant.modules.document.infrastructure.parse_job_source import SqlAlchemyDocumentParseSources
 from plm_assistant.modules.document.application.parse_job_result import DocumentParseJobResults
@@ -432,7 +434,9 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                     queue=ParseJobQueue(SqlAlchemyParseJobQueueRepository()),
                     sources=DocumentParseSourceReader(repository=SqlAlchemyDocumentParseSources(),
                         audit_sources=UploadCommitAuditSources(repository=SqlAlchemyUploadCommitAuditSources())),
-                    results=DocumentParseJobResults(repository=SqlAlchemyDocumentParseJobResults()))}
+                    results=DocumentParseJobResults(repository=SqlAlchemyDocumentParseJobResults())),
+                ('ai','AI_PROVIDER_TEST'):ProviderTestJobReadProjection(
+                    repository=SqlAlchemyProviderTestJobReadRepository())}
             job_reads = AuthorizedJobReadService(
                     unit_of_work=runtime.unit_of_work,
                     project_access=SqlAlchemyProjectReadAccess(),
