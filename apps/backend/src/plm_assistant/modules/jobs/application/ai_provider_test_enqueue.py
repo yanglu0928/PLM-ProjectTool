@@ -51,6 +51,8 @@ class AIProviderTestJobRef:
 class AIProviderTestQueuePort(Protocol):
     def enqueue(self, transaction: object, *, request: AIProviderTestJobRequest) -> AIProviderTestJobRef: ...
     def find(self, transaction: object, *, request: AIProviderTestJobRequest) -> AIProviderTestJobRef | None: ...
+    def find_by_job(self, transaction: object, *, job_id: uuid.UUID,
+                    provider_id: uuid.UUID, actor_id: uuid.UUID) -> AIProviderTestJobRef | None: ...
 
 
 class AIProviderTestJobQueue:
@@ -86,3 +88,11 @@ class AIProviderTestJobQueue:
     def find(self, transaction: object, *, request: AIProviderTestJobRequest) -> AIProviderTestJobRef | None:
         self._request(request)
         return self._result(self._repository.find(transaction, request=request), optional=True)
+
+    def find_by_job(self, transaction: object, *, job_id: uuid.UUID,
+                    provider_id: uuid.UUID, actor_id: uuid.UUID) -> AIProviderTestJobRef | None:
+        if any(type(value) is not uuid.UUID or not value.int for value in (job_id, provider_id, actor_id)):
+            raise AIProviderTestEnqueueError("VALIDATION_FAILED")
+        return self._result(self._repository.find_by_job(
+            transaction, job_id=job_id, provider_id=provider_id, actor_id=actor_id,
+        ), optional=True)

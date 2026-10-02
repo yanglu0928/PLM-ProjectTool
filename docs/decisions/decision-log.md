@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-642 — Provider Test 提交以原始命令收据固定 JobRef
+
+- Date/WBS：2026-10-02 / `AI-01-A05-P03-A02`；输入冻结 202 JobRef、CR-AI-002、P03-A01 队列。
+- Decision：只在管理员 Session/CSRF、运行许可、If-Match、当前 Provider 配置、受控探针策略及 ACTIVE SecretVersion 全部满足时，同一事务写入 Job/Outbox、Audit 与持久幂等收据。收据指向 JobId；重放先核对原命令指纹及 Job/Outbox 归属，返回首次 JobRef，不以变化后的配置/Secret 重新排队。只允许 CONFIGURED、SUSPENDED、ACTIVE 测试，RETIRED 拒绝；本任务不开放 HTTP、不解密 Secret、不联网。
+- Reason/Impact/Rollback：避免同 Key 重放因当前配置漂移产生新探针，也不把首次成功误当成当前连通证明。无 Schema、公开 API、新依赖或现有数据迁移；撤内部调用可回退，已有队列/审计/收据历史不删除。真实外发与 Worker 仍关闭。
+
 ## DEC-20261002-641 — Provider Test 异步提交先建立受信 Job/Outbox 对
 
 - Date/WBS：2026-10-02 / `AI-01-A05-P03-A01`；输入冻结 AI_PROVIDER_TEST `202 JobRef`、DM-04 Job/Outbox 至少一次与 CR-AI-002。

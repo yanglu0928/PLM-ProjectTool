@@ -75,6 +75,33 @@ class SqlAlchemyAIProviderTestJobQueueRepository:
     def find(self, transaction: object, *, request: AIProviderTestJobRequest) -> AIProviderTestJobRef | None:
         return self._pair(transaction, request)[1]
 
+    def find_by_job(self, transaction: object, *, job_id, provider_id, actor_id) -> AIProviderTestJobRef | None:
+        session = self._session(transaction)
+        job = session.execute(select(JobRow).where(
+            JobRow.job_id == job_id, JobRow.owner_module == "ai",
+            JobRow.job_type == "AI_PROVIDER_TEST", JobRow.scope == "DEPLOYMENT",
+            JobRow.project_id.is_(None), JobRow.actor_ref == actor_id,
+        )).scalar_one_or_none()
+        if job is None:
+            return None
+        events = list(session.scalars(select(OutboxEventRow).where(
+            OutboxEventRow.owner_module == "ai",
+            OutboxEventRow.event_type == "AI_PROVIDER_TEST_REQUESTED",
+            OutboxEventRow.idempotency_key == job.idempotency_key,
+            OutboxEventRow.scope == "DEPLOYMENT", OutboxEventRow.project_id.is_(None),
+            OutboxEventRow.aggregate_ref == provider_id,
+        )))
+        if (len(events) != 1 or job.payload_refs.get("provider_id") != str(provider_id)
+                or job.payload_refs.get("probe_id") != "CHAT_CONNECTIVITY_V1"
+                or not all(key in job.payload_refs for key in (
+                    "config_id", "secret_version_id", "policy_sha256"))):
+            raise AIProviderTestEnqueueError("CONFLICT_STATE")
+        event = events[0]
+        if (event.payload_refs != dict(job.payload_refs, job_id=str(job.job_id))
+                or event.trace_id != job.trace_id or event.aggregate_version < 1):
+            raise AIProviderTestEnqueueError("CONFLICT_STATE")
+        return AIProviderTestJobRef(job.job_id, event.event_id)
+
     def enqueue(self, transaction: object, *, request: AIProviderTestJobRequest) -> AIProviderTestJobRef:
         session, existing = self._pair(transaction, request)
         if existing is not None:
