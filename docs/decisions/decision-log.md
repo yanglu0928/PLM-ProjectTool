@@ -6928,3 +6928,11 @@
 - Reason：根锁版本/状态可变，通用收据不足以保存原 ETag/活动版本；独立快照可与 Audit/收据同事务审计。
 - Impact/Rollback：先登记CR，下一项实现增量Schema；原冻结内容/API不改。非空结果须保留并向前修复。
 - Verification：静态对照冻结 API、Prompt ORM/Schema0061和通用收据；运行验证待P02/P03。
+
+# DEC-20261002-690：退役结果保留旧活动指针但不复制正文
+
+- Date/WBS：2026-10-02 / `AI-03-A06-P02`；依据 CR-AI-009。
+- Decision：0062只存首次状态/旧活动版本/锁版本/Audit等最小快照；旧活动版本非空时用复合FK限定同Template。DRAFT旧指针必须空，ACTIVE旧指针必须非空正数；不存正文。非空结果表禁止down。
+- Reason：首次200可由收据UUID独立重放，历史版本仍可追溯；SQL CHECK 必须显式处理 NULL 三值逻辑，不能把 `>0` 的 UNKNOWN 当拒绝。
+- Impact/Rollback：AI ORM/Alembic增量，无API/依赖变化；有历史时向前修复或受控备份恢复。
+- Verification：Win11隔离PG18空/有历史升降、drift=0、FK/形态/历史保护/非空拒降；后端2085运行/3跳过、开发wheel通过。
