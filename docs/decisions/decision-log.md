@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-632 — Provider 创建 HTTP 仅可选注入
+
+- Date/WBS：2026-10-02 / `AI-01-A03-P03-A02`；输入冻结 API-01/API-03 与 A01 原始 ProviderView。
+- Decision：新增严格 JSON 的可选 `AI_PROVIDER_CREATE` POST Router；请求仅包含受控配置字段及 SecretRef UUID，不接收 URL/API Key/密文。复用当前 Origin/Session/CSRF/管理员/License、同事务收据与 Audit，返回固定脱敏首版视图、强 ETag、Location/no-store；默认及现有 Windows 平台组合均不自动挂载写 Router。License 失效映射冻结403，Secret 不可用对外统一安全503。
+- Reason/Impact/Rollback：保证只在显式安全组合验证后开放写面，且公开201与幂等重放保持首版响应。无 Schema/依赖/Breaking 变化；撤可选 Router 注入即可回退，已创建的 Provider/审计/收据仍保留。
+
 ## DEC-20261002-631 — Provider 创建返回原始不可变配置快照
 
 - Date/WBS：2026-10-02 / `AI-01-A03-P03-A01`；输入冻结 `AI_PROVIDER_CREATE` 201 ProviderView 与原内部创建仅返回 ID 的差异。

@@ -62,6 +62,7 @@ COMMON_ERRORS: dict[str, ErrorSpec] = {
     "AUTH_RATE_LIMITED": ErrorSpec("AUTH_RATE_LIMITED", 429, "请求过于频繁，请稍后重试。"),
     "SYSTEM_INTERNAL": ErrorSpec("SYSTEM_INTERNAL", 500, "服务暂时无法完成请求。"),
     "SYSTEM_UNAVAILABLE": ErrorSpec("SYSTEM_UNAVAILABLE", 503, "服务暂时不可用。"),
+    "AI_PROVIDER_UNAVAILABLE": ErrorSpec("AI_PROVIDER_UNAVAILABLE", 503, "Provider 暂不可用。"),
     "PLATFORM_SECRET_UNAVAILABLE": ErrorSpec(
         "PLATFORM_SECRET_UNAVAILABLE", 503, "Secret 服务暂时不可用。"
     ),

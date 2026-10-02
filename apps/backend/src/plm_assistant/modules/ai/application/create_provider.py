@@ -14,6 +14,7 @@ from plm_assistant.modules.ai.domain.provider_configuration import (
 )
 from plm_assistant.modules.ai.application.provider_metadata import AIProviderMetadataView
 from plm_assistant.modules.audit.application.public import AuditEventDraft, AuditService
+from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
 from plm_assistant.modules.platform.application.idempotency import (
     IdempotencyError, IdempotencyResult, IdempotencyScope,
     canonical_payload_fingerprint, validate_idempotency_key,
@@ -179,6 +180,8 @@ class AIProviderCreateService:
                 return view if include_view else provider_id
         except AIProviderCreateError:
             raise
+        except RuntimeLicenseError:
+            raise AIProviderCreateError("LICENSE_OPERATION_DENIED") from None
         except IdempotencyError as exc:
             raise AIProviderCreateError(exc.code) from None
         except Exception:
