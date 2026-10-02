@@ -7020,3 +7020,11 @@
 - Impact/Rollback：不改冻结API/技术栈；新增列及守卫，下一项0065实施。有非NULL新引用时拒绝降级，既有NULL历史不阻止退回0064。内部创建/Owner注册在后续独立实现。
 - Verification：本项静态对照冻结三字段引用、0063 ORM及Document Owner解析；运行验证待P02。
 - Verification Result：0065已实施；Win11隔离PG18空库和0063遗留NULL历史兼容升降、drift、新写ObjectId强制/不可变/Scope及新历史拒降PASS；后端2100运行/3跳过、开发wheel SHA-256 `b0cd5c1288cb2ac278d755068124245b858270a2bd2a6cc53d06a864da7ab7ca`。Owner注册和内部创建仍待。
+
+# DEC-20261002-701：AI输入先全组校验，再逐项调用显式Owner
+
+- Date/WBS：2026-10-02 / `AI-04-A03-P03`；依据 CR-AI-010、冻结同项目固定版本与最小数据规则。
+- Decision：AI输入Resolver仅接受显式注册的公开ResourceType；先对整组1～1000项完成形状与重复检查，之后才调用Owner。Owner必须返回精确同ObjectId/VersionId、合法内部Owner/ObjectType及同一PROJECT；当前只注册可复用既有授权读链的DocumentVersion桥接，其他类型保持失败关闭。
+- Reason：边验证边调用会在后续重复/畸形引用时产生不必要的授权读取；预校验避免部分副作用。显式Owner避免AI模块猜测跨域表结构或绕过Owner权限。
+- Impact/Rollback：无Schema/API/依赖变化；停止组合Resolver即可回滚。Project授权矩阵增加冻结已定义的AI_TASK_CREATE角色，不开放入口。
+- Verification：定向13项和后端2106运行/3跳过PASS；wheel SHA-256 `895c2b4de673045ceb3db79e21edca79d850a61fcecdf2ad7f46c94f13991e46`。真实Task创建/外发未执行。
