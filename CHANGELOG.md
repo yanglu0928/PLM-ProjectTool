@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A03-P03 新增 Provider 激活可选 HTTP，可信 Origin/Session/CSRF、强 If-Match、必填幂等 Key，返回不可变首次 `200 ACTIVE`/ETag。兼容性：默认应用 404；无 Schema、依赖或 Breaking API 变化。升级：需已有 0056；仅显式注入路由开放，撤注入可回退且历史记录保留。验证：Win11 隔离 PG18/ASGI 许可拒绝、激活、Audit、暂停后重放/版本冲突 PASS；合同4项，后端2001运行/3跳过；开发 wheel SHA-256 `a2886c9f248456184f810c1254df55e9df73f27cfba3678046cc805025c9bfff`。已知问题：Windows 正式组合、生产 Worker/真实外发、正式信任、质量/三平台/Gate/UAT/可用包仍待。
+
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A03-P02 新增 Provider 内部受权激活命令：当前管理员、License、配置/Secret/策略/最新探针、强版本检查，ACTIVE/Audit/首次快照/收据同事务提交；同 Key 保留原结果。兼容性：复用 0056，无新 Schema/依赖/Breaking API。升级：无需新增迁移；撤内部命令可回退，历史不删除。验证：Win11 隔离 PG18 双并发/权限/许可/Secret/暂停后重放/审计故障回滚 PASS，后端1997运行/3跳过；开发 wheel SHA-256 `42c8c814b980d8ca622c81431950c504fb0f76559abda19dc8ef3e38717272a9`。已知问题：公开激活 HTTP、Windows 正式组合、生产 Worker/真实外发、三平台/Gate/UAT/可用包仍待。
 
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A03-P01 增加不可变 Provider 激活首次响应快照 Schema 0056，绑定 Provider/config/探针、actor/Audit 和原始锁版本，供未来同 Key 200 ACTIVE/ETag 重放。兼容性：增量表及探针身份复合唯一键，无 Breaking API 或依赖变化。升级：备份后 0055→0056；空表可 down，有历史快照拒绝降级。验证：Win11 隔离 PG18 空/有数据升降级、归属、不可变、ORM 漂移 0；后端1992运行/3跳过，开发 wheel SHA-256 `c0766e1873bcbd62927f85f7f4f32ad5b9e8913827c721f9ffc32b8f4ba945d4`。已知问题：激活命令/API/正式组合、生产 Worker/真实外发、三平台/Gate/UAT/可用包待完成。

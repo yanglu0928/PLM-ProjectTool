@@ -6652,3 +6652,10 @@
 - Reason：创建的初始身份/幂等与 PATCH 的状态锁和乐观并发不同，合并验收易把“可配置”误报为“可使用/已外发”。
 - Impact/Rollback：内部 Application/AI Repository 和 Platform 自有 Secret 证明适配器，无 Schema/API/依赖变化；未公开装配即可停止。已提交的历史记录不物理回滚，纠正用后续版本。
 - Verification：定向2、Win11隔离PG18权限/许可端口/Secret/并发收据/Audit失败回滚/停用后历史重放与角色撤销拒绝、后端1909运行/3跳过、wheel SHA-256 `e00d6490aa2d49ceac368892e843f4809e1e97ec7cd461d65e5f810dac956acd`。正式License/外发/HTTP/三平台/Gate未验。
+## DEC-20261002-655 — Provider 激活 HTTP 只投影不可变首次状态
+
+- Date/WBS：2026-10-02 / `AI-01-A05-P05-A03-P03`；依据冻结 API-03 和 P02 内部激活快照。
+- Decision：新增显式 opt-in 的无请求体 POST 边界；强 If-Match、必填幂等 Key、可信 Origin/Host、当前 Session/CSRF 后调用内部受权命令。200 仅返回快照的 ProviderId、ACTIVE 与原始 ETag，不再次读取当前状态；默认应用不挂载。
+- Reason：同 Key 重放可能发生于后续暂停/改版之后，当前行不能代表首次响应。最小状态投影符合冻结的 `200 ACTIVE`，且不泄露配置/Secret。
+- Impact/Rollback：仅 AI API、应用可选路由、合同测试和增量文档；无 Schema、依赖、生产挂载或外发。移除可选路由可回退，历史激活/Audit/收据保留。
+- Verification：合同4项；Win11 隔离 ASGI/PG18 许可拒绝、激活/Audit、暂停后原结果重放及新 Key 版本冲突 PASS；后端2001运行/3跳过、开发 wheel 通过。生产组合、正式信任与 Gate 3 未验。

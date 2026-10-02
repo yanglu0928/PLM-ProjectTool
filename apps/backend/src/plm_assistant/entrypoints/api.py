@@ -49,6 +49,7 @@ def create_app(
     ai_provider_create_router: APIRouter | None = None,
     ai_provider_patch_router: APIRouter | None = None,
     ai_provider_test_router: APIRouter | None = None,
+    ai_provider_activate_router: APIRouter | None = None,
     project_read_router: APIRouter | None = None,
     workflow_read_router: APIRouter | None = None,
     workflow_start_router: APIRouter | None = None,
@@ -165,6 +166,8 @@ def create_app(
         app.include_router(ai_provider_patch_router)
     if ai_provider_test_router is not None:
         app.include_router(ai_provider_test_router)
+    if ai_provider_activate_router is not None:
+        app.include_router(ai_provider_activate_router)
     if project_read_router is not None:
         app.include_router(project_read_router)
     if workflow_read_router is not None:
