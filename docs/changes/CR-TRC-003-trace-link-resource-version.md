@@ -24,3 +24,5 @@
 2026-10-02 P03 结果：PROJECT当前ProjectManager内部撤销在真实Session/CSRF/License、项目行锁、原v0、通用持久收据及Audit同事务下完成；同Key并发仅一终态/一审计/一收据，审计失败回滚。无新Schema/API/依赖；关系Owner及公开HTTP仍关闭。正式信任、目标平台与Gate未因此通过。
 
 2026-10-02 P04 结果：冻结撤销路径的可选HTTP/强ETag与最小结果经真实Session/隔离PG18验证；默认应用与Windows平台组合仍不挂载。关系Owner身份、公开创建/列表/通用图、正式目标账户信任源及Gate不因可选HTTP验证而关闭。
+
+2026-10-02 P05 前置核查：`created_by`仅为审计字段，不将其解释为关系Owner；缺独立Owner身份证明/撤权Port与正式目标账户信任材料，正式平台继续不挂载撤销Router。冻结Schema/API未改，后续Owner扩展须独立CR/历史迁移与验证；本项不增加产品代码或测试PASS。详见`docs/progress/trc-01-a07-p05-owner-platform-precheck.md`。

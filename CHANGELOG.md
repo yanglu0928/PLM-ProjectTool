@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/TRC-01-A07-P05 记录关系Owner与正式撤销装配前置缺口，保持默认/Windows正式路由关闭，转独立Trace替换关系任务。兼容性：仅核查/文档，程序、API、Schema、依赖不变。升级：无迁移。验证：冻结合同与代码静态核查，未运行新业务测试。已知问题：关系Owner身份/撤权规则、正式信任源、Server2025/Debian、通用Trace路径、Gate/UAT和可用发行包仍缺。
+
 - 2026-10-02：0.1.0.dev0/TRC-01-A07-P04 新增冻结TraceLink撤销的显式可选HTTP边界，可信Origin/Session/CSRF/If-Match/幂等Key和最小REVOKED/v1投影。兼容性：默认及正式平台未挂载，原API/Schema/依赖不变。升级：无迁移，需既有0053才能安全装配。验证：合同3、隔离PG18真实Session/权限/许可/重放/单Audit与收据、后端1892运行/3跳过、wheel PASS。已知问题：关系Owner、正式装配/信任、通用Trace创建/查询、三平台/性能/UAT/Gate及可用程序包未完成。
 
 - 2026-10-02：0.1.0.dev0/TRC-01-A07-P03 新增仅当前PROJECT经理的内部TraceLink撤销，同事务行锁、强版本、持久幂等、Audit和安全最小结果。兼容性：内部Application/Repository与项目策略增量，无公开API/新Schema/依赖。升级：需先执行已验证0053，已撤销历史不可反向恢复。验证：单元4、隔离PG18权限/并发/重放/审计回滚、后端1889运行/3跳过、开发wheel PASS。已知问题：可选HTTP、关系Owner、正式信任/三平台/性能/UAT/Gate及可用发行包未完成。

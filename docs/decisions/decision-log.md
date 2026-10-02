@@ -6397,3 +6397,11 @@
 - Impact/Rollback：Trace HTTP router与应用工厂可选参数，无Schema/Migration、新依赖、默认路由或旧数据改动；不传Router即可回滚。后续公开列表/创建/图Owner和平台装配需另验。
 - Verification Plan：HTTP单元覆盖默认404、成功/ETag/最小字段、Origin/Session/CSRF/If-Match/Key/空体/查询、安全码；真实ASGI+PG18合成当前PM/非PM/跨项目/失效License/重放/单Audit/收据，后端全量和wheel。正式目标账户、Server2025/Debian与Gate不由本项判PASS。
 - Result：HTTP合同3/3，原Trace自启动PG18脚本扩展真实Session的默认404/当前PM200/重放/非经理/CSRF/缺If-Match/非空体/查询/过期License及单一终态Audit/收据PASS；后端1892运行/3跳过，开发wheel SHA-256 `8ba0a2cb87a0250c582d7eec113057dd28929bb863ab973149b8c4a5a80033e2`。仅显式可选路由；Windows正式组合与关系Owner未装配。
+
+# DEC-20261002-616：不从创建者推断 Trace 关系 Owner
+
+- Date/WBS：2026-10-02 / `TRC-01-A07-P05`；输入冻结 API-02、TraceLink ORM/内部撤销、P04 可选 HTTP 与 Windows 正式组合。
+- Decision：`created_by` 仅为创建审计事实，不能自动充当冻结合同的“关系 Owner”；现有仅 PM 路径不扩权。正式组合在独立 Owner 证明与目标账户真实信任材料齐备前继续不挂载撤销 Router，默认模式继续 404。转 `TRC-01-A08-P01` 的独立 PM 替换关系前置核查。
+- Reason：端点 Document Owner 只证明资源版本，不证明边所有权；以创建者或合成 License 代替会扩大权限/虚报可用性。当前无可逆的真实关系 Owner/撤权规则。
+- Impact/Rollback：仅记录前置，不改代码、Schema、API、运行配置或历史数据；无需升级/迁移，删除本记录即可恢复原文档状态。未来 Owner 扩展需先登记 CR/迁移与验证，正式装配需另验。
+- Verification：API-02/ORM/服务/应用工厂/正式组合静态核查；未运行新业务测试，P04 原 PASS 不扩大到生产、Server2025/Debian、Gate 3 或发行。
