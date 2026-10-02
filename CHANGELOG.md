@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A06-P01 完成Worker/Invocation执行边界核查并登记CR-AI-015：当前客户端自报AI payload摘要不足以证明最终发送载荷，选择服务端确定性 `AIExecutionEnvelope`，由Preview、Task创建复核和每次Invocation共用，所有授权范围与字节/Token上限在网络I/O前失败关闭。兼容性/升级/回滚：本项仅文档，无Schema/API/依赖/运行变化；未来可撤Worker组合恢复不消费，旧无服务端计划证明记录不可执行且不猜测回填。验证：静态核对冻结合同、Schema0064、P05前置和现有AI模块；未运行新代码测试。已知问题：执行Grant、内容Owner、Invocation、Router/Adapter和结果发布待分片实现；真实外发仍需明确授权。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A05-P06 实现冻结AI Task GET安全投影：项目经理/客户经理可读项目Task，其他成员仅可读自己提交项，普通成员越权、跨项目与不存在资源统一404；只返回版本和资源引用，不读取/返回参数、Prompt/Input正文、Provider原始内容或Secret。兼容性：无Schema/依赖/Breaking URL/外发，仅显式Windows只读/写组合挂载，登录-only保持404。升级/回滚：按既有组合启动；撤Router注入恢复404且历史不变。验证：Win11/PG18.6真实HTTP/PG角色与项目隔离、Query拒绝及响应最小化PASS，定向43、后端2157运行/3跳过；开发wheel SHA-256 `63315024faa0b1d4f5d7776579679b6af5030743257df2b4e0dd7cb2160c6c0e`。已知问题：Worker最终payload/Invocation/发送前限额与授权再验、正式信任、Server2025、Gate3/UAT/交付包待完成。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A05-P05 新增严格非敏感Task Policy Bootstrap来源、Windows显式写平台Task路由和执行前置；按CR-AI-014/DEC-719补充Schema0071保存不可变 `prompt_policy_version`，旧NULL Task保留但不可执行。兼容性：0070后新增可空列，无依赖/Breaking URL/真实Provider外发；仅Win11/PG18.6验证。升级/回滚：备份停写后升0071并配置受审策略；移除策略重启恢复404；有版本化Task历史拒绝降0070，须向前修复或受控恢复。验证：真实Session/Project/Document/Egress/Prompt/Task HTTP链、202重放、版本不可改、准入及撤销拒绝PASS，定向50、后端2153运行/3跳过；开发wheel SHA-256 `32a3d4b414b2dec7bce36ea2b307f313833c7c62d6ebc9f795ccdc75bbb1b7e0`。已知问题：Task GET、Worker最终payload/Invocation/发送前限额与撤销再验、正式信任、Server2025、Gate3/UAT/交付包待完成。

@@ -7180,3 +7180,11 @@
 - Reason：项目管理需要查看执行状态和追溯关系，但普通成员不应借Task ID浏览其他人的处理上下文；显式列投影比先加载完整实体再过滤更能控制敏感内容泄漏。
 - Impact/Rollback：新增可选GET Router、读取服务/Repository、Windows组合和 `AI_TASK_GET` 项目读策略；无Schema、依赖、Breaking URL或外发。撤Router注入恢复404，历史不变。
 - Verification：Win11/PG18.6真实HTTP/PG创建人及项目经理200、普通成员和跨项目404、Query拒绝与无参数/正文PASS；定向43、后端2157运行/3跳过，wheel `63315024faa0b1d4f5d7776579679b6af5030743257df2b4e0dd7cb2160c6c0e`。Worker最终payload/Invocation/发送前限制仍由A06继续验收。
+
+# DEC-20261003-721：AI外发授权必须绑定服务端确定性最终载荷
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P01`；依据 ADR-004、DM-04、API-03、Schema0064、CR-AI-015。
+- Decision：不接受客户端自报payload摘要作为AI Worker最终放行证据。采用服务端确定性 `AIExecutionEnvelope`，让AI_TASK Preview、Task创建复核和每次Invocation共用构建器；实际字节摘要、来源、Provider/config/model/region、数据类别、字节/Token/重试上限任一不符均在网络I/O前拒绝。旧记录无服务端计划证明时不可执行。
+- Reason：客户端无权读取完整Prompt，也无法可靠复刻模板、编码和Provider序列化；逻辑引用摘要不能捕获正文或字节变化，发送后再记录则无法撤回外发。
+- Impact/Rollback：P01仅文档，后续按CR-AI-015分片实现；不改现有Schema/API/依赖。撤未来Worker/路由组合恢复不消费，历史保留，不删除Invocation/Audit。真实Provider调用仍需明确数据范围授权。
+- Verification：静态对照冻结合同、Schema0064、P05执行前置、Egress Owner和现有AI模块；确认无生产AIService/ModelRouter/ProviderAdapter、确定性载荷构建或Invocation发布服务。本项未运行新代码测试，不标Worker PASS。
