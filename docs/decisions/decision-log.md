@@ -6422,3 +6422,4 @@
 - Reason：独立预解析无法保证 Document/Project/Session 证明与替换提交为同一受锁事实；接受客户端内部 Scope/Owner 会改变冻结合同并扩大信任边界。
 - Impact/Rollback：仅记录前置，无代码/API/Schema/数据变化，升级无迁移；P04/P05 分别验证后才可显式注入 Router，默认/正式组合仍关闭。
 - Verification：冻结合同/Owner/Service 静态核查，无新业务测试，内部 P02 PASS 不扩大为 HTTP、Gate 或发行 PASS。
+- P04 Result：仅注册DOC-02的原始三字段内部入口，在当前命令事务解析Owner Scope/Project；Receipt基于原始输入，重放重验当前身份/许可/旧边但不重新要求新端点可读。Win11隔离PG18来源变RESTRICTED后同Key安全重放与原Trace链PASS，后端1897运行/3跳过、开发wheel SHA-256 `29a227016ed0e5501e4f4cfec3741cbffa989353e146eadff47cbb85a0ce1fa0`。HTTP/正式装配/Gate仍关闭。

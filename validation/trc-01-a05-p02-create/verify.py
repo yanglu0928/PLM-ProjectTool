@@ -55,11 +55,13 @@ from plm_assistant.modules.trace.application.revoke_link import (
     RevokeTraceLink, TraceRevokeError, TraceRevokeService,
 )
 from plm_assistant.modules.trace.application.supersede_link import (
-    SupersedeTraceLink, TraceSupersedeError, TraceSupersedeService,
+    SupersedeTraceLink, SupersedeTraceLinkRefs, TraceSupersedeError,
+    TraceSupersedeService,
 )
 from plm_assistant.modules.trace.api.revoke_link import create_trace_revoke_router
 from plm_assistant.modules.trace.application.target_proof import (
-    TraceProofQuery, TraceResourceVersionRef, TraceTargetProofError,
+    TraceProofQuery, TracePublicEdgeResolver, TraceResourceVersionRef,
+    TraceTargetProofError,
     TraceTargetProofService,
 )
 from plm_assistant.modules.trace.domain.link_shape import TraceEdgeShape, TraceVersionRef
@@ -218,7 +220,7 @@ def verify():
                 "RETURNING document_id", (project_id, pm),
             ).fetchone()[0]
             with db.transaction():
-                first, _ = create_version(db, doc_id, project_id, pm, 1, None)
+                first, first_file = create_version(db, doc_id, project_id, pm, 1, None)
             with db.transaction():
                 second, _ = create_version(db, doc_id, project_id, pm, 2, first)
             with db.transaction():
@@ -679,6 +681,9 @@ def verify():
                 cycle_guard=SqlAlchemyTraceCycleGuard(),
                 repository=SqlAlchemyTraceSupersedeRepository(),
                 receipts=SqlAlchemyIdempotencyReceipts(), audit=audit,
+                public_resolver=TracePublicEdgeResolver({
+                    "DOC-02": document_owner,
+                }),
             )
         supersede = superseder(AuditService(SqlAlchemyAuditRepository()))
         old_edge = TraceEdgeShape(ref(second), ref(first), "REFINES")
@@ -793,6 +798,31 @@ def verify():
                 "SELECT link_state FROM plm.trc_links WHERE trace_link_id=%s",
                 (existing_target.trace_link_id,),
             ).fetchone() == ("ACTIVE",)
+        public_change = SupersedeTraceLinkRefs(
+            pm_token, CSRF, uuid.uuid4(), project_id,
+            colliding_old.trace_link_id, 0,
+            TraceResourceVersionRef("DOC-02", doc_id, first),
+            TraceResourceVersionRef("DOC-02", doc_id, second),
+            "GENERATED_FROM",
+        )
+        public_result = supersede.supersede_refs(
+            public_change, idempotency_key="trace-supersede-public-refs-001",
+        )
+        with connect(name) as db:
+            db.execute("UPDATE plm.doc_file_objects SET file_state='RESTRICTED' "
+                       "WHERE file_object_id=%s", (first_file,))
+        assert supersede.supersede_refs(
+            public_change, idempotency_key="trace-supersede-public-refs-001",
+        ) == public_result
+        with connect(name) as db:
+            assert db.execute(
+                "SELECT link_state,lock_version,superseded_by_ref FROM plm.trc_links "
+                "WHERE trace_link_id=%s", (colliding_old.trace_link_id,),
+            ).fetchone() == ("SUPERSEDED", 1, public_result.replacement_id)
+            assert db.execute(
+                "SELECT link_state,lock_version FROM plm.trc_links "
+                "WHERE trace_link_id=%s", (public_result.replacement_id,),
+            ).fetchone() == ("ACTIVE", 0)
             db.execute("UPDATE plm.prj_projects SET state='ARCHIVED' WHERE project_id=%s",
                        (project_id,))
         try:
@@ -802,7 +832,7 @@ def verify():
             assert exc.code == "PROJECT_ARCHIVED"
         else:
             raise AssertionError("archived project accepted Trace write")
-        print("PASS: Trace create/graph, PM revoke HTTP and atomic PM supersede/PG chain")
+        print("PASS: Trace create/graph, PM revoke HTTP and raw-ref atomic supersede/PG chain")
     finally:
         if runtime is not None:
             runtime.dispose()

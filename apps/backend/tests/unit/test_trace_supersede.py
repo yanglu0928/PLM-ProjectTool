@@ -10,10 +10,13 @@ from plm_assistant.modules.platform.application.idempotency import IdempotencyEr
 from plm_assistant.modules.project.application.authorization import AuthorizedProjectAction
 from plm_assistant.modules.trace.application.create_link import StoredTraceLink
 from plm_assistant.modules.trace.application.supersede_link import (
-    SupersedeTraceLink, SupersededTraceLink, TraceSupersedeError,
+    SupersedeTraceLink, SupersedeTraceLinkRefs, SupersededTraceLink, TraceSupersedeError,
     TraceSupersedeService, TraceSupersedeState,
 )
-from plm_assistant.modules.trace.application.target_proof import TraceTargetProof
+from plm_assistant.modules.trace.application.target_proof import (
+    TracePublicEdgeResolver, TraceResourceVersionRef, TraceTargetProof,
+    TraceTargetProofError,
+)
 from plm_assistant.modules.trace.domain.link_shape import TraceEdgeShape, TraceVersionRef
 from plm_assistant.modules.trace.infrastructure.cycle_guard import TraceCycleError
 
@@ -56,8 +59,24 @@ class _Projects:
 
 
 class _Owner:
+    enabled = True
+    refs = ()
+
     def prove(self, tx, query, ref):
+        if not self.enabled:
+            raise TraceTargetProofError("RESOURCE_NOT_FOUND")
         return TraceTargetProof(ref)
+
+    def resolve(self, tx, query, project_id, ref):
+        if not self.enabled:
+            raise TraceTargetProofError("RESOURCE_NOT_FOUND")
+        for actual in self.refs:
+            if (actual.object_type == ref.resource_type
+                    and actual.object_id == ref.resource_id
+                    and actual.version_id == ref.version_id
+                    and actual.project_id == project_id):
+                return actual
+        raise TraceTargetProofError("RESOURCE_NOT_FOUND")
 
 
 class _Cycles:
@@ -142,12 +161,15 @@ class TraceSupersedeTests(unittest.TestCase):
         ))
         self.receipts, self.audit, self.cycles = _Receipts(), _Audit(), _Cycles()
         from plm_assistant.modules.trace.application.target_proof import TraceTargetProofService
+        self.owner = _Owner()
+        self.owner.refs = (source, target, other)
         self.service = TraceSupersedeService(
             unit_of_work=lambda: self.tx, sessions=self.sessions,
             projects=self.projects, license_guard=self.guard,
-            proofs=TraceTargetProofService({("document", "DOC-02"): _Owner()}),
+            proofs=TraceTargetProofService({("document", "DOC-02"): self.owner}),
             cycle_guard=self.cycles, repository=self.repository,
             receipts=self.receipts, audit=self.audit,
+            public_resolver=TracePublicEdgeResolver({"DOC-02": self.owner}),
             clock=lambda: datetime.now(timezone.utc),
         )
 
@@ -217,6 +239,55 @@ class TraceSupersedeTests(unittest.TestCase):
             self._attempt()
         self.assertEqual(caught.exception.code, "TRACE_UNAVAILABLE")
         self.assertFalse(self.tx.committed)
+
+    def test_frozen_refs_resolve_in_command_transaction_and_replay_without_owner(self):
+        def public(ref):
+            return TraceResourceVersionRef(ref.object_type, ref.object_id,
+                                           ref.version_id)
+        command = SupersedeTraceLinkRefs(
+            self.command.session_token, self.command.csrf_token,
+            self.command.trace_id, self.project, self.link, 0,
+            public(self.new.source), public(self.new.target),
+            self.new.relation_type,
+        )
+        first = self.service.supersede_refs(
+            command, idempotency_key="trace-public-refs-key-001",
+        )
+        self.assertEqual(first.replacement_id, self.repository.new_id)
+        self.owner.enabled = False
+        self.assertEqual(self.service.supersede_refs(
+            command, idempotency_key="trace-public-refs-key-001",
+        ), first)
+        self.assertEqual((self.repository.created, self.receipts.completions), (1, 1))
+        with self.assertRaises(TraceSupersedeError) as caught:
+            self.service.supersede_refs(
+                replace(command, expected_version=1),
+                idempotency_key="trace-public-refs-key-001",
+            )
+        self.assertEqual(caught.exception.code, "CONFLICT_IDEMPOTENCY")
+
+    def test_frozen_refs_invalid_or_unregistered_are_rejected(self):
+        valid = TraceResourceVersionRef(
+            "DOC-02", self.new.source.object_id, self.new.source.version_id,
+        )
+        command = SupersedeTraceLinkRefs(
+            self.command.session_token, self.command.csrf_token,
+            self.command.trace_id, self.project, self.link, 0,
+            valid, TraceResourceVersionRef("UNKNOWN", uuid.uuid4(), uuid.uuid4()),
+            self.new.relation_type,
+        )
+        with self.assertRaises(TraceSupersedeError) as caught:
+            self.service.supersede_refs(
+                command, idempotency_key="trace-public-refs-key-002",
+            )
+        self.assertEqual(caught.exception.code, "RESOURCE_NOT_FOUND")
+        with self.assertRaises(TraceSupersedeError) as caught:
+            self.service.supersede_refs(
+                replace(command, target=TraceResourceVersionRef(
+                    "DOC-02", uuid.UUID(int=0), uuid.uuid4())),
+                idempotency_key="trace-public-refs-key-002",
+            )
+        self.assertEqual(caught.exception.code, "VALIDATION_FAILED")
 
 
 if __name__ == "__main__":

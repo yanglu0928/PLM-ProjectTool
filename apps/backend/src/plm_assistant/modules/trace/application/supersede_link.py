@@ -21,7 +21,8 @@ from plm_assistant.modules.trace.application.create_link import (
     StoredTraceLink, _ref_fingerprint,
 )
 from plm_assistant.modules.trace.application.target_proof import (
-    TraceProofQuery, TraceTargetProofError, TraceTargetProofService,
+    TraceProofQuery, TracePublicEdgeResolver, TraceResourceVersionRef,
+    TraceTargetProofError, TraceTargetProofService,
 )
 from plm_assistant.modules.trace.domain.link_shape import TraceEdgeShape
 from plm_assistant.modules.trace.infrastructure.cycle_guard import TraceCycleError
@@ -46,6 +47,21 @@ class SupersedeTraceLink:
     trace_link_id: uuid.UUID
     expected_version: int
     replacement: TraceEdgeShape
+
+
+@dataclass(frozen=True, slots=True)
+class SupersedeTraceLinkRefs:
+    """Frozen public three-field replacement, resolved only inside command UoW."""
+
+    session_token: bytes = field(repr=False)
+    csrf_token: bytes = field(repr=False)
+    trace_id: uuid.UUID
+    project_id: uuid.UUID
+    trace_link_id: uuid.UUID
+    expected_version: int
+    source: TraceResourceVersionRef
+    target: TraceResourceVersionRef
+    relation_type: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -106,6 +122,7 @@ class TraceSupersedeService:
                  proofs: TraceTargetProofService, cycle_guard: _CyclePort,
                  repository: _RepositoryPort, receipts: _ReceiptPort,
                  audit: AuditService,
+                 public_resolver: TracePublicEdgeResolver | None = None,
                  clock: Callable[[], datetime] | None = None) -> None:
         if any(item is None for item in (
                 unit_of_work, sessions, projects, license_guard, proofs,
@@ -114,11 +131,20 @@ class TraceSupersedeService:
         self._uow, self._sessions, self._projects = unit_of_work, sessions, projects
         self._guard, self._proofs, self._cycles = license_guard, proofs, cycle_guard
         self._repository, self._receipts, self._audit = repository, receipts, audit
+        self._public_resolver = public_resolver
         self._clock = clock or (lambda: datetime.now(timezone.utc))
 
     def supersede(self, command: SupersedeTraceLink, *,
                   idempotency_key: str) -> SupersededTraceLink:
-        if (type(command) is not SupersedeTraceLink
+        return self._execute(command, idempotency_key=idempotency_key)
+
+    def supersede_refs(self, command: SupersedeTraceLinkRefs, *,
+                       idempotency_key: str) -> SupersededTraceLink:
+        return self._execute(command, idempotency_key=idempotency_key)
+
+    def _execute(self, command: SupersedeTraceLink | SupersedeTraceLinkRefs, *,
+                 idempotency_key: str) -> SupersededTraceLink:
+        if (type(command) not in (SupersedeTraceLink, SupersedeTraceLinkRefs)
                 or type(command.session_token) is not bytes
                 or len(command.session_token) != 32
                 or type(command.csrf_token) is not bytes
@@ -126,20 +152,53 @@ class TraceSupersedeService:
                 or any(type(value) is not uuid.UUID or value.int == 0 for value in (
                     command.trace_id, command.project_id, command.trace_link_id))
                 or type(command.expected_version) is not int
-                or command.expected_version < 0
-                or type(command.replacement) is not TraceEdgeShape
-                or command.replacement.scope != "PROJECT"
-                or command.replacement.project_id != command.project_id):
+                or command.expected_version < 0):
             raise TraceSupersedeError("VALIDATION_FAILED")
-        try:
-            validate_idempotency_key(idempotency_key)
-            fingerprint = canonical_payload_fingerprint({
+        public = type(command) is SupersedeTraceLinkRefs
+        if public:
+            if (type(command.source) is not TraceResourceVersionRef
+                    or type(command.target) is not TraceResourceVersionRef
+                    or type(command.relation_type) is not str
+                    or not command.relation_type
+                    or any(type(ref.resource_type) is not str
+                           or not ref.resource_type
+                           or type(ref.resource_id) is not uuid.UUID
+                           or ref.resource_id.int == 0
+                           or type(ref.version_id) is not uuid.UUID
+                           or ref.version_id.int == 0
+                           for ref in (command.source, command.target))
+                    or self._public_resolver is None):
+                raise TraceSupersedeError("VALIDATION_FAILED")
+            fingerprint_input = {
+                "trace_link_id": str(command.trace_link_id),
+                "expected_version": command.expected_version,
+                "source": {
+                    "resource_type": command.source.resource_type,
+                    "resource_id": str(command.source.resource_id),
+                    "version_id": str(command.source.version_id),
+                },
+                "target": {
+                    "resource_type": command.target.resource_type,
+                    "resource_id": str(command.target.resource_id),
+                    "version_id": str(command.target.version_id),
+                },
+                "relation_type": command.relation_type,
+            }
+        else:
+            if (type(command.replacement) is not TraceEdgeShape
+                    or command.replacement.scope != "PROJECT"
+                    or command.replacement.project_id != command.project_id):
+                raise TraceSupersedeError("VALIDATION_FAILED")
+            fingerprint_input = {
                 "trace_link_id": str(command.trace_link_id),
                 "expected_version": command.expected_version,
                 "source": _ref_fingerprint(command.replacement.source),
                 "target": _ref_fingerprint(command.replacement.target),
                 "relation_type": command.replacement.relation_type,
-            })
+            }
+        try:
+            validate_idempotency_key(idempotency_key)
+            fingerprint = canonical_payload_fingerprint(fingerprint_input)
             self._guard.require_valid(trace_id=command.trace_id)
             with self._uow() as tx:
                 now = self._clock()
@@ -188,17 +247,22 @@ class TraceSupersedeService:
                     raise TraceSupersedeError("CONFLICT_VERSION")
                 if state.link_state != "ACTIVE":
                     raise TraceSupersedeError("CONFLICT_STATE")
-                if (state.edge == command.replacement
-                        or state.edge.source != command.replacement.source
-                        and state.edge.target != command.replacement.target):
+                replacement = (self._public_resolver.resolve_edge(
+                    tx, TraceProofQuery(command.session_token, command.trace_id),
+                    command.project_id, command.source, command.target,
+                    command.relation_type,
+                ) if public else command.replacement)
+                if (state.edge == replacement
+                        or state.edge.source != replacement.source
+                        and state.edge.target != replacement.target):
                     raise TraceSupersedeError("VALIDATION_FAILED")
                 self._proofs.prove_edge(
                     tx, TraceProofQuery(command.session_token, command.trace_id),
-                    command.replacement,
+                    replacement,
                 )
-                self._cycles.assert_acyclic(tx, command.replacement)
+                self._cycles.assert_acyclic(tx, replacement)
                 stored = self._repository.create_active(
-                    tx, edge=command.replacement, actor_id=actor,
+                    tx, edge=replacement, actor_id=actor,
                     trace_id=command.trace_id,
                 )
                 if (type(stored) is not StoredTraceLink
