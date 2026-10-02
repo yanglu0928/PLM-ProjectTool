@@ -52,7 +52,8 @@ class PromptVersionDraft:
     def __post_init__(self) -> None:
         if (type(self.prompt_template_id) is not uuid.UUID or self.prompt_template_id.int == 0
                 or type(self.task_type) is not PromptTaskType
-                or any(type(value) is not str or _REF.fullmatch(value) is None for value in (
+                or any(type(value) is not str or _REF.fullmatch(value) is None
+                       or _OBVIOUS_SECRET.search(value) is not None for value in (
                     self.output_schema_ref, self.rag_policy_ref, self.provider_policy_ref,
                 ))
                 or type(self.schema_version) is not int or not 1 <= self.schema_version <= 2147483647):
