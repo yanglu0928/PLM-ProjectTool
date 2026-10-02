@@ -6818,3 +6818,10 @@
 - Reason：在不改变冻结模型/API 的情况下防跨模板激活与历史覆盖，同时保留退役后的解释链。
 - Impact/Rollback：新增 ORM/Migration 0059 与 Schema 增量说明；无公开 API、依赖或外发。空表可降至 0058，有历史拒绝物理降级并向前修复。
 - Verification：Win11 隔离 PG18 空/有旧数据迁移、drift、约束、历史触发器及非空拒降 PASS；后端回归与开发包见 A02 进度记录。正式账户/三平台未验。
+# DEC-20261002-676：Prompt 创建与首版写入按冻结 API 拆分
+
+- Date/WBS：2026-10-02 / `AI-03-A03`；依据冻结 API-03 的独立 `AI_PROMPT_CREATE` 与 `AI_PROMPT_CREATE_VERSION`、DM AI-03 和 Schema 0059。
+- Decision：A03 仅创建 DEPLOYMENT/DRAFT PromptTemplate 身份，活动版本为空，不接收或写入 Prompt 正文；A04 独立追加不可变首版并实施正文/策略安全校验。修正先前 A02 进度中的“创建与首版同项”下一任务措辞，不改冻结 API 或表结构。
+- Reason：冻结合同把模板创建和版本追加分成两个受控操作；Schema 允许无版本 DRAFT。合并实现会提前扩大创建入口的敏感内容边界并模糊幂等语义。
+- Impact/Rollback：仅内部 AI Application/Repository 与合成验证；无公开 API、迁移、外发或生产路由。未装配时可停止；已产生的审计和 DRAFT 历史不物理删除。
+- Verification：A03 Win11 隔离 PG18 当前管理员/CSRF/License、同事务收据/Audit、并发重放、退役后历史视图、审计回滚及撤权拒绝通过；后端2055运行/3跳过、开发 wheel 通过。A04 另验不可变正文写入；两项完成前不声称 Prompt 可调用。
