@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/TRC-01-A06-P01 新增Trace内部PROJECT单跳逐节点受权查询，显式项目成员权限、受限候选窗口与隐藏边不泄露；验证脚本改为自启动隔离PG18。兼容性：内部Application/Repository与项目只读策略增量，无公开API/Schema/依赖变化。升级：无迁移、无旧数据改写。验证：单元6、隔离PG18真实Session/上下游/撤权/跨项目/License及原创建回归、后端1863运行/3跳过、开发wheel PASS。已知问题：多跳/稳定游标/图HTTP、其他业务Owner、正式信任/法律/目标平台/UAT/Gate与可用发行包仍开放。
+
 - 2026-10-02：0.1.0.dev0/WFL-01-A07-P06 新增Workflow调用方事务固定Evidence最小观测适配，PROJECT/GLOBAL标准来源分流且失败关闭；P05记录真实Review Subject/ApprovedException Owner前置阻塞。兼容性：内部Application接口增量，公开API/Schema/依赖不变。升级：无迁移，不开放Checklist/Gate写。验证：定向5、后端1857运行/3跳过、开发wheel PASS；本项未跑新的端到端写链。已知问题：真实Review/例外Owner、正式信任/法律、目标平台/UAT/Gate和可用发行包仍缺。
 
 - 2026-10-02：0.1.0.dev0/WFL-01-A07-P04-A03 增加项目经理对GLOBAL `STANDARD_CAPABILITY` 的窄内部固定来源证明及Evidence Owner，不放宽普通GLOBAL列表/详情/下载。兼容性：内部Application Port增量，无公开API/Schema/依赖变化。升级：无迁移，历史证据不改写。验证：单元6、隔离PG18整文档与解析节点六表锁/普通GLOBAL拒绝/跨项目/撤销/实际文件和解析篡改、后端全量1852通过/3跳过、开发wheel PASS。已知问题：未装配实际Workflow写链，Review/例外Owner、正式License/法律、目标平台/UAT/Gate及可用发行包仍未完成。

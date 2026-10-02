@@ -51,6 +51,15 @@ class TraceTargetProofService:
         return (self._prove_one(transaction, query, edge.source),
                 self._prove_one(transaction, query, edge.target))
 
+    def prove_ref(self, transaction: object, query: TraceProofQuery,
+                  ref: TraceVersionRef) -> TraceTargetProof:
+        if (transaction is None or type(query) is not TraceProofQuery
+                or type(query.session_token) is not bytes or len(query.session_token) != 32
+                or type(query.trace_id) is not uuid.UUID or query.trace_id.int == 0
+                or type(ref) is not TraceVersionRef):
+            raise TraceTargetProofError("VALIDATION_FAILED")
+        return self._prove_one(transaction, query, ref)
+
     def _prove_one(self, transaction: object, query: TraceProofQuery,
                    ref: TraceVersionRef) -> TraceTargetProof:
         provider = self._owners.get((ref.owner_module, ref.object_type))

@@ -3,9 +3,14 @@
 from __future__ import annotations
 
 import hashlib
+import shutil
+import socket
+import subprocess
+import tempfile
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from threading import Barrier
 
 import psycopg
@@ -30,19 +35,39 @@ from plm_assistant.modules.project.infrastructure.authorization_repository impor
 from plm_assistant.modules.trace.application.create_link import (
     CreateTraceLink, TraceCreateError, TraceCreateService,
 )
+from plm_assistant.modules.trace.application.query_one_hop import (
+    TraceOneHopQuery, TraceOneHopService, TraceQueryError,
+)
 from plm_assistant.modules.trace.application.target_proof import (
     TraceTargetProofError, TraceTargetProofService,
 )
 from plm_assistant.modules.trace.domain.link_shape import TraceEdgeShape, TraceVersionRef
 from plm_assistant.modules.trace.infrastructure.create_repository import SqlAlchemyTraceCreateRepository
+from plm_assistant.modules.trace.infrastructure.query_repository import SqlAlchemyTraceAdjacencyRepository
 from plm_assistant.modules.trace.infrastructure.cycle_guard import (
     SqlAlchemyTraceCycleGuard, TraceCycleError,
 )
 
 
 HOST, PORT, USER = "127.0.0.1", 55432, "poc_admin"
+ROOT = Path(__file__).resolve().parents[2]
+PG_SOURCE = ROOT / "artifacts/poc-02/windows/runtime/postgresql-18.6/pgsql"
+VECTOR_SOURCE = ROOT / "artifacts/poc-02/windows/source/pgvector-0.8.6"
 CSRF = b"c" * 32
 HASH = b"h" * 32
+
+
+def run(*args: str, detached: bool = False) -> None:
+    output = subprocess.DEVNULL if detached else subprocess.PIPE
+    result = subprocess.run(args, stdout=output, stderr=output, text=True, timeout=120)
+    if result.returncode:
+        raise RuntimeError(f"isolated PostgreSQL command failed: {Path(args[0]).name}")
+
+
+def free_port() -> int:
+    with socket.socket() as probe:
+        probe.bind((HOST, 0))
+        return int(probe.getsockname()[1])
 
 
 def connect(name):
@@ -197,6 +222,12 @@ def verify():
                 receipts=SqlAlchemyIdempotencyReceipts(), audit=audit,
             )
         creator = service(AuditService(SqlAlchemyAuditRepository()))
+        reader = TraceOneHopService(
+            unit_of_work=runtime.unit_of_work,
+            sessions=SqlAlchemyProjectReadAccess(), projects=auth,
+            license_guard=guard, proofs=proofs,
+            repository=SqlAlchemyTraceAdjacencyRepository(),
+        )
         ref = lambda version: TraceVersionRef(
             "document", "DOC-02", doc_id, version, "PROJECT", project_id,
         )
@@ -234,6 +265,27 @@ def verify():
             assert db.execute(
                 "SELECT count(*) FROM plm.aud_events WHERE action='TRACE_LINK_CREATED'",
             ).fetchone()[0] == 2
+        downstream = reader.query(TraceOneHopQuery(
+            customer_token, uuid.uuid4(), project_id, ref(first), "DOWNSTREAM",
+        ))
+        assert len(downstream.links) == 1 and downstream.links[0].edge == edge
+        upstream = reader.query(TraceOneHopQuery(
+            pm_token, uuid.uuid4(), project_id, ref(second), "UPSTREAM",
+        ))
+        assert len(upstream.links) == 1 and upstream.links[0].edge == edge
+        limited = reader.query(TraceOneHopQuery(
+            pm_token, uuid.uuid4(), project_id, ref(second), "DOWNSTREAM",
+            relation_type="REFINES", limit=1,
+        ))
+        assert len(limited.links) == 1 and limited.links[0].edge == concurrent_edge
+        try:
+            reader.query(TraceOneHopQuery(
+                other_pm_token, uuid.uuid4(), project_id, ref(first), "DOWNSTREAM",
+            ))
+        except TraceQueryError as exc:
+            assert exc.code == "RESOURCE_NOT_FOUND"
+        else:
+            raise AssertionError("cross-project actor read Trace graph")
         try:
             creator.create(CreateTraceLink(customer_token, CSRF, uuid.uuid4(), edge),
                            idempotency_key="trace-customer-key")
@@ -259,6 +311,10 @@ def verify():
         with connect(name) as db:
             db.execute("UPDATE plm.doc_file_objects SET file_state='RESTRICTED' "
                        "WHERE file_object_id=%s", (third_file,))
+        hidden = reader.query(TraceOneHopQuery(
+            pm_token, uuid.uuid4(), project_id, ref(second), "DOWNSTREAM",
+        ))
+        assert hidden.links == () and hidden.truncated
         unavailable = TraceEdgeShape(ref(first), ref(third), "REFINES")
         try:
             creator.create(CreateTraceLink(pm_token, CSRF, uuid.uuid4(), unavailable),
@@ -283,6 +339,14 @@ def verify():
         else:
             raise AssertionError("cross-project DocumentVersion became Trace target")
         guard.enabled = False
+        try:
+            reader.query(TraceOneHopQuery(
+                pm_token, uuid.uuid4(), project_id, ref(first), "DOWNSTREAM",
+            ))
+        except TraceQueryError as exc:
+            assert exc.code == "LICENSE_OPERATION_DENIED"
+        else:
+            raise AssertionError("expired License permitted Trace read")
         try:
             creator.create(CreateTraceLink(pm_token, CSRF, uuid.uuid4(), edge),
                            idempotency_key="trace-expired-license-key")
@@ -316,7 +380,7 @@ def verify():
             assert exc.code == "PROJECT_ARCHIVED"
         else:
             raise AssertionError("archived project accepted Trace write")
-        print("PASS: Trace create, replay, duplicate edge, roles/CSRF, cycle, target and Audit rollback")
+        print("PASS: Trace create/replay/Audit and authorized one-hop direction, scope and hidden neighbor")
     finally:
         if runtime is not None:
             runtime.dispose()
@@ -324,5 +388,42 @@ def verify():
         admin.close()
 
 
+def main() -> None:
+    global PORT
+    scratch = Path(tempfile.mkdtemp(prefix="plm-trc-pg-"))
+    if not str(scratch).isascii():
+        raise RuntimeError("ASCII temporary PostgreSQL path required")
+    install = scratch / "pgsql"
+    started = False
+    bin_dir = install / "bin"
+    data = scratch / "data"
+    try:
+        for name in ("bin", "lib", "share"):
+            shutil.copytree(PG_SOURCE / name, install / name)
+        shutil.copy2(VECTOR_SOURCE / "vector.dll", install / "lib/vector.dll")
+        shutil.copy2(VECTOR_SOURCE / "vector.control", install / "share/extension/vector.control")
+        for path in (VECTOR_SOURCE / "sql").glob("vector--*.sql"):
+            shutil.copy2(path, install / "share/extension" / path.name)
+        PORT = free_port()
+        run(str(bin_dir / "initdb.exe"), "-D", str(data), "-U", USER,
+            "-A", "trust", "--no-locale", "-E", "UTF8")
+        run(str(bin_dir / "pg_ctl.exe"), "-D", str(data), "-l", str(scratch / "postgres.log"),
+            "-o", f"-h {HOST} -p {PORT}", "-w", "start", detached=True)
+        started = True
+        verify()
+    finally:
+        if started:
+            run(str(bin_dir / "pg_ctl.exe"), "-D", str(data), "-m", "fast", "-w", "stop")
+        if data.exists():
+            status = subprocess.run([str(bin_dir / "pg_ctl.exe"), "-D", str(data), "status"],
+                                    stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                                    timeout=15)
+            if status.returncode == 0:
+                raise RuntimeError(f"isolated PostgreSQL remains running; data preserved at {scratch}")
+        if (scratch.resolve().is_relative_to(Path(tempfile.gettempdir()).resolve())
+                and scratch.name.startswith("plm-trc-pg-")):
+            shutil.rmtree(scratch)
+
+
 if __name__ == "__main__":
-    verify()
+    main()

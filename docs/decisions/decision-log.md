@@ -6325,3 +6325,12 @@
 - Reason：避免 Workflow 复制跨模块文件/解析/授权逻辑，亦避免用历史 UUID 或客户端观测值充当事实。P05 缺真实业务 Owner，不能以临时实现开启 PASS/WAIVED。
 - Impact/Rollback：内部接口/测试，无 API、Schema、依赖或数据迁移；不装配适配器即可回滚。后续真实写链必须重新验证 Session/License/CSRF、Review/例外、Audit/收据及并发；静态 Review 快照不代替客户确认。
 - Verification：定向单元5/5、后端1857运行/3跳过、wheel构建PASS；本项无新的PG写事务/浏览器/目标平台验收。
+
+# DEC-20261002-608：Trace 单跳读取在每条边的两端重新证明访问权
+
+- Date/WBS：2026-10-02 / `TRC-01-A06-P01`；冻结 AF-02/DM-03/API-02 的 Trace 查询与逐节点授权。
+- Decision：内部 PROJECT 单跳查询先验证当前 Session/License/项目成员及起点 Owner，随后在同一事务读取指定方向、指定项目的 ACTIVE 边；每条候选边两端逐一调用显式注册 Owner，缺失/无权边完全省略，内部故障整体失败关闭。用有界原始候选窗口与布尔 `truncated` 标记，不返回隐匿对象详情或数量；不装配外部 Graph API。
+- Reason：Trace 行的 UUID 与 Scope 不能证明目标仍可访问；只验起点会泄露无权节点。后续完整多跳/游标仍可沿用同一逐边授权原则。
+- Impact/Rollback：仅内部读取 Application/Repository 及项目只读操作策略，无 Schema/Migration/外部 API/依赖变更；不装配该服务即可回滚。旧边不迁移，历史继续保留。
+- Verification Plan：单元覆盖起点/项目/License拒绝、两端撤权、跨项目、未注册 Owner、错误/异常、候选窗口；隔离 PG18 验证 ACTIVE/Scope/方向/上限与当前权限。全量后端和 wheel 后判内部任务结果；不声称多跳、HTTP、目标平台或 Gate 通过。
+- Result：内部单跳单元6/6、隔离PG18真实会话/上下游/项目隔离/撤权隐藏/License拒绝及旧创建回归PASS；全量后端1863运行/3跳过、开发wheel PASS。首次全量旧策略总数断言失败，更新矩阵后重跑通过；未挂公开图API。
