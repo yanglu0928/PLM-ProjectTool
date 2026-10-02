@@ -8,7 +8,9 @@ from fastapi import FastAPI
 from sqlalchemy import create_engine, text
 
 from plm_assistant.entrypoints.api import create_app
+from plm_assistant.entrypoints.ai_egress_policy import create_deployment_ai_egress_policies
 from plm_assistant.entrypoints.password_capacity import get_process_password_capacity
+from plm_assistant.entrypoints.windows_ai_egress import create_windows_ai_egress_router
 from plm_assistant.entrypoints.windows_audit_list_cursor import create_windows_audit_cursor_codec
 from plm_assistant.modules.audit.api.read_events import create_audit_read_router
 from plm_assistant.modules.audit.application.authorized_read import AuthorizedAuditReadService
@@ -280,6 +282,22 @@ class ProductionLoginStartupError(RuntimeError):
         super().__init__("production login unavailable")
 
 
+def _create_configured_ai_egress_router(
+    settings: BootstrapSettings, *, runtime: DatabaseRuntime,
+    sessions: SessionService, origins: LoginOriginPolicy, license_guard: object,
+    audit: AuditService, documents: DocumentReadService,
+):
+    """Keep Egress absent unless the explicit write composition has a policy."""
+    if not settings.ai_egress_policies:
+        return None
+    preview_policies, approval_policy = create_deployment_ai_egress_policies(settings)
+    return create_windows_ai_egress_router(
+        runtime=runtime, sessions=sessions, origins=origins,
+        license_guard=license_guard, audit=audit, documents=documents,
+        preview_policies=preview_policies, approval_policy=approval_policy,
+    )
+
+
 def _schema_current(runtime: DatabaseRuntime) -> bool:
     config = Config()
     config.set_main_option("script_location", str(MIGRATION_PACKAGE))
@@ -384,6 +402,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         ai_prompt_retire_router = None
         ai_provider_create_router = None
         ai_provider_patch_router = None
+        ai_egress_router = None
         project_read_router = None
         workflow_read_router = None
         workflow_start_router = None
@@ -822,6 +841,11 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 sessions=sessions, departments=department_deactivates, origins=origins,
             )
             if include_secret_write:
+                ai_egress_router = _create_configured_ai_egress_router(
+                    settings, runtime=runtime, sessions=sessions, origins=origins,
+                    license_guard=licenses.guard, audit=audit,
+                    documents=document_reads,
+                )
                 evidence_downloads = PrepareDownloadService(
                     reader=document_reads, storage=LocalFileStorage(settings.data_root),
                     unit_of_work=runtime.unit_of_work, audit=audit,
@@ -1165,6 +1189,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             ai_prompt_retire_router=ai_prompt_retire_router,
             ai_provider_create_router=ai_provider_create_router,
             ai_provider_patch_router=ai_provider_patch_router,
+            ai_egress_router=ai_egress_router,
             project_read_router=project_read_router,
             workflow_read_router=workflow_read_router,
             workflow_start_router=workflow_start_router,

@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+from fastapi import APIRouter
 from fastapi.testclient import TestClient
 
 from plm_assistant.entrypoints.api import create_app
@@ -186,8 +187,19 @@ class ProductionLoginTests(unittest.TestCase):
             return_value=ParseListCursorCodec(b"p" * 32),
         ))
 
-    def settings(self, origins: tuple[str, ...]) -> BootstrapSettings:
-        return BootstrapSettings(data_root=Path(self.temp_dir.name), trusted_origins=origins)
+    def settings(self, origins: tuple[str, ...], *, egress: bool = False) -> BootstrapSettings:
+        policies = ({
+            "reference": "minimal-document-text.v1",
+            "operation_types": ["AI_TASK"], "data_categories": ["DOCUMENT_TEXT"],
+            "ttl_minutes": 30, "max_record_count": 50,
+            "max_payload_bytes": 1_048_576, "max_input_tokens": 32_768,
+            "max_retry_attempts": 2, "risk_codes": ["EXTERNAL_PROCESSING"],
+            "approval_roles": ["PROJECT_MANAGER"], "data_regions": ["cn-beijing"],
+        },) if egress else ()
+        return BootstrapSettings(
+            data_root=Path(self.temp_dir.name), trusted_origins=origins,
+            ai_egress_policies=policies,
+        )
 
     def test_missing_audit_cursor_disposes_both_platform_modes(self):
         from contextlib import ExitStack
@@ -518,7 +530,7 @@ class ProductionLoginTests(unittest.TestCase):
     def test_platform_mounts_read_only_with_explicit_trust_sources(self) -> None:
         runtime = Mock()
         runtime.is_ready.return_value = True
-        settings = self.settings(("http://localhost",))
+        settings = self.settings(("http://localhost",), egress=True)
         from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
         with patch("plm_assistant.entrypoints.production_login.read_database_url",
                    return_value="postgresql+psycopg://test:synthetic@localhost/test"), patch(
@@ -532,9 +544,11 @@ class ProductionLoginTests(unittest.TestCase):
                    return_value=SecretListCursorCodec(b"q" * 32)), patch(
                    "plm_assistant.entrypoints.production_login.create_windows_project_member_cursor_codec",
                    return_value=MemberListCursorCodec(b"m" * 32)), patch(
-                   "plm_assistant.entrypoints.production_login.create_windows_project_department_cursor_codec",
-                   return_value=DepartmentListCursorCodec(b"d" * 32)):
+                    "plm_assistant.entrypoints.production_login.create_windows_project_department_cursor_codec",
+                    return_value=DepartmentListCursorCodec(b"d" * 32)), patch(
+                    "plm_assistant.entrypoints.production_login.create_windows_ai_egress_router") as egress_factory:
             app = create_production_platform_app(settings)
+        egress_factory.assert_not_called()
         with TestClient(app, base_url="http://localhost") as client:
             self.assertEqual(client.get("/api/v1/admin/secrets").status_code, 401)
             self.assertEqual(client.get("/api/v1/admin/ai/models").status_code, 401)
@@ -563,6 +577,9 @@ class ProductionLoginTests(unittest.TestCase):
             for action in ("suspend", "resume", "remove"):
                 self.assertEqual(client.post("/api/v1/projects/00000000-0000-0000-0000-000000000001/members/00000000-0000-0000-0000-000000000002:" + action).status_code, 403)
             self.assertEqual(client.get("/health/ready").status_code, 200)
+            self.assertEqual(client.post(
+                "/api/v1/projects/00000000-0000-0000-0000-000000000001/egress-previews"
+            ).status_code, 404)
         runtime.dispose.assert_called_once()
 
     def test_platform_download_storage_failure_disposes_before_publish(self) -> None:
@@ -757,7 +774,12 @@ class ProductionLoginTests(unittest.TestCase):
     def test_write_mode_mounts_only_after_all_sources_exist(self) -> None:
         runtime = Mock()
         runtime.is_ready.return_value = True
-        settings = self.settings(("http://localhost",))
+        settings = self.settings(("http://localhost",), egress=True)
+        egress_router = APIRouter()
+
+        @egress_router.post("/api/v1/projects/{project_id}/egress-previews", status_code=204)
+        def synthetic_egress_mount(project_id: str) -> None:
+            del project_id
         from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
         with patch("plm_assistant.entrypoints.production_login.read_database_url",
                    return_value="postgresql+psycopg://test:synthetic@localhost/test"), patch(
@@ -776,11 +798,14 @@ class ProductionLoginTests(unittest.TestCase):
                    "plm_assistant.entrypoints.windows_secret_write.create_windows_secret_write_service",
                    return_value=Mock()) as write_factory, patch(
                    "plm_assistant.entrypoints.production_login.create_windows_document_upload_token_issuer",
-                   return_value=Mock()) as upload_issuer_factory:
+                    return_value=Mock()) as upload_issuer_factory, patch(
+                    "plm_assistant.entrypoints.production_login.create_windows_ai_egress_router",
+                    return_value=egress_router) as egress_factory:
             app = create_production_platform_write_app(settings)
         license_factory.assert_called_once()
         write_factory.assert_called_once()
         upload_issuer_factory.assert_called_once()
+        egress_factory.assert_called_once()
         with TestClient(app, base_url="http://localhost") as client:
             self.assertEqual(client.post("/api/v1/admin/secrets").status_code, 403)
             self.assertEqual(client.post("/api/v1/admin/ai/models").status_code, 403)
@@ -809,6 +834,9 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(client.post(
                 "/api/v1/admin/secrets/00000000-0000-0000-0000-000000000001:disable"
             ).status_code, 403)
+            self.assertEqual(client.post(
+                "/api/v1/projects/00000000-0000-0000-0000-000000000001/egress-previews"
+            ).status_code, 204)
         runtime.dispose.assert_called_once()
 
     def test_write_mode_missing_upload_key_disposes_without_publishing(self) -> None:

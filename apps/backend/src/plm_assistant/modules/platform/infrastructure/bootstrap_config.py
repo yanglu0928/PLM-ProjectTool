@@ -51,6 +51,7 @@ class BootstrapSettings(BaseSettings):
     parser_ocr_recognition_model_dir: Path | None = None
     parser_ocr_model_fingerprint: str | None = None
     ai_probe_policies: tuple[dict[str, str], ...] = ()
+    ai_egress_policies: tuple[dict[str, Any], ...] = ()
 
     @field_validator("ai_probe_policies", mode="before")
     @classmethod
@@ -66,6 +67,50 @@ class BootstrapSettings(BaseSettings):
         if len(set(references)) != len(references):
             raise ValueError("invalid AI probe policy configuration")
         return tuple(dict(item) for item in value)
+
+    @field_validator("ai_egress_policies", mode="before")
+    @classmethod
+    def validate_ai_egress_policies(cls, value: Any) -> tuple[dict[str, Any], ...]:
+        fields = frozenset({
+            "reference", "operation_types", "data_categories", "ttl_minutes",
+            "max_record_count", "max_payload_bytes", "max_input_tokens",
+            "max_retry_attempts", "risk_codes", "approval_roles", "data_regions",
+        })
+        list_fields = (
+            "operation_types", "data_categories", "risk_codes", "approval_roles",
+            "data_regions",
+        )
+        bounds = {
+            "ttl_minutes": (1, 1_440),
+            "max_record_count": (0, 1_000_000_000),
+            "max_payload_bytes": (1, 1_073_741_824),
+            "max_input_tokens": (1, 1_048_576),
+            "max_retry_attempts": (1, 10),
+        }
+        if type(value) not in (tuple, list) or len(value) > 16:
+            raise ValueError("invalid AI Egress policy configuration")
+        normalized: list[dict[str, Any]] = []
+        for item in value:
+            if (type(item) is not dict or set(item) != fields
+                    or type(item["reference"]) is not str):
+                raise ValueError("invalid AI Egress policy configuration")
+            for name in list_fields:
+                field = item[name]
+                if (type(field) not in (tuple, list) or not 1 <= len(field) <= 64
+                        or len(set(field)) != len(field)
+                        or any(type(entry) is not str for entry in field)):
+                    raise ValueError("invalid AI Egress policy configuration")
+            if any(type(item[name]) is not int or not low <= item[name] <= high
+                   for name, (low, high) in bounds.items()):
+                raise ValueError("invalid AI Egress policy configuration")
+            normalized.append({
+                **item,
+                **{name: tuple(item[name]) for name in list_fields},
+            })
+        references = [item["reference"] for item in normalized]
+        if len(set(references)) != len(references):
+            raise ValueError("invalid AI Egress policy configuration")
+        return tuple(normalized)
 
     @field_validator("parser_ocr_detection_model_dir", "parser_ocr_recognition_model_dir")
     @classmethod

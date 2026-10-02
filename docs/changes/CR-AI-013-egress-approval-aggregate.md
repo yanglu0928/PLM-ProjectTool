@@ -1,6 +1,6 @@
 # CR-AI-013：Egress Preview/Authorization 正式授权聚合
 
-日期：2026-10-03；状态：依 V1.1 持续授权登记，0068～0069、内部服务、Task Owner、可选HTTP及Windows 11隔离数据库组合已实施；正式部署策略来源与生产挂载待继续；关联冻结 API-03 `EGRESS_PREVIEW_CREATE/GET/AUTHORIZE/REVOKE`、DM-04、SC-01/02、CR-AI-011/012；原 Gate 2 冻结提交 `64cdf09` 不改。WBS `AI-04-A04-P01～P08`。
+日期：2026-10-03；状态：依 V1.1 持续授权登记，0068～0069、内部服务、Task Owner、可选HTTP、Windows 11数据库组合、正式部署策略来源与显式写平台挂载已实施；关联冻结 API-03 `EGRESS_PREVIEW_CREATE/GET/AUTHORIZE/REVOKE`、DM-04、SC-01/02、CR-AI-011/012；原 Gate 2 冻结提交 `64cdf09` 不改。WBS `AI-04-A04-P01～P09`。
 
 缺口与证据：冻结 API 要求每个逻辑外发操作先生成不发送数据的 EgressPreview，再由 ProjectManager/CustomerManager 且满足部署策略的主体显式授权，并支持撤销。当前仓库只有 AITask 内不可变消费快照，无 Preview/Authorization 权威根、来源明细、批准或撤销历史、首次幂等结果。SC-01 的 AI-04 物理映射也仅列 Task/Invocation owned tables。消费快照不能反向冒充批准来源。
 
@@ -27,3 +27,7 @@ P06结果：已实现锁定当前Authorization、Provider/Config/Model路由与�
 P07结果：已实现四条冻结路径的单一可选HTTP Router，严格执行Session/License应用链、Origin/CSRF/幂等/强ETag、精确JSON与安全投影；Authorize以`If-Match: "v0"`绑定不可变Preview版本，并以正文Preview指纹绑定具体内容，Revoke只接受Authorization v0。默认应用与当前生产组合四路径均404。合同5、后端2130运行/3跳过、wheel SHA-256 `e83a9586fe28193ccd4ca201e5665525e6c534bad0ec4f1c9afd1973e6209bd9` PASS；无Schema、依赖、真实PG HTTP组合或外发。
 
 P08结果：新增只有完整显式依赖才可构造的Windows Egress组合工厂和读/写Session分流适配器；当前生产组合仍未挂载。Win11/PG18.6真实Session、Project角色、DocumentVersion Owner、Preview/Authorization/Audit/Receipt HTTP链及重放/隔离/撤销/License拒绝PASS。首轮发现P07将首次结果trace与当前重放trace错误比较导致503，移除该非业务等值要求并补合同后完整重跑。后端2130运行/3跳过、wheel SHA-256 `d1533684503661409b357c5a567091bd01acab693b4da4b0f2645e75f2fff093` PASS；信任/策略为合成注入，无外发。
+
+P09实施前计划：现有Bootstrap只有Provider探针策略，不能作为逐次外发批准策略；选择新增最多16条非秘密、版本化`ai_egress_policies`，每项严格固定reference、operation/data category、TTL、记录/字节/Token/重试上限、风险代码、批准角色和数据区域。启动时转换为不可变Preview Registry与Approval Policy，缺失或畸形固定错误失败关闭。仅Windows显式写平台在正式License/Session/文档读取等既有信任源和该策略同时存在时挂载Egress Router；默认、登录和只读平台保持关闭。升级需受控编辑Bootstrap并重启；回滚移除策略并重启即可恢复404，既有授权历史保留。验证覆盖配置/YAML负例、策略允许/拒绝、三种平台路由矩阵和Win11隔离PG链；不连接Provider或外发。
+
+P09结果：已新增严格非秘密Bootstrap策略源，转换为不可变Preview/Approval策略并仅在Windows显式写平台且配置非空时挂载；默认/登录/只读保持404。配置单元6、生产组合合同32、Win11/PG18.6使用Bootstrap策略的真实HTTP/数据库链、后端2136运行/3跳过、wheel `7eeafd306f5d45efd283fdc3c1d9919090afa585ece13f4737bf99d1be6cfe5e` PASS。无Schema/依赖/Breaking API/外发。

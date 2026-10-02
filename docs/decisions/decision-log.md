@@ -7124,3 +7124,11 @@
 - Reason：一个仅支持CSRF的写适配器无法实现冻结GET合同；而把测试许可策略硬编码为生产默认会绕过逐次外发治理。显式依赖使缺项直接启动失败，读写分流保持各自锁和CSRF语义。
 - Impact/Rollback：新增Auth适配器和Windows组合工厂，无Schema/依赖/Breaking API；停止调用工厂即回退，历史记录不变。P08还修复幂等HTTP投影不得要求首次业务trace等于当前请求trace。
 - Verification：Win11/PG18.6真实Session/Project/Document Owner及六类Egress记录、三Audit/三Receipt链路，重放/隔离/撤销/许可拒绝PASS；合同5、后端2130运行/3跳过；wheel `d1533684503661409b357c5a567091bd01acab693b4da4b0f2645e75f2fff093`。
+
+# DEC-20261003-714：Egress生产策略用非敏感Bootstrap快照并仅写平台挂载
+
+- Date/WBS：2026-10-03 / `AI-04-A04-P09`；依据 CR-AI-013、DEC-713。
+- Decision：以最多16条严格定型、版本化的Bootstrap非秘密策略作为Preview与Approval部署源；策略快照不包含URL/Key/正文。默认、登录和只读平台即使有配置也不挂载；显式Windows写平台无策略时仅对Egress保持404，有策略但组合失败时整体启动失败。
+- Reason：Provider探针策略含endpoint且不表达逐次外发边界，不能复用；将测试放行策略写死在生产组合会绕过部署治理。显式策略快照可审查、可重启回滚且不泄露客户数据。
+- Impact/Rollback：无Schema/依赖/Breaking API；受控修改Bootstrap并重启启用，移除配置并重启恢复404，既有不可变授权历史保留。
+- Verification：单元6、生产组合合同32、Win11/PG18.6 Bootstrap策略真实Egress链、后端2136运行/3跳过PASS；wheel `7eeafd306f5d45efd283fdc3c1d9919090afa585ece13f4737bf99d1be6cfe5e`。

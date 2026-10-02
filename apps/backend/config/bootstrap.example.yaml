@@ -28,3 +28,20 @@ password_kdf_slots: 4
 #     model_key: "<approved-model>"
 #     data_region: "cn-beijing"
 #     egress_class: "EXTERNAL_APPROVAL_REQUIRED"
+# Optional AI Egress Preview/Authorization policies. These contain only bounded,
+# non-secret allowlists and limits: never add endpoint URLs, API keys or content.
+# Without at least one valid policy, the four Egress routes remain unmounted.
+# Policy changes require a controlled process restart; existing approvals keep
+# their immutable historical snapshot and remain subject to runtime checks.
+# ai_egress_policies:
+#   - reference: "minimal-document-text.v1"
+#     operation_types: ["AI_TASK"]
+#     data_categories: ["DOCUMENT_TEXT"]
+#     ttl_minutes: 30
+#     max_record_count: 50
+#     max_payload_bytes: 1048576
+#     max_input_tokens: 32768
+#     max_retry_attempts: 2
+#     risk_codes: ["EXTERNAL_PROCESSING"]
+#     approval_roles: ["PROJECT_MANAGER", "CUSTOMER_MANAGER"]
+#     data_regions: ["cn-beijing"]
