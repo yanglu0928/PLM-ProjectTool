@@ -23,6 +23,7 @@ from plm_assistant.modules.document.api.document_list_cursor import DocumentList
 from plm_assistant.modules.document.api.version_list_cursor import VersionListCursorCodec
 from plm_assistant.modules.document.api.parse_list_cursor import ParseListCursorCodec
 from plm_assistant.modules.jobs.api.list_cursor import JobListCursorCodec
+from plm_assistant.modules.ai.application.provider_list_cursor import ProviderListCursorCodec
 
 
 class _ContractMaintenanceAdmission:
@@ -155,6 +156,10 @@ class ProductionLoginTests(unittest.TestCase):
             "plm_assistant.entrypoints.production_login.create_windows_audit_cursor_codec",
             return_value=AuditListCursorCodec(b"a"*32),
         ))
+        self.enterContext(patch(
+            "plm_assistant.entrypoints.production_login.create_windows_ai_provider_list_cursor_codec",
+            return_value=ProviderListCursorCodec(b"i" * 32),
+        ))
         self.temp_dir = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp_dir.cleanup)
         self.enterContext(patch(
@@ -190,6 +195,31 @@ class ProductionLoginTests(unittest.TestCase):
                 stack.enter_context(patch(prefix+"create_windows_audit_cursor_codec",side_effect=RuntimeError("sensitive synthetic missing key")))
                 with self.assertRaises(ProductionLoginStartupError) as exc:factory(self.settings(("http://localhost",)))
                 self.assertNotIn("sensitive",str(exc.exception))
+            runtime.dispose.assert_called_once()
+
+    def test_missing_ai_provider_cursor_disposes_both_platform_modes(self):
+        from contextlib import ExitStack
+        from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
+        for factory in (create_production_platform_app, create_production_platform_write_app):
+            runtime = Mock(); runtime.is_ready.return_value = True
+            with ExitStack() as stack:
+                prefix = "plm_assistant.entrypoints.production_login."
+                for name, value in (("read_database_url", "postgresql+psycopg://localhost/test"),
+                                    ("create_database_runtime", runtime), ("_schema_current", True),
+                                    ("create_windows_secret_list_cursor_codec", SecretListCursorCodec(b"q" * 32))):
+                    stack.enter_context(patch(prefix + name, return_value=value))
+                stack.enter_context(patch(
+                    "plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services",
+                    return_value=Mock(guard=Mock()),
+                ))
+                missing = stack.enter_context(patch(
+                    prefix + "create_windows_ai_provider_list_cursor_codec",
+                    side_effect=RuntimeError("private synthetic missing key"),
+                ))
+                with self.assertRaises(ProductionLoginStartupError) as caught:
+                    factory(self.settings(("http://localhost",)))
+                missing.assert_called_once()
+                self.assertNotIn("private", str(caught.exception))
             runtime.dispose.assert_called_once()
 
     def test_job_list_dependencies_fail_closed_and_dispose_both_modes(self):

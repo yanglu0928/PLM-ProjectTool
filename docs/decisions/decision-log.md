@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-630 — Provider 只读路由挂入 Windows 显式平台模式
+
+- Date/WBS：2026-10-02 / `AI-01-A04-P05`；输入冻结 Provider GET/LIST、P01～P04 安全投影/游标/可选HTTP及现有 Windows `--platform`/`--platform-write` 组合。
+- Decision：两种显式平台模式共用当前 Session、DeploymentAdmin 与 License Guard，加载专用 Provider 游标 Vault KeyRef 后才注入只读路由；普通默认应用和 `--login` 不挂载。缺钥或任一构造失败，整个显式平台模式启动失败并清理运行时，不降级为无签名游标。
+- Reason/Impact/Rollback：保持既有平台管理读面一致且失败关闭。无 Schema/API/依赖变化；不选择显式平台模式或撤路由注入即可代码回退，Provider 数据不变。合成装配证据不替代正式账户密钥/License 信任源。
+
 ## DEC-20261002-629 — Provider GET/LIST 仅显式可选装配
 
 - Date/WBS：2026-10-02 / `AI-01-A04-P04`；输入冻结 API-01/API-03、P01～P03 安全投影/分页/签名钥。

@@ -95,6 +95,10 @@ from plm_assistant.modules.audit.api.submit_export import create_audit_export_su
 from plm_assistant.modules.audit.application.submit_export import AuditExportSubmitService
 from plm_assistant.modules.audit.application.export_submit_authorization import AuditExportSubmitAuthorization
 from plm_assistant.entrypoints.windows_secret_list_cursor import create_windows_secret_list_cursor_codec
+from plm_assistant.entrypoints.windows_ai_provider_list_cursor import create_windows_ai_provider_list_cursor_codec
+from plm_assistant.modules.ai.api.provider_metadata import create_ai_provider_read_router
+from plm_assistant.modules.ai.application.provider_metadata import AIProviderMetadataService
+from plm_assistant.modules.ai.infrastructure.provider_metadata_repository import SqlAlchemyAIProviderMetadataRepository
 from plm_assistant.entrypoints.windows_project_member_cursor import create_windows_project_member_cursor_codec
 from plm_assistant.entrypoints.windows_project_department_cursor import create_windows_project_department_cursor_codec
 from plm_assistant.entrypoints.windows_document_upload_token import create_windows_document_upload_token_issuer
@@ -346,6 +350,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         secret_create_router = None
         secret_rotate_router = None
         secret_disable_router = None
+        ai_provider_read_router = None
         project_read_router = None
         workflow_read_router = None
         workflow_start_router = None
@@ -430,6 +435,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 )
             job_detail_router = create_job_detail_router(reads=job_reads,origins=origins)
             cursors = create_windows_secret_list_cursor_codec()
+            ai_provider_cursors = create_windows_ai_provider_list_cursor_codec()
             member_cursors = create_windows_project_member_cursor_codec()
             department_cursors = create_windows_project_department_cursor_codec()
             audit_cursors = create_windows_audit_cursor_codec()
@@ -550,6 +556,16 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             )
             secret_list_router = create_secret_metadata_list_router(
                 sessions=sessions, metadata=metadata, origins=origins, cursors=cursors,
+            )
+            ai_provider_read_router = create_ai_provider_read_router(
+                sessions=sessions, origins=origins,
+                providers=AIProviderMetadataService(
+                    unit_of_work=runtime.unit_of_work,
+                    access=SqlAlchemyDeploymentReadAccess(),
+                    license_guard=licenses.guard,
+                    repository=SqlAlchemyAIProviderMetadataRepository(),
+                    cursors=ai_provider_cursors,
+                ),
             )
             project_reads = ProjectReadService(
                 unit_of_work=runtime.unit_of_work,
@@ -1027,6 +1043,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             secret_create_router=secret_create_router,
             secret_rotate_router=secret_rotate_router,
             secret_disable_router=secret_disable_router,
+            ai_provider_read_router=ai_provider_read_router,
             project_read_router=project_read_router,
             workflow_read_router=workflow_read_router,
             workflow_start_router=workflow_start_router,
