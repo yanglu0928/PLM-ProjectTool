@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-01-A05-P04-A04-P02 新增 Provider Test 失败安全码分类、两次有界退避与最终不可变 FAILED 结果；每次尝试及成功终态增加同事务受控 SYSTEM Audit。兼容性：无 Schema/依赖/Breaking API。升级：复用 0055，未装配 Worker；撤内部调用可回退，历史保留。验证：Win11 临时 PG18 三轮实际领取/结果唯一/旧 fencing/非重试失败/审计回滚和成功回归，后端1974运行/3跳过；开发 wheel SHA-256 `4ed4cbd3cf98875714dca398cc61c1d83b4b30a133759fe4dffc651fe769e900`。已知问题：P04-A05 Worker 组合、P05 读取/激活/Windows 组合、正式信任/真实外发/质量/三平台/Gate/UAT/可用程序包仍未完成。
+
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P04-A04-P01 新增 Provider Test 内部成功结果与 Job/Lease/Attempt 同事务发布，发布前再次锁定当前配置/策略/Secret/fencing。兼容性：无 Schema/依赖/Breaking API。升级：复用 0055，不需新迁移；未启用生产 Worker，撤内部调用可回退且历史保留。验证：Win11 临时 PG18 真实成功/旧 fencing/Secret 停用/配置升版/失败回滚；后端1967运行/3跳过，开发 wheel SHA-256 `1e77801ef9b78e1fc8c1561347e9646ca36e2279bbf1647ed1fb33a0c75ecc96`。已知问题：P02 失败/重试/审计、真实外发/正式信任/质量/三平台/Gate/UAT/可用程序包仍待。
 
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P04-A03-P02 新增内部 Provider Test 单次钉 IP HTTPS 固定探针、发送前后事实复核与精确版本 Secret 使用；仅测试专用入口可访问本机合成 TLS。兼容性：无 Schema/依赖/Breaking API。升级：无需迁移，未装配生产 Worker；撤内部调用可回退。验证：Win11 本机合成 TLS/临时 CA、未受信证书/重定向/过大/非法/超时及缓冲清零，后端1963运行/3跳过，开发 wheel SHA-256 `c0887ada21cb92f74a8c513363bbbe61f6e76f64d50680e4c61dacb4a508ebe1`。已知问题：发送和状态变化的时序窗口需 A04 终态重验；结果发布/生产 Worker/真实厂商外发、正式信任/质量/三平台/Gate/UAT/可用程序包未完成。

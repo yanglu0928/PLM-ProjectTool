@@ -9,6 +9,7 @@ from typing import Protocol
 from plm_assistant.modules.ai.application.provider_test_preflight import (
     ProviderTestPreflightError, ProviderTestPreflightService,
 )
+from plm_assistant.modules.ai.application.probe_audit import ProviderProbeAudit
 from plm_assistant.modules.ai.application.run_provider_probe import ProviderProbeObservation
 from plm_assistant.modules.jobs.application.lease import JobLeaseError
 from plm_assistant.modules.jobs.application.lease_checkpoint import validate_checkpoint
@@ -34,12 +35,14 @@ class ProviderProbeSuccessPublisher:
 
     def __init__(self, *, unit_of_work: Callable[[], object],
                  preflight: ProviderTestPreflightService,
-                 store: _SuccessStore, jobs: _JobFinisher) -> None:
-        if any(item is None for item in (unit_of_work, preflight, store, jobs)):
+                 store: _SuccessStore, jobs: _JobFinisher,
+                 audit: ProviderProbeAudit) -> None:
+        if any(item is None for item in (unit_of_work, preflight, store, jobs, audit)):
             raise ValueError("Provider probe publication dependencies required")
         self._uow, self._preflight, self._store, self._jobs = (
             unit_of_work, preflight, store, jobs,
         )
+        self._audit = audit
 
     def publish(self, *, observation: ProviderProbeObservation,
                 worker_ref: str, trace_id: uuid.UUID) -> uuid.UUID:
@@ -51,6 +54,7 @@ class ProviderProbeSuccessPublisher:
             validate_checkpoint(job_id=observation.job_id,
                                 fencing_token=observation.fencing_token,
                                 worker_ref=worker_ref)
+            identity = self._audit.capture()
             with self._uow() as tx:
                 snapshot = self._preflight.check_locked(
                     tx, job_id=observation.job_id,
@@ -71,6 +75,10 @@ class ProviderProbeSuccessPublisher:
                         or finished.attempt_no != snapshot.claim.attempt_no
                         or finished.job_type != "AI_PROVIDER_TEST"):
                     raise ProviderProbePublicationError("JOB_STORE_UNAVAILABLE")
+                self._audit.append(tx, claim=snapshot.claim, actor_id=identity,
+                                   action="AI_PROVIDER_TEST_SUCCEEDED",
+                                   outcome="SUCCESS", state="SUCCEEDED")
+                self._audit.assert_same(identity)
                 tx.commit()
                 return result_id
         except ProviderProbePublicationError:

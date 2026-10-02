@@ -12,6 +12,7 @@ from sqlalchemy.engine import URL
 
 from plm_assistant.modules.ai.application.create_provider import AIProviderCreateService, CreateAIProvider
 from plm_assistant.modules.ai.application.probe_policy import EndpointProbePolicy, EndpointProbeRegistry
+from plm_assistant.modules.ai.application.probe_audit import ProviderProbeAudit
 from plm_assistant.modules.ai.application.provider_test_preflight import ProviderTestPreflightService
 from plm_assistant.modules.ai.application.publish_provider_probe_success import (
     ProviderProbePublicationError, ProviderProbeSuccessPublisher,
@@ -35,6 +36,7 @@ from plm_assistant.modules.platform.infrastructure.ai_provider_secret_proof impo
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
+from types import SimpleNamespace
 
 
 helpers = runpy.run_path(str(Path(__file__).parents[1] / "ai-01-a05-p04-a02-preflight" / "verify.py"))
@@ -115,6 +117,10 @@ def main():
                 )
                 store = SqlAlchemyProviderProbeResultRepository()
                 jobs = SqlAlchemyJobLeaseRepository()
+                probe_audit = ProviderProbeAudit(
+                    system_actor=SimpleNamespace(assert_current=lambda: uuid.UUID(int=1)),
+                    audit=audit,
+                )
 
                 def submit_claim():
                     trace = uuid.uuid4()
@@ -128,7 +134,7 @@ def main():
                 def publisher(job_finisher=jobs):
                     return ProviderProbeSuccessPublisher(
                         unit_of_work=runtime.unit_of_work, preflight=preflight,
-                        store=store, jobs=job_finisher,
+                        store=store, jobs=job_finisher, audit=probe_audit,
                     )
 
                 def publish(claim, trace, job_finisher=jobs):
@@ -156,6 +162,7 @@ def main():
                     assert row == ("SUCCEEDED", None, first.config_id, secret_version, 1, 1)
                     assert db.execute("SELECT state FROM plm.job_jobs WHERE job_id=%s", (first.job_id,)).fetchone()[0] == "SUCCEEDED"
                     assert db.execute("SELECT state FROM plm.job_leases WHERE job_id=%s", (first.job_id,)).fetchone()[0] == "RELEASED"
+                    assert db.execute("SELECT count(*) FROM plm.aud_events WHERE trace_id=%s AND action='AI_PROVIDER_TEST_SUCCEEDED'", (first_trace,)).fetchone()[0] == 1
                 expect("JOB_LEASE_LOST", lambda: publish(first, first_trace))
 
                 second, second_trace = submit_claim()

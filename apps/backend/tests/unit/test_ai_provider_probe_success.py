@@ -5,6 +5,7 @@ import uuid
 from types import SimpleNamespace
 
 from plm_assistant.modules.ai.application.probe_policy import ProviderProbePlan
+from plm_assistant.modules.ai.application.probe_audit import ProviderProbeAudit
 from plm_assistant.modules.ai.application.provider_test_preflight import (
     ProviderTestPreflightError, ProviderTestPreflightSnapshot,
 )
@@ -74,6 +75,26 @@ class Jobs:
                                job_type="AI_PROVIDER_TEST")
 
 
+class Actor:
+    def __init__(self):
+        self.identity = uuid.uuid4()
+
+    def assert_current(self):
+        return self.identity
+
+
+class Audit:
+    def __init__(self):
+        self.events = []
+        self.failure = False
+
+    def append(self, tx, event):
+        if self.failure:
+            raise RuntimeError("synthetic audit failure")
+        self.events.append(event)
+        return uuid.uuid4()
+
+
 class ProviderProbeSuccessTests(unittest.TestCase):
     def setUp(self):
         self.trace = uuid.uuid4()
@@ -92,9 +113,12 @@ class ProviderProbeSuccessTests(unittest.TestCase):
         self.preflight = Preflight(self.snapshot)
         self.store = Store()
         self.jobs = Jobs(self.claim)
+        self.actor = Actor()
+        self.audit = Audit()
         self.publisher = ProviderProbeSuccessPublisher(
             unit_of_work=lambda: self.tx, preflight=self.preflight,
             store=self.store, jobs=self.jobs,
+            audit=ProviderProbeAudit(system_actor=self.actor, audit=self.audit),
         )
         self.observation = ProviderProbeObservation(self.claim.job_id, 1)
 
@@ -107,6 +131,7 @@ class ProviderProbeSuccessTests(unittest.TestCase):
         self.assertEqual((self.preflight.calls, self.store.calls, self.jobs.calls), (1, 1, 1))
         self.assertTrue(self.tx.committed)
         self.assertFalse(self.tx.rolled_back)
+        self.assertEqual(self.audit.events[0].action, "AI_PROVIDER_TEST_SUCCEEDED")
 
     def test_changed_facts_never_append_or_finish(self):
         self.preflight.failure = "AI_PROVIDER_CONFIG_CHANGED"
@@ -125,6 +150,13 @@ class ProviderProbeSuccessTests(unittest.TestCase):
                     self.publish()
                 self.assertFalse(self.tx.committed)
                 self.assertTrue(self.tx.rolled_back)
+
+    def test_audit_failure_rolls_back_success(self):
+        self.audit.failure = True
+        with self.assertRaises(ProviderProbePublicationError):
+            self.publish()
+        self.assertFalse(self.tx.committed)
+        self.assertTrue(self.tx.rolled_back)
 
     def test_rejects_foreign_observation_before_transaction(self):
         with self.assertRaises(ProviderProbePublicationError):

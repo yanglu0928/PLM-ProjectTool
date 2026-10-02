@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-649 — Provider 探针失败按安全码有限重试，终态才写不可变结果
+
+- Date/WBS：2026-10-02 / `AI-01-A05-P04-A04-P02`；输入 CR-AI-002、DEC-20261002-648、Job 最多 3 次与结果表 `job_id` 唯一约束。
+- Decision：对受信内部探针异常只接收固定安全错误码；网络/DNS 暂不可用可在第 1/2 次以 5/15 秒重试，第 3 次或非重试类立即终止。每次仅在当前 AI Job/fencing/worker 的短事务内更新 Job/Lease/Attempt 并写 SYSTEM Audit；重试不写最终 ProbeResult；终态 FAILED 才从原不可变配置读取 SecretRef，写绑定原 Job/配置/SecretVersion 的不可变失败结果及 Audit。原始异常、响应、Key 不落库。成功路径同时补同事务 Audit；缺受控 SYSTEM 身份或 Audit 失败，整笔回滚。旧租约不得补写失败。
+- Reason/Impact/Rollback：结果表每 Job 只能一个终态，重试记录留在 Attempt；成功/失败审计必须与终态一致。无 Schema/API/依赖变更；撤内部 Worker 调用可回退，已提交 Job/Attempt/Audit/结果历史不删除。仍不启用生产 Worker 或真实外发；逐次许可/配置变动不因失败处理被放宽。
+
 ## DEC-20261002-648 — 探针成功证明与 Job 终态在同一事务发布
 
 - Date/WBS：2026-10-02 / `AI-01-A05-P04-A04-P01`；输入 CR-AI-002、`20261002_0055` 不可变结果表、P04-A03 的一次性成功观察值。
