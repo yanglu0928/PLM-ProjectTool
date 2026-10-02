@@ -22,3 +22,5 @@
 2026-10-02 P02 结果：增量 `20261002_0053` 在一次性 PostgreSQL 18 空库、含ACTIVE及含REVOKED/SUPERSEDED历史的三库执行；版本回填/终态自增/非法改写/可安全降级及终态拒绝降级均通过。P03业务命令和公开撤销仍未实现。完整后端/构建结果见P02进度记录。
 
 2026-10-02 P03 结果：PROJECT当前ProjectManager内部撤销在真实Session/CSRF/License、项目行锁、原v0、通用持久收据及Audit同事务下完成；同Key并发仅一终态/一审计/一收据，审计失败回滚。无新Schema/API/依赖；关系Owner及公开HTTP仍关闭。正式信任、目标平台与Gate未因此通过。
+
+2026-10-02 P04 结果：冻结撤销路径的可选HTTP/强ETag与最小结果经真实Session/隔离PG18验证；默认应用与Windows平台组合仍不挂载。关系Owner身份、公开创建/列表/通用图、正式目标账户信任源及Gate不因可选HTTP验证而关闭。

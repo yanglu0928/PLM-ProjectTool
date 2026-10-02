@@ -15,15 +15,22 @@ from threading import Barrier
 
 import psycopg
 from alembic import command
+from fastapi.testclient import TestClient
 from psycopg import sql
 from sqlalchemy.engine import URL
 
+from plm_assistant.entrypoints.api import create_app
 from plm_assistant.entrypoints.trace_document_owner import DocumentVersionTraceOwner
 from plm_assistant.modules.audit.application.audit_service import AuditService
 from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
 from plm_assistant.modules.auth.infrastructure.deployment_read_access import SqlAlchemyDeploymentReadAccess
+from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
+from plm_assistant.modules.auth.application.session_service import SessionService
+from plm_assistant.modules.auth.infrastructure.password_issue_access import SqlAlchemyPasswordIssueAccess
+from plm_assistant.modules.auth.infrastructure.scrypt_password import ScryptPasswordHasher
 from plm_assistant.modules.auth.infrastructure.project_read_access import SqlAlchemyProjectReadAccess
 from plm_assistant.modules.auth.infrastructure.project_write_access import SqlAlchemyProjectWriteAccess
+from plm_assistant.modules.auth.infrastructure.session_repository import SqlAlchemySessionRepository
 from plm_assistant.modules.document.application.read_documents import DocumentReadService
 from plm_assistant.modules.document.infrastructure.read_repository import SqlAlchemyDocumentReadRepository
 from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
@@ -47,6 +54,7 @@ from plm_assistant.modules.trace.application.page_graph import (
 from plm_assistant.modules.trace.application.revoke_link import (
     RevokeTraceLink, TraceRevokeError, TraceRevokeService,
 )
+from plm_assistant.modules.trace.api.revoke_link import create_trace_revoke_router
 from plm_assistant.modules.trace.application.target_proof import (
     TraceProofQuery, TraceResourceVersionRef, TraceTargetProofError,
     TraceTargetProofService,
@@ -595,6 +603,70 @@ def verify():
                 "SELECT count(*) FROM plm.plt_idempotency_receipts "
                 "WHERE operation='V1_TRACE_LINK_REVOKE'",
             ).fetchone()[0] == 2
+        audit_service = AuditService(SqlAlchemyAuditRepository())
+        http_sessions = SessionService(
+            unit_of_work=runtime.unit_of_work,
+            repository=SqlAlchemySessionRepository(),
+            issue_access=SqlAlchemyPasswordIssueAccess(ScryptPasswordHasher()),
+            audit=audit_service,
+        )
+        http_router = create_trace_revoke_router(
+            sessions=http_sessions, revokes=revoke,
+            origins=LoginOriginPolicy(["http://localhost"]),
+        )
+        http_path = (f"/api/v1/projects/{project_id}/trace-links/"
+                     f"{rollback_created.trace_link_id}:revoke")
+        http_headers = {
+            "origin": "http://localhost",
+            "cookie": "plm_session=" + pm_token.hex(),
+            "x-csrf-token": CSRF.hex(),
+            "idempotency-key": "trace-http-revoke-001",
+            "if-match": '"v0"',
+        }
+        with TestClient(create_app(), base_url="http://localhost") as closed:
+            assert closed.post(http_path, headers=http_headers).status_code == 404
+        with TestClient(create_app(trace_revoke_router=http_router),
+                        base_url="http://localhost") as client:
+            def post(headers, status, code=None, path=http_path, content=None):
+                response = client.post(path, headers=headers, content=content)
+                assert response.status_code == status, response.text
+                if code is not None:
+                    assert response.json()["error"]["code"] == code, response.text
+                return response
+
+            post(http_headers | {"cookie": "plm_session=" + customer_token.hex()},
+                 404, "RESOURCE_NOT_FOUND")
+            post(http_headers | {"x-csrf-token": (b"x" * 32).hex()},
+                 403, "AUTH_CSRF_INVALID")
+            post({key: value for key, value in http_headers.items()
+                  if key != "if-match"}, 428, "CONFLICT_VERSION_REQUIRED")
+            post(http_headers, 400, "REQUEST_MALFORMED", content=b"{}")
+            post(http_headers, 400, "REQUEST_MALFORMED", path=http_path + "?x=1")
+            guard.enabled = False
+            post(http_headers, 403, "LICENSE_OPERATION_DENIED")
+            guard.enabled = True
+            first_http = post(http_headers, 200)
+            assert first_http.headers["etag"] == '"v1"'
+            assert first_http.json()["data"] == {
+                "trace_link_id": str(rollback_created.trace_link_id),
+                "link_state": "REVOKED",
+            }
+            assert post(http_headers, 200).json()["data"] == first_http.json()["data"]
+            post(http_headers | {"if-match": '"v1"'}, 409, "CONFLICT_IDEMPOTENCY")
+            post(http_headers | {"idempotency-key": "trace-http-revoke-002"},
+                 409, "CONFLICT_VERSION")
+        with connect(name) as db:
+            assert db.execute(
+                "SELECT link_state,lock_version FROM plm.trc_links "
+                "WHERE trace_link_id=%s", (rollback_created.trace_link_id,),
+            ).fetchone() == ("REVOKED", 1)
+            assert db.execute(
+                "SELECT count(*) FROM plm.aud_events WHERE action='TRACE_LINK_REVOKED'",
+            ).fetchone()[0] == 3
+            assert db.execute(
+                "SELECT count(*) FROM plm.plt_idempotency_receipts "
+                "WHERE operation='V1_TRACE_LINK_REVOKE' AND state='COMPLETED'",
+            ).fetchone()[0] == 3
             db.execute("UPDATE plm.prj_projects SET state='ARCHIVED' WHERE project_id=%s",
                        (project_id,))
         try:
@@ -604,7 +676,7 @@ def verify():
             assert exc.code == "PROJECT_ARCHIVED"
         else:
             raise AssertionError("archived project accepted Trace write")
-        print("PASS: Trace create/graph and PM revoke authorization, replay, race, Audit rollback")
+        print("PASS: Trace create/graph and PM revoke internal plus optional HTTP Session/PG chain")
     finally:
         if runtime is not None:
             runtime.dispose()

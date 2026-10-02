@@ -6388,3 +6388,12 @@
 - Impact/Rollback：内部Trace命令/Repository及Project操作策略增量，复用0053/通用收据，无新Schema/Migration或公开API。未装配命令即可回滚；已撤销边保留历史不可恢复为ACTIVE，只能以新边表达后续业务关系。
 - Verification Plan：单元验证无权/跨项目/缺Key/错版本/终态、同Key与不同载荷、License/Session/CSRF；一次性PG18验证行锁并发、一次状态转换/一审计一收据、审计失败回滚及项目归属；后端全量/wheel。不以内部通过替代HTTP/UAT/Gate验收。
 - Result：定向撤销单元4/4、项目授权策略7/7，原Trace自启动隔离PG18矩阵扩展受限端点PM清理、非经理/跨项目/CSRF/License/版本拒绝、同Key并发和Audit失败回滚PASS；后端全量1889运行/3跳过、开发wheel SHA-256 `36465601c896ab3d562e774d1acbac965dbc565e8b3b672475a817944fee4f32`。首轮全量原策略数量断言30失配，增新操作后更新为31并重跑通过。公开HTTP、关系Owner及正式目标环境未验。
+
+# DEC-20261002-615：Trace撤销HTTP只做可选最小投影
+
+- Date/WBS：2026-10-02 / `TRC-01-A07-P04`；输入冻结API-01/02、内部撤销P03与CR-TRC-003。
+- Decision：仅新增可选`POST /api/v1/projects/{project_id}/trace-links/{trace_link_id}:revoke`，空体，现有Origin/Host、Cookie Session/CSRF、强If-Match、Idempotency-Key共用安全解析；内部命令仍二次复验授权。200只投影LinkId/`REVOKED`/强ETag`"v1"`，不投影两端或暗示当前端点可读。默认应用与Windows平台组合均不挂载，挂载另立任务/真实信任验证。
+- Reason：冻结路径/控制明确，但其他业务Owner/通用Trace创建与图查询尚不完整；将路由做显式可选以便受控实测，同时避免把开发验证冒充生产可用。历史同Key返回首次结果，因REVOKED是不可逆终态，v1仍有效；新Key的旧版本拒绝。
+- Impact/Rollback：Trace HTTP router与应用工厂可选参数，无Schema/Migration、新依赖、默认路由或旧数据改动；不传Router即可回滚。后续公开列表/创建/图Owner和平台装配需另验。
+- Verification Plan：HTTP单元覆盖默认404、成功/ETag/最小字段、Origin/Session/CSRF/If-Match/Key/空体/查询、安全码；真实ASGI+PG18合成当前PM/非PM/跨项目/失效License/重放/单Audit/收据，后端全量和wheel。正式目标账户、Server2025/Debian与Gate不由本项判PASS。
+- Result：HTTP合同3/3，原Trace自启动PG18脚本扩展真实Session的默认404/当前PM200/重放/非经理/CSRF/缺If-Match/非空体/查询/过期License及单一终态Audit/收据PASS；后端1892运行/3跳过，开发wheel SHA-256 `8ba0a2cb87a0250c582d7eec113057dd28929bb863ab973149b8c4a5a80033e2`。仅显式可选路由；Windows正式组合与关系Owner未装配。
