@@ -7060,3 +7060,11 @@
 - Reason：防止部分入队、伪造授权、重放重复审计或返回新Job；也不扩展全平台单UUID收据合同。
 - Impact/Rollback：新增内部Application/Repository，无Schema/API/依赖变化；未挂载组合根，可停止注入回退，已有历史保留。
 - Verification：单元5，Win11隔离PG18.6真实原子链/重放/冲突/Audit失败回滚，后端2111运行/3跳过，wheel `d7978d74ee11f263ed25bd45fb8386cc178bfce4b14e8dbd75052e4dc88e0129`。
+
+# DEC-20261003-706：Egress批准源与Task消费快照分离
+
+- Date/WBS：2026-10-03 / `AI-04-A04-P01`；依据 CR-AI-013、冻结 `EGRESS_*`。
+- Decision：新建 Preview Root+不可变SourceRef与Authorization Root/撤销历史；AITask只通过Owner读取当前有效授权并复制最小不可变快照。两者不共用可变行。
+- Reason：先预览后批准、可撤销当前资格与不可改写的调用证据是不同责任；反向使用Task快照会伪造批准源。
+- Impact/Rollback：新增0068/0069计划与Project权限Operation，不改冻结URL/DTO；空表可降，历史非空拒降。
+- Verification：本项静态核对API-03、SC-01、0064～0067与现有代码，确认权威聚合缺失；无运行测试或外发。
