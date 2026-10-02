@@ -6969,3 +6969,11 @@
 - Reason：把安全退役限定在显式管理员写模式，不扩大 Prompt 内容写入/激活范围。
 - Impact/Rollback：无新Schema/API/依赖；撤装配恢复404，0062退役历史不可删除，须向前修复。正式信任、生产迁移另验。
 - Verification：Win11隔离PG18合成组合404/200/重放/权限/许可/缺密钥失败关闭及单根/Audit/结果/收据PASS；后端2090运行/3跳过、开发wheel通过。Server2025/Debian及真实账户未验。
+
+# DEC-20261002-695：Prompt 元数据读取不投影退役历史指针或正文
+
+- Date/WBS：2026-10-02 / `AI-03-A07-P02`；依据冻结 `AI_PROMPT_LIST/GET`、DM-04。
+- Decision：独立 Prompt HMAC cursor，不复用 Model 密钥；只在 `ACTIVE` 状态联接不可变版本的 hash/schema/policy 元数据，永不选择 system/user 正文。`RETIRED` 根上保留的旧指针不进入读 DTO。
+- Reason：避免把安全退役后的历史版本误标为仍可调用，并防止普通管理列表泄露模板正文或跨会话游标复用。
+- Impact/Rollback：无 Schema/API/依赖变化；内部服务可停止装配，数据库不变。
+- Verification：单元4、Win11隔离PG18三状态/分页/安全投影、后端2094运行/3跳过、开发wheel通过；公开HTTP和正式账户未验。
