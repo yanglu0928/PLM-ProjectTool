@@ -6887,3 +6887,11 @@
 - Reason：合成准入可证明代码链路，不能证明审查事实或生产信任锚。默认不挂载防止自由正文写入不可变历史。
 - Impact/Rollback：本项仅验证脚本与文档，无生产行为/Schema/API 变化；随机测试库已清理。
 - Verification：Win11 隔离PG18默认/普通用户404、未列422零写、已列201/重放、冲突409、许可403及单版本/Audit/收据脚本exit0；正式生产未验。
+
+# DEC-20261002-685：Prompt 激活以 AI 专属不可变结果承载原 200
+
+- Date/WBS：2026-10-02 / `AI-03-A05-P01`；依据 CR-AI-008、冻结 API-03 与当前通用幂等收据形态。
+- Decision：先设计 AI 所有的不可变激活首次响应结果 Schema0061，以 UUID 供通用收据引用；后续内部服务在同事务保存根状态、Audit、结果和收据。历史重放按结果投影而不读当前可变根，仍重验身份/License。
+- Reason：通用收据无复合版本/ETag，Prompt 根可继续切换或退役，不能把现态冒充首次 200。
+- Impact/Rollback：原冻结 `64cdf09` 不变；下一项需要 ORM/Migration0061，历史数据写入后 down 应拒绝。无本项代码/API变更。
+- Verification：对照冻结 API、Prompt ORM/Schema0059/0060 与通用收据静态核查；新运行测试未执行，下一项隔离PG18验证。
