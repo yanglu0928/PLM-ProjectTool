@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-625 — Provider 配置追加不直接变更 ACTIVE
+
+- Date/WBS：2026-10-02 / `AI-01-A03-P02`；输入冻结 DM-04/API-03、CR-AI-001 和 A03-P01 创建链。
+- Decision：内部追加仅允许 CONFIGURED/SUSPENDED，锁 Provider 根并核强预期版本及不变 Kind；ACTIVE/RETIRED 拒绝。当前管理员/License 每次调用重验；同 Key 历史回放保留首次配置 ID，但不意味着现行 Secret 可用或允许外发。
+- Reason/Impact/Rollback：活动配置直接切换会使正在执行的调用缺少独立暂停与路由切换证明。无 Schema/API/依赖变化；可撤内部入口回滚代码，已提交的配置历史保留且只能通过新的受权版本纠正。验证见 `docs/progress/ai-01-a03-p02-provider-config-append.md`。
+
 ## DEC-20261002-599 — Checklist Record 缺业务 Owner 时保持写入口关闭
 
 - Date/WBS：2026-10-02 / `WFL-01-A07-P01`；输入冻结 `WORKFLOW_CHECKLIST_RECORD`、CR-WFL-004、`EVIDENCE_FIXED_PROJECT_V1`/Review/Exception Owner 约束。
