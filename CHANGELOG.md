@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-02-A07 登记 CR-AI-004：质量证明 Owner 与 Provider 真实运行前置不足，先实现安全暂停/退役，AVAILABLE/质量关联保持关闭。兼容性：本项无程序、Schema、API、依赖或出站变化。升级/回滚：无需升级；保留原冻结基线和此前模型历史。验证：静态核对冻结 DM-04/API-03、Schema0057 与当前 AI-01/AI-02 代码，未执行新增运行测试。已知问题：质量 Owner、正式 Provider Worker/目标账户、AVAILABLE、三平台/Gate/UAT/可用包待完成。
+
 - 2026-10-02：0.1.0.dev0/AI-02-A06 将 AIModel 创建 POST 仅接入 Windows 显式写平台，登录模式404、只读平台 POST405，模型初态仍暂停且不外发。兼容性：无 Schema/依赖/Breaking API 变化。升级/回滚：写模式需原有目标账户信任及模型专属游标密钥；撤创建路由组合可回退，历史模型/收据/Audit 保留。验证：Win11 隔离 PG18 三模式真实 Session/201重放/GET/许可及缺钥关闭、后端2047运行/3跳过，开发 wheel SHA-256 `ef4ba16aeb3f4ed0ddb6a8bca78f76bf4617689003d8714afb2ecc6c8f598741`。已知问题：正式目标账户及 Server2025/Debian、模型质量证明/状态/真实调用、Gate/UAT/可用包未验。
 
 - 2026-10-02：0.1.0.dev0/AI-02-A05 新增可选 AIModel POST 201，只接收模型语义/受控能力和空质量引用；首次响应固定 `SUSPENDED`/v0，同 Key 历史重放不泄露后来的模型状态/质量引用。兼容性：无 Schema/依赖/Breaking API/外发变化；默认及生产创建路由仍404。升级/回滚：无需迁移，撤可选路由可回退，历史模型/收据/Audit 保留。验证：Win11 隔离 PG18 实际201/重放/权限/License/Audit、合同3项、后端2047运行/3跳过，开发 wheel SHA-256 `5ac6dcb40071e4337aa0e300f87c2caaba56b5b97b2b1693e92d4f50cbed4f58`。已知问题：Windows 显式写组合、正式目标账户密钥/信任、模型状态/质量证明/真实调用、三平台/Gate/UAT/可用包未验。
