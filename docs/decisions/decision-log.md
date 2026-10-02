@@ -6414,3 +6414,11 @@
 - Impact/Rollback：设计决策不改冻结 API/Schema/数据；P02 仅增内部 Trace 代码和项目 PM 操作，不装配即停止新替换；已终态历史不反向改写。若未来放宽相关性需可追溯变更与迁移分析。
 - Verification Plan：P02 单元/隔离 PG18 验同项目新边、强版本/状态、Owner 证明、环、同 Key 并发、其他 ACTIVE 冲突及 Audit/收据失败回滚，后端回归/wheel。P01 仅静态核查，未运行新业务测试。
 - P02 Result：内部当前PM命令/Repository实施；Win11隔离PG18新边+旧边单事务、非经理/许可/错版本/同边、Audit回滚、同Key并发与预存ACTIVE目标拒绝及原Trace HTTP回归PASS。后端1895运行/3跳过，开发wheel SHA-256 `184cdb8db11efd305aff09c6f249d515f9f9316d0188ed329c2aabb855db0602`。公开/正式装配、关系Owner和Gate仍关闭。
+
+# DEC-20261002-618：Trace supersede 不跨事务预解析公开引用
+
+- Date/WBS：2026-10-02 / `TRC-01-A08-P03`；输入冻结 API-02 三字段 ResourceVersionRef、P02 内部已解析命令及 Document Owner 事务 Port。
+- Decision：不将公开三字段客户端输入当作已解析 TraceEdgeShape，不在独立预解析事务后调用内部 supersede。可选 HTTP 继续关闭；先做 P04 同一命令事务内 Owner 解析和原始输入指纹，再做 P05 HTTP。
+- Reason：独立预解析无法保证 Document/Project/Session 证明与替换提交为同一受锁事实；接受客户端内部 Scope/Owner 会改变冻结合同并扩大信任边界。
+- Impact/Rollback：仅记录前置，无代码/API/Schema/数据变化，升级无迁移；P04/P05 分别验证后才可显式注入 Router，默认/正式组合仍关闭。
+- Verification：冻结合同/Owner/Service 静态核查，无新业务测试，内部 P02 PASS 不扩大为 HTTP、Gate 或发行 PASS。
