@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-01-A05-P04-A03-P01 SecretResolver 内部信封新增精确 SecretVersionId，可选预期版本在解密前失败关闭；旧调用保持兼容，无网络外发。兼容性：无 Migration、依赖或 Breaking API。升级：无需数据库迁移；撤新增参数调用可回退，Secret 历史保留。验证：Win11 隔离 PG18.6 真实版本轮换、旧版本拒绝与缓冲清零，后端1957运行/3跳过；开发wheel SHA-256 `929de2d77529833b0607566652e7110e9a333d7d689b50a6a5dc5fd65effa210`。已知问题：A03-P02 受限传输/发送前重验、A04 结果发布、真实外发/正式信任/质量/三平台/Gate/UAT/可用程序包待完成。
+
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P04-A02 新增 Provider Test 执行前 License/当前配置/SecretVersion/策略/fencing 预检，并统一提交与预检的策略摘要；不解密 Secret、不联网、不授予外发许可。兼容性：无 Migration、依赖或 Breaking API。升级：复用 0055 及现有表，撤内部预检调用可回退；历史 Job/Lease 保留。验证：Win11 隔离 PG18.6 实际 Secret 轮换/配置升版、许可/策略/旧租约拒绝；后端1955运行/3跳过，开发wheel SHA-256 `225e71f6623c7deecb37b9f55476d5351502f8d16be789dc94f759691539c8bd`。已知问题：A03 版本绑定 Secret/受限传输、A04 结果发布、真实外发/正式信任/质量/三平台/Gate/UAT/可用程序包待完成。
 
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P04-A01 新增 Provider Test 专属 Worker Job 领取/fencing 与成对 Outbox 引用校验，不读取 Secret 或外发。兼容性：无 Migration、依赖或 Breaking API；Worker 入口仍关闭。升级：复用现有 Job/Lease 表，撤内部调用可回退，历史 Attempt/Lease 保留。验证：Win11 隔离 PG18.6 双 Worker、异 Owner 排除、租约过期/旧 token、事务回滚及畸形队列失败关闭；后端1952运行/3跳过，开发wheel SHA-256 `2a9013ba7fb58a30105b2149be0c864df65d4cd4ff97c13c1b4373cbb47619e7`。已知问题：P04-A02～A04 重验/传输/发布、真实外发/正式信任、质量/三平台/Gate/UAT/可用程序包均待。

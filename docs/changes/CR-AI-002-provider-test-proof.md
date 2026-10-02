@@ -42,3 +42,7 @@
 2026-10-02 P04-A02 核查发现现有 SecretResolver 信封不携带 SecretVersionId。按 DEC-20261002-645，先实现不解密、不联网的当前版本/许可/策略/fencing 预检；A03 另实现版本绑定 Secret 使用及发送前重验，预检不授予外发权限。该调整在 CR-AI-002 既有范围内，无 Schema/API 变化。
 
 2026-10-02 P04-A02 已在 Windows 11 隔离 PG 验证当前租约、License 拒绝、策略变化、Secret 停用/轮换、Provider 配置实际升版失败关闭；未产生结果或网络调用。版本绑定 Secret 使用和出站安全仍待 A03，不提前开放 Worker。
+
+2026-10-02 A03 再拆 P01 版本绑定 SecretResolver、P02 受限 Adapter 与本机合成端点；按 DEC-20261002-646 先完成 P01。Internal Envelope 增量携带 SecretVersionId，预期版本不符时须在解密前拒绝；不改变既有调用默认行为，也不开放 Worker 或外发。
+
+2026-10-02 P04-A03-P01 已在隔离 PG 验证真实 SecretVersion 轮换后旧 Job 版本在解密前拒绝、匹配版本可读取且退出清零；没有网络外发。A03-P02 的发送前再核验和目标安全仍待，不可由版本绑定单项推断可外发。

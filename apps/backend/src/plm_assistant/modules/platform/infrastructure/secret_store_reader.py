@@ -57,6 +57,7 @@ class SqlAlchemyEncryptedSecretStore:
                     encrypted_payload=version.encrypted_payload,
                     encryption_metadata=metadata,
                     key_provider_ref=version.key_provider_ref,
+                    secret_version_id=version.secret_version_id,
                 )
             except (TypeError, ValueError, UnicodeError):
                 return None

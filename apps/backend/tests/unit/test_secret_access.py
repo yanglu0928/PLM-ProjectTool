@@ -135,6 +135,40 @@ class SecretAccessTests(unittest.TestCase):
         self.assertNotIn("opaque-metadata", text)
         self.assertNotIn("external-provider", text)
 
+    def test_exact_version_blocks_rotation_before_decryption(self) -> None:
+        current_version = uuid.uuid4()
+        decryptor = FakeDecryptor()
+        audit = FakeAudit()
+        resolver = SecretResolver(FakeStore(replace(
+            envelope(), secret_version_id=current_version,
+        )), decryptor, audit)
+        with self.assertRaises(SecretAccessError):
+            with resolver.use(SECRET_REF, SecretConsumer.AI_PROVIDER_ADAPTER,
+                              expected_version_id=uuid.uuid4()):
+                pass
+        self.assertEqual(decryptor.calls, 0)
+        self.assertEqual(audit.events[-1]["outcome"], "DENIED")
+        with resolver.use(SECRET_REF, SecretConsumer.AI_PROVIDER_ADAPTER,
+                          expected_version_id=current_version) as value:
+            self.assertEqual(value.tobytes(), b"synthetic-only")
+        self.assertEqual(decryptor.calls, 1)
+        self.assertEqual(decryptor.buffer, bytearray(len(decryptor.buffer)))
+        self.assertEqual(audit.events[-1]["outcome"], "GRANTED")
+        with self.assertRaises(SecretAccessError):
+            with resolver.use(SECRET_REF, SecretConsumer.AI_PROVIDER_ADAPTER,
+                              expected_version_id=uuid.UUID(int=0)):
+                pass
+        self.assertEqual(decryptor.calls, 1)
+
+    def test_expected_version_fails_when_store_does_not_supply_identity(self) -> None:
+        decryptor = FakeDecryptor()
+        resolver = SecretResolver(FakeStore(envelope()), decryptor, FakeAudit())
+        with self.assertRaises(SecretAccessError):
+            with resolver.use(SECRET_REF, SecretConsumer.AI_PROVIDER_ADAPTER,
+                              expected_version_id=uuid.uuid4()):
+                pass
+        self.assertEqual(decryptor.calls, 0)
+
 
 if __name__ == "__main__":
     unittest.main()

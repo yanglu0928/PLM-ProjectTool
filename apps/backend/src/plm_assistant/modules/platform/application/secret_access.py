@@ -66,6 +66,7 @@ class SecretEnvelope:
     encrypted_payload: bytes = field(repr=False)
     encryption_metadata: bytes = field(repr=False)
     key_provider_ref: str = field(repr=False)
+    secret_version_id: uuid.UUID | None = field(default=None, repr=False)
 
 
 @dataclass(frozen=True, slots=True)
@@ -113,7 +114,8 @@ class SecretResolver:
 
     @contextmanager
     def use(
-        self, secret_ref: SecretRef, consumer: SecretConsumer
+        self, secret_ref: SecretRef, consumer: SecretConsumer,
+        *, expected_version_id: uuid.UUID | None = None,
     ) -> Iterator[memoryview]:
         trace_id = current_trace_id() or new_uuid7()
         safe_consumer = consumer.value if isinstance(consumer, SecretConsumer) else "UNKNOWN"
@@ -122,6 +124,10 @@ class SecretResolver:
         try:
             if not isinstance(secret_ref, SecretRef) or not isinstance(
                 consumer, SecretConsumer
+            ):
+                raise SecretAccessError("secret unavailable")
+            if expected_version_id is not None and (
+                type(expected_version_id) is not uuid.UUID or not expected_version_id.int
             ):
                 raise SecretAccessError("secret unavailable")
             envelope = self._store.load(secret_ref)
@@ -140,6 +146,8 @@ class SecretResolver:
                 or not envelope.encryption_metadata
                 or not isinstance(envelope.key_provider_ref, str)
                 or not envelope.key_provider_ref
+                or (expected_version_id is not None
+                    and envelope.secret_version_id != expected_version_id)
             ):
                 raise SecretAccessError("secret unavailable")
             plaintext = self._decryptor.decrypt(envelope)

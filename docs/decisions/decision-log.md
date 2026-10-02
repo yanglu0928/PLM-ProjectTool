@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-646 — SecretResolver 增加可选精确版本约束
+
+- Date/WBS：2026-10-02 / `AI-01-A05-P04-A03-P01`；输入 DEC-20261002-645、SecretResolver 当前信封缺 SecretVersionId。
+- Decision：在内部 `SecretEnvelope` 增加不可暴露的 `secret_version_id` 元数据，由 PostgreSQL Store 读取当前 ACTIVE 版本填充；`SecretResolver.use` 增加可选 `expected_version_id`，指定时必须在解密前与当前信封精确一致，缺失/错配失败关闭并记 DENIED。未指定时保持现有消费者行为。这里只建版本绑定能力，不实施 AI 网络发送。
+- Reason/Impact/Rollback：版本号不能唯一绑定 Job 记录的 SecretVersion UUID。该变化无 Schema/API/依赖改动，旧调用兼容；可撤新参数调用回退，但已写入历史仍保留。需单位、真实 PG 轮换与全量回归，不将该能力当作外发授权。
+
 ## DEC-20261002-645 — Provider Test 预检不是外发许可
 
 - Date/WBS：2026-10-02 / `AI-01-A05-P04-A02`；输入 CR-AI-002、P04-A01 专属领取、现有 SecretResolver 信封未携带 SecretVersionId 的事实。
