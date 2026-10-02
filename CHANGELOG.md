@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/TRC-01-A09-P02 新增Trace创建冻结三字段引用同事务Owner解析与显式License/安全历史重放，原已解析内部入口保留。兼容性：内部Application/Repository增量，公开API/Schema/依赖不变；调用方需注入既有Guard。升级：无迁移，旧关系/收据保留。验证：单元及隔离PG18来源受限/原边撤销后同Key重放、失效许可/新Key拒绝与原Trace链、后端1902运行/3跳过、开发wheel SHA-256 `939efcd3d2bcfce8413ddd9f19ad30621fc660d35f2c082098f82f37c2aeaad0`。已知问题：通用HTTP依CR-TRC-002关闭，其他Owner/正式信任/三平台/Gate/UAT与可用包仍缺。
+
 - 2026-10-02：0.1.0.dev0/TRC-01-A09-P01 登记Trace创建三字段引用与收据顺序前置差异，按CR-TRC-002保持通用创建HTTP关闭，转内部P02。兼容性：仅设计/状态，程序、API、Schema、依赖不变。升级：无迁移。验证：冻结API/模型/Owner与创建Service静态核查，未运行新业务测试。已知问题：内部同事务解析/重放修复、其他业务Owner、正式信任/三平台/Gate/UAT及可用包仍待。
 
 - 2026-10-02：0.1.0.dev0/TRC-01-A08-P06 登记Trace supersede关系Owner/正式装配前置缺口，维持生产组合关闭并转独立创建路径。兼容性：仅文档/状态，程序、API、Schema、依赖不变。升级：无迁移。验证：冻结合同、Project策略和入口静态核查，未运行新业务测试。已知问题：关系Owner身份、正式目标账户信任/三平台、通用Trace、Gate/UAT与可用发行包仍待。

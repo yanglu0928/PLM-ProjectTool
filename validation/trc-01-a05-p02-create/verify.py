@@ -40,7 +40,7 @@ from plm_assistant.modules.platform.infrastructure.migration import create_migra
 from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
 from plm_assistant.modules.project.infrastructure.authorization_repository import SqlAlchemyProjectAuthorizationRepository
 from plm_assistant.modules.trace.application.create_link import (
-    CreateTraceLink, TraceCreateError, TraceCreateService,
+    CreateTraceLink, CreateTraceLinkRefs, TraceCreateError, TraceCreateService,
 )
 from plm_assistant.modules.trace.application.query_one_hop import (
     TraceOneHopQuery, TraceOneHopService, TraceQueryError,
@@ -302,9 +302,11 @@ def verify():
             return TraceCreateService(
                 unit_of_work=runtime.unit_of_work,
                 sessions=SqlAlchemyProjectWriteAccess(), projects=auth,
+                license_guard=guard,
                 proofs=proofs, cycle_guard=SqlAlchemyTraceCycleGuard(),
                 repository=SqlAlchemyTraceCreateRepository(),
                 receipts=SqlAlchemyIdempotencyReceipts(), audit=audit,
+                public_resolver=TracePublicEdgeResolver({"DOC-02": document_owner}),
             )
         creator = service(AuditService(SqlAlchemyAuditRepository()))
         reader = TraceOneHopService(
@@ -329,6 +331,15 @@ def verify():
         edge = TraceEdgeShape(ref(first), ref(second), "DERIVED_FROM")
         cmd = CreateTraceLink(pm_token, CSRF, uuid.uuid4(), edge)
         first_result = creator.create(cmd, idempotency_key="trace-create-key-001")
+        raw_create = CreateTraceLinkRefs(
+            pm_token, CSRF, uuid.uuid4(), project_id,
+            TraceResourceVersionRef("DOC-02", doc_id, first),
+            TraceResourceVersionRef("DOC-02", doc_id, second),
+            "DERIVED_FROM",
+        )
+        assert creator.create_refs(
+            raw_create, idempotency_key="trace-create-raw-ref-001",
+        ) == first_result
         assert creator.create(cmd, idempotency_key="trace-create-key-001") == first_result
         assert creator.create(cmd, idempotency_key="trace-create-key-002") == first_result
         im_result = creator.create(
@@ -491,7 +502,7 @@ def verify():
         try:
             creator.create(CreateTraceLink(pm_token, CSRF, uuid.uuid4(), edge),
                            idempotency_key="trace-expired-license-key")
-        except TraceTargetProofError as exc:
+        except TraceCreateError as exc:
             assert exc.code == "LICENSE_OPERATION_DENIED"
         else:
             raise AssertionError("expired License permitted Trace creation")
@@ -511,7 +522,7 @@ def verify():
             assert db.execute(
                 "SELECT count(*) FROM plm.plt_idempotency_receipts "
                 "WHERE operation='V1_TRACE_LINK_CREATE'",
-            ).fetchone()[0] == 5
+            ).fetchone()[0] == 6
         def revoker(audit):
             return TraceRevokeService(
                 unit_of_work=runtime.unit_of_work,
@@ -884,6 +895,23 @@ def verify():
         assert supersede.supersede_refs(
             public_change, idempotency_key="trace-supersede-public-refs-001",
         ) == public_result
+        assert creator.create_refs(
+            raw_create, idempotency_key="trace-create-raw-ref-001",
+        ) == first_result
+        guard.enabled = False
+        try:
+            creator.create_refs(raw_create, idempotency_key="trace-create-raw-ref-001")
+        except TraceCreateError as exc:
+            assert exc.code == "LICENSE_OPERATION_DENIED"
+        else:
+            raise AssertionError("expired License replayed Trace create")
+        guard.enabled = True
+        try:
+            creator.create_refs(raw_create, idempotency_key="trace-create-raw-ref-002")
+        except TraceTargetProofError as exc:
+            assert exc.code == "RESOURCE_NOT_FOUND"
+        else:
+            raise AssertionError("new key created TraceLink from restricted source")
         with connect(name) as db:
             db.execute("UPDATE plm.prj_projects SET state='ARCHIVED' WHERE project_id=%s",
                        (project_id,))

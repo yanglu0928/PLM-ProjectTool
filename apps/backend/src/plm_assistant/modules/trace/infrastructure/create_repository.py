@@ -21,6 +21,17 @@ def _session(transaction: object) -> Session:
 
 
 class SqlAlchemyTraceCreateRepository:
+    def exists_in_project(self, transaction: object, *, project_id: uuid.UUID,
+                          trace_link_id: uuid.UUID) -> bool:
+        found = _session(transaction).execute(
+            select(TraceLinkRow.trace_link_id).where(
+                TraceLinkRow.scope == "PROJECT",
+                TraceLinkRow.project_id == project_id,
+                TraceLinkRow.trace_link_id == trace_link_id,
+            ),
+        ).scalar_one_or_none()
+        return found == trace_link_id
+
     def create_active(self, transaction: object, *, edge: TraceEdgeShape,
                       actor_id: uuid.UUID, trace_id: uuid.UUID) -> StoredTraceLink:
         if (type(edge) is not TraceEdgeShape

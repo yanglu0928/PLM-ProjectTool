@@ -6439,3 +6439,4 @@
 - Reason：客户端 Scope/Owner 不是冻结输入，独立预解析会失去提交时的受锁证明；当前收据前端点证明使未知结果重试在来源失效后不可恢复，移动顺序又要求显式 License 避免历史路径绕过。
 - Impact/Rollback：P01 仅记录设计，无代码/API/Schema/数据修改。P02 仅内部 Trace/许可 Port 调整，不装配新入口即可停止；旧收据及关系历史保留。其他 Owner 与正式 HTTP 按 CR-TRC-002 后续验收。
 - Verification Plan：P02 单元与隔离 PG18 首次/同Key端点变受限后重放、过期 License/撤权/跨项目拒绝、异载荷冲突、并发去重与 Audit 失败回滚；后端回归与 wheel。P01 仅静态核查，未运行新业务测试。
+- P02 Result：内部原始三字段与已解析入口共用当前License/Session/Project→Receipt→仅首次Owner证明/创建顺序；PG18来源RESTRICTED、旧边REVOKED后原Key重放，许可/新Key拒绝及原Trace链PASS。后端1902运行/3跳过、开发wheel SHA-256 `939efcd3d2bcfce8413ddd9f19ad30621fc660d35f2c082098f82f37c2aeaad0`。通用创建HTTP/其他Owner及Gate不判PASS。
