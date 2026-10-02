@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-628 — Provider 列表游标使用独立 Windows Vault KeyRef
+
+- Date/WBS：2026-10-02 / `AI-01-A04-P03`；输入 P02 独立签名游标与现有 Windows 当前账户 Credential Manager 恢复机制。
+- Decision：固定 Provider 专用 `ai-provider-list-cursor-v1` KeyRef，只读解析严格 32 字节；无钥/错长/异常失败关闭。仅用随机测试 KeyRef 在本机证明失密、加密备份和旧游标恢复；不自动生成或供给正式 KeyRef。
+- Reason/Impact/Rollback：避免跨资源共用签名钥和在服务启动时静默变钥。无 Schema/API/依赖变化，撤入口装配即可回退；正式目标账户、Server 2025/Debian 来源仍另验。
+
 ## DEC-20261002-627 — Provider 列表使用专用签名游标
 
 - Date/WBS：2026-10-02 / `AI-01-A04-P02`；输入冻结 API-01 列表游标规则、API-03 `AI_PROVIDER_LIST`、DM-04 与 P01 安全投影。
