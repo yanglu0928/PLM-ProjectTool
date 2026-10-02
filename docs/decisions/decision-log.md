@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-638 — Provider Test 按冻结异步合同拆分安全前置
+
+- Date/WBS：2026-10-02 / `AI-01-A05`；冻结 API-03 为 202 JobRef、固定无客户探针，DM-04 要求可绑定当前配置的连通证明；当前实现缺端点策略解析、TestRun、AI Job Owner 和 Adapter。
+- Decision：先登记 CR-AI-002，不开放同步 HTTP 或任意 URL；依次完成受控策略/探针、持久证明、同事务 Job/Outbox、受限 Worker、受权结果与组合。真实外发保持关闭，先用本机合成端点验证。
+- Reason/Impact/Rollback：防止 URL 注入、Secret 错发或旧配置测试结果误用于激活。当前决策仅改变实施顺序和增量设计，无代码/API/Schema 变更；后续各项分别验证、可撤未开放入口，历史证明不得物理清除。
+
 ## DEC-20261002-637 — Provider PATCH 仅装入 Windows 显式写平台
 
 - Date/WBS：2026-10-02 / `AI-01-A03-P04-A02-P03`；输入冻结 Provider PATCH 与已验可选路由、`--platform-write` 组合。
