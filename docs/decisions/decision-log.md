@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261002-666 — AIModel 只读投影独立分页游标并显式标注质量未评估
+
+- Date/WBS：2026-10-02 / `AI-02-A03`；依据冻结 API-03 模型 LIST/GET、DM-04 模型可用与质量不等价、Schema 0057、现有 Provider 管理只读入口。
+- Decision：模型分页使用独立 32 字节 HMAC key/`ai-model-metadata` family，绑定当前 Session 和 page_size，以 `(created_at, model_id)` keyset 排序；不复用 Provider 游标。只读 DTO 仅含模型语义、受控能力、状态/ETag、质量引用及固定 `NOT_EVALUATED` 质量语义，不输出 Key/Secret/厂商异常；可选路由不默认或生产挂载。
+- Reason：防止跨资源/Session 游标混用与分页漂移，防止 SUSPENDED/AVAILABLE 或任意质量引用被误表述为 POC 质量通过。
+- Impact/Rollback：只增 AI 内部读取、游标和可选 `/api/v1/admin/ai/models` GET 合同；冻结 API 无 Breaking Change，无 Schema/依赖/外发。未挂载时可撤入口；历史 Model/Audit 保留。
+- Verification：定向单元/合同6项、Win11 隔离 PG18 管理员/普通用户/许可/分页/撤权/安全投影与默认404通过；后端2041运行/3跳过，开发wheel构建通过。正式游标密钥供给和发行仍待。
+
 ## DEC-20261002-665 — 模型首次登记复用管理员受权收据，质量引用先拒绝未证明值
 
 - Date/WBS：2026-10-02 / `AI-02-A02`；依据冻结 DM-04/API-03、Schema 0057、现有 AIProvider 创建链。
