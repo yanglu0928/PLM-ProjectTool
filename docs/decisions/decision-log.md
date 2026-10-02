@@ -7011,3 +7011,11 @@
 - Impact/Rollback：增量 Schema 0064，不改冻结 API、依赖或业务路由；新历史表非空时拒绝物理降级，使用向前修复或受控备份恢复。Provider/Prompt 退役仅阻止新 Invocation，历史引用仍保留。
 - Verification Plan：Win11 隔离 PostgreSQL 18 验证空库与既有0063数据升级、Scope/Project与同Task引用、Provider/Config/Model/ACTIVE Prompt 准入、授权时间窗/类别、Attempt状态机与终态不可变、Context不可变、无正文列、空表回退/再升级、非空拒降、Alembic drift、后端回归和开发 wheel。
 - Verification Result：Schema0064/ORM 已实施；Win11 隔离PG18上述升降、既有数据、drift与负例全部 PASS。首轮函数变量名与列名歧义，修正后完整重跑 PASS。首轮全量误用数据库最小环境导致12项缺 `pydantic-settings` 导入失败；改用完整Python3.13验证环境后2100运行/3跳过 PASS。开发wheel包含0064与ORM，SHA-256 `f6e46044844a1ad9fb2dbc99d429cca607a4185d6d544673edbbbb8a47295d3e`。无真实外发、API或生产迁移。
+
+# DEC-20261002-700：缺 ObjectId 的0063输入只保留历史，不猜测补值
+
+- Date/WBS：2026-10-02 / `AI-04-A03-P01`；依据 CR-AI-010、冻结 ResourceVersionRef 与历史不可变规则。
+- Decision：0065增加 `ai_task_input_refs.object_id`；迁移前行允许保持NULL且永不更新，新INSERT必须非NULL。应用读取NULL时失败关闭，只有显式注册Owner在同事务证明ObjectId/VersionId/Scope/Project后才可建立新引用。
+- Reason：VersionId不能替代业务ObjectId；猜测回填会制造不可追溯事实，而拒绝整个0063历史库升级又不满足兼容迁移。只读遗留+新写强约束同时保留历史和未来正确性。
+- Impact/Rollback：不改冻结API/技术栈；新增列及守卫，下一项0065实施。有非NULL新引用时拒绝降级，既有NULL历史不阻止退回0064。内部创建/Owner注册在后续独立实现。
+- Verification：本项静态对照冻结三字段引用、0063 ORM及Document Owner解析；运行验证待P02。
