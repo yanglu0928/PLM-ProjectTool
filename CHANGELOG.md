@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-03-A06-P05 核对Prompt退役装配边界：单向安全退役不需要Prompt内容签名清单，但仍依赖平台License/Session/CSRF及目标账户信任；增版/激活继续关闭。兼容性/升级/回滚：本项无程序、Schema、API、依赖或数据变化。验证：只读CR/服务/Windows组合检查，未执行新的运行测试；正式平台组合未验。已知问题：退役Windows显式写装配、正式信任/Invocation/Gate3/UAT/可用包待。
+
 - 2026-10-02：0.1.0.dev0/AI-03-A06-P04 新增可选Prompt退役POST HTTP：严格空对象、管理员Session/Origin/CSRF/幂等/强ETag，200仅回首次RETIRED/ETag；默认及生产不挂载。兼容性：复用0062，无新依赖/Breaking API；Win11隔离PG18验证，Server2025/Debian未验。升级/回滚：需先受控升0062与正式发行信任才可显式装配，撤Router恢复404，历史保留。验证：合同3、隔离PG18实际HTTP权限/重放/冲突/许可与单结果审计、后端2090运行/3跳过，开发wheel SHA-256 `92b65e4fc58a0ba583f4c7eeb99e3bb289daee47d8c709efeb38fae3012c05a5`。已知问题：正式信任/目标账户、Invocation/Gate3/UAT/可用包未过。
 
 - 2026-10-02：0.1.0.dev0/AI-03-A06-P03 新增PromptTemplate内部原子退役，DRAFT/ACTIVE行锁+强版本、当前管理员/CSRF/License、根/Audit/0062首次结果/收据同事务和撤权后拒绝重放；保留旧活动版本历史指针。兼容性：复用0062，无新依赖/公开API；Win11隔离PG18验证，Server2025/Debian未验。升级/回滚：先受控升0062；未装生产服务可撤，已有退役历史保留。验证：PG18并发/重放/权限/许可/故障回滚/撤权、单元2、后端2087运行/3跳过，开发wheel SHA-256 `55a1ea046c29163d4544f088685378903eea661812568d43d334b6a6e7332d6a`。已知问题：退役HTTP/生产信任/Invocation/Gate3/UAT/可用包未过。

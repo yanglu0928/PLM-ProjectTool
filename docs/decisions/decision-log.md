@@ -6953,3 +6953,11 @@
 - Impact/Rollback：无Schema/依赖/冻结路径或状态码变化；撤可选Router即404，历史结果保留。
 - Verification Plan：合同单测默认关闭/成功/重放/畸形请求/错误映射；Win11隔离PG18真实HTTP/Session/审计/收据链，正式信任另验。
 - Verification Result：合同3项、Win11隔离PG18实际HTTP链、后端2090运行/3跳过、开发wheel通过；生产仍不挂载。
+
+# DEC-20261002-693：安全退役不依赖 Prompt 内容签名清单
+
+- Date/WBS：2026-10-02 / `AI-03-A06-P05`；依据 CR-AI-007/009 与冻结退役语义。
+- Decision：退役只允许状态单向关闭且无新正文/激活，不以 Prompt 内容清单为前置；后续仅在 Windows 显式平台写模式装配，仍依赖平台 License/Session/CSRF/Schema0062及目标账户发行信任。增版/激活继续因 Prompt 清单缺失而关闭。
+- Reason：把内容准入扩展到单向禁用会阻碍安全停用；但安全停用不等于允许新内容调用，也不能绕过平台信任。
+- Impact/Rollback：本项只记录决策，无运行行为；下一项若组合失败保持默认404。无 Schema/API/依赖变化。
+- Verification：只读核对 CR-AI-007、退役服务和 Windows 组合；实际组合与正式账户未验。
