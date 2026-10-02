@@ -7019,3 +7019,4 @@
 - Reason：VersionId不能替代业务ObjectId；猜测回填会制造不可追溯事实，而拒绝整个0063历史库升级又不满足兼容迁移。只读遗留+新写强约束同时保留历史和未来正确性。
 - Impact/Rollback：不改冻结API/技术栈；新增列及守卫，下一项0065实施。有非NULL新引用时拒绝降级，既有NULL历史不阻止退回0064。内部创建/Owner注册在后续独立实现。
 - Verification：本项静态对照冻结三字段引用、0063 ORM及Document Owner解析；运行验证待P02。
+- Verification Result：0065已实施；Win11隔离PG18空库和0063遗留NULL历史兼容升降、drift、新写ObjectId强制/不可变/Scope及新历史拒降PASS；后端2100运行/3跳过、开发wheel SHA-256 `b0cd5c1288cb2ac278d755068124245b858270a2bd2a6cc53d06a864da7ab7ca`。Owner注册和内部创建仍待。

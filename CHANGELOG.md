@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-04-A03-P02 按CR-AI-010新增Schema0065 InputRef ObjectId与新写强制守卫，完整保存Owner/Object/ObjectId/Version；0063遗留NULL只读保留且后续执行须失败关闭。兼容性：0064后增量，不改冻结API/依赖，仅Win11隔离验证。升级/回滚：空库或仅遗留NULL可降0064，存在完整新身份拒降。验证：空/遗留历史升降重升、drift=0、缺失/零UUID/跨项目/不可变/拒降负例、后端2100运行/3跳过；开发wheel SHA-256 `b0cd5c1288cb2ac278d755068124245b858270a2bd2a6cc53d06a864da7ab7ca`。已知问题：Owner解析、内部Task创建、正式信任/外发、Gate3/UAT/可用包未过。
+
 - 2026-10-02：0.1.0.dev0/AI-04-A03-P01 对照冻结三字段ResourceVersionRef发现Schema0063输入引用缺业务ObjectId，登记CR-AI-010/DEC-700；决定既有缺值只读保留且执行失败关闭，新引用经Owner证明后强制完整身份。兼容性/升级/回滚：本项仅设计记录，无运行、Schema、API或依赖变化；0065方案保留原0063历史，不猜测回填。验证：静态核对冻结API/DM、0063与Document Owner能力。已知问题：0065和Owner注册/内部Task创建待实施。
 
 - 2026-10-02：0.1.0.dev0/AI-04-A02-P02 新增AIInvocation、ContextRef、逐次外发授权快照及AITask当前Attempt ORM/Migration0064；外部调用强制有效授权，Provider/Model/Prompt准入、连续Attempt、结构化成功Schema VALID及终态/历史不可变由PG约束和守卫保护，不存SecretRef、Key或Prompt/Response正文。兼容性：0063后增量，不改冻结API/依赖，仅Win11隔离验证；Server2025/Debian未验。升级/回滚：正式库先备份并受控升0064；无新增历史可降0063，有历史拒绝物理降级。验证：空库升降重升、既有0063数据升级、drift=0及负例PASS；完整环境后端2100运行/3跳过；开发wheel SHA-256 `f6e46044844a1ad9fb2dbc99d429cca607a4185d6d544673edbbbb8a47295d3e`。已知问题：内部Task创建/Owner准入/统一AIService、正式信任与真实外发、Gate3/UAT/可用包未过。

@@ -120,13 +120,17 @@ class AITaskInputRefRow(Base):
                         "AND ai_task_id <> '00000000-0000-0000-0000-000000000000'::uuid "
                         "AND version_id <> '00000000-0000-0000-0000-000000000000'::uuid "
                         "AND ref_ordinal BETWEEN 1 AND 1000", name="ck_ai_task_inputs__ids"),
+        CheckConstraint("object_id IS NULL OR "
+                        "object_id <> '00000000-0000-0000-0000-000000000000'::uuid",
+                        name="ck_ai_task_inputs__object_id"),
         CheckConstraint("(scope='GLOBAL' AND project_id IS NULL) OR "
                         "(scope='PROJECT' AND project_id IS NOT NULL)",
                         name="ck_ai_task_inputs__scope"),
         CheckConstraint("owner_module ~ '^[a-z][a-z0-9_]{0,63}$' AND "
                         "object_type ~ '^[A-Z][A-Z0-9_]{0,63}$' AND isfinite(added_at)",
                         name="ck_ai_task_inputs__ref"),
-        Index("ix_ai_task_inputs__version", "owner_module", "object_type", "version_id"),
+        Index("ix_ai_task_inputs__object_version", "owner_module", "object_type",
+              "object_id", "version_id"),
     )
 
     input_ref_id: Mapped[uuid.UUID] = mapped_column(
@@ -138,6 +142,8 @@ class AITaskInputRefRow(Base):
     project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     owner_module: Mapped[str] = mapped_column(Text, nullable=False)
     object_type: Mapped[str] = mapped_column(Text, nullable=False)
+    # NULL is migration-only legacy from Schema0063; all new INSERTs are guarded non-NULL.
+    object_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     added_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True, precision=6), nullable=False,

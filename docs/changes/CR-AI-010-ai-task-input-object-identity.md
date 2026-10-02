@@ -1,6 +1,6 @@
 # CR-AI-010：AITask 输入版本补全业务对象身份
 
-日期：2026-10-02；状态：依 V1.1 持续授权登记，待增量实施；关联冻结 API-01/03 `ResourceVersionRef`、DM-04、Schema0063及 DEC-698/699；原 Gate 2 冻结提交 `64cdf09` 和0063历史不改。WBS `AI-04-A03`。
+日期：2026-10-02；状态：依 V1.1 持续授权登记，0065已实施并完成Win11隔离验证；Owner注册与内部Task创建待后续；关联冻结 API-01/03 `ResourceVersionRef`、DM-04、Schema0063及 DEC-698/699；原 Gate 2 冻结提交 `64cdf09` 和0063历史不改。WBS `AI-04-A03`。
 
 冲突与证据：冻结公开输入版本引用必须包含 `resource_type`、`resource_id`、`version_id`，Owner解析后还需保留 Owner/ObjectType/Scope/Project。0063 `ai_task_input_refs` 已保存 Owner/ObjectType/VersionId/Scope/Project，但遗漏业务 `object_id`。仅凭版本UUID即使当前物理表中唯一，也不能完整重建客户端三字段引用、证明对象与版本归属或适配不同Owner的复合身份；若直接把 `version_id` 当 `object_id` 会伪造业务事实。
 
@@ -11,3 +11,5 @@
 迁移/回滚：新增0065/ORM；空库与既有0063数据均可升级。既有NULL历史保持只读。若没有任何非NULL新身份可降0064；存在新引用时拒绝物理降级并向前修复或受控备份恢复。不得更新0063遗留InputRef来伪造历史。
 
 验证计划：P01登记差异；P02验证空库及既有NULL历史升级、drift、新插入缺ObjectId拒绝、完整身份不可变/Scope同Task、遗留行保持NULL、空/仅遗留可降重升、非NULL新历史拒降、后端回归和wheel；P03以后再实现显式Owner注册及内部AITask创建。无真实数据外发、API开放或生产迁移。
+
+P02结果：ORM/Migration0065已实施；Win11隔离PG18空库和仅0063遗留NULL历史升/降/重升、drift=0、新写缺ObjectId/零UUID/跨项目拒绝、完整身份改删拒绝、遗留NULL不改写及非NULL新历史拒降全部PASS。首轮测试把公开`DOC-02`误作Owner内部ObjectType而被既有白名单正确拒绝，改为解析后`DOCUMENT_VERSION`并完整重跑。后端2100运行/3跳过PASS；开发wheel SHA-256 `b0cd5c1288cb2ac278d755068124245b858270a2bd2a6cc53d06a864da7ab7ca`。无真实外发/API/生产迁移。
