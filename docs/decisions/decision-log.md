@@ -7084,3 +7084,11 @@
 - Reason：通用幂等收据只能指向一个 UUID，而可变 Root 无法重放首次 AUTHORIZED 响应；独立结果可保留原响应，延迟约束又防止只改状态或只写事件。
 - Impact/Rollback：增量Schema0069，不改冻结API/依赖；空表可降0068，有历史时向前修复或受控恢复。当前角色/原批准者/部署策略由后续应用服务重验。
 - Verification：Win11隔离PG18.6空库往返、已有0068升级、drift、越界/过期/角色/缺结果授权、不完整撤销、单向/不可变/拒降PASS；后端2111运行/3跳过，wheel `a9f4e426e9e132960da559d8e2a931493f6fb978742f234bde33304d99785700`。首轮迁移变量名和夹具引号缺陷已修正并全量重跑。
+
+# DEC-20261003-709：Preview 按版本化策略固化边界并从不可变根重放
+
+- Date/WBS：2026-10-03 / `AI-04-A04-P04`；依据 CR-AI-013、冻结 `EGRESS_PREVIEW_CREATE/GET`。
+- Decision：Preview 创建必须在一个事务内通过当前 License、Session/CSRF、Project 角色、显式 Input Owner、当前 ACTIVE Provider/配置/AVAILABLE Model 和可注入的版本化最小外发策略，然后原子写 Root/Source/Audit/Receipt。类别集合排序后参与请求指纹；同 Key 从0068不可变根精确重放，不从当前可变路由重建历史。GET 只返同项目安全投影。
+- Reason：策略引用与定量上限是授权候选边界，必须在发生批准前稳定、可审计；重放若重跑当前路由会将历史请求漂移到新配置。
+- Impact/Rollback：复用0068/0069，无新Schema、依赖或Breaking API；停止后续组合即可回退入口，已有Preview/Audit/Receipt保留且不删除。公开HTTP及真实外发继续关闭。
+- Verification：定向12项、Win11隔离PG18.6真实原子链/重放/冲突/回滚/项目隔离、后端2116运行/3跳过PASS；开发wheel SHA-256 `2160e09b852932c733add19ef0ee6e5bc2cad10749d0cb8848716ab89be03673`。

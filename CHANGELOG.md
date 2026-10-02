@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A04-P04 新增Egress Preview内部原子创建/受权读取，组合License、Session/CSRF、Project权限、Input Owner、当前Provider/Config/Model与版本化最小外发策略，Root/Source/Audit/Receipt同事务；同Key精确重放且数据类别集合规范化。兼容性：复用0068/0069，无新Schema/依赖/Breaking API，仅Win11验证。升级/回滚：需先受控升至0069；未挂公开入口，停止组合即可回退，历史保留。验证：定向12、PG18.6真实原子链/重放/冲突/回滚/隔离、后端2116运行/3跳过PASS；开发wheel SHA-256 `2160e09b852932c733add19ef0ee6e5bc2cad10749d0cb8848716ab89be03673`。首轮全量的权限库存断言33已随新操作更新为35并全量重跑。已知问题：Authorize/Revoke/Task Owner、HTTP/生产组合/真实外发、Gate3/UAT/可用包待完成。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A04-P03 新增Schema0069 EgressAuthorization Root、不可变撤销事件和Authorize/Revoke首次结果；Preview边界只能缩小，Provider/Config/Model需当前可用，延迟触发器强制首次结果与撤销历史成套原子落库及`AUTHORIZED@0→REVOKED@1`。兼容性：0068后增量，不改冻结API/依赖，仅Win11验证。升级/回滚：空表可降0068，有历史拒降。验证：PG18.6空库往返/已有Preview升级/drift/负例、后端2111运行/3跳过PASS；开发wheel SHA-256 `a9f4e426e9e132960da559d8e2a931493f6fb978742f234bde33304d99785700`。首轮PL/pgSQL变量名及夹具引号缺陷已修正并全量重跑。已知问题：Application/HTTP/真实外发、Gate3/UAT/可用包待完成。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A04-P02 新增Schema0068 EgressPreview Root与不可变SourceRef，由PG保护Provider/Config/AVAILABLE Model/Region、Scope/Project、集合/语义来源去重、非零UUID、指纹/上限/时间及只追加历史。兼容性：0067后增量，不改冻结API/依赖，仅Win11验证。升级/回滚：空表可降0067，有历史拒降并向前修复或受控恢复。验证：PG18.6空库升降重升/drift/负例、后端2111运行/3跳过PASS；开发wheel SHA-256 `9f7f479e00258503511e43238d637662bc5ed772608798f183dc7d867c32c01e`。已知问题：0069 Authorization/撤销、服务/HTTP/真实外发、Gate3/UAT/可用包待完成。
