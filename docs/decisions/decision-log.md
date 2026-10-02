@@ -7044,3 +7044,11 @@
 - Reason：批准主体、时间、数据边界与撤销状态是正式业务事实，不得由 AI 模块猜测或自我授权。
 - Impact/Rollback：P06 可实现 Port/内部创建，但 Egress Owner 生产实现前不开放 API；无 Schema/API 冻结内容改写。
 - Verification：静态搜索确认当前仅有0064 Task 内快照表，无 Egress Preview/Authorization 生产聚合或可组合 Owner。
+
+# DEC-20261002-704：授权快照固定Model、源集合摘要与定量边界
+
+- Date/WBS：2026-10-02 / `AI-04-A03-P06`；依据 CR-AI-012、冻结 `EgressAuthorization`。
+- Decision：Schema0067在0064快照上增加Model、批准角色、preview payload/source refs指纹、载荷/Token/重试上限和捕获时AUTHORIZED状态。source refs明细由同Task不可变InputRef集合承载，不复制正文或第二份明细。
+- Reason：0064现有列不足以证明Invocation未更换Model、源或扩大载荷；把边界放在Job JSON/日志或推迟到Invocation均无法作为完整批准证据。
+- Impact/Rollback：新列兼容旧NULL历史，新行强制完整；不改冻结API/技术栈，有完整新快照拒绝降级。
+- Verification：本项静态对照API-03与0064 ORM/Migration；P07执行PG18、回归和wheel验证。
