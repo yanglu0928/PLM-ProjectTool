@@ -70,6 +70,7 @@ def main() -> None:
                     ("create_windows_secret_list_cursor_codec", _h["SecretListCursorCodec"](b"q" * 32)),
                     ("create_windows_ai_provider_list_cursor_codec", _h["ProviderListCursorCodec"](b"i" * 32)),
                     ("create_windows_ai_model_list_cursor_codec", _h["ModelListCursorCodec"](b"n" * 32)),
+                    ("create_windows_ai_prompt_list_cursor_codec", _h["PromptListCursorCodec"](b"p" * 32)),
                     ("create_windows_project_member_cursor_codec", _h["MemberListCursorCodec"](b"m" * 32)),
                     ("create_windows_project_department_cursor_codec", _h["DepartmentListCursorCodec"](b"d" * 32)),
                     ("create_windows_document_list_cursor_codec", _h["DocumentListCursorCodec"](b"l" * 32)),

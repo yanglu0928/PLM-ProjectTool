@@ -20,6 +20,7 @@ from plm_assistant.entrypoints.production_login import (
     create_production_platform_app, create_production_platform_write_app,
 )
 from plm_assistant.modules.ai.application.model_list_cursor import ModelListCursorCodec
+from plm_assistant.modules.ai.application.prompt_list_cursor import PromptListCursorCodec
 from plm_assistant.modules.ai.application.provider_list_cursor import ProviderListCursorCodec
 from plm_assistant.modules.audit.api.list_cursor import AuditListCursorCodec
 from plm_assistant.modules.auth.api.user_list_cursor import UserListCursorCodec
@@ -80,6 +81,7 @@ def main() -> None:
                     ("create_windows_secret_list_cursor_codec", SecretListCursorCodec(b"q" * 32)),
                     ("create_windows_ai_provider_list_cursor_codec", ProviderListCursorCodec(b"i" * 32)),
                     ("create_windows_ai_model_list_cursor_codec", ModelListCursorCodec(b"n" * 32)),
+                    ("create_windows_ai_prompt_list_cursor_codec", PromptListCursorCodec(b"p" * 32)),
                     ("create_windows_project_member_cursor_codec", MemberListCursorCodec(b"m" * 32)),
                     ("create_windows_project_department_cursor_codec", DepartmentListCursorCodec(b"d" * 32)),
                     ("create_windows_document_list_cursor_codec", DocumentListCursorCodec(b"l" * 32)),

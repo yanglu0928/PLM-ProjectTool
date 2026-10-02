@@ -6985,3 +6985,11 @@
 - Reason：先验证冻结接口的权限与投影，避免在缺正式游标签名密钥和发行信任时静默开放生产入口。
 - Impact/Rollback：无Schema/依赖/Breaking API变化；撤Router恢复404，数据不变。
 - Verification：合同3、Win11隔离PG18真实ASGI分页/ETag/三状态/权限/许可/撤销/无正文、后端2097运行/3跳过、开发wheel通过；正式组合尚未挂载。
+
+# DEC-20261002-697：Prompt 只读组合要求专属 Vault 密钥
+
+- Date/WBS：2026-10-02 / `AI-03-A07-P04`；依据冻结 `AI_PROMPT_LIST/GET`、DEC-696、现有 Windows 游标密钥机制。
+- Decision：`--platform` 和 `--platform-write` 均显式装配 Prompt LIST/GET，并从当前账户 Vault 读取独立 `ai-prompt-list-cursor-v1`；缺失/损坏则拒绝显式平台服务启动，错误不泄露底层密钥信息。默认登录组合不装配。详情路由限定 UUID 以维持退役 POST 在只读模式404。
+- Reason：防止跨资源游标密钥复用、不可恢复游标或默默降级；保持冻结动作路由语义。
+- Impact/Rollback：新密钥是部署前置，不改Schema/依赖/冻结API；正式账户需受控供给及离线备份。撤只读装配可恢复原入口状态，不改数据。
+- Verification：Win11临时Vault丢失/备份恢复、缺钥启动失败、隔离PG18平台读/写组合、退役/Model回归、后端2100运行/3跳过、开发wheel通过；正式账户/Server2025/Debian未验。

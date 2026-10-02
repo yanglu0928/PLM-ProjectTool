@@ -1,4 +1,4 @@
-"""Disposable PG18 proof of Windows explicit Prompt retirement composition."""
+"""Disposable PG18 proof of Windows explicit Prompt metadata composition."""
 
 from __future__ import annotations
 
@@ -29,7 +29,7 @@ connect, seed_user, Guard = _h["connect"], _h["seed_user"], _h["Guard"]
 
 
 def main() -> None:
-    name = "ai03a06p06_" + uuid.uuid4().hex[:12]
+    name = "ai03a07p04_" + uuid.uuid4().hex[:12]
     admin_token, member_token = b"a" * 32, b"m" * 32
     with connect("postgres") as admin:
         admin.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(name)))
@@ -38,28 +38,31 @@ def main() -> None:
                              port=55434, database=name)
             command.upgrade(create_migration_config(url), "head")
             with connect(name) as db:
-                actor = seed_user(db, "Synthetic Platform Retire Admin",
+                actor = seed_user(db, "Synthetic Platform Prompt Admin",
                                   "DEPLOYMENT_ADMIN", admin_token)
-                seed_user(db, "Synthetic Platform Retire Member", "NONE", member_token)
-                template = db.execute(
+                seed_user(db, "Synthetic Platform Prompt Member", "NONE", member_token)
+                ids = [db.execute(
                     "INSERT INTO plm.ai_prompt_templates(task_type,created_by) "
                     "VALUES ('GAP_ANALYSIS',%s) RETURNING prompt_template_id", (actor,),
-                ).fetchone()[0]
-                system, user = "Synthetic system", "Synthetic {input}"
-                db.execute(
-                    "INSERT INTO plm.ai_prompt_versions(prompt_template_id,version_no,system_template,"
-                    "user_template,system_template_hash,user_template_hash,output_schema_ref,schema_version,"
-                    "rag_policy_ref,provider_policy_ref,created_by) VALUES "
-                    "(%s,1,%s,%s,%s,%s,'schema.synthetic.v1',1,'rag.synthetic.v1',"
-                    "'provider.synthetic.v1',%s)",
-                    (template, system, user, hashlib.sha256(system.encode()).hexdigest(),
-                     hashlib.sha256(user.encode()).hexdigest(), actor),
-                )
+                ).fetchone()[0] for _ in range(3)]
+                system, user = "SYNTHETIC_PRIVATE_SYSTEM_TEXT", "SYNTHETIC_PRIVATE_USER_TEXT"
+                for ident in ids[1:]:
+                    db.execute(
+                        "INSERT INTO plm.ai_prompt_versions(prompt_template_id,version_no,"
+                        "system_template,user_template,system_template_hash,user_template_hash,"
+                        "output_schema_ref,schema_version,rag_policy_ref,provider_policy_ref,"
+                        "created_by) VALUES (%s,1,%s,%s,%s,%s,'schema.synthetic.v1',1,"
+                        "'rag.synthetic.v1','provider.synthetic.v1',%s)",
+                        (ident, system, user, hashlib.sha256(system.encode()).hexdigest(),
+                         hashlib.sha256(user.encode()).hexdigest(), actor),
+                    )
                 db.execute("UPDATE plm.ai_prompt_templates SET template_state='ACTIVE',"
-                           "active_version_no=1,lock_version=2 WHERE prompt_template_id=%s", (template,))
+                           "active_version_no=1,lock_version=1 WHERE prompt_template_id=%s", (ids[1],))
+                db.execute("UPDATE plm.ai_prompt_templates SET template_state='RETIRED',"
+                           "active_version_no=1,lock_version=2 WHERE prompt_template_id=%s", (ids[2],))
             guard = Guard()
             prefix = "plm_assistant.entrypoints.production_login."
-            with TemporaryDirectory(prefix="plm-prompt-retire-platform-") as directory, ExitStack() as stack:
+            with TemporaryDirectory(prefix="plm-prompt-metadata-platform-") as directory, ExitStack() as stack:
                 settings = _h["BootstrapSettings"](
                     data_root=Path(directory), trusted_origins=("http://localhost",),
                 )
@@ -92,44 +95,43 @@ def main() -> None:
                         provider=SimpleNamespace(resolve_key=lambda ref: b"u" * 32),
                         key_ref="document-upload-token-v1",
                     )))
-                path = f"/api/v1/admin/ai/prompt-templates/{template}:retire"
-                headers = {"cookie": "plm_session=" + admin_token.hex(),
-                           "x-csrf-token": (b"c" * 32).hex(),
-                           "idempotency-key": str(uuid.uuid4()),
-                           "origin": "http://localhost", "if-match": '"v2"'}
+                path = "/api/v1/admin/ai/prompt-templates"
+                headers = {"cookie": "plm_session=" + admin_token.hex()}
+                member = {"cookie": "plm_session=" + member_token.hex()}
                 with TestClient(create_production_login_app(settings),
                                 base_url="http://localhost") as client:
-                    assert client.post(path, json={}, headers=headers).status_code == 404
-                with TestClient(create_production_platform_app(settings),
-                                base_url="http://localhost") as client:
-                    assert client.post(path, json={}, headers=headers).status_code == 404
-                with TestClient(create_production_platform_write_app(settings),
-                                base_url="http://localhost") as client:
-                    first = client.post(path, json={}, headers=headers)
-                    assert first.status_code == 200 and first.headers["etag"] == '"v3"', first.text
-                    replay = client.post(path, json={}, headers=headers)
-                    assert replay.status_code == 200 and replay.json()["data"] == first.json()["data"]
-                    assert client.post(path, json={}, headers={
-                        **headers, "cookie": "plm_session=" + member_token.hex(),
-                        "idempotency-key": str(uuid.uuid4()),
-                    }).status_code == 404
-                    guard.enabled = False
-                    assert client.post(path, json={}, headers=headers).status_code == 403
-                with patch(prefix + "create_windows_ai_model_list_cursor_codec",
+                    assert client.get(path, headers=headers).status_code == 404
+                for factory in (create_production_platform_app, create_production_platform_write_app):
+                    with TestClient(factory(settings), base_url="http://localhost") as client:
+                        first = client.get(path + "?page_size=2", headers=headers)
+                        assert first.status_code == 200, first.text
+                        cursor = first.json()["data"]["next_cursor"]
+                        assert cursor and len(first.json()["data"]["items"]) == 2
+                        second = client.get(path + "?page_size=2&cursor=" + cursor,
+                                            headers=headers)
+                        assert second.status_code == 200 and len(second.json()["data"]["items"]) == 1
+                        items = first.json()["data"]["items"] + second.json()["data"]["items"]
+                        assert {item["prompt_template_id"] for item in items} == {str(ident) for ident in ids}
+                        retired = next(item for item in items if item["prompt_template_id"] == str(ids[2]))
+                        assert retired["active_version_no"] is None
+                        detail = client.get(f"{path}/{ids[1]}", headers=headers)
+                        assert detail.status_code == 200 and detail.headers["etag"] == '"v1"'
+                        assert system not in first.text + second.text + detail.text
+                        assert user not in first.text + second.text + detail.text
+                        assert client.get(path, headers=member).status_code == 404
+                        guard.enabled = False
+                        assert client.get(path, headers=headers).status_code == 403
+                        guard.enabled = True
+                with patch(prefix + "create_windows_ai_prompt_list_cursor_codec",
                            side_effect=RuntimeError("synthetic missing key")):
-                    try:
-                        create_production_platform_write_app(settings)
-                    except ProductionLoginStartupError as exc:
-                        assert "synthetic" not in str(exc)
-                    else:
-                        raise AssertionError("missing platform trust did not close startup")
-            with connect(name) as db:
-                assert db.execute("SELECT template_state,active_version_no,lock_version FROM "
-                                  "plm.ai_prompt_templates WHERE prompt_template_id=%s",
-                                  (template,)).fetchone() == ("RETIRED", 1, 3)
-                assert db.execute("SELECT count(*) FROM plm.ai_prompt_retire_results").fetchone()[0] == 1
-                assert db.execute("SELECT count(*) FROM plm.aud_events WHERE action='AI_PROMPT_RETIRE'").fetchone()[0] == 1
-            print("PASS: Windows login/read/write Prompt retirement modes, PG 200/replay, auth/license/key fail-closed")
+                    for factory in (create_production_platform_app, create_production_platform_write_app):
+                        try:
+                            factory(settings)
+                        except ProductionLoginStartupError as exc:
+                            assert "synthetic" not in str(exc)
+                        else:
+                            raise AssertionError("missing Prompt cursor key did not close startup")
+            print("PASS: Win11 platform read/write Prompt metadata, PG pages/ETag/auth/license, missing key closed")
         finally:
             admin.execute("SELECT pg_terminate_backend(pid) FROM pg_stat_activity "
                           "WHERE datname=%s AND pid<>pg_backend_pid()", (name,))

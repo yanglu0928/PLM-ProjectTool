@@ -124,7 +124,7 @@ def create_ai_prompt_read_router(*, sessions: SessionService,
             headers={"Cache-Control": "no-store"},
         )
 
-    @router.get("/api/v1/admin/ai/prompt-templates/{prompt_template_id}")
+    @router.get("/api/v1/admin/ai/prompt-templates/{prompt_template_id:uuid}")
     async def get_ai_prompt(prompt_template_id: uuid.UUID, request: Request) -> JSONResponse:
         query = await _query(request, sessions=sessions, origins=origins)
         if request.url.query:

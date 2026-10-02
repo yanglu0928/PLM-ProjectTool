@@ -6,4 +6,4 @@
 
 `GET /api/v1/admin/ai/prompt-templates/{prompt_template_id}`：同样权限，无查询参数；返回安全元数据与强 ETag。两接口的元数据仅含模板 ID、任务类型、状态、当前活动版本及其 schema/policy refs、内容 hash、ETag。DRAFT/RETIRED 的活动版本字段全部为 null；RETIRED 旧指针仅留内部历史。绝不返回 system/user 模板正文、Secret 或客户数据。
 
-本项为可选 Router，默认应用与当前 Windows 生产组合未挂载，仍返回404。Win11 隔离PG18/合成 License及真实 Session 核查通过；正式游标密钥来源、发行信任、目标账户、Server2025/Debian、生产迁移、Gate3/UAT/可用包另验。Router 存在不代表生产可用。
+本项为可选 Router，默认登录模式仍404；Windows `--platform` / `--platform-write` 显式组合装配，并要求当前账户 Vault 中独立 `ai-prompt-list-cursor-v1` 密钥，缺失则启动失败关闭。详情路径按 UUID 匹配，避免与退役动作路径产生 405 遮蔽。Win11 隔离PG18/合成 License及真实 Session、临时密钥备份恢复核查通过；正式发行信任/目标账户密钥与离线备份、Server2025/Debian、生产迁移、Gate3/UAT/可用包另验。Router存在不代表生产可用。

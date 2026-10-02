@@ -90,6 +90,9 @@ class PromptMetadataApiTests(unittest.TestCase):
         self.assertNotIn("system_template\"", response.text)
         self.assertNotIn("user_template\"", response.text)
         self.assertNotIn("secret", response.text.lower())
+        self.assertEqual(self.client.post(
+            self.detail_path + ":retire", json={}, headers={"cookie": self.cookie},
+        ).status_code, 404)
 
     def test_list_validation_and_error_mapping(self) -> None:
         first = self.get(self.list_path + "?page_size=1")
