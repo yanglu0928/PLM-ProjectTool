@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A03-P04-P02-A02 前置核查确定正式 Worker 缺 Secret 访问审计适配器；按 CR-AI-002 拆 A02-P01，Worker 与 Test 公开路由保持关闭。兼容性/升级：仅文档和排期记录，无程序/Schema/API/依赖变化。验证：静态核对 `SecretResolver` Port、隔离 Worker 夹具及 Audit 主体要求，未运行新业务测试。已知问题：正式访问审计/Worker 同源组合、真实外发和发行 Gate 待完成。
+
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A03-P04-P02-A01 新增 Windows Provider Test 提交组合工厂，复用受控策略、Session/License/Secret 证明及真实 Job/Outbox/Audit/收据；暂不挂公开路由。兼容性：默认及当前 Windows 入口仍 404；无 Schema、依赖或 Breaking API。升级：无需新迁移；撤工厂可回退，历史 Job 保留。验证：Win11 隔离 ASGI/PG18 默认关闭、缺策略/许可拒绝、202 与同 Key 重放 PASS；后端2006运行/3跳过，开发 wheel SHA-256 `6414171596dd60e3c6b4fb2f112b95141da7209c2fdc029f19585579c4419f0e`。已知问题：Worker/生命周期、路由挂载、正式信任/出站、三平台/Gate/UAT/可用包仍待。
 
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A03-P04-P01 新增受控 Bootstrap 非秘密探针策略来源，严格六字段、引用唯一、有界配置并生成不可变 Registry；缺失/不安全配置失败关闭。兼容性：默认空策略，既有部署不自动开放 Provider Test/Activate；无 Schema/API/依赖变化。升级：若后续启用需在受保护 Bootstrap YAML 显式配置并重启，变更后重新测试；撤字段/工厂可回退，既有历史保留。验证：Win11 定向5项、后端2006运行/3跳过、开发 wheel SHA-256 `92609fefc0dd1a01e873ba37a1302c9ea2629d1e45aadbe265711785a878c03f`。已知问题：正式目标账户配置 ACL/策略目的地、Test/Worker/Activate 同源组合、真实外发、三平台/Gate/UAT/可用包未验。

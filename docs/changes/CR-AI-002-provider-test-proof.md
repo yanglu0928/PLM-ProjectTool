@@ -78,3 +78,5 @@
 2026-10-02 P05-A03-P04-P02 范围拆分：Windows 现有服务计划仅 Web、Audit Worker、Parser Worker；Provider Test 单次 Worker 只在隔离脚本内组合。直接公开 `:test` 会接受 Job 却没有正式消费者。按 DEC-20261002-657 拆 A01 受控策略 Test 提交工厂（不挂路由）、A02 同策略单次 Worker 工厂与安全运行边界、A03 在两者具备后装配/验收公开路由及生命周期。API-03 冻结 202 JobRef 不变，原 P04 激活路由继续关闭。失败关闭及历史 Job/结果保留；此拆分不授权真实厂商外发。
 
 2026-10-02 P05-A03-P04-P02-A01 Windows 提交组合工厂已验证，但不向生产应用注入路由；受控 Bootstrap 策略缺失时固定失败，隔离 ASGI/PG18 真管理员/License、Job/Outbox/Audit/收据与历史重放通过。后端2006运行/3跳过。仍缺 Worker 的同源/目标账户网络和安全生命周期，不能据此开启 :test 或 :activate。
+
+2026-10-02 P05-A03-P04-P02-A02 前置核查：`ProviderProbeOneShotWorker` 的隔离验证注入合成 `SecretAudit`，生产组合没有实现 `SecretResolver` 所需的 `SecretAuditPort.record_access`。无审计或无操作主体地拼接生产 Worker 会削弱密钥访问追踪；又因 Audit `SYSTEM` 事件要求原始 actor，不能用未知值伪造。比较：静默 no-op（不选，失审计）、直接复用合成对象（不选）、先建立与 Job/受权用户绑定的正式 Secret 访问审计上下文/持久适配器，再组合 Worker（选）。A02 暂 PRECONDITION_BLOCKED，拆 A02-P01 独立完成审计语义及失败关闭/隔离 PG 验证；当前不启动 Worker、不真实外发。后续 Worker 仍须校验 Vault 主钥、策略一致、网络目的地和安全生命周期。
