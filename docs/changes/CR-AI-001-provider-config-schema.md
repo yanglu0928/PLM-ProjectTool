@@ -19,3 +19,5 @@
 ## 验证计划与剩余风险
 
 在 Windows 11 本机隔离 PostgreSQL 18 中验证：空库 up/down/re-up、有数据升级保持既有行、ORM/Alembic 无差异、受控字段/版本/FK/指针/能力约束、历史不可改写、非空降级拒绝；后端全量回归和 wheel。测试只用合成身份与无明文 SecretRecord，不连接外部 AI。此验证不代表 Provider 配置 Service、激活/连通、逐次客户数据外发、POC-03 质量、Server 2025/Debian 运行或 Gate 3 通过。
+
+2026-10-02 验证结果：Windows 11 隔离 PostgreSQL18.6 空库 up/down/re-up、有旧数据升级、复合 FK/历史保护/约束、非空降级拒绝、两库 Alembic check PASS；后端1907运行/3跳过、开发 wheel PASS。详见 `docs/progress/ai-01-a02-provider-schema.md`；正式生产迁移、Service/AI质量/三平台/Gate 仍未验证。

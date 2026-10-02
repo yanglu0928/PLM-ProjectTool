@@ -36,6 +36,7 @@ from plm_assistant.modules.workflow.infrastructure import history_orm  # noqa: F
 from plm_assistant.modules.workflow.infrastructure import checklist_record_orm  # noqa: F401 - register WFL-01 record chain
 from plm_assistant.modules.review.infrastructure import orm as review_orm  # noqa: F401 - register Review owned history
 from plm_assistant.modules.jobs.infrastructure import orm as jobs_orm  # noqa: F401 - register Job/Outbox tables
+from plm_assistant.modules.ai.infrastructure import provider_orm  # noqa: F401 - register AI-01 tables
 
 
 config = context.config

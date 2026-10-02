@@ -3,7 +3,7 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 2：Platform Core|
-|Current WBS|`AI-01-A01` Provider 内部配置形状 PASS；无激活/外发/公开 API，Phase 2 与 Gate 3 仍开放|
+|Current WBS|`AI-01-A02` Provider 配置版本 Schema/迁移隔离 PG18 PASS；无 Service/激活/外发/公开 API，Phase 2 与 Gate 3 仍开放|
 |Current Status|PHASE_1_COMPLETE / DOC_03_A03_P04_P04_PRECONDITION_BLOCKED / DOC_02_A02_P01_INTERNAL_PASS / DOC_02_A02_P02_PRECONDITION_BLOCKED / DOC_03_A04_A03_P04_P03_CONTENT_HTTP_PASS / DOC_03_A04_A04_P01_JOB_SCHEMA_PASS / DOC_03_A04_A04_P02_JOB_LEASE_PASS / DOC_03_A04_A04_P03_OUTBOX_PASS / DOC_03_A04_A04_P04_P01_PARSE_QUEUE_PASS / DOC_03_A04_A04_P04_P02_COMMIT_INTERNAL_PASS / DOC_03_A04_A04_P04_P03_P01_ABORT_STATE_PASS / DOC_03_A04_A04_P04_P03_P02_PRECONDITION_BLOCKED / DOC_03_A04_A04_P04_P04_A01_FINALIZE_HTTP_PASS / DOC_03_A04_A04_P04_P04_A02_WINDOWS_COMPOSITION_PASS / DOC_03_A04_A04_P04_COMMIT_ABORT_IN_PROGRESS / DOC_01_A02_INTERNAL_PASS / DOC_01_A03_P01_CURSOR_PASS / DOC_01_A03_P02_HTTP_CONTRACT_PASS / DOC_01_A03_P03_HTTP_DB_PASS / DOC_01_A03_P04_WINDOWS_COMPOSITION_PASS / DOC_01_A04_P01_VERSION_INTERNAL_PASS / DOC_01_A04_P02_VERSION_CURSOR_PASS / DOC_01_A04_P03_VERSION_HTTP_CONTRACT_PASS / DOC_01_A04_P04_VERSION_HTTP_DB_PASS / DOC_01_A04_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P01_VERIFIED_SNAPSHOT_PASS / DOC_01_A05_P02_DOWNLOAD_SOURCE_PASS / DOC_01_A05_P03_PREPARE_DOWNLOAD_PASS / DOC_01_A05_P04_DOWNLOAD_HTTP_PASS / DOC_01_A05_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P06_DISCONNECT_CAPACITY_BOUNDED_PASS / DOC_03_A04_A04_P04_P03_P02_A01_GATE_ADAPTER_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P01_CONTENT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P02_COMMIT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P03_ABORT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P01_READONLY_INSPECTION_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A01_STORAGE_STEP_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A02_INTERNAL_CLEANUP_PASS / PLT_02_A07_P05_A09_CEREMONY_PENDING / PHASE_2_IN_PROGRESS|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
 |Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03、DOC-03-A01、DOC-03-A02（限定范围）、DOC-03-A03-P01～P03（P03 内部合成验证）、DOC-03-A03-P04-P01～P03（内部合成验证）、DOC-03-A04-A01（Schema 验证）、DOC-03-A04-A02（内部合成验证）、DOC-01-A01、DOC-02-A01、DOC-02-A02-P01（内部合成验证） PASS|
@@ -11,10 +11,10 @@
 |Pending User Decisions|LIC-03-A03 方案 A 已确定；P08-A02 本机浏览器将两份纯合成 PDF 上传至 127.0.0.1 隔离服务的 UI 文件操作确认待回复（非项目技术方案选择）。客户数据外发、付款/额度重置和不可恢复生产操作不在持续授权内|
 |Architecture Version|`ARCH-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，License ADR-006 经用户批准 CR-LIC-001 修订|
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，DM-02 License 授权粒度经用户批准 CR-LIC-001 修订|
-|DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；原冻结64cdf09保留；增量至`20261002_0053` TraceLink状态资源版本（CR-TRC-003）；无生产迁移|
+|DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；原冻结64cdf09保留；增量至`20261002_0054` AIProvider配置版本（CR-AI-001）；无生产迁移|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
 |Test Summary|DOC05A05-P07 三视图定向26、前端全量970项/typecheck/build PASS；DOC05A05-P06 定向44、前端全量960项/typecheck/build PASS；DOC05A05-P05 定向149、前端全量916项/typecheck/build PASS；DOC05A05-P04 定向30、前端全量910项/typecheck/build PASS；DOC05A05-P03 定向143、前端全量880项/typecheck/build PASS；DOC05A05-P02 定向31、前端全量876项/typecheck/build PASS；DOC05A05-P01 SessionClient 定向139、前端全量845项/typecheck/build PASS；A05真实浏览器/PG审计、A06 Auth UTC-Z真实网络与后端1558无失败/2跳过、A07导航浏览器；A08-P02前端85及真实PG改密HTTP内部链通过、浏览器最终提交待人工；A09前端86跨路由合同；PRJ05A01客户端123、A02列表131、A03详情139；A04真实浏览器及独立HTTP/PG合成读链通过；PRJ05A05-P01前端147桥接、P02前端173创建客户端、P03-A01候选读取205、P03-A02创建页面212/typecheck/build合同；P04真实IAB/PG创建通过。AUT05A10-P01前端219私有User写桥接、P02前端249安全客户端、P03前端258页面合同；P04-A01隔离ASGI/PG写链通过。AUT05A11-P01前端265/typecheck/build用户只读页合同通过，P02 Windows11本机合成浏览器/PG匿名/普通用户拦截、Admin两用户列表/刷新及临时资源清理通过。AUT05A12-P01前端271状态传输合同，P02前端292状态响应合同，P03前端309详情强ETag合同，P04前端320/typecheck/build启停页面合同通过；P05-A01实际Windows11隔离ASGI/PG User启停/会话/历史重放和临时源清理exit0（首轮PG服务停止，恢复后重跑）。AUT05A13-P01～P03前端362/typecheck/build，P04隔离浏览器同用户改名v0→v1、旧名拒绝/新名登录及SQL一审计、临时清理和原只读API回归exit0（首轮PG服务停止，恢复后重跑）。新凭据浏览器提交待人工，正式HTTPS/信任/性能/三平台/全UAT仍未验，CR008 FAIL/Gate/包待|
-|Next WBS|`AI-01-A02` 核查冻结 AI-01 物理 Schema 与 Secret/Audit 关系，随后实现 Provider 配置版本持久化及空/有数据升降级；仍不激活、不外发客户数据|
+|Next WBS|`AI-01-A03` 编码前检查并实现内部受权 Provider 创建/配置版本追加（License、DeploymentAdmin、Secret用途、同事务Audit/幂等）；不激活或外发客户数据|
 
 ## 自动执行策略
 
@@ -24,6 +24,8 @@
 - GitHub：允许在当前 Scope 和正确分支内自动 fetch、commit、push；禁止 force push、直接提交 main、覆盖未知远端修改或提交 Secret/客户数据。
 
 ## 最近检查点
+
+- 2026-10-02/AI-01-A02 按先行 CR-AI-001 新增部署级Provider根/不可变配置版本及迁移0054；Win11隔离PG18空库升降、有数据升级、ORM零差异、跨Owner FK/历史/非空降级拒绝PASS，后端1907运行/3跳过、开发wheel PASS。生产迁移、Service、外发和Gate未验。
 
 - 2026-10-02/AI-01-A01 新增纯 Domain 的四类 Provider/四种能力、不变配置版本及受控 Secret 引用 UUID 形状，拒绝原始 URL/畸形值并不回显错误输入；未装配 Provider、HTTP、License、外发。定向5/5、Win11 后端1907运行/3跳过、开发 wheel PASS；Phase 2/Gate 3 未关闭。
 

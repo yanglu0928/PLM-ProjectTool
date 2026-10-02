@@ -6456,3 +6456,11 @@
 - Reason：Domain 不反向依赖 Platform Application，也不能让“配置字段有效”越权成为许可证、目标端点、秘密读取或客户数据发送资格。
 - Impact/Rollback：新增 AI Domain/测试，没有 Schema/Migration、API、依赖或外发；未接生产组合，可移除该未消费合同回滚。后续持久层须保留配置版本历史。
 - Verification：定向5/5、Windows 11 后端1907运行/3跳过、开发 wheel SHA-256 `4383e7e4609a7f52afc1792a5e74ed2999fb75dc51c477f9749e53dc92e28825`；API/权限/真实数据库/质量/三平台未在本项验证。
+
+# DEC-20261002-623：AIProvider 配置历史与当前指针分离
+
+- Date/WBS：2026-10-02 / `AI-01-A02`；输入冻结 SC-01/02、DM-04 与先行 CR-AI-001。
+- Decision：部署级根保留当前配置复合 FK 与状态/乐观版本，不可变子版本保留 SecretRecord 引用、地区和能力声明；空表可降级，已有历史安全拒绝。配置 FK 不承担 Secret 用途/有效性、许可或外发证明。
+- Reason：避免跨 Provider 指针、无痕覆盖配置或丢失历史；将受权运行证明留给 AI Application，维持模块所有权。
+- Impact/Rollback：ORM、迁移0054、隔离验证及固定迁移/表清单测试；不改 `/api/v1`、技术栈/依赖或客户数据。空表 downgrade 至0053；有历史须向前修复。
+- Verification：Win11 隔离PG18空/有数据升级及空库降级、字段/FK/追加历史/非空降级、Alembic drift 0；后端1907运行/3跳过；wheel SHA-256 `856a4007c223058ed5035861d3bf45d69b2b364fa8c20ddcf3e8ece53384bc16`。正式迁移/Service/Gate/三平台未验。
