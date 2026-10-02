@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-626 — Provider 安全读取拆分详情与列表
+
+- Date/WBS：2026-10-02 / `AI-01-A04-P01`；输入冻结 API-03 `AI_PROVIDER_GET/LIST`、DM-04、现有0054与管理员只读 Session Port。
+- Decision：先实现内部详情的显式列投影和 SecretRef 遮罩，当前管理员/License 前后重验并提供资源强版本；列表的有界 keyset/cursor、HTTP 和生产组合独立验收，不以无界内部查询冒充完整列表。
+- Reason/Impact/Rollback：冻结列表需安全分页且签名游标有独立密钥生命周期；详情不依赖游标，可先建立可复用的最小安全视图。无 Schema/API/依赖变更；撤内部读取入口即可回滚，历史配置不变。
+
 ## DEC-20261002-625 — Provider 配置追加不直接变更 ACTIVE
 
 - Date/WBS：2026-10-02 / `AI-01-A03-P02`；输入冻结 DM-04/API-03、CR-AI-001 和 A03-P01 创建链。

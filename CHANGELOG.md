@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-01-A04-P01 新增内部 Provider 详情安全投影，当前管理员/License 双重检查、脱敏 SecretRef 与强 ETag。兼容性：内部新增，不改变 Schema/公开 API/依赖。升级：需既有0054；不装配即可撤回。验证：Win11隔离PG18真实Session/角色/撤权、合成License、版本更新与脱敏，后端1913运行/3跳过，开发wheel SHA-256 `b454256aa7ebfaf37433d24d3ea5ecbe9cb1f55dc171cb8e38d1fb2c5f628ee6`。已知问题：列表游标/HTTP/正式密钥与信任、激活/外发、质量/三平台/Gate/UAT/可用包仍未完成。
+
 - 2026-10-02：0.1.0.dev0/AI-01-A03-P02 新增内部 AIProvider 不可变配置追加、强版本/状态/Kind 守卫与同事务 Secret/Audit/幂等；ACTIVE 不直接切换。兼容性：无公开 API/Schema/依赖变化。升级：需已有0054；旧版保留，新版纠错以受权追加完成。验证：Win11隔离PG18权限/许可/Secret/并发/历史重放与审计回滚、后端1911运行/3跳过，开发 wheel SHA-256 `f256f544c5a32759b0c9d7352391682a3c190abe2f096e09637f24cf11fd19f4`。已知问题：公开Provider API、正式信任与主钥、激活/模型路由/外发、质量、三平台/Gate/UAT/可用包未完成。
 
 - 2026-10-02：0.1.0.dev0/AI-01-A03-P01 新增内部管理员受权 AIProvider 首版创建，Secret 用途/有效版本同事务证明，持久幂等与 Audit 原子提交。兼容性：仅内部新增，不改公开 API/Schema/依赖；不激活或外发。升级：需先执行0054；无新迁移，历史不物理删除。验证：Win11隔离PG18合成License、真实Session/权限/Secret/并发重放与Audit失败回滚，后端1909运行/3跳过，开发 wheel SHA-256 `e00d6490aa2d49ceac368892e843f4809e1e97ec7cd461d65e5f810dac956acd`。已知问题：配置追加、公开CRUD、正式信任/主钥、模型路由/逐次外发、AI质量、三平台/Gate/UAT及可用包未完成。
