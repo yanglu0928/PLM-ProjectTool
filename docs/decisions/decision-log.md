@@ -6405,3 +6405,11 @@
 - Reason：端点 Document Owner 只证明资源版本，不证明边所有权；以创建者或合成 License 代替会扩大权限/虚报可用性。当前无可逆的真实关系 Owner/撤权规则。
 - Impact/Rollback：仅记录前置，不改代码、Schema、API、运行配置或历史数据；无需升级/迁移，删除本记录即可恢复原文档状态。未来 Owner 扩展需先登记 CR/迁移与验证，正式装配需另验。
 - Verification：API-02/ORM/服务/应用工厂/正式组合静态核查；未运行新业务测试，P04 原 PASS 不扩大到生产、Server2025/Debian、Gate 3 或发行。
+
+# DEC-20261002-617：TraceLink 替换只接受本事务的新相关边
+
+- Date/WBS：2026-10-02 / `TRC-01-A08-P01`；输入冻结 API-02、DM-03、0029/0053 守卫、已实现创建/撤销与 P05 授权边界。
+- Decision：仅当前 PM 内部路径先行。锁旧 ACTIVE/v0 与当前项目，证明新边同项目且至少保留一个旧端点、形状真实且非原样；环检查后在同事务先插入全新 ACTIVE 边，再设旧边 `SUPERSEDED`/`superseded_by_ref`。拒绝复用其他已有 ACTIVE 边。Audit/持久收据原子完成，重放核旧边终态/替代 ID；关系 Owner 与公开/正式装配另验。
+- Reason：0029 守卫要求替代边已存在且不早于旧边，ACTIVE 唯一索引禁止原样替换。无关边复用会把不相关事实冒充同一历史链，失败时必须整事务回滚。
+- Impact/Rollback：设计决策不改冻结 API/Schema/数据；P02 仅增内部 Trace 代码和项目 PM 操作，不装配即停止新替换；已终态历史不反向改写。若未来放宽相关性需可追溯变更与迁移分析。
+- Verification Plan：P02 单元/隔离 PG18 验同项目新边、强版本/状态、Owner 证明、环、同 Key 并发、其他 ACTIVE 冲突及 Audit/收据失败回滚，后端回归/wheel。P01 仅静态核查，未运行新业务测试。
