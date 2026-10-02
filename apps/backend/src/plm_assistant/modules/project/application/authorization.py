@@ -44,6 +44,7 @@ POLICIES: dict[str, _Policy] = {
     }), True),
     "TRACE_LINK_CREATE": _Policy(frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
     "TRACE_LINK_REVOKE": _Policy(MANAGERS, True),
+    "TRACE_LINK_SUPERSEDE": _Policy(MANAGERS, True),
     "TRACE_GRAPH_READ": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "PROJECT_PATCH": _Policy(MANAGERS, True),
     "PROJECT_ARCHIVE": _Policy(MANAGERS, True),

@@ -54,6 +54,9 @@ from plm_assistant.modules.trace.application.page_graph import (
 from plm_assistant.modules.trace.application.revoke_link import (
     RevokeTraceLink, TraceRevokeError, TraceRevokeService,
 )
+from plm_assistant.modules.trace.application.supersede_link import (
+    SupersedeTraceLink, TraceSupersedeError, TraceSupersedeService,
+)
 from plm_assistant.modules.trace.api.revoke_link import create_trace_revoke_router
 from plm_assistant.modules.trace.application.target_proof import (
     TraceProofQuery, TraceResourceVersionRef, TraceTargetProofError,
@@ -63,6 +66,7 @@ from plm_assistant.modules.trace.domain.link_shape import TraceEdgeShape, TraceV
 from plm_assistant.modules.trace.infrastructure.create_repository import SqlAlchemyTraceCreateRepository
 from plm_assistant.modules.trace.infrastructure.query_repository import SqlAlchemyTraceAdjacencyRepository
 from plm_assistant.modules.trace.infrastructure.revoke_repository import SqlAlchemyTraceRevokeRepository
+from plm_assistant.modules.trace.infrastructure.supersede_repository import SqlAlchemyTraceSupersedeRepository
 from plm_assistant.modules.trace.infrastructure.cycle_guard import (
     SqlAlchemyTraceCycleGuard, TraceCycleError,
 )
@@ -667,6 +671,128 @@ def verify():
                 "SELECT count(*) FROM plm.plt_idempotency_receipts "
                 "WHERE operation='V1_TRACE_LINK_REVOKE' AND state='COMPLETED'",
             ).fetchone()[0] == 3
+        def superseder(audit):
+            return TraceSupersedeService(
+                unit_of_work=runtime.unit_of_work,
+                sessions=SqlAlchemyProjectWriteAccess(), projects=auth,
+                license_guard=guard, proofs=proofs,
+                cycle_guard=SqlAlchemyTraceCycleGuard(),
+                repository=SqlAlchemyTraceSupersedeRepository(),
+                receipts=SqlAlchemyIdempotencyReceipts(), audit=audit,
+            )
+        supersede = superseder(AuditService(SqlAlchemyAuditRepository()))
+        old_edge = TraceEdgeShape(ref(second), ref(first), "REFINES")
+        new_edge = TraceEdgeShape(ref(second), ref(first), "IMPLEMENTS")
+        old_link = creator.create(
+            CreateTraceLink(pm_token, CSRF, uuid.uuid4(), old_edge),
+            idempotency_key="trace-create-for-supersede-001",
+        )
+        change = SupersedeTraceLink(
+            pm_token, CSRF, uuid.uuid4(), project_id,
+            old_link.trace_link_id, 0, new_edge,
+        )
+        for denied, expected in (
+            (SupersedeTraceLink(customer_token, CSRF, uuid.uuid4(), project_id,
+                                old_link.trace_link_id, 0, new_edge), "RESOURCE_NOT_FOUND"),
+            (SupersedeTraceLink(pm_token, CSRF, uuid.uuid4(), other_project,
+                                old_link.trace_link_id, 0, new_edge), "VALIDATION_FAILED"),
+            (SupersedeTraceLink(pm_token, CSRF, uuid.uuid4(), project_id,
+                                old_link.trace_link_id, 1, new_edge), "CONFLICT_VERSION"),
+            (SupersedeTraceLink(pm_token, CSRF, uuid.uuid4(), project_id,
+                                old_link.trace_link_id, 0, old_edge), "VALIDATION_FAILED"),
+        ):
+            try:
+                supersede.supersede(denied, idempotency_key="trace-supersede-denied-001")
+            except TraceSupersedeError as exc:
+                assert exc.code == expected, (exc.code, expected)
+            else:
+                raise AssertionError("invalid Trace replacement accepted")
+        guard.enabled = False
+        try:
+            supersede.supersede(change, idempotency_key="trace-supersede-license-001")
+        except TraceSupersedeError as exc:
+            assert exc.code == "LICENSE_OPERATION_DENIED"
+        else:
+            raise AssertionError("expired License replaced TraceLink")
+        guard.enabled = True
+        try:
+            superseder(FailingAudit()).supersede(
+                change, idempotency_key="trace-supersede-audit-fail-001",
+            )
+        except TraceSupersedeError as exc:
+            assert exc.code == "TRACE_UNAVAILABLE"
+        else:
+            raise AssertionError("Trace supersede audit failure committed")
+        with connect(name) as db:
+            assert db.execute(
+                "SELECT link_state,lock_version,superseded_by_ref FROM plm.trc_links "
+                "WHERE trace_link_id=%s", (old_link.trace_link_id,),
+            ).fetchone() == ("ACTIVE", 0, None)
+            assert db.execute(
+                "SELECT count(*) FROM plm.trc_links WHERE relation_type='IMPLEMENTS' "
+                "AND source_version_id=%s AND target_version_id=%s",
+                (second, first),
+            ).fetchone()[0] == 0
+        barrier = Barrier(2)
+        def concurrent_supersede():
+            barrier.wait(timeout=5)
+            return supersede.supersede(
+                change, idempotency_key="trace-supersede-race-001",
+            )
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            futures = (pool.submit(concurrent_supersede),
+                       pool.submit(concurrent_supersede))
+            first_replacement = futures[0].result(timeout=15)
+            assert futures[1].result(timeout=15) == first_replacement
+        try:
+            supersede.supersede(change, idempotency_key="trace-supersede-new-001")
+        except TraceSupersedeError as exc:
+            assert exc.code == "CONFLICT_VERSION"
+        else:
+            raise AssertionError("second replacement accepted")
+        with connect(name) as db:
+            assert db.execute(
+                "SELECT link_state,lock_version,superseded_by_ref FROM plm.trc_links "
+                "WHERE trace_link_id=%s", (old_link.trace_link_id,),
+            ).fetchone() == ("SUPERSEDED", 1, first_replacement.replacement_id)
+            assert db.execute(
+                "SELECT link_state,lock_version FROM plm.trc_links "
+                "WHERE trace_link_id=%s", (first_replacement.replacement_id,),
+            ).fetchone() == ("ACTIVE", 0)
+            assert db.execute(
+                "SELECT count(*) FROM plm.aud_events WHERE action='TRACE_LINK_SUPERSEDED'",
+            ).fetchone()[0] == 1
+            assert db.execute(
+                "SELECT count(*) FROM plm.plt_idempotency_receipts "
+                "WHERE operation='V1_TRACE_LINK_SUPERSEDE' AND state='COMPLETED'",
+            ).fetchone()[0] == 1
+        colliding_old = creator.create(
+            CreateTraceLink(pm_token, CSRF, uuid.uuid4(),
+                            TraceEdgeShape(ref(first), ref(second), "VALIDATES")),
+            idempotency_key="trace-supersede-collision-old-001",
+        )
+        existing_target = creator.create(
+            CreateTraceLink(pm_token, CSRF, uuid.uuid4(), edge),
+            idempotency_key="trace-supersede-collision-target-001",
+        )
+        try:
+            supersede.supersede(SupersedeTraceLink(
+                pm_token, CSRF, uuid.uuid4(), project_id,
+                colliding_old.trace_link_id, 0, edge,
+            ), idempotency_key="trace-supersede-collision-001")
+        except TraceSupersedeError as exc:
+            assert exc.code == "CONFLICT_STATE"
+        else:
+            raise AssertionError("pre-existing active edge reused as replacement")
+        with connect(name) as db:
+            assert db.execute(
+                "SELECT link_state,lock_version,superseded_by_ref FROM plm.trc_links "
+                "WHERE trace_link_id=%s", (colliding_old.trace_link_id,),
+            ).fetchone() == ("ACTIVE", 0, None)
+            assert db.execute(
+                "SELECT link_state FROM plm.trc_links WHERE trace_link_id=%s",
+                (existing_target.trace_link_id,),
+            ).fetchone() == ("ACTIVE",)
             db.execute("UPDATE plm.prj_projects SET state='ARCHIVED' WHERE project_id=%s",
                        (project_id,))
         try:
@@ -676,7 +802,7 @@ def verify():
             assert exc.code == "PROJECT_ARCHIVED"
         else:
             raise AssertionError("archived project accepted Trace write")
-        print("PASS: Trace create/graph and PM revoke internal plus optional HTTP Session/PG chain")
+        print("PASS: Trace create/graph, PM revoke HTTP and atomic PM supersede/PG chain")
     finally:
         if runtime is not None:
             runtime.dispose()
