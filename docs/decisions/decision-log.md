@@ -7092,3 +7092,11 @@
 - Reason：策略引用与定量上限是授权候选边界，必须在发生批准前稳定、可审计；重放若重跑当前路由会将历史请求漂移到新配置。
 - Impact/Rollback：复用0068/0069，无新Schema、依赖或Breaking API；停止后续组合即可回退入口，已有Preview/Audit/Receipt保留且不删除。公开HTTP及真实外发继续关闭。
 - Verification：定向12项、Win11隔离PG18.6真实原子链/重放/冲突/回滚/项目隔离、后端2116运行/3跳过PASS；开发wheel SHA-256 `2160e09b852932c733add19ef0ee6e5bc2cad10749d0cb8848716ab89be03673`。
+
+# DEC-20261003-710：Authorize 历史重放不从已撤销当前根重建
+
+- Date/WBS：2026-10-03 / `AI-04-A04-P05`；依据 CR-AI-013、冻结 `EGRESS_AUTHORIZE/REVOKE`。
+- Decision：Project Authorize 只接受 ProjectManager/CustomerManager 且必须通过强制注入的部署策略；只能缩小被锁定 Preview 边界。收据指向不可变 AuthorizeResult，重放时用该结果投影首次 `AUTHORIZED@0`，不从可变 Authorization Root 当前状态构造。Revoke 仅能在强版本0上执行一次。
+- Reason：合法撤销会使当前根变为 `REVOKED@1`；如果原201重放读当前根，会改写已完成命令的历史响应。新Task/Invocation仍必须读当前根，不能因历史重放结果继续外发。
+- Impact/Rollback：复用0069独立结果表，无新Schema、依赖或Breaking API；内部服务未挂公开入口，可停止后续组合，历史保留。
+- Verification：定向17、Win11隔离PG18.6真实授权/策略拒绝/回滚/撤销/撤销后首次重放/跨项目隔离、后端2121运行/3跳过PASS；wheel `2b319bb6b3275317bd489aede16ed2e07041c6fdd41a2b42db4ed1e551afc1cd`。

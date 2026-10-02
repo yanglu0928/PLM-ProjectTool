@@ -1,6 +1,6 @@
 # CR-AI-013：Egress Preview/Authorization 正式授权聚合
 
-日期：2026-10-03；状态：依 V1.1 持续授权登记，0068～0069 及 Preview 内部应用切片已实施，Authorize/Revoke 等切片待继续；关联冻结 API-03 `EGRESS_PREVIEW_CREATE/GET/AUTHORIZE/REVOKE`、DM-04、SC-01/02、CR-AI-011/012；原 Gate 2 冻结提交 `64cdf09` 不改。WBS `AI-04-A04-P01～P04`。
+日期：2026-10-03；状态：依 V1.1 持续授权登记，0068～0069 及 Preview/Authorize/Revoke 内部应用切片已实施，Task Owner 与入口等切片待继续；关联冻结 API-03 `EGRESS_PREVIEW_CREATE/GET/AUTHORIZE/REVOKE`、DM-04、SC-01/02、CR-AI-011/012；原 Gate 2 冻结提交 `64cdf09` 不改。WBS `AI-04-A04-P01～P05`。
 
 缺口与证据：冻结 API 要求每个逻辑外发操作先生成不发送数据的 EgressPreview，再由 ProjectManager/CustomerManager 且满足部署策略的主体显式授权，并支持撤销。当前仓库只有 AITask 内不可变消费快照，无 Preview/Authorization 权威根、来源明细、批准或撤销历史、首次幂等结果。SC-01 的 AI-04 物理映射也仅列 Task/Invocation owned tables。消费快照不能反向冒充批准来源。
 
@@ -19,3 +19,5 @@ P02结果：已实现ORM/Migration0068。Preview 与 SourceRef 不可改写，Pr
 P03结果：已实现ORM/Migration0069。Authorization 只能在当前 ACTIVE Provider/Config 和 AVAILABLE Model 上缩小 Preview 边界，并以 `AUTHORIZED@0→REVOKED@1` 单向迁移。延迟约束触发器强制批准/撤销与各自首次结果成套原子提交。Win11/PG18.6升降重升、已有Preview升级、drift、权限形状/越界/历史/非空拒降PASS；后端2111运行/3跳过、wheel PASS。首轮PL/pgSQL变量名和夹具引号问题已修正并全量重跑；无生产迁移、HTTP或外发。
 
 P04结果：已实现 Preview 内部原子创建与同项目受权读取。创建链组合 License、Session/CSRF、Project 权限、Input Owner、当前 Provider/Config/Model 路由与版本化最小外发策略，原子落 Root/Source/Audit/Receipt；数据类别规范化后参与幂等指纹。Win11/PG18.6 真实原子链、重放/冲突/回滚/隔离 PASS，定向12、后端2116运行/3跳过 PASS，wheel SHA-256 `2160e09b852932c733add19ef0ee6e5bc2cad10749d0cb8848716ab89be03673`。首轮全量发现权限库存断言33未包含新操作，更新为35并全量重跑；无新Schema、HTTP、生产组合或外发。
+
+P05结果：已实现 Project Authorize/Revoke 内部服务及仓储，强制ProjectManager/CustomerManager、可注入部署策略、Preview指纹与只缩小边界；批准/撤销各自将根、Audit、不可变首次结果和Receipt原子提交。撤销后原Authorize Key仍精确重放首次`AUTHORIZED@0`。Win11/PG18.6真实策略拒绝/缩小/回滚/重放/撤销/隔离PASS，定向17、后端2121运行/3跳过PASS，wheel SHA-256 `2b319bb6b3275317bd489aede16ed2e07041c6fdd41a2b42db4ed1e551afc1cd`。首轮夹具幂等键长度失败已修正并全量重跑；无新Schema、HTTP、生产组合或外发。

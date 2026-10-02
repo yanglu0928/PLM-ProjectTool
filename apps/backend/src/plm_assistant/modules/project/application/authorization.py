@@ -53,6 +53,12 @@ POLICIES: dict[str, _Policy] = {
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER", "CUSTOMER_MANAGER"}), True,
     ),
     "EGRESS_PREVIEW_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
+    "EGRESS_AUTHORIZE": _Policy(
+        frozenset({"PROJECT_MANAGER", "CUSTOMER_MANAGER"}), True,
+    ),
+    "EGRESS_REVOKE": _Policy(
+        frozenset({"PROJECT_MANAGER", "CUSTOMER_MANAGER"}), True,
+    ),
     "PROJECT_PATCH": _Policy(MANAGERS, True),
     "PROJECT_ARCHIVE": _Policy(MANAGERS, True),
     "PROJECT_MEMBER_LIST": _Policy(MEMBER_READERS, False),

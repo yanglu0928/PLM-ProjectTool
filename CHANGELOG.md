@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A04-P05 新增Project Egress Authorize/Revoke内部服务；强制ProjectManager/CustomerManager、License/Session/CSRF、可注入部署策略、Preview指纹与只缩小边界，批准/撤销各自将根/Audit/首次结果/Receipt原子提交；撤销后原Authorize Key仍重放历史`AUTHORIZED@0`。兼容性：复用0068/0069，无新Schema/依赖/Breaking API，仅Win11验证。升级/回滚：需先受控升至0069；未挂公开入口，停止组合即可回退，历史保留。验证：定向17、PG18.6真实缩小/策略拒绝/原子回滚/历史重放/撤销/隔离、后端2121运行/3跳过PASS；开发wheel SHA-256 `2b319bb6b3275317bd489aede16ed2e07041c6fdd41a2b42db4ed1e551afc1cd`。首轮夹具幂等键长度失败已修正并完整重跑。已知问题：Task Owner/部署策略正式来源、HTTP/生产组合/真实外发、Gate3/UAT/可用包待完成。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A04-P04 新增Egress Preview内部原子创建/受权读取，组合License、Session/CSRF、Project权限、Input Owner、当前Provider/Config/Model与版本化最小外发策略，Root/Source/Audit/Receipt同事务；同Key精确重放且数据类别集合规范化。兼容性：复用0068/0069，无新Schema/依赖/Breaking API，仅Win11验证。升级/回滚：需先受控升至0069；未挂公开入口，停止组合即可回退，历史保留。验证：定向12、PG18.6真实原子链/重放/冲突/回滚/隔离、后端2116运行/3跳过PASS；开发wheel SHA-256 `2160e09b852932c733add19ef0ee6e5bc2cad10749d0cb8848716ab89be03673`。首轮全量的权限库存断言33已随新操作更新为35并全量重跑。已知问题：Authorize/Revoke/Task Owner、HTTP/生产组合/真实外发、Gate3/UAT/可用包待完成。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A04-P03 新增Schema0069 EgressAuthorization Root、不可变撤销事件和Authorize/Revoke首次结果；Preview边界只能缩小，Provider/Config/Model需当前可用，延迟触发器强制首次结果与撤销历史成套原子落库及`AUTHORIZED@0→REVOKED@1`。兼容性：0068后增量，不改冻结API/依赖，仅Win11验证。升级/回滚：空表可降0068，有历史拒降。验证：PG18.6空库往返/已有Preview升级/drift/负例、后端2111运行/3跳过PASS；开发wheel SHA-256 `a9f4e426e9e132960da559d8e2a931493f6fb978742f234bde33304d99785700`。首轮PL/pgSQL变量名及夹具引号缺陷已修正并全量重跑。已知问题：Application/HTTP/真实外发、Gate3/UAT/可用包待完成。
