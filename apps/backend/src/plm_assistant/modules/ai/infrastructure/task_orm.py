@@ -73,6 +73,8 @@ class AITaskRow(Base):
         Index("ix_ai_tasks__project_state", "project_id", "task_state",
               text("requested_at DESC"), text("ai_task_id DESC")),
         Index("ix_ai_tasks__requester", "requested_by", text("requested_at DESC")),
+        Index("uq_ai_tasks__job_ref", "job_ref", unique=True,
+              postgresql_where=text("job_ref IS NOT NULL")),
     )
 
     ai_task_id: Mapped[uuid.UUID] = mapped_column(

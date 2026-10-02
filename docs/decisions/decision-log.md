@@ -7034,8 +7034,8 @@
 - Date/WBS：2026-10-02 / `AI-04-A03-P04`；依据 CR-AI-011、冻结 `AI_TASK_CREATE`。
 - Decision：通用幂等收据继续只指向 AITask；0066 为迁移后新 Task 强制唯一非空 JobRef 并纳入不可变守卫，从 Task 精确恢复首次 JobRef。旧 NULL 只保留历史，不猜测回填。
 - Reason：避免改动全平台收据合同，同时满足 202 Task+Job 稳定重放与一对一关系。
-- Impact/Rollback：增量 Schema0066，不改冻结API/依赖；有新绑定时拒绝降级。P05 实施与验证。
-- Verification：本项为静态合同/Schema/收据核对，未执行新运行测试。
+- Impact/Rollback：增量 Schema0066，不改冻结API/依赖；有新绑定时拒绝降级。P05 已实施，P06 再组合内部创建。
+- Verification：Win11隔离PG18.6空/旧NULL历史升降重升、drift、缺Job/错Owner/复用/换绑及拒降PASS；后端2106运行/3跳过，wheel `56e45841582d8e764b53a78426e9a43171f2924aa86cd509a0a61419e5cd658f`。
 
 # DEC-20261002-703：外发授权只能由独立 Owner 产生快照
 

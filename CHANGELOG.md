@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-04-A03-P05 新增Schema0066，为迁移后新AITask强制唯一非空且不可变的`ai/AI_TASK_EXECUTE` Job绑定，校验Scope/Project/Actor/Trace/TaskId；旧NULL历史保留不补值。兼容性：0065后增量，不改冻结API/依赖，仅Win11隔离验证。升级/回滚：仅旧NULL可降0065，存在新完整绑定拒降。验证：空/旧历史升降重升、drift=0、缺Job/错Owner/复用/换绑/拒降，后端2106运行/3跳过；开发wheel SHA-256 `56e45841582d8e764b53a78426e9a43171f2924aa86cd509a0a61419e5cd658f`。已知问题：Egress Owner/内部创建/真实外发、Gate3/UAT/可用包待。
+
 - 2026-10-02：0.1.0.dev0/AI-04-A03-P04 登记CR-AI-011：通用幂等收据仅指向AITask，新Task将强制唯一非空不可变JobRef以精确重放202；外发授权只能由独立Owner产生完整快照，当前正式聚合缺失时失败关闭。兼容性/升级/回滚：本项仅设计与追溯记录，无程序、Schema、API、依赖或数据变化；0066/P06后续分片实施。验证：静态核对冻结API/DM、Schema0063～0065、通用收据与Jobs入队模式，未运行新测试。已知问题：Schema0066、内部创建、Egress正式聚合/真实外发、Gate3/UAT/可用包待。
 
 - 2026-10-02：0.1.0.dev0/AI-04-A03-P03 新增AI输入显式Owner Resolver和DocumentVersion授权桥接；全组校验/去重后才解析，未注册、身份不一致与跨项目失败关闭；Project授权矩阵加入冻结AI_TASK_CREATE角色。兼容性：无Schema/API/依赖变化，不开放路由或外发。升级/回滚：停止后续组合即可，数据不变。验证：定向13、后端2106运行/3跳过；开发wheel SHA-256 `895c2b4de673045ceb3db79e21edca79d850a61fcecdf2ad7f46c94f13991e46`。已知问题：仅Document Owner可用，内部Task创建/授权快照/Job、正式信任与Gate3待。
