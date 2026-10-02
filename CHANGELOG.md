@@ -1,5 +1,9 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/TRC-01-A07-P02 按CR-TRC-003新增TraceLink数据库拥有的状态资源版本及安全迁移`0053`，历史ACTIVE回填v0、REVOKED/SUPERSEDED回填v1。兼容性：公开API/依赖不变，原状态守卫保留。升级：需按顺序执行0053并备份；含终态历史的down被安全拒绝，须正向修复。验证：隔离PG18空库/有数据三库升降级、守卫与Alembic差异检查PASS；后端1885运行/3跳过、开发wheel PASS。已知问题：正式生产迁移、内部撤销/公开HTTP、关系Owner、三平台/正式信任/UAT/Gate与可用包未完成。
+
+- 2026-10-02：0.1.0.dev0/TRC-01-A07-P01 登记CR-TRC-003：TraceLink缺状态命令强ETag所需资源版本，先补Schema再做撤销。兼容性：仅设计/状态记录，产品API/Schema/依赖未变。升级：本项无迁移。验证：冻结API-01/API-02与Trace ORM/0029迁移静态核查，未运行新业务测试。已知问题：版本列/撤销命令、关系Owner、正式信任/三平台/Gate和可用发行包未完成。
+
 - 2026-10-02：0.1.0.dev0/TRC-01-A06-P03-P03 新增DOC-02冻结三字段引用的Document Owner内部Scope/Project及固定版本解析，保留现有Session/License授权和同事务证明。兼容性：内部只读Port/组合增量，公开API/Schema/依赖不变。升级：无迁移，不装配即可回滚。验证：新单元6、隔离PG18真实PROJECT/GLOBAL/拒绝及旧Trace回归、后端1885运行/3跳过、开发wheel PASS。已知问题：其他业务Owner、正式游标Key、通用图HTTP/三平台/性能/UAT/Gate与可用发行包未完成。
 
 - 2026-10-02：0.1.0.dev0/TRC-01-A06-P03-P02 登记通用Trace图HTTP的真实Owner Scope解析前置阻塞，继续按CR-TRC-002逐Owner实现。兼容性：纯记录，公开API/Schema/依赖不变。升级：无迁移。验证：冻结API-02与实际Owner注册静态核查；未运行新业务测试。已知问题：DOC-02以外Owner、正式图游标密钥、图HTTP、Gate与可用发行包未完成。

@@ -6370,3 +6370,12 @@
 - Impact/Rollback：Document内部只读Port及Trace组合层增量，无公开API、Schema/Migration、依赖或历史数据改写；不装配解析Port即可回滚。未来其他Owner各自接线并验全套网络安全合同后方可开放通用HTTP。
 - Verification Plan：单元验证同事务精确传参、PROJECT/GLOBAL授权、错误Scope/Project/Version/无权与异常掩码；隔离PG18验证真实Document/Version/File和当前Session权限，后端全量及wheel。正式目标账户密钥/三平台/性能/UAT/Gate另验。
 - Result：新单元6项、Trace Owner定向总7及Document解析4均PASS；隔离PG18现有Trace创建/图验证扩展真实PROJECT/GLOBAL、跨项目/无权/不存在版本、受限File与过期License拒绝后PASS；后端全量1885运行/3跳过，开发wheel SHA-256 `84a2bbcf14532c70d15ac4d28dd321cec8b6775d97a8e783399cb6a8bc32ec9b`。通用HTTP仍关闭，其他Owner及正式密钥未验。
+
+# DEC-20261002-613：TraceLink 状态强 ETag 使用数据库拥有的版本
+
+- Date/WBS：2026-10-02 / `TRC-01-A07-P02`；输入 CR-TRC-003、冻结 API-01 If-Match/强ETag 与 Trace 原始状态触发器。
+- Decision：新增`lock_version BIGINT NOT NULL`，ACTIVE=0、REVOKED/SUPERSEDED=1；独立数据库触发器拒绝调用方直接改版本并在唯一合法终态转换时加1，状态/版本组合由 CHECK 约束。历史终态回填只在独占表锁和同一迁移事务中暂时停用原守卫，随后恢复；原冻结0029迁移不追写。降级只允许全体ACTIVE/v0，已终态历史须保留并拒绝丢弃版本。
+- Reason：显式版本列满足冻结通用协议，可由后续If-Match/CAS命令复用；独立触发器保留原不可变守卫，且原历史无信息丢失。
+- Impact/Rollback：仅Trace ORM与0053 migration，无公开API/新依赖；空库/未转换数据可down，已有终态数据不做有损down，改走备份/正向修复。P02不开放撤销命令。
+- Verification Plan：真实PG18空库head→0052→head、含ACTIVE+两种终态数据0052→head、触发器非法直改/重复转换拒绝、终态down拒绝、有ACTIVE数据down/up；全量后端与wheel。未测试生产迁移与三平台发行。
+- Result：一次性PG18三库空库/ACTIVE/REVOKED/SUPERSEDED升降级及守卫PASS，Alembic ORM差异检查无新操作；首轮验证脚本误查public版本表，修正为plm后重跑通过。原迁移Head单元断言随0053更新后，后端全量1885运行/3跳过；开发wheel SHA-256 `70602728cb93c47ce4e37048c325e79e0876d13d1d19d2adf22ef8ec2083dbf2`。仅Schema，不判撤销/HTTP/发行通过。

@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import CheckConstraint, ForeignKeyConstraint, Index, Text, text
+from sqlalchemy import BigInteger, CheckConstraint, ForeignKeyConstraint, Index, Text, text
 from sqlalchemy.dialects.postgresql import TIMESTAMP, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -75,6 +75,9 @@ class TraceLinkRow(Base):
                         "AND superseded_by_ref<>trace_link_id) OR "
                         "(link_state IN ('ACTIVE','REVOKED') AND superseded_by_ref IS NULL)",
                         name="ck_trc_links__state"),
+        CheckConstraint("(link_state='ACTIVE' AND lock_version=0) OR "
+                        "(link_state IN ('SUPERSEDED','REVOKED') AND lock_version=1)",
+                        name="ck_trc_links__resource_version"),
         Index("uq_trc_links__active_edge", "source_owner_module", "source_object_type",
               "source_object_id", "source_version_id", "target_owner_module",
               "target_object_type", "target_object_id", "target_version_id", "relation_type",
@@ -104,6 +107,8 @@ class TraceLinkRow(Base):
     relation_type: Mapped[str] = mapped_column(Text, nullable=False)
     link_state: Mapped[str] = mapped_column(Text, nullable=False,
                                             server_default=text("'ACTIVE'"))
+    lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False,
+                                              server_default=text("0"))
     created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6),
                                                  nullable=False,
