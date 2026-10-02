@@ -50,6 +50,22 @@ class BootstrapSettings(BaseSettings):
     parser_ocr_detection_model_dir: Path | None = None
     parser_ocr_recognition_model_dir: Path | None = None
     parser_ocr_model_fingerprint: str | None = None
+    ai_probe_policies: tuple[dict[str, str], ...] = ()
+
+    @field_validator("ai_probe_policies", mode="before")
+    @classmethod
+    def validate_ai_probe_policies(cls, value: Any) -> tuple[dict[str, str], ...]:
+        fields = frozenset({"reference", "kind", "endpoint_url", "model_key",
+                            "data_region", "egress_class"})
+        if (type(value) not in (tuple, list) or len(value) > 16
+                or any(type(item) is not dict or set(item) != fields
+                       or any(type(key) is not str or type(field) is not str
+                              for key, field in item.items()) for item in value)):
+            raise ValueError("invalid AI probe policy configuration")
+        references = [item["reference"] for item in value]
+        if len(set(references)) != len(references):
+            raise ValueError("invalid AI probe policy configuration")
+        return tuple(dict(item) for item in value)
 
     @field_validator("parser_ocr_detection_model_dir", "parser_ocr_recognition_model_dir")
     @classmethod

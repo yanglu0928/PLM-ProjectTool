@@ -17,3 +17,14 @@ password_kdf_slots: 4
 # parser_ocr_detection_model_dir: "C:/PLMTool/app/models/PP-OCRv5_mobile_det"
 # parser_ocr_recognition_model_dir: "C:/PLMTool/app/models/PP-OCRv5_mobile_rec"
 # parser_ocr_model_fingerprint: "<64 lowercase hex characters>"
+# Optional AI Provider probe policies. Supply only approved non-secret endpoint
+# metadata in the protected deployment config; never put API keys here.
+# Without an explicit valid policy, Provider Test/Activate composition stays closed.
+# Changes require a controlled process restart and fresh Provider Test proof.
+# ai_probe_policies:
+#   - reference: "<approved-symbolic-reference>"
+#     kind: "OPENAI_COMPATIBLE"
+#     endpoint_url: "https://<approved-host>/v1/chat/completions"
+#     model_key: "<approved-model>"
+#     data_region: "cn-beijing"
+#     egress_class: "EXTERNAL_APPROVAL_REQUIRED"

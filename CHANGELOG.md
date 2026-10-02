@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A03-P04-P01 新增受控 Bootstrap 非秘密探针策略来源，严格六字段、引用唯一、有界配置并生成不可变 Registry；缺失/不安全配置失败关闭。兼容性：默认空策略，既有部署不自动开放 Provider Test/Activate；无 Schema/API/依赖变化。升级：若后续启用需在受保护 Bootstrap YAML 显式配置并重启，变更后重新测试；撤字段/工厂可回退，既有历史保留。验证：Win11 定向5项、后端2006运行/3跳过、开发 wheel SHA-256 `92609fefc0dd1a01e873ba37a1302c9ea2629d1e45aadbe265711785a878c03f`。已知问题：正式目标账户配置 ACL/策略目的地、Test/Worker/Activate 同源组合、真实外发、三平台/Gate/UAT/可用包未验。
+
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A03-P04 前置检查确认 Windows 组合缺正式受控探针策略来源，激活路由不挂载并保持 404；按 CR-AI-002 拆出 P04-P01。兼容性/升级：本次仅记录，无程序/Schema/API/依赖变化，不需升级或回滚。验证：静态核对组合依赖；未运行新增功能测试。已知问题：策略来源、Test/Worker 正式接线、生产信任/出站、Gate/UAT/可用包待完成。
 
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A03-P03 新增 Provider 激活可选 HTTP，可信 Origin/Session/CSRF、强 If-Match、必填幂等 Key，返回不可变首次 `200 ACTIVE`/ETag。兼容性：默认应用 404；无 Schema、依赖或 Breaking API 变化。升级：需已有 0056；仅显式注入路由开放，撤注入可回退且历史记录保留。验证：Win11 隔离 PG18/ASGI 许可拒绝、激活、Audit、暂停后重放/版本冲突 PASS；合同4项，后端2001运行/3跳过；开发 wheel SHA-256 `a2886c9f248456184f810c1254df55e9df73f27cfba3678046cc805025c9bfff`。已知问题：Windows 正式组合、生产 Worker/真实外发、正式信任、质量/三平台/Gate/UAT/可用包仍待。

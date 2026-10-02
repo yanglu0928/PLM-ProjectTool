@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261002-656 — 部署 Bootstrap 显式提供非秘密探针策略快照
+
+- Date/WBS：2026-10-02 / `AI-01-A05-P05-A03-P04-P01`；依据 CR-AI-002 和现有 `EndpointProbePolicy/Registry`。
+- Decision：在受控 Bootstrap YAML 新增可选 `ai_probe_policies`，只接受有界、六字段、引用唯一的非秘密策略。独立部署工厂将配置严格转换为不可变 Registry；缺失或无效配置固定消息失败关闭，不回显 URL。策略在进程启动时形成快照，变更须受控重启；Provider API 仍只能写符号引用。
+- Reason：Test/Worker/Activate 必须使用同一受控策略指纹，不能硬编码外发地址或复用合成测试 registry。复用已有 Bootstrap 可信配置入口，不增加独立文件/环境 Secret 来源。
+- Impact/Rollback：增量非秘密部署配置字段与独立工厂，无 Schema、API、依赖、真实外发或生产路由开放。移除配置字段/工厂即可回退，既有 Provider/Test 历史保留。正式目标账户配置 ACL、三平台与实际出站另验。
+- Verification：Win11 定向5项与后端2006运行/3跳过，开发 wheel 通过；无真实外发。目标账户配置 ACL、同源组合和 Gate 未验。
+
 ## DEC-20261002-654 — Provider 激活在单事务写状态、Audit、快照与收据
 
 - Date/WBS：2026-10-02 / `AI-01-A05-P05-A03-P02`；输入冻结 API-03、CR-AI-002、P05-A02 当前证明、Schema 0056。前置满足；本项仅内部命令，公开 HTTP/正式 Worker 另验。
