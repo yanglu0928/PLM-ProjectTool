@@ -6825,3 +6825,10 @@
 - Reason：冻结合同把模板创建和版本追加分成两个受控操作；Schema 允许无版本 DRAFT。合并实现会提前扩大创建入口的敏感内容边界并模糊幂等语义。
 - Impact/Rollback：仅内部 AI Application/Repository 与合成验证；无公开 API、迁移、外发或生产路由。未装配时可停止；已产生的审计和 DRAFT 历史不物理删除。
 - Verification：A03 Win11 隔离 PG18 当前管理员/CSRF/License、同事务收据/Audit、并发重放、退役后历史视图、审计回滚及撤权拒绝通过；后端2055运行/3跳过、开发 wheel 通过。A04 另验不可变正文写入；两项完成前不声称 Prompt 可调用。
+# DEC-20261002-677：PromptVersion 内容准入失败关闭
+
+- Date/WBS：2026-10-02 / `AI-03-A04-P01`；依据冻结 DM/API-03 PromptVersion 禁止真实 Key、固定客户资料、Golden 答案和绕过 Evidence/Review 指令，以及 Schema 0059。
+- Decision：不可变增版先建立规范化内容/哈希与显式内容准入端口。普通语法/密钥特征检查只作前置拒绝，不能当作完整语义审查；准入证明须绑定模板、TaskType、规范化正文与策略引用的指纹，并在同一写入链重验。未提供可信准入来源时失败关闭，不能将合成测试端口装入生产。
+- Reason：正则或 AI 自评不能证明任意自由文本不含客户固定副本、Golden 答案或绕过指令。冻结要求不能因为暂缺审查系统而被降格为“已自动验证”。
+- Impact/Rollback：核对通用收据后先按 CR-AI-006 拆 P01 不可变首次结果 Schema，P02 再做内部原子增版/准入，P03 才做可信准入来源与公开装配；不改冻结 API 或引入外部服务。已有版本/结果历史不可物理回滚。
+- Verification：P01 Win11 隔离 PG18 空/有历史迁移、约束/不可变及拒降通过；P02 以纯合成正文和合成准入端口检验指纹绑定、权限/License、单调并发、Audit/收据回滚；不得据此宣称真实业务 Prompt 安全或 PromptRegistry 可用。P03 另验可信来源和真实模板审查。
