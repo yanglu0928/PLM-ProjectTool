@@ -6920,3 +6920,11 @@
 - Impact/Rollback：无 Schema/依赖/路径/状态码变动；不注入 Router 即404，可撤路由，历史激活结果保留。
 - Verification Plan：合同单测覆盖默认关闭、成功/重放、严格请求、权限/许可/冲突/准入错误映射与响应快照；隔离 PG18 实际 HTTP 链另验，不据此开启正式生产入口。
 - Verification Result：合同3项、Win11隔离PG18临时签名清单实际HTTP整链、后端2085运行/3跳过、开发wheel通过；生产仍不挂载。
+
+# DEC-20261002-689：Prompt 退役需独立不可变首次结果
+
+- Date/WBS：2026-10-02 / `AI-03-A06-P01`；依据 CR-AI-009、冻结 `AI_PROMPT_RETIRE`。
+- Decision：退役首次200由预定0062的 AI 专属不可变结果承载，通用收据仅指向结果 UUID；不复用固定 ACTIVE 的0061，也不从当前根重建历史响应。退役保留旧活动指针但不代表仍可调用。
+- Reason：根锁版本/状态可变，通用收据不足以保存原 ETag/活动版本；独立快照可与 Audit/收据同事务审计。
+- Impact/Rollback：先登记CR，下一项实现增量Schema；原冻结内容/API不改。非空结果须保留并向前修复。
+- Verification：静态对照冻结 API、Prompt ORM/Schema0061和通用收据；运行验证待P02/P03。
