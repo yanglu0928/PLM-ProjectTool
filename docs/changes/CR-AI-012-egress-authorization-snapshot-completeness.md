@@ -1,6 +1,6 @@
 # CR-AI-012：AITask 外发授权快照完整性
 
-日期：2026-10-02；状态：依 V1.1 持续授权登记，待Schema0067实施；关联冻结 API-03 `EgressAuthorization`/`AI_TASK_CREATE`、DM-04、Schema0064～0066、CR-AI-011；原 Gate 2 冻结提交 `64cdf09` 不改。WBS `AI-04-A03-P06`。
+日期：2026-10-02；状态：依 V1.1 持续授权登记，Schema0067已实施并完成Win11隔离验证；关联冻结 API-03 `EgressAuthorization`/`AI_TASK_CREATE`、DM-04、Schema0064～0067、CR-AI-011；原 Gate 2 冻结提交 `64cdf09` 不改。WBS `AI-04-A03-P06～P07`。
 
 冲突与证据：冻结授权必须固定 preview/payload fingerprint、批准主体/角色/时间、Provider 配置版本、Model/region、用途、数据类别、source version refs、最大载荷、有效期、授权状态和有界重试。0064 `ai_egress_authorization_snapshots` 仅保存 AuthorizationRef、purpose、Provider/Config、region、categories、单一 fingerprint、approver和时间窗；缺 Model、批准角色、源集合摘要、载荷/Token 上限、状态与重试边界。当前结构不足以证明后续 Invocation 没有扩大授权。
 
@@ -13,3 +13,5 @@
 迁移/回滚：0067为快照表增加可空列以兼容历史，由INSERT守卫强制新行完整，不回填历史。无完整新快照时可降0066；有新快照时拒绝物理降级，向前修复或受控备份恢复。
 
 验证计划：P07验证空库/旧快照升降重升、drift、新行缺列/Model-Provider错配/非AVAILABLE Model/非AUTHORIZED/超界/变更删除拒绝、正确快照和非空历史拒降；之后再实现 Owner Port 和原子创建。无真实客户数据外发。
+
+P07结果：ORM/Migration0067已实施；Win11隔离PostgreSQL18.6空库与0065遗留快照升降重升、drift=0，缺完整字段、SUSPENDED Model、非批准角色、越界上限、改删与非空历史拒降均PASS。后端2106运行/3跳过PASS；开发wheel SHA-256 `4550d75d6d8961ce493637a56b618e3c32132d4aee7caf5b58d4144146ce9589`。无真实外发/API/生产迁移。

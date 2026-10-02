@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-04-A03-P07 新增Schema0067，新外发授权快照强制Model/批准角色/payload与source指纹/载荷、Token、重试上限/捕获时AUTHORIZED，且Model必须同Provider并AVAILABLE；旧NULL历史不回填。兼容性：0066后增量，不改冻结API/依赖，仅Win11隔离验证。升级/回滚：只有遗留NULL可降0066，完整新快照拒降。验证：空/遗留升降重升、drift=0、完整性/状态/边界/不可变/拒降，后端2106运行/3跳过；开发wheel SHA-256 `4550d75d6d8961ce493637a56b618e3c32132d4aee7caf5b58d4144146ce9589`。已知问题：Egress Owner/原子创建/真实外发、Gate3/UAT/可用包待。
+
 - 2026-10-02：0.1.0.dev0/AI-04-A03-P06 登记CR-AI-012：0064外发授权快照缺冻结合同要求的Model、批准角色、源集合摘要、载荷/Token/重试上限与授权状态；决定以0067补齐，旧NULL历史不猜测回填且不得执行。兼容性/升级/回滚：本项仅追溯记录，无程序、Schema、API、依赖或数据变化；P07后续实施。验证：静态核对API-03与0064。已知问题：0067、Owner/内部创建/真实外发、Gate3/UAT/可用包待。
 
 - 2026-10-02：0.1.0.dev0/AI-04-A03-P05 新增Schema0066，为迁移后新AITask强制唯一非空且不可变的`ai/AI_TASK_EXECUTE` Job绑定，校验Scope/Project/Actor/Trace/TaskId；旧NULL历史保留不补值。兼容性：0065后增量，不改冻结API/依赖，仅Win11隔离验证。升级/回滚：仅旧NULL可降0065，存在新完整绑定拒降。验证：空/旧历史升降重升、drift=0、缺Job/错Owner/复用/换绑/拒降，后端2106运行/3跳过；开发wheel SHA-256 `56e45841582d8e764b53a78426e9a43171f2924aa86cd509a0a61419e5cd658f`。已知问题：Egress Owner/内部创建/真实外发、Gate3/UAT/可用包待。

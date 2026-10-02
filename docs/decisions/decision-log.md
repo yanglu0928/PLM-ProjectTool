@@ -7050,5 +7050,5 @@
 - Date/WBS：2026-10-02 / `AI-04-A03-P06`；依据 CR-AI-012、冻结 `EgressAuthorization`。
 - Decision：Schema0067在0064快照上增加Model、批准角色、preview payload/source refs指纹、载荷/Token/重试上限和捕获时AUTHORIZED状态。source refs明细由同Task不可变InputRef集合承载，不复制正文或第二份明细。
 - Reason：0064现有列不足以证明Invocation未更换Model、源或扩大载荷；把边界放在Job JSON/日志或推迟到Invocation均无法作为完整批准证据。
-- Impact/Rollback：新列兼容旧NULL历史，新行强制完整；不改冻结API/技术栈，有完整新快照拒绝降级。
-- Verification：本项静态对照API-03与0064 ORM/Migration；P07执行PG18、回归和wheel验证。
+- Impact/Rollback：新列兼容旧NULL历史，新行强制完整；不改冻结API/技术栈，有完整新快照拒绝降级。0067已实施。
+- Verification：Win11隔离PG18.6空/遗留升降重升、drift、Model/角色/边界/不可变/拒降PASS；后端2106运行/3跳过，wheel `4550d75d6d8961ce493637a56b618e3c32132d4aee7caf5b58d4144146ce9589`。

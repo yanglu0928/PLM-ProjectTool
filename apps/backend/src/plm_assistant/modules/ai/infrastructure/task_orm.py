@@ -170,6 +170,8 @@ class AIEgressAuthorizationSnapshotRow(Base):
         ),
         ForeignKeyConstraint(["approved_by"], ["plm.auth_users.user_id"],
                              name="fk_ai_egress_snapshots__approver", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["ai_model_id"], ["plm.ai_models.ai_model_id"],
+                             name="fk_ai_egress_snapshots__model", ondelete="NO ACTION"),
         UniqueConstraint("egress_authorization_snapshot_id", "ai_task_id",
                          name="uq_ai_egress_snapshots__identity_task"),
         CheckConstraint(
@@ -197,7 +199,23 @@ class AIEgressAuthorizationSnapshotRow(Base):
             "AND isfinite(approved_at) AND isfinite(valid_until) AND isfinite(captured_at)",
             name="ck_ai_egress_snapshots__time",
         ),
+        CheckConstraint(
+            "(ai_model_id IS NULL AND approved_role IS NULL "
+            "AND preview_payload_fingerprint IS NULL AND source_refs_fingerprint IS NULL "
+            "AND max_payload_bytes IS NULL AND max_input_tokens IS NULL "
+            "AND max_retry_attempts IS NULL AND authorization_state_at_capture IS NULL) OR "
+            "(ai_model_id IS NOT NULL AND approved_role IN "
+            "('PROJECT_MANAGER','CUSTOMER_MANAGER','DEPLOYMENT_ADMIN') "
+            "AND octet_length(preview_payload_fingerprint)=32 "
+            "AND octet_length(source_refs_fingerprint)=32 "
+            "AND max_payload_bytes BETWEEN 1 AND 1073741824 "
+            "AND max_input_tokens BETWEEN 1 AND 1048576 "
+            "AND max_retry_attempts BETWEEN 1 AND 10 "
+            "AND authorization_state_at_capture='AUTHORIZED')",
+            name="ck_ai_egress_snapshots__complete_v2",
+        ),
         Index("ix_ai_egress_snapshots__task_time", "ai_task_id", "captured_at"),
+        Index("ix_ai_egress_snapshots__model", "ai_model_id"),
     )
 
     egress_authorization_snapshot_id: Mapped[uuid.UUID] = mapped_column(
@@ -214,6 +232,14 @@ class AIEgressAuthorizationSnapshotRow(Base):
     allowed_data_categories: Mapped[list[str]] = mapped_column(JSONB, nullable=False)
     authorization_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
     approved_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    ai_model_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    approved_role: Mapped[str | None] = mapped_column(Text)
+    preview_payload_fingerprint: Mapped[bytes | None] = mapped_column(LargeBinary)
+    source_refs_fingerprint: Mapped[bytes | None] = mapped_column(LargeBinary)
+    max_payload_bytes: Mapped[int | None] = mapped_column(BigInteger)
+    max_input_tokens: Mapped[int | None] = mapped_column(Integer)
+    max_retry_attempts: Mapped[int | None] = mapped_column(Integer)
+    authorization_state_at_capture: Mapped[str | None] = mapped_column(Text)
     approved_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False)
     valid_until: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False)
     captured_at: Mapped[datetime] = mapped_column(
