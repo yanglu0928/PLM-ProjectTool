@@ -96,6 +96,8 @@ class AIProviderProbeResultRow(Base):
             name="fk_ai_provider_probe_results__lease", ondelete="NO ACTION",
         ),
         UniqueConstraint("job_id", name="uq_ai_provider_probe_results__job"),
+        UniqueConstraint("probe_result_id", "ai_provider_id", "provider_config_version_id",
+                         name="uq_ai_provider_probe_results__identity_config"),
         CheckConstraint(
             "probe_result_id <> '00000000-0000-0000-0000-000000000000'::uuid "
             "AND ai_provider_id <> '00000000-0000-0000-0000-000000000000'::uuid "
@@ -133,3 +135,61 @@ class AIProviderProbeResultRow(Base):
     observed_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False, server_default=text("statement_timestamp()"))
     created_xid: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("txid_current()"))
+
+
+class AIProviderActivationResultRow(Base):
+    """Immutable first ACTIVE response; referenced by an actor-scoped receipt."""
+
+    __tablename__ = "ai_provider_activation_results"
+    __table_args__ = (
+        ForeignKeyConstraint(["ai_provider_id"], ["plm.ai_providers.ai_provider_id"],
+                             name="fk_ai_provider_activation_results__provider", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["provider_config_version_id", "ai_provider_id"],
+            ["plm.ai_provider_config_versions.provider_config_version_id",
+             "plm.ai_provider_config_versions.ai_provider_id"],
+            name="fk_ai_provider_activation_results__config_provider", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["probe_result_id", "ai_provider_id", "provider_config_version_id"],
+            ["plm.ai_provider_probe_results.probe_result_id",
+             "plm.ai_provider_probe_results.ai_provider_id",
+             "plm.ai_provider_probe_results.provider_config_version_id"],
+            name="fk_ai_provider_activation_results__probe_config", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["actor_id"], ["plm.auth_users.user_id"],
+                             name="fk_ai_provider_activation_results__actor", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["audit_event_id"], ["plm.aud_events.audit_event_id"],
+                             name="fk_ai_provider_activation_results__audit", ondelete="NO ACTION"),
+        UniqueConstraint("ai_provider_id", "lock_version",
+                         name="uq_ai_provider_activation_results__provider_version"),
+        UniqueConstraint("audit_event_id", name="uq_ai_provider_activation_results__audit"),
+        CheckConstraint(
+            "activation_result_id <> '00000000-0000-0000-0000-000000000000'::uuid "
+            "AND ai_provider_id <> '00000000-0000-0000-0000-000000000000'::uuid "
+            "AND provider_config_version_id <> '00000000-0000-0000-0000-000000000000'::uuid "
+            "AND probe_result_id <> '00000000-0000-0000-0000-000000000000'::uuid "
+            "AND actor_id <> '00000000-0000-0000-0000-000000000000'::uuid "
+            "AND audit_event_id <> '00000000-0000-0000-0000-000000000000'::uuid "
+            "AND trace_id <> '00000000-0000-0000-0000-000000000000'::uuid "
+            "AND before_state IN ('CONFIGURED','SUSPENDED') AND result_state = 'ACTIVE' "
+            "AND expected_lock_version BETWEEN 0 AND 9223372036854775806 "
+            "AND lock_version = expected_lock_version + 1 "
+            "AND created_xid > 0 AND isfinite(accepted_at)",
+            name="ck_ai_provider_activation_results__shape",
+        ),
+    )
+
+    activation_result_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    ai_provider_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    provider_config_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    probe_result_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    actor_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    audit_event_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    trace_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    before_state: Mapped[str] = mapped_column(Text, nullable=False)
+    result_state: Mapped[str] = mapped_column(Text, nullable=False)
+    expected_lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    accepted_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False,
+                                                   server_default=text("statement_timestamp()"))
+    created_xid: Mapped[int] = mapped_column(BigInteger, nullable=False,
+                                              server_default=text("txid_current()"))

@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A03-P01 增加不可变 Provider 激活首次响应快照 Schema 0056，绑定 Provider/config/探针、actor/Audit 和原始锁版本，供未来同 Key 200 ACTIVE/ETag 重放。兼容性：增量表及探针身份复合唯一键，无 Breaking API 或依赖变化。升级：备份后 0055→0056；空表可 down，有历史快照拒绝降级。验证：Win11 隔离 PG18 空/有数据升降级、归属、不可变、ORM 漂移 0；后端1992运行/3跳过，开发 wheel SHA-256 `c0766e1873bcbd62927f85f7f4f32ad5b9e8913827c721f9ffc32b8f4ba945d4`。已知问题：激活命令/API/正式组合、生产 Worker/真实外发、三平台/Gate/UAT/可用包待完成。
+
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A02 新增当前 Provider 激活资格内部证明，仅接纳最新终态成功且当前配置、SecretVersion、受控端点策略及 Job/Outbox 绑定仍一致的结果。兼容性：无 Schema、依赖或 Breaking API 变化。升级：无需迁移；撤内部服务调用可回退，历史结果保留。验证：Win11 隔离 PG18 真实当前/配置变化/Secret 停用轮换/策略变化/较新失败 PASS，后端 1992 运行/3 跳过；开发 wheel SHA-256 `f4aaa7d735211f39bd5db66c33b8bd756ac12e4ae1010afb593df701a7254951`。已知问题：内部资格证明尚未接激活命令或公开 API；生产 Worker/真实外发、三平台/Gate/UAT/可用包未完成。
 
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A01 将 Provider Test 接入部署管理员 Job 安全读取，同事务核对原 Job/Outbox 与不可变结果归属，仅成功状态给历史结果引用。兼容性：无 Schema、依赖或 Breaking API 变化。升级：复用 0055；撤 Owner 注册可回退，历史数据保留。验证：Win11 隔离 PG18 实际权限/错配/缺证明/成功/License 失效 PASS，后端 1987 运行/3 跳过；开发 wheel SHA-256 `0ff067c507c68a6fbacaa787ba668dc88341e0c08395605862d9b56395902fc0`。已知问题：历史结果不是当前激活许可；P05-A02 激活重验、正式 HTTP/生产 Worker/真实外发/三平台/Gate/UAT/可用包仍待。
