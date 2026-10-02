@@ -19,3 +19,5 @@ P02 结果：ORM/Migration0062 已实现；Win11 隔离PG18空/有Prompt历史�
 P03 结果：内部退役服务和 AI 仓储已实现；当前管理员/CSRF/License 双重检查、DRAFT/ACTIVE 根行锁和强版本条件、根/Audit/0062首次结果/收据同事务，原Key重放保留首次 ETag 且撤权拒绝。Win11隔离PG18合成权限/许可/同Key并发/历史重放/Audit故障回滚通过；后端2087运行/3跳过，开发wheel通过。公开HTTP/正式生产迁移及 Invocation 资格仍未完成。
 
 P04 结果：可选退役HTTP实现冻结路径200，仅严格空对象与Session/Origin/CSRF/幂等/强If-Match，结果最小安全投影。Win11隔离PG18实际HTTP默认/普通用户404、200与重放、冲突409、许可403和单次根/Audit/结果/收据通过；合同3、后端2090运行/3跳过及开发wheel通过。默认/生产仍不挂载，正式信任/Invocation未验。
+
+P05/P06 结果：核查后确认单向安全退役不要求 Prompt 内容签名清单，但平台信任不豁免；仅在 Windows 显式写组合装配退役 Router，登录/只读保持404。Win11隔离PG18合成写组合200/重放、普通用户404、License403、缺平台游标密钥失败关闭及单根/Audit/首次结果/收据通过；后端2090运行/3跳过，开发wheel通过。正式目标账户/发行信任、生产迁移、Invocation资格、Server2025/Debian、Gate3/UAT/可用包仍待，不以合成证据替代。

@@ -6961,3 +6961,11 @@
 - Reason：把内容准入扩展到单向禁用会阻碍安全停用；但安全停用不等于允许新内容调用，也不能绕过平台信任。
 - Impact/Rollback：本项只记录决策，无运行行为；下一项若组合失败保持默认404。无 Schema/API/依赖变化。
 - Verification：只读核对 CR-AI-007、退役服务和 Windows 组合；实际组合与正式账户未验。
+
+# DEC-20261002-694：退役仅进入显式平台写组合
+
+- Date/WBS：2026-10-02 / `AI-03-A06-P06`；依据 CR-AI-009、DEC-693。
+- Decision：仅在 Windows `--platform-write` 组合复用现有平台 UOW、License guard、Session/Origin/CSRF、幂等收据与 Audit 装配退役 Router。登录/只读默认404；增版/激活继续关闭。单向禁用无需 Prompt 内容签名准入，但仍依赖目标账户和正式平台信任。
+- Reason：把安全退役限定在显式管理员写模式，不扩大 Prompt 内容写入/激活范围。
+- Impact/Rollback：无新Schema/API/依赖；撤装配恢复404，0062退役历史不可删除，须向前修复。正式信任、生产迁移另验。
+- Verification：Win11隔离PG18合成组合404/200/重放/权限/许可/缺密钥失败关闭及单根/Audit/结果/收据PASS；后端2090运行/3跳过、开发wheel通过。Server2025/Debian及真实账户未验。

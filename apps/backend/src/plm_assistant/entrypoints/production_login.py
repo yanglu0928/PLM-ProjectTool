@@ -111,6 +111,9 @@ from plm_assistant.modules.ai.infrastructure.model_create_repository import SqlA
 from plm_assistant.modules.ai.api.change_model_state import create_ai_model_state_router
 from plm_assistant.modules.ai.application.change_model_state import AIModelStateService
 from plm_assistant.modules.ai.infrastructure.model_state_repository import SqlAlchemyAIModelStateRepository
+from plm_assistant.modules.ai.api.retire_prompt_template import create_ai_prompt_retire_router
+from plm_assistant.modules.ai.application.retire_prompt_template import PromptTemplateRetireService
+from plm_assistant.modules.ai.infrastructure.prompt_retire_repository import SqlAlchemyPromptRetireRepository
 from plm_assistant.modules.ai.api.create_provider import create_ai_provider_create_router
 from plm_assistant.modules.ai.application.create_provider import AIProviderCreateService
 from plm_assistant.modules.ai.infrastructure.provider_create_repository import SqlAlchemyAIProviderCreateRepository
@@ -373,6 +376,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         ai_model_read_router = None
         ai_model_create_router = None
         ai_model_state_router = None
+        ai_prompt_retire_router = None
         ai_provider_create_router = None
         ai_provider_patch_router = None
         project_read_router = None
@@ -1001,6 +1005,17 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                         audit=audit,
                     ),
                 )
+                ai_prompt_retire_router = create_ai_prompt_retire_router(
+                    sessions=sessions, origins=origins,
+                    retirements=PromptTemplateRetireService(
+                        unit_of_work=runtime.unit_of_work,
+                        access=SqlAlchemyLicenseImportAccess(),
+                        license_guard=licenses.guard,
+                        repository=SqlAlchemyPromptRetireRepository(),
+                        receipts=SqlAlchemyIdempotencyReceipts(),
+                        audit=audit,
+                    ),
+                )
                 ai_provider_patch_router = create_ai_provider_patch_router(
                     sessions=sessions, origins=origins,
                     providers=AIProviderAppendService(
@@ -1130,6 +1145,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             ai_model_read_router=ai_model_read_router,
             ai_model_create_router=ai_model_create_router,
             ai_model_state_router=ai_model_state_router,
+            ai_prompt_retire_router=ai_prompt_retire_router,
             ai_provider_create_router=ai_provider_create_router,
             ai_provider_patch_router=ai_provider_patch_router,
             project_read_router=project_read_router,
