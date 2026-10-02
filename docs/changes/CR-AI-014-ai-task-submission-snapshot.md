@@ -1,6 +1,6 @@
 # CR-AI-014：AI Task 提交策略、Prompt版本与最小参数快照
 
-日期：2026-10-03；状态：依 V1.1 持续授权登记，P02～P05已实施，P06安全读取待继续；关联冻结 API-03 `AI_TASK_CREATE/GET`、DM-04、Schema0063～0071、CR-AI-010～013；原 Gate 2 冻结提交 `64cdf09` 不改。WBS `AI-04-A05`。
+日期：2026-10-03；状态：依 V1.1 持续授权登记，P02～P06已实施；关联冻结 API-03 `AI_TASK_CREATE/GET`、DM-04、Schema0063～0071、CR-AI-010～013；原 Gate 2 冻结提交 `64cdf09` 不改。WBS `AI-04-A05`。
 
 ## 缺口与证据
 
@@ -43,3 +43,9 @@ Migration0070、AITask ORM和迁移head合同已落地。Windows 11 / PostgreSQL
 新增严格Bootstrap `ai_task_policies` 非敏感来源，启动时生成不可变Task Policy与Task→Egress Purpose注册表；配置不接收Prompt正文、客户数据、URL、Key或Token。仅Windows显式写平台且存在有效策略时挂载Task POST，无配置保持404，配置非法使写平台启动失败。新增执行前置投影：只接受完整Prompt/策略/参数/Job/Egress快照，重新验证当前授权未撤销未过期以及当前Provider/Config/Model路由，旧NULL、非PENDING Job、摘要漂移或授权变化一律不准执行。此校验是Worker发送前的必要条件，不等同于最终payload上限/逐次Invocation验收。
 
 Windows 11 / PostgreSQL 18.6完成0071空库升降重升与有历史拒降，并通过真实Session、Project、Document Owner、Egress Preview/Authorize/Revoke与Task HTTP组合：默认404、创建202/重放、版本落库不可改、执行准入、撤销后准入及新建拒绝均PASS，无真实Provider调用。单元/合同定向50，后端2153运行/3跳过PASS；开发wheel SHA-256 `32a3d4b414b2dec7bce36ea2b307f313833c7c62d6ebc9f795ccdc75bbb1b7e0`。P06继续实现冻结Task GET安全投影；Worker仍须实现最终payload构造、逐次授权/Invocation、限额及失败发布。
+
+## P06实施结果
+
+冻结Task GET已实现为可选安全只读路径。项目经理和客户经理可读取项目内Task，其他有效项目成员仅能读取自己提交的Task；普通成员读取他人Task、跨项目引用和不存在资源统一404。Repository只投影受控元数据及引用，明确不读取或返回Task参数、Prompt/Input正文、供应商请求/响应或Secret；未知Input Owner映射失败关闭。GET挂载于显式Windows只读/写平台，登录-only组合保持404。
+
+Windows 11 / PostgreSQL 18.6真实HTTP/PG验证创建人、管理角色、普通成员与跨项目隔离以及无正文响应均PASS；定向43项，后端2157运行/3跳过，开发wheel SHA-256 `63315024faa0b1d4f5d7776579679b6af5030743257df2b4e0dd7cb2160c6c0e`。无Schema、依赖、Breaking URL、客户数据外发或真实Provider调用。回滚只需撤Router组合，历史Task不变。后续 `AI-04-A06-P01` 核查最终payload、Invocation、发送前授权/限额/摘要与失败发布边界。

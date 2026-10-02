@@ -13,6 +13,7 @@ from plm_assistant.entrypoints.ai_task_policy import create_deployment_ai_task_p
 from plm_assistant.entrypoints.password_capacity import get_process_password_capacity
 from plm_assistant.entrypoints.windows_ai_egress import create_windows_ai_egress_router
 from plm_assistant.entrypoints.windows_ai_task import create_windows_ai_task_router
+from plm_assistant.entrypoints.windows_ai_task_read import create_windows_ai_task_read_router
 from plm_assistant.entrypoints.windows_audit_list_cursor import create_windows_audit_cursor_codec
 from plm_assistant.modules.audit.api.read_events import create_audit_read_router
 from plm_assistant.modules.audit.application.authorized_read import AuthorizedAuditReadService
@@ -422,6 +423,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         ai_provider_patch_router = None
         ai_egress_router = None
         ai_task_create_router = None
+        ai_task_read_router = None
         project_read_router = None
         workflow_read_router = None
         workflow_start_router = None
@@ -542,6 +544,9 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 project_facts=SqlAlchemyProjectAuthorizationRepository(),
                 license_guard=licenses.guard,
                 repository=SqlAlchemyDocumentReadRepository(),
+            )
+            ai_task_read_router = create_windows_ai_task_read_router(
+                runtime=runtime, origins=origins, license_guard=licenses.guard,
             )
             document_read_router = create_document_read_router(
                 sessions=sessions, documents=document_reads,
@@ -1215,6 +1220,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             ai_provider_patch_router=ai_provider_patch_router,
             ai_egress_router=ai_egress_router,
             ai_task_create_router=ai_task_create_router,
+            ai_task_read_router=ai_task_read_router,
             project_read_router=project_read_router,
             workflow_read_router=workflow_read_router,
             workflow_start_router=workflow_start_router,

@@ -7172,3 +7172,11 @@
 - Reason：P03已在内存解析策略版本但0070未保存，历史Task无法证明策略版本；仅依赖创建时授权快照又会允许撤销后的Task进入Worker。两者都不满足冻结追溯与逐次外发控制。
 - Impact/Rollback：新增0071可空兼容列、部署策略源、Windows组合和内部执行前置；不改冻结URL/依赖且无外部调用。无版本化历史可降0070，有历史拒降并向前修复；移除配置重启恢复Task POST 404。
 - Verification：Win11/PG18.6真实Egress+Task HTTP/PG链、202重放、版本不可变、执行准入/撤销拒绝PASS；定向50、后端2153运行/3跳过；wheel `32a3d4b414b2dec7bce36ea2b307f313833c7c62d6ebc9f795ccdc75bbb1b7e0`。
+
+# DEC-20261003-720：Task GET按管理角色或创建人授权并只返回引用投影
+
+- Date/WBS：2026-10-03 / `AI-04-A05-P06`；依据冻结 API-03、CR-AI-014、DEC-719。
+- Decision：项目经理、客户经理可读取项目内Task；其他有效项目成员仅可读取自己提交的Task。未授权、普通成员读取他人Task、跨项目和不存在资源统一404。响应只包含冻结合同需要的状态、版本和资源引用，禁止Task参数、Prompt/Input正文、Provider原始载荷及Secret；未知Input Owner映射失败关闭。
+- Reason：项目管理需要查看执行状态和追溯关系，但普通成员不应借Task ID浏览其他人的处理上下文；显式列投影比先加载完整实体再过滤更能控制敏感内容泄漏。
+- Impact/Rollback：新增可选GET Router、读取服务/Repository、Windows组合和 `AI_TASK_GET` 项目读策略；无Schema、依赖、Breaking URL或外发。撤Router注入恢复404，历史不变。
+- Verification：Win11/PG18.6真实HTTP/PG创建人及项目经理200、普通成员和跨项目404、Query拒绝与无参数/正文PASS；定向43、后端2157运行/3跳过，wheel `63315024faa0b1d4f5d7776579679b6af5030743257df2b4e0dd7cb2160c6c0e`。Worker最终payload/Invocation/发送前限制仍由A06继续验收。
