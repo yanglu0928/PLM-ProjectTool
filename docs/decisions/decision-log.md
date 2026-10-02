@@ -6440,3 +6440,11 @@
 - Impact/Rollback：P01 仅记录设计，无代码/API/Schema/数据修改。P02 仅内部 Trace/许可 Port 调整，不装配新入口即可停止；旧收据及关系历史保留。其他 Owner 与正式 HTTP 按 CR-TRC-002 后续验收。
 - Verification Plan：P02 单元与隔离 PG18 首次/同Key端点变受限后重放、过期 License/撤权/跨项目拒绝、异载荷冲突、并发去重与 Audit 失败回滚；后端回归与 wheel。P01 仅静态核查，未运行新业务测试。
 - P02 Result：内部原始三字段与已解析入口共用当前License/Session/Project→Receipt→仅首次Owner证明/创建顺序；PG18来源RESTRICTED、旧边REVOKED后原Key重放，许可/新Key拒绝及原Trace链PASS。后端1902运行/3跳过、开发wheel SHA-256 `939efcd3d2bcfce8413ddd9f19ad30621fc660d35f2c082098f82f37c2aeaad0`。通用创建HTTP/其他Owner及Gate不判PASS。
+
+# DEC-20261002-621：Platform Core 真实 Owner 依赖解环
+
+- Date/WBS：2026-10-02 / `PLT-CORE-DEPENDENCY-A01`；依据 V2.1 Phase 2～4、冻结 ADR-004/DM-04/API-03、RVW-02-A10/WFL-01-A07-P05 与现有 Owner 接线。
+- Decision：按 CR-SEQ-001 前置不依赖业务 Owner 的 AI/RAG 基础 WBS；Phase 2 及 Gate 3 保持开放，后续真实业务 Owner 回接 Review/Trace/Workflow 并重做阶段验收。下一项 `AI-01-A01`。
+- Reason：后续阶段才实现的固定业务 Subject 是 Phase 2 真实 Gate 所需，严格逐阶段全部关闭会造成依赖循环；合成 APPROVED 或观测引用不是业务事实。
+- Impact/Rollback：仅排期拓扑/状态/文档，无运行代码、API、Schema、依赖或数据迁移。可停止前置编码并恢复排期；保留历史 CR 和证据。独立变更各自验证/回滚。
+- Verification：静态检查正式阶段顺序、冻结合同、当前 Port/Owner/POC-03 阻塞；未运行新增业务测试，不判 Phase 2/3/Gate 3 PASS；逐次外发授权边界不变。
