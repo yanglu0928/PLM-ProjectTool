@@ -57,6 +57,7 @@ class SqlAlchemyAITaskCreateRepository:
             context_policy_ref=request.prompt.context_policy_ref,
             prompt_template_ref=request.prompt.prompt_template_ref,
             prompt_version_no=request.prompt.prompt_version_no,
+            prompt_policy_version=request.prompt.policy_version,
             task_parameters=cast(
                 literal(request.prompt.task_parameters_json, type_=Text), JSONB,
             ),

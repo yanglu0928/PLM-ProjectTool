@@ -77,10 +77,12 @@ class AITaskRow(Base):
                         name="ck_ai_tasks__error"),
         CheckConstraint(
             "(prompt_template_ref IS NULL AND prompt_version_no IS NULL "
+            "AND prompt_policy_version IS NULL "
             "AND task_parameters IS NULL AND task_parameters_fingerprint IS NULL) OR "
             "(prompt_template_ref IS NOT NULL "
             "AND prompt_template_ref<>'00000000-0000-0000-0000-000000000000'::uuid "
             "AND prompt_version_no BETWEEN 1 AND 9223372036854775807 "
+            "AND prompt_policy_version BETWEEN 1 AND 2147483647 "
             "AND jsonb_typeof(task_parameters)='object' "
             "AND octet_length(task_parameters_fingerprint)=32)",
             name="ck_ai_tasks__submission_snapshot",
@@ -106,6 +108,7 @@ class AITaskRow(Base):
     context_policy_ref: Mapped[str] = mapped_column(Text, nullable=False)
     prompt_template_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     prompt_version_no: Mapped[int | None] = mapped_column(BigInteger)
+    prompt_policy_version: Mapped[int | None] = mapped_column(BigInteger)
     task_parameters: Mapped[dict | None] = mapped_column(JSONB)
     task_parameters_fingerprint: Mapped[bytes | None] = mapped_column(LargeBinary)
     task_state: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'QUEUED'"))

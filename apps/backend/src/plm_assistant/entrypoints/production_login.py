@@ -9,8 +9,10 @@ from sqlalchemy import create_engine, text
 
 from plm_assistant.entrypoints.api import create_app
 from plm_assistant.entrypoints.ai_egress_policy import create_deployment_ai_egress_policies
+from plm_assistant.entrypoints.ai_task_policy import create_deployment_ai_task_policies
 from plm_assistant.entrypoints.password_capacity import get_process_password_capacity
 from plm_assistant.entrypoints.windows_ai_egress import create_windows_ai_egress_router
+from plm_assistant.entrypoints.windows_ai_task import create_windows_ai_task_router
 from plm_assistant.entrypoints.windows_audit_list_cursor import create_windows_audit_cursor_codec
 from plm_assistant.modules.audit.api.read_events import create_audit_read_router
 from plm_assistant.modules.audit.application.authorized_read import AuthorizedAuditReadService
@@ -298,6 +300,22 @@ def _create_configured_ai_egress_router(
     )
 
 
+def _create_configured_ai_task_router(
+    settings: BootstrapSettings, *, runtime: DatabaseRuntime,
+    sessions: SessionService, origins: LoginOriginPolicy, license_guard: object,
+    audit: AuditService, documents: DocumentReadService,
+):
+    """Keep Task submission absent unless an explicit deployment policy exists."""
+    if not settings.ai_task_policies:
+        return None
+    task_policies, egress_purposes = create_deployment_ai_task_policies(settings)
+    return create_windows_ai_task_router(
+        runtime=runtime, sessions=sessions, origins=origins,
+        license_guard=license_guard, audit=audit, documents=documents,
+        task_policies=task_policies, egress_purposes=egress_purposes,
+    )
+
+
 def _schema_current(runtime: DatabaseRuntime) -> bool:
     config = Config()
     config.set_main_option("script_location", str(MIGRATION_PACKAGE))
@@ -403,6 +421,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         ai_provider_create_router = None
         ai_provider_patch_router = None
         ai_egress_router = None
+        ai_task_create_router = None
         project_read_router = None
         workflow_read_router = None
         workflow_start_router = None
@@ -846,6 +865,11 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                     license_guard=licenses.guard, audit=audit,
                     documents=document_reads,
                 )
+                ai_task_create_router = _create_configured_ai_task_router(
+                    settings, runtime=runtime, sessions=sessions, origins=origins,
+                    license_guard=licenses.guard, audit=audit,
+                    documents=document_reads,
+                )
                 evidence_downloads = PrepareDownloadService(
                     reader=document_reads, storage=LocalFileStorage(settings.data_root),
                     unit_of_work=runtime.unit_of_work, audit=audit,
@@ -1190,6 +1214,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             ai_provider_create_router=ai_provider_create_router,
             ai_provider_patch_router=ai_provider_patch_router,
             ai_egress_router=ai_egress_router,
+            ai_task_create_router=ai_task_create_router,
             project_read_router=project_read_router,
             workflow_read_router=workflow_read_router,
             workflow_start_router=workflow_start_router,

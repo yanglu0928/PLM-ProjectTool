@@ -7164,3 +7164,11 @@
 - Reason：P03已具备完整内部原子链，但直接全局挂载会在部署Task Policy/正式组合未完成时开放不完整能力；严格DTO也防止Key、endpoint、正文或任意Provider参数旁路。
 - Impact/Rollback：新增Router/App工厂槽和两项冻结AI错误码；无Schema/依赖/外发。撤注入恢复404，历史不变。
 - Verification：合同14项、后端2145运行/3跳过PASS；wheel `6f854dd6386108a0ad01c2f4b2aa8fe694af5bf0ec734be05d0f586889922ee7`。首轮缺Idempotency-Key状态断言按既有平台422语义修正并全量重跑。
+
+# DEC-20261003-719：Task Policy版本必须随提交快照持久化并在执行前重验当前外发资格
+
+- Date/WBS：2026-10-03 / `AI-04-A05-P05`；依据 CR-AI-014、Schema0070、DEC-717/718。
+- Decision：用严格非敏感Bootstrap生成不可变Task Policy和Task→Purpose映射；仅显式Windows写平台有有效策略时挂载创建。新增0071保存 `prompt_policy_version`，新Task必须完整、旧NULL历史不可执行。执行前置除读取完整Task/Prompt/参数/Job/Egress快照外，还须通过当前Egress Owner重验未撤销授权及ACTIVE Provider/当前Config/AVAILABLE Model。
+- Reason：P03已在内存解析策略版本但0070未保存，历史Task无法证明策略版本；仅依赖创建时授权快照又会允许撤销后的Task进入Worker。两者都不满足冻结追溯与逐次外发控制。
+- Impact/Rollback：新增0071可空兼容列、部署策略源、Windows组合和内部执行前置；不改冻结URL/依赖且无外部调用。无版本化历史可降0070，有历史拒降并向前修复；移除配置重启恢复Task POST 404。
+- Verification：Win11/PG18.6真实Egress+Task HTTP/PG链、202重放、版本不可变、执行准入/撤销拒绝PASS；定向50、后端2153运行/3跳过；wheel `32a3d4b414b2dec7bce36ea2b307f313833c7c62d6ebc9f795ccdc75bbb1b7e0`。

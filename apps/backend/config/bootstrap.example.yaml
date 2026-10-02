@@ -45,3 +45,24 @@ password_kdf_slots: 4
 #     risk_codes: ["EXTERNAL_PROCESSING"]
 #     approval_roles: ["PROJECT_MANAGER", "CUSTOMER_MANAGER"]
 #     data_regions: ["cn-beijing"]
+# Optional AI Task submission policies. These bind a public policy reference to
+# one reviewed Prompt template, Egress purpose and strictly typed scalar fields.
+# Never put Prompt text, customer content, endpoint URLs or credentials here.
+# Removing all entries and restarting unmounts Task submission; existing Task
+# snapshots remain immutable and are still subject to execution-time checks.
+# ai_task_policies:
+#   - reference: "gap-analysis.v1"
+#     policy_version: 1
+#     task_type: "GAP_ANALYSIS"
+#     prompt_template_id: "00000000-0000-0000-0000-000000000001"
+#     purpose_ref: "project-gap-analysis.v1"
+#     output_schema_ref: "gap-analysis-output.v1"
+#     context_policy_ref: "project-documents.v1"
+#     parameter_fields:
+#       - name: "language"
+#         value_type: "STRING"
+#         required: true
+#         max_length: 16
+#         minimum: null
+#         maximum: null
+#         allowed_values: ["zh-CN", "en-US"]

@@ -1,6 +1,6 @@
 # CR-AI-014：AI Task 提交策略、Prompt版本与最小参数快照
 
-日期：2026-10-03；状态：依 V1.1 持续授权登记，P02～P04已实施，P05待继续；关联冻结 API-03 `AI_TASK_CREATE/GET`、DM-04、Schema0063～0070、CR-AI-010～013；原 Gate 2 冻结提交 `64cdf09` 不改。WBS `AI-04-A05`。
+日期：2026-10-03；状态：依 V1.1 持续授权登记，P02～P05已实施，P06安全读取待继续；关联冻结 API-03 `AI_TASK_CREATE/GET`、DM-04、Schema0063～0071、CR-AI-010～013；原 Gate 2 冻结提交 `64cdf09` 不改。WBS `AI-04-A05`。
 
 ## 缺口与证据
 
@@ -35,3 +35,11 @@ Migration0070、AITask ORM和迁移head合同已落地。Windows 11 / PostgreSQL
 ## P04实施结果
 
 冻结POST路径已实现为可选Router：严格七字段请求、S/L/C/I/E/A前置、安全202 TaskRef+JobRef投影和冻结AI错误码；默认及当前生产组合保持404。合同14项、后端2145运行/3跳过及wheel通过。无新Schema、依赖、生产挂载或外发；P05负责非敏感部署Task Policy、Windows真实HTTP/PG组合和读取/执行前置。
+
+## P05偏差、实施与结果
+
+实施执行前置时发现P03虽然解析了 `policy_version`，0070却只保存策略引用，无法证明历史Task使用哪一版部署策略。按持续授权新增兼容Migration0071与 `prompt_policy_version`：旧Task保持五列全NULL且执行失败关闭；新Task必须完整保存1～2147483647版本并与其他提交快照共同不可变。0071不追写冻结提交，也不猜测回填历史；只要已有版本化Task历史即拒绝物理降级，正式升级须先备份停写，回滚采用向前修复或受控备份恢复。
+
+新增严格Bootstrap `ai_task_policies` 非敏感来源，启动时生成不可变Task Policy与Task→Egress Purpose注册表；配置不接收Prompt正文、客户数据、URL、Key或Token。仅Windows显式写平台且存在有效策略时挂载Task POST，无配置保持404，配置非法使写平台启动失败。新增执行前置投影：只接受完整Prompt/策略/参数/Job/Egress快照，重新验证当前授权未撤销未过期以及当前Provider/Config/Model路由，旧NULL、非PENDING Job、摘要漂移或授权变化一律不准执行。此校验是Worker发送前的必要条件，不等同于最终payload上限/逐次Invocation验收。
+
+Windows 11 / PostgreSQL 18.6完成0071空库升降重升与有历史拒降，并通过真实Session、Project、Document Owner、Egress Preview/Authorize/Revoke与Task HTTP组合：默认404、创建202/重放、版本落库不可改、执行准入、撤销后准入及新建拒绝均PASS，无真实Provider调用。单元/合同定向50，后端2153运行/3跳过PASS；开发wheel SHA-256 `32a3d4b414b2dec7bce36ea2b307f313833c7c62d6ebc9f795ccdc75bbb1b7e0`。P06继续实现冻结Task GET安全投影；Worker仍须实现最终payload构造、逐次授权/Invocation、限额及失败发布。

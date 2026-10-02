@@ -52,6 +52,7 @@ class BootstrapSettings(BaseSettings):
     parser_ocr_model_fingerprint: str | None = None
     ai_probe_policies: tuple[dict[str, str], ...] = ()
     ai_egress_policies: tuple[dict[str, Any], ...] = ()
+    ai_task_policies: tuple[dict[str, Any], ...] = ()
 
     @field_validator("ai_probe_policies", mode="before")
     @classmethod
@@ -110,6 +111,55 @@ class BootstrapSettings(BaseSettings):
         references = [item["reference"] for item in normalized]
         if len(set(references)) != len(references):
             raise ValueError("invalid AI Egress policy configuration")
+        return tuple(normalized)
+
+    @field_validator("ai_task_policies", mode="before")
+    @classmethod
+    def validate_ai_task_policies(cls, value: Any) -> tuple[dict[str, Any], ...]:
+        fields = frozenset({
+            "reference", "policy_version", "task_type", "prompt_template_id",
+            "purpose_ref", "output_schema_ref", "context_policy_ref",
+            "parameter_fields",
+        })
+        parameter_fields = frozenset({
+            "name", "value_type", "required", "max_length", "minimum",
+            "maximum", "allowed_values",
+        })
+        if type(value) not in (tuple, list) or len(value) > 64:
+            raise ValueError("invalid AI Task policy configuration")
+        normalized: list[dict[str, Any]] = []
+        for item in value:
+            if (type(item) is not dict or set(item) != fields
+                    or any(type(item[name]) is not str for name in (
+                        "reference", "task_type", "prompt_template_id", "purpose_ref",
+                        "output_schema_ref", "context_policy_ref",
+                    ))
+                    or type(item["policy_version"]) is not int
+                    or type(item["parameter_fields"]) not in (tuple, list)
+                    or len(item["parameter_fields"]) > 16):
+                raise ValueError("invalid AI Task policy configuration")
+            parameters: list[dict[str, Any]] = []
+            for parameter in item["parameter_fields"]:
+                if (type(parameter) is not dict or set(parameter) != parameter_fields
+                        or type(parameter["name"]) is not str
+                        or type(parameter["value_type"]) is not str
+                        or type(parameter["required"]) is not bool
+                        or any(parameter[name] is not None
+                               and type(parameter[name]) is not int
+                               for name in ("max_length", "minimum", "maximum"))
+                        or type(parameter["allowed_values"]) not in (tuple, list)
+                        or len(parameter["allowed_values"]) > 64
+                        or any(type(entry) is not str
+                               for entry in parameter["allowed_values"])):
+                    raise ValueError("invalid AI Task policy configuration")
+                parameters.append({
+                    **parameter,
+                    "allowed_values": tuple(parameter["allowed_values"]),
+                })
+            normalized.append({**item, "parameter_fields": tuple(parameters)})
+        references = [item["reference"] for item in normalized]
+        if len(set(references)) != len(references):
+            raise ValueError("invalid AI Task policy configuration")
         return tuple(normalized)
 
     @field_validator("parser_ocr_detection_model_dir", "parser_ocr_recognition_model_dir")
