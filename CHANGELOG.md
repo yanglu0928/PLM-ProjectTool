@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-01-A05-P04-A01 新增 Provider Test 专属 Worker Job 领取/fencing 与成对 Outbox 引用校验，不读取 Secret 或外发。兼容性：无 Migration、依赖或 Breaking API；Worker 入口仍关闭。升级：复用现有 Job/Lease 表，撤内部调用可回退，历史 Attempt/Lease 保留。验证：Win11 隔离 PG18.6 双 Worker、异 Owner 排除、租约过期/旧 token、事务回滚及畸形队列失败关闭；后端1952运行/3跳过，开发wheel SHA-256 `2a9013ba7fb58a30105b2149be0c864df65d4cd4ff97c13c1b4373cbb47619e7`。已知问题：P04-A02～A04 重验/传输/发布、真实外发/正式信任、质量/三平台/Gate/UAT/可用程序包均待。
+
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P03-A03 新增可选 Provider Test 202 JobRef HTTP，Session/CSRF/必填幂等键/强 If-Match/空正文边界；默认应用及 Windows 平台组合仍不挂载。兼容性：无 Migration、依赖或 Breaking API。升级：仅显式注入路由时开放，撤注入可回退，历史 Job/收据/Audit 保留。验证：合成 HTTP 合同3项、后端1949运行/3跳过，开发wheel SHA-256 `0e2c2844cbc10750600c1ee6105c60077a245ad6435a1625dbcc2a341a250112`。已知问题：HTTP+PG 端到端、P04 Worker/外发安全、P05 结果/激活、正式信任/质量/三平台/Gate/UAT/可用程序包均待。
 
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P03-A02 新增 Provider Test 内部管理员受权同事务提交、历史 JobRef 幂等收据与 Audit，绑定当前配置/Secret 版本及受控策略摘要；不解密 Secret、不联网。兼容性：复用 0055 与现有表，无 Migration、依赖或 Breaking API。升级：无需新迁移；撤内部调用可回退，历史记录保留。验证：Win11 隔离 PG18.6 真实 Session、同 Key 并发、版本/权限/策略拒绝、重放/审计失败回滚，后端1946运行/3跳过，开发wheel SHA-256 `78aa45d5d01d9397189c7982ece8914c9ea5229bcf8c389f9cc473e8b5f0d559`。已知问题：A03 HTTP、P04 Worker/真实外发、P05 结果/激活、正式信任/质量/三平台/Gate/UAT/可用程序包待完成。

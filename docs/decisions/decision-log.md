@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-644 — Provider Test Worker 先建立专属领取与 fencing
+
+- Date/WBS：2026-10-02 / `AI-01-A05-P04-A01`；输入 CR-AI-002、P03 原子队列、现有 Job Lease/Attempt 规则。
+- Decision：P04 拆为 A01 专属 Job 领取、A02 执行前配置/许可/Secret/策略重验、A03 受限合成网络 Adapter、A04 不可变结果与终态发布。A01 只领取 `owner_module=ai`、`job_type=AI_PROVIDER_TEST`、DEPLOYMENT、引用载荷形状正确且未耗尽的 Job；使用 PostgreSQL `FOR UPDATE SKIP LOCKED`，过期租约先关闭旧 Attempt，再递增 fencing token 建立新 Attempt/Lease。A01 不启动循环、不调用网络/Secret，也不将 Job RUNNING 视为测试成功。
+- Reason/Impact/Rollback：通用 `claim_next` 可领取其他 Owner，不适合作为 AI Worker 入口。专属领取避免越权并为后续发布建立 fencing；无 Schema/API/依赖变化。撤内部调用可回退，已创建的 Job/Attempt/Lease 历史不删除；耗尽/取消/终态由后续专属流程处理，不在 A01 静默改写。
+
 ## DEC-20261002-643 — Provider Test 202 HTTP 保持显式注入且无请求正文
 
 - Date/WBS：2026-10-02 / `AI-01-A05-P03-A03`；输入冻结 API-03 与内部 A02 原子提交。
