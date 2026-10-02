@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-03-A06-P04 新增可选Prompt退役POST HTTP：严格空对象、管理员Session/Origin/CSRF/幂等/强ETag，200仅回首次RETIRED/ETag；默认及生产不挂载。兼容性：复用0062，无新依赖/Breaking API；Win11隔离PG18验证，Server2025/Debian未验。升级/回滚：需先受控升0062与正式发行信任才可显式装配，撤Router恢复404，历史保留。验证：合同3、隔离PG18实际HTTP权限/重放/冲突/许可与单结果审计、后端2090运行/3跳过，开发wheel SHA-256 `92b65e4fc58a0ba583f4c7eeb99e3bb289daee47d8c709efeb38fae3012c05a5`。已知问题：正式信任/目标账户、Invocation/Gate3/UAT/可用包未过。
+
 - 2026-10-02：0.1.0.dev0/AI-03-A06-P03 新增PromptTemplate内部原子退役，DRAFT/ACTIVE行锁+强版本、当前管理员/CSRF/License、根/Audit/0062首次结果/收据同事务和撤权后拒绝重放；保留旧活动版本历史指针。兼容性：复用0062，无新依赖/公开API；Win11隔离PG18验证，Server2025/Debian未验。升级/回滚：先受控升0062；未装生产服务可撤，已有退役历史保留。验证：PG18并发/重放/权限/许可/故障回滚/撤权、单元2、后端2087运行/3跳过，开发wheel SHA-256 `55a1ea046c29163d4544f088685378903eea661812568d43d334b6a6e7332d6a`。已知问题：退役HTTP/生产信任/Invocation/Gate3/UAT/可用包未过。
 
 - 2026-10-02：0.1.0.dev0/AI-03-A06-P02 依据CR-AI-009增加Prompt退役首次结果ORM/Migration0062，保留旧活动指针与不可变审计快照；不复制正文。兼容性：0061后增量，无API/依赖变化；Win11隔离PG18验证，Server2025/Debian未验。升级/回滚：先备份并受控升0062；空结果表可降0061，有历史拒绝物理降级。验证：空/有历史升降、drift=0、FK/形态/Audit唯一/历史保护/拒降，后端2085运行/3跳过，开发wheel SHA-256 `833be57233163f092529fb88d5b427d985491bbdec199aefeb808b5b8c72c6f8`。首轮约束名、NULL三值逻辑问题已修复并重测。已知问题：退役服务/API、正式信任/生产迁移/Invocation/Gate3/UAT/可用包未过。

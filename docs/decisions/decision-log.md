@@ -6944,3 +6944,12 @@
 - Reason：保留最后活动版本的追溯引用，同时避免重放从当前根推断原响应。
 - Impact/Rollback：无新Schema/API/依赖；内部服务未装生产，已有退役历史不可删除，向前修复。
 - Verification：Win11隔离PG18 DRAFT/ACTIVE、并发/重放/回滚/撤权 PASS；单元2、后端2087运行/3跳过，开发wheel通过。Invocation仍待独立验收。
+
+# DEC-20261002-692：Prompt 退役 HTTP 只投影首次状态与 ETag
+
+- Date/WBS：2026-10-02 / `AI-03-A06-P04`；依据冻结 `AI_PROMPT_RETIRE`、CR-AI-009。
+- Decision：新增仅显式注入的可选 Router；POST 接受严格空 JSON 对象、强 If-Match、Session/Origin/CSRF/幂等键；200 `data` 只含模板 UUID、固定 RETIRED 和首次 ETag，不把保留的旧活动版本指针描述为仍 ACTIVE。默认/生产组合不挂载。
+- Reason：冻结合同未定义额外退役参数；最小首次投影避免历史指针语义混淆，并能从0062不可变结果精确重放。
+- Impact/Rollback：无Schema/依赖/冻结路径或状态码变化；撤可选Router即404，历史结果保留。
+- Verification Plan：合同单测默认关闭/成功/重放/畸形请求/错误映射；Win11隔离PG18真实HTTP/Session/审计/收据链，正式信任另验。
+- Verification Result：合同3项、Win11隔离PG18实际HTTP链、后端2090运行/3跳过、开发wheel通过；生产仍不挂载。
