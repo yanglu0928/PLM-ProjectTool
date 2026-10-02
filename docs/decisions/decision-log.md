@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-634 — Provider PATCH 原始版本结果与既有收据兼容
+
+- Date/WBS：2026-10-02 / `AI-01-A03-P04-A01`；输入冻结 PATCH `200 config version + ETag`、API-01 同Key原结果、现有内部追加 UUID 与 `201` 版本创建收据。
+- Decision：保留旧 `append()` UUID 入口及其已有收据形状/状态，增加内部 `append_result()` 返回原始不可变配置版本号与当次写入后的强ETag；重放以收据配置ID查询不可变版本，并用已纳入请求指纹的原 `expected_lock_version + 1` 还原原始 ETag，不读取当前配置指针。公开PATCH下一任务统一返回冻结200，内部201仅代表历史配置版本创建收据，不作为HTTP状态。
+- Reason/Impact/Rollback：避免破坏历史收据或因后续升版/状态改变使同Key返回漂移。无Schema/API/依赖变化；撤新入口可回退，已有配置版本/收据不删除。需隔离PG验证原始结果、后续变化、失权、并发及回滚。
+
 ## DEC-20261002-633 — Provider 创建仅 Windows 显式写平台装配
 
 - Date/WBS：2026-10-02 / `AI-01-A03-P03-A03`；输入已验证可选 Provider POST、当前 Windows `--platform-write` 的 Secret/License 信任组合。

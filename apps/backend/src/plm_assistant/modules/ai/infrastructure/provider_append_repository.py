@@ -54,6 +54,18 @@ class SqlAlchemyAIProviderAppendRepository:
             .execution_options(autoflush=False)
         ).scalar_one_or_none() is not None
 
+    def version_number(self, transaction: object, *, provider_id: uuid.UUID,
+                       config_id: uuid.UUID) -> int | None:
+        if (type(provider_id) is not uuid.UUID or provider_id.int == 0
+                or type(config_id) is not uuid.UUID or config_id.int == 0):
+            return None
+        return _session(transaction).execute(
+            select(AIProviderConfigVersionRow.config_version_no)
+            .where(AIProviderConfigVersionRow.provider_config_version_id == config_id,
+                   AIProviderConfigVersionRow.ai_provider_id == provider_id)
+            .execution_options(autoflush=False)
+        ).scalar_one_or_none()
+
     def append(self, transaction: object, *, configuration: ProviderConfiguration,
                config_id: uuid.UUID, actor_id: uuid.UUID,
                expected_lock_version: int) -> None:

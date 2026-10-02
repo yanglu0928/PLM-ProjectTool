@@ -16,6 +16,7 @@ from plm_assistant.modules.ai.domain.provider_configuration import (
     ProviderCapability, ProviderConfiguration, ProviderConfigurationError, ProviderKind,
 )
 from plm_assistant.modules.audit.application.public import AuditEventDraft, AuditService
+from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
 from plm_assistant.modules.platform.application.idempotency import (
     IdempotencyError, IdempotencyResult, IdempotencyScope,
     canonical_payload_fingerprint, validate_idempotency_key,
@@ -54,11 +55,26 @@ class CurrentAIProvider:
     kind: ProviderKind
 
 
+@dataclass(frozen=True, slots=True)
+class AppendedAIProviderConfigResult:
+    provider_id: uuid.UUID
+    config_id: uuid.UUID
+    config_version: int
+    lock_version: int
+
+    @property
+    def etag(self) -> str:
+        return f'"v{self.lock_version}"'
+
+
 class AIProviderAppendRepositoryPort(Protocol):
     def lock_current(self, transaction: object, *, provider_id: uuid.UUID) -> CurrentAIProvider | None: ...
 
     def version_belongs(self, transaction: object, *, provider_id: uuid.UUID,
                         config_id: uuid.UUID) -> bool: ...
+
+    def version_number(self, transaction: object, *, provider_id: uuid.UUID,
+                       config_id: uuid.UUID) -> int | None: ...
 
     def append(self, transaction: object, *, configuration: ProviderConfiguration,
                config_id: uuid.UUID, actor_id: uuid.UUID, expected_lock_version: int) -> None: ...
@@ -81,6 +97,19 @@ class AIProviderAppendService:
         self._clock = clock or (lambda: datetime.now(timezone.utc))
 
     def append(self, command: AppendAIProviderConfig) -> uuid.UUID:
+        result = self._append(command, include_result=False)
+        if type(result) is not uuid.UUID:
+            raise AIProviderAppendError("AI_PROVIDER_UNAVAILABLE")
+        return result
+
+    def append_result(self, command: AppendAIProviderConfig) -> AppendedAIProviderConfigResult:
+        """Return the original version/ETag for the frozen PATCH boundary."""
+        result = self._append(command, include_result=True)
+        if type(result) is not AppendedAIProviderConfigResult:
+            raise AIProviderAppendError("AI_PROVIDER_UNAVAILABLE")
+        return result
+
+    def _append(self, command: AppendAIProviderConfig, *, include_result: bool) -> uuid.UUID | AppendedAIProviderConfigResult:
         if (type(command) is not AppendAIProviderConfig
                 or type(command.session_token) is not bytes or len(command.session_token) != 32
                 or type(command.csrf_token) is not bytes or len(command.csrf_token) != 32
@@ -121,6 +150,16 @@ class AIProviderAppendService:
                             or not self._repo.version_belongs(
                                 tx, provider_id=command.provider_id, config_id=replay.ref_id)):
                         raise AIProviderAppendError("AI_PROVIDER_UNAVAILABLE")
+                    if include_result:
+                        number = self._repo.version_number(
+                            tx, provider_id=command.provider_id, config_id=replay.ref_id,
+                        )
+                        if type(number) is not int or number < 2:
+                            raise AIProviderAppendError("AI_PROVIDER_UNAVAILABLE")
+                        return AppendedAIProviderConfigResult(
+                            command.provider_id, replay.ref_id, number,
+                            command.expected_lock_version + 1,
+                        )
                     return replay.ref_id
                 current = self._repo.lock_current(tx, provider_id=command.provider_id)
                 if current is None:
@@ -152,10 +191,16 @@ class AIProviderAppendService:
                 self._receipts.complete(tx, scope=scope, result=IdempotencyResult(
                     "V1_AI_PROVIDER_CONFIG_APPEND", config_id, 201,
                 ))
+                result = AppendedAIProviderConfigResult(
+                    command.provider_id, config_id, configuration.config_version,
+                    command.expected_lock_version + 1,
+                ) if include_result else config_id
                 tx.commit()
-                return config_id
+                return result
         except AIProviderAppendError:
             raise
+        except RuntimeLicenseError:
+            raise AIProviderAppendError("LICENSE_OPERATION_DENIED") from None
         except IdempotencyError as exc:
             raise AIProviderAppendError(exc.code) from None
         except Exception:

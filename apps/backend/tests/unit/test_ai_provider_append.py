@@ -6,6 +6,7 @@ from dataclasses import replace
 
 from plm_assistant.modules.ai.application.append_provider_config import (
     AIProviderAppendError, AIProviderAppendService, AppendAIProviderConfig,
+    AppendedAIProviderConfigResult,
 )
 from plm_assistant.modules.ai.domain.provider_configuration import ProviderCapability, ProviderKind
 
@@ -42,6 +43,13 @@ class AIProviderAppendValidationTests(unittest.TestCase):
         self.assertNotIn("s" * 32, rendered)
         self.assertNotIn("c" * 32, rendered)
         self.assertNotIn(self.command.idempotency_key, rendered)
+
+    def test_result_shape_and_invalid_command(self) -> None:
+        result = AppendedAIProviderConfigResult(self.command.provider_id, uuid.uuid4(), 2, 1)
+        self.assertEqual(result.etag, '"v1"')
+        with self.assertRaises(AIProviderAppendError) as caught:
+            self.service.append_result(replace(self.command, expected_lock_version=True))
+        self.assertEqual(caught.exception.code, "VALIDATION_FAILED")
 
 
 if __name__ == "__main__":
