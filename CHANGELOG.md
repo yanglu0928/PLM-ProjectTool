@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-01-A03-P04-A02-P03 将现有 Provider PATCH 仅挂入 Windows 显式 `--platform-write`，缺写依赖整体失败关闭；默认/登录 404、只读平台 405。兼容性：无 Schema、依赖或 Breaking API 变化。升级：需既有 0054 和目标账户正式信任源；撤组合注入可回滚，历史配置/收据/审计保留。验证：Win11 隔离 PG18/ASGI 真实 Session、ETag/重放/权限/License/Audit，组合合同30项、后端1932运行/3跳过，开发 wheel SHA-256 `7adf3fd729dc3e91213e527d1de74d3da6ed2254f63ed3df23d2bc6e13d453f9`。已知问题：正式信任源、Provider测试/激活/外发、质量、Server2025/Debian/Gate/UAT/可用程序包和39份旧平台脚本夹具回归仍待。
+
 - 2026-10-02：0.1.0.dev0/AI-01-A03-P04-A02-P02 新增Provider配置受控部分PATCH可选HTTP，强If-Match/可选客户端幂等Key、200配置版本及ETag；默认和Windows正式组合不挂载。兼容性：无Schema/依赖/Breaking API。升级：需已有0054，显式注入Router才开放；撤注入可回滚。验证：Win11隔离ASGI/PG18真实Session/部分升版/原结果重放/版本和权限/License/Secret/撤权、合同3项，后端1931运行/3跳过；开发wheel SHA-256 `e78f36ce3454e29311b7f64543a94b4bfa8e3b331109d66feb417eaaf99cbe6e`。已知问题：Windows写组合、正式信任/外发、质量、三平台/Gate/UAT/可用程序包及旧夹具回归仍待。
 
 - 2026-10-02：0.1.0.dev0/AI-01-A03-P04-A02-P01 新增Provider内部受控部分配置更新，在PG行锁内合并，按原始变更集持久幂等并保留原始版本/ETag；旧完整追加入口兼容。兼容性：无Schema/依赖/公开API变化。升级：需已有0054，无新迁移。验证：Win11隔离PG18局部合并/历史重放/权限/License/Secret/版本/并发/回滚，旧完整追加回归，后端1928运行/3跳过；开发wheel SHA-256 `babaad45fc95aaf9f38cd49b659c4ed3473564be2b65e0d231974073914175d7`。已知问题：PATCH HTTP、正式信任/外发、质量、三平台/Gate/UAT/可用程序包及旧夹具回归未完成。

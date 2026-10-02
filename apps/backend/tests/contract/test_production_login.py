@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+import uuid
 from contextlib import contextmanager
 from pathlib import Path
 from unittest.mock import Mock, patch
@@ -251,6 +252,42 @@ class ProductionLoginTests(unittest.TestCase):
             read_app = create_production_platform_app(self.settings(("http://localhost",)))
             with TestClient(read_app, base_url="http://localhost") as client:
                 self.assertEqual(client.post("/api/v1/admin/ai/providers").status_code, 405)
+            self.assertEqual(failed.call_count, 0)
+            with self.assertRaises(ProductionLoginStartupError) as caught:
+                create_production_platform_write_app(self.settings(("http://localhost",)))
+            failed.assert_called_once()
+            self.assertNotIn("private", str(caught.exception))
+        self.assertEqual(runtime.dispose.call_count, 2)
+
+    def test_ai_provider_patch_dependency_fails_closed_only_in_write_mode(self):
+        from contextlib import ExitStack
+        from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
+        runtime = Mock(); runtime.is_ready.return_value = True
+        prefix = "plm_assistant.entrypoints.production_login."
+        with ExitStack() as stack:
+            for name, value in (
+                ("read_database_url", "postgresql+psycopg://localhost/test"),
+                ("create_database_runtime", runtime), ("_schema_current", True),
+                ("create_windows_secret_list_cursor_codec", SecretListCursorCodec(b"q" * 32)),
+                ("create_windows_project_member_cursor_codec", MemberListCursorCodec(b"m" * 32)),
+                ("create_windows_project_department_cursor_codec", DepartmentListCursorCodec(b"d" * 32)),
+            ):
+                stack.enter_context(patch(prefix + name, return_value=value))
+            stack.enter_context(patch(
+                "plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services",
+                return_value=Mock(guard=Mock()),
+            ))
+            stack.enter_context(patch(
+                "plm_assistant.entrypoints.windows_secret_write.create_windows_secret_write_service",
+                return_value=Mock(),
+            ))
+            failed = stack.enter_context(patch(
+                prefix + "AIProviderAppendService",
+                side_effect=RuntimeError("private synthetic patch dependency"),
+            ))
+            read_app = create_production_platform_app(self.settings(("http://localhost",)))
+            with TestClient(read_app, base_url="http://localhost") as client:
+                self.assertEqual(client.patch("/api/v1/admin/ai/providers/" + str(uuid.uuid4())).status_code, 405)
             self.assertEqual(failed.call_count, 0)
             with self.assertRaises(ProductionLoginStartupError) as caught:
                 create_production_platform_write_app(self.settings(("http://localhost",)))

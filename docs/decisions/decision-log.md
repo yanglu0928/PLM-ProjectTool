@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-637 — Provider PATCH 仅装入 Windows 显式写平台
+
+- Date/WBS：2026-10-02 / `AI-01-A03-P04-A02-P03`；输入冻结 Provider PATCH 与已验可选路由、`--platform-write` 组合。
+- Decision：仅在 `include_secret_write` 分支构造配置追加服务并挂入 PATCH；复用已在该分支使用的 Session、License Guard、PostgreSQL UoW、Secret 证明、幂等收据及 Audit。默认/登录模式保持 404，只读平台仅有同路径 GET，PATCH 返回 405。写依赖初始化失败则整体启动失败并释放运行时。
+- Reason/Impact/Rollback：保持写面显式开启，不把合成验证推定为正式信任源就绪。无 Schema、依赖、冻结 API 或权限变化；撤组合注入可回滚代码，已有配置版本、收据和审计保留。验证隔离 PostgreSQL/ASGI 双平台边界、权限、许可、重放及启动失败关闭。
+
 ## DEC-20261002-636 — Provider PATCH HTTP 保持冻结If-Match且幂等键可选
 
 - Date/WBS：2026-10-02 / `AI-01-A03-P04-A02-P02`；输入冻结 API-01 PATCH部分DTO/If-Match、API-03 PATCH控制S,L,C,M,A（未列I），内部P01要求事务收据键。
