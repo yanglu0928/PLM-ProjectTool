@@ -6911,3 +6911,12 @@
 - Reason：仅有版本存在或先前写入历史不能证明当前内容已被受信审查；强版本锁与同事务首次结果保留并发和历史响应语义。
 - Impact/Rollback：复用0061，不改变冻结 API/Schema/依赖；关闭内部入口停止新激活，已写历史保留、向前修复。
 - Verification：Win11 隔离PG18合成准入、未审版本零写/并发/重放/回滚/退役/撤权通过；后端2082运行/3跳过。正式信任/生产入口未验。
+
+# DEC-20261002-688：Prompt 激活 HTTP 采用空对象和最小首次结果
+
+- Date/WBS：2026-10-02 / `AI-03-A05-P04`；依据冻结 API-03 `AI_PROMPT_ACTIVATE_VERSION`、CR-AI-008。
+- Decision：建立仅显式注入的可选 Router，POST 只接收有界严格 JSON 空对象 `{}`，URL 携带 Template/Version，强 If-Match/Session/CSRF/Origin/幂等键为前置；200 仅返回 Template、Version、ACTIVE、首次 ETag，不返回 Prompt 正文或当前可变根。默认/生产组合不挂载。
+- Reason：冻结合同未定义额外激活参数，空对象避免未审选项；最小不可变结果允许旧 Key 精确重放，当前 trace 仍为本次请求。
+- Impact/Rollback：无 Schema/依赖/路径/状态码变动；不注入 Router 即404，可撤路由，历史激活结果保留。
+- Verification Plan：合同单测覆盖默认关闭、成功/重放、严格请求、权限/许可/冲突/准入错误映射与响应快照；隔离 PG18 实际 HTTP 链另验，不据此开启正式生产入口。
+- Verification Result：合同3项、Win11隔离PG18临时签名清单实际HTTP整链、后端2085运行/3跳过、开发wheel通过；生产仍不挂载。
