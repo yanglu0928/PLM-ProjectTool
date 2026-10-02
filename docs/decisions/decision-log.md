@@ -7108,3 +7108,11 @@
 - Reason：批准历史结果只用于幂等响应，不代表当前还可外发；锁定当前根可使Task创建与并发撤销有明确顺序，Purpose映射防止用其他逻辑操作的授权创建Task。
 - Impact/Rollback：新增内部Owner/仓储与错误契约，复用0067现有Task Snapshot，无新Schema/依赖/Breaking API；未挂公开入口，可停止组合，历史Task不删除。
 - Verification：定向14、Win11隔离PG18.6当前投影/Purpose/Source/过期/撤销/Project/Task七类原子链与重放、后端2125运行/3跳过PASS；wheel `ad6e4a017f425c8a58bf6fc1643add7bf2a70c87998869548ae9a360f5ce687c`。
+
+# DEC-20261003-712：Egress HTTP 仅显式注入并以双重版本条件授权
+
+- Date/WBS：2026-10-03 / `AI-04-A04-P07`；依据冻结 API-03 与 CR-AI-013。
+- Decision：四条 Egress 路径由一个可选 Router 显式注入，默认/当前生产组合保持404。Authorize必须同时提供强`If-Match: "v0"`和正文`expected_preview_fingerprint`：前者满足冻结资源版本前置，后者精确绑定不可变Preview内容；Revoke仅接受Authorization v0并返回v1。
+- Reason：Preview本身只追加且没有可变lock_version，不能丢弃冻结合同的M控制，也不能用普通整数ETag替代完整内容指纹；双重条件兼顾统一HTTP并发合同和授权精确性。
+- Impact/Rollback：无Schema/依赖/Breaking API变化；撤去可选Router注入即恢复404，既有Preview/Authorization历史不删除。未装入生产组合且不执行外发。
+- Verification：合同5项覆盖默认关闭、四路径、安全投影/严格输入/权限前置/错误映射；后端2130运行/3跳过，wheel `e83a9586fe28193ccd4ca201e5665525e6c534bad0ec4f1c9afd1973e6209bd9`。
