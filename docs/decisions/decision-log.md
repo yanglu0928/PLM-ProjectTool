@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261002-671 — Model 安全状态命令按操作分离幂等域
+
+- Date/WBS：2026-10-02 / `AI-02-A08-P02`；依据 CR-AI-004/005、Schema0058、现有 Provider 激活与通用收据模式。
+- Decision：仅内部 SUSPEND/RETIRE，分别使用 `V1_AI_MODEL_SUSPEND`/`V1_AI_MODEL_RETIRE` 收据域，锁定 Model 并核对强版本/允许前态；状态行、不可变结果、Audit 与收据同事务。重放必须验证原结果及 Audit 归属，保持原状态/ETag，不从当前 Model 行重建。
+- Reason：禁止跨操作 Key 互用和并发双写；终态退休不能被重放误读成当前许可。
+- Impact/Rollback：仅内部 AI Application/Repository，无 Schema/API/依赖/外发变化；未挂生产入口可撤，有历史时保留并向前修复。
+- Verification：Win11 隔离 PG18 真实管理员/CSRF/License/强版本/同 Key 双并发/跨操作域/历史重放/Audit 回滚与撤权通过；单元2项、后端2049运行/3跳过及开发wheel通过。
+
 ## DEC-20261002-670 — Model 状态结果只保存首次非 AVAILABLE 转移
 
 - Date/WBS：2026-10-02 / `AI-02-A08-P01`；依据 CR-AI-005、冻结 API-03、当前通用收据与 Provider 激活结果模式。
