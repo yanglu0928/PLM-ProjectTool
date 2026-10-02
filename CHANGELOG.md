@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-01-A03-P04-A02-P01 新增Provider内部受控部分配置更新，在PG行锁内合并，按原始变更集持久幂等并保留原始版本/ETag；旧完整追加入口兼容。兼容性：无Schema/依赖/公开API变化。升级：需已有0054，无新迁移。验证：Win11隔离PG18局部合并/历史重放/权限/License/Secret/版本/并发/回滚，旧完整追加回归，后端1928运行/3跳过；开发wheel SHA-256 `babaad45fc95aaf9f38cd49b659c4ed3473564be2b65e0d231974073914175d7`。已知问题：PATCH HTTP、正式信任/外发、质量、三平台/Gate/UAT/可用程序包及旧夹具回归未完成。
+
 - 2026-10-02：0.1.0.dev0/AI-01-A03-P04-A01 增加Provider内部配置追加的原始版本/强ETag结果及同Key稳定重放，旧UUID入口和历史配置收据保持兼容；尚不开放PATCH。兼容性：无Schema/依赖/公开API变化。升级：需已有0054，无新迁移。验证：Win11隔离PG18首次/重放/后续升版/状态和Secret变化/并发/权限/License/回滚，旧追加回归，后端1927运行/3跳过；开发wheel SHA-256 `9abf4944875a474b659a7d99a72126da6c3376e1eacbee2391ae87d7975ca73f`。已知问题：PATCH HTTP、正式信任/外发、质量、三平台/Gate/UAT/可用程序包及旧夹具回归未完成。
 
 - 2026-10-02：0.1.0.dev0/AI-01-A03-P03-A03 Provider 创建201 HTTP仅挂入Windows显式 `--platform-write`，读平台POST405、默认/登录POST404；缺写依赖整体失败关闭。兼容性：无 Schema/依赖/Breaking API。升级：需0054及目标账户正式数据库/License/Secret/游标钥信任源；撤组合代码可回滚，历史不删除。验证：Win11隔离PG18/ASGI真实Session/重放/权限/License/Audit与缺依赖合同，后端1926运行/3跳过；开发wheel SHA-256 `678c794080f69e4c422d4e1e5478b900c5df6af1ce3136976ae9c0151c9e9619`。已知问题：正式信任、PATCH/Test/激活/外发、质量、三平台/Gate/UAT/可用包及旧平台脚本夹具回归仍待。

@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-635 — Provider PATCH 部分字段在锁内合并且按原始变更集幂等
+
+- Date/WBS：2026-10-02 / `AI-01-A03-P04-A02-P01`；输入冻结 API-01 PATCH缺失字段不修改/If-Match及API-03 Provider PATCH，现有追加服务只接受完整配置。
+- Decision：新增内部受控部分更新命令，仅允许显示名、EndpointPolicyRef、SecretRef、地区、外发类别、能力声明的非空子集；Kind不可变。对原始规范化变更集、ProviderId和If-Match版本生成幂等指纹；授权/License后先预约收据，历史同Key重放直接返回原始不可变版本结果。新写入在同一事务锁定Provider，读取当前完整配置并合并、校验、证明Secret、追加版本/Audit/收据。旧完整追加入口保留。
+- Reason/Impact/Rollback：避免路由层预读导致并发丢失或同Key在后续当前态变化后产生不同指纹。无Schema/公开API/依赖变化；撤新入口可代码回退，已追加版本及收据保留。后续可选HTTP独立验证。
+
 ## DEC-20261002-634 — Provider PATCH 原始版本结果与既有收据兼容
 
 - Date/WBS：2026-10-02 / `AI-01-A03-P04-A01`；输入冻结 PATCH `200 config version + ETag`、API-01 同Key原结果、现有内部追加 UUID 与 `201` 版本创建收据。

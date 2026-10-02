@@ -66,6 +66,34 @@ class SqlAlchemyAIProviderAppendRepository:
             .execution_options(autoflush=False)
         ).scalar_one_or_none()
 
+    def current_configuration(self, transaction: object, *, provider_id: uuid.UUID) -> ProviderConfiguration | None:
+        if type(provider_id) is not uuid.UUID or provider_id.int == 0:
+            return None
+        row = _session(transaction).execute(
+            select(AIProviderConfigVersionRow).join(
+                AIProviderRow,
+                (AIProviderRow.ai_provider_id == AIProviderConfigVersionRow.ai_provider_id)
+                & (AIProviderRow.current_config_version_ref
+                   == AIProviderConfigVersionRow.provider_config_version_id),
+            ).where(AIProviderRow.ai_provider_id == provider_id)
+            .execution_options(autoflush=False)
+        ).scalar_one_or_none()
+        if row is None:
+            return None
+        capabilities = frozenset(item for enabled, item in (
+            (row.can_chat, ProviderCapability.CHAT),
+            (row.can_structured_output, ProviderCapability.STRUCTURED_OUTPUT),
+            (row.can_embedding, ProviderCapability.EMBEDDING),
+            (row.can_rerank, ProviderCapability.RERANK),
+        ) if enabled)
+        return ProviderConfiguration(
+            provider_id=provider_id, config_version=row.config_version_no,
+            kind=ProviderKind(row.provider_kind), display_name=row.display_name,
+            endpoint_policy_ref=row.endpoint_policy_ref, secret_ref=row.secret_ref,
+            data_region=row.data_region, egress_class=row.egress_class,
+            capabilities=capabilities,
+        )
+
     def append(self, transaction: object, *, configuration: ProviderConfiguration,
                config_id: uuid.UUID, actor_id: uuid.UUID,
                expected_lock_version: int) -> None:

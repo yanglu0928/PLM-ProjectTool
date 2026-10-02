@@ -7,6 +7,7 @@ from dataclasses import replace
 from plm_assistant.modules.ai.application.append_provider_config import (
     AIProviderAppendError, AIProviderAppendService, AppendAIProviderConfig,
     AppendedAIProviderConfigResult,
+    PatchAIProviderConfig,
 )
 from plm_assistant.modules.ai.domain.provider_configuration import ProviderCapability, ProviderKind
 
@@ -50,6 +51,17 @@ class AIProviderAppendValidationTests(unittest.TestCase):
         with self.assertRaises(AIProviderAppendError) as caught:
             self.service.append_result(replace(self.command, expected_lock_version=True))
         self.assertEqual(caught.exception.code, "VALIDATION_FAILED")
+
+    def test_patch_rejects_uncontrolled_or_empty_changes_before_io(self) -> None:
+        base = PatchAIProviderConfig(
+            b"s" * 32, b"c" * 32, uuid.uuid4(), uuid.uuid4(), 0,
+            {"display_name": "Synthetic Provider v2"}, str(uuid.uuid4()),
+        )
+        for changes in ({}, {"kind": "CUSTOM"}, {"secret_ref": "raw-key"},
+                        {"capabilities": frozenset({"CHAT"})}, {"display_name": None}):
+            with self.subTest(changes=changes), self.assertRaises(AIProviderAppendError) as caught:
+                self.service.patch_result(replace(base, changes=changes))
+            self.assertEqual(caught.exception.code, "VALIDATION_FAILED")
 
 
 if __name__ == "__main__":
