@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A06-P03-P01-A03 新增完整无正文Execution Grant Issuer与AI PostgreSQL投影：同一短事务组合Jobs当前Claim、Task/Input、当前Prompt、Schema/参数、CHAT Model、Egress快照和当前授权，并补齐最小载荷策略/最大记录数；License边界双检，AI侧不直读裸Job。兼容性/升级/回滚：无Schema、公开API、依赖、生产装配或外发；撤未装配组件即可，历史不变。验证：Win11/PG18.6有效链签发，Prompt活动版本、模型/批准payload快照漂移和撤销拒绝，Invocation为0；定向15、后端2167运行/3跳过PASS；wheel SHA-256 `87690d1d519bfd23bc0b8ca0e02881f989e67d07d66227a623c3bdc00215b16d`。首次两次脚本分别被授权历史完整性和当前Prompt守卫拒绝，修正夹具后新库重跑。已知问题：内容Owner/确定性Envelope、Preview、Invocation、Adapter/发布及Gate3/UAT/可用包待完成。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P03-P01-A02 新增Jobs PostgreSQL当前AI Task Claim Owner：复用唯一Lease锁证明RUNNING Job、ACTIVE Lease/Attempt、worker/fencing，并绑定严格三字段payload、原actor/Project/Trace、尝试上限与唯一原始Outbox。兼容性/升级/回滚：无Schema/API/依赖/生产装配，撤Repository即可。验证：Win11/PG18.6真实claim及错误worker/token、额外payload、Outbox漂移拒绝，定向8、后端2164运行/3跳过PASS；wheel SHA-256 `fd96d52395a7e27fd228d90fcc197a3eed982704cbeb1b5472e0afc1caab46eb`。首轮验证脚本旧工厂参数已修正并从新库重跑。已知问题：完整Grant PG投影、正文Envelope、Invocation/Adapter/发布待实现；无外发。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P03-P01-A01 新增Jobs-owned AI Task当前Claim内部合同，固定Task/Project/原actor/Trace/Authorization/Input摘要与attempt/fencing/max-attempts；只在调用方短事务中复核，异常安全收敛，摘要不入repr。兼容性/升级/回滚：无Schema/API/依赖/生产装配，撤模块即可。验证：定向7、后端2164运行/3跳过PASS；开发wheel SHA-256 `ae993dc1a638c20c488df2d86e3eea4c04bc7417b58508e3c75f42778eab5e52`。已知问题：PostgreSQL Claim/Outbox绑定、完整Grant投影和正文Envelope待实现；无外发。

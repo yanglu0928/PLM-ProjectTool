@@ -99,6 +99,7 @@ class AITaskExecutionGrant:
     data_region: str
     allowed_data_categories: tuple[str, ...]
     approved_payload_fingerprint: bytes = field(repr=False)
+    minimal_payload_policy_ref: str
     max_record_count: int
     max_payload_bytes: int
     max_input_tokens: int
@@ -115,6 +116,7 @@ class AITaskExecutionGrant:
         refs = (
             self.prompt_policy_ref, self.provider_policy_ref,
             self.output_schema_ref, self.context_policy_ref, self.purpose_ref,
+            self.minimal_payload_policy_ref,
         )
         hashes = (self.system_template_hash, self.user_template_hash)
         if (not all(_id(value) for value in identifiers)
@@ -206,6 +208,7 @@ def execution_grant_fingerprint(grant: AITaskExecutionGrant) -> bytes:
         "data_region": grant.data_region,
         "allowed_data_categories": list(grant.allowed_data_categories),
         "approved_payload_fingerprint": grant.approved_payload_fingerprint.hex(),
+        "minimal_payload_policy_ref": grant.minimal_payload_policy_ref,
         "max_record_count": grant.max_record_count,
         "max_payload_bytes": grant.max_payload_bytes,
         "max_input_tokens": grant.max_input_tokens,

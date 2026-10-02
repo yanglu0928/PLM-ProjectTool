@@ -110,6 +110,8 @@ class EgressAuthorizationOwner:
             current.model_id, current.data_region, current.allowed_data_categories,
             authorization_fingerprint(current), current.payload_fingerprint,
             current.source_refs_fingerprint, current.approved_by, role,
-            current.approved_at, current.valid_until, current.max_payload_bytes,
+            current.approved_at, current.valid_until,
+            current.minimal_payload_policy_ref, current.max_record_count,
+            current.max_payload_bytes,
             current.max_input_tokens, current.max_retry_attempts, current.state,
         )

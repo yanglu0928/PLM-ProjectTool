@@ -33,6 +33,8 @@ P03-P01-A01已完成Jobs-owned当前Claim内部合同，固定原actor/Project/T
 
 P03-P01-A02已实现Jobs PostgreSQL Owner：复用当前Lease锁，证明RUNNING Job、ACTIVE Lease、未完成Attempt、worker/fencing、严格AI payload和唯一原始Outbox。Win11/PG18.6正负链、定向8、后端2164运行/3跳过及wheel通过。首轮验证脚本旧工厂参数已修正并从新库重跑。A03继续组合AI-owned Task/Input/Prompt/Model/Egress元数据；本项仍无正文/Invocation/外发。
 
+P03-P01-A03已实现完整无正文Grant投影：同一短事务先取Jobs-owned Claim，再锁定AI Task并核顺序InputRef、当前Prompt、Schema/参数、AVAILABLE CHAT Model和不可变Egress快照，最后由Egress Owner重验当前授权/路由/上限；AI侧不直读裸Job。P02内部Grant补齐最小载荷策略和最大记录数，由当前授权投影提供且受Task快照中的完整授权摘要约束。Win11/PG18.6有效链签发，Prompt活动版本漂移、模型/批准payload快照漂移及撤销拒绝，定向15、后端2167运行/3跳过、wheel通过；无Invocation/外发。验证夹具两次先后被授权历史完整性与Task当前Prompt守卫正确拒绝，均修正夹具后从新库重跑。P03-P02继续内容Owner和确定性Envelope。
+
 ## 影响、迁移与回滚
 
 该变更补充冻结实现顺序，不修改原冻结提交。P01无代码、Schema、依赖或公开API变化。后续若需新增数据库对象或请求字段，必须在相应切片先给出ORM/Migration、空库/有数据up/down、兼容与API增量证据。已存在的Egress Preview/Authorization和Task历史保留；不能证明服务端载荷计划的旧记录一律不可执行，不猜测回填。

@@ -120,7 +120,8 @@ def main() -> None:
                 auth_ref, project, "gap.analysis.v1", provider, provider_config, model,
                 "cn-beijing", ("TECHNICAL_DOCUMENT",), b"a" * 32, b"p" * 32,
                 input_refs_fingerprint(resolved), actor, "PROJECT_MANAGER",
-                now - timedelta(minutes=1), now + timedelta(hours=1), 65536, 4096, 3,
+                now - timedelta(minutes=1), now + timedelta(hours=1),
+                "document-minimal.v1", 1, 65536, 4096, 3,
                 "AUTHORIZED",
             )
             command_value = CreateAITask(

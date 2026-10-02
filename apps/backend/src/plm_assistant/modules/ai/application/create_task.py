@@ -83,6 +83,8 @@ class AuthorizedEgressSnapshot:
     approved_role: str
     approved_at: datetime
     valid_until: datetime
+    minimal_payload_policy_ref: str
+    max_record_count: int
     max_payload_bytes: int
     max_input_tokens: int
     max_retry_attempts: int
@@ -327,6 +329,8 @@ class AITaskCreateService:
                 or any(type(item) is not str or not 1 <= len(item) <= 64
                        or item != item.strip() for item in snapshot.allowed_data_categories)
                 or type(snapshot.purpose_ref) is not str or _REF.fullmatch(snapshot.purpose_ref) is None
+                or type(snapshot.minimal_payload_policy_ref) is not str
+                or _REF.fullmatch(snapshot.minimal_payload_policy_ref) is None
                 or type(snapshot.data_region) is not str
                 or not re.fullmatch(r"[a-z][a-z0-9-]{0,63}", snapshot.data_region)
                 or not isinstance(snapshot.approved_at, datetime)
@@ -335,6 +339,8 @@ class AITaskCreateService:
                 or snapshot.valid_until.tzinfo is None
                 or snapshot.approved_at.astimezone(timezone.utc) > now
                 or now >= snapshot.valid_until.astimezone(timezone.utc)
+                or type(snapshot.max_record_count) is not int
+                or not 1 <= snapshot.max_record_count <= 1_000_000_000
                 or type(snapshot.max_payload_bytes) is not int
                 or not 1 <= snapshot.max_payload_bytes <= 1_073_741_824
                 or type(snapshot.max_input_tokens) is not int

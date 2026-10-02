@@ -183,7 +183,7 @@ def main():
                 model, "cn-beijing", ("DOCUMENT_TEXT",), b"a" * 32, b"p" * 32,
                 input_refs_fingerprint(resolved), manager, "PROJECT_MANAGER",
                 now - timedelta(minutes=1), now + timedelta(minutes=30),
-                65_536, 4_096, 2, "AUTHORIZED",
+                "document-minimal.v1", 1, 65_536, 4_096, 2, "AUTHORIZED",
             )
             policy = AITaskSubmissionPolicy(
                 "gap-analysis.v1", 7, "GAP_ANALYSIS", prompt,

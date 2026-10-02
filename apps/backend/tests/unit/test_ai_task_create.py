@@ -111,7 +111,8 @@ class AITaskCreateTests(unittest.TestCase):
             uuid.uuid4(), uuid.uuid4(), uuid.uuid4(), "cn-beijing",
             ("TECHNICAL_DOCUMENT",), b"a" * 32, b"p" * 32, source,
             uuid.uuid4(), "PROJECT_MANAGER", self.now - timedelta(minutes=1),
-            self.now + timedelta(hours=1), 65536, 4096, 3, "AUTHORIZED",
+            self.now + timedelta(hours=1), "document-minimal.v1", 1,
+            65536, 4096, 3, "AUTHORIZED",
         )
         self.created = CreatedAITask(uuid.uuid4(), uuid.uuid4())
 
@@ -164,6 +165,7 @@ class AITaskCreateTests(unittest.TestCase):
             self.snapshot.allowed_data_categories, self.snapshot.authorization_fingerprint,
             self.snapshot.preview_payload_fingerprint, b"x" * 32, self.snapshot.approved_by,
             self.snapshot.approved_role, self.snapshot.approved_at, self.snapshot.valid_until,
+            self.snapshot.minimal_payload_policy_ref, self.snapshot.max_record_count,
             self.snapshot.max_payload_bytes, self.snapshot.max_input_tokens,
             self.snapshot.max_retry_attempts, self.snapshot.authorization_state,
         )
@@ -182,7 +184,9 @@ class AITaskCreateTests(unittest.TestCase):
             self.snapshot.allowed_data_categories, self.snapshot.authorization_fingerprint,
             self.snapshot.preview_payload_fingerprint, self.snapshot.source_refs_fingerprint,
             self.snapshot.approved_by, self.snapshot.approved_role,
-            self.now - timedelta(hours=2), self.now, self.snapshot.max_payload_bytes,
+            self.now - timedelta(hours=2), self.now,
+            self.snapshot.minimal_payload_policy_ref, self.snapshot.max_record_count,
+            self.snapshot.max_payload_bytes,
             self.snapshot.max_input_tokens, self.snapshot.max_retry_attempts, "AUTHORIZED",
         )
         with self.assertRaises(AITaskCreateError) as raised:

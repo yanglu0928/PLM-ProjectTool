@@ -61,7 +61,8 @@ class AITaskExecutionPreflightTests(unittest.TestCase):
             self.provider_id, self.config_id, self.model_id, "cn-beijing",
             ("DOCUMENT_TEXT",), b"a" * 32, b"v" * 32, b"i" * 32,
             uuid.uuid4(), "PROJECT_MANAGER", self.now - timedelta(minutes=1),
-            self.valid_until, 1000, 100, 2, "AUTHORIZED",
+            self.valid_until, "document-minimal.v1", 1, 1000, 100, 2,
+            "AUTHORIZED",
         )
 
     def service(self, snapshot, current=None, *, fail=False):
@@ -96,7 +97,8 @@ class AITaskExecutionPreflightTests(unittest.TestCase):
                 b"x" * 32, self.current.preview_payload_fingerprint,
                 self.current.source_refs_fingerprint, self.current.approved_by,
                 self.current.approved_role, self.current.approved_at,
-                self.current.valid_until, self.current.max_payload_bytes,
+                self.current.valid_until, self.current.minimal_payload_policy_ref,
+                self.current.max_record_count, self.current.max_payload_bytes,
                 self.current.max_input_tokens, self.current.max_retry_attempts,
                 self.current.authorization_state,
             )),

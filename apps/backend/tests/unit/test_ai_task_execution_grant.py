@@ -27,7 +27,8 @@ class AITaskExecutionGrantTests(unittest.TestCase):
             b"t" * 32, uuid.uuid4(), uuid.uuid4(), b"a" * 32,
             "project-gap-analysis.v1", uuid.uuid4(), uuid.uuid4(), uuid.uuid4(),
             "deepseek-chat", "PROVIDER_MANAGED", "cn-beijing",
-            ("DOCUMENT_TEXT",), b"p" * 32, 1, 65536, 4096, 3,
+            ("DOCUMENT_TEXT",), b"p" * 32, "document-minimal.v1",
+            1, 65536, 4096, 3,
             self.now + timedelta(minutes=20),
         )
 

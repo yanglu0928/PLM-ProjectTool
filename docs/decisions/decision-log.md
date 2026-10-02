@@ -7212,3 +7212,11 @@
 - Reason：分别查询Job、Lease、Attempt或不核Outbox会产生代次漂移、伪造来源及任务/授权错配；复用同一事务当前锁保持Jobs为唯一Owner。
 - Impact/Rollback：新增内部Repository和验证脚本，无Schema/API/依赖/生产装配；撤Repository保留历史。A03再组合完整Execution Grant。
 - Verification：Win11/PG18.6真实claim及错误worker/token、额外payload、Outbox漂移拒绝PASS；定向8、后端2164运行/3跳过，wheel `fd96d52395a7e27fd228d90fcc197a3eed982704cbeb1b5472e0afc1caab46eb`。首轮仅验证脚本数据库工厂旧参数，修正后新库重跑。
+
+# DEC-20261003-725：Execution Grant由Jobs Claim与AI Owner投影在同一短事务合成
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P03-P01-A03`；依据 CR-AI-015、DEC-722～724。
+- Decision：AI执行Grant必须先通过Jobs-owned当前Claim，再由AI Repository锁定Task并投影顺序InputRef、当前ACTIVE Prompt/哈希、Schema/参数、AVAILABLE CHAT Model及Egress快照，最后调用Egress Owner重验当前授权和路由。AI Repository禁止把裸Job查询当成授权。Grant显式增加最小载荷策略和最大记录数，取自当前Authorization且由快照中的完整授权摘要绑定；License在事务内与边界后双检，发送前还须再检。
+- Reason：单独的Task快照不能证明Worker仍持有当前attempt，单独的Job claim也不能证明Prompt/Model/Authorization未漂移；最大记录数和最小载荷策略若不进入Grant，后续Envelope构建器无法在无隐式配置的条件下确定边界。
+- Impact/Rollback：仅内部合同、Issuer和Repository；无Schema、公开API、依赖、生产Worker或外发变化。撤未装配组件即可回退，已有Task/Job/授权历史不改。
+- Verification：Win11/PG18.6完整链仅有效记录签发Grant；Prompt活动版本漂移、模型/批准payload快照漂移、撤销均拒绝，Invocation为0。定向15、后端2167运行/3跳过；wheel `87690d1d519bfd23bc0b8ca0e02881f989e67d07d66227a623c3bdc00215b16d`。两次夹具失败分别来自授权历史和当前Prompt数据库守卫，修正夹具后全新库PASS。

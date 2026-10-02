@@ -150,7 +150,7 @@ def main() -> None:
                 provider_config, model, "cn-beijing", ("TECHNICAL_DOCUMENT",),
                 b"a" * 32, b"p" * 32, input_refs_fingerprint(resolved), actor,
                 "PROJECT_MANAGER", now - timedelta(minutes=1), now + timedelta(hours=1),
-                65_536, 4_096, 3, "AUTHORIZED",
+                "document-minimal.v1", 1, 65_536, 4_096, 3, "AUTHORIZED",
             )
             fields = (
                 AITaskParameterField("language", "STRING", True, 16,
