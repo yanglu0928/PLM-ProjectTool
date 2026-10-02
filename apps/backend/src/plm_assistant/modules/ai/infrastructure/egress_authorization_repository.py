@@ -31,8 +31,8 @@ def _categories(value: object) -> tuple[str, ...]:
     return tuple(value)
 
 
-def _authorization(row: AIEgressAuthorizationRow, *, state: str | None = None,
-                   lock_version: int | None = None) -> EgressAuthorizationView:
+def egress_authorization_view(row: AIEgressAuthorizationRow, *, state: str | None = None,
+                              lock_version: int | None = None) -> EgressAuthorizationView:
     identifiers = (
         row.authorization_id, row.egress_preview_id, row.project_id,
         row.ai_provider_id, row.provider_config_version_id,
@@ -119,7 +119,7 @@ class SqlAlchemyEgressAuthorizationRepository:
                 AIEgressAuthorizationRow.authorization_id == request.authorization_id,
             ).execution_options(autoflush=False)
         ).scalar_one()
-        return _authorization(row)
+        return egress_authorization_view(row)
 
     def save_authorize_result(self, transaction: object, *, result_id: uuid.UUID,
                               authorization: EgressAuthorizationView,
@@ -159,7 +159,9 @@ class SqlAlchemyEgressAuthorizationRepository:
                 or result.actor_id != root.approved_by
                 or result.approved_role != root.approved_role):
             raise RuntimeError("invalid Egress authorize result history")
-        authorization = _authorization(root, state="AUTHORIZED", lock_version=0)
+        authorization = egress_authorization_view(
+            root, state="AUTHORIZED", lock_version=0,
+        )
         return EgressAuthorizeResult(
             result.result_id, authorization, result.audit_event_id, result.trace_id,
         )
@@ -173,7 +175,7 @@ class SqlAlchemyEgressAuthorizationRepository:
                 AIEgressAuthorizationRow.project_id == project_id,
             ).with_for_update().execution_options(autoflush=False)
         ).scalar_one_or_none()
-        return None if row is None else _authorization(row)
+        return None if row is None else egress_authorization_view(row)
 
     def revoke(self, transaction: object, *, authorization: EgressAuthorizationView,
                actor_id: uuid.UUID, revoked_role: str, reason_code: str,

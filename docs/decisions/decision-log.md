@@ -7100,3 +7100,11 @@
 - Reason：合法撤销会使当前根变为 `REVOKED@1`；如果原201重放读当前根，会改写已完成命令的历史响应。新Task/Invocation仍必须读当前根，不能因历史重放结果继续外发。
 - Impact/Rollback：复用0069独立结果表，无新Schema、依赖或Breaking API；内部服务未挂公开入口，可停止后续组合，历史保留。
 - Verification：定向17、Win11隔离PG18.6真实授权/策略拒绝/回滚/撤销/撤销后首次重放/跨项目隔离、后端2121运行/3跳过PASS；wheel `2b319bb6b3275317bd489aede16ed2e07041c6fdd41a2b42db4ed1e551afc1cd`。
+
+# DEC-20261003-711：AITask 仅由锁定的当前 Authorization Owner 生成消费快照
+
+- Date/WBS：2026-10-03 / `AI-04-A04-P06`；依据 CR-AI-010～013、DEC-703/705/710。
+- Decision：Egress Owner 必须在AITask创建事务内锁定权威Authorization Root，同时验证`AUTHORIZED@0`、同Project、AI_TASK operation、有效期、SourceRef集合指纹、受信Task→Purpose映射以及当前ACTIVE Provider/当前Config/AVAILABLE Model。完整Authorization事实计算规范化指纹，再投影为Task不可变快照；消费端不接受客户端自报快照。
+- Reason：批准历史结果只用于幂等响应，不代表当前还可外发；锁定当前根可使Task创建与并发撤销有明确顺序，Purpose映射防止用其他逻辑操作的授权创建Task。
+- Impact/Rollback：新增内部Owner/仓储与错误契约，复用0067现有Task Snapshot，无新Schema/依赖/Breaking API；未挂公开入口，可停止组合，历史Task不删除。
+- Verification：定向14、Win11隔离PG18.6当前投影/Purpose/Source/过期/撤销/Project/Task七类原子链与重放、后端2125运行/3跳过PASS；wheel `ad6e4a017f425c8a58bf6fc1643add7bf2a70c87998869548ae9a360f5ce687c`。

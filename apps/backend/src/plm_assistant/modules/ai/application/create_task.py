@@ -41,6 +41,12 @@ class AITaskCreateError(RuntimeError):
         super().__init__(code)
 
 
+class EgressAuthorizationOwnerError(RuntimeError):
+    def __init__(self, code: str = "AI_EGRESS_AUTHORIZATION_INVALID") -> None:
+        self.code = code
+        super().__init__(code)
+
+
 @dataclass(frozen=True, slots=True)
 class CreateAITask:
     session_token: bytes = field(repr=False)
@@ -229,6 +235,8 @@ class AITaskCreateService:
         except ProjectAuthorizationError as exc:
             raise AITaskCreateError(exc.code) from None
         except AIInputResolutionError as exc:
+            raise AITaskCreateError(exc.code) from None
+        except EgressAuthorizationOwnerError as exc:
             raise AITaskCreateError(exc.code) from None
         except IdempotencyError as exc:
             raise AITaskCreateError(exc.code) from None
