@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-643 — Provider Test 202 HTTP 保持显式注入且无请求正文
+
+- Date/WBS：2026-10-02 / `AI-01-A05-P03-A03`；输入冻结 API-03 与内部 A02 原子提交。
+- Decision：新增可选 `POST /api/v1/admin/ai/providers/{provider_id}:test`，执行可信 Origin、Session/CSRF、必填 Idempotency-Key、强 If-Match 和空正文检查，委托 A02 返回 202 `job_id`；只将路由加入显式应用参数，不挂入 Windows 平台组合，直到 Worker/结果/信任与外发安全完成。错误返回公共安全码，不返回端点/Secret/探针细节。
+- Reason/Impact/Rollback：符合冻结异步合同，阻止意外公开尚不可执行的 Job；无 Schema/Breaking API/依赖变化。撤可选注入可回退，既有 Job/审计/收据历史保留。
+
 ## DEC-20261002-642 — Provider Test 提交以原始命令收据固定 JobRef
 
 - Date/WBS：2026-10-02 / `AI-01-A05-P03-A02`；输入冻结 202 JobRef、CR-AI-002、P03-A01 队列。
