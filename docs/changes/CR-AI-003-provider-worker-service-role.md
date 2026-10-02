@@ -4,7 +4,7 @@
 
 ## 冲突与证据
 
-当前 `SERVICE_NAMES`、Windows 服务计划/安装/只读盘点/配置对账、运行进程标记仅承认 API、Audit Worker、Parser Worker。Provider Test 已具备专属 Job 领取、Secret 审计、固定网络探针、维护准入循环，但没有可被 SCM 独立停止和盘点的进程角色。若将探针塞入 Audit/Parser Worker，将混合当前账户 Vault 主钥与对外网络权限，且维护停写证据无法区分哪个 Worker 在执行外发；若只把第四个名称加进 `SERVICE_NAMES`，计划会生成尚不能运行的服务命令。
+A02 前 `SERVICE_NAMES`、Windows 服务计划/安装/只读盘点/配置对账、运行进程标记仅承认 API、Audit Worker、Parser Worker。Provider Test 已具备专属 Job 领取、Secret 审计、固定网络探针、维护准入循环，但当时没有可被 SCM 独立停止和盘点的进程角色。若将探针塞入 Audit/Parser Worker，将混合当前账户 Vault 主钥与对外网络权限，且维护停写证据无法区分哪个 Worker 在执行外发；若只把第四个名称加进 `SERVICE_NAMES`，计划会生成尚不能运行的服务命令。
 
 ## 方案、差异与决定
 
@@ -30,3 +30,5 @@
 2026-10-02 A01 进度：Windows 未发布工厂从既有受控单次 Worker 取得同一数据库的维护准入并生成固定格式的唯一 WorkerRef；缺准入关闭并释放所有权，构建不领取 Job。Win11 定向9项、新隔离 PG18 共享锁覆盖真实单次 Job/Secret/本机 TLS/结果及后端2025运行/3跳过、wheel通过。尚未新增 SCM 名称、计划或安装入口；A02/A03 保持开放。
 
 2026-10-02 A02 进度：按 DEC-663 增加独立固定服务名、进程标记、SCM 宿主 STOP 排空、只读盘点和配置对账；合法受控探针策略不存在时计划仍仅列原三角色，AI 安装和对账拒绝。未修改原三角色命令。Windows11 定向模拟与后端全量2032项/3跳过、开发 wheel `daf5c7ceae5e3925d4986bf0ef0e9440732e6e2576aa8599975373c67fd57aee` 通过；只读本机盘点四服务均未安装。无 Schema/API/依赖变化、无需迁移。尚未进行真实 SCM 写入、目标账户/ACL/Vault/License/信任、服务重启/失联/长 I/O 静止或厂商外发；A03、正式路由、Gate 3 仍开放。回滚如未投产可撤第四角色/入口；已投产则须先停止受理并对账 Job/Audit，不自动删除服务或历史。
+
+2026-10-02 A03 前置审查：当前 Windows11 会话为 Medium Integrity，Administrators SID 标记为 deny-only，不能据此执行受控 SCM 写入。仓库可见配置只有 `bootstrap.example.yaml`；没有已确认的独立目标账户受保护 Bootstrap/Vault/License/ACL/CA 证据。原生只读盘点四服务均未安装。故真实安装/启动/停止、目标账户 PID/标记及长 I/O 静止均标记 `PRECONDITION_BLOCKED / NOT_SCM_VALIDATED`，不尝试提升权限或以开发账户代替目标账户，也不触发厂商出站。材料和受控管理员会话具备后重新执行 A03；其间转向不依赖 A03 的工作项。

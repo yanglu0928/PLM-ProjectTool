@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A03-P04-P02-A03-P03-A03 Windows11 真实 SCM 验收前置审查记录为 `PRECONDITION_BLOCKED`，未安装/启动服务或外发。兼容性：无代码、Schema、API、依赖变化。升级/回滚：无需操作；目标账户材料及受控管理员会话就绪后重做实机验收。验证：当前 Medium Integrity、管理员 deny-only，四服务原生只读盘点均未安装。已知问题：目标账户 Vault/License/ACL/CA、真实服务启停/静止、Server2025/Debian、Gate/UAT/可用包仍待。
+
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A03-P04-P02-A03-P03-A02 依据 CR-AI-003 增加独立 Windows AI Provider Worker 固定服务角色、进程标记、宿主 STOP 排空与条件性计划/安装/盘点/对账；无受控策略时保留原三角色命令并拒绝 AI 安装。兼容性：无 Schema、公开 API 或新依赖，旧部署不自动增加服务。升级：目标账户材料/受控策略齐备后方可单独安装第四服务；回滚前若已投产须先停新任务并对账 Job/Audit，不能自动删除。验证：Win11 定向模拟、后端2032运行/3跳过、只读本机盘点四服务未安装、开发 wheel SHA-256 `daf5c7ceae5e3925d4986bf0ef0e9440732e6e2576aa8599975373c67fd57aee`。已知问题：真实 SCM/目标账户/长 I/O 静止、正式外发、Server2025/Debian、Gate/UAT/可用包未验。
 
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A03-P04-P02-A03-P03-A01 依据 CR-AI-003 增加未发布的 Windows Provider 探针维护准入循环工厂，复用当前账户/同策略单次 Worker，缺准入释放数据库，不在构建时领取。兼容性：无 SCM 名称、Schema/API/依赖变化。升级：无需迁移，撤未挂载工厂即可回退，历史 Job/Audit 保留。验证：Win11 定向9、新隔离 PG18 共享锁下真实合成 Job/TLS/审计、后端2025运行/3跳过，开发 wheel SHA-256 `9a19bb3fc4bbf49ddcfa5ba82863b88f6274de99f5b0d4689e055ab13a73c648`。已知问题：第四服务角色/安装/目标账户、正式外发、Gate/UAT/可用包未验。
