@@ -7002,3 +7002,12 @@
 - Impact/Rollback：0063 仅新增表，无已有列/API/依赖改变；空输入表可物理降级，已有 Task/输入历史拒绝降级并向前修复或受控备份恢复。P02 必须在 P01 之上补全冻结模型，不能据 P01 关闭 AI-04。
 - Verification Plan：Win11隔离PG18空库及已有业务历史升级、drift、Scope/Project FK、输入引用同项目/不可变/序号约束、空表 down/re-up 与非空拒降；后端回归及开发wheel。正式账户、AI外发和Gate3另验。
 - Verification Result：0063 ORM/Migration 已实施；Win11隔离PG18上述空/有数据与负例均 PASS，首轮全量回归因旧ORM/迁移头清单失败，更新后2100运行/3跳过PASS，开发wheel通过。Invocation/Context/外发快照仍未实现，正式环境与Gate3未验。
+
+# DEC-20261002-699：每次 Invocation 固化外发授权与运行身份，不复制秘密或正文
+
+- Date/WBS：2026-10-02 / `AI-04-A02-P02`；依据冻结 DM-04、SC-01/02、API-03 与 DEC-698。
+- Decision：0064 为每次 AI Invocation 保存独立 Attempt、Provider/Config/Model/PromptVersion、输入/请求/响应与 Context 指纹、结构化输出验证状态和逐次外发授权快照；授权快照显式记录 Provider、区域、允许数据类别、审批人、授权时间窗与指纹，但只引用 SecretRecord 间接所在的 ProviderConfig，不复制 SecretRef、密钥、Prompt/Response 正文。无外发仅可显式记为 `NOT_APPLICABLE`，不得据此引入本地大模型。AITask 的当前 Invocation 采用同 Task 复合外键。
+- Reason：冻结设计要求 Attempt 可追溯、重试不覆盖、外发逐次授权和敏感正文不落运行表；仅存可校验身份/指纹及受控载荷引用可满足审计而不扩大秘密面。
+- Impact/Rollback：增量 Schema 0064，不改冻结 API、依赖或业务路由；新历史表非空时拒绝物理降级，使用向前修复或受控备份恢复。Provider/Prompt 退役仅阻止新 Invocation，历史引用仍保留。
+- Verification Plan：Win11 隔离 PostgreSQL 18 验证空库与既有0063数据升级、Scope/Project与同Task引用、Provider/Config/Model/ACTIVE Prompt 准入、授权时间窗/类别、Attempt状态机与终态不可变、Context不可变、无正文列、空表回退/再升级、非空拒降、Alembic drift、后端回归和开发 wheel。
+- Verification Result：Schema0064/ORM 已实施；Win11 隔离PG18上述升降、既有数据、drift与负例全部 PASS。首轮函数变量名与列名歧义，修正后完整重跑 PASS。首轮全量误用数据库最小环境导致12项缺 `pydantic-settings` 导入失败；改用完整Python3.13验证环境后2100运行/3跳过 PASS。开发wheel包含0064与ORM，SHA-256 `f6e46044844a1ad9fb2dbc99d429cca607a4185d6d544673edbbbb8a47295d3e`。无真实外发、API或生产迁移。
