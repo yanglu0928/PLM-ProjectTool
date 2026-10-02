@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-650 — Provider Test 先接单次受控 Worker，不挂生产循环
+
+- Date/WBS：2026-10-02 / `AI-01-A05-P04-A05`；输入 CR-AI-002、P04-A01～A04 的领取/预检/探针/发布。现有这些组件彼此独立，没有一条完整的 Job 到结果链。
+- Decision：新增纯 Application 单次 `run_once`：只领取一个 AI Provider Test Job，按 claim 的 JobId/fencing/worker/trace 运行固定探针，校验返回观察值与 claim 一致，再调用成功原子发布；受限异常或发布冲突交给失败/重试发布。无 Job 返回 IDLE，不循环、不注入厂商 Key/端点、不挂 Windows 生产组合。验证使用隔离 PG18、真实 Secret 只读 Store 与本机临时 CA TLS，测试专用解密器/端点覆盖只留 validation。
+- Reason/Impact/Rollback：只验证零到一个 Job 的状态转换，避免默认应用或未获外发授权的生产 Worker 隐式启动。无 Schema/API/依赖变化；撤单次 Worker 内部入口即可回退，已形成的 Job/结果/Audit 历史保留。真实厂商 Key/数据外发与进程守护、部署装配另行按 P05/Release 验收。
+
 ## DEC-20261002-649 — Provider 探针失败按安全码有限重试，终态才写不可变结果
 
 - Date/WBS：2026-10-02 / `AI-01-A05-P04-A04-P02`；输入 CR-AI-002、DEC-20261002-648、Job 最多 3 次与结果表 `job_id` 唯一约束。
