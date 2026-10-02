@@ -6936,3 +6936,11 @@
 - Reason：首次200可由收据UUID独立重放，历史版本仍可追溯；SQL CHECK 必须显式处理 NULL 三值逻辑，不能把 `>0` 的 UNKNOWN 当拒绝。
 - Impact/Rollback：AI ORM/Alembic增量，无API/依赖变化；有历史时向前修复或受控备份恢复。
 - Verification：Win11隔离PG18空/有历史升降、drift=0、FK/形态/历史保护/非空拒降；后端2085运行/3跳过、开发wheel通过。
+
+# DEC-20261002-691：退役保留活动指针，仅状态阻断未来调用
+
+- Date/WBS：2026-10-02 / `AI-03-A06-P03`；依据 CR-AI-009、冻结 PromptTemplate 状态。
+- Decision：退役不清除历史 `active_version_no`，只将根状态设 RETIRED、锁版本加一并写不可变首次结果；新退役拒绝，旧Key可在当前身份/License有效时重放。AI Invocation 必须另按根状态拒绝，不以指针存在视作 ACTIVE。
+- Reason：保留最后活动版本的追溯引用，同时避免重放从当前根推断原响应。
+- Impact/Rollback：无新Schema/API/依赖；内部服务未装生产，已有退役历史不可删除，向前修复。
+- Verification：Win11隔离PG18 DRAFT/ACTIVE、并发/重放/回滚/撤权 PASS；单元2、后端2087运行/3跳过，开发wheel通过。Invocation仍待独立验收。
