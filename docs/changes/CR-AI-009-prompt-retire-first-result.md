@@ -1,6 +1,6 @@
 # CR-AI-009：PromptTemplate 退役首次响应快照
 
-日期：2026-10-02；状态：依 V1.1 持续授权登记，设计已定、尚未实施；关联冻结 API-03 `AI_PROMPT_RETIRE`、DM-04、CR-AI-006/008；原 Gate2 冻结提交 `64cdf09` 不改。WBS `AI-03-A06`。
+日期：2026-10-02；状态：依 V1.1 持续授权登记，P01～P06 已按下述范围实施并完成 Win11 合成隔离验证；正式发行信任、生产迁移与 Invocation 资格仍开放。关联冻结 API-03 `AI_PROMPT_RETIRE`、DM-04、CR-AI-006/008；原 Gate2 冻结提交 `64cdf09` 不改。WBS `AI-03-A06`。
 
 冲突与证据：冻结接口要求 DeploymentAdmin 携带 Session/License/CSRF/幂等键/强 If-Match 退役模板并返回 200 RETIRED。通用收据只保存一个 UUID、状态码和请求指纹；根表 `template_state`、`active_version_no`、`lock_version` 是可变当前状态。若收据仅指向根，历史重放会从现态重建首次 ETag/活动版本，无法独立证明原结果，且在修复/未来变更后可能误回传。激活结果0061只允许固定 ACTIVE、复合版本归属，不可复用为退役结果。
 
