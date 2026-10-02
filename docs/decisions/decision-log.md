@@ -6448,3 +6448,11 @@
 - Reason：后续阶段才实现的固定业务 Subject 是 Phase 2 真实 Gate 所需，严格逐阶段全部关闭会造成依赖循环；合成 APPROVED 或观测引用不是业务事实。
 - Impact/Rollback：仅排期拓扑/状态/文档，无运行代码、API、Schema、依赖或数据迁移。可停止前置编码并恢复排期；保留历史 CR 和证据。独立变更各自验证/回滚。
 - Verification：静态检查正式阶段顺序、冻结合同、当前 Port/Owner/POC-03 阻塞；未运行新增业务测试，不判 Phase 2/3/Gate 3 PASS；逐次外发授权边界不变。
+
+# DEC-20261002-622：AI Provider 配置形状不等于激活或外发授权
+
+- Date/WBS：2026-10-02 / `AI-01-A01`；输入 ADR-004、DM-04、API-03、AIService 合同及 CR-SEQ-001。
+- Decision：先实现不含 URL/Key/客户正文的不可变 Provider 配置形状，Secret 引用在 Domain 只持有 UUID；Platform SecretRef 用途与消费者由后续 AI Application 证明，Provider 真实连接、ACTIVE、调用和逐次外发另验。
+- Reason：Domain 不反向依赖 Platform Application，也不能让“配置字段有效”越权成为许可证、目标端点、秘密读取或客户数据发送资格。
+- Impact/Rollback：新增 AI Domain/测试，没有 Schema/Migration、API、依赖或外发；未接生产组合，可移除该未消费合同回滚。后续持久层须保留配置版本历史。
+- Verification：定向5/5、Windows 11 后端1907运行/3跳过、开发 wheel SHA-256 `4383e7e4609a7f52afc1792a5e74ed2999fb75dc51c477f9749e53dc92e28825`；API/权限/真实数据库/质量/三平台未在本项验证。
