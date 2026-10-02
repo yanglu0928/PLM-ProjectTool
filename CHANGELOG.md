@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A06-P03-P01-A02 新增Jobs PostgreSQL当前AI Task Claim Owner：复用唯一Lease锁证明RUNNING Job、ACTIVE Lease/Attempt、worker/fencing，并绑定严格三字段payload、原actor/Project/Trace、尝试上限与唯一原始Outbox。兼容性/升级/回滚：无Schema/API/依赖/生产装配，撤Repository即可。验证：Win11/PG18.6真实claim及错误worker/token、额外payload、Outbox漂移拒绝，定向8、后端2164运行/3跳过PASS；wheel SHA-256 `fd96d52395a7e27fd228d90fcc197a3eed982704cbeb1b5472e0afc1caab46eb`。首轮验证脚本旧工厂参数已修正并从新库重跑。已知问题：完整Grant PG投影、正文Envelope、Invocation/Adapter/发布待实现；无外发。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P03-P01-A01 新增Jobs-owned AI Task当前Claim内部合同，固定Task/Project/原actor/Trace/Authorization/Input摘要与attempt/fencing/max-attempts；只在调用方短事务中复核，异常安全收敛，摘要不入repr。兼容性/升级/回滚：无Schema/API/依赖/生产装配，撤模块即可。验证：定向7、后端2164运行/3跳过PASS；开发wheel SHA-256 `ae993dc1a638c20c488df2d86e3eea4c04bc7417b58508e3c75f42778eab5e52`。已知问题：PostgreSQL Claim/Outbox绑定、完整Grant投影和正文Envelope待实现；无外发。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P02 新增无正文Execution Grant和载荷计划证明合同，固定Task/Job/Attempt/Fencing、InputRef、Prompt/Schema、Provider/Model、授权快照及记录/字节/Token/重试/时限上限；任何Grant/来源/批准payload或上限漂移均在网络I/O前拒绝，敏感摘要不进入repr。兼容性/升级/回滚：无Schema/API/依赖/生产装配，撤未引用模块即可。验证：定向4、后端2161运行/3跳过PASS；开发wheel SHA-256 `eea3cec629b1cf64060dfb6faf7fea5ca755aaf9e42cd58779808c705af06401`。首轮仅修正测试校验时机与计数元数据断言，生产规则未放宽。已知问题：Jobs Claim/PG投影、内容Owner、服务端Preview、Invocation/Adapter/发布待实现；无外发。

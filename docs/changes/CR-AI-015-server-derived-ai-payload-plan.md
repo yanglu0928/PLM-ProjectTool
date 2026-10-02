@@ -31,6 +31,8 @@ P02已实现无正文 `AITaskExecutionGrant`、覆盖全部执行元数据的规
 
 P03-P01-A01已完成Jobs-owned当前Claim内部合同，固定原actor/Project/Task/Authorization/Input摘要/Trace与attempt/fencing/max-attempts，并在调用方短事务内失败关闭；定向7、后端2164运行/3跳过及wheel通过。当前只是Owner合同，尚无PostgreSQL实现，不标实际Claim/Grant PASS。A02继续核ACTIVE Lease/Attempt、RUNNING Job、原Outbox和payload绑定。
 
+P03-P01-A02已实现Jobs PostgreSQL Owner：复用当前Lease锁，证明RUNNING Job、ACTIVE Lease、未完成Attempt、worker/fencing、严格AI payload和唯一原始Outbox。Win11/PG18.6正负链、定向8、后端2164运行/3跳过及wheel通过。首轮验证脚本旧工厂参数已修正并从新库重跑。A03继续组合AI-owned Task/Input/Prompt/Model/Egress元数据；本项仍无正文/Invocation/外发。
+
 ## 影响、迁移与回滚
 
 该变更补充冻结实现顺序，不修改原冻结提交。P01无代码、Schema、依赖或公开API变化。后续若需新增数据库对象或请求字段，必须在相应切片先给出ORM/Migration、空库/有数据up/down、兼容与API增量证据。已存在的Egress Preview/Authorization和Task历史保留；不能证明服务端载荷计划的旧记录一律不可执行，不猜测回填。

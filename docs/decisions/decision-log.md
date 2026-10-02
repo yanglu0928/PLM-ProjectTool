@@ -7204,3 +7204,11 @@
 - Reason：通用Claim缺原actor与最大尝试数，不能证明AI Task、外发授权和原Outbox绑定；跨事务缓存Claim也会绕过Lease到期/fencing。
 - Impact/Rollback：仅新增未装配内部DTO/Service与单测，无Schema/API/依赖；撤模块即可。A02补PostgreSQL Owner，A03再组合完整Grant。
 - Verification：定向7、后端2164运行/3跳过PASS；wheel `ae993dc1a638c20c488df2d86e3eea4c04bc7417b58508e3c75f42778eab5e52`。本项不宣称实际PG Claim或Worker可用。
+
+# DEC-20261003-724：AI Task Claim复用唯一Lease锁并绑定原始Outbox
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P03-P01-A02`；依据 CR-AI-015、DEC-723。
+- Decision：Jobs Owner Repository先调用现有Lease Repository核当前worker/fencing/未过期ACTIVE Lease和Attempt，再验证严格AI Task三字段payload、原actor/Project/Trace/最大尝试及唯一 `AI_TASK_QUEUED` Outbox。AI模块不得自行重写Lease判断或从payload猜缺失事实。
+- Reason：分别查询Job、Lease、Attempt或不核Outbox会产生代次漂移、伪造来源及任务/授权错配；复用同一事务当前锁保持Jobs为唯一Owner。
+- Impact/Rollback：新增内部Repository和验证脚本，无Schema/API/依赖/生产装配；撤Repository保留历史。A03再组合完整Execution Grant。
+- Verification：Win11/PG18.6真实claim及错误worker/token、额外payload、Outbox漂移拒绝PASS；定向8、后端2164运行/3跳过，wheel `fd96d52395a7e27fd228d90fcc197a3eed982704cbeb1b5472e0afc1caab46eb`。首轮仅验证脚本数据库工厂旧参数，修正后新库重跑。
