@@ -7196,3 +7196,11 @@
 - Reason：后续内容读取、Provider序列化和网络调用需要一个可复核但不会把正文/Secret扩散到Job或日志的边界；仅比较payload摘要会漏掉Claim代次、模型、Prompt或授权上限变化。
 - Impact/Rollback：新增未装配内部合同与单测，无Schema/API/依赖/运行行为变化；撤模块即可。P03细分为当前Jobs Claim+PG投影和内容Envelope两步，避免AI模块把裸Job表当授权。
 - Verification：定向4、后端2161运行/3跳过PASS；wheel `eea3cec629b1cf64060dfb6faf7fea5ca755aaf9e42cd58779808c705af06401`。首轮失败仅为测试在构造时即触发预期校验及把计数字段误判正文，修正测试后全量重跑。
+
+# DEC-20261003-723：AI执行只能接受Jobs-owned当前Claim证明
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P03-P01-A01`；依据 CR-AI-015、Jobs Lease/Fencing基线。
+- Decision：新增Jobs-owned `AITaskExecutionClaim`，携带Task/Project/原actor/Trace/Authorization/Input摘要和当前attempt/fencing/max-attempts；AI模块只在自己的短事务中调用Owner并复核请求Job/token，不直接把裸Job行或通用ClaimedJob当执行许可。
+- Reason：通用Claim缺原actor与最大尝试数，不能证明AI Task、外发授权和原Outbox绑定；跨事务缓存Claim也会绕过Lease到期/fencing。
+- Impact/Rollback：仅新增未装配内部DTO/Service与单测，无Schema/API/依赖；撤模块即可。A02补PostgreSQL Owner，A03再组合完整Grant。
+- Verification：定向7、后端2164运行/3跳过PASS；wheel `ae993dc1a638c20c488df2d86e3eea4c04bc7417b58508e3c75f42778eab5e52`。本项不宣称实际PG Claim或Worker可用。

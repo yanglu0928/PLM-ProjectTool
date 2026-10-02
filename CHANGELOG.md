@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A06-P03-P01-A01 新增Jobs-owned AI Task当前Claim内部合同，固定Task/Project/原actor/Trace/Authorization/Input摘要与attempt/fencing/max-attempts；只在调用方短事务中复核，异常安全收敛，摘要不入repr。兼容性/升级/回滚：无Schema/API/依赖/生产装配，撤模块即可。验证：定向7、后端2164运行/3跳过PASS；开发wheel SHA-256 `ae993dc1a638c20c488df2d86e3eea4c04bc7417b58508e3c75f42778eab5e52`。已知问题：PostgreSQL Claim/Outbox绑定、完整Grant投影和正文Envelope待实现；无外发。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P02 新增无正文Execution Grant和载荷计划证明合同，固定Task/Job/Attempt/Fencing、InputRef、Prompt/Schema、Provider/Model、授权快照及记录/字节/Token/重试/时限上限；任何Grant/来源/批准payload或上限漂移均在网络I/O前拒绝，敏感摘要不进入repr。兼容性/升级/回滚：无Schema/API/依赖/生产装配，撤未引用模块即可。验证：定向4、后端2161运行/3跳过PASS；开发wheel SHA-256 `eea3cec629b1cf64060dfb6faf7fea5ca755aaf9e42cd58779808c705af06401`。首轮仅修正测试校验时机与计数元数据断言，生产规则未放宽。已知问题：Jobs Claim/PG投影、内容Owner、服务端Preview、Invocation/Adapter/发布待实现；无外发。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P01 完成Worker/Invocation执行边界核查并登记CR-AI-015：当前客户端自报AI payload摘要不足以证明最终发送载荷，选择服务端确定性 `AIExecutionEnvelope`，由Preview、Task创建复核和每次Invocation共用，所有授权范围与字节/Token上限在网络I/O前失败关闭。兼容性/升级/回滚：本项仅文档，无Schema/API/依赖/运行变化；未来可撤Worker组合恢复不消费，旧无服务端计划证明记录不可执行且不猜测回填。验证：静态核对冻结合同、Schema0064、P05前置和现有AI模块；未运行新代码测试。已知问题：执行Grant、内容Owner、Invocation、Router/Adapter和结果发布待分片实现；真实外发仍需明确授权。
