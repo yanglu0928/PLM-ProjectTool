@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/TRC-01-A08-P06 登记Trace supersede关系Owner/正式装配前置缺口，维持生产组合关闭并转独立创建路径。兼容性：仅文档/状态，程序、API、Schema、依赖不变。升级：无迁移。验证：冻结合同、Project策略和入口静态核查，未运行新业务测试。已知问题：关系Owner身份、正式目标账户信任/三平台、通用Trace、Gate/UAT与可用发行包仍待。
+
 - 2026-10-02：0.1.0.dev0/TRC-01-A08-P05 新增冻结TraceLink supersede显式可选HTTP，三字段引用/可信Origin/Session/CSRF/强If-Match/幂等Key与201最小替代Ref。兼容性：默认/Windows正式组合不挂载；Schema/依赖不变。升级：无新迁移，装配前需既有0029/0053；不注入Router即可关闭。验证：合同3、隔离PG18真实ASGI/权限/许可/重放/单终态与收据、后端1900运行/3跳过、开发wheel SHA-256 `4442f5503acecfaf616147ed3772fe7c59e3789696d0e46c623162b4dccf1fc1`。已知问题：关系与其他业务Owner、正式装配/信任/三平台/性能/UAT/Gate及可用程序包仍缺。
 
 - 2026-10-02：0.1.0.dev0/TRC-01-A08-P04 新增Trace替换冻结三字段引用的同事务Owner解析与原始输入幂等入口，仅注册DOC-02，来源失效后历史同Key仍受当前授权重验。兼容性：内部Application/Owner Port增量，公开API/Schema/依赖不变。升级：无迁移，不注入Resolver则入口关闭。验证：单元2、隔离PG18真实Document Owner/来源受限后重放及原Trace链、后端1897运行/3跳过、开发wheel SHA-256 `29a227016ed0e5501e4f4cfec3741cbffa989353e146eadff47cbb85a0ce1fa0`。已知问题：可选HTTP/其他业务与关系Owner、正式信任/三平台/性能/UAT/Gate和可用包未完成。
