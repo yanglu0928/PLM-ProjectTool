@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-01-A05-P02 增加不可变 Provider Test 最终结果 Schema 0055，绑定配置/Secret 版本和 Job/Attempt/Lease，保存策略摘要与安全结果码，不保存 URL/Key/正文。兼容性：增量表与唯一键，无 Breaking API/依赖变化。升级：备份后 0054→0055；空表可回滚，有历史结果拒绝降级。验证：Win11 隔离 PG18.6 双库空/有数据 up/down、ORM drift=0、复合归属/历史/非空降级，后端1938运行/3跳过；开发wheel SHA-256 `c9bc8c9d3163666fdb24d3f2c4127f6e6f8579758cafef73146b31a24672bf37`。已知问题：P03～P05 Job/Worker/真实连通、正式信任源、质量/三平台/Gate/UAT/可用程序包仍待。
+
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P01 新增 Provider Test 离线受控端点策略与固定无客户探针计划，未知引用/配置错配/非 HTTPS 或含凭据、查询、片段等 URL 失败关闭；仅 OpenAI-compatible CHAT，未外发。兼容性：无 Schema、依赖、公开 API 或现有组合变化。升级：无需迁移；撤内部合同可回滚。验证：定向6项、后端1938运行/3跳过、开发wheel SHA-256 `190589d1cea1b168e20c9ce9ea666f26029d88a0c1c9f5f3513598a1fcfc0fa3`。已知问题：正式策略来源、DNS/IP 出站防护、TestRun/Job/Worker、真实厂商连通、质量/三平台/Gate/UAT/可用程序包均待完成。
 
 - 2026-10-02：0.1.0.dev0/AI-01-A05 前置核查完成，登记 CR-AI-002：冻结的 Provider Test 必须异步 202 JobRef，需先补受控端点策略、当前配置绑定证明、Job Owner 与受限 Worker；真实外发保持关闭。兼容性/升级：本次无程序、Schema、依赖或 API 改动，无需升级。验证：静态核对冻结 API-03/DM-04、当前 Provider/Job ORM/SecretResolver；未执行新运行时测试。已知问题：A05 功能本身、正式信任源、真实连通、质量、三平台/Gate/UAT/可用程序包仍待完成；下项 P01。

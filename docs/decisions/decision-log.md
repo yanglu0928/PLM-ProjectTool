@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-640 — Provider Test 结果只记录不可变版本证明
+
+- Date/WBS：2026-10-02 / `AI-01-A05-P02`；输入 CR-AI-002、冻结 DM-04 的当前配置连通证明及 0054 Provider/Secret/Job 关系。
+- Decision：新增 append-only 的 AI Provider 探针结果表，绑定 Provider 与配置版本的复合键、SecretRecord 与 SecretVersion 的复合键、唯一 JobId，以及 Job Attempt/Lease 的复合键、固定探针标识、策略 SHA-256、成功或安全失败码、观察时间。只在 Worker 完成时插入结果，不把待执行/运行中状态伪装为证明；不存 URL、Key、响应正文或原始异常。成功结果仅是可供后续激活重验的候选，不自行改变 Provider 状态。
+- Reason/Impact/Rollback：Job 可变且至少一次，不能单独作为当前配置及 Secret 版本的稳定证明。Schema 从 0054 增量升级，空表可降；有结果记录时拒绝降级并向前修复。公开 API/技术栈不变；空/有数据迁移、复合归属、历史不可变和回滚均需隔离 PG 验证。
+
 ## DEC-20261002-639 — Provider Test 探针计划由受控策略精确解析
 
 - Date/WBS：2026-10-02 / `AI-01-A05-P01`；输入冻结固定无客户探针、CR-AI-002 和现有符号化 EndpointPolicyRef。

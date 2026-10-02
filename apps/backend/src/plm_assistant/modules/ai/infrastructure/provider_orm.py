@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Boolean, CheckConstraint, ForeignKey, ForeignKeyConstraint, Index, Integer, Text, UniqueConstraint, text
+from sqlalchemy import BigInteger, Boolean, CheckConstraint, ForeignKey, ForeignKeyConstraint, Index, Integer, LargeBinary, Text, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import TIMESTAMP, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -38,6 +38,7 @@ class AIProviderConfigVersionRow(Base):
     __tablename__ = "ai_provider_config_versions"
     __table_args__ = (
         UniqueConstraint("provider_config_version_id", "ai_provider_id", name="uq_ai_provider_configs__id_provider"),
+        UniqueConstraint("provider_config_version_id", "ai_provider_id", "secret_ref", name="uq_ai_provider_configs__identity_secret"),
         UniqueConstraint("ai_provider_id", "config_version_no", name="uq_ai_provider_configs__provider_no"),
         CheckConstraint("provider_config_version_id <> '00000000-0000-0000-0000-000000000000'::uuid AND ai_provider_id <> '00000000-0000-0000-0000-000000000000'::uuid AND secret_ref <> '00000000-0000-0000-0000-000000000000'::uuid", name="ck_ai_provider_configs__ids"),
         CheckConstraint("config_version_no > 0 AND created_xid > 0", name="ck_ai_provider_configs__version"),
@@ -65,5 +66,70 @@ class AIProviderConfigVersionRow(Base):
     can_embedding: Mapped[bool] = mapped_column(Boolean, nullable=False)
     can_rerank: Mapped[bool] = mapped_column(Boolean, nullable=False)
     created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("plm.auth_users.user_id", ondelete="NO ACTION"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False, server_default=text("statement_timestamp()"))
+    created_xid: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("txid_current()"))
+
+
+class AIProviderProbeResultRow(Base):
+    """Append-only final probe proof; never a permission to activate by itself."""
+
+    __tablename__ = "ai_provider_probe_results"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["provider_config_version_id", "ai_provider_id", "secret_record_id"],
+            ["plm.ai_provider_config_versions.provider_config_version_id",
+             "plm.ai_provider_config_versions.ai_provider_id",
+             "plm.ai_provider_config_versions.secret_ref"],
+            name="fk_ai_provider_probe_results__config_secret", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["secret_version_id", "secret_record_id"],
+            ["plm.plt_secret_versions.secret_version_id", "plm.plt_secret_versions.secret_record_id"],
+            name="fk_ai_provider_probe_results__secret_version", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["job_id", "attempt_no"], ["plm.job_attempts.job_id", "plm.job_attempts.attempt_no"],
+            name="fk_ai_provider_probe_results__attempt", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["job_id", "fencing_token"], ["plm.job_leases.job_id", "plm.job_leases.fencing_token"],
+            name="fk_ai_provider_probe_results__lease", ondelete="NO ACTION",
+        ),
+        UniqueConstraint("job_id", name="uq_ai_provider_probe_results__job"),
+        CheckConstraint(
+            "probe_result_id <> '00000000-0000-0000-0000-000000000000'::uuid "
+            "AND ai_provider_id <> '00000000-0000-0000-0000-000000000000'::uuid "
+            "AND provider_config_version_id <> '00000000-0000-0000-0000-000000000000'::uuid "
+            "AND secret_record_id <> '00000000-0000-0000-0000-000000000000'::uuid "
+            "AND secret_version_id <> '00000000-0000-0000-0000-000000000000'::uuid "
+            "AND job_id <> '00000000-0000-0000-0000-000000000000'::uuid",
+            name="ck_ai_provider_probe_results__ids",
+        ),
+        CheckConstraint("probe_id = 'CHAT_CONNECTIVITY_V1'", name="ck_ai_provider_probe_results__probe"),
+        CheckConstraint("octet_length(policy_sha256) = 32", name="ck_ai_provider_probe_results__policy_digest"),
+        CheckConstraint("attempt_no > 0 AND fencing_token > 0 AND created_xid > 0", name="ck_ai_provider_probe_results__attempt"),
+        CheckConstraint(
+            "(outcome = 'SUCCEEDED' AND failure_code IS NULL) OR "
+            "(outcome = 'FAILED' AND failure_code IS NOT NULL "
+            "AND failure_code ~ '^[A-Z][A-Z0-9_]{0,63}$')",
+            name="ck_ai_provider_probe_results__outcome",
+        ),
+        CheckConstraint("isfinite(observed_at) AND isfinite(created_at)", name="ck_ai_provider_probe_results__time"),
+        Index("ix_ai_provider_probe_results__provider_time", "ai_provider_id", "observed_at", "probe_result_id"),
+    )
+
+    probe_result_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    ai_provider_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    provider_config_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    secret_record_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    secret_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    job_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("plm.job_jobs.job_id", ondelete="NO ACTION"), nullable=False)
+    probe_id: Mapped[str] = mapped_column(Text, nullable=False)
+    policy_sha256: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    outcome: Mapped[str] = mapped_column(Text, nullable=False)
+    failure_code: Mapped[str | None] = mapped_column(Text)
+    attempt_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    fencing_token: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    observed_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False, server_default=text("statement_timestamp()"))
     created_xid: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("txid_current()"))
