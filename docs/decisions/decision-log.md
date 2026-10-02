@@ -6352,3 +6352,12 @@
 - Impact/Rollback：内部 Trace Application/游标Codec 增量，无公开API/Schema/Migration/历史数据修改；不装配页服务即可回滚。生产独立密钥的目标账户供给/备份恢复在正式HTTP组合前另验，测试密钥不得当生产来源。图底层预算截断、不同Owner尚未注册、正式安全/性能/Gate仍开放。
 - Verification Plan：单元覆盖正常续页、密钥/Session/Project/查询篡改、TTL、图/权限变化拒绝、页节点不泄露、截断语义；隔离PG18真实两页、撤权或状态变化后旧游标拒绝。全量后端与wheel后仅判内部可续页PASS。
 - Result：定向6项、隔离PG18两页/撤权旧游标拒绝/新截断图及旧创建回归PASS，后端1876运行/3跳过、开发wheel PASS。仅内部合成密钥，正式目标账户密钥及公开图API未验。
+
+# DEC-20261002-611：Trace 图游标使用独立 Windows 当前账户只读密钥引用
+
+- Date/WBS：2026-10-02 / `TRC-01-A06-P03-P01`；输入 P02-P02 专用 AES-GCM 游标、既有 Windows SecretKeyProvider/交互供给和 CR-TRC-002 未开放HTTP的时序边界。
+- Decision：新增固定 `trace-graph-cursor-v1` 引用的 Windows 只读组合入口；只从当前进程账户 Credential Manager 解析精确 32 字节，缺失、错形或Provider异常立即拒绝装配。不复用其他Cursor/Secret/License密钥，不在运行时生成或回退到环境变量/文件。实际正式账户的交互供给与离线备份/恢复留发行前置。
+- Reason：测试合成 key 不能成为生产来源，Trace 游标与其他业务游标签名域须独立；复用受检的当前账户Vault生命周期避免引入新密钥存储方式。
+- Impact/Rollback：仅组合入口和测试，无Schema/Migration/API/依赖/历史数据变更；不装配入口即可回滚。通用图HTTP仍因 CR-TRC-002 的Owner解析缺口关闭。
+- Verification Plan：假Port精确引用/缺失/错长/异常单元，Windows11唯一临时Vault引用做加密备份、删失、错口令拒绝、恢复后旧游标可解；最后清理仅自己的测试凭据，不触碰正式引用。全量回归与wheel通过后只判本机来源PASS。
+- Result：定向3/3、Windows11当前账户唯一临时Vault凭据供给/加密备份/删失/错口令拒绝/恢复旧游标/最终清理PASS；后端1879运行/3跳过、开发wheel PASS。正式KeyRef未供给，通用图HTTP未装配。

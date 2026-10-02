@@ -18,3 +18,5 @@
 ## 验证与剩余风险
 
 本轮仅完成静态前置核查：冻结 API-02 与代码 Owner 注册清单核对；未声称 HTTP 验收通过。后续逐 Owner 验证 Scope/Project、固定版本、权限/状态、不可枚举错误，并以真实 Session/License/CSRF/幂等/并发/Audit 测试完整路由。当前 Gate 3 和可用程序包未通过。
+
+2026-10-02 检查点：内部单跳/有界多跳及合成密钥游标已分别在 `TRC-01-A06-P01/P02` 验证；`P03-P01` 增加 Windows 当前账户独立 Trace 图游标 KeyRef 只读来源并以**临时测试引用**验证备份恢复。正式目标账户密钥未供给；业务 Owner 仍仅有 `document/DOC-02`，冻结三字段引用的通用 Scope/Project 解析未齐，故本 CR 的公开 HTTP 时序阻塞不变，不宣称 Gate/发行通过。
