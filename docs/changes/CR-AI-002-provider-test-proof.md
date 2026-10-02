@@ -82,3 +82,5 @@
 2026-10-02 P05-A03-P04-P02-A02 前置核查：`ProviderProbeOneShotWorker` 的隔离验证注入合成 `SecretAudit`，生产组合没有实现 `SecretResolver` 所需的 `SecretAuditPort.record_access`。无审计或无操作主体地拼接生产 Worker 会削弱密钥访问追踪；又因 Audit `SYSTEM` 事件要求原始 actor，不能用未知值伪造。比较：静默 no-op（不选，失审计）、直接复用合成对象（不选）、先建立与 Job/受权用户绑定的正式 Secret 访问审计上下文/持久适配器，再组合 Worker（选）。A02 暂 PRECONDITION_BLOCKED，拆 A02-P01 独立完成审计语义及失败关闭/隔离 PG 验证；当前不启动 Worker、不真实外发。后续 Worker 仍须校验 Vault 主钥、策略一致、网络目的地和安全生命周期。
 
 2026-10-02 P05-A03-P04-P02-A02-P01 按 DEC-20261002-658 完成受权快照作用域审计适配器；系统身份/原请求用户/Secret 版本/trace 严格匹配，独立短事务先写 Audit 再交付明文。Win11 隔离 PG18 落库、审计故障拒绝并清零与后端2009运行/3跳过通过。Runner 仍需显式绑定该作用域和 trace；Windows Worker/正式 Vault/目标出站未装配，A02/P02/P04/Gate 仍开放。
+
+2026-10-02 P05-A03-P04-P02-A02-P02 按 DEC-20261002-659 将首次预检快照及 trace 绑定到 Runner，审计绑定故障在开启 Transport 前拒绝；Windows 未挂载 Worker 工厂从同一 Bootstrap 策略、当前账户 DB/License/SYSTEM Actor/Vault 主钥装配真实 SecretStore、审计及钉 IP HTTPS Transport，失败释放新建连接。Win11 隔离 PG18/本机 TLS 验证成功与失败均记录 Secret 访问主体/原用户/版本；定向8、后端2014运行/3跳过及 wheel 通过。工厂未运行或注册，未验证正式账户信任、真实厂商外发、维护模式下服务生命周期；P02-A03/P04/Gate 仍开放。

@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A03-P04-P02-A02-P02 Windows Provider 探针单次 Worker 工厂绑定同源策略/当前账户信任和持久 Secret 审计，Runner 在发送期间绑定预检快照与 trace；不自动运行。兼容性：仅内部未挂载组合，无 Schema/API/依赖变化。升级：无需迁移；撤工厂及 Runner 可选注入可回退，已有审计保留。验证：Win11 定向8、隔离 PG18/本机 TLS 成功与失败审计、后端2014运行/3跳过，开发 wheel SHA-256 `1f94193dfee960c7191012ee6c6e08d96e22af16f46ec244c14d2ec23e31678b`。已知问题：生产生命周期/维护模式、目标账户信任、真实外发、三平台/Gate/UAT/可用包仍待。
+
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A03-P04-P02-A02-P01 新增 Provider 探针 Secret 访问审计适配器，以受权 Job 快照绑定 SYSTEM/原用户/SecretVersion/trace，审计先于明文交付且失败关闭。兼容性：内部未装配，无 Schema/API/依赖变化。升级：无需迁移；撤适配器可回退，既有 Audit 事件保留。验证：Win11 定向3、隔离 PG18 审计落库/故障清零拒绝、后端2009运行/3跳过，开发 wheel SHA-256 `a27c9505aaab37ed62546cc9adfa873253ebb90a12f98f68de981477344611af`。已知问题：Runner/Windows Worker 未接入；正式 Vault/目标账户/出站、三平台/Gate/UAT/可用包未验。
 
 - 2026-10-02：0.1.0.dev0/AI-01-A05-P05-A03-P04-P02-A02 前置核查确定正式 Worker 缺 Secret 访问审计适配器；按 CR-AI-002 拆 A02-P01，Worker 与 Test 公开路由保持关闭。兼容性/升级：仅文档和排期记录，无程序/Schema/API/依赖变化。验证：静态核对 `SecretResolver` Port、隔离 Worker 夹具及 Audit 主体要求，未运行新业务测试。已知问题：正式访问审计/Worker 同源组合、真实外发和发行 Gate 待完成。

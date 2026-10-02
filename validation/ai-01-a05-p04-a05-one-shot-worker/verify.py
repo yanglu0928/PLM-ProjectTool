@@ -28,6 +28,7 @@ from plm_assistant.modules.ai.application.submit_provider_test import AIProvider
 from plm_assistant.modules.ai.domain.provider_configuration import ProviderCapability, ProviderKind
 from plm_assistant.modules.ai.infrastructure.provider_create_repository import SqlAlchemyAIProviderCreateRepository
 from plm_assistant.modules.ai.infrastructure.provider_probe_result_repository import SqlAlchemyProviderProbeResultRepository
+from plm_assistant.modules.ai.infrastructure.provider_probe_secret_audit import ProviderProbeSecretAccessAudit
 from plm_assistant.modules.ai.infrastructure.provider_test_source import SqlAlchemyAIProviderTestSource
 from plm_assistant.modules.audit.application.public import AuditService
 from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
@@ -62,7 +63,7 @@ SecretAudit = tls_helpers["Audit"]
 SYNTHETIC_KEY = tls_helpers["SYNTHETIC_KEY"]
 
 
-def main():
+def main(*, persistent_secret_audit=False):
     name = "ai01a05p04a05_" + uuid.uuid4().hex[:10]
     token = b"a" * 32
     with tempfile.TemporaryDirectory(prefix="plm-one-shot-probe-tls-") as temp:
@@ -129,13 +130,18 @@ def main():
                             probe_registry=registry,
                         )
                         decryptor = Decryptor()
+                        secret_audit = (ProviderProbeSecretAccessAudit(
+                            unit_of_work=runtime.unit_of_work, audit=audit,
+                            system_actor=SimpleNamespace(assert_current=lambda: uuid.UUID(int=1)),
+                        ) if persistent_secret_audit else SecretAudit())
                         runner = ProviderProbeRunner(
                             preflight=preflight,
                             secrets=SecretResolver(
                                 SqlAlchemyEncryptedSecretStore(runtime.unit_of_work),
-                                decryptor, SecretAudit(),
+                                decryptor, secret_audit,
                             ),
                             transport=SyntheticLoopbackTransport(server.server_port, ca_path),
+                            access_audit_scope=secret_audit if persistent_secret_audit else None,
                         )
                         probe_audit = ProviderProbeAudit(
                             system_actor=SimpleNamespace(assert_current=lambda: uuid.UUID(int=1)),
@@ -181,6 +187,8 @@ def main():
                             assert db.execute("SELECT state FROM plm.job_jobs WHERE job_id=%s", (first.job_id,)).fetchone()[0] == "SUCCEEDED"
                             assert db.execute("SELECT outcome,secret_version_id FROM plm.ai_provider_probe_results WHERE job_id=%s", (first.job_id,)).fetchone() == ("SUCCEEDED", version)
                             assert db.execute("SELECT count(*) FROM plm.aud_events WHERE trace_id=%s AND action='AI_PROVIDER_TEST_SUCCEEDED'", (trace1,)).fetchone()[0] == 1
+                            if persistent_secret_audit:
+                                assert db.execute("SELECT actor_type,actor_id,original_actor_id,target_version_id FROM plm.aud_events WHERE trace_id=%s AND action='AI_PROVIDER_SECRET_ACCESS'", (trace1,)).fetchone() == ("SYSTEM", uuid.UUID(int=1), actor, version)
                         assert worker.run_once(worker_ref="synthetic-worker").state == "IDLE"
                         assert len(Handler.captured) == 1
 
@@ -193,6 +201,8 @@ def main():
                             assert db.execute("SELECT state FROM plm.job_jobs WHERE job_id=%s", (second.job_id,)).fetchone()[0] == "FAILED"
                             assert db.execute("SELECT outcome,failure_code FROM plm.ai_provider_probe_results WHERE job_id=%s", (second.job_id,)).fetchone() == ("FAILED", "PROBE_HTTP_REJECTED")
                             assert db.execute("SELECT count(*) FROM plm.aud_events WHERE trace_id=%s AND action='AI_PROVIDER_TEST_FAILED'", (trace2,)).fetchone()[0] == 1
+                            if persistent_secret_audit:
+                                assert db.execute("SELECT count(*) FROM plm.aud_events WHERE trace_id=%s AND action='AI_PROVIDER_SECRET_ACCESS'", (trace2,)).fetchone()[0] == 1
                         assert all(not any(buffer) for buffer in decryptor.buffers)
                         print("PASS: isolated PG18/loopback TLS one-shot IDLE/success/fatal, fixed probe, version binding, result/Audit")
                     finally:

@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261002-659 — Windows 探针 Worker 构建时锁定策略与审计信任源
+
+- Date/WBS：2026-10-02 / `AI-01-A05-P05-A03-P04-P02-A02-P02`；依据 CR-AI-002、A02-P01 Secret 审计、现有单次 Worker 与 Windows 受控信任链。
+- Decision：Runner 在首次预检后以同一快照绑定 Secret 审计作用域及 trace，再进行发送前后重验；Windows 专用工厂从 Bootstrap 读取受控策略，从当前账户取得 DB/License、SYSTEM Actor 与固定 Vault 主钥，并注入 PostgreSQL SecretStore、AES-GCM、持久审计、专属 Job 组件及生产默认的钉 IP HTTPS Transport。缺一依赖固定失败并释放新建数据库连接。工厂只构建，不注册服务、不自动领取任务。
+- Reason：跨进程策略/身份/主钥若用合成或请求输入，容易让 Job 指纹与 Worker 出站地址分叉；SecretResolver 必须在明文交付前持久审计。
+- Impact/Rollback：内部 Runner 与 Windows 组合层增量，无 Schema/公开 API/新依赖；撤未挂载工厂即可回退，历史 Job/审计不删除。正式服务生命周期/维护模式和真实外发仍由后续验收。
+- Verification：Win11 定向 8 项、隔离 PG18/本机 TLS 两个终态的持久 Secret 审计、后端 2014 项运行/3 跳过、开发 wheel PASS。不以工厂存在宣称生产 Worker/Gate 通过。
+
 ## DEC-20261002-658 — Provider 探针密钥访问以受权快照绑定独立审计事务
 
 - Date/WBS：2026-10-02 / `AI-01-A05-P05-A03-P04-P02-A02-P01`；输入 CR-AI-002、`SecretResolver` 审计 Port、ADR-007 SystemActor/原 actor/trace 继承及 Audit 事件约束。

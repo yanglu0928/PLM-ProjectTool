@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import unittest
 import uuid
+from contextlib import contextmanager
 from dataclasses import replace
 
 from plm_assistant.modules.ai.application.probe_policy import ProviderProbePlan
@@ -13,6 +14,7 @@ from plm_assistant.modules.jobs.application.ai_provider_test_claim import AIProv
 from plm_assistant.modules.platform.application.secret_access import (
     SecretConsumer, SecretEnvelope, SecretPurpose, SecretRef, SecretResolver, SecretState,
 )
+from plm_assistant.modules.platform.application.trace_context import current_trace_id
 
 
 class FakePreflight:
@@ -40,6 +42,7 @@ class FakeConnection:
     def send_fixed_probe(self, key):
         self.calls += 1
         self.key = key.tobytes()
+        self.trace = current_trace_id()
 
 
 class FakeTransport:
@@ -73,6 +76,24 @@ class FakeDecryptor:
 class FakeAudit:
     def record_access(self, **_):
         pass
+
+
+class FakeAuditScope:
+    def __init__(self, *, fail=False):
+        self.fail = fail
+        self.bound = None
+        self.trace = None
+
+    @contextmanager
+    def bind(self, snapshot):
+        if self.fail:
+            raise RuntimeError("audit unavailable")
+        self.bound = snapshot
+        self.trace = current_trace_id()
+        try:
+            yield
+        finally:
+            self.bound = None
 
 
 class ProbeRunnerTests(unittest.TestCase):
@@ -131,6 +152,23 @@ class ProbeRunnerTests(unittest.TestCase):
         self.assertEqual(caught.exception.code, "PROBE_SECRET_UNAVAILABLE")
         self.assertEqual(self.decryptor.calls, 0)
         self.assertEqual(self.transport.connection.calls, 0)
+
+    def test_audit_scope_and_trace_bound_across_probe_then_cleared(self):
+        scope = FakeAuditScope()
+        self.runner._audit_scope = scope
+        self.run_probe()
+        self.assertEqual(scope.trace, None)
+        self.assertEqual(self.transport.connection.trace, str(self.trace))
+        self.assertIsNone(scope.bound)
+        self.assertIsNone(current_trace_id())
+
+    def test_audit_binding_failure_never_opens_transport(self):
+        self.runner._audit_scope = FakeAuditScope(fail=True)
+        with self.assertRaises(ProviderProbeExecutionError) as caught:
+            self.run_probe()
+        self.assertEqual(caught.exception.code, "PROBE_SECRET_UNAVAILABLE")
+        self.assertEqual(self.transport.opened, 0)
+        self.assertEqual(self.decryptor.calls, 0)
 
 
 if __name__ == "__main__":
