@@ -23,6 +23,12 @@
 5. P06 实现 `AIService → ModelRouter → ProviderAdapter` 的有界调用与Secret最小读取；发送前最后一次授权/Lease检查，不持有数据库事务跨网络。
 6. P07/P08 分别实现成功Schema校验/Suggestion受权存储与失败/未知结果发布、取消和安全重试；最后做无外发合成、明确授权真实调用、质量回归和平台验收。
 
+## P02实施结果与P03细分
+
+P02已实现无正文 `AITaskExecutionGrant`、覆盖全部执行元数据的规范化Grant摘要以及 `AITaskPayloadPlanProof` 准入。Task/Job/Attempt、来源、批准payload、记录/字节/Token上限或有效期任一变化均拒绝；敏感摘要字段不进入对象repr。定向4项、后端2161运行/3跳过及wheel通过，无Schema/API/依赖/外发。
+
+为保持 Jobs Owner 边界且不让AI模块直接把裸Job行当授权，原P03细分：P03-P01先实现Jobs当前Lease/Attempt专属证明与PostgreSQL Grant元数据投影；P03-P02再实现内容Owner和确定性Envelope。该细分不改变原Scope，不新增外发或跳过Preview重构。
+
 ## 影响、迁移与回滚
 
 该变更补充冻结实现顺序，不修改原冻结提交。P01无代码、Schema、依赖或公开API变化。后续若需新增数据库对象或请求字段，必须在相应切片先给出ORM/Migration、空库/有数据up/down、兼容与API增量证据。已存在的Egress Preview/Authorization和Task历史保留；不能证明服务端载荷计划的旧记录一律不可执行，不猜测回填。

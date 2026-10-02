@@ -7188,3 +7188,11 @@
 - Reason：客户端无权读取完整Prompt，也无法可靠复刻模板、编码和Provider序列化；逻辑引用摘要不能捕获正文或字节变化，发送后再记录则无法撤回外发。
 - Impact/Rollback：P01仅文档，后续按CR-AI-015分片实现；不改现有Schema/API/依赖。撤未来Worker/路由组合恢复不消费，历史保留，不删除Invocation/Audit。真实Provider调用仍需明确数据范围授权。
 - Verification：静态对照冻结合同、Schema0064、P05执行前置、Egress Owner和现有AI模块；确认无生产AIService/ModelRouter/ProviderAdapter、确定性载荷构建或Invocation发布服务。本项未运行新代码测试，不标Worker PASS。
+
+# DEC-20261003-722：Execution Grant只承载完整元数据和无正文载荷证明
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P02`；依据 CR-AI-015、DEC-721。
+- Decision：建立不可变 `AITaskExecutionGrant`，覆盖Task/Job/Attempt/Fencing、InputRef顺序、Prompt/Schema/Provider/Model/授权快照及所有定量上限；以规范化SHA-256形成Grant摘要。载荷构建器只返回无正文 `AITaskPayloadPlanProof`，必须精确匹配Grant/来源/批准payload并在记录数、字节、Token和有效期内。
+- Reason：后续内容读取、Provider序列化和网络调用需要一个可复核但不会把正文/Secret扩散到Job或日志的边界；仅比较payload摘要会漏掉Claim代次、模型、Prompt或授权上限变化。
+- Impact/Rollback：新增未装配内部合同与单测，无Schema/API/依赖/运行行为变化；撤模块即可。P03细分为当前Jobs Claim+PG投影和内容Envelope两步，避免AI模块把裸Job表当授权。
+- Verification：定向4、后端2161运行/3跳过PASS；wheel `eea3cec629b1cf64060dfb6faf7fea5ca755aaf9e42cd58779808c705af06401`。首轮失败仅为测试在构造时即触发预期校验及把计数字段误判正文，修正测试后全量重跑。
