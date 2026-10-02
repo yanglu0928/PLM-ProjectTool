@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-631 — Provider 创建返回原始不可变配置快照
+
+- Date/WBS：2026-10-02 / `AI-01-A03-P03-A01`；输入冻结 `AI_PROVIDER_CREATE` 201 ProviderView 与原内部创建仅返回 ID 的差异。
+- Decision：保留现有 `create()` 内部 UUID 入口兼容性，另提供面向冻结 HTTP 的创建结果入口；在同一创建/幂等事务中从首版不可变配置构造固定 `CONFIGURED/v0` 安全视图。同 Key 重放返回该原始视图，不读取可能已变更的当前配置或 Secret 正文；不增 Schema/公开 API。
+- Reason/Impact/Rollback：满足创建结果和幂等原语义，避免提交后另一次当前态读取改变首次响应或受后续配置变化影响。仅 AI 内部 Application/Repository 与测试增量；撤掉新入口可回滚，已存 Provider/收据不变。正式 HTTP、目标账户信任和生产迁移仍另验。
+
 ## DEC-20261002-630 — Provider 只读路由挂入 Windows 显式平台模式
 
 - Date/WBS：2026-10-02 / `AI-01-A04-P05`；输入冻结 Provider GET/LIST、P01～P04 安全投影/游标/可选HTTP及现有 Windows `--platform`/`--platform-write` 组合。

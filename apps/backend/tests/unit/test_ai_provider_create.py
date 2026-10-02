@@ -42,6 +42,11 @@ class AIProviderCreateValidationTests(unittest.TestCase):
         self.assertNotIn("s" * 32, repr(self.command))
         self.assertNotIn("c" * 32, repr(self.command))
 
+    def test_create_view_rejects_untrusted_command_before_io(self) -> None:
+        with self.assertRaises(AIProviderCreateError) as caught:
+            self.service.create_view(replace(self.command, csrf_token=b"short"))
+        self.assertEqual(caught.exception.code, "VALIDATION_FAILED")
+
 
 if __name__ == "__main__":
     unittest.main()

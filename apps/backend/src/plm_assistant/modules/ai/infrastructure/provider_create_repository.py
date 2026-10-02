@@ -8,8 +8,9 @@ from sqlalchemy import insert, select
 from sqlalchemy.orm import Session
 
 from plm_assistant.modules.ai.domain.provider_configuration import (
-    ProviderCapability, ProviderConfiguration,
+    ProviderCapability, ProviderConfiguration, ProviderKind,
 )
+from plm_assistant.modules.ai.application.provider_metadata import AIProviderMetadataView
 from plm_assistant.modules.ai.infrastructure.provider_orm import (
     AIProviderConfigVersionRow, AIProviderRow,
 )
@@ -63,3 +64,44 @@ class SqlAlchemyAIProviderCreateRepository:
                    AIProviderConfigVersionRow.config_version_no == 1)
             .execution_options(autoflush=False)
         ).scalar_one_or_none()
+
+    def initial_view(self, transaction: object, *, provider_id: uuid.UUID) -> AIProviderMetadataView | None:
+        """Project only immutable version 1, never current state or Secret payload."""
+        if type(provider_id) is not uuid.UUID or provider_id.int == 0:
+            return None
+        row = _session(transaction).execute(
+            select(
+                AIProviderConfigVersionRow.provider_kind,
+                AIProviderConfigVersionRow.display_name,
+                AIProviderConfigVersionRow.endpoint_policy_ref,
+                AIProviderConfigVersionRow.secret_ref,
+                AIProviderConfigVersionRow.data_region,
+                AIProviderConfigVersionRow.egress_class,
+                AIProviderConfigVersionRow.can_chat,
+                AIProviderConfigVersionRow.can_structured_output,
+                AIProviderConfigVersionRow.can_embedding,
+                AIProviderConfigVersionRow.can_rerank,
+            ).join(AIProviderRow, AIProviderRow.ai_provider_id == AIProviderConfigVersionRow.ai_provider_id)
+            .where(AIProviderRow.ai_provider_id == provider_id,
+                   AIProviderConfigVersionRow.config_version_no == 1)
+            .execution_options(autoflush=False)
+        ).one_or_none()
+        if row is None:
+            return None
+        capabilities = frozenset(item for enabled, item in (
+            (row.can_chat, ProviderCapability.CHAT),
+            (row.can_structured_output, ProviderCapability.STRUCTURED_OUTPUT),
+            (row.can_embedding, ProviderCapability.EMBEDDING),
+            (row.can_rerank, ProviderCapability.RERANK),
+        ) if enabled)
+        if (type(row.secret_ref) is not uuid.UUID or row.secret_ref.int == 0
+                or not capabilities):
+            raise ValueError("invalid AI Provider initial view")
+        return AIProviderMetadataView(
+            provider_id=provider_id, kind=ProviderKind(row.provider_kind),
+            display_name=row.display_name, endpoint_policy_ref=row.endpoint_policy_ref,
+            data_region=row.data_region, egress_class=row.egress_class,
+            capabilities=capabilities,
+            secret_ref_masked="****" + row.secret_ref.hex[-8:],
+            state="CONFIGURED", config_version=1, lock_version=0,
+        )

@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-01-A03-P03-A01 为冻结 Provider 创建 `201 ProviderView` 增加内部首版不可变脱敏视图入口，同 Key 重放不读取已变化的当前配置；旧 UUID 入口保留。兼容性：无 Schema/依赖/公开 API 变化。升级：需已有0054；无新迁移。验证：Win11隔离PG18首次/重放/后续配置与Secret变化/缺视图原子回滚、旧创建/追加回归，后端1922运行/3跳过；开发wheel SHA-256 `aaa8fb02a4856c1fe3a7408d2f036d3f018c215ac35cf5985bff3ad86ce53132`。已知问题：创建HTTP、正式目标账户信任/外发、质量、三平台/Gate/UAT/可用程序包仍未完成。
+
 - 2026-10-02：0.1.0.dev0/AI-01-A04-P05 在 Windows `--platform` 和 `--platform-write` 显式组合挂载 Provider 安全 GET/LIST，缺专用游标钥拒绝启动；默认/登录模式不开放。兼容性：无 Schema/依赖/Breaking API。升级：需0054及目标服务账户独立游标 KeyRef，先备份并验证恢复；缺钥平台启动失败。验证：Win11 隔离 PG18/ASGI 双模式分页/详情/授权/License/脱敏/ETag、缺钥失败关闭，后端1921运行/3跳过；开发 wheel SHA-256 `909faf0da6e962ddefe144c90809670cce74d1f36560224bd7456cacccc1dba5`。已知问题：39份旧平台隔离脚本的合成钥夹具待更新/重跑；正式账户密钥与信任、Provider 写HTTP/激活/外发、质量、Server2025/Debian/Gate/UAT/可用程序包仍未完成。
 
 - 2026-10-02：0.1.0.dev0/AI-01-A04-P04 新增冻结 Provider GET/LIST 可选只读HTTP，固定脱敏投影、Session/管理员/License与签名分页；默认应用仍404。兼容性：无Schema/依赖或Breaking变更。升级：需0054、专用游标钥及显式Router注入；未注入无行为变化。验证：Win11隔离ASGI/PG18两页/权限/许可/撤权/ETag及合同7项；全量首轮Windows访问冲突未形成结果，单独重跑1920运行/3跳过PASS；开发wheel SHA-256 `9a2eced0b188bc11f94e736ff296deeab6ffc0c014002387b655d5074f687685`。已知问题：偶发访问冲突待观察，正式组合/信任/密钥、写API/激活/外发、质量/三平台/Gate/UAT/可用包未完成。

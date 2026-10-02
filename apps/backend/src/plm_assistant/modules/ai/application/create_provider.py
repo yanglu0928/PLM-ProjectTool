@@ -12,6 +12,7 @@ from plm_assistant.modules.ai.domain.provider_configuration import (
     ProviderCapability, ProviderConfiguration, ProviderConfigurationError,
     ProviderKind,
 )
+from plm_assistant.modules.ai.application.provider_metadata import AIProviderMetadataView
 from plm_assistant.modules.audit.application.public import AuditEventDraft, AuditService
 from plm_assistant.modules.platform.application.idempotency import (
     IdempotencyError, IdempotencyResult, IdempotencyScope,
@@ -60,6 +61,8 @@ class AIProviderCreateRepositoryPort(Protocol):
 
     def initial_config_id(self, transaction: object, *, provider_id: uuid.UUID) -> uuid.UUID | None: ...
 
+    def initial_view(self, transaction: object, *, provider_id: uuid.UUID) -> AIProviderMetadataView | None: ...
+
 
 class AIProviderReceiptPort(Protocol):
     def reserve(self, transaction: object, *, scope: IdempotencyScope,
@@ -86,6 +89,19 @@ class AIProviderCreateService:
         self._clock = clock or (lambda: datetime.now(timezone.utc))
 
     def create(self, command: CreateAIProvider) -> uuid.UUID:
+        result = self._create(command, include_view=False)
+        if type(result) is not uuid.UUID:
+            raise AIProviderCreateError("AI_PROVIDER_UNAVAILABLE")
+        return result
+
+    def create_view(self, command: CreateAIProvider) -> AIProviderMetadataView:
+        """Return the immutable first response for HTTP creation and replay."""
+        result = self._create(command, include_view=True)
+        if type(result) is not AIProviderMetadataView:
+            raise AIProviderCreateError("AI_PROVIDER_UNAVAILABLE")
+        return result
+
+    def _create(self, command: CreateAIProvider, *, include_view: bool) -> uuid.UUID | AIProviderMetadataView:
         if (type(command) is not CreateAIProvider
                 or type(command.session_token) is not bytes or len(command.session_token) != 32
                 or type(command.csrf_token) is not bytes or len(command.csrf_token) != 32
@@ -132,6 +148,11 @@ class AIProviderCreateService:
                         raise AIProviderCreateError("AI_PROVIDER_UNAVAILABLE")
                     # A previous successful creation remains historically
                     # identifiable after its Secret is disabled; no use/activation.
+                    if include_view:
+                        view = self._repo.initial_view(tx, provider_id=replay.ref_id)
+                        if type(view) is not AIProviderMetadataView:
+                            raise AIProviderCreateError("AI_PROVIDER_UNAVAILABLE")
+                        return view
                     return replay.ref_id
                 if not self._secret.active_provider_key(tx, secret_ref=config.secret_ref):
                     raise AIProviderCreateError("AI_PROVIDER_SECRET_UNAVAILABLE")
@@ -150,8 +171,12 @@ class AIProviderCreateService:
                 self._receipts.complete(tx, scope=scope, result=IdempotencyResult(
                     "V1_AI_PROVIDER_CREATE", provider_id, 201,
                 ))
+                if include_view:
+                    view = self._repo.initial_view(tx, provider_id=provider_id)
+                    if type(view) is not AIProviderMetadataView:
+                        raise AIProviderCreateError("AI_PROVIDER_UNAVAILABLE")
                 tx.commit()
-                return provider_id
+                return view if include_view else provider_id
         except AIProviderCreateError:
             raise
         except IdempotencyError as exc:
