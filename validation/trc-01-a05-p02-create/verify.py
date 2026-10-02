@@ -41,6 +41,9 @@ from plm_assistant.modules.trace.application.query_one_hop import (
 from plm_assistant.modules.trace.application.query_bounded_graph import (
     TraceBoundedGraphQuery, TraceBoundedGraphService,
 )
+from plm_assistant.modules.trace.application.page_graph import (
+    TraceGraphCursorCodec, TraceGraphPageService,
+)
 from plm_assistant.modules.trace.application.target_proof import (
     TraceTargetProofError, TraceTargetProofService,
 )
@@ -237,6 +240,10 @@ def verify():
             license_guard=guard, proofs=proofs,
             repository=SqlAlchemyTraceAdjacencyRepository(),
         )
+        graph_pages = TraceGraphPageService(
+            graph=graph, cursor_codec=TraceGraphCursorCodec(b"t" * 32),
+            clock=lambda: datetime.now(timezone.utc),
+        )
         ref = lambda version: TraceVersionRef(
             "document", "DOC-02", doc_id, version, "PROJECT", project_id,
         )
@@ -299,6 +306,17 @@ def verify():
         ))
         assert depth_one.nodes == (ref(first), ref(second))
         assert tuple(link.edge for link in depth_one.links) == (edge,)
+        page_query = TraceBoundedGraphQuery(
+            customer_token, uuid.uuid4(), project_id, ref(first), "DOWNSTREAM",
+        )
+        first_page = graph_pages.query_page(page_query, page_size=1)
+        assert tuple(link.edge for link in first_page.links) == (edge,)
+        assert first_page.next_cursor is not None
+        second_page = graph_pages.query_page(
+            page_query, page_size=1, cursor=first_page.next_cursor,
+        )
+        assert tuple(link.edge for link in second_page.links) == (concurrent_edge,)
+        assert second_page.next_cursor is None
         try:
             reader.query(TraceOneHopQuery(
                 other_pm_token, uuid.uuid4(), project_id, ref(first), "DOWNSTREAM",
@@ -342,6 +360,16 @@ def verify():
         assert hidden_graph.nodes == (ref(first), ref(second))
         assert tuple(link.edge for link in hidden_graph.links) == (edge,)
         assert hidden_graph.truncated
+        try:
+            graph_pages.query_page(page_query, page_size=1,
+                                   cursor=first_page.next_cursor)
+        except TraceQueryError as exc:
+            assert exc.code == "TRACE_CURSOR_STALE"
+        else:
+            raise AssertionError("revoked graph continued with stale cursor")
+        fresh_hidden_page = graph_pages.query_page(page_query, page_size=1)
+        assert tuple(link.edge for link in fresh_hidden_page.links) == (edge,)
+        assert fresh_hidden_page.truncated and fresh_hidden_page.next_cursor is None
         unavailable = TraceEdgeShape(ref(first), ref(third), "REFINES")
         try:
             creator.create(CreateTraceLink(pm_token, CSRF, uuid.uuid4(), unavailable),
@@ -407,7 +435,7 @@ def verify():
             assert exc.code == "PROJECT_ARCHIVED"
         else:
             raise AssertionError("archived project accepted Trace write")
-        print("PASS: Trace create/replay/Audit and authorized one-hop/bounded BFS, scope and hidden neighbor")
+        print("PASS: Trace create/replay/Audit, authorized graph pages and stale cursor on revoked neighbor")
     finally:
         if runtime is not None:
             runtime.dispose()

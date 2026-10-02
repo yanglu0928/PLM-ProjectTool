@@ -6343,3 +6343,12 @@
 - Impact/Rollback：内部 Trace Application 增量，无公开 API/Schema/Migration/依赖及历史数据变更；不装配多跳服务即可回滚。此结果是有界部分图，不代替完整可续页图或客户业务事实。
 - Verification Plan：单元验证多跳顺序、环、深度、节点与边上限、隐藏节点与根撤权、项目/License/Owner错误；隔离PG18验真实多跳/撤权。后端全量与wheel通过后只判内部遍历PASS。
 - Result：定向7项、隔离PG18两跳/深度/撤权隐藏及旧创建回归PASS；边预算孤立节点缺陷已修复并重测；后端1870运行/3跳过、开发wheel PASS。稳定游标/公开图API仍未完成。
+
+# DEC-20261002-610：Trace 有界图游标绑定查询与当前可见图指纹
+
+- Date/WBS：2026-10-02 / `TRC-01-A06-P02-P02`；输入冻结图查询 `cursor/max_depth/max_nodes` 与 P02-P01 同事务逐节点受权结果。
+- Decision：内部页服务每次以当前 Session/License/Project/Owner 重新计算同一有界可见图，再按固定 BFS 边序分页；专用 32 字节 AES-256-GCM 游标以 Session 摘要、Project/固定起点、方向、关系、深度、节点与页大小作 AAD，密文只含位置、可见图指纹和15分钟时效。下页图指纹不匹配则拒绝续页并要求重查，不能将过期授权快照继续输出。游标只覆盖本次预算内图；若基础图 `truncated=true`，最后一页仍保留截断标记，不暗示可续出全部边。
+- Reason：裸 offset/客户端 BFS 状态既可篡改又会在边或权限变化时漏读/重复；持久化服务器快照将增加Schema/数据留存。对最多500节点/2000边的当前受权图重新计算并比较指纹可在无新表的条件下失败关闭。
+- Impact/Rollback：内部 Trace Application/游标Codec 增量，无公开API/Schema/Migration/历史数据修改；不装配页服务即可回滚。生产独立密钥的目标账户供给/备份恢复在正式HTTP组合前另验，测试密钥不得当生产来源。图底层预算截断、不同Owner尚未注册、正式安全/性能/Gate仍开放。
+- Verification Plan：单元覆盖正常续页、密钥/Session/Project/查询篡改、TTL、图/权限变化拒绝、页节点不泄露、截断语义；隔离PG18真实两页、撤权或状态变化后旧游标拒绝。全量后端与wheel后仅判内部可续页PASS。
+- Result：定向6项、隔离PG18两页/撤权旧游标拒绝/新截断图及旧创建回归PASS，后端1876运行/3跳过、开发wheel PASS。仅内部合成密钥，正式目标账户密钥及公开图API未验。
