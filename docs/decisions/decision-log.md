@@ -6317,3 +6317,11 @@
 - Reason：借用普通 GLOBAL 读取要求给项目经理部署管理员权限，会扩大信息边界；仅存 UUID 或仅验证 DB 元数据不足以证明来源完整。独立 Port 让来源证明在调用方事务内且不公开通用浏览能力。
 - Impact/Rollback：内部 Application/DTO 增量，不改 API、Schema、数据或既有 GLOBAL 读取；若失败不装配 Workflow 并保持 Checklist/Gate 写关闭。只认 `STANDARD_CAPABILITY`，其他类别继续拒绝。验证合成 PG18/本地存储、权限及篡改，再处理真实 Workflow/Review/例外 Owner；正式信任和目标环境另验。
 - Result：新单元 6/6，隔离 PostgreSQL 18 合成 GLOBAL 整文档及固定解析节点持六表共享锁、普通 GLOBAL 项目经理读取仍拒绝，跨项目/撤销/实际文件及解析字节篡改失败关闭；后端全量 1852 通过/3 跳过，开发 wheel PASS。仅内部来源证明，实际 Workflow 写链、Review/例外 Owner 与正式目标环境仍未验。
+
+# DEC-20261002-607：Workflow Evidence 观测只接受实际 Owner 的显式 Scope 证明
+
+- Date/WBS：2026-10-02 / `WFL-01-A07-P06`；P05 缺 Review/例外 Owner 保持阻塞。
+- Decision：Workflow 内部适配按显式 PROJECT/GLOBAL 分别调用 P04 已验证 Owner，并在相同调用方事务核 EvidenceId、目标 ProjectId、Scope、ELIGIBLE、版本及指纹；只生成最小 `ChecklistBasisObservation`，不提交事务、不判 Review/例外/Gate。未知范围和异常失败关闭。
+- Reason：避免 Workflow 复制跨模块文件/解析/授权逻辑，亦避免用历史 UUID 或客户端观测值充当事实。P05 缺真实业务 Owner，不能以临时实现开启 PASS/WAIVED。
+- Impact/Rollback：内部接口/测试，无 API、Schema、依赖或数据迁移；不装配适配器即可回滚。后续真实写链必须重新验证 Session/License/CSRF、Review/例外、Audit/收据及并发；静态 Review 快照不代替客户确认。
+- Verification：定向单元5/5、后端1857运行/3跳过、wheel构建PASS；本项无新的PG写事务/浏览器/目标平台验收。
