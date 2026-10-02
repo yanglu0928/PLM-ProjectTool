@@ -25,7 +25,7 @@
 
 ## 最近检查点
 
-- 2026-10-02/AI-01-A04-P05 Provider GET/LIST 接入 Windows 两种显式平台模式；Win11 隔离真实 Session/PG18/ASGI 两页/详情/脱敏/ETag/非管理员/License、登录模式关闭及缺独立游标钥双模式启动失败关闭 PASS。后端1921运行/3跳过、开发wheelPASS；正式目标账户密钥与信任、三平台、Gate/可用包未验。
+- 2026-10-02/AI-01-A04-P05 Provider GET/LIST 接入 Windows 两种显式平台模式；Win11 隔离真实 Session/PG18/ASGI 两页/详情/脱敏/ETag/非管理员/License、登录模式关闭及缺独立游标钥双模式启动失败关闭 PASS。后端1921运行/3跳过、开发wheelPASS；39份旧平台隔离脚本的合成钥夹具待更新/重跑，正式目标账户密钥与信任、三平台、Gate/可用包未验。
 
 - 2026-10-02/AI-01-A04-P04 冻结Provider只读GET/LIST可选Router，默认404；Win11隔离ASGI/PG18两页/详情/管理员/License/撤权/脱敏/ETag PASS，P02回归PASS。全量首轮Windows访问冲突，单独重跑1920运行/3跳过PASS，开发wheelPASS；正式组合/目标账户钥/信任/Gate与可用包未验。
 

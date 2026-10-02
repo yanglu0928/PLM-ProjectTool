@@ -21,4 +21,4 @@
 
 Windows 11 临时 PostgreSQL 18.6 库应用 Alembic `head`，种入纯合成两用户、三 Provider/Secret，用真实会话与 HTTP 验证两个显式模式各自两页列表、详情强 ETag、固定遮罩、普通用户404、License拒绝403；登录模式404。两个显式模式在专用游标钥缺失时均拒绝启动。隔离库删除，PG 恢复原停机状态。后端全量 `1921` 运行、`3` 跳过、零失败；开发 wheel SHA-256 `909faf0da6e962ddefe144c90809670cce74d1f36560224bd7456cacccc1dba5`。未执行真实目标账户或三平台发行验证。
 
-兼容/升级：无新 Schema、依赖或 Breaking API；需先迁移至0054，并为运行显式平台模式的 Windows 服务账户供给独立 Provider 游标 KeyRef，升级前备份并验证恢复；缺钥会阻止显式平台启动。回滚代码装配不删除 Provider 数据；已产生的游标签名不可用时需重新分页。已知问题：正式服务账户密钥/License/Secret 主钥、Provider 写 HTTP/激活/路由/逐次外发、质量、Server 2025/Debian、UAT/Gate和可用包未验。下一项优先补 `AI-01-A03-P03` Provider 创建 HTTP，并保持生产外发关闭。
+兼容/升级：无新 Schema、依赖或 Breaking API；需先迁移至0054，并为运行显式平台模式的 Windows 服务账户供给独立 Provider 游标 KeyRef，升级前备份并验证恢复；缺钥会阻止显式平台启动。回滚代码装配不删除 Provider 数据；已产生的游标签名不可用时需重新分页。已知问题：正式服务账户密钥/License/Secret 主钥、Provider 写 HTTP/激活/路由/逐次外发、质量、Server 2025/Debian、UAT/Gate和可用包未验。另经静态盘点，39份旧平台隔离验证脚本尚未针对新增必需 Provider 游标钥更新其合成夹具；本项未声称这些历史脚本回归通过，后续作为测试维护任务处理。下一产品项优先补 `AI-01-A03-P03` Provider 创建 HTTP，并保持生产外发关闭。
