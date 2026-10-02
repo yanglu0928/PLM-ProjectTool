@@ -39,6 +39,7 @@ from plm_assistant.modules.jobs.infrastructure import orm as jobs_orm  # noqa: F
 from plm_assistant.modules.ai.infrastructure import provider_orm  # noqa: F401 - register AI-01 tables
 from plm_assistant.modules.ai.infrastructure import model_orm  # noqa: F401 - register AI-02 tables
 from plm_assistant.modules.ai.infrastructure import prompt_orm  # noqa: F401 - register AI-03 tables
+from plm_assistant.modules.ai.infrastructure import task_orm  # noqa: F401 - register AI-04 Task/Input tables
 
 
 config = context.config

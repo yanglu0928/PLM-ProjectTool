@@ -6993,3 +6993,12 @@
 - Reason：防止跨资源游标密钥复用、不可恢复游标或默默降级；保持冻结动作路由语义。
 - Impact/Rollback：新密钥是部署前置，不改Schema/依赖/冻结API；正式账户需受控供给及离线备份。撤只读装配可恢复原入口状态，不改数据。
 - Verification：Win11临时Vault丢失/备份恢复、缺钥启动失败、隔离PG18平台读/写组合、退役/Model回归、后端2100运行/3跳过、开发wheel通过；正式账户/Server2025/Debian未验。
+
+# DEC-20261002-698：AI-04 物理 Schema 按 Root/Input 与 Invocation/Snapshot 分切片
+
+- Date/WBS：2026-10-02 / `AI-04-A02-P01`；依据冻结 DM-04、SC-01/02、API-03。
+- Decision：0063 先建立 AITask R-SCP Root 与其不可变输入版本引用，包含 GLOBAL/PROJECT Scope、项目归属、TaskType、输入指纹、策略引用、状态/建议态、请求者、Job/Trace 与乐观锁；0064 再加入 Invocation、Context 与逐次外发授权快照及当前 Attempt 指针。冻结的四张 owned/Root 表均保留在最终范围；P01 不开放 API 或厂商调用。
+- Reason：使数据库每步可独立验证，同时避免在尚无 Attempt 表时伪造当前 Invocation 外键或外发授权已可用。
+- Impact/Rollback：0063 仅新增表，无已有列/API/依赖改变；空输入表可物理降级，已有 Task/输入历史拒绝降级并向前修复或受控备份恢复。P02 必须在 P01 之上补全冻结模型，不能据 P01 关闭 AI-04。
+- Verification Plan：Win11隔离PG18空库及已有业务历史升级、drift、Scope/Project FK、输入引用同项目/不可变/序号约束、空表 down/re-up 与非空拒降；后端回归及开发wheel。正式账户、AI外发和Gate3另验。
+- Verification Result：0063 ORM/Migration 已实施；Win11隔离PG18上述空/有数据与负例均 PASS，首轮全量回归因旧ORM/迁移头清单失败，更新后2100运行/3跳过PASS，开发wheel通过。Invocation/Context/外发快照仍未实现，正式环境与Gate3未验。

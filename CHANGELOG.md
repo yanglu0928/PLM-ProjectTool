@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-02：0.1.0.dev0/AI-04-A02-P01 新增AITask Root与不可变输入引用ORM/Migration0063，保护Scope/Project、身份/指纹、终态及历史；未开放AI外发或API。兼容性：0062后增量，原冻结基线不改，仅Win11隔离验证；Server2025/Debian未验。升级/回滚：正式库先备份并受控升0063；空表可降0062，有历史拒物理降级，向前修复或受控备份恢复。验证：空/有数据升级、空表降/重升、drift=0、FK/Scope/不可变/终态/非空拒降，后端2100运行/3跳过；开发wheel SHA-256 `b411179e3422b9c4fd28b887e575f1399315a90a0c1ef195fd53de9b372660cc`。已知问题：Invocation/Context/授权快照及Owner版本核验、正式信任、Gate3/UAT/可用包未过。
+
 - 2026-10-02：0.1.0.dev0/AI-04-A01 核对AITask/Invocation冻结边界与前置条件，明确逐次外发授权、Prompt RETIRED拒新调用及Suggestion仅建议态。兼容性/升级/回滚：仅文档，无程序、Schema、API或依赖变化。验证：冻结API/DM/Schema与现有源码静态核查，未执行新运行测试或客户数据外发。已知问题：物理Schema、统一AIService/Job、正式信任、RAG质量、Gate3/UAT/可用包未完成。
 
 - 2026-10-02：0.1.0.dev0/AI-03-A07-P04 Windows显式平台读/写组合装配Prompt LIST/GET，要求独立当前账户Vault游标密钥，缺失启动失败；默认模式404。修复只读详情路径对退役POST的405遮蔽，恢复404。兼容性：无Schema/依赖/Breaking API，仅Win11合成隔离验证。升级/回滚：受控供给独立密钥并离线备份后方可部署；撤只读Router装配恢复旧入口，数据不变。验证：Vault临时丢失/恢复、PG18两模式分页/ETag/鉴权/License/缺钥、Model及退役组合回归、后端2100运行/3跳过，开发wheel SHA-256 `f712ba6dcd7e01e0f7629ec10a8ad4c8f76aa9ef63ac75a21a52925d13a78c70`。已知问题：正式目标账户密钥/发行信任、Server2025/Debian、Prompt内容准入、Invocation、Gate3/UAT/可用包未过。
