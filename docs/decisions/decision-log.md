@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261002-661 — Provider 探针绝对时限与租约预算
+
+- Date/WBS：2026-10-02 / `AI-01-A05-P05-A03-P04-P02-A03-P02`；依据 CR-AI-002、ADR-007、当前 `PinnedHttpsProbeTransport` 与 Worker 60 秒租约。
+- Decision：受控域名 DNS 在只运行固定标准库代码的短命隔离解释器中解析，3 秒超时并终止子进程；网络建立到固定响应读取使用单一 20 秒绝对截止时间，拒绝分块/无长度/超限/滴流响应；Job 租约调整为 120 秒，保留现有 fencing 与发布前当前事实重验。仅内部 Provider Test，不扩展通用网络栈。
+- Reason：`getaddrinfo` 无调用时限；`http.client` 的逐次 socket 超时可被滴流续命。60 秒租约不足以覆盖领取、三次预检、独立 Secret 审计和结果发布的最坏数据库事务预算。后台超时线程会残留未知工作，不选；从请求线程强行终止不安全。
+- Impact/Rollback：无 Schema/API/依赖变化；失败重试等待可能从 60 增至 120 秒。回滚可停用未挂载 Worker/路由并恢复原传输代码，已存在 Job/审计不删除。新 DNS 子进程不接收 Secret、客户正文或 Provider Key。
+- Verification：Win11 定向16项（含真实隔离 DNS 子进程超时）、本机合成 TLS、隔离 PG18 Job→结果/审计、后端2023运行/3跳过与开发 wheel PASS。子进程创建期的 OS 级阻塞、真实厂商外发、SCM 及 Gate 保持开放。
+
 ## DEC-20261002-660 — Provider Worker 生命周期分步进入正式组合
 
 - Date/WBS：2026-10-02 / `AI-01-A05-P05-A03-P04-P02-A03-P01`；依据 CR-AI-002、ADR-007/012/013、现有三角色 SCM 与单次 Provider Worker。

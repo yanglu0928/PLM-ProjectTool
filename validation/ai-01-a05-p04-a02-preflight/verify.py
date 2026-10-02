@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import uuid
 
 import psycopg
@@ -33,7 +34,7 @@ from plm_assistant.modules.platform.infrastructure.idempotency_receipts import S
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
 
 
-HOST, PORT, USER = "127.0.0.1", 55432, "poc_admin"
+HOST, PORT, USER = "127.0.0.1", int(os.environ.get("PLM_POC_PG_PORT", "55432")), "poc_admin"
 CSRF = b"c" * 32
 
 

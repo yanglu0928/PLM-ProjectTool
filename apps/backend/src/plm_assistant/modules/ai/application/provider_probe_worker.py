@@ -49,7 +49,7 @@ class _Failure(Protocol):
 
 
 class ProviderProbeOneShotWorker:
-    LEASE_SECONDS = 60
+    LEASE_SECONDS = 120
 
     def __init__(self, *, claims: AIProviderTestClaims, runner: _Runner,
                  success: _Success, failure: _Failure) -> None:

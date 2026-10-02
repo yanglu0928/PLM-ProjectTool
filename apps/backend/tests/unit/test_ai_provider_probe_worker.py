@@ -22,9 +22,11 @@ class Claims:
         self.claim = claim
         self.calls = 0
         self.raise_error = False
+        self.lease_seconds = None
 
     def claim_next(self, **kwargs):
         self.calls += 1
+        self.lease_seconds = kwargs["lease_seconds"]
         if self.raise_error:
             raise JobLeaseError("STORE_DOWN")
         return self.claim
@@ -103,6 +105,7 @@ class ProviderProbeWorkerTests(unittest.TestCase):
                          ("SUCCEEDED", self.claim.job_id, self.success.id))
         self.assertEqual((self.claims.calls, self.runner.calls, self.success.calls), (1, 1, 1))
         self.assertFalse(self.failure.calls)
+        self.assertEqual(self.claims.lease_seconds, 120)
 
     def test_probe_error_enters_failure_publisher_once(self):
         self.runner.error = ProviderProbeExecutionError("PROBE_NETWORK_UNAVAILABLE")
