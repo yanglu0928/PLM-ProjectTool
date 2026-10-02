@@ -122,9 +122,12 @@ class AIProviderMetadataService:
             self._guard.require_valid(trace_id=query.trace_id)
             with self._uow() as tx:
                 self._require_admin(tx, query)
-                after = (self._cursors.decode(
-                    cursor, session_token=query.session_token, page_size=page_size,
-                ) if cursor is not None else None)
+                try:
+                    after = (self._cursors.decode(
+                        cursor, session_token=query.session_token, page_size=page_size,
+                    ) if cursor is not None else None)
+                except ValueError:
+                    raise AIProviderMetadataError("REQUEST_MALFORMED") from None
                 rows = self._repo.list_page(tx, after=after, limit=page_size + 1)
                 if (type(rows) is not list or len(rows) > page_size + 1
                         or any(type(row) is not AIProviderMetadataEntry

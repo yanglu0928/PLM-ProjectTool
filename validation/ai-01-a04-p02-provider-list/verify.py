@@ -121,9 +121,9 @@ def main() -> None:
                 assert all(str(secret) not in repr(item) for item in first.items)
                 expect("AUTH_ACCESS_DENIED", lambda: page(token=member_token,
                                                              cursor=first.next_cursor))
-                expect("VALIDATION_FAILED", lambda: page(size=3, cursor=first.next_cursor))
+                expect("REQUEST_MALFORMED", lambda: page(size=3, cursor=first.next_cursor))
                 tampered = first.next_cursor[:-1] + ("A" if first.next_cursor[-1] != "A" else "B")
-                expect("VALIDATION_FAILED", lambda: page(cursor=tampered))
+                expect("REQUEST_MALFORMED", lambda: page(cursor=tampered))
 
                 # A newly inserted newer row must not appear on an existing next page.
                 newest = create(4)

@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261002-629 — Provider GET/LIST 仅显式可选装配
+
+- Date/WBS：2026-10-02 / `AI-01-A04-P04`；输入冻结 API-01/API-03、P01～P03 安全投影/分页/签名钥。
+- Decision：新增一个可选 Provider 只读 Router，由 `create_app` 显式注入；默认应用及现有 Windows 平台组合均不自动挂载。GET/列表只输出固定安全字段，可信 Host/Session 与内部管理员/License 双重检查；无效游标统一 `REQUEST_MALFORMED` 400，详情附强 ETag，列表用内部签名游标。
+- Reason/Impact/Rollback：保留正式信任材料未供给时的失败关闭和冻结请求/错误合同。无 Schema/依赖/Breaking API 变化；撤路由注入可回滚，不影响 Provider 历史。
+
 ## DEC-20261002-628 — Provider 列表游标使用独立 Windows Vault KeyRef
 
 - Date/WBS：2026-10-02 / `AI-01-A04-P03`；输入 P02 独立签名游标与现有 Windows 当前账户 Credential Manager 恢复机制。
