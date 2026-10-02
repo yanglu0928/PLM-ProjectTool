@@ -1,6 +1,6 @@
 # CR-AI-014：AI Task 提交策略、Prompt版本与最小参数快照
 
-日期：2026-10-03；状态：依 V1.1 持续授权登记，P02～P03已实施，P04～P05待继续；关联冻结 API-03 `AI_TASK_CREATE/GET`、DM-04、Schema0063～0070、CR-AI-010～013；原 Gate 2 冻结提交 `64cdf09` 不改。WBS `AI-04-A05`。
+日期：2026-10-03；状态：依 V1.1 持续授权登记，P02～P04已实施，P05待继续；关联冻结 API-03 `AI_TASK_CREATE/GET`、DM-04、Schema0063～0070、CR-AI-010～013；原 Gate 2 冻结提交 `64cdf09` 不改。WBS `AI-04-A05`。
 
 ## 缺口与证据
 
@@ -31,3 +31,7 @@ Migration0070、AITask ORM和迁移head合同已落地。Windows 11 / PostgreSQL
 ## P03实施结果
 
 版本化Task Policy已严格绑定task type、PromptTemplate、purpose、Output/RAG引用和有界标量参数；Prompt Owner在创建事务锁定当前ACTIVE版本并由PostgreSQL规范化JSONB与计算摘要。内部新Task通过现有原子链写入完整0070快照，purpose与当前Egress Authorization精确一致；Prompt退役后新建失败，历史重放保留。Win11/PG18.6真实链、后端2140运行/3跳过及wheel通过。首轮发现JSON文本双重编码并修正为Text→JSONB显式转换后全量重跑。公开路由、部署策略来源和Worker执行仍未开启。
+
+## P04实施结果
+
+冻结POST路径已实现为可选Router：严格七字段请求、S/L/C/I/E/A前置、安全202 TaskRef+JobRef投影和冻结AI错误码；默认及当前生产组合保持404。合同14项、后端2145运行/3跳过及wheel通过。无新Schema、依赖、生产挂载或外发；P05负责非敏感部署Task Policy、Windows真实HTTP/PG组合和读取/执行前置。

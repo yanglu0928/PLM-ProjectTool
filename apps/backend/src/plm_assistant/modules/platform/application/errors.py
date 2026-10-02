@@ -63,6 +63,12 @@ COMMON_ERRORS: dict[str, ErrorSpec] = {
     "SYSTEM_INTERNAL": ErrorSpec("SYSTEM_INTERNAL", 500, "服务暂时无法完成请求。"),
     "SYSTEM_UNAVAILABLE": ErrorSpec("SYSTEM_UNAVAILABLE", 503, "服务暂时不可用。"),
     "AI_PROVIDER_UNAVAILABLE": ErrorSpec("AI_PROVIDER_UNAVAILABLE", 503, "Provider 暂不可用。"),
+    "AI_PROMPT_VERSION_INVALID": ErrorSpec(
+        "AI_PROMPT_VERSION_INVALID", 422, "Prompt 版本或策略与任务不兼容。"
+    ),
+    "AI_EGRESS_AUTHORIZATION_REQUIRED": ErrorSpec(
+        "AI_EGRESS_AUTHORIZATION_REQUIRED", 403, "本次 AI 操作缺少有效外发授权。"
+    ),
     "PLATFORM_SECRET_UNAVAILABLE": ErrorSpec(
         "PLATFORM_SECRET_UNAVAILABLE", 503, "Secret 服务暂时不可用。"
     ),

@@ -7156,3 +7156,11 @@
 - Reason：任意JSON会成为客户正文旁路；Python JSON编码与PostgreSQL `jsonb::text`不完全同构，不能由不同运行时各自声称同一摘要；提交后再解析活动Prompt则会造成版本漂移。
 - Impact/Rollback：内部CreateAITask新增参数及强制Policy/Prompt Owner依赖，复用0070，无新迁移/公开API/依赖/外发。停止后续组合可回退应用，完整Task历史保留。
 - Verification：定向16、Win11/PG18.6严格参数/锁定Prompt/数据库摘要/原子链/重放/退役和不匹配拒绝、后端2140运行/3跳过PASS；wheel `c214a8a277f9ef8521b68a62930b389053d105891c87bf68b4963fb2c1c215a8`。首轮双重JSON编码被数据库拒绝，修正Text→JSONB后从新库完整重跑。
+
+# DEC-20261003-718：AI Task创建HTTP只接受最小七字段并保持可选注入
+
+- Date/WBS：2026-10-03 / `AI-04-A05-P04`；依据冻结API-03、CR-AI-014。
+- Decision：冻结POST路径严格接收task type、input refs、三类策略引用、最小标量参数及EgressAuthorizationRef；返回仅TaskRef+JobRef。Router继续可选注入，默认及生产组合在P05前保持404。策略/Prompt和Egress失败映射冻结安全码，不暴露Owner内部原因。
+- Reason：P03已具备完整内部原子链，但直接全局挂载会在部署Task Policy/正式组合未完成时开放不完整能力；严格DTO也防止Key、endpoint、正文或任意Provider参数旁路。
+- Impact/Rollback：新增Router/App工厂槽和两项冻结AI错误码；无Schema/依赖/外发。撤注入恢复404，历史不变。
+- Verification：合同14项、后端2145运行/3跳过PASS；wheel `6f854dd6386108a0ad01c2f4b2aa8fe694af5bf0ec734be05d0f586889922ee7`。首轮缺Idempotency-Key状态断言按既有平台422语义修正并全量重跑。
