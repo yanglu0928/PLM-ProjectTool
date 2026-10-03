@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A06-P09-P02 新增Owner专用`AI_TASK_EXECUTE` claim与pre-Begin失败原子收敛；业务Worker不再跨Owner抢占Audit/Document/Probe，准备失败固定Job FAILED且不自动重发，Task的retryable仅作显式新generation资格。兼容性/升级/回滚：无Schema/API/依赖变化，通用/Parse claim保持；可停止业务AI消费撤组合，已提交终态/Audit必须保留。验证：Win11/PG18.6真实Owner隔离、零Invocation、Audit回滚，定向29、后端2280运行/3跳过；wheel 803项 SHA-256 `5515e05e104437824aa2d5131a0398347afb015624de33a772c4cc39eb738b1f`。已知问题：P03～P06生产Worker组合、Server2025、Gate3/UAT/可使用包待完成。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P09-P01 完成业务AI Worker组合前置核查并登记CR-AI-019：现Windows AI Worker仅运行Probe，缺业务Owner专用claim、pre-Begin失败收敛、一步执行/公平循环及受信Execution Policy来源。决定保留单一`AI_PROVIDER_WORKER`服务角色但隔离Probe/业务链，拆P02～P06实施。兼容性/升级/回滚：本项仅文档，无程序/Schema/API/依赖/外发；未运行新增测试。已知问题即P02～P06、Server2025、Gate3/UAT/可使用程序包待完成。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P08-P05-P02 将`ai/AI_TASK_EXECUTE`接入冻结Project Job Retry API；当前Session/CSRF、License、创建者或项目经理、Job ETag及当前Egress授权在Owner事务内重验，原子生成新Task/Job/Input/Egress/Outbox/Audit/Lineage；同Key精确回放、不同Key禁止分叉，Invocation延至Worker Begin。兼容性/升级/回滚：复用Schema0075和冻结API，无Migration/依赖/真实外发；可移除AI Owner但必须保留代际历史。验证：Win11/PG18.6一次性数据库，相关定向23、后端2275运行/3跳过；最终wheel 801项、SHA-256 `d5d693afce4e879b090846613f6edd4d54f71c0d60bb5f832bc9869e88c7a07b`。已知问题：生产AI Worker组合、Server2025、Gate3/UAT/可使用程序包待完成。

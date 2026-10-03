@@ -7532,3 +7532,11 @@
 - Reason：现有角色名和Secret consumer边界已覆盖Provider网络，新增角色会扩大安装/账户/ACL/诊断矩阵；但直接复用Probe Worker/Transport或通用claim会把连通性探针与客户业务载荷混同并跨Owner消费。单角色、双链隔离兼顾最小部署面和职责边界。
 - Impact/Rollback：P01仅设计记录。P02～P05将新增AI专用claim/pre-Begin失败、业务一步执行器、组合循环和非Secret Execution Policy Bootstrap；不改公开API和冻结状态。停止角色并保留所有终态/对账历史即可回滚，已RUNNING不得复活。
 - Verification：静态核对Windows服务入口仅创建Probe Loop、服务计划只读`ai_probe_policies`、通用claim过滤、Prepare/Begin次序及P08发布器前置；确认三个客观缺口。本项无运行测试、Secret或网络I/O。
+
+# DEC-20261003-765：pre-Begin 失败固定终止 Job，显式 Retry 资格只留在 Task
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P09-P02`；依据 CR-AI-019、DEC-758～764。
+- Decision：业务 Worker 必须通过 Jobs-owned `claim_next_ai_task` 领取，且只接收 `ai/AI_TASK_EXECUTE`。prepare 在 Invocation Begin 之前失败时，Job 一律以不自动重试方式进入 FAILED；Task 可保留 `retryable=true` 作为用户显式新 generation 资格。Job/Attempt/Lease/Task/Audit 必须同事务，且此路径必须证明不存在 Invocation。
+- Reason：通用 `RETRY_WAIT` 会绕过已冻结的显式 Retry generation 与当前 Egress 重验；跨 Owner claim 会让业务AI进程执行不属于它的任务。pre-Begin 时尚无 Invocation，不能伪造执行尝试或复用要求 Begun Invocation 的P08发布器。
+- Impact/Rollback：无Schema/API/依赖/网络变化；新增内部claim与pre-Begin Publisher/Repository。可停止业务AI消费并撤销新组合，但已持久化终态和Audit不可删除。
+- Verification：Windows11/PostgreSQL18.6实证Owner隔离、原子终止、零Invocation与Audit故障全回滚；相关定向29、后端2280运行/3跳过；wheel 803项 SHA-256 `5515e05e104437824aa2d5131a0398347afb015624de33a772c4cc39eb738b1f`。

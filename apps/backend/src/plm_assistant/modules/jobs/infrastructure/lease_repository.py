@@ -226,16 +226,24 @@ class SqlAlchemyJobLeaseRepository:
                    lease_seconds: int) -> ClaimedJob | None:
         return self._claim_next_filtered(transaction, worker_ref=worker_ref,
                                          lease_seconds=lease_seconds,
-                                         parse_only=False)
+                                         owner_filter=None)
 
     def claim_next_parse(self, transaction: object, *, worker_ref: str,
                          lease_seconds: int) -> ClaimedJob | None:
         return self._claim_next_filtered(transaction, worker_ref=worker_ref,
                                          lease_seconds=lease_seconds,
-                                         parse_only=True)
+                                         owner_filter=("document", "DOCUMENT_PARSE"))
+
+    def claim_next_ai_task(self, transaction: object, *, worker_ref: str,
+                           lease_seconds: int) -> ClaimedJob | None:
+        return self._claim_next_filtered(
+            transaction, worker_ref=worker_ref, lease_seconds=lease_seconds,
+            owner_filter=("ai", "AI_TASK_EXECUTE"),
+        )
 
     def _claim_next_filtered(self, transaction: object, *, worker_ref: str,
-                             lease_seconds: int, parse_only: bool) -> ClaimedJob | None:
+                             lease_seconds: int,
+                             owner_filter: tuple[str, str] | None) -> ClaimedJob | None:
         session = self._session(transaction)
         # Limit one claim per transaction. Exhausted jobs are terminalized before
         # trying the next row, so they cannot starve a ready job indefinitely.
@@ -247,9 +255,9 @@ class SqlAlchemyJobLeaseRepository:
                      or_(JobRow.owner_module != "ai",
                          JobRow.job_type != "AI_TASK_EXECUTE")),
             )]
-            if parse_only:
-                conditions.extend((JobRow.owner_module == "document",
-                                   JobRow.job_type == "DOCUMENT_PARSE"))
+            if owner_filter is not None:
+                conditions.extend((JobRow.owner_module == owner_filter[0],
+                                   JobRow.job_type == owner_filter[1]))
             job = session.execute(select(JobRow).where(*conditions)
                 .order_by(JobRow.priority.desc(), JobRow.available_at, JobRow.job_id)
                 .limit(1).with_for_update(of=JobRow, skip_locked=True)).scalar_one_or_none()
