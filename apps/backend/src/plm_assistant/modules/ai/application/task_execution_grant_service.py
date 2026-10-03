@@ -101,62 +101,86 @@ class AITaskExecutionGrantIssuer:
 
     def issue(self, *, job_id: uuid.UUID, fencing_token: int,
               worker_ref: str, now: datetime) -> AITaskExecutionGrant:
+        try:
+            with self._uow() as transaction:
+                grant = self.issue_in(
+                    transaction, job_id=job_id, fencing_token=fencing_token,
+                    worker_ref=worker_ref, now=now,
+                )
+            self.require_usable(grant)
+            return grant
+        except AITaskExecutionGrantError:
+            raise
+        except Exception:
+            raise AITaskExecutionGrantError() from None
+
+    def issue_in(self, transaction: object, *, job_id: uuid.UUID,
+                 fencing_token: int, worker_ref: str,
+                 now: datetime) -> AITaskExecutionGrant:
+        """Issue inside the caller's short transaction; never perform network I/O."""
         if (type(job_id) is not uuid.UUID or not job_id.int
                 or not isinstance(now, datetime) or now.tzinfo is None
                 or now.utcoffset() is None):
             raise AITaskExecutionGrantError()
         now = now.astimezone(timezone.utc)
         try:
-            with self._uow() as transaction:
-                claim = self._claims.check_current(
-                    transaction, job_id=job_id, fencing_token=fencing_token,
-                    worker_ref=worker_ref,
-                )
-                material = self._repository.load(
-                    transaction, claim=claim, now=now,
-                )
-                if type(material) is not AITaskExecutionGrantMaterial:
-                    raise AITaskExecutionGrantError()
-                self._require_claim(material, claim)
-                current = self._egress.resolve_authorized(
-                    transaction,
-                    query=EgressAuthorizationQuery(
-                        claim.egress_authorization_ref, claim.project_id,
-                        material.task_type, claim.input_fingerprint, now,
-                    ),
-                )
-                self._require_authorization(material, current, claim, now)
-                self._guard.require_valid(trace_id=claim.trace_id)
-                grant = AITaskExecutionGrant(
-                    material.ai_task_id, material.project_id, material.job_id,
-                    material.requested_by, material.trace_id, claim.attempt_no,
-                    claim.fencing_token, material.task_type, material.input_refs,
-                    material.source_refs_fingerprint, material.prompt_policy_ref,
-                    material.prompt_policy_version, material.prompt_template_id,
-                    material.prompt_version_no, material.system_template_hash,
-                    material.user_template_hash, material.provider_policy_ref,
-                    material.output_schema_ref, material.schema_version,
-                    material.context_policy_ref,
-                    material.task_parameters_fingerprint,
-                    material.egress_snapshot_id, material.authorization_ref,
-                    material.authorization_fingerprint, material.purpose_ref,
-                    material.ai_provider_id, material.provider_config_version_id,
-                    material.ai_model_id, material.provider_model_key,
-                    material.model_revision, material.data_region,
-                    material.allowed_data_categories,
-                    material.approved_payload_fingerprint,
-                    current.minimal_payload_policy_ref,
-                    current.max_record_count, material.max_payload_bytes,
-                    material.max_input_tokens, material.max_retry_attempts,
-                    material.valid_until, material.content_plan_ref,
-                )
-            # Do not allow a license state change at the transaction boundary to
-            # produce a usable grant. The network boundary will check again.
-            self._guard.require_valid(trace_id=grant.trace_id)
-            return grant
+            claim = self._claims.check_current(
+                transaction, job_id=job_id, fencing_token=fencing_token,
+                worker_ref=worker_ref,
+            )
+            material = self._repository.load(
+                transaction, claim=claim, now=now,
+            )
+            if type(material) is not AITaskExecutionGrantMaterial:
+                raise AITaskExecutionGrantError()
+            self._require_claim(material, claim)
+            current = self._egress.resolve_authorized(
+                transaction,
+                query=EgressAuthorizationQuery(
+                    claim.egress_authorization_ref, claim.project_id,
+                    material.task_type, claim.input_fingerprint, now,
+                ),
+            )
+            self._require_authorization(material, current, claim, now)
+            self._guard.require_valid(trace_id=claim.trace_id)
+            return AITaskExecutionGrant(
+                material.ai_task_id, material.project_id, material.job_id,
+                material.requested_by, material.trace_id, claim.attempt_no,
+                claim.fencing_token, material.task_type, material.input_refs,
+                material.source_refs_fingerprint, material.prompt_policy_ref,
+                material.prompt_policy_version, material.prompt_template_id,
+                material.prompt_version_no, material.system_template_hash,
+                material.user_template_hash, material.provider_policy_ref,
+                material.output_schema_ref, material.schema_version,
+                material.context_policy_ref,
+                material.task_parameters_fingerprint,
+                material.egress_snapshot_id, material.authorization_ref,
+                material.authorization_fingerprint, material.purpose_ref,
+                material.ai_provider_id, material.provider_config_version_id,
+                material.ai_model_id, material.provider_model_key,
+                material.model_revision, material.data_region,
+                material.allowed_data_categories,
+                material.approved_payload_fingerprint,
+                current.minimal_payload_policy_ref,
+                current.max_record_count, material.max_payload_bytes,
+                material.max_input_tokens, material.max_retry_attempts,
+                material.valid_until, material.content_plan_ref,
+            )
         except AITaskExecutionGrantError:
             raise
         except (JobLeaseError, EgressAuthorizationOwnerError, RuntimeLicenseError):
+            raise AITaskExecutionGrantError() from None
+        except Exception:
+            raise AITaskExecutionGrantError() from None
+
+    def require_usable(self, grant: AITaskExecutionGrant) -> None:
+        """Recheck License after commit; the network boundary must check again."""
+        if type(grant) is not AITaskExecutionGrant:
+            raise AITaskExecutionGrantError()
+        try:
+            grant.__post_init__()
+            self._guard.require_valid(trace_id=grant.trace_id)
+        except (AITaskExecutionGrantError, RuntimeLicenseError):
             raise AITaskExecutionGrantError() from None
         except Exception:
             raise AITaskExecutionGrantError() from None

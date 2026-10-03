@@ -41,6 +41,8 @@ P05-P01静态核查确认Schema0064已有Invocation/Context/Task当前指针与�
 
 P05-P02已新增Schema0073独立INSERT守卫：新Invocation必须是AUTHORIZED、非空PlanRef，并与Task、授权快照和Content Plan的静态身份、策略、Prompt/Schema、Context、Provider/Model/revision及payload证明一致。旧NULL历史保留，但升级后新NULL/跨Plan/payload漂移失败关闭；有新Plan绑定Invocation时拒绝降级。Win11/PG18.6空库/历史库升降重升、drift和负例通过，后端2211运行/3跳过及wheel通过。无公开API、依赖、运行装配或网络外发；P05-P03继续短事务Begin。
 
+P05-P03已新增无正文Invocation Begin服务与PostgreSQL Repository：Grant在调用方UoW内签发，下一PENDING Attempt、Task当前指针/状态/开始时间/锁版本同事务提交，提交后再检License。Win11/PG18.6真实UoW证明单次原子写、重复拒绝及注入故障全回滚；定向9、后端2213运行/3跳过及wheel通过。首次验证发现UoW需显式commit，修正后新库完整重跑。无公开API/迁移/依赖/Worker装配/外发；P05-P04继续真实Claim→Envelope→Begin组合和发送前Proof。
+
 ## 影响、迁移与回滚
 
 该变更补充冻结实现顺序，不修改原冻结提交。P01无代码、Schema、依赖或公开API变化。后续若需新增数据库对象或请求字段，必须在相应切片先给出ORM/Migration、空库/有数据up/down、兼容与API增量证据。已存在的Egress Preview/Authorization和Task历史保留；不能证明服务端载荷计划的旧记录一律不可执行，不猜测回填。

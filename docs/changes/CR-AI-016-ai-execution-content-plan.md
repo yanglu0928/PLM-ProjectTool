@@ -69,6 +69,8 @@ P05-P01核查发现0072对Invocation只增加PlanRef外键和更新不可变守�
 
 P05-P02已实现Schema0073：不增加列或表，以新INSERT触发器强制每个新Invocation的PlanRef非空，并逐项核对Task、授权快照与Plan的身份和payload证明。守卫只核不可变静态证据，当前授权/License/Lease仍由应用层重验。Windows 11/PostgreSQL18.6证明旧NULL保留但新NULL、跨Plan和payload漂移拒绝，精确PENDING行可写，有新历史拒降；后端2211运行/3跳过及wheel通过。P05-P03再实现实际写入器。
 
+P05-P03已实现实际内部写入器：Grant的精确Plan ID和批准payload摘要进入PENDING Invocation，Task指针与状态同事务推进；重复Begin和写后故障失败关闭。当前仅NONE Context可到达，未来RAG Plan若被错误写成空Context会被0073拒绝。Win11/PG18.6真实UoW、后端2213运行/3跳过及wheel通过；无网络外发或生产Worker装配。
+
 ## 兼容、迁移与回滚
 
 - 原 Gate 2 冻结提交和现有 0064/0068～0071 历史不改。P03-P02-A01～A04 先建立未装配合同与 Owner，暂不产生数据库或公开 API 变化。

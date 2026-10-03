@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A06-P05-P03 新增无正文Invocation Begin服务/Repository，Grant复核、PENDING Attempt与Task当前指针/状态/时间/版本同一短事务提交，commit后再验License；重复开始和写后故障失败关闭。兼容性/升级/回滚：需Schema0073，无新Migration/API/依赖/Worker装配/外发；未装配可撤，已提交历史须后续终态收敛。验证：Win11/PG18.6真实原子链/重复拒绝/故障回滚/零Provider I/O，定向9、后端2213运行/3跳过及wheel PASS，SHA-256 `c6af40d3c0558987e475b1f0bc0c3a7528a48ff92190a99ea394ef4cbf815d0b`。首次验证遗漏显式commit已修复重跑。已知问题：真实Claim+Envelope组合、Invocation终态、Adapter/发布、Server2025、Gate3/UAT/可用包待完成。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P05-P02 新增Schema0073新Invocation PlanRef同源守卫，数据库逐项核Task、授权快照与Plan的身份/策略/Prompt/Context/模型/payload证明；旧NULL保留但新NULL、跨Plan和漂移拒绝。兼容性/升级/回滚：无新表列/API/依赖/外发，空历史可降，有非空Invocation PlanRef拒降并向前修复。验证：Win11/PG18.6空/历史库升降重升、drift/负例/拒降，后端2211运行/3跳过及wheel PASS，SHA-256 `d2301d828172e76fc2eec67d5c4ec5b8a7c79c1fe96f4c245f4754eb97f2ca46`。已知问题：业务Invocation Begin/终态、Adapter/发布、Server2025、Gate3/UAT/可用包待完成；Debian13按指令跳过。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P05-P01 完成Invocation生命周期/持久化前置核查：确认0064已有表和状态机但无业务写入器/AI Task Worker；发现0072未在INSERT时强制Invocation PlanRef与Task/授权快照/Plan同源，决定先追加0073守卫再实现短事务Begin。兼容性/升级/回滚：本项仅文档，无程序/Schema/API/依赖/外发；旧NULL历史不回填、不可执行。验证：静态交叉核对Migration/ORM/冻结DM/API和Worker入口，未运行新增测试。已知问题：0073、Invocation Begin/终态、Adapter/发布、Server2025、Gate3/UAT/可用包待完成；Debian13按指令跳过。

@@ -7356,3 +7356,11 @@
 - Reason：静态历史一致性适合数据库最终守卫；当前授权/License/Lease会变化且涉及Owner边界，必须在调用方短事务和网络发送前检查。把二者混入触发器会造成隐式跨模块授权并仍无法覆盖事务提交后的网络窗口。
 - Impact/Rollback：Schema头增至0073，无表/列/API/依赖/外发变化；旧NULL历史保留。无非空Invocation PlanRef可降级，有新历史时拒降并向前修复。
 - Verification：Win11/PG18.6空库和旧NULL历史升降重升、drift=0；新NULL/跨Plan/payload漂移拒绝、精确PENDING插入和有新历史拒降PASS；后端2211运行/3跳过，wheel SHA-256 `d2301d828172e76fc2eec67d5c4ec5b8a7c79c1fe96f4c245f4754eb97f2ca46`。
+
+# DEC-20261003-743：Invocation Begin提交前只写证明，提交后再验License且不跨网络持有事务
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P05-P03`；依据 CR-AI-015/016、DEC-742、Schema0073。
+- Decision：Grant Issuer增加调用方事务内入口；Begin服务在同一短UoW内完成Claim/授权/License复核、PENDING Invocation插入及Task指针/状态推进，并显式commit。commit后再验License；任何Provider I/O必须发生在事务外且发送前再次检查。正文不进入Invocation。
+- Reason：Grant与Invocation分事务会留下撤权/fencing竞争窗口；跨网络持锁又会放大锁时长且不能使外部副作用可回滚。PENDING先落证据、事务外调用是可追溯且失败关闭的边界。
+- Impact/Rollback：内部应用/Repository增量，无Migration/API/依赖/生产装配/外发。未装配可撤代码；已提交PENDING及Task状态不能删除，须由后续终态/对账收敛。当前只支持NONE Context。
+- Verification：Win11/PG18.6真实UoW原子Begin、重复拒绝、注入故障全回滚、零Provider I/O；定向9、后端2213运行/3跳过PASS；wheel SHA-256 `c6af40d3c0558987e475b1f0bc0c3a7528a48ff92190a99ea394ef4cbf815d0b`。首次证据遗漏显式commit，修正后新库完整重跑。
