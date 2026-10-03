@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
 import math
 import uuid
@@ -48,6 +49,9 @@ class ParsedAISuggestion:
                 or not 2 <= len(self.canonical_payload_json) <= 1_048_576
                 or any(type(value) is not bytes or len(value) != 32 for value in (
                     self.payload_fingerprint, self.response_fingerprint))
+                or not hmac.compare_digest(
+                    hashlib.sha256(self.canonical_payload_json).digest(),
+                    self.payload_fingerprint)
                 or type(self.evidence_ordinals) is not tuple
                 or not self.evidence_ordinals
                 or type(self.latency_ms) is not int or self.latency_ms < 0):

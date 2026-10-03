@@ -7468,3 +7468,11 @@
 - Reason：模型自报对象身份和指纹不可作为证据，通用宽松JSON或Markdown抽取会把歧义内容错误标为Schema VALID。来源序号可与已授权Plan稳定关联，同时把证据真实性留在服务端Owner边界。
 - Impact/Rollback：新增内部registry/parser，无Schema/API/依赖/网络。兼容既有`gap-output.v1`和部署示例`gap-analysis-output.v1`；移除parser恢复不发布结果，不修改历史。
 - Verification：单元4/8子用例，Windows11真实Prepared来源身份上的有效/无效合成响应，后端2245运行/3跳过；wheel SHA-256 `2fd6018406f032e0277531e3921dee8c0ded6ad8a6d581056b3ea347e3379a0d`；零真实Provider/Secret/外发。
+
+# DEC-20261003-757：Suggestion、AI终态、Jobs与Audit必须单事务发布
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P07-P05`；依据 CR-AI-018、Schema0074、P07-P02～P04。
+- Decision：成功响应解析后，在一个短事务内以当前Lease/fencing终结Job/Attempt/Lease，从不可变Content Plan解析Evidence，写Suggestion/Evidence，推进Invocation为SUCCEEDED/VALID、Task为SUCCEEDED/AVAILABLE并追加Project Audit；任一步失败全部回滚。响应由成功编排在所有退出路径清零；回滚后的RUNNING交P08，不回退PENDING或重发。
+- Reason：分步提交会产生Job成功但无结果、结果可见但无Audit或Evidence伪引用。由服务端Plan解析内容指纹可证明引用来自已授权的确切内容版本，同时保持Suggestion为非正式事实。
+- Impact/Rollback：新增内部发布服务/Repository，无Schema/API/依赖/生产Worker/真实外发。可停止消费；已发布历史不可删除，未发布RUNNING由P08对账。
+- Verification：Win11/PG18.6真实链中注入Audit失败后全回滚，再以同一未重发响应原子成功；单元3/2子用例、后端2248运行/3跳过；wheel SHA-256 `a1a3f0f3e6b3b4167f7ff395810b8a4ca5216d6c325758831db08ddb3c8b0b79`。
