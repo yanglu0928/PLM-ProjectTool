@@ -156,3 +156,15 @@ class AIExecutionContentPlanOwner:
         if value is not None:
             value.__post_init__()
         return value
+
+    def get_for_preview(
+        self, transaction: object, *, egress_preview_id: uuid.UUID,
+    ) -> PersistedAIExecutionContentPlan | None:
+        if not _id(egress_preview_id):
+            return None
+        value = self._repository.get_by_preview(
+            transaction, egress_preview_id=egress_preview_id,
+        )
+        if value is not None:
+            value.__post_init__()
+        return value

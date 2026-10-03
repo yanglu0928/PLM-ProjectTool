@@ -57,6 +57,8 @@ P04-P04-A02已新增Preview规划期Prompt PostgreSQL Owner：短事务内锁定
 
 P04-P04-A03已让Document Owner提供Preview规划期精确最小投影：使用EGRESS_PREVIEW_CREATE而非执行权限，在同一事务内锁定当前成功ParseRecord/Result、读取复核私有结果并返回`minimum.document.text.v1`投影；执行期仍要求AI_TASK_EXECUTE。同步修正A01未装配合成夹具的旧策略别名，不改历史/API。Win11/PG18.6 CustomerManager权限隔离、行锁、摘要和零Invocation通过。
 
+P04-P04-A04已把AI_TASK Preview、服务端Envelope、唯一Content Plan/Source、Audit与Receipt组合为同一事务；AI计划模式拒绝客户端派生record count/payload fingerprint，路由模型key/revision来自数据库。精确幂等重放不重读正文但必须复核Plan仍存在且摘要/计数一致，Task参数变化冲突，Audit失败全回滚。旧内部/非AI路径兼容，公开HTTP尚待A05强制新形态。
+
 ## 兼容、迁移与回滚
 
 - 原 Gate 2 冻结提交和现有 0064/0068～0071 历史不改。P03-P02-A01～A04 先建立未装配合同与 Owner，暂不产生数据库或公开 API 变化。

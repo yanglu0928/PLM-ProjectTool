@@ -5,12 +5,25 @@ from __future__ import annotations
 import re
 import uuid
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timedelta, timezone
 from types import MappingProxyType
 from typing import Mapping, Protocol
 
 from plm_assistant.modules.ai.application.create_task import input_refs_fingerprint
+from plm_assistant.modules.ai.application.egress_task_plan import (
+    AIEgressTaskPlanError,
+    AIExecutionPreviewPlanBuilder,
+    AIExecutionPreviewPlanRequest,
+    AIExecutionPreviewRoute,
+    AITaskPreviewPlanRequest,
+    BuiltAIExecutionPreviewPlan,
+)
+from plm_assistant.modules.ai.application.execution_content_plan_owner import (
+    AIExecutionContentPlanOwner,
+    AIExecutionContentPlanPersistenceError,
+    PersistedAIExecutionContentPlan,
+)
 from plm_assistant.modules.ai.application.input_resolution import (
     AIInputResolutionError, AIInputResolutionQuery, AIInputResourceVersionRef,
     AIInputVersionResolver, AIResolvedInputVersionRef,
@@ -51,11 +64,12 @@ class CreateEgressPreview:
     source_refs: tuple[AIInputResourceVersionRef, ...]
     allowed_data_categories: tuple[str, ...]
     minimal_payload_policy_ref: str
-    estimated_record_count: int
+    estimated_record_count: int | None
     max_payload_bytes: int
     max_input_tokens: int
     max_retry_attempts: int
-    payload_fingerprint: bytes = field(repr=False)
+    payload_fingerprint: bytes | None = field(repr=False)
+    ai_task_plan: AITaskPreviewPlanRequest | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -121,6 +135,8 @@ class EgressRoute:
     provider_config_version_id: uuid.UUID
     model_id: uuid.UUID
     data_region: str
+    provider_model_key: str
+    model_revision: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -235,15 +251,25 @@ class EgressPreviewService:
                  policies: EgressPreviewPolicyRegistry,
                  repository: EgressPreviewRepositoryPort,
                  receipts: EgressPreviewReceiptPort, audit: AuditService,
+                 task_plan_builder: AIExecutionPreviewPlanBuilder | None = None,
+                 content_plan_owner: AIExecutionContentPlanOwner | None = None,
                  clock: Callable[[], datetime] | None = None) -> None:
         if any(value is None for value in (
             unit_of_work, access, license_guard, authorization, input_resolver,
             policies, repository, receipts, audit,
         )):
             raise ValueError("Egress Preview dependencies required")
+        if ((task_plan_builder is None) != (content_plan_owner is None)
+                or task_plan_builder is not None
+                and type(task_plan_builder) is not AIExecutionPreviewPlanBuilder
+                or content_plan_owner is not None
+                and type(content_plan_owner) is not AIExecutionContentPlanOwner):
+            raise ValueError("AI Egress Task Plan dependencies must be paired")
         self._uow, self._access, self._guard = unit_of_work, access, license_guard
         self._authorization, self._inputs, self._policies = authorization, input_resolver, policies
         self._repository, self._receipts, self._audit = repository, receipts, audit
+        self._task_plans = task_plan_builder
+        self._content_plans = content_plan_owner
         self._clock = clock or (lambda: datetime.now(timezone.utc))
 
     def create(self, command: CreateEgressPreview, *, idempotency_key: str) -> EgressPreviewView:
@@ -263,7 +289,10 @@ class EgressPreviewService:
                 "max_payload_bytes": command.max_payload_bytes,
                 "max_input_tokens": command.max_input_tokens,
                 "max_retry_attempts": command.max_retry_attempts,
-                "payload_fingerprint": command.payload_fingerprint.hex(),
+                "payload_fingerprint": (command.payload_fingerprint.hex()
+                                        if command.payload_fingerprint else None),
+                "ai_task_plan": self._task_plan_fingerprint_fields(
+                    command.ai_task_plan),
             })
             self._guard.require_valid(trace_id=command.trace_id)
             with self._uow() as tx:
@@ -287,6 +316,8 @@ class EgressPreviewService:
                     )
                     if type(view) is not EgressPreviewView:
                         raise EgressPreviewError("AI_EGRESS_PREVIEW_UNAVAILABLE")
+                    if command.ai_task_plan is not None:
+                        self._require_persisted_plan(tx, view)
                     return view
                 sources = self._inputs.resolve_all(
                     tx, AIInputResolutionQuery(command.session_token, command.trace_id),
@@ -297,18 +328,45 @@ class EgressPreviewService:
                 )
                 if type(route) is not EgressRoute:
                     raise EgressPreviewError("AI_EGRESS_ROUTE_UNAVAILABLE")
-                expires_at, risks = self._policies.authorize(command, now=now)
+                planned = self._build_task_plan(
+                    tx, command=command, actor=actor, sources=sources,
+                    route=route,
+                )
+                effective = command
+                if planned is not None:
+                    effective = replace(
+                        command,
+                        estimated_record_count=planned.envelope.record_count,
+                        payload_fingerprint=planned.envelope.payload_fingerprint,
+                    )
+                    if (planned.envelope.payload_bytes > command.max_payload_bytes
+                            or planned.envelope.input_tokens > command.max_input_tokens):
+                        raise EgressPreviewError("AI_EGRESS_POLICY_DENIED")
+                expires_at, risks = self._policies.authorize(effective, now=now)
                 request = EgressPreviewPersistenceRequest(
                     command.project_id, command.purpose_ref, command.operation_type, route,
                     tuple(sorted(command.allowed_data_categories)), sources,
-                    command.minimal_payload_policy_ref, command.estimated_record_count,
+                    command.minimal_payload_policy_ref,
+                    effective.estimated_record_count,
                     command.max_payload_bytes, command.max_input_tokens,
-                    command.max_retry_attempts, command.payload_fingerprint,
+                    command.max_retry_attempts, effective.payload_fingerprint,
                     input_refs_fingerprint(sources), risks, actor, command.trace_id, expires_at,
                 )
                 view = self._repository.create(tx, request=request)
                 if type(view) is not EgressPreviewView:
                     raise EgressPreviewError("AI_EGRESS_PREVIEW_UNAVAILABLE")
+                if planned is not None:
+                    persisted = self._content_plans.persist(
+                        tx, egress_preview_id=view.preview_id,
+                        plan=planned.plan, envelope=planned.envelope,
+                    )
+                    if (type(persisted) is not PersistedAIExecutionContentPlan
+                            or persisted.egress_preview_id != view.preview_id
+                            or persisted.payload_fingerprint
+                               != view.payload_fingerprint
+                            or persisted.record_count
+                               != view.estimated_record_count):
+                        raise EgressPreviewError("AI_EGRESS_PREVIEW_UNAVAILABLE")
                 self._audit.append(tx, AuditEventDraft(
                     trace_id=command.trace_id, event_scope="PROJECT",
                     target_project_id=command.project_id, actor_type="USER", actor_id=actor,
@@ -333,6 +391,9 @@ class EgressPreviewService:
             raise EgressPreviewError(error.code) from None
         except RuntimeLicenseError:
             raise EgressPreviewError("LICENSE_OPERATION_DENIED") from None
+        except (AIEgressTaskPlanError,
+                AIExecutionContentPlanPersistenceError):
+            raise EgressPreviewError("AI_EGRESS_PREVIEW_UNAVAILABLE") from None
         except Exception:
             raise EgressPreviewError("AI_EGRESS_PREVIEW_UNAVAILABLE") from None
 
@@ -390,17 +451,82 @@ class EgressPreviewService:
                        for item in command.allowed_data_categories)
                 or type(command.minimal_payload_policy_ref) is not str
                 or _REF.fullmatch(command.minimal_payload_policy_ref) is None
-                or type(command.estimated_record_count) is not int
-                or not 0 <= command.estimated_record_count <= 1_000_000_000
+                or not ((command.ai_task_plan is not None
+                         and command.operation_type == "AI_TASK"
+                         and command.estimated_record_count is None
+                         and command.payload_fingerprint is None)
+                        or (command.ai_task_plan is None
+                            and type(command.estimated_record_count) is int
+                            and 0 <= command.estimated_record_count <= 1_000_000_000
+                            and type(command.payload_fingerprint) is bytes
+                            and len(command.payload_fingerprint) == 32))
                 or type(command.max_payload_bytes) is not int
                 or not 1 <= command.max_payload_bytes <= 1_073_741_824
                 or type(command.max_input_tokens) is not int
                 or not 1 <= command.max_input_tokens <= 1_048_576
                 or type(command.max_retry_attempts) is not int
                 or not 1 <= command.max_retry_attempts <= 10
-                or type(command.payload_fingerprint) is not bytes
-                or len(command.payload_fingerprint) != 32):
+                or (command.ai_task_plan is not None
+                    and type(command.ai_task_plan) is not AITaskPreviewPlanRequest)):
             raise EgressPreviewError("VALIDATION_FAILED")
+
+    def _build_task_plan(
+        self, transaction: object, *, command: CreateEgressPreview,
+        actor: uuid.UUID, sources: tuple[AIResolvedInputVersionRef, ...],
+        route: EgressRoute,
+    ) -> BuiltAIExecutionPreviewPlan | None:
+        if command.ai_task_plan is None:
+            return None
+        if self._task_plans is None or self._content_plans is None:
+            raise EgressPreviewError("AI_EGRESS_PREVIEW_UNAVAILABLE")
+        planned = self._task_plans.build(
+            transaction,
+            request=AIExecutionPreviewPlanRequest(
+                command.project_id, actor, command.trace_id,
+                command.purpose_ref, command.minimal_payload_policy_ref,
+                tuple(sorted(command.allowed_data_categories)), sources,
+                AIExecutionPreviewRoute(
+                    route.provider_id, route.provider_config_version_id,
+                    route.model_id, route.provider_model_key,
+                    route.model_revision, route.data_region,
+                ),
+                command.ai_task_plan,
+            ),
+        )
+        if type(planned) is not BuiltAIExecutionPreviewPlan:
+            raise EgressPreviewError("AI_EGRESS_PREVIEW_UNAVAILABLE")
+        return planned
+
+    def _require_persisted_plan(
+        self, transaction: object, view: EgressPreviewView,
+    ) -> PersistedAIExecutionContentPlan:
+        if self._content_plans is None:
+            raise EgressPreviewError("AI_EGRESS_PREVIEW_UNAVAILABLE")
+        value = self._content_plans.get_for_preview(
+            transaction, egress_preview_id=view.preview_id,
+        )
+        if (type(value) is not PersistedAIExecutionContentPlan
+                or value.egress_preview_id != view.preview_id
+                or value.plan.project_id != view.project_id
+                or value.plan.purpose_ref != view.purpose_ref
+                or value.payload_fingerprint != view.payload_fingerprint
+                or value.record_count != view.estimated_record_count):
+            raise EgressPreviewError("AI_EGRESS_PREVIEW_UNAVAILABLE")
+        return value
+
+    @staticmethod
+    def _task_plan_fingerprint_fields(
+        task: AITaskPreviewPlanRequest | None,
+    ) -> dict[str, object] | None:
+        if task is None:
+            return None
+        return {
+            "task_type": task.task_type,
+            "prompt_policy_ref": task.prompt_policy_ref,
+            "output_schema_ref": task.output_schema_ref,
+            "context_policy_ref": task.context_policy_ref,
+            "task_parameters": task.task_parameters,
+        }
 
     def _actor(self, tx: object, session_token: bytes,
                csrf_token: bytes | None) -> tuple[datetime, uuid.UUID]:

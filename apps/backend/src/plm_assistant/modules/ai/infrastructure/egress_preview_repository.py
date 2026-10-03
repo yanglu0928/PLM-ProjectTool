@@ -45,6 +45,8 @@ class SqlAlchemyEgressPreviewRepository:
                 AIProviderConfigVersionRow.egress_class,
                 AIModelRow.ai_model_id,
                 AIModelRow.model_state,
+                AIModelRow.provider_model_key,
+                AIModelRow.model_revision,
             ).select_from(AIProviderRow).join(
                 AIProviderConfigVersionRow,
                 (AIProviderConfigVersionRow.ai_provider_id == AIProviderRow.ai_provider_id)
@@ -63,7 +65,8 @@ class SqlAlchemyEgressPreviewRepository:
             return None
         return EgressRoute(
             row.ai_provider_id, row.provider_config_version_id,
-            row.ai_model_id, row.data_region,
+            row.ai_model_id, row.data_region, row.provider_model_key,
+            row.model_revision,
         )
 
     def create(self, transaction: object, *,

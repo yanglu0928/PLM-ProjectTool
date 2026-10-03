@@ -83,6 +83,7 @@ class EgressPreviewTests(unittest.TestCase):
         ),)
         self.route = EgressRoute(
             self.command.provider_id, uuid.uuid4(), self.command.model_id, "cn-beijing",
+            "deepseek-chat", "PROVIDER_MANAGED",
         )
         self.view = EgressPreviewView(
             uuid.uuid4(), self.project, self.command.purpose_ref, "AI_TASK",

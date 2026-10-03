@@ -7308,3 +7308,11 @@
 - Reason：CustomerManager按冻结策略可以创建/审批Preview但不能执行AI Task；复用执行权限会错误拒绝合法Preview，反向放宽执行权限则越权。两个阶段必须产生同一最小投影语义但不能混用授权。
 - Impact/Rollback：新增内部Service/Adapter入口并修正未装配Builder测试别名；无Schema、公开API、依赖、持久化或网络变化。撤新入口即可回滚，执行期路径不变。
 - Verification：单元新增1、Document/Builder合计9；Win11/PG18.6精确投影、CustomerManager权限分离、事务锁、敏感repr、零Plan/Invocation以及旧执行期PG回归PASS；后端2202运行/3跳过；wheel SHA-256 `2760da76b2fe311d5aabf5e3ef0222b3555497e7035a5354de17afc49a5f919a`。首轮验证仅临时目录创建顺序错误，修正后全新资源完整重跑。
+
+# DEC-20261003-737：AI_TASK Preview先由服务端构建Envelope并与Plan原子持久化
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P04-P04-A04`；依据 CR-AI-016、DEC-731～736、Schema0072。
+- Decision：带`ai_task_plan`的内部AI_TASK Preview必须省略客户端record count/payload fingerprint；同一事务解析Source、锁定Route/Prompt、构建Envelope、写Preview、唯一Plan/Source、Audit和Receipt。Preview展示的计数/hash来自Envelope。重放不重读可变Owner，但必须读取并复核原不可变Plan；Task参数属于幂等请求指纹。
+- Reason：先写Preview再异步补Plan会留下已可审批但没有内容证明的窗口；重放重新读取Source会破坏幂等，而只返回Preview不核Plan又会掩盖历史损坏。Provider model key/revision必须来自锁定数据库Route，不能由客户端补齐。
+- Impact/Rollback：扩展内部Command/Route与可选Service依赖，无Schema、公开HTTP、依赖或网络变化；旧内部路径保留到A05切换。回滚不装配Builder/Plan Owner并关闭新AI_TASK入口，已提交Plan历史保留。
+- Verification：新增单元2、相关12；Win11/PG18.6真实Preview/Plan/Source/Audit/Receipt原子提交、重放、参数冲突、Audit全回滚、零Invocation和旧Preview PG回归PASS；后端2204运行/3跳过；wheel SHA-256 `3b4bae40ee433e65dcee8e43e52a72c40fe33834a1172de357e0b7ce0487ef99`。
