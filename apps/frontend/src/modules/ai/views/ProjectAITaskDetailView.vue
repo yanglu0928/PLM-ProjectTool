@@ -125,6 +125,7 @@ onUnmounted(() => { mounted = false; generation += 1; });
         </ul>
         <p v-if="task.job_id">取消、重试与当前Job状态由既有受控任务页处理：<RouterLink :to="{ name: 'project-job-detail', params: { projectId: route.params.projectId, jobId: task.job_id } }">打开运行任务 {{ task.job_id }}</RouterLink></p>
         <p v-else>当前任务没有可公开的Job引用，因此不提供取消或重试入口。</p>
+        <p v-if="task.suggestion_state !== 'NONE'"><RouterLink :to="{ name: 'project-ai-suggestion', params: { projectId: route.params.projectId, taskId: task.ai_task_id } }">查看AI建议、原文位置与待维护信息</RouterLink></p>
         <h2>调用历史</h2>
         <p v-if="loaded && !invocations.length" role="status">当前任务尚无可见调用记录。</p>
         <ol v-if="invocations.length" aria-label="AI调用历史">

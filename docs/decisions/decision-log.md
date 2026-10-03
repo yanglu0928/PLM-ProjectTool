@@ -7660,3 +7660,11 @@
 - Reason：Task与Job状态存在不同Owner、ETag和幂等语义，复制按钮会产生双写实现及未知结果重试风险。固定引用跳转既保留用户路径，也让现有Job授权和恢复规则保持唯一。
 - Impact/Rollback：仅新增前端详情/路由及列表链接，无后端/API/依赖变化；删除详情即可回滚。Suggestion仍在下一WBS逐次授权读取。
 - Verification：定向10、前端全量1233项、typecheck与Vite 138模块构建通过；无外部网络或客户数据。
+
+# DEC-20261003-781：建议页只展示服务端重建位置，不复制正文或接受模型定位
+
+- Date/WBS：2026-10-03 / `AI-05-A05`；依据 CR-AI-020、DEC-773/776/778 与用户确认的待办交互要求。
+- Decision：每条建议只按 `source_ordinal` 消费服务器重建的固定 DocumentVersion content URL 与位置标签；V2 再按 citation node id 缩小显示范围，V1 明确为整个文档。页面显示人工维护字段的标签、提示、原因和必填性，但不提供写表单，也不把建议变为正式事实。
+- Reason：复制正文进表格会脱离原文版本与授权上下文；前端自行搜索或接受模型 locator 无法证明位置。将核对动作指向当前受权的固定版本，既可快速定位，又保留 Document Owner 作为唯一授权和完整性边界。
+- Impact/Rollback：仅新增前端只读页面、路由和 Task 详情入口，无后端/API/Schema/依赖变化；删除三处前端变更即可回滚。后续写入必须由独立 Draft/Review Owner 承担，不在本页隐式实现。
+- Verification：定向10、前端全量1238项、typecheck与Vite 141模块构建通过；无外部网络、客户数据或Secret。

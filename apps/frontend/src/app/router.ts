@@ -31,6 +31,7 @@ import AdminJobDetailView from "@/modules/jobs/views/AdminJobDetailView.vue";
 import ProjectWorkflowView from "@/modules/workflow/views/ProjectWorkflowView.vue";
 import ProjectAIWorkbenchView from "@/modules/ai/views/ProjectAIWorkbenchView.vue";
 import ProjectAITaskDetailView from "@/modules/ai/views/ProjectAITaskDetailView.vue";
+import ProjectAISuggestionView from "@/modules/ai/views/ProjectAISuggestionView.vue";
 
 export function createAppRouter(
   history: RouterHistory = createWebHistory(),
@@ -77,6 +78,11 @@ export function createAppRouter(
         path: "/admin/users/:userId/name",
         name: "admin-user-name",
         component: AdminUserNameView,
+      },
+      {
+        path: "/projects/:projectId/ai/:taskId/suggestion",
+        name: "project-ai-suggestion",
+        component: ProjectAISuggestionView,
       },
       {
         path: "/projects/:projectId/ai/:taskId",
