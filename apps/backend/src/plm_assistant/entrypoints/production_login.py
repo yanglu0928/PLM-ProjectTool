@@ -93,8 +93,20 @@ from plm_assistant.modules.document.application.job_read_projection import Docum
 from plm_assistant.modules.ai.application.provider_test_job_read_projection import ProviderTestJobReadProjection
 from plm_assistant.modules.ai.infrastructure.provider_test_job_read import SqlAlchemyProviderTestJobReadRepository
 from plm_assistant.modules.ai.application.request_task_cancel import AITaskJobCancelOwner
+from plm_assistant.modules.ai.application.request_task_retry import AITaskJobRetryOwner
+from plm_assistant.modules.ai.application.task_job_read_projection import AITaskJobReadProjection
+from plm_assistant.modules.ai.application.egress_authorization_owner import EgressAuthorizationOwner
 from plm_assistant.modules.ai.infrastructure.task_cancellation_repository import (
     SqlAlchemyAITaskCancellationRepository,
+)
+from plm_assistant.modules.ai.infrastructure.task_retry_repository import (
+    SqlAlchemyAITaskRetryRepository,
+)
+from plm_assistant.modules.ai.infrastructure.task_job_read import (
+    SqlAlchemyAITaskJobReadRepository,
+)
+from plm_assistant.modules.ai.infrastructure.egress_authorization_owner_repository import (
+    SqlAlchemyEgressAuthorizationOwnerRepository,
 )
 from plm_assistant.modules.document.application.parse_job_source import DocumentParseSourceReader
 from plm_assistant.modules.document.infrastructure.parse_job_source import SqlAlchemyDocumentParseSources
@@ -507,7 +519,9 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                         audit_sources=UploadCommitAuditSources(repository=SqlAlchemyUploadCommitAuditSources())),
                     results=DocumentParseJobResults(repository=SqlAlchemyDocumentParseJobResults())),
                 ('ai','AI_PROVIDER_TEST'):ProviderTestJobReadProjection(
-                    repository=SqlAlchemyProviderTestJobReadRepository())}
+                    repository=SqlAlchemyProviderTestJobReadRepository()),
+                ('ai','AI_TASK_EXECUTE'):AITaskJobReadProjection(
+                    repository=SqlAlchemyAITaskJobReadRepository())}
             job_reads = AuthorizedJobReadService(
                     unit_of_work=runtime.unit_of_work,
                     project_access=SqlAlchemyProjectReadAccess(),
@@ -987,17 +1001,38 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                         users=SqlAlchemyUserRepository(),results=user_create_results,
                         replay_verifier=UserCreateReplayVerifier(source=user_create_results),hasher=verifier,
                         audit=audit,receipts=SqlAlchemyIdempotencyReceipts()))
+                retry_owners = {('audit','AUDIT_EXPORT'):AuditJobRetryOwner(
+                    requests=AuditUserRetryService(
+                        unit_of_work=runtime.unit_of_work,
+                        repository=SqlAlchemyAuditExportSubmitRepository(),
+                        authorization=AuditExportSubmitAuthorization(
+                            project_access=SqlAlchemyProjectWriteAccess(),
+                            deployment_access=SqlAlchemyLicenseImportAccess(),
+                            projects=retry_projects, license_guard=licenses.guard),
+                        sources=retry_sources,
+                        generations=SqlAlchemyAuditRetryGenerations(),
+                        receipts=SqlAlchemyIdempotencyReceipts(),
+                        queue=AuditExportJobQueue(SqlAlchemyAuditExportJobQueueRepository()),
+                        audit=audit))}
+                if settings.ai_task_policies:
+                    _, retry_egress_purposes = create_deployment_ai_task_policies(settings)
+                    retry_owners[('ai','AI_TASK_EXECUTE')] = AITaskJobRetryOwner(
+                        unit_of_work=runtime.unit_of_work,
+                        repository=SqlAlchemyAITaskRetryRepository(),
+                        session_access=SqlAlchemyProjectWriteAccess(),
+                        projects=ProjectAuthorizationService(
+                            unit_of_work=runtime.unit_of_work,
+                            repository=SqlAlchemyProjectAuthorizationRepository()),
+                        license_guard=licenses.guard,
+                        egress_owner=EgressAuthorizationOwner(
+                            repository=SqlAlchemyEgressAuthorizationOwnerRepository(),
+                            purposes=retry_egress_purposes),
+                        receipts=SqlAlchemyIdempotencyReceipts(), audit=audit,
+                    )
                 job_retry_router = create_job_retry_router(
                     sessions=sessions,origins=origins,
                     retries=JobRetryRequests(reads=job_reads,sessions=sessions,license_guard=licenses.guard,
-                        owners={('audit','AUDIT_EXPORT'):AuditJobRetryOwner(requests=AuditUserRetryService(
-                            unit_of_work=runtime.unit_of_work,repository=SqlAlchemyAuditExportSubmitRepository(),
-                            authorization=AuditExportSubmitAuthorization(
-                                project_access=SqlAlchemyProjectWriteAccess(),deployment_access=SqlAlchemyLicenseImportAccess(),
-                                projects=retry_projects,license_guard=licenses.guard),
-                            sources=retry_sources,generations=SqlAlchemyAuditRetryGenerations(),
-                            receipts=SqlAlchemyIdempotencyReceipts(),queue=AuditExportJobQueue(SqlAlchemyAuditExportJobQueueRepository()),
-                            audit=audit))}))
+                        owners=retry_owners))
                 job_cancel_router = create_project_job_cancel_router(
                     sessions=sessions,origins=origins,
                     cancellations=ProjectJobCancellation(

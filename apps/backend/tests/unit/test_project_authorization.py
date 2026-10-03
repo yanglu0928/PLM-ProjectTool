@@ -47,7 +47,7 @@ class ProjectAuthorizationTests(unittest.TestCase):
                                     operation=operation, resource_id=resource_id)
 
     def test_matrix_exact_for_four_roles(self):
-        self.assertEqual(len(POLICIES), 39)
+        self.assertEqual(len(POLICIES), 40)
         self.assertEqual(POLICIES["AI_TASK_CREATE"].roles,
                          {"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"})
         self.assertTrue(POLICIES["AI_TASK_CREATE"].write)
@@ -74,6 +74,9 @@ class ProjectAuthorizationTests(unittest.TestCase):
         self.assertEqual(POLICIES['JOB_PROJECT_CANCEL'].roles, ALL_MEMBERS)
         self.assertTrue(POLICIES['JOB_PROJECT_CANCEL'].lock_reads)
         self.assertFalse(POLICIES['JOB_PROJECT_CANCEL'].write)
+        self.assertEqual(POLICIES['JOB_PROJECT_RETRY'].roles, ALL_MEMBERS)
+        self.assertTrue(POLICIES['JOB_PROJECT_RETRY'].lock_reads)
+        self.assertTrue(POLICIES['JOB_PROJECT_RETRY'].write)
         self.assertEqual(POLICIES['JOB_PROJECT_LIST'].roles, ALL_MEMBERS)
         self.assertTrue(POLICIES['JOB_PROJECT_LIST'].lock_reads)
         self.assertFalse(POLICIES['JOB_PROJECT_LIST'].write)

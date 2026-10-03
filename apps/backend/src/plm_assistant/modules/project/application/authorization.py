@@ -37,6 +37,7 @@ POLICIES: dict[str, _Policy] = {
     "AUDIT_PROJECT_EXPORT": _Policy(MANAGERS, True),
     "AUDIT_PROJECT_CANCEL": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "JOB_PROJECT_CANCEL": _Policy(ALL_MEMBERS, False, lock_reads=True),
+    "JOB_PROJECT_RETRY": _Policy(ALL_MEMBERS, True, lock_reads=True),
     "JOB_PROJECT_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "JOB_PROJECT_LIST": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "DOCUMENT_PARSE_PROCESS": _Policy(frozenset({

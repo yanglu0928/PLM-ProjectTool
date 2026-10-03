@@ -7516,3 +7516,11 @@
 - Reason：只在应用层复制Task无法防止代际断链、输入/授权漂移或终态被伪装为可重试；而将所有复制数据再存一份会扩大个人/客户数据。只保存引用与摘要并由trigger对比原记录，可在不复制正文的情况下强制完整血缘。
 - Impact/Rollback：新增0075/ORM及内部追溯模型，无公开API/依赖/外发。旧历史不回填；空表可降，有血缘拒绝降级，回滚必须停止新Retry并向前修复或受控恢复。
 - Verification：Win11/PG18.6空/历史/血缘三库升降重升、drift、根/版本/不可变/拒降负例通过；定向6、后端2269运行/3跳过；wheel SHA-256 `46467de977e9898296dcdb02d53dab7a26178e6cb52cad803b5e0eba54a946d0`。
+
+# DEC-20261003-763：Retry复用冻结Job端点并重新取得当前Egress授权
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P08-P05-P02`；依据 CR-AI-018、DEC-758/759/762、Schema0075。
+- Decision：`ai/AI_TASK_EXECUTE`注册到冻结Project Job `:retry` Owner；当前写事务重新验证Session/CSRF、License、Project、原创建者或项目经理、Job ETag及原Authorization的当前Provider/Model/有效期/未撤销状态。当前授权投影必须与原Task Egress快照精确相同，随后原子复制无正文Task/Input/Egress快照并创建新Job/Outbox、USER Audit和不可变Lineage；同actor/key精确回放，不同key不能从同一源分叉。
+- Reason：读取时的`retryable`只是安全提示，不能充当写授权；重试也不能沿用过期/撤销授权或复活原终态。创建Invocation必须继续发生在Worker真实领取/Begin时，Retry HTTP只表示新任务已排队。
+- Impact/Rollback：不改冻结URL、请求/响应或Schema0075；新增`JOB_PROJECT_RETRY`当前写策略、AI Job安全投影与Owner注册。停止AI Job消费并移除Owner可恢复该类型`JOB_NOT_RETRYABLE`，已生成的代际/Audit/收据不可删除；无Provider网络或客户数据外发。
+- Verification：新单元6项及相关定向23项；Windows11/PG18.6一次性数据库证明原子Task/Job/Input/Egress/Outbox/Audit/Lineage、源不变、ETag失败回滚、同Key回放、分叉拒绝、Invocation延后创建；后端2275运行/3跳过；最终wheel 801项 SHA-256 `d5d693afce4e879b090846613f6edd4d54f71c0d60bb5f832bc9869e88c7a07b`。
