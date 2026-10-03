@@ -53,6 +53,27 @@ class GetAITask:
             raise AITaskReadError("VALIDATION_FAILED")
 
 
+def _position(value: object) -> bool:
+    return (type(value) is tuple and len(value) == 2 and _time(value[0])
+            and _id(value[1]))
+
+
+@dataclass(frozen=True, slots=True)
+class ListAITasks:
+    session_token: bytes = field(repr=False)
+    trace_id: uuid.UUID
+    project_id: uuid.UUID
+    page_size: int = 50
+    before: tuple[datetime, uuid.UUID] | None = field(default=None, repr=False)
+
+    def __post_init__(self) -> None:
+        if (type(self.session_token) is not bytes or len(self.session_token) != 32
+                or not all(_id(value) for value in (self.trace_id, self.project_id))
+                or type(self.page_size) is not int or not 1 <= self.page_size <= 100
+                or self.before is not None and not _position(self.before)):
+            raise AITaskReadError("VALIDATION_FAILED")
+
+
 @dataclass(frozen=True, slots=True)
 class AITaskInputView:
     resource_type: str
@@ -110,9 +131,52 @@ class AITaskView:
             raise AITaskReadError()
 
 
+@dataclass(frozen=True, slots=True)
+class AITaskListCandidates:
+    items: tuple[AITaskView, ...]
+    has_more: bool
+
+    def __post_init__(self) -> None:
+        if (type(self.items) is not tuple or len(self.items) > 100
+                or type(self.has_more) is not bool
+                or self.has_more and not self.items):
+            raise AITaskReadError()
+        positions: list[tuple[datetime, uuid.UUID]] = []
+        for item in self.items:
+            if type(item) is not AITaskView:
+                raise AITaskReadError()
+            item.__post_init__()
+            positions.append((item.requested_at, item.ai_task_id))
+        if (len({item.ai_task_id for item in self.items}) != len(self.items)
+                or any(left <= right for left, right in zip(
+                    positions, positions[1:], strict=False))):
+            raise AITaskReadError()
+
+
+@dataclass(frozen=True, slots=True)
+class AITaskPage:
+    items: tuple[AITaskView, ...]
+    next_position: tuple[datetime, uuid.UUID] | None = field(repr=False)
+    has_more: bool
+
+    def __post_init__(self) -> None:
+        if (type(self.items) is not tuple or len(self.items) > 100
+                or type(self.has_more) is not bool
+                or self.has_more != (self.next_position is not None)
+                or self.next_position is not None and not _position(self.next_position)):
+            raise AITaskReadError()
+        AITaskListCandidates(self.items, self.has_more).__post_init__()
+
+
 class AITaskReadRepositoryPort(Protocol):
     def get(self, transaction: object, *, ai_task_id: uuid.UUID,
             project_id: uuid.UUID) -> AITaskView | None: ...
+
+    def list_page(
+        self, transaction: object, *, project_id: uuid.UUID,
+        requested_by: uuid.UUID | None,
+        before: tuple[datetime, uuid.UUID] | None, limit: int,
+    ) -> AITaskListCandidates: ...
 
 
 class AITaskReadAccessPort(Protocol):
@@ -169,6 +233,84 @@ class AITaskReadService:
                     raise AITaskReadError("RESOURCE_NOT_FOUND")
                 self._guard.require_valid(trace_id=query.trace_id)
                 return value
+        except AITaskReadError:
+            raise
+        except ProjectAuthorizationError:
+            raise AITaskReadError("RESOURCE_NOT_FOUND") from None
+        except RuntimeLicenseError:
+            raise AITaskReadError("LICENSE_OPERATION_DENIED") from None
+        except Exception:
+            raise AITaskReadError() from None
+
+
+class AITaskListService:
+    def __init__(self, *, unit_of_work: Callable[[], object],
+                 access: AITaskReadAccessPort, license_guard: object,
+                 authorization: ProjectAuthorizationService,
+                 repository: AITaskReadRepositoryPort,
+                 clock: Callable[[], datetime] | None = None) -> None:
+        if any(value is None for value in (
+            unit_of_work, access, license_guard, authorization, repository,
+        )):
+            raise ValueError("AI Task list dependencies required")
+        self._uow, self._access, self._guard = unit_of_work, access, license_guard
+        self._authorization, self._repository = authorization, repository
+        self._clock = clock or (lambda: datetime.now(timezone.utc))
+
+    def list(self, query: ListAITasks) -> AITaskPage:
+        if type(query) is not ListAITasks:
+            raise AITaskReadError("VALIDATION_FAILED")
+        query.__post_init__()
+        try:
+            self._guard.require_valid(trace_id=query.trace_id)
+            with self._uow() as transaction:
+                now = self._clock()
+                if not _time(now):
+                    raise AITaskReadError()
+                actor = self._access.authenticated_user(
+                    transaction, session_token=query.session_token,
+                    now=now.astimezone(timezone.utc),
+                )
+                if not _id(actor):
+                    raise AITaskReadError("AUTH_ACCESS_DENIED")
+                proof = self._authorization.require_in_transaction(
+                    transaction, user_id=actor, project_id=query.project_id,
+                    operation="AI_TASK_LIST",
+                )
+                if (type(proof) is not AuthorizedProjectAction
+                        or proof.user_id != actor
+                        or proof.project_id != query.project_id
+                        or proof.operation != "AI_TASK_LIST"
+                        or proof.project_role not in {
+                            "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER",
+                            "CUSTOMER_MANAGER",
+                        }):
+                    raise AITaskReadError("RESOURCE_NOT_FOUND")
+                creator = (None if proof.project_role in _MANAGEMENT_ROLES
+                           else actor)
+                candidates = self._repository.list_page(
+                    transaction, project_id=query.project_id,
+                    requested_by=creator, before=query.before,
+                    limit=query.page_size,
+                )
+                if type(candidates) is not AITaskListCandidates:
+                    raise AITaskReadError()
+                candidates.__post_init__()
+                if len(candidates.items) > query.page_size:
+                    raise AITaskReadError()
+                for item in candidates.items:
+                    if (item.project_id != query.project_id
+                            or creator is not None and item.requested_by != creator
+                            or query.before is not None and (
+                                item.requested_at, item.ai_task_id) >= query.before):
+                        raise AITaskReadError()
+                self._guard.require_valid(trace_id=query.trace_id)
+                position = ((candidates.items[-1].requested_at,
+                             candidates.items[-1].ai_task_id)
+                            if candidates.has_more else None)
+                return AITaskPage(
+                    candidates.items, position, candidates.has_more,
+                )
         except AITaskReadError:
             raise
         except ProjectAuthorizationError:

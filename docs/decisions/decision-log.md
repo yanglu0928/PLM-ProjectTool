@@ -7604,3 +7604,11 @@
 - Reason：让AI或前端回传locator/URL无法证明来源，让AI模块读取Document内部存储又破坏Owner边界。固定ParseResult是唯一可重建node到页/段/单元格的权威来源；V1没有node，任何精确跳转都是虚报。
 - Impact/Rollback：新增Document应用服务和domain locator，无Migration、公开API、依赖或生产装配变化；Evidence接口兼容。可停止新读取链并撤新增服务；若回退domain提取必须恢复Evidence校验实现，历史Evidence不可删除或降格。
 - Verification：Windows 11独立标记`AI_04_A07_P03_DOCUMENT_LOCATOR_PASS`；Evidence/Document定向61通过、95子测试，后端2314通过/3跳过、2960子测试；wheel 809项 SHA-256 `c388c7293bc6c2b3523c893102f6463ee38d2fbf709f63ec96761afe1aca41e3`；零真实外发和客户数据。
+
+# DEC-20261003-774：AI读取列表共用独立密钥但按协议族隔离
+
+- Date/WBS：2026-10-03 / `AI-04-A07-P04`；依据 CR-AI-020、DEC-770及冻结AI_TASK_LIST。
+- Decision：Task与后续Invocation列表从同一当前账户Vault引用`ai-read-cursor-v1`取得32字节密钥，分别使用`plm-ai-task-list-aesgcm-v1`与独立Invocation family/AAD；Task cursor同时绑定Session摘要、Project和page size。列表角色为PM/IM/CM，IM只查询本人创建Task，管理角色可查询项目内Task。
+- Reason：两个列表各增一个账户Secret会扩大备份恢复和部署面；复用现有Job/Evidence密钥又会造成协议混用。相同密钥下使用独立AEAD family/AAD可保持密码学域隔离，同时满足最小Secret数量。创建者过滤必须下推Repository，不能先取项目全集再在应用层隐藏。
+- Impact/Rollback：无Schema/Migration/依赖；新增opt-in冻结GET Router、应用服务、批量投影和`ait1`codec，默认应用仍404。P07前不声明生产组合可用；撤Router可回滚，cursor失效不影响Task事实。
+- Verification：定向19通过/215子测试、Win11标记`AI_04_A07_P04_TASK_LIST_PASS`，后端2322通过/3跳过、2980子测试；wheel 811项 SHA-256 `febe5a9b085202d88f6a6d33a160c08b508e877fe98faadb65174a744c6c17df`。真实PG/Vault/组合留P07。
