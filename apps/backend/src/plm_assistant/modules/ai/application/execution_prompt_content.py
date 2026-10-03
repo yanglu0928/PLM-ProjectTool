@@ -17,6 +17,9 @@ from plm_assistant.modules.ai.application.execution_content_plan import (
 from plm_assistant.modules.ai.application.task_execution_grant import (
     AITaskExecutionGrant,
 )
+from plm_assistant.modules.ai.application.task_submission_policy import (
+    ResolvedAITaskSubmissionPolicy,
+)
 from plm_assistant.modules.ai.domain.prompt_identity import PromptTaskType
 from plm_assistant.modules.ai.domain.prompt_version import (
     PromptVersionDraft,
@@ -234,6 +237,41 @@ class AIExecutionPromptPlanningContent:
     @property
     def canonical_parameters_json(self) -> str:
         return _canonical_parameters(self.task_parameters)
+
+
+class AIExecutionPromptPlanningRepositoryPort(Protocol):
+    def load_current(
+        self, transaction: object, *, policy: ResolvedAITaskSubmissionPolicy,
+    ) -> AIExecutionPromptPlanningContent | None: ...
+
+
+class AIExecutionPromptPlanningOwner:
+    def __init__(self, repository: AIExecutionPromptPlanningRepositoryPort) -> None:
+        if repository is None:
+            raise ValueError("AI execution planning Prompt repository required")
+        self._repository = repository
+
+    def resolve_current(
+        self, transaction: object, *, policy: ResolvedAITaskSubmissionPolicy,
+    ) -> AIExecutionPromptPlanningContent:
+        if transaction is None or type(policy) is not ResolvedAITaskSubmissionPolicy:
+            raise AIExecutionPromptContentError()
+        try:
+            content = self._repository.load_current(transaction, policy=policy)
+        except AIExecutionPromptContentError:
+            raise
+        except Exception:
+            raise AIExecutionPromptContentError() from None
+        if (type(content) is not AIExecutionPromptPlanningContent
+                or content.task_type != policy.task_type
+                or content.prompt_policy_ref != policy.reference
+                or content.prompt_policy_version != policy.policy_version
+                or content.prompt_template_id != policy.prompt_template_id
+                or content.output_schema_ref != policy.output_schema_ref
+                or content.context_policy_ref != policy.context_policy_ref):
+            raise AIExecutionPromptContentError()
+        content.__post_init__()
+        return content
 
 
 class AIExecutionPromptTaskContentRepositoryPort(Protocol):

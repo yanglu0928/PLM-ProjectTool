@@ -53,6 +53,8 @@ P04-P03已实现应用Owner与PostgreSQL Repository：写前重验Plan/Envelope�
 
 P04-P04-A01已新增服务端Preview Plan Builder与独立Prompt规划内容合同：Task Policy、Prompt、精确Source投影、模型路由、Context/encoding/estimator全部由服务端组合，客户端不能提供派生计数/hash；正文与参数排除repr。当前为内部合同，Preview API/生产组合尚未改变。
 
+P04-P04-A02已新增Preview规划期Prompt PostgreSQL Owner：短事务内锁定当前ACTIVE模板并读取活动版本，精确匹配部署Task Policy固定的模板/输出Schema/Context，任务参数由Policy进入PostgreSQL JSONB规范化并在数据库端计算摘要。活动版本号允许按正式Prompt激活流程推进；每次新Preview固定当时版本/hash，既有Plan不漂移。Win11/PG18.6锁、摘要、漂移和零Invocation通过；无公开API、Schema、依赖或Provider外发。
+
 ## 兼容、迁移与回滚
 
 - 原 Gate 2 冻结提交和现有 0064/0068～0071 历史不改。P03-P02-A01～A04 先建立未装配合同与 Owner，暂不产生数据库或公开 API 变化。

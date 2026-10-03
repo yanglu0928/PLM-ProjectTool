@@ -7292,3 +7292,11 @@
 - Reason：Preview发生在Task之前；伪身份会污染追溯语义，也会让执行期授权字段看似已经存在。独立最小合同可复用严格Renderer而不降低边界。
 - Impact/Rollback：内部未装配合同，无Schema/API/依赖/持久化/外发；可整体撤回。后续A02～A06逐层接Owner、Preview事务、HTTP与Windows组合。
 - Verification：Builder新增2项、Prompt/Envelope合计14项、后端2199运行/3跳过；wheel SHA-256 `da9d8cc92d8442955ceec44c01deecd9fc0c00494f5e50932b73bdb81bae81ce`。
+
+# DEC-20261003-735：Preview Prompt读取锁定当前模板但允许活动版本正规推进
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P04-P04-A02`；依据 CR-AI-016、DEC-731～734。
+- Decision：规划期Owner在调用方事务内以`FOR KEY SHARE`锁定DEPLOYMENT/ACTIVE PromptTemplate，读取其当前活动版本；精确匹配Task Policy固定的task type、template、output schema和context policy。Policy不固定活动版本号，正式激活的新版本用于后续新Preview；每个Plan仍固定实际version/hash。参数经PostgreSQL JSONB规范化并由数据库计算摘要。
+- Reason：把活动版本号误当Policy常量会阻断正式Prompt升级；不锁模板则Preview规划期间活动指针可并发漂移。数据库端JSONB摘要与后续持久化语义保持一致。
+- Impact/Rollback：新增内部Owner/Repository与验证，无Schema、公开API、依赖、生产装配、持久化或外发变化；不装配并删除组件即可回滚。
+- Verification：单元2、相关定向10；Win11/PG18.6活动版本、JSONB摘要、行锁、敏感repr、漂移拒绝和零Invocation PASS；后端2201运行/3跳过；wheel SHA-256 `2fc1a8ef6d9216063715acd205e143cd678af01a8ff325b645d7ba189e14f2db`。首轮测试误把合法活动版本推进当漂移，修正验收边界后全部重跑通过。
