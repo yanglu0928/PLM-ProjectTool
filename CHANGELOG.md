@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A06-P06-P05-P03 新增业务AI Task专用Secret访问审计作用域，精确绑定Project/原请求用户/Task/Invocation/Job generation/Route/SecretRecord/Version，以受控SYSTEM actor持久化Project-scope GRANTED/DENIED，不保存Envelope、正文、Key或Response。兼容性/升级/回滚：未装配内部增量，无Migration/API/依赖/历史修改；停止业务消费并撤适配器即可，固定Probe不变。验证：单元3项/8子用例、Win11/PG18.6真实审计成功/错误版本拒绝、解密前失败和明文清零、后端2231运行/3跳过PASS；wheel SHA-256 `5918f56a12390f5a2ed225fd2b0d02b37bc0bd6a557d3c76264e2f68b2e80f9e`。未读取真实Secret、未访问Provider。已知问题：双pre-send/SecretResolver/Adapter编排、响应Schema/终态、Windows Worker、Server2025/Gate3/UAT/可用包待完成。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P06-P05-P02 为AI Task Claim增加数据库观察时间和当前Lease截止；pre-send要求剩余Lease严格覆盖Route总时限+2秒，并将SendProof开始截止收紧为Authorization与`lease-total-margin`较早者。兼容性/升级/回滚：内部合同增量，无Migration/API/依赖/历史修改，未装配Worker；撤字段/窗口即可回滚。验证：相关定向16、Win11/PG18.6真实21秒拒绝/120秒成功、后端2231运行/3跳过PASS；wheel SHA-256 `930d37c319def3c3cbf928738f80e535cac2b924f75ff4aec4ad5eda26a8fc74`。首次夹具两次时间表达式产生微秒不一致，被既有Jobs守卫拒绝；改同一显式截止后新资源重跑，生产规则未放宽。已知问题：Task Secret Audit、双pre-send发送编排、响应Schema/终态、Server2025/Gate3/UAT/可用包待完成。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P06-P05-P01 完成发送编排/SecretResolver前置核查：发现现有Claim/SendProof缺Lease截止，不能证明最长120秒Adapter调用留在当前generation租约内；Probe专用Secret审计亦不能复用为业务Task审计。决定先增加数据库观察时间/Lease截止并以`lease_expires_at-total_timeout-margin`限制发送开始，再新增Task专用Secret审计，最终按pre-send→精确SecretVersion解析→再次pre-send一致性→Adapter编排。兼容性/升级/回滚：本项仅文档，无Migration/API/依赖/行为/外发。验证：静态核对Jobs checkpoint、AI pre-send、SecretResolver/Store和Probe审计；未运行新增代码测试。已知问题：P02～P04实现、响应Schema/终态、Windows Worker、Server2025/Gate3/UAT/可用包待完成。

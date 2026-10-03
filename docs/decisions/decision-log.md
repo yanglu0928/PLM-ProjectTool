@@ -7420,3 +7420,11 @@
 - Reason：Adapter已有绝对总时限；将该时限从Lease截止前倒推为开始截止，可在不持有数据库事务和不后台续租的情况下保证被批准的最坏网络窗口落在当前generation Lease内。2秒用于短生命Secret/审计/函数切换，不替代Worker合理Lease配置。
 - Impact/Rollback：内部Claim/Proof语义收紧，无Schema/API/依赖/外发；未装配Worker。回滚为停止发送并撤内部字段，不修改历史。
 - Verification：Claim/pre-send相关定向16、Win11/PG18.6 21秒窗口拒绝及120秒成功、后端2231运行/3跳过PASS；wheel SHA-256 `930d37c319def3c3cbf928738f80e535cac2b924f75ff4aec4ad5eda26a8fc74`；零Secret/网络。
+
+# DEC-20261003-751：业务 Secret 审计只绑定最小 Task 发送身份
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P06-P05-P03`；依据 CR-AI-017、DEC-749/750。
+- Decision：不复用 Provider Probe 的 Secret 审计。业务 AI 发送在已授权 Prepared Invocation/Route/SendProof 完全一致时，建立仅含 Project、原请求用户、Task、Invocation、Job generation、SecretRecord/Version 的 ContextVar；SecretResolver 的 GRANTED/DENIED 以受控 SYSTEM actor、原用户和精确 PLT-02 Version 写 Project 审计。Envelope、正文、Key、Response 和完整对象不得进入作用域。
+- Reason：SecretResolver 的通用审计 Port 不携带业务 Task 身份；复用 Probe snapshot 会产生错误审计语义，而把 Envelope/Key 放入上下文会扩大敏感信息生命周期。最小绑定同时让错误 trace/consumer/Secret/proof 漂移在审计前失败关闭。
+- Impact/Rollback：新增未装配内部审计适配器及默认关闭验证回调，无Schema/API/依赖/历史修改。回滚为停止业务消费并撤适配器；固定 Probe 不变。
+- Verification：单元3项/8子用例、Win11/PG18.6真实 AuditService 持久化 SUCCESS/DENIED、错误Version解密前拒绝与明文清零、后端2231运行/3跳过PASS；wheel SHA-256 `5918f56a12390f5a2ed225fd2b0d02b37bc0bd6a557d3c76264e2f68b2e80f9e`；零真实Secret/Provider网络。

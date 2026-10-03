@@ -38,3 +38,5 @@ P06-P04已实现独立OpenAI-compatible业务Adapter：网络前复核SendProof�
 P06-P05-P01前置核查发现当前AI Task Claim/SendProof未携带Lease截止时间，而Route总网络时限最长120秒；仅在pre-send瞬间验证Lease无法证明调用可在当前generation租约内结束。另发现Probe专用Secret审计不能承载业务Task身份。P06-P05拆为：P02补数据库观察时间/Lease截止与`lease_expires_at-total_timeout-margin`开始截止；P03新增业务Task Secret审计；P04以pre-send→精确SecretVersion解析→再次pre-send/Route一致→Adapter顺序执行。此修订无Schema/API/依赖变化，不放宽外发授权。
 
 P06-P05-P02已完成：AI Task Claim由数据库投影`observed_at/lease_expires_at`，pre-send要求剩余Lease严格覆盖Route总时限+2秒，并把SendProof开始截止收紧到`min(authorization, lease-total-margin)`。Win11/PG18.6 21秒窗口拒绝、120秒窗口成功，相关定向16、后端2231运行/3跳过及wheel通过；无Schema/API/依赖/Secret/网络。P03继续Task专用Secret审计。
+
+P06-P05-P03已完成：新增业务 Task 专用 Secret 审计作用域，把 Project/原请求用户/Task/Invocation/Job generation/Route/SecretRecord/SecretVersion 精确绑定到最小 ContextVar；仅在绑定内接受 AI_PROVIDER_ADAPTER 的 GRANTED/DENIED，并通过真实 AuditService 写 Project-scope SYSTEM/original-user 事件。Win11/PG18.6真实链证明成功和错误版本拒绝均落审计、错误版本不解密、明文缓冲区清零；单元3、后端2231运行/3跳过及wheel通过，零真实Secret/Provider网络。P04继续双pre-send、精确SecretVersion解析和Adapter顺序编排。

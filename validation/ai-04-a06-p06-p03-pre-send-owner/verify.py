@@ -48,7 +48,7 @@ def load_helper(directory: str, name: str):
     return module
 
 
-def validate(context: dict[str, object]) -> None:
+def validate(context: dict[str, object], after_authorized=None) -> None:
     prepared = context["prepared_invocation"]
     begun = context["begun_invocation"]
     current = context["current_claim"]
@@ -177,7 +177,13 @@ def validate(context: dict[str, object]) -> None:
             "UPDATE plm.ai_models SET model_state='AVAILABLE',lock_version=lock_version+1 "
             "WHERE ai_model_id=%s", (prepared.grant.ai_model_id,),
         )
-    assert authorize().proof.ai_invocation_id == begun.ai_invocation_id
+    final_send = authorize()
+    assert final_send.proof.ai_invocation_id == begun.ai_invocation_id
+    if after_authorized is not None:
+        after_authorized({
+            **context,
+            "authorized_send": final_send,
+        })
     print(
         "AI_04_A06_P06_P03_PRE_SEND_OWNER_PASS: Win11/PostgreSQL18.6 "
         "post-Begin PENDING Invocation, current Job fencing, live Authorization, ACTIVE "
@@ -189,11 +195,15 @@ def validate(context: dict[str, object]) -> None:
     )
 
 
-def main() -> None:
+def main(after_authorized=None) -> None:
     helper = load_helper(
         "ai-04-a06-p05-p04-claim-envelope-begin", "p06p03_p05_helper",
     )
-    helper.main(after_begin=validate)
+    helper.main(
+        after_begin=lambda context: validate(
+            context, after_authorized=after_authorized,
+        ),
+    )
 
 
 if __name__ == "__main__":
