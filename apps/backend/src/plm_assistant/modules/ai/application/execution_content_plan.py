@@ -402,4 +402,3 @@ class AIExecutionContentIdentityOwnerPort(Protocol):
         query: AIExecutionContentIdentityQuery,
         input_ref: AITaskExecutionInputRef,
     ) -> AIExecutionContentSourceIdentity: ...
-
