@@ -7564,3 +7564,11 @@
 - Reason：数据库Provider配置只保存受控符号引用与业务事实，不能成为任意URL输入；Probe固定ping与业务客户载荷的Transport、审计和策略不能复用。成对检查防止可提交业务Task但服务角色没有授权执行边界，严格启动失败也不会读取Provider Key。
 - Impact/Rollback：新增非Secret配置字段、生产组合入口和服务计划条件，无Schema/API/第三方依赖变化。Probe-only兼容；业务部署需新增配置并重启。可撤业务入口恢复Probe-only，历史记录保留并先对账RUNNING。
 - Verification：新增单元9、相关83；Windows11/PostgreSQL18.6真实Worker runtime构建完整业务链且启动零claim/Invocation/Secret访问/网络；后端2310运行/3跳过；wheel 807项 SHA-256 `fad0c47681f29496d5968e9a2396a437553726b63bfabe2fbfc2132326f06dbf`。
+
+# DEC-20261003-769：生产服务闭环用本地受信TLS替身验证而不外发数据
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P09-P06`；依据 CR-AI-019、DEC-764～768。
+- Decision：Windows 11 服务级闭环必须运行实际 SCM 服务入口、生产 Worker 对象图、真实 PostgreSQL 与 AES-GCM Secret Store；网络侧使用临时 CA 签发、主机名匹配且由客户端正常验证的本地 HTTPS Provider 替身，通过测试专用 connector 保持生产 DNS/IP pinning、SNI、证书和响应边界。禁止关闭 TLS 校验、使用真实 Provider Key 或发送客户数据。
+- Reason：组件级组合不能证明停止排空、运行标记和资源释放；直接调用真实 Provider 又超出本 CR 的数据外发授权。本地受信 TLS 能在不改变生产安全策略的情况下验证完整生命周期。
+- Impact/Rollback：只新增仓库验证器和证据，无生产代码、Schema、API、依赖或部署配置变化；删除验证器不会改变产品行为。Server 2025 仍需独立环境证据，Debian 13 只跳过验证、不移除兼容目标。
+- Verification：Windows 11/PostgreSQL 18.6 一次性库完成一个 Task/Invocation/Suggestion/Secret Audit、一次发送、协作停止排空、标记删除及数据库 dispose；首轮证书扩展不完整失败关闭，补齐 KeyUsage/EKU/SKI/AKI 后全新库通过。后端2307运行/3跳过、2944子测试通过；wheel 807项 SHA-256 `1f9a5b903fce940c663e7118912ccf00fd76119f385f6334d8fb2680c817d75b`。

@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A06-P09-P06 完成 Windows 11 真实 AI Provider SCM 服务循环验证：一次性 PostgreSQL 18.6、合成 License/文档、本地 CA 验证 HTTPS Provider 与真实 AES-GCM Secret Store完成一个Task/Invocation/Suggestion/Secret Audit，协作停止后排空、删除运行标记并释放数据库。兼容性/升级/回滚：无生产代码、Schema/API/依赖变化，可停止Worker并保留历史；Server2025待独立验证，Debian13按指令跳过验证但仍为兼容目标。验证：后端2307运行/3跳过、2944子测试通过；wheel 807项 SHA-256 `1f9a5b903fce940c663e7118912ccf00fd76119f385f6334d8fb2680c817d75b`。首轮临时证书缺KeyUsage/EKU导致TLS失败关闭，补齐验证夹具后全新库重跑；真实Provider/客户数据零外发。已知问题：正式信任/Provider、AI质量/性能、UAT、Gate3与可使用包待完成，下一项AI-05前端工作台前置核查。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P09-P05 新增严格非Secret业务Execution Policy Bootstrap并将完整业务执行链装配到既有`AI_PROVIDER_WORKER`；Task/Execution策略必须成对，服务计划仅在Probe或完整业务配置存在时列出角色，Probe与业务Transport/Adapter/Secret Audit保持隔离。兼容性/升级/回滚：无Schema/API/依赖变化，Probe-only兼容；业务部署须补配置并重启，可撤业务入口但RUNNING须先对账。验证：Win11/PG18.6真实Worker runtime启动零claim/Invocation/Secret访问/网络，相关83、后端2310运行/3跳过；wheel 807项 SHA-256 `fad0c47681f29496d5968e9a2396a437553726b63bfabe2fbfc2132326f06dbf`。验证脚本首轮模型表连接字段错误已修正并新库重跑。已知问题：P06真实服务循环/合成本地HTTPS、Server2025、Gate3/UAT/可使用包待完成。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P09-P04 新增公平有界的业务AI/Provider Probe组合循环：每轮先限量对账过期业务Task，双链按非空闲结果让权，空闲可同轮回退；维护准入覆盖对账至发布，停止协作排空正在进行的有界网络调用。兼容性/升级/回滚：无Schema/API/依赖变化，尚未替换Probe-only生产入口；可撤新增循环恢复旧行为，持久历史不变。验证：Win11/PG18.6真实维护锁与四轮2/2调度、P03业务整链回归，相关定向27、后端2301运行/3跳过；wheel 805项 SHA-256 `3f7a696b5a7218b865fdad75054865acfe4e09db55e6d2fb9df6788b2d8a82ec`。系统Python缺构建后端的首次打包未产物，已用项目Python3.13.15构建环境成功。已知问题：P05～P06生产策略/入口组合、Server2025、Gate3/UAT/可使用包待完成。
