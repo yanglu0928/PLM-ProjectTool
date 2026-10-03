@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A06-P09-P04 新增公平有界的业务AI/Provider Probe组合循环：每轮先限量对账过期业务Task，双链按非空闲结果让权，空闲可同轮回退；维护准入覆盖对账至发布，停止协作排空正在进行的有界网络调用。兼容性/升级/回滚：无Schema/API/依赖变化，尚未替换Probe-only生产入口；可撤新增循环恢复旧行为，持久历史不变。验证：Win11/PG18.6真实维护锁与四轮2/2调度、P03业务整链回归，相关定向27、后端2301运行/3跳过；wheel 805项 SHA-256 `3f7a696b5a7218b865fdad75054865acfe4e09db55e6d2fb9df6788b2d8a82ec`。系统Python缺构建后端的首次打包未产物，已用项目Python3.13.15构建环境成功。已知问题：P05～P06生产策略/入口组合、Server2025、Gate3/UAT/可使用包待完成。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P09-P03 新增业务AI one-shot Worker，按专用claim、Prepare/Begin、双pre-send/Secret/发送栅栏、Adapter、Parse和结果原子发布固定执行；Begin错误显式携带已提交事实，防止已创建Invocation被误归类或重发。兼容性/升级/回滚：无Schema/API/依赖变化，内部新事实默认false；可停止消费撤Worker，已越栅栏或已提交Invocation必须保留对账。验证：Win11/PG18.6真实存储+合成Adapter整链一次发送/第二周期IDLE，定向36、后端2294运行/3跳过；wheel 804项 SHA-256 `aa3f580203457a2e5856b72f4f29914426847e8fe78385ba71339f4bab916452`。已知问题：P04～P06循环/生产组合、Server2025、Gate3/UAT/可使用包待完成。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P09-P02 新增Owner专用`AI_TASK_EXECUTE` claim与pre-Begin失败原子收敛；业务Worker不再跨Owner抢占Audit/Document/Probe，准备失败固定Job FAILED且不自动重发，Task的retryable仅作显式新generation资格。兼容性/升级/回滚：无Schema/API/依赖变化，通用/Parse claim保持；可停止业务AI消费撤组合，已提交终态/Audit必须保留。验证：Win11/PG18.6真实Owner隔离、零Invocation、Audit回滚，定向29、后端2280运行/3跳过；wheel 803项 SHA-256 `5515e05e104437824aa2d5131a0398347afb015624de33a772c4cc39eb738b1f`。已知问题：P03～P06生产Worker组合、Server2025、Gate3/UAT/可使用包待完成。

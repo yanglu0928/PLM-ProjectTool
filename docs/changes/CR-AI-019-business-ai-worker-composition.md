@@ -1,6 +1,6 @@
 # CR-AI-019：业务 AI Worker 生产组合与启动边界
 
-日期：2026-10-03；状态：依 V1.1 持续授权登记，P02～P03 已验证、P04～P06 实施中；关联 Gate 2 冻结 ADR-004/DM-04/API-03、CR-AI-015～018、Schema0072～0075；原冻结提交 `64cdf09` 不改。WBS `AI-04-A06-P09`。
+日期：2026-10-03；状态：依 V1.1 持续授权登记，P02～P04 已验证、P05～P06 实施中；关联 Gate 2 冻结 ADR-004/DM-04/API-03、CR-AI-015～018、Schema0072～0075；原冻结提交 `64cdf09` 不改。WBS `AI-04-A06-P09`。
 
 ## 差异与证据
 
@@ -12,7 +12,7 @@ P06～P08 已分别验证Execution Grant、精确Content/Envelope、Provider Rou
 
 1. P02（已完成）：增加Jobs-owned `claim_next_ai_task`，只领取`ai/AI_TASK_EXECUTE`；增加pre-Begin失败Owner，在无Invocation时原子关闭当前Job/Attempt/Lease与Task并写Audit，不进入自动`RETRY_WAIT`。Windows 11/PostgreSQL 18.6 的 Owner 隔离、零 Invocation 及 Audit 故障回滚已验证。
 2. P03（已完成）：实现业务AI one-shot Worker，固定`claim → prepare → begin → 双重授权/Secret/发送栅栏 → parse → success/failure publish`顺序；响应和正文在全部退出路径释放，不在日志输出。Begin已提交后无法安全发布时保留给过期对账，绝不重新发送同一Invocation。Windows 11/PostgreSQL 18.6 整链已证明一次发送、原子终态和第二周期 IDLE。
-3. P04：实现公平有界组合循环。每轮先限量对账过期业务Task，再在Probe与业务Task间交替尝试；维护准入覆盖claim、Secret、网络与发布，停止为协作排空，不强杀网络线程。
+3. P04（已完成）：实现公平有界组合循环。每轮先限量对账过期业务Task，再在Probe与业务Task间交替尝试；首选链空闲时同轮尝试另一链但不剥夺首选链下轮检查机会。维护准入覆盖对账、claim、Secret、网络与发布，停止为协作排空，不强杀网络线程。Windows 11/PostgreSQL 18.6 已证明真实维护锁、2/2公平调度、静止后独占维护恢复及既有业务整链回归。
 4. P05：新增严格非Secret业务Execution Policy Bootstrap来源并装配既有`AI_PROVIDER_WORKER`，该角色统一承载厂商网络I/O，但Probe与业务Adapter/策略/审计路径保持隔离。配置业务Task而未配置完整Execution Policy时启动失败关闭；服务计划在Probe或完整业务策略存在时列出该角色。
 5. P06：Windows11使用一次性PG、合成License/Secret/HTTPS Provider与纯合成文档做真实服务组合验证；Windows Server 2025在网络/目标账户可用时单列。真实客户数据或真实Provider外发不由本CR授权。
 
