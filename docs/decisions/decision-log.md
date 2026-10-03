@@ -7524,3 +7524,11 @@
 - Reason：读取时的`retryable`只是安全提示，不能充当写授权；重试也不能沿用过期/撤销授权或复活原终态。创建Invocation必须继续发生在Worker真实领取/Begin时，Retry HTTP只表示新任务已排队。
 - Impact/Rollback：不改冻结URL、请求/响应或Schema0075；新增`JOB_PROJECT_RETRY`当前写策略、AI Job安全投影与Owner注册。停止AI Job消费并移除Owner可恢复该类型`JOB_NOT_RETRYABLE`，已生成的代际/Audit/收据不可删除；无Provider网络或客户数据外发。
 - Verification：新单元6项及相关定向23项；Windows11/PG18.6一次性数据库证明原子Task/Job/Input/Egress/Outbox/Audit/Lineage、源不变、ETag失败回滚、同Key回放、分叉拒绝、Invocation延后创建；后端2275运行/3跳过；最终wheel 801项 SHA-256 `d5d693afce4e879b090846613f6edd4d54f71c0d60bb5f832bc9869e88c7a07b`。
+
+# DEC-20261003-764：业务AI与Probe共用服务角色但保持执行链隔离
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P09-P01`；依据 CR-AI-015～019、P06～P08。
+- Decision：保留既有Windows `AI_PROVIDER_WORKER`作为唯一厂商网络进程角色，不增加新SCM角色；在进程内以Owner专用claim、独立Probe/业务策略、Transport/Adapter和Audit边界运行两条链。循环先有界对账过期业务Task，再公平交替Probe和业务Task；Maintenance admission覆盖完整外部调用，SCM停止协作排空。
+- Reason：现有角色名和Secret consumer边界已覆盖Provider网络，新增角色会扩大安装/账户/ACL/诊断矩阵；但直接复用Probe Worker/Transport或通用claim会把连通性探针与客户业务载荷混同并跨Owner消费。单角色、双链隔离兼顾最小部署面和职责边界。
+- Impact/Rollback：P01仅设计记录。P02～P05将新增AI专用claim/pre-Begin失败、业务一步执行器、组合循环和非Secret Execution Policy Bootstrap；不改公开API和冻结状态。停止角色并保留所有终态/对账历史即可回滚，已RUNNING不得复活。
+- Verification：静态核对Windows服务入口仅创建Probe Loop、服务计划只读`ai_probe_policies`、通用claim过滤、Prepare/Begin次序及P08发布器前置；确认三个客观缺口。本项无运行测试、Secret或网络I/O。
