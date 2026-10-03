@@ -7260,3 +7260,11 @@
 - Reason：ParseResult hash不能让通用Builder单独核派生projection bytes；调用者自带Context或隐式默认estimator会使批准内容、Token上限和实际语义漂移。Provider-neutral字节必须在网络Adapter前确定且可重复。
 - Impact/Rollback：修改尚未持久化的内部Source合同，新增Envelope/Context/Estimator组件与验证；无Schema、公开API、依赖、生产装配或网络I/O。P04持久化前可整体撤回；持久化后须保留不可变hash历史并向前修复。
 - Verification：Win11/Python3.13禁socket构建确定性Envelope，hash/顺序/Context/Estimator/限额负例PASS；A02/A03 Win11/PG18.6重跑，定向24、后端2191运行/3跳过；wheel SHA-256 `3e39c82a15758fc6521e0f74af8eb5c05da480db1fe02d931ed90e3862c52e1b`。首次字段放置错误导致6个构造TypeError，移至Identity后全部重跑通过。
+
+# DEC-20261003-731：AI_TASK Preview必须携带计划输入并由服务端计算载荷证明
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P04-P01`；依据 CR-AI-016、DEC-726～730、Schema0068～0071。
+- Decision：保持现有URL和响应；AI_TASK Preview请求新增必需 `ai_task_plan`，提前提交与Task Create相同的task type、Prompt/output/context policy和最小参数。AI_TASK不再接受客户端estimated record count/payload fingerprint，改由Owner+Prompt+Envelope服务端计算；非AI operation原合同不变。0072以Plan/Source新表反向一对一绑定Preview，并在Authorization、Task、授权快照、Invocation传播同一PlanRef。旧NULL历史不回填且不可执行。
+- Reason：现有Preview发生在Task之前，缺Prompt/参数，客户端hash也无法证明ParseRecord/最小投影/服务端Prompt/Estimator；若Task创建后才生成Plan，审批没有覆盖实际内容。
+- Impact/Rollback：这是尚未正式发行的AI_TASK请求体有意收紧，前后端原子升级并保留错误显式；非AI不变。Schema有新Plan历史后拒绝down，回滚应用时停止AI_TASK新建/消费并保留历史向前修复。
+- Verification：静态交叉核对Preview、Authorization、Task、Invocation ORM/API和A01～A04合同；本项仅文档，无代码测试、Migration、API运行变化或外发。P02起按空/历史库和双操作类型验证。

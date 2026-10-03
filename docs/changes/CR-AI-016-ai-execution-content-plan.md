@@ -1,6 +1,6 @@
 # CR-AI-016：AI 执行内容必须绑定不可变 Content Plan
 
-日期：2026-10-03；状态：依 V1.1 持续授权登记，待分片实施；关联 Gate 2 冻结提交 `64cdf09`、DM-04、API-03、CR-AI-015、Schema0064/0068～0071。WBS `AI-04-A06-P03-P02`。
+日期：2026-10-03；状态：依 V1.1 持续授权登记，分片实施中；关联 Gate 2 冻结提交 `64cdf09`、DM-04、API-03、CR-AI-015、Schema0064/0068～0071。WBS `AI-04-A06-P03-P02～P04`。
 
 ## 冲突与证据
 
@@ -44,6 +44,8 @@ P03-P02-A02已实现AI-owned Prompt/Task参数短生命周期投影和 `strict-p
 P03-P02-A03已实现Document-owned精确解析内容Owner、PostgreSQL五行当前事实锁、私有ParseResult存储复核和AI反腐层。规划阶段按确定顺序选择一个成功ParseRecord，执行阶段只读取Plan冻结的ParseRecord/ParseResultRef/hash；正文最小投影删除locator/confidence并规范为NFC/LF/UTF-8。后台执行新增内部 `AI_TASK_EXECUTE` 策略，以Task原请求人当前Project权限重新鉴权，不复用浏览器Session。Win11/PG18.6/本地文件证明新解析结果出现后旧Plan仍读取旧结果，暂停成员和文件篡改均拒绝；定向19、后端2185运行/3跳过、wheel通过，Invocation=0。无Schema/API/依赖/外发。A04继续Envelope/Context/Estimator。
 
 P03-P02-A04已实现 `provider-neutral-json.v1` 规范Envelope、显式Context Policy Registry和可注入版本化Token Estimator。编码前补强Plan来源身份，ParseResult原始hash之外增加最小 `projection_fingerprint`，由Document Owner规划/执行两次计算并由Envelope复核。当前仅 `no-retrieval.v1/NONE` 可构建；`project-documents.v1` 等RAG policy因无RetrievalRun/ContextBundle Owner继续失败关闭。Win11/Python3.13在socket禁用时确定性构建、服务端payload证明与限额负例PASS；A02/A03 PG链重跑、定向24、后端2191运行/3跳过、wheel通过。无Schema/API/依赖/Invocation/外发。P04继续持久化Plan与服务端Preview绑定。
+
+P04-P01前置核查确认现有Preview早于Task且不含task type/Prompt/参数，不能在不改变AI_TASK请求语义的情况下批准完整Envelope。选择AI_TASK Preview新增精确 `ai_task_plan`，由服务端计算record count/payload fingerprint；旧客户端自报字段在AI_TASK模式不再接受，非AI operation不变。Schema0072拟新增Plan/Source并把Authorization/Task/Snapshot/Invocation绑定同一PlanRef；旧NULL历史只读、可撤销但不可新建Task/执行。该API收紧、迁移/回滚与分片见DEC-731/P04-P01进度；本项仅文档，尚未实施Schema/API。
 
 ## 兼容、迁移与回滚
 
