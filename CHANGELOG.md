@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A07-P03 新增Document-owned固定ParseResult节点定位与V1文档级降级：当前授权/hash/canonical结果/profile/node/locator全量复核后生成`STRUCTURED_NODE`、`PARSED_NODE`精度和固定版本受权content route；AI/前端不能提供locator，V1只标`DOCUMENT`。九类locator校验归属Document domain，Evidence旧入口兼容。兼容性/升级/回滚：无Migration/API/依赖/生产装配变化，可停止读取装配，历史Evidence/V1/V2保留。验证：Win11标记`AI_04_A07_P03_DOCUMENT_LOCATOR_PASS`，定向61通过/95子测试，后端2314通过/3跳过、2960子测试；wheel 809项 SHA-256 `c388c7293bc6c2b3523c893102f6463ee38d2fbf709f63ec96761afe1aca41e3`；零真实外发/客户数据。已知问题：P04～P07列表/Suggestion GET/Windows组合、Accept/Reject、前端、质量/Gate3/UAT/包待完成。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A07-P02 新增`gap-output.v2@2`受控citation与人工维护提示；准备阶段从本次实际发送的最小文档投影提取无正文node catalog，Parser在持久化前精确验证ordinal/node，未知节点或缺必填提示失败关闭且引用不进入repr。兼容性/升级/回滚：V1历史不改，无Migration/API/依赖/生产策略切换；回滚停止创建V2，已产生V2仍只读保留。验证：Win11独立标记`AI_04_A07_P02_OUTPUT_V2_PASS`，AI模块269通过/301子测试，后端2308通过/3跳过、2944子测试；wheel 807项 SHA-256 `bc3466e072d1f0e5fe6f35c75a6bb3986525a839178f29d0ddbdf50177035aec`；零真实Provider I/O/客户数据。已知问题：P03 locator Owner、P04～P07读取闭环、Accept/Reject、前端、质量/Gate3/UAT/包待完成。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A07-P01 完成AI建议读取/定位前置核查并登记CR-AI-020：现`gap-output.v1`只保存文档序号，不能可靠定位页/段落/单元格，也没有结构化人工维护提示。选择保留V1历史并新增`gap-output.v2@2`的受控node引用/confirmation，由服务端基于固定Content Plan/ParseRecord复核并生成安全locator；Task/Invocation列表使用独立Vault cursor key和协议域分离。兼容性/升级/回滚：本项仅文档，无代码/Schema/API/依赖/外发；V1不改，新V2以新Prompt/Task策略启用。验证：静态核对Schema/Parser/发布器/Document投影/Evidence Viewer。已知问题：P02～P07实现、Accept/Reject、前端、质量/Gate3/UAT/包待完成。

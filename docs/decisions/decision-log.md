@@ -7596,3 +7596,11 @@
 - Reason：只按 Content Plan 或文档版本验证仍允许模型引用未发送或不存在的节点；由模型给出 locator/URL 又会扩大信任边界。发送时的精确投影是最小且可证明的引用集合，locator 解析可在 P03 继续由 Document Owner 独立完成。
 - Impact/Rollback：新增内部 V2 Schema、无正文 catalog 和 Parser 校验，无 Migration、公开 API、新依赖或生产策略切换；V1 行为不变。可停止新建 V2 Task并撤注册，但已持久化 V2 历史必须保留只读。
 - Verification：Windows 11 合成验证接受真实节点并拒绝不存在节点/缺维护提示；AI 模块269通过/301子测试，后端2308通过/3跳过、2944子测试；wheel 807项 SHA-256 `bc3466e072d1f0e5fe6f35c75a6bb3986525a839178f29d0ddbdf50177035aec`；零Provider I/O和客户数据。
+
+# DEC-20261003-773：Suggestion 定位由 Document Owner 从固定解析结果生成
+
+- Date/WBS：2026-10-03 / `AI-04-A07-P03`；依据 CR-AI-020、DEC-771/772及冻结Document/Evidence模型。
+- Decision：AI只向Document Owner提交固定document/version/parse身份和P02已验证的node id；Owner每次重新授权并校验固定结果后生成`STRUCTURED_NODE`、位置标签和固定版本content route。九类typed locator结构校验归属Document domain，Evidence旧命名作为兼容适配器。V1历史只返回`DOCUMENT`精度。
+- Reason：让AI或前端回传locator/URL无法证明来源，让AI模块读取Document内部存储又破坏Owner边界。固定ParseResult是唯一可重建node到页/段/单元格的权威来源；V1没有node，任何精确跳转都是虚报。
+- Impact/Rollback：新增Document应用服务和domain locator，无Migration、公开API、依赖或生产装配变化；Evidence接口兼容。可停止新读取链并撤新增服务；若回退domain提取必须恢复Evidence校验实现，历史Evidence不可删除或降格。
+- Verification：Windows 11独立标记`AI_04_A07_P03_DOCUMENT_LOCATOR_PASS`；Evidence/Document定向61通过、95子测试，后端2314通过/3跳过、2960子测试；wheel 809项 SHA-256 `c388c7293bc6c2b3523c893102f6463ee38d2fbf709f63ec96761afe1aca41e3`；零真实外发和客户数据。

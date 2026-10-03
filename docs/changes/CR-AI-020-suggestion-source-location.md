@@ -1,6 +1,6 @@
 # CR-AI-020：AI 建议精确来源定位与人工确认提示
 
-日期：2026-10-03；状态：依 V1.1 持续授权登记，P02 已通过，待 P03～P07 实施验证；关联 Gate 2 冻结 API-03、CR-AI-018、Schema0072/0074、用户确认的待办交互要求；原冻结提交 `64cdf09` 与 `gap-output.v1` 历史不改。WBS `AI-04-A07`。
+日期：2026-10-03；状态：依 V1.1 持续授权登记，P02～P03 已通过，待 P04～P07 实施验证；关联 Gate 2 冻结 API-03、CR-AI-018、Schema0072/0074、用户确认的待办交互要求；原冻结提交 `64cdf09` 与 `gap-output.v1` 历史不改。WBS `AI-04-A07`。
 
 ## 差异与证据
 
@@ -24,6 +24,8 @@
 6. P07：Windows显式组合与一次性PostgreSQL HTTP/权限/游标/定位验证；缺cursor密钥或Document locator Owner时启动失败关闭。无真实Provider调用或客户数据外发。
 
 P02 实施证据：新增严格 `gap-output.v2@2` 及兼容别名；每项必须提供至少一个本次实际发送节点的 citation。准备阶段只从已验证的 `document-minimum-text-v1` 投影提取无正文 node catalog，Parser 以精确 ordinal/node 白名单验证输出；不存在节点、重复/越界引用、缺人工维护字段均失败关闭。V1 校验和历史读取语义未变，生产 Task/Prompt 策略尚未切换 V2。Windows 11 独立验证标记 `AI_04_A07_P02_OUTPUT_V2_PASS`；后端 2308 通过/3 跳过、2944 子测试通过；wheel 807 项 SHA-256 `bc3466e072d1f0e5fe6f35c75a6bb3986525a839178f29d0ddbdf50177035aec`。P03 继续实现 Document-owned locator。
+
+P03 实施证据：Document Owner 新增固定 ParseResult 节点解析服务，每次先经既有 DocumentVersion/ParseRecord 当前授权、状态与hash复核，再对 canonical Parser Result、profile/version、node kind/source locator、OCR指纹和node集合完整校验；只接受调用方给出的node id，不接受AI提供locator。返回规范`STRUCTURED_NODE`、`PARSED_NODE`精度、无正文位置标签和绑定固定DocumentVersion的受权content route。V1经独立版本Owner重验后仅返回`DOCUMENT`精度。九类定位结构校验归属Document domain，Evidence旧入口保持兼容。Windows 11标记`AI_04_A07_P03_DOCUMENT_LOCATOR_PASS`；Evidence相关61通过/95子测试，后端2314通过/3跳过、2960子测试；wheel 809项 SHA-256 `c388c7293bc6c2b3523c893102f6463ee38d2fbf709f63ec96761afe1aca41e3`。无数据库/API/依赖/真实外发。
 
 Accept/Reject及写入目标Draft不在本CR中；它们涉及目标Owner、Review Lock、第二个expected version和正式业务版本，后续独立Change Request/写闭环实施。
 
