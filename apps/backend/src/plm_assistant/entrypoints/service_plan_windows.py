@@ -15,6 +15,10 @@ from plm_assistant.modules.platform.infrastructure.windows_service_dispatcher im
     SERVICE_NAMES,
 )
 from plm_assistant.entrypoints.ai_probe_policy import create_deployment_ai_probe_registry
+from plm_assistant.entrypoints.ai_execution_policy import (
+    create_deployment_ai_execution_registry,
+)
+from plm_assistant.entrypoints.ai_task_policy import create_deployment_ai_task_policies
 
 
 class WindowsServicePlanError(RuntimeError):
@@ -54,6 +58,13 @@ def build_service_plan(python_exe: Path, bootstrap_yaml: Path) -> dict:
             raise WindowsServicePlanError()
         if settings.ai_probe_policies:
             create_deployment_ai_probe_registry(settings)
+        has_tasks = bool(settings.ai_task_policies)
+        has_execution = bool(settings.ai_execution_policies)
+        if has_tasks != has_execution:
+            raise WindowsServicePlanError()
+        if has_tasks:
+            create_deployment_ai_task_policies(settings)
+            create_deployment_ai_execution_registry(settings)
     except Exception:
         raise WindowsServicePlanError() from None
     return {
@@ -68,7 +79,8 @@ def build_service_plan(python_exe: Path, bootstrap_yaml: Path) -> dict:
                  "plm_assistant.entrypoints.service_windows", role,
                  str(bootstrap)))}
             for role, name in SERVICE_NAMES.items()
-            if role != "AI_PROVIDER_WORKER" or settings.ai_probe_policies
+            if (role != "AI_PROVIDER_WORKER" or settings.ai_probe_policies
+                or settings.ai_task_policies)
         ],
     }
 

@@ -279,15 +279,15 @@ def run_ai_provider_service(settings_path: Path, stop_event: Event,
     if (sys.platform != "win32" or not isinstance(settings_path, Path)
             or not settings_path.is_absolute()):
         raise WindowsAIProviderServiceError()
-    from plm_assistant.entrypoints.windows_ai_provider_probe_worker import (
-        create_windows_ai_provider_probe_loop,
+    from plm_assistant.entrypoints.windows_ai_provider_worker import (
+        create_windows_ai_provider_loop,
     )
     from plm_assistant.modules.platform.infrastructure.bootstrap_config import (
         load_bootstrap_settings,
     )
 
     settings = load_bootstrap_settings(settings_path.resolve(strict=True))
-    database, loop = create_windows_ai_provider_probe_loop(settings)
+    database, loop = create_windows_ai_provider_loop(settings)
     run_ai_provider_loop_service(database, loop, settings.data_root, stop_event, ready)
 
 

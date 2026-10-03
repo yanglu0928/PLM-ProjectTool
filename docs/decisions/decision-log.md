@@ -7556,3 +7556,11 @@
 - Reason：固定业务优先会饿死 Probe，简单逐轮交替又会在一侧空闲时增加另一侧延迟；同轮无界清空对账会饿死新任务。按非空闲结果让权兼顾持续双繁忙公平和单侧吞吐，有界对账保留恢复能力且不垄断进程。
 - Impact/Rollback：新增未装配的内部循环，无Schema/API/依赖/网络策略变化；原Probe-only入口不变。可撤循环恢复原行为，已持久化历史不受影响。
 - Verification：单元7、相关定向27；Windows11/PostgreSQL18.6真实维护共享锁覆盖对账与四轮2/2调度，工作中独占锁拒绝、静止后恢复，并回归业务整链；后端2301运行/3跳过；wheel 805项 SHA-256 `3f7a696b5a7218b865fdad75054865acfe4e09db55e6d2fb9df6788b2d8a82ec`。
+
+# DEC-20261003-768：业务执行端点只来自成对的非Secret部署策略
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P09-P05`；依据 CR-AI-019、DEC-764～767。
+- Decision：业务Provider Endpoint、模型白名单、区域/外发等级及响应/时限上限只能由严格 `ai_execution_policies` Bootstrap生成；不得从数据库显示名、请求、环境Secret或Probe策略推导。业务Task策略和Execution策略必须成对配置；不完整时数据库前失败且SCM计划不列角色。仅Probe继续走原组合，完整业务配置改用单角色双链组合。
+- Reason：数据库Provider配置只保存受控符号引用与业务事实，不能成为任意URL输入；Probe固定ping与业务客户载荷的Transport、审计和策略不能复用。成对检查防止可提交业务Task但服务角色没有授权执行边界，严格启动失败也不会读取Provider Key。
+- Impact/Rollback：新增非Secret配置字段、生产组合入口和服务计划条件，无Schema/API/第三方依赖变化。Probe-only兼容；业务部署需新增配置并重启。可撤业务入口恢复Probe-only，历史记录保留并先对账RUNNING。
+- Verification：新增单元9、相关83；Windows11/PostgreSQL18.6真实Worker runtime构建完整业务链且启动零claim/Invocation/Secret访问/网络；后端2310运行/3跳过；wheel 807项 SHA-256 `fad0c47681f29496d5968e9a2396a437553726b63bfabe2fbfc2132326f06dbf`。

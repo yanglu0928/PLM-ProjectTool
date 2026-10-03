@@ -50,14 +50,16 @@ password_kdf_slots: 4
 # Never put Prompt text, customer content, endpoint URLs or credentials here.
 # Removing all entries and restarting unmounts Task submission; existing Task
 # snapshots remain immutable and are still subject to execution-time checks.
+# Starting AI_PROVIDER_WORKER for business Tasks requires both this list and the
+# complete ai_execution_policies list below; an incomplete pair fails closed.
 # ai_task_policies:
 #   - reference: "gap-analysis.v1"
 #     policy_version: 1
 #     task_type: "GAP_ANALYSIS"
 #     prompt_template_id: "00000000-0000-0000-0000-000000000001"
 #     purpose_ref: "project-gap-analysis.v1"
-#     output_schema_ref: "gap-analysis-output.v1"
-#     context_policy_ref: "project-documents.v1"
+#     output_schema_ref: "gap-output.v1"
+#     context_policy_ref: "no-retrieval.v1"
 #     parameter_fields:
 #       - name: "language"
 #         value_type: "STRING"
@@ -66,3 +68,18 @@ password_kdf_slots: 4
 #         minimum: null
 #         maximum: null
 #         allowed_values: ["zh-CN", "en-US"]
+# Business AI Provider execution policies are non-secret endpoint and resource
+# bounds. Provider keys remain encrypted Secret records and are never put here.
+# The symbolic reference must match the active Provider configuration; models
+# not on the allowlist cannot be sent. Changes require a controlled restart.
+# ai_execution_policies:
+#   - reference: "<approved-symbolic-reference>"
+#     kind: "OPENAI_COMPATIBLE"
+#     endpoint_url: "https://<approved-host>/v1/chat/completions"
+#     data_region: "cn-beijing"
+#     egress_class: "EXTERNAL_APPROVAL_REQUIRED"
+#     allowed_model_keys: ["<approved-model>"]
+#     max_response_bytes: 1048576
+#     connect_timeout_seconds: 5
+#     read_timeout_seconds: 30
+#     total_timeout_seconds: 40

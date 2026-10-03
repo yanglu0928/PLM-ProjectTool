@@ -112,6 +112,47 @@ class WindowsServicePlanTests(unittest.TestCase):
             with self.assertRaises(plan.WindowsServicePlanError):
                 plan.build_service_plan(python, config)
 
+    def test_complete_business_policy_adds_ai_and_incomplete_pair_fails(self):
+        task_yaml = (
+            "ai_task_policies:\n"
+            "  - reference: gap-analysis.v1\n"
+            "    policy_version: 1\n"
+            "    task_type: GAP_ANALYSIS\n"
+            "    prompt_template_id: 11111111-1111-4111-8111-111111111111\n"
+            "    purpose_ref: project-gap-analysis.v1\n"
+            "    output_schema_ref: gap-output.v1\n"
+            "    context_policy_ref: no-retrieval.v1\n"
+            "    parameter_fields: []\n"
+        )
+        execution_yaml = (
+            "ai_execution_policies:\n"
+            "  - reference: endpoint.business.v1\n"
+            "    kind: OPENAI_COMPATIBLE\n"
+            "    endpoint_url: https://business.example.test/v1/chat/completions\n"
+            "    data_region: cn-beijing\n"
+            "    egress_class: EXTERNAL_APPROVAL_REQUIRED\n"
+            "    allowed_model_keys: [business-chat]\n"
+            "    max_response_bytes: 1048576\n"
+            "    connect_timeout_seconds: 5\n"
+            "    read_timeout_seconds: 30\n"
+            "    total_timeout_seconds: 40\n"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            python, config = self.paths(directory)
+            base = config.read_text(encoding="utf-8")
+            config.write_text(base + task_yaml, encoding="utf-8")
+            with self.assertRaises(plan.WindowsServicePlanError):
+                plan.build_service_plan(python, config)
+            config.write_text(base + execution_yaml, encoding="utf-8")
+            with self.assertRaises(plan.WindowsServicePlanError):
+                plan.build_service_plan(python, config)
+            config.write_text(base + task_yaml + execution_yaml, encoding="utf-8")
+            result = plan.build_service_plan(python, config)
+            self.assertEqual(
+                [item["role"] for item in result["service_commands"]],
+                list(SERVICE_NAMES),
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

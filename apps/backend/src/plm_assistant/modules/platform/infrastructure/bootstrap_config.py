@@ -51,6 +51,7 @@ class BootstrapSettings(BaseSettings):
     parser_ocr_recognition_model_dir: Path | None = None
     parser_ocr_model_fingerprint: str | None = None
     ai_probe_policies: tuple[dict[str, str], ...] = ()
+    ai_execution_policies: tuple[dict[str, Any], ...] = ()
     ai_egress_policies: tuple[dict[str, Any], ...] = ()
     ai_task_policies: tuple[dict[str, Any], ...] = ()
 
@@ -68,6 +69,52 @@ class BootstrapSettings(BaseSettings):
         if len(set(references)) != len(references):
             raise ValueError("invalid AI probe policy configuration")
         return tuple(dict(item) for item in value)
+
+    @field_validator("ai_execution_policies", mode="before")
+    @classmethod
+    def validate_ai_execution_policies(
+        cls, value: Any,
+    ) -> tuple[dict[str, Any], ...]:
+        fields = frozenset({
+            "reference", "kind", "endpoint_url", "data_region",
+            "egress_class", "allowed_model_keys", "max_response_bytes",
+            "connect_timeout_seconds", "read_timeout_seconds",
+            "total_timeout_seconds",
+        })
+        string_fields = (
+            "reference", "kind", "endpoint_url", "data_region",
+            "egress_class",
+        )
+        integer_bounds = {
+            "max_response_bytes": (1, 100_000_000),
+            "connect_timeout_seconds": (1, 120),
+            "read_timeout_seconds": (1, 120),
+            "total_timeout_seconds": (1, 120),
+        }
+        if type(value) not in (tuple, list) or len(value) > 16:
+            raise ValueError("invalid AI execution policy configuration")
+        normalized: list[dict[str, Any]] = []
+        for item in value:
+            if (type(item) is not dict or set(item) != fields
+                    or any(type(item[name]) is not str for name in string_fields)
+                    or type(item["allowed_model_keys"]) not in (tuple, list)
+                    or not 1 <= len(item["allowed_model_keys"]) <= 64
+                    or len(set(item["allowed_model_keys"]))
+                    != len(item["allowed_model_keys"])
+                    or any(type(model) is not str
+                           for model in item["allowed_model_keys"])
+                    or any(type(item[name]) is not int
+                           or not low <= item[name] <= high
+                           for name, (low, high) in integer_bounds.items())):
+                raise ValueError("invalid AI execution policy configuration")
+            normalized.append({
+                **item,
+                "allowed_model_keys": tuple(item["allowed_model_keys"]),
+            })
+        references = [item["reference"] for item in normalized]
+        if len(set(references)) != len(references):
+            raise ValueError("invalid AI execution policy configuration")
+        return tuple(normalized)
 
     @field_validator("ai_egress_policies", mode="before")
     @classmethod
