@@ -183,6 +183,7 @@ def validate(context: dict[str, object], after_authorized=None) -> None:
         after_authorized({
             **context,
             "authorized_send": final_send,
+            "pre_send_service": service,
         })
     print(
         "AI_04_A06_P06_P03_PRE_SEND_OWNER_PASS: Win11/PostgreSQL18.6 "

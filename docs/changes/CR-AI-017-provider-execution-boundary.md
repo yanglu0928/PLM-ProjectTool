@@ -40,3 +40,5 @@ P06-P05-P01前置核查发现当前AI Task Claim/SendProof未携带Lease截止�
 P06-P05-P02已完成：AI Task Claim由数据库投影`observed_at/lease_expires_at`，pre-send要求剩余Lease严格覆盖Route总时限+2秒，并把SendProof开始截止收紧到`min(authorization, lease-total-margin)`。Win11/PG18.6 21秒窗口拒绝、120秒窗口成功，相关定向16、后端2231运行/3跳过及wheel通过；无Schema/API/依赖/Secret/网络。P03继续Task专用Secret审计。
 
 P06-P05-P03已完成：新增业务 Task 专用 Secret 审计作用域，把 Project/原请求用户/Task/Invocation/Job generation/Route/SecretRecord/SecretVersion 精确绑定到最小 ContextVar；仅在绑定内接受 AI_PROVIDER_ADAPTER 的 GRANTED/DENIED，并通过真实 AuditService 写 Project-scope SYSTEM/original-user 事件。Win11/PG18.6真实链证明成功和错误版本拒绝均落审计、错误版本不解密、明文缓冲区清零；单元3、后端2231运行/3跳过及wheel通过，零真实Secret/Provider网络。P04继续双pre-send、精确SecretVersion解析和Adapter顺序编排。
+
+P06-P05-P04已完成：唯一内部发送入口按首次pre-send→Task审计/trace→精确SecretVersion读取→第二次pre-send→Route/Proof稳定性→Adapter顺序执行，任何轮换、授权/Lease/License、身份/摘要或审计漂移均在Adapter前失败关闭；密钥和错误路径清零。Win11/PG18.6使用真实pre-send、PostgreSQL Secret Store和Project Audit及合成Adapter通过，相关定向17、后端2235运行/3跳过及wheel通过，零真实Secret/Provider网络。一次方法调用最多一次Adapter不等于跨崩溃远端exactly-once；P07/P08继续响应Schema、Suggestion/Invocation终态、UNKNOWN和对账。

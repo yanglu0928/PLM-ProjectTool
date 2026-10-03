@@ -7428,3 +7428,11 @@
 - Reason：SecretResolver 的通用审计 Port 不携带业务 Task 身份；复用 Probe snapshot 会产生错误审计语义，而把 Envelope/Key 放入上下文会扩大敏感信息生命周期。最小绑定同时让错误 trace/consumer/Secret/proof 漂移在审计前失败关闭。
 - Impact/Rollback：新增未装配内部审计适配器及默认关闭验证回调，无Schema/API/依赖/历史修改。回滚为停止业务消费并撤适配器；固定 Probe 不变。
 - Verification：单元3项/8子用例、Win11/PG18.6真实 AuditService 持久化 SUCCESS/DENIED、错误Version解密前拒绝与明文清零、后端2231运行/3跳过PASS；wheel SHA-256 `5918f56a12390f5a2ed225fd2b0d02b37bc0bd6a557d3c76264e2f68b2e80f9e`；零真实Secret/Provider网络。
+
+# DEC-20261003-752：Secret解析后必须以第二份当前证明立即发送
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P06-P05-P04`；依据 CR-AI-017、DEC-749～751。
+- Decision：业务发送唯一入口执行首次pre-send，随后绑定Task审计/trace并按其精确SecretVersion进入SecretResolver；持有短生命Key时再做第二次pre-send。只有Route完全相同、SendProof除最新valid_until外的Invocation/Job generation/Grant/Authorization/Plan/route/payload身份完全相同才立即调用Adapter；Adapter使用第二份proof。一次调用最多调用一次Adapter。
+- Reason：Secret加载/审计位于数据库授权与网络之间，期间可能发生密钥轮换、撤销、License或Lease变化。只做首次检查会发送旧Key，先做第二次再取Key又会在Key解析后留下同样竞态。双检查配合精确Version和Adapter内部proof复核把可控窗口收至最小。
+- Impact/Rollback：新增未装配内部应用服务及验证注入，无Schema/API/依赖/历史修改。可停止业务消费并撤服务；PENDING历史留待后续终态/对账，不删除。该决定不承诺崩溃或超时下远端exactly-once。
+- Verification：新单元4项/5子用例、相关定向17/23，Win11/PG18.6真实pre-send/Secret Store/Project Audit及合成Adapter顺序通过；后端2235运行/3跳过PASS，wheel SHA-256 `98575f61b942d999a86771d8e76ec6d40e64821eb784bc2462abd210dde38de7`；零真实Secret/Provider网络。
