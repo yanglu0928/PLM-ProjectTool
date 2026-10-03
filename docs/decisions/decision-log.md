@@ -7388,3 +7388,11 @@
 - Reason：单独payload hash不能防止路由、密钥版本或Invocation被替换；响应若使用普通bytes无法在下游消费后主动清零。
 - Impact/Rollback：新增未装配内部合同，无Schema/API/依赖/外发。撤合同代码即可，历史不变。
 - Verification：单元5、后端2221运行/3跳过PASS；wheel SHA-256 `38731f0ce54d2791e71f5f2b88f9aed04fd582e1270c89bbe5a3958fc1b6412b`；无Secret读取或网络I/O。
+
+# DEC-20261003-747：Begin后以独立当前事实Owner关闭最终发送授权
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P06-P03`；依据 CR-AI-015/017、DEC-745/746、Schema0073。
+- Decision：不复用只接受QUEUED Task的Grant Issuer；以PENDING Invocation为根，在一个短事务内组合Jobs Claim、Task/Invocation、当前Authorization、ACTIVE Provider/current Config、AVAILABLE CHAT Model和ACTIVE SecretVersion，并用只来自部署组合的execution policy解析endpoint与网络上限。事务内外双验License后生成SendProof；本Owner不解密Secret、不联网。
+- Reason：Begin已将Task推进为RUNNING，原Issuer的QUEUED守卫是正确安全边界；放宽它会混淆创建前Grant与发送前当前事实。数据库只保存endpoint policy引用又不足以安全产生URL，因此URL/model allow-list/超时必须来自受信部署策略。
+- Impact/Rollback：新增未装配application/infrastructure组件及默认关闭的验证回调，无Schema/API/依赖/Probe/历史修改。可停止消费并撤组件；已存在PENDING Invocation留待终态对账。
+- Verification：单元4、相关定向12、Win11/PG18.6真实Claim→Envelope→Begin→pre-send组合、后端2225运行/3跳过PASS；wheel SHA-256 `efffd47597b53e6a83a06c660129db4b16793321a9d876fca2c1acae9dae7cbc`。Inactive Secret和暂停Model失败关闭；零Secret解密/Provider I/O。

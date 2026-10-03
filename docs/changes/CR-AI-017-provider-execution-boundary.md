@@ -1,6 +1,6 @@
 # CR-AI-017：业务 AI 调用不得复用固定 Provider 探针作为发送器
 
-日期：2026-10-03；状态：依 V1.1 持续授权登记，实施中；关联 Gate 2 冻结 ADR-004/DM-04/API-03、CR-AI-002/003/015/016、Schema0073；原冻结提交 `64cdf09` 不改。WBS `AI-04-A06-P06`。
+日期：2026-10-03；状态：依 V1.1 持续授权登记，实施中（P06-P02～P03已通过）；关联 Gate 2 冻结 ADR-004/DM-04/API-03、CR-AI-002/003/015/016、Schema0073；原冻结提交 `64cdf09` 不改。WBS `AI-04-A06-P06`。
 
 ## 冲突与证据
 
@@ -30,3 +30,5 @@ P05 的 Grant Repository 只允许 `QUEUED + no current Invocation`，Begin 后 
 单元覆盖策略严格形状、未知 Provider/model/endpoint、URL/DNS/redirect/proxy/字节/时间上限、Envelope一字节漂移、SecretVersion变化、网络前 Lease/授权/License 撤销、内存/日志脱敏。PostgreSQL覆盖并发 fencing、Task/Invocation状态、路由/密钥轮换、事务回滚。网络合成先用本地受控 TLS 替身；任何真实 Provider 调用均必须有当轮明确数据范围授权。剩余风险包括 Provider 差异、超时后远端结果未知、结构化输出和 usage/token 语义，分别由 Adapter 版本、UNKNOWN 终态和 P07/P08 关闭。
 
 P06-P02已实现无正文Route/SendProof/Response/Adapter Port合同：Route固定endpoint policy/URL、Provider/Config/Model、SecretVersion、region/egress class和有界超时/响应；SendProof将Invocation/Job generation/Grant/Authorization/Plan/Route/Envelope绑定；响应正文由可清零bytearray管理且不进repr。单元5、后端2221运行/3跳过及wheel通过；无Secret读取、网络、Schema/API/依赖变化。P06-P03继续post-Begin PostgreSQL pre-send Owner。
+
+P06-P03已实现post-Begin pre-send Owner、受信execution policy registry和PostgreSQL current route投影：同一短事务锁定当前Job generation、RUNNING Task/PENDING Invocation、未撤销授权、ACTIVE Provider/current Config、AVAILABLE CHAT Model和ACTIVE SecretVersion，事务内外双验License，再生成Route/SendProof。Win11/PG18.6真实链证明Inactive Secret和暂停Model失败关闭；单元4、相关定向12、后端2225运行/3跳过及wheel通过。无Secret解密、网络、Schema/API/依赖变化。P06-P04继续实现有界OpenAI-compatible Adapter与合成TLS网络边界。

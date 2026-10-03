@@ -89,7 +89,7 @@ def load_composition():
     return module
 
 
-def validate(context: dict[str, object]) -> None:
+def validate(context: dict[str, object], after_begin=None) -> None:
     runtime = context["runtime"]
     guard = context["guard"]
     worker = "ai-invocation-worker-01"
@@ -206,6 +206,14 @@ def validate(context: dict[str, object]) -> None:
             "SELECT count(*) FROM plm.ai_invocations WHERE ai_task_id=%s",
             (context["ai_task_id"],),
         ).fetchone()[0] == 1
+    if after_begin is not None:
+        after_begin({
+            **context,
+            "current_claim": current,
+            "prepared_invocation": prepared,
+            "begun_invocation": begun,
+            "worker_ref": worker,
+        })
     print(
         "AI_04_A06_P05_P04_CLAIM_ENVELOPE_BEGIN_PASS: Win11/PostgreSQL18.6 "
         "real Job claim and fencing issued the exact Grant, immutable Plan/Prompt/Document "
@@ -214,8 +222,11 @@ def validate(context: dict[str, object]) -> None:
     )
 
 
-def main() -> None:
-    load_composition().main(after_validation=validate)
+def main(after_begin=None) -> None:
+    def callback(context):
+        validate(context, after_begin=after_begin)
+
+    load_composition().main(after_validation=callback)
 
 
 if __name__ == "__main__":
