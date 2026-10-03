@@ -8,7 +8,12 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Protocol
 
-from .task_execution_grant import AITaskExecutionGrant, AITaskExecutionGrantError
+from .task_execution_grant import (
+    AITaskExecutionGrant,
+    AITaskExecutionGrantError,
+    AITaskPayloadPlanProof,
+    require_payload_plan,
+)
 from .task_execution_grant_service import AITaskExecutionGrantIssuer
 
 
@@ -49,10 +54,12 @@ class AITaskInvocationBeginService:
         self._repository = repository
 
     def begin(self, *, job_id: uuid.UUID, fencing_token: int,
-              worker_ref: str, now: datetime) -> BegunAITaskInvocation:
+              worker_ref: str, now: datetime,
+              payload_plan: AITaskPayloadPlanProof) -> BegunAITaskInvocation:
         if (type(job_id) is not uuid.UUID or not job_id.int
                 or not isinstance(now, datetime) or now.tzinfo is None
-                or now.utcoffset() is None):
+                or now.utcoffset() is None
+                or type(payload_plan) is not AITaskPayloadPlanProof):
             raise AITaskInvocationBeginError()
         now = now.astimezone(timezone.utc)
         try:
@@ -61,6 +68,7 @@ class AITaskInvocationBeginService:
                     transaction, job_id=job_id, fencing_token=fencing_token,
                     worker_ref=worker_ref, now=now,
                 )
+                require_payload_plan(grant, payload_plan, now=now)
                 invocation_id = self._repository.begin(
                     transaction, grant=grant, now=now,
                 )

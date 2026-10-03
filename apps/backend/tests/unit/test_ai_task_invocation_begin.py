@@ -5,7 +5,8 @@ import uuid
 from datetime import datetime, timedelta, timezone
 
 from plm_assistant.modules.ai.application.task_execution_grant import (
-    AITaskExecutionGrant, AITaskExecutionInputRef,
+    AITaskExecutionGrant, AITaskExecutionInputRef, AITaskPayloadPlanProof,
+    execution_grant_fingerprint,
 )
 from plm_assistant.modules.ai.application.task_invocation_begin import (
     AITaskInvocationBeginError, AITaskInvocationBeginService,
@@ -82,6 +83,14 @@ def grant(now: datetime) -> AITaskExecutionGrant:
     )
 
 
+def proof(value: AITaskExecutionGrant) -> AITaskPayloadPlanProof:
+    return AITaskPayloadPlanProof(
+        value.ai_task_id, value.job_id, value.attempt_no,
+        execution_grant_fingerprint(value), value.source_refs_fingerprint,
+        value.approved_payload_fingerprint, 1, 100, 100,
+    )
+
+
 class AITaskInvocationBeginTests(unittest.TestCase):
     def setUp(self):
         self.now = datetime(2026, 10, 3, 12, tzinfo=timezone.utc)
@@ -92,7 +101,8 @@ class AITaskInvocationBeginTests(unittest.TestCase):
         result = AITaskInvocationBeginService(
             unit_of_work=uow, grants=grants, repository=repository,
         ).begin(job_id=self.grant.job_id, fencing_token=1,
-                worker_ref="worker-a", now=self.now)
+                worker_ref="worker-a", now=self.now,
+                payload_plan=proof(self.grant))
         self.assertTrue(uow.committed)
         self.assertIs(grants.transactions[0], repository.transactions[0])
         self.assertEqual(result.grant, self.grant)
@@ -108,7 +118,19 @@ class AITaskInvocationBeginTests(unittest.TestCase):
                 AITaskInvocationBeginService(
                     unit_of_work=_Uow(), grants=grants, repository=repository,
                 ).begin(job_id=self.grant.job_id, fencing_token=1,
-                        worker_ref="worker-a", now=self.now)
+                        worker_ref="worker-a", now=self.now,
+                        payload_plan=proof(self.grant))
+
+    def test_reissued_grant_must_match_prepared_payload_proof(self):
+        other = grant(self.now)
+        with self.assertRaises(AITaskInvocationBeginError):
+            AITaskInvocationBeginService(
+                unit_of_work=_Uow(), grants=_Grants(self.grant),
+                repository=_Repository(uuid.uuid4()),
+            ).begin(
+                job_id=self.grant.job_id, fencing_token=1,
+                worker_ref="worker-a", now=self.now, payload_plan=proof(other),
+            )
 
 
 if __name__ == "__main__":

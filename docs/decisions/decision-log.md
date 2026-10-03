@@ -7364,3 +7364,11 @@
 - Reason：Grant与Invocation分事务会留下撤权/fencing竞争窗口；跨网络持锁又会放大锁时长且不能使外部副作用可回滚。PENDING先落证据、事务外调用是可追溯且失败关闭的边界。
 - Impact/Rollback：内部应用/Repository增量，无Migration/API/依赖/生产装配/外发。未装配可撤代码；已提交PENDING及Task状态不能删除，须由后续终态/对账收敛。当前只支持NONE Context。
 - Verification：Win11/PG18.6真实UoW原子Begin、重复拒绝、注入故障全回滚、零Provider I/O；定向9、后端2213运行/3跳过PASS；wheel SHA-256 `c6af40d3c0558987e475b1f0bc0c3a7528a48ff92190a99ea394ef4cbf815d0b`。首次证据遗漏显式commit，修正后新库完整重跑。
+
+# DEC-20261003-744：Envelope先于Begin构建，Begin必须以重签Grant复核同一Proof
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P05-P04`；依据 CR-AI-015/016、DEC-740～743、Schema0073。
+- Decision：在Task仍为QUEUED时，以实时Claim签发Grant，用短读事务从不可变Plan指定的Prompt/Document Owner构建Envelope和Proof；随后Begin短写事务重签Grant并以`require_payload_plan`复核该Proof，通过后才写PENDING/Task指针。正文只在短生命内存对象，不入Invocation/日志。
+- Reason：Prompt内容Owner为防止Task并发漂移只允许QUEUED读取，Begin又必须原子将Task改为RUNNING；因此不能先Begin再构建载荷，也不能把内存正文持有在跨网络数据库事务中。两个短事务之间的竞争由重签Grant和Grant fingerprint绑定Proof关闭。
+- Impact/Rollback：收紧未装配内部Begin签名，无Schema/API/依赖/外发变化。可停止新AI Task消费回滚应用；任何已提交Invocation/Task历史保留，不删除或倒写。
+- Verification：Win11/PG18.6真实HTTP/Project/Document/Prompt/Plan/Job Claim链，错fencing、篡改Proof失败关闭，正确Envelope摘要与唯一PENDING Invocation一致；定向14、后端2216运行/3跳过PASS，wheel SHA-256 `e9679924e35e775446d2907523926a75073a5a4443e827abf77ec07de0df93b1`，零Provider I/O。首轮验证通用Claim取到Parse Job，仅调整合成夹具AI Job优先级后新资源重跑。

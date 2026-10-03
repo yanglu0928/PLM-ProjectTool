@@ -71,6 +71,8 @@ P05-P02已实现Schema0073：不增加列或表，以新INSERT触发器强制每
 
 P05-P03已实现实际内部写入器：Grant的精确Plan ID和批准payload摘要进入PENDING Invocation，Task指针与状态同事务推进；重复Begin和写后故障失败关闭。当前仅NONE Context可到达，未来RAG Plan若被错误写成空Context会被0073拒绝。Win11/PG18.6真实UoW、后端2213运行/3跳过及wheel通过；无网络外发或生产Worker装配。
 
+P05-P04已在真实Job Claim上重建持久化Plan指定的Prompt/Document投影和确定性Envelope，并将服务端payload proof作为Begin必需参数。Begin写事务重签Grant后才复核proof，因此Plan、Attempt/Fencing、授权或payload的任何竞争都在Invocation前失败关闭。Win11/PG18.6的错fencing/摘要篡改/正向原子链、后端2216运行/3跳过及wheel通过，Provider I/O为0。Content Plan绑定的P03～P05已完成；RAG Context、Provider tokenizer与实际发送边界仍由后续切片关闭。
+
 ## 兼容、迁移与回滚
 
 - 原 Gate 2 冻结提交和现有 0064/0068～0071 历史不改。P03-P02-A01～A04 先建立未装配合同与 Owner，暂不产生数据库或公开 API 变化。

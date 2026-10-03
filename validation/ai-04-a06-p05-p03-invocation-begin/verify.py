@@ -13,7 +13,8 @@ from psycopg.types.json import Jsonb
 from sqlalchemy.engine import URL
 
 from plm_assistant.modules.ai.application.task_execution_grant import (
-    AITaskExecutionGrant, AITaskExecutionInputRef,
+    AITaskExecutionGrant, AITaskExecutionInputRef, AITaskPayloadPlanProof,
+    execution_grant_fingerprint,
 )
 from plm_assistant.modules.ai.application.task_invocation_begin import (
     AITaskInvocationBeginError, AITaskInvocationBeginService,
@@ -108,6 +109,14 @@ def create_grant(db, helper, seed: dict[str, object]) -> AITaskExecutionGrant:
     )
 
 
+def proof(value: AITaskExecutionGrant) -> AITaskPayloadPlanProof:
+    return AITaskPayloadPlanProof(
+        value.ai_task_id, value.job_id, value.attempt_no,
+        execution_grant_fingerprint(value), value.source_refs_fingerprint,
+        value.approved_payload_fingerprint, 1, 100, 100,
+    )
+
+
 def main() -> None:
     helper = load_helper()
     suffix = uuid.uuid4().hex[:10]
@@ -134,6 +143,7 @@ def main() -> None:
         result = service.begin(
             job_id=success.job_id, fencing_token=1,
             worker_ref="ai-task-synthetic", now=datetime.now(timezone.utc),
+            payload_plan=proof(success),
         )
         assert result.grant is success and grants.after_commit == 1
         assert len(grants.transactions) == 1
@@ -141,6 +151,7 @@ def main() -> None:
             service.begin(
                 job_id=success.job_id, fencing_token=1,
                 worker_ref="ai-task-synthetic", now=datetime.now(timezone.utc),
+                payload_plan=proof(success),
             )
         except AITaskInvocationBeginError:
             pass
@@ -155,6 +166,7 @@ def main() -> None:
             rollback_service.begin(
                 job_id=rollback.job_id, fencing_token=1,
                 worker_ref="ai-task-synthetic", now=datetime.now(timezone.utc),
+                payload_plan=proof(rollback),
             )
         except AITaskInvocationBeginError:
             pass

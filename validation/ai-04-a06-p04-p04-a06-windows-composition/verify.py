@@ -127,7 +127,7 @@ class ApprovalPolicy:
         )
 
 
-def main() -> None:
+def main(after_validation=None) -> None:
     schema = load_helper(
         "ai-04-a06-p04-p02-content-plan-schema", "composition_schema_helper",
     )
@@ -419,6 +419,20 @@ def main() -> None:
             "rejected, License denial closed, zero Invocation/provider I/O\n"
             "AI_04_A06_P04_P05_PLAN_REF_BINDING_PASS"
         )
+        if after_validation is not None:
+            if not callable(after_validation):
+                raise TypeError("after_validation must be callable")
+            after_validation({
+                "database": database,
+                "url": url,
+                "runtime": runtime,
+                "result_root": result_root,
+                "guard": guard,
+                "purposes": purposes,
+                "project_id": project,
+                "ai_task_id": uuid.UUID(task_data["ai_task_id"]),
+                "job_id": uuid.UUID(task_data["job_id"]),
+            })
     finally:
         if runtime is not None:
             runtime.dispose()
