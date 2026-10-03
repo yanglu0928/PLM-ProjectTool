@@ -7436,3 +7436,11 @@
 - Reason：Secret加载/审计位于数据库授权与网络之间，期间可能发生密钥轮换、撤销、License或Lease变化。只做首次检查会发送旧Key，先做第二次再取Key又会在Key解析后留下同样竞态。双检查配合精确Version和Adapter内部proof复核把可控窗口收至最小。
 - Impact/Rollback：新增未装配内部应用服务及验证注入，无Schema/API/依赖/历史修改。可停止业务消费并撤服务；PENDING历史留待后续终态/对账，不删除。该决定不承诺崩溃或超时下远端exactly-once。
 - Verification：新单元4项/5子用例、相关定向17/23，Win11/PG18.6真实pre-send/Secret Store/Project Audit及合成Adapter顺序通过；后端2235运行/3跳过PASS，wheel SHA-256 `98575f61b942d999a86771d8e76ec6d40e64821eb784bc2462abd210dde38de7`；零真实Secret/Provider网络。
+
+# DEC-20261003-753：网络前持久RUNNING栅栏，未知结果沿用FAILED安全错误
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P07-P01`；依据冻结 DM-04/API-03、Schema0064/0073、CR-AI-018。
+- Decision：第二次pre-send和稳定性复核后、Adapter前，以当前Job fencing和精确proof原子把Invocation从PENDING推进RUNNING并写started_at；只有栅栏提交成功才可发送。崩溃/超时导致远端结果未知时，不新增冻结外UNKNOWN状态，使用`FAILED / AI_PROVIDER_OUTCOME_UNKNOWN / retryable=false`；只有显式受权Retry创建新attempt。
+- Reason：PENDING在网络期间可被再次授权，无法阻止同一Invocation重复外发；数据库栅栏可令既有pre-send在重复执行时失败关闭。RUNNING可能在socket写前崩溃，因此它只证明“发送边界已越过”，不能证明远端收到。冻结状态已用安全error表达未知结果，无需Breaking enum。
+- Impact/Rollback：P01仅文档。后续增加0074结果Owner及内部栅栏/发布服务，不改公开请求或状态枚举。发送栅栏装配后回滚只能停止消费并对账RUNNING记录，不得改回PENDING。
+- Verification：静态核对0064状态/触发器、0073同源守卫、P06 pre-send/编排、冻结DM/API和Suggestion/Schema实现缺口；无新运行测试、Migration、外发或Secret访问，不标P07/P08 PASS。
