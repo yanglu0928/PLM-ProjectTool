@@ -7220,3 +7220,11 @@
 - Reason：单独的Task快照不能证明Worker仍持有当前attempt，单独的Job claim也不能证明Prompt/Model/Authorization未漂移；最大记录数和最小载荷策略若不进入Grant，后续Envelope构建器无法在无隐式配置的条件下确定边界。
 - Impact/Rollback：仅内部合同、Issuer和Repository；无Schema、公开API、依赖、生产Worker或外发变化。撤未装配组件即可回退，已有Task/Job/授权历史不改。
 - Verification：Win11/PG18.6完整链仅有效记录签发Grant；Prompt活动版本漂移、模型/批准payload快照漂移、撤销均拒绝，Invocation为0。定向15、后端2167运行/3跳过；wheel `87690d1d519bfd23bc0b8ca0e02881f989e67d07d66227a623c3bdc00215b16d`。两次夹具失败分别来自授权历史和当前Prompt数据库守卫，修正夹具后全新库PASS。
+
+# DEC-20261003-726：业务Input与实际AI正文之间增加不可变Content Plan
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P03-P02-P01`；依据冻结DM-04/API-03、CR-AI-015/016。
+- Decision：AITask继续绑定业务InputRef；AI_TASK Preview由服务端建立不可变 `AIExecutionContentPlan`，固定精确DocumentVersion+ParseRecord/Result hash、Prompt/参数、Context、编码和Estimator版本，Authorization/Task/Invocation绑定同一Plan。未知或尚未实现的RAG policy失败关闭；旧无Plan历史不回填且不可执行。
+- Reason：DocumentVersion可对应多个解析结果，运行时选latest会造成批准载荷和重试漂移；客户端摘要、原文件字节或静默空Context均不能证明冻结合同要求的实际最小载荷。
+- Impact/Rollback：P03-P02先增加未装配内部合同，P04再以追加Schema和兼容API语义持久化Plan；原冻结提交与旧历史保留。回滚撤Worker/Preview新组合并停止消费，不删除Plan/Authorization/Invocation历史。
+- Verification：静态交叉核对AITask/Egress实现、Document固定来源证明、Prompt规范化、DM-04/API-03及RAG模块清单；本项无代码/Schema/API/依赖/外发，未运行新增测试。
