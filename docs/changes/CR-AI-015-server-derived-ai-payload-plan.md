@@ -37,6 +37,8 @@ P03-P01-A03已实现完整无正文Grant投影：同一短事务先取Jobs-owned
 
 P03-P02-P01静态核查进一步确认：业务 `DocumentVersion` 不能唯一决定实际解析正文，Document Owner读取正文必须指定精确 `ParseRecord`，而当前Preview/Authorization/Task没有持久化ParseResult、编码与Estimator身份；仓库亦尚无RAG Context生产实现。已另登记CR-AI-016，选择Preview阶段生成不可变 `AIExecutionContentPlan` 并让Authorization/Task/Invocation绑定，旧无Plan历史不可执行；P03-P02先实现未装配合同与Owner，P04再实施兼容Schema/API增量。本结论不修改本CR的服务端确定性Envelope方向。
 
+P05-P01静态核查确认Schema0064已有Invocation/Context/Task当前指针与状态机，但仓库没有业务Invocation写入器、AI Task Worker、ModelRouter或ProviderAdapter；现有AI_PROVIDER_WORKER仅用于合成Provider探针。Schema0072为Invocation增加了PlanRef外键和更新不可变守卫，却未扩展0064插入守卫以核Task/授权快照/Plan同源。决定先以P05-P02追加0073新写完整性守卫，再实现短事务Invocation Begin；旧NULL历史不回填、不执行。本项仅文档，无代码、Schema、API、依赖或外发。
+
 ## 影响、迁移与回滚
 
 该变更补充冻结实现顺序，不修改原冻结提交。P01无代码、Schema、依赖或公开API变化。后续若需新增数据库对象或请求字段，必须在相应切片先给出ORM/Migration、空库/有数据up/down、兼容与API增量证据。已存在的Egress Preview/Authorization和Task历史保留；不能证明服务端载荷计划的旧记录一律不可执行，不猜测回填。

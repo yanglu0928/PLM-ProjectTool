@@ -7340,3 +7340,11 @@
 - Reason：只比较payload/source fingerprint不能证明下游消费的是哪一个不可变Plan；允许NULL或各根引用分叉会使批准内容与实际执行内容失去可追溯闭环。
 - Impact/Rollback：复用0072已有列，无Migration、公开响应、依赖或外发变化。应用回滚必须关闭新AI_TASK执行并保留历史，不得恢复信任客户端摘要。当前没有生产Invocation writer，本决定只把Plan身份送达Grant并为下一切片提供强前置。
 - Verification：Win11/PG18.6真实Preview→Authorization→Task→Preflight链四处PlanRef一致、Task重放稳定、旧形态/License失败关闭且Invocation=0；定向33、后端2209运行/3跳过PASS；wheel SHA-256 `0500de4bb38f766103ae0980fa83c0232424a362ca4d6e588c4d2c0fc5bd6338`。
+
+# DEC-20261003-741：Invocation写入前先补数据库Plan同源守卫
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P05-P01`；依据 CR-AI-015/016、Schema0064/0072、DEC-740。
+- Decision：不直接以应用Repository创建Invocation。先追加Schema0073，在INSERT时要求新Invocation非空PlanRef，并与Task、授权快照及Content Plan的身份/载荷证明同源；旧NULL历史保留且不可执行。随后才实现同一短事务的PENDING Attempt与Task当前指针。
+- Reason：0072的FK只能证明Plan存在，更新触发器只能证明引用不变，不能阻止新Invocation跨Task引用另一个合法Plan或写NULL。仅靠应用层检查无法提供数据库最终守卫。
+- Impact/Rollback：P01仅文档。P02将是无新表/列的触发器增量；已有NULL历史不回填。产生新Invocation后拒绝降级，应用回滚关闭业务AI消费并保留历史。
+- Verification：静态核对0064/0072 Migration、ORM、冻结DM/API与当前worker入口；确认生产代码中除ORM外没有AIInvocation写入，未运行新增测试、无网络外发。

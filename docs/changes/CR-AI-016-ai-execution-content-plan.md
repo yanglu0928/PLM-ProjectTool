@@ -65,6 +65,8 @@ P04-P04-A06已完成Windows显式生产组合：存在部署Task Policy时，Egr
 
 P04-P05已把Preview产生的不可变PlanRef强制传播至Authorization、Task及其授权快照，并纳入执行前置、Grant签发和Grant指纹。新AI_TASK授权若Preview无Plan、Task/快照/当前授权引用缺失或不一致、内容Plan ID与Grant不一致，均在Invocation和网络I/O前失败关闭；旧NULL历史保留可读/可撤销但不可执行。Windows 11/PostgreSQL18.6真实Preview→Authorization→Task→Preflight证明四处引用一致、重放稳定且Invocation为0；定向33、后端2209运行/3跳过及wheel通过。复用Schema0072，无Migration/API响应/依赖/外发变化。生产Invocation写入器尚未存在，下一切片P05从生命周期与持久化前置核查开始，不能把本项描述为Invocation行已落库。
 
+P05-P01核查发现0072对Invocation只增加PlanRef外键和更新不可变守卫，0064插入守卫尚不知道该列，因而数据库不能独立拒绝新Invocation的NULL或跨Task/快照/Plan引用。应用Repository实施前先追加Schema0073 INSERT完整性守卫；旧NULL历史保留但不可继续执行，不猜测回填。该顺序是本CR原“Invocation绑定同一PlanRef”目标的失败关闭补强，不改公开API或外发范围。
+
 ## 兼容、迁移与回滚
 
 - 原 Gate 2 冻结提交和现有 0064/0068～0071 历史不改。P03-P02-A01～A04 先建立未装配合同与 Owner，暂不产生数据库或公开 API 变化。

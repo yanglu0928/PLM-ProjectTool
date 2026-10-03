@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A06-P05-P01 完成Invocation生命周期/持久化前置核查：确认0064已有表和状态机但无业务写入器/AI Task Worker；发现0072未在INSERT时强制Invocation PlanRef与Task/授权快照/Plan同源，决定先追加0073守卫再实现短事务Begin。兼容性/升级/回滚：本项仅文档，无程序/Schema/API/依赖/外发；旧NULL历史不回填、不可执行。验证：静态交叉核对Migration/ORM/冻结DM/API和Worker入口，未运行新增测试。已知问题：0073、Invocation Begin/终态、Adapter/发布、Server2025、Gate3/UAT/可用包待完成；Debian13按指令跳过。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P04-P05 将不可变Content Plan引用贯穿AI_TASK Authorization、Task、授权快照、Preflight与Grant；缺失/分叉/内容Plan ID不符均在Invocation前失败关闭，旧NULL历史只读/可撤销但不可执行。兼容性/升级/回滚：复用Schema0072，无Migration/依赖/冻结URL或响应/外发变化；应用回滚须关闭新AI执行并保留Plan历史。验证：Win11/PG18.6真实Preview→Authorization→Task→Preflight四处PlanRef一致、重放/拒绝及零Invocation；定向33、后端2209运行/3跳过及wheel PASS，SHA-256 `0500de4bb38f766103ae0980fa83c0232424a362ca4d6e588c4d2c0fc5bd6338`。已知问题：生产Invocation writer、Adapter/结果发布、Server2025、Gate3/UAT/可用包待完成；Debian13按指令跳过。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P04-P04-A06 完成Windows显式生产组合：配置Task Policy时装配Prompt/Document Owner、确定性Envelope/Plan Builder及Plan Repository，统一私有ParseResult根；缺Task Policy的AI_TASK失败关闭，非AI兼容。兼容性/升级/回滚：无Schema/依赖/冻结URL或响应变化；启用需匹配Egress/Task Policy、ACTIVE Prompt及ParseResult，移除Task Policy并重启可关闭新规划，Plan历史保留。验证：Win11/PG18.6真实HTTP/Session/Project/Document/Prompt链201/重放/授权、旧形态400、License403、Preview/Plan证明一致、零Invocation；定向45、后端2206运行/3跳过及wheel PASS，SHA-256 `38884673913bd55efc194680f35513dd7a8e0020f728688458523a03a8aa5ced`。首次验证夹具Prompt不兼容导致安全503，修正后新库重跑通过。已知问题：P04-P05下游PlanRef绑定、Invocation/Adapter/发行、Server2025/Gate3/UAT/可用包待完成；Debian13按指令跳过。
