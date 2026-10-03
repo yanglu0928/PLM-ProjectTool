@@ -7444,3 +7444,11 @@
 - Reason：PENDING在网络期间可被再次授权，无法阻止同一Invocation重复外发；数据库栅栏可令既有pre-send在重复执行时失败关闭。RUNNING可能在socket写前崩溃，因此它只证明“发送边界已越过”，不能证明远端收到。冻结状态已用安全error表达未知结果，无需Breaking enum。
 - Impact/Rollback：P01仅文档。后续增加0074结果Owner及内部栅栏/发布服务，不改公开请求或状态枚举。发送栅栏装配后回滚只能停止消费并对账RUNNING记录，不得改回PENDING。
 - Verification：静态核对0064状态/触发器、0073同源守卫、P06 pre-send/编排、冻结DM/API和Suggestion/Schema实现缺口；无新运行测试、Migration、外发或Secret访问，不标P07/P08 PASS。
+
+# DEC-20261003-754：Suggestion只保存不可变非正式事实与类型化证据引用
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P07-P02`；依据 CR-AI-018、Schema0064/0074。
+- Decision：SuggestionPayload必须唯一归属RUNNING且未发布的精确Task/Invocation，Schema/Scope/Project同源，载荷为有界规范JSON与SHA-256，事实状态恒为`NOT_FORMAL_FACT`；Evidence只保存Owner/Object/Version/内容指纹类型引用。Invocation以延迟复合FK在同一发布事务指向自己的Payload，发布后Payload/Evidence不可变。
+- Reason：自由UUID、Provider wrapper或无Owner字符串不能构成可追溯结果；先写子记录再终态化需要延迟FK，而AI结构有效不等于客户确认事实。类型化引用避免复制正文并为后续Owner复核保留精确身份。
+- Impact/Rollback：新增Schema0074/ORM，不改冻结API/状态枚举/依赖。旧NULL历史保留；空结果可降，有结果拒绝降级并须向前修复或受控恢复。多态Evidence存在性留给P04/P05受信Owner验证。
+- Verification：Win11/PG18.6空/历史/绑定三库升降重升、ORM drift、负例、延迟FK/封存/拒降PASS；后端2238运行/3跳过，wheel SHA-256 `4ffcea6c91bf5a5ea1767ea1b11f68600d5424a04025a63872be9f7f379170f4`；零Provider/Secret/外发。

@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A06-P07-P02 新增Schema0074不可变SuggestionPayload/Evidence与Invocation真实延迟复合FK；数据库强制RUNNING未发布、Task/Invocation/Schema/Scope同源，结果固定`NOT_FORMAL_FACT`，证据只保存类型化版本/指纹引用，发布后封存。兼容性/升级/回滚：仅追加表/FK/守卫，无冻结API/枚举/依赖变化；旧NULL保留，空结果可降，有结果拒降并向前修复。验证：Win11/PG18.6空/历史/绑定三库升降重升、ORM drift、负例/FK/不可变/拒降，后端2238运行/3跳过、wheel SHA-256 `4ffcea6c91bf5a5ea1767ea1b11f68600d5424a04025a63872be9f7f379170f4`。未访问Provider/Secret或外发；P07-P03发送栅栏、P04 Schema Owner、P05发布及P08对账待完成。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P07-P01 完成Provider响应/Suggestion/终态前置核查并登记CR-AI-018：现有网络期间PENDING可导致崩溃后重复外发，且SuggestionPayloadRef没有owned表/FK或受信Output Schema registry。决定第二次pre-send后先原子PENDING→RUNNING形成发送栅栏；未知远端结果沿用冻结`FAILED + AI_PROVIDER_OUTCOME_UNKNOWN + retryable=false`，不新增Breaking枚举或自动重试。兼容性/升级/回滚：本项仅文档，无Migration/API/依赖/行为/外发；后续0074保留旧NULL历史。验证：静态核对冻结DM/API、0064/0073、P06 Adapter/编排和实现缺口，未运行新增测试。已知问题：P07-P02～P05及P08结果Owner/栅栏/Schema/终态/对账、Windows Worker、Server2025/Gate3/UAT/可用包待完成。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P06-P05-P04 新增唯一内部Provider发送编排，严格执行首次pre-send→Task审计/trace→精确SecretVersion读取→第二次pre-send→Route/Proof稳定性→Adapter；漂移/审计/Secret失败均在Adapter前关闭，密钥在全部退出路径清零。兼容性/升级/回滚：未装配内部增量，无Migration/API/依赖/历史修改；停止业务AI消费并撤服务即可，Probe不变。验证：新单元4项/5子用例、相关定向17/23、Win11/PG18.6真实pre-send/Secret Store/Project Audit与合成Adapter、后端2235运行/3跳过PASS；wheel SHA-256 `98575f61b942d999a86771d8e76ec6d40e64821eb784bc2462abd210dde38de7`。零真实Secret/Provider网络。已知问题：一次方法调用最多一次Adapter不等于崩溃/超时远端exactly-once；响应Schema/Suggestion、Invocation终态/UNKNOWN/对账、Windows Worker、Server2025/Gate3/UAT/可用包待完成。

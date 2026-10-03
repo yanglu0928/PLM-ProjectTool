@@ -315,6 +315,14 @@ class AIInvocationRow(Base):
             ["content_plan_ref"], ["plm.ai_execution_content_plans.content_plan_id"],
             name="fk_ai_invocations__content_plan", ondelete="NO ACTION",
         ),
+        ForeignKeyConstraint(
+            ["suggestion_payload_ref", "ai_invocation_id", "ai_task_id"],
+            ["plm.ai_suggestion_payloads.suggestion_payload_id",
+             "plm.ai_suggestion_payloads.ai_invocation_id",
+             "plm.ai_suggestion_payloads.ai_task_id"],
+            name="fk_ai_invocations__suggestion_payload", ondelete="NO ACTION",
+            deferrable=True, initially="DEFERRED", use_alter=True,
+        ),
         UniqueConstraint("ai_task_id", "attempt_no", name="uq_ai_invocations__task_attempt"),
         UniqueConstraint("ai_invocation_id", "ai_task_id", name="uq_ai_invocations__identity_task"),
         CheckConstraint(
@@ -423,6 +431,136 @@ class AIInvocationRow(Base):
     )
     started_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True, precision=6))
     completed_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True, precision=6))
+
+
+class AISuggestionPayloadRow(Base):
+    """Immutable schema-valid suggestion; always a non-formal fact."""
+
+    __tablename__ = "ai_suggestion_payloads"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["ai_invocation_id", "ai_task_id"],
+            ["plm.ai_invocations.ai_invocation_id", "plm.ai_invocations.ai_task_id"],
+            name="fk_ai_suggestion_payloads__invocation", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(["project_id"], ["plm.prj_projects.project_id"],
+                             name="fk_ai_suggestion_payloads__project",
+                             ondelete="NO ACTION"),
+        UniqueConstraint("ai_invocation_id",
+                         name="uq_ai_suggestion_payloads__invocation"),
+        UniqueConstraint(
+            "suggestion_payload_id", "ai_invocation_id", "ai_task_id",
+            name="uq_ai_suggestion_payloads__identity_invocation_task",
+        ),
+        CheckConstraint(
+            "suggestion_payload_id<>'00000000-0000-0000-0000-000000000000'::uuid "
+            "AND ai_invocation_id<>'00000000-0000-0000-0000-000000000000'::uuid "
+            "AND ai_task_id<>'00000000-0000-0000-0000-000000000000'::uuid",
+            name="ck_ai_suggestion_payloads__ids",
+        ),
+        CheckConstraint("(scope='GLOBAL' AND project_id IS NULL) OR "
+                        "(scope='PROJECT' AND project_id IS NOT NULL)",
+                        name="ck_ai_suggestion_payloads__scope"),
+        CheckConstraint(
+            "output_schema_ref ~ '^[A-Za-z][A-Za-z0-9._:/-]{0,127}$' "
+            "AND schema_version BETWEEN 1 AND 9223372036854775807 "
+            "AND octet_length(payload_fingerprint)=32",
+            name="ck_ai_suggestion_payloads__schema_fingerprint",
+        ),
+        CheckConstraint("jsonb_typeof(canonical_payload)='object' "
+                        "AND pg_column_size(canonical_payload)<=1048576",
+                        name="ck_ai_suggestion_payloads__payload"),
+        CheckConstraint("fact_status='NOT_FORMAL_FACT'",
+                        name="ck_ai_suggestion_payloads__fact_status"),
+        CheckConstraint("jsonb_typeof(quality_flags)='array' "
+                        "AND jsonb_array_length(quality_flags)<=64",
+                        name="ck_ai_suggestion_payloads__quality_flags"),
+        CheckConstraint("isfinite(created_at)",
+                        name="ck_ai_suggestion_payloads__time"),
+        Index("ix_ai_suggestion_payloads__project_time", "project_id",
+              text("created_at DESC"), text("suggestion_payload_id DESC")),
+    )
+
+    suggestion_payload_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"),
+    )
+    ai_invocation_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    ai_task_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    scope: Mapped[str] = mapped_column(Text, nullable=False)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    output_schema_ref: Mapped[str] = mapped_column(Text, nullable=False)
+    schema_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    canonical_payload: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    payload_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    fact_status: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'NOT_FORMAL_FACT'"),
+    )
+    quality_flags: Mapped[list] = mapped_column(
+        JSONB, nullable=False, server_default=text("'[]'::jsonb"),
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+
+
+class AISuggestionEvidenceRefRow(Base):
+    """Typed immutable source evidence attached before Suggestion publication."""
+
+    __tablename__ = "ai_suggestion_evidence_refs"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["suggestion_payload_id"],
+            ["plm.ai_suggestion_payloads.suggestion_payload_id"],
+            name="fk_ai_suggestion_evidence_refs__payload", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(["project_id"], ["plm.prj_projects.project_id"],
+                             name="fk_ai_suggestion_evidence_refs__project",
+                             ondelete="NO ACTION"),
+        UniqueConstraint("suggestion_payload_id", "ref_ordinal",
+                         name="uq_ai_suggestion_evidence_refs__ordinal"),
+        UniqueConstraint(
+            "suggestion_payload_id", "owner_module", "object_type",
+            "object_id", "version_id",
+            name="uq_ai_suggestion_evidence_refs__identity",
+        ),
+        CheckConstraint(
+            "suggestion_evidence_ref_id<>"
+            "'00000000-0000-0000-0000-000000000000'::uuid "
+            "AND suggestion_payload_id<>"
+            "'00000000-0000-0000-0000-000000000000'::uuid "
+            "AND object_id<>'00000000-0000-0000-0000-000000000000'::uuid "
+            "AND version_id<>'00000000-0000-0000-0000-000000000000'::uuid",
+            name="ck_ai_suggestion_evidence_refs__ids",
+        ),
+        CheckConstraint("ref_ordinal BETWEEN 1 AND 256 AND "
+                        "((scope='GLOBAL' AND project_id IS NULL) OR "
+                        "(scope='PROJECT' AND project_id IS NOT NULL))",
+                        name="ck_ai_suggestion_evidence_refs__scope_ordinal"),
+        CheckConstraint("owner_module ~ '^[a-z][a-z0-9_]{0,63}$' "
+                        "AND object_type ~ '^[A-Z][A-Z0-9_]{0,63}$' "
+                        "AND octet_length(content_fingerprint)=32",
+                        name="ck_ai_suggestion_evidence_refs__identity"),
+        CheckConstraint("isfinite(created_at)",
+                        name="ck_ai_suggestion_evidence_refs__time"),
+    )
+
+    suggestion_evidence_ref_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"),
+    )
+    suggestion_payload_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    ref_ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+    scope: Mapped[str] = mapped_column(Text, nullable=False)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    owner_module: Mapped[str] = mapped_column(Text, nullable=False)
+    object_type: Mapped[str] = mapped_column(Text, nullable=False)
+    object_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    content_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
 
 
 class AIInvocationContextRefRow(Base):
