@@ -7572,3 +7572,11 @@
 - Reason：组件级组合不能证明停止排空、运行标记和资源释放；直接调用真实 Provider 又超出本 CR 的数据外发授权。本地受信 TLS 能在不改变生产安全策略的情况下验证完整生命周期。
 - Impact/Rollback：只新增仓库验证器和证据，无生产代码、Schema、API、依赖或部署配置变化；删除验证器不会改变产品行为。Server 2025 仍需独立环境证据，Debian 13 只跳过验证、不移除兼容目标。
 - Verification：Windows 11/PostgreSQL 18.6 一次性库完成一个 Task/Invocation/Suggestion/Secret Audit、一次发送、协作停止排空、标记删除及数据库 dispose；首轮证书扩展不完整失败关闭，补齐 KeyUsage/EKU/SKI/AKI 后全新库通过。后端2307运行/3跳过、2944子测试通过；wheel 807项 SHA-256 `1f9a5b903fce940c663e7118912ccf00fd76119f385f6334d8fb2680c817d75b`。
+
+# DEC-20261003-770：AI 工作台先补安全读取闭环再接前端
+
+- Date/WBS：2026-10-03 / `AI-05-A01`；依据冻结 API-03、用户确认的原文定位与人工维护提示要求。
+- Decision：不让前端从 Job、Worker响应或数据库内部结构推导 AI 建议。先实现冻结 `AI_TASK_LIST`、`AI_TASK_INVOCATION_LIST`、`AI_TASK_SUGGESTION_GET` 的安全只读投影和 Windows 组合，再建设前端 Task/建议工作台；Suggestion Accept/Reject 因需目标业务 Draft Owner 与 Review 锁，独立于读取闭环实施。
+- Reason：当前只有 Task Create/GET、Egress与通用Job HTTP。Job安全视图不含Suggestion正文/Evidence；直接越层会暴露内部载荷并无法提供稳定受权原文定位。先补只读闭环可让UI严格依赖冻结合同，并保持AI输出为建议。
+- Impact/Rollback：A01仅文档，无代码/Schema/API/依赖变化。后续仍使用冻结 `/api/v1`，不复制无界正文；回滚前端不影响不可变Task/Suggestion历史。
+- Verification：静态核对后端Router/组合、AI Schema/Repository、前端路由与现有Job/Document/Evidence客户端；确认四个公开AI工作台能力缺口。本项未运行测试或外发。

@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-05-A01 完成AI建议工作台编码前核查：确认现有后端具备Egress、Task创建/单项读取和Job跟踪，但缺冻结Task List、Invocation List、Suggestion GET及Accept/Reject；决定先补受权只读投影，再接前端原文定位和人工维护提示，禁止前端读取内部表或把Job当建议正文。兼容性/升级/回滚：仅文档，无代码/Schema/API/依赖/外发；后续沿用冻结`/api/v1`。验证：静态交叉核对Router、Windows组合、Schema/Repository及前端路由。已知问题：AI-04-A07读取闭环、Accept/Reject业务Owner、前端、质量/Gate3/UAT/可用包待完成。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P09-P06 完成 Windows 11 真实 AI Provider SCM 服务循环验证：一次性 PostgreSQL 18.6、合成 License/文档、本地 CA 验证 HTTPS Provider 与真实 AES-GCM Secret Store完成一个Task/Invocation/Suggestion/Secret Audit，协作停止后排空、删除运行标记并释放数据库。兼容性/升级/回滚：无生产代码、Schema/API/依赖变化，可停止Worker并保留历史；Server2025待独立验证，Debian13按指令跳过验证但仍为兼容目标。验证：后端2307运行/3跳过、2944子测试通过；wheel 807项 SHA-256 `1f9a5b903fce940c663e7118912ccf00fd76119f385f6334d8fb2680c817d75b`。首轮临时证书缺KeyUsage/EKU导致TLS失败关闭，补齐验证夹具后全新库重跑；真实Provider/客户数据零外发。已知问题：正式信任/Provider、AI质量/性能、UAT、Gate3与可使用包待完成，下一项AI-05前端工作台前置核查。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P09-P05 新增严格非Secret业务Execution Policy Bootstrap并将完整业务执行链装配到既有`AI_PROVIDER_WORKER`；Task/Execution策略必须成对，服务计划仅在Probe或完整业务配置存在时列出角色，Probe与业务Transport/Adapter/Secret Audit保持隔离。兼容性/升级/回滚：无Schema/API/依赖变化，Probe-only兼容；业务部署须补配置并重启，可撤业务入口但RUNNING须先对账。验证：Win11/PG18.6真实Worker runtime启动零claim/Invocation/Secret访问/网络，相关83、后端2310运行/3跳过；wheel 807项 SHA-256 `fad0c47681f29496d5968e9a2396a437553726b63bfabe2fbfc2132326f06dbf`。验证脚本首轮模型表连接字段错误已修正并新库重跑。已知问题：P06真实服务循环/合成本地HTTPS、Server2025、Gate3/UAT/可使用包待完成。
