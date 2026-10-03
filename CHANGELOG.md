@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A06-P06-P01 完成Provider调用边界前置核查并登记CR-AI-017：固定无客户数据Probe不能复用为业务Adapter，Begin后不能复用QUEUED-only Grant Issuer做最后检查；选择独立execution policy/ModelRouter/post-Begin pre-send Owner/ProviderAdapter，仅复用SecretResolver与抽取后的安全网络原语。兼容性/升级/回滚：本项仅文档，无Migration/API/依赖/行为变化；原Probe保持，回滚不装配业务Worker。验证：静态核对冻结合同及Probe/Secret/Grant源码，未运行新测试，零外发。已知问题：P06-P02～P05、Provider结果终态、Server2025、Gate3/UAT/可用包待完成；真实Provider/客户数据外发需当轮明确授权。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P05-P04 新增真实Claim→Grant→Content Plan/Prompt/Document→Envelope/Proof→Invocation Begin发送前编排，Begin强制以重签Grant复核已构建payload proof；正文只存在短生命内存并零Provider I/O。兼容性/升级/回滚：收紧未装配内部Begin合同，无Migration/公开API/依赖/外发；需Schema0073，回滚停止新AI消费且保留已提交历史。验证：Win11/PG18.6真实ASGI/Owner/Lease链，错fencing和篡改Proof拒绝、正确链唯一PENDING；定向14、后端2216运行/3跳过及wheel PASS，SHA-256 `e9679924e35e775446d2907523926a75073a5a4443e827abf77ec07de0df93b1`。首轮验证先claim到Parse Job，仅修正合成夹具优先级后新资源重跑。已知问题：ModelRouter/ProviderAdapter/Secret最小读取、发送前最终复核、Invocation终态/RAG、Server2025、Gate3/UAT/可用包待完成；Debian13按指令跳过。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P05-P03 新增无正文Invocation Begin服务/Repository，Grant复核、PENDING Attempt与Task当前指针/状态/时间/版本同一短事务提交，commit后再验License；重复开始和写后故障失败关闭。兼容性/升级/回滚：需Schema0073，无新Migration/API/依赖/Worker装配/外发；未装配可撤，已提交历史须后续终态收敛。验证：Win11/PG18.6真实原子链/重复拒绝/故障回滚/零Provider I/O，定向9、后端2213运行/3跳过及wheel PASS，SHA-256 `c6af40d3c0558987e475b1f0bc0c3a7528a48ff92190a99ea394ef4cbf815d0b`。首次验证遗漏显式commit已修复重跑。已知问题：真实Claim+Envelope组合、Invocation终态、Adapter/发布、Server2025、Gate3/UAT/可用包待完成。

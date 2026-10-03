@@ -7372,3 +7372,11 @@
 - Reason：Prompt内容Owner为防止Task并发漂移只允许QUEUED读取，Begin又必须原子将Task改为RUNNING；因此不能先Begin再构建载荷，也不能把内存正文持有在跨网络数据库事务中。两个短事务之间的竞争由重签Grant和Grant fingerprint绑定Proof关闭。
 - Impact/Rollback：收紧未装配内部Begin签名，无Schema/API/依赖/外发变化。可停止新AI Task消费回滚应用；任何已提交Invocation/Task历史保留，不删除或倒写。
 - Verification：Win11/PG18.6真实HTTP/Project/Document/Prompt/Plan/Job Claim链，错fencing、篡改Proof失败关闭，正确Envelope摘要与唯一PENDING Invocation一致；定向14、后端2216运行/3跳过PASS，wheel SHA-256 `e9679924e35e775446d2907523926a75073a5a4443e827abf77ec07de0df93b1`，零Provider I/O。首轮验证通用Claim取到Parse Job，仅调整合成夹具AI Job优先级后新资源重跑。
+
+# DEC-20261003-745：业务 ProviderAdapter 与固定 Provider Probe 彻底分离
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P06-P01`；依据 ADR-004、CR-AI-002/015/016、P05-P04。
+- Decision：保留 Provider Test 的固定`ping`/Probe Claim/Result边界；业务AI调用新建独立非秘密execution endpoint policy、ModelRouter、post-Begin pre-send Owner和ProviderAdapter。可复用SecretResolver及抽取的DNS/TLS安全原语，不复用固定探针运输接口。
+- Reason：探针是无客户数据的连通性证明，无法携带已批准Envelope或返回受控业务结果；Grant Issuer又只接受QUEUED Task，Begin后必须以PENDING Invocation根做独立最后复核。
+- Impact/Rollback：P01仅文档。后续是内部Port/非秘密Bootstrap增量，不改冻结URL；原Probe行为不变。回滚不装配业务Worker，PENDING历史保留待对账。
+- Verification：静态核对run_provider_probe/probe_policy/provider_probe_transport、SecretResolver、Grant Repository与冻结AIService合同；未运行新代码测试、无网络外发，不标Adapter PASS。

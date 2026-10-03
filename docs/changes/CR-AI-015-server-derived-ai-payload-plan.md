@@ -45,6 +45,8 @@ P05-P03已新增无正文Invocation Begin服务与PostgreSQL Repository：Grant�
 
 P05-P04已完成真实Claim→Grant→Content Plan/Prompt/Document精确内容→Envelope/Proof→Begin组合。由于Prompt Owner必须在Task仍QUEUED时读取，采用短读事务先构建敏感内存Envelope，短写事务再重签Grant并强制复核同一payload proof，不跨网络持事务。Win11/PG18.6真实ASGI/Owner/Lease链的错fencing和篡改Proof均在写前失败，正确链只生成一条PENDING Invocation；定向14、后端2216运行/3跳过及wheel通过，零Provider I/O。P05完成，P06从ModelRouter/ProviderAdapter/Secret和发送前最后复核的前置核查开始。
 
+P06-P01核查发现现有Provider Probe固定构造`ping`且使用独立Claim/Result，不能作为业务Envelope发送器；Begin后Task为RUNNING，也不能复用只允许QUEUED的Grant Issuer做最后检查。已登记CR-AI-017，选择独立execution endpoint policy/ModelRouter/post-Begin pre-send Owner/ProviderAdapter，只复用SecretResolver和抽取后的安全网络原语。本项无代码、Schema、API、依赖或外发；P06-P02先实现无正文route/send proof/observation合同。
+
 ## 影响、迁移与回滚
 
 该变更补充冻结实现顺序，不修改原冻结提交。P01无代码、Schema、依赖或公开API变化。后续若需新增数据库对象或请求字段，必须在相应切片先给出ORM/Migration、空库/有数据up/down、兼容与API增量证据。已存在的Egress Preview/Authorization和Task历史保留；不能证明服务端载荷计划的旧记录一律不可执行，不猜测回填。
