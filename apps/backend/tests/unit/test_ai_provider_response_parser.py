@@ -7,6 +7,7 @@ from dataclasses import replace
 
 from plm_assistant.modules.ai.application.output_schema import (
     GapOutputSchemaV1,
+    GapOutputSchemaV2,
     default_ai_output_schema_registry,
 )
 from plm_assistant.modules.ai.application.provider_execution_contract import (
@@ -21,6 +22,7 @@ from plm_assistant.modules.ai.application.task_invocation_begin import (
     BegunAITaskInvocation,
 )
 from plm_assistant.modules.ai.application.task_invocation_prepare import (
+    AIExecutionSourceNodeCatalog,
     PreparedAITaskInvocation,
 )
 from unit.test_ai_task_provider_send_service import _facts
@@ -55,6 +57,31 @@ def _response(*, content=None, finish="STOP", raw=None):
     return AIProviderResponse(bytearray(body), AIProviderResponseObservation(
         hashlib.sha256(body).digest(), len(body), 10, 5, 7, finish,
     ))
+
+
+def _payload_v2(node_id="line-1"):
+    return {
+        "schema_ref": "gap-output.v2",
+        "schema_version": 2,
+        "items": [{
+            "category": "PENDING_CONFIRMATION",
+            "title": "接口边界",
+            "summary": "当前资料未固定回写范围。",
+            "rationale": "授权输入仅说明存在接口。",
+            "recommendation": "由项目负责人确认字段与失败补偿。",
+            "source_citations": [{"source_ordinal": 1, "node_ids": [node_id]}],
+            "confirmation": {
+                "required": True,
+                "question": "接口需要回写哪些对象和字段？",
+                "required_fields": [{
+                    "key": "SCOPE", "label": "回写范围",
+                    "prompt": "请列出对象、字段和触发时点。",
+                    "reason": "用于确认接口边界和失败补偿。",
+                    "required": True,
+                }],
+            },
+        }],
+    }
 
 
 class AIProviderSuggestionParserTests(unittest.TestCase):
@@ -102,6 +129,38 @@ class AIProviderSuggestionParserTests(unittest.TestCase):
             self.parser.parse(prepared=prepared, begun=begun, response=response)
         self.assertEqual(caught.exception.code, "AI_OUTPUT_SCHEMA_UNKNOWN")
         response.close()
+
+    def test_v2_requires_exact_nodes_and_structured_confirmation(self):
+        alias = default_ai_output_schema_registry().resolve("gap-output.v2", 2)
+        self.assertIsInstance(alias, GapOutputSchemaV2)
+        changed_grant = replace(
+            self.prepared.grant, output_schema_ref="gap-output.v2",
+            schema_version=2,
+        )
+        prepared = PreparedAITaskInvocation(
+            changed_grant, self.prepared.envelope, self.prepared.payload_plan,
+            (AIExecutionSourceNodeCatalog(1, ("line-1", "line-2")),),
+        )
+        begun = BegunAITaskInvocation(self.begun.ai_invocation_id, changed_grant)
+        response = _response(content=json.dumps(_payload_v2(), ensure_ascii=False))
+        result = self.parser.parse(
+            prepared=prepared, begun=begun, response=response,
+        )
+        self.assertEqual(result.evidence_ordinals, (1,))
+        self.assertEqual(result.source_citations[0].node_ids, ("line-1",))
+        self.assertNotIn("line-1", repr(result))
+        response.close()
+
+        invalid = [_payload_v2("missing-node"), _payload_v2()]
+        invalid[1]["items"][0]["confirmation"]["required_fields"] = []
+        for payload in invalid:
+            response = _response(content=json.dumps(payload, ensure_ascii=False))
+            with self.assertRaises(AIProviderResponseParseError) as caught:
+                self.parser.parse(
+                    prepared=prepared, begun=begun, response=response,
+                )
+            self.assertEqual(caught.exception.code, "AI_OUTPUT_SCHEMA_INVALID")
+            response.close()
 
         response = _response(
             content=json.dumps(_payload(), ensure_ascii=False), finish="LENGTH",

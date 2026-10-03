@@ -12,6 +12,7 @@ from dataclasses import dataclass, field
 from .output_schema import (
     AIOutputSchemaError,
     AIOutputSchemaRegistry,
+    ValidatedAISourceCitation,
 )
 from .provider_execution_contract import AIProviderResponse
 from .task_invocation_begin import BegunAITaskInvocation
@@ -38,6 +39,9 @@ class ParsedAISuggestion:
     usage_input_tokens: int | None
     usage_output_tokens: int | None
     latency_ms: int
+    source_citations: tuple[ValidatedAISourceCitation, ...] = field(
+        default=(), repr=False,
+    )
 
     def __post_init__(self) -> None:
         if (any(type(value) is not uuid.UUID or not value.int for value in (
@@ -54,6 +58,12 @@ class ParsedAISuggestion:
                     self.payload_fingerprint)
                 or type(self.evidence_ordinals) is not tuple
                 or not self.evidence_ordinals
+                or type(self.source_citations) is not tuple
+                or any(type(value) is not ValidatedAISourceCitation
+                       for value in self.source_citations)
+                or self.source_citations and tuple(
+                    value.source_ordinal for value in self.source_citations
+                ) != self.evidence_ordinals
                 or type(self.latency_ms) is not int or self.latency_ms < 0):
             raise AIProviderResponseParseError()
 
@@ -185,6 +195,10 @@ class AIProviderSuggestionParser:
                 allowed_source_ordinals=frozenset(
                     item.ordinal for item in grant.input_refs
                 ),
+                allowed_source_nodes={
+                    item.source_ordinal: frozenset(item.node_ids)
+                    for item in prepared.source_node_catalogs
+                },
             )
             return ParsedAISuggestion(
                 grant.ai_task_id, begun.ai_invocation_id, grant.project_id,
@@ -195,6 +209,7 @@ class AIProviderSuggestionParser:
                 observation.response_fingerprint,
                 observation.input_tokens, observation.output_tokens,
                 observation.latency_ms,
+                validated.source_citations,
             )
         except AIProviderResponseParseError:
             raise

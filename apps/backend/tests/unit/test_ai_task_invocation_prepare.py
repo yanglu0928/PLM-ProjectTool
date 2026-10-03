@@ -185,6 +185,8 @@ class AITaskInvocationPrepareTests(unittest.TestCase):
         self.assertEqual(result.payload_plan.grant_fingerprint,
                          execution_grant_fingerprint(self.grant))
         self.assertEqual((grants.issued, grants.checked), (1, 1))
+        self.assertEqual(result.source_node_catalogs[0].source_ordinal, 1)
+        self.assertEqual(result.source_node_catalogs[0].node_ids, ("line-1",))
         self.assertNotIn("需求", repr(result))
 
     def test_persisted_payload_drift_and_unknown_owner_fail_closed(self):

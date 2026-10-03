@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import hmac
+import json
+import unicodedata
 import uuid
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
@@ -40,6 +42,37 @@ class _ReadOwner(Protocol):
     ) -> AIExecutionContentProjection: ...
 
 
+def _safe_node_id(value: object) -> bool:
+    if (type(value) is not str or not value or len(value) > 256
+            or value != value.strip()
+            or unicodedata.normalize("NFC", value) != value):
+        return False
+    try:
+        encoded = value.encode("utf-8")
+    except UnicodeError:
+        return False
+    return (len(encoded) <= 512
+            and not any(unicodedata.category(char) in {"Cc", "Cs"}
+                        for char in value))
+
+
+@dataclass(frozen=True, slots=True)
+class AIExecutionSourceNodeCatalog:
+    """No-content node identities that the Provider actually received."""
+
+    source_ordinal: int
+    node_ids: tuple[str, ...]
+
+    def __post_init__(self) -> None:
+        if (type(self.source_ordinal) is not int
+                or not 1 <= self.source_ordinal <= 1000
+                or type(self.node_ids) is not tuple or not self.node_ids
+                or len(self.node_ids) > 1_000_000
+                or any(not _safe_node_id(value) for value in self.node_ids)
+                or len(set(self.node_ids)) != len(self.node_ids)):
+            raise AITaskInvocationPrepareError()
+
+
 @dataclass(frozen=True, slots=True)
 class PreparedAITaskInvocation:
     """Short-lived sensitive bytes plus their no-content authorization proof."""
@@ -47,15 +80,54 @@ class PreparedAITaskInvocation:
     grant: AITaskExecutionGrant
     envelope: AIExecutionEnvelope = field(repr=False)
     payload_plan: AITaskPayloadPlanProof
+    source_node_catalogs: tuple[AIExecutionSourceNodeCatalog, ...] = field(
+        default=(), repr=False,
+    )
 
     def __post_init__(self) -> None:
         if (type(self.grant) is not AITaskExecutionGrant
                 or type(self.envelope) is not AIExecutionEnvelope
-                or type(self.payload_plan) is not AITaskPayloadPlanProof):
+                or type(self.payload_plan) is not AITaskPayloadPlanProof
+                or type(self.source_node_catalogs) is not tuple):
             raise AITaskInvocationPrepareError()
         self.grant.__post_init__()
         self.envelope.__post_init__()
         self.payload_plan.__post_init__()
+        if self.source_node_catalogs:
+            if (len(self.source_node_catalogs) != len(self.grant.input_refs)
+                    or any(type(item) is not AIExecutionSourceNodeCatalog
+                           for item in self.source_node_catalogs)):
+                raise AITaskInvocationPrepareError()
+            for item, input_ref in zip(
+                    self.source_node_catalogs, self.grant.input_refs, strict=True):
+                item.__post_init__()
+                if item.source_ordinal != input_ref.ordinal:
+                    raise AITaskInvocationPrepareError()
+
+
+def _source_node_catalogs(
+    projected: tuple[AIExecutionContentProjection, ...],
+) -> tuple[AIExecutionSourceNodeCatalog, ...]:
+    result: list[AIExecutionSourceNodeCatalog] = []
+    for projection in projected:
+        try:
+            payload = json.loads(projection.content_utf8.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError, TypeError):
+            raise AITaskInvocationPrepareError() from None
+        if (type(payload) is not dict
+                or payload.get("schema_version") != "document-minimum-text-v1"
+                or type(payload.get("nodes")) is not list
+                or not payload["nodes"]):
+            raise AITaskInvocationPrepareError()
+        node_ids: list[str] = []
+        for node in payload["nodes"]:
+            if type(node) is not dict or not _safe_node_id(node.get("node_id")):
+                raise AITaskInvocationPrepareError()
+            node_ids.append(node["node_id"])
+        result.append(AIExecutionSourceNodeCatalog(
+            projection.source.ordinal, tuple(node_ids),
+        ))
+    return tuple(result)
 
 
 class AITaskInvocationPrepareService:
@@ -115,8 +187,9 @@ class AITaskInvocationPrepareService:
                     if owner is None:
                         raise AITaskInvocationPrepareError()
                     projected.append(owner.read_exact(transaction, query, source))
+                exact_sources = tuple(projected)
                 envelope = self._envelopes.build(
-                    plan=plan, sources=tuple(projected), prompt_content=prompt,
+                    plan=plan, sources=exact_sources, prompt_content=prompt,
                 )
                 proof = require_envelope_for_grant(
                     grant, plan, envelope, now=now,
@@ -128,7 +201,9 @@ class AITaskInvocationPrepareService:
                         or persisted.payload_bytes != proof.payload_bytes
                         or persisted.input_tokens != proof.input_tokens):
                     raise AITaskInvocationPrepareError()
-                prepared = PreparedAITaskInvocation(grant, envelope, proof)
+                prepared = PreparedAITaskInvocation(
+                    grant, envelope, proof, _source_node_catalogs(exact_sources),
+                )
             self._grants.require_usable(grant)
             return prepared
         except AITaskInvocationPrepareError:

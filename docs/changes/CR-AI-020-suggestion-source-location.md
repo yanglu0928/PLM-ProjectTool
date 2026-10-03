@@ -1,6 +1,6 @@
 # CR-AI-020：AI 建议精确来源定位与人工确认提示
 
-日期：2026-10-03；状态：依 V1.1 持续授权登记，待 P02～P07 实施验证；关联 Gate 2 冻结 API-03、CR-AI-018、Schema0072/0074、用户确认的待办交互要求；原冻结提交 `64cdf09` 与 `gap-output.v1` 历史不改。WBS `AI-04-A07`。
+日期：2026-10-03；状态：依 V1.1 持续授权登记，P02 已通过，待 P03～P07 实施验证；关联 Gate 2 冻结 API-03、CR-AI-018、Schema0072/0074、用户确认的待办交互要求；原冻结提交 `64cdf09` 与 `gap-output.v1` 历史不改。WBS `AI-04-A07`。
 
 ## 差异与证据
 
@@ -22,6 +22,8 @@
 4. P05：实现冻结`AI_TASK_INVOCATION_LIST`，只返回Provider/Model/Prompt/Schema/Context版本、状态、usage/latency、安全错误和时间；禁止请求/响应、Secret、Context正文、Provider request ref。
 5. P06：实现冻结`AI_TASK_SUGGESTION_GET`，返回Schema受控payload、质量标记与服务端解析的定位描述；每次读取重验当前Session/License/Project/Task和Document权限。坏节点、hash漂移或定位不可解析固定失败，不降级猜测。
 6. P07：Windows显式组合与一次性PostgreSQL HTTP/权限/游标/定位验证；缺cursor密钥或Document locator Owner时启动失败关闭。无真实Provider调用或客户数据外发。
+
+P02 实施证据：新增严格 `gap-output.v2@2` 及兼容别名；每项必须提供至少一个本次实际发送节点的 citation。准备阶段只从已验证的 `document-minimum-text-v1` 投影提取无正文 node catalog，Parser 以精确 ordinal/node 白名单验证输出；不存在节点、重复/越界引用、缺人工维护字段均失败关闭。V1 校验和历史读取语义未变，生产 Task/Prompt 策略尚未切换 V2。Windows 11 独立验证标记 `AI_04_A07_P02_OUTPUT_V2_PASS`；后端 2308 通过/3 跳过、2944 子测试通过；wheel 807 项 SHA-256 `bc3466e072d1f0e5fe6f35c75a6bb3986525a839178f29d0ddbdf50177035aec`。P03 继续实现 Document-owned locator。
 
 Accept/Reject及写入目标Draft不在本CR中；它们涉及目标Owner、Review Lock、第二个expected version和正式业务版本，后续独立Change Request/写闭环实施。
 

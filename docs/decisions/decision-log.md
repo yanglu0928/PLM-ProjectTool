@@ -7588,3 +7588,11 @@
 - Reason：V1丢失了模型实际引用的node，文本搜索会歧义和漂移，任意模型locator不可受信。新Schema版本避免重解释历史，又能满足“点击定位原文”和“明确提示人工维护内容”。
 - Impact/Rollback：原冻结提交和V1不改；新Prompt/Task策略以新版本选择V2，Task/Invocation/Suggestion读接口后续按冻结路径实现。预期可复用0074 canonical payload与现有Source身份；若需Schema追加必须另记迁移证据。回滚停止新V2 Task，历史V2仍保留只读。
 - Verification：静态核对V1 Schema/Parser、Document最小投影node、Suggestion发布/0074 EvidenceRef、Evidence Viewer与前端缺口；确认只有DocumentVersion证明、无节点定位。本项无运行测试/外发。
+
+# DEC-20261003-772：输出节点只从本次实际发送投影建立白名单
+
+- Date/WBS：2026-10-03 / `AI-04-A07-P02`；依据 CR-AI-020、DEC-771。
+- Decision：`gap-output.v2@2` 的 citation 只能引用准备阶段从本次实际进入 Provider Envelope 的 `document-minimum-text-v1` 投影提取的 `source_ordinal/node_id`；Parser 必须在持久化前精确验证。catalog 不含正文并隐藏于 repr。`PENDING_CONFIRMATION` 同时必须提供受控问题和至少一个必填维护字段；其他分类禁止伪装成人工确认。
+- Reason：只按 Content Plan 或文档版本验证仍允许模型引用未发送或不存在的节点；由模型给出 locator/URL 又会扩大信任边界。发送时的精确投影是最小且可证明的引用集合，locator 解析可在 P03 继续由 Document Owner 独立完成。
+- Impact/Rollback：新增内部 V2 Schema、无正文 catalog 和 Parser 校验，无 Migration、公开 API、新依赖或生产策略切换；V1 行为不变。可停止新建 V2 Task并撤注册，但已持久化 V2 历史必须保留只读。
+- Verification：Windows 11 合成验证接受真实节点并拒绝不存在节点/缺维护提示；AI 模块269通过/301子测试，后端2308通过/3跳过、2944子测试；wheel 807项 SHA-256 `bc3466e072d1f0e5fe6f35c75a6bb3986525a839178f29d0ddbdf50177035aec`；零Provider I/O和客户数据。
