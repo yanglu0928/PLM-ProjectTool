@@ -7404,3 +7404,11 @@
 - Reason：普通高层HTTP客户端可能隐式读取代理、跟随重定向或在连接时再次DNS解析，破坏endpoint policy和SSRF边界；只检查首个DNS结果也允许混入私网候选。数字IP pinning同时保留hostname证书验证可关闭重绑定窗口。
 - Impact/Rollback：新增未装配Infrastructure Adapter，无Schema/API/依赖/Probe变化；撤Adapter恢复不发送，历史PENDING Invocation保留待对账。测试连接器只在验证组合中显式注入，生产默认仍使用数字IP:443。
 - Verification：单元5、相关定向14、Windows11本地合成TLS端到端和后端2230运行/3跳过PASS；wheel SHA-256 `0cf512ea16bb7082fcbf1d9e675b0d7c116501b20b7b34c90b6591d93bfb6b61`；无真实Provider/客户数据/真实Secret。
+
+# DEC-20261003-749：发送开始窗口必须覆盖Adapter总时限
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P06-P05-P01`；依据 CR-AI-017、P06-P03/P04。
+- Decision：在业务发送接线前，AI Task Claim须提供数据库观察时间和精确Lease截止；pre-send仅在剩余Lease大于Route总网络时限加安全余量时签发Proof，并将发送开始截止限制在`lease_expires_at-total_timeout-margin`。Secret解析后必须再次pre-send且Route/Grant/Invocation generation完全一致，随后立即发送。Probe专用Secret Audit不复用，另建Task身份作用域。
+- Reason：检查瞬间Lease有效不等于最长120秒调用可在本generation内结束；Secret读取/解密/审计又位于首次检查与网络之间。只依赖Authorization有效期或静态fencing token会让过期Worker仍可能开始外发。
+- Impact/Rollback：P01仅记录，后续为内部合同/Owner增量，无Schema/API/依赖；回滚为不装配业务Worker，不发送。安全余量及Lease窗口将在P02用行为测试固定。
+- Verification：静态核对`SqlAlchemyJobLeaseRepository.check_current/_claim`、AI Claim/pre-send、SecretResolver/Store、Probe Secret Audit和Worker组合；确认Claim当前不返回Lease时间且Probe Audit拒绝非Probe snapshot。本项未运行新代码测试。

@@ -34,3 +34,5 @@ P06-P02已实现无正文Route/SendProof/Response/Adapter Port合同：Route固�
 P06-P03已实现post-Begin pre-send Owner、受信execution policy registry和PostgreSQL current route投影：同一短事务锁定当前Job generation、RUNNING Task/PENDING Invocation、未撤销授权、ACTIVE Provider/current Config、AVAILABLE CHAT Model和ACTIVE SecretVersion，事务内外双验License，再生成Route/SendProof。Win11/PG18.6真实链证明Inactive Secret和暂停Model失败关闭；单元4、相关定向12、后端2225运行/3跳过及wheel通过。无Secret解密、网络、Schema/API/依赖变化。P06-P04继续实现有界OpenAI-compatible Adapter与合成TLS网络边界。
 
 P06-P04已实现独立OpenAI-compatible业务Adapter：网络前复核SendProof，确定性转换精确messages/model；隔离DNS且全部候选须global、数字IP pinning、原hostname SNI/证书、TLS≥1.2、系统CA、无代理/重定向，并限制各阶段时长、Content-Length和响应字节。Windows 11本地合成TLS、单元5、相关定向14、后端2230运行/3跳过及wheel通过；未接真实Provider/客户数据/真实Secret。P06-P05起组合pre-send、SecretResolver和Adapter，再进入响应Schema/终态。
+
+P06-P05-P01前置核查发现当前AI Task Claim/SendProof未携带Lease截止时间，而Route总网络时限最长120秒；仅在pre-send瞬间验证Lease无法证明调用可在当前generation租约内结束。另发现Probe专用Secret审计不能承载业务Task身份。P06-P05拆为：P02补数据库观察时间/Lease截止与`lease_expires_at-total_timeout-margin`开始截止；P03新增业务Task Secret审计；P04以pre-send→精确SecretVersion解析→再次pre-send/Route一致→Adapter顺序执行。此修订无Schema/API/依赖变化，不放宽外发授权。
