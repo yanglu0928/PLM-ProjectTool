@@ -43,6 +43,8 @@ P03-P02-A02已实现AI-owned Prompt/Task参数短生命周期投影和 `strict-p
 
 P03-P02-A03已实现Document-owned精确解析内容Owner、PostgreSQL五行当前事实锁、私有ParseResult存储复核和AI反腐层。规划阶段按确定顺序选择一个成功ParseRecord，执行阶段只读取Plan冻结的ParseRecord/ParseResultRef/hash；正文最小投影删除locator/confidence并规范为NFC/LF/UTF-8。后台执行新增内部 `AI_TASK_EXECUTE` 策略，以Task原请求人当前Project权限重新鉴权，不复用浏览器Session。Win11/PG18.6/本地文件证明新解析结果出现后旧Plan仍读取旧结果，暂停成员和文件篡改均拒绝；定向19、后端2185运行/3跳过、wheel通过，Invocation=0。无Schema/API/依赖/外发。A04继续Envelope/Context/Estimator。
 
+P03-P02-A04已实现 `provider-neutral-json.v1` 规范Envelope、显式Context Policy Registry和可注入版本化Token Estimator。编码前补强Plan来源身份，ParseResult原始hash之外增加最小 `projection_fingerprint`，由Document Owner规划/执行两次计算并由Envelope复核。当前仅 `no-retrieval.v1/NONE` 可构建；`project-documents.v1` 等RAG policy因无RetrievalRun/ContextBundle Owner继续失败关闭。Win11/Python3.13在socket禁用时确定性构建、服务端payload证明与限额负例PASS；A02/A03 PG链重跑、定向24、后端2191运行/3跳过、wheel通过。无Schema/API/依赖/Invocation/外发。P04继续持久化Plan与服务端Preview绑定。
+
 ## 兼容、迁移与回滚
 
 - 原 Gate 2 冻结提交和现有 0064/0068～0071 历史不改。P03-P02-A01～A04 先建立未装配合同与 Owner，暂不产生数据库或公开 API 变化。

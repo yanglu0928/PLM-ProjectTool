@@ -68,7 +68,8 @@ class AIExecutionPromptContentTests(unittest.TestCase):
             input_ref.object_id, input_ref.version_id, project_id,
             "DOCUMENT_PARSED_TEXT", uuid.uuid4(), uuid.uuid4(),
             "document-parser.standard", "1.0.0", "document.parse-result.v1",
-            "document.parse.fixed.v1", b"d" * 32, b"e" * 32, 100, 1,
+            "document.parse.fixed.v1", b"d" * 32, b"e" * 32, b"f" * 32,
+            100, 1,
         )
         prompt = AIExecutionPromptIdentity(
             "gap-analysis.v1", 1, self.grant.prompt_template_id, 2,

@@ -245,7 +245,7 @@ def main() -> None:
             version_id, project, "DOCUMENT_PARSED_TEXT", uuid.uuid4(),
             uuid.uuid4(), "document-parser.standard", "1.0.0",
             "document.parse-result.v1", "document.parse.fixed.v1",
-            b"d" * 32, b"e" * 32, 1024, 1,
+            b"d" * 32, b"e" * 32, b"f" * 32, 1024, 1,
         )
         prompt_identity = AIExecutionPromptIdentity(
             grant.prompt_policy_ref, grant.prompt_policy_version,

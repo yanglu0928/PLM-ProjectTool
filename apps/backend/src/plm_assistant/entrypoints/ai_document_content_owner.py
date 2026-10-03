@@ -72,7 +72,8 @@ class AIDocumentContentOwner:
                 source.content_revision_id, source.content_object_id,
                 source.producer_ref, source.producer_version,
                 source.selection_policy_ref, source.source_fingerprint,
-                source.content_fingerprint, source.content_size_bytes,
+            source.content_fingerprint, source.projection_fingerprint,
+            source.content_size_bytes,
                 source.record_count,
             )
             result = self._service.read_exact(
@@ -110,5 +111,6 @@ class AIDocumentContentOwner:
             identity.parser_profile, identity.parser_version,
             "document.parse-result.v1", identity.selection_policy_ref,
             identity.source_sha256, identity.result_sha256,
-            identity.result_size_bytes, identity.record_count,
+            identity.projection_sha256, identity.result_size_bytes,
+            identity.record_count,
         )

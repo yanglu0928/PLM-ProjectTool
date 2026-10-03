@@ -25,3 +25,5 @@
 本项复用 Schema0071 与现有 Document/Project 表，无 Migration、公开路由、生产 Worker 装配或网络 I/O。回滚可撤新 Owner/Repository/反腐层和内部策略项；现有文档、解析结果、Task 与授权历史不变。旧无 Content Plan 记录仍不可执行。Windows Server 2025 尚未在本项复验；Debian 13 按用户指令跳过，不能据 Win11 结果宣称已验证。
 
 下一任务：`AI-04-A06-P03-P02-A04`，实现 provider-neutral Envelope 规范编码、Context policy 失败关闭和可注入版本化 Token estimator，不执行网络 I/O。
+
+后续 A04 在持久化前补强通用身份：新增最小正文 `projection_fingerprint`，Document Owner 规划时计算、执行时重算。该字段与 ParseResult 原始 hash 并列，详情见 DEC-730/A04 进度，不改变本项 PG/权限/存储结论。

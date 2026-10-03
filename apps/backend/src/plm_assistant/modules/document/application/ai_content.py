@@ -144,6 +144,7 @@ class DocumentAIContentIdentity:
     selection_policy_ref: str
     source_sha256: bytes = field(repr=False)
     result_sha256: bytes = field(repr=False)
+    projection_sha256: bytes = field(repr=False)
     result_size_bytes: int
     record_count: int
 
@@ -156,6 +157,7 @@ class DocumentAIContentIdentity:
                 or self.selection_policy_ref != "document.parse.fixed.v1"
                 or not _digest(self.source_sha256)
                 or not _digest(self.result_sha256)
+                or not _digest(self.projection_sha256)
                 or type(self.result_size_bytes) is not int
                 or not 1 <= self.result_size_bytes <= 100_000_000
                 or type(self.record_count) is not int
@@ -257,7 +259,7 @@ class DocumentAIContentService:
             if current != source:
                 raise DocumentAIContentError()
             self._guard.require_valid(trace_id=query.trace_id)
-            return self._identity(source, count)
+            return self._identity(source, count, projection)
         except DocumentAIContentError:
             raise
         except Exception:
@@ -289,10 +291,13 @@ class DocumentAIContentService:
             source = self._require_source(
                 source, query.project_id, identity.document_id,
                 identity.document_version_id)
-            if self._identity(source, identity.record_count) != identity:
+            if not self._source_matches_identity(source, identity):
                 raise DocumentAIContentError()
             projection, count = self._read_and_project(source)
-            if count != identity.record_count:
+            if (count != identity.record_count
+                    or not hmac.compare_digest(
+                        hashlib.sha256(projection).digest(),
+                        identity.projection_sha256)):
                 raise DocumentAIContentError()
             current = self._repository.get_exact(
                 transaction, project_id=query.project_id,
@@ -364,14 +369,34 @@ class DocumentAIContentService:
 
     def _identity(
         self, source: DocumentAIContentSource, record_count: int,
+        projection: bytes,
     ) -> DocumentAIContentIdentity:
         return DocumentAIContentIdentity(
             source.document_id, source.document_version_id, source.project_id,
             source.parse_record_id, source.result_ref_id,
             source.parser_profile, source.parser_version,
             self._policy.selection_policy_ref, source.source_sha256,
-            source.result_sha256, source.result_size_bytes, record_count,
+            source.result_sha256, hashlib.sha256(projection).digest(),
+            source.result_size_bytes, record_count,
         )
+
+    @staticmethod
+    def _source_matches_identity(
+        source: DocumentAIContentSource,
+        identity: DocumentAIContentIdentity,
+    ) -> bool:
+        return (source.document_id == identity.document_id
+                and source.document_version_id == identity.document_version_id
+                and source.project_id == identity.project_id
+                and source.parse_record_id == identity.parse_record_id
+                and source.result_ref_id == identity.result_ref_id
+                and source.parser_profile == identity.parser_profile
+                and source.parser_version == identity.parser_version
+                and hmac.compare_digest(
+                    source.source_sha256, identity.source_sha256)
+                and hmac.compare_digest(
+                    source.result_sha256, identity.result_sha256)
+                and source.result_size_bytes == identity.result_size_bytes)
 
 
 def _minimum_text_projection(

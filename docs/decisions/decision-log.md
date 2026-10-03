@@ -7252,3 +7252,11 @@
 - Reason：DocumentVersion并不唯一对应解析正文；运行时重新选latest会使批准载荷漂移。后台进程没有且不得持有用户Session，若只信Task创建时权限则成员暂停/移除或项目归档后仍可能外发。
 - Impact/Rollback：新增内部Project策略、Document Owner/Repository、最小正文投影和AI反腐层；无Schema、公开API、依赖、生产装配或网络调用。撤新组件和策略项即可回滚，已有Document/Task/授权历史不变；旧无Plan记录不可执行。
 - Verification：Win11/PG18.6/本地私有文件证明旧Plan不随新ParseRecord漂移、当前成员暂停和文件篡改拒绝、Invocation=0；定向19、后端2185运行/3跳过PASS；wheel SHA-256 `5bed8f10c02b9935de2224a227d68f3d410dbde1306b78293450d7ec9252800d`。
+
+# DEC-20261003-730：Plan同时固定Owner原始结果与最小投影并以显式策略构建Envelope
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P03-P02-A04`；依据 CR-AI-015/016、DEC-726～729。
+- Decision：Content Source在source/result hash之外增加 `projection_fingerprint`，由Owner规划时计算、执行时重算；Envelope只接收与Plan数量/顺序/身份/hash全匹配的projection，按 `provider-neutral-json.v1` 规范编码并由服务端计算payload fingerprint。Context仅允许Registry显式注册的NONE policy；RAG没有不可变Owner时关闭。Token estimator按ref/version/model绑定并可注入，内置UTF-8 byte upper-bound仅供已证明兼容的Adapter/模型绑定。
+- Reason：ParseResult hash不能让通用Builder单独核派生projection bytes；调用者自带Context或隐式默认estimator会使批准内容、Token上限和实际语义漂移。Provider-neutral字节必须在网络Adapter前确定且可重复。
+- Impact/Rollback：修改尚未持久化的内部Source合同，新增Envelope/Context/Estimator组件与验证；无Schema、公开API、依赖、生产装配或网络I/O。P04持久化前可整体撤回；持久化后须保留不可变hash历史并向前修复。
+- Verification：Win11/Python3.13禁socket构建确定性Envelope，hash/顺序/Context/Estimator/限额负例PASS；A02/A03 Win11/PG18.6重跑，定向24、后端2191运行/3跳过；wheel SHA-256 `3e39c82a15758fc6521e0f74af8eb5c05da480db1fe02d931ed90e3862c52e1b`。首次字段放置错误导致6个构造TypeError，移至Identity后全部重跑通过。

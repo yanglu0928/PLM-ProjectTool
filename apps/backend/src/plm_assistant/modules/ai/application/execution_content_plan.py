@@ -8,6 +8,7 @@ belong to short-lived Owner projections implemented by later slices.
 from __future__ import annotations
 
 import hashlib
+import hmac
 import re
 import uuid
 from dataclasses import dataclass, field
@@ -66,6 +67,7 @@ class AIExecutionContentSourceIdentity:
     selection_policy_ref: str
     source_fingerprint: bytes = field(repr=False)
     content_fingerprint: bytes = field(repr=False)
+    projection_fingerprint: bytes = field(repr=False)
     content_size_bytes: int
     record_count: int
 
@@ -92,6 +94,7 @@ class AIExecutionContentSourceIdentity:
                 or _MODEL.fullmatch(self.producer_version) is None
                 or not _digest(self.source_fingerprint)
                 or not _digest(self.content_fingerprint)
+                or not _digest(self.projection_fingerprint)
                 or type(self.content_size_bytes) is not int
                 or not 1 <= self.content_size_bytes <= 1_073_741_824
                 or type(self.record_count) is not int
@@ -269,6 +272,7 @@ def content_plan_fingerprint(plan: AIExecutionContentPlan) -> bytes:
             "selection_policy_ref": source.selection_policy_ref,
             "source_fingerprint": source.source_fingerprint.hex(),
             "content_fingerprint": source.content_fingerprint.hex(),
+            "projection_fingerprint": source.projection_fingerprint.hex(),
             "content_size_bytes": source.content_size_bytes,
             "record_count": source.record_count,
         } for source in plan.sources],
@@ -455,6 +459,10 @@ class AIExecutionContentProjection:
         except UnicodeDecodeError:
             raise AIExecutionContentPlanError() from None
         if not decoded.strip():
+            raise AIExecutionContentPlanError()
+        if not hmac.compare_digest(
+                hashlib.sha256(self.content_utf8).digest(),
+                self.source.projection_fingerprint):
             raise AIExecutionContentPlanError()
 
     @property
