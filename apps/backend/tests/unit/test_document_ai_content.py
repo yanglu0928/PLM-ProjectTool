@@ -142,6 +142,39 @@ class DocumentAIContentTests(unittest.TestCase):
         self.assertEqual(self.guard.calls, 4)
         self.assertEqual(self.project_repository.locks, [True, True])
 
+    def test_preview_projection_uses_preview_authority_and_minimum_content(self):
+        self.project_repository.facts = ProjectActorFacts(
+            "ACTIVE", "CUSTOMER_MANAGER",
+        )
+        result = self.service.resolve_projection(
+            object(), query=self.query, document_id=self.document_id,
+            document_version_id=self.version_id,
+        )
+        owner = AIDocumentContentOwner(self.service)
+        input_ref = AITaskExecutionInputRef(
+            1, "DOC-02", "document", "DOCUMENT_VERSION",
+            self.document_id, self.version_id, self.project_id,
+        )
+        query = AIExecutionContentIdentityQuery(
+            uuid.uuid4(), self.project_id, self.actor_id, uuid.uuid4(),
+            "gap-analysis.v1", "minimum.document.text.v1",
+            owner.selection_policy_ref,
+        )
+        projection = owner.resolve_projection(
+            object(), query=query, input_ref=input_ref,
+        )
+        self.assertEqual(result.content_utf8, projection.content_utf8)
+        self.assertEqual(projection.source.content_revision_id,
+                         self.source.parse_record_id)
+        self.assertEqual(projection.source.projection_fingerprint,
+                         hashlib.sha256(projection.content_utf8).digest())
+        self.assertNotIn("需求", repr(projection))
+        with self.assertRaises(DocumentAIContentError):
+            self.service.resolve_identity(
+                object(), query=self.query, document_id=self.document_id,
+                document_version_id=self.version_id,
+            )
+
     def test_execution_rereads_frozen_result_not_new_selection(self):
         identity = self.service.resolve_identity(
             object(), query=self.query, document_id=self.document_id,

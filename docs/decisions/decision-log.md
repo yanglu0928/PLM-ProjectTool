@@ -7300,3 +7300,11 @@
 - Reason：把活动版本号误当Policy常量会阻断正式Prompt升级；不锁模板则Preview规划期间活动指针可并发漂移。数据库端JSONB摘要与后续持久化语义保持一致。
 - Impact/Rollback：新增内部Owner/Repository与验证，无Schema、公开API、依赖、生产装配、持久化或外发变化；不装配并删除组件即可回滚。
 - Verification：单元2、相关定向10；Win11/PG18.6活动版本、JSONB摘要、行锁、敏感repr、漂移拒绝和零Invocation PASS；后端2201运行/3跳过；wheel SHA-256 `2fc1a8ef6d9216063715acd205e143cd678af01a8ff325b645d7ba189e14f2db`。首轮测试误把合法活动版本推进当漂移，修正验收边界后全部重跑通过。
+
+# DEC-20261003-736：Document Preview规划与Task执行使用分离权限但共享精确投影算法
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P04-P04-A03`；依据 CR-AI-016、DEC-726～730/735。
+- Decision：Document规划投影用`EGRESS_PREVIEW_CREATE`当前Project权限选择并锁定当前成功ParseRecord/Result；执行期精确读取继续用`AI_TASK_EXECUTE`。二者共享同一规范化、最小化、完整性和数据库前后复核算法，正式最小载荷引用统一为`minimum.document.text.v1`。
+- Reason：CustomerManager按冻结策略可以创建/审批Preview但不能执行AI Task；复用执行权限会错误拒绝合法Preview，反向放宽执行权限则越权。两个阶段必须产生同一最小投影语义但不能混用授权。
+- Impact/Rollback：新增内部Service/Adapter入口并修正未装配Builder测试别名；无Schema、公开API、依赖、持久化或网络变化。撤新入口即可回滚，执行期路径不变。
+- Verification：单元新增1、Document/Builder合计9；Win11/PG18.6精确投影、CustomerManager权限分离、事务锁、敏感repr、零Plan/Invocation以及旧执行期PG回归PASS；后端2202运行/3跳过；wheel SHA-256 `2760da76b2fe311d5aabf5e3ef0222b3555497e7035a5354de17afc49a5f919a`。首轮验证仅临时目录创建顺序错误，修正后全新资源完整重跑。

@@ -21,6 +21,8 @@ from plm_assistant.modules.document.application.ai_content import (
 
 
 class AIDocumentContentOwner:
+    selection_policy_ref = "document.parse.fixed.v1"
+
     def __init__(self, service: DocumentAIContentService) -> None:
         if type(service) is not DocumentAIContentService:
             raise ValueError("Document AI content service required")
@@ -47,6 +49,37 @@ class AIDocumentContentOwner:
                 document_version_id=input_ref.version_id,
             )
             return self._to_ai(input_ref.ordinal, identity)
+        except DocumentAIContentError:
+            raise AIExecutionContentPlanError(
+                "AI_EXECUTION_SOURCE_UNAVAILABLE") from None
+
+    def resolve_projection(
+        self, transaction: object, query: AIExecutionContentIdentityQuery,
+        input_ref: AITaskExecutionInputRef,
+    ) -> AIExecutionContentProjection:
+        if (type(query) is not AIExecutionContentIdentityQuery
+                or type(input_ref) is not AITaskExecutionInputRef
+                or query.selection_policy_ref != self.selection_policy_ref
+                or not self._supports(input_ref)
+                or input_ref.project_id != query.project_id):
+            raise AIExecutionContentPlanError(
+                "AI_EXECUTION_SOURCE_UNAVAILABLE")
+        try:
+            result = self._service.resolve_projection(
+                transaction,
+                query=DocumentAIContentQuery(
+                    query.project_id, query.requested_by, query.trace_id,
+                    query.purpose_ref, query.minimal_payload_policy_ref,
+                    self.selection_policy_ref,
+                ),
+                document_id=input_ref.object_id,
+                document_version_id=input_ref.version_id,
+            )
+            source = self._to_ai(input_ref.ordinal, result.identity)
+            return AIExecutionContentProjection(
+                source, result.projection_schema_ref,
+                result.identity.record_count, result.content_utf8,
+            )
         except DocumentAIContentError:
             raise AIExecutionContentPlanError(
                 "AI_EXECUTION_SOURCE_UNAVAILABLE") from None

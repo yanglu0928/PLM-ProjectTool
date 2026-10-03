@@ -239,27 +239,28 @@ class DocumentAIContentService:
     ) -> DocumentAIContentIdentity:
         self._validate_request(query, document_id, document_version_id)
         try:
-            self._guard.require_valid(trace_id=query.trace_id)
-            self._authorize(transaction, query)
-            source = self._repository.select_current(
-                transaction, project_id=query.project_id,
-                document_id=document_id, document_version_id=document_version_id,
-                allowed_parser_versions=self._policy.allowed_parser_versions,
-                max_result_bytes=self._policy.max_result_bytes,
+            return self._resolve_current(
+                transaction, query=query, document_id=document_id,
+                document_version_id=document_version_id,
+                operation="AI_TASK_EXECUTE",
+            ).identity
+        except DocumentAIContentError:
+            raise
+        except Exception:
+            raise DocumentAIContentError() from None
+
+    def resolve_projection(
+        self, transaction: object, *, query: DocumentAIContentQuery,
+        document_id: uuid.UUID, document_version_id: uuid.UUID,
+    ) -> DocumentAIContentProjection:
+        """Resolve current minimum text for an Egress Preview content plan."""
+        self._validate_request(query, document_id, document_version_id)
+        try:
+            return self._resolve_current(
+                transaction, query=query, document_id=document_id,
+                document_version_id=document_version_id,
+                operation="EGRESS_PREVIEW_CREATE",
             )
-            source = self._require_source(
-                source, query.project_id, document_id, document_version_id)
-            projection, count = self._read_and_project(source)
-            current = self._repository.get_exact(
-                transaction, project_id=query.project_id,
-                document_id=document_id, document_version_id=document_version_id,
-                parse_record_id=source.parse_record_id,
-                result_ref_id=source.result_ref_id,
-            )
-            if current != source:
-                raise DocumentAIContentError()
-            self._guard.require_valid(trace_id=query.trace_id)
-            return self._identity(source, count, projection)
         except DocumentAIContentError:
             raise
         except Exception:
@@ -280,7 +281,7 @@ class DocumentAIContentService:
             raise DocumentAIContentError()
         try:
             self._guard.require_valid(trace_id=query.trace_id)
-            self._authorize(transaction, query)
+            self._authorize(transaction, query, operation="AI_TASK_EXECUTE")
             source = self._repository.get_exact(
                 transaction, project_id=query.project_id,
                 document_id=identity.document_id,
@@ -329,10 +330,42 @@ class DocumentAIContentService:
                 != self._policy.minimal_payload_policy_ref):
             raise DocumentAIContentError()
 
-    def _authorize(self, transaction: object, query: DocumentAIContentQuery) -> None:
+    def _authorize(
+        self, transaction: object, query: DocumentAIContentQuery, *, operation: str,
+    ) -> None:
         self._projects.require_in_transaction(
             transaction, user_id=query.actor_id, project_id=query.project_id,
-            operation="AI_TASK_EXECUTE",
+            operation=operation,
+        )
+
+    def _resolve_current(
+        self, transaction: object, *, query: DocumentAIContentQuery,
+        document_id: uuid.UUID, document_version_id: uuid.UUID,
+        operation: str,
+    ) -> DocumentAIContentProjection:
+        self._guard.require_valid(trace_id=query.trace_id)
+        self._authorize(transaction, query, operation=operation)
+        source = self._repository.select_current(
+            transaction, project_id=query.project_id,
+            document_id=document_id, document_version_id=document_version_id,
+            allowed_parser_versions=self._policy.allowed_parser_versions,
+            max_result_bytes=self._policy.max_result_bytes,
+        )
+        source = self._require_source(
+            source, query.project_id, document_id, document_version_id)
+        projection, count = self._read_and_project(source)
+        current = self._repository.get_exact(
+            transaction, project_id=query.project_id,
+            document_id=document_id, document_version_id=document_version_id,
+            parse_record_id=source.parse_record_id,
+            result_ref_id=source.result_ref_id,
+        )
+        if current != source:
+            raise DocumentAIContentError()
+        self._guard.require_valid(trace_id=query.trace_id)
+        return DocumentAIContentProjection(
+            self._identity(source, count, projection),
+            self._policy.projection_schema_ref, projection,
         )
 
     def _require_source(

@@ -100,7 +100,7 @@ class AIEgressTaskPlanTests(unittest.TestCase):
         )
         self.request = AIExecutionPreviewPlanRequest(
             self.project, uuid.uuid4(), uuid.uuid4(),
-            "project-gap-analysis.v1", "document-minimal.v1",
+            "project-gap-analysis.v1", "minimum.document.text.v1",
             ("DOCUMENT_TEXT",), (self.input,),
             AIExecutionPreviewRoute(
                 uuid.uuid4(), uuid.uuid4(), uuid.uuid4(),

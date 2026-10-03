@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A06-P04-P04-A03 新增Document Preview规划期精确最小投影，以EGRESS_PREVIEW_CREATE权限锁定当前成功ParseRecord/Result并复核私有内容；执行期AI_TASK_EXECUTE不放宽，正式策略统一为`minimum.document.text.v1`。兼容性/升级/回滚：内部未装配，无Schema/API/依赖/持久化/外发变化；只修正合成夹具旧别名，可撤新入口回滚。验证：定向9、Win11/PG18.6权限分离/行锁/摘要/零Invocation与旧执行PG回归、后端2202运行/3跳过及wheel PASS，SHA-256 `2760da76b2fe311d5aabf5e3ef0222b3555497e7035a5354de17afc49a5f919a`。已知问题：A04 Preview事务、A05 HTTP、A06 Windows组合及后续绑定/Invocation/发行待完成。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P04-P04-A02 新增Preview规划期Prompt PostgreSQL Owner；短事务锁定ACTIVE模板、读取当前版本，精确匹配Policy固定身份，参数使用数据库JSONB规范化与SHA-256且敏感值不进repr。兼容性/升级/回滚：内部未装配，无Schema/API/依赖/持久化/外发变化；活动版本正规推进用于新Preview，旧Plan不漂移，可撤新组件回滚。验证：定向10、Win11/PG18.6真实锁/摘要/漂移/零Invocation、后端2201运行/3跳过及wheel PASS，SHA-256 `2fc1a8ef6d9216063715acd205e143cd678af01a8ff325b645d7ba189e14f2db`。已知问题：A03 Document规划投影、A04 Preview事务、A05 HTTP、A06 Windows组合及后续绑定/Invocation/发行待完成。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P04-P04-A01 新增服务端Preview Plan Builder与独立Prompt规划内容合同；Task Policy/Prompt/Source投影/模型/Context/Estimator由服务端生成Plan+Envelope，禁止用伪Task/Job身份复用执行合同，敏感内容不进repr。兼容性/升级/回滚：内部未装配，无Schema/API/依赖/持久化/外发，可整体撤回。验证：定向14、后端2199运行/3跳过及wheel PASS，SHA-256 `da9d8cc92d8442955ceec44c01deecd9fc0c00494f5e50932b73bdb81bae81ce`。已知问题：A02 Prompt PG Owner、A03 Document规划投影、A04 Preview事务、A05 HTTP、A06 Windows组合及后续绑定/Invocation/发行待完成。
