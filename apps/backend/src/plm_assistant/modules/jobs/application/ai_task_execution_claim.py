@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Protocol
 
 from plm_assistant.modules.jobs.application.lease import JobLeaseError
@@ -22,6 +23,8 @@ class AITaskExecutionClaim:
     fencing_token: int = 0
     attempt_no: int = 0
     max_attempts: int = 0
+    observed_at: datetime | None = None
+    lease_expires_at: datetime | None = None
 
     def __post_init__(self) -> None:
         if (any(type(value) is not uuid.UUID or not value.int for value in (
@@ -34,7 +37,14 @@ class AITaskExecutionClaim:
                 or not 1 <= self.fencing_token <= 9_223_372_036_854_775_807
                 or type(self.attempt_no) is not int
                 or type(self.max_attempts) is not int
-                or not 1 <= self.attempt_no <= self.max_attempts <= 10):
+                or not 1 <= self.attempt_no <= self.max_attempts <= 10
+                or not isinstance(self.observed_at, datetime)
+                or self.observed_at.tzinfo is None
+                or self.observed_at.utcoffset() is None
+                or not isinstance(self.lease_expires_at, datetime)
+                or self.lease_expires_at.tzinfo is None
+                or self.lease_expires_at.utcoffset() is None
+                or self.observed_at >= self.lease_expires_at):
             raise JobLeaseError("JOB_STORE_UNAVAILABLE")
 
 

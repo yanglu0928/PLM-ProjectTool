@@ -45,7 +45,7 @@ class SqlAlchemyAITaskExecutionClaimRepository:
         self._leases = SqlAlchemyJobLeaseRepository()
 
     @staticmethod
-    def _snapshot(session, job: JobRow) -> AITaskExecutionClaim:
+    def _snapshot(session, job: JobRow, *, observed_at) -> AITaskExecutionClaim:
         payload = job.payload_refs
         if (job.owner_module != "ai" or job.job_type != "AI_TASK_EXECUTE"
                 or job.scope != "PROJECT"
@@ -53,6 +53,8 @@ class SqlAlchemyAITaskExecutionClaimRepository:
                 or type(job.actor_ref) is not uuid.UUID or not job.actor_ref.int
                 or type(job.max_attempts) is not int
                 or not 1 <= job.max_attempts <= 10
+                or job.lease_expires_at is None
+                or job.lease_expires_at <= observed_at
                 or type(payload) is not dict
                 or set(payload) != {
                     "ai_task_id", "egress_authorization_ref", "input_fingerprint",
@@ -84,7 +86,8 @@ class SqlAlchemyAITaskExecutionClaimRepository:
         return AITaskExecutionClaim(
             job.job_id, task_id, job.project_id, job.actor_ref, trace_id,
             authorization_ref, input_fingerprint, job.fencing_token,
-            job.attempt_count, job.max_attempts,
+            job.attempt_count, job.max_attempts, observed_at,
+            job.lease_expires_at,
         )
 
     def check_current(self, transaction: object, *, job_id: uuid.UUID,
@@ -100,7 +103,8 @@ class SqlAlchemyAITaskExecutionClaimRepository:
         job = session.get(JobRow, job_id, populate_existing=True)
         if job is None:
             raise JobLeaseError("STALE_LEASE")
-        claim = self._snapshot(session, job)
+        observed_at = self._leases._now(session)
+        claim = self._snapshot(session, job, observed_at=observed_at)
         if (claim.fencing_token != current.fencing_token
                 or claim.attempt_no != current.attempt_no
                 or claim.project_id != current.project_id

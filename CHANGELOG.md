@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A06-P06-P05-P02 为AI Task Claim增加数据库观察时间和当前Lease截止；pre-send要求剩余Lease严格覆盖Route总时限+2秒，并将SendProof开始截止收紧为Authorization与`lease-total-margin`较早者。兼容性/升级/回滚：内部合同增量，无Migration/API/依赖/历史修改，未装配Worker；撤字段/窗口即可回滚。验证：相关定向16、Win11/PG18.6真实21秒拒绝/120秒成功、后端2231运行/3跳过PASS；wheel SHA-256 `930d37c319def3c3cbf928738f80e535cac2b924f75ff4aec4ad5eda26a8fc74`。首次夹具两次时间表达式产生微秒不一致，被既有Jobs守卫拒绝；改同一显式截止后新资源重跑，生产规则未放宽。已知问题：Task Secret Audit、双pre-send发送编排、响应Schema/终态、Server2025/Gate3/UAT/可用包待完成。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P06-P05-P01 完成发送编排/SecretResolver前置核查：发现现有Claim/SendProof缺Lease截止，不能证明最长120秒Adapter调用留在当前generation租约内；Probe专用Secret审计亦不能复用为业务Task审计。决定先增加数据库观察时间/Lease截止并以`lease_expires_at-total_timeout-margin`限制发送开始，再新增Task专用Secret审计，最终按pre-send→精确SecretVersion解析→再次pre-send一致性→Adapter编排。兼容性/升级/回滚：本项仅文档，无Migration/API/依赖/行为/外发。验证：静态核对Jobs checkpoint、AI pre-send、SecretResolver/Store和Probe审计；未运行新增代码测试。已知问题：P02～P04实现、响应Schema/终态、Windows Worker、Server2025/Gate3/UAT/可用包待完成。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P06-P04 新增独立OpenAI-compatible有界ProviderAdapter：网络前复核SendProof，确定性转换精确messages/model；隔离DNS且全部候选必须global、数字IP pinning、原hostname SNI/证书、TLS≥1.2、系统CA、无代理/重定向，并限制DNS/连接/读取/总时长、Content-Length和响应字节；请求缓冲清零，响应交可清零对象。兼容性/升级/回滚：未装配内部增量，无Migration/API/新增依赖，可撤Adapter且固定Probe/历史不变。验证：单元5、相关定向14、Windows11本地合成TLS、后端2230运行/3跳过PASS；wheel SHA-256 `0cf512ea16bb7082fcbf1d9e675b0d7c116501b20b7b34c90b6591d93bfb6b61`。未访问真实Provider、客户数据或真实Secret。已知问题：AIService发送/SecretResolver编排、响应Schema/Invocation终态、Windows Worker、Server2025/Gate3/UAT/可用包待完成。

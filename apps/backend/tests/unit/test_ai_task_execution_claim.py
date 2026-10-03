@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 import uuid
 from dataclasses import replace
+from datetime import datetime, timedelta, timezone
 
 from plm_assistant.modules.jobs.application.ai_task_execution_claim import (
     AITaskExecutionClaim, AITaskExecutionClaims,
@@ -23,9 +24,11 @@ class Repository:
 
 class AITaskExecutionClaimTests(unittest.TestCase):
     def setUp(self) -> None:
+        now = datetime(2026, 10, 3, 18, tzinfo=timezone.utc)
         self.claim = AITaskExecutionClaim(
             uuid.uuid4(), uuid.uuid4(), uuid.uuid4(), uuid.uuid4(), uuid.uuid4(),
             uuid.uuid4(), b"i" * 32, 2, 2, 3,
+            now, now + timedelta(minutes=2),
         )
 
     def test_exact_current_claim_is_returned(self) -> None:
@@ -56,6 +59,8 @@ class AITaskExecutionClaimTests(unittest.TestCase):
             {"input_fingerprint": b"short"},
             {"attempt_no": 4},
             {"max_attempts": 11},
+            {"lease_expires_at": self.claim.observed_at},
+            {"observed_at": self.claim.lease_expires_at},
         ):
             with self.subTest(changes=changes), self.assertRaises(JobLeaseError):
                 replace(self.claim, **changes)

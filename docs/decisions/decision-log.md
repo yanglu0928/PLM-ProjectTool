@@ -7412,3 +7412,11 @@
 - Reason：检查瞬间Lease有效不等于最长120秒调用可在本generation内结束；Secret读取/解密/审计又位于首次检查与网络之间。只依赖Authorization有效期或静态fencing token会让过期Worker仍可能开始外发。
 - Impact/Rollback：P01仅记录，后续为内部合同/Owner增量，无Schema/API/依赖；回滚为不装配业务Worker，不发送。安全余量及Lease窗口将在P02用行为测试固定。
 - Verification：静态核对`SqlAlchemyJobLeaseRepository.check_current/_claim`、AI Claim/pre-send、SecretResolver/Store、Probe Secret Audit和Worker组合；确认Claim当前不返回Lease时间且Probe Audit拒绝非Probe snapshot。本项未运行新代码测试。
+
+# DEC-20261003-750：SendProof截止表示最迟开始而非仅授权过期
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P06-P05-P02`；依据 CR-AI-017、DEC-749。
+- Decision：`AIProviderSendProof.valid_until`按最迟允许开始网络调用解释，并取Authorization截止与`lease_expires_at-route.total_timeout-2秒`的较早值。Claim同时保存数据库观察时间，剩余Lease不严格大于总时限+余量时不签发Proof。
+- Reason：Adapter已有绝对总时限；将该时限从Lease截止前倒推为开始截止，可在不持有数据库事务和不后台续租的情况下保证被批准的最坏网络窗口落在当前generation Lease内。2秒用于短生命Secret/审计/函数切换，不替代Worker合理Lease配置。
+- Impact/Rollback：内部Claim/Proof语义收紧，无Schema/API/依赖/外发；未装配Worker。回滚为停止发送并撤内部字段，不修改历史。
+- Verification：Claim/pre-send相关定向16、Win11/PG18.6 21秒窗口拒绝及120秒成功、后端2231运行/3跳过PASS；wheel SHA-256 `930d37c319def3c3cbf928738f80e535cac2b924f75ff4aec4ad5eda26a8fc74`；零Secret/网络。

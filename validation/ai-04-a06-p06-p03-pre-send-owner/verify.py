@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import importlib.util
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from plm_assistant.modules.ai.application.egress_authorization_owner import (
@@ -120,6 +120,37 @@ def validate(context: dict[str, object]) -> None:
                 (secret_version, secret_ref),
             )
 
+    with schema.connect(context["database"]) as db:
+        short_deadline = datetime.now(timezone.utc) + timedelta(seconds=21)
+        with db.transaction():
+            db.execute(
+                "UPDATE plm.job_jobs SET lease_expires_at=%s WHERE job_id=%s",
+                (short_deadline, current.job_id),
+            )
+            db.execute(
+                "UPDATE plm.job_leases SET lease_expires_at=%s "
+                "WHERE job_id=%s AND fencing_token=%s AND state='ACTIVE'",
+                (short_deadline, current.job_id, current.fencing_token),
+            )
+    try:
+        authorize()
+    except AIProviderPreSendError:
+        pass
+    else:
+        raise AssertionError("insufficient Lease window authorized Provider send")
+    with schema.connect(context["database"]) as db:
+        renewed_deadline = datetime.now(timezone.utc) + timedelta(seconds=120)
+        with db.transaction():
+            db.execute(
+                "UPDATE plm.job_jobs SET lease_expires_at=%s WHERE job_id=%s",
+                (renewed_deadline, current.job_id),
+            )
+            db.execute(
+                "UPDATE plm.job_leases SET lease_expires_at=%s "
+                "WHERE job_id=%s AND fencing_token=%s AND state='ACTIVE'",
+                (renewed_deadline, current.job_id, current.fencing_token),
+            )
+
     result = authorize()
     assert result.route.secret_version_id == secret_version
     assert result.route.ai_provider_id == prepared.grant.ai_provider_id
@@ -151,8 +182,10 @@ def validate(context: dict[str, object]) -> None:
         "AI_04_A06_P06_P03_PRE_SEND_OWNER_PASS: Win11/PostgreSQL18.6 "
         "post-Begin PENDING Invocation, current Job fencing, live Authorization, ACTIVE "
         "Provider/current Config, AVAILABLE CHAT Model and exact ACTIVE SecretVersion were "
-        "locked and projected into one bounded Route/SendProof; inactive Secret and suspended "
-        "Model failed closed; zero Secret decryption and zero Provider network I/O"
+        "locked and projected into one Lease-bounded Route/SendProof; inactive Secret, "
+        "insufficient Lease window and suspended Model failed closed; zero Secret decryption "
+        "and zero Provider network I/O\n"
+        "AI_04_A06_P06_P05_P02_LEASE_WINDOW_PASS"
     )
 
 

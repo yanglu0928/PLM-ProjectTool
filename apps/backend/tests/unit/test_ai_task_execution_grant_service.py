@@ -79,7 +79,7 @@ class AITaskExecutionGrantIssuerTests(unittest.TestCase):
         )
         self.claim = AITaskExecutionClaim(
             job, task, project, actor, trace, authorization, b"i" * 32,
-            7, 1, 3,
+            7, 1, 3, self.now, self.now + timedelta(minutes=2),
         )
         valid_until = self.now + timedelta(minutes=20)
         approved_at = self.now - timedelta(minutes=2)

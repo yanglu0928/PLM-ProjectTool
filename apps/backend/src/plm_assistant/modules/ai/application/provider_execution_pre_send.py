@@ -6,7 +6,7 @@ import hmac
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Protocol
 
 from plm_assistant.modules.ai.domain.provider_configuration import ProviderKind
@@ -44,6 +44,9 @@ class AIProviderPreSendError(RuntimeError):
     def __init__(self, code: str = "AI_PROVIDER_SEND_NOT_AUTHORIZED") -> None:
         self.code = code
         super().__init__(code)
+
+
+_SEND_START_MARGIN_SECONDS = 2
 
 
 @dataclass(frozen=True, slots=True)
@@ -204,6 +207,19 @@ class AIProviderPreSendService:
                     policy.read_timeout_seconds,
                     policy.total_timeout_seconds,
                 )
+                send_start_deadline = min(
+                    prepared.grant.valid_until.astimezone(timezone.utc),
+                    claim.lease_expires_at.astimezone(timezone.utc) - timedelta(
+                        seconds=(route.total_timeout_seconds
+                                 + _SEND_START_MARGIN_SECONDS),
+                    ),
+                )
+                if (claim.observed_at.astimezone(timezone.utc)
+                        + timedelta(seconds=(route.total_timeout_seconds
+                                             + _SEND_START_MARGIN_SECONDS))
+                        >= claim.lease_expires_at.astimezone(timezone.utc)
+                        or now >= send_start_deadline):
+                    raise AIProviderPreSendError()
                 proof = AIProviderSendProof(
                     prepared.grant.ai_task_id,
                     begun.ai_invocation_id,
@@ -217,7 +233,7 @@ class AIProviderPreSendService:
                     prepared.envelope.payload_fingerprint,
                     prepared.envelope.payload_bytes,
                     prepared.envelope.input_tokens,
-                    prepared.grant.valid_until,
+                    send_start_deadline,
                 )
                 self._guard.require_valid(trace_id=prepared.grant.trace_id)
                 result = AuthorizedAIProviderSend(route, proof)

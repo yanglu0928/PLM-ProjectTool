@@ -143,7 +143,7 @@ class AIProviderPreSendTests(unittest.TestCase):
         self.begun = BegunAITaskInvocation(invocation, self.grant)
         self.claim = AITaskExecutionClaim(
             job, task, project, actor, trace, authorization, b"i" * 32,
-            7, 1, 3,
+            7, 1, 3, self.now, self.now + timedelta(minutes=2),
         )
         self.material = AIProviderExecutionRouteMaterial(
             task, invocation, project, job, 1, snapshot, authorization, plan,
@@ -167,13 +167,13 @@ class AIProviderPreSendTests(unittest.TestCase):
             1_000_000, 3, 10, 20,
         )
 
-    def service(self, *, material=None, current=None, secret_version=True,
-                policy=None, guard=None):
+    def service(self, *, claim=None, material=None, current=None,
+                secret_version=True, policy=None, guard=None):
         guard = guard or _Guard()
         service = AIProviderPreSendService(
             unit_of_work=_Transaction,
             claims=AITaskExecutionClaims(
-                repository=_ClaimRepository(self.claim),
+                repository=_ClaimRepository(self.claim if claim is None else claim),
             ),
             repository=_RouteRepository(
                 self.material if material is None else material,
@@ -200,6 +200,10 @@ class AIProviderPreSendTests(unittest.TestCase):
         result = self.authorize(service)
         self.assertEqual(result.route.secret_version_id, self.secret_version)
         self.assertEqual(result.proof.ai_invocation_id, self.begun.ai_invocation_id)
+        self.assertEqual(
+            result.proof.valid_until,
+            self.claim.lease_expires_at - timedelta(seconds=22),
+        )
         self.assertIs(require_provider_send(
             result.proof, result.route, self.envelope, now=self.now,
         ), result.proof)
@@ -230,6 +234,14 @@ class AIProviderPreSendTests(unittest.TestCase):
             self.policy, allowed_model_keys=frozenset({"other-model"}),
         )
         service, _ = self.service(policy=policy)
+        with self.assertRaises(AIProviderPreSendError):
+            self.authorize(service)
+
+    def test_insufficient_lease_window_fails_before_send_proof(self):
+        claim = replace(
+            self.claim, lease_expires_at=self.now + timedelta(seconds=22),
+        )
+        service, _ = self.service(claim=claim)
         with self.assertRaises(AIProviderPreSendError):
             self.authorize(service)
 
