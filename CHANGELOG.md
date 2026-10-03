@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A06-P03-P02-A01 新增无正文AIExecutionContentPlan、精确Owner内容来源/Prompt/Context身份、规范化fingerprint、Grant匹配和Owner Port；固定编码与Token estimator版本，NONE/RAG Context严格闭合，不保存正文/参数值/locator/Secret。兼容性/升级/回滚：无Schema、公开API、依赖、运行装配或外发，撤新模块即可；旧无Plan历史仍不可执行。验证：定向10、后端2173运行/3跳过PASS；wheel SHA-256 `1ccf1411c3eee3ebc438f8108213b6ecdab3a358cd81f199907d685cd48acf0c`。开发期括号、parser版本规则和测试断言边界问题修复后完整重跑。已知问题：Prompt/参数与Document内容Owner、Envelope、Plan持久化/Preview、Invocation/Adapter/发布、Gate3/UAT/可用包待完成。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P03-P02-P01 完成内容Owner与确定性Envelope编码前核查并登记CR-AI-016：确认DocumentVersion不能唯一绑定ParseRecord/解析正文，客户端payload摘要与静默空RAG Context均不足；选择服务端不可变AIExecutionContentPlan，固定解析结果、Prompt/参数、Context、编码和Estimator身份，旧无Plan历史不可执行。兼容性/升级/回滚：本项仅文档，无程序、Schema、API、依赖或外发；原冻结提交/历史保留，后续P04追加兼容迁移，撤新组合即可停止执行。验证：冻结DM/API、当前AI/Document代码和RAG模块清单静态交叉核对；未运行新增代码测试。已知问题：Content Plan/Owner/Envelope、Schema Preview重构、Invocation/Adapter/发布、Gate3/UAT/可用包待完成。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P03-P01-A03 新增完整无正文Execution Grant Issuer与AI PostgreSQL投影：同一短事务组合Jobs当前Claim、Task/Input、当前Prompt、Schema/参数、CHAT Model、Egress快照和当前授权，并补齐最小载荷策略/最大记录数；License边界双检，AI侧不直读裸Job。兼容性/升级/回滚：无Schema、公开API、依赖、生产装配或外发；撤未装配组件即可，历史不变。验证：Win11/PG18.6有效链签发，Prompt活动版本、模型/批准payload快照漂移和撤销拒绝，Invocation为0；定向15、后端2167运行/3跳过PASS；wheel SHA-256 `87690d1d519bfd23bc0b8ca0e02881f989e67d07d66227a623c3bdc00215b16d`。首次两次脚本分别被授权历史完整性和当前Prompt守卫拒绝，修正夹具后新库重跑。已知问题：内容Owner/确定性Envelope、Preview、Invocation、Adapter/发布及Gate3/UAT/可用包待完成。

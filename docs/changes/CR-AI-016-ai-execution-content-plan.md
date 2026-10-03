@@ -35,6 +35,10 @@
 4. `P03-P02-A04`：实现 provider-neutral Envelope 规范编码和可注入、版本化 Token estimator；只接受明确支持的 context policy，不执行网络 I/O。
 5. `P04`：以增量 Schema（编号在实现切片分配）持久化 Content Plan 及来源行，重构 AI_TASK Preview/Authorization/Task 绑定；非 AI operation 保持原合同。此切片再更新 ORM、Migration、API 文档和兼容测试。
 
+## P03-P02-A01 实施结果
+
+已新增不含正文的 `AIExecutionContentPlan`、精确内容来源身份、Prompt/Context身份、规范化fingerprint、Grant逐项匹配以及 `AIExecutionContentIdentityOwnerPort`。Plan显式固定Envelope编码和Token estimator版本；Context只允许完整NONE或RAG_CONTEXT形态，未知语义仍留给后续策略注册表失败关闭。定向10项、后端2173运行/3跳过和开发wheel通过；无Schema/API/依赖/运行装配/外发。开发期括号、parser version规则和测试断言边界问题均修复后完整重跑。A02继续实现Prompt/Task参数短生命周期Owner和严格渲染器。
+
 ## 兼容、迁移与回滚
 
 - 原 Gate 2 冻结提交和现有 0064/0068～0071 历史不改。P03-P02-A01～A04 先建立未装配合同与 Owner，暂不产生数据库或公开 API 变化。

@@ -7228,3 +7228,11 @@
 - Reason：DocumentVersion可对应多个解析结果，运行时选latest会造成批准载荷和重试漂移；客户端摘要、原文件字节或静默空Context均不能证明冻结合同要求的实际最小载荷。
 - Impact/Rollback：P03-P02先增加未装配内部合同，P04再以追加Schema和兼容API语义持久化Plan；原冻结提交与旧历史保留。回滚撤Worker/Preview新组合并停止消费，不删除Plan/Authorization/Invocation历史。
 - Verification：静态交叉核对AITask/Egress实现、Document固定来源证明、Prompt规范化、DM-04/API-03及RAG模块清单；本项无代码/Schema/API/依赖/外发，未运行新增测试。
+
+# DEC-20261003-727：Content Plan只保存可复核身份且Context形态闭合
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P03-P02-A01`；依据 CR-AI-015/016、DEC-726。
+- Decision：Content Plan只保存按序业务输入映射、精确Owner revision/object、producer/schema/policy、摘要/大小/计数、Prompt/Context/Model/编码/Estimator版本；禁止正文、参数值、locator和Secret。Context只能是字段全空且计数为零的NONE，或引用/摘要/计数全部完整的RAG_CONTEXT。Grant逐项核业务身份，内容结果变化由Plan fingerprint捕获并待P04持久绑定。
+- Reason：把正文或动态Owner查询塞入Grant会扩大Job/日志泄漏面；允许半空Context或只比较业务Input则无法证明实际发送内容与授权一致。
+- Impact/Rollback：新增未装配Application合同和单测，无Schema/API/依赖/运行行为；删除模块即可回退。旧无Plan历史仍不可执行。
+- Verification：定向10、后端2173运行/3跳过PASS；wheel SHA-256 `1ccf1411c3eee3ebc438f8108213b6ecdab3a358cd81f199907d685cd48acf0c`。三轮开发期语法/版本规则/断言位置问题修复后均从修正状态重跑。
