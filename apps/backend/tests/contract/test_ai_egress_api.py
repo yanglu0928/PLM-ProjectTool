@@ -132,9 +132,15 @@ class AIEgressApiTests(unittest.TestCase):
             }],
             "allowed_data_categories": ["CUSTOMER_DOCUMENT"],
             "minimal_payload_policy_ref": "egress.minimal.v1",
-            "estimated_record_count": 1, "max_payload_bytes": 4096,
+            "max_payload_bytes": 4096,
             "max_input_tokens": 512, "max_retry_attempts": 2,
-            "payload_fingerprint": (b"p" * 32).hex(),
+            "ai_task_plan": {
+                "task_type": "CAPABILITY_EXTRACT",
+                "prompt_policy_ref": "capability-extract.v1",
+                "output_schema_ref": "capability-output.v1",
+                "context_policy_ref": "no-retrieval.v1",
+                "task_parameters": {"language": "zh-CN"},
+            },
         }
         self.headers = {
             "cookie": "plm_session=" + "61" * 32,
@@ -176,7 +182,9 @@ class AIEgressApiTests(unittest.TestCase):
         self.assertEqual(created.json()["data"]["preview_fingerprint"],
                          self.preview.preview_fingerprint.hex())
         self.assertEqual(self.previews.create_command.source_refs[0].version_id, self.version_id)
-        self.assertEqual(self.previews.create_command.payload_fingerprint, b"p" * 32)
+        self.assertIsNone(self.previews.create_command.payload_fingerprint)
+        self.assertEqual(self.previews.create_command.ai_task_plan.task_type,
+                         "CAPABILITY_EXTRACT")
         detail = self.client.get(
             self.preview_path + "/" + str(self.preview_id),
             headers={"cookie": self.headers["cookie"]},
@@ -217,10 +225,13 @@ class AIEgressApiTests(unittest.TestCase):
     def test_strict_payload_validation(self) -> None:
         for change, status in (
             ({"api_key": "forbidden"}, 400),
-            ({"payload_fingerprint": "AA" * 32}, 422),
+            ({"payload_fingerprint": "AA" * 32}, 400),
+            ({"estimated_record_count": 1}, 400),
             ({"source_refs": []}, 422),
             ({"allowed_data_categories": ["X", "X"]}, 422),
             ({"max_payload_bytes": True}, 422),
+            ({"ai_task_plan": {**self.preview_body["ai_task_plan"],
+                                "task_parameters": {"nested": {"x": 1}}}}, 422),
         ):
             with self.subTest(change=change):
                 result = self.client.post(
@@ -241,6 +252,23 @@ class AIEgressApiTests(unittest.TestCase):
             authorize_path, json={**self.authorize_body, "valid_until": "2026-10-03T12:25:06+08:00"},
             headers={**self.headers, "if-match": '"v0"'},
         ).status_code, 422)
+
+    def test_non_ai_preview_keeps_legacy_derived_fields(self) -> None:
+        body = {
+            key: value for key, value in self.preview_body.items()
+            if key != "ai_task_plan"
+        }
+        body.update({
+            "operation_type": "INDEX_BUILD",
+            "estimated_record_count": 1,
+            "payload_fingerprint": (b"p" * 32).hex(),
+        })
+        response = self.client.post(
+            self.preview_path, json=body, headers=self.headers,
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertIsNone(self.previews.create_command.ai_task_plan)
+        self.assertEqual(self.previews.create_command.payload_fingerprint, b"p" * 32)
 
     def test_security_preconditions(self) -> None:
         authorize_path = self.preview_path + "/" + str(self.preview_id) + ":authorize"

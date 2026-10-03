@@ -7316,3 +7316,11 @@
 - Reason：先写Preview再异步补Plan会留下已可审批但没有内容证明的窗口；重放重新读取Source会破坏幂等，而只返回Preview不核Plan又会掩盖历史损坏。Provider model key/revision必须来自锁定数据库Route，不能由客户端补齐。
 - Impact/Rollback：扩展内部Command/Route与可选Service依赖，无Schema、公开HTTP、依赖或网络变化；旧内部路径保留到A05切换。回滚不装配Builder/Plan Owner并关闭新AI_TASK入口，已提交Plan历史保留。
 - Verification：新增单元2、相关12；Win11/PG18.6真实Preview/Plan/Source/Audit/Receipt原子提交、重放、参数冲突、Audit全回滚、零Invocation和旧Preview PG回归PASS；后端2204运行/3跳过；wheel SHA-256 `3b4bae40ee433e65dcee8e43e52a72c40fe33834a1172de357e0b7ce0487ef99`。
+
+# DEC-20261003-738：AI_TASK与非AI Preview使用互斥HTTP请求形态
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P04-P04-A05`；依据 CR-AI-016、DEC-731/737。
+- Decision：AI_TASK请求必须提供五字段`ai_task_plan`且不得提供客户端派生record count/payload fingerprint；RETRIEVAL/INDEX请求保持旧派生字段且不得提供Task Plan。严格字段集合使旧AI_TASK明确400而非静默忽略。响应与URL不变。
+- Reason：静默接受旧摘要会让调用方误以为它仍是授权依据，也给双重语义留下空间；非AI操作尚无本切片的Owner/Plan实现，不能误用AI Task合同。
+- Impact/Rollback：已登记的`/api/v1`有意收紧，旧冻结提交保留；尚无正式发行依赖旧AI_TASK形态，前后端原子升级。回滚须同时撤客户端且保持AI_TASK关闭，不能恢复信任客户端摘要。
+- Verification：HTTP合同6项、后端2205运行/3跳过PASS；wheel SHA-256 `e424ed47c2fc910205d5c0878741c89eee130ff86754b9c68fdbc9c37c895c0a`。无Schema/依赖/外发；真实Windows HTTP/PG组合留A06。

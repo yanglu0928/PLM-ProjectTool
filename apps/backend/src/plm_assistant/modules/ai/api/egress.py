@@ -28,6 +28,10 @@ from plm_assistant.modules.ai.application.egress_preview import (
     EgressPreviewSourceView,
     EgressPreviewView,
 )
+from plm_assistant.modules.ai.application.egress_task_plan import (
+    AIEgressTaskPlanError,
+    AITaskPreviewPlanRequest,
+)
 from plm_assistant.modules.ai.application.input_resolution import AIInputResourceVersionRef
 from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginError, LoginOriginPolicy
 from plm_assistant.modules.auth.api.session import (
@@ -42,10 +46,18 @@ from plm_assistant.modules.platform.application.errors import ApplicationError
 
 
 MAX_EGRESS_BODY = 262_144
-_PREVIEW_FIELDS = frozenset({
+_PREVIEW_COMMON_FIELDS = frozenset({
     "purpose_ref", "operation_type", "provider_id", "model_id", "source_refs",
-    "allowed_data_categories", "minimal_payload_policy_ref", "estimated_record_count",
-    "max_payload_bytes", "max_input_tokens", "max_retry_attempts", "payload_fingerprint",
+    "allowed_data_categories", "minimal_payload_policy_ref", "max_payload_bytes",
+    "max_input_tokens", "max_retry_attempts",
+})
+_AI_TASK_PREVIEW_FIELDS = _PREVIEW_COMMON_FIELDS | {"ai_task_plan"}
+_OTHER_PREVIEW_FIELDS = _PREVIEW_COMMON_FIELDS | {
+    "estimated_record_count", "payload_fingerprint",
+}
+_TASK_PLAN_FIELDS = frozenset({
+    "task_type", "prompt_policy_ref", "output_schema_ref", "context_policy_ref",
+    "task_parameters",
 })
 _SOURCE_FIELDS = frozenset({"resource_type", "resource_id", "version_id"})
 _AUTHORIZE_FIELDS = frozenset({
@@ -141,7 +153,10 @@ def _source_ref(value: object) -> AIInputResourceVersionRef:
 
 def _create_command(body: object, *, token: bytes, csrf: bytes, trace_id: uuid.UUID,
                     project_id: uuid.UUID) -> CreateEgressPreview:
-    if type(body) is not dict or set(body) != _PREVIEW_FIELDS:
+    if type(body) is not dict or type(body.get("operation_type")) is not str:
+        raise ApplicationError("REQUEST_MALFORMED")
+    ai_task = body["operation_type"] == "AI_TASK"
+    if set(body) != (_AI_TASK_PREVIEW_FIELDS if ai_task else _OTHER_PREVIEW_FIELDS):
         raise ApplicationError("REQUEST_MALFORMED")
     sources, categories = body["source_refs"], body["allowed_data_categories"]
     if (type(sources) is not list or not 1 <= len(sources) <= 1000
@@ -151,20 +166,51 @@ def _create_command(body: object, *, token: bytes, csrf: bytes, trace_id: uuid.U
         raise ApplicationError("VALIDATION_FAILED")
     scalar_strings = ("purpose_ref", "operation_type", "minimal_payload_policy_ref")
     scalar_ints = (
-        "estimated_record_count", "max_payload_bytes", "max_input_tokens",
-        "max_retry_attempts",
+        "max_payload_bytes", "max_input_tokens", "max_retry_attempts",
     )
     if (any(type(body[name]) is not str for name in scalar_strings)
             or any(type(body[name]) is not int for name in scalar_ints)):
         raise ApplicationError("VALIDATION_FAILED")
+    estimated_record_count = None
+    payload_fingerprint = None
+    task_plan = None
+    if ai_task:
+        task_plan = _task_plan(body["ai_task_plan"])
+    else:
+        if type(body["estimated_record_count"]) is not int:
+            raise ApplicationError("VALIDATION_FAILED")
+        estimated_record_count = body["estimated_record_count"]
+        payload_fingerprint = _fingerprint(body["payload_fingerprint"])
     return CreateEgressPreview(
         token, csrf, trace_id, project_id, body["purpose_ref"], body["operation_type"],
         _canonical_uuid(body["provider_id"]), _canonical_uuid(body["model_id"]),
         tuple(_source_ref(item) for item in sources), tuple(categories),
-        body["minimal_payload_policy_ref"], body["estimated_record_count"],
+        body["minimal_payload_policy_ref"], estimated_record_count,
         body["max_payload_bytes"], body["max_input_tokens"], body["max_retry_attempts"],
-        _fingerprint(body["payload_fingerprint"]),
+        payload_fingerprint, task_plan,
     )
+
+
+def _task_plan(value: object) -> AITaskPreviewPlanRequest:
+    if type(value) is not dict or set(value) != _TASK_PLAN_FIELDS:
+        raise ApplicationError("REQUEST_MALFORMED")
+    parameters = value["task_parameters"]
+    if (type(parameters) is not dict or len(parameters) > 16
+            or any(type(key) is not str or type(item) not in (str, int, bool)
+                   for key, item in parameters.items())
+            or any(type(value[name]) is not str for name in (
+                "task_type", "prompt_policy_ref", "output_schema_ref",
+                "context_policy_ref",
+            ))):
+        raise ApplicationError("VALIDATION_FAILED")
+    try:
+        return AITaskPreviewPlanRequest(
+            value["task_type"], value["prompt_policy_ref"],
+            value["output_schema_ref"], value["context_policy_ref"],
+            dict(parameters),
+        )
+    except AIEgressTaskPlanError:
+        raise ApplicationError("VALIDATION_FAILED") from None
 
 
 def _authorize_command(body: object, *, token: bytes, csrf: bytes, trace_id: uuid.UUID,

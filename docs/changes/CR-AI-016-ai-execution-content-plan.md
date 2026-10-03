@@ -59,6 +59,8 @@ P04-P04-A03已让Document Owner提供Preview规划期精确最小投影：使用
 
 P04-P04-A04已把AI_TASK Preview、服务端Envelope、唯一Content Plan/Source、Audit与Receipt组合为同一事务；AI计划模式拒绝客户端派生record count/payload fingerprint，路由模型key/revision来自数据库。精确幂等重放不重读正文但必须复核Plan仍存在且摘要/计数一致，Task参数变化冲突，Audit失败全回滚。旧内部/非AI路径兼容，公开HTTP尚待A05强制新形态。
 
+P04-P04-A05已实施公开HTTP合同收紧：AI_TASK必须提交五字段`ai_task_plan`并禁止`estimated_record_count/payload_fingerprint`；非AI operation继续要求旧派生字段且禁止Task Plan。响应合同不变，冻结基线文件/提交不回写；这是本CR/API Change的可追溯增量。合同6与后端2205回归通过，生产组合/真实HTTP-PG留A06。
+
 ## 兼容、迁移与回滚
 
 - 原 Gate 2 冻结提交和现有 0064/0068～0071 历史不改。P03-P02-A01～A04 先建立未装配合同与 Owner，暂不产生数据库或公开 API 变化。

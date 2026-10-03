@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A06-P04-P04-A05 收紧Egress Preview HTTP：AI_TASK强制五字段`ai_task_plan`并拒绝客户端计数/hash，非AI operation保持旧派生字段；URL/响应、安全前置与错误投影不变。兼容性/升级/回滚：CR-AI-016有意收紧，冻结提交不回写，前后端同批升级；回滚须同时撤客户端并关闭AI_TASK，不得恢复信任客户端摘要。验证：合同6、后端2205运行/3跳过及wheel PASS，SHA-256 `e424ed47c2fc910205d5c0878741c89eee130ff86754b9c68fdbc9c37c895c0a`。已知问题：A06 Windows组合、下游Task绑定/Invocation/Adapter/发行待完成。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P04-P04-A04 将AI_TASK Preview、服务端Envelope、Content Plan/Source、Audit与Receipt纳入单一事务；计划模式不接受客户端派生计数/hash，Route补齐数据库模型key/revision，精确重放复核Plan且不重读正文，参数漂移冲突。兼容性/升级/回滚：内部可选扩展，无Schema/公开API/依赖/外发变化，旧内部/非AI路径保留；不装配新依赖可回滚，Plan历史保留。验证：相关12、Win11/PG18.6原子提交/重放/冲突/全回滚/零Invocation及旧Preview PG回归、后端2204运行/3跳过及wheel PASS，SHA-256 `3b4bae40ee433e65dcee8e43e52a72c40fe33834a1172de357e0b7ce0487ef99`。已知问题：A05 HTTP、A06 Windows组合及下游Task绑定/Invocation/发行待完成。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P04-P04-A03 新增Document Preview规划期精确最小投影，以EGRESS_PREVIEW_CREATE权限锁定当前成功ParseRecord/Result并复核私有内容；执行期AI_TASK_EXECUTE不放宽，正式策略统一为`minimum.document.text.v1`。兼容性/升级/回滚：内部未装配，无Schema/API/依赖/持久化/外发变化；只修正合成夹具旧别名，可撤新入口回滚。验证：定向9、Win11/PG18.6权限分离/行锁/摘要/零Invocation与旧执行PG回归、后端2202运行/3跳过及wheel PASS，SHA-256 `2760da76b2fe311d5aabf5e3ef0222b3555497e7035a5354de17afc49a5f919a`。已知问题：A04 Preview事务、A05 HTTP、A06 Windows组合及后续绑定/Invocation/发行待完成。
