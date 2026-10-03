@@ -428,10 +428,15 @@ def main(after_validation=None) -> None:
                 "runtime": runtime,
                 "result_root": result_root,
                 "guard": guard,
+                "sessions": sessions,
+                "audit": audit,
                 "purposes": purposes,
                 "project_id": project,
                 "ai_task_id": uuid.UUID(task_data["ai_task_id"]),
                 "job_id": uuid.UUID(task_data["job_id"]),
+                "session_token": token,
+                "csrf_token": csrf,
+                "origin": ORIGIN,
             })
     finally:
         if runtime is not None:

@@ -92,6 +92,10 @@ from plm_assistant.modules.audit.application.job_read_projection import AuditJob
 from plm_assistant.modules.document.application.job_read_projection import DocumentParseJobReadProjection
 from plm_assistant.modules.ai.application.provider_test_job_read_projection import ProviderTestJobReadProjection
 from plm_assistant.modules.ai.infrastructure.provider_test_job_read import SqlAlchemyProviderTestJobReadRepository
+from plm_assistant.modules.ai.application.request_task_cancel import AITaskJobCancelOwner
+from plm_assistant.modules.ai.infrastructure.task_cancellation_repository import (
+    SqlAlchemyAITaskCancellationRepository,
+)
 from plm_assistant.modules.document.application.parse_job_source import DocumentParseSourceReader
 from plm_assistant.modules.document.infrastructure.parse_job_source import SqlAlchemyDocumentParseSources
 from plm_assistant.modules.document.application.parse_job_result import DocumentParseJobResults
@@ -1024,6 +1028,16 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                                 cancellations=SqlAlchemyParseCancellationRepository(),
                                 receipts=SqlAlchemyIdempotencyReceipts(),
                                 audit_sources=SqlAlchemyParseCancelAuditSources(), audit=audit,
+                            ),
+                            ('ai','AI_TASK_EXECUTE'):AITaskJobCancelOwner(
+                                unit_of_work=runtime.unit_of_work,
+                                store=SqlAlchemyAITaskCancellationRepository(),
+                                session_access=SqlAlchemyProjectWriteAccess(),
+                                projects=ProjectAuthorizationService(
+                                    unit_of_work=runtime.unit_of_work,
+                                    repository=SqlAlchemyProjectAuthorizationRepository()),
+                                license_guard=licenses.guard,
+                                receipts=SqlAlchemyIdempotencyReceipts(), audit=audit,
                             )},
                     ),
                 )

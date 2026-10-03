@@ -7500,3 +7500,11 @@
 - Reason：通用claim会把过期RUNNING直接创建下一Attempt；若Invocation已越过发送栅栏，这会绕过P08-P02并重复外发。Jobs模块又不能解释AI Invocation阶段，必须由AI Owner基于聚合事实决定UNKNOWN或安全pre-send失败。
 - Impact/Rollback：收紧通用claim的一种Owner类型并新增内部对账Owner，无Schema/API/依赖/真实外发；其他Owner恢复不变。回滚只能停止AI消费并保留RUNNING待修，不能恢复通用AI自动claim。生产对账循环待后续装配。
 - Verification：Win11/PG18.6真实过期栅栏Job未被通用claim领取；Audit失败全回滚，专用Owner成功后重复扫描为空且旧Worker覆盖拒绝；单元3、后端2259运行/3跳过；wheel SHA-256 `e8fbcb05e52d93da3f2344b8bddafacdd6fca5847fa0e1341bbefbdc672a0504`。
+
+# DEC-20261003-761：AI取消复用冻结Job API并以发送栅栏决定终态
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P08-P04`；依据冻结API-03 Project Job Cancel、CR-AI-018、DEC-753/758～760。
+- Decision：AI Task用户取消由既有Project Job Cancel端点分派至AI Owner；Owner在同一写事务重验当前Session/CSRF、License和项目身份，仅原创建者或当前项目经理可执行，并以Job ETag与actor-scoped幂等回执约束。PENDING发送栅栏前原子CANCELLED；RUNNING栅栏后原子FAILED/`AI_PROVIDER_OUTCOME_UNKNOWN`/不可重试。因冻结Job回执不允许终态FAILED标`changed=true`，发送后公开回执为`FAILED/changed=false`，表示取消未确认成功；Audit仍记录真实RUNNING→FAILED。
+- Reason：独立AI取消URL会重复并漂移冻结合同；通用取消若不理解Invocation阶段又可能把已发送请求误报为撤销。复用端点和Owner分派保留API稳定性，同时让AI聚合独占外部副作用解释权。
+- Impact/Rollback：无Schema/API/依赖变化；生产写组合新增`ai/AI_TASK_EXECUTE` Owner，其他Owner不变。可停止AI消费并移除Owner注册；已终态历史与回执不可删除或复活。
+- Verification：Win11/PG18.6真实ASGI/PG矩阵覆盖普通非创建成员拒绝、项目经理与创建者、ETag/License/幂等冲突、Audit回滚、发送前阻断与发送后单次合成Adapter UNKNOWN；定向7、后端2266运行/3跳过；wheel SHA-256 `1a464698c47a85c65423666dd29f13fc1471d0a5fcb30fd1ef82941cafb718cc`。
