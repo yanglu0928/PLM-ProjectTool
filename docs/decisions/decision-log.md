@@ -7508,3 +7508,11 @@
 - Reason：独立AI取消URL会重复并漂移冻结合同；通用取消若不理解Invocation阶段又可能把已发送请求误报为撤销。复用端点和Owner分派保留API稳定性，同时让AI聚合独占外部副作用解释权。
 - Impact/Rollback：无Schema/API/依赖变化；生产写组合新增`ai/AI_TASK_EXECUTE` Owner，其他Owner不变。可停止AI消费并移除Owner注册；已终态历史与回执不可删除或复活。
 - Verification：Win11/PG18.6真实ASGI/PG矩阵覆盖普通非创建成员拒绝、项目经理与创建者、ETag/License/幂等冲突、Audit回滚、发送前阻断与发送后单次合成Adapter UNKNOWN；定向7、后端2266运行/3跳过；wheel SHA-256 `1a464698c47a85c65423666dd29f13fc1471d0a5fcb30fd1ef82941cafb718cc`。
+
+# DEC-20261003-762：显式Retry先建不可变派生血缘再开放Owner
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P08-P05-P01`；依据 CR-AI-018、DEC-758/759。
+- Decision：Schema0075以新Task为主键保存直接源/根Task、新旧Job、实际请求人、USER Audit、generation和源Job ETag；数据库强制只从可重试FAILED或安全CANCELLED派生新QUEUED/PENDING聚合，且Prompt/Policy/Parameters/Content Plan、有序Input与Egress快照不漂移。先完成该持久不变量，P02再原子接入冻结`:retry` Owner。
+- Reason：只在应用层复制Task无法防止代际断链、输入/授权漂移或终态被伪装为可重试；而将所有复制数据再存一份会扩大个人/客户数据。只保存引用与摘要并由trigger对比原记录，可在不复制正文的情况下强制完整血缘。
+- Impact/Rollback：新增0075/ORM及内部追溯模型，无公开API/依赖/外发。旧历史不回填；空表可降，有血缘拒绝降级，回滚必须停止新Retry并向前修复或受控恢复。
+- Verification：Win11/PG18.6空/历史/血缘三库升降重升、drift、根/版本/不可变/拒降负例通过；定向6、后端2269运行/3跳过；wheel SHA-256 `46467de977e9898296dcdb02d53dab7a26178e6cb52cad803b5e0eba54a946d0`。

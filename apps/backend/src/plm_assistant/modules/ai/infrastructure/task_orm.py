@@ -283,6 +283,81 @@ class AIEgressAuthorizationSnapshotRow(Base):
     )
 
 
+class AITaskRetryGenerationRow(Base):
+    """Immutable lineage from one terminal AI Task to a fresh queued Task."""
+
+    __tablename__ = "ai_task_retry_generations"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["new_ai_task_id"], ["plm.ai_tasks.ai_task_id"],
+            name="fk_ai_task_retries__new_task", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["source_ai_task_id"], ["plm.ai_tasks.ai_task_id"],
+            name="fk_ai_task_retries__source_task", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["root_ai_task_id"], ["plm.ai_tasks.ai_task_id"],
+            name="fk_ai_task_retries__root_task", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["source_job_id"], ["plm.job_jobs.job_id"],
+            name="fk_ai_task_retries__source_job", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["new_job_id"], ["plm.job_jobs.job_id"],
+            name="fk_ai_task_retries__new_job", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["requested_by"], ["plm.auth_users.user_id"],
+            name="fk_ai_task_retries__requester", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["retry_audit_event_id"], ["plm.aud_events.audit_event_id"],
+            name="fk_ai_task_retries__audit", ondelete="NO ACTION",
+        ),
+        UniqueConstraint("new_job_id", name="uq_ai_task_retries__new_job"),
+        UniqueConstraint("retry_audit_event_id", name="uq_ai_task_retries__audit"),
+        UniqueConstraint("root_ai_task_id", "generation_no",
+                         name="uq_ai_task_retries__root_generation"),
+        CheckConstraint(
+            "new_ai_task_id<>'00000000-0000-0000-0000-000000000000'::uuid "
+            "AND source_ai_task_id<>'00000000-0000-0000-0000-000000000000'::uuid "
+            "AND root_ai_task_id<>'00000000-0000-0000-0000-000000000000'::uuid "
+            "AND source_job_id<>'00000000-0000-0000-0000-000000000000'::uuid "
+            "AND new_job_id<>'00000000-0000-0000-0000-000000000000'::uuid "
+            "AND requested_by<>'00000000-0000-0000-0000-000000000000'::uuid "
+            "AND retry_audit_event_id<>'00000000-0000-0000-0000-000000000000'::uuid "
+            "AND new_ai_task_id<>source_ai_task_id "
+            "AND new_job_id<>source_job_id "
+            "AND generation_no BETWEEN 1 AND 10 "
+            "AND expected_source_version>=0 AND first_job_version=0 "
+            "AND isfinite(created_at)",
+            name="ck_ai_task_retries__shape",
+        ),
+        Index("ix_ai_task_retries__root_generation", "root_ai_task_id",
+              "generation_no", "created_at"),
+        Index("ix_ai_task_retries__source", "source_ai_task_id", "created_at"),
+    )
+
+    new_ai_task_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True,
+    )
+    source_ai_task_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    root_ai_task_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    source_job_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    new_job_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    requested_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    retry_audit_event_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    generation_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    expected_source_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    first_job_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+
+
 class AIInvocationRow(Base):
     """One retry-safe AI attempt with fingerprints and controlled references only."""
 

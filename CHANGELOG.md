@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A06-P08-P05-P01 新增Schema0075与ORM不可变AI Task显式重试血缘，强制源FAILED/CANCELLED终态、新QUEUED/PENDING Task/Job、精确Prompt/Policy/Parameters/Content Plan/Input/Egress快照、root/generation、Job ETag和USER Audit一致；UNKNOWN/不可重试失败不能派生。兼容性/升级/回滚：0074后只追加表，旧历史不回填；空血缘可降，有血缘拒绝降级；无API/依赖/真实外发。验证：Win11/PG18.6三库迁移/drift/正负例，定向6、后端2269运行/3跳过，wheel 797项、SHA-256 `46467de977e9898296dcdb02d53dab7a26178e6cb52cad803b5e0eba54a946d0`。已知问题：P02 Owner/冻结Retry API接线、生产Worker/Server 2025/Gate 3/UAT/可用包待完成。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P08-P04 为`ai/AI_TASK_EXECUTE`接入冻结Project Job Cancel API：当前Session/CSRF、License、创建者或项目经理、Job强ETag及幂等回执在Owner事务内重验；发送前Job/Attempt/Lease/PENDING Invocation/Task/Audit原子CANCELLED并阻止发送，发送后原子FAILED/`AI_PROVIDER_OUTCOME_UNKNOWN`且公开回执`changed=false`。兼容性/升级/回滚：无Schema/API/依赖/真实外发，其他Job Owner不变；可移除AI Owner但不得复活或删除终态历史。验证：Win11/PG18.6真实ASGI/PG角色、冲突、License、重放、Audit回滚和栅栏前后矩阵；定向7、后端2266运行/3跳过；开发wheel 796项完整，SHA-256 `1a464698c47a85c65423666dd29f13fc1471d0a5fcb30fd1ef82941cafb718cc`。已知问题：显式Retry generation、生产Worker/对账循环、Server 2025、Gate 3/UAT及可用发行包仍待。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P08-P03 新增过期AI执行Owner对账并禁止通用claim自动接管`AI_TASK_EXECUTE`：PENDING安全失败可显式重试，RUNNING栅栏固定UNKNOWN不可重试；Lease EXPIRED、Job/Attempt/Invocation/Task/Audit同事务收敛。兼容性/升级/回滚：无Schema/API/依赖/真实外发，其他Jobs Owner不变；生产对账循环尚待装配，回滚不得恢复AI自动重发。验证：Win11/PG18.6真实过期链、Audit回滚、旧Worker拒绝、重复扫描为空；单元3、后端2259运行/3跳过；wheel SHA-256 `e8fbcb05e52d93da3f2344b8bddafacdd6fca5847fa0e1341bbefbdc672a0504`。
