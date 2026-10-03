@@ -7,6 +7,7 @@ belong to short-lived Owner projections implemented by later slices.
 
 from __future__ import annotations
 
+import hashlib
 import re
 import uuid
 from dataclasses import dataclass, field
@@ -402,3 +403,69 @@ class AIExecutionContentIdentityOwnerPort(Protocol):
         query: AIExecutionContentIdentityQuery,
         input_ref: AITaskExecutionInputRef,
     ) -> AIExecutionContentSourceIdentity: ...
+
+
+@dataclass(frozen=True, slots=True)
+class AIExecutionContentReadQuery:
+    """Grant-derived current-authority request for one exact planned source."""
+
+    content_plan_id: uuid.UUID
+    ai_task_id: uuid.UUID
+    project_id: uuid.UUID
+    job_id: uuid.UUID
+    requested_by: uuid.UUID
+    trace_id: uuid.UUID
+    authorization_ref: uuid.UUID
+    purpose_ref: str
+    minimal_payload_policy_ref: str
+
+    def __post_init__(self) -> None:
+        if (not all(_id(value) for value in (
+                    self.content_plan_id, self.ai_task_id, self.project_id,
+                    self.job_id, self.requested_by, self.trace_id,
+                    self.authorization_ref,
+                ))
+                or any(type(value) is not str or _REF.fullmatch(value) is None
+                       for value in (
+                           self.purpose_ref, self.minimal_payload_policy_ref,
+                       ))):
+            raise AIExecutionContentPlanError()
+
+
+@dataclass(frozen=True, slots=True)
+class AIExecutionContentProjection:
+    """Short-lived minimum text projection; bytes are never represented."""
+
+    source: AIExecutionContentSourceIdentity
+    projection_schema_ref: str
+    record_count: int
+    content_utf8: bytes = field(repr=False)
+
+    def __post_init__(self) -> None:
+        if (type(self.source) is not AIExecutionContentSourceIdentity
+                or type(self.projection_schema_ref) is not str
+                or _REF.fullmatch(self.projection_schema_ref) is None
+                or type(self.record_count) is not int
+                or self.record_count != self.source.record_count
+                or type(self.content_utf8) is not bytes
+                or not 1 <= len(self.content_utf8) <= 100_000_000):
+            raise AIExecutionContentPlanError()
+        try:
+            decoded = self.content_utf8.decode("utf-8")
+        except UnicodeDecodeError:
+            raise AIExecutionContentPlanError() from None
+        if not decoded.strip():
+            raise AIExecutionContentPlanError()
+
+    @property
+    def projection_fingerprint(self) -> bytes:
+        return hashlib.sha256(self.content_utf8).digest()
+
+
+class AIExecutionContentReadOwnerPort(Protocol):
+    def read_exact(
+        self,
+        transaction: object,
+        query: AIExecutionContentReadQuery,
+        source: AIExecutionContentSourceIdentity,
+    ) -> AIExecutionContentProjection: ...

@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A06-P03-P02-A03 新增Document精确ParseRecord/ParseResult内容Owner、PostgreSQL五行锁定Repository、最小正文投影和AI反腐层；规划确定唯一结果，执行只读冻结身份，并以原请求人当前Project权限重新鉴权。兼容性/升级/回滚：复用0071，无Migration、公开API、依赖、生产装配或外发；撤新组件与内部策略即可，历史不变。验证：Win11/PG18.6/本地私有文件证明新结果出现后旧Plan不漂移、暂停成员与文件篡改拒绝、Invocation=0；定向19、后端2185运行/3跳过PASS；wheel SHA-256 `5bed8f10c02b9935de2224a227d68f3d410dbde1306b78293450d7ec9252800d`。已知问题：Envelope/Context/Estimator、Plan持久化/Preview、Invocation/Adapter/发布、Server2025、Gate3/UAT/可用包待完成；Debian13按用户要求跳过。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P03-P02-A02 新增精确Prompt/Task参数短生命周期Owner、PostgreSQL投影和strict-placeholders.v1渲染器；只允许input/context/parameters字面占位符，NFC/LF/UTF-8规范化且插入正文不二次展开，Prompt/参数不进repr。兼容性/升级/回滚：复用0071，无Migration/API/依赖/生产装配/外发；撤组件即可，旧不兼容Prompt不猜测修补、需新建版本。验证：Win11/PG18.6真实Grant内容链及参数/活动Prompt漂移拒绝、Invocation=0，定向16、后端2179运行/3跳过PASS；wheel SHA-256 `c11a990c885c0c76ec93c83038da4ab62887ebffc1839a4f0b26c898518450b0`。首轮负例夹具漏同步hash已修复重跑。已知问题：Document内容Owner、Envelope、Plan持久化/Preview、Invocation/Adapter/发布、Gate3/UAT/可用包待完成。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P03-P02-A01 新增无正文AIExecutionContentPlan、精确Owner内容来源/Prompt/Context身份、规范化fingerprint、Grant匹配和Owner Port；固定编码与Token estimator版本，NONE/RAG Context严格闭合，不保存正文/参数值/locator/Secret。兼容性/升级/回滚：无Schema、公开API、依赖、运行装配或外发，撤新模块即可；旧无Plan历史仍不可执行。验证：定向10、后端2173运行/3跳过PASS；wheel SHA-256 `1ccf1411c3eee3ebc438f8108213b6ecdab3a358cd81f199907d685cd48acf0c`。开发期括号、parser版本规则和测试断言边界问题修复后完整重跑。已知问题：Prompt/参数与Document内容Owner、Envelope、Plan持久化/Preview、Invocation/Adapter/发布、Gate3/UAT/可用包待完成。

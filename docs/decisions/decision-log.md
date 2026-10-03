@@ -7244,3 +7244,11 @@
 - Reason：通用模板引擎会扩大注入和非确定性面；重复替换会让客户正文被误解释为控制语法；静默忽略参数/Context会让批准计划与实际语义不一致。
 - Impact/Rollback：新增未装配Owner/Repository/Renderer，无Schema/API/依赖/生产行为；撤组件即可。严格语法不回填旧Prompt，未准入版本继续不可执行。
 - Verification：Win11/PG18.6精确投影/渲染及参数、活动Prompt漂移拒绝，Invocation=0；定向16、后端2179运行/3跳过PASS；wheel SHA-256 `c11a990c885c0c76ec93c83038da4ab62887ebffc1839a4f0b26c898518450b0`。首轮唯一失败为负例夹具未同步模板hash，修正后完整重跑。
+
+# DEC-20261003-729：后台Document内容读取以原请求人当前Project权限和冻结解析结果双重约束
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P03-P02-A03`；依据 CR-AI-015/016、DEC-726～728。
+- Decision：规划阶段由Document Owner确定一个具体成功ParseRecord/ParseResultRef；执行阶段只读取Content Plan冻结身份，不再选择latest。Worker不复用浏览器Session，新增内部 `AI_TASK_EXECUTE` Project操作，以Task原请求人身份在每次规划和读取时锁定并重验当前Project/Department/Member事实，仅ProjectManager/ImplementationMember且活动项目可继续。
+- Reason：DocumentVersion并不唯一对应解析正文；运行时重新选latest会使批准载荷漂移。后台进程没有且不得持有用户Session，若只信Task创建时权限则成员暂停/移除或项目归档后仍可能外发。
+- Impact/Rollback：新增内部Project策略、Document Owner/Repository、最小正文投影和AI反腐层；无Schema、公开API、依赖、生产装配或网络调用。撤新组件和策略项即可回滚，已有Document/Task/授权历史不变；旧无Plan记录不可执行。
+- Verification：Win11/PG18.6/本地私有文件证明旧Plan不随新ParseRecord漂移、当前成员暂停和文件篡改拒绝、Invocation=0；定向19、后端2185运行/3跳过PASS；wheel SHA-256 `5bed8f10c02b9935de2224a227d68f3d410dbde1306b78293450d7ec9252800d`。
