@@ -24,6 +24,10 @@ from plm_assistant.modules.ai.application.send_provider_request import (
     AITaskProviderSendError,
     AITaskProviderSendService,
 )
+from plm_assistant.modules.ai.application.provider_send_fence import (
+    AITaskProviderSendFenceError,
+    AITaskProviderSendFenceService,
+)
 from plm_assistant.modules.ai.application.task_execution_grant import (
     AITaskExecutionGrant,
     AITaskExecutionInputRef,
@@ -39,6 +43,9 @@ from plm_assistant.modules.ai.application.task_invocation_prepare import (
 from plm_assistant.modules.ai.domain.provider_configuration import ProviderKind
 from plm_assistant.modules.platform.application.secret_access import SecretAccessError
 from plm_assistant.modules.platform.application.trace_context import current_trace_id
+from plm_assistant.modules.jobs.application.ai_task_execution_claim import (
+    AITaskExecutionClaim,
+)
 
 
 def _facts():
@@ -170,6 +177,132 @@ class _Adapter:
         return self.response
 
 
+class _Fence:
+    def __init__(self, events, *, fail=False):
+        self.events, self.fail = events, fail
+        self.calls = []
+
+    def fence(self, **values):
+        self.events.append("fence")
+        self.calls.append(values)
+        if self.fail:
+            raise AITaskProviderSendFenceError()
+
+
+class _Transaction:
+    def __init__(self):
+        self.committed = False
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        return False
+
+    def commit(self):
+        self.committed = True
+
+
+class _UnitOfWork:
+    def __init__(self):
+        self.transactions = []
+
+    def __call__(self):
+        transaction = _Transaction()
+        self.transactions.append(transaction)
+        return transaction
+
+
+class _Claims:
+    def __init__(self, claim):
+        self.claim = claim
+        self.calls = []
+
+    def check_current(self, transaction, **values):
+        self.calls.append((transaction, values))
+        return self.claim
+
+
+class _FenceRepository:
+    def __init__(self, version=1):
+        self.version = version
+        self.calls = []
+
+    def mark_running(self, transaction, **values):
+        self.calls.append((transaction, values))
+        return self.version
+
+
+class AITaskProviderSendFenceServiceTests(unittest.TestCase):
+    def setUp(self):
+        self.now, self.prepared, self.begun, self.send = _facts()
+        grant = self.prepared.grant
+        self.claim = AITaskExecutionClaim(
+            grant.job_id, grant.ai_task_id, grant.project_id,
+            grant.requested_by, grant.trace_id, grant.authorization_ref,
+            grant.source_refs_fingerprint, grant.fencing_token,
+            grant.attempt_no, grant.max_retry_attempts, self.now,
+            self.now + timedelta(minutes=2),
+        )
+
+    def service(self, *, claim=None, version=1):
+        uow = _UnitOfWork()
+        claims = _Claims(claim or self.claim)
+        repository = _FenceRepository(version)
+        service = AITaskProviderSendFenceService(
+            unit_of_work=uow, claims=claims, repository=repository,
+        )
+        return service, uow, claims, repository
+
+    def fence(self, service, *, send=None):
+        return service.fence(
+            prepared=self.prepared, begun=self.begun, send=send or self.send,
+            job_id=self.prepared.grant.job_id,
+            fencing_token=self.prepared.grant.fencing_token,
+            worker_ref="worker-a", now=self.now,
+        )
+
+    def test_current_claim_commits_exact_running_fence(self):
+        service, uow, claims, repository = self.service(version=3)
+        result = self.fence(service)
+        self.assertEqual(result.ai_invocation_id, self.begun.ai_invocation_id)
+        self.assertEqual(result.invocation_lock_version, 3)
+        self.assertEqual(result.fenced_at, self.claim.observed_at)
+        self.assertTrue(uow.transactions[0].committed)
+        self.assertEqual(len(claims.calls), 1)
+        self.assertEqual(len(repository.calls), 1)
+        self.assertEqual(repository.calls[0][1]["send"], self.send)
+
+    def test_duplicate_or_stale_fence_fails_without_commit(self):
+        service, uow, _, repository = self.service(version=None)
+        with self.assertRaises(AITaskProviderSendFenceError):
+            self.fence(service)
+        self.assertFalse(uow.transactions[0].committed)
+        self.assertEqual(len(repository.calls), 1)
+
+    def test_identity_or_deadline_drift_fails_closed(self):
+        changed = AuthorizedAIProviderSend(
+            self.send.route,
+            replace(self.send.proof, ai_invocation_id=uuid.uuid4()),
+        )
+        service, uow, _, repository = self.service()
+        with self.assertRaises(AITaskProviderSendFenceError):
+            self.fence(service, send=changed)
+        self.assertEqual(uow.transactions, [])
+        self.assertEqual(repository.calls, [])
+
+        late_claim = replace(
+            self.claim,
+            observed_at=self.send.proof.valid_until,
+            lease_expires_at=self.send.proof.valid_until + timedelta(minutes=1),
+        )
+        service, uow, _, repository = self.service(claim=late_claim)
+        with self.assertRaises(AITaskProviderSendFenceError):
+            self.fence(service)
+        self.assertFalse(uow.transactions[0].committed)
+        self.assertEqual(repository.calls, [])
+
+
 class AITaskProviderSendServiceTests(unittest.TestCase):
     def setUp(self):
         self.now, self.prepared, self.begun, self.initial = _facts()
@@ -177,7 +310,7 @@ class AITaskProviderSendServiceTests(unittest.TestCase):
 
     def service(self, values, *, secret_fail=False, audit_fail=False,
                 audit_exit_fail=False,
-                adapter_failure=None, adapter_response=True):
+                fence_fail=False, adapter_failure=None, adapter_response=True):
         pre_send = _PreSend(self.events, values)
         secrets = _Secrets(
             self.events, str(self.prepared.grant.trace_id), fail=secret_fail,
@@ -189,11 +322,13 @@ class AITaskProviderSendServiceTests(unittest.TestCase):
         adapter = _Adapter(
             self.events, response=response, failure=adapter_failure,
         )
+        fence = _Fence(self.events, fail=fence_fail)
         service = AITaskProviderSendService(
             pre_send=pre_send, secrets=secrets, adapter=adapter,
-            access_audit_scope=audit, clock=lambda: self.now,
+            access_audit_scope=audit, send_fence=fence,
+            clock=lambda: self.now,
         )
-        return service, pre_send, secrets, audit, adapter, response
+        return service, pre_send, secrets, audit, fence, adapter, response
 
     def send(self, service):
         return service.send_once(
@@ -211,14 +346,14 @@ class AITaskProviderSendServiceTests(unittest.TestCase):
                 valid_until=self.initial.proof.valid_until + timedelta(seconds=5),
             ),
         )
-        service, pre_send, secrets, audit, adapter, response = self.service(
+        service, pre_send, secrets, audit, fence, adapter, response = self.service(
             [self.initial, refreshed],
         )
         result = self.send(service)
         self.assertIs(result, response)
         self.assertEqual(self.events, [
             "pre-send", "audit-enter", "secret-enter", "pre-send",
-            "adapter", "secret-exit", "audit-exit",
+            "fence", "adapter", "secret-exit", "audit-exit",
         ])
         self.assertEqual(len(pre_send.calls), 2)
         self.assertEqual(audit.bound, (self.prepared, self.initial))
@@ -226,6 +361,7 @@ class AITaskProviderSendServiceTests(unittest.TestCase):
             secrets.arguments[2], self.initial.route.secret_version_id,
         )
         self.assertEqual(adapter.calls[0]["proof"], refreshed.proof)
+        self.assertEqual(fence.calls[0]["send"], refreshed)
         self.assertTrue(all(value == 0 for value in secrets.buffer))
         result.close()
 
@@ -248,7 +384,7 @@ class AITaskProviderSendServiceTests(unittest.TestCase):
         )
         for final in cases:
             self.events.clear()
-            service, _, secrets, _, adapter, response = self.service(
+            service, _, secrets, _, _, adapter, response = self.service(
                 [self.initial, final],
             )
             with self.subTest(final=final), self.assertRaises(
@@ -268,7 +404,7 @@ class AITaskProviderSendServiceTests(unittest.TestCase):
         )
         for values, secret_fail, audit_fail, expected in cases:
             self.events.clear()
-            service, _, secrets, _, adapter, response = self.service(
+            service, _, secrets, _, _, adapter, response = self.service(
                 values, secret_fail=secret_fail, audit_fail=audit_fail,
             )
             with self.subTest(expected=expected), self.assertRaises(
@@ -280,8 +416,20 @@ class AITaskProviderSendServiceTests(unittest.TestCase):
                 self.assertTrue(all(value == 0 for value in secrets.buffer))
             response.close()
 
+        self.events.clear()
+        service, _, secrets, _, fence, adapter, response = self.service(
+            [self.initial, self.initial], fence_fail=True,
+        )
+        with self.assertRaises(AITaskProviderSendError) as caught:
+            self.send(service)
+        self.assertEqual(caught.exception.code, "AI_PROVIDER_SEND_NOT_AUTHORIZED")
+        self.assertEqual(len(fence.calls), 1)
+        self.assertEqual(adapter.calls, [])
+        self.assertTrue(all(value == 0 for value in secrets.buffer))
+        response.close()
+
     def test_adapter_failure_is_safe_and_invalid_response_is_rejected(self):
-        service, _, secrets, _, _, response = self.service(
+        service, _, secrets, _, _, _, response = self.service(
             [self.initial, self.initial],
             adapter_failure=AIProviderExecutionError(
                 "AI_PROVIDER_NETWORK_UNAVAILABLE",
@@ -294,7 +442,7 @@ class AITaskProviderSendServiceTests(unittest.TestCase):
         response.close()
 
         self.events.clear()
-        service, _, secrets, _, adapter, _ = self.service(
+        service, _, secrets, _, _, adapter, _ = self.service(
             [self.initial, self.initial], adapter_response=False,
         )
         with self.assertRaises(AITaskProviderSendError) as caught:
@@ -304,7 +452,7 @@ class AITaskProviderSendServiceTests(unittest.TestCase):
         self.assertTrue(all(value == 0 for value in secrets.buffer))
 
         self.events.clear()
-        service, _, secrets, _, _, response = self.service(
+        service, _, secrets, _, _, _, response = self.service(
             [self.initial, self.initial], audit_exit_fail=True,
         )
         with self.assertRaises(AITaskProviderSendError) as caught:

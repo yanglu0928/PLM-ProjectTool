@@ -82,6 +82,14 @@ class SyntheticAdapter:
         ))
 
 
+class SyntheticFence:
+    def __init__(self) -> None:
+        self.calls = []
+
+    def fence(self, **values) -> None:
+        self.calls.append(values)
+
+
 def validate(context: dict[str, object]) -> None:
     prepared = context["prepared_invocation"]
     begun = context["begun_invocation"]
@@ -110,9 +118,10 @@ def validate(context: dict[str, object]) -> None:
     )
     pre_send = CountingPreSend(context["pre_send_service"])
     adapter = SyntheticAdapter(b"synthetic-task-key-not-for-network")
+    fence = SyntheticFence()
     service = AITaskProviderSendService(
         pre_send=pre_send, secrets=secrets, adapter=adapter,
-        access_audit_scope=audit,
+        access_audit_scope=audit, send_fence=fence,
         clock=lambda: datetime.now(timezone.utc),
     )
     response = service.send_once(
@@ -129,6 +138,7 @@ def validate(context: dict[str, object]) -> None:
     assert len(pre_send.results) == 2
     assert pre_send.results[0].route == pre_send.results[1].route
     assert len(adapter.calls) == 1
+    assert len(fence.calls) == 1
     assert adapter.calls[0]["route"] == pre_send.results[1].route
     assert adapter.calls[0]["proof"] == pre_send.results[1].proof
     assert len(decryptor.buffers) == 1

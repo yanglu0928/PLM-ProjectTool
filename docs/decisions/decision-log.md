@@ -7452,3 +7452,11 @@
 - Reason：自由UUID、Provider wrapper或无Owner字符串不能构成可追溯结果；先写子记录再终态化需要延迟FK，而AI结构有效不等于客户确认事实。类型化引用避免复制正文并为后续Owner复核保留精确身份。
 - Impact/Rollback：新增Schema0074/ORM，不改冻结API/状态枚举/依赖。旧NULL历史保留；空结果可降，有结果拒绝降级并须向前修复或受控恢复。多态Evidence存在性留给P04/P05受信Owner验证。
 - Verification：Win11/PG18.6空/历史/绑定三库升降重升、ORM drift、负例、延迟FK/封存/拒降PASS；后端2238运行/3跳过，wheel SHA-256 `4ffcea6c91bf5a5ea1767ea1b11f68600d5424a04025a63872be9f7f379170f4`；零Provider/Secret/外发。
+
+# DEC-20261003-755：只有已提交RUNNING栅栏的Invocation可进入Adapter
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P07-P03`；依据 CR-AI-018、DEC-753、P06-P05-P04。
+- Decision：唯一发送编排在第二次pre-send及Route/Proof稳定性复核后，以当前Jobs Lease/fencing重新核对Task/Invocation/Plan/payload并原子提交`PENDING→RUNNING`、started_at和lock version；仅栅栏提交成功才调用Adapter。同一Invocation不能再次pre-send；栅栏后任何失败不得改回PENDING。
+- Reason：进程内一次调用保护不能覆盖崩溃重启；持久状态转换能阻止同一Invocation重复外发。RUNNING可能在socket写前形成，因此仅表示越过发送边界，不作为远端收到或成功的证据。
+- Impact/Rollback：新增内部Application/Repository并收紧发送服务依赖，无Schema/API/依赖/生产Worker/真实外发。可停止消费并撤组合；已RUNNING记录由P08对账，不能降级状态或删除。
+- Verification：Win11/PG18.6真实Claim/Plan/Invocation/Secret/Audit与合成Adapter，数据库RUNNING先于一次Adapter、二次发送拒绝；定向12/11子用例、后端2241运行/3跳过；wheel SHA-256 `8e4cc572f2310f47aeaab4686722d9717ccfd4ad229073f031e00a76980d086c`。

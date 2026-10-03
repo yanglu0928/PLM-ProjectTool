@@ -1,6 +1,6 @@
 # CR-AI-018：Invocation 发送栅栏与 Suggestion 结果归属缺口
 
-日期：2026-10-03；状态：依 V1.1 持续授权登记，P07-P02已实施、其余分片继续；关联 Gate 2 冻结 ADR-004/DM-04/API-03、CR-AI-015～017、Schema0064/0073/0074；原冻结提交 `64cdf09` 不改。WBS `AI-04-A06-P07～P08`。
+日期：2026-10-03；状态：依 V1.1 持续授权登记，P07-P02/P03已实施、其余分片继续；关联 Gate 2 冻结 ADR-004/DM-04/API-03、CR-AI-015～017、Schema0064/0073/0074；原冻结提交 `64cdf09` 不改。WBS `AI-04-A06-P07～P08`。
 
 ## 冲突与证据
 
@@ -18,7 +18,7 @@ Schema0064 虽有 `suggestion_payload_ref`、`response_fingerprint`、usage、la
 4. P07-P05：成功结果在一个短事务写不可变 SuggestionPayload、Invocation SUCCEEDED/VALID、Task SUCCEEDED/AVAILABLE、Job/Attempt/Lease终态、Audit/结果引用；提交后关闭并清零 Provider response。
 5. P08：失败、取消、`AI_PROVIDER_OUTCOME_UNKNOWN`、崩溃对账和显式新 attempt Retry；不得把运行中栅栏静默恢复为 PENDING，也不得把 UNKNOWN 自动标为可重试。
 
-实施记录：P07-P02 已以 Schema0074落地不可变 SuggestionPayload/Evidence、RUNNING且未发布写入门禁、`NOT_FORMAL_FACT`约束及 Invocation 延迟复合FK；旧NULL历史保留，有结果历史拒绝物理降级。Evidence实际Owner存在性与输出Schema内容校验仍由P04/P05承担，不把多态引用或JSON形状冒充已验证业务事实。
+实施记录：P07-P02 已以 Schema0074落地不可变 SuggestionPayload/Evidence、RUNNING且未发布写入门禁、`NOT_FORMAL_FACT`约束及 Invocation 延迟复合FK；旧NULL历史保留，有结果历史拒绝物理降级。P07-P03 已在唯一发送编排中加入当前Job generation/Invocation的持久RUNNING栅栏，提交后同一Invocation不再满足pre-send；栅栏后失败保留RUNNING供P08收敛，不回退PENDING。Evidence实际Owner存在性与输出Schema内容校验仍由P04/P05承担，不把多态引用或JSON形状冒充已验证业务事实。
 
 ## 兼容、迁移与回滚
 

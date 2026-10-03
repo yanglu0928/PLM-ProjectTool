@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A06-P07-P03 新增Provider持久发送栅栏并接入唯一发送编排：第二次pre-send与稳定性复核后，在当前Job generation下把精确PENDING Invocation原子提交为RUNNING，再允许一次Adapter调用；重复调用不再通过pre-send，栅栏后失败不回退PENDING。兼容性/升级/回滚：内部服务依赖收紧，无Schema/API/依赖/生产Worker/真实外发；可停止消费并撤组合，已RUNNING须由P08对账。验证：Win11/PG18.6真实Claim/Plan/Invocation/Secret/Audit与合成Adapter、二次发送拒绝，定向12/11子用例、后端2241运行/3跳过；wheel SHA-256 `8e4cc572f2310f47aeaab4686722d9717ccfd4ad229073f031e00a76980d086c`。已知问题：RUNNING不证明远端收到；P07-P04 Schema解析、P05成功发布及P08失败/UNKNOWN对账待完成。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P07-P02 新增Schema0074不可变SuggestionPayload/Evidence与Invocation真实延迟复合FK；数据库强制RUNNING未发布、Task/Invocation/Schema/Scope同源，结果固定`NOT_FORMAL_FACT`，证据只保存类型化版本/指纹引用，发布后封存。兼容性/升级/回滚：仅追加表/FK/守卫，无冻结API/枚举/依赖变化；旧NULL保留，空结果可降，有结果拒降并向前修复。验证：Win11/PG18.6空/历史/绑定三库升降重升、ORM drift、负例/FK/不可变/拒降，后端2238运行/3跳过、wheel SHA-256 `4ffcea6c91bf5a5ea1767ea1b11f68600d5424a04025a63872be9f7f379170f4`。未访问Provider/Secret或外发；P07-P03发送栅栏、P04 Schema Owner、P05发布及P08对账待完成。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P07-P01 完成Provider响应/Suggestion/终态前置核查并登记CR-AI-018：现有网络期间PENDING可导致崩溃后重复外发，且SuggestionPayloadRef没有owned表/FK或受信Output Schema registry。决定第二次pre-send后先原子PENDING→RUNNING形成发送栅栏；未知远端结果沿用冻结`FAILED + AI_PROVIDER_OUTCOME_UNKNOWN + retryable=false`，不新增Breaking枚举或自动重试。兼容性/升级/回滚：本项仅文档，无Migration/API/依赖/行为/外发；后续0074保留旧NULL历史。验证：静态核对冻结DM/API、0064/0073、P06 Adapter/编排和实现缺口，未运行新增测试。已知问题：P07-P02～P05及P08结果Owner/栅栏/Schema/终态/对账、Windows Worker、Server2025/Gate3/UAT/可用包待完成。

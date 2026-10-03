@@ -27,6 +27,10 @@ from .provider_execution_pre_send import (
     AIProviderPreSendService,
     AuthorizedAIProviderSend,
 )
+from .provider_send_fence import (
+    AITaskProviderSendFenceError,
+    AITaskProviderSendFenceService,
+)
 from .task_invocation_begin import BegunAITaskInvocation
 from .task_invocation_prepare import PreparedAITaskInvocation
 
@@ -51,16 +55,18 @@ class AITaskProviderSendService:
         self, *, pre_send: AIProviderPreSendService,
         secrets: SecretResolver, adapter: AIProviderAdapterPort,
         access_audit_scope: AITaskProviderSecretAuditScopePort,
+        send_fence: AITaskProviderSendFenceService,
         clock: Callable[[], datetime] | None = None,
     ) -> None:
         if any(value is None for value in (
-            pre_send, secrets, adapter, access_audit_scope,
+            pre_send, secrets, adapter, access_audit_scope, send_fence,
         )):
             raise ValueError("AI Task Provider send dependencies required")
         self._pre_send = pre_send
         self._secrets = secrets
         self._adapter = adapter
         self._audit_scope = access_audit_scope
+        self._send_fence = send_fence
         self._clock = clock or (lambda: datetime.now(timezone.utc))
 
     def send_once(
@@ -110,6 +116,11 @@ class AITaskProviderSendService:
                 ) as key:
                     final = authorize()
                     self._require_stable(initial, final)
+                    self._send_fence.fence(
+                        prepared=prepared, begun=begun, send=final,
+                        job_id=job_id, fencing_token=fencing_token,
+                        worker_ref=worker_ref, now=self._clock(),
+                    )
                     response = self._adapter.send(
                         route=final.route, proof=final.proof,
                         envelope=prepared.envelope, key=key,
@@ -125,6 +136,10 @@ class AITaskProviderSendService:
         except AITaskProviderSendError:
             raise
         except AIProviderPreSendError:
+            raise AITaskProviderSendError(
+                "AI_PROVIDER_SEND_NOT_AUTHORIZED",
+            ) from None
+        except AITaskProviderSendFenceError:
             raise AITaskProviderSendError(
                 "AI_PROVIDER_SEND_NOT_AUTHORIZED",
             ) from None
