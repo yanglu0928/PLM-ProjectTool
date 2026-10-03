@@ -243,7 +243,9 @@ class SqlAlchemyJobLeaseRepository:
             now = self._now(session)
             conditions = [or_(
                 and_(JobRow.state.in_(("PENDING", "RETRY_WAIT")), JobRow.available_at <= now),
-                and_(JobRow.state == "RUNNING", JobRow.lease_expires_at <= now),
+                and_(JobRow.state == "RUNNING", JobRow.lease_expires_at <= now,
+                     or_(JobRow.owner_module != "ai",
+                         JobRow.job_type != "AI_TASK_EXECUTE")),
             )]
             if parse_only:
                 conditions.extend((JobRow.owner_module == "document",

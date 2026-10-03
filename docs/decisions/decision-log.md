@@ -7492,3 +7492,11 @@
 - Reason：通用Jobs retryable会自动进入RETRY_WAIT并再次领取，同一Provider请求可能重复外发。仅依赖错误码推断是否已发送也不可靠；发送服务必须携带已提交栅栏事实。失败链若分步提交会留下可再次领取或缺Audit的悬空状态。
 - Impact/Rollback：内部服务/Repository语义收紧，无Schema/API/依赖/生产Worker/真实外发。停止消费并撤组合即可；已失败历史保留，RUNNING交P03对账。
 - Verification：Win11/PG18.6真实链在合成Adapter失败后固定UNKNOWN，Audit注入失败全回滚后不重发即可原子FAILED；定向15、后端2256运行/3跳过；wheel SHA-256 `b0928fe407cc91e9e0dfe99aae4b6e3755c17941bf12b081ebd6e9dec48192f2`。
+
+# DEC-20261003-760：过期AI执行只由AI Owner对账，不进入通用claim重试
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P08-P03`；依据 CR-AI-018、DEC-753/758/759。
+- Decision：通用Jobs claim排除Lease过期的`ai/AI_TASK_EXECUTE` RUNNING Job。AI Owner专用扫描在同一事务锁定Job/Lease/Attempt/Task/current Invocation：RUNNING按`AI_PROVIDER_OUTCOME_UNKNOWN/false`，PENDING按`AI_WORKER_LEASE_EXPIRED/true`终态化；retryable只授权后续显式generation，不触发自动领取。Lease EXPIRED、Job/Attempt/Invocation/Task FAILED和Project Audit原子提交。
+- Reason：通用claim会把过期RUNNING直接创建下一Attempt；若Invocation已越过发送栅栏，这会绕过P08-P02并重复外发。Jobs模块又不能解释AI Invocation阶段，必须由AI Owner基于聚合事实决定UNKNOWN或安全pre-send失败。
+- Impact/Rollback：收紧通用claim的一种Owner类型并新增内部对账Owner，无Schema/API/依赖/真实外发；其他Owner恢复不变。回滚只能停止AI消费并保留RUNNING待修，不能恢复通用AI自动claim。生产对账循环待后续装配。
+- Verification：Win11/PG18.6真实过期栅栏Job未被通用claim领取；Audit失败全回滚，专用Owner成功后重复扫描为空且旧Worker覆盖拒绝；单元3、后端2259运行/3跳过；wheel SHA-256 `e8fbcb05e52d93da3f2344b8bddafacdd6fca5847fa0e1341bbefbdc672a0504`。
