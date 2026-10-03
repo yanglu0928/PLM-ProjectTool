@@ -1,5 +1,9 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A06-P08-P02 新增AI执行失败原子发布和栅栏感知分类：栅栏后Adapter异常固定`FAILED/AI_PROVIDER_OUTCOME_UNKNOWN/retryable=false`，响应Schema无效保留指纹并标INVALID；Job永不进入自动RETRY_WAIT，Job/Attempt/Lease、Invocation、Task、Audit同事务收敛。兼容性/升级/回滚：无Schema/API/依赖/生产Worker/真实外发；停止消费可回退，终态历史保留，P03继续对账遗留RUNNING。验证：Win11/PG18.6合成Adapter与真实事务，Audit失败全回滚后无二次发送完成FAILED；定向15、后端2256运行/3跳过；wheel SHA-256 `b0928fe407cc91e9e0dfe99aae4b6e3755c17941bf12b081ebd6e9dec48192f2`。
+
+- 2026-10-03：0.1.0.dev0/AI-04-A06-P08-P01 完成失败/取消/对账/重试前置核查：确认通用Jobs自动重试会重复Provider外发，同一AITask又不能合法复活；决定失败Job不自动RETRY_WAIT，显式Retry保留旧终态并创建派生Task/new Job/Invocation generation。兼容性/升级/回滚：仅设计记录，无Schema/API/依赖/行为/外发；P02～P05分步实施。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P07-P05 新增Suggestion成功结果原子发布：从不可变Content Plan解析模型来源序号为真实Evidence身份/指纹，并在当前Job generation同一事务提交`NOT_FORMAL_FACT` Payload/Evidence、SUCCEEDED/VALID Invocation、SUCCEEDED/AVAILABLE Task、Job/Attempt/Lease终态与Project Audit；任一步失败全回滚，Response/Key清零且不重发。兼容性/升级/回滚：复用Schema0074，无API/依赖/生产Worker/真实外发；停止消费即可，已发布历史保留，RUNNING交P08。验证：Win11/PG18.6真实链Audit故障全回滚后同响应成功，单元3/2子用例、后端2248运行/3跳过；wheel SHA-256 `a1a3f0f3e6b3b4167f7ff395810b8a4ca5216d6c325758831db08ddb3c8b0b79`。P08失败/UNKNOWN/取消/对账/显式Retry待完成。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P07-P04 新增受信版本化Output Schema registry和有界OpenAI-compatible响应解析；首版四类非正式gap建议只可引用本次授权来源序号，拒绝模型自报formal fact/Owner/UUID/指纹、Markdown、重复键、非有限数、未知字段/Schema及越界结构，输出规范JSON与SHA-256。兼容性/升级/回滚：无Schema/API/依赖/网络，支持`gap-output.v1@1`和现有部署示例别名；撤parser恢复不发布。验证：单元4/8子用例、Windows11真实Prepared身份合成响应，后端2245运行/3跳过；wheel SHA-256 `2fd6018406f032e0277531e3921dee8c0ded6ad8a6d581056b3ea347e3379a0d`。P05 Evidence Owner/成功发布及P08失败/UNKNOWN对账待完成。

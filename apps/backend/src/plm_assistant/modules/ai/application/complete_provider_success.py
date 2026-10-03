@@ -12,6 +12,11 @@ from .publish_suggestion_success import (
     AITaskSuggestionSuccessPublisher,
     PublishedAITaskSuggestion,
 )
+from .publish_task_failure import (
+    AITaskFailurePhase,
+    AITaskFailurePublicationError,
+    AITaskFailurePublisher,
+)
 from .task_invocation_begin import BegunAITaskInvocation
 from .task_invocation_prepare import PreparedAITaskInvocation
 
@@ -26,11 +31,13 @@ class AITaskProviderSuccessService:
     def __init__(
         self, *, parser: AIProviderSuggestionParser,
         publisher: AITaskSuggestionSuccessPublisher,
+        failures: AITaskFailurePublisher | None = None,
     ) -> None:
         if parser is None or publisher is None:
             raise ValueError("AI Provider success dependencies required")
         self._parser = parser
         self._publisher = publisher
+        self._failures = failures
 
     def complete(
         self, *, prepared: PreparedAITaskInvocation,
@@ -48,6 +55,19 @@ class AITaskProviderSuccessService:
                 worker_ref=worker_ref,
             )
         except AIProviderResponseParseError as error:
+            if self._failures is not None:
+                try:
+                    self._failures.publish(
+                        prepared=prepared, begun=begun,
+                        worker_ref=worker_ref,
+                        phase=AITaskFailurePhase.RESPONSE_INVALID,
+                        error_code=error.code, retryable=False,
+                        response_fingerprint=(
+                            response.observation.response_fingerprint
+                        ),
+                    )
+                except AITaskFailurePublicationError as failure:
+                    raise AITaskProviderSuccessError(failure.code) from None
             raise AITaskProviderSuccessError(error.code) from None
         except AITaskSuggestionPublicationError as error:
             raise AITaskProviderSuccessError(error.code) from None

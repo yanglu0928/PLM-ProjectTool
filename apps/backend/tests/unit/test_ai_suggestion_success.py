@@ -21,6 +21,9 @@ from plm_assistant.modules.ai.application.publish_suggestion_success import (
     AITaskSuggestionSuccessPublisher,
     PublishedAITaskSuggestion,
 )
+from plm_assistant.modules.ai.application.publish_task_failure import (
+    AITaskFailurePhase,
+)
 from plm_assistant.modules.jobs.application.lease import ClaimedJob, JobLeaseError
 from unit.test_ai_provider_response_parser import _payload, _response
 from unit.test_ai_task_provider_send_service import _facts
@@ -118,6 +121,15 @@ class _Publisher:
         return self.result
 
 
+class _Failures:
+    def __init__(self):
+        self.calls = []
+
+    def publish(self, **values):
+        self.calls.append(values)
+        return object()
+
+
 class AITaskSuggestionSuccessTests(unittest.TestCase):
     def setUp(self):
         self.now, self.prepared, self.begun, _ = _facts()
@@ -202,6 +214,30 @@ class AITaskSuggestionSuccessTests(unittest.TestCase):
             prepared=self.prepared, begun=self.begun, response=response,
             worker_ref="worker-a",
         ), self.result)
+        with self.assertRaises(Exception):
+            response.view()
+
+    def test_invalid_response_is_terminalized_before_it_is_closed(self):
+        response = _response(content="not-json")
+        failures = _Failures()
+        service = AITaskProviderSuccessService(
+            parser=self.parser, publisher=_Publisher(result=self.result),
+            failures=failures,
+        )
+        with self.assertRaises(AITaskProviderSuccessError) as caught:
+            service.complete(
+                prepared=self.prepared, begun=self.begun,
+                response=response, worker_ref="worker-a",
+            )
+        self.assertEqual(caught.exception.code, "AI_PROVIDER_RESPONSE_INVALID")
+        self.assertEqual(len(failures.calls), 1)
+        self.assertEqual(
+            failures.calls[0]["phase"], AITaskFailurePhase.RESPONSE_INVALID,
+        )
+        self.assertEqual(
+            failures.calls[0]["response_fingerprint"],
+            response.observation.response_fingerprint,
+        )
         with self.assertRaises(Exception):
             response.view()
 

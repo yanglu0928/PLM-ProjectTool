@@ -7476,3 +7476,19 @@
 - Reason：分步提交会产生Job成功但无结果、结果可见但无Audit或Evidence伪引用。由服务端Plan解析内容指纹可证明引用来自已授权的确切内容版本，同时保持Suggestion为非正式事实。
 - Impact/Rollback：新增内部发布服务/Repository，无Schema/API/依赖/生产Worker/真实外发。可停止消费；已发布历史不可删除，未发布RUNNING由P08对账。
 - Verification：Win11/PG18.6真实链中注入Audit失败后全回滚，再以同一未重发响应原子成功；单元3/2子用例、后端2248运行/3跳过；wheel SHA-256 `a1a3f0f3e6b3b4167f7ff395810b8a4ca5216d6c325758831db08ddb3c8b0b79`。
+
+# DEC-20261003-758：AI显式重试使用新派生Task generation而非复活终态
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P08-P01`；依据冻结DM-04/API-03、CR-AI-018。
+- Decision：当前AI失败发布永不使用Jobs自动`RETRY_WAIT`。显式用户Retry保留旧FAILED/CANCELLED Task、Invocation和Job，以不可变来源关系创建新的派生AITask、新Job及新Invocation attempt；旧Root不回到RUNNING。取消在PENDING发送边界前可安全终止，RUNNING栅栏后不能声明无远端副作用，按UNKNOWN对账。
+- Reason：冻结数据模型同时要求终态不复活、重试不覆盖历史，而现有AITask只绑定一个唯一Job；在同一Task替换Job并从FAILED回RUNNING会违反数据库守卫。派生Task generation满足新Job/Invocation语义并保留完整历史。
+- Impact/Rollback：P01仅设计；P05将走追加关系/内部Owner与既有API语义兼容，不改原冻结提交。可停止新Retry入口，历史不删除。P02～P04先独立完成失败/对账/取消。
+- Verification：静态核对0063/0064/0066触发器与ORM、冻结DM/API及通用Jobs retry；确认现结构不能合法复活同一AITask。本项无运行测试、Migration或外发。
+
+# DEC-20261003-759：AI失败Job永不自动重发，retryable仅表示显式新generation资格
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P08-P02`；依据 CR-AI-018、DEC-753/758、P07。
+- Decision：失败发布对Jobs固定`retryable=false/delay=0`并原子FAILED；AITask/Invocation的retryable只作为显式用户新generation的策略提示。持久栅栏后任何未成功交付结果的Adapter异常一律`AI_PROVIDER_OUTCOME_UNKNOWN/retryable=false`；Schema无效保留响应指纹并标INVALID，不创建Suggestion。Job/Attempt/Lease、Invocation、Task和Audit必须同事务提交。
+- Reason：通用Jobs retryable会自动进入RETRY_WAIT并再次领取，同一Provider请求可能重复外发。仅依赖错误码推断是否已发送也不可靠；发送服务必须携带已提交栅栏事实。失败链若分步提交会留下可再次领取或缺Audit的悬空状态。
+- Impact/Rollback：内部服务/Repository语义收紧，无Schema/API/依赖/生产Worker/真实外发。停止消费并撤组合即可；已失败历史保留，RUNNING交P03对账。
+- Verification：Win11/PG18.6真实链在合成Adapter失败后固定UNKNOWN，Audit注入失败全回滚后不重发即可原子FAILED；定向15、后端2256运行/3跳过；wheel SHA-256 `b0928fe407cc91e9e0dfe99aae4b6e3755c17941bf12b081ebd6e9dec48192f2`。

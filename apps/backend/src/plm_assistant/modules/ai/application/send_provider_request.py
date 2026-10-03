@@ -36,8 +36,12 @@ from .task_invocation_prepare import PreparedAITaskInvocation
 
 
 class AITaskProviderSendError(RuntimeError):
-    def __init__(self, code: str = "AI_PROVIDER_SEND_UNAVAILABLE") -> None:
+    def __init__(
+        self, code: str = "AI_PROVIDER_SEND_UNAVAILABLE", *,
+        provider_outcome_unknown: bool = False,
+    ) -> None:
         self.code = code
+        self.provider_outcome_unknown = provider_outcome_unknown
         super().__init__(code)
 
 
@@ -83,6 +87,7 @@ class AITaskProviderSendService:
 
         response: object | None = None
         handed_off = False
+        fenced = False
 
         def authorize() -> AuthorizedAIProviderSend:
             now = self._clock()
@@ -121,6 +126,7 @@ class AITaskProviderSendService:
                         job_id=job_id, fencing_token=fencing_token,
                         worker_ref=worker_ref, now=self._clock(),
                     )
+                    fenced = True
                     response = self._adapter.send(
                         route=final.route, proof=final.proof,
                         envelope=prepared.envelope, key=key,
@@ -133,7 +139,12 @@ class AITaskProviderSendService:
                         )
             handed_off = True
             return response
-        except AITaskProviderSendError:
+        except AITaskProviderSendError as exc:
+            if fenced and not exc.provider_outcome_unknown:
+                raise AITaskProviderSendError(
+                    "AI_PROVIDER_OUTCOME_UNKNOWN",
+                    provider_outcome_unknown=True,
+                ) from None
             raise
         except AIProviderPreSendError:
             raise AITaskProviderSendError(
@@ -148,9 +159,16 @@ class AITaskProviderSendService:
                 "AI_PROVIDER_SECRET_UNAVAILABLE",
             ) from None
         except AIProviderExecutionError as exc:
-            raise AITaskProviderSendError(exc.code) from None
+            raise AITaskProviderSendError(
+                "AI_PROVIDER_OUTCOME_UNKNOWN" if fenced else exc.code,
+                provider_outcome_unknown=fenced,
+            ) from None
         except Exception:
-            raise AITaskProviderSendError() from None
+            raise AITaskProviderSendError(
+                "AI_PROVIDER_OUTCOME_UNKNOWN" if fenced
+                else "AI_PROVIDER_SEND_UNAVAILABLE",
+                provider_outcome_unknown=fenced,
+            ) from None
         finally:
             if not handed_off and isinstance(response, AIProviderResponse):
                 response.close()

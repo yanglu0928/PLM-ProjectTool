@@ -437,7 +437,8 @@ class AITaskProviderSendServiceTests(unittest.TestCase):
         )
         with self.assertRaises(AITaskProviderSendError) as caught:
             self.send(service)
-        self.assertEqual(caught.exception.code, "AI_PROVIDER_NETWORK_UNAVAILABLE")
+        self.assertEqual(caught.exception.code, "AI_PROVIDER_OUTCOME_UNKNOWN")
+        self.assertTrue(caught.exception.provider_outcome_unknown)
         self.assertTrue(all(value == 0 for value in secrets.buffer))
         response.close()
 
@@ -447,7 +448,8 @@ class AITaskProviderSendServiceTests(unittest.TestCase):
         )
         with self.assertRaises(AITaskProviderSendError) as caught:
             self.send(service)
-        self.assertEqual(caught.exception.code, "AI_PROVIDER_RESPONSE_INVALID")
+        self.assertEqual(caught.exception.code, "AI_PROVIDER_OUTCOME_UNKNOWN")
+        self.assertTrue(caught.exception.provider_outcome_unknown)
         self.assertEqual(len(adapter.calls), 1)
         self.assertTrue(all(value == 0 for value in secrets.buffer))
 
@@ -457,7 +459,8 @@ class AITaskProviderSendServiceTests(unittest.TestCase):
         )
         with self.assertRaises(AITaskProviderSendError) as caught:
             self.send(service)
-        self.assertEqual(caught.exception.code, "AI_PROVIDER_SEND_UNAVAILABLE")
+        self.assertEqual(caught.exception.code, "AI_PROVIDER_OUTCOME_UNKNOWN")
+        self.assertTrue(caught.exception.provider_outcome_unknown)
         with self.assertRaises(AIProviderExecutionError):
             response.view()
         self.assertTrue(all(value == 0 for value in secrets.buffer))
