@@ -88,7 +88,7 @@ onUnmounted(() => { mounted = false; generation += 1; });
             <strong>{{ item.task_type }}</strong>
             <span class="task-state">{{ taskLabels[item.task_state] }}</span>
           </div>
-          <span>AI任务号：{{ item.ai_task_id }}</span>
+          <span>AI任务号：<RouterLink :to="{ name: 'project-ai-task-detail', params: { projectId: route.params.projectId, taskId: item.ai_task_id } }">{{ item.ai_task_id }}</RouterLink></span>
           <span>建议：{{ suggestionLabels[item.suggestion_state] }} · 建议始终需人工确认</span>
           <span>提交：<time :datetime="item.requested_at">{{ new Date(item.requested_at).toLocaleString("zh-CN") }}</time></span>
           <span>输出合同：{{ item.output_schema_ref }} · 版本：{{ item.etag }}</span>

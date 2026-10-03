@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0-dev.0/AI-05-A04 新增AI任务详情与Invocation运行历史页：Task/Invocation并行受权读取、任一失败整页清空、分页去重、路由迟到隔离；展示固定输入和版本事实，不显示传输正文。取消/重试只链接既有Job详情，无Job引用则关闭，不复制写链。兼容性/升级/回滚：无后端/API/Migration/依赖变化，可删除详情路由回滚。验证：定向10、前端全量1233、typecheck、Vite 138模块构建通过。已知问题：Suggestion卡片/原文定位/人工维护、提交/外发授权、Accept/Reject、真实浏览器/Gate3/UAT/发行包待完成。
+
 - 2026-10-03：0.1.0-dev.0/AI-05-A03 新增项目AI任务与建议状态工作台及项目详情入口：服务器受权分页、迟到响应隔离、后续授权失败清空、既有Job详情链接；固定提示AI输出不是正式业务事实，不预取建议正文且无接受/拒绝/取消/重试表单。兼容性/升级/回滚：无后端/API/Migration/依赖变化，删除页面/路由/入口可回滚。验证：定向23、前端全量1228、typecheck、Vite 135模块构建通过。已知问题：详情/Invocation、原文定位/人工字段、提交/外发授权、Accept/Reject、真实浏览器/Gate3/UAT/发行包待完成。
 
 - 2026-10-03：0.1.0-dev.0/AI-05-A02 新增前端`AIReadClient`，严格读取冻结Task列表/详情、Invocation列表与Suggestion详情；同源no-store、cursor family/ETag/身份/顺序/状态运行时校验，V1仅Document定位，V2 citation必须与Document Owner节点集合一致，`NOT_FORMAL_FACT`与人工维护提示不可省略；未知外层字段丢弃、canonical未知字段拒绝。兼容性/升级/回滚：无后端/Migration/依赖/合同变化，删除客户端可回滚；合同扩展需同步版本化校验。验证：定向29、前端全量1223、typecheck、Vite 131模块构建通过；三项dist SHA-256见进度文档。已知问题：页面、任务操作/外发授权、Accept/Reject目标Draft、真实浏览器/Gate3/UAT/发行包待完成。

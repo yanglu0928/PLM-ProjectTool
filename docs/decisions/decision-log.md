@@ -7652,3 +7652,11 @@
 - Reason：在列表中预取所有Suggestion会扩大文档授权检查和网络面，也会让状态浏览与业务确认混在一起；写按钮在缺目标Draft Owner/Review锁时会制造虚假的完成路径。
 - Impact/Rollback：仅新增前端页面、路由和项目详情入口，无后端/合同/依赖变化；删除三处入口即可回滚。直接URL仍由服务器授权，前端角色提示不成为权限来源。
 - Verification：定向23、前端全量1228项、typecheck及Vite 135模块构建通过；无外部网络或客户数据。
+
+# DEC-20261003-780：AI任务操作复用Job Owner而不复制写链
+
+- Date/WBS：2026-10-03 / `AI-05-A04`；依据冻结 API-03 的Task/Invocation/Job边界、DEC-770/779。
+- Decision：AI详情页只读取Task与Invocation版本事实；取消、重试和当前运行状态通过Task固定`job_id`链接到既有Job详情及其Owner流程。AI页面不复制Job命令、不根据Task状态自行构造写请求；无Job引用则关闭操作入口。
+- Reason：Task与Job状态存在不同Owner、ETag和幂等语义，复制按钮会产生双写实现及未知结果重试风险。固定引用跳转既保留用户路径，也让现有Job授权和恢复规则保持唯一。
+- Impact/Rollback：仅新增前端详情/路由及列表链接，无后端/API/依赖变化；删除详情即可回滚。Suggestion仍在下一WBS逐次授权读取。
+- Verification：定向10、前端全量1233项、typecheck与Vite 138模块构建通过；无外部网络或客户数据。
