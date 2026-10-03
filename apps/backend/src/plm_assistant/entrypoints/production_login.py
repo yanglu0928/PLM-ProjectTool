@@ -294,10 +294,15 @@ def _create_configured_ai_egress_router(
     if not settings.ai_egress_policies:
         return None
     preview_policies, approval_policy = create_deployment_ai_egress_policies(settings)
+    task_policies = None
+    if settings.ai_task_policies:
+        task_policies, _ = create_deployment_ai_task_policies(settings)
     return create_windows_ai_egress_router(
         runtime=runtime, sessions=sessions, origins=origins,
         license_guard=license_guard, audit=audit, documents=documents,
         preview_policies=preview_policies, approval_policy=approval_policy,
+        task_policies=task_policies,
+        data_root=settings.data_root if task_policies is not None else None,
     )
 
 

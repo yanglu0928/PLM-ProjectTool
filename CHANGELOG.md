@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A06-P04-P04-A06 完成Windows显式生产组合：配置Task Policy时装配Prompt/Document Owner、确定性Envelope/Plan Builder及Plan Repository，统一私有ParseResult根；缺Task Policy的AI_TASK失败关闭，非AI兼容。兼容性/升级/回滚：无Schema/依赖/冻结URL或响应变化；启用需匹配Egress/Task Policy、ACTIVE Prompt及ParseResult，移除Task Policy并重启可关闭新规划，Plan历史保留。验证：Win11/PG18.6真实HTTP/Session/Project/Document/Prompt链201/重放/授权、旧形态400、License403、Preview/Plan证明一致、零Invocation；定向45、后端2206运行/3跳过及wheel PASS，SHA-256 `38884673913bd55efc194680f35513dd7a8e0020f728688458523a03a8aa5ced`。首次验证夹具Prompt不兼容导致安全503，修正后新库重跑通过。已知问题：P04-P05下游PlanRef绑定、Invocation/Adapter/发行、Server2025/Gate3/UAT/可用包待完成；Debian13按指令跳过。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P04-P04-A05 收紧Egress Preview HTTP：AI_TASK强制五字段`ai_task_plan`并拒绝客户端计数/hash，非AI operation保持旧派生字段；URL/响应、安全前置与错误投影不变。兼容性/升级/回滚：CR-AI-016有意收紧，冻结提交不回写，前后端同批升级；回滚须同时撤客户端并关闭AI_TASK，不得恢复信任客户端摘要。验证：合同6、后端2205运行/3跳过及wheel PASS，SHA-256 `e424ed47c2fc910205d5c0878741c89eee130ff86754b9c68fdbc9c37c895c0a`。已知问题：A06 Windows组合、下游Task绑定/Invocation/Adapter/发行待完成。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P04-P04-A04 将AI_TASK Preview、服务端Envelope、Content Plan/Source、Audit与Receipt纳入单一事务；计划模式不接受客户端派生计数/hash，Route补齐数据库模型key/revision，精确重放复核Plan且不重读正文，参数漂移冲突。兼容性/升级/回滚：内部可选扩展，无Schema/公开API/依赖/外发变化，旧内部/非AI路径保留；不装配新依赖可回滚，Plan历史保留。验证：相关12、Win11/PG18.6原子提交/重放/冲突/全回滚/零Invocation及旧Preview PG回归、后端2204运行/3跳过及wheel PASS，SHA-256 `3b4bae40ee433e65dcee8e43e52a72c40fe33834a1172de357e0b7ce0487ef99`。已知问题：A05 HTTP、A06 Windows组合及下游Task绑定/Invocation/发行待完成。

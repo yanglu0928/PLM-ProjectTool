@@ -7324,3 +7324,11 @@
 - Reason：静默接受旧摘要会让调用方误以为它仍是授权依据，也给双重语义留下空间；非AI操作尚无本切片的Owner/Plan实现，不能误用AI Task合同。
 - Impact/Rollback：已登记的`/api/v1`有意收紧，旧冻结提交保留；尚无正式发行依赖旧AI_TASK形态，前后端原子升级。回滚须同时撤客户端且保持AI_TASK关闭，不能恢复信任客户端摘要。
 - Verification：HTTP合同6项、后端2205运行/3跳过PASS；wheel SHA-256 `e424ed47c2fc910205d5c0878741c89eee130ff86754b9c68fdbc9c37c895c0a`。无Schema/依赖/外发；真实Windows HTTP/PG组合留A06。
+
+# DEC-20261003-739：Windows Egress仅在Task Policy完整时装配服务端Content Plan
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P04-P04-A06`；依据 CR-AI-016、DEC-731/737/738。
+- Decision：Windows显式写组合在部署存在`ai_task_policies`时，同时注入统一`data_root`、Prompt规划Owner、Document最小内容Owner、Envelope/Plan Builder和Plan Repository。只有Egress Policy而没有Task Policy时不构造伪默认计划；AI_TASK失败关闭，非AI路径保持兼容。
+- Reason：A05已禁止客户端派生摘要，若组合根未接实际Owner，合同虽存在却只能503；若以默认Prompt/正文或客户端值补齐则绕过部署准入、内容最小化和不可变证明。
+- Impact/Rollback：无Schema、依赖、冻结URL/响应或Provider外发变化；生产配置需同时提供匹配Policy/Prompt/ParseResult。移除Task Policy并重启即可关闭AI_TASK规划，既有Plan历史保留。
+- Verification：Windows11/PostgreSQL18.6真实ASGI Session/Project/Document/Prompt链完成201创建/重放、旧形态400、授权201、License403，Preview/Plan计数及指纹一致且Invocation=0；定向45、后端2206运行/3跳过PASS；wheel SHA-256 `38884673913bd55efc194680f35513dd7a8e0020f728688458523a03a8aa5ced`。首次证据Prompt夹具不兼容导致安全503，修正夹具后新库完整重跑。

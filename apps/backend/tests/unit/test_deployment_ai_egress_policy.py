@@ -48,9 +48,12 @@ class DeploymentAIEgressPolicyTests(unittest.TestCase):
             "data_regions": ["cn-beijing"],
         }
 
-    def settings(self, policies=()):
+    def settings(self, policies=(), *, task_policies=()):
         with patch.dict(os.environ, {}, clear=True):
-            return BootstrapSettings(data_root=self.root, ai_egress_policies=policies)
+            return BootstrapSettings(
+                data_root=self.root, ai_egress_policies=policies,
+                ai_task_policies=task_policies,
+            )
 
     def preview(self, *, region="cn-beijing") -> EgressPreviewView:
         now = datetime(2026, 10, 3, tzinfo=timezone.utc)
@@ -172,8 +175,41 @@ class DeploymentAIEgressPolicyTests(unittest.TestCase):
         kwargs = factory.call_args.kwargs
         self.assertEqual(set(kwargs), {
             "runtime", "sessions", "origins", "license_guard", "audit", "documents",
-            "preview_policies", "approval_policy",
+            "preview_policies", "approval_policy", "task_policies", "data_root",
         })
+        self.assertIsNone(kwargs["task_policies"])
+        self.assertIsNone(kwargs["data_root"])
+
+    def test_configured_task_policy_enables_server_planning_composition(self):
+        task_policy = {
+            "reference": "gap-analysis.v1", "policy_version": 1,
+            "task_type": "GAP_ANALYSIS", "prompt_template_id": str(uuid.uuid4()),
+            "purpose_ref": "project-gap-analysis.v1",
+            "output_schema_ref": "gap-output.v1",
+            "context_policy_ref": "no-retrieval.v1",
+            "parameter_fields": [{
+                "name": "language", "value_type": "STRING", "required": True,
+                "max_length": 16, "minimum": None, "maximum": None,
+                "allowed_values": ["zh-CN", "en-US"],
+            }],
+        }
+        settings = self.settings((self.policy,), task_policies=(task_policy,))
+        with patch(
+            "plm_assistant.entrypoints.production_login.create_windows_ai_egress_router",
+            return_value=MagicMock(name="router"),
+        ) as factory:
+            _create_configured_ai_egress_router(
+                settings, runtime=MagicMock(), sessions=MagicMock(), origins=MagicMock(),
+                license_guard=MagicMock(), audit=MagicMock(), documents=MagicMock(),
+            )
+        kwargs = factory.call_args.kwargs
+        resolved = kwargs["task_policies"].resolve(
+            reference="gap-analysis.v1", task_type="GAP_ANALYSIS",
+            output_schema_ref="gap-output.v1", context_policy_ref="no-retrieval.v1",
+            parameters={"language": "zh-CN"},
+        )
+        self.assertEqual(resolved.purpose_ref, "project-gap-analysis.v1")
+        self.assertEqual(kwargs["data_root"], self.root)
 
     def test_duplicate_yaml_field_is_rejected(self):
         self.path.write_text(
