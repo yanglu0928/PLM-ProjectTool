@@ -7636,3 +7636,11 @@
 - Reason：单一专用秘密减少部署和恢复面，同时不与Job/Evidence协议复用；Suggestion定位必须以当前Document事实重建，不能在组合层绕过Owner。修正夹具才能让真实文件完整性链参与验收，避免用不可被生产存储接受的路径产生假阳性。
 - Impact/Rollback：无Schema、依赖或API合同变化；显式生产模式新增一个必须部署的Vault引用。回滚可撤路由装配/取钥，历史事实不变；不允许通过硬编码临时密钥或弱化Document校验恢复服务。
 - Verification：Windows11/PostgreSQL18.6真实ASGI/Vault验证标记`AI_04_A07_P07_WINDOWS_READ_COMPOSITION_PASS`；定向36通过/9子测试，后端2339通过/3跳过、3016子测试；wheel 820项 SHA-256 `4d17a7bc5fc8e6665b4d0a52d97d0404ddc1433ff2bcfb662987d2c1f32c91e2`；零Provider I/O与客户数据。
+
+# DEC-20261003-778：AI前端只消费重建后的严格建议DTO
+
+- Date/WBS：2026-10-03 / `AI-05-A02`；依据冻结 API-03、CR-AI-020、DEC-770～777。
+- Decision：前端建立单一只读`AIReadClient`，对Task/Invocation/Suggestion的身份、状态、版本、顺序、ETag和分页进行运行时校验；V1只接受Document定位，V2要求citation与固定node定位完全一致。响应外层未知字段丢弃，canonical payload未知字段拒绝；任意URL、服务端错误message及内部fingerprint不进入DTO。
+- Reason：TypeScript类型不能证明网络数据可信。只在Vue组件中按字段存在性渲染会把服务端漂移、错误绑定或敏感字段带入状态树；白名单重建可让后续页面只接触冻结、安全且不可变的视图。
+- Impact/Rollback：仅新增前端读取层和测试，无后端/API/Schema/依赖变化；删除客户端即可回滚。严格拒绝服务端非合同形状是预期失败关闭行为，合同扩展需先版本化客户端而非宽泛放行。
+- Verification：定向29、前端全量1223项、typecheck和Vite 131模块生产构建通过；无外部网络、客户数据或Secret。
