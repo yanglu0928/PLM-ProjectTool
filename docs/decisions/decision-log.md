@@ -7396,3 +7396,11 @@
 - Reason：Begin已将Task推进为RUNNING，原Issuer的QUEUED守卫是正确安全边界；放宽它会混淆创建前Grant与发送前当前事实。数据库只保存endpoint policy引用又不足以安全产生URL，因此URL/model allow-list/超时必须来自受信部署策略。
 - Impact/Rollback：新增未装配application/infrastructure组件及默认关闭的验证回调，无Schema/API/依赖/Probe/历史修改。可停止消费并撤组件；已存在PENDING Invocation留待终态对账。
 - Verification：单元4、相关定向12、Win11/PG18.6真实Claim→Envelope→Begin→pre-send组合、后端2225运行/3跳过PASS；wheel SHA-256 `efffd47597b53e6a83a06c660129db4b16793321a9d876fca2c1acae9dae7cbc`。Inactive Secret和暂停Model失败关闭；零Secret解密/Provider I/O。
+
+# DEC-20261003-748：业务Adapter使用全候选global校验后的IP pinning
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P06-P04`；依据 CR-AI-017、DEC-745～747。
+- Decision：OpenAI-compatible业务Adapter用隔离子进程解析DNS，只有全部1～16个候选均为global地址才连接；实际TCP连接使用已验证数字IP，TLS仍用Route hostname做SNI和证书校验。固定443、系统CA、TLS≥1.2、无代理、无重定向和有界Content-Length；不得放宽或复用Probe固定请求接口。
+- Reason：普通高层HTTP客户端可能隐式读取代理、跟随重定向或在连接时再次DNS解析，破坏endpoint policy和SSRF边界；只检查首个DNS结果也允许混入私网候选。数字IP pinning同时保留hostname证书验证可关闭重绑定窗口。
+- Impact/Rollback：新增未装配Infrastructure Adapter，无Schema/API/依赖/Probe变化；撤Adapter恢复不发送，历史PENDING Invocation保留待对账。测试连接器只在验证组合中显式注入，生产默认仍使用数字IP:443。
+- Verification：单元5、相关定向14、Windows11本地合成TLS端到端和后端2230运行/3跳过PASS；wheel SHA-256 `0cf512ea16bb7082fcbf1d9e675b0d7c116501b20b7b34c90b6591d93bfb6b61`；无真实Provider/客户数据/真实Secret。
