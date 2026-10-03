@@ -184,7 +184,9 @@ export class SessionClient {
   /** Frozen create command paths; the CSRF token never leaves this client. */
   async #postCommand(path: "/api/v1/projects" | "/api/v1/admin/users"
     | `/api/v1/projects/${string}/members` | `/api/v1/projects/${string}/departments`
-    | `/api/v1/projects/${string}/document-uploads`, body: string,
+    | `/api/v1/projects/${string}/document-uploads`
+    | `/api/v1/projects/${string}/egress-previews`
+    | `/api/v1/projects/${string}/ai-tasks`, body: string,
     idempotencyKey: string, maxBodyBytes: number): Promise<Response> {
     if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
     if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
@@ -221,6 +223,52 @@ export class SessionClient {
   postProjectDocumentUploadCreate(projectId: string, body: string, idempotencyKey: string): Promise<Response> {
     if (!identifier(projectId)) return Promise.reject(new SessionClientError("AUTH_CLIENT_UNAVAILABLE"));
     return this.#postCommand(`/api/v1/projects/${projectId}/document-uploads`, body, idempotencyKey, 8192);
+  }
+
+  postProjectAIEgressPreview(projectId: string, body: string, idempotencyKey: string): Promise<Response> {
+    if (!identifier(projectId)) return Promise.reject(new SessionClientError("AUTH_CLIENT_UNAVAILABLE"));
+    return this.#postCommand(`/api/v1/projects/${projectId}/egress-previews`, body, idempotencyKey, 262_144);
+  }
+
+  postProjectAITaskCreate(projectId: string, body: string, idempotencyKey: string): Promise<Response> {
+    if (!identifier(projectId)) return Promise.reject(new SessionClientError("AUTH_CLIENT_UNAVAILABLE"));
+    return this.#postCommand(`/api/v1/projects/${projectId}/ai-tasks`, body, idempotencyKey, 262_144);
+  }
+
+  async postProjectAIEgressDecision(projectId: string, resourceId: string,
+    action: "authorize" | "revoke", body: string, etag: string,
+    idempotencyKey: string): Promise<Response> {
+    if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
+    if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
+    if (!identifier(projectId) || !identifier(resourceId)
+      || typeof body !== "string" || body.length === 0
+      || new TextEncoder().encode(body).length > 262_144
+      || !/^"v(?:0|[1-9]\d*)"$/.test(etag)
+      || !Number.isSafeInteger(Number(etag.slice(2, -1)))
+      || typeof idempotencyKey !== "string" || !/^[\x20-\x7e]{16,128}$/.test(idempotencyKey)) {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    }
+    this.#busy = true;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      const noun = action === "authorize" ? "egress-previews" : "egress-authorizations";
+      const fetcher = this.fetcher;
+      const response = await fetcher(`/api/v1/projects/${projectId}/${noun}/${resourceId}:${action}`, {
+        method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error",
+        headers: { Accept: "application/json", "Content-Type": "application/json",
+          "X-CSRF-Token": this.#csrf, "Idempotency-Key": idempotencyKey,
+          "If-Match": etag }, body, signal: controller.signal,
+      });
+      if (controller.signal.aborted) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+      if (response.status === 401) { this.#csrf = null; this.#view = null; }
+      return response;
+    } catch {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    } finally {
+      window.clearTimeout(timer);
+      this.#busy = false;
+    }
   }
 
   /** Bounded single Content PUT. Blob gives Fetch a known length; scripts cannot set Content-Length. */

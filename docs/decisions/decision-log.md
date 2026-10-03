@@ -7676,3 +7676,11 @@
 - Reason：冻结写接口刻意不替客户端猜测路由，但缺少选择投影会迫使用户掌握部署内部ID；自由输入既不友好，也可能将“可配置”误当“获准执行”。服务端求交可维持后端为唯一策略事实来源。
 - Impact/Rollback：新增非破坏GET、一个只读授权操作及组合完整性要求，无Migration/依赖；冻结写接口不变。撤新增路由/服务即可回滚，前端不得回退手填。Task/Egress/Execution策略缺一时提交组合不挂载。
 - Verification：定向12、compileall、后端全量2346通过/3跳过；wheel SHA-256 `5a0440e5d149006ce44c85ae6b21be35a691c890a04c76cf9c1d4905165de288`；无外发或客户数据。
+
+# DEC-20261003-783：外发预览、授权与任务创建使用独立不确定结果边界
+
+- Date/WBS：2026-10-03 / `AI-05-A06-P02`；依据冻结 API-03 S/L/C/I/M/E/A 控制和 DEC-782。
+- Decision：前端五条调用由单一严格客户端管理，但Preview、Authorize、Task Create与Revoke各使用独立幂等键和各自响应证明；网络/解析/身份不一致不自动重试或换Key。Task Create只引用已批准Authorization，不重复携带Provider路由；授权有效期不得越过Preview。
+- Reason：把三步合成一个可重放请求会模糊用户明确授权时点，也可能在未知结果后重复创建Preview、授权或Task。独立证明能让页面在每个阶段停止并引导读取当前事实。
+- Impact/Rollback：新增前端客户端与Session私有CSRF传输桥接，无API/Schema/依赖变化。删除新增文件/桥接方法可回滚；不允许改成浏览器直接保存CSRF或自动循环重试。
+- Verification：定向163、前端全量1244、typecheck与Vite 141模块构建通过；无真实外发、客户数据或Secret。
