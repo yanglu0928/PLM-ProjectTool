@@ -7236,3 +7236,11 @@
 - Reason：把正文或动态Owner查询塞入Grant会扩大Job/日志泄漏面；允许半空Context或只比较业务Input则无法证明实际发送内容与授权一致。
 - Impact/Rollback：新增未装配Application合同和单测，无Schema/API/依赖/运行行为；删除模块即可回退。旧无Plan历史仍不可执行。
 - Verification：定向10、后端2173运行/3跳过PASS；wheel SHA-256 `1ccf1411c3eee3ebc438f8108213b6ecdab3a358cd81f199907d685cd48acf0c`。三轮开发期语法/版本规则/断言位置问题修复后均从修正状态重跑。
+
+# DEC-20261003-728：Prompt渲染只允许三个字面占位符且插入内容不再解析
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P03-P02-A02`；依据 CR-AI-015/016、DEC-727。
+- Decision：Prompt/Task参数必须由AI Owner按Grant精确投影；渲染策略 `strict-placeholders.v1` 仅接受 `{input}`、`{context}`、`{parameters}`，不实现表达式/属性/条件/动态模板。Input恰好一次，RAG Context和非空参数恰好一次；替换仅扫描原模板，插入正文中的大括号保持字面量。旧Prompt不兼容时创建新版本，不运行时猜测改写。
+- Reason：通用模板引擎会扩大注入和非确定性面；重复替换会让客户正文被误解释为控制语法；静默忽略参数/Context会让批准计划与实际语义不一致。
+- Impact/Rollback：新增未装配Owner/Repository/Renderer，无Schema/API/依赖/生产行为；撤组件即可。严格语法不回填旧Prompt，未准入版本继续不可执行。
+- Verification：Win11/PG18.6精确投影/渲染及参数、活动Prompt漂移拒绝，Invocation=0；定向16、后端2179运行/3跳过PASS；wheel SHA-256 `c11a990c885c0c76ec93c83038da4ab62887ebffc1839a4f0b26c898518450b0`。首轮唯一失败为负例夹具未同步模板hash，修正后完整重跑。

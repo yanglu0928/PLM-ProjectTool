@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A06-P03-P02-A02 新增精确Prompt/Task参数短生命周期Owner、PostgreSQL投影和strict-placeholders.v1渲染器；只允许input/context/parameters字面占位符，NFC/LF/UTF-8规范化且插入正文不二次展开，Prompt/参数不进repr。兼容性/升级/回滚：复用0071，无Migration/API/依赖/生产装配/外发；撤组件即可，旧不兼容Prompt不猜测修补、需新建版本。验证：Win11/PG18.6真实Grant内容链及参数/活动Prompt漂移拒绝、Invocation=0，定向16、后端2179运行/3跳过PASS；wheel SHA-256 `c11a990c885c0c76ec93c83038da4ab62887ebffc1839a4f0b26c898518450b0`。首轮负例夹具漏同步hash已修复重跑。已知问题：Document内容Owner、Envelope、Plan持久化/Preview、Invocation/Adapter/发布、Gate3/UAT/可用包待完成。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P03-P02-A01 新增无正文AIExecutionContentPlan、精确Owner内容来源/Prompt/Context身份、规范化fingerprint、Grant匹配和Owner Port；固定编码与Token estimator版本，NONE/RAG Context严格闭合，不保存正文/参数值/locator/Secret。兼容性/升级/回滚：无Schema、公开API、依赖、运行装配或外发，撤新模块即可；旧无Plan历史仍不可执行。验证：定向10、后端2173运行/3跳过PASS；wheel SHA-256 `1ccf1411c3eee3ebc438f8108213b6ecdab3a358cd81f199907d685cd48acf0c`。开发期括号、parser版本规则和测试断言边界问题修复后完整重跑。已知问题：Prompt/参数与Document内容Owner、Envelope、Plan持久化/Preview、Invocation/Adapter/发布、Gate3/UAT/可用包待完成。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P03-P02-P01 完成内容Owner与确定性Envelope编码前核查并登记CR-AI-016：确认DocumentVersion不能唯一绑定ParseRecord/解析正文，客户端payload摘要与静默空RAG Context均不足；选择服务端不可变AIExecutionContentPlan，固定解析结果、Prompt/参数、Context、编码和Estimator身份，旧无Plan历史不可执行。兼容性/升级/回滚：本项仅文档，无程序、Schema、API、依赖或外发；原冻结提交/历史保留，后续P04追加兼容迁移，撤新组合即可停止执行。验证：冻结DM/API、当前AI/Document代码和RAG模块清单静态交叉核对；未运行新增代码测试。已知问题：Content Plan/Owner/Envelope、Schema Preview重构、Invocation/Adapter/发布、Gate3/UAT/可用包待完成。
