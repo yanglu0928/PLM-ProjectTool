@@ -7348,3 +7348,11 @@
 - Reason：0072的FK只能证明Plan存在，更新触发器只能证明引用不变，不能阻止新Invocation跨Task引用另一个合法Plan或写NULL。仅靠应用层检查无法提供数据库最终守卫。
 - Impact/Rollback：P01仅文档。P02将是无新表/列的触发器增量；已有NULL历史不回填。产生新Invocation后拒绝降级，应用回滚关闭业务AI消费并保留历史。
 - Verification：静态核对0064/0072 Migration、ORM、冻结DM/API与当前worker入口；确认生产代码中除ORM外没有AIInvocation写入，未运行新增测试、无网络外发。
+
+# DEC-20261003-742：0073只证明不可变快照同源，当前授权与Lease继续由应用层重验
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P05-P02`；依据 CR-AI-015/016、DEC-741、Schema0064/0072。
+- Decision：以独立BEFORE INSERT触发器核新Invocation、Task、授权快照和Content Plan的完整静态等价关系；不在数据库触发器中读取当前Authorization状态、License或Job Lease，也不替换0064状态机。
+- Reason：静态历史一致性适合数据库最终守卫；当前授权/License/Lease会变化且涉及Owner边界，必须在调用方短事务和网络发送前检查。把二者混入触发器会造成隐式跨模块授权并仍无法覆盖事务提交后的网络窗口。
+- Impact/Rollback：Schema头增至0073，无表/列/API/依赖/外发变化；旧NULL历史保留。无非空Invocation PlanRef可降级，有新历史时拒降并向前修复。
+- Verification：Win11/PG18.6空库和旧NULL历史升降重升、drift=0；新NULL/跨Plan/payload漂移拒绝、精确PENDING插入和有新历史拒降PASS；后端2211运行/3跳过，wheel SHA-256 `d2301d828172e76fc2eec67d5c4ec5b8a7c79c1fe96f4c245f4754eb97f2ca46`。

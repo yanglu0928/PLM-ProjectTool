@@ -39,6 +39,8 @@ P03-P02-P01静态核查进一步确认：业务 `DocumentVersion` 不能唯一�
 
 P05-P01静态核查确认Schema0064已有Invocation/Context/Task当前指针与状态机，但仓库没有业务Invocation写入器、AI Task Worker、ModelRouter或ProviderAdapter；现有AI_PROVIDER_WORKER仅用于合成Provider探针。Schema0072为Invocation增加了PlanRef外键和更新不可变守卫，却未扩展0064插入守卫以核Task/授权快照/Plan同源。决定先以P05-P02追加0073新写完整性守卫，再实现短事务Invocation Begin；旧NULL历史不回填、不执行。本项仅文档，无代码、Schema、API、依赖或外发。
 
+P05-P02已新增Schema0073独立INSERT守卫：新Invocation必须是AUTHORIZED、非空PlanRef，并与Task、授权快照和Content Plan的静态身份、策略、Prompt/Schema、Context、Provider/Model/revision及payload证明一致。旧NULL历史保留，但升级后新NULL/跨Plan/payload漂移失败关闭；有新Plan绑定Invocation时拒绝降级。Win11/PG18.6空库/历史库升降重升、drift和负例通过，后端2211运行/3跳过及wheel通过。无公开API、依赖、运行装配或网络外发；P05-P03继续短事务Begin。
+
 ## 影响、迁移与回滚
 
 该变更补充冻结实现顺序，不修改原冻结提交。P01无代码、Schema、依赖或公开API变化。后续若需新增数据库对象或请求字段，必须在相应切片先给出ORM/Migration、空库/有数据up/down、兼容与API增量证据。已存在的Egress Preview/Authorization和Task历史保留；不能证明服务端载荷计划的旧记录一律不可执行，不猜测回填。

@@ -67,6 +67,8 @@ P04-P05已把Preview产生的不可变PlanRef强制传播至Authorization、Task
 
 P05-P01核查发现0072对Invocation只增加PlanRef外键和更新不可变守卫，0064插入守卫尚不知道该列，因而数据库不能独立拒绝新Invocation的NULL或跨Task/快照/Plan引用。应用Repository实施前先追加Schema0073 INSERT完整性守卫；旧NULL历史保留但不可继续执行，不猜测回填。该顺序是本CR原“Invocation绑定同一PlanRef”目标的失败关闭补强，不改公开API或外发范围。
 
+P05-P02已实现Schema0073：不增加列或表，以新INSERT触发器强制每个新Invocation的PlanRef非空，并逐项核对Task、授权快照与Plan的身份和payload证明。守卫只核不可变静态证据，当前授权/License/Lease仍由应用层重验。Windows 11/PostgreSQL18.6证明旧NULL保留但新NULL、跨Plan和payload漂移拒绝，精确PENDING行可写，有新历史拒降；后端2211运行/3跳过及wheel通过。P05-P03再实现实际写入器。
+
 ## 兼容、迁移与回滚
 
 - 原 Gate 2 冻结提交和现有 0064/0068～0071 历史不改。P03-P02-A01～A04 先建立未装配合同与 Owner，暂不产生数据库或公开 API 变化。
