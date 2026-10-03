@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A06-P07-P04 新增受信版本化Output Schema registry和有界OpenAI-compatible响应解析；首版四类非正式gap建议只可引用本次授权来源序号，拒绝模型自报formal fact/Owner/UUID/指纹、Markdown、重复键、非有限数、未知字段/Schema及越界结构，输出规范JSON与SHA-256。兼容性/升级/回滚：无Schema/API/依赖/网络，支持`gap-output.v1@1`和现有部署示例别名；撤parser恢复不发布。验证：单元4/8子用例、Windows11真实Prepared身份合成响应，后端2245运行/3跳过；wheel SHA-256 `2fd6018406f032e0277531e3921dee8c0ded6ad8a6d581056b3ea347e3379a0d`。P05 Evidence Owner/成功发布及P08失败/UNKNOWN对账待完成。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P07-P03 新增Provider持久发送栅栏并接入唯一发送编排：第二次pre-send与稳定性复核后，在当前Job generation下把精确PENDING Invocation原子提交为RUNNING，再允许一次Adapter调用；重复调用不再通过pre-send，栅栏后失败不回退PENDING。兼容性/升级/回滚：内部服务依赖收紧，无Schema/API/依赖/生产Worker/真实外发；可停止消费并撤组合，已RUNNING须由P08对账。验证：Win11/PG18.6真实Claim/Plan/Invocation/Secret/Audit与合成Adapter、二次发送拒绝，定向12/11子用例、后端2241运行/3跳过；wheel SHA-256 `8e4cc572f2310f47aeaab4686722d9717ccfd4ad229073f031e00a76980d086c`。已知问题：RUNNING不证明远端收到；P07-P04 Schema解析、P05成功发布及P08失败/UNKNOWN对账待完成。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P07-P02 新增Schema0074不可变SuggestionPayload/Evidence与Invocation真实延迟复合FK；数据库强制RUNNING未发布、Task/Invocation/Schema/Scope同源，结果固定`NOT_FORMAL_FACT`，证据只保存类型化版本/指纹引用，发布后封存。兼容性/升级/回滚：仅追加表/FK/守卫，无冻结API/枚举/依赖变化；旧NULL保留，空结果可降，有结果拒降并向前修复。验证：Win11/PG18.6空/历史/绑定三库升降重升、ORM drift、负例/FK/不可变/拒降，后端2238运行/3跳过、wheel SHA-256 `4ffcea6c91bf5a5ea1767ea1b11f68600d5424a04025a63872be9f7f379170f4`。未访问Provider/Secret或外发；P07-P03发送栅栏、P04 Schema Owner、P05发布及P08对账待完成。

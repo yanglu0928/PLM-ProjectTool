@@ -7460,3 +7460,11 @@
 - Reason：进程内一次调用保护不能覆盖崩溃重启；持久状态转换能阻止同一Invocation重复外发。RUNNING可能在socket写前形成，因此仅表示越过发送边界，不作为远端收到或成功的证据。
 - Impact/Rollback：新增内部Application/Repository并收紧发送服务依赖，无Schema/API/依赖/生产Worker/真实外发。可停止消费并撤组合；已RUNNING记录由P08对账，不能降级状态或删除。
 - Verification：Win11/PG18.6真实Claim/Plan/Invocation/Secret/Audit与合成Adapter，数据库RUNNING先于一次Adapter、二次发送拒绝；定向12/11子用例、后端2241运行/3跳过；wheel SHA-256 `8e4cc572f2310f47aeaab4686722d9717ccfd4ad229073f031e00a76980d086c`。
+
+# DEC-20261003-756：模型只引用授权来源序号，Evidence身份由Owner解析
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P07-P04`；依据 CR-AI-018、Schema0074。
+- Decision：Output Schema采用代码内受信版本注册；`gap-output.v1@1`只接受四类非正式建议及本次Grant中存在的来源序号。模型不得提供formal fact、Owner、UUID或内容指纹；P05由受信内容Owner从不可变Content Plan解析Evidence。响应必须为单choice/STOP/纯JSON，并经过重复键、非有限数、深度/节点/文本/字段边界后才规范化和计算指纹。
+- Reason：模型自报对象身份和指纹不可作为证据，通用宽松JSON或Markdown抽取会把歧义内容错误标为Schema VALID。来源序号可与已授权Plan稳定关联，同时把证据真实性留在服务端Owner边界。
+- Impact/Rollback：新增内部registry/parser，无Schema/API/依赖/网络。兼容既有`gap-output.v1`和部署示例`gap-analysis-output.v1`；移除parser恢复不发布结果，不修改历史。
+- Verification：单元4/8子用例，Windows11真实Prepared来源身份上的有效/无效合成响应，后端2245运行/3跳过；wheel SHA-256 `2fd6018406f032e0277531e3921dee8c0ded6ad8a6d581056b3ea347e3379a0d`；零真实Provider/Secret/外发。
