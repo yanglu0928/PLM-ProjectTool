@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A07-P01 完成AI建议读取/定位前置核查并登记CR-AI-020：现`gap-output.v1`只保存文档序号，不能可靠定位页/段落/单元格，也没有结构化人工维护提示。选择保留V1历史并新增`gap-output.v2@2`的受控node引用/confirmation，由服务端基于固定Content Plan/ParseRecord复核并生成安全locator；Task/Invocation列表使用独立Vault cursor key和协议域分离。兼容性/升级/回滚：本项仅文档，无代码/Schema/API/依赖/外发；V1不改，新V2以新Prompt/Task策略启用。验证：静态核对Schema/Parser/发布器/Document投影/Evidence Viewer。已知问题：P02～P07实现、Accept/Reject、前端、质量/Gate3/UAT/包待完成。
+
 - 2026-10-03：0.1.0.dev0/AI-05-A01 完成AI建议工作台编码前核查：确认现有后端具备Egress、Task创建/单项读取和Job跟踪，但缺冻结Task List、Invocation List、Suggestion GET及Accept/Reject；决定先补受权只读投影，再接前端原文定位和人工维护提示，禁止前端读取内部表或把Job当建议正文。兼容性/升级/回滚：仅文档，无代码/Schema/API/依赖/外发；后续沿用冻结`/api/v1`。验证：静态交叉核对Router、Windows组合、Schema/Repository及前端路由。已知问题：AI-04-A07读取闭环、Accept/Reject业务Owner、前端、质量/Gate3/UAT/可用包待完成。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P09-P06 完成 Windows 11 真实 AI Provider SCM 服务循环验证：一次性 PostgreSQL 18.6、合成 License/文档、本地 CA 验证 HTTPS Provider 与真实 AES-GCM Secret Store完成一个Task/Invocation/Suggestion/Secret Audit，协作停止后排空、删除运行标记并释放数据库。兼容性/升级/回滚：无生产代码、Schema/API/依赖变化，可停止Worker并保留历史；Server2025待独立验证，Debian13按指令跳过验证但仍为兼容目标。验证：后端2307运行/3跳过、2944子测试通过；wheel 807项 SHA-256 `1f9a5b903fce940c663e7118912ccf00fd76119f385f6334d8fb2680c817d75b`。首轮临时证书缺KeyUsage/EKU导致TLS失败关闭，补齐验证夹具后全新库重跑；真实Provider/客户数据零外发。已知问题：正式信任/Provider、AI质量/性能、UAT、Gate3与可使用包待完成，下一项AI-05前端工作台前置核查。

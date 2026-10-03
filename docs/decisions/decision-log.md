@@ -7580,3 +7580,11 @@
 - Reason：当前只有 Task Create/GET、Egress与通用Job HTTP。Job安全视图不含Suggestion正文/Evidence；直接越层会暴露内部载荷并无法提供稳定受权原文定位。先补只读闭环可让UI严格依赖冻结合同，并保持AI输出为建议。
 - Impact/Rollback：A01仅文档，无代码/Schema/API/依赖变化。后续仍使用冻结 `/api/v1`，不复制无界正文；回滚前端不影响不可变Task/Suggestion历史。
 - Verification：静态核对后端Router/组合、AI Schema/Repository、前端路由与现有Job/Document/Evidence客户端；确认四个公开AI工作台能力缺口。本项未运行测试或外发。
+
+# DEC-20261003-771：新建议用受控节点引用实现精确定位并保留V1历史
+
+- Date/WBS：2026-10-03 / `AI-04-A07-P01`；依据 CR-AI-020、冻结 API-03 与用户确认的定位/提示要求。
+- Decision：保留`gap-output.v1`只读兼容并明确为文档级定位；新建`gap-output.v2@2`，要求每项输出受控`source_ordinal + node_ids`及结构化人工确认提示。节点必须来自本次确定性输入投影，服务端结合固定Content Plan/ParseRecord验证并由Document Owner生成locator，模型不得提供URL或自由locator。
+- Reason：V1丢失了模型实际引用的node，文本搜索会歧义和漂移，任意模型locator不可受信。新Schema版本避免重解释历史，又能满足“点击定位原文”和“明确提示人工维护内容”。
+- Impact/Rollback：原冻结提交和V1不改；新Prompt/Task策略以新版本选择V2，Task/Invocation/Suggestion读接口后续按冻结路径实现。预期可复用0074 canonical payload与现有Source身份；若需Schema追加必须另记迁移证据。回滚停止新V2 Task，历史V2仍保留只读。
+- Verification：静态核对V1 Schema/Parser、Document最小投影node、Suggestion发布/0074 EvidenceRef、Evidence Viewer与前端缺口；确认只有DocumentVersion证明、无节点定位。本项无运行测试/外发。
