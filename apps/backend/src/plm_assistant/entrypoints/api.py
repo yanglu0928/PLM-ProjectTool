@@ -62,6 +62,7 @@ def create_app(
     ai_task_read_router: APIRouter | None = None,
     ai_task_list_router: APIRouter | None = None,
     ai_task_invocation_list_router: APIRouter | None = None,
+    ai_suggestion_read_router: APIRouter | None = None,
     project_read_router: APIRouter | None = None,
     workflow_read_router: APIRouter | None = None,
     workflow_start_router: APIRouter | None = None,
@@ -204,6 +205,8 @@ def create_app(
         app.include_router(ai_task_list_router)
     if ai_task_invocation_list_router is not None:
         app.include_router(ai_task_invocation_list_router)
+    if ai_suggestion_read_router is not None:
+        app.include_router(ai_suggestion_read_router)
     if project_read_router is not None:
         app.include_router(project_read_router)
     if workflow_read_router is not None:

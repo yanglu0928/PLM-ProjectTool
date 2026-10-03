@@ -62,6 +62,10 @@ POLICIES: dict[str, _Policy] = {
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER", "CUSTOMER_MANAGER"}),
         False, lock_reads=True,
     ),
+    "AI_TASK_SUGGESTION_GET": _Policy(
+        frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER", "CUSTOMER_MANAGER"}),
+        False, lock_reads=True,
+    ),
     "EGRESS_PREVIEW_CREATE": _Policy(
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER", "CUSTOMER_MANAGER"}), True,
     ),

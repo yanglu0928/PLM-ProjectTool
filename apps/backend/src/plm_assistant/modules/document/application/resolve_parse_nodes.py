@@ -91,12 +91,20 @@ class DocumentNodeLocationSet:
     document_id: uuid.UUID
     document_version_id: uuid.UUID
     parse_record_id: uuid.UUID
+    result_ref_id: uuid.UUID
+    source_sha256: bytes = field(repr=False)
+    result_sha256: bytes = field(repr=False)
     content_url: str
     locations: tuple[DocumentNodeLocation, ...]
 
     def __post_init__(self) -> None:
         if (any(type(value) is not uuid.UUID or not value.int for value in (
-                    self.document_id, self.document_version_id, self.parse_record_id))
+                    self.document_id, self.document_version_id, self.parse_record_id,
+                    self.result_ref_id))
+                or type(self.source_sha256) is not bytes
+                or len(self.source_sha256) != 32
+                or type(self.result_sha256) is not bytes
+                or len(self.result_sha256) != 32
                 or type(self.content_url) is not str
                 or not self.content_url.startswith("/api/v1/")
                 or type(self.locations) is not tuple or not self.locations
@@ -109,6 +117,7 @@ class DocumentNodeLocationSet:
 class DocumentVersionLocation:
     document_id: uuid.UUID
     document_version_id: uuid.UUID
+    source_sha256: bytes = field(repr=False)
     locator: dict[str, object]
     precision: str
     display_label: str
@@ -122,6 +131,8 @@ class DocumentVersionLocation:
         if (any(type(value) is not uuid.UUID or not value.int for value in (
                     self.document_id, self.document_version_id))
                 or canonical != {"locator_type": "DOCUMENT"}
+                or type(self.source_sha256) is not bytes
+                or len(self.source_sha256) != 32
                 or canonical != self.locator or self.precision != "DOCUMENT"
                 or self.display_label != "整个文档版本"
                 or type(self.content_url) is not str
@@ -189,7 +200,8 @@ class DocumentVersionLocationService:
                 or _MIME.fullmatch(version.detected_mime) is None):
             raise DocumentNodeLocationError()
         return DocumentVersionLocation(
-            document_id, document_version_id, {"locator_type": "DOCUMENT"},
+            document_id, document_version_id, bytes.fromhex(version.content_sha256),
+            {"locator_type": "DOCUMENT"},
             "DOCUMENT", "整个文档版本",
             _content_url(query, document_id, document_version_id),
         )
@@ -238,6 +250,7 @@ class DocumentNodeLocationService:
         )
         return DocumentNodeLocationSet(
             document_id, document_version_id, parse_record_id,
+            result.result_ref_id, result.source_sha256, result.result_sha256,
             _content_url(query, document_id, document_version_id),
             locations,
         )

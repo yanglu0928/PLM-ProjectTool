@@ -7620,3 +7620,11 @@
 - Reason：原始传输信息既非工作台判断建议所需，又可能携带客户正文、厂商标识或敏感关联；只读版本事实足以审计实际执行。把Task ID加入AAD防止同项目不同Task间游标重放。
 - Impact/Rollback：新增opt-in冻结GET及内部最小投影，无Migration/依赖/生产装配；旧无Plan Invocation以context null显示。撤Router即可回滚，历史不变。
 - Verification：Win11标记`AI_04_A07_P05_INVOCATION_LIST_PASS`，定向14通过/211子测试，后端2329通过/3跳过、2999子测试；wheel 815项 SHA-256 `f36edbea41edf6a6e7fe21528858b480fee29009f23616da1c72765fd9297e88`；真实PG/Vault/组合留P07。
+
+# DEC-20261003-776：Suggestion定位每次由当前Document事实重建
+
+- Date/WBS：2026-10-03 / `AI-04-A07-P06`；依据冻结`AI_TASK_SUGGESTION_GET`、CR-AI-020、DEC-771。
+- Decision：Suggestion只从当前成功Invocation的不可变canonical payload读取；Task/Invocation/Suggestion/Content Plan版本图、Evidence顺序与source hash必须一致。读取前后重验Task授权，所有输入DocumentVersion逐次经Document Owner重验；V2按固定ParseResult/node重建locator，V1只返回Document精度。历史locator、模型提供的URL/locator和文本搜索均不受信。
+- Reason：Task权限不等于Document权限永久有效；复制持久化locator会在撤权、替换或解析结果漂移后泄露历史位置。服务端按固定身份和hash重建可同时支持点击定位与失败关闭。
+- Impact/Rollback：新增opt-in冻结GET、内部最小Repository和Document固定结果校验字段；无Schema/Migration/依赖/生产装配。撤Router可回退为404，历史Suggestion/Evidence不删除；坏V2不降级自由搜索，V1保持明确粗粒度。
+- Verification：Win11标记`AI_04_A07_P06_SUGGESTION_READ_PASS`，定向12通过/22子测试，后端2335通过/3跳过、3009子测试；wheel 818项 SHA-256 `eed99c13131a974aa7a5858330afb7744039f61eef83a12c145063cca059981a`；零真实Provider I/O和客户数据，真实PG/Vault/组合留P07。
