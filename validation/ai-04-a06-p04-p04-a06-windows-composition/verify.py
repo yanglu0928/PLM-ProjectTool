@@ -127,7 +127,12 @@ class ApprovalPolicy:
         )
 
 
-def main(after_validation=None) -> None:
+def main(after_validation=None, *, output_schema_ref: str = "gap-output.v1",
+         schema_version: int = 1) -> None:
+    if (output_schema_ref not in {"gap-output.v1", "gap-output.v2"}
+            or schema_version not in {1, 2}
+            or output_schema_ref != f"gap-output.v{schema_version}"):
+        raise ValueError("unsupported synthetic output schema")
     schema = load_helper(
         "ai-04-a06-p04-p02-content-plan-schema", "composition_schema_helper",
     )
@@ -175,11 +180,12 @@ def main(after_validation=None) -> None:
                     "INSERT INTO plm.ai_prompt_versions(prompt_template_id,version_no,"
                     "system_template,user_template,system_template_hash,user_template_hash,"
                     "output_schema_ref,schema_version,rag_policy_ref,provider_policy_ref,"
-                    "created_by) VALUES (%s,1,%s,%s,%s,%s,'gap-output.v1',1,"
+                    "created_by) VALUES (%s,1,%s,%s,%s,%s,%s,%s,"
                     "'no-retrieval.v1','content-plan-chat.v1',%s)",
                     (prompt, system_text, user_text,
                      hashlib.sha256(system_text.encode()).hexdigest(),
-                     hashlib.sha256(user_text.encode()).hexdigest(), actor),
+                     hashlib.sha256(user_text.encode()).hexdigest(),
+                     output_schema_ref, schema_version, actor),
                 )
             source_bytes = "合成项目需求原文".encode("utf-8")
             source_sha = hashlib.sha256(source_bytes).digest()
@@ -190,13 +196,16 @@ def main(after_validation=None) -> None:
                 (project, actor),
             ).fetchone()[0]
             file_id = uuid.uuid4()
+            source_locator = (
+                f"projects/{project.hex}/objects/{file_id.hex[:2]}/{file_id.hex}"
+            )
             db.execute(
                 "INSERT INTO plm.doc_file_objects(file_object_id,scope,project_id,"
                 "storage_class,storage_locator,original_name_metadata,created_by,file_state,"
                 "sha256,size_bytes,detected_mime,available_at) VALUES "
                 "(%s,'PROJECT',%s,'PERSISTENT',%s,'composition.txt',%s,'AVAILABLE',%s,%s,"
                 "'text/plain',statement_timestamp())",
-                (file_id, project, f"projects/{project.hex}/composition.txt", actor,
+                (file_id, project, source_locator, actor,
                  source_sha, len(source_bytes)),
             )
             version = db.execute(
@@ -234,7 +243,7 @@ def main(after_validation=None) -> None:
         )
         task_policy = AITaskSubmissionPolicy(
             "gap-analysis.v1", 1, "GAP_ANALYSIS", prompt,
-            "project-gap-analysis.v1", "gap-output.v1", "no-retrieval.v1",
+            "project-gap-analysis.v1", output_schema_ref, "no-retrieval.v1",
             (AITaskParameterField("language", "STRING", True, 16),),
         )
         preview_policy = EgressPreviewPolicy(
@@ -283,7 +292,7 @@ def main(after_validation=None) -> None:
             "ai_task_plan": {
                 "task_type": "GAP_ANALYSIS",
                 "prompt_policy_ref": "gap-analysis.v1",
-                "output_schema_ref": "gap-output.v1",
+                "output_schema_ref": output_schema_ref,
                 "context_policy_ref": "no-retrieval.v1",
                 "task_parameters": {"language": "zh-CN"},
             },
@@ -333,7 +342,7 @@ def main(after_validation=None) -> None:
                     "task_type": "GAP_ANALYSIS",
                     "input_refs": body["source_refs"],
                     "prompt_policy_ref": "gap-analysis.v1",
-                    "output_schema_ref": "gap-output.v1",
+                    "output_schema_ref": output_schema_ref,
                     "context_policy_ref": "no-retrieval.v1",
                     "task_parameters": {"language": "zh-CN"},
                     "egress_authorization_ref": authorization_id,
@@ -348,7 +357,7 @@ def main(after_validation=None) -> None:
                     "task_type": "GAP_ANALYSIS",
                     "input_refs": body["source_refs"],
                     "prompt_policy_ref": "gap-analysis.v1",
-                    "output_schema_ref": "gap-output.v1",
+                    "output_schema_ref": output_schema_ref,
                     "context_policy_ref": "no-retrieval.v1",
                     "task_parameters": {"language": "zh-CN"},
                     "egress_authorization_ref": authorization_id,

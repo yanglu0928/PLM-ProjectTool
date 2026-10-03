@@ -1,6 +1,6 @@
 # CR-AI-020：AI 建议精确来源定位与人工确认提示
 
-日期：2026-10-03；状态：依 V1.1 持续授权登记，P02～P06 已通过，待 P07 实施验证；关联 Gate 2 冻结 API-03、CR-AI-018、Schema0072/0074、用户确认的待办交互要求；原冻结提交 `64cdf09` 与 `gap-output.v1` 历史不改。WBS `AI-04-A07`。
+日期：2026-10-03；状态：`IMPLEMENTED_AND_WINDOWS11_VERIFIED`，P02～P07 已通过；关联 Gate 2 冻结 API-03、CR-AI-018、Schema0072/0074、用户确认的待办交互要求；原冻结提交 `64cdf09` 与 `gap-output.v1` 历史不改。WBS `AI-04-A07`。
 
 ## 差异与证据
 
@@ -32,6 +32,8 @@ P04 实施证据：新增冻结`AI_TASK_LIST`的当前Session/License/Project授
 P05 实施证据：新增冻结`AI_TASK_INVOCATION_LIST`，每页重新验证Session/License/Project和Task创建者/管理角色；按attempt/id稳定倒序。投影只包含实际Provider/config、Model/revision、Prompt、Output Schema、固定Content Plan/Context版本、状态/schema validation、usage/latency、安全错误与时间；不查询或返回请求/响应正文、Secret、Provider request ref及任何fingerprint。`aii1` cursor使用与P04相同32字节密钥合同但独立`plm-ai-invocation-list-aesgcm-v1` family，并绑定Task。定向14通过/211子测试，后端2329通过/3跳过、2999子测试；wheel 815项 SHA-256 `f36edbea41edf6a6e7fe21528858b480fee29009f23616da1c72765fd9297e88`。Router默认关闭，真实PG/Vault/Windows组合留P07。
 
 P06 实施证据：新增冻结`AI_TASK_SUGGESTION_GET`安全投影。Task/当前Invocation/Suggestion/Plan的Project、Provider/Model/Prompt/Schema/Context关系必须一致，canonical JSON、payload fingerprint与Evidence→Plan来源顺序/hash再次验证；仅`SUCCEEDED + VALID`可读且固定`NOT_FORMAL_FACT`。读取前后两次重验Session/License/Project/Task；所有输入DocumentVersion均由Document Owner重验当前权限/source hash，V2再核固定ParseResult identity/result hash与实际node，V1仅Document精度。传输不含Secret、路径、Provider request ref、原始响应或内部fingerprint。Windows 11标记`AI_04_A07_P06_SUGGESTION_READ_PASS`；定向12通过/22子测试、后端2335通过/3跳过、3009子测试；wheel 818项 SHA-256 `eed99c13131a974aa7a5858330afb7744039f61eef83a12c145063cca059981a`。无Schema/依赖/真实外发；Router默认关闭，P07继续真实PG/Vault/Windows组合。
+
+P07 实施证据：Windows显式生产组合从当前账户Vault固定引用`ai-read-cursor-v1`取得唯一32字节密钥，按Task/Invocation各自AEAD family装配两个cursor codec，并将Task列表、Invocation列表和Suggestion GET与真实DocumentVersion/ParseResult Owner接入现有平台应用。缺密钥、错长度、缺Owner或错codec均在启动时失败关闭。Windows 11一次性PostgreSQL 18.6/Alembic head及真实ASGI Session证明两页稳定分页、PM/CM可读、非创建IM与CustomerMember隐藏、V2固定node定位与人工维护提示、License失效403、解析结果hash漂移及DocumentVersion撤销404、响应无Secret/路径/Provider request ref/fingerprint。验收中发现旧组合夹具使用了不符合`LocalFileStorage`规范的合成locator；仅把夹具改为既有标准`projects/{project}/objects/{bucket}/{file}`，未改生产Schema/API。标记`AI_04_A07_P07_WINDOWS_READ_COMPOSITION_PASS`；定向36通过/9子测试，后端2339通过/3跳过、3016子测试；wheel 820项 SHA-256 `4d17a7bc5fc8e6665b4d0a52d97d0404ddc1433ff2bcfb662987d2c1f32c91e2`。无真实Provider I/O或客户数据外发。
 
 Accept/Reject及写入目标Draft不在本CR中；它们涉及目标Owner、Review Lock、第二个expected version和正式业务版本，后续独立Change Request/写闭环实施。
 

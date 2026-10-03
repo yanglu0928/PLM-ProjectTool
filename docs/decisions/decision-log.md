@@ -7628,3 +7628,11 @@
 - Reason：Task权限不等于Document权限永久有效；复制持久化locator会在撤权、替换或解析结果漂移后泄露历史位置。服务端按固定身份和hash重建可同时支持点击定位与失败关闭。
 - Impact/Rollback：新增opt-in冻结GET、内部最小Repository和Document固定结果校验字段；无Schema/Migration/依赖/生产装配。撤Router可回退为404，历史Suggestion/Evidence不删除；坏V2不降级自由搜索，V1保持明确粗粒度。
 - Verification：Win11标记`AI_04_A07_P06_SUGGESTION_READ_PASS`，定向12通过/22子测试，后端2335通过/3跳过、3009子测试；wheel 818项 SHA-256 `eed99c13131a974aa7a5858330afb7744039f61eef83a12c145063cca059981a`；零真实Provider I/O和客户数据，真实PG/Vault/组合留P07。
+
+# DEC-20261003-777：Windows AI读取组合使用单一专用Vault密钥并强制Document Owner
+
+- Date/WBS：2026-10-03 / `AI-04-A07-P07`；依据 CR-AI-020、DEC-774～776。
+- Decision：Windows显式生产组合从当前账户Vault固定引用`ai-read-cursor-v1`读取唯一32字节密钥，Task与Invocation依靠各自codec family/AAD隔离；三条读取路由必须同时取得真实DocumentVersion与ParseResult Owner，缺任一依赖均拒绝启动。旧组合夹具的非规范合成文件locator修正为既有标准对象locator。
+- Reason：单一专用秘密减少部署和恢复面，同时不与Job/Evidence协议复用；Suggestion定位必须以当前Document事实重建，不能在组合层绕过Owner。修正夹具才能让真实文件完整性链参与验收，避免用不可被生产存储接受的路径产生假阳性。
+- Impact/Rollback：无Schema、依赖或API合同变化；显式生产模式新增一个必须部署的Vault引用。回滚可撤路由装配/取钥，历史事实不变；不允许通过硬编码临时密钥或弱化Document校验恢复服务。
+- Verification：Windows11/PostgreSQL18.6真实ASGI/Vault验证标记`AI_04_A07_P07_WINDOWS_READ_COMPOSITION_PASS`；定向36通过/9子测试，后端2339通过/3跳过、3016子测试；wheel 820项 SHA-256 `4d17a7bc5fc8e6665b4d0a52d97d0404ddc1433ff2bcfb662987d2c1f32c91e2`；零Provider I/O与客户数据。

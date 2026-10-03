@@ -14,6 +14,10 @@ from plm_assistant.entrypoints.password_capacity import get_process_password_cap
 from plm_assistant.entrypoints.windows_ai_egress import create_windows_ai_egress_router
 from plm_assistant.entrypoints.windows_ai_task import create_windows_ai_task_router
 from plm_assistant.entrypoints.windows_ai_task_read import create_windows_ai_task_read_router
+from plm_assistant.entrypoints.windows_ai_read import create_windows_ai_read_routers
+from plm_assistant.entrypoints.windows_ai_read_cursor import (
+    create_windows_ai_read_cursor_codecs,
+)
 from plm_assistant.entrypoints.windows_audit_list_cursor import create_windows_audit_cursor_codec
 from plm_assistant.modules.audit.api.read_events import create_audit_read_router
 from plm_assistant.modules.audit.application.authorized_read import AuthorizedAuditReadService
@@ -445,6 +449,9 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         ai_egress_router = None
         ai_task_create_router = None
         ai_task_read_router = None
+        ai_task_list_router = None
+        ai_task_invocation_list_router = None
+        ai_suggestion_read_router = None
         project_read_router = None
         workflow_read_router = None
         workflow_start_router = None
@@ -536,6 +543,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             ai_provider_cursors = create_windows_ai_provider_list_cursor_codec()
             ai_model_cursors = create_windows_ai_model_list_cursor_codec()
             ai_prompt_cursors = create_windows_ai_prompt_list_cursor_codec()
+            ai_read_cursors = create_windows_ai_read_cursor_codecs()
             member_cursors = create_windows_project_member_cursor_codec()
             department_cursors = create_windows_project_department_cursor_codec()
             audit_cursors = create_windows_audit_cursor_codec()
@@ -604,6 +612,16 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 storage=LocalParseResultStorage(settings.data_root),
                 unit_of_work=runtime.unit_of_work,
             )
+            ai_read_routers = create_windows_ai_read_routers(
+                runtime=runtime, origins=origins, license_guard=licenses.guard,
+                task_cursors=ai_read_cursors.task,
+                invocation_cursors=ai_read_cursors.invocation,
+                documents=document_reads,
+                parse_results=evidence_results_for_viewer,
+            )
+            ai_task_list_router = ai_read_routers.tasks
+            ai_task_invocation_list_router = ai_read_routers.invocations
+            ai_suggestion_read_router = ai_read_routers.suggestion
             evidence_viewer_router = create_evidence_viewer_router(
                 sessions=sessions, origins=origins,
                 viewer=EvidenceViewerService(
@@ -1275,6 +1293,9 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             ai_egress_router=ai_egress_router,
             ai_task_create_router=ai_task_create_router,
             ai_task_read_router=ai_task_read_router,
+            ai_task_list_router=ai_task_list_router,
+            ai_task_invocation_list_router=ai_task_invocation_list_router,
+            ai_suggestion_read_router=ai_suggestion_read_router,
             project_read_router=project_read_router,
             workflow_read_router=workflow_read_router,
             workflow_start_router=workflow_start_router,

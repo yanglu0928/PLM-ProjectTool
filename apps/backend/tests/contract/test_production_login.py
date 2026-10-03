@@ -28,6 +28,9 @@ from plm_assistant.modules.jobs.api.list_cursor import JobListCursorCodec
 from plm_assistant.modules.ai.application.provider_list_cursor import ProviderListCursorCodec
 from plm_assistant.modules.ai.application.model_list_cursor import ModelListCursorCodec
 from plm_assistant.modules.ai.application.prompt_list_cursor import PromptListCursorCodec
+from plm_assistant.modules.ai.api.task_list_cursor import AITaskListCursorCodec
+from plm_assistant.modules.ai.api.invocation_list_cursor import AIInvocationListCursorCodec
+from plm_assistant.entrypoints.windows_ai_read_cursor import WindowsAIReadCursorCodecs
 
 
 class _ContractMaintenanceAdmission:
@@ -171,6 +174,13 @@ class ProductionLoginTests(unittest.TestCase):
         self.enterContext(patch(
             "plm_assistant.entrypoints.production_login.create_windows_ai_prompt_list_cursor_codec",
             return_value=PromptListCursorCodec(b"p" * 32),
+        ))
+        self.enterContext(patch(
+            "plm_assistant.entrypoints.production_login.create_windows_ai_read_cursor_codecs",
+            return_value=WindowsAIReadCursorCodecs(
+                AITaskListCursorCodec(b"r" * 32),
+                AIInvocationListCursorCodec(b"r" * 32),
+            ),
         ))
         self.temp_dir = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp_dir.cleanup)
