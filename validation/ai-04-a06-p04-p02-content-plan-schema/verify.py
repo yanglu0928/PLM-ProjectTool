@@ -107,7 +107,10 @@ def seed_foundation(db: psycopg.Connection, suffix: str) -> dict[str, object]:
 
 
 def create_preview(db: psycopg.Connection, seed: dict[str, object],
-                   operation: str = "AI_TASK") -> tuple[uuid.UUID, uuid.UUID, uuid.UUID]:
+                   operation: str = "AI_TASK", *,
+                   payload_fingerprint: bytes = b"p" * 32,
+                   source_refs_fingerprint: bytes = b"s" * 32,
+                   estimated_record_count: int = 6) -> tuple[uuid.UUID, uuid.UUID, uuid.UUID]:
     object_id, version_id = uuid.uuid4(), uuid.uuid4()
     preview = db.execute(
         "INSERT INTO plm.ai_egress_previews(scope,project_id,purpose_ref,operation_type,"
@@ -116,10 +119,11 @@ def create_preview(db: psycopg.Connection, seed: dict[str, object],
         "max_payload_bytes,max_input_tokens,max_retry_attempts,payload_fingerprint,"
         "source_refs_fingerprint,risk_codes,created_by,trace_id,expires_at) VALUES "
         "('PROJECT',%s,'project-gap-analysis.v1',%s,%s,%s,%s,'cn-beijing',%s,"
-        "'document-minimal.v1',6,65536,4096,3,%s,%s,%s,%s,%s,"
+        "'document-minimal.v1',%s,65536,4096,3,%s,%s,%s,%s,%s,"
         "statement_timestamp()+interval '2 hours') RETURNING egress_preview_id",
         (seed["project"], operation, seed["provider"], seed["provider_config"],
-         seed["model"], Jsonb(["DOCUMENT_TEXT"]), b"p" * 32, b"s" * 32,
+         seed["model"], Jsonb(["DOCUMENT_TEXT"]), estimated_record_count,
+         payload_fingerprint, source_refs_fingerprint,
          Jsonb(["EXTERNAL_PROVIDER"]), seed["actor"], uuid.uuid4()),
     ).fetchone()[0]
     db.execute(

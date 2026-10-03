@@ -7276,3 +7276,11 @@
 - Reason：正向在既有Preview加非空列会破坏历史，允许后续追加Source或跨事务补齐又会使已计算的Plan/hash可漂移。反向唯一绑定既保留旧行，又允许同一事务原子创建完整图。
 - Impact/Rollback：Schema增量且旧行NULL；P04-P05前尚不强制新写链使用Plan。空Plan历史可降0071；出现Plan后停止新消费、保留历史并向前修复。无公开HTTP、正文、参数值、locator、Secret或网络外发。
 - Verification：Win11/PG18.6空/历史/Plan三库up/down/re-up、ORM drift、AI/非AI兼容、完整性/身份/不可变/截断/敏感列/拒降负例PASS；后端2194运行/3跳过；wheel SHA-256 `eee89c4747111b62db83116621d22e010fa16751f314835e62ac417a40adb306`。首次触发器变量歧义与ORM清单漏登记均修正后全量重跑通过。
+
+# DEC-20261003-733：Repository返回前强制校验完整Plan图且不持久化Envelope正文
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P04-P03`；依据 CR-AI-016、DEC-732、Schema0072。
+- Decision：应用Owner接收短命Plan+Envelope，重验二者的Plan/source/encoding/estimator/context身份，仅把Plan身份和Envelope hash/计数交给Repository。Repository写根/来源并以schema限定名称即时触发0072延迟完整性，再恢复延迟模式；读取重建强类型Plan并重算Plan fingerprint。完全一致的PlanId+PreviewId重放返回原记录，证明漂移失败关闭。
+- Reason：持久化canonical Envelope会扩大客户正文面；只在事务commit时发现图不完整会使调用方在返回后才失败；只信任数据库中的Plan hash又不能发现数据库映射或历史异常。
+- Impact/Rollback：内部未装配组件，无HTTP/Schema/依赖/Invocation/外发变化。可撤Repository/Owner但保留0072历史。并发创建将在P04-P04写服务中以Preview幂等和唯一键收口。
+- Verification：Win11/PG18.6真实写/提交/新事务读/精确重放/漂移拒绝/rollback、零Invocation通过；单元3、后端2197运行/3跳过；wheel SHA-256 `b7c2a8b7a088339cb3dc2b03d0af2e6431dcf7e016cc4ff117526394eb307c6a`。首次未限定schema的SET CONSTRAINTS失败，改为`plm.trg_*`后新库完整重跑通过。

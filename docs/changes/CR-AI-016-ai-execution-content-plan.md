@@ -49,6 +49,8 @@ P04-P01前置核查确认现有Preview早于Task且不含task type/Prompt/参数
 
 P04-P02已实现Schema0072/ORM：新增无正文Plan/Source、Preview/Prompt/Model/精确Source数据库保护、同事务完整性、不可变/禁止截断，以及Authorization/Task/Snapshot/Invocation可空且不可变的PlanRef。旧AI/非AI Preview与旧Task保持NULL且可升降重升；一旦产生Plan历史即拒绝down。Windows 11/PostgreSQL18.6三套一次性库、Alembic drift、负例、后端2194运行/3跳过和wheel通过。Repository/Preview/写链强制绑定尚未实施。
 
+P04-P03已实现应用Owner与PostgreSQL Repository：写前重验Plan/Envelope、仅持久化无正文证明，显式触发0072延迟完整性，读时重建强类型Plan并重算完整指纹；完全一致重放不新增，漂移失败关闭。Win11/PG18.6真实事务写/新事务读/重放/漂移/回滚与零Invocation通过，后端2197运行/3跳过及wheel通过。组件尚未装配到Preview HTTP；并发唯一冲突由P04-P04同一写服务处理。
+
 ## 兼容、迁移与回滚
 
 - 原 Gate 2 冻结提交和现有 0064/0068～0071 历史不改。P03-P02-A01～A04 先建立未装配合同与 Owner，暂不产生数据库或公开 API 变化。

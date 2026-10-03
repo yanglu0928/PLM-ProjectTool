@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A06-P04-P03 新增Content Plan应用Owner与PostgreSQL Repository：写前重验Plan/Envelope、只存身份/hash/计数，显式触发0072完整性；读时重建Plan并重算指纹，精确重放不新增、漂移失败关闭。兼容性/升级/回滚：内部未装配组件，无HTTP/Schema/依赖/Invocation/外发变化，可撤代码但保留已有Plan历史。验证：Win11/PG18.6真实写读重放/漂移/rollback/零Invocation，P02回归、后端2197运行/3跳过及wheel PASS，SHA-256 `b7c2a8b7a088339cb3dc2b03d0af2e6431dcf7e016cc4ff117526394eb307c6a`；首次SET CONSTRAINTS缺schema失败已修正重跑。已知问题：P04-P04 Preview、P04-P05下游绑定、Invocation/Adapter/发布/Server2025/Gate3/UAT/可用包待完成；Debian13按指令跳过。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P04-P02 新增Schema0072/ORM无正文Content Plan与精确Source，Plan反向一对一冻结AI_TASK Preview，四个下游根增加可空不可变PlanRef；同事务完整性、Preview/Prompt/Model/Source匹配、不可变/禁截断及有历史拒降。兼容性/升级/回滚：旧AI/非AI与Task保持NULL并可升降重升；首次Plan后只允许向前修复，Repository/HTTP/执行尚未装配。验证：Win11/PG18.6三库矩阵、Alembic drift/负例、后端2194运行/3跳过及wheel PASS，SHA-256 `eee89c4747111b62db83116621d22e010fa16751f314835e62ac417a40adb306`；首次PL/pgSQL变量歧义、首次ORM表清单失败已修正并重跑。已知问题：P04-P03 Repository、P04-P04 Preview、P04-P05下游绑定、Invocation/Adapter/发布/Server2025/Gate3/UAT/可用包待完成；Debian13按指令跳过。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P04-P01 完成Content Plan持久化/Preview绑定前置核查：现有Preview早于Task且缺Prompt/参数，选择AI_TASK请求新增ai_task_plan并由服务端计算计数/payload hash；非AI operation不变。规划Schema0072新增Plan/Source，并在Authorization/Task/Snapshot/Invocation传播PlanRef；旧NULL历史不回填、不可执行。兼容性/升级/回滚：本项仅文档；后续为尚未发行AI_TASK请求体有意收紧，前后端原子升级，有Plan历史拒降并向前修复。验证：静态交叉核对0064/0068～0071 ORM/API与A01～A04；未运行新增测试。已知问题：0072/Repository/Preview/Task绑定尚未实现，RAG/Invocation/Adapter/发布/Server2025/Gate3/UAT/可用包待完成；Debian13按指令跳过。
