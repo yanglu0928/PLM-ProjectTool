@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A06-P04-P04-A01 新增服务端Preview Plan Builder与独立Prompt规划内容合同；Task Policy/Prompt/Source投影/模型/Context/Estimator由服务端生成Plan+Envelope，禁止用伪Task/Job身份复用执行合同，敏感内容不进repr。兼容性/升级/回滚：内部未装配，无Schema/API/依赖/持久化/外发，可整体撤回。验证：定向14、后端2199运行/3跳过及wheel PASS，SHA-256 `da9d8cc92d8442955ceec44c01deecd9fc0c00494f5e50932b73bdb81bae81ce`。已知问题：A02 Prompt PG Owner、A03 Document规划投影、A04 Preview事务、A05 HTTP、A06 Windows组合及后续绑定/Invocation/发行待完成。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P04-P03 新增Content Plan应用Owner与PostgreSQL Repository：写前重验Plan/Envelope、只存身份/hash/计数，显式触发0072完整性；读时重建Plan并重算指纹，精确重放不新增、漂移失败关闭。兼容性/升级/回滚：内部未装配组件，无HTTP/Schema/依赖/Invocation/外发变化，可撤代码但保留已有Plan历史。验证：Win11/PG18.6真实写读重放/漂移/rollback/零Invocation，P02回归、后端2197运行/3跳过及wheel PASS，SHA-256 `b7c2a8b7a088339cb3dc2b03d0af2e6431dcf7e016cc4ff117526394eb307c6a`；首次SET CONSTRAINTS缺schema失败已修正重跑。已知问题：P04-P04 Preview、P04-P05下游绑定、Invocation/Adapter/发布/Server2025/Gate3/UAT/可用包待完成；Debian13按指令跳过。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P04-P02 新增Schema0072/ORM无正文Content Plan与精确Source，Plan反向一对一冻结AI_TASK Preview，四个下游根增加可空不可变PlanRef；同事务完整性、Preview/Prompt/Model/Source匹配、不可变/禁截断及有历史拒降。兼容性/升级/回滚：旧AI/非AI与Task保持NULL并可升降重升；首次Plan后只允许向前修复，Repository/HTTP/执行尚未装配。验证：Win11/PG18.6三库矩阵、Alembic drift/负例、后端2194运行/3跳过及wheel PASS，SHA-256 `eee89c4747111b62db83116621d22e010fa16751f314835e62ac417a40adb306`；首次PL/pgSQL变量歧义、首次ORM表清单失败已修正并重跑。已知问题：P04-P03 Repository、P04-P04 Preview、P04-P05下游绑定、Invocation/Adapter/发布/Server2025/Gate3/UAT/可用包待完成；Debian13按指令跳过。

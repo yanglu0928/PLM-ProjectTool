@@ -23,7 +23,7 @@ from plm_assistant.modules.ai.application.execution_content_plan import (
     require_content_plan_for_grant,
 )
 from plm_assistant.modules.ai.application.execution_prompt_content import (
-    AIExecutionPromptTaskContent,
+    AIExecutionPromptPlanningContent, AIExecutionPromptTaskContent,
     RenderedAIExecutionPrompt,
     StrictAIExecutionPromptRenderer,
 )
@@ -255,12 +255,15 @@ class AIExecutionEnvelopeBuilder:
     def build(
         self, *, plan: AIExecutionContentPlan,
         sources: tuple[AIExecutionContentProjection, ...],
-        prompt_content: AIExecutionPromptTaskContent,
+        prompt_content: AIExecutionPromptTaskContent | AIExecutionPromptPlanningContent,
     ) -> AIExecutionEnvelope:
         if (type(plan) is not AIExecutionContentPlan
                 or type(sources) is not tuple
                 or len(sources) != len(plan.sources)
-                or type(prompt_content) is not AIExecutionPromptTaskContent):
+                or type(prompt_content) not in (
+                    AIExecutionPromptTaskContent,
+                    AIExecutionPromptPlanningContent,
+                )):
             raise AIExecutionEnvelopeError()
         plan.__post_init__()
         projected: list[object] = []

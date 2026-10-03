@@ -7284,3 +7284,11 @@
 - Reason：持久化canonical Envelope会扩大客户正文面；只在事务commit时发现图不完整会使调用方在返回后才失败；只信任数据库中的Plan hash又不能发现数据库映射或历史异常。
 - Impact/Rollback：内部未装配组件，无HTTP/Schema/依赖/Invocation/外发变化。可撤Repository/Owner但保留0072历史。并发创建将在P04-P04写服务中以Preview幂等和唯一键收口。
 - Verification：Win11/PG18.6真实写/提交/新事务读/精确重放/漂移拒绝/rollback、零Invocation通过；单元3、后端2197运行/3跳过；wheel SHA-256 `b7c2a8b7a088339cb3dc2b03d0af2e6431dcf7e016cc4ff117526394eb307c6a`。首次未限定schema的SET CONSTRAINTS失败，改为`plm.trg_*`后新库完整重跑通过。
+
+# DEC-20261003-734：Preview规划使用独立Prompt内容而不伪造Task/Job身份
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P04-P04-A01`；依据 CR-AI-016、DEC-731～733。
+- Decision：新增Preview专用Prompt规划投影和服务端Plan Builder；Builder用部署Task Policy、当前Prompt、显式Source Owner、Provider route、Context与Estimator构建Plan/Envelope。不得为复用执行期内容合同而生成虚假的TaskId/JobId/AuthorizationId。
+- Reason：Preview发生在Task之前；伪身份会污染追溯语义，也会让执行期授权字段看似已经存在。独立最小合同可复用严格Renderer而不降低边界。
+- Impact/Rollback：内部未装配合同，无Schema/API/依赖/持久化/外发；可整体撤回。后续A02～A06逐层接Owner、Preview事务、HTTP与Windows组合。
+- Verification：Builder新增2项、Prompt/Envelope合计14项、后端2199运行/3跳过；wheel SHA-256 `da9d8cc92d8442955ceec44c01deecd9fc0c00494f5e50932b73bdb81bae81ce`。

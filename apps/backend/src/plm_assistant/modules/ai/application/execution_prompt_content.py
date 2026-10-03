@@ -165,6 +165,77 @@ class AIExecutionPromptTaskContent:
         return _canonical_parameters(self.task_parameters)
 
 
+@dataclass(frozen=True, slots=True)
+class AIExecutionPromptPlanningContent:
+    """Short-lived active Prompt projection used before an AI Task exists."""
+
+    task_type: str
+    prompt_policy_ref: str
+    prompt_policy_version: int
+    prompt_template_id: uuid.UUID
+    prompt_version_no: int
+    system_template: str = field(repr=False)
+    user_template: str = field(repr=False)
+    system_template_hash: str
+    user_template_hash: str
+    provider_policy_ref: str
+    output_schema_ref: str
+    schema_version: int
+    context_policy_ref: str
+    task_parameters: Mapping[str, object] = field(repr=False)
+    task_parameters_fingerprint: bytes = field(repr=False)
+
+    def __post_init__(self) -> None:
+        refs = (
+            self.prompt_policy_ref, self.provider_policy_ref,
+            self.output_schema_ref, self.context_policy_ref,
+        )
+        if (not _id(self.prompt_template_id)
+                or any(type(value) is not str or _REF.fullmatch(value) is None
+                       for value in refs)
+                or type(self.prompt_policy_version) is not int
+                or not 1 <= self.prompt_policy_version <= 2_147_483_647
+                or type(self.prompt_version_no) is not int
+                or not 1 <= self.prompt_version_no <= 9_223_372_036_854_775_807
+                or type(self.schema_version) is not int
+                or not 1 <= self.schema_version <= 2_147_483_647
+                or not _digest(self.task_parameters_fingerprint)
+                or not isinstance(self.task_parameters, Mapping)
+                or len(self.task_parameters) > 16):
+            raise AIExecutionPromptContentError()
+        try:
+            task_type = PromptTaskType(self.task_type)
+            draft = PromptVersionDraft(
+                self.prompt_template_id, task_type, self.system_template,
+                self.user_template, self.output_schema_ref, self.schema_version,
+                self.context_policy_ref, self.provider_policy_ref,
+            )
+        except (ValueError, PromptVersionError):
+            raise AIExecutionPromptContentError() from None
+        if (draft.system_hash != self.system_template_hash
+                or draft.user_hash != self.user_template_hash
+                or draft.system_template != self.system_template
+                or draft.user_template != self.user_template):
+            raise AIExecutionPromptContentError()
+        copied: dict[str, object] = {}
+        for key, value in self.task_parameters.items():
+            if (type(key) is not str or _PARAMETER.fullmatch(key) is None
+                    or type(value) is str and (
+                        not value or value != value.strip() or len(value) > 4096)
+                    or type(value) is int and not isinstance(value, bool) and not (
+                        -9_223_372_036_854_775_808
+                        <= value <= 9_223_372_036_854_775_807)
+                    or type(value) not in (str, int, bool)):
+                raise AIExecutionPromptContentError()
+            copied[key] = value
+        _canonical_parameters(copied)
+        object.__setattr__(self, "task_parameters", MappingProxyType(copied))
+
+    @property
+    def canonical_parameters_json(self) -> str:
+        return _canonical_parameters(self.task_parameters)
+
+
 class AIExecutionPromptTaskContentRepositoryPort(Protocol):
     def load_exact(
         self,
@@ -256,13 +327,16 @@ class StrictAIExecutionPromptRenderer:
     def render(
         self,
         plan: AIExecutionContentPlan,
-        content: AIExecutionPromptTaskContent,
+        content: AIExecutionPromptTaskContent | AIExecutionPromptPlanningContent,
         *,
         input_text: str,
         context_text: str | None,
     ) -> RenderedAIExecutionPrompt:
         if (type(plan) is not AIExecutionContentPlan
-                or type(content) is not AIExecutionPromptTaskContent):
+                or type(content) not in (
+                    AIExecutionPromptTaskContent,
+                    AIExecutionPromptPlanningContent,
+                )):
             raise AIExecutionPromptContentError(
                 "AI_EXECUTION_PROMPT_RENDER_INVALID",
             )
