@@ -43,6 +43,9 @@ def egress_authorization_view(row: AIEgressAuthorizationRow, *, state: str | Non
             or len(row.payload_fingerprint) != 32
             or type(row.source_refs_fingerprint) is not bytes
             or len(row.source_refs_fingerprint) != 32
+            or (row.content_plan_ref is not None
+                and (type(row.content_plan_ref) is not uuid.UUID
+                     or not row.content_plan_ref.int))
             or row.approved_role not in ("ProjectManager", "CustomerManager")
             or row.authorization_state not in ("AUTHORIZED", "REVOKED")
             or row.lock_version not in (0, 1)
@@ -64,6 +67,7 @@ def egress_authorization_view(row: AIEgressAuthorizationRow, *, state: str | Non
         row.max_retry_attempts, bytes(row.payload_fingerprint),
         bytes(row.source_refs_fingerprint), row.approved_by, row.approved_role,
         row.approved_at, row.valid_until, projected_state, projected_version,
+        row.content_plan_ref,
     )
 
 
@@ -109,6 +113,7 @@ class SqlAlchemyEgressAuthorizationRepository:
             max_retry_attempts=request.max_retry_attempts,
             payload_fingerprint=preview.payload_fingerprint,
             source_refs_fingerprint=preview.source_refs_fingerprint,
+            content_plan_ref=preview.content_plan_ref,
             authorization_state="AUTHORIZED", approved_by=request.approved_by,
             approved_role=request.approved_role, valid_until=request.valid_until,
             lock_version=0,

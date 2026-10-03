@@ -40,6 +40,7 @@ class AITaskExecutionSnapshot:
     provider_config_version_id: uuid.UUID
     ai_model_id: uuid.UUID
     valid_until: datetime
+    content_plan_ref: uuid.UUID | None = None
 
 
 class AITaskExecutionSnapshotRepositoryPort(Protocol):
@@ -94,6 +95,9 @@ class AITaskExecutionPreflight:
                         or current.provider_config_version_id
                         != snapshot.provider_config_version_id
                         or current.ai_model_id != snapshot.ai_model_id
+                        or current.content_plan_ref != snapshot.content_plan_ref
+                        or type(snapshot.content_plan_ref) is not uuid.UUID
+                        or not snapshot.content_plan_ref.int
                         or current.valid_until != snapshot.valid_until
                         or now >= snapshot.valid_until.astimezone(timezone.utc)):
                     raise AITaskExecutionPreflightError()

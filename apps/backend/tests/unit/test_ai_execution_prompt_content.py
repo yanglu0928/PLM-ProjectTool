@@ -34,6 +34,7 @@ class _Repository:
 class AIExecutionPromptContentTests(unittest.TestCase):
     def setUp(self) -> None:
         project_id = uuid.uuid4()
+        content_plan = uuid.uuid4()
         input_ref = AITaskExecutionInputRef(
             1, "DOC-02", "document", "DOCUMENT_VERSION",
             uuid.uuid4(), uuid.uuid4(), project_id,
@@ -54,6 +55,7 @@ class AIExecutionPromptContentTests(unittest.TestCase):
             ("DOCUMENT_TEXT",), b"p" * 32, "document-minimal.v1",
             10, 65536, 4096, 3,
             datetime(2026, 10, 3, tzinfo=timezone.utc) + timedelta(minutes=20),
+            content_plan,
         )
         self.content = AIExecutionPromptTaskContent(
             self.grant.ai_task_id, project_id, self.grant.job_id,
@@ -81,7 +83,7 @@ class AIExecutionPromptContentTests(unittest.TestCase):
             b"g" * 32, 1, 50,
         )
         self.plan = AIExecutionContentPlan(
-            uuid.uuid4(), 1, project_id, "project-gap-analysis.v1",
+            content_plan, 1, project_id, "project-gap-analysis.v1",
             "GAP_ANALYSIS", b"s" * 32, (source,), prompt, b"t" * 32, context,
             self.grant.ai_provider_id, self.grant.provider_config_version_id,
             self.grant.ai_model_id, "deepseek-chat", "PROVIDER_MANAGED",

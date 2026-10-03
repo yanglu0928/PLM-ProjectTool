@@ -63,6 +63,8 @@ P04-P04-A05已实施公开HTTP合同收紧：AI_TASK必须提交五字段`ai_tas
 
 P04-P04-A06已完成Windows显式生产组合：存在部署Task Policy时，Egress组合根注入Prompt规划、Document最小内容、Envelope/Plan Builder和Plan Repository，并使用统一`data_root`读取私有ParseResult；缺少Task Policy时AI_TASK失败关闭而非退回客户端摘要。Windows 11/PostgreSQL18.6真实Session/Project/Document/Prompt/HTTP链证明Preview/Plan原子一致、精确重放、旧形态400、授权201、License拒绝403和零Invocation/Provider I/O。首次证据种子使用Schema专用双花括号Prompt导致安全503，改用独立可执行Prompt后新库完整重跑。定向45、后端2206运行/3跳过及wheel通过；无Schema、依赖或客户数据外发。P04-P05继续把Authorization/Task/Snapshot/Invocation绑定同一PlanRef。
 
+P04-P05已把Preview产生的不可变PlanRef强制传播至Authorization、Task及其授权快照，并纳入执行前置、Grant签发和Grant指纹。新AI_TASK授权若Preview无Plan、Task/快照/当前授权引用缺失或不一致、内容Plan ID与Grant不一致，均在Invocation和网络I/O前失败关闭；旧NULL历史保留可读/可撤销但不可执行。Windows 11/PostgreSQL18.6真实Preview→Authorization→Task→Preflight证明四处引用一致、重放稳定且Invocation为0；定向33、后端2209运行/3跳过及wheel通过。复用Schema0072，无Migration/API响应/依赖/外发变化。生产Invocation写入器尚未存在，下一切片P05从生命周期与持久化前置核查开始，不能把本项描述为Invocation行已落库。
+
 ## 兼容、迁移与回滚
 
 - 原 Gate 2 冻结提交和现有 0064/0068～0071 历史不改。P03-P02-A01～A04 先建立未装配合同与 Owner，暂不产生数据库或公开 API 变化。

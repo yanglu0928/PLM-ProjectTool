@@ -105,6 +105,7 @@ class AITaskExecutionGrant:
     max_input_tokens: int
     max_retry_attempts: int
     valid_until: datetime
+    content_plan_id: uuid.UUID | None = None
 
     def __post_init__(self) -> None:
         identifiers = (
@@ -112,6 +113,7 @@ class AITaskExecutionGrant:
             self.trace_id, self.prompt_template_id, self.egress_snapshot_id,
             self.authorization_ref, self.ai_provider_id,
             self.provider_config_version_id, self.ai_model_id,
+            self.content_plan_id,
         )
         refs = (
             self.prompt_policy_ref, self.provider_policy_ref,
@@ -214,6 +216,7 @@ def execution_grant_fingerprint(grant: AITaskExecutionGrant) -> bytes:
         "max_input_tokens": grant.max_input_tokens,
         "max_retry_attempts": grant.max_retry_attempts,
         "valid_until": grant.valid_until.isoformat(),
+        "content_plan_id": str(grant.content_plan_id),
     })
 
 

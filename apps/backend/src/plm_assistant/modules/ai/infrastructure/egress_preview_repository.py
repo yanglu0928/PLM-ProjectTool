@@ -11,7 +11,7 @@ from plm_assistant.modules.ai.application.egress_preview import (
     EgressPreviewPersistenceRequest, EgressPreviewSourceView, EgressPreviewView, EgressRoute,
 )
 from plm_assistant.modules.ai.infrastructure.egress_orm import (
-    AIEgressPreviewRow, AIEgressPreviewSourceRefRow,
+    AIEgressPreviewRow, AIEgressPreviewSourceRefRow, AIExecutionContentPlanRow,
 )
 from plm_assistant.modules.ai.infrastructure.model_orm import AIModelRow
 from plm_assistant.modules.ai.infrastructure.provider_orm import (
@@ -120,6 +120,12 @@ class SqlAlchemyEgressPreviewRepository:
         ).scalar_one_or_none()
         if root is None:
             return None
+        content_plan_ref = session.execute(
+            select(AIExecutionContentPlanRow.content_plan_id).where(
+                AIExecutionContentPlanRow.egress_preview_id == preview_id,
+                AIExecutionContentPlanRow.project_id == project_id,
+            ).execution_options(autoflush=False)
+        ).scalar_one_or_none()
         rows = session.execute(
             select(AIEgressPreviewSourceRefRow).where(
                 AIEgressPreviewSourceRefRow.egress_preview_id == preview_id,
@@ -151,4 +157,5 @@ class SqlAlchemyEgressPreviewRepository:
             root.max_payload_bytes, root.max_input_tokens, root.max_retry_attempts,
             bytes(root.payload_fingerprint), bytes(root.source_refs_fingerprint),
             _strings(root.risk_codes, maximum=32), root.created_at, root.expires_at,
+            content_plan_ref,
         )

@@ -330,6 +330,7 @@ def require_content_plan_for_grant(
     grant.__post_init__()
     plan.__post_init__()
     if (plan.project_id != grant.project_id
+            or plan.content_plan_id != grant.content_plan_id
             or plan.purpose_ref != grant.purpose_ref
             or plan.task_type != grant.task_type
             or plan.source_refs_fingerprint != grant.source_refs_fingerprint

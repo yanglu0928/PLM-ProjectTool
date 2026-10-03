@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import unittest
 import uuid
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 
 from plm_assistant.modules.ai.application.create_task import (
@@ -23,6 +24,7 @@ class EgressAuthorizationOwnerTests(unittest.TestCase):
     def setUp(self):
         self.now = datetime(2026, 10, 3, 10, tzinfo=timezone.utc)
         self.project, self.authorization_id = uuid.uuid4(), uuid.uuid4()
+        self.content_plan = uuid.uuid4()
         self.value = EgressAuthorizationView(
             self.authorization_id, uuid.uuid4(), self.project,
             "gap.analysis.v1", "AI_TASK", uuid.uuid4(), uuid.uuid4(),
@@ -31,6 +33,7 @@ class EgressAuthorizationOwnerTests(unittest.TestCase):
             b"p" * 32, b"s" * 32, uuid.uuid4(), "ProjectManager",
             self.now - timedelta(minutes=1), self.now + timedelta(minutes=20),
             "AUTHORIZED", 0,
+            self.content_plan,
         )
         self.query = EgressAuthorizationQuery(
             self.authorization_id, self.project, "GAP_ANALYSIS",
@@ -65,6 +68,12 @@ class EgressAuthorizationOwnerTests(unittest.TestCase):
                 object(), query=self.query,
             )
 
+    def test_rejects_legacy_authorization_without_content_plan(self):
+        with self.assertRaises(EgressAuthorizationOwnerError):
+            self.owner(value=replace(
+                self.value, content_plan_ref=None,
+            )).resolve_authorized(object(), query=self.query)
+
     def test_rejects_expired_or_revoked_current_root(self):
         expired = EgressAuthorizationView(
             self.value.authorization_id, self.value.preview_id, self.value.project_id,
@@ -77,6 +86,7 @@ class EgressAuthorizationOwnerTests(unittest.TestCase):
             self.value.source_refs_fingerprint, self.value.approved_by,
             self.value.approved_role, self.value.approved_at, self.now,
             "AUTHORIZED", 0,
+            self.value.content_plan_ref,
         )
         with self.assertRaises(EgressAuthorizationOwnerError):
             self.owner(value=expired).resolve_authorized(object(), query=self.query)
@@ -91,6 +101,7 @@ class EgressAuthorizationOwnerTests(unittest.TestCase):
             self.value.source_refs_fingerprint, self.value.approved_by,
             self.value.approved_role, self.value.approved_at, self.value.valid_until,
             "REVOKED", 1,
+            self.value.content_plan_ref,
         )
         with self.assertRaises(EgressAuthorizationOwnerError):
             self.owner(value=revoked).resolve_authorized(object(), query=self.query)

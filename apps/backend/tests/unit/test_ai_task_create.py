@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import unittest
 import uuid
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 
 from plm_assistant.modules.ai.application.create_task import (
@@ -113,6 +114,7 @@ class AITaskCreateTests(unittest.TestCase):
             uuid.uuid4(), "PROJECT_MANAGER", self.now - timedelta(minutes=1),
             self.now + timedelta(hours=1), "document-minimal.v1", 1,
             65536, 4096, 3, "AUTHORIZED",
+            uuid.uuid4(),
         )
         self.created = CreatedAITask(uuid.uuid4(), uuid.uuid4())
 
@@ -144,6 +146,14 @@ class AITaskCreateTests(unittest.TestCase):
         ])
         self.assertEqual(len(self.audit.events), 1)
         self.assertTrue(self.uow.items[0].committed)
+
+    def test_legacy_authorization_without_content_plan_is_rejected(self):
+        with self.assertRaises(AITaskCreateError) as caught:
+            self.service(snapshot=replace(
+                self.snapshot, content_plan_ref=None,
+            )).create(self.command, idempotency_key="P" * 16)
+        self.assertEqual(caught.exception.code, "AI_EGRESS_AUTHORIZATION_INVALID")
+        self.assertEqual(self.repo.creates, 0)
 
     def test_replay_returns_original_task_and_job_without_owner_calls(self):
         receipt = IdempotencyResult("V1_AI_TASK_CREATE", self.created.ai_task_id, 202)

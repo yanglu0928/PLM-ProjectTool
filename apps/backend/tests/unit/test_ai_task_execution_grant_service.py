@@ -84,6 +84,7 @@ class AITaskExecutionGrantIssuerTests(unittest.TestCase):
         valid_until = self.now + timedelta(minutes=20)
         approved_at = self.now - timedelta(minutes=2)
         approved_by = uuid.uuid4()
+        self.content_plan = uuid.uuid4()
         self.material = AITaskExecutionGrantMaterial(
             task, project, job, actor, trace, "GAP_ANALYSIS", (input_ref,),
             b"i" * 32, "gap-analysis.v1", 4, uuid.uuid4(), 2,
@@ -93,6 +94,7 @@ class AITaskExecutionGrantIssuerTests(unittest.TestCase):
             provider, config, model, "deepseek-chat", "PROVIDER_MANAGED",
             "cn-beijing", ("DOCUMENT_TEXT",), b"p" * 32, approved_by,
             "PROJECT_MANAGER", approved_at, 65_536, 4_096, 3, valid_until,
+            self.content_plan,
         )
         self.current = AuthorizedEgressSnapshot(
             authorization, project, "project-gap-analysis.v1", provider, config,
@@ -100,6 +102,7 @@ class AITaskExecutionGrantIssuerTests(unittest.TestCase):
             b"p" * 32, b"i" * 32, approved_by, "PROJECT_MANAGER",
             approved_at, valid_until, "document-minimal.v1", 50,
             65_536, 4_096, 3, "AUTHORIZED",
+            self.content_plan,
         )
 
     def service(self, *, material=None, current=None, guard=None):

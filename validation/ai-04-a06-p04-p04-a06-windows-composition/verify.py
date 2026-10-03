@@ -23,6 +23,11 @@ from sqlalchemy.engine import URL
 
 from plm_assistant.entrypoints.api import create_app
 from plm_assistant.entrypoints.windows_ai_egress import create_windows_ai_egress_router
+from plm_assistant.entrypoints.windows_ai_task import create_windows_ai_task_router
+from plm_assistant.modules.ai.application.egress_authorization_owner import (
+    AITaskEgressPurposeRegistry,
+    EgressAuthorizationOwner,
+)
 from plm_assistant.modules.ai.application.egress_preview import (
     EgressPreviewPolicy,
     EgressPreviewPolicyRegistry,
@@ -31,6 +36,15 @@ from plm_assistant.modules.ai.application.task_submission_policy import (
     AITaskParameterField,
     AITaskSubmissionPolicy,
     AITaskSubmissionPolicyRegistry,
+)
+from plm_assistant.modules.ai.application.task_execution_preflight import (
+    AITaskExecutionPreflight,
+)
+from plm_assistant.modules.ai.infrastructure.egress_authorization_owner_repository import (
+    SqlAlchemyEgressAuthorizationOwnerRepository,
+)
+from plm_assistant.modules.ai.infrastructure.task_execution_preflight_repository import (
+    SqlAlchemyAITaskExecutionSnapshotRepository,
 )
 from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
 from plm_assistant.modules.auth.application.session_service import SessionService
@@ -228,6 +242,9 @@ def main() -> None:
             frozenset({"DOCUMENT_TEXT"}), timedelta(minutes=30),
             10, 131072, 131072, 3, ("EXTERNAL_PROVIDER", "CUSTOMER_DATA"),
         )
+        task_policies = AITaskSubmissionPolicyRegistry({
+            task_policy.reference: task_policy,
+        })
         router = create_windows_ai_egress_router(
             runtime=runtime, sessions=sessions, origins=LoginOriginPolicy([ORIGIN]),
             license_guard=guard, audit=audit, documents=documents,
@@ -235,10 +252,16 @@ def main() -> None:
                 preview_policy.reference: preview_policy,
             }),
             approval_policy=ApprovalPolicy(),
-            task_policies=AITaskSubmissionPolicyRegistry({
-                task_policy.reference: task_policy,
-            }),
+            task_policies=task_policies,
             data_root=result_root,
+        )
+        purposes = AITaskEgressPurposeRegistry({
+            "GAP_ANALYSIS": frozenset({"project-gap-analysis.v1"}),
+        })
+        task_router = create_windows_ai_task_router(
+            runtime=runtime, sessions=sessions, origins=LoginOriginPolicy([ORIGIN]),
+            license_guard=guard, audit=audit, documents=documents,
+            task_policies=task_policies, egress_purposes=purposes,
         )
         path = f"/api/v1/projects/{project}/egress-previews"
         headers = {
@@ -265,7 +288,9 @@ def main() -> None:
                 "task_parameters": {"language": "zh-CN"},
             },
         }
-        with TestClient(create_app(ai_egress_router=router), base_url=ORIGIN) as client:
+        with TestClient(create_app(
+            ai_egress_router=router, ai_task_create_router=task_router,
+        ), base_url=ORIGIN) as client:
             first = client.post(path, json=body, headers=headers)
             assert first.status_code == 201, first.text
             preview = first.json()["data"]
@@ -297,6 +322,51 @@ def main() -> None:
             )
             assert authorization.status_code == 201, authorization.text
             assert authorization.json()["data"]["state"] == "AUTHORIZED"
+            authorization_id = authorization.json()["data"]["authorization_id"]
+            task_headers = {
+                **headers, "idempotency-key": str(uuid.uuid4()),
+            }
+            task_response = client.post(
+                f"/api/v1/projects/{project}/ai-tasks",
+                headers=task_headers,
+                json={
+                    "task_type": "GAP_ANALYSIS",
+                    "input_refs": body["source_refs"],
+                    "prompt_policy_ref": "gap-analysis.v1",
+                    "output_schema_ref": "gap-output.v1",
+                    "context_policy_ref": "no-retrieval.v1",
+                    "task_parameters": {"language": "zh-CN"},
+                    "egress_authorization_ref": authorization_id,
+                },
+            )
+            assert task_response.status_code == 202, task_response.text
+            task_data = task_response.json()["data"]
+            assert client.post(
+                f"/api/v1/projects/{project}/ai-tasks",
+                headers=task_headers,
+                json={
+                    "task_type": "GAP_ANALYSIS",
+                    "input_refs": body["source_refs"],
+                    "prompt_policy_ref": "gap-analysis.v1",
+                    "output_schema_ref": "gap-output.v1",
+                    "context_policy_ref": "no-retrieval.v1",
+                    "task_parameters": {"language": "zh-CN"},
+                    "egress_authorization_ref": authorization_id,
+                },
+            ).json()["data"] == task_data
+            preflight = AITaskExecutionPreflight(
+                unit_of_work=runtime.unit_of_work,
+                repository=SqlAlchemyAITaskExecutionSnapshotRepository(),
+                egress_owner=EgressAuthorizationOwner(
+                    repository=SqlAlchemyEgressAuthorizationOwnerRepository(),
+                    purposes=purposes,
+                ),
+            )
+            admitted = preflight.require(
+                ai_task_id=uuid.UUID(task_data["ai_task_id"]), project_id=project,
+                job_id=uuid.UUID(task_data["job_id"]), now=datetime.now(timezone.utc),
+            )
+            assert admitted.content_plan_ref is not None
             guard.enabled = False
             denied = client.get(
                 path + "/" + preview["preview_id"],
@@ -330,11 +400,24 @@ def main() -> None:
                 "(SELECT count(*) FROM plm.ai_invocations)"
             ).fetchone()
             assert counts == (1, 1, 1, 1, 1, 2, 2, 0), counts
+            links = db.execute(
+                "SELECT p.content_plan_id,a.content_plan_ref,t.content_plan_ref,"
+                "s.content_plan_ref FROM plm.ai_execution_content_plans p "
+                "JOIN plm.ai_egress_authorizations a "
+                "ON a.egress_preview_id=p.egress_preview_id "
+                "JOIN plm.ai_egress_authorization_snapshots s "
+                "ON s.authorization_ref=a.authorization_id "
+                "JOIN plm.ai_tasks t ON t.ai_task_id=s.ai_task_id"
+            ).fetchone()
+            assert links is not None and len(set(links)) == 1, links
+            assert admitted.content_plan_ref == links[0]
         print(
             "AI_04_A06_P04_P04_A06_WINDOWS_COMPOSITION_PASS: Win11/PostgreSQL18 "
             "real ASGI Session/Project/Document/Prompt composition created one atomic "
-            "server-derived Preview+ContentPlan, exact replay and authorization; legacy "
-            "client facts rejected, License denial closed, zero Invocation/provider I/O"
+            "server-derived Preview+ContentPlan, exact replay, authorization and Task; "
+            "Authorization/Task/Snapshot/Preflight share one PlanRef, legacy client facts "
+            "rejected, License denial closed, zero Invocation/provider I/O\n"
+            "AI_04_A06_P04_P05_PLAN_REF_BINDING_PASS"
         )
     finally:
         if runtime is not None:

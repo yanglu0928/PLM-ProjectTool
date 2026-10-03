@@ -64,6 +64,7 @@ class AITaskExecutionGrantMaterial:
     max_input_tokens: int
     max_retry_attempts: int
     valid_until: datetime
+    content_plan_ref: uuid.UUID | None = None
 
 
 class AITaskExecutionGrantRepositoryPort(Protocol):
@@ -147,7 +148,7 @@ class AITaskExecutionGrantIssuer:
                     current.minimal_payload_policy_ref,
                     current.max_record_count, material.max_payload_bytes,
                     material.max_input_tokens, material.max_retry_attempts,
-                    material.valid_until,
+                    material.valid_until, material.content_plan_ref,
                 )
             # Do not allow a license state change at the transaction boundary to
             # produce a usable grant. The network boundary will check again.
@@ -171,6 +172,8 @@ class AITaskExecutionGrantIssuer:
                 or material.authorization_ref != claim.egress_authorization_ref
                 or material.source_refs_fingerprint != claim.input_fingerprint
                 or material.max_retry_attempts != claim.max_attempts
+                or type(material.content_plan_ref) is not uuid.UUID
+                or not material.content_plan_ref.int
                 or claim.attempt_no > material.max_retry_attempts):
             raise AITaskExecutionGrantError()
 
@@ -188,6 +191,7 @@ class AITaskExecutionGrantIssuer:
                 != material.authorization_fingerprint
                 or current.preview_payload_fingerprint
                 != material.approved_payload_fingerprint
+                or current.content_plan_ref != material.content_plan_ref
                 or current.purpose_ref != material.purpose_ref
                 or current.ai_provider_id != material.ai_provider_id
                 or current.provider_config_version_id

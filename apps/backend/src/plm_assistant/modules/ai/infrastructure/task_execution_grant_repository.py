@@ -57,6 +57,7 @@ class SqlAlchemyAITaskExecutionGrantRepository:
             AITaskRow.prompt_policy_version, AITaskRow.prompt_template_ref,
             AITaskRow.prompt_version_no, AITaskRow.output_schema_ref,
             AITaskRow.context_policy_ref, AITaskRow.task_parameters_fingerprint,
+            AITaskRow.content_plan_ref,
             PromptVersionRow.system_template_hash,
             PromptVersionRow.user_template_hash,
             PromptVersionRow.provider_policy_ref,
@@ -79,6 +80,8 @@ class SqlAlchemyAITaskExecutionGrantRepository:
             AIEgressAuthorizationSnapshotRow.max_payload_bytes,
             AIEgressAuthorizationSnapshotRow.max_input_tokens,
             AIEgressAuthorizationSnapshotRow.max_retry_attempts,
+            AIEgressAuthorizationSnapshotRow.content_plan_ref.label(
+                "snapshot_content_plan_ref"),
             AIModelRow.provider_model_key, AIModelRow.model_revision,
         ).join(
             PromptTemplateRow,
@@ -111,6 +114,7 @@ class SqlAlchemyAITaskExecutionGrantRepository:
             AITaskRow.prompt_policy_version.is_not(None),
             AITaskRow.task_parameters.is_not(None),
             AITaskRow.task_parameters_fingerprint.is_not(None),
+            AITaskRow.content_plan_ref.is_not(None),
             AITaskRow.task_parameters_fingerprint
             == func.sha256(func.convert_to(parameters_text, "UTF8")),
             PromptTemplateRow.task_type == AITaskRow.task_type,
@@ -128,6 +132,8 @@ class SqlAlchemyAITaskExecutionGrantRepository:
             AIEgressAuthorizationSnapshotRow.source_refs_fingerprint
             == claim.input_fingerprint,
             AIEgressAuthorizationSnapshotRow.ai_model_id.is_not(None),
+            AIEgressAuthorizationSnapshotRow.content_plan_ref
+            == AITaskRow.content_plan_ref,
             AIEgressAuthorizationSnapshotRow.valid_until > now,
             AIModelRow.model_kind == "CHAT",
             AIModelRow.model_state == "AVAILABLE",
@@ -184,4 +190,5 @@ class SqlAlchemyAITaskExecutionGrantRepository:
             _bytes32(row.preview_payload_fingerprint), row.approved_by,
             row.approved_role, row.approved_at, row.max_payload_bytes,
             row.max_input_tokens, row.max_retry_attempts, row.valid_until,
+            row.content_plan_ref,
         )

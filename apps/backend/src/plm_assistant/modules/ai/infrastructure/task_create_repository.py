@@ -62,6 +62,7 @@ class SqlAlchemyAITaskCreateRepository:
                 literal(request.prompt.task_parameters_json, type_=Text), JSONB,
             ),
             task_parameters_fingerprint=request.prompt.task_parameters_fingerprint,
+            content_plan_ref=request.egress.content_plan_ref,
             job_ref=job_id, trace_id=request.trace_id,
         ))
         for ordinal, item in enumerate(request.inputs, 1):
@@ -89,6 +90,7 @@ class SqlAlchemyAITaskCreateRepository:
             max_input_tokens=egress.max_input_tokens,
             max_retry_attempts=egress.max_retry_attempts,
             authorization_state_at_capture=egress.authorization_state,
+            content_plan_ref=egress.content_plan_ref,
         ))
         session.execute(insert(OutboxEventRow).values(
             event_id=event_id, event_type="AI_TASK_QUEUED", owner_module="ai",

@@ -89,6 +89,7 @@ class AuthorizedEgressSnapshot:
     max_input_tokens: int
     max_retry_attempts: int
     authorization_state: str
+    content_plan_ref: uuid.UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -318,6 +319,7 @@ class AITaskCreateService:
                 or not all(type(value) is uuid.UUID and value.int for value in (
                     snapshot.ai_provider_id, snapshot.provider_config_version_id,
                     snapshot.ai_model_id, snapshot.approved_by,
+                    snapshot.content_plan_ref,
                 ))
                 or any(type(value) is not bytes or len(value) != 32 for value in (
                     snapshot.authorization_fingerprint, snapshot.preview_payload_fingerprint,

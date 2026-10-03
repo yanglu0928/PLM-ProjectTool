@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import unittest
 import uuid
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 
 from plm_assistant.modules.ai.application.egress_authorization import (
@@ -91,6 +92,7 @@ class EgressAuthorizationTests(unittest.TestCase):
     def setUp(self):
         self.now = datetime(2026, 10, 3, 9, tzinfo=timezone.utc)
         self.actor, self.project = uuid.uuid4(), uuid.uuid4()
+        self.content_plan = uuid.uuid4()
         self.preview = EgressPreviewView(
             uuid.uuid4(), self.project, "gap.analysis.v1", "AI_TASK",
             uuid.uuid4(), uuid.uuid4(), uuid.uuid4(), "cn-beijing",
@@ -99,6 +101,7 @@ class EgressAuthorizationTests(unittest.TestCase):
             "minimum.document.text.v1", 10, 65536, 4096, 3,
             b"p" * 32, b"s" * 32, ("EXTERNAL_PROVIDER",),
             self.now - timedelta(minutes=1), self.now + timedelta(minutes=30),
+            self.content_plan,
         )
         self.authorization_view = EgressAuthorizationView(
             uuid.uuid4(), self.preview.preview_id, self.project,
@@ -110,6 +113,7 @@ class EgressAuthorizationTests(unittest.TestCase):
             self.preview.payload_fingerprint, self.preview.source_refs_fingerprint,
             self.actor, "ProjectManager", self.now,
             self.now + timedelta(minutes=20), "AUTHORIZED", 0,
+            self.content_plan,
         )
         self.authorize_command = AuthorizeEgress(
             b"s" * 32, b"c" * 32, uuid.uuid4(), self.project,
@@ -138,6 +142,14 @@ class EgressAuthorizationTests(unittest.TestCase):
         self.assertEqual(len(self.audit.events), 1)
         self.assertEqual(self.receipts.completed[0].ref_type, "V1_EGRESS_AUTHORIZE")
         self.assertTrue(self.uow.items[-1].committed)
+
+    def test_legacy_ai_preview_without_content_plan_is_not_authorized(self):
+        service = self.service()
+        self.repo.preview = replace(self.preview, content_plan_ref=None)
+        with self.assertRaises(EgressAuthorizationError) as caught:
+            service.authorize(self.authorize_command, idempotency_key="P" * 16)
+        self.assertEqual(caught.exception.code, "AI_EGRESS_APPROVAL_DENIED")
+        self.assertEqual(self.repo.created, 0)
 
     def test_authorize_replays_result_without_policy_or_preview(self):
         stored = EgressAuthorizeResult(

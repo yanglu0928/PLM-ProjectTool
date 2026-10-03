@@ -108,6 +108,7 @@ class EgressPreviewView:
     risk_codes: tuple[str, ...]
     created_at: datetime
     expires_at: datetime
+    content_plan_ref: uuid.UUID | None = None
 
     @property
     def preview_fingerprint(self) -> bytes:

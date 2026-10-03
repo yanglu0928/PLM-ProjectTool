@@ -28,6 +28,7 @@ class SqlAlchemyAITaskExecutionSnapshotRepository:
         row = _session(transaction).execute(select(
             AITaskRow.ai_task_id, AITaskRow.project_id, AITaskRow.job_ref,
             AITaskRow.task_type, AITaskRow.input_fingerprint,
+            AITaskRow.content_plan_ref,
             AITaskRow.prompt_policy_ref, AITaskRow.prompt_policy_version,
             AITaskRow.prompt_template_ref, AITaskRow.prompt_version_no,
             AITaskRow.output_schema_ref, AITaskRow.context_policy_ref,
@@ -38,6 +39,8 @@ class SqlAlchemyAITaskExecutionSnapshotRepository:
             AIEgressAuthorizationSnapshotRow.ai_provider_id,
             AIEgressAuthorizationSnapshotRow.provider_config_version_id,
             AIEgressAuthorizationSnapshotRow.ai_model_id,
+            AIEgressAuthorizationSnapshotRow.content_plan_ref.label(
+                "snapshot_content_plan_ref"),
             AIEgressAuthorizationSnapshotRow.valid_until,
         ).join(
             JobRow, JobRow.job_id == AITaskRow.job_ref,
@@ -57,6 +60,7 @@ class SqlAlchemyAITaskExecutionSnapshotRepository:
             AITaskRow.prompt_policy_version.is_not(None),
             AITaskRow.task_parameters.is_not(None),
             AITaskRow.task_parameters_fingerprint.is_not(None),
+            AITaskRow.content_plan_ref.is_not(None),
             AITaskRow.task_parameters_fingerprint
             == func.sha256(func.convert_to(parameters_text, "UTF8")),
             PromptVersionRow.output_schema_ref == AITaskRow.output_schema_ref,
@@ -71,6 +75,8 @@ class SqlAlchemyAITaskExecutionSnapshotRepository:
             AIEgressAuthorizationSnapshotRow.source_refs_fingerprint
             == AITaskRow.input_fingerprint,
             AIEgressAuthorizationSnapshotRow.ai_model_id.is_not(None),
+            AIEgressAuthorizationSnapshotRow.content_plan_ref
+            == AITaskRow.content_plan_ref,
         ).with_for_update(of=AITaskRow)
           .execution_options(autoflush=False)).one_or_none()
         if row is None or type(row.task_parameters) is not dict:
@@ -84,5 +90,5 @@ class SqlAlchemyAITaskExecutionSnapshotRepository:
             bytes(row.task_parameters_fingerprint), row.authorization_ref,
             bytes(row.authorization_fingerprint), row.purpose_ref,
             row.ai_provider_id, row.provider_config_version_id, row.ai_model_id,
-            row.valid_until,
+            row.valid_until, row.content_plan_ref,
         )

@@ -90,6 +90,7 @@ class EgressAuthorizationView:
     valid_until: datetime
     state: str
     lock_version: int
+    content_plan_ref: uuid.UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -264,6 +265,9 @@ class EgressAuthorizationService:
                         or command.max_payload_bytes > preview.max_payload_bytes
                         or command.max_input_tokens > preview.max_input_tokens
                         or command.max_retry_attempts > preview.max_retry_attempts
+                        or (preview.operation_type == "AI_TASK"
+                            and (type(preview.content_plan_ref) is not uuid.UUID
+                                 or not preview.content_plan_ref.int))
                         or self._policy.permits(tx, facts=facts) is not True):
                     raise EgressAuthorizationError("AI_EGRESS_APPROVAL_DENIED")
                 approved_role = _ROLE.get(action.project_role)

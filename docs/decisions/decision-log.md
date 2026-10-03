@@ -7332,3 +7332,11 @@
 - Reason：A05已禁止客户端派生摘要，若组合根未接实际Owner，合同虽存在却只能503；若以默认Prompt/正文或客户端值补齐则绕过部署准入、内容最小化和不可变证明。
 - Impact/Rollback：无Schema、依赖、冻结URL/响应或Provider外发变化；生产配置需同时提供匹配Policy/Prompt/ParseResult。移除Task Policy并重启即可关闭AI_TASK规划，既有Plan历史保留。
 - Verification：Windows11/PostgreSQL18.6真实ASGI Session/Project/Document/Prompt链完成201创建/重放、旧形态400、授权201、License403，Preview/Plan计数及指纹一致且Invocation=0；定向45、后端2206运行/3跳过PASS；wheel SHA-256 `38884673913bd55efc194680f35513dd7a8e0020f728688458523a03a8aa5ced`。首次证据Prompt夹具不兼容导致安全503，修正夹具后新库完整重跑。
+
+# DEC-20261003-740：AI Task执行资格以同一不可变PlanRef贯穿授权、任务和Grant
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P04-P05`；依据 CR-AI-015/016、Schema0072、DEC-731/739。
+- Decision：新AI_TASK Authorization必须继承Preview的非空Content Plan ID；Task与其授权快照原子保存同一引用；Preflight和Grant签发同时复核Task、快照、当前Authorization一致。Grant指纹包含Plan ID，内容加载要求精确ID相等。旧NULL历史继续可读/可撤销但不得创建新Task或执行。
+- Reason：只比较payload/source fingerprint不能证明下游消费的是哪一个不可变Plan；允许NULL或各根引用分叉会使批准内容与实际执行内容失去可追溯闭环。
+- Impact/Rollback：复用0072已有列，无Migration、公开响应、依赖或外发变化。应用回滚必须关闭新AI_TASK执行并保留历史，不得恢复信任客户端摘要。当前没有生产Invocation writer，本决定只把Plan身份送达Grant并为下一切片提供强前置。
+- Verification：Win11/PG18.6真实Preview→Authorization→Task→Preflight链四处PlanRef一致、Task重放稳定、旧形态/License失败关闭且Invocation=0；定向33、后端2209运行/3跳过PASS；wheel SHA-256 `0500de4bb38f766103ae0980fa83c0232424a362ca4d6e588c4d2c0fc5bd6338`。

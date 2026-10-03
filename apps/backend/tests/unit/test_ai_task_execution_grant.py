@@ -15,6 +15,7 @@ class AITaskExecutionGrantTests(unittest.TestCase):
     def setUp(self) -> None:
         self.now = datetime(2026, 10, 3, tzinfo=timezone.utc)
         self.task_id, self.project_id, self.job_id = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
+        self.content_plan = uuid.uuid4()
         input_ref = AITaskExecutionInputRef(
             1, "DOC-02", "document", "DOCUMENT_VERSION",
             uuid.uuid4(), uuid.uuid4(), self.project_id,
@@ -30,6 +31,7 @@ class AITaskExecutionGrantTests(unittest.TestCase):
             ("DOCUMENT_TEXT",), b"p" * 32, "document-minimal.v1",
             1, 65536, 4096, 3,
             self.now + timedelta(minutes=20),
+            self.content_plan,
         )
 
     def proof(self) -> AITaskPayloadPlanProof:

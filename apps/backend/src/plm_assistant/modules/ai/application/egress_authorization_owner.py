@@ -64,6 +64,8 @@ def authorization_fingerprint(value: EgressAuthorizationView) -> bytes:
         "approved_at": value.approved_at.isoformat(),
         "valid_until": value.valid_until.isoformat(),
         "state": value.state, "lock_version": value.lock_version,
+        "content_plan_ref": (str(value.content_plan_ref)
+                             if value.content_plan_ref is not None else None),
     })
 
 
@@ -95,6 +97,8 @@ class EgressAuthorizationOwner:
                 or current.authorization_id != query.authorization_ref
                 or current.project_id != query.project_id
                 or current.operation_type != "AI_TASK"
+                or type(current.content_plan_ref) is not uuid.UUID
+                or not current.content_plan_ref.int
                 or current.state != "AUTHORIZED" or current.lock_version != 0
                 or current.source_refs_fingerprint != query.source_refs_fingerprint
                 or current.approved_at > query.now
@@ -114,4 +118,5 @@ class EgressAuthorizationOwner:
             current.minimal_payload_policy_ref, current.max_record_count,
             current.max_payload_bytes,
             current.max_input_tokens, current.max_retry_attempts, current.state,
+            current.content_plan_ref,
         )

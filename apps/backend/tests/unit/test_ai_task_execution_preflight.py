@@ -46,6 +46,7 @@ class AITaskExecutionPreflightTests(unittest.TestCase):
         self.now = datetime(2026, 10, 3, tzinfo=timezone.utc)
         self.task_id, self.project_id, self.job_id = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
         self.authorization_ref = uuid.uuid4()
+        self.content_plan = uuid.uuid4()
         self.provider_id, self.config_id, self.model_id = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
         self.valid_until = self.now + timedelta(minutes=20)
         self.snapshot = AITaskExecutionSnapshot(
@@ -55,6 +56,7 @@ class AITaskExecutionPreflightTests(unittest.TestCase):
             {"language": "zh-CN"}, b"p" * 32,
             self.authorization_ref, b"a" * 32, "project-gap-analysis.v1",
             self.provider_id, self.config_id, self.model_id, self.valid_until,
+            self.content_plan,
         )
         self.current = AuthorizedEgressSnapshot(
             self.authorization_ref, self.project_id, "project-gap-analysis.v1",
@@ -63,6 +65,7 @@ class AITaskExecutionPreflightTests(unittest.TestCase):
             uuid.uuid4(), "PROJECT_MANAGER", self.now - timedelta(minutes=1),
             self.valid_until, "document-minimal.v1", 1, 1000, 100, 2,
             "AUTHORIZED",
+            self.content_plan,
         )
 
     def service(self, snapshot, current=None, *, fail=False):

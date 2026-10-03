@@ -23,6 +23,7 @@ from plm_assistant.modules.ai.application.task_execution_grant import (
 class AIExecutionContentPlanTests(unittest.TestCase):
     def setUp(self) -> None:
         self.project_id = uuid.uuid4()
+        self.content_plan = uuid.uuid4()
         self.input_ref = AITaskExecutionInputRef(
             1, "DOC-02", "document", "DOCUMENT_VERSION",
             uuid.uuid4(), uuid.uuid4(), self.project_id,
@@ -38,6 +39,7 @@ class AIExecutionContentPlanTests(unittest.TestCase):
             ("DOCUMENT_TEXT",), b"p" * 32, "document-minimal.v1",
             10, 65536, 4096, 3,
             datetime(2026, 10, 3, tzinfo=timezone.utc) + timedelta(minutes=20),
+            self.content_plan,
         )
         source = AIExecutionContentSourceIdentity(
             1, "DOC-02", "document", "DOCUMENT_VERSION",
@@ -57,7 +59,7 @@ class AIExecutionContentPlanTests(unittest.TestCase):
             b"g" * 32, 3, 512,
         )
         self.plan = AIExecutionContentPlan(
-            uuid.uuid4(), 1, self.project_id, "project-gap-analysis.v1",
+            self.content_plan, 1, self.project_id, "project-gap-analysis.v1",
             "GAP_ANALYSIS", b"s" * 32, (source,), prompt, b"t" * 32, context,
             self.grant.ai_provider_id, self.grant.provider_config_version_id,
             self.grant.ai_model_id, "deepseek-chat", "PROVIDER_MANAGED",
@@ -105,6 +107,7 @@ class AIExecutionContentPlanTests(unittest.TestCase):
             replace(self.plan, ai_model_id=uuid.uuid4()),
             replace(self.plan, model_revision="different"),
             replace(self.plan, minimal_payload_policy_ref="different.v1"),
+            replace(self.plan, content_plan_id=uuid.uuid4()),
             replace(self.plan, prompt=replace(
                 self.plan.prompt, user_template_hash="f" * 64,
             )),

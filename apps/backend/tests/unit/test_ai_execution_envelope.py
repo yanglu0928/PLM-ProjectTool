@@ -48,6 +48,7 @@ class _WrongEstimator:
 class AIExecutionEnvelopeTests(unittest.TestCase):
     def setUp(self) -> None:
         self.project_id = uuid.uuid4()
+        self.content_plan = uuid.uuid4()
         self.input_ref = AITaskExecutionInputRef(
             1, "DOC-02", "document", "DOCUMENT_VERSION",
             uuid.uuid4(), uuid.uuid4(), self.project_id,
@@ -67,6 +68,7 @@ class AIExecutionEnvelopeTests(unittest.TestCase):
             ("DOCUMENT_TEXT",), b"x" * 32, "minimum.document.text.v1",
             10, 1_000_000, 1_000_000, 3,
             datetime.now(timezone.utc) + timedelta(minutes=20),
+            self.content_plan,
         )
         projection_payload = json.dumps({
             "nodes": [{"kind": "TEXT_LINE", "node_id": "line-1",
@@ -90,7 +92,7 @@ class AIExecutionEnvelopeTests(unittest.TestCase):
             "strict-placeholders.v1", 1,
         )
         self.plan = AIExecutionContentPlan(
-            uuid.uuid4(), 1, self.project_id, "gap.analysis.v1",
+            self.content_plan, 1, self.project_id, "gap.analysis.v1",
             "GAP_ANALYSIS", b"s" * 32, (self.source,), self.prompt,
             b"t" * 32, AIExecutionContextIdentity(
                 "no-retrieval.v1", "NONE"),
