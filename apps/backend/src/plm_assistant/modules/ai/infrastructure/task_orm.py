@@ -40,6 +40,10 @@ class AITaskRow(Base):
             ["plm.ai_prompt_versions.prompt_template_id", "plm.ai_prompt_versions.version_no"],
             name="fk_ai_tasks__prompt_version", ondelete="NO ACTION",
         ),
+        ForeignKeyConstraint(
+            ["content_plan_ref"], ["plm.ai_execution_content_plans.content_plan_id"],
+            name="fk_ai_tasks__content_plan", ondelete="NO ACTION",
+        ),
         UniqueConstraint("ai_task_id", "scope", "project_id",
                          name="uq_ai_tasks__identity_scope", postgresql_nulls_not_distinct=True),
         CheckConstraint("ai_task_id <> '00000000-0000-0000-0000-000000000000'::uuid "
@@ -93,6 +97,7 @@ class AITaskRow(Base):
         Index("uq_ai_tasks__job_ref", "job_ref", unique=True,
               postgresql_where=text("job_ref IS NOT NULL")),
         Index("ix_ai_tasks__prompt_version", "prompt_template_ref", "prompt_version_no"),
+        Index("ix_ai_tasks__content_plan", "content_plan_ref"),
     )
 
     ai_task_id: Mapped[uuid.UUID] = mapped_column(
@@ -111,6 +116,7 @@ class AITaskRow(Base):
     prompt_policy_version: Mapped[int | None] = mapped_column(BigInteger)
     task_parameters: Mapped[dict | None] = mapped_column(JSONB)
     task_parameters_fingerprint: Mapped[bytes | None] = mapped_column(LargeBinary)
+    content_plan_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     task_state: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'QUEUED'"))
     suggestion_state: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'NONE'"))
     accepted_domain_module: Mapped[str | None] = mapped_column(Text)
@@ -195,6 +201,10 @@ class AIEgressAuthorizationSnapshotRow(Base):
                              name="fk_ai_egress_snapshots__approver", ondelete="NO ACTION"),
         ForeignKeyConstraint(["ai_model_id"], ["plm.ai_models.ai_model_id"],
                              name="fk_ai_egress_snapshots__model", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["content_plan_ref"], ["plm.ai_execution_content_plans.content_plan_id"],
+            name="fk_ai_egress_snapshots__content_plan", ondelete="NO ACTION",
+        ),
         UniqueConstraint("egress_authorization_snapshot_id", "ai_task_id",
                          name="uq_ai_egress_snapshots__identity_task"),
         CheckConstraint(
@@ -239,6 +249,7 @@ class AIEgressAuthorizationSnapshotRow(Base):
         ),
         Index("ix_ai_egress_snapshots__task_time", "ai_task_id", "captured_at"),
         Index("ix_ai_egress_snapshots__model", "ai_model_id"),
+        Index("ix_ai_egress_snapshots__content_plan", "content_plan_ref"),
     )
 
     egress_authorization_snapshot_id: Mapped[uuid.UUID] = mapped_column(
@@ -259,6 +270,7 @@ class AIEgressAuthorizationSnapshotRow(Base):
     approved_role: Mapped[str | None] = mapped_column(Text)
     preview_payload_fingerprint: Mapped[bytes | None] = mapped_column(LargeBinary)
     source_refs_fingerprint: Mapped[bytes | None] = mapped_column(LargeBinary)
+    content_plan_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     max_payload_bytes: Mapped[int | None] = mapped_column(BigInteger)
     max_input_tokens: Mapped[int | None] = mapped_column(Integer)
     max_retry_attempts: Mapped[int | None] = mapped_column(Integer)
@@ -298,6 +310,10 @@ class AIInvocationRow(Base):
             ["plm.ai_egress_authorization_snapshots.egress_authorization_snapshot_id",
              "plm.ai_egress_authorization_snapshots.ai_task_id"],
             name="fk_ai_invocations__egress_task", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["content_plan_ref"], ["plm.ai_execution_content_plans.content_plan_id"],
+            name="fk_ai_invocations__content_plan", ondelete="NO ACTION",
         ),
         UniqueConstraint("ai_task_id", "attempt_no", name="uq_ai_invocations__task_attempt"),
         UniqueConstraint("ai_invocation_id", "ai_task_id", name="uq_ai_invocations__identity_task"),
@@ -363,6 +379,7 @@ class AIInvocationRow(Base):
             name="ck_ai_invocations__time"),
         Index("ix_ai_invocations__task_state", "ai_task_id", "invocation_state", "attempt_no"),
         Index("ix_ai_invocations__provider_time", "ai_provider_id", "created_at"),
+        Index("ix_ai_invocations__content_plan", "content_plan_ref"),
     )
 
     ai_invocation_id: Mapped[uuid.UUID] = mapped_column(
@@ -385,6 +402,7 @@ class AIInvocationRow(Base):
     egress_authorization_snapshot_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     request_payload_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     request_payload_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    content_plan_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     retrieval_run_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     context_bundle_fingerprint: Mapped[bytes | None] = mapped_column(LargeBinary)
     invocation_state: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'PENDING'"))

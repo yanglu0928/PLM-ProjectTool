@@ -12,6 +12,14 @@ from sqlalchemy.orm import Mapped, mapped_column
 from plm_assistant.modules.platform.infrastructure.orm import Base
 
 
+_TASK_TYPES = (
+    "'DOCUMENT_PARSE','CAPABILITY_EXTRACT','GAP_ANALYSIS','SURVEY_GENERATE',"
+    "'SURVEY_ANALYZE','REQUIREMENT_NORMALIZE','REQUIREMENT_MATCH',"
+    "'SOLUTION_SUGGEST','PROTOTYPE_GENERATE','SOLUTION_GENERATE',"
+    "'PLAN_GENERATE','OUTPUT_SUMMARIZE'"
+)
+
+
 class AIEgressPreviewRow(Base):
     __tablename__ = "ai_egress_previews"
     __table_args__ = (
@@ -102,6 +110,257 @@ class AIEgressPreviewSourceRefRow(Base):
     added_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False, server_default=text("statement_timestamp()"))
 
 
+class AIExecutionContentPlanRow(Base):
+    """Immutable, no-content execution identity and envelope proof."""
+
+    __tablename__ = "ai_execution_content_plans"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["egress_preview_id"], ["plm.ai_egress_previews.egress_preview_id"],
+            name="fk_ai_content_plans__preview", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["project_id"], ["plm.prj_projects.project_id"],
+            name="fk_ai_content_plans__project", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["prompt_template_id", "prompt_version_no"],
+            ["plm.ai_prompt_versions.prompt_template_id", "plm.ai_prompt_versions.version_no"],
+            name="fk_ai_content_plans__prompt_version", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["provider_config_version_id", "ai_provider_id"],
+            ["plm.ai_provider_config_versions.provider_config_version_id",
+             "plm.ai_provider_config_versions.ai_provider_id"],
+            name="fk_ai_content_plans__provider_config", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["ai_model_id"], ["plm.ai_models.ai_model_id"],
+            name="fk_ai_content_plans__model", ondelete="NO ACTION",
+        ),
+        UniqueConstraint("egress_preview_id", name="uq_ai_content_plans__preview"),
+        CheckConstraint(
+            "content_plan_id<>'00000000-0000-0000-0000-000000000000'::uuid "
+            "AND egress_preview_id<>'00000000-0000-0000-0000-000000000000'::uuid "
+            "AND project_id<>'00000000-0000-0000-0000-000000000000'::uuid "
+            "AND prompt_template_id<>'00000000-0000-0000-0000-000000000000'::uuid "
+            "AND ai_provider_id<>'00000000-0000-0000-0000-000000000000'::uuid "
+            "AND provider_config_version_id<>'00000000-0000-0000-0000-000000000000'::uuid "
+            "AND ai_model_id<>'00000000-0000-0000-0000-000000000000'::uuid",
+            name="ck_ai_content_plans__uuid",
+        ),
+        CheckConstraint(
+            "content_plan_version=1 AND prompt_policy_version BETWEEN 1 AND 2147483647 "
+            "AND prompt_version_no BETWEEN 1 AND 9223372036854775807 "
+            "AND schema_version BETWEEN 1 AND 2147483647 "
+            "AND rendering_policy_version BETWEEN 1 AND 2147483647 "
+            "AND envelope_encoding_version BETWEEN 1 AND 2147483647 "
+            "AND token_estimator_version BETWEEN 1 AND 2147483647",
+            name="ck_ai_content_plans__versions",
+        ),
+        CheckConstraint(
+            f"task_type IN ({_TASK_TYPES})",
+            name="ck_ai_content_plans__task_type",
+        ),
+        CheckConstraint(
+            "purpose_ref ~ '^[A-Za-z][A-Za-z0-9._:/-]{0,127}$' "
+            "AND prompt_policy_ref ~ '^[A-Za-z][A-Za-z0-9._:/-]{0,127}$' "
+            "AND provider_policy_ref ~ '^[A-Za-z][A-Za-z0-9._:/-]{0,127}$' "
+            "AND output_schema_ref ~ '^[A-Za-z][A-Za-z0-9._:/-]{0,127}$' "
+            "AND rendering_policy_ref ~ '^[A-Za-z][A-Za-z0-9._:/-]{0,127}$' "
+            "AND context_policy_ref ~ '^[A-Za-z][A-Za-z0-9._:/-]{0,127}$' "
+            "AND minimal_payload_policy_ref ~ '^[A-Za-z][A-Za-z0-9._:/-]{0,127}$' "
+            "AND envelope_encoding_ref ~ '^[A-Za-z][A-Za-z0-9._:/-]{0,127}$' "
+            "AND token_estimator_ref ~ '^[A-Za-z][A-Za-z0-9._:/-]{0,127}$'",
+            name="ck_ai_content_plans__refs",
+        ),
+        CheckConstraint(
+            "provider_model_key ~ '^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$' "
+            "AND model_revision ~ '^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$' "
+            "AND data_region ~ '^[a-z][a-z0-9-]{0,63}$' "
+            "AND system_template_hash ~ '^[0-9a-f]{64}$' "
+            "AND user_template_hash ~ '^[0-9a-f]{64}$'",
+            name="ck_ai_content_plans__route_hashes",
+        ),
+        CheckConstraint(
+            "jsonb_typeof(allowed_data_categories)='array' "
+            "AND jsonb_array_length(allowed_data_categories) BETWEEN 1 AND 64",
+            name="ck_ai_content_plans__categories",
+        ),
+        CheckConstraint(
+            "octet_length(source_refs_fingerprint)=32 "
+            "AND octet_length(task_parameters_fingerprint)=32 "
+            "AND octet_length(content_plan_fingerprint)=32 "
+            "AND octet_length(payload_fingerprint)=32",
+            name="ck_ai_content_plans__fingerprints",
+        ),
+        CheckConstraint(
+            "(context_mode='NONE' AND retrieval_run_id IS NULL "
+            "AND context_bundle_id IS NULL AND context_bundle_fingerprint IS NULL "
+            "AND context_record_count=0 AND context_content_size_bytes=0) OR "
+            "(context_mode='RAG_CONTEXT' AND retrieval_run_id IS NOT NULL "
+            "AND context_bundle_id IS NOT NULL "
+            "AND octet_length(context_bundle_fingerprint)=32 "
+            "AND context_record_count BETWEEN 1 AND 1000000000 "
+            "AND context_content_size_bytes BETWEEN 1 AND 1073741824)",
+            name="ck_ai_content_plans__context",
+        ),
+        CheckConstraint(
+            "record_count BETWEEN 1 AND 1000000000 "
+            "AND payload_bytes BETWEEN 1 AND 100000000 "
+            "AND input_tokens BETWEEN 1 AND 1073741824 "
+            "AND created_xid>0 AND isfinite(created_at)",
+            name="ck_ai_content_plans__metrics",
+        ),
+        Index("ix_ai_content_plans__project_time", "project_id",
+              text("created_at DESC"), text("content_plan_id DESC")),
+        Index("ix_ai_content_plans__prompt_version", "prompt_template_id",
+              "prompt_version_no"),
+    )
+
+    content_plan_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"),
+    )
+    egress_preview_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    content_plan_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    purpose_ref: Mapped[str] = mapped_column(Text, nullable=False)
+    task_type: Mapped[str] = mapped_column(Text, nullable=False)
+    source_refs_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    prompt_policy_ref: Mapped[str] = mapped_column(Text, nullable=False)
+    prompt_policy_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    prompt_template_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    prompt_version_no: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    system_template_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    user_template_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    provider_policy_ref: Mapped[str] = mapped_column(Text, nullable=False)
+    output_schema_ref: Mapped[str] = mapped_column(Text, nullable=False)
+    schema_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    rendering_policy_ref: Mapped[str] = mapped_column(Text, nullable=False)
+    rendering_policy_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    task_parameters_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    context_policy_ref: Mapped[str] = mapped_column(Text, nullable=False)
+    context_mode: Mapped[str] = mapped_column(Text, nullable=False)
+    retrieval_run_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    context_bundle_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    context_bundle_fingerprint: Mapped[bytes | None] = mapped_column(LargeBinary)
+    context_record_count: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    context_content_size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    ai_provider_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    provider_config_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    ai_model_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    provider_model_key: Mapped[str] = mapped_column(Text, nullable=False)
+    model_revision: Mapped[str] = mapped_column(Text, nullable=False)
+    data_region: Mapped[str] = mapped_column(Text, nullable=False)
+    allowed_data_categories: Mapped[list[str]] = mapped_column(JSONB, nullable=False)
+    minimal_payload_policy_ref: Mapped[str] = mapped_column(Text, nullable=False)
+    envelope_encoding_ref: Mapped[str] = mapped_column(Text, nullable=False)
+    envelope_encoding_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    token_estimator_ref: Mapped[str] = mapped_column(Text, nullable=False)
+    token_estimator_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    content_plan_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    payload_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    record_count: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    payload_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    input_tokens: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    created_xid: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("txid_current()"),
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+
+
+class AIExecutionContentSourceRow(Base):
+    """Ordered exact Owner identity; no content or storage locator."""
+
+    __tablename__ = "ai_execution_content_sources"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["content_plan_id"], ["plm.ai_execution_content_plans.content_plan_id"],
+            name="fk_ai_content_sources__plan", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["project_id"], ["plm.prj_projects.project_id"],
+            name="fk_ai_content_sources__project", ondelete="NO ACTION",
+        ),
+        UniqueConstraint("content_plan_id", "source_ordinal",
+                         name="uq_ai_content_sources__ordinal"),
+        UniqueConstraint(
+            "content_plan_id", "resource_type", "owner_module", "object_type",
+            "object_id", "version_id", name="uq_ai_content_sources__semantic",
+        ),
+        CheckConstraint(
+            "content_source_id<>'00000000-0000-0000-0000-000000000000'::uuid "
+            "AND content_plan_id<>'00000000-0000-0000-0000-000000000000'::uuid "
+            "AND project_id<>'00000000-0000-0000-0000-000000000000'::uuid "
+            "AND object_id<>'00000000-0000-0000-0000-000000000000'::uuid "
+            "AND version_id<>'00000000-0000-0000-0000-000000000000'::uuid "
+            "AND content_revision_id<>'00000000-0000-0000-0000-000000000000'::uuid "
+            "AND content_object_id<>'00000000-0000-0000-0000-000000000000'::uuid",
+            name="ck_ai_content_sources__uuid",
+        ),
+        CheckConstraint(
+            "source_ordinal BETWEEN 1 AND 1000 "
+            "AND resource_type ~ '^[A-Z][A-Z0-9-]{0,63}$' "
+            "AND owner_module ~ '^[a-z][a-z0-9_]{0,63}$' "
+            "AND object_type ~ '^[A-Z][A-Z0-9_]{0,63}$' "
+            "AND content_kind ~ '^[A-Z][A-Z0-9_]{0,63}$'",
+            name="ck_ai_content_sources__shape",
+        ),
+        CheckConstraint(
+            "producer_ref ~ '^[A-Za-z][A-Za-z0-9._:/-]{0,127}$' "
+            "AND producer_version ~ '^[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}$' "
+            "AND content_schema_ref ~ '^[A-Za-z][A-Za-z0-9._:/-]{0,127}$' "
+            "AND selection_policy_ref ~ '^[A-Za-z][A-Za-z0-9._:/-]{0,127}$'",
+            name="ck_ai_content_sources__refs",
+        ),
+        CheckConstraint(
+            "octet_length(source_fingerprint)=32 "
+            "AND octet_length(content_fingerprint)=32 "
+            "AND octet_length(projection_fingerprint)=32",
+            name="ck_ai_content_sources__fingerprints",
+        ),
+        CheckConstraint(
+            "content_size_bytes BETWEEN 1 AND 1073741824 "
+            "AND record_count BETWEEN 1 AND 1000000000 "
+            "AND isfinite(created_at)",
+            name="ck_ai_content_sources__metrics",
+        ),
+        Index("ix_ai_content_sources__content_identity", "owner_module",
+              "content_kind", "content_revision_id", "content_object_id"),
+    )
+
+    content_source_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"),
+    )
+    content_plan_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    source_ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+    resource_type: Mapped[str] = mapped_column(Text, nullable=False)
+    owner_module: Mapped[str] = mapped_column(Text, nullable=False)
+    object_type: Mapped[str] = mapped_column(Text, nullable=False)
+    object_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    content_kind: Mapped[str] = mapped_column(Text, nullable=False)
+    content_revision_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    content_object_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    producer_ref: Mapped[str] = mapped_column(Text, nullable=False)
+    producer_version: Mapped[str] = mapped_column(Text, nullable=False)
+    content_schema_ref: Mapped[str] = mapped_column(Text, nullable=False)
+    selection_policy_ref: Mapped[str] = mapped_column(Text, nullable=False)
+    source_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    content_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    projection_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    content_size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    record_count: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+
+
 class AIEgressAuthorizationRow(Base):
     __tablename__ = "ai_egress_authorizations"
     __table_args__ = (
@@ -126,6 +385,10 @@ class AIEgressAuthorizationRow(Base):
             ["plm.ai_provider_config_versions.provider_config_version_id",
              "plm.ai_provider_config_versions.ai_provider_id"],
             name="fk_ai_egress_authorizations__provider_config", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["content_plan_ref"], ["plm.ai_execution_content_plans.content_plan_id"],
+            name="fk_ai_egress_authorizations__content_plan", ondelete="NO ACTION",
         ),
         UniqueConstraint("egress_preview_id", name="uq_ai_egress_authorizations__preview"),
         CheckConstraint(
@@ -179,6 +442,7 @@ class AIEgressAuthorizationRow(Base):
             "ix_ai_egress_authorizations__project_state_expiry",
             "project_id", "authorization_state", "valid_until", "authorization_id",
         ),
+        Index("ix_ai_egress_authorizations__content_plan", "content_plan_ref"),
     )
 
     authorization_id: Mapped[uuid.UUID] = mapped_column(
@@ -201,6 +465,7 @@ class AIEgressAuthorizationRow(Base):
     max_retry_attempts: Mapped[int] = mapped_column(Integer, nullable=False)
     payload_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
     source_refs_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    content_plan_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     authorization_state: Mapped[str] = mapped_column(
         Text, nullable=False, server_default=text("'AUTHORIZED'"),
     )

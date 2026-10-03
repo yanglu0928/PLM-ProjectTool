@@ -7268,3 +7268,11 @@
 - Reason：现有Preview发生在Task之前，缺Prompt/参数，客户端hash也无法证明ParseRecord/最小投影/服务端Prompt/Estimator；若Task创建后才生成Plan，审批没有覆盖实际内容。
 - Impact/Rollback：这是尚未正式发行的AI_TASK请求体有意收紧，前后端原子升级并保留错误显式；非AI不变。Schema有新Plan历史后拒绝down，回滚应用时停止AI_TASK新建/消费并保留历史向前修复。
 - Verification：静态交叉核对Preview、Authorization、Task、Invocation ORM/API和A01～A04合同；本项仅文档，无代码测试、Migration、API运行变化或外发。P02起按空/历史库和双操作类型验证。
+
+# DEC-20261003-732：Schema0072以反向一对一Plan冻结Preview内容身份
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P04-P02`；依据 CR-AI-016、DEC-731、Schema0068～0071。
+- Decision：新增无正文 `ai_execution_content_plans/sources`；Plan以唯一Preview外键反向一对一绑定，Source仅能在Plan创建事务内写入且必须匹配Preview Source。延迟完整性约束在提交时检查来源非空/连续/数量/记录数，Plan/Source与Plan后的Preview Source均冻结。四个下游根新增可空、不可变PlanRef，旧NULL历史不回填；有Plan历史拒降。
+- Reason：正向在既有Preview加非空列会破坏历史，允许后续追加Source或跨事务补齐又会使已计算的Plan/hash可漂移。反向唯一绑定既保留旧行，又允许同一事务原子创建完整图。
+- Impact/Rollback：Schema增量且旧行NULL；P04-P05前尚不强制新写链使用Plan。空Plan历史可降0071；出现Plan后停止新消费、保留历史并向前修复。无公开HTTP、正文、参数值、locator、Secret或网络外发。
+- Verification：Win11/PG18.6空/历史/Plan三库up/down/re-up、ORM drift、AI/非AI兼容、完整性/身份/不可变/截断/敏感列/拒降负例PASS；后端2194运行/3跳过；wheel SHA-256 `eee89c4747111b62db83116621d22e010fa16751f314835e62ac417a40adb306`。首次触发器变量歧义与ORM清单漏登记均修正后全量重跑通过。

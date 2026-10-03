@@ -47,6 +47,8 @@ P03-P02-A04已实现 `provider-neutral-json.v1` 规范Envelope、显式Context P
 
 P04-P01前置核查确认现有Preview早于Task且不含task type/Prompt/参数，不能在不改变AI_TASK请求语义的情况下批准完整Envelope。选择AI_TASK Preview新增精确 `ai_task_plan`，由服务端计算record count/payload fingerprint；旧客户端自报字段在AI_TASK模式不再接受，非AI operation不变。Schema0072拟新增Plan/Source并把Authorization/Task/Snapshot/Invocation绑定同一PlanRef；旧NULL历史只读、可撤销但不可新建Task/执行。该API收紧、迁移/回滚与分片见DEC-731/P04-P01进度；本项仅文档，尚未实施Schema/API。
 
+P04-P02已实现Schema0072/ORM：新增无正文Plan/Source、Preview/Prompt/Model/精确Source数据库保护、同事务完整性、不可变/禁止截断，以及Authorization/Task/Snapshot/Invocation可空且不可变的PlanRef。旧AI/非AI Preview与旧Task保持NULL且可升降重升；一旦产生Plan历史即拒绝down。Windows 11/PostgreSQL18.6三套一次性库、Alembic drift、负例、后端2194运行/3跳过和wheel通过。Repository/Preview/写链强制绑定尚未实施。
+
 ## 兼容、迁移与回滚
 
 - 原 Gate 2 冻结提交和现有 0064/0068～0071 历史不改。P03-P02-A01～A04 先建立未装配合同与 Owner，暂不产生数据库或公开 API 变化。
