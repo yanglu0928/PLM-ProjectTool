@@ -7668,3 +7668,11 @@
 - Reason：复制正文进表格会脱离原文版本与授权上下文；前端自行搜索或接受模型 locator 无法证明位置。将核对动作指向当前受权的固定版本，既可快速定位，又保留 Document Owner 作为唯一授权和完整性边界。
 - Impact/Rollback：仅新增前端只读页面、路由和 Task 详情入口，无后端/API/Schema/依赖变化；删除三处前端变更即可回滚。后续写入必须由独立 Draft/Review Owner 承担，不在本页隐式实现。
 - Verification：定向10、前端全量1238项、typecheck与Vite 141模块构建通过；无外部网络、客户数据或Secret。
+
+# DEC-20261003-782：提交选项由服务器求交，不允许用户手填内部路由标识
+
+- Date/WBS：2026-10-03 / `AI-05-A06-P01`；依据 CR-AI-021、冻结 AI_TASK_CREATE/EGRESS 与部署执行策略。
+- Decision：新增项目级只读选项投影，Task/Egress策略来自不可变部署注册表，Provider/Model候选必须是数据库当前 ACTIVE/AVAILABLE 结构化CHAT路线并再次通过执行白名单。前端只可从该投影选择；路由为空或接口未挂载时关闭提交，不提供UUID/策略字符串自由输入。
+- Reason：冻结写接口刻意不替客户端猜测路由，但缺少选择投影会迫使用户掌握部署内部ID；自由输入既不友好，也可能将“可配置”误当“获准执行”。服务端求交可维持后端为唯一策略事实来源。
+- Impact/Rollback：新增非破坏GET、一个只读授权操作及组合完整性要求，无Migration/依赖；冻结写接口不变。撤新增路由/服务即可回滚，前端不得回退手填。Task/Egress/Execution策略缺一时提交组合不挂载。
+- Verification：定向12、compileall、后端全量2346通过/3跳过；wheel SHA-256 `5a0440e5d149006ce44c85ae6b21be35a691c890a04c76cf9c1d4905165de288`；无外发或客户数据。

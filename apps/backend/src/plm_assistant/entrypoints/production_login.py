@@ -9,6 +9,7 @@ from sqlalchemy import create_engine, text
 
 from plm_assistant.entrypoints.api import create_app
 from plm_assistant.entrypoints.ai_egress_policy import create_deployment_ai_egress_policies
+from plm_assistant.entrypoints.ai_execution_policy import create_deployment_ai_execution_registry
 from plm_assistant.entrypoints.ai_task_policy import create_deployment_ai_task_policies
 from plm_assistant.entrypoints.password_capacity import get_process_password_capacity
 from plm_assistant.entrypoints.windows_ai_egress import create_windows_ai_egress_router
@@ -332,13 +333,17 @@ def _create_configured_ai_task_router(
     audit: AuditService, documents: DocumentReadService,
 ):
     """Keep Task submission absent unless an explicit deployment policy exists."""
-    if not settings.ai_task_policies:
+    if (not settings.ai_task_policies or not settings.ai_egress_policies
+            or not settings.ai_execution_policies):
         return None
     task_policies, egress_purposes = create_deployment_ai_task_policies(settings)
+    preview_policies, _ = create_deployment_ai_egress_policies(settings)
+    execution_policies = create_deployment_ai_execution_registry(settings)
     return create_windows_ai_task_router(
         runtime=runtime, sessions=sessions, origins=origins,
         license_guard=license_guard, audit=audit, documents=documents,
         task_policies=task_policies, egress_purposes=egress_purposes,
+        preview_policies=preview_policies, execution_policies=execution_policies,
     )
 
 

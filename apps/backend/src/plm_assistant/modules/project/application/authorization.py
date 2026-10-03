@@ -50,6 +50,10 @@ POLICIES: dict[str, _Policy] = {
     "AI_TASK_CREATE": _Policy(
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True,
     ),
+    "AI_TASK_OPTIONS_GET": _Policy(
+        frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), False,
+        lock_reads=True,
+    ),
     "AI_TASK_EXECUTE": _Policy(
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True,
     ),

@@ -37,9 +37,29 @@ class DeploymentAITaskPolicyTests(unittest.TestCase):
             }],
         }
 
-    def settings(self, policies=()):
+    def settings(self, policies=(), *, complete=False):
+        egress = ({
+            "reference": "minimal-document-text.v1", "operation_types": ["AI_TASK"],
+            "data_categories": ["DOCUMENT_TEXT"], "ttl_minutes": 30,
+            "max_record_count": 50, "max_payload_bytes": 1_048_576,
+            "max_input_tokens": 32_768, "max_retry_attempts": 2,
+            "risk_codes": ["EXTERNAL_PROCESSING"],
+            "approval_roles": ["PROJECT_MANAGER", "CUSTOMER_MANAGER"],
+            "data_regions": ["cn-beijing"],
+        },) if complete else ()
+        execution = ({
+            "reference": "endpoint.business.v1", "kind": "OPENAI_COMPATIBLE",
+            "endpoint_url": "https://business.example.test/v1/chat/completions",
+            "data_region": "cn-beijing", "egress_class": "EXTERNAL_APPROVAL_REQUIRED",
+            "allowed_model_keys": ["business-chat"], "max_response_bytes": 1_048_576,
+            "connect_timeout_seconds": 5, "read_timeout_seconds": 30,
+            "total_timeout_seconds": 40,
+        },) if complete else ()
         with patch.dict(os.environ, {}, clear=True):
-            return BootstrapSettings(data_root=self.root, ai_task_policies=policies)
+            return BootstrapSettings(
+                data_root=self.root, ai_task_policies=policies,
+                ai_egress_policies=egress, ai_execution_policies=execution,
+            )
 
     def test_missing_policy_fails_factory_and_keeps_write_mount_closed(self):
         settings = self.settings()
@@ -128,7 +148,7 @@ class DeploymentAITaskPolicyTests(unittest.TestCase):
                                  "AI Task deployment policy unavailable")
 
     def test_configured_write_mount_receives_both_policy_registries(self):
-        settings = self.settings((self.policy,))
+        settings = self.settings((self.policy,), complete=True)
         router = MagicMock(name="router")
         with patch(
             "plm_assistant.entrypoints.production_login.create_windows_ai_task_router",
@@ -141,7 +161,8 @@ class DeploymentAITaskPolicyTests(unittest.TestCase):
         self.assertIs(result, router)
         self.assertEqual(set(factory.call_args.kwargs), {
             "runtime", "sessions", "origins", "license_guard", "audit", "documents",
-            "task_policies", "egress_purposes",
+            "task_policies", "egress_purposes", "preview_policies",
+            "execution_policies",
         })
 
 

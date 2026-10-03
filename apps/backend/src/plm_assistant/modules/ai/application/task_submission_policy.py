@@ -117,6 +117,10 @@ class AITaskSubmissionPolicyRegistry:
             raise ValueError("AI Task submission policies required")
         self._policies = MappingProxyType(dict(policies))
 
+    def snapshot(self) -> tuple[AITaskSubmissionPolicy, ...]:
+        """Return the immutable, non-secret deployment policies in stable order."""
+        return tuple(self._policies[key] for key in sorted(self._policies))
+
     def resolve(self, *, reference: str, task_type: str, output_schema_ref: str,
                 context_policy_ref: str, parameters: dict[str, object]) -> ResolvedAITaskSubmissionPolicy:
         policy = self._policies.get(reference)

@@ -69,6 +69,21 @@ class AIProviderExecutionPolicyRegistry:
             value.__post_init__()
         self._policies = MappingProxyType({value.reference: value for value in values})
 
+    def permits(
+        self, *, reference: str, provider_kind: ProviderKind,
+        data_region: str, egress_class: str, provider_model_key: str,
+    ) -> bool:
+        """Check a public route candidate without exposing endpoint policy contents."""
+        try:
+            self.resolve(
+                reference=reference, provider_kind=provider_kind,
+                data_region=data_region, egress_class=egress_class,
+                provider_model_key=provider_model_key,
+            )
+            return True
+        except AIProviderExecutionError:
+            return False
+
     def resolve(
         self, *, reference: str, provider_kind: ProviderKind,
         data_region: str, egress_class: str, provider_model_key: str,

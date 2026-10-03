@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0-dev.0/AI-05-A06-P01 新增项目AI提交选项安全投影：部署Task/Egress策略与当前ACTIVE Provider、AVAILABLE结构化CHAT Model、执行白名单在服务器求交；不返回Endpoint、Prompt、Secret，空选项关闭提交，完整配置链缺一不挂载。兼容性/升级/回滚：纯新增GET，无Migration/依赖，撤路由可回滚，冻结写接口不变。验证：定向12、compileall、后端全量2346/跳过3、wheel通过。已知问题：前端写客户端/三步交互、真实PG/浏览器、Accept/Reject、Gate3/UAT/发行包待完成。
+
 - 2026-10-03：0.1.0-dev.0/AI-05-A05 新增AI建议详情卡片：V2按受控node显示服务端位置标签，V1明确整个文档，原文动作只打开固定DocumentVersion受权URL；逐字段解释需要维护的信息、填写提示、原因和必填性，但不复制正文、不提供写表单、不把建议视作正式事实。兼容性/升级/回滚：无后端/API/Migration/依赖变化，可删除建议页/路由/入口回滚。验证：定向10、前端全量1238、typecheck、Vite 141模块构建通过。已知问题：Task提交/逐次外发授权、Accept/Reject、真实浏览器/Gate3/UAT/发行包待完成。
 
 - 2026-10-03：0.1.0-dev.0/AI-05-A04 新增AI任务详情与Invocation运行历史页：Task/Invocation并行受权读取、任一失败整页清空、分页去重、路由迟到隔离；展示固定输入和版本事实，不显示传输正文。取消/重试只链接既有Job详情，无Job引用则关闭，不复制写链。兼容性/升级/回滚：无后端/API/Migration/依赖变化，可删除详情路由回滚。验证：定向10、前端全量1233、typecheck、Vite 138模块构建通过。已知问题：Suggestion卡片/原文定位/人工维护、提交/外发授权、Accept/Reject、真实浏览器/Gate3/UAT/发行包待完成。

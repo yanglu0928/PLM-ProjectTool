@@ -187,6 +187,10 @@ class EgressPreviewPolicyRegistry:
             raise ValueError("Egress Preview policies required")
         self._policies = MappingProxyType(dict(policies))
 
+    def snapshot(self) -> tuple[EgressPreviewPolicy, ...]:
+        """Return the immutable, non-secret preview policies in stable order."""
+        return tuple(self._policies[key] for key in sorted(self._policies))
+
     def authorize(self, command: CreateEgressPreview, *, now: datetime) -> tuple[datetime, tuple[str, ...]]:
         policy = self._policies.get(command.minimal_payload_policy_ref)
         if (policy is None or command.operation_type not in policy.allowed_operation_types

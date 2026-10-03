@@ -6,11 +6,21 @@ from fastapi import APIRouter
 
 from plm_assistant.entrypoints.ai_document_input_owner import DocumentVersionAIInputOwner
 from plm_assistant.modules.ai.api.create_task import create_ai_task_create_router
+from plm_assistant.modules.ai.api.task_submission_options import (
+    create_ai_task_submission_options_router,
+)
 from plm_assistant.modules.ai.application.create_task import AITaskCreateService
 from plm_assistant.modules.ai.application.egress_authorization_owner import (
     AITaskEgressPurposeRegistry, EgressAuthorizationOwner,
 )
 from plm_assistant.modules.ai.application.input_resolution import AIInputVersionResolver
+from plm_assistant.modules.ai.application.egress_preview import EgressPreviewPolicyRegistry
+from plm_assistant.modules.ai.application.provider_execution_policy import (
+    AIProviderExecutionPolicyRegistry,
+)
+from plm_assistant.modules.ai.application.task_submission_options import (
+    AITaskSubmissionOptionsService,
+)
 from plm_assistant.modules.ai.application.task_submission_policy import (
     AITaskPromptOwner, AITaskSubmissionPolicyRegistry,
 )
@@ -22,6 +32,9 @@ from plm_assistant.modules.ai.infrastructure.task_create_repository import (
 )
 from plm_assistant.modules.ai.infrastructure.task_prompt_repository import (
     SqlAlchemyAITaskPromptCurrentRepository,
+)
+from plm_assistant.modules.ai.infrastructure.task_submission_options_repository import (
+    SqlAlchemyAITaskSubmissionOptionsRepository,
 )
 from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
 from plm_assistant.modules.auth.application.session_service import SessionService
@@ -48,6 +61,8 @@ def create_windows_ai_task_router(
     license_guard: object, audit: AuditService, documents: DocumentReadService,
     task_policies: AITaskSubmissionPolicyRegistry,
     egress_purposes: AITaskEgressPurposeRegistry,
+    preview_policies: EgressPreviewPolicyRegistry,
+    execution_policies: AIProviderExecutionPolicyRegistry,
 ) -> APIRouter:
     """Build Task submission only when all trust and policy sources are explicit."""
     try:
@@ -58,6 +73,8 @@ def create_windows_ai_task_router(
                 or type(documents) is not DocumentReadService
                 or type(task_policies) is not AITaskSubmissionPolicyRegistry
                 or type(egress_purposes) is not AITaskEgressPurposeRegistry
+                or type(preview_policies) is not EgressPreviewPolicyRegistry
+                or type(execution_policies) is not AIProviderExecutionPolicyRegistry
                 or license_guard is None):
             raise WindowsAITaskStartupError()
         service = AITaskCreateService(
@@ -81,9 +98,24 @@ def create_windows_ai_task_router(
             receipts=SqlAlchemyIdempotencyReceipts(),
             audit=audit,
         )
-        return create_ai_task_create_router(
+        router = create_ai_task_create_router(
             sessions=sessions, tasks=service, origins=origins,
         )
+        router.include_router(create_ai_task_submission_options_router(
+            options=AITaskSubmissionOptionsService(
+                unit_of_work=runtime.unit_of_work,
+                access=SqlAlchemyEgressAccess(), license_guard=license_guard,
+                authorization=ProjectAuthorizationService(
+                    unit_of_work=runtime.unit_of_work,
+                    repository=SqlAlchemyProjectAuthorizationRepository(),
+                ),
+                repository=SqlAlchemyAITaskSubmissionOptionsRepository(),
+                task_policies=task_policies, egress_policies=preview_policies,
+                execution_policies=execution_policies,
+            ),
+            origins=origins,
+        ))
+        return router
     except WindowsAITaskStartupError:
         raise
     except Exception:
