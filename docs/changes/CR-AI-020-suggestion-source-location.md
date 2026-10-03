@@ -1,6 +1,6 @@
 # CR-AI-020：AI 建议精确来源定位与人工确认提示
 
-日期：2026-10-03；状态：依 V1.1 持续授权登记，P02～P04 已通过，待 P05～P07 实施验证；关联 Gate 2 冻结 API-03、CR-AI-018、Schema0072/0074、用户确认的待办交互要求；原冻结提交 `64cdf09` 与 `gap-output.v1` 历史不改。WBS `AI-04-A07`。
+日期：2026-10-03；状态：依 V1.1 持续授权登记，P02～P05 已通过，待 P06～P07 实施验证；关联 Gate 2 冻结 API-03、CR-AI-018、Schema0072/0074、用户确认的待办交互要求；原冻结提交 `64cdf09` 与 `gap-output.v1` 历史不改。WBS `AI-04-A07`。
 
 ## 差异与证据
 
@@ -28,6 +28,8 @@ P02 实施证据：新增严格 `gap-output.v2@2` 及兼容别名；每项必须
 P03 实施证据：Document Owner 新增固定 ParseResult 节点解析服务，每次先经既有 DocumentVersion/ParseRecord 当前授权、状态与hash复核，再对 canonical Parser Result、profile/version、node kind/source locator、OCR指纹和node集合完整校验；只接受调用方给出的node id，不接受AI提供locator。返回规范`STRUCTURED_NODE`、`PARSED_NODE`精度、无正文位置标签和绑定固定DocumentVersion的受权content route。V1经独立版本Owner重验后仅返回`DOCUMENT`精度。九类定位结构校验归属Document domain，Evidence旧入口保持兼容。Windows 11标记`AI_04_A07_P03_DOCUMENT_LOCATOR_PASS`；Evidence相关61通过/95子测试，后端2314通过/3跳过、2960子测试；wheel 809项 SHA-256 `c388c7293bc6c2b3523c893102f6463ee38d2fbf709f63ec96761afe1aca41e3`。无数据库/API/依赖/真实外发。
 
 P04 实施证据：新增冻结`AI_TASK_LIST`的当前Session/License/Project授权、创建者可见性和稳定`requested_at + ai_task_id` keyset；ProjectManager/CustomerManager可看项目内任务，ImplementationMember仅看本人任务，CustomerMember无列表权限。`ait1` AES-GCM cursor使用独立AI读取密钥合同，AAD绑定协议族、Session摘要、Project和page size，ID不以明文出现；与P05 Invocation family分离。公开路由保持opt-in，默认应用404，Windows生产组合及Vault取钥留P07。定向19通过/215子测试，后端2322通过/3跳过、2980子测试；wheel 811项 SHA-256 `febe5a9b085202d88f6a6d33a160c08b508e877fe98faadb65174a744c6c17df`。本项未做真实PostgreSQL/Windows组合，不改Schema。
+
+P05 实施证据：新增冻结`AI_TASK_INVOCATION_LIST`，每页重新验证Session/License/Project和Task创建者/管理角色；按attempt/id稳定倒序。投影只包含实际Provider/config、Model/revision、Prompt、Output Schema、固定Content Plan/Context版本、状态/schema validation、usage/latency、安全错误与时间；不查询或返回请求/响应正文、Secret、Provider request ref及任何fingerprint。`aii1` cursor使用与P04相同32字节密钥合同但独立`plm-ai-invocation-list-aesgcm-v1` family，并绑定Task。定向14通过/211子测试，后端2329通过/3跳过、2999子测试；wheel 815项 SHA-256 `f36edbea41edf6a6e7fe21528858b480fee29009f23616da1c72765fd9297e88`。Router默认关闭，真实PG/Vault/Windows组合留P07。
 
 Accept/Reject及写入目标Draft不在本CR中；它们涉及目标Owner、Review Lock、第二个expected version和正式业务版本，后续独立Change Request/写闭环实施。
 

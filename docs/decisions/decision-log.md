@@ -7612,3 +7612,11 @@
 - Reason：两个列表各增一个账户Secret会扩大备份恢复和部署面；复用现有Job/Evidence密钥又会造成协议混用。相同密钥下使用独立AEAD family/AAD可保持密码学域隔离，同时满足最小Secret数量。创建者过滤必须下推Repository，不能先取项目全集再在应用层隐藏。
 - Impact/Rollback：无Schema/Migration/依赖；新增opt-in冻结GET Router、应用服务、批量投影和`ait1`codec，默认应用仍404。P07前不声明生产组合可用；撤Router可回滚，cursor失效不影响Task事实。
 - Verification：定向19通过/215子测试、Win11标记`AI_04_A07_P04_TASK_LIST_PASS`，后端2322通过/3跳过、2980子测试；wheel 811项 SHA-256 `febe5a9b085202d88f6a6d33a160c08b508e877fe98faadb65174a744c6c17df`。真实PG/Vault/组合留P07。
+
+# DEC-20261003-775：Invocation只投影可审计版本事实，不投影传输事实
+
+- Date/WBS：2026-10-03 / `AI-04-A07-P05`；依据冻结AI_TASK_INVOCATION_LIST、CR-AI-020、DEC-774。
+- Decision：Invocation列表返回实际Provider/config、Model/revision、Prompt、Schema、Content Plan/Context refs、状态、schema validation、usage/latency、安全错误与时间；明确排除request/response、provider request ref、所有fingerprint、Secret和Context正文。Context refs必须与固定Plan的Project/retrieval/bundle摘要一致后才输出identity。cursor复用AI读取密钥但使用独立Invocation family并绑定Task。
+- Reason：原始传输信息既非工作台判断建议所需，又可能携带客户正文、厂商标识或敏感关联；只读版本事实足以审计实际执行。把Task ID加入AAD防止同项目不同Task间游标重放。
+- Impact/Rollback：新增opt-in冻结GET及内部最小投影，无Migration/依赖/生产装配；旧无Plan Invocation以context null显示。撤Router即可回滚，历史不变。
+- Verification：Win11标记`AI_04_A07_P05_INVOCATION_LIST_PASS`，定向14通过/211子测试，后端2329通过/3跳过、2999子测试；wheel 815项 SHA-256 `f36edbea41edf6a6e7fe21528858b480fee29009f23616da1c72765fd9297e88`；真实PG/Vault/组合留P07。
