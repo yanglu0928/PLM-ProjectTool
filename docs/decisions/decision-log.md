@@ -7380,3 +7380,11 @@
 - Reason：探针是无客户数据的连通性证明，无法携带已批准Envelope或返回受控业务结果；Grant Issuer又只接受QUEUED Task，Begin后必须以PENDING Invocation根做独立最后复核。
 - Impact/Rollback：P01仅文档。后续是内部Port/非秘密Bootstrap增量，不改冻结URL；原Probe行为不变。回滚不装配业务Worker，PENDING历史保留待对账。
 - Verification：静态核对run_provider_probe/probe_policy/provider_probe_transport、SecretResolver、Grant Repository与冻结AIService合同；未运行新代码测试、无网络外发，不标Adapter PASS。
+
+# DEC-20261003-746：Provider发送证明同时绑定Invocation、Route与Envelope
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P06-P02`；依据 CR-AI-015/017、DEC-745。
+- Decision：发送边界必须持有不含正文的`AIProviderSendProof`，将PENDING Invocation、Job generation、Grant、Authorization、Content Plan、实际Envelope和精确Provider Route/SecretVersion绑定；Adapter仅接受已复核的Route/Proof/Envelope。响应正文用可清零受控内存移交P07，不进repr/普通日志。
+- Reason：单独payload hash不能防止路由、密钥版本或Invocation被替换；响应若使用普通bytes无法在下游消费后主动清零。
+- Impact/Rollback：新增未装配内部合同，无Schema/API/依赖/外发。撤合同代码即可，历史不变。
+- Verification：单元5、后端2221运行/3跳过PASS；wheel SHA-256 `38731f0ce54d2791e71f5f2b88f9aed04fd582e1270c89bbe5a3958fc1b6412b`；无Secret读取或网络I/O。
