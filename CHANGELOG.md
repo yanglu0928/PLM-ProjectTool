@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0-dev.0/AI-05-A06-P03 新增AI任务三步提交页：从服务器选项和固定DocumentVersion生成Preview，展示region/来源/载荷/风险后要求ProjectManager勾选本轮明确授权，再独立创建Task；未知结果保留操作号，不自动重试，可在建Task前撤销授权。兼容性/升级/回滚：纯前端，无API/Schema/依赖变化，可删除页面/路由/入口回滚。验证：定向10、前端全量1249、typecheck、Vite 145模块构建通过。已知问题：ImplementationMember跨账户授权接力、真实PG/浏览器、Accept/Reject、Gate3/UAT/发行包待完成。
+
 - 2026-10-03：0.1.0-dev.0/AI-05-A06-P02 新增严格AI提交客户端：Options、Egress Preview/Authorize/Revoke、Task Create白名单解析与身份绑定；各写步骤独立幂等、授权ETag保护、未知结果不自动重试，Task Create不携带Provider/endpoint/Secret。兼容性/升级/回滚：纯前端，无API/Schema/依赖变化，可删除客户端与Session桥接回滚。验证：定向163、前端全量1244、typecheck、Vite 141模块构建通过。已知问题：三步提交页面、真实PG/浏览器、Accept/Reject、Gate3/UAT/发行包待完成。
 
 - 2026-10-03：0.1.0-dev.0/AI-05-A06-P01 新增项目AI提交选项安全投影：部署Task/Egress策略与当前ACTIVE Provider、AVAILABLE结构化CHAT Model、执行白名单在服务器求交；不返回Endpoint、Prompt、Secret，空选项关闭提交，完整配置链缺一不挂载。兼容性/升级/回滚：纯新增GET，无Migration/依赖，撤路由可回滚，冻结写接口不变。验证：定向12、compileall、后端全量2346/跳过3、wheel通过。已知问题：前端写客户端/三步交互、真实PG/浏览器、Accept/Reject、Gate3/UAT/发行包待完成。

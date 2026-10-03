@@ -32,6 +32,7 @@ import ProjectWorkflowView from "@/modules/workflow/views/ProjectWorkflowView.vu
 import ProjectAIWorkbenchView from "@/modules/ai/views/ProjectAIWorkbenchView.vue";
 import ProjectAITaskDetailView from "@/modules/ai/views/ProjectAITaskDetailView.vue";
 import ProjectAISuggestionView from "@/modules/ai/views/ProjectAISuggestionView.vue";
+import ProjectAISubmitView from "@/modules/ai/views/ProjectAISubmitView.vue";
 
 export function createAppRouter(
   history: RouterHistory = createWebHistory(),
@@ -78,6 +79,11 @@ export function createAppRouter(
         path: "/admin/users/:userId/name",
         name: "admin-user-name",
         component: AdminUserNameView,
+      },
+      {
+        path: "/projects/:projectId/ai/new",
+        name: "project-ai-submit",
+        component: ProjectAISubmitView,
       },
       {
         path: "/projects/:projectId/ai/:taskId/suggestion",

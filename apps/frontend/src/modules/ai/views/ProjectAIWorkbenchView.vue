@@ -18,6 +18,10 @@ const busy = ref(false);
 const error = ref("");
 let generation = 0;
 let mounted = true;
+const mayCreate = () => !!identity && !identity.password_change_required && session.canSubmit
+  && session.view?.user.user_id === identity.user.user_id
+  && identity.authorized_projects.some(item => item.project_id === route.params.projectId
+    && ["PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"].includes(item.role));
 
 const taskLabels: Readonly<Record<AITaskView["task_state"], string>> = Object.freeze({
   QUEUED: "等待执行", RUNNING: "执行中", SUCCEEDED: "已完成", FAILED: "失败",
@@ -78,6 +82,7 @@ onUnmounted(() => { mounted = false; generation += 1; });
       <RouterLink to="/login">前往账户与登录</RouterLink>
     </template>
     <template v-else>
+      <p v-if="mayCreate()"><RouterLink :to="{ name: 'project-ai-submit', params: { projectId: route.params.projectId } }">新建AI分析任务</RouterLink></p>
       <button type="button" :disabled="busy" @click="load(null, true)">{{ busy ? "正在读取…" : "刷新AI任务" }}</button>
       <p v-if="busy" role="status">正在确认AI任务访问权限…</p>
       <p v-if="error" role="alert">{{ error }}</p>
