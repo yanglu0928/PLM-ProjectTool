@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-03：0.1.0.dev0/AI-04-A06-P09-P03 新增业务AI one-shot Worker，按专用claim、Prepare/Begin、双pre-send/Secret/发送栅栏、Adapter、Parse和结果原子发布固定执行；Begin错误显式携带已提交事实，防止已创建Invocation被误归类或重发。兼容性/升级/回滚：无Schema/API/依赖变化，内部新事实默认false；可停止消费撤Worker，已越栅栏或已提交Invocation必须保留对账。验证：Win11/PG18.6真实存储+合成Adapter整链一次发送/第二周期IDLE，定向36、后端2294运行/3跳过；wheel 804项 SHA-256 `aa3f580203457a2e5856b72f4f29914426847e8fe78385ba71339f4bab916452`。已知问题：P04～P06循环/生产组合、Server2025、Gate3/UAT/可使用包待完成。
+
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P09-P02 新增Owner专用`AI_TASK_EXECUTE` claim与pre-Begin失败原子收敛；业务Worker不再跨Owner抢占Audit/Document/Probe，准备失败固定Job FAILED且不自动重发，Task的retryable仅作显式新generation资格。兼容性/升级/回滚：无Schema/API/依赖变化，通用/Parse claim保持；可停止业务AI消费撤组合，已提交终态/Audit必须保留。验证：Win11/PG18.6真实Owner隔离、零Invocation、Audit回滚，定向29、后端2280运行/3跳过；wheel 803项 SHA-256 `5515e05e104437824aa2d5131a0398347afb015624de33a772c4cc39eb738b1f`。已知问题：P03～P06生产Worker组合、Server2025、Gate3/UAT/可使用包待完成。
 
 - 2026-10-03：0.1.0.dev0/AI-04-A06-P09-P01 完成业务AI Worker组合前置核查并登记CR-AI-019：现Windows AI Worker仅运行Probe，缺业务Owner专用claim、pre-Begin失败收敛、一步执行/公平循环及受信Execution Policy来源。决定保留单一`AI_PROVIDER_WORKER`服务角色但隔离Probe/业务链，拆P02～P06实施。兼容性/升级/回滚：本项仅文档，无程序/Schema/API/依赖/外发；未运行新增测试。已知问题即P02～P06、Server2025、Gate3/UAT/可使用程序包待完成。

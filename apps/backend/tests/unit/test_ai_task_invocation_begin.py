@@ -121,6 +121,29 @@ class AITaskInvocationBeginTests(unittest.TestCase):
                         worker_ref="worker-a", now=self.now,
                         payload_plan=proof(self.grant))
 
+    def test_post_commit_guard_error_carries_durable_begin_fact(self):
+        with self.assertRaises(AITaskInvocationBeginError) as caught:
+            AITaskInvocationBeginService(
+                unit_of_work=_Uow(), grants=_Grants(self.grant, fail_after=True),
+                repository=_Repository(uuid.uuid4()),
+            ).begin(
+                job_id=self.grant.job_id, fencing_token=1,
+                worker_ref="worker-a", now=self.now,
+                payload_plan=proof(self.grant),
+            )
+        self.assertTrue(caught.exception.committed)
+
+        with self.assertRaises(AITaskInvocationBeginError) as caught:
+            AITaskInvocationBeginService(
+                unit_of_work=_Uow(), grants=_Grants(self.grant),
+                repository=_Repository(uuid.UUID(int=0)),
+            ).begin(
+                job_id=self.grant.job_id, fencing_token=1,
+                worker_ref="worker-a", now=self.now,
+                payload_plan=proof(self.grant),
+            )
+        self.assertFalse(caught.exception.committed)
+
     def test_reissued_grant_must_match_prepared_payload_proof(self):
         other = grant(self.now)
         with self.assertRaises(AITaskInvocationBeginError):

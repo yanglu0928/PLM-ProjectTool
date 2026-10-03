@@ -18,8 +18,12 @@ from .task_execution_grant_service import AITaskExecutionGrantIssuer
 
 
 class AITaskInvocationBeginError(RuntimeError):
-    def __init__(self, code: str = "AI_TASK_INVOCATION_NOT_STARTED") -> None:
+    def __init__(self, code: str = "AI_TASK_INVOCATION_NOT_STARTED", *,
+                 committed: bool = False) -> None:
+        if type(committed) is not bool:
+            raise ValueError("committed must be bool")
         self.code = code
+        self.committed = committed
         super().__init__(code)
 
 
@@ -62,6 +66,7 @@ class AITaskInvocationBeginService:
                 or type(payload_plan) is not AITaskPayloadPlanProof):
             raise AITaskInvocationBeginError()
         now = now.astimezone(timezone.utc)
+        committed = False
         try:
             with self._uow() as transaction:
                 grant = self._grants.issue_in(
@@ -74,11 +79,16 @@ class AITaskInvocationBeginService:
                 )
                 result = BegunAITaskInvocation(invocation_id, grant)
                 transaction.commit()
+                committed = True
             self._grants.require_usable(grant)
             return result
-        except AITaskInvocationBeginError:
+        except AITaskInvocationBeginError as error:
+            if committed and not error.committed:
+                raise AITaskInvocationBeginError(
+                    error.code, committed=True,
+                ) from None
             raise
         except AITaskExecutionGrantError:
-            raise AITaskInvocationBeginError() from None
+            raise AITaskInvocationBeginError(committed=committed) from None
         except Exception:
-            raise AITaskInvocationBeginError() from None
+            raise AITaskInvocationBeginError(committed=committed) from None

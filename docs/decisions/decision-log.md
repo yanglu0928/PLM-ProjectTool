@@ -7540,3 +7540,11 @@
 - Reason：通用 `RETRY_WAIT` 会绕过已冻结的显式 Retry generation 与当前 Egress 重验；跨 Owner claim 会让业务AI进程执行不属于它的任务。pre-Begin 时尚无 Invocation，不能伪造执行尝试或复用要求 Begun Invocation 的P08发布器。
 - Impact/Rollback：无Schema/API/依赖/网络变化；新增内部claim与pre-Begin Publisher/Repository。可停止业务AI消费并撤销新组合，但已持久化终态和Audit不可删除。
 - Verification：Windows11/PostgreSQL18.6实证Owner隔离、原子终止、零Invocation与Audit故障全回滚；相关定向29、后端2280运行/3跳过；wheel 803项 SHA-256 `5515e05e104437824aa2d5131a0398347afb015624de33a772c4cc39eb738b1f`。
+
+# DEC-20261003-766：Invocation Begin 失败必须携带已提交事实
+
+- Date/WBS：2026-10-03 / `AI-04-A06-P09-P03`；依据 CR-AI-019、DEC-753/759/760/765。
+- Decision：Begin 内部错误增加不可混淆的 `committed` 事实。未提交时 Worker 才能调用零 Invocation 失败 Owner；提交后的 License 复核失败或发送/结果发布不确定，一律保留当前 Invocation 和 Job generation 等待过期对账，不回退 PENDING、不创建新 Invocation、不再发送。
+- Reason：事务 commit 之后还有 License 复核，单看异常无法判断 Invocation 是否存在。把已提交误归为 pre-Begin 会尝试关闭不匹配的聚合，甚至诱导重发；显式事实使 one-shot 可做安全分流。
+- Impact/Rollback：只增加内部错误字段和Worker编排，默认`committed=false`，无Schema/API/依赖变化。可停止业务消费撤组合；已提交历史必须保留并对账。
+- Verification：新Worker/Begin单元14、相关定向36；Windows11/PostgreSQL18.6真实存储与合成Adapter整链单次成功、第二周期IDLE；后端2294运行/3跳过；wheel 804项 SHA-256 `aa3f580203457a2e5856b72f4f29914426847e8fe78385ba71339f4bab916452`。
