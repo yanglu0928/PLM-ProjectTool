@@ -8371,3 +8371,11 @@
 - Reason：Review写入必须共享同一UOW/Session/License/Audit/Project事实，同时不能因读模式已加载Handover Action读取而间接开放Review POST。
 - Impact/Rollback：无Migration/冻结API破坏/依赖/Secret/外发。撤Windows写模式的Router注入可恢复关闭，不删历史。
 - Verification：Win11/PG18.6真实composition+HTTP完成四命令及各自幂等重放、批准后升版和撤回投影；P02内部链独立回归PASS，组合定向34、后端2674通过/3跳过，wheel SHA-256 `4b3419d4679ad44b0d95a2d79621859238da928257942c6699e327cb2f7e03f9`。
+
+# DEC-20261005-870：Handover业务submit-review保持原子Owner编排
+
+- Date/WBS：2026-10-05 / `HND-01-A05-A01`；依据冻结API-04、CR-HND-001/002及DEC-867～869。
+- Decision：11个Analysis Operation按读取Owner、identity状态Owner、普通写HTTP、业务原子submit-review、读HTTP和Windows组合拆分A02～A07。`HND_VERSION_SUBMIT_REVIEW`必须在业务Owner中原子编排Review create/start，不以客户端串行通用Review端点代替。
+- Reason：两次HTTP之间会留下可见中间Review identity，且无法把Version当前事实校验、Review/Round、Audit和收据绑为一个业务结果，违反冻结API-04。
+- Impact/Rollback：纯设计分解，无代码/Schema/API行为/依赖/外发。可停止后续实施，不影响已完成Review历史。
+- Verification：静态核对API-04的11个Operation、当前Handover模块文件/仓储/Router及Schema0101；确认内部3写可复用、公开Analysis Router和业务submit-review编排尚缺失。
