@@ -50,3 +50,9 @@ Build/Batch当前只允许PLANNED/PENDING创建，UPDATE/DELETE/TRUNCATE均关�
 Schema0080 仅开放持有当前租约时的 Build `PLANNED→RUNNING` 和 Index `PLANNED→BUILDING`，两者必须在同一事务完成；启动时重验 Model AVAILABLE、Chunk ACTIVE、逐批 Authorization 未撤销/未过期。同时收紧 EmbeddingRecord 守卫：记录必须归属于已 SUCCEEDED 且授权引用精确匹配的 Batch；P02 尚未开放 Batch 转换，因此无半实现向量写入路径。
 
 Windows11/PostgreSQL18.6 标记 `RAG_03_A03_P02_BUILD_BEGIN_PASS`：实际完成受权双批计划、Parser/AI Owner隔离、RAG单次claim、Build/Index原子启动、PENDING Batch向量拒绝、未开放Batch状态拒绝与已启动历史拒降；ORM drift无新操作。后端2378项通过/3跳过；wheel隔离22项，SHA-256 `cdeeb0404194cd6c2c00d013e48d6d1477b2c797411e6eef4554be31ace30056`。无Provider I/O、Secret或客户数据外发。P03将先关闭单次租约过期后 Job FAILED 与 Build/Index 状态收敛，再进入批次发送栅栏。
+
+## A03-P03 实施与结果
+
+新增 `ExpiredRAGEmbeddingBuildReconciler`和Schema0081。过期RUNNING RAG Job被排除在通用claim及RAG再claim之外，只能由Reconciler使用PostgreSQL时间和当前generation证明处理。单事务将Lease置EXPIRED、Attempt/Job置不可重试FAILED、Build/Index置FAILED、未发送PENDING Batch置CANCELLED，并写入唯一SYSTEM Audit；Audit或系统身份失败必须整体回滚。Schema同时预留RUNNING Batch→UNKNOWN的保守收敛，后续发送栅栏实现后再做实际正向验证，不将本项描述为已验证网络未知结果。
+
+Windows11/PostgreSQL18.6 标记 `RAG_03_A03_P03_EXPIRED_RECONCILIATION_PASS`：实际验证Audit失败六类聚合全回滚、随后一次原子失败收敛、两个未发送Batch取消、SYSTEM Audit、旧Worker续租拒绝和已对账历史拒降；零Provider I/O。后端2384项通过/3跳过；wheel隔离25项，SHA-256 `1df2985741d742aca64516b24f27eb4b868e7c84f1b5377533fe1a2a3357d70b`。A03完成，下一项进入A04-P01批次网络前持久化发送栅栏。

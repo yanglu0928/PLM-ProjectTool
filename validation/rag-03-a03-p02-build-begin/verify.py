@@ -75,7 +75,7 @@ def reject(operation, expected: str) -> None:
     raise AssertionError(f"operation unexpectedly succeeded: {expected}")
 
 
-def main() -> None:
+def main(after_begin=None) -> None:
     database = "rag03a03p02_" + uuid.uuid4().hex[:10]
     scratch = Path(tempfile.mkdtemp(prefix="plm-rag03a03p02-"))
     runtime = None
@@ -204,10 +204,24 @@ def main() -> None:
                     "send_fencing_token=1,started_at=statement_timestamp(),lock_version=1 "
                     "WHERE embedding_build_id=%s AND batch_ordinal=1",
                     (planned.embedding_build_id,),
-                ), "history is retained until Worker transitions are installed")
+                ), "reconciliation proof is invalid")
             assert claims.claim_next(
                 worker_ref="rag-worker-02", lease_seconds=120,
             ) is None
+            if after_begin is not None:
+                after_begin({
+                    "database": database,
+                    "config": config,
+                    "runtime": runtime,
+                    "planned": planned,
+                    "claim": claim,
+                    "claims": claims,
+                    "actor": actor,
+                    "project": project,
+                    "batches": tuple(batches),
+                    "members": tuple(members),
+                })
+                return
             reject(lambda: command.downgrade(config, "20261004_0079"),
                    "started RAG EmbeddingBuild history prevents downgrade")
             print(

@@ -260,11 +260,20 @@ class SqlAlchemyJobLeaseRepository:
                 and_(JobRow.state.in_(("PENDING", "RETRY_WAIT")), JobRow.available_at <= now),
                 and_(JobRow.state == "RUNNING", JobRow.lease_expires_at <= now,
                      or_(JobRow.owner_module != "ai",
-                         JobRow.job_type != "AI_TASK_EXECUTE")),
+                         JobRow.job_type != "AI_TASK_EXECUTE"),
+                     or_(JobRow.owner_module != "rag",
+                         JobRow.job_type != "RAG_INDEX_BUILD")),
             )]
             if owner_filter is not None:
                 conditions.extend((JobRow.owner_module == owner_filter[0],
                                    JobRow.job_type == owner_filter[1]))
+            else:
+                # RAG Build has a multi-aggregate expiry reconciler. A generic
+                # claimant must never split Job from Build/Index terminal state.
+                conditions.append(or_(
+                    JobRow.owner_module != "rag",
+                    JobRow.job_type != "RAG_INDEX_BUILD",
+                ))
             job = session.execute(select(JobRow).where(*conditions)
                 .order_by(JobRow.priority.desc(), JobRow.available_at, JobRow.job_id)
                 .limit(1).with_for_update(of=JobRow, skip_locked=True)).scalar_one_or_none()

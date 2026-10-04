@@ -7772,3 +7772,11 @@
 - Reason：通用claim或分开推进会产生错Owner、无租约Build、RUNNING/PLANNED分裂及批次尚未成功却可写向量的窗口。双重应用+数据库守卫使半实现状态在提交时失败关闭。
 - Impact/Rollback：新增内部应用/仓储服务及Schema0080守卫，无公开API、Provider I/O或新依赖。仅当Build/Index仍为PLANNED且无向量历史时可降0079；已启动历史保留并向前修复。
 - Verification：Win11/PG18.6标记`RAG_03_A03_P02_BUILD_BEGIN_PASS`；后端2378/3跳过，wheel隔离22项，SHA-256 `cdeeb0404194cd6c2c00d013e48d6d1477b2c797411e6eef4554be31ace30056`。Parser/AI不误领，PENDING Batch向量写入及已启动降级均拒绝。
+
+# DEC-20261004-795：过期RAG Build由专用对账原子终结而不再claim
+
+- Date/WBS：2026-10-04 / `RAG-03-A03-P03`；依据`CR-RAG-003`、DEC-793/794及AI过期任务对账经验。
+- Decision：Jobs通用claim与RAG专用claim均不接管过期`rag/RAG_INDEX_BUILD`；专用Reconciler按PostgreSQL时间锁定一个过期generation，在同一事务终结Job/Lease/Attempt/Build/Index/Batch并写Audit。未发送Batch为CANCELLED；已RUNNING Batch只能UNKNOWN且Job不可重试。
+- Reason：若claim先单独终结Job，Build/Index会永久停在RUNNING/BUILDING，也无法对外发是否发生作一致判定。Owner专用对账可把状态与审计当作一个不可分割事实。
+- Impact/Rollback：新增Schema0081守卫和内部Reconciler，无API、依赖或网络调用。无对账历史可降0080；已对账历史拒降并向前修复。
+- Verification：Win11/PG18.6标记`RAG_03_A03_P03_EXPIRED_RECONCILIATION_PASS`；Audit失败回滚、通用/专用claim不拆分、六类聚合原子收敛、旧Worker拒绝和历史保留通过。后端2384/3跳过，wheel隔离25项，SHA-256 `1df2985741d742aca64516b24f27eb4b868e7c84f1b5377533fe1a2a3357d70b`。

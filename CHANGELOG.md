@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-04：0.1.0-dev.0/RAG-03-A03-P03 新增过期 Embedding Build 原子对账与Schema0081；通用/RAG claim不再拆分处理过期RAG Job，专用Reconciler在同一事务终结Job/Lease/Attempt/Build/Index/未发送Batch并写SYSTEM Audit，Audit失败整体回滚。兼容性/升级/回滚：内部Schema/服务增量，无API/网络；无对账历史可降0080，已对账历史拒降。验证：Win11/PG18.6原子收敛、回滚、旧Worker拒绝、历史保留PASS；后端2384/跳过3，wheel隔离25，SHA-256 `1df2985741d742aca64516b24f27eb4b868e7c84f1b5377533fe1a2a3357d70b`。已知问题：Batch发送栅栏/Adapter/响应提交、READY/激活、三平台、性能、Gate3/UAT/发行包待完成。
+
 - 2026-10-04：0.1.0-dev.0/RAG-03-A03-P02 新增受权 Embedding Build 计划创建、`rag/RAG_INDEX_BUILD` 专用单次 claim 及 Schema0080 原子 Build RUNNING/Index BUILDING 启动；Parser/AI Worker 不会误领 RAG Job，PENDING Batch 仍不可写入向量。兼容性/升级/回滚：内部Schema和应用服务增量，无公开API/网络调用；未启动历史可降0079，已启动或向量历史拒降。验证：Win11/PG18.6真实组合PASS，后端2378/跳过3，wheel隔离22项，SHA-256 `cdeeb0404194cd6c2c00d013e48d6d1477b2c797411e6eef4554be31ace30056`。已知问题：租约过期后Build/Index失败收敛、Batch发送栅栏、Embedding Adapter、READY/激活、三平台、性能、Gate3/UAT/发行包待完成。
 
 - 2026-10-04：0.1.0-dev.0/RAG-03-A03-P01 新增Embedding Build计划Schema0079：每个Index唯一Build/Job，Job仅一次尝试；Batch同事务连续覆盖精确来源、每批独占一次外发授权并提交时复算来源、授权集和Build指纹。兼容性/升级/回滚：内部Schema增量，无API/网络；空表可降0078，有历史拒降；状态转换在P02前关闭。验证：Win11/PG18.6有效双批计划、迁移/drift/负例通过，后端2366/跳过3，wheel隔离24。已知问题：创建/claim、发送栅栏、Adapter、READY/激活、三平台、性能、Gate3/UAT/发行包待完成。
