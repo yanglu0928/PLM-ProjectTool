@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-04：0.1.0-dev.0/RAG-04-A03-P02 新增Retrieval专属单次claim并从通用ready/expired、Parser、AI Task与RAG Build入口隔离；精确绑定PROJECT、唯一Run payload、Actor/Trace和attempt/fencing=1，过期generation不自动重领，等待Job/Run/Audit专属原子对账。兼容性/升级/回滚：无Migration/API/依赖，内部队列路由收紧；可停Worker但不能把过期历史回交通用claim。验证：Win11/PG18.6四类Owner隔离、专属认领/当前检查/过期保持PASS；定向16、后端2473/跳过3、wheel RAG100，SHA-256 `5d463c4c635d33a2607a9cd0985a7969d633ba9569ef49c719c94f6078977013`。已知问题：P03当前事实/解密、P04 FTS、原子完成Owner、正式ACTIVE/质量/性能/Gate3/UAT/发行包待完成。
+
 - 2026-10-04：0.1.0-dev.0/RAG-04-A03-P01 完成Retrieval执行链前置核查：发现通用Job claim会接管`RAG_RETRIEVAL`并可能拆分Job/Run终态，锁定专属单次claim、通用ready/expired隔离、原请求Actor当前授权重验、受控解密与参数化PROJECT FTS；A03只生成有界内存候选，A05再原子发布。兼容性/升级/回滚：纯文档，无Schema/API/依赖/网络/外发；P02收紧内部路由，过期历史必须专属对账。验证：静态核对Job lease、A02 payload、Schema0088和FTS/Index来源。已知问题：P02～P04实现、原子完成Owner、vector/exact/Global/Rerank、正式ACTIVE/质量/性能/Gate3/UAT/发行包待完成。
 
 - 2026-10-04：0.1.0-dev.0/RAG-04-A02-P02 新增受权异步Retrieval创建Owner与专用AES-256-GCM Query Cipher；当前Session/CSRF、License、Project成员、ACTIVE Index/Model/Chunk、幂等全部通过后才读取密钥，Job/Run/密文/Audit/收据同事务，重放重验权限且不新建密文。兼容性/升级/回滚：复用Schema0088和`cryptography==50.0.1`，无Migration/公开API/新依赖/外发；可停Owner关闭新建，既有历史保留并向前修复。验证：Win11/PG18.6合成ACTIVE下成功/全回滚/重放/撤权及安全负例PASS；后端2467/跳过3、wheel RAG95，SHA-256 `14a6a8ce6b7293e63acbb7f40a15bbb513ba938a8649ea978b138b9420a0fe12`。已知问题：执行Worker/候选/Context/HTTP、正式密钥/ACTIVE/业务质量/性能/三平台/Gate3/UAT/发行包待完成。

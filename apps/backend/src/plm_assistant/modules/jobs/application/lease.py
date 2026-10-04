@@ -72,6 +72,8 @@ class JobLeaseRepositoryPort(Protocol):
                            lease_seconds: int) -> ClaimedJob | None: ...
     def claim_next_rag_build(self, transaction: object, *, worker_ref: str,
                              lease_seconds: int) -> ClaimedJob | None: ...
+    def claim_next_rag_retrieval(self, transaction: object, *, worker_ref: str,
+                                 lease_seconds: int) -> ClaimedJob | None: ...
     def heartbeat(self, transaction: object, *, job_id: uuid.UUID,
                   fencing_token: int, worker_ref: str, lease_seconds: int) -> None: ...
     def pulse_parse(self, transaction: object, *, job_id: uuid.UUID,
@@ -137,6 +139,19 @@ class JobLeaseService:
             raise JobLeaseError("INVALID_LEASE_DURATION")
         with self._unit_of_work() as tx:
             result = self._repository.claim_next_rag_build(
+                tx, worker_ref=worker_ref, lease_seconds=lease_seconds,
+            )
+            tx.commit()
+            return result
+
+    def claim_next_rag_retrieval(self, *, worker_ref: str,
+                                 lease_seconds: int) -> ClaimedJob | None:
+        """RAG-retrieval-only admission; expired generations require reconciliation."""
+        self._validate_worker(worker_ref)
+        if not 1 <= lease_seconds <= 3600:
+            raise JobLeaseError("INVALID_LEASE_DURATION")
+        with self._unit_of_work() as tx:
+            result = self._repository.claim_next_rag_retrieval(
                 tx, worker_ref=worker_ref, lease_seconds=lease_seconds,
             )
             tx.commit()

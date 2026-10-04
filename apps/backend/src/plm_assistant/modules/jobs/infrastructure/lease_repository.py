@@ -248,6 +248,13 @@ class SqlAlchemyJobLeaseRepository:
             owner_filter=("rag", "RAG_INDEX_BUILD"),
         )
 
+    def claim_next_rag_retrieval(self, transaction: object, *, worker_ref: str,
+                                 lease_seconds: int) -> ClaimedJob | None:
+        return self._claim_next_filtered(
+            transaction, worker_ref=worker_ref, lease_seconds=lease_seconds,
+            owner_filter=("rag", "RAG_RETRIEVAL"),
+        )
+
     def _claim_next_filtered(self, transaction: object, *, worker_ref: str,
                              lease_seconds: int,
                              owner_filter: tuple[str, str] | None) -> ClaimedJob | None:
@@ -262,17 +269,23 @@ class SqlAlchemyJobLeaseRepository:
                      or_(JobRow.owner_module != "ai",
                          JobRow.job_type != "AI_TASK_EXECUTE"),
                      or_(JobRow.owner_module != "rag",
-                         JobRow.job_type != "RAG_INDEX_BUILD")),
+                          JobRow.job_type != "RAG_INDEX_BUILD"),
+                     or_(JobRow.owner_module != "rag",
+                          JobRow.job_type != "RAG_RETRIEVAL")),
             )]
             if owner_filter is not None:
                 conditions.extend((JobRow.owner_module == owner_filter[0],
                                    JobRow.job_type == owner_filter[1]))
             else:
-                # RAG Build has a multi-aggregate expiry reconciler. A generic
-                # claimant must never split Job from Build/Index terminal state.
+                # RAG Build and Retrieval have multi-aggregate terminal state.
+                # A generic claimant must never split their owner aggregates.
                 conditions.append(or_(
                     JobRow.owner_module != "rag",
                     JobRow.job_type != "RAG_INDEX_BUILD",
+                ))
+                conditions.append(or_(
+                    JobRow.owner_module != "rag",
+                    JobRow.job_type != "RAG_RETRIEVAL",
                 ))
             job = session.execute(select(JobRow).where(*conditions)
                 .order_by(JobRow.priority.desc(), JobRow.available_at, JobRow.job_id)

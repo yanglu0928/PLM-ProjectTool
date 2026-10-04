@@ -1,6 +1,6 @@
 # CR-RAG-004：RetrievalRun、加密查询内容与最小 Context 边界
 
-日期：2026-10-04；状态：`A03_P01_EXECUTION_PRECHECK_PASS`；WBS：`RAG-04-A01～A06`。关联 Gate 2 冻结 ADR-004/009、DM-04、SC-01～04、API-03，以及 Schema0087/CR-RAG-001～003；原冻结提交 `64cdf09` 不改。
+日期：2026-10-04；状态：`A03_P02_CLAIM_PASS`；WBS：`RAG-04-A01～A06`。关联 Gate 2 冻结 ADR-004/009、DM-04、SC-01～04、API-03，以及 Schema0087/CR-RAG-001～003；原冻结提交 `64cdf09` 不改。
 
 ## 差异与实施方案
 
@@ -49,3 +49,9 @@ Windows11/PostgreSQL18.6完成成功创建、Audit失败全回滚、幂等重放
 静态检查确认通用Job claim/过期处理当前只隔离`rag/RAG_INDEX_BUILD`，会错误接管`rag/RAG_RETRIEVAL`并可能让Job与Run状态分裂。A03先增加专属单次claim，同时从通用ready/expired路径排除Retrieval；过期Run须等待专属原子Reconciler，不允许通用重领。
 
 执行边界锁定为：当前Lease/License/原请求Actor与Membership/ACTIVE Index/Model/来源重验通过后才能解密；query重新计算fingerprint并归零；首个`fts.project.v1`只生成同Project、同Index generation、参数化SQL和固定metadata AST的有界内存候选，A05再把Candidate/Score/Context及Run/Job终态原子发布。vector/exact Query Embedding、GLOBAL合并和Rerank外发仍关闭并留给A04。未运行新增程序测试，进入A03-P02专属claim与通用队列隔离。
+
+## A03-P02 实施与结果
+
+新增`RAG_RETRIEVAL`专属单次claim DTO/Service/PostgreSQL仓储，固定PROJECT scope、唯一Run引用payload、Run ID幂等键、原Actor/Trace及attempt/fencing均为1；当前检查点可重验同一Lease。通用ready/expired claim新增Retrieval排除，Parser/AI/RAG Build入口也不能跨Owner接管；专属入口不自动重领过期generation。
+
+Windows11/PostgreSQL18.6合成组合证明四类非本Owner不抢占、专属Worker精确认领、第二Worker不重复领取，且租约过期后Job/Lease/Run保持原generation等待原子对账。定向16、后端2473/跳过3、wheel RAG100通过，SHA-256 `5d463c4c635d33a2607a9cd0985a7969d633ba9569ef49c719c94f6078977013`。无Migration/API/依赖/Provider I/O/客户数据外发；进入A03-P03当前事实重验与受控解密。

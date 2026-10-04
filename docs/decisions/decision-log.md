@@ -7932,3 +7932,11 @@
 - Reason：现通用claim会抢占Retrieval且可单独终结Job，造成Run永久RUNNING；在搜索循环中逐条写Candidate也会留下半快照。SYSTEM Worker不能替代请求主体授权，解密和候选生成必须位于当前事实检查之后。
 - Impact/Rollback：P01仅文档，无代码/Schema/API/依赖/网络或外发变化。P02收紧内部路由；可停止专属Worker，但过期/已认领历史必须向前对账，不能回交通用Worker。vector/exact Query Embedding、GLOBAL合并和Rerank继续关闭。
 - Verification：静态确认通用claim仅隔离RAG Index Build、A02 Job为单次且payload只有Run引用、Schema0088状态/Context仍关闭、现有stored simple FTS与精确Index来源可支持首个PROJECT FTS；未运行新增程序测试。
+
+# DEC-20261004-815：过期 Retrieval generation 不由任何 claim 自动接管
+
+- Date/WBS：2026-10-04 / `RAG-04-A03-P02`；依据CR-RAG-004、DEC-814、Schema0088及Jobs租约合同。
+- Decision：`RAG_RETRIEVAL`使用PROJECT/单attempt/单fencing专属claim，并从通用ready/expired、Parser、AI Task和RAG Build入口隔离。专属claim也不重领过期generation；当前Run完成/失败Owner开放前保持原Job/Run，由后续专属Reconciler一次关闭Job、Lease、Attempt、Run和Audit。
+- Reason：`max_attempts=1`表示不可自动重放，通用过期逻辑只知道Job而不知道Run；让任一claim过期接管会制造Job失败而Run仍RUNNING，或在无法证明query是否已解密/检索的情况下重复执行。
+- Impact/Rollback：无Schema/API/依赖变化，只收紧内部队列可见性。可停止专属Worker；已有过期历史不能回交通用Worker，须向前对账。既有Build/AI/Parser认领合同保持。
+- Verification：Win11/PG18.6证明通用、Parser、AI、RAG Build均不抢占，专属精确认领且第二Worker不重复领取；3秒租约过期后Job/Lease/Run原generation保持。定向16、后端2473/3跳过、wheel RAG100，SHA-256 `5d463c4c635d33a2607a9cd0985a7969d633ba9569ef49c719c94f6078977013`。

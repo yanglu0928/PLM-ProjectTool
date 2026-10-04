@@ -21,6 +21,9 @@ class _UnusedRepository:
     def claim_next_rag_build(self, *args, **kwargs):
         raise AssertionError("invalid command reached repository")
 
+    def claim_next_rag_retrieval(self, *args, **kwargs):
+        raise AssertionError("invalid command reached repository")
+
 
 class JobLeaseValidationTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -54,6 +57,12 @@ class JobLeaseValidationTests(unittest.TestCase):
             with self.subTest(worker=worker, seconds=seconds), self.assertRaises(JobLeaseError):
                 self.service.claim_next_rag_build(worker_ref=worker,
                                                   lease_seconds=seconds)
+
+    def test_rag_retrieval_claim_rejects_invalid_input_before_transaction(self) -> None:
+        for worker, seconds in (("", 180), ("worker", 0), ("worker", 3601)):
+            with self.subTest(worker=worker, seconds=seconds), self.assertRaises(JobLeaseError):
+                self.service.claim_next_rag_retrieval(worker_ref=worker,
+                                                      lease_seconds=seconds)
 
     def test_parse_pulse_rejects_invalid_input_before_transaction(self) -> None:
         for worker, seconds in (("", 60), ("worker", 0), ("worker", 3601)):
