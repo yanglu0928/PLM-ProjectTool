@@ -201,10 +201,10 @@ def main(after_begin=None) -> None:
                 ), "lacks a successful authorized Build batch")
                 reject(lambda: db.execute(
                     "UPDATE plm.rag_embedding_build_batches SET batch_state='RUNNING',"
-                    "send_fencing_token=1,started_at=statement_timestamp(),lock_version=1 "
+                    "send_fencing_token=2,started_at=statement_timestamp(),lock_version=1 "
                     "WHERE embedding_build_id=%s AND batch_ordinal=1",
                     (planned.embedding_build_id,),
-                ), "reconciliation proof is invalid")
+                ), "invalid")
             assert claims.claim_next(
                 worker_ref="rag-worker-02", lease_seconds=120,
             ) is None

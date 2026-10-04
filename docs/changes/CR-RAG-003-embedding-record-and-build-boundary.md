@@ -1,6 +1,6 @@
 # CR-RAG-003：EmbeddingRecord、受控 HNSW 与构建发送边界
 
-日期：2026-10-04；状态：`A03_P01_IMPLEMENTED_AND_WINDOWS11_PG18_VERIFIED`；WBS：`RAG-03-A01～A05`。关联 Gate 2 冻结 ADR-004、DM-04、SC-02～04、API-03，以及 CR-RAG-002/Schema0077；原冻结提交 `64cdf09` 不改。
+日期：2026-10-04；状态：`A04_P01_IMPLEMENTED_AND_WINDOWS11_PG18_VERIFIED`；WBS：`RAG-03-A01～A05`。关联 Gate 2 冻结 ADR-004、DM-04、SC-02～04、API-03，以及 CR-RAG-002/Schema0077；原冻结提交 `64cdf09` 不改。
 
 ## 差异与实施方案
 
@@ -56,3 +56,9 @@ Windows11/PostgreSQL18.6 标记 `RAG_03_A03_P02_BUILD_BEGIN_PASS`：实际完成
 新增 `ExpiredRAGEmbeddingBuildReconciler`和Schema0081。过期RUNNING RAG Job被排除在通用claim及RAG再claim之外，只能由Reconciler使用PostgreSQL时间和当前generation证明处理。单事务将Lease置EXPIRED、Attempt/Job置不可重试FAILED、Build/Index置FAILED、未发送PENDING Batch置CANCELLED，并写入唯一SYSTEM Audit；Audit或系统身份失败必须整体回滚。Schema同时预留RUNNING Batch→UNKNOWN的保守收敛，后续发送栅栏实现后再做实际正向验证，不将本项描述为已验证网络未知结果。
 
 Windows11/PostgreSQL18.6 标记 `RAG_03_A03_P03_EXPIRED_RECONCILIATION_PASS`：实际验证Audit失败六类聚合全回滚、随后一次原子失败收敛、两个未发送Batch取消、SYSTEM Audit、旧Worker续租拒绝和已对账历史拒降；零Provider I/O。后端2384项通过/3跳过；wheel隔离25项，SHA-256 `1df2985741d742aca64516b24f27eb4b868e7c84f1b5377533fe1a2a3357d70b`。A03完成，下一项进入A04-P01批次网络前持久化发送栅栏。
+
+## A04-P01 实施与结果
+
+新增 `RAGEmbeddingBatchSendFenceService`和Schema0082。Worker必须在同一短事务中锁定当前Job/Lease/Attempt、RUNNING Build、BUILDING Index和精确PENDING Batch，重验payload/来源指纹与限额、Chunk ACTIVE/Scope/数据类别、未撤销且未过期的逐批授权、AVAILABLE Embedding Model、ACTIVE Provider及其当前可Embedding Config，然后才持久化 `PENDING→RUNNING`、fencing token和开始时间。事务提交后的回执仅是必要边界，不单独授权Provider调用；A04-P02仍须通过统一AIService复核Secret/端点策略并调用Adapter。
+
+Windows11/PostgreSQL18.6标记 `RAG_03_A04_P01_BATCH_SEND_FENCE_PASS`：错误payload指纹不产生状态变化，正确批次原子提交RUNNING，另一批保持PENDING；模拟租约过期后已fenced批次实际收敛为UNKNOWN/`RAG_PROVIDER_OUTCOME_UNKNOWN`且Job不重试，未发送批次取消，已fenced历史拒降。后端2390项通过/3跳过；wheel隔离31项，SHA-256 `73414666a86943ae4f0da933c7992191f56a9f1bc485428d803972790d213c85`。本项零Provider I/O、零Secret解密和零客户数据外发。

@@ -7780,3 +7780,11 @@
 - Reason：若claim先单独终结Job，Build/Index会永久停在RUNNING/BUILDING，也无法对外发是否发生作一致判定。Owner专用对账可把状态与审计当作一个不可分割事实。
 - Impact/Rollback：新增Schema0081守卫和内部Reconciler，无API、依赖或网络调用。无对账历史可降0080；已对账历史拒降并向前修复。
 - Verification：Win11/PG18.6标记`RAG_03_A03_P03_EXPIRED_RECONCILIATION_PASS`；Audit失败回滚、通用/专用claim不拆分、六类聚合原子收敛、旧Worker拒绝和历史保留通过。后端2384/3跳过，wheel隔离25项，SHA-256 `1df2985741d742aca64516b24f27eb4b868e7c84f1b5377533fe1a2a3357d70b`。
+
+# DEC-20261004-796：Embedding Batch先提交发送栅栏再进入统一AIService
+
+- Date/WBS：2026-10-04 / `RAG-03-A04-P01`；依据`CR-RAG-003`、DEC-793～795及已验证AI Task发送边界。
+- Decision：Embedding每个Batch只有在同一短事务内重验当前单次租约、Build/Index/Batch、payload/来源指纹、Chunk当前性、逐批Authorization、Embedding Model和Provider当前Config后，才持久化RUNNING/fencing token；该事务提交后才允许后续AIService考虑网络调用。回执本身不是Provider调用授权。
+- Reason：若先调网络再记录RUNNING，进程在请求后崩溃时会把已可能计费/外发的批次误当未发送并重放。仅检查历史授权也无法抵御撤销、模型停用、Provider配置切换或Chunk受限。
+- Impact/Rollback：新增内部Schema0082、应用/仓储服务，无API、依赖、Secret解密或真实Provider I/O。无fenced历史可降0081；已fenced历史拒降并向前修复。
+- Verification：Win11/PG18.6标记`RAG_03_A04_P01_BATCH_SEND_FENCE_PASS`；错误payload拒绝、正确Batch原子RUNNING、实际过期RUNNING→UNKNOWN/不重发及历史拒降通过。后端2390/3跳过，wheel隔离31项，SHA-256 `73414666a86943ae4f0da933c7992191f56a9f1bc485428d803972790d213c85`。首轮验证暴露Schema0082误引用不存在的Job `started_at`，改为Attempt `started_at`后完整重跑通过；失败库已自动清理。
