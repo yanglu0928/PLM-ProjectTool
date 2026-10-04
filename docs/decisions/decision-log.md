@@ -7860,3 +7860,11 @@
 - Reason：把可变JSON摘要放在Index根上无法证明观察对象且容易被覆盖；让证据插入隐式推进状态又会把采集、裁决与多聚合提交混为一个不可恢复半状态。追加表可审计，状态仍由单独Owner原子控制。
 - Impact/Rollback：新增内部Schema0085/ORM/验证夹具，无公开API、依赖或真实网络。空表可降0084；有历史拒降并向前修复。原冻结基线和既有历史不改写。
 - Verification：Win11/PG18.6空库升降重升、已有数据升级、drift、HNSW/exact技术证据和完整负例PASS；后端2431/3跳过、wheel隔离57，SHA-256 `f6971d1ec3eb529f5e5b8bb1513f99df68a490b202cf55052591e9ba17ca0779`；零真实Provider I/O。验证修正见进度文档。
+
+# DEC-20261004-806：技术 PASS/FAIL 与 Job、Build、Index 必须单事务双向收敛
+
+- Date/WBS：2026-10-04 / `RAG-03-A05-P03`；依据`CR-RAG-003`、DEC-804/805及Schema0085。
+- Decision：技术Owner固定最多10个现有向量自查询、Top-K最多5、HNSW `ef_search=200`/`strict_order`和同授权范围exact对照，最低技术Recall 95%。PASSED同事务完成Job/Attempt/Lease/Build并推进Index READY；FAILED登记`RAG_INDEX_TECHNICAL_VALIDATION_FAILED`并关闭Job/Build/Index。Schema0086从Job和Build两侧使用deferred validator核完整终态，防止只完成任一聚合。READY不激活。
+- Reason：单向守卫只能防止某个表提前转换，无法阻止通用Job接口留下“Job成功但Index仍BUILDING”的半状态；失败若只抛异常又会丢失已完成技术探针的可审计事实。双向提交期核验确保完整成功或完整回滚/失败关闭。
+- Impact/Rollback：内部应用/基础设施与数据库函数增量，无公开API、依赖、真实外发或ACTIVE变化。空状态可降0085；SUCCEEDED/READY或新技术失败终态拒降并向前修复。自查询Recall不外推为业务质量或性能。
+- Verification：Win11/PG18.6空迁移/drift、PASS/FAILED、直接改Job/Index及有历史拒降通过；定向64、后端2438/3跳过、wheel隔离64，SHA-256 `bcb6d531593c544f6448a1dec090f7e12ed6a4f2c95d404400ef2449e252f946`；ACTIVE为0、零真实Provider I/O。验证环境修正见进度文档。

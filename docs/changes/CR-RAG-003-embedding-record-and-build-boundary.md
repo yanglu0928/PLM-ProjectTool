@@ -1,6 +1,6 @@
 # CR-RAG-003：EmbeddingRecord、受控 HNSW 与构建发送边界
 
-日期：2026-10-04；状态：`A05_P02_SCHEMA_PASS`；WBS：`RAG-03-A01～A05`。关联 Gate 2 冻结 ADR-004、DM-04、SC-02～04、API-03，以及 CR-RAG-002/Schema0077；原冻结提交 `64cdf09` 不改。
+日期：2026-10-04；状态：`A05_P03_READY_OWNER_PASS`；WBS：`RAG-03-A01～A05`。关联 Gate 2 冻结 ADR-004、DM-04、SC-02～04、API-03，以及 CR-RAG-002/Schema0077；原冻结提交 `64cdf09` 不改。
 
 ## 差异与实施方案
 
@@ -116,3 +116,9 @@ Windows11/PostgreSQL18.6三份全新隔离库分别验证成功写入精确记�
 Schema0085新增每个Index/Build唯一的不可变`rag_embedding_index_validations`。提交期守卫以数据库时间固化完成时刻，只接受当前未过期单次RAG Job Lease下的RUNNING Build/BUILDING Index，重算精确source/AVAILABLE record、缺失/额外/重复/无效记录、全部Batch、record-set/HNSW catalog/validation指纹和basis-points Recall；零可用记录仍可用空集摘要登记FAILED。技术PASSED另要求HNSW与同Scope/Project/Index exact计划均已观察、`ef_search=200`、`iterative_scan=strict_order`及实际Recall达到绑定策略门槛；查询/客户正文和Golden答案不持久化。验证历史不可更新、删除或截断，存在历史时拒降0084。
 
 Windows11/PostgreSQL18.6完成空库升降重升、已有Index/Build升级、ORM drift、单批合成非零1024维记录、HNSW/exact Top-1 10000 basis-points证据、伪造指纹/改删截断/有历史拒降负例；写入PASSED后Build/Index/Job仍为RUNNING/BUILDING/RUNNING，状态转换保持关闭。后端2431项通过/3跳过；wheel隔离57项，SHA-256 `f6971d1ec3eb529f5e5b8bb1513f99df68a490b202cf55052591e9ba17ca0779`。验证夹具先后修正全零cosine、参数绑定、精简环境依赖和wheel依赖路径后均以全新环境重跑；产品守卫未放宽。P03继续技术Owner与READY原子收敛，零真实Provider I/O。
+
+## A05-P03 实施与结果
+
+新增技术验证Service/Repository与Schema0086。Owner固定最多10个现有向量自查询、Top-K最多5、`ef_search=200`、`iterative_scan=strict_order`及同Scope/Project/Index exact对照，技术Recall门槛9500 basis points。PASS在单事务写不可变证据、完成Job/Attempt、释放Lease、完成Build并只推进Index READY；技术FAIL以`RAG_INDEX_TECHNICAL_VALIDATION_FAILED`保留证据并关闭Job/Build/Index。Job和Build两侧deferred约束反向核对完整聚合，直接改Job或Index均被拒绝。该自查询冒烟不替代业务Golden、分类/引用或性能证据。
+
+Windows11/PostgreSQL18.6空迁移/降级/重升、drift、1024维正向READY、强制Recall失败关闭、直接越权状态与有历史拒降均通过；ACTIVE保持0。RAG定向64项、后端2438项/3跳过、wheel隔离64项通过，SHA-256 `bcb6d531593c544f6448a1dec090f7e12ed6a4f2c95d404400ef2449e252f946`。首次夹具正文指纹不一致及清理editable元数据造成的既有Windows测试失败均已按进度文档修正并全量重跑。P04继续新独立业务质量证据与唯一ACTIVE切换；零真实Provider I/O。
