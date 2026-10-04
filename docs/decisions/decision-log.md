@@ -8188,3 +8188,11 @@
 - Reason：只读进程不得扩大写面；共用或硬编码密钥会破坏域隔离。无恢复备份的正式供给不可接受。生产组合暴露出先采样时钟会必然早于Subject实时`verified_at`，因此必须按因果顺序采样。
 - Impact/Rollback：无Schema/Migration、冻结API、依赖或外发变化。停止注入Capability Router即可关闭新流量；Review修复不改变状态机，历史保留。正式密钥、ACL、备份恢复继续作为Release前置。
 - Verification：定向42、Win11/PG18.6十二Operation真实HTTP/重放/状态边界与drift、后端2597/3跳过；wheel Capability/Review59+Migration4，SHA-256 `793500a98946317b3ba4c95e0909029b085814fe00cda5b9e17aaa2c17f87ea0`。
+
+# DEC-20261005-847：Handover 先物理化固定来源再开放业务入口
+
+- Date/WBS：2026-10-05 / `HND-01-A01`；依据DM-05、SC-01/02、API-04、CR-SEQ-001及CR-HND-001。
+- Decision：Handover按Schema基础、Analysis Owner、Review正式化、ActionItem、HTTP/组合、前端/真实验收分步实施。HND-02除冻结已列Item/Evidence/Capability/Option表外，增加固定Project DocumentVersion和AI Task provenance owned tables；不以路径、动态最新版、JSON UUID数组、正文复制或TraceLink替代输入快照。
+- Reason：当前只有类型白名单和Workflow阶段名，3 Root/20 Operation运行实现为零；直接挂API会绕过固定来源、项目授权与人工确认。冻结模型明确要求多值source/ai refs，但SC-01没有可保持外键与顺序的物理集合。
+- Impact/Rollback：本项纯文档；后续新增表不增加Root/API/Scope，须按CR-HND-001迁移与历史拒降。未实施Schema前可停止；不得改写Gate2冻结提交。
+- Verification：静态交叉核对冻结DM/SC/API、模块边界、Workflow与运行源码；确认零handover文件/表/Owner/Router，标记`HND_01_A01_RUNTIME_PRECHECK_PASS`，未运行新增程序测试。

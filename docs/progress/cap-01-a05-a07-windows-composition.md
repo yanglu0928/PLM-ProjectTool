@@ -1,6 +1,6 @@
 # CAP-01-A05-A07：Capability Windows 生产组合
 
-日期：2026-10-05。结论：`CAP_01_A05_A07_WINDOWS_COMPOSITION_PASS`（隔离合成密钥）；正式目标账户密钥仪式仍为 Release 前置。下一项：`HAN-01-A01` Handover 运行时前置核查。
+日期：2026-10-05。结论：`CAP_01_A05_A07_WINDOWS_COMPOSITION_PASS`（隔离合成密钥）；正式目标账户密钥仪式仍为 Release 前置。下一项：`HND-01-A01` Handover 运行时前置核查。
 
 ## 编码前检查
 

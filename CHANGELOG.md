@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/HND-01-A01 完成Handover运行时前置核查并登记CR-HND-001：冻结3 Root/20 Operation当前运行实现为零；选择先物理化固定Project DocumentVersion、Approved CapabilityBaselineVersion、六类Item/Evidence/Capability/Option及AI Task provenance，再接Analysis/Review/Action/API/UI。NEED_CONFIRM完整提示、AI建议态、Evidence定位和SUBMITTED≠CLOSED保持硬边界。兼容性/升级/回滚：纯文档，无Schema/API/依赖/外发，可停止后续实现且不追写Gate2基线。验证：静态交叉核对DM-05、SC-01/02、API-04、模块边界、Workflow与源码，标记`HND_01_A01_RUNTIME_PRECHECK_PASS`。已知问题：A02以后实现、真实资料/确认、质量、正式信任/性能/Gate3/发行仍待。
+
 - 2026-10-05：0.1.0-dev.0/CAP-01-A05-A07 将Capability五读/十二全量Operation分别接入Windows显式只读/写生产组合，使用两把独立Vault游标密钥并在缺失时失败关闭；真实组合发现并修复GLOBAL Review开始时间早于Subject校验的生产时序问题。兼容性/升级/回滚：无Schema/Migration、冻结API、依赖或外发变化，停注入Router即可关闭流量，历史保留。验证：定向42、Win11/PG18.6隔离合成密钥下十二Operation真实HTTP/重放/状态边界与drift、后端2597通过/3跳过、wheel Capability/Review59+Migration4，SHA-256 `793500a98946317b3ba4c95e0909029b085814fe00cda5b9e17aaa2c17f87ea0`。已知问题：CR-CAP-004正式目标账户密钥/备份/ACL/恢复、正式信任、性能、Server2025/Debian13、Gate3/发行仍待。
 
 - 2026-10-05：0.1.0-dev.0/CAP-01-A05-A06 新增Capability五个冻结读取Operation的统一opt-in Router，覆盖Baseline list/get、Version list/get和Item list；DeploymentAdmin可读受控全历史，当前项目成员仅读当前APPROVED投影。两域HMAC游标绑定Session/页大小/权限投影/family/scope，续页由Owner在同一事务重验当前投影；默认应用五路404。兼容性/升级/回滚：无Schema/Migration/依赖/配置/外发，内部Query/Page尾部字段有默认值，停注入Router可关闭流量。验证：定向18、Win11/PG18.6管理员/成员/非成员投影及终态回归，后端2594通过/3跳过，wheel Capability/Review63+解包Migration4，SHA-256 `583680a9af014e66d4a7133dbfa424a8c055e1f9cf129c0bc110898dbfed0ba5`。已知问题：Windows正式密钥/组合/真实HTTP、前端、正式信任/性能/Gate3/发行仍待。
