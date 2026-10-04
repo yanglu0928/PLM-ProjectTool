@@ -39,3 +39,4 @@
 
 - 2026-10-05 / `CAP-01-A02`：Schema0091/ORM已实施并在Windows 11/PostgreSQL 18.6验证；两Root/五表、来源集合重算、逐项Document/Evidence完整性、Owner关闭和历史拒降通过。没有导入资料、创建APPROVED或开放API。下一项按本CR进入A03内部创建与来源验证Owner。
 - 2026-10-05 / `CAP-01-A03-P01`：A03按冻结三个独立Operation拆为P01 Baseline创建、P02完整Draft Version创建、P03 Validate报告；P01已实现DeploymentAdmin/License/幂等/Audit原子Owner，并经Document Port重验GLOBAL标准来源。无Schema/API/导入/正式状态变化，下一项P02。
+- 2026-10-05 / `CAP-01-A03-P02`：为冻结M控制新增Schema0092最小Baseline锁推进守卫，完整DRAFT Version/Item/Document/Evidence Owner已通过Win11/PG18.6验证；来源和内容摘要均服务端计算，无Review/APPROVED/API/导入。下一项P03 Validate报告。

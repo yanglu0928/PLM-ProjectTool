@@ -8084,3 +8084,11 @@
 - Reason：三个Operation具有不同Root、载荷和副作用，一次实现会跨越身份、完整版本和无状态报告三个问题；让调用方提交opaque source ref又会绕过CR-CAP-001。先固定Identity Owner可在不暴露半版本的前提下为P02提供受控Root。
 - Impact/Rollback：无Migration、HTTP、依赖、外发或现有资料导入。可停止装配Owner关闭新创建；已提交Baseline/Audit/收据保留，不能删除回滚。P02/P03完成前Version/Validate继续不可用。
 - Verification：Windows11/PG18.6管理员/CSRF/License、GLOBAL来源、重放/冲突/双并发、Audit回滚和撤权通过；定向9、后端2538/3跳过；wheel 906项 SHA-256 `f6cfb4ad42c3bd8269b5c9a11945096dc16f19827438edbaa0236d43c991874b`。
+
+# DEC-20261005-834：Draft Version 创建推进 Baseline ETag 且内容指纹排除并发令牌
+
+- Date/WBS：2026-10-05 / `CAP-01-A03-P02`；依据CR-CAP-001、DEC-831～833及冻结`CAP_VERSION_CREATE`的M控制。
+- Decision：Schema0092只允许Baseline业务事实不变时精确推进一次lock_version；Version Owner以expected lock条件写，服务端单调分配version_no并自动指向上一版。内容指纹只覆盖BaselineId和完整Item/Document/Evidence快照，请求幂等指纹再组合expected lock；二者不混用。来源与Evidence通过各自模块Port在同一事务锁定重验。
+- Reason：永久v0无法提供冻结合同要求的并发控制；把expected lock写入内容摘要会让相同业务快照因并发令牌变化而产生不同内容身份；调用方提交摘要或跨模块直查会绕过Owner边界。
+- Impact/Rollback：内部Schema`0091 -> 0092`仅替换守卫，无表列/API/依赖/外发变化。无锁推进历史可降，有历史拒降；可停Owner关闭新Version，已提交聚合/Audit/收据保留。Review/APPROVED仍关闭。
+- Verification：Win11/PG18.6 Migration/drift、v1～v3/ETag/supersedes、Document/Evidence、重放/冲突/并发、Audit回滚/撤权和历史拒降通过；后端2542/3跳过；wheel909项 SHA-256 `83393f6584968a94a1efe5a86f27f7813ca92b7c077d1e0a8fafc1438fb164bd`。

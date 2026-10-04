@@ -227,7 +227,7 @@ def verify_constraints_and_retained_history() -> None:
             reject(lambda: db.execute(
                 "UPDATE plm.cap_items SET name='changed' "
                 "WHERE baseline_version_id=%s", (baseline_version_id,)),
-                "Capability Owner is not installed")
+                "immutable")
             reject(lambda: db.execute(
                 "INSERT INTO plm.cap_baselines(baseline_code,name,"
                 "source_collection_ref,current_approved_version_ref,created_by) "
