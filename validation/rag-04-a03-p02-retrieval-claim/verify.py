@@ -34,8 +34,11 @@ create_fixture = load(
 begin_fixture = create_fixture.begin_fixture
 
 
-def execute(context, envelope, sender, adapter, *, after_claim=None) -> None:
-    create_fixture.execute(context, envelope, sender, adapter)
+def execute(context, envelope, sender, adapter, *, after_claim=None,
+            retrieval_query=None) -> None:
+    create_fixture.execute(
+        context, envelope, sender, adapter, query_text=retrieval_query,
+    )
     database, runtime = context["database"], context["runtime"]
     with begin_fixture.connect(database) as db:
         job_id, run_id, project_id, actor_id = db.execute(
@@ -126,10 +129,11 @@ def execute(context, envelope, sender, adapter, *, after_claim=None) -> None:
     )
 
 
-def main(*, after_claim=None) -> None:
+def main(*, after_claim=None, retrieval_query=None) -> None:
     def validate(context, envelope, sender, adapter):
         execute(
             context, envelope, sender, adapter, after_claim=after_claim,
+            retrieval_query=retrieval_query,
         )
 
     create_fixture.activation_fixture.send_fixture.main(

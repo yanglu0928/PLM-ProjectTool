@@ -7948,3 +7948,11 @@
 - Reason：SYSTEM Worker不能继承创建时权限；只读当前事实但不锁定会在解密/查询窗口遭遇撤权竞态；把明文作为返回对象会扩大生命周期。允许首版入口携带GLOBAL而执行端不支持还会形成永久悬挂Job。
 - Impact/Rollback：无Schema/公开API/依赖/外发变化；新增内部执行权限和PROJECT-only校验。可停止Worker关闭解密，已有密文保留；不能恢复无实现GLOBAL输入。未来GLOBAL须由A04版本化策略另行开放。
 - Verification：Win11/PG18.6证明全链当前事实后一次读钥、query/fingerprint一致和归零；暂停成员或License关闭均零新增读钥。新增5、相关17、后端2478/3跳过、wheel RAG105，SHA-256 `32fd62d069d23df52423d2a7e398ac8662c948740fbbb7da9fd120e6372eb9e3`。
+
+# DEC-20261004-817：首个 Retrieval 候选仅为参数化 PROJECT FTS 内存计划
+
+- Date/WBS：2026-10-04 / `RAG-04-A03-P04`；依据CR-RAG-004、DEC-814～816、Schema0088及stored simple FTS。
+- Decision：首个候选查询只使用bind参数的`websearch_to_tsquery('simple', query)`，固定限制Preparation锁定的Project/Index/Model/精确来源和当前可用文档事实；metadata只支持category/source type/version。排名量化整数并稳定排序，候选池最多400。A03只返回无正文/向量的内存计划，不写Candidate/Score。
+- Reason：任意metadata/JSONPath会形成注入或语义猜测；逐条落库会留下半快照。当前未实现GLOBAL/query vector/rerank时，先完成可验证的零外发PROJECT FTS，避免伪装混合检索能力。
+- Impact/Rollback：无Schema/API/依赖/网络变化；business/effective filter暂时关闭。可停止Planner回滚计算，数据库无新增历史；未来能力由A04版本化开放。
+- Verification：Win11/PG18.6精确同范围返回1条候选、分数/locator正确且Candidate/Score仍0；新增3、相关13、后端2481/3跳过、wheel RAG108，SHA-256 `df2f916abbd8d04c7ebe51d35eda55bb86b307ff5250470943f1e6e68ce7129f`。

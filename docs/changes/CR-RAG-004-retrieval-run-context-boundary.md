@@ -1,6 +1,6 @@
 # CR-RAG-004：RetrievalRun、加密查询内容与最小 Context 边界
 
-日期：2026-10-04；状态：`A03_P03_QUERY_PREPARATION_PASS`；WBS：`RAG-04-A01～A06`。关联 Gate 2 冻结 ADR-004/009、DM-04、SC-01～04、API-03，以及 Schema0087/CR-RAG-001～003；原冻结提交 `64cdf09` 不改。
+日期：2026-10-04；状态：`A03_P04_PROJECT_FTS_PASS`；WBS：`RAG-04-A01～A06`。关联 Gate 2 冻结 ADR-004/009、DM-04、SC-01～04、API-03，以及 Schema0087/CR-RAG-001～003；原冻结提交 `64cdf09` 不改。
 
 ## 差异与实施方案
 
@@ -61,3 +61,9 @@ Windows11/PostgreSQL18.6合成组合证明四类非本Owner不抢占、专属Wor
 新增当前事实重验/受控解密服务与仓储：先以原请求Actor无密钥检查User、Project/Membership/Department和License，再重验同一Lease/角色并有序锁定Run、ACTIVE Project Index、精确来源Chunk、AVAILABLE Embedding及QueryContent。只有全链一致才读取一次密钥；解密后严格UTF-8/NFKC复算query fingerprint，受权callback结束或异常即归零。授权快照以安全引用和指纹固定，不记录正文。
 
 同时修正A02入口与既定边界不一致：当前唯一`fts.project.v1 + none.v1`拒绝非空GLOBAL Index，防止创建Worker必然拒绝的悬挂作业；未来GLOBAL合并仍由A04显式开放。Windows11/PostgreSQL18.6成功路径及成员撤权/License关闭零密钥读取负例通过；新增5、相关17、后端2478/跳过3、wheel RAG105，SHA-256 `32fd62d069d23df52423d2a7e398ac8662c948740fbbb7da9fd120e6372eb9e3`。无Migration/API/依赖/真实外发，进入A03-P04参数化PROJECT FTS。
+
+## A03-P04 实施与结果
+
+新增参数化PROJECT FTS Planner/Repository：`simple` websearch query只经bind parameter传入，固定限制受权Project/Index/Model/精确来源、ACTIVE Chunk、AVAILABLE Embedding/DocumentVersion和ACTIVE Document。metadata只映射category/source type/version三个字段；business/effective在有正式物理语义前关闭。rank量化整数并以source ordinal/ChunkId稳定排序，池上限400。
+
+输出只是不含正文/向量的不可变内存候选，A05前不写Candidate/Score。Win11/PostgreSQL18.6返回一条精确同范围候选且数据库候选表保持空；新增3、相关13、后端2481/跳过3、wheel RAG108，SHA-256 `df2f916abbd8d04c7ebe51d35eda55bb86b307ff5250470943f1e6e68ce7129f`。无Migration/API/依赖/外发；A03完成，进入A04-P01。

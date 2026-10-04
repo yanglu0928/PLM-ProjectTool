@@ -160,6 +160,8 @@ class RAGRetrievalCreateTests(unittest.TestCase):
             {"global_index_ref": uuid.uuid4()},
             {"metadata_filter": {"sql": "select *"}},
             {"metadata_filter": {"business": {"unknown": "x"}}},
+            {"metadata_filter": {"business": {}}},
+            {"metadata_filter": {"effective_from": "2026-01-01"}},
             {"query": "   "},
             {"top_k": 101},
         )

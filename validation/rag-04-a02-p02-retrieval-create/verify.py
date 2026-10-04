@@ -82,7 +82,7 @@ def expect(code: str, action) -> None:
         raise AssertionError(f"expected {code}")
 
 
-def execute(context, envelope, sender, adapter) -> None:
+def execute(context, envelope, sender, adapter, *, query_text=None) -> None:
     activation_fixture.execute(context, envelope, sender, adapter)
     database, runtime = context["database"], context["runtime"]
     actor, project = context["actor"], context["project"]
@@ -115,7 +115,7 @@ def execute(context, envelope, sender, adapter) -> None:
             clock=lambda: datetime.now(timezone.utc),
         )
 
-    query = "RAG04P02 synthetic unique plaintext marker"
+    query = query_text or "RAG04P02 synthetic unique plaintext marker"
     command = CreateProjectRetrieval(
         token, CSRF, uuid.uuid4(), project, query,
         {"source_type": ["PROJECT_RECORD"]},
@@ -227,9 +227,14 @@ def execute(context, envelope, sender, adapter) -> None:
     )
 
 
-def main() -> None:
+def main(*, query_text=None) -> None:
+    def validate(context, envelope, sender, adapter):
+        execute(
+            context, envelope, sender, adapter, query_text=query_text,
+        )
+
     activation_fixture.send_fixture.main(
-        execute=execute, source_bodies=("PLM begin one",),
+        execute=validate, source_bodies=("PLM begin one",),
         adapter_vector_value=0.01,
     )
 

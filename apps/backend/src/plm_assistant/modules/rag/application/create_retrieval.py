@@ -352,8 +352,12 @@ class RAGRetrievalCreateService:
                 or not isinstance(now, datetime) or now.tzinfo is None
                 or now.utcoffset() is None):
             raise RAGRetrievalCreateError("VALIDATION_FAILED")
+        normalized_filter = normalize_retrieval_filter(command.metadata_filter)
+        if set(normalized_filter) - {
+                "document_category", "source_type", "document_version_ref"}:
+            raise RAGRetrievalCreateError("RAG_METADATA_FILTER_NOT_ALLOWED")
         return now.astimezone(timezone.utc), normalize_retrieval_query(command.query), \
-            normalize_retrieval_filter(command.metadata_filter)
+            normalized_filter
 
     def _actor(self, tx: object, command: CreateProjectRetrieval,
                now: datetime) -> uuid.UUID:
