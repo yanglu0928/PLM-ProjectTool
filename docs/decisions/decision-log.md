@@ -7956,3 +7956,11 @@
 - Reason：任意metadata/JSONPath会形成注入或语义猜测；逐条落库会留下半快照。当前未实现GLOBAL/query vector/rerank时，先完成可验证的零外发PROJECT FTS，避免伪装混合检索能力。
 - Impact/Rollback：无Schema/API/依赖/网络变化；business/effective filter暂时关闭。可停止Planner回滚计算，数据库无新增历史；未来能力由A04版本化开放。
 - Verification：Win11/PG18.6精确同范围返回1条候选、分数/locator正确且Candidate/Score仍0；新增3、相关13、后端2481/3跳过、wheel RAG108，SHA-256 `df2f916abbd8d04c7ebe51d35eda55bb86b307ff5250470943f1e6e68ce7129f`。
+
+# DEC-20261004-818：FTS-only 是完整策略，未启用通道不记 degraded
+
+- Date/WBS：2026-10-04 / `RAG-04-A04-P01`；依据CR-RAG-004、DEC-817、冻结DM-04/API-03及Schema0088。
+- Decision：`fts.project.v1 + none.v1`只消费FTS候选并以整数分数稳定Top-K，vector/GLOBAL/rerank为NOT_APPLICABLE而非degraded。1至Top-K不足成功并标`CANDIDATE_SHORTFALL`；零候选以`RAG_NO_AUTHORIZED_CANDIDATES`失败且不建空Context。不得放宽Project/filter/Index或自动外发补齐。
+- Reason：把未启用能力记为降级会混淆策略意图，把零候选当成功又违反Context最少1项；候选不足触发外发会绕过逐次授权。明确FTS完整策略可先形成安全可用闭环。
+- Impact/Rollback：本项仅文档，无Schema/API/依赖/网络变化。vector/exact/GLOBAL/rerank以后续策略版本和独立外发证据开放；当前合法FTS请求不变。
+- Verification：静态核对版本化policy、NOT_APPLICABLE/degraded/quality flags、整数ScorePart和Context最少1项约束；未运行新增程序测试。

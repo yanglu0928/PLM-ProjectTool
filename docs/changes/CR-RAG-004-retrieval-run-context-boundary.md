@@ -1,6 +1,6 @@
 # CR-RAG-004：RetrievalRun、加密查询内容与最小 Context 边界
 
-日期：2026-10-04；状态：`A03_P04_PROJECT_FTS_PASS`；WBS：`RAG-04-A01～A06`。关联 Gate 2 冻结 ADR-004/009、DM-04、SC-01～04、API-03，以及 Schema0087/CR-RAG-001～003；原冻结提交 `64cdf09` 不改。
+日期：2026-10-04；状态：`A04_P01_MERGE_PRECHECK_PASS`；WBS：`RAG-04-A01～A06`。关联 Gate 2 冻结 ADR-004/009、DM-04、SC-01～04、API-03，以及 Schema0087/CR-RAG-001～003；原冻结提交 `64cdf09` 不改。
 
 ## 差异与实施方案
 
@@ -67,3 +67,9 @@ Windows11/PostgreSQL18.6合成组合证明四类非本Owner不抢占、专属Wor
 新增参数化PROJECT FTS Planner/Repository：`simple` websearch query只经bind parameter传入，固定限制受权Project/Index/Model/精确来源、ACTIVE Chunk、AVAILABLE Embedding/DocumentVersion和ACTIVE Document。metadata只映射category/source type/version三个字段；business/effective在有正式物理语义前关闭。rank量化整数并以source ordinal/ChunkId稳定排序，池上限400。
 
 输出只是不含正文/向量的不可变内存候选，A05前不写Candidate/Score。Win11/PostgreSQL18.6返回一条精确同范围候选且数据库候选表保持空；新增3、相关13、后端2481/跳过3、wheel RAG108，SHA-256 `df2f916abbd8d04c7ebe51d35eda55bb86b307ff5250470943f1e6e68ce7129f`。无Migration/API/依赖/外发；A03完成，进入A04-P01。
+
+## A04-P01 核查结论
+
+当前`fts.project.v1 + none.v1`确定为完整零外发策略，不是缺vector/rerank后的degraded。P02只做整数FTS分数的稳定Top-K和显式quality plan：1至Top-K不足可成功并标`CANDIDATE_SHORTFALL`，零候选以`RAG_NO_AUTHORIZED_CANDIDATES`失败且不创建空Context；任何不足都不得跨Project、旧Index、放宽filter或自动外发补齐。
+
+GLOBAL/vector/exact query embedding/rerank必须使用新策略版本并先完成Egress授权/发送/响应绑定，保持关闭且不阻塞首个FTS闭环。本项仅文档，未运行新增程序测试；进入A04-P02纯应用合并计划。
