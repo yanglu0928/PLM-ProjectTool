@@ -1,0 +1,36 @@
+{
+  "executables": {
+    "gs": false,
+    "gswin64c": true,
+    "ocrmypdf": true,
+    "tesseract": true
+  },
+  "packages": {
+    "PyMuPDF": "1.28.2",
+    "SQLAlchemy": "2.0.54",
+    "alembic": "1.20.0",
+    "fastapi": "0.141.1",
+    "ocrmypdf": "17.12.1",
+    "openpyxl": "3.1.5",
+    "paddleocr": "3.7.0",
+    "paddlepaddle": "3.3.1",
+    "pdfplumber": "0.11.10",
+    "pgvector": "0.5.0",
+    "psycopg": "3.3.5",
+    "pytesseract": "0.3.13",
+    "python-docx": "1.2.0",
+    "python-pptx": "1.0.2",
+    "uvicorn": "0.53.0"
+  },
+  "platform": {
+    "release": "11",
+    "system": "Windows",
+    "version": "10.0.26200"
+  },
+  "python": {
+    "architecture": "AMD64",
+    "executable_name": "python.exe",
+    "implementation": "CPython",
+    "version": "3.13.15"
+  }
+}

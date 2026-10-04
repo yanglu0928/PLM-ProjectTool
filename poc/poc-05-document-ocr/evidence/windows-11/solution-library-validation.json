@@ -1,0 +1,370 @@
+{
+  "status": "PARTIAL_PASS",
+  "generated_at": "2026-09-17T09:40:12.155210+00:00",
+  "corpus": "local_solution_library_redacted",
+  "privacy": {
+    "source_files_committed": false,
+    "source_names_committed": false,
+    "parsed_content_committed": false,
+    "local_mapping_location": "git-ignored artifacts/poc-05/solution-library/"
+  },
+  "quality_scope": "schema_and_structure_only_no_content_accuracy_ground_truth",
+  "summary": {
+    "file_count": 18,
+    "supported_count": 17,
+    "passed_count": 17,
+    "failed_count": 0,
+    "unsupported_count": 1,
+    "source_unchanged_count": 18,
+    "duration_seconds": 22.11,
+    "status_counts": {
+      "PASS": 17,
+      "UNSUPPORTED": 1
+    }
+  },
+  "extension_counts": {
+    ".doc": 1,
+    ".docx": 11,
+    ".pdf": 1,
+    ".pptx": 5
+  },
+  "results": [
+    {
+      "document_id": "SL-001",
+      "extension": ".pptx",
+      "size_bytes": 8827633,
+      "status": "PASS",
+      "parser_mode": "structural",
+      "duration_seconds": 0.596,
+      "page_count": 44,
+      "block_count": 505,
+      "table_row_count": 9,
+      "ocr_line_count": 0,
+      "warning_count": 0,
+      "schema_error_count": 0,
+      "source_unchanged": true,
+      "package_check": {
+        "status": "PASS"
+      },
+      "pdf_profile": null
+    },
+    {
+      "document_id": "SL-002",
+      "extension": ".docx",
+      "size_bytes": 7335616,
+      "status": "PASS",
+      "parser_mode": "structural",
+      "duration_seconds": 0.055,
+      "page_count": 1,
+      "block_count": 140,
+      "table_row_count": 0,
+      "ocr_line_count": 0,
+      "warning_count": 1,
+      "schema_error_count": 0,
+      "source_unchanged": true,
+      "package_check": {
+        "status": "PASS"
+      },
+      "pdf_profile": null
+    },
+    {
+      "document_id": "SL-003",
+      "extension": ".docx",
+      "size_bytes": 823368,
+      "status": "PASS",
+      "parser_mode": "structural",
+      "duration_seconds": 0.071,
+      "page_count": 2,
+      "block_count": 181,
+      "table_row_count": 23,
+      "ocr_line_count": 0,
+      "warning_count": 1,
+      "schema_error_count": 0,
+      "source_unchanged": true,
+      "package_check": {
+        "status": "PASS"
+      },
+      "pdf_profile": null
+    },
+    {
+      "document_id": "SL-004",
+      "extension": ".docx",
+      "size_bytes": 8121369,
+      "status": "PASS",
+      "parser_mode": "structural",
+      "duration_seconds": 0.228,
+      "page_count": 5,
+      "block_count": 594,
+      "table_row_count": 71,
+      "ocr_line_count": 0,
+      "warning_count": 1,
+      "schema_error_count": 0,
+      "source_unchanged": true,
+      "package_check": {
+        "status": "PASS"
+      },
+      "pdf_profile": null
+    },
+    {
+      "document_id": "SL-005",
+      "extension": ".docx",
+      "size_bytes": 22820365,
+      "status": "PASS",
+      "parser_mode": "structural",
+      "duration_seconds": 0.802,
+      "page_count": 15,
+      "block_count": 1906,
+      "table_row_count": 478,
+      "ocr_line_count": 0,
+      "warning_count": 1,
+      "schema_error_count": 0,
+      "source_unchanged": true,
+      "package_check": {
+        "status": "PASS"
+      },
+      "pdf_profile": null
+    },
+    {
+      "document_id": "SL-006",
+      "extension": ".pdf",
+      "size_bytes": 5849983,
+      "status": "PASS",
+      "parser_mode": "pdf_text",
+      "duration_seconds": 12.72,
+      "page_count": 81,
+      "block_count": 1740,
+      "table_row_count": 509,
+      "ocr_line_count": 0,
+      "warning_count": 0,
+      "schema_error_count": 0,
+      "source_unchanged": true,
+      "package_check": null,
+      "pdf_profile": {
+        "classification": "text_with_sparse_low_text_pages",
+        "page_count": 81,
+        "text_character_count": 20182,
+        "low_text_page_count": 1,
+        "low_text_page_ratio": 0.0123,
+        "low_text_threshold": 20
+      }
+    },
+    {
+      "document_id": "SL-007",
+      "extension": ".docx",
+      "size_bytes": 21180669,
+      "status": "PASS",
+      "parser_mode": "structural",
+      "duration_seconds": 0.406,
+      "page_count": 3,
+      "block_count": 668,
+      "table_row_count": 30,
+      "ocr_line_count": 0,
+      "warning_count": 1,
+      "schema_error_count": 0,
+      "source_unchanged": true,
+      "package_check": {
+        "status": "PASS"
+      },
+      "pdf_profile": null
+    },
+    {
+      "document_id": "SL-008",
+      "extension": ".docx",
+      "size_bytes": 69352358,
+      "status": "PASS",
+      "parser_mode": "structural",
+      "duration_seconds": 1.304,
+      "page_count": 15,
+      "block_count": 2325,
+      "table_row_count": 627,
+      "ocr_line_count": 0,
+      "warning_count": 1,
+      "schema_error_count": 0,
+      "source_unchanged": true,
+      "package_check": {
+        "status": "PASS"
+      },
+      "pdf_profile": null
+    },
+    {
+      "document_id": "SL-009",
+      "extension": ".docx",
+      "size_bytes": 773267,
+      "status": "PASS",
+      "parser_mode": "structural",
+      "duration_seconds": 0.057,
+      "page_count": 3,
+      "block_count": 93,
+      "table_row_count": 35,
+      "ocr_line_count": 0,
+      "warning_count": 1,
+      "schema_error_count": 0,
+      "source_unchanged": true,
+      "package_check": {
+        "status": "PASS"
+      },
+      "pdf_profile": null
+    },
+    {
+      "document_id": "SL-010",
+      "extension": ".docx",
+      "size_bytes": 744679,
+      "status": "PASS",
+      "parser_mode": "structural",
+      "duration_seconds": 0.027,
+      "page_count": 1,
+      "block_count": 65,
+      "table_row_count": 25,
+      "ocr_line_count": 0,
+      "warning_count": 1,
+      "schema_error_count": 0,
+      "source_unchanged": true,
+      "package_check": {
+        "status": "PASS"
+      },
+      "pdf_profile": null
+    },
+    {
+      "document_id": "SL-011",
+      "extension": ".docx",
+      "size_bytes": 20029452,
+      "status": "PASS",
+      "parser_mode": "structural",
+      "duration_seconds": 0.493,
+      "page_count": 4,
+      "block_count": 790,
+      "table_row_count": 155,
+      "ocr_line_count": 0,
+      "warning_count": 1,
+      "schema_error_count": 0,
+      "source_unchanged": true,
+      "package_check": {
+        "status": "PASS"
+      },
+      "pdf_profile": null
+    },
+    {
+      "document_id": "SL-012",
+      "extension": ".docx",
+      "size_bytes": 9443846,
+      "status": "PASS",
+      "parser_mode": "structural",
+      "duration_seconds": 0.126,
+      "page_count": 2,
+      "block_count": 164,
+      "table_row_count": 47,
+      "ocr_line_count": 0,
+      "warning_count": 1,
+      "schema_error_count": 0,
+      "source_unchanged": true,
+      "package_check": {
+        "status": "PASS"
+      },
+      "pdf_profile": null
+    },
+    {
+      "document_id": "SL-013",
+      "extension": ".docx",
+      "size_bytes": 19104417,
+      "status": "PASS",
+      "parser_mode": "structural",
+      "duration_seconds": 0.392,
+      "page_count": 4,
+      "block_count": 659,
+      "table_row_count": 176,
+      "ocr_line_count": 0,
+      "warning_count": 1,
+      "schema_error_count": 0,
+      "source_unchanged": true,
+      "package_check": {
+        "status": "PASS"
+      },
+      "pdf_profile": null
+    },
+    {
+      "document_id": "SL-014",
+      "extension": ".pptx",
+      "size_bytes": 6461036,
+      "status": "PASS",
+      "parser_mode": "structural",
+      "duration_seconds": 0.498,
+      "page_count": 34,
+      "block_count": 281,
+      "table_row_count": 7,
+      "ocr_line_count": 0,
+      "warning_count": 0,
+      "schema_error_count": 0,
+      "source_unchanged": true,
+      "package_check": {
+        "status": "PASS"
+      },
+      "pdf_profile": null
+    },
+    {
+      "document_id": "SL-015",
+      "extension": ".doc",
+      "size_bytes": 6106752,
+      "status": "UNSUPPORTED",
+      "parser_mode": "none",
+      "source_unchanged": true,
+      "package_check": null
+    },
+    {
+      "document_id": "SL-016",
+      "extension": ".pptx",
+      "size_bytes": 116274497,
+      "status": "PASS",
+      "parser_mode": "structural",
+      "duration_seconds": 1.929,
+      "page_count": 124,
+      "block_count": 1940,
+      "table_row_count": 66,
+      "ocr_line_count": 0,
+      "warning_count": 0,
+      "schema_error_count": 0,
+      "source_unchanged": true,
+      "package_check": {
+        "status": "PASS"
+      },
+      "pdf_profile": null
+    },
+    {
+      "document_id": "SL-017",
+      "extension": ".pptx",
+      "size_bytes": 21574938,
+      "status": "PASS",
+      "parser_mode": "structural",
+      "duration_seconds": 0.368,
+      "page_count": 64,
+      "block_count": 765,
+      "table_row_count": 92,
+      "ocr_line_count": 0,
+      "warning_count": 0,
+      "schema_error_count": 0,
+      "source_unchanged": true,
+      "package_check": {
+        "status": "PASS"
+      },
+      "pdf_profile": null
+    },
+    {
+      "document_id": "SL-018",
+      "extension": ".pptx",
+      "size_bytes": 20504586,
+      "status": "PASS",
+      "parser_mode": "structural",
+      "duration_seconds": 0.565,
+      "page_count": 90,
+      "block_count": 894,
+      "table_row_count": 49,
+      "ocr_line_count": 0,
+      "warning_count": 0,
+      "schema_error_count": 0,
+      "source_unchanged": true,
+      "package_check": {
+        "status": "PASS"
+      },
+      "pdf_profile": null
+    }
+  ]
+}

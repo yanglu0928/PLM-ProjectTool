@@ -1,0 +1,25 @@
+{
+  "status": "PASS",
+  "wbs": "1.03",
+  "platform": "win32-x64",
+  "node": "v24.19.0",
+  "package_manager": "pnpm@11.19.0",
+  "versions": {
+    "vue": "3.5.43",
+    "vue-router": "5.3.1",
+    "vite": "8.3.0",
+    "vitest": "5.0.1",
+    "typescript": "5.9.3"
+  },
+  "test_file_count": 4,
+  "test_count": 9,
+  "required_file_count": 11,
+  "missing_file_count": 0,
+  "forbidden_browser_dependency_count": 0,
+  "health_endpoint": "/health/ready",
+  "business_route_count": 0,
+  "javascript_bytes": 88832,
+  "css_bytes": 3434,
+  "source_map_count": 0,
+  "external_call_count": 0
+}

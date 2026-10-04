@@ -1,0 +1,27 @@
+{
+  "platform": {
+    "caption": "Microsoft Windows Server 2025 Datacenter",
+    "version": "10.0.26100",
+    "architecture": "64-bit"
+  },
+  "office": {
+    "word_installed": false,
+    "powerpoint_installed": false,
+    "status": "BLOCKED_NOT_INSTALLED"
+  },
+  "docx": {
+    "status": "PASS",
+    "sha256": "c02c542e360ac23d6ac9c7356b0e2d5f63906287b91883675d15a670f1faf2af",
+    "package_entry_count": 19,
+    "explicit_page_breaks": 99,
+    "table_count": 9,
+    "inline_shape_count": 4
+  },
+  "pptx": {
+    "status": "PASS",
+    "sha256": "a5dacab4af80f8cf40cb773b17f8eda61fa5d27bde11d3bde92e6307dcf1397e",
+    "package_entry_count": 218,
+    "slide_count": 50
+  },
+  "status": "PARTIAL_PASS_OFFICE_BLOCKED"
+}

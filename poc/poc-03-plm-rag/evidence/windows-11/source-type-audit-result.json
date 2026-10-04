@@ -1,0 +1,31 @@
+{
+  "schema_version": "poc-03.source-type-audit-result.v1",
+  "generated_at": "2026-09-17T14:42:46.858519+00:00",
+  "status": "PASS",
+  "p03_a02_status": "BLOCKED_MISSING_SOURCE_CORPORA",
+  "summary": {
+    "candidate_count": 120,
+    "eligible_candidate_count": 45,
+    "minimum_case_count_gap": 55,
+    "proposed_source_type_counts": {
+      "CONTRACT": 20,
+      "TECHNICAL_AGREEMENT": 25
+    },
+    "audit_status_counts": {
+      "CORRECTION_REQUIRED": 25,
+      "EXCLUDED_UNSUPPORTED_SOURCE_TYPE": 75,
+      "VERIFIED": 20
+    },
+    "missing_required_source_types": [
+      "STANDARD_CAPABILITY",
+      "SURVEY"
+    ]
+  },
+  "privacy": {
+    "source_file_names_committed": false,
+    "source_content_committed": false,
+    "reviewer_names_committed": false,
+    "local_mapping_committed": false
+  },
+  "conclusion": "Existing evidence can support contract and technical-agreement cases only; standard-capability and survey source corpora are still required."
+}

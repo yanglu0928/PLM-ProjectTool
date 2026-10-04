@@ -1,0 +1,68 @@
+# CR-AUD-004：审计Worker安全终止与失败追溯
+
+日期：2026-09-26；状态：RECORDED_UNDER_CONTINUOUS_AUTHORIZATION / TERMINAL_OWNER_INTERNAL_VALIDATED / REMAINING_LIFECYCLE_PENDING。
+来源：P03-A07-P04-P02失败会保留RUNNING/private字节；当前业务授权拒绝后不能再调用capture/render/publish，通用Jobs retry_or_fail自有UOW不能与Owner失败Audit原子提交。原64cdf09/原权限/License保留，不追写。
+
+比较：撤权/License拒绝后继续业务以完成任务，拒绝；仅等租约到期会重复失败及丢失当前失败追溯，不作为最终方案；采用固定安全终止Owner与Jobs专属caller-UOW失败Port。安全终止不是业务授权例外：不得读取正文、render/publish/恢复成功、延长Lease或修改已成功历史。
+
+拟定Owner边界（实施前还须完成正式基线对应约束核查）：受控SystemActor每次真实来源→原Root/acceptance/pair固定源→当前代/Worker/Lease或真实取消来源→同UOW失败/取消技术转换与最小SYSTEM Audit。原User仅历史original_actor，已停用用户或License拒绝不能保活/发布，但不能阻止仅终止未成功任务。Admin无项目旁路；不接受浏览器/插件/自由路径/自由错误正文，不能从裸UUID猜Root或授予系统业务角色。
+
+错误政策需Owner明确固定：授权/License/上限等终止、可恢复基础故障限次retry，停止超时仍活跃的线程不能提前转换或重试；当前代已过期/被接管则不允许旧Worker改状态，取消只走既有首申请历史/确认/到期恢复，不造新申请。技术Port本身不选择业务retry策略或校验Audit权限。
+
+P05实施前策略补充：仅AUDIT_UNAVAILABLE可有限retry，attempt1/2后固定5/15秒，attempt3 FAILED；自由正文、未知错误、权限/License/内容损坏/上限和仍活线程不调度。原User当前业务权限必须前后有效，identity仅写SYSTEM追溯不授业务；实际当前代Port与重试Audit同UOW。原三次总尝试与冻结授权保持，旧文件/尝试保留，下一代新claim重新授权。未知基础故障不宣称已治愈，调度/执行器/确认丢失独立验收。
+
+偏差影响：内部安全终止的授权边界需单独实现/测试，原业务当前权检查不放宽；无新增DB/API/角色/权益/技术栈。旧文件和失败尝试永久保留，不删除/回填历史，不修改原冻结API。Rollback撤未装配终止Owner，保原技术状态/审计/字节；不复活FAILED/CANCELLED。
+
+验证计划：先Jobs原pair/current lease失败Port及caller整UOW回滚，再实际Owner受控identity与最小Audit；User/角色/License撤销、取消/过期/接管/成功拒改、同事务Audit故障回滚、确认丢失源核验。实际独立库/临时Vault/文件；正式材料/三平台/网络停机/质量/Gate/可用包仍待。不以CR记录或技术PortPASS宣称Owner政策已生效。
+
+实施前基线复核（P02）：已读取总控V1.1、实施方案V2.1、ADR010及冻结API02强制Audit边界。V2.1 §3.5/License当前权限禁止业务操作；API02要求导出失败Audit与状态同事务。新增仅内部安全终止，不属于License业务恢复面、不新增HTTP/角色或客户事实，不调用现有当前权限业务入口。原授权链/成功发布不改。此处为可追溯安全边界补充，按持续授权接受，不回写64cdf09。
+
+P02首先实现固定不可重试原因AUTH_ACCESS_DENIED/RESOURCE_NOT_FOUND/LICENSE_OPERATION_DENIED/AUDIT_EXPORT_LIMIT_EXCEEDED/AUDIT_EXPORT_CONTENT_UNAVAILABLE的当前活代FAILED及SYSTEM审计；瞬时错误retry、取消、到期恢复、丢失提交确认独立待验。要求与执行器相同Supervisor的短事务静止锁防止本实例心跳重启；该锁不是多进程全局证明，其他进程靠真实Job/fence/Lease拒绝。调用者只能在主执行同步I/O已返回后调用；不会自动终止线程或磁盘I/O。已有成功/取消/过期/新代均拒绝且审计回滚。
+
+实施证据：P01 caller-UOW技术Port及P02终止Owner/静止锁已真实PG/临时Vault验证（详细进度/ADR011）；1004后端无失败（2环境跳过），开发wheel成功。撤权业务拒绝保持、最小SYSTEM失败Audit同事务、所有后置故障回滚/旧代终态拒改。仅终止Owner内部通过，剩余取消/瞬时retry/提交确认丢失及主循环未通过；不把CR整体或Gate标PASS。
+
+P03追加证据：失败提交确认丢失只读核验内部PASS，真实commit后raise、完整原pair/当前失败Lease-Attempt/唯一Audit源读取，多次八表无写，技术FAILED缺错重复审计拒绝；1008无失败（2环境跳过），原终止发布/wheel通过。取消/retry/执行器/主循环尚待，CR整体不标PASS。
+
+P04-P01/P02取消申请前置已验证：冻结creator或PM当前权限、可信Root取原actor/spec，Job首申请与USER Audit/持久不可变响应同UOW，首源缺失拒绝采用裸技术状态；真实并发/回滚/终态不撤回/原响应不漂移证明。1017无失败（2环境跳过）。后台SystemActor确认/过期恢复、公开HTTP/执行器/retry仍待，不将本申请或technical ack测试当取消整体PASS。
+
+P04-P03当前活代后台确认内部PASS：真实首USER来源+当前SystemActor+最小SYSTEM Audit/实际Worker-fence-alive ack同UOW，User/License撤权仅安全终止，后置Audit/ack/identity故障回滚，真实到期拒绝活代入口。1021无失败（2环境跳过），原发布/wheel通过。到期恢复/确认丢失/主循环/retry/HTTP尚待，不将CR或取消整体关闭。
+
+P04-P04严格当前代到期恢复内部PASS：首USER源+当前identity与最小SYSTEM恢复Audit、实际DB到期/当前Worker-fence一致Job-Lease-Attempt转换同UOW，实际两Scope短租约与写后回滚/错绑定/未到期/终态/裸技术源矩阵通过，首历史/字节/结果不变；1025无失败（2环境跳过）、原发布/wheel通过。旧通用恢复保留但执行Owner不采用。到期仅DB fencing非OS强杀；取消确认丢失/执行器/主循环/retry/HTTP未完成，CR/Gate保持未关闭。
+
+P04-P05取消确认丢失只读核验内部PASS：真实两Scope活期与到期commit后确认丢失，完整当前代终态技术事实+原首USER+唯一SYSTEM完成源+受控identity，多次八表无写；错绑定/类型/缺重复源拒绝，1031无失败（2环境跳过）、旧发布/wheel通过。无Mutation/commit/文件I/O/STALE推断，即时PENDING取消不属该Worker证明。retry/执行器/主循环/HTTP未完成，CR/Gate仍未关闭。
+
+P05重试Owner内部PASS：当前权限/SystemActor前后校验、原pair/活Lease、静止锁，固定白名单与5/15秒三次上限、最小SYSTEM Audit与转换同事务；实际两Scope真实等待/新代新文件旧字节保留/写后及后验故障回滚，1037无失败（2环境跳过）、旧发布/wheel通过。不把基础故障名称当治愈，重试确认丢失/执行器/主循环/HTTP未完成，CR/Gate不关闭。
+
+P05-P02重试确认丢失只读核验内部PASS：真实两Scope三次commit后确认故障、actual旧代Lease/Attempt/deadline与唯一执行窗口SYSTEM源，实际新代启动/最终FAILED旧收据不漂移、八表无写，当前权限/identity/缺重复源拒绝；1042无失败（2环境跳过）、旧发布/wheel通过。历史收据不代表当前状态或当前代授权，不是实际网络断线证明；执行器/主循环/HTTP仍待，CR/Gate未关闭。
+
+P06-P01执行器事实前置内部PASS：实际原pair/指定Worker-fence/Attempt-Lease/当前Job与DBclock，只读当前/历史关系，current identity前后与同Supervisor静止；实际两Scope状态和六表无写/撤权仅内部hint而业务拒绝/错绑定身份拒绝、1047无失败（2环境跳过）及wheel通过。无Mutation/renew/终态receipt或业务旁路，实际接线/主循环/HTTP未完成，CR/Gate保持未关闭。
+
+P06-P02单命令编排内部PASS：共享实际Supervisor与受控identity，真实facts路由原成功/终止/取消/retry与来源确认；四类实际commit后确认故障按源返回，不猜STALE/覆成功/活线程提前写。实际bounded PG-Vault两Scope0/260新执行、真实撤权/render中取消/到期/基础retry/无写重放及裸取消拒绝，1060无失败（2环境跳过）、旧发布/wheel通过。等待期即时取消不改原Worker retry收据。claim/主循环/CLI/HTTP与正式信任锚/质量/整体包仍待，CR/Gate未关闭。
+
+P06-P03实施前领取偏差：通用claim_next无Owner过滤并静默耗尽FAILED，不可直接沿用。保原接口，独立audit/AUDIT_EXPORT选择且只取未耗尽候选；先无锁hint再Root→原pair→Job一致锁顺序实际领取，避免Job→Root反序；同Supervisor真实静止/identity前后与last活租约核验。满三次由后续受控到期/耗尽审计分项解决，不能此时静默终止或宣称主循环完成。无Schema/API/技术栈改变，失败整UOW回滚/原字节尝试保留；确认丢失不自动重复猜领取。
+
+P06-P03专属领取准入内部PASS：实际bounded PG-Vault两ScopePENDING/授权retry实际deadline/过期三代新Worker-fence与原Root-pair完整源，第4次无写、其他Owner不变、独立Supervisor并发不重复与claim写后/identity故障回滚；1067无失败（2环境跳过）、旧发布/wheel通过。确认错误不猜重复，耗尽仍待安全审计终止，主循环/CLI/HTTP未完成，CR/Gate保持未关闭。
+
+P06-P04实施前耗尽政策：当前RUNNING匹配Worker/fence/一致ACTIVE Lease和未完成第三Attempt/max3、真实DB clock已到期才允许安全FAILED。预读到期→最小SYSTEM失败Audit固定AUDIT_EXPORT_ATTEMPTS_EXHAUSTED→identity后验→再次实际期限/三次检查并转换Job/EXPIRED Lease/完成Attempt→commit。与User/License无业务旁路，不强杀I/O，不删除字节，不沿用要求RELEASED/alive的旧失败证明；独立expired证明+唯一失败Audit核验确认丢失。无Schema/API/依赖扩张，撤未公开Owner保历史；扫描/循环另验。
+
+P06-P04内部PASS：实际PG双Scope三代真实到期/前代活租约错Worker拒绝、Audit与三表同UOW；Audit/state写后故障六表回滚、撤权仍正文拒绝但安全失败可用、真正commit后确认故障完整EXPIRED终态/唯一Audit核源恢复，无写重放/旧字节保留。1075无失败（2环境跳过）、旧执行器/发布/wheel通过。脚本首次相对路径问题修正重跑；非真实网络断线证明，扫描/领取确认恢复/loop/CLI/HTTP未完成，CR/Gate未关闭。
+
+P06-P05候选发现内部PASS：编码前策略另登记P05进度，Jobs仅固定Owner/type/current第三代一致ACTIVE Lease/未完成Attempt/实际期限的单候选无锁hint；扫描前后identity，收尾原Owner全部重验，不能用hint改状态。真实双Scope六表无写/真正确认恢复与完成后无候选、P04实际拒绝回滚/撤权/字节保留及原发布回归，1081无失败（2环境跳过）/wheel通过。公平并发/坏源隔离/领取确认/loop/CLI/HTTP仍待，CR/Gate未关闭。
+
+P06-P06确认恢复政策在编码前progress记录：commit异常只保本次actual命令/Claim/identity，退出原UOW后核完整原Root/pair/current活Worker-fence/ActualClaim，不经deadlock重复领取、不以STALE猜成功，技术收据不授业务权限。实际双Scope提交前回滚与commit后确认故障一Lease/Attempt、六表无写/错Worker过期换代成功拒绝/撤权正文拒绝；1084无失败（2环境跳过）及开发wheel通过。本次已知命令恢复不等于实际网络中断或跨进程未知命令恢复，loop/CLI/HTTP未完成，CR/Gate未关闭。
+
+P06-P07编码前策略记录在进度：实例有界单步/交替优先/stop仅新准入停止，异常保pending，静止Reader核绑定旧代/前两次期限仅释放本机引用，不写DB/伪造成功/强杀。真实双Scope实际领取/周期heartbeat/发布、空和stop六表不写、撤权安全FAILED及原发布回归，1090无失败（2环境跳过）/wheel；交替/异常排空/活线程拒绝/错facts及本机释放为unit范围。全局公平/真实timeout综合/loop/CLI/HTTP未验，CR/Gate未关闭。
+
+P06-P08编码前Loop策略在progress登记，现内部PASS：原Step有界/持续运行、实例互斥与空闲Event可中断，actual STOPPED才停止、LIMIT非排空证明，异常保pending不自旋/强杀。1095无失败（2跳过）、真实两Scope经Loop实际领取/周期heartbeat/发布和撤权安全FAILED/空stop无写、旧发布及wheel通过。进程信号/服务组合/未知跨进程恢复/公平隔离/CLI/HTTP仍待，CR/Gate不关闭。
+
+P06-P09组合策略编码前进度登记，内部PASS：显式有界PG18/current完整Schema与identity失败关闭、固定Audit/Jobs事实Repo/同Supervisor和原授权/存储Port；不授启动License业务权限或生成密钥/线程/claim/caller资源关闭。1099无失败（2跳过）、实际PG-Vault双Scope完整组合Loop发布/撤权安全失败/empty-stop无写及旧发布/wheel通过。首次PG连接超时后确认原进程活且ready重跑，无重建；异常长测试耗时非性能证据。正式来源/CLI信号/服务/公平隔离/未知恢复/HTTP仍待，CR/Gate未关闭。
+
+P06-P10编码前signal/桥线程政策与Loop兼容偏差分别在progress记录，内部PASS：最小callback只标志，正常桥线程stop排空；主线程互斥注册/全恢复/失败poison，最长50ms小段保poll截止。实际原wait信号延迟60.052s后调整同定向测试0.122s；7新unit/1106无失败（2跳过），两个独立合成进程解释器SIGINT idle及时停/活动任务完成一claim/handler还原，PG组合发布回归/wheel通过。外部Console/SCM/硬SIGTERM/生产性能未证，正式来源/CLI/公平隔离/未知恢复/其他平台/Gate未完成，不强杀/auto-dispose。
+
+P06-P11实施前进度记录License普通runtime与Worker有界runtime冲突；保旧函数，新显式Worker同固定product/machine/integrity/_assemble，不变签名/权益/信任根。Windows CLI固定账户来源无秘密参数，Application全静止接口保护dispose，活线程拒绝/不强杀。1111无失败（2跳过）、临时Windows Credential/Vault+真实PG缺正式包内公钥失败关闭/六表不写与构造DB释放；明确合成License下Windows工厂process adapter两Scope物理发布/当前撤权安全失败/stop及静止资源关闭、原发布/wheel通过。正式来源/外部Console/SCM/网络黑洞/未知恢复/公平/HTTP待，CR/Gate不关闭。
+
+P06-P12-A外部隐藏Console限定目标与发送器后CTRL_BREAK，可响应合成idle/active路径通过；1111通过/2跳过。长阻塞合成路径首次发生再次领取，保留失败，测试分段等待不代表生产修复。真实PG子进程/阻塞/桥接竞态继续P12-B；CR/Gate未关闭。
+
+P06-P12-B01先记录后修复已处理标志的桥接竞态：Loop每Step前显式只读Probe，在正常执行栈stop，最小handler与已知pending排空不变；1113通过/2跳过、禁桥线程1执行1领取、恢复长等待外部CTRL_BREAK单次排空与wheel通过。无限阻塞/尚未处理信号/真实PG子进程/SCM仍待，CR/Gate不关闭。
+
+P06-P12-B02实际Windows CLI六个独立隐藏Console子进程、临时PG/Credential/Vault identity在明确测试License下双Scope实际文件发布/哈希/单Attempt/RELEASED/同SYSTEM actor；缺公钥与外部idle停止六表无写，active外部CTRL_BREAK仅排空第一任务/第二PENDING未领取，下一once成功。原发布回归通过、临时来源清理；正式License/SCM/无限阻塞/公平/未知恢复/HTTP/完整包/Gate仍待，CR不关闭。

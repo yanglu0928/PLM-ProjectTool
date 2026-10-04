@@ -1,0 +1,1 @@
+"""Document-owned domain rules."""

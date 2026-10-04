@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "standard_id": "MODULE-DIRECTORY-STANDARD-V1",
+  "wbs": "1.01",
+  "status": "ACTIVE_IMPLEMENTATION_STANDARD",
+  "backend": {
+    "root": "apps/backend",
+    "package_root": "apps/backend/src/plm_assistant",
+    "python_package": "plm_assistant",
+    "entrypoints_root": "apps/backend/src/plm_assistant/entrypoints",
+    "modules_root": "apps/backend/src/plm_assistant/modules",
+    "shared_root": "apps/backend/src/plm_assistant/shared",
+    "tests_root": "apps/backend/tests",
+    "module_layers": [
+      "api",
+      "application",
+      "domain",
+      "infrastructure"
+    ],
+    "application_children": [
+      "commands",
+      "queries",
+      "ports",
+      "public"
+    ],
+    "test_suites": [
+      "unit",
+      "contract",
+      "integration",
+      "permission",
+      "architecture"
+    ],
+    "layer_dependencies": {
+      "api": [
+        "application"
+      ],
+      "application": [
+        "domain"
+      ],
+      "domain": [],
+      "infrastructure": [
+        "application",
+        "domain"
+      ]
+    }
+  },
+  "frontend": {
+    "root": "apps/frontend",
+    "source_root": "apps/frontend/src",
+    "roots": [
+      "app",
+      "modules",
+      "shared"
+    ]
+  },
+  "developer_workbench": {
+    "root": "tools/developer-workbench",
+    "separate_trust_zone": true,
+    "included_in_customer_runtime": false,
+    "allowed_runtime_dependencies": []
+  },
+  "runtime_modules": [
+    {"name": "platform", "group": "platform", "allowed_dependencies": []},
+    {"name": "audit", "group": "platform", "allowed_dependencies": ["platform"]},
+    {"name": "auth", "group": "platform", "allowed_dependencies": ["platform", "audit"]},
+    {"name": "project", "group": "platform", "allowed_dependencies": ["auth", "audit"]},
+    {"name": "jobs", "group": "platform", "allowed_dependencies": ["platform", "audit"]},
+    {"name": "license", "group": "security", "allowed_dependencies": ["audit"]},
+    {"name": "document", "group": "platform", "allowed_dependencies": ["project", "jobs", "audit"]},
+    {"name": "evidence", "group": "platform", "allowed_dependencies": ["project", "document", "audit"]},
+    {"name": "review", "group": "platform", "allowed_dependencies": ["project", "audit"]},
+    {"name": "trace", "group": "platform", "allowed_dependencies": ["project", "audit"]},
+    {"name": "workflow", "group": "platform", "allowed_dependencies": ["project", "evidence", "review", "audit"]},
+    {"name": "ai", "group": "ai_rag", "allowed_dependencies": ["jobs", "audit"]},
+    {"name": "rag", "group": "ai_rag", "allowed_dependencies": ["project", "document", "ai", "jobs", "audit"]},
+    {"name": "capability", "group": "capability", "allowed_dependencies": ["document", "review", "trace", "audit"]},
+    {"name": "handover", "group": "business", "allowed_dependencies": ["project", "document", "evidence", "ai", "rag", "review", "trace", "audit"]},
+    {"name": "survey", "group": "business", "allowed_dependencies": ["project", "document", "evidence", "ai", "rag", "review", "trace", "audit"]},
+    {"name": "requirement", "group": "business", "allowed_dependencies": ["project", "evidence", "ai", "rag", "review", "trace", "audit"]},
+    {"name": "prototype", "group": "business", "allowed_dependencies": ["project", "requirement", "document", "review", "trace", "audit"]},
+    {"name": "solution", "group": "business", "allowed_dependencies": ["project", "requirement", "prototype", "evidence", "ai", "rag", "review", "trace", "audit"]},
+    {"name": "plan", "group": "business", "allowed_dependencies": ["project", "solution", "review", "trace", "audit"]},
+    {"name": "plugin", "group": "extension", "allowed_dependencies": ["jobs", "audit"]},
+    {"name": "output", "group": "output", "allowed_dependencies": ["project", "document", "solution", "plan", "plugin", "trace", "audit"]}
+  ],
+  "cross_module_import": "plm_assistant.modules.<target>.application.public",
+  "required_tracked_paths": [
+    "apps/backend/README.md",
+    "apps/backend/src/plm_assistant/README.md",
+    "apps/backend/src/plm_assistant/entrypoints/README.md",
+    "apps/backend/src/plm_assistant/modules/README.md",
+    "apps/backend/src/plm_assistant/shared/README.md",
+    "apps/backend/tests/README.md",
+    "apps/frontend/README.md",
+    "tools/developer-workbench/README.md"
+  ],
+  "naming": {
+    "directory_pattern": "^[a-z][a-z0-9_]*$",
+    "max_component_length": 40,
+    "recommended_max_source_path": 220,
+    "manifest_separator": "/",
+    "forbidden_windows_names": [
+      "con", "prn", "aux", "nul",
+      "com1", "com2", "com3", "com4", "com5", "com6", "com7", "com8", "com9",
+      "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8", "lpt9"
+    ]
+  }
+}

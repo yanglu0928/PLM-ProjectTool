@@ -1,0 +1,55 @@
+{
+  "schema_version": "poc-03.r4-retrieval-contract-result.v1",
+  "generated_at": "2026-09-20T13:56:11+08:00",
+  "status": "PASS",
+  "summary": {
+    "case_count": 120,
+    "exact_candidate_pool_hits": 119,
+    "exact_candidate_pool_recall": 0.9916666666666667,
+    "same_document_candidate_pool_hits": 120,
+    "same_document_candidate_pool_recall": 1.0,
+    "source_type_violation_count": 0,
+    "minimum_candidate_count": 13,
+    "maximum_candidate_count": 59,
+    "average_candidate_count": 42.275,
+    "miss_count": 1
+  },
+  "checks": {
+    "candidate_pool_recall_at_least_95_percent": true,
+    "source_type_isolation": true,
+    "gin_index_used": true,
+    "hnsw_index_used": true
+  },
+  "configuration": {
+    "retrieval_pipeline_version": "r4-source-filter-lexical-idf-v1",
+    "source_type_filter": true,
+    "cjk_ocr_spacing_normalization": true,
+    "candidate_channels": [
+      "vector",
+      "full_text",
+      "lexical_idf"
+    ],
+    "channel_limit": 20,
+    "vector_weight": 0.6,
+    "full_text_weight": 0.4,
+    "external_calls": 0,
+    "embedding_cache_reused": true
+  },
+  "environment": {
+    "postgresql_version": "18.6",
+    "pgvector_version": "0.8.6",
+    "platform": "Windows 11 x86-64"
+  },
+  "limitations": {
+    "candidate_pool_is_not_reranked_top5": true,
+    "same_dataset_used_for_exploratory_tuning": true,
+    "independent_holdout_required_before_production_claim": true
+  },
+  "privacy": {
+    "queries_committed": false,
+    "chunk_ids_committed": false,
+    "document_text_committed": false,
+    "case_level_results_committed": false,
+    "external_calls": 0
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "corpus_version": "poc-05.1",
+  "files": [
+    {
+      "file": "sample.docx",
+      "size_bytes": 37646,
+      "sha256": "9ccb9f94c9c5e7d0dd1d005e343c17c66a07c5815e710cd6b73f8d53171dfc36"
+    },
+    {
+      "file": "sample.pptx",
+      "size_bytes": 14837,
+      "sha256": "2106aef6f8e9fc844e4c7eda900cd4886f5eb9bcd07110687f3dcc25676bed54"
+    },
+    {
+      "file": "sample.xlsx",
+      "size_bytes": 6604,
+      "sha256": "a0566a653fce3d1cecd31c9c4c9c5e9e28f3b91721ab6c7555ca3f8926fe15d4"
+    },
+    {
+      "file": "sample.csv",
+      "size_bytes": 166,
+      "sha256": "0bf2b8076a40dc15b34d1e2fff4566d2be5d9401388c490e81c8752926125b85"
+    },
+    {
+      "file": "sample-text.pdf",
+      "size_bytes": 3810,
+      "sha256": "0f668522ddc93b66d69cdd775ab2f26e93e506083ad7862bfd35025a412308c9"
+    },
+    {
+      "file": "sample-scan.pdf",
+      "size_bytes": 981555,
+      "sha256": "f9806cd6228a9c2604625f09659cd0b487eb74d25ed43b9029db34beda604563"
+    }
+  ]
+}

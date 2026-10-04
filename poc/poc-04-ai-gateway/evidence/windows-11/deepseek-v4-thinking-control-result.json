@@ -1,0 +1,23 @@
+{
+  "schema_version": "poc-04.deepseek-v4-thinking-control-result.v1",
+  "status": "PASS",
+  "platform": "Windows 11 x86-64",
+  "model": "deepseek-flash",
+  "finding": "DeepSeek V4 thinking mode is enabled by default and may consume the output budget before structured final content is emitted.",
+  "implementation": "AIRequest.thinking is mapped by DeepSeekAdapter; structured short tasks set thinking=disabled.",
+  "checks": {
+    "provider_payload_maps_disabled_thinking": true,
+    "business_path_uses_unified_ai_service": true,
+    "structured_holdout_suggestions_complete": 50,
+    "invalid_responses_written_as_business_facts": 0
+  },
+  "tests": {
+    "passed": 12,
+    "failed": 0
+  },
+  "privacy": {
+    "api_key_committed": false,
+    "request_content_committed": false,
+    "response_content_committed": false
+  }
+}

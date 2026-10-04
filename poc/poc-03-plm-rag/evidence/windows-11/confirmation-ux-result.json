@@ -1,0 +1,32 @@
+{
+  "schema_version": "poc-03.confirmation-ux-prototype-result.v1",
+  "generated_at": "2026-09-17T14:12:40.064413+00:00",
+  "status": "PASS_FOR_UX_REVIEW",
+  "summary": {
+    "task_count": 120,
+    "risk_counts": {
+      "中": 105,
+      "低": 8,
+      "高": 7
+    },
+    "current_status_counts": {
+      "已确认": 45,
+      "待补充": 75
+    },
+    "original_review_status_counts": {
+      "APPROVED": 120
+    },
+    "evidence_link_count": 120,
+    "source_type_unresolved_count": 75
+  },
+  "privacy": {
+    "external_ai_service_called": false,
+    "customer_content_uploaded": false,
+    "customer_content_committed": false,
+    "reviewer_names_committed": false,
+    "navigator_committed": false,
+    "workbook_committed": false
+  },
+  "scope": "POC-03 confirmation UX prototype, not formal handover ActionItem output",
+  "conclusion": "The local confirmation prototype is ready for UX review; source evidence and human decisions remain local."
+}

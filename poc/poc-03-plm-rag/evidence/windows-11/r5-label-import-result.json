@@ -1,0 +1,23 @@
+{
+  "schema_version": "poc-03.r5-label-import-result.v1",
+  "generated_at": "2026-09-18T05:32:20.301687Z",
+  "status": "AWAITING_HUMAN_CONFIRMATION",
+  "privacy": {
+    "workbook_content_committed": false,
+    "queries_committed": false,
+    "reviewer_names_committed": false,
+    "output_dataset_committed": false
+  },
+  "summary": {
+    "total_case_count": 120,
+    "r4_explicit_conclusion_count": 62,
+    "conflict_review_count": 58,
+    "resolved_case_count": 0,
+    "batch_confirmation_received": false,
+    "pending_count": 58,
+    "issue_count": 0,
+    "output_written": false
+  },
+  "issues": [],
+  "conclusion": "R5 Golden Dataset export remains blocked."
+}

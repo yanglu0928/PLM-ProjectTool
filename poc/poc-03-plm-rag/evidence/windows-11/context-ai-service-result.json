@@ -1,0 +1,27 @@
+{
+  "schema_version": "poc-03.context-ai-service-result.v1",
+  "generated_at": "2026-09-17T23:27:26.174584+08:00",
+  "status": "PASS",
+  "routing": {
+    "entrypoint": "RagAIOrchestrator",
+    "gateway": "AIService",
+    "router": "ModelRouter",
+    "provider_adapter": "RecordingProvider",
+    "direct_provider_call_from_rag": false,
+    "ai_service_call_count": 1
+  },
+  "trace": {
+    "project_id": "PROJECT-POC03",
+    "prompt_id": "RAG_ANSWER",
+    "prompt_version": "v1",
+    "context_chunk_ids": ["CH-001", "CH-002", "CH-003"],
+    "context_truncated": false,
+    "structured_output_validated": true
+  },
+  "privacy": {
+    "customer_content_used": false,
+    "query_text_committed": false,
+    "context_text_committed": false,
+    "ai_output_text_committed": false
+  }
+}

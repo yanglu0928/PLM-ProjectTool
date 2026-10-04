@@ -1,0 +1,31 @@
+{
+  "schema_version": "poc-03.holdout-source-ingest-result.v1",
+  "status": "PASS",
+  "platform": "Windows 11 x86-64",
+  "input_file_count": 49,
+  "accepted_document_count": 49,
+  "accepted_block_count": 506,
+  "accepted_character_count": 282819,
+  "checks": {
+    "schema_valid": true,
+    "historical_file_hash_disjoint": true,
+    "historical_content_hash_disjoint": true,
+    "all_accepted_are_actual_survey_records": true
+  },
+  "source_governance": {
+    "actual_survey_records": "PRIMARY_EVIDENCE",
+    "survey_form_templates": "REFERENCE_ONLY_NOT_ELIGIBLE_FOR_HOLDOUT_QUOTA"
+  },
+  "privacy": {
+    "customer_files_committed": false,
+    "source_names_committed": false,
+    "source_hashes_committed": false,
+    "document_content_committed": false,
+    "parsed_documents_committed": false
+  },
+  "external_calls": {
+    "embedding": 0,
+    "reranker": 0,
+    "llm": 0
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "schema_version": "poc-03.r7-semantic-review-result.v1",
+  "status": "R7_1_COVERAGE_PASS_HOLDOUT_REQUIRED",
+  "platform": "Windows 11 x86-64",
+  "source_dataset": "R6",
+  "review_scope_count": 120,
+  "evidence_candidate_count": 836,
+  "original_document_resolved_count": 120,
+  "suggested_classification_change_count": 73,
+  "suggested_citation_change_count": 58,
+  "import_result": {
+    "resolved_count": 120,
+    "pending_count": 0,
+    "returned_count": 0,
+    "issue_count": 0,
+    "output_dataset_written": true,
+    "schema_validation": "PASS"
+  },
+  "coverage_audit": {
+    "status": "PASS",
+    "case_count": 120,
+    "unique_query_count": 120,
+    "unique_document_count": 29,
+    "unique_chunk_count": 112,
+    "all_source_types_present": true,
+    "all_final_classifications_present": true,
+    "missing_classifications": []
+  },
+  "r7_1_exception_review": {
+    "status": "PASS",
+    "scope_count": 1,
+    "case_id_committed": false,
+    "resolved_count": 1,
+    "issue_count": 0,
+    "schema_validation": "PASS",
+    "output_dataset_written": true
+  },
+  "workbook_validation": {
+    "sheet_count": 6,
+    "rendered_sheet_count": 6,
+    "formula_error_count": 0
+  },
+  "tests": {
+    "passed": 134,
+    "failed": 0
+  },
+  "external_calls": {
+    "embedding": 0,
+    "reranker": 0,
+    "llm": 0
+  },
+  "privacy": {
+    "workbook_committed": false,
+    "queries_committed": false,
+    "document_text_committed": false,
+    "reviewer_names_committed": false,
+    "api_keys_committed": false
+  },
+  "validation_limit": "R7 is an AI-assisted calibration dataset. The same 120 cases cannot close P03-A12/P03-A13; an independently constructed holdout set remains mandatory."
+}

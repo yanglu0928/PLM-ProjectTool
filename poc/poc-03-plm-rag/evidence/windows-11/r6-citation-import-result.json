@@ -1,0 +1,21 @@
+{
+  "schema_version": "poc-03.r6-citation-import-result.v1",
+  "generated_at": "2026-09-18",
+  "status": "PASS",
+  "summary": {
+    "review_scope_count": 6,
+    "preserved_case_count": 114,
+    "resolved_case_count": 120,
+    "pending_count": 0,
+    "returned_count": 0,
+    "issue_count": 0,
+    "output_written": true
+  },
+  "privacy": {
+    "workbook_content_committed": false,
+    "queries_committed": false,
+    "reviewer_names_committed": false,
+    "output_dataset_committed": false
+  },
+  "conclusion": "R6 Golden Dataset export passed strict import after human confirmation."
+}
