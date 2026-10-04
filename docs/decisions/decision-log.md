@@ -7692,3 +7692,11 @@
 - Reason：把授权隐藏在“开始分析”按钮内无法证明用户看过本轮实际范围；自动串联也会在任一步结果未知时扩大重复外发风险。三段式仍保持一次页面完成，同时保留明确授权证据。
 - Impact/Rollback：新增前端页面、路由和工作台入口，无后端/API/依赖变化；删除三处可回滚。当前ProjectManager可完成全链，ImplementationMember无法自批且首版不提供跨账户接力页，后续若实现必须继续复用现有Preview GET/Authorize权限而非放宽角色。
 - Verification：定向10、前端全量1249、typecheck与Vite 145模块构建通过；零真实外发和客户数据。
+
+# DEC-20261004-785：浏览器原生传输函数必须无接收器调用
+
+- Date/WBS：2026-10-04 / `AI-05-A06-P04`；依据DEC-783/784与Windows 11真实Edge验收。
+- Decision：`AISubmissionClient.options`与现有安全客户端一致，先把注入的Fetch transport复制到局部变量，再以普通函数形式调用；禁止通过`this.fetcher(...)`把客户端实例作为原生`fetch`接收器。增加严格transport测试，若收到非`undefined`接收器即模拟Edge抛出`Illegal invocation`。
+- Reason：jsdom/mock函数不检查Web IDL接收器，原定向和全量单测均产生假阴性；Edge对原生`Window.fetch`执行接收器校验，导致Options在网络请求前失败，真实提交页无法使用。此修复不放宽响应校验、授权或重试语义。
+- Impact/Rollback：前端一行兼容修复和验证夹具；无API、Schema、Migration、依赖、策略或客户数据变化。可回滚代码但会恢复Edge阻断，故不建议。托管浏览器内核因本机运行资产路径缺失不可用，验收改用本机Edge DevTools Protocol驱动实际构建产物；该偏差只影响验证通道，已保留截图和可重复脚本。
+- Verification：Edge154实际完成登录→项目→AI工作台→固定DocumentVersion→Preview→明确Authorize→Task Create；四阶段截图视觉通过。PostgreSQL18.6证明1/1/1/1与0 Invocation，全部临时资源清理；定向7、前端全量67文件/1250项、typecheck与Vite145模块构建通过，零Provider I/O。

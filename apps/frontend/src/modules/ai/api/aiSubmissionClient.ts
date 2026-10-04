@@ -108,7 +108,7 @@ export class AISubmissionClient {
   async options(projectId: string): Promise<AISubmissionOptions> {
     if (!id(projectId)) throw new AISubmissionError("AI_SUBMISSION_INVALID_INPUT");
     const controller = new AbortController(); const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
-    try { const response = await this.fetcher(`/api/v1/projects/${projectId}/ai-task-options`, { method: "GET", credentials: "same-origin", cache: "no-store", redirect: "error", headers: { Accept: "application/json" }, signal: controller.signal });
+    try { const fetcher = this.fetcher; const response = await fetcher(`/api/v1/projects/${projectId}/ai-task-options`, { method: "GET", credentials: "same-origin", cache: "no-store", redirect: "error", headers: { Accept: "application/json" }, signal: controller.signal });
       if (controller.signal.aborted || response.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !== "application/json") throw new AISubmissionError("AI_SUBMISSION_UNCERTAIN");
       const result = envelope(await response.json(), response.status); if (response.status !== 200) throw mapError(response.status, result.error); return parseOptions(result.data);
     } catch (failure) { if (failure instanceof AISubmissionError) throw failure; throw new AISubmissionError("AI_SUBMISSION_UNCERTAIN"); }

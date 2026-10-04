@@ -1,0 +1,138 @@
+/** Edge CDP fallback for environments where the managed browser kernel is unavailable. */
+import { spawn } from "node:child_process";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
+const [origin, projectId, outputRoot] = process.argv.slice(2);
+if (!origin?.startsWith("http://127.0.0.1:") || !/^[0-9a-f-]{36}$/.test(projectId ?? "") || !outputRoot) {
+  throw new Error("origin, project id and output root required");
+}
+const edge = "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe";
+const profile = await mkdtemp(join(tmpdir(), "plm-ai05-edge-"));
+const debuggingPort = 10000 + (process.pid % 40000);
+const browser = spawn(edge, [
+  "--headless=new", `--remote-debugging-port=${debuggingPort}`, `--user-data-dir=${profile}`,
+  "--no-first-run", "--disable-features=msEdgeFirstRunExperience",
+  "--window-size=1440,1200", `${origin}/login`,
+], { stdio: "ignore", windowsHide: true });
+
+const pause = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+async function target() {
+  for (let count = 0; count < 100; count += 1) {
+    try {
+      const entries = await (await fetch(`http://127.0.0.1:${debuggingPort}/json/list`)).json();
+      const page = entries.find((entry) => entry.type === "page" && entry.url.startsWith(origin));
+      if (page) return page;
+    } catch { /* Edge is starting. */ }
+    await pause(100);
+  }
+  throw new Error("Edge DevTools target unavailable");
+}
+
+let socket;
+let nextId = 0;
+const pending = new Map();
+const observations = [];
+function send(method, params = {}) {
+  const id = ++nextId;
+  socket.send(JSON.stringify({ id, method, params }));
+  return new Promise((resolve, reject) => pending.set(id, { resolve, reject }));
+}
+async function evaluate(expression) {
+  const response = await send("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true });
+  if (response.exceptionDetails) throw new Error(response.exceptionDetails.text);
+  return response.result.value;
+}
+async function waitFor(expression, label) {
+  for (let count = 0; count < 200; count += 1) {
+    if (await evaluate(`Boolean(${expression})`)) return;
+    await pause(100);
+  }
+  const diagnostic = await evaluate("({ url: location.href, title: document.title, text: document.body?.innerText?.slice(0, 4000) ?? '' })");
+  throw new Error(`Timed out waiting for ${label}: ${JSON.stringify({ diagnostic, observations: observations.slice(-30) })}`);
+}
+async function clickText(text) {
+  const clicked = await evaluate(`(() => { const node = [...document.querySelectorAll('a,button')]
+    .find((item) => item.textContent.trim() === ${JSON.stringify(text)}); if (!node) return false; node.click(); return true; })()`);
+  if (!clicked) throw new Error(`Missing action: ${text}`);
+}
+async function screenshot(name) {
+  const result = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: true });
+  const path = join(outputRoot, name);
+  await writeFile(path, Buffer.from(result.data, "base64"));
+  return path;
+}
+
+try {
+  const page = await target();
+  socket = new WebSocket(page.webSocketDebuggerUrl);
+  await new Promise((resolve, reject) => {
+    socket.addEventListener("open", resolve, { once: true });
+    socket.addEventListener("error", reject, { once: true });
+  });
+  socket.addEventListener("message", ({ data }) => {
+    const message = JSON.parse(data);
+    if (message.method === "Network.responseReceived") {
+      const response = message.params.response;
+      if (response.url.includes("/api/")) observations.push({ type: "response", url: response.url, status: response.status,
+        mimeType: response.mimeType });
+    } else if (message.method === "Network.loadingFailed") {
+      observations.push({ type: "failed", errorText: message.params.errorText, canceled: message.params.canceled });
+    } else if (message.method === "Runtime.exceptionThrown") {
+      observations.push({ type: "exception", text: message.params.exceptionDetails.text });
+    }
+    if (!message.id || !pending.has(message.id)) return;
+    const request = pending.get(message.id);
+    pending.delete(message.id);
+    if (message.error) request.reject(new Error(message.error.message));
+    else request.resolve(message.result);
+  });
+  await send("Runtime.enable");
+  await send("Page.enable");
+  await send("Network.enable");
+  await waitFor("document.querySelector('#login-username')", "login form");
+  await evaluate(`(() => { const set = (selector, value) => { const input = document.querySelector(selector);
+    input.value = value; input.dispatchEvent(new Event('input', { bubbles: true })); };
+    set('#login-username', 'Synthetic AI Manager'); set('#login-password', 'synthetic-ai-browser-password');
+    return true; })()`);
+  await waitFor("!document.querySelector('button[type=submit]').disabled", "enabled login action");
+  await evaluate("document.querySelector('button[type=submit]').click()");
+  await waitFor("document.body.innerText.includes('登录成功。')", "successful login");
+  await clickText("我的项目");
+  await waitFor("document.body.innerText.includes('Synthetic AI Browser Project')", "project list");
+  await clickText("Synthetic AI Browser Project");
+  await waitFor("document.body.innerText.includes('查看AI任务与建议状态')", "project detail");
+  await clickText("查看AI任务与建议状态");
+  await waitFor("document.body.innerText.includes('新建AI分析任务')", "AI workbench");
+  await clickText("新建AI分析任务");
+  await waitFor("document.body.innerText.includes('Synthetic Local Route')", "safe options and document list");
+  const chosen = await evaluate(`(() => { const input = document.querySelector('.document-choice input[type=checkbox]');
+    if (!input) return false; input.click(); return input.checked; })()`);
+  if (!chosen) throw new Error("Synthetic document could not be selected");
+  await screenshot("01-options.png");
+  await clickText("生成外发预览（不会发送）");
+  await waitFor("document.querySelector('section.preview')", "egress preview");
+  await screenshot("02-preview.png");
+  const approved = await evaluate(`(() => { const input = document.querySelector('.approval input[type=checkbox]');
+    if (!input) return false; input.click(); return input.checked; })()`);
+  if (!approved) throw new Error("Explicit approval checkbox could not be selected");
+  await clickText("明确授权本轮外发");
+  await waitFor("document.querySelector('section.authorization')", "egress authorization");
+  await screenshot("03-authorization.png");
+  await clickText("创建AI任务");
+  await waitFor("document.querySelector('section.created')", "created AI task");
+  const result = await evaluate(`(() => ({ text: document.querySelector('section.created').innerText,
+    alerts: [...document.querySelectorAll('[role=alert]')].map((item) => item.innerText),
+    url: location.href }))()`);
+  if (result.alerts.length || !result.text.includes("任务已创建") || result.url !== `${origin}/projects/${projectId}/ai/new`) {
+    throw new Error(`Unexpected browser result: ${JSON.stringify(result)}`);
+  }
+  const finalShot = await screenshot("04-created.png");
+  console.log(JSON.stringify({ status: "PASS", ...result, screenshot: finalShot }));
+  socket.close();
+} finally {
+  browser.kill();
+  await pause(300);
+  await rm(profile, { recursive: true, force: true });
+}

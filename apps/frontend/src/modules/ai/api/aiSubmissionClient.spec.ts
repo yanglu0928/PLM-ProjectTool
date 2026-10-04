@@ -75,6 +75,17 @@ describe("AISubmissionClient", () => {
   it("maps safe errors without exposing server messages", async () => { const fetcher = vi.fn().mockResolvedValueOnce(login()).mockResolvedValueOnce(error(503, "AI_PROVIDER_UNAVAILABLE"));
     const session = new SessionClient(fetcher as typeof fetch); await session.login("user", "synthetic-only");
     await expect(new AISubmissionClient(session, fetcher as typeof fetch).options(project)).rejects.toMatchObject({ code: "AI_PROVIDER_UNAVAILABLE" }); });
+  it("invokes the native-style options transport without a class receiver", async () => {
+    const calls: unknown[] = [];
+    const fetcher = function(this: unknown, ...args: Parameters<typeof fetch>) {
+      if (this !== undefined) throw new TypeError("Illegal invocation");
+      calls.push(args);
+      return Promise.resolve(json({ task_policies: [policy], egress_policies: [egress], routes: [route] }));
+    } as typeof fetch;
+    const client = new AISubmissionClient(new SessionClient(vi.fn() as typeof fetch), fetcher);
+    await expect(client.options(project)).resolves.toMatchObject({ routes: [route] });
+    expect(calls).toHaveLength(1);
+  });
   it("marks transport failures uncertain and never retries", async () => { const fetcher = vi.fn().mockResolvedValueOnce(login()).mockRejectedValueOnce(new TypeError("network private"));
     const session = new SessionClient(fetcher as typeof fetch); await session.login("user", "synthetic-only");
     await expect(new AISubmissionClient(session, fetcher as typeof fetch).createPreview(project, input, "preview-key-0000001"))
