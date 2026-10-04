@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-04：0.1.0-dev.0/RAG-03-A05-P04-P03 新增受权质量证据登记Owner：真实Session/CSRF、当前ProjectManager/DeploymentAdmin角色与License重验；调用方不能自报PASS，服务端从计数固定重算90%/98%并合并Project隔离、零越界引用和失败关闭结论；只持久安全引用/指纹/计数，失败证据不覆盖。兼容性/升级/回滚：内部应用/仓储增量，无Schema/API/依赖/真实外发变化；停用新Owner即可停写，已登记证据依Schema0087不可删改。验证：Win11/PG18.6登记FAIL 48%/74%、PASS 90%/98%、幂等重放/冲突、Audit回滚、License/CSRF/角色拒绝；RAG76、后端2448/跳过3、wheel76，SHA-256 `87657be4c06848d3fd85dd044c4f1fd2f81f6b5827e7163baa3b51ffc73e5350`。已知问题：本证据为合成机制证明，P04激活Owner、新独立业务质量、真实ACTIVE、Gate3/UAT和发行包待完成。
+
 - 2026-10-04：0.1.0-dev.0/RAG-03-A05-P04-P02 新增Schema0087不可变业务Quality/Activation证据：固定50～10000样本、分类90%、精确引用98%、Project隔离/零越界/失败关闭；READY→ACTIVE及旧ACTIVE→RETIRED必须与Audit/ActivationResult、最新质量和当前Model/来源/全部构建授权原子一致。兼容性/升级/回滚：内部两表与状态守卫增量，无公开API/依赖/真实外发；空历史可降0086，有证据或激活历史拒降。验证：Win11/PG18.6迁移/drift、合成FAIL/PASS、直改拒绝、临时原子ACTIVE及拒降通过；RAG70、Metadata/Migration7、后端2442/跳过3、wheel77，SHA-256 `bbe7b7b1159ec282d762e0215d696c207a5e6df64c42bd83fb177babdd418c02`。已知问题：合成值仅证明机制，P03/P04 Owner、新独立业务证据、真实ACTIVE、Gate3/UAT和发行包待完成。
 
 - 2026-10-04：0.1.0-dev.0/RAG-03-A05-P04-P01 完成业务质量证据与ACTIVE切换前置核查：现有50条已见失败集不得复用，P04拆为Schema0087不可变Quality/Activation、受权质量登记及当前事实重验/唯一ACTIVE原子切换；隔离合成夹具只能证明机制，不能作为业务质量。兼容性/升级/回滚：仅文档，无代码、Schema/API、依赖、网络或外发变化。验证：静态交叉核对冻结DM-04/API-03、ADR-009、CR-RAG-003及Schema0086；未运行新增程序测试。已知问题：新独立达标证据、P02～P04、正式ACTIVE、Gate3/UAT和发行包待完成。

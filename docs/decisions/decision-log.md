@@ -7884,3 +7884,11 @@
 - Reason：单Index唯一质量行会因一次失败永久封死后续真正独立复验；只挑任意历史PASS又可能忽略更新失败。最新证据规则同时保留失败历史并禁止择优放行。
 - Impact/Rollback：新增内部Schema0087/ORM，无公开API、依赖或真实外发。空历史可降0086；有Quality/Activation或ACTIVE/RETIRED历史拒降。登记/激活Owner尚未开放。
 - Verification：Win11/PG18.6空库迁移/drift、合成48%/74%失败、90%/98%通过、直接ACTIVE拒绝、带Audit原子ACTIVE、不可变/拒降通过；RAG70、Metadata/Migration7、后端2442/3跳过、wheel77，SHA-256 `bbe7b7b1159ec282d762e0215d696c207a5e6df64c42bd83fb177babdd418c02`。合成ACTIVE不作为业务质量。
+
+# DEC-20261004-809：质量结论必须服务端重算且历史重放仍重验当前权限
+
+- Date/WBS：2026-10-04 / `RAG-03-A05-P04-P03`；依据DEC-807/808、ADR-009、CR-RAG-003及Schema0087。
+- Decision：质量登记命令不提供quality state或basis points字段；只接收安全引用/指纹、样本/正确数和三项安全断言，由服务端固定重算90%/98%与完整PASS条件。登记要求Session/CSRF、当前ProjectManager或DeploymentAdmin及License；幂等重放在返回历史结果前仍执行同样重验。质量/Audit/回执同事务，登记不激活Index。
+- Reason：允许调用方自报PASS会绕过冻结门槛；计算比率而不保留原始计数会丢失可复算性。如果幂等重放先返回旧结果再校验权限，已撤权主体仍可读取历史操作成果。登记与激活分离可保留失败证据且避免半激活。
+- Impact/Rollback：新增内部应用/仓储，无Schema、公开API、依赖或网络变化。可停止组合新Owner以关闭新写；已登记历史按Schema0087保留并向前修复，原冻结基线不改写。
+- Verification：Win11/PG18.6真实Session/CSRF、ProjectManager、License、幂等、Audit链通过；合成FAILED 48%/74%和PASS 90%/98%、冲突/回滚/撤权负例通过，Index仍READY。RAG76、后端2448/3跳过、wheel76，SHA-256 `87657be4c06848d3fd85dd044c4f1fd2f81f6b5827e7163baa3b51ffc73e5350`；零真实Provider I/O。
