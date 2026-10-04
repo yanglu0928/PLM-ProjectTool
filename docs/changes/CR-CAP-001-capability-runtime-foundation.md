@@ -34,3 +34,7 @@
 ## 风险与剩余边界
 
 摘要只能证明已选固定引用集合一致，不能证明文档内容正确、能力项抽取质量或人工批准。Document/Evidence Owner 未通过前版本不能验证/送审；Review Owner 未完成前正式指针必须保持空。正式标准能力仍需有 GLOBAL 权限的人工作成并完成 Review；不得从本地资料、AI 输出或历史表格自动生成客户事实。Gate 3质量、性能、正式信任、Server 2025当前链和Debian 13发行验证不因本 CR 改变。
+
+## 实施进度
+
+- 2026-10-05 / `CAP-01-A02`：Schema0091/ORM已实施并在Windows 11/PostgreSQL 18.6验证；两Root/五表、来源集合重算、逐项Document/Evidence完整性、Owner关闭和历史拒降通过。没有导入资料、创建APPROVED或开放API。下一项按本CR进入A03内部创建与来源验证Owner。

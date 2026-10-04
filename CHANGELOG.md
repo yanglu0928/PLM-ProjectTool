@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/CAP-01-A02 新增Capability Schema0091/ORM：两Root/五表、精确GLOBAL DocumentVersion集合摘要、逐项Document/Evidence固定引用、提交期完整性与初始Owner关闭；不导入现有资料、不创建APPROVED、不开放HTTP。兼容性/升级/回滚：内部`0090 -> 0091`追加，无API/依赖/网络/客户数据变化；无Capability历史可降，有历史拒降并向前修复。验证：Win11/PG18.6空/历史库升级、空历史升降重升、drift、正确/错误来源、非法状态与历史拒降通过；定向8、相关11、后端2533通过/3跳过、wheel 900项 SHA-256 `f2df5cbf900f438ff68728fe0e6b57b49de6d49a057bc4f0aba95d13b88737dc`。已知问题：创建/Audit/幂等/Review/HTTP/前端/生产组合尚待A03以后，Gate3及发行阻塞不变。
+
 - 2026-10-05：0.1.0-dev.0/CAP-01-A01 完成GLOBAL Capability最小真实Owner前置核查并登记CR-CAP-001：冻结`source_collection_ref`缺物理集合Owner，选择由精确GLOBAL DocumentVersion集合计算`sha256:`引用，同时保留逐项Document/Evidence固定引用；不新增Root、不借用RAG Index、不自动导入或批准现有资料。兼容性/升级/回滚：纯文档，无Schema/Migration/API/依赖/网络/客户数据变化；A02规划Schema0091，未实施前可停止。验证：静态核对冻结DM/SC/API、运行源码、迁移头0090、Audit白名单和SC-04 manifest，标记`CAP_01_A01_PRECHECK_PASS`。已知问题：Schema/Owner/Review/HTTP尚未实现，Gate3及发行阻塞不变。
 
 - 2026-10-04：0.1.0-dev.0/GATE-3-A01 完成Platform Core与AI/RAG客观证据审计：Windows11统一AI/RAG机制闭环按测试范围通过，但真实业务Owner/完整模拟项目、全新独立留出集质量、正式信任、20并发性能及当前目标平台发行证据未齐，Gate 3保持`BLOCKED`；依据CR-SEQ-001转入Capability最小真实Owner。兼容性/升级/回滚：纯文档，无Schema/Migration/API/依赖/网络/客户数据变化，可撤审计记录但不得改写历史失败。验证：交叉核对V2.1、ADR-009、EXC-P0-006、CR-SEQ-001、R12与P08证据，标记`GATE_3_A01_EVIDENCE_AUDIT_COMPLETE`。已知问题：分类48%/引用74%、新集来源配额、正式信任、性能、Server2025当前链和Debian13发行验证仍未完成。

@@ -8068,3 +8068,11 @@
 - Reason：冻结语义要求受控来源集合但没有集合实体；摘要引用在不扩大Root/API的情况下固定集合，逐项引用保留授权、定位与反向追溯。
 - Impact/Rollback：A01仅文档；A02将新增Schema0091/ORM，无现有数据自动导入、无公开API/依赖/外发。无历史可降；有Capability历史拒绝物理降级。删除未执行Schema前的CR/计划可回滚，但不得把资料或AI输出自动批准。
 - Verification：静态核对当前无capability模块/表，冻结两Root/五表、十二Operation、Document GLOBAL STANDARD_CAPABILITY证明能力、Audit白名单与迁移头0090；标记`CAP_01_A01_PRECHECK_PASS`。
+
+# DEC-20261005-832：Capability 基础版本在提交期形成完整且不可变的 GLOBAL 快照
+
+- Date/WBS：2026-10-05 / `CAP-01-A02`；依据CR-CAP-001、DEC-831及冻结DM-05/SC-01/02。
+- Decision：Schema0091一次创建Baseline、Version、Item和逐项Document/Evidence五表；deferred validator在事务提交期精确重算声明计数、来源集合摘要与GLOBAL当前事实。A02只允许正式指针为空的ACTIVE Baseline和无Review的完整DRAFT Version，所有更新/删除/清空关闭，等待A03/A04唯一Owner以迁移显式开放。
+- Reason：分步提交半版本会让Draft在引用未齐时可见；只保存调用方声明摘要无法证明来源集合；Schema任务直接开放APPROVED或状态更新会绕过当前授权、Audit、Review和幂等边界。
+- Impact/Rollback：内部Schema `0090 -> 0091`，无公开API、依赖、外发或现有资料导入。无Capability历史可降；有历史拒降并向前修复。后续Owner须替换守卫而不是直写或删除历史。
+- Verification：Windows11/PG18.6空/历史库升级、空历史升降重升、drift、正确/错误GLOBAL来源、Owner关闭和历史拒降通过；定向8、相关11、后端2533/3跳过；开发wheel 900项，SHA-256 `f2df5cbf900f438ff68728fe0e6b57b49de6d49a057bc4f0aba95d13b88737dc`。
