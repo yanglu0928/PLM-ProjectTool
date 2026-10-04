@@ -8140,3 +8140,11 @@
 - Reason：现有四类内部能力不覆盖读取、PATCH/ARCHIVE/RESTRICT、持久幂等外层或生产装配；直接挂Router会产生一半可用的冻结合同。GLOBAL URL没有ProjectId，项目成员若可列全部历史会泄漏Draft/退回/受限标准事实。
 - Impact/Rollback：A01仅文档，无代码/Schema/API行为、依赖、Secret或网络。后续保持冻结URL/Operation不变；可不装配Router回滚新流量，状态历史不删除。
 - Verification：静态交叉核对API-04十二Operation、Capability源码/Schema0094、现有可选Router/Windows组合及游标密钥模式；标记`CAP_01_A05_A01_HTTP_PRECHECK_PASS`，未运行新增程序测试。
+
+# DEC-20261005-841：GLOBAL Capability 项目成员读取收窄为当前正式投影
+
+- Date/WBS：2026-10-05 / `CAP-01-A05-A02`；依据冻结API-04、DM-05、DEC-840及Schema0094。
+- Decision：DeploymentAdmin可读取Capability受控全历史；非管理员必须是至少一个ACTIVE Project中ACTIVE Department的当前ACTIVE Member，只能读取ACTIVE Baseline及其`current_approved_version_ref`精确指向的APPROVED Version/Items。Project模块提供当前成员事实Port，Capability不跨Owner直查；分页采用Baseline和Capability子资源两个独立HMAC密钥域，并绑定Session、权限投影、查询及资源族/Scope。
+- Reason：GLOBAL URL没有ProjectId，冻结的“受权项目成员只读”若解释为可读全历史，会暴露Draft、退回、已替代或受限标准事实；只检查曾经的成员记录也会让项目归档、部门停用或成员移除后继续读取。游标若不绑定投影或资源族可绕过后续Router过滤。
+- Impact/Rollback：无Schema/Migration/公开HTTP/依赖/网络/Secret或外发。可停止装配内部读取服务回滚新流量，历史不变；A05-A06/A07必须供给独立目标账户密钥，否则失败关闭。
+- Verification：Win11/PG18.6四版本真实投影验证管理员全历史、成员当前APPROVED、旧版隐藏和非成员拒绝；新增13、后端2572/3跳过；wheel Capability36，SHA-256 `824642fbec46d94050047da4b73a190fd2e3e28d9495e8caabc26960b81f7f70`。

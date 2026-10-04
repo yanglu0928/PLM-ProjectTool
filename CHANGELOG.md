@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/CAP-01-A05-A02 新增Capability当前受权读取Owner、安全投影及两域签名游标：DeploymentAdmin可读受控全历史，ACTIVE项目成员仅能读取ACTIVE基线当前APPROVED Version/Items，无成员或历史版本统一失败关闭；Project成员事实保持Project Owner边界。兼容性/升级/回滚：无Schema/API挂载/依赖/网络/Secret/外发，停止装配即可关闭；后续无独立密钥必须拒绝启动。验证：Win11/PG18.6四版本管理员/成员/非成员投影通过，新增13、后端2572通过/3跳过、wheel Capability36，SHA-256 `824642fbec46d94050047da4b73a190fd2e3e28d9495e8caabc26960b81f7f70`。已知问题：五个GET尚未挂HTTP，A03～A07、前端、正式信任/性能/Gate3/发行仍待。
+
 - 2026-10-05：0.1.0-dev.0/CAP-01-A05-A01 完成Capability冻结HTTP前置核查：十二Operation均未挂载，现有内部Owner只覆盖Baseline/Draft/Validate与Review正式化；锁定按安全读取、状态Owner、普通命令、送审外层、读取Router、Windows组合分步实施，项目成员只读当前APPROVED投影并使用独立游标密钥。兼容性/升级/回滚：纯文档，无Schema/API行为/依赖/配置/外发，可停止后续实现。验证：静态核对API-04、Capability源码/Schema0094和现有可选Router/组合模式，标记`CAP_01_A05_A01_HTTP_PRECHECK_PASS`。已知问题：A02～A07、前端、正式信任/性能/Gate3/发行仍待。
 
 - 2026-10-05：0.1.0-dev.0/CAP-01-A04-A04 新增Schema0094与Capability Review终态消费：APPROVED原子更新正式指针并SUPERSEDE旧正式版，RETURNED/WITHDRAWN保留旧指针且Version收敛为RETURNED，终态后允许按强ETag创建新Draft；Capability Audit与Review决定同事务。兼容性/升级/回滚：内部`0093 -> 0094`，无API/依赖/网络/外发；无终态历史可降，有历史拒降。验证：Win11/PG18.6四版本批准/退回/撤回/再批准、空库降升/drift/Audit/拒降通过，后端2559通过/3跳过，wheel Review103+Capability23，SHA-256 `002abd2f409b96be5f6b6f24a8cb7151a4b4f2cb17e501b9ed7bf58cc54e258a`。已知问题：A05冻结HTTP/持久幂等/生产组合、前端及Gate3/发行仍待。

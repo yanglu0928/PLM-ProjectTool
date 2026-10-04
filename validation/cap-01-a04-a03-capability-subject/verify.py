@@ -22,6 +22,9 @@ from plm_assistant.modules.auth.infrastructure.current_user_access import (
 from plm_assistant.modules.auth.infrastructure.license_import_access import (
     SqlAlchemyLicenseImportAccess,
 )
+from plm_assistant.modules.auth.infrastructure.project_read_access import (
+    SqlAlchemyProjectReadAccess,
+)
 from plm_assistant.modules.capability.application.create_baseline import (
     CapabilityBaselineCreateService,
     CreateCapabilityBaseline,
@@ -35,6 +38,9 @@ from plm_assistant.modules.capability.application.create_version import (
 from plm_assistant.modules.capability.application.review_subject import (
     CapabilityReviewSubjectOwner,
 )
+from plm_assistant.modules.capability.application.read_capability import (
+    CapabilityReadError, CapabilityReadQuery, CapabilityReadService,
+)
 from plm_assistant.modules.capability.application.source_validation import (
     CapabilityDocumentRef,
     CapabilitySourceValidator,
@@ -47,6 +53,9 @@ from plm_assistant.modules.capability.infrastructure.review_subject_repository i
 )
 from plm_assistant.modules.capability.infrastructure.version_create_repository import (
     SqlAlchemyCapabilityVersionCreateRepository,
+)
+from plm_assistant.modules.capability.infrastructure.read_repository import (
+    SqlAlchemyCapabilityReadRepository,
 )
 from plm_assistant.modules.document.infrastructure.read_repository import (
     SqlAlchemyDocumentReadRepository,
@@ -62,6 +71,9 @@ from plm_assistant.modules.platform.infrastructure.idempotency_receipts import (
 )
 from plm_assistant.modules.platform.infrastructure.migration import (
     create_migration_config,
+)
+from plm_assistant.modules.project.infrastructure.capability_read_access import (
+    SqlAlchemyCapabilityReadMembership,
 )
 from plm_assistant.modules.review.application.global_persistence import (
     GlobalReviewPersistenceService,
@@ -92,6 +104,7 @@ seed_global_source = _schema["seed_global_source"]
 
 def main() -> None:
     terminal_enabled = os.environ.get("PLM_CAP_TERMINAL_VALIDATION") == "1"
+    read_enabled = os.environ.get("PLM_CAP_READ_VALIDATION") == "1"
     name = "cap01a04a03_" + uuid.uuid4().hex[:10]
     admin_token = b"a" * 32
     with connect("postgres") as admin:
@@ -396,6 +409,81 @@ def main() -> None:
                                               'CAP_VERSION_RETURNED',
                                               'CAP_VERSION_WITHDRAWN')
                         """).fetchone()[0] == 4
+                    if read_enabled:
+                        with connect(name) as db:
+                            project_id = db.execute("""
+                                INSERT INTO plm.prj_projects(
+                                    project_code,project_code_normalized,name,created_by
+                                ) VALUES ('CAPREAD','capread','Capability Read',%s)
+                                RETURNING project_id
+                            """, (actor,)).fetchone()[0]
+                            department_id = db.execute("""
+                                INSERT INTO plm.prj_departments(
+                                    project_id,department_code,
+                                    department_code_normalized,name
+                                ) VALUES (%s,'READ','read','Read Team')
+                                RETURNING department_id
+                            """, (project_id,)).fetchone()[0]
+                            db.execute("""
+                                INSERT INTO plm.prj_project_members(
+                                    project_id,user_id,department_id,project_role
+                                ) VALUES (%s,%s,%s,'IMPLEMENTATION_MEMBER')
+                            """, (project_id, reviewer_one, department_id))
+                        reader = CapabilityReadService(
+                            unit_of_work=runtime.unit_of_work,
+                            session_access=SqlAlchemyProjectReadAccess(),
+                            current_user=SqlAlchemyCurrentUserAccess(),
+                            membership=SqlAlchemyCapabilityReadMembership(),
+                            license_guard=guard,
+                            repository=SqlAlchemyCapabilityReadRepository(),
+                            clock=lambda: now,
+                        )
+                        admin_query = CapabilityReadQuery(admin_token, uuid.uuid4())
+                        member_query = CapabilityReadQuery(b"b" * 32, uuid.uuid4())
+                        outsider_query = CapabilityReadQuery(b"c" * 32, uuid.uuid4())
+                        admin_versions = reader.list_versions(
+                            admin_query, baseline_id=baseline.baseline_id,
+                            page_size=20,
+                        )
+                        assert [entry.state for entry in admin_versions.items] == [
+                            "APPROVED", "RETURNED", "RETURNED", "SUPERSEDED",
+                        ]
+                        member_baselines = reader.list_baselines(
+                            member_query, page_size=20,
+                        )
+                        assert len(member_baselines.items) == 1
+                        member_versions = reader.list_versions(
+                            member_query, baseline_id=baseline.baseline_id,
+                            page_size=20,
+                        )
+                        assert [entry.baseline_version_id for entry in member_versions.items] == [
+                            final_version.baseline_version_id,
+                        ]
+                        member_items = reader.list_items(
+                            member_query, baseline_id=baseline.baseline_id,
+                            baseline_version_id=final_version.baseline_version_id,
+                            page_size=20,
+                        )
+                        assert len(member_items.items) == 1
+                        try:
+                            reader.get_version(
+                                member_query, baseline_id=baseline.baseline_id,
+                                baseline_version_id=version.baseline_version_id,
+                            )
+                        except CapabilityReadError as error:
+                            assert error.code == "RESOURCE_NOT_FOUND"
+                        else:
+                            raise AssertionError("member discovered superseded Version")
+                        try:
+                            reader.list_baselines(outsider_query, page_size=20)
+                        except CapabilityReadError as error:
+                            assert error.code == "AUTH_ACCESS_DENIED"
+                        else:
+                            raise AssertionError("nonmember read GLOBAL Capability")
+                        print(
+                            "CAP_01_A05_A02_READ_OWNER_PASS: admin history, current "
+                            "approved member projection and nonmember denial verified"
+                        )
                     try:
                         command.downgrade(cfg, "20261005_0093")
                     except Exception as error:
