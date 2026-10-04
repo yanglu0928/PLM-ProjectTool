@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-04：0.1.0-dev.0/RAG-04-A06-P03 新增Retrieval Run/Result/Context当前受权读取Owner；每次重验License、Session、Project成员，并按创建者或ProjectManager/CustomerManager收窄，Result/Context再复验当前Document/Version/Chunk，仅返回有界snippet、locator、整数分数和固定Bundle。CR-RAG-004安全收紧公开DTO，不返回query原文/密文/filter/fingerprint。兼容性/升级/回滚：无Migration/HTTP挂载/依赖/网络/外发；可撤Owner/后续Router，历史不改写。验证：应用/权限12、RAG135、后端2508/跳过3、Win11/PG18.6真实当前授权与来源限制，wheel RAG135+Migration4，SHA-256 `e2d2dbb8419b7cfae18d13658bfbe493a19ea18140ebdfb107638d3dc26988b9`。已知问题：P04～P08、正式质量/性能、Server2025/Debian13、Gate3/UAT和发行包待完成。
+
 - 2026-10-04：0.1.0-dev.0/RAG-04-A06-P02 新增Schema0090 Retrieval原子取消；PENDING直接取消固定Job v2/零Attempt，RUNNING协作取消固定v3/单Attempt/Lease，Job/Run同完成且零结果。真实负例发现并修复Schema0089在Run仍RUNNING时未拒绝Job-only终态的早退偏差。兼容性/升级/回滚：内部`0089 -> 0090`，无公开API/依赖/网络/外发；无取消历史可降，有历史拒降并向前修复。验证：Win11/PG18.6迁移/drift/两类取消/半终态回滚/拒降；定向14、后端2503/跳过3、wheel RAG130+Migration4，SHA-256 `8fa75bb94f43fea0cb6be8486725846816e83c4e4aa410bd1176ddb23851fb3d`。已知问题：P03～P08、正式质量/性能、Server2025/Debian13、Gate3/UAT和发行包待完成。
 
 - 2026-10-04：0.1.0-dev.0/RAG-04-A06-P01 完成Retrieval五个冻结HTTP、权限、取消和生产组合前置核查；发现DM-04/API-03要求CANCELLED而Schema0089只认成功/失败，决定先以Schema0090补原子取消，再实现读取/HTTP/双路径同Owner取消/既有第四Worker组合/前端/真实验收。兼容性/升级/回滚：纯文档，无代码/Schema/API行为/依赖/网络/外发；不新增第五服务角色。验证：静态交叉核对冻结合同、当前Schema/Owner/Job cancel registry与四角色。已知问题：P02～P08、正式质量/性能、Server2025/Debian13、Gate3/UAT和发行包待完成。

@@ -8004,3 +8004,11 @@
 - Reason：把直接取消伪造成Worker Attempt会制造不存在的执行历史；忽略已认领Lease又会绕过fencing。旧validator对RUNNING Run早退使Job-only终态未被数据库拒绝，必须在开放取消前关闭。
 - Impact/Rollback：内部Schema `0089 -> 0090`，无公开API、依赖或外发。无取消历史可降；已有取消请求/终态拒降并向前修复。原完整成功/失败兼容。
 - Verification：Win11/PG18.6升级/drift、空历史升降、PENDING/RUNNING取消、Job-only和带结果回滚、历史拒降通过；定向14、后端2503/3跳过、wheel RAG130+Migration4，SHA-256 `8fa75bb94f43fea0cb6be8486725846816e83c4e4aa410bd1176ddb23851fb3d`。
+
+# DEC-20261004-824：Retrieval 公开读取以创建者/监督角色和当前来源状态双重收窄
+
+- Date/WBS：2026-10-04 / `RAG-04-A06-P03`；依据CR-RAG-004、DEC-822～823、冻结DM-04/API-03及Schema0090。
+- Decision：Run/Result/Context每次在同一事务重验License、Session和当前Project事实；创建者可读自身Run，ProjectManager/CustomerManager可监督读取，普通非创建者隐藏。Result/Context再锁定并复验当前Document/Version/Chunk，只返回有界snippet、locator、整数分数与固定Bundle。query原文、密文、filter和query fingerprint均不进入公开Run DTO。
+- Reason：仅凭创建时授权会在成员撤权或文档限制后继续泄露正文；把普通项目成员全部视为“受权角色”会扩大横向可见性。query fingerprint对低熵业务查询存在离线枚举风险，内部完整性用途不要求向客户端暴露。
+- Impact/Rollback：新增内部应用/仓储Owner和三项Project读权限；CR-RAG-004明确收紧冻结候选DTO中的fingerprint字段，原冻结提交不追写。无Migration/HTTP挂载/依赖/网络/外发；可撤Owner/Router，历史不改写。
+- Verification：应用/权限12、RAG135、后端2508/3跳过；Win11/PG18.6真实Session、创建者/监督角色、普通成员/错Project、撤权、Document限制/恢复通过；wheel RAG135+Migration4，SHA-256 `e2d2dbb8419b7cfae18d13658bfbe493a19ea18140ebdfb107638d3dc26988b9`。

@@ -1,6 +1,6 @@
 # CR-RAG-004：RetrievalRun、加密查询内容与最小 Context 边界
 
-日期：2026-10-04；状态：`A06_P02_RETRIEVAL_CANCELLATION_SCHEMA_PASS`；WBS：`RAG-04-A01～A06`。关联 Gate 2 冻结 ADR-004/009、DM-04、SC-01～04、API-03，以及 Schema0087/CR-RAG-001～003；原冻结提交 `64cdf09` 不改。
+日期：2026-10-04；状态：`A06_P03_RETRIEVAL_READ_OWNER_PASS`；WBS：`RAG-04-A01～A06`。关联 Gate 2 冻结 ADR-004/009、DM-04、SC-01～04、API-03，以及 Schema0087/CR-RAG-001～003；原冻结提交 `64cdf09` 不改。
 
 ## 差异与实施方案
 
@@ -105,3 +105,9 @@ A06拆为P02取消Schema、P03只读Owner、P04 Create/Get/Result/Context HTTP�
 Schema0090新增冻结模型已有的RetrievalRun CANCELLED。PENDING直接取消固定Job v2/零Lease与Attempt；RUNNING协作取消固定Job v3/单generation/RELEASED或EXPIRED Lease/`JOB_CANCELLED` Attempt；两者都要求取消申请事实、Job/Run同完成时点和零Candidate/Score/Context。有取消历史拒绝降回0089。
 
 真实负例发现Schema0089在Run仍RUNNING时过早返回，允许Job单独终态提交；0090一并修复为任何Job SUCCEEDED/FAILED/CANCELLED都必须与Run同事务终结。Windows11/PostgreSQL18.6升级、drift、升降重升、两类取消、半终态/带结果回滚和拒降通过；定向14、后端2503/跳过3、wheel RAG130+Migration4通过，SHA-256 `8fa75bb94f43fea0cb6be8486725846816e83c4e4aa410bd1176ddb23851fb3d`。无公开API/依赖/网络/外发；进入A06-P03只读Owner。
+
+## A06-P03 实施与结果
+
+新增Run/Result/Context当前受权读取Owner：同事务重验License、Session、Project/Department/Membership，创建者可读自身Run，ProjectManager/CustomerManager可监督读取，普通非创建者统一404语义。Result/Context锁定并逐次复验同Project的ACTIVE Document/Chunk和AVAILABLE Version，仅投影有界snippet、locator、整数分数与固定Bundle信息。
+
+按A06-P01最小化结论，API-03候选DTO中列示的query fingerprint不进入公开Run投影；该摘要仍只在数据库内部用于完整性/幂等，避免低熵query被离线枚举。此项作为CR-RAG-004的可追溯API安全收紧，原冻结提交不追写。Windows11/PostgreSQL18.6真实Run完成创建者/监督角色、普通成员/错Project、成员撤权和Document限制/恢复复验；后端2508/3跳过、wheel RAG135+Migration4通过，SHA-256 `e2d2dbb8419b7cfae18d13658bfbe493a19ea18140ebdfb107638d3dc26988b9`。无Migration/HTTP挂载/依赖/网络/外发；进入A06-P04严格HTTP合同。
