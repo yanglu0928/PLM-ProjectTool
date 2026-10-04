@@ -7900,3 +7900,11 @@
 - Reason：让调用方选质量证据会允许择优旧PASS；分开退役与激活会产生零ACTIVE或双ACTIVE窗口。只在登记质量时检查来源/授权又无法防止其后撤销或过期。
 - Impact/Rollback：内部应用/仓储增量，无Schema/API/依赖/网络变化。可停止Owner阻止新切换；已激活/退役记录依不可变结果向前修复，不改写冻结基线。
 - Verification：Win11/PG18.6首次激活与完整回滚/撤权路径通过；旧ACTIVE退役投影为单元证据，其数据库绑定为P02 Schema证据，不冒充双代业务演练。RAG81、后端2453/3跳过、wheel81，SHA-256 `cf47841ad85b2808901c73aef54659efe2cd318adfddbc8f079fe5ea01c9b475`；合成ACTIVE不作为Gate证据。
+
+# DEC-20261004-811：异步 Retrieval 查询正文由专用加密 Owner 持有
+
+- Date/WBS：2026-10-04 / `RAG-04-A01`；依据冻结DM-04/SC-01～04/API-03、CR-AI-016、Schema0087及Job安全合同。
+- Decision：RetrievalRun与Job只保存规范化query SHA-256和专用QueryContent引用；查询原文由RAG自有密文实体持有，使用独立注入AEAD端口、版本化AAD与外部密钥引用，且不复用Secret业务表。Worker受权解密后只在短生命周期缓冲中使用并归零。GLOBAL/PROJECT分别召回，metadata只接受固定AST，Context只固化引用/范围/顺序/token/fingerprint而不复制无界正文。
+- Reason：冻结Create返回202，Worker必须跨请求取得query；但Job/Audit/DTO禁止正文。把query放入payload_refs会扩大泄漏面，复用Secret表又混淆API Key与客户查询的保留/权限语义。专用加密Owner可同时满足异步执行、最小暴露和R3清理策略。
+- Impact/Rollback：登记CR-RAG-004，A01仅文档，不改Schema/API/依赖/网络。后续Schema0088追加表，缺内容密钥失败关闭；空历史可降，有密文/候选/Context历史时停止新作业并向前修复。
+- Verification：静态交叉核对冻结Retrieval/Context字段、五个HTTP Operation、Job禁止payload正文、AI RAG_CONTEXT完整引用合同及当前实现缺口；未运行新增程序测试，不代表Retrieval或质量通过。
