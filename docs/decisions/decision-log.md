@@ -7708,3 +7708,11 @@
 - Reason：Task的`QUEUED`表示业务任务已排队，Job的`PENDING`表示调度记录待领取，二者是同一时点的合法不同词汇。相等校验使真实成功创建后的Job详情稳定503，单元mock未覆盖实际仓储组合。
 - Impact/Rollback：内部读取修复与3项回归，无API、Schema、Migration、依赖、写状态机或历史数据变化；可撤但会恢复用户可见阻断。验证脚本首轮模板正则错误仅影响验证，已改为路径分段并用全新库复验。
 - Verification：相关9项、后端全量2349项/3跳过、wheel 823项通过；Edge154/PG18.6实际Task/Invocation/Job/List四类200、视觉检查和隔离资源清理通过，零Provider I/O。
+
+# DEC-20261004-787：生产 RAG 按四聚合分层实施，不复制 PoC 运行代码
+
+- Date/WBS：2026-10-04 / `RAG-01-A01`；依据ADR-004、冻结DM/SC/API与POC-02/03证据。
+- Decision：按DocumentChunk→EmbeddingIndex→EmbeddingRecord/Build→RetrievalRun/Context顺序实施，每个阶段独立验收。Chunk只固定Document/Parse来源、切分generation、正文指纹/定位/元数据；Index关联由EmbeddingRecord建立，不在Chunk复制可变Index归属。业务只能经RetrievalService，Chunk/Embedding无公共CRUD。
+- Reason：当前生产仓库没有rag模块，而PoC同时包含评测脚本、本地Artifacts与已见数据；直接移植会混淆生产事实、授权和质量结果。分层可先关闭Scope/来源/维度不变量，再接外部调用和检索质量。
+- Impact/Rollback：本项仅文档和任务分解，无程序、Schema/API/依赖/外发。分类48%、引用74%继续FAIL，Gate3新集来源容量阻塞不变；后续Migration逐项提供down和历史数据保护。
+- Verification：静态核对现有模块目录、迁移头0075、Document ParseResult、AI EMBEDDING Model、pgvector基线、冻结RAG四聚合/API及POC-03矩阵；确认无生产RAG表或路由。
