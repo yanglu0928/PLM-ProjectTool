@@ -8100,3 +8100,11 @@
 - Reason：只在重放时重新检查会把当前状态冒充首次结果；新增结果表会扩大冻结两Root/五表。Audit已是不可变、可追溯部署事实，有限reason足以恢复PASS/来源失效/Evidence失效组合。
 - Impact/Rollback：无Migration/API/依赖/外发或状态变化；可停Owner关闭新验证，已有Audit/收据保留。Validate PASS不得用于代替Review或APPROVED。
 - Verification：Win11/PG18.6 PASS、Evidence失效报告、恢复后原Key历史回放与新KeyPASS、零状态转换通过；后端2544/3跳过；wheel912项 SHA-256 `9a835fe53819d943e9fe6ce12d6ae13ae84984daccb7aad5e9151d38be6cb9e0`。
+
+# DEC-20261005-836：补齐 Review 已有 GLOBAL 数据合同而不伪造 Project
+
+- Date/WBS：2026-10-05 / `CAP-01-A04-A01`；依据冻结Architecture/DM-05/API-04、CR-CAP-001与CR-RVW-003。
+- Decision：保留Schema0034/0035已存在的GLOBAL/PROJECT双Scope模型，在Review内部持久DTO/仓储补齐显式Scope，并新增默认不挂HTTP的GLOBAL编排；现有PROJECT service/router保持兼容。Capability只能通过Subject Port锁定/验证/消费，不得直写Review表；GLOBAL权限、Reviewer资格、幂等和Audit使用部署事实，不伪造ProjectId。
+- Reason：当前数据库与只读仓储支持GLOBAL，但创建/开轮/决策及Subject DTO显式PROJECT-only，导致冻结CAP-01无法真实送审。系统项目、跨Owner SQL或复制评审表都会破坏Scope和单一状态机。
+- Impact/Rollback：A01仅文档；后续A02优先无Migration兼容泛化，A04可能增加Capability状态守卫。可停止装配GLOBAL编排关闭新流量，历史保留；既有PROJECT API不得改变。
+- Verification：静态核对Review application/infrastructure/ORM/Schema0034/0035、冻结GLOBAL Review与Capability Owner合同；标记`CAP_01_A04_A01_GLOBAL_REVIEW_PRECHECK_PASS`。Gate 3保持BLOCKED。

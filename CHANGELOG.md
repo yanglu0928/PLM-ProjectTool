@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/CAP-01-A04-A01 完成GLOBAL Review运行前置核查并登记CR-RVW-003：Schema/ORM/只读仓储已有双Scope，但创建/开轮/决策及Subject DTO误限PROJECT；选择补齐Review内部GLOBAL编排，既有PROJECT API保持不变，Capability仅经Subject Port消费。兼容性/升级/回滚：纯文档，无Schema/API/依赖/网络/客户数据变化，可停止后续实现并保留记录。验证：静态核对冻结Architecture/DM/API、Review Schema0034/0035和运行源码，标记`CAP_01_A04_A01_GLOBAL_REVIEW_PRECHECK_PASS`。已知问题：GLOBAL内核、Capability Subject/正式指针、HTTP/生产组合及Gate3/发行仍待。
+
 - 2026-10-05：0.1.0-dev.0/CAP-01-A03-P03 新增不改变状态的Capability Version Validate Owner：重验Document/Evidence当前事实，输出有限PASS/issue报告，以不可变AuditEvent+幂等收据固定首次观察并支持原Key精确回放；未新增结果表。兼容性/升级/回滚：无Migration/API/依赖/网络/客户数据变化，可停Owner且保留Audit/收据。验证：Win11/PG18.6 PASS、Evidence失效、恢复后历史回放/新Key重验及零状态转换通过；后端2544通过/3跳过、wheel912项 SHA-256 `9a835fe53819d943e9fe6ce12d6ae13ae84984daccb7aad5e9151d38be6cb9e0`。已知问题：Review/APPROVED、HTTP/前端/生产组合及Gate3/发行仍待。
 
 - 2026-10-05：0.1.0-dev.0/CAP-01-A03-P02 新增完整DRAFT BaselineVersion Owner和Schema0092最小ETag守卫：服务端重验Document/Evidence、计算来源/内容指纹，原子写Version/Item/固定引用、推进Baseline锁、Audit和收据，版本单调且自动supersedes。兼容性/升级/回滚：内部`0091 -> 0092`仅替换守卫，无API/依赖/网络/客户数据变化；无锁推进历史可降，有历史拒降。验证：Win11/PG18.6 migration/drift、v1～v3、并发/幂等/Audit回滚/撤权/拒降通过；后端2542通过/3跳过、wheel909项 SHA-256 `83393f6584968a94a1efe5a86f27f7813ca92b7c077d1e0a8fafc1438fb164bd`。已知问题：P03 Validate、Review/APPROVED/HTTP/前端/生产组合及Gate3/发行仍待。

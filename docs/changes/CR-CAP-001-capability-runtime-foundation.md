@@ -41,3 +41,4 @@
 - 2026-10-05 / `CAP-01-A03-P01`：A03按冻结三个独立Operation拆为P01 Baseline创建、P02完整Draft Version创建、P03 Validate报告；P01已实现DeploymentAdmin/License/幂等/Audit原子Owner，并经Document Port重验GLOBAL标准来源。无Schema/API/导入/正式状态变化，下一项P02。
 - 2026-10-05 / `CAP-01-A03-P02`：为冻结M控制新增Schema0092最小Baseline锁推进守卫，完整DRAFT Version/Item/Document/Evidence Owner已通过Win11/PG18.6验证；来源和内容摘要均服务端计算，无Review/APPROVED/API/导入。下一项P03 Validate报告。
 - 2026-10-05 / `CAP-01-A03-P03`：Validate Owner以不可变AuditEvent承载幂等历史报告，不新增冻结模型外结果表；当前PASS/失效、恢复后原Key回放与新Key重验通过。A03完成，下一项A04 Review/正式状态Owner。
+- 2026-10-05 / `CAP-01-A04-A01`：核查确认Review Schema/ORM/只读仓储已有GLOBAL合同，但写服务、持久DTO与Subject合同被实现为PROJECT-only；登记`CR-RVW-003`，按GLOBAL内核、Capability Subject Owner、终态正式化三项补齐，不伪造Project、不跨Owner写表、不改变既有PROJECT API。下一项A04-A02。
