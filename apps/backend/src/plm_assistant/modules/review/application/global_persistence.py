@@ -154,6 +154,11 @@ class GlobalReviewPersistenceService:
         if result != expected or type(result) is not SubmittedGlobalReviewRef:
             raise ReviewRoundPersistError()
         result.__post_init__()
+        finalizer = getattr(
+            self._subjects, "finalize_start_in_transaction", None,
+        )
+        if finalizer is not None and finalizer(tx, request) is not None:
+            raise ReviewRoundPersistError()
         if self._subjects.assert_active_lock_in_transaction(tx, request) is not None:
             raise ReviewRoundPersistError()
         self._audit.append(tx, AuditEventDraft(

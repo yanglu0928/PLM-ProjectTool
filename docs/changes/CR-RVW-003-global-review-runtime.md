@@ -45,3 +45,4 @@ GLOBAL Review 允许部署管理员组织评审，不代表管理员可单人绕
 ## 实施进度
 
 - 2026-10-05 / `CAP-01-A04-A02`：新增Review-owned GLOBAL submit/transition事务内核与仓储，双Scope Subject DTO按冻结合同开放；真实PG18.6完成两人APPROVED、WITHDRAWN、Audit、锁释放和Scope隔离，PROJECT回归不变。该内核仍要求受信caller提供认证/资格/License/幂等和真实Subject，未挂HTTP。下一项A04-A03。
+- 2026-10-05 / `CAP-01-A04-A03`：新增真实Capability Subject Owner及Schema0093送审绑定；送审原子进入IN_REVIEW并阻止替代Draft，终态重验当前Reviewer/来源后仍故意失败关闭。Win11/PG18.6、后端2557/3跳过及wheel定向通过。下一项A04-A04终态正式化。

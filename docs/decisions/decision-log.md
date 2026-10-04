@@ -8116,3 +8116,11 @@
 - Reason：直接泛化既有PROJECT命令会同时改权限、公开合同和结果DTO；在真实Capability Owner尚未接入时开放可提交命令又会形成无业务证明入口。受信内核先固定Review独占写入和同事务边界，A03再接真实Subject与外层权限。
 - Impact/Rollback：无Migration/API/依赖/网络/外发；不装配GLOBAL persistence即可关闭新调用，既有Review/Audit历史保留。Subject DTO增加GLOBAL合法形态但PROJECT规则不放宽。
 - Verification：Win11/PG18.6真实GLOBAL两人APPROVED与WITHDRAWN、6 Event/7 Audit/2锁释放/0 PROJECT污染；Review103、后端2551通过/3跳过；wheel Review103，SHA-256 `79345662fc3e278059db17f2e4917e04031b00226ec8dd2ec43408da6f92dbf7`。
+
+# DEC-20261005-838：Capability 送审使用显式后绑定阶段并在终态Owner前失败关闭
+
+- Date/WBS：2026-10-05 / `CAP-01-A04-A03`；依据CR-CAP-001、CR-RVW-003、DEC-837及Schema0092。
+- Decision：Review首轮与Capability Version外键不能互相预写，故在同一数据库事务内增加Review行落库后的Subject finalize阶段；Capability Owner只允许当前DeploymentAdmin把最新完整DRAFT精确绑定为IN_REVIEW，并要求全部Reviewer启用、GLOBAL Document/Evidence当前有效。Schema0093以延迟触发器复核Review/Round/Version完整绑定，并禁止同Baseline多个IN_REVIEW。终态消费在A04-A04前明确抛错并整笔回滚。
+- Reason：在Review创建前写外键会违反引用完整性；创建后不再调用Subject则可能留下已开Review但未锁版本。提前允许APPROVED或仅靠应用约定会绕过正式指针、旧版状态和退回/撤回规则。
+- Impact/Rollback：内部Schema`0092 -> 0093`替换守卫并追加索引/延迟校验，无公开API、依赖、网络或外发。无Review历史可降；有历史拒降并向前修复。既有PROJECT Review Subject没有后绑定需求时可保持原实现，持久内核兼容缺省/空finalize。
+- Verification：Win11/PG18.6完成错误Evidence全回滚、真实送审绑定、替代Draft拒绝、非终态决策、Reviewer撤权拒绝、终态失败关闭及历史拒降；定向28、后端2557/3跳过；wheel Review103+Capability21，SHA-256 `15f26b23db3391abfd959d04f31b1c59e6028aa7075c031a31a6a6a159f41c55`。

@@ -55,6 +55,9 @@ class BoundSyntheticOwner:
     def assert_active_lock_in_transaction(self, tx, request):
         return None
 
+    def finalize_start_in_transaction(self, tx, request):
+        return None
+
     def require_start_replay_access_in_transaction(self, **kwargs):
         return None
 
@@ -118,7 +121,7 @@ def main() -> None:
                 subject_id, version_id = uuid.uuid4(), uuid.uuid4()
                 with runtime.unit_of_work() as tx:
                     submitted = service.submit_in_transaction(
-                        tx, actor_id=submitter, subject_type="CAP-02",
+                        tx, actor_id=submitter, subject_type="CAP-01",
                         subject_id=subject_id,
                         subject_version_id=version_id,
                         reviewer_ids=(reviewer_one, reviewer_two),
@@ -149,7 +152,7 @@ def main() -> None:
 
                 with runtime.unit_of_work() as tx:
                     withdrawn = service.submit_in_transaction(
-                        tx, actor_id=submitter, subject_type="CAP-02",
+                        tx, actor_id=submitter, subject_type="CAP-01",
                         subject_id=subject_id,
                         subject_version_id=uuid.uuid4(),
                         reviewer_ids=(reviewer_one,),

@@ -29,13 +29,14 @@ class GlobalReviewPersistenceTests(unittest.TestCase):
         self.review, self.round, self.trace = uuid4(), uuid4(), uuid4()
         self.reviewer = uuid4()
         self.identity = ReviewIdentitySnapshot(
-            self.review, "GLOBAL", None, "CAP-02", self.subject,
+            self.review, "GLOBAL", None, "CAP-01", self.subject,
             "DEPLOYMENT_ALL_V1", "DRAFT", None, 0,
         )
         self.repository, self.audit = Mock(), Mock()
         self.subjects = Mock(spec=[
             "prepare_start_in_transaction",
             "assert_active_lock_in_transaction",
+            "finalize_start_in_transaction",
             "require_start_replay_access_in_transaction",
             "require_transition_access_in_transaction",
             "assert_transition_lock_in_transaction",
@@ -53,12 +54,13 @@ class GlobalReviewPersistenceTests(unittest.TestCase):
             )
         )
         self.subjects.assert_active_lock_in_transaction.return_value = None
+        self.subjects.finalize_start_in_transaction.return_value = None
         self.subjects.require_transition_access_in_transaction.return_value = None
         self.subjects.assert_transition_lock_in_transaction.return_value = None
         self.subjects.consume_terminal_in_transaction.return_value = None
         self.subjects.assert_terminal_consumed_in_transaction.return_value = None
         self.submitted = SubmittedGlobalReviewRef(
-            self.review, self.round, "CAP-02", self.subject, self.version,
+            self.review, self.round, "CAP-01", self.subject, self.version,
             "DEPLOYMENT_ALL_V1", (self.reviewer,), self.actor, self.now,
         )
         self.repository.insert_global_round.return_value = self.submitted
@@ -70,7 +72,7 @@ class GlobalReviewPersistenceTests(unittest.TestCase):
 
     def submit(self):
         return self.service.submit_in_transaction(
-            self.tx, actor_id=self.actor, subject_type="CAP-02",
+            self.tx, actor_id=self.actor, subject_type="CAP-01",
             subject_id=self.subject, subject_version_id=self.version,
             reviewer_ids=(self.reviewer,), policy_code="DEPLOYMENT_ALL_V1",
             trace_id=self.trace,
@@ -97,6 +99,7 @@ class GlobalReviewPersistenceTests(unittest.TestCase):
         self.assertEqual(request.review.scope, "GLOBAL")
         self.assertIsNone(request.review.project_id)
         self.assertEqual(self.subjects.assert_active_lock_in_transaction.call_count, 2)
+        self.subjects.finalize_start_in_transaction.assert_called_once()
         self.assertEqual(self.audit.append.call_count, 2)
         self.assertTrue(all(call.args[0] is self.tx
                             for call in self.audit.append.call_args_list))
@@ -107,7 +110,7 @@ class GlobalReviewPersistenceTests(unittest.TestCase):
                 repository=self.repository, audit=self.audit,
                 subjects=None, clock=lambda: self.now,
             ).submit_in_transaction(
-                self.tx, actor_id=self.actor, subject_type="CAP-02",
+                self.tx, actor_id=self.actor, subject_type="CAP-01",
                 subject_id=self.subject, subject_version_id=self.version,
                 reviewer_ids=(self.reviewer,),
                 policy_code="DEPLOYMENT_ALL_V1", trace_id=self.trace,

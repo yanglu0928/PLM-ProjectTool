@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/CAP-01-A04-A03 新增真实Capability Review Subject Owner与Schema0093：当前DeploymentAdmin/Reviewer及GLOBAL Document/Evidence重验，Review创建后同事务绑定Version为IN_REVIEW，阻止评审期替代Draft；终态在正式化Owner前失败关闭。兼容性/升级/回滚：内部`0092 -> 0093`替换守卫并追加唯一索引/延迟校验，无API/依赖/网络/外发；无Review历史可降，有历史拒降。验证：Win11/PG18.6送审/回滚/撤权/替代Draft栅栏/终态失败关闭及历史拒降通过，后端2557通过/3跳过，wheel Review103+Capability21，SHA-256 `15f26b23db3391abfd959d04f31b1c59e6028aa7075c031a31a6a6a159f41c55`。已知问题：A04-A04终态正式化、认证/License/幂等外层、HTTP/前端/生产组合及Gate3/发行仍待。
+
 - 2026-10-05：0.1.0-dev.0/CAP-01-A04-A02 新增Review GLOBAL受信caller同事务内核：GLOBAL创建/首轮、决策/撤回、Subject双锁复核与终态消费、DEPLOYMENT Audit；既有PROJECT命令/API不变且HTTP未挂载。兼容性/升级/回滚：无Migration/API/依赖/网络/客户数据变化，可停止装配关闭新GLOBAL调用并保留历史。验证：Win11/PG18.6两人APPROVED、WITHDRAWN、6 Event/7 Audit/2锁释放/0 PROJECT污染，Review103、后端2551通过/3跳过，wheel SHA-256 `79345662fc3e278059db17f2e4917e04031b00226ec8dd2ec43408da6f92dbf7`。已知问题：真实Capability Subject、认证/资格/幂等外层、正式指针、HTTP/生产组合及Gate3/发行仍待。
 
 - 2026-10-05：0.1.0-dev.0/CAP-01-A04-A01 完成GLOBAL Review运行前置核查并登记CR-RVW-003：Schema/ORM/只读仓储已有双Scope，但创建/开轮/决策及Subject DTO误限PROJECT；选择补齐Review内部GLOBAL编排，既有PROJECT API保持不变，Capability仅经Subject Port消费。兼容性/升级/回滚：纯文档，无Schema/API/依赖/网络/客户数据变化，可停止后续实现并保留记录。验证：静态核对冻结Architecture/DM/API、Review Schema0034/0035和运行源码，标记`CAP_01_A04_A01_GLOBAL_REVIEW_PRECHECK_PASS`。已知问题：GLOBAL内核、Capability Subject/正式指针、HTTP/生产组合及Gate3/发行仍待。

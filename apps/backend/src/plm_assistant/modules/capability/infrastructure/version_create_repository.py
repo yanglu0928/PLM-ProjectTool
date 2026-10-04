@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import insert, select, text, update
+from sqlalchemy import exists, insert, select, text, update
 
 from plm_assistant.modules.capability.application.create_version import (
     CapabilityBaselineLock, CapabilityItemDraft,
@@ -65,6 +65,10 @@ class SqlAlchemyCapabilityVersionCreateRepository:
             CapabilityBaselineRow.source_collection_ref == baseline.source_collection_ref,
             CapabilityBaselineRow.current_approved_version_ref.is_(None),
             CapabilityBaselineRow.lock_version == baseline.lock_version,
+            ~exists(select(1).where(
+                CapabilityBaselineVersionRow.baseline_id == baseline.baseline_id,
+                CapabilityBaselineVersionRow.version_state == "IN_REVIEW",
+            )),
         ).values(
             updated_by=actor_id, updated_at=text("statement_timestamp()"),
             lock_version=CapabilityBaselineRow.lock_version + 1,

@@ -100,6 +100,13 @@ class ReviewSubjectStartPort(Protocol):
     """
     def prepare_start_in_transaction(self, tx: object, request: ReviewSubjectStartRequest) -> PreparedReviewSubject: ...
     def assert_active_lock_in_transaction(self, tx: object, request: ReviewSubjectStartRequest) -> None: ...
+    def finalize_start_in_transaction(self, tx: object, request: ReviewSubjectStartRequest) -> None:
+        """Bind the Subject version after Review rows exist, before final proof.
+
+        This explicit phase is required when the Subject stores foreign keys to
+        the newly inserted Review/round. It must not commit or write Review data.
+        """
+        ...
     def require_start_replay_access_in_transaction(self, tx: object, *, actor_id: UUID,
                                                    review: ReviewIdentitySnapshot, round_ref: object) -> None:
         """Recheck CURRENT access to fixed historical version, not edit eligibility.

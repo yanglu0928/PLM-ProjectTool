@@ -40,6 +40,7 @@ class ReviewStartTests(unittest.TestCase):
         self.repo.is_retryable_deadlock.side_effect=SqlAlchemyReviewStartRepository.is_retryable_deadlock
         self.owner.prepare_start_in_transaction.side_effect=lambda tx,r:PreparedReviewSubject(r,b"s"*32,1,self.now,r.reviewer_ids,())
         self.owner.assert_active_lock_in_transaction.return_value=None
+        self.owner.finalize_start_in_transaction.return_value=None
         self.owner.require_start_replay_access_in_transaction.return_value=None
         self.result=StartedReviewRoundRef(self.round,self.review,self.project,1,self.cmd.subject_version_id,self.actor,self.now)
         self.repo.insert_round.return_value=self.result

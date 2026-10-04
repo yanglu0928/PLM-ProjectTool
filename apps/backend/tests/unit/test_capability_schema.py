@@ -86,6 +86,28 @@ class CapabilityFoundationSchemaTests(unittest.TestCase):
         self.assertIn("Capability history prevents downgrade",
                       inspect.getsource(migration.downgrade))
 
+    def test_review_start_delta_is_narrow_and_history_safe(self) -> None:
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions.20261005_0093_capability_review_start"
+        )
+        self.assertEqual(migration.down_revision, "20261005_0092")
+        for required in (
+            "OLD.version_state<>'DRAFT'",
+            "NEW.version_state<>'IN_REVIEW'",
+            "Capability Review binding is incomplete or mismatched",
+            "review_row.subject_type<>'CAP-01'",
+        ):
+            self.assertIn(required, migration._REVIEW_START_GUARD
+                          + migration._REVIEW_BINDING)
+        index = next(
+            item for item in CapabilityBaselineVersionRow.__table__.indexes
+            if item.name == "uq_cap_versions__baseline_in_review"
+        )
+        self.assertTrue(index.unique)
+        with patch.object(migration.context, "is_offline_mode", return_value=True):
+            with self.assertRaisesRegex(RuntimeError, "offline Capability Review"):
+                migration.downgrade()
+
 
 if __name__ == "__main__":
     unittest.main()

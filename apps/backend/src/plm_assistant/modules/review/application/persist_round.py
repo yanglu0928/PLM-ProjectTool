@@ -75,6 +75,11 @@ class ReviewRoundPersistenceService:
                 or result.started_at != now):
             raise ReviewRoundPersistError()
         result.__post_init__()
+        finalizer = getattr(
+            self._subjects, "finalize_start_in_transaction", None,
+        )
+        if finalizer is not None and finalizer(tx, request) is not None:
+            raise ReviewRoundPersistError()
         if self._subjects.assert_active_lock_in_transaction(tx, request) is not None:
             raise ReviewRoundPersistError()
         self._audit.append(tx, AuditEventDraft(trace_id=trace_id, event_scope="PROJECT", target_project_id=project_id,

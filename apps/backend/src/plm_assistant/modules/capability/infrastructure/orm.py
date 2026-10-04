@@ -130,6 +130,10 @@ class CapabilityBaselineVersionRow(Base):
             name="ck_cap_versions__review_shape",
         ),
         Index("ix_cap_versions__baseline_created", "baseline_id", "created_at"),
+        Index(
+            "uq_cap_versions__baseline_in_review", "baseline_id", unique=True,
+            postgresql_where=text("version_state='IN_REVIEW'"),
+        ),
         {"schema": "plm"},
     )
 

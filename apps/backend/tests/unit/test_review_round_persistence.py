@@ -17,6 +17,7 @@ class RoundPersistenceTests(unittest.TestCase):
         self.repo.lock_start_context.return_value = self.root, self.round
         self.owner.prepare_start_in_transaction.side_effect = lambda tx, r: PreparedReviewSubject(r, b"s"*32, 1, self.now, r.reviewer_ids, ())
         self.owner.assert_active_lock_in_transaction.return_value = None
+        self.owner.finalize_start_in_transaction.return_value = None
         self.result = StartedReviewRoundRef(self.round, self.root.review_id, self.root.project_id, 1, self.version, self.actor, self.now)
         self.repo.insert_round.return_value = self.result
         self.params = dict(actor_id=self.actor, project_id=self.root.project_id, review_id=self.root.review_id,
@@ -29,7 +30,8 @@ class RoundPersistenceTests(unittest.TestCase):
         self.assertEqual(self.call(), self.result)
         self.assertEqual(self.owner.assert_active_lock_in_transaction.call_count, 2)
         self.tx.commit.assert_not_called()
-        for method in (self.owner.prepare_start_in_transaction, self.owner.assert_active_lock_in_transaction, self.repo.insert_round, self.audit.append):
+        self.owner.finalize_start_in_transaction.assert_called_once_with(self.tx, self.owner.prepare_start_in_transaction.call_args.args[1])
+        for method in (self.owner.prepare_start_in_transaction, self.owner.assert_active_lock_in_transaction, self.owner.finalize_start_in_transaction, self.repo.insert_round, self.audit.append):
             self.assertTrue(all(c.args[0] is self.tx for c in method.call_args_list))
         self.assertEqual(self.audit.append.call_args.args[1].action, "REVIEW_STARTED")
 
