@@ -7748,3 +7748,11 @@
 - Reason：Python端当前无vector类型适配，且模型维度可能变化；为任意维度动态DDL会扩大Runtime权限，缺少发送栅栏则崩溃恢复可能重复计费/外发。只开放实证维度并保持PLANNED失败关闭，可以在不虚报质量的前提下逐步落地。
 - Impact/Rollback：A01仅文档；A02将新增内部Schema0078、`pgvector==0.5.0`和768/1024 HNSW，不改公共API。空表可降，有向量/构建历史拒绝物理降级并保留审计。MIT第三方Notice复核前发行阻塞不解除。
 - Verification：静态核对pyproject、生产Adapter/Worker、Schema0077状态守卫、PoC 768/1024证据及既有Egress INDEX_BUILD/REBUILD；确认当前不存在可发送或可写向量路径，Gate3保持开放。
+
+# DEC-20261004-792：EmbeddingRecord 先落物理完整性且在 Build Owner 前保持不可写
+
+- Date/WBS：2026-10-04 / `RAG-03-A02`；依据 `CR-RAG-003`、DEC-791。
+- Decision：Schema0078以无界vector列配合768/1024维检查和两个Migration预建cosine HNSW，复合外键固定Index/Model/Dimension及精确Chunk/正文指纹，Egress Authorization非空；记录只接受AVAILABLE且要求Index为BUILDING。Schema0077继续拒绝状态更新，A02因此没有半实现写路径。
+- Reason：先开放Index状态会让未经唯一Owner、批次授权和发送栅栏的代码写入向量；按物理层先行可验证类型、FK、维度和查询索引，同时把运行权限留给A03。无界列避免每种维度复制表，受控表达式索引避免Runtime DDL。
+- Impact/Rollback：新增内部Schema0078与`pgvector==0.5.0`，无公共API/真实外发。空表可降0077；有记录拒降并保留历史。Python包MIT归属已记录，但最终Notice审阅前不解除发行阻塞。
+- Verification：Win11/PG18.6标记`RAG_03_A02_EMBEDDING_RECORD_SCHEMA_PASS`；定向20、后端2362/3跳过；wheel隔离定向20，SHA-256 `6adfdd88423491bb4d44c4f95992e14602efc11e5455feb26acbc003fa5ab5ba`。HNSW 768/1024目录与执行计划命中，零真实Provider I/O和客户数据。

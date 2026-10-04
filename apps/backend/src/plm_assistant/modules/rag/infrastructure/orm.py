@@ -19,6 +19,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP, TSVECTOR, UUID
 from sqlalchemy.orm import Mapped, mapped_column
+from pgvector.sqlalchemy import Vector
 
 from plm_assistant.modules.platform.infrastructure.orm import Base
 
@@ -160,6 +161,10 @@ class EmbeddingIndexRow(Base):
             name="uq_rag_indexes__purpose_version",
             postgresql_nulls_not_distinct=True,
         ),
+        UniqueConstraint(
+            "embedding_index_id", "embedding_model_ref", "embedding_dimension",
+            name="uq_rag_indexes__id_model_dimension",
+        ),
         CheckConstraint(
             "(scope='GLOBAL' AND project_id IS NULL) OR "
             "(scope='PROJECT' AND project_id IS NOT NULL)",
@@ -254,6 +259,10 @@ class IndexSourceChunkRow(Base):
             "embedding_index_id", "chunk_id",
             name="uq_rag_index_sources__chunk",
         ),
+        UniqueConstraint(
+            "embedding_index_id", "chunk_id", "chunk_text_fingerprint",
+            name="uq_rag_index_sources__chunk_fingerprint",
+        ),
         CheckConstraint(
             "(scope='GLOBAL' AND project_id IS NULL) OR "
             "(scope='PROJECT' AND project_id IS NOT NULL)",
@@ -279,6 +288,114 @@ class IndexSourceChunkRow(Base):
     scope: Mapped[str] = mapped_column(Text, nullable=False)
     project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     chunk_text_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    created_xid: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("txid_current()"),
+    )
+
+
+class EmbeddingRecordRow(Base):
+    """An immutable successful vector bound to one exact Index source Chunk."""
+
+    __tablename__ = "rag_embedding_records"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["project_id"], ["plm.prj_projects.project_id"],
+            name="fk_rag_embeddings__project", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["embedding_index_id", "embedding_model_ref", "embedding_dimension"],
+            ["plm.rag_embedding_indexes.embedding_index_id",
+             "plm.rag_embedding_indexes.embedding_model_ref",
+             "plm.rag_embedding_indexes.embedding_dimension"],
+            name="fk_rag_embeddings__index_model_dimension", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["embedding_index_id", "chunk_id", "chunk_text_fingerprint"],
+            ["plm.rag_index_source_chunks.embedding_index_id",
+             "plm.rag_index_source_chunks.chunk_id",
+             "plm.rag_index_source_chunks.chunk_text_fingerprint"],
+            name="fk_rag_embeddings__source_chunk", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["egress_authorization_ref"],
+            ["plm.ai_egress_authorizations.authorization_id"],
+            name="fk_rag_embeddings__egress_authorization", ondelete="NO ACTION",
+        ),
+        CheckConstraint(
+            "(scope='GLOBAL' AND project_id IS NULL) OR "
+            "(scope='PROJECT' AND project_id IS NOT NULL)",
+            name="ck_rag_embeddings__scope_project",
+        ),
+        CheckConstraint(
+            "embedding_dimension IN (768,1024) "
+            "AND vector_dims(embedding_vector)=embedding_dimension",
+            name="ck_rag_embeddings__dimension",
+        ),
+        CheckConstraint(
+            "octet_length(chunk_text_fingerprint)=32 "
+            "AND octet_length(vector_fingerprint)=32",
+            name="ck_rag_embeddings__fingerprints",
+        ),
+        CheckConstraint(
+            "embedding_state IN ('AVAILABLE','FAILED','REVOKED') "
+            "AND (provider_request_ref IS NULL OR "
+            "(char_length(provider_request_ref) BETWEEN 1 AND 255 "
+            "AND provider_request_ref !~ '[\\r\\n]')) "
+            "AND created_xid>0 AND isfinite(created_at)",
+            name="ck_rag_embeddings__state",
+        ),
+        Index(
+            "uq_rag_embeddings__index_chunk_available",
+            "embedding_index_id", "chunk_id", unique=True,
+            postgresql_where=text("embedding_state='AVAILABLE'"),
+        ),
+        Index(
+            "ix_rag_embeddings__project_index", "project_id",
+            "embedding_index_id", "embedding_record_id",
+        ),
+        Index(
+            "ix_rag_embeddings__v768_hnsw",
+            text("(embedding_vector::vector(768)) vector_cosine_ops"),
+            postgresql_using="hnsw",
+            postgresql_with={"m": 32, "ef_construction": 200},
+            postgresql_where=text(
+                "embedding_state='AVAILABLE' AND embedding_dimension=768"
+            ),
+        ),
+        Index(
+            "ix_rag_embeddings__v1024_hnsw",
+            text("(embedding_vector::vector(1024)) vector_cosine_ops"),
+            postgresql_using="hnsw",
+            postgresql_with={"m": 32, "ef_construction": 200},
+            postgresql_where=text(
+                "embedding_state='AVAILABLE' AND embedding_dimension=1024"
+            ),
+        ),
+    )
+
+    embedding_record_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"),
+    )
+    scope: Mapped[str] = mapped_column(Text, nullable=False)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    embedding_index_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    chunk_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    embedding_model_ref: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    embedding_dimension: Mapped[int] = mapped_column(Integer, nullable=False)
+    chunk_text_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    embedding_vector: Mapped[list[float]] = mapped_column(Vector(), nullable=False)
+    vector_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    embedding_state: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'AVAILABLE'"),
+    )
+    provider_request_ref: Mapped[str | None] = mapped_column(Text)
+    egress_authorization_ref: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), nullable=False,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
     created_xid: Mapped[int] = mapped_column(
         BigInteger, nullable=False, server_default=text("txid_current()"),
     )

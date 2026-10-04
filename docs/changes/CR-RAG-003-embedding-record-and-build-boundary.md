@@ -1,6 +1,6 @@
 # CR-RAG-003：EmbeddingRecord、受控 HNSW 与构建发送边界
 
-日期：2026-10-04；状态：`APPROVED_FOR_IMPLEMENTATION_BY_STANDING_AUTHORIZATION`；WBS：`RAG-03-A01～A05`。关联 Gate 2 冻结 ADR-004、DM-04、SC-02～04、API-03，以及 CR-RAG-002/Schema0077；原冻结提交 `64cdf09` 不改。
+日期：2026-10-04；状态：`A02_IMPLEMENTED_AND_WINDOWS11_PG18_VERIFIED`；WBS：`RAG-03-A01～A05`。关联 Gate 2 冻结 ADR-004、DM-04、SC-02～04、API-03，以及 CR-RAG-002/Schema0077；原冻结提交 `64cdf09` 不改。
 
 ## 差异与实施方案
 
@@ -30,3 +30,9 @@ Schema0078 在 Windows 11/PostgreSQL 18.6 完成空库与已有 Index 升/降/�
 ## A01 核查结论
 
 现有 `pyproject.toml` 未包含 Python `pgvector`，生产 AI Adapter 只实现 Chat 类调用，Schema0077 又故意封闭全部状态更新，因此当前没有隐式可执行的 Embedding 路径。PyPI 的 `pgvector` 0.5.0 支持 Python 3.10+、SQLAlchemy 与 Psycopg，满足 Python 3.13 技术栈；PoC 已使用 768 与 1024 维模型。A02 先落 EmbeddingRecord/HNSW 数据边界，且在 Build Owner 落地前保持零可写路径，不把 Schema PASS 描述为构建或质量 PASS。
+
+## A02 实施与结果
+
+Schema0078 已加入 `rag_embedding_records`、Index/模型/维度和精确 source Chunk/正文指纹复合外键、外发授权引用、向量/来源 SHA-256、不可变/保留守卫，以及 768/1024 两个 cosine HNSW 表达式索引。`pgvector==0.5.0` 已进入正式依赖；Index 仍由 Schema0077 锁定为 PLANNED，因此数据库守卫要求 BUILDING 的 EmbeddingRecord 当前没有可写生产路径。
+
+Windows 11/PostgreSQL18.6 完成空库升降重升、已有 Index 升级、ORM drift、PLANNED 写关闭、768/1024 HNSW 物理执行计划、维度负例、不可改写/删除/截断和有数据拒降；标记 `RAG_03_A02_EMBEDDING_RECORD_SCHEMA_PASS`。源码后端全量2362项通过、3项既有条件跳过；wheel 隔离导入与20项本次Schema/迁移合同通过，SHA-256 `6adfdd88423491bb4d44c4f95992e14602efc11e5455feb26acbc003fa5ab5ba`。无真实 Provider I/O、Secret 或客户数据外发；Build/批次/READY/激活仍待A03～A05。

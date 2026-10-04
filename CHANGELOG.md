@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-04：0.1.0-dev.0/RAG-03-A02 新增EmbeddingRecord/受控HNSW Schema0078和`pgvector==0.5.0`：复合外键固定Index/Model/Dimension与精确Chunk/正文指纹，Egress Authorization非空，vector维度仅768/1024并由Migration预建cosine HNSW；Index仍锁定PLANNED，Build Owner前向量不可写。兼容性/升级/回滚：内部Schema/依赖增量，无API/真实外发；空表可降0077，有记录拒降；MIT Notice待最终复核。验证：Win11/PG18.6迁移、drift、HNSW计划及负例通过，后端2362/跳过3，wheel隔离定向20。已知问题：Build/批次/Adapter/READY/激活、三平台、性能、Gate3/UAT/正式发行包待完成。
+
 - 2026-10-04：0.1.0-dev.0/RAG-03-A01 完成EmbeddingRecord/Build编码前核查并登记CR-RAG-003：锁定Python pgvector类型依赖方向、逻辑vector复合约束、仅768/1024预建HNSW、唯一Build Owner/generation/批次与网络前RUNNING栅栏；未知维度和未知网络结果均失败关闭。兼容性/升级/回滚：纯文档，无Schema/API/依赖/外发变化；A02规划空表可降、有历史拒降。验证：静态核对依赖、Adapter/Worker、Schema0077守卫、PoC维度与Egress类型。已知问题：A02～A05、API、性能、三平台、Gate3/UAT/发行包待完成。
 
 - 2026-10-04：0.1.0-dev.0/RAG-02-A02 新增EmbeddingIndex/精确Chunk快照Schema0077：同事务封存模型/维度、Scope/Project、purpose/version、profile与有序Chunk集合，提交时复算count/ordinal/SHA-256；成员不可变，Build Owner未安装前只允许PLANNED。兼容性/升级/回滚：内部新增表，无API/依赖/外发；空表可降0076，有历史拒降。验证：Win11/PG18.6空/历史库迁移、drift及全套负例通过，定向14、后端2356/跳过3、wheel828项。已知问题：Embedding/HNSW/Build/激活/API、三平台、性能、Gate3/UAT/发行包待完成。
