@@ -1,6 +1,6 @@
 # CR-RAG-004：RetrievalRun、加密查询内容与最小 Context 边界
 
-日期：2026-10-04；状态：`A05_P01_RETRIEVAL_TERMINAL_SCHEMA_PASS`；WBS：`RAG-04-A01～A06`。关联 Gate 2 冻结 ADR-004/009、DM-04、SC-01～04、API-03，以及 Schema0087/CR-RAG-001～003；原冻结提交 `64cdf09` 不改。
+日期：2026-10-04；状态：`A05_P02_RETRIEVAL_WORKER_CONTEXT_PASS`；WBS：`RAG-04-A01～A06`。关联 Gate 2 冻结 ADR-004/009、DM-04、SC-01～04、API-03，以及 Schema0087/CR-RAG-001～003；原冻结提交 `64cdf09` 不改。
 
 ## 差异与实施方案
 
@@ -85,3 +85,11 @@ GLOBAL/vector/exact query embedding/rerank必须使用新策略版本并先完�
 Schema0089把Retrieval成功、正常失败和租约过期统一收敛为提交期原子边界。成功必须在同一事务内完成同generation的Job/Attempt/Lease/Run，并写入1..Top-K个Candidate、每候选恰好两条FTS/FINAL ScorePart、唯一`project-documents.v1` ContextBundle及与候选完整同序的ContextItem；不足只允许`CANDIDATE_SHORTFALL`。失败只允许固定错误码，要求终态同步且结果集为零。RUNNING Run不能提交结果行，所有结果还必须由当前终态事务创建，关闭半快照和旧generation补写。
 
 Windows11/PostgreSQL18.6完成0088已有库升级、drift、空历史降级重升、完整成功、零候选失败、过期generation失败、Candidate单独提交拒绝、缺Context成功拒绝及终态历史拒降。相关32、后端2490/跳过3、wheel RAG117通过，SHA-256 `9c34322accd117ea004fd4d26eaa0ff5643f4541797de56babb6b28041a0bde1`。无公开API/依赖/网络/外发；合成ACTIVE不作业务质量证据。进入A05-P02发布Owner、单次Worker与AI `RAG_CONTEXT`受权读取。
+
+## A05-P02 实施与结果
+
+新增成功/已知失败/过期发布Owner与一次性Worker：当前Actor/License/Lease/Run/ACTIVE Index及来源重验通过后受控解密，执行参数化PROJECT FTS和稳定合并，再在同一事务提交Job/Attempt/Lease/Run、完整结果和SYSTEM Audit。提交结果不确定时只进入`RECONCILIATION_PENDING`，不自动重放。过期generation由专属Reconciler关闭且不重领。
+
+新增AI `RAG_CONTEXT`读取Owner与策略注册边界：只按精确Run/Bundle读取，在当前`AI_TASK_EXECUTE`授权和License双检查之间锁定并复核完整最小Context来源、顺序、locator、snippet/token/bundle fingerprint；调用方不能自行注入RAG正文。实施中修正零分FTS候选与Schema0089正分约束不兼容的偏差：非正分在merge前过滤，全零集合固定失败且不创建结果。
+
+Windows11/PostgreSQL18.6真实事务完成成功Worker/Audit/Context读取、撤权关闭、零候选失败、过期对账及失败零结果；RAG125、AI定向8、后端2498/跳过3、wheel隔离RAG125+AI8通过，SHA-256 `71116eb41d492a683bc85372d01dbc9784366eb298f700c729b9adc4772cbbdd`。无Migration/公开API/依赖/网络/外发；合成ACTIVE不作业务质量证据。进入A06-P01 HTTP/权限/组合前置核查。

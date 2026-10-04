@@ -42,6 +42,13 @@ class _ReadOwner(Protocol):
     ) -> AIExecutionContentProjection: ...
 
 
+class _ContextReadOwner(Protocol):
+    def read_exact(
+        self, transaction: object, query: AIExecutionContentReadQuery,
+        context: object,
+    ) -> str: ...
+
+
 def _safe_node_id(value: object) -> bool:
     if (type(value) is not str or not value or len(value) > 256
             or value != value.strip()
@@ -140,13 +147,19 @@ class AITaskInvocationPrepareService:
         prompts: AIExecutionPromptTaskContentOwner,
         source_owners: Mapping[str, AIExecutionContentReadOwnerPort],
         envelopes: AIExecutionEnvelopeBuilder,
+        context_owners: Mapping[str, _ContextReadOwner] | None = None,
     ) -> None:
         if (any(value is None for value in (
                 unit_of_work, grants, plans, prompts, envelopes))
                 or not isinstance(source_owners, Mapping) or not source_owners
                 or any(type(key) is not str or not key or owner is None
                        or not callable(getattr(owner, "read_exact", None))
-                       for key, owner in source_owners.items())):
+                       for key, owner in source_owners.items())
+                or context_owners is not None and (
+                    not isinstance(context_owners, Mapping)
+                    or any(type(key) is not str or not key or owner is None
+                           or not callable(getattr(owner, "read_exact", None))
+                           for key, owner in context_owners.items()))):
             raise ValueError("AI Task Invocation prepare dependencies required")
         self._uow = unit_of_work
         self._grants = grants
@@ -154,6 +167,9 @@ class AITaskInvocationPrepareService:
         self._prompts = prompts
         self._sources: dict[str, _ReadOwner] = dict(source_owners)
         self._envelopes = envelopes
+        self._contexts: dict[str, _ContextReadOwner] = dict(
+            context_owners or {},
+        )
 
     def prepare(self, *, job_id: uuid.UUID, fencing_token: int,
                 worker_ref: str, now: datetime) -> PreparedAITaskInvocation:
@@ -188,8 +204,19 @@ class AITaskInvocationPrepareService:
                         raise AITaskInvocationPrepareError()
                     projected.append(owner.read_exact(transaction, query, source))
                 exact_sources = tuple(projected)
+                context_text = None
+                if plan.context.mode == "RAG_CONTEXT":
+                    context_owner = self._contexts.get(
+                        plan.context.context_policy_ref,
+                    )
+                    if context_owner is None:
+                        raise AITaskInvocationPrepareError()
+                    context_text = context_owner.read_exact(
+                        transaction, query, plan.context,
+                    )
                 envelope = self._envelopes.build(
                     plan=plan, sources=exact_sources, prompt_content=prompt,
+                    context_text=context_text,
                 )
                 proof = require_envelope_for_grant(
                     grant, plan, envelope, now=now,

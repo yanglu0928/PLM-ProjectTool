@@ -164,22 +164,33 @@ class AIExecutionTokenEstimatorRegistry:
 
 
 class AIExecutionContextPolicyRegistry:
-    """Current explicit context boundary; RAG remains closed until its Owner exists."""
+    """Accept only registered NONE policies or Owner-supplied RAG Context."""
 
-    def __init__(self, no_retrieval_policy_refs: frozenset[str]) -> None:
+    def __init__(self, no_retrieval_policy_refs: frozenset[str],
+                 rag_context_policy_refs: frozenset[str] = frozenset()) -> None:
         if (type(no_retrieval_policy_refs) is not frozenset
                 or not no_retrieval_policy_refs
                 or any(type(value) is not str or _REF.fullmatch(value) is None
-                       for value in no_retrieval_policy_refs)):
-            raise ValueError("explicit no-retrieval policies required")
+                       for value in no_retrieval_policy_refs)
+                or type(rag_context_policy_refs) is not frozenset
+                or any(type(value) is not str or _REF.fullmatch(value) is None
+                       for value in rag_context_policy_refs)
+                or no_retrieval_policy_refs & rag_context_policy_refs):
+            raise ValueError("explicit disjoint Context policies required")
         self._no_retrieval = no_retrieval_policy_refs
+        self._rag_context = rag_context_policy_refs
 
-    def resolve(self, plan: AIExecutionContentPlan) -> str | None:
+    def resolve(self, plan: AIExecutionContentPlan, *,
+                owner_context_text: str | None = None) -> str | None:
         if (plan.context.mode == "NONE"
-                and plan.context.context_policy_ref in self._no_retrieval):
+                and plan.context.context_policy_ref in self._no_retrieval
+                and owner_context_text is None):
             return None
-        # RAG_CONTEXT is deliberately not accepted from caller-supplied text.
-        # It needs a future immutable RetrievalRun/ContextBundle Owner.
+        if (plan.context.mode == "RAG_CONTEXT"
+                and plan.context.context_policy_ref in self._rag_context
+                and type(owner_context_text) is str
+                and owner_context_text.strip()):
+            return owner_context_text
         raise AIExecutionEnvelopeError(
             "AI_EXECUTION_CONTEXT_POLICY_UNSUPPORTED")
 
@@ -256,6 +267,7 @@ class AIExecutionEnvelopeBuilder:
         self, *, plan: AIExecutionContentPlan,
         sources: tuple[AIExecutionContentProjection, ...],
         prompt_content: AIExecutionPromptTaskContent | AIExecutionPromptPlanningContent,
+        context_text: str | None = None,
     ) -> AIExecutionEnvelope:
         if (type(plan) is not AIExecutionContentPlan
                 or type(sources) is not tuple
@@ -297,7 +309,9 @@ class AIExecutionEnvelopeBuilder:
             "schema_version": "ai-input-bundle.v1",
             "sources": projected,
         }).decode("utf-8")
-        context_text = self._contexts.resolve(plan)
+        context_text = self._contexts.resolve(
+            plan, owner_context_text=context_text,
+        )
         try:
             rendered = self._renderer.render(
                 plan, prompt_content, input_text=input_bundle,

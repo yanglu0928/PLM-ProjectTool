@@ -158,7 +158,7 @@ class AIExecutionEnvelopeTests(unittest.TestCase):
                 prompt_content=self.prompt_content,
             )
 
-    def test_rag_and_unknown_none_context_policies_fail_closed(self):
+    def test_rag_requires_registered_policy_and_owner_text(self):
         rag_plan = replace(
             self.plan, context=AIExecutionContextIdentity(
                 "project-documents.v1", "RAG_CONTEXT", uuid.uuid4(),
@@ -175,6 +175,32 @@ class AIExecutionEnvelopeTests(unittest.TestCase):
                     "AI_EXECUTION_CONTEXT_POLICY_UNSUPPORTED"):
                 self.builder.build(
                     plan=plan, sources=(self.projection,), prompt_content=content)
+        rag_builder = AIExecutionEnvelopeBuilder(
+            renderer=StrictAIExecutionPromptRenderer(),
+            context_policies=AIExecutionContextPolicyRegistry(
+                frozenset({"no-retrieval.v1"}),
+                frozenset({"project-documents.v1"}),
+            ),
+            token_estimators=AIExecutionTokenEstimatorRegistry((
+                Utf8ByteUpperBoundTokenEstimator(),)),
+        )
+        with self.assertRaisesRegex(
+                AIExecutionEnvelopeError,
+                "AI_EXECUTION_CONTEXT_POLICY_UNSUPPORTED"):
+            rag_builder.build(
+                plan=rag_plan, sources=(self.projection,),
+                prompt_content=rag_content,
+            )
+        envelope = rag_builder.build(
+            plan=rag_plan, sources=(self.projection,),
+            prompt_content=rag_content,
+            context_text='{"schema_version":"rag-context-minimum-text.v1"}',
+        )
+        self.assertEqual(
+            envelope.context_bundle_fingerprint,
+            rag_plan.context.context_bundle_fingerprint,
+        )
+        self.assertIn("rag-context-minimum-text.v1", envelope.canonical_bytes.decode())
 
     def test_unknown_or_inconsistent_estimator_fails_closed(self):
         unknown = replace(

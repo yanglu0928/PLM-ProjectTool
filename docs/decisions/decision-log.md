@@ -7980,3 +7980,11 @@
 - Reason：应用层先写候选再终结Run、或先完成Job再补Context，都会暴露半快照并允许旧Worker补写；只校验最终计数不能证明结果来自同一generation和事务。
 - Impact/Rollback：新增内部Schema0089/ORM约束，无公开API、依赖、网络或外发。无终态/结果历史可降0088；已有历史拒降并向前修复。可停止Worker关闭新终态，但不得删除不可变历史。
 - Verification：Win11/PG18.6升级/drift/空历史升降重升、完整成功、零候选失败、租约过期、半Candidate和缺Context回滚、终态拒降通过；相关32、后端2490/3跳过、wheel RAG117，SHA-256 `9c34322accd117ea004fd4d26eaa0ff5643f4541797de56babb6b28041a0bde1`。合成ACTIVE不作业务质量证据。
+
+# DEC-20261004-821：Retrieval 单次执行、终态发布与 AI Context 读取按 Owner 隔离
+
+- Date/WBS：2026-10-04 / `RAG-04-A05-P02`；依据CR-RAG-004、DEC-814～820及Schema0089。
+- Decision：一次性Worker只编排当前claim、受权准备、PROJECT FTS、稳定merge与原子发布；已知失败/过期各由专属Owner收敛，提交不确定不重放。AI只可通过登记的RAG context policy和Owner按精确Run/Bundle读取最小文本，并在读取前后重验当前`AI_TASK_EXECUTE`权限与License。非正FTS分数在merge边界删除，全零统一为零候选失败。
+- Reason：Worker直接跨事务写结果或自行重放不确定提交会产生半快照/重复执行；让AI调用方注入任意context正文会绕过Project隔离与当前授权。零分候选不能满足Schema0089正分约束，应在稳定计划中转成可审计业务失败而非数据库内部错误。
+- Impact/Rollback：无Migration、公开API、依赖、网络或外发变化；现有NONE policy兼容。可停Worker并撤RAG policy/Owner组合，已提交Run/结果/Audit保留，未知终态必须先对账。冻结API接线留A06。
+- Verification：Win11/PG18.6成功Worker/Audit/Context、撤权拒绝、零候选失败、过期对账与失败零结果通过；RAG125、AI定向8、后端2498/3跳过、wheel隔离RAG125+AI8，SHA-256 `71116eb41d492a683bc85372d01dbc9784366eb298f700c729b9adc4772cbbdd`；零真实Provider I/O。

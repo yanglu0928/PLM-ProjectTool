@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-04：0.1.0-dev.0/RAG-04-A05-P02 新增Retrieval成功/已知失败/过期原子发布Owner、一次性Worker与AI `RAG_CONTEXT`最小受权读取；当前Actor/License/Index/来源重验后才解密，结果/终态/Audit同事务，不确定提交不重放，撤权后Context关闭。修正零分FTS候选与Schema0089不兼容，统一转为零候选失败。兼容性/升级/回滚：无Migration/公开API/依赖/网络/外发，NONE策略兼容；可停Worker/撤Owner组合，历史保留并先对账未知终态。验证：Win11/PG18.6成功/撤权/零候选/过期及失败零结果；RAG125、AI定向8、后端2498/跳过3、wheel RAG125+AI8，SHA-256 `71116eb41d492a683bc85372d01dbc9784366eb298f700c729b9adc4772cbbdd`。已知问题：A06 HTTP/生产组合、扩展策略、正式质量/性能、Server2025/Debian13、Gate3/UAT和发行包待完成。
+
 - 2026-10-04：0.1.0-dev.0/RAG-04-A05-P01 新增Schema0089 Retrieval原子终态边界；成功必须在同一事务完成Job/Attempt/Lease/Run并写完整Candidate、FTS/FINAL ScorePart和唯一最小Context，正常失败/租约过期则同步终结且结果集为零，RUNNING或旧事务不能提交结果。兼容性/升级/回滚：内部`0088 -> 0089`，无公开API/依赖/网络/外发；无终态/结果历史可降，有历史拒降并向前修复。验证：Windows11/PostgreSQL18.6升级、drift、升降重升、成功/失败/过期及半提交回滚；相关32、后端2490/跳过3、wheel RAG117，SHA-256 `9c34322accd117ea004fd4d26eaa0ff5643f4541797de56babb6b28041a0bde1`。已知问题：发布Owner/单次Worker/AI RAG_CONTEXT读取、扩展策略、正式质量/性能、Server2025/Debian13、Gate3/UAT和发行包待完成。
 
 - 2026-10-04：0.1.0-dev.0/RAG-04-A04-P02 新增FTS-only最终排名与ScorePart内存计划；整数分数稳定Top-K、固定单通道权重，非零不足标shortfall但不degraded，零候选失败且不建空Context，rerank/egress保持NOT_APPLICABLE。兼容性/升级/回滚：无Migration/API/依赖/网络/外发，移除Planner即可回滚；扩展通道保持关闭。验证：新增4、相关7、后端2485/跳过3、wheel RAG112，SHA-256 `41cbb1c460c6874fe5d4c16ce3cee8a764f44ed7f72ad878cf23d4a403517942`。已知问题：A05原子发布/Worker、扩展策略、正式质量/性能/Gate3/UAT/发行包待完成。

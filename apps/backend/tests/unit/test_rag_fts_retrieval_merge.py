@@ -58,6 +58,11 @@ class FTSRetrievalMergeTests(unittest.TestCase):
                 RAGRetrievalPreparationError, "RAG_NO_AUTHORIZED_CANDIDATES"):
             self.plan((), top_k=5)
 
+    def test_zero_score_is_not_publishable_as_a_candidate(self):
+        with self.assertRaisesRegex(
+                RAGRetrievalPreparationError, "RAG_NO_AUTHORIZED_CANDIDATES"):
+            self.plan((self.candidate(0, 0),), top_k=5)
+
     def test_tie_uses_existing_stable_ordinal(self):
         first, second = self.candidate(0, 100), self.candidate(1, 100)
         result = self.plan((first, second))

@@ -85,9 +85,12 @@ class FTSRetrievalMergePlanner:
                 or type(top_k) is not int or not 1 <= top_k <= 100):
             raise RAGRetrievalPreparationError("RAG_RETRIEVAL_MERGE_UNAVAILABLE")
         candidates.__post_init__()
-        if not candidates.candidates:
+        positive = tuple(
+            item for item in candidates.candidates if item.raw_score_micros > 0
+        )
+        if not positive:
             raise RAGRetrievalPreparationError("RAG_NO_AUTHORIZED_CANDIDATES")
-        ordered = sorted(candidates.candidates, key=lambda item: (
+        ordered = sorted(positive, key=lambda item: (
             -item.raw_score_micros, item.candidate_ordinal, item.chunk_id.int,
         ))[:top_k]
         ranked = []
