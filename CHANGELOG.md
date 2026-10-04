@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/HND-01-A05-A05 新增Handover Version业务原子送审Owner和默认关闭HTTP，单UOW创建PROJECT Review/首轮/Audit/收据，支持当前权限重验及终态后首次回执恢复；按CR-HND-006对无持久字段的非空due_at/submission_note失败关闭。兼容性/升级/回滚：无Migration/依赖/配置/Secret/外发，生产组合仍关闭，撤可选Router恢复404并保留历史。验证：定向14、Win11/PG18.6审计故障整笔回滚及送审/重放/批准/升版/撤回真实链、后端2697通过/3跳过，wheel四模块导入PASS，SHA-256 `6d368e45c0b15ce1488e3d03cf1f4f23db5b34281b5722ac92a545d8e768e83c`。已知问题：A06～A07、Server2025/Debian13、Gate3与发行仍待。
+
 - 2026-10-05：0.1.0-dev.0/HND-01-A05-A04 新增默认关闭的Handover Analysis/Version五个普通写HTTP，含严格DTO、Origin/Session/CSRF、幂等/If-Match、安全错误和最小投影；补`handover.api`包标记，修复源码可用但wheel遗漏Handover API目录的打包偏差。兼容性/升级/回滚：无Migration/冻结URL破坏/依赖/配置/Secret/外发，生产组合仍关闭，撤可选Router恢复404。验证：合同3项、后端2690通过/3跳过，wheel新命令/已有Action读取导入PASS，SHA-256 `d72a5e078ed0caa7226af75580b46f2d218942c374bf7fd61c2700c2f2292da9`。已知问题：A05～A07、Server2025/Debian13、Gate3与发行仍待。
 
 - 2026-10-05：0.1.0-dev.0/HND-01-A05-A03 按CR-HND-005新增Schema0102和Handover Analysis metadata PATCH/ARCHIVE内部Owner；只开放ACTIVE目的更新与ACTIVE→ARCHIVED，强ETag、在审栅栏、当前项目角色、License、Audit和归档持久幂等均失败关闭。兼容性/升级/回滚：无新表列/冻结URL/依赖/配置/Secret/外发，存在状态/Audit历史拒绝降至0101，公开Router仍关闭。验证：定向17、Win11/PG18.6升降/drift/角色/隔离/栅栏/重放/回滚/归档保护、后端2687通过/3跳过、wheel导入PASS，SHA-256 `f095e967558071076e09b25dbd44fbced0873710de760b7c79407719a072a472`。已知问题：A04～A07、Server2025/Debian13、Gate3与发行仍待。

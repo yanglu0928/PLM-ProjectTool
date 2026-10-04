@@ -106,6 +106,7 @@ def create_app(
     capability_review_router: APIRouter | None = None,
     capability_read_router: APIRouter | None = None,
     handover_command_router: APIRouter | None = None,
+    handover_review_submission_router: APIRouter | None = None,
     handover_action_read_router: APIRouter | None = None,
     review_command_router: APIRouter | None = None,
     maintenance_admission: MaintenanceAdmissionPort | None = None,
@@ -301,6 +302,8 @@ def create_app(
         app.include_router(capability_read_router)
     if handover_command_router is not None:
         app.include_router(handover_command_router)
+    if handover_review_submission_router is not None:
+        app.include_router(handover_review_submission_router)
     if handover_action_read_router is not None:
         app.include_router(handover_action_read_router)
     if review_command_router is not None:

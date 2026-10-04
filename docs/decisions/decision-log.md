@@ -8403,3 +8403,11 @@
 - Reason：重复Owner逻辑会形成授权与幂等双事实；A07前挂载会把合同能力误当生产能力。打包复验另发现`handover.api`缺包标记，必须修复以保证wheel与源码行为一致。
 - Impact/Rollback：无Migration/冻结API破坏/依赖/配置/网络/外发。补`handover/api/__init__.py`使既有Action读取与新命令进入wheel；撤Router注入即恢复404，合法历史不删除。
 - Verification：合同3项、后端2690通过/3跳过；wheel同时导入两个Handover API模块PASS，SHA-256 `d72a5e078ed0caa7226af75580b46f2d218942c374bf7fd61c2700c2f2292da9`。真实Windows/PG组合留A07。
+
+# DEC-20261005-874：Handover送审以单UOW复用PROJECT Review原子内核
+
+- Date/WBS：2026-10-05 / `HND-01-A05-A05`；依据冻结API-02/API-04、CR-HND-006、DEC-867/870。
+- Decision：Handover外层命令固定HND-02/HANDOVER_ALL_V1，在同一UOW内预锁评审人、重验当前PM和Subject事实，再由Review Owner原子创建identity与第一轮，最后写业务幂等收据并复核License后提交。同Key从不可变首轮恢复201结果，即使Review已终结也不返回漂移的当前状态；重放仍重验当前权限。默认Router关闭。
+- Reason：客户端串行调用通用Review create/start会留下中间状态且不能给Handover Operation形成单一原子回执；Handover直接写Review表又会越过模块Owner。冻结DTO的调度字段尚无持久模型，故按CR-HND-006非空失败关闭。
+- Impact/Rollback：无Migration、依赖、配置、Secret、网络或外发。撤可选Router/编排恢复404，已提交Review/Audit/收据历史保留。首次PG验证移除了无模型保证的跨时钟`started_at >= created_at`重放假设，但Review/Round/actor/版本绑定未放宽。
+- Verification：定向14；Win11/PG18.6 Audit故障整事务回滚、送审/即时重放/批准后首回执恢复/第二版撤回和Alembic drift=0通过；后端2697通过/3跳过；wheel四新增模块导入PASS，SHA-256 `6d368e45c0b15ce1488e3d03cf1f4f23db5b34281b5722ac92a545d8e768e83c`。

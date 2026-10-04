@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import os
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -44,6 +45,10 @@ from plm_assistant.modules.handover.application.create_version import (
 from plm_assistant.modules.handover.application.review_subject import (
     HandoverReviewSubjectOwner,
 )
+from plm_assistant.modules.handover.application.submit_review import (
+    HandoverReviewSubmissionError, HandoverReviewSubmissionService,
+    SubmitHandoverVersionReview,
+)
 from plm_assistant.modules.handover.application.source_validation import (
     HandoverSourceValidator,
 )
@@ -80,6 +85,9 @@ from plm_assistant.modules.review.application.create_review import (
 from plm_assistant.modules.review.application.start_round import (
     ReviewStartService, StartReviewRound,
 )
+from plm_assistant.modules.review.application.project_persistence import (
+    ProjectReviewPersistenceService,
+)
 from plm_assistant.modules.review.application.transition_command import (
     DecideReviewRound, ReviewTransitionCommandService, WithdrawReviewRound,
 )
@@ -89,6 +97,9 @@ from plm_assistant.modules.review.infrastructure.create_repository import (
 )
 from plm_assistant.modules.review.infrastructure.start_repository import (
     SqlAlchemyReviewStartRepository,
+)
+from plm_assistant.modules.review.infrastructure.project_submission_repository import (
+    SqlAlchemyProjectReviewSubmissionRepository,
 )
 from plm_assistant.modules.review.infrastructure.transition_repository import (
     SqlAlchemyReviewTransitionRepository,
@@ -340,6 +351,72 @@ def main(*, use_http: bool = False) -> None:
                     receipts=receipts, audit=audit, subjects=owner,
                     clock=lambda: now,
                 )
+                submission_validation = (
+                    os.environ.get("PLM_HND_SUBMISSION_VALIDATION") == "1"
+                )
+                submission_service = None
+                submission_replays = {}
+                if submission_validation:
+                    submission_service = HandoverReviewSubmissionService(
+                        unit_of_work=runtime.unit_of_work, access=access,
+                        license_guard=guard, authorization=authorization,
+                        reviewers=reviewer_service, receipts=receipts,
+                        replay_repository=(
+                            SqlAlchemyProjectReviewSubmissionRepository()
+                        ),
+                        reviews=ProjectReviewPersistenceService(
+                            creation_repository=(
+                                SqlAlchemyReviewCreationRepository()
+                            ),
+                            round_repository=SqlAlchemyReviewStartRepository(),
+                            audit=audit, subjects=owner, clock=lambda: now,
+                        ),
+                        subjects=owner, clock=lambda: now,
+                    )
+
+                    class FailingAudit:
+                        @staticmethod
+                        def append(*args, **kwargs):
+                            raise RuntimeError("synthetic review audit failure")
+
+                    failing = HandoverReviewSubmissionService(
+                        unit_of_work=runtime.unit_of_work, access=access,
+                        license_guard=guard, authorization=authorization,
+                        reviewers=reviewer_service, receipts=receipts,
+                        replay_repository=(
+                            SqlAlchemyProjectReviewSubmissionRepository()
+                        ),
+                        reviews=ProjectReviewPersistenceService(
+                            creation_repository=(
+                                SqlAlchemyReviewCreationRepository()
+                            ),
+                            round_repository=SqlAlchemyReviewStartRepository(),
+                            audit=FailingAudit(), subjects=owner, clock=lambda: now,
+                        ),
+                        subjects=owner, clock=lambda: now,
+                    )
+                    failed_command = SubmitHandoverVersionReview(
+                        manager_token, CSRF, uuid.uuid4(), project,
+                        analysis.handover_analysis_id,
+                        first.handover_analysis_version_id, (reviewer,),
+                        "HANDOVER_ALL_V1", str(uuid.uuid4()),
+                    )
+                    try:
+                        failing.submit(failed_command)
+                        raise AssertionError("audit failure must roll back submission")
+                    except HandoverReviewSubmissionError as exc:
+                        assert exc.code == "SYSTEM_UNAVAILABLE", exc.code
+                    with connect(name) as db:
+                        assert db.execute(
+                            "SELECT count(*) FROM plm.rvw_reviews WHERE "
+                            "project_id=%s AND subject_id=%s",
+                            (project, analysis.handover_analysis_id),
+                        ).fetchone()[0] == 0
+                        assert db.execute(
+                            "SELECT version_state FROM plm.hnd_analysis_versions "
+                            "WHERE handover_analysis_version_id=%s",
+                            (first.handover_analysis_version_id,),
+                        ).fetchone()[0] == "DRAFT"
 
                 client = None
                 if use_http:
@@ -381,6 +458,18 @@ def main(*, use_http: bool = False) -> None:
                     return result
 
                 def create_start(version_id: uuid.UUID):
+                    if submission_service is not None:
+                        key = str(uuid.uuid4())
+                        command_value = SubmitHandoverVersionReview(
+                            manager_token, CSRF, uuid.uuid4(), project,
+                            analysis.handover_analysis_id, version_id,
+                            (reviewer,), "HANDOVER_ALL_V1", key,
+                        )
+                        submitted = submission_service.submit(command_value)
+                        replayed = submission_service.submit(command_value)
+                        assert replayed == submitted
+                        submission_replays[version_id] = command_value
+                        return submitted.review_id, submitted.round_id
                     if client is None:
                         created = create_service.create_idempotent(CreateReview(
                             manager_token, CSRF, uuid.uuid4(), project, "HND-02",
@@ -465,6 +554,13 @@ def main(*, use_http: bool = False) -> None:
                     )
                     assert decision_replay.status_code == 200, decision_replay.text
                     assert decision_replay.json()["data"] == approved.json()["data"]
+                if submission_service is not None:
+                    replayed = submission_service.submit(
+                        submission_replays[first.handover_analysis_version_id]
+                    )
+                    assert (replayed.review_id, replayed.round_id) == (
+                        review_one, round_one,
+                    )
 
                 with connect(name) as db:
                     root_lock = db.execute(
@@ -544,6 +640,8 @@ def main(*, use_http: bool = False) -> None:
                 if client is not None:
                     client.close()
                 marker = (
+                    "HND_01_A05_A05_SUBMIT_REVIEW_PASS"
+                    if submission_validation else
                     "HND_01_A04_A02_P04_WINDOWS_HTTP_PASS" if use_http else
                     "HND_01_A04_A02_P02_REVIEW_OWNER_PASS"
                 )
