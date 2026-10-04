@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-04：0.1.0-dev.0/RAG-04-A04-P02 新增FTS-only最终排名与ScorePart内存计划；整数分数稳定Top-K、固定单通道权重，非零不足标shortfall但不degraded，零候选失败且不建空Context，rerank/egress保持NOT_APPLICABLE。兼容性/升级/回滚：无Migration/API/依赖/网络/外发，移除Planner即可回滚；扩展通道保持关闭。验证：新增4、相关7、后端2485/跳过3、wheel RAG112，SHA-256 `41cbb1c460c6874fe5d4c16ce3cee8a764f44ed7f72ad878cf23d4a403517942`。已知问题：A05原子发布/Worker、扩展策略、正式质量/性能/Gate3/UAT/发行包待完成。
+
 - 2026-10-04：0.1.0-dev.0/RAG-04-A04-P01 完成Retrieval合并/Rerank/降级边界核查：FTS-only确定为完整零外发策略，未启用vector/GLOBAL/rerank保持NOT_APPLICABLE而非degraded；不足但非零标shortfall，零候选失败且不建空Context，禁止跨范围或自动外发补齐。兼容性/升级/回滚：纯文档，无Schema/API/依赖/网络；扩展能力以后续策略版本开放。验证：静态核对冻结policy、Schema0088状态/分数/Context约束。已知问题：P02 merge plan、A05原子发布/Worker、扩展策略、正式质量/性能/Gate3/UAT/发行包待完成。
 
 - 2026-10-04：0.1.0-dev.0/RAG-04-A03-P04 新增参数化PROJECT FTS与有界内存候选计划；固定Project/Index/Model/精确来源/当前文档谓词，metadata只支持category/source type/version，rank整数化稳定排序且池最多400，不含正文/向量、不写Candidate/Score。兼容性/升级/回滚：无Migration/API/依赖/外发；business/effective暂时关闭，GLOBAL/vector/rerank留A04；停Planner即可回滚计算。验证：Win11/PG18.6返回1条同范围候选且数据库候选0；新增3、相关13、后端2481/跳过3、wheel RAG108，SHA-256 `df2f916abbd8d04c7ebe51d35eda55bb86b307ff5250470943f1e6e68ce7129f`。已知问题：A04策略/外发、A05原子发布/终态、正式质量/性能/Gate3/UAT/发行包待完成。

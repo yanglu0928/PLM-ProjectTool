@@ -1,6 +1,6 @@
 # CR-RAG-004：RetrievalRun、加密查询内容与最小 Context 边界
 
-日期：2026-10-04；状态：`A04_P01_MERGE_PRECHECK_PASS`；WBS：`RAG-04-A01～A06`。关联 Gate 2 冻结 ADR-004/009、DM-04、SC-01～04、API-03，以及 Schema0087/CR-RAG-001～003；原冻结提交 `64cdf09` 不改。
+日期：2026-10-04；状态：`A04_P02_FTS_MERGE_PASS`；WBS：`RAG-04-A01～A06`。关联 Gate 2 冻结 ADR-004/009、DM-04、SC-01～04、API-03，以及 Schema0087/CR-RAG-001～003；原冻结提交 `64cdf09` 不改。
 
 ## 差异与实施方案
 
@@ -73,3 +73,9 @@ Windows11/PostgreSQL18.6合成组合证明四类非本Owner不抢占、专属Wor
 当前`fts.project.v1 + none.v1`确定为完整零外发策略，不是缺vector/rerank后的degraded。P02只做整数FTS分数的稳定Top-K和显式quality plan：1至Top-K不足可成功并标`CANDIDATE_SHORTFALL`，零候选以`RAG_NO_AUTHORIZED_CANDIDATES`失败且不创建空Context；任何不足都不得跨Project、旧Index、放宽filter或自动外发补齐。
 
 GLOBAL/vector/exact query embedding/rerank必须使用新策略版本并先完成Egress授权/发送/响应绑定，保持关闭且不阻塞首个FTS闭环。本项仅文档，未运行新增程序测试；进入A04-P02纯应用合并计划。
+
+## A04-P02 实施与结果
+
+新增纯应用FTS merge plan：整数分数稳定Top-K，每条生成FTS/FINAL ScorePart；非零不足标`CANDIDATE_SHORTFALL`但不degraded，零候选抛`RAG_NO_AUTHORIZED_CANDIDATES`，rerank/egress保持NOT_APPLICABLE。无数据库写入、网络或外发。
+
+新增4、相关7、后端2485/跳过3、wheel RAG112通过，SHA-256 `41cbb1c460c6874fe5d4c16ce3cee8a764f44ed7f72ad878cf23d4a403517942`。A04当前FTS策略完成，进入A05-P01 Schema0089原子终态边界。

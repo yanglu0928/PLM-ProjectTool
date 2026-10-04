@@ -7964,3 +7964,11 @@
 - Reason：把未启用能力记为降级会混淆策略意图，把零候选当成功又违反Context最少1项；候选不足触发外发会绕过逐次授权。明确FTS完整策略可先形成安全可用闭环。
 - Impact/Rollback：本项仅文档，无Schema/API/依赖/网络变化。vector/exact/GLOBAL/rerank以后续策略版本和独立外发证据开放；当前合法FTS请求不变。
 - Verification：静态核对版本化policy、NOT_APPLICABLE/degraded/quality flags、整数ScorePart和Context最少1项约束；未运行新增程序测试。
+
+# DEC-20261004-819：FTS 最终分数不依赖候选集合动态归一化
+
+- Date/WBS：2026-10-04 / `RAG-04-A04-P02`；依据CR-RAG-004、DEC-818及Schema0088整数ScorePart边界。
+- Decision：FTS-only直接使用量化raw micros作为final micros，单通道权重固定1.0；稳定Top-K按分数、原ordinal、ChunkId。非零不足标shortfall但不degraded，零候选失败。每项生成FTS/FINAL两份可复算ScorePart计划。
+- Reason：以当前候选最大值动态归一化会让同一Chunk分数随其他候选出现/消失而漂移；单通道无需人为合并。明确零候选失败可避免非法空Context。
+- Impact/Rollback：纯应用内存计划，无Schema/API/依赖/网络变化；可移除Planner回滚。扩展通道须使用新策略版本。
+- Verification：新增4、相关7、后端2485/3跳过、wheel RAG112，SHA-256 `41cbb1c460c6874fe5d4c16ce3cee8a764f44ed7f72ad878cf23d4a403517942`。
