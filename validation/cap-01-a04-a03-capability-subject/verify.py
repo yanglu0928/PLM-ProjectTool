@@ -502,6 +502,7 @@ def main() -> None:
                         patched = state_service.patch(PatchCapabilityBaseline(
                             admin_token, CSRF, uuid.uuid4(), baseline.baseline_id,
                             12, "PLM Review Controlled", None,
+                            patch_name=True, patch_description=False,
                         ))
                         assert patched.etag == '"v13"'
                         review_candidate = version_service.create(
@@ -593,7 +594,8 @@ def main() -> None:
                                        name,description,lock_version
                                   FROM plm.cap_baselines WHERE baseline_id=%s
                             """, (baseline.baseline_id,)).fetchone() == (
-                                "ARCHIVED", None, "PLM Review Controlled", None, 19,
+                                "ARCHIVED", None, "PLM Review Controlled",
+                                "Synthetic review subject", 19,
                             )
                             state_rows = dict(db.execute("""
                                 SELECT baseline_version_id,version_state

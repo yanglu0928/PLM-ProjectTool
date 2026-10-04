@@ -36,8 +36,10 @@ class PatchCapabilityBaseline:
     trace_id: uuid.UUID
     baseline_id: uuid.UUID
     expected_lock_version: int
-    name: str
+    name: str | None
     description: str | None
+    patch_name: bool = True
+    patch_description: bool = True
 
 
 @dataclass(frozen=True, slots=True)
@@ -86,7 +88,9 @@ class CapabilityStateRepositoryPort(Protocol):
     def get_baseline(self, transaction: object, *,
                      baseline_id: uuid.UUID) -> CapabilityBaselineView | None: ...
     def patch(self, transaction: object, *, baseline_id: uuid.UUID,
-              expected_lock_version: int, name: str, description: str | None,
+              expected_lock_version: int, name: str | None,
+              description: str | None, patch_name: bool,
+              patch_description: bool,
               actor_id: uuid.UUID) -> CapabilityBaselineView: ...
     def archive(self, transaction: object, *, baseline_id: uuid.UUID,
                 expected_lock_version: int,
@@ -122,8 +126,14 @@ class CapabilityStateService:
 
     def patch(self, command: PatchCapabilityBaseline) -> CapabilityBaselineView:
         self._validate_common(command, PatchCapabilityBaseline)
-        name = self._text(command.name, 255, nullable=False)
-        description = self._text(command.description, 2000, nullable=True)
+        if (type(command.patch_name) is not bool
+                or type(command.patch_description) is not bool
+                or not (command.patch_name or command.patch_description)):
+            raise CapabilityStateError("VALIDATION_FAILED")
+        name = (self._text(command.name, 255, nullable=False)
+                if command.patch_name else None)
+        description = (self._text(command.description, 2000, nullable=True)
+                       if command.patch_description else None)
         return self._execute(command, lambda tx, actor: self._patch(
             tx, actor, command, name, description,
         ))
@@ -163,11 +173,13 @@ class CapabilityStateService:
         ))
 
     def _patch(self, tx: object, actor: uuid.UUID, command: PatchCapabilityBaseline,
-               name: str, description: str | None) -> CapabilityBaselineView:
+               name: str | None, description: str | None) -> CapabilityBaselineView:
         view = self._repo.patch(
             tx, baseline_id=command.baseline_id,
             expected_lock_version=command.expected_lock_version,
-            name=name, description=description, actor_id=actor,
+            name=name, description=description,
+            patch_name=command.patch_name,
+            patch_description=command.patch_description, actor_id=actor,
         )
         self._audit.append(tx, AuditEventDraft(
             trace_id=command.trace_id, event_scope="DEPLOYMENT",

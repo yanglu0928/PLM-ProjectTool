@@ -84,7 +84,10 @@ class _Repo:
         self._raise()
         self.patch_args = kwargs
         self.baseline = replace(
-            self.baseline, name=kwargs["name"], description=kwargs["description"],
+            self.baseline,
+            name=(kwargs["name"] if kwargs["patch_name"] else self.baseline.name),
+            description=(kwargs["description"] if kwargs["patch_description"]
+                         else self.baseline.description),
             etag='"v5"',
         )
         return self.baseline
@@ -168,6 +171,21 @@ class CapabilityStateServiceTests(unittest.TestCase):
         self.assertIsNone(result.description)
         self.assertEqual("CAP_BASELINE_PATCHED", self.audit_repo.events[0].action)
         self.assertEqual(1, _Tx.commits)
+
+    def test_patch_supports_controlled_partial_dto(self):
+        command = replace(
+            self.patch, name=None, description="  New detail  ",
+            patch_name=False, patch_description=True,
+        )
+        result = self.service.patch(command)
+        self.assertEqual("Core", result.name)
+        self.assertEqual("New detail", result.description)
+        self.assertFalse(self.repo.patch_args["patch_name"])
+        with self.assertRaises(CapabilityStateError) as raised:
+            self.service.patch(replace(
+                self.patch, patch_name=False, patch_description=False,
+            ))
+        self.assertEqual("VALIDATION_FAILED", raised.exception.code)
 
     def test_archive_is_persistently_idempotent(self):
         first = self.service.archive(self.archive)

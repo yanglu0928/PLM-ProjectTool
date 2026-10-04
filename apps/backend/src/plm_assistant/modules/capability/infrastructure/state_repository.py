@@ -58,13 +58,17 @@ class SqlAlchemyCapabilityStateRepository:
         return None if row is None else _version(row)
 
     def patch(self, transaction: object, *, baseline_id: uuid.UUID,
-              expected_lock_version: int, name: str, description: str | None,
+              expected_lock_version: int, name: str | None,
+              description: str | None, patch_name: bool,
+              patch_description: bool,
               actor_id: uuid.UUID) -> CapabilityBaselineView:
         row = self._lock_baseline(transaction, baseline_id)
         self._writable(row, expected_lock_version)
-        if row.name == name and row.description == description:
+        next_name = name if patch_name else row.name
+        next_description = description if patch_description else row.description
+        if row.name == next_name and row.description == next_description:
             raise CapabilityStateError("CONFLICT_STATE")
-        row.name, row.description = name, description
+        row.name, row.description = next_name, next_description
         self._advance(row, actor_id)
         return self._refresh(transaction, row)
 

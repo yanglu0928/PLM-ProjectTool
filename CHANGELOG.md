@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/CAP-01-A05-A04 新增Capability六个普通命令的统一opt-in HTTP Router，覆盖Baseline Create/Patch/Archive与Version Create/Validate/Restrict；严格Origin/Session/CSRF、幂等、强ETag、canonical UUID/JSON边界和安全错误，默认应用六路404。PATCH按冻结协议改为受控partial DTO并在行锁后合并。兼容性/升级/回滚：无Schema/依赖/配置/外发，公开Operation不变，不注入Router即可关闭；生产组合仍未接线。验证：合同/Owner21、Win11/PG18.6 partial与既有状态链、后端2583通过/3跳过，wheel Capability47+解包Migration4，SHA-256 `21eab4dfe4ba29762e180606ba377bd685328a90cda48f02894eaf4d8c8650eb`。已知问题：送审/五个GET/Windows组合、前端、正式信任/性能/Gate3/发行仍待。
+
 - 2026-10-05：0.1.0-dev.0/CAP-01-A05-A03 新增Schema0095及Capability元数据/状态Owner：强ETag修改、幂等归档、受控原因Version限制；当前APPROVED被限制时原子清空正式指针，IN_REVIEW及归档后写入失败关闭，Audit/收据同事务。兼容性/升级/回滚：内部`0094 -> 0095`仅替换函数，无字段/API挂载/依赖/外发；无新历史可降，有PATCH/ARCHIVE/RESTRICT历史拒降。验证：Win11/PG18.6降升/drift/Review栅栏/指针/重放/归档/拒降，后端2579通过/3跳过，wheel Capability43+解包Migration4，SHA-256 `f1e4b6f006357b8fa0afb773d2941abc70aa5e299318cca6af86e048ccc7bdb0`。已知问题：六个普通命令HTTP与生产组合、送审/读取Router、前端、正式信任/性能/Gate3/发行仍待。
 
 - 2026-10-05：0.1.0-dev.0/CAP-01-A05-A02 新增Capability当前受权读取Owner、安全投影及两域签名游标：DeploymentAdmin可读受控全历史，ACTIVE项目成员仅能读取ACTIVE基线当前APPROVED Version/Items，无成员或历史版本统一失败关闭；Project成员事实保持Project Owner边界。兼容性/升级/回滚：无Schema/API挂载/依赖/网络/Secret/外发，停止装配即可关闭；后续无独立密钥必须拒绝启动。验证：Win11/PG18.6四版本管理员/成员/非成员投影通过，新增13、后端2572通过/3跳过、wheel Capability36，SHA-256 `824642fbec46d94050047da4b73a190fd2e3e28d9495e8caabc26960b81f7f70`。已知问题：五个GET尚未挂HTTP，A03～A07、前端、正式信任/性能/Gate3/发行仍待。

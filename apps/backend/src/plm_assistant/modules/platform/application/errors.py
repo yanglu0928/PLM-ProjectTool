@@ -84,6 +84,9 @@ COMMON_ERRORS: dict[str, ErrorSpec] = {
     "PROJECT_DEPARTMENT_IN_USE": ErrorSpec(
         "PROJECT_DEPARTMENT_IN_USE", 409, "部门仍有在用成员，不能停用。"
     ),
+    "CAPABILITY_EVIDENCE_REQUIRED": ErrorSpec(
+        "CAPABILITY_EVIDENCE_REQUIRED", 422, "能力项缺少合格的全局证据。"
+    ),
 }
 
 

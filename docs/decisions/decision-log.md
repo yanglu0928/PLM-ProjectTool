@@ -8156,3 +8156,11 @@
 - Reason：保留指向RESTRICTED Version的正式指针会让安全限制失效；评审中直接限制会使Review快照与Subject状态断裂。若归档后仍允许限制Version并推进Baseline锁，Archive首次响应ETag将无法精确重放，需新增结果表或削弱幂等；终态写栅栏更小且符合归档语义。
 - Impact/Rollback：内部Schema`0094 -> 0095`只替换函数，无表列/API挂载/依赖/外发。无新状态历史可恢复0094；存在三类Audit、ARCHIVED或RESTRICTED历史拒降并向前修复。当前正式版被限制后普通成员暂时不可见该Baseline，直至新版本批准。
 - Verification：Win11/PG18.6空库降升/drift、Patch、评审冲突、撤回后两Version限制、指针清空、重放、Audit、Archive终态和拒降通过；后端2579/3跳过；wheel Capability43+解包Migration4，SHA-256 `f1e4b6f006357b8fa0afb773d2941abc70aa5e299318cca6af86e048ccc7bdb0`。
+
+# DEC-20261005-843：Capability 普通命令使用单一可选Router且PATCH保持partial语义
+
+- Date/WBS：2026-10-05 / `CAP-01-A05-A04`；依据冻结API-01/API-04、DEC-840～842及Schema0095。
+- Decision：Baseline Create/Patch/Archive与Version Create/Validate/Restrict由一个显式注入Router承载，默认应用保持六路404且本项不接Windows生产组合。PATCH只接受name/description非空受控partial DTO，在Owner行锁后合并；其余命令沿用现有持久幂等、强ETag、License/Admin复核和Audit。CapabilityItem输入采用冻结完整快照字段，路径/引用只接受canonical lowercase UUID。
+- Reason：把六个Router逐个装入会增加半装配风险；把PATCH实现成全量替换违反API-01。直接接production root又会跳过A07所需目标账户密钥、真实数据库HTTP和关闭/恢复验证。
+- Impact/Rollback：无Schema/Migration/依赖/配置/网络/外发；新增冻结码表已有`CAPABILITY_EVIDENCE_REQUIRED`公开映射。停止注入Router即可关闭流量，合法历史不删除；送审与读取仍默认关闭。
+- Verification：合同/Owner定向21、Win11/PG18.6 partial与A03全链、后端2583/3跳过；wheel Capability HTTP/Owner47+解包Migration4，SHA-256 `21eab4dfe4ba29762e180606ba377bd685328a90cda48f02894eaf4d8c8650eb`。
