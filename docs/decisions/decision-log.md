@@ -8036,3 +8036,11 @@
 - Reason：密钥进配置会扩大Secret暴露；API和通用取消分别构造Owner会分裂状态机；第五服务会改变已冻结拓扑。精确类检查虽在API runtime可过，却会拒绝生产Worker实际`WorkerDatabaseRuntime`，端口验证既兼容现有两个runtime又保持缺能力失败关闭。
 - Impact/Rollback：无Migration、公开API语义、依赖或Provider网络变化。无策略时保持原404与双族行为；可移除策略停止新流量，已存在历史保留。正式目标账户仍须供应专用密钥并单独验收。
 - Verification：定向92、后端2529/3跳过、wheel RAG142+生产组合80；Windows11/PG18.6真实生产HTTP、`WorkerDatabaseRuntime`、公平单周期、同Owner取消和SQL终态通过。SHA-256 `353c0edc1e27ec718a71edeb53c31134d91f1b03f270dda8943192b244256547`。精确类型失败和旧夹具FIFO抢占两轮均作废后完整重跑。
+
+# DEC-20261004-828：Retrieval 浏览器只保留当前页瞬时 query 与安全事实投影
+
+- Date/WBS：2026-10-04 / `RAG-04-A06-P07`；依据CR-RAG-004、DEC-824～827和冻结API-03。
+- Decision：前端覆盖五个冻结Operation，但query只允许进入当前组件内存和一次同源有界POST body，任何结果分支/路由变化/卸载即清空；未知写结果不重放。读取只保存服务器安全投影并强校验身份/ETag/排名/locator/整数分数/Context组合，丢弃内部fingerprint，任一漂移整页失败关闭。当前过滤仅开放category/source/version；ACTIVE Index列表缺少正式Operation时使用实施管理员提供UUID并明确标记可用性缺口。
+- Reason：把query放入URL、storage或长生命周期client会扩大业务敏感信息暴露；部分展示结果与失败Context会制造混合事实。日期过滤虽在基础Schema保留字段，但当前执行策略明确关闭，客户端提前接受只会造成稳定的400/409不兼容。自行增加Index列表URL会破坏冻结API边界。
+- Impact/Rollback：纯前端，无Schema/Migration/后端API/依赖/外发；可移除页面/客户端/路由回滚，不修改历史Run/结果。后续Index发现能力须以正式API增量和Change Request实施。
+- Verification：定向29、前端全量69文件/1261项、typecheck及Vite149模块生产构建PASS；首轮错误断言/静态类型问题修复后完整重跑，错误轮不作证据。

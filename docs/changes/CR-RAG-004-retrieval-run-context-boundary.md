@@ -129,3 +129,11 @@ Schema0090新增冻结模型已有的RetrievalRun CANCELLED。PENDING直接取�
 新增精确非Secret Retrieval bootstrap策略和固定专用查询密钥引用；显式platform-write生产API挂载四个读写Operation、取消别名，并把同一取消Owner注册到通用Job取消。既有第四`AI_PROVIDER_WORKER`在Probe/AI Task/Retrieval三族之间公平轮转，每周期有限对账，Retrieval-only不要求Provider Secret主密钥或网络；Worker在解密前响应协作取消。
 
 真实组合首次发现helper精确类型检查拒绝实际`WorkerDatabaseRuntime`，改按`unit_of_work`端口验证；第二轮因旧PENDING夹具先被FIFO认领，改由生产取消入口先合法关闭旧Run。两轮均作废，最终Windows11/PostgreSQL18.6生产HTTP/真实Worker runtime、一个SUCCEEDED与一个CANCELLED Run完整通过。定向92、后端2529/3跳过、wheel隔离RAG142+生产组合80，SHA-256 `353c0edc1e27ec718a71edeb53c31134d91f1b03f270dda8943192b244256547`。无Migration/API语义/依赖/真实外发；进入A06-P07前端安全接入。
+
+## A06-P07 实施与结果
+
+新增 Retrieval 严格前端客户端、创建/详情页、路由和项目入口，覆盖 Create/Get/Result/Context/Cancel。query 只进入一次同源有界POST正文，所有离开提交路径的分支均清空；响应复核身份、ETag、连续排名、locator、整数分数、Context顺序/token，并从前端View丢弃内部bundle fingerprint。结果/Context任一失败则整页清空，未知写结果保留原内存操作号且不自动换号重试。
+
+复核发现初版客户端虽未在页面暴露、但类型接受当前Worker明确关闭的日期过滤，已在验收前收紧为category/source/version三类并增加传输前拒绝回归。后端尚无ACTIVE Index列表Operation，页面暂要求实施管理员提供已激活UUID并明确提示，作为后续可用性缺口记录，不伪称最终体验完成。
+
+纯前端，无Schema/Migration/后端API/依赖/外发变化。定向29、前端全量69文件/1261项、typecheck及Vite149模块生产构建通过。两条错误测试断言及两处首轮静态类型错误均修复后完整重跑，初轮不计验收证据。进入A06-P08真实浏览器/HTTP/Worker/PostgreSQL验收。

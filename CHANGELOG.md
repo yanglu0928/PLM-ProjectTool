@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-04：0.1.0-dev.0/RAG-04-A06-P07 新增Retrieval严格前端客户端、创建/详情页、路由和项目入口，覆盖Create/Get/Result/Context/Cancel；query仅在当前页内存与一次同源POST存在，未知写结果不重放，结果只展示安全状态/来源/定位/整数分数/最小Context并丢弃内部fingerprint。兼容性/升级/回滚：纯前端，无Schema/Migration/后端API/依赖/外发；当前无ACTIVE Index列表API，暂由实施管理员提供UUID并由服务器复核，可删除页面/客户端回滚。验证：定向29、前端全量69文件/1261项、typecheck、Vite149模块生产构建PASS；首轮错误断言/类型问题及客户端误接受未开放日期过滤偏差均修复后完整重跑。已知问题：P08真实浏览器全链、Index发现、正式密钥/SCM、Server2025、质量/性能、Gate3/UAT和发行包待完成；Debian13按指令跳过。
+
 - 2026-10-04：0.1.0-dev.0/RAG-04-A06-P06 新增精确Retrieval bootstrap策略、固定专用查询密钥来源、显式Windows生产API组合和既有第四`AI_PROVIDER_WORKER`三族公平有界循环；两条取消路径共享同一Owner，Worker在解密前响应取消，Retrieval-only不读取Provider主密钥或联网。兼容性/升级/回滚：无Migration、公开API语义或依赖变化；无策略保持404/既有行为，移除策略可停新流量，历史保留。验证：定向92、后端2529/跳过3、wheel隔离RAG142+生产组合80、Win11/PG18.6真实HTTP/Worker/SQL通过，SHA-256 `353c0edc1e27ec718a71edeb53c31134d91f1b03f270dda8943192b244256547`；runtime精确类型与旧夹具FIFO两轮证据作废后重跑。已知问题：P07～P08、正式密钥/SCM、质量/性能、Server2025、Gate3/UAT和发行包待完成；Debian13按指令跳过。
 
 - 2026-10-04：0.1.0-dev.0/RAG-04-A06-P05 新增Retrieval唯一取消Owner、冻结别名Router及当前/过期专属Reconciler；别名与通用Project Job cancel registry共享授权、锁定、状态和Audit核心，PENDING直接原子取消，RUNNING协作请求后由当前Worker或过期对账原子关闭，精确回放保留首次响应。兼容性/升级/回滚：复用Schema0090，无Migration/依赖/生产挂载/Provider I/O/外发；默认仍关闭，撤组件可停新取消，历史保留且拒绝降级。验证：新增9、RAG141、相关18、后端2522/跳过3、Win11/PG18.6三类真实取消与回放、wheel RAG141+HTTP8+Migration4，SHA-256 `5179db1356d9a8e70779457355e2d5dbc6eac8b196706f0bb650dc99578486eb`；两轮非法/版本漂移夹具证据作废，合法3秒自然到期新库重跑通过。已知问题：P06～P08、正式质量/性能、Server2025、Gate3/UAT和发行包待完成；Debian13按指令跳过。

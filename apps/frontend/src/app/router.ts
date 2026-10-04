@@ -33,6 +33,7 @@ import ProjectAIWorkbenchView from "@/modules/ai/views/ProjectAIWorkbenchView.vu
 import ProjectAITaskDetailView from "@/modules/ai/views/ProjectAITaskDetailView.vue";
 import ProjectAISuggestionView from "@/modules/ai/views/ProjectAISuggestionView.vue";
 import ProjectAISubmitView from "@/modules/ai/views/ProjectAISubmitView.vue";
+import ProjectRetrievalView from "@/modules/rag/views/ProjectRetrievalView.vue";
 
 export function createAppRouter(
   history: RouterHistory = createWebHistory(),
@@ -84,6 +85,16 @@ export function createAppRouter(
         path: "/projects/:projectId/ai/new",
         name: "project-ai-submit",
         component: ProjectAISubmitView,
+      },
+      {
+        path: "/projects/:projectId/retrievals/new",
+        name: "project-retrieval-new",
+        component: ProjectRetrievalView,
+      },
+      {
+        path: "/projects/:projectId/retrievals/:runId",
+        name: "project-retrieval-detail",
+        component: ProjectRetrievalView,
       },
       {
         path: "/projects/:projectId/ai/:taskId/suggestion",
