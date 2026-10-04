@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/HND-02-A04-A03 新增Action LIST/GET专用上下文绑定cursor与可选HTTP Router；列表仅安全摘要，详情为有界固定引用/当前事件，默认应用保持404。兼容性/升级/回滚：无Migration/冻结API破坏/依赖/配置/网络/外发，撤可选Router/cursor恢复404。验证：cursor/HTTP合同6、后端2657通过/3跳过、wheel解包导入PASS，SHA-256 `485980beef8b8ad65ef465bcc010f1e60a47f7ba1febff94ef185495f360d76c`。已知问题：A04 Windows组合/正式cursor密钥、Action写HTTP/UI、Review/Workflow、Gate3和发行仍待。
+
 - 2026-10-05：0.1.0-dev.0/HND-02-A04-A02 新增Action LIST/GET内部读取Owner；四类当前项目成员可读，列表稳定有界分页，详情仅含固定来源/输入规格/响应-Evidence引用和当前事件，跨项目/撤权隐藏且业务零写。兼容性/升级/回滚：无Migration/公开HTTP/cursor密钥/依赖/配置/网络/外发；撤Service和只读策略即可回滚。验证：Win11/PG18.6、相关11、后端2651通过/3跳过、wheel解包导入PASS，SHA-256 `535c319eb4792114ee420bfe906a43109278f35633976e5112e08e29dc45e422`。已知问题：A03 cursor/HTTP、Windows组合/UI、Review/Workflow、Gate3和发行仍待。
 
 - 2026-10-05：0.1.0-dev.0/HND-02-A04-A01 完成Action LIST/GET读取前置设计：列表为有界稳定摘要分页，详情返回固定引用和当前状态最新事件，不无界展开历史或暴露路径/正文/Trace端点；后续cursor绑定Session/Project/页长/资源族。兼容性/升级/回滚：纯文档，无程序/Schema/API行为/依赖/配置/网络/外发。验证：静态交叉核对冻结API/DM、Schema0100、当前授权和既有读取模式。已知问题：A02读取Owner、A03 HTTP、Windows组合/UI、Review/Workflow、Gate3和发行仍待。

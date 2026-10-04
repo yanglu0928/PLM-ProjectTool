@@ -8323,3 +8323,11 @@
 - Reason：Action可能包含客户输入提示和材料引用，必须先确认当前项目成员；历史事件因PATCH可无界增长，只读取当前序号事件。GET/List本身无业务变化，写审计会让读取失去零副作用性质并放大存储。
 - Impact/Rollback：无Migration、公开HTTP、依赖、配置、网络或外发。撤读取Service与两个只读策略即可回滚，Action历史不变；A03后才增加cursor/HTTP。
 - Verification：Win11/PG18.6四角色、稳定分页、安全详情、跨项目/撤权/License/归档读取和三表零写通过；新增4/相关11、后端2651通过/3跳过，wheel解包导入PASS，SHA-256 `535c319eb4792114ee420bfe906a43109278f35633976e5112e08e29dc45e422`。
+
+# DEC-20261005-864：Action HTTP 使用独立上下文绑定 cursor 且默认关闭
+
+- Date/WBS：2026-10-05 / `HND-02-A04-A03`；依据API-01/API-04、DEC-862/863与既有HTTP安全边界。
+- Decision：Action LIST使用独立HMAC cursor绑定Session/Project/page size/完整排序位置；LIST只输出摘要，GET输出有界详情和当前事件。Router只有显式注入时存在，默认应用保持404；Windows组合与密钥供给后置A04。
+- Reason：复用其他资源cursor会混淆资源族，客户端可构造位置会扩大扫描；在正式密钥/组合验证前默认挂载会把合同测试能力误当生产能力。详情需防御Owner异常，不能把内部TraceId、路径或正文投影到HTTP。
+- Impact/Rollback：无Migration、冻结API破坏、依赖、配置、网络或外发。撤可选Router/cursor恢复404，内部读取Owner保留。
+- Verification：cursor/HTTP合同6项、后端2657通过/3跳过、wheel解包导入PASS，SHA-256 `485980beef8b8ad65ef465bcc010f1e60a47f7ba1febff94ef185495f360d76c`；真实HTTP/PG与正式密钥留A04。
