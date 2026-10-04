@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/HND-02-A03-A03 新增Schema0100与Action metadata PATCH Owner；OPEN/IN_PROGRESS下由PM、实施成员或assigned owner按强ETag修改五项元数据，同状态事件/Audit原子记录，无变化不写，来源/生命周期/终态不可改。兼容性：无表列/API/依赖/外发；同状态历史拒降。验证：Win11/PG18.6、定向17、后端2631通过/3跳过、wheel17，SHA-256 `7beb883e3641b51d91c0c0039b574341b2e03b2a4876d173a99177d9190e26de`。已知问题：START/SUBMIT/VERIFY/CLOSE-CANCEL、Review/HTTP/UI/Workflow及Gate3/发行仍待。
+
 - 2026-10-05：0.1.0-dev.0/HND-02-A03-A02 新增Schema0099 Action生命周期完整性：精确OPEN→IN_PROGRESS→SUBMITTED→VERIFIED→CLOSED及非终态取消，Root强锁/连续事件/投影同事务；SUBMIT/VERIFY固定同项目AVAILABLE DocumentVersion与ELIGIBLE Evidence，CLOSED要求同项目ACTIVE Trace，owned历史不可变且终态不复活。兼容性/升级/回滚：内部0098→0099只换守卫/触发器，无表列/API/依赖/配置/外发；全OPEN/v0无子项历史可降，有生命周期历史拒降。验证：Win11/PG18.6降升/drift/完整链/取消/回滚/终态，定向12、后端2625通过/3跳过、wheel最终解包16，SHA-256 `1ee8ef45a636708a8489f460befd2946b65c25f792b4f932f250fb92d8c6446a`。已知问题：PATCH/START/SUBMIT/VERIFY/CLOSE-CANCEL Owner、Review/HTTP/UI/Workflow、真实下游解决、质量/性能/正式信任/Gate3/发行仍待。
 
 - 2026-10-05：0.1.0-dev.0/HND-02-A03-A01 完成Action状态Owner前置核查并登记CR-HND-003：锁定OPEN→IN_PROGRESS→SUBMITTED→VERIFIED→CLOSED、非终态取消、Root版本/唯一事件原子对应、提交/验证Document与Evidence固定、Close解决Trace Owner验证及终态不复活；后续按Schema/PATCH/START/SUBMIT/VERIFY/CLOSE-CANCEL拆分。兼容性/升级/回滚：纯文档，无Schema/API/依赖/配置/网络/外发，可停止后续实现并保留记录。验证：静态核对冻结DM/API、CR-HND-001/002、Schema0098及Document/Evidence/Trace边界。已知问题：A02～A07、Review/HTTP/UI/Workflow、真实下游解决、质量、性能、正式信任/Gate3/发行仍待。

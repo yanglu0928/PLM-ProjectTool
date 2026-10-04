@@ -103,6 +103,7 @@ POLICIES: dict[str, _Policy] = {
     "HND_ACTION_CREATE": _Policy(
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True,
     ),
+    "HND_ACTION_PATCH": _Policy(ALL_MEMBERS, True),
     "PROJECT_PATCH": _Policy(MANAGERS, True),
     "PROJECT_ARCHIVE": _Policy(MANAGERS, True),
     "PROJECT_MEMBER_LIST": _Policy(MEMBER_READERS, False),

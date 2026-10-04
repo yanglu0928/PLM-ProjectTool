@@ -8268,3 +8268,10 @@
 - Reason：先放通用UPDATE会绕过权限/Audit/Trace；子项先写或Root先写都需要到事务提交才判定完整。来源初始资格若在每次转换重验，会被正常Review状态变化误阻塞，因此只在v0验证资格、后续验证固定来源存在。
 - Impact/Rollback：内部0099仅替换守卫/触发器，无表列/API/依赖/配置/外发。全OPEN/v0且无子项历史可降，有生命周期历史拒降并向前修复。
 - Verification：Win11/PG18.6降升/drift、完整链/取消/半写回滚/引用与终态保护通过；定向12、后端2625/3跳过；wheel最终解包16，SHA-256 `1ee8ef45a636708a8489f460befd2946b65c25f792b4f932f250fb92d8c6446a`。
+
+# DEC-20261005-857：Action metadata PATCH 以同状态事件保持版本连续
+
+- Date/WBS：2026-10-05 / `HND-02-A03-A03`；依据API-04、CR-HND-003及Schema0099。
+- Decision：只在OPEN/IN_PROGRESS修改title/input spec/owner/due/priority；每次真实修改追加同状态事件并推进强ETag。PM/IM或assigned owner可执行，新Owner重验当前成员；无变化不写。
+- Impact/Rollback：Schema0100仅替换守卫，无表列/API/依赖/外发；同状态历史存在时拒降。来源与生命周期保持不可变。
+- Verification：Win11/PG18.6权限/ETag/回滚/License/拒降，定向17、后端2631/3跳过、wheel17，SHA-256 `7beb883e3641b51d91c0c0039b574341b2e03b2a4876d173a99177d9190e26de`。

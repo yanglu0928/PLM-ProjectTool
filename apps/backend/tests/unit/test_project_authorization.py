@@ -4,7 +4,7 @@ import unittest
 import uuid
 
 from plm_assistant.modules.project.application.authorization import (
-    ALL_MEMBERS, POLICIES, ProjectActorFacts, ProjectAuthorizationError,
+    ALL_MEMBERS, MEMBER_READERS, POLICIES, ProjectActorFacts, ProjectAuthorizationError,
     ProjectAuthorizationService,
 )
 
@@ -47,7 +47,7 @@ class ProjectAuthorizationTests(unittest.TestCase):
                                     operation=operation, resource_id=resource_id)
 
     def test_matrix_exact_for_four_roles(self):
-        self.assertEqual(len(POLICIES), 53)
+        self.assertEqual(len(POLICIES), 54)
         self.assertEqual(POLICIES["HND_ANALYSIS_CREATE"].roles, frozenset({
             "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER",
         }))
@@ -64,6 +64,9 @@ class ProjectAuthorizationTests(unittest.TestCase):
             "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER",
         }))
         self.assertTrue(POLICIES["HND_ACTION_CREATE"].write)
+        self.assertEqual(POLICIES["HND_ACTION_PATCH"].roles, ALL_MEMBERS)
+        self.assertTrue(POLICIES["HND_ACTION_PATCH"].write)
+        self.assertIsNone(POLICIES["HND_ACTION_PATCH"].target)
         self.assertEqual(POLICIES["RAG_RETRIEVAL_CREATE"].roles, frozenset({
             "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER", "CUSTOMER_MANAGER",
         }))
