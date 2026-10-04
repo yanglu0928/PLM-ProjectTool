@@ -8299,3 +8299,11 @@
 - Reason：已提交引用可能在验证前失去资格；只检查状态或新增任意同项目Evidence不能证明本次响应。VERIFIED表示受权人员已核验材料，但仍不代表下游resolution Trace已建立。
 - Impact/Rollback：复用Schema0100，无Migration、公开HTTP、依赖、配置、网络或外发；停装配Owner可关闭新VERIFY，已验证历史不可删除或回退。
 - Verification：Win11/PG18.6角色、当前事实、Evidence正反例、强锁、重复状态、并发幂等、Audit回滚恢复及License拒绝通过；定向17、后端2640/3跳过、wheel解包17，SHA-256 `f3faba55feb1c5313c40ccb30c167f8a886ba100f8158c17fc49130c75c5ce2e`。
+
+# DEC-20261005-861：Action 终态由精确 Trace 证明或保留历史取消
+
+- Date/WBS：2026-10-05 / `HND-02-A03-A07`；依据API-04、CR-HND-003、Schema0100及DEC-855～860。
+- Decision：CLOSE只由ProjectManager执行，并通过Trace应用层Owner边界读锁ACTIVE同项目关系、复验两端当前事实；ANALYSIS_ITEM精确匹配固定HND-02 AnalysisVersion，HUMAN只接受显式SRV-02/SRV-05/REQ-03下游正式版本和关闭reason。CANCEL由ProjectManager从任一非终态执行并保留既有提交/验证投影；两种终态均不可复活。
+- Reason：仅有Trace外键无法阻止无关关系冒充解决；把HND-03新增成Trace节点会破坏冻结模型。人工来源没有固定分析版本，只能由受权人员显式选择正式下游关系并以事件reason绑定决定。取消不是关闭，不得生成虚假解决时间或Trace。
+- Impact/Rollback：复用Schema0100，无Migration、公开HTTP、依赖、配置、网络或外发。停止装配Owner可关闭新终态写，合法历史保留；未注册真实Survey/Requirement Owner时生产关闭失败关闭。
+- Verification：Win11/PG18.6两类Trace、角色、终态、取消历史、幂等并发、Audit回滚和License拒绝通过；新增7/相关14、后端2647通过/3跳过；wheel解包导入PASS，SHA-256 `c04d7c3c9abdf28ea87a5480908d3e7a3960a5a96cd83fd57948af93093ca0b2`。

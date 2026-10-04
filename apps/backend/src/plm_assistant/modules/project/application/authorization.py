@@ -109,6 +109,8 @@ POLICIES: dict[str, _Policy] = {
     "HND_ACTION_VERIFY": _Policy(
         frozenset({"PROJECT_MANAGER", "CUSTOMER_MANAGER"}), True,
     ),
+    "HND_ACTION_CLOSE": _Policy(MANAGERS, True),
+    "HND_ACTION_CANCEL": _Policy(MANAGERS, True),
     "PROJECT_PATCH": _Policy(MANAGERS, True),
     "PROJECT_ARCHIVE": _Policy(MANAGERS, True),
     "PROJECT_MEMBER_LIST": _Policy(MEMBER_READERS, False),
