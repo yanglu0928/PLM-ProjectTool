@@ -131,6 +131,26 @@ class CapabilityFoundationSchemaTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "offline Capability terminal"):
                 migration.downgrade()
 
+    def test_state_owner_delta_is_narrow_and_history_safe(self) -> None:
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions.20261005_0095_capability_state_owner"
+        )
+        self.assertEqual(migration.down_revision, "20261005_0094")
+        sql = migration._STATE_OWNER_GUARD + migration._STATE_INTEGRITY
+        for required in (
+            "OLD.baseline_state='ACTIVE' AND NEW.baseline_state='ARCHIVED'",
+            "OLD.version_state IN ('DRAFT','APPROVED','RETURNED','SUPERSEDED')",
+            "AND NEW.version_state='RESTRICTED'",
+            "Capability approved pointer is invalid",
+            "Restricted Capability remains formally approved",
+        ):
+            self.assertIn(required, sql)
+        with patch.object(migration.context, "is_offline_mode", return_value=True):
+            with self.assertRaisesRegex(RuntimeError, "offline Capability state-owner"):
+                migration.downgrade()
+        self.assertIn("Capability state-owner history prevents downgrade",
+                      inspect.getsource(migration.downgrade))
+
 
 if __name__ == "__main__":
     unittest.main()

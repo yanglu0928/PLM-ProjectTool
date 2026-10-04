@@ -41,6 +41,10 @@ from plm_assistant.modules.capability.application.review_subject import (
 from plm_assistant.modules.capability.application.read_capability import (
     CapabilityReadError, CapabilityReadQuery, CapabilityReadService,
 )
+from plm_assistant.modules.capability.application.change_state import (
+    ArchiveCapabilityBaseline, CapabilityStateError, CapabilityStateService,
+    PatchCapabilityBaseline, RestrictCapabilityVersion,
+)
 from plm_assistant.modules.capability.application.source_validation import (
     CapabilityDocumentRef,
     CapabilitySourceValidator,
@@ -56,6 +60,9 @@ from plm_assistant.modules.capability.infrastructure.version_create_repository i
 )
 from plm_assistant.modules.capability.infrastructure.read_repository import (
     SqlAlchemyCapabilityReadRepository,
+)
+from plm_assistant.modules.capability.infrastructure.state_repository import (
+    SqlAlchemyCapabilityStateRepository,
 )
 from plm_assistant.modules.document.infrastructure.read_repository import (
     SqlAlchemyDocumentReadRepository,
@@ -105,6 +112,7 @@ seed_global_source = _schema["seed_global_source"]
 def main() -> None:
     terminal_enabled = os.environ.get("PLM_CAP_TERMINAL_VALIDATION") == "1"
     read_enabled = os.environ.get("PLM_CAP_READ_VALIDATION") == "1"
+    state_enabled = os.environ.get("PLM_CAP_STATE_VALIDATION") == "1"
     name = "cap01a04a03_" + uuid.uuid4().hex[:10]
     admin_token = b"a" * 32
     with connect("postgres") as admin:
@@ -484,10 +492,152 @@ def main() -> None:
                             "CAP_01_A05_A02_READ_OWNER_PASS: admin history, current "
                             "approved member projection and nonmember denial verified"
                         )
+                    if state_enabled:
+                        state_service = CapabilityStateService(
+                            unit_of_work=runtime.unit_of_work, access=access,
+                            license_guard=guard,
+                            repository=SqlAlchemyCapabilityStateRepository(),
+                            receipts=receipts, audit=audit, clock=lambda: now,
+                        )
+                        patched = state_service.patch(PatchCapabilityBaseline(
+                            admin_token, CSRF, uuid.uuid4(), baseline.baseline_id,
+                            12, "PLM Review Controlled", None,
+                        ))
+                        assert patched.etag == '"v13"'
+                        review_candidate = version_service.create(
+                            CreateCapabilityVersion(
+                                admin_token, CSRF, uuid.uuid4(),
+                                baseline.baseline_id, 13, (item,),
+                                str(uuid.uuid4()),
+                            )
+                        )
+                        with runtime.unit_of_work() as tx:
+                            candidate_review = review.submit_in_transaction(
+                                tx, actor_id=actor, subject_type="CAP-01",
+                                subject_id=baseline.baseline_id,
+                                subject_version_id=review_candidate.baseline_version_id,
+                                reviewer_ids=(reviewer_one,),
+                                policy_code="DEPLOYMENT_ALL_V1",
+                                trace_id=uuid.uuid4(),
+                            )
+                            tx.commit()
+                        try:
+                            state_service.restrict(RestrictCapabilityVersion(
+                                admin_token, CSRF, uuid.uuid4(), baseline.baseline_id,
+                                review_candidate.baseline_version_id,
+                                "SOURCE_WITHDRAWN", str(uuid.uuid4()),
+                            ))
+                        except CapabilityStateError as error:
+                            assert error.code == "CONFLICT_STATE"
+                        else:
+                            raise AssertionError("IN_REVIEW Capability was restricted")
+                        try:
+                            state_service.archive(ArchiveCapabilityBaseline(
+                                admin_token, CSRF, uuid.uuid4(), baseline.baseline_id,
+                                15, str(uuid.uuid4()),
+                            ))
+                        except CapabilityStateError as error:
+                            assert error.code == "CONFLICT_STATE"
+                        else:
+                            raise AssertionError("IN_REVIEW Capability was archived")
+                        with runtime.unit_of_work() as tx:
+                            review.withdraw_in_transaction(
+                                tx, actor_id=actor,
+                                review_id=candidate_review.review_id,
+                                round_id=candidate_review.round_id,
+                                trace_id=uuid.uuid4(), expected_version=1,
+                                reason="synthetic state-owner validation",
+                            )
+                            tx.commit()
+                        approved_restrict = RestrictCapabilityVersion(
+                            admin_token, CSRF, uuid.uuid4(), baseline.baseline_id,
+                            final_version.baseline_version_id,
+                            "SOURCE_WITHDRAWN", str(uuid.uuid4()),
+                        )
+                        first_restrict = state_service.restrict(approved_restrict)
+                        replay_restrict = state_service.restrict(approved_restrict)
+                        assert first_restrict == replay_restrict
+                        state_service.restrict(RestrictCapabilityVersion(
+                            admin_token, CSRF, uuid.uuid4(), baseline.baseline_id,
+                            review_candidate.baseline_version_id,
+                            "REVIEW_SCOPE_WITHDRAWN", str(uuid.uuid4()),
+                        ))
+                        archive_command = ArchiveCapabilityBaseline(
+                            admin_token, CSRF, uuid.uuid4(), baseline.baseline_id,
+                            18, str(uuid.uuid4()),
+                        )
+                        archived = state_service.archive(archive_command)
+                        assert state_service.archive(archive_command) == archived
+                        try:
+                            state_service.restrict(RestrictCapabilityVersion(
+                                admin_token, CSRF, uuid.uuid4(), baseline.baseline_id,
+                                version.baseline_version_id,
+                                "POST_ARCHIVE_RESTRICTION", str(uuid.uuid4()),
+                            ))
+                        except CapabilityStateError as error:
+                            assert error.code == "CONFLICT_STATE"
+                        else:
+                            raise AssertionError("archived Baseline accepted Version write")
+                        try:
+                            version_service.create(CreateCapabilityVersion(
+                                admin_token, CSRF, uuid.uuid4(), baseline.baseline_id,
+                                19, (item,), str(uuid.uuid4()),
+                            ))
+                        except CapabilityVersionCreateError as error:
+                            assert error.code == "CAPABILITY_STATE_CONFLICT"
+                        else:
+                            raise AssertionError("Draft created under archived Baseline")
+                        with connect(name) as db:
+                            assert db.execute("""
+                                SELECT baseline_state,current_approved_version_ref,
+                                       name,description,lock_version
+                                  FROM plm.cap_baselines WHERE baseline_id=%s
+                            """, (baseline.baseline_id,)).fetchone() == (
+                                "ARCHIVED", None, "PLM Review Controlled", None, 19,
+                            )
+                            state_rows = dict(db.execute("""
+                                SELECT baseline_version_id,version_state
+                                  FROM plm.cap_baseline_versions
+                                 WHERE baseline_version_id IN (%s,%s)
+                            """, (
+                                final_version.baseline_version_id,
+                                review_candidate.baseline_version_id,
+                            )).fetchall())
+                            assert state_rows == {
+                                final_version.baseline_version_id: "RESTRICTED",
+                                review_candidate.baseline_version_id: "RESTRICTED",
+                            }
+                            actions = dict(db.execute("""
+                                SELECT action,count(*) FROM plm.aud_events
+                                 WHERE target_owner_module='capability'
+                                   AND action IN ('CAP_BASELINE_PATCHED',
+                                                  'CAP_BASELINE_ARCHIVED',
+                                                  'CAP_VERSION_RESTRICTED')
+                                 GROUP BY action
+                            """).fetchall())
+                            assert actions == {
+                                "CAP_BASELINE_PATCHED": 1,
+                                "CAP_BASELINE_ARCHIVED": 1,
+                                "CAP_VERSION_RESTRICTED": 2,
+                            }, actions
+                        try:
+                            command.downgrade(cfg, "20261005_0094")
+                        except Exception as error:
+                            assert "Capability state-owner history prevents downgrade" in str(error)
+                        else:
+                            raise AssertionError("Schema0095 downgraded state history")
+                        print(
+                            "CAP_01_A05_A03_STATE_OWNER_PASS: metadata, active Review "
+                            "fences, approved-pointer restriction, replay, archive and "
+                            "history refusal verified"
+                        )
                     try:
                         command.downgrade(cfg, "20261005_0093")
                     except Exception as error:
-                        assert "Capability terminal history prevents downgrade" in str(error)
+                        expected = ("Capability state-owner history prevents downgrade"
+                                    if state_enabled else
+                                    "Capability terminal history prevents downgrade")
+                        assert expected in str(error)
                     else:
                         raise AssertionError("Schema0094 downgraded terminal history")
                     print(

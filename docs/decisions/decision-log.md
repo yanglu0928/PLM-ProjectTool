@@ -8148,3 +8148,11 @@
 - Reason：GLOBAL URL没有ProjectId，冻结的“受权项目成员只读”若解释为可读全历史，会暴露Draft、退回、已替代或受限标准事实；只检查曾经的成员记录也会让项目归档、部门停用或成员移除后继续读取。游标若不绑定投影或资源族可绕过后续Router过滤。
 - Impact/Rollback：无Schema/Migration/公开HTTP/依赖/网络/Secret或外发。可停止装配内部读取服务回滚新流量，历史不变；A05-A06/A07必须供给独立目标账户密钥，否则失败关闭。
 - Verification：Win11/PG18.6四版本真实投影验证管理员全历史、成员当前APPROVED、旧版隐藏和非成员拒绝；新增13、后端2572/3跳过；wheel Capability36，SHA-256 `824642fbec46d94050047da4b73a190fd2e3e28d9495e8caabc26960b81f7f70`。
+
+# DEC-20261005-842：Capability 限制清除正式指针且归档成为终态写栅栏
+
+- Date/WBS：2026-10-05 / `CAP-01-A05-A03`；依据冻结DM-05/API-04、CR-CAP-002、DEC-840/841及Schema0094。
+- Decision：Schema0095仅开放ACTIVE Baseline元数据修改、ACTIVE→ARCHIVED和非IN_REVIEW Version单向RESTRICTED。限制当前APPROVED必须同事务清空正式指针并推进Baseline锁；限制原因使用受控Audit reason code。ARCHIVED不撤销历史引用，但禁止全部后续Capability写，需先限制再归档。Patch强ETag；Archive/Restrict持久幂等且每次首次成功只写一条Audit。
+- Reason：保留指向RESTRICTED Version的正式指针会让安全限制失效；评审中直接限制会使Review快照与Subject状态断裂。若归档后仍允许限制Version并推进Baseline锁，Archive首次响应ETag将无法精确重放，需新增结果表或削弱幂等；终态写栅栏更小且符合归档语义。
+- Impact/Rollback：内部Schema`0094 -> 0095`只替换函数，无表列/API挂载/依赖/外发。无新状态历史可恢复0094；存在三类Audit、ARCHIVED或RESTRICTED历史拒降并向前修复。当前正式版被限制后普通成员暂时不可见该Baseline，直至新版本批准。
+- Verification：Win11/PG18.6空库降升/drift、Patch、评审冲突、撤回后两Version限制、指针清空、重放、Audit、Archive终态和拒降通过；后端2579/3跳过；wheel Capability43+解包Migration4，SHA-256 `f1e4b6f006357b8fa0afb773d2941abc70aa5e299318cca6af86e048ccc7bdb0`。
