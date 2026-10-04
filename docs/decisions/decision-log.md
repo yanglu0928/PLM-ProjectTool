@@ -8339,3 +8339,11 @@
 - Reason：Handover读取同时依赖License、当前Session、Project授权和独立cursor信任；不得因单个密钥缺失静默发布无分页保护或半成品路由。
 - Impact/Rollback：无Migration/API语义破坏/依赖/网络/外发。正式服务账户密钥预置仍是Release前置；撤Windows组合注入恢复404。
 - Verification：Win11/PG18.6真实HTTP分页/详情/拒绝/零写PASS，组合定向34、后端2659通过/3跳过，wheel SHA-256 `68d630b740cad7ade9f577cb92d5fe2842921ef4bb9972e073cacc41feb200a3`。首轮fixture非原子建Root/Event被触发器拒绝，改为同事务后重跑PASS，未放宽产品约束。
+
+# DEC-20261005-866：Handover Review数据库终态边界先于应用Subject Owner
+
+- Date/WBS：2026-10-05 / `HND-01-A04-A02-P01`；依据CR-HND-001/002、DM-05/API-02、Schema0034/0035/0097/0100。
+- Decision：将A02拆为P01 Schema0101和P02应用Subject Owner/Review内部链。P01只开放精确Review状态转换，并以延迟约束强制PROJECT/HND-02/Project/Analysis/Version/Round绑定、敏感Item非取消Action覆盖、批准时Review/Version/Item/正式指针原子一致；退回/撤回保留候选Item且不得成为正式指针。
+- Reason：数据库转换边界与应用权限/幂等编排具有不同回滚面；先固定提交期不变量，可阻止后续Owner或人工SQL产生半正式状态，同时不把Action承接误当问题关闭。拆分不改变冻结Operation或CR-HND-002业务语义。
+- Impact/Rollback：内部`0100 -> 0101`只替换/新增函数与延迟触发器，无表列/API/依赖/网络/外发。无Review历史可降并恢复0097守卫；存在送审/正式化/Item确认历史则拒降，只能向前修复。P02前生产Review写仍关闭。
+- Verification：Win11/PG18.6空库升降重升、既有DRAFT升级、drift、PROJECT绑定、Action覆盖、提前确认拒绝、批准原子投影与历史拒降通过；专项7、后端2662通过/3跳过，wheel解包导入PASS，SHA-256 `149a4c6e2b2d92fc07302346d9e2f43178e85ee9ad14ef6caa02c8d02058c046`。首次全量唯一失败为迁移合同仍断言0100，更新至0101后完整重跑PASS。

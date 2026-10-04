@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/HND-01-A04-A02-P01 新增Schema0101 Handover Review状态与终态完整性边界：PROJECT/HND-02/Version/Round精确绑定，缺资料或待确认Item须有非取消Action承接，批准时Review/Version/全部Item/正式指针原子投影，退回/撤回不写正式事实，保留历史拒绝降级。兼容性/升级/回滚：内部`0100 -> 0101`仅替换/新增函数与延迟触发器，无表列/冻结API/依赖/网络/外发；无Review历史可降级，有历史仅向前修复。验证：Win11/PG18.6升降/既有DRAFT升级/drift/正反例，专项7、后端2662通过/3跳过、wheel解包导入PASS，SHA-256 `149a4c6e2b2d92fc07302346d9e2f43178e85ee9ad14ef6caa02c8d02058c046`。已知问题：P02 Subject Owner/内部Review链及后续HTTP/Windows组合/UI、Gate3和发行仍待。
+
 - 2026-10-05：0.1.0-dev.0/HND-02-A04-A04 新增Action读取Windows失败关闭组合，在两个显式Platform模式使用当前账户Vault独立cursor密钥挂载LIST/GET，Login-only/默认app保持404。兼容性/升级/回滚：无Migration/冻结API破坏/依赖/网络/外发；发行前需为目标账户预置`handover-action-cursor-v1`，撤组合注入恢复404。验证：Win11/PG18.6真实HTTP/数据库、定向34、后端2659通过/3跳过、wheel解包导入PASS，SHA-256 `68d630b740cad7ade9f577cb92d5fe2842921ef4bb9972e073cacc41feb200a3`。已知问题：正式目标账户密钥、Action写HTTP/UI、Handover Review/Workflow、Gate3和发行仍待。
 
 - 2026-10-05：0.1.0-dev.0/HND-02-A04-A03 新增Action LIST/GET专用上下文绑定cursor与可选HTTP Router；列表仅安全摘要，详情为有界固定引用/当前事件，默认应用保持404。兼容性/升级/回滚：无Migration/冻结API破坏/依赖/配置/网络/外发，撤可选Router/cursor恢复404。验证：cursor/HTTP合同6、后端2657通过/3跳过、wheel解包导入PASS，SHA-256 `485980beef8b8ad65ef465bcc010f1e60a47f7ba1febff94ef185495f360d76c`。已知问题：A04 Windows组合/正式cursor密钥、Action写HTTP/UI、Review/Workflow、Gate3和发行仍待。
