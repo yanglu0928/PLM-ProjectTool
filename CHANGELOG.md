@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-04：0.1.0-dev.0/RAG-03-A05-P04-P02 新增Schema0087不可变业务Quality/Activation证据：固定50～10000样本、分类90%、精确引用98%、Project隔离/零越界/失败关闭；READY→ACTIVE及旧ACTIVE→RETIRED必须与Audit/ActivationResult、最新质量和当前Model/来源/全部构建授权原子一致。兼容性/升级/回滚：内部两表与状态守卫增量，无公开API/依赖/真实外发；空历史可降0086，有证据或激活历史拒降。验证：Win11/PG18.6迁移/drift、合成FAIL/PASS、直改拒绝、临时原子ACTIVE及拒降通过；RAG70、Metadata/Migration7、后端2442/跳过3、wheel77，SHA-256 `bbe7b7b1159ec282d762e0215d696c207a5e6df64c42bd83fb177babdd418c02`。已知问题：合成值仅证明机制，P03/P04 Owner、新独立业务证据、真实ACTIVE、Gate3/UAT和发行包待完成。
+
 - 2026-10-04：0.1.0-dev.0/RAG-03-A05-P04-P01 完成业务质量证据与ACTIVE切换前置核查：现有50条已见失败集不得复用，P04拆为Schema0087不可变Quality/Activation、受权质量登记及当前事实重验/唯一ACTIVE原子切换；隔离合成夹具只能证明机制，不能作为业务质量。兼容性/升级/回滚：仅文档，无代码、Schema/API、依赖、网络或外发变化。验证：静态交叉核对冻结DM-04/API-03、ADR-009、CR-RAG-003及Schema0086；未运行新增程序测试。已知问题：新独立达标证据、P02～P04、正式ACTIVE、Gate3/UAT和发行包待完成。
 
 - 2026-10-04：0.1.0-dev.0/RAG-03-A05-P03 新增技术验证Owner与Schema0086原子收敛：固定最多10查询/Top-5、`ef_search=200`/`strict_order`、同Scope exact Recall≥95%；PASS同事务完成Job/Attempt/Lease/Build并仅推进Index READY，技术FAIL保留不可变证据并关闭三方FAILED，Job/Build双向deferred守卫禁止半状态。兼容性/升级/回滚：内部服务/数据库函数增量，无公开API/依赖/真实外发；空状态可降0085，SUCCEEDED/READY或新失败历史拒降。验证：Win11/PG18.6空迁移、drift、PASS/FAILED及绕过负例通过；后端2438/跳过3、wheel隔离64，SHA-256 `bcb6d531593c544f6448a1dec090f7e12ed6a4f2c95d404400ef2449e252f946`。已知问题：P04新独立业务质量/激活、正式性能、Server2025/Debian13、Gate3/UAT和发行包待完成。

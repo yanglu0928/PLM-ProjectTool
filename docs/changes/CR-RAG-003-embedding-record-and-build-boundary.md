@@ -1,6 +1,6 @@
 # CR-RAG-003：EmbeddingRecord、受控 HNSW 与构建发送边界
 
-日期：2026-10-04；状态：`A05_P04_P01_ACTIVATION_PRECHECK_PASS`；WBS：`RAG-03-A01～A05`。关联 Gate 2 冻结 ADR-004、DM-04、SC-02～04、API-03，以及 CR-RAG-002/Schema0077；原冻结提交 `64cdf09` 不改。
+日期：2026-10-04；状态：`A05_P04_P02_QUALITY_SCHEMA_PASS`；WBS：`RAG-03-A01～A05`。关联 Gate 2 冻结 ADR-004、DM-04、SC-02～04、API-03，以及 CR-RAG-002/Schema0077；原冻结提交 `64cdf09` 不改。
 
 ## 差异与实施方案
 
@@ -128,3 +128,9 @@ Windows11/PostgreSQL18.6空迁移/降级/重升、drift、1024维正向READY、�
 现有50条已见失败集不能复用，仓库当前也没有新独立达标业务证据，因此不允许直接产生真实ACTIVE或关闭Gate3/UAT。P04拆为Schema0087不可变Quality/Activation证据、受权质量登记Owner、当前来源/Model/全部构建授权重验及唯一ACTIVE原子切换Owner。质量表只保存引用、计数和SHA-256，不保存Query、Golden答案或客户正文；数据库固定分类9000、精确引用9800 basis points，并要求Project隔离、越界引用0和失败关闭检查通过。
 
 Windows隔离验证后续可使用明确标记的全新`SYNTHETIC_CONTRACT_FIXTURE`证明机制，但不得作为正式业务质量。P01仅静态核查和实施拆分，无代码、Schema/API、依赖、网络或外发变化；进入P02。
+
+## A05-P04-P02 实施与结果
+
+Schema0087/ORM新增不可变QualityResult与ActivationResult。数据库由正确数重算basis points并固定分类9000、精确引用9800门槛；PASSED还必须满足Project隔离、零越界引用和失败关闭检查。证据仅存引用、计数和SHA-256，无Query/Golden/客户正文。Index守卫与deferred validator要求READY→ACTIVE、可选旧ACTIVE→RETIRED、Audit、ActivationResult、最新质量结果及当前Model/来源/全部构建授权在同一事务一致；直接状态更新拒绝。
+
+Win11/PG18.6空库升降重升、drift、合成FAILED/PASSED证据、直接激活拒绝、带Audit临时原子激活、不可变和拒降通过；该临时ACTIVE仅证明机制。RAG单元70、Migration/ORM Metadata 7、后端2442/3跳过、wheel隔离77通过，wheel SHA-256 `bbe7b7b1159ec282d762e0215d696c207a5e6df64c42bd83fb177babdd418c02`。无真实Provider I/O或客户数据外发；进入P03受权登记Owner，真实ACTIVE/Gate3/UAT仍阻塞。

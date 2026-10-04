@@ -7,6 +7,7 @@ from datetime import datetime
 
 from sqlalchemy import (
     BigInteger,
+    Boolean,
     CheckConstraint,
     Computed,
     ForeignKeyConstraint,
@@ -738,6 +739,214 @@ class EmbeddingIndexValidationRow(Base):
     completed_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True, precision=6), nullable=False,
         server_default=text("statement_timestamp()"),
+    )
+    created_xid: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("txid_current()"),
+    )
+
+
+class EmbeddingIndexQualityResultRow(Base):
+    """Immutable held-out business-quality result; no query or answer body."""
+
+    __tablename__ = "rag_embedding_index_quality_results"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["embedding_index_id"], ["plm.rag_embedding_indexes.embedding_index_id"],
+            name="fk_rag_index_quality__index", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["technical_validation_ref"],
+            ["plm.rag_embedding_index_validations.embedding_index_validation_id"],
+            name="fk_rag_index_quality__technical_validation", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["project_id"], ["plm.prj_projects.project_id"],
+            name="fk_rag_index_quality__project", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["embedding_model_ref"], ["plm.ai_models.ai_model_id"],
+            name="fk_rag_index_quality__model", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["evaluated_by"], ["plm.auth_users.user_id"],
+            name="fk_rag_index_quality__evaluator", ondelete="NO ACTION",
+        ),
+        UniqueConstraint(
+            "embedding_index_id", "dataset_fingerprint", "evaluation_policy_ref",
+            name="uq_rag_index_quality__index_dataset_policy",
+        ),
+        UniqueConstraint("dataset_fingerprint", name="uq_rag_index_quality__dataset"),
+        CheckConstraint(
+            "(scope='GLOBAL' AND project_id IS NULL) OR "
+            "(scope='PROJECT' AND project_id IS NOT NULL)",
+            name="ck_rag_index_quality__scope_project",
+        ),
+        CheckConstraint(
+            "index_purpose ~ '^[A-Za-z][A-Za-z0-9._:/-]{0,127}$' AND "
+            "dataset_ref ~ '^[A-Za-z][A-Za-z0-9._:/-]{0,255}$' AND "
+            "evaluation_policy_ref ~ '^[A-Za-z][A-Za-z0-9._:/-]{0,127}$'",
+            name="ck_rag_index_quality__refs",
+        ),
+        CheckConstraint(
+            "octet_length(source_snapshot_fingerprint)=32 AND "
+            "octet_length(dataset_fingerprint)=32 AND "
+            "octet_length(isolation_attestation_fingerprint)=32 AND "
+            "octet_length(evaluation_artifact_fingerprint)=32",
+            name="ck_rag_index_quality__fingerprints",
+        ),
+        CheckConstraint(
+            "dataset_case_count BETWEEN 50 AND 10000 AND "
+            "classification_correct_count BETWEEN 0 AND dataset_case_count AND "
+            "exact_citation_correct_count BETWEEN 0 AND dataset_case_count AND "
+            "minimum_classification_basis_points=9000 AND "
+            "minimum_exact_citation_basis_points=9800 AND "
+            "classification_basis_points="
+            "(classification_correct_count::bigint*10000/dataset_case_count) AND "
+            "exact_citation_basis_points="
+            "(exact_citation_correct_count::bigint*10000/dataset_case_count) AND "
+            "out_of_scope_citation_count BETWEEN 0 AND dataset_case_count",
+            name="ck_rag_index_quality__metrics",
+        ),
+        CheckConstraint(
+            "(quality_state='PASSED' AND error_code IS NULL AND "
+            "classification_basis_points>=minimum_classification_basis_points AND "
+            "exact_citation_basis_points>=minimum_exact_citation_basis_points AND "
+            "project_isolation_pass AND out_of_scope_citation_count=0 AND "
+            "failure_closure_pass) OR (quality_state='FAILED' AND "
+            "error_code ~ '^RAG_[A-Z0-9_]{1,59}$')",
+            name="ck_rag_index_quality__result",
+        ),
+        CheckConstraint(
+            "created_xid>0 AND isfinite(dataset_sealed_at) AND "
+            "isfinite(completed_at) AND dataset_sealed_at<completed_at",
+            name="ck_rag_index_quality__time",
+        ),
+        Index(
+            "ix_rag_index_quality__index_time", "embedding_index_id",
+            text("completed_at DESC"), text("quality_result_id DESC"),
+        ),
+    )
+
+    quality_result_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"),
+    )
+    embedding_index_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    technical_validation_ref: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    scope: Mapped[str] = mapped_column(Text, nullable=False)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    index_purpose: Mapped[str] = mapped_column(Text, nullable=False)
+    embedding_model_ref: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    source_snapshot_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    dataset_ref: Mapped[str] = mapped_column(Text, nullable=False)
+    dataset_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    isolation_attestation_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    evaluation_artifact_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    evaluation_policy_ref: Mapped[str] = mapped_column(Text, nullable=False)
+    dataset_case_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    classification_correct_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    exact_citation_correct_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    minimum_classification_basis_points: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("9000"),
+    )
+    classification_basis_points: Mapped[int] = mapped_column(Integer, nullable=False)
+    minimum_exact_citation_basis_points: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("9800"),
+    )
+    exact_citation_basis_points: Mapped[int] = mapped_column(Integer, nullable=False)
+    project_isolation_pass: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    out_of_scope_citation_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    failure_closure_pass: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    quality_state: Mapped[str] = mapped_column(Text, nullable=False)
+    error_code: Mapped[str | None] = mapped_column(Text)
+    evaluated_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    dataset_sealed_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+    )
+    completed_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+    created_xid: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("txid_current()"),
+    )
+
+
+class EmbeddingIndexActivationResultRow(Base):
+    """Immutable first activation result and optional superseded Index."""
+
+    __tablename__ = "rag_embedding_index_activation_results"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["embedding_index_id"], ["plm.rag_embedding_indexes.embedding_index_id"],
+            name="fk_rag_index_activation__index", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["quality_result_ref"],
+            ["plm.rag_embedding_index_quality_results.quality_result_id"],
+            name="fk_rag_index_activation__quality", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["retired_index_ref"], ["plm.rag_embedding_indexes.embedding_index_id"],
+            name="fk_rag_index_activation__retired", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["project_id"], ["plm.prj_projects.project_id"],
+            name="fk_rag_index_activation__project", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["activated_by"], ["plm.auth_users.user_id"],
+            name="fk_rag_index_activation__actor", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["audit_event_id"], ["plm.aud_events.audit_event_id"],
+            name="fk_rag_index_activation__audit", ondelete="NO ACTION",
+        ),
+        UniqueConstraint("embedding_index_id", name="uq_rag_index_activation__index"),
+        UniqueConstraint("quality_result_ref", name="uq_rag_index_activation__quality"),
+        UniqueConstraint("retired_index_ref", name="uq_rag_index_activation__retired"),
+        UniqueConstraint("audit_event_id", name="uq_rag_index_activation__audit"),
+        CheckConstraint(
+            "(scope='GLOBAL' AND project_id IS NULL) OR "
+            "(scope='PROJECT' AND project_id IS NOT NULL)",
+            name="ck_rag_index_activation__scope_project",
+        ),
+        CheckConstraint(
+            "index_purpose ~ '^[A-Za-z][A-Za-z0-9._:/-]{0,127}$' AND "
+            "embedding_index_id<>coalesce(retired_index_ref,"
+            "'00000000-0000-0000-0000-000000000000'::uuid)",
+            name="ck_rag_index_activation__refs",
+        ),
+        CheckConstraint(
+            "expected_lock_version=2 AND lock_version=3 AND "
+            "((retired_index_ref IS NULL AND "
+            "retired_before_lock_version IS NULL AND retired_after_lock_version IS NULL) "
+            "OR (retired_index_ref IS NOT NULL AND "
+            "retired_before_lock_version>=3 AND "
+            "retired_after_lock_version=retired_before_lock_version+1))",
+            name="ck_rag_index_activation__versions",
+        ),
+        CheckConstraint("created_xid>0 AND isfinite(activated_at)",
+                        name="ck_rag_index_activation__time"),
+    )
+
+    activation_result_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"),
+    )
+    embedding_index_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    quality_result_ref: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    retired_index_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    scope: Mapped[str] = mapped_column(Text, nullable=False)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    index_purpose: Mapped[str] = mapped_column(Text, nullable=False)
+    activated_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    audit_event_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    trace_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    expected_lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    retired_before_lock_version: Mapped[int | None] = mapped_column(BigInteger)
+    retired_after_lock_version: Mapped[int | None] = mapped_column(BigInteger)
+    activated_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
     )
     created_xid: Mapped[int] = mapped_column(
         BigInteger, nullable=False, server_default=text("txid_current()"),

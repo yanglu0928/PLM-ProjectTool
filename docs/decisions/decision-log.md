@@ -7876,3 +7876,11 @@
 - Reason：现有50条为已见失败集且仓库没有新独立达标业务证据；直接生成PASS会伪造质量。把登记与激活合并又会让失败证据无法保留，或让过期来源/授权借旧PASS激活。
 - Impact/Rollback：P01仅文档，无代码、Schema/API、依赖、网络或外发。后续追加表空历史可降，有历史向前修复；正式ACTIVE、Gate3/UAT继续阻塞。
 - Verification：静态交叉核对DM-04/API-03/ADR-009、Schema0086及历史98%/48%/74%；未运行新增程序测试。
+
+# DEC-20261004-808：质量失败可追加保留，激活只认最新达标证据与当前事实
+
+- Date/WBS：2026-10-04 / `RAG-03-A05-P04-P02`；依据DEC-807、ADR-009、CR-RAG-003及Schema0086。
+- Decision：Schema0087允许同一Index追加不同独立数据集的FAILED/PASSED质量结果，但数据集指纹全局唯一，防止同一集合重复包装；激活只认完成时间/结果ID最新的PASSED。数据库固定50～10000样本、分类90%、精确引用98%、Project隔离、零越界引用和失败关闭。READY→ACTIVE和旧ACTIVE→RETIRED由deferred validator绑定Audit/ActivationResult并重验Model、来源与全部构建授权。
+- Reason：单Index唯一质量行会因一次失败永久封死后续真正独立复验；只挑任意历史PASS又可能忽略更新失败。最新证据规则同时保留失败历史并禁止择优放行。
+- Impact/Rollback：新增内部Schema0087/ORM，无公开API、依赖或真实外发。空历史可降0086；有Quality/Activation或ACTIVE/RETIRED历史拒降。登记/激活Owner尚未开放。
+- Verification：Win11/PG18.6空库迁移/drift、合成48%/74%失败、90%/98%通过、直接ACTIVE拒绝、带Audit原子ACTIVE、不可变/拒降通过；RAG70、Metadata/Migration7、后端2442/3跳过、wheel77，SHA-256 `bbe7b7b1159ec282d762e0215d696c207a5e6df64c42bd83fb177babdd418c02`。合成ACTIVE不作为业务质量。
