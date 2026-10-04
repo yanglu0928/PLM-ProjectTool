@@ -90,6 +90,18 @@ COMMON_ERRORS: dict[str, ErrorSpec] = {
     "BUSINESS_REVIEW_NOT_ELIGIBLE": ErrorSpec(
         "BUSINESS_REVIEW_NOT_ELIGIBLE", 422, "当前版本不满足送审条件。"
     ),
+    "REVIEW_SUBJECT_LOCKED": ErrorSpec(
+        "REVIEW_SUBJECT_LOCKED", 409, "当前主题版本正在评审中。"
+    ),
+    "REVIEW_REVIEWER_INELIGIBLE": ErrorSpec(
+        "REVIEW_REVIEWER_INELIGIBLE", 422, "确认人集合不符合评审要求。"
+    ),
+    "REVIEW_COMMENT_REQUIRED": ErrorSpec(
+        "REVIEW_COMMENT_REQUIRED", 422, "退回决定必须填写实质意见。"
+    ),
+    "REVIEW_DECISION_EXISTS": ErrorSpec(
+        "REVIEW_DECISION_EXISTS", 409, "当前确认人已作出最终决定。"
+    ),
 }
 
 

@@ -8355,3 +8355,11 @@
 - Reason：Review批准表示问题清单正式确认，不等于HND-03问题已关闭；通用Review已有可靠的权限、幂等、审计和不可变历史，另建审批表会产生双事实。来源漂移时仍须允许PM撤回，以释放在审锁而不伪造批准。
 - Impact/Rollback：无新Schema revision/公开API/依赖/外发。CR-HND-004同时修复0101跨表字段解析和批准后升版旧限制；已有Review/批准历史不可删除，停止装配Owner仅关闭新写入。旧0101开发库需向前修复。
 - Verification：Win11/PG18.6真实create/start/approve、批准后新建V2、再次create/start/withdraw，最终V1 APPROVED/CONFIRMED且为正式指针、V2 RETURNED/CANDIDATE；定向36、后端2667通过/3跳过，wheel SHA-256 `3954fa5175350eb61ec36ea410d150f0e7ae56e4ccb1a5b014060922bc8e08eb`。
+
+# DEC-20261005-868：Review HTTP仅投影最小固定身份并保持Owner关闭失败
+
+- Date/WBS：2026-10-05 / `HND-01-A04-A02-P03`；依据API-01/API-02、DM-05、DEC-867。
+- Decision：四个冻结Review写路径使用严格白名单DTO；撤回正文细化为精确`reason`可空字段。默认app不注入Router，未知Subject必须由应用Owner注册失败关闭，HTTP不接受owner_module。决定不擅自增加If-Match；开轮/撤回保持冻结M控制。
+- Reason：冻结基线已定义路径、主体和核心DTO，但未细化撤回正文/最小回执；白名单增量避免直接序列化内部快照和主题正文。
+- Impact/Rollback：无Migration/依赖/配置/网络/外发，不改冻结路径与权限。撤可选Router注入即恢复404；P04前生产未挂载。
+- Verification：合同5项、Review相关定向109项、后端全量2672通过/3跳过；默认404、强If-Match、严格JSON、四类冻结Review错误和安全投影已验。wheel导入PASS，SHA-256 `f5693a3fce3237f24516cb5f80bf354a3d9b01379dea52d3e99218c6550dbf64`；真实Windows/PG生产组合留P04。
