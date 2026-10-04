@@ -8020,3 +8020,11 @@
 - Reason：把未完成Cancel/密钥/Worker组合的Router直接接入生产会把内部能力误表述为可用；HTTP层若信任Owner返回对象身份或宽松解析，还可能跨Scope响应或接受未来字段静默漂移。默认关闭可先冻结可测合同，再在P06由完整组合一次启用。
 - Impact/Rollback：无Migration、依赖、网络或外发；冻结URL和Operation保持，query fingerprint安全收紧沿用CR-RAG-004。撤除可选Router即可恢复原404，内部历史不改写。首次wheel隔离命令因PowerShell参数错误作废，已用新目录和显式导入路径重跑，不影响产品实现。
 - Verification：HTTP合同5、RAG135、后端2513/3跳过；wheel隔离RAG135+HTTP5+Migration4，SHA-256 `e70068a741ad18a0d5eda3796a813ad021f7da1e33b95b0149056567d5beca96`。Owner真实PG证据沿用A02-P02/P03；本项未重复PG，P08负责真实HTTP全链。
+
+# DEC-20261004-826：Retrieval 两个取消入口共享写 Owner，首次响应由 Audit 重建
+
+- Date/WBS：2026-10-04 / `RAG-04-A06-P05`；依据冻结API-03、Schema0090、CR-RAG-004、DEC-822/823/825。
+- Decision：Retrieval别名与通用Project Job cancel registry均委托同一`RAGRetrievalCancelOwner`。PENDING直接同事务终结；RUNNING只提交CANCEL_REQUESTED，由当前Worker Reconciler或租约到期Reconciler原子关闭。两个入口保留独立Operation Idempotency Scope，但共享锁定/授权/状态/Audit核心；Receipt以不可变Audit重建首次状态和版本，后续终结不改写首次响应。
+- Reason：两套写实现会使Job/Run、版本和幂等证据分叉；RUNNING请求线程直接释放另一个Worker的Lease会破坏fencing。Schema0090固定版本形态允许从Audit状态确定首次响应，无需再新增只为响应缓存服务的Schema表。
+- Impact/Rollback：复用0090，无Migration/依赖/网络/外发；默认Router及生产registry仍关闭，P06再组合。可撤Owner/Router/Reconciler关闭新请求，已取消历史保留并拒绝物理降级。
+- Verification：新增9、RAG141、相关18、后端2522/3跳过；Win11/PG18.6真实别名直取消、通用registry协作取消、当前/过期Reconciler及回放通过；wheel RAG141+HTTP8+Migration4，SHA-256 `5179db1356d9a8e70779457355e2d5dbc6eac8b196706f0bb650dc99578486eb`。1秒非法Lease与直接改Job时间导致版本漂移的两轮夹具证据均作废，合法3秒自然到期新库重跑通过。

@@ -117,3 +117,9 @@ Schema0090新增冻结模型已有的RetrievalRun CANCELLED。PENDING直接取�
 新增默认关闭的Create/Get/Result/Context可选Router。Create严格限定七字段、PROJECT/FTS-only/无rerank，并执行Origin、Session、CSRF与幂等控制；读取复用A06-P03当前授权DTO并在HTTP边界再次复核Project/Run绑定，只公开状态、来源、整数分数和最小snippet。默认应用仍404，取消、生产密钥/Worker与真实流量未提前开放。
 
 无Migration、依赖、网络或外发；Owner真实PG证据沿用A02-P02/P03，本合同项未重复数据库验证，P08负责真实HTTP全链。HTTP合同5、RAG135、后端2513/3跳过、wheel隔离RAG135+HTTP5+Migration4通过，SHA-256 `e70068a741ad18a0d5eda3796a813ad021f7da1e33b95b0149056567d5beca96`。首次wheel隔离命令因PowerShell参数不兼容未实际解包并作废，已在新目录以显式导入路径重跑通过。进入A06-P05双路径同Owner取消。
+
+## A06-P05 实施与结果
+
+新增唯一Retrieval取消Owner、PostgreSQL Repository和专属Reconciler。冻结Retrieval别名与通用Project Job cancel registry均复用该Owner；PENDING直接形成Job v2/Run v1取消终态，RUNNING先形成Job v2请求，再由当前Worker RELEASED或过期Lease EXPIRED两类Reconciler形成Job v3/Run v1终态。两个入口的首次响应由Receipt引用不可变Audit重建，后续终结不改写首次`CANCEL_REQUESTED`响应。
+
+复用Schema0090，无Migration/依赖/Provider I/O/外发，默认生产组合仍关闭。新增9、RAG141、相关18、后端2522/3跳过；Windows11/PostgreSQL18.6真实别名直取消、通用registry、当前/过期Reconciler和重放通过；wheel RAG141+HTTP8+Migration4，SHA-256 `5179db1356d9a8e70779457355e2d5dbc6eac8b196706f0bb650dc99578486eb`。首次1秒非法Lease及第二次直接修改Job时间导致版本自增的夹具证据均作废，最终合法3秒自然到期在新库完整通过。进入A06-P06生产组合。
