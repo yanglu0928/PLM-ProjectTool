@@ -134,6 +134,10 @@ class CapabilityBaselineVersionRow(Base):
             "uq_cap_versions__baseline_in_review", "baseline_id", unique=True,
             postgresql_where=text("version_state='IN_REVIEW'"),
         ),
+        Index(
+            "uq_cap_versions__baseline_approved", "baseline_id", unique=True,
+            postgresql_where=text("version_state='APPROVED'"),
+        ),
         {"schema": "plm"},
     )
 

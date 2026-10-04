@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from typing import Protocol
 
 from plm_assistant.modules.auth.application.current_user import CurrentUserFacts
+from plm_assistant.modules.audit.application.public import AuditEventDraft
 from plm_assistant.modules.evidence.application.fixed_source_record import (
     LockedEvidenceSource,
 )
@@ -25,6 +26,7 @@ from plm_assistant.modules.review.application.subject_transition import (
     ReviewSubjectTransition,
     ReviewSubjectTransitionError,
 )
+from plm_assistant.modules.review.domain.round_progress import ReviewRoundState
 
 from .create_version import CapabilityItemDraft
 from .source_validation import (
@@ -78,6 +80,16 @@ class CapabilityReviewRepositoryPort(Protocol):
         actor_id: uuid.UUID,
     ) -> None: ...
 
+    def consume_terminal(
+        self, transaction: object, *, before: CapabilityReviewLock,
+        transition: ReviewSubjectTransition, version_state: str,
+    ) -> None: ...
+
+    def assert_terminal_consumed(
+        self, transaction: object, *, transition: ReviewSubjectTransition,
+        version_state: str,
+    ) -> None: ...
+
 
 class CapabilityReviewUserPort(Protocol):
     def current_enabled_user(
@@ -93,12 +105,7 @@ class CapabilityReviewEvidencePort(Protocol):
 
 
 class CapabilityReviewSubjectOwner:
-    """Real CAP-01 owner for Review start and nonterminal access.
-
-    A03 deliberately refuses terminal consumption. A04 installs the formal
-    transition owner and schema guard before an APPROVED/RETURNED/WITHDRAWN
-    Review can commit against a Capability version.
-    """
+    """Real CAP-01 owner for Review start, access and terminal consumption."""
 
     SUBJECT_TYPE = "CAP-01"
     POLICY_CODE = "DEPLOYMENT_ALL_V1"
@@ -108,13 +115,19 @@ class CapabilityReviewSubjectOwner:
         repository: CapabilityReviewRepositoryPort,
         sources: CapabilitySourceValidator,
         evidence: CapabilityReviewEvidencePort,
+        audit,
+        terminal_enabled: bool = True,
         clock=None,
     ) -> None:
         if any(item is None for item in (
-                users, repository, sources, evidence)):
+                users, repository, sources, evidence, audit)):
             raise ValueError("Capability Review Subject dependencies required")
         self._users, self._repo = users, repository
         self._sources, self._evidence = sources, evidence
+        self._audit = audit
+        if type(terminal_enabled) is not bool:
+            raise ValueError("Capability terminal policy is invalid")
+        self._terminal_enabled = terminal_enabled
         self._clock = clock or (lambda: datetime.now(timezone.utc))
 
     def prepare_start_in_transaction(
@@ -219,12 +232,37 @@ class CapabilityReviewSubjectOwner:
     def consume_terminal_in_transaction(
         self, tx: object, transition: ReviewSubjectTransition,
     ) -> None:
-        raise ReviewSubjectTransitionError()
+        self._require_transition(transition)
+        if not self._terminal_enabled or not transition.terminal:
+            raise ReviewSubjectTransitionError()
+        before = self._transition_lock(tx, transition)
+        state = self._terminal_version_state(transition)
+        self._repo.consume_terminal(
+            tx, before=before, transition=transition, version_state=state,
+        )
+        review_state = transition.after_progress.state.value
+        self._audit.append(tx, AuditEventDraft(
+            trace_id=transition.trace_id, event_scope="DEPLOYMENT",
+            target_project_id=None, actor_type="USER",
+            actor_id=transition.actor_id, original_actor_id=None,
+            actor_hint_digest=None, action="CAP_VERSION_" + review_state,
+            outcome="SUCCESS", target_owner_module="capability",
+            target_object_type="CAP-02",
+            target_object_id=transition.before.subject_version_id,
+            target_version_id=transition.before.subject_version_id,
+            before_state="IN_REVIEW", after_state=state,
+        ))
 
     def assert_terminal_consumed_in_transaction(
         self, tx: object, transition: ReviewSubjectTransition,
     ) -> None:
-        raise ReviewSubjectTransitionError()
+        self._require_transition(transition)
+        if not self._terminal_enabled or not transition.terminal:
+            raise ReviewSubjectTransitionError()
+        self._repo.assert_terminal_consumed(
+            tx, transition=transition,
+            version_state=self._terminal_version_state(transition),
+        )
 
     def require_transition_replay_access_in_transaction(
         self, tx: object, *, actor_id: uuid.UUID, review, result,
@@ -313,6 +351,15 @@ class CapabilityReviewSubjectOwner:
                 if previous != current:
                     raise ReviewSubjectAccessDenied()
         return tuple(observed[key] for key in sorted(observed, key=str))
+
+    @staticmethod
+    def _terminal_version_state(transition: ReviewSubjectTransition) -> str:
+        state = transition.after_progress.state
+        if state is ReviewRoundState.APPROVED:
+            return "APPROVED"
+        if state in (ReviewRoundState.RETURNED, ReviewRoundState.WITHDRAWN):
+            return "RETURNED"
+        raise ReviewSubjectTransitionError()
 
     def _require_users(
         self, tx, *, actor_id, reviewer_ids, actor_must_admin,

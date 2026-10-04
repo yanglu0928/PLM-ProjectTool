@@ -63,7 +63,6 @@ class SqlAlchemyCapabilityVersionCreateRepository:
             CapabilityBaselineRow.baseline_id == baseline.baseline_id,
             CapabilityBaselineRow.baseline_state == "ACTIVE",
             CapabilityBaselineRow.source_collection_ref == baseline.source_collection_ref,
-            CapabilityBaselineRow.current_approved_version_ref.is_(None),
             CapabilityBaselineRow.lock_version == baseline.lock_version,
             ~exists(select(1).where(
                 CapabilityBaselineVersionRow.baseline_id == baseline.baseline_id,

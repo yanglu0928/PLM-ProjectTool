@@ -108,6 +108,29 @@ class CapabilityFoundationSchemaTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "offline Capability Review"):
                 migration.downgrade()
 
+    def test_review_terminal_delta_formalizes_one_approved_version(self) -> None:
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions.20261005_0094_capability_review_terminal"
+        )
+        self.assertEqual(migration.down_revision, "20261005_0093")
+        sql = migration._TERMINAL_OWNER_GUARD + migration._TERMINAL_INTEGRITY
+        for required in (
+            "OLD.version_state='IN_REVIEW'",
+            "NEW.version_state IN ('APPROVED','RETURNED')",
+            "OLD.version_state='APPROVED' AND NEW.version_state='SUPERSEDED'",
+            "Capability approval formalization is incomplete",
+            "review_row.review_state NOT IN ('RETURNED','WITHDRAWN')",
+        ):
+            self.assertIn(required, sql)
+        index = next(
+            item for item in CapabilityBaselineVersionRow.__table__.indexes
+            if item.name == "uq_cap_versions__baseline_approved"
+        )
+        self.assertTrue(index.unique)
+        with patch.object(migration.context, "is_offline_mode", return_value=True):
+            with self.assertRaisesRegex(RuntimeError, "offline Capability terminal"):
+                migration.downgrade()
+
 
 if __name__ == "__main__":
     unittest.main()

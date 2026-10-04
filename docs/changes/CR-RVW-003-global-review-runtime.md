@@ -28,7 +28,7 @@ CAP-01 CapabilityBaseline 是 GLOBAL Root。若沿用 PROJECT 命令，必须伪
 
 - A02 优先复用现有 Schema0034/0035 已有 GLOBAL 列与约束，不修改表结构；现有 PROJECT 方法保留兼容包装，既有 `/api/v1/projects/...` 合同不变。
 - GLOBAL 幂等域使用部署级 Scope，不借用或伪造 ProjectId；Audit 使用 GLOBAL scope 且 `target_project_id=NULL`。
-- A04 如需 Schema0093，只替换 Capability 状态守卫，不改不可变内容列；有正式化历史时拒绝物理降级并采用向前修复。
+- A03使用Schema0093开放送审绑定，A04使用Schema0094开放终态正式化；两者只替换Capability状态守卫并追加必要索引/延迟完整性，不改不可变内容列。有对应历史时拒绝物理降级并采用向前修复。
 - 可通过不装配 GLOBAL 编排/Capability Subject Owner 停止新流量；已提交 Review、Audit、Version 和正式指针历史保留，不删除回滚。
 
 ## 验证计划
@@ -46,3 +46,4 @@ GLOBAL Review 允许部署管理员组织评审，不代表管理员可单人绕
 
 - 2026-10-05 / `CAP-01-A04-A02`：新增Review-owned GLOBAL submit/transition事务内核与仓储，双Scope Subject DTO按冻结合同开放；真实PG18.6完成两人APPROVED、WITHDRAWN、Audit、锁释放和Scope隔离，PROJECT回归不变。该内核仍要求受信caller提供认证/资格/License/幂等和真实Subject，未挂HTTP。下一项A04-A03。
 - 2026-10-05 / `CAP-01-A04-A03`：新增真实Capability Subject Owner及Schema0093送审绑定；送审原子进入IN_REVIEW并阻止替代Draft，终态重验当前Reviewer/来源后仍故意失败关闭。Win11/PG18.6、后端2557/3跳过及wheel定向通过。下一项A04-A04终态正式化。
+- 2026-10-05 / `CAP-01-A04-A04`：Schema0094与真实Subject终态消费完成；首版批准、退回、撤回、后续升版与旧正式版SUPERSEDED在Win11/PG18.6通过，终态Audit同事务。未挂HTTP，下一项A05前置核查。

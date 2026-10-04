@@ -8124,3 +8124,11 @@
 - Reason：在Review创建前写外键会违反引用完整性；创建后不再调用Subject则可能留下已开Review但未锁版本。提前允许APPROVED或仅靠应用约定会绕过正式指针、旧版状态和退回/撤回规则。
 - Impact/Rollback：内部Schema`0092 -> 0093`替换守卫并追加索引/延迟校验，无公开API、依赖、网络或外发。无Review历史可降；有历史拒降并向前修复。既有PROJECT Review Subject没有后绑定需求时可保持原实现，持久内核兼容缺省/空finalize。
 - Verification：Win11/PG18.6完成错误Evidence全回滚、真实送审绑定、替代Draft拒绝、非终态决策、Reviewer撤权拒绝、终态失败关闭及历史拒降；定向28、后端2557/3跳过；wheel Review103+Capability21，SHA-256 `15f26b23db3391abfd959d04f31b1c59e6028aa7075c031a31a6a6a159f41c55`。
+
+# DEC-20261005-839：Capability 撤回收敛为RETURNED并保留Review区别
+
+- Date/WBS：2026-10-05 / `CAP-01-A04-A04`；依据冻结共同版本状态、DM-05、CR-RVW-003、DEC-838及Schema0093。
+- Decision：Schema0094只开放`IN_REVIEW -> APPROVED/RETURNED`及`APPROVED -> SUPERSEDED`。Review WITHDRAWN在Capability Version投影为RETURNED，精确撤回事实由Review/Round/Event不可变历史保留。APPROVED原子替换正式指针并SUPERSEDE旧APPROVED；RETURNED/WITHDRAWN保持旧指针。首次批准后Version创建不再要求正式指针为空，但仍要求ACTIVE、强ETag和零IN_REVIEW。
+- Reason：冻结Version状态没有WITHDRAWN，新增枚举会扩大模型；回到DRAFT会允许复用已形成Review快照的内容。若继续要求正式指针为空，首次批准后无法创建任何修订版，违反不可变版本升版规则。
+- Impact/Rollback：内部Schema`0093 -> 0094`替换守卫并追加唯一APPROVED索引/延迟终态校验，无公开API、依赖或外发。无终态历史可降；有正式化历史拒降并向前修复。A03显式关闭模式仅用于历史验证，默认Owner启用终态。
+- Verification：Win11/PG18.6空库降升、首版批准、退回、撤回、继续建版、再批准/旧版SUPERSEDED、Audit与终态拒降通过；后端2559/3跳过；wheel Review103+Capability23，SHA-256 `002abd2f409b96be5f6b6f24a8cb7151a4b4f2cb17e501b9ed7bf58cc54e258a`。

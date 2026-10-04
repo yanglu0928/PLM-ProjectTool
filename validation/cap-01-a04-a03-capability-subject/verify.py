@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import runpy
+import os
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -90,6 +91,7 @@ seed_global_source = _schema["seed_global_source"]
 
 
 def main() -> None:
+    terminal_enabled = os.environ.get("PLM_CAP_TERMINAL_VALIDATION") == "1"
     name = "cap01a04a03_" + uuid.uuid4().hex[:10]
     admin_token = b"a" * 32
     with connect("postgres") as admin:
@@ -102,6 +104,10 @@ def main() -> None:
             cfg = create_migration_config(url)
             command.upgrade(cfg, "head")
             command.check(cfg)
+            if terminal_enabled:
+                command.downgrade(cfg, "20261005_0093")
+                command.upgrade(cfg, "head")
+                command.check(cfg)
             runtime = create_database_runtime(url)
             try:
                 with connect(name) as db:
@@ -170,7 +176,8 @@ def main() -> None:
                 owner = CapabilityReviewSubjectOwner(
                     users=SqlAlchemyCurrentUserAccess(),
                     repository=SqlAlchemyCapabilityReviewSubjectRepository(),
-                    sources=sources, evidence=evidence, clock=lambda: now,
+                    sources=sources, evidence=evidence, audit=audit,
+                    terminal_enabled=terminal_enabled, clock=lambda: now,
                 )
                 review = GlobalReviewPersistenceService(
                     repository=SqlAlchemyGlobalReviewRepository(),
@@ -275,59 +282,175 @@ def main() -> None:
                         "UPDATE plm.auth_users SET state='ENABLED' "
                         "WHERE user_id=%s", (reviewer_two,),
                     )
-                try:
+                if terminal_enabled:
                     with runtime.unit_of_work() as tx:
-                        review.decide_in_transaction(
+                        approved = review.decide_in_transaction(
                             tx, actor_id=reviewer_two,
                             review_id=submitted.review_id,
                             round_id=submitted.round_id,
                             trace_id=uuid.uuid4(),
                             decision=ReviewDecisionKind.APPROVE,
                         )
+                        assert approved.state.value == "APPROVED"
                         tx.commit()
-                except ReviewSubjectTransitionError:
-                    pass
-                else:
-                    raise AssertionError("A03 accepted terminal formalization")
-
-                with connect(name) as db:
-                    assert db.execute("""
-                        SELECT version_state,review_ref,review_round_ref
-                          FROM plm.cap_baseline_versions
-                         WHERE baseline_version_id=%s
-                    """, (version.baseline_version_id,)).fetchone() == (
-                        "IN_REVIEW", submitted.review_id, submitted.round_id,
+                    returned_version = version_service.create(
+                        CreateCapabilityVersion(
+                            admin_token, CSRF, uuid.uuid4(),
+                            baseline.baseline_id, 3, (item,),
+                            str(uuid.uuid4()),
+                        )
                     )
-                    assert db.execute("""
-                        SELECT lock_version,current_approved_version_ref
-                          FROM plm.cap_baselines WHERE baseline_id=%s
-                    """, (baseline.baseline_id,)).fetchone() == (2, None)
-                    assert db.execute("""
-                        SELECT review_state,lock_version
-                          FROM plm.rvw_reviews WHERE review_id=%s
-                    """, (submitted.review_id,)).fetchone() == (
-                        "IN_REVIEW", 2,
+                    with runtime.unit_of_work() as tx:
+                        returned_review = review.submit_in_transaction(
+                            tx, actor_id=actor, subject_type="CAP-01",
+                            subject_id=baseline.baseline_id,
+                            subject_version_id=returned_version.baseline_version_id,
+                            reviewer_ids=(reviewer_one,),
+                            policy_code="DEPLOYMENT_ALL_V1",
+                            trace_id=uuid.uuid4(),
+                        )
+                        tx.commit()
+                    with runtime.unit_of_work() as tx:
+                        returned = review.decide_in_transaction(
+                            tx, actor_id=reviewer_one,
+                            review_id=returned_review.review_id,
+                            round_id=returned_review.round_id,
+                            trace_id=uuid.uuid4(),
+                            decision=ReviewDecisionKind.RETURN,
+                            comment="synthetic revision required",
+                        )
+                        assert returned.state.value == "RETURNED"
+                        tx.commit()
+                    withdrawn_version = version_service.create(
+                        CreateCapabilityVersion(
+                            admin_token, CSRF, uuid.uuid4(),
+                            baseline.baseline_id, 6, (item,),
+                            str(uuid.uuid4()),
+                        )
                     )
-                    assert db.execute("""
-                        SELECT count(*) FROM plm.rvw_review_decisions
-                         WHERE review_id=%s
-                    """, (submitted.review_id,)).fetchone()[0] == 1
-                    assert db.execute("""
-                        SELECT count(*) FROM plm.rvw_subject_snapshot_refs
-                         WHERE review_id=%s AND ref_kind='EVIDENCE'
-                           AND ref_id=%s AND ref_scope='GLOBAL'
-                    """, (submitted.review_id, evidence_id)).fetchone()[0] == 1
-                try:
-                    command.downgrade(cfg, "20261005_0092")
-                except Exception as error:
-                    assert "Capability Review history prevents downgrade" in str(error)
+                    with runtime.unit_of_work() as tx:
+                        withdrawn_review = review.submit_in_transaction(
+                            tx, actor_id=actor, subject_type="CAP-01",
+                            subject_id=baseline.baseline_id,
+                            subject_version_id=withdrawn_version.baseline_version_id,
+                            reviewer_ids=(reviewer_one, reviewer_two),
+                            policy_code="DEPLOYMENT_ALL_V1",
+                            trace_id=uuid.uuid4(),
+                        )
+                        tx.commit()
+                    with runtime.unit_of_work() as tx:
+                        withdrawn = review.withdraw_in_transaction(
+                            tx, actor_id=actor,
+                            review_id=withdrawn_review.review_id,
+                            round_id=withdrawn_review.round_id,
+                            trace_id=uuid.uuid4(), expected_version=1,
+                            reason="synthetic scope changed",
+                        )
+                        assert withdrawn.state.value == "WITHDRAWN"
+                        tx.commit()
+                    final_version = version_service.create(CreateCapabilityVersion(
+                        admin_token, CSRF, uuid.uuid4(), baseline.baseline_id, 9,
+                        (item,), str(uuid.uuid4()),
+                    ))
+                    with runtime.unit_of_work() as tx:
+                        final_review = review.submit_in_transaction(
+                            tx, actor_id=actor, subject_type="CAP-01",
+                            subject_id=baseline.baseline_id,
+                            subject_version_id=final_version.baseline_version_id,
+                            reviewer_ids=(reviewer_two,),
+                            policy_code="DEPLOYMENT_ALL_V1",
+                            trace_id=uuid.uuid4(),
+                        )
+                        tx.commit()
+                    with runtime.unit_of_work() as tx:
+                        review.decide_in_transaction(
+                            tx, actor_id=reviewer_two,
+                            review_id=final_review.review_id,
+                            round_id=final_review.round_id,
+                            trace_id=uuid.uuid4(),
+                            decision=ReviewDecisionKind.APPROVE,
+                        )
+                        tx.commit()
+                    with connect(name) as db:
+                        assert db.execute("""
+                            SELECT lock_version,current_approved_version_ref
+                              FROM plm.cap_baselines WHERE baseline_id=%s
+                        """, (baseline.baseline_id,)).fetchone() == (
+                            12, final_version.baseline_version_id,
+                        )
+                        states = dict(db.execute("""
+                            SELECT baseline_version_id,version_state
+                              FROM plm.cap_baseline_versions
+                             WHERE baseline_id=%s
+                        """, (baseline.baseline_id,)).fetchall())
+                        assert states == {
+                            version.baseline_version_id: "SUPERSEDED",
+                            returned_version.baseline_version_id: "RETURNED",
+                            withdrawn_version.baseline_version_id: "RETURNED",
+                            final_version.baseline_version_id: "APPROVED",
+                        }, states
+                        assert db.execute("""
+                            SELECT count(*) FROM plm.aud_events
+                             WHERE target_owner_module='capability'
+                               AND action IN ('CAP_VERSION_APPROVED',
+                                              'CAP_VERSION_RETURNED',
+                                              'CAP_VERSION_WITHDRAWN')
+                        """).fetchone()[0] == 4
+                    try:
+                        command.downgrade(cfg, "20261005_0093")
+                    except Exception as error:
+                        assert "Capability terminal history prevents downgrade" in str(error)
+                    else:
+                        raise AssertionError("Schema0094 downgraded terminal history")
+                    print(
+                        "CAP_01_A04_A04_TERMINAL_FORMALIZATION_PASS: approved "
+                        "pointer, supersede, returned/withdrawn preservation and "
+                        "post-terminal Draft creation verified"
+                    )
                 else:
-                    raise AssertionError("Schema0093 downgraded active Review history")
-                print(
-                    "CAP_01_A04_A03_CAPABILITY_SUBJECT_PASS: real Capability "
-                    "source/user lock, persistent IN_REVIEW binding, replacement "
-                    "Draft fence and terminal fail-closed verified"
-                )
+                    try:
+                        with runtime.unit_of_work() as tx:
+                            review.decide_in_transaction(
+                                tx, actor_id=reviewer_two,
+                                review_id=submitted.review_id,
+                                round_id=submitted.round_id,
+                                trace_id=uuid.uuid4(),
+                                decision=ReviewDecisionKind.APPROVE,
+                            )
+                            tx.commit()
+                    except ReviewSubjectTransitionError:
+                        pass
+                    else:
+                        raise AssertionError("A03 accepted terminal formalization")
+                    with connect(name) as db:
+                        assert db.execute("""
+                            SELECT version_state,review_ref,review_round_ref
+                              FROM plm.cap_baseline_versions
+                             WHERE baseline_version_id=%s
+                        """, (version.baseline_version_id,)).fetchone() == (
+                            "IN_REVIEW", submitted.review_id, submitted.round_id,
+                        )
+                        assert db.execute("""
+                            SELECT lock_version,current_approved_version_ref
+                              FROM plm.cap_baselines WHERE baseline_id=%s
+                        """, (baseline.baseline_id,)).fetchone() == (2, None)
+                        assert db.execute("""
+                            SELECT review_state,lock_version
+                              FROM plm.rvw_reviews WHERE review_id=%s
+                        """, (submitted.review_id,)).fetchone() == (
+                            "IN_REVIEW", 2,
+                        )
+                    try:
+                        command.downgrade(cfg, "20261005_0092")
+                    except Exception as error:
+                        assert "Capability Review history prevents downgrade" in str(error)
+                    else:
+                        raise AssertionError("Schema0093 downgraded active Review history")
+                    print(
+                        "CAP_01_A04_A03_CAPABILITY_SUBJECT_PASS: real Capability "
+                        "source/user lock, persistent IN_REVIEW binding, replacement "
+                        "Draft fence and terminal fail-closed verified"
+                    )
             finally:
                 runtime.dispose()
         finally:

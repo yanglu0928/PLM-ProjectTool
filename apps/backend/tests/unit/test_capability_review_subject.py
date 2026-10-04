@@ -38,6 +38,7 @@ from plm_assistant.modules.review.domain.round_progress import (
     ReviewDecisionKind,
     ReviewDecisionSnapshot,
     ReviewRoundProgress,
+    ReviewWithdrawalSnapshot,
 )
 
 
@@ -73,8 +74,8 @@ class CapabilityReviewSubjectTests(unittest.TestCase):
             self.actor, self.identity, self.round, self.version,
             (self.reviewer, self.other),
         )
-        self.users, self.repository, self.sources, self.evidence = (
-            Mock(), Mock(), Mock(), Mock(),
+        self.users, self.repository, self.sources, self.evidence, self.audit = (
+            Mock(), Mock(), Mock(), Mock(), Mock(),
         )
         self.users.current_enabled_user.side_effect = lambda tx, user_id: (
             CurrentUserFacts(
@@ -83,6 +84,7 @@ class CapabilityReviewSubjectTests(unittest.TestCase):
             )
         )
         self.repository.lock_subject.return_value = self.lock
+        self.repository.assert_terminal_consumed = Mock()
         self.sources.validate.return_value = ValidatedCapabilitySourceSet(
             self.snapshot.source_collection_ref, (self.document_ref,),
         )
@@ -93,6 +95,7 @@ class CapabilityReviewSubjectTests(unittest.TestCase):
         self.owner = CapabilityReviewSubjectOwner(
             users=self.users, repository=self.repository,
             sources=self.sources, evidence=self.evidence,
+            audit=self.audit, terminal_enabled=False,
             clock=lambda: self.now,
         )
         self.tx = object()
@@ -206,6 +209,83 @@ class CapabilityReviewSubjectTests(unittest.TestCase):
         ))
         with self.assertRaises(ReviewSubjectTransitionError):
             self.owner.consume_terminal_in_transaction(self.tx, transition)
+
+    def test_terminal_outcomes_are_consumed_and_independently_asserted(self):
+        review = replace(
+            self.identity, state="IN_REVIEW", active_round_id=self.round,
+            lock_version=1,
+        )
+        active = replace(
+            self.lock,
+            snapshot=replace(self.snapshot, version_state="IN_REVIEW"),
+            baseline_lock_version=2, review_ref=self.review,
+            review_round_ref=self.round,
+        )
+        self.repository.lock_subject.return_value = active
+        owner = CapabilityReviewSubjectOwner(
+            users=self.users, repository=self.repository,
+            sources=self.sources, evidence=self.evidence, audit=self.audit,
+            clock=lambda: self.now,
+        )
+        for expected, decision in (
+                ("APPROVED", ReviewDecisionKind.APPROVE),
+                ("RETURNED", ReviewDecisionKind.RETURN)):
+            with self.subTest(expected=expected):
+                progress = ReviewRoundProgress(
+                    self.round, self.now, (self.reviewer,),
+                )
+                fixed = FixedReviewRoundSnapshot(
+                    review, 1, self.version, self.actor, progress,
+                    (uuid4(),), 0, uuid4(), b"f" * 32, 1,
+                    self.now, (), uuid4(), self.now, None,
+                )
+                entry = ReviewDecisionSnapshot(
+                    uuid4(), self.round, self.reviewer, decision, self.now,
+                    "return for revision" if decision is ReviewDecisionKind.RETURN
+                    else None,
+                )
+                transition = ReviewSubjectTransition(
+                    self.reviewer, uuid4(), fixed,
+                    progress.record_decision(entry), self.now,
+                )
+                owner.require_transition_access_in_transaction(
+                    self.tx, transition,
+                )
+                owner.consume_terminal_in_transaction(self.tx, transition)
+                self.repository.consume_terminal.assert_called_with(
+                    self.tx, before=active, transition=transition,
+                    version_state=expected,
+                )
+                owner.assert_terminal_consumed_in_transaction(
+                    self.tx, transition,
+                )
+                self.repository.assert_terminal_consumed.assert_called_with(
+                    self.tx, transition=transition, version_state=expected,
+                )
+
+        progress = ReviewRoundProgress(
+            self.round, self.now, (self.reviewer, self.other),
+        )
+        fixed = FixedReviewRoundSnapshot(
+            review, 1, self.version, self.actor, progress,
+            (uuid4(), uuid4()), 0, uuid4(), b"f" * 32, 1,
+            self.now, (), uuid4(), self.now, None,
+        )
+        withdrawn = ReviewSubjectTransition(
+            self.actor, uuid4(), fixed,
+            progress.withdraw(ReviewWithdrawalSnapshot(
+                self.actor, self.now, "scope changed",
+            )), self.now,
+        )
+        owner.require_transition_access_in_transaction(self.tx, withdrawn)
+        owner.consume_terminal_in_transaction(self.tx, withdrawn)
+        self.repository.consume_terminal.assert_called_with(
+            self.tx, before=active, transition=withdrawn,
+            version_state="RETURNED",
+        )
+        audit = self.audit.append.call_args.args[1]
+        self.assertEqual(audit.action, "CAP_VERSION_WITHDRAWN")
+        self.assertEqual(audit.after_state, "RETURNED")
 
 
 if __name__ == "__main__":
