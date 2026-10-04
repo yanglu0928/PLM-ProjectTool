@@ -1,6 +1,6 @@
 # CR-RAG-004：RetrievalRun、加密查询内容与最小 Context 边界
 
-日期：2026-10-04；状态：`A03_P02_CLAIM_PASS`；WBS：`RAG-04-A01～A06`。关联 Gate 2 冻结 ADR-004/009、DM-04、SC-01～04、API-03，以及 Schema0087/CR-RAG-001～003；原冻结提交 `64cdf09` 不改。
+日期：2026-10-04；状态：`A03_P03_QUERY_PREPARATION_PASS`；WBS：`RAG-04-A01～A06`。关联 Gate 2 冻结 ADR-004/009、DM-04、SC-01～04、API-03，以及 Schema0087/CR-RAG-001～003；原冻结提交 `64cdf09` 不改。
 
 ## 差异与实施方案
 
@@ -55,3 +55,9 @@ Windows11/PostgreSQL18.6完成成功创建、Audit失败全回滚、幂等重放
 新增`RAG_RETRIEVAL`专属单次claim DTO/Service/PostgreSQL仓储，固定PROJECT scope、唯一Run引用payload、Run ID幂等键、原Actor/Trace及attempt/fencing均为1；当前检查点可重验同一Lease。通用ready/expired claim新增Retrieval排除，Parser/AI/RAG Build入口也不能跨Owner接管；专属入口不自动重领过期generation。
 
 Windows11/PostgreSQL18.6合成组合证明四类非本Owner不抢占、专属Worker精确认领、第二Worker不重复领取，且租约过期后Job/Lease/Run保持原generation等待原子对账。定向16、后端2473/跳过3、wheel RAG100通过，SHA-256 `5d463c4c635d33a2607a9cd0985a7969d633ba9569ef49c719c94f6078977013`。无Migration/API/依赖/Provider I/O/客户数据外发；进入A03-P03当前事实重验与受控解密。
+
+## A03-P03 实施与结果
+
+新增当前事实重验/受控解密服务与仓储：先以原请求Actor无密钥检查User、Project/Membership/Department和License，再重验同一Lease/角色并有序锁定Run、ACTIVE Project Index、精确来源Chunk、AVAILABLE Embedding及QueryContent。只有全链一致才读取一次密钥；解密后严格UTF-8/NFKC复算query fingerprint，受权callback结束或异常即归零。授权快照以安全引用和指纹固定，不记录正文。
+
+同时修正A02入口与既定边界不一致：当前唯一`fts.project.v1 + none.v1`拒绝非空GLOBAL Index，防止创建Worker必然拒绝的悬挂作业；未来GLOBAL合并仍由A04显式开放。Windows11/PostgreSQL18.6成功路径及成员撤权/License关闭零密钥读取负例通过；新增5、相关17、后端2478/跳过3、wheel RAG105，SHA-256 `32fd62d069d23df52423d2a7e398ac8662c948740fbbb7da9fd120e6372eb9e3`。无Migration/API/依赖/真实外发，进入A03-P04参数化PROJECT FTS。

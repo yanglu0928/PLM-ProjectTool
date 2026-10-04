@@ -7940,3 +7940,11 @@
 - Reason：`max_attempts=1`表示不可自动重放，通用过期逻辑只知道Job而不知道Run；让任一claim过期接管会制造Job失败而Run仍RUNNING，或在无法证明query是否已解密/检索的情况下重复执行。
 - Impact/Rollback：无Schema/API/依赖变化，只收紧内部队列可见性。可停止专属Worker；已有过期历史不能回交通用Worker，须向前对账。既有Build/AI/Parser认领合同保持。
 - Verification：Win11/PG18.6证明通用、Parser、AI、RAG Build均不抢占，专属精确认领且第二Worker不重复领取；3秒租约过期后Job/Lease/Run原generation保持。定向16、后端2473/3跳过、wheel RAG100，SHA-256 `5d463c4c635d33a2607a9cd0985a7969d633ba9569ef49c719c94f6078977013`。
+
+# DEC-20261004-816：Retrieval 明文只在当前事实锁定的 callback 中短暂存在
+
+- Date/WBS：2026-10-04 / `RAG-04-A03-P03`；依据CR-RAG-004、DEC-814/815、Schema0088及Project/License当前授权合同。
+- Decision：Worker先以原请求Actor无密钥重验ENABLED User、当前Membership/Department/Project和License；第二短事务重验同一Lease/角色并有序锁定Run、ACTIVE Project Index、精确Chunk、AVAILABLE Embedding和QueryContent，之后才允许一次密钥读取。明文只交给同事务短callback，严格规范化/复算fingerprint且总是归零。当前`fts.project.v1`入口同步拒绝GLOBAL Index。
+- Reason：SYSTEM Worker不能继承创建时权限；只读当前事实但不锁定会在解密/查询窗口遭遇撤权竞态；把明文作为返回对象会扩大生命周期。允许首版入口携带GLOBAL而执行端不支持还会形成永久悬挂Job。
+- Impact/Rollback：无Schema/公开API/依赖/外发变化；新增内部执行权限和PROJECT-only校验。可停止Worker关闭解密，已有密文保留；不能恢复无实现GLOBAL输入。未来GLOBAL须由A04版本化策略另行开放。
+- Verification：Win11/PG18.6证明全链当前事实后一次读钥、query/fingerprint一致和归零；暂停成员或License关闭均零新增读钥。新增5、相关17、后端2478/3跳过、wheel RAG105，SHA-256 `32fd62d069d23df52423d2a7e398ac8662c948740fbbb7da9fd120e6372eb9e3`。

@@ -84,6 +84,10 @@ POLICIES: dict[str, _Policy] = {
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER", "CUSTOMER_MANAGER"}),
         True,
     ),
+    "RAG_RETRIEVAL_EXECUTE": _Policy(
+        frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER", "CUSTOMER_MANAGER"}),
+        True,
+    ),
     "PROJECT_PATCH": _Policy(MANAGERS, True),
     "PROJECT_ARCHIVE": _Policy(MANAGERS, True),
     "PROJECT_MEMBER_LIST": _Policy(MEMBER_READERS, False),

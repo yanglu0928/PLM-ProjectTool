@@ -34,7 +34,7 @@ create_fixture = load(
 begin_fixture = create_fixture.begin_fixture
 
 
-def execute(context, envelope, sender, adapter) -> None:
+def execute(context, envelope, sender, adapter, *, after_claim=None) -> None:
     create_fixture.execute(context, envelope, sender, adapter)
     database, runtime = context["database"], context["runtime"]
     with begin_fixture.connect(database) as db:
@@ -92,6 +92,11 @@ def execute(context, envelope, sender, adapter) -> None:
     assert claims.claim_next(
         worker_ref="rag-retrieval-02", lease_seconds=30,
     ) is None
+    if after_claim is not None:
+        after_claim({
+            **context, "job_id": job_id, "retrieval_run_id": run_id,
+            "claim": claim, "claims": claims,
+        })
     time.sleep(4)
     assert generic.claim_next(
         worker_ref="generic-after-expiry", lease_seconds=30,
@@ -121,9 +126,14 @@ def execute(context, envelope, sender, adapter) -> None:
     )
 
 
-def main() -> None:
+def main(*, after_claim=None) -> None:
+    def validate(context, envelope, sender, adapter):
+        execute(
+            context, envelope, sender, adapter, after_claim=after_claim,
+        )
+
     create_fixture.activation_fixture.send_fixture.main(
-        execute=execute, source_bodies=("PLM begin one",),
+        execute=validate, source_bodies=("PLM begin one",),
         adapter_vector_value=0.01,
     )
 

@@ -157,6 +157,7 @@ class RAGRetrievalCreateTests(unittest.TestCase):
         changes = (
             {"retrieval_policy_ref": "hybrid.project.v1"},
             {"rerank_policy_ref": "external.rerank.v1"},
+            {"global_index_ref": uuid.uuid4()},
             {"metadata_filter": {"sql": "select *"}},
             {"metadata_filter": {"business": {"unknown": "x"}}},
             {"query": "   "},

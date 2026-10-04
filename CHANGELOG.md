@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-04：0.1.0-dev.0/RAG-04-A03-P03 新增Retrieval当前事实重验与受控解密：原Actor User/Membership/Department/Project、License、单次Lease、Run、ACTIVE Project Index、精确Chunk、AVAILABLE Embedding及QueryContent全部重验/锁定后才读一次密钥；严格规范化/复算query fingerprint，明文callback结束即归零。修正首个FTS入口误接受GLOBAL Index的偏差。兼容性/升级/回滚：无Migration/公开API/依赖/外发；当前PROJECT请求兼容，GLOBAL待A04正式开放；可停Worker但不回退明文。验证：Win11/PG18.6成功及撤权/License零读钥负例；新增5、相关17、后端2478/跳过3、wheel RAG105，SHA-256 `32fd62d069d23df52423d2a7e398ac8662c948740fbbb7da9fd120e6372eb9e3`。已知问题：P04 FTS、过期/完成Owner、Global/vector/rerank、正式质量/性能/Gate3/UAT/发行包待完成。
+
 - 2026-10-04：0.1.0-dev.0/RAG-04-A03-P02 新增Retrieval专属单次claim并从通用ready/expired、Parser、AI Task与RAG Build入口隔离；精确绑定PROJECT、唯一Run payload、Actor/Trace和attempt/fencing=1，过期generation不自动重领，等待Job/Run/Audit专属原子对账。兼容性/升级/回滚：无Migration/API/依赖，内部队列路由收紧；可停Worker但不能把过期历史回交通用claim。验证：Win11/PG18.6四类Owner隔离、专属认领/当前检查/过期保持PASS；定向16、后端2473/跳过3、wheel RAG100，SHA-256 `5d463c4c635d33a2607a9cd0985a7969d633ba9569ef49c719c94f6078977013`。已知问题：P03当前事实/解密、P04 FTS、原子完成Owner、正式ACTIVE/质量/性能/Gate3/UAT/发行包待完成。
 
 - 2026-10-04：0.1.0-dev.0/RAG-04-A03-P01 完成Retrieval执行链前置核查：发现通用Job claim会接管`RAG_RETRIEVAL`并可能拆分Job/Run终态，锁定专属单次claim、通用ready/expired隔离、原请求Actor当前授权重验、受控解密与参数化PROJECT FTS；A03只生成有界内存候选，A05再原子发布。兼容性/升级/回滚：纯文档，无Schema/API/依赖/网络/外发；P02收紧内部路由，过期历史必须专属对账。验证：静态核对Job lease、A02 payload、Schema0088和FTS/Index来源。已知问题：P02～P04实现、原子完成Owner、vector/exact/Global/Rerank、正式ACTIVE/质量/性能/Gate3/UAT/发行包待完成。

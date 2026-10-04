@@ -147,7 +147,7 @@ class _Receipts(Protocol):
                  result: IdempotencyResult) -> None: ...
 
 
-def _normalized_query(value: str) -> str:
+def normalize_retrieval_query(value: str) -> str:
     if type(value) is not str:
         raise RAGRetrievalCreateError("VALIDATION_FAILED")
     normalized = " ".join(unicodedata.normalize("NFKC", value).split())
@@ -157,7 +157,7 @@ def _normalized_query(value: str) -> str:
     return normalized
 
 
-def _normalized_filter(value: dict) -> dict:
+def normalize_retrieval_filter(value: dict) -> dict:
     if type(value) is not dict or len(value) > len(_FILTER_KEYS):
         raise RAGRetrievalCreateError("VALIDATION_FAILED")
     if set(value) - _FILTER_KEYS:
@@ -345,17 +345,15 @@ class RAGRetrievalCreateService:
                 or not command.project_id.int
                 or type(command.project_index_ref) is not uuid.UUID
                 or not command.project_index_ref.int
-                or (command.global_index_ref is not None and
-                    (type(command.global_index_ref) is not uuid.UUID
-                     or not command.global_index_ref.int))
+                or command.global_index_ref is not None
                 or command.retrieval_policy_ref != _QUERY_POLICY
                 or command.rerank_policy_ref != _RERANK_POLICY
                 or type(command.top_k) is not int or not 1 <= command.top_k <= 100
                 or not isinstance(now, datetime) or now.tzinfo is None
                 or now.utcoffset() is None):
             raise RAGRetrievalCreateError("VALIDATION_FAILED")
-        return now.astimezone(timezone.utc), _normalized_query(command.query), \
-            _normalized_filter(command.metadata_filter)
+        return now.astimezone(timezone.utc), normalize_retrieval_query(command.query), \
+            normalize_retrieval_filter(command.metadata_filter)
 
     def _actor(self, tx: object, command: CreateProjectRetrieval,
                now: datetime) -> uuid.UUID:
