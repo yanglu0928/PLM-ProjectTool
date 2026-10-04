@@ -8076,3 +8076,11 @@
 - Reason：分步提交半版本会让Draft在引用未齐时可见；只保存调用方声明摘要无法证明来源集合；Schema任务直接开放APPROVED或状态更新会绕过当前授权、Audit、Review和幂等边界。
 - Impact/Rollback：内部Schema `0090 -> 0091`，无公开API、依赖、外发或现有资料导入。无Capability历史可降；有历史拒降并向前修复。后续Owner须替换守卫而不是直写或删除历史。
 - Verification：Windows11/PG18.6空/历史库升级、空历史升降重升、drift、正确/错误GLOBAL来源、Owner关闭和历史拒降通过；定向8、相关11、后端2533/3跳过；开发wheel 900项，SHA-256 `f2df5cbf900f438ff68728fe0e6b57b49de6d49a057bc4f0aba95d13b88737dc`。
+
+# DEC-20261005-833：Capability 创建按冻结 Operation 分离并先建立 Baseline Identity Owner
+
+- Date/WBS：2026-10-05 / `CAP-01-A03-P01`；依据CR-CAP-001、DEC-831/832及冻结API-04。
+- Decision：A03按`CAP_BASELINE_CREATE`、`CAP_VERSION_CREATE`、`CAP_VERSION_VALIDATE`拆为P01～P03。P01仅创建ACTIVE/v0且正式指针为空的Baseline Identity；来源集合由Document公开Port在写事务重验并由服务端重算，写入与Audit/幂等收据原子提交。重放核对原始元数据和来源摘要，不创建Version或正式事实。
+- Reason：三个Operation具有不同Root、载荷和副作用，一次实现会跨越身份、完整版本和无状态报告三个问题；让调用方提交opaque source ref又会绕过CR-CAP-001。先固定Identity Owner可在不暴露半版本的前提下为P02提供受控Root。
+- Impact/Rollback：无Migration、HTTP、依赖、外发或现有资料导入。可停止装配Owner关闭新创建；已提交Baseline/Audit/收据保留，不能删除回滚。P02/P03完成前Version/Validate继续不可用。
+- Verification：Windows11/PG18.6管理员/CSRF/License、GLOBAL来源、重放/冲突/双并发、Audit回滚和撤权通过；定向9、后端2538/3跳过；wheel 906项 SHA-256 `f6cfb4ad42c3bd8269b5c9a11945096dc16f19827438edbaa0236d43c991874b`。

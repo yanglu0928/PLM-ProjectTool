@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/CAP-01-A03-P01 新增DeploymentAdmin CapabilityBaseline内部创建Owner：服务端从当前GLOBAL ACTIVE/AVAILABLE标准Document集合计算来源摘要，原子写入空正式指针Baseline、Audit和幂等收据；同Key重放/冲突/并发与撤权失败关闭。兼容性/升级/回滚：复用Schema0091，无Migration/API/依赖/网络/客户数据变化；可停Owner关闭新建，既有Baseline/Audit/收据保留。验证：Win11/PG18.6真实Session/CSRF/License/来源/并发/Audit回滚通过；定向9、后端2538通过/3跳过、wheel906项 SHA-256 `f6cfb4ad42c3bd8269b5c9a11945096dc16f19827438edbaa0236d43c991874b`。已知问题：P02 Draft Version、P03 Validate、Review/HTTP/前端/生产组合及Gate3/发行仍待。
+
 - 2026-10-05：0.1.0-dev.0/CAP-01-A02 新增Capability Schema0091/ORM：两Root/五表、精确GLOBAL DocumentVersion集合摘要、逐项Document/Evidence固定引用、提交期完整性与初始Owner关闭；不导入现有资料、不创建APPROVED、不开放HTTP。兼容性/升级/回滚：内部`0090 -> 0091`追加，无API/依赖/网络/客户数据变化；无Capability历史可降，有历史拒降并向前修复。验证：Win11/PG18.6空/历史库升级、空历史升降重升、drift、正确/错误来源、非法状态与历史拒降通过；定向8、相关11、后端2533通过/3跳过、wheel 900项 SHA-256 `f2df5cbf900f438ff68728fe0e6b57b49de6d49a057bc4f0aba95d13b88737dc`。已知问题：创建/Audit/幂等/Review/HTTP/前端/生产组合尚待A03以后，Gate3及发行阻塞不变。
 
 - 2026-10-05：0.1.0-dev.0/CAP-01-A01 完成GLOBAL Capability最小真实Owner前置核查并登记CR-CAP-001：冻结`source_collection_ref`缺物理集合Owner，选择由精确GLOBAL DocumentVersion集合计算`sha256:`引用，同时保留逐项Document/Evidence固定引用；不新增Root、不借用RAG Index、不自动导入或批准现有资料。兼容性/升级/回滚：纯文档，无Schema/Migration/API/依赖/网络/客户数据变化；A02规划Schema0091，未实施前可停止。验证：静态核对冻结DM/SC/API、运行源码、迁移头0090、Audit白名单和SC-04 manifest，标记`CAP_01_A01_PRECHECK_PASS`。已知问题：Schema/Owner/Review/HTTP尚未实现，Gate3及发行阻塞不变。
