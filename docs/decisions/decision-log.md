@@ -8244,3 +8244,11 @@
 - Reason：先开放通用UPDATE会绕过SUBMITTED≠CLOSED、验证Evidence与resolution Trace；只建Root不建事件会失去状态来源。CR-HND-002要求候选Item可由人工先登记Action以解除Review顺序死锁。
 - Impact/Rollback：内部`0097 -> 0098`新增四表，无公开API/依赖/配置/网络或外发。空历史可降，有历史拒降并向前修复；本项不创建正式业务待办。
 - Verification：Win11/PG18.6降升/drift、合法候选来源、初始事件、跨项目/生命周期负例及拒降通过；定向15、后端2617/3跳过；wheel解包定向15，SHA-256 `21e6b7380edfb4116b9c72bc670eaff8ce09da14b4badeab9fc1f3b2f7ccf2c0`。
+
+# DEC-20261005-854：Action 人工创建保持候选确认与待办生命周期分离
+
+- Date/WBS：2026-10-05 / `HND-02-A02`；依据冻结DM-05/API-04、Schema0098、CR-HND-001/002及DEC-852/853。
+- Decision：ProjectManager或ImplementationMember可从固定`DRAFT/CANDIDATE`或`APPROVED/CONFIRMED` Item人工登记Action，也可用显式原因登记人工来源；受理人必须是同项目当前有效成员。Root、seq0 OPEN事件、Audit与持久收据同事务；登记不改变Version/Item状态，同Key重放仍重验当前Actor权限。
+- Reason：Review前需要真实待办承接缺资料/待确认项，但自动生成、登记即确认或跨项目受理会把AI候选冒充正式事实并破坏权限边界。只写Root而无事件/Audit/收据会失去状态来源与故障原子性。
+- Impact/Rollback：复用Schema0098，无Migration、公开API、依赖、配置、网络或外发；停装配Owner可关闭新写，已提交历史保留。后续状态Owner不得把`SUBMITTED`等同`CLOSED`。
+- Verification：Win11/PG18.6真实角色/受理人/两类来源/并发/回滚/License与候选不确认通过；定向19、后端2621/3跳过；wheel解包定向19，SHA-256 `3c28e90912235cd82cb7323fa2f763b7e82fdabaafd46941ede4b9ff52b62aa9`。
