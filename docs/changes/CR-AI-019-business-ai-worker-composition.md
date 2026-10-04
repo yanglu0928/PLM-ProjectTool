@@ -26,3 +26,5 @@ P06～P08 已分别验证Execution Grant、精确Content/Envelope、Provider Rou
 - 网络调用期间停止只能协作等待既有有界时限；SCM STOPPED前必须确认循环、数据库连接和秘密生命周期静止。
 - prepare前失败、Begin后失败、发送栅栏后未知、结果发布失败、进程重启和Maintenance竞争必须分别验证。
 - Gate 3只有在真实服务组合、正式信任、质量/性能、Server2025、UAT及交付包证据满足后才能关闭；Debian13按用户指令跳过验证但仍是兼容目标。
+
+2026-10-04 后续边界：CR-RAG-004 A06-P06在不改变第四服务角色的前提下增加Retrieval工作族。Probe/AI Task既有发送、Secret和对账合同不变；Retrieval使用独立查询密钥、零Provider网络和专属Owner。三族公平有界循环已在Windows11/PostgreSQL18.6验证，正式SCM与目标账户仍按本CR和ADR-013开放。

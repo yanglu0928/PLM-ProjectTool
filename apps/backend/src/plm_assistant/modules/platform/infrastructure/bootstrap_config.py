@@ -54,6 +54,34 @@ class BootstrapSettings(BaseSettings):
     ai_execution_policies: tuple[dict[str, Any], ...] = ()
     ai_egress_policies: tuple[dict[str, Any], ...] = ()
     ai_task_policies: tuple[dict[str, Any], ...] = ()
+    rag_retrieval_policies: tuple[dict[str, str], ...] = ()
+
+    @field_validator("rag_retrieval_policies", mode="before")
+    @classmethod
+    def validate_rag_retrieval_policies(
+        cls, value: Any,
+    ) -> tuple[dict[str, str], ...]:
+        """Accept only the first zero-egress retrieval strategy.
+
+        This setting is an explicit deployment opt-in.  Query key material is
+        deliberately absent and must be resolved from the process account's
+        dedicated Windows vault entry by the API and Worker composition roots.
+        """
+        fields = frozenset({
+            "reference", "scope", "rerank_policy_ref", "context_policy_ref",
+        })
+        expected = {
+            "reference": "fts.project.v1",
+            "scope": "PROJECT",
+            "rerank_policy_ref": "none.v1",
+            "context_policy_ref": "project-documents.v1",
+        }
+        if (type(value) not in (tuple, list) or len(value) > 1
+                or any(type(item) is not dict or set(item) != fields
+                       or any(type(field) is not str for field in item.values())
+                       or item != expected for item in value)):
+            raise ValueError("invalid RAG Retrieval policy configuration")
+        return tuple(dict(item) for item in value)
 
     @field_validator("ai_probe_policies", mode="before")
     @classmethod

@@ -176,6 +176,11 @@ class RAGRetrievalCancellationRepositoryPort(Protocol):
                           fencing_token: int,
                           worker_ref: str) -> ReconciledRAGRetrievalCancel: ...
 
+    def reconcile_current_if_requested(
+        self, transaction: object, *, job_id: uuid.UUID,
+        fencing_token: int, worker_ref: str,
+    ) -> ReconciledRAGRetrievalCancel | None: ...
+
     def reconcile_expired_next(self, transaction: object
                                ) -> ReconciledRAGRetrievalCancel | None: ...
 
@@ -429,6 +434,22 @@ class RAGRetrievalCancelReconciler:
             transaction, job_id=job_id, fencing_token=fencing_token,
             worker_ref=worker_ref,
         ))
+
+    def reconcile_current_if_requested(
+        self, *, job_id: uuid.UUID, fencing_token: int, worker_ref: str,
+    ) -> ReconciledRAGRetrievalCancel | None:
+        if (not _id(job_id) or type(fencing_token) is not int
+                or fencing_token < 1 or type(worker_ref) is not str
+                or not 1 <= len(worker_ref) <= 128
+                or worker_ref.strip() != worker_ref):
+            raise RAGRetrievalCancelError("VALIDATION_FAILED")
+        return self._run(
+            lambda transaction: self._repo.reconcile_current_if_requested(
+                transaction, job_id=job_id, fencing_token=fencing_token,
+                worker_ref=worker_ref,
+            ),
+            optional=True,
+        )
 
     def reconcile_expired_next(self) -> ReconciledRAGRetrievalCancel | None:
         return self._run(self._repo.reconcile_expired_next, optional=True)

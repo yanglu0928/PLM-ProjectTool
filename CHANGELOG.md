@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-04：0.1.0-dev.0/RAG-04-A06-P06 新增精确Retrieval bootstrap策略、固定专用查询密钥来源、显式Windows生产API组合和既有第四`AI_PROVIDER_WORKER`三族公平有界循环；两条取消路径共享同一Owner，Worker在解密前响应取消，Retrieval-only不读取Provider主密钥或联网。兼容性/升级/回滚：无Migration、公开API语义或依赖变化；无策略保持404/既有行为，移除策略可停新流量，历史保留。验证：定向92、后端2529/跳过3、wheel隔离RAG142+生产组合80、Win11/PG18.6真实HTTP/Worker/SQL通过，SHA-256 `353c0edc1e27ec718a71edeb53c31134d91f1b03f270dda8943192b244256547`；runtime精确类型与旧夹具FIFO两轮证据作废后重跑。已知问题：P07～P08、正式密钥/SCM、质量/性能、Server2025、Gate3/UAT和发行包待完成；Debian13按指令跳过。
+
 - 2026-10-04：0.1.0-dev.0/RAG-04-A06-P05 新增Retrieval唯一取消Owner、冻结别名Router及当前/过期专属Reconciler；别名与通用Project Job cancel registry共享授权、锁定、状态和Audit核心，PENDING直接原子取消，RUNNING协作请求后由当前Worker或过期对账原子关闭，精确回放保留首次响应。兼容性/升级/回滚：复用Schema0090，无Migration/依赖/生产挂载/Provider I/O/外发；默认仍关闭，撤组件可停新取消，历史保留且拒绝降级。验证：新增9、RAG141、相关18、后端2522/跳过3、Win11/PG18.6三类真实取消与回放、wheel RAG141+HTTP8+Migration4，SHA-256 `5179db1356d9a8e70779457355e2d5dbc6eac8b196706f0bb650dc99578486eb`；两轮非法/版本漂移夹具证据作废，合法3秒自然到期新库重跑通过。已知问题：P06～P08、正式质量/性能、Server2025、Gate3/UAT和发行包待完成；Debian13按指令跳过。
 
 - 2026-10-04：0.1.0-dev.0/RAG-04-A06-P04 新增默认关闭的Retrieval Create/Get/Result/Context严格HTTP Router；Create限定七字段及PROJECT/FTS-only，执行Origin/Session/CSRF/幂等控制，读取复用当前授权Owner并复核Project/Run绑定，仅返回安全状态、来源、整数分数和最小snippet。兼容性/升级/回滚：无Migration/依赖/生产挂载/网络/外发，默认仍404；撤Router可回滚，历史不改写。验证：合同5、RAG135、后端2513/跳过3、wheel隔离RAG135+合同5+Migration4，SHA-256 `e70068a741ad18a0d5eda3796a813ad021f7da1e33b95b0149056567d5beca96`；首次wheel隔离命令参数错误结果作废，新目录显式导入后重跑通过。已知问题：P05～P08、正式质量/性能、Server2025、Gate3/UAT和发行包待完成；Debian13按指令跳过。

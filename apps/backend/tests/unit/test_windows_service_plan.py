@@ -103,6 +103,26 @@ class WindowsServicePlanTests(unittest.TestCase):
                              list(SERVICE_NAMES.items()))
             self.assertFalse(result["backup_or_migration_authorized"])
 
+    def test_retrieval_policy_reuses_fixed_ai_worker_role(self):
+        retrieval_yaml = (
+            "rag_retrieval_policies:\n"
+            "  - reference: fts.project.v1\n"
+            "    scope: PROJECT\n"
+            "    rerank_policy_ref: none.v1\n"
+            "    context_policy_ref: project-documents.v1\n"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            python, config = self.paths(directory)
+            config.write_text(
+                config.read_text(encoding="utf-8") + retrieval_yaml,
+                encoding="utf-8",
+            )
+            result = plan.build_service_plan(python, config)
+            self.assertEqual(
+                [item["role"] for item in result["service_commands"]],
+                list(SERVICE_NAMES),
+            )
+
     def test_invalid_ai_policy_never_emits_plan(self):
         with tempfile.TemporaryDirectory() as directory:
             python, config = self.paths(directory, ai_policy=True)

@@ -64,14 +64,50 @@ class WindowsAIProviderWorkerTests(unittest.TestCase):
             "model_key": "business-chat", "data_region": "cn-beijing",
             "egress_class": "EXTERNAL_APPROVAL_REQUIRED",
         }
+        self.retrieval_policy = {
+            "reference": "fts.project.v1", "scope": "PROJECT",
+            "rerank_policy_ref": "none.v1",
+            "context_policy_ref": "project-documents.v1",
+        }
 
-    def settings(self, *, probe=False, tasks=True, execution=True):
+    def settings(self, *, probe=False, tasks=True, execution=True,
+                 retrieval=False):
         return BootstrapSettings(
             data_root=self.root,
             ai_probe_policies=(self.probe_policy,) if probe else (),
             ai_task_policies=(self.task_policy,) if tasks else (),
             ai_execution_policies=(self.execution_policy,) if execution else (),
+            rag_retrieval_policies=(self.retrieval_policy,) if retrieval else (),
         )
+
+    def test_retrieval_only_reuses_role_without_provider_master_key(self):
+        database = Mock()
+        database.maintenance_admission = SimpleNamespace(admit=Mock())
+        actor = SimpleNamespace(assert_current=lambda: uuid.uuid4())
+        retrieval = SimpleNamespace(
+            worker=Mock(run_once=Mock()),
+            terminal_reconciler=Mock(reconcile_expired_next=Mock()),
+            cancel_reconciler=Mock(reconcile_expired_next=Mock()),
+        )
+        with patch.object(entry.sys, "platform", "win32"), \
+             patch.object(entry, "read_database_url", return_value="owned"), \
+             patch.object(entry, "create_worker_database_runtime",
+                          return_value=database), \
+             patch.object(entry, "create_windows_worker_license_services",
+                          return_value=SimpleNamespace(guard=object())), \
+             patch.object(entry, "create_windows_system_actor", return_value=actor), \
+             patch.object(entry, "WindowsSecretKeyProvider") as vault, \
+             patch.object(entry, "create_windows_rag_retrieval_worker",
+                          return_value=retrieval) as factory:
+            owned, loop = entry.create_windows_ai_provider_loop(self.settings(
+                tasks=False, execution=False, retrieval=True,
+            ))
+        self.assertIs(owned, database)
+        self.assertIsInstance(loop, AIProviderCombinedWorkerLoop)
+        self.assertIs(loop._retrieval, retrieval.worker)
+        self.assertIsInstance(loop._task, entry._IdleTaskWorker)
+        factory.assert_called_once()
+        vault.return_value.resolve_key.assert_not_called()
 
     def test_non_windows_empty_and_incomplete_policy_never_open_database(self):
         cases = (

@@ -8,12 +8,34 @@ from unittest.mock import patch
 
 from plm_assistant.modules.platform.infrastructure.bootstrap_config import (
     BootstrapConfigurationError,
+    BootstrapSettings,
     LogLevel,
     load_bootstrap_settings,
 )
 
 
 class BootstrapConfigTests(unittest.TestCase):
+    def test_retrieval_policy_is_exact_nonsecret_opt_in(self):
+        policy = {
+            "reference": "fts.project.v1", "scope": "PROJECT",
+            "rerank_policy_ref": "none.v1",
+            "context_policy_ref": "project-documents.v1",
+        }
+        settings = BootstrapSettings(
+            data_root=self.root, rag_retrieval_policies=(policy,),
+        )
+        self.assertEqual(settings.rag_retrieval_policies, (policy,))
+        for invalid in (
+            ({**policy, "query_key": "synthetic-secret"},),
+            ({**policy, "scope": "GLOBAL"},),
+            ({**policy, "reference": "vector.project.v1"},),
+            (policy, policy),
+        ):
+            with self.subTest(invalid=invalid), self.assertRaises(ValueError):
+                BootstrapSettings(
+                    data_root=self.root, rag_retrieval_policies=invalid,
+                )
+
     def test_password_capacity_default_and_environment_override(self):
         with patch.dict(os.environ, {}, clear=True):
             self.assertEqual(load_bootstrap_settings(self.yaml_file).password_kdf_slots, 4)

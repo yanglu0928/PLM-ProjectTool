@@ -20,6 +20,9 @@ from plm_assistant.modules.rag.application.retrieval_terminal import (
     PublishedRAGRetrievalTerminal,
     RAGRetrievalTerminalError,
 )
+from plm_assistant.modules.rag.application.retrieval_cancel import (
+    ReconciledRAGRetrievalCancel,
+)
 from plm_assistant.modules.rag.application.retrieval_worker import (
     RAGRetrievalOneShotWorker,
 )
@@ -64,6 +67,13 @@ class _Terminal:
         return self.failure
 
 
+class _Cancellations:
+    def __init__(self, result=None): self.result, self.calls = result, 0
+    def reconcile_current_if_requested(self, **_kwargs):
+        self.calls += 1
+        return self.result
+
+
 class RAGRetrievalWorkerTests(unittest.TestCase):
     def setUp(self):
         now = datetime.now(timezone.utc)
@@ -98,14 +108,36 @@ class RAGRetrievalWorkerTests(unittest.TestCase):
         )
 
     def worker(self, *, claim_present=True, preparation_error=None,
-               candidate_error=None, terminal=None):
+               candidate_error=None, terminal=None, cancellations=None):
         return RAGRetrievalOneShotWorker(
             claims=_Claims(self.claim if claim_present else None),
             preparation=_Preparation(self.prepared, preparation_error),
             candidates=_Candidates(self.candidates, candidate_error),
             merge=FTSRetrievalMergePlanner(),
             terminal=terminal or _Terminal(self.success, self.failure),
+            cancellations=cancellations,
         )
+
+    def test_cooperative_cancel_finishes_before_query_decryption(self):
+        cancellation = _Cancellations(ReconciledRAGRetrievalCancel(
+            self.run, self.job, self.project, self.actor, self.trace,
+            "RELEASED", datetime.now(timezone.utc),
+        ))
+        preparation = _Preparation(self.prepared)
+        worker = RAGRetrievalOneShotWorker(
+            claims=_Claims(self.claim), preparation=preparation,
+            candidates=_Candidates(self.candidates),
+            merge=FTSRetrievalMergePlanner(),
+            terminal=_Terminal(self.success, self.failure),
+            cancellations=cancellation,
+        )
+        preparation.consume_current_query = lambda **_kwargs: self.fail(
+            "cancelled Retrieval must not decrypt query content"
+        )
+        result = worker.run_once(worker_ref="rag-worker-1")
+        self.assertEqual(result.state, "CANCELLED")
+        self.assertEqual(cancellation.calls, 1)
+
 
     def test_success_returns_context_identity(self):
         result = self.worker().run_once(worker_ref="rag-worker-1")

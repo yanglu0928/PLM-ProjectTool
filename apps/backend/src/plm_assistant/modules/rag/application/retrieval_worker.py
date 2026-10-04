@@ -13,6 +13,11 @@ from plm_assistant.modules.jobs.application.rag_retrieval_claim import (
 )
 
 from .fts_retrieval_merge import FTSRetrievalMergePlanner
+from .retrieval_cancel import (
+    RAGRetrievalCancelError,
+    RAGRetrievalCancelReconciler,
+    ReconciledRAGRetrievalCancel,
+)
 from .prepare_retrieval_query import (
     PreparedRAGRetrieval,
     RAGRetrievalPreparationError,
@@ -60,6 +65,11 @@ class RAGRetrievalWorkerCycle:
                     or self.candidate_count < 1 or self.error_code is not None):
                 raise RAGRetrievalWorkerError()
             return
+        if self.state == "CANCELLED":
+            if (self.context_bundle_id is not None or self.candidate_count != 0
+                    or self.error_code is not None):
+                raise RAGRetrievalWorkerError()
+            return
         if self.state in {"FAILED", "RECONCILIATION_PENDING"}:
             if (self.context_bundle_id is not None or self.candidate_count != 0
                     or type(self.error_code) is not str
@@ -78,7 +88,8 @@ class RAGRetrievalOneShotWorker:
                  preparation: RAGRetrievalQueryPreparationService,
                  candidates: ProjectFTSCandidatePlanner,
                  merge: FTSRetrievalMergePlanner,
-                 terminal: RAGRetrievalTerminalService) -> None:
+                 terminal: RAGRetrievalTerminalService,
+                 cancellations: RAGRetrievalCancelReconciler | None = None) -> None:
         if any(value is None for value in (
                 claims, preparation, candidates, merge, terminal)):
             raise ValueError("RAG Retrieval Worker dependencies required")
@@ -87,6 +98,12 @@ class RAGRetrievalOneShotWorker:
         self._candidates = candidates
         self._merge = merge
         self._terminal = terminal
+        if (cancellations is not None
+                and not callable(getattr(
+                    cancellations, "reconcile_current_if_requested", None,
+                ))):
+            raise ValueError("RAG Retrieval cancellation reconciler invalid")
+        self._cancellations = cancellations
 
     def run_once(self, *, worker_ref: str) -> RAGRetrievalWorkerCycle:
         try:
@@ -101,6 +118,9 @@ class RAGRetrievalOneShotWorker:
         if claim is None:
             return RAGRetrievalWorkerCycle("IDLE")
         self._require_claim(claim)
+        cancelled = self._cancel_if_requested(claim, worker_ref)
+        if cancelled is not None:
+            return cancelled
         try:
             published = self._preparation.consume_current_query(
                 job_id=claim.job_id, fencing_token=claim.fencing_token,
@@ -117,16 +137,26 @@ class RAGRetrievalOneShotWorker:
                 published.context_bundle_id, published.candidate_count,
             )
         except RAGRetrievalPreparationError as error:
+            cancelled = self._cancel_if_requested(claim, worker_ref)
+            if cancelled is not None:
+                return cancelled
             code = ("RAG_NO_AUTHORIZED_CANDIDATES"
                     if error.code == "RAG_NO_AUTHORIZED_CANDIDATES"
                     else "RAG_RETRIEVAL_PREPARATION_UNAVAILABLE")
             return self._fail(claim, worker_ref, code)
         except RAGRetrievalTerminalError as error:
+            if not error.committed:
+                cancelled = self._cancel_if_requested(claim, worker_ref)
+                if cancelled is not None:
+                    return cancelled
             return RAGRetrievalWorkerCycle(
                 "RECONCILIATION_PENDING", claim.job_id,
                 claim.retrieval_run_id, error_code=error.code,
             )
         except Exception:
+            cancelled = self._cancel_if_requested(claim, worker_ref)
+            if cancelled is not None:
+                return cancelled
             return self._fail(
                 claim, worker_ref, "RAG_RETRIEVAL_PREPARATION_UNAVAILABLE",
             )
@@ -160,6 +190,42 @@ class RAGRetrievalOneShotWorker:
             return RAGRetrievalWorkerCycle(
                 "RECONCILIATION_PENDING", claim.job_id,
                 claim.retrieval_run_id, error_code=error.code,
+            )
+        except Exception:
+            return RAGRetrievalWorkerCycle(
+                "RECONCILIATION_PENDING", claim.job_id,
+                claim.retrieval_run_id,
+                error_code="RAG_RETRIEVAL_TERMINAL_UNAVAILABLE",
+            )
+
+    def _cancel_if_requested(
+        self, claim: RAGRetrievalClaim, worker_ref: str,
+    ) -> RAGRetrievalWorkerCycle | None:
+        if self._cancellations is None:
+            return None
+        try:
+            result = self._cancellations.reconcile_current_if_requested(
+                job_id=claim.job_id, fencing_token=claim.fencing_token,
+                worker_ref=worker_ref,
+            )
+            if result is None:
+                return None
+            if (type(result) is not ReconciledRAGRetrievalCancel
+                    or result.job_id != claim.job_id
+                    or result.retrieval_run_id != claim.retrieval_run_id
+                    or result.lease_outcome != "RELEASED"):
+                raise RAGRetrievalCancelError()
+            result.__post_init__()
+            return RAGRetrievalWorkerCycle(
+                "CANCELLED", claim.job_id, claim.retrieval_run_id,
+            )
+        except RAGRetrievalCancelError as error:
+            if error.code == "STALE_LEASE" and not error.committed:
+                return None
+            return RAGRetrievalWorkerCycle(
+                "RECONCILIATION_PENDING", claim.job_id,
+                claim.retrieval_run_id,
+                error_code="RAG_RETRIEVAL_TERMINAL_UNAVAILABLE",
             )
         except Exception:
             return RAGRetrievalWorkerCycle(

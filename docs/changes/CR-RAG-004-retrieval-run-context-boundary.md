@@ -123,3 +123,9 @@ Schema0090新增冻结模型已有的RetrievalRun CANCELLED。PENDING直接取�
 新增唯一Retrieval取消Owner、PostgreSQL Repository和专属Reconciler。冻结Retrieval别名与通用Project Job cancel registry均复用该Owner；PENDING直接形成Job v2/Run v1取消终态，RUNNING先形成Job v2请求，再由当前Worker RELEASED或过期Lease EXPIRED两类Reconciler形成Job v3/Run v1终态。两个入口的首次响应由Receipt引用不可变Audit重建，后续终结不改写首次`CANCEL_REQUESTED`响应。
 
 复用Schema0090，无Migration/依赖/Provider I/O/外发，默认生产组合仍关闭。新增9、RAG141、相关18、后端2522/3跳过；Windows11/PostgreSQL18.6真实别名直取消、通用registry、当前/过期Reconciler和重放通过；wheel RAG141+HTTP8+Migration4，SHA-256 `5179db1356d9a8e70779457355e2d5dbc6eac8b196706f0bb650dc99578486eb`。首次1秒非法Lease及第二次直接修改Job时间导致版本自增的夹具证据均作废，最终合法3秒自然到期在新库完整通过。进入A06-P06生产组合。
+
+## A06-P06 实施与结果
+
+新增精确非Secret Retrieval bootstrap策略和固定专用查询密钥引用；显式platform-write生产API挂载四个读写Operation、取消别名，并把同一取消Owner注册到通用Job取消。既有第四`AI_PROVIDER_WORKER`在Probe/AI Task/Retrieval三族之间公平轮转，每周期有限对账，Retrieval-only不要求Provider Secret主密钥或网络；Worker在解密前响应协作取消。
+
+真实组合首次发现helper精确类型检查拒绝实际`WorkerDatabaseRuntime`，改按`unit_of_work`端口验证；第二轮因旧PENDING夹具先被FIFO认领，改由生产取消入口先合法关闭旧Run。两轮均作废，最终Windows11/PostgreSQL18.6生产HTTP/真实Worker runtime、一个SUCCEEDED与一个CANCELLED Run完整通过。定向92、后端2529/3跳过、wheel隔离RAG142+生产组合80，SHA-256 `353c0edc1e27ec718a71edeb53c31134d91f1b03f270dda8943192b244256547`。无Migration/API语义/依赖/真实外发；进入A06-P07前端安全接入。

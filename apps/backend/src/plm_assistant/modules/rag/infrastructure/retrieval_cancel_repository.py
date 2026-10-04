@@ -293,6 +293,27 @@ class SqlAlchemyRAGRetrievalCancellationRepository:
             fencing_token=fencing_token, worker_ref=worker_ref,
         )
 
+    def reconcile_current_if_requested(
+        self, transaction: object, *, job_id: uuid.UUID,
+        fencing_token: int, worker_ref: str,
+    ) -> ReconciledRAGRetrievalCancel | None:
+        session = _session(transaction)
+        now = session.scalar(select(func.clock_timestamp()))
+        job = session.scalar(select(JobRow).where(
+            JobRow.job_id == job_id,
+            JobRow.owner_module == "rag",
+            JobRow.job_type == "RAG_RETRIEVAL",
+            JobRow.scope == "PROJECT",
+        ).with_for_update(of=JobRow).execution_options(populate_existing=True))
+        if job is None:
+            raise RAGRetrievalCancelError("STALE_LEASE")
+        if job.state != "CANCEL_REQUESTED":
+            return None
+        return self._reconcile(
+            session, job=job, now=now, expired=False,
+            fencing_token=fencing_token, worker_ref=worker_ref,
+        )
+
     def reconcile_expired_next(self, transaction: object
                                ) -> ReconciledRAGRetrievalCancel | None:
         session = _session(transaction)

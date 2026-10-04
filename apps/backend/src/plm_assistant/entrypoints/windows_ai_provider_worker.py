@@ -20,6 +20,7 @@ from plm_assistant.entrypoints.windows_license_runtime import (
 from plm_assistant.entrypoints.windows_secret_write import SECRET_MASTER_KEY_REF
 from plm_assistant.entrypoints.windows_system_actor import create_windows_system_actor
 from plm_assistant.modules.ai.application.business_task_worker import (
+    AIBusinessTaskWorkerCycle,
     AIBusinessTaskOneShotWorker,
 )
 from plm_assistant.modules.ai.application.complete_provider_failure import (
@@ -204,6 +205,9 @@ from plm_assistant.modules.project.application.authorization import (
 from plm_assistant.modules.project.infrastructure.authorization_repository import (
     SqlAlchemyProjectAuthorizationRepository,
 )
+from plm_assistant.entrypoints.windows_rag_retrieval import (
+    create_windows_rag_retrieval_worker,
+)
 
 
 class WindowsAIProviderWorkerStartupError(RuntimeError):
@@ -217,6 +221,17 @@ class _IdleProbeWorker:
         return ProviderProbeWorkerCycle("IDLE")
 
 
+class _IdleTaskWorker:
+    def run_once(self, *, worker_ref: str) -> AIBusinessTaskWorkerCycle:
+        JobLeaseService._validate_worker(worker_ref)
+        return AIBusinessTaskWorkerCycle("IDLE")
+
+
+class _IdleTaskReconciler:
+    def reconcile_next(self):
+        return None
+
+
 def create_windows_ai_provider_loop(settings: BootstrapSettings):
     """Build the role without network calls; caller owns loop and database."""
     database = None
@@ -226,19 +241,27 @@ def create_windows_ai_provider_loop(settings: BootstrapSettings):
         has_probe = bool(settings.ai_probe_policies)
         has_tasks = bool(settings.ai_task_policies)
         has_execution = bool(settings.ai_execution_policies)
-        if has_tasks != has_execution or not (has_probe or has_tasks):
+        has_retrieval = bool(settings.rag_retrieval_policies)
+        if (has_tasks != has_execution
+                or not (has_probe or has_tasks or has_retrieval)):
             raise WindowsAIProviderWorkerStartupError()
-        if has_probe and not has_tasks:
+        if has_probe and not has_tasks and not has_retrieval:
             return create_windows_ai_provider_probe_loop(settings)
-        if any(item["context_policy_ref"] != "no-retrieval.v1"
+        if has_tasks and any(item["context_policy_ref"] != "no-retrieval.v1"
                for item in settings.ai_task_policies):
             raise WindowsAIProviderWorkerStartupError()
 
         probe_policies = (
             create_deployment_ai_probe_registry(settings) if has_probe else None
         )
-        _, purposes = create_deployment_ai_task_policies(settings)
-        execution_policies = create_deployment_ai_execution_registry(settings)
+        task_configuration = (
+            create_deployment_ai_task_policies(settings) if has_tasks else None
+        )
+        purposes = task_configuration[1] if task_configuration else None
+        execution_policies = (
+            create_deployment_ai_execution_registry(settings)
+            if has_tasks else None
+        )
         database = create_worker_database_runtime(
             read_database_url(), maintenance_admission=True,
         )
@@ -251,12 +274,38 @@ def create_windows_ai_provider_loop(settings: BootstrapSettings):
         if type(identity) is not uuid.UUID or not identity.int:
             raise WindowsAIProviderWorkerStartupError()
         key_provider = WindowsSecretKeyProvider()
-        master_key = key_provider.resolve_key(SECRET_MASTER_KEY_REF)
-        if type(master_key) is not bytes or len(master_key) != 32:
-            raise WindowsAIProviderWorkerStartupError()
-        del master_key
+        if has_probe or has_tasks:
+            master_key = key_provider.resolve_key(SECRET_MASTER_KEY_REF)
+            if type(master_key) is not bytes or len(master_key) != 32:
+                raise WindowsAIProviderWorkerStartupError()
+            del master_key
         audit = AuditService(SqlAlchemyAuditRepository())
         jobs = SqlAlchemyJobLeaseRepository()
+        retrieval = (create_windows_rag_retrieval_worker(
+            database, license_guard=guard, system_actor=actor,
+            key_resolver=key_provider,
+        ) if has_retrieval else None)
+        if not has_tasks:
+            probe_worker = (
+                _create_probe_worker(
+                    database=database, guard=guard, actor=actor, audit=audit,
+                    key_provider=key_provider, policies=probe_policies,
+                    jobs=jobs,
+                ) if probe_policies is not None else _IdleProbeWorker()
+            )
+            loop = AIProviderCombinedWorkerLoop(
+                probe_worker=probe_worker,
+                probe_worker_ref="ai-probe-" + uuid.uuid4().hex,
+                task_worker=_IdleTaskWorker(),
+                task_worker_ref="ai-task-" + uuid.uuid4().hex,
+                reconciler=_IdleTaskReconciler(),
+                maintenance_admission=admission,
+                retrieval_worker=retrieval.worker,
+                retrieval_worker_ref="rag-retrieval-" + uuid.uuid4().hex,
+                retrieval_terminal_reconciler=retrieval.terminal_reconciler,
+                retrieval_cancel_reconciler=retrieval.cancel_reconciler,
+            )
+            return database, loop
         claims = AITaskExecutionClaims(
             repository=SqlAlchemyAITaskExecutionClaimRepository(),
         )
@@ -373,6 +422,16 @@ def create_windows_ai_provider_loop(settings: BootstrapSettings):
             task_worker=task_worker,
             task_worker_ref="ai-task-" + uuid.uuid4().hex,
             reconciler=reconciler, maintenance_admission=admission,
+            retrieval_worker=(retrieval.worker if retrieval else None),
+            retrieval_worker_ref=(
+                "rag-retrieval-" + uuid.uuid4().hex if retrieval else None
+            ),
+            retrieval_terminal_reconciler=(
+                retrieval.terminal_reconciler if retrieval else None
+            ),
+            retrieval_cancel_reconciler=(
+                retrieval.cancel_reconciler if retrieval else None
+            ),
         )
         return database, loop
     except Exception:

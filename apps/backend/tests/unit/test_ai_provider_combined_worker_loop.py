@@ -19,6 +19,9 @@ from plm_assistant.modules.ai.application.provider_probe_worker import (
 from plm_assistant.modules.ai.application.reconcile_expired_task import (
     ReconciledAITaskFailure,
 )
+from plm_assistant.modules.rag.application.retrieval_worker import (
+    RAGRetrievalWorkerCycle,
+)
 
 
 class _Admission:
@@ -99,6 +102,40 @@ class _ProbeWorker:
         return ProviderProbeWorkerCycle(state, job_id, result_id)
 
 
+class _RetrievalWorker:
+    def __init__(self, admission, events):
+        self.admission, self.events = admission, events
+        self.states = ["IDLE"]
+
+    def run_once(self, *, worker_ref):
+        assert self.admission.held
+        assert worker_ref == "rag-retrieval-combined-test"
+        self.events.append("retrieval")
+        state = self.states.pop(0)
+        if state == "IDLE":
+            return RAGRetrievalWorkerCycle("IDLE")
+        return RAGRetrievalWorkerCycle(
+            state, uuid.uuid4(), uuid.uuid4(),
+            context_bundle_id=(uuid.uuid4() if state == "SUCCEEDED" else None),
+            candidate_count=(1 if state == "SUCCEEDED" else 0),
+            error_code=("SYNTHETIC_FAILURE" if state in {
+                "FAILED", "RECONCILIATION_PENDING",
+            } else None),
+        )
+
+
+class _RAGReconciler:
+    def __init__(self, admission, events, name):
+        self.admission, self.events, self.name = admission, events, name
+        self.calls = 0
+
+    def reconcile_expired_next(self):
+        assert self.admission.held
+        self.calls += 1
+        self.events.append(self.name)
+        return None
+
+
 def _reconciled():
     return ReconciledAITaskFailure(
         uuid.uuid4(), uuid.uuid4(), uuid.uuid4(), uuid.uuid4(),
@@ -169,6 +206,38 @@ class AIProviderCombinedWorkerLoopTests(unittest.TestCase):
         self.assertEqual(self.events, ["reconcile", "reconcile", "task"])
         self.assertEqual((result.reconciled, result.task_succeeded), (2, 1))
         self.assertEqual(len(self.reconciler.results), 1)
+
+    def test_retrieval_is_third_fair_family_with_bounded_reconciliation(self):
+        retrieval = _RetrievalWorker(self.admission, self.events)
+        terminal = _RAGReconciler(self.admission, self.events, "rag-terminal")
+        cancel = _RAGReconciler(self.admission, self.events, "rag-cancel")
+        self.task.states = ["SUCCEEDED"]
+        self.probe.states = ["SUCCEEDED"]
+        retrieval.states = ["SUCCEEDED"]
+        loop = AIProviderCombinedWorkerLoop(
+            probe_worker=self.probe,
+            probe_worker_ref="ai-probe-combined-test",
+            task_worker=self.task,
+            task_worker_ref="ai-task-combined-test",
+            reconciler=self.reconciler,
+            maintenance_admission=self.admission,
+            poll_seconds=.05,
+            retrieval_worker=retrieval,
+            retrieval_worker_ref="rag-retrieval-combined-test",
+            retrieval_terminal_reconciler=terminal,
+            retrieval_cancel_reconciler=cancel,
+        )
+        result = loop.run(max_cycles=3)
+        work = [event for event in self.events
+                if event in {"task", "probe", "retrieval"}]
+        self.assertEqual(work, ["task", "probe", "retrieval"])
+        self.assertEqual(
+            (result.task_succeeded, result.probe_succeeded,
+             result.retrieval_succeeded),
+            (1, 1, 1),
+        )
+        self.assertEqual((terminal.calls, cancel.calls), (3, 3))
+
 
     def test_stop_during_network_drains_and_skips_fallback(self):
         entered, release = threading.Event(), threading.Event()

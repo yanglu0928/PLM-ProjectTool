@@ -3,6 +3,7 @@ from __future__ import annotations
 import tempfile
 import unittest
 import uuid
+import inspect
 from contextlib import contextmanager
 from pathlib import Path
 from unittest.mock import Mock, patch
@@ -197,7 +198,8 @@ class ProductionLoginTests(unittest.TestCase):
             return_value=ParseListCursorCodec(b"p" * 32),
         ))
 
-    def settings(self, origins: tuple[str, ...], *, egress: bool = False) -> BootstrapSettings:
+    def settings(self, origins: tuple[str, ...], *, egress: bool = False,
+                 retrieval: bool = False) -> BootstrapSettings:
         policies = ({
             "reference": "minimal-document-text.v1",
             "operation_types": ["AI_TASK"], "data_categories": ["DOCUMENT_TEXT"],
@@ -209,6 +211,11 @@ class ProductionLoginTests(unittest.TestCase):
         return BootstrapSettings(
             data_root=Path(self.temp_dir.name), trusted_origins=origins,
             ai_egress_policies=policies,
+            rag_retrieval_policies=({
+                "reference": "fts.project.v1", "scope": "PROJECT",
+                "rerank_policy_ref": "none.v1",
+                "context_policy_ref": "project-documents.v1",
+            },) if retrieval else (),
         )
 
     def test_missing_audit_cursor_disposes_both_platform_modes(self):
@@ -784,12 +791,30 @@ class ProductionLoginTests(unittest.TestCase):
     def test_write_mode_mounts_only_after_all_sources_exist(self) -> None:
         runtime = Mock()
         runtime.is_ready.return_value = True
-        settings = self.settings(("http://localhost",), egress=True)
+        settings = self.settings(
+            ("http://localhost",), egress=True, retrieval=True,
+        )
         egress_router = APIRouter()
+        retrieval_router, retrieval_cancel_router = APIRouter(), APIRouter()
+        retrieval_cancel_owner = Mock(cancel=Mock())
 
         @egress_router.post("/api/v1/projects/{project_id}/egress-previews", status_code=204)
         def synthetic_egress_mount(project_id: str) -> None:
             del project_id
+        @retrieval_router.get(
+            "/api/v1/projects/{project_id}/retrieval-runs/{run_id}",
+            status_code=204,
+        )
+        def synthetic_retrieval_mount(project_id: str, run_id: str) -> None:
+            del project_id, run_id
+        @retrieval_cancel_router.post(
+            "/api/v1/projects/{project_id}/retrieval-runs/{run_id}:cancel",
+            status_code=204,
+        )
+        def synthetic_retrieval_cancel_mount(
+            project_id: str, run_id: str,
+        ) -> None:
+            del project_id, run_id
         from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
         with patch("plm_assistant.entrypoints.production_login.read_database_url",
                    return_value="postgresql+psycopg://test:synthetic@localhost/test"), patch(
@@ -810,12 +835,42 @@ class ProductionLoginTests(unittest.TestCase):
                    "plm_assistant.entrypoints.production_login.create_windows_document_upload_token_issuer",
                     return_value=Mock()) as upload_issuer_factory, patch(
                     "plm_assistant.entrypoints.production_login.create_windows_ai_egress_router",
-                    return_value=egress_router) as egress_factory:
+                    return_value=egress_router) as egress_factory, patch(
+                    "plm_assistant.entrypoints.production_login.create_windows_rag_retrieval_api",
+                    return_value=Mock(
+                        router=retrieval_router,
+                        cancel_router=retrieval_cancel_router,
+                        cancellation_owner=retrieval_cancel_owner,
+                    )) as retrieval_factory:
             app = create_production_platform_write_app(settings)
         license_factory.assert_called_once()
         write_factory.assert_called_once()
         upload_issuer_factory.assert_called_once()
         egress_factory.assert_called_once()
+        retrieval_factory.assert_called_once()
+        included_routes = (
+            route
+            for included in app.routes
+            for route in getattr(
+                getattr(included, "original_router", None), "routes", (),
+            )
+        )
+        generic_cancel = next((
+            route for route in included_routes
+            if getattr(route, "path", "") ==
+            "/api/v1/projects/{project_id}/jobs/{job_id}:cancel"
+        ), None)
+        self.assertIsNotNone(
+            generic_cancel,
+            "generic Project Job cancel route not mounted",
+        )
+        dispatcher = inspect.getclosurevars(
+            generic_cancel.endpoint,
+        ).nonlocals["cancellations"]
+        self.assertIs(
+            dispatcher._owners[("rag", "RAG_RETRIEVAL")],
+            retrieval_cancel_owner,
+        )
         with TestClient(app, base_url="http://localhost") as client:
             self.assertEqual(client.post("/api/v1/admin/secrets").status_code, 403)
             self.assertEqual(client.post("/api/v1/admin/ai/models").status_code, 403)
@@ -846,6 +901,14 @@ class ProductionLoginTests(unittest.TestCase):
             ).status_code, 403)
             self.assertEqual(client.post(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/egress-previews"
+            ).status_code, 204)
+            self.assertEqual(client.get(
+                "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
+                "retrieval-runs/00000000-0000-0000-0000-000000000002"
+            ).status_code, 204)
+            self.assertEqual(client.post(
+                "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
+                "retrieval-runs/00000000-0000-0000-0000-000000000002:cancel"
             ).status_code, 204)
         runtime.dispose.assert_called_once()
 

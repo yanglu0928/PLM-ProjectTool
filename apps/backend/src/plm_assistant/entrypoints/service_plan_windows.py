@@ -80,7 +80,8 @@ def build_service_plan(python_exe: Path, bootstrap_yaml: Path) -> dict:
                  str(bootstrap)))}
             for role, name in SERVICE_NAMES.items()
             if (role != "AI_PROVIDER_WORKER" or settings.ai_probe_policies
-                or settings.ai_task_policies)
+                or settings.ai_task_policies
+                or settings.rag_retrieval_policies)
         ],
     }
 

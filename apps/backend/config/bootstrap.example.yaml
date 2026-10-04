@@ -83,3 +83,13 @@ password_kdf_slots: 4
 #     connect_timeout_seconds: 5
 #     read_timeout_seconds: 30
 #     total_timeout_seconds: 40
+# Optional first-version local Retrieval strategy. This is an exact opt-in;
+# omitting it keeps the Retrieval HTTP routes and Worker queue closed. Query
+# content is encrypted with the dedicated Windows Vault key reference
+# `rag-retrieval-query-v1`, provisioned and backed up separately with the
+# existing secret_key_recovery command. Never put that key in this YAML.
+# rag_retrieval_policies:
+#   - reference: "fts.project.v1"
+#     scope: "PROJECT"
+#     rerank_policy_ref: "none.v1"
+#     context_policy_ref: "project-documents.v1"

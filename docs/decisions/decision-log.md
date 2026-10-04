@@ -8028,3 +8028,11 @@
 - Reason：两套写实现会使Job/Run、版本和幂等证据分叉；RUNNING请求线程直接释放另一个Worker的Lease会破坏fencing。Schema0090固定版本形态允许从Audit状态确定首次响应，无需再新增只为响应缓存服务的Schema表。
 - Impact/Rollback：复用0090，无Migration/依赖/网络/外发；默认Router及生产registry仍关闭，P06再组合。可撤Owner/Router/Reconciler关闭新请求，已取消历史保留并拒绝物理降级。
 - Verification：新增9、RAG141、相关18、后端2522/3跳过；Win11/PG18.6真实别名直取消、通用registry协作取消、当前/过期Reconciler及回放通过；wheel RAG141+HTTP8+Migration4，SHA-256 `5179db1356d9a8e70779457355e2d5dbc6eac8b196706f0bb650dc99578486eb`。1秒非法Lease与直接改Job时间导致版本漂移的两轮夹具证据均作废，合法3秒自然到期新库重跑通过。
+
+# DEC-20261004-827：Retrieval 复用第四 Worker 角色并按运行时端口组合
+
+- Date/WBS：2026-10-04 / `RAG-04-A06-P06`；依据CR-RAG-004、DEC-822/826、ADR-013及Schema0090。
+- Decision：生产配置只接受一个精确FTS-only PROJECT Retrieval策略；查询内容密钥固定由Windows受信来源以`rag-retrieval-query-v1`提供，不进入YAML。显式platform-write API一次挂载全部Retrieval Router并让两条取消路径共享实例。既有`AI_PROVIDER_WORKER`增加Retrieval第三工作族，以轮转和每族有界对账保持公平，不新增服务角色；组合依赖`unit_of_work`运行时端口而非具体runtime类。
+- Reason：密钥进配置会扩大Secret暴露；API和通用取消分别构造Owner会分裂状态机；第五服务会改变已冻结拓扑。精确类检查虽在API runtime可过，却会拒绝生产Worker实际`WorkerDatabaseRuntime`，端口验证既兼容现有两个runtime又保持缺能力失败关闭。
+- Impact/Rollback：无Migration、公开API语义、依赖或Provider网络变化。无策略时保持原404与双族行为；可移除策略停止新流量，已存在历史保留。正式目标账户仍须供应专用密钥并单独验收。
+- Verification：定向92、后端2529/3跳过、wheel RAG142+生产组合80；Windows11/PG18.6真实生产HTTP、`WorkerDatabaseRuntime`、公平单周期、同Owner取消和SQL终态通过。SHA-256 `353c0edc1e27ec718a71edeb53c31134d91f1b03f270dda8943192b244256547`。精确类型失败和旧夹具FIFO抢占两轮均作废后完整重跑。

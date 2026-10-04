@@ -19,6 +19,9 @@ from plm_assistant.entrypoints.windows_ai_read import create_windows_ai_read_rou
 from plm_assistant.entrypoints.windows_ai_read_cursor import (
     create_windows_ai_read_cursor_codecs,
 )
+from plm_assistant.entrypoints.windows_rag_retrieval import (
+    create_windows_rag_retrieval_api,
+)
 from plm_assistant.entrypoints.windows_audit_list_cursor import create_windows_audit_cursor_codec
 from plm_assistant.modules.audit.api.read_events import create_audit_read_router
 from plm_assistant.modules.audit.application.authorized_read import AuthorizedAuditReadService
@@ -457,6 +460,9 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         ai_task_list_router = None
         ai_task_invocation_list_router = None
         ai_suggestion_read_router = None
+        rag_retrieval_router = None
+        rag_retrieval_cancel_router = None
+        rag_retrieval_cancel_owner = None
         project_read_router = None
         workflow_read_router = None
         workflow_start_router = None
@@ -911,6 +917,14 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 sessions=sessions, departments=department_deactivates, origins=origins,
             )
             if include_secret_write:
+                if settings.rag_retrieval_policies:
+                    rag_api = create_windows_rag_retrieval_api(
+                        runtime, sessions=sessions, origins=origins,
+                        license_guard=licenses.guard,
+                    )
+                    rag_retrieval_router = rag_api.router
+                    rag_retrieval_cancel_router = rag_api.cancel_router
+                    rag_retrieval_cancel_owner = rag_api.cancellation_owner
                 ai_egress_router = _create_configured_ai_egress_router(
                     settings, runtime=runtime, sessions=sessions, origins=origins,
                     license_guard=licenses.guard, audit=audit,
@@ -1056,12 +1070,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                     sessions=sessions,origins=origins,
                     retries=JobRetryRequests(reads=job_reads,sessions=sessions,license_guard=licenses.guard,
                         owners=retry_owners))
-                job_cancel_router = create_project_job_cancel_router(
-                    sessions=sessions,origins=origins,
-                    cancellations=ProjectJobCancellation(
-                        unit_of_work=runtime.unit_of_work,repository=SqlAlchemyJobReadRepository(),
-                        sessions=sessions,license_guard=licenses.guard,
-                        owners={('audit','AUDIT_EXPORT'):AuditJobCancelOwner(
+                cancel_owners = {('audit','AUDIT_EXPORT'):AuditJobCancelOwner(
                             requests=AuditExportCancelRequestService(
                                 unit_of_work=runtime.unit_of_work,repository=SqlAlchemyAuditExportSubmitRepository(),
                                 authorization=AuditExportCancelAuthorization(
@@ -1096,7 +1105,17 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                                     repository=SqlAlchemyProjectAuthorizationRepository()),
                                 license_guard=licenses.guard,
                                 receipts=SqlAlchemyIdempotencyReceipts(), audit=audit,
-                            )},
+                            )}
+                if rag_retrieval_cancel_owner is not None:
+                    cancel_owners[('rag', 'RAG_RETRIEVAL')] = (
+                        rag_retrieval_cancel_owner
+                    )
+                job_cancel_router = create_project_job_cancel_router(
+                    sessions=sessions,origins=origins,
+                    cancellations=ProjectJobCancellation(
+                        unit_of_work=runtime.unit_of_work,repository=SqlAlchemyJobReadRepository(),
+                        sessions=sessions,license_guard=licenses.guard,
+                        owners=cancel_owners,
                     ),
                 )
                 audit_export_submit_router = create_audit_export_submit_router(
@@ -1301,6 +1320,8 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             ai_task_list_router=ai_task_list_router,
             ai_task_invocation_list_router=ai_task_invocation_list_router,
             ai_suggestion_read_router=ai_suggestion_read_router,
+            rag_retrieval_router=rag_retrieval_router,
+            rag_retrieval_cancel_router=rag_retrieval_cancel_router,
             project_read_router=project_read_router,
             workflow_read_router=workflow_read_router,
             workflow_start_router=workflow_start_router,
