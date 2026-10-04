@@ -136,3 +136,149 @@ class DocumentChunkRow(Base):
     lock_version: Mapped[int] = mapped_column(
         BigInteger, nullable=False, server_default=text("0"),
     )
+
+
+class EmbeddingIndexRow(Base):
+    """A planned, model-bound index generation with an exact source snapshot."""
+
+    __tablename__ = "rag_embedding_indexes"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["project_id"], ["plm.prj_projects.project_id"],
+            name="fk_rag_indexes__project", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["embedding_model_ref"], ["plm.ai_models.ai_model_id"],
+            name="fk_rag_indexes__model", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["created_by"], ["plm.auth_users.user_id"],
+            name="fk_rag_indexes__creator", ondelete="NO ACTION",
+        ),
+        UniqueConstraint(
+            "scope", "project_id", "index_purpose", "index_version",
+            name="uq_rag_indexes__purpose_version",
+            postgresql_nulls_not_distinct=True,
+        ),
+        CheckConstraint(
+            "(scope='GLOBAL' AND project_id IS NULL) OR "
+            "(scope='PROJECT' AND project_id IS NOT NULL)",
+            name="ck_rag_indexes__scope_project",
+        ),
+        CheckConstraint(
+            "index_purpose ~ '^[A-Za-z][A-Za-z0-9._:/-]{0,127}$' "
+            "AND chunk_profile ~ '^[A-Za-z][A-Za-z0-9._:/-]{0,127}$'",
+            name="ck_rag_indexes__refs",
+        ),
+        CheckConstraint(
+            "embedding_dimension BETWEEN 1 AND 2000 "
+            "AND chunk_profile_version BETWEEN 1 AND 2147483647 "
+            "AND index_version BETWEEN 1 AND 9223372036854775807",
+            name="ck_rag_indexes__versions",
+        ),
+        CheckConstraint(
+            "source_chunk_count BETWEEN 1 AND 1000000000 "
+            "AND octet_length(source_snapshot_fingerprint)=32",
+            name="ck_rag_indexes__snapshot",
+        ),
+        CheckConstraint(
+            "index_state IN ('PLANNED','BUILDING','READY','ACTIVE','FAILED','RETIRED') "
+            "AND lock_version BETWEEN 0 AND 9223372036854775807 "
+            "AND created_xid>0 AND isfinite(created_at)",
+            name="ck_rag_indexes__state",
+        ),
+        Index(
+            "uq_rag_indexes__active_purpose", "scope", "project_id",
+            "index_purpose", unique=True,
+            postgresql_where=text("index_state='ACTIVE'"),
+            postgresql_nulls_not_distinct=True,
+        ),
+        Index(
+            "ix_rag_indexes__project_purpose_version", "project_id",
+            "index_purpose", text("index_version DESC"), "embedding_index_id",
+        ),
+    )
+
+    embedding_index_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"),
+    )
+    scope: Mapped[str] = mapped_column(Text, nullable=False)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    index_purpose: Mapped[str] = mapped_column(Text, nullable=False)
+    embedding_model_ref: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    embedding_dimension: Mapped[int] = mapped_column(Integer, nullable=False)
+    chunk_profile: Mapped[str] = mapped_column(Text, nullable=False)
+    chunk_profile_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    source_chunk_count: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    source_snapshot_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    index_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    index_state: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'PLANNED'"),
+    )
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+    created_xid: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("txid_current()"),
+    )
+    lock_version: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("0"),
+    )
+
+
+class IndexSourceChunkRow(Base):
+    """An immutable exact member of an EmbeddingIndex source snapshot."""
+
+    __tablename__ = "rag_index_source_chunks"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["embedding_index_id"],
+            ["plm.rag_embedding_indexes.embedding_index_id"],
+            name="fk_rag_index_sources__index", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["chunk_id"], ["plm.rag_document_chunks.chunk_id"],
+            name="fk_rag_index_sources__chunk", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["project_id"], ["plm.prj_projects.project_id"],
+            name="fk_rag_index_sources__project", ondelete="NO ACTION",
+        ),
+        UniqueConstraint(
+            "embedding_index_id", "source_ordinal",
+            name="uq_rag_index_sources__ordinal",
+        ),
+        UniqueConstraint(
+            "embedding_index_id", "chunk_id",
+            name="uq_rag_index_sources__chunk",
+        ),
+        CheckConstraint(
+            "(scope='GLOBAL' AND project_id IS NULL) OR "
+            "(scope='PROJECT' AND project_id IS NOT NULL)",
+            name="ck_rag_index_sources__scope_project",
+        ),
+        CheckConstraint(
+            "source_ordinal BETWEEN 1 AND 1000000000 "
+            "AND octet_length(chunk_text_fingerprint)=32 "
+            "AND created_xid>0",
+            name="ck_rag_index_sources__shape",
+        ),
+        Index(
+            "ix_rag_index_sources__chunk", "chunk_id", "embedding_index_id",
+        ),
+    )
+
+    index_source_chunk_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"),
+    )
+    embedding_index_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    source_ordinal: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    chunk_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    scope: Mapped[str] = mapped_column(Text, nullable=False)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    chunk_text_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    created_xid: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("txid_current()"),
+    )

@@ -7732,3 +7732,11 @@
 - Reason：Chunk generation 可并发产生或被限制，仅靠版本清单会让同一 Index 身份对应不同实际输入；提前开放 READY/ACTIVE 则会产生无向量、无验证却可见的假索引。精确成员和关闭转换可保持输入可复现。
 - Impact/Rollback：本项先登记实施边界，无程序/Schema/API/依赖/外发；A02 将以Schema0077新增内部表。AIModel 后续失效不改历史，运行入口逐次重验。空表可降级，有历史拒降。
 - Verification：静态核对 AIModel ORM/state、AI Egress INDEX_BUILD/REBUILD、冻结 Index 状态/API、DocumentChunk0076、pgvector 2,000维和 Runtime禁止DDL边界；确认当前无Index/Build实现。
+
+# DEC-20261004-790：Index 创建事务即封存精确来源快照
+
+- Date/WBS：2026-10-04 / `RAG-02-A02`；依据 `CR-RAG-002`、DEC-789。
+- Decision：Index root与全部source Chunk必须在同一PostgreSQL transaction id内创建；deferred提交守卫按ordinal复算Chunk id/text fingerprint SHA-256并校验count/连续序号。提交后禁止追加或改写成员；Index在Build Owner安装前只允许PLANNED且禁止UPDATE。
+- Reason：应用先建root再异步补成员会让同一Index身份短暂或永久对应不完整输入，也允许并发Chunk变化污染构建。事务封存让source snapshot成为一次提交事实，并让后续Build按固定集合执行。
+- Impact/Rollback：新增内部Schema0077/ORM，无API、依赖、向量或外发。空表可降0076；有历史拒降。聚合fingerprint在创建事务执行，后续大规模容量须在RAG-03性能验证中测量，不能以Runtime动态DDL规避。
+- Verification：Win11/PG18.6标记`RAG_02_A02_EMBEDDING_INDEX_SCHEMA_PASS`；定向14、后端2356通过/3跳过；wheel828项 SHA-256 `4169d67bcca6e8271aed693a36f15f00e361440ca8048f3b1ac96fe22d53d9ee`。零Provider I/O和客户数据。

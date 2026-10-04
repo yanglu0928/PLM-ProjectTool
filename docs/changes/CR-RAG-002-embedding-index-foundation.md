@@ -1,6 +1,6 @@
 # CR-RAG-002：EmbeddingIndex 身份与精确来源快照
 
-日期：2026-10-04；状态：`APPROVED_FOR_IMPLEMENTATION_BY_CONTINUOUS_AUTHORIZATION`；WBS：`RAG-02-A01～A02`。关联 Gate 2 冻结 ADR-004、DM-04、SC-01～03 与 API-03；原冻结提交 `64cdf09` 不改。
+日期：2026-10-04；状态：`IMPLEMENTED_AND_WINDOWS11_PG18_VERIFIED`；WBS：`RAG-02-A01～A02`。关联 Gate 2 冻结 ADR-004、DM-04、SC-01～03 与 API-03；原冻结提交 `64cdf09` 不改。
 
 ## 差异与方案
 
@@ -21,3 +21,9 @@ A02 只开放 `PLANNED` Index 的持久化基础：模型必须是当前 `AVAILA
 ## 验证计划
 
 空库和有 DocumentChunk 历史的 PostgreSQL 18.6 升/降/重升；ORM drift；GLOBAL/PROJECT、模型 kind/state/dimension、purpose/version、Chunk Scope/profile、重复/跨 Index 成员、来源不可变和有数据拒降负例；确认未产生 Embedding、Job、Egress、Provider I/O。Windows Server 2025、Debian 13、HNSW/Build/激活与质量另行验证。
+
+## 实施与结果
+
+Schema0077 已新增 `rag_embedding_indexes` 与 `rag_index_source_chunks`。Index 和成员只能在同一 PostgreSQL transaction id 内创建；deferred constraint 在提交时复算有序 `(ordinal, chunk_id, text fingerprint)` SHA-256，并验证成员数量与连续序号。成员创建后不可追加、改写、删除或截断；Index 在 Build Owner 落地前拒绝任何状态更新。
+
+Windows 11/PostgreSQL18.6 完成空库升降重升、已有 Chunk/AIModel 升级、ORM drift、模型 kind/state/dimension、跨项目、缺成员、错误指纹、重复版本、迟到成员、状态关闭、历史保留和有数据拒降；标记 `RAG_02_A02_EMBEDDING_INDEX_SCHEMA_PASS`。后端全量2356项通过、3项既有条件跳过；开发wheel 828项，SHA-256 `4169d67bcca6e8271aed693a36f15f00e361440ca8048f3b1ac96fe22d53d9ee`。无向量、Provider I/O、客户数据或Secret外发。

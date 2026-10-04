@@ -3,21 +3,21 @@
 |字段|当前值|
 |---|---|
 |Current Phase|Phase 2：Platform Core|
-|Current WBS|`RAG-02-A01` EmbeddingIndex编码前核查完成；进入`RAG-02-A02` Index/精确来源快照Schema|
+|Current WBS|`RAG-02-A02` EmbeddingIndex/精确来源快照Schema完成；进入`RAG-03-A01` EmbeddingRecord/Build核查|
 |Current Status|PHASE_1_COMPLETE / DOC_03_A03_P04_P04_PRECONDITION_BLOCKED / DOC_02_A02_P01_INTERNAL_PASS / DOC_02_A02_P02_PRECONDITION_BLOCKED / DOC_03_A04_A03_P04_P03_CONTENT_HTTP_PASS / DOC_03_A04_A04_P01_JOB_SCHEMA_PASS / DOC_03_A04_A04_P02_JOB_LEASE_PASS / DOC_03_A04_A04_P03_OUTBOX_PASS / DOC_03_A04_A04_P04_P01_PARSE_QUEUE_PASS / DOC_03_A04_A04_P04_P02_COMMIT_INTERNAL_PASS / DOC_03_A04_A04_P04_P03_P01_ABORT_STATE_PASS / DOC_03_A04_A04_P04_P03_P02_PRECONDITION_BLOCKED / DOC_03_A04_A04_P04_P04_A01_FINALIZE_HTTP_PASS / DOC_03_A04_A04_P04_P04_A02_WINDOWS_COMPOSITION_PASS / DOC_03_A04_A04_P04_COMMIT_ABORT_IN_PROGRESS / DOC_01_A02_INTERNAL_PASS / DOC_01_A03_P01_CURSOR_PASS / DOC_01_A03_P02_HTTP_CONTRACT_PASS / DOC_01_A03_P03_HTTP_DB_PASS / DOC_01_A03_P04_WINDOWS_COMPOSITION_PASS / DOC_01_A04_P01_VERSION_INTERNAL_PASS / DOC_01_A04_P02_VERSION_CURSOR_PASS / DOC_01_A04_P03_VERSION_HTTP_CONTRACT_PASS / DOC_01_A04_P04_VERSION_HTTP_DB_PASS / DOC_01_A04_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P01_VERIFIED_SNAPSHOT_PASS / DOC_01_A05_P02_DOWNLOAD_SOURCE_PASS / DOC_01_A05_P03_PREPARE_DOWNLOAD_PASS / DOC_01_A05_P04_DOWNLOAD_HTTP_PASS / DOC_01_A05_P05_WINDOWS_COMPOSITION_PASS / DOC_01_A05_P06_DISCONNECT_CAPACITY_BOUNDED_PASS / DOC_03_A04_A04_P04_P03_P02_A01_GATE_ADAPTER_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P01_CONTENT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P02_COMMIT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A02_P03_ABORT_GATE_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P01_READONLY_INSPECTION_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A01_STORAGE_STEP_PASS / DOC_03_A04_A04_P04_P03_P02_A03_P02_A02_INTERNAL_CLEANUP_PASS / PLT_02_A07_P05_A09_CEREMONY_PENDING / AI_04_A02_P02_SCHEMA_PASS / AI_04_A03_P02_INPUT_IDENTITY_PASS / AI_04_A03_P03_INPUT_OWNER_PASS / AI_04_A04_P02_EGRESS_PREVIEW_SCHEMA_PASS / AI_04_A04_P03_EGRESS_AUTHORIZATION_SCHEMA_PASS / AI_04_A04_P04_EGRESS_PREVIEW_SERVICE_PASS / AI_04_A04_P05_EGRESS_AUTHORIZATION_SERVICE_PASS / AI_04_A04_P06_EGRESS_OWNER_TASK_PASS / AI_04_A04_P07_EGRESS_HTTP_CONTRACT_PASS / AI_04_A04_P08_EGRESS_HTTP_WINDOWS_PASS / AI_04_A04_P09_EGRESS_DEPLOYMENT_POLICY_PASS / AI_04_A05_P02_TASK_SUBMISSION_SCHEMA_PASS / AI_04_A05_P03_TASK_POLICY_PROMPT_OWNER_PASS / AI_04_A06_P03_P02_A03_DOCUMENT_CONTENT_PG_PASS / AI_05_A06_P04_WINDOWS_BROWSER_PASS / AI_05_A07_WINDOWS_WORKBENCH_PASS / RAG_DOCUMENT_CHUNK_SCHEMA_PASS / PHASE_2_IN_PROGRESS|
-|Latest WBS Status|`RAG_EMBEDDING_INDEX_PRECHECK_PASS`|
+|Latest WBS Status|`RAG_EMBEDDING_INDEX_SCHEMA_PASS`|
 |Completed Phases|Phase 0 技术验证（`COMPLETE_WITH_APPROVED_ALTERNATIVES`）；Architecture / Data Model / DB Schema / API Contract Freeze；Gate 2 `APPROVED`；Phase 1 基础工程|
 |Completed WBS|POC-01、POC-02、POC-04、POC-05、POC-06、POC-08、POC-09 已按验证或批准例外收口；POC-03 以批准替代方案收口；Gate 1 已通过；AF-01～AF-05、DM-01～DM-06、SC-01～SC-05、API-01～API-05 PASS；Gate 2 已批准并冻结四份基线；1.01～1.09、PLT-01-A01～A03、PLT-02-A01～A06、API-RUNTIME-01（仅 Win11）、PRJ-03-A01～A04、AUD-01-A01～A03、AUT-01-A01～A03、AUT-02-A01～A05、AUT-03-A01～A06、AUT-03-A07-P01～P03（P02/P03 仅 Win11）、AUT-03-A08～A10（仅 Win11）、PRJ-01-A01～A06、PRJ-02-A01～A04、LIC-01-A01～A04、LIC-02-A01～A05、LIC-03-A01～A03、DOC-03-A01、DOC-03-A02（限定范围）、DOC-03-A03-P01～P03（P03 内部合成验证）、DOC-03-A03-P04-P01～P03（内部合成验证）、DOC-03-A04-A01（Schema 验证）、DOC-03-A04-A02（内部合成验证）、DOC-01-A01、DOC-02-A01、DOC-02-A02-P01（内部合成验证） PASS|
 |Blockers|DOC-03-A04-A04-P04-P03-P02 内部清理/崩溃对账已在隔离库/临时文件验证；A03-P03 证实 Server 2025 VM可启动但宿主VMnet8地址漂移（169.254/16 vs 预期192.168.27.1/24），管理端口未连通且修复需管理员权限，正式旧版进程停写、目标账户 ACL 与恢复演练未完成，生产物理删除入口仍关闭；AUT-03-A07 Windows 11 合成端到端已通过，Server 2025 目标运行账户/HTTPS 代理与 Debian 安全凭据来源未验证；PLT-02-A07 显式生产写组合已合成验证，正式发行公钥、目标账户可信时间/游标/Secret 主密钥供给、Server 2025 恢复演练仍待；POC-03 新集合同 0/7、技术协议 1/8 来源配额不足且旧质量失败继续阻塞 Gate 3/UAT，CR-PAR-005 中文模型路径失败、Server Office、Debian 未验证和 Ghostscript 发行合规继续作为 Release 约束|
 |Pending User Decisions|LIC-03-A03 方案 A 已确定；P08-A02 本机浏览器将两份纯合成 PDF 上传至 127.0.0.1 隔离服务的 UI 文件操作确认待回复（非项目技术方案选择）。客户数据外发、付款/额度重置和不可恢复生产操作不在持续授权内|
 |Architecture Version|`ARCH-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，License ADR-006 经用户批准 CR-LIC-001 修订|
 |Data Model Version|`DATA-MODEL-CANDIDATE-V1`；Gate 2 原冻结内容 `64cdf09`，DM-02 License 授权粒度经用户批准 CR-LIC-001 修订|
-|DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；原冻结64cdf09保留；增量至`20261004_0076`，新增来源绑定DocumentChunk与受控FTS（CR-RAG-001）；无生产迁移|
+|DB Schema Version|`DB-SCHEMA-CANDIDATE-V1`；原冻结64cdf09保留；增量至`20261004_0077`，新增来源绑定DocumentChunk/FTS及PLANNED EmbeddingIndex精确Chunk快照（CR-RAG-001/002）；无生产迁移|
 |API Contract Version|`API-CONTRACT-CANDIDATE-V1`；API-01～API-05 PASS，Gate 2 已冻结（内容提交 `64cdf09`）|
 |Test Summary|AI04A05-P02 Win11/PG18.6 Schema0070空/历史库升降重升、drift、约束负例、后端2136运行/3跳过及wheel PASS；AI04A04-P08 Win11/PG18.6真实HTTP组合、P07合同5、后端2130运行/3跳过、wheel PASS；AI04A04-P07合同5、后端2130运行/3跳过、wheel PASS；DOC05A05-P07 三视图定向26、前端全量970项/typecheck/build PASS；DOC05A05-P06 定向44、前端全量960项/typecheck/build PASS；DOC05A05-P05 定向149、前端全量916项/typecheck/build PASS；DOC05A05-P04 定向30、前端全量910项/typecheck/build PASS；DOC05A05-P03 定向143、前端全量880项/typecheck/build PASS；DOC05A05-P02 定向31、前端全量876项/typecheck/build PASS；DOC05A05-P01 SessionClient 定向139、前端全量845项/typecheck/build PASS；A05真实浏览器/PG审计、A06 Auth UTC-Z真实网络与后端1558无失败/2跳过、A07导航浏览器；A08-P02前端85及真实PG改密HTTP内部链通过、浏览器最终提交待人工；A09前端86跨路由合同；PRJ05A01客户端123、A02列表131、A03详情139；A04真实浏览器及独立HTTP/PG合成读链通过；PRJ05A05-P01前端147桥接、P02前端173创建客户端、P03-A01候选读取205、P03-A02创建页面212/typecheck/build合同；P04真实IAB/PG创建通过。AUT05A10-P01前端219私有User写桥接、P02前端249安全客户端、P03前端258页面合同；P04-A01隔离ASGI/PG写链通过。AUT05A11-P01前端265/typecheck/build用户只读页合同通过，P02 Windows11本机合成浏览器/PG匿名/普通用户拦截、Admin两用户列表/刷新及临时资源清理通过。AUT05A12-P01前端271状态传输合同，P02前端292状态响应合同，P03前端309详情强ETag合同，P04前端320/typecheck/build启停页面合同通过；P05-A01实际Windows11隔离ASGI/PG User启停/会话/历史重放和临时源清理exit0（首轮PG服务停止，恢复后重跑）。AUT05A13-P01～P03前端362/typecheck/build，P04隔离浏览器同用户改名v0→v1、旧名拒绝/新名登录及SQL一审计、临时清理和原只读API回归exit0（首轮PG服务停止，恢复后重跑）。新凭据浏览器提交待人工，正式HTTPS/信任/性能/三平台/全UAT仍未验，CR008 FAIL/Gate/包待|
-|Latest Test Summary|RAG-01-A02 Windows 11/PostgreSQL18.6：Schema0076空库升降重升、已有Document/Parse升级、ORM drift、Scope/来源/hash/generation负例、simple FTS/GIN、历史保留和有数据拒降通过；定向10、后端2352/跳过3、wheel827项|
-|Next WBS|`RAG-02-A02` EmbeddingIndex与逐Chunk来源快照ORM、Migration0077及隔离PG18验证|
-|Latest Validation|`RAG_EMBEDDING_INDEX_PRECHECK_PASS`；仅静态核查，不代表Index构建/激活、Embedding/Hybrid运行或Gate3通过|
+|Latest Test Summary|RAG-02-A02 Windows 11/PostgreSQL18.6：Schema0077空库升降重升、已有Chunk/AIModel升级、ORM drift、模型/Scope/维度/精确快照/事务封存/状态关闭/历史保留通过；定向14、后端2356/跳过3、wheel828项|
+|Next WBS|`RAG-03-A01` EmbeddingRecord、受控HNSW维度族、外发授权与Build Owner编码前核查|
+|Latest Validation|`RAG_02_A02_EMBEDDING_INDEX_SCHEMA_PASS`；不代表Embedding/HNSW/Build/激活、性能、三平台或Gate3通过|
 
 ## 自动执行策略
 
@@ -27,6 +27,8 @@
 - GitHub：允许在当前 Scope 和正确分支内自动 fetch、commit、push；禁止 force push、直接提交 main、覆盖未知远端修改或提交 Secret/客户数据。
 
 ## 最近检查点
+
+- 2026-10-04/RAG-02-A02 新增Schema0077：Index与精确Chunk成员同事务创建，提交时复算有序快照；模型/维度/Scope/profile强绑定，成员封存，Build Owner落地前仅PLANNED。Win11/PG18.6迁移、drift和负例通过；后端2356/3跳过、wheel828项。进入RAG-03-A01。
 
 - 2026-10-04/RAG-02-A01 核清Index的Scope/purpose/version、AIModel/dimension、逐Chunk精确来源快照和半实现失败关闭边界；登记CR-RAG-002，决定A02只允许PLANNED，Build/Validation/Embedding完成前不开放状态转换或HTTP。仅文档，进入RAG-02-A02。
 
