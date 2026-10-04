@@ -8260,3 +8260,11 @@
 - Reason：通用UPDATE会绕过响应/Evidence/Trace和权限；仅检查Trace外键会让无关关系冒充解决。Trace不需要新增HND-03节点，Action自身指针和关闭事件可绑定受权关系。
 - Impact/Rollback：本项纯文档；后续0099只替换守卫，不新增表/列/API/依赖。可停止后续Owner并保留记录，任何合法状态历史不得删除或降级。
 - Verification：静态交叉核对DM-05/API-04、CR-HND-001/002、Schema0098和Document/Evidence/Trace边界，标记`HND_02_A03_A01_STATE_PRECHECK_PASS`；未运行新增程序测试。
+
+# DEC-20261005-856：Action 状态历史与 Root 强锁一一对应
+
+- Date/WBS：2026-10-05 / `HND-02-A03-A02`；依据DM-05/API-04、CR-HND-003及Schema0098。
+- Decision：Schema0099只开放精确前向状态/取消，不开放metadata PATCH；每次状态转换Root版本与唯一下一事件一一对应。SUBMIT/VERIFY前按状态插入固定Document/Evidence并延迟校验当前PROJECT事实；CLOSED要求同项目ACTIVE Trace最低事实，深层来源/目标留给Owner。
+- Reason：先放通用UPDATE会绕过权限/Audit/Trace；子项先写或Root先写都需要到事务提交才判定完整。来源初始资格若在每次转换重验，会被正常Review状态变化误阻塞，因此只在v0验证资格、后续验证固定来源存在。
+- Impact/Rollback：内部0099仅替换守卫/触发器，无表列/API/依赖/配置/外发。全OPEN/v0且无子项历史可降，有生命周期历史拒降并向前修复。
+- Verification：Win11/PG18.6降升/drift、完整链/取消/半写回滚/引用与终态保护通过；定向12、后端2625/3跳过；wheel最终解包16，SHA-256 `1ee8ef45a636708a8489f460befd2946b65c25f792b4f932f250fb92d8c6446a`。
