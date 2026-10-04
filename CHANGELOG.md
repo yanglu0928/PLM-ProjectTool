@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-04：0.1.0-dev.0/RAG-03-A03-P01 新增Embedding Build计划Schema0079：每个Index唯一Build/Job，Job仅一次尝试；Batch同事务连续覆盖精确来源、每批独占一次外发授权并提交时复算来源、授权集和Build指纹。兼容性/升级/回滚：内部Schema增量，无API/网络；空表可降0078，有历史拒降；状态转换在P02前关闭。验证：Win11/PG18.6有效双批计划、迁移/drift/负例通过，后端2366/跳过3，wheel隔离24。已知问题：创建/claim、发送栅栏、Adapter、READY/激活、三平台、性能、Gate3/UAT/发行包待完成。
+
 - 2026-10-04：0.1.0-dev.0/RAG-03-A02 新增EmbeddingRecord/受控HNSW Schema0078和`pgvector==0.5.0`：复合外键固定Index/Model/Dimension与精确Chunk/正文指纹，Egress Authorization非空，vector维度仅768/1024并由Migration预建cosine HNSW；Index仍锁定PLANNED，Build Owner前向量不可写。兼容性/升级/回滚：内部Schema/依赖增量，无API/真实外发；空表可降0077，有记录拒降；MIT Notice待最终复核。验证：Win11/PG18.6迁移、drift、HNSW计划及负例通过，后端2362/跳过3，wheel隔离定向20。已知问题：Build/批次/Adapter/READY/激活、三平台、性能、Gate3/UAT/正式发行包待完成。
 
 - 2026-10-04：0.1.0-dev.0/RAG-03-A01 完成EmbeddingRecord/Build编码前核查并登记CR-RAG-003：锁定Python pgvector类型依赖方向、逻辑vector复合约束、仅768/1024预建HNSW、唯一Build Owner/generation/批次与网络前RUNNING栅栏；未知维度和未知网络结果均失败关闭。兼容性/升级/回滚：纯文档，无Schema/API/依赖/外发变化；A02规划空表可降、有历史拒降。验证：静态核对依赖、Adapter/Worker、Schema0077守卫、PoC维度与Egress类型。已知问题：A02～A05、API、性能、三平台、Gate3/UAT/发行包待完成。

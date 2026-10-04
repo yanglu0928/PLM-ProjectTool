@@ -399,3 +399,200 @@ class EmbeddingRecordRow(Base):
     created_xid: Mapped[int] = mapped_column(
         BigInteger, nullable=False, server_default=text("txid_current()"),
     )
+
+
+class EmbeddingBuildRow(Base):
+    """One immutable batch plan and unique Job owner for an Index generation."""
+
+    __tablename__ = "rag_embedding_builds"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["project_id"], ["plm.prj_projects.project_id"],
+            name="fk_rag_builds__project", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["embedding_index_id", "embedding_model_ref", "embedding_dimension"],
+            ["plm.rag_embedding_indexes.embedding_index_id",
+             "plm.rag_embedding_indexes.embedding_model_ref",
+             "plm.rag_embedding_indexes.embedding_dimension"],
+            name="fk_rag_builds__index_model_dimension", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["build_job_ref"], ["plm.job_jobs.job_id"],
+            name="fk_rag_builds__job", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["created_by"], ["plm.auth_users.user_id"],
+            name="fk_rag_builds__creator", ondelete="NO ACTION",
+        ),
+        UniqueConstraint("embedding_index_id", name="uq_rag_builds__index"),
+        UniqueConstraint("build_job_ref", name="uq_rag_builds__job"),
+        CheckConstraint(
+            "(scope='GLOBAL' AND project_id IS NULL) OR "
+            "(scope='PROJECT' AND project_id IS NOT NULL)",
+            name="ck_rag_builds__scope_project",
+        ),
+        CheckConstraint(
+            "build_generation BETWEEN 1 AND 9223372036854775807 "
+            "AND embedding_dimension IN (768,1024) "
+            "AND source_chunk_count BETWEEN 1 AND 1000000000 "
+            "AND batch_count BETWEEN 1 AND 100000",
+            name="ck_rag_builds__counts",
+        ),
+        CheckConstraint(
+            "octet_length(source_snapshot_fingerprint)=32 "
+            "AND octet_length(authorization_set_fingerprint)=32 "
+            "AND octet_length(build_fingerprint)=32",
+            name="ck_rag_builds__fingerprints",
+        ),
+        CheckConstraint(
+            "build_state IN ('PLANNED','RUNNING','SUCCEEDED','FAILED','UNKNOWN','CANCELLED') "
+            "AND lock_version BETWEEN 0 AND 9223372036854775807 "
+            "AND created_xid>0 AND isfinite(created_at)",
+            name="ck_rag_builds__state",
+        ),
+        Index(
+            "ix_rag_builds__project_state", "project_id", "build_state",
+            "embedding_build_id",
+        ),
+    )
+
+    embedding_build_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"),
+    )
+    embedding_index_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    scope: Mapped[str] = mapped_column(Text, nullable=False)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    embedding_model_ref: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    embedding_dimension: Mapped[int] = mapped_column(Integer, nullable=False)
+    build_generation: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    build_job_ref: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    source_chunk_count: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    source_snapshot_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    batch_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    authorization_set_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    build_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    build_state: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'PLANNED'"),
+    )
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+    created_xid: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("txid_current()"),
+    )
+    lock_version: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("0"),
+    )
+
+
+class EmbeddingBuildBatchRow(Base):
+    """An exact, individually authorized external request in a Build plan."""
+
+    __tablename__ = "rag_embedding_build_batches"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["embedding_build_id"], ["plm.rag_embedding_builds.embedding_build_id"],
+            name="fk_rag_build_batches__build", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["egress_authorization_ref"],
+            ["plm.ai_egress_authorizations.authorization_id"],
+            name="fk_rag_build_batches__authorization", ondelete="NO ACTION",
+        ),
+        UniqueConstraint(
+            "embedding_build_id", "batch_ordinal",
+            name="uq_rag_build_batches__ordinal",
+        ),
+        UniqueConstraint(
+            "embedding_build_id", "source_first_ordinal",
+            name="uq_rag_build_batches__source_start",
+        ),
+        UniqueConstraint(
+            "egress_authorization_ref", name="uq_rag_build_batches__authorization",
+        ),
+        CheckConstraint(
+            "batch_ordinal BETWEEN 1 AND 100000 "
+            "AND source_first_ordinal BETWEEN 1 AND 1000000000 "
+            "AND source_record_count BETWEEN 1 AND 1000 "
+            "AND payload_bytes BETWEEN 1 AND 100000000 "
+            "AND input_tokens BETWEEN 1 AND 1048576",
+            name="ck_rag_build_batches__bounds",
+        ),
+        CheckConstraint(
+            "octet_length(source_batch_fingerprint)=32 "
+            "AND octet_length(payload_fingerprint)=32",
+            name="ck_rag_build_batches__fingerprints",
+        ),
+        CheckConstraint(
+            "batch_state IN ('PENDING','RUNNING','SUCCEEDED','FAILED','UNKNOWN','CANCELLED') "
+            "AND lock_version BETWEEN 0 AND 9223372036854775807 "
+            "AND created_xid>0 AND isfinite(created_at)",
+            name="ck_rag_build_batches__state",
+        ),
+        CheckConstraint(
+            "(batch_state='PENDING' AND send_fencing_token IS NULL "
+            "AND provider_request_ref IS NULL AND error_code IS NULL "
+            "AND started_at IS NULL AND completed_at IS NULL) OR "
+            "(batch_state='RUNNING' AND send_fencing_token>0 "
+            "AND error_code IS NULL AND started_at IS NOT NULL "
+            "AND completed_at IS NULL) OR "
+            "(batch_state='SUCCEEDED' AND send_fencing_token>0 "
+            "AND error_code IS NULL AND started_at IS NOT NULL "
+            "AND completed_at>=started_at) OR "
+            "(batch_state IN ('FAILED','UNKNOWN','CANCELLED') "
+            "AND error_code IS NOT NULL AND started_at IS NOT NULL "
+            "AND completed_at>=started_at)",
+            name="ck_rag_build_batches__lifecycle",
+        ),
+        CheckConstraint(
+            "(provider_request_ref IS NULL OR "
+            "(char_length(provider_request_ref) BETWEEN 1 AND 255 "
+            "AND provider_request_ref !~ '[\\r\\n]')) "
+            "AND (error_code IS NULL OR error_code ~ '^[A-Z][A-Z0-9_]{0,63}$')",
+            name="ck_rag_build_batches__result",
+        ),
+        Index(
+            "ix_rag_build_batches__build_state", "embedding_build_id",
+            "batch_state", "batch_ordinal",
+        ),
+    )
+
+    embedding_build_batch_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"),
+    )
+    embedding_build_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    batch_ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+    source_first_ordinal: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    source_record_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    source_batch_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    payload_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    payload_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    input_tokens: Mapped[int] = mapped_column(Integer, nullable=False)
+    egress_authorization_ref: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), nullable=False,
+    )
+    batch_state: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'PENDING'"),
+    )
+    send_fencing_token: Mapped[int | None] = mapped_column(BigInteger)
+    provider_request_ref: Mapped[str | None] = mapped_column(Text)
+    error_code: Mapped[str | None] = mapped_column(Text)
+    started_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6),
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6),
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+    created_xid: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("txid_current()"),
+    )
+    lock_version: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("0"),
+    )

@@ -7756,3 +7756,11 @@
 - Reason：先开放Index状态会让未经唯一Owner、批次授权和发送栅栏的代码写入向量；按物理层先行可验证类型、FK、维度和查询索引，同时把运行权限留给A03。无界列避免每种维度复制表，受控表达式索引避免Runtime DDL。
 - Impact/Rollback：新增内部Schema0078与`pgvector==0.5.0`，无公共API/真实外发。空表可降0077；有记录拒降并保留历史。Python包MIT归属已记录，但最终Notice审阅前不解除发行阻塞。
 - Verification：Win11/PG18.6标记`RAG_03_A02_EMBEDDING_RECORD_SCHEMA_PASS`；定向20、后端2362/3跳过；wheel隔离定向20，SHA-256 `6adfdd88423491bb4d44c4f95992e14602efc11e5455feb26acbc003fa5ab5ba`。HNSW 768/1024目录与执行计划命中，零真实Provider I/O和客户数据。
+
+# DEC-20261004-793：一次外发批次只使用一次授权且 Job 不自动重试
+
+- Date/WBS：2026-10-04 / `RAG-03-A03-P01`；依据 `CR-RAG-003`、DEC-791/792及既有AI发送栅栏经验。
+- Decision：每个Index只有一个Build根和一个`rag/RAG_INDEX_BUILD` Job，首版generation固定1、Job max_attempts=1；Build批次在创建事务中连续覆盖精确来源，每批独占一个INDEX_BUILD/REBUILD Authorization，授权source/payload fingerprint、Model、Scope、类别和限额必须精确匹配。失败重建创建新Index，不复活旧Build。
+- Reason：一个授权覆盖多次网络调用会使逐次外发证据含糊；通用Job自动重试又可能在响应未知时重复计费/外发。逐批授权+单次Job尝试让后续Worker能在每次socket send前建立唯一栅栏，并把未知结果保守收敛。
+- Impact/Rollback：新增内部Schema0079/ORM，无API、网络或客户数据。Build/Batch状态仍封闭；空表可降0078，有历史拒降。P02才安装创建/claim与Index状态推进。
+- Verification：Win11/PG18.6标记`RAG_03_A03_P01_BUILD_PLAN_SCHEMA_PASS`；有效双批计划、迁移/drift/封存/拒降通过；后端2366/3跳过，wheel隔离24项，SHA-256 `94d7bddb4b89811f3e630d91c1e8d1360281d32d8dfc3420423ffe716d91c535`。零Provider I/O。
