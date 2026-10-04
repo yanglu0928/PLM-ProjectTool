@@ -8315,3 +8315,11 @@
 - Reason：四类成员读取不等于可批量导出正文；PATCH可产生无界同状态事件，塞入单一详情会破坏响应上限。旧Session摘要和客户端cursor都不能替代当前成员事实。
 - Impact/Rollback：纯文档，无程序、Schema、API行为、依赖、配置、网络或外发。A02新增只读Owner，A03后才实现HTTP；可停止后续实施而不影响既有Action历史。
 - Verification：静态交叉核对冻结API/DM、Schema0100、Project当前授权及既有Capability/Document读取模式，标记`HND_02_A04_A01_ACTION_READ_PRECHECK_PASS`；未运行新增程序测试。
+
+# DEC-20261005-863：Action 读取每次重验当前成员且保持零写
+
+- Date/WBS：2026-10-05 / `HND-02-A04-A02`；依据API-01/API-04、DEC-862及Schema0100。
+- Decision：LIST/GET新增独立四角色只读策略并锁当前Project成员事实；LIST返回稳定位置的摘要，GET返回有界owned refs和唯一当前事件。读取不写Audit/收据，不复用任何写Operation或旧Session授权摘要。
+- Reason：Action可能包含客户输入提示和材料引用，必须先确认当前项目成员；历史事件因PATCH可无界增长，只读取当前序号事件。GET/List本身无业务变化，写审计会让读取失去零副作用性质并放大存储。
+- Impact/Rollback：无Migration、公开HTTP、依赖、配置、网络或外发。撤读取Service与两个只读策略即可回滚，Action历史不变；A03后才增加cursor/HTTP。
+- Verification：Win11/PG18.6四角色、稳定分页、安全详情、跨项目/撤权/License/归档读取和三表零写通过；新增4/相关11、后端2651通过/3跳过，wheel解包导入PASS，SHA-256 `535c319eb4792114ee420bfe906a43109278f35633976e5112e08e29dc45e422`。

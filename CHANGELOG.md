@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/HND-02-A04-A02 新增Action LIST/GET内部读取Owner；四类当前项目成员可读，列表稳定有界分页，详情仅含固定来源/输入规格/响应-Evidence引用和当前事件，跨项目/撤权隐藏且业务零写。兼容性/升级/回滚：无Migration/公开HTTP/cursor密钥/依赖/配置/网络/外发；撤Service和只读策略即可回滚。验证：Win11/PG18.6、相关11、后端2651通过/3跳过、wheel解包导入PASS，SHA-256 `535c319eb4792114ee420bfe906a43109278f35633976e5112e08e29dc45e422`。已知问题：A03 cursor/HTTP、Windows组合/UI、Review/Workflow、Gate3和发行仍待。
+
 - 2026-10-05：0.1.0-dev.0/HND-02-A04-A01 完成Action LIST/GET读取前置设计：列表为有界稳定摘要分页，详情返回固定引用和当前状态最新事件，不无界展开历史或暴露路径/正文/Trace端点；后续cursor绑定Session/Project/页长/资源族。兼容性/升级/回滚：纯文档，无程序/Schema/API行为/依赖/配置/网络/外发。验证：静态交叉核对冻结API/DM、Schema0100、当前授权和既有读取模式。已知问题：A02读取Owner、A03 HTTP、Windows组合/UI、Review/Workflow、Gate3和发行仍待。
 
 - 2026-10-05：0.1.0-dev.0/HND-02-A03-A07 新增Action CLOSE/CANCEL Owner及Trace解决关系证明；CLOSE限ProjectManager并精确验证HND-02来源或显式SRV/REQ正式下游关系，CANCEL可从任一非终态进入CANCELLED且保留提交/验证历史，终态不复活。兼容性/升级/回滚：复用Schema0100，无Migration/公开API/依赖/配置/网络/外发；未注册真实下游Owner时失败关闭，停止装配可关闭新写且保留历史。验证：Win11/PG18.6、相关14、后端2647通过/3跳过、wheel解包导入PASS，SHA-256 `c04d7c3c9abdf28ea87a5480908d3e7a3960a5a96cd83fd57948af93093ca0b2`。已知问题：Survey/Requirement真实Owner、Action读取/HTTP/UI、Handover Review/Workflow、Gate3和发行仍待。
