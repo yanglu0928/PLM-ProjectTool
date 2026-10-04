@@ -17,10 +17,10 @@ SC-01 的 HND-02 owned-table 清单列出 Item/Evidence/Capability/Option，却�
 
 ## 分步实施
 
-1. `HND-01-A02`：新增 Handover Schema/ORM 基础，覆盖三 Root、固定来源、六类 Item、NEED_CONFIRM 结构、Action 状态历史和初始 Owner 关闭；不导入资料、不开放 HTTP。
+1. `HND-01-A02`：新增 HND-01/HND-02 Analysis identity/version Schema/ORM 基础，覆盖固定来源、六类 Item、NEED_CONFIRM 结构和初始 Owner 关闭；不导入资料、不开放 HTTP。
 2. `HND-01-A03`：实现 Analysis identity、完整 Draft Version 与 Validate Owner；固定 Project DocumentVersion 和 Approved CapabilityBaselineVersion，服务端计算来源/内容指纹、Audit 与持久幂等。
 3. `HND-01-A04`：实现 PROJECT Review Subject、送审和终态消费；只有真实 APPROVED/CONFIRMED Version 更新正式指针，退回/撤回保留历史。
-4. `HND-02`：按独立 WBS 实现 ActionItem 创建、修改、OPEN→IN_PROGRESS→SUBMITTED→VERIFIED→CLOSED 以及 CANCELLED；SUBMITTED 永不等同 CLOSED，关闭要求验证结果、Evidence 与 resolution Trace。
+4. `HND-02-A01`：先以独立 Schema 增量物理化 HND-03 ActionItem、状态历史、Evidence 与 resolution Trace 约束；随后按独立 WBS 实现创建、修改、OPEN→IN_PROGRESS→SUBMITTED→VERIFIED→CLOSED 以及 CANCELLED。SUBMITTED 永不等同 CLOSED。
 5. 后续按读取/写 HTTP、独立游标与 Windows 组合、前端 Evidence 定位/输入提示、真实 PostgreSQL/浏览器和 Workflow Checklist Adapter 分项验证。
 
 ## 影响、迁移与回滚
@@ -28,6 +28,10 @@ SC-01 的 HND-02 owned-table 清单列出 Item/Evidence/Capability/Option，却�
 这是 Gate 2 冻结模型的物理化与 owned-table 补足，不增加 Root、公开 Operation、角色、技术栈或业务 Scope。新增表只能由 Handover Owner 写；不得跨模块直写 Document、Capability、Evidence、Review、Trace 或 Workflow 表。PROJECT 资源必须双检 path/project/resource 归属；DeploymentAdmin 没有项目成员身份时不得读取项目正文。
 
 每个 Schema 增量提供 ORM、Alembic up/down、空库/有数据升级、drift 与历史拒降。无 Handover 历史时可降级；产生任何 Root/Version/Item/Action/来源历史后拒绝物理降级并向前修复或恢复备份。应用回滚可停止 Handover Router/Worker，不删除历史、Evidence、Review、Trace 或 Audit。
+
+## 2026-10-05 实施分拆补记
+
+编码前复核发现，把三 Root、来源/Item 完整性和 Action 状态机放入同一个迁移会同时解决 Analysis 快照与 Action 流程两个独立问题，并显著扩大单次回滚面。依据“一项 WBS 只解决一个明确问题”，`HND-01-A02` 收窄为 HND-01/HND-02 的八表 Analysis foundation；HND-03 不取消、不改合同，顺延到 `HND-02-A01` 独立增量。该分拆不改变冻结 Root、字段、Operation、权限或验收标准；只改变实施批次，并要求 HND-03 完成前不得开放依赖缺失资料 Action 的 Review/HTTP 闭环。
 
 ## 验证与剩余风险
 

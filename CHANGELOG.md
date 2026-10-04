@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/HND-01-A02 新增Handover Schema0096/ORM，以八表物理化HND-01/HND-02 Analysis identity/version、固定Project DocumentVersion、Approved Capability Version/Item、Evidence、GAP_ANALYSIS provenance及六类Item/NEED_CONFIRM；Owner前更新/删除/truncate失败关闭。CR-HND-001记录实施分拆：HND-03 ActionItem顺延至HND-02-A01，不改变冻结合同。兼容性/升级/回滚：内部`0095 -> 0096`追加，无公开API/依赖/配置/外发；空历史可降，有历史拒降。验证：Win11/PG18.6升级/降升/drift/合法快照与负例、定向8、后端2601通过/3跳过、wheel解包定向11，SHA-256 `87b9680c9f80f25e41f6bb44c1d1d0e21d543616a501fa8199d10dfa2ceb762d`。已知问题：A03 Owner、A04 Review、HND-03/HTTP/UI/Workflow、真实质量、性能、正式信任/Gate3/发行仍待。
+
 - 2026-10-05：0.1.0-dev.0/HND-01-A01 完成Handover运行时前置核查并登记CR-HND-001：冻结3 Root/20 Operation当前运行实现为零；选择先物理化固定Project DocumentVersion、Approved CapabilityBaselineVersion、六类Item/Evidence/Capability/Option及AI Task provenance，再接Analysis/Review/Action/API/UI。NEED_CONFIRM完整提示、AI建议态、Evidence定位和SUBMITTED≠CLOSED保持硬边界。兼容性/升级/回滚：纯文档，无Schema/API/依赖/外发，可停止后续实现且不追写Gate2基线。验证：静态交叉核对DM-05、SC-01/02、API-04、模块边界、Workflow与源码，标记`HND_01_A01_RUNTIME_PRECHECK_PASS`。已知问题：A02以后实现、真实资料/确认、质量、正式信任/性能/Gate3/发行仍待。
 
 - 2026-10-05：0.1.0-dev.0/CAP-01-A05-A07 将Capability五读/十二全量Operation分别接入Windows显式只读/写生产组合，使用两把独立Vault游标密钥并在缺失时失败关闭；真实组合发现并修复GLOBAL Review开始时间早于Subject校验的生产时序问题。兼容性/升级/回滚：无Schema/Migration、冻结API、依赖或外发变化，停注入Router即可关闭流量，历史保留。验证：定向42、Win11/PG18.6隔离合成密钥下十二Operation真实HTTP/重放/状态边界与drift、后端2597通过/3跳过、wheel Capability/Review59+Migration4，SHA-256 `793500a98946317b3ba4c95e0909029b085814fe00cda5b9e17aaa2c17f87ea0`。已知问题：CR-CAP-004正式目标账户密钥/备份/ACL/恢复、正式信任、性能、Server2025/Debian13、Gate3/发行仍待。

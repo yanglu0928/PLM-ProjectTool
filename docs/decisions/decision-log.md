@@ -8196,3 +8196,11 @@
 - Reason：当前只有类型白名单和Workflow阶段名，3 Root/20 Operation运行实现为零；直接挂API会绕过固定来源、项目授权与人工确认。冻结模型明确要求多值source/ai refs，但SC-01没有可保持外键与顺序的物理集合。
 - Impact/Rollback：本项纯文档；后续新增表不增加Root/API/Scope，须按CR-HND-001迁移与历史拒降。未实施Schema前可停止；不得改写Gate2冻结提交。
 - Verification：静态交叉核对冻结DM/SC/API、模块边界、Workflow与运行源码；确认零handover文件/表/Owner/Router，标记`HND_01_A01_RUNTIME_PRECHECK_PASS`，未运行新增程序测试。
+
+# DEC-20261005-848：Handover Analysis 与 Action Schema 分批物理化
+
+- Date/WBS：2026-10-05 / `HND-01-A02`；依据CR-HND-001、DEC-847及“一项WBS一个明确问题”。
+- Decision：Schema0096只物理化HND-01/HND-02八表 Analysis identity/version、固定Document/Capability/AI来源和六类Item；HND-03 ActionItem/状态历史顺延至`HND-02-A01`独立增量。Owner前更新/删除/truncate及非初始状态失败关闭；`source_missing`不构成闭环，Action绑定前不得开放正式Review/HTTP。
+- Reason：Analysis快照完整性与Action状态机是两个独立事务边界；一次迁移覆盖三Root会扩大审查和回滚面，并容易把“缺资料”错误解释为已生成待办。分批不改变冻结模型，只让每项证据可独立验证。
+- Impact/Rollback：新增内部Schema0096，无公开API/既有表/依赖/配置/网络或客户数据变化。空历史可降回0095，有任一Handover历史拒降并向前修复；HND-03仍是正式交付前置。
+- Verification：Win11/PG18.6有数据升级、空历史降升、drift、合法固定快照及四类负例通过；定向8、后端2601通过/3跳过；wheel解包定向11，SHA-256 `87b9680c9f80f25e41f6bb44c1d1d0e21d543616a501fa8199d10dfa2ceb762d`。
