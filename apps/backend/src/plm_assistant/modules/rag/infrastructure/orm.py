@@ -951,3 +951,335 @@ class EmbeddingIndexActivationResultRow(Base):
     created_xid: Mapped[int] = mapped_column(
         BigInteger, nullable=False, server_default=text("txid_current()"),
     )
+
+
+class RetrievalRunRow(Base):
+    """Immutable initial RetrievalRun identity; later Owners own transitions."""
+
+    __tablename__ = "rag_retrieval_runs"
+    __table_args__ = (
+        ForeignKeyConstraint(["project_id"], ["plm.prj_projects.project_id"],
+                             name="fk_rag_retrieval_runs__project"),
+        ForeignKeyConstraint(["actor_ref"], ["plm.auth_users.user_id"],
+                             name="fk_rag_retrieval_runs__actor"),
+        ForeignKeyConstraint(["global_index_ref"],
+                             ["plm.rag_embedding_indexes.embedding_index_id"],
+                             name="fk_rag_retrieval_runs__global_index"),
+        ForeignKeyConstraint(["project_index_ref"],
+                             ["plm.rag_embedding_indexes.embedding_index_id"],
+                             name="fk_rag_retrieval_runs__project_index"),
+        ForeignKeyConstraint(["job_id"], ["plm.job_jobs.job_id"],
+                             name="fk_rag_retrieval_runs__job"),
+        UniqueConstraint("job_id", name="uq_rag_retrieval_runs__job"),
+        CheckConstraint(
+            "(scope='GLOBAL' AND project_id IS NULL AND global_index_ref IS NOT NULL "
+            "AND project_index_ref IS NULL) OR (scope='PROJECT' AND project_id IS NOT NULL "
+            "AND project_index_ref IS NOT NULL)",
+            name="ck_rag_retrieval_runs__scope_project"),
+        CheckConstraint(
+            "octet_length(query_fingerprint)=32 AND "
+            "octet_length(metadata_filter_fingerprint)=32 AND "
+            "jsonb_typeof(metadata_filter)='object' AND "
+            "(metadata_filter - ARRAY['document_category','source_type',"
+            "'document_version_ref','effective_from','effective_to','business']::text[])="
+            "'{}'::jsonb",
+            name="ck_rag_retrieval_runs__query_filter"),
+        CheckConstraint(
+            "retrieval_policy_ref ~ '^[A-Za-z][A-Za-z0-9._:/-]{0,127}$' AND "
+            "rerank_policy_ref ~ '^[A-Za-z][A-Za-z0-9._:/-]{0,127}$'",
+            name="ck_rag_retrieval_runs__policies"),
+        CheckConstraint(
+            "top_k BETWEEN 1 AND 100 AND "
+            "rerank_state IN ('PENDING','NOT_APPLICABLE') AND "
+            "egress_state IN ('PENDING','NOT_APPLICABLE') AND "
+            "retrieval_state='RUNNING' AND jsonb_typeof(quality_flags)='array' AND "
+            "NOT degraded AND error_code IS NULL AND completed_at IS NULL AND "
+            "created_xid>0 AND lock_version=0 AND isfinite(created_at)",
+            name="ck_rag_retrieval_runs__foundation_state"),
+        Index("ix_rag_retrieval_runs__project_time", "project_id",
+              text("created_at DESC"), text("retrieval_run_id DESC")),
+    )
+
+    retrieval_run_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    scope: Mapped[str] = mapped_column(Text, nullable=False)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    actor_ref: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    query_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    metadata_filter: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    metadata_filter_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    global_index_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    project_index_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    retrieval_policy_ref: Mapped[str] = mapped_column(Text, nullable=False)
+    rerank_policy_ref: Mapped[str] = mapped_column(Text, nullable=False)
+    top_k: Mapped[int] = mapped_column(Integer, nullable=False)
+    rerank_state: Mapped[str] = mapped_column(Text, nullable=False,
+                                               server_default=text("'PENDING'"))
+    egress_state: Mapped[str] = mapped_column(Text, nullable=False)
+    retrieval_state: Mapped[str] = mapped_column(Text, nullable=False,
+                                                  server_default=text("'RUNNING'"))
+    quality_flags: Mapped[list] = mapped_column(JSONB, nullable=False,
+                                                server_default=text("'[]'::jsonb"))
+    degraded: Mapped[bool] = mapped_column(Boolean, nullable=False,
+                                           server_default=text("false"))
+    error_code: Mapped[str | None] = mapped_column(Text)
+    job_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    trace_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"))
+    completed_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6))
+    created_xid: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("txid_current()"))
+    lock_version: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("0"))
+
+
+class RetrievalQueryContentRow(Base):
+    """Ciphertext-only query body; plaintext is never stored in Run or Job."""
+
+    __tablename__ = "rag_retrieval_query_contents"
+    __table_args__ = (
+        ForeignKeyConstraint(["retrieval_run_id"],
+                             ["plm.rag_retrieval_runs.retrieval_run_id"],
+                             name="fk_rag_retrieval_query_contents__run"),
+        ForeignKeyConstraint(["project_id"], ["plm.prj_projects.project_id"],
+                             name="fk_rag_retrieval_query_contents__project"),
+        CheckConstraint(
+            "octet_length(query_fingerprint)=32 AND "
+            "octet_length(encrypted_payload) BETWEEN 17 AND 65536 AND "
+            "jsonb_typeof(encryption_metadata)='object' AND "
+            "encryption_metadata ? 'format' AND encryption_metadata ? 'nonce' AND "
+            "key_provider_ref ~ '^[A-Za-z][A-Za-z0-9._:/-]{0,255}$'",
+            name="ck_rag_retrieval_query_contents__cipher"),
+        CheckConstraint(
+            "plaintext_bytes BETWEEN 1 AND 16384 AND created_xid>0 AND "
+            "isfinite(created_at) AND isfinite(retention_until) AND "
+            "retention_until>created_at",
+            name="ck_rag_retrieval_query_contents__retention"),
+    )
+
+    retrieval_run_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    query_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    encrypted_payload: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    encryption_metadata: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    key_provider_ref: Mapped[str] = mapped_column(Text, nullable=False)
+    plaintext_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    retention_until: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"))
+    created_xid: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("txid_current()"))
+
+
+class RetrievalCandidateRow(Base):
+    """Authorized immutable candidate snapshot; no vector or unbounded body."""
+
+    __tablename__ = "rag_retrieval_candidates"
+    __table_args__ = (
+        ForeignKeyConstraint(["retrieval_run_id"],
+                             ["plm.rag_retrieval_runs.retrieval_run_id"],
+                             name="fk_rag_retrieval_candidates__run"),
+        ForeignKeyConstraint(["run_project_id"], ["plm.prj_projects.project_id"],
+                             name="fk_rag_retrieval_candidates__run_project"),
+        ForeignKeyConstraint(["candidate_project_id"], ["plm.prj_projects.project_id"],
+                             name="fk_rag_retrieval_candidates__candidate_project"),
+        ForeignKeyConstraint(["embedding_index_id"],
+                             ["plm.rag_embedding_indexes.embedding_index_id"],
+                             name="fk_rag_retrieval_candidates__index"),
+        ForeignKeyConstraint(["embedding_model_ref"], ["plm.ai_models.ai_model_id"],
+                             name="fk_rag_retrieval_candidates__model"),
+        ForeignKeyConstraint(["chunk_id"], ["plm.rag_document_chunks.chunk_id"],
+                             name="fk_rag_retrieval_candidates__chunk"),
+        ForeignKeyConstraint(["document_version_ref"],
+                             ["plm.doc_document_versions.document_version_id"],
+                             name="fk_rag_retrieval_candidates__document_version"),
+        ForeignKeyConstraint(["parse_result_ref"],
+                             ["plm.doc_parse_result_refs.parse_result_ref_id"],
+                             name="fk_rag_retrieval_candidates__parse_result"),
+        UniqueConstraint("retrieval_run_id", "candidate_ordinal",
+                         name="uq_rag_retrieval_candidates__ordinal"),
+        UniqueConstraint("retrieval_run_id", "chunk_id",
+                         name="uq_rag_retrieval_candidates__chunk"),
+        CheckConstraint(
+            "(candidate_scope='GLOBAL' AND candidate_project_id IS NULL) OR "
+            "(candidate_scope='PROJECT' AND candidate_project_id IS NOT NULL)",
+            name="ck_rag_retrieval_candidates__scope_project"),
+        CheckConstraint(
+            "source_type IN ('CONTRACTUAL','PROJECT_RECORD','STANDARD_CAPABILITY',"
+            "'REFERENCE_MATERIAL','TEMPLATE','GENERATED_ARTIFACT','OTHER') AND "
+            "jsonb_typeof(source_locator)='object' AND source_locator ? 'locator_type'",
+            name="ck_rag_retrieval_candidates__source"),
+        CheckConstraint(
+            "retrieval_channel IN ('FTS','VECTOR','HYBRID','EXACT') AND "
+            "candidate_ordinal BETWEEN 0 AND 9999 AND "
+            "final_score_micros BETWEEN -1000000000 AND 1000000000 AND "
+            "octet_length(authorization_snapshot_fingerprint)=32 AND "
+            "created_xid>0 AND isfinite(created_at)",
+            name="ck_rag_retrieval_candidates__result"),
+        Index("ix_rag_retrieval_candidates__run_rank", "retrieval_run_id",
+              "candidate_ordinal"),
+    )
+
+    candidate_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    retrieval_run_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    run_project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    candidate_scope: Mapped[str] = mapped_column(Text, nullable=False)
+    candidate_project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    embedding_index_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    embedding_model_ref: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    chunk_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    document_version_ref: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    parse_result_ref: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    source_type: Mapped[str] = mapped_column(Text, nullable=False)
+    source_locator: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    retrieval_channel: Mapped[str] = mapped_column(Text, nullable=False)
+    candidate_ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+    final_score_micros: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    authorization_snapshot_fingerprint: Mapped[bytes] = mapped_column(
+        LargeBinary, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"))
+    created_xid: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("txid_current()"))
+
+
+class RetrievalScorePartRow(Base):
+    __tablename__ = "rag_retrieval_score_parts"
+    __table_args__ = (
+        ForeignKeyConstraint(["retrieval_run_id"],
+                             ["plm.rag_retrieval_runs.retrieval_run_id"],
+                             name="fk_rag_retrieval_score_parts__run"),
+        ForeignKeyConstraint(["project_id"], ["plm.prj_projects.project_id"],
+                             name="fk_rag_retrieval_score_parts__project"),
+        ForeignKeyConstraint(["candidate_id"],
+                             ["plm.rag_retrieval_candidates.candidate_id"],
+                             name="fk_rag_retrieval_score_parts__candidate"),
+        UniqueConstraint("candidate_id", "score_kind", "score_ordinal",
+                         name="uq_rag_retrieval_score_parts__kind_ordinal"),
+        CheckConstraint(
+            "score_kind IN ('FTS','VECTOR','METADATA','SOURCE_WEIGHT','RERANK','FINAL') "
+            "AND score_ordinal BETWEEN 0 AND 31 AND "
+            "raw_score_micros BETWEEN -1000000000 AND 1000000000 AND "
+            "normalized_score_micros BETWEEN 0 AND 1000000 AND "
+            "weight_micros BETWEEN 0 AND 1000000 AND "
+            "weighted_score_micros BETWEEN -1000000000 AND 1000000000 AND "
+            "score_policy_ref ~ '^[A-Za-z][A-Za-z0-9._:/-]{0,127}$' AND "
+            "created_xid>0 AND isfinite(created_at)",
+            name="ck_rag_retrieval_score_parts__score"),
+    )
+
+    score_part_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    retrieval_run_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    candidate_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    score_kind: Mapped[str] = mapped_column(Text, nullable=False)
+    score_ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+    raw_score_micros: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    normalized_score_micros: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    weight_micros: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    weighted_score_micros: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    score_policy_ref: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"))
+    created_xid: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("txid_current()"))
+
+
+class ContextBundleRow(Base):
+    __tablename__ = "rag_context_bundles"
+    __table_args__ = (
+        ForeignKeyConstraint(["retrieval_run_id"],
+                             ["plm.rag_retrieval_runs.retrieval_run_id"],
+                             name="fk_rag_context_bundles__run"),
+        ForeignKeyConstraint(["project_id"], ["plm.prj_projects.project_id"],
+                             name="fk_rag_context_bundles__project"),
+        UniqueConstraint("retrieval_run_id", "context_policy_ref",
+                         name="uq_rag_context_bundles__run_policy"),
+        UniqueConstraint("bundle_fingerprint",
+                         name="uq_rag_context_bundles__fingerprint"),
+        CheckConstraint(
+            "context_policy_ref ~ '^[A-Za-z][A-Za-z0-9._:/-]{0,127}$' AND "
+            "octet_length(bundle_fingerprint)=32 AND item_count BETWEEN 1 AND 100 AND "
+            "token_budget BETWEEN 1 AND 1048576 AND token_count BETWEEN 1 AND token_budget "
+            "AND created_xid>0 AND isfinite(created_at)",
+            name="ck_rag_context_bundles__shape"),
+    )
+
+    context_bundle_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    retrieval_run_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    context_policy_ref: Mapped[str] = mapped_column(Text, nullable=False)
+    bundle_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    item_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    token_budget: Mapped[int] = mapped_column(Integer, nullable=False)
+    token_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"))
+    created_xid: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("txid_current()"))
+
+
+class ContextItemRow(Base):
+    __tablename__ = "rag_context_items"
+    __table_args__ = (
+        ForeignKeyConstraint(["context_bundle_id"],
+                             ["plm.rag_context_bundles.context_bundle_id"],
+                             name="fk_rag_context_items__bundle"),
+        ForeignKeyConstraint(["retrieval_run_id"],
+                             ["plm.rag_retrieval_runs.retrieval_run_id"],
+                             name="fk_rag_context_items__run"),
+        ForeignKeyConstraint(["project_id"], ["plm.prj_projects.project_id"],
+                             name="fk_rag_context_items__project"),
+        ForeignKeyConstraint(["candidate_id"],
+                             ["plm.rag_retrieval_candidates.candidate_id"],
+                             name="fk_rag_context_items__candidate"),
+        ForeignKeyConstraint(["chunk_id"], ["plm.rag_document_chunks.chunk_id"],
+                             name="fk_rag_context_items__chunk"),
+        ForeignKeyConstraint(["document_version_ref"],
+                             ["plm.doc_document_versions.document_version_id"],
+                             name="fk_rag_context_items__document_version"),
+        UniqueConstraint("context_bundle_id", "item_ordinal",
+                         name="uq_rag_context_items__ordinal"),
+        UniqueConstraint("context_bundle_id", "candidate_id",
+                         name="uq_rag_context_items__candidate"),
+        CheckConstraint(
+            "item_ordinal BETWEEN 0 AND 99 AND snippet_start>=0 AND "
+            "snippet_end>snippet_start AND snippet_end-snippet_start<=8192 AND "
+            "token_count BETWEEN 1 AND 16384 AND "
+            "jsonb_typeof(source_locator)='object' AND source_locator ? 'locator_type' AND "
+            "octet_length(snippet_fingerprint)=32 AND "
+            "octet_length(access_snapshot_fingerprint)=32 AND "
+            "created_xid>0 AND isfinite(created_at)",
+            name="ck_rag_context_items__minimal"),
+    )
+
+    context_item_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    context_bundle_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    retrieval_run_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    candidate_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    item_ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+    chunk_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    document_version_ref: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    source_locator: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    snippet_start: Mapped[int] = mapped_column(Integer, nullable=False)
+    snippet_end: Mapped[int] = mapped_column(Integer, nullable=False)
+    token_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    snippet_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    access_snapshot_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"))
+    created_xid: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("txid_current()"))

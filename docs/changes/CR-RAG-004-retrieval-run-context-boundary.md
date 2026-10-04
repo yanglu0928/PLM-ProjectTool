@@ -1,6 +1,6 @@
 # CR-RAG-004：RetrievalRun、加密查询内容与最小 Context 边界
 
-日期：2026-10-04；状态：`A01_PRECHECK_PASS`；WBS：`RAG-04-A01～A06`。关联 Gate 2 冻结 ADR-004/009、DM-04、SC-01～04、API-03，以及 Schema0087/CR-RAG-001～003；原冻结提交 `64cdf09` 不改。
+日期：2026-10-04；状态：`A02_P01_SCHEMA_PASS`；WBS：`RAG-04-A01～A06`。关联 Gate 2 冻结 ADR-004/009、DM-04、SC-01～04、API-03，以及 Schema0087/CR-RAG-001～003；原冻结提交 `64cdf09` 不改。
 
 ## 差异与实施方案
 
@@ -31,3 +31,9 @@ Windows 11/PostgreSQL 18.6 验证空库/有数据升降重升、ORM drift、密�
 ## A01 核查结论
 
 静态检查确认当前只有 Chunk/Embedding/Index 实现和 AI 侧 `RAG_CONTEXT` 失败关闭合同，没有 RetrievalRun/ContextBundle 生产 Owner。冻结边界可在不破坏 API 的前提下通过专用加密 QueryContent 和追加式不可变表实现；下一项进入 Schema0088，未产生真实外发或客户数据处理。
+
+## A02-P01 实施与结果
+
+Schema0088/ORM已新增Run、密文QueryContent、Candidate/ScorePart及ContextBundle/Item。Run/Job不保存query正文；同事务deferred约束拒绝缺QueryContent。PROJECT候选复合重验Run、ACTIVE Index、精确source Chunk与AVAILABLE Embedding；Score固定整数微分值；Context只存引用/范围/token/指纹且完成Owner前关闭。六张表历史不可改删截断，有任一历史拒降。
+
+Windows11/PostgreSQL18.6完成空/已有基础数据升级、drift、空历史降级重升、有历史拒降及合成ACTIVE组合；缺QueryContent、状态直改和提前Context被拒绝。后端2458/跳过3、wheel RAG86通过，SHA-256 `4fb5d1c4f465be331807cc1dcbcbddd8746216fe641d881bb22224e2c643b4fc`。无真实Provider I/O或客户数据外发；合成ACTIVE不作业务质量证据。进入A02-P02创建Owner。

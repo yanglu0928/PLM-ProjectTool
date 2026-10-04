@@ -7908,3 +7908,11 @@
 - Reason：冻结Create返回202，Worker必须跨请求取得query；但Job/Audit/DTO禁止正文。把query放入payload_refs会扩大泄漏面，复用Secret表又混淆API Key与客户查询的保留/权限语义。专用加密Owner可同时满足异步执行、最小暴露和R3清理策略。
 - Impact/Rollback：登记CR-RAG-004，A01仅文档，不改Schema/API/依赖/网络。后续Schema0088追加表，缺内容密钥失败关闭；空历史可降，有密文/候选/Context历史时停止新作业并向前修复。
 - Verification：静态交叉核对冻结Retrieval/Context字段、五个HTTP Operation、Job禁止payload正文、AI RAG_CONTEXT完整引用合同及当前实现缺口；未运行新增程序测试，不代表Retrieval或质量通过。
+
+# DEC-20261004-812：Retrieval 基础先固化不可变快照并关闭未实现状态
+
+- Date/WBS：2026-10-04 / `RAG-04-A02-P01`；依据CR-RAG-004、DEC-811、冻结DM-04/SC-01/API-03及Schema0087。
+- Decision：Schema0088一次建立Run、密文QueryContent、Candidate/ScorePart、ContextBundle/Item六个物理边界。Run初态固定RUNNING/v0且UPDATE关闭；同事务deferred验证QueryContent。Candidate必须绑定Run选择的ACTIVE Index、精确source Chunk和AVAILABLE Embedding；Score使用整数微分值。Context只保存引用/范围/token/指纹，并在成功终态Owner安装前拒绝创建。
+- Reason：只建Run而把候选/Context暂存JSON会失去Project/Index/Chunk复合约束与可查询分数；直接开放终态又会允许半实现Worker制造不可追溯Context。整数分数避免NaN/Infinity和跨平台浮点序列化漂移。
+- Impact/Rollback：新增内部Schema0088/ORM，无公开API、依赖、网络或真实外发。空历史可降0087；有任一密文、Run、候选或Context历史则拒降并向前修复。合成ACTIVE仅验证机制。
+- Verification：Win11/PG18.6空/已有数据升级、drift、空历史降级重升、有历史拒降、Run+密文QueryContent、Candidate/Score正向以及缺Content/直改Run/提前Context负例PASS；后端2458/3跳过、wheel RAG86，SHA-256 `4fb5d1c4f465be331807cc1dcbcbddd8746216fe641d881bb22224e2c643b4fc`。

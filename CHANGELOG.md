@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-04：0.1.0-dev.0/RAG-04-A02-P01 新增Schema0088 Retrieval基础：不可变Run、专用加密QueryContent、Candidate/ScorePart及最小ContextBundle/Item；Job只含Run引用，提交期拒绝缺query密文，候选强绑ACTIVE Index/精确Chunk/AVAILABLE Embedding，Context不复制正文且Owner前关闭。兼容性/升级/回滚：内部追加六表，无公开API/依赖/真实外发；空历史可降0087，有历史拒降并向前修复。验证：Win11/PG18.6空/已有数据升级、drift、升降重升、有历史拒降与合成ACTIVE绑定通过；后端2458/跳过3、wheel RAG86，SHA-256 `4fb5d1c4f465be331807cc1dcbcbddd8746216fe641d881bb22224e2c643b4fc`。已知问题：创建Owner/Worker/Rerank/Context/HTTP、正式ACTIVE/密钥/业务质量/性能/三平台/Gate3/UAT/发行包待完成。
+
 - 2026-10-04：0.1.0-dev.0/RAG-04-A01 完成RetrievalRun/ContextBundle编码前核查并登记CR-RAG-004：异步query使用专用加密QueryContent，Run/Job/Audit/DTO只保留引用和SHA-256；锁定GLOBAL/PROJECT分区召回、固定metadata AST、同范围exact/FTS fallback、显式rerank degraded及不复制无界正文的最小Context。兼容性/升级/回滚：仅文档，无代码、Schema/API、依赖、网络或外发；后续Schema0088追加表，空历史可降、有历史拒降。验证：静态交叉核对冻结DM-04/SC-01～04/API-03、现有Schema0087与AI RAG_CONTEXT失败关闭；未运行新增程序测试。已知问题：A02～A06、正式ACTIVE/内容密钥、业务质量、性能、三平台、Gate3/UAT和发行包待完成。
 
 - 2026-10-04：0.1.0-dev.0/RAG-03-A05-P04-P04 新增受权原子Index激活Owner：按Scope/Project/purpose有序锁定，重验最新PASSED质量、Embedding Model、技术Build/验证、来源Chunk和全部构建授权；同事务退役可选旧ACTIVE、将READY/v2切为ACTIVE/v3，并写Audit/ActivationResult/幂等回执。兼容性/升级/回滚：内部应用/仓储增量，无Schema/API/依赖/真实外发变化；可停止Owner关闭新切换，已激活历史不改写并向前修复。验证：Win11/PG18.6首次激活、回滚、幂等/撤权与所有当前事实通过；旧ACTIVE退役投影为单元+P02 Schema机制证据；RAG81、后端2453/跳过3、wheel81，SHA-256 `cf47841ad85b2808901c73aef54659efe2cd318adfddbc8f079fe5ea01c9b475`。已知问题：合成ACTIVE不构成业务质量，正式ACTIVE/Gate3/UAT/发行包待；下一项RAG-04-A01。
