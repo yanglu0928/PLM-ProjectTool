@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/HND-02-A03-A01 完成Action状态Owner前置核查并登记CR-HND-003：锁定OPEN→IN_PROGRESS→SUBMITTED→VERIFIED→CLOSED、非终态取消、Root版本/唯一事件原子对应、提交/验证Document与Evidence固定、Close解决Trace Owner验证及终态不复活；后续按Schema/PATCH/START/SUBMIT/VERIFY/CLOSE-CANCEL拆分。兼容性/升级/回滚：纯文档，无Schema/API/依赖/配置/网络/外发，可停止后续实现并保留记录。验证：静态核对冻结DM/API、CR-HND-001/002、Schema0098及Document/Evidence/Trace边界。已知问题：A02～A07、Review/HTTP/UI/Workflow、真实下游解决、质量、性能、正式信任/Gate3/发行仍待。
+
 - 2026-10-05：0.1.0-dev.0/HND-02-A02 新增内部Action Create Owner：PM/ImplementationMember经Session/CSRF、License和当前项目授权，以固定AnalysisItem或显式人工原因登记待办；当前有效项目成员受理，字段级输入提示、未来期限、Root/seq0 OPEN事件/Audit/持久收据同事务，同Key重放重验权限且登记不确认候选Item。兼容性/升级/回滚：复用Schema0098，无Migration/公开API/依赖/配置/网络/外发，停装配可关闭新写并保留历史。验证：Win11/PG18.6角色/受理人/来源/并发/回滚/License/候选不确认，定向19、后端2621通过/3跳过、wheel解包定向19，SHA-256 `3c28e90912235cd82cb7323fa2f763b7e82fdabaafd46941ede4b9ff52b62aa9`。已知问题：Action状态Owner、Review/HTTP/UI/Workflow、真实质量、性能、正式信任/Gate3/发行仍待。
 
 - 2026-10-05：0.1.0-dev.0/HND-02-A01 新增Schema0098与HND-03 ActionItem ORM四表：固定AnalysisItem或显式人工来源、requested input、Owner/期限/优先级、响应DocumentVersion、Evidence用途、resolution Trace及append-only状态事件；初始只允许OPEN/v0与唯一seq0事件，CR-HND-002允许受权人工从DRAFT/CANDIDATE登记且不确认Item，后续生命周期Owner前失败关闭。兼容性/升级/回滚：内部`0097 -> 0098`追加，无公开API/依赖/配置/外发；空历史可降，有历史拒降。验证：Win11/PG18.6降升/drift/合法候选来源/初始事件/跨项目与Owner关闭/拒降，定向15、后端2617通过/3跳过、wheel解包定向15，SHA-256 `21e6b7380edfb4116b9c72bc670eaff8ce09da14b4badeab9fc1f3b2f7ccf2c0`。已知问题：Action Create/状态Owner、Review/HTTP/UI/Workflow、真实质量、性能、正式信任/Gate3/发行仍待。

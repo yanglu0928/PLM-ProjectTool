@@ -8252,3 +8252,11 @@
 - Reason：Review前需要真实待办承接缺资料/待确认项，但自动生成、登记即确认或跨项目受理会把AI候选冒充正式事实并破坏权限边界。只写Root而无事件/Audit/收据会失去状态来源与故障原子性。
 - Impact/Rollback：复用Schema0098，无Migration、公开API、依赖、配置、网络或外发；停装配Owner可关闭新写，已提交历史保留。后续状态Owner不得把`SUBMITTED`等同`CLOSED`。
 - Verification：Win11/PG18.6真实角色/受理人/两类来源/并发/回滚/License与候选不确认通过；定向19、后端2621/3跳过；wheel解包定向19，SHA-256 `3c28e90912235cd82cb7323fa2f763b7e82fdabaafd46941ede4b9ff52b62aa9`。
+
+# DEC-20261005-855：Action 生命周期按状态职责拆分并由 Owner 验证解决 Trace
+
+- Date/WBS：2026-10-05 / `HND-02-A03-A01`；依据冻结DM-05/API-04、Schema0098、CR-HND-001/002及CR-HND-003。
+- Decision：生命周期按Schema、PATCH、START、SUBMIT、VERIFY、CLOSE/CANCEL分项实现；Root版本与唯一下一事件原子对应，SUBMIT固定PROJECT响应Document/Evidence，VERIFY追加验证Evidence，CLOSE通过Trace Owner验证同项目ACTIVE解决关系。终态不复活，取消保留全部历史。
+- Reason：通用UPDATE会绕过响应/Evidence/Trace和权限；仅检查Trace外键会让无关关系冒充解决。Trace不需要新增HND-03节点，Action自身指针和关闭事件可绑定受权关系。
+- Impact/Rollback：本项纯文档；后续0099只替换守卫，不新增表/列/API/依赖。可停止后续Owner并保留记录，任何合法状态历史不得删除或降级。
+- Verification：静态交叉核对DM-05/API-04、CR-HND-001/002、Schema0098和Document/Evidence/Trace边界，标记`HND_02_A03_A01_STATE_PRECHECK_PASS`；未运行新增程序测试。
