@@ -1,6 +1,6 @@
 # CR-RAG-003：EmbeddingRecord、受控 HNSW 与构建发送边界
 
-日期：2026-10-04；状态：`A05_P01_VALIDATION_PRECHECK_PASS`；WBS：`RAG-03-A01～A05`。关联 Gate 2 冻结 ADR-004、DM-04、SC-02～04、API-03，以及 CR-RAG-002/Schema0077；原冻结提交 `64cdf09` 不改。
+日期：2026-10-04；状态：`A05_P02_SCHEMA_PASS`；WBS：`RAG-03-A01～A05`。关联 Gate 2 冻结 ADR-004、DM-04、SC-02～04、API-03，以及 CR-RAG-002/Schema0077；原冻结提交 `64cdf09` 不改。
 
 ## 差异与实施方案
 
@@ -110,3 +110,9 @@ Windows11/PostgreSQL18.6三份全新隔离库分别验证成功写入精确记�
 现有 Schema0084 只能证明单个成功 Batch 与其精确 EmbeddingRecord 集合原子一致，不能证明全部计划 Batch 已完成或整个 Index 无缺失/额外记录。SC-04 的 1,001 条 32 维 HNSW/exact 冒烟与 POC-02 合成性能也不能替代正式候选维度、多项目偏斜或业务质量验证。故 A05 将技术就绪与业务质量拆成互不替代的证据层：技术层核精确来源/记录/批次/模型/维度/指纹、受控 HNSW catalog/plan 和同 Scope exact 对照，通过后才允许 Build SUCCEEDED、Index READY 与 Job 成功原子提交；READY→ACTIVE 另须新的独立留出集满足分类≥90%、精确引用≥98%，并重验当前来源、模型、授权与唯一 ACTIVE 切换。
 
 后续 A05-P02 以追加式不可变 `EmbeddingIndexValidation` Owner/Schema0085 保存计数、指纹、HNSW 技术证据和结论，不保存查询/客户正文或 Golden 答案，且暂不开放 READY/ACTIVE；P03 实现技术验证及 READY 收敛；P04 实现质量证明登记与原子激活。POC-03 已见 50 条的 98%/48%/74% 继续保持原结论，在新独立数据达标前 ACTIVE、Gate 3/UAT 不得标 PASS。本项仅静态前置核查，无代码、Schema、API、依赖、测试执行或数据外发变化。
+
+## A05-P02 实施与结果
+
+Schema0085新增每个Index/Build唯一的不可变`rag_embedding_index_validations`。提交期守卫以数据库时间固化完成时刻，只接受当前未过期单次RAG Job Lease下的RUNNING Build/BUILDING Index，重算精确source/AVAILABLE record、缺失/额外/重复/无效记录、全部Batch、record-set/HNSW catalog/validation指纹和basis-points Recall；零可用记录仍可用空集摘要登记FAILED。技术PASSED另要求HNSW与同Scope/Project/Index exact计划均已观察、`ef_search=200`、`iterative_scan=strict_order`及实际Recall达到绑定策略门槛；查询/客户正文和Golden答案不持久化。验证历史不可更新、删除或截断，存在历史时拒降0084。
+
+Windows11/PostgreSQL18.6完成空库升降重升、已有Index/Build升级、ORM drift、单批合成非零1024维记录、HNSW/exact Top-1 10000 basis-points证据、伪造指纹/改删截断/有历史拒降负例；写入PASSED后Build/Index/Job仍为RUNNING/BUILDING/RUNNING，状态转换保持关闭。后端2431项通过/3跳过；wheel隔离57项，SHA-256 `f6971d1ec3eb529f5e5b8bb1513f99df68a490b202cf55052591e9ba17ca0779`。验证夹具先后修正全零cosine、参数绑定、精简环境依赖和wheel依赖路径后均以全新环境重跑；产品守卫未放宽。P03继续技术Owner与READY原子收敛，零真实Provider I/O。

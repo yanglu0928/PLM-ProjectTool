@@ -596,3 +596,149 @@ class EmbeddingBuildBatchRow(Base):
     lock_version: Mapped[int] = mapped_column(
         BigInteger, nullable=False, server_default=text("0"),
     )
+
+
+class EmbeddingIndexValidationRow(Base):
+    """Immutable technical evidence for one complete EmbeddingIndex build."""
+
+    __tablename__ = "rag_embedding_index_validations"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["project_id"], ["plm.prj_projects.project_id"],
+            name="fk_rag_index_validations__project", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["embedding_index_id", "embedding_model_ref", "embedding_dimension"],
+            ["plm.rag_embedding_indexes.embedding_index_id",
+             "plm.rag_embedding_indexes.embedding_model_ref",
+             "plm.rag_embedding_indexes.embedding_dimension"],
+            name="fk_rag_index_validations__index_model_dimension",
+            ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["embedding_build_id"], ["plm.rag_embedding_builds.embedding_build_id"],
+            name="fk_rag_index_validations__build", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["validated_by"], ["plm.auth_users.user_id"],
+            name="fk_rag_index_validations__validator", ondelete="NO ACTION",
+        ),
+        UniqueConstraint(
+            "embedding_index_id", name="uq_rag_index_validations__index",
+        ),
+        UniqueConstraint(
+            "embedding_build_id", name="uq_rag_index_validations__build",
+        ),
+        CheckConstraint(
+            "(scope='GLOBAL' AND project_id IS NULL) OR "
+            "(scope='PROJECT' AND project_id IS NOT NULL)",
+            name="ck_rag_index_validations__scope_project",
+        ),
+        CheckConstraint(
+            "embedding_dimension IN (768,1024) "
+            "AND source_chunk_count BETWEEN 1 AND 1000000000 "
+            "AND available_record_count BETWEEN 0 AND 1000000000 "
+            "AND missing_record_count BETWEEN 0 AND 1000000000 "
+            "AND extra_record_count BETWEEN 0 AND 1000000000 "
+            "AND duplicate_record_count BETWEEN 0 AND 1000000000 "
+            "AND invalid_record_count BETWEEN 0 AND 1000000000 "
+            "AND expected_batch_count BETWEEN 1 AND 100000 "
+            "AND succeeded_batch_count BETWEEN 0 AND 100000",
+            name="ck_rag_index_validations__counts",
+        ),
+        CheckConstraint(
+            "octet_length(source_snapshot_fingerprint)=32 "
+            "AND octet_length(build_fingerprint)=32 "
+            "AND octet_length(record_set_fingerprint)=32 "
+            "AND octet_length(validation_fingerprint)=32 "
+            "AND (hnsw_catalog_fingerprint IS NULL OR "
+            "octet_length(hnsw_catalog_fingerprint)=32) "
+            "AND (plan_fingerprint IS NULL OR octet_length(plan_fingerprint)=32)",
+            name="ck_rag_index_validations__fingerprints",
+        ),
+        CheckConstraint(
+            "validation_policy_ref ~ '^[A-Za-z][A-Za-z0-9._:/-]{0,127}$' "
+            "AND hnsw_index_name ~ '^ix_rag_embeddings__v(768|1024)_hnsw$' "
+            "AND exact_query_count BETWEEN 0 AND 10000 "
+            "AND exact_top_k BETWEEN 0 AND 1000 "
+            "AND exact_overlap_count BETWEEN 0 AND 10000000 "
+            "AND exact_expected_count BETWEEN 0 AND 10000000 "
+            "AND exact_overlap_count<=exact_expected_count "
+            "AND exact_expected_count<=exact_query_count*exact_top_k "
+            "AND hnsw_ef_search BETWEEN 1 AND 1000 "
+            "AND hnsw_iterative_scan IN ('off','strict_order','relaxed_order') "
+            "AND minimum_recall_basis_points BETWEEN 1 AND 10000 "
+            "AND observed_recall_basis_points BETWEEN 0 AND 10000",
+            name="ck_rag_index_validations__probe",
+        ),
+        CheckConstraint(
+            "(validation_state='PASSED' AND error_code IS NULL "
+            "AND available_record_count=source_chunk_count "
+            "AND missing_record_count=0 AND extra_record_count=0 "
+            "AND duplicate_record_count=0 AND invalid_record_count=0 "
+            "AND succeeded_batch_count=expected_batch_count "
+            "AND hnsw_catalog_fingerprint IS NOT NULL "
+            "AND hnsw_plan_observed AND exact_plan_observed "
+            "AND hnsw_ef_search=200 AND hnsw_iterative_scan='strict_order' "
+            "AND exact_query_count>0 AND exact_top_k>0 "
+            "AND exact_expected_count>0 AND plan_fingerprint IS NOT NULL "
+            "AND observed_recall_basis_points>=minimum_recall_basis_points) OR "
+            "(validation_state='FAILED' "
+            "AND error_code ~ '^RAG_[A-Z0-9_]{1,59}$')",
+            name="ck_rag_index_validations__result",
+        ),
+        CheckConstraint(
+            "created_xid>0 AND isfinite(completed_at)",
+            name="ck_rag_index_validations__history",
+        ),
+        Index(
+            "ix_rag_index_validations__project_result", "project_id",
+            "validation_state", "completed_at", "embedding_index_validation_id",
+        ),
+    )
+
+    embedding_index_validation_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"),
+    )
+    embedding_index_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    embedding_build_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    scope: Mapped[str] = mapped_column(Text, nullable=False)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    embedding_model_ref: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    embedding_dimension: Mapped[int] = mapped_column(Integer, nullable=False)
+    source_chunk_count: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    available_record_count: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    missing_record_count: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    extra_record_count: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    duplicate_record_count: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    invalid_record_count: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    expected_batch_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    succeeded_batch_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    source_snapshot_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    build_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    record_set_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    validation_policy_ref: Mapped[str] = mapped_column(Text, nullable=False)
+    hnsw_index_name: Mapped[str] = mapped_column(Text, nullable=False)
+    hnsw_catalog_fingerprint: Mapped[bytes | None] = mapped_column(LargeBinary)
+    hnsw_plan_observed: Mapped[bool] = mapped_column(nullable=False)
+    exact_plan_observed: Mapped[bool] = mapped_column(nullable=False)
+    hnsw_ef_search: Mapped[int] = mapped_column(Integer, nullable=False)
+    hnsw_iterative_scan: Mapped[str] = mapped_column(Text, nullable=False)
+    exact_query_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    exact_top_k: Mapped[int] = mapped_column(Integer, nullable=False)
+    exact_overlap_count: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    exact_expected_count: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    minimum_recall_basis_points: Mapped[int] = mapped_column(Integer, nullable=False)
+    observed_recall_basis_points: Mapped[int] = mapped_column(Integer, nullable=False)
+    plan_fingerprint: Mapped[bytes | None] = mapped_column(LargeBinary)
+    validation_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    validation_state: Mapped[str] = mapped_column(Text, nullable=False)
+    error_code: Mapped[str | None] = mapped_column(Text)
+    validated_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    completed_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+    created_xid: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("txid_current()"),
+    )

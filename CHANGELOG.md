@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-04：0.1.0-dev.0/RAG-03-A05-P02 新增Schema0085不可变EmbeddingIndex技术验证证据：精确绑定Index/Build/Model/Scope，提交期重算来源/记录/批次/指纹、HNSW catalog、`ef_search=200`/`strict_order`计划及同范围exact Recall；历史不可改删截断，PASSED写入不推进Build/Index/Job，READY仍关闭。兼容性/升级/回滚：内部追加表，无公开API/依赖/真实外发；空表可降0084，有历史拒降并向前修复。验证：Win11/PG18.6空/已有数据升降、drift、单批1024维HNSW/exact与负例PASS；后端2431/跳过3、wheel隔离57，SHA-256 `f6971d1ec3eb529f5e5b8bb1513f99df68a490b202cf55052591e9ba17ca0779`。已知问题：P03 READY收敛、P04独立业务质量/激活、正式性能、Server2025/Debian13、Gate3/UAT和发行包待完成。
+
 - 2026-10-04：0.1.0-dev.0/RAG-03-A05-P01 完成EmbeddingIndex验证前置核查：技术完整性/HNSW/exact冒烟只允许推进READY，ACTIVE另须新独立留出集满足分类≥90%、精确引用≥98%并重验当前来源/模型/授权；历史98%检索、48%分类、74%引用及SC-04小样本计划证据均不得外推为业务质量或Gate3通过。兼容性/升级/回滚：仅文档，无代码、Schema、Migration、API、依赖或外发变化；后续Schema0085采用追加式不可变验证Owner，READY/ACTIVE继续关闭。验证：静态交叉核对冻结DM-04、API-03、SC-03/04、ADR-009及Schema0084；未运行新程序测试。已知问题：A05-P02～P04、正式维度性能、新独立业务质量、Server2025/Debian13、Gate3/UAT和发行包待完成。
 
 - 2026-10-04：0.1.0-dev.0/RAG-03-A04-P06 新增Embedding单次Batch Worker，并将发送结果升级为“响应+第二次pre-send最终授权”证明，确保成功/失败提交使用的正是实际发送route/proof。Worker只调用一次发送：成功严格解析并发布记录；HTTP拒绝和无效响应进入已知失败；网络或提交结果不确定返回RECONCILIATION_PENDING并保留RUNNING栅栏，绝不重放。兼容性/升级/回滚：内部返回合同和Worker增量，无Schema、公开API或依赖；可停止Worker并回退组合，已fenced历史仍按既有对账。验证：Win11/PG18.6成功、无效响应、UNKNOWN三份隔离库PASS，后端2428/跳过3、wheel隔离36，SHA-256 `f81a2bf78e288887cf1654379e7fe8de4f2aab6fe15bb774ec7cd909ed5f3c76`。首轮验证SQL的`LIKE`百分号未按psycopg参数规则转义，修正验证夹具并用全新库重跑。已知问题：多批调度、Build完成/验证、READY/ACTIVE、Server2025/Debian13、性能、Gate3/UAT和发行包待完成；零真实Provider I/O。

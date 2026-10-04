@@ -116,8 +116,9 @@ class _Decryptor:
 
 
 class _Adapter:
-    def __init__(self):
+    def __init__(self, vector_value=0.0):
         self.calls = []
+        self.vector_value = vector_value
 
     def send(self, *, route, proof, envelope, key):
         require_embedding_send(
@@ -131,7 +132,7 @@ class _Adapter:
             "model": route.provider_model_key,
             "data": [{
                 "object": "embedding", "index": index,
-                "embedding": [0.0] * envelope.embedding_dimension,
+                "embedding": [self.vector_value] * envelope.embedding_dimension,
             } for index in range(envelope.record_count)],
             "usage": {
                 "prompt_tokens": envelope.input_tokens,
@@ -221,7 +222,7 @@ def validate(context: dict[str, object]) -> None:
         secret_version,
     )
     decryptor = _Decryptor()
-    adapter = _Adapter()
+    adapter = _Adapter(_ADAPTER_VECTOR_VALUE)
     service = AIEmbeddingSendService(
         pre_send=pre_send,
         secrets=SecretResolver(_Store(secret), decryptor, audit),
@@ -271,11 +272,20 @@ def validate(context: dict[str, object]) -> None:
     )
 
 
-def main(after_send=None, execute=None) -> None:
-    global _AFTER_SEND, _EXECUTE
+def main(
+    after_send=None,
+    execute=None,
+    source_bodies=("PLM begin one", "PLM begin two"),
+    adapter_vector_value=0.0,
+) -> None:
+    global _AFTER_SEND, _EXECUTE, _ADAPTER_VECTOR_VALUE
     _AFTER_SEND = after_send
     _EXECUTE = execute
-    bodies = {1: b"PLM begin one", 2: b"PLM begin two"}
+    _ADAPTER_VECTOR_VALUE = adapter_vector_value
+    bodies = {
+        ordinal: body.encode("utf-8")
+        for ordinal, body in enumerate(source_bodies, 1)
+    }
 
     def payload_factory(ordinal, member):
         envelope = AIEmbeddingEnvelopeBuilder().build(
@@ -295,6 +305,7 @@ def main(after_send=None, execute=None) -> None:
 
     fixture.main(
         after_begin=validate, batch_payload_factory=payload_factory,
+        source_bodies=source_bodies,
     )
 
 

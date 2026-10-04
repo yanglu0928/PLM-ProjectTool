@@ -75,7 +75,11 @@ def reject(operation, expected: str) -> None:
     raise AssertionError(f"operation unexpectedly succeeded: {expected}")
 
 
-def main(after_begin=None, batch_payload_factory=None) -> None:
+def main(
+    after_begin=None,
+    batch_payload_factory=None,
+    source_bodies=("PLM begin one", "PLM begin two"),
+) -> None:
     database = "rag03a03p02_" + uuid.uuid4().hex[:10]
     scratch = Path(tempfile.mkdtemp(prefix="plm-rag03a03p02-"))
     runtime = None
@@ -93,7 +97,7 @@ def main(after_begin=None, batch_payload_factory=None) -> None:
                 source = fixture.index_fixture.chunk_fixture.seed_source(db, storage)
                 actor, project, _, _, version, record, result = source
                 members = []
-                for ordinal, body in enumerate(("PLM begin one", "PLM begin two"), 1):
+                for ordinal, body in enumerate(source_bodies, 1):
                     chunk_id = db.execute(
                         fixture.index_fixture.chunk_fixture.CHUNK_INSERT,
                         fixture.index_fixture.chunk_fixture.chunk_values(
@@ -195,7 +199,7 @@ def main(after_begin=None, batch_payload_factory=None) -> None:
                     "SELECT array_agg(batch_state ORDER BY batch_ordinal) "
                     "FROM plm.rag_embedding_build_batches WHERE embedding_build_id=%s",
                     (planned.embedding_build_id,),
-                ).fetchone()[0] == ["PENDING", "PENDING"]
+                ).fetchone()[0] == ["PENDING"] * len(members)
                 reject(lambda: db.execute(
                     "INSERT INTO plm.rag_embedding_records(scope,project_id,"
                     "embedding_index_id,chunk_id,embedding_model_ref,embedding_dimension,"

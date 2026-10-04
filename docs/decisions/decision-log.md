@@ -7852,3 +7852,11 @@
 - Reason：单Batch成功不能证明Index完整，物理HNSW命中/小样本Recall不能证明业务质量；把二者合并会误放行历史48%分类/74%引用失败，并让Gate3/UAT失去客观证据。
 - Impact/Rollback：本项只固定A05拆分和后续Schema0085方向，无代码/Schema/API/依赖/外发变化。后续采用追加验证表，空表可降、有历史拒降；READY/ACTIVE在Owner和数据库守卫落地前保持关闭。
 - Verification：静态交叉核对冻结状态机、Validation/Activation合同、HNSW/exact要求、SC-04证据边界与ADR-009独立集门槛；未运行新程序测试，不代表READY、ACTIVE、性能、业务质量、Gate3或UAT通过。
+
+# DEC-20261004-805：Index技术验证使用追加式不可变Owner且不直接推进状态
+
+- Date/WBS：2026-10-04 / `RAG-03-A05-P02`；依据`CR-RAG-003`、DEC-804、冻结DM-04/API-03/SC-03及Schema0084。
+- Decision：Schema0085为每个Index/Build最多保存一条不可变技术验证，数据库在当前单次RAG Lease下重算来源、AVAILABLE记录、缺失/额外/重复/无效数、全部Batch、record-set和HNSW catalog指纹及basis-points Recall。PASSED固定要求HNSW/exact计划、`ef_search=200`、`iterative_scan=strict_order`和策略门槛；正文/查询/Golden答案不保存。插入验证事实不修改Job/Build/Index，READY由后续Owner同事务收敛。
+- Reason：把可变JSON摘要放在Index根上无法证明观察对象且容易被覆盖；让证据插入隐式推进状态又会把采集、裁决与多聚合提交混为一个不可恢复半状态。追加表可审计，状态仍由单独Owner原子控制。
+- Impact/Rollback：新增内部Schema0085/ORM/验证夹具，无公开API、依赖或真实网络。空表可降0084；有历史拒降并向前修复。原冻结基线和既有历史不改写。
+- Verification：Win11/PG18.6空库升降重升、已有数据升级、drift、HNSW/exact技术证据和完整负例PASS；后端2431/3跳过、wheel隔离57，SHA-256 `f6971d1ec3eb529f5e5b8bb1513f99df68a490b202cf55052591e9ba17ca0779`；零真实Provider I/O。验证修正见进度文档。
