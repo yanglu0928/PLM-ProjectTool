@@ -8212,3 +8212,11 @@
 - Reason：客户端摘要、路径或动态最新版不能证明固定来源；把Identity创建与分析生成合并会混淆空容器和业务结论，并扩大单一WBS。重放若不复核当前成员资格会让已撤权用户继续读取创建结果。
 - Impact/Rollback：复用Schema0096，无Migration/公开API挂载/依赖/配置/外发。停装配服务即可关闭新写，合法Identity/Audit/收据保留；后续P02才能生成完整Draft Version。
 - Verification：Win11/PG18.6真实角色/Session/CSRF/License/固定来源/重放并发/Audit回滚/撤权通过；定向16、后端2606通过/3跳过、wheel解包定向16，SHA-256 `2021d3ddf09a03ddd1b5f67a6c78df1057b8fe226c46c5a7b6f3a6aac852f586`。
+
+# DEC-20261005-850：Handover Draft 以完整固定快照原子创建
+
+- Date/WBS：2026-10-05 / `HND-01-A03-P02`；依据冻结DM-05/API-04、CR-HND-001及Schema0096。
+- Decision：DRAFT Version在一个事务固定DocumentVersion、当前Approved Capability Version及AVAILABLE Item、PROJECT Evidence、可选SUCCEEDED GAP_ANALYSIS Task和六类CANDIDATE Item。NEED_CONFIRM字段级提示在Owner完整校验；Schema0097只开放父identity不可变字段不动且锁精确加一的转换，子项仍不可变。
+- Reason：分步写子表会产生不完整快照；动态Capability/Document或无关AI Task会让结论不可追溯。数据库最低结构不能替代字段级用户提示，DRAFT也不能被描述为客户确认。
+- Impact/Rollback：内部`0096 -> 0097`无表列/公开HTTP/依赖/配置/外发变化。无Version历史可降，有历史拒降；停服务关闭新建，历史保留。P03负责独立Validate报告，Review前仍不正式化。
+- Verification：Win11/PG18.6降升/drift、固定五类输入、NEED_CONFIRM、强锁、重放并发、Audit回滚、三版supersedes及拒降通过；定向24、后端2610通过/3跳过、wheel解包定向24，SHA-256 `ce1fd1c07600ef9ef05146c772d8c760222a096c50bf2973a2aeac955ccd2188`。

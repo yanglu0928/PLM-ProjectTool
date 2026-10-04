@@ -103,11 +103,14 @@ def main():
             assert db.execute("SELECT count(*) FROM plm.hnd_analysis_items WHERE handover_analysis_version_id=%s", (version,)).fetchone()[0] == 1
             reject(lambda: insert_valid(db, deps, ref="sha256:"+"0"*64), "source set fingerprint is invalid")
             reject(lambda: insert_valid(db, deps, need_options=False), "NEED_CONFIRM prompt is incomplete")
-            reject(lambda: db.execute("UPDATE plm.hnd_analyses SET analysis_purpose='changed' WHERE handover_analysis_id=%s", (analysis,)), "Owner is not installed")
+            reject(lambda: db.execute("UPDATE plm.hnd_analyses SET analysis_purpose='changed' WHERE handover_analysis_id=%s", (analysis,)), "Handover Analysis Owner")
         try:
             command.downgrade(cfg, PREVIOUS)
         except Exception as error:
-            assert "Handover analysis history prevents downgrade" in str(error), str(error)
+            assert any(message in str(error) for message in (
+                "Handover Version history prevents downgrade",
+                "Handover analysis history prevents downgrade",
+            )), str(error)
         else:
             raise AssertionError("Schema0096 accepted retained Handover history")
     finally:
