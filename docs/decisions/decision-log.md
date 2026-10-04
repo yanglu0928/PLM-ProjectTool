@@ -8220,3 +8220,11 @@
 - Reason：分步写子表会产生不完整快照；动态Capability/Document或无关AI Task会让结论不可追溯。数据库最低结构不能替代字段级用户提示，DRAFT也不能被描述为客户确认。
 - Impact/Rollback：内部`0096 -> 0097`无表列/公开HTTP/依赖/配置/外发变化。无Version历史可降，有历史拒降；停服务关闭新建，历史保留。P03负责独立Validate报告，Review前仍不正式化。
 - Verification：Win11/PG18.6降升/drift、固定五类输入、NEED_CONFIRM、强锁、重放并发、Audit回滚、三版supersedes及拒降通过；定向24、后端2610通过/3跳过、wheel解包定向24，SHA-256 `ce1fd1c07600ef9ef05146c772d8c760222a096c50bf2973a2aeac955ccd2188`。
+
+# DEC-20261005-851：Handover Validate 固定首次观察且不改变业务状态
+
+- Date/WBS：2026-10-05 / `HND-01-A03-P03`；依据冻结DM-05/API-04、CR-HND-001、DEC-847～850及Schema0097。
+- Decision：Validate在共享锁下重建不可变Version快照，重验当前Document/Evidence/Capability/AI provenance与提示完整性；以有限问题码写不可变Audit并由持久收据固定首次观察。同key重放历史观察，新key重验当前事实；Version/Item状态和正式指针始终不变。任何`source_missing`输出`ACTION_ITEM_REQUIRED`。
+- Reason：外部Owner事实会随时间失效，写回不可变快照会破坏追溯；重放若返回当前结果会违反幂等。缺资料在HND-03建立前没有可关闭待办，不能被Validate PASS掩盖。
+- Impact/Rollback：复用Schema0097，无Migration/公开HTTP/依赖/配置/网络或外发。停装配Owner即可关闭新验证，历史Audit/收据保留；HND-03 Action仍是正式Review前置。
+- Verification：Win11/PG18.6 PASS/重放、Evidence失效、缺资料Action要求、Audit回滚恢复及零状态转换通过；定向27、后端2613/3跳过；wheel解包定向27，SHA-256 `af5d4d49abbc412cf98b5806a39f73676ab504dc0d055bdb0dd2eed4dc028d9f`。
