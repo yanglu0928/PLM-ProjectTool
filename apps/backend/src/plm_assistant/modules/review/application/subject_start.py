@@ -35,7 +35,7 @@ class ReviewSubjectStartRequest:
             self.review.__post_init__()
         except ValueError:
             raise ReviewSubjectStartError() from None
-        if self.review.scope != "PROJECT" or self.review.state == "IN_REVIEW":
+        if self.review.scope not in ("GLOBAL", "PROJECT") or self.review.state == "IN_REVIEW":
             raise ReviewSubjectStartError()
 
 
@@ -65,9 +65,13 @@ class PreparedReviewSubject:
             except ValueError:
                 raise ReviewSubjectStartError() from None
             key = (ref.ref_kind, ref.ref_id)
+            review = self.request.review
             if (key in seen or ref.verified_at > self.verified_at
-                    or ref.ref_scope == "PROJECT" and ref.ref_project_id != self.request.review.project_id
-                    or ref.ref_scope == "GLOBAL" and ref.ref_kind != "EVIDENCE"):
+                    or review.scope == "GLOBAL" and ref.ref_scope != "GLOBAL"
+                    or review.scope == "PROJECT" and ref.ref_scope == "PROJECT"
+                    and ref.ref_project_id != review.project_id
+                    or review.scope == "PROJECT" and ref.ref_scope == "GLOBAL"
+                    and ref.ref_kind != "EVIDENCE"):
                 raise ReviewSubjectStartError()
             seen.add(key)
 

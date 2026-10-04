@@ -22,9 +22,17 @@ class SubjectStartTests(unittest.TestCase):
         root = self.request.review
         for changes in (dict(actor_id=None), dict(round_id=True), dict(subject_version_id=None), dict(reviewer_ids=()),
                         dict(reviewer_ids=self.request.reviewer_ids*2), dict(reviewer_ids=list(self.request.reviewer_ids)),
-                        dict(review=replace(root, scope="GLOBAL", project_id=None)),
                         dict(review=replace(root, state="IN_REVIEW", active_round_id=uuid4(), lock_version=1))):
             with self.subTest(changes=changes), self.assertRaises(ReviewSubjectStartError): replace(self.request, **changes)
+
+    def test_global_request_and_only_global_basis_are_supported(self):
+        root = replace(self.request.review, scope="GLOBAL", project_id=None)
+        request = replace(self.request, review=root)
+        global_ref = replace(self.ref, ref_scope="GLOBAL", ref_project_id=None)
+        ready = replace(self.ready, request=request, basis=(global_ref,))
+        ready.require_binding(request)
+        with self.assertRaises(ReviewSubjectStartError):
+            replace(ready, basis=(self.ref,))
 
     def test_every_request_dimension_bound_no_reusing_other_subject_or_round(self):
         for changes in (dict(actor_id=uuid4()), dict(round_id=uuid4()), dict(subject_version_id=uuid4()),

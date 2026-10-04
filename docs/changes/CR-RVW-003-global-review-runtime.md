@@ -41,3 +41,7 @@ CAP-01 CapabilityBaseline 是 GLOBAL Root。若沿用 PROJECT 命令，必须伪
 ## 风险与边界
 
 GLOBAL Review 允许部署管理员组织评审，不代表管理员可单人绕过 reviewer 决策。Reviewer 当前资格必须来自 Auth Owner，不从历史 assignment 推断。Review APPROVED 也只有在 Capability Owner 成功消费且提交后才形成正式 Capability；任何中途异常整事务回滚。Gate 3、客户内容正确性、AI 质量、正式信任和三平台发行不因本 CR 自动通过。
+
+## 实施进度
+
+- 2026-10-05 / `CAP-01-A04-A02`：新增Review-owned GLOBAL submit/transition事务内核与仓储，双Scope Subject DTO按冻结合同开放；真实PG18.6完成两人APPROVED、WITHDRAWN、Audit、锁释放和Scope隔离，PROJECT回归不变。该内核仍要求受信caller提供认证/资格/License/幂等和真实Subject，未挂HTTP。下一项A04-A03。

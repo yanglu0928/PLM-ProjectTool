@@ -8108,3 +8108,11 @@
 - Reason：当前数据库与只读仓储支持GLOBAL，但创建/开轮/决策及Subject DTO显式PROJECT-only，导致冻结CAP-01无法真实送审。系统项目、跨Owner SQL或复制评审表都会破坏Scope和单一状态机。
 - Impact/Rollback：A01仅文档；后续A02优先无Migration兼容泛化，A04可能增加Capability状态守卫。可停止装配GLOBAL编排关闭新流量，历史保留；既有PROJECT API不得改变。
 - Verification：静态核对Review application/infrastructure/ORM/Schema0034/0035、冻结GLOBAL Review与Capability Owner合同；标记`CAP_01_A04_A01_GLOBAL_REVIEW_PRECHECK_PASS`。Gate 3保持BLOCKED。
+
+# DEC-20261005-837：GLOBAL Review 先提供受信caller同事务内核
+
+- Date/WBS：2026-10-05 / `CAP-01-A04-A02`；依据CR-RVW-003、DEC-836与既有Review Subject Port。
+- Decision：新增不创建UOW、不commit、不挂HTTP的GLOBAL submit/transition persistence及专属仓储；调用方负责Session/Admin/reviewer资格、License、幂等和整事务回滚。Subject prepare/lock在写前后绑定复核，终态必须consume/assert；Audit使用DEPLOYMENT Scope。PROJECT service/仓储/DTO保持不变。
+- Reason：直接泛化既有PROJECT命令会同时改权限、公开合同和结果DTO；在真实Capability Owner尚未接入时开放可提交命令又会形成无业务证明入口。受信内核先固定Review独占写入和同事务边界，A03再接真实Subject与外层权限。
+- Impact/Rollback：无Migration/API/依赖/网络/外发；不装配GLOBAL persistence即可关闭新调用，既有Review/Audit历史保留。Subject DTO增加GLOBAL合法形态但PROJECT规则不放宽。
+- Verification：Win11/PG18.6真实GLOBAL两人APPROVED与WITHDRAWN、6 Event/7 Audit/2锁释放/0 PROJECT污染；Review103、后端2551通过/3跳过；wheel Review103，SHA-256 `79345662fc3e278059db17f2e4917e04031b00226ec8dd2ec43408da6f92dbf7`。

@@ -31,7 +31,7 @@ class ReviewSubjectTransition:
             self.after_progress.__post_init__()
             old = self.before.progress
             new = self.after_progress
-            if (self.before.review.scope != "PROJECT"
+            if (self.before.review.scope not in ("GLOBAL", "PROJECT")
                     or old.state is not ReviewRoundState.IN_REVIEW
                     or self.before.round_lock_version >= 2**63 - 1
                     or self.before.review.lock_version >= 2**63 - 1):

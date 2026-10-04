@@ -63,6 +63,18 @@ class SubjectTransitionTests(unittest.TestCase):
             with self.assertRaises(ReviewSubjectTransitionError): intent.require_binding(changed)
         with self.assertRaises(FrozenInstanceError): intent.actor_id = uuid4()
 
+    def test_global_round_transition_is_supported(self):
+        global_before = replace(
+            self.before,
+            review=replace(self.before.review, scope="GLOBAL", project_id=None),
+        )
+        intent = self.intent(
+            self.progress.record_decision(self.decision()),
+            before=global_before,
+        )
+        self.assertFalse(intent.terminal)
+        intent.require_binding(intent)
+
     def test_time_counter_and_terminal_before_fail_closed(self):
         intent = self.intent(self.progress.record_decision(self.decision()))
         for changes in (dict(occurred_at=self.now+timedelta(seconds=1)), dict(actor_id=True),
