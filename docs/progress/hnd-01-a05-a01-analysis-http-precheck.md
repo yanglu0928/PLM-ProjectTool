@@ -12,7 +12,7 @@ P04完成的通用Review create/start两步端点不取代`HND_VERSION_SUBMIT_RE
 
 |WBS|唯一问题|验收边界|
 |---|---|---|
-|`HND-01-A05-A02`|Analysis/Version/Item只读Owner与签名cursor|当前四类Project成员、固定Version投影、有界稳定分页、零业务写|
+|`HND-01-A05-A02`|Analysis/Version/Item只读Owner与内部完整位置|当前四类Project成员、固定Version投影、有界稳定分页、零业务写|
 |`HND-01-A05-A03`|Analysis metadata PATCH/ARCHIVE Owner|ACTIVE、强ETag、角色、Review写栅栏、Audit/幂等和终态保护|
 |`HND-01-A05-A04`|CREATE/VERSION_CREATE/VALIDATE写HTTP|严格DTO、最小投影、默认关闭，不重写既有Owner|
 |`HND-01-A05-A05`|HND_VERSION_SUBMIT_REVIEW原子业务编排|Owner事实重验与Review create/start/收据/Audit同事务，不暴露中间DRAFT Review|

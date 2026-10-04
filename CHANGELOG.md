@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/HND-01-A05-A02 新增Handover Analysis/Version/Item五读内部Owner与Handover-owned仓储；每次重验License/Session/当前项目成员，Analysis完整双字段keyset、Version倒序和Item正序分页均限制1～200，详情仅投影安全固定引用。兼容性/升级/回滚：无Migration/冻结API/依赖/配置/Secret/外发，公开Router仍关闭；可撤读取Owner和五项只读策略，历史不变。验证：定向14、Win11/PG18.6四角色/跨项目/撤权/归档/License/零写与Alembic check、后端2681通过/3跳过、wheel导入PASS，SHA-256 `5e3865d23c5436e5168f4b61504a4166efbba33edf75bd92801724dcb33b16ae`。已知问题：A03～A07、Server2025/Debian13、Gate3与发行仍待。
+
 - 2026-10-05：0.1.0-dev.0/HND-01-A05-A01 完成Handover Analysis 11个冻结Operation运行差距核查，按读取Owner、identity状态Owner、普通写HTTP、原子submit-review、读HTTP和Windows组合拆分A02～A07；明确不以客户端串行通用Review两端点代替业务原子送审。兼容性/回滚：纯文档，无程序/Schema/API行为/依赖/配置/外发。验证：静态交叉核对冻结API、现有Owner/Repository/Router和Schema0101。已知问题：A02～A07尚待客观实施。
 
 - 2026-10-05：0.1.0-dev.0/HND-01-A04-A02-P04 新增Windows Handover Review失败关闭组合，仅`--platform-write`挂载PROJECT Review四写路径，只读/default/login-only不开放；真实HND-02 Owner与Review三写服务共享UOW、License、Audit、收据和Project事实。兼容性/升级/回滚：无Migration/依赖/Secret/外发，停注入Router恢复关闭。验证：Win11/PG18.6真实HTTP create/start/approve/升版/withdraw及四命令幂等重放，后端2674通过/3跳过，wheel SHA-256 `4b3419d4679ad44b0d95a2d79621859238da928257942c6699e327cb2f7e03f9`。已知问题：Server2025/Debian13、Review读/UI、Analysis/Action剩余HTTP、Gate3/发行仍待。

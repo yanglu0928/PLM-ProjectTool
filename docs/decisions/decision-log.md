@@ -8379,3 +8379,11 @@
 - Reason：两次HTTP之间会留下可见中间Review identity，且无法把Version当前事实校验、Review/Round、Audit和收据绑为一个业务结果，违反冻结API-04。
 - Impact/Rollback：纯设计分解，无代码/Schema/API行为/依赖/外发。可停止后续实施，不影响已完成Review历史。
 - Verification：静态核对API-04的11个Operation、当前Handover模块文件/仓储/Router及Schema0101；确认内部3写可复用、公开Analysis Router和业务submit-review编排尚缺失。
+
+# DEC-20261005-871：Handover读取使用当前项目事实与安全固定引用
+
+- Date/WBS：2026-10-05 / `HND-01-A05-A02`；依据冻结API-04、DM-05、Schema0097/0101及DEC-870。
+- Decision：Analysis/Version/Item五读每次重验License、Session和锁定的当前Project成员事实；Analysis按`updated_at DESC, id DESC`、Version按唯一版本号倒序、Item按唯一ordinal正序，统一最多200。Version/Item仅返回固定引用标识与业务短文本，不跨Owner解析Document路径、Evidence正文/定位或AI输入输出；读取保持零业务写。
+- Reason：Handover候选包含客户调研问题与材料引用，旧Session摘要不能代表当前成员资格；单字段Analysis时间位置会在同时间戳下重漏。引用存在不等于调用者可读取被引用资源正文，必须继续经过各资源Owner当前授权。
+- Impact/Rollback：无Migration、冻结API、依赖、配置、Secret、网络或外发，公开Router仍关闭。A01表格的A02“签名cursor”文字按原A06分工更正为内部完整位置；撤Service/Repository及五项只读策略即可回滚，历史不变。
+- Verification：定向14；Win11/PG18.6四角色、三类双页、安全投影、跨项目/撤权/归档/License和零写PASS；后端2681通过/3跳过；wheel导入PASS，SHA-256 `5e3865d23c5436e5168f4b61504a4166efbba33edf75bd92801724dcb33b16ae`。
