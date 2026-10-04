@@ -1,6 +1,6 @@
 # CR-RAG-003：EmbeddingRecord、受控 HNSW 与构建发送边界
 
-日期：2026-10-04；状态：`A04_IMPLEMENTED_AND_WINDOWS11_PG18_VERIFIED`；WBS：`RAG-03-A01～A05`。关联 Gate 2 冻结 ADR-004、DM-04、SC-02～04、API-03，以及 CR-RAG-002/Schema0077；原冻结提交 `64cdf09` 不改。
+日期：2026-10-04；状态：`A05_P01_VALIDATION_PRECHECK_PASS`；WBS：`RAG-03-A01～A05`。关联 Gate 2 冻结 ADR-004、DM-04、SC-02～04、API-03，以及 CR-RAG-002/Schema0077；原冻结提交 `64cdf09` 不改。
 
 ## 差异与实施方案
 
@@ -104,3 +104,9 @@ Windows11/PostgreSQL18.6以两份新隔离库分别验证无效响应和Provider
 发送服务现在返回`SentAIEmbeddingResponse`，同时携带受控响应和第二次pre-send得到且实际传给Adapter的最终`AuthorizedAIEmbeddingSend`；已知HTTP拒绝错误也携带该证明。新增`RAGEmbeddingBatchOneShotWorker`把单次发送、二次响应解析、成功提交和失败提交串为唯一顺序：成功返回BATCH_SUCCEEDED；已知拒绝/无效响应返回BUILD_FAILED；网络结果或本地提交不确定只返回RECONCILIATION_PENDING并保留发送栅栏，调用内绝不重发。
 
 Windows11/PostgreSQL18.6三份全新隔离库分别验证成功写入精确记录、无效响应保留SHA-256并失败、发送后结果UNKNOWN保持RUNNING等待已验证的过期对账；标记`RAG_03_A04_P06_BATCH_WORKER_PASS`。后端2428项通过/3跳过；wheel隔离36项，SHA-256 `f81a2bf78e288887cf1654379e7fe8de4f2aab6fe15bb774ec7cd909ed5f3c76`。首轮仅验证SQL的LIKE百分号未转义，修正夹具后新库全量重跑通过；产品守卫未放宽。A04完成，A05继续完整性/HNSW/质量验证及READY/ACTIVE边界。
+
+## A05-P01 核查结论
+
+现有 Schema0084 只能证明单个成功 Batch 与其精确 EmbeddingRecord 集合原子一致，不能证明全部计划 Batch 已完成或整个 Index 无缺失/额外记录。SC-04 的 1,001 条 32 维 HNSW/exact 冒烟与 POC-02 合成性能也不能替代正式候选维度、多项目偏斜或业务质量验证。故 A05 将技术就绪与业务质量拆成互不替代的证据层：技术层核精确来源/记录/批次/模型/维度/指纹、受控 HNSW catalog/plan 和同 Scope exact 对照，通过后才允许 Build SUCCEEDED、Index READY 与 Job 成功原子提交；READY→ACTIVE 另须新的独立留出集满足分类≥90%、精确引用≥98%，并重验当前来源、模型、授权与唯一 ACTIVE 切换。
+
+后续 A05-P02 以追加式不可变 `EmbeddingIndexValidation` Owner/Schema0085 保存计数、指纹、HNSW 技术证据和结论，不保存查询/客户正文或 Golden 答案，且暂不开放 READY/ACTIVE；P03 实现技术验证及 READY 收敛；P04 实现质量证明登记与原子激活。POC-03 已见 50 条的 98%/48%/74% 继续保持原结论，在新独立数据达标前 ACTIVE、Gate 3/UAT 不得标 PASS。本项仅静态前置核查，无代码、Schema、API、依赖、测试执行或数据外发变化。

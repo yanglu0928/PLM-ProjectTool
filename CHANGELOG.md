@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-04：0.1.0-dev.0/RAG-03-A05-P01 完成EmbeddingIndex验证前置核查：技术完整性/HNSW/exact冒烟只允许推进READY，ACTIVE另须新独立留出集满足分类≥90%、精确引用≥98%并重验当前来源/模型/授权；历史98%检索、48%分类、74%引用及SC-04小样本计划证据均不得外推为业务质量或Gate3通过。兼容性/升级/回滚：仅文档，无代码、Schema、Migration、API、依赖或外发变化；后续Schema0085采用追加式不可变验证Owner，READY/ACTIVE继续关闭。验证：静态交叉核对冻结DM-04、API-03、SC-03/04、ADR-009及Schema0084；未运行新程序测试。已知问题：A05-P02～P04、正式维度性能、新独立业务质量、Server2025/Debian13、Gate3/UAT和发行包待完成。
+
 - 2026-10-04：0.1.0-dev.0/RAG-03-A04-P06 新增Embedding单次Batch Worker，并将发送结果升级为“响应+第二次pre-send最终授权”证明，确保成功/失败提交使用的正是实际发送route/proof。Worker只调用一次发送：成功严格解析并发布记录；HTTP拒绝和无效响应进入已知失败；网络或提交结果不确定返回RECONCILIATION_PENDING并保留RUNNING栅栏，绝不重放。兼容性/升级/回滚：内部返回合同和Worker增量，无Schema、公开API或依赖；可停止Worker并回退组合，已fenced历史仍按既有对账。验证：Win11/PG18.6成功、无效响应、UNKNOWN三份隔离库PASS，后端2428/跳过3、wheel隔离36，SHA-256 `f81a2bf78e288887cf1654379e7fe8de4f2aab6fe15bb774ec7cd909ed5f3c76`。首轮验证SQL的`LIKE`百分号未按psycopg参数规则转义，修正验证夹具并用全新库重跑。已知问题：多批调度、Build完成/验证、READY/ACTIVE、Server2025/Debian13、性能、Gate3/UAT和发行包待完成；零真实Provider I/O。
 
 - 2026-10-04：0.1.0-dev.0/RAG-03-A04-P05-P03 新增Schema0084与Embedding已知失败原子收敛：HTTP非200作为已知Provider拒绝，不再误分类UNKNOWN；无效响应保留`sha256:`证明。当前Batch FAILED、未发送Batch CANCELLED、Job/Lease/Attempt/Build/Index FAILED/RELEASED及Project Audit必须同事务完成，全部不可重试且不写向量。兼容性/升级/回滚：内部Schema/应用/仓储及发送错误分类增量，无公开API或依赖；无新错误历史可降0083，有历史拒降并向前修复。验证：Win11/PG18.6两条真实事务路径PASS，后端2422/跳过3、wheel隔离30，SHA-256 `c02440eb5d569aa9ed8b129af169c5e55b7861dffe2ba31ecc74b2c017df119b`。已知问题：单次Worker组合、远端结果UNKNOWN即时标记、READY/ACTIVE、Server2025/Debian13、性能、Gate3/UAT和发行包待完成；零真实Provider I/O。

@@ -7844,3 +7844,11 @@
 - Reason：如果发送后再次查询授权，配置切换会让响应与提交证明来自不同事实；如果发布异常后由Worker重试发送，则可能重复外发和计费。把最终授权随响应移交并让不确定结果走对账可保持因果一致性。
 - Impact/Rollback：新增内部发送结果合同和Batch Worker，无Schema、公开API、依赖或真实网络。可停止Worker并回退组合；已RUNNING Batch仍由0081/0082对账，不能改回PENDING。
 - Verification：Win11/PG18.6成功、无效响应、UNKNOWN三份隔离库标记`RAG_03_A04_P06_BATCH_WORKER_PASS`；后端2428/3跳过、wheel隔离36，SHA-256 `f81a2bf78e288887cf1654379e7fe8de4f2aab6fe15bb774ec7cd909ed5f3c76`；零真实Provider I/O。
+
+# DEC-20261004-804：Index READY 与 ACTIVE 使用分层且不可互替的验证证据
+
+- Date/WBS：2026-10-04 / `RAG-03-A05-P01`；依据冻结 DM-04、API-03、SC-03/04、ADR-009、CR-RAG-003及Schema0084。
+- Decision：Index级验证使用独立不可变Owner。技术层精确核对source/AVAILABLE record/全部Batch、模型/维度/指纹及受控HNSW catalog/plan，并用同Scope/Project/Index的exact cosine作有界对照；技术PASS只允许Build SUCCEEDED、Index READY与Job成功原子收敛。READY→ACTIVE另须未参与调优的新独立业务质量证据满足分类≥90%、精确引用≥98%，同时重验当前来源/模型/授权并原子退役同用途旧ACTIVE。技术验证不得保存查询正文、客户正文或Golden答案。
+- Reason：单Batch成功不能证明Index完整，物理HNSW命中/小样本Recall不能证明业务质量；把二者合并会误放行历史48%分类/74%引用失败，并让Gate3/UAT失去客观证据。
+- Impact/Rollback：本项只固定A05拆分和后续Schema0085方向，无代码/Schema/API/依赖/外发变化。后续采用追加验证表，空表可降、有历史拒降；READY/ACTIVE在Owner和数据库守卫落地前保持关闭。
+- Verification：静态交叉核对冻结状态机、Validation/Activation合同、HNSW/exact要求、SC-04证据边界与ADR-009独立集门槛；未运行新程序测试，不代表READY、ACTIVE、性能、业务质量、Gate3或UAT通过。
