@@ -31,6 +31,16 @@ from plm_assistant.modules.capability.infrastructure.baseline_create_repository 
 from plm_assistant.modules.capability.infrastructure.version_create_repository import (
     SqlAlchemyCapabilityVersionCreateRepository,
 )
+from plm_assistant.modules.capability.application.validate_version import (
+    CapabilityVersionValidationError, CapabilityVersionValidationService,
+    ValidateCapabilityVersion,
+)
+from plm_assistant.modules.capability.infrastructure.version_validation_repository import (
+    SqlAlchemyCapabilityVersionValidationRepository,
+)
+from plm_assistant.modules.audit.infrastructure.capability_validation_source import (
+    SqlAlchemyCapabilityValidationAuditSource,
+)
 from plm_assistant.modules.document.infrastructure.read_repository import SqlAlchemyDocumentReadRepository
 from plm_assistant.modules.evidence.infrastructure.fixed_source_repository import (
     SqlAlchemyEvidenceFixedSourceRepository,
@@ -108,6 +118,15 @@ def main() -> None:
                     receipts=receipts, clock=lambda: datetime.now(timezone.utc),
                 )
                 service = CapabilityVersionCreateService(**kwargs, audit=audit)
+                validation = CapabilityVersionValidationService(
+                    unit_of_work=runtime.unit_of_work, access=access,
+                    license_guard=guard, sources=sources,
+                    evidence=SqlAlchemyEvidenceFixedSourceRepository(),
+                    repository=SqlAlchemyCapabilityVersionValidationRepository(),
+                    audit_source=SqlAlchemyCapabilityValidationAuditSource(),
+                    receipts=receipts, audit=audit,
+                    clock=lambda: datetime.now(timezone.utc),
+                )
                 stable_item_id = uuid.uuid4()
 
                 def create(*, token=admin_token, csrf=CSRF, expected=0,
@@ -161,6 +180,33 @@ def main() -> None:
                                code="PLM.DOCUMENT.VERSION3")
                 assert third.version_no == 3 and third.lock_version == 3
 
+                def validate(version_id, key):
+                    return validation.validate(ValidateCapabilityVersion(
+                        admin_token, CSRF, uuid.uuid4(), baseline.baseline_id,
+                        version_id, key,
+                    ))
+
+                passed = validate(first.baseline_version_id, str(uuid.uuid4()))
+                assert passed.valid and passed.issue_codes == ()
+                invalid_key = str(uuid.uuid4())
+                with connect(name) as db, db.transaction():
+                    db.execute("SET LOCAL session_replication_role='replica'")
+                    db.execute("UPDATE plm.evd_evidence_records SET "
+                               "eligibility_state='CANDIDATE',eligibility_reason=NULL "
+                               "WHERE evidence_id=%s",
+                               (evidence_id,))
+                invalid = validate(third.baseline_version_id, invalid_key)
+                assert not invalid.valid and invalid.issue_codes == ("EVIDENCE_UNAVAILABLE",)
+                with connect(name) as db, db.transaction():
+                    db.execute("SET LOCAL session_replication_role='replica'")
+                    db.execute("UPDATE plm.evd_evidence_records SET "
+                               "eligibility_state='ELIGIBLE',"
+                               "eligibility_reason='restored synthetic source' "
+                               "WHERE evidence_id=%s",
+                               (evidence_id,))
+                assert validate(third.baseline_version_id, invalid_key) == invalid
+                assert validate(third.baseline_version_id, str(uuid.uuid4())).valid
+
                 with connect(name) as db:
                     assert db.execute(
                         "SELECT lock_version,current_approved_version_ref FROM "
@@ -181,6 +227,14 @@ def main() -> None:
                         "SELECT count(*) FROM plm.plt_idempotency_receipts WHERE "
                         "operation='V1_CAP_VERSION_CREATE'"
                     ).fetchone()[0] == 3
+                    assert db.execute(
+                        "SELECT count(*) FROM plm.aud_events WHERE "
+                        "action='CAP_VERSION_VALIDATED'"
+                    ).fetchone()[0] == 3
+                    assert db.execute(
+                        "SELECT count(*) FROM plm.plt_idempotency_receipts WHERE "
+                        "operation='V1_CAP_VERSION_VALIDATE'"
+                    ).fetchone()[0] == 3
                     db.execute("UPDATE plm.auth_users SET state='DISABLED' WHERE user_id=%s",
                                (actor,))
                 expect("AUTH_ACCESS_DENIED", lambda: create(key=first_key))
@@ -194,6 +248,10 @@ def main() -> None:
                     "CAP_01_A03_P02_VERSION_CREATE_PASS: complete DRAFT snapshots, "
                     "Document/Evidence sources, ETag/version sequence, idempotency/"
                     "concurrency, Audit rollback and retained-history guard verified"
+                )
+                print(
+                    "CAP_01_A03_P03_VERSION_VALIDATE_PASS: current PASS/invalid "
+                    "reports, immutable Audit replay and no state transition verified"
                 )
             finally:
                 runtime.dispose()

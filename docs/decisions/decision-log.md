@@ -8092,3 +8092,11 @@
 - Reason：永久v0无法提供冻结合同要求的并发控制；把expected lock写入内容摘要会让相同业务快照因并发令牌变化而产生不同内容身份；调用方提交摘要或跨模块直查会绕过Owner边界。
 - Impact/Rollback：内部Schema`0091 -> 0092`仅替换守卫，无表列/API/依赖/外发变化。无锁推进历史可降，有历史拒降；可停Owner关闭新Version，已提交聚合/Audit/收据保留。Review/APPROVED仍关闭。
 - Verification：Win11/PG18.6 Migration/drift、v1～v3/ETag/supersedes、Document/Evidence、重放/冲突/并发、Audit回滚/撤权和历史拒降通过；后端2542/3跳过；wheel909项 SHA-256 `83393f6584968a94a1efe5a86f27f7813ca92b7c077d1e0a8fafc1438fb164bd`。
+
+# DEC-20261005-835：Capability Validate 用 AuditEvent 固定首次报告而不扩张冻结表
+
+- Date/WBS：2026-10-05 / `CAP-01-A03-P03`；依据CR-CAP-001、DEC-831～834及冻结`CAP_VERSION_VALIDATE`。
+- Decision：Validate每次锁定不可变Version快照并重验Document/Evidence当前事实，只输出有限issue code；Version不变。首次报告以`CAP_VERSION_VALIDATED` AuditEvent的reason/occurred_at/trace固定，幂等收据引用AuditEventId；原Key恢复首次报告，新Key才重新观察。不新增validation result表。
+- Reason：只在重放时重新检查会把当前状态冒充首次结果；新增结果表会扩大冻结两Root/五表。Audit已是不可变、可追溯部署事实，有限reason足以恢复PASS/来源失效/Evidence失效组合。
+- Impact/Rollback：无Migration/API/依赖/外发或状态变化；可停Owner关闭新验证，已有Audit/收据保留。Validate PASS不得用于代替Review或APPROVED。
+- Verification：Win11/PG18.6 PASS、Evidence失效报告、恢复后原Key历史回放与新KeyPASS、零状态转换通过；后端2544/3跳过；wheel912项 SHA-256 `9a835fe53819d943e9fe6ce12d6ae13ae84984daccb7aad5e9151d38be6cb9e0`。
