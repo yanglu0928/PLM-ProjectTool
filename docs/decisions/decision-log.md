@@ -8060,3 +8060,11 @@
 - Reason：合成ACTIVE、合成正文和单平台机制不能证明分类/引用泛化质量或生产就绪；等待新客户材料也不应阻断不依赖外发和新留出集的Owner开发。
 - Impact/Rollback：仅增加审计/状态记录，无Schema/API/Migration/依赖/网络/客户数据变化。可撤审计文档但不得删除历史48%/74%失败或把缺失证据改成PASS。
 - Verification：静态交叉核对V2.1、冻结ADR/DM/API、Phase 0例外、R12来源容量、STATUS及P08实测记录；输出`GATE_3_A01_EVIDENCE_AUDIT_COMPLETE`与`GATE_3_BLOCKED_PLATFORM_OWNER_QUALITY_TRUST_PERFORMANCE`。
+
+# DEC-20261005-831：Capability 来源集合使用固定 DocumentVersion 集合摘要引用
+
+- Date/WBS：2026-10-05 / `CAP-01-A01`；依据冻结DM-05/SC-01/02/API-04、CR-SEQ-001与CR-CAP-001。
+- Decision：不新增SourceCollection Root，也不复用RAG Index或接受悬空opaque ref；`source_collection_ref`物理化为由排序后的精确GLOBAL DocumentVersion集合及合同版本计算的`sha256:<64 lowercase hex>`。Version仍用owned tables保存逐份Document/Evidence引用，Owner必须经对应模块Port重算和重验。
+- Reason：冻结语义要求受控来源集合但没有集合实体；摘要引用在不扩大Root/API的情况下固定集合，逐项引用保留授权、定位与反向追溯。
+- Impact/Rollback：A01仅文档；A02将新增Schema0091/ORM，无现有数据自动导入、无公开API/依赖/外发。无历史可降；有Capability历史拒绝物理降级。删除未执行Schema前的CR/计划可回滚，但不得把资料或AI输出自动批准。
+- Verification：静态核对当前无capability模块/表，冻结两Root/五表、十二Operation、Document GLOBAL STANDARD_CAPABILITY证明能力、Audit白名单与迁移头0090；标记`CAP_01_A01_PRECHECK_PASS`。

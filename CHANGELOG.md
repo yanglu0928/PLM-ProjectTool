@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/CAP-01-A01 完成GLOBAL Capability最小真实Owner前置核查并登记CR-CAP-001：冻结`source_collection_ref`缺物理集合Owner，选择由精确GLOBAL DocumentVersion集合计算`sha256:`引用，同时保留逐项Document/Evidence固定引用；不新增Root、不借用RAG Index、不自动导入或批准现有资料。兼容性/升级/回滚：纯文档，无Schema/Migration/API/依赖/网络/客户数据变化；A02规划Schema0091，未实施前可停止。验证：静态核对冻结DM/SC/API、运行源码、迁移头0090、Audit白名单和SC-04 manifest，标记`CAP_01_A01_PRECHECK_PASS`。已知问题：Schema/Owner/Review/HTTP尚未实现，Gate3及发行阻塞不变。
+
 - 2026-10-04：0.1.0-dev.0/GATE-3-A01 完成Platform Core与AI/RAG客观证据审计：Windows11统一AI/RAG机制闭环按测试范围通过，但真实业务Owner/完整模拟项目、全新独立留出集质量、正式信任、20并发性能及当前目标平台发行证据未齐，Gate 3保持`BLOCKED`；依据CR-SEQ-001转入Capability最小真实Owner。兼容性/升级/回滚：纯文档，无Schema/Migration/API/依赖/网络/客户数据变化，可撤审计记录但不得改写历史失败。验证：交叉核对V2.1、ADR-009、EXC-P0-006、CR-SEQ-001、R12与P08证据，标记`GATE_3_A01_EVIDENCE_AUDIT_COMPLETE`。已知问题：分类48%/引用74%、新集来源配额、正式信任、性能、Server2025当前链和Debian13发行验证仍未完成。
 
 - 2026-10-04：0.1.0-dev.0/RAG-04-A06-P08 新增可复现Windows11真实浏览器验收夹具，以实际Vite构建、生产FastAPI、第四Worker和PG18.6完成登录、Create/Get/Result/Context/Cancel闭环；query不进URL/storage，数据库终检1成功/2取消及1套Candidate/Context，全部临时资源清理。兼容性/升级/回滚：仅validation脚本/记录，无产品Schema/Migration/API/依赖/配置变化，可删除脚本回滚。验证：Edge154观察108个API事件、三张全页视觉证据；构建HTML/JS/CSS SHA-256为`ae24ab097fcfe230b8d776efd3467eb27a7eae135f1e8692b026a2c2ed6d50e3`/`13e54218479ac1327036c48585f5c8c3f98b604d402cd9f1e416127d1258867f`/`331b3c8b88e23b1273d38ea4a9c7056016aad60464072f32b00db25a297ef8af`；托管浏览器缺资产及五类夹具/时序无效证据已记录并清理。已知问题：合成ACTIVE不证明业务质量，Gate3/性能/正式密钥与SCM/Server2025/UAT/发行包仍待；Debian13按指令跳过。
