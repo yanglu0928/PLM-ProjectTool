@@ -7988,3 +7988,11 @@
 - Reason：Worker直接跨事务写结果或自行重放不确定提交会产生半快照/重复执行；让AI调用方注入任意context正文会绕过Project隔离与当前授权。零分候选不能满足Schema0089正分约束，应在稳定计划中转成可审计业务失败而非数据库内部错误。
 - Impact/Rollback：无Migration、公开API、依赖、网络或外发变化；现有NONE policy兼容。可停Worker并撤RAG policy/Owner组合，已提交Run/结果/Audit保留，未知终态必须先对账。冻结API接线留A06。
 - Verification：Win11/PG18.6成功Worker/Audit/Context、撤权拒绝、零候选失败、过期对账与失败零结果通过；RAG125、AI定向8、后端2498/3跳过、wheel隔离RAG125+AI8，SHA-256 `71116eb41d492a683bc85372d01dbc9784366eb298f700c729b9adc4772cbbdd`；零真实Provider I/O。
+
+# DEC-20261004-822：Retrieval 取消必须先补齐 Run/Job 原子状态且复用既有服务角色
+
+- Date/WBS：2026-10-04 / `RAG-04-A06-P01`；依据冻结DM-04/API-03、ADR-013、CR-RAG-004及Schema0089。
+- Decision：A06先以Schema0090开放冻结模型已有的Run CANCELLED；PENDING Job直接同步取消，RUNNING先CANCEL_REQUESTED再由Retrieval专属Reconciler原子关闭Lease/Attempt/Job/Run/Audit。Retrieval别名取消与通用Job取消必须委托同一Owner。生产执行复用既有第四Worker角色的隔离、公平有界调度，不新增第五服务。
+- Reason：Schema0089只认成功/失败，直接挂取消会让Job与Run分裂；两条HTTP路径若分用Owner会产生状态/幂等差异。新增服务角色会改变已冻结Windows拓扑，而本地FTS与AI Context链可在同一受控Worker宿主内保持Owner和密钥隔离。
+- Impact/Rollback：P01仅文档；P02将追加Schema0090，冻结外部路径/角色不变。可撤Router/策略和停止调度关闭新流量；取消历史不物理降级。合成ACTIVE仍不作质量证据。
+- Verification：静态核对API-03五个Operation、DM-04状态、Schema0089约束、Job cancel registry和ADR-013四角色；未运行新增程序测试。

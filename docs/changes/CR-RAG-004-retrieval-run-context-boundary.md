@@ -1,6 +1,6 @@
 # CR-RAG-004：RetrievalRun、加密查询内容与最小 Context 边界
 
-日期：2026-10-04；状态：`A05_P02_RETRIEVAL_WORKER_CONTEXT_PASS`；WBS：`RAG-04-A01～A06`。关联 Gate 2 冻结 ADR-004/009、DM-04、SC-01～04、API-03，以及 Schema0087/CR-RAG-001～003；原冻结提交 `64cdf09` 不改。
+日期：2026-10-04；状态：`A06_P01_HTTP_COMPOSITION_PRECHECK_PASS`；WBS：`RAG-04-A01～A06`。关联 Gate 2 冻结 ADR-004/009、DM-04、SC-01～04、API-03，以及 Schema0087/CR-RAG-001～003；原冻结提交 `64cdf09` 不改。
 
 ## 差异与实施方案
 
@@ -93,3 +93,9 @@ Windows11/PostgreSQL18.6完成0088已有库升级、drift、空历史降级重�
 新增AI `RAG_CONTEXT`读取Owner与策略注册边界：只按精确Run/Bundle读取，在当前`AI_TASK_EXECUTE`授权和License双检查之间锁定并复核完整最小Context来源、顺序、locator、snippet/token/bundle fingerprint；调用方不能自行注入RAG正文。实施中修正零分FTS候选与Schema0089正分约束不兼容的偏差：非正分在merge前过滤，全零集合固定失败且不创建结果。
 
 Windows11/PostgreSQL18.6真实事务完成成功Worker/Audit/Context读取、撤权关闭、零候选失败、过期对账及失败零结果；RAG125、AI定向8、后端2498/跳过3、wheel隔离RAG125+AI8通过，SHA-256 `71116eb41d492a683bc85372d01dbc9784366eb298f700c729b9adc4772cbbdd`。无Migration/公开API/依赖/网络/外发；合成ACTIVE不作业务质量证据。进入A06-P01 HTTP/权限/组合前置核查。
+
+## A06-P01 核查结论
+
+冻结API-03的Create/Get/Result/Context/Cancel尚无生产HTTP与前端，现有内部Owner足以作为实现基础；但发现冻结DM-04允许RetrievalRun `CANCELLED`、通用Job支持协作取消，而Schema0089只允许SUCCEEDED/FAILED。直接复用通用Job cancel会拆分聚合，必须先以Schema0090追加取消原子边界：PENDING直接同步取消，RUNNING先CANCEL_REQUESTED再由专属Reconciler关闭Lease/Attempt/Job/Run/Audit，和成功发布按同一Job锁定顺序竞争。
+
+A06拆为P02取消Schema、P03只读Owner、P04 Create/Get/Result/Context HTTP、P05双路径同Owner取消、P06 API/既有第四Worker角色组合、P07前端、P08真实浏览器/PG验收。首版继续FTS-only/PROJECT/零外发；不新增第五服务角色。纯文档静态核查，无代码/Schema/API行为/依赖/网络变化；进入A06-P02。

@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-04：0.1.0-dev.0/RAG-04-A06-P01 完成Retrieval五个冻结HTTP、权限、取消和生产组合前置核查；发现DM-04/API-03要求CANCELLED而Schema0089只认成功/失败，决定先以Schema0090补原子取消，再实现读取/HTTP/双路径同Owner取消/既有第四Worker组合/前端/真实验收。兼容性/升级/回滚：纯文档，无代码/Schema/API行为/依赖/网络/外发；不新增第五服务角色。验证：静态交叉核对冻结合同、当前Schema/Owner/Job cancel registry与四角色。已知问题：P02～P08、正式质量/性能、Server2025/Debian13、Gate3/UAT和发行包待完成。
+
 - 2026-10-04：0.1.0-dev.0/RAG-04-A05-P02 新增Retrieval成功/已知失败/过期原子发布Owner、一次性Worker与AI `RAG_CONTEXT`最小受权读取；当前Actor/License/Index/来源重验后才解密，结果/终态/Audit同事务，不确定提交不重放，撤权后Context关闭。修正零分FTS候选与Schema0089不兼容，统一转为零候选失败。兼容性/升级/回滚：无Migration/公开API/依赖/网络/外发，NONE策略兼容；可停Worker/撤Owner组合，历史保留并先对账未知终态。验证：Win11/PG18.6成功/撤权/零候选/过期及失败零结果；RAG125、AI定向8、后端2498/跳过3、wheel RAG125+AI8，SHA-256 `71116eb41d492a683bc85372d01dbc9784366eb298f700c729b9adc4772cbbdd`。已知问题：A06 HTTP/生产组合、扩展策略、正式质量/性能、Server2025/Debian13、Gate3/UAT和发行包待完成。
 
 - 2026-10-04：0.1.0-dev.0/RAG-04-A05-P01 新增Schema0089 Retrieval原子终态边界；成功必须在同一事务完成Job/Attempt/Lease/Run并写完整Candidate、FTS/FINAL ScorePart和唯一最小Context，正常失败/租约过期则同步终结且结果集为零，RUNNING或旧事务不能提交结果。兼容性/升级/回滚：内部`0088 -> 0089`，无公开API/依赖/网络/外发；无终态/结果历史可降，有历史拒降并向前修复。验证：Windows11/PostgreSQL18.6升级、drift、升降重升、成功/失败/过期及半提交回滚；相关32、后端2490/跳过3、wheel RAG117，SHA-256 `9c34322accd117ea004fd4d26eaa0ff5643f4541797de56babb6b28041a0bde1`。已知问题：发布Owner/单次Worker/AI RAG_CONTEXT读取、扩展策略、正式质量/性能、Server2025/Debian13、Gate3/UAT和发行包待完成。
