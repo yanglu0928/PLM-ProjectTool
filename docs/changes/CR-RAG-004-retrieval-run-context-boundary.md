@@ -1,6 +1,6 @@
 # CR-RAG-004：RetrievalRun、加密查询内容与最小 Context 边界
 
-日期：2026-10-04；状态：`A04_P02_FTS_MERGE_PASS`；WBS：`RAG-04-A01～A06`。关联 Gate 2 冻结 ADR-004/009、DM-04、SC-01～04、API-03，以及 Schema0087/CR-RAG-001～003；原冻结提交 `64cdf09` 不改。
+日期：2026-10-04；状态：`A05_P01_RETRIEVAL_TERMINAL_SCHEMA_PASS`；WBS：`RAG-04-A01～A06`。关联 Gate 2 冻结 ADR-004/009、DM-04、SC-01～04、API-03，以及 Schema0087/CR-RAG-001～003；原冻结提交 `64cdf09` 不改。
 
 ## 差异与实施方案
 
@@ -79,3 +79,9 @@ GLOBAL/vector/exact query embedding/rerank必须使用新策略版本并先完�
 新增纯应用FTS merge plan：整数分数稳定Top-K，每条生成FTS/FINAL ScorePart；非零不足标`CANDIDATE_SHORTFALL`但不degraded，零候选抛`RAG_NO_AUTHORIZED_CANDIDATES`，rerank/egress保持NOT_APPLICABLE。无数据库写入、网络或外发。
 
 新增4、相关7、后端2485/跳过3、wheel RAG112通过，SHA-256 `41cbb1c460c6874fe5d4c16ce3cee8a764f44ed7f72ad878cf23d4a403517942`。A04当前FTS策略完成，进入A05-P01 Schema0089原子终态边界。
+
+## A05-P01 实施与结果
+
+Schema0089把Retrieval成功、正常失败和租约过期统一收敛为提交期原子边界。成功必须在同一事务内完成同generation的Job/Attempt/Lease/Run，并写入1..Top-K个Candidate、每候选恰好两条FTS/FINAL ScorePart、唯一`project-documents.v1` ContextBundle及与候选完整同序的ContextItem；不足只允许`CANDIDATE_SHORTFALL`。失败只允许固定错误码，要求终态同步且结果集为零。RUNNING Run不能提交结果行，所有结果还必须由当前终态事务创建，关闭半快照和旧generation补写。
+
+Windows11/PostgreSQL18.6完成0088已有库升级、drift、空历史降级重升、完整成功、零候选失败、过期generation失败、Candidate单独提交拒绝、缺Context成功拒绝及终态历史拒降。相关32、后端2490/跳过3、wheel RAG117通过，SHA-256 `9c34322accd117ea004fd4d26eaa0ff5643f4541797de56babb6b28041a0bde1`。无公开API/依赖/网络/外发；合成ACTIVE不作业务质量证据。进入A05-P02发布Owner、单次Worker与AI `RAG_CONTEXT`受权读取。

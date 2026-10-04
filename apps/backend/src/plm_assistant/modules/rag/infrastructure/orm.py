@@ -992,10 +992,23 @@ class RetrievalRunRow(Base):
             "top_k BETWEEN 1 AND 100 AND "
             "rerank_state IN ('PENDING','NOT_APPLICABLE') AND "
             "egress_state IN ('PENDING','NOT_APPLICABLE') AND "
-            "retrieval_state='RUNNING' AND jsonb_typeof(quality_flags)='array' AND "
-            "NOT degraded AND error_code IS NULL AND completed_at IS NULL AND "
-            "created_xid>0 AND lock_version=0 AND isfinite(created_at)",
-            name="ck_rag_retrieval_runs__foundation_state"),
+            "jsonb_typeof(quality_flags)='array' AND NOT degraded AND "
+            "created_xid>0 AND isfinite(created_at) AND (("
+            "retrieval_state='RUNNING' AND quality_flags='[]'::jsonb AND "
+            "error_code IS NULL AND completed_at IS NULL AND lock_version=0) OR ("
+            "retrieval_state='SUCCEEDED' AND rerank_state='NOT_APPLICABLE' AND "
+            "egress_state='NOT_APPLICABLE' AND quality_flags IN "
+            "('[]'::jsonb,'[\"CANDIDATE_SHORTFALL\"]'::jsonb) AND "
+            "error_code IS NULL AND completed_at IS NOT NULL AND "
+            "isfinite(completed_at) AND completed_at>=created_at AND "
+            "lock_version=1) OR (retrieval_state='FAILED' AND "
+            "rerank_state='NOT_APPLICABLE' AND egress_state='NOT_APPLICABLE' AND "
+            "quality_flags='[]'::jsonb AND error_code IN "
+            "('RAG_NO_AUTHORIZED_CANDIDATES',"
+            "'RAG_RETRIEVAL_PREPARATION_UNAVAILABLE',"
+            "'RAG_RETRIEVAL_LEASE_EXPIRED') AND completed_at IS NOT NULL AND "
+            "isfinite(completed_at) AND completed_at>=created_at AND lock_version=1))",
+            name="ck_rag_retrieval_runs__lifecycle"),
         Index("ix_rag_retrieval_runs__project_time", "project_id",
               text("created_at DESC"), text("retrieval_run_id DESC")),
     )

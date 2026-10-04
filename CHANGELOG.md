@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-04：0.1.0-dev.0/RAG-04-A05-P01 新增Schema0089 Retrieval原子终态边界；成功必须在同一事务完成Job/Attempt/Lease/Run并写完整Candidate、FTS/FINAL ScorePart和唯一最小Context，正常失败/租约过期则同步终结且结果集为零，RUNNING或旧事务不能提交结果。兼容性/升级/回滚：内部`0088 -> 0089`，无公开API/依赖/网络/外发；无终态/结果历史可降，有历史拒降并向前修复。验证：Windows11/PostgreSQL18.6升级、drift、升降重升、成功/失败/过期及半提交回滚；相关32、后端2490/跳过3、wheel RAG117，SHA-256 `9c34322accd117ea004fd4d26eaa0ff5643f4541797de56babb6b28041a0bde1`。已知问题：发布Owner/单次Worker/AI RAG_CONTEXT读取、扩展策略、正式质量/性能、Server2025/Debian13、Gate3/UAT和发行包待完成。
+
 - 2026-10-04：0.1.0-dev.0/RAG-04-A04-P02 新增FTS-only最终排名与ScorePart内存计划；整数分数稳定Top-K、固定单通道权重，非零不足标shortfall但不degraded，零候选失败且不建空Context，rerank/egress保持NOT_APPLICABLE。兼容性/升级/回滚：无Migration/API/依赖/网络/外发，移除Planner即可回滚；扩展通道保持关闭。验证：新增4、相关7、后端2485/跳过3、wheel RAG112，SHA-256 `41cbb1c460c6874fe5d4c16ce3cee8a764f44ed7f72ad878cf23d4a403517942`。已知问题：A05原子发布/Worker、扩展策略、正式质量/性能/Gate3/UAT/发行包待完成。
 
 - 2026-10-04：0.1.0-dev.0/RAG-04-A04-P01 完成Retrieval合并/Rerank/降级边界核查：FTS-only确定为完整零外发策略，未启用vector/GLOBAL/rerank保持NOT_APPLICABLE而非degraded；不足但非零标shortfall，零候选失败且不建空Context，禁止跨范围或自动外发补齐。兼容性/升级/回滚：纯文档，无Schema/API/依赖/网络；扩展能力以后续策略版本开放。验证：静态核对冻结policy、Schema0088状态/分数/Context约束。已知问题：P02 merge plan、A05原子发布/Worker、扩展策略、正式质量/性能/Gate3/UAT/发行包待完成。

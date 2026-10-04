@@ -7972,3 +7972,11 @@
 - Reason：以当前候选最大值动态归一化会让同一Chunk分数随其他候选出现/消失而漂移；单通道无需人为合并。明确零候选失败可避免非法空Context。
 - Impact/Rollback：纯应用内存计划，无Schema/API/依赖/网络变化；可移除Planner回滚。扩展通道须使用新策略版本。
 - Verification：新增4、相关7、后端2485/3跳过、wheel RAG112，SHA-256 `41cbb1c460c6874fe5d4c16ce3cee8a764f44ed7f72ad878cf23d4a403517942`。
+
+# DEC-20261004-820：Retrieval 结果集与 Job/Run 终态必须单事务提交
+
+- Date/WBS：2026-10-04 / `RAG-04-A05-P01`；依据CR-RAG-004、DEC-814～819及Schema0088。
+- Decision：Schema0089只允许当前generation把RUNNING Run转换为SUCCEEDED或FAILED。成功提交必须同时终结Job/Attempt/Lease，并创建完整Candidate、FTS/FINAL ScorePart和唯一最小Context；失败或过期必须同步终结四类状态且结果集为零。结果行只能在当前终态事务创建，RUNNING状态不能提交任何结果。
+- Reason：应用层先写候选再终结Run、或先完成Job再补Context，都会暴露半快照并允许旧Worker补写；只校验最终计数不能证明结果来自同一generation和事务。
+- Impact/Rollback：新增内部Schema0089/ORM约束，无公开API、依赖、网络或外发。无终态/结果历史可降0088；已有历史拒降并向前修复。可停止Worker关闭新终态，但不得删除不可变历史。
+- Verification：Win11/PG18.6升级/drift/空历史升降重升、完整成功、零候选失败、租约过期、半Candidate和缺Context回滚、终态拒降通过；相关32、后端2490/3跳过、wheel RAG117，SHA-256 `9c34322accd117ea004fd4d26eaa0ff5643f4541797de56babb6b28041a0bde1`。合成ACTIVE不作业务质量证据。
