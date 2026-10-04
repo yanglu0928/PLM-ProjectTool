@@ -54,6 +54,26 @@ class SubmittedGlobalReviewRef:
 
 
 @dataclass(frozen=True, slots=True)
+class PersistedGlobalReviewSubmission:
+    review: ReviewIdentitySnapshot
+    submission: SubmittedGlobalReviewRef
+
+    def __post_init__(self) -> None:
+        if (type(self.review) is not ReviewIdentitySnapshot
+                or type(self.submission) is not SubmittedGlobalReviewRef):
+            raise ReviewRoundPersistError()
+        self.review.__post_init__()
+        self.submission.__post_init__()
+        if (self.review.review_id != self.submission.review_id
+                or self.review.scope != "GLOBAL"
+                or self.review.project_id is not None
+                or self.review.subject_type != self.submission.subject_type
+                or self.review.subject_id != self.submission.subject_id
+                or self.review.policy_code != self.submission.policy_code):
+            raise ReviewRoundPersistError()
+
+
+@dataclass(frozen=True, slots=True)
 class AppliedGlobalReviewTransitionRef:
     review_id: UUID
     round_id: UUID

@@ -8164,3 +8164,11 @@
 - Reason：把六个Router逐个装入会增加半装配风险；把PATCH实现成全量替换违反API-01。直接接production root又会跳过A07所需目标账户密钥、真实数据库HTTP和关闭/恢复验证。
 - Impact/Rollback：无Schema/Migration/依赖/配置/网络/外发；新增冻结码表已有`CAPABILITY_EVIDENCE_REQUIRED`公开映射。停止注入Router即可关闭流量，合法历史不删除；送审与读取仍默认关闭。
 - Verification：合同/Owner定向21、Win11/PG18.6 partial与A03全链、后端2583/3跳过；wheel Capability HTTP/Owner47+解包Migration4，SHA-256 `21eab4dfe4ba29762e180606ba377bd685328a90cda48f02894eaf4d8c8650eb`。
+
+# DEC-20261005-844：Capability 送审复用 GLOBAL Review 原子内核并以首轮收据重放
+
+- Date/WBS：2026-10-05 / `CAP-01-A05-A05`；依据冻结API-01/API-04、CR-CAP-003、DEC-837～843及Schema0095。
+- Decision：送审外层负责Session/CSRF、当前DeploymentAdmin、License、持久幂等和HTTP，在同一UOW内调用现有GLOBAL Review persistence与Capability Subject，不复制状态机。收据指向首轮Round，从不可变首轮恢复首次结果并重验当前权限。Reviewer集合规范排序。`due_at/submission_note`当前只接受null，非空失败关闭。
+- Reason：按当前Review状态拼重放会冒充首次响应；Capability自建Review写链会破坏唯一状态机和Subject锁。冻结Review Schema未存调度/备注，默默忽略会丢数据。
+- Impact/Rollback：无Migration/依赖/配置/网络/外发；默认Router仍关闭，停止注入即关闭流量，已提交Review历史保留。通用调度能力须后续独立CR。
+- Verification：定向6、Win11/PG18.6原子送审/回滚/重放与终态回归、后端2589/3跳过；wheel Capability/Review58+解包Migration4，SHA-256 `9289eea0d7a4b1a046d564dd186e2a19372d4c06ece5b99f3f3805602dba1d2d`。

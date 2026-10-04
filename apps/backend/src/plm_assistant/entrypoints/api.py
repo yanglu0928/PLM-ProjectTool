@@ -103,6 +103,7 @@ def create_app(
     evidence_eligibility_router: APIRouter | None = None,
     evidence_eligibility_operation_lookup_router: APIRouter | None = None,
     capability_command_router: APIRouter | None = None,
+    capability_review_router: APIRouter | None = None,
     maintenance_admission: MaintenanceAdmissionPort | None = None,
     shutdown_callback: Callable[[], None] | None = None,
 ) -> FastAPI:
@@ -290,4 +291,6 @@ def create_app(
         app.include_router(evidence_eligibility_operation_lookup_router)
     if capability_command_router is not None:
         app.include_router(capability_command_router)
+    if capability_review_router is not None:
+        app.include_router(capability_review_router)
     return app

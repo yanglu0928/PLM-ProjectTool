@@ -8,10 +8,11 @@ from sqlalchemy.orm import Session
 
 from ..application.global_persistence import (
     AppliedGlobalReviewTransitionRef,
+    PersistedGlobalReviewSubmission,
     SubmittedGlobalReviewRef,
 )
 from ..application.persist_round import ReviewRoundPersistError
-from ..application.read_snapshot import ReviewIdentitySnapshot
+from ..application.read_snapshot import FixedReviewRoundSnapshot, ReviewIdentitySnapshot
 from ..domain.round_progress import ReviewRoundProgress, ReviewRoundState, _uuid
 from .orm import _tables
 from .read_repository import SqlAlchemyReviewSnapshotReadRepository
@@ -134,6 +135,37 @@ class SqlAlchemyGlobalReviewRepository:
             request.reviewer_ids, request.actor_id, started_at,
             root.lock_version + 1, number,
         )
+
+    def get_global_submission(self, tx, *, round_id):
+        if not _uuid(round_id):
+            raise ReviewRoundPersistError("VALIDATION_FAILED")
+        rounds = _tables[1]
+        row = self._session(tx).execute(select(
+            rounds.c.review_id,
+        ).where(
+            rounds.c.review_round_id == round_id,
+            rounds.c.scope == "GLOBAL",
+            rounds.c.project_id.is_(None),
+        )).one_or_none()
+        if row is None:
+            return None
+        fixed = SqlAlchemyReviewSnapshotReadRepository().get_round(
+            tx, "GLOBAL", None, row.review_id, round_id,
+        )
+        if type(fixed) is not FixedReviewRoundSnapshot or fixed.round_no != 1:
+            raise ReviewRoundPersistError()
+        result = PersistedGlobalReviewSubmission(
+            fixed.review,
+            SubmittedGlobalReviewRef(
+                fixed.review.review_id, fixed.progress.round_id,
+                fixed.review.subject_type, fixed.review.subject_id,
+                fixed.subject_version_id, fixed.review.policy_code,
+                fixed.progress.reviewer_ids, fixed.started_by,
+                fixed.progress.started_at, 1, fixed.round_no,
+            ),
+        )
+        result.__post_init__()
+        return result
 
     def lock_global_transition_context(self, tx, *, review_id, round_id):
         session, root = self._session(tx), _tables[0]

@@ -87,6 +87,9 @@ COMMON_ERRORS: dict[str, ErrorSpec] = {
     "CAPABILITY_EVIDENCE_REQUIRED": ErrorSpec(
         "CAPABILITY_EVIDENCE_REQUIRED", 422, "能力项缺少合格的全局证据。"
     ),
+    "BUSINESS_REVIEW_NOT_ELIGIBLE": ErrorSpec(
+        "BUSINESS_REVIEW_NOT_ELIGIBLE", 422, "当前版本不满足送审条件。"
+    ),
 }
 
 

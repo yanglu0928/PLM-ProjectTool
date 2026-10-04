@@ -38,6 +38,10 @@ from plm_assistant.modules.capability.application.create_version import (
 from plm_assistant.modules.capability.application.review_subject import (
     CapabilityReviewSubjectOwner,
 )
+from plm_assistant.modules.capability.application.submit_review import (
+    CapabilityReviewSubmissionError, CapabilityReviewSubmissionService,
+    SubmitCapabilityVersionReview,
+)
 from plm_assistant.modules.capability.application.read_capability import (
     CapabilityReadError, CapabilityReadQuery, CapabilityReadService,
 )
@@ -113,6 +117,7 @@ def main() -> None:
     terminal_enabled = os.environ.get("PLM_CAP_TERMINAL_VALIDATION") == "1"
     read_enabled = os.environ.get("PLM_CAP_READ_VALIDATION") == "1"
     state_enabled = os.environ.get("PLM_CAP_STATE_VALIDATION") == "1"
+    submission_enabled = os.environ.get("PLM_CAP_SUBMISSION_VALIDATION") == "1"
     name = "cap01a04a03_" + uuid.uuid4().hex[:10]
     admin_token = b"a" * 32
     with connect("postgres") as admin:
@@ -200,9 +205,16 @@ def main() -> None:
                     sources=sources, evidence=evidence, audit=audit,
                     terminal_enabled=terminal_enabled, clock=lambda: now,
                 )
+                review_repository = SqlAlchemyGlobalReviewRepository()
                 review = GlobalReviewPersistenceService(
-                    repository=SqlAlchemyGlobalReviewRepository(),
+                    repository=review_repository,
                     audit=audit, subjects=owner, clock=lambda: now,
+                )
+                submission = CapabilityReviewSubmissionService(
+                    unit_of_work=runtime.unit_of_work, access=access,
+                    license_guard=guard, receipts=receipts,
+                    replay_repository=review_repository, reviews=review,
+                    subjects=owner, clock=lambda: now,
                 )
 
                 with connect(name) as db, db.transaction():
@@ -214,18 +226,32 @@ def main() -> None:
                          WHERE evidence_id=%s
                     """, (evidence_id,))
                 try:
-                    with runtime.unit_of_work() as tx:
-                        review.submit_in_transaction(
-                            tx, actor_id=actor, subject_type="CAP-01",
-                            subject_id=baseline.baseline_id,
-                            subject_version_id=version.baseline_version_id,
-                            reviewer_ids=(reviewer_one, reviewer_two),
-                            policy_code="DEPLOYMENT_ALL_V1",
-                            trace_id=uuid.uuid4(),
-                        )
-                        tx.commit()
-                except ReviewSubjectAccessDenied:
-                    pass
+                    if submission_enabled:
+                        submission.submit(SubmitCapabilityVersionReview(
+                            admin_token, CSRF, uuid.uuid4(), baseline.baseline_id,
+                            version.baseline_version_id,
+                            (reviewer_two, reviewer_one),
+                            "DEPLOYMENT_ALL_V1", str(uuid.uuid4()),
+                        ))
+                    else:
+                        with runtime.unit_of_work() as tx:
+                            review.submit_in_transaction(
+                                tx, actor_id=actor, subject_type="CAP-01",
+                                subject_id=baseline.baseline_id,
+                                subject_version_id=version.baseline_version_id,
+                                reviewer_ids=(reviewer_one, reviewer_two),
+                                policy_code="DEPLOYMENT_ALL_V1",
+                                trace_id=uuid.uuid4(),
+                            )
+                            tx.commit()
+                except (ReviewSubjectAccessDenied,
+                        CapabilityReviewSubmissionError) as error:
+                    if (submission_enabled
+                            and not isinstance(error, CapabilityReviewSubmissionError)):
+                        raise
+                    if (submission_enabled
+                            and error.code != "BUSINESS_REVIEW_NOT_ELIGIBLE"):
+                        raise
                 else:
                     raise AssertionError("invalid Evidence entered Review")
                 with connect(name) as db:
@@ -248,16 +274,31 @@ def main() -> None:
                              WHERE evidence_id=%s
                         """, (evidence_id,))
 
-                with runtime.unit_of_work() as tx:
-                    submitted = review.submit_in_transaction(
-                        tx, actor_id=actor, subject_type="CAP-01",
-                        subject_id=baseline.baseline_id,
-                        subject_version_id=version.baseline_version_id,
-                        reviewer_ids=(reviewer_one, reviewer_two),
-                        policy_code="DEPLOYMENT_ALL_V1",
-                        trace_id=uuid.uuid4(),
+                if submission_enabled:
+                    submit_command = SubmitCapabilityVersionReview(
+                        admin_token, CSRF, uuid.uuid4(), baseline.baseline_id,
+                        version.baseline_version_id,
+                        (reviewer_two, reviewer_one),
+                        "DEPLOYMENT_ALL_V1", str(uuid.uuid4()),
                     )
-                    tx.commit()
+                    submitted = submission.submit(submit_command)
+                    assert submission.submit(submit_command) == submitted
+                    print(
+                        "CAP_01_A05_A05_SUBMIT_REVIEW_PASS: current admin, "
+                        "eligibility rollback, atomic Review/Subject/receipt and "
+                        "persistent replay verified"
+                    )
+                else:
+                    with runtime.unit_of_work() as tx:
+                        submitted = review.submit_in_transaction(
+                            tx, actor_id=actor, subject_type="CAP-01",
+                            subject_id=baseline.baseline_id,
+                            subject_version_id=version.baseline_version_id,
+                            reviewer_ids=(reviewer_one, reviewer_two),
+                            policy_code="DEPLOYMENT_ALL_V1",
+                            trace_id=uuid.uuid4(),
+                        )
+                        tx.commit()
 
                 try:
                     version_service.create(CreateCapabilityVersion(
