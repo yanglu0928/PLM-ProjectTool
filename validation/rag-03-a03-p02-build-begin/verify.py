@@ -75,7 +75,7 @@ def reject(operation, expected: str) -> None:
     raise AssertionError(f"operation unexpectedly succeeded: {expected}")
 
 
-def main(after_begin=None) -> None:
+def main(after_begin=None, batch_payload_factory=None) -> None:
     database = "rag03a03p02_" + uuid.uuid4().hex[:10]
     scratch = Path(tempfile.mkdtemp(prefix="plm-rag03a03p02-"))
     runtime = None
@@ -120,19 +120,25 @@ def main(after_begin=None) -> None:
             with connect(database) as db:
                 for ordinal, member in enumerate(members, 1):
                     source_fingerprint = fixture.batch_source_fingerprint(member)
-                    payload_fingerprint = hashlib.sha256(
-                        f"begin-payload:{ordinal}".encode("utf-8")
-                    ).digest()
+                    if batch_payload_factory is None:
+                        payload_fingerprint = hashlib.sha256(
+                            f"begin-payload:{ordinal}".encode("utf-8")
+                        ).digest()
+                        payload_bytes, input_tokens = 200 + ordinal, 30 + ordinal
+                    else:
+                        payload_fingerprint, payload_bytes, input_tokens = (
+                            batch_payload_factory(ordinal, member)
+                        )
                     authorization = fixture.authorize_batch(
                         db, actor=actor, project=project, provider=provider,
                         provider_config=provider_config, model=model, index_id=index_id,
                         source_fingerprint=source_fingerprint,
                         payload_fingerprint=payload_fingerprint,
-                        payload_bytes=200 + ordinal, input_tokens=30 + ordinal,
+                        payload_bytes=payload_bytes, input_tokens=input_tokens,
                     )
                     batches.append(RAGEmbeddingBatchPlan(
                         ordinal, ordinal, 1, source_fingerprint,
-                        payload_fingerprint, 200 + ordinal, 30 + ordinal,
+                        payload_fingerprint, payload_bytes, input_tokens,
                         authorization,
                     ))
             runtime = create_database_runtime(url)

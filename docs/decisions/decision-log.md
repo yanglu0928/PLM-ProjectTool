@@ -7804,3 +7804,11 @@
 - Reason：复制DNS/TLS实现容易产生安全策略漂移，而强行共用响应解析会错把向量当成Chat内容。共享传输、分离语义是最小且完整的生产边界。
 - Impact/Rollback：新增内部Adapter并重构Chat传输调用，无Schema/API/依赖/真实网络。回退时可恢复Chat原内联传输并删除Embedding Adapter。
 - Verification：定向11项、后端2396/3跳过、wheel隔离42通过，SHA-256 `dde88638911bff74e9b2877752297d6a60f291e0c6548ac8661f319602fec7e8`；错误数量/序号/维度/NaN/模型和私网DNS全部拒绝，旧Chat Adapter无回归。
+
+# DEC-20261004-799：Embedding仅在双重当前授权和持久化fence后单次发送
+
+- Date/WBS：2026-10-04 / `RAG-03-A04-P04`；依据`CR-RAG-003`、DEC-796～798及统一AIService约束。
+- Decision：Embedding send-once先读取当前Build/Index/Batch/Authorization/Provider/Config/Model与活动Secret版本并检查License；打开精确Secret后必须再次授权且路由/证明身份稳定，随后通过RAG桥接提交精确Batch fence，最后只调用一次Adapter。Envelope内部身份增加Index、batch ordinal和source first ordinal，仅用于proof/fence，不进入外发JSON。fence后异常一律视为Provider结果未知，不自动重放。
+- Reason：授权到Secret解密、Secret到网络发送之间均存在配置切换/撤权/租约过期窗口；缺少第二次授权或把fence放在网络之后会允许过期事实外发或重复计费。RAG所需ordinal若靠再次查询猜测，会把统一AI proof与实际Batch拆成两个身份源。
+- Impact/Rollback：新增内部服务、仓储、Audit适配和测试，无Schema、公开API、依赖或真实外发。可移除新编排回退到不可发送状态；不得把已有RUNNING fence降回PENDING，继续由既有UNKNOWN对账处理。原冻结基线不改写。
+- Verification：Win11/PG18.6标记`RAG_03_A04_P04_EMBEDDING_SEND_BOUNDARY_PASS`；活动Secret、双授权、四次License检查、Scope Audit、精确fence、单次合成Adapter和明文归零通过。后端2408/3跳过，wheel隔离21项，SHA-256 `16e3e4f1273606488b1913ea2b1bdca530c7c934df055e5a5c41a77a4bd639da`；零真实Provider I/O。

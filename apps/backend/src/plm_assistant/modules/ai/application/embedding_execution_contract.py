@@ -73,7 +73,10 @@ class AIEmbeddingSource:
 @dataclass(frozen=True, slots=True)
 class AIEmbeddingEnvelope:
     embedding_build_id: uuid.UUID
+    embedding_index_id: uuid.UUID
     embedding_build_batch_id: uuid.UUID
+    batch_ordinal: int
+    source_first_ordinal: int
     provider_model_key: str
     model_revision: str
     embedding_dimension: int
@@ -86,7 +89,12 @@ class AIEmbeddingEnvelope:
 
     def __post_init__(self) -> None:
         if (not _id(self.embedding_build_id)
+                or not _id(self.embedding_index_id)
                 or not _id(self.embedding_build_batch_id)
+                or type(self.batch_ordinal) is not int
+                or not 1 <= self.batch_ordinal <= 1_000_000
+                or type(self.source_first_ordinal) is not int
+                or not 1 <= self.source_first_ordinal <= 1_000_000_000
                 or type(self.provider_model_key) is not str
                 or _MODEL.fullmatch(self.provider_model_key) is None
                 or type(self.model_revision) is not str
@@ -137,7 +145,9 @@ class AIEmbeddingEnvelopeBuilder:
     """Build the exact logical payload authorized for one external Batch."""
 
     def build(self, *, embedding_build_id: uuid.UUID,
+              embedding_index_id: uuid.UUID,
               embedding_build_batch_id: uuid.UUID,
+              batch_ordinal: int,
               provider_model_key: str, model_revision: str,
               embedding_dimension: int,
               sources: tuple[AIEmbeddingSource, ...]) -> AIEmbeddingEnvelope:
@@ -171,7 +181,8 @@ class AIEmbeddingEnvelopeBuilder:
             "schema_version": _SCHEMA,
         })
         result = AIEmbeddingEnvelope(
-            embedding_build_id, embedding_build_batch_id,
+            embedding_build_id, embedding_index_id, embedding_build_batch_id,
+            batch_ordinal, sources[0].source_ordinal,
             provider_model_key, model_revision, embedding_dimension,
             hashlib.sha256("\n".join(canonical_sources).encode("utf-8")).digest(),
             tuple(fingerprints), canonical_bytes, len(sources), input_tokens,
@@ -186,6 +197,10 @@ class AIEmbeddingSendProof:
     embedding_build_id: uuid.UUID
     embedding_build_batch_id: uuid.UUID
     egress_authorization_ref: uuid.UUID
+    trace_id: uuid.UUID
+    actor_id: uuid.UUID
+    scope: str
+    project_id: uuid.UUID | None
     fencing_token: int
     route_fingerprint: bytes = field(repr=False)
     source_refs_fingerprint: bytes = field(repr=False)
@@ -197,7 +212,11 @@ class AIEmbeddingSendProof:
     def __post_init__(self) -> None:
         if (not all(_id(value) for value in (
                 self.job_id, self.embedding_build_id,
-                self.embedding_build_batch_id, self.egress_authorization_ref))
+                self.embedding_build_batch_id, self.egress_authorization_ref,
+                self.trace_id, self.actor_id))
+                or self.scope not in {"GLOBAL", "PROJECT"}
+                or (self.scope == "GLOBAL" and self.project_id is not None)
+                or (self.scope == "PROJECT" and not _id(self.project_id))
                 or self.fencing_token != 1
                 or not all(_digest(value) for value in (
                     self.route_fingerprint, self.source_refs_fingerprint,

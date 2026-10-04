@@ -51,7 +51,9 @@ def _fixture(value):
     text = "PLM embedding".encode()
     envelope = AIEmbeddingEnvelopeBuilder().build(
         embedding_build_id=uuid.uuid4(),
+        embedding_index_id=uuid.uuid4(),
         embedding_build_batch_id=uuid.uuid4(),
+        batch_ordinal=1,
         provider_model_key=route.provider_model_key,
         model_revision=route.model_revision, embedding_dimension=768,
         sources=(AIEmbeddingSource(
@@ -60,7 +62,8 @@ def _fixture(value):
     )
     proof = AIEmbeddingSendProof(
         uuid.uuid4(), envelope.embedding_build_id,
-        envelope.embedding_build_batch_id, uuid.uuid4(), 1,
+        envelope.embedding_build_batch_id, uuid.uuid4(), uuid.uuid4(),
+        uuid.uuid4(), "GLOBAL", None, 1,
         provider_route_fingerprint(route), envelope.source_refs_fingerprint,
         envelope.payload_fingerprint, envelope.payload_bytes,
         envelope.input_tokens, now + timedelta(minutes=5),

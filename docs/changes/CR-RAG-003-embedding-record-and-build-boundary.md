@@ -74,3 +74,9 @@ Windows11/PostgreSQL18.6标记 `RAG_03_A04_P01_BATCH_SEND_FENCE_PASS`：错误pa
 新增 `PinnedHttpsOpenAICompatibleEmbeddingAdapter`，并将原Chat Adapter的DNS隔离、公网IP候选全部验证、固定443、系统CA/TLS1.2+、禁代理/重定向、连接/读/总超时及有界Content-Length JSON收发抽为共用pinned TLS核心。Embedding wire只映射已授权的model/input及float编码；响应必须精确匹配记录数、0起连续index、模型、768/1024维和有限有界数值，usage形状也必须合法。
 
 定向11项及旧Chat安全回归通过；后端2396项通过/3跳过；wheel隔离37项Embedding/RAG与5项Chat Adapter，共42项通过，SHA-256 `dde88638911bff74e9b2877752297d6a60f291e0c6548ac8661f319602fec7e8`。全部使用合成socket，零真实Provider I/O、零Secret解密和零客户数据外发。
+
+## A04-P04 实施与结果
+
+新增当前路由事实仓储、Embedding pre-send与send-once服务、Scope感知Secret审计及RAG fence桥接。一次调用必须依次完成：当前事实授权、精确Secret版本访问、Secret作用域内再次授权、事实稳定性比较、持久化Batch fence、单次Adapter调用。两次授权各在事务内外检查License；fence后的任何异常均按Provider结果未知处理，禁止自动重放。
+
+为让统一AI模块无歧义生成RAG fence proof，内部Envelope补充EmbeddingIndex id、batch ordinal和source first ordinal；这些身份不进入厂商JSON，不改变最小外发正文或payload fingerprint。Windows11/PostgreSQL18.6标记`RAG_03_A04_P04_EMBEDDING_SEND_BOUNDARY_PASS`：真实事务完成双重授权、活动Secret版本证明、PROJECT Secret审计、PENDING→RUNNING fence、一次合成Adapter调用及明文归零。后端2408项通过/3跳过；wheel隔离21项，SHA-256 `16e3e4f1273606488b1913ea2b1bdca530c7c934df055e5a5c41a77a4bd639da`。首轮验证在Build启动后更新payload被Schema0082不可变守卫正确拒绝，验证改为计划前生成精确payload后使用新库重跑通过；未放宽数据库。零真实Provider I/O、零客户数据外发。

@@ -44,14 +44,18 @@ class _SyntheticEmbeddingAdapter:
 class AIEmbeddingExecutionContractTests(unittest.TestCase):
     def setUp(self) -> None:
         self.now = datetime(2026, 10, 4, 14, tzinfo=timezone.utc)
-        self.build_id, self.batch_id = uuid.uuid4(), uuid.uuid4()
+        self.build_id, self.index_id, self.batch_id = (
+            uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
+        )
         self.sources = tuple(
             AIEmbeddingSource(i, uuid.uuid4(), hashlib.sha256(text).digest(), text)
             for i, text in enumerate(("PLM需求".encode(), "PLM交付".encode()), 3)
         )
         self.envelope = AIEmbeddingEnvelopeBuilder().build(
             embedding_build_id=self.build_id,
+            embedding_index_id=self.index_id,
             embedding_build_batch_id=self.batch_id,
+            batch_ordinal=1,
             provider_model_key="text-embedding-v4",
             model_revision="PROVIDER_MANAGED", embedding_dimension=1024,
             sources=self.sources,
@@ -64,7 +68,8 @@ class AIEmbeddingExecutionContractTests(unittest.TestCase):
             "CUSTOMER_CONTENT", 1_000_000, 5, 20, 30,
         )
         self.proof = AIEmbeddingSendProof(
-            uuid.uuid4(), self.build_id, self.batch_id, uuid.uuid4(), 1,
+            uuid.uuid4(), self.build_id, self.batch_id, uuid.uuid4(),
+            uuid.uuid4(), uuid.uuid4(), "GLOBAL", None, 1,
             provider_route_fingerprint(self.route),
             self.envelope.source_refs_fingerprint,
             self.envelope.payload_fingerprint, self.envelope.payload_bytes,
@@ -74,7 +79,9 @@ class AIEmbeddingExecutionContractTests(unittest.TestCase):
     def test_deterministic_envelope_and_synthetic_adapter_boundary(self) -> None:
         same = AIEmbeddingEnvelopeBuilder().build(
             embedding_build_id=self.build_id,
+            embedding_index_id=self.index_id,
             embedding_build_batch_id=self.batch_id,
+            batch_ordinal=1,
             provider_model_key="text-embedding-v4",
             model_revision="PROVIDER_MANAGED", embedding_dimension=1024,
             sources=self.sources,
@@ -106,7 +113,9 @@ class AIEmbeddingExecutionContractTests(unittest.TestCase):
         with self.assertRaises(AIEmbeddingExecutionError):
             AIEmbeddingEnvelopeBuilder().build(
                 embedding_build_id=self.build_id,
+                embedding_index_id=self.index_id,
                 embedding_build_batch_id=self.batch_id,
+                batch_ordinal=1,
                 provider_model_key="text-embedding-v4",
                 model_revision="PROVIDER_MANAGED",
                 embedding_dimension=1024,
