@@ -87,6 +87,24 @@ COMMON_ERRORS: dict[str, ErrorSpec] = {
     "CAPABILITY_EVIDENCE_REQUIRED": ErrorSpec(
         "CAPABILITY_EVIDENCE_REQUIRED", 422, "能力项缺少合格的全局证据。"
     ),
+    "HANDOVER_SOURCE_REQUIRED": ErrorSpec(
+        "HANDOVER_SOURCE_REQUIRED", 422, "交接分析缺少合格的固定来源。"
+    ),
+    "HANDOVER_ITEM_INCOMPLETE": ErrorSpec(
+        "HANDOVER_ITEM_INCOMPLETE", 422, "交接问题项缺少合格证据或资料缺失声明。"
+    ),
+    "HANDOVER_CONFIRMATION_PROMPT_REQUIRED": ErrorSpec(
+        "HANDOVER_CONFIRMATION_PROMPT_REQUIRED", 422, "待确认项缺少完整确认指引。"
+    ),
+    "HANDOVER_ACTION_STATE_INVALID": ErrorSpec(
+        "HANDOVER_ACTION_STATE_INVALID", 409, "当前待办状态不允许此操作。"
+    ),
+    "HANDOVER_ACTION_EVIDENCE_REQUIRED": ErrorSpec(
+        "HANDOVER_ACTION_EVIDENCE_REQUIRED", 422, "待办缺少所需证据。"
+    ),
+    "HANDOVER_ACTION_RESOLUTION_REQUIRED": ErrorSpec(
+        "HANDOVER_ACTION_RESOLUTION_REQUIRED", 422, "关闭待办缺少验证结果或解决追溯。"
+    ),
     "BUSINESS_REVIEW_NOT_ELIGIBLE": ErrorSpec(
         "BUSINESS_REVIEW_NOT_ELIGIBLE", 422, "当前版本不满足送审条件。"
     ),

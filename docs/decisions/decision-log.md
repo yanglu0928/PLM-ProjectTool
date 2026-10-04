@@ -8395,3 +8395,11 @@
 - Reason：直接在0101上实现会被数据库守卫拒绝；归档若清空正式指针或改写Version会破坏已批准事实，若允许在审归档则会留下无法合法终结的Review。单向Root栅栏能保留审计和追溯，同时最小化冻结模型增量。
 - Impact/Rollback：按CR-HND-005新增向前Migration0102，不改写冻结提交/0101；无新表列、URL、依赖、配置、Secret、网络或外发。存在ARCHIVED或PATCH/ARCHIVE Audit历史拒降，只能停止新Owner并向前修复。
 - Verification：定向17；Win11/PG18.6升降重升/drift、权限/隔离/强锁/在审栅栏/重放/Audit回滚/归档保护/历史拒降，后端2687通过/3跳过；wheel SHA-256 `f095e967558071076e09b25dbd44fbced0873710de760b7c79407719a072a472`。
+
+# DEC-20261005-873：Handover普通写HTTP仅作严格可选边界
+
+- Date/WBS：2026-10-05 / `HND-01-A05-A04`；依据冻结API-01/API-04、DM-05、DEC-870～872。
+- Decision：Analysis CREATE/PATCH/ARCHIVE与Version CREATE/VALIDATE共享一个显式注入Router，传输层仅做严格DTO、Origin/Session/CSRF、Idempotency/If-Match和安全投影；业务角色、项目隔离、License、引用资格、Audit/收据继续由Owner同事务执行。默认与Windows当前组合保持404。
+- Reason：重复Owner逻辑会形成授权与幂等双事实；A07前挂载会把合同能力误当生产能力。打包复验另发现`handover.api`缺包标记，必须修复以保证wheel与源码行为一致。
+- Impact/Rollback：无Migration/冻结API破坏/依赖/配置/网络/外发。补`handover/api/__init__.py`使既有Action读取与新命令进入wheel；撤Router注入即恢复404，合法历史不删除。
+- Verification：合同3项、后端2690通过/3跳过；wheel同时导入两个Handover API模块PASS，SHA-256 `d72a5e078ed0caa7226af75580b46f2d218942c374bf7fd61c2700c2f2292da9`。真实Windows/PG组合留A07。
