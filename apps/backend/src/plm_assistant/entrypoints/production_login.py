@@ -25,6 +25,9 @@ from plm_assistant.entrypoints.windows_rag_retrieval import (
 from plm_assistant.entrypoints.windows_capability import (
     create_windows_capability_routers,
 )
+from plm_assistant.entrypoints.windows_handover_action_read import (
+    create_windows_handover_action_read_router,
+)
 from plm_assistant.entrypoints.windows_audit_list_cursor import create_windows_audit_cursor_codec
 from plm_assistant.modules.audit.api.read_events import create_audit_read_router
 from plm_assistant.modules.audit.application.authorized_read import AuthorizedAuditReadService
@@ -511,6 +514,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         capability_command_router = None
         capability_review_router = None
         capability_read_router = None
+        handover_action_read_router = None
         if include_secret_read:
             from plm_assistant.entrypoints.windows_license_runtime import (
                 create_windows_license_services,
@@ -524,6 +528,10 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             capability_read_router = capability_routers.reads
             capability_command_router = capability_routers.commands
             capability_review_router = capability_routers.review_submission
+            handover_action_read_router = create_windows_handover_action_read_router(
+                runtime, sessions=sessions, origins=origins,
+                license_guard=licenses.guard,
+            )
             user_detail_router = create_user_detail_router(sessions=sessions,origins=origins,
                 reads=AuthorizedUserReadService(unit_of_work=runtime.unit_of_work,
                     access=SqlAlchemyDeploymentReadAccess(),repository=SqlAlchemyUserReadRepository(),
@@ -1381,6 +1389,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             capability_command_router=capability_command_router,
             capability_review_router=capability_review_router,
             capability_read_router=capability_read_router,
+            handover_action_read_router=handover_action_read_router,
             maintenance_admission=maintenance_admission,
             shutdown_callback=shutdown,
         )

@@ -8331,3 +8331,11 @@
 - Reason：复用其他资源cursor会混淆资源族，客户端可构造位置会扩大扫描；在正式密钥/组合验证前默认挂载会把合同测试能力误当生产能力。详情需防御Owner异常，不能把内部TraceId、路径或正文投影到HTTP。
 - Impact/Rollback：无Migration、冻结API破坏、依赖、配置、网络或外发。撤可选Router/cursor恢复404，内部读取Owner保留。
 - Verification：cursor/HTTP合同6项、后端2657通过/3跳过、wheel解包导入PASS，SHA-256 `485980beef8b8ad65ef465bcc010f1e60a47f7ba1febff94ef185495f360d76c`；真实HTTP/PG与正式密钥留A04。
+
+# DEC-20261005-865：Action读取仅在显式Windows Platform模式失败关闭挂载
+
+- Date/WBS：2026-10-05 / `HND-02-A04-A04`；依据DEC-862～864、Windows当前账户Vault边界与现有Production Platform组合模式。
+- Decision：LIST/GET仅由`create_production_platform_app`/`create_production_platform_write_app`显式组合；cursor密钥固定为当前服务账户Vault中`handover-action-cursor-v1`，缺失即整体启动失败。Login-only/默认app保持404。
+- Reason：Handover读取同时依赖License、当前Session、Project授权和独立cursor信任；不得因单个密钥缺失静默发布无分页保护或半成品路由。
+- Impact/Rollback：无Migration/API语义破坏/依赖/网络/外发。正式服务账户密钥预置仍是Release前置；撤Windows组合注入恢复404。
+- Verification：Win11/PG18.6真实HTTP分页/详情/拒绝/零写PASS，组合定向34、后端2659通过/3跳过，wheel SHA-256 `68d630b740cad7ade9f577cb92d5fe2842921ef4bb9972e073cacc41feb200a3`。首轮fixture非原子建Root/Event被触发器拒绝，改为同事务后重跑PASS，未放宽产品约束。
