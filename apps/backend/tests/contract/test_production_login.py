@@ -195,6 +195,10 @@ class ProductionLoginTests(unittest.TestCase):
             "plm_assistant.entrypoints.production_login.create_windows_handover_action_read_router",
             return_value=APIRouter(),
         ))
+        self.handover_review_factory = self.enterContext(patch(
+            "plm_assistant.entrypoints.production_login.create_windows_handover_review_router",
+            return_value=APIRouter(),
+        ))
         self.temp_dir = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp_dir.cleanup)
         self.enterContext(patch(
@@ -579,6 +583,7 @@ class ProductionLoginTests(unittest.TestCase):
             app = create_production_platform_app(settings)
         egress_factory.assert_not_called()
         self.handover_action_factory.assert_called_once()
+        self.handover_review_factory.assert_not_called()
         with TestClient(app, base_url="http://localhost") as client:
             self.assertEqual(client.get("/api/v1/admin/secrets").status_code, 401)
             self.assertEqual(client.get("/api/v1/admin/ai/models").status_code, 401)
@@ -862,6 +867,7 @@ class ProductionLoginTests(unittest.TestCase):
         egress_factory.assert_called_once()
         retrieval_factory.assert_called_once()
         self.handover_action_factory.assert_called_once()
+        self.handover_review_factory.assert_called_once()
         included_routes = (
             route
             for included in app.routes

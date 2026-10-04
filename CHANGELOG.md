@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/HND-01-A04-A02-P04 新增Windows Handover Review失败关闭组合，仅`--platform-write`挂载PROJECT Review四写路径，只读/default/login-only不开放；真实HND-02 Owner与Review三写服务共享UOW、License、Audit、收据和Project事实。兼容性/升级/回滚：无Migration/依赖/Secret/外发，停注入Router恢复关闭。验证：Win11/PG18.6真实HTTP create/start/approve/升版/withdraw及四命令幂等重放，后端2674通过/3跳过，wheel SHA-256 `4b3419d4679ad44b0d95a2d79621859238da928257942c6699e327cb2f7e03f9`。已知问题：Server2025/Debian13、Review读/UI、Analysis/Action剩余HTTP、Gate3/发行仍待。
+
 - 2026-10-05：0.1.0-dev.0/HND-01-A04-A02-P03 新增默认关闭的PROJECT Review create/start/decide/withdraw四写Router，严格`subject_ref`等DTO、Session/CSRF/幂等/强ETag和API-02冻结Review错误投影；最小响应不暴露主题正文或Owner。兼容性/升级/回滚：无Migration/依赖/配置/网络/外发，撤选配Router恢复404。验证：合同5项、Review定向109、后端2672通过/3跳过，wheel导入PASS，SHA-256 `f5693a3fce3237f24516cb5f80bf354a3d9b01379dea52d3e99218c6550dbf64`。已知问题：P04 Windows写组合/真实HTTP-PG、读取/UI、Gate3和发行仍待。
 
 - 2026-10-05：0.1.0-dev.0/HND-01-A04-A02-P02 新增真实HND-02 PROJECT Review Subject Owner/仓储，复用通用创建、开轮、决定、撤回内核；固定`HANDOVER_ALL_V1`，送审与批准重验Version来源/Evidence/Capability/AI/评审人/Action，批准原子确认Item与正式指针，退回/撤回保留候选与旧指针。按CR-HND-004修复Schema0101共享触发器跨表字段解析，并允许首版批准后在保留正式指针且无在审版本时创建下一Draft。兼容性/升级/回滚：无新revision/表列/公开API/依赖/网络/外发；旧0101开发库需向前修复，停装配Owner可关闭新Review写入，历史保留。验证：Win11/PG18.6真实create/start/approve/升版/withdraw，定向36、后端2667通过/3跳过、wheel解包导入PASS，SHA-256 `3954fa5175350eb61ec36ea410d150f0e7ae56e4ccb1a5b014060922bc8e08eb`。已知问题：P03 HTTP/Windows组合与后续UI、Gate3和发行仍待。

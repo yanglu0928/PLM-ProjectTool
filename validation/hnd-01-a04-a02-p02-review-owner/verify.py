@@ -114,7 +114,7 @@ connect, seed_user, CSRF = fixture.connect, fixture.seed_user, fixture.CSRF
 Guard = fixture.Guard
 
 
-def main() -> None:
+def main(*, use_http: bool = False) -> None:
     name = "hnd01a04p02_" + uuid.uuid4().hex[:8]
     manager_token, reviewer_token = b"m" * 32, b"r" * 32
     with connect("postgres") as admin:
@@ -341,29 +341,130 @@ def main() -> None:
                     clock=lambda: now,
                 )
 
+                client = None
+                if use_http:
+                    from fastapi.testclient import TestClient
+                    from plm_assistant.entrypoints.api import create_app
+                    from plm_assistant.entrypoints.windows_handover_review import (
+                        create_windows_handover_review_router,
+                    )
+                    from plm_assistant.modules.auth.api.login_origin_policy import (
+                        LoginOriginPolicy,
+                    )
+
+                    class Sessions:
+                        @staticmethod
+                        def validate(token, *, csrf_token, require_csrf):
+                            assert token in (manager_token, reviewer_token)
+                            assert csrf_token == CSRF and require_csrf is True
+                            return object()
+
+                    router = create_windows_handover_review_router(
+                        runtime, sessions=Sessions(),
+                        origins=LoginOriginPolicy(["http://localhost"]),
+                        license_guard=guard, audit=audit,
+                    )
+                    client = TestClient(
+                        create_app(review_command_router=router),
+                        base_url="http://localhost",
+                    )
+
+                def headers(token: bytes, *, etag: str | None = None):
+                    result = {
+                        "origin": "http://localhost",
+                        "cookie": "plm_session=" + token.hex(),
+                        "x-csrf-token": CSRF.hex(),
+                        "idempotency-key": str(uuid.uuid4()),
+                    }
+                    if etag is not None:
+                        result["if-match"] = etag
+                    return result
+
                 def create_start(version_id: uuid.UUID):
-                    created = create_service.create_idempotent(CreateReview(
-                        manager_token, CSRF, uuid.uuid4(), project, "HND-02",
-                        analysis.handover_analysis_id, version_id,
-                    ), idempotency_key=str(uuid.uuid4()))
-                    started = start_service.start_idempotent(StartReviewRound(
-                        manager_token, CSRF, project, created.review_id,
-                        version_id, (reviewer,), "HANDOVER_ALL_V1", 0,
-                        uuid.uuid4(),
-                    ), idempotency_key=str(uuid.uuid4()))
-                    return created, started
+                    if client is None:
+                        created = create_service.create_idempotent(CreateReview(
+                            manager_token, CSRF, uuid.uuid4(), project, "HND-02",
+                            analysis.handover_analysis_id, version_id,
+                        ), idempotency_key=str(uuid.uuid4()))
+                        started = start_service.start_idempotent(StartReviewRound(
+                            manager_token, CSRF, project, created.review_id,
+                            version_id, (reviewer,), "HANDOVER_ALL_V1", 0,
+                            uuid.uuid4(),
+                        ), idempotency_key=str(uuid.uuid4()))
+                        return created.review_id, started.round_id
+                    create_headers = headers(manager_token)
+                    create_body = {"subject_ref": {
+                        "resource_type": "HND-02",
+                        "resource_id": str(analysis.handover_analysis_id),
+                        "version_id": str(version_id),
+                    }}
+                    created = client.post(
+                        f"/api/v1/projects/{project}/reviews",
+                        headers=create_headers, json=create_body,
+                    )
+                    assert created.status_code == 201, created.text
+                    create_replay = client.post(
+                        f"/api/v1/projects/{project}/reviews",
+                        headers=create_headers, json=create_body,
+                    )
+                    assert create_replay.status_code == 201, create_replay.text
+                    assert create_replay.json()["data"] == created.json()["data"]
+                    review_id = uuid.UUID(created.json()["data"]["review_id"])
+                    start_headers = headers(manager_token, etag='"v0"')
+                    start_body = {
+                        "subject_version_ref": str(version_id),
+                        "reviewer_user_ids": [str(reviewer)],
+                        "policy_code": "HANDOVER_ALL_V1",
+                    }
+                    started = client.post(
+                        f"/api/v1/projects/{project}/reviews/{review_id}/rounds",
+                        headers=start_headers, json=start_body,
+                    )
+                    assert started.status_code == 201, started.text
+                    start_replay = client.post(
+                        f"/api/v1/projects/{project}/reviews/{review_id}/rounds",
+                        headers=start_headers, json=start_body,
+                    )
+                    assert start_replay.status_code == 201, start_replay.text
+                    assert start_replay.json()["data"] == started.json()["data"]
+                    return review_id, uuid.UUID(
+                        started.json()["data"]["review_round_id"]
+                    )
 
                 review_one, round_one = create_start(
                     first.handover_analysis_version_id
                 )
-                approved = transition_service.decide_idempotent(
-                    DecideReviewRound(
-                        reviewer_token, CSRF, project, review_one.review_id,
-                        round_one.round_id, uuid.uuid4(),
-                        ReviewDecisionKind.APPROVE, "Approved for handover",
-                    ), idempotency_key=str(uuid.uuid4()),
-                )
-                assert approved.state.value == "APPROVED"
+                if client is None:
+                    approved = transition_service.decide_idempotent(
+                        DecideReviewRound(
+                            reviewer_token, CSRF, project, review_one,
+                            round_one, uuid.uuid4(),
+                            ReviewDecisionKind.APPROVE, "Approved for handover",
+                        ), idempotency_key=str(uuid.uuid4()),
+                    )
+                    assert approved.state.value == "APPROVED"
+                else:
+                    decision_headers = headers(reviewer_token)
+                    decision_body = {
+                        "decision": "APPROVE",
+                        "comment": "Approved for handover",
+                    }
+                    decision_path = (
+                        f"/api/v1/projects/{project}/reviews/{review_one}/rounds/"
+                        f"{round_one}:decide"
+                    )
+                    approved = client.post(
+                        decision_path, headers=decision_headers,
+                        json=decision_body,
+                    )
+                    assert approved.status_code == 200, approved.text
+                    assert approved.json()["data"]["state"] == "APPROVED"
+                    decision_replay = client.post(
+                        decision_path, headers=decision_headers,
+                        json=decision_body,
+                    )
+                    assert decision_replay.status_code == 200, decision_replay.text
+                    assert decision_replay.json()["data"] == approved.json()["data"]
 
                 with connect(name) as db:
                     root_lock = db.execute(
@@ -382,14 +483,34 @@ def main() -> None:
                 review_two, round_two = create_start(
                     second.handover_analysis_version_id
                 )
-                withdrawn = transition_service.withdraw_idempotent(
-                    WithdrawReviewRound(
-                        manager_token, CSRF, project, review_two.review_id,
-                        round_two.round_id, uuid.uuid4(), 1,
-                        "Source scope changed",
-                    ), idempotency_key=str(uuid.uuid4()),
-                )
-                assert withdrawn.state.value == "WITHDRAWN"
+                if client is None:
+                    withdrawn = transition_service.withdraw_idempotent(
+                        WithdrawReviewRound(
+                            manager_token, CSRF, project, review_two,
+                            round_two, uuid.uuid4(), 1,
+                            "Source scope changed",
+                        ), idempotency_key=str(uuid.uuid4()),
+                    )
+                    assert withdrawn.state.value == "WITHDRAWN"
+                else:
+                    withdraw_headers = headers(manager_token, etag='"v1"')
+                    withdraw_body = {"reason": "Source scope changed"}
+                    withdraw_path = (
+                        f"/api/v1/projects/{project}/reviews/{review_two}/rounds/"
+                        f"{round_two}:withdraw"
+                    )
+                    withdrawn = client.post(
+                        withdraw_path, headers=withdraw_headers,
+                        json=withdraw_body,
+                    )
+                    assert withdrawn.status_code == 200, withdrawn.text
+                    assert withdrawn.json()["data"]["state"] == "WITHDRAWN"
+                    withdraw_replay = client.post(
+                        withdraw_path, headers=withdraw_headers,
+                        json=withdraw_body,
+                    )
+                    assert withdraw_replay.status_code == 200, withdraw_replay.text
+                    assert withdraw_replay.json()["data"] == withdrawn.json()["data"]
                 with connect(name) as db:
                     row = db.execute(
                         "SELECT a.current_approved_version_ref,"
@@ -420,8 +541,14 @@ def main() -> None:
                         "SELECT count(*) FROM plm.aud_events WHERE action IN "
                         "('HND_VERSION_APPROVED','HND_VERSION_WITHDRAWN')"
                     ).fetchone()[0] == 2
+                if client is not None:
+                    client.close()
+                marker = (
+                    "HND_01_A04_A02_P04_WINDOWS_HTTP_PASS" if use_http else
+                    "HND_01_A04_A02_P02_REVIEW_OWNER_PASS"
+                )
                 print(
-                    "HND_01_A04_A02_P02_REVIEW_OWNER_PASS: real PROJECT "
+                    marker + ": real PROJECT "
                     "Review create/start/approve/withdraw, current source and "
                     "reviewer revalidation, atomic approved pointer/item "
                     "projection and withdrawal history verified on PostgreSQL 18"

@@ -28,6 +28,9 @@ from plm_assistant.entrypoints.windows_capability import (
 from plm_assistant.entrypoints.windows_handover_action_read import (
     create_windows_handover_action_read_router,
 )
+from plm_assistant.entrypoints.windows_handover_review import (
+    create_windows_handover_review_router,
+)
 from plm_assistant.entrypoints.windows_audit_list_cursor import create_windows_audit_cursor_codec
 from plm_assistant.modules.audit.api.read_events import create_audit_read_router
 from plm_assistant.modules.audit.application.authorized_read import AuthorizedAuditReadService
@@ -515,6 +518,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         capability_review_router = None
         capability_read_router = None
         handover_action_read_router = None
+        review_command_router = None
         if include_secret_read:
             from plm_assistant.entrypoints.windows_license_runtime import (
                 create_windows_license_services,
@@ -532,6 +536,11 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 runtime, sessions=sessions, origins=origins,
                 license_guard=licenses.guard,
             )
+            if include_secret_write:
+                review_command_router = create_windows_handover_review_router(
+                    runtime, sessions=sessions, origins=origins,
+                    license_guard=licenses.guard, audit=audit,
+                )
             user_detail_router = create_user_detail_router(sessions=sessions,origins=origins,
                 reads=AuthorizedUserReadService(unit_of_work=runtime.unit_of_work,
                     access=SqlAlchemyDeploymentReadAccess(),repository=SqlAlchemyUserReadRepository(),
@@ -1390,6 +1399,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             capability_review_router=capability_review_router,
             capability_read_router=capability_read_router,
             handover_action_read_router=handover_action_read_router,
+            review_command_router=review_command_router,
             maintenance_admission=maintenance_admission,
             shutdown_callback=shutdown,
         )

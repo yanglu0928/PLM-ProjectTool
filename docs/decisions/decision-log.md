@@ -8363,3 +8363,11 @@
 - Reason：冻结基线已定义路径、主体和核心DTO，但未细化撤回正文/最小回执；白名单增量避免直接序列化内部快照和主题正文。
 - Impact/Rollback：无Migration/依赖/配置/网络/外发，不改冻结路径与权限。撤可选Router注入即恢复404；P04前生产未挂载。
 - Verification：合同5项、Review相关定向109项、后端全量2672通过/3跳过；默认404、强If-Match、严格JSON、四类冻结Review错误和安全投影已验。wheel导入PASS，SHA-256 `f5693a3fce3237f24516cb5f80bf354a3d9b01379dea52d3e99218c6550dbf64`；真实Windows/PG生产组合留P04。
+
+# DEC-20261005-869：Handover Review只在Windows显式写模式组合
+
+- Date/WBS：2026-10-05 / `HND-01-A04-A02-P04`；依据DEC-867/868、Windows现有Platform组合边界。
+- Decision：以单一composition组装真实`HND-02` Owner和PROJECT Review三写服务，仅在`--platform-write`注入Router；只读Platform不创建该工厂，默认/login-only仍关闭。
+- Reason：Review写入必须共享同一UOW/Session/License/Audit/Project事实，同时不能因读模式已加载Handover Action读取而间接开放Review POST。
+- Impact/Rollback：无Migration/冻结API破坏/依赖/Secret/外发。撤Windows写模式的Router注入可恢复关闭，不删历史。
+- Verification：Win11/PG18.6真实composition+HTTP完成四命令及各自幂等重放、批准后升版和撤回投影；P02内部链独立回归PASS，组合定向34、后端2674通过/3跳过，wheel SHA-256 `4b3419d4679ad44b0d95a2d79621859238da928257942c6699e327cb2f7e03f9`。
