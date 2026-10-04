@@ -8132,3 +8132,11 @@
 - Reason：冻结Version状态没有WITHDRAWN，新增枚举会扩大模型；回到DRAFT会允许复用已形成Review快照的内容。若继续要求正式指针为空，首次批准后无法创建任何修订版，违反不可变版本升版规则。
 - Impact/Rollback：内部Schema`0093 -> 0094`替换守卫并追加唯一APPROVED索引/延迟终态校验，无公开API、依赖或外发。无终态历史可降；有正式化历史拒降并向前修复。A03显式关闭模式仅用于历史验证，默认Owner启用终态。
 - Verification：Win11/PG18.6空库降升、首版批准、退回、撤回、继续建版、再批准/旧版SUPERSEDED、Audit与终态拒降通过；后端2559/3跳过；wheel Review103+Capability23，SHA-256 `002abd2f409b96be5f6b6f24a8cb7151a4b4f2cb17e501b9ed7bf58cc54e258a`。
+
+# DEC-20261005-840：Capability HTTP先补安全读取与状态Owner再分组挂载
+
+- Date/WBS：2026-10-05 / `CAP-01-A05-A01`；依据冻结API-01/API-04、DM-05、Schema0094及CR-CAP-001。
+- Decision：十二个冻结Operation不一次性直挂。按安全读取、状态Owner、六个普通命令HTTP、送审外层、五个读取HTTP、Windows组合六项实施。项目成员的GLOBAL读取只暴露ACTIVE Baseline当前APPROVED Version/Items；DeploymentAdmin可读受控历史。Capability分页使用独立HMAC游标，所有Router默认关闭并只在显式平台组合注册。
+- Reason：现有四类内部能力不覆盖读取、PATCH/ARCHIVE/RESTRICT、持久幂等外层或生产装配；直接挂Router会产生一半可用的冻结合同。GLOBAL URL没有ProjectId，项目成员若可列全部历史会泄漏Draft/退回/受限标准事实。
+- Impact/Rollback：A01仅文档，无代码/Schema/API行为、依赖、Secret或网络。后续保持冻结URL/Operation不变；可不装配Router回滚新流量，状态历史不删除。
+- Verification：静态交叉核对API-04十二Operation、Capability源码/Schema0094、现有可选Router/Windows组合及游标密钥模式；标记`CAP_01_A05_A01_HTTP_PRECHECK_PASS`，未运行新增程序测试。

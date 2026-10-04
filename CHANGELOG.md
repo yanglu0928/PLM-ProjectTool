@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/CAP-01-A05-A01 完成Capability冻结HTTP前置核查：十二Operation均未挂载，现有内部Owner只覆盖Baseline/Draft/Validate与Review正式化；锁定按安全读取、状态Owner、普通命令、送审外层、读取Router、Windows组合分步实施，项目成员只读当前APPROVED投影并使用独立游标密钥。兼容性/升级/回滚：纯文档，无Schema/API行为/依赖/配置/外发，可停止后续实现。验证：静态核对API-04、Capability源码/Schema0094和现有可选Router/组合模式，标记`CAP_01_A05_A01_HTTP_PRECHECK_PASS`。已知问题：A02～A07、前端、正式信任/性能/Gate3/发行仍待。
+
 - 2026-10-05：0.1.0-dev.0/CAP-01-A04-A04 新增Schema0094与Capability Review终态消费：APPROVED原子更新正式指针并SUPERSEDE旧正式版，RETURNED/WITHDRAWN保留旧指针且Version收敛为RETURNED，终态后允许按强ETag创建新Draft；Capability Audit与Review决定同事务。兼容性/升级/回滚：内部`0093 -> 0094`，无API/依赖/网络/外发；无终态历史可降，有历史拒降。验证：Win11/PG18.6四版本批准/退回/撤回/再批准、空库降升/drift/Audit/拒降通过，后端2559通过/3跳过，wheel Review103+Capability23，SHA-256 `002abd2f409b96be5f6b6f24a8cb7151a4b4f2cb17e501b9ed7bf58cc54e258a`。已知问题：A05冻结HTTP/持久幂等/生产组合、前端及Gate3/发行仍待。
 
 - 2026-10-05：0.1.0-dev.0/CAP-01-A04-A03 新增真实Capability Review Subject Owner与Schema0093：当前DeploymentAdmin/Reviewer及GLOBAL Document/Evidence重验，Review创建后同事务绑定Version为IN_REVIEW，阻止评审期替代Draft；终态在正式化Owner前失败关闭。兼容性/升级/回滚：内部`0092 -> 0093`替换守卫并追加唯一索引/延迟校验，无API/依赖/网络/外发；无Review历史可降，有历史拒降。验证：Win11/PG18.6送审/回滚/撤权/替代Draft栅栏/终态失败关闭及历史拒降通过，后端2557通过/3跳过，wheel Review103+Capability21，SHA-256 `15f26b23db3391abfd959d04f31b1c59e6028aa7075c031a31a6a6a159f41c55`。已知问题：A04-A04终态正式化、认证/License/幂等外层、HTTP/前端/生产组合及Gate3/发行仍待。
