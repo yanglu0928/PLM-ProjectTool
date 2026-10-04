@@ -1,6 +1,6 @@
 # CR-RAG-003：EmbeddingRecord、受控 HNSW 与构建发送边界
 
-日期：2026-10-04；状态：`A05_P03_READY_OWNER_PASS`；WBS：`RAG-03-A01～A05`。关联 Gate 2 冻结 ADR-004、DM-04、SC-02～04、API-03，以及 CR-RAG-002/Schema0077；原冻结提交 `64cdf09` 不改。
+日期：2026-10-04；状态：`A05_P04_P01_ACTIVATION_PRECHECK_PASS`；WBS：`RAG-03-A01～A05`。关联 Gate 2 冻结 ADR-004、DM-04、SC-02～04、API-03，以及 CR-RAG-002/Schema0077；原冻结提交 `64cdf09` 不改。
 
 ## 差异与实施方案
 
@@ -122,3 +122,9 @@ Windows11/PostgreSQL18.6完成空库升降重升、已有Index/Build升级、ORM
 新增技术验证Service/Repository与Schema0086。Owner固定最多10个现有向量自查询、Top-K最多5、`ef_search=200`、`iterative_scan=strict_order`及同Scope/Project/Index exact对照，技术Recall门槛9500 basis points。PASS在单事务写不可变证据、完成Job/Attempt、释放Lease、完成Build并只推进Index READY；技术FAIL以`RAG_INDEX_TECHNICAL_VALIDATION_FAILED`保留证据并关闭Job/Build/Index。Job和Build两侧deferred约束反向核对完整聚合，直接改Job或Index均被拒绝。该自查询冒烟不替代业务Golden、分类/引用或性能证据。
 
 Windows11/PostgreSQL18.6空迁移/降级/重升、drift、1024维正向READY、强制Recall失败关闭、直接越权状态与有历史拒降均通过；ACTIVE保持0。RAG定向64项、后端2438项/3跳过、wheel隔离64项通过，SHA-256 `bcb6d531593c544f6448a1dec090f7e12ed6a4f2c95d404400ef2449e252f946`。首次夹具正文指纹不一致及清理editable元数据造成的既有Windows测试失败均已按进度文档修正并全量重跑。P04继续新独立业务质量证据与唯一ACTIVE切换；零真实Provider I/O。
+
+## A05-P04-P01 激活前置核查
+
+现有50条已见失败集不能复用，仓库当前也没有新独立达标业务证据，因此不允许直接产生真实ACTIVE或关闭Gate3/UAT。P04拆为Schema0087不可变Quality/Activation证据、受权质量登记Owner、当前来源/Model/全部构建授权重验及唯一ACTIVE原子切换Owner。质量表只保存引用、计数和SHA-256，不保存Query、Golden答案或客户正文；数据库固定分类9000、精确引用9800 basis points，并要求Project隔离、越界引用0和失败关闭检查通过。
+
+Windows隔离验证后续可使用明确标记的全新`SYNTHETIC_CONTRACT_FIXTURE`证明机制，但不得作为正式业务质量。P01仅静态核查和实施拆分，无代码、Schema/API、依赖、网络或外发变化；进入P02。

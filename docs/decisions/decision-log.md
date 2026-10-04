@@ -7868,3 +7868,11 @@
 - Reason：单向守卫只能防止某个表提前转换，无法阻止通用Job接口留下“Job成功但Index仍BUILDING”的半状态；失败若只抛异常又会丢失已完成技术探针的可审计事实。双向提交期核验确保完整成功或完整回滚/失败关闭。
 - Impact/Rollback：内部应用/基础设施与数据库函数增量，无公开API、依赖、真实外发或ACTIVE变化。空状态可降0085；SUCCEEDED/READY或新技术失败终态拒降并向前修复。自查询Recall不外推为业务质量或性能。
 - Verification：Win11/PG18.6空迁移/drift、PASS/FAILED、直接改Job/Index及有历史拒降通过；定向64、后端2438/3跳过、wheel隔离64，SHA-256 `bcb6d531593c544f6448a1dec090f7e12ed6a4f2c95d404400ef2449e252f946`；ACTIVE为0、零真实Provider I/O。验证环境修正见进度文档。
+
+# DEC-20261004-807：业务质量登记与 Index 激活分离，合成夹具不得充当 Gate 证据
+
+- Date/WBS：2026-10-04 / `RAG-03-A05-P04-P01`；依据冻结DM-04/API-03、ADR-009、CR-RAG-003及Schema0086。
+- Decision：P04拆为不可变Quality/Activation Schema、受权质量登记Owner和唯一ACTIVE原子切换Owner。质量证据只保存安全引用、计数、固定门槛和SHA-256；READY→ACTIVE时重验技术证据、当前来源/Model/构建授权，并在同事务退役同用途旧ACTIVE、写Audit/Activation结果。隔离验证夹具固定标记`SYNTHETIC_CONTRACT_FIXTURE`，只证明机制。
+- Reason：现有50条为已见失败集且仓库没有新独立达标业务证据；直接生成PASS会伪造质量。把登记与激活合并又会让失败证据无法保留，或让过期来源/授权借旧PASS激活。
+- Impact/Rollback：P01仅文档，无代码、Schema/API、依赖、网络或外发。后续追加表空历史可降，有历史向前修复；正式ACTIVE、Gate3/UAT继续阻塞。
+- Verification：静态交叉核对DM-04/API-03/ADR-009、Schema0086及历史98%/48%/74%；未运行新增程序测试。
