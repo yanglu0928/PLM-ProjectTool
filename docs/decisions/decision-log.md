@@ -7996,3 +7996,11 @@
 - Reason：Schema0089只认成功/失败，直接挂取消会让Job与Run分裂；两条HTTP路径若分用Owner会产生状态/幂等差异。新增服务角色会改变已冻结Windows拓扑，而本地FTS与AI Context链可在同一受控Worker宿主内保持Owner和密钥隔离。
 - Impact/Rollback：P01仅文档；P02将追加Schema0090，冻结外部路径/角色不变。可撤Router/策略和停止调度关闭新流量；取消历史不物理降级。合成ACTIVE仍不作质量证据。
 - Verification：静态核对API-03五个Operation、DM-04状态、Schema0089约束、Job cancel registry和ADR-013四角色；未运行新增程序测试。
+
+# DEC-20261004-823：Retrieval 取消区分零 attempt 直接终结与单 attempt 协作终结
+
+- Date/WBS：2026-10-04 / `RAG-04-A06-P02`；依据DEC-822、冻结DM-04/API-03、CR-RAG-004及Schema0089。
+- Decision：Schema0090允许Run `RUNNING/v0 -> CANCELLED/v1`。PENDING取消固定Job v2、attempt/fencing=0且无Lease/Attempt；RUNNING取消固定Job v3、attempt/fencing=1、Lease RELEASED/EXPIRED、Attempt `JOB_CANCELLED`。两类均要求完整取消事实、同完成时点和零结果；Job任一终态不得在Run仍RUNNING时提交。
+- Reason：把直接取消伪造成Worker Attempt会制造不存在的执行历史；忽略已认领Lease又会绕过fencing。旧validator对RUNNING Run早退使Job-only终态未被数据库拒绝，必须在开放取消前关闭。
+- Impact/Rollback：内部Schema `0089 -> 0090`，无公开API、依赖或外发。无取消历史可降；已有取消请求/终态拒降并向前修复。原完整成功/失败兼容。
+- Verification：Win11/PG18.6升级/drift、空历史升降、PENDING/RUNNING取消、Job-only和带结果回滚、历史拒降通过；定向14、后端2503/3跳过、wheel RAG130+Migration4，SHA-256 `8fa75bb94f43fea0cb6be8486725846816e83c4e4aa410bd1176ddb23851fb3d`。

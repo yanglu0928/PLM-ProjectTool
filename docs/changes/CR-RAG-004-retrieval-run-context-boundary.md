@@ -1,6 +1,6 @@
 # CR-RAG-004：RetrievalRun、加密查询内容与最小 Context 边界
 
-日期：2026-10-04；状态：`A06_P01_HTTP_COMPOSITION_PRECHECK_PASS`；WBS：`RAG-04-A01～A06`。关联 Gate 2 冻结 ADR-004/009、DM-04、SC-01～04、API-03，以及 Schema0087/CR-RAG-001～003；原冻结提交 `64cdf09` 不改。
+日期：2026-10-04；状态：`A06_P02_RETRIEVAL_CANCELLATION_SCHEMA_PASS`；WBS：`RAG-04-A01～A06`。关联 Gate 2 冻结 ADR-004/009、DM-04、SC-01～04、API-03，以及 Schema0087/CR-RAG-001～003；原冻结提交 `64cdf09` 不改。
 
 ## 差异与实施方案
 
@@ -99,3 +99,9 @@ Windows11/PostgreSQL18.6真实事务完成成功Worker/Audit/Context读取、撤
 冻结API-03的Create/Get/Result/Context/Cancel尚无生产HTTP与前端，现有内部Owner足以作为实现基础；但发现冻结DM-04允许RetrievalRun `CANCELLED`、通用Job支持协作取消，而Schema0089只允许SUCCEEDED/FAILED。直接复用通用Job cancel会拆分聚合，必须先以Schema0090追加取消原子边界：PENDING直接同步取消，RUNNING先CANCEL_REQUESTED再由专属Reconciler关闭Lease/Attempt/Job/Run/Audit，和成功发布按同一Job锁定顺序竞争。
 
 A06拆为P02取消Schema、P03只读Owner、P04 Create/Get/Result/Context HTTP、P05双路径同Owner取消、P06 API/既有第四Worker角色组合、P07前端、P08真实浏览器/PG验收。首版继续FTS-only/PROJECT/零外发；不新增第五服务角色。纯文档静态核查，无代码/Schema/API行为/依赖/网络变化；进入A06-P02。
+
+## A06-P02 实施与结果
+
+Schema0090新增冻结模型已有的RetrievalRun CANCELLED。PENDING直接取消固定Job v2/零Lease与Attempt；RUNNING协作取消固定Job v3/单generation/RELEASED或EXPIRED Lease/`JOB_CANCELLED` Attempt；两者都要求取消申请事实、Job/Run同完成时点和零Candidate/Score/Context。有取消历史拒绝降回0089。
+
+真实负例发现Schema0089在Run仍RUNNING时过早返回，允许Job单独终态提交；0090一并修复为任何Job SUCCEEDED/FAILED/CANCELLED都必须与Run同事务终结。Windows11/PostgreSQL18.6升级、drift、升降重升、两类取消、半终态/带结果回滚和拒降通过；定向14、后端2503/跳过3、wheel RAG130+Migration4通过，SHA-256 `8fa75bb94f43fea0cb6be8486725846816e83c4e4aa410bd1176ddb23851fb3d`。无公开API/依赖/网络/外发；进入A06-P03只读Owner。
