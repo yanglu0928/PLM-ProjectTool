@@ -7916,3 +7916,11 @@
 - Reason：只建Run而把候选/Context暂存JSON会失去Project/Index/Chunk复合约束与可查询分数；直接开放终态又会允许半实现Worker制造不可追溯Context。整数分数避免NaN/Infinity和跨平台浮点序列化漂移。
 - Impact/Rollback：新增内部Schema0088/ORM，无公开API、依赖、网络或真实外发。空历史可降0087；有任一密文、Run、候选或Context历史则拒降并向前修复。合成ACTIVE仅验证机制。
 - Verification：Win11/PG18.6空/已有数据升级、drift、空历史降级重升、有历史拒降、Run+密文QueryContent、Candidate/Score正向以及缺Content/直改Run/提前Context负例PASS；后端2458/3跳过、wheel RAG86，SHA-256 `4fb5d1c4f465be331807cc1dcbcbddd8746216fe641d881bb22224e2c643b4fc`。
+
+# DEC-20261004-813：只有当前受权且非重放的 Retrieval 创建才读取 Query 密钥
+
+- Date/WBS：2026-10-04 / `RAG-04-A02-P02`；依据CR-RAG-004、DEC-811/812、Schema0088及冻结Project权限边界。
+- Decision：首个创建Owner只开放无外发`fts.project.v1 + none.v1`。Session/CSRF、License、当前Project成员、ACTIVE Index/Model/Chunk和幂等重放均先于密钥读取；重放只投影安全Run/Job字段并重验授权。非重放请求在同一事务中写Job、Run、专用AES-GCM QueryContent、Audit与收据，明文缓冲总是归零。
+- Reason：在授权前加密会让无权请求使用密钥，在幂等判定前加密会制造不可观测的无用密文。把query放入Job/Audit则违反既有安全合同。先只开FTS可在Egress/Reranker Owner未落地时保持零外发。
+- Impact/Rollback：新增内部应用/仓储/密码端口和Project操作权限，无Schema、公开API、新依赖或网络变化。可停止Owner以关闭新作业；已产生历史按Schema0088保留且不回退明文。
+- Verification：Win11/PG18.6实证Session/CSRF、License、Membership、ACTIVE Index、Audit回滚、重放与撤权；后端2467/3跳过、wheel RAG95，SHA-256 `14a6a8ce6b7293e63acbb7f40a15bbb513ba938a8649ea978b138b9420a0fe12`。零真实Provider I/O或客户数据外发，合成ACTIVE不作业务质量/Gate证据。

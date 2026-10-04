@@ -1,6 +1,6 @@
 # CR-RAG-004：RetrievalRun、加密查询内容与最小 Context 边界
 
-日期：2026-10-04；状态：`A02_P01_SCHEMA_PASS`；WBS：`RAG-04-A01～A06`。关联 Gate 2 冻结 ADR-004/009、DM-04、SC-01～04、API-03，以及 Schema0087/CR-RAG-001～003；原冻结提交 `64cdf09` 不改。
+日期：2026-10-04；状态：`A02_P02_CREATE_OWNER_PASS`；WBS：`RAG-04-A01～A06`。关联 Gate 2 冻结 ADR-004/009、DM-04、SC-01～04、API-03，以及 Schema0087/CR-RAG-001～003；原冻结提交 `64cdf09` 不改。
 
 ## 差异与实施方案
 
@@ -37,3 +37,9 @@ Windows 11/PostgreSQL 18.6 验证空库/有数据升降重升、ORM drift、密�
 Schema0088/ORM已新增Run、密文QueryContent、Candidate/ScorePart及ContextBundle/Item。Run/Job不保存query正文；同事务deferred约束拒绝缺QueryContent。PROJECT候选复合重验Run、ACTIVE Index、精确source Chunk与AVAILABLE Embedding；Score固定整数微分值；Context只存引用/范围/token/指纹且完成Owner前关闭。六张表历史不可改删截断，有任一历史拒降。
 
 Windows11/PostgreSQL18.6完成空/已有基础数据升级、drift、空历史降级重升、有历史拒降及合成ACTIVE组合；缺QueryContent、状态直改和提前Context被拒绝。后端2458/跳过3、wheel RAG86通过，SHA-256 `4fb5d1c4f465be331807cc1dcbcbddd8746216fe641d881bb22224e2c643b4fc`。无真实Provider I/O或客户数据外发；合成ACTIVE不作业务质量证据。进入A02-P02创建Owner。
+
+## A02-P02 实施与结果
+
+实现仅允许`fts.project.v1 + none.v1`的受权创建Owner和专用AES-256-GCM Query Cipher。输入规范化后，在同一业务事务内重验Session/CSRF、License、当前Project成员、ACTIVE Index/Model/Chunk及幂等收据；只有非重放且当前授权的请求才读取密钥并加密。Job、Run、QueryContent、Audit和收据同事务，重放仍重验当前权限，query缓冲归零。
+
+Windows11/PostgreSQL18.6完成成功创建、Audit失败全回滚、幂等重放、撤权后重放以及CSRF/License/Index负例；query明文未进入Job/Audit。后端2467/跳过3、wheel RAG95通过，SHA-256 `14a6a8ce6b7293e63acbb7f40a15bbb513ba938a8649ea978b138b9420a0fe12`。零真实Provider I/O、零客户数据外发；合成ACTIVE仍不作Gate证据。进入A03-P01执行链前置核查。
