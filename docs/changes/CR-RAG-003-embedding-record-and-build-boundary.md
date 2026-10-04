@@ -68,3 +68,9 @@ Windows11/PostgreSQL18.6标记 `RAG_03_A04_P01_BATCH_SEND_FENCE_PASS`：错误pa
 统一AI模块新增Provider-neutral `AIEmbeddingEnvelope`、`AIEmbeddingSendProof`和`AIEmbeddingProviderAdapterPort`。Envelope以规范UTF-8 JSON固定外发文本顺序、Model key/revision和请求schema，另以source fingerprint绑定Chunk id/原ordinal/正文指纹；SendProof同时绑定Build/Batch/Job/Authorization、fencing token、route/payload/source fingerprint、字节/token与有效期。敏感正文和指纹字段不进repr。
 
 本地合成Adapter验证正确proof仅调用一次，route/payload/source/过期/顺序漂移全部失败关闭。后端2393项通过/3跳过；wheel隔离34项，SHA-256 `a61a4193a6c7053fd88b7d5aa775c204c54c4a52c26765d651e5cb1b6118b137`。首轮wheel命令误把Windows绝对文件路径当作Python模块名，测试未加载；改用discover pattern后3项通过，同一wheel的31项RAG测试也通过。本项零Provider I/O、零Secret解密和零客户数据外发。
+
+## A04-P03 实施与结果
+
+新增 `PinnedHttpsOpenAICompatibleEmbeddingAdapter`，并将原Chat Adapter的DNS隔离、公网IP候选全部验证、固定443、系统CA/TLS1.2+、禁代理/重定向、连接/读/总超时及有界Content-Length JSON收发抽为共用pinned TLS核心。Embedding wire只映射已授权的model/input及float编码；响应必须精确匹配记录数、0起连续index、模型、768/1024维和有限有界数值，usage形状也必须合法。
+
+定向11项及旧Chat安全回归通过；后端2396项通过/3跳过；wheel隔离37项Embedding/RAG与5项Chat Adapter，共42项通过，SHA-256 `dde88638911bff74e9b2877752297d6a60f291e0c6548ac8661f319602fec7e8`。全部使用合成socket，零真实Provider I/O、零Secret解密和零客户数据外发。

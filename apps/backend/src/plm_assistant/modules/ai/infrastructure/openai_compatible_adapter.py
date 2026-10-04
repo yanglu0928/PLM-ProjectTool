@@ -310,12 +310,11 @@ class PinnedHttpsOpenAICompatibleAdapter:
         context.minimum_version = ssl.TLSVersion.TLSv1_2
         return context
 
-    def send(
-        self, *, route: AIProviderExecutionRoute, proof: AIProviderSendProof,
-        envelope: AIExecutionEnvelope, key: memoryview,
+    def _send_over_pinned_tls(
+        self, route: AIProviderExecutionRoute,
+        operation: Callable[[ssl.SSLSocket, str, str, float], AIProviderResponse],
     ) -> AIProviderResponse:
-        now = datetime.now(timezone.utc)
-        require_provider_send(proof, route, envelope, now=now)
+        """Shared no-proxy/no-redirect transport for approved AI operations."""
         deadline = self._monotonic() + route.total_timeout_seconds
         parts = urlsplit(route.endpoint_url)
         hostname = parts.hostname
@@ -362,14 +361,7 @@ class PinnedHttpsOpenAICompatibleAdapter:
                     )
                 tls = context.wrap_socket(raw, server_hostname=hostname)
                 raw = None
-                connection = _PinnedOpenAIConnection(
-                    tls, hostname=hostname, path=parts.path, route=route,
-                    deadline=deadline, monotonic=self._monotonic,
-                )
-                try:
-                    return connection.send(envelope, key)
-                finally:
-                    tls.close()
+                return operation(tls, hostname, parts.path, deadline)
             except AIProviderExecutionError:
                 raise
             except (OSError, ssl.SSLError, TimeoutError):
@@ -382,3 +374,17 @@ class PinnedHttpsOpenAICompatibleAdapter:
         if last_failure or self._monotonic() >= deadline:
             raise AIProviderExecutionError("AI_PROVIDER_NETWORK_UNAVAILABLE")
         raise AIProviderExecutionError("AI_PROVIDER_DESTINATION_UNAVAILABLE")
+
+    def send(
+        self, *, route: AIProviderExecutionRoute, proof: AIProviderSendProof,
+        envelope: AIExecutionEnvelope, key: memoryview,
+    ) -> AIProviderResponse:
+        now = datetime.now(timezone.utc)
+        require_provider_send(proof, route, envelope, now=now)
+        return self._send_over_pinned_tls(
+            route,
+            lambda tls, hostname, path, deadline: _PinnedOpenAIConnection(
+                tls, hostname=hostname, path=path, route=route,
+                deadline=deadline, monotonic=self._monotonic,
+            ).send(envelope, key),
+        )

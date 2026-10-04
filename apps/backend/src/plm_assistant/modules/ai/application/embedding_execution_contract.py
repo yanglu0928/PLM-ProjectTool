@@ -76,6 +76,7 @@ class AIEmbeddingEnvelope:
     embedding_build_batch_id: uuid.UUID
     provider_model_key: str
     model_revision: str
+    embedding_dimension: int
     source_refs_fingerprint: bytes = field(repr=False)
     source_text_fingerprints: tuple[bytes, ...] = field(repr=False)
     canonical_bytes: bytes = field(repr=False)
@@ -90,6 +91,7 @@ class AIEmbeddingEnvelope:
                 or _MODEL.fullmatch(self.provider_model_key) is None
                 or type(self.model_revision) is not str
                 or _MODEL.fullmatch(self.model_revision) is None
+                or self.embedding_dimension not in {768, 1024}
                 or not _digest(self.source_refs_fingerprint)
                 or type(self.source_text_fingerprints) is not tuple
                 or not self.source_text_fingerprints
@@ -137,6 +139,7 @@ class AIEmbeddingEnvelopeBuilder:
     def build(self, *, embedding_build_id: uuid.UUID,
               embedding_build_batch_id: uuid.UUID,
               provider_model_key: str, model_revision: str,
+              embedding_dimension: int,
               sources: tuple[AIEmbeddingSource, ...]) -> AIEmbeddingEnvelope:
         if type(sources) is not tuple or not 1 <= len(sources) <= 1_000:
             raise AIEmbeddingExecutionError("AI_EMBEDDING_SOURCE_INVALID")
@@ -169,7 +172,7 @@ class AIEmbeddingEnvelopeBuilder:
         })
         result = AIEmbeddingEnvelope(
             embedding_build_id, embedding_build_batch_id,
-            provider_model_key, model_revision,
+            provider_model_key, model_revision, embedding_dimension,
             hashlib.sha256("\n".join(canonical_sources).encode("utf-8")).digest(),
             tuple(fingerprints), canonical_bytes, len(sources), input_tokens,
         )

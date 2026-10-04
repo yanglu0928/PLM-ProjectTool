@@ -7796,3 +7796,11 @@
 - Reason：复用Chat envelope会引入message/response schema假设，而由RAG直接拼厂商JSON会绕过统一策略、Secret和审计边界。独立Provider-neutral合同可让生产Adapter只做受控映射。
 - Impact/Rollback：新增内部合同与测试，无Schema/API/依赖/真实网络；可删除新合同回退，不影响Schema0082历史。
 - Verification：合成Adapter单次调用、五类漂移拒绝和repr隐藏通过；后端2393/3跳过，wheel隔离34项，SHA-256 `a61a4193a6c7053fd88b7d5aa775c204c54c4a52c26765d651e5cb1b6118b137`。wheel首轮测试加载命令错误后已用discover更正并重跑通过。
+
+# DEC-20261004-798：Chat与Embedding共用pinned TLS传输而保持响应语义隔离
+
+- Date/WBS：2026-10-04 / `RAG-03-A04-P03`；依据`CR-RAG-003`、DEC-797及既有AI Provider安全传输策略。
+- Decision：复用同一pinned TLS连接策略与HTTP边界，但Chat和Embedding各自保留wire映射和响应校验器；Embedding不复用Chat choices/message假设。
+- Reason：复制DNS/TLS实现容易产生安全策略漂移，而强行共用响应解析会错把向量当成Chat内容。共享传输、分离语义是最小且完整的生产边界。
+- Impact/Rollback：新增内部Adapter并重构Chat传输调用，无Schema/API/依赖/真实网络。回退时可恢复Chat原内联传输并删除Embedding Adapter。
+- Verification：定向11项、后端2396/3跳过、wheel隔离42通过，SHA-256 `dde88638911bff74e9b2877752297d6a60f291e0c6548ac8661f319602fec7e8`；错误数量/序号/维度/NaN/模型和私网DNS全部拒绝，旧Chat Adapter无回归。

@@ -53,7 +53,8 @@ class AIEmbeddingExecutionContractTests(unittest.TestCase):
             embedding_build_id=self.build_id,
             embedding_build_batch_id=self.batch_id,
             provider_model_key="text-embedding-v4",
-            model_revision="PROVIDER_MANAGED", sources=self.sources,
+            model_revision="PROVIDER_MANAGED", embedding_dimension=1024,
+            sources=self.sources,
         )
         self.route = AIProviderExecutionRoute(
             uuid.uuid4(), uuid.uuid4(), uuid.uuid4(),
@@ -75,7 +76,8 @@ class AIEmbeddingExecutionContractTests(unittest.TestCase):
             embedding_build_id=self.build_id,
             embedding_build_batch_id=self.batch_id,
             provider_model_key="text-embedding-v4",
-            model_revision="PROVIDER_MANAGED", sources=self.sources,
+            model_revision="PROVIDER_MANAGED", embedding_dimension=1024,
+            sources=self.sources,
         )
         self.assertEqual(same.canonical_bytes, self.envelope.canonical_bytes)
         adapter = _SyntheticEmbeddingAdapter()
@@ -107,6 +109,7 @@ class AIEmbeddingExecutionContractTests(unittest.TestCase):
                 embedding_build_batch_id=self.batch_id,
                 provider_model_key="text-embedding-v4",
                 model_revision="PROVIDER_MANAGED",
+                embedding_dimension=1024,
                 sources=(self.sources[1], self.sources[0]),
             )
 
