@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-04：0.1.0-dev.0/RAG-01-A02 新增生产DocumentChunk/受控FTS Schema0076：数据库强制Scope/Project、DocumentVersion/成功ParseResult/hash/category、切分代次、来源不可变、状态与历史保留；正文使用确定性`simple` tsvector/GIN，Chunk不复制Index/模型/向量归属。兼容性/升级/回滚：内部新增表，无API/依赖/外发变化；空表可降0075，有历史拒降。验证：Win11/PG18.6空/历史库升降、drift、负例、FTS GIN通过，定向10、后端2352/跳过3、wheel827项。已知问题：Server2025/Debian13、Build/检索运行、分类/引用质量、Gate3/UAT与正式发行包未验。
+
 - 2026-10-04：0.1.0-dev.0/RAG-01-A01 完成生产RAG编码前核查：确认当前仅有PoC实现，生产后端尚无rag模块/表/路由；固定按DocumentChunk、EmbeddingIndex、EmbeddingRecord/Build、RetrievalRun/Context分层实施，PoC代码/已见数据不直接移植。兼容性/升级/回滚：纯文档，无API/Schema/Migration/依赖/外发变化。验证：静态核对冻结ADR/DM/SC/API、迁移头0075、Document ParseResult、AI Embedding Model与POC-03矩阵。已知问题：分类48%、引用74%仍FAIL；Gate3新独立集来源容量、Server2025/Debian和正式发行包仍待。
 
 - 2026-10-04：0.1.0-dev.0/AI-05-A07 完成Windows11真实AI工作台浏览器闭环：三步创建后进入Task详情，验证固定输入、QUEUED/NONE与空Invocation，进入既有Job详情验证AI_TASK_EXECUTE/ai/PENDING，再返回工作台确认同一Task/Job回显。真实Edge发现Job Owner读取错误要求Task/Job状态字符串相等，导致合法`QUEUED/PENDING`返回503；按CR-AI-022改为显式封闭状态对并保持未知组合失败关闭。兼容性/升级/回滚：无API/Schema/Migration/依赖变化，撤内部修复会恢复Job详情故障；历史事实不改写。验证：相关9、后端全量2349/跳过3、开发wheel 823项及真实Edge/PG四类读取200、数据库1 Task/1 Job/0 Invocation与临时资源清理通过。已知问题：Accept/Reject真实Draft Owner、RAG、Gate3/UAT和正式发行包待完成；Server2025及Debian13本项未验。

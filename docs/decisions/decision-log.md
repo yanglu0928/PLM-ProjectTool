@@ -7716,3 +7716,11 @@
 - Reason：当前生产仓库没有rag模块，而PoC同时包含评测脚本、本地Artifacts与已见数据；直接移植会混淆生产事实、授权和质量结果。分层可先关闭Scope/来源/维度不变量，再接外部调用和检索质量。
 - Impact/Rollback：本项仅文档和任务分解，无程序、Schema/API/依赖/外发。分类48%、引用74%继续FAIL，Gate3新集来源容量阻塞不变；后续Migration逐项提供down和历史数据保护。
 - Verification：静态核对现有模块目录、迁移头0075、Document ParseResult、AI EMBEDDING Model、pgvector基线、冻结RAG四聚合/API及POC-03矩阵；确认无生产RAG表或路由。
+
+# DEC-20261004-788：DocumentChunk 只固定来源事实并使用受控 simple FTS
+
+- Date/WBS：2026-10-04 / `RAG-01-A02`；依据 `CR-RAG-001`、DEC-787、冻结 DM-04/SC-03。
+- Decision：DocumentChunk 固定 DocumentVersion、成功 ParseRecord/ParseResult、切分 profile/version/ordinal、受控 locator、document category、正文 SHA-256 和元数据快照；Index/模型/向量归属留给后续 EmbeddingRecord。正文以生成列 `simple` tsvector 和 GIN 提供确定性全文候选，来源不可改写，状态和历史保留由数据库守卫强制。
+- Reason：把 Index 或向量复制到 Chunk 会在换模和代次重建时产生可变双事实；依赖数据库默认语言配置也会让三平台结果漂移。固定 `simple` 配置可复现，但不虚报为中文语义检索质量。
+- Impact/Rollback：新增内部 Schema0076/ORM，无公共 API、依赖、外发或客户数据。空表可降回0075；有历史拒绝物理降级，改用停止构建、受控状态或向前修复。原冻结提交不改写。
+- Verification：Win11/PG18.6 标记`RAG_01_A02_DOCUMENT_CHUNK_SCHEMA_PASS`；定向10、后端2352通过/3跳过；wheel 827项 SHA-256 `fed28e9a2409d58ec4d469886e8ec62759e1a905dedde8ed0617f8fdc7f239e0`。Server2025/Debian13和Gate3质量未验。

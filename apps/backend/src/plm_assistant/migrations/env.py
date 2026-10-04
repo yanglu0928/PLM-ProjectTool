@@ -41,6 +41,7 @@ from plm_assistant.modules.ai.infrastructure import model_orm  # noqa: F401 - re
 from plm_assistant.modules.ai.infrastructure import prompt_orm  # noqa: F401 - register AI-03 tables
 from plm_assistant.modules.ai.infrastructure import task_orm  # noqa: F401 - register AI-04 Task/Invocation tables
 from plm_assistant.modules.ai.infrastructure import egress_orm  # noqa: F401 - register AI-04 Egress preview tables
+from plm_assistant.modules.rag.infrastructure import orm as rag_orm  # noqa: F401 - register RAG-01 tables
 
 
 config = context.config
