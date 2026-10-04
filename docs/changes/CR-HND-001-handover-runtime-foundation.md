@@ -33,6 +33,10 @@ SC-01 的 HND-02 owned-table 清单列出 Item/Evidence/Capability/Option，却�
 
 编码前复核发现，把三 Root、来源/Item 完整性和 Action 状态机放入同一个迁移会同时解决 Analysis 快照与 Action 流程两个独立问题，并显著扩大单次回滚面。依据“一项 WBS 只解决一个明确问题”，`HND-01-A02` 收窄为 HND-01/HND-02 的八表 Analysis foundation；HND-03 不取消、不改合同，顺延到 `HND-02-A01` 独立增量。该分拆不改变冻结 Root、字段、Operation、权限或验收标准；只改变实施批次，并要求 HND-03 完成前不得开放依赖缺失资料 Action 的 Review/HTTP 闭环。
 
+## 2026-10-05 Review 顺序补记
+
+`HND-01-A04-A01` 进一步确认：Draft Item 全为 CANDIDATE，而缺资料/待确认项必须先有 Action 承接；若完整实现 Review 后再实现 HND-03，会在“已确认Item才能建Action”与“缺资料有Action才能送审”之间形成顺序死锁。正式 `CR-HND-002` 选择由受权项目成员以明确actor/reason从固定DRAFT候选Item人工登记Action，且登记不确认Item；因此实施顺序调整为先完成 `HND-02-A01` 及Action Owner，再返回 `HND-01-A04-A02`。本补记不覆盖CR-HND-002的迁移、验证与回滚要求。
+
 ## 验证与剩余风险
 
 本项静态交叉核对冻结 DM-05、SC-01/02、API-04、模块边界、Workflow 六阶段定义与当前源码，确认 3 Root、20 Operation 和零运行实现；只标记 `HND_01_A01_RUNTIME_PRECHECK_PASS`。POC-03 质量、真实客户确认、正式资料导入、Review/Trace/Workflow回接、性能、正式信任和目标平台发行仍未验证，不得据此关闭 Gate 3。

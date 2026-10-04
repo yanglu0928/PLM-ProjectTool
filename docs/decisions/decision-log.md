@@ -8228,3 +8228,11 @@
 - Reason：外部Owner事实会随时间失效，写回不可变快照会破坏追溯；重放若返回当前结果会违反幂等。缺资料在HND-03建立前没有可关闭待办，不能被Validate PASS掩盖。
 - Impact/Rollback：复用Schema0097，无Migration/公开HTTP/依赖/配置/网络或外发。停装配Owner即可关闭新验证，历史Audit/收据保留；HND-03 Action仍是正式Review前置。
 - Verification：Win11/PG18.6 PASS/重放、Evidence失效、缺资料Action要求、Audit回滚恢复及零状态转换通过；定向27、后端2613/3跳过；wheel解包定向27，SHA-256 `af5d4d49abbc412cf98b5806a39f73676ab504dc0d055bdb0dd2eed4dc028d9f`。
+
+# DEC-20261005-852：先建立人工 Action 承接再开放 Handover Review
+
+- Date/WBS：2026-10-05 / `HND-01-A04-A01`；依据冻结DM-05/API-02/API-04、Schema0034/0035/0097、CR-HND-001及CR-HND-002。
+- Decision：Review批准确认问题清单而不关闭问题。受权PM/IM可用明确actor/reason从固定DRAFT候选Item人工创建Action且不改变Item状态；每个source_missing/NEED_CONFIRM必须先有同源且未被无替代取消的Action才能送审。先实施HND-03，再返回Handover Review；APPROVED时CANDIDATE仅受控投影为CONFIRMED。
+- Reason：当前Draft Item全为CANDIDATE且HND-03不存在；先Review会留下无待办承接的正式缺口，坚持确认后才建Action又形成顺序死锁。终态自动建Action缺Owner/期限/类型/reason且越过人工创建边界。
+- Impact/Rollback：纯文档顺序调整，无Schema/API行为/依赖/配置/网络或外发。可停止后续实现并保留CR；不得删除合法历史或把Review APPROVED、Item CONFIRMED、Action CLOSED混为同一事实。
+- Verification：静态交叉核对冻结DM/API、Review Project内核、Handover Schema0097与CR-HND-001，标记`HND_01_A04_A01_REVIEW_PRECHECK_PASS`；未运行新增程序测试。
