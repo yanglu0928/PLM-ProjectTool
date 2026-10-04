@@ -7788,3 +7788,11 @@
 - Reason：若先调网络再记录RUNNING，进程在请求后崩溃时会把已可能计费/外发的批次误当未发送并重放。仅检查历史授权也无法抵御撤销、模型停用、Provider配置切换或Chunk受限。
 - Impact/Rollback：新增内部Schema0082、应用/仓储服务，无API、依赖、Secret解密或真实Provider I/O。无fenced历史可降0081；已fenced历史拒降并向前修复。
 - Verification：Win11/PG18.6标记`RAG_03_A04_P01_BATCH_SEND_FENCE_PASS`；错误payload拒绝、正确Batch原子RUNNING、实际过期RUNNING→UNKNOWN/不重发及历史拒降通过。后端2390/3跳过，wheel隔离31项，SHA-256 `73414666a86943ae4f0da933c7992191f56a9f1bc485428d803972790d213c85`。首轮验证暴露Schema0082误引用不存在的Job `started_at`，改为Attempt `started_at`后完整重跑通过；失败库已自动清理。
+
+# DEC-20261004-797：Embedding使用统一AI模块的确定性请求与Adapter Port
+
+- Date/WBS：2026-10-04 / `RAG-03-A04-P02`；依据`CR-RAG-003`、DEC-796及“业务模块只调统一AIService”约束。
+- Decision：Embedding请求/发送证明/Adapter Port定义在统一AI application模块；RAG不引用厂商SDK。外发payload使用确定性UTF-8 JSON，source proof独立固定Chunk身份/顺序/指纹，route/payload/source/时效必须同时匹配。
+- Reason：复用Chat envelope会引入message/response schema假设，而由RAG直接拼厂商JSON会绕过统一策略、Secret和审计边界。独立Provider-neutral合同可让生产Adapter只做受控映射。
+- Impact/Rollback：新增内部合同与测试，无Schema/API/依赖/真实网络；可删除新合同回退，不影响Schema0082历史。
+- Verification：合成Adapter单次调用、五类漂移拒绝和repr隐藏通过；后端2393/3跳过，wheel隔离34项，SHA-256 `a61a4193a6c7053fd88b7d5aa775c204c54c4a52c26765d651e5cb1b6118b137`。wheel首轮测试加载命令错误后已用discover更正并重跑通过。

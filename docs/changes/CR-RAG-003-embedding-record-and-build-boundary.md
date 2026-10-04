@@ -62,3 +62,9 @@ Windows11/PostgreSQL18.6 标记 `RAG_03_A03_P03_EXPIRED_RECONCILIATION_PASS`：�
 新增 `RAGEmbeddingBatchSendFenceService`和Schema0082。Worker必须在同一短事务中锁定当前Job/Lease/Attempt、RUNNING Build、BUILDING Index和精确PENDING Batch，重验payload/来源指纹与限额、Chunk ACTIVE/Scope/数据类别、未撤销且未过期的逐批授权、AVAILABLE Embedding Model、ACTIVE Provider及其当前可Embedding Config，然后才持久化 `PENDING→RUNNING`、fencing token和开始时间。事务提交后的回执仅是必要边界，不单独授权Provider调用；A04-P02仍须通过统一AIService复核Secret/端点策略并调用Adapter。
 
 Windows11/PostgreSQL18.6标记 `RAG_03_A04_P01_BATCH_SEND_FENCE_PASS`：错误payload指纹不产生状态变化，正确批次原子提交RUNNING，另一批保持PENDING；模拟租约过期后已fenced批次实际收敛为UNKNOWN/`RAG_PROVIDER_OUTCOME_UNKNOWN`且Job不重试，未发送批次取消，已fenced历史拒降。后端2390项通过/3跳过；wheel隔离31项，SHA-256 `73414666a86943ae4f0da933c7992191f56a9f1bc485428d803972790d213c85`。本项零Provider I/O、零Secret解密和零客户数据外发。
+
+## A04-P02 实施与结果
+
+统一AI模块新增Provider-neutral `AIEmbeddingEnvelope`、`AIEmbeddingSendProof`和`AIEmbeddingProviderAdapterPort`。Envelope以规范UTF-8 JSON固定外发文本顺序、Model key/revision和请求schema，另以source fingerprint绑定Chunk id/原ordinal/正文指纹；SendProof同时绑定Build/Batch/Job/Authorization、fencing token、route/payload/source fingerprint、字节/token与有效期。敏感正文和指纹字段不进repr。
+
+本地合成Adapter验证正确proof仅调用一次，route/payload/source/过期/顺序漂移全部失败关闭。后端2393项通过/3跳过；wheel隔离34项，SHA-256 `a61a4193a6c7053fd88b7d5aa775c204c54c4a52c26765d651e5cb1b6118b137`。首轮wheel命令误把Windows绝对文件路径当作Python模块名，测试未加载；改用discover pattern后3项通过，同一wheel的31项RAG测试也通过。本项零Provider I/O、零Secret解密和零客户数据外发。

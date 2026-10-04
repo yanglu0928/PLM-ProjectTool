@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-04：0.1.0-dev.0/RAG-03-A04-P02 新增统一AI模块的Provider-neutral Embedding Envelope、SendProof和Adapter Port；以确定性UTF-8 JSON绑定Build/Batch、Chunk顺序/指纹、Model revision、route/payload/source fingerprint、字节/token和有效期，敏感正文/指纹不进repr。兼容性/升级/回滚：内部合同增量，无Schema/API/依赖/真实网络；可回退新合同文件。验证：合成Adapter单次调用、五类漂移拒绝及repr隐藏PASS；后端2393/跳过3，wheel隔离34，SHA-256 `a61a4193a6c7053fd88b7d5aa775c204c54c4a52c26765d651e5cb1b6118b137`。已知问题：生产HTTPS Adapter/响应提交、READY/激活、三平台、性能、Gate3/UAT/发行包待完成。
+
 - 2026-10-04：0.1.0-dev.0/RAG-03-A04-P01 新增Embedding Batch网络前持久化发送栅栏与Schema0082；只有当前单次租约、Build/Index、payload/来源指纹、Chunk状态/类别、Authorization限额/有效期、AVAILABLE Embedding Model及ACTIVE Provider当前Config全部匹配时，Batch才能在独立事务中PENDING→RUNNING；返回凭据不单独授权Provider调用。兼容性/升级/回滚：内部Schema/服务增量，无API/真实网络；无fenced历史可降0081，已fenced历史拒降。验证：Win11/PG18.6错误payload拒绝、事务栅栏、RUNNING过期收敛UNKNOWN且不重发及拒降PASS；后端2390/跳过3，wheel隔离31，SHA-256 `73414666a86943ae4f0da933c7992191f56a9f1bc485428d803972790d213c85`。已知问题：统一AIService Embedding Adapter/响应提交、READY/激活、三平台、性能、Gate3/UAT/发行包待完成。
 
 - 2026-10-04：0.1.0-dev.0/RAG-03-A03-P03 新增过期 Embedding Build 原子对账与Schema0081；通用/RAG claim不再拆分处理过期RAG Job，专用Reconciler在同一事务终结Job/Lease/Attempt/Build/Index/未发送Batch并写SYSTEM Audit，Audit失败整体回滚。兼容性/升级/回滚：内部Schema/服务增量，无API/网络；无对账历史可降0080，已对账历史拒降。验证：Win11/PG18.6原子收敛、回滚、旧Worker拒绝、历史保留PASS；后端2384/跳过3，wheel隔离25，SHA-256 `1df2985741d742aca64516b24f27eb4b868e7c84f1b5377533fe1a2a3357d70b`。已知问题：Batch发送栅栏/Adapter/响应提交、READY/激活、三平台、性能、Gate3/UAT/发行包待完成。
