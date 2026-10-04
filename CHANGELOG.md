@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-04：0.1.0-dev.0/RAG-03-A01 完成EmbeddingRecord/Build编码前核查并登记CR-RAG-003：锁定Python pgvector类型依赖方向、逻辑vector复合约束、仅768/1024预建HNSW、唯一Build Owner/generation/批次与网络前RUNNING栅栏；未知维度和未知网络结果均失败关闭。兼容性/升级/回滚：纯文档，无Schema/API/依赖/外发变化；A02规划空表可降、有历史拒降。验证：静态核对依赖、Adapter/Worker、Schema0077守卫、PoC维度与Egress类型。已知问题：A02～A05、API、性能、三平台、Gate3/UAT/发行包待完成。
+
 - 2026-10-04：0.1.0-dev.0/RAG-02-A02 新增EmbeddingIndex/精确Chunk快照Schema0077：同事务封存模型/维度、Scope/Project、purpose/version、profile与有序Chunk集合，提交时复算count/ordinal/SHA-256；成员不可变，Build Owner未安装前只允许PLANNED。兼容性/升级/回滚：内部新增表，无API/依赖/外发；空表可降0076，有历史拒降。验证：Win11/PG18.6空/历史库迁移、drift及全套负例通过，定向14、后端2356/跳过3、wheel828项。已知问题：Embedding/HNSW/Build/激活/API、三平台、性能、Gate3/UAT/发行包待完成。
 
 - 2026-10-04：0.1.0-dev.0/RAG-02-A01 完成EmbeddingIndex编码前核查并登记CR-RAG-002：Index固定Scope/Project、purpose/version、AIModel/dimension、Chunk profile和逐Chunk精确来源快照；A02仅开放PLANNED持久化，Embedding/Validation/Build未完成前拒绝状态转换。兼容性/升级/回滚：纯文档，无Schema/API/依赖/外发变化；规划空表可降、有历史拒降。验证：静态核对冻结DM/SC/API、AIModel、Egress INDEX_BUILD/REBUILD、Schema0076与维度/DDL边界。已知问题：A02、Build/HNSW/激活/API、质量/Gate3/UAT/发行包待完成。

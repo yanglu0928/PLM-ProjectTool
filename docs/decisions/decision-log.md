@@ -7740,3 +7740,11 @@
 - Reason：应用先建root再异步补成员会让同一Index身份短暂或永久对应不完整输入，也允许并发Chunk变化污染构建。事务封存让source snapshot成为一次提交事实，并让后续Build按固定集合执行。
 - Impact/Rollback：新增内部Schema0077/ORM，无API、依赖、向量或外发。空表可降0076；有历史拒降。聚合fingerprint在创建事务执行，后续大规模容量须在RAG-03性能验证中测量，不能以Runtime动态DDL规避。
 - Verification：Win11/PG18.6标记`RAG_02_A02_EMBEDDING_INDEX_SCHEMA_PASS`；定向14、后端2356通过/3跳过；wheel828项 SHA-256 `4169d67bcca6e8271aed693a36f15f00e361440ca8048f3b1ac96fe22d53d9ee`。零Provider I/O和客户数据。
+
+# DEC-20261004-791：Embedding 首版只开放受控维度并以发送前栅栏关闭重复外发
+
+- Date/WBS：2026-10-04 / `RAG-03-A01`；依据 `CR-RAG-003`、DEC-789/790、冻结 DM-04/SC-02～04。
+- Decision：生产加入锁定 Python pgvector 类型依赖；EmbeddingRecord 使用逻辑无界vector和数据库维度/来源复合约束，首版只由Migration为PoC已验证的768/1024维预建HNSW。未知维度不得Runtime DDL或激活。构建按唯一Owner/generation/批次执行，网络调用前必须提交RUNNING发送栅栏，发送后结果未知不自动重发。
+- Reason：Python端当前无vector类型适配，且模型维度可能变化；为任意维度动态DDL会扩大Runtime权限，缺少发送栅栏则崩溃恢复可能重复计费/外发。只开放实证维度并保持PLANNED失败关闭，可以在不虚报质量的前提下逐步落地。
+- Impact/Rollback：A01仅文档；A02将新增内部Schema0078、`pgvector==0.5.0`和768/1024 HNSW，不改公共API。空表可降，有向量/构建历史拒绝物理降级并保留审计。MIT第三方Notice复核前发行阻塞不解除。
+- Verification：静态核对pyproject、生产Adapter/Worker、Schema0077状态守卫、PoC 768/1024证据及既有Egress INDEX_BUILD/REBUILD；确认当前不存在可发送或可写向量路径，Gate3保持开放。
