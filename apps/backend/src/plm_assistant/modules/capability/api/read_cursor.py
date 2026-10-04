@@ -92,6 +92,15 @@ class CapabilityBaselineCursorCodec:
                 json.JSONDecodeError):
             raise ApplicationError("REQUEST_MALFORMED") from None
 
+    def decode_bound(self, token: str, *, session_token: bytes,
+                     page_size: int) -> tuple[uuid.UUID, str]:
+        return _decode_visibility(
+            lambda visibility: self.decode(
+                token, session_token=session_token, page_size=page_size,
+                visibility=visibility,
+            )
+        )
+
 
 class CapabilityChildCursorCodec:
     _FIELDS = {"v", "family", "scope", "session", "query", "position"}
@@ -149,3 +158,25 @@ class CapabilityChildCursorCodec:
         except (TypeError, ValueError, KeyError, OverflowError, UnicodeDecodeError,
                 json.JSONDecodeError):
             raise ApplicationError("REQUEST_MALFORMED") from None
+
+    def decode_bound(self, token: str, *, family: str, scope_id: uuid.UUID,
+                     session_token: bytes, page_size: int) -> tuple[int, str]:
+        return _decode_visibility(
+            lambda visibility: self.decode(
+                token, family=family, scope_id=scope_id,
+                session_token=session_token, page_size=page_size,
+                visibility=visibility,
+            )
+        )
+
+
+def _decode_visibility(decoder):
+    matched = []
+    for visibility in ("ADMIN_HISTORY", "CURRENT_APPROVED"):
+        try:
+            matched.append((decoder(visibility), visibility))
+        except ApplicationError:
+            pass
+    if len(matched) != 1:
+        raise ApplicationError("REQUEST_MALFORMED")
+    return matched[0]

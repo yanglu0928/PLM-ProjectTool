@@ -22,6 +22,7 @@ class CapabilityReadError(RuntimeError):
 class CapabilityReadQuery:
     session_token: bytes = field(repr=False)
     trace_id: uuid.UUID
+    expected_visibility: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -80,6 +81,7 @@ class CapabilityBaselinePage:
     items: tuple[CapabilityBaselineView, ...]
     next_position: uuid.UUID | None
     has_more: bool
+    visibility: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -87,6 +89,7 @@ class CapabilityVersionPage:
     items: tuple[CapabilityVersionView, ...]
     next_position: int | None
     has_more: bool
+    visibility: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,6 +97,7 @@ class CapabilityItemPage:
     items: tuple[CapabilityItemView, ...]
     next_position: int | None
     has_more: bool
+    visibility: str = ""
 
 
 class CapabilitySessionAccessPort(Protocol):
@@ -214,6 +218,9 @@ class CapabilityReadService:
             self._guard.require_valid(trace_id=query.trace_id)
             with self._uow() as tx:
                 visibility = self._visibility(tx, query)
+                if (query.expected_visibility is not None
+                        and query.expected_visibility != visibility):
+                    raise CapabilityReadError("VALIDATION_FAILED")
                 return operation(tx, visibility)
         except CapabilityReadError:
             raise
@@ -249,7 +256,9 @@ class CapabilityReadService:
         )
         self._validate_rows(rows, CapabilityBaselineView, page_size + 1)
         items, more = rows[:page_size], len(rows) > page_size
-        return CapabilityBaselinePage(items, items[-1].baseline_id if more else None, more)
+        return CapabilityBaselinePage(
+            items, items[-1].baseline_id if more else None, more, visibility,
+        )
 
     def _page_versions(self, tx: object, visibility: str, baseline_id: uuid.UUID,
                        page_size: int, after: int | None) -> CapabilityVersionPage:
@@ -259,7 +268,9 @@ class CapabilityReadService:
         )
         self._validate_rows(rows, CapabilityVersionView, page_size + 1)
         items, more = rows[:page_size], len(rows) > page_size
-        return CapabilityVersionPage(items, items[-1].version_no if more else None, more)
+        return CapabilityVersionPage(
+            items, items[-1].version_no if more else None, more, visibility,
+        )
 
     def _page_items(self, tx: object, visibility: str, baseline_id: uuid.UUID,
                     version_id: uuid.UUID, page_size: int,
@@ -271,7 +282,9 @@ class CapabilityReadService:
         )
         self._validate_rows(rows, CapabilityItemView, page_size + 1)
         items, more = rows[:page_size], len(rows) > page_size
-        return CapabilityItemPage(items, items[-1].ordinal if more else None, more)
+        return CapabilityItemPage(
+            items, items[-1].ordinal if more else None, more, visibility,
+        )
 
     @staticmethod
     def _validate_rows(rows: object, row_type: type, maximum: int) -> None:
@@ -284,7 +297,9 @@ class CapabilityReadService:
     def _validate_query(query: CapabilityReadQuery) -> None:
         if (type(query) is not CapabilityReadQuery
                 or type(query.session_token) is not bytes or len(query.session_token) != 32
-                or type(query.trace_id) is not uuid.UUID or query.trace_id.int == 0):
+                or type(query.trace_id) is not uuid.UUID or query.trace_id.int == 0
+                or query.expected_visibility not in (
+                    None, "ADMIN_HISTORY", "CURRENT_APPROVED")):
             raise CapabilityReadError("VALIDATION_FAILED")
 
     @staticmethod

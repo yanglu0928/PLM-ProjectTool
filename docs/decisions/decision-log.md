@@ -8172,3 +8172,11 @@
 - Reason：按当前Review状态拼重放会冒充首次响应；Capability自建Review写链会破坏唯一状态机和Subject锁。冻结Review Schema未存调度/备注，默默忽略会丢数据。
 - Impact/Rollback：无Migration/依赖/配置/网络/外发；默认Router仍关闭，停止注入即关闭流量，已提交Review历史保留。通用调度能力须后续独立CR。
 - Verification：定向6、Win11/PG18.6原子送审/回滚/重放与终态回归、后端2589/3跳过；wheel Capability/Review58+解包Migration4，SHA-256 `9289eea0d7a4b1a046d564dd186e2a19372d4c06ece5b99f3f3805602dba1d2d`。
+
+# DEC-20261005-845：Capability 续页在 Owner 事务内重验游标权限投影
+
+- Date/WBS：2026-10-05 / `CAP-01-A05-A06`；依据冻结API-01/API-04、DEC-840/841及Schema0095。
+- Decision：五个读取Operation由一个显式注入Router承载，默认保持404。游标从签名query绑定恢复`ADMIN_HISTORY`或`CURRENT_APPROVED`，作为expected visibility传入Owner；Owner在当次Session/User/Project事实读取的同一UOW内比对，不符即拒绝。Baseline与子资源使用独立HMAC密钥域，子资源继续绑定family/scope。
+- Reason：HTTP在调Owner前不知当前权限投影；若只在事务外解码或两次独立授权，角色/成员关系可在窗口内变化。不绑定投影又会让管理员历史游标在降权后被当成成员游标续用。
+- Impact/Rollback：无Schema/Migration/依赖/配置/外发；内部Query/Page尾部增加带默认的visibility字段，旧两/三参数构造兼容。停注入Router可关闭流量，历史不改写。
+- Verification：读取Owner/游标/合同18、Win11/PG18.6真实投影回归、后端2594/3跳过；wheel Capability/Review63+解包Migration4，SHA-256 `583680a9af014e66d4a7133dbfa424a8c055e1f9cf129c0bc110898dbfed0ba5`。

@@ -214,6 +214,15 @@ class CapabilityReadServiceTests(unittest.TestCase):
             self.service.list_baselines(self.query, page_size=20)
         self.assertEqual("CAPABILITY_UNAVAILABLE", raised.exception.code)
 
+    def test_cursor_visibility_is_rechecked_in_owner_transaction(self):
+        self.repository.rows = (_baseline(1),)
+        with self.assertRaises(CapabilityReadError) as raised:
+            self.service.list_baselines(
+                CapabilityReadQuery(SESSION, uuid.uuid4(), "CURRENT_APPROVED"),
+                page_size=20,
+            )
+        self.assertEqual("VALIDATION_FAILED", raised.exception.code)
+
 
 if __name__ == "__main__":
     unittest.main()

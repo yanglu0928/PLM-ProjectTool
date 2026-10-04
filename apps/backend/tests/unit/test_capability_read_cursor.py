@@ -26,6 +26,9 @@ class CapabilityReadCursorTests(unittest.TestCase):
             token, session_token=self.session, page_size=25,
             visibility="ADMIN_HISTORY",
         ))
+        self.assertEqual((position, "ADMIN_HISTORY"), self.baseline.decode_bound(
+            token, session_token=self.session, page_size=25,
+        ))
         for kwargs in (
             {"session_token": b"x" * 32, "page_size": 25,
              "visibility": "ADMIN_HISTORY"},
@@ -47,6 +50,10 @@ class CapabilityReadCursorTests(unittest.TestCase):
             token, family="capability-versions", scope_id=self.scope,
             session_token=self.session, page_size=10,
             visibility="CURRENT_APPROVED",
+        ))
+        self.assertEqual((9, "CURRENT_APPROVED"), self.child.decode_bound(
+            token, family="capability-versions", scope_id=self.scope,
+            session_token=self.session, page_size=10,
         ))
         for family, scope in (
             ("capability-items", self.scope),
