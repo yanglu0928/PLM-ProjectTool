@@ -9,6 +9,15 @@ from plm_assistant.modules.ai.infrastructure.task_orm import AITaskRow
 from plm_assistant.modules.jobs.application.authorized_read import JobReadError, JobReadFacts
 from plm_assistant.modules.jobs.infrastructure.orm import JobRow
 
+_VALID_TASK_JOB_STATE_PAIRS = frozenset({
+    ("QUEUED", "PENDING"),
+    ("RUNNING", "RUNNING"),
+    ("SUCCEEDED", "SUCCEEDED"),
+    ("FAILED", "FAILED"),
+    ("CANCEL_REQUESTED", "CANCEL_REQUESTED"),
+    ("CANCELLED", "CANCELLED"),
+})
+
 
 class SqlAlchemyAITaskJobReadRepository:
     def retryable(self, transaction: object, *, facts: JobReadFacts) -> bool:
@@ -29,7 +38,7 @@ class SqlAlchemyAITaskJobReadRepository:
                 (facts.job_id, facts.owner_module, facts.job_type, facts.scope,
                  facts.project_id, facts.actor_id, facts.state,
                  facts.attempt_count, facts.lock_version)
-                or task.task_state != job.state
+                or (task.task_state, job.state) not in _VALID_TASK_JOB_STATE_PAIRS
                 or task.suggestion_state != "NONE"):
             raise JobReadError()
         return (task.task_state == "CANCELLED"

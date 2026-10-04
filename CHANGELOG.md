@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-04：0.1.0-dev.0/AI-05-A07 完成Windows11真实AI工作台浏览器闭环：三步创建后进入Task详情，验证固定输入、QUEUED/NONE与空Invocation，进入既有Job详情验证AI_TASK_EXECUTE/ai/PENDING，再返回工作台确认同一Task/Job回显。真实Edge发现Job Owner读取错误要求Task/Job状态字符串相等，导致合法`QUEUED/PENDING`返回503；按CR-AI-022改为显式封闭状态对并保持未知组合失败关闭。兼容性/升级/回滚：无API/Schema/Migration/依赖变化，撤内部修复会恢复Job详情故障；历史事实不改写。验证：相关9、后端全量2349/跳过3、开发wheel 823项及真实Edge/PG四类读取200、数据库1 Task/1 Job/0 Invocation与临时资源清理通过。已知问题：Accept/Reject真实Draft Owner、RAG、Gate3/UAT和正式发行包待完成；Server2025及Debian13本项未验。
+
 - 2026-10-04：0.1.0-dev.0/AI-05-A06-P04 完成Windows11真实浏览器/PG提交闭环：实际构建Vue经同源代理访问生产FastAPI和一次性PostgreSQL18.6，完成登录、项目/AI工作台、受控Options、固定文档、Preview、明确Authorize和Task Create；数据库证明1 Preview、1 Authorization、1 QUEUED AI Task、1 PENDING Job、0 Invocation并完成全部临时资源清理。真实Edge发现Options把原生`fetch`作为类方法调用导致`Illegal invocation`，已改为无接收器调用并增加回归。兼容性/升级/回滚：无API/Schema/依赖变化，前端单行兼容修复可回滚但会恢复Edge故障；验证夹具仅使用合成数据和无效Provider地址。验证：定向7、前端全量67文件/1250项、typecheck、Vite145模块构建及四阶段视觉检查通过。已知问题：AI-05-A07完整工作台浏览器验收、Accept/Reject目标Draft Owner、Gate3/UAT/正式发行包待完成；Server2025及Debian13本项未验。
 
 - 2026-10-03：0.1.0-dev.0/AI-05-A06-P03 新增AI任务三步提交页：从服务器选项和固定DocumentVersion生成Preview，展示region/来源/载荷/风险后要求ProjectManager勾选本轮明确授权，再独立创建Task；未知结果保留操作号，不自动重试，可在建Task前撤销授权。兼容性/升级/回滚：纯前端，无API/Schema/依赖变化，可删除页面/路由/入口回滚。验证：定向10、前端全量1249、typecheck、Vite 145模块构建通过。已知问题：ImplementationMember跨账户授权接力、真实PG/浏览器、Accept/Reject、Gate3/UAT/发行包待完成。

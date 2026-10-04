@@ -4,7 +4,8 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const [origin, projectId, outputRoot] = process.argv.slice(2);
+const [origin, projectId, outputRoot, mode] = process.argv.slice(2);
+const verifyWorkbench = mode === "--workbench";
 if (!origin?.startsWith("http://127.0.0.1:") || !/^[0-9a-f-]{36}$/.test(projectId ?? "") || !outputRoot) {
   throw new Error("origin, project id and output root required");
 }
@@ -56,6 +57,11 @@ async function clickText(text) {
   const clicked = await evaluate(`(() => { const node = [...document.querySelectorAll('a,button')]
     .find((item) => item.textContent.trim() === ${JSON.stringify(text)}); if (!node) return false; node.click(); return true; })()`);
   if (!clicked) throw new Error(`Missing action: ${text}`);
+}
+async function clickTextStartingWith(text) {
+  const clicked = await evaluate(`(() => { const node = [...document.querySelectorAll('a,button')]
+    .find((item) => item.textContent.trim().startsWith(${JSON.stringify(text)})); if (!node) return false; node.click(); return true; })()`);
+  if (!clicked) throw new Error(`Missing action starting with: ${text}`);
 }
 async function screenshot(name) {
   const result = await send("Page.captureScreenshot", { format: "png", captureBeyondViewport: true });
@@ -129,7 +135,63 @@ try {
     throw new Error(`Unexpected browser result: ${JSON.stringify(result)}`);
   }
   const finalShot = await screenshot("04-created.png");
-  console.log(JSON.stringify({ status: "PASS", ...result, screenshot: finalShot }));
+  if (!verifyWorkbench) {
+    console.log(JSON.stringify({ status: "PASS", ...result, screenshot: finalShot }));
+  } else {
+    const identifiers = await evaluate(`(() => {
+      const links = [...document.querySelectorAll('section.created a')];
+      const task = links.find((item) => item.textContent.trim() === '查看AI任务详情');
+      const href = task?.getAttribute('href') ?? '';
+      const taskId = href.split('/').at(-1) ?? null;
+      return { taskId: /^[0-9a-f-]{36}$/.test(taskId ?? '') ? taskId : null };
+    })()`);
+    if (!identifiers.taskId) throw new Error("Created task identifier was not exposed by the safe detail link");
+    await clickText("查看AI任务详情");
+    await waitFor("document.body.innerText.includes('当前任务尚无可见调用记录。')", "AI task detail and empty invocation history");
+    const taskDetail = await evaluate(`(() => ({ text: document.querySelector('.ai-task-detail')?.innerText ?? '',
+      jobHref: [...document.querySelectorAll('.ai-task-detail a')].find((item) => item.textContent.trim().startsWith('打开运行任务'))?.getAttribute('href') ?? null,
+      alerts: [...document.querySelectorAll('[role=alert]')].map((item) => item.innerText), url: location.href }))()`);
+    if (taskDetail.alerts.length || !taskDetail.text.includes('QUEUED') || !taskDetail.text.includes('NONE（仍需人工确认）')
+        || !taskDetail.text.includes('固定版本') || !taskDetail.jobHref?.match(/\/jobs\/[0-9a-f-]{36}$/)) {
+      throw new Error(`Unexpected task detail: ${JSON.stringify(taskDetail)}`);
+    }
+    const jobId = taskDetail.jobHref.split('/').at(-1);
+    await screenshot("05-task-detail.png");
+    await clickTextStartingWith("打开运行任务");
+    await waitFor("document.body.innerText.includes('运行任务详情') && document.body.innerText.includes('AI_TASK_EXECUTE')", "job detail");
+    const jobDetail = await evaluate(`(() => ({ text: document.body.innerText,
+      alerts: [...document.querySelectorAll('[role=alert]')].map((item) => item.innerText), url: location.href }))()`);
+    if (jobDetail.alerts.length || !jobDetail.text.includes('状态\nPENDING') || !jobDetail.text.includes('来源模块\nai')
+        || jobDetail.url !== `${origin}/projects/${projectId}/jobs/${jobId}`) {
+      throw new Error(`Unexpected job detail: ${JSON.stringify(jobDetail)}`);
+    }
+    await screenshot("06-job-detail.png");
+    await evaluate("history.back(); true");
+    await waitFor("document.body.innerText.includes('任务详情与运行历史') && document.body.innerText.includes('当前任务尚无可见调用记录。')", "task detail after browser back");
+    await clickText("返回AI任务列表");
+    await waitFor(`document.body.innerText.includes('任务与建议状态') && document.body.innerText.includes(${JSON.stringify(identifiers.taskId)})`, "created task in workbench list");
+    const workbench = await evaluate(`(() => ({ text: document.querySelector('.ai-workbench')?.innerText ?? '',
+      alerts: [...document.querySelectorAll('[role=alert]')].map((item) => item.innerText), url: location.href }))()`);
+    if (workbench.alerts.length || !workbench.text.includes('等待执行') || !workbench.text.includes('暂无建议')
+        || !workbench.text.includes(jobId) || workbench.url !== `${origin}/projects/${projectId}/ai`) {
+      throw new Error(`Unexpected workbench list: ${JSON.stringify(workbench)}`);
+    }
+    const workbenchShot = await screenshot("07-workbench.png");
+    const apiResponses = observations.filter((item) => item.type === 'response');
+    const requiredFragments = [
+      `/ai-tasks/${identifiers.taskId}`,
+      `/ai-tasks/${identifiers.taskId}/invocations`,
+      `/jobs/${jobId}`,
+      `/projects/${projectId}/ai-tasks?page_size=50`,
+    ];
+    const missing = requiredFragments.filter((fragment) => !apiResponses.some((item) => item.status === 200 && item.url.includes(fragment)));
+    if (missing.length) throw new Error(`Missing successful API observations: ${JSON.stringify({ missing, apiResponses })}`);
+    console.log("AI_05_A07_WINDOWS_WORKBENCH_PASS");
+    console.log(JSON.stringify({ status: "PASS", taskId: identifiers.taskId, jobId,
+      taskState: "QUEUED", suggestionState: "NONE", jobState: "PENDING", invocationCount: 0,
+      screenshots: [finalShot, join(outputRoot, "05-task-detail.png"), join(outputRoot, "06-job-detail.png"), workbenchShot],
+      observedApiResponses: requiredFragments.length }));
+  }
   socket.close();
 } finally {
   browser.kill();

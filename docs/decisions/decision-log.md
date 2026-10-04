@@ -7700,3 +7700,11 @@
 - Reason：jsdom/mock函数不检查Web IDL接收器，原定向和全量单测均产生假阴性；Edge对原生`Window.fetch`执行接收器校验，导致Options在网络请求前失败，真实提交页无法使用。此修复不放宽响应校验、授权或重试语义。
 - Impact/Rollback：前端一行兼容修复和验证夹具；无API、Schema、Migration、依赖、策略或客户数据变化。可回滚代码但会恢复Edge阻断，故不建议。托管浏览器内核因本机运行资产路径缺失不可用，验收改用本机Edge DevTools Protocol驱动实际构建产物；该偏差只影响验证通道，已保留截图和可重复脚本。
 - Verification：Edge154实际完成登录→项目→AI工作台→固定DocumentVersion→Preview→明确Authorize→Task Create；四阶段截图视觉通过。PostgreSQL18.6证明1/1/1/1与0 Invocation，全部临时资源清理；定向7、前端全量67文件/1250项、typecheck与Vite145模块构建通过，零Provider I/O。
+
+# DEC-20261004-786：AI Task 与 Job 状态必须使用显式跨聚合映射
+
+- Date/WBS：2026-10-04 / `AI-05-A07`；依据冻结Task/Job读取合同、实际创建状态与CR-AI-022。
+- Decision：Job Owner投影只接受封闭状态对：初始`QUEUED/PENDING`、运行`RUNNING/RUNNING`及同名终态/取消请求；禁止继续用字符串相等表达两个聚合的初始语义，也禁止用“任意非终态”放宽一致性。
+- Reason：Task的`QUEUED`表示业务任务已排队，Job的`PENDING`表示调度记录待领取，二者是同一时点的合法不同词汇。相等校验使真实成功创建后的Job详情稳定503，单元mock未覆盖实际仓储组合。
+- Impact/Rollback：内部读取修复与3项回归，无API、Schema、Migration、依赖、写状态机或历史数据变化；可撤但会恢复用户可见阻断。验证脚本首轮模板正则错误仅影响验证，已改为路径分段并用全新库复验。
+- Verification：相关9项、后端全量2349项/3跳过、wheel 823项通过；Edge154/PG18.6实际Task/Invocation/Job/List四类200、视觉检查和隔离资源清理通过，零Provider I/O。
