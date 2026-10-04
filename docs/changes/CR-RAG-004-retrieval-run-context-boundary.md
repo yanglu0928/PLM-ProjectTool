@@ -111,3 +111,9 @@ Schema0090新增冻结模型已有的RetrievalRun CANCELLED。PENDING直接取�
 新增Run/Result/Context当前受权读取Owner：同事务重验License、Session、Project/Department/Membership，创建者可读自身Run，ProjectManager/CustomerManager可监督读取，普通非创建者统一404语义。Result/Context锁定并逐次复验同Project的ACTIVE Document/Chunk和AVAILABLE Version，仅投影有界snippet、locator、整数分数与固定Bundle信息。
 
 按A06-P01最小化结论，API-03候选DTO中列示的query fingerprint不进入公开Run投影；该摘要仍只在数据库内部用于完整性/幂等，避免低熵query被离线枚举。此项作为CR-RAG-004的可追溯API安全收紧，原冻结提交不追写。Windows11/PostgreSQL18.6真实Run完成创建者/监督角色、普通成员/错Project、成员撤权和Document限制/恢复复验；后端2508/3跳过、wheel RAG135+Migration4通过，SHA-256 `e2d2dbb8419b7cfae18d13658bfbe493a19ea18140ebdfb107638d3dc26988b9`。无Migration/HTTP挂载/依赖/网络/外发；进入A06-P04严格HTTP合同。
+
+## A06-P04 实施与结果
+
+新增默认关闭的Create/Get/Result/Context可选Router。Create严格限定七字段、PROJECT/FTS-only/无rerank，并执行Origin、Session、CSRF与幂等控制；读取复用A06-P03当前授权DTO并在HTTP边界再次复核Project/Run绑定，只公开状态、来源、整数分数和最小snippet。默认应用仍404，取消、生产密钥/Worker与真实流量未提前开放。
+
+无Migration、依赖、网络或外发；Owner真实PG证据沿用A02-P02/P03，本合同项未重复数据库验证，P08负责真实HTTP全链。HTTP合同5、RAG135、后端2513/3跳过、wheel隔离RAG135+HTTP5+Migration4通过，SHA-256 `e70068a741ad18a0d5eda3796a813ad021f7da1e33b95b0149056567d5beca96`。首次wheel隔离命令因PowerShell参数不兼容未实际解包并作废，已在新目录以显式导入路径重跑通过。进入A06-P05双路径同Owner取消。

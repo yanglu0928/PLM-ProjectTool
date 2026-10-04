@@ -8012,3 +8012,11 @@
 - Reason：仅凭创建时授权会在成员撤权或文档限制后继续泄露正文；把普通项目成员全部视为“受权角色”会扩大横向可见性。query fingerprint对低熵业务查询存在离线枚举风险，内部完整性用途不要求向客户端暴露。
 - Impact/Rollback：新增内部应用/仓储Owner和三项Project读权限；CR-RAG-004明确收紧冻结候选DTO中的fingerprint字段，原冻结提交不追写。无Migration/HTTP挂载/依赖/网络/外发；可撤Owner/Router，历史不改写。
 - Verification：应用/权限12、RAG135、后端2508/3跳过；Win11/PG18.6真实Session、创建者/监督角色、普通成员/错Project、撤权、Document限制/恢复通过；wheel RAG135+Migration4，SHA-256 `e2d2dbb8419b7cfae18d13658bfbe493a19ea18140ebdfb107638d3dc26988b9`。
+
+# DEC-20261004-825：Retrieval 四个 HTTP Operation 先以默认关闭 Router 固定边界
+
+- Date/WBS：2026-10-04 / `RAG-04-A06-P04`；依据冻结API-03、CR-RAG-004、DEC-822～824。
+- Decision：Create/Get/Result/Context使用独立可选Router；默认应用不挂载。Create只接受七字段、PROJECT/FTS-only/无rerank合同，路径是Project唯一来源并执行Origin/Session/CSRF/幂等校验；读取只投影A06-P03安全DTO，并在HTTP边界复核Project/Run响应绑定。取消、生产组合和Worker不在本项提前开放。
+- Reason：把未完成Cancel/密钥/Worker组合的Router直接接入生产会把内部能力误表述为可用；HTTP层若信任Owner返回对象身份或宽松解析，还可能跨Scope响应或接受未来字段静默漂移。默认关闭可先冻结可测合同，再在P06由完整组合一次启用。
+- Impact/Rollback：无Migration、依赖、网络或外发；冻结URL和Operation保持，query fingerprint安全收紧沿用CR-RAG-004。撤除可选Router即可恢复原404，内部历史不改写。首次wheel隔离命令因PowerShell参数错误作废，已用新目录和显式导入路径重跑，不影响产品实现。
+- Verification：HTTP合同5、RAG135、后端2513/3跳过；wheel隔离RAG135+HTTP5+Migration4，SHA-256 `e70068a741ad18a0d5eda3796a813ad021f7da1e33b95b0149056567d5beca96`。Owner真实PG证据沿用A02-P02/P03；本项未重复PG，P08负责真实HTTP全链。
