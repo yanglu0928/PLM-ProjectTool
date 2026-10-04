@@ -7724,3 +7724,11 @@
 - Reason：把 Index 或向量复制到 Chunk 会在换模和代次重建时产生可变双事实；依赖数据库默认语言配置也会让三平台结果漂移。固定 `simple` 配置可复现，但不虚报为中文语义检索质量。
 - Impact/Rollback：新增内部 Schema0076/ORM，无公共 API、依赖、外发或客户数据。空表可降回0075；有历史拒绝物理降级，改用停止构建、受控状态或向前修复。原冻结提交不改写。
 - Verification：Win11/PG18.6 标记`RAG_01_A02_DOCUMENT_CHUNK_SCHEMA_PASS`；定向10、后端2352通过/3跳过；wheel 827项 SHA-256 `fed28e9a2409d58ec4d469886e8ec62759e1a905dedde8ed0617f8fdc7f239e0`。Server2025/Debian13和Gate3质量未验。
+
+# DEC-20261004-789：Index 来源快照固定到 Chunk 成员且半实现状态失败关闭
+
+- Date/WBS：2026-10-04 / `RAG-02-A01`；依据 `CR-RAG-002`、DEC-787/788、冻结 DM-04/SC-01～03/API-03。
+- Decision：EmbeddingIndex 固定模型/维度、Scope/Project、purpose/version、Chunk profile 和逐 Chunk 精确来源成员；只记录 DocumentVersion 不足以证明实际输入。A02 仅允许插入 PLANNED，EmbeddingRecord/Validation/Build Owner 完成前数据库拒绝状态转换和激活。
+- Reason：Chunk generation 可并发产生或被限制，仅靠版本清单会让同一 Index 身份对应不同实际输入；提前开放 READY/ACTIVE 则会产生无向量、无验证却可见的假索引。精确成员和关闭转换可保持输入可复现。
+- Impact/Rollback：本项先登记实施边界，无程序/Schema/API/依赖/外发；A02 将以Schema0077新增内部表。AIModel 后续失效不改历史，运行入口逐次重验。空表可降级，有历史拒降。
+- Verification：静态核对 AIModel ORM/state、AI Egress INDEX_BUILD/REBUILD、冻结 Index 状态/API、DocumentChunk0076、pgvector 2,000维和 Runtime禁止DDL边界；确认当前无Index/Build实现。

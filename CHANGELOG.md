@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-04：0.1.0-dev.0/RAG-02-A01 完成EmbeddingIndex编码前核查并登记CR-RAG-002：Index固定Scope/Project、purpose/version、AIModel/dimension、Chunk profile和逐Chunk精确来源快照；A02仅开放PLANNED持久化，Embedding/Validation/Build未完成前拒绝状态转换。兼容性/升级/回滚：纯文档，无Schema/API/依赖/外发变化；规划空表可降、有历史拒降。验证：静态核对冻结DM/SC/API、AIModel、Egress INDEX_BUILD/REBUILD、Schema0076与维度/DDL边界。已知问题：A02、Build/HNSW/激活/API、质量/Gate3/UAT/发行包待完成。
+
 - 2026-10-04：0.1.0-dev.0/RAG-01-A02 新增生产DocumentChunk/受控FTS Schema0076：数据库强制Scope/Project、DocumentVersion/成功ParseResult/hash/category、切分代次、来源不可变、状态与历史保留；正文使用确定性`simple` tsvector/GIN，Chunk不复制Index/模型/向量归属。兼容性/升级/回滚：内部新增表，无API/依赖/外发变化；空表可降0075，有历史拒降。验证：Win11/PG18.6空/历史库升降、drift、负例、FTS GIN通过，定向10、后端2352/跳过3、wheel827项。已知问题：Server2025/Debian13、Build/检索运行、分类/引用质量、Gate3/UAT与正式发行包未验。
 
 - 2026-10-04：0.1.0-dev.0/RAG-01-A01 完成生产RAG编码前核查：确认当前仅有PoC实现，生产后端尚无rag模块/表/路由；固定按DocumentChunk、EmbeddingIndex、EmbeddingRecord/Build、RetrievalRun/Context分层实施，PoC代码/已见数据不直接移植。兼容性/升级/回滚：纯文档，无API/Schema/Migration/依赖/外发变化。验证：静态核对冻结ADR/DM/SC/API、迁移头0075、Document ParseResult、AI Embedding Model与POC-03矩阵。已知问题：分类48%、引用74%仍FAIL；Gate3新独立集来源容量、Server2025/Debian和正式发行包仍待。
