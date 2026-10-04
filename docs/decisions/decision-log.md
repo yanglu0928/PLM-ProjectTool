@@ -8236,3 +8236,11 @@
 - Reason：当前Draft Item全为CANDIDATE且HND-03不存在；先Review会留下无待办承接的正式缺口，坚持确认后才建Action又形成顺序死锁。终态自动建Action缺Owner/期限/类型/reason且越过人工创建边界。
 - Impact/Rollback：纯文档顺序调整，无Schema/API行为/依赖/配置/网络或外发。可停止后续实现并保留CR；不得删除合法历史或把Review APPROVED、Item CONFIRMED、Action CLOSED混为同一事实。
 - Verification：静态交叉核对冻结DM/API、Review Project内核、Handover Schema0097与CR-HND-001，标记`HND_01_A04_A01_REVIEW_PRECHECK_PASS`；未运行新增程序测试。
+
+# DEC-20261005-853：Action Schema 初始只开放 OPEN Root 与唯一创建事件
+
+- Date/WBS：2026-10-05 / `HND-02-A01`；依据冻结DM-05/SC-01/02/API-04、CR-HND-001/002及Schema0097。
+- Decision：Schema0098物理化Action Root、response/evidence refs和append-only state events；初始只允许OPEN/v0 Root与同事务唯一seq0事件。人工ANALYSIS_ITEM来源可引用同项目DRAFT/CANDIDATE或APPROVED/CONFIRMED，登记不改变Item；HUMAN来源必须显式说明。响应/Evidence与全部生命周期更新在后续Owner前失败关闭。
+- Reason：先开放通用UPDATE会绕过SUBMITTED≠CLOSED、验证Evidence与resolution Trace；只建Root不建事件会失去状态来源。CR-HND-002要求候选Item可由人工先登记Action以解除Review顺序死锁。
+- Impact/Rollback：内部`0097 -> 0098`新增四表，无公开API/依赖/配置/网络或外发。空历史可降，有历史拒降并向前修复；本项不创建正式业务待办。
+- Verification：Win11/PG18.6降升/drift、合法候选来源、初始事件、跨项目/生命周期负例及拒降通过；定向15、后端2617/3跳过；wheel解包定向15，SHA-256 `21e6b7380edfb4116b9c72bc670eaff8ce09da14b4badeab9fc1f3b2f7ccf2c0`。

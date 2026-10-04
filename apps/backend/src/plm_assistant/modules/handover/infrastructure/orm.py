@@ -399,3 +399,212 @@ class HandoverItemOptionRow(Base):
     label: Mapped[str] = mapped_column(Text, nullable=False)
     description: Mapped[str | None] = mapped_column(Text)
     ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class HandoverActionItemRow(Base):
+    __tablename__ = "hnd_action_items"
+    __table_args__ = (
+        UniqueConstraint("action_item_id", "project_id",
+                         name="uq_hnd_actions__id_project"),
+        ForeignKeyConstraint(["project_id"], ["plm.prj_projects.project_id"],
+                             name="fk_hnd_actions__project", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["source_analysis_version_ref", "source_item_id"],
+            ["plm.hnd_analysis_items.handover_analysis_version_id",
+             "plm.hnd_analysis_items.analysis_item_id"],
+            name="fk_hnd_actions__source_item", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(["owner_ref"], ["plm.auth_users.user_id"],
+                             name="fk_hnd_actions__owner", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["created_by"], ["plm.auth_users.user_id"],
+                             name="fk_hnd_actions__creator", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["updated_by"], ["plm.auth_users.user_id"],
+                             name="fk_hnd_actions__updater", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["verified_by"], ["plm.auth_users.user_id"],
+                             name="fk_hnd_actions__verifier", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["resolution_trace_ref"], ["plm.trc_links.trace_link_id"],
+                             name="fk_hnd_actions__resolution_trace", ondelete="NO ACTION"),
+        CheckConstraint(
+            "(source_kind='ANALYSIS_ITEM' AND source_analysis_version_ref IS NOT NULL "
+            "AND source_item_id IS NOT NULL AND human_source_reason IS NULL) OR "
+            "(source_kind='HUMAN' AND source_analysis_version_ref IS NULL "
+            "AND source_item_id IS NULL AND human_source_reason IS NOT NULL "
+            "AND char_length(human_source_reason) BETWEEN 1 AND 2000 "
+            "AND human_source_reason=btrim(human_source_reason))",
+            name="ck_hnd_actions__source_shape",
+        ),
+        CheckConstraint(
+            "action_type IN ('PROVIDE_INFO','CONFIRM_DECISION','RESOLVE_CONFLICT',"
+            "'MITIGATE_RISK','DEFINE_SCOPE','OTHER')",
+            name="ck_hnd_actions__type",
+        ),
+        CheckConstraint("char_length(title) BETWEEN 1 AND 255 AND title=btrim(title)",
+                        name="ck_hnd_actions__title"),
+        CheckConstraint("jsonb_typeof(requested_input_spec)='object'",
+                        name="ck_hnd_actions__input_spec"),
+        CheckConstraint("priority IN ('LOW','MEDIUM','HIGH','URGENT')",
+                        name="ck_hnd_actions__priority"),
+        CheckConstraint(
+            "action_state IN ('OPEN','IN_PROGRESS','SUBMITTED','VERIFIED','CLOSED','CANCELLED')",
+            name="ck_hnd_actions__state",
+        ),
+        CheckConstraint("char_length(created_reason) BETWEEN 1 AND 2000 "
+                        "AND created_reason=btrim(created_reason)",
+                        name="ck_hnd_actions__created_reason"),
+        CheckConstraint("lock_version>=0", name="ck_hnd_actions__lock"),
+        Index("ix_hnd_actions__project_state_due", "project_id", "action_state",
+              "due_at", "action_item_id"),
+        Index("ix_hnd_actions__owner_state_due", "owner_ref", "action_state",
+              "due_at", "action_item_id"),
+        Index("ix_hnd_actions__source_item", "source_analysis_version_ref",
+              "source_item_id"),
+        {"schema": "plm"},
+    )
+
+    action_item_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"),
+    )
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    source_kind: Mapped[str] = mapped_column(Text, nullable=False)
+    source_analysis_version_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    source_item_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    human_source_reason: Mapped[str | None] = mapped_column(Text)
+    action_type: Mapped[str] = mapped_column(Text, nullable=False)
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    requested_input_spec: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    owner_ref: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    due_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6),
+                                              nullable=False)
+    priority: Mapped[str] = mapped_column(Text, nullable=False)
+    action_state: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'OPEN'"),
+    )
+    submitted_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6),
+    )
+    verified_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    verified_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6),
+    )
+    closed_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6),
+    )
+    resolution_trace_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    created_reason: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+    updated_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    updated_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+    lock_version: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("0"),
+    )
+
+
+class HandoverActionResponseRefRow(Base):
+    __tablename__ = "hnd_action_response_refs"
+    __table_args__ = (
+        UniqueConstraint("action_item_id", "document_version_id",
+                         name="uq_hnd_action_responses__action_version"),
+        UniqueConstraint("action_item_id", "ordinal",
+                         name="uq_hnd_action_responses__action_ordinal"),
+        ForeignKeyConstraint(
+            ["action_item_id", "project_id"],
+            ["plm.hnd_action_items.action_item_id", "plm.hnd_action_items.project_id"],
+            name="fk_hnd_action_responses__action", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["document_version_id", "document_id"],
+            ["plm.doc_document_versions.document_version_id",
+             "plm.doc_document_versions.document_id"],
+            name="fk_hnd_action_responses__document", ondelete="NO ACTION",
+        ),
+        CheckConstraint("ordinal>=0", name="ck_hnd_action_responses__ordinal"),
+        {"schema": "plm"},
+    )
+    action_response_ref_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"),
+    )
+    action_item_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    document_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    document_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class HandoverActionEvidenceRefRow(Base):
+    __tablename__ = "hnd_action_evidence_refs"
+    __table_args__ = (
+        UniqueConstraint("action_item_id", "evidence_id", "purpose",
+                         name="uq_hnd_action_evidence__action_evidence_purpose"),
+        UniqueConstraint("action_item_id", "ordinal",
+                         name="uq_hnd_action_evidence__action_ordinal"),
+        ForeignKeyConstraint(
+            ["action_item_id", "project_id"],
+            ["plm.hnd_action_items.action_item_id", "plm.hnd_action_items.project_id"],
+            name="fk_hnd_action_evidence__action", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(["evidence_id"], ["plm.evd_evidence_records.evidence_id"],
+                             name="fk_hnd_action_evidence__evidence", ondelete="NO ACTION"),
+        CheckConstraint("purpose IN ('SUBMISSION','VERIFICATION','RESOLUTION')",
+                        name="ck_hnd_action_evidence__purpose"),
+        CheckConstraint("ordinal>=0", name="ck_hnd_action_evidence__ordinal"),
+        {"schema": "plm"},
+    )
+    action_evidence_ref_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"),
+    )
+    action_item_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    evidence_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    purpose: Mapped[str] = mapped_column(Text, nullable=False)
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class HandoverActionStateEventRow(Base):
+    __tablename__ = "hnd_action_state_events"
+    __table_args__ = (
+        UniqueConstraint("action_item_id", "sequence_no",
+                         name="uq_hnd_action_events__action_sequence"),
+        ForeignKeyConstraint(
+            ["action_item_id", "project_id"],
+            ["plm.hnd_action_items.action_item_id", "plm.hnd_action_items.project_id"],
+            name="fk_hnd_action_events__action", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(["actor_id"], ["plm.auth_users.user_id"],
+                             name="fk_hnd_action_events__actor", ondelete="NO ACTION"),
+        CheckConstraint("sequence_no>=0", name="ck_hnd_action_events__sequence"),
+        CheckConstraint(
+            "from_state IS NULL OR from_state IN "
+            "('OPEN','IN_PROGRESS','SUBMITTED','VERIFIED','CLOSED','CANCELLED')",
+            name="ck_hnd_action_events__from_state",
+        ),
+        CheckConstraint(
+            "to_state IN ('OPEN','IN_PROGRESS','SUBMITTED','VERIFIED','CLOSED','CANCELLED')",
+            name="ck_hnd_action_events__to_state",
+        ),
+        CheckConstraint("char_length(reason) BETWEEN 1 AND 2000 AND reason=btrim(reason)",
+                        name="ck_hnd_action_events__reason"),
+        Index("ix_hnd_action_events__action_occurred", "action_item_id",
+              "occurred_at", "sequence_no"),
+        {"schema": "plm"},
+    )
+    action_state_event_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"),
+    )
+    action_item_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    sequence_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    from_state: Mapped[str | None] = mapped_column(Text)
+    to_state: Mapped[str] = mapped_column(Text, nullable=False)
+    actor_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    occurred_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+    )
+    trace_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
