@@ -8347,3 +8347,11 @@
 - Reason：数据库转换边界与应用权限/幂等编排具有不同回滚面；先固定提交期不变量，可阻止后续Owner或人工SQL产生半正式状态，同时不把Action承接误当问题关闭。拆分不改变冻结Operation或CR-HND-002业务语义。
 - Impact/Rollback：内部`0100 -> 0101`只替换/新增函数与延迟触发器，无表列/API/依赖/网络/外发。无Review历史可降并恢复0097守卫；存在送审/正式化/Item确认历史则拒降，只能向前修复。P02前生产Review写仍关闭。
 - Verification：Win11/PG18.6空库升降重升、既有DRAFT升级、drift、PROJECT绑定、Action覆盖、提前确认拒绝、批准原子投影与历史拒降通过；专项7、后端2662通过/3跳过，wheel解包导入PASS，SHA-256 `149a4c6e2b2d92fc07302346d9e2f43178e85ee9ad14ef6caa02c8d02058c046`。首次全量唯一失败为迁移合同仍断言0100，更新至0101后完整重跑PASS。
+
+# DEC-20261005-867：Handover复用PROJECT Review并以批准终态确认问题清单
+
+- Date/WBS：2026-10-05 / `HND-01-A04-A02-P02`；依据CR-HND-001/002/004、DEC-866、冻结DM-05/API-02。
+- Decision：HND-02注册真实PROJECT Subject Owner，政策固定`HANDOVER_ALL_V1`，复用通用Review create/start/decision/withdraw。送审重验全部当前业务事实和非取消Action覆盖；只有全员APPROVE终态再次重验并原子确认Item/替换正式指针，RETURN/WITHDRAW保持Item候选和旧正式指针。
+- Reason：Review批准表示问题清单正式确认，不等于HND-03问题已关闭；通用Review已有可靠的权限、幂等、审计和不可变历史，另建审批表会产生双事实。来源漂移时仍须允许PM撤回，以释放在审锁而不伪造批准。
+- Impact/Rollback：无新Schema revision/公开API/依赖/外发。CR-HND-004同时修复0101跨表字段解析和批准后升版旧限制；已有Review/批准历史不可删除，停止装配Owner仅关闭新写入。旧0101开发库需向前修复。
+- Verification：Win11/PG18.6真实create/start/approve、批准后新建V2、再次create/start/withdraw，最终V1 APPROVED/CONFIRMED且为正式指针、V2 RETURNED/CANDIDATE；定向36、后端2667通过/3跳过，wheel SHA-256 `3954fa5175350eb61ec36ea410d150f0e7ae56e4ccb1a5b014060922bc8e08eb`。

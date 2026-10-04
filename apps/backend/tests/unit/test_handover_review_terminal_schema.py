@@ -28,6 +28,11 @@ class HandoverReviewTerminalSchemaTests(unittest.TestCase):
         ):
             with self.subTest(required=required):
                 self.assertIn(required, sql)
+        self.assertIn(
+            "ELSIF TG_TABLE_NAME='hnd_analysis_items' THEN\n"
+            "      IF NEW.item_state<>'CANDIDATE' THEN",
+            self.migration._REVIEW_OWNER_GUARD,
+        )
 
     def test_action_coverage_and_terminal_projection_are_deferred(self):
         sql = (self.migration._REVIEW_START_INTEGRITY

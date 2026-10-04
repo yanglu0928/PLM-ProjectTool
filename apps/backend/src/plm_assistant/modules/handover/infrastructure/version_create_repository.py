@@ -78,7 +78,6 @@ class SqlAlchemyHandoverVersionCreateRepository:
             HandoverAnalysisRow.project_id == analysis.project_id,
             HandoverAnalysisRow.analysis_state == "ACTIVE",
             HandoverAnalysisRow.source_set_ref == analysis.source_set_ref,
-            HandoverAnalysisRow.current_approved_version_ref.is_(None),
             HandoverAnalysisRow.lock_version == analysis.lock_version,
             ~exists(select(1).where(
                 HandoverAnalysisVersionRow.handover_analysis_id

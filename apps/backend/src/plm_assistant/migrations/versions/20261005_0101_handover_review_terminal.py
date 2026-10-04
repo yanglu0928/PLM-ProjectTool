@@ -37,9 +37,10 @@ BEGIN
          OR NEW.review_round_ref IS NOT NULL THEN
         RAISE EXCEPTION 'HandoverAnalysisVersion initial state is invalid';
       END IF;
-    ELSIF TG_TABLE_NAME='hnd_analysis_items'
-       AND NEW.item_state<>'CANDIDATE' THEN
-      RAISE EXCEPTION 'Handover AnalysisItem initial state is invalid';
+    ELSIF TG_TABLE_NAME='hnd_analysis_items' THEN
+      IF NEW.item_state<>'CANDIDATE' THEN
+        RAISE EXCEPTION 'Handover AnalysisItem initial state is invalid';
+      END IF;
     END IF;
     RETURN NEW;
   END IF;
