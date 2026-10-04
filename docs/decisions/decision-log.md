@@ -7764,3 +7764,11 @@
 - Reason：一个授权覆盖多次网络调用会使逐次外发证据含糊；通用Job自动重试又可能在响应未知时重复计费/外发。逐批授权+单次Job尝试让后续Worker能在每次socket send前建立唯一栅栏，并把未知结果保守收敛。
 - Impact/Rollback：新增内部Schema0079/ORM，无API、网络或客户数据。Build/Batch状态仍封闭；空表可降0078，有历史拒降。P02才安装创建/claim与Index状态推进。
 - Verification：Win11/PG18.6标记`RAG_03_A03_P01_BUILD_PLAN_SCHEMA_PASS`；有效双批计划、迁移/drift/封存/拒降通过；后端2366/3跳过，wheel隔离24项，SHA-256 `94d7bddb4b89811f3e630d91c1e8d1360281d32d8dfc3420423ffe716d91c535`。零Provider I/O。
+
+# DEC-20261004-794：RAG Build 以专用单次租约和同事务双状态启动
+
+- Date/WBS：2026-10-04 / `RAG-03-A03-P02`；依据 `CR-RAG-003`、DEC-791～793和Schema0079。
+- Decision：Build计划由内部Planner在一事务创建Job/Build/全部Batch；Worker只经`rag/RAG_INDEX_BUILD`专用claim领取，首版attempt与fencing token固定为1。Begin事务先重验当前租约、Model/Chunk/Authorization，然后必须同时将Build置RUNNING、Index置BUILDING。EmbeddingRecord额外要求精确所属Batch已SUCCEEDED，不仅依赖Index BUILDING。
+- Reason：通用claim或分开推进会产生错Owner、无租约Build、RUNNING/PLANNED分裂及批次尚未成功却可写向量的窗口。双重应用+数据库守卫使半实现状态在提交时失败关闭。
+- Impact/Rollback：新增内部应用/仓储服务及Schema0080守卫，无公开API、Provider I/O或新依赖。仅当Build/Index仍为PLANNED且无向量历史时可降0079；已启动历史保留并向前修复。
+- Verification：Win11/PG18.6标记`RAG_03_A03_P02_BUILD_BEGIN_PASS`；后端2378/3跳过，wheel隔离22项，SHA-256 `cdeeb0404194cd6c2c00d013e48d6d1477b2c797411e6eef4554be31ace30056`。Parser/AI不误领，PENDING Batch向量写入及已启动降级均拒绝。

@@ -42,3 +42,11 @@ Windows 11/PostgreSQL18.6 完成空库升降重升、已有 Index 升级、ORM d
 Schema0079 新增不可变 `rag_embedding_builds` 与 `rag_embedding_build_batches`。每个 Index 只能有一个 generation=1 Build 根和一个 `rag/RAG_INDEX_BUILD` Job，Job `max_attempts=1`；所有 Batch 必须与 Build 同事务创建、ordinal/range 连续覆盖精确 Index 来源，每个 Batch 独占一次 INDEX_BUILD/INDEX_REBUILD Authorization，且Scope/Project/Model、数据类别、记录/字节/token上限、source/payload fingerprint完全匹配。授权集合和Build fingerprint在提交时复算。
 
 Build/Batch当前只允许PLANNED/PENDING创建，UPDATE/DELETE/TRUNCATE均关闭；所以Schema完成后仍不会启动Job、推进Index或发生外发。Windows11/PostgreSQL18.6完成空库升降重升、已有Index升级、ORM drift、有效双批计划、Job Owner/逐批授权/来源覆盖、状态关闭、历史保留和有数据拒降；标记`RAG_03_A03_P01_BUILD_PLAN_SCHEMA_PASS`。后端2366项通过/3跳过；wheel隔离定向24项，SHA-256 `94d7bddb4b89811f3e630d91c1e8d1360281d32d8dfc3420423ffe716d91c535`。P02将实现受权创建/claim与PLANNED→BUILDING原子推进。
+
+## A03-P02 实施与结果
+
+新增内部 `RAGEmbeddingBuildPlanner`，从固定 PLANNED Index 派生 Build/Job/Batch，应用层先验证连续分批和授权唯一性，数据库再重算来源、授权集及 Build fingerprint。新增 Jobs-owned `RAGIndexBuildClaim`：只领取 `rag/RAG_INDEX_BUILD`，严格要求 generation/attempt/fencing token 均为1、精确 payload/idempotency/scope/project/actor/trace 且租约当前有效。
+
+Schema0080 仅开放持有当前租约时的 Build `PLANNED→RUNNING` 和 Index `PLANNED→BUILDING`，两者必须在同一事务完成；启动时重验 Model AVAILABLE、Chunk ACTIVE、逐批 Authorization 未撤销/未过期。同时收紧 EmbeddingRecord 守卫：记录必须归属于已 SUCCEEDED 且授权引用精确匹配的 Batch；P02 尚未开放 Batch 转换，因此无半实现向量写入路径。
+
+Windows11/PostgreSQL18.6 标记 `RAG_03_A03_P02_BUILD_BEGIN_PASS`：实际完成受权双批计划、Parser/AI Owner隔离、RAG单次claim、Build/Index原子启动、PENDING Batch向量拒绝、未开放Batch状态拒绝与已启动历史拒降；ORM drift无新操作。后端2378项通过/3跳过；wheel隔离22项，SHA-256 `cdeeb0404194cd6c2c00d013e48d6d1477b2c797411e6eef4554be31ace30056`。无Provider I/O、Secret或客户数据外发。P03将先关闭单次租约过期后 Job FAILED 与 Build/Index 状态收敛，再进入批次发送栅栏。

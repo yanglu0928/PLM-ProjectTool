@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-04：0.1.0-dev.0/RAG-03-A03-P02 新增受权 Embedding Build 计划创建、`rag/RAG_INDEX_BUILD` 专用单次 claim 及 Schema0080 原子 Build RUNNING/Index BUILDING 启动；Parser/AI Worker 不会误领 RAG Job，PENDING Batch 仍不可写入向量。兼容性/升级/回滚：内部Schema和应用服务增量，无公开API/网络调用；未启动历史可降0079，已启动或向量历史拒降。验证：Win11/PG18.6真实组合PASS，后端2378/跳过3，wheel隔离22项，SHA-256 `cdeeb0404194cd6c2c00d013e48d6d1477b2c797411e6eef4554be31ace30056`。已知问题：租约过期后Build/Index失败收敛、Batch发送栅栏、Embedding Adapter、READY/激活、三平台、性能、Gate3/UAT/发行包待完成。
+
 - 2026-10-04：0.1.0-dev.0/RAG-03-A03-P01 新增Embedding Build计划Schema0079：每个Index唯一Build/Job，Job仅一次尝试；Batch同事务连续覆盖精确来源、每批独占一次外发授权并提交时复算来源、授权集和Build指纹。兼容性/升级/回滚：内部Schema增量，无API/网络；空表可降0078，有历史拒降；状态转换在P02前关闭。验证：Win11/PG18.6有效双批计划、迁移/drift/负例通过，后端2366/跳过3，wheel隔离24。已知问题：创建/claim、发送栅栏、Adapter、READY/激活、三平台、性能、Gate3/UAT/发行包待完成。
 
 - 2026-10-04：0.1.0-dev.0/RAG-03-A02 新增EmbeddingRecord/受控HNSW Schema0078和`pgvector==0.5.0`：复合外键固定Index/Model/Dimension与精确Chunk/正文指纹，Egress Authorization非空，vector维度仅768/1024并由Migration预建cosine HNSW；Index仍锁定PLANNED，Build Owner前向量不可写。兼容性/升级/回滚：内部Schema/依赖增量，无API/真实外发；空表可降0077，有记录拒降；MIT Notice待最终复核。验证：Win11/PG18.6迁移、drift、HNSW计划及负例通过，后端2362/跳过3，wheel隔离定向20。已知问题：Build/批次/Adapter/READY/激活、三平台、性能、Gate3/UAT/正式发行包待完成。

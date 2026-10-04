@@ -241,6 +241,13 @@ class SqlAlchemyJobLeaseRepository:
             owner_filter=("ai", "AI_TASK_EXECUTE"),
         )
 
+    def claim_next_rag_build(self, transaction: object, *, worker_ref: str,
+                             lease_seconds: int) -> ClaimedJob | None:
+        return self._claim_next_filtered(
+            transaction, worker_ref=worker_ref, lease_seconds=lease_seconds,
+            owner_filter=("rag", "RAG_INDEX_BUILD"),
+        )
+
     def _claim_next_filtered(self, transaction: object, *, worker_ref: str,
                              lease_seconds: int,
                              owner_filter: tuple[str, str] | None) -> ClaimedJob | None:
