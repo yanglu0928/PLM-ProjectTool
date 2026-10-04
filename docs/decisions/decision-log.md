@@ -8204,3 +8204,11 @@
 - Reason：Analysis快照完整性与Action状态机是两个独立事务边界；一次迁移覆盖三Root会扩大审查和回滚面，并容易把“缺资料”错误解释为已生成待办。分批不改变冻结模型，只让每项证据可独立验证。
 - Impact/Rollback：新增内部Schema0096，无公开API/既有表/依赖/配置/网络或客户数据变化。空历史可降回0095，有任一Handover历史拒降并向前修复；HND-03仍是正式交付前置。
 - Verification：Win11/PG18.6有数据升级、空历史降升、drift、合法固定快照及四类负例通过；定向8、后端2601通过/3跳过；wheel解包定向11，SHA-256 `87b9680c9f80f25e41f6bb44c1d1d0e21d543616a501fa8199d10dfa2ceb762d`。
+
+# DEC-20261005-849：Handover identity 只固定项目来源，不生成分析事实
+
+- Date/WBS：2026-10-05 / `HND-01-A03-P01`；依据冻结DM-05/API-04、Schema0096及CR-HND-001。
+- Decision：HND_ANALYSIS_CREATE由ProjectManager或ImplementationMember执行，Owner从精确PROJECT DocumentVersion集合计算`handover-source-set.v1`摘要；当前Session/CSRF/License/项目写权限、Document事实、持久幂等和Audit均通过既有Owner Port处理。Identity固定为ACTIVE、零正式版本和v0，不在创建时生成Version/Item/AI建议。
+- Reason：客户端摘要、路径或动态最新版不能证明固定来源；把Identity创建与分析生成合并会混淆空容器和业务结论，并扩大单一WBS。重放若不复核当前成员资格会让已撤权用户继续读取创建结果。
+- Impact/Rollback：复用Schema0096，无Migration/公开API挂载/依赖/配置/外发。停装配服务即可关闭新写，合法Identity/Audit/收据保留；后续P02才能生成完整Draft Version。
+- Verification：Win11/PG18.6真实角色/Session/CSRF/License/固定来源/重放并发/Audit回滚/撤权通过；定向16、后端2606通过/3跳过、wheel解包定向16，SHA-256 `2021d3ddf09a03ddd1b5f67a6c78df1057b8fe226c46c5a7b6f3a6aac852f586`。
