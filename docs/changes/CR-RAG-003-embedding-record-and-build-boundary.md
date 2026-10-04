@@ -1,6 +1,6 @@
 # CR-RAG-003：EmbeddingRecord、受控 HNSW 与构建发送边界
 
-日期：2026-10-04；状态：`A05_P04_P03_QUALITY_OWNER_PASS`；WBS：`RAG-03-A01～A05`。关联 Gate 2 冻结 ADR-004、DM-04、SC-02～04、API-03，以及 CR-RAG-002/Schema0077；原冻结提交 `64cdf09` 不改。
+日期：2026-10-04；状态：`A05_P04_P04_ACTIVATION_OWNER_PASS`；WBS：`RAG-03-A01～A05`。关联 Gate 2 冻结 ADR-004、DM-04、SC-02～04、API-03，以及 CR-RAG-002/Schema0077；原冻结提交 `64cdf09` 不改。
 
 ## 差异与实施方案
 
@@ -140,3 +140,9 @@ Win11/PG18.6空库升降重升、drift、合成FAILED/PASSED证据、直接激�
 新增受权质量登记Service/Repository。PROJECT范围要求ACTIVE Project中的ACTIVE ProjectManager，GLOBAL范围要求ENABLED DeploymentAdmin；Session/CSRF、License在写前和提交前重验。调用方不能输入PASS/FAIL，只提交安全引用、SHA-256、样本/正确数和安全断言；服务端以固定9000/9800 basis points、Project隔离、零越界引用和失败关闭统一裁决。证据、Audit和幂等回执原子提交，历史重放仍要求当前权限；Owner不更改READY Index。
 
 Windows11/PostgreSQL18.6以真实Session/CSRF/ProjectManager验证FAILED 48%/74%、PASS 90%/98%、幂等重放/冲突、错误CSRF、License失效、Audit失败回滚及撤权后历史重放拒绝；Index保持READY/v2。RAG定向76、后端2448/3跳过、wheel隔离76通过，SHA-256 `87657be4c06848d3fd85dd044c4f1fd2f81f6b5827e7163baa3b51ffc73e5350`。全部数值为隔离合成机制证明，零真实Provider I/O或客户数据外发；进入P04原子激活Owner，真实ACTIVE/Gate3/UAT仍阻塞。
+
+## A05-P04-P04 实施与结果
+
+新增原子激活Service/Repository。仓储按Scope/Project/purpose有序锁定候选，只选最新QualityResult，并重验Model AVAILABLE/维度、Build SUCCEEDED/技术PASSED、来源Chunk ACTIVE/指纹/Scope和全部构建授权。Session/CSRF、ProjectManager/DeploymentAdmin、License与幂等重放当前权限仍必须通过。同事务完成可选旧ACTIVE→RETIRED、新READY/v2→ACTIVE/v3、Audit、ActivationResult和回执，并由Schema0087再次提交期复核。
+
+Windows11/PostgreSQL18.6验证首次激活、Audit故障全回滚、CSRF/License/新键重复激活/撤权重放拒绝，成功后ACTIVE/v3、Audit、ActivationResult和receipt各一。旧ACTIVE退役的应用版本映射以单元测试验证，数据库绑定由P02 Schema0087验证；未伪报为双代完整业务演练。RAG81、后端2453/3跳过、wheel81通过，SHA-256 `cf47841ad85b2808901c73aef54659efe2cd318adfddbc8f079fe5ea01c9b475`。本次ACTIVE仅存在于用后即删合成库；正式ACTIVE/Gate3/UAT仍阻塞，RAG-03机制完成后进入RAG-04-A01。

@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-04：0.1.0-dev.0/RAG-03-A05-P04-P04 新增受权原子Index激活Owner：按Scope/Project/purpose有序锁定，重验最新PASSED质量、Embedding Model、技术Build/验证、来源Chunk和全部构建授权；同事务退役可选旧ACTIVE、将READY/v2切为ACTIVE/v3，并写Audit/ActivationResult/幂等回执。兼容性/升级/回滚：内部应用/仓储增量，无Schema/API/依赖/真实外发变化；可停止Owner关闭新切换，已激活历史不改写并向前修复。验证：Win11/PG18.6首次激活、回滚、幂等/撤权与所有当前事实通过；旧ACTIVE退役投影为单元+P02 Schema机制证据；RAG81、后端2453/跳过3、wheel81，SHA-256 `cf47841ad85b2808901c73aef54659efe2cd318adfddbc8f079fe5ea01c9b475`。已知问题：合成ACTIVE不构成业务质量，正式ACTIVE/Gate3/UAT/发行包待；下一项RAG-04-A01。
+
 - 2026-10-04：0.1.0-dev.0/RAG-03-A05-P04-P03 新增受权质量证据登记Owner：真实Session/CSRF、当前ProjectManager/DeploymentAdmin角色与License重验；调用方不能自报PASS，服务端从计数固定重算90%/98%并合并Project隔离、零越界引用和失败关闭结论；只持久安全引用/指纹/计数，失败证据不覆盖。兼容性/升级/回滚：内部应用/仓储增量，无Schema/API/依赖/真实外发变化；停用新Owner即可停写，已登记证据依Schema0087不可删改。验证：Win11/PG18.6登记FAIL 48%/74%、PASS 90%/98%、幂等重放/冲突、Audit回滚、License/CSRF/角色拒绝；RAG76、后端2448/跳过3、wheel76，SHA-256 `87657be4c06848d3fd85dd044c4f1fd2f81f6b5827e7163baa3b51ffc73e5350`。已知问题：本证据为合成机制证明，P04激活Owner、新独立业务质量、真实ACTIVE、Gate3/UAT和发行包待完成。
 
 - 2026-10-04：0.1.0-dev.0/RAG-03-A05-P04-P02 新增Schema0087不可变业务Quality/Activation证据：固定50～10000样本、分类90%、精确引用98%、Project隔离/零越界/失败关闭；READY→ACTIVE及旧ACTIVE→RETIRED必须与Audit/ActivationResult、最新质量和当前Model/来源/全部构建授权原子一致。兼容性/升级/回滚：内部两表与状态守卫增量，无公开API/依赖/真实外发；空历史可降0086，有证据或激活历史拒降。验证：Win11/PG18.6迁移/drift、合成FAIL/PASS、直改拒绝、临时原子ACTIVE及拒降通过；RAG70、Metadata/Migration7、后端2442/跳过3、wheel77，SHA-256 `bbe7b7b1159ec282d762e0215d696c207a5e6df64c42bd83fb177babdd418c02`。已知问题：合成值仅证明机制，P03/P04 Owner、新独立业务证据、真实ACTIVE、Gate3/UAT和发行包待完成。

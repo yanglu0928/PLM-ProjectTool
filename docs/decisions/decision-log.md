@@ -7892,3 +7892,11 @@
 - Reason：允许调用方自报PASS会绕过冻结门槛；计算比率而不保留原始计数会丢失可复算性。如果幂等重放先返回旧结果再校验权限，已撤权主体仍可读取历史操作成果。登记与激活分离可保留失败证据且避免半激活。
 - Impact/Rollback：新增内部应用/仓储，无Schema、公开API、依赖或网络变化。可停止组合新Owner以关闭新写；已登记历史按Schema0087保留并向前修复，原冻结基线不改写。
 - Verification：Win11/PG18.6真实Session/CSRF、ProjectManager、License、幂等、Audit链通过；合成FAILED 48%/74%和PASS 90%/98%、冲突/回滚/撤权负例通过，Index仍READY。RAG76、后端2448/3跳过、wheel76，SHA-256 `87657be4c06848d3fd85dd044c4f1fd2f81f6b5827e7163baa3b51ffc73e5350`；零真实Provider I/O。
+
+# DEC-20261004-810：Index 激活由最新质量与当前事实共同授权
+
+- Date/WBS：2026-10-04 / `RAG-03-A05-P04-P04`；依据DEC-807～809、ADR-009、CR-RAG-003及Schema0087。
+- Decision：激活命令只指定Index和预期v2，QualityResult与可选旧ACTIVE必须由仓储在有序锁中选取。放行前同事务重验最新PASSED质量、Model/维度、Build/技术证据、来源Chunk与全部构建授权，再原子退役同用途旧ACTIVE、激活新Index并写Audit/ActivationResult/回执。重放仍要求当前Session/角色/License。
+- Reason：让调用方选质量证据会允许择优旧PASS；分开退役与激活会产生零ACTIVE或双ACTIVE窗口。只在登记质量时检查来源/授权又无法防止其后撤销或过期。
+- Impact/Rollback：内部应用/仓储增量，无Schema/API/依赖/网络变化。可停止Owner阻止新切换；已激活/退役记录依不可变结果向前修复，不改写冻结基线。
+- Verification：Win11/PG18.6首次激活与完整回滚/撤权路径通过；旧ACTIVE退役投影为单元证据，其数据库绑定为P02 Schema证据，不冒充双代业务演练。RAG81、后端2453/3跳过、wheel81，SHA-256 `cf47841ad85b2808901c73aef54659efe2cd318adfddbc8f079fe5ea01c9b475`；合成ACTIVE不作为Gate证据。
