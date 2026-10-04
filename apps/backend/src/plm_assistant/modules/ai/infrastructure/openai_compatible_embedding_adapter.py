@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import re
 from datetime import datetime, timezone
 
 from plm_assistant.modules.ai.application.embedding_execution_contract import (
@@ -25,6 +26,9 @@ from .openai_compatible_adapter import (
     PinnedHttpsOpenAICompatibleAdapter,
     _canonical_json,
 )
+
+
+_REQUEST_REF = re.compile(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,254}\Z")
 
 
 def _embedding_wire_body(
@@ -63,7 +67,10 @@ def _validate_embedding_response(
     if set(value) - {"data", "model", "object", "usage", "id"}:
         raise ValueError()
     if ("model" in value and value["model"] != route.provider_model_key
-            or "object" in value and value["object"] != "list"):
+            or "object" in value and value["object"] != "list"
+            or "id" in value and (
+                type(value["id"]) is not str
+                or _REQUEST_REF.fullmatch(value["id"]) is None)):
         raise ValueError()
     data = value["data"]
     if type(data) is not list or len(data) != envelope.record_count:

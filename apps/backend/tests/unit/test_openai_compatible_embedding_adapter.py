@@ -118,6 +118,8 @@ class OpenAICompatibleEmbeddingAdapterTests(unittest.TestCase):
         cases.append(value)
         value = self.valid_response(); value["model"] = "other-model"
         cases.append(value)
+        value = self.valid_response(); value["id"] = "bad\nrequest"
+        cases.append(value)
         for value in cases:
             route, envelope, _, sock = _fixture(value)
             with self.subTest(value=list(value)), self.assertRaises(

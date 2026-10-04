@@ -80,3 +80,9 @@ Windows11/PostgreSQL18.6标记 `RAG_03_A04_P01_BATCH_SEND_FENCE_PASS`：错误pa
 新增当前路由事实仓储、Embedding pre-send与send-once服务、Scope感知Secret审计及RAG fence桥接。一次调用必须依次完成：当前事实授权、精确Secret版本访问、Secret作用域内再次授权、事实稳定性比较、持久化Batch fence、单次Adapter调用。两次授权各在事务内外检查License；fence后的任何异常均按Provider结果未知处理，禁止自动重放。
 
 为让统一AI模块无歧义生成RAG fence proof，内部Envelope补充EmbeddingIndex id、batch ordinal和source first ordinal；这些身份不进入厂商JSON，不改变最小外发正文或payload fingerprint。Windows11/PostgreSQL18.6标记`RAG_03_A04_P04_EMBEDDING_SEND_BOUNDARY_PASS`：真实事务完成双重授权、活动Secret版本证明、PROJECT Secret审计、PENDING→RUNNING fence、一次合成Adapter调用及明文归零。后端2408项通过/3跳过；wheel隔离21项，SHA-256 `16e3e4f1273606488b1913ea2b1bdca530c7c934df055e5a5c41a77a4bd639da`。首轮验证在Build启动后更新payload被Schema0082不可变守卫正确拒绝，验证改为计划前生成精确payload后使用新库重跑通过；未放宽数据库。零真实Provider I/O、零客户数据外发。
+
+## A04-P05-P01 实施与结果
+
+新增Provider-neutral Embedding响应证明合同。统一AI层从受控Response再次验证request id、model、record count、连续index、受控维度、有限有界数值、usage与观察值；向量统一量化为PostgreSQL pgvector的float32表示后，再以版本化域分离字节计算SHA-256。Provider未返回id时以响应SHA-256构造稳定request ref。Adapter同步拒绝非法id，防止带换行或超长引用进入后续持久化。
+
+后端2411项通过/3跳过；wheel隔离9项，SHA-256 `5ab86c70645c91cea7fed48dde580dcdd3a0f026598911190bda1241dd08e80c`。本项无Schema、公开API、Secret访问、真实Provider I/O或客户数据外发；Schema0082仍保持成功提交关闭，下一项P05-P02以Schema0083开放原子响应提交。

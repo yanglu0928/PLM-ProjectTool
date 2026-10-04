@@ -7812,3 +7812,11 @@
 - Reason：授权到Secret解密、Secret到网络发送之间均存在配置切换/撤权/租约过期窗口；缺少第二次授权或把fence放在网络之后会允许过期事实外发或重复计费。RAG所需ordinal若靠再次查询猜测，会把统一AI proof与实际Batch拆成两个身份源。
 - Impact/Rollback：新增内部服务、仓储、Audit适配和测试，无Schema、公开API、依赖或真实外发。可移除新编排回退到不可发送状态；不得把已有RUNNING fence降回PENDING，继续由既有UNKNOWN对账处理。原冻结基线不改写。
 - Verification：Win11/PG18.6标记`RAG_03_A04_P04_EMBEDDING_SEND_BOUNDARY_PASS`；活动Secret、双授权、四次License检查、Scope Audit、精确fence、单次合成Adapter和明文归零通过。后端2408/3跳过，wheel隔离21项，SHA-256 `16e3e4f1273606488b1913ea2b1bdca530c7c934df055e5a5c41a77a4bd639da`；零真实Provider I/O。
+
+# DEC-20261004-800：向量指纹以数据库float32语义计算
+
+- Date/WBS：2026-10-04 / `RAG-03-A04-P05-P01`；依据`CR-RAG-003`、DEC-799、pgvector存储语义。
+- Decision：Provider JSON响应进入RAG仓储前由统一AI层二次解析；每个数值先规范到IEEE-754 big-endian float32，再以版本化域分离前缀、维度和连续float32字节计算vector fingerprint。Provider request id必须为有界安全引用；缺失时使用响应SHA-256引用。
+- Reason：Python JSON数字默认是float64，而pgvector实际存储float32；若直接对JSON或float64计算指纹，持久化后的向量与证明会在平台或序列化差异下不一致。未经限制的Provider id也不能写入审计/结果列。
+- Impact/Rollback：新增内部响应合同并收紧Adapter id校验，无Schema/API/依赖/网络。回退将使成功提交入口继续关闭，不影响已fenced Batch；原冻结基线不改写。
+- Verification：模型/数量/序号/维度/NaN/id/usage漂移全部失败关闭，重复解析生成相同float32与指纹；后端2411/3跳过、wheel隔离9，SHA-256 `5ab86c70645c91cea7fed48dde580dcdd3a0f026598911190bda1241dd08e80c`。
