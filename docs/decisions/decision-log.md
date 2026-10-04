@@ -8275,3 +8275,11 @@
 - Decision：只在OPEN/IN_PROGRESS修改title/input spec/owner/due/priority；每次真实修改追加同状态事件并推进强ETag。PM/IM或assigned owner可执行，新Owner重验当前成员；无变化不写。
 - Impact/Rollback：Schema0100仅替换守卫，无表列/API/依赖/外发；同状态历史存在时拒降。来源与生命周期保持不可变。
 - Verification：Win11/PG18.6权限/ETag/回滚/License/拒降，定向17、后端2631/3跳过、wheel17，SHA-256 `7beb883e3641b51d91c0c0039b574341b2e03b2a4876d173a99177d9190e26de`。
+
+# DEC-20261005-858：Action START 由当前负责人或项目经理原子推进
+
+- Date/WBS：2026-10-05 / `HND-02-A03-A04`；依据API-04、CR-HND-003、Schema0100及DEC-856/857。
+- Decision：仅当前assigned owner或ProjectManager可按强ETag执行`OPEN -> IN_PROGRESS`；Root、唯一状态事件、Audit和actor作用域持久收据同事务。精确重放返回首次事件投影，但仍重验当前Owner/PM权限。
+- Reason：START表示实际承接，不应由任意项目成员代替负责人声明；把Root、事件或收据拆开会造成状态来源缺失、重复推进或虚假成功。重放绕过当前权限会在转派/撤权后泄露历史结果。
+- Impact/Rollback：复用Schema0100，无Migration、公开HTTP、依赖、配置、网络或外发；停装配Owner可关闭新START，已提交状态和历史不可删除或回退。SUBMIT仍由后续独立Owner控制。
+- Verification：Win11/PG18.6 owner/PM、非Owner、旧ETag、重复状态、并发幂等、冲突、Audit回滚恢复及License拒绝通过；定向17、后端2634/3跳过、wheel解包17，SHA-256 `fb0cde735e209e1601b8b5c63c03cc1f9770b2af457ec2b274940653e06de83a`。
