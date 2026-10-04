@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-04：0.1.0-dev.0/RAG-04-A03-P01 完成Retrieval执行链前置核查：发现通用Job claim会接管`RAG_RETRIEVAL`并可能拆分Job/Run终态，锁定专属单次claim、通用ready/expired隔离、原请求Actor当前授权重验、受控解密与参数化PROJECT FTS；A03只生成有界内存候选，A05再原子发布。兼容性/升级/回滚：纯文档，无Schema/API/依赖/网络/外发；P02收紧内部路由，过期历史必须专属对账。验证：静态核对Job lease、A02 payload、Schema0088和FTS/Index来源。已知问题：P02～P04实现、原子完成Owner、vector/exact/Global/Rerank、正式ACTIVE/质量/性能/Gate3/UAT/发行包待完成。
+
 - 2026-10-04：0.1.0-dev.0/RAG-04-A02-P02 新增受权异步Retrieval创建Owner与专用AES-256-GCM Query Cipher；当前Session/CSRF、License、Project成员、ACTIVE Index/Model/Chunk、幂等全部通过后才读取密钥，Job/Run/密文/Audit/收据同事务，重放重验权限且不新建密文。兼容性/升级/回滚：复用Schema0088和`cryptography==50.0.1`，无Migration/公开API/新依赖/外发；可停Owner关闭新建，既有历史保留并向前修复。验证：Win11/PG18.6合成ACTIVE下成功/全回滚/重放/撤权及安全负例PASS；后端2467/跳过3、wheel RAG95，SHA-256 `14a6a8ce6b7293e63acbb7f40a15bbb513ba938a8649ea978b138b9420a0fe12`。已知问题：执行Worker/候选/Context/HTTP、正式密钥/ACTIVE/业务质量/性能/三平台/Gate3/UAT/发行包待完成。
 
 - 2026-10-04：0.1.0-dev.0/RAG-04-A02-P01 新增Schema0088 Retrieval基础：不可变Run、专用加密QueryContent、Candidate/ScorePart及最小ContextBundle/Item；Job只含Run引用，提交期拒绝缺query密文，候选强绑ACTIVE Index/精确Chunk/AVAILABLE Embedding，Context不复制正文且Owner前关闭。兼容性/升级/回滚：内部追加六表，无公开API/依赖/真实外发；空历史可降0087，有历史拒降并向前修复。验证：Win11/PG18.6空/已有数据升级、drift、升降重升、有历史拒降与合成ACTIVE绑定通过；后端2458/跳过3、wheel RAG86，SHA-256 `4fb5d1c4f465be331807cc1dcbcbddd8746216fe641d881bb22224e2c643b4fc`。已知问题：创建Owner/Worker/Rerank/Context/HTTP、正式ACTIVE/密钥/业务质量/性能/三平台/Gate3/UAT/发行包待完成。

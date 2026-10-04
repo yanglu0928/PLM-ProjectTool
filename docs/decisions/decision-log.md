@@ -7924,3 +7924,11 @@
 - Reason：在授权前加密会让无权请求使用密钥，在幂等判定前加密会制造不可观测的无用密文。把query放入Job/Audit则违反既有安全合同。先只开FTS可在Egress/Reranker Owner未落地时保持零外发。
 - Impact/Rollback：新增内部应用/仓储/密码端口和Project操作权限，无Schema、公开API、新依赖或网络变化。可停止Owner以关闭新作业；已产生历史按Schema0088保留且不回退明文。
 - Verification：Win11/PG18.6实证Session/CSRF、License、Membership、ACTIVE Index、Audit回滚、重放与撤权；后端2467/3跳过、wheel RAG95，SHA-256 `14a6a8ce6b7293e63acbb7f40a15bbb513ba938a8649ea978b138b9420a0fe12`。零真实Provider I/O或客户数据外发，合成ACTIVE不作业务质量/Gate证据。
+
+# DEC-20261004-814：Retrieval 使用专属单次 claim 与延迟原子候选发布
+
+- Date/WBS：2026-10-04 / `RAG-04-A03-P01`；依据CR-RAG-004、DEC-811～813及Schema0088。
+- Decision：`rag/RAG_RETRIEVAL`必须从通用ready/expired claim隔离并使用专属单次claim；过期generation只能由可同时关闭Job/Run/Audit的专属Reconciler处理。执行先以原请求Actor重验当前License/Membership/ACTIVE Index/精确来源，再受控解密和复核query fingerprint。A03只生成同Project、同Index generation、参数化FTS的有界内存候选，Candidate/Score/Context及Run/Job终态留给A05原子发布。
+- Reason：现通用claim会抢占Retrieval且可单独终结Job，造成Run永久RUNNING；在搜索循环中逐条写Candidate也会留下半快照。SYSTEM Worker不能替代请求主体授权，解密和候选生成必须位于当前事实检查之后。
+- Impact/Rollback：P01仅文档，无代码/Schema/API/依赖/网络或外发变化。P02收紧内部路由；可停止专属Worker，但过期/已认领历史必须向前对账，不能回交通用Worker。vector/exact Query Embedding、GLOBAL合并和Rerank继续关闭。
+- Verification：静态确认通用claim仅隔离RAG Index Build、A02 Job为单次且payload只有Run引用、Schema0088状态/Context仍关闭、现有stored simple FTS与精确Index来源可支持首个PROJECT FTS；未运行新增程序测试。
