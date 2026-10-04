@@ -63,6 +63,7 @@ from plm_assistant.modules.rag.infrastructure.embedding_batch_send_fence_reposit
 
 ROOT = Path(__file__).resolve().parents[2]
 _AFTER_SEND = None
+_EXECUTE = None
 
 
 def load(path: Path, name: str):
@@ -230,14 +231,19 @@ def validate(context: dict[str, object]) -> None:
             repository=SqlAlchemyRAGEmbeddingBatchSendFenceRepository(),
         )),
     )
-    with service.send_once(
-        envelope=envelope, job_id=claim.job_id,
-        fencing_token=claim.fencing_token, worker_ref="rag-worker-01",
-    ) as response:
-        assert b"synthetic" in bytes(response.view())
-        if _AFTER_SEND is not None:
-            route, proof, _ = adapter.calls[0]
-            _AFTER_SEND(context, envelope, route, proof, response)
+    if _EXECUTE is not None:
+        _EXECUTE(context, envelope, service, adapter)
+    else:
+        with service.send_once(
+            envelope=envelope, job_id=claim.job_id,
+            fencing_token=claim.fencing_token, worker_ref="rag-worker-01",
+        ) as response:
+            assert b"synthetic" in bytes(response.view())
+            if _AFTER_SEND is not None:
+                route, proof, _ = adapter.calls[0]
+                assert response.authorization.route == route
+                assert response.authorization.proof == proof
+                _AFTER_SEND(context, envelope, route, proof, response.response)
     assert len(adapter.calls) == 1
     assert len(guard.calls) == 4
     assert decryptor.plaintext is not None
@@ -253,7 +259,7 @@ def validate(context: dict[str, object]) -> None:
             "WHERE trace_id=%s AND action='AI_PROVIDER_SECRET_ACCESS'",
             (claim.trace_id,),
         ).fetchall()
-    if _AFTER_SEND is None:
+    if _AFTER_SEND is None and _EXECUTE is None:
         assert state == ("RUNNING", 1, 1)
     assert events == [("AI_PROVIDER_SECRET_ACCESS", "SUCCESS", "RAG_EMBEDDING_SEND")]
     print(
@@ -265,9 +271,10 @@ def validate(context: dict[str, object]) -> None:
     )
 
 
-def main(after_send=None) -> None:
-    global _AFTER_SEND
+def main(after_send=None, execute=None) -> None:
+    global _AFTER_SEND, _EXECUTE
     _AFTER_SEND = after_send
+    _EXECUTE = execute
     bodies = {1: b"PLM begin one", 2: b"PLM begin two"}
 
     def payload_factory(ordinal, member):

@@ -7836,3 +7836,11 @@
 - Reason：把完整拒绝响应当UNKNOWN会阻碍确定性收敛，而自动重试可能重复外发；反之，无效响应若不保存不可逆指纹就无法证明实际检查对象。所有聚合分事务关闭又会留下可继续执行或假BUILDING的半状态。
 - Impact/Rollback：新增内部Schema0084、失败服务/仓储并收紧Embedding发送错误分类，无公开API、依赖或真实网络。有新错误历史时拒降0083并向前修复；原冻结基线不改写。
 - Verification：Win11/PG18.6两份隔离库分别标记`RAG_03_A04_P05_P03_BATCH_FAILURE_PASS`与`RAG_03_A04_P05_P03_PROVIDER_REJECTED_PASS`；零向量、不可重试、Audit和有历史拒降通过。后端2422/3跳过、wheel隔离30，SHA-256 `c02440eb5d569aa9ed8b129af169c5e55b7861dffe2ba31ecc74b2c017df119b`；零真实Provider I/O。
+
+# DEC-20261004-803：Worker提交必须复用实际发送的第二次授权证明
+
+- Date/WBS：2026-10-04 / `RAG-03-A04-P06`；依据`CR-RAG-003`、DEC-799～802。
+- Decision：Embedding发送返回响应与实际用于Adapter调用的第二次pre-send授权组合证明；Worker不得重新查询或重建route/proof。一次Worker调用最多一次发送，成功、已知失败分别调用其原子发布器，任何远端或本地提交不确定只进入RECONCILIATION_PENDING并保留栅栏，禁止自动重放。
+- Reason：如果发送后再次查询授权，配置切换会让响应与提交证明来自不同事实；如果发布异常后由Worker重试发送，则可能重复外发和计费。把最终授权随响应移交并让不确定结果走对账可保持因果一致性。
+- Impact/Rollback：新增内部发送结果合同和Batch Worker，无Schema、公开API、依赖或真实网络。可停止Worker并回退组合；已RUNNING Batch仍由0081/0082对账，不能改回PENDING。
+- Verification：Win11/PG18.6成功、无效响应、UNKNOWN三份隔离库标记`RAG_03_A04_P06_BATCH_WORKER_PASS`；后端2428/3跳过、wheel隔离36，SHA-256 `f81a2bf78e288887cf1654379e7fe8de4f2aab6fe15bb774ec7cd909ed5f3c76`；零真实Provider I/O。

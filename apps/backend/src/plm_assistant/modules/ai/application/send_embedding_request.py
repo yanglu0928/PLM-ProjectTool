@@ -5,6 +5,7 @@ from __future__ import annotations
 import uuid
 from collections.abc import Callable
 from contextlib import AbstractContextManager, ExitStack
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Protocol
 
@@ -35,9 +36,15 @@ from .provider_execution_contract import (
 
 class AIEmbeddingSendError(RuntimeError):
     def __init__(self, code: str = "AI_EMBEDDING_SEND_UNAVAILABLE", *,
-                 provider_outcome_unknown: bool = False) -> None:
+                 provider_outcome_unknown: bool = False,
+                 authorized_send: AuthorizedAIEmbeddingSend | None = None) -> None:
+        if (type(provider_outcome_unknown) is not bool
+                or (authorized_send is not None
+                    and type(authorized_send) is not AuthorizedAIEmbeddingSend)):
+            raise ValueError("invalid Embedding send error")
         self.code = code
         self.provider_outcome_unknown = provider_outcome_unknown
+        self.authorized_send = authorized_send
         super().__init__(code)
 
 
@@ -62,6 +69,36 @@ class AIEmbeddingBatchFencePort(Protocol):
               now: datetime) -> object: ...
 
 
+@dataclass(slots=True)
+class SentAIEmbeddingResponse:
+    """One response bound to the exact second pre-send authorization."""
+
+    response: AIProviderResponse = field(repr=False)
+    authorization: AuthorizedAIEmbeddingSend
+
+    def __post_init__(self) -> None:
+        if (type(self.response) is not AIProviderResponse
+                or type(self.authorization) is not AuthorizedAIEmbeddingSend):
+            raise AIEmbeddingSendError()
+        self.authorization.__post_init__()
+
+    @property
+    def observation(self):
+        return self.response.observation
+
+    def view(self):
+        return self.response.view()
+
+    def close(self) -> None:
+        self.response.close()
+
+    def __enter__(self) -> SentAIEmbeddingResponse:
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        self.close()
+
+
 class AIEmbeddingSendService:
     """Authorize twice around Secret access, commit one fence, then send once."""
 
@@ -83,7 +120,7 @@ class AIEmbeddingSendService:
 
     def send_once(self, *, envelope: AIEmbeddingEnvelope,
                   job_id: uuid.UUID, fencing_token: int,
-                  worker_ref: str) -> AIProviderResponse:
+                  worker_ref: str) -> SentAIEmbeddingResponse:
         if (type(envelope) is not AIEmbeddingEnvelope
                 or type(job_id) is not uuid.UUID or not job_id.int
                 or type(fencing_token) is not int or fencing_token < 1
@@ -92,6 +129,7 @@ class AIEmbeddingSendService:
         response: object | None = None
         handed_off = False
         fenced = False
+        final: AuthorizedAIEmbeddingSend | None = None
 
         def authorize() -> AuthorizedAIEmbeddingSend:
             now = self._clock()
@@ -145,8 +183,9 @@ class AIEmbeddingSendService:
                         raise AIEmbeddingSendError(
                             "AI_EMBEDDING_RESPONSE_INVALID",
                         )
+            result = SentAIEmbeddingResponse(response, final)
             handed_off = True
-            return response
+            return result
         except AIEmbeddingSendError as exc:
             if fenced and not exc.provider_outcome_unknown:
                 raise AIEmbeddingSendError(
@@ -180,6 +219,7 @@ class AIEmbeddingSendService:
             if fenced and exc.code == "AI_PROVIDER_HTTP_REJECTED":
                 raise AIEmbeddingSendError(
                     "AI_EMBEDDING_PROVIDER_REJECTED",
+                    authorized_send=final,
                 ) from None
             raise AIEmbeddingSendError(
                 "AI_EMBEDDING_PROVIDER_OUTCOME_UNKNOWN" if fenced

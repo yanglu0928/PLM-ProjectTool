@@ -239,6 +239,7 @@ class AIEmbeddingSendServiceTests(unittest.TestCase):
         self.assertEqual(len(fence.calls), 1)
         self.assertEqual(len(adapter.calls), 1)
         self.assertEqual(adapter.calls[0]["proof"], refreshed.proof)
+        self.assertEqual(response.authorization, refreshed)
         self.assertTrue(all(value == 0 for value in secrets.buffer))
         response.close()
 
@@ -328,6 +329,7 @@ class AIEmbeddingSendServiceTests(unittest.TestCase):
             caught.exception.code, "AI_EMBEDDING_PROVIDER_REJECTED",
         )
         self.assertFalse(caught.exception.provider_outcome_unknown)
+        self.assertEqual(caught.exception.authorized_send, self.initial)
         self.assertEqual(len(fence.calls), 1)
         self.assertEqual(len(adapter.calls), 1)
         self.assertTrue(all(value == 0 for value in secrets.buffer))
