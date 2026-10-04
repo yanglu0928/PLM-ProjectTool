@@ -96,6 +96,10 @@ POLICIES: dict[str, _Policy] = {
     ),
     "HND_ANALYSIS_LIST": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "HND_ANALYSIS_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
+    "HND_ANALYSIS_PATCH": _Policy(
+        frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True,
+    ),
+    "HND_ANALYSIS_ARCHIVE": _Policy(MANAGERS, True),
     "HND_VERSION_CREATE": _Policy(
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True,
     ),

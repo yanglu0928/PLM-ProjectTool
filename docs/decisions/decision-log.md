@@ -8387,3 +8387,11 @@
 - Reason：Handover候选包含客户调研问题与材料引用，旧Session摘要不能代表当前成员资格；单字段Analysis时间位置会在同时间戳下重漏。引用存在不等于调用者可读取被引用资源正文，必须继续经过各资源Owner当前授权。
 - Impact/Rollback：无Migration、冻结API、依赖、配置、Secret、网络或外发，公开Router仍关闭。A01表格的A02“签名cursor”文字按原A06分工更正为内部完整位置；撤Service/Repository及五项只读策略即可回滚，历史不变。
 - Verification：定向14；Win11/PG18.6四角色、三类双页、安全投影、跨项目/撤权/归档/License和零写PASS；后端2681通过/3跳过；wheel导入PASS，SHA-256 `5e3865d23c5436e5168f4b61504a4166efbba33edf75bd92801724dcb33b16ae`。
+
+# DEC-20261005-872：Analysis归档为保留历史的单向写栅栏
+
+- Date/WBS：2026-10-05 / `HND-01-A05-A03`；依据冻结API-04、DM-05、CR-HND-005与Schema0101。
+- Decision：Schema0102只开放ACTIVE目的更新和ACTIVE→ARCHIVED；两者强ETag且在数据库/仓储双层拒绝IN_REVIEW。归档保留全部Version/Item/Review/Action与正式指针，不级联改变历史；既有Create/Version/Review Owner的ACTIVE条件自然关闭后续写。ARCHIVE由PM持久幂等，PATCH由PM/实施成员执行且拒绝无变化。
+- Reason：直接在0101上实现会被数据库守卫拒绝；归档若清空正式指针或改写Version会破坏已批准事实，若允许在审归档则会留下无法合法终结的Review。单向Root栅栏能保留审计和追溯，同时最小化冻结模型增量。
+- Impact/Rollback：按CR-HND-005新增向前Migration0102，不改写冻结提交/0101；无新表列、URL、依赖、配置、Secret、网络或外发。存在ARCHIVED或PATCH/ARCHIVE Audit历史拒降，只能停止新Owner并向前修复。
+- Verification：定向17；Win11/PG18.6升降重升/drift、权限/隔离/强锁/在审栅栏/重放/Audit回滚/归档保护/历史拒降，后端2687通过/3跳过；wheel SHA-256 `f095e967558071076e09b25dbd44fbced0873710de760b7c79407719a072a472`。
