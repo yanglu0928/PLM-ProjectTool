@@ -27,7 +27,10 @@ from .embedding_pre_send import (
     AIEmbeddingPreSendService,
     AuthorizedAIEmbeddingSend,
 )
-from .provider_execution_contract import AIProviderResponse
+from .provider_execution_contract import (
+    AIProviderExecutionError,
+    AIProviderResponse,
+)
 
 
 class AIEmbeddingSendError(RuntimeError):
@@ -171,6 +174,16 @@ class AIEmbeddingSendService:
         except AIEmbeddingExecutionError as exc:
             raise AIEmbeddingSendError(
                 "AI_EMBEDDING_PROVIDER_OUTCOME_UNKNOWN" if fenced else exc.code,
+                provider_outcome_unknown=fenced,
+            ) from None
+        except AIProviderExecutionError as exc:
+            if fenced and exc.code == "AI_PROVIDER_HTTP_REJECTED":
+                raise AIEmbeddingSendError(
+                    "AI_EMBEDDING_PROVIDER_REJECTED",
+                ) from None
+            raise AIEmbeddingSendError(
+                "AI_EMBEDDING_PROVIDER_OUTCOME_UNKNOWN" if fenced
+                else "AI_EMBEDDING_SEND_UNAVAILABLE",
                 provider_outcome_unknown=fenced,
             ) from None
         except Exception:

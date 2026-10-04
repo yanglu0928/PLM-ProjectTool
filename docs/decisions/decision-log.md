@@ -7828,3 +7828,11 @@
 - Reason：记录守卫必须先看到SUCCEEDED Batch，而若状态更新和记录写入分两个事务，会暴露“成功但无完整向量”或“有向量但未成功”的永久半状态。先更新、同事务写入、提交期复核同时满足守卫顺序与原子可见性。
 - Impact/Rollback：新增内部Schema0083及成功发布应用/仓储，无公开API、新依赖或真实网络。无成功Batch/记录历史可降0082；存在历史拒降并向前修复，原冻结基线不改写。
 - Verification：Win11/PG18.6标记`RAG_03_A04_P05_P02_BATCH_SUCCESS_PASS`；仅更新Batch的故障提交被拒并回滚，随后精确双记录原子提交和有历史拒降通过。后端2417/3跳过、wheel隔离28，SHA-256 `bd3b0f5276257eaa197d4b706c027f59b3c82b53add78355481918207c48030c`；零真实Provider I/O。
+
+# DEC-20261004-802：已知Provider拒绝与无效响应原子失败且不重试
+
+- Date/WBS：2026-10-04 / `RAG-03-A04-P05-P03`；依据`CR-RAG-003`、DEC-796～801及Schema0083。
+- Decision：收到完整HTTP非200即为已知Provider拒绝，不再归类为远端结果未知；已收到但严格解析失败的响应只保留SHA-256证明。两类错误都不可重试，并在一个事务终结当前Batch、未发送Batch、Job/Lease/Attempt、Build/Index和SYSTEM Audit；已有成功批次历史不删除。
+- Reason：把完整拒绝响应当UNKNOWN会阻碍确定性收敛，而自动重试可能重复外发；反之，无效响应若不保存不可逆指纹就无法证明实际检查对象。所有聚合分事务关闭又会留下可继续执行或假BUILDING的半状态。
+- Impact/Rollback：新增内部Schema0084、失败服务/仓储并收紧Embedding发送错误分类，无公开API、依赖或真实网络。有新错误历史时拒降0083并向前修复；原冻结基线不改写。
+- Verification：Win11/PG18.6两份隔离库分别标记`RAG_03_A04_P05_P03_BATCH_FAILURE_PASS`与`RAG_03_A04_P05_P03_PROVIDER_REJECTED_PASS`；零向量、不可重试、Audit和有历史拒降通过。后端2422/3跳过、wheel隔离30，SHA-256 `c02440eb5d569aa9ed8b129af169c5e55b7861dffe2ba31ecc74b2c017df119b`；零真实Provider I/O。

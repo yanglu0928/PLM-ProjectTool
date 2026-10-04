@@ -1,6 +1,6 @@
 # CR-RAG-003：EmbeddingRecord、受控 HNSW 与构建发送边界
 
-日期：2026-10-04；状态：`A04_P05_P02_IMPLEMENTED_AND_WINDOWS11_PG18_VERIFIED`；WBS：`RAG-03-A01～A05`。关联 Gate 2 冻结 ADR-004、DM-04、SC-02～04、API-03，以及 CR-RAG-002/Schema0077；原冻结提交 `64cdf09` 不改。
+日期：2026-10-04；状态：`A04_P05_P03_IMPLEMENTED_AND_WINDOWS11_PG18_VERIFIED`；WBS：`RAG-03-A01～A05`。关联 Gate 2 冻结 ADR-004、DM-04、SC-02～04、API-03，以及 CR-RAG-002/Schema0077；原冻结提交 `64cdf09` 不改。
 
 ## 差异与实施方案
 
@@ -92,3 +92,9 @@ Windows11/PostgreSQL18.6标记 `RAG_03_A04_P01_BATCH_SEND_FENCE_PASS`：错误pa
 Schema0083只开放当前单次租约下Batch `RUNNING→SUCCEEDED`，要求Build仍RUNNING、Index仍BUILDING、fencing token递增1、完成时间与Provider request ref齐备。解析结果新增route/payload/source三个指纹，防止同数量同维度响应跨批次误配。成功发布服务把Batch终态与全部float32 EmbeddingRecord放在同一事务：先更新Batch，再插入精确记录集；deferred提交约束按Batch来源逐条复核Chunk、正文指纹、Model、Dimension、Authorization、Provider request ref及AVAILABLE状态，并要求来源数、记录数和有效匹配数完全一致。
 
 Windows11/PostgreSQL18.6先故意只提交SUCCEEDED Batch而不写记录，数据库在commit拒绝并完整回滚为RUNNING；随后生产服务一次提交精确记录集并标记`RAG_03_A04_P05_P02_BATCH_SUCCESS_PASS`，有成功历史时拒绝降级0082。后端2417项通过/3跳过；wheel隔离28项，SHA-256 `bd3b0f5276257eaa197d4b706c027f59b3c82b53add78355481918207c48030c`。无真实Provider I/O、Secret或客户数据外发；P05-P03继续实现已知Provider失败/无效响应的不可重试原子收敛，READY/ACTIVE仍关闭。
+
+## A04-P05-P03 实施与结果
+
+Schema0084新增当前租约下的已知失败终态：完整HTTP非200响应分类为`RAG_PROVIDER_REQUEST_REJECTED`且不制造Provider request ref；已收到但无法通过严格解析的响应分类为`RAG_EMBEDDING_RESPONSE_INVALID`并只保存`sha256:`响应证明。失败发布服务先由Jobs Owner不可重试释放租约并终结Attempt/Job，再在同一事务把当前RUNNING Batch置FAILED、后续PENDING Batch置CANCELLED、Build/Index置FAILED并追加SYSTEM Audit；既有SUCCEEDED Batch/EmbeddingRecord作为历史保留，不会被误当成可激活Index。
+
+Windows11/PostgreSQL18.6以两份新隔离库分别验证无效响应和Provider拒绝：Job/Lease/Attempt/Build/Index/Batch/Audit原子闭合、零EmbeddingRecord、不可重试、有历史拒降0083；标记`RAG_03_A04_P05_P03_BATCH_FAILURE_PASS`与`RAG_03_A04_P05_P03_PROVIDER_REJECTED_PASS`。后端2422项通过/3跳过；wheel隔离30项，SHA-256 `c02440eb5d569aa9ed8b129af169c5e55b7861dffe2ba31ecc74b2c017df119b`。全部为合成响应，零真实Provider I/O、Secret或客户数据外发；P06继续组合单次Worker和UNKNOWN即时分流。
