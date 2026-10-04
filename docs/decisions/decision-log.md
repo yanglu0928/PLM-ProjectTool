@@ -8044,3 +8044,11 @@
 - Reason：把query放入URL、storage或长生命周期client会扩大业务敏感信息暴露；部分展示结果与失败Context会制造混合事实。日期过滤虽在基础Schema保留字段，但当前执行策略明确关闭，客户端提前接受只会造成稳定的400/409不兼容。自行增加Index列表URL会破坏冻结API边界。
 - Impact/Rollback：纯前端，无Schema/Migration/后端API/依赖/外发；可移除页面/客户端/路由回滚，不修改历史Run/结果。后续Index发现能力须以正式API增量和Change Request实施。
 - Verification：定向29、前端全量69文件/1261项、typecheck及Vite149模块生产构建PASS；首轮错误断言/静态类型问题修复后完整重跑，错误轮不作证据。
+
+# DEC-20261004-829：RAG-04 以真实浏览器和数据库双证据收口，质量结论不外推
+
+- Date/WBS：2026-10-04 / `RAG-04-A06-P08`；依据CR-RAG-004、DEC-822～828及用户持续执行授权。
+- Decision：机制收口必须由实际构建Edge完成登录/项目内路由/Create/Get/Result/Context/Cancel，并由生产第四Worker和PostgreSQL终态/结果计数独立复核；query须在浏览器URL/storage检查中为零。合成ACTIVE与合成正文只证明机制，不得外推为业务质量、Gate3或UAT。托管浏览器不可用时允许使用同机Edge CDP，但必须记录失败和保持同一页面/API/数据库断言。
+- Reason：单元/jsdom和TestClient不能发现浏览器会话、RouterLink、响应式确认及真实Fetch差异；仅页面成功又不能证明原子数据库结果。反之，合成全链通过也不能替代独立业务留出集的分类/引用质量。
+- Impact/Rollback：只新增validation脚本/记录，无产品Schema/Migration/API/依赖/配置变化；可删除脚本回滚。正式质量、性能、Server2025和信任源继续作为Gate/Release条件。
+- Verification：Win11 build26200、Edge154、PG18.6最终全新隔离轮完成1 SUCCEEDED、2 CANCELLED、1套Candidate/Context，108个浏览器API事件和三张视觉证据；数据库/凭据/临时根/Profile清理PASS。前置无效轮均未计证据。

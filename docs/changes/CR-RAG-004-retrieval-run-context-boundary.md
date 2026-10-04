@@ -1,6 +1,6 @@
 # CR-RAG-004：RetrievalRun、加密查询内容与最小 Context 边界
 
-日期：2026-10-04；状态：`A06_P03_RETRIEVAL_READ_OWNER_PASS`；WBS：`RAG-04-A01～A06`。关联 Gate 2 冻结 ADR-004/009、DM-04、SC-01～04、API-03，以及 Schema0087/CR-RAG-001～003；原冻结提交 `64cdf09` 不改。
+日期：2026-10-04；状态：`A06_P08_WINDOWS_BROWSER_PASS`；WBS：`RAG-04-A01～A06`。关联 Gate 2 冻结 ADR-004/009、DM-04、SC-01～04、API-03，以及 Schema0087/CR-RAG-001～003；原冻结提交 `64cdf09` 不改。
 
 ## 差异与实施方案
 
@@ -137,3 +137,11 @@ Schema0090新增冻结模型已有的RetrievalRun CANCELLED。PENDING直接取�
 复核发现初版客户端虽未在页面暴露、但类型接受当前Worker明确关闭的日期过滤，已在验收前收紧为category/source/version三类并增加传输前拒绝回归。后端尚无ACTIVE Index列表Operation，页面暂要求实施管理员提供已激活UUID并明确提示，作为后续可用性缺口记录，不伪称最终体验完成。
 
 纯前端，无Schema/Migration/后端API/依赖/外发变化。定向29、前端全量69文件/1261项、typecheck及Vite149模块生产构建通过。两条错误测试断言及两处首轮静态类型错误均修复后完整重跑，初轮不计验收证据。进入A06-P08真实浏览器/HTTP/Worker/PostgreSQL验收。
+
+## A06-P08 实施与结果
+
+新增一次性 Windows 真实浏览器验收夹具：隔离 PostgreSQL 18 合成 ACTIVE Index、生产 FastAPI platform-write、Vite实际构建同源代理、第四Worker和真实Edge组成完整闭环。浏览器完成登录/项目内导航、首Run创建、Worker后Result/Context读取、次Run创建/取消和当前状态复读；query不进入URL/storage，内部fingerprint不显示。
+
+数据库终检为SUCCEEDED 1、CANCELLED 2（含启动前合法关闭的旧夹具）、Candidate/ContextBundle/ContextItem各1；临时库、数据根、Windows凭据和Edge profile清理。最终Edge观察108个API事件，三张视觉证据无告警或敏感泄露；构建HTML/JS/CSS SHA-256分别为`ae24ab097fcfe230b8d776efd3467eb27a7eae135f1e8692b026a2c2ed6d50e3`、`13e54218479ac1327036c48585f5c8c3f98b604d402cd9f1e416127d1258867f`、`331b3c8b88e23b1273d38ea4a9c7056016aad60464072f32b00db25a297ef8af`。
+
+托管浏览器资产缺失后采用既有Edge CDP替代；夹具正文/凭据、整页导航、响应式确认和控制端轮询五类失败均作为无效证据记录并清理，最终全新库一次通过。无产品Schema/API/依赖变化，RAG-04首个PROJECT/FTS-only机制闭环完成；正式业务质量/Gate3仍未通过，进入GATE-3-A01证据审计。
