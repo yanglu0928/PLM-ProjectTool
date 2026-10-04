@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/CAP-01-A05-A07 将Capability五读/十二全量Operation分别接入Windows显式只读/写生产组合，使用两把独立Vault游标密钥并在缺失时失败关闭；真实组合发现并修复GLOBAL Review开始时间早于Subject校验的生产时序问题。兼容性/升级/回滚：无Schema/Migration、冻结API、依赖或外发变化，停注入Router即可关闭流量，历史保留。验证：定向42、Win11/PG18.6隔离合成密钥下十二Operation真实HTTP/重放/状态边界与drift、后端2597通过/3跳过、wheel Capability/Review59+Migration4，SHA-256 `793500a98946317b3ba4c95e0909029b085814fe00cda5b9e17aaa2c17f87ea0`。已知问题：CR-CAP-004正式目标账户密钥/备份/ACL/恢复、正式信任、性能、Server2025/Debian13、Gate3/发行仍待。
+
 - 2026-10-05：0.1.0-dev.0/CAP-01-A05-A06 新增Capability五个冻结读取Operation的统一opt-in Router，覆盖Baseline list/get、Version list/get和Item list；DeploymentAdmin可读受控全历史，当前项目成员仅读当前APPROVED投影。两域HMAC游标绑定Session/页大小/权限投影/family/scope，续页由Owner在同一事务重验当前投影；默认应用五路404。兼容性/升级/回滚：无Schema/Migration/依赖/配置/外发，内部Query/Page尾部字段有默认值，停注入Router可关闭流量。验证：定向18、Win11/PG18.6管理员/成员/非成员投影及终态回归，后端2594通过/3跳过，wheel Capability/Review63+解包Migration4，SHA-256 `583680a9af014e66d4a7133dbfa424a8c055e1f9cf129c0bc110898dbfed0ba5`。已知问题：Windows正式密钥/组合/真实HTTP、前端、正式信任/性能/Gate3/发行仍待。
 
 - 2026-10-05：0.1.0-dev.0/CAP-01-A05-A05 新增Capability Version送审外层与opt-in HTTP；重用GLOBAL Review唯一状态机，在同一UOW原子写Review/Subject/Audit/收据，以不可变首轮恢复持久重放并重验当前权限，默认应用仍404。CR-CAP-003对暂无Review存储的`due_at/submission_note`采用非空422失败关闭，不静默丢数据。兼容性/升级/回滚：无Schema/Migration/依赖/配置/外发，停注入Router可关闭流量，历史保留。验证：定向6、Win11/PG18.6原子送审/回滚/重放与终态回归，后端2589通过/3跳过，wheel Capability/Review58+解包Migration4，SHA-256 `9289eea0d7a4b1a046d564dd186e2a19372d4c06ece5b99f3f3805602dba1d2d`。已知问题：五个GET/Windows组合、通用调度存储、前端、正式信任/性能/Gate3/发行仍待。

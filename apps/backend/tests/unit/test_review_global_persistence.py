@@ -1,5 +1,5 @@
 from dataclasses import replace
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from unittest.mock import Mock
 from uuid import uuid4
 import unittest
@@ -121,6 +121,33 @@ class GlobalReviewPersistenceTests(unittest.TestCase):
         )
         with self.assertRaises(ReviewRoundPersistError):
             self.submit()
+
+    def test_submit_observes_started_time_after_subject_verification(self):
+        events = []
+        started = self.now + timedelta(microseconds=1)
+        self.repository.insert_global_identity.side_effect = lambda *args, **kwargs: (
+            events.append("identity") or (self.identity, self.round)
+        )
+        self.subjects.prepare_start_in_transaction.side_effect = lambda tx, request: (
+            events.append("prepare") or PreparedReviewSubject(
+                request, b"s" * 32, 1, self.now, request.reviewer_ids, (),
+            )
+        )
+        self.repository.insert_global_round.return_value = replace(
+            self.submitted, submitted_at=started,
+        )
+        service = GlobalReviewPersistenceService(
+            repository=self.repository, audit=self.audit, subjects=self.subjects,
+            clock=lambda: events.append("clock") or started,
+        )
+        result = service.submit_in_transaction(
+            self.tx, actor_id=self.actor, subject_type="CAP-01",
+            subject_id=self.subject, subject_version_id=self.version,
+            reviewer_ids=(self.reviewer,), policy_code="DEPLOYMENT_ALL_V1",
+            trace_id=self.trace,
+        )
+        self.assertEqual(started, result.submitted_at)
+        self.assertEqual(["identity", "prepare", "clock"], events)
 
     def test_terminal_approval_requires_owner_consumption(self):
         fixed = self.active()

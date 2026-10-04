@@ -22,6 +22,9 @@ from plm_assistant.entrypoints.windows_ai_read_cursor import (
 from plm_assistant.entrypoints.windows_rag_retrieval import (
     create_windows_rag_retrieval_api,
 )
+from plm_assistant.entrypoints.windows_capability import (
+    create_windows_capability_routers,
+)
 from plm_assistant.entrypoints.windows_audit_list_cursor import create_windows_audit_cursor_codec
 from plm_assistant.modules.audit.api.read_events import create_audit_read_router
 from plm_assistant.modules.audit.application.authorized_read import AuthorizedAuditReadService
@@ -505,11 +508,22 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         evidence_viewer_router = None
         evidence_eligibility_router = None
         evidence_eligibility_operation_lookup_router = None
+        capability_command_router = None
+        capability_review_router = None
+        capability_read_router = None
         if include_secret_read:
             from plm_assistant.entrypoints.windows_license_runtime import (
                 create_windows_license_services,
             )
             licenses = create_windows_license_services(runtime, settings)
+            capability_routers = create_windows_capability_routers(
+                runtime, sessions=sessions, origins=origins,
+                license_guard=licenses.guard, audit=audit,
+                include_write=include_secret_write,
+            )
+            capability_read_router = capability_routers.reads
+            capability_command_router = capability_routers.commands
+            capability_review_router = capability_routers.review_submission
             user_detail_router = create_user_detail_router(sessions=sessions,origins=origins,
                 reads=AuthorizedUserReadService(unit_of_work=runtime.unit_of_work,
                     access=SqlAlchemyDeploymentReadAccess(),repository=SqlAlchemyUserReadRepository(),
@@ -1364,6 +1378,9 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             evidence_viewer_router=evidence_viewer_router,
             evidence_eligibility_router=evidence_eligibility_router,
             evidence_eligibility_operation_lookup_router=evidence_eligibility_operation_lookup_router,
+            capability_command_router=capability_command_router,
+            capability_review_router=capability_review_router,
+            capability_read_router=capability_read_router,
             maintenance_admission=maintenance_admission,
             shutdown_callback=shutdown,
         )

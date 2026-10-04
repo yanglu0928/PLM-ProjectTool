@@ -137,7 +137,6 @@ class GlobalReviewPersistenceService:
             raise ReviewRoundPersistError("VALIDATION_FAILED")
         if self._subjects is None:
             raise ReviewRoundPersistError("RESOURCE_NOT_FOUND")
-        now = self._now()
         identity, round_id = self._repository.insert_global_identity(
             tx, actor_id=actor_id, subject_type=subject_type,
             subject_id=subject_id, policy_code=policy_code,
@@ -162,6 +161,7 @@ class GlobalReviewPersistenceService:
         prepared.require_binding(request)
         if self._subjects.assert_active_lock_in_transaction(tx, request) is not None:
             raise ReviewRoundPersistError()
+        now = self._now()
         if now < prepared.verified_at:
             raise ReviewRoundPersistError()
         result = self._repository.insert_global_round(

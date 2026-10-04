@@ -8180,3 +8180,11 @@
 - Reason：HTTP在调Owner前不知当前权限投影；若只在事务外解码或两次独立授权，角色/成员关系可在窗口内变化。不绑定投影又会让管理员历史游标在降权后被当成成员游标续用。
 - Impact/Rollback：无Schema/Migration/依赖/配置/外发；内部Query/Page尾部增加带默认的visibility字段，旧两/三参数构造兼容。停注入Router可关闭流量，历史不改写。
 - Verification：读取Owner/游标/合同18、Win11/PG18.6真实投影回归、后端2594/3跳过；wheel Capability/Review63+解包Migration4，SHA-256 `583680a9af014e66d4a7133dbfa424a8c055e1f9cf129c0bc110898dbfed0ba5`。
+
+# DEC-20261005-846：Capability Windows 组合显式分读写并延期正式密钥仪式
+
+- Date/WBS：2026-10-05 / `CAP-01-A05-A07`；依据CR-CAP-004、DEC-840～845及Schema0095。
+- Decision：Windows `--platform`只挂五个Capability读取Operation，`--platform-write`挂全部十二个，登录专用模式不挂载。Baseline/Child分页各用固定独立Vault引用，缺任一密钥均拒绝启动。当前账户正式供给因缺操作员持有的加密恢复备份口令延期，真实HTTP/PG使用隔离合成Resolver验证，不把合成密钥冒充生产材料。GLOBAL Review开始时间必须在Subject当前事实验证后采样。
+- Reason：只读进程不得扩大写面；共用或硬编码密钥会破坏域隔离。无恢复备份的正式供给不可接受。生产组合暴露出先采样时钟会必然早于Subject实时`verified_at`，因此必须按因果顺序采样。
+- Impact/Rollback：无Schema/Migration、冻结API、依赖或外发变化。停止注入Capability Router即可关闭新流量；Review修复不改变状态机，历史保留。正式密钥、ACL、备份恢复继续作为Release前置。
+- Verification：定向42、Win11/PG18.6十二Operation真实HTTP/重放/状态边界与drift、后端2597/3跳过；wheel Capability/Review59+Migration4，SHA-256 `793500a98946317b3ba4c95e0909029b085814fe00cda5b9e17aaa2c17f87ea0`。

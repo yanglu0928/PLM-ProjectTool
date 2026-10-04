@@ -32,6 +32,7 @@ from plm_assistant.modules.ai.application.prompt_list_cursor import PromptListCu
 from plm_assistant.modules.ai.api.task_list_cursor import AITaskListCursorCodec
 from plm_assistant.modules.ai.api.invocation_list_cursor import AIInvocationListCursorCodec
 from plm_assistant.entrypoints.windows_ai_read_cursor import WindowsAIReadCursorCodecs
+from plm_assistant.entrypoints.windows_capability import WindowsCapabilityRouters
 
 
 class _ContractMaintenanceAdmission:
@@ -181,6 +182,13 @@ class ProductionLoginTests(unittest.TestCase):
             return_value=WindowsAIReadCursorCodecs(
                 AITaskListCursorCodec(b"r" * 32),
                 AIInvocationListCursorCodec(b"r" * 32),
+            ),
+        ))
+        self.enterContext(patch(
+            "plm_assistant.entrypoints.production_login.create_windows_capability_routers",
+            side_effect=lambda *args, include_write, **kwargs: WindowsCapabilityRouters(
+                APIRouter(), APIRouter() if include_write else None,
+                APIRouter() if include_write else None,
             ),
         ))
         self.temp_dir = tempfile.TemporaryDirectory()
