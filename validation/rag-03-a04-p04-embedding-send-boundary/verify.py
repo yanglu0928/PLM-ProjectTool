@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import json
 import uuid
 from datetime import timedelta
 from pathlib import Path
@@ -61,6 +62,7 @@ from plm_assistant.modules.rag.infrastructure.embedding_batch_send_fence_reposit
 
 
 ROOT = Path(__file__).resolve().parents[2]
+_AFTER_SEND = None
 
 
 def load(path: Path, name: str):
@@ -123,7 +125,18 @@ class _Adapter:
         )
         assert bytes(key) == b"synthetic-key-never-sent"
         self.calls.append((route, proof, envelope))
-        body = bytearray(b'{"data":[],"synthetic":true}')
+        body = bytearray(json.dumps({
+            "id": "synthetic-request-1", "object": "list",
+            "model": route.provider_model_key,
+            "data": [{
+                "object": "embedding", "index": index,
+                "embedding": [0.0] * envelope.embedding_dimension,
+            } for index in range(envelope.record_count)],
+            "usage": {
+                "prompt_tokens": envelope.input_tokens,
+                "total_tokens": envelope.input_tokens,
+            },
+        }, separators=(",", ":")).encode())
         return AIProviderResponse(body, AIProviderResponseObservation(
             hashlib.sha256(body).digest(), len(body),
             envelope.input_tokens, 0, envelope.input_tokens, "STOP",
@@ -222,6 +235,9 @@ def validate(context: dict[str, object]) -> None:
         fencing_token=claim.fencing_token, worker_ref="rag-worker-01",
     ) as response:
         assert b"synthetic" in bytes(response.view())
+        if _AFTER_SEND is not None:
+            route, proof, _ = adapter.calls[0]
+            _AFTER_SEND(context, envelope, route, proof, response)
     assert len(adapter.calls) == 1
     assert len(guard.calls) == 4
     assert decryptor.plaintext is not None
@@ -237,7 +253,8 @@ def validate(context: dict[str, object]) -> None:
             "WHERE trace_id=%s AND action='AI_PROVIDER_SECRET_ACCESS'",
             (claim.trace_id,),
         ).fetchall()
-    assert state == ("RUNNING", 1, 1)
+    if _AFTER_SEND is None:
+        assert state == ("RUNNING", 1, 1)
     assert events == [("AI_PROVIDER_SECRET_ACCESS", "SUCCESS", "RAG_EMBEDDING_SEND")]
     print(
         "RAG_03_A04_P04_EMBEDDING_SEND_BOUNDARY_PASS: Windows 11/"
@@ -248,7 +265,9 @@ def validate(context: dict[str, object]) -> None:
     )
 
 
-def main() -> None:
+def main(after_send=None) -> None:
+    global _AFTER_SEND
+    _AFTER_SEND = after_send
     bodies = {1: b"PLM begin one", 2: b"PLM begin two"}
 
     def payload_factory(ordinal, member):

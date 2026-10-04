@@ -7820,3 +7820,11 @@
 - Reason：Python JSON数字默认是float64，而pgvector实际存储float32；若直接对JSON或float64计算指纹，持久化后的向量与证明会在平台或序列化差异下不一致。未经限制的Provider id也不能写入审计/结果列。
 - Impact/Rollback：新增内部响应合同并收紧Adapter id校验，无Schema/API/依赖/网络。回退将使成功提交入口继续关闭，不影响已fenced Batch；原冻结基线不改写。
 - Verification：模型/数量/序号/维度/NaN/id/usage漂移全部失败关闭，重复解析生成相同float32与指纹；后端2411/3跳过、wheel隔离9，SHA-256 `5ab86c70645c91cea7fed48dde580dcdd3a0f026598911190bda1241dd08e80c`。
+
+# DEC-20261004-801：Batch成功与精确EmbeddingRecord集合构成一个提交事实
+
+- Date/WBS：2026-10-04 / `RAG-03-A04-P05-P02`；依据`CR-RAG-003`、DEC-796～800及Schema0082发送栅栏。
+- Decision：解析响应证明必须携带并复核route/payload/source三个指纹，防止同数量同维度响应跨批次误配。Schema0083只允许当前单次租约把精确Batch由RUNNING推进SUCCEEDED；同一事务先更新Batch，再插入按来源顺序生成的全部AVAILABLE EmbeddingRecord。deferred约束在commit时重算来源数、有效记录数及Chunk/文本指纹/Model/Dimension/Authorization/Provider request ref绑定，不完整、额外或错绑记录均使整个事务回滚。
+- Reason：记录守卫必须先看到SUCCEEDED Batch，而若状态更新和记录写入分两个事务，会暴露“成功但无完整向量”或“有向量但未成功”的永久半状态。先更新、同事务写入、提交期复核同时满足守卫顺序与原子可见性。
+- Impact/Rollback：新增内部Schema0083及成功发布应用/仓储，无公开API、新依赖或真实网络。无成功Batch/记录历史可降0082；存在历史拒降并向前修复，原冻结基线不改写。
+- Verification：Win11/PG18.6标记`RAG_03_A04_P05_P02_BATCH_SUCCESS_PASS`；仅更新Batch的故障提交被拒并回滚，随后精确双记录原子提交和有历史拒降通过。后端2417/3跳过、wheel隔离28，SHA-256 `bd3b0f5276257eaa197d4b706c027f59b3c82b53add78355481918207c48030c`；零真实Provider I/O。

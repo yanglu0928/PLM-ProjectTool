@@ -1,6 +1,6 @@
 # CR-RAG-003：EmbeddingRecord、受控 HNSW 与构建发送边界
 
-日期：2026-10-04；状态：`A04_P01_IMPLEMENTED_AND_WINDOWS11_PG18_VERIFIED`；WBS：`RAG-03-A01～A05`。关联 Gate 2 冻结 ADR-004、DM-04、SC-02～04、API-03，以及 CR-RAG-002/Schema0077；原冻结提交 `64cdf09` 不改。
+日期：2026-10-04；状态：`A04_P05_P02_IMPLEMENTED_AND_WINDOWS11_PG18_VERIFIED`；WBS：`RAG-03-A01～A05`。关联 Gate 2 冻结 ADR-004、DM-04、SC-02～04、API-03，以及 CR-RAG-002/Schema0077；原冻结提交 `64cdf09` 不改。
 
 ## 差异与实施方案
 
@@ -86,3 +86,9 @@ Windows11/PostgreSQL18.6标记 `RAG_03_A04_P01_BATCH_SEND_FENCE_PASS`：错误pa
 新增Provider-neutral Embedding响应证明合同。统一AI层从受控Response再次验证request id、model、record count、连续index、受控维度、有限有界数值、usage与观察值；向量统一量化为PostgreSQL pgvector的float32表示后，再以版本化域分离字节计算SHA-256。Provider未返回id时以响应SHA-256构造稳定request ref。Adapter同步拒绝非法id，防止带换行或超长引用进入后续持久化。
 
 后端2411项通过/3跳过；wheel隔离9项，SHA-256 `5ab86c70645c91cea7fed48dde580dcdd3a0f026598911190bda1241dd08e80c`。本项无Schema、公开API、Secret访问、真实Provider I/O或客户数据外发；Schema0082仍保持成功提交关闭，下一项P05-P02以Schema0083开放原子响应提交。
+
+## A04-P05-P02 实施与结果
+
+Schema0083只开放当前单次租约下Batch `RUNNING→SUCCEEDED`，要求Build仍RUNNING、Index仍BUILDING、fencing token递增1、完成时间与Provider request ref齐备。解析结果新增route/payload/source三个指纹，防止同数量同维度响应跨批次误配。成功发布服务把Batch终态与全部float32 EmbeddingRecord放在同一事务：先更新Batch，再插入精确记录集；deferred提交约束按Batch来源逐条复核Chunk、正文指纹、Model、Dimension、Authorization、Provider request ref及AVAILABLE状态，并要求来源数、记录数和有效匹配数完全一致。
+
+Windows11/PostgreSQL18.6先故意只提交SUCCEEDED Batch而不写记录，数据库在commit拒绝并完整回滚为RUNNING；随后生产服务一次提交精确记录集并标记`RAG_03_A04_P05_P02_BATCH_SUCCESS_PASS`，有成功历史时拒绝降级0082。后端2417项通过/3跳过；wheel隔离28项，SHA-256 `bd3b0f5276257eaa197d4b706c027f59b3c82b53add78355481918207c48030c`。无真实Provider I/O、Secret或客户数据外发；P05-P03继续实现已知Provider失败/无效响应的不可重试原子收敛，READY/ACTIVE仍关闭。

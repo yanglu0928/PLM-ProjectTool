@@ -15,6 +15,7 @@ from .provider_execution_contract import (
     AIProviderExecutionError,
     AIProviderExecutionRoute,
     AIProviderResponse,
+    provider_route_fingerprint,
 )
 
 
@@ -54,6 +55,9 @@ class AIEmbeddingVector:
 @dataclass(frozen=True, slots=True)
 class ParsedAIEmbeddingResponse:
     provider_request_ref: str
+    route_fingerprint: bytes = field(repr=False)
+    payload_fingerprint: bytes = field(repr=False)
+    source_refs_fingerprint: bytes = field(repr=False)
     response_fingerprint: bytes = field(repr=False)
     response_bytes: int
     usage_input_tokens: int | None
@@ -63,6 +67,12 @@ class ParsedAIEmbeddingResponse:
     def __post_init__(self) -> None:
         if (type(self.provider_request_ref) is not str
                 or _REQUEST_REF.fullmatch(self.provider_request_ref) is None
+                or type(self.route_fingerprint) is not bytes
+                or len(self.route_fingerprint) != 32
+                or type(self.payload_fingerprint) is not bytes
+                or len(self.payload_fingerprint) != 32
+                or type(self.source_refs_fingerprint) is not bytes
+                or len(self.source_refs_fingerprint) != 32
                 or type(self.response_fingerprint) is not bytes
                 or len(self.response_fingerprint) != 32
                 or type(self.response_bytes) is not int
@@ -166,7 +176,9 @@ def parse_embedding_response(*, response: AIProviderResponse,
         if type(request_ref) is not str or _REQUEST_REF.fullmatch(request_ref) is None:
             raise AIEmbeddingResponseError()
         result = ParsedAIEmbeddingResponse(
-            request_ref, observation.response_fingerprint,
+            request_ref, provider_route_fingerprint(route),
+            envelope.payload_fingerprint, envelope.source_refs_fingerprint,
+            observation.response_fingerprint,
             observation.response_bytes, usage_input,
             observation.latency_ms, tuple(vectors),
         )
