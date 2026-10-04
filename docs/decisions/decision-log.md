@@ -8291,3 +8291,11 @@
 - Reason：提交必须携带可定位的实际响应，而非空状态转换；Evidence若不属于响应文档不能证明本次提交。ProjectManager不在冻结提交角色中，仅凭管理角色不能替负责人提交。SUBMITTED只表示已交付待验，不表示验证或关闭。
 - Impact/Rollback：复用Schema0100，无Migration、公开HTTP、依赖、配置、网络或外发；停装配Owner可关闭新SUBMIT，已提交Root和不可变引用保留。Evidence后续资格变化不改写首次提交回执，VERIFY会按当前事实重新检查。
 - Verification：Win11/PG18.6 owner/ImplementationMember、PM拒绝、Document/Evidence正反例、强锁、重复状态、并发幂等、Audit回滚恢复及License拒绝通过；定向17、后端2637/3跳过、wheel解包17，SHA-256 `8973d6e6134fd044d112d64da9364248679d9a6aa6d20ba393231e420c1084dd`。
+
+# DEC-20261005-860：Action VERIFY 重验提交事实并追加验证 Evidence
+
+- Date/WBS：2026-10-05 / `HND-02-A03-A06`；依据API-04、CR-HND-003、Schema0100及DEC-856～859。
+- Decision：当前ProjectManager或CustomerManager可按强ETag执行`SUBMITTED -> VERIFIED`；先重验固定响应Document与SUBMISSION Evidence当前事实，再追加至少一条属于响应集合的VERIFICATION Evidence。Root、事件、验证人/时间、Evidence、Audit和actor作用域收据同事务。
+- Reason：已提交引用可能在验证前失去资格；只检查状态或新增任意同项目Evidence不能证明本次响应。VERIFIED表示受权人员已核验材料，但仍不代表下游resolution Trace已建立。
+- Impact/Rollback：复用Schema0100，无Migration、公开HTTP、依赖、配置、网络或外发；停装配Owner可关闭新VERIFY，已验证历史不可删除或回退。
+- Verification：Win11/PG18.6角色、当前事实、Evidence正反例、强锁、重复状态、并发幂等、Audit回滚恢复及License拒绝通过；定向17、后端2640/3跳过、wheel解包17，SHA-256 `f3faba55feb1c5313c40ccb30c167f8a886ba100f8158c17fc49130c75c5ce2e`。

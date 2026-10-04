@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/HND-02-A03-A06 新增Action VERIFY Owner；ProjectManager或CustomerManager按强ETag重验固定响应Document和SUBMISSION Evidence当前资格，再追加属于响应集合的VERIFICATION Evidence，Root/事件/验证人时间/Audit/收据原子提交，VERIFIED不等于CLOSED。兼容性/升级/回滚：复用Schema0100，无Migration/公开API/依赖/配置/网络/外发；停止装配可关闭新VERIFY并保留历史。验证：Win11/PG18.6、定向17、后端2640通过/3跳过、wheel解包17，SHA-256 `f3faba55feb1c5313c40ccb30c167f8a886ba100f8158c17fc49130c75c5ce2e`。已知问题：CLOSE-CANCEL、Review/HTTP/UI/Workflow及Gate3/发行仍待。
+
 - 2026-10-05：0.1.0-dev.0/HND-02-A03-A05 新增Action SUBMIT Owner；assigned owner或ImplementationMember按强ETag提交至少一个当前PROJECT可用DocumentVersion及一条属于响应集合的ELIGIBLE Evidence，Root/事件/submitted_at/引用/Audit/幂等收据原子提交，SUBMITTED不等于验证或关闭。兼容性/升级/回滚：复用Schema0100，无Migration/公开API/依赖/配置/网络/外发；停止装配可关闭新SUBMIT并保留历史。验证：Win11/PG18.6、定向17、后端2637通过/3跳过、wheel解包17，SHA-256 `8973d6e6134fd044d112d64da9364248679d9a6aa6d20ba393231e420c1084dd`；首轮短幂等键夹具失败已作废并以全新库重跑。已知问题：VERIFY/CLOSE-CANCEL、Review/HTTP/UI/Workflow及Gate3/发行仍待。
 
 - 2026-10-05：0.1.0-dev.0/HND-02-A03-A04 新增Action START Owner；assigned owner或ProjectManager按强ETag把OPEN原子推进到IN_PROGRESS，状态事件、Audit、持久幂等收据同事务，重放仍重验当前Owner/PM权限。兼容性/升级/回滚：复用Schema0100，无Migration/公开API/依赖/配置/网络/外发；停止装配可关闭新START，已提交历史保留。验证：Win11/PG18.6、定向17、后端2634通过/3跳过、wheel解包17，SHA-256 `fb0cde735e209e1601b8b5c63c03cc1f9770b2af457ec2b274940653e06de83a`；无效夹具和wheel ZIP路径执行偏差已记录并以全新库/解包重跑。已知问题：SUBMIT/VERIFY/CLOSE-CANCEL、Review/HTTP/UI/Workflow及Gate3/发行仍待。
