@@ -8052,3 +8052,11 @@
 - Reason：单元/jsdom和TestClient不能发现浏览器会话、RouterLink、响应式确认及真实Fetch差异；仅页面成功又不能证明原子数据库结果。反之，合成全链通过也不能替代独立业务留出集的分类/引用质量。
 - Impact/Rollback：只新增validation脚本/记录，无产品Schema/Migration/API/依赖/配置变化；可删除脚本回滚。正式质量、性能、Server2025和信任源继续作为Gate/Release条件。
 - Verification：Win11 build26200、Edge154、PG18.6最终全新隔离轮完成1 SUCCEEDED、2 CANCELLED、1套Candidate/Context，108个浏览器API事件和三张视觉证据；数据库/凭据/临时根/Profile清理PASS。前置无效轮均未计证据。
+
+# DEC-20261004-830：Gate 3 按机制、业务质量与生产就绪证据分层判定
+
+- Date/WBS：2026-10-04 / `GATE-3-A01`；依据V2.1 Phase 2/3验收、ADR-009、EXC-P0-006、CR-SEQ-001及RAG-04-A06-P08。
+- Decision：RAG-04 Windows 11浏览器/生产组合/PG闭环只判定统一RAG机制在该测试范围通过；Gate 3同时要求Platform Core真实业务Owner回接、完整模拟项目阶段、全新独立留出集质量、正式信任和性能证据，因此当前保持`BLOCKED`。依据CR-SEQ-001转入Capability最小真实Owner，不以提前开发等同于Phase 4或Gate通过。
+- Reason：合成ACTIVE、合成正文和单平台机制不能证明分类/引用泛化质量或生产就绪；等待新客户材料也不应阻断不依赖外发和新留出集的Owner开发。
+- Impact/Rollback：仅增加审计/状态记录，无Schema/API/Migration/依赖/网络/客户数据变化。可撤审计文档但不得删除历史48%/74%失败或把缺失证据改成PASS。
+- Verification：静态交叉核对V2.1、冻结ADR/DM/API、Phase 0例外、R12来源容量、STATUS及P08实测记录；输出`GATE_3_A01_EVIDENCE_AUDIT_COMPLETE`与`GATE_3_BLOCKED_PLATFORM_OWNER_QUALITY_TRUST_PERFORMANCE`。
