@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/HND-02-A04-A01 完成Action LIST/GET读取前置设计：列表为有界稳定摘要分页，详情返回固定引用和当前状态最新事件，不无界展开历史或暴露路径/正文/Trace端点；后续cursor绑定Session/Project/页长/资源族。兼容性/升级/回滚：纯文档，无程序/Schema/API行为/依赖/配置/网络/外发。验证：静态交叉核对冻结API/DM、Schema0100、当前授权和既有读取模式。已知问题：A02读取Owner、A03 HTTP、Windows组合/UI、Review/Workflow、Gate3和发行仍待。
+
 - 2026-10-05：0.1.0-dev.0/HND-02-A03-A07 新增Action CLOSE/CANCEL Owner及Trace解决关系证明；CLOSE限ProjectManager并精确验证HND-02来源或显式SRV/REQ正式下游关系，CANCEL可从任一非终态进入CANCELLED且保留提交/验证历史，终态不复活。兼容性/升级/回滚：复用Schema0100，无Migration/公开API/依赖/配置/网络/外发；未注册真实下游Owner时失败关闭，停止装配可关闭新写且保留历史。验证：Win11/PG18.6、相关14、后端2647通过/3跳过、wheel解包导入PASS，SHA-256 `c04d7c3c9abdf28ea87a5480908d3e7a3960a5a96cd83fd57948af93093ca0b2`。已知问题：Survey/Requirement真实Owner、Action读取/HTTP/UI、Handover Review/Workflow、Gate3和发行仍待。
 
 - 2026-10-05：0.1.0-dev.0/HND-02-A03-A06 新增Action VERIFY Owner；ProjectManager或CustomerManager按强ETag重验固定响应Document和SUBMISSION Evidence当前资格，再追加属于响应集合的VERIFICATION Evidence，Root/事件/验证人时间/Audit/收据原子提交，VERIFIED不等于CLOSED。兼容性/升级/回滚：复用Schema0100，无Migration/公开API/依赖/配置/网络/外发；停止装配可关闭新VERIFY并保留历史。验证：Win11/PG18.6、定向17、后端2640通过/3跳过、wheel解包17，SHA-256 `f3faba55feb1c5313c40ccb30c167f8a886ba100f8158c17fc49130c75c5ce2e`。已知问题：CLOSE-CANCEL、Review/HTTP/UI/Workflow及Gate3/发行仍待。

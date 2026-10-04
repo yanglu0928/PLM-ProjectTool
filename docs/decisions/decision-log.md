@@ -8307,3 +8307,11 @@
 - Reason：仅有Trace外键无法阻止无关关系冒充解决；把HND-03新增成Trace节点会破坏冻结模型。人工来源没有固定分析版本，只能由受权人员显式选择正式下游关系并以事件reason绑定决定。取消不是关闭，不得生成虚假解决时间或Trace。
 - Impact/Rollback：复用Schema0100，无Migration、公开HTTP、依赖、配置、网络或外发。停止装配Owner可关闭新终态写，合法历史保留；未注册真实Survey/Requirement Owner时生产关闭失败关闭。
 - Verification：Win11/PG18.6两类Trace、角色、终态、取消历史、幂等并发、Audit回滚和License拒绝通过；新增7/相关14、后端2647通过/3跳过；wheel解包导入PASS，SHA-256 `c04d7c3c9abdf28ea87a5480908d3e7a3960a5a96cd83fd57948af93093ca0b2`。
+
+# DEC-20261005-862：Action 读取分离有界摘要与安全详情
+
+- Date/WBS：2026-10-05 / `HND-02-A04-A01`；依据API-01/API-04、DM-05、Schema0100及DEC-861。
+- Decision：LIST按`updated_at DESC, action_item_id DESC`有界分页且只投影摘要；GET返回固定来源、输入规格、响应/Evidence引用和当前状态最新事件，不无界返回全部事件，也不读取Document路径、Evidence正文/定位或Trace两端。后续独立cursor绑定Session/Project/page size/resource family。
+- Reason：四类成员读取不等于可批量导出正文；PATCH可产生无界同状态事件，塞入单一详情会破坏响应上限。旧Session摘要和客户端cursor都不能替代当前成员事实。
+- Impact/Rollback：纯文档，无程序、Schema、API行为、依赖、配置、网络或外发。A02新增只读Owner，A03后才实现HTTP；可停止后续实施而不影响既有Action历史。
+- Verification：静态交叉核对冻结API/DM、Schema0100、Project当前授权及既有Capability/Document读取模式，标记`HND_02_A04_A01_ACTION_READ_PRECHECK_PASS`；未运行新增程序测试。
