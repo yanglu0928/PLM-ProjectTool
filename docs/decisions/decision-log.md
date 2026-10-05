@@ -8467,3 +8467,11 @@
 - Reason：七个内部Owner已持有授权、隔离、Document/Evidence/Trace验证、Audit与事务事实；一次性混合传输、组合、前端和浏览器会跨越多个问题域，也会让合同能力误当生产可用。
 - Impact/Rollback：纯设计记录，无程序、Schema、Migration、依赖、Secret、网络或外发变化。后续Router保持opt-in，撤注入即可关闭公开写，合法历史保留。
 - Verification：静态核对API-04七个冻结Operation、七个Owner及现有Action LIST/GET和Windows读取组合；确认当前公开写为0、生产写组合为0。
+
+# DEC-20261005-882：Action登记与元数据HTTP保持可选且只投影Owner事实
+
+- Date/WBS：2026-10-05 / `HND-02-A05-A02`；依据冻结API-04、DEC-881及既有Create/Patch Owner。
+- Decision：CREATE/PATCH共用一个opt-in Router；正文严格白名单，UUID和UTC时间必须canonical。CREATE用持久幂等，PATCH只用强If-Match与非空partial DTO。HTTP不判断角色、来源、Owner、期限或状态，只投影Owner返回的最小Action事实；默认app不注入。
+- Reason：授权或业务校验下沉到HTTP会形成第二事实，非canonical时间/UUID和宽松partial会扩大重放身份；在Windows组合前默认开放又会把合同通过误当生产就绪。
+- Impact/Rollback：无Schema、Migration、冻结URL、依赖、配置、Secret、网络或外发。撤Router注入恢复404，合法历史不变。
+- Verification：新增合同3、相关定向54、后端全量2709通过/3跳过；wheel导入PASS，SHA-256 `e8a6e5bb84cac252613c3feeb9eb2553f16bc1108d08e0a87638c4a111fb1b97`。
