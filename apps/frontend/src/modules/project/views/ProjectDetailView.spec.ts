@@ -68,6 +68,7 @@ describe("ProjectDetailView", () => {
     expect(wrapper.get('a[href="/projects/' + id + '/members"]').text()).toContain("成员历史");
     expect(wrapper.get('a[href="/projects/' + id + '/ai"]').text()).toContain("AI任务");
     expect(wrapper.get('a[href="/projects/' + id + '/handover"]').text()).toContain("交接分析");
+    expect(wrapper.get('a[href="/projects/' + id + '/handover-actions"]').text()).toContain("交接待办");
     expect(wrapper.get('a[href="/projects/' + id + '/workflow"]').text()).toContain("六阶段流程");
     expect(fetcher).toHaveBeenCalledTimes(1);
     expect(fetcher.mock.calls[0][0]).toBe(`/api/v1/projects/${id}`);

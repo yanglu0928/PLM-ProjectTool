@@ -8451,3 +8451,11 @@
 - Reason：页面加载即展开原文会扩大披露并产生陈旧副本；仅显示UUID又无法满足快速定位。按需Owner调用同时保留最小列表和可操作定位，字段提示解决人工不知道维护什么的问题。
 - Impact/Rollback：纯前端路由/页面/导航，无Schema/API/依赖/Secret/外发变化；撤页面不改变业务历史。Vite主JS 524.49kB警告登记为后续发行性能项。
 - Verification：新增页面8、相关定向26；前端72文件1296项、typecheck及Vite156模块build通过。
+
+# DEC-20261005-880：Action工作台显式区分提交、验证与关闭
+
+- Date/WBS：2026-10-05 / `HND-01-A06-A04`；依据冻结API-04、HND-02读取HTTP及Action生命周期Owner。
+- Decision：Action前端只读投影必须保持`SUBMITTED≠VERIFIED≠CLOSED`；只有CLOSED且具备提交/验证/关闭时间和Resolution Trace才可显示已关闭。请求字段形成明确人工维护提示，响应DocumentVersion只导航Owner，Evidence按点击重新验权定位，不复制原文。当前不显示任何写按钮。
+- Reason：把已提交当完成会越过客户/项目经理验证及Trace闭环；在写HTTP不存在时提供按钮会形成假能力。按需Evidence定位同时满足可操作性和当前授权。
+- Impact/Rollback：纯前端，无Schema/API/依赖/Secret/外发变化；撤路由不改变历史。主JS539.06kB提示继续作为发行拆包性能项。
+- Verification：客户端16、页面3、相关定向37；前端74文件1315项、typecheck及Vite160模块build通过。
