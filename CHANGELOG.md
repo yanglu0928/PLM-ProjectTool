@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/HND-02-A05-A04-P02 完成Win11/PostgreSQL 18生产组合HTTP闭环：CREATE→PATCH→START→SUBMIT→VERIFY真实成功，另一Action CANCEL成功；按CR-HND-008，已有ACTIVE Trace但缺Survey Target Owner时CLOSE稳定422，Root保持VERIFIED/v4、Resolution为空、CLOSED Audit为0。兼容性/回滚：无Schema/Migration/依赖/Secret/外发，一次性库已删除；撤写Router恢复404。验证令牌`HND_02_A05_A04_P02_ACTION_WRITE_HTTP_PASS`。已知问题：真实Survey/Requirement Owner与CLOSE正例、Action写UI/浏览器、正式信任、Server2025、Gate3与发行仍待。
+
 - 2026-10-05：0.1.0-dev.0/HND-02-A05-A04-P01 新增Windows Action七写组合并仅在显式Platform写模式挂载；CR-HND-008在缺Survey/Requirement真实Trace Owner时让CLOSE失败关闭而不阻断其余六写。修复AI/Document API目录缺包标记导致wheel生产入口不可导入的偏差。兼容性/回滚：无Schema/Migration/冻结URL/依赖/Secret/外发，撤写Router恢复404；包标记只修复wheel收录。验证：组合/入口34、后端2714通过/3跳过、七Owner分别Win11/PG18通过，wheel生产入口导入PASS，SHA-256 `99d9a79dd65c45d5aec31abfc36dc18926ff9c28f0a65ca2be9a86a830b687e7`。已知问题：统一HTTP/PG链P02、真实下游Trace Owner/CLOSE正例、写UI/浏览器、正式信任、Server2025、Gate3与发行仍待。
 
 - 2026-10-05：0.1.0-dev.0/HND-02-A05-A03 新增默认关闭的Handover Action START/SUBMIT/VERIFY/CLOSE/CANCEL严格HTTP；五路统一Origin/Session/CSRF、强If-Match、持久幂等头、canonical UUID与白名单JSON，业务验证仍由Owner持有；SUBMITTED、VERIFIED、CLOSED响应保持不同事实。兼容性/回滚：无Schema/Migration/冻结URL/依赖/Secret/外发，撤可选Router恢复404。验证：新增合同3、后端2712通过/3跳过，wheel导入PASS，SHA-256 `39aeb417c9f1aa3b5ef9202ccaf129abd3a895f919204787844daaee10a4a900`。已知问题：Windows真实组合/PG闭环、写UI/浏览器、正式信任、Server2025、Gate3与发行仍待。

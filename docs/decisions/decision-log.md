@@ -8491,3 +8491,11 @@
 - Reason：拒绝整个写模式会把独立下游缺口扩大，跳过Owner又会制造假关闭；源码导入不能证明安装包可用。
 - Impact/Rollback：无Schema/Migration/冻结URL/依赖/Secret/网络/外发；补AI/Document API包标记只改变wheel收录。撤两个写Router注入恢复404，历史保留。
 - Verification：组合/入口34、后端2714通过/3跳过；七个Owner分别在Win11/PG18验证，wheel生产入口导入PASS，SHA-256 `99d9a79dd65c45d5aec31abfc36dc18926ff9c28f0a65ca2be9a86a830b687e7`；统一HTTP/PG链留P02。
+
+# DEC-20261005-885：Action Windows闭环按六写成功加CLOSE失败关闭验收
+
+- Date/WBS：2026-10-05 / `HND-02-A05-A04-P02`；依据CR-HND-008、DEC-884及持续授权。
+- Decision：在真实Survey/Requirement Owner缺失期间，A04客观验收定义为生产组合六写成功，以及已有ACTIVE Trace仍无法绕过Owner的CLOSE 422/零状态变化；不得以合成Owner关闭CR或宣称七写全成功。
+- Reason：该组合同时证明可用能力和安全边界，并允许继续前端/浏览器工作；伪造CLOSE正例会破坏冻结Trace授权。
+- Impact/Rollback：无Schema/Migration/依赖/Secret/外发；一次性验证库已删除。撤写Router恢复404，历史保留。Owner到位后向前补CLOSE正例，不改现有URL/DTO。
+- Verification：Win11/PG18真实ASGI/HTTP完成CREATE→PATCH→START→SUBMIT→VERIFY，ACTIVE Trace下CLOSE稳定422且Root仍VERIFIED/v4/CLOSED Audit=0，另一Action CANCEL成功；令牌`HND_02_A05_A04_P02_ACTION_WRITE_HTTP_PASS`。
