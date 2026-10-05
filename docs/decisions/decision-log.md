@@ -8459,3 +8459,11 @@
 - Reason：把已提交当完成会越过客户/项目经理验证及Trace闭环；在写HTTP不存在时提供按钮会形成假能力。按需Evidence定位同时满足可操作性和当前授权。
 - Impact/Rollback：纯前端，无Schema/API/依赖/Secret/外发变化；撤路由不改变历史。主JS539.06kB提示继续作为发行拆包性能项。
 - Verification：客户端16、页面3、相关定向37；前端74文件1315项、typecheck及Vite160模块build通过。
+
+# DEC-20261005-881：Action七写复用既有Owner并分两组开放HTTP
+
+- Date/WBS：2026-10-05 / `HND-02-A05-A01`；依据冻结API-04、Schema0100、DEC-880及七个既有Action Owner。
+- Decision：公开边界不复制业务规则；CREATE/PATCH与五个生命周期命令分两项实现，统一严格Origin/Session/CSRF、canonical UUID、白名单DTO和安全错误。PATCH仅强If-Match，其余状态写强If-Match并持久幂等，CREATE持久幂等；SUBMITTED/VERIFIED不投影为完成。Windows写组合和真实PG闭环独立实施。
+- Reason：七个内部Owner已持有授权、隔离、Document/Evidence/Trace验证、Audit与事务事实；一次性混合传输、组合、前端和浏览器会跨越多个问题域，也会让合同能力误当生产可用。
+- Impact/Rollback：纯设计记录，无程序、Schema、Migration、依赖、Secret、网络或外发变化。后续Router保持opt-in，撤注入即可关闭公开写，合法历史保留。
+- Verification：静态核对API-04七个冻结Operation、七个Owner及现有Action LIST/GET和Windows读取组合；确认当前公开写为0、生产写组合为0。
