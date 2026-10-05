@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/HND-01-A06-A03 新增项目交接分析列表/详情/版本/问题卡片页面与项目导航；Evidence按用户点击调用既有Viewer重新验权定位固定原文，失败/切换上下文清除旧位置；NEED_CONFIRM明确显示问题、影响、选项及字段名称/必填/格式/示例，不复制正文或自动确认。兼容性/回滚：纯前端路由增量，无Schema/API/依赖/Secret/外发，撤路由即可。验证：新增8、相关定向26、前端72文件1296项、typecheck、Vite156模块build PASS。已知问题：主JS 524.49kB拆包性能、Action页、写UI/HTTP、真实浏览器、Gate3与发行仍待。
+
 - 2026-10-05：0.1.0-dev.0/HND-01-A06-A02 新增未接页面的Handover Analysis五读严格前端客户端：白名单校验父级身份/ETag/排序/计数，三类不透明cursor以品牌类型隔离；Version列表保持最小摘要、详情核完整固定来源，NEED_CONFIRM投影确认问题/选项/字段级维护提示。兼容性/回滚：纯前端新增，无Schema/API/依赖/配置/Secret/外发，删除未引用客户端即可。验证：定向27、前端70文件1288项、typecheck、Vite149模块build PASS。已知问题：A03页面/Evidence定位、写UI、Action公共写边界、浏览器、Gate3与发行仍待。
 
 - 2026-10-05：0.1.0-dev.0/HND-01-A06-A01 完成Handover前端与交互前置核查：问题卡片按需调用Evidence Viewer定位固定原文，NEED_CONFIRM以确认问题/影响/选项/`required_input_spec`给出人工维护提示，不复制正文进表格或把AI建议当事实；拆分Analysis五读客户端、页面、Action只读与后续写HTTP/UI。兼容性/回滚：纯文档，无程序/Schema/API/依赖/配置/Secret/外发。验证：静态核对冻结API、当前Windows组合与既有前端Owner边界。已知问题：A02起程序、真实浏览器、Action写HTTP、Gate3与发行仍待。

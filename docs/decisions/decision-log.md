@@ -8443,3 +8443,11 @@
 - Reason：解码签名cursor会在客户端复制服务端信任逻辑；要求LIST展开固定来源会与真实最小投影冲突，反之让GET缺明细又会丢失版本输入身份。直接保留任意JSON规格不能为用户形成可信维护提示。
 - Impact/Rollback：仅新增未接线前端客户端，无Schema/API/依赖/配置/Secret/外发变化；删除客户端即可回滚。
 - Verification：定向27、前端全量70文件/1288项、typecheck及Vite149模块build通过；首轮同步抛错与测试Response复用已修正后重跑。
+
+# DEC-20261005-879：Handover页面按问题触发Evidence重新验权定位
+
+- Date/WBS：2026-10-05 / `HND-01-A06-A03`；依据DEC-877/878、Evidence Viewer和用户确认的待办交互要求。
+- Decision：项目页按Analysis→Version→Item分层读取；问题卡片不复制原文。Evidence仅在用户点击后交由既有Viewer重新验权，成功只显示固定位置/短提示/受权内容入口，下一次定位或上下文变化立即清旧。NEED_CONFIRM显示问题、影响、选项与字段级维护提示，不提供空白确认表单或自动接受。
+- Reason：页面加载即展开原文会扩大披露并产生陈旧副本；仅显示UUID又无法满足快速定位。按需Owner调用同时保留最小列表和可操作定位，字段提示解决人工不知道维护什么的问题。
+- Impact/Rollback：纯前端路由/页面/导航，无Schema/API/依赖/Secret/外发变化；撤页面不改变业务历史。Vite主JS 524.49kB警告登记为后续发行性能项。
+- Verification：新增页面8、相关定向26；前端72文件1296项、typecheck及Vite156模块build通过。

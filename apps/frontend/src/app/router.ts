@@ -34,6 +34,8 @@ import ProjectAITaskDetailView from "@/modules/ai/views/ProjectAITaskDetailView.
 import ProjectAISuggestionView from "@/modules/ai/views/ProjectAISuggestionView.vue";
 import ProjectAISubmitView from "@/modules/ai/views/ProjectAISubmitView.vue";
 import ProjectRetrievalView from "@/modules/rag/views/ProjectRetrievalView.vue";
+import ProjectHandoverListView from "@/modules/handover/views/ProjectHandoverListView.vue";
+import ProjectHandoverDetailView from "@/modules/handover/views/ProjectHandoverDetailView.vue";
 
 export function createAppRouter(
   history: RouterHistory = createWebHistory(),
@@ -110,6 +112,16 @@ export function createAppRouter(
         path: "/projects/:projectId/ai",
         name: "project-ai-workbench",
         component: ProjectAIWorkbenchView,
+      },
+      {
+        path: "/projects/:projectId/handover",
+        name: "project-handover",
+        component: ProjectHandoverListView,
+      },
+      {
+        path: "/projects/:projectId/handover/:analysisId",
+        name: "project-handover-detail",
+        component: ProjectHandoverDetailView,
       },
       {
         path: "/projects/:projectId/workflow",
