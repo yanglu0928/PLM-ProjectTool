@@ -33,6 +33,7 @@ from plm_assistant.modules.ai.api.task_list_cursor import AITaskListCursorCodec
 from plm_assistant.modules.ai.api.invocation_list_cursor import AIInvocationListCursorCodec
 from plm_assistant.entrypoints.windows_ai_read_cursor import WindowsAIReadCursorCodecs
 from plm_assistant.entrypoints.windows_capability import WindowsCapabilityRouters
+from plm_assistant.entrypoints.windows_handover import WindowsHandoverRouters
 
 
 class _ContractMaintenanceAdmission:
@@ -187,6 +188,13 @@ class ProductionLoginTests(unittest.TestCase):
         self.enterContext(patch(
             "plm_assistant.entrypoints.production_login.create_windows_capability_routers",
             side_effect=lambda *args, include_write, **kwargs: WindowsCapabilityRouters(
+                APIRouter(), APIRouter() if include_write else None,
+                APIRouter() if include_write else None,
+            ),
+        ))
+        self.handover_factory = self.enterContext(patch(
+            "plm_assistant.entrypoints.production_login.create_windows_handover_routers",
+            side_effect=lambda *args, include_write, **kwargs: WindowsHandoverRouters(
                 APIRouter(), APIRouter() if include_write else None,
                 APIRouter() if include_write else None,
             ),

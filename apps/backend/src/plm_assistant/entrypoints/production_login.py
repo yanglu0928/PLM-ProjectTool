@@ -28,6 +28,9 @@ from plm_assistant.entrypoints.windows_capability import (
 from plm_assistant.entrypoints.windows_handover_action_read import (
     create_windows_handover_action_read_router,
 )
+from plm_assistant.entrypoints.windows_handover import (
+    create_windows_handover_routers,
+)
 from plm_assistant.entrypoints.windows_handover_review import (
     create_windows_handover_review_router,
 )
@@ -517,6 +520,9 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         capability_command_router = None
         capability_review_router = None
         capability_read_router = None
+        handover_command_router = None
+        handover_review_submission_router = None
+        handover_read_router = None
         handover_action_read_router = None
         review_command_router = None
         if include_secret_read:
@@ -532,6 +538,14 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             capability_read_router = capability_routers.reads
             capability_command_router = capability_routers.commands
             capability_review_router = capability_routers.review_submission
+            handover_routers = create_windows_handover_routers(
+                runtime, sessions=sessions, origins=origins,
+                license_guard=licenses.guard, audit=audit,
+                include_write=include_secret_write,
+            )
+            handover_read_router = handover_routers.reads
+            handover_command_router = handover_routers.commands
+            handover_review_submission_router = handover_routers.review_submission
             handover_action_read_router = create_windows_handover_action_read_router(
                 runtime, sessions=sessions, origins=origins,
                 license_guard=licenses.guard,
@@ -1398,6 +1412,9 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             capability_command_router=capability_command_router,
             capability_review_router=capability_review_router,
             capability_read_router=capability_read_router,
+            handover_command_router=handover_command_router,
+            handover_review_submission_router=handover_review_submission_router,
+            handover_read_router=handover_read_router,
             handover_action_read_router=handover_action_read_router,
             review_command_router=review_command_router,
             maintenance_admission=maintenance_admission,

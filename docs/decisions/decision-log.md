@@ -8419,3 +8419,11 @@
 - Reason：只签位置或共用资源族密钥无法阻止跨Project、跨Analysis/Version和跨列表重放；把路径/正文随详情展开会越过Document/Evidence/AI Owner授权。A07前缺正式服务账户Vault key，故保持默认关闭。
 - Impact/Rollback：无Migration、依赖、配置、网络、Secret内容或外发；撤可选Router恢复404，数据历史不变。正式三key的生成/备份/ACL/恢复属于A07/Release证据。
 - Verification：新增7、相关定向14；Win11/PG18.6 A02真实读取链及drift通过；后端2704通过/3跳过；wheel read/cursor模块导入PASS，SHA-256 `ab45d75740810d07a00057f9ae58e769ed5ba36071d3bab8613bced0f9704477`。
+
+# DEC-20261005-876：Handover Analysis按平台模式组合且三Key缺失拒绝启动
+
+- Date/WBS：2026-10-05 / `HND-01-A05-A07`；依据冻结API-04、DEC-873～875与CR-HND-007。
+- Decision：显式只读平台模式仅挂五个Analysis读取；显式写模式再挂五个普通命令和业务原子送审。通用Review与Handover Action继续由各自Owner/Router持有。Analysis/Version/Item cursor固定三个独立Vault引用，任一缺失或过短即拒绝启动；验证只能注入进程内合成key，不能替代正式服务账户仪式。
+- Reason：组合层若复制Review/Action会形成第二业务事实；读模式暴露写路由会破坏部署边界；缺key时临时生成或复用其他key会令重启失效并扩大跨资源重放。当前服务账户尚无正式三key仪式证据，必须把机制通过与发行就绪分开陈述。
+- Impact/Rollback：无Migration、冻结API破坏、依赖、网络或外发；正式Release新增三key生成/备份/ACL/恢复/轮换前置。撤生产入口的Handover注入恢复404，合法历史保留。
+- Verification：组合/生产入口定向34；Win11/PG18.6真实11 Operation、分页、原子送审/重放、批准、升版/撤回及drift通过；后端2706通过/3跳过；wheel SHA-256 `0d909a2ca641c1ef8b8fd3f17d847dc302a37f95a8aef28339b6c0c83a8469c7`。

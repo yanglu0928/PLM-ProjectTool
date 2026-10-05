@@ -354,6 +354,9 @@ def main(*, use_http: bool = False) -> None:
                 submission_validation = (
                     os.environ.get("PLM_HND_SUBMISSION_VALIDATION") == "1"
                 )
+                composition_validation = (
+                    os.environ.get("PLM_HND_ANALYSIS_COMPOSITION_VALIDATION") == "1"
+                )
                 submission_service = None
                 submission_replays = {}
                 if submission_validation:
@@ -431,9 +434,10 @@ def main(*, use_http: bool = False) -> None:
 
                     class Sessions:
                         @staticmethod
-                        def validate(token, *, csrf_token, require_csrf):
+                        def validate(token, *, csrf_token=None, require_csrf=False):
                             assert token in (manager_token, reviewer_token)
-                            assert csrf_token == CSRF and require_csrf is True
+                            if require_csrf:
+                                assert csrf_token == CSRF
                             return object()
 
                     router = create_windows_handover_review_router(
@@ -441,8 +445,46 @@ def main(*, use_http: bool = False) -> None:
                         origins=LoginOriginPolicy(["http://localhost"]),
                         license_guard=guard, audit=audit,
                     )
+                    handover_routers = None
+                    if composition_validation:
+                        from plm_assistant.entrypoints.windows_handover import (
+                            HANDOVER_ANALYSIS_CURSOR_KEY_REF,
+                            HANDOVER_ITEM_CURSOR_KEY_REF,
+                            HANDOVER_VERSION_CURSOR_KEY_REF,
+                            create_windows_handover_routers,
+                        )
+
+                        class Keys:
+                            @staticmethod
+                            def resolve_key(key_ref):
+                                return {
+                                    HANDOVER_ANALYSIS_CURSOR_KEY_REF: b"a" * 32,
+                                    HANDOVER_VERSION_CURSOR_KEY_REF: b"v" * 32,
+                                    HANDOVER_ITEM_CURSOR_KEY_REF: b"i" * 32,
+                                }.get(key_ref)
+
+                        handover_routers = create_windows_handover_routers(
+                            runtime, sessions=Sessions(),
+                            origins=LoginOriginPolicy(["http://localhost"]),
+                            license_guard=guard, audit=audit,
+                            include_write=True, resolver=Keys(),
+                        )
                     client = TestClient(
-                        create_app(review_command_router=router),
+                        create_app(
+                            review_command_router=router,
+                            handover_read_router=(
+                                None if handover_routers is None
+                                else handover_routers.reads
+                            ),
+                            handover_command_router=(
+                                None if handover_routers is None
+                                else handover_routers.commands
+                            ),
+                            handover_review_submission_router=(
+                                None if handover_routers is None
+                                else handover_routers.review_submission
+                            ),
+                        ),
                         base_url="http://localhost",
                     )
 
@@ -457,7 +499,123 @@ def main(*, use_http: bool = False) -> None:
                         result["if-match"] = etag
                     return result
 
+                if composition_validation:
+                    assert client is not None
+                    root = f"/api/v1/projects/{project}/handover-analyses"
+                    source_body = [{
+                        "document_id": str(source.document_id),
+                        "document_version_id": str(source.document_version_id),
+                    }]
+                    created_response = client.post(
+                        root, headers=headers(manager_token), json={
+                            "analysis_purpose": "Composition verification",
+                            "source_documents": source_body,
+                        },
+                    )
+                    assert created_response.status_code == 201, created_response.text
+                    created_data = created_response.json()["data"]
+                    scratch_id = created_data["handover_analysis_id"]
+                    patched_response = client.patch(
+                        f"{root}/{scratch_id}",
+                        headers=headers(manager_token, etag='"v0"'),
+                        json={"analysis_purpose": "Composition verification updated"},
+                    )
+                    assert patched_response.status_code == 200, patched_response.text
+                    scratch_item = uuid.uuid4()
+                    version_response = client.post(
+                        f"{root}/{scratch_id}/versions",
+                        headers=headers(manager_token, etag='"v1"'),
+                        json={
+                            "source_documents": source_body,
+                            "capability_baseline_id": str(baseline),
+                            "capability_baseline_version_id": str(cap_version),
+                            "items": [{
+                                "analysis_item_id": str(scratch_item),
+                                "item_type": "GAP", "title": "Synthetic gap",
+                                "statement": "Synthetic statement",
+                                "impact": "Synthetic impact", "severity": "LOW",
+                                "priority": "LOW", "recommendation": None,
+                                "confirmation_question": None,
+                                "required_input_spec": {}, "source_missing": False,
+                                "evidence_refs": [str(evidence)],
+                                "capability_refs": [str(cap_item)], "options": [],
+                            }],
+                            "ai_task_refs": [],
+                        },
+                    )
+                    assert version_response.status_code == 201, version_response.text
+                    scratch_version = version_response.json()["data"][
+                        "handover_analysis_version_id"
+                    ]
+                    validate_response = client.post(
+                        f"{root}/{scratch_id}/versions/{scratch_version}:validate",
+                        headers=headers(manager_token),
+                    )
+                    assert validate_response.status_code == 200, validate_response.text
+                    detail = client.get(
+                        f"{root}/{scratch_id}", headers=headers(manager_token),
+                    )
+                    assert detail.status_code == 200 and detail.headers["etag"] == '"v2"'
+                    assert client.get(
+                        f"{root}/{scratch_id}/versions",
+                        headers=headers(manager_token),
+                    ).status_code == 200
+                    version_detail = client.get(
+                        f"{root}/{scratch_id}/versions/{scratch_version}",
+                        headers=headers(manager_token),
+                    )
+                    assert version_detail.status_code == 200, version_detail.text
+                    item_page = client.get(
+                        f"{root}/{scratch_id}/versions/{scratch_version}/items",
+                        headers=headers(manager_token),
+                    )
+                    assert item_page.status_code == 200, item_page.text
+                    first_page = client.get(
+                        root + "?page_size=1", headers=headers(manager_token),
+                    )
+                    assert first_page.status_code == 200, first_page.text
+                    cursor = first_page.json()["data"]["next_cursor"]
+                    assert cursor and client.get(
+                        root + f"?page_size=1&cursor={cursor}",
+                        headers=headers(manager_token),
+                    ).status_code == 200
+                    archived = client.post(
+                        f"{root}/{scratch_id}:archive",
+                        headers=headers(manager_token, etag='"v2"'),
+                    )
+                    assert archived.status_code == 200, archived.text
+                    assert archived.json()["data"]["state"] == "ARCHIVED"
+
                 def create_start(version_id: uuid.UUID):
+                    if composition_validation:
+                        assert client is not None
+                        submission_headers = headers(manager_token)
+                        submission_body = {
+                            "reviewer_ids": [str(reviewer)],
+                            "policy_ref": "HANDOVER_ALL_V1",
+                            "due_at": None, "submission_note": None,
+                        }
+                        path = (
+                            f"/api/v1/projects/{project}/handover-analyses/"
+                            f"{analysis.handover_analysis_id}/versions/"
+                            f"{version_id}:submit-review"
+                        )
+                        submitted_response = client.post(
+                            path, headers=submission_headers, json=submission_body,
+                        )
+                        assert submitted_response.status_code == 201, submitted_response.text
+                        replay_response = client.post(
+                            path, headers=submission_headers, json=submission_body,
+                        )
+                        assert replay_response.status_code == 201, replay_response.text
+                        assert replay_response.json()["data"] == submitted_response.json()["data"]
+                        result = submitted_response.json()["data"]
+                        submission_replays[version_id] = (
+                            path, submission_headers, submission_body,
+                        )
+                        return uuid.UUID(result["review_id"]), uuid.UUID(
+                            result["review_round_id"]
+                        )
                     if submission_service is not None:
                         key = str(uuid.uuid4())
                         command_value = SubmitHandoverVersionReview(
@@ -554,7 +712,19 @@ def main(*, use_http: bool = False) -> None:
                     )
                     assert decision_replay.status_code == 200, decision_replay.text
                     assert decision_replay.json()["data"] == approved.json()["data"]
-                if submission_service is not None:
+                if composition_validation:
+                    path, replay_headers, replay_body = submission_replays[
+                        first.handover_analysis_version_id
+                    ]
+                    replayed = client.post(
+                        path, headers=replay_headers, json=replay_body,
+                    )
+                    assert replayed.status_code == 201, replayed.text
+                    assert (uuid.UUID(replayed.json()["data"]["review_id"]),
+                            uuid.UUID(replayed.json()["data"]["review_round_id"])) == (
+                                review_one, round_one,
+                            )
+                elif submission_service is not None:
                     replayed = submission_service.submit(
                         submission_replays[first.handover_analysis_version_id]
                     )
@@ -640,6 +810,8 @@ def main(*, use_http: bool = False) -> None:
                 if client is not None:
                     client.close()
                 marker = (
+                    "HND_01_A05_A07_WINDOWS_COMPOSITION_PASS"
+                    if composition_validation else
                     "HND_01_A05_A05_SUBMIT_REVIEW_PASS"
                     if submission_validation else
                     "HND_01_A04_A02_P04_WINDOWS_HTTP_PASS" if use_http else
