@@ -8531,3 +8531,11 @@
 - Reason：该指令与 2026-09-24 至 2026-10-02 的 `CR-EXEC-001` 持续授权一致，属于再次确认而非新增产品 Scope；重复申请普通批准会中断既定持续交付目标。
 - Impact/Rollback：只更新仓库执行纪律和追溯记录，无产品代码、Schema/Migration、API、权限、依赖、配置、Secret、网络或客户数据外发变化。可恢复旧执行节奏，但已形成的 Change Request、测试、提交和远端历史必须保留。
 - Verification：交叉核对 AGENTS、V1.1、CR-EXEC-001、项目 Skill 和 STATUS 的安全/Gate边界；明确正式信任、客户签署、缺失环境、付款及不可恢复生产操作仍不在默认授权内，Gate 只能由客观证据关闭。
+
+# DEC-20261005-890：Handover资格由业务Owner证明而非Workflow直查
+
+- Date/WBS：2026-10-05 / `HND-03-A01`；依据冻结DM-02/DM-05、API-02、六阶段Workflow V1及已完成Handover Review/Action运行链。
+- Decision：`HANDOVER_BASELINE`与`HANDOVER_ISSUES`由Handover-owned Port在Workflow调用方事务内证明当前正式Version、APPROVED ReviewRound、固定来源和Action事实，再转换为最小Evidence/ReviewRound观测；Workflow不得直查`hnd_*`或复制正文。无独立blocking字段时，`source_missing`或`NEED_CONFIRM/CONFLICT/RISK`保守视为阻断；每项相关Action须达到VERIFIED或CLOSED，SUBMITTED/CANCELLED不满足。无ApprovedException Owner时WAIVED失败关闭。
+- Reason：Handover真实Review Owner已经存在，但历史APPROVED不证明当前来源；任意同项目Evidence、Action状态或UUID也不能证明Gate。保守规则不按AI置信度/严重度擅自豁免，同时遵循冻结DM允许Gate消费满足规则的VERIFIED/CLOSED。
+- Impact/Rollback：本项纯文档，无代码、Schema/Migration、API、权限、依赖、配置、Secret、网络或外发。后续分为领域合同、当前事实Owner、PG验证，再回Workflow独立写链；停止注册Port即可回滚且历史不变。
+- Verification：静态交叉检查DM-05、API-02、六阶段定义、Workflow记录/历史Schema、Handover Review Subject与Action生命周期；标记`HND_03_A01_WORKFLOW_QUALIFICATION_PRECHECK_PASS`，不代表Checklist、Transition、Gate 3或发行通过。
