@@ -8523,3 +8523,11 @@
 - Reason：测试替身不约束原生fetch的receiver，单元测试会漏掉浏览器`Illegal invocation`；JavaScript `toISOString()`的`.000Z`与后端canonical序列化不等价。真实浏览器验收必须覆盖这些运行时差异。
 - Impact/Rollback：纯前端调用与验收harness修复，无Schema/Migration/冻结API/依赖/Secret/外发。回滚会重新导致Action列表或CREATE在真实浏览器失败。首轮审计事件名夹具写错后作废，以全新库重跑。
 - Verification：Action相关45、前端全量75文件1341项、typecheck、Vite161模块build；本机Edge记录20个成功API响应，PG最终VERIFIED/v4与CANCELLED/v1及六类Audit准确，截图复核、隔离资源清理通过；令牌`HND_02_A05_A06_WINDOWS_BROWSER_PASS`。
+
+# DEC-20261005-889：再次确认持续交付纪律并保持客观 Gate
+
+- Date/WBS：2026-10-05 / `CR-EXEC-001`；来源为用户本轮再次选择方案 A 并明确调整工作纪律。
+- Decision：继续按 `STATUS.md` 的依赖顺序自主完成全部剩余工作直至可使用程序包；遇到原方案不兼容，先记录证据、备选、所选最小调整、影响、迁移/回滚和验证计划，再直接实施、验证并同步 GitHub，不等待普通 WBS、Gate 交界或可追溯方案调整的逐项同意。
+- Reason：该指令与 2026-09-24 至 2026-10-02 的 `CR-EXEC-001` 持续授权一致，属于再次确认而非新增产品 Scope；重复申请普通批准会中断既定持续交付目标。
+- Impact/Rollback：只更新仓库执行纪律和追溯记录，无产品代码、Schema/Migration、API、权限、依赖、配置、Secret、网络或客户数据外发变化。可恢复旧执行节奏，但已形成的 Change Request、测试、提交和远端历史必须保留。
+- Verification：交叉核对 AGENTS、V1.1、CR-EXEC-001、项目 Skill 和 STATUS 的安全/Gate边界；明确正式信任、客户签署、缺失环境、付款及不可恢复生产操作仍不在默认授权内，Gate 只能由客观证据关闭。

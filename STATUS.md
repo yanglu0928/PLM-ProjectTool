@@ -28,6 +28,8 @@
 
 ## 最近检查点
 
+- 2026-10-05/CR-EXEC-001 用户再次选择A并重申持续推进至可用程序包；偏差先记录再自主实施/验证并同步GitHub，不等待普通逐项批准。无产品代码/Schema/API/依赖变化；安全边界和Gate客观证据要求不变，继续HND-03-A01。
+
 - 2026-10-05/HND-02-A05-A06 Win11真实Edge/Vue/生产FastAPI/PG18完成六写、20个成功API、状态/Audit/清理；CLOSE按CR-HND-008禁用。修复原生fetch接收者与canonical UTC真实浏览器缺陷；相关45、前端1341项/typecheck/build PASS；进入HND-03-A01。
 
 - 2026-10-05/HND-02-A05-A05-P02 Action写工作台支持人工/Analysis来源创建、完整元数据维护及START/SUBMIT/VERIFY/CANCEL；成功后GET刷新，未知结果原Key/ETag重试，CLOSE按CR-HND-008禁用。页面7、前端75文件1339项/typecheck/build PASS；进入A06真实浏览器。
