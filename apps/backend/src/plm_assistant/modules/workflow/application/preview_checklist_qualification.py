@@ -259,9 +259,13 @@ class WorkflowChecklistQualificationPreviewService:
             raise WorkflowChecklistQualificationPreviewError(
                 "CONFLICT_STATE",
             )
-        stage = workflow.stages[0]
-        if stage.stage_key != "HANDOVER" or stage.state not in {
-                "ACTIVE", "BLOCKED"}:
+        stage = next(
+            (value for value in workflow.stages
+             if value.stage_key == workflow.current_stage),
+            None,
+        )
+        if (stage is None or stage.stage_key != "HANDOVER"
+                or stage.state not in {"ACTIVE", "BLOCKED"}):
             raise WorkflowChecklistQualificationPreviewError(
                 "CONFLICT_STATE",
             )

@@ -100,7 +100,7 @@ class WorkflowChecklistQualificationPreviewTests(unittest.TestCase):
         definition = six_stage_definition()
         stages = tuple(StageView(
             stage.stage_key, stage.order,
-            "ACTIVE" if stage.order == 1 and state == "ACTIVE"
+            "ACTIVE" if stage.stage_key == current and state == "ACTIVE"
             else "NOT_STARTED",
             tuple(ChecklistView(item.item_key, item.required, "PENDING")
                   for item in stage.checklist_items),

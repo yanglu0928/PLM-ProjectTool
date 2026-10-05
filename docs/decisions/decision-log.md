@@ -8619,3 +8619,11 @@
 - Reason：预览是写命令的辅助边界，普通项目成员无写权时不应获得额外的Gate证据集；仅返UUID且不返内部指纹/路径/正文限制了暴露。
 - Impact/Rollback：依CR-WFL-008为兼容性API增量，无Schema/Migration/依赖/Secret/外发；默认app继续404，撤Router/Service可回滚。预览不改变冻结写DTO或原写时Owner复验。
 - Verification：定向9、相关32、后端2763运行/3跳过全部通过；wheel SHA-256 `c97424723d7698d249179422cfc3c9592b1acc3c8741fc363e92658bdc7c3e49`。生产组合/真实PG留A08。
+
+# DEC-20261006-901：资格预览仅进入Windows写平台并按当前阶段选择完整投影
+
+- Date/WBS：2026-10-06 / `WFL-01-A07-P07-A08`；依据CR-WFL-008、DEC-900及Win11/PostgreSQL真实复验证据。
+- Decision：资格预览只挂载于显式`platform-write`，默认、登录和只读平台保持404；GET使用只读Session当前事实Port，但Project授权继续精确调用`WORKFLOW_CHECKLIST_RECORD`的ProjectManager/ACTIVE策略。Workflow完整六阶段投影必须按`current_stage`定位，不依赖集合首项。
+- Reason：预览只服务于紧随其后的写入，扩大到只读平台没有当前产品必要性；GET没有CSRF语义，误用写Session Port会让合法读取固定失败。生产Repository返回完整六阶段，合同单阶段替身不能代表真实顺序。
+- Impact/Rollback：无Schema/Migration、冻结写DTO、角色、依赖、Secret或外发变化；撤生产资格Router注入恢复404。修复收紧正确阶段选择，不改变Handover Owner或写时再复验。
+- Verification：首轮503定位并修复阶段选择，次轮503定位并修复Session Port；最终Win11/PostgreSQL18.6真实HTTP、Alembic check、权威Handover、最小响应、ETag/no-store及业务快照零写PASS。定向45、后端2765运行/3跳过、wheel模块检查PASS，SHA-256 `83664a5775c80974310f423d756b8c3d3d886a177f0af6fd303fb3ea976155f3`。

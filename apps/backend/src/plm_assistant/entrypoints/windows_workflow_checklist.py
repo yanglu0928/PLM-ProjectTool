@@ -62,6 +62,12 @@ from plm_assistant.modules.trace.infrastructure.resolution_repository import (
 from plm_assistant.modules.workflow.api.record_checklist import (
     create_workflow_checklist_record_router,
 )
+from plm_assistant.modules.workflow.api.qualification_preview import (
+    create_workflow_checklist_qualification_router,
+)
+from plm_assistant.modules.workflow.application.preview_checklist_qualification import (
+    WorkflowChecklistQualificationPreviewService,
+)
 from plm_assistant.modules.workflow.application.record_checklist import (
     WorkflowChecklistRecordService,
 )
@@ -71,11 +77,48 @@ from plm_assistant.modules.workflow.infrastructure.checklist_record_append_repos
 from plm_assistant.modules.workflow.infrastructure.checklist_record_replay_repository import (
     SqlAlchemyChecklistRecordReplayRepository,
 )
+from plm_assistant.modules.workflow.infrastructure.read_repository import (
+    SqlAlchemyWorkflowReadRepository,
+)
 
 
 class ProductionWorkflowChecklistStartupError(RuntimeError):
     def __init__(self) -> None:
         super().__init__("Workflow Checklist composition unavailable")
+
+
+def _create_handover_qualification(
+    *, documents, downloads, parse_results,
+    project_repository=None, target_proofs=None,
+):
+    if project_repository is None:
+        project_repository = SqlAlchemyProjectAuthorizationRepository()
+    if target_proofs is None:
+        target_proofs = TraceTargetProofService({})
+    document_proofs = DocumentFixedSourceProofService(
+        documents=documents,
+        downloads=downloads,
+        parse_metadata=SqlAlchemyParseResultReadRepository(),
+        parse_results=parse_results,
+    )
+    return HandoverWorkflowQualificationOwner(
+        repository=SqlAlchemyHandoverWorkflowQualificationRepository(),
+        sources=HandoverSourceValidator(SqlAlchemyDocumentReadRepository()),
+        documents=document_proofs,
+        evidence=EvidenceFixedProjectSourceService(
+            sessions=SqlAlchemyProjectReadAccess(),
+            projects=project_repository,
+            evidence=SqlAlchemyEvidenceFixedSourceRepository(),
+            documents=document_proofs,
+        ),
+        capabilities=SqlAlchemyCapabilityReadRepository(),
+        ai_tasks=SqlAlchemyAITaskReadRepository(),
+        reviews=SqlAlchemyReviewSnapshotReadRepository(),
+        trace_proofs=TraceResolutionProofService(
+            SqlAlchemyTraceResolutionRepository(),
+            target_proofs,
+        ),
+    )
 
 
 def create_windows_workflow_checklist_record_router(
@@ -91,29 +134,10 @@ def create_windows_workflow_checklist_record_router(
         raise ProductionWorkflowChecklistStartupError()
     try:
         project_repository = SqlAlchemyProjectAuthorizationRepository()
-        document_proofs = DocumentFixedSourceProofService(
-            documents=documents,
-            downloads=downloads,
-            parse_metadata=SqlAlchemyParseResultReadRepository(),
-            parse_results=parse_results,
-        )
-        qualification = HandoverWorkflowQualificationOwner(
-            repository=SqlAlchemyHandoverWorkflowQualificationRepository(),
-            sources=HandoverSourceValidator(SqlAlchemyDocumentReadRepository()),
-            documents=document_proofs,
-            evidence=EvidenceFixedProjectSourceService(
-                sessions=SqlAlchemyProjectReadAccess(),
-                projects=project_repository,
-                evidence=SqlAlchemyEvidenceFixedSourceRepository(),
-                documents=document_proofs,
-            ),
-            capabilities=SqlAlchemyCapabilityReadRepository(),
-            ai_tasks=SqlAlchemyAITaskReadRepository(),
-            reviews=SqlAlchemyReviewSnapshotReadRepository(),
-            trace_proofs=TraceResolutionProofService(
-                SqlAlchemyTraceResolutionRepository(),
-                target_proofs or TraceTargetProofService({}),
-            ),
+        qualification = _create_handover_qualification(
+            documents=documents, downloads=downloads,
+            parse_results=parse_results, project_repository=project_repository,
+            target_proofs=target_proofs,
         )
         records = WorkflowChecklistRecordService(
             unit_of_work=runtime.unit_of_work,
@@ -131,6 +155,38 @@ def create_windows_workflow_checklist_record_router(
         )
         return create_workflow_checklist_record_router(
             sessions=sessions, records=records, origins=origins,
+        )
+    except Exception:
+        raise ProductionWorkflowChecklistStartupError() from None
+
+
+def create_windows_workflow_checklist_qualification_router(
+    runtime, *, sessions, origins, license_guard,
+    documents, downloads, parse_results,
+) -> APIRouter:
+    """Compose the opt-in Checklist qualification preview with real owners."""
+
+    if any(value is None for value in (
+            runtime, sessions, origins, license_guard,
+            documents, downloads, parse_results)):
+        raise ProductionWorkflowChecklistStartupError()
+    try:
+        previews = WorkflowChecklistQualificationPreviewService(
+            unit_of_work=runtime.unit_of_work,
+            sessions=SqlAlchemyProjectReadAccess(),
+            projects=ProjectAuthorizationService(
+                unit_of_work=runtime.unit_of_work,
+                repository=SqlAlchemyProjectAuthorizationRepository(),
+            ),
+            license_guard=license_guard,
+            workflows=SqlAlchemyWorkflowReadRepository(),
+            qualification=_create_handover_qualification(
+                documents=documents, downloads=downloads,
+                parse_results=parse_results,
+            ),
+        )
+        return create_workflow_checklist_qualification_router(
+            sessions=sessions, previews=previews, origins=origins,
         )
     except Exception:
         raise ProductionWorkflowChecklistStartupError() from None

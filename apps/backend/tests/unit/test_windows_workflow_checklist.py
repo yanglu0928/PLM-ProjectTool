@@ -5,6 +5,7 @@ from unittest.mock import Mock
 
 from plm_assistant.entrypoints.windows_workflow_checklist import (
     ProductionWorkflowChecklistStartupError,
+    create_windows_workflow_checklist_qualification_router,
     create_windows_workflow_checklist_record_router,
 )
 from plm_assistant.modules.trace.application.target_proof import TraceTargetProofService
@@ -34,6 +35,30 @@ class WindowsWorkflowChecklistCompositionTests(unittest.TestCase):
                 runtime,
                 sessions=Mock(), origins=Mock(), license_guard=Mock(), audit=Mock(),
                 documents=None, downloads=Mock(), parse_results=Mock(),
+            )
+
+    def test_composes_qualification_preview_with_real_owner_graph(self):
+        runtime = Mock()
+        runtime.unit_of_work = Mock()
+        router = create_windows_workflow_checklist_qualification_router(
+            runtime,
+            sessions=Mock(), origins=Mock(), license_guard=Mock(),
+            documents=Mock(), downloads=Mock(), parse_results=Mock(),
+        )
+
+        self.assertEqual([
+            "/api/v1/projects/{project_id}/workflow/checklist-items/"
+            "{item_key}/qualification",
+        ], [route.path for route in router.routes])
+
+    def test_qualification_preview_missing_dependency_fails_closed(self):
+        runtime = Mock()
+        runtime.unit_of_work = Mock()
+        with self.assertRaises(ProductionWorkflowChecklistStartupError):
+            create_windows_workflow_checklist_qualification_router(
+                runtime,
+                sessions=Mock(), origins=Mock(), license_guard=Mock(),
+                documents=Mock(), downloads=None, parse_results=Mock(),
             )
 
 
