@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/HND-03-A03 新增Handover Workflow当前事实Repository/Owner：在调用方事务内锁定正式Analysis/Version/Item/Action与当前Event，通过Application Port重证物理Document、固定Evidence、CURRENT_APPROVED Capability、SUCCEEDED GAP_ANALYSIS、精确APPROVED ReviewRound和阻断Item的ACTIVE CLOSED Trace；不commit、不写Workflow。兼容性/升级/回滚：无Schema/Migration、公开API、角色、配置、依赖或外发；停注册可回滚，历史不变。验证：Owner 8、相关31、后端2733运行/3跳过、wheel全部PASS，SHA-256 `3b5830f9503cc0a8098cb643bf93761146f1d0832e66dcb0514c746976a0b708`。已知问题：真实PG18行锁/漂移/零写留A04；Checklist写链/Transition、Resolution Owner、Gate3与发行仍待。
+
 - 2026-10-05：0.1.0-dev.0/HND-03-A02 新增Handover两项Workflow Checklist的纯资格领域合同：精确绑定当前APPROVED Version/Review、保守阻断Item、VERIFIED/CLOSED Action、Evidence当前版本/指纹及CLOSED Resolution Trace；开放、提交、只取消或重复未完成Action失败关闭。兼容性/升级/回滚：无Schema/Migration、公开API、权限、依赖、配置、Secret、网络或外发；删除策略/后续注册可回滚，历史不改写。验证：定向11、后端2725运行/3跳过、开发wheel全部PASS，wheel SHA-256 `8aec40adfd09200f8d06f171aa9d2c1f6e25f0dda62784f2962701bd6be1c2bd`。已知问题：本项不证明真实PG当前事实；A03/A04、Workflow写链/Transition、Resolution Owner、Gate3与发行仍待。
 
 - 2026-10-05：0.1.0-dev.0/HND-03-A01 完成Handover Workflow资格适配前置核查：两项Checklist由Handover Owner在调用方事务内证明当前Approved Version/Review、固定来源和Action事实，Workflow只保存最小Evidence/ReviewRound观测；`source_missing`或NEED_CONFIRM/CONFLICT/RISK保守阻断，VERIFIED/CLOSED可满足规则，SUBMITTED/CANCELLED不满足，无例外Owner时WAIVED关闭。兼容性/回滚：纯文档，无代码、Schema/API、权限、依赖、Secret或外发；后续Port可停止注册。验证：静态核对冻结DM/API、Workflow Schema与真实Handover Owner。已知问题：A02～A04、Checklist/Transition写链、真实CLOSE Owner、正式信任、性能、Gate3与发行仍待。

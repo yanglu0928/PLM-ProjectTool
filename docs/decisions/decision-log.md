@@ -8547,3 +8547,11 @@
 - Reason：策略自己查库会穿透模块边界；只保存UUID会在Evidence修订后产生陈旧等价；把单个已验证重复Action当作整个Item闭环会遮蔽开放事项。
 - Impact/Rollback：无Schema/Migration、公开API、权限、依赖、配置、Secret、网络或外发变化。未接入Workflow写链；移除策略/后续注册即可回滚，历史不变。
 - Verification：定向11项、后端全量2725运行/3跳过全部通过；开发wheel SHA-256 `8aec40adfd09200f8d06f171aa9d2c1f6e25f0dda62784f2962701bd6be1c2bd`。
+
+# DEC-20261005-892：资格Owner只在调用方事务内重证当前事实
+
+- Date/WBS：2026-10-05 / `HND-03-A03`；依据DEC-890/891及Document/Evidence/Capability/AI/Review/Trace Application Interface。
+- Decision：Handover Repository只锁自身Analysis/Version/Item/Action及Action子记录；外部事实必须调用各Owner/Port重证，不跨模块直查表。Owner不持有UOW、不commit不写Workflow，使后续Checklist命令可在同一授权/License/事务内锁定与写入。
+- Reason：独立事务的先证后写会产生TOCTOU；Workflow查`hnd_*`或Handover查其他模块内表会破坏Owner边界。对非阻断Item的CLOSED Trace强制重证又会无关扩大Gate，故Trace重证精确限定于阻断Item。
+- Impact/Rollback：无Schema/Migration、公开API、角色、依赖、配置、Secret、网络外发。停注册Owner/Repository即可回滚，历史不变。
+- Verification：Owner新增8项，相关31项、后端全量2733运行/3跳过全通过；开发wheel SHA-256 `3b5830f9503cc0a8098cb643bf93761146f1d0832e66dcb0514c746976a0b708`。真实PG锁/并发/零写留A04，本项不越权标记。
