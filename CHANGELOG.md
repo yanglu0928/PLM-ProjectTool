@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/HND-01-A05-A06 新增默认关闭的Handover Analysis五读HTTP与Analysis/Version/Item三类独立上下文绑定HMAC cursor；续页仍由Owner重验当前License/Session/Project成员，投影不展开路径/正文/AI内容。兼容性/升级/回滚：无Migration/依赖/配置/Secret/外发，撤可选Router恢复404。验证：新增7、相关定向14、Win11/PG18.6 A02真实读取链/drift、后端2704通过/3跳过，wheel导入PASS，SHA-256 `ab45d75740810d07a00057f9ae58e769ed5ba36071d3bab8613bced0f9704477`。已知问题：A07 Windows组合、Server2025/Debian13、Gate3与发行仍待。
+
 - 2026-10-05：0.1.0-dev.0/HND-01-A05-A05 新增Handover Version业务原子送审Owner和默认关闭HTTP，单UOW创建PROJECT Review/首轮/Audit/收据，支持当前权限重验及终态后首次回执恢复；按CR-HND-006对无持久字段的非空due_at/submission_note失败关闭。兼容性/升级/回滚：无Migration/依赖/配置/Secret/外发，生产组合仍关闭，撤可选Router恢复404并保留历史。验证：定向14、Win11/PG18.6审计故障整笔回滚及送审/重放/批准/升版/撤回真实链、后端2697通过/3跳过，wheel四模块导入PASS，SHA-256 `6d368e45c0b15ce1488e3d03cf1f4f23db5b34281b5722ac92a545d8e768e83c`。已知问题：A06～A07、Server2025/Debian13、Gate3与发行仍待。
 
 - 2026-10-05：0.1.0-dev.0/HND-01-A05-A04 新增默认关闭的Handover Analysis/Version五个普通写HTTP，含严格DTO、Origin/Session/CSRF、幂等/If-Match、安全错误和最小投影；补`handover.api`包标记，修复源码可用但wheel遗漏Handover API目录的打包偏差。兼容性/升级/回滚：无Migration/冻结URL破坏/依赖/配置/Secret/外发，生产组合仍关闭，撤可选Router恢复404。验证：合同3项、后端2690通过/3跳过，wheel新命令/已有Action读取导入PASS，SHA-256 `d72a5e078ed0caa7226af75580b46f2d218942c374bf7fd61c2700c2f2292da9`。已知问题：A05～A07、Server2025/Debian13、Gate3与发行仍待。

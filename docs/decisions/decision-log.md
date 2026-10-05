@@ -8411,3 +8411,11 @@
 - Reason：客户端串行调用通用Review create/start会留下中间状态且不能给Handover Operation形成单一原子回执；Handover直接写Review表又会越过模块Owner。冻结DTO的调度字段尚无持久模型，故按CR-HND-006非空失败关闭。
 - Impact/Rollback：无Migration、依赖、配置、Secret、网络或外发。撤可选Router/编排恢复404，已提交Review/Audit/收据历史保留。首次PG验证移除了无模型保证的跨时钟`started_at >= created_at`重放假设，但Review/Round/actor/版本绑定未放宽。
 - Verification：定向14；Win11/PG18.6 Audit故障整事务回滚、送审/即时重放/批准后首回执恢复/第二版撤回和Alembic drift=0通过；后端2697通过/3跳过；wheel四新增模块导入PASS，SHA-256 `6d368e45c0b15ce1488e3d03cf1f4f23db5b34281b5722ac92a545d8e768e83c`。
+
+# DEC-20261005-875：Handover五读使用三类独立父链绑定cursor
+
+- Date/WBS：2026-10-05 / `HND-01-A05-A06`；依据冻结API-01/API-04、DEC-871及A02读取Owner。
+- Decision：五个读取Operation共享一个opt-in Router；Analysis、Version、Item各使用独立32字节HMAC key和资源族，token绑定Session、Project、页长及对应完整父级链/服务端位置。HTTP只投影有界固定引用，Owner在每页重验当前License/User/Project成员。
+- Reason：只签位置或共用资源族密钥无法阻止跨Project、跨Analysis/Version和跨列表重放；把路径/正文随详情展开会越过Document/Evidence/AI Owner授权。A07前缺正式服务账户Vault key，故保持默认关闭。
+- Impact/Rollback：无Migration、依赖、配置、网络、Secret内容或外发；撤可选Router恢复404，数据历史不变。正式三key的生成/备份/ACL/恢复属于A07/Release证据。
+- Verification：新增7、相关定向14；Win11/PG18.6 A02真实读取链及drift通过；后端2704通过/3跳过；wheel read/cursor模块导入PASS，SHA-256 `ab45d75740810d07a00057f9ae58e769ed5ba36071d3bab8613bced0f9704477`。
