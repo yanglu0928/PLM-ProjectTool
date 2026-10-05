@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/HND-03-A04 新增Windows 11/PostgreSQL 18.6一次性资格验证：真实批准Handover/Review、物理Document字节、PROJECT Evidence、CURRENT_APPROVED Capability、SUCCEEDED GAP_ANALYSIS、VERIFIED Action均由A03 Owner重证；8类竞争写锁返回55P03，29张相关业务表调用前后逻辑快照相同，Evidence失效与文件篡改均失败关闭。兼容性/升级/回滚：仅验证脚本/文档，无Schema/Migration、冻结API、权限、依赖、Secret、外发或生产数据；删除脚本可回滚。验证：空库迁移、Alembic check与完整隔离矩阵PASS，临时库/文件清理。已知问题：Workflow Checklist写链/Transition、Server2025矩阵、Resolution Owner、Gate3与发行仍待；Debian13按用户指令不实机验证。
+
 - 2026-10-05：0.1.0-dev.0/HND-03-A03 新增Handover Workflow当前事实Repository/Owner：在调用方事务内锁定正式Analysis/Version/Item/Action与当前Event，通过Application Port重证物理Document、固定Evidence、CURRENT_APPROVED Capability、SUCCEEDED GAP_ANALYSIS、精确APPROVED ReviewRound和阻断Item的ACTIVE CLOSED Trace；不commit、不写Workflow。兼容性/升级/回滚：无Schema/Migration、公开API、角色、配置、依赖或外发；停注册可回滚，历史不变。验证：Owner 8、相关31、后端2733运行/3跳过、wheel全部PASS，SHA-256 `3b5830f9503cc0a8098cb643bf93761146f1d0832e66dcb0514c746976a0b708`。已知问题：真实PG18行锁/漂移/零写留A04；Checklist写链/Transition、Resolution Owner、Gate3与发行仍待。
 
 - 2026-10-05：0.1.0-dev.0/HND-03-A02 新增Handover两项Workflow Checklist的纯资格领域合同：精确绑定当前APPROVED Version/Review、保守阻断Item、VERIFIED/CLOSED Action、Evidence当前版本/指纹及CLOSED Resolution Trace；开放、提交、只取消或重复未完成Action失败关闭。兼容性/升级/回滚：无Schema/Migration、公开API、权限、依赖、配置、Secret、网络或外发；删除策略/后续注册可回滚，历史不改写。验证：定向11、后端2725运行/3跳过、开发wheel全部PASS，wheel SHA-256 `8aec40adfd09200f8d06f171aa9d2c1f6e25f0dda62784f2962701bd6be1c2bd`。已知问题：本项不证明真实PG当前事实；A03/A04、Workflow写链/Transition、Resolution Owner、Gate3与发行仍待。

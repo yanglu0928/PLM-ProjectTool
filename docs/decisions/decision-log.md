@@ -8555,3 +8555,11 @@
 - Reason：独立事务的先证后写会产生TOCTOU；Workflow查`hnd_*`或Handover查其他模块内表会破坏Owner边界。对非阻断Item的CLOSED Trace强制重证又会无关扩大Gate，故Trace重证精确限定于阻断Item。
 - Impact/Rollback：无Schema/Migration、公开API、角色、依赖、配置、Secret、网络外发。停注册Owner/Repository即可回滚，历史不变。
 - Verification：Owner新增8项，相关31项、后端全量2733运行/3跳过全通过；开发wheel SHA-256 `3b5830f9503cc0a8098cb643bf93761146f1d0832e66dcb0514c746976a0b708`。真实PG锁/并发/零写留A04，本项不越权标记。
+
+# DEC-20261005-893：资格零写以业务逻辑快照证明
+
+- Date/WBS：2026-10-05 / `HND-03-A04`；依据DEC-890～892、Windows 11/PostgreSQL 18.6真实运行证据。
+- Decision：Handover资格真实验收必须同时证明正向业务事实、并发共享锁、当前事实漂移拒绝和零业务写。零写不使用`pg_stat_xact_user_tables`元组活动计数，因为`FOR SHARE`也可能产生元组活动；改为对Handover/Review/Document/Evidence/Capability/AI共29张相关表在调用前后逐行逻辑快照比对。
+- Reason：资格Owner的设计目标是调用方事务内加锁后供Workflow原子写入，行锁是预期行为，不应被误报为业务修改；只看行数又会漏掉UPDATE。逐行逻辑快照直接证明业务内容未变。
+- Impact/Rollback：仅一次性验证脚本与文档，无产品Schema/Migration/API/权限/依赖、Secret、外发或业务数据变化；删除脚本即可回滚。验证夹具对Capability计数、AI输入、Action事件投影的修正均遵循现行约束，不放宽生产规则。
+- Verification：空库迁移和Alembic check通过；真实Approved Handover/Review、物理文件、三类Evidence、Capability、AI、VERIFIED Action正例PASS；8类竞争`FOR UPDATE NOWAIT`均55P03；29表快照不变；Evidence失效和响应文件篡改均失败关闭；令牌`HND_03_A04_WORKFLOW_QUALIFICATION_PG_PASS`。
