@@ -8427,3 +8427,11 @@
 - Reason：组合层若复制Review/Action会形成第二业务事实；读模式暴露写路由会破坏部署边界；缺key时临时生成或复用其他key会令重启失效并扩大跨资源重放。当前服务账户尚无正式三key仪式证据，必须把机制通过与发行就绪分开陈述。
 - Impact/Rollback：无Migration、冻结API破坏、依赖、网络或外发；正式Release新增三key生成/备份/ACL/恢复/轮换前置。撤生产入口的Handover注入恢复404，合法历史保留。
 - Verification：组合/生产入口定向34；Win11/PG18.6真实11 Operation、分页、原子送审/重放、批准、升版/撤回及drift通过；后端2706通过/3跳过；wheel SHA-256 `0d909a2ca641c1ef8b8fd3f17d847dc302a37f95a8aef28339b6c0c83a8469c7`。
+
+# DEC-20261005-877：Handover问题卡片按需定位Evidence且以规格提示人工维护
+
+- Date/WBS：2026-10-05 / `HND-01-A06-A01`；依据用户已确认的待办交互要求、冻结API-04、现有Evidence Viewer与Analysis Item投影。
+- Decision：Handover前端不复制原文到表格；Item以问题卡片展示服务器事实，用户点击Evidence时由既有Viewer重新验权并返回固定版本位置。NEED_CONFIRM把`confirmation_question`、影响、选项和`required_input_spec`转换为明确字段提示，但不在只读阶段创建空白业务事实或把AI建议当确认。Analysis读页面先独立交付，Action写入口等待真实HTTP Owner边界。
+- Reason：Evidence引用本身不证明当前可读，复制正文会绕过Document/Evidence Owner并使版本漂移；无字段提示的空白表格不能表达维护要求。前端直连内部Action Owner或假成功则破坏冻结API、安全与审计边界。
+- Impact/Rollback：纯设计拆分，无程序、Schema、Migration、API、依赖、Secret、网络或外发变化。撤后续页面不影响业务历史。
+- Verification：静态交叉核对Analysis/Action公开路由、DTO、Evidence Viewer、AI建议定位和Document页面；标记`HND_01_A06_A01_FRONTEND_PRECHECK_PASS`，不代表前端或浏览器通过。

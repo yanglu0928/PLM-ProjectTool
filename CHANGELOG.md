@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/HND-01-A06-A01 完成Handover前端与交互前置核查：问题卡片按需调用Evidence Viewer定位固定原文，NEED_CONFIRM以确认问题/影响/选项/`required_input_spec`给出人工维护提示，不复制正文进表格或把AI建议当事实；拆分Analysis五读客户端、页面、Action只读与后续写HTTP/UI。兼容性/回滚：纯文档，无程序/Schema/API/依赖/配置/Secret/外发。验证：静态核对冻结API、当前Windows组合与既有前端Owner边界。已知问题：A02起程序、真实浏览器、Action写HTTP、Gate3与发行仍待。
+
 - 2026-10-05：0.1.0-dev.0/HND-01-A05-A07 新增Handover Analysis Windows失败关闭生产组合：显式只读模式挂载五读，写模式再挂五个普通命令与业务原子送审，Review/Action保持独立Owner；三类cursor使用固定独立Vault引用，任一缺失拒绝启动。兼容性/升级/回滚：无Migration/冻结API破坏/依赖/外发，撤组合恢复404；CR-HND-007要求Release前完成正式服务账户key仪式。验证：组合/入口定向34、Win11/PG18.6真实11 Operation与Review批准/撤回/drift、后端2706通过/3跳过，wheel SHA-256 `0d909a2ca641c1ef8b8fd3f17d847dc302a37f95a8aef28339b6c0c83a8469c7`。已知问题：正式key仪式、前端/浏览器、Server2025、Gate3与发行仍待；Debian13实机按用户指令跳过。
 
 - 2026-10-05：0.1.0-dev.0/HND-01-A05-A06 新增默认关闭的Handover Analysis五读HTTP与Analysis/Version/Item三类独立上下文绑定HMAC cursor；续页仍由Owner重验当前License/Session/Project成员，投影不展开路径/正文/AI内容。兼容性/升级/回滚：无Migration/依赖/配置/Secret/外发，撤可选Router恢复404。验证：新增7、相关定向14、Win11/PG18.6 A02真实读取链/drift、后端2704通过/3跳过，wheel导入PASS，SHA-256 `ab45d75740810d07a00057f9ae58e769ed5ba36071d3bab8613bced0f9704477`。已知问题：A07 Windows组合、Server2025/Debian13、Gate3与发行仍待。
