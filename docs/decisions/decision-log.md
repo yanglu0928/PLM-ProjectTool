@@ -8435,3 +8435,11 @@
 - Reason：Evidence引用本身不证明当前可读，复制正文会绕过Document/Evidence Owner并使版本漂移；无字段提示的空白表格不能表达维护要求。前端直连内部Action Owner或假成功则破坏冻结API、安全与审计边界。
 - Impact/Rollback：纯设计拆分，无程序、Schema、Migration、API、依赖、Secret、网络或外发变化。撤后续页面不影响业务历史。
 - Verification：静态交叉核对Analysis/Action公开路由、DTO、Evidence Viewer、AI建议定位和Document页面；标记`HND_01_A06_A01_FRONTEND_PRECHECK_PASS`，不代表前端或浏览器通过。
+
+# DEC-20261005-878：Handover五读客户端区分版本摘要与固定详情
+
+- Date/WBS：2026-10-05 / `HND-01-A06-A02`；依据A01、冻结API-04及A05-A06五读HTTP。
+- Decision：浏览器以品牌类型区分Analysis/Version/Item三类不透明cursor，发网前只校验安全形状而不解码；所有响应重新验证父级身份、排序和白名单投影。Version LIST只接受计数摘要且来源/AI明细为空，Version GET才要求明细与声明数相等。NEED_CONFIRM严格投影确认问题、建议、选项及字段级维护规格，其他Item拒绝携带该结构。
+- Reason：解码签名cursor会在客户端复制服务端信任逻辑；要求LIST展开固定来源会与真实最小投影冲突，反之让GET缺明细又会丢失版本输入身份。直接保留任意JSON规格不能为用户形成可信维护提示。
+- Impact/Rollback：仅新增未接线前端客户端，无Schema/API/依赖/配置/Secret/外发变化；删除客户端即可回滚。
+- Verification：定向27、前端全量70文件/1288项、typecheck及Vite149模块build通过；首轮同步抛错与测试Response复用已修正后重跑。
