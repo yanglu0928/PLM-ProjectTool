@@ -8499,3 +8499,11 @@
 - Reason：该组合同时证明可用能力和安全边界，并允许继续前端/浏览器工作；伪造CLOSE正例会破坏冻结Trace授权。
 - Impact/Rollback：无Schema/Migration/依赖/Secret/外发；一次性验证库已删除。撤写Router恢复404，历史保留。Owner到位后向前补CLOSE正例，不改现有URL/DTO。
 - Verification：Win11/PG18真实ASGI/HTTP完成CREATE→PATCH→START→SUBMIT→VERIFY，ACTIVE Trace下CLOSE稳定422且Root仍VERIFIED/v4/CLOSED Audit=0，另一Action CANCEL成功；令牌`HND_02_A05_A04_P02_ACTION_WRITE_HTTP_PASS`。
+
+# DEC-20261005-886：Action 前端写回执不作为当前状态证明
+
+- Date/WBS：2026-10-05 / `HND-02-A05-A05-P01`；依据冻结API-04、DEC-880～885及CR-HND-008。
+- Decision：七写统一由`SessionClient`持有CSRF并发起同源请求；客户端持有原始Key/ETag且不在未知结果时自动重试。成功响应必须重验Project/Action、状态、ETag递增及请求绑定，但仍统一返回`is_current_state_proof: false`，操作后须GET刷新当前事实。PATCH无幂等键，未知结果只能重新读取；SUBMIT/VERIFY/CLOSE继续分离。
+- Reason：持久幂等重放返回的是首次结果，后续Action可能已推进；把首次回执当当前事实会形成陈旧完成状态。让页面或业务客户端读取CSRF会破坏会话Owner边界，自动换Key重试则可能产生第二个命令。
+- Impact/Rollback：纯前端，无Schema/Migration/后端API/依赖/Secret/外发。删除新增写客户端和三项Session传输即可回滚，业务历史不变。主JS 540.63kB既有拆包警告继续登记。
+- Verification：专项20、前端全量75文件1335项、typecheck、Vite160模块production build通过；令牌`HND_02_A05_A05_P01_ACTION_WRITE_CLIENT_PASS`。

@@ -489,6 +489,62 @@ export class SessionClient {
     }
   }
 
+  /** Handover Action writes: the caller retains the original body, Key and ETag after uncertainty. */
+  async #writeProjectHandoverAction(projectId: string, actionId: string | null,
+    method: "POST" | "PATCH", operation: "create" | "patch" | "start" | "submit" | "verify" | "close" | "cancel",
+    body: string, etag: string | null, idempotencyKey: string | null): Promise<Response> {
+    if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
+    if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
+    const version = etag === null ? null : /^"v(?:0|[1-9]\d*)"$/.test(etag) ? Number(etag.slice(2, -1)) : null;
+    if (!identifier(projectId) || (operation === "create") !== (actionId === null)
+      || actionId !== null && !identifier(actionId)
+      || typeof body !== "string" || body.length === 0 || new TextEncoder().encode(body).length > 2 * 1024 * 1024
+      || (operation === "create") !== (etag === null)
+      || etag !== null && (!Number.isSafeInteger(version) || version === null || version >= Number.MAX_SAFE_INTEGER)
+      || (operation === "patch") !== (idempotencyKey === null)
+      || idempotencyKey !== null && !/^[\x20-\x7e]{16,128}$/.test(idempotencyKey)
+      || operation === "patch" && method !== "PATCH" || operation !== "patch" && method !== "POST") {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    }
+    const base = `/api/v1/projects/${projectId}/handover-action-items`;
+    const path = operation === "create" ? base
+      : operation === "patch" ? `${base}/${actionId}` : `${base}/${actionId}:${operation}`;
+    const headers: Record<string, string> = { Accept: "application/json", "Content-Type": "application/json",
+      "X-CSRF-Token": this.#csrf };
+    if (etag !== null) headers["If-Match"] = etag;
+    if (idempotencyKey !== null) headers["Idempotency-Key"] = idempotencyKey;
+    this.#busy = true;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      const fetcher = this.fetcher;
+      const response = await fetcher(path, { method, credentials: "same-origin", cache: "no-store",
+        redirect: "error", headers, body, signal: controller.signal });
+      if (controller.signal.aborted) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+      if (response.status === 401) { this.#csrf = null; this.#view = null; }
+      return response;
+    } catch {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    } finally {
+      window.clearTimeout(timer);
+      this.#busy = false;
+    }
+  }
+
+  postProjectHandoverActionCreate(projectId: string, body: string, idempotencyKey: string): Promise<Response> {
+    return this.#writeProjectHandoverAction(projectId, null, "POST", "create", body, null, idempotencyKey);
+  }
+
+  patchProjectHandoverAction(projectId: string, actionId: string, etag: string, body: string): Promise<Response> {
+    return this.#writeProjectHandoverAction(projectId, actionId, "PATCH", "patch", body, etag, null);
+  }
+
+  postProjectHandoverActionTransition(projectId: string, actionId: string,
+    operation: "start" | "submit" | "verify" | "close" | "cancel", etag: string,
+    idempotencyKey: string, body: string): Promise<Response> {
+    return this.#writeProjectHandoverAction(projectId, actionId, "POST", operation, body, etag, idempotencyKey);
+  }
+
   /** Retrieval alias cancellation uses its Run version and never retries implicitly. */
   async postProjectRAGRetrievalCancel(projectId: string, runId: string, etag: string,
     idempotencyKey: string, reason: string): Promise<Response> {
