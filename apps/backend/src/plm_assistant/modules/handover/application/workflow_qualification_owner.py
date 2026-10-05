@@ -96,6 +96,28 @@ class HandoverWorkflowQualificationQuery:
 
 
 @dataclass(frozen=True, slots=True)
+class HandoverWorkflowCurrentQualificationQuery:
+    """Select the sole current approved Analysis without expanding API V1."""
+
+    session_token: bytes = field(repr=False)
+    trace_id: uuid.UUID
+    project_id: uuid.UUID
+    item_key: str
+
+    def __post_init__(self) -> None:
+        if (type(self.session_token) is not bytes
+                or len(self.session_token) != 32
+                or not all(_id(value) for value in (
+                    self.trace_id, self.project_id,
+                ))
+                or type(self.item_key) is not str
+                or self.item_key not in {
+                    "HANDOVER_BASELINE", "HANDOVER_ISSUES",
+                }):
+            raise HandoverWorkflowQualificationOwnerError()
+
+
+@dataclass(frozen=True, slots=True)
 class HandoverWorkflowActionLock:
     action_item_id: uuid.UUID
     project_id: uuid.UUID
@@ -177,6 +199,10 @@ class HandoverWorkflowQualificationLock:
 
 
 class HandoverWorkflowQualificationRepositoryPort(Protocol):
+    def only_current_analysis_id(
+        self, transaction: object, *, project_id: uuid.UUID,
+    ) -> uuid.UUID | None: ...
+
     def lock_current(
         self, transaction: object, *, project_id: uuid.UUID,
         handover_analysis_id: uuid.UUID,
@@ -259,6 +285,32 @@ class HandoverWorkflowQualificationOwner:
         self._reviews, self._traces = reviews, trace_proofs
         self._policy = policy or HandoverWorkflowQualificationPolicy()
         self._clock = clock or (lambda: datetime.now(timezone.utc))
+
+    def qualify_only_current_in_transaction(
+        self, transaction: object,
+        query: HandoverWorkflowCurrentQualificationQuery,
+    ) -> HandoverChecklistQualification:
+        if (transaction is None
+                or type(query) is not HandoverWorkflowCurrentQualificationQuery):
+            raise HandoverWorkflowQualificationOwnerError()
+        query.__post_init__()
+        try:
+            analysis_id = self._repo.only_current_analysis_id(
+                transaction, project_id=query.project_id,
+            )
+            if not _id(analysis_id):
+                raise HandoverWorkflowQualificationOwnerError()
+            return self.qualify_in_transaction(
+                transaction,
+                HandoverWorkflowQualificationQuery(
+                    query.session_token, query.trace_id, query.project_id,
+                    analysis_id, query.item_key,
+                ),
+            )
+        except HandoverWorkflowQualificationOwnerError:
+            raise
+        except Exception:
+            raise HandoverWorkflowQualificationOwnerError() from None
 
     def qualify_in_transaction(
         self, transaction: object, query: HandoverWorkflowQualificationQuery,

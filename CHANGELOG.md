@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/WFL-01-A07-P07-A03 新增Workflow Checklist受权命令与Handover策略注册：Session/CSRF、License、ProjectManager-only、持久幂等、业务Owner、不可变追加和Audit保持原子；CR-WFL-006以服务端唯一当前Handover选择保持冻结DTO兼容。升级/回滚：无Schema/Migration/依赖变化，可撤组合但保留Record/Audit/receipt。验证：定向34、后端2745运行/3跳过、Win11/PG18.6原回执/Audit回滚/并发/唯一选择PASS，wheel SHA-256 `62251c2c3672117a63bb1275cd4471eba8a894961bab10dfd404321777e422fc`。已知问题：HTTP和Windows生产组合留A04+，本项不代表Gate 3/发行/UAT。
+
 - 2026-10-05：0.1.0-dev.0/WFL-01-A07-P07-A02 新增Workflow Checklist不可变记录追加Repository：固定Workflow→Stage→Item→当前记录锁序，原子追加Record/Refs与双版本，禁止已有历史回到PENDING/分叉；完整观测摘要在读取时复算失败关闭。兼容性/升级/回滚：无Schema/Migration/冻结API/角色/依赖/Secret/外发；原开发占位摘要不再被Reader信任，正式写接口尚未开放故无生产迁移。验证：定向11、Workflow相关104、后端2737运行/3跳过、开发wheel SHA-256 `7a2a0d35b178ee416db473c731039212f19604d26e95a4780964f3457b2d52e0`；Win11/PG18.6首次/更正、旧当前记录回归、回滚、三层锁、双写1成功1冲突、Evidence事实与摘要篡改拒绝PASS。已知问题：本项不含授权/License/Handover Owner/幂等/Audit/HTTP/Gate，进入P07-A03。
 
 - 2026-10-05：0.1.0-dev.0/WFL-01-A07-P07-A01 完成Handover Checklist受权写前置核查：旧P01全量Owner阻塞拆分为显式策略注册，首批只允许HANDOVER_BASELINE/HANDOVER_ISSUES调用真实Handover Owner；PASS请求引用须与Owner合格集合精确一致，FAIL仍走全套授权/事务，WAIVED及未注册Item失败关闭。兼容性/回滚：纯文档，无代码、Schema/Migration、API、权限、依赖、Secret或外发；停止后续策略注册即可。验证：静态交叉核对冻结API-02、0030/0032、当前记录查询、HND-03与旧P01。已知问题：追加Repository/受权服务/HTTP/Transition、其余Checklist Owner、ApprovedException、Gate3与发行仍待。

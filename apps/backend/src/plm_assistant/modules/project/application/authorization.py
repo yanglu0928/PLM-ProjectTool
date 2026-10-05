@@ -26,6 +26,7 @@ class _Policy:
 POLICIES: dict[str, _Policy] = {
     "PROJECT_GET": _Policy(ALL_MEMBERS, False),
     "WORKFLOW_START": _Policy(MANAGERS, True),
+    "WORKFLOW_CHECKLIST_RECORD": _Policy(MANAGERS, True),
     "WORKFLOW_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "REVIEW_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "REVIEW_CREATE": _Policy(MANAGERS, True),

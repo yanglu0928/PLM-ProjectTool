@@ -29,6 +29,7 @@ from plm_assistant.modules.handover.application.validate_version import (
 )
 from plm_assistant.modules.handover.application.workflow_qualification_owner import (
     HandoverWorkflowActionLock, HandoverWorkflowQualificationLock,
+    HandoverWorkflowCurrentQualificationQuery,
     HandoverWorkflowQualificationOwner,
     HandoverWorkflowQualificationOwnerError,
     HandoverWorkflowQualificationQuery,
@@ -190,6 +191,30 @@ class HandoverWorkflowQualificationOwnerTests(unittest.TestCase):
         )
         self.assertEqual(issues.review.review_round_id, self.round_id)
         self.assertEqual(self.documents.prove.call_count, 4)
+
+    def test_only_current_selection_uses_server_resolved_identity(self):
+        self.repository.only_current_analysis_id.return_value = self.analysis
+        result = self.owner.qualify_only_current_in_transaction(
+            self.tx, HandoverWorkflowCurrentQualificationQuery(
+                b"s" * 32, self.trace_id, self.project,
+                "HANDOVER_ISSUES",
+            ),
+        )
+        self.assertEqual(result.item_key, "HANDOVER_ISSUES")
+        self.repository.lock_current.assert_called_with(
+            self.tx, project_id=self.project,
+            handover_analysis_id=self.analysis,
+        )
+
+    def test_missing_or_ambiguous_current_selection_fails_closed(self):
+        self.repository.only_current_analysis_id.return_value = None
+        with self.assertRaises(HandoverWorkflowQualificationOwnerError):
+            self.owner.qualify_only_current_in_transaction(
+                self.tx, HandoverWorkflowCurrentQualificationQuery(
+                    b"s" * 32, self.trace_id, self.project,
+                    "HANDOVER_BASELINE",
+                ),
+            )
 
     def test_missing_or_nonformal_handover_fails_closed(self):
         for value in (

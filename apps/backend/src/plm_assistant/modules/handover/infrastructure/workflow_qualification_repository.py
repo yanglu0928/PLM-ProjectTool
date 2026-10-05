@@ -29,6 +29,23 @@ class SqlAlchemyHandoverWorkflowQualificationRepository:
     def __init__(self) -> None:
         self._versions = SqlAlchemyHandoverVersionValidationRepository()
 
+    def only_current_analysis_id(
+        self, transaction: object, *, project_id: uuid.UUID,
+    ) -> uuid.UUID | None:
+        if type(project_id) is not uuid.UUID or project_id.int == 0:
+            return None
+        session = _session(transaction)
+        values = tuple(session.execute(select(
+            HandoverAnalysisRow.handover_analysis_id,
+        ).where(
+            HandoverAnalysisRow.project_id == project_id,
+            HandoverAnalysisRow.analysis_state == "ACTIVE",
+            HandoverAnalysisRow.current_approved_version_ref.is_not(None),
+        ).order_by(
+            HandoverAnalysisRow.handover_analysis_id,
+        ).limit(2).with_for_update(read=True)).scalars())
+        return values[0] if len(values) == 1 else None
+
     def lock_current(
         self, transaction: object, *, project_id: uuid.UUID,
         handover_analysis_id: uuid.UUID,

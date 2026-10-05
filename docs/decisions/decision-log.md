@@ -8579,3 +8579,11 @@
 - Reason：0032只约束摘要长度，若追加端使用占位摘要或读取端不复算，数据库行不可变仍不能证明Record、Refs内容与摘要一致。
 - Impact/Rollback：历史合成占位摘要不再被当前Reader信任；正式写接口此前未开放，无生产迁移。无Schema、冻结API、角色、依赖或外发变化。可撤销读取侧复算及新增Repository，但不可删除或改写已形成的不可变业务历史。
 - Verification：定向11、Workflow相关104项、后端2737运行/3跳过、开发wheel及Win11/PG18.6首次/更正/回滚/锁/并发/Evidence事实和摘要损坏拒绝全部通过；令牌`WFL_01_A07_P07_A02_CHECKLIST_APPEND_PASS`。
+
+# DEC-20261005-896：Checklist命令以服务端唯一当前Handover和原历史回执失败关闭
+
+- Date/WBS：2026-10-05 / `WFL-01-A07-P07-A03`；依据DEC-894/895、CR-WFL-006及HND-03资格Owner。
+- Decision：不修改冻结Checklist DTO；服务端只在恰有一个当前已批准ACTIVE Handover Analysis时调用Owner。PASS精确匹配Owner Evidence，FAIL不伪造证明，WAIVED/未注册Item拒绝。幂等重放按receipt返回原不可变Record，不会被后续更正覆盖。
+- Reason：冻结请求没有Analysis身份，客户端选择会扩大合同并泄漏业务事实；返回当前Record会让原命令幂等回执随时间变化。
+- Impact/Rollback：新增ProjectManager-only内部写策略，无Schema/Migration、冻结API、依赖、Secret或外发变化。可停注册/撤组合，但已有Record、Audit和receipt保留。
+- Verification：定向34、后端2745运行/3跳过；Win11/PG18.6真实受权、License、原回执、Audit回滚、同键并发和零/一/多选择PASS；wheel SHA-256 `62251c2c3672117a63bb1275cd4471eba8a894961bab10dfd404321777e422fc`。
