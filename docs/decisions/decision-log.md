@@ -8507,3 +8507,11 @@
 - Reason：持久幂等重放返回的是首次结果，后续Action可能已推进；把首次回执当当前事实会形成陈旧完成状态。让页面或业务客户端读取CSRF会破坏会话Owner边界，自动换Key重试则可能产生第二个命令。
 - Impact/Rollback：纯前端，无Schema/Migration/后端API/依赖/Secret/外发。删除新增写客户端和三项Session传输即可回滚，业务历史不变。主JS 540.63kB既有拆包警告继续登记。
 - Verification：专项20、前端全量75文件1335项、typecheck、Vite160模块production build通过；令牌`HND_02_A05_A05_P01_ACTION_WRITE_CLIENT_PASS`。
+
+# DEC-20261005-887：Action 工作台以角色提示加服务端重验开放写操作
+
+- Date/WBS：2026-10-05 / `HND-02-A05-A05-P02`；依据DEC-877/880/886、CR-HND-008与用户确认的待办交互要求。
+- Decision：页面用当前项目角色、assigned owner和Action状态决定显示哪些操作，但明确这只是提示，写请求仍由后端Owner重验。创建/修改以字段名、必填、格式、示例引导人工维护；提交与验证要求固定DocumentVersion/Evidence引用。成功写回执后强制GET当前Action，未知结果只保留原Key/ETag重试。缺真实Resolution Owner时CLOSE按钮禁用并展示CR原因。
+- Reason：前端角色门不能成为授权事实；直接依据首次回执更新为完成会混淆首次幂等结果与当前状态；在Owner缺失时提供CLOSE会制造必然失败或诱导绕过。冻结合同没有成员/Document/Evidence搜索Operation，故不伪造选择器能力。
+- Impact/Rollback：纯前端页面，无Schema/Migration/后端API/依赖/Secret/外发。撤写区恢复只读页，历史不变。引用选择器需未来受权只读Owner合同；主JS 564.57kB拆包警告继续登记。
+- Verification：页面7、前端全量75文件1339项、typecheck、Vite161模块production build通过；令牌`HND_02_A05_A05_P02_ACTION_WRITE_WORKBENCH_PASS`。
