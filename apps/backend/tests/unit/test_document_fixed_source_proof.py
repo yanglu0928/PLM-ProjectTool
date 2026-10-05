@@ -36,12 +36,17 @@ class _Downloads:
         self.version_id, self.digest = version_id, digest
         self.calls = 0
         self.stream = None
+        self.transactions = []
 
     def prepare(self, *_):
         self.calls += 1
         self.stream = io.BytesIO(b"source")
         return VerifiedDownload(self.version_id, 6, "text/plain",
                                 self.digest, self.stream)
+
+    def prepare_in_transaction(self, transaction, *args):
+        self.transactions.append(transaction)
+        return self.prepare(*args)
 
 
 class _Metadata:
@@ -58,10 +63,15 @@ class _Parsed:
     def __init__(self, result):
         self.result = result
         self.calls = 0
+        self.transactions = []
 
     def read(self, *_args, **_kwargs):
         self.calls += 1
         return self.result
+
+    def read_in_transaction(self, transaction, *_args, **_kwargs):
+        self.transactions.append(transaction)
+        return self.read()
 
 
 class DocumentFixedSourceProofTests(unittest.TestCase):
@@ -111,6 +121,7 @@ class DocumentFixedSourceProofTests(unittest.TestCase):
         self.assertIsNone(proof.parse_content)
         self.assertEqual(self.downloads.calls, 1)
         self.assertTrue(self.downloads.stream.closed)
+        self.assertEqual(self.downloads.transactions, [self.tx])
         self.assertEqual(self.metadata.calls, [])
         self.assertIs(self.documents.calls[0][0], self.tx)
 
@@ -120,6 +131,7 @@ class DocumentFixedSourceProofTests(unittest.TestCase):
         self.assertEqual(proof.result_sha256, self.result_sha)
         self.assertIs(self.metadata.calls[0][0], self.tx)
         self.assertEqual(self.parse_results.calls, 1)
+        self.assertEqual(self.parse_results.transactions, [self.tx])
         self.assertNotIn("private/locator", repr(proof))
         self.assertNotIn("parsed", repr(proof))
 

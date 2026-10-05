@@ -264,7 +264,7 @@ def seed_document(db, *, storage: LocalFileStorage, root: Path,
     return HandoverDocumentRef(document_id, version_id)
 
 
-def main() -> None:
+def main(qualified_callback=None) -> None:
     name = "hnd03a04_" + uuid.uuid4().hex[:10]
     manager_token, reviewer_token = b"m" * 32, b"r" * 32
     with tempfile.TemporaryDirectory(prefix="plm-hnd03-a04-") as temp:
@@ -724,6 +724,22 @@ def main() -> None:
                                     raise AssertionError(
                                         f"qualification did not lock {table}"
                                     )
+                    if qualified_callback is not None:
+                        qualified_callback({
+                            "database": name,
+                            "runtime": runtime,
+                            "data_root": data_root,
+                            "documents": reads,
+                            "downloads": downloads,
+                            "manager_token": manager_token,
+                            "project_id": project,
+                            "manager_id": manager,
+                            "evidence_ids": tuple(
+                                value.evidence_id for value in result.evidence
+                            ),
+                            "audit": audit,
+                            "license_guard": guard,
+                        })
                     assert business_snapshot(name) == before_qualification
 
                     with connect(name) as db:

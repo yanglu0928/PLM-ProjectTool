@@ -105,13 +105,39 @@ class DocumentParseResultReadService:
     def read(self, query: DocumentReadQuery, *, document_id: uuid.UUID,
              document_version_id: uuid.UUID,
              parse_record_id: uuid.UUID) -> VerifiedParseResult:
+        return self._read(
+            None, query, document_id=document_id,
+            document_version_id=document_version_id,
+            parse_record_id=parse_record_id,
+        )
+
+    def read_in_transaction(
+            self, transaction: object, query: DocumentReadQuery, *,
+            document_id: uuid.UUID, document_version_id: uuid.UUID,
+            parse_record_id: uuid.UUID) -> VerifiedParseResult:
+        """Verify parse bytes while retaining the caller's fact locks."""
+        if transaction is None:
+            raise ParseResultReadError("RESOURCE_NOT_FOUND")
+        return self._read(
+            transaction, query, document_id=document_id,
+            document_version_id=document_version_id,
+            parse_record_id=parse_record_id,
+        )
+
+    def _read(self, transaction: object | None, query: DocumentReadQuery, *,
+              document_id: uuid.UUID, document_version_id: uuid.UUID,
+              parse_record_id: uuid.UUID) -> VerifiedParseResult:
         if (type(query) is not DocumentReadQuery
                 or type(document_id) is not uuid.UUID or document_id.int == 0
                 or type(document_version_id) is not uuid.UUID or document_version_id.int == 0
                 or type(parse_record_id) is not uuid.UUID or parse_record_id.int == 0):
             raise ParseResultReadError("RESOURCE_NOT_FOUND")
-        first_document = self._document(query, document_id, document_version_id)
-        first_result = self._result(query, document_version_id, parse_record_id)
+        first_document = self._document(
+            transaction, query, document_id, document_version_id,
+        )
+        first_result = self._result(
+            transaction, query, document_version_id, parse_record_id,
+        )
         try:
             content = self._storage.read_verified(
                 scope=query.scope, project_id=query.project_id,
@@ -137,8 +163,12 @@ class DocumentParseResultReadService:
                 or payload.get("parser_version") != first_result.parser_version
                 or type(payload.get("nodes")) is not list):
             raise ParseResultReadError("PARSER_RESULT_INVALID")
-        if (self._document(query, document_id, document_version_id) != first_document
-                or self._result(query, document_version_id, parse_record_id) != first_result):
+        if (self._document(
+                transaction, query, document_id, document_version_id,
+                ) != first_document
+                or self._result(
+                    transaction, query, document_version_id, parse_record_id,
+                ) != first_result):
             raise ParseResultReadError("RESOURCE_NOT_FOUND")
         return VerifiedParseResult(
             parse_record_id, document_version_id, first_result.result_ref_id,
@@ -146,10 +176,23 @@ class DocumentParseResultReadService:
             first_document.content_sha256, first_result.result_sha256, content,
         )
 
-    def _document(self, query: DocumentReadQuery, document_id: uuid.UUID,
+    def _document(self, transaction: object | None, query: DocumentReadQuery,
+                  document_id: uuid.UUID,
                   version_id: uuid.UUID) -> _FixedDocumentProof:
         try:
-            snapshot = self._documents.prepare(query, document_id, version_id)
+            if transaction is None:
+                snapshot = self._documents.prepare(
+                    query, document_id, version_id,
+                )
+            else:
+                prepare = getattr(
+                    self._documents, "prepare_in_transaction", None,
+                )
+                if not callable(prepare):
+                    raise ParseResultReadError()
+                snapshot = prepare(
+                    transaction, query, document_id, version_id,
+                )
         except DownloadError as error:
             raise ParseResultReadError(error.code) from None
         except Exception:
@@ -178,12 +221,19 @@ class DocumentParseResultReadService:
         except Exception:
             raise ParseResultReadError() from None
 
-    def _result(self, query: DocumentReadQuery, version_id: uuid.UUID,
+    def _result(self, transaction: object | None, query: DocumentReadQuery,
+                version_id: uuid.UUID,
                 record_id: uuid.UUID) -> FixedParseResultSource:
         try:
-            with self._uow() as tx:
+            if transaction is None:
+                with self._uow() as tx:
+                    source = self._metadata.get(
+                        tx, scope=query.scope, project_id=query.project_id,
+                        document_version_id=version_id, parse_record_id=record_id,
+                    )
+            else:
                 source = self._metadata.get(
-                    tx, scope=query.scope, project_id=query.project_id,
+                    transaction, scope=query.scope, project_id=query.project_id,
                     document_version_id=version_id, parse_record_id=record_id,
                 )
             if (type(source) is not FixedParseResultSource

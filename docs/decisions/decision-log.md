@@ -8595,3 +8595,11 @@
 - Reason：原命令在后续更正后必须返回原Record，但客户端的下一次强If-Match仍需当前Workflow版本；混为单一`version`会导致陈旧状态或冲突误用。
 - Impact/Rollback：无Schema/Migration、冻结请求、权限、依赖或外发变化；新增冻结错误409注册。撤Router注入即恢复404，业务历史不变。
 - Verification：合同5、相关19、后端2750运行/3跳过；首轮`PENDING`传输缺口已修复；wheel SHA-256 `e8cd5e076e44c3bdf95b1e0925aa1689ddd9eb2acf631cc6332f284b2d25af8d`。
+
+# DEC-20261006-898：Checklist 固定来源证明复用写事务而不降级授权
+
+- Date/WBS：2026-10-06 / `WFL-01-A07-P07-A05`；依据真实Windows HTTP/PG首次自锁证据、DEC-890～897及CR-WFL-007。
+- Decision：Document固定来源、物理下载快照和Parse结果在Checklist/Handover当前事实证明中复用调用方事务；保留普通读API的独立事务入口。生产组合仅在显式写模式挂载，Trace Target Owner注册表缺失时CLOSED继续失败关闭。
+- Reason：写授权已对Session/User加排他锁，嵌套普通下载授权事务会等待自身；降低写锁或跳过物理字节校验都会破坏授权或当前事实语义。复用事务同时消除自锁并保持锁到原子提交。
+- Impact/Rollback：无Schema/Migration、冻结DTO、角色、依赖、Secret或外发变化。可同时撤Checklist生产Router和事务路径恢复404；若保留Router则不得单独撤事务路径。物理读取延长事务的性能风险留正式20并发门验证。
+- Verification：事务/HTTP/入口相关58、后端2754运行/3跳过；Win11/PG18.6真实Handover资格、HTTP PASS/重放、Record/Audit/receipt与漂移拒绝通过；wheel SHA-256 `5dcda0d86389bfcb71f4b7a783d67537720940d7393b4b91899a403b44d0ae29`。

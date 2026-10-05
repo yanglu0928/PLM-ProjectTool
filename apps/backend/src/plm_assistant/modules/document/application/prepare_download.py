@@ -66,7 +66,29 @@ class PrepareDownloadService:
 
     def prepare(self, query: DocumentReadQuery, document_id: uuid.UUID,
                 document_version_id: uuid.UUID) -> VerifiedDownload:
-        source = self._source(query, document_id, document_version_id)
+        return self._prepare(
+            query, document_id, document_version_id,
+            lambda: self._source(query, document_id, document_version_id),
+        )
+
+    def prepare_in_transaction(
+            self, transaction: object, query: DocumentReadQuery,
+            document_id: uuid.UUID,
+            document_version_id: uuid.UUID) -> VerifiedDownload:
+        """Verify one snapshot without opening a competing Auth transaction."""
+        if transaction is None:
+            raise DownloadError("RESOURCE_NOT_FOUND")
+        return self._prepare(
+            query, document_id, document_version_id,
+            lambda: self._source_in_transaction(
+                transaction, query, document_id, document_version_id,
+            ),
+        )
+
+    def _prepare(self, query: DocumentReadQuery, document_id: uuid.UUID,
+                 document_version_id: uuid.UUID,
+                 source_reader: Callable[[], DocumentDownloadSource]) -> VerifiedDownload:
+        source = source_reader()
         try:
             snapshot = self._storage.open_verified_snapshot(
                 source.storage_locator, expected_sha256=source.content_sha256,
@@ -78,7 +100,7 @@ class PrepareDownloadService:
         except Exception:
             raise DownloadError("FILE_UNAVAILABLE") from None
         try:
-            current = self._source(query, document_id, document_version_id)
+            current = source_reader()
             if current != source:
                 raise DownloadError("RESOURCE_NOT_FOUND")
             return VerifiedDownload(
@@ -94,6 +116,36 @@ class PrepareDownloadService:
         try:
             source = self._reader.get_download_source(query, document_id,
                                                       document_version_id)
+        except DocumentReadError as exc:
+            raise DownloadError(exc.code) from None
+        except Exception:
+            raise DownloadError("DOCUMENT_UNAVAILABLE") from None
+        if (type(source) is not DocumentDownloadSource
+                or type(source.actor_user_id) is not uuid.UUID
+                or source.actor_user_id.int == 0
+                or type(source.file_object_id) is not uuid.UUID
+                or source.file_object_id.int == 0
+                or type(source.storage_locator) is not str
+                or type(source.content_sha256) is not bytes
+                or len(source.content_sha256) != 32
+                or type(source.size_bytes) is not int
+                or not 0 <= source.size_bytes <= self._max_bytes
+                or type(source.detected_mime) is not str
+                or not source.detected_mime):
+            raise DownloadError("FILE_UNAVAILABLE")
+        return source
+
+    def _source_in_transaction(
+            self, transaction: object, query: DocumentReadQuery,
+            document_id: uuid.UUID,
+            document_version_id: uuid.UUID) -> DocumentDownloadSource:
+        reader = getattr(self._reader, "get_download_source_for_trace", None)
+        if not callable(reader):
+            raise DownloadError("DOCUMENT_UNAVAILABLE")
+        try:
+            source = reader(
+                transaction, query, document_id, document_version_id,
+            )
         except DocumentReadError as exc:
             raise DownloadError(exc.code) from None
         except Exception:

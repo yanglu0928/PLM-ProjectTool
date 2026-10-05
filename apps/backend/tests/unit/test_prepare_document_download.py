@@ -32,6 +32,7 @@ class Reader:
         self.source = source
         self.calls = 0
         self.second = source
+        self.transactions = []
 
     def get_download_source(self, query, document_id, document_version_id):
         self.calls += 1
@@ -40,6 +41,11 @@ class Reader:
         if self.calls > 1 and isinstance(self.second, Exception):
             raise self.second
         return self.source if self.calls == 1 else self.second
+
+    def get_download_source_for_trace(
+            self, transaction, query, document_id, document_version_id):
+        self.transactions.append(transaction)
+        return self.get_download_source(query, document_id, document_version_id)
 
 
 class Storage:
@@ -105,6 +111,14 @@ class PrepareDownloadTests(unittest.TestCase):
             self.assertEqual(self.reader.calls, 2)
         self.assertTrue(self.storage.stream.closed)
         self.assertEqual(self.audit.events, [])
+
+    def test_caller_transaction_is_reused_for_both_source_observations(self):
+        transaction = object()
+        with self.service().prepare_in_transaction(
+                transaction, self.query, self.document, self.version) as ready:
+            self.assertEqual(ready.stream.read(), b"verified")
+        self.assertEqual(self.reader.transactions, [transaction, transaction])
+        self.assertEqual(self.txs, [])
 
     def test_recheck_revocation_or_changed_source_closes_snapshot(self):
         for second in (DocumentReadError("RESOURCE_NOT_FOUND"),

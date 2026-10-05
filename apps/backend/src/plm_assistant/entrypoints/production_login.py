@@ -31,6 +31,9 @@ from plm_assistant.entrypoints.windows_handover_action_read import (
 from plm_assistant.entrypoints.windows_handover_action import (
     create_windows_handover_action_write_routers,
 )
+from plm_assistant.entrypoints.windows_workflow_checklist import (
+    create_windows_workflow_checklist_record_router,
+)
 from plm_assistant.entrypoints.windows_handover import (
     create_windows_handover_routers,
 )
@@ -481,6 +484,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         project_read_router = None
         workflow_read_router = None
         workflow_start_router = None
+        workflow_checklist_record_router = None
         audit_read_router = None
         audit_export_result_router = None
         audit_export_download_router = None
@@ -679,6 +683,15 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 storage=LocalParseResultStorage(settings.data_root),
                 unit_of_work=runtime.unit_of_work,
             )
+            if include_secret_write:
+                workflow_checklist_record_router = (
+                    create_windows_workflow_checklist_record_router(
+                        runtime, sessions=sessions, origins=origins,
+                        license_guard=licenses.guard, audit=audit,
+                        documents=document_reads, downloads=document_downloads,
+                        parse_results=evidence_results_for_viewer,
+                    )
+                )
             ai_read_routers = create_windows_ai_read_routers(
                 runtime=runtime, origins=origins, license_guard=licenses.guard,
                 task_cursors=ai_read_cursors.task,
@@ -1381,6 +1394,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             project_read_router=project_read_router,
             workflow_read_router=workflow_read_router,
             workflow_start_router=workflow_start_router,
+            workflow_checklist_record_router=workflow_checklist_record_router,
             audit_read_router=audit_read_router,
             audit_export_result_router=audit_export_result_router,
             audit_export_download_router=audit_export_download_router,

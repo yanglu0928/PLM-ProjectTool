@@ -36,6 +36,7 @@ class _Documents:
         self.calls = 0
         self.denied_on = None
         self.changed_on = None
+        self.transactions = []
 
     def prepare(self, *_):
         self.calls += 1
@@ -48,6 +49,10 @@ class _Documents:
         source = self.source
         return VerifiedDownload(source.document_version_id, source.size_bytes,
                                 source.detected_mime, source.content_sha256, io.BytesIO())
+
+    def prepare_in_transaction(self, transaction, *args):
+        self.transactions.append(transaction)
+        return self.prepare(*args)
 
 
 class _Metadata:
@@ -117,6 +122,16 @@ class DocumentParseResultReadTests(unittest.TestCase):
         self.assertEqual(read.content, self.content)
         self.assertEqual((self.documents.calls, self.metadata.calls, self.storage.calls), (2, 2, 1))
         self.assertNotIn("content", repr(read))
+
+    def test_caller_transaction_is_reused_for_document_and_metadata(self):
+        transaction = object()
+        read = self.service.read_in_transaction(
+            transaction, self.query, document_id=self.document_id,
+            document_version_id=self.version_id,
+            parse_record_id=self.record_id,
+        )
+        self.assertEqual(read.content, self.content)
+        self.assertEqual(self.documents.transactions, [transaction, transaction])
 
     def test_revoked_after_storage_read_fails_closed(self):
         self.documents.denied_on = 2

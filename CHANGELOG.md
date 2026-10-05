@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-06：0.1.0-dev.0/WFL-01-A07-P07-A05 将Checklist冻结HTTP接入Windows写模式生产组合，并以Win11/PostgreSQL 18.6真实Approved Handover/Review、Document/Evidence/Capability/AI和VERIFIED Action完成PASS/重放/Record/Audit/receipt闭环。CR-WFL-007修复写事务持有Session排他锁时普通Document下载另开授权事务造成的自锁，Document/Parse固定证明改为复用调用方事务且不降低授权/字节校验。升级/回滚：无Schema/Migration/冻结DTO/依赖变化；撤写Router恢复404，保留Router时不得单独撤事务修复。验证：相关58、后端2754运行/3跳过、真实PG令牌PASS，wheel SHA-256 `5dcda0d86389bfcb71f4b7a783d67537720940d7393b4b91899a403b44d0ae29`。已知问题：前端记录、真实CLOSED Trace Owner、20并发、Server2025当前程序链、正式信任、Gate3/UAT/发行仍待。
+
 - 2026-10-06：0.1.0-dev.0/WFL-01-A07-P07-A04 新增默认关闭的冻结Checklist记录HTTP：强制Origin/Session/CSRF/幂等键/强If-Match/严格JSON与canonical UUID，注册冻结`WORKFLOW_GATE_NOT_SATISFIED` 409；回执分离当时Record版本与当前Workflow ETag。升级/回滚：无Schema/Migration/依赖变化，撤Router注入即恢复404。验证：合同5、相关19、后端2750运行/3跳过，wheel SHA-256 `e8cd5e076e44c3bdf95b1e0925aa1689ddd9eb2acf631cc6332f284b2d25af8d`。已知问题：Windows生产组合和真实HTTP/PG留A05，不代表Gate 3/发行/UAT。
 
 - 2026-10-05：0.1.0-dev.0/WFL-01-A07-P07-A03 新增Workflow Checklist受权命令与Handover策略注册：Session/CSRF、License、ProjectManager-only、持久幂等、业务Owner、不可变追加和Audit保持原子；CR-WFL-006以服务端唯一当前Handover选择保持冻结DTO兼容。升级/回滚：无Schema/Migration/依赖变化，可撤组合但保留Record/Audit/receipt。验证：定向34、后端2745运行/3跳过、Win11/PG18.6原回执/Audit回滚/并发/唯一选择PASS，wheel SHA-256 `62251c2c3672117a63bb1275cd4471eba8a894961bab10dfd404321777e422fc`。已知问题：HTTP和Windows生产组合留A04+，本项不代表Gate 3/发行/UAT。

@@ -486,6 +486,40 @@ class DocumentReadService:
         except Exception:
             raise DocumentReadError("DOCUMENT_UNAVAILABLE") from None
 
+    def get_download_source_for_trace(
+            self, transaction: object, query: DocumentReadQuery,
+            document_id: uuid.UUID,
+            document_version_id: uuid.UUID) -> DocumentDownloadSource:
+        """Resolve download metadata inside an existing protected transaction."""
+        self._validate_query(query)
+        if (transaction is None or type(document_id) is not uuid.UUID
+                or document_id.int == 0 or type(document_version_id) is not uuid.UUID
+                or document_version_id.int == 0):
+            raise DocumentReadError("RESOURCE_NOT_FOUND")
+        try:
+            self._guard.require_valid(trace_id=query.trace_id)
+            actor = self._authorize(transaction, query, lock_project=True)
+            self._require_document(transaction, query, document_id)
+            source = self._repository.get_download_source(
+                transaction, scope=query.scope, project_id=query.project_id,
+                document_id=document_id, document_version_id=document_version_id,
+                actor_user_id=actor,
+            )
+            if (type(source) is not DocumentDownloadSource
+                    or source.actor_user_id != actor
+                    or source.document_id != document_id
+                    or source.document_version_id != document_version_id
+                    or source.scope != query.scope
+                    or source.project_id != query.project_id):
+                raise DocumentReadError("RESOURCE_NOT_FOUND")
+            return source
+        except DocumentReadError:
+            raise
+        except RuntimeLicenseError:
+            raise DocumentReadError("LICENSE_OPERATION_DENIED") from None
+        except Exception:
+            raise DocumentReadError("DOCUMENT_UNAVAILABLE") from None
+
     def _require_document(self, tx: object, query: DocumentReadQuery,
                           document_id: uuid.UUID) -> None:
         if type(self._repository.get(

@@ -102,7 +102,7 @@ class DocumentFixedSourceProofService:
             if len(source_sha256) != 32:
                 raise FixedSourceProofError("DOCUMENT_UNAVAILABLE")
             if parse_record_id is None:
-                self._verify_download(query, document_id, document_version_id,
+                self._verify_download(transaction, query, document_id, document_version_id,
                                       source_sha256)
                 return VerifiedFixedSource(facts)
             locked = self._parse_metadata.get_for_trace(
@@ -116,11 +116,21 @@ class DocumentFixedSourceProofService:
                     or locked.scope != query.scope or locked.project_id != query.project_id):
                 raise FixedSourceProofError("RESOURCE_NOT_FOUND")
             locked.__post_init__()
-            parsed = self._parse_results.read(
-                query, document_id=document_id,
-                document_version_id=document_version_id,
-                parse_record_id=parse_record_id,
+            transactional_read = getattr(
+                self._parse_results, "read_in_transaction", None,
             )
+            if callable(transactional_read):
+                parsed = transactional_read(
+                    transaction, query, document_id=document_id,
+                    document_version_id=document_version_id,
+                    parse_record_id=parse_record_id,
+                )
+            else:
+                parsed = self._parse_results.read(
+                    query, document_id=document_id,
+                    document_version_id=document_version_id,
+                    parse_record_id=parse_record_id,
+                )
             if (type(parsed) is not VerifiedParseResult
                     or parsed.parse_record_id != locked.parse_record_id
                     or parsed.document_version_id != locked.document_version_id
@@ -148,9 +158,18 @@ class DocumentFixedSourceProofService:
         except Exception:
             raise FixedSourceProofError() from None
 
-    def _verify_download(self, query: DocumentReadQuery, document_id: uuid.UUID,
+    def _verify_download(self, transaction: object, query: DocumentReadQuery,
+                         document_id: uuid.UUID,
                          version_id: uuid.UUID, source_sha256: bytes) -> None:
-        snapshot = self._downloads.prepare(query, document_id, version_id)
+        transactional_prepare = getattr(
+            self._downloads, "prepare_in_transaction", None,
+        )
+        if callable(transactional_prepare):
+            snapshot = transactional_prepare(
+                transaction, query, document_id, version_id,
+            )
+        else:
+            snapshot = self._downloads.prepare(query, document_id, version_id)
         if type(snapshot) is not VerifiedDownload:
             close = getattr(snapshot, "close", None)
             if callable(close):
