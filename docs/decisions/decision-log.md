@@ -8626,4 +8626,12 @@
 - Decision：资格预览只挂载于显式`platform-write`，默认、登录和只读平台保持404；GET使用只读Session当前事实Port，但Project授权继续精确调用`WORKFLOW_CHECKLIST_RECORD`的ProjectManager/ACTIVE策略。Workflow完整六阶段投影必须按`current_stage`定位，不依赖集合首项。
 - Reason：预览只服务于紧随其后的写入，扩大到只读平台没有当前产品必要性；GET没有CSRF语义，误用写Session Port会让合法读取固定失败。生产Repository返回完整六阶段，合同单阶段替身不能代表真实顺序。
 - Impact/Rollback：无Schema/Migration、冻结写DTO、角色、依赖、Secret或外发变化；撤生产资格Router注入恢复404。修复收紧正确阶段选择，不改变Handover Owner或写时再复验。
-- Verification：首轮503定位并修复阶段选择，次轮503定位并修复Session Port；最终Win11/PostgreSQL18.6真实HTTP、Alembic check、权威Handover、最小响应、ETag/no-store及业务快照零写PASS。定向45、后端2765运行/3跳过、wheel模块检查PASS，SHA-256 `83664a5775c80974310f423d756b8c3d3d886a177f0af6fd303fb3ea976155f3`。
+- Verification：首轮503后先收紧阶段选择，复验仍503；受控诊断确认实际异常为写Session Port缺少CSRF参数，改只读Port后最终Win11/PostgreSQL18.6真实HTTP、Alembic check、权威Handover、最小响应、ETag/no-store及业务快照零写PASS。定向45、后端2765运行/3跳过、wheel模块检查PASS，SHA-256 `83664a5775c80974310f423d756b8c3d3d886a177f0af6fd303fb3ea976155f3`。
+
+# DEC-20261006-902：Checklist页面以权威资格构造PASS并持久保留未知写原操作
+
+- Date/WBS：2026-10-06 / `WFL-01-A07-P07-A09`；依据CR-WFL-008、DEC-899～901及A06安全写客户端。
+- Decision：ProjectManager在当前Handover记录PASS前必须即时读取资格预览，页面只显示依据数量，不展示或允许输入UUID；FAIL不请求资格，但必须提示并填写未满足原因和影响。提交前把原Key、ETag、结果及Evidence保存到当前Session，未知结果仅在独立重读仍为同Workflow/版本后使用原操作重试。
+- Reason：服务端Owner Evidence精确集合不能由用户或前端推测；网络未知时生成新Key会产生重复命令风险。FAIL无需伪造通过依据，但空白失败记录对待办处理不友好。
+- Impact/Rollback：纯前端增量，无Schema/Migration、后端API、权限、依赖、Secret或外发变化。删除资格客户端和页面状态机可回滚；服务端路由保持默认关闭策略。SessionStorage仅保存当前登录主体的一条最小未决命令，格式/身份异常即关闭新写入。
+- Verification：资格客户端/写客户端/页面定向33项，前端全量77文件/1372项、typecheck及Vite163模块生产构建通过；主JS 585.43kB警告保留。真实浏览器/PG留A10。

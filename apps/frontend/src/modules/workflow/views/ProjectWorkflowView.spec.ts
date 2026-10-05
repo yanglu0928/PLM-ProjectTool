@@ -6,11 +6,18 @@ import { createAppRouter } from "@/app/router";
 import { SessionClient } from "@/modules/auth/api/sessionClient";
 import { WorkflowReadClient, parseWorkflow } from "@/modules/workflow/api/workflowReadClient";
 import { WorkflowStartClient, WorkflowStartError } from "@/modules/workflow/api/workflowStartClient";
+import { WorkflowChecklistQualificationClient } from "@/modules/workflow/api/workflowChecklistQualificationClient";
+import { WorkflowChecklistRecordClient, WorkflowChecklistRecordError,
+  type WorkflowChecklistFirstReceipt } from "@/modules/workflow/api/workflowChecklistRecordClient";
 import ProjectWorkflowView from "./ProjectWorkflowView.vue";
 
 const id = "01234567-89ab-4cde-8123-456789abcdef";
 const otherId = "21234567-89ab-4cde-8123-456789abcdef";
 const workflowId = "11234567-89ab-4cde-8123-456789abcdef";
+const analysisId = "31234567-89ab-4cde-8123-456789abcdef";
+const reviewRoundId = "41234567-89ab-4cde-8123-456789abcdef";
+const evidenceId = "51234567-89ab-4cde-8123-456789abcdef";
+const checklistRecordId = "61234567-89ab-4cde-8123-456789abcdef";
 const stages = [
   ["HANDOVER", "HANDOVER_BASELINE", "HANDOVER_ISSUES"],
   ["SURVEY", "SURVEY_ACTUAL_SOURCES", "SURVEY_CONCLUSION"],
@@ -53,13 +60,35 @@ async function session(manager = false, restricted = false) {
   return auth;
 }
 async function page(auth: SessionClient, reader: WorkflowReadClient, starter?: WorkflowStartClient,
+  qualifications?: WorkflowChecklistQualificationClient,
+  checklistRecords?: WorkflowChecklistRecordClient,
   path = `/projects/${id}/workflow`) {
   const router = createAppRouter(createMemoryHistory());
   await router.push(path); await router.isReady();
-  const wrapper = mount(ProjectWorkflowView, { props: { session: auth, workflows: reader, starter },
+  const wrapper = mount(ProjectWorkflowView, { props: { session: auth, workflows: reader, starter,
+    qualifications, checklistRecords },
     global: { plugins: [router] } });
   await flushPromises();
   return { wrapper, router };
+}
+function qualification(item: "HANDOVER_BASELINE" | "HANDOVER_ISSUES" = "HANDOVER_BASELINE") {
+  return Object.freeze({ workflow_id: workflowId, project_id: id, definition_version: 1 as const,
+    stage_key: "HANDOVER" as const, item_key: item, current_item_state: "PENDING" as const,
+    workflow_etag: '"v1"', handover_analysis_version_id: analysisId,
+    review_round_ref: reviewRoundId, evidence_refs: Object.freeze([evidenceId]) });
+}
+function checklistReceipt(result: "PASS" | "FAIL" = "PASS"): WorkflowChecklistFirstReceipt {
+  return Object.freeze({ is_current_state_proof: false as const, first_record: Object.freeze({
+    record_id: checklistRecordId, workflow_id: workflowId, project_id: id,
+    definition_version: 1 as const, stage_key: "HANDOVER" as const,
+    item_key: "HANDOVER_BASELINE" as const, result, item_version: 1,
+    recorded_workflow_version: 2, current_workflow_version: 2,
+    supersedes_record_id: null, evidence_refs: result === "PASS" ? [evidenceId] : [],
+    review_round_refs: result === "PASS" ? [reviewRoundId] : [], exception_refs: [],
+    reason: result === "FAIL" ? "尚未满足" : null,
+    impact: result === "FAIL" ? "继续处理" : null,
+    occurred_at: "2026-10-06T02:00:00Z", etag: '"v2"',
+  }) });
 }
 
 describe("ProjectWorkflowView", () => {
@@ -149,6 +178,131 @@ describe("ProjectWorkflowView", () => {
     const { wrapper } = await page(auth, new WorkflowReadClient(fetcher as typeof fetch));
     expect(wrapper.text()).toContain("已关闭新的启动请求");
     expect(wrapper.findAll("button").some((button) => button.text() === "准备启动流程")).toBe(false);
+    wrapper.unmount();
+  });
+
+  it("blocks a malformed saved Checklist operation rather than replacing its Key", async () => {
+    window.sessionStorage.setItem(`plm.workflow.checklist.pending.${id}`, JSON.stringify({
+      actor: id, project: id, workflow: workflowId, item: "HANDOVER_BASELINE",
+      result: "PASS", key: "synthetic-checklist-key", etag: '"v1"', evidence: [],
+      reason: null, impact: null,
+    }));
+    const auth = await session(true);
+    const reader = new WorkflowReadClient(
+      vi.fn().mockResolvedValue(response(snapshot(true), '"v1"')) as typeof fetch,
+    );
+    const { wrapper } = await page(auth, reader);
+    expect(wrapper.text()).toContain("已关闭新的启动请求及检查项记录请求");
+    expect(wrapper.findAll("button").some((button) => button.text() === "核验并记录通过"))
+      .toBe(false);
+    wrapper.unmount();
+  });
+
+  it("gets authoritative qualification before PASS and never asks for raw identifiers", async () => {
+    const auth = await session(true);
+    const reader = new WorkflowReadClient(
+      vi.fn().mockImplementation(() => Promise.resolve(
+        response(snapshot(true), '"v1"'),
+      )) as typeof fetch,
+    );
+    const qualifications = new WorkflowChecklistQualificationClient();
+    const get = vi.spyOn(qualifications, "get").mockResolvedValue(qualification());
+    const records = new WorkflowChecklistRecordClient(auth);
+    const record = vi.spyOn(records, "record").mockResolvedValue(checklistReceipt());
+    const { wrapper } = await page(auth, reader, undefined, qualifications, records);
+    await wrapper.findAll("button").find((button) => button.text() === "核验并记录通过")!.trigger("click");
+    await flushPromises();
+    expect(get).toHaveBeenCalledWith(id, "HANDOVER_BASELINE");
+    expect(wrapper.text()).toContain("服务器已按当前版本");
+    expect(wrapper.text()).toContain("不会要求手填或展示内部UUID");
+    expect(wrapper.text()).not.toContain(evidenceId);
+    const form = wrapper.get('form[aria-label="检查项记录确认"]');
+    await form.get('input[type="checkbox"]').setValue(true);
+    await form.trigger("submit"); await flushPromises();
+    expect(record).toHaveBeenCalledTimes(1);
+    expect(record.mock.calls[0]?.[1]).toMatchObject({ item_key: "HANDOVER_BASELINE",
+      result: "PASS", evidence_refs: [evidenceId], reason: null, impact: null });
+    expect(record.mock.calls[0]?.[1].idempotency_key).toMatch(/^[\x20-\x7e]{16,128}$/);
+    expect(wrapper.text()).toContain("不是当前状态或 Gate 通过证明");
+    expect(wrapper.find("ol").exists()).toBe(false);
+    expect(window.sessionStorage.length).toBe(0);
+    wrapper.unmount();
+  });
+
+  it("prompts for reason and impact on FAIL without requesting qualification", async () => {
+    const auth = await session(true);
+    const reader = new WorkflowReadClient(
+      vi.fn().mockResolvedValue(response(snapshot(true), '"v1"')) as typeof fetch,
+    );
+    const qualifications = new WorkflowChecklistQualificationClient();
+    const get = vi.spyOn(qualifications, "get");
+    const records = new WorkflowChecklistRecordClient(auth);
+    const record = vi.spyOn(records, "record").mockResolvedValue(checklistReceipt("FAIL"));
+    const { wrapper } = await page(auth, reader, undefined, qualifications, records);
+    await wrapper.findAll("button").find((button) => button.text() === "记录未通过")!.trigger("click");
+    const form = wrapper.get('form[aria-label="检查项记录确认"]');
+    await form.get('input[type="checkbox"]').setValue(true);
+    await form.trigger("submit");
+    expect(wrapper.text()).toContain("请填写未满足原因和影响/后续处理");
+    expect(record).not.toHaveBeenCalled();
+    const areas = form.findAll("textarea");
+    await areas[0]!.setValue("尚未满足"); await areas[1]!.setValue("继续处理");
+    await form.trigger("submit"); await flushPromises();
+    expect(get).not.toHaveBeenCalled();
+    expect(record.mock.calls[0]?.[1]).toMatchObject({ result: "FAIL", evidence_refs: [],
+      reason: "尚未满足", impact: "继续处理" });
+    wrapper.unmount();
+  });
+
+  it("rejects a stale qualification instead of presenting a confirmation", async () => {
+    const auth = await session(true);
+    const reader = new WorkflowReadClient(
+      vi.fn().mockResolvedValue(response(snapshot(true), '"v1"')) as typeof fetch,
+    );
+    const qualifications = new WorkflowChecklistQualificationClient();
+    vi.spyOn(qualifications, "get").mockResolvedValue(Object.freeze({
+      ...qualification(), workflow_etag: '"v2"',
+    }));
+    const { wrapper } = await page(auth, reader, undefined, qualifications);
+    await wrapper.findAll("button").find((button) => button.text() === "核验并记录通过")!.trigger("click");
+    await flushPromises();
+    expect(wrapper.text()).toContain("资格依据与当前流程快照不一致");
+    expect(wrapper.find('form[aria-label="检查项记录确认"]').exists()).toBe(false);
+    expect(wrapper.find("ol").exists()).toBe(false);
+    wrapper.unmount();
+  });
+
+  it("retains and retries only the original uncertain Checklist operation", async () => {
+    const auth = await session(true);
+    const reader = new WorkflowReadClient(
+      vi.fn().mockImplementation(() => Promise.resolve(
+        response(snapshot(true), '"v1"'),
+      )) as typeof fetch,
+    );
+    const qualifications = new WorkflowChecklistQualificationClient();
+    const get = vi.spyOn(qualifications, "get").mockResolvedValue(qualification());
+    const records = new WorkflowChecklistRecordClient(auth);
+    const record = vi.spyOn(records, "record")
+      .mockRejectedValueOnce(new WorkflowChecklistRecordError("WORKFLOW_CHECKLIST_UNCERTAIN"))
+      .mockResolvedValueOnce(checklistReceipt());
+    const { wrapper } = await page(auth, reader, undefined, qualifications, records);
+    await wrapper.findAll("button").find((button) => button.text() === "核验并记录通过")!.trigger("click");
+    await flushPromises();
+    const first = wrapper.get('form[aria-label="检查项记录确认"]');
+    await first.get('input[type="checkbox"]').setValue(true);
+    await first.trigger("submit"); await flushPromises();
+    expect(wrapper.text()).toContain("原操作号、版本和依据已保留");
+    expect(window.sessionStorage.length).toBe(1);
+    await wrapper.findAll("button").find((button) => button.text() === "刷新当前流程")!.trigger("click");
+    await flushPromises();
+    const retry = wrapper.get('form[aria-label="检查项原操作重试"]');
+    await retry.get('input[type="checkbox"]').setValue(true);
+    await retry.trigger("submit"); await flushPromises();
+    expect(record).toHaveBeenCalledTimes(2);
+    expect(record.mock.calls[0]?.[1].idempotency_key)
+      .toBe(record.mock.calls[1]?.[1].idempotency_key);
+    expect(get).toHaveBeenCalledTimes(1);
+    expect(window.sessionStorage.length).toBe(0);
     wrapper.unmount();
   });
 

@@ -59,9 +59,10 @@ Operation ID: WORKFLOW_CHECKLIST_QUALIFICATION_GET
 SHA-256 `c97424723d7698d249179422cfc3c9592b1acc3c8741fc363e92658bdc7c3e49`。
 
 生产组合复验：`WFL-01-A07-P07-A08` 将 Router 仅装入 Windows 显式
-`platform-write`，默认、登录和只读平台保持关闭。首轮真实 PostgreSQL 复验发现完整
-六阶段投影误取首阶段，修复为按 `current_stage` 定位；下一轮发现 GET 误装需 CSRF 的
-写 Session Port，修复为只读 Session Port，ProjectManager/ACTIVE Project 授权策略不变。
+`platform-write`，默认、登录和只读平台保持关闭。首轮真实 PostgreSQL 复验返回503；
+排查期间把完整六阶段选择从固定首项收紧为按 `current_stage` 定位，复验仍返回503。
+保留安全异常包装并在受控验证中打开诊断后，确认实际阻断为 GET 误装需 CSRF 的写
+Session Port；修复为只读 Session Port，ProjectManager/ACTIVE Project 授权策略不变。
 Win11/PostgreSQL 18.6 最终真实 HTTP/权威 Handover/业务零写快照通过，后端全量
 2765 项运行/3 项跳过通过，wheel SHA-256
 `83664a5775c80974310f423d756b8c3d3d886a177f0af6fd303fb3ea976155f3`。

@@ -15,10 +15,11 @@
 
 ## 首轮失败与修复
 
-真实投影首轮返回503，定位为服务按`stages[0]`取当前Handover；生产Repository返回完整
-六阶段且首项为Kickoff。修复为按`workflow.current_stage`精确定位，并让单元夹具使用真实
-阶段状态。下一轮仍503，定位为组合误用要求CSRF的`SqlAlchemyProjectWriteAccess`；GET
-改用只读Session Port，Project授权仍调用`WORKFLOW_CHECKLIST_RECORD`，未扩大角色或状态。
+真实投影首轮返回503。排查期间将服务从固定`stages[0]`收紧为按
+`workflow.current_stage`精确定位，并让单元夹具使用真实阶段状态；复验仍返回503，因此不把
+阶段假设描述为已确认根因。随后在受控验证中暂时打开内部异常诊断，确认实际阻断是组合误用
+要求CSRF的`SqlAlchemyProjectWriteAccess`；恢复安全异常包装并改用只读Session Port后通过。
+Project授权仍调用`WORKFLOW_CHECKLIST_RECORD`，未扩大角色或状态。
 
 ## 验证、兼容与剩余
 

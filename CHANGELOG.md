@@ -1,6 +1,8 @@
 # 版本说明
 
-- 2026-10-06：0.1.0-dev.0/WFL-01-A07-P07-A08 将Checklist资格预览接入Windows显式`platform-write`生产组合，默认/登录/只读平台继续关闭；Win11/PostgreSQL 18.6真实当前Handover事实GET返回最小Evidence/Review/Version、强ETag与`no-store`且业务快照零写。首轮真实复验发现并修复完整六阶段投影误取首阶段、GET误用需CSRF的写Session Port，两项均补回归且未放宽ProjectManager/ACTIVE授权。升级/回滚：无Schema/Migration/依赖/Secret/外发，撤资格Router注入恢复404。验证：定向45、后端2765运行/3跳过、真实PG/Alembic check及wheel模块检查PASS，wheel SHA-256 `83664a5775c80974310f423d756b8c3d3d886a177f0af6fd303fb3ea976155f3`。已知问题：前端页面/真实浏览器、CLOSED Trace Owner、20并发、正式信任、Gate3/UAT/发行仍待。
+- 2026-10-06：0.1.0-dev.0/WFL-01-A07-P07-A09 新增严格Checklist资格GET客户端并接入项目Workflow页面：仅ProjectManager在当前Handover可操作；PASS先由服务器复验且不展示/手填UUID，FAIL明确要求填写未满足原因和影响；写前持久保存原Key/ETag/Evidence，未知结果只允许同版本原操作重试，首次回执不冒充当前状态。升级/回滚：纯前端，无Schema/Migration/后端API/依赖/Secret/外发；删除客户端及页面接线可回滚。验证：定向33、前端77文件/1372项、typecheck、Vite163模块build PASS。已知问题：主JS 585.43kB警告、真实Edge/PG页面闭环、CLOSED Trace Owner、20并发、Gate3/UAT/发行仍待。
+
+- 2026-10-06：0.1.0-dev.0/WFL-01-A07-P07-A08 将Checklist资格预览接入Windows显式`platform-write`生产组合，默认/登录/只读平台继续关闭；Win11/PostgreSQL 18.6真实当前Handover事实GET返回最小Evidence/Review/Version、强ETag与`no-store`且业务快照零写。首轮真实复验返回503；排查期间将阶段选择从固定首项收紧为按`current_stage`定位，保留安全异常包装诊断后确认并修复实际阻断——GET误用需CSRF的写Session Port；ProjectManager/ACTIVE授权未放宽。升级/回滚：无Schema/Migration/依赖/Secret/外发，撤资格Router注入恢复404。验证：定向45、后端2765运行/3跳过、真实PG/Alembic check及wheel模块检查PASS，wheel SHA-256 `83664a5775c80974310f423d756b8c3d3d886a177f0af6fd303fb3ea976155f3`。已知问题：前端页面/真实浏览器、CLOSED Trace Owner、20并发、正式信任、Gate3/UAT/发行仍待。
 
 - 2026-10-06：0.1.0-dev.0/WFL-01-A07-P07-A07 依CR-WFL-008新增默认关闭的Checklist资格预览GET；仅ProjectManager/ACTIVE Project可用，在单事务重验当前Workflow与Handover Owner，只返最小Evidence集/Review/Handover Version引用和强ETag，不返正文/路径/AI内容/内部摘要。预览不是Gate事实，写时仍完整再复验。升级/回滚：无Schema/Migration/依赖/Secret/外发，默认app仍404，删除新Router/Service可回滚。验证：定向9、相关32、后端2763运行/3跳过PASS；wheel SHA-256 `c97424723d7698d249179422cfc3c9592b1acc3c8741fc363e92658bdc7c3e49`。已知问题：Windows组合/真实PG/HTTP、前端页面与性能待后续。
 
