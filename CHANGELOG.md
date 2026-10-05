@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/HND-02-A05-A03 新增默认关闭的Handover Action START/SUBMIT/VERIFY/CLOSE/CANCEL严格HTTP；五路统一Origin/Session/CSRF、强If-Match、持久幂等头、canonical UUID与白名单JSON，业务验证仍由Owner持有；SUBMITTED、VERIFIED、CLOSED响应保持不同事实。兼容性/回滚：无Schema/Migration/冻结URL/依赖/Secret/外发，撤可选Router恢复404。验证：新增合同3、后端2712通过/3跳过，wheel导入PASS，SHA-256 `39aeb417c9f1aa3b5ef9202ccaf129abd3a895f919204787844daaee10a4a900`。已知问题：Windows真实组合/PG闭环、写UI/浏览器、正式信任、Server2025、Gate3与发行仍待。
+
 - 2026-10-05：0.1.0-dev.0/HND-02-A05-A02 新增默认关闭的Handover Action CREATE/PATCH严格HTTP：CREATE持久幂等并返回201/Location/ETag，PATCH强If-Match与非空partial，统一受信Origin/Session/CSRF、canonical UUID/UTC时间、白名单JSON及安全错误投影；业务规则继续由Owner持有。兼容性/回滚：无Schema/Migration/冻结URL/依赖/Secret/外发，撤可选Router恢复404。验证：新增3、相关定向54、后端2709通过/3跳过，wheel导入PASS，SHA-256 `e8a6e5bb84cac252613c3feeb9eb2553f16bc1108d08e0a87638c4a111fb1b97`。已知问题：五个生命周期HTTP、Windows真实组合、写UI/浏览器、正式信任、Server2025、Gate3与发行仍待。
 
 - 2026-10-05：0.1.0-dev.0/HND-02-A05-A01 完成Handover Action七写HTTP/组合前置核查：七个内部Owner齐备，公开写与Windows写组合仍为0；确定CREATE/PATCH与五个生命周期命令分组实施，HTTP仅承担严格安全传输，SUBMITTED/VERIFIED不得标成完成。兼容性/回滚：纯文档，无程序/Schema/API行为/依赖/Secret/外发，可停止后续实现。验证：静态核对冻结API-04、Schema0100、七个Owner及当前Action读边界。已知问题：A02～A06、正式信任、Server2025、真实浏览器、拆包性能、Gate3与发行仍待。

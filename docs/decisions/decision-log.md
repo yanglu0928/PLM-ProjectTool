@@ -8475,3 +8475,11 @@
 - Reason：授权或业务校验下沉到HTTP会形成第二事实，非canonical时间/UUID和宽松partial会扩大重放身份；在Windows组合前默认开放又会把合同通过误当生产就绪。
 - Impact/Rollback：无Schema、Migration、冻结URL、依赖、配置、Secret、网络或外发。撤Router注入恢复404，合法历史不变。
 - Verification：新增合同3、相关定向54、后端全量2709通过/3跳过；wheel导入PASS，SHA-256 `e8a6e5bb84cac252613c3feeb9eb2553f16bc1108d08e0a87638c4a111fb1b97`。
+
+# DEC-20261005-883：Action生命周期HTTP不合并提交、验证与关闭事实
+
+- Date/WBS：2026-10-05 / `HND-02-A05-A03`；依据冻结API-04、DEC-881及五个既有生命周期Owner。
+- Decision：五个POST使用独立opt-in Router并统一强If-Match、持久幂等头和严格安全传输；HTTP只适配Owner命令/回执。SUBMIT、VERIFY、CLOSE保持不同响应形状，前两者不返回关闭事实，只有CLOSE返回Resolution Trace和关闭时间。
+- Reason：把提交或验证投影为完成会绕过客户/项目经理验收和Trace闭环；传输层复制Evidence/Trace/角色规则会形成第二业务事实。
+- Impact/Rollback：无Schema、Migration、冻结URL、依赖、配置、Secret、网络或外发。撤可选生命周期Router恢复404，历史不变。
+- Verification：新增合同3、后端全量2712通过/3跳过；wheel导入PASS，SHA-256 `39aeb417c9f1aa3b5ef9202ccaf129abd3a895f919204787844daaee10a4a900`。
