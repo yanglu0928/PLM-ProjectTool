@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/WFL-01-A07-P07-A02 新增Workflow Checklist不可变记录追加Repository：固定Workflow→Stage→Item→当前记录锁序，原子追加Record/Refs与双版本，禁止已有历史回到PENDING/分叉；完整观测摘要在读取时复算失败关闭。兼容性/升级/回滚：无Schema/Migration/冻结API/角色/依赖/Secret/外发；原开发占位摘要不再被Reader信任，正式写接口尚未开放故无生产迁移。验证：定向11、Workflow相关104、后端2737运行/3跳过、开发wheel SHA-256 `7a2a0d35b178ee416db473c731039212f19604d26e95a4780964f3457b2d52e0`；Win11/PG18.6首次/更正、旧当前记录回归、回滚、三层锁、双写1成功1冲突、Evidence事实与摘要篡改拒绝PASS。已知问题：本项不含授权/License/Handover Owner/幂等/Audit/HTTP/Gate，进入P07-A03。
+
 - 2026-10-05：0.1.0-dev.0/WFL-01-A07-P07-A01 完成Handover Checklist受权写前置核查：旧P01全量Owner阻塞拆分为显式策略注册，首批只允许HANDOVER_BASELINE/HANDOVER_ISSUES调用真实Handover Owner；PASS请求引用须与Owner合格集合精确一致，FAIL仍走全套授权/事务，WAIVED及未注册Item失败关闭。兼容性/回滚：纯文档，无代码、Schema/Migration、API、权限、依赖、Secret或外发；停止后续策略注册即可。验证：静态交叉核对冻结API-02、0030/0032、当前记录查询、HND-03与旧P01。已知问题：追加Repository/受权服务/HTTP/Transition、其余Checklist Owner、ApprovedException、Gate3与发行仍待。
 
 - 2026-10-05：0.1.0-dev.0/HND-03-A04 新增Windows 11/PostgreSQL 18.6一次性资格验证：真实批准Handover/Review、物理Document字节、PROJECT Evidence、CURRENT_APPROVED Capability、SUCCEEDED GAP_ANALYSIS、VERIFIED Action均由A03 Owner重证；8类竞争写锁返回55P03，29张相关业务表调用前后逻辑快照相同，Evidence失效与文件篡改均失败关闭。兼容性/升级/回滚：仅验证脚本/文档，无Schema/Migration、冻结API、权限、依赖、Secret、外发或生产数据；删除脚本可回滚。验证：空库迁移、Alembic check与完整隔离矩阵PASS，临时库/文件清理。已知问题：Workflow Checklist写链/Transition、Server2025矩阵、Resolution Owner、Gate3与发行仍待；Debian13按用户指令不实机验证。

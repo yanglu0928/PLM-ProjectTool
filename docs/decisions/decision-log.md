@@ -8571,3 +8571,11 @@
 - Reason：旧P01因所有Review Subject/ApprovedException Owner缺失而整体阻塞，现Handover Owner已客观具备，但不能把这一能力外推到其他十项或例外审批。显式注册允许增量实现且不伪造全量支持。
 - Impact/Rollback：纯前置决策，无代码、Schema/Migration、公开API、权限、依赖、Secret、网络或外发变化。后续不注册策略即可回滚；已追加历史不得覆盖。请求result只表示意图，Owner观测字段由服务端派生。
 - Verification：交叉核对六阶段V1、ChecklistRecord/Ref 0032、CurrentChecklistRecord锁与链验证、冻结请求字段、HND-03输出及旧P01未满足项；令牌`WFL_01_A07_P07_A01_HANDOVER_CHECKLIST_WRITE_PRECHECK_PASS`。
+
+# DEC-20261005-895：Checklist记录摘要绑定完整观测并在读取时复算
+
+- Date/WBS：2026-10-05 / `WFL-01-A07-P07-A02`；依据DEC-894、0030/0032及当前记录读取边界。
+- Decision：追加端使用规范JSON摘要绑定Record全部版本/状态字段、Stage观测和规范排序Refs；当前读取端从已存事实重算并比较，任何不一致失败关闭。Repository保持调用方事务，不内置commit、授权、Audit或业务Owner。
+- Reason：0032只约束摘要长度，若追加端使用占位摘要或读取端不复算，数据库行不可变仍不能证明Record、Refs内容与摘要一致。
+- Impact/Rollback：历史合成占位摘要不再被当前Reader信任；正式写接口此前未开放，无生产迁移。无Schema、冻结API、角色、依赖或外发变化。可撤销读取侧复算及新增Repository，但不可删除或改写已形成的不可变业务历史。
+- Verification：定向11、Workflow相关104项、后端2737运行/3跳过、开发wheel及Win11/PG18.6首次/更正/回滚/锁/并发/Evidence事实和摘要损坏拒绝全部通过；令牌`WFL_01_A07_P07_A02_CHECKLIST_APPEND_PASS`。

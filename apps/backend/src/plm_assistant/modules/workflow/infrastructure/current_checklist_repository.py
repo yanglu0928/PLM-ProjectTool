@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from ..application.current_checklist_record import (
     ChecklistBasisObservation, ChecklistRecordReadError, CurrentChecklistRecord,
 )
+from ..application.checklist_record_integrity import checklist_record_fingerprint
 from ..domain.catalog_v1 import six_stage_definition
 from ..domain.checklist_record import ChecklistRecordSnapshot
 from ..domain.fingerprint import definition_fingerprint
@@ -94,5 +95,14 @@ class SqlAlchemyCurrentChecklistRecordRepository:
             )
         except ValueError:
             raise ChecklistRecordReadError() from None
-        return CurrentChecklistRecord(snapshot, basis, bytes(root["content_fingerprint"]),
+        fingerprint = bytes(root["content_fingerprint"])
+        try:
+            expected_fingerprint = checklist_record_fingerprint(
+                snapshot, basis, root["observed_stage_state"],
+            )
+        except ValueError:
+            raise ChecklistRecordReadError() from None
+        if fingerprint != expected_fingerprint:
+            raise ChecklistRecordReadError()
+        return CurrentChecklistRecord(snapshot, basis, fingerprint,
                                       root["observed_stage_state"], workflow["lock_version"])
