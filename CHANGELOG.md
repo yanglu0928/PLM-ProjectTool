@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-06：0.1.0-dev.0/WFL-01-A07-P07-A07 依CR-WFL-008新增默认关闭的Checklist资格预览GET；仅ProjectManager/ACTIVE Project可用，在单事务重验当前Workflow与Handover Owner，只返最小Evidence集/Review/Handover Version引用和强ETag，不返正文/路径/AI内容/内部摘要。预览不是Gate事实，写时仍完整再复验。升级/回滚：无Schema/Migration/依赖/Secret/外发，默认app仍404，删除新Router/Service可回滚。验证：定向9、相关32、后端2763运行/3跳过PASS；wheel SHA-256 `c97424723d7698d249179422cfc3c9592b1acc3c8741fc363e92658bdc7c3e49`。已知问题：Windows组合/真实PG/HTTP、前端页面与性能待后续。
+
 - 2026-10-06：0.1.0-dev.0/WFL-01-A07-P07-A06 新增 Checklist 记录 Session 安全传输与严格前端客户端；仅支持已有 Owner 的两项 Handover PASS/FAIL，强 ETag/幂等/CSRF、未知结果不自动重试，回执严格绑定身份/版本/证据且不冒充当前状态。DEC-899 因现有读投影缺完整权威 Evidence 集，不让页面猜测或用户手填 UUID，页面接线移至新增资格预览边界之后。升级/回滚：纯前端未接页面增量，无Schema/Migration/后端API/依赖/Secret/外发，删除新客户端可回滚。验证：前端76文件/1363项、typecheck、Vite161模块build PASS。已知问题：资格预览/页面/真实浏览器待实施，主JS 565.71kB警告。
 
 - 2026-10-06：0.1.0-dev.0/WFL-01-A07-P07-A05 将Checklist冻结HTTP接入Windows写模式生产组合，并以Win11/PostgreSQL 18.6真实Approved Handover/Review、Document/Evidence/Capability/AI和VERIFIED Action完成PASS/重放/Record/Audit/receipt闭环。CR-WFL-007修复写事务持有Session排他锁时普通Document下载另开授权事务造成的自锁，Document/Parse固定证明改为复用调用方事务且不降低授权/字节校验。升级/回滚：无Schema/Migration/冻结DTO/依赖变化；撤写Router恢复404，保留Router时不得单独撤事务修复。验证：相关58、后端2754运行/3跳过、真实PG令牌PASS，wheel SHA-256 `5dcda0d86389bfcb71f4b7a783d67537720940d7393b4b91899a403b44d0ae29`。已知问题：前端记录、真实CLOSED Trace Owner、20并发、Server2025当前程序链、正式信任、Gate3/UAT/发行仍待。

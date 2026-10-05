@@ -8611,3 +8611,11 @@
 - Reason：冻结写命令要求请求 Evidence 集与 Handover Owner 当前结果精确一致；当前前端投影不含完整固定文档 Evidence 和 Action 验证 Evidence。猜测会产生稳定 409 或错误 Gate 操作，手填则违背待办的可用性要求。
 - Impact/Rollback：本项仅前端未接页面的客户端增量，无 Schema/Migration/后端 API/角色/依赖/Secret/外发变化；删除客户端可回滚。原定“A06 页面接线”的未完部分保留到预览边界之后，不虚报完成。
 - Verification：前端 `76` 文件/`1363` 项测试、typecheck、Vite `161` 模块构建全部通过；成功回执始终标记为非当前状态证明。
+
+# DEC-20261006-900：Checklist 资格预览精确复用写权限并保持写时再复验
+
+- Date/WBS：2026-10-06 / `WFL-01-A07-P07-A07`；依据CR-WFL-008、冻结Checklist写DTO和HND-03当前事实Owner。
+- Decision：新增预览GET不建立宽松读角色，精确复用`WORKFLOW_CHECKLIST_RECORD`的ProjectManager/ACTIVE Project授权策略；成功只返回Workflow ETag、当前Item状态和Owner生成的最小Evidence/Review/Handover Version引用。
+- Reason：预览是写命令的辅助边界，普通项目成员无写权时不应获得额外的Gate证据集；仅返UUID且不返内部指纹/路径/正文限制了暴露。
+- Impact/Rollback：依CR-WFL-008为兼容性API增量，无Schema/Migration/依赖/Secret/外发；默认app继续404，撤Router/Service可回滚。预览不改变冻结写DTO或原写时Owner复验。
+- Verification：定向9、相关32、后端2763运行/3跳过全部通过；wheel SHA-256 `c97424723d7698d249179422cfc3c9592b1acc3c8741fc363e92658bdc7c3e49`。生产组合/真实PG留A08。
