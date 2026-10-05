@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/HND-03-A02 新增Handover两项Workflow Checklist的纯资格领域合同：精确绑定当前APPROVED Version/Review、保守阻断Item、VERIFIED/CLOSED Action、Evidence当前版本/指纹及CLOSED Resolution Trace；开放、提交、只取消或重复未完成Action失败关闭。兼容性/升级/回滚：无Schema/Migration、公开API、权限、依赖、配置、Secret、网络或外发；删除策略/后续注册可回滚，历史不改写。验证：定向11、后端2725运行/3跳过、开发wheel全部PASS，wheel SHA-256 `8aec40adfd09200f8d06f171aa9d2c1f6e25f0dda62784f2962701bd6be1c2bd`。已知问题：本项不证明真实PG当前事实；A03/A04、Workflow写链/Transition、Resolution Owner、Gate3与发行仍待。
+
 - 2026-10-05：0.1.0-dev.0/HND-03-A01 完成Handover Workflow资格适配前置核查：两项Checklist由Handover Owner在调用方事务内证明当前Approved Version/Review、固定来源和Action事实，Workflow只保存最小Evidence/ReviewRound观测；`source_missing`或NEED_CONFIRM/CONFLICT/RISK保守阻断，VERIFIED/CLOSED可满足规则，SUBMITTED/CANCELLED不满足，无例外Owner时WAIVED关闭。兼容性/回滚：纯文档，无代码、Schema/API、权限、依赖、Secret或外发；后续Port可停止注册。验证：静态核对冻结DM/API、Workflow Schema与真实Handover Owner。已知问题：A02～A04、Checklist/Transition写链、真实CLOSE Owner、正式信任、性能、Gate3与发行仍待。
 
 - 2026-10-05：0.1.0-dev.0/CR-EXEC-001 用户再次选择方案 A 并确认持续交付纪律：按计划自主推进至可使用程序包，不兼容方案在前置记录差异、风险、迁移/回滚和验证计划后直接实施，所有调整同步 GitHub。兼容性/回滚：仅执行规则与追溯文档，无产品代码、Schema/API、依赖、Secret或外发变化；可恢复旧执行节奏但保留历史。验证：AGENTS、V1.1、CR与决策日志边界一致；正式信任、客户确认、付款、不可恢复生产操作和客观Gate仍不得推定通过。

@@ -8539,3 +8539,11 @@
 - Reason：Handover真实Review Owner已经存在，但历史APPROVED不证明当前来源；任意同项目Evidence、Action状态或UUID也不能证明Gate。保守规则不按AI置信度/严重度擅自豁免，同时遵循冻结DM允许Gate消费满足规则的VERIFIED/CLOSED。
 - Impact/Rollback：本项纯文档，无代码、Schema/Migration、API、权限、依赖、配置、Secret、网络或外发。后续分为领域合同、当前事实Owner、PG验证，再回Workflow独立写链；停止注册Port即可回滚且历史不变。
 - Verification：静态交叉检查DM-05、API-02、六阶段定义、Workflow记录/历史Schema、Handover Review Subject与Action生命周期；标记`HND_03_A01_WORKFLOW_QUALIFICATION_PRECHECK_PASS`，不代表Checklist、Transition、Gate 3或发行通过。
+
+# DEC-20261005-891：Handover资格合同绑定当前观测而不持久化第二事实
+
+- Date/WBS：2026-10-05 / `HND-03-A02`；依据DEC-890、冻结DM-05及现有Workflow Evidence/ReviewRound引用边界。
+- Decision：资格策略作为Handover application的纯函数合同，只消费A03 Owner在调用方事务内已重验的当前观测；输出固定两个Item的最小Evidence/Review证明和指纹。指纹必须绑定Evidence当前lock version/content fingerprint，不仅绑UUID。未取消Action必须全部VERIFIED/CLOSED，CLOSED必须带Resolution Trace。
+- Reason：策略自己查库会穿透模块边界；只保存UUID会在Evidence修订后产生陈旧等价；把单个已验证重复Action当作整个Item闭环会遮蔽开放事项。
+- Impact/Rollback：无Schema/Migration、公开API、权限、依赖、配置、Secret、网络或外发变化。未接入Workflow写链；移除策略/后续注册即可回滚，历史不变。
+- Verification：定向11项、后端全量2725运行/3跳过全部通过；开发wheel SHA-256 `8aec40adfd09200f8d06f171aa9d2c1f6e25f0dda62784f2962701bd6be1c2bd`。
