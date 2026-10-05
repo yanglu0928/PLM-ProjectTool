@@ -8483,3 +8483,11 @@
 - Reason：把提交或验证投影为完成会绕过客户/项目经理验收和Trace闭环；传输层复制Evidence/Trace/角色规则会形成第二业务事实。
 - Impact/Rollback：无Schema、Migration、冻结URL、依赖、配置、Secret、网络或外发。撤可选生命周期Router恢复404，历史不变。
 - Verification：新增合同3、后端全量2712通过/3跳过；wheel导入PASS，SHA-256 `39aeb417c9f1aa3b5ef9202ccaf129abd3a895f919204787844daaee10a4a900`。
+
+# DEC-20261005-884：Windows Action写组合隔离下游Owner缺口
+
+- Date/WBS：2026-10-05 / `HND-02-A05-A04-P01`；依据CR-HND-008、DEC-883及Windows显式Platform模式。
+- Decision：写模式挂载七路Action写Router并复用真实Owner；缺Survey/Requirement Target Owner时只让CLOSE经空显式注册表失败关闭，不阻断其余六写，也不使用合成Owner。真实Owner到位后通过同一注入口补齐。wheel生产入口必须作为打包验收，缺包标记直接修复。
+- Reason：拒绝整个写模式会把独立下游缺口扩大，跳过Owner又会制造假关闭；源码导入不能证明安装包可用。
+- Impact/Rollback：无Schema/Migration/冻结URL/依赖/Secret/网络/外发；补AI/Document API包标记只改变wheel收录。撤两个写Router注入恢复404，历史保留。
+- Verification：组合/入口34、后端2714通过/3跳过；七个Owner分别在Win11/PG18验证，wheel生产入口导入PASS，SHA-256 `99d9a79dd65c45d5aec31abfc36dc18926ff9c28f0a65ca2be9a86a830b687e7`；统一HTTP/PG链留P02。

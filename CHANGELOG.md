@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/HND-02-A05-A04-P01 新增Windows Action七写组合并仅在显式Platform写模式挂载；CR-HND-008在缺Survey/Requirement真实Trace Owner时让CLOSE失败关闭而不阻断其余六写。修复AI/Document API目录缺包标记导致wheel生产入口不可导入的偏差。兼容性/回滚：无Schema/Migration/冻结URL/依赖/Secret/外发，撤写Router恢复404；包标记只修复wheel收录。验证：组合/入口34、后端2714通过/3跳过、七Owner分别Win11/PG18通过，wheel生产入口导入PASS，SHA-256 `99d9a79dd65c45d5aec31abfc36dc18926ff9c28f0a65ca2be9a86a830b687e7`。已知问题：统一HTTP/PG链P02、真实下游Trace Owner/CLOSE正例、写UI/浏览器、正式信任、Server2025、Gate3与发行仍待。
+
 - 2026-10-05：0.1.0-dev.0/HND-02-A05-A03 新增默认关闭的Handover Action START/SUBMIT/VERIFY/CLOSE/CANCEL严格HTTP；五路统一Origin/Session/CSRF、强If-Match、持久幂等头、canonical UUID与白名单JSON，业务验证仍由Owner持有；SUBMITTED、VERIFIED、CLOSED响应保持不同事实。兼容性/回滚：无Schema/Migration/冻结URL/依赖/Secret/外发，撤可选Router恢复404。验证：新增合同3、后端2712通过/3跳过，wheel导入PASS，SHA-256 `39aeb417c9f1aa3b5ef9202ccaf129abd3a895f919204787844daaee10a4a900`。已知问题：Windows真实组合/PG闭环、写UI/浏览器、正式信任、Server2025、Gate3与发行仍待。
 
 - 2026-10-05：0.1.0-dev.0/HND-02-A05-A02 新增默认关闭的Handover Action CREATE/PATCH严格HTTP：CREATE持久幂等并返回201/Location/ETag，PATCH强If-Match与非空partial，统一受信Origin/Session/CSRF、canonical UUID/UTC时间、白名单JSON及安全错误投影；业务规则继续由Owner持有。兼容性/回滚：无Schema/Migration/冻结URL/依赖/Secret/外发，撤可选Router恢复404。验证：新增3、相关定向54、后端2709通过/3跳过，wheel导入PASS，SHA-256 `e8a6e5bb84cac252613c3feeb9eb2553f16bc1108d08e0a87638c4a111fb1b97`。已知问题：五个生命周期HTTP、Windows真实组合、写UI/浏览器、正式信任、Server2025、Gate3与发行仍待。

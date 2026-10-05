@@ -34,6 +34,9 @@ from plm_assistant.modules.ai.api.invocation_list_cursor import AIInvocationList
 from plm_assistant.entrypoints.windows_ai_read_cursor import WindowsAIReadCursorCodecs
 from plm_assistant.entrypoints.windows_capability import WindowsCapabilityRouters
 from plm_assistant.entrypoints.windows_handover import WindowsHandoverRouters
+from plm_assistant.entrypoints.windows_handover_action import (
+    WindowsHandoverActionWriteRouters,
+)
 
 
 class _ContractMaintenanceAdmission:
@@ -202,6 +205,10 @@ class ProductionLoginTests(unittest.TestCase):
         self.handover_action_factory = self.enterContext(patch(
             "plm_assistant.entrypoints.production_login.create_windows_handover_action_read_router",
             return_value=APIRouter(),
+        ))
+        self.handover_action_write_factory = self.enterContext(patch(
+            "plm_assistant.entrypoints.production_login.create_windows_handover_action_write_routers",
+            return_value=WindowsHandoverActionWriteRouters(APIRouter(), APIRouter()),
         ))
         self.handover_review_factory = self.enterContext(patch(
             "plm_assistant.entrypoints.production_login.create_windows_handover_review_router",
@@ -591,6 +598,7 @@ class ProductionLoginTests(unittest.TestCase):
             app = create_production_platform_app(settings)
         egress_factory.assert_not_called()
         self.handover_action_factory.assert_called_once()
+        self.handover_action_write_factory.assert_not_called()
         self.handover_review_factory.assert_not_called()
         with TestClient(app, base_url="http://localhost") as client:
             self.assertEqual(client.get("/api/v1/admin/secrets").status_code, 401)
@@ -875,6 +883,7 @@ class ProductionLoginTests(unittest.TestCase):
         egress_factory.assert_called_once()
         retrieval_factory.assert_called_once()
         self.handover_action_factory.assert_called_once()
+        self.handover_action_write_factory.assert_called_once()
         self.handover_review_factory.assert_called_once()
         included_routes = (
             route

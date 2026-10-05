@@ -28,6 +28,9 @@ from plm_assistant.entrypoints.windows_capability import (
 from plm_assistant.entrypoints.windows_handover_action_read import (
     create_windows_handover_action_read_router,
 )
+from plm_assistant.entrypoints.windows_handover_action import (
+    create_windows_handover_action_write_routers,
+)
 from plm_assistant.entrypoints.windows_handover import (
     create_windows_handover_routers,
 )
@@ -524,6 +527,8 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         handover_review_submission_router = None
         handover_read_router = None
         handover_action_read_router = None
+        handover_action_command_router = None
+        handover_action_lifecycle_router = None
         review_command_router = None
         if include_secret_read:
             from plm_assistant.entrypoints.windows_license_runtime import (
@@ -551,6 +556,12 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 license_guard=licenses.guard,
             )
             if include_secret_write:
+                action_write_routers = create_windows_handover_action_write_routers(
+                    runtime, sessions=sessions, origins=origins,
+                    license_guard=licenses.guard, audit=audit,
+                )
+                handover_action_command_router = action_write_routers.commands
+                handover_action_lifecycle_router = action_write_routers.lifecycle
                 review_command_router = create_windows_handover_review_router(
                     runtime, sessions=sessions, origins=origins,
                     license_guard=licenses.guard, audit=audit,
@@ -1416,6 +1427,8 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             handover_review_submission_router=handover_review_submission_router,
             handover_read_router=handover_read_router,
             handover_action_read_router=handover_action_read_router,
+            handover_action_command_router=handover_action_command_router,
+            handover_action_lifecycle_router=handover_action_lifecycle_router,
             review_command_router=review_command_router,
             maintenance_admission=maintenance_admission,
             shutdown_callback=shutdown,
