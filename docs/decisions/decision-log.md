@@ -8563,3 +8563,11 @@
 - Reason：资格Owner的设计目标是调用方事务内加锁后供Workflow原子写入，行锁是预期行为，不应被误报为业务修改；只看行数又会漏掉UPDATE。逐行逻辑快照直接证明业务内容未变。
 - Impact/Rollback：仅一次性验证脚本与文档，无产品Schema/Migration/API/权限/依赖、Secret、外发或业务数据变化；删除脚本即可回滚。验证夹具对Capability计数、AI输入、Action事件投影的修正均遵循现行约束，不放宽生产规则。
 - Verification：空库迁移和Alembic check通过；真实Approved Handover/Review、物理文件、三类Evidence、Capability、AI、VERIFIED Action正例PASS；8类竞争`FOR UPDATE NOWAIT`均55P03；29表快照不变；Evidence失效和响应文件篡改均失败关闭；令牌`HND_03_A04_WORKFLOW_QUALIFICATION_PG_PASS`。
+
+# DEC-20261005-894：Checklist写能力按真实业务Owner显式注册
+
+- Date/WBS：2026-10-05 / `WFL-01-A07-P07-A01`；依据冻结API-02、CR-WFL-004/005、旧P01阻塞与HND-03真实资格证据。
+- Decision：实现通用Workflow追加服务，但资格策略按Item显式注册；首批仅注册`HANDOVER_BASELINE`和`HANDOVER_ISSUES`。PASS必须在同一事务调用Handover Owner，并要求请求Evidence集合与Owner结果精确一致；FAIL仍受权、锁定、幂等和审计；WAIVED及未注册Item失败关闭。
+- Reason：旧P01因所有Review Subject/ApprovedException Owner缺失而整体阻塞，现Handover Owner已客观具备，但不能把这一能力外推到其他十项或例外审批。显式注册允许增量实现且不伪造全量支持。
+- Impact/Rollback：纯前置决策，无代码、Schema/Migration、公开API、权限、依赖、Secret、网络或外发变化。后续不注册策略即可回滚；已追加历史不得覆盖。请求result只表示意图，Owner观测字段由服务端派生。
+- Verification：交叉核对六阶段V1、ChecklistRecord/Ref 0032、CurrentChecklistRecord锁与链验证、冻结请求字段、HND-03输出及旧P01未满足项；令牌`WFL_01_A07_P07_A01_HANDOVER_CHECKLIST_WRITE_PRECHECK_PASS`。
