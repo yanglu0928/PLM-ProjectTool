@@ -30,6 +30,8 @@
 
 实际结果：Win11/PostgreSQL 18生产组合HTTP已完成CREATE/PATCH/START/SUBMIT/VERIFY/CANCEL；另写入同项目ACTIVE Trace后调用CLOSE，稳定返回422，Action保持VERIFIED/v4、Resolution为空且CLOSED Audit为0。替代方案客观通过，但真实CLOSE正例仍未完成，CR保持开放。
 
+2026-10-05浏览器补证：构建Vue通过本机Edge与生产Windows写组合完成CREATE/PATCH/START/SUBMIT/VERIFY/CANCEL，VERIFIED页面的CLOSE按钮明确禁用并显示本CR原因；数据库保持VERIFIED/v4且无CLOSED Audit。该证据证明UI没有绕过缺口，但不关闭本CR。
+
 ## 实施中发现的打包偏差
 
 首次 wheel 生产入口导入发现 `plm_assistant.modules.ai.api` 与 `plm_assistant.modules.document.api` 缺少包标记：源码树因 namespace 行为可运行，但 setuptools wheel 未包含对应 API 目录，导致安装包导入 `production_login` 失败。该问题直接阻断可使用程序包，已补最小 `__init__.py`，系统扫描确认其余含 Python 文件的模块目录均有包标记，并要求重新构建、从 wheel 导入生产入口；不改变 AI/Document API 行为或冻结合同。

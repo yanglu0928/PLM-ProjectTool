@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-05：0.1.0-dev.0/HND-02-A05-A06 完成Windows 11真实Edge/Vue/生产FastAPI/PostgreSQL 18 Action写闭环：CREATE/PATCH/START/SUBMIT/VERIFY、第二Action CANCEL、20个成功API响应及PG/Audit/清理通过；VERIFIED的CLOSE按CR-HND-008禁用。修复Action读取原生fetch接收者导致`Illegal invocation`及浏览器`.000Z`不符合canonical UTC的问题，并补回归。兼容性/回滚：无Schema/Migration/冻结API/依赖/Secret/外发；回滚会恢复真实浏览器故障。验证：相关45、前端75文件1341项、typecheck、Vite161模块build、浏览器截图与隔离清理PASS；主JS564.57kB警告保留。已知问题：HND Workflow资格回接、真实CLOSE Owner、正式信任、Server2025、性能、Gate3与发行仍待。
+
 - 2026-10-05：0.1.0-dev.0/HND-02-A05-A05-P02 将Action写客户端接入项目待办工作台：支持人工/Analysis来源创建、五项元数据修改及START/SUBMIT/VERIFY/CANCEL，按角色/assigned owner/状态给出操作提示并由后端最终重验；成功后GET刷新，未知结果只用原Key/ETag重试。CLOSE因CR-HND-008缺真实Resolution Owner保持禁用。兼容性/回滚：纯前端，无Schema/Migration/后端API/依赖/Secret/外发，撤写区恢复只读页。验证：页面7、前端75文件1339项、typecheck、Vite161模块build PASS；主JS564.57kB警告保留。已知问题：A06真实浏览器、受权引用选择器、真实CLOSE正例、正式信任、Server2025、Gate3与发行仍待。
 
 - 2026-10-05：0.1.0-dev.0/HND-02-A05-A05-P01 新增Handover Action七写严格前端客户端及Session安全传输；CSRF仅由会话Owner注入，原始Key/ETag由调用方持有且未知结果不自动重试。回执重验身份、状态、ETag递增和请求绑定，但统一声明非当前状态证明，SUBMITTED/VERIFIED/CLOSED保持分离。兼容性/回滚：纯前端，无Schema/Migration/后端API/依赖/Secret/外发，删除新增客户端和传输入口即可。验证：专项20、前端75文件1335项、typecheck、Vite160模块build PASS；主JS 540.63kB警告保留。已知问题：P02工作台、A06真实浏览器、真实下游Trace Owner/CLOSE正例、正式信任、Server2025、Gate3与发行仍待。

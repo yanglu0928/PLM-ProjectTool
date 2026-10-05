@@ -8515,3 +8515,11 @@
 - Reason：前端角色门不能成为授权事实；直接依据首次回执更新为完成会混淆首次幂等结果与当前状态；在Owner缺失时提供CLOSE会制造必然失败或诱导绕过。冻结合同没有成员/Document/Evidence搜索Operation，故不伪造选择器能力。
 - Impact/Rollback：纯前端页面，无Schema/Migration/后端API/依赖/Secret/外发。撤写区恢复只读页，历史不变。引用选择器需未来受权只读Owner合同；主JS 564.57kB拆包警告继续登记。
 - Verification：页面7、前端全量75文件1339项、typecheck、Vite161模块production build通过；令牌`HND_02_A05_A05_P02_ACTION_WRITE_WORKBENCH_PASS`。
+
+# DEC-20261005-888：Action 浏览器边界固定无接收者 fetch 与 canonical UTC
+
+- Date/WBS：2026-10-05 / `HND-02-A05-A06`；依据真实Windows 11浏览器证据、冻结API-04及CR-HND-008。
+- Decision：所有Action原生fetch必须先复制为局部函数再调用，禁止把客户端对象作为原生fetch接收者；Action写入时间只接受与后端一致的canonical UTC `Z`，零微秒不带小数、非零微秒固定六位。托管Windows浏览器内核不可用时使用已有隔离本机Edge/CDP回退，但仍须走构建Vue、生产组合和真实PG，不能降级为TestClient。CLOSE继续禁用并显示Owner缺口。
+- Reason：测试替身不约束原生fetch的receiver，单元测试会漏掉浏览器`Illegal invocation`；JavaScript `toISOString()`的`.000Z`与后端canonical序列化不等价。真实浏览器验收必须覆盖这些运行时差异。
+- Impact/Rollback：纯前端调用与验收harness修复，无Schema/Migration/冻结API/依赖/Secret/外发。回滚会重新导致Action列表或CREATE在真实浏览器失败。首轮审计事件名夹具写错后作废，以全新库重跑。
+- Verification：Action相关45、前端全量75文件1341项、typecheck、Vite161模块build；本机Edge记录20个成功API响应，PG最终VERIFIED/v4与CANCELLED/v1及六类Audit准确，截图复核、隔离资源清理通过；令牌`HND_02_A05_A06_WINDOWS_BROWSER_PASS`。

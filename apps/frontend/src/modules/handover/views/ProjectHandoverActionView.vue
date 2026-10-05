@@ -85,7 +85,7 @@ async function locate(evidenceId: string) { if (!detail.value || !detail.value.e
 
 function localInput(iso: string) { const value = new Date(iso); return Number.isFinite(value.valueOf())
   ? new Date(value.valueOf() - value.getTimezoneOffset() * 60_000).toISOString().slice(0, 16) : ""; }
-function utcInput(value: string) { const parsed = new Date(value); return Number.isFinite(parsed.valueOf()) ? parsed.toISOString() : value; }
+function utcInput(value: string) { const parsed = new Date(value); return Number.isFinite(parsed.valueOf()) ? parsed.toISOString().replace(".000Z", "Z") : value; }
 function ids(value: string) { return value.split(/[\s,;]+/u).map(item => item.trim()).filter(Boolean); }
 function documents(value: string) { return value.split(/\r?\n/u).map(line => line.trim()).filter(Boolean).map(line => { const pair = line.split(/[,，\s]+/u);
   return { document_id: pair[0] ?? "", document_version_id: pair[1] ?? "" }; }); }

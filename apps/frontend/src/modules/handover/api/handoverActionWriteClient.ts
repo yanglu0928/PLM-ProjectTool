@@ -57,7 +57,7 @@ function exact(value: Record<string, unknown>, keys: readonly string[]) { return
 function id(value: unknown): value is string { return typeof value === "string" && uuid.test(value) && value !== "00000000-0000-0000-0000-000000000000"; }
 function text(value: unknown, maximum: number): value is string { return typeof value === "string" && value.length >= 1 && value.length <= maximum
   && value.trim() === value && !/\p{C}/u.test(value); }
-function instant(value: unknown): value is string { return typeof value === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})$/.test(value)
+function instant(value: unknown): value is string { return typeof value === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{6})?Z$/.test(value)
   && Number.isFinite(Date.parse(value)); }
 function version(value: unknown): number | null { if (typeof value !== "string" || !etagPattern.test(value)) return null;
   const parsed = Number(value.slice(2, -1)); return Number.isSafeInteger(parsed) && parsed < Number.MAX_SAFE_INTEGER ? parsed : null; }

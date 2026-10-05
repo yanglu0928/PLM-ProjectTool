@@ -45,4 +45,8 @@ describe("HandoverActionReadClient", () => {
   it("fails closed on ETag drift and mismatched error", async () => {
     await expect(client(ok(detail, '"v3"')).api.get(project, action)).rejects.toMatchObject({ code: "HANDOVER_ACTION_UNAVAILABLE" });
     await expect(client(failure(403, "RESOURCE_NOT_FOUND")).api.get(project, action)).rejects.toMatchObject({ code: "HANDOVER_ACTION_UNAVAILABLE" }); });
+  it("invokes a native-style fetcher without the client as receiver", async () => {
+    function nativeStyle(this: unknown): Promise<Response> { expect(this).toBeUndefined(); return Promise.resolve(ok({ items: [], next_cursor: null, has_more: false })); }
+    await expect(new HandoverActionReadClient(nativeStyle as typeof fetch).list(project)).resolves.toMatchObject({ items: [], has_more: false });
+  });
 });

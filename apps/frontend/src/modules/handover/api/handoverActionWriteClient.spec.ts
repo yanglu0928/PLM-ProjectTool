@@ -73,6 +73,7 @@ describe("HandoverActionWriteClient", () => {
   it.each([
     ["create", () => ({ ...input, human_source_reason: "冲突来源" })],
     ["create", () => ({ ...input, requested_input_spec: { fields: [] } })],
+    ["create", () => ({ ...input, due_at: "2026-10-10T12:00:00.000Z" })],
     ["patch", () => ({})],
   ])("rejects unsafe %s input before transport", async (kind, make) => {
     const { api, fetcher } = await setup();

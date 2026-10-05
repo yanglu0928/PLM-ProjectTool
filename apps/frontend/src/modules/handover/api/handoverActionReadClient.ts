@@ -102,7 +102,7 @@ export class HandoverActionReadClient {
     if (result.etag !== item.etag) throw new HandoverActionReadError("HANDOVER_ACTION_UNAVAILABLE"); return item; }
   async #get(path: string, withEtag?: false): Promise<unknown>; async #get(path: string, withEtag: true): Promise<{ data: unknown; etag: string | null }>;
   async #get(path: string, withEtag = false): Promise<unknown> { const controller = new AbortController(); const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
-    try { const response = await this.fetcher(path, { method: "GET", credentials: "same-origin", cache: "no-store", redirect: "error", headers: { Accept: "application/json" }, signal: controller.signal });
+    try { const fetcher = this.fetcher; const response = await fetcher(path, { method: "GET", credentials: "same-origin", cache: "no-store", redirect: "error", headers: { Accept: "application/json" }, signal: controller.signal });
       if (controller.signal.aborted || response.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !== "application/json") throw new Error(); const body: unknown = await response.json();
       if (controller.signal.aborted || !record(body) || !id(body.trace_id)) throw new Error(); if (response.status !== 200) { const code = record(body.error) ? body.error.code : null;
         const expected: Record<string, number> = { AUTH_SESSION_EXPIRED: 401, LICENSE_OPERATION_DENIED: 403, RESOURCE_NOT_FOUND: 404 };
