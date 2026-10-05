@@ -81,6 +81,10 @@ COMMON_ERRORS: dict[str, ErrorSpec] = {
     "PROJECT_ARCHIVED": ErrorSpec(
         "PROJECT_ARCHIVED", 409, "项目已归档，不允许修改。"
     ),
+    "WORKFLOW_GATE_NOT_SATISFIED": ErrorSpec(
+        "WORKFLOW_GATE_NOT_SATISFIED", 409,
+        "当前清单、证据或评审尚不满足要求。",
+    ),
     "PROJECT_DEPARTMENT_IN_USE": ErrorSpec(
         "PROJECT_DEPARTMENT_IN_USE", 409, "部门仍有在用成员，不能停用。"
     ),

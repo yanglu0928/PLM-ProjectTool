@@ -68,6 +68,7 @@ def create_app(
     project_read_router: APIRouter | None = None,
     workflow_read_router: APIRouter | None = None,
     workflow_start_router: APIRouter | None = None,
+    workflow_checklist_record_router: APIRouter | None = None,
     trace_revoke_router: APIRouter | None = None,
     trace_supersede_router: APIRouter | None = None,
     audit_read_router: APIRouter | None = None,
@@ -229,6 +230,8 @@ def create_app(
         app.include_router(workflow_read_router)
     if workflow_start_router is not None:
         app.include_router(workflow_start_router)
+    if workflow_checklist_record_router is not None:
+        app.include_router(workflow_checklist_record_router)
     if trace_revoke_router is not None:
         app.include_router(trace_revoke_router)
     if trace_supersede_router is not None:

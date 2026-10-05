@@ -8587,3 +8587,11 @@
 - Reason：冻结请求没有Analysis身份，客户端选择会扩大合同并泄漏业务事实；返回当前Record会让原命令幂等回执随时间变化。
 - Impact/Rollback：新增ProjectManager-only内部写策略，无Schema/Migration、冻结API、依赖、Secret或外发变化。可停注册/撤组合，但已有Record、Audit和receipt保留。
 - Verification：定向34、后端2745运行/3跳过；Win11/PG18.6真实受权、License、原回执、Audit回滚、同键并发和零/一/多选择PASS；wheel SHA-256 `62251c2c3672117a63bb1275cd4471eba8a894961bab10dfd404321777e422fc`。
+
+# DEC-20261006-897：Checklist HTTP分离不可变记录版本与当前Workflow ETag
+
+- Date/WBS：2026-10-06 / `WFL-01-A07-P07-A04`；依据冻结API-02、DEC-896和A03原历史幂等回执。
+- Decision：写端点保持显式注入/默认关闭，严格适配五字段DTO。回执用`recorded_workflow_version`和`item_version`描述当时不可变Record，HTTP ETag和`current_workflow_version`描述当前聚合版本；不把历史幂等回执冒充当前业务事实。
+- Reason：原命令在后续更正后必须返回原Record，但客户端的下一次强If-Match仍需当前Workflow版本；混为单一`version`会导致陈旧状态或冲突误用。
+- Impact/Rollback：无Schema/Migration、冻结请求、权限、依赖或外发变化；新增冻结错误409注册。撤Router注入即恢复404，业务历史不变。
+- Verification：合同5、相关19、后端2750运行/3跳过；首轮`PENDING`传输缺口已修复；wheel SHA-256 `e8cd5e076e44c3bdf95b1e0925aa1689ddd9eb2acf631cc6332f284b2d25af8d`。

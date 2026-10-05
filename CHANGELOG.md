@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-06：0.1.0-dev.0/WFL-01-A07-P07-A04 新增默认关闭的冻结Checklist记录HTTP：强制Origin/Session/CSRF/幂等键/强If-Match/严格JSON与canonical UUID，注册冻结`WORKFLOW_GATE_NOT_SATISFIED` 409；回执分离当时Record版本与当前Workflow ETag。升级/回滚：无Schema/Migration/依赖变化，撤Router注入即恢复404。验证：合同5、相关19、后端2750运行/3跳过，wheel SHA-256 `e8cd5e076e44c3bdf95b1e0925aa1689ddd9eb2acf631cc6332f284b2d25af8d`。已知问题：Windows生产组合和真实HTTP/PG留A05，不代表Gate 3/发行/UAT。
+
 - 2026-10-05：0.1.0-dev.0/WFL-01-A07-P07-A03 新增Workflow Checklist受权命令与Handover策略注册：Session/CSRF、License、ProjectManager-only、持久幂等、业务Owner、不可变追加和Audit保持原子；CR-WFL-006以服务端唯一当前Handover选择保持冻结DTO兼容。升级/回滚：无Schema/Migration/依赖变化，可撤组合但保留Record/Audit/receipt。验证：定向34、后端2745运行/3跳过、Win11/PG18.6原回执/Audit回滚/并发/唯一选择PASS，wheel SHA-256 `62251c2c3672117a63bb1275cd4471eba8a894961bab10dfd404321777e422fc`。已知问题：HTTP和Windows生产组合留A04+，本项不代表Gate 3/发行/UAT。
 
 - 2026-10-05：0.1.0-dev.0/WFL-01-A07-P07-A02 新增Workflow Checklist不可变记录追加Repository：固定Workflow→Stage→Item→当前记录锁序，原子追加Record/Refs与双版本，禁止已有历史回到PENDING/分叉；完整观测摘要在读取时复算失败关闭。兼容性/升级/回滚：无Schema/Migration/冻结API/角色/依赖/Secret/外发；原开发占位摘要不再被Reader信任，正式写接口尚未开放故无生产迁移。验证：定向11、Workflow相关104、后端2737运行/3跳过、开发wheel SHA-256 `7a2a0d35b178ee416db473c731039212f19604d26e95a4780964f3457b2d52e0`；Win11/PG18.6首次/更正、旧当前记录回归、回滚、三层锁、双写1成功1冲突、Evidence事实与摘要篡改拒绝PASS。已知问题：本项不含授权/License/Handover Owner/幂等/Audit/HTTP/Gate，进入P07-A03。
