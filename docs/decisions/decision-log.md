@@ -8603,3 +8603,11 @@
 - Reason：写授权已对Session/User加排他锁，嵌套普通下载授权事务会等待自身；降低写锁或跳过物理字节校验都会破坏授权或当前事实语义。复用事务同时消除自锁并保持锁到原子提交。
 - Impact/Rollback：无Schema/Migration、冻结DTO、角色、依赖、Secret或外发变化。可同时撤Checklist生产Router和事务路径恢复404；若保留Router则不得单独撤事务路径。物理读取延长事务的性能风险留正式20并发门验证。
 - Verification：事务/HTTP/入口相关58、后端2754运行/3跳过；Win11/PG18.6真实Handover资格、HTTP PASS/重放、Record/Audit/receipt与漂移拒绝通过；wheel SHA-256 `5dcda0d86389bfcb71f4b7a783d67537720940d7393b4b91899a403b44d0ae29`。
+
+# DEC-20261006-899：Checklist 前端先交付安全写客户端，页面等待权威资格预览
+
+- Date/WBS：2026-10-06 / `WFL-01-A07-P07-A06`；依据冻结 Checklist POST、DEC-894～898 及现有 Workflow/Handover 读取投影。
+- Decision：A06 收窄为 Checklist 专用 Session 传输和严格业务客户端，不把 PASS 表单接入页面。下一项以 Change Request 新增服务端权威资格预览，再由页面使用其 Evidence 集；不要求用户手工维护 UUID，不从多个摘要读取推测集合。
+- Reason：冻结写命令要求请求 Evidence 集与 Handover Owner 当前结果精确一致；当前前端投影不含完整固定文档 Evidence 和 Action 验证 Evidence。猜测会产生稳定 409 或错误 Gate 操作，手填则违背待办的可用性要求。
+- Impact/Rollback：本项仅前端未接页面的客户端增量，无 Schema/Migration/后端 API/角色/依赖/Secret/外发变化；删除客户端可回滚。原定“A06 页面接线”的未完部分保留到预览边界之后，不虚报完成。
+- Verification：前端 `76` 文件/`1363` 项测试、typecheck、Vite `161` 模块构建全部通过；成功回执始终标记为非当前状态证明。

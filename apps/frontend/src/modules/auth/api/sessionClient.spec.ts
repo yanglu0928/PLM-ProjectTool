@@ -767,6 +767,90 @@ describe("SessionClient", () => {
     expect(api.canSubmit).toBe(true);
   });
 
+  it("posts a bounded Checklist record with private CSRF and caller-owned replay inputs", async () => {
+    const receipt = response({ record_id: id, result: "PASS", etag: '"v5"' });
+    const { api, fetcher } = client(response(session()), receipt);
+    await api.login("manager", "synthetic-only");
+    const body = JSON.stringify({ result: "PASS", reason: null, impact: null,
+      evidence_refs: [id], exception_refs: [] });
+    const key = "synthetic-checklist-record-0001";
+    await expect(api.postProjectWorkflowChecklistRecord(projectId,
+      "HANDOVER_BASELINE", body, '"v4"', key)).resolves.toBe(receipt);
+    expect(fetcher.mock.calls[1]).toEqual([
+      `/api/v1/projects/${projectId}/workflow/checklist-items/HANDOVER_BASELINE:record`, {
+        method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error",
+        headers: { Accept: "application/json", "Content-Type": "application/json",
+          "X-CSRF-Token": token, "Idempotency-Key": key, "If-Match": '"v4"' },
+        body, signal: expect.any(AbortSignal),
+      },
+    ]);
+    expect(JSON.stringify(api)).not.toContain(token);
+    expect(api.canSubmit).toBe(true);
+  });
+
+  it("rejects unsafe Checklist path, body, version and Key before network", async () => {
+    const { api, fetcher } = client(response(session()));
+    await api.login("manager", "synthetic-only");
+    const key = "synthetic-checklist-record-0001";
+    for (const [project, item, body, etag, operation] of [
+      ["../other", "HANDOVER_BASELINE", "{}", '"v4"', key],
+      [projectId.toUpperCase(), "HANDOVER_BASELINE", "{}", '"v4"', key],
+      [projectId, "SURVEY_CONCLUSION", "{}", '"v4"', key],
+      [projectId, "HANDOVER_BASELINE", "", '"v4"', key],
+      [projectId, "HANDOVER_BASELINE", "x".repeat(2 * 1024 * 1024 + 1), '"v4"', key],
+      [projectId, "HANDOVER_BASELINE", "{}", '"v0"', key],
+      [projectId, "HANDOVER_BASELINE", "{}", 'W/"v4"', key],
+      [projectId, "HANDOVER_BASELINE", "{}", '"v9007199254740991"', key],
+      [projectId, "HANDOVER_BASELINE", "{}", '"v4"', "short"],
+    ] as const) {
+      await expect(api.postProjectWorkflowChecklistRecord(project,
+        item as "HANDOVER_BASELINE", body, etag, operation))
+        .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    }
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("requires Checklist write proof, retains it after unknown and clears it on 401", async () => {
+    const readOnly = session(); delete (readOnly as Partial<typeof readOnly>).csrf_token;
+    const { api: viewer, fetcher: viewerFetcher } = client(response(readOnly));
+    await viewer.current();
+    await expect(viewer.postProjectWorkflowChecklistRecord(projectId,
+      "HANDOVER_ISSUES", "{}", '"v4"', "synthetic-checklist-record-0001"))
+      .rejects.toMatchObject({ code: "AUTH_RELOGIN_REQUIRED" });
+    expect(viewerFetcher).toHaveBeenCalledTimes(1);
+    const { api, fetcher } = client(response(session()), new Response("{}", { status: 503 }),
+      new Response("{}", { status: 401 }));
+    await api.login("manager", "synthetic-only");
+    await api.postProjectWorkflowChecklistRecord(projectId, "HANDOVER_ISSUES", "{}",
+      '"v4"', "synthetic-checklist-record-0001");
+    expect(api.canSubmit).toBe(true);
+    await api.postProjectWorkflowChecklistRecord(projectId, "HANDOVER_ISSUES", "{}",
+      '"v4"', "synthetic-checklist-record-0001");
+    expect(api.canSubmit).toBe(false);
+    expect(api.view).toBeNull();
+    expect(fetcher).toHaveBeenCalledTimes(3);
+  });
+
+  it("never overlaps or retries a timed-out Checklist record", async () => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn().mockResolvedValueOnce(response(session()))
+      .mockImplementationOnce((_path: string, options: RequestInit) => new Promise((_done, reject) => {
+        options.signal?.addEventListener("abort", () => reject(new Error("synthetic timeout")));
+      }));
+    const api = new SessionClient(fetcher as typeof fetch, 100);
+    await api.login("manager", "synthetic-only");
+    const pending = expect(api.postProjectWorkflowChecklistRecord(projectId,
+      "HANDOVER_BASELINE", "{}", '"v4"', "synthetic-checklist-record-0001"))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    await expect(api.postProjectWorkflowChecklistRecord(projectId,
+      "HANDOVER_BASELINE", "{}", '"v4"', "synthetic-checklist-record-0001"))
+      .rejects.toMatchObject({ code: "AUTH_CLIENT_BUSY" });
+    await vi.advanceTimersByTimeAsync(101);
+    await pending;
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(api.canSubmit).toBe(true);
+  });
+
   it("posts Project Job cancel with private CSRF, original version, key and bounded reason", async () => {
     const receipt = response({ job_id: id, state: "CANCEL_REQUESTED", etag: '"v2"' });
     const { api, fetcher } = client(response(session()), receipt);

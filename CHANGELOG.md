@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-06：0.1.0-dev.0/WFL-01-A07-P07-A06 新增 Checklist 记录 Session 安全传输与严格前端客户端；仅支持已有 Owner 的两项 Handover PASS/FAIL，强 ETag/幂等/CSRF、未知结果不自动重试，回执严格绑定身份/版本/证据且不冒充当前状态。DEC-899 因现有读投影缺完整权威 Evidence 集，不让页面猜测或用户手填 UUID，页面接线移至新增资格预览边界之后。升级/回滚：纯前端未接页面增量，无Schema/Migration/后端API/依赖/Secret/外发，删除新客户端可回滚。验证：前端76文件/1363项、typecheck、Vite161模块build PASS。已知问题：资格预览/页面/真实浏览器待实施，主JS 565.71kB警告。
+
 - 2026-10-06：0.1.0-dev.0/WFL-01-A07-P07-A05 将Checklist冻结HTTP接入Windows写模式生产组合，并以Win11/PostgreSQL 18.6真实Approved Handover/Review、Document/Evidence/Capability/AI和VERIFIED Action完成PASS/重放/Record/Audit/receipt闭环。CR-WFL-007修复写事务持有Session排他锁时普通Document下载另开授权事务造成的自锁，Document/Parse固定证明改为复用调用方事务且不降低授权/字节校验。升级/回滚：无Schema/Migration/冻结DTO/依赖变化；撤写Router恢复404，保留Router时不得单独撤事务修复。验证：相关58、后端2754运行/3跳过、真实PG令牌PASS，wheel SHA-256 `5dcda0d86389bfcb71f4b7a783d67537720940d7393b4b91899a403b44d0ae29`。已知问题：前端记录、真实CLOSED Trace Owner、20并发、Server2025当前程序链、正式信任、Gate3/UAT/发行仍待。
 
 - 2026-10-06：0.1.0-dev.0/WFL-01-A07-P07-A04 新增默认关闭的冻结Checklist记录HTTP：强制Origin/Session/CSRF/幂等键/强If-Match/严格JSON与canonical UUID，注册冻结`WORKFLOW_GATE_NOT_SATISFIED` 409；回执分离当时Record版本与当前Workflow ETag。升级/回滚：无Schema/Migration/依赖变化，撤Router注入即恢复404。验证：合同5、相关19、后端2750运行/3跳过，wheel SHA-256 `e8cd5e076e44c3bdf95b1e0925aa1689ddd9eb2acf631cc6332f284b2d25af8d`。已知问题：Windows生产组合和真实HTTP/PG留A05，不代表Gate 3/发行/UAT。
