@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-06：0.1.0-dev.0/SUR-01-A04-A02-P03 确认并以3项Survey合同固定复用冻结PROJECT Review四写Router：`SRV-02 + SURVEY_ALL_V1`创建、强ETag开轮、批准投影、默认404、严格安全传输和错误码均通过，不复制Survey专用Review路径。兼容性/升级/回滚：无运行时代码、Migration/ORM/API路径/依赖/外发变化，生产入口仍默认关闭。验证：定向13、后端2810通过/3跳过；wheel 1038项，SHA-256 `bc9bd853a438bdd3b2e63b6fff76e15b4bed53954b99bd7bd47a911ff15cbc7d`。已知问题：Windows真实HTTP/PG组合、业务提交端点、读取/UI、Round/Response/Conclusion、Gate3/UAT/发行仍待。
+
 - 2026-10-06：0.1.0-dev.0/SUR-01-A04-A02-P02 新增真实 `SRV-02 + SURVEY_ALL_V1` Review Subject Owner与PostgreSQL仓储；Validate/Review共用当前定义验证器，送审与批准重验评审人、内容、四类来源及目标部门，批准原子取代旧版并更新正式指针，退回/撤回保留旧指针。Review basis不伪造Survey类型化来源，采用内容指纹和同事务持锁重验。兼容性/升级/回滚：无Migration/ORM/公开API/依赖/外发，停装Owner可关闭新写入且历史保留。验证：定向15、Win11/PG18.6来源漂移拒批/恢复批准/漂移撤回、后端2807通过/3跳过；wheel 1038项，SHA-256 `10c68d6dbd9f228e71e5b7ad2489fabcb5caa26bb527734b8e1b1f6da1d3f2eb`。已知问题：Review HTTP/Windows组合、Round/Response/Conclusion、Workflow资格、Gate3/UAT/发行仍待。
 
 - 2026-10-06：0.1.0-dev.0/SUR-01-A04-A02-P01 新增Migration0105 Survey Review终态守卫：仅开放送审、批准/退回和旧正式版取代三条路径，固定Review引用，以可延迟约束强制`PROJECT + SRV-02 + SURVEY_ALL_V1`、Version状态和Root正式指针原子收敛。有历史拒降，无表列/公开API/依赖/外发变化。验证：定向9、Win11/PG18.6空升降重升/drift/错误Policy/过早批准/批准退回取代/历史拒降、原0103回归、后端2802通过/3跳过；wheel 1036项，SHA-256 `6fe3201f64ef9a213d8c2e2020f57203fce4ce796736bdd9db429d73a7f74637`。已知问题：真实Survey Subject Owner、HTTP/UI、Round/Response/Conclusion、Workflow资格、Server2025/Debian13、Gate3/UAT/发行仍待。

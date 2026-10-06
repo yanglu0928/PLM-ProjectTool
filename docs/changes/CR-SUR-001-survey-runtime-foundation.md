@@ -80,3 +80,6 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
   正式指针，退回/撤回保留旧正式版。通用 Review basis 不支持 Survey 类型化来源，故不伪造 Evidence/Trace
   引用，改由内容指纹及同事务持锁重验保证当前性；未来扩展 basis 类型须另走 CR。无 Schema/API/依赖/
   外发变化；Windows 11/PostgreSQL 18.6、后端全量及 wheel 检查通过。
+- 2026-10-06 / `SUR-01-A04-A02-P03`：确认冻结PROJECT Review四写Router按Subject调度，`SRV-02`
+  直接复用而不复制Survey专用Review路径；新增`SURVEY_ALL_V1`创建/开轮/终态、安全边界和错误投影合同。
+  无运行时代码、Schema/API路径/依赖/外发变化；后端全量及wheel检查通过，真实Windows HTTP/PG组合留P04。

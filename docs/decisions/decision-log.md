@@ -8785,3 +8785,11 @@
 - Reason：复制Validate规则会产生送审与验证判定漂移；伪造basis会破坏类型与反向追溯。内容指纹固定不可变定义，同事务Owner证明固定来源当前性；撤回若也要求来源有效，会把因来源撤销而无法批准的Review永久锁死。
 - Impact/Rollback：新增内部Owner、Repository及共享当前验证器，无Migration/ORM/公开API/角色/依赖/Secret/网络或外发。停止装配Owner即可关闭新写入，既有Version/Review/Audit保留；若未来让Review basis原生表达Survey来源，必须另建CR并兼容历史空basis。
 - Verification：Owner/Validate/Schema定向15；Win11/PostgreSQL18.6最新Draft、评审人/来源重验、精确开轮、来源漂移拒批、恢复后批准正式化、漂移后撤回保留旧指针PASS；后端2807通过/3跳过；wheel 1038项，SHA-256 `10c68d6dbd9f228e71e5b7ad2489fabcb5caa26bb527734b8e1b1f6da1d3f2eb`。
+
+# DEC-20261006-922：Survey 复用冻结 PROJECT Review 四写 HTTP 边界
+
+- Date/WBS：2026-10-06 / `SUR-01-A04-A02-P03`；依据冻结API-02、API-04及DEC-919/921。
+- Decision：`SRV-02`继续使用通用`/api/v1/projects/{project_id}/reviews` create/start/decide/withdraw路径，由生产组合注入唯一Survey Subject Owner；不复制Survey专用Review Router。业务便捷端点`SURVEY_VERSION_SUBMIT_REVIEW`后续只可编排相同内核，不得另写Review/Survey表。
+- Reason：现有Router按subject_type传递通用命令，DTO、安全传输、ETag、错误映射和最小响应均已冻结；复制路径会造成安全与幂等语义分叉。
+- Impact/Rollback：仅新增Survey合同测试和实施记录，无运行时代码、Migration、ORM、公开路径、角色、依赖、Secret或外发。生产入口在P04组合前仍默认关闭。
+- Verification：Survey合同3，连同通用Review/Subject Owner定向13；后端2810通过/3跳过；wheel 1038项，SHA-256 `bc9bd853a438bdd3b2e63b6fff76e15b4bed53954b99bd7bd47a911ff15cbc7d`。
