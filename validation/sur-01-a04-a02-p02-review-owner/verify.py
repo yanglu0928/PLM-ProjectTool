@@ -55,6 +55,9 @@ from plm_assistant.modules.project.infrastructure.survey_source_proof import (
 from plm_assistant.modules.review.application.read_snapshot import (
     FixedReviewRoundSnapshot, ReviewIdentitySnapshot,
 )
+from plm_assistant.modules.review.application.project_persistence import (
+    ProjectReviewPersistenceService,
+)
 from plm_assistant.modules.review.application.subject_start import (
     ReviewSubjectAccessDenied, ReviewSubjectStartRequest,
 )
@@ -65,11 +68,24 @@ from plm_assistant.modules.review.domain.round_progress import (
     ReviewDecisionKind, ReviewDecisionSnapshot, ReviewRoundProgress,
     ReviewWithdrawalSnapshot,
 )
+from plm_assistant.modules.review.infrastructure.create_repository import (
+    SqlAlchemyReviewCreationRepository,
+)
+from plm_assistant.modules.review.infrastructure.project_submission_repository import (
+    SqlAlchemyProjectReviewSubmissionRepository,
+)
+from plm_assistant.modules.review.infrastructure.start_repository import (
+    SqlAlchemyReviewStartRepository,
+)
 from plm_assistant.modules.survey.application.create_version import (
     CreateSurveyVersion, SurveyVersionCreateService,
 )
 from plm_assistant.modules.survey.application.review_subject import (
     SurveyReviewSubjectOwner,
+)
+from plm_assistant.modules.survey.application.submit_review import (
+    SubmitSurveyVersionReview, SurveyReviewSubmissionError,
+    SurveyReviewSubmissionService,
 )
 from plm_assistant.modules.survey.application.validate_version import (
     SurveyVersionCurrentValidator,
@@ -110,8 +126,12 @@ def fixed_round(*, now, review_id, round_id, project_id, survey_id,
     return fixed, progress
 
 
-def main(*, use_http: bool = False) -> None:
-    database = ("sur01a04p04_" if use_http else "sur01a04p02_") + uuid.uuid4().hex[:6]
+def main(*, use_http: bool = False,
+         submission_validation: bool = False) -> None:
+    prefix = "sur01a05a05_" if submission_validation else (
+        "sur01a04p04_" if use_http else "sur01a04p02_"
+    )
+    database = prefix + uuid.uuid4().hex[:6]
     manager_token = b"m" * 32
     with connect("postgres") as admin:
         admin.execute(sql.SQL("CREATE DATABASE {}").format(
@@ -185,6 +205,63 @@ def main(*, use_http: bool = False) -> None:
                 current=SurveyVersionCurrentValidator(**sources),
                 audit=audit, clock=lambda: now,
             )
+            receipts = SqlAlchemyIdempotencyReceipts()
+            submission_service = None
+            submission_replays = {}
+            if submission_validation:
+                submission_service = SurveyReviewSubmissionService(
+                    unit_of_work=runtime.unit_of_work,
+                    access=SqlAlchemyProjectWriteAccess(), license_guard=guard,
+                    authorization=authorization, reviewers=reviewer_service,
+                    receipts=receipts,
+                    replay_repository=SqlAlchemyProjectReviewSubmissionRepository(),
+                    reviews=ProjectReviewPersistenceService(
+                        creation_repository=SqlAlchemyReviewCreationRepository(),
+                        round_repository=SqlAlchemyReviewStartRepository(),
+                        audit=audit, subjects=owner, clock=lambda: now,
+                    ),
+                    subjects=owner, clock=lambda: now,
+                )
+
+                class FailingAudit:
+                    @staticmethod
+                    def append(*args, **kwargs):
+                        raise RuntimeError("synthetic review audit failure")
+
+                failing = SurveyReviewSubmissionService(
+                    unit_of_work=runtime.unit_of_work,
+                    access=SqlAlchemyProjectWriteAccess(), license_guard=guard,
+                    authorization=authorization, reviewers=reviewer_service,
+                    receipts=receipts,
+                    replay_repository=SqlAlchemyProjectReviewSubmissionRepository(),
+                    reviews=ProjectReviewPersistenceService(
+                        creation_repository=SqlAlchemyReviewCreationRepository(),
+                        round_repository=SqlAlchemyReviewStartRepository(),
+                        audit=FailingAudit(), subjects=owner, clock=lambda: now,
+                    ),
+                    subjects=owner, clock=lambda: now,
+                )
+                failed_command = SubmitSurveyVersionReview(
+                    manager_token, CSRF, uuid.uuid4(), ids["project"],
+                    survey_id, first.survey_version_id, (reviewer,),
+                    "SURVEY_ALL_V1", str(uuid.uuid4()),
+                )
+                try:
+                    failing.submit(failed_command)
+                    raise AssertionError("audit failure must roll back submission")
+                except SurveyReviewSubmissionError as exc:
+                    assert exc.code == "SYSTEM_UNAVAILABLE", exc.code
+                with connect(database) as db:
+                    assert db.execute(
+                        "SELECT count(*) FROM plm.rvw_reviews WHERE "
+                        "project_id=%s AND subject_id=%s",
+                        (ids["project"], survey_id),
+                    ).fetchone()[0] == 0
+                    assert db.execute(
+                        "SELECT version_state FROM plm.srv_survey_versions "
+                        "WHERE survey_version_id=%s",
+                        (first.survey_version_id,),
+                    ).fetchone()[0] == "DRAFT"
             authorized = None
             with runtime.unit_of_work() as tx:
                 authorized = owner.authorize_create(
@@ -219,8 +296,21 @@ def main(*, use_http: bool = False) -> None:
                     origins=LoginOriginPolicy(["http://localhost"]),
                     license_guard=guard, audit=audit,
                 )
+                submission_router = None
+                if submission_validation:
+                    from plm_assistant.modules.survey.api.submit_review import (
+                        create_survey_review_submission_router,
+                    )
+                    submission_router = create_survey_review_submission_router(
+                        sessions=Sessions(),
+                        origins=LoginOriginPolicy(["http://localhost"]),
+                        submissions=submission_service,
+                    )
                 client = TestClient(
-                    create_app(review_command_router=router),
+                    create_app(
+                        review_command_router=router,
+                        survey_review_submission_router=submission_router,
+                    ),
                     base_url="http://localhost",
                 )
 
@@ -236,6 +326,46 @@ def main(*, use_http: bool = False) -> None:
                 return result
 
             def create_start(version_id):
+                if submission_validation:
+                    key = str(uuid.uuid4())
+                    if client is not None:
+                        path = (
+                            f"/api/v1/projects/{ids['project']}/surveys/"
+                            f"{survey_id}/versions/{version_id}:submit-review"
+                        )
+                        request_headers = headers(manager_token)
+                        request_headers["idempotency-key"] = key
+                        request_body = {
+                            "reviewer_ids": [str(reviewer)],
+                            "policy_ref": "SURVEY_ALL_V1",
+                            "due_at": None, "submission_note": None,
+                        }
+                        submitted = client.post(
+                            path, headers=request_headers, json=request_body,
+                        )
+                        assert submitted.status_code == 201, submitted.text
+                        replayed = client.post(
+                            path, headers=request_headers, json=request_body,
+                        )
+                        assert replayed.status_code == 201, replayed.text
+                        assert replayed.json()["data"] == submitted.json()["data"]
+                        submission_replays[version_id] = (
+                            path, request_headers, request_body,
+                        )
+                        data = submitted.json()["data"]
+                        return uuid.UUID(data["review_id"]), uuid.UUID(
+                            data["review_round_id"]
+                        )
+                    assert submission_service is not None
+                    command_value = SubmitSurveyVersionReview(
+                        manager_token, CSRF, uuid.uuid4(), ids["project"],
+                        survey_id, version_id, (reviewer,),
+                        "SURVEY_ALL_V1", key,
+                    )
+                    submitted = submission_service.submit(command_value)
+                    assert submission_service.submit(command_value) == submitted
+                    submission_replays[version_id] = command_value
+                    return submitted.review_id, submitted.round_id
                 assert client is not None
                 root = f"/api/v1/projects/{ids['project']}/reviews"
                 created = client.post(root, headers=headers(manager_token), json={
@@ -380,6 +510,23 @@ def main(*, use_http: bool = False) -> None:
                 assert replayed.status_code == 200, replayed.text
                 assert replayed.json()["data"] == approved.json()["data"]
 
+            if submission_validation:
+                replay = submission_replays[first.survey_version_id]
+                if client is not None:
+                    path, request_headers, request_body = replay
+                    original = client.post(
+                        path, headers=request_headers, json=request_body,
+                    )
+                    assert original.status_code == 201, original.text
+                    assert uuid.UUID(original.json()["data"]["review_id"]) == review1
+                    assert uuid.UUID(
+                        original.json()["data"]["review_round_id"]
+                    ) == round1
+                else:
+                    assert submission_service is not None
+                    original = submission_service.submit(replay)
+                    assert (original.review_id, original.round_id) == (review1, round1)
+
             with connect(database) as db:
                 root = db.execute(
                     "SELECT current_approved_version_ref,lock_version "
@@ -504,6 +651,8 @@ def main(*, use_http: bool = False) -> None:
             if client is not None:
                 client.close()
             marker = (
+                "SUR_01_A05_A05_SUBMIT_REVIEW_PASS"
+                if submission_validation else
                 "SUR_01_A04_A02_P04_WINDOWS_HTTP_PASS" if use_http else
                 "SUR_01_A04_A02_P02_REVIEW_OWNER_PASS"
             )

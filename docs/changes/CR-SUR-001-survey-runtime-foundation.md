@@ -102,3 +102,7 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
   CREATE/PATCH/ARCHIVE/VERSION_CREATE/VERSION_VALIDATE转换至已验证Owner；四类来源使用显式可空的
   类型化固定字段，不返回跨模块正文/路径。无Schema/依赖/外发变化；定向17、后端2832/3及
   wheel检查通过，真实Windows HTTP/PG组合留A07。
+- 2026-10-06 / `SUR-01-A05-A05`：新增Survey业务原子送审Service与默认关闭Router，在单事务复用
+  PROJECT Review创建/首轮内核和真实`SRV-02` Owner；同键重放首次Round并重验访问。冻结请求的
+  `due_at`/`submission_note`因通用Review无持久化位置，按CR-SUR-005保留字段但V1只接受null，避免
+  静默丢弃。无Schema/依赖/外发变化；Win11/PG18.6、定向19、后端2838/3及wheel检查通过。

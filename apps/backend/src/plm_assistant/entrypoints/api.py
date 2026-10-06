@@ -115,6 +115,7 @@ def create_app(
     handover_action_command_router: APIRouter | None = None,
     handover_action_lifecycle_router: APIRouter | None = None,
     survey_command_router: APIRouter | None = None,
+    survey_review_submission_router: APIRouter | None = None,
     review_command_router: APIRouter | None = None,
     maintenance_admission: MaintenanceAdmissionPort | None = None,
     shutdown_callback: Callable[[], None] | None = None,
@@ -327,6 +328,8 @@ def create_app(
         app.include_router(handover_action_lifecycle_router)
     if survey_command_router is not None:
         app.include_router(survey_command_router)
+    if survey_review_submission_router is not None:
+        app.include_router(survey_review_submission_router)
     if review_command_router is not None:
         app.include_router(review_command_router)
     return app

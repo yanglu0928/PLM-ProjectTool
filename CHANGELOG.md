@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-06：0.1.0-dev.0/SUR-01-A05-A05 新增默认关闭的SurveyVersion原子送审Service/HTTP，一次事务完成PROJECT Review创建、首轮启动、SurveyVersion进入IN_REVIEW、Audit及持久幂等回执；仅ProjectManager、固定`SURVEY_ALL_V1`，重放首次Round并重验访问。CR-SUR-005明确现有Review未持久化的`due_at/submission_note`在V1只接受null，非空422而不静默丢弃。兼容性/升级/回滚：无Schema/Migration/ORM/依赖/配置/Secret/外发，撤Router注入恢复404且保留历史。验证：定向19、Win11/PG18.6真实原子/回滚/重放/漂移/批准/撤回、后端2838通过/3跳过，wheel 1049项，SHA-256 `170083bd760238bff4948b3a9bed3613d523d18dfd991030de4c4aed4917a3b7`。已知问题：A06～A07、Survey UI、Round/Response/Conclusion、Server2025、Gate3与发行仍待；Debian13实机按用户指令跳过。
+
 - 2026-10-06：0.1.0-dev.0/SUR-01-A05-A04 新增默认关闭、显式注入的Survey五普通写HTTP Router，接通CREATE/PATCH/ARCHIVE/VERSION_CREATE/VERSION_VALIDATE；强制Origin/Session/CSRF、License Owner重验、幂等键、强ETag、规范UUID、严格有界JSON和安全错误投影。兼容性/升级/回滚：无Schema/Migration/依赖/配置/Secret/外发，Schema head保持0106，不注入Router即回滚且不删历史。验证：定向17，完整Python 3.13环境后端2832通过/3跳过，wheel 1047项，SHA-256 `7b1f6ffdaf5cc9b4c5e4aa70b8e309f5db56bfe11cace2004663a90b0244b374`。已知问题：A05～A07、Round/Response/Conclusion、Server2025/Debian13、Gate3与发行仍待。
 
 - 2026-10-06：0.1.0-dev.0/SUR-01-A05-A03 按CR-SUR-004新增Schema0106和Survey metadata PATCH/ARCHIVE内部Owner；只开放ACTIVE名称修改与单向归档，强ETag、IN_REVIEW双层栅栏、双角色PATCH/仅PM归档、Audit与归档持久幂等失败关闭。兼容性/升级/回滚：无新表列/冻结URL/依赖/配置/Secret/外发；无状态历史可降0105，有归档或相关Audit历史拒降。验证：定向17、Win11/PG18.6升降/drift/角色/隔离/栅栏/重放/回滚/历史保护，后端2829通过/3跳过，wheel 1045项，SHA-256 `26980b48d6ede0efb24621d278ec8200c6ca903b372a8672ef853ce826996443`。已知问题：A04～A07、Round/Response/Conclusion、Server2025/Debian13、Gate3与发行仍待。

@@ -8833,3 +8833,11 @@
 - Reason：默认注入会越过A07生产组合验收；宽松Source形状会让不明引用混入不可变快照。严格传输边界与业务Owner分层可避免Router重复权限/当前事实逻辑。
 - Impact/Rollback：只新增Survey API包、可选组合参数和契约测试；无Schema/Migration、依赖、Secret、网络或外发变化。不注入Router即回滚，合法历史保留。
 - Verification：定向17项、完整Python 3.13环境后端2832通过/3跳过；wheel 1047项，SHA-256 `7b1f6ffdaf5cc9b4c5e4aa70b8e309f5db56bfe11cace2004663a90b0244b374`。首次全量误用缺pgvector精简环境的19个导入错误未计产品证据。
+
+# DEC-20261006-928：Survey 业务送审原子复用 PROJECT Review 内核
+
+- Date/WBS：2026-10-06 / `SUR-01-A05-A05`；依据冻结API-04、CR-SUR-005、DEC-921/922及Schema0106。
+- Decision：业务端点在单事务调用通用Review创建/首轮持久化和真实Survey Subject Owner，并将首次Round写入Survey业务幂等回执；重放恢复首次结果且重新验证Project与Subject访问。固定`SURVEY_ALL_V1`，仅ProjectManager可调用。Review尚不持久化的`due_at/submission_note`保留请求槽位但V1仅接受null，非空422。
+- Reason：让客户端分两次调用通用Review会暴露中间DRAFT并产生两个幂等结果；复制Review表写入会分叉状态机。接受后丢弃可选元数据会虚报保存，跨模块扩Schema又超出本WBS，显式null约束是可追溯且向后兼容的失败关闭选择。
+- Impact/Rollback：新增Survey Application/API、一个PM授权策略和可选组合参数；无Schema/Migration、ORM、依赖、Secret、网络或外发。停止注入Router恢复404，既有Review/Survey/Audit/receipt历史保留。
+- Verification：定向19；Win11/PG18.6 Audit回滚、原子送审/重放、来源漂移拒批/恢复批准、批准后重放、第二版本送审/撤回PASS；后端2838通过/3跳过；wheel 1049项，SHA-256 `170083bd760238bff4948b3a9bed3613d523d18dfd991030de4c4aed4917a3b7`。
