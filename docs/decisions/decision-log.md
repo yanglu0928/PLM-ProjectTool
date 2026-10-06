@@ -8881,3 +8881,11 @@
 - Reason：直接用Version列表对象会混淆摘要与当前读取；裸UUID链接无法重验目标Owner且不友好；复制正文进卡片会失去权限、版本和定位。分层读取和业务标签能降低人工负担而不虚构客户确认。
 - Impact/Rollback：新增纯前端页面、路由和项目入口；无后端、Schema/Migration、API、权限、依赖、Secret或外发。撤路由/导航可回滚。静态路由令主JS增至625.76 kB，作为发行性能偏差保留。
 - Verification：页面/项目入口定向3文件27项，前端全量81文件/1429项、TypeScript typecheck、Vite171模块build通过。
+
+# DEC-20261006-934：Survey 固定来源由服务端解析且不扩大 GLOBAL 权限
+
+- Date/WBS：2026-10-06 / `SUR-01-A06-A04-P01`；依据DEC-931/933、CR-SUR-006、来源证明Adapter及Evidence Viewer。
+- Decision：新增兼容只读location子资源；服务端在精确SurveyVersion/question/source与当前Project读取权限下，将内部row identity解析为最小公共record/location。历史可追溯与当前资格分开表达；GLOBAL Capability/Document/Evidence不继承Project成员权限，MANUAL无固定对象返回受控不可定位。
+- Reason：浏览器猜UUID会误定位或越权，复制正文会破坏Owner/版本/权限；直接把历史来源称作当前正式事实也不真实。既有Evidence Viewer已负责最终原文和fingerprint复验，应复用而不是复制。
+- Impact/Rollback：登记向后兼容GET与P01/P02/P03拆分；本项无代码、Schema/Migration、角色、依赖、Secret、网络或外发。撤后续Router注入恢复404，四读合同与历史不变。
+- Verification：静态核对Survey来源结构、Handover/Capability公共标识及引用、Document证明、Evidence Viewer权限；标记`SUR_01_A06_A04_P01_SOURCE_LOCATION_PRECHECK_PASS`。

@@ -127,3 +127,6 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
   实际调研记录优先、TEMPLATE仅参考，MANUAL不冒充确认，Handover/Capability内部row ID不展示或猜路由。
   TEMPLATE仅导航受权Document历史，完整来源定位留A04。无后端/Schema/依赖/外发变化；定向27、前端
   81文件1429项、typecheck/build通过。静态路由使主JS增至625.76 kB，登记为发行性能后续项。
+- 2026-10-06 / `SUR-01-A06-A04-P01`：登记CR-SUR-006与兼容只读location子资源；固定历史追溯与
+  当前来源资格分离，GLOBAL目标不继承Project权限，MANUAL无固定对象时明确不可定位。P02/P03实现与
+  真实Windows验证仍待。

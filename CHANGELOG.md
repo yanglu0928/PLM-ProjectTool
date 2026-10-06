@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-06：0.1.0-dev.0/SUR-01-A06-A04-P01 登记CR-SUR-006与Survey来源定位V1兼容增量：服务端按精确固定来源解析最小公共业务/Document/Evidence目标，区分历史追溯与当前资格；GLOBAL目标不继承Project权限，MANUAL无固定对象明确不可定位。兼容性/回滚：纯文档/合同，无运行代码、Schema/Migration、依赖、Secret、外发；后续不注入Router即可保持404。验证：静态交叉核对通过。已知问题：P02/P03实现、前端真实浏览器闭环、写交互、Round/Response/Conclusion、Gate3与发行仍待。
+
 - 2026-10-06：0.1.0-dev.0/SUR-01-A06-A03 新增Survey列表、详情、Version问题卡片和项目导航；显示具体人工维护提示，明确实际调研记录优先、TEMPLATE仅参考、MANUAL不是确认事实。TEMPLATE只导航受权文档历史，Handover/Capability内部row ID不展示或猜路由。兼容性/回滚：纯前端，无后端/Schema/API/依赖/外发变化，撤路由/导航即可回滚。验证：定向3文件27项、前端81文件1429项、typecheck、Vite171模块build通过。已知问题：来源解析/浏览器闭环、写交互、Round/Response/Conclusion、Gate3与发行仍待；主JS增至625.76 kB，需后续动态拆包和真实加载验收。
 
 - 2026-10-06：0.1.0-dev.0/SUR-01-A06-A02 新增未接页面的Survey四读严格客户端：两类品牌cursor、父级/ETag/稳定排序、完整Version计数、零基问题/ordinal、有界V1规则深冻结及四类互斥来源失败关闭；不读取正文/路径或猜内部UUID。兼容性/回滚：纯前端，无后端/Schema/API/依赖/外发变化，删除未引用文件即可回滚。验证：定向25、前端79文件1420项、typecheck、Vite164模块build通过；主JS 599.01 kB既有提示保留。已知问题：A03页面、来源解析定位、写交互、浏览器闭环、Round/Response/Conclusion、Gate3与发行仍待。
