@@ -331,12 +331,13 @@ def main() -> None:
                    "Survey choice options are incomplete")
             reject(lambda: db.execute("UPDATE plm.srv_surveys SET name='Changed' "
                                       "WHERE survey_id=%s", (survey,)),
-                   "Survey Owner transition is invalid")
+                   "Survey update is outside active Owner")
         try:
             command.downgrade(cfg, PREVIOUS)
         except Exception as error:
             assert ("Survey definition history prevents downgrade" in str(error)
-                    or "Survey Version history prevents downgrade" in str(error)), str(error)
+                    or "Survey Version history prevents downgrade" in str(error)
+                    or "Survey Review history prevents downgrade" in str(error)), str(error)
         else:
             raise AssertionError("Schema0103 accepted retained Survey history")
     finally:

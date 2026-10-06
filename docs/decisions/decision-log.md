@@ -8769,3 +8769,11 @@
 - Reason：通用Review已提供事务内Subject回调；历史Validate回执不能证明送审时来源仍有效。0104仍禁止业务状态投影，必须先建立数据库窄门，避免Review终态与Survey状态半提交。
 - Impact/Rollback：本项仅静态核查和实施拆分，无代码/Schema/API/依赖/外发。后续0105与Owner沿CR-SUR-001实施；应用可停止装配，业务历史不可删除。
 - Verification：交叉核对Review Subject合同、PROJECT内核、Capability/Handover真实Owner、Survey0103/0104、Version创建与Validate当前性；标记`SUR_01_A04_A01_REVIEW_PRECHECK_PASS`。
+
+# DEC-20261006-920：Survey Review 状态投影以延迟数据库守卫原子收敛
+
+- Date/WBS：2026-10-06 / `SUR-01-A04-A02-P01`；依据DEC-919、Schema0103/0104及通用Review终态回调。
+- Decision：Migration0105不新增表列，只开放`DRAFT -> IN_REVIEW -> APPROVED/RETURNED`和旧批准版`APPROVED -> SUPERSEDED`；Review引用一经送审不得替换。可延迟触发器强制`PROJECT + SRV-02 + SURVEY_ALL_V1`、同Project/Survey/Version、活动Round和终态一致，批准/取代必须与Root正式指针同事务收敛。
+- Reason：Review内核与业务Subject由不同Owner协作，逐语句即时约束无法允许合法的多行终态事务；只靠应用校验又可能留下Review已终态而Survey未正式化的半提交。延迟数据库守卫允许任意合法语句顺序，同时在提交点失败关闭。
+- Impact/Rollback：新增0105函数/触发器，无表列、ORM、公开API、角色、依赖、Secret或外发变化。无Review历史可降至0104并恢复DRAFT Owner；存在正式指针、非DRAFT状态或Review引用时拒降，应用回滚停装Owner且保留历史。
+- Verification：Schema单元5、Migration合同合计9；Win11/PostgreSQL18.6空降/重升、drift、错误Policy、过早批准、批准/撤回/取代和历史拒降PASS；原0103验证回归PASS；后端2802通过/3跳过；wheel 1036项，SHA-256 `6fe3201f64ef9a213d8c2e2020f57203fce4ce796736bdd9db429d73a7f74637`。

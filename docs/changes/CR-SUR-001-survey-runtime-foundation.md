@@ -71,3 +71,7 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
 - 2026-10-06 / `SUR-01-A04-A01`：Review前置核查确认复用通用PROJECT内核；先以0105开放受控
   Version/Root终态投影，再实现`SRV-02 + SURVEY_ALL_V1`真实Subject Owner。历史Validate报告不能替代
   送审/终态调用方事务内的当前事实重证。
+- 2026-10-06 / `SUR-01-A04-A02-P01`：完成 Migration 0105。未新增表列，只开放
+  `DRAFT -> IN_REVIEW -> APPROVED/RETURNED`及旧批准版`SUPERSEDED`的窄状态门；延迟触发器强制
+  `PROJECT + SRV-02 + SURVEY_ALL_V1` Review/Round、Version和Root正式指针同事务收敛。空历史可降至
+  0104，有正式指针、非DRAFT状态或Review引用时拒降；Windows 11/PostgreSQL 18.6及全量后端通过。

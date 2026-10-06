@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-06：0.1.0-dev.0/SUR-01-A04-A02-P01 新增Migration0105 Survey Review终态守卫：仅开放送审、批准/退回和旧正式版取代三条路径，固定Review引用，以可延迟约束强制`PROJECT + SRV-02 + SURVEY_ALL_V1`、Version状态和Root正式指针原子收敛。有历史拒降，无表列/公开API/依赖/外发变化。验证：定向9、Win11/PG18.6空升降重升/drift/错误Policy/过早批准/批准退回取代/历史拒降、原0103回归、后端2802通过/3跳过；wheel 1036项，SHA-256 `6fe3201f64ef9a213d8c2e2020f57203fce4ce796736bdd9db429d73a7f74637`。已知问题：真实Survey Subject Owner、HTTP/UI、Round/Response/Conclusion、Workflow资格、Server2025/Debian13、Gate3/UAT/发行仍待。
+
 - 2026-10-06：0.1.0-dev.0/SUR-01-A04-A01 完成Survey Review前置核查：复用通用PROJECT Review，固定`SRV-02 + SURVEY_ALL_V1`，历史Validate不替代当前重证；按Schema0105与Subject Owner拆分后续状态/正式指针实现。纯文档，无Schema/API/依赖/外发变化；静态交叉核对通过。已知问题：0105与真实Subject Owner尚未实现，Review仍失败关闭。
 
 - 2026-10-06：0.1.0-dev.0/SUR-01-A03-P03 新增SurveyVersion内部Validate Owner、有界ConditionRule V1、题型白名单、不可变快照指纹/计数校验、四类来源与目标部门当前性重证，以及Audit固定的完整幂等报告。无Migration/公开API/依赖/外发变化。验证：定向7、Win11/PG18.6有效与失效来源/非法题型/未来引用/环/重放冲突/Audit回滚恢复PASS、后端2797通过/3跳过；wheel 1035项，SHA-256 `e8491872dff06a1549721639940e0e7f7adb9ca7f3f125473935b8f243df2b64`。已知问题：Review、HTTP/UI、Round/Response/Conclusion与Workflow资格仍待。
