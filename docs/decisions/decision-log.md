@@ -8651,3 +8651,11 @@
 - Reason：现有Checklist写链已经按Handover/Review/Document/Evidence事实后锁Workflow；Transition若先锁Workflow再调Owner，会与并发Checklist记录形成反序等待。数据库中的PASS和APPROVED只是历史观测，不能替代当前Owner证明。
 - Impact/Rollback：纯前置决策，无代码、Schema/Migration、API、权限、依赖、Secret或外发变化。后续分仓储、受权命令、HTTP/Windows/UI实施；任一前置失败可停止注册且保留0031/0033和历史。
 - Verification：静态交叉核对六阶段定义、当前Record读取、Handover资格Owner、0031提交完整性、0033 Record关联和冻结Transition DTO；标记`WFL_02_A02_A01_TRANSITION_COMMAND_PRECHECK_PASS`，不把A10单项PASS或合成Schema历史当推进证明。
+
+# DEC-20261006-905：Transition仓储只接受本次重证的当前PASS并不拥有事务
+
+- Date/WBS：2026-10-06 / `WFL-02-A02-A02`；依据DEC-904、Schema0031/0033、当前Checklist Record链及真实PostgreSQL验证。
+- Decision：低层仓储要求调用方提供规范排序的Owner新鲜观测，锁定Workflow/Stage/Item后将其与当前PASS Record逐项核对，再在调用方事务内原子追加Transition/Gate历史和推进三层状态；仓储不commit、不授权、不检查License、不写Audit/收据。ApprovedException Owner未实现前WAIVED失败关闭。
+- Reason：数据库历史PASS只证明记录时观测，不能证明迁移时事实仍有效；仓储自行开启或提交事务会破坏Owner锁、Audit和收据的原子性。保留Schema对WAIVED的表达能力不等于运行时已有可信批准人和撤销语义。
+- Impact/Rollback：新增内部application/infrastructure模块和测试，无Schema/Migration、冻结API、角色、依赖、Secret或外发变化；停止A03注册并删除新增模块可回滚，已经提交的不可变历史不得改写。项目归档事实由A03在同一事务先行证明。
+- Verification：Win11/PostgreSQL18.6真实回滚、Evidence新鲜性、Record/Refs固定、原子HANDOVER→SURVEY、摘要回读、行锁与双调用收敛PASS；后端2768项通过/3项跳过，wheel 1011项，SHA-256 `4e96bfc8947398e764e6bfa74fd46372dcb48830ae20db30820b7682369bc395`。
