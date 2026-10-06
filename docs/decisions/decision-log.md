@@ -8937,3 +8937,11 @@
 - Reason：面对面记录会在会议进行中产生，不能要求创建时齐全；只存Evidence ID无法证明当时版本和内容；允许更新/删除会破坏项目交接追溯。Schema可表达CLOSED以保持冻结模型，但应用成功关闭仍必须等待SUR-03完整性Owner。
 - Impact/Rollback：新增两表和0107，不改现有表/API/角色/依赖/Secret/外发。空历史可降0106；有历史只能停止应用装配并向前修复，不能删除事实。
 - Verification：Windows11/PostgreSQL18.6非空/空升级、降级重升、drift、生命周期/来源正负例和历史拒降通过；后端2859通过/3跳过；wheel1061项，SHA-256 `162786f098335bb5dd2b2570d5d9c37651aba48f01a0bff88f9a2757c6d30aee`。
+
+# DEC-20261006-941：Round 来源证明与追加必须共享调用方事务
+
+- Date/WBS：2026-10-06 / `SUR-02-A03`；依据CR-SUR-007、DEC-940及现有Evidence/Document固定来源Owner。
+- Decision：Evidence Owner以可选策略精确限制ProjectManager/ImplementationMember和PROJECT_RECORD，默认调用保持原Workflow语义；Survey adapter最小化为固定Evidence/DocumentVersion/lock/fingerprint/actor，Round Repository在同一事务锁定OPEN Round、解析固定Question并追加，不自行commit。
+- Reason：proof后另开事务会留下Evidence撤销或Round关闭的竞态；直接复用Workflow Owner会错误排除ImplementationMember且允许其他非模板类别；让调用方传actor/category布尔值则可伪造来源。
+- Impact/Rollback：无Schema/API/依赖/Secret/外发；新Evidence构造参数有默认值，既有组合不变。停止A04组合可阻止新写，已追加历史仍保留。
+- Verification：Windows11/PostgreSQL18.6真实Evidence/Round锁、连续追加、固定Question、错误回滚、角色/类别和CLOSED拒绝通过；后端2864通过/3跳过；wheel1063项，SHA-256 `72ca80f5920f95e02da2dfc4dc2be89381c15cc4f53a02fc70eb0a5d1a81ecb3`。

@@ -101,6 +101,10 @@ class EvidenceFixedProjectSourceTests(unittest.TestCase):
         result = self.prove()
         self.assertEqual(result.content_fingerprint, self.source_sha)
         self.assertEqual((result.observed_lock_version, result.observed_state), (2, "ELIGIBLE"))
+        self.assertEqual(
+            (result.verified_by, result.verified_project_role, result.document_category),
+            (self.actor, "PROJECT_MANAGER", "PROJECT_RECORD"),
+        )
         self.assertTrue(self.projects.calls[0][1])
         self.assertTrue(all(call is self.tx for call in self.sessions.calls))
         self.assertIs(self.evidence.calls[0][0], self.tx)
@@ -172,6 +176,35 @@ class EvidenceFixedProjectSourceTests(unittest.TestCase):
         self.documents.error = FixedSourceProofError("FILE_INTEGRITY_MISMATCH")
         with self.assertRaisesRegex(EvidenceFixedSourceError, "EVIDENCE_FINGERPRINT_MISMATCH"):
             self.prove()
+
+    def test_configured_role_and_exact_category_policy_are_enforced(self):
+        self.projects.facts = ProjectActorFacts("ACTIVE", "IMPLEMENTATION_MEMBER")
+        service = EvidenceFixedProjectSourceService(
+            sessions=self.sessions,
+            projects=self.projects,
+            evidence=self.evidence,
+            documents=self.documents,
+            allowed_project_roles=frozenset({
+                "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER",
+            }),
+            required_document_category="PROJECT_RECORD",
+            clock=lambda: datetime.now(timezone.utc),
+        )
+        result = service.prove(self.tx, self.query, self.evidence_id)
+        self.assertEqual(result.verified_project_role, "IMPLEMENTATION_MEMBER")
+        self.documents.fixed = VerifiedFixedSource(
+            replace(self.facts, document_category="CONTRACTUAL")
+        )
+        with self.assertRaisesRegex(EvidenceFixedSourceError, "RESOURCE_NOT_FOUND"):
+            service.prove(self.tx, self.query, self.evidence_id)
+        with self.assertRaises(ValueError):
+            EvidenceFixedProjectSourceService(
+                sessions=self.sessions,
+                projects=self.projects,
+                evidence=self.evidence,
+                documents=self.documents,
+                allowed_project_roles=frozenset(),
+            )
 
 
 if __name__ == "__main__":

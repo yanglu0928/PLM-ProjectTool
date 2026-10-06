@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-06：0.1.0-dev.0/SUR-02-A03 新增精确PROJECT_RECORD Evidence proof与caller-transaction Round source append：只允许ProjectManager/ImplementationMember，最小固定Evidence/DocumentVersion/lock/fingerprint/actor，OPEN Round锁内解析固定Question并分配连续ordinal，不自行commit或开放HTTP。兼容性/回滚：Evidence Owner新策略均为可选，既有Workflow组合行为不变；无Schema/API/依赖/Secret/外发，停止后续组合即可阻止新写且保留0107历史。验证：Win11/PG18.6锁/追加/回滚/角色/类别/CLOSED拒绝和drift通过；后端2864/3，wheel1063项，SHA-256 `72ca80f5920f95e02da2dfc4dc2be89381c15cc4f53a02fc70eb0a5d1a81ecb3`。已知问题：A04命令/读取、A05状态、SUR-03答复完整性、A06 HTTP/UI/浏览器、Gate3/UAT及发行仍待。
+
 - 2026-10-06：0.1.0-dev.0/SUR-02-A02 新增Survey Round双表ORM与Migration0107：Round固定当前批准定义并受四态/强锁版本约束，OPEN期间仅可追加同项目ELIGIBLE PROJECT_RECORD的Evidence/DocumentVersion/指纹快照，来源与Round历史禁止更新删除截断；应用CLOSE继续等待SUR-03完整性Owner。兼容性/升级/回滚：只新增冻结SRV-03两表，无现有API/角色/依赖/Secret/外发变化；空历史可降0106，有历史拒降并向前修复。验证：Win11/PG18.6非空/空升降重升、drift和状态/来源负例通过；后端2859/3，wheel1061项，SHA-256 `162786f098335bb5dd2b2570d5d9c37651aba48f01a0bff88f9a2757c6d30aee`。已知问题：A03以后来源Owner/命令/HTTP/UI/浏览器、SUR-03答复完整性、Gate3/UAT及发行仍待。
 
 - 2026-10-06：0.1.0-dev.0/SUR-02-A01 完成Survey Round运行时前置核查并登记CR-SUR-007：保持冻结SRV-03两表、四态和七Operation；Round固定当前批准定义，现场PROJECT_RECORD由Evidence/Document Owner在OPEN期间追加，不能冒充Answer。SRV-04未实现前CLOSE失败关闭，待真实Assignment/Response完整性Owner后接通。兼容性/回滚：纯文档，无程序/Schema/API/依赖/Secret/外发变化。验证：静态交叉核对冻结模型、Schema/API和当前0106运行实现。已知问题：A02以后Schema/Owner/HTTP/UI/真实PG浏览器、SUR-03/04、Gate3/UAT及发行仍待。

@@ -1,4 +1,4 @@
-"""Evidence-owned, caller-transaction proof for a PROJECT Workflow reference."""
+"""Evidence-owned, caller-transaction proof for a policy-scoped PROJECT reference."""
 
 from __future__ import annotations
 
@@ -44,6 +44,9 @@ class VerifiedProjectEvidence:
     content_fingerprint: bytes = field(repr=False)
     observed_state: str = "ELIGIBLE"
     scope: str = "PROJECT"
+    verified_by: uuid.UUID | None = None
+    verified_project_role: str = ""
+    document_category: str = ""
 
 
 class SessionPort(Protocol):
@@ -71,11 +74,27 @@ class DocumentSourcePort(Protocol):
 class EvidenceFixedProjectSourceService:
     def __init__(self, *, sessions: SessionPort, projects: ProjectPort,
                  evidence: EvidenceSourcePort, documents: DocumentSourcePort,
+                 allowed_project_roles: frozenset[str] | None = None,
+                 required_document_category: str | None = None,
                  clock: Callable[[], datetime] | None = None) -> None:
         if any(item is None for item in (sessions, projects, evidence, documents)):
             raise ValueError("fixed PROJECT Evidence dependencies required")
+        roles = (frozenset({"PROJECT_MANAGER"})
+                 if allowed_project_roles is None else allowed_project_roles)
+        if (type(roles) is not frozenset or not roles
+                or not all(type(role) is str and role in {
+                    "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER",
+                    "CUSTOMER_MANAGER", "CUSTOMER_MEMBER",
+                } for role in roles)
+                or required_document_category is not None and (
+                    type(required_document_category) is not str
+                    or not 1 <= len(required_document_category) <= 64
+                )):
+            raise ValueError("validated PROJECT Evidence policy required")
         self._sessions, self._projects = sessions, projects
         self._evidence, self._documents = evidence, documents
+        self._allowed_project_roles = roles
+        self._required_document_category = required_document_category
         self._clock = clock or (lambda: datetime.now(timezone.utc))
 
     def prove(self, transaction: object, query: EvidenceFixedProjectQuery,
@@ -101,7 +120,7 @@ class EvidenceFixedProjectSourceService:
             )
             if (type(role) is not ProjectActorFacts
                     or role.project_state != "ACTIVE"
-                    or role.project_role != "PROJECT_MANAGER"):
+                    or role.project_role not in self._allowed_project_roles):
                 raise EvidenceFixedSourceError("RESOURCE_NOT_FOUND")
             source = self._evidence.get_for_trace(
                 transaction, scope="PROJECT", project_id=query.project_id,
@@ -140,7 +159,15 @@ class EvidenceFixedProjectSourceService:
                     or fixed.facts.document_version_id != source.document_version_id
                     or fixed.facts.scope != "PROJECT"
                     or fixed.facts.project_id != query.project_id
-                    or fixed.facts.document_category == "TEMPLATE"):
+                    or (
+                        self._required_document_category is None
+                        and fixed.facts.document_category == "TEMPLATE"
+                    )
+                    or (
+                        self._required_document_category is not None
+                        and fixed.facts.document_category
+                        != self._required_document_category
+                    )):
                 raise EvidenceFixedSourceError("RESOURCE_NOT_FOUND")
             if record_id is None:
                 if fixed.parse_record_id is not None:
@@ -179,7 +206,9 @@ class EvidenceFixedProjectSourceService:
             return VerifiedProjectEvidence(
                 evidence_id, query.project_id, source.document_id,
                 source.document_version_id, record_id, source.lock_version,
-                fingerprint,
+                fingerprint, verified_by=actor,
+                verified_project_role=role.project_role,
+                document_category=fixed.facts.document_category,
             )
         except EvidenceFixedSourceError:
             raise
