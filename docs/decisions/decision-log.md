@@ -8659,3 +8659,11 @@
 - Reason：数据库历史PASS只证明记录时观测，不能证明迁移时事实仍有效；仓储自行开启或提交事务会破坏Owner锁、Audit和收据的原子性。保留Schema对WAIVED的表达能力不等于运行时已有可信批准人和撤销语义。
 - Impact/Rollback：新增内部application/infrastructure模块和测试，无Schema/Migration、冻结API、角色、依赖、Secret或外发变化；停止A03注册并删除新增模块可回滚，已经提交的不可变历史不得改写。项目归档事实由A03在同一事务先行证明。
 - Verification：Win11/PostgreSQL18.6真实回滚、Evidence新鲜性、Record/Refs固定、原子HANDOVER→SURVEY、摘要回读、行锁与双调用收敛PASS；后端2768项通过/3项跳过，wheel 1011项，SHA-256 `4e96bfc8947398e764e6bfa74fd46372dcb48830ae20db30820b7682369bc395`。
+
+# DEC-20261006-906：Transition命令由服务端双Owner重证且只注册Handover
+
+- Date/WBS：2026-10-06 / `WFL-02-A02-A03`；依据DEC-904/905、HND-03当前事实Owner和冻结ProjectManager权限。
+- Decision：内部命令仅接受`SURVEY`目标，按Baseline→Issues固定顺序在同一UOW调用Handover Owner；两项证明必须共享Project、Approved Version、Review/Round/Subject/fingerprint，再交给A02核对当前PASS Record。Transition、Audit和持久幂等收据原子提交；重放仍验当前访问但不重跑Owner或写历史。WAIVED及其余阶段不注册。
+- Reason：客户端refs或历史PASS不能代替迁移时当前事实；两次Owner调用若来自不同Version/Review，分别有效也不能组合成同一Gate快照。把Audit/receipt放到外部事务会留下成功状态无审计或未知重试双写风险。
+- Impact/Rollback：新增内部Service和`WORKFLOW_TRANSITION` ProjectManager写策略，无Schema/Migration、公开URL/DTO、依赖、Secret或外发变化；撤Service/Operation可停止新迁移，历史保留。冻结`gate_snapshot_refs`的HTTP具体投影留A04，不在内部命令猜造。
+- Verification：定向12项；Win11/PG18.6真实Handover Owner、双Checklist PASS、Audit故障全回滚、单次Transition/Audit/receipt及原键重放PASS；后端2773通过/3跳过，wheel 1012项，SHA-256 `1d9e65f0bf6515d31aa7581255388d368361ce90f5aeaf30108638736724bdfa`。
