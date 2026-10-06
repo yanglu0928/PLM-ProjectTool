@@ -8945,3 +8945,11 @@
 - Reason：proof后另开事务会留下Evidence撤销或Round关闭的竞态；直接复用Workflow Owner会错误排除ImplementationMember且允许其他非模板类别；让调用方传actor/category布尔值则可伪造来源。
 - Impact/Rollback：无Schema/API/依赖/Secret/外发；新Evidence构造参数有默认值，既有组合不变。停止A04组合可阻止新写，已追加历史仍保留。
 - Verification：Windows11/PostgreSQL18.6真实Evidence/Round锁、连续追加、固定Question、错误回滚、角色/类别和CLOSED拒绝通过；后端2864通过/3跳过；wheel1063项，SHA-256 `72ca80f5920f95e02da2dfc4dc2be89381c15cc4f53a02fc70eb0a5d1a81ecb3`。
+
+# DEC-20261006-942：Round 编号在 Survey 根锁内分配且列表使用复合位置
+
+- Date/WBS：2026-10-06 / `SUR-02-A04`；依据CR-SUR-007、冻结SURVEY_ROUND_CREATE/LIST/GET及0107唯一约束。
+- Decision：创建锁定ACTIVE Survey根、重验请求Version等于当前APPROVED Version后，在锁内取同Survey最大round_no+1；列表按(created_at,round_id)倒序，游标绑定Session/Project/page_size和完整复合位置。详情只投影固定来源最小快照。
+- Reason：单查max而不锁根会让不同幂等Key并发撞号；只用时间游标会漏读同一statement timestamp的Round；列表复制正文或locator会越过Evidence/Document Owner。
+- Impact/Rollback：新增内部命令/读取/游标及三项冻结角色策略，无Schema/公开API/依赖/Secret/外发；不装配Router即保持外部关闭，已提交事实保留。
+- Verification：Windows11/PostgreSQL18.6当前批准版本、角色、CSRF/License、同Key并发、Audit回滚、1..4连续编号、两页读取/详情/来源、隔离撤权与drift通过；后端2871通过/3跳过；wheel1067项，SHA-256 `772e2d8ef0f893717d34c21a9bbfe131acadb079917526b15bdd6937dff0ddff`。

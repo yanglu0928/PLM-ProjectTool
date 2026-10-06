@@ -140,3 +140,60 @@ class SurveyVersionCursorCodec(_Codec):
             raise
         except (KeyError, TypeError, ValueError, OverflowError):
             raise ApplicationError("REQUEST_MALFORMED") from None
+
+
+class SurveyRoundCursorCodec(_Codec):
+    _FIELDS = {
+        "v", "family", "project", "session", "query", "created_at", "round_id",
+    }
+
+    def encode(
+        self, *, project_id: uuid.UUID, session_token: bytes,
+        page_size: int, created_at: datetime, round_id: uuid.UUID,
+    ) -> str:
+        payload = _base(project_id, session_token, page_size)
+        if (type(created_at) is not datetime or created_at.tzinfo is None
+                or created_at.utcoffset() is None
+                or type(round_id) is not uuid.UUID or round_id.int == 0):
+            raise ValueError("invalid SurveyRound cursor position")
+        payload.update({
+            "family": "survey-rounds",
+            "created_at": created_at.astimezone(timezone.utc).isoformat(
+                timespec="microseconds",
+            ).replace("+00:00", "Z"),
+            "round_id": str(round_id),
+        })
+        return self._encode(payload)
+
+    def decode(
+        self, token: str, *, project_id: uuid.UUID,
+        session_token: bytes, page_size: int,
+    ) -> tuple[datetime, uuid.UUID]:
+        try:
+            value = self._decode(token)
+            expected = _base(project_id, session_token, page_size)
+            if (set(value) != self._FIELDS
+                    or value["family"] != "survey-rounds"
+                    or any(value[key] != expected[key]
+                           for key in ("v", "project", "session", "query"))
+                    or type(value["created_at"]) is not str
+                    or type(value["round_id"]) is not str):
+                raise ValueError()
+            instant = datetime.fromisoformat(
+                value["created_at"].replace("Z", "+00:00")
+            )
+            identity = uuid.UUID(value["round_id"])
+            if (str(identity) != value["round_id"] or identity.int == 0
+                    or self.encode(
+                        project_id=project_id,
+                        session_token=session_token,
+                        page_size=page_size,
+                        created_at=instant,
+                        round_id=identity,
+                    ) != token):
+                raise ValueError()
+            return instant, identity
+        except ApplicationError:
+            raise
+        except (KeyError, TypeError, ValueError, OverflowError):
+            raise ApplicationError("REQUEST_MALFORMED") from None

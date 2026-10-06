@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 from plm_assistant.modules.platform.application.errors import ApplicationError
 from plm_assistant.modules.survey.api.read_cursor import (
-    SurveyCursorCodec, SurveyVersionCursorCodec,
+    SurveyCursorCodec, SurveyRoundCursorCodec, SurveyVersionCursorCodec,
 )
 
 
@@ -16,6 +16,7 @@ class SurveyReadCursorTests(unittest.TestCase):
         self.session = b"s" * 32
         self.surveys = SurveyCursorCodec(b"a" * 32)
         self.versions = SurveyVersionCursorCodec(b"v" * 32)
+        self.rounds = SurveyRoundCursorCodec(b"r" * 32)
 
     def test_survey_cursor_binds_full_position_and_context(self):
         instant = datetime(2026, 10, 6, 1, 2, 3, 456789, tzinfo=timezone.utc)
@@ -47,6 +48,29 @@ class SurveyReadCursorTests(unittest.TestCase):
             with self.assertRaises(ApplicationError):
                 codec.decode(token, project_id=self.project, survey_id=survey,
                              session_token=self.session, page_size=10)
+
+    def test_round_cursor_binds_complete_position_and_context(self):
+        instant = datetime(2026, 10, 6, 4, 5, 6, 123456, tzinfo=timezone.utc)
+        round_id = uuid.uuid4()
+        token = self.rounds.encode(
+            project_id=self.project, session_token=self.session, page_size=20,
+            created_at=instant, round_id=round_id,
+        )
+        self.assertEqual((instant, round_id), self.rounds.decode(
+            token, project_id=self.project, session_token=self.session,
+            page_size=20,
+        ))
+        for codec, project, session, size in (
+            (self.rounds, uuid.uuid4(), self.session, 20),
+            (self.rounds, self.project, b"x" * 32, 20),
+            (self.rounds, self.project, self.session, 21),
+            (SurveyRoundCursorCodec(b"x" * 32), self.project, self.session, 20),
+        ):
+            with self.assertRaises(ApplicationError):
+                codec.decode(
+                    token, project_id=project, session_token=session,
+                    page_size=size,
+                )
 
 
 if __name__ == "__main__":
