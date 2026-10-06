@@ -143,3 +143,6 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
   PostgreSQL18.6完成四类来源及Evidence Viewer闭环；按DEC-938修正Version列表摘要兼容和浏览器
   原生fetch调用上下文。4个location、1个Viewer均200，无告警/内部row identity，Survey/Version零写，
   前端82文件1441项与构建通过。SUR-01来源定位闭环完成，进入SUR-02 Round前置核查。
+- 2026-10-06 / `SUR-02-A01`：核清SRV-03两表/四态/七Operation当前运行实现为零，并登记
+  CR-SUR-007。Round先独立实现Schema、固定PROJECT_RECORD来源、创建读取及OPEN/CANCEL；CLOSE必须
+  等SRV-04提供真实Assignment/Response完整性Owner，禁止以空集合、模板、原始记录或客户端PASS放行。

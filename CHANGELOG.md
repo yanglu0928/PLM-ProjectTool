@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-06：0.1.0-dev.0/SUR-02-A01 完成Survey Round运行时前置核查并登记CR-SUR-007：保持冻结SRV-03两表、四态和七Operation；Round固定当前批准定义，现场PROJECT_RECORD由Evidence/Document Owner在OPEN期间追加，不能冒充Answer。SRV-04未实现前CLOSE失败关闭，待真实Assignment/Response完整性Owner后接通。兼容性/回滚：纯文档，无程序/Schema/API/依赖/Secret/外发变化。验证：静态交叉核对冻结模型、Schema/API和当前0106运行实现。已知问题：A02以后Schema/Owner/HTTP/UI/真实PG浏览器、SUR-03/04、Gate3/UAT及发行仍待。
+
 - 2026-10-06：0.1.0-dev.0/SUR-01-A06-A05-P02 完成Windows 11真实Edge来源定位闭环：构建Vue经生产FastAPI/PostgreSQL18.6展开Handover、Capability、PROJECT Template与MANUAL，4个location和1个Evidence Viewer均200，无UI告警/内部row identity，Survey/Version零写并清理临时资源。按DEC-938窄修复列表摘要/详情兼容与浏览器原生fetch接收者问题。兼容性/回滚：无Schema/Migration、冻结API、角色、依赖、Secret或外发变化；撤兼容修正会恢复已验证浏览器故障。验证：前端82文件1441项、typecheck、Vite172模块build通过。已知问题：主JS636.50 kB分块提示、定义写UI、Round/Response/Conclusion、Gate3/UAT及发行仍待；托管浏览器内核缺资源，已用同机Edge/CDP留证。
 
 - 2026-10-06：0.1.0-dev.0/SUR-01-A06-A05-P01 新增Survey来源定位前端客户端与按需点击：人工来源显示需维护信息，历史来源提示不再当前合格，Document固定版本、Handover公共记录及Evidence Viewer精确原文入口按权限展开；不显示或猜测内部row identity。兼容性/回滚：纯前端，无后端/Schema/Migration/角色/依赖/Secret/外发变化，移除客户端和结果区即可回滚。验证：定向39、前端82文件1438项、typecheck、Vite172模块build通过。已知问题：真实浏览器P02、定义写UI、Round/Response/Conclusion、Gate3与发行仍待；主JS 636.34 kB分块提示继续登记。

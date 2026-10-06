@@ -8921,3 +8921,11 @@
 - Reason：列表后端有意返回声明计数而不展开owned集合，沿用详情校验会让页面失败关闭；将浏览器原生`fetch`作为对象方法调用会在请求发出前失败。放宽详情或绕过Evidence完整性核验都会掩盖真实合同错误，故只做窄兼容修正。
 - Impact/Rollback：前端读取/Viewer兼容修正及隔离验收脚本，无Schema/Migration、冻结API、角色、依赖、Secret、外发或客户数据。撤代码会恢复已验证浏览器故障；历史数据不变。
 - Verification：Windows 11 Edge经构建Vue/生产FastAPI/PostgreSQL18.6取得4个location 200与1个Viewer 200，无UI告警/内部row identity，Survey/Version零写与临时资源清理通过；前端82文件1441项、typecheck及Vite172模块build通过。托管computer-use因kernel assets缺失改用同机Edge/CDP，记录为工具偏差而非产品PASS替代。
+
+# DEC-20261006-939：Survey Round 分离生命周期与答复完整性
+
+- Date/WBS：2026-10-06 / `SUR-02-A01`；依据冻结SRV-03、API-04七项Round Operation、CR-SUR-001/007及当前0106实现。
+- Decision：Round以当前批准SurveyVersion创建并永久绑定该固定版本；现场PROJECT_RECORD通过Evidence/Document Owner在OPEN期间追加，后续由FACILITATED_RECORD Response同事务调用。先实现Schema、来源、创建读取、计划、OPEN/CANCEL；CLOSE只在SRV-04提供锁定当前Assignment/Response的完整性Owner后开放。
+- Reason：创建时强制齐全现场记录不符合面对面交流后形成记录的实际流程；把原始记录当Answer或让客户维护模板违背已确认交互原则。SRV-04尚不存在时允许空Round关闭会虚报完整性并污染后续Conclusion/Workflow Gate。
+- Impact/Rollback：本项仅登记CR和实施拆分，无代码、Schema/Migration、API、依赖、Secret或外发。后续0107只新增冻结两表；应用可停止装配，历史不得删除。
+- Verification：静态交叉核对Data Model、SC-01/02、API-01/04、现有Survey ORM/Migration/入口及Evidence/Document Owner；确认运行时无Round实现并标记`SUR_02_A01_RUNTIME_PRECHECK_PASS`。数据库/HTTP/浏览器未运行，留后续WBS。
