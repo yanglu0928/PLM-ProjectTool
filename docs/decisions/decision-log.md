@@ -8849,3 +8849,11 @@
 - Reason：裸位置可被跨会话、Project或父资源重放；只签时间会在同时间戳分页丢项。复制来源正文/路径会越过对应Owner权限。
 - Impact/Rollback：新增Survey read API/cursor及可选组合参数；无Schema/Migration/依赖/Secret/外发。撤Router注入恢复404。
 - Verification：专项20、后端2844通过/3跳过；wheel 1051项，SHA-256 `f42547db0d917f6ee75c4456737702ba8e415e7a0ffc7381d1c15b12f4465dcf`。
+
+# DEC-20261006-930：Survey 定义以单一 Windows 组合区分只读与写模式
+
+- Date/WBS：2026-10-06 / `SUR-01-A05-A07`；依据冻结API-04、DEC-924～929及现有Windows生产入口。
+- Decision：新增单一Survey组合工厂；显式只读平台模式只注入四GET，显式写模式再注入五个普通写与原子送审，默认/login-only不注入。Survey/Version cursor分别从`survey-cursor-v1`和`survey-version-cursor-v1`解析独立32字节key，任一缺失均整组失败关闭；Review决定继续使用唯一通用PROJECT Router。
+- Reason：多个组合根会造成同一路径注册、授权或依赖漂移；让只读模式携带写Router会扩大攻击面。独立cursor key限制family间影响，通用Review Router已由Subject Registry安全承载`SRV-02`。
+- Impact/Rollback：新增Windows组合与生产入口注入；无Schema/Migration、冻结路径、角色、依赖、Secret值、网络或外发变化。撤组合注入可恢复404/405，合法历史保留。首轮真实闭环发现A06错误拒绝Schema零基`sequence_no`，按既有Schema修正而未变更冻结合同。
+- Verification：定向46；Windows 11/PostgreSQL18.6全新隔离库完成十Operation、只读/写隔离、送审重放、Review批准、归档和Alembic无漂移；后端2846通过/3跳过；wheel 1052项，SHA-256 `5ecfda4d9b0ad06f8dbe5e12541e4b2aff2e95a1eedd2951f7093efb6175c7c0`。

@@ -151,7 +151,7 @@ def _source(value: SurveySourceView) -> dict[str, object]:
 def _question(value: SurveyQuestionView) -> dict[str, object]:
     if (type(value) is not SurveyQuestionView
             or type(value.question_id) is not uuid.UUID or value.question_id.int == 0
-            or type(value.sequence_no) is not int or value.sequence_no <= 0
+            or type(value.sequence_no) is not int or value.sequence_no < 0
             or value.answer_type not in _ANSWERS
             or any(type(item) is not str or not item for item in (
                 value.topic, value.question_text, value.objective, value.expected_output))

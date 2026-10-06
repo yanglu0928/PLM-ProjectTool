@@ -109,3 +109,9 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
 - 2026-10-06 / `SUR-01-A05-A06`：新增默认关闭的Survey四读Router及两类会话/Project/查询/父资源
   绑定HMAC cursor，投影固定类型化引用且不复制跨模块正文/路径。无Schema/依赖/外发变化；专项20、
   后端2844/3及wheel检查通过，Windows生产组合留A07。
+- 2026-10-06 / `SUR-01-A05-A07`：新增失败关闭的Windows Survey组合；显式只读模式只挂四GET，写模式
+  覆盖冻结十个定义Operation，默认/login-only继续关闭。首轮真实HTTP/PG在Version GET发现A06序列化边界
+  错把Schema/ORM的零基`sequence_no`拒绝为503；按既有Schema合同修正为`>= 0`并增加回归断言，以全新
+  隔离库完整重跑创建、读取、校验、原子送审/重放、Review批准和归档。无Schema/API/依赖/外发变化；
+  Windows 11/PostgreSQL 18.6、定向46、后端2846/3及wheel检查通过。正式目标账户两份cursor key仪式、
+  Server 2025、UI、Round/Response/Conclusion、Gate 3与发行继续开放。

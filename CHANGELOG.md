@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-06：0.1.0-dev.0/SUR-01-A05-A07 新增失败关闭的Windows Survey生产组合：只读平台只挂四GET，写平台覆盖冻结十个定义Operation，默认/login-only保持关闭；两类cursor使用独立Windows Secret key。首轮真实闭环发现A06错误拒绝Schema零基题目序号，修正为`sequence_no >= 0`并用全新库重跑。兼容性/升级/回滚：无Schema/Migration/依赖/公开路径/外发变化；目标账户须供给两份key，撤组合注入恢复关闭且保留历史。验证：定向46、Win11/PG18.6真实创建/读取/校验/送审重放/批准/归档、后端2846通过/3跳过，wheel 1052项，SHA-256 `5ecfda4d9b0ad06f8dbe5e12541e4b2aff2e95a1eedd2951f7093efb6175c7c0`。已知问题：Survey UI、Round/Response/Conclusion、Server2025、正式key仪式、Gate3与发行仍待；Debian13实机按用户指令跳过。
+
 - 2026-10-06：0.1.0-dev.0/SUR-01-A05-A06 新增默认关闭的Survey四读HTTP与两类HMAC签名cursor；cursor绑定Session/Project/页长/完整位置，Version另绑定父Survey，固定投影不复制跨模块正文或路径。兼容性/回滚：无Schema/Migration/依赖/Secret/外发，撤Router注入恢复404。验证：专项20、后端2844通过/3跳过，wheel 1051项，SHA-256 `f42547db0d917f6ee75c4456737702ba8e415e7a0ffc7381d1c15b12f4465dcf`。已知问题：A07生产组合、Survey UI、Round/Response/Conclusion、Server2025、Gate3与发行仍待。
 
 - 2026-10-06：0.1.0-dev.0/SUR-01-A05-A05 新增默认关闭的SurveyVersion原子送审Service/HTTP，一次事务完成PROJECT Review创建、首轮启动、SurveyVersion进入IN_REVIEW、Audit及持久幂等回执；仅ProjectManager、固定`SURVEY_ALL_V1`，重放首次Round并重验访问。CR-SUR-005明确现有Review未持久化的`due_at/submission_note`在V1只接受null，非空422而不静默丢弃。兼容性/升级/回滚：无Schema/Migration/ORM/依赖/配置/Secret/外发，撤Router注入恢复404且保留历史。验证：定向19、Win11/PG18.6真实原子/回滚/重放/漂移/批准/撤回、后端2838通过/3跳过，wheel 1049项，SHA-256 `170083bd760238bff4948b3a9bed3613d523d18dfd991030de4c4aed4917a3b7`。已知问题：A06～A07、Survey UI、Round/Response/Conclusion、Server2025、Gate3与发行仍待；Debian13实机按用户指令跳过。

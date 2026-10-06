@@ -34,6 +34,7 @@ from plm_assistant.modules.ai.api.invocation_list_cursor import AIInvocationList
 from plm_assistant.entrypoints.windows_ai_read_cursor import WindowsAIReadCursorCodecs
 from plm_assistant.entrypoints.windows_capability import WindowsCapabilityRouters
 from plm_assistant.entrypoints.windows_handover import WindowsHandoverRouters
+from plm_assistant.entrypoints.windows_survey import WindowsSurveyRouters
 from plm_assistant.entrypoints.windows_handover_action import (
     WindowsHandoverActionWriteRouters,
 )
@@ -198,6 +199,13 @@ class ProductionLoginTests(unittest.TestCase):
         self.handover_factory = self.enterContext(patch(
             "plm_assistant.entrypoints.production_login.create_windows_handover_routers",
             side_effect=lambda *args, include_write, **kwargs: WindowsHandoverRouters(
+                APIRouter(), APIRouter() if include_write else None,
+                APIRouter() if include_write else None,
+            ),
+        ))
+        self.survey_factory = self.enterContext(patch(
+            "plm_assistant.entrypoints.production_login.create_windows_survey_routers",
+            side_effect=lambda *args, include_write, **kwargs: WindowsSurveyRouters(
                 APIRouter(), APIRouter() if include_write else None,
                 APIRouter() if include_write else None,
             ),
@@ -613,6 +621,7 @@ class ProductionLoginTests(unittest.TestCase):
             app = create_production_platform_app(settings)
         egress_factory.assert_not_called()
         self.handover_action_factory.assert_called_once()
+        self.survey_factory.assert_called_once()
         self.handover_action_write_factory.assert_not_called()
         self.project_review_factory.assert_not_called()
         self.workflow_checklist_factory.assert_not_called()

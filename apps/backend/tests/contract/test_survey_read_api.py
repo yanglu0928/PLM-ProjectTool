@@ -29,7 +29,7 @@ VIEW = SurveyView(SURVEY, PROJECT, "Current-state survey", "ACTIVE", None,
 SOURCE = SurveySourceView("MANUAL", None, None, None, None, None, None,
                           None, None, "Facilitated workshop", 0)
 QUESTION_VIEW = SurveyQuestionView(
-    QUESTION, 1, "Process", "Describe current process", "Establish baseline",
+    QUESTION, 0, "Process", "Describe current process", "Establish baseline",
     "TEXT", {"max_length": 2000}, True, None, "Confirmed process", True,
     (SurveyOptionView("N/A", "Not applicable", None, 0),), (SOURCE,))
 VERSION_VIEW = SurveyVersionView(
@@ -114,6 +114,7 @@ class SurveyReadApiTests(unittest.TestCase):
                                   headers=self.headers)
         self.assertEqual('"v0"', survey.headers["etag"])
         self.assertEqual(str(QUESTION), version.json()["data"]["questions"][0]["question_id"])
+        self.assertEqual(0, version.json()["data"]["questions"][0]["sequence_no"])
         self.assertEqual(str(DEPARTMENT), version.json()["data"]["target_departments"][0]["department_id"])
         self.assertNotIn("path", version.text.lower())
 
