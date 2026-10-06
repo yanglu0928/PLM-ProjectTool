@@ -16,6 +16,9 @@ from plm_assistant.modules.survey.application.change_round import (
     SurveyRoundStateService,
 )
 from plm_assistant.modules.survey.application.round_views import SurveyRoundView
+from plm_assistant.modules.survey.application.round_completeness import (
+    SurveyRoundCompletenessProof,
+)
 
 
 NOW = datetime(2026, 10, 6, 4, 0, tzinfo=timezone.utc)
@@ -86,6 +89,25 @@ class Repository:
             cancellation_reason=kwargs["reason"],
         )
         return self.current
+
+    def close(self, transaction, **kwargs):
+        self.current = view(
+            "CLOSED", kwargs["expected_lock_version"] + 1,
+            opened_by=ACTOR, opened_at=NOW - timedelta(minutes=5),
+            closed_by=ACTOR, closed_at=NOW,
+            close_report_fingerprint=kwargs["report_fingerprint"],
+        )
+        return self.current
+
+
+class Completeness:
+    calls = []
+
+    def prove(self, transaction, query):
+        self.calls.append(query)
+        return SurveyRoundCompletenessProof(
+            ROUND, VERSION, PROJECT, 1, 1, 2, 2, 1, b"p" * 32,
+        )
 
 
 class Receipts:
@@ -166,6 +188,26 @@ class SurveyRoundStateTests(unittest.TestCase):
         self.assertEqual(0, Tx.commits)
         self.assertEqual([], Audit.events)
         self.assertEqual([], Receipts.completed)
+
+    def test_close_proves_completeness_in_transaction_and_replays(self):
+        Completeness.calls = []
+        self.service = SurveyRoundStateService(
+            unit_of_work=Tx, access=Access(), license_guard=Guard(),
+            authorization=Authorization(), repository=self.repository,
+            receipts=self.receipts, audit=Audit(), completeness=Completeness(),
+            clock=lambda: NOW,
+        )
+        result = self.service.close(self.close)
+        self.assertEqual("CLOSED", result.round_state)
+        self.assertEqual(b"p" * 32, result.close_report_fingerprint)
+        self.assertEqual("PROJECT_MANAGER", Completeness.calls[0].actor_role)
+        self.assertEqual("SURVEY_ROUND_CLOSED", Audit.events[0].action)
+        self.assertEqual("OPEN", Audit.events[0].before_state)
+        self.assertEqual("V1_SURVEY_ROUND_CLOSE", Receipts.completed[0].ref_type)
+        Receipts.replay = Receipts.completed[0]
+        replay = self.service.close(self.close)
+        self.assertEqual(result, replay)
+        self.assertEqual(1, len(Completeness.calls))
 
     def test_invalid_boundaries_and_secrets_fail_closed(self):
         invalid = (

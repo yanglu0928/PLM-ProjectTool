@@ -76,6 +76,26 @@ class SqlAlchemySurveyRoundStateRepository:
         self._advance(row, actor_id, occurred_at=occurred_at)
         return self._refresh(transaction, row)
 
+    def close(
+        self, transaction: object, *, project_id: uuid.UUID,
+        survey_round_id: uuid.UUID, expected_lock_version: int,
+        report_fingerprint: bytes, actor_id: uuid.UUID,
+    ) -> SurveyRoundView:
+        if type(report_fingerprint) is not bytes or len(report_fingerprint) != 32:
+            raise SurveyRoundStateError("SURVEY_ROUND_INCOMPLETE")
+        row = self._lock(transaction, project_id, survey_round_id)
+        if row.lock_version != expected_lock_version:
+            raise SurveyRoundStateError("CONFLICT_VERSION")
+        if row.round_state != "OPEN":
+            raise SurveyRoundStateError("SURVEY_ROUND_STATE_CONFLICT")
+        occurred_at = func.statement_timestamp()
+        row.round_state = "CLOSED"
+        row.closed_by = actor_id
+        row.closed_at = occurred_at
+        row.close_report_fingerprint = report_fingerprint
+        self._advance(row, actor_id, occurred_at=occurred_at)
+        return self._refresh(transaction, row)
+
     @staticmethod
     def _lock(
         transaction: object, project_id: uuid.UUID,

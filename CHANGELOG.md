@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-06：0.1.0-dev.0/SUR-02-A06-P01 接通Round CLOSE同事务完整性证明，新增冻结七个Round HTTP及Windows真实组合；Round cursor从既有Survey Secret按用途HMAC派生。兼容性/回滚：无Schema/依赖/Breaking URL/外发，撤Router/Owner注入恢复404/失败关闭，历史关闭/Audit/receipt保留。验证：Win11/PG18.6原子关闭/重放/读取/终态/drift，后端2905/3、4203子断言，wheel1085项，SHA-256 `7fc7d8e4a9c0e295c05898c7f9df248536701cf8398453854f792ea0d81c95d1`。已知问题：Round前端/浏览器、Assignment/Response HTTP/UI、Conclusion、Gate3/UAT及发行仍待。
+
 - 2026-10-06：0.1.0-dev.0/SUR-03-A07 新增Round完整性caller-transaction Owner：非空Assignment、固定目标部门覆盖、全VALIDATED、当前条件/必答/规则/Evidence重证与稳定报告指纹。兼容性/回滚：无Schema/公开API/依赖/Secret/外发，不自行commit，未接CLOSE前行为不变。验证：Win11/PG18.6锁/空集/非终态/Evidence漂移/drift，后端2902/3、4203子断言，wheel1084项，SHA-256 `05f1aabae62cf01ac90ba00a75d9a31103cceb4a21813e07677bf15b14cb9069`。已知问题：Round CLOSE/HTTP、Response HTTP/UI、Gate3/UAT及发行仍待。
 
 - 2026-10-06：0.1.0-dev.0/SUR-03-A06 新增Assignment VALIDATE/RETURN内部Owner：PM/Implementation角色、强ETag、重新计算完整性、人工退回意见、RETURNED追加更正后重提、Audit及持久幂等。兼容性/回滚：无Schema/公开API/依赖/Secret/外发，历史保留。验证：Win11/PG18.6并发/回滚/状态矩阵/授权/CSRF/License/drift，后端2899/3、4203子断言，wheel1082项，SHA-256 `9d814bab2c14f5551b7db3945184c2e9bd983a7fab904a52b5db3f70c3a594ae`。首轮角色集合偏差已修正并全新库重跑。已知问题：A07 Round完整性、CLOSE/HTTP/UI、Gate3/UAT及发行仍待。

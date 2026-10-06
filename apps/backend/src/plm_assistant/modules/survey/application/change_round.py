@@ -26,9 +26,16 @@ from plm_assistant.modules.project.application.authorization import (
 )
 
 from .round_views import SurveyRoundView
+from .round_completeness import (
+    SurveyRoundCompletenessError,
+    SurveyRoundCompletenessOwner,
+    SurveyRoundCompletenessProof,
+    SurveyRoundCompletenessQuery,
+)
 
 
 _OPEN_OPERATION = "V1_SURVEY_ROUND_OPEN"
+_CLOSE_OPERATION = "V1_SURVEY_ROUND_CLOSE"
 _CANCEL_OPERATION = "V1_SURVEY_ROUND_CANCEL"
 
 
@@ -111,12 +118,19 @@ class RepositoryPort(Protocol):
         reason: str, actor_id: uuid.UUID,
     ) -> SurveyRoundView: ...
 
+    def close(
+        self, transaction: object, *, project_id: uuid.UUID,
+        survey_round_id: uuid.UUID, expected_lock_version: int,
+        report_fingerprint: bytes, actor_id: uuid.UUID,
+    ) -> SurveyRoundView: ...
+
 
 class SurveyRoundStateService:
     def __init__(
         self, *, unit_of_work: Callable[[], object], access: object,
         license_guard: object, authorization: ProjectAuthorizationService,
         repository: RepositoryPort, receipts: object, audit: AuditService,
+        completeness: SurveyRoundCompletenessOwner | None = None,
         clock: Callable[[], datetime] | None = None,
     ) -> None:
         if any(value is None for value in (
@@ -126,6 +140,7 @@ class SurveyRoundStateService:
         self._uow, self._access, self._guard = unit_of_work, access, license_guard
         self._authorization, self._repository = authorization, repository
         self._receipts, self._audit = receipts, audit
+        self._completeness = completeness
         self._clock = clock or (lambda: datetime.now(timezone.utc))
 
     def patch(self, command: PatchSurveyRound) -> SurveyRoundView:
@@ -134,22 +149,22 @@ class SurveyRoundStateService:
             command.scheduled_start_at, command.scheduled_end_at,
         )
         location = self._text(command.location_note, maximum=1000, optional=True)
-        return self._execute(command, "SURVEY_ROUND_PATCH", lambda tx, actor:
-            self._patch(tx, actor, command, start, end, location))
+        return self._execute(command, "SURVEY_ROUND_PATCH", lambda tx, authorized:
+            self._patch(tx, authorized.user_id, command, start, end, location))
 
     def open(self, command: OpenSurveyRound) -> SurveyRoundView:
         self._validate_common(command, OpenSurveyRound)
         fingerprint = self._idempotency_fingerprint(command, {})
-        return self._execute(command, "SURVEY_ROUND_OPEN", lambda tx, actor:
+        return self._execute(command, "SURVEY_ROUND_OPEN", lambda tx, authorized:
             self._transition(
-                tx, actor, command, fingerprint=fingerprint,
+                tx, authorized.user_id, command, fingerprint=fingerprint,
                 operation=_OPEN_OPERATION, final_state="OPEN",
                 action="SURVEY_ROUND_OPENED",
                 apply=lambda: self._repository.open(
                     tx, project_id=command.project_id,
                     survey_round_id=command.survey_round_id,
                     expected_lock_version=command.expected_lock_version,
-                    actor_id=actor,
+                    actor_id=authorized.user_id,
                 ),
             ))
 
@@ -157,24 +172,57 @@ class SurveyRoundStateService:
         self._validate_common(command, CancelSurveyRound)
         reason = self._text(command.reason, maximum=2000, optional=False)
         fingerprint = self._idempotency_fingerprint(command, {"reason": reason})
-        return self._execute(command, "SURVEY_ROUND_CANCEL", lambda tx, actor:
+        return self._execute(command, "SURVEY_ROUND_CANCEL", lambda tx, authorized:
             self._transition(
-                tx, actor, command, fingerprint=fingerprint,
+                tx, authorized.user_id, command, fingerprint=fingerprint,
                 operation=_CANCEL_OPERATION, final_state="CANCELLED",
                 action="SURVEY_ROUND_CANCELLED", reason_code="USER_CANCELLED",
                 apply=lambda: self._repository.cancel(
                     tx, project_id=command.project_id,
                     survey_round_id=command.survey_round_id,
                     expected_lock_version=command.expected_lock_version,
-                    reason=reason, actor_id=actor,
+                    reason=reason, actor_id=authorized.user_id,
                 ),
             ))
 
     def close(self, command: CloseSurveyRound) -> SurveyRoundView:
         self._validate_common(command, CloseSurveyRound)
-        self._validate_key(command.idempotency_key)
-        return self._execute(command, "SURVEY_ROUND_CLOSE", lambda _tx, _actor:
-            self._close_unavailable())
+        fingerprint = self._idempotency_fingerprint(command, {})
+        return self._execute(command, "SURVEY_ROUND_CLOSE", lambda tx, authorized:
+            self._transition(
+                tx, authorized.user_id, command, fingerprint=fingerprint,
+                operation=_CLOSE_OPERATION, final_state="CLOSED",
+                action="SURVEY_ROUND_CLOSED", before_state="OPEN",
+                apply=lambda: self._apply_close(tx, authorized, command),
+            ))
+
+    def _apply_close(
+        self, tx: object, authorized: AuthorizedProjectAction,
+        command: CloseSurveyRound,
+    ) -> SurveyRoundView:
+        if self._completeness is None:
+            raise SurveyRoundStateError("SURVEY_ROUND_COMPLETENESS_UNAVAILABLE")
+        try:
+            proof = self._completeness.prove(tx, SurveyRoundCompletenessQuery(
+                command.session_token, command.trace_id, command.project_id,
+                command.survey_round_id, authorized.user_id,
+                authorized.project_role,
+            ))
+        except SurveyRoundCompletenessError as error:
+            raise SurveyRoundStateError(error.code) from None
+        if (type(proof) is not SurveyRoundCompletenessProof
+                or proof.project_id != command.project_id
+                or proof.survey_round_id != command.survey_round_id
+                or type(proof.report_fingerprint) is not bytes
+                or len(proof.report_fingerprint) != 32):
+            raise SurveyRoundStateError()
+        return self._repository.close(
+            tx, project_id=command.project_id,
+            survey_round_id=command.survey_round_id,
+            expected_lock_version=command.expected_lock_version,
+            report_fingerprint=proof.report_fingerprint,
+            actor_id=authorized.user_id,
+        )
 
     def _patch(
         self, tx: object, actor: uuid.UUID, command: PatchSurveyRound,
@@ -198,6 +246,7 @@ class SurveyRoundStateService:
         self, tx: object, actor: uuid.UUID, command: object, *,
         fingerprint: bytes, operation: str, final_state: str, action: str,
         apply: Callable[[], SurveyRoundView], reason_code: str | None = None,
+        before_state: str = "PLANNED",
     ) -> SurveyRoundView:
         scope = IdempotencyScope.from_key(
             actor_id=actor, project_id=command.project_id,  # type: ignore[attr-defined]
@@ -225,7 +274,7 @@ class SurveyRoundStateService:
         result = apply()
         self._append_audit(
             tx, command, actor, result, action=action,
-            before_state="PLANNED", after_state=final_state,
+            before_state=before_state, after_state=final_state,
             reason_code=reason_code,
         )
         self._receipts.complete(tx, scope=scope, result=IdempotencyResult(
@@ -254,7 +303,7 @@ class SurveyRoundStateService:
 
     def _execute(
         self, command: object, operation: str,
-        action: Callable[[object, uuid.UUID], SurveyRoundView],
+        action: Callable[[object, AuthorizedProjectAction], SurveyRoundView],
     ) -> SurveyRoundView:
         try:
             self._guard.require_valid(trace_id=command.trace_id)  # type: ignore[attr-defined]
@@ -270,7 +319,12 @@ class SurveyRoundStateService:
                         or authorized.project_id != command.project_id  # type: ignore[attr-defined]
                         or authorized.operation != operation):
                     raise SurveyRoundStateError("RESOURCE_NOT_FOUND")
-                result = action(tx, actor)
+                if authorized.project_role not in (
+                    "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER",
+                    "CUSTOMER_MANAGER", "CUSTOMER_MEMBER",
+                ):
+                    raise SurveyRoundStateError("RESOURCE_NOT_FOUND")
+                result = action(tx, authorized)
                 if type(result) is not SurveyRoundView:
                     raise SurveyRoundStateError()
                 self._guard.require_valid(trace_id=command.trace_id)  # type: ignore[attr-defined]
@@ -358,7 +412,3 @@ class SurveyRoundStateService:
                 or any(unicodedata.category(char)[0] == "C" for char in normalized)):
             raise SurveyRoundStateError("VALIDATION_FAILED")
         return normalized
-
-    @staticmethod
-    def _close_unavailable() -> SurveyRoundView:
-        raise SurveyRoundStateError("SURVEY_ROUND_COMPLETENESS_UNAVAILABLE")

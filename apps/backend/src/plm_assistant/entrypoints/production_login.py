@@ -565,14 +565,6 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             handover_read_router = handover_routers.reads
             handover_command_router = handover_routers.commands
             handover_review_submission_router = handover_routers.review_submission
-            survey_routers = create_windows_survey_routers(
-                runtime, sessions=sessions, origins=origins,
-                license_guard=licenses.guard, audit=audit,
-                include_write=include_secret_write,
-            )
-            survey_read_router = survey_routers.reads
-            survey_command_router = survey_routers.commands
-            survey_review_submission_router = survey_routers.review_submission
             handover_action_read_router = create_windows_handover_action_read_router(
                 runtime, sessions=sessions, origins=origins,
                 license_guard=licenses.guard,
@@ -701,6 +693,16 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 storage=LocalParseResultStorage(settings.data_root),
                 unit_of_work=runtime.unit_of_work,
             )
+            survey_routers = create_windows_survey_routers(
+                runtime, sessions=sessions, origins=origins,
+                license_guard=licenses.guard, audit=audit,
+                include_write=include_secret_write,
+                documents=document_reads, downloads=document_downloads,
+                parse_results=evidence_results_for_viewer,
+            )
+            survey_read_router = survey_routers.reads
+            survey_command_router = survey_routers.commands
+            survey_review_submission_router = survey_routers.review_submission
             if include_secret_write:
                 workflow_checklist_record_router = (
                     create_windows_workflow_checklist_record_router(

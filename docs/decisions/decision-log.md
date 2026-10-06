@@ -9017,3 +9017,11 @@
 - Reason：SQL/Python空集合真值会把未调研Round误判为完成；只看VALIDATED枚举会漏掉提交后Evidence漂移；跨事务证明会在CLOSE前产生竞态。
 - Impact/Rollback：无Schema/API/依赖/外发；内部只读锁定Owner不commit。未接CLOSE前外部行为不变。
 - Verification：Win11/PG18.6稳定证明、三类竞争锁、空集、非VALIDATED、Evidence漂移及drift通过；后端2902/3、4203子断言，wheel1084项，SHA-256 `05f1aabae62cf01ac90ba00a75d9a31103cceb4a21813e07677bf15b14cb9069`。
+
+# DEC-20261006-951：CLOSE消费同事务证明且Round游标密钥用途派生
+
+- Date/WBS：2026-10-06 / `SUR-02-A06-P01`；依据CR-SUR-007/008、冻结七Round Operation及A07完整性Owner。
+- Decision：CLOSE只在ProjectManager授权后的同一事务消费A07证明，持久化服务端报告指纹后写CLOSED/Audit/receipt；重放不重新证明。七个冻结HTTP按只读/写模式显式装配。Round cursor不新增第三份部署Secret，而从既有Survey cursor Secret用固定标签HMAC派生独立用途密钥；生产组合必须提供完整Document下载/解析证明依赖。
+- Reason：跨事务证明会在关闭前留下竞态；客户端报告或计数不可信；新增Secret会扩大当前目标账户运维面，而直接复用同一key又缺少用途隔离。固定HMAC派生同时保持现有两Secret部署兼容和token域分离。
+- Impact/Rollback：无Schema/依赖/外发或Breaking URL；生产Survey组合初始化时点移动到Document证明依赖就绪后。撤Router/Owner注入可恢复404/失败关闭，历史CLOSE/Audit/receipt保留。
+- Verification：Win11/PG18.6真实HTTP/生产组合完成原子CLOSE、重放、Audit/receipt、列表/详情、终态拒绝与drift；定向13、后端2905/3、4203子断言；wheel1085项，SHA-256 `7fc7d8e4a9c0e295c05898c7f9df248536701cf8398453854f792ea0d81c95d1`。

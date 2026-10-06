@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hmac
 from typing import Protocol
 
 from fastapi import APIRouter
@@ -30,6 +31,18 @@ from plm_assistant.modules.document.infrastructure.survey_source_location import
 )
 from plm_assistant.modules.document.infrastructure.survey_template_proof import (
     SqlAlchemySurveyTemplateProof,
+)
+from plm_assistant.modules.document.application.prove_fixed_source import (
+    DocumentFixedSourceProofService,
+)
+from plm_assistant.modules.document.infrastructure.parse_result_read_repository import (
+    SqlAlchemyParseResultReadRepository,
+)
+from plm_assistant.modules.evidence.application.fixed_project_source import (
+    EvidenceFixedProjectSourceService,
+)
+from plm_assistant.modules.evidence.infrastructure.fixed_source_repository import (
+    SqlAlchemyEvidenceFixedSourceRepository,
 )
 from plm_assistant.modules.handover.infrastructure.survey_source_proof import (
     SqlAlchemyHandoverSurveySourceProof,
@@ -73,7 +86,10 @@ from plm_assistant.modules.survey.api.source_location import (
     create_survey_source_location_router,
 )
 from plm_assistant.modules.survey.api.read_cursor import (
-    SurveyCursorCodec, SurveyVersionCursorCodec,
+    SurveyCursorCodec, SurveyRoundCursorCodec, SurveyVersionCursorCodec,
+)
+from plm_assistant.modules.survey.api.rounds import (
+    create_survey_round_command_router, create_survey_round_read_router,
 )
 from plm_assistant.modules.survey.api.submit_review import (
     create_survey_review_submission_router,
@@ -82,6 +98,12 @@ from plm_assistant.modules.survey.application.change_survey import SurveyStateSe
 from plm_assistant.modules.survey.application.create_survey import SurveyCreateService
 from plm_assistant.modules.survey.application.create_version import SurveyVersionCreateService
 from plm_assistant.modules.survey.application.read_surveys import SurveyReadService
+from plm_assistant.modules.survey.application.create_round import SurveyRoundCreateService
+from plm_assistant.modules.survey.application.change_round import SurveyRoundStateService
+from plm_assistant.modules.survey.application.read_rounds import SurveyRoundReadService
+from plm_assistant.modules.survey.application.round_completeness import (
+    SurveyRoundCompletenessOwner,
+)
 from plm_assistant.modules.survey.application.source_location import (
     SurveySourceLocationService,
 )
@@ -92,6 +114,18 @@ from plm_assistant.modules.survey.application.validate_version import (
 )
 from plm_assistant.modules.survey.infrastructure.read_repository import (
     SqlAlchemySurveyReadRepository,
+)
+from plm_assistant.modules.survey.infrastructure.round_completeness_repository import (
+    SqlAlchemySurveyRoundCompletenessRepository,
+)
+from plm_assistant.modules.survey.infrastructure.round_repository import (
+    SqlAlchemySurveyRoundRepository,
+)
+from plm_assistant.modules.survey.infrastructure.round_state_repository import (
+    SqlAlchemySurveyRoundStateRepository,
+)
+from plm_assistant.modules.survey.infrastructure.submission_repository import (
+    SqlAlchemySurveyAssignmentSubmissionRepository,
 )
 from plm_assistant.modules.survey.infrastructure.review_subject_repository import (
     SqlAlchemySurveyReviewSubjectRepository,
@@ -133,12 +167,17 @@ class WindowsSurveyRouters:
 def create_windows_survey_routers(
     runtime, *, sessions, origins, license_guard, audit,
     include_write: bool, resolver: SurveyKeyResolverPort | None = None,
+    documents=None, downloads=None, parse_results=None,
 ) -> WindowsSurveyRouters:
     if type(include_write) is not bool:
         raise ProductionSurveyStartupError()
     try:
         keys = resolver or WindowsSecretKeyProvider()
-        survey_cursors = SurveyCursorCodec(keys.resolve_key(SURVEY_CURSOR_KEY_REF))
+        survey_cursor_key = keys.resolve_key(SURVEY_CURSOR_KEY_REF)
+        survey_cursors = SurveyCursorCodec(survey_cursor_key)
+        round_cursors = SurveyRoundCursorCodec(hmac.digest(
+            survey_cursor_key, b"survey-round-cursor-v1", "sha256",
+        ))
         version_cursors = SurveyVersionCursorCodec(
             keys.resolve_key(SURVEY_VERSION_CURSOR_KEY_REF)
         )
@@ -165,6 +204,16 @@ def create_windows_survey_routers(
         )
         read_router.include_router(create_survey_source_location_router(
             sessions=sessions, origins=origins, locations=locations,
+        ))
+        round_repository = SqlAlchemySurveyRoundRepository()
+        round_reads = SurveyRoundReadService(
+            unit_of_work=runtime.unit_of_work,
+            access=SqlAlchemyProjectReadAccess(), license_guard=license_guard,
+            authorization=authorization, repository=round_repository,
+        )
+        read_router.include_router(create_survey_round_read_router(
+            sessions=sessions, origins=origins, reads=round_reads,
+            cursors=round_cursors,
         ))
         if not include_write:
             return WindowsSurveyRouters(read_router, None, None)
@@ -207,6 +256,44 @@ def create_windows_survey_routers(
             sessions=sessions, origins=origins, surveys=surveys, states=states,
             versions=versions, validations=validations,
         )
+        dependency_shape = tuple(
+            value is not None for value in (documents, downloads, parse_results)
+        )
+        if any(dependency_shape) and not all(dependency_shape):
+            raise ValueError("complete Survey Round evidence dependencies required")
+        completeness = None
+        if all(dependency_shape):
+            document_proofs = DocumentFixedSourceProofService(
+                documents=documents, downloads=downloads,
+                parse_metadata=SqlAlchemyParseResultReadRepository(),
+                parse_results=parse_results,
+            )
+            completeness = SurveyRoundCompletenessOwner(
+                repository=SqlAlchemySurveyRoundCompletenessRepository(),
+                submissions=SqlAlchemySurveyAssignmentSubmissionRepository(),
+                evidence_owner=EvidenceFixedProjectSourceService(
+                    sessions=SqlAlchemyProjectReadAccess(),
+                    projects=project_repository,
+                    evidence=SqlAlchemyEvidenceFixedSourceRepository(),
+                    documents=document_proofs,
+                    allowed_project_roles=frozenset({"PROJECT_MANAGER"}),
+                ),
+            )
+        round_creates = SurveyRoundCreateService(
+            unit_of_work=runtime.unit_of_work, access=access,
+            license_guard=license_guard, authorization=authorization,
+            repository=round_repository, receipts=receipts, audit=audit,
+        )
+        round_states = SurveyRoundStateService(
+            unit_of_work=runtime.unit_of_work, access=access,
+            license_guard=license_guard, authorization=authorization,
+            repository=SqlAlchemySurveyRoundStateRepository(), receipts=receipts,
+            audit=audit, completeness=completeness,
+        )
+        command_router.include_router(create_survey_round_command_router(
+            sessions=sessions, origins=origins, creates=round_creates,
+            states=round_states,
+        ))
         reviewers = ProjectReviewerQualificationService(
             users=SqlAlchemyReviewUserAccess(), projects=project_repository,
         )
