@@ -8667,3 +8667,11 @@
 - Reason：客户端refs或历史PASS不能代替迁移时当前事实；两次Owner调用若来自不同Version/Review，分别有效也不能组合成同一Gate快照。把Audit/receipt放到外部事务会留下成功状态无审计或未知重试双写风险。
 - Impact/Rollback：新增内部Service和`WORKFLOW_TRANSITION` ProjectManager写策略，无Schema/Migration、公开URL/DTO、依赖、Secret或外发变化；撤Service/Operation可停止新迁移，历史保留。冻结`gate_snapshot_refs`的HTTP具体投影留A04，不在内部命令猜造。
 - Verification：定向12项；Win11/PG18.6真实Handover Owner、双Checklist PASS、Audit故障全回滚、单次Transition/Audit/receipt及原键重放PASS；后端2773通过/3跳过，wheel 1012项，SHA-256 `1d9e65f0bf6515d31aa7581255388d368361ce90f5aeaf30108638736724bdfa`。
+
+# DEC-20261006-907：冻结gate_snapshot_refs保留字段但由服务端权威生成
+
+- Date/WBS：2026-10-06 / `WFL-02-A02-A04`；依据CR-WFL-009、冻结API-02及DEC-906。
+- Decision：Transition POST保留冻结三字段；`gate_snapshot_refs`当前必须是显式空数组，表示客户端不声明可信快照。任何非空/非数组值拒绝，服务端仍重证双Owner并固定当前Record/typed refs。响应仅投影不可变TransitionRef、阶段/版本/时间和当前ETag。
+- Reason：冻结合同没有定义ref元素类型，客户端也没有稳定取得两个当前Record身份的冻结读接口；猜造UUID DTO、忽略非空输入或把Evidence ID当Gate授权都会形成不兼容或安全歧义。
+- Impact/Rollback：CR-WFL-009下的兼容性细化；无Schema/Migration/依赖/Secret/外发。Router显式注入且默认404，撤插槽可回滚并保留A03/历史。未来支持非空显式快照需新API CR且保持空数组客户端兼容。
+- Verification：HTTP合同4、后端2777通过/3跳过，wheel 1013项，SHA-256 `84694eb7f938d3b597dd909a612bff6062a617c6e8559fc12b7c817f5facf158`；Windows真实组合留A05。

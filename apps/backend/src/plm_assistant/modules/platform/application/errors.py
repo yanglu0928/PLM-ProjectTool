@@ -85,6 +85,10 @@ COMMON_ERRORS: dict[str, ErrorSpec] = {
         "WORKFLOW_GATE_NOT_SATISFIED", 409,
         "当前清单、证据或评审尚不满足要求。",
     ),
+    "WORKFLOW_TRANSITION_INVALID": ErrorSpec(
+        "WORKFLOW_TRANSITION_INVALID", 409,
+        "当前工作流不允许此阶段迁移。",
+    ),
     "PROJECT_DEPARTMENT_IN_USE": ErrorSpec(
         "PROJECT_DEPARTMENT_IN_USE", 409, "部门仍有在用成员，不能停用。"
     ),
