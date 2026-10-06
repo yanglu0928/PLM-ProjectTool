@@ -8777,3 +8777,11 @@
 - Reason：Review内核与业务Subject由不同Owner协作，逐语句即时约束无法允许合法的多行终态事务；只靠应用校验又可能留下Review已终态而Survey未正式化的半提交。延迟数据库守卫允许任意合法语句顺序，同时在提交点失败关闭。
 - Impact/Rollback：新增0105函数/触发器，无表列、ORM、公开API、角色、依赖、Secret或外发变化。无Review历史可降至0104并恢复DRAFT Owner；存在正式指针、非DRAFT状态或Review引用时拒降，应用回滚停装Owner且保留历史。
 - Verification：Schema单元5、Migration合同合计9；Win11/PostgreSQL18.6空降/重升、drift、错误Policy、过早批准、批准/撤回/取代和历史拒降PASS；原0103验证回归PASS；后端2802通过/3跳过；wheel 1036项，SHA-256 `6fe3201f64ef9a213d8c2e2020f57203fce4ce796736bdd9db429d73a7f74637`。
+
+# DEC-20261006-921：Survey Review 当前事实复用单一验证器且不伪造 basis
+
+- Date/WBS：2026-10-06 / `SUR-01-A04-A02-P02`；依据DEC-918/919/920、通用Review Subject合同与0105。
+- Decision：Validate报告与Review送审/批准共用`SurveyVersionCurrentValidator`；Review快照固定Version内容指纹，送审和批准在调用方事务内持锁重验评审人、题型/条件、四类来源与目标部门。现有Review basis仅允许Evidence/Trace，Survey的Handover/Capability/Template/人工来源不冒充这两类引用，basis保持空集合。APPROVED才更新正式指针并取代旧版；RETURN/WITHDRAW不要求漂移来源恢复且保留旧指针。
+- Reason：复制Validate规则会产生送审与验证判定漂移；伪造basis会破坏类型与反向追溯。内容指纹固定不可变定义，同事务Owner证明固定来源当前性；撤回若也要求来源有效，会把因来源撤销而无法批准的Review永久锁死。
+- Impact/Rollback：新增内部Owner、Repository及共享当前验证器，无Migration/ORM/公开API/角色/依赖/Secret/网络或外发。停止装配Owner即可关闭新写入，既有Version/Review/Audit保留；若未来让Review basis原生表达Survey来源，必须另建CR并兼容历史空basis。
+- Verification：Owner/Validate/Schema定向15；Win11/PostgreSQL18.6最新Draft、评审人/来源重验、精确开轮、来源漂移拒批、恢复后批准正式化、漂移后撤回保留旧指针PASS；后端2807通过/3跳过；wheel 1038项，SHA-256 `10c68d6dbd9f228e71e5b7ad2489fabcb5caa26bb527734b8e1b1f6da1d3f2eb`。

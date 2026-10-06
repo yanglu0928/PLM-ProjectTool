@@ -113,6 +113,106 @@ class SurveyValidationAuditPort(Protocol):
             survey_version_id: uuid.UUID) -> SurveyValidationAudit | None: ...
 
 
+class SurveyVersionCurrentValidator:
+    """Revalidate immutable content and all typed sources in the caller's tx."""
+
+    def __init__(self, *, handover_sources: object, capability_sources: object,
+                 template_sources: object, departments: object) -> None:
+        if any(value is None for value in (
+                handover_sources, capability_sources, template_sources,
+                departments)):
+            raise ValueError("Survey current validation dependencies are required")
+        self._handover, self._capability = handover_sources, capability_sources
+        self._templates, self._departments = template_sources, departments
+
+    def current_issues(self, tx: object,
+                       snapshot: SurveyVersionSnapshot) -> tuple[str, ...]:
+        if type(snapshot) is not SurveyVersionSnapshot:
+            raise SurveyVersionValidationError()
+        found: set[str] = set()
+        if not hmac.compare_digest(
+                canonical_payload_fingerprint(
+                    SurveyVersionValidationService._snapshot_payload(snapshot)
+                ), snapshot.content_fingerprint):
+            found.add("CONTENT_FINGERPRINT_MISMATCH")
+        option_count = sum(len(question.options) for question in snapshot.questions)
+        source_count = sum(len(question.sources) for question in snapshot.questions)
+        if (not snapshot.ordinals_contiguous
+                or snapshot.declared_question_count != len(snapshot.questions)
+                or snapshot.declared_option_count != option_count
+                or snapshot.declared_source_count != source_count
+                or snapshot.declared_target_department_count
+                != len(snapshot.target_department_ids)):
+            found.add("COUNT_MISMATCH")
+        SurveyVersionValidationService._question_issues(snapshot, found)
+        self._source_issues(tx, snapshot, found)
+        return tuple(code for code in _ORDER if code in found)
+
+    def _source_issues(self, tx: object, snapshot: SurveyVersionSnapshot,
+                       found: set[str]) -> None:
+        for question in snapshot.questions:
+            for source in question.sources:
+                if not self._source_current(tx, snapshot.project_id, source):
+                    found.add("SOURCE_UNAVAILABLE")
+        for department_id in snapshot.target_department_ids:
+            proof = self._departments.prove(
+                tx, project_id=snapshot.project_id, department_id=department_id,
+            )
+            if (type(proof) is not SurveyTargetDepartmentProof
+                    or proof.department_id != department_id
+                    or proof.project_id != snapshot.project_id
+                    or proof.state != "ACTIVE"):
+                found.add("TARGET_DEPARTMENT_UNAVAILABLE")
+
+    def _source_current(self, tx: object, project_id: uuid.UUID,
+                        source: SurveySourceDraft) -> bool:
+        if source.source_kind == "MANUAL":
+            return True
+        if source.source_kind == "HANDOVER_ITEM":
+            proof = self._handover.prove(
+                tx, project_id=project_id,
+                analysis_item_row_id=source.handover_item_row_id,
+                handover_analysis_version_id=source.handover_analysis_version_id,
+                handover_analysis_id=source.handover_analysis_id,
+            )
+            return (type(proof) is HandoverSurveySourceProof
+                    and proof.analysis_item_row_id == source.handover_item_row_id
+                    and proof.handover_analysis_version_id
+                    == source.handover_analysis_version_id
+                    and proof.handover_analysis_id == source.handover_analysis_id
+                    and proof.project_id == project_id
+                    and proof.item_state in {
+                        "CONFIRMED", "RESOLVED", "ACCEPTED_RISK",
+                    })
+        if source.source_kind == "CAPABILITY_ITEM":
+            proof = self._capability.prove(
+                tx, capability_item_row_id=source.capability_item_row_id,
+                baseline_version_id=source.capability_baseline_version_id,
+                baseline_id=source.capability_baseline_id,
+            )
+            return (type(proof) is CapabilitySurveySourceProof
+                    and proof.capability_item_row_id
+                    == source.capability_item_row_id
+                    and proof.baseline_version_id
+                    == source.capability_baseline_version_id
+                    and proof.baseline_id == source.capability_baseline_id
+                    and proof.item_state == "AVAILABLE")
+        if source.source_kind == "TEMPLATE_DOCUMENT_VERSION":
+            proof = self._templates.prove(
+                tx, path_project_id=project_id,
+                document_id=source.template_document_id,
+                document_version_id=source.template_document_version_id,
+            )
+            return (type(proof) is SurveyTemplateProof
+                    and proof.document_version_id
+                    == source.template_document_version_id
+                    and proof.document_id == source.template_document_id
+                    and (proof.scope == "GLOBAL" and proof.project_id is None
+                         or proof.scope == "PROJECT"
+                         and proof.project_id == project_id))
+        return False
+
+
 class SurveyVersionValidationService:
     def __init__(self, *, unit_of_work: Callable[[], object], access: object,
                  license_guard: object, authorization: ProjectAuthorizationService,
@@ -130,6 +230,12 @@ class SurveyVersionValidationService:
         self._authorization = authorization
         self._handover, self._capability = handover_sources, capability_sources
         self._templates, self._departments = template_sources, departments
+        self._current = SurveyVersionCurrentValidator(
+            handover_sources=handover_sources,
+            capability_sources=capability_sources,
+            template_sources=template_sources,
+            departments=departments,
+        )
         self._repository, self._audit_source = repository, audit_source
         self._receipts, self._audit = receipts, audit
         self._clock = clock or (lambda: datetime.now(timezone.utc))
@@ -220,23 +326,7 @@ class SurveyVersionValidationService:
 
     def _current_issues(self, tx: object,
                         snapshot: SurveyVersionSnapshot) -> tuple[str, ...]:
-        found: set[str] = set()
-        if not hmac.compare_digest(
-                canonical_payload_fingerprint(self._snapshot_payload(snapshot)),
-                snapshot.content_fingerprint):
-            found.add("CONTENT_FINGERPRINT_MISMATCH")
-        option_count = sum(len(question.options) for question in snapshot.questions)
-        source_count = sum(len(question.sources) for question in snapshot.questions)
-        if (not snapshot.ordinals_contiguous
-                or snapshot.declared_question_count != len(snapshot.questions)
-                or snapshot.declared_option_count != option_count
-                or snapshot.declared_source_count != source_count
-                or snapshot.declared_target_department_count
-                != len(snapshot.target_department_ids)):
-            found.add("COUNT_MISMATCH")
-        self._question_issues(snapshot, found)
-        self._source_issues(tx, snapshot, found)
-        return tuple(code for code in _ORDER if code in found)
+        return self._current.current_issues(tx, snapshot)
 
     @classmethod
     def _question_issues(cls, snapshot: SurveyVersionSnapshot,
@@ -272,63 +362,6 @@ class SurveyVersionValidationService:
                     found.add("CONDITION_RULE_INVALID")
         if cls._has_cycle(graph):
             found.add("CONDITION_CYCLE")
-
-    def _source_issues(self, tx: object, snapshot: SurveyVersionSnapshot,
-                       found: set[str]) -> None:
-        for question in snapshot.questions:
-            for source in question.sources:
-                if not self._source_current(tx, snapshot.project_id, source):
-                    found.add("SOURCE_UNAVAILABLE")
-        for department_id in snapshot.target_department_ids:
-            proof = self._departments.prove(
-                tx, project_id=snapshot.project_id, department_id=department_id,
-            )
-            if (type(proof) is not SurveyTargetDepartmentProof
-                    or proof.department_id != department_id
-                    or proof.project_id != snapshot.project_id or proof.state != "ACTIVE"):
-                found.add("TARGET_DEPARTMENT_UNAVAILABLE")
-
-    def _source_current(self, tx: object, project_id: uuid.UUID,
-                        source: SurveySourceDraft) -> bool:
-        if source.source_kind == "MANUAL":
-            return True
-        if source.source_kind == "HANDOVER_ITEM":
-            proof = self._handover.prove(
-                tx, project_id=project_id,
-                analysis_item_row_id=source.handover_item_row_id,
-                handover_analysis_version_id=source.handover_analysis_version_id,
-                handover_analysis_id=source.handover_analysis_id,
-            )
-            return (type(proof) is HandoverSurveySourceProof
-                    and proof.analysis_item_row_id == source.handover_item_row_id
-                    and proof.handover_analysis_version_id
-                    == source.handover_analysis_version_id
-                    and proof.handover_analysis_id == source.handover_analysis_id
-                    and proof.project_id == project_id
-                    and proof.item_state in {"CONFIRMED", "RESOLVED", "ACCEPTED_RISK"})
-        if source.source_kind == "CAPABILITY_ITEM":
-            proof = self._capability.prove(
-                tx, capability_item_row_id=source.capability_item_row_id,
-                baseline_version_id=source.capability_baseline_version_id,
-                baseline_id=source.capability_baseline_id,
-            )
-            return (type(proof) is CapabilitySurveySourceProof
-                    and proof.capability_item_row_id == source.capability_item_row_id
-                    and proof.baseline_version_id == source.capability_baseline_version_id
-                    and proof.baseline_id == source.capability_baseline_id
-                    and proof.item_state == "AVAILABLE")
-        if source.source_kind == "TEMPLATE_DOCUMENT_VERSION":
-            proof = self._templates.prove(
-                tx, path_project_id=project_id,
-                document_id=source.template_document_id,
-                document_version_id=source.template_document_version_id,
-            )
-            return (type(proof) is SurveyTemplateProof
-                    and proof.document_version_id == source.template_document_version_id
-                    and proof.document_id == source.template_document_id
-                    and (proof.scope == "GLOBAL" and proof.project_id is None
-                         or proof.scope == "PROJECT" and proof.project_id == project_id))
-        return False
 
     @staticmethod
     def _snapshot_payload(snapshot: SurveyVersionSnapshot) -> dict[str, object]:

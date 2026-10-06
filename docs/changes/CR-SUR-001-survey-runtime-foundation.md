@@ -75,3 +75,8 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
   `DRAFT -> IN_REVIEW -> APPROVED/RETURNED`及旧批准版`SUPERSEDED`的窄状态门；延迟触发器强制
   `PROJECT + SRV-02 + SURVEY_ALL_V1` Review/Round、Version和Root正式指针同事务收敛。空历史可降至
   0104，有正式指针、非DRAFT状态或Review引用时拒降；Windows 11/PostgreSQL 18.6及全量后端通过。
+- 2026-10-06 / `SUR-01-A04-A02-P02`：完成真实 `SRV-02 + SURVEY_ALL_V1` Subject Owner 与仓储；
+  Validate/Review 共用当前定义验证器，送审与批准重验评审人、内容和四类来源，批准原子取代旧版并更新
+  正式指针，退回/撤回保留旧正式版。通用 Review basis 不支持 Survey 类型化来源，故不伪造 Evidence/Trace
+  引用，改由内容指纹及同事务持锁重验保证当前性；未来扩展 basis 类型须另走 CR。无 Schema/API/依赖/
+  外发变化；Windows 11/PostgreSQL 18.6、后端全量及 wheel 检查通过。
