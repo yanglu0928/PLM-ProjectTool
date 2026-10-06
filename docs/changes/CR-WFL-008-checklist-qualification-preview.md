@@ -42,7 +42,7 @@ Operation ID: WORKFLOW_CHECKLIST_QUALIFICATION_GET
 - 无 Schema/Migration、新表/列、新依赖、Secret、网络或客户数据外发。
 - 新 Router 继续显式注入；默认应用保持 404。回滚可停止注入并删除新
   Service/Router，既有 Workflow/Checklist 历史不受影响。
-- 前端在本端点完成前保持 Checklist 写入按钮未接线，不退化为手填 UUID。
+- 前端在本端点完成前保持 Checklist 写入按钮未接线，不退化为手填 UUID；A09完成接线后仍只显示依据数量。
 
 ## 风险与验证计划
 
@@ -66,3 +66,10 @@ Session Port；修复为只读 Session Port，ProjectManager/ACTIVE Project 授�
 Win11/PostgreSQL 18.6 最终真实 HTTP/权威 Handover/业务零写快照通过，后端全量
 2765 项运行/3 项跳过通过，wheel SHA-256
 `83664a5775c80974310f423d756b8c3d3d886a177f0af6fd303fb3ea976155f3`。
+
+前端与浏览器复验：`WFL-01-A07-P07-A09` 完成资格客户端、页面最小展示及原操作恢复；
+`WFL-01-A07-P07-A10` 在Windows 11真实Edge、构建Vue、生产FastAPI和PostgreSQL 18.6
+完成资格GET、显式PASS、首次回执和独立v2当前态刷新。页面只显示3项依据且不显示/手填
+UUID；数据库精确为一Record、三Evidence Ref、一Audit和一完成receipt。受管浏览器控制内核
+因本机kernel-assets路径错误不可用，按DEC-888使用同一本机Edge引擎和一次性profile/CDP，
+未降级HTTP、应用或数据库边界。

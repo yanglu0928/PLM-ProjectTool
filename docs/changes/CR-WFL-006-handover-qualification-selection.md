@@ -1,6 +1,6 @@
 # CR-WFL-006：Checklist 写入的 Handover 资格对象服务端唯一选择
 
-日期：2026-10-05；来源：`WFL-01-A07-P07-A03` 编码前核查；状态：`HTTP_CONTRACT_IMPLEMENTED / WINDOWS_COMPOSITION_PENDING`。原 Gate 2 冻结提交 `64cdf09`、API-02 和 CR-WFL-004/005 保留不改写。
+日期：2026-10-05；来源：`WFL-01-A07-P07-A03` 编码前核查；状态：`IMPLEMENTED / VERIFIED`。原 Gate 2 冻结提交 `64cdf09`、API-02 和 CR-WFL-004/005 保留不改写。
 
 ## 偏差与原因
 
@@ -29,4 +29,5 @@
 
 - 已于 `WFL-01-A07-P07-A03` 实现内部唯一选择、Handover 策略注册、受权命令、幂等原历史 Record 重放和 Audit 原子性。
 - Windows 11 / PostgreSQL 18.6 实库验证覆盖零/一/多候选、同键并发、更正后原回执重放及 Audit 失败回滚；后续仅剩冻结 HTTP 适配和 Windows 生产组合的独立验收。
-- `WFL-01-A07-P07-A04` 已实现默认关闭的冻结 HTTP 适配及合同验证；未将路由接入生产 Windows 组合，真实 HTTP/PG 闭环留待 A05。
+- `WFL-01-A07-P07-A04` 已实现默认关闭的冻结 HTTP 适配及合同验证；A05已接入Windows显式写组合并完成真实HTTP/PG PASS与幂等重放。
+- A07～A10新增并接入兼容性资格预览，最终由真实Edge完成资格GET、显式PASS、首次回执和独立v2当前态刷新；PG后验精确验证Record/Refs/Audit/receipt。因此本CR的服务端唯一选择、写合同、Windows组合和浏览器主链均已验证。其余十项Checklist Owner、Stage Transition和Gate 3不在本CR关闭范围。

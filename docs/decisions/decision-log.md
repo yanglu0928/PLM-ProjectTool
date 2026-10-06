@@ -8635,3 +8635,11 @@
 - Reason：服务端Owner Evidence精确集合不能由用户或前端推测；网络未知时生成新Key会产生重复命令风险。FAIL无需伪造通过依据，但空白失败记录对待办处理不友好。
 - Impact/Rollback：纯前端增量，无Schema/Migration、后端API、权限、依赖、Secret或外发变化。删除资格客户端和页面状态机可回滚；服务端路由保持默认关闭策略。SessionStorage仅保存当前登录主体的一条最小未决命令，格式/身份异常即关闭新写入。
 - Verification：资格客户端/写客户端/页面定向33项，前端全量77文件/1372项、typecheck及Vite163模块生产构建通过；主JS 585.43kB警告保留。真实浏览器/PG留A10。
+
+# DEC-20261006-903：Checklist浏览器验收必须保留真实Edge/生产组合/当前态三层证据
+
+- Date/WBS：2026-10-06 / `WFL-01-A07-P07-A10`；依据DEC-888/902、CR-WFL-006～008及Windows 11真实运行证据。
+- Decision：浏览器验收同时固定资格预览、首次写回执和独立刷新当前态；回执不得代替当前态。托管Windows控制内核因本机kernel-assets路径错误不可用时，允许使用已安装Microsoft Edge、一次性profile和CDP驱动，但不得替换为TestClient、模拟DOM或非生产组合。生产组合必须与业务fixture共用固定Document/Parse数据根。
+- Reason：只观察POST 200无法证明页面未泄露UUID、首次回执提示正确或独立GET已经看到v2；空数据根会让真实资格Owner正确失败，却被夹具误报成产品缺陷。Edge引擎和真实网络/数据库边界才覆盖Vue调度、Cookie/CSRF、ETag、Owner和持久化的组合差异。
+- Impact/Rollback：只新增隔离验收harness，无产品Schema/Migration/API、权限、依赖、Secret或外发变化。删除harness即可回滚；临时数据库、凭据、profile和文件均清理。受管控制内核故障作为工具层偏差保留，不据此降低正式浏览器验收范围。
+- Verification：本机Edge观察7个成功API响应，资格页仅显示3项依据且无UUID；首次回执`HANDOVER_ISSUES/PASS/"v2"`后独立刷新显示v2/PASS。PG后验精确为一Record、三Evidence Ref、一Audit、一完成receipt；外层Handover漂移拒绝与清理继续PASS，令牌`WFL_01_A07_P07_A10_WINDOWS_BROWSER_PASS`。
