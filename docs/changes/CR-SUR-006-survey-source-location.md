@@ -53,4 +53,5 @@ Handover 固定项已有公共 `analysis_item_id` 与同项目 Evidence；PROJEC
 ## 实施记录
 
 - 2026-10-06 / `SUR-01-A06-A04-P02`：完成内部Service、精确Survey source identity读取及三个来源Owner Adapter。Windows 11/PostgreSQL 18.6真实ORM验证四类来源、GLOBAL withholding、历史/当前分离和零写入；定向16、后端2854/3与wheel通过。HTTP、Windows组合及浏览器留P03/A05。
+- 2026-10-06 / `SUR-01-A06-A04-P03`：实现冻结GET端点、严格路径/query/body校验、安全错误映射与互斥公开投影，并注入Windows Survey读/写组合。Windows 11/PostgreSQL 18.6真实HTTP验证默认404、四类来源、跨项目隐藏、状态漂移和零写入；定向46、后端2858/3及wheel1060通过。A04后端闭环完成，前端点击与浏览器闭环留A05。
 

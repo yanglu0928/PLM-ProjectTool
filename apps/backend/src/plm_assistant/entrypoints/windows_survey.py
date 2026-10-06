@@ -22,11 +22,20 @@ from plm_assistant.modules.auth.infrastructure.review_user_access import (
 from plm_assistant.modules.capability.infrastructure.survey_source_proof import (
     SqlAlchemyCapabilitySurveySourceProof,
 )
+from plm_assistant.modules.capability.infrastructure.survey_source_location import (
+    SqlAlchemyCapabilitySurveySourceLocation,
+)
+from plm_assistant.modules.document.infrastructure.survey_source_location import (
+    SqlAlchemyDocumentSurveySourceLocation,
+)
 from plm_assistant.modules.document.infrastructure.survey_template_proof import (
     SqlAlchemySurveyTemplateProof,
 )
 from plm_assistant.modules.handover.infrastructure.survey_source_proof import (
     SqlAlchemyHandoverSurveySourceProof,
+)
+from plm_assistant.modules.handover.infrastructure.survey_source_location import (
+    SqlAlchemyHandoverSurveySourceLocation,
 )
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import (
     SqlAlchemyIdempotencyReceipts,
@@ -60,6 +69,9 @@ from plm_assistant.modules.review.infrastructure.start_repository import (
 )
 from plm_assistant.modules.survey.api.commands import create_survey_command_router
 from plm_assistant.modules.survey.api.read import create_survey_read_router
+from plm_assistant.modules.survey.api.source_location import (
+    create_survey_source_location_router,
+)
 from plm_assistant.modules.survey.api.read_cursor import (
     SurveyCursorCodec, SurveyVersionCursorCodec,
 )
@@ -70,6 +82,9 @@ from plm_assistant.modules.survey.application.change_survey import SurveyStateSe
 from plm_assistant.modules.survey.application.create_survey import SurveyCreateService
 from plm_assistant.modules.survey.application.create_version import SurveyVersionCreateService
 from plm_assistant.modules.survey.application.read_surveys import SurveyReadService
+from plm_assistant.modules.survey.application.source_location import (
+    SurveySourceLocationService,
+)
 from plm_assistant.modules.survey.application.review_subject import SurveyReviewSubjectOwner
 from plm_assistant.modules.survey.application.submit_review import SurveyReviewSubmissionService
 from plm_assistant.modules.survey.application.validate_version import (
@@ -140,6 +155,17 @@ def create_windows_survey_routers(
             sessions=sessions, origins=origins, reads=reads,
             survey_cursors=survey_cursors, version_cursors=version_cursors,
         )
+        locations = SurveySourceLocationService(
+            unit_of_work=runtime.unit_of_work,
+            access=SqlAlchemyProjectReadAccess(), license_guard=license_guard,
+            authorization=authorization, sources=SqlAlchemySurveyReadRepository(),
+            handover=SqlAlchemyHandoverSurveySourceLocation(),
+            capability=SqlAlchemyCapabilitySurveySourceLocation(),
+            documents=SqlAlchemyDocumentSurveySourceLocation(),
+        )
+        read_router.include_router(create_survey_source_location_router(
+            sessions=sessions, origins=origins, locations=locations,
+        ))
         if not include_write:
             return WindowsSurveyRouters(read_router, None, None)
 

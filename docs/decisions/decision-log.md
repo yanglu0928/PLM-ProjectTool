@@ -8897,3 +8897,11 @@
 - Reason：删除历史定位会破坏已发布SurveyVersion的可追溯性，把旧来源继续标成当前则会虚报事实。仅相信Evidence UUID又可能在异常数据中跨Scope；GLOBAL访问也不能从Project身份推导。
 - Impact/Rollback：新增内部Service、三个来源Adapter及Survey精确source读取，无Schema/API/角色/依赖/Secret/外发；删除新增边界可回滚，P03前公开路径仍404。
 - Verification：定向16、新模块导入/编译、Windows 11/PostgreSQL18.6四类来源/漂移/零写、后端2854通过/3跳过、wheel1059项通过；标记`SUR_01_A06_A04_P02_SOURCE_LOCATION_INTERNAL_PASS`。
+
+# DEC-20261006-936：Survey 来源定位作为既有只读 Router 的兼容子资源装配
+
+- Date/WBS：2026-10-06 / `SUR-01-A06-A04-P03`；依据CR-SUR-006、冻结增量合同与DEC-935。
+- Decision：新增location Router但组合进既有Survey reads Router，read-only与write模式均开放；默认应用继续404。HTTP只接受规范小写UUID、`0..99`非前导零ordinal、无query/body请求，并把内部通用位置按来源种类转换为严格互斥公共JSON。
+- Reason：复用既有Session/Host/Project读权限与生产装配可避免第五套读取边界；严格投影可防止内部row identity、正文、路径或下载URL外泄，且保持冻结四读响应不变。
+- Impact/Rollback：新增一个向后兼容GET、Router和组合注入，无Schema/Migration、现有JSON、角色、依赖、Secret或外发变化；移除include_router即可恢复404。
+- Verification：定向46、Windows 11/PostgreSQL18.6真实HTTP/四类来源/跨项目/漂移/零写、后端2858通过/3跳过、wheel1060项通过；标记`SUR_01_A06_A04_P03_SOURCE_LOCATION_HTTP_PASS`。

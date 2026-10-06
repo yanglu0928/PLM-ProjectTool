@@ -1,6 +1,6 @@
 # Survey 来源定位 V1 兼容增量
 
-日期：2026-10-06。依据：`CR-SUR-006`。状态：A04-P01 合同冻结，P02 内部 Owner 已通过；HTTP/组合待 P03 验证。
+日期：2026-10-06。依据：`CR-SUR-006`。状态：A04-P01 合同冻结，P02 内部 Owner、P03 HTTP/Windows 组合均已通过。
 
 ## Operation
 

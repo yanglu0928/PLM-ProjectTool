@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-06：0.1.0-dev.0/SUR-01-A06-A04-P03 新增严格Survey来源定位GET及Windows组合；响应仅含按来源互斥的公共业务/Document/Evidence标识，拒绝query/body、非规范UUID/ordinal，默认应用仍404。兼容性/回滚：向后兼容子资源，无Schema/Migration、现有四读JSON、角色、依赖、Secret或外发变化，撤Router注入恢复404。验证：定向46、Win11/PG18.6真实HTTP四类来源/隔离/漂移/零写、后端2858/3、wheel1060项，SHA-256 `7e2575f0fe62d221410fa5d6783195b28ee6c928afa7cfcb7ef42577e523cf1f`。已知问题：A05前端点击/浏览器闭环、写交互、Round/Response/Conclusion、Gate3与发行仍待。
+
 - 2026-10-06：0.1.0-dev.0/SUR-01-A06-A04-P02 新增Survey固定来源定位内部Owner与Handover/Capability/Document最小Adapter；精确重验Survey/Version/question/ordinal及Project读取权限，历史可追溯与当前资格分开，Handover Evidence再验同Project，GLOBAL目标不继承Project权限，MANUAL明确无固定目标。兼容性/回滚：无Schema/Migration、现有API、角色、依赖、Secret、外发；删除内部边界即可回滚，HTTP仍404。验证：定向16、新模块导入/编译、Win11/PG18.6真实ORM四类来源/漂移/零写、后端2854/3、wheel1059项，SHA-256 `d4667e34e0810d99499be0d86ae023bb147ba1f2065fe99a08660be07c871adf`。首次误用缺pgvector旧venv的19个导入错误作为环境偏差保留。已知问题：P03 HTTP/组合、A05浏览器、写交互、Round/Response/Conclusion、Gate3与发行仍待。
 
 - 2026-10-06：0.1.0-dev.0/SUR-01-A06-A04-P01 登记CR-SUR-006与Survey来源定位V1兼容增量：服务端按精确固定来源解析最小公共业务/Document/Evidence目标，区分历史追溯与当前资格；GLOBAL目标不继承Project权限，MANUAL无固定对象明确不可定位。兼容性/回滚：纯文档/合同，无运行代码、Schema/Migration、依赖、Secret、外发；后续不注入Router即可保持404。验证：静态交叉核对通过。已知问题：P02/P03实现、前端真实浏览器闭环、写交互、Round/Response/Conclusion、Gate3与发行仍待。
