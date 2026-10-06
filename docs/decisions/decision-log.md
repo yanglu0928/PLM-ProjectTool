@@ -8889,3 +8889,11 @@
 - Reason：浏览器猜UUID会误定位或越权，复制正文会破坏Owner/版本/权限；直接把历史来源称作当前正式事实也不真实。既有Evidence Viewer已负责最终原文和fingerprint复验，应复用而不是复制。
 - Impact/Rollback：登记向后兼容GET与P01/P02/P03拆分；本项无代码、Schema/Migration、角色、依赖、Secret、网络或外发。撤后续Router注入恢复404，四读合同与历史不变。
 - Verification：静态核对Survey来源结构、Handover/Capability公共标识及引用、Document证明、Evidence Viewer权限；标记`SUR_01_A06_A04_P01_SOURCE_LOCATION_PRECHECK_PASS`。
+
+# DEC-20261006-935：Survey 来源定位保留历史追溯但单独计算当前资格
+
+- Date/WBS：2026-10-06 / `SUR-01-A06-A04-P02`；依据CR-SUR-006与DEC-934。
+- Decision：精确固定来源即使其Root/Version/Item后来不再当前合格，仍解析公共历史标识；`current_eligibility`由来源Owner按当前状态单独计算。Handover Evidence必须联表确认同Project；Capability/GLOBAL Template在Project调用中不输出GLOBAL locations。
+- Reason：删除历史定位会破坏已发布SurveyVersion的可追溯性，把旧来源继续标成当前则会虚报事实。仅相信Evidence UUID又可能在异常数据中跨Scope；GLOBAL访问也不能从Project身份推导。
+- Impact/Rollback：新增内部Service、三个来源Adapter及Survey精确source读取，无Schema/API/角色/依赖/Secret/外发；删除新增边界可回滚，P03前公开路径仍404。
+- Verification：定向16、新模块导入/编译、Windows 11/PostgreSQL18.6四类来源/漂移/零写、后端2854通过/3跳过、wheel1059项通过；标记`SUR_01_A06_A04_P02_SOURCE_LOCATION_INTERNAL_PASS`。

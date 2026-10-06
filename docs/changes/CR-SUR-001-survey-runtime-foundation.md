@@ -130,3 +130,6 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
 - 2026-10-06 / `SUR-01-A06-A04-P01`：登记CR-SUR-006与兼容只读location子资源；固定历史追溯与
   当前来源资格分离，GLOBAL目标不继承Project权限，MANUAL无固定对象时明确不可定位。P02/P03实现与
   真实Windows验证仍待。
+- 2026-10-06 / `SUR-01-A06-A04-P02`：新增Survey来源定位内部Owner和Handover/Capability/Document
+  解析Adapter；Windows 11/PostgreSQL 18.6验证四类固定来源、GLOBAL隔离、状态漂移与零写入。HTTP与
+  平台组合仍留P03。

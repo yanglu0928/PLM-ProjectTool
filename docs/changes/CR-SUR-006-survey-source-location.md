@@ -50,3 +50,7 @@ Handover 固定项已有公共 `analysis_item_id` 与同项目 Evidence；PROJEC
 - PostgreSQL：真实固定来源、来源状态漂移、零写入与事务一致性。
 - 组合：默认/login-only 404，Windows 显式 Survey 读/写模式开放；Windows 11 真实 HTTP/PostgreSQL 通过后才标 P03 PASS。
 
+## 实施记录
+
+- 2026-10-06 / `SUR-01-A06-A04-P02`：完成内部Service、精确Survey source identity读取及三个来源Owner Adapter。Windows 11/PostgreSQL 18.6真实ORM验证四类来源、GLOBAL withholding、历史/当前分离和零写入；定向16、后端2854/3与wheel通过。HTTP、Windows组合及浏览器留P03/A05。
+

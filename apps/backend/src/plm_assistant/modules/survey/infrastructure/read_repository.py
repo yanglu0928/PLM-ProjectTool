@@ -61,6 +61,41 @@ def _version(row: SurveyVersionRow, *,
 
 
 class SqlAlchemySurveyReadRepository:
+    def get_source(
+        self, transaction: object, *, project_id: uuid.UUID,
+        survey_id: uuid.UUID, survey_version_id: uuid.UUID,
+        question_id: uuid.UUID, source_ordinal: int,
+    ) -> SurveySourceView | None:
+        row = _session(transaction).execute(select(
+            SurveyQuestionSourceRefRow,
+        ).join(
+            SurveyQuestionRow,
+            SurveyQuestionRow.question_row_id
+            == SurveyQuestionSourceRefRow.question_row_id,
+        ).join(
+            SurveyVersionRow,
+            SurveyVersionRow.survey_version_id
+            == SurveyQuestionSourceRefRow.survey_version_id,
+        ).where(
+            SurveyQuestionSourceRefRow.project_id == project_id,
+            SurveyQuestionSourceRefRow.survey_id == survey_id,
+            SurveyQuestionSourceRefRow.survey_version_id == survey_version_id,
+            SurveyQuestionSourceRefRow.ordinal == source_ordinal,
+            SurveyQuestionRow.project_id == project_id,
+            SurveyQuestionRow.survey_id == survey_id,
+            SurveyQuestionRow.survey_version_id == survey_version_id,
+            SurveyQuestionRow.question_id == question_id,
+            SurveyVersionRow.project_id == project_id,
+            SurveyVersionRow.survey_id == survey_id,
+        ).with_for_update(read=True)).scalar_one_or_none()
+        return None if row is None else SurveySourceView(
+            row.source_kind, row.handover_item_row_id,
+            row.handover_analysis_version_id, row.handover_analysis_id,
+            row.capability_item_row_id, row.capability_baseline_version_id,
+            row.capability_baseline_id, row.template_document_version_id,
+            row.template_document_id, row.manual_source_note, row.ordinal,
+        )
+
     def list_surveys(
         self, transaction: object, *, project_id: uuid.UUID,
         after_updated_at: datetime | None, after_survey_id: uuid.UUID | None,
