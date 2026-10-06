@@ -94,3 +94,7 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
   每次重验License/Session/当前成员事实，Survey使用完整双字段keyset、Version倒序分页，详情只展开当前
   Project内的不可变问题结构与类型化固定引用，不跨模块复制正文或路径。无Schema/API/依赖/外发变化；
   Windows 11/PostgreSQL 18.6、2823项后端全量及wheel检查通过。
+- 2026-10-06 / `SUR-01-A05-A03`：按CR-SUR-004新增Migration0106和Survey metadata/归档内部Owner；
+  只开放ACTIVE名称修改与单向归档，双层IN_REVIEW栅栏、强ETag、双角色PATCH/仅PM归档、Audit及归档
+  持久幂等同事务失败关闭。无新表列或冻结API变化；Windows 11/PostgreSQL 18.6、2829项后端全量及
+  wheel检查通过。

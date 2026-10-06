@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-06：0.1.0-dev.0/SUR-01-A05-A03 按CR-SUR-004新增Schema0106和Survey metadata PATCH/ARCHIVE内部Owner；只开放ACTIVE名称修改与单向归档，强ETag、IN_REVIEW双层栅栏、双角色PATCH/仅PM归档、Audit与归档持久幂等失败关闭。兼容性/升级/回滚：无新表列/冻结URL/依赖/配置/Secret/外发；无状态历史可降0105，有归档或相关Audit历史拒降。验证：定向17、Win11/PG18.6升降/drift/角色/隔离/栅栏/重放/回滚/历史保护，后端2829通过/3跳过，wheel 1045项，SHA-256 `26980b48d6ede0efb24621d278ec8200c6ca903b372a8672ef853ce826996443`。已知问题：A04～A07、Round/Response/Conclusion、Server2025/Debian13、Gate3与发行仍待。
+
 - 2026-10-06：0.1.0-dev.0/SUR-01-A05-A02 新增Survey/Version四读内部Owner与Survey-owned仓储；四角色重验License/Session/当前项目成员，Survey完整双字段keyset、Version倒序分页均限制1～200，详情只投影不可变问题结构和类型化固定引用。兼容性/升级/回滚：无Migration/冻结API/依赖/配置/Secret/外发，公开Router仍关闭；可撤读取边界与四项策略，历史不变。验证：定向14、Win11/PG18.6四角色/跨项目/撤权/归档/License/零写与Alembic check、后端2823通过/3跳过、wheel 1042项，SHA-256 `01594a8a60323989143767bc9a35439ff0e8fd0d9494eb32a9c03b702762b1fb`。已知问题：A03～A07、Round/Response/Conclusion、Server2025/Debian13、Gate3与发行仍待。
 
 - 2026-10-06：0.1.0-dev.0/SUR-01-A05-A01 完成Survey定义HTTP/读取前置核查：冻结10个Operation中内部CREATE、VERSION_CREATE、VERSION_VALIDATE与通用Review已具备，Survey读取、metadata状态、业务Router及原子SUBMIT_REVIEW仍为零；按读取Owner、状态Owner、五普通写、原子送审、四读及Windows组合拆为六项。兼容性/升级/回滚：纯文档，无代码/Schema/API/依赖/外发。验证：静态交叉核对通过。已知问题：A02以后实现、前端、Round/Response/Conclusion、Workflow资格、Gate3/UAT/发行仍待。

@@ -8817,3 +8817,11 @@
 - Reason：只用时间戳会在同值分页时丢失或重复；动态latest或跨模块正文复制会破坏固定版本、Owner权限与Project隔离。内部Application位置不应绑定HTTP签名与会话上下文。
 - Impact/Rollback：新增内部Service/Repository及四项只读策略；无Schema/Migration、公开API、依赖、Secret、网络或外发变化。删除新增边界可回滚，历史不变且公开Router仍关闭。
 - Verification：定向14；Win11/PG18.6四角色、同时间戳/Version分页、完整类型化投影、跨项目/撤权/License拒绝、归档读取与零写入通过；后端2823通过/3跳过；wheel 1042项，SHA-256 `01594a8a60323989143767bc9a35439ff0e8fd0d9494eb32a9c03b702762b1fb`。
+
+# DEC-20261006-926：Survey metadata 与归档以向前窄状态门交付
+
+- Date/WBS：2026-10-06 / `SUR-01-A05-A03`；依据CR-SUR-004、冻结API-04及Schema0105。
+- Decision：Migration0106只开放ACTIVE Survey名称修改和`ACTIVE -> ARCHIVED`，并保留0105全部Review状态路径。应用与数据库均锁定Root并拒绝IN_REVIEW；PATCH限ProjectManager/ImplementationMember，ARCHIVE限ProjectManager且使用持久幂等首次结果，二者同事务写Audit并双验License。
+- Reason：0105合法地关闭未知Root变化，但因此无法实现已冻结PATCH/ARCHIVE；应用绕过触发器会移除数据库最终防御。向前替换守卫可保留冻结历史且将允许形态缩到最小。
+- Impact/Rollback：新增0106但无表列、公开API、依赖、Secret、网络或外发变化。无归档/PATCH/ARCHIVE Audit历史可降回0105；有历史拒降，只能向前修复。应用可停止装配，历史不恢复ACTIVE。
+- Verification：定向17；Win11/PG18.6升降重升/drift/角色/隔离/ETag/在审栅栏/精确重放/Audit回滚/历史拒降通过；首次全量的旧head断言更正后，后端2829通过/3跳过；wheel 1045项，SHA-256 `26980b48d6ede0efb24621d278ec8200c6ca903b372a8672ef853ce826996443`。

@@ -130,6 +130,10 @@ POLICIES: dict[str, _Policy] = {
     ),
     "SURVEY_LIST": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "SURVEY_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
+    "SURVEY_PATCH": _Policy(
+        frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True,
+    ),
+    "SURVEY_ARCHIVE": _Policy(MANAGERS, True),
     "SURVEY_VERSION_CREATE": _Policy(
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True,
     ),
