@@ -9009,3 +9009,11 @@
 - Reason：把SUBMIT时报告当永久证明会漏掉Evidence漂移；直接编辑旧Answer或RETURNED跳回SUBMITTED会丢失谁、何时、为何修正的历史。
 - Impact/Rollback：无Schema/公开API/依赖/外发；新增内部Owner和两项策略。历史状态/Audit/receipt不可删除。
 - Verification：Win11/PG18.6并发VALIDATE、RETURN、Audit回滚、退回更正重提、角色/CSRF/License/终态拒绝与drift通过；后端2899/3、4203子断言，wheel1082项，SHA-256 `9d814bab2c14f5551b7db3945184c2e9bd983a7fab904a52b5db3f70c3a594ae`。
+
+# DEC-20261006-950：Round 完整性禁止空集合并在调用方事务重证
+
+- Date/WBS：2026-10-06 / `SUR-03-A07`；依据CR-SUR-008、0107 Round与A05/A06 Assignment完整性Owner。
+- Decision：完整性Owner先锁Round，再按稳定顺序锁全部Assignment并逐项锁当前Answer/Evidence；Assignment必须非空、部门集合精确覆盖全部固定target且全VALIDATED。每条仍重新计算当前完整性，报告指纹绑定不可变身份、lock和Evidence观测，不含正文。
+- Reason：SQL/Python空集合真值会把未调研Round误判为完成；只看VALIDATED枚举会漏掉提交后Evidence漂移；跨事务证明会在CLOSE前产生竞态。
+- Impact/Rollback：无Schema/API/依赖/外发；内部只读锁定Owner不commit。未接CLOSE前外部行为不变。
+- Verification：Win11/PG18.6稳定证明、三类竞争锁、空集、非VALIDATED、Evidence漂移及drift通过；后端2902/3、4203子断言，wheel1084项，SHA-256 `05f1aabae62cf01ac90ba00a75d9a31103cceb4a21813e07677bf15b14cb9069`。

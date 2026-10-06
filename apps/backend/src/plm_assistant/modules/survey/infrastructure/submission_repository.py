@@ -55,7 +55,7 @@ class SqlAlchemySurveyAssignmentSubmissionRepository:
             populate_existing=True)).scalar_one_or_none()
         if round_row is None or assignment is None:
             return None
-        if (required_state not in ("IN_PROGRESS", "SUBMITTED")
+        if (required_state not in ("IN_PROGRESS", "SUBMITTED", "VALIDATED")
                 or round_row.round_state != "OPEN"
                 or assignment.submission_state != required_state):
             raise ValueError("SURVEY_ASSIGNMENT_STATE_INVALID")

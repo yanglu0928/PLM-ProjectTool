@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-06：0.1.0-dev.0/SUR-03-A07 新增Round完整性caller-transaction Owner：非空Assignment、固定目标部门覆盖、全VALIDATED、当前条件/必答/规则/Evidence重证与稳定报告指纹。兼容性/回滚：无Schema/公开API/依赖/Secret/外发，不自行commit，未接CLOSE前行为不变。验证：Win11/PG18.6锁/空集/非终态/Evidence漂移/drift，后端2902/3、4203子断言，wheel1084项，SHA-256 `05f1aabae62cf01ac90ba00a75d9a31103cceb4a21813e07677bf15b14cb9069`。已知问题：Round CLOSE/HTTP、Response HTTP/UI、Gate3/UAT及发行仍待。
+
 - 2026-10-06：0.1.0-dev.0/SUR-03-A06 新增Assignment VALIDATE/RETURN内部Owner：PM/Implementation角色、强ETag、重新计算完整性、人工退回意见、RETURNED追加更正后重提、Audit及持久幂等。兼容性/回滚：无Schema/公开API/依赖/Secret/外发，历史保留。验证：Win11/PG18.6并发/回滚/状态矩阵/授权/CSRF/License/drift，后端2899/3、4203子断言，wheel1082项，SHA-256 `9d814bab2c14f5551b7db3945184c2e9bd983a7fab904a52b5db3f70c3a594ae`。首轮角色集合偏差已修正并全新库重跑。已知问题：A07 Round完整性、CLOSE/HTTP/UI、Gate3/UAT及发行仍待。
 
 - 2026-10-06：0.1.0-dev.0/SUR-03-A05 新增Assignment SUBMIT内部Owner：当前链尾、ConditionRule、required、六类型ValidationRule、EvidenceRequired/漂移及facilitated source完整性，同事务进入SUBMITTED并写Audit/幂等。Document/Evidence内部固定证明增加原始显示名以执行附件扩展名，不改公开API/Schema。验证：Win11/PG18.6并发/回滚/权限/CSRF/License/drift，后端2896/3、4193子断言，wheel1081项，SHA-256 `2b59bc885c3aed47a379f1c046ee176316be4f9c992d7bd198a309b310940b37`。已知问题：A06/A07状态与Round完整性、HTTP/UI、Gate3/UAT及发行仍待。
