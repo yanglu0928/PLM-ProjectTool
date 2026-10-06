@@ -59,3 +59,6 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
 - 2026-10-06 / `SUR-01-A02`：完成六表定义基础与 Migration 0103。来源采用真实外键加受控类型，
   TEMPLATE 仅允许模板类别并继续不得作为客户事实；无冻结 API 或 Scope 变化。空历史可降级，存在
   Survey 历史时拒绝降级。Windows 11 / PostgreSQL 18.6、2783 项后端回归及 Wheel 内容检查通过。
+- 2026-10-06 / `SUR-01-A03-P01`：完成内部 Survey identity 创建 Owner，按冻结合同允许
+  ProjectManager/ImplementationMember，接入当前 Session/CSRF、Project、License、Audit 与持久幂等；
+  未开放 HTTP 或创建 Version。Windows 11 / PostgreSQL 18.6、2785 项后端回归及 Wheel 检查通过。

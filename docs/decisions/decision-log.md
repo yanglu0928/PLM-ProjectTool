@@ -8723,3 +8723,11 @@
 - Reason：无类型UUID、动态latest和正文复制不能证明版本、Scope与来源；把PROJECT_RECORD当问题模板会混淆实际调研事实与问题结构。一次加入Round/Response/Conclusion会跨越独立状态机和事务边界。
 - Impact/Rollback：新增Migration 0103与ORM，无冻结API、角色、依赖、网络或外发变化。空历史可降级；存在Survey定义历史时拒绝物理降级，应用回滚只能停止后续Owner并保留历史。
 - Verification：定向8项；Windows 11/PostgreSQL18.6含数据升级、空降级/重升、drift、四类来源、模板/选择题负例、Owner关闭和历史拒降PASS；后端2783通过/3跳过；wheel 1017项，SHA-256 `b397d565ee4c26ee41d01b4800cb8117456efcab1bc379b31868de4a44f0785e`。
+
+# DEC-20261006-914：Survey identity 创建严格复用冻结双角色与通用写事务边界
+
+- Date/WBS：2026-10-06 / `SUR-01-A03-P01`；依据冻结API-04 `SURVEY_CREATE`、CR-SUR-001、Schema0103及现有Project写链。
+- Decision：内部创建命令只接受Survey名称，允许当前ACTIVE Project的ProjectManager或ImplementationMember；Session/CSRF、Project锁、License、持久幂等、identity、Audit和完成收据置于同一事务。首次状态固定ACTIVE、无批准版本和v0，不顺带创建空SurveyVersion。
+- Reason：冻结合同明确双角色；收窄为单一ProjectManager会形成不兼容实现。identity与不可变定义版本是不同Root/事务，自动创建空Version既无法满足0103完整性，也会混淆后续来源与指纹验证。
+- Impact/Rollback：新增内部Service/Repository及`SURVEY_CREATE`授权策略，无Migration、公开Router、冻结DTO、依赖、Secret或外发变化；停止后续组合即可关闭入口，已创建identity保留。
+- Verification：定向9项；Windows 11/PostgreSQL18.6双角色/拒绝、License、重放/冲突/并发、Audit回滚、零Version及撤权PASS；后端2785通过/3跳过；wheel 1020项，SHA-256 `3b75760339120d0d0e5dffc8639272db59eb737ef0a9606e1d9d5e5da011c3c6`。
