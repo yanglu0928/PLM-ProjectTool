@@ -8985,3 +8985,11 @@
 - Reason：把创建时角色或部门固化为永久读取许可会让调岗、停用后继续访问客户答复；让所有项目成员读全部Assignment又超过冻结“受权成员”边界。动态过滤兼顾部门级现场调研和最小权限。
 - Impact/Rollback：内部Owner/策略/cursor增量，无Schema/公开API/依赖/Secret/外发；未装配Router时外部404。
 - Verification：Win11/PG18.6创建并发、Audit回滚、PM全量、显式本人、部门级同部门、他人隐藏、停用撤权及drift通过；后端2884/3，wheel1074项，SHA-256 `ce26a7b545fc252a5e81cad0bc856110ba2deb68abb078f64ac53cbaf6b74dee`。
+
+# DEC-20261006-947：Answer 与面对面来源必须在同一事务固定
+
+- Date/WBS：2026-10-06 / `SUR-03-A04`；依据CR-SUR-008、0108不可变约束及DEC-941的Round source调用方事务边界。
+- Decision：一个写命令只追加一个固定Question的Response和唯一Answer；六类值由服务端按固定Question/Option解释，Evidence逐项重证并保存DocumentVersion/lock/fingerprint。FACILITATED_RECORD只允许ImplementationMember，先在同一事务追加Round PROJECT_RECORD source，再把其Evidence固定到Answer；仓储显式Response→Answer→Evidence写序，幂等重放核对actor/source/evidence/ETag完整形状。
+- Reason：把PROJECT_RECORD直接当结构化答复、允许客户端给ATTACHMENT传任意值、proof后跨事务写入或只凭receipt返回成功，都会形成无法追溯、可漂移或形状不完整的业务事实；显式写序避免ORM在无关系映射时依赖未承诺的插入排序。
+- Impact/Rollback：仅新增内部Owner和SURVEY_RESPONSE_RECORD策略，无Schema/公开API/依赖/Secret/外发；未装配Router仍404，已写历史不可删除。
+- Verification：Win11/PG18.6自助/代录、固定Evidence、更正、并发幂等、Audit回滚、角色/CSRF/License和drift通过；后端2888/3、4188子断言，wheel1077项，SHA-256 `7704683dd77d200f01f35a49abcbce9012562e118f6a4f2648766ae68b59ceba`。

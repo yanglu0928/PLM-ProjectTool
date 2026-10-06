@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-06：0.1.0-dev.0/SUR-03-A04 新增Response/Answer/Evidence内部原子Owner：自助/Implementation录入、六类型规范、固定Evidence、更正链、FACILITATED_RECORD同事务PROJECT_RECORD source、Session/CSRF/License/授权、Audit和持久幂等。兼容性/回滚：无Schema/公开API/依赖/Secret/外发，Router未装配仍404，既有历史保留。验证：Win11/PG18.6并发/回滚/来源/授权/drift，后端2888/3、4188子断言，wheel1077项，SHA-256 `7704683dd77d200f01f35a49abcbce9012562e118f6a4f2648766ae68b59ceba`。验收夹具按真实唯一约束改为唯一target/来源后全新库通过，产品约束未放宽。已知问题：A05以后状态/完整性/HTTP/UI、Round CLOSE、Gate3/UAT及发行仍待。
+
 - 2026-10-06：0.1.0-dev.0/SUR-03-A03 新增Assignment create/list/get内部Owner：PM/Implementation创建，OPEN Round/固定target/当前assignee、Session/CSRF/License、Audit、持久幂等；PM/实施全量、显式本人和部门级当前同部门动态可见，稳定cursor绑定Round。兼容性/回滚：无Schema/公开API/依赖/Secret/外发，Router未装配仍404。验证：Win11/PG18.6并发/回滚/分页/撤权/drift，后端2884/3，wheel1074项，SHA-256 `ce26a7b545fc252a5e81cad0bc856110ba2deb68abb078f64ac53cbaf6b74dee`。已知问题：A04以后Response/状态/完整性/HTTP/UI、Round CLOSE、Gate3/UAT及发行仍待。
 
 - 2026-10-06：0.1.0-dev.0/SUR-03-A02 新增SRV-04四表ORM与Migration0108：OPEN Round固定target、部门/受访人NULLS NOT DISTINCT唯一、单问题Response/一对一Answer、单根单后继更正、FACILITATED_RECORD source、Evidence快照及不可变历史。兼容性/回滚：只新增冻结四表，无公开API/依赖/Secret/外发；空历史可降0107，有历史拒降。验证：Win11/PG18.6升级降级/drift/约束负例，后端2880/3，wheel1070项，SHA-256 `d0ff7af0146bd2ed8746fddf2d38d21037e4f543e604d9476e4907a6d0ced6b5`。首轮触发器字段分支及head/inventory断言偏差已修复重跑。已知问题：A03以后Owner/HTTP/UI/浏览器、Round CLOSE、Gate3/UAT及发行仍待。
