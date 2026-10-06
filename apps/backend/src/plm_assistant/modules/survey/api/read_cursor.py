@@ -1,0 +1,142 @@
+"""Session-bound signed cursors for Survey definition reads."""
+
+from __future__ import annotations
+
+import base64
+import hashlib
+import hmac
+import json
+import re
+import uuid
+from datetime import datetime, timezone
+
+from plm_assistant.modules.platform.application.errors import ApplicationError
+
+
+_TOKEN = re.compile(r"[A-Za-z0-9_-]{1,1024}\.[A-Za-z0-9_-]{43}\Z", re.ASCII)
+
+
+def _b64(value: bytes) -> str:
+    return base64.urlsafe_b64encode(value).rstrip(b"=").decode("ascii")
+
+
+def _unb64(value: str) -> bytes:
+    return base64.urlsafe_b64decode(value + "=" * (-len(value) % 4))
+
+
+def _base(project_id: uuid.UUID, session_token: bytes, page_size: int) -> dict:
+    if (type(project_id) is not uuid.UUID or project_id.int == 0
+            or type(session_token) is not bytes or len(session_token) != 32
+            or type(page_size) is not int or not 1 <= page_size <= 200):
+        raise ValueError()
+    return {"v": 1, "project": str(project_id),
+            "session": hashlib.sha256(session_token).hexdigest(),
+            "query": hashlib.sha256(
+                f"page_size={page_size}".encode("ascii")
+            ).hexdigest()}
+
+
+class _Codec:
+    def __init__(self, key: bytes) -> None:
+        if type(key) is not bytes or len(key) != 32:
+            raise ValueError("dedicated 32-byte Survey cursor key required")
+        self._key = key
+
+    def _encode(self, payload: dict) -> str:
+        raw = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("ascii")
+        return _b64(raw) + "." + _b64(hmac.digest(self._key, raw, "sha256"))
+
+    def _decode(self, token: str) -> dict:
+        try:
+            if type(token) is not str or _TOKEN.fullmatch(token) is None:
+                raise ValueError()
+            encoded, signature = token.split(".")
+            raw, mac = _unb64(encoded), _unb64(signature)
+            if (_b64(raw) != encoded or _b64(mac) != signature or len(mac) != 32
+                    or not hmac.compare_digest(
+                        mac, hmac.digest(self._key, raw, "sha256")
+                    )):
+                raise ValueError()
+            value = json.loads(raw.decode("ascii"))
+            if type(value) is not dict:
+                raise ValueError()
+            return value
+        except (TypeError, ValueError, UnicodeDecodeError, json.JSONDecodeError):
+            raise ApplicationError("REQUEST_MALFORMED") from None
+
+
+class SurveyCursorCodec(_Codec):
+    _FIELDS = {"v", "family", "project", "session", "query", "updated_at",
+               "survey_id"}
+
+    def encode(self, *, project_id: uuid.UUID, session_token: bytes,
+               page_size: int, updated_at: datetime, survey_id: uuid.UUID) -> str:
+        payload = _base(project_id, session_token, page_size)
+        if (type(updated_at) is not datetime or updated_at.tzinfo is None
+                or updated_at.utcoffset() is None or type(survey_id) is not uuid.UUID
+                or survey_id.int == 0):
+            raise ValueError("invalid Survey cursor position")
+        payload.update({"family": "surveys", "updated_at": updated_at.astimezone(
+            timezone.utc).isoformat(timespec="microseconds").replace("+00:00", "Z"),
+            "survey_id": str(survey_id)})
+        return self._encode(payload)
+
+    def decode(self, token: str, *, project_id: uuid.UUID, session_token: bytes,
+               page_size: int) -> tuple[datetime, uuid.UUID]:
+        try:
+            value = self._decode(token)
+            expected = _base(project_id, session_token, page_size)
+            if (set(value) != self._FIELDS or value["family"] != "surveys"
+                    or any(value[key] != expected[key]
+                           for key in ("v", "project", "session", "query"))
+                    or type(value["updated_at"]) is not str
+                    or type(value["survey_id"]) is not str):
+                raise ValueError()
+            instant = datetime.fromisoformat(value["updated_at"].replace("Z", "+00:00"))
+            identity = uuid.UUID(value["survey_id"])
+            if str(identity) != value["survey_id"] or identity.int == 0 or self.encode(
+                    project_id=project_id, session_token=session_token,
+                    page_size=page_size, updated_at=instant,
+                    survey_id=identity) != token:
+                raise ValueError()
+            return instant, identity
+        except ApplicationError:
+            raise
+        except (KeyError, TypeError, ValueError, OverflowError):
+            raise ApplicationError("REQUEST_MALFORMED") from None
+
+
+class SurveyVersionCursorCodec(_Codec):
+    _FIELDS = {"v", "family", "project", "survey", "session", "query",
+               "position"}
+
+    def encode(self, *, project_id: uuid.UUID, survey_id: uuid.UUID,
+               session_token: bytes, page_size: int, position: int) -> str:
+        payload = _base(project_id, session_token, page_size)
+        if (type(survey_id) is not uuid.UUID or survey_id.int == 0
+                or type(position) is not int or position <= 0):
+            raise ValueError("invalid SurveyVersion cursor position")
+        payload.update({"family": "survey-versions", "survey": str(survey_id),
+                        "position": position})
+        return self._encode(payload)
+
+    def decode(self, token: str, *, project_id: uuid.UUID, survey_id: uuid.UUID,
+               session_token: bytes, page_size: int) -> int:
+        try:
+            value = self._decode(token)
+            expected = _base(project_id, session_token, page_size)
+            if (set(value) != self._FIELDS or value["family"] != "survey-versions"
+                    or any(value[key] != expected[key]
+                           for key in ("v", "project", "session", "query"))
+                    or value["survey"] != str(survey_id)
+                    or type(value["position"]) is not int
+                    or value["position"] <= 0 or self.encode(
+                        project_id=project_id, survey_id=survey_id,
+                        session_token=session_token, page_size=page_size,
+                        position=value["position"]) != token):
+                raise ValueError()
+            return value["position"]
+        except ApplicationError:
+            raise
+        except (KeyError, TypeError, ValueError, OverflowError):
+            raise ApplicationError("REQUEST_MALFORMED") from None

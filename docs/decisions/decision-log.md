@@ -8841,3 +8841,11 @@
 - Reason：让客户端分两次调用通用Review会暴露中间DRAFT并产生两个幂等结果；复制Review表写入会分叉状态机。接受后丢弃可选元数据会虚报保存，跨模块扩Schema又超出本WBS，显式null约束是可追溯且向后兼容的失败关闭选择。
 - Impact/Rollback：新增Survey Application/API、一个PM授权策略和可选组合参数；无Schema/Migration、ORM、依赖、Secret、网络或外发。停止注入Router恢复404，既有Review/Survey/Audit/receipt历史保留。
 - Verification：定向19；Win11/PG18.6 Audit回滚、原子送审/重放、来源漂移拒批/恢复批准、批准后重放、第二版本送审/撤回PASS；后端2838通过/3跳过；wheel 1049项，SHA-256 `170083bd760238bff4948b3a9bed3613d523d18dfd991030de4c4aed4917a3b7`。
+
+# DEC-20261006-929：Survey 定义读取 cursor 绑定完整隔离上下文
+
+- Date/WBS：2026-10-06 / `SUR-01-A05-A06`；依据冻结API-04与DEC-925。
+- Decision：Survey列表以`updated_at + survey_id`完整位置签名，Version列表以`version_no`签名；两类cursor都绑定Session、Project、page_size和独立family，Version另绑定Survey。四读Router默认关闭，只返回Survey-owned固定引用投影。
+- Reason：裸位置可被跨会话、Project或父资源重放；只签时间会在同时间戳分页丢项。复制来源正文/路径会越过对应Owner权限。
+- Impact/Rollback：新增Survey read API/cursor及可选组合参数；无Schema/Migration/依赖/Secret/外发。撤Router注入恢复404。
+- Verification：专项20、后端2844通过/3跳过；wheel 1051项，SHA-256 `f42547db0d917f6ee75c4456737702ba8e415e7a0ffc7381d1c15b12f4465dcf`。
