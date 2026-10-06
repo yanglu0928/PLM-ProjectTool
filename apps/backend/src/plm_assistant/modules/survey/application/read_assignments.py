@@ -12,7 +12,9 @@ from plm_assistant.modules.project.application.authorization import (
     AuthorizedProjectAction, ProjectAuthorizationError, ProjectAuthorizationService,
 )
 
-from .assignment_views import SurveyAssignmentPage, SurveyAssignmentView
+from .assignment_views import (
+    SurveyAssignmentDetailView, SurveyAssignmentPage, SurveyAssignmentView,
+)
 
 
 class SurveyAssignmentReadError(RuntimeError):
@@ -91,6 +93,26 @@ class SurveyAssignmentReadService:
                 actor_id=actor, actor_role=role,
             )
             if type(result) is not SurveyAssignmentView:
+                raise SurveyAssignmentReadError("RESOURCE_NOT_FOUND")
+            return result
+        return self._run(query, "SURVEY_ASSIGNMENT_GET", read)
+
+    def get_assignment_detail(
+        self, query: SurveyAssignmentReadQuery,
+        survey_assignment_id: uuid.UUID,
+    ) -> SurveyAssignmentDetailView:
+        self._validate(query)
+        if type(survey_assignment_id) is not uuid.UUID or survey_assignment_id.int == 0:
+            raise SurveyAssignmentReadError("VALIDATION_FAILED")
+
+        def read(tx, actor, role):
+            result = self._repository.get_assignment_detail(
+                tx, project_id=query.project_id,
+                survey_round_id=query.survey_round_id,
+                survey_assignment_id=survey_assignment_id,
+                actor_id=actor, actor_role=role,
+            )
+            if type(result) is not SurveyAssignmentDetailView:
                 raise SurveyAssignmentReadError("RESOURCE_NOT_FOUND")
             return result
         return self._run(query, "SURVEY_ASSIGNMENT_GET", read)

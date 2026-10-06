@@ -12,15 +12,16 @@ from plm_assistant.modules.project.infrastructure.orm import (
     ProjectMemberRow,
 )
 from plm_assistant.modules.survey.application.assignment_views import (
-    SurveyAssignmentView,
+    SurveyAnswerEvidenceView, SurveyAssignmentDetailView, SurveyAssignmentView,
+    SurveyResponseReadView,
 )
 from plm_assistant.modules.survey.application.create_assignment import (
     SurveyAssignmentCreateError,
 )
 
 from .orm import (
-    SurveyAssignmentRow,
-    SurveyResponseRow,
+    SurveyAnswerEvidenceRefRow, SurveyAnswerRow, SurveyAssignmentRow,
+    SurveyQuestionRow, SurveyResponseRow,
     SurveyRoundRow,
     SurveyTargetDepartmentRow,
 )
@@ -154,6 +155,72 @@ class SqlAlchemySurveyAssignmentRepository:
             query, actor_id, actor_role, project_id,
         )).one_or_none()
         return None if row is None else _view(row[0], row[1])
+
+    def get_assignment_detail(
+        self, transaction: object, *, project_id: uuid.UUID,
+        survey_round_id: uuid.UUID, survey_assignment_id: uuid.UUID,
+        actor_id: uuid.UUID, actor_role: str,
+    ) -> SurveyAssignmentDetailView | None:
+        session = _session(transaction)
+        count = select(func.count(SurveyResponseRow.survey_response_id)).where(
+            SurveyResponseRow.survey_assignment_id
+            == SurveyAssignmentRow.survey_assignment_id,
+        ).correlate(SurveyAssignmentRow).scalar_subquery()
+        query = select(SurveyAssignmentRow, count).where(
+            SurveyAssignmentRow.project_id == project_id,
+            SurveyAssignmentRow.survey_round_id == survey_round_id,
+            SurveyAssignmentRow.survey_assignment_id == survey_assignment_id,
+        )
+        row = session.execute(self._visible(
+            query, actor_id, actor_role, project_id,
+        )).one_or_none()
+        if row is None:
+            return None
+        response_rows = session.execute(select(
+            SurveyResponseRow, SurveyAnswerRow, SurveyQuestionRow.question_id,
+        ).join(
+            SurveyAnswerRow,
+            SurveyAnswerRow.survey_response_id
+            == SurveyResponseRow.survey_response_id,
+        ).join(
+            SurveyQuestionRow,
+            SurveyQuestionRow.question_row_id == SurveyResponseRow.question_row_id,
+        ).where(
+            SurveyResponseRow.project_id == project_id,
+            SurveyResponseRow.survey_assignment_id == survey_assignment_id,
+        ).order_by(
+            SurveyResponseRow.recorded_at,
+            SurveyResponseRow.survey_response_id,
+        )).all()
+        answer_ids = tuple(answer.survey_answer_id for _, answer, _ in response_rows)
+        evidence_by_answer: dict[uuid.UUID, list[SurveyAnswerEvidenceView]] = {
+            identity: [] for identity in answer_ids
+        }
+        if answer_ids:
+            evidence_rows = session.execute(select(
+                SurveyAnswerEvidenceRefRow,
+            ).where(
+                SurveyAnswerEvidenceRefRow.survey_answer_id.in_(answer_ids),
+            ).order_by(
+                SurveyAnswerEvidenceRefRow.survey_answer_id,
+                SurveyAnswerEvidenceRefRow.ordinal,
+            )).scalars().all()
+            for evidence in evidence_rows:
+                evidence_by_answer[evidence.survey_answer_id].append(
+                    SurveyAnswerEvidenceView(
+                        evidence.evidence_id, evidence.document_id,
+                        evidence.document_version_id,
+                        evidence.observed_evidence_lock_version,
+                        bytes(evidence.content_fingerprint), evidence.ordinal,
+                    ))
+        responses = tuple(SurveyResponseReadView(
+            response.survey_response_id, question_id,
+            response.response_source, response.round_source_record_ref_id,
+            response.correction_of_response_id, response.recorded_by,
+            response.recorded_at, answer.raw_answer, answer.answer_value,
+            tuple(evidence_by_answer[answer.survey_answer_id]),
+        ) for response, answer, question_id in response_rows)
+        return SurveyAssignmentDetailView(_view(row[0], row[1]), responses)
 
     @staticmethod
     def _visible(query, actor_id: uuid.UUID, actor_role: str,

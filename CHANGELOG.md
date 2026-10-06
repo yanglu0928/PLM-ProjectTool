@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-06：0.1.0-dev.0/SUR-03-A08 新增冻结七个Assignment/Response HTTP、动态可见详情投影、Round绑定cursor及Windows生产组合；完整Document证明依赖缺失时五写保持404。兼容性/回滚：无Schema/Migration、Breaking URL、角色、依赖、Secret数量或外发变化，撤Router注入恢复404并保留历史。验证：Win11/PG18.6完成两Assignment、八Response、两SUBMIT、VALIDATE、RETURN、分页/详情、14 Audit/receipt及drift；后端2907/3、4203子断言；开发wheel1086项，SHA-256 `6c9d208d5cbb505bc342d87794b88ddf3e2694ed8ee622616761f503f4333b4f`。已知问题：Assignment/Response前端/浏览器、Conclusion、Gate3/UAT及发行仍待。
+
 - 2026-10-06：0.1.0-dev.0/SUR-02-A06-P02 新增Round严格前端客户端、角色收窄工作台、写后重读与未知结果恢复；Win11真实Edge经构建Vue/生产FastAPI/PG18.6完成LIST/GET、两次CREATE、PATCH、OPEN、CLOSE 422失败关闭和CANCEL。兼容性/回滚：无Schema/API/角色/依赖/Secret/外发变化，撤前端增量即可，历史Round/Audit/receipt保留。验证：定向14、前端84文件1455项、typecheck、Vite176模块build、Edge 40条网络证据PASS。偏差：修复原生fetch接收者、接受新建Round `updated_by=null`，验收wrapper明确批准合成Version。已知问题：主JS658.73 kB分块提示、Assignment/Response HTTP/UI、Conclusion、Gate3/UAT及发行仍待。
 
 - 2026-10-06：0.1.0-dev.0/SUR-02-A06-P01 接通Round CLOSE同事务完整性证明，新增冻结七个Round HTTP及Windows真实组合；Round cursor从既有Survey Secret按用途HMAC派生。兼容性/回滚：无Schema/依赖/Breaking URL/外发，撤Router/Owner注入恢复404/失败关闭，历史关闭/Audit/receipt保留。验证：Win11/PG18.6原子关闭/重放/读取/终态/drift，后端2905/3、4203子断言，wheel1085项，SHA-256 `7fc7d8e4a9c0e295c05898c7f9df248536701cf8398453854f792ea0d81c95d1`。已知问题：Round前端/浏览器、Assignment/Response HTTP/UI、Conclusion、Gate3/UAT及发行仍待。

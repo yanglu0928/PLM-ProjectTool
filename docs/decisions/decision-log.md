@@ -9033,3 +9033,11 @@
 - Reason：前端按钮和首次回执不能替代服务器当前状态或Round完整性证明；网络超时后换Key重试可能重复写入。浏览器原生fetch还要求调用时不得携带SessionClient接收者。
 - Impact/Rollback：仅前端客户端/页面/导航及Session transport增量，无Schema/API/依赖/Secret/外发；新建Round的`updated_by`按冻结响应实际接受`null`。撤前端增量可回滚，已提交Round/Audit/receipt保留。
 - Verification：前端定向14、全量84文件1455项、typecheck、Vite176模块build；Win11真实Edge/生产FastAPI/PG18.6完成LIST/GET、两次CREATE、PATCH、OPEN、CLOSE 422失败关闭和CANCEL，40条浏览器网络证据与隔离资源清理通过。
+
+# DEC-20261006-953：Assignment详情在可见性Owner后聚合且写路由依赖完整Evidence链
+
+- Date/WBS：2026-10-06 / `SUR-03-A08`；依据CR-SUR-008、冻结七个Assignment/Response Operation和DEC-946～950。
+- Decision：冻结GET的`Assignment/response projection`由Assignment可见性过滤成功后，在同一Survey仓储事务聚合Response、Answer及固定Evidence最小快照；列表cursor由既有Survey cursor Secret以`survey-assignment-cursor-v1`标签HMAC派生并额外绑定Round。只读与命令Router分离；生产组合始终挂只读，只有Document下载/解析证明依赖完整时才挂CREATE/RESPONSE/SUBMIT/VALIDATE/RETURN。
+- Reason：只返回Assignment Root不满足冻结合同；另建Response公开读取路径会扩大V1 API。让写链在缺Document Owner时以空证明继续，会绕过Evidence漂移与facilitated PROJECT_RECORD重证；把读写放同一Router又会在生产组合中重复注册GET。
+- Impact/Rollback：无Schema/Migration、Breaking URL、角色、依赖、Secret数量或外发变化；撤两个Router注入恢复404，历史事实保留。缺Evidence组合依赖的部署保持五写404而非降级。
+- Verification：合同/组合/Owner定向7项与2子测试；Win11/PG18.6真实七Operation、两Assignment/八Response、分页/详情、14 Audit/receipt及drift；后端2907/3、4203子断言；wheel1086项，SHA-256 `6c9d208d5cbb505bc342d87794b88ddf3e2694ed8ee622616761f503f4333b4f`。

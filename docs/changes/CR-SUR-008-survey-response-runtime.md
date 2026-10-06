@@ -59,3 +59,4 @@
 - 2026-10-06 / `SUR-03-A07`：完成caller-transaction Round完整性Owner；非空Assignment、全部目标部门覆盖、全VALIDATED及当前Answer/Evidence重证后生成稳定报告指纹，不自行commit。Windows 11/PostgreSQL18.6锁、空集/非终态/漂移拒绝通过，详见`docs/progress/sur-03-a07-round-completeness.md`。
 - 2026-10-06 / `SUR-02-A06-P01`：CLOSE现于同一调用方事务消费A07证明，保存32字节报告指纹并原子写状态/Audit/幂等回执；七个冻结Round HTTP与Windows组合已开放，默认未注入Router仍404。Round页面/浏览器闭环留P02，Assignment/Response HTTP仍按A08/A09推进。
 - 2026-10-06 / `SUR-02-A06-P02`：Round页面和Windows 11真实Edge闭环完成，CLOSE不完整在UI/HTTP保持422失败关闭且不误报当前成功。Assignment/Response HTTP、组合和前端仍按A08/A09推进。
+- 2026-10-06 / `SUR-03-A08`：七个冻结Assignment/Response HTTP已接入Windows生产组合；GET在既有动态可见性后投影Survey自有Response/Answer/Evidence，列表cursor从既有Secret按用途派生。缺完整Document证明依赖时写Router保持404，Windows 11/PostgreSQL18.6完成两个Assignment、八条Response、两次SUBMIT、VALIDATE、RETURN、分页/详情、Audit/receipt及drift验证；前端/浏览器留A09。

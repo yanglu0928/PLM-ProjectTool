@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 import hmac
 from typing import Protocol
 
@@ -81,12 +82,17 @@ from plm_assistant.modules.review.infrastructure.start_repository import (
     SqlAlchemyReviewStartRepository,
 )
 from plm_assistant.modules.survey.api.commands import create_survey_command_router
+from plm_assistant.modules.survey.api.assignments import (
+    create_survey_assignment_command_router,
+    create_survey_assignment_read_router,
+)
 from plm_assistant.modules.survey.api.read import create_survey_read_router
 from plm_assistant.modules.survey.api.source_location import (
     create_survey_source_location_router,
 )
 from plm_assistant.modules.survey.api.read_cursor import (
-    SurveyCursorCodec, SurveyRoundCursorCodec, SurveyVersionCursorCodec,
+    SurveyAssignmentCursorCodec, SurveyCursorCodec, SurveyRoundCursorCodec,
+    SurveyVersionCursorCodec,
 )
 from plm_assistant.modules.survey.api.rounds import (
     create_survey_round_command_router, create_survey_round_read_router,
@@ -95,9 +101,30 @@ from plm_assistant.modules.survey.api.submit_review import (
     create_survey_review_submission_router,
 )
 from plm_assistant.modules.survey.application.change_survey import SurveyStateService
+from plm_assistant.modules.survey.application.create_assignment import (
+    SurveyAssignmentCreateService,
+)
 from plm_assistant.modules.survey.application.create_survey import SurveyCreateService
 from plm_assistant.modules.survey.application.create_version import SurveyVersionCreateService
 from plm_assistant.modules.survey.application.read_surveys import SurveyReadService
+from plm_assistant.modules.survey.application.read_assignments import (
+    SurveyAssignmentReadService,
+)
+from plm_assistant.modules.survey.application.record_response import (
+    SurveyResponseRecordService,
+)
+from plm_assistant.modules.survey.application.review_assignment import (
+    SurveyAssignmentReviewService,
+)
+from plm_assistant.modules.survey.application.round_source import (
+    SurveyRoundProjectRecordProofService,
+)
+from plm_assistant.modules.survey.application.submit_assignment import (
+    SurveyAssignmentSubmitService,
+)
+from plm_assistant.modules.survey.infrastructure.assignment_repository import (
+    SqlAlchemySurveyAssignmentRepository,
+)
 from plm_assistant.modules.survey.application.create_round import SurveyRoundCreateService
 from plm_assistant.modules.survey.application.change_round import SurveyRoundStateService
 from plm_assistant.modules.survey.application.read_rounds import SurveyRoundReadService
@@ -123,6 +150,12 @@ from plm_assistant.modules.survey.infrastructure.round_repository import (
 )
 from plm_assistant.modules.survey.infrastructure.round_state_repository import (
     SqlAlchemySurveyRoundStateRepository,
+)
+from plm_assistant.modules.survey.infrastructure.round_source_repository import (
+    SqlAlchemySurveyRoundSourceRepository,
+)
+from plm_assistant.modules.survey.infrastructure.response_repository import (
+    SqlAlchemySurveyResponseRepository,
 )
 from plm_assistant.modules.survey.infrastructure.submission_repository import (
     SqlAlchemySurveyAssignmentSubmissionRepository,
@@ -178,6 +211,9 @@ def create_windows_survey_routers(
         round_cursors = SurveyRoundCursorCodec(hmac.digest(
             survey_cursor_key, b"survey-round-cursor-v1", "sha256",
         ))
+        assignment_cursors = SurveyAssignmentCursorCodec(hmac.digest(
+            survey_cursor_key, b"survey-assignment-cursor-v1", "sha256",
+        ))
         version_cursors = SurveyVersionCursorCodec(
             keys.resolve_key(SURVEY_VERSION_CURSOR_KEY_REF)
         )
@@ -214,6 +250,16 @@ def create_windows_survey_routers(
         read_router.include_router(create_survey_round_read_router(
             sessions=sessions, origins=origins, reads=round_reads,
             cursors=round_cursors,
+        ))
+        assignment_repository = SqlAlchemySurveyAssignmentRepository()
+        assignment_reads = SurveyAssignmentReadService(
+            unit_of_work=runtime.unit_of_work,
+            access=SqlAlchemyProjectReadAccess(), license_guard=license_guard,
+            authorization=authorization, repository=assignment_repository,
+        )
+        read_router.include_router(create_survey_assignment_read_router(
+            sessions=sessions, origins=origins, reads=assignment_reads,
+            cursors=assignment_cursors,
         ))
         if not include_write:
             return WindowsSurveyRouters(read_router, None, None)
@@ -294,6 +340,61 @@ def create_windows_survey_routers(
             sessions=sessions, origins=origins, creates=round_creates,
             states=round_states,
         ))
+        if all(dependency_shape):
+            general_evidence = EvidenceFixedProjectSourceService(
+                sessions=SqlAlchemyProjectReadAccess(),
+                projects=project_repository,
+                evidence=SqlAlchemyEvidenceFixedSourceRepository(),
+                documents=document_proofs,
+                allowed_project_roles=frozenset({
+                    "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER",
+                    "CUSTOMER_MANAGER", "CUSTOMER_MEMBER",
+                }),
+            )
+            round_evidence = EvidenceFixedProjectSourceService(
+                sessions=SqlAlchemyProjectReadAccess(),
+                projects=project_repository,
+                evidence=SqlAlchemyEvidenceFixedSourceRepository(),
+                documents=document_proofs,
+                allowed_project_roles=frozenset({
+                    "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER",
+                }),
+                required_document_category="PROJECT_RECORD",
+            )
+            submission_repository = SqlAlchemySurveyAssignmentSubmissionRepository()
+            assignment_creates = SurveyAssignmentCreateService(
+                unit_of_work=runtime.unit_of_work, access=access,
+                license_guard=license_guard, authorization=authorization,
+                repository=assignment_repository, receipts=receipts, audit=audit,
+            )
+            response_records = SurveyResponseRecordService(
+                unit_of_work=runtime.unit_of_work, access=access,
+                license_guard=license_guard, authorization=authorization,
+                repository=SqlAlchemySurveyResponseRepository(), receipts=receipts,
+                audit=audit, evidence_owner=general_evidence,
+                round_record_proof=SurveyRoundProjectRecordProofService(
+                    evidence=round_evidence,
+                ),
+                round_source_repository=SqlAlchemySurveyRoundSourceRepository(),
+            )
+            assignment_submissions = SurveyAssignmentSubmitService(
+                unit_of_work=runtime.unit_of_work, access=access,
+                license_guard=license_guard, authorization=authorization,
+                repository=submission_repository, receipts=receipts, audit=audit,
+                evidence_owner=general_evidence,
+            )
+            assignment_reviews = SurveyAssignmentReviewService(
+                unit_of_work=runtime.unit_of_work, access=access,
+                license_guard=license_guard, authorization=authorization,
+                repository=submission_repository, receipts=receipts, audit=audit,
+                evidence_owner=general_evidence,
+                clock=lambda: datetime.now(timezone.utc),
+            )
+            command_router.include_router(create_survey_assignment_command_router(
+                sessions=sessions, origins=origins, creates=assignment_creates,
+                responses=response_records, submissions=assignment_submissions,
+                reviews=assignment_reviews,
+            ))
         reviewers = ProjectReviewerQualificationService(
             users=SqlAlchemyReviewUserAccess(), projects=project_repository,
         )

@@ -38,3 +38,33 @@ class SurveyAssignmentPage:
     next_created_at: datetime | None
     next_assignment_id: uuid.UUID | None
     has_more: bool
+
+
+@dataclass(frozen=True, slots=True)
+class SurveyAnswerEvidenceView:
+    evidence_id: uuid.UUID
+    document_id: uuid.UUID
+    document_version_id: uuid.UUID
+    observed_evidence_lock_version: int
+    content_fingerprint: bytes = field(repr=False)
+    ordinal: int = 0
+
+
+@dataclass(frozen=True, slots=True)
+class SurveyResponseReadView:
+    survey_response_id: uuid.UUID
+    question_id: uuid.UUID
+    response_source: str
+    round_source_record_ref_id: uuid.UUID | None
+    correction_of_response_id: uuid.UUID | None
+    recorded_by: uuid.UUID
+    recorded_at: datetime
+    raw_answer: str | None
+    answer_value: object | None
+    evidence: tuple[SurveyAnswerEvidenceView, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class SurveyAssignmentDetailView:
+    assignment: SurveyAssignmentView
+    responses: tuple[SurveyResponseReadView, ...] = ()
