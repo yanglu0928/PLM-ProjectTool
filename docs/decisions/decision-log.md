@@ -8707,3 +8707,11 @@
 - Reason：浏览器已经为`ol`生成序号，标题重复渲染`stage.order`会形成`1. 1.`等噪声；移除标题序号仍保留正确的列表语义和阅读顺序。
 - Impact/Rollback：仅前端展示和回归断言变化，无后端、Schema/Migration、冻结API、权限、依赖、Secret或外发变化；恢复标题插值即可回滚。
 - Verification：页面定向15项、前端78文件1395项、typecheck及Vite164模块生产构建通过；主JS 599.01kB既有分块警告保留。
+
+# DEC-20261006-912：Survey 按真实来源链分批物理化
+
+- Date/WBS：2026-10-06 / `SUR-01-A01`；依据冻结DM-05、SC-01/02/03、API-01/04、六阶段Workflow V1及`CR-SUR-001`。
+- Decision：保持SRV-01～05、十七张表和二十九个Operation不变，按定义版本、Round、Assignment/Response、Conclusion、HTTP/UI/Workflow Owner分批交付。问题来源采用类型化固定引用；实际面对面记录必须固定PROJECT_RECORD/Evidence并标记`FACILITATED_RECORD`，TEMPLATE只提供问题结构。
+- Reason：当前Survey运行实现为零，而单次实现五Root会跨越四个状态机和多个事务边界；无类型UUID、动态latest或正文复制不能保持版本、Scope和授权。模板或AI建议也不能证明客户事实。
+- Impact/Rollback：本项及CR为文档决策，无Schema/API/依赖/网络/外发；后续每个迁移空历史可降、有历史拒降，应用可停Owner/Router但保留业务历史。Gate2冻结提交不改写。
+- Verification：静态交叉核对五Root、十七表、二十九Operation、当前Migration head 0102、Audit/Trace/AI白名单、Workflow两项清单及源码零Survey模块；标记`SUR_01_A01_RUNTIME_PRECHECK_PASS`。

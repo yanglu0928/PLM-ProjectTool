@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-06：0.1.0-dev.0/SUR-01-A01 完成Survey运行时/Schema前置核查并登记CR-SUR-001：冻结五Root、十七表、二十九Operation当前运行实现为零；选择按定义版本、Round、Assignment/Response、Conclusion及接入层分批物理化。面对面PROJECT_RECORD/FACILITATED_RECORD优先，TEMPLATE只供问题结构，AI只形成建议/Draft。兼容性/升级/回滚：纯文档，无Schema/API/依赖/网络/外发，原Gate2冻结提交保留。验证：静态核对DM/SC/API、模块边界、Workflow、Migration head 0102与源码，标记`SUR_01_A01_RUNTIME_PRECHECK_PASS`。已知问题：A02以后实现、真实客户资料/确认、质量/性能、正式信任、Gate3/UAT/发行仍待。
+
 - 2026-10-06：0.1.0-dev.0/WFL-02-A02-A08 修复六阶段流程重复编号：保留语义化`ol`自动序号，移除标题内重复的`stage.order`文本，阶段状态与读写行为不变。升级/回滚：仅前端展示与回归断言变化，无后端/Schema/Migration/API/权限/依赖/Secret/外发变化；恢复标题插值即可回滚。验证：页面定向15项、前端78文件1395项、typecheck及Vite164模块生产构建通过；主JS 599.01kB既有分块警告保留。已知问题：Survey/Requirement及后续阶段Owner、质量/性能、正式信任、Gate3/UAT/发行仍待。
 
 - 2026-10-06：0.1.0-dev.0/WFL-02-A02-A07 新增可重复Windows 11真实Edge验收harness：独立PG18.6事实库预置两项当前PASS，经构建Vue/生产`platform-write` FastAPI完成理由输入、二次确认、首次`HANDOVER -> SURVEY/v4`回执和独立SURVEY当前态刷新；PG后验唯一Transition/双Gate/Audit/receipt并清理临时库、凭据、profile和文件。升级/回滚：仅新增验证资产与记录，无产品/Schema/Migration/API/依赖/Secret/外发变化。验证：Edge 6个成功API响应、三张截图、服务端数据库后验及清理PASS。视觉QA发现`ol`标记与标题内阶段序号重复，登记为A08独立可用性修复，不影响本次迁移事实。已知问题：A08编号、Survey/Requirement及后续阶段Owner、质量/性能、正式信任、Gate3/UAT/发行仍待。
