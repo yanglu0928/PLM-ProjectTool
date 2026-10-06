@@ -146,3 +146,6 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
 - 2026-10-06 / `SUR-02-A01`：核清SRV-03两表/四态/七Operation当前运行实现为零，并登记
   CR-SUR-007。Round先独立实现Schema、固定PROJECT_RECORD来源、创建读取及OPEN/CANCEL；CLOSE必须
   等SRV-04提供真实Assignment/Response完整性Owner，禁止以空集合、模板、原始记录或客户端PASS放行。
+- 2026-10-06 / `SUR-03-A01`：核清SRV-04四表、五态、七Operation当前运行实现为零，并登记
+  CR-SUR-008。补齐部门/受访人target、单问题Response/Answer、追加式更正、RETURNED重提、面对面记录
+  同事务固定和非空Round完整性边界；本项不创建客户答复或开放CLOSE，进入Migration0108。

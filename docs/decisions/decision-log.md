@@ -8961,3 +8961,11 @@
 - Reason：应用时钟无法保证生命周期时间与数据库写时间完全一致；CLOSE若先写幂等回执或“尝试成功”Audit，会把尚不存在的Assignment/Response完整性误表述为业务事实。失败关闭也不能绕过当前Session、License和ProjectManager授权边界。
 - Impact/Rollback：只增加内部状态Owner与四项冻结角色策略，无Schema/公开API/依赖/Secret/外发；不装配Router即保持外部404。已提交OPEN/CANCEL/Audit/receipt历史不可删除。
 - Verification：Windows11/PostgreSQL18.6完成同Key并发OPEN、CANCEL重放、ETag/角色/CSRF/License、Audit回滚恢复、终态保护、CLOSE零写和drift；首轮SQL表达式布尔求值偏差经显式`is not None`修复并从新库重跑；后端2876通过/3跳过；wheel1069项，SHA-256 `03ee68e7b1d823bc358cb6b8fee86199dc8edba5f707b45748f5538f8af38ae4`。
+
+# DEC-20261006-944：Response 是单问题追加事实且 Round 完整性禁止空集合真值
+
+- Date/WBS：2026-10-06 / `SUR-03-A01`；依据冻结SRV-04、API-04、CR-SUR-001/007/008及现有Round/Evidence Owner。
+- Decision：每个Response固定一个Question并拥有一个Answer；Assignment/Question只有一个根Response，每个Response最多一个同题更正后继，当前值取唯一链尾。部门级Assignment允许assignee为空但仍按当前部门成员授权。Round完整必须非空、覆盖固定Version全部target department、所有Assignment为VALIDATED，并重新验证当前Answer/Evidence/facilitated source。
+- Reason：Response若包含可变Answer集合会使单题更正覆盖其他题；多根或分叉更正无法确定当前值；SQL与Python的`all(empty)`会把未调研错误判定为完整。面对面PROJECT_RECORD只能证明原始记录存在，不能代替结构化回答与受权校验。
+- Impact/Rollback：本项仅登记CR和A02～A09拆分，无程序/Schema/API/依赖/Secret/外发；冻结四表、五态、七Operation不变。Round CLOSE继续显式失败关闭。
+- Verification：静态交叉核对DM/SC/API冻结基线、0107 ORM/Migration、SurveyVersion Question/Option/target、Round source及Evidence Owner，确认SRV-04运行实现为零并标记`SUR_03_A01_RESPONSE_PRECHECK_PASS`。
