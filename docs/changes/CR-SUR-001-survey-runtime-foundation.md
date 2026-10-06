@@ -65,3 +65,6 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
 - 2026-10-06 / `SUR-01-A03-P02-A01`：编码前核查发现现有 Handover/Capability 公共投影缺少 0103
   类型化外键所需的版本内 row identity；登记 CR-SUR-002，先由来源 Owner 提供最小证明 Adapter，再写
   SurveyVersion，避免 Survey 直连其他模块私有表。
+- 2026-10-06 / `SUR-01-A03-P03`：完成内部 Validate Owner。对不可变快照复算指纹/计数，以有界
+  ConditionRule V1 检查题型、较早问题引用与环，并重新证明四类来源和目标部门当前性；报告经 Audit 与
+  持久幂等固定，不修改 Version、不开放 HTTP。

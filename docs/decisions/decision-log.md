@@ -8749,7 +8749,15 @@
 # DEC-20261006-917：SurveyVersion 创建以窄 Root 更新门和四类 Owner 证明原子提交
 
 - Date/WBS：2026-10-06 / `SUR-01-A03-P02-A03`；依据CR-SUR-002、Schema0103和冻结SURVEY_VERSION_CREATE。
-- Decision：Migration0104只允许ACTIVE且批准指针为空的Survey Root保持身份/名称/状态不变并精确`lock_version+1`；Version内容由服务端规范化并哈希，四类来源和目标部门先经Owner证明，六表、Audit、幂等收据同事务提交。GLOBAL TEMPLATE 使用Document-owned最小证明而非扩大普通Document读取权限。
+- Decision：Migration0104只允许ACTIVE Survey Root保持身份/名称/状态/批准指针不变并精确`lock_version+1`；批准指针可为空或保留已有批准版本，以兼容批准后的下一版草稿。Version内容由服务端规范化并哈希，四类来源和目标部门先经Owner证明，六表、Audit、幂等收据同事务提交。GLOBAL TEMPLATE 使用Document-owned最小证明而非扩大普通Document读取权限。
 - Reason：不更新Root版本会失去If-Match并发语义；直接放宽通用更新或授予GLOBAL Document管理读取会扩大攻击面。JSONB可选条件必须写SQL NULL而非JSON null。
 - Impact/Rollback：新增0104、内部Service/Repository/Document proof，无公开Router、冻结DTO、依赖、Secret或外发。无Version历史可降级恢复全关闭保护；有历史只向前修复。
 - Verification：定向16、Win11/PG18.6四类来源/三代版本/重放冲突/Audit回滚/六表原子性及0104升降PASS；后端2790通过/3跳过；wheel SHA-256 `10391ff37ca46591eb3f098872add4df5088ee75edaa785ebf5905226b7ff05c`。
+
+# DEC-20261006-918：Survey 条件与题型在送审前以有界内部合同验证
+
+- Date/WBS：2026-10-06 / `SUR-01-A03-P03`；依据冻结 `SURVEY_VERSION_VALIDATE`、DM-05/API-04“仅引用较早问题”及不可变0103六表。
+- Decision：ConditionRule V1 只接受有界 `all/any` AST、六种操作符和固定 `question_ref`；深度、分支和叶数受限，引用必须存在且更早，并独立检测环。各 answer type 使用最小字段白名单；Validate 每次以共享锁重建快照、复算指纹/计数、重新调用来源 Owner，并把稳定 issue set 编码进 Audit；同 Key 重放首次报告，新 Key 才重证当前性。
+- Reason：冻结基线规定引用方向但未给出可执行 JSON 语法。任意 JSON、动态 latest 或重放时重算都会分别造成不可执行条件、来源漂移和幂等结果变化；有界 AST 也限制恶意深层输入。
+- Impact/Rollback：新增内部条件合同、Validate Service/Repository、Audit replay source 与授权策略；无 Schema/Migration、公开 API、依赖、Secret、网络或数据外发。移除 Owner 注入可回滚，已有 Version/Audit 保留。
+- Verification：新增定向7项；Win11/PG18.6有效/失效来源、非法题型、未来引用、环、重放冲突及Audit回滚恢复通过；后端2797通过/3跳过；wheel SHA-256 `e8491872dff06a1549721639940e0e7f7adb9ca7f3f125473935b8f243df2b64`。
