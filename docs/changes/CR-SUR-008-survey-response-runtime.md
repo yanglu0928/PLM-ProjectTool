@@ -52,3 +52,4 @@
 ## 实施记录
 
 - 2026-10-06 / `SUR-03-A02`：完成四表 ORM 与 Migration0108，数据库强制OPEN Round/固定target、NULLS NOT DISTINCT、单根单后继更正、一Response一Answer、facilitated source、Evidence快照、不可变及历史拒降。Windows 11/PostgreSQL18.6、后端全量和wheel通过；多表触发器字段分支及head/inventory断言偏差已修复并重跑，详见`docs/progress/sur-03-a02-response-schema.md`。
+- 2026-10-06 / `SUR-03-A03`：完成Assignment create/list/get、当前target/assignee证明、管理角色全量与显式assignee/部门成员动态可见性、稳定cursor、Audit和持久幂等。Windows 11/PostgreSQL18.6的并发、回滚、撤权、隔离与drift通过，详见`docs/progress/sur-03-a03-assignment-owner.md`。

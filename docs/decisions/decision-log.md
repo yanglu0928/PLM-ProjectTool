@@ -8977,3 +8977,11 @@
 - Reason：只靠应用校验无法抵御并发双根、分叉更正、孤立Response或Evidence漂移；保留历史需要数据库成为第二道不可变边界。
 - Impact/Rollback：新增四表和0108，无公开API/依赖/Secret/外发；空历史可降0107，有历史拒降并向前修复。
 - Verification：Win11/PG18.6升级/降级/drift与约束负例通过；后端2880/3、wheel1070项，SHA-256 `d0ff7af0146bd2ed8746fddf2d38d21037e4f543e604d9476e4907a6d0ced6b5`。
+
+# DEC-20261006-946：Assignment 可见性按当前成员事实动态收窄
+
+- Date/WBS：2026-10-06 / `SUR-03-A03`；依据冻结Assignment角色、CR-SUR-008与Project成员Owner。
+- Decision：PM/ImplementationMember可见Round全部Assignment；显式assignee仅本人可见；assignee为空的部门级Assignment仅当前同部门有效成员可见。创建和读取均重新验证当前Project成员事实，列表cursor绑定Round父资源。
+- Reason：把创建时角色或部门固化为永久读取许可会让调岗、停用后继续访问客户答复；让所有项目成员读全部Assignment又超过冻结“受权成员”边界。动态过滤兼顾部门级现场调研和最小权限。
+- Impact/Rollback：内部Owner/策略/cursor增量，无Schema/公开API/依赖/Secret/外发；未装配Router时外部404。
+- Verification：Win11/PG18.6创建并发、Audit回滚、PM全量、显式本人、部门级同部门、他人隐藏、停用撤权及drift通过；后端2884/3，wheel1074项，SHA-256 `ce26a7b545fc252a5e81cad0bc856110ba2deb68abb078f64ac53cbaf6b74dee`。

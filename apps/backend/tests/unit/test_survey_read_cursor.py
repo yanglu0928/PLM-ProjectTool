@@ -6,7 +6,8 @@ from datetime import datetime, timezone
 
 from plm_assistant.modules.platform.application.errors import ApplicationError
 from plm_assistant.modules.survey.api.read_cursor import (
-    SurveyCursorCodec, SurveyRoundCursorCodec, SurveyVersionCursorCodec,
+    SurveyAssignmentCursorCodec, SurveyCursorCodec, SurveyRoundCursorCodec,
+    SurveyVersionCursorCodec,
 )
 
 
@@ -17,6 +18,7 @@ class SurveyReadCursorTests(unittest.TestCase):
         self.surveys = SurveyCursorCodec(b"a" * 32)
         self.versions = SurveyVersionCursorCodec(b"v" * 32)
         self.rounds = SurveyRoundCursorCodec(b"r" * 32)
+        self.assignments = SurveyAssignmentCursorCodec(b"q" * 32)
 
     def test_survey_cursor_binds_full_position_and_context(self):
         instant = datetime(2026, 10, 6, 1, 2, 3, 456789, tzinfo=timezone.utc)
@@ -70,6 +72,29 @@ class SurveyReadCursorTests(unittest.TestCase):
                 codec.decode(
                     token, project_id=project, session_token=session,
                     page_size=size,
+                )
+
+    def test_assignment_cursor_binds_round_and_complete_position(self):
+        instant = datetime(2026, 10, 6, 7, 8, 9, 123456, tzinfo=timezone.utc)
+        round_id, assignment_id = uuid.uuid4(), uuid.uuid4()
+        token = self.assignments.encode(
+            project_id=self.project, survey_round_id=round_id,
+            session_token=self.session, page_size=30, created_at=instant,
+            assignment_id=assignment_id,
+        )
+        self.assertEqual((instant, assignment_id), self.assignments.decode(
+            token, project_id=self.project, survey_round_id=round_id,
+            session_token=self.session, page_size=30,
+        ))
+        for codec, selected_round in (
+            (self.assignments, uuid.uuid4()),
+            (SurveyAssignmentCursorCodec(b"x" * 32), round_id),
+        ):
+            with self.assertRaises(ApplicationError):
+                codec.decode(
+                    token, project_id=self.project,
+                    survey_round_id=selected_round,
+                    session_token=self.session, page_size=30,
                 )
 
 
