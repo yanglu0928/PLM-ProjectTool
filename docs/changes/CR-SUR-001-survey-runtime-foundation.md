@@ -123,3 +123,7 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
   两类品牌cursor、完整Version声明计数、零基问题/ordinal、V1规则和四类互斥来源。嵌套规则深冻结，
   不读取跨模块正文或路径。无后端/Schema/依赖/外发变化；定向25、前端79文件1420项、typecheck和
   production build通过，主JS 599.01 kB既有分块提示保留。
+- 2026-10-06 / `SUR-01-A06-A03`：新增Survey列表/详情/Version问题卡片、项目入口及安全来源可用性提示；
+  实际调研记录优先、TEMPLATE仅参考，MANUAL不冒充确认，Handover/Capability内部row ID不展示或猜路由。
+  TEMPLATE仅导航受权Document历史，完整来源定位留A04。无后端/Schema/依赖/外发变化；定向27、前端
+  81文件1429项、typecheck/build通过。静态路由使主JS增至625.76 kB，登记为发行性能后续项。

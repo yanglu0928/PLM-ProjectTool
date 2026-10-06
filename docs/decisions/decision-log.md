@@ -8873,3 +8873,11 @@
 - Reason：宽松JSON会把未知规则或私有字段带入页面；把列表当摘要会遗漏问题并诱发额外猜测；浏览器解析cursor或内部row UUID会破坏会话/Project绑定和Owner边界。深冻结防止展示层无意改写已读取的不可变定义。
 - Impact/Rollback：新增未引用的纯前端客户端与测试，无后端、Schema/Migration、公开API、权限、依赖、Secret或外发。删除新增文件即可回滚。
 - Verification：定向25，前端全量79文件/1420项、TypeScript typecheck、Vite164模块production build通过；599.01 kB主JS既有分块提示保留。
+
+# DEC-20261006-933：Survey 问题卡片分层读取且不把内部来源标识变成链接
+
+- Date/WBS：2026-10-06 / `SUR-01-A06-A03`；依据DEC-931/932、用户确认的交互原则和现有Document/Handover页面。
+- Decision：列表只呈现Survey摘要；详情先读取根和Version页，选择Version时再按ID重读固定详情。问题卡片明确需要维护的回答/规则/输出/证据；TEMPLATE标为参考并只导航受权Document历史，MANUAL及Handover/Capability在解析Owner完成前显示真实限制，不展示或拼接内部row ID。
+- Reason：直接用Version列表对象会混淆摘要与当前读取；裸UUID链接无法重验目标Owner且不友好；复制正文进卡片会失去权限、版本和定位。分层读取和业务标签能降低人工负担而不虚构客户确认。
+- Impact/Rollback：新增纯前端页面、路由和项目入口；无后端、Schema/Migration、API、权限、依赖、Secret或外发。撤路由/导航可回滚。静态路由令主JS增至625.76 kB，作为发行性能偏差保留。
+- Verification：页面/项目入口定向3文件27项，前端全量81文件/1429项、TypeScript typecheck、Vite171模块build通过。
