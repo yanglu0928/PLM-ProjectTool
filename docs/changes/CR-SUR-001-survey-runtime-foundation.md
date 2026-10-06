@@ -68,3 +68,6 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
 - 2026-10-06 / `SUR-01-A03-P03`：完成内部 Validate Owner。对不可变快照复算指纹/计数，以有界
   ConditionRule V1 检查题型、较早问题引用与环，并重新证明四类来源和目标部门当前性；报告经 Audit 与
   持久幂等固定，不修改 Version、不开放 HTTP。
+- 2026-10-06 / `SUR-01-A04-A01`：Review前置核查确认复用通用PROJECT内核；先以0105开放受控
+  Version/Root终态投影，再实现`SRV-02 + SURVEY_ALL_V1`真实Subject Owner。历史Validate报告不能替代
+  送审/终态调用方事务内的当前事实重证。

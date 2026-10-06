@@ -8761,3 +8761,11 @@
 - Reason：冻结基线规定引用方向但未给出可执行 JSON 语法。任意 JSON、动态 latest 或重放时重算都会分别造成不可执行条件、来源漂移和幂等结果变化；有界 AST 也限制恶意深层输入。
 - Impact/Rollback：新增内部条件合同、Validate Service/Repository、Audit replay source 与授权策略；无 Schema/Migration、公开 API、依赖、Secret、网络或数据外发。移除 Owner 注入可回滚，已有 Version/Audit 保留。
 - Verification：新增定向7项；Win11/PG18.6有效/失效来源、非法题型、未来引用、环、重放冲突及Audit回滚恢复通过；后端2797通过/3跳过；wheel SHA-256 `e8491872dff06a1549721639940e0e7f7adb9ca7f3f125473935b8f243df2b64`。
+
+# DEC-20261006-919：Survey Review 复用通用 PROJECT 内核并由业务 Owner 正式化
+
+- Date/WBS：2026-10-06 / `SUR-01-A04-A01`；依据冻结Review Owner边界、`SURVEY_VERSION_SUBMIT_REVIEW`与Schema0104。
+- Decision：不新建Survey专用审批表。注册`SRV-02 + SURVEY_ALL_V1` Subject Owner，送审/终态均重新验证当前完整快照；0105先建立Review绑定和终态数据库守卫，再实现应用Owner。APPROVED替换正式指针并SUPERSEDE旧版，RETURN/WITHDRAW映射RETURNED且保留旧指针。
+- Reason：通用Review已提供事务内Subject回调；历史Validate回执不能证明送审时来源仍有效。0104仍禁止业务状态投影，必须先建立数据库窄门，避免Review终态与Survey状态半提交。
+- Impact/Rollback：本项仅静态核查和实施拆分，无代码/Schema/API/依赖/外发。后续0105与Owner沿CR-SUR-001实施；应用可停止装配，业务历史不可删除。
+- Verification：交叉核对Review Subject合同、PROJECT内核、Capability/Handover真实Owner、Survey0103/0104、Version创建与Validate当前性；标记`SUR_01_A04_A01_REVIEW_PRECHECK_PASS`。
