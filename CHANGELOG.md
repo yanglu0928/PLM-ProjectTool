@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-06：0.1.0-dev.0/SUR-01-A03-P02-A03 新增完整DRAFT SurveyVersion Owner与Migration0104：冻结双角色下规范化问题/选项/四类来源/部门并服务端指纹，消费最小Owner证明，在同事务形成版本链、六表、Audit与幂等；0104仅开放Root身份不变、批准指针不变的lock_version+1，兼容已有批准版本后的下一版草稿。Document补充GLOBAL/同项目TEMPLATE最小证明，不扩大正文读取。验证：定向16、Win11/PG18.6三代版本/重放冲突/Audit回滚/六表原子性/升降PASS、后端2790通过/3跳过；wheel 1031项，SHA-256 `10391ff37ca46591eb3f098872add4df5088ee75edaa785ebf5905226b7ff05c`。已知问题：Validate/Review、HTTP/UI、Round/Response/Conclusion与Workflow资格仍待。
+
 - 2026-10-06：0.1.0-dev.0/SUR-01-A03-P02-A02 新增Handover/Capability/Project最小Survey来源证明Adapter，精确证明当前批准Item与同项目ACTIVE部门，拒绝跨Scope、缺失及过期状态且不暴露正文/路径。无Migration/API/依赖/外发变化。验证：Win11/PG18.6正反例、后端2786通过/3跳过；wheel 1026项，SHA-256 `7530cec86a5b3a58ab69762a96ee09d341ae82231448b9566de2dab72ce3c099`。
 
 - 2026-10-06：0.1.0-dev.0/SUR-01-A03-P02-A01 完成SurveyVersion创建编码前检查并登记CR-SUR-002：0103类型化外键需要版本内row identity，而现有Handover/Capability公共投影未暴露；选择由来源Owner新增最小caller-transaction证明Adapter，Survey不直查跨模块私表。升级/回滚：纯文档设计调整，无Schema/API/角色/依赖/网络/外发；撤后续Adapter注册可回滚。验证：静态核对0103、来源读取投影、Document固定版本证明和模块边界，标记`SUR_01_A03_P02_A01_SOURCE_PROOF_PRECHECK_PASS`。已知问题：A02 Adapter和A03 Version创建尚未实现。

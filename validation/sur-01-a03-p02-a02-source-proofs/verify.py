@@ -16,6 +16,9 @@ from plm_assistant.modules.capability.infrastructure.survey_source_proof import 
 from plm_assistant.modules.handover.infrastructure.survey_source_proof import (
     SqlAlchemyHandoverSurveySourceProof,
 )
+from plm_assistant.modules.document.infrastructure.survey_template_proof import (
+    SqlAlchemySurveyTemplateProof,
+)
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
 from plm_assistant.modules.project.infrastructure.survey_source_proof import (
@@ -47,6 +50,7 @@ def main() -> None:
             handover = SqlAlchemyHandoverSurveySourceProof()
             capability = SqlAlchemyCapabilitySurveySourceProof()
             department = SqlAlchemySurveyTargetDepartmentProof()
+            template = SqlAlchemySurveyTemplateProof()
             with runtime.unit_of_work() as tx:
                 h = handover.prove(
                     tx, project_id=ids["project"],
@@ -62,9 +66,20 @@ def main() -> None:
                 d = department.prove(
                     tx, project_id=ids["project"], department_id=ids["department"],
                 )
+                t = template.prove(
+                    tx, path_project_id=ids["project"],
+                    document_id=ids["template_document"],
+                    document_version_id=ids["template_version"],
+                )
                 assert h is not None and h.item_state == "CONFIRMED"
                 assert c is not None and c.item_state == "AVAILABLE"
                 assert d is not None and d.state == "ACTIVE"
+                assert t is not None and t.scope == "GLOBAL"
+                assert template.prove(
+                    tx, path_project_id=ids["project"],
+                    document_id=ids["record_document"],
+                    document_version_id=ids["record_version"],
+                ) is None
                 assert handover.prove(
                     tx, project_id=uuid.uuid4(),
                     analysis_item_row_id=ids["handover_item_row"],
@@ -104,7 +119,7 @@ def main() -> None:
                 ) is None
             print(
                 "SUR_01_A03_P02_A02_SOURCE_PROOFS_PASS: current approved Handover/"
-                "Capability and active Project Department proofs plus cross-scope, missing "
+                "Capability, TEMPLATE Document and active Project Department proofs plus cross-scope, missing "
                 "and stale-state rejection verified on PostgreSQL 18"
             )
         finally:

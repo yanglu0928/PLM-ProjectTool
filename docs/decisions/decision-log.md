@@ -8745,3 +8745,11 @@
 - Date/WBS：2026-10-06 / `SUR-01-A03-P02-A02`。
 - Decision：三个Owner Adapter只返回固定row/version/root/project身份与合格状态，并在调用方事务持有共享锁；不返回正文或路径。
 - Impact/Verification：无Schema/API/依赖/外发；Win11/PG18.6正反例、后端2786通过/3跳过、wheel SHA-256 `7530cec86a5b3a58ab69762a96ee09d341ae82231448b9566de2dab72ce3c099`。
+
+# DEC-20261006-917：SurveyVersion 创建以窄 Root 更新门和四类 Owner 证明原子提交
+
+- Date/WBS：2026-10-06 / `SUR-01-A03-P02-A03`；依据CR-SUR-002、Schema0103和冻结SURVEY_VERSION_CREATE。
+- Decision：Migration0104只允许ACTIVE且批准指针为空的Survey Root保持身份/名称/状态不变并精确`lock_version+1`；Version内容由服务端规范化并哈希，四类来源和目标部门先经Owner证明，六表、Audit、幂等收据同事务提交。GLOBAL TEMPLATE 使用Document-owned最小证明而非扩大普通Document读取权限。
+- Reason：不更新Root版本会失去If-Match并发语义；直接放宽通用更新或授予GLOBAL Document管理读取会扩大攻击面。JSONB可选条件必须写SQL NULL而非JSON null。
+- Impact/Rollback：新增0104、内部Service/Repository/Document proof，无公开Router、冻结DTO、依赖、Secret或外发。无Version历史可降级恢复全关闭保护；有历史只向前修复。
+- Verification：定向16、Win11/PG18.6四类来源/三代版本/重放冲突/Audit回滚/六表原子性及0104升降PASS；后端2790通过/3跳过；wheel SHA-256 `10391ff37ca46591eb3f098872add4df5088ee75edaa785ebf5905226b7ff05c`。

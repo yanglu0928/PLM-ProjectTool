@@ -36,3 +36,11 @@ Survey；通过最小 dataclass、精确 ID/Scope/状态校验和负例测试关
 - 每个 Adapter 验证正确来源、跨 Project、非当前版本、未批准/不可用、停用部门及伪造组合。
 - PostgreSQL 18.6 caller-transaction 证明和并发状态漂移失败关闭。
 - A03 再验证完整六表、指纹、重放/冲突、Audit 回滚及零部分写入。
+
+## 实施记录
+
+- `SUR-01-A03-P02-A02`：完成 Handover、Capability、Project 最小证明；随后补充 Document-owned
+  TEMPLATE proof，解决现有 GLOBAL Document 管理员读取权限不能直接授予 Survey 双角色的问题，仍不返回正文。
+- `SUR-01-A03-P02-A03`：完成 Migration 0104 和 DRAFT Version Owner。0104 仅允许 Root 身份不变、
+  ACTIVE且批准指针保持不变时 `lock_version + 1`，兼容已有批准版本后的下一版草稿；没有放宽其他修改。
+  真实 PostgreSQL、全量回归与 Wheel 通过。
