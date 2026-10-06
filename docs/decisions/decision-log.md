@@ -8905,3 +8905,11 @@
 - Reason：复用既有Session/Host/Project读权限与生产装配可避免第五套读取边界；严格投影可防止内部row identity、正文、路径或下载URL外泄，且保持冻结四读响应不变。
 - Impact/Rollback：新增一个向后兼容GET、Router和组合注入，无Schema/Migration、现有JSON、角色、依赖、Secret或外发变化；移除include_router即可恢复404。
 - Verification：定向46、Windows 11/PostgreSQL18.6真实HTTP/四类来源/跨项目/漂移/零写、后端2858通过/3跳过、wheel1060项通过；标记`SUR_01_A06_A04_P03_SOURCE_LOCATION_HTTP_PASS`。
+
+# DEC-20261006-937：Survey 前端只在用户点击后解析并展开来源
+
+- Date/WBS：2026-10-06 / `SUR-01-A06-A05-P01`；依据CR-SUR-006及用户对“点击按钮快速定位、明确维护提示”的要求。
+- Decision：问题卡片默认只显示来源种类和维护说明；点击后调用精确location端点。Document固定版本提供历史页及受权原文，Handover仅使用公共analysis/version/item，Evidence再调用既有Viewer核验精确位置；MANUAL、GLOBAL不可展开和目标缺失显示不同的受控说明。
+- Reason：初始页面不得根据旧四读中的内部row identity猜路径，也不应把模板或历史来源误当客户事实；Evidence Viewer是既有的最终权限、完整性与locator边界。
+- Impact/Rollback：纯前端客户端/交互，无后端、Schema/Migration、角色、依赖、Secret或外发变化；移除location客户端和结果区恢复说明态。
+- Verification：定向3文件39项、前端全量82文件1438项、TypeScript和Vite172模块生产构建通过；标记`SUR_01_A06_A05_P01_FRONTEND_PASS`。主JS 636.34 kB的既有分块偏差继续保留，真实浏览器待P02。

@@ -136,3 +136,6 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
 - 2026-10-06 / `SUR-01-A06-A04-P03`：新增严格只读来源定位HTTP并装配到Windows Survey读模式；
   Windows 11/PostgreSQL 18.6真实HTTP验证四类来源、公开投影、跨项目隐藏、状态漂移与零写入。
   A04后端闭环完成，前端点击定位进入A05。
+- 2026-10-06 / `SUR-01-A06-A05-P01`：问题卡片新增按需来源定位客户端和交互；人工来源给维护
+  指引，历史来源提示非当前事实，固定Document/Handover/Evidence提供受权入口。定向39、前端全量
+  82文件1438项、typecheck/build通过，真实浏览器留P02。

@@ -4,18 +4,28 @@ import { RouterLink, useRoute } from "vue-router";
 
 import { SessionClient } from "@/modules/auth/api/sessionClient";
 import { sessionClientKey } from "@/modules/auth/api/sessionContext";
+import { EvidenceViewerClient, EvidenceViewerClientError, type EvidenceViewerDescriptor } from "@/modules/evidence/api/evidenceViewerClient";
 import { SurveyReadClient, SurveyReadError, type SurveyQuestionView, type SurveySourceView,
   type SurveyVersionCursor, type SurveyVersionView, type SurveyView } from "@/modules/survey/api/surveyReadClient";
+import { SurveySourceLocationClient, SurveySourceLocationClientError, type SurveySourceLocation,
+  type SurveySourceLocationView } from "@/modules/survey/api/surveySourceLocationClient";
 
-const props = defineProps<{ session?: SessionClient; surveys?: SurveyReadClient }>();
+const props = defineProps<{ session?: SessionClient; surveys?: SurveyReadClient;
+  sourceLocations?: SurveySourceLocationClient; evidence?: EvidenceViewerClient }>();
 const session = toRaw(props.session ?? inject(sessionClientKey, null) ?? new SessionClient());
 const surveys = toRaw(props.surveys ?? new SurveyReadClient());
+const sourceLocations = toRaw(props.sourceLocations ?? new SurveySourceLocationClient());
+const evidence = toRaw(props.evidence ?? new EvidenceViewerClient());
 const identity = session.view; const route = useRoute();
 const survey = ref<SurveyView | null>(null); const versions = ref<readonly SurveyVersionView[]>([]);
 const versionCursor = ref<SurveyVersionCursor | null>(null); const selectedVersion = ref<SurveyVersionView | null>(null);
 const busy = ref(false); const versionBusy = ref(false); const detailBusy = ref(false);
 const error = ref(""); const versionError = ref(""); const detailError = ref("");
-let generation = 0; let detailGeneration = 0; let mounted = true;
+const locatedSources = ref<Readonly<Record<string, SurveySourceLocationView>>>({});
+const locationErrors = ref<Readonly<Record<string, string>>>({}); const locationBusy = ref("");
+const selectedEvidence = ref<EvidenceViewerDescriptor | null>(null); const selectedEvidenceSource = ref("");
+const evidenceError = ref(""); const evidenceBusy = ref(false);
+let generation = 0; let detailGeneration = 0; let locationGeneration = 0; let evidenceGeneration = 0; let mounted = true;
 const answerLabels = Object.freeze({ TEXT: "文本", SINGLE_CHOICE: "单选", MULTIPLE_CHOICE: "多选",
   DATE: "日期", NUMBER: "数字", ATTACHMENT: "附件" });
 const versionLabels = Object.freeze({ DRAFT: "草稿", IN_REVIEW: "评审中", APPROVED: "已批准", RETURNED: "已退回",
@@ -25,7 +35,11 @@ function ids() { return { projectId: typeof route.params.projectId === "string" 
   surveyId: typeof route.params.surveyId === "string" ? route.params.surveyId : "" }; }
 function mayRead() { return mounted && !!identity && !identity.password_change_required
   && session.view?.user.user_id === identity.user.user_id; }
-function clearSelection() { detailGeneration += 1; selectedVersion.value = null; detailError.value = ""; detailBusy.value = false; }
+function clearLocations() { locationGeneration += 1; evidenceGeneration += 1; locatedSources.value = {};
+  locationErrors.value = {}; locationBusy.value = ""; selectedEvidence.value = null; selectedEvidenceSource.value = "";
+  evidenceError.value = ""; evidenceBusy.value = false; }
+function clearSelection() { detailGeneration += 1; selectedVersion.value = null; detailError.value = ""; detailBusy.value = false;
+  clearLocations(); }
 async function load() {
   if (!mayRead() || busy.value) return;
   const request = ids(); const current = ++generation;
@@ -62,7 +76,7 @@ async function loadMoreVersions() {
 async function choose(summary: SurveyVersionView) {
   if (!mayRead() || detailBusy.value) return;
   const request = ids(); const current = ++detailGeneration;
-  selectedVersion.value = null; detailError.value = ""; detailBusy.value = true;
+  selectedVersion.value = null; detailError.value = ""; detailBusy.value = true; clearLocations();
   try {
     const detail = await surveys.getVersion(request.projectId, request.surveyId, summary.survey_version_id);
     if (!mounted || current !== detailGeneration || ids().projectId !== request.projectId
@@ -94,14 +108,59 @@ function sourceLabel(source: SurveySourceView): string {
       : source.source_kind === "TEMPLATE_DOCUMENT_VERSION" ? "业务表单/模板参考" : "面对面调研或人工来源说明";
 }
 function sourceAvailability(source: SurveySourceView): string {
-  return source.source_kind === "TEMPLATE_DOCUMENT_VERSION" ? "可打开受权文档历史核对固定模板版本。"
-    : source.source_kind === "MANUAL" ? "当前只有人工来源说明；未绑定受控文档或Evidence，不能一键定位原文。"
-      : "当前固定来源已记录，但受控原文定位入口尚未接入；页面不会猜测内部标识。";
+  return source.source_kind === "MANUAL" ? "当前只有人工来源说明；请维护访谈时间、参与人、结论及后续固定证据。"
+    : "点击后由服务器重新核验当前权限并解析固定来源；页面不会猜测内部标识。";
+}
+function sourceKey(question: SurveyQuestionView, source: SurveySourceView): string {
+  return `${question.question_id}:${source.ordinal}`;
+}
+function locationMessage(view: SurveySourceLocationView): string {
+  if (view.unavailable_reason === "MANUAL_SOURCE_NOT_FIXED") return "人工来源尚未绑定固定原文；请按上方提示补充并在后续形成受控记录。";
+  if (view.unavailable_reason === "NO_AUTHORIZED_LOCATION") return "来源记录可追溯，但当前项目身份无权展开其全局原文位置。";
+  if (view.unavailable_reason === "SOURCE_TARGET_UNAVAILABLE") return "原固定目标已不可用；请保留历史说明并发起来源修订。";
+  return "服务器已返回可用定位入口。";
+}
+function documentContentUrl(location: SurveySourceLocation): string {
+  return location.location_kind === "DOCUMENT_VERSION"
+    ? `/api/v1/projects/${location.project_id}/documents/${location.document_id}/versions/${location.document_version_id}/content` : "";
+}
+async function locateSource(question: SurveyQuestionView, source: SurveySourceView) {
+  if (!mayRead() || !selectedVersion.value || locationBusy.value) return;
+  const version = selectedVersion.value; const request = ids(); const key = sourceKey(question, source);
+  if (!version.questions.some(item => item.question_id === question.question_id
+      && item.sources.some(entry => entry.ordinal === source.ordinal && entry.source_kind === source.source_kind))) return;
+  const current = ++locationGeneration; locationBusy.value = key; selectedEvidence.value = null;
+  selectedEvidenceSource.value = ""; evidenceError.value = "";
+  locationErrors.value = Object.freeze({ ...locationErrors.value, [key]: "" });
+  try {
+    const result = await sourceLocations.get(request.projectId, request.surveyId,
+      version.survey_version_id, question.question_id, source.ordinal, source.source_kind);
+    if (!mounted || current !== locationGeneration || selectedVersion.value?.survey_version_id !== version.survey_version_id
+        || ids().projectId !== request.projectId || ids().surveyId !== request.surveyId || !mayRead()) return;
+    locatedSources.value = Object.freeze({ ...locatedSources.value, [key]: result });
+  } catch (failure) {
+    if (mounted && current === locationGeneration) locationErrors.value = Object.freeze({ ...locationErrors.value,
+      [key]: failure instanceof SurveySourceLocationClientError ? failure.message : "暂时无法定位该来源。" });
+  } finally { if (mounted && current === locationGeneration) locationBusy.value = ""; }
+}
+async function locateEvidence(location: SurveySourceLocation, key: string) {
+  if (!mayRead() || evidenceBusy.value || location.location_kind !== "EVIDENCE"
+      || !locatedSources.value[key]?.locations.includes(location)) return;
+  const request = ids(); const current = ++evidenceGeneration; selectedEvidence.value = null;
+  selectedEvidenceSource.value = key; evidenceError.value = ""; evidenceBusy.value = true;
+  try {
+    const result = await evidence.get({ kind: "PROJECT", projectId: request.projectId }, location.evidence_id);
+    if (!mounted || current !== evidenceGeneration || ids().projectId !== request.projectId
+        || ids().surveyId !== request.surveyId || !locatedSources.value[key]?.locations.includes(location) || !mayRead()) return;
+    selectedEvidence.value = result; selectedEvidenceSource.value = key;
+  } catch (failure) { if (mounted && current === evidenceGeneration) evidenceError.value = failure instanceof EvidenceViewerClientError
+    ? failure.message : "暂时无法定位原文。";
+  } finally { if (mounted && current === evidenceGeneration) evidenceBusy.value = false; }
 }
 watch(() => [route.params.projectId, route.params.surveyId], () => {
   generation += 1; clearSelection(); busy.value = false; void load();
 }, { immediate: true });
-onUnmounted(() => { mounted = false; generation += 1; detailGeneration += 1; });
+onUnmounted(() => { mounted = false; generation += 1; detailGeneration += 1; locationGeneration += 1; evidenceGeneration += 1; });
 </script>
 
 <template>
@@ -146,9 +205,36 @@ onUnmounted(() => { mounted = false; generation += 1; detailGeneration += 1; });
                 <strong>{{ sourceLabel(source) }}</strong><p v-if="source.manual_source_note">{{ source.manual_source_note }}</p>
                 <p v-if="source.source_kind === 'TEMPLATE_DOCUMENT_VERSION'" class="template-warning">模板仅供问题结构参考，不是客户事实。</p>
                 <p>{{ sourceAvailability(source) }}</p>
-                <RouterLink v-if="source.source_kind === 'TEMPLATE_DOCUMENT_VERSION' && source.template_document_id"
-                  :to="{ name: 'project-document-detail', params: { projectId: route.params.projectId,
-                    documentId: source.template_document_id } }">打开受权文档历史并核对固定模板版本</RouterLink>
+                <button type="button" :disabled="!!locationBusy || evidenceBusy"
+                  @click="locateSource(question, source)">{{ locationBusy === sourceKey(question, source) ? "正在定位…" : "定位该固定来源" }}</button>
+                <p v-if="locationErrors[sourceKey(question, source)]" role="alert">{{ locationErrors[sourceKey(question, source)] }}</p>
+                <section v-if="locatedSources[sourceKey(question, source)]" class="location-result">
+                  <p>{{ locationMessage(locatedSources[sourceKey(question, source)]!) }}</p>
+                  <p v-if="!locatedSources[sourceKey(question, source)]!.current_eligibility" class="history-warning">
+                    此来源仍可用于历史追溯，但已不再满足当前来源资格，不能当作当前确认事实。</p>
+                  <ul v-if="locatedSources[sourceKey(question, source)]!.locations.length">
+                    <li v-for="location in locatedSources[sourceKey(question, source)]!.locations"
+                      :key="`${location.location_kind}:${location.location_kind === 'EVIDENCE' ? location.evidence_id : location.location_kind === 'DOCUMENT_VERSION' ? location.document_version_id : location.analysis_item_id}`">
+                      <RouterLink v-if="location.location_kind === 'BUSINESS_RECORD'"
+                        :to="{ name: 'project-handover-detail', params: { projectId: location.project_id,
+                          analysisId: location.handover_analysis_id }, query: { version: location.handover_analysis_version_id,
+                          item: location.analysis_item_id } }">打开交接分析中的固定问题</RouterLink>
+                      <template v-else-if="location.location_kind === 'DOCUMENT_VERSION'">
+                        <RouterLink :to="{ name: 'project-document-detail', params: { projectId: location.project_id,
+                          documentId: location.document_id }, query: { version: location.document_version_id } }">查看固定文档版本历史</RouterLink>
+                        <span> · <a :href="documentContentUrl(location)" target="_blank" rel="noopener noreferrer">打开受权固定版本原文</a></span>
+                      </template>
+                      <button v-else type="button" :disabled="evidenceBusy"
+                        @click="locateEvidence(location, sourceKey(question, source))">{{ evidenceBusy ? "正在核验原文…" : "定位原文证据" }}</button>
+                    </li>
+                  </ul>
+                  <section v-if="selectedEvidence && selectedEvidenceSource === sourceKey(question, source)" class="located-evidence">
+                    <h4>已核验的原文位置</h4><p>{{ selectedEvidence.display_label }} · 固定文档版本 {{ selectedEvidence.document_version_no }}</p>
+                    <p v-if="selectedEvidence.short_preview">短提示：{{ selectedEvidence.short_preview }}（不是权威正文）</p>
+                    <a :href="selectedEvidence.content_url" target="_blank" rel="noopener noreferrer">打开受权固定版本</a>
+                  </section>
+                  <p v-if="evidenceError && selectedEvidenceSource === sourceKey(question, source)" role="alert">{{ evidenceError }}</p>
+                </section>
               </article>
             </section>
           </article>
@@ -166,5 +252,7 @@ onUnmounted(() => { mounted = false; generation += 1; detailGeneration += 1; });
 .question-card > header { display: flex; justify-content: space-between; gap: 1rem; }.question-text { font-size: 1.05rem; }
 .source-guide { padding: .8rem; background: #f4f7fb; border-radius: .5rem; }.source-item { padding: .55rem 0; border-top: 1px solid #d8dee7; }
 .source-item:first-of-type { border-top: 0; }.template-warning { color: #7a4b00; font-weight: 600; }
+.location-result { margin-top: .5rem; padding: .7rem; background: #eef7f1; border-radius: .4rem; }.location-result li { margin: .4rem 0; }
+.history-warning { color: #7a4b00; font-weight: 600; }.located-evidence { margin-top: .6rem; padding: .6rem; border-left: .25rem solid #39724f; }
 .fact-warning { padding: .8rem 1rem; border-left: .3rem solid #d29b42; background: #fff8e9; }.survey-detail [role="alert"] { color: #a21d25; }
 </style>
