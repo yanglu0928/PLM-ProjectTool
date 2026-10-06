@@ -47,7 +47,7 @@ class ProjectAuthorizationTests(unittest.TestCase):
                                     operation=operation, resource_id=resource_id)
 
     def test_matrix_exact_for_four_roles(self):
-        self.assertEqual(len(POLICIES), 92)
+        self.assertEqual(len(POLICIES), 93)
         self.assertEqual(POLICIES["SURVEY_CREATE"].roles, frozenset({
             "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER",
         }))
@@ -105,6 +105,8 @@ class ProjectAuthorizationTests(unittest.TestCase):
             self.assertTrue(POLICIES[operation].lock_reads)
         self.assertEqual(POLICIES["SURVEY_RESPONSE_RECORD"].roles, ALL_MEMBERS)
         self.assertTrue(POLICIES["SURVEY_RESPONSE_RECORD"].write)
+        self.assertEqual(POLICIES["SURVEY_ASSIGNMENT_SUBMIT"].roles, ALL_MEMBERS)
+        self.assertTrue(POLICIES["SURVEY_ASSIGNMENT_SUBMIT"].write)
         self.assertEqual(POLICIES["HND_ANALYSIS_CREATE"].roles, frozenset({
             "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER",
         }))

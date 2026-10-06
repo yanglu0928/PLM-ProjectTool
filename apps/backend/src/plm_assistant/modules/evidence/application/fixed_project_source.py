@@ -47,6 +47,7 @@ class VerifiedProjectEvidence:
     verified_by: uuid.UUID | None = None
     verified_project_role: str = ""
     document_category: str = ""
+    original_display_name: str | None = None
 
 
 class SessionPort(Protocol):
@@ -209,6 +210,7 @@ class EvidenceFixedProjectSourceService:
                 fingerprint, verified_by=actor,
                 verified_project_role=role.project_role,
                 document_category=fixed.facts.document_category,
+                original_display_name=fixed.facts.original_display_name,
             )
         except EvidenceFixedSourceError:
             raise

@@ -8993,3 +8993,11 @@
 - Reason：把PROJECT_RECORD直接当结构化答复、允许客户端给ATTACHMENT传任意值、proof后跨事务写入或只凭receipt返回成功，都会形成无法追溯、可漂移或形状不完整的业务事实；显式写序避免ORM在无关系映射时依赖未承诺的插入排序。
 - Impact/Rollback：仅新增内部Owner和SURVEY_RESPONSE_RECORD策略，无Schema/公开API/依赖/Secret/外发；未装配Router仍404，已写历史不可删除。
 - Verification：Win11/PG18.6自助/代录、固定Evidence、更正、并发幂等、Audit回滚、角色/CSRF/License和drift通过；后端2888/3、4188子断言，wheel1077项，SHA-256 `7704683dd77d200f01f35a49abcbce9012562e118f6a4f2648766ae68b59ceba`。
+
+# DEC-20261006-948：SUBMIT 只消费活动链尾并重新证明 Evidence
+
+- Date/WBS：2026-10-06 / `SUR-03-A05`；依据CR-SUR-008、ConditionRule V1、0108更正链和Document/Evidence Owner。
+- Decision：按固定Question顺序求值条件，只有更早且当前活动的链尾Answer进入条件上下文；非活动历史不删除但不参与完整性。活动题重验required、类型、ValidationRule及Evidence；所有Evidence在提交事务重证固定版本/lock/fingerprint。附件扩展名使用Document Owner内部透传的原始显示名，禁止Survey直查Document表或信任客户端名称。
+- Reason：若条件读取非活动旧答复、使用任意历史Response或只检查Evidence ID，SUBMIT可在条件变化、撤销或内容漂移后错误通过；原固定证明未携带名称则无法客观执行已冻结allowed_extensions。
+- Impact/Rollback：无Schema/公开API/依赖/Secret/外发；Document/Evidence内部事实增加可空名称，既有构造兼容。停止Owner装配可阻止新提交，历史不删除。
+- Verification：Win11/PG18.6条件/必答/规则/Evidence漂移、并发重放、Audit回滚、角色/CSRF/License/drift通过；后端2896/3、4193子断言，wheel1081项，SHA-256 `2b59bc885c3aed47a379f1c046ee176316be4f9c992d7bd198a309b310940b37`。

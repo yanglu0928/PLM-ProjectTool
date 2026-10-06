@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import math
 import uuid
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 
 
@@ -74,6 +75,50 @@ def parse_condition_rule(rule: object) -> tuple[SurveyConditionLeaf, ...]:
 
     visit(rule, 1)
     return tuple(leaves)
+
+
+def evaluate_condition_rule(
+    rule: object, answers: Mapping[uuid.UUID, object],
+) -> bool:
+    """Evaluate a validated V1 rule against earlier active current answers."""
+    if not isinstance(answers, Mapping):
+        raise SurveyConditionRuleError("invalid answer mapping")
+    parse_condition_rule(rule)
+
+    def visit(node: dict) -> bool:
+        if "all" in node:
+            return all(visit(child) for child in node["all"])
+        if "any" in node:
+            return any(visit(child) for child in node["any"])
+        reference = uuid.UUID(node["question_ref"])
+        operator = node["operator"]
+        present = reference in answers
+        if operator == "ANSWERED":
+            return present
+        if operator == "NOT_ANSWERED":
+            return not present
+        if not present:
+            return False
+        answer, expected = answers[reference], node["value"]
+        if operator in {"IN", "NOT_IN"}:
+            matched = _answer_in(answer, expected)
+        else:
+            matched = _answer_equals(answer, expected)
+        return not matched if operator in {"NOT_EQUALS", "NOT_IN"} else matched
+
+    return visit(rule)
+
+
+def _answer_equals(answer: object, expected: object) -> bool:
+    if type(answer) is list:
+        return any(type(item) is type(expected) and item == expected for item in answer)
+    return type(answer) is type(expected) and answer == expected
+
+
+def _answer_in(answer: object, expected: list[object]) -> bool:
+    values = answer if type(answer) is list else [answer]
+    return any(type(value) is type(item) and value == item
+               for value in values for item in expected)
 
 
 def _valid_value(value: object, operator: str) -> bool:

@@ -119,6 +119,7 @@ class DocumentEvidenceSourceFacts:
     document_category: str
     document_state: str
     content_sha256: str
+    original_display_name: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -405,7 +406,7 @@ class DocumentReadService:
             return DocumentEvidenceSourceFacts(
                 document_id, document_version_id, query.scope, query.project_id,
                 document.document_category, document.document_state,
-                version.content_sha256,
+                version.content_sha256, document.original_display_name,
             )
         except DocumentReadError:
             raise
