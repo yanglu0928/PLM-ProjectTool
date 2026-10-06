@@ -34,6 +34,7 @@ from plm_assistant.entrypoints.windows_handover_action import (
 from plm_assistant.entrypoints.windows_workflow_checklist import (
     create_windows_workflow_checklist_qualification_router,
     create_windows_workflow_checklist_record_router,
+    create_windows_workflow_stage_transition_router,
 )
 from plm_assistant.entrypoints.windows_handover import (
     create_windows_handover_routers,
@@ -487,6 +488,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         workflow_start_router = None
         workflow_checklist_record_router = None
         workflow_checklist_qualification_router = None
+        workflow_transition_router = None
         audit_read_router = None
         audit_export_result_router = None
         audit_export_download_router = None
@@ -698,6 +700,14 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                     create_windows_workflow_checklist_qualification_router(
                         runtime, sessions=sessions, origins=origins,
                         license_guard=licenses.guard,
+                        documents=document_reads, downloads=document_downloads,
+                        parse_results=evidence_results_for_viewer,
+                    )
+                )
+                workflow_transition_router = (
+                    create_windows_workflow_stage_transition_router(
+                        runtime, sessions=sessions, origins=origins,
+                        license_guard=licenses.guard, audit=audit,
                         documents=document_reads, downloads=document_downloads,
                         parse_results=evidence_results_for_viewer,
                     )
@@ -1408,6 +1418,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             workflow_checklist_qualification_router=(
                 workflow_checklist_qualification_router
             ),
+            workflow_transition_router=workflow_transition_router,
             audit_read_router=audit_read_router,
             audit_export_result_router=audit_export_result_router,
             audit_export_download_router=audit_export_download_router,

@@ -8675,3 +8675,11 @@
 - Reason：冻结合同没有定义ref元素类型，客户端也没有稳定取得两个当前Record身份的冻结读接口；猜造UUID DTO、忽略非空输入或把Evidence ID当Gate授权都会形成不兼容或安全歧义。
 - Impact/Rollback：CR-WFL-009下的兼容性细化；无Schema/Migration/依赖/Secret/外发。Router显式注入且默认404，撤插槽可回滚并保留A03/历史。未来支持非空显式快照需新API CR且保持空数组客户端兼容。
 - Verification：HTTP合同4、后端2777通过/3跳过，wheel 1013项，SHA-256 `84694eb7f938d3b597dd909a612bff6062a617c6e8559fc12b7c817f5facf158`；Windows真实组合留A05。
+
+# DEC-20261006-908：Transition只进入Windows显式写组合并复用同一Handover事实图
+
+- Date/WBS：2026-10-06 / `WFL-02-A02-A05`；依据DEC-904～907、CR-WFL-009及既有Windows生产模式隔离。
+- Decision：Transition Router只在`--platform-write`创建成功且全部信任源存在后挂载；默认App、登录模式、只读平台模式继续关闭。生产组合复用Checklist的Document/Parse/Handover事实图，并以独立Service实例接入同一UOW、Project授权、License、Audit和持久幂等适配器。
+- Reason：Stage推进是不可逆业务写，不能因只读平台启用而扩大攻击面；另造简化Owner会让HTTP验证绕开真实Handover当前事实，无法证明Gate与Checklist记录的一致性。
+- Impact/Rollback：无Schema/Migration、冻结API、角色、依赖、Secret或外发变化；撤生产组合Router注入即可恢复关闭，已提交不可变Transition历史保留。首次验证环境缺包不改变产品依赖，沿用仓库正式依赖集合重跑。
+- Verification：组合/生产入口定向38项；Win11/PostgreSQL18.6独立临时库经真实HTTP验证默认404、Origin/Session/CSRF/If-Match、非空客户端Gate拒绝、首次迁移/精确回放及唯一Transition/双Gate/Audit/receipt；后端2779通过/3跳过，wheel 1013项，SHA-256 `5bfc9fac85fedb89d1a85d2cc7fb1728693fbe3c0cb1510a89d3ccd90aa1bc38`。

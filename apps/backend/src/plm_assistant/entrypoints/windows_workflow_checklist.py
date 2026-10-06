@@ -65,11 +65,17 @@ from plm_assistant.modules.workflow.api.record_checklist import (
 from plm_assistant.modules.workflow.api.qualification_preview import (
     create_workflow_checklist_qualification_router,
 )
+from plm_assistant.modules.workflow.api.transition_stage import (
+    create_workflow_stage_transition_router,
+)
 from plm_assistant.modules.workflow.application.preview_checklist_qualification import (
     WorkflowChecklistQualificationPreviewService,
 )
 from plm_assistant.modules.workflow.application.record_checklist import (
     WorkflowChecklistRecordService,
+)
+from plm_assistant.modules.workflow.application.transition_stage import (
+    WorkflowStageTransitionService,
 )
 from plm_assistant.modules.workflow.infrastructure.checklist_record_append_repository import (
     SqlAlchemyChecklistRecordAppendRepository,
@@ -79,6 +85,9 @@ from plm_assistant.modules.workflow.infrastructure.checklist_record_replay_repos
 )
 from plm_assistant.modules.workflow.infrastructure.read_repository import (
     SqlAlchemyWorkflowReadRepository,
+)
+from plm_assistant.modules.workflow.infrastructure.stage_transition_repository import (
+    SqlAlchemyStageTransitionRepository,
 )
 
 
@@ -187,6 +196,42 @@ def create_windows_workflow_checklist_qualification_router(
         )
         return create_workflow_checklist_qualification_router(
             sessions=sessions, previews=previews, origins=origins,
+        )
+    except Exception:
+        raise ProductionWorkflowChecklistStartupError() from None
+
+
+def create_windows_workflow_stage_transition_router(
+    runtime, *, sessions, origins, license_guard, audit,
+    documents, downloads, parse_results,
+) -> APIRouter:
+    """Compose the opt-in Stage Transition endpoint with real owners."""
+
+    if any(value is None for value in (
+            runtime, sessions, origins, license_guard, audit,
+            documents, downloads, parse_results)):
+        raise ProductionWorkflowChecklistStartupError()
+    try:
+        project_repository = SqlAlchemyProjectAuthorizationRepository()
+        transitions = WorkflowStageTransitionService(
+            unit_of_work=runtime.unit_of_work,
+            sessions=SqlAlchemyProjectWriteAccess(),
+            projects=ProjectAuthorizationService(
+                unit_of_work=runtime.unit_of_work,
+                repository=project_repository,
+            ),
+            license_guard=license_guard,
+            qualification=_create_handover_qualification(
+                documents=documents, downloads=downloads,
+                parse_results=parse_results,
+                project_repository=project_repository,
+            ),
+            transitions=SqlAlchemyStageTransitionRepository(),
+            receipts=SqlAlchemyIdempotencyReceipts(),
+            audit=audit,
+        )
+        return create_workflow_stage_transition_router(
+            sessions=sessions, transitions=transitions, origins=origins,
         )
     except Exception:
         raise ProductionWorkflowChecklistStartupError() from None

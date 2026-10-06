@@ -224,6 +224,11 @@ class ProductionLoginTests(unittest.TestCase):
             "create_windows_workflow_checklist_qualification_router",
             return_value=APIRouter(),
         ))
+        self.workflow_transition_factory = self.enterContext(patch(
+            "plm_assistant.entrypoints.production_login."
+            "create_windows_workflow_stage_transition_router",
+            return_value=APIRouter(),
+        ))
         self.temp_dir = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp_dir.cleanup)
         self.enterContext(patch(
@@ -612,6 +617,7 @@ class ProductionLoginTests(unittest.TestCase):
         self.handover_review_factory.assert_not_called()
         self.workflow_checklist_factory.assert_not_called()
         self.workflow_checklist_qualification_factory.assert_not_called()
+        self.workflow_transition_factory.assert_not_called()
         with TestClient(app, base_url="http://localhost") as client:
             self.assertEqual(client.get("/api/v1/admin/secrets").status_code, 401)
             self.assertEqual(client.get("/api/v1/admin/ai/models").status_code, 401)
@@ -899,6 +905,7 @@ class ProductionLoginTests(unittest.TestCase):
         self.handover_review_factory.assert_called_once()
         self.workflow_checklist_factory.assert_called_once()
         self.workflow_checklist_qualification_factory.assert_called_once()
+        self.workflow_transition_factory.assert_called_once()
         included_routes = (
             route
             for included in app.routes
