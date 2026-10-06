@@ -110,8 +110,8 @@ def fixed_round(*, now, review_id, round_id, project_id, survey_id,
     return fixed, progress
 
 
-def main() -> None:
-    database = "sur01a04p02_" + uuid.uuid4().hex[:6]
+def main(*, use_http: bool = False) -> None:
+    database = ("sur01a04p04_" if use_http else "sur01a04p02_") + uuid.uuid4().hex[:6]
     manager_token = b"m" * 32
     with connect("postgres") as admin:
         admin.execute(sql.SQL("CREATE DATABASE {}").format(
@@ -136,6 +136,12 @@ def main() -> None:
                        (%s,%s,%s,'CUSTOMER_MANAGER')
             """, (ids["project"], manager, ids["department"],
                     ids["project"], reviewer, ids["department"]))
+            target_department = db.execute("""
+                INSERT INTO plm.prj_departments(
+                  project_id,department_code,department_code_normalized,name)
+                VALUES (%s,'SURVEY_TARGET','survey_target','Survey Target')
+                RETURNING department_id
+            """, (ids["project"],)).fetchone()[0]
             survey_id = db.execute("""
                 INSERT INTO plm.srv_surveys(project_id,name,created_by)
                 VALUES (%s,'Review survey',%s) RETURNING survey_id
@@ -167,7 +173,7 @@ def main() -> None:
             )
             first = creator.create(CreateSurveyVersion(
                 manager_token, CSRF, uuid.uuid4(), ids["project"], survey_id,
-                0, valid_questions(ids), (ids["department"],),
+                0, valid_questions(ids), (target_department,),
                 str(uuid.uuid4()),
             ))
             reviewer_service = ProjectReviewerQualificationService(
@@ -189,7 +195,76 @@ def main() -> None:
             assert authorized is not None
             assert authorized.policy_code == "SURVEY_ALL_V1"
 
-            review1, round1 = uuid.uuid4(), uuid.uuid4()
+            client = None
+            if use_http:
+                from fastapi.testclient import TestClient
+                from plm_assistant.entrypoints.api import create_app
+                from plm_assistant.entrypoints.windows_project_review import (
+                    create_windows_project_review_router,
+                )
+                from plm_assistant.modules.auth.api.login_origin_policy import (
+                    LoginOriginPolicy,
+                )
+
+                class Sessions:
+                    @staticmethod
+                    def validate(token, *, csrf_token=None, require_csrf=False):
+                        assert token in (manager_token, b"r" * 32)
+                        if require_csrf:
+                            assert csrf_token == CSRF
+                        return object()
+
+                router = create_windows_project_review_router(
+                    runtime, sessions=Sessions(),
+                    origins=LoginOriginPolicy(["http://localhost"]),
+                    license_guard=guard, audit=audit,
+                )
+                client = TestClient(
+                    create_app(review_command_router=router),
+                    base_url="http://localhost",
+                )
+
+            def headers(token: bytes, *, etag: str | None = None):
+                result = {
+                    "origin": "http://localhost",
+                    "cookie": "plm_session=" + token.hex(),
+                    "x-csrf-token": CSRF.hex(),
+                    "idempotency-key": str(uuid.uuid4()),
+                }
+                if etag is not None:
+                    result["if-match"] = etag
+                return result
+
+            def create_start(version_id):
+                assert client is not None
+                root = f"/api/v1/projects/{ids['project']}/reviews"
+                created = client.post(root, headers=headers(manager_token), json={
+                    "subject_ref": {
+                        "resource_type": "SRV-02",
+                        "resource_id": str(survey_id),
+                        "version_id": str(version_id),
+                    },
+                })
+                assert created.status_code == 201, created.text
+                review_id = uuid.UUID(created.json()["data"]["review_id"])
+                started = client.post(
+                    f"{root}/{review_id}/rounds",
+                    headers=headers(manager_token, etag='"v0"'),
+                    json={
+                        "subject_version_ref": str(version_id),
+                        "reviewer_user_ids": [str(reviewer)],
+                        "policy_code": "SURVEY_ALL_V1",
+                    },
+                )
+                assert started.status_code == 201, started.text
+                return review_id, uuid.UUID(
+                    started.json()["data"]["review_round_id"]
+                )
+
+            review1, round1 = (
+                create_start(first.survey_version_id) if client is not None
+                else (uuid.uuid4(), uuid.uuid4())
+            )
             identity1 = ReviewIdentitySnapshot(
                 review1, "PROJECT", ids["project"], "SRV-02", survey_id,
                 "SURVEY_ALL_V1", "DRAFT", None, 0,
@@ -198,32 +273,33 @@ def main() -> None:
                 manager, identity1, round1, first.survey_version_id,
                 (reviewer,),
             )
-            with runtime.unit_of_work() as tx:
-                prepared = owner.prepare_start_in_transaction(tx, request1)
-                assert prepared.basis == ()
-                tx.session.execute(text("SET LOCAL session_replication_role='replica'"))
-                tx.session.execute(text("""
-                    INSERT INTO plm.rvw_reviews(
-                      review_id,scope,project_id,subject_type,subject_id,
-                      policy_code,review_state,active_round_id,lock_version,created_by)
-                    VALUES (:review,'PROJECT',:project,'SRV-02',:survey,
-                      'SURVEY_ALL_V1','IN_REVIEW',:round,1,:actor)
-                """), {"review": review1, "project": ids["project"],
-                        "survey": survey_id, "round": round1, "actor": manager})
-                tx.session.execute(text("""
-                    INSERT INTO plm.rvw_review_rounds(
-                      review_round_id,review_id,scope,project_id,round_no,
-                      subject_version_id,round_state,lock_version,started_by,started_at)
-                    VALUES (:round,:review,'PROJECT',:project,1,:version,
-                      'IN_REVIEW',0,:actor,:started)
-                """), {"round": round1, "review": review1,
-                        "project": ids["project"],
-                        "version": first.survey_version_id,
-                        "actor": manager, "started": now})
-                tx.session.execute(text("SET LOCAL session_replication_role='origin'"))
-                owner.finalize_start_in_transaction(tx, request1)
-                owner.assert_active_lock_in_transaction(tx, request1)
-                tx.commit()
+            if client is None:
+                with runtime.unit_of_work() as tx:
+                    prepared = owner.prepare_start_in_transaction(tx, request1)
+                    assert prepared.basis == ()
+                    tx.session.execute(text("SET LOCAL session_replication_role='replica'"))
+                    tx.session.execute(text("""
+                        INSERT INTO plm.rvw_reviews(
+                          review_id,scope,project_id,subject_type,subject_id,
+                          policy_code,review_state,active_round_id,lock_version,created_by)
+                        VALUES (:review,'PROJECT',:project,'SRV-02',:survey,
+                          'SURVEY_ALL_V1','IN_REVIEW',:round,1,:actor)
+                    """), {"review": review1, "project": ids["project"],
+                            "survey": survey_id, "round": round1, "actor": manager})
+                    tx.session.execute(text("""
+                        INSERT INTO plm.rvw_review_rounds(
+                          review_round_id,review_id,scope,project_id,round_no,
+                          subject_version_id,round_state,lock_version,started_by,started_at)
+                        VALUES (:round,:review,'PROJECT',:project,1,:version,
+                          'IN_REVIEW',0,:actor,:started)
+                    """), {"round": round1, "review": review1,
+                            "project": ids["project"],
+                            "version": first.survey_version_id,
+                            "actor": manager, "started": now})
+                    tx.session.execute(text("SET LOCAL session_replication_role='origin'"))
+                    owner.finalize_start_in_transaction(tx, request1)
+                    owner.assert_active_lock_in_transaction(tx, request1)
+                    tx.commit()
 
             fixed1, progress1 = fixed_round(
                 now=now, review_id=review1, round_id=round1,
@@ -243,37 +319,66 @@ def main() -> None:
                 db.execute("SET LOCAL session_replication_role='replica'")
                 db.execute(
                     "UPDATE plm.prj_departments SET state='INACTIVE' "
-                    "WHERE department_id=%s", (ids["department"],),
+                    "WHERE department_id=%s", (target_department,),
                 )
-            try:
-                with runtime.unit_of_work() as tx:
-                    owner.require_transition_access_in_transaction(tx, approval)
-            except ReviewSubjectAccessDenied:
-                pass
+            if client is None:
+                try:
+                    with runtime.unit_of_work() as tx:
+                        owner.require_transition_access_in_transaction(tx, approval)
+                except ReviewSubjectAccessDenied:
+                    pass
+                else:
+                    raise AssertionError("stale target department approved")
             else:
-                raise AssertionError("stale target department approved")
+                stale_path = (
+                    f"/api/v1/projects/{ids['project']}/reviews/{review1}/"
+                    f"rounds/{round1}:decide"
+                )
+                stale = client.post(
+                    stale_path, headers=headers(b"r" * 32),
+                    json={"decision": "APPROVE", "comment": None},
+                )
+                assert stale.status_code == 404, stale.text
             with connect(database) as db, db.transaction():
                 db.execute("SET LOCAL session_replication_role='replica'")
                 db.execute(
                     "UPDATE plm.prj_departments SET state='ACTIVE' "
-                    "WHERE department_id=%s", (ids["department"],),
+                    "WHERE department_id=%s", (target_department,),
                 )
 
-            with runtime.unit_of_work() as tx:
-                owner.require_transition_access_in_transaction(tx, approval)
-                tx.session.execute(text("SET LOCAL session_replication_role='replica'"))
-                tx.session.execute(text(
-                    "UPDATE plm.rvw_reviews SET review_state='APPROVED',"
-                    "active_round_id=NULL,lock_version=2 WHERE review_id=:review"
-                ), {"review": review1})
-                tx.session.execute(text(
-                    "UPDATE plm.rvw_review_rounds SET round_state='APPROVED',"
-                    "lock_version=1 WHERE review_round_id=:round"
-                ), {"round": round1})
-                tx.session.execute(text("SET LOCAL session_replication_role='origin'"))
-                owner.consume_terminal_in_transaction(tx, approval)
-                owner.assert_terminal_consumed_in_transaction(tx, approval)
-                tx.commit()
+            if client is None:
+                with runtime.unit_of_work() as tx:
+                    owner.require_transition_access_in_transaction(tx, approval)
+                    tx.session.execute(text("SET LOCAL session_replication_role='replica'"))
+                    tx.session.execute(text(
+                        "UPDATE plm.rvw_reviews SET review_state='APPROVED',"
+                        "active_round_id=NULL,lock_version=2 WHERE review_id=:review"
+                    ), {"review": review1})
+                    tx.session.execute(text(
+                        "UPDATE plm.rvw_review_rounds SET round_state='APPROVED',"
+                        "lock_version=1 WHERE review_round_id=:round"
+                    ), {"round": round1})
+                    tx.session.execute(text("SET LOCAL session_replication_role='origin'"))
+                    owner.consume_terminal_in_transaction(tx, approval)
+                    owner.assert_terminal_consumed_in_transaction(tx, approval)
+                    tx.commit()
+            else:
+                approve_headers = headers(b"r" * 32)
+                approve_body = {"decision": "APPROVE", "comment": None}
+                approve_path = (
+                    f"/api/v1/projects/{ids['project']}/reviews/{review1}/"
+                    f"rounds/{round1}:decide"
+                )
+                approved = client.post(
+                    approve_path, headers=approve_headers, json=approve_body,
+                )
+                assert approved.status_code == 200, approved.text
+                assert approved.json()["data"]["state"] == "APPROVED"
+                replayed = client.post(
+                    approve_path, headers=approve_headers, json=approve_body,
+                )
+                assert replayed.status_code == 200, replayed.text
+                assert replayed.json()["data"] == approved.json()["data"]
 
             with connect(database) as db:
                 root = db.execute(
@@ -285,9 +390,12 @@ def main() -> None:
             second = creator.create(CreateSurveyVersion(
                 manager_token, CSRF, uuid.uuid4(), ids["project"], survey_id,
                 second_expected_lock, valid_questions(ids),
-                (ids["department"],), str(uuid.uuid4()),
+                (target_department,), str(uuid.uuid4()),
             ))
-            review2, round2 = uuid.uuid4(), uuid.uuid4()
+            review2, round2 = (
+                create_start(second.survey_version_id) if client is not None
+                else (uuid.uuid4(), uuid.uuid4())
+            )
             identity2 = ReviewIdentitySnapshot(
                 review2, "PROJECT", ids["project"], "SRV-02", survey_id,
                 "SURVEY_ALL_V1", "DRAFT", None, 0,
@@ -296,30 +404,31 @@ def main() -> None:
                 manager, identity2, round2, second.survey_version_id,
                 (reviewer,),
             )
-            with runtime.unit_of_work() as tx:
-                owner.prepare_start_in_transaction(tx, request2)
-                tx.session.execute(text("SET LOCAL session_replication_role='replica'"))
-                tx.session.execute(text("""
-                    INSERT INTO plm.rvw_reviews(
-                      review_id,scope,project_id,subject_type,subject_id,
-                      policy_code,review_state,active_round_id,lock_version,created_by)
-                    VALUES (:review,'PROJECT',:project,'SRV-02',:survey,
-                      'SURVEY_ALL_V1','IN_REVIEW',:round,1,:actor)
-                """), {"review": review2, "project": ids["project"],
-                        "survey": survey_id, "round": round2, "actor": manager})
-                tx.session.execute(text("""
-                    INSERT INTO plm.rvw_review_rounds(
-                      review_round_id,review_id,scope,project_id,round_no,
-                      subject_version_id,round_state,lock_version,started_by,started_at)
-                    VALUES (:round,:review,'PROJECT',:project,1,:version,
-                      'IN_REVIEW',0,:actor,:started)
-                """), {"round": round2, "review": review2,
-                        "project": ids["project"],
-                        "version": second.survey_version_id,
-                        "actor": manager, "started": now})
-                tx.session.execute(text("SET LOCAL session_replication_role='origin'"))
-                owner.finalize_start_in_transaction(tx, request2)
-                tx.commit()
+            if client is None:
+                with runtime.unit_of_work() as tx:
+                    owner.prepare_start_in_transaction(tx, request2)
+                    tx.session.execute(text("SET LOCAL session_replication_role='replica'"))
+                    tx.session.execute(text("""
+                        INSERT INTO plm.rvw_reviews(
+                          review_id,scope,project_id,subject_type,subject_id,
+                          policy_code,review_state,active_round_id,lock_version,created_by)
+                        VALUES (:review,'PROJECT',:project,'SRV-02',:survey,
+                          'SURVEY_ALL_V1','IN_REVIEW',:round,1,:actor)
+                    """), {"review": review2, "project": ids["project"],
+                            "survey": survey_id, "round": round2, "actor": manager})
+                    tx.session.execute(text("""
+                        INSERT INTO plm.rvw_review_rounds(
+                          review_round_id,review_id,scope,project_id,round_no,
+                          subject_version_id,round_state,lock_version,started_by,started_at)
+                        VALUES (:round,:review,'PROJECT',:project,1,:version,
+                          'IN_REVIEW',0,:actor,:started)
+                    """), {"round": round2, "review": review2,
+                            "project": ids["project"],
+                            "version": second.survey_version_id,
+                            "actor": manager, "started": now})
+                    tx.session.execute(text("SET LOCAL session_replication_role='origin'"))
+                    owner.finalize_start_in_transaction(tx, request2)
+                    tx.commit()
 
             fixed2, progress2 = fixed_round(
                 now=now, review_id=review2, round_id=round2,
@@ -337,23 +446,41 @@ def main() -> None:
                 db.execute("SET LOCAL session_replication_role='replica'")
                 db.execute(
                     "UPDATE plm.prj_departments SET state='INACTIVE' "
-                    "WHERE department_id=%s", (ids["department"],),
+                    "WHERE department_id=%s", (target_department,),
                 )
-            with runtime.unit_of_work() as tx:
-                owner.require_transition_access_in_transaction(tx, withdrawn)
-                tx.session.execute(text("SET LOCAL session_replication_role='replica'"))
-                tx.session.execute(text(
-                    "UPDATE plm.rvw_reviews SET review_state='WITHDRAWN',"
-                    "active_round_id=NULL,lock_version=2 WHERE review_id=:review"
-                ), {"review": review2})
-                tx.session.execute(text(
-                    "UPDATE plm.rvw_review_rounds SET round_state='WITHDRAWN',"
-                    "lock_version=1 WHERE review_round_id=:round"
-                ), {"round": round2})
-                tx.session.execute(text("SET LOCAL session_replication_role='origin'"))
-                owner.consume_terminal_in_transaction(tx, withdrawn)
-                owner.assert_terminal_consumed_in_transaction(tx, withdrawn)
-                tx.commit()
+            if client is None:
+                with runtime.unit_of_work() as tx:
+                    owner.require_transition_access_in_transaction(tx, withdrawn)
+                    tx.session.execute(text("SET LOCAL session_replication_role='replica'"))
+                    tx.session.execute(text(
+                        "UPDATE plm.rvw_reviews SET review_state='WITHDRAWN',"
+                        "active_round_id=NULL,lock_version=2 WHERE review_id=:review"
+                    ), {"review": review2})
+                    tx.session.execute(text(
+                        "UPDATE plm.rvw_review_rounds SET round_state='WITHDRAWN',"
+                        "lock_version=1 WHERE review_round_id=:round"
+                    ), {"round": round2})
+                    tx.session.execute(text("SET LOCAL session_replication_role='origin'"))
+                    owner.consume_terminal_in_transaction(tx, withdrawn)
+                    owner.assert_terminal_consumed_in_transaction(tx, withdrawn)
+                    tx.commit()
+            else:
+                withdraw_headers = headers(manager_token, etag='"v1"')
+                withdraw_body = {"reason": "Source changed"}
+                withdraw_path = (
+                    f"/api/v1/projects/{ids['project']}/reviews/{review2}/"
+                    f"rounds/{round2}:withdraw"
+                )
+                response = client.post(
+                    withdraw_path, headers=withdraw_headers, json=withdraw_body,
+                )
+                assert response.status_code == 200, response.text
+                assert response.json()["data"]["state"] == "WITHDRAWN"
+                replayed = client.post(
+                    withdraw_path, headers=withdraw_headers, json=withdraw_body,
+                )
+                assert replayed.status_code == 200, replayed.text
+                assert replayed.json()["data"] == response.json()["data"]
 
             with connect(database) as db:
                 rows = dict(db.execute(
@@ -374,8 +501,14 @@ def main() -> None:
                 ).fetchall())
                 assert actions["SURVEY_VERSION_APPROVED"] == 1
                 assert actions["SURVEY_VERSION_WITHDRAWN"] == 1
+            if client is not None:
+                client.close()
+            marker = (
+                "SUR_01_A04_A02_P04_WINDOWS_HTTP_PASS" if use_http else
+                "SUR_01_A04_A02_P02_REVIEW_OWNER_PASS"
+            )
             print(
-                "SUR_01_A04_A02_P02_REVIEW_OWNER_PASS: latest Draft creation "
+                marker + ": latest Draft creation "
                 "authorization, current reviewer/source validation, exact start "
                 "binding, stale-source approval rejection, atomic approval and "
                 "stale-source withdrawal with retained approved pointer verified "

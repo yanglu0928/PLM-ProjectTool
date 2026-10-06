@@ -425,8 +425,8 @@ def main(*, use_http: bool = False) -> None:
                 if use_http:
                     from fastapi.testclient import TestClient
                     from plm_assistant.entrypoints.api import create_app
-                    from plm_assistant.entrypoints.windows_handover_review import (
-                        create_windows_handover_review_router,
+                    from plm_assistant.entrypoints.windows_project_review import (
+                        create_windows_project_review_router,
                     )
                     from plm_assistant.modules.auth.api.login_origin_policy import (
                         LoginOriginPolicy,
@@ -440,7 +440,7 @@ def main(*, use_http: bool = False) -> None:
                                 assert csrf_token == CSRF
                             return object()
 
-                    router = create_windows_handover_review_router(
+                    router = create_windows_project_review_router(
                         runtime, sessions=Sessions(),
                         origins=LoginOriginPolicy(["http://localhost"]),
                         license_guard=guard, audit=audit,

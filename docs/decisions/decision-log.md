@@ -8793,3 +8793,11 @@
 - Reason：现有Router按subject_type传递通用命令，DTO、安全传输、ETag、错误映射和最小响应均已冻结；复制路径会造成安全与幂等语义分叉。
 - Impact/Rollback：仅新增Survey合同测试和实施记录，无运行时代码、Migration、ORM、公开路径、角色、依赖、Secret或外发。生产入口在P04组合前仍默认关闭。
 - Verification：Survey合同3，连同通用Review/Subject Owner定向13；后端2810通过/3跳过；wheel 1038项，SHA-256 `bc9bd853a438bdd3b2e63b6fff76e15b4bed53954b99bd7bd47a911ff15cbc7d`。
+
+# DEC-20261006-923：唯一 PROJECT Review Router 以 Subject Registry 组合多业务 Owner
+
+- Date/WBS：2026-10-06 / `SUR-01-A04-A02-P04`；依据CR-SUR-003、冻结API-02及DEC-922。
+- Decision：生产平台只挂载一组Review四写路径，由`ProjectReviewSubjectRegistry`按唯一`SUBJECT_TYPE`把全部create/start/transition/replay回调分派到Handover或Survey真实Owner。未知、重复、不完整Owner失败关闭；不得通过同路径多Router的注册顺序实现回退。
+- Reason：FastAPI匹配首个同路径Router后不会因业务404继续尝试下一Router；Handover单Owner组合与第二个Survey Router无法共存。Review内核已经以Owner Port定义全部事务回调，Registry是最小且可验证的组合扩展。
+- Impact/Rollback：Windows平台写组合改用双Owner Router；默认/login-only/只读保持关闭。无Schema/ORM/冻结API/角色/依赖/Secret/网络/外发。回滚到Handover单Owner会关闭Survey HTTP但保留全部历史。
+- Verification：Registry/组合新增6、定向48；Win11/PG18.6 Survey来源漂移拒批/恢复批准/漂移撤回及Handover全链双回归PASS；后端最终2816通过/3跳过；wheel 1040项，SHA-256 `9334cdad39de0438c6fef6b9d40056c0ebe3b9bfc19c2fbad725fa8a0c2f825d`。

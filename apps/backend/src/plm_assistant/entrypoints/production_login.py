@@ -39,8 +39,8 @@ from plm_assistant.entrypoints.windows_workflow_checklist import (
 from plm_assistant.entrypoints.windows_handover import (
     create_windows_handover_routers,
 )
-from plm_assistant.entrypoints.windows_handover_review import (
-    create_windows_handover_review_router,
+from plm_assistant.entrypoints.windows_project_review import (
+    create_windows_project_review_router,
 )
 from plm_assistant.entrypoints.windows_audit_list_cursor import create_windows_audit_cursor_codec
 from plm_assistant.modules.audit.api.read_events import create_audit_read_router
@@ -570,7 +570,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 )
                 handover_action_command_router = action_write_routers.commands
                 handover_action_lifecycle_router = action_write_routers.lifecycle
-                review_command_router = create_windows_handover_review_router(
+                review_command_router = create_windows_project_review_router(
                     runtime, sessions=sessions, origins=origins,
                     license_guard=licenses.guard, audit=audit,
                 )

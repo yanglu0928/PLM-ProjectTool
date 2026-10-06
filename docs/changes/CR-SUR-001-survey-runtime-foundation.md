@@ -83,3 +83,7 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
 - 2026-10-06 / `SUR-01-A04-A02-P03`：确认冻结PROJECT Review四写Router按Subject调度，`SRV-02`
   直接复用而不复制Survey专用Review路径；新增`SURVEY_ALL_V1`创建/开轮/终态、安全边界和错误投影合同。
   无运行时代码、Schema/API路径/依赖/外发变化；后端全量及wheel检查通过，真实Windows HTTP/PG组合留P04。
+- 2026-10-06 / `SUR-01-A04-A02-P04`：P03预想的第二份同路径Router无法与既有Handover入口安全共存，
+  因此登记并实施CR-SUR-003，以Review-owned Subject Registry让唯一PROJECT Router按`HND-02`/`SRV-02`
+  失败关闭分派。Windows 11/PostgreSQL 18.6真实Survey与Handover双链、后端全量和wheel通过；无Schema/
+  冻结API/依赖/外发变化，默认/login-only/只读组合仍关闭Review写入。
