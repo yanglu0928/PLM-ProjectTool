@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-06：0.1.0-dev.0/SUR-01-A06-A05-P02 完成Windows 11真实Edge来源定位闭环：构建Vue经生产FastAPI/PostgreSQL18.6展开Handover、Capability、PROJECT Template与MANUAL，4个location和1个Evidence Viewer均200，无UI告警/内部row identity，Survey/Version零写并清理临时资源。按DEC-938窄修复列表摘要/详情兼容与浏览器原生fetch接收者问题。兼容性/回滚：无Schema/Migration、冻结API、角色、依赖、Secret或外发变化；撤兼容修正会恢复已验证浏览器故障。验证：前端82文件1441项、typecheck、Vite172模块build通过。已知问题：主JS636.50 kB分块提示、定义写UI、Round/Response/Conclusion、Gate3/UAT及发行仍待；托管浏览器内核缺资源，已用同机Edge/CDP留证。
+
 - 2026-10-06：0.1.0-dev.0/SUR-01-A06-A05-P01 新增Survey来源定位前端客户端与按需点击：人工来源显示需维护信息，历史来源提示不再当前合格，Document固定版本、Handover公共记录及Evidence Viewer精确原文入口按权限展开；不显示或猜测内部row identity。兼容性/回滚：纯前端，无后端/Schema/Migration/角色/依赖/Secret/外发变化，移除客户端和结果区即可回滚。验证：定向39、前端82文件1438项、typecheck、Vite172模块build通过。已知问题：真实浏览器P02、定义写UI、Round/Response/Conclusion、Gate3与发行仍待；主JS 636.34 kB分块提示继续登记。
 
 - 2026-10-06：0.1.0-dev.0/SUR-01-A06-A04-P03 新增严格Survey来源定位GET及Windows组合；响应仅含按来源互斥的公共业务/Document/Evidence标识，拒绝query/body、非规范UUID/ordinal，默认应用仍404。兼容性/回滚：向后兼容子资源，无Schema/Migration、现有四读JSON、角色、依赖、Secret或外发变化，撤Router注入恢复404。验证：定向46、Win11/PG18.6真实HTTP四类来源/隔离/漂移/零写、后端2858/3、wheel1060项，SHA-256 `7e2575f0fe62d221410fa5d6783195b28ee6c928afa7cfcb7ef42577e523cf1f`。已知问题：A05前端点击/浏览器闭环、写交互、Round/Response/Conclusion、Gate3与发行仍待。

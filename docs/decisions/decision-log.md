@@ -8913,3 +8913,11 @@
 - Reason：初始页面不得根据旧四读中的内部row identity猜路径，也不应把模板或历史来源误当客户事实；Evidence Viewer是既有的最终权限、完整性与locator边界。
 - Impact/Rollback：纯前端客户端/交互，无后端、Schema/Migration、角色、依赖、Secret或外发变化；移除location客户端和结果区恢复说明态。
 - Verification：定向3文件39项、前端全量82文件1438项、TypeScript和Vite172模块生产构建通过；标记`SUR_01_A06_A05_P01_FRONTEND_PASS`。主JS 636.34 kB的既有分块偏差继续保留，真实浏览器待P02。
+
+# DEC-20261006-938：Survey 来源定位以真实浏览器差异收紧兼容边界
+
+- Date/WBS：2026-10-06 / `SUR-01-A06-A05-P02`；依据CR-SUR-001/006、DEC-932/937及Windows 11真实Edge复验。
+- Decision：Version列表允许服务端既有摘要形状，但仅接受问题和目标部门数组同时为空，详情继续要求完整计数；Survey location与Evidence Viewer的原生`fetch`以无接收者方式调用。浏览器夹具使用规范LocalFileStorage locator和整文档Evidence，不以非规范测试路径降低生产完整性检查。
+- Reason：列表后端有意返回声明计数而不展开owned集合，沿用详情校验会让页面失败关闭；将浏览器原生`fetch`作为对象方法调用会在请求发出前失败。放宽详情或绕过Evidence完整性核验都会掩盖真实合同错误，故只做窄兼容修正。
+- Impact/Rollback：前端读取/Viewer兼容修正及隔离验收脚本，无Schema/Migration、冻结API、角色、依赖、Secret、外发或客户数据。撤代码会恢复已验证浏览器故障；历史数据不变。
+- Verification：Windows 11 Edge经构建Vue/生产FastAPI/PostgreSQL18.6取得4个location 200与1个Viewer 200，无UI告警/内部row identity，Survey/Version零写与临时资源清理通过；前端82文件1441项、typecheck及Vite172模块build通过。托管computer-use因kernel assets缺失改用同机Edge/CDP，记录为工具偏差而非产品PASS替代。

@@ -78,6 +78,15 @@ describe("SurveyReadClient", () => {
     expect(Object.isFrozen(value.questions[0]!.sources)).toBe(true);
   });
 
+  it("accepts the backend list-summary shape but keeps detail parsing strict", async () => {
+    const summary = { ...versionView, questions: [], target_departments: [] };
+    await expect(client(ok({ items: [summary], next_cursor: null, has_more: false })).api
+      .listVersions(project, survey)).resolves.toMatchObject({ items: [{ declared_question_count: 1, questions: [] }] });
+    expect(() => parseSurveyVersion(summary, project, survey, version)).toThrowError(SurveyReadError);
+    expect(() => parseSurveyVersion({ ...summary, target_departments: versionView.target_departments },
+      project, survey, undefined, true)).toThrowError(SurveyReadError);
+  });
+
   it("accepts bounded V1 validation and condition rule shapes", () => {
     const earlier = { ...questionView, question_id: actor, answer_type: "TEXT", options: [],
       validation_rule: { min_length: 1, max_length: 2000 }, sources: [{ ...source, source_kind: "MANUAL",

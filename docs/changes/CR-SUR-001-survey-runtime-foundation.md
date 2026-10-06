@@ -139,3 +139,7 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
 - 2026-10-06 / `SUR-01-A06-A05-P01`：问题卡片新增按需来源定位客户端和交互；人工来源给维护
   指引，历史来源提示非当前事实，固定Document/Handover/Evidence提供受权入口。定向39、前端全量
   82文件1438项、typecheck/build通过，真实浏览器留P02。
+- 2026-10-06 / `SUR-01-A06-A05-P02`：Windows 11真实Edge经构建Vue、生产FastAPI与
+  PostgreSQL18.6完成四类来源及Evidence Viewer闭环；按DEC-938修正Version列表摘要兼容和浏览器
+  原生fetch调用上下文。4个location、1个Viewer均200，无告警/内部row identity，Survey/Version零写，
+  前端82文件1441项与构建通过。SUR-01来源定位闭环完成，进入SUR-02 Round前置核查。

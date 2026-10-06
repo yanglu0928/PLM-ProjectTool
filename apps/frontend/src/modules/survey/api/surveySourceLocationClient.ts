@@ -151,7 +151,10 @@ export class SurveySourceLocationClient {
     }
     const controller = new AbortController(); const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
     try {
-      const response = await this.fetcher(
+      // Keep the platform fetch detached from this client instance. Native browser
+      // implementations may reject an invocation whose receiver is not Window.
+      const fetcher = this.fetcher;
+      const response = await fetcher(
         `/api/v1/projects/${projectId}/surveys/${surveyId}/versions/${versionId}/questions/${questionId}/sources/${ordinal}/location`,
         { method: "GET", credentials: "same-origin", cache: "no-store", redirect: "error",
           headers: { Accept: "application/json" }, signal: controller.signal });

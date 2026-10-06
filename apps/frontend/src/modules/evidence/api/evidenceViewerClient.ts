@@ -149,7 +149,11 @@ export class EvidenceViewerClient {
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
     try {
-      const response = await this.fetcher(`${path}/evidence/${evidenceId}/viewer`, {
+      // Invoke a browser-native fetch as a standalone function. Binding the
+      // EvidenceViewerClient instance as its receiver fails before any request
+      // is emitted in Windows Edge.
+      const fetcher = this.fetcher;
+      const response = await fetcher(`${path}/evidence/${evidenceId}/viewer`, {
         method: "GET", credentials: "same-origin", cache: "no-store", redirect: "error",
         headers: { Accept: "application/json" }, signal: controller.signal,
       });

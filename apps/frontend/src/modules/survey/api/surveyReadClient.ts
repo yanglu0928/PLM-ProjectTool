@@ -254,7 +254,7 @@ const versionFields = ["survey_version_id", "survey_id", "project_id", "version_
   "supersedes_version_ref", "review_ref", "review_round_ref", "created_by", "created_at", "questions",
   "target_departments"] as const;
 export function parseSurveyVersion(value: unknown, projectId: string, surveyId: string,
-                                   versionId?: string): SurveyVersionView {
+                                   versionId?: string, allowSummary = false): SurveyVersionView {
   if (!record(value) || !exact(value, versionFields) || !id(value.survey_version_id)
     || versionId !== undefined && value.survey_version_id !== versionId || value.survey_id !== surveyId
     || value.project_id !== projectId || !integer(value.version_no, 1)
@@ -266,13 +266,16 @@ export function parseSurveyVersion(value: unknown, projectId: string, surveyId: 
     || (value.review_ref === null) !== (value.review_round_ref === null) || !id(value.created_by) || !instant(value.created_at)
     || !Array.isArray(value.questions) || !Array.isArray(value.target_departments)
     || value.questions.length !== value.declared_question_count
-    || value.target_departments.length !== value.declared_target_department_count) {
+      && (!allowSummary || value.questions.length !== 0)
+    || value.target_departments.length !== value.declared_target_department_count
+      && (!allowSummary || value.target_departments.length !== 0)
+    || allowSummary && (value.questions.length === 0) !== (value.target_departments.length === 0)) {
     throw new SurveyReadError("SURVEY_READ_UNAVAILABLE");
   }
   const questions = value.questions.map((item, sequence) => parseQuestion(item, sequence));
-  if (new Set(questions.map(item => item.question_id)).size !== questions.length
+  if (questions.length > 0 && (new Set(questions.map(item => item.question_id)).size !== questions.length
     || questions.reduce((count, item) => count + item.options.length, 0) !== value.declared_option_count
-    || questions.reduce((count, item) => count + item.sources.length, 0) !== value.declared_source_count) {
+    || questions.reduce((count, item) => count + item.sources.length, 0) !== value.declared_source_count)) {
     throw new SurveyReadError("SURVEY_READ_UNAVAILABLE");
   }
   const targets = value.target_departments.map((item, ordinal): SurveyTargetDepartmentView => {
@@ -312,7 +315,7 @@ export class SurveyReadClient {
       Promise<SurveyPage<SurveyVersionView, SurveyVersionCursor>> {
     this.#listInput([projectId, surveyId], pageSize, next);
     return await this.#page(`/api/v1/projects/${projectId}/surveys/${surveyId}/versions${this.#query(pageSize, next)}`,
-      pageSize, next, item => parseSurveyVersion(item, projectId, surveyId), "version") as SurveyPage<SurveyVersionView, SurveyVersionCursor>;
+      pageSize, next, item => parseSurveyVersion(item, projectId, surveyId, undefined, true), "version") as SurveyPage<SurveyVersionView, SurveyVersionCursor>;
   }
   async getVersion(projectId: string, surveyId: string, versionId: string): Promise<SurveyVersionView> {
     this.#ids(projectId, surveyId, versionId);

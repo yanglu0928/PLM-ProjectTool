@@ -32,6 +32,16 @@ describe("SurveySourceLocationClient", () => {
     expect(result.locations[1]).toEqual(expect.objectContaining({ location_kind: "EVIDENCE", evidence_id: evidence }));
     expect(Object.isFrozen(result.locations)).toBe(true);
   });
+  it("invokes browser fetch without binding the client as its receiver", async () => {
+    let receiver: unknown = Symbol("not-called");
+    const fetcher = function (this: unknown): Promise<Response> {
+      receiver = this;
+      return Promise.resolve(response(located));
+    };
+    await new SurveySourceLocationClient(fetcher as typeof fetch).get(
+      project, survey, version, question, 0, "HANDOVER_ITEM");
+    expect(receiver).toBeUndefined();
+  });
   it("accepts controlled partial and manual results", () => {
     expect(parseSurveySourceLocation({ source_kind: "CAPABILITY_ITEM", source_ordinal: 1,
       resolution_state: "PARTIALLY_LOCATABLE", current_eligibility: false,

@@ -40,6 +40,16 @@ describe("EvidenceViewerClient", () => {
     expect(Object.isFrozen(result)).toBe(true);
   });
 
+  it("invokes browser fetch without binding the client as its receiver", async () => {
+    let receiver: unknown = Symbol("not-called");
+    const fetcher = function (this: unknown): Promise<Response> {
+      receiver = this;
+      return Promise.resolve(success(descriptor));
+    };
+    await new EvidenceViewerClient(fetcher as typeof fetch).get(scope, evidenceId);
+    expect(receiver).toBeUndefined();
+  });
+
   it("rejects URL or source-identity substitution and malformed locator", async () => {
     for (const changed of [
       { ...descriptor, content_url: "https://evil.example/file" },
