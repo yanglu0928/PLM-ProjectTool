@@ -148,6 +148,12 @@ POLICIES: dict[str, _Policy] = {
     ),
     "SURVEY_ROUND_LIST": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "SURVEY_ROUND_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
+    "SURVEY_ROUND_PATCH": _Policy(
+        frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True,
+    ),
+    "SURVEY_ROUND_OPEN": _Policy(MANAGERS, True),
+    "SURVEY_ROUND_CLOSE": _Policy(MANAGERS, True),
+    "SURVEY_ROUND_CANCEL": _Policy(MANAGERS, True),
     "PROJECT_PATCH": _Policy(MANAGERS, True),
     "PROJECT_ARCHIVE": _Policy(MANAGERS, True),
     "PROJECT_MEMBER_LIST": _Policy(MEMBER_READERS, False),

@@ -38,3 +38,4 @@
 - 2026-10-06 / `SUR-02-A02`：完成两表 ORM 与 Migration `20261006_0107`。Schema 验证了当前批准定义边界、Round 状态机、PROJECT_RECORD 固定快照、append-only 与历史拒降；应用 CLOSE 仍失败关闭。Windows 11/PostgreSQL 18.6 真库、后端全量和开发 wheel 均通过，详见 `docs/progress/sur-02-a02-round-schema.md`。
 - 2026-10-06 / `SUR-02-A03`：完成精确 PROJECT_RECORD Evidence proof adapter 与 caller-transaction Round append Repository；固定 Question、连续 ordinal、锁持有、回滚和关闭后拒绝在 Windows 11/PostgreSQL 18.6 通过。未开放 HTTP 或独立提交边界，详见 `docs/progress/sur-02-a03-round-source.md`。
 - 2026-10-06 / `SUR-02-A04`：完成 Round create/list/get、连续序号、当前批准版本栅栏、授权/License/Audit/持久幂等和稳定游标；Windows 11/PostgreSQL 18.6 的并发、回滚、隔离、撤权与固定来源详情通过。尚未开放 HTTP，详见 `docs/progress/sur-02-a04-round-create-read.md`。
+- 2026-10-06 / `SUR-02-A05`：完成 PLANNED schedule PATCH、ProjectManager-only OPEN/CANCEL、强 ETag、持久幂等与 Audit 原子状态 Owner；Windows 11/PostgreSQL 18.6 的同 Key 并发、回滚、终态保护及 CLOSE 零写失败关闭通过。首轮 SQL 时间表达式布尔求值偏差已按显式分支修复并从新库重跑，详见 `docs/progress/sur-02-a05-round-state.md`。

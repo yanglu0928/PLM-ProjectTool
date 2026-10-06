@@ -8953,3 +8953,11 @@
 - Reason：单查max而不锁根会让不同幂等Key并发撞号；只用时间游标会漏读同一statement timestamp的Round；列表复制正文或locator会越过Evidence/Document Owner。
 - Impact/Rollback：新增内部命令/读取/游标及三项冻结角色策略，无Schema/公开API/依赖/Secret/外发；不装配Router即保持外部关闭，已提交事实保留。
 - Verification：Windows11/PostgreSQL18.6当前批准版本、角色、CSRF/License、同Key并发、Audit回滚、1..4连续编号、两页读取/详情/来源、隔离撤权与drift通过；后端2871通过/3跳过；wheel1067项，SHA-256 `772e2d8ef0f893717d34c21a9bbfe131acadb079917526b15bdd6937dff0ddff`。
+
+# DEC-20261006-943：Round 生命周期时间由数据库单语句确定且 CLOSE 不预留成功事实
+
+- Date/WBS：2026-10-06 / `SUR-02-A05`；依据CR-SUR-007、0107状态触发器与冻结Round四态。
+- Decision：PATCH仅允许PLANNED且由PM/ImplementationMember执行；OPEN/CANCEL仅PM执行，生命周期时间与updated_at复用同一个`statement_timestamp()`表达式并只推进一次lock。CLOSE完成授权后固定返回`SURVEY_ROUND_COMPLETENESS_UNAVAILABLE`，不预留receipt、不写Audit或状态，直至SUR-03真实完整性Owner可在同事务复算。
+- Reason：应用时钟无法保证生命周期时间与数据库写时间完全一致；CLOSE若先写幂等回执或“尝试成功”Audit，会把尚不存在的Assignment/Response完整性误表述为业务事实。失败关闭也不能绕过当前Session、License和ProjectManager授权边界。
+- Impact/Rollback：只增加内部状态Owner与四项冻结角色策略，无Schema/公开API/依赖/Secret/外发；不装配Router即保持外部404。已提交OPEN/CANCEL/Audit/receipt历史不可删除。
+- Verification：Windows11/PostgreSQL18.6完成同Key并发OPEN、CANCEL重放、ETag/角色/CSRF/License、Audit回滚恢复、终态保护、CLOSE零写和drift；首轮SQL表达式布尔求值偏差经显式`is not None`修复并从新库重跑；后端2876通过/3跳过；wheel1069项，SHA-256 `03ee68e7b1d823bc358cb6b8fee86199dc8edba5f707b45748f5538f8af38ae4`。

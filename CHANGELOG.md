@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-06：0.1.0-dev.0/SUR-02-A05 新增Round计划与状态Owner：PLANNED schedule PATCH允许PM/Implementation，OPEN/CANCEL限PM，强ETag、Session/CSRF/License、持久幂等、Audit及生命周期时间同事务；CLOSE在SUR-03完整性Owner前明确返回不可用且零写。兼容性/回滚：无Schema/冻结URL/JSON/依赖/Secret/外发，未装配Router时外部仍404，停止组合保留历史。验证：Win11/PG18.6同Key并发、回滚、终态、CLOSE失败关闭/drift通过；后端2876/3，wheel1069项，SHA-256 `03ee68e7b1d823bc358cb6b8fee86199dc8edba5f707b45748f5538f8af38ae4`。首轮SQL时间表达式布尔求值失败已改为显式分支并从新库重跑。已知问题：SUR-03答复完整性、A06 CLOSE/HTTP/UI/浏览器、Gate3/UAT及发行仍待。
+
 - 2026-10-06：0.1.0-dev.0/SUR-02-A04 新增Round create/list/get内部命令与读取：锁定Survey根并重验当前APPROVED Version，分配连续round_no；接入PM/Implementation创建、全成员读取、Session/CSRF/License、Audit、持久幂等和绑定会话/项目/页长/复合位置的稳定游标；详情仅返回固定来源最小快照。兼容性/回滚：无Schema/冻结URL/JSON/依赖/Secret/外发，未装配Router时外部仍404，停止组合保留历史。验证：Win11/PG18.6并发/回滚/隔离/撤权/分页/来源/drift通过；后端2871/3，wheel1067项，SHA-256 `772e2d8ef0f893717d34c21a9bbfe131acadb079917526b15bdd6937dff0ddff`。首轮验收脚本因同Key计划时间变化被正确拒绝，固定相同载荷后重跑通过。已知问题：A05状态Owner、SUR-03答复完整性、A06 HTTP/UI/浏览器、Gate3/UAT及发行仍待。
 
 - 2026-10-06：0.1.0-dev.0/SUR-02-A03 新增精确PROJECT_RECORD Evidence proof与caller-transaction Round source append：只允许ProjectManager/ImplementationMember，最小固定Evidence/DocumentVersion/lock/fingerprint/actor，OPEN Round锁内解析固定Question并分配连续ordinal，不自行commit或开放HTTP。兼容性/回滚：Evidence Owner新策略均为可选，既有Workflow组合行为不变；无Schema/API/依赖/Secret/外发，停止后续组合即可阻止新写且保留0107历史。验证：Win11/PG18.6锁/追加/回滚/角色/类别/CLOSED拒绝和drift通过；后端2864/3，wheel1063项，SHA-256 `72ca80f5920f95e02da2dfc4dc2be89381c15cc4f53a02fc70eb0a5d1a81ecb3`。已知问题：A04命令/读取、A05状态、SUR-03答复完整性、A06 HTTP/UI/浏览器、Gate3/UAT及发行仍待。
