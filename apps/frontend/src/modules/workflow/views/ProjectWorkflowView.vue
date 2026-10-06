@@ -558,7 +558,7 @@ onUnmounted(() => { mounted = false; generation += 1; });
         <p>以下清单状态仅为服务器当前快照，不代表客户已确认或项目 Gate 已通过。</p>
         <ol aria-label="六阶段流程">
           <li v-for="stage in workflow.stages" :key="stage.stage_key">
-            <h2>{{ stage.order }}. {{ stage.stage_key }} · {{ stage.state }}</h2>
+            <h2>{{ stage.stage_key }} · {{ stage.state }}</h2>
             <ul><li v-for="item in stage.checklist_items" :key="item.item_key">
               {{ item.item_key }} · {{ item.state }}
               <span v-if="stage.stage_key === 'HANDOVER' && stage.state !== 'COMPLETED'

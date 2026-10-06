@@ -8699,3 +8699,11 @@
 - Reason：单看POST 200无法证明Vue实际发送空Gate/原版本、页面未泄露UUID、当前Workflow已变为SURVEY，或后端事实没有重复写。真实浏览器和数据库双向证据覆盖前端、Cookie/CSRF、生产组合、Owner重证与持久化边界。
 - Impact/Rollback：仅新增隔离验收harness，无产品、Schema/Migration、冻结API、角色、依赖、Secret或外发变化；删除harness即可回滚。视觉检查发现既有有序列表标记和标题序号重复，单列A08修复，不篡改A07通过范围。
 - Verification：Edge观察6个成功API响应，确认页无UUID，首次回执`HANDOVER -> SURVEY/"v4"`，独立刷新显示HANDOVER COMPLETED/SURVEY ACTIVE；PG唯一Transition/双Gate/Audit/receipt，临时库、凭据、profile和文件清理PASS。
+
+# DEC-20261006-911：阶段序号只由语义化有序列表呈现
+
+- Date/WBS：2026-10-06 / `WFL-02-A02-A08`；依据A07真实Edge视觉QA和现有六阶段页面语义。
+- Decision：保留`ol`作为阶段顺序的唯一可见编号来源，标题只显示阶段键与状态；不改动服务器返回的`order`、阶段排序、状态、Transition控制或辅助技术标签。
+- Reason：浏览器已经为`ol`生成序号，标题重复渲染`stage.order`会形成`1. 1.`等噪声；移除标题序号仍保留正确的列表语义和阅读顺序。
+- Impact/Rollback：仅前端展示和回归断言变化，无后端、Schema/Migration、冻结API、权限、依赖、Secret或外发变化；恢复标题插值即可回滚。
+- Verification：页面定向15项、前端78文件1395项、typecheck及Vite164模块生产构建通过；主JS 599.01kB既有分块警告保留。

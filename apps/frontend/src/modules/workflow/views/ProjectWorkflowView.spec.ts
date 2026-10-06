@@ -132,6 +132,10 @@ describe("ProjectWorkflowView", () => {
     const fetcher = vi.fn().mockResolvedValue(response(snapshot(), '"v0"'));
     const { wrapper } = await page(await session(), new WorkflowReadClient(fetcher as typeof fetch));
     expect(wrapper.findAll('ol[aria-label="六阶段流程"] > li')).toHaveLength(6);
+    expect(wrapper.findAll('ol[aria-label="六阶段流程"] > li > h2').map((heading) => heading.text()))
+      .toEqual(["HANDOVER · NOT_STARTED", "SURVEY · NOT_STARTED",
+        "REQUIREMENT · NOT_STARTED", "PROTOTYPE · NOT_STARTED",
+        "SOLUTION · NOT_STARTED", "PLAN · NOT_STARTED"]);
     expect(wrapper.text()).toContain("HANDOVER_BASELINE");
     expect(wrapper.text()).toContain("不代表客户已确认或项目 Gate 已通过");
     expect(wrapper.find("button").text()).not.toContain("准备启动流程");
