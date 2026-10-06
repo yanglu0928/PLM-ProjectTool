@@ -619,6 +619,49 @@ export class SessionClient {
     return this.#writeProjectHandoverAction(projectId, actionId, "POST", operation, body, etag, idempotencyKey);
   }
 
+  /** Survey Round writes retain the caller's original body, Key and ETag after uncertainty. */
+  async writeProjectSurveyRound(projectId: string, roundId: string | null,
+    method: "POST" | "PATCH", operation: "create" | "patch" | "open" | "close" | "cancel",
+    body: string | null, etag: string | null, idempotencyKey: string | null): Promise<Response> {
+    if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
+    if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
+    const version = etag === null ? null : /^"v(?:0|[1-9]\d*)"$/.test(etag) ? Number(etag.slice(2, -1)) : null;
+    const hasBody = operation === "create" || operation === "patch" || operation === "cancel";
+    const needsKey = operation !== "patch";
+    if (!identifier(projectId) || (operation === "create") !== (roundId === null)
+      || roundId !== null && !identifier(roundId)
+      || hasBody !== (body !== null) || body !== null && (body.length === 0 || new TextEncoder().encode(body).length > 8192)
+      || (operation === "create") !== (etag === null)
+      || etag !== null && (!Number.isSafeInteger(version) || version === null || version >= Number.MAX_SAFE_INTEGER)
+      || needsKey !== (idempotencyKey !== null)
+      || idempotencyKey !== null && !/^[\x20-\x7e]{16,128}$/.test(idempotencyKey)
+      || operation === "patch" && method !== "PATCH" || operation !== "patch" && method !== "POST") {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    }
+    const base = `/api/v1/projects/${projectId}/survey-rounds`;
+    const path = operation === "create" ? base : operation === "patch" ? `${base}/${roundId}` : `${base}/${roundId}:${operation}`;
+    const headers: Record<string, string> = { Accept: "application/json", "X-CSRF-Token": this.#csrf };
+    if (body !== null) headers["Content-Type"] = "application/json";
+    if (etag !== null) headers["If-Match"] = etag;
+    if (idempotencyKey !== null) headers["Idempotency-Key"] = idempotencyKey;
+    this.#busy = true;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      // Native Window.fetch rejects a SessionClient receiver; detach it before invocation.
+      const fetcher = this.fetcher;
+      const response = await fetcher(path, { method, credentials: "same-origin", cache: "no-store",
+        redirect: "error", headers, ...(body === null ? {} : { body }), signal: controller.signal });
+      if (controller.signal.aborted) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+      if (response.status === 401) { this.#csrf = null; this.#view = null; }
+      return response;
+    } catch {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    } finally {
+      window.clearTimeout(timer); this.#busy = false;
+    }
+  }
+
   /** Retrieval alias cancellation uses its Run version and never retries implicitly. */
   async postProjectRAGRetrievalCancel(projectId: string, runId: string, etag: string,
     idempotencyKey: string, reason: string): Promise<Response> {

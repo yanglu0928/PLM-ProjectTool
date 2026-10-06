@@ -50,7 +50,8 @@ onUnmounted(() => { mounted = false; generation += 1; });
     <h1 id="survey-list-title">调研定义与固定版本</h1>
     <p class="fact-warning"><strong>问题模板和来源说明不等于客户事实。</strong> 应以实际面对面调研记录、固定来源和人工评审为准。</p>
     <p>列表不复制资料原文。进入定义后可查看问题卡片、需要维护的信息和当前可用的受控来源入口。</p>
-    <p><RouterLink :to="{ name: 'project-detail', params: { projectId: route.params.projectId } }">返回项目详情</RouterLink></p>
+    <p><RouterLink :to="{ name: 'project-detail', params: { projectId: route.params.projectId } }">返回项目详情</RouterLink>
+      · <RouterLink :to="{ name: 'project-survey-rounds', params: { projectId: route.params.projectId } }">进入调研轮次工作台</RouterLink></p>
     <template v-if="!identity">
       <p role="status">尚未读取当前身份。请先登录，或在账户页读取当前身份。</p>
       <RouterLink to="/login">前往账户与登录</RouterLink>

@@ -9025,3 +9025,11 @@
 - Reason：跨事务证明会在关闭前留下竞态；客户端报告或计数不可信；新增Secret会扩大当前目标账户运维面，而直接复用同一key又缺少用途隔离。固定HMAC派生同时保持现有两Secret部署兼容和token域分离。
 - Impact/Rollback：无Schema/依赖/外发或Breaking URL；生产Survey组合初始化时点移动到Document证明依赖就绪后。撤Router/Owner注入可恢复404/失败关闭，历史CLOSE/Audit/receipt保留。
 - Verification：Win11/PG18.6真实HTTP/生产组合完成原子CLOSE、重放、Audit/receipt、列表/详情、终态拒绝与drift；定向13、后端2905/3、4203子断言；wheel1085项，SHA-256 `7fc7d8e4a9c0e295c05898c7f9df248536701cf8398453854f792ea0d81c95d1`。
+
+# DEC-20261006-952：Round界面只以写后重读事实更新并保留未知操作上下文
+
+- Date/WBS：2026-10-06 / `SUR-02-A06-P02`；依据CR-SUR-007/008、冻结七Round Operation与现有前端会话安全模式。
+- Decision：Round写请求全部经SessionClient持有CSRF，CREATE/OPEN/CLOSE/CANCEL绑定持久幂等Key，PATCH绑定ETag且无Key；页面不把写回执单独称为当前事实，成功后重新LIST/GET。不确定结果只在本页内存保留原Key/ETag/body，禁止自动轮换。PLANNED/OPEN显式标为非客户确认事实。
+- Reason：前端按钮和首次回执不能替代服务器当前状态或Round完整性证明；网络超时后换Key重试可能重复写入。浏览器原生fetch还要求调用时不得携带SessionClient接收者。
+- Impact/Rollback：仅前端客户端/页面/导航及Session transport增量，无Schema/API/依赖/Secret/外发；新建Round的`updated_by`按冻结响应实际接受`null`。撤前端增量可回滚，已提交Round/Audit/receipt保留。
+- Verification：前端定向14、全量84文件1455项、typecheck、Vite176模块build；Win11真实Edge/生产FastAPI/PG18.6完成LIST/GET、两次CREATE、PATCH、OPEN、CLOSE 422失败关闭和CANCEL，40条浏览器网络证据与隔离资源清理通过。
