@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-06：0.1.0-dev.0/SUR-01-A03-P02-A02 新增Handover/Capability/Project最小Survey来源证明Adapter，精确证明当前批准Item与同项目ACTIVE部门，拒绝跨Scope、缺失及过期状态且不暴露正文/路径。无Migration/API/依赖/外发变化。验证：Win11/PG18.6正反例、后端2786通过/3跳过；wheel 1026项，SHA-256 `7530cec86a5b3a58ab69762a96ee09d341ae82231448b9566de2dab72ce3c099`。
+
 - 2026-10-06：0.1.0-dev.0/SUR-01-A03-P02-A01 完成SurveyVersion创建编码前检查并登记CR-SUR-002：0103类型化外键需要版本内row identity，而现有Handover/Capability公共投影未暴露；选择由来源Owner新增最小caller-transaction证明Adapter，Survey不直查跨模块私表。升级/回滚：纯文档设计调整，无Schema/API/角色/依赖/网络/外发；撤后续Adapter注册可回滚。验证：静态核对0103、来源读取投影、Document固定版本证明和模块边界，标记`SUR_01_A03_P02_A01_SOURCE_PROOF_PRECHECK_PASS`。已知问题：A02 Adapter和A03 Version创建尚未实现。
 
 - 2026-10-06：0.1.0-dev.0/SUR-01-A03-P01 新增内部Survey identity创建Owner：冻结角色ProjectManager/ImplementationMember，经Session/CSRF、ACTIVE Project、License和持久幂等后，在同事务写ACTIVE/v0 identity、Audit与收据；原Key重放、异Payload冲突、并发收敛，不自动创建Version或开放HTTP。升级/回滚：无Migration/冻结DTO/依赖/Secret/外发变化，停止后续组合可关闭入口并保留历史。验证：定向9、Win11/PG18.6真实双角色/拒绝/并发/Audit回滚/零Version/撤权PASS、后端2785通过/3跳过；wheel 1020项，SHA-256 `3b75760339120d0d0e5dffc8639272db59eb737ef0a9606e1d9d5e5da011c3c6`。已知问题：Version创建/验证、Review、HTTP/UI、Round/Response/Conclusion、Workflow资格、Server2025/Debian13、Gate3/UAT/发行仍待。

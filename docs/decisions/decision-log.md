@@ -8739,3 +8739,9 @@
 - Reason：现有公共投影缺少版本内row identity，Survey直查私表会让权限、当前批准状态和未来表结构耦合；删掉row identity又会削弱固定版本追溯。
 - Impact/Rollback：CR-SUR-002把P02拆为证明Adapter和Version创建两项；无Schema/API/角色/依赖/网络/外发变化。撤Adapter注册可回滚，0103与identity历史保留。
 - Verification：静态核对0103外键、Handover/Capability读取投影、Document caller-transaction proof和Owner规则；标记`SUR_01_A03_P02_A01_SOURCE_PROOF_PRECHECK_PASS`，不宣称Version创建已通过。
+
+# DEC-20261006-916：来源证明只返回写入固定引用所需最小身份
+
+- Date/WBS：2026-10-06 / `SUR-01-A03-P02-A02`。
+- Decision：三个Owner Adapter只返回固定row/version/root/project身份与合格状态，并在调用方事务持有共享锁；不返回正文或路径。
+- Impact/Verification：无Schema/API/依赖/外发；Win11/PG18.6正反例、后端2786通过/3跳过、wheel SHA-256 `7530cec86a5b3a58ab69762a96ee09d341ae82231448b9566de2dab72ce3c099`。
