@@ -8825,3 +8825,11 @@
 - Reason：0105合法地关闭未知Root变化，但因此无法实现已冻结PATCH/ARCHIVE；应用绕过触发器会移除数据库最终防御。向前替换守卫可保留冻结历史且将允许形态缩到最小。
 - Impact/Rollback：新增0106但无表列、公开API、依赖、Secret、网络或外发变化。无归档/PATCH/ARCHIVE Audit历史可降回0105；有历史拒降，只能向前修复。应用可停止装配，历史不恢复ACTIVE。
 - Verification：定向17；Win11/PG18.6升降重升/drift/角色/隔离/ETag/在审栅栏/精确重放/Audit回滚/历史拒降通过；首次全量的旧head断言更正后，后端2829通过/3跳过；wheel 1045项，SHA-256 `26980b48d6ede0efb24621d278ec8200c6ca903b372a8672ef853ce826996443`。
+
+# DEC-20261006-927：Survey 普通写 HTTP 以严格 DTO 且默认关闭
+
+- Date/WBS：2026-10-06 / `SUR-01-A05-A04`；依据冻结API-01/API-04、Schema0106及A02/A03 Owner。
+- Decision：五个普通写Operation由一个可选Router转换，只在`create_app(survey_command_router=...)`显式注入时开放。Version请求采用精确Question/Option/Source DTO，每个Source显式带齐类型化固定引用字段，未使用字段为null；资格仍由Owner事务内重验。
+- Reason：默认注入会越过A07生产组合验收；宽松Source形状会让不明引用混入不可变快照。严格传输边界与业务Owner分层可避免Router重复权限/当前事实逻辑。
+- Impact/Rollback：只新增Survey API包、可选组合参数和契约测试；无Schema/Migration、依赖、Secret、网络或外发变化。不注入Router即回滚，合法历史保留。
+- Verification：定向17项、完整Python 3.13环境后端2832通过/3跳过；wheel 1047项，SHA-256 `7b1f6ffdaf5cc9b4c5e4aa70b8e309f5db56bfe11cace2004663a90b0244b374`。首次全量误用缺pgvector精简环境的19个导入错误未计产品证据。

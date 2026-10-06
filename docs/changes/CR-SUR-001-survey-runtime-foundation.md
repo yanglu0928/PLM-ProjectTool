@@ -98,3 +98,7 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
   只开放ACTIVE名称修改与单向归档，双层IN_REVIEW栅栏、强ETag、双角色PATCH/仅PM归档、Audit及归档
   持久幂等同事务失败关闭。无新表列或冻结API变化；Windows 11/PostgreSQL 18.6、2829项后端全量及
   wheel检查通过。
+- 2026-10-06 / `SUR-01-A05-A04`：新增默认关闭的Survey五个普通写Router，严格将冻结
+  CREATE/PATCH/ARCHIVE/VERSION_CREATE/VERSION_VALIDATE转换至已验证Owner；四类来源使用显式可空的
+  类型化固定字段，不返回跨模块正文/路径。无Schema/依赖/外发变化；定向17、后端2832/3及
+  wheel检查通过，真实Windows HTTP/PG组合留A07。
