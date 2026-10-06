@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-06：0.1.0-dev.0/WFL-02-A02-A01 完成首个受权Stage Transition编码前核查：仅`HANDOVER→SURVEY`具备两项真实Handover Owner，可在两项当前PASS Record均存在且本次Owner重证与Record typed refs精确一致时推进；锁序固定业务Owner→Workflow/Stage/Item以兼容现有Checklist写链，WAIVED和其余阶段失败关闭。升级/回滚：纯文档，无代码/Schema/Migration/API/依赖/Secret/外发；可停止后续注册并保留0031/0033。验证：静态交叉核对冻结DM/API、六阶段V1、当前Record、Handover Owner和0031/0033提交保护。已知问题：运行仓储、受权命令、HTTP/Windows/UI及`gate_snapshot_refs`精确公开投影仍待。
+
 - 2026-10-06：0.1.0-dev.0/WFL-01-A07-P07-A10 完成Windows 11真实Edge/Vue/生产FastAPI/PostgreSQL 18.6 Checklist闭环：ProjectManager登录后对`HANDOVER_ISSUES`取得3项权威依据、显式确认PASS、看到首次`"v2"`回执并独立刷新为当前v2/PASS；PG精确验证一Record、三Evidence Ref、一Audit、一完成幂等receipt及隔离资源清理。托管浏览器控制内核因kernel-assets路径错误不可用，按DEC-888使用本机Edge一次性profile/CDP，不降级浏览器引擎或生产网络/数据库边界；首轮空data_root 409和第二轮Vue同步点击夹具偏差均修复后以全新库重跑。升级/回滚：仅新增验收harness，无产品Schema/Migration/API/依赖/Secret/外发；删除harness可回滚。已知问题：Stage Transition、其余Checklist业务Owner、CLOSED Trace Owner、20并发、正式信任、Server2025当前链、Gate3/UAT/发行仍待。
 
 - 2026-10-06：0.1.0-dev.0/WFL-01-A07-P07-A09 新增严格Checklist资格GET客户端并接入项目Workflow页面：仅ProjectManager在当前Handover可操作；PASS先由服务器复验且不展示/手填UUID，FAIL明确要求填写未满足原因和影响；写前持久保存原Key/ETag/Evidence，未知结果只允许同版本原操作重试，首次回执不冒充当前状态。升级/回滚：纯前端，无Schema/Migration/后端API/依赖/Secret/外发；删除客户端及页面接线可回滚。验证：定向33、前端77文件/1372项、typecheck、Vite163模块build PASS。已知问题：主JS 585.43kB警告、真实Edge/PG页面闭环、CLOSED Trace Owner、20并发、Gate3/UAT/发行仍待。

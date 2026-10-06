@@ -8643,3 +8643,11 @@
 - Reason：只观察POST 200无法证明页面未泄露UUID、首次回执提示正确或独立GET已经看到v2；空数据根会让真实资格Owner正确失败，却被夹具误报成产品缺陷。Edge引擎和真实网络/数据库边界才覆盖Vue调度、Cookie/CSRF、ETag、Owner和持久化的组合差异。
 - Impact/Rollback：只新增隔离验收harness，无产品Schema/Migration/API、权限、依赖、Secret或外发变化。删除harness即可回滚；临时数据库、凭据、profile和文件均清理。受管控制内核故障作为工具层偏差保留，不据此降低正式浏览器验收范围。
 - Verification：本机Edge观察7个成功API响应，资格页仅显示3项依据且无UUID；首次回执`HANDOVER_ISSUES/PASS/"v2"`后独立刷新显示v2/PASS。PG后验精确为一Record、三Evidence Ref、一Audit、一完成receipt；外层Handover漂移拒绝与清理继续PASS，令牌`WFL_01_A07_P07_A10_WINDOWS_BROWSER_PASS`。
+
+# DEC-20261006-904：首个Stage Transition沿用Owner到Workflow的统一锁序
+
+- Date/WBS：2026-10-06 / `WFL-02-A02-A01`；依据冻结DM-02/API-02、CR-WFL-003/004、Schema0031/0033及Handover两项当前Owner。
+- Decision：首批运行时Stage Transition只注册`HANDOVER -> SURVEY`。事务内先按固定Item顺序调用Handover Owner重证两项，再锁Workflow/Stage/Checklist/current Record并追加Transition；两项Record必须当前PASS且其typed refs与Owner本次观测精确一致。WAIVED和其余阶段继续失败关闭。
+- Reason：现有Checklist写链已经按Handover/Review/Document/Evidence事实后锁Workflow；Transition若先锁Workflow再调Owner，会与并发Checklist记录形成反序等待。数据库中的PASS和APPROVED只是历史观测，不能替代当前Owner证明。
+- Impact/Rollback：纯前置决策，无代码、Schema/Migration、API、权限、依赖、Secret或外发变化。后续分仓储、受权命令、HTTP/Windows/UI实施；任一前置失败可停止注册且保留0031/0033和历史。
+- Verification：静态交叉核对六阶段定义、当前Record读取、Handover资格Owner、0031提交完整性、0033 Record关联和冻结Transition DTO；标记`WFL_02_A02_A01_TRANSITION_COMMAND_PRECHECK_PASS`，不把A10单项PASS或合成Schema历史当推进证明。
