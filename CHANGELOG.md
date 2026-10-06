@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-06：0.1.0-dev.0/WFL-02-A02-A07 新增可重复Windows 11真实Edge验收harness：独立PG18.6事实库预置两项当前PASS，经构建Vue/生产`platform-write` FastAPI完成理由输入、二次确认、首次`HANDOVER -> SURVEY/v4`回执和独立SURVEY当前态刷新；PG后验唯一Transition/双Gate/Audit/receipt并清理临时库、凭据、profile和文件。升级/回滚：仅新增验证资产与记录，无产品/Schema/Migration/API/依赖/Secret/外发变化。验证：Edge 6个成功API响应、三张截图、服务端数据库后验及清理PASS。视觉QA发现`ol`标记与标题内阶段序号重复，登记为A08独立可用性修复，不影响本次迁移事实。已知问题：A08编号、Survey/Requirement及后续阶段Owner、质量/性能、正式信任、Gate3/UAT/发行仍待。
+
 - 2026-10-06：0.1.0-dev.0/WFL-02-A02-A06 新增Stage Transition安全前端链：SessionClient仅发送同源CSRF/原ETag/原Key，严格客户端只接受HANDOVER双PASS到SURVEY、规范理由和空`gate_snapshot_refs`；Workflow页仅向ProjectManager显示显式理由/二次确认，未知结果持久保留原Key/理由/ETag且只允许同版本重试，不输入、展示或生成Gate UUID。升级/回滚：无后端/Schema/Migration/冻结API/权限/依赖/Secret/外发，删除客户端和页面区块即可恢复后端-only。验证：定向195、前端78文件1395项、typecheck及Vite164模块生产构建通过；主JS 599.03kB既有分块警告保留。首轮测试有两条旧文案断言、复用已消费Response及一个TS收窄问题，修正后完整重跑。已知问题：A07真实Edge/PG、其余阶段Owner、性能、正式信任、Gate3/UAT/发行仍待。
 
 - 2026-10-06：0.1.0-dev.0/WFL-02-A02-A05 将Stage Transition接入Windows显式`--platform-write`组合，复用真实Handover资格Owner、ProjectManager授权、License、Audit与持久幂等；默认App、登录模式和只读平台模式继续不挂载。升级/回滚：无Schema/Migration/冻结API/依赖/Secret/外发，撤生产组合Router注入恢复关闭且保留不可变历史。验证：组合/生产入口定向38项、Win11/PG18.6真实HTTP默认404/Origin403/非空Gate422/首次及重放200、唯一Transition/双Gate/Audit/receipt，后端2779通过/3跳过；wheel 1013项，SHA-256 `5bfc9fac85fedb89d1a85d2cc7fb1728693fbe3c0cb1510a89d3ccd90aa1bc38`。首次真实脚本使用的旧测试venv缺`pgvector`而未进入迁移，补入项目既有Python3.13依赖路径后以新临时库完整重跑。已知问题：A06前端、A07真实浏览器、其余阶段Owner、性能、正式信任、Gate3/UAT/发行仍待。

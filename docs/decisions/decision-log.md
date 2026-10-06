@@ -8691,3 +8691,11 @@
 - Reason：前端Checklist状态只是展示前置，可信Gate仍由服务器事务内重证；让用户填写refs会造成伪授权。网络未知时换Key或理由会产生双推进/幂等冲突，自动把版本变化认定成功也会混淆其他并发操作。
 - Impact/Rollback：纯前端增量，无后端、Schema/Migration、冻结API、角色、依赖、Secret或外发变化。删除Session桥、严格客户端和页面区块可回滚；Windows后端组合继续可独立关闭。首次测试偏差均在请求发送前的夹具/类型层修正。
 - Verification：Session/客户端/页面定向195项，前端78文件1395项、typecheck及Vite164模块生产构建通过；主JS 599.03kB分块警告保留。真实Edge/PG留A07，不以jsdom替代浏览器验收。
+
+# DEC-20261006-910：首个阶段推进以真实Edge首次回执和独立当前态双证据验收
+
+- Date/WBS：2026-10-06 / `WFL-02-A02-A07`；依据DEC-903/909、Windows显式写生产组合及用户持续自主执行授权。
+- Decision：Transition浏览器验收同时固定页面明确确认、首次不可变回执和独立GET当前态；回执不能代替当前状态。使用本机Microsoft Edge、一次性profile、构建Vue、生产FastAPI和隔离PG18.6，不以TestClient/jsdom/模拟DOM替代。服务端后验必须同时证明唯一Transition、双Gate、Audit和完成回执。
+- Reason：单看POST 200无法证明Vue实际发送空Gate/原版本、页面未泄露UUID、当前Workflow已变为SURVEY，或后端事实没有重复写。真实浏览器和数据库双向证据覆盖前端、Cookie/CSRF、生产组合、Owner重证与持久化边界。
+- Impact/Rollback：仅新增隔离验收harness，无产品、Schema/Migration、冻结API、角色、依赖、Secret或外发变化；删除harness即可回滚。视觉检查发现既有有序列表标记和标题序号重复，单列A08修复，不篡改A07通过范围。
+- Verification：Edge观察6个成功API响应，确认页无UUID，首次回执`HANDOVER -> SURVEY/"v4"`，独立刷新显示HANDOVER COMPLETED/SURVEY ACTIVE；PG唯一Transition/双Gate/Audit/receipt，临时库、凭据、profile和文件清理PASS。
