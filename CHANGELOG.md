@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-06：0.1.0-dev.0/SUR-02-A02 新增Survey Round双表ORM与Migration0107：Round固定当前批准定义并受四态/强锁版本约束，OPEN期间仅可追加同项目ELIGIBLE PROJECT_RECORD的Evidence/DocumentVersion/指纹快照，来源与Round历史禁止更新删除截断；应用CLOSE继续等待SUR-03完整性Owner。兼容性/升级/回滚：只新增冻结SRV-03两表，无现有API/角色/依赖/Secret/外发变化；空历史可降0106，有历史拒降并向前修复。验证：Win11/PG18.6非空/空升降重升、drift和状态/来源负例通过；后端2859/3，wheel1061项，SHA-256 `162786f098335bb5dd2b2570d5d9c37651aba48f01a0bff88f9a2757c6d30aee`。已知问题：A03以后来源Owner/命令/HTTP/UI/浏览器、SUR-03答复完整性、Gate3/UAT及发行仍待。
+
 - 2026-10-06：0.1.0-dev.0/SUR-02-A01 完成Survey Round运行时前置核查并登记CR-SUR-007：保持冻结SRV-03两表、四态和七Operation；Round固定当前批准定义，现场PROJECT_RECORD由Evidence/Document Owner在OPEN期间追加，不能冒充Answer。SRV-04未实现前CLOSE失败关闭，待真实Assignment/Response完整性Owner后接通。兼容性/回滚：纯文档，无程序/Schema/API/依赖/Secret/外发变化。验证：静态交叉核对冻结模型、Schema/API和当前0106运行实现。已知问题：A02以后Schema/Owner/HTTP/UI/真实PG浏览器、SUR-03/04、Gate3/UAT及发行仍待。
 
 - 2026-10-06：0.1.0-dev.0/SUR-01-A06-A05-P02 完成Windows 11真实Edge来源定位闭环：构建Vue经生产FastAPI/PostgreSQL18.6展开Handover、Capability、PROJECT Template与MANUAL，4个location和1个Evidence Viewer均200，无UI告警/内部row identity，Survey/Version零写并清理临时资源。按DEC-938窄修复列表摘要/详情兼容与浏览器原生fetch接收者问题。兼容性/回滚：无Schema/Migration、冻结API、角色、依赖、Secret或外发变化；撤兼容修正会恢复已验证浏览器故障。验证：前端82文件1441项、typecheck、Vite172模块build通过。已知问题：主JS636.50 kB分块提示、定义写UI、Round/Response/Conclusion、Gate3/UAT及发行仍待；托管浏览器内核缺资源，已用同机Edge/CDP留证。

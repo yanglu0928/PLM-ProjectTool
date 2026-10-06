@@ -8929,3 +8929,11 @@
 - Reason：创建时强制齐全现场记录不符合面对面交流后形成记录的实际流程；把原始记录当Answer或让客户维护模板违背已确认交互原则。SRV-04尚不存在时允许空Round关闭会虚报完整性并污染后续Conclusion/Workflow Gate。
 - Impact/Rollback：本项仅登记CR和实施拆分，无代码、Schema/Migration、API、依赖、Secret或外发。后续0107只新增冻结两表；应用可停止装配，历史不得删除。
 - Verification：静态交叉核对Data Model、SC-01/02、API-01/04、现有Survey ORM/Migration/入口及Evidence/Document Owner；确认运行时无Round实现并标记`SUR_02_A01_RUNTIME_PRECHECK_PASS`。数据库/HTTP/浏览器未运行，留后续WBS。
+
+# DEC-20261006-940：Survey Round 历史由数据库强制不可变
+
+- Date/WBS：2026-10-06 / `SUR-02-A02`；依据CR-SUR-007、冻结SRV-03和Evidence/Document现有事实模型。
+- Decision：0107以两表承载Round与现场来源；Round固定当前批准SurveyVersion，source只在OPEN期间追加同项目ELIGIBLE PROJECT_RECORD Evidence的精确DocumentVersion、lock/fingerprint快照。状态只允许PLANNED→OPEN→CLOSED或PLANNED→CANCELLED，历史行禁止删除/截断；有历史或离线模式拒绝降级。
+- Reason：面对面记录会在会议进行中产生，不能要求创建时齐全；只存Evidence ID无法证明当时版本和内容；允许更新/删除会破坏项目交接追溯。Schema可表达CLOSED以保持冻结模型，但应用成功关闭仍必须等待SUR-03完整性Owner。
+- Impact/Rollback：新增两表和0107，不改现有表/API/角色/依赖/Secret/外发。空历史可降0106；有历史只能停止应用装配并向前修复，不能删除事实。
+- Verification：Windows11/PostgreSQL18.6非空/空升级、降级重升、drift、生命周期/来源正负例和历史拒降通过；后端2859通过/3跳过；wheel1061项，SHA-256 `162786f098335bb5dd2b2570d5d9c37651aba48f01a0bff88f9a2757c6d30aee`。

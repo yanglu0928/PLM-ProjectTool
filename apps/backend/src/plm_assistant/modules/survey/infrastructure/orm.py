@@ -384,3 +384,177 @@ class SurveyTargetDepartmentRow(Base):
     project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     department_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class SurveyRoundRow(Base):
+    __tablename__ = "srv_rounds"
+    __table_args__ = (
+        UniqueConstraint("survey_round_id", "survey_version_id", "survey_id",
+                         "project_id", name="uq_srv_rounds__identity"),
+        UniqueConstraint("survey_id", "round_no", name="uq_srv_rounds__survey_no"),
+        ForeignKeyConstraint(
+            ["survey_version_id", "survey_id", "project_id"],
+            ["plm.srv_survey_versions.survey_version_id",
+             "plm.srv_survey_versions.survey_id",
+             "plm.srv_survey_versions.project_id"],
+            name="fk_srv_rounds__version", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(["created_by"], ["plm.auth_users.user_id"],
+                             name="fk_srv_rounds__creator", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["updated_by"], ["plm.auth_users.user_id"],
+                             name="fk_srv_rounds__updater", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["opened_by"], ["plm.auth_users.user_id"],
+                             name="fk_srv_rounds__opener", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["closed_by"], ["plm.auth_users.user_id"],
+                             name="fk_srv_rounds__closer", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["cancelled_by"], ["plm.auth_users.user_id"],
+                             name="fk_srv_rounds__canceller", ondelete="NO ACTION"),
+        CheckConstraint("round_no>0", name="ck_srv_rounds__number"),
+        CheckConstraint("round_state IN ('PLANNED','OPEN','CLOSED','CANCELLED')",
+                        name="ck_srv_rounds__state"),
+        CheckConstraint(
+            "(scheduled_start_at IS NULL AND scheduled_end_at IS NULL) OR "
+            "(scheduled_start_at IS NOT NULL AND scheduled_end_at IS NOT NULL "
+            "AND scheduled_end_at>scheduled_start_at)",
+            name="ck_srv_rounds__schedule",
+        ),
+        CheckConstraint(
+            "location_note IS NULL OR (char_length(location_note) BETWEEN 1 AND 1000 "
+            "AND location_note=btrim(location_note))",
+            name="ck_srv_rounds__location",
+        ),
+        CheckConstraint(
+            "(round_state='PLANNED' AND opened_by IS NULL AND opened_at IS NULL "
+            "AND closed_by IS NULL AND closed_at IS NULL "
+            "AND close_report_fingerprint IS NULL AND cancelled_by IS NULL "
+            "AND cancelled_at IS NULL AND cancellation_reason IS NULL) OR "
+            "(round_state='OPEN' AND opened_by IS NOT NULL AND opened_at IS NOT NULL "
+            "AND closed_by IS NULL AND closed_at IS NULL "
+            "AND close_report_fingerprint IS NULL AND cancelled_by IS NULL "
+            "AND cancelled_at IS NULL AND cancellation_reason IS NULL) OR "
+            "(round_state='CLOSED' AND opened_by IS NOT NULL AND opened_at IS NOT NULL "
+            "AND closed_by IS NOT NULL AND closed_at IS NOT NULL "
+            "AND close_report_fingerprint IS NOT NULL "
+            "AND octet_length(close_report_fingerprint)=32 "
+            "AND cancelled_by IS NULL AND cancelled_at IS NULL "
+            "AND cancellation_reason IS NULL AND closed_at>=opened_at) OR "
+            "(round_state='CANCELLED' AND opened_by IS NULL AND opened_at IS NULL "
+            "AND closed_by IS NULL AND closed_at IS NULL "
+            "AND close_report_fingerprint IS NULL AND cancelled_by IS NOT NULL "
+            "AND cancelled_at IS NOT NULL AND cancellation_reason IS NOT NULL "
+            "AND char_length(cancellation_reason) BETWEEN 1 AND 2000 "
+            "AND cancellation_reason=btrim(cancellation_reason) "
+            "AND cancelled_at>=created_at)",
+            name="ck_srv_rounds__lifecycle",
+        ),
+        CheckConstraint("lock_version>=0", name="ck_srv_rounds__lock"),
+        Index("ix_srv_rounds__project_state_schedule", "project_id", "round_state",
+              "scheduled_start_at", "survey_round_id"),
+        Index("ix_srv_rounds__survey_number", "survey_id", "round_no"),
+        {"schema": "plm"},
+    )
+
+    survey_round_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"),
+    )
+    survey_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    survey_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    round_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    round_state: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'PLANNED'"),
+    )
+    scheduled_start_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6),
+    )
+    scheduled_end_at: Mapped[datetime | None] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6),
+    )
+    location_note: Mapped[str | None] = mapped_column(Text)
+    opened_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    opened_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True, precision=6))
+    closed_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    closed_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True, precision=6))
+    close_report_fingerprint: Mapped[bytes | None] = mapped_column(LargeBinary)
+    cancelled_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    cancelled_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True, precision=6))
+    cancellation_reason: Mapped[str | None] = mapped_column(Text)
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+    updated_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    updated_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+    lock_version: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("0"),
+    )
+
+
+class SurveyRoundSourceRecordRow(Base):
+    __tablename__ = "srv_round_source_records"
+    __table_args__ = (
+        UniqueConstraint("survey_round_id", "ordinal",
+                         name="uq_srv_round_sources__round_ordinal"),
+        UniqueConstraint("survey_round_id", "question_row_id", "evidence_id",
+                         name="uq_srv_round_sources__round_question_evidence",
+                         postgresql_nulls_not_distinct=True),
+        ForeignKeyConstraint(
+            ["survey_round_id", "survey_version_id", "survey_id", "project_id"],
+            ["plm.srv_rounds.survey_round_id", "plm.srv_rounds.survey_version_id",
+             "plm.srv_rounds.survey_id", "plm.srv_rounds.project_id"],
+            name="fk_srv_round_sources__round", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["question_row_id", "survey_version_id", "survey_id", "project_id"],
+            ["plm.srv_questions.question_row_id",
+             "plm.srv_questions.survey_version_id", "plm.srv_questions.survey_id",
+             "plm.srv_questions.project_id"],
+            name="fk_srv_round_sources__question", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["document_version_id", "document_id"],
+            ["plm.doc_document_versions.document_version_id",
+             "plm.doc_document_versions.document_id"],
+            name="fk_srv_round_sources__document", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(["evidence_id"], ["plm.evd_evidence_records.evidence_id"],
+                             name="fk_srv_round_sources__evidence", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["recorded_by"], ["plm.auth_users.user_id"],
+                             name="fk_srv_round_sources__recorder", ondelete="NO ACTION"),
+        CheckConstraint("ordinal>=0", name="ck_srv_round_sources__ordinal"),
+        CheckConstraint("observed_evidence_lock_version>=0",
+                        name="ck_srv_round_sources__evidence_lock"),
+        CheckConstraint("octet_length(content_fingerprint)=32",
+                        name="ck_srv_round_sources__fingerprint"),
+        CheckConstraint("recorded_at<=created_at", name="ck_srv_round_sources__recorded_at"),
+        Index("ix_srv_round_sources__evidence", "evidence_id", "survey_round_id"),
+        Index("ix_srv_round_sources__question", "question_row_id", "survey_round_id"),
+        {"schema": "plm"},
+    )
+
+    round_source_record_ref_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"),
+    )
+    survey_round_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    survey_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    survey_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    question_row_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    document_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    document_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    evidence_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    observed_evidence_lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    content_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    recorded_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    recorded_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+    )
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )

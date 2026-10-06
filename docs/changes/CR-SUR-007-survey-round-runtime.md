@@ -32,3 +32,7 @@
 0107 只新增冻结已有的两张表，不修改 SRV-01/SRV-02、现有 `/api/v1` JSON、角色、依赖或 Scope。空历史可降至0106；有 Round/source/lifecycle/Audit/receipt 历史时拒绝物理降级并向前修复。应用回滚可停止 Router/Owner 注入，但不删除业务历史。
 
 测试必须覆盖：同 Survey round_no 并发分配、跨项目/撤权/归档/License、非当前或非 APPROVED Version、计划字段边界、状态全矩阵、强 ETag、Audit/幂等回滚、PROJECT_RECORD Evidence 的 Scope/类别/eligibility/fingerprint、Question 属于固定 Version、追加记录不可变、CLOSED/CANCELLED 后拒绝追加，以及未注册 completeness Owner 时 CLOSE 失败关闭。Windows 11/PostgreSQL 18.6 为当前实际验证环境；Windows Server 2025 留发行矩阵复验，Debian 13 按用户指令跳过实机但继续保持正式兼容目标。
+
+## 实施记录
+
+- 2026-10-06 / `SUR-02-A02`：完成两表 ORM 与 Migration `20261006_0107`。Schema 验证了当前批准定义边界、Round 状态机、PROJECT_RECORD 固定快照、append-only 与历史拒降；应用 CLOSE 仍失败关闭。Windows 11/PostgreSQL 18.6 真库、后端全量和开发 wheel 均通过，详见 `docs/progress/sur-02-a02-round-schema.md`。
