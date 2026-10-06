@@ -8683,3 +8683,11 @@
 - Reason：Stage推进是不可逆业务写，不能因只读平台启用而扩大攻击面；另造简化Owner会让HTTP验证绕开真实Handover当前事实，无法证明Gate与Checklist记录的一致性。
 - Impact/Rollback：无Schema/Migration、冻结API、角色、依赖、Secret或外发变化；撤生产组合Router注入即可恢复关闭，已提交不可变Transition历史保留。首次验证环境缺包不改变产品依赖，沿用仓库正式依赖集合重跑。
 - Verification：组合/生产入口定向38项；Win11/PostgreSQL18.6独立临时库经真实HTTP验证默认404、Origin/Session/CSRF/If-Match、非空客户端Gate拒绝、首次迁移/精确回放及唯一Transition/双Gate/Audit/receipt；后端2779通过/3跳过，wheel 1013项，SHA-256 `5bfc9fac85fedb89d1a85d2cc7fb1728693fbe3c0cb1510a89d3ccd90aa1bc38`。
+
+# DEC-20261006-909：Transition页面只提交空Gate并将未知写绑定原操作身份
+
+- Date/WBS：2026-10-06 / `WFL-02-A02-A06`；依据CR-WFL-009、DEC-907/908及已验证Checklist前端未知写模式。
+- Decision：前端仅在ProjectManager、ACTIVE HANDOVER且两项当前快照均为PASS时展示`HANDOVER -> SURVEY`；用户必须填写理由并二次确认。请求固定发送`gate_snapshot_refs=[]`，不接收、生成或展示Gate UUID。发送前把actor/project/workflow/原Key/ETag/理由/目标保存于当前Session；未知结果只能在独立GET仍为同Workflow/ETag且仍满足页面前置时以原操作重试。
+- Reason：前端Checklist状态只是展示前置，可信Gate仍由服务器事务内重证；让用户填写refs会造成伪授权。网络未知时换Key或理由会产生双推进/幂等冲突，自动把版本变化认定成功也会混淆其他并发操作。
+- Impact/Rollback：纯前端增量，无后端、Schema/Migration、冻结API、角色、依赖、Secret或外发变化。删除Session桥、严格客户端和页面区块可回滚；Windows后端组合继续可独立关闭。首次测试偏差均在请求发送前的夹具/类型层修正。
+- Verification：Session/客户端/页面定向195项，前端78文件1395项、typecheck及Vite164模块生产构建通过；主JS 599.03kB分块警告保留。真实Edge/PG留A07，不以jsdom替代浏览器验收。

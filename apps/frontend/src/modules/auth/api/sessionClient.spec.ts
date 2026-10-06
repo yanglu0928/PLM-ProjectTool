@@ -851,6 +851,67 @@ describe("SessionClient", () => {
     expect(api.canSubmit).toBe(true);
   });
 
+  it("posts Workflow Transition with private CSRF and caller-owned replay inputs", async () => {
+    const receipt = response({ stage_transition_id: id, etag: '"v4"' });
+    const { api, fetcher } = client(response(session()), receipt);
+    await api.login("manager", "synthetic-only");
+    const body = JSON.stringify({ target_stage_key: "SURVEY", reason: "approved",
+      gate_snapshot_refs: [] });
+    const key = "synthetic-transition-key-0001";
+    await expect(api.postProjectWorkflowTransition(projectId, body, '"v3"', key))
+      .resolves.toBe(receipt);
+    expect(fetcher.mock.calls[1]).toEqual([
+      `/api/v1/projects/${projectId}/workflow:transition`, {
+        method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error",
+        headers: { Accept: "application/json", "Content-Type": "application/json",
+          "X-CSRF-Token": token, "Idempotency-Key": key, "If-Match": '"v3"' },
+        body, signal: expect.any(AbortSignal),
+      },
+    ]);
+    expect(JSON.stringify(api)).not.toContain(token);
+  });
+
+  it("rejects unsafe Workflow Transition inputs and never overlaps a request", async () => {
+    const { api, fetcher } = client(response(session()));
+    await api.login("manager", "synthetic-only");
+    const key = "synthetic-transition-key-0001";
+    for (const [project, body, etag, operation] of [
+      ["../other", "{}", '"v3"', key],
+      [projectId.toUpperCase(), "{}", '"v3"', key],
+      [projectId, "", '"v3"', key],
+      [projectId, "x".repeat(8193), '"v3"', key],
+      [projectId, "{}", '"v0"', key],
+      [projectId, "{}", 'W/"v3"', key],
+      [projectId, "{}", '"v9007199254740991"', key],
+      [projectId, "{}", '"v3"', "short"],
+    ] as const) {
+      await expect(api.postProjectWorkflowTransition(project, body, etag, operation))
+        .rejects.toMatchObject({ code: "AUTH_CLIENT_UNAVAILABLE" });
+    }
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps Workflow Transition submit capability after unknown and clears it on 401", async () => {
+    const readOnly = session(); delete (readOnly as Partial<typeof readOnly>).csrf_token;
+    const { api: viewer, fetcher: viewerFetcher } = client(response(readOnly));
+    await viewer.current();
+    await expect(viewer.postProjectWorkflowTransition(projectId, "{}", '"v3"',
+      "synthetic-transition-key-0001"))
+      .rejects.toMatchObject({ code: "AUTH_RELOGIN_REQUIRED" });
+    expect(viewerFetcher).toHaveBeenCalledTimes(1);
+    const { api, fetcher } = client(response(session()), new Response("{}", { status: 503 }),
+      new Response("{}", { status: 401 }));
+    await api.login("manager", "synthetic-only");
+    await api.postProjectWorkflowTransition(projectId, "{}", '"v3"',
+      "synthetic-transition-key-0001");
+    expect(api.canSubmit).toBe(true);
+    await api.postProjectWorkflowTransition(projectId, "{}", '"v3"',
+      "synthetic-transition-key-0001");
+    expect(api.canSubmit).toBe(false);
+    expect(api.view).toBeNull();
+    expect(fetcher).toHaveBeenCalledTimes(3);
+  });
+
   it("posts Project Job cancel with private CSRF, original version, key and bounded reason", async () => {
     const receipt = response({ job_id: id, state: "CANCEL_REQUESTED", etag: '"v2"' });
     const { api, fetcher } = client(response(session()), receipt);

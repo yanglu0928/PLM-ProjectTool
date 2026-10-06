@@ -9,6 +9,8 @@ import { WorkflowStartClient, WorkflowStartError } from "@/modules/workflow/api/
 import { WorkflowChecklistQualificationClient } from "@/modules/workflow/api/workflowChecklistQualificationClient";
 import { WorkflowChecklistRecordClient, WorkflowChecklistRecordError,
   type WorkflowChecklistFirstReceipt } from "@/modules/workflow/api/workflowChecklistRecordClient";
+import { WorkflowTransitionClient, WorkflowTransitionError,
+  type WorkflowTransitionFirstReceipt } from "@/modules/workflow/api/workflowTransitionClient";
 import ProjectWorkflowView from "./ProjectWorkflowView.vue";
 
 const id = "01234567-89ab-4cde-8123-456789abcdef";
@@ -62,14 +64,23 @@ async function session(manager = false, restricted = false) {
 async function page(auth: SessionClient, reader: WorkflowReadClient, starter?: WorkflowStartClient,
   qualifications?: WorkflowChecklistQualificationClient,
   checklistRecords?: WorkflowChecklistRecordClient,
+  transitions?: WorkflowTransitionClient,
   path = `/projects/${id}/workflow`) {
   const router = createAppRouter(createMemoryHistory());
   await router.push(path); await router.isReady();
   const wrapper = mount(ProjectWorkflowView, { props: { session: auth, workflows: reader, starter,
-    qualifications, checklistRecords },
+    qualifications, checklistRecords, transitions },
     global: { plugins: [router] } });
   await flushPromises();
   return { wrapper, router };
+}
+function transitionSnapshot(etag = '"v3"') {
+  const current = snapshot(true);
+  return parseWorkflow({ ...current, etag,
+    stages: current.stages.map((stage, index) => index === 0 ? { ...stage, state: "ACTIVE",
+      checklist_items: stage.checklist_items.map((item) => ({ ...item, state: "PASS" })) }
+      : stage),
+  });
 }
 function qualification(item: "HANDOVER_BASELINE" | "HANDOVER_ISSUES" = "HANDOVER_BASELINE") {
   return Object.freeze({ workflow_id: workflowId, project_id: id, definition_version: 1 as const,
@@ -89,6 +100,16 @@ function checklistReceipt(result: "PASS" | "FAIL" = "PASS"): WorkflowChecklistFi
     impact: result === "FAIL" ? "继续处理" : null,
     occurred_at: "2026-10-06T02:00:00Z", etag: '"v2"',
   }) });
+}
+function transitionReceipt(): WorkflowTransitionFirstReceipt {
+  return Object.freeze({ is_current_state_proof: false as const,
+    first_transition: Object.freeze({
+      stage_transition_id: otherId, workflow_id: workflowId, project_id: id,
+      definition_version: 1 as const, from_stage: "HANDOVER" as const,
+      to_stage: "SURVEY" as const, before_workflow_version: 3,
+      transitioned_workflow_version: 4, current_workflow_version: 4,
+      reason: "交接事实已核对", occurred_at: "2026-10-06T02:00:00Z", etag: '"v4"',
+    }) });
 }
 
 describe("ProjectWorkflowView", () => {
@@ -303,6 +324,98 @@ describe("ProjectWorkflowView", () => {
       .toBe(record.mock.calls[1]?.[1].idempotency_key);
     expect(get).toHaveBeenCalledTimes(1);
     expect(window.sessionStorage.length).toBe(0);
+    wrapper.unmount();
+  });
+
+  it("offers a confirmed Handover transition only after both current items PASS", async () => {
+    const auth = await session(true);
+    const reader = new WorkflowReadClient(
+      vi.fn().mockImplementation(() => Promise.resolve(
+        response(transitionSnapshot(), '"v3"'),
+      )) as typeof fetch,
+    );
+    const transitions = new WorkflowTransitionClient(auth);
+    const transition = vi.spyOn(transitions, "transition").mockResolvedValue(transitionReceipt());
+    const { wrapper } = await page(auth, reader, undefined, undefined, undefined, transitions);
+    const prepare = wrapper.findAll("button")
+      .find((button) => button.text() === "准备推进至 SURVEY");
+    expect(prepare).toBeDefined();
+    await prepare!.trigger("click");
+    expect(wrapper.text()).toContain("不会接收、展示或生成 Gate UUID");
+    expect(wrapper.text()).not.toContain(otherId);
+    const form = wrapper.get('form[aria-label="阶段推进确认"]');
+    await form.get('input[type="checkbox"]').setValue(true);
+    await form.trigger("submit");
+    expect(wrapper.text()).toContain("请填写本次推进理由");
+    expect(transition).not.toHaveBeenCalled();
+    await form.get("textarea").setValue("  交接事实已核对  ");
+    await form.trigger("submit"); await flushPromises();
+    expect(transition).toHaveBeenCalledTimes(1);
+    expect(transition.mock.calls[0]?.[1]).toMatchObject({ reason: "交接事实已核对" });
+    expect(transition.mock.calls[0]?.[1].idempotency_key).toMatch(/^[\x20-\x7e]{16,128}$/);
+    expect(wrapper.text()).toContain("不是当前流程状态证明");
+    expect(wrapper.find("ol").exists()).toBe(false);
+    expect(window.sessionStorage.length).toBe(0);
+    wrapper.unmount();
+  });
+
+  it("does not offer transition while a Handover item is not PASS", async () => {
+    const auth = await session(true);
+    const reader = new WorkflowReadClient(
+      vi.fn().mockResolvedValue(response(snapshot(true), '"v1"')) as typeof fetch,
+    );
+    const { wrapper } = await page(auth, reader);
+    expect(wrapper.findAll("button").some((button) => button.text() === "准备推进至 SURVEY"))
+      .toBe(false);
+    wrapper.unmount();
+  });
+
+  it("retains and retries only the original uncertain transition operation", async () => {
+    const auth = await session(true);
+    const reader = new WorkflowReadClient(
+      vi.fn().mockImplementation(() => Promise.resolve(
+        response(transitionSnapshot(), '"v3"'),
+      )) as typeof fetch,
+    );
+    const transitions = new WorkflowTransitionClient(auth);
+    const transition = vi.spyOn(transitions, "transition")
+      .mockRejectedValueOnce(new WorkflowTransitionError("WORKFLOW_TRANSITION_UNCERTAIN"))
+      .mockResolvedValueOnce(transitionReceipt());
+    const { wrapper } = await page(auth, reader, undefined, undefined, undefined, transitions);
+    await wrapper.findAll("button").find((button) => button.text() === "准备推进至 SURVEY")!
+      .trigger("click");
+    const first = wrapper.get('form[aria-label="阶段推进确认"]');
+    await first.get("textarea").setValue("交接事实已核对");
+    await first.get('input[type="checkbox"]').setValue(true);
+    await first.trigger("submit"); await flushPromises();
+    expect(wrapper.text()).toContain("原操作号、理由和版本已保留");
+    expect(window.sessionStorage.length).toBe(1);
+    await wrapper.findAll("button").find((button) => button.text() === "刷新当前流程")!
+      .trigger("click"); await flushPromises();
+    const retry = wrapper.get('form[aria-label="阶段推进原操作重试"]');
+    await retry.get('input[type="checkbox"]').setValue(true);
+    await retry.trigger("submit"); await flushPromises();
+    expect(transition).toHaveBeenCalledTimes(2);
+    expect(transition.mock.calls[0]?.[1].idempotency_key)
+      .toBe(transition.mock.calls[1]?.[1].idempotency_key);
+    expect(transition.mock.calls[0]?.[1].reason).toBe(transition.mock.calls[1]?.[1].reason);
+    expect(window.sessionStorage.length).toBe(0);
+    wrapper.unmount();
+  });
+
+  it("blocks a malformed saved transition rather than replacing its key", async () => {
+    window.sessionStorage.setItem(`plm.workflow.transition.pending.${id}`, JSON.stringify({
+      actor: id, project: id, workflow: workflowId, key: "short", etag: '"v3"',
+      reason: "交接事实已核对", target: "SURVEY",
+    }));
+    const auth = await session(true);
+    const reader = new WorkflowReadClient(
+      vi.fn().mockResolvedValue(response(transitionSnapshot(), '"v3"')) as typeof fetch,
+    );
+    const { wrapper } = await page(auth, reader);
+    expect(wrapper.text()).toContain("已关闭新的启动请求及检查项记录请求，并关闭阶段推进请求");
+    expect(wrapper.findAll("button").some((button) => button.text() === "准备推进至 SURVEY"))
+      .toBe(false);
     wrapper.unmount();
   });
 

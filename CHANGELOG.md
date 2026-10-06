@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-06：0.1.0-dev.0/WFL-02-A02-A06 新增Stage Transition安全前端链：SessionClient仅发送同源CSRF/原ETag/原Key，严格客户端只接受HANDOVER双PASS到SURVEY、规范理由和空`gate_snapshot_refs`；Workflow页仅向ProjectManager显示显式理由/二次确认，未知结果持久保留原Key/理由/ETag且只允许同版本重试，不输入、展示或生成Gate UUID。升级/回滚：无后端/Schema/Migration/冻结API/权限/依赖/Secret/外发，删除客户端和页面区块即可恢复后端-only。验证：定向195、前端78文件1395项、typecheck及Vite164模块生产构建通过；主JS 599.03kB既有分块警告保留。首轮测试有两条旧文案断言、复用已消费Response及一个TS收窄问题，修正后完整重跑。已知问题：A07真实Edge/PG、其余阶段Owner、性能、正式信任、Gate3/UAT/发行仍待。
+
 - 2026-10-06：0.1.0-dev.0/WFL-02-A02-A05 将Stage Transition接入Windows显式`--platform-write`组合，复用真实Handover资格Owner、ProjectManager授权、License、Audit与持久幂等；默认App、登录模式和只读平台模式继续不挂载。升级/回滚：无Schema/Migration/冻结API/依赖/Secret/外发，撤生产组合Router注入恢复关闭且保留不可变历史。验证：组合/生产入口定向38项、Win11/PG18.6真实HTTP默认404/Origin403/非空Gate422/首次及重放200、唯一Transition/双Gate/Audit/receipt，后端2779通过/3跳过；wheel 1013项，SHA-256 `5bfc9fac85fedb89d1a85d2cc7fb1728693fbe3c0cb1510a89d3ccd90aa1bc38`。首次真实脚本使用的旧测试venv缺`pgvector`而未进入迁移，补入项目既有Python3.13依赖路径后以新临时库完整重跑。已知问题：A06前端、A07真实浏览器、其余阶段Owner、性能、正式信任、Gate3/UAT/发行仍待。
 
 - 2026-10-06：0.1.0-dev.0/WFL-02-A02-A04 依CR-WFL-009新增默认关闭的冻结Transition POST：严格Origin/Session/CSRF/Key/If-Match/JSON；保留三个字段并要求`gate_snapshot_refs=[]`，由服务器权威生成双Gate；200只返最小TransitionRef/阶段/版本/UTC/ETag。升级/回滚：无Schema/Migration/依赖/Secret/外发，撤可选Router恢复404。验证：合同4、后端2777通过/3跳过，wheel 1013项，SHA-256 `84694eb7f938d3b597dd909a612bff6062a617c6e8559fc12b7c817f5facf158`；首轮补齐冻结错误运行注册并移除无效非相邻测试夹具后重跑。已知问题：A05 Windows真实HTTP-PG、前端/浏览器、其余阶段Owner、性能、正式信任、Gate3/UAT/发行仍待。

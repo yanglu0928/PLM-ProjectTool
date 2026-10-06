@@ -488,6 +488,41 @@ export class SessionClient {
     }
   }
 
+  /** Stage Transition is a single attempt; callers retain the original body, Key and ETag after uncertainty. */
+  async postProjectWorkflowTransition(projectId: string, body: string,
+    etag: string, idempotencyKey: string): Promise<Response> {
+    if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
+    if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
+    const version = typeof etag === "string" && /^"v[1-9]\d*"$/.test(etag)
+      ? Number(etag.slice(2, -1)) : null;
+    if (!identifier(projectId) || typeof body !== "string" || body.length === 0
+      || new TextEncoder().encode(body).length > 8192
+      || !Number.isSafeInteger(version) || version === null || version >= Number.MAX_SAFE_INTEGER
+      || typeof idempotencyKey !== "string" || !/^[\x20-\x7e]{16,128}$/.test(idempotencyKey)) {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    }
+    this.#busy = true;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      const fetcher = this.fetcher;
+      const response = await fetcher(`/api/v1/projects/${projectId}/workflow:transition`, {
+        method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error",
+        headers: { Accept: "application/json", "Content-Type": "application/json",
+          "X-CSRF-Token": this.#csrf, "Idempotency-Key": idempotencyKey, "If-Match": etag },
+        body, signal: controller.signal,
+      });
+      if (controller.signal.aborted) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+      if (response.status === 401) { this.#csrf = null; this.#view = null; }
+      return response;
+    } catch {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    } finally {
+      window.clearTimeout(timer);
+      this.#busy = false;
+    }
+  }
+
   /** Project Job cancellation: one request only; the receipt is not current Job state proof. */
   async postProjectJobCancel(projectId: string, jobId: string, etag: string,
     idempotencyKey: string, reason: string): Promise<Response> {
