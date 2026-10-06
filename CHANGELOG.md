@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-06：0.1.0-dev.0/SUR-01-A05-A01 完成Survey定义HTTP/读取前置核查：冻结10个Operation中内部CREATE、VERSION_CREATE、VERSION_VALIDATE与通用Review已具备，Survey读取、metadata状态、业务Router及原子SUBMIT_REVIEW仍为零；按读取Owner、状态Owner、五普通写、原子送审、四读及Windows组合拆为六项。兼容性/升级/回滚：纯文档，无代码/Schema/API/依赖/外发。验证：静态交叉核对通过。已知问题：A02以后实现、前端、Round/Response/Conclusion、Workflow资格、Gate3/UAT/发行仍待。
+
 - 2026-10-06：0.1.0-dev.0/SUR-01-A04-A02-P04 按CR-SUR-003新增失败关闭的PROJECT Review Subject Registry，让唯一冻结Router同时承载`HND-02`与`SRV-02`真实Owner，并只在Windows平台写模式挂载。兼容性/升级/回滚：无Migration/ORM/API/角色/依赖/外发；回滚单Owner会关闭Survey HTTP但保留历史。验证：新增6、定向48、Win11/PG18.6 Survey来源漂移拒批/恢复批准/漂移撤回及Handover双链回归；后端最终2816通过/3跳过；wheel 1040项，SHA-256 `9334cdad39de0438c6fef6b9d40056c0ebe3b9bfc19c2fbad725fa8a0c2f825d`。已知问题：Survey业务提交/读取/UI、Round/Response/Conclusion、Server2025、Gate3/UAT/发行仍待；全量首轮有1项既有随机RAG密文篡改测试偶发失败，独立3次与第二轮全量均通过。
 
 - 2026-10-06：0.1.0-dev.0/SUR-01-A04-A02-P03 确认并以3项Survey合同固定复用冻结PROJECT Review四写Router：`SRV-02 + SURVEY_ALL_V1`创建、强ETag开轮、批准投影、默认404、严格安全传输和错误码均通过，不复制Survey专用Review路径。兼容性/升级/回滚：无运行时代码、Migration/ORM/API路径/依赖/外发变化，生产入口仍默认关闭。验证：定向13、后端2810通过/3跳过；wheel 1038项，SHA-256 `bc9bd853a438bdd3b2e63b6fff76e15b4bed53954b99bd7bd47a911ff15cbc7d`。已知问题：Windows真实HTTP/PG组合、业务提交端点、读取/UI、Round/Response/Conclusion、Gate3/UAT/发行仍待。

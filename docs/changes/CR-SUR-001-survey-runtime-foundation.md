@@ -87,3 +87,6 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
   因此登记并实施CR-SUR-003，以Review-owned Subject Registry让唯一PROJECT Router按`HND-02`/`SRV-02`
   失败关闭分派。Windows 11/PostgreSQL 18.6真实Survey与Handover双链、后端全量和wheel通过；无Schema/
   冻结API/依赖/外发变化，默认/login-only/只读组合仍关闭Review写入。
+- 2026-10-06 / `SUR-01-A05-A01`：盘点冻结Survey定义10个Operation；内部已有CREATE、VERSION_CREATE、
+  VERSION_VALIDATE与通用Review链，但Survey Router、读取、metadata状态和原子SUBMIT_REVIEW仍为零。按读取、
+  状态、普通写HTTP、原子送审、读HTTP及Windows组合六项拆分；纯文档，无运行行为变化。

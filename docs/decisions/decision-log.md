@@ -8801,3 +8801,11 @@
 - Reason：FastAPI匹配首个同路径Router后不会因业务404继续尝试下一Router；Handover单Owner组合与第二个Survey Router无法共存。Review内核已经以Owner Port定义全部事务回调，Registry是最小且可验证的组合扩展。
 - Impact/Rollback：Windows平台写组合改用双Owner Router；默认/login-only/只读保持关闭。无Schema/ORM/冻结API/角色/依赖/Secret/网络/外发。回滚到Handover单Owner会关闭Survey HTTP但保留全部历史。
 - Verification：Registry/组合新增6、定向48；Win11/PG18.6 Survey来源漂移拒批/恢复批准/漂移撤回及Handover全链双回归PASS；后端最终2816通过/3跳过；wheel 1040项，SHA-256 `9334cdad39de0438c6fef6b9d40056c0ebe3b9bfc19c2fbad725fa8a0c2f825d`。
+
+# DEC-20261006-924：Survey 定义 HTTP 先建权威读取再开放业务写入
+
+- Date/WBS：2026-10-06 / `SUR-01-A05-A01`；依据冻结API-04、CR-SUR-001及已验A03/A04。
+- Decision：Survey定义10个Operation按读取Owner、metadata状态Owner、五普通写HTTP、原子SUBMIT_REVIEW、四读HTTP、Windows组合依次实施。通用Review两步HTTP不替代业务原子送审；Version读取返回固定类型化引用而不复制跨模块正文。
+- Reason：写入已具备内部Owner但没有当前授权读取投影，先开放写会使客户端依赖数据库形状或猜测ETag；前端两次调用通用Review会暴露中间DRAFT并破坏单一幂等业务结果。跨模块正文复制会绕过各Owner权限和固定版本语义。
+- Impact/Rollback：本项仅静态核查和拆分，无代码/Schema/API/角色/依赖/Secret/网络/外发。后续每项保持默认关闭并可撤Router回滚，历史不可删除。
+- Verification：交叉核对API-04 10个Operation、Survey内部Service/Repository、生产Router清单、Review组合、Project授权策略及0103～0105；标记`SUR_01_A05_A01_DEFINITION_HTTP_PRECHECK_PASS`。
