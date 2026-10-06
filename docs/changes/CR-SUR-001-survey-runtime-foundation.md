@@ -119,3 +119,7 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
   TEMPLATE只作参考，实际面对面记录优先且任何来源说明都不自动成为客户事实。当前Handover/Capability
   row identity和MANUAL说明不足以让浏览器安全定位原文，决定先交付四读客户端/页面，再以独立兼容
   只读解析边界补齐按需定位，不猜UUID、不复制正文。本项纯文档，无运行行为变化。
+- 2026-10-06 / `SUR-01-A06-A02`：新增未接页面的四读严格客户端；精确验证Envelope、父级身份、强ETag、
+  两类品牌cursor、完整Version声明计数、零基问题/ordinal、V1规则和四类互斥来源。嵌套规则深冻结，
+  不读取跨模块正文或路径。无后端/Schema/依赖/外发变化；定向25、前端79文件1420项、typecheck和
+  production build通过，主JS 599.01 kB既有分块提示保留。

@@ -8865,3 +8865,11 @@
 - Reason：复制原文到表格会丢失当前授权和固定版本语义；把内部row UUID拼成公共链接会产生错误定位或越权；仅显示空白字段又不能告诉用户维护什么。服务端解析能重验Project、固定版本和目标可见性，前端只呈现业务说明。
 - Impact/Rollback：本项只做静态核查与拆分，无代码、Schema/Migration、冻结API、依赖、Secret、网络或外发。后续解析端点属于兼容增量，实施前按持续授权登记独立CR并保留现有四读合同。
 - Verification：交叉核对Survey十Operation/DTO、A07组合、Handover问题卡片/Evidence按需定位、Document路由和前端模块清单；确认Survey前端实现为零并标记`SUR_01_A06_A01_FRONTEND_PRECHECK_PASS`。
+
+# DEC-20261006-932：Survey 前端只消费完整类型化 Version 投影
+
+- Date/WBS：2026-10-06 / `SUR-01-A06-A02`；依据DEC-931、Survey四读增量与Schema0103～0106。
+- Decision：客户端严格验证四读Envelope、父级、计数、顺序和两类opaque cursor；Version列表与详情均按服务端完整问题投影解析。问题从0连续编号，validation/condition只接受有界V1结构并深冻结；来源只接受四种互斥固定形状，不解析内部row identity或读取跨模块正文。
+- Reason：宽松JSON会把未知规则或私有字段带入页面；把列表当摘要会遗漏问题并诱发额外猜测；浏览器解析cursor或内部row UUID会破坏会话/Project绑定和Owner边界。深冻结防止展示层无意改写已读取的不可变定义。
+- Impact/Rollback：新增未引用的纯前端客户端与测试，无后端、Schema/Migration、公开API、权限、依赖、Secret或外发。删除新增文件即可回滚。
+- Verification：定向25，前端全量79文件/1420项、TypeScript typecheck、Vite164模块production build通过；599.01 kB主JS既有分块提示保留。
