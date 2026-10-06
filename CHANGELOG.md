@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-06：0.1.0-dev.0/SUR-01-A03-P02-A01 完成SurveyVersion创建编码前检查并登记CR-SUR-002：0103类型化外键需要版本内row identity，而现有Handover/Capability公共投影未暴露；选择由来源Owner新增最小caller-transaction证明Adapter，Survey不直查跨模块私表。升级/回滚：纯文档设计调整，无Schema/API/角色/依赖/网络/外发；撤后续Adapter注册可回滚。验证：静态核对0103、来源读取投影、Document固定版本证明和模块边界，标记`SUR_01_A03_P02_A01_SOURCE_PROOF_PRECHECK_PASS`。已知问题：A02 Adapter和A03 Version创建尚未实现。
+
 - 2026-10-06：0.1.0-dev.0/SUR-01-A03-P01 新增内部Survey identity创建Owner：冻结角色ProjectManager/ImplementationMember，经Session/CSRF、ACTIVE Project、License和持久幂等后，在同事务写ACTIVE/v0 identity、Audit与收据；原Key重放、异Payload冲突、并发收敛，不自动创建Version或开放HTTP。升级/回滚：无Migration/冻结DTO/依赖/Secret/外发变化，停止后续组合可关闭入口并保留历史。验证：定向9、Win11/PG18.6真实双角色/拒绝/并发/Audit回滚/零Version/撤权PASS、后端2785通过/3跳过；wheel 1020项，SHA-256 `3b75760339120d0d0e5dffc8639272db59eb737ef0a9606e1d9d5e5da011c3c6`。已知问题：Version创建/验证、Review、HTTP/UI、Round/Response/Conclusion、Workflow资格、Server2025/Debian13、Gate3/UAT/发行仍待。
 
 - 2026-10-06：0.1.0-dev.0/SUR-01-A02 新增SRV-01/SRV-02六表定义Schema/ORM与Migration 0103：类型化固定Handover、Capability、TEMPLATE DocumentVersion及人工来源，校验声明计数、问题来源、选择题选项和同Project部门；Owner完成前更新/删除/清空失败关闭，有历史拒绝降级。升级/回滚：从0102含数据或空库可升级，空Survey历史可降级/重升；无冻结API/角色/依赖/网络/外发变化。验证：定向8、Win11/PG18.6真实迁移/drift/四类来源/负例PASS、后端2783通过/3跳过；wheel 1017项，SHA-256 `b397d565ee4c26ee41d01b4800cb8117456efcab1bc379b31868de4a44f0785e`。首轮全量仅有硬编码ORM元数据清单遗漏，精确补表后完整重跑通过；既有Alembic警告保留。已知问题：A03 Owner、Review、Round/Response/Conclusion、HTTP/UI/Workflow资格、Server2025/Debian13、Gate3/UAT/发行仍待。

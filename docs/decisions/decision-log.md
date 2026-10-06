@@ -8731,3 +8731,11 @@
 - Reason：冻结合同明确双角色；收窄为单一ProjectManager会形成不兼容实现。identity与不可变定义版本是不同Root/事务，自动创建空Version既无法满足0103完整性，也会混淆后续来源与指纹验证。
 - Impact/Rollback：新增内部Service/Repository及`SURVEY_CREATE`授权策略，无Migration、公开Router、冻结DTO、依赖、Secret或外发变化；停止后续组合即可关闭入口，已创建identity保留。
 - Verification：定向9项；Windows 11/PostgreSQL18.6双角色/拒绝、License、重放/冲突/并发、Audit回滚、零Version及撤权PASS；后端2785通过/3跳过；wheel 1020项，SHA-256 `3b75760339120d0d0e5dffc8639272db59eb737ef0a9606e1d9d5e5da011c3c6`。
+
+# DEC-20261006-915：Survey 不以跨模块私表查询弥补来源投影缺口
+
+- Date/WBS：2026-10-06 / `SUR-01-A03-P02-A01`；依据CR-SUR-002、0103类型化外键及模块Owner硬约束。
+- Decision：Handover/Capability/Project在各自模块提供caller-transaction最小来源证明，Document复用既有固定版本证明；Survey只消费证明并写自身六表。数据库触发器保留为最终防御，不能替代应用Owner。
+- Reason：现有公共投影缺少版本内row identity，Survey直查私表会让权限、当前批准状态和未来表结构耦合；删掉row identity又会削弱固定版本追溯。
+- Impact/Rollback：CR-SUR-002把P02拆为证明Adapter和Version创建两项；无Schema/API/角色/依赖/网络/外发变化。撤Adapter注册可回滚，0103与identity历史保留。
+- Verification：静态核对0103外键、Handover/Capability读取投影、Document caller-transaction proof和Owner规则；标记`SUR_01_A03_P02_A01_SOURCE_PROOF_PRECHECK_PASS`，不宣称Version创建已通过。

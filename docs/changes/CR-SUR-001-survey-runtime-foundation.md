@@ -62,3 +62,6 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
 - 2026-10-06 / `SUR-01-A03-P01`：完成内部 Survey identity 创建 Owner，按冻结合同允许
   ProjectManager/ImplementationMember，接入当前 Session/CSRF、Project、License、Audit 与持久幂等；
   未开放 HTTP 或创建 Version。Windows 11 / PostgreSQL 18.6、2785 项后端回归及 Wheel 检查通过。
+- 2026-10-06 / `SUR-01-A03-P02-A01`：编码前核查发现现有 Handover/Capability 公共投影缺少 0103
+  类型化外键所需的版本内 row identity；登记 CR-SUR-002，先由来源 Owner 提供最小证明 Adapter，再写
+  SurveyVersion，避免 Survey 直连其他模块私有表。
