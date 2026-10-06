@@ -53,3 +53,9 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
 
 本 CR 只记录实现映射和顺序，不修改冻结业务语义；`SUR-01-A01` 仅完成静态核查。真实客户资料导入、
 客户答复/确认、质量、性能、正式信任、Windows Server 2025、Gate 3、UAT 和发行需各自证据关闭。
+
+## 实施记录
+
+- 2026-10-06 / `SUR-01-A02`：完成六表定义基础与 Migration 0103。来源采用真实外键加受控类型，
+  TEMPLATE 仅允许模板类别并继续不得作为客户事实；无冻结 API 或 Scope 变化。空历史可降级，存在
+  Survey 历史时拒绝降级。Windows 11 / PostgreSQL 18.6、2783 项后端回归及 Wheel 内容检查通过。

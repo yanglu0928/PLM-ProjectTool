@@ -8715,3 +8715,11 @@
 - Reason：当前Survey运行实现为零，而单次实现五Root会跨越四个状态机和多个事务边界；无类型UUID、动态latest或正文复制不能保持版本、Scope和授权。模板或AI建议也不能证明客户事实。
 - Impact/Rollback：本项及CR为文档决策，无Schema/API/依赖/网络/外发；后续每个迁移空历史可降、有历史拒降，应用可停Owner/Router但保留业务历史。Gate2冻结提交不改写。
 - Verification：静态交叉核对五Root、十七表、二十九Operation、当前Migration head 0102、Audit/Trace/AI白名单、Workflow两项清单及源码零Survey模块；标记`SUR_01_A01_RUNTIME_PRECHECK_PASS`。
+
+# DEC-20261006-913：Survey 定义来源使用类型化固定外键且在 Owner 前关闭修改
+
+- Date/WBS：2026-10-06 / `SUR-01-A02`；依据CR-SUR-001、冻结DM-05/SC-02及现有Handover、Capability、Document Owner边界。
+- Decision：0103只物理化SRV-01/SRV-02六表。问题来源在单表中以互斥类型固定到当前批准同Project Handover Item、当前批准GLOBAL Capability Item、GLOBAL或同Project TEMPLATE DocumentVersion，或规范化人工说明；ProjectId显式贯穿owned rows。正式Owner完成前只允许合法初始插入，更新/删除/清空失败关闭。
+- Reason：无类型UUID、动态latest和正文复制不能证明版本、Scope与来源；把PROJECT_RECORD当问题模板会混淆实际调研事实与问题结构。一次加入Round/Response/Conclusion会跨越独立状态机和事务边界。
+- Impact/Rollback：新增Migration 0103与ORM，无冻结API、角色、依赖、网络或外发变化。空历史可降级；存在Survey定义历史时拒绝物理降级，应用回滚只能停止后续Owner并保留历史。
+- Verification：定向8项；Windows 11/PostgreSQL18.6含数据升级、空降级/重升、drift、四类来源、模板/选择题负例、Owner关闭和历史拒降PASS；后端2783通过/3跳过；wheel 1017项，SHA-256 `b397d565ee4c26ee41d01b4800cb8117456efcab1bc379b31868de4a44f0785e`。

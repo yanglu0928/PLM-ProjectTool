@@ -44,6 +44,7 @@ from plm_assistant.modules.ai.infrastructure import egress_orm  # noqa: F401 - r
 from plm_assistant.modules.rag.infrastructure import orm as rag_orm  # noqa: F401 - register RAG-01 tables
 from plm_assistant.modules.capability.infrastructure import orm as capability_orm  # noqa: F401 - register CAP-01/02 tables
 from plm_assistant.modules.handover.infrastructure import orm as handover_orm  # noqa: F401 - register HND-01/02 tables
+from plm_assistant.modules.survey.infrastructure import orm as survey_orm  # noqa: F401 - register SRV-01/02 tables
 
 
 config = context.config
