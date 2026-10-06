@@ -8809,3 +8809,11 @@
 - Reason：写入已具备内部Owner但没有当前授权读取投影，先开放写会使客户端依赖数据库形状或猜测ETag；前端两次调用通用Review会暴露中间DRAFT并破坏单一幂等业务结果。跨模块正文复制会绕过各Owner权限和固定版本语义。
 - Impact/Rollback：本项仅静态核查和拆分，无代码/Schema/API/角色/依赖/Secret/网络/外发。后续每项保持默认关闭并可撤Router回滚，历史不可删除。
 - Verification：交叉核对API-04 10个Operation、Survey内部Service/Repository、生产Router清单、Review组合、Project授权策略及0103～0105；标记`SUR_01_A05_A01_DEFINITION_HTTP_PRECHECK_PASS`。
+
+# DEC-20261006-925：Survey 定义读取只投影当前 Project 内的固定引用
+
+- Date/WBS：2026-10-06 / `SUR-01-A05-A02`；依据冻结API-04、DEC-924及Schema0103～0105。
+- Decision：四类Project成员经当前License/Session/成员事实读取Survey和不可变Version；Survey采用`updated_at DESC, survey_id DESC`完整keyset，Version采用唯一`version_no DESC`。Version详情返回问题、选项、条件、人工说明及Handover/Capability/Document类型化固定标识，不跨模块读取或复制正文、路径和存储定位。签名cursor留A06传输层。
+- Reason：只用时间戳会在同值分页时丢失或重复；动态latest或跨模块正文复制会破坏固定版本、Owner权限与Project隔离。内部Application位置不应绑定HTTP签名与会话上下文。
+- Impact/Rollback：新增内部Service/Repository及四项只读策略；无Schema/Migration、公开API、依赖、Secret、网络或外发变化。删除新增边界可回滚，历史不变且公开Router仍关闭。
+- Verification：定向14；Win11/PG18.6四角色、同时间戳/Version分页、完整类型化投影、跨项目/撤权/License拒绝、归档读取与零写入通过；后端2823通过/3跳过；wheel 1042项，SHA-256 `01594a8a60323989143767bc9a35439ff0e8fd0d9494eb32a9c03b702762b1fb`。

@@ -90,3 +90,7 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
 - 2026-10-06 / `SUR-01-A05-A01`：盘点冻结Survey定义10个Operation；内部已有CREATE、VERSION_CREATE、
   VERSION_VALIDATE与通用Review链，但Survey Router、读取、metadata状态和原子SUBMIT_REVIEW仍为零。按读取、
   状态、普通写HTTP、原子送审、读HTTP及Windows组合六项拆分；纯文档，无运行行为变化。
+- 2026-10-06 / `SUR-01-A05-A02`：完成Survey/Version四读内部Owner与Survey-owned仓储；四类Project成员
+  每次重验License/Session/当前成员事实，Survey使用完整双字段keyset、Version倒序分页，详情只展开当前
+  Project内的不可变问题结构与类型化固定引用，不跨模块复制正文或路径。无Schema/API/依赖/外发变化；
+  Windows 11/PostgreSQL 18.6、2823项后端全量及wheel检查通过。
