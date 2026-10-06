@@ -8857,3 +8857,11 @@
 - Reason：多个组合根会造成同一路径注册、授权或依赖漂移；让只读模式携带写Router会扩大攻击面。独立cursor key限制family间影响，通用Review Router已由Subject Registry安全承载`SRV-02`。
 - Impact/Rollback：新增Windows组合与生产入口注入；无Schema/Migration、冻结路径、角色、依赖、Secret值、网络或外发变化。撤组合注入可恢复404/405，合法历史保留。首轮真实闭环发现A06错误拒绝Schema零基`sequence_no`，按既有Schema修正而未变更冻结合同。
 - Verification：定向46；Windows 11/PostgreSQL18.6全新隔离库完成十Operation、只读/写隔离、送审重放、Review批准、归档和Alembic无漂移；后端2846通过/3跳过；wheel 1052项，SHA-256 `5ecfda4d9b0ad06f8dbe5e12541e4b2aff2e95a1eedd2951f7093efb6175c7c0`。
+
+# DEC-20261006-931：Survey 问题卡片先严格读取，来源定位由服务端解析
+
+- Date/WBS：2026-10-06 / `SUR-01-A06-A01`；依据用户确认的待办交互原则、冻结API-04及Survey A05定义投影。
+- Decision：先以四读客户端和问题卡片呈现完整不可变Version；明确面对面项目记录优先、TEMPLATE仅参考，所有来源均不自动成为客户事实。TEMPLATE可导航现有Document Owner；Handover/Capability版本内row identity及MANUAL说明不得由前端猜路由，后续建立Project受权的最小只读来源解析边界，按点击返回可公开导航或明确不可定位。
+- Reason：复制原文到表格会丢失当前授权和固定版本语义；把内部row UUID拼成公共链接会产生错误定位或越权；仅显示空白字段又不能告诉用户维护什么。服务端解析能重验Project、固定版本和目标可见性，前端只呈现业务说明。
+- Impact/Rollback：本项只做静态核查与拆分，无代码、Schema/Migration、冻结API、依赖、Secret、网络或外发。后续解析端点属于兼容增量，实施前按持续授权登记独立CR并保留现有四读合同。
+- Verification：交叉核对Survey十Operation/DTO、A07组合、Handover问题卡片/Evidence按需定位、Document路由和前端模块清单；确认Survey前端实现为零并标记`SUR_01_A06_A01_FRONTEND_PRECHECK_PASS`。

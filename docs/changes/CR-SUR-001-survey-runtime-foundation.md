@@ -115,3 +115,7 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
   隔离库完整重跑创建、读取、校验、原子送审/重放、Review批准和归档。无Schema/API/依赖/外发变化；
   Windows 11/PostgreSQL 18.6、定向46、后端2846/3及wheel检查通过。正式目标账户两份cursor key仪式、
   Server 2025、UI、Round/Response/Conclusion、Gate 3与发行继续开放。
+- 2026-10-06 / `SUR-01-A06-A01`：核清Survey前端为零，Version完整投影可先建设严格只读问题卡片；
+  TEMPLATE只作参考，实际面对面记录优先且任何来源说明都不自动成为客户事实。当前Handover/Capability
+  row identity和MANUAL说明不足以让浏览器安全定位原文，决定先交付四读客户端/页面，再以独立兼容
+  只读解析边界补齐按需定位，不猜UUID、不复制正文。本项纯文档，无运行行为变化。

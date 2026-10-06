@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-06：0.1.0-dev.0/SUR-01-A06-A01 完成Survey前端与交互前置核查：前端当前为零，确定先做四读严格客户端和问题卡片；面对面项目记录优先、TEMPLATE仅参考，来源说明不自动成为客户事实。Handover/Capability内部row identity及MANUAL说明不能由浏览器安全定位，后续以受权只读来源解析边界补齐按需定位，不复制正文或猜UUID。兼容性/回滚：纯文档，无程序/Schema/API/依赖/外发变化。验证：静态交叉核对通过。已知问题：A02以后客户端、页面、来源解析/浏览器闭环、写交互、Round/Response/Conclusion、Gate3与发行仍待。
+
 - 2026-10-06：0.1.0-dev.0/SUR-01-A05-A07 新增失败关闭的Windows Survey生产组合：只读平台只挂四GET，写平台覆盖冻结十个定义Operation，默认/login-only保持关闭；两类cursor使用独立Windows Secret key。首轮真实闭环发现A06错误拒绝Schema零基题目序号，修正为`sequence_no >= 0`并用全新库重跑。兼容性/升级/回滚：无Schema/Migration/依赖/公开路径/外发变化；目标账户须供给两份key，撤组合注入恢复关闭且保留历史。验证：定向46、Win11/PG18.6真实创建/读取/校验/送审重放/批准/归档、后端2846通过/3跳过，wheel 1052项，SHA-256 `5ecfda4d9b0ad06f8dbe5e12541e4b2aff2e95a1eedd2951f7093efb6175c7c0`。已知问题：Survey UI、Round/Response/Conclusion、Server2025、正式key仪式、Gate3与发行仍待；Debian13实机按用户指令跳过。
 
 - 2026-10-06：0.1.0-dev.0/SUR-01-A05-A06 新增默认关闭的Survey四读HTTP与两类HMAC签名cursor；cursor绑定Session/Project/页长/完整位置，Version另绑定父Survey，固定投影不复制跨模块正文或路径。兼容性/回滚：无Schema/Migration/依赖/Secret/外发，撤Router注入恢复404。验证：专项20、后端2844通过/3跳过，wheel 1051项，SHA-256 `f42547db0d917f6ee75c4456737702ba8e415e7a0ffc7381d1c15b12f4465dcf`。已知问题：A07生产组合、Survey UI、Round/Response/Conclusion、Server2025、Gate3与发行仍待。
