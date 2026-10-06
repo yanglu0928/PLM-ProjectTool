@@ -48,3 +48,7 @@
 0108 只新增冻结已有的四张 SRV-04 表，不修改 SRV-01～03、现有 `/api/v1` JSON、技术栈、依赖或 Scope。空历史可降至0107；存在 Assignment/Response/Answer/Evidence、相关 Audit/receipt 或已关闭 Round 历史时拒绝物理降级，只允许向前修复或恢复备份。应用回滚可停止 Owner/Router 注入，但不得删除答复历史。
 
 验证至少覆盖：部门/assignee唯一、跨项目/部门/撤权、Round状态、强ETag、同Key并发、Audit/receipt回滚、六种 answer type、固定选项、条件题、必答/Evidence、单根单后继更正链、RETURNED更正重提、VALIDATED终态、PROJECT_RECORD来源同事务回滚、Evidence版本/指纹漂移、空Assignment与缺目标部门拒绝CLOSE，以及历史拒降。Windows 11/PostgreSQL 18.6 为当前实际环境；Windows Server 2025 留发行复验，Debian 13 按用户指令跳过实机但仍保持正式兼容目标。
+
+## 实施记录
+
+- 2026-10-06 / `SUR-03-A02`：完成四表 ORM 与 Migration0108，数据库强制OPEN Round/固定target、NULLS NOT DISTINCT、单根单后继更正、一Response一Answer、facilitated source、Evidence快照、不可变及历史拒降。Windows 11/PostgreSQL18.6、后端全量和wheel通过；多表触发器字段分支及head/inventory断言偏差已修复并重跑，详见`docs/progress/sur-03-a02-response-schema.md`。

@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-06：0.1.0-dev.0/SUR-03-A02 新增SRV-04四表ORM与Migration0108：OPEN Round固定target、部门/受访人NULLS NOT DISTINCT唯一、单问题Response/一对一Answer、单根单后继更正、FACILITATED_RECORD source、Evidence快照及不可变历史。兼容性/回滚：只新增冻结四表，无公开API/依赖/Secret/外发；空历史可降0107，有历史拒降。验证：Win11/PG18.6升级降级/drift/约束负例，后端2880/3，wheel1070项，SHA-256 `d0ff7af0146bd2ed8746fddf2d38d21037e4f543e604d9476e4907a6d0ced6b5`。首轮触发器字段分支及head/inventory断言偏差已修复重跑。已知问题：A03以后Owner/HTTP/UI/浏览器、Round CLOSE、Gate3/UAT及发行仍待。
+
 - 2026-10-06：0.1.0-dev.0/SUR-03-A01 完成SRV-04运行时前置核查并登记CR-SUR-008：保持冻结四表、五态和七Operation，补齐部门/可空受访人target、单问题Response/一对一Answer、单根单后继更正、RETURNED更正重提、FACILITATED_RECORD同事务固定，以及非空/全目标部门/全VALIDATED的Round完整性。兼容性/回滚：纯文档，无程序/Schema/API/依赖/Secret/外发；Round CLOSE继续失败关闭。验证：静态交叉核对冻结DM/SC/API与0107当前实现。已知问题：A02～A09 Schema/Owner/HTTP/UI/浏览器、Round CLOSE、Gate3/UAT及发行仍待。
 
 - 2026-10-06：0.1.0-dev.0/SUR-02-A05 新增Round计划与状态Owner：PLANNED schedule PATCH允许PM/Implementation，OPEN/CANCEL限PM，强ETag、Session/CSRF/License、持久幂等、Audit及生命周期时间同事务；CLOSE在SUR-03完整性Owner前明确返回不可用且零写。兼容性/回滚：无Schema/冻结URL/JSON/依赖/Secret/外发，未装配Router时外部仍404，停止组合保留历史。验证：Win11/PG18.6同Key并发、回滚、终态、CLOSE失败关闭/drift通过；后端2876/3，wheel1069项，SHA-256 `03ee68e7b1d823bc358cb6b8fee86199dc8edba5f707b45748f5538f8af38ae4`。首轮SQL时间表达式布尔求值失败已改为显式分支并从新库重跑。已知问题：SUR-03答复完整性、A06 CLOSE/HTTP/UI/浏览器、Gate3/UAT及发行仍待。

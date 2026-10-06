@@ -558,3 +558,276 @@ class SurveyRoundSourceRecordRow(Base):
         TIMESTAMP(timezone=True, precision=6), nullable=False,
         server_default=text("statement_timestamp()"),
     )
+
+
+class SurveyAssignmentRow(Base):
+    __tablename__ = "srv_assignments"
+    __table_args__ = (
+        UniqueConstraint(
+            "survey_assignment_id", "survey_round_id", "survey_version_id",
+            "survey_id", "project_id", name="uq_srv_assignments__identity",
+        ),
+        UniqueConstraint(
+            "survey_round_id", "department_id", "assignee_user_id",
+            name="uq_srv_assignments__round_target",
+            postgresql_nulls_not_distinct=True,
+        ),
+        ForeignKeyConstraint(
+            ["survey_round_id", "survey_version_id", "survey_id", "project_id"],
+            ["plm.srv_rounds.survey_round_id",
+             "plm.srv_rounds.survey_version_id", "plm.srv_rounds.survey_id",
+             "plm.srv_rounds.project_id"],
+            name="fk_srv_assignments__round", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["survey_version_id", "department_id"],
+            ["plm.srv_target_departments.survey_version_id",
+             "plm.srv_target_departments.department_id"],
+            name="fk_srv_assignments__target", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["department_id", "project_id"],
+            ["plm.prj_departments.department_id", "plm.prj_departments.project_id"],
+            name="fk_srv_assignments__department", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(["assignee_user_id"], ["plm.auth_users.user_id"],
+                             name="fk_srv_assignments__assignee",
+                             ondelete="NO ACTION"),
+        ForeignKeyConstraint(["created_by"], ["plm.auth_users.user_id"],
+                             name="fk_srv_assignments__creator", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["updated_by"], ["plm.auth_users.user_id"],
+                             name="fk_srv_assignments__updater", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["submitted_by"], ["plm.auth_users.user_id"],
+                             name="fk_srv_assignments__submitter", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["validated_by"], ["plm.auth_users.user_id"],
+                             name="fk_srv_assignments__validator", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["returned_by"], ["plm.auth_users.user_id"],
+                             name="fk_srv_assignments__returner", ondelete="NO ACTION"),
+        CheckConstraint(
+            "submission_state IN ('ASSIGNED','IN_PROGRESS','SUBMITTED',"
+            "'VALIDATED','RETURNED')", name="ck_srv_assignments__state",
+        ),
+        CheckConstraint(
+            "return_comment IS NULL OR (char_length(return_comment) BETWEEN 1 AND 2000 "
+            "AND return_comment=btrim(return_comment))",
+            name="ck_srv_assignments__return_comment",
+        ),
+        CheckConstraint("lock_version>=0", name="ck_srv_assignments__lock"),
+        Index("ix_srv_assignments__round_state", "survey_round_id",
+              "submission_state", "survey_assignment_id"),
+        Index("ix_srv_assignments__assignee_state", "assignee_user_id",
+              "submission_state", "survey_assignment_id"),
+        {"schema": "plm"},
+    )
+
+    survey_assignment_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"),
+    )
+    survey_round_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    survey_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    survey_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    department_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    assignee_user_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    submission_state: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'ASSIGNED'"),
+    )
+    submitted_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    submitted_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True, precision=6))
+    validated_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    validated_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True, precision=6))
+    returned_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    returned_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True, precision=6))
+    return_comment: Mapped[str | None] = mapped_column(Text)
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+    updated_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    updated_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+    lock_version: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("0"),
+    )
+
+
+class SurveyResponseRow(Base):
+    __tablename__ = "srv_responses"
+    __table_args__ = (
+        UniqueConstraint(
+            "survey_response_id", "survey_assignment_id", "question_row_id",
+            "project_id", name="uq_srv_responses__identity",
+        ),
+        UniqueConstraint(
+            "survey_assignment_id", "question_row_id", "correction_of_response_id",
+            name="uq_srv_responses__question_chain",
+            postgresql_nulls_not_distinct=True,
+        ),
+        UniqueConstraint("correction_of_response_id",
+                         name="uq_srv_responses__correction_successor"),
+        ForeignKeyConstraint(
+            ["survey_assignment_id", "survey_round_id", "survey_version_id",
+             "survey_id", "project_id"],
+            ["plm.srv_assignments.survey_assignment_id",
+             "plm.srv_assignments.survey_round_id",
+             "plm.srv_assignments.survey_version_id",
+             "plm.srv_assignments.survey_id", "plm.srv_assignments.project_id"],
+            name="fk_srv_responses__assignment", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["question_row_id", "survey_version_id", "survey_id", "project_id"],
+            ["plm.srv_questions.question_row_id",
+             "plm.srv_questions.survey_version_id", "plm.srv_questions.survey_id",
+             "plm.srv_questions.project_id"],
+            name="fk_srv_responses__question", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(["correction_of_response_id"],
+                             ["plm.srv_responses.survey_response_id"],
+                             name="fk_srv_responses__correction", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["round_source_record_ref_id"],
+                             ["plm.srv_round_source_records.round_source_record_ref_id"],
+                             name="fk_srv_responses__round_source", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["recorded_by"], ["plm.auth_users.user_id"],
+                             name="fk_srv_responses__recorder", ondelete="NO ACTION"),
+        CheckConstraint(
+            "response_source IN ('SELF_SERVICE','FACILITATED_RECORD')",
+            name="ck_srv_responses__source",
+        ),
+        CheckConstraint(
+            "(response_source='SELF_SERVICE' AND round_source_record_ref_id IS NULL) OR "
+            "(response_source='FACILITATED_RECORD' AND "
+            "round_source_record_ref_id IS NOT NULL)",
+            name="ck_srv_responses__source_shape",
+        ),
+        CheckConstraint("recorded_at<=created_at", name="ck_srv_responses__recorded_at"),
+        Index("ix_srv_responses__assignment_recorded", "survey_assignment_id",
+              "recorded_at", "survey_response_id"),
+        Index("ix_srv_responses__question", "question_row_id", "survey_response_id"),
+        {"schema": "plm"},
+    )
+
+    survey_response_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"),
+    )
+    survey_assignment_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    survey_round_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    survey_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    survey_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    question_row_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    response_source: Mapped[str] = mapped_column(Text, nullable=False)
+    round_source_record_ref_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    correction_of_response_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    recorded_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    recorded_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+
+
+class SurveyAnswerRow(Base):
+    __tablename__ = "srv_answers"
+    __table_args__ = (
+        UniqueConstraint("survey_response_id", name="uq_srv_answers__response"),
+        UniqueConstraint(
+            "survey_answer_id", "survey_response_id", "survey_assignment_id",
+            "question_row_id", "project_id", name="uq_srv_answers__identity",
+        ),
+        ForeignKeyConstraint(
+            ["survey_response_id", "survey_assignment_id", "question_row_id",
+             "project_id"],
+            ["plm.srv_responses.survey_response_id",
+             "plm.srv_responses.survey_assignment_id",
+             "plm.srv_responses.question_row_id", "plm.srv_responses.project_id"],
+            name="fk_srv_answers__response", ondelete="NO ACTION",
+        ),
+        CheckConstraint(
+            "raw_answer IS NOT NULL OR answer_value IS NOT NULL",
+            name="ck_srv_answers__value",
+        ),
+        CheckConstraint(
+            "raw_answer IS NULL OR (char_length(raw_answer) BETWEEN 1 AND 20000 "
+            "AND raw_answer=btrim(raw_answer))",
+            name="ck_srv_answers__raw",
+        ),
+        {"schema": "plm"},
+    )
+
+    survey_answer_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"),
+    )
+    survey_response_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    survey_assignment_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    question_row_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    raw_answer: Mapped[str | None] = mapped_column(Text)
+    answer_value: Mapped[object | None] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+
+
+class SurveyAnswerEvidenceRefRow(Base):
+    __tablename__ = "srv_answer_evidence_refs"
+    __table_args__ = (
+        UniqueConstraint("survey_answer_id", "ordinal",
+                         name="uq_srv_answer_evidence__answer_ordinal"),
+        UniqueConstraint("survey_answer_id", "evidence_id",
+                         name="uq_srv_answer_evidence__answer_evidence"),
+        ForeignKeyConstraint(
+            ["survey_answer_id", "survey_response_id", "survey_assignment_id",
+             "question_row_id", "project_id"],
+            ["plm.srv_answers.survey_answer_id",
+             "plm.srv_answers.survey_response_id",
+             "plm.srv_answers.survey_assignment_id",
+             "plm.srv_answers.question_row_id", "plm.srv_answers.project_id"],
+            name="fk_srv_answer_evidence__answer", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["document_version_id", "document_id"],
+            ["plm.doc_document_versions.document_version_id",
+             "plm.doc_document_versions.document_id"],
+            name="fk_srv_answer_evidence__document", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(["evidence_id"], ["plm.evd_evidence_records.evidence_id"],
+                             name="fk_srv_answer_evidence__evidence",
+                             ondelete="NO ACTION"),
+        ForeignKeyConstraint(["recorded_by"], ["plm.auth_users.user_id"],
+                             name="fk_srv_answer_evidence__recorder",
+                             ondelete="NO ACTION"),
+        CheckConstraint("ordinal>=0", name="ck_srv_answer_evidence__ordinal"),
+        CheckConstraint("observed_evidence_lock_version>=0",
+                        name="ck_srv_answer_evidence__lock"),
+        CheckConstraint("octet_length(content_fingerprint)=32",
+                        name="ck_srv_answer_evidence__fingerprint"),
+        CheckConstraint("recorded_at<=created_at",
+                        name="ck_srv_answer_evidence__recorded_at"),
+        Index("ix_srv_answer_evidence__evidence", "evidence_id", "survey_answer_id"),
+        {"schema": "plm"},
+    )
+
+    survey_answer_evidence_ref_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"),
+    )
+    survey_answer_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    survey_response_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    survey_assignment_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    question_row_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    document_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    document_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    evidence_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    observed_evidence_lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    content_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    recorded_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    recorded_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False)
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )

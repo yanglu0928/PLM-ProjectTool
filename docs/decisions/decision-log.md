@@ -8969,3 +8969,11 @@
 - Reason：Response若包含可变Answer集合会使单题更正覆盖其他题；多根或分叉更正无法确定当前值；SQL与Python的`all(empty)`会把未调研错误判定为完整。面对面PROJECT_RECORD只能证明原始记录存在，不能代替结构化回答与受权校验。
 - Impact/Rollback：本项仅登记CR和A02～A09拆分，无程序/Schema/API/依赖/Secret/外发；冻结四表、五态、七Operation不变。Round CLOSE继续显式失败关闭。
 - Verification：静态交叉核对DM/SC/API冻结基线、0107 ORM/Migration、SurveyVersion Question/Option/target、Round source及Evidence Owner，确认SRV-04运行实现为零并标记`SUR_03_A01_RESPONSE_PRECHECK_PASS`。
+
+# DEC-20261006-945：SRV-04 更正链和答复快照由数据库封闭
+
+- Date/WBS：2026-10-06 / `SUR-03-A02`；依据CR-SUR-008与冻结四表/NULLS NOT DISTINCT约束。
+- Decision：0108以Assignment target唯一、Response单根单后继、更正同Assignment/Question、一Response一Answer延迟约束及固定Evidence快照封闭历史；四表拒绝UPDATE/DELETE/TRUNCATE，Assignment Root仅允许受控状态更新。
+- Reason：只靠应用校验无法抵御并发双根、分叉更正、孤立Response或Evidence漂移；保留历史需要数据库成为第二道不可变边界。
+- Impact/Rollback：新增四表和0108，无公开API/依赖/Secret/外发；空历史可降0107，有历史拒降并向前修复。
+- Verification：Win11/PG18.6升级/降级/drift与约束负例通过；后端2880/3、wheel1070项，SHA-256 `d0ff7af0146bd2ed8746fddf2d38d21037e4f543e604d9476e4907a6d0ced6b5`。
