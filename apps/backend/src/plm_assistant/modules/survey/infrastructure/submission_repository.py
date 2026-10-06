@@ -12,6 +12,7 @@ from plm_assistant.modules.project.infrastructure.orm import ProjectMemberRow
 from plm_assistant.modules.survey.application.submission_views import (
     CurrentSubmissionAnswer, SubmissionEvidenceSnapshot, SubmissionQuestion,
     SurveyAssignmentSubmissionSnapshot, SurveyAssignmentSubmitReceipt,
+    SurveyAssignmentReviewReceipt,
 )
 
 from .orm import (
@@ -38,7 +39,8 @@ class SqlAlchemySurveyAssignmentSubmissionRepository:
 
     def lock_snapshot(
         self, transaction, *, project_id, survey_round_id, survey_assignment_id,
-        expected_lock_version, actor_id, actor_role,
+        expected_lock_version, actor_id, actor_role, required_state="IN_PROGRESS",
+        manager_access=False,
     ) -> SurveyAssignmentSubmissionSnapshot:
         session = _session(transaction)
         round_row = session.execute(select(SurveyRoundRow).where(
@@ -53,11 +55,14 @@ class SqlAlchemySurveyAssignmentSubmissionRepository:
             populate_existing=True)).scalar_one_or_none()
         if round_row is None or assignment is None:
             return None
-        if round_row.round_state != "OPEN" or assignment.submission_state != "IN_PROGRESS":
+        if (required_state not in ("IN_PROGRESS", "SUBMITTED")
+                or round_row.round_state != "OPEN"
+                or assignment.submission_state != required_state):
             raise ValueError("SURVEY_ASSIGNMENT_STATE_INVALID")
         if assignment.lock_version != expected_lock_version:
             raise ValueError("CONFLICT_VERSION")
-        if not self._allowed(session, assignment, actor_id, actor_role):
+        if not (manager_access and actor_role == "PROJECT_MANAGER") and not self._allowed(
+                session, assignment, actor_id, actor_role):
             raise LookupError("RESOURCE_NOT_FOUND")
 
         question_rows = session.execute(select(SurveyQuestionRow).where(
@@ -151,6 +156,55 @@ class SqlAlchemySurveyAssignmentSubmissionRepository:
         return SurveyAssignmentSubmitReceipt(
             assignment.survey_assignment_id, assignment.survey_round_id,
             assignment.project_id, "SUBMITTED", f'"v{assignment.lock_version}"')
+
+    def review_transition(self, transaction, *, snapshot, actor_id,
+                          target_state, return_comment=None):
+        if (target_state not in ("VALIDATED", "RETURNED")
+                or target_state == "VALIDATED" and return_comment is not None
+                or target_state == "RETURNED" and type(return_comment) is not str):
+            raise ValueError("VALIDATION_FAILED")
+        session = _session(transaction)
+        assignment = session.execute(select(SurveyAssignmentRow).where(
+            SurveyAssignmentRow.survey_assignment_id == snapshot.survey_assignment_id,
+            SurveyAssignmentRow.project_id == snapshot.project_id,
+        ).with_for_update(of=SurveyAssignmentRow).execution_options(
+            populate_existing=True)).scalar_one_or_none()
+        if (assignment is None or assignment.submission_state != "SUBMITTED"
+                or assignment.lock_version != snapshot.before_lock_version):
+            raise ValueError("CONFLICT_VERSION")
+        assignment.submission_state = target_state
+        if target_state == "VALIDATED":
+            assignment.validated_by = actor_id
+            assignment.validated_at = func.statement_timestamp()
+        else:
+            assignment.returned_by = actor_id
+            assignment.returned_at = func.statement_timestamp()
+            assignment.return_comment = return_comment
+        assignment.updated_by = actor_id
+        assignment.updated_at = func.statement_timestamp()
+        assignment.lock_version += 1
+        session.flush(); session.refresh(assignment)
+        return SurveyAssignmentReviewReceipt(
+            assignment.survey_assignment_id, assignment.survey_round_id,
+            assignment.project_id, target_state,
+            f'"v{assignment.lock_version}"', return_comment)
+
+    def replay_review(self, transaction, *, project_id, survey_round_id,
+                      survey_assignment_id, actor_id, actor_role,
+                      target_state, result_version, return_comment):
+        session = _session(transaction)
+        assignment = session.execute(select(SurveyAssignmentRow).where(
+            SurveyAssignmentRow.project_id == project_id,
+            SurveyAssignmentRow.survey_round_id == survey_round_id,
+            SurveyAssignmentRow.survey_assignment_id == survey_assignment_id,
+        ).with_for_update(read=True, of=SurveyAssignmentRow)).scalar_one_or_none()
+        if (assignment is None or actor_role not in (
+                "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER")):
+            return None
+        return SurveyAssignmentReviewReceipt(
+            assignment.survey_assignment_id, assignment.survey_round_id,
+            assignment.project_id, target_state, f'"v{result_version}"',
+            return_comment)
 
     def replay(self, transaction, *, project_id, survey_round_id,
                survey_assignment_id, actor_id, actor_role, result_version):

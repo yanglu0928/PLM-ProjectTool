@@ -9001,3 +9001,11 @@
 - Reason：若条件读取非活动旧答复、使用任意历史Response或只检查Evidence ID，SUBMIT可在条件变化、撤销或内容漂移后错误通过；原固定证明未携带名称则无法客观执行已冻结allowed_extensions。
 - Impact/Rollback：无Schema/公开API/依赖/Secret/外发；Document/Evidence内部事实增加可空名称，既有构造兼容。停止Owner装配可阻止新提交，历史不删除。
 - Verification：Win11/PG18.6条件/必答/规则/Evidence漂移、并发重放、Audit回滚、角色/CSRF/License/drift通过；后端2896/3、4193子断言，wheel1081项，SHA-256 `2b59bc885c3aed47a379f1c046ee176316be4f9c992d7bd198a309b310940b37`。
+
+# DEC-20261006-949：VALIDATE 重新计算且 RETURN 只开放追加式修正
+
+- Date/WBS：2026-10-06 / `SUR-03-A06`；依据CR-SUR-008、0108状态机与A05完整性Owner。
+- Decision：VALIDATE与RETURN均只接受SUBMITTED并限ProjectManager/ImplementationMember；VALIDATE重新读取当前链尾并重证Evidence，RETURN只保存规范化人工意见。RETURNED不直接改回SUBMITTED，也不覆盖旧Answer，必须追加更正进入IN_PROGRESS后重新SUBMIT。
+- Reason：把SUBMIT时报告当永久证明会漏掉Evidence漂移；直接编辑旧Answer或RETURNED跳回SUBMITTED会丢失谁、何时、为何修正的历史。
+- Impact/Rollback：无Schema/公开API/依赖/外发；新增内部Owner和两项策略。历史状态/Audit/receipt不可删除。
+- Verification：Win11/PG18.6并发VALIDATE、RETURN、Audit回滚、退回更正重提、角色/CSRF/License/终态拒绝与drift通过；后端2899/3、4203子断言，wheel1082项，SHA-256 `9d814bab2c14f5551b7db3945184c2e9bd983a7fab904a52b5db3f70c3a594ae`。

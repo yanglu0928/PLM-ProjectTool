@@ -66,3 +66,13 @@ class SurveyAssignmentSubmitReceipt:
     project_id: uuid.UUID
     submission_state: str
     etag: str
+
+
+@dataclass(frozen=True, slots=True)
+class SurveyAssignmentReviewReceipt:
+    survey_assignment_id: uuid.UUID
+    survey_round_id: uuid.UUID
+    project_id: uuid.UUID
+    submission_state: str
+    etag: str
+    return_comment: str | None

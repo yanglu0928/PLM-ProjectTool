@@ -55,3 +55,4 @@
 - 2026-10-06 / `SUR-03-A03`：完成Assignment create/list/get、当前target/assignee证明、管理角色全量与显式assignee/部门成员动态可见性、稳定cursor、Audit和持久幂等。Windows 11/PostgreSQL18.6的并发、回滚、撤权、隔离与drift通过，详见`docs/progress/sur-03-a03-assignment-owner.md`。
 - 2026-10-06 / `SUR-03-A04`：完成Response/Answer/Evidence原子追加、六类型基础规范、更正链、固定Evidence及ImplementationMember面对面代录与Round PROJECT_RECORD source同事务固定；Windows 11/PostgreSQL18.6的并发幂等、Audit整笔回滚、授权/CSRF/License及drift通过，详见`docs/progress/sur-03-a04-response-record.md`。
 - 2026-10-06 / `SUR-03-A05`：完成Assignment SUBMIT当前回答完整性Owner；ConditionRule、required、六类型ValidationRule、EvidenceRequired/漂移和facilitated来源均在同事务失败关闭。为执行附件`allowed_extensions`，内部Document/Evidence固定证明透传原始显示名，不改公开API/Schema，详见`docs/progress/sur-03-a05-assignment-submit.md`。
+- 2026-10-06 / `SUR-03-A06`：完成VALIDATE/RETURN、人工退回意见与RETURNED追加更正后重新SUBMIT/VALIDATE状态闭环；VALIDATE重新执行A05完整性。首轮角色集合偏差已按冻结PM+Implementation修正并重跑，详见`docs/progress/sur-03-a06-assignment-review.md`。

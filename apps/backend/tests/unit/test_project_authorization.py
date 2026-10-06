@@ -4,7 +4,7 @@ import unittest
 import uuid
 
 from plm_assistant.modules.project.application.authorization import (
-    ALL_MEMBERS, MEMBER_READERS, POLICIES, ProjectActorFacts, ProjectAuthorizationError,
+    ALL_MEMBERS, MANAGERS, MEMBER_READERS, POLICIES, ProjectActorFacts, ProjectAuthorizationError,
     ProjectAuthorizationService,
 )
 
@@ -47,7 +47,7 @@ class ProjectAuthorizationTests(unittest.TestCase):
                                     operation=operation, resource_id=resource_id)
 
     def test_matrix_exact_for_four_roles(self):
-        self.assertEqual(len(POLICIES), 93)
+        self.assertEqual(len(POLICIES), 95)
         self.assertEqual(POLICIES["SURVEY_CREATE"].roles, frozenset({
             "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER",
         }))
@@ -107,6 +107,11 @@ class ProjectAuthorizationTests(unittest.TestCase):
         self.assertTrue(POLICIES["SURVEY_RESPONSE_RECORD"].write)
         self.assertEqual(POLICIES["SURVEY_ASSIGNMENT_SUBMIT"].roles, ALL_MEMBERS)
         self.assertTrue(POLICIES["SURVEY_ASSIGNMENT_SUBMIT"].write)
+        for operation in ("SURVEY_ASSIGNMENT_VALIDATE", "SURVEY_ASSIGNMENT_RETURN"):
+            self.assertEqual(POLICIES[operation].roles, frozenset({
+                "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER",
+            }))
+            self.assertTrue(POLICIES[operation].write)
         self.assertEqual(POLICIES["HND_ANALYSIS_CREATE"].roles, frozenset({
             "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER",
         }))
