@@ -1,5 +1,10 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/REQ-01-A11-A02 新增Requirement严格只读客户端，覆盖identity/version
+  list/get，强ETag、独立opaque cursor、父级/顺序/计数/ordinal/安全错误和超时失败关闭。
+  兼容性/回滚：无Schema、后端API、依赖或外发，删除未挂载客户端即可回滚。验证：定向26、前端
+  全量1508项及typecheck/build PASS。已知问题：A11-A03读取定位页、A04写页、A05 Edge、A12待。
+
 - 2026-10-08：0.1.0-dev.0/REQ-01-A11-A01 完成Requirement前端/Edge前置核查，固定复用
   Evidence Viewer进行显式点击原文定位，不复制来源正文或猜测内部URL；拆分严格只读客户端、
   读取/定位页、结构化Version Draft写页及真实Edge四步。兼容性/回滚：纯设计记录，无Schema、

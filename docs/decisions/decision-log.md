@@ -9696,3 +9696,14 @@
   PENDING不可送审、AI建议不是业务事实，不要求用户复制原文到表格。
 - Impact/Rollback：纯设计边界，无Schema/API/依赖/外发变化；前端入口可独立回滚。A02～A05按
   严格客户端、读取/定位页、写入页和真实Edge顺序实施。
+
+# DEC-20261008-1010：Version详情以声明计数和连续 ordinal 作为前端信任边界
+
+- Date/WBS：2026-10-08 / `REQ-01-A11-A02`；依据冻结Version投影和A06读取Owner。
+- Decision：前端只在七类声明计数与对应数组长度一致、所有owned/support ordinal从0连续、父级
+  Project/Requirement/Version精确匹配时接纳详情；列表摘要与详情使用不同解析入口。未知或多余字段、
+  Review/Round半绑定、乱序列表和cursor原值回放全部失败关闭。
+- Reason：仅靠TypeScript接口不能约束网络数据；若接纳部分/乱序集合，会在页面上制造缺项或错位，
+  让用户把不完整快照误认为正式需求。
+- Impact/Rollback：仅新增前端只读客户端，无后端/Schema/依赖变化。定向26、前端全量1508及
+  typecheck/build通过；尚未挂页面。
