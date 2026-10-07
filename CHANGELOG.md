@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A07-A02-P02 新增Prototype当前事实Validator、真实
+  `PRT-03 + PROTOTYPE_ALL_V1` Subject Owner与PostgreSQL仓储；送审/批准重证输入及内容指纹，批准推进指针
+  并SUPERSEDE旧版，退回/撤回保留旧指针。兼容性/回滚：无Schema/公开API/依赖/外发；停止注册Owner即可
+  关闭新入口，历史保留。验证：Win11/PG18.6统一Review链与漂移回滚、定向26/21 subtests、后端
+  3144/3/4684 subtests、compileall、wheel1209项/`a30b16ca…827a33`PASS。已知问题：Trace/Submit/HTTP/
+  前端、Server2025、Gate3/UAT/发行待；Debian13按指令跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A07-A02-P01 新增PrototypeVersion Review生命周期Migration0132与
   不可变状态结果；`PRT-03 + PROTOTYPE_ALL_V1`联合闭包只允许START/APPROVED/RETURNED/WITHDRAWN窄迁移，
   评审中禁止创建，批准推进正式指针并允许旧版SUPERSEDE，退回/撤回保留旧指针。兼容性/升级：前向加表，

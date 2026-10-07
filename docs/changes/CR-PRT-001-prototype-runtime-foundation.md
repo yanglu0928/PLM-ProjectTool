@@ -205,3 +205,10 @@ Migration0132新增不可变Review状态结果并开放`PRT-03 + PROTOTYPE_ALL_V
 原批准指针。Version、Root、Review/Round、Scope Decision指纹和状态结果由延迟闭包一次核验，裸更新失败。
 实现复核补齐同指针Root锁推进与Scope Decision指纹检查，均在正式实库验收前完成。Win11/PG18.6完整状态流、
 后端3137/3/4684 subtests及wheel1206项/`0464c7e0…d802952`通过；无公开API/依赖/外发。P02前业务Owner仍关闭。
+
+## A07-A02-P02 实施记录（2026-10-08）
+
+新增Prototype当前事实Validator、真实`PRT-03 + PROTOTYPE_ALL_V1` Subject Owner及PostgreSQL仓储。送审与
+批准在同一调用方事务重证Template、当前Approved Requirement、Document及Create规范内容指纹；批准推进正式
+指针并SUPERSEDE旧版，退回/撤回保留旧指针。Win11/PG18.6统一Review真实链、输入漂移回滚、后端
+3144/3/4684 subtests及wheel1209项/`a30b16ca…827a33`通过；无新Schema/公开API/依赖/外发，进入批准Trace。

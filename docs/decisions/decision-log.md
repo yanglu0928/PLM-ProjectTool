@@ -1,5 +1,16 @@
 # 自主决策记录
 
+## DEC-20261008-1042：Prototype审批重算创建指纹并由业务Owner消费终态
+
+- Date/WBS：2026-10-08 / `PRT-01-A07-A02-P02`；依据DEC-1036～1041与统一PROJECT Review合同。
+- Decision：送审和APPROVE均重新调用目标Owner证明，并用Create完全相同的规范载荷重算PrototypeVersion内容
+  指纹；历史Validate报告不授权审批。Subject Owner只经通用Review内核工作，0132结果由Prototype仓储写入，
+  Review模块不直接修改`prt_*`。RETURNED/WITHDRAWN不要求已失效输入恢复，以保证能安全退出IN_REVIEW。
+- Reason：只检查输入“存在”无法发现证明摘要或不可变聚合被篡改；把历史报告当批准依据会产生检查后漂移；
+  非批准终态若也强制当前输入有效，会把失效版本永久卡在评审中。
+- Impact/Rollback：新增内部Validator/Owner/Repository，无Schema/公开API/依赖/外发。停止注册Owner可关闭新
+  写入，已提交Review/结果/Audit保留。Win11/PG18.6统一Review链、漂移回滚及全量回归通过。
+
 ## DEC-20261008-1041：Review状态以结果行和延迟联合闭包推进
 
 - Date/WBS：2026-10-08 / `PRT-01-A07-A02-P01`；依据DEC-1040、冻结PRT-03与Review Kernel。
