@@ -9058,3 +9058,11 @@
 - Decision：SUBMIT继续只接受五字段回执；VALIDATE与RETURN都严格要求`return_comment`，VALIDATE必须为`null`，RETURN必须与当次规范意见精确一致。不放宽多余字段或状态/ETag/父资源校验。
 - Impact/Rollback：仅前端响应解析与回归fixture；无Schema/Migration、后端API、角色、依赖、Secret或外发变化。回滚会恢复“服务端已成功但前端误报未知”的故障，不影响已提交事实。
 - Verification：严格客户端定向12项、前端全量86文件1466项、typecheck/build通过；全新Windows 11 Edge/PG18.6链中VALIDATE后页面重读VALIDATED，随后CLOSE成功。SQL证明1 VALIDATED Assignment、4 Response/Answer与对应Audit/receipt，隔离资源清理通过。
+
+# DEC-20261007-956：Conclusion 使用独立 series subject 与类型化固定来源
+
+- Date/WBS：2026-10-07 / `SUR-04-A01`；依据冻结DM-05、SC-01/02/03、API-04及CR-SUR-001。
+- Evidence/Conflict：冻结基线指定SRV-05五表、五Operation与V-PRJ语义，但未固定无identity Root的创建规则、多态引用列和Review policy；当前运行实现为零，且不存在ApprovedException/风险接受Owner。
+- Decision：登记CR-SUR-009。`survey_conclusion_id`为不可变版本，`conclusion_series_id`为稳定Review subject；新series从v1开始，后继只接受同Project/Survey/series精确supersedes。Evidence按SUPPORT/CONFLICT固定版本，open issue首版只接受有真实Owner的HND-03；Review使用`SRV-05 + SURVEY_CONCLUSION_ALL_V1`。历史Validate、AI、模板、客户端PASS及文本风险接受均不能正式化。
+- Impact/Rollback：纯文档前置，无Schema、Migration、API、依赖、Secret、客户数据或外发变化。若A02实现不满足该边界，停止该增量而不改冻结基线。
+- Verification：静态确认SC-01唯一五表、API-04唯一五Operation、Root manifest含SRV-05、Migration head 0108且无Conclusion运行实现；A02限定为五表ORM/Migration0109和数据库验证。
