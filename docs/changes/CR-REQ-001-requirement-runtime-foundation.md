@@ -181,3 +181,12 @@ ETag共同防分叉；Version、六类owned、支持引用、不可变首结果�
 client reason等命令元数据；请求幂等指纹保留这些字段。由于跨Owner AI预接纳协议尚不存在，非空AI Task
 及AI_CANDIDATE assessment均失败关闭，只接受HUMAN assessment。Win11/PG18.6升降、drift、真实权限、
 Evidence、幂等、并发、回滚、直写拒绝和历史拒降通过；定向33、后端3000/3及wheel1140项通过。
+
+## A06-A03 实施记录（2026-10-07）
+
+新增RequirementVersion授权list/get内部读取Owner。列表在同一Requirement下按`version_no`倒序keyset，
+仅返回摘要；完整statement/rationale和七类固定集合只在详情返回。详情重证声明计数、顶层连续ordinal及
+Source/Assessment两类嵌套Evidence连续ordinal，异常投影失败关闭。CustomerMember、ImplementationMember、
+ProjectManager均可读，但每次调用重证当前License、Session和项目成员资格；跨项目隐藏为资源不存在。
+Win11/PG18.6验证分页、完整顺序、隔离、拒绝和零写，定向13、后端3006/3及wheel1142项通过。无Schema、
+Migration、公开API、依赖、Secret或外发变化；A06完成，进入A07 Version校验。

@@ -9471,3 +9471,14 @@
   显式归属断言后复验通过，不改变Schema或运行语义。
 - Impact/Rollback：Schema head 0119，新增内部Owner/策略/测试/validation，无公开API/依赖/Secret/外发。
   空历史可降0118；有创建历史向前修复。Win11/PG18.6、定向33、后端3000/3及wheel1140项通过。
+
+# DEC-20261007-990：Version 列表最小摘要，详情逐层验证固定顺序
+
+- Date/WBS：2026-10-07 / `REQ-01-A06-A03`；依据DEC-988、Migration0118声明闭包和最小必要投影原则。
+- Decision：list只返回Version身份、状态、分类、计数、固定引用、指纹及创建信息，statement/rationale仅由
+  get返回；list按version_no倒序keyset。get重建完整不可变快照，并同时核验七类声明计数、顶层ordinal及
+  Source/Assessment嵌套Evidence ordinal连续性。所有当前项目成员可读，每次重证License/Session/角色。
+- Reason：把正文放入列表既违背摘要语义又扩大暴露面；只依赖SQL排序而不验证序号缺口会把异常存量投影
+  成看似完整的固定快照。逐层失败关闭可让后续A07校验只消费结构闭合的版本事实。
+- Impact/Rollback：新增内部读取Service/Repository及两项授权策略，无Schema/Migration/公开API/依赖/
+  Secret/外发；删除增量即可回滚。Win11/PG18.6、定向13、后端3006/3及wheel1142项通过。

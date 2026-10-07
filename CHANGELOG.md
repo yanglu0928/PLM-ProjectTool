@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/REQ-01-A06-A03 新增RequirementVersion授权list/get，所有当前项目成员经
+  License/Session/角色重证后可按version_no稳定分页并读取完整固定快照；列表仅返回摘要，详情核验七类
+  声明计数、顶层及嵌套Evidence连续ordinal，跨项目和异常投影失败关闭。兼容性/回滚：内部增量，无
+  Schema、Migration、公开API、依赖、Secret或外发；可移除读取Owner和两项策略。验证：定向13、后端
+  3006项/3跳过、Win11/PG18.6分页/顺序/隔离/拒绝/零写/drift、wheel1142项/
+  `010dcc7c…0df`通过。已知问题：A07～A12、Gate3/UAT/发行待。
+
 - 2026-10-07：0.1.0-dev.0/REQ-01-A06-A02 新增RequirementVersion完整DRAFT原子创建Owner与
   Migration0119不可变首结果，显式initial/base、Root ETag、A05来源/Evidence proof和提交时双闭包防止
   并发分叉/半套快照；非空AI provenance及无provenance AI_CANDIDATE失败关闭。兼容性/升级：内部Schema
