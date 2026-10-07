@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/REQ-01-A11-A01 完成Requirement前端/Edge前置核查，固定复用
+  Evidence Viewer进行显式点击原文定位，不复制来源正文或猜测内部URL；拆分严格只读客户端、
+  读取/定位页、结构化Version Draft写页及真实Edge四步。兼容性/回滚：纯设计记录，无Schema、
+  API、依赖、Secret或外发；移除未来前端入口即可回滚。验证：冻结API/A10响应、Evidence Viewer、
+  Survey既有定位模式静态对账PASS。已知问题：A11-A02～A05、A12、Gate3/UAT/发行待。
+
 - 2026-10-08：0.1.0-dev.0/REQ-01-A10-A08 新增Requirement Windows生产组合，platform/read
   精确发布七个GET，platform/write发布完整22个冻结Operation；四类cursor密钥独立且失败关闭，
   `REQ-03`已注册到统一PROJECT Review终态链。兼容性/升级：无Schema、依赖或外发变化；目标服务

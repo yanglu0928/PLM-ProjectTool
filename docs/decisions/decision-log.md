@@ -9685,3 +9685,14 @@
 - Impact/Rollback：无Schema/依赖变化；目标服务账户需供给四个新密钥，缺失时失败关闭。可停止五个
   Requirement Router注入回滚新流量，既有历史不删除。定向38、后端3066/3、Windows11/PG18.6
   生产组合及wheel1165项/`5d17adad…f426`通过。
+
+# DEC-20261008-1009：Requirement 来源定位复用 Evidence Viewer，不复制原文
+
+- Date/WBS：2026-10-08 / `REQ-01-A11-A01`；依据用户定位UX要求、冻结Version投影和A10生产组合。
+- Decision：Requirement详情只显示固定来源元数据；用户显式点击Evidence引用后调用既有
+  PROJECT Evidence Viewer，由服务端重证并返回文档版本/Locator/受权正文URL。业务来源可提供
+  Survey/Handover导航，但不替代Evidence。HUMAN_DECISION在没有独立安全读API时不猜内部路径。
+- Input UX：Version Draft按来源、五要素验收、能力人工确认、假设/排除/依赖分组提示；明确
+  PENDING不可送审、AI建议不是业务事实，不要求用户复制原文到表格。
+- Impact/Rollback：纯设计边界，无Schema/API/依赖/外发变化；前端入口可独立回滚。A02～A05按
+  严格客户端、读取/定位页、写入页和真实Edge顺序实施。
