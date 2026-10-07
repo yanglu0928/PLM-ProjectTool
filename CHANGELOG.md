@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/SUR-05-A04 新增SurveyConclusion严格前端客户端与人工结论工作台；从
+  CLOSED Round、VALIDATED答复、当前Department/Member、ELIGIBLE Evidence和未关闭HND-03选择，
+  支持验证/送审、原幂等Key重试、Evidence固定原文点击定位及待办`actionId`深链自动展开。兼容性/
+  回滚：无Schema/Migration、冻结API、依赖、Secret或外发变化，撤前端路由/客户端即可。验证：定向15、
+  前端88文件1474项、typecheck、Vite184 modules build通过。已知问题：A05真实Edge、SUR-06、
+  Server2025、Gate3/UAT及发行仍待；主JS 721.75 kB分块提示继续登记。
+
 - 2026-10-07：0.1.0-dev.0/SUR-05-A03 将SurveyConclusion五Operation装入Windows显式生产组合，
   用现有Survey key用途派生cursor，并把SRV-05注册进通用PROJECT Review；Document证明依赖不完整时
   写链失败关闭。兼容性/回滚：无Schema/Migration、依赖、Secret数量或外发，撤组合恢复A02默认404。

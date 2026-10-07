@@ -67,13 +67,14 @@ async function load(next: HandoverActionCursor | null = null, replace = false) {
   try { const page = await actions.list(project, 50, next); if (!mounted || current !== generation || projectId() !== project || !mayRead()) return;
     const known = new Set(items.value.map(item => item.action_item_id)); if (page.items.some(item => known.has(item.action_item_id))) throw new HandoverActionReadError("HANDOVER_ACTION_UNAVAILABLE");
     items.value = Object.freeze([...items.value, ...page.items]); cursor.value = page.next_cursor; loaded.value = true;
+    const requested = route.query.actionId; if (replace && typeof requested === "string") void show(requested);
   } catch (failure) { if (mounted && current === generation) { items.value = []; cursor.value = null; loaded.value = false; clearDetail();
     error.value = failure instanceof HandoverActionReadError ? failure.message : "暂时无法读取交接待办。"; } }
   finally { if (mounted && current === generation) busy.value = false; } }
-async function show(item: HandoverActionSummary) { if (!mayRead() || detailBusy.value) return; const project = projectId(); const current = ++detailGeneration;
+async function show(item: HandoverActionSummary | string) { if (!mayRead() || detailBusy.value) return; const project = projectId(); const current = ++detailGeneration;
   locationGeneration += 1; detail.value = null; located.value = null; locationError.value = ""; detailError.value = ""; operation.value = null;
   mutationError.value = ""; mutationMessage.value = ""; pendingRetry.value = null; detailBusy.value = true;
-  try { const value = await actions.get(project, item.action_item_id); if (!mounted || current !== detailGeneration || projectId() !== project || !mayRead()) return; detail.value = value; }
+  try { const value = await actions.get(project, typeof item === "string" ? item : item.action_item_id); if (!mounted || current !== detailGeneration || projectId() !== project || !mayRead()) return; detail.value = value; }
   catch (failure) { if (mounted && current === detailGeneration) detailError.value = failure instanceof HandoverActionReadError ? failure.message : "暂时无法读取待办详情。"; }
   finally { if (mounted && current === detailGeneration) detailBusy.value = false; } }
 async function locate(evidenceId: string) { if (!detail.value || !detail.value.evidence.some(item => item.evidence_id === evidenceId) || locationBusy.value) return;
@@ -132,6 +133,7 @@ function transition(value: "start" | "submit" | "verify" | "cancel") { if (!deta
 
 watch(() => route.params.projectId, () => { generation += 1; items.value = []; cursor.value = null; loaded.value = false; busy.value = false;
   error.value = ""; clearDetail(); createOpen.value = false; void load(null, true); }, { immediate: true });
+watch(() => route.query.actionId, value => { if (loaded.value && typeof value === "string") void show(value); });
 onUnmounted(() => { mounted = false; generation += 1; clearDetail(); });
 </script>
 

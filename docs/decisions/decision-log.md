@@ -9170,3 +9170,16 @@
   历史Conclusion/Review/Audit/receipt保留。
 - Verification：定向7、后端2942/3；Win11/PG18.6真实五Operation、SRV-05通用APPROVE和drift通过；
   wheel1105项，SHA-256 `f86bb421db49d29539d6feeced8b3903b74572f8b11f75aad02f84e0cd0599df`。
+
+# DEC-20261007-965：Conclusion 候选仅取当前受权事实且按稳定资源深链定位
+
+- Date/WBS：2026-10-07 / `SUR-05-A04`；依据A01交互边界、冻结五Operation和用户对待办/文档定位的要求。
+- Decision：创建页不让用户手填Response/Evidence/HND资源ID；先选同一Survey的CLOSED Round，再读取
+  VALIDATED链尾答复、ELIGIBLE Evidence及未关闭HND-03。部门/模块正文保留明确人工维护输入；AI task
+  不由页面猜测。Evidence点击后读取Viewer并打开固定DocumentVersion，HND以`actionId` query深链，
+  目标页自动GET并展开。任何选择集合超过单页安全上限即失败关闭，不用截断候选生成形式完整的结论。
+- Reason：这保持“实际调研记录优先”，避免复制原文到表格、猜内部row identity或漏选分页后的来源；
+  同时让人工字段与定位动作直接可见。
+- Impact/Rollback：纯前端和Session写桥接，无Schema/Migration、冻结API、依赖、Secret或外发变化；撤
+  Conclusion路由/页面/客户端和HND query展开即可，后端历史不变。
+- Verification：定向15、前端88文件1474项、typecheck、Vite184 modules build通过；真实Edge留A05。

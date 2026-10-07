@@ -41,7 +41,7 @@ onUnmounted(()=>{mounted=false;generation+=1;pending.value=null});
 
 <template><section class="rounds" aria-labelledby="round-title" :aria-busy="busy||detailBusy||mutationBusy"><p class="section-kicker">项目调研</p><h1 id="round-title">调研轮次工作台</h1>
 <p class="warning"><strong>PLANNED 和 OPEN 均不是客户确认事实。</strong> 只有服务器重新验证全部有效响应与当前证据后，轮次才能 CLOSED；界面按钮不替代该证明。</p>
-<p><RouterLink :to="{name:'project-surveys',params:{projectId}}">返回调研定义</RouterLink> · <RouterLink :to="{name:'project-detail',params:{projectId}}">返回项目详情</RouterLink></p>
+<p><RouterLink :to="{name:'project-surveys',params:{projectId}}">返回调研定义</RouterLink> · <RouterLink :to="{name:'project-survey-conclusions',params:{projectId}}">进入调研结论工作台</RouterLink> · <RouterLink :to="{name:'project-detail',params:{projectId}}">返回项目详情</RouterLink></p>
 <template v-if="!identity"><p role="status">尚未读取当前身份。请先登录。</p><RouterLink to="/login">前往登录</RouterLink></template>
 <template v-else-if="identity.password_change_required"><p role="status">当前账户须先修改密码，暂不能读取调研轮次。</p></template>
 <template v-else><div class="toolbar"><button :disabled="busy||mutationBusy" @click="load(null,true)">{{busy?'正在读取…':'刷新轮次'}}</button><button v-if="canCreate" :disabled="busy||detailBusy||mutationBusy" @click="createOpen=!createOpen">新建计划轮次</button></div>

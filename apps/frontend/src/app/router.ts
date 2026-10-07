@@ -41,6 +41,7 @@ import ProjectSurveyListView from "@/modules/survey/views/ProjectSurveyListView.
 import ProjectSurveyDetailView from "@/modules/survey/views/ProjectSurveyDetailView.vue";
 import ProjectSurveyRoundView from "@/modules/survey/views/ProjectSurveyRoundView.vue";
 import ProjectSurveyAssignmentView from "@/modules/survey/views/ProjectSurveyAssignmentView.vue";
+import ProjectSurveyConclusionView from "@/modules/survey/views/ProjectSurveyConclusionView.vue";
 
 export function createAppRouter(
   history: RouterHistory = createWebHistory(),
@@ -132,6 +133,11 @@ export function createAppRouter(
         path: "/projects/:projectId/handover/:analysisId",
         name: "project-handover-detail",
         component: ProjectHandoverDetailView,
+      },
+      {
+        path: "/projects/:projectId/survey-conclusions",
+        name: "project-survey-conclusions",
+        component: ProjectSurveyConclusionView,
       },
       {
         path: "/projects/:projectId/survey-rounds/:roundId/assignments",
