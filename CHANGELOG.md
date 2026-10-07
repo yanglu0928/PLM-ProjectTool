@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/REQ-01-A07 新增RequirementVersion当前事实校验报告Owner，复算指纹/计数，
+  重证来源、Capability和双侧Evidence，检查验收标准、声明冲突及四类分类；PENDING明确未通过，原Key
+  回放首次Audit且不改变Version。兼容性/回滚：内部增量，无Schema、Migration、公开API、依赖、Secret
+  或外发；可停止Owner并保留Audit/receipt。验证：定向14、后端3013项/3跳过、Win11/PG18.6漂移/恢复/
+  重放/拒绝/零状态迁移/drift、wheel1145项/`63cc68f3…a8c8`通过。已知问题：A08～A12、Gate3/UAT/发行待。
+
 - 2026-10-07：0.1.0-dev.0/REQ-01-A06-A03 新增RequirementVersion授权list/get，所有当前项目成员经
   License/Session/角色重证后可按version_no稳定分页并读取完整固定快照；列表仅返回摘要，详情核验七类
   声明计数、顶层及嵌套Evidence连续ordinal，跨项目和异常投影失败关闭。兼容性/回滚：内部增量，无

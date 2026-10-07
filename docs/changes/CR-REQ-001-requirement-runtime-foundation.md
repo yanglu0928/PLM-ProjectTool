@@ -190,3 +190,12 @@ Source/Assessment两类嵌套Evidence连续ordinal，异常投影失败关闭。
 ProjectManager均可读，但每次调用重证当前License、Session和项目成员资格；跨项目隐藏为资源不存在。
 Win11/PG18.6验证分页、完整顺序、隔离、拒绝和零写，定向13、后端3006/3及wheel1142项通过。无Schema、
 Migration、公开API、依赖、Secret或外发变化；A06完成，进入A07 Version校验。
+
+## A07 实施记录（2026-10-07）
+
+新增RequirementVersion共享锁快照、当前事实Validator、幂等报告Owner及Audit回放proof。每个新Key复算
+内容指纹/七类计数/有序集合，重证五类来源、Capability与双侧Evidence，并按冻结规则检查分类、五要素
+AcceptanceCriterion及声明冲突。STANDARD要求人工CONFIRMED DIRECT；NONSTANDARD/DIFFERENCE要求人工
+CONFIRMED PARTIAL/NONE和明确排除；PENDING始终未通过。业务校验失败仍是成功报告操作，不改变Version；
+原Key恢复首次Audit，新Key重验当前事实。Win11/PG18.6漂移/恢复/重放/拒绝/零状态迁移，定向14、后端
+3013/3及wheel1145项通过；无Schema、Migration、公开API、依赖、Secret或外发变化，进入A08。

@@ -9482,3 +9482,18 @@
   成看似完整的固定快照。逐层失败关闭可让后续A07校验只消费结构闭合的版本事实。
 - Impact/Rollback：新增内部读取Service/Repository及两项授权策略，无Schema/Migration/公开API/依赖/
   Secret/外发；删除增量即可回滚。Win11/PG18.6、定向13、后端3006/3及wheel1142项通过。
+
+# DEC-20261007-991：Requirement 校验是可回放当前事实报告，不是状态转换
+
+- Date/WBS：2026-10-07 / `REQ-01-A07`；依据冻结REQ_VERSION_VALIDATE、Requirement分类规则和A05 proof。
+- Decision：每个新幂等Key在同一事务共享锁Version快照、重证当前来源/Capability/Evidence并保存一个
+  SUCCESS Audit；`valid=false`表示业务校验未通过，不表示命令失败。原Key从Audit恢复首次有限issue集合，
+  新Key才重新观察。校验不修改Version、Root正式指针或Review状态。
+- Classification：STANDARD至少一个人工CONFIRMED DIRECT；NONSTANDARD/DIFFERENCE至少一个人工
+  CONFIRMED PARTIAL/NONE且有明确exclusion；PENDING始终报告未通过。另检查验收标准缺失/重复与
+  assumption/exclusion冲突，不从AI置信度或空默认值推断正式分类。
+- Reason：当前上游事实会漂移，若重放时重新计算将篡改首次响应；若校验直接迁移状态则绕过A08统一
+  Review。有限代码报告既可追溯，又将结构/来源有效与人工批准清晰分离。
+- Impact/Rollback：内部Service/Repository/Audit proof/策略增量，无Schema/Migration/公开API/依赖/
+  Secret/外发；停止Owner即可回滚，既有Audit/receipt保留。Win11/PG18.6、定向14、后端3013/3及
+  wheel1145项通过。
