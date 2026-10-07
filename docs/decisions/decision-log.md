@@ -9779,3 +9779,14 @@
   逐项重证可使来源、能力、Evidence、Review或范围发生漂移时立即失败关闭。
 - Impact/Rollback：仅新增未注册的应用层Owner，无Schema/API/依赖/权限/外发。新增6、后端3079/3、
   wheel1166项/`1460b429…651c8`通过；删除Owner和测试可回滚，A03-A02继续实现真实数据库锁。
+
+# DEC-20261008-1017：Project共享锁作为Requirement完整范围的并发栅栏
+
+- Date/WBS：2026-10-08 / `REQ-01-A12-A03-A02`；依据CR-REQ-004、DEC-1016和Project授权写锁顺序。
+- Decision：资格读取先共享锁Project，再规范排序锁全部Requirement Root、Version及StateDecision；正常
+  Requirement写命令通过Project写授权取得排他锁，因此新Root/Version/状态变化不能穿过本次Scope扫描。
+  ACTIVE只接受最高且当前Approved Version；ARCHIVED只接受紧接正式DEFER/REJECT决定的归档。
+- Reason：只锁已存在Root不能阻止phantom新需求；只读`current_approved_version_ref`会漏掉待处理的新版本；
+  只看ARCHIVED状态会把无依据的范围删除误判为已解释。
+- Impact/Rollback：新增只读Repository，无Schema/API/依赖/外发；Windows 11/PG18.6锁与负例、后端
+  3079/3、wheel1167项/`e229c332…fc7c77`通过。停止A04注册并删除Repository可回滚。

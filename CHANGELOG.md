@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/REQ-01-A12-A03-A02 新增Requirement Workflow PostgreSQL完整范围
+  Repository：Project共享锁防phantom，规范锁定全部Root/Version/Decision，ACTIVE只接受最高当前
+  Approved，DEFER/REJECT/ARCHIVED必须闭合正式决定。兼容性/回滚：无Schema/API/依赖/权限/外发，
+  尚未生产注册；停止后续注册并删除Repository即可回滚。验证：Win11/PG18.6锁与四类失败关闭、Alembic
+  无漂移、后端3079项/3跳过、compileall、wheel1167项/`e229c332…fc7c77`PASS。已知问题：A04～A07、
+  完整Owner真实业务链、Gate3/UAT/发行待。
+
 - 2026-10-08：0.1.0-dev.0/REQ-01-A12-A03-A01 新增Requirement Workflow聚合当前事实Owner：以完整
   Root集合为范围，逐Approved Version重验来源/能力/Evidence和真实ReviewRound；DEFER/REJECT/ARCHIVED
   缺口必须有不可变决定及当前Evidence，Acceptance另验五要素。兼容性/回滚：无Schema/API/依赖/权限/
