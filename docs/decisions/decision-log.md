@@ -9621,3 +9621,12 @@
 - Reason：资源间共享cursor会允许跨列表重放；不绑定查询/Session会让位置被不同上下文复用。
 - Impact/Rollback：无Schema/依赖变化；移除Router注入即回滚流量。Win11/PG18.6真实HTTP、定向7、
   后端3040/3与wheel1156项通过。正式密钥供给留A08。
+
+# DEC-20261008-1003：Requirement PATCH 不伪造幂等语义
+
+- Date/WBS：2026-10-08 / `REQ-01-A10-A04-P01`；依据冻结API-04与`CR-REQ-003`。
+- Decision：REQ_PATCH仅使用强If-Match与单事务Audit，不接收或生成幂等key/receipt；
+  DEFER/REJECT/ARCHIVE的持久幂等保持。
+- Reason：服务器自生key不能提供客户端重放语义，且会把内部错配伪装成冻结合同实现。
+- Impact/Rollback：无Schema/公开HTTP/依赖变化；历史不删除。Win11/PG18.6、定向5、后端3040/3
+  及wheel1156项通过；回滚内部代码时必须同时关闭未来公开PATCH。

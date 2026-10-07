@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/REQ-01-A10-A04-P01 登记`CR-REQ-003`并将Requirement PATCH
+  对齐冻结`S,L,C,M,A`：移除内部幂等key/receipt，保留强ETag、不可变command result和
+  同事务Audit；DEFER/REJECT/ARCHIVE幂等不变。兼容性/回滚：无Schema、公开HTTP、依赖、
+  Secret或外发；回滚时未来PATCH必须关闭。验证：定向5、后端3040/3、Win11/PG18.6
+  PATCH零receipt/并发/Audit回滚、状态命令重放/drift及wheel1156项/`4c1c4cd4…d5`PASS。
+  已知问题：A10-A04-P02～A08、A11～A12、Gate3/UAT/发行待。
+
 - 2026-10-08：0.1.0-dev.0/REQ-01-A10-A03-P02 新增Package独立签cursor与opt-in Router，
   实现LIST/CREATE/GET/PATCH/ADD/REMOVE六个冻结HTTP；落实最小投影、ETag/If-Match、
   Create/ADD/REMOVE持久幂等、PATCH零receipt、安全错误和默认404。兼容性/回滚：无

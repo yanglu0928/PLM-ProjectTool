@@ -18,7 +18,7 @@ class RequirementMutationTests(unittest.TestCase):
     def setUp(self) -> None:
         self.project, self.requirement = uuid.uuid4(), uuid.uuid4()
         common = (b"s" * 32, b"c" * 32, uuid.uuid4(), self.project, self.requirement, 0)
-        self.patch = PatchRequirementIdentity(*common, "REQ-002", str(uuid.uuid4()))
+        self.patch = PatchRequirementIdentity(*common, "REQ-002")
         self.decision = DecideRequirementIdentity(
             *common, "Customer deferred", "Schedule impact", (uuid.uuid4(),), str(uuid.uuid4()))
         self.archive = ArchiveRequirementIdentity(*common, str(uuid.uuid4()))
@@ -56,12 +56,14 @@ class RequirementMutationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             replace(view, requirement_state="ACTIVE")
 
-    def test_secrets_and_keys_are_redacted(self) -> None:
+    def test_secrets_are_redacted_and_only_retryable_commands_have_keys(self) -> None:
         for command in (self.patch, self.decision, self.archive):
             rendered = repr(command)
             self.assertNotIn("s" * 32, rendered)
             self.assertNotIn("c" * 32, rendered)
-            self.assertNotIn(command.idempotency_key, rendered)
+        self.assertFalse(hasattr(self.patch, "idempotency_key"))
+        for command in (self.decision, self.archive):
+            self.assertNotIn(command.idempotency_key, repr(command))
 
     def test_repository_proves_evidence_and_uses_root_version_fence(self) -> None:
         source = inspect.getsource(SqlAlchemyRequirementMutationRepository.mutate)

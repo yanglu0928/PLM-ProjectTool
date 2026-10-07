@@ -1,4 +1,4 @@
-"""Authorized, idempotent Requirement identity mutations."""
+"""Authorized Requirement identity mutations."""
 
 from __future__ import annotations
 
@@ -47,7 +47,6 @@ class PatchRequirementIdentity:
     requirement_id: uuid.UUID
     expected_version: int
     requirement_code: str
-    idempotency_key: str = field(repr=False)
 
 
 @dataclass(frozen=True, slots=True)
@@ -134,7 +133,7 @@ class RequirementMutationService:
 
     def patch(self, command: PatchRequirementIdentity) -> RequirementIdentityView:
         self._common(command, PatchRequirementIdentity)
-        return self._execute(command, "PATCH", self._code(command.requirement_code), None, None, ())
+        return self._execute_patch(command, self._code(command.requirement_code))
 
     def defer(self, command: DecideRequirementIdentity) -> RequirementIdentityView:
         reason, impact, evidence = self._decision(command)
@@ -148,9 +147,43 @@ class RequirementMutationService:
         self._common(command, ArchiveRequirementIdentity)
         return self._execute(command, "ARCHIVE", None, None, None, ())
 
+    def _execute_patch(
+        self, command: PatchRequirementIdentity, code: str,
+    ) -> RequirementIdentityView:
+        try:
+            self._guard.require_valid(trace_id=command.trace_id)
+            result_id = uuid.UUID(new_uuid7())
+            with self._uow() as tx:
+                actor = self._actor(tx, command)
+                authorized = self._authorization.require_in_transaction(
+                    tx, user_id=actor, project_id=command.project_id,
+                    operation="REQ_PATCH")
+                if (authorized.user_id != actor
+                        or authorized.project_id != command.project_id
+                        or authorized.operation != "REQ_PATCH"):
+                    raise RequirementMutationError("RESOURCE_NOT_FOUND")
+                result = self._repository.mutate(
+                    tx, result_id=result_id, decision_id=None, operation="PATCH",
+                    project_id=command.project_id,
+                    requirement_id=command.requirement_id,
+                    expected_version=command.expected_version, actor_id=actor,
+                    requirement_code=code, reason=None, impact=None,
+                    evidence_ids=())
+                self._append_audit(tx, command, actor, result, "PATCH")
+                tx.commit()
+                return result
+        except RequirementMutationError:
+            raise
+        except ProjectAuthorizationError as error:
+            raise RequirementMutationError(error.code) from None
+        except RuntimeLicenseError:
+            raise RequirementMutationError("LICENSE_OPERATION_DENIED") from None
+        except Exception:
+            raise RequirementMutationError("REQUIREMENT_UNAVAILABLE") from None
+
     def _execute(self, command, operation: str, code: str | None, reason: str | None,
                  impact: str | None, evidence: tuple[uuid.UUID, ...]) -> RequirementIdentityView:
-        receipt_operation, auth_operation, action = _OPERATIONS[operation]
+        receipt_operation, auth_operation, _ = _OPERATIONS[operation]
         try:
             validate_idempotency_key(command.idempotency_key)
             fingerprint = canonical_payload_fingerprint({
@@ -187,13 +220,7 @@ class RequirementMutationService:
                     project_id=command.project_id, requirement_id=command.requirement_id,
                     expected_version=command.expected_version, actor_id=actor,
                     requirement_code=code, reason=reason, impact=impact, evidence_ids=evidence)
-                self._audit.append(tx, AuditEventDraft(
-                    trace_id=command.trace_id, event_scope="PROJECT",
-                    target_project_id=command.project_id, actor_type="USER", actor_id=actor,
-                    original_actor_id=None, actor_hint_digest=None, action=action,
-                    outcome="SUCCESS", target_owner_module="requirement",
-                    target_object_type="REQ-02", target_object_id=command.requirement_id,
-                    before_state=None, after_state=result.requirement_state))
+                self._append_audit(tx, command, actor, result, operation)
                 self._receipts.complete(tx, scope=scope,
                     result=IdempotencyResult(receipt_operation, result_id, 200))
                 tx.commit()
@@ -208,6 +235,21 @@ class RequirementMutationService:
             raise RequirementMutationError(error.code) from None
         except Exception:
             raise RequirementMutationError("REQUIREMENT_UNAVAILABLE") from None
+
+    def _append_audit(
+        self, tx: object,
+        command: PatchRequirementIdentity | DecideRequirementIdentity
+        | ArchiveRequirementIdentity,
+        actor: uuid.UUID, result: RequirementIdentityView, operation: str,
+    ) -> None:
+        action = _OPERATIONS[operation][2]
+        self._audit.append(tx, AuditEventDraft(
+            trace_id=command.trace_id, event_scope="PROJECT",
+            target_project_id=command.project_id, actor_type="USER", actor_id=actor,
+            original_actor_id=None, actor_hint_digest=None, action=action,
+            outcome="SUCCESS", target_owner_module="requirement",
+            target_object_type="REQ-02", target_object_id=command.requirement_id,
+            before_state=None, after_state=result.requirement_state))
 
     @staticmethod
     def _common(command: object, expected: type) -> None:

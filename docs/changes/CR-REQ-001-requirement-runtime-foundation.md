@@ -295,3 +295,10 @@ Cursor绑定family/Project/Session/page size/成对位置；写端严格Origin/C
 ADD/REMOVE幂等，PATCH仅强If-Match。默认应用不注入仍404，Windows生产组合留A08。
 Win11/PG18.6真实HTTP六Operation/cursor/角色/License/Audit/drift，定向7、后端3040/3及
 wheel1156项/`204dd820…a25`通过。无Schema、依赖、Secret或外发变化；A03完成进入A04。
+
+## A10-A04-P01 实施记录（2026-10-08）
+
+A04公开边界检查发现内部Requirement PATCH强制幂等key，与冻结API-04的`S,L,C,M,A`
+冲突。已先登记`CR-REQ-003`并将A04拆为P01合同对齐和P02七个HTTP。P01移除PATCH
+key/receipt，保留If-Match、不可变command result和同事务Audit；DEFER/REJECT/ARCHIVE
+持久幂等不变。Win11/PG18.6、定向5、后端3040/3及wheel1156项/`4c1c4cd4…d5`通过。

@@ -119,11 +119,11 @@ def main() -> None:
                 ("race", "REQ-RACE"), ("rollback", "REQ-ROLLBACK"),
                 ("duplicate", "REQ-DUPLICATE"), ("direct", "REQ-DIRECT"))}
 
-            def patch(root, *, version=0, code="REQ-PATCHED", key=None,
+            def patch(root, *, version=0, code="REQ-PATCHED",
                       token=impl_token, csrf=CSRF, target=mutation):
                 return target.patch(PatchRequirementIdentity(
                     token, csrf, uuid.uuid4(), project, root.requirement_id,
-                    version, code, key or str(uuid.uuid4())))
+                    version, code))
 
             def decide(method, root, *, version=0, ids=(evidence,), key=None,
                        token=customer_token, target=mutation):
@@ -143,12 +143,16 @@ def main() -> None:
             expect("LICENSE_OPERATION_DENIED", lambda: patch(roots["patch"]))
             guard.enabled = True
 
-            patch_key = str(uuid.uuid4())
-            patched = patch(roots["patch"], key=patch_key)
+            with connect(database) as db:
+                receipts_before_patch = db.execute(
+                    "SELECT count(*) FROM plm.plt_idempotency_receipts"
+                ).fetchone()[0]
+            patched = patch(roots["patch"])
             assert patched.etag == '"v1"' and patched.requirement_code == "REQ-PATCHED"
-            assert patch(roots["patch"], key=patch_key) == patched
-            expect("CONFLICT_IDEMPOTENCY", lambda: patch(
-                roots["patch"], key=patch_key, code="REQ-DIFFERENT"))
+            with connect(database) as db:
+                assert db.execute(
+                    "SELECT count(*) FROM plm.plt_idempotency_receipts"
+                ).fetchone()[0] == receipts_before_patch
             expect("CONFLICT_DUPLICATE", lambda: patch(
                 roots["duplicate"], code="req-patched"))
             expect("RESOURCE_NOT_FOUND", lambda: decide(
@@ -184,12 +188,10 @@ def main() -> None:
 
             failed = RequirementMutationService(
                 **base, repository=SqlAlchemyRequirementMutationRepository(), audit=FailedAudit())
-            failed_key = str(uuid.uuid4())
             expect("REQUIREMENT_UNAVAILABLE", lambda: patch(
-                roots["rollback"], key=failed_key, code="REQ-FAILED", token=pm_token,
+                roots["rollback"], code="REQ-FAILED", token=pm_token,
                 target=failed))
-            recovered = patch(roots["rollback"], key=failed_key,
-                              code="REQ-RECOVERED", token=pm_token)
+            recovered = patch(roots["rollback"], code="REQ-RECOVERED", token=pm_token)
             assert recovered.requirement_code == "REQ-RECOVERED"
 
             with connect(database) as db:
@@ -221,16 +223,17 @@ def main() -> None:
                                   "'REQUIREMENT_PATCHED','REQUIREMENT_DEFERRED',"
                                   "'REQUIREMENT_REJECTED','REQUIREMENT_ARCHIVED')").fetchone()[0] == 7
                 db.execute("UPDATE plm.auth_users SET state='DISABLED' WHERE user_id=%s", (impl,))
-            expect("AUTH_ACCESS_DENIED", lambda: patch(roots["patch"], key=patch_key))
+            expect("AUTH_ACCESS_DENIED", lambda: patch(roots["patch"]))
             try:
                 command.downgrade(cfg, PREVIOUS)
             except Exception as error:
                 assert "Requirement mutation history prevents downgrade" in str(error), str(error)
             else:
                 raise AssertionError("Schema0115 accepted mutation history")
-            print("REQ_01_A03_P03_P02_REQUIREMENT_MUTATION_PASS: roles, License, PATCH, "
-                  "DEFER/REJECT evidence proof, ARCHIVE, immutable replay, concurrency, "
-                  "Audit rollback, database closure and history refusal verified on PostgreSQL 18")
+            print("REQ_01_A03_P03_P02_REQUIREMENT_MUTATION_PASS: roles, License, "
+                  "non-idempotent PATCH, idempotent DEFER/REJECT evidence proof and ARCHIVE, "
+                  "immutable replay, concurrency, Audit rollback, database closure and "
+                  "history refusal verified on PostgreSQL 18")
         finally:
             runtime.dispose()
     finally:

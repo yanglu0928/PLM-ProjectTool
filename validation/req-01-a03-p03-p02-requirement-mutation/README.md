@@ -7,6 +7,6 @@ $env:PYTHONPATH='apps/backend/src'
 .poc-runtime/poc-01/windows-online/Scripts/python.exe validation/req-01-a03-p03-p02-requirement-mutation/verify.py
 ```
 
-覆盖 Migration0115 空历史升降/重升与 drift，真实 Session/CSRF、角色、License、PATCH、
-DEFER/REJECT 当前同项目 ELIGIBLE Evidence、ARCHIVE、持久首结果、并发ETag、Audit回滚、
-数据库提交闭包、伪造快照、撤权重放拒绝和有历史降级拒绝。
+覆盖 Migration0115 空历史升降/重升与 drift，真实 Session/CSRF、角色、License、非幂等
+PATCH（不写 receipt）、DEFER/REJECT 当前同项目 ELIGIBLE Evidence、ARCHIVE、三类状态命令的
+持久首结果、并发 ETag、Audit 回滚、数据库提交闭包、伪造快照、撤权重放拒绝和有历史降级拒绝。
