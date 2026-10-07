@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/REQ-01-A11-A04 新增Requirement Version结构化草稿、校验与送审页面，
+  强根ETag/原幂等Key、严格三类回执、逐字段人工维护提示、有效成员评审人选择及PENDING送审门禁。
+  兼容性/回滚：无Schema、后端API、依赖或外发；撤专用transport/client/page/route即可回滚。
+  验证：8个新增场景、前端全量1524项、typecheck/build PASS。已知问题：能力目录选择尚无冻结读端点；
+  既有大chunk警告；A05真实Edge/PG、A12、Gate3/UAT/发行待。
+
 - 2026-10-08：0.1.0-dev.0/REQ-01-A11-A03 新增Requirement列表、详情和显式点击原文定位页面；
   展示验收五要素、能力人工确认及假设/排除/依赖维护提示，待确认项禁止冒充正式事实，业务导航不替代
   Evidence重新鉴权。兼容性/回滚：无Schema、后端API、依赖或外发；撤页面、路由及入口即可回滚。

@@ -743,6 +743,39 @@ export class SessionClient {
     } finally { window.clearTimeout(timer); this.#busy = false; }
   }
 
+  /** Requirement Version writes retain the exact body, Key and root ETag after uncertainty. */
+  async writeProjectRequirementVersion(projectId: string, requirementId: string,
+    versionId: string | null, operation: "create" | "validate" | "submit-review",
+    body: string | null, etag: string | null, idempotencyKey: string): Promise<Response> {
+    if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
+    if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
+    const hasBody = operation === "create" || operation === "submit-review";
+    const version = etag === null ? null : /^"v(?:0|[1-9]\d*)"$/.test(etag) ? Number(etag.slice(2, -1)) : null;
+    if (!identifier(projectId) || !identifier(requirementId)
+      || (operation === "create") !== (versionId === null) || versionId !== null && !identifier(versionId)
+      || hasBody !== (body !== null) || body !== null && (body.length === 0 || new TextEncoder().encode(body).length > 2 * 1024 * 1024)
+      || (operation === "create") !== (etag !== null)
+      || etag !== null && (!Number.isSafeInteger(version) || version === null || version >= Number.MAX_SAFE_INTEGER)
+      || typeof idempotencyKey !== "string" || !/^[\x20-\x7e]{16,128}$/.test(idempotencyKey)) {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    }
+    const root = `/api/v1/projects/${projectId}/requirements/${requirementId}/versions`;
+    const path = operation === "create" ? root : `${root}/${versionId}:${operation}`;
+    const headers: Record<string, string> = { Accept: "application/json", "X-CSRF-Token": this.#csrf,
+      "Idempotency-Key": idempotencyKey };
+    if (body !== null) headers["Content-Type"] = "application/json";
+    if (etag !== null) headers["If-Match"] = etag;
+    this.#busy = true; const controller = new AbortController(); const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      const fetcher = this.fetcher; const response = await fetcher(path, { method: "POST", credentials: "same-origin",
+        cache: "no-store", redirect: "error", headers, ...(body === null ? {} : { body }), signal: controller.signal });
+      if (controller.signal.aborted) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+      if (response.status === 401) { this.#csrf = null; this.#view = null; }
+      return response;
+    } catch { throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE"); }
+    finally { window.clearTimeout(timer); this.#busy = false; }
+  }
+
   /** Retrieval alias cancellation uses its Run version and never retries implicitly. */
   async postProjectRAGRetrievalCancel(projectId: string, runId: string, etag: string,
     idempotencyKey: string, reason: string): Promise<Response> {

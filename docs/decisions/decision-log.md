@@ -9719,3 +9719,15 @@
   和版本语义；由内部ID拼URL会绕过受控解析边界。
 - Impact/Rollback：只新增前端页面/路由/入口，无Schema、后端API、依赖或外发变化；撤入口与页面即可
   回滚。8个新页面场景、前端全量1516、typecheck/build通过；真实Edge/PG留A05。
+
+# DEC-20261008-1012：Requirement 固定版本只经结构化草稿和服务端校验进入评审
+
+- Date/WBS：2026-10-08 / `REQ-01-A11-A04`；依据冻结API-04、DEC-1006及A11-A01 UX边界。
+- Decision：浏览器按冻结Create DTO逐字段创建不可变Draft，携带当前Requirement根ETag与调用方保留的
+  幂等Key；创建后必须调用服务端VALIDATE。只有`valid=true`且classification不是
+  `PENDING_CONFIRMATION`时才显示送审动作；Reviewer只从当前服务端可见的ACTIVE项目成员选择，送审
+  固定`REQ-03 + REQUIREMENT_ALL_V1`，不允许浏览器定制策略或把回执称为批准。
+- Reason：直接将AI Candidate写入正式版本会绕过人工判断；允许待确认项送审会把未确认内容推进正式
+  Workflow；让用户手填Reviewer UUID会重复此前不友好的确认模式。
+- Impact/Rollback：仅新增前端专用transport/client/page/route，无Schema、后端API、依赖或外发变化。
+  8个新场景、前端全量1524、typecheck/build通过；实际网络和撤权边界留A05。

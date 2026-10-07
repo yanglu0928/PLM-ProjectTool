@@ -105,6 +105,8 @@ onUnmounted(() => { mounted = false; generation += 1; detailGeneration += 1; evi
     <p class="section-kicker">项目需求</p><h1 id="requirement-detail-title">需求版本、待维护内容与原文定位</h1>
     <p class="fact-warning"><strong>AI 任务仅是建议，来源摘要不是权威正文。</strong>证据仅在明确点击后按当前权限定位。</p>
     <p><RouterLink :to="{ name: 'project-requirements', params: { projectId: route.params.projectId } }">返回需求列表</RouterLink></p>
+    <p><RouterLink :to="{ name: 'project-requirement-draft', params: { projectId: route.params.projectId,
+      requirementId: route.params.requirementId } }">创建结构化需求版本草稿</RouterLink></p>
     <template v-if="!identity"><p role="status">尚未读取当前身份。请先登录。</p></template>
     <template v-else-if="identity.password_change_required"><p role="status">当前账户须先修改密码，暂不能读取项目需求。</p></template>
     <template v-else>
