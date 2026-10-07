@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/REQ-01-A08-A02-P02 新增Requirement Review Subject Owner/Repository，固定
+  `REQ-03 + REQUIREMENT_ALL_V1`、ACTIVE最新DRAFT、Reviewer当前资格、送审/批准当前事实重验及终态
+  原子正式化；退回/撤回不因来源漂移被永久锁死。兼容性/回滚：内部增量，无Schema、公开API、依赖、
+  Secret或外发；可停止注册并保留历史。验证：定向14、后端3019项/3跳过、Win11/PG18.6来源漂移拒绝、
+  START/两次APPROVED/SUPERSEDED/RETURNED/指针/Audit/drift、wheel1148项/
+  `5bd3164b…99a1`通过。已知问题：A09～A12、Gate3/UAT/发行待。
+
 - 2026-10-07：0.1.0-dev.0/REQ-01-A08-A02-P01 新增Migration0120 Requirement Review生命周期窄门与
   不可变状态结果，绑定Review/Round/Version、前后正式指针、Actor和Root lock version，并以延迟闭包
   阻止无结果直写、孤立终态及一次Root bump挂接多个状态结果。兼容性/升级：内部Schema增量，无公开API、

@@ -9522,3 +9522,15 @@
 - Impact/Rollback：Schema head升至0120；无公开API、依赖、Secret或外发。有Review历史拒绝降级并应向前
   修复。Win11/PG18.6升降、drift、START/RETURNED/APPROVED、直写/截断拒绝，定向20、后端3014/3及
   wheel1146项/`ed08fa48…7d38`通过；业务Subject Owner仍由P02开放。
+
+# DEC-20261007-994：Requirement 批准重证当前事实，非批准终态只消费锁定版本
+
+- Date/WBS：2026-10-07 / `REQ-01-A08-A02-P02`；依据DEC-991～993及PROJECT Review Subject协议。
+- Decision：Create/Start绑定ACTIVE Root最新DRAFT并重证全部Reviewer当前项目成员资格；Start与APPROVED
+  均运行A07 CurrentValidator。RETURNED/WITHDRAWN仍要求Review/Version锁精确匹配，但不因来源后来失效
+  而禁止结束Review。终态在Review写入后同事务更新Version/正式指针并插入0120不可变结果与Audit。
+- Reason：历史Validate报告只证明当时事实，不能授权当前批准；反之退回或撤回不是业务正式化，强制来源
+  继续有效会把失效版本永久锁在IN_REVIEW。结果主动flush和独立重读可让数据库闭包在提交前失败关闭。
+- Impact/Rollback：新增Requirement内部Subject Owner/Repository和验证，无Schema、公开API、依赖、Secret
+  或外发；停止注册即可关闭新入口，既有Review/结果保留。Win11/PG18.6、定向14、后端3019/3及
+  wheel1148项/`5bd3164b…99a1`通过；A08完成。

@@ -216,3 +216,13 @@ PROJECT、同项目Subject/Version、活动Round、终态及唯一正式指针�
 `req_requirement_review_state_results`，固定Review事件、前后正式指针、Actor和lock version，并反向闭合
 Root与Version状态转换。无结果直写、改删/截断失败关闭；有Review历史拒降。Win11/PG18.6升降/drift、
 START/RETURNED/APPROVED，定向20、后端3014/3及wheel1146项通过；P02前Owner仍关闭。
+
+## A08-A02-P02 实施记录（2026-10-07）
+
+新增Requirement Review Subject Owner与PostgreSQL Repository，复用PROJECT Review内核并固定
+`REQ-03 + REQUIREMENT_ALL_V1`。Create/Start只接受ACTIVE Root最新DRAFT，Reviewer重证当前项目成员；
+Start和APPROVED在同一事务重跑A07 CurrentValidator，RETURNED/WITHDRAWN不把过期来源误作批准前提。
+Repository写Version、Root及0120不可变结果后主动flush，终态断言同时重读结果、正式指针、唯一APPROVED
+和lock version；每个终态另写Requirement Audit。Win11/PG18.6验证来源漂移拒绝、两次批准、旧正式版
+SUPERSEDED及RETURNED保留指针，定向14、后端3019/3及wheel1148项通过。无Schema、公开API、依赖、
+Secret或外发变化；A08完成，进入A09 RequirementRelation。
