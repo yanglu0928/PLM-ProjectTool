@@ -24,6 +24,8 @@ from plm_assistant.modules.prototype.infrastructure.orm import (
     PrototypeVersionArtifactRefRow,
     PrototypeVersionRequirementRefRow,
     PrototypeVersionCreateResultRow,
+    PrototypeVersionApprovalTraceManifestRow,
+    PrototypeVersionApprovalTraceSourceRow,
     PrototypeVersionReviewStateResultRow,
     PrototypeVersionRow,
 )
@@ -393,6 +395,44 @@ class PrototypeIdentitySchemaTests(unittest.TestCase):
             self.assertIn(required, source)
         with patch.object(migration.context, "is_offline_mode", return_value=True):
             with self.assertRaisesRegex(RuntimeError, "offline Prototype Review"):
+                migration.downgrade()
+
+    def test_prototype_approval_trace_manifest_is_immutable_and_exact(self) -> None:
+        manifest = PrototypeVersionApprovalTraceManifestRow.__table__
+        source_table = PrototypeVersionApprovalTraceSourceRow.__table__
+        self.assertEqual(manifest.name, "prt_version_approval_trace_manifests")
+        self.assertEqual(source_table.name, "prt_version_approval_trace_sources")
+        names = {
+            constraint.name
+            for table in (manifest, source_table)
+            for constraint in table.constraints
+        }
+        for required in (
+            "uq_prt_approval_manifests__version",
+            "uq_prt_approval_manifests__review_result",
+            "fk_prt_approval_sources__manifest",
+            "fk_prt_approval_sources__trace_link",
+            "ck_prt_approval_sources__shape",
+        ):
+            self.assertIn(required, names)
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions."
+            "20261008_0133_prototype_approval_trace_manifest"
+        )
+        self.assertEqual(migration.down_revision, "20261008_0132")
+        for required in (
+            "Prototype approval Trace manifest source set is incomplete",
+            "Prototype approval has no Trace manifest",
+            "Prototype approval Trace document source set is not exact",
+            "Prototype approval Trace requirement source set is not exact",
+            "l.target_owner_module='prototype'",
+            "l.target_object_type='PRT-03'",
+        ):
+            self.assertIn(required, migration._GUARDS)
+        with patch.object(migration.context, "is_offline_mode", return_value=True):
+            with self.assertRaisesRegex(
+                RuntimeError, "offline Prototype approval Trace"
+            ):
                 migration.downgrade()
 
 

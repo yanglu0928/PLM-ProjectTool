@@ -1151,3 +1151,149 @@ class PrototypeVersionReviewStateResultRow(Base):
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True, precision=6), nullable=False,
         server_default=text("statement_timestamp()"))
+
+
+class PrototypeVersionApprovalTraceManifestRow(Base):
+    """Immutable approval-to-TraceLink closure for one approved PrototypeVersion."""
+
+    __tablename__ = "prt_version_approval_trace_manifests"
+    __table_args__ = (
+        UniqueConstraint(
+            "approval_trace_manifest_id", "prototype_version_id", "prototype_id",
+            "project_id", name="uq_prt_approval_manifests__identity_version",
+        ),
+        UniqueConstraint(
+            "prototype_version_id", name="uq_prt_approval_manifests__version",
+        ),
+        UniqueConstraint(
+            "review_state_result_id", name="uq_prt_approval_manifests__review_result",
+        ),
+        ForeignKeyConstraint(
+            ["prototype_version_id", "prototype_id", "project_id"],
+            ["plm.prt_prototype_versions.prototype_version_id",
+             "plm.prt_prototype_versions.prototype_id",
+             "plm.prt_prototype_versions.project_id"],
+            name="fk_prt_approval_manifests__version", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["review_state_result_id"],
+            ["plm.prt_version_review_state_results.review_state_result_id"],
+            name="fk_prt_approval_manifests__review_result", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["review_id"], ["plm.rvw_reviews.review_id"],
+            name="fk_prt_approval_manifests__review", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["review_round_id"], ["plm.rvw_review_rounds.review_round_id"],
+            name="fk_prt_approval_manifests__round", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["template_version_id", "template_id"],
+            ["plm.prt_template_versions.prototype_template_version_id",
+             "plm.prt_template_versions.prototype_template_id"],
+            name="fk_prt_approval_manifests__template_version", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["approved_by"], ["plm.auth_users.user_id"],
+            name="fk_prt_approval_manifests__approver", ondelete="NO ACTION",
+        ),
+        CheckConstraint(
+            "octet_length(content_fingerprint)=32",
+            name="ck_prt_approval_manifests__fingerprint",
+        ),
+        CheckConstraint(
+            "declared_artifact_count BETWEEN 1 AND 100 AND "
+            "declared_requirement_count BETWEEN 1 AND 200 AND "
+            "declared_trace_link_count="
+            "declared_artifact_count+declared_requirement_count+1",
+            name="ck_prt_approval_manifests__counts",
+        ),
+        Index(
+            "ix_prt_approval_manifests__review_round", "review_id", "review_round_id",
+        ),
+        {"schema": "plm"},
+    )
+
+    approval_trace_manifest_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    prototype_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    prototype_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    review_state_result_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    review_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    review_round_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    template_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    template_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    content_fingerprint: Mapped[bytes] = mapped_column(nullable=False)
+    declared_artifact_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    declared_requirement_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    declared_trace_link_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    approved_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"))
+
+
+class PrototypeVersionApprovalTraceSourceRow(Base):
+    """Ordered immutable source edge owned by an approval Trace manifest."""
+
+    __tablename__ = "prt_version_approval_trace_sources"
+    __table_args__ = (
+        UniqueConstraint(
+            "approval_trace_manifest_id", "ordinal",
+            name="uq_prt_approval_sources__manifest_ordinal",
+        ),
+        UniqueConstraint(
+            "approval_trace_manifest_id", "source_kind", "source_version_id",
+            name="uq_prt_approval_sources__manifest_source",
+        ),
+        UniqueConstraint(
+            "trace_link_id", name="uq_prt_approval_sources__trace_link",
+        ),
+        ForeignKeyConstraint(
+            ["approval_trace_manifest_id", "prototype_version_id", "prototype_id",
+             "project_id"],
+            ["plm.prt_version_approval_trace_manifests.approval_trace_manifest_id",
+             "plm.prt_version_approval_trace_manifests.prototype_version_id",
+             "plm.prt_version_approval_trace_manifests.prototype_id",
+             "plm.prt_version_approval_trace_manifests.project_id"],
+            name="fk_prt_approval_sources__manifest", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["trace_link_id"], ["plm.trc_links.trace_link_id"],
+            name="fk_prt_approval_sources__trace_link", ondelete="NO ACTION",
+        ),
+        CheckConstraint("ordinal>0", name="ck_prt_approval_sources__ordinal"),
+        CheckConstraint(
+            "(source_kind='TEMPLATE_VERSION' AND source_owner_module='prototype' "
+            "AND source_object_type='PRT-04' AND relation_type='DERIVED_FROM') OR "
+            "(source_kind='DOCUMENT_VERSION' AND source_owner_module='document' "
+            "AND source_object_type='DOC-02' AND relation_type='DERIVED_FROM') OR "
+            "(source_kind='REQUIREMENT_VERSION' AND source_owner_module='requirement' "
+            "AND source_object_type='REQ-03' AND relation_type='IMPLEMENTS')",
+            name="ck_prt_approval_sources__shape",
+        ),
+        Index(
+            "ix_prt_approval_sources__source", "source_owner_module",
+            "source_object_type", "source_version_id", "prototype_version_id",
+        ),
+        {"schema": "plm"},
+    )
+
+    approval_trace_source_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    approval_trace_manifest_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), nullable=False)
+    prototype_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    prototype_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+    source_kind: Mapped[str] = mapped_column(Text, nullable=False)
+    source_owner_module: Mapped[str] = mapped_column(Text, nullable=False)
+    source_object_type: Mapped[str] = mapped_column(Text, nullable=False)
+    source_object_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    source_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    source_project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    relation_type: Mapped[str] = mapped_column(Text, nullable=False)
+    trace_link_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)

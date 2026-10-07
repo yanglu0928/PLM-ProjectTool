@@ -183,6 +183,8 @@ class OrmMetadataTests(unittest.TestCase):
             'plm.prt_interaction_specs',
             'plm.prt_version_create_results',
             'plm.prt_version_review_state_results',
+            'plm.prt_version_approval_trace_manifests',
+            'plm.prt_version_approval_trace_sources',
         }
         for table in prototype_tables:
             self.assertIn(table, Base.metadata.tables)

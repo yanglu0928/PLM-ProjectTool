@@ -1,5 +1,13 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A07-A03-P02 新增Prototype Approval Trace Manifest ORM与
+  Migration0133；新APPROVED Review结果必须同事务绑定当前Approved PrototypeVersion、批准依据及
+  Template/Document/Requirement完整ACTIVE TraceLink集合，两表不可变，缺边/错边/非批准绑定失败关闭。
+  兼容性/升级：前向加表，不改公开API/Relation/依赖/外发；升级前旧批准不伪造回填，空Manifest历史可降0132，
+  有历史拒降。验证：Win11/PG18.6升降重升及正负闭环、定向23、后端3148/3、compileall、wheel
+  1210项/`10ba4ab5…7f784f`PASS。已知问题：P03应用Owner尚未接入，当前新批准按设计关闭；Submit/HTTP/前端、
+  Server2025、Gate3/UAT/发行待，Debian13按指令跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A07-A03-P01 完成Prototype批准Trace前置核查：Review/Round不是合法
   TraceVersion节点，固定采用Approval Manifest保存批准依据，并把Template/Document以DERIVED_FROM、
   Requirement以IMPLEMENTS完整投影到Approved PRT-03；拆为Schema0133和同事务Owner两项。兼容性/回滚：
