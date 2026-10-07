@@ -9650,3 +9650,15 @@
   首次trace误当成当前请求trace校验则会错误返回503。
 - Impact/Rollback：无Schema/依赖/冻结合同变化；移除Router注入即可关闭流量。Win11/PG18.6真实
   HTTP、定向7、后端3054/3及wheel1160项通过。正式密钥供给留A08。
+
+# DEC-20261008-1006：Requirement 送审只开放原子业务操作
+
+- Date/WBS：2026-10-08 / `REQ-01-A10-A06`；依据冻结REQ_VERSION_SUBMIT_REVIEW、REQ-03和
+  `REQUIREMENT_ALL_V1`。
+- Decision：客户端只能调用一次业务送审；ProjectManager授权、Reviewer锁/资格、当前事实重验、
+  Review create/start、RequirementVersion绑定、Snapshot、Audit及receipt在同一UOW完成。禁止客户端
+  串行调用通用Review create/start。V1不持久化due_at/submission_note，必须显式为null。
+- Reason：串行公开两个通用命令会暴露不可消费的DRAFT Review，并允许来源在两次请求之间漂移；静默
+  丢弃调度/备注会制造虚假合同。
+- Impact/Rollback：增加既有冻结Operation和Project授权映射，无Schema/依赖变化；停用Router注入可
+  关闭新流量，已生成Review历史保留。Win11/PG18.6、定向13、后端3060/3及wheel1162项通过。

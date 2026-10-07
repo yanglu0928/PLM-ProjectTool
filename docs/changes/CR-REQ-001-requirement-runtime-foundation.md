@@ -322,3 +322,12 @@ VALIDATE。Cursor绑定family/Project/Requirement/Session/page size/version_no�
 角色/License/Audit/drift，定向7、后端3054/3及wheel1160项/`82330863…2b18`通过。
 同时修正三个Requirement cursor负例的随机无变化篡改夹具，未改变产品逻辑。无Schema、依赖、
 Secret或外发变化；A05完成进入A06原子送审。
+
+## A10-A06 实施记录（2026-10-08）
+
+新增固定`REQ-03 + REQUIREMENT_ALL_V1`的RequirementVersion原子送审Service与opt-in HTTP。
+ProjectManager授权、Reviewer锁/资格、当前事实重验、Review create/start、Version绑定、Snapshot、
+Audit和receipt在单一UOW中执行；持久回放恢复首次Round并重验Subject访问，同key异载荷冲突。
+V1的due_at/submission_note必须显式为null。Win11/PG18.6真实来源漂移拒绝/恢复送审、原子链、
+回放/冲突/角色/License/Audit/drift，定向13、后端3060/3及wheel1162项/`4fab22cf…a64f`
+通过。无Schema、依赖、Secret或外发变化；A06完成进入A07 Relation HTTP。

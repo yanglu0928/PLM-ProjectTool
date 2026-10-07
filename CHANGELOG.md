@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/REQ-01-A10-A06 新增RequirementVersion原子送审Service与opt-in
+  HTTP，固定`REQ-03 + REQUIREMENT_ALL_V1`，将ProjectManager授权、Reviewer资格、当前事实重验、
+  Review create/start、Version绑定、Snapshot、Audit和receipt纳入同一UOW；持久回放重验Subject，
+  同key异载荷冲突。兼容性/回滚：无Schema、依赖、Secret或外发，停止注入可关闭流量且历史保留。
+  验证：定向13、后端3060/3、Win11/PG18.6原子链/漂移/回放/拒绝/Audit/drift及wheel1162项/
+  `4fab22cf…a64f`PASS。已知问题：A10-A07～A08、A11～A12、Gate3/UAT/发行待。
+
 - 2026-10-08：0.1.0-dev.0/REQ-01-A10-A05 新增RequirementVersion独立签cursor与opt-in
   Router，实现LIST/CREATE/GET/VALIDATE四个冻结HTTP；落实完整固定快照、根ETag/If-Match、
   create/validate持久幂等、当前事实校验、安全错误和默认404，并区分首次审计证明trace与当前
