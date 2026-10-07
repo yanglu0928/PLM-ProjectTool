@@ -9766,3 +9766,16 @@
   只保留Review ID列表会丢失每个Review与Version/指纹的对应关系。
 - Impact/Rollback：纯内部未注册增量，无Schema/API/依赖/权限或外发。新增4、兼容11、后端3073/3、
   wheel1165项/`cedcb4d5…eb4e`通过；A03 Owner前无生产行为变化。
+
+# DEC-20261008-1016：Requirement资格由完整Root集合与真实逐项批准共同证明
+
+- Date/WBS：2026-10-08 / `REQ-01-A12-A03-A01`；依据CR-REQ-004、DEC-1014/1015及现有
+  RequirementVersion/Review/Evidence Owner事实。
+- Decision：资格Owner在同一事务内以全部Requirement Root为范围；ACTIVE Root必须绑定当前最新
+  APPROVED Version并逐项重验当前事实及`REQ-03 + REQUIREMENT_ALL_V1`审批。DEFERRED/REJECTED/
+  ARCHIVED Root只有存在匹配或先前DEFER/REJECT不可变决定及当前Evidence时才算范围已解释。
+  `REQUIREMENT_ACCEPTANCE`另复核完整五要素验收标准。
+- Reason：Package只是组织关系；历史Validate报告、Version状态或直接ARCHIVE都不能证明当前完整范围。
+  逐项重证可使来源、能力、Evidence、Review或范围发生漂移时立即失败关闭。
+- Impact/Rollback：仅新增未注册的应用层Owner，无Schema/API/依赖/权限/外发。新增6、后端3079/3、
+  wheel1166项/`1460b429…651c8`通过；删除Owner和测试可回滚，A03-A02继续实现真实数据库锁。

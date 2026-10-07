@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/REQ-01-A12-A03-A01 新增Requirement Workflow聚合当前事实Owner：以完整
+  Root集合为范围，逐Approved Version重验来源/能力/Evidence和真实ReviewRound；DEFER/REJECT/ARCHIVED
+  缺口必须有不可变决定及当前Evidence，Acceptance另验五要素。兼容性/回滚：无Schema/API/依赖/权限/
+  外发，尚未生产注册；删除Owner与测试即可回滚。验证：新增6、后端3079项/3跳过、compileall、
+  wheel1166项/`1460b429…651c8`PASS。已知问题：A03-A02 PostgreSQL锁、A04～A07、Gate3/UAT/发行待。
+
 - 2026-10-08：0.1.0-dev.0/REQ-01-A12-A02 新增Workflow内部多Subject资格集合，逐成员保留真实
   Subject/Version/Evidence/Approved Review，固定规范顺序、范围/资格指纹、复数Version/Review/Evidence
   投影；注册表兼容既有Handover/Survey单Subject Owner。兼容性/回滚：无Schema/API/依赖/权限/外发，
