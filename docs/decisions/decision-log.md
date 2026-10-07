@@ -9886,3 +9886,14 @@
   current Root会改变首次响应。
 - Impact/Rollback：新增两表、延迟闭包和两个内部Owner授权Operation，无公开API/依赖/外发。空历史可降
   0122，存在首结果拒绝物理降级；停止后续Router装配可关闭运行流量。
+
+# DEC-20261008-1026：SET_MEMBERS 是完整集合替换且 PATCH 不承载安全状态
+
+- Date/WBS：2026-10-08 / `PRT-01-A03-A03`；依据冻结`PRT_PACKAGE_PATCH/SET_MEMBERS`、API-01控制位
+  与PRT-01只组织同项目Prototype的不变量。
+- Decision：SET_MEMBERS接收0～200个唯一固定Prototype ID并原子替换完整集合；只删除membership。
+  PATCH只修改name、使用强ETag且无幂等receipt，不通过通用metadata PATCH开放未冻结的RESTRICTED状态机。
+- Reason：将SET解释为增量会造成客户端和服务端范围漂移；级联删除违反Package不拥有Prototype；把安全
+  状态塞入普通PATCH缺少权威来源；为无`I`的PATCH派生key会破坏冻结合同。
+- Impact/Rollback：新增Schema0124结果表、两项授权和内部Owner，无公开API/依赖/外发。空mutation历史可
+  降0123，存在结果拒降；移除后续Router可停止流量，历史集合结果保留。

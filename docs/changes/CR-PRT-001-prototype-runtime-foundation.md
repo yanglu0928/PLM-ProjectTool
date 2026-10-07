@@ -84,3 +84,10 @@ A03拆为A02身份创建、A03 Package修改、A04 Prototype修改、A05 NOT_REQ
 首结果、Audit和receipt同事务闭合，持久重放只恢复首次View并重证权限。0123拒绝自动接纳Owner关闭期间
 可能存在的手工Root，必须另走审计迁移；空历史可降，产生结果后拒降。Win11/PG18.6真实闭环、后端
 3094/3及wheel1175项/`36935bcf…25ffb9`通过；Router仍关闭。
+
+## A03-A03 实施记录（2026-10-08）
+
+新增Package PATCH/SET_MEMBERS Service、Repository、授权策略及Migration0124不可变结果。PATCH只改name且
+无receipt；SET是允许空集合的全量替换，成员同项目、存在且非ARCHIVED，只删membership不删Prototype。
+Root版本、实际集合和结果在提交时延迟闭合。Win11/PG18.6真实闭环、后端3100/3及wheel1178项/
+`31875e15…d5f4c5`通过；Router仍关闭。

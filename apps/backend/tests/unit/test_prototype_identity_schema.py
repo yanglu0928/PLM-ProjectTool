@@ -8,6 +8,7 @@ from unittest.mock import patch
 from plm_assistant.modules.prototype.infrastructure.orm import (
     PrototypeCreateResultRow,
     PrototypePackageMembershipRow,
+    PrototypePackageCommandResultRow,
     PrototypePackageCreateResultRow,
     PrototypePackageRow,
     PrototypeRow,
@@ -130,6 +131,27 @@ class PrototypeIdentitySchemaTests(unittest.TestCase):
             self.assertIn(required, migration._GUARDS + inspect.getsource(migration.upgrade))
         with patch.object(migration.context, "is_offline_mode", return_value=True):
             with self.assertRaisesRegex(RuntimeError, "offline Prototype create-result"):
+                migration.downgrade()
+
+    def test_package_mutation_result_closes_root_and_membership(self) -> None:
+        self.assertEqual(
+            PrototypePackageCommandResultRow.__table__.name,
+            "prt_package_command_results",
+        )
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions."
+            "20261008_0124_prototype_package_mutations"
+        )
+        self.assertEqual(migration.down_revision, "20261008_0123")
+        for required in (
+            "PrototypePackage mutation is invalid",
+            "PrototypePackage membership history cannot be rewritten",
+            "PrototypePackage command result history is immutable",
+            "PrototypePackage mutation has no immutable result",
+        ):
+            self.assertIn(required, migration._GUARDS)
+        with patch.object(migration.context, "is_offline_mode", return_value=True):
+            with self.assertRaisesRegex(RuntimeError, "offline PrototypePackage mutation"):
                 migration.downgrade()
 
 

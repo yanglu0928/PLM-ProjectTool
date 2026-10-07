@@ -15,7 +15,7 @@ from sqlalchemy import (
     UniqueConstraint,
     text,
 )
-from sqlalchemy.dialects.postgresql import TIMESTAMP, UUID
+from sqlalchemy.dialects.postgresql import ARRAY, TIMESTAMP, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from plm_assistant.modules.platform.infrastructure.orm import Base
@@ -232,6 +232,46 @@ class PrototypeCreateResultRow(Base):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True, precision=6), nullable=False
+    )
+
+
+class PrototypePackageCommandResultRow(Base):
+    """Immutable result for PATCH and SET_MEMBERS."""
+
+    __tablename__ = "prt_package_command_results"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["prototype_package_id", "project_id"],
+            ["plm.prt_packages.prototype_package_id", "plm.prt_packages.project_id"],
+            name="fk_prt_package_command_results__package", ondelete="NO ACTION",
+        ),
+        CheckConstraint(
+            "operation IN ('PATCH','SET_MEMBERS')",
+            name="ck_prt_package_command_results__operation",
+        ),
+        CheckConstraint(
+            "char_length(name) BETWEEN 1 AND 255 AND name=btrim(name)",
+            name="ck_prt_package_command_results__name",
+        ),
+        CheckConstraint(
+            "package_state IN ('ACTIVE','ARCHIVED','RESTRICTED')",
+            name="ck_prt_package_command_results__state",
+        ),
+        CheckConstraint("lock_version>0", name="ck_prt_package_command_results__version"),
+        {"schema": "plm"},
+    )
+
+    result_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    prototype_package_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    operation: Mapped[str] = mapped_column(Text, nullable=False)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    package_state: Mapped[str] = mapped_column(Text, nullable=False)
+    member_refs: Mapped[list[uuid.UUID]] = mapped_column(ARRAY(UUID(as_uuid=True)), nullable=False)
+    lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
     )
 
 
