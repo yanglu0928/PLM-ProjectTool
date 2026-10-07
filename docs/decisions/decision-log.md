@@ -9850,3 +9850,15 @@
   制品超出锁定 Scope 并扩大安全面。
 - Impact/Rollback：A01仅文档，无Schema/API/代码/依赖/外发。A02～A11可逐项停用，历史冻结版本不改写；
   未通过Artifact、Review和Workflow实证前不宣称Prototype或Gate可用。
+
+# DEC-20261008-1023：NOT_REQUIRED 使用独立决定与固定需求版本集合
+
+- Date/WBS：2026-10-08 / `PRT-01-A02`；依据冻结PRT-02、PrototypeNotRequiredRequest、Workflow
+  `PROTOTYPE_SCOPE_DECISIONS`和CR-PRT-001。
+- Decision：Prototype Root只保存状态和正式指针；NOT_REQUIRED事实独立保存reason、impact、确认主体、
+  可选Review/Round及before/after版本，并以有序子表固定全部受影响RequirementVersion。每个Prototype首版
+  至多一个NOT_REQUIRED决定；A03 Owner前决定写入关闭，不能以无Version/Link推断。
+- Reason：把理由塞入可变Root会丢失不可变历史；只保存Requirement ID会随current漂移；让A02直接写决定
+  会产生Root未变、子项不全或Review错配的半套事实。
+- Impact/Rollback：新增Schema0122五表和metadata注册，无公开API/依赖/外发；空历史可降，存在历史拒绝
+  物理降级。真实角色、Approved需求、Review和连续ordinal由A03同事务重验。

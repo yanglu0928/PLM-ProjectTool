@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A02 新增Schema0122，物理化PrototypePackage、Prototype、同项目
+  membership及NOT_REQUIRED不可变决定/固定RequirementVersion范围；A03前只允许ACTIVE/v0身份初态，
+  决定写入和正式指针均关闭。兼容性/升级：已有库可向前升级，空历史可降至0121；任何Prototype历史
+  拒绝破坏性降级，无API/依赖/外发变化。验证：Win11/PG18.6升降、drift、跨项目/Owner关闭负例，
+  后端3089项/3跳过、compileall、wheel1171项/`ec80a596…57c1d`PASS。已知问题：A03～A11、Server2025、
+  Gate3/UAT/发行待；Debian13按用户指令跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A01 完成Prototype运行时前置核查并登记`CR-PRT-001`：保留冻结
   PRT-01～05及26个Operation；旧`/prototypes/generate`不实施，AI生成只经统一AITask进入建议/Draft，
   制品不执行，NOT_REQUIRED必须有固定需求范围与真实决定依据。兼容性/回滚：纯文档，无Schema/API/

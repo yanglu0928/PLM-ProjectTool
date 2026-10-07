@@ -38,6 +38,7 @@ from plm_assistant.modules.capability.infrastructure import orm as capability_or
 from plm_assistant.modules.handover.infrastructure import orm as handover_orm  # noqa: F401
 from plm_assistant.modules.survey.infrastructure import orm as survey_orm  # noqa: F401
 from plm_assistant.modules.requirement.infrastructure import orm as requirement_orm  # noqa: F401
+from plm_assistant.modules.prototype.infrastructure import orm as prototype_orm  # noqa: F401
 
 
 class OrmMetadataTests(unittest.TestCase):
@@ -165,11 +166,18 @@ class OrmMetadataTests(unittest.TestCase):
             'plm.srv_conclusion_open_issues',
         ):
             self.assertIn(table, Base.metadata.tables)
+        prototype_tables = {
+            'plm.prt_packages', 'plm.prt_prototypes',
+            'plm.prt_package_memberships', 'plm.prt_scope_decisions',
+            'plm.prt_scope_decision_requirement_refs',
+        }
+        for table in prototype_tables:
+            self.assertIn(table, Base.metadata.tables)
         self.assertIn('plm.job_parse_cancel_versions', Base.metadata.tables)
         self.assertIn('plm.plt_maintenance_state', Base.metadata.tables)
         for table in (export_orm.exports, export_orm.members, export_orm.captures, export_orm.acceptances):
             self.assertIn("plm."+table.name, Base.metadata.tables)
-        self.assertEqual(historical_metadata - {"plm."+t.name for t in (export_orm.exports, export_orm.members, export_orm.captures, export_orm.acceptances, export_orm.render_attempts, export_orm.results, export_orm.cancel_versions, export_orm.retry_generations)} - {"plm.trc_links"} - {"plm."+t.name for t in review_orm._tables}, {"plm.wfl_checklist_records", "plm.wfl_checklist_record_refs", "plm.wfl_stage_transitions", "plm.wfl_transition_gate_items", "plm.wfl_transition_gate_refs", "plm.wfl_project_workflows", "plm.wfl_stages", "plm.wfl_stage_checklists", "plm.wfl_checklist_items", "plm.plt_system_configurations", "plm.plt_configuration_versions", "plm.plt_configuration_command_receipts", "plm.plt_idempotency_receipts", "plm.plt_secret_records", "plm.plt_secret_versions", "plm.aud_events", "plm.auth_users", "plm.auth_password_credentials", "plm.auth_sessions", "plm.auth_login_rate_buckets", "plm.lic_installations", "plm.lic_validation_events", "plm.lic_validation_states", "plm.lic_installation_documents", "plm.lic_trusted_time_events", "plm.lic_trusted_time_states", "plm.prj_projects", "plm.prj_departments", "plm.prj_department_create_results", "plm.prj_department_deactivate_results", "plm.prj_project_members", "plm.prj_member_assignment_history", "plm.prj_member_create_results", "plm.prj_member_state_results", "plm.doc_file_objects", "plm.doc_file_state_events", "plm.doc_documents", "plm.doc_document_versions", "plm.doc_version_source_refs", "plm.doc_upload_intents", "plm.doc_parse_records", "plm.doc_parse_result_refs", "plm.evd_evidence_records", "plm.job_jobs", "plm.job_attempts", "plm.job_leases", "plm.job_outbox_events", "plm.job_outbox_consumptions"})
+        self.assertEqual(historical_metadata - {"plm."+t.name for t in (export_orm.exports, export_orm.members, export_orm.captures, export_orm.acceptances, export_orm.render_attempts, export_orm.results, export_orm.cancel_versions, export_orm.retry_generations)} - {"plm.trc_links"} - {"plm."+t.name for t in review_orm._tables} - prototype_tables, {"plm.wfl_checklist_records", "plm.wfl_checklist_record_refs", "plm.wfl_stage_transitions", "plm.wfl_transition_gate_items", "plm.wfl_transition_gate_refs", "plm.wfl_project_workflows", "plm.wfl_stages", "plm.wfl_stage_checklists", "plm.wfl_checklist_items", "plm.plt_system_configurations", "plm.plt_configuration_versions", "plm.plt_configuration_command_receipts", "plm.plt_idempotency_receipts", "plm.plt_secret_records", "plm.plt_secret_versions", "plm.aud_events", "plm.auth_users", "plm.auth_password_credentials", "plm.auth_sessions", "plm.auth_login_rate_buckets", "plm.lic_installations", "plm.lic_validation_events", "plm.lic_validation_states", "plm.lic_installation_documents", "plm.lic_trusted_time_events", "plm.lic_trusted_time_states", "plm.prj_projects", "plm.prj_departments", "plm.prj_department_create_results", "plm.prj_department_deactivate_results", "plm.prj_project_members", "plm.prj_member_assignment_history", "plm.prj_member_create_results", "plm.prj_member_state_results", "plm.doc_file_objects", "plm.doc_file_state_events", "plm.doc_documents", "plm.doc_document_versions", "plm.doc_version_source_refs", "plm.doc_upload_intents", "plm.doc_parse_records", "plm.doc_parse_result_refs", "plm.evd_evidence_records", "plm.job_jobs", "plm.job_attempts", "plm.job_leases", "plm.job_outbox_events", "plm.job_outbox_consumptions"})
 
 
 if __name__ == "__main__":

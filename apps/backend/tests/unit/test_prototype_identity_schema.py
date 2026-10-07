@@ -1,0 +1,113 @@
+from __future__ import annotations
+
+import importlib
+import inspect
+import unittest
+from unittest.mock import patch
+
+from plm_assistant.modules.prototype.infrastructure.orm import (
+    PrototypePackageMembershipRow,
+    PrototypePackageRow,
+    PrototypeRow,
+    PrototypeScopeDecisionRequirementRefRow,
+    PrototypeScopeDecisionRow,
+)
+
+
+class PrototypeIdentitySchemaTests(unittest.TestCase):
+    def test_identity_and_membership_are_project_scoped(self) -> None:
+        tables = (
+            PrototypePackageRow.__table__,
+            PrototypeRow.__table__,
+            PrototypePackageMembershipRow.__table__,
+        )
+        self.assertEqual(
+            [table.name for table in tables],
+            ["prt_packages", "prt_prototypes", "prt_package_memberships"],
+        )
+        for table in tables:
+            with self.subTest(table=table.name):
+                self.assertEqual(table.schema, "plm")
+                self.assertIn("project_id", table.c)
+        self.assertTrue(PrototypeRow.__table__.c.current_approved_version_ref.nullable)
+
+    def test_cross_project_membership_is_closed_by_composite_foreign_keys(self) -> None:
+        names = {
+            constraint.name
+            for table in (
+                PrototypePackageRow.__table__,
+                PrototypeRow.__table__,
+                PrototypePackageMembershipRow.__table__,
+            )
+            for constraint in table.constraints
+        }
+        for required in (
+            "uq_prt_packages__id_project",
+            "uq_prt_prototypes__id_project",
+            "uq_prt_package_memberships__package_prototype",
+            "fk_prt_package_memberships__package",
+            "fk_prt_package_memberships__prototype",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, names)
+
+    def test_not_required_decision_fixes_requirement_versions(self) -> None:
+        decision = PrototypeScopeDecisionRow.__table__
+        refs = PrototypeScopeDecisionRequirementRefRow.__table__
+        self.assertEqual((decision.schema, decision.name), ("plm", "prt_scope_decisions"))
+        self.assertEqual(
+            (refs.schema, refs.name),
+            ("plm", "prt_scope_decision_requirement_refs"),
+        )
+        names = {
+            constraint.name
+            for table in (decision, refs)
+            for constraint in table.constraints
+        }
+        for required in (
+            "uq_prt_scope_decisions__prototype",
+            "fk_prt_scope_decisions__prototype",
+            "ck_prt_scope_decisions__review_pair",
+            "uq_prt_scope_req_refs__decision_version",
+            "uq_prt_scope_req_refs__decision_ordinal",
+            "fk_prt_scope_req_refs__decision",
+            "fk_prt_scope_req_refs__requirement_version",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, names)
+
+    def test_foundation_keeps_decision_owner_and_version_pointer_closed(self) -> None:
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions."
+            "20261008_0122_prototype_identity_scope"
+        )
+        self.assertEqual(migration.down_revision, "20261007_0121")
+        for required in (
+            "Prototype scope decision Owner is not installed",
+            "Prototype identity Owner is not installed",
+            "PrototypePackage initial state is invalid",
+            "Prototype initial state is invalid",
+            "NEW.current_approved_version_ref IS NOT NULL",
+            "Prototype identity and scope history cannot be truncated",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, migration._GUARDS)
+
+    def test_downgrade_is_offline_closed_and_preserves_history(self) -> None:
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions."
+            "20261008_0122_prototype_identity_scope"
+        )
+        with patch.object(migration.context, "is_offline_mode", return_value=True), \
+                patch.object(migration.op, "execute") as execute:
+            with self.assertRaisesRegex(RuntimeError, "offline Prototype identity"):
+                migration.downgrade()
+        execute.assert_not_called()
+        self.assertIn(
+            "Prototype identity or scope history prevents downgrade",
+            inspect.getsource(migration.downgrade),
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()

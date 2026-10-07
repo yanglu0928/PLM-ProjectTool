@@ -63,3 +63,11 @@ Operation，也不允许自动正式化。若后续需要新的建议读取/采�
 逐项执行定向 Unit/API/Permission/Exception、Windows 11/PostgreSQL 18.6 空库/有数据升降级、约束与并发、
 真实 HTTP/Edge、完整后端/前端回归、wheel 和 Secret 扫描。A11 之前不宣称 Prototype Workflow 合格；
 Gate 3、UAT、发行与可使用程序包仍以各自客观证据关闭。
+
+## A02 实施记录（2026-10-08）
+
+Migration0122新增Package、Prototype、同项目membership、NOT_REQUIRED范围决定及固定受影响
+RequirementVersion引用五表。Prototype正式指针先保留nullable，A05 Version表建立前由Owner guard强制
+为空；范围决定与子引用在A03原子Owner前全部拒写。空历史可降0121，任何新表历史拒绝物理降级。
+Windows 11/PostgreSQL 18.6真实升降、drift、跨项目负例、后端3089/3及wheel1171项/
+`ec80a596…57c1d`通过；未开放业务Owner、HTTP或正式Prototype事实。
