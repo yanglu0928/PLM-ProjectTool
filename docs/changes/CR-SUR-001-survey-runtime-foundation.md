@@ -170,3 +170,5 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
 - 2026-10-07 / `SUR-04-A06`：新增SRV-05真实Review Subject、原子送审及APPROVED/RETURNED终态消费；
   新批准版原子替换旧批准版。按CR-SUR-010传递非持久proof context，按CR-SUR-011以Migration0110兼容
   状态机并保持载荷不可变。Win11/PG18.6和后端2938/3通过；进入SUR-05 HTTP/Windows组合/UI。
+- 2026-10-07 / `SUR-05-A01`：对账冻结五个Conclusion Operation与当前Owner，固定严格HTTP投影、用途
+  派生cursor、Windows显式装配、写后重读及Evidence/open issue点击定位拆分；纯文档PASS，进入A02。

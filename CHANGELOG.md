@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/SUR-05-A01 完成SurveyConclusion HTTP/UI前置核查，固定五个冻结Operation、
+  摘要/详情投影、用途派生cursor、空体Validate、通用送审DTO及Evidence/HND待办点击定位；拆分A02～A05。
+  兼容性/回滚：纯文档，无代码、Schema/Migration、API路径、依赖、Secret或外发变化。验证：冻结API、
+  A04～A06 Owner、Windows Survey组合和现有前端定位能力静态对账PASS。已知问题：HTTP/组合/UI/Edge、
+  SUR-06资格、Gate3/UAT及发行仍待。
+
 - 2026-10-07：0.1.0-dev.0/SUR-04-A06 新增SurveyConclusion真实Review Subject、原子送审及终态消费；
   送审/批准重证当前来源，退回/撤回投影RETURNED，新批准版原子替换旧批准版。兼容性/升级：按
   CR-SUR-010传递不持久化的脱敏proof context；按CR-SUR-011新增Migration0110，仅放行白名单状态迁移并

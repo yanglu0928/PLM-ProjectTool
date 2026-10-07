@@ -9133,3 +9133,14 @@
 - Verification：定向35、后端2938/3；Win11/PG18.6验证回滚/重放/来源漂移、退回、替换批准、锁释放、
   token零泄漏、非法载荷/状态拒绝、有数据降级/重升及drift；wheel1104项，SHA-256
   `f65b9beddab1f9879de23f2f5abea716bb4c89286eafad95c9357baa588be336`。
+
+# DEC-20261007-962：Conclusion HTTP 保持五Operation并以按需定位替代正文表格复制
+
+- Date/WBS：2026-10-07 / `SUR-05-A01`；依据冻结API-04、CR-SUR-009及用户确认的待办/文档定位交互。
+- Decision：只实现LIST/CREATE/GET/VALIDATE/SUBMIT_REVIEW；列表为摘要，详情返回固定最小refs，Evidence
+  与HND待办由前端点击进入受权定位。cursor从现有Survey key用途派生；Validate空体且幂等；送审保留
+  通用四字段并在V1要求未持久字段为null。页面写后重读且不把模板/AI建议称为客户事实。
+- Reason：复制正文到表格既不利于确认也会扩大敏感数据面；新增latest/修改/删除路径或额外Secret均无
+  冻结基线依据。内部Owner已完整，不需要在HTTP层复制业务规则。
+- Impact/Rollback：纯设计核查，无代码、Schema/API路径、依赖、Secret或外发变化；后续按A02～A05分别
+  验证HTTP、Windows组合、前端和Edge，任一证据不足不提前标记SUR-05完成。

@@ -120,4 +120,7 @@
   依CR-SUR-010只在调用栈传递脱敏临时proof context，依CR-SUR-011新增Migration0110放行白名单状态
   迁移同时逐字段保护业务载荷。Win11/PG18.6回滚/重放/失效阻断/替换/升降重升、后端2938/3及
   wheel1104项通过；公开HTTP/UI仍关闭，进入SUR-05。
+- 2026-10-07 / `SUR-05-A01`：完成HTTP/UI前置核查，保持冻结五Operation与既有路径；固定列表摘要/
+  详情展开、用途派生cursor、空体Validate、通用ReviewSubmission四字段及Evidence/HND点击定位边界。
+  拆分A02 HTTP、A03 Windows真实组合、A04前端、A05真实Edge；本项无运行变化。
 
