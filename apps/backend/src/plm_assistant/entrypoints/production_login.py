@@ -576,10 +576,6 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 )
                 handover_action_command_router = action_write_routers.commands
                 handover_action_lifecycle_router = action_write_routers.lifecycle
-                review_command_router = create_windows_project_review_router(
-                    runtime, sessions=sessions, origins=origins,
-                    license_guard=licenses.guard, audit=audit,
-                )
             user_detail_router = create_user_detail_router(sessions=sessions,origins=origins,
                 reads=AuthorizedUserReadService(unit_of_work=runtime.unit_of_work,
                     access=SqlAlchemyDeploymentReadAccess(),repository=SqlAlchemyUserReadRepository(),
@@ -704,6 +700,12 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             survey_command_router = survey_routers.commands
             survey_review_submission_router = survey_routers.review_submission
             if include_secret_write:
+                review_command_router = create_windows_project_review_router(
+                    runtime, sessions=sessions, origins=origins,
+                    license_guard=licenses.guard, audit=audit,
+                    documents=document_reads, downloads=document_downloads,
+                    parse_results=evidence_results_for_viewer,
+                )
                 workflow_checklist_record_router = (
                     create_windows_workflow_checklist_record_router(
                         runtime, sessions=sessions, origins=origins,

@@ -9156,3 +9156,17 @@
 - Impact/Rollback：新增默认关闭Router、cursor family及冻结错误注册；无Schema/Migration、依赖、Secret
   数量或外发。撤Router恢复404，内部Owner和历史不受影响。
 - Verification：定向10、后端2941/3、compileall及wheel1105项通过；真实组合留A03。
+
+# DEC-20261007-964：Conclusion 写链与通用 Review 仅在完整证明依赖后装配
+
+- Date/WBS：2026-10-07 / `SUR-05-A03`；依据CR-SUR-009、DEC-961～963及Windows生产组合边界。
+- Evidence/Conflict：Conclusion CREATE/VALIDATE/审批重证可能消费PROJECT_RECORD，必须同时具备Document
+  facts、下载快照与Parse读取；原通用Review组合早于这些服务构造，无法安全注册SRV-05。只读LIST/GET
+  不消费这些证明，不应被不必要关闭。
+- Decision：只读Conclusion始终随Survey读组合开放；三写与SRV-05 Owner仅在三项证明依赖完整时开放，
+  部分提供视为配置错误并失败关闭。生产Review组合延后到Document/Evidence服务就绪后，以唯一Registry
+  注册Handover、SurveyVersion、SurveyConclusion；cursor从既有Survey key用固定label派生。
+- Impact/Rollback：无Schema/Migration、公开路径、依赖、Secret数量或外发。撤组合变更恢复默认404；
+  历史Conclusion/Review/Audit/receipt保留。
+- Verification：定向7、后端2942/3；Win11/PG18.6真实五Operation、SRV-05通用APPROVE和drift通过；
+  wheel1105项，SHA-256 `f86bb421db49d29539d6feeced8b3903b74572f8b11f75aad02f84e0cd0599df`。

@@ -12,6 +12,12 @@ from fastapi import APIRouter
 from plm_assistant.modules.audit.infrastructure.survey_validation_source import (
     SqlAlchemySurveyValidationAuditSource,
 )
+from plm_assistant.modules.audit.infrastructure.conclusion_validation_source import (
+    SqlAlchemyConclusionValidationAuditSource,
+)
+from plm_assistant.modules.ai.infrastructure.survey_conclusion_task import (
+    SqlAlchemySurveyConclusionAITaskProof,
+)
 from plm_assistant.modules.auth.infrastructure.project_read_access import (
     SqlAlchemyProjectReadAccess,
 )
@@ -51,6 +57,9 @@ from plm_assistant.modules.handover.infrastructure.survey_source_proof import (
 from plm_assistant.modules.handover.infrastructure.survey_source_location import (
     SqlAlchemyHandoverSurveySourceLocation,
 )
+from plm_assistant.modules.handover.infrastructure.survey_conclusion_issue import (
+    SqlAlchemySurveyConclusionIssueProof,
+)
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import (
     SqlAlchemyIdempotencyReceipts,
 )
@@ -58,7 +67,7 @@ from plm_assistant.modules.platform.infrastructure.windows_secret_key_provider i
     WindowsSecretKeyProvider,
 )
 from plm_assistant.modules.project.application.authorization import (
-    ProjectAuthorizationService,
+    ALL_MEMBERS, ProjectAuthorizationService,
 )
 from plm_assistant.modules.project.application.reviewers import (
     ProjectReviewerQualificationService,
@@ -71,6 +80,9 @@ from plm_assistant.modules.project.infrastructure.survey_source_proof import (
 )
 from plm_assistant.modules.review.application.project_persistence import (
     ProjectReviewPersistenceService,
+)
+from plm_assistant.modules.review.application.subject_registry import (
+    ProjectReviewSubjectRegistry,
 )
 from plm_assistant.modules.review.infrastructure.create_repository import (
     SqlAlchemyReviewCreationRepository,
@@ -86,13 +98,17 @@ from plm_assistant.modules.survey.api.assignments import (
     create_survey_assignment_command_router,
     create_survey_assignment_read_router,
 )
+from plm_assistant.modules.survey.api.conclusions import (
+    create_survey_conclusion_command_router,
+    create_survey_conclusion_read_router,
+)
 from plm_assistant.modules.survey.api.read import create_survey_read_router
 from plm_assistant.modules.survey.api.source_location import (
     create_survey_source_location_router,
 )
 from plm_assistant.modules.survey.api.read_cursor import (
-    SurveyAssignmentCursorCodec, SurveyCursorCodec, SurveyRoundCursorCodec,
-    SurveyVersionCursorCodec,
+    SurveyAssignmentCursorCodec, SurveyConclusionCursorCodec,
+    SurveyCursorCodec, SurveyRoundCursorCodec, SurveyVersionCursorCodec,
 )
 from plm_assistant.modules.survey.api.rounds import (
     create_survey_round_command_router, create_survey_round_read_router,
@@ -105,10 +121,16 @@ from plm_assistant.modules.survey.application.create_assignment import (
     SurveyAssignmentCreateService,
 )
 from plm_assistant.modules.survey.application.create_survey import SurveyCreateService
+from plm_assistant.modules.survey.application.create_conclusion import (
+    SurveyConclusionCreateService,
+)
 from plm_assistant.modules.survey.application.create_version import SurveyVersionCreateService
 from plm_assistant.modules.survey.application.read_surveys import SurveyReadService
 from plm_assistant.modules.survey.application.read_assignments import (
     SurveyAssignmentReadService,
+)
+from plm_assistant.modules.survey.application.read_conclusions import (
+    SurveyConclusionReadService,
 )
 from plm_assistant.modules.survey.application.record_response import (
     SurveyResponseRecordService,
@@ -135,9 +157,33 @@ from plm_assistant.modules.survey.application.source_location import (
     SurveySourceLocationService,
 )
 from plm_assistant.modules.survey.application.review_subject import SurveyReviewSubjectOwner
+from plm_assistant.modules.survey.application.conclusion_review_subject import (
+    SurveyConclusionReviewSubjectOwner,
+)
+from plm_assistant.modules.survey.application.conclusion_sources import (
+    SurveyConclusionProjectRecordProofService,
+)
+from plm_assistant.modules.survey.application.submit_conclusion_review import (
+    SurveyConclusionReviewSubmissionService,
+)
 from plm_assistant.modules.survey.application.submit_review import SurveyReviewSubmissionService
 from plm_assistant.modules.survey.application.validate_version import (
     SurveyVersionCurrentValidator, SurveyVersionValidationService,
+)
+from plm_assistant.modules.survey.application.validate_conclusion import (
+    SurveyConclusionCurrentValidator, SurveyConclusionValidationService,
+)
+from plm_assistant.modules.survey.infrastructure.conclusion_repository import (
+    SqlAlchemySurveyConclusionRepository,
+)
+from plm_assistant.modules.survey.infrastructure.conclusion_response_source import (
+    SqlAlchemyConclusionResponseProof,
+)
+from plm_assistant.modules.survey.infrastructure.conclusion_review_repository import (
+    SqlAlchemySurveyConclusionReviewRepository,
+)
+from plm_assistant.modules.survey.infrastructure.conclusion_validation_repository import (
+    SqlAlchemySurveyConclusionValidationRepository,
 )
 from plm_assistant.modules.survey.infrastructure.read_repository import (
     SqlAlchemySurveyReadRepository,
@@ -214,6 +260,9 @@ def create_windows_survey_routers(
         assignment_cursors = SurveyAssignmentCursorCodec(hmac.digest(
             survey_cursor_key, b"survey-assignment-cursor-v1", "sha256",
         ))
+        conclusion_cursors = SurveyConclusionCursorCodec(hmac.digest(
+            survey_cursor_key, b"survey-conclusion-cursor-v1", "sha256",
+        ))
         version_cursors = SurveyVersionCursorCodec(
             keys.resolve_key(SURVEY_VERSION_CURSOR_KEY_REF)
         )
@@ -260,6 +309,16 @@ def create_windows_survey_routers(
         read_router.include_router(create_survey_assignment_read_router(
             sessions=sessions, origins=origins, reads=assignment_reads,
             cursors=assignment_cursors,
+        ))
+        conclusion_repository = SqlAlchemySurveyConclusionRepository()
+        conclusion_reads = SurveyConclusionReadService(
+            unit_of_work=runtime.unit_of_work,
+            access=SqlAlchemyProjectReadAccess(), license_guard=license_guard,
+            authorization=authorization, repository=conclusion_repository,
+        )
+        read_router.include_router(create_survey_conclusion_read_router(
+            sessions=sessions, origins=origins, reads=conclusion_reads,
+            cursors=conclusion_cursors,
         ))
         if not include_write:
             return WindowsSurveyRouters(read_router, None, None)
@@ -395,14 +454,45 @@ def create_windows_survey_routers(
                 responses=response_records, submissions=assignment_submissions,
                 reviews=assignment_reviews,
             ))
+            conclusion_create_evidence = SurveyConclusionProjectRecordProofService(
+                evidence=round_evidence,
+            )
+            conclusion_review_evidence = SurveyConclusionProjectRecordProofService(
+                evidence=EvidenceFixedProjectSourceService(
+                    sessions=SqlAlchemyProjectReadAccess(),
+                    projects=project_repository,
+                    evidence=SqlAlchemyEvidenceFixedSourceRepository(),
+                    documents=document_proofs,
+                    allowed_project_roles=ALL_MEMBERS,
+                    required_document_category="PROJECT_RECORD",
+                ),
+                allowed_verified_roles=ALL_MEMBERS,
+            )
+            conclusion_response_owner = SqlAlchemyConclusionResponseProof()
+            conclusion_issue_owner = SqlAlchemySurveyConclusionIssueProof()
+            conclusion_ai_owner = SqlAlchemySurveyConclusionAITaskProof()
         reviewers = ProjectReviewerQualificationService(
             users=SqlAlchemyReviewUserAccess(), projects=project_repository,
         )
-        owner = SurveyReviewSubjectOwner(
+        survey_owner = SurveyReviewSubjectOwner(
             repository=SqlAlchemySurveyReviewSubjectRepository(),
             reviewers=reviewers,
             current=SurveyVersionCurrentValidator(**source_ports), audit=audit,
         )
+        subjects = survey_owner
+        if all(dependency_shape):
+            conclusion_owner = SurveyConclusionReviewSubjectOwner(
+                repository=SqlAlchemySurveyConclusionReviewRepository(),
+                reviewers=reviewers,
+                current=SurveyConclusionCurrentValidator(
+                    response_owner=conclusion_response_owner,
+                    evidence_owner=conclusion_review_evidence,
+                    issue_owner=conclusion_issue_owner,
+                    ai_owner=conclusion_ai_owner,
+                ),
+                audit=audit,
+            )
+            subjects = ProjectReviewSubjectRegistry((survey_owner, conclusion_owner))
         submission = SurveyReviewSubmissionService(
             unit_of_work=runtime.unit_of_work, access=access,
             license_guard=license_guard, authorization=authorization,
@@ -411,10 +501,50 @@ def create_windows_survey_routers(
             reviews=ProjectReviewPersistenceService(
                 creation_repository=SqlAlchemyReviewCreationRepository(),
                 round_repository=SqlAlchemyReviewStartRepository(),
-                audit=audit, subjects=owner,
+                audit=audit, subjects=subjects,
             ),
-            subjects=owner,
+            subjects=subjects,
         )
+        if all(dependency_shape):
+            conclusion_creates = SurveyConclusionCreateService(
+                unit_of_work=runtime.unit_of_work, access=access,
+                license_guard=license_guard, authorization=authorization,
+                repository=conclusion_repository,
+                response_owner=conclusion_response_owner,
+                evidence_owner=conclusion_create_evidence,
+                issue_owner=conclusion_issue_owner,
+                ai_owner=conclusion_ai_owner, receipts=receipts, audit=audit,
+            )
+            conclusion_validations = SurveyConclusionValidationService(
+                unit_of_work=runtime.unit_of_work, access=access,
+                license_guard=license_guard, authorization=authorization,
+                repository=SqlAlchemySurveyConclusionValidationRepository(),
+                response_owner=conclusion_response_owner,
+                evidence_owner=conclusion_create_evidence,
+                issue_owner=conclusion_issue_owner,
+                ai_owner=conclusion_ai_owner,
+                audit_source=SqlAlchemyConclusionValidationAuditSource(),
+                receipts=receipts, audit=audit,
+            )
+            conclusion_submissions = SurveyConclusionReviewSubmissionService(
+                unit_of_work=runtime.unit_of_work, access=access,
+                license_guard=license_guard, authorization=authorization,
+                reviewers=reviewers, receipts=receipts,
+                replay_repository=SqlAlchemyProjectReviewSubmissionRepository(),
+                reviews=ProjectReviewPersistenceService(
+                    creation_repository=SqlAlchemyReviewCreationRepository(),
+                    round_repository=SqlAlchemyReviewStartRepository(),
+                    audit=audit, subjects=subjects,
+                ),
+                subjects=subjects,
+            )
+            command_router.include_router(create_survey_conclusion_command_router(
+                sessions=sessions, origins=origins,
+                creates=conclusion_creates,
+                validations=conclusion_validations,
+                submissions=conclusion_submissions,
+                reads=conclusion_reads,
+            ))
         review_router = create_survey_review_submission_router(
             sessions=sessions, origins=origins, submissions=submission,
         )

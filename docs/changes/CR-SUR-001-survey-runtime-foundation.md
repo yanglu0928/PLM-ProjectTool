@@ -174,3 +174,6 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
   派生cursor、Windows显式装配、写后重读及Evidence/open issue点击定位拆分；纯文档PASS，进入A02。
 - 2026-10-07 / `SUR-05-A02`：完成五个Conclusion Operation严格HTTP与会话绑定cursor；不接收series、
   不泄漏child row ID或复制外部正文。定向10、后端2941/3和wheel1105项通过；进入A03 Windows组合。
+- 2026-10-07 / `SUR-05-A03`：完成Windows显式Conclusion组合与SRV-05通用Review注册；完整证明依赖
+  才开放写，cursor不新增Secret。Win11/PG18.6真实五Operation与批准、后端2942/3、wheel1105项通过；
+  进入A04前端。

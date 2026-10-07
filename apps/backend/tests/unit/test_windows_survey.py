@@ -34,20 +34,20 @@ class WindowsSurveyCompositionTests(unittest.TestCase):
         read_only = create_windows_survey_routers(
             runtime, sessions=sessions, origins=origins, license_guard=guard,
             audit=audit, include_write=False, resolver=keys)
-        self.assertEqual(7, len(read_only.reads.routes))
+        self.assertEqual(8, len(read_only.reads.routes))
         self.assertIsNone(read_only.commands)
         self.assertIsNone(read_only.review_submission)
         write = create_windows_survey_routers(
             runtime, sessions=sessions, origins=origins, license_guard=guard,
             audit=audit, include_write=True, resolver=Keys())
-        self.assertEqual(7, len(write.reads.routes))
+        self.assertEqual(8, len(write.reads.routes))
         self.assertEqual(6, len(write.commands.routes))
         self.assertEqual(1, len(write.review_submission.routes))
         complete = create_windows_survey_routers(
             runtime, sessions=sessions, origins=origins, license_guard=guard,
             audit=audit, include_write=True, resolver=Keys(),
             documents=Mock(), downloads=Mock(), parse_results=Mock())
-        self.assertEqual(7, len(complete.commands.routes))
+        self.assertEqual(8, len(complete.commands.routes))
         self.assertEqual([SURVEY_CURSOR_KEY_REF, SURVEY_VERSION_CURSOR_KEY_REF],
                          keys.refs)
 

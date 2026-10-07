@@ -34,6 +34,21 @@ class WindowsProjectReviewCompositionTests(unittest.TestCase):
             )
         self.assertNotIn("None", str(caught.exception))
 
+    def test_conclusion_owner_requires_complete_evidence_dependencies(self):
+        runtime = Mock()
+        runtime.unit_of_work = Mock()
+        with self.assertRaises(ProductionProjectReviewStartupError):
+            create_windows_project_review_router(
+                runtime, sessions=Mock(), origins=Mock(), license_guard=Mock(),
+                audit=Mock(), documents=Mock(),
+            )
+        router = create_windows_project_review_router(
+            runtime, sessions=Mock(), origins=Mock(), license_guard=Mock(),
+            audit=Mock(), documents=Mock(), downloads=Mock(),
+            parse_results=Mock(),
+        )
+        self.assertEqual(4, len(router.routes))
+
 
 if __name__ == "__main__":
     unittest.main()

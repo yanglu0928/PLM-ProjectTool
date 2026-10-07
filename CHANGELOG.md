@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/SUR-05-A03 将SurveyConclusion五Operation装入Windows显式生产组合，
+  用现有Survey key用途派生cursor，并把SRV-05注册进通用PROJECT Review；Document证明依赖不完整时
+  写链失败关闭。兼容性/回滚：无Schema/Migration、依赖、Secret数量或外发，撤组合恢复A02默认404。
+  验证：定向7、后端2942/3、Win11/PG18.6真实CREATE/LIST/GET/VALIDATE/SUBMIT_REVIEW/APPROVE、drift，
+  wheel1105项/`f86bb421…9df`通过。已知问题：A04/A05前端/Edge、SUR-06、Server2025、Gate3/UAT及发行仍待。
+
 - 2026-10-07：0.1.0-dev.0/SUR-05-A02 新增默认关闭的SurveyConclusion五Operation严格HTTP、会话/
   项目/页长绑定cursor、摘要/详情投影、空请求体Validate及业务送审适配；不接受客户端series、不返回
   owned child row ID，补注册冻结来源错误。兼容性/回滚：无Schema/Migration、依赖、Secret数量或外发，

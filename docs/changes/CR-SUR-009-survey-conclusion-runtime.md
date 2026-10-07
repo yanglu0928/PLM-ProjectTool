@@ -126,4 +126,8 @@
 - 2026-10-07 / `SUR-05-A02`：新增默认关闭的五Operation严格HTTP、独立family cursor和冻结错误映射；
   列表/详情不泄漏child row ID，送审series由服务端受权读取不可变映射后交A06 Owner重锁。定向10、
   后端2941/3、wheel1105项通过；无Schema/依赖/Secret/外发，进入A03 Windows真实组合。
+- 2026-10-07 / `SUR-05-A03`：Windows Survey显式组合接入Conclusion两读三写，cursor从既有key按用途
+  派生；完整Document证明依赖下，通用Review Registry注册SRV-05并在生产入口延后装配。部分依赖失败
+  关闭，默认应用仍404、只读模式不开放写。Win11/PG18.6真实五Operation及通用APPROVE、后端2942/3、
+  wheel1105项通过；无Schema/依赖/Secret/外发，进入A04前端。
 
