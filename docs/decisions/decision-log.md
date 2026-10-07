@@ -9183,3 +9183,17 @@
 - Impact/Rollback：纯前端和Session写桥接，无Schema/Migration、冻结API、依赖、Secret或外发变化；撤
   Conclusion路由/页面/客户端和HND query展开即可，后端历史不变。
 - Verification：定向15、前端88文件1474项、typecheck、Vite184 modules build通过；真实Edge留A05。
+
+# DEC-20261007-966：Conclusion 浏览器验收保持 SPA 身份边界并隔离合成评审资格
+
+- Date/WBS：2026-10-07 / `SUR-05-A05`；依据DEC-965、现有内存SessionClient及Windows真实组合。
+- Evidence/Conflict：浏览器硬刷新会丢失仅存内存的当前身份；验收库新增CUSTOMER_MANAGER若不先满足
+  credential shape会被数据库约束拒绝；Evidence列表也必须具备独立cursor codec。绕过身份、约束或
+  复用生产Secret都不能构成真实验收。
+- Decision：端到端流程只经产品RouterLink作SPA导航，不在脚本持久化或伪造会话；fixture先创建禁用
+  用户与不可登录合成凭据，再原子启用并加入隔离Project，Evidence cursor用固定一次性合成key。网络
+  控件按实际完成态等待，重复按钮文案按所属表单定位。
+- Impact/Rollback：只新增本机验收脚本和文档，无产品代码、Schema/Migration、API、依赖、生产Secret、
+  外发或客户数据变化。删除验收目录即可回滚；完整刷新不恢复身份登记为发行体验已知限制。
+- Verification：真实Edge经production Vue/FastAPI/PG18.6完成CREATE/GET/VALIDATE/SUBMIT_REVIEW、
+  Evidence Viewer和HND深链，166条观察、四截图视觉QA、定义零写与隔离清理全部通过。

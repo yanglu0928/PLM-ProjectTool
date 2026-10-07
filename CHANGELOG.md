@@ -1,5 +1,13 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/SUR-05-A05 新增可重复的Windows 11真实Edge结论验收；经production
+  Vue/FastAPI/PostgreSQL 18.6完成HND非阻断待办、CLOSED Round、VALIDATED Response、结论创建、
+  Evidence/HND点击定位、当前来源验证及正式送审，最终`IN_REVIEW`，166条观察及四截图视觉QA通过，
+  数据/凭据/profile清理通过。兼容性/回滚：仅验收脚本与文档，无Schema/API/依赖/生产Secret/外发；
+  删除验收目录即可。偏差：硬刷新不恢复内存身份，验收按产品SPA导航；fixture按数据库凭据约束创建
+  合成评审人并使用独立cursor key。已知问题：SUR-06、Server2025、Gate3/UAT及发行仍待，主JS分块
+  提示与完整刷新会话体验继续登记。
+
 - 2026-10-07：0.1.0-dev.0/SUR-05-A04 新增SurveyConclusion严格前端客户端与人工结论工作台；从
   CLOSED Round、VALIDATED答复、当前Department/Member、ELIGIBLE Evidence和未关闭HND-03选择，
   支持验证/送审、原幂等Key重试、Evidence固定原文点击定位及待办`actionId`深链自动展开。兼容性/
