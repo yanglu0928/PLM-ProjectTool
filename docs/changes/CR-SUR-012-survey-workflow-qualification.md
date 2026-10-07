@@ -90,3 +90,10 @@ Checklist PASS，或把模板/AI 建议当实际来源都会破坏模块边界�
   Audit/receipt 回滚、Transition gate snapshot 与 Handover 旧链回归。
 - 浏览器：生产 Vue/FastAPI/PG 经 Survey 资格预览、两项 PASS、二次确认推进 REQUIREMENT，截图、网络
   状态、SQL历史和清理均通过。
+
+## 实施记录
+
+- 2026-10-07 / `SUR-06-A02`：新增业务中立的current qualification query/result、Evidence/Review
+  observation、显式只读item-key registry及Handover compatibility adapter；重复/未知注册、错身份、
+  空Evidence、非批准Review与Owner异常全部失败关闭。未接生产service/HTTP，原Handover运行行为不变。
+  新增6、既有Handover/Workflow定向37、后端2948/3及wheel1107项通过，进入A03 Survey Owner。

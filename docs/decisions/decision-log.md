@@ -9209,3 +9209,14 @@
   业务版本由Review指纹和Owner当前证明绑定；Handover HTTP字段不变，Survey用独立严格响应变体。
 - Impact/Rollback：无Schema/Migration、冻结请求/path、依赖、Secret或外发；应用可移除Survey注册恢复
   Handover-only，历史不改写。A02～A07逐步验证，任一失败不提前放行SURVEY→REQUIREMENT。
+
+# DEC-20261007-968：资格注册表在生产接线前保持纯内部且显式失败关闭
+
+- Date/WBS：2026-10-07 / `SUR-06-A02`；依据CR-SUR-012及既有Handover真实资格Owner。
+- Decision：通用合同只表达Owner已经证明的project/stage/item、subject/version、Evidence、Review和
+  coherence，不含业务正文；注册表由构造方显式提供不可变allowlist，禁止动态发现和默认fallback。
+  Handover通过adapter逐字段映射，A02不替换现有service依赖，待Survey Owner完成后在A04一次接线。
+- Reason：先接半成品注册表会扩大生产失败面；让Workflow认识Handover/Survey私有DTO又会把业务模块
+  耦合固化。独立合同可先证明形状与错误收敛，同时以全量回归确认零行为变化。
+- Impact/Rollback：新增两个内部模块与六项测试，无Schema/API/依赖/Secret/外发；删除增量即可。
+  后端2948/3、Handover/Workflow定向37、wheel1107项通过。
