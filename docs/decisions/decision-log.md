@@ -9837,3 +9837,16 @@
   真实Owner会违反证据边界。
 - Impact/Rollback：只改验收夹具，无产品代码/Schema/API/依赖/外发。Edge 30项网络观察、PG六PASS/
   三Transition/六Gate/十receipt及全量清理通过；撤可选Requirement模式和A07目录即可回滚。
+
+# DEC-20261008-1022：Prototype 生成必须停留在统一 AI Draft 与受控制品边界
+
+- Date/WBS：2026-10-08 / `PRT-01-A01`；依据 Gate 2 冻结 PRT-01～05/API-04、六阶段 Definition V1
+  和 `CR-PRT-001`。
+- Decision：不实现旧摘要 `/prototypes/generate`；`PROTOTYPE_GENERATE` 只经统一 AIService/AITask 产生
+  建议态或 Draft 输入。正式链继续使用冻结的 Identity/Version/Validate/Review/Link Operation，且制品只
+  存储、校验和受权预览，不执行 AI 生成代码、脚本或引入原型执行沙箱。NOT_REQUIRED 必须是带受影响
+  Approved RequirementVersion、reason、impact、决定/Review/Evidence 的显式事实。
+- Reason：旧快捷路径会把生成、范围决定和正式化混成一次操作；无链接或无版本不是不需要原型；执行生成
+  制品超出锁定 Scope 并扩大安全面。
+- Impact/Rollback：A01仅文档，无Schema/API/代码/依赖/外发。A02～A11可逐项停用，历史冻结版本不改写；
+  未通过Artifact、Review和Workflow实证前不宣称Prototype或Gate可用。

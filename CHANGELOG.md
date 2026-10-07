@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A01 完成Prototype运行时前置核查并登记`CR-PRT-001`：保留冻结
+  PRT-01～05及26个Operation；旧`/prototypes/generate`不实施，AI生成只经统一AITask进入建议/Draft，
+  制品不执行，NOT_REQUIRED必须有固定需求范围与真实决定依据。兼容性/回滚：纯文档，无Schema/API/
+  代码/依赖/外发；后续接线可逐项停用。验证：冻结Data Model/Schema/API、现有Trace/Audit/AI/Workflow
+  预留和Requirement上游静态对账PASS。已知问题：A02～A11、Gate3/UAT/发行待。
+
 - 2026-10-08：0.1.0-dev.0/REQ-01-A12-A07 在隔离Windows 11真实Edge、构建后Vue、生产FastAPI与
   PostgreSQL 18.6完成START、六项PASS、三次推进并到达PROTOTYPE/v10；30项网络观察无页面错误，
   PG端六Gate、Audit/receipt和清理一致。Computer Use控制器因本机kernel assets路径错误，按已记录替代
