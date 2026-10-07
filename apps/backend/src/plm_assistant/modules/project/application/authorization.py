@@ -174,6 +174,12 @@ POLICIES: dict[str, _Policy] = {
     "SURVEY_CONCLUSION_SUBMIT_REVIEW": _Policy(MANAGERS, True),
     "REQ_PACKAGE_CREATE": _Policy(
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
+    "REQ_PACKAGE_PATCH": _Policy(
+        frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
+    "REQ_PACKAGE_ADD": _Policy(
+        frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
+    "REQ_PACKAGE_REMOVE": _Policy(
+        frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
     "REQ_CREATE": _Policy(
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
     "PROJECT_PATCH": _Policy(MANAGERS, True),

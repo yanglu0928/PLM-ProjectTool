@@ -74,3 +74,13 @@ membership；P03 Requirement元数据及 DEFER/REJECT 决定。P01 新增两类�
 Requirement code 收紧为 64 位 ASCII 业务键并在项目内按大写规范值唯一。创建写在同一事务完成当前
 Session/CSRF、项目角色、License、Root、结果、Audit 与 receipt；PM和ImplementationMember可创建，
 其他角色失败关闭。尚未开放 Router，也未开放 P02/P03 变更状态。
+
+## A03-P02 实施记录（2026-10-07）
+
+P02 新增 Package PATCH、Requirement membership ADD/REMOVE 三类内部 Owner 和 Migration0113。Package
+Root 行锁与 `expected_version` 共同保证每个成功命令只递增一个版本；membership 每次最多200个唯一
+Requirement，ADD/REMOVE均要求当前Package为ACTIVE，跨项目、重复加入、不存在关联和旧版本失败关闭。
+REMOVE只删除关联，不删除Requirement。状态转换固定ACTIVE与RESTRICTED双向、二者可转ARCHIVED、
+ARCHIVED终态。每个成功命令保存完整且规范排序的不可变成员集合快照；幂等重放先重证当前权限，再返回
+首次结果，不读取已变化的Root。数据库触发器继续关闭Requirement更新，并重证结果快照与同事务当前
+Package/成员集合一致；有命令历史拒降。未开放Router，也未开放P03 Requirement决定。

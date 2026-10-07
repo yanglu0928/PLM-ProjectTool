@@ -8,6 +8,7 @@ from unittest.mock import patch
 from plm_assistant.modules.requirement.infrastructure.orm import (
     RequirementCreateResultRow,
     RequirementPackageMembershipRow,
+    RequirementPackageCommandResultRow,
     RequirementPackageCreateResultRow,
     RequirementPackageRow,
     RequirementRow,
@@ -36,8 +37,10 @@ class RequirementIdentitySchemaTests(unittest.TestCase):
             [
                 RequirementPackageCreateResultRow.__table__.name,
                 RequirementCreateResultRow.__table__.name,
+                RequirementPackageCommandResultRow.__table__.name,
             ],
-            ["req_package_create_results", "req_requirement_create_results"],
+            ["req_package_create_results", "req_requirement_create_results",
+             "req_package_command_results"],
         )
 
     def test_same_project_code_and_membership_constraints_exist(self) -> None:
@@ -110,6 +113,25 @@ class RequirementIdentitySchemaTests(unittest.TestCase):
             "Requirement create result history prevents downgrade",
             inspect.getsource(migration.downgrade),
         )
+
+    def test_package_mutation_delta_opens_only_package_and_membership_owner(self) -> None:
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions."
+            "20261007_0113_requirement_package_mutations"
+        )
+        self.assertEqual(migration.down_revision, "20261007_0112")
+        for required in (
+            "RequirementPackage mutation is invalid",
+            "Requirement identity Owner is not installed",
+            "RequirementPackage membership history cannot be rewritten",
+            "RequirementPackage command result history is immutable",
+            "RequirementPackage command result does not match current root",
+        ):
+            self.assertIn(required, migration._MUTATION_GUARDS)
+        with patch.object(migration.context, "is_offline_mode", return_value=True):
+            with self.assertRaisesRegex(RuntimeError, "offline Requirement Package"):
+                migration.downgrade()
+        self.assertIn("mutation history prevents downgrade", inspect.getsource(migration.downgrade))
 
 
 if __name__ == "__main__":

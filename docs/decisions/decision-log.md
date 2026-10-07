@@ -9311,3 +9311,18 @@
   receipt为模块JSON会扩大平台边界并引入不可信动态形状。
 - Impact/Rollback：Migration0112新增两个操作历史表并收紧Requirement code为ASCII业务键；无公开API、
   依赖或外发。空历史可降0111；有历史向前修复。Win11/PG18.6、后端2966/3及wheel1117项通过。
+
+# DEC-20261007-977：Package membership 以 Root ETag 和不可变完整集合快照串行化
+
+- Date/WBS：2026-10-07 / `REQ-01-A03-P02`；依据冻结REQ-01聚合边界、API-04和DEC-976。
+- Evidence/Gap：冻结合同要求PATCH、ADD、REMOVE及ETag，但未定义成员批量上限、重复加入语义和Package
+  状态转换；只保存请求增量无法在后续成员变化后精确重放首成功响应。
+- Decision：一次成员命令限1～200个唯一、规范排序的Requirement ID；同项目Package行锁加ETag串行化
+  PATCH/ADD/REMOVE。重复ADD、不存在REMOVE、跨项目和旧版本均冲突/隐藏失败；REMOVE只删除关联。
+  每次成功保存完整成员集合的不可变快照。ACTIVE/RESTRICTED可双向，二者可转ARCHIVED且ARCHIVED终态；
+  仅ACTIVE可改成员。
+- Reason：Root ETag使元数据和成员集合共享一个可观察并发序列；完整快照才能保持Idempotency-Key的首响应
+  语义。显式失败避免把客户端重试或错误集合伪装成成功写。
+- Impact/Rollback：Migration0113新增命令结果表并开放受约束Package/membership Owner，不开放Requirement
+  Root更新、公开API、依赖或外发。空历史可降0112；有历史向前修复。Win11/PG18.6、后端2973/3及
+  wheel1120项通过。
