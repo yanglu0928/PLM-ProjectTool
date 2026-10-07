@@ -34,7 +34,8 @@ class RequirementPackageCursorTests(unittest.TestCase):
             (uuid.uuid4(), self.session, 25, token),
             (self.project, b"x" * 32, 25, token),
             (self.project, self.session, 24, token),
-            (self.project, self.session, 25, token[:-1] + "A"),
+            (self.project, self.session, 25,
+             token[:-1] + ("A" if token[-1] != "A" else "B")),
         ):
             with self.subTest(project=project, size=size), self.assertRaises(
                     ApplicationError) as caught:

@@ -9639,3 +9639,14 @@
 - Reason：Package与Requirement即使位置形状相同也属于不同资源族，不得允许cursor交叉重放。
 - Impact/Rollback：无Schema/依赖变化；移除Router注入即回滚流量。Win11/PG18.6真实HTTP、定向7、
   后端3047/3与wheel1158项通过。正式密钥供给留A08。
+
+# DEC-20261008-1005：Version cursor 绑定双父级且回放证明不改写
+
+- Date/WBS：2026-10-08 / `REQ-01-A10-A05`；依据API-01 keyset、冻结Version路径和幂等审计约束。
+- Decision：Version列表使用独立32字节密钥和`requirement-versions`用途，签名绑定Project、
+  Requirement、Session摘要、page size和version_no；VALIDATE重放返回首次不可变审计证明，证明
+  trace不强制等于当前HTTP trace，响应envelope始终使用当前请求trace。
+- Reason：Version位置在Requirement父级内才唯一；幂等重放若改写首次证明就不再是同一结果，若把
+  首次trace误当成当前请求trace校验则会错误返回503。
+- Impact/Rollback：无Schema/依赖/冻结合同变化；移除Router注入即可关闭流量。Win11/PG18.6真实
+  HTTP、定向7、后端3054/3及wheel1160项通过。正式密钥供给留A08。

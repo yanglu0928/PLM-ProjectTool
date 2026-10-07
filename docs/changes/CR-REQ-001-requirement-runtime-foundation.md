@@ -311,3 +311,14 @@ CSRF/JSON，CREATE及三个状态命令幂等，PATCH仅强If-Match；决定必�
 默认应用不注入仍404，Windows生产组合留A08。Win11/PG18.6真实七Operation/cursor/角色/
 License/Audit/drift，定向7、后端3047/3及wheel1158项/`b2f8e19c…fc1`通过。
 无Schema、依赖、Secret或外发变化；A04完成进入A05。
+
+## A10-A05 实施记录（2026-10-08）
+
+新增RequirementVersion独立HMAC cursor和opt-in Router，按冻结路径开放LIST/CREATE/GET/
+VALIDATE。Cursor绑定family/Project/Requirement/Session/page size/version_no；创建严格强If-Match
+并持久幂等，校验持久幂等但不要求If-Match，完整固定快照和当前事实校验结果均使用安全投影。
+校验幂等回放保留首次不可变审计证明trace，当前HTTP envelope使用本次trace，两者不混同。
+默认应用不注入仍404，Windows生产组合留A08。Win11/PG18.6真实四Operation/cursor/回放/
+角色/License/Audit/drift，定向7、后端3054/3及wheel1160项/`82330863…2b18`通过。
+同时修正三个Requirement cursor负例的随机无变化篡改夹具，未改变产品逻辑。无Schema、依赖、
+Secret或外发变化；A05完成进入A06原子送审。

@@ -119,6 +119,7 @@ def create_app(
     survey_read_router: APIRouter | None = None,
     requirement_package_router: APIRouter | None = None,
     requirement_router: APIRouter | None = None,
+    requirement_version_router: APIRouter | None = None,
     review_command_router: APIRouter | None = None,
     maintenance_admission: MaintenanceAdmissionPort | None = None,
     shutdown_callback: Callable[[], None] | None = None,
@@ -339,6 +340,8 @@ def create_app(
         app.include_router(requirement_package_router)
     if requirement_router is not None:
         app.include_router(requirement_router)
+    if requirement_version_router is not None:
+        app.include_router(requirement_version_router)
     if review_command_router is not None:
         app.include_router(review_command_router)
     return app
