@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A04-A01 完成PrototypeTemplate前置核查：固定Create同事务建立
+  GLOBAL/PROJECT Root与不可变首版、Revise仅追加，布局/组件合同不可执行，ArtifactRef必须由目标Owner
+  证明且GLOBAL不得反写项目事实；A04拆为Schema/Create/Revise/Read四个原子子项。兼容性/回滚：纯文档，
+  无Schema/API/代码/依赖/外发，冻结六个Template Operation不变。验证：Gate2数据模型、Schema Profile、
+  API-04、CR-PRT-001及现有Owner边界静态对账PASS。已知问题：A02～A05、PRT后续、Server2025、
+  Gate3/UAT/发行待。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A03-A05 新增NOT_REQUIRED原子范围决定Owner及Migration0126；
   固定1～200个当前Approved RequirementVersion，PM/CustomerManager实际受权动作记录confirmed_by而不
   冒充客户确认，可选Review必须以精确决定指纹Approved。Root/决定/有序引用/首结果/Audit/receipt同事务。

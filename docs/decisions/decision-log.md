@@ -9922,3 +9922,16 @@
   会制造冻结Operation不存在的前置流程；把PM动作称客户确认会伪造业务事实。
 - Impact/Rollback：Migration0126兼容增加决定指纹与不可变结果表，无公开API/依赖/外发；空历史可降0125，
   存在决定拒降。Windows实库用隔离合成Review验证证明合同，不构成客户确认或正式项目事实。
+
+# DEC-20261008-1029：PrototypeTemplate只承载不可执行合同并以首版闭合身份
+
+- Date/WBS：2026-10-08 / `PRT-01-A04-A01`；依据冻结PRT-04、M-SCP/V-SCP、API-04六个Template
+  Operation及CR-PRT-001。
+- Decision：Create在同一事务建立GLOBAL/PROJECT Root与不可变首版；Revise只追加版本、精确supersede
+  当前版并推进Root指针。版本只保存有界结构化布局/组件合同、适用终端和经Owner证明的固定ArtifactRef，
+  不保存或执行脚本/命令。GLOBAL模板不得引用PROJECT Artifact或形成项目/客户事实；OutputArtifact Owner
+  未实现时对应引用失败关闭。
+- Reason：空Template身份无法满足冻结Create结果；可变正文会改写已生成PrototypeVersion语义；裸多态UUID
+  会产生孤立或跨项目引用；把模板做成代码入口会越过锁定Scope并形成未授权执行沙箱。
+- Impact/Rollback：A01仅文档和实现拆分，无Schema/API/代码/依赖/外发；A02～A05可分别停止装配。已产生的
+  TemplateVersion、ArtifactRef、Audit历史必须保留，冻结六个Operation与HTTP路径不变。

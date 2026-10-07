@@ -107,3 +107,10 @@ Review能证明精确内容，兼容增加32字节decision_fingerprint，并仅�
 `PRT_SCOPE_DECISION` Snapshot精确匹配；Review仍可空，不新增公开请求必填字段。Root、决定、有序引用、
 不可变首结果、Audit和receipt同事务闭合。Win11/PG18.6真实闭环、后端3113/3及wheel1184项/
 `b88fd092…6c9a6c`通过；Router仍关闭，`PRT-01-A03`完成。
+
+## A04 拆分与 A01 前置核查（2026-10-08）
+
+A04按单一问题拆为A02 Schema0127、A03 PROJECT/GLOBAL Create、A04 Revise和A05内部读取Owner。Create同时
+建立Root与不可变首版，Revise仅追加并原子推进当前指针；版本正文只保存非可执行布局/组件合同、适用终端及
+固定ArtifactRef。GLOBAL不得引用PROJECT Artifact或反写项目事实；OutputArtifact Owner未就绪时对应引用
+失败关闭，不接受裸UUID替代。冻结六个Template Operation、路径和角色不变，HTTP仍在A09统一开放。
