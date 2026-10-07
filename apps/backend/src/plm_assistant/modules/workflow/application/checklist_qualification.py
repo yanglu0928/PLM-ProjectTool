@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hmac
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
@@ -152,11 +153,140 @@ class CurrentChecklistQualification:
         )
 
 
+@dataclass(frozen=True, slots=True)
+class ChecklistQualificationSubject:
+    """One independently approved subject inside an aggregate stage scope."""
+
+    subject_type: str
+    subject_id: uuid.UUID
+    subject_version_id: uuid.UUID
+    content_fingerprint: bytes
+    evidence: tuple[ChecklistQualificationEvidence, ...]
+    review: ChecklistQualificationReview
+
+    def __post_init__(self) -> None:
+        if (not _token(self.subject_type, limit=64)
+                or not _id(self.subject_id)
+                or not _id(self.subject_version_id)
+                or type(self.content_fingerprint) is not bytes
+                or len(self.content_fingerprint) != 32
+                or type(self.evidence) is not tuple or not self.evidence
+                or any(type(value) is not ChecklistQualificationEvidence
+                       for value in self.evidence)
+                or len({value.evidence_id for value in self.evidence})
+                   != len(self.evidence)
+                or type(self.review) is not ChecklistQualificationReview):
+            raise ChecklistQualificationError()
+        self.review.__post_init__()
+        for value in self.evidence:
+            value.__post_init__()
+        if (self.review.subject_type != self.subject_type
+                or self.review.subject_id != self.subject_id
+                or self.review.subject_version_id != self.subject_version_id
+                or not hmac.compare_digest(
+                    self.review.subject_fingerprint,
+                    self.content_fingerprint,
+                )):
+            raise ChecklistQualificationError()
+
+    @property
+    def coherence_key(self) -> tuple[str, uuid.UUID, uuid.UUID, uuid.UUID]:
+        return (
+            self.subject_type, self.subject_id, self.subject_version_id,
+            self.review.review_round_id,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class AggregateChecklistQualification:
+    """A stable project scope composed only of real approved subjects."""
+
+    project_id: uuid.UUID
+    stage_key: str
+    item_key: str
+    subjects: tuple[ChecklistQualificationSubject, ...]
+    scope_evidence: tuple[ChecklistQualificationEvidence, ...]
+    scope_fingerprint: bytes
+    qualification_fingerprint: bytes
+
+    def __post_init__(self) -> None:
+        if (not _id(self.project_id)
+                or self.item_key not in _ITEM_STAGES
+                or self.stage_key != _ITEM_STAGES.get(self.item_key)
+                or type(self.subjects) is not tuple or not self.subjects
+                or any(type(value) is not ChecklistQualificationSubject
+                       for value in self.subjects)
+                or type(self.scope_evidence) is not tuple
+                or any(type(value) is not ChecklistQualificationEvidence
+                       for value in self.scope_evidence)
+                or len({value.evidence_id for value in self.scope_evidence})
+                   != len(self.scope_evidence)
+                or type(self.scope_fingerprint) is not bytes
+                or len(self.scope_fingerprint) != 32
+                or type(self.qualification_fingerprint) is not bytes
+                or len(self.qualification_fingerprint) != 32):
+            raise ChecklistQualificationError()
+        for value in self.subjects:
+            value.__post_init__()
+        for value in self.scope_evidence:
+            value.__post_init__()
+        order = tuple((value.subject_type, value.subject_id.int,
+                       value.subject_version_id.int)
+                      for value in self.subjects)
+        if (order != tuple(sorted(order))
+                or len({value.subject_id for value in self.subjects})
+                   != len(self.subjects)
+                or len({value.subject_version_id for value in self.subjects})
+                   != len(self.subjects)
+                or len({value.review.review_id for value in self.subjects})
+                   != len(self.subjects)
+                or len({value.review.review_round_id for value in self.subjects})
+                   != len(self.subjects)
+                or any(value.review.project_id != self.project_id
+                       for value in self.subjects)
+                or any(evidence.project_id != self.project_id
+                       for value in self.subjects for evidence in value.evidence)
+                or any(value.project_id != self.project_id
+                       for value in self.scope_evidence)):
+            raise ChecklistQualificationError()
+
+    @property
+    def coherence_key(self) -> tuple[
+        str, bytes, tuple[tuple[str, uuid.UUID, uuid.UUID, uuid.UUID], ...],
+    ]:
+        return (
+            self.stage_key, self.scope_fingerprint,
+            tuple(value.coherence_key for value in self.subjects),
+        )
+
+    @property
+    def subject_version_refs(self) -> tuple[uuid.UUID, ...]:
+        return tuple(value.subject_version_id for value in self.subjects)
+
+    @property
+    def review_round_refs(self) -> tuple[uuid.UUID, ...]:
+        return tuple(value.review.review_round_id for value in self.subjects)
+
+    @property
+    def evidence_refs(self) -> tuple[uuid.UUID, ...]:
+        return tuple(sorted({
+            evidence.evidence_id
+            for subject in self.subjects for evidence in subject.evidence
+        } | {
+            evidence.evidence_id for evidence in self.scope_evidence
+        }, key=lambda value: value.int))
+
+
+ChecklistQualificationResult = (
+    CurrentChecklistQualification | AggregateChecklistQualification
+)
+
+
 class ChecklistQualificationOwnerPort(Protocol):
     def qualify_only_current_in_transaction(
         self, transaction: object,
         query: CurrentChecklistQualificationQuery,
-    ) -> CurrentChecklistQualification: ...
+    ) -> ChecklistQualificationResult: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -202,7 +332,7 @@ class ChecklistQualificationRegistry:
     def qualify_only_current_in_transaction(
         self, transaction: object,
         query: CurrentChecklistQualificationQuery,
-    ) -> CurrentChecklistQualification:
+    ) -> ChecklistQualificationResult:
         if transaction is None or type(query) is not CurrentChecklistQualificationQuery:
             raise ChecklistQualificationError()
         query.__post_init__()
@@ -213,7 +343,9 @@ class ChecklistQualificationRegistry:
             result = owner.qualify_only_current_in_transaction(
                 transaction, query,
             )
-            if type(result) is not CurrentChecklistQualification:
+            if type(result) not in {
+                    CurrentChecklistQualification,
+                    AggregateChecklistQualification}:
                 raise ChecklistQualificationError()
             result.__post_init__()
             if (result.project_id != query.project_id

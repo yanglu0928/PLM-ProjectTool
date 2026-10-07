@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/REQ-01-A12-A02 新增Workflow内部多Subject资格集合，逐成员保留真实
+  Subject/Version/Evidence/Approved Review，固定规范顺序、范围/资格指纹、复数Version/Review/Evidence
+  投影；注册表兼容既有Handover/Survey单Subject Owner。兼容性/回滚：无Schema/API/依赖/权限/外发，
+  A03前未生产注册；撤新增类型与union即可回滚。验证：新增4、定向15、后端3073项/3跳过、compileall、
+  wheel1165项/`cedcb4d5…eb4e`PASS。已知问题：A03～A07、Gate3/UAT/发行待。
+
 - 2026-10-08：0.1.0-dev.0/REQ-01-A12-A01 完成Requirement Workflow资格前置核查并登记
   `CR-REQ-004`：现有单Subject合同不能覆盖项目多Approved RequirementVersion，采用真实多Subject
   集合、逐Version ReviewRound和稳定范围指纹；禁止单需求代替全集、合成批准或用Package静默排除。

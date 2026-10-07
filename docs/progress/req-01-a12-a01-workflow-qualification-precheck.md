@@ -40,4 +40,3 @@
   Transition/Windows接线；A05 Windows 11真实PG；A06前端；A07真实Edge完整三阶段推进。
 - 本项纯设计和静态对账，无运行代码、Schema/Migration、公开路由、依赖、Secret、客户数据或外发变化；
   不声称Requirement资格、PROTOTYPE推进、Gate 3、UAT或发行通过。
-

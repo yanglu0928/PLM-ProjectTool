@@ -50,4 +50,3 @@ Owner。因此不能靠选择某个Package静默排除未入包Requirement。Req
 - 分步验证：聚合集合合同与旧Owner兼容、Requirement current-fact Owner、服务/HTTP/Windows接线、
   Windows 11/PostgreSQL 18.6并发/漂移/重放、前端与真实Edge。Windows Server 2025另验；Debian 13按
   用户指令跳过。不得用单元测试或合成状态宣称Gate 3通过。
-

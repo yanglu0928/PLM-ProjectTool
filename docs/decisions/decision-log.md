@@ -9755,3 +9755,14 @@
   只有复数真实批准与明确决定才能满足两个Requirement Checklist item。
 - Impact/Rollback：A01仅文档；后续停注册Requirement Owner和PROTOTYPE推进即可回滚运行流量，历史不
   改写。A02～A07分别验证合同、Owner、生产接线、PG、前端与Edge，未完成前不宣称资格或Gate通过。
+
+# DEC-20261008-1015：聚合资格成员保留各自 Review 且集合顺序规范化
+
+- Date/WBS：2026-10-08 / `REQ-01-A12-A02`；依据CR-REQ-004和既有单Subject registry。
+- Decision：聚合合同不保留伪造的“主Subject”；每个成员独立绑定真实Version/Evidence/Review，成员按
+  `(subject_type, subject_id, subject_version_id)`规范排序，集合scope fingerprint和成员coherence
+  共同作为双Checklist一致性键。注册表只接受精确单Subject或Aggregate类型。
+- Reason：伪主Subject会重新引入不存在的项目级批准；无规范顺序会让同一范围因查询顺序产生不同Gate；
+  只保留Review ID列表会丢失每个Review与Version/指纹的对应关系。
+- Impact/Rollback：纯内部未注册增量，无Schema/API/依赖/权限或外发。新增4、兼容11、后端3073/3、
+  wheel1165项/`cedcb4d5…eb4e`通过；A03 Owner前无生产行为变化。
