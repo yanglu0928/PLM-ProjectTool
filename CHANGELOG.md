@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/REQ-01-A03-P01 新增Package/Requirement内部创建Owner、PM/实施成员策略、
+  持久幂等/Audit及Migration0112不可变首结果；Requirement code收紧为项目内大写规范唯一的ASCII键。
+  兼容性/升级：空结果历史可降0111，有历史须向前修复；无公开API、依赖、Secret或外发。验证：定向23、
+  后端2966项/3跳过、Win11/PG18.6并发/回滚/伪造/升降/drift、wheel1117项/`5dd79c19…73e1`通过。
+  已知问题：A03-P02/P03、A04 Version、HTTP/UI/Workflow、Gate3/UAT/发行待。
+
 - 2026-10-07：0.1.0-dev.0/REQ-01-A02 新增Requirement三表ORM与Migration0111，固定项目内规范化
   requirement code、同项目Package membership、初态Owner关闭、正式指针A04前强制为空及历史拒降。
   兼容性/升级：PostgreSQL 18；空历史可降0110，存在历史向前修复/备份恢复；无公开API、依赖、Secret

@@ -6,7 +6,9 @@ import unittest
 from unittest.mock import patch
 
 from plm_assistant.modules.requirement.infrastructure.orm import (
+    RequirementCreateResultRow,
     RequirementPackageMembershipRow,
+    RequirementPackageCreateResultRow,
     RequirementPackageRow,
     RequirementRow,
 )
@@ -29,6 +31,13 @@ class RequirementIdentitySchemaTests(unittest.TestCase):
                 self.assertIn("project_id", table.c)
         self.assertTrue(
             RequirementRow.__table__.c.current_approved_version_ref.nullable
+        )
+        self.assertEqual(
+            [
+                RequirementPackageCreateResultRow.__table__.name,
+                RequirementCreateResultRow.__table__.name,
+            ],
+            ["req_package_create_results", "req_requirement_create_results"],
         )
 
     def test_same_project_code_and_membership_constraints_exist(self) -> None:
@@ -79,6 +88,26 @@ class RequirementIdentitySchemaTests(unittest.TestCase):
         execute.assert_not_called()
         self.assertIn(
             "Requirement identity history prevents downgrade",
+            inspect.getsource(migration.downgrade),
+        )
+
+    def test_create_result_delta_is_immutable_and_history_safe(self) -> None:
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions."
+            "20261007_0112_requirement_create_results"
+        )
+        self.assertEqual(migration.down_revision, "20261007_0111")
+        for required in (
+            "Requirement create result history is immutable",
+            "Requirement create result history cannot be truncated",
+            "Requirement create result does not match initial identity",
+        ):
+            self.assertIn(required, migration._GUARDS)
+        with patch.object(migration.context, "is_offline_mode", return_value=True):
+            with self.assertRaisesRegex(RuntimeError, "offline Requirement create"):
+                migration.downgrade()
+        self.assertIn(
+            "Requirement create result history prevents downgrade",
             inspect.getsource(migration.downgrade),
         )
 

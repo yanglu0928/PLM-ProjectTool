@@ -9300,3 +9300,14 @@
   支持归档/安全限制且不发明Package审批流程。规范code避免大小写重复业务身份。
 - Impact/Rollback：新增三表/ORM/Migration0111，无公开API、依赖、Secret或外发。空历史可降0110；
   有历史拒降并向前修复。Win11/PG18.6、后端2961/3和wheel1113项验证通过；A03前写Owner保持关闭。
+
+# DEC-20261007-976：创建幂等以 Owner 自有不可变结果快照保留首响应
+
+- Date/WBS：2026-10-07 / `REQ-01-A03-P01`；依据CR-REQ-001和通用receipt最小引用合同。
+- Decision：Package和Requirement创建各保存一个不可变首成功投影；receipt只引用Root ID。重放先重证
+  当前Session/Project角色，再读历史投影，不用可能已被后续Patch改变的Root冒充首响应。数据库触发器
+  在结果INSERT时重证Root的初态字段、时间和v0；更新、删除、截断及有历史降级全部拒绝。
+- Reason：A03后续会修改name/code/state，仅返回当前Root会破坏Idempotency-Key首响应语义；扩展全局
+  receipt为模块JSON会扩大平台边界并引入不可信动态形状。
+- Impact/Rollback：Migration0112新增两个操作历史表并收紧Requirement code为ASCII业务键；无公开API、
+  依赖或外发。空历史可降0111；有历史向前修复。Win11/PG18.6、后端2966/3及wheel1117项通过。

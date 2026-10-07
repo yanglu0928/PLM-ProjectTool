@@ -65,3 +65,12 @@ Assumption、Exclusion、Dependency；API-04 固定 22 个 project-scoped Operat
 - A03 Owner 安装前只允许 ACTIVE 初始 INSERT；UPDATE、DELETE、TRUNCATE 全部失败关闭。空历史可降至
   0110，任一新表存在历史即拒绝物理降级。Windows 11 / PostgreSQL 18.6、Alembic drift、后端全量与
   wheel 验证均通过；未开放 HTTP、正式业务 Owner 或 RequirementVersion。
+
+## A03 拆分与 P01 实施记录（2026-10-07）
+
+A03 为避免一个任务同时开放多种状态机，拆为：P01 Package/Requirement 创建；P02 Package元数据与
+membership；P03 Requirement元数据及 DEFER/REJECT 决定。P01 新增两类内部创建 Owner、两个不可变
+首成功结果表和 Migration0112；通用 receipt 只保存引用，精确首响应由 Owner 自有结果快照保存。
+Requirement code 收紧为 64 位 ASCII 业务键并在项目内按大写规范值唯一。创建写在同一事务完成当前
+Session/CSRF、项目角色、License、Root、结果、Audit 与 receipt；PM和ImplementationMember可创建，
+其他角色失败关闭。尚未开放 Router，也未开放 P02/P03 变更状态。

@@ -126,6 +126,10 @@ class RequirementRow(Base):
             name="ck_req_requirements__code",
         ),
         CheckConstraint(
+            "requirement_code ~ '^[A-Za-z][A-Za-z0-9_.-]{0,63}$'",
+            name="ck_req_requirements__code_pattern",
+        ),
+        CheckConstraint(
             "char_length(requirement_code_normalized) BETWEEN 1 AND 64 "
             "AND requirement_code_normalized=btrim(requirement_code_normalized) "
             "AND requirement_code_normalized=upper(requirement_code)",
@@ -221,4 +225,60 @@ class RequirementPackageMembershipRow(Base):
         TIMESTAMP(timezone=True, precision=6),
         nullable=False,
         server_default=text("statement_timestamp()"),
+    )
+
+
+class RequirementPackageCreateResultRow(Base):
+    """Immutable first-success Package view for idempotent create replay."""
+
+    __tablename__ = "req_package_create_results"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["requirement_package_id", "project_id"],
+            ["plm.req_packages.requirement_package_id", "plm.req_packages.project_id"],
+            name="fk_req_package_create_results__package",
+            ondelete="NO ACTION",
+        ),
+        CheckConstraint(
+            "char_length(name) BETWEEN 1 AND 255 AND name=btrim(name)",
+            name="ck_req_package_create_results__name",
+        ),
+        {"schema": "plm"},
+    )
+
+    requirement_package_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True
+    )
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False
+    )
+
+
+class RequirementCreateResultRow(Base):
+    """Immutable first-success Requirement view for idempotent create replay."""
+
+    __tablename__ = "req_requirement_create_results"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["requirement_id", "project_id"],
+            ["plm.req_requirements.requirement_id", "plm.req_requirements.project_id"],
+            name="fk_req_requirement_create_results__requirement",
+            ondelete="NO ACTION",
+        ),
+        CheckConstraint(
+            "requirement_code ~ '^[A-Za-z][A-Za-z0-9_.-]{0,63}$'",
+            name="ck_req_requirement_create_results__code",
+        ),
+        {"schema": "plm"},
+    )
+
+    requirement_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True
+    )
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    requirement_code: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False
     )
