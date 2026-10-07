@@ -212,3 +212,10 @@ Migration0132新增不可变Review状态结果并开放`PRT-03 + PROTOTYPE_ALL_V
 批准在同一调用方事务重证Template、当前Approved Requirement、Document及Create规范内容指纹；批准推进正式
 指针并SUPERSEDE旧版，退回/撤回保留旧指针。Win11/PG18.6统一Review真实链、输入漂移回滚、后端
 3144/3/4684 subtests及wheel1209项/`a30b16ca…827a33`通过；无新Schema/公开API/依赖/外发，进入批准Trace。
+
+## A07-A03-P01 前置核查（2026-10-08）
+
+通用Trace只允许业务Version节点，不能保存Review/Round批准依据；公开TraceCreateService自带UOW，也不能从
+Review终态嵌套调用。选择新增Prototype-owned Approval Trace Manifest固定Review/Round/内容指纹和全部来源，
+并在同一调用方事务通过Trace低层仓储投影Template/Document DERIVED_FROM及Requirement IMPLEMENTS边。
+A03拆为P02 Schema0133、P03 Owner/终态接入；纯文档，不改变冻结API/关系枚举/业务Scope。

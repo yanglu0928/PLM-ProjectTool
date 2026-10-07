@@ -1,5 +1,16 @@
 # 自主决策记录
 
+## DEC-20261008-1043：批准依据使用Manifest绑定，业务版本使用通用Trace边投影
+
+- Date/WBS：2026-10-08 / `PRT-01-A07-A03-P01`；依据PrototypeVersionApproved事件、冻结TRC-01与DEC-1042。
+- Decision：Review/Round不伪装成TraceVersion；Prototype-owned Approval Manifest保存批准身份、内容指纹和
+  来源全集，通用Trace只承载合法Version边：Template/Document DERIVED_FROM、Requirement IMPLEMENTS。
+  APPROVED终态通过调用方同一事务使用Trace低层仓储，禁止嵌套调用公开Trace Service。
+- Reason：`TraceVersionRef`和`trc_links`均无Review/Round类型；仅建业务边会丢批准依据，仅建Manifest又无法供
+  Trace图反向查询；嵌套UOW会留下批准与边不一致的提交窗口。
+- Impact/Rollback：A03拆为Schema0133与Owner投影两项，P01纯文档。后续前向加表，不改公开API/Relation枚举；
+  已批准历史产生后只允许前向修复，不能删除Manifest或Trace历史。
+
 ## DEC-20261008-1042：Prototype审批重算创建指纹并由业务Owner消费终态
 
 - Date/WBS：2026-10-08 / `PRT-01-A07-A02-P02`；依据DEC-1036～1041与统一PROJECT Review合同。

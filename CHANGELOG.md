@@ -1,5 +1,10 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A07-A03-P01 完成Prototype批准Trace前置核查：Review/Round不是合法
+  TraceVersion节点，固定采用Approval Manifest保存批准依据，并把Template/Document以DERIVED_FROM、
+  Requirement以IMPLEMENTS完整投影到Approved PRT-03；拆为Schema0133和同事务Owner两项。兼容性/回滚：
+  纯文档，无Schema/API/代码/依赖/外发。已知问题：P02/P03、Submit/HTTP/前端、Server2025、Gate3/UAT/发行待。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A07-A02-P02 新增Prototype当前事实Validator、真实
   `PRT-03 + PROTOTYPE_ALL_V1` Subject Owner与PostgreSQL仓储；送审/批准重证输入及内容指纹，批准推进指针
   并SUPERSEDE旧版，退回/撤回保留旧指针。兼容性/回滚：无Schema/公开API/依赖/外发；停止注册Owner即可
