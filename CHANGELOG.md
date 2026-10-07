@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/REQ-01-A09-A03 新增RequirementRelation create/list内部Owner，补齐冻结角色
+  策略、同项目固定端点证明、对称输入归一化、分类型DAG、Project行锁并发串行、自然边唯一/请求幂等、
+  Audit及UUIDv7 keyset分页。兼容性/回滚：内部增量，无Schema、公开API、依赖、Secret或外发；可关闭
+  Owner并保留关系历史。验证：定向12、后端3025项/3跳过、Win11/PG18.6并发互补边/分页/隔离/drift、
+  wheel1151项/`5b44a3c1…ab6d`通过。已知问题：A09-A04、A10～A12、Gate3/UAT/发行待。
+
 - 2026-10-07：0.1.0-dev.0/REQ-01-A09-A02 新增Migration0121与RequirementRelation ORM，落实同项目
   固定Version组合FK、五类关系、规范对称端点、ACTIVE唯一/双向索引及不可逆REVOKED/SUPERSEDED守卫；
   DAG/并发证明继续关闭至Owner。兼容性/升级：内部Schema增量，无公开API、依赖、Secret或外发；空历史

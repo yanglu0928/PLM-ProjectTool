@@ -188,6 +188,13 @@ POLICIES: dict[str, _Policy] = {
     "REQ_VERSION_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "REQ_VERSION_VALIDATE": _Policy(
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
+    "REQ_RELATION_LIST": _Policy(ALL_MEMBERS, False, lock_reads=True),
+    "REQ_RELATION_CREATE": _Policy(
+        frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
+    "REQ_RELATION_REVOKE": _Policy(
+        frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
+    "REQ_RELATION_SUPERSEDE": _Policy(
+        frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
     "REQ_PATCH": _Policy(
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
     "REQ_DEFER": _Policy(

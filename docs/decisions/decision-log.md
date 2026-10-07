@@ -9557,3 +9557,14 @@
   A04 Owner同事务执行；当前业务写入口继续关闭。
 - Impact/Rollback：Schema head升至0121，无公开API、依赖、Secret或外发；空历史可降0120，有历史向前
   修复。Win11/PG18.6、定向21、后端3020/3及wheel1149项/`c87c9c8d…ff97`通过。
+
+# DEC-20261007-997：关系图写以 Project 行锁串行，自然边唯一不替代请求幂等
+
+- Date/WBS：2026-10-07 / `REQ-01-A09-A03`；依据DEC-995/996及冻结REQ_RELATION_CREATE/LIST。
+- Decision：create在项目写授权取得Project行锁后，才证明端点、执行分类型反向可达检查并插入边；同项目
+  图写串行，跨项目仍可并发。DUPLICATES/CONFLICTS_WITH在请求指纹前规范化。ACTIVE唯一边使不同Key的
+  同义创建返回同一边，但每个成功Key仍保存独立receipt；Audit仅在物理插入时产生一次。
+- Pagination：list按UUIDv7 relation ID倒序keyset并限定Project；不把端点正文或Version内容复制到关系
+  投影。所有当前项目成员可读，CREATE/REVOKE/SUPERSEDE均为ProjectManager或ImplementationMember。
+- Evidence：Win11/PG18.6两位Actor并发互补PARENT_OF边只有一笔成功，另一笔观察提交后报cycle；定向12、
+  后端3025/3及wheel1151项/`5b44a3c1…ab6d`通过。无Schema、公开API、Secret或外发变化。

@@ -244,3 +244,12 @@ shape/不可变生命周期，递归图证明由同事务Owner完成。无公开
 改写、删除与截断；有历史拒降。DAG递归和Project串行锁按A01边界留A03/A04 Owner，不以Schema虚报。
 Win11/PG18.6升降/drift及全部正负例、定向21、后端3020/3、wheel1149项通过；首轮全量唯一失败是既有
 RAG随机密文末字节恰为固定替换值导致的无实际篡改，独立10次与完整复跑通过，未跨WBS修改RAG。
+
+## A09-A03 实施记录（2026-10-07）
+
+新增RequirementRelation create/list Service与Repository并补齐四项冻结授权策略。写命令在Project写授权
+取得行锁后证明两端组合身份、规范化对称端点、按DEPENDS_ON/PARENT_OF分别递归防环，并以ACTIVE唯一
+边提供自然幂等；Idempotency receipt、Audit和边写入同事务。列表由任一当前项目成员读取，以UUIDv7关系
+ID倒序keyset分页且仅限项目。Win11/PG18.6真实Session/CSRF/License/角色、反向对称输入、分页、端点
+错配、类型DAG和两位Actor并发互补边通过；定向12、后端3025/3及wheel1151项通过。无Schema、公开API、
+Secret或外发变化，进入A04 revoke/supersede。
