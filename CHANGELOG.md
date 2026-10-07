@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/REQ-01-A08-A01 完成Requirement Review正式化前置核查，固定复用
+  `REQ-03 + REQUIREMENT_ALL_V1` PROJECT Review、最新DRAFT锁、送审/批准当前事实重验及终态原子消费；
+  A08拆为Migration0120和Subject Owner。兼容性/回滚：纯文档，无Schema、API、程序、依赖、Secret或
+  外发。验证：冻结合同、Review内核、Migration0116～0119、A06/A07静态对账。已知问题：A08-A02、
+  A09～A12、Gate3/UAT/发行待。
+
 - 2026-10-07：0.1.0-dev.0/REQ-01-A07 新增RequirementVersion当前事实校验报告Owner，复算指纹/计数，
   重证来源、Capability和双侧Evidence，检查验收标准、声明冲突及四类分类；PENDING明确未通过，原Key
   回放首次Audit且不改变Version。兼容性/回滚：内部增量，无Schema、Migration、公开API、依赖、Secret

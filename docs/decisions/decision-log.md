@@ -9497,3 +9497,16 @@
 - Impact/Rollback：内部Service/Repository/Audit proof/策略增量，无Schema/Migration/公开API/依赖/
   Secret/外发；停止Owner即可回滚，既有Audit/receipt保留。Win11/PG18.6、定向14、后端3013/3及
   wheel1145项通过。
+
+# DEC-20261007-992：Requirement 复用 PROJECT Review 且终态由 Subject Owner 原子消费
+
+- Date/WBS：2026-10-07 / `REQ-01-A08-A01`；依据冻结REQ-03、REQUIREMENT_ALL_V1及现有Review内核。
+- Decision：不新增Requirement专用Review表或状态机；只允许ACTIVE Root的最新DRAFT进入统一PROJECT
+  Review。送审和APPROVE均重跑A07 CurrentValidator，不能用历史Validate PASS替代当前事实。
+- Terminal：APPROVED将当前Version置正式、旧正式版SUPERSEDED并更新Root指针；RETURNED/WITHDRAWN
+  映射Version RETURNED且不改变旧指针。Review先形成终态，Requirement Subject在同一事务消费并由延迟
+  数据库闭包验证，任一步失败整体回滚。
+- Reason：Review决定与业务正式指针属于不同Owner；复制状态机或异步事后更新都会产生孤立终态。重验
+  当前事实阻止已撤销来源、PENDING或过期能力判断在历史报告掩护下被批准。
+- Impact/Rollback：A01纯文档；A02增量实施Migration与Subject Owner。无API/依赖/Secret/外发；产生
+  Review历史后不得物理降级，采用向前修复。Gate 3不因此关闭。

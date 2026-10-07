@@ -199,3 +199,11 @@ AcceptanceCriterion及声明冲突。STANDARD要求人工CONFIRMED DIRECT；NONS
 CONFIRMED PARTIAL/NONE和明确排除；PENDING始终未通过。业务校验失败仍是成功报告操作，不改变Version；
 原Key恢复首次Audit，新Key重验当前事实。Win11/PG18.6漂移/恢复/重放/拒绝/零状态迁移，定向14、后端
 3013/3及wheel1145项通过；无Schema、Migration、公开API、依赖、Secret或外发变化，进入A08。
+
+## A08 拆分与 A01 编码前核查（2026-10-07）
+
+A08拆为A02-P01 Review生命周期Migration0120和A02-P02 Requirement Subject Owner。复用通用PROJECT
+Review，固定`REQ-03 + REQUIREMENT_ALL_V1`，不新增第二套Review表。只允许ACTIVE Requirement最新DRAFT
+送审；送审和APPROVE均在调用方事务重跑A07 CurrentValidator，历史Validate Audit不能替代当前证明，
+PENDING或任一来源/能力/Evidence漂移均拒绝。APPROVED原子更新Root正式指针并SUPERSEDE旧正式版；
+RETURNED/WITHDRAWN映射Version RETURNED且保留旧指针。HTTP/生产组合留A10，前端留A11。
