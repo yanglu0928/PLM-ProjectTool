@@ -9568,3 +9568,14 @@
   投影。所有当前项目成员可读，CREATE/REVOKE/SUPERSEDE均为ProjectManager或ImplementationMember。
 - Evidence：Win11/PG18.6两位Actor并发互补PARENT_OF边只有一笔成功，另一笔观察提交后报cycle；定向12、
   后端3025/3及wheel1151项/`5b44a3c1…ab6d`通过。无Schema、公开API、Secret或外发变化。
+
+# DEC-20261007-998：Supersede 的 DAG 视图排除旧边，replacement 可复用既有 ACTIVE 边
+
+- Date/WBS：2026-10-07 / `REQ-01-A09-A04`；依据REQ-04 append-only/supersede和DEC-995～997。
+- Decision：supersede先锁旧ACTIVE边，并在同一Project行锁事务中以“ACTIVE图减旧边”检查replacement；
+  否则把A→B替换为B→A会被即将删除的旧边误判成环。replacement若已是相同规范ACTIVE边则复用，
+  否则新建；随后旧边一次性指向replacement并变SUPERSEDED。相同内容替代自身拒绝。
+- Replay：receipt固定返回撤销后的旧边或替代后的replacement，并重证数据库终态/指针；新Key不能再次
+  操作终态。物理新建replacement才写CREATED Audit，旧边总写REVOKED/SUPERSEDED Audit。
+- Evidence：Win11/PG18.6反向替代、既有replacement复用、终态拒写、Audit/receipt/drift，定向14、
+  后端3027/3及wheel1151项/`3ecf0f2e…4aa1`通过。无Schema、公开API、Secret或外发变化。

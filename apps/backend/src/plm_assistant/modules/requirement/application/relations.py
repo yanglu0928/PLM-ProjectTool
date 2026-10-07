@@ -1,4 +1,4 @@
-"""Authorized RequirementRelation create and project-scoped list."""
+"""Authorized RequirementRelation creation, lifecycle and scoped reads."""
 
 from __future__ import annotations
 
@@ -25,6 +25,10 @@ RELATION_TYPES = frozenset({
 SYMMETRIC_TYPES = frozenset({"DUPLICATES", "CONFLICTS_WITH"})
 _OPERATION = "V1_REQ_RELATION_CREATE"
 _RESULT_TYPE = "V1_REQ_RELATION"
+_REVOKE_OPERATION = "V1_REQ_RELATION_REVOKE"
+_REVOKE_RESULT_TYPE = "V1_REQ_RELATION_REVOKED"
+_SUPERSEDE_OPERATION = "V1_REQ_RELATION_SUPERSEDE"
+_SUPERSEDE_RESULT_TYPE = "V1_REQ_RELATION_REPLACEMENT"
 
 
 class RequirementRelationError(RuntimeError):
@@ -56,6 +60,29 @@ class RequirementRelationQuery:
     session_token: bytes = field(repr=False)
     trace_id: uuid.UUID
     project_id: uuid.UUID
+
+
+@dataclass(frozen=True, slots=True)
+class RevokeRequirementRelation:
+    session_token: bytes = field(repr=False)
+    csrf_token: bytes = field(repr=False)
+    trace_id: uuid.UUID
+    project_id: uuid.UUID
+    requirement_relation_id: uuid.UUID
+    idempotency_key: str = field(repr=False)
+
+
+@dataclass(frozen=True, slots=True)
+class SupersedeRequirementRelation:
+    session_token: bytes = field(repr=False)
+    csrf_token: bytes = field(repr=False)
+    trace_id: uuid.UUID
+    project_id: uuid.UUID
+    requirement_relation_id: uuid.UUID
+    source: RequirementVersionRef
+    target: RequirementVersionRef
+    relation_type: str
+    idempotency_key: str = field(repr=False)
 
 
 @dataclass(frozen=True, slots=True)
@@ -91,7 +118,8 @@ class RequirementRelationRepositoryPort(Protocol):
                         target: RequirementVersionRef) -> bool: ...
     def assert_acyclic(self, transaction: object, *, project_id: uuid.UUID,
                        source_version_id: uuid.UUID, target_version_id: uuid.UUID,
-                       relation_type: str) -> None: ...
+                       relation_type: str,
+                       exclude_relation_id: uuid.UUID | None = None) -> None: ...
     def create_active(self, transaction: object, *, project_id: uuid.UUID,
                       source: RequirementVersionRef, target: RequirementVersionRef,
                       relation_type: str, actor_id: uuid.UUID) -> StoredRequirementRelation: ...
@@ -102,6 +130,16 @@ class RequirementRelationRepositoryPort(Protocol):
     def list_relations(self, transaction: object, *, project_id: uuid.UUID,
                        after_relation_id: uuid.UUID | None,
                        limit: int) -> tuple[RequirementRelationView, ...]: ...
+    def lock_active(self, transaction: object, *, project_id: uuid.UUID,
+                    relation_id: uuid.UUID) -> RequirementRelationView | None: ...
+    def revoke_active(self, transaction: object, *, project_id: uuid.UUID,
+                      relation_id: uuid.UUID) -> None: ...
+    def supersede_active(self, transaction: object, *, project_id: uuid.UUID,
+                         relation_id: uuid.UUID,
+                         replacement_id: uuid.UUID) -> None: ...
+    def replacement_matches(self, transaction: object, *, project_id: uuid.UUID,
+                            relation_id: uuid.UUID,
+                            replacement_id: uuid.UUID) -> bool: ...
 
 
 class RequirementRelationService:
@@ -160,6 +198,7 @@ class RequirementRelationService:
                     source_version_id=source.requirement_version_id,
                     target_version_id=target.requirement_version_id,
                     relation_type=command.relation_type,
+                    exclude_relation_id=None,
                 )
                 stored = self._repo.create_active(
                     tx, project_id=command.project_id, source=source,
@@ -187,6 +226,172 @@ class RequirementRelationService:
                         _RESULT_TYPE, stored.requirement_relation_id, 201))
                 view = self._get(
                     tx, command.project_id, stored.requirement_relation_id)
+                tx.commit()
+                return view
+        except RequirementRelationError:
+            raise
+        except IdempotencyError as error:
+            raise RequirementRelationError(error.code) from None
+        except ProjectAuthorizationError as error:
+            raise RequirementRelationError(error.code) from None
+        except RuntimeLicenseError:
+            raise RequirementRelationError("LICENSE_OPERATION_DENIED") from None
+        except Exception:
+            raise RequirementRelationError() from None
+
+    def revoke(self, command: RevokeRequirementRelation) -> RequirementRelationView:
+        self._validate_state_command(command, RevokeRequirementRelation)
+        fingerprint = canonical_payload_fingerprint({
+            "project_id": str(command.project_id),
+            "requirement_relation_id": str(command.requirement_relation_id),
+        })
+        return self._state_command(
+            command, operation=_REVOKE_OPERATION,
+            result_type=_REVOKE_RESULT_TYPE,
+            authorization_operation="REQ_RELATION_REVOKE",
+            request_fingerprint=fingerprint,
+            status_code=200,
+        )
+
+    def supersede(
+        self, command: SupersedeRequirementRelation,
+    ) -> RequirementRelationView:
+        self._validate_state_command(command, SupersedeRequirementRelation)
+        if (type(command.source) is not RequirementVersionRef
+                or type(command.target) is not RequirementVersionRef
+                or not all(self._id(value) for value in (
+                    command.source.requirement_id,
+                    command.source.requirement_version_id,
+                    command.target.requirement_id,
+                    command.target.requirement_version_id))
+                or command.source.requirement_version_id
+                == command.target.requirement_version_id
+                or command.relation_type not in RELATION_TYPES):
+            raise RequirementRelationError("VALIDATION_FAILED")
+        source, target = self._canonical(
+            command.source, command.target, command.relation_type)
+        fingerprint = canonical_payload_fingerprint({
+            "project_id": str(command.project_id),
+            "requirement_relation_id": str(command.requirement_relation_id),
+            "source": self._ref_payload(source),
+            "target": self._ref_payload(target),
+            "relation_type": command.relation_type,
+        })
+        return self._state_command(
+            command, operation=_SUPERSEDE_OPERATION,
+            result_type=_SUPERSEDE_RESULT_TYPE,
+            authorization_operation="REQ_RELATION_SUPERSEDE",
+            request_fingerprint=fingerprint,
+            replacement=(source, target, command.relation_type),
+            status_code=201,
+        )
+
+    def _state_command(
+        self, command, *, operation, result_type,
+        authorization_operation, request_fingerprint, status_code,
+        replacement=None,
+    ):
+        try:
+            validate_idempotency_key(command.idempotency_key)
+            self._guard.require_valid(trace_id=command.trace_id)
+            with self._uow() as tx:
+                actor = self._actor(
+                    self._write_access, tx, command.session_token,
+                    command.csrf_token)
+                self._authorize(
+                    tx, actor, command.project_id, authorization_operation)
+                scope = IdempotencyScope.from_key(
+                    actor_id=actor, project_id=command.project_id,
+                    operation=operation, key=command.idempotency_key)
+                replay = self._receipts.reserve(
+                    tx, scope=scope, request_fingerprint=request_fingerprint)
+                if replay is not None:
+                    if (replay.ref_type != result_type
+                            or replay.status_code != status_code):
+                        raise RequirementRelationError()
+                    view = self._get(tx, command.project_id, replay.ref_id)
+                    if replacement is None:
+                        if (view.requirement_relation_id
+                                != command.requirement_relation_id
+                                or view.relation_state != "REVOKED"):
+                            raise RequirementRelationError()
+                    elif not self._repo.replacement_matches(
+                            tx, project_id=command.project_id,
+                            relation_id=command.requirement_relation_id,
+                            replacement_id=view.requirement_relation_id):
+                        raise RequirementRelationError()
+                    return view
+                before = self._repo.lock_active(
+                    tx, project_id=command.project_id,
+                    relation_id=command.requirement_relation_id)
+                if type(before) is not RequirementRelationView:
+                    raise RequirementRelationError("RESOURCE_NOT_FOUND")
+                if replacement is None:
+                    self._repo.revoke_active(
+                        tx, project_id=command.project_id,
+                        relation_id=command.requirement_relation_id)
+                    result_id = command.requirement_relation_id
+                    action, after_state = "REQUIREMENT_RELATION_REVOKED", "REVOKED"
+                else:
+                    source, target, relation_type = replacement
+                    if (before.source == source and before.target == target
+                            and before.relation_type == relation_type):
+                        raise RequirementRelationError("VALIDATION_FAILED")
+                    if not self._repo.endpoints_exist(
+                            tx, project_id=command.project_id,
+                            source=source, target=target):
+                        raise RequirementRelationError("RESOURCE_NOT_FOUND")
+                    self._repo.assert_acyclic(
+                        tx, project_id=command.project_id,
+                        source_version_id=source.requirement_version_id,
+                        target_version_id=target.requirement_version_id,
+                        relation_type=relation_type,
+                        exclude_relation_id=command.requirement_relation_id)
+                    stored = self._repo.create_active(
+                        tx, project_id=command.project_id, source=source,
+                        target=target, relation_type=relation_type,
+                        actor_id=actor)
+                    if type(stored) is not StoredRequirementRelation:
+                        raise RequirementRelationError()
+                    result_id = stored.requirement_relation_id
+                    self._repo.supersede_active(
+                        tx, project_id=command.project_id,
+                        relation_id=command.requirement_relation_id,
+                        replacement_id=result_id)
+                    if stored.inserted:
+                        self._audit.append(tx, AuditEventDraft(
+                            trace_id=command.trace_id, event_scope="PROJECT",
+                            target_project_id=command.project_id,
+                            actor_type="USER", actor_id=actor,
+                            original_actor_id=None, actor_hint_digest=None,
+                            action="REQUIREMENT_RELATION_CREATED",
+                            outcome="SUCCESS", target_owner_module="requirement",
+                            target_object_type="REQ-04", target_object_id=result_id,
+                            after_state="ACTIVE"))
+                    action, after_state = (
+                        "REQUIREMENT_RELATION_SUPERSEDED", "SUPERSEDED")
+                self._audit.append(tx, AuditEventDraft(
+                    trace_id=command.trace_id, event_scope="PROJECT",
+                    target_project_id=command.project_id,
+                    actor_type="USER", actor_id=actor,
+                    original_actor_id=None, actor_hint_digest=None,
+                    action=action, outcome="SUCCESS",
+                    target_owner_module="requirement", target_object_type="REQ-04",
+                    target_object_id=command.requirement_relation_id,
+                    before_state="ACTIVE", after_state=after_state))
+                self._receipts.complete(
+                    tx, scope=scope, result=IdempotencyResult(
+                        result_type, result_id, status_code))
+                view = self._get(tx, command.project_id, result_id)
+                if replacement is None:
+                    if view.relation_state != "REVOKED" or view.lock_version != 1:
+                        raise RequirementRelationError()
+                elif (view.relation_state != "ACTIVE" or view.lock_version != 0
+                      or not self._repo.replacement_matches(
+                          tx, project_id=command.project_id,
+                          relation_id=command.requirement_relation_id,
+                          replacement_id=result_id)):
+                    raise RequirementRelationError()
                 tx.commit()
                 return view
         except RequirementRelationError:
@@ -282,6 +487,18 @@ class RequirementRelationService:
                 or type(query.session_token) is not bytes
                 or len(query.session_token) != 32
                 or not cls._id(query.trace_id) or not cls._id(query.project_id)):
+            raise RequirementRelationError("VALIDATION_FAILED")
+
+    @classmethod
+    def _validate_state_command(cls, command, expected_type):
+        if (type(command) is not expected_type
+                or type(command.session_token) is not bytes
+                or len(command.session_token) != 32
+                or type(command.csrf_token) is not bytes
+                or len(command.csrf_token) != 32
+                or not cls._id(command.trace_id)
+                or not cls._id(command.project_id)
+                or not cls._id(command.requirement_relation_id)):
             raise RequirementRelationError("VALIDATION_FAILED")
 
     @staticmethod

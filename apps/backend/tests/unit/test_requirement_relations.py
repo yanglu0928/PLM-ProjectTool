@@ -11,7 +11,8 @@ from plm_assistant.modules.project.application.authorization import (
 from plm_assistant.modules.requirement.application.relations import (
     CreateRequirementRelation, RequirementRelationError,
     RequirementRelationQuery, RequirementRelationService,
-    RequirementRelationView, RequirementVersionRef, StoredRequirementRelation,
+    RequirementRelationView, RequirementVersionRef, RevokeRequirementRelation,
+    StoredRequirementRelation, SupersedeRequirementRelation,
 )
 
 
@@ -71,7 +72,7 @@ class RequirementRelationTests(unittest.TestCase):
             self.tx, project_id=self.project,
             source_version_id=self.left.requirement_version_id,
             target_version_id=self.right.requirement_version_id,
-            relation_type="DEPENDS_ON")
+            relation_type="DEPENDS_ON", exclude_relation_id=None)
         self.audit.append.assert_called_once()
         event = self.audit.append.call_args.args[1]
         self.assertEqual(event.action, "REQUIREMENT_RELATION_CREATED")
@@ -128,6 +129,48 @@ class RequirementRelationTests(unittest.TestCase):
         rendered = repr(self.command())
         self.assertNotIn("s" * 32, rendered)
         self.assertNotIn("c" * 32, rendered)
+
+    def test_revoke_is_atomic_and_replayable(self):
+        revoked = RequirementRelationView(
+            self.relation, self.project, self.left, self.right,
+            "DEPENDS_ON", "REVOKED", 1, self.actor, self.now, None)
+        self.repo.lock_active.return_value = self.view
+        self.repo.get.return_value = revoked
+        result = self.service.revoke(RevokeRequirementRelation(
+            b"s" * 32, b"c" * 32, uuid.uuid4(), self.project,
+            self.relation, str(uuid.uuid4())))
+        self.assertEqual(result, revoked)
+        self.repo.revoke_active.assert_called_once_with(
+            self.tx, project_id=self.project, relation_id=self.relation)
+        self.assertEqual(
+            self.receipts.complete.call_args.kwargs["result"].status_code, 200)
+        self.assertEqual(
+            self.audit.append.call_args.args[1].action,
+            "REQUIREMENT_RELATION_REVOKED")
+
+    def test_supersede_excludes_old_edge_and_binds_replacement(self):
+        replacement_id = uuid.uuid4()
+        replacement = RequirementRelationView(
+            replacement_id, self.project, self.left,
+            RequirementVersionRef(uuid.uuid4(), uuid.uuid4()),
+            "PARENT_OF", "ACTIVE", 0, self.actor, self.now, None)
+        self.repo.lock_active.return_value = self.view
+        self.repo.create_active.return_value = StoredRequirementRelation(
+            replacement_id, True)
+        self.repo.get.return_value = replacement
+        self.repo.replacement_matches.return_value = True
+        result = self.service.supersede(SupersedeRequirementRelation(
+            b"s" * 32, b"c" * 32, uuid.uuid4(), self.project,
+            self.relation, replacement.source, replacement.target,
+            replacement.relation_type, str(uuid.uuid4())))
+        self.assertEqual(result, replacement)
+        cycle = self.repo.assert_acyclic.call_args.kwargs
+        self.assertEqual(cycle["exclude_relation_id"], self.relation)
+        self.repo.supersede_active.assert_called_once_with(
+            self.tx, project_id=self.project, relation_id=self.relation,
+            replacement_id=replacement_id)
+        self.assertEqual(
+            self.receipts.complete.call_args.kwargs["result"].status_code, 201)
 
 
 if __name__ == "__main__":

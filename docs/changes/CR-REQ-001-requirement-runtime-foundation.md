@@ -253,3 +253,12 @@ RAG随机密文末字节恰为固定替换值导致的无实际篡改，独立10
 ID倒序keyset分页且仅限项目。Win11/PG18.6真实Session/CSRF/License/角色、反向对称输入、分页、端点
 错配、类型DAG和两位Actor并发互补边通过；定向12、后端3025/3及wheel1151项通过。无Schema、公开API、
 Secret或外发变化，进入A04 revoke/supersede。
+
+## A09-A04 实施记录（2026-10-07）
+
+在同一Relation Service/Repository新增revoke与supersede：两者复用License、Session+CSRF、冻结角色、
+Project行锁、receipt和Audit。Supersede共享锁旧ACTIVE边，从递归DAG中排除旧边后证明replacement；可
+创建新边或复用另一条既有ACTIVE边，再原子将旧边单向终结。Revoke只允许ACTIVE→REVOKED；原Key从
+receipt回放固定终态，新Key对终态失败关闭。Win11/PG18.6验证反向替代、既有replacement复用、终态拒写、
+Audit/receipt/drift，定向14、后端3027/3及wheel1151项通过；首轮仅验收脚本把重放误计为新receipt，
+修正6条后新库复跑。A09完成，进入A10 HTTP/Windows组合。
