@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/REQ-01-A05-A01 完成五类固定来源权威身份、当前资格和事务锁边界对账；
+  Survey/Handover要求业务状态与统一Review双重证明，PROJECT Evidence/Capability使用所属Owner，
+  HUMAN_DECISION首版仅接受既有不可变DEFER/REJECT决定，不虚构范围排除/风险接受Owner。兼容性/回滚：
+  纯文档，无Schema、API、程序、依赖、Secret或外发。验证：冻结合同、现有Owner/ORM/Review链静态对账。
+  已知问题：A05-A02～A04、A06～A12、Gate3/UAT/发行待。
+
 - 2026-10-07：0.1.0-dev.0/REQ-01-A04-A04 新增Source/Assessment Evidence与Version AI Task规范化引用、
   Migration0118及提交时完整闭包；固定七类声明计数/连续ordinal、能力双侧Evidence、PROJECT Evidence
   同一映射及AI Accepted-to-Draft。兼容性/升级：既有身份历史可升级，关闭Owner期间的未审计Version拒绝

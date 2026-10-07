@@ -9394,3 +9394,17 @@
   Draft；旧Schema从未开放Version Owner，静默补默认支持引用会伪造来源与确认。
 - Impact/Rollback：Migration0118/ORM增量，无公开API、依赖或外发；support写保持关闭。空support历史可
   降0117，有历史向前修复。Win11/PG18.6、定向18、后端2983/3及wheel1127项通过。
+
+# DEC-20261007-984：Requirement 来源证明由来源 Owner 重证且人工决定首版限 DEFER/REJECT
+
+- Date/WBS：2026-10-07 / `REQ-01-A05-A01`；依据CR-REQ-001、冻结SourceDecisionRef及既有Owner事实。
+- Evidence/Gap：SurveyConclusion与Handover已有正式Review终态；Evidence与Capability有当前资格Owner。
+  仓库不存在通用范围排除、风险接受或ApprovedException事实Owner，只有Requirement A03受权创建的不可变
+  DEFER/REJECT Decision、Evidence引用与首成功结果闭包。
+- Decision：五类证明均由事实所属模块在调用方事务内共享锁读取；Survey/Handover额外联查精确Review与
+  Round，不信单一状态列。`HUMAN_DECISION`首版只接受已存在的Requirement DEFER/REJECT正式决定；其他
+  决定类型失败关闭，不从自由文本、Action状态或通用Review APPROVED推断。
+- Reason：跨模块直查或动态latest会复制信任逻辑；为完成枚举而虚构通用决定实体会把尚未实现的人工事实
+  伪装成正式来源。限定已验证载体保持可追溯，也允许后续以独立CR扩充新的正式决定Owner。
+- Impact/Rollback：纯设计，无Schema/API/程序/依赖/Secret/外发；A02～A04逐类实现并真库验收，删除增量
+  即可回滚。本项不开放Version写Owner。

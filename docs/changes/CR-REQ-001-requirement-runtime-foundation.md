@@ -132,3 +132,11 @@ trigger在提交时核对七类声明计数、连续ordinal、CapabilityAssessme
 PROJECT双证据、PROJECT_EVIDENCE Source同一映射，以及AI Task已接受到当前requirement Draft。三类
 support Owner继续关闭。0118允许既有身份历史升级，但拒绝自动接纳此前关闭Owner期间由管理员绕过产生
 的Version行，必须另走审计迁移。A04 Schema至此完成；来源对象资格与当前状态由A05 adapter证明。
+
+## A05 拆分与 A01 编码前核查（2026-10-07）
+
+A05拆为A02 SurveyConclusion/Handover、A03 PROJECT Evidence/Capability、A04 Human Decision与五类
+真库闭环。Survey与Handover必须同时证明业务当前状态和统一Review终态；Evidence与Capability由各自
+Owner在调用方事务内共享锁读取当前资格。现有人工正式决定权威载体仅有Requirement A03创建的不可变
+DEFER/REJECT Decision及Evidence/首结果闭包，因此首版`HUMAN_DECISION`只接受该范围；未实现的范围排除、
+风险接受和通用例外不能由备注、Handover Action或通用Review状态推断。
