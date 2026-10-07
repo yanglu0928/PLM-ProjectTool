@@ -9243,3 +9243,14 @@
   重新引入业务耦合。显式映射与registry一致，且便于后续每个阶段按证据逐项开放。
 - Impact/Rollback：无Schema/Migration、新URL、依赖、Secret或外发；移除Survey注册和
   `REQUIREMENT`映射即恢复Handover-only，历史不改写。后端2957/3与wheel通过；真实PG留A05。
+
+# DEC-20261007-971：A05 以已批准 Survey 起点隔离证明资格写链
+
+- Date/WBS：2026-10-07 / `SUR-06-A05`；依据CR-SUR-012 A05/A07边界和已验证SRV-05审批链。
+- Decision：A05复用真实Conclusion Review fixture生成唯一APPROVED Conclusion，然后将Workflow
+  隔离初始化为合法ACTIVE Survey阶段，专门证明preview→record→transition、事务锁、并发栅栏、
+  漂移失败关闭和持久历史。完整`HANDOVER→SURVEY→REQUIREMENT`的用户交互仍由A07 Edge验收。
+- Reason：在A05重复全部Handover构造会混淆该项的Survey原子写链目标；直接SQL伪造
+  APPROVED Conclusion/Review又无法证明当前Owner兼容真审批结果。可选callback保持旧验证默认行为。
+- Impact/Rollback：仅validation资产变化，无产品Schema/API/依赖/Secret/外发；删除A05脚本与
+  callback即可回滚。脚本两次PASS，后端2957/3，临时库全部清理。

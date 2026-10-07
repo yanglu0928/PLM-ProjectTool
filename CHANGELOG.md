@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/SUR-06-A05 新增Windows 11/PostgreSQL 18.6真实Survey Workflow
+  验证：生产组合完成两项资格预览、事务锁、写时/推进时漂移拒绝、并发版本栅栏、
+  2 PASS、`SURVEY→REQUIREMENT`、Audit/receipt/重放和清理。兼容性/回滚：仅新增验证
+  脚本及旧fixture可选callback，无产品Schema/API/依赖/Secret/外发；删除验证增量即可。
+  验证：独立PG执行2次、后端2957项/3跳过、compileall、wheel1109项/
+  `47597ce4…2fe0`通过。已知问题：A06前端、A07全链Edge、Gate3/UAT/发行仍待。
+
 - 2026-10-07：0.1.0-dev.0/SUR-06-A04 将Checklist preview/record、Stage Transition和Windows生产
   组合接入Handover+Survey显式资格registry，新增严格`SURVEY→REQUIREMENT`与Survey
   qualification独立投影；原Handover字段/路径/请求保持不变。兼容性/回滚：无

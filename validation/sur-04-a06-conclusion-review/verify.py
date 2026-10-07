@@ -181,7 +181,7 @@ def fingerprint(
         ))
 
 
-def main() -> None:
+def main(approved_callback=None) -> None:
     database = "sur04a06_" + uuid.uuid4().hex[:8]
     manager_token, reviewer_token = b"m" * 32, b"r" * 32
     with schema.connect("postgres") as admin:
@@ -478,6 +478,28 @@ def main() -> None:
         third_review = submit(third)
         assert decide(third_review, ReviewDecisionKind.APPROVE).state.value \
             == "APPROVED"
+
+        if approved_callback is not None:
+            approved_callback({
+                "database": database,
+                "runtime": runtime,
+                "project_id": ids["project"],
+                "department_id": ids["department"],
+                "manager_id": manager,
+                "manager_token": manager_token,
+                "guard": guard,
+                "audit": audit,
+                "evidence_id": evidence,
+                "document_id": document,
+                "document_version_id": document_version,
+                "evidence_fingerprint": evidence_fingerprint,
+                "document_facts": facts,
+                "survey_id": survey,
+                "survey_conclusion_id": third,
+                "conclusion_series_id": series_id,
+                "review_id": third_review.review_id,
+                "review_round_id": third_review.round_id,
+            })
 
         with schema.connect(database) as db:
             states = db.execute(

@@ -106,3 +106,7 @@ Checklist PASS，或把模板/AI 建议当实际来源都会破坏模块边界�
   `SURVEY→REQUIREMENT`且两项必须共享coherence。Handover HTTP投影保持不变，Survey返回
   独立`survey_conclusion_id`变体。无Schema/API path/依赖/Secret/外发变化；后端
   2957/3、compileall、wheel1109项/`81c9e929…fa4f`通过，进入A05真实PG验证。
+- 2026-10-07 / `SUR-06-A05`：Windows 11/PostgreSQL 18.6隔离库经生产Windows组合验证
+  Survey两项preview/record、Conclusion/Evidence/Review事务锁、写时与推进时漂移重证、
+  并发版本栅栏、两项PASS、`SURVEY→REQUIREMENT`、Audit、receipt和重放；两次执行均
+  PASS并清理临时库。后端2957/3、wheel1109项/`47597ce4…2fe0`通过，进入A06前端。
