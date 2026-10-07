@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/REQ-01-A04-A03 新增RequirementVersion六类有序owned语义表与
+  Migration0117，固定三列项目归属、来源闭合类型、验收五要素、精确Capability引用和AI Candidate边界；
+  六表Owner继续关闭。兼容性/升级：内部增量，无公开API/依赖/Secret/外发；空历史可降0116，有owned
+  历史须向前修复。验证：定向17、后端2982项/3跳过、Win11/PG18.6升降/drift/合法集合及七类负例/
+  截断与历史拒降、wheel1126项/`4f8e8316…8a03`通过。已知问题：A04、A05～A12、Gate3/UAT/发行待。
+
 - 2026-10-07：0.1.0-dev.0/REQ-01-A04-A02 新增RequirementVersion primary与Migration0116，固定同父
   同项目替代链、自替代拒绝、单IN_REVIEW/APPROVED及Root批准指针复合外键；业务写与指针推进继续关闭。
   兼容性/升级：内部增量，无公开API/依赖/Secret/外发；空历史可降0115，有Version历史须向前修复。

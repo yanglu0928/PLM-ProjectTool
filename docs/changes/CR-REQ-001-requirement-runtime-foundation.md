@@ -115,3 +115,12 @@ Requirement、Project复合外键固定同父同项目并禁止自替代；parti
 IN_REVIEW和APPROVED。Requirement当前批准指针增加同样三列复合外键，但既有Root守卫继续禁止其变化，
 直至A08正式化Owner原子更新。全部Version写在A03/A04/A06完成前失败关闭。空历史可降0115，有Version
 历史拒绝降级；Windows 11/PostgreSQL 18.6真实升降、drift、负例、关闭守卫和历史保护通过。
+
+## A04-A03 实施记录（2026-10-07）
+
+Migration0117按冻结名称建立Source、AcceptanceCriterion、CapabilityAssessment、Assumption、Exclusion、
+Dependency六类Version owned表，全部显式携带Version/Requirement/Project复合归属和有序ordinal。
+AcceptanceCriterion物理要求可观察结果、验证方法、数据、环境和Evidence要求；CapabilityAssessment精确
+FK固定GLOBAL CapabilityVersion/Item，AI Candidate只能保留CANDIDATE状态，不能伪装人工确认。
+Dependency仅为版本声明而非A09关系图。Evidence/AI支持引用与声明计数提交闭包留A04；六表业务Owner
+继续关闭。空历史可降0116，有owned历史拒降；Win11/PG18.6真实升降、drift及负例通过。

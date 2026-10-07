@@ -64,6 +64,12 @@ class OrmMetadataTests(unittest.TestCase):
         historical_metadata.discard('plm.req_requirement_decision_evidence_refs')
         historical_metadata.discard('plm.req_requirement_command_results')
         historical_metadata.discard('plm.req_requirement_versions')
+        historical_metadata.discard('plm.req_sources')
+        historical_metadata.discard('plm.req_acceptance_criteria')
+        historical_metadata.discard('plm.req_capability_assessments')
+        historical_metadata.discard('plm.req_assumptions')
+        historical_metadata.discard('plm.req_exclusions')
+        historical_metadata.discard('plm.req_dependencies')
         self.assertIn('plm.ai_providers', Base.metadata.tables)
         self.assertIn('plm.ai_provider_config_versions', Base.metadata.tables)
         self.assertIn('plm.ai_provider_probe_results', Base.metadata.tables)
@@ -121,6 +127,9 @@ class OrmMetadataTests(unittest.TestCase):
             'plm.req_requirement_decision_evidence_refs',
             'plm.req_requirement_command_results',
             'plm.req_requirement_versions',
+            'plm.req_sources', 'plm.req_acceptance_criteria',
+            'plm.req_capability_assessments', 'plm.req_assumptions',
+            'plm.req_exclusions', 'plm.req_dependencies',
         ):
             self.assertIn(table, Base.metadata.tables)
         for table in (

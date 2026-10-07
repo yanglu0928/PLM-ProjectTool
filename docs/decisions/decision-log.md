@@ -9370,3 +9370,15 @@
   DRAFT/APPROVED已可创建或正式指针已可推进。
 - Impact/Rollback：Migration0116/ORM增量，无公开API、依赖、外发或现有行改写。空Version历史可降0115；
   有历史拒降并向前修复。Win11/PG18.6、定向16、后端2981/3及wheel1125项通过。
+
+# DEC-20261007-982：版本 owned 集合以显式语义表固定且 AI 判断保持 Candidate 边界
+
+- Date/WBS：2026-10-07 / `REQ-01-A04-A03`；依据冻结REQ-03、DEC-980及API-04最小输入。
+- Decision：六类集合分别建表并携带Version/Requirement/Project和ordinal。来源类型闭合为批准Survey结论、
+  确认Handover、人工决定、PROJECT Evidence；验收标准五要素非空；能力判断用CapabilityVersion/Item
+  复合FK。AI assessor只能产生CANDIDATE且无人工actor，CONFIRMED/REJECTED必须是HUMAN并固定用户。
+  Assumption/Exclusion/Dependency保存显式文本，Dependency不参与REQ-04 DAG。
+- Reason：避免JSON/数组隐藏归属和顺序、动态Capability latest漂移，以及AI Candidate通过字段组合伪装
+  人工正式判断；Source标签本身不证明上游状态，A05仍须专用adapter重验。
+- Impact/Rollback：Migration0117/ORM增量，无公开API、依赖或外发。所有owned写保持关闭；空历史可降
+  0116，有历史向前修复。Win11/PG18.6、定向17、后端2982/3及wheel1126项通过。
