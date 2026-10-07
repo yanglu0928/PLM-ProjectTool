@@ -246,6 +246,32 @@ class PrototypeIdentitySchemaTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "offline PrototypeTemplate"):
                 migration.downgrade()
 
+    def test_template_create_owner_closes_root_version_artifacts_and_result(self) -> None:
+        self.assertIn(
+            "declared_artifact_count", PrototypeTemplateVersionRow.__table__.c,
+        )
+        self.assertIn(
+            "declared_artifact_count", PrototypeTemplateCommandResultRow.__table__.c,
+        )
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions."
+            "20261008_0128_prototype_template_create"
+        )
+        self.assertEqual(migration.down_revision, "20261008_0127")
+        for required in (
+            "PrototypeTemplate initial state is invalid",
+            "PrototypeTemplate first version is invalid",
+            "PrototypeTemplate ArtifactRef set is incomplete",
+            "PrototypeTemplate has no immutable create result",
+            "pre-existing PrototypeTemplate requires audited migration",
+        ):
+            self.assertIn(required, migration._GUARDS + inspect.getsource(migration.upgrade))
+        with patch.object(migration.context, "is_offline_mode", return_value=True):
+            with self.assertRaisesRegex(
+                RuntimeError, "offline PrototypeTemplate create-owner"
+            ):
+                migration.downgrade()
+
 
 if __name__ == "__main__":
     unittest.main()

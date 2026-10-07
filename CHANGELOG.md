@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A04-A03 新增PROJECT/GLOBAL Template Create Owner、
+  DocumentVersion固定Artifact证明及Migration0128；分Scope授权，Root/v1/引用/结果/Audit/receipt同事务，
+  重放重证权限与License，OutputArtifact未实现时失败关闭。兼容性/升级：前向开放CREATE，无公开API/依赖/
+  外发；空历史可降0127，有历史拒降。验证：Win11/PG18.6真实闭环、定向26、后端3119项/3跳过、compileall、
+  wheel1190项/`9ffbb496…84630d`PASS。已知问题：Revise/Read/HTTP/前端、Server2025、Gate3/UAT/发行待。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A04-A02 新增PrototypeTemplate Schema0127：GLOBAL/PROJECT Root、
   不可变PUBLISHED Version、非可执行布局/组件JSON合同、适用终端、有序ArtifactRef及CREATE/REVISE结果；
   Root指针使用同Template复合延迟FK，A03前Owner关闭。兼容性/升级：已有库前向升级；空Template历史可降

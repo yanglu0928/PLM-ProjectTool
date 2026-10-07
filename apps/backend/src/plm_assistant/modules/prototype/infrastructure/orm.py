@@ -649,6 +649,10 @@ class PrototypeTemplateVersionRow(Base):
             "cardinality(applicable_terminals) BETWEEN 1 AND 16",
             name="ck_prt_template_versions__terminals",
         ),
+        CheckConstraint(
+            "declared_artifact_count BETWEEN 0 AND 100",
+            name="ck_prt_template_versions__artifact_count",
+        ),
         Index(
             "ix_prt_template_versions__scope_project", "scope", "project_id",
             "prototype_template_id", "version_no",
@@ -673,6 +677,9 @@ class PrototypeTemplateVersionRow(Base):
     layout_contract: Mapped[dict[str, object]] = mapped_column(JSONB, nullable=False)
     component_contract: Mapped[dict[str, object]] = mapped_column(JSONB, nullable=False)
     applicable_terminals: Mapped[list[str]] = mapped_column(ARRAY(Text), nullable=False)
+    declared_artifact_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0")
+    )
     created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True, precision=6), nullable=False,
@@ -770,6 +777,10 @@ class PrototypeTemplateCommandResultRow(Base):
             name="ck_prt_template_command_results__fingerprint",
         ),
         CheckConstraint("lock_version>=0", name="ck_prt_template_command_results__lock"),
+        CheckConstraint(
+            "declared_artifact_count BETWEEN 0 AND 100",
+            name="ck_prt_template_command_results__artifact_count",
+        ),
         {"schema": "plm"},
     )
 
@@ -786,6 +797,9 @@ class PrototypeTemplateCommandResultRow(Base):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     version_no: Mapped[int] = mapped_column(Integer, nullable=False)
     content_fingerprint: Mapped[bytes] = mapped_column(nullable=False)
+    declared_artifact_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0")
+    )
     lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True, precision=6), nullable=False,

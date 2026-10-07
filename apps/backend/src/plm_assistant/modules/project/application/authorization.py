@@ -220,6 +220,8 @@ POLICIES: dict[str, _Policy] = {
     "PRT_ARCHIVE": _Policy(MANAGERS, True),
     "PRT_MARK_NOT_REQUIRED": _Policy(
         frozenset({"PROJECT_MANAGER", "CUSTOMER_MANAGER"}), True),
+    "PRT_TEMPLATE_CREATE": _Policy(
+        frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
     "PROJECT_PATCH": _Policy(MANAGERS, True),
     "PROJECT_ARCHIVE": _Policy(MANAGERS, True),
     "PROJECT_MEMBER_LIST": _Policy(MEMBER_READERS, False),

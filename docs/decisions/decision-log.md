@@ -9947,3 +9947,16 @@
   UUID不能保护Scope/状态；让Schema阶段开放半套写入会形成无Audit/无receipt历史。
 - Impact/Rollback：Migration0127新增四表，无公开API/依赖/外发。空历史可降0126，任何Template历史拒降；
   首次drift出现循环排序警告后已按既有版本聚合模式修正并复跑，冻结模型和Operation未改变。
+
+# DEC-20261008-1031：Template Create按Scope分命令并由Artifact Owner证明固定引用
+
+- Date/WBS：2026-10-08 / `PRT-01-A04-A03`；依据冻结PRT-04、DEC-1029/1030及CR-PRT-001。
+- Decision：PROJECT与GLOBAL创建使用不同内部命令和授权入口，不接受客户端自由Scope；先权限、后License、
+  再进入写事务。DocumentVersion固定引用由Document Owner在同事务证明状态、文件和Scope；GLOBAL只接受
+  GLOBAL文档，PROJECT接受GLOBAL或同项目文档。OutputArtifact Owner未实现前失败关闭。Root、首版、引用、
+  结果、Audit和receipt原子提交，重放重证当前权限与License。
+- Reason：自由Scope会扩大权限；裸UUID无法证明目标存在、当前状态或租户边界；在OutputArtifact实现前猜测
+  其表结构会跨Owner写入；重放不重证会让撤权用户继续读取结果。主动内容键必须明确拒绝，但不能用`on*`
+  笼统规则误伤`one`等普通合同字段。
+- Impact/Rollback：Migration0128前向开放CREATE并增加声明计数，无公开API/依赖/外发变化；空历史可降0127，
+  有历史拒降。可停止Service装配回滚流量，已形成的不可变历史不得删除。

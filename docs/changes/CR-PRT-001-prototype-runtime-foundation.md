@@ -121,3 +121,11 @@ Migration0127新增GLOBAL/PROJECT Template Root、不可变PUBLISHED Version、�
 布局/组件合同为JSON对象，适用终端有界，Root当前指针以同Template复合延迟FK固定。A03前四表Owner全部
 关闭且拒绝TRUNCATE；空历史可降，存在历史拒降。Win11/PG18.6真实升级/升降/drift/约束、后端3114/3及
 wheel1185项/`b39bc65e…ae693c84`通过；未开放业务Owner或HTTP。
+
+## A04-A03 实施记录（2026-10-08）
+
+新增PROJECT/GLOBAL Template Create Service、DocumentVersion固定Artifact证明、Repository及Migration0128。
+两个Scope使用独立命令和权限；Root、v1 PUBLISHED不可变Version、有序引用、结果、Audit与receipt同事务，
+持久重放重证权限/License。合同拒绝主动内容但允许`one`等普通字段；GLOBAL不得引用项目文档，OutputArtifact
+Owner未实现时失败关闭。Win11/PG18.6真实闭环、后端3119/3及wheel1190项/
+`9ffbb496…84630d`通过；冻结HTTP仍关闭，进入A04 Revise Owner。
