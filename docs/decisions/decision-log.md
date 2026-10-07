@@ -9612,3 +9612,12 @@
 - Reason：服务器自生key不会让客户端重放变得幂等，反而隐藏内部与冻结API的冲突。
 - Impact/Rollback：无Schema/公开HTTP/依赖变化；历史不删除。Win11/PG18.6、定向6、后端3033/3及
   wheel1153项通过。回滚内部代码时必须同时关闭未来公开PATCH。
+
+# DEC-20261008-1002：Package cursor 不复用其他资源密钥或位置
+
+- Date/WBS：2026-10-08 / `REQ-01-A10-A03-P02`；依据API-01 keyset、DEC-999/1000。
+- Decision：Package列表使用独立32字节密钥和`requirement-packages`用途，签名绑定Project、
+  Session摘要、page size和`(updated_at,package_id)`；Router只通过显式注入开放。
+- Reason：资源间共享cursor会允许跨列表重放；不绑定查询/Session会让位置被不同上下文复用。
+- Impact/Rollback：无Schema/依赖变化；移除Router注入即回滚流量。Win11/PG18.6真实HTTP、定向7、
+  后端3040/3与wheel1156项通过。正式密钥供给留A08。

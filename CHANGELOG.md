@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/REQ-01-A10-A03-P02 新增Package独立签cursor与opt-in Router，
+  实现LIST/CREATE/GET/PATCH/ADD/REMOVE六个冻结HTTP；落实最小投影、ETag/If-Match、
+  Create/ADD/REMOVE持久幂等、PATCH零receipt、安全错误和默认404。兼容性/回滚：无
+  Schema、依赖、Secret或外发；停止注入可关闭流量，历史保留。验证：定向7、后端3040/3、
+  Win11/PG18.6六HTTP/cursor/重放/拒绝/Audit/drift、wheel1156项/`204dd820…a25` PASS。
+  已知问题：A10-A04～A08、A11～A12、正式cursor密钥、Gate3/UAT/发行待。
+
 - 2026-10-08：0.1.0-dev.0/REQ-01-A10-A03-P01 依`CR-REQ-002`将Package PATCH与冻结
   `S,L,C,M,A`对齐：移除内部幂等key/receipt，保留强ETag、不可变结果证明和同事务Audit；
   ADD/REMOVE幂等不变。兼容性/回滚：无Schema、公开HTTP、依赖、Secret或外发；回滚时未来PATCH

@@ -287,3 +287,11 @@ A03公开边界检查发现内部Package PATCH强制幂等key，与冻结API-04�
 冲突。已先登记`CR-REQ-002`，将A03拆为P01 PATCH内部合同对齐和P02六个HTTP。
 P01移除PATCH key/receipt，保留If-Match、不可变command result和同事务Audit；ADD/REMOVE持久
 幂等不变。Win11/PG18.6、定向6、后端3033/3及wheel1153项/`c52ddd2b…e324`通过。
+
+## A10-A03-P02 实施记录（2026-10-08）
+
+新增Package独立HMAC cursor和opt-in Router，按冻结路径开放LIST/CREATE/GET/PATCH/ADD/REMOVE。
+Cursor绑定family/Project/Session/page size/成对位置；写端严格Origin/CSRF/JSON，Create和
+ADD/REMOVE幂等，PATCH仅强If-Match。默认应用不注入仍404，Windows生产组合留A08。
+Win11/PG18.6真实HTTP六Operation/cursor/角色/License/Audit/drift，定向7、后端3040/3及
+wheel1156项/`204dd820…a25`通过。无Schema、依赖、Secret或外发变化；A03完成进入A04。
