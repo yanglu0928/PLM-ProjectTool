@@ -105,4 +105,9 @@
   event；AI只接受当前Invocation绑定的SUCCEEDED SURVEY_ANALYZE Suggestion且保持NOT_FORMAL_FACT。
   Win11/PG18.6四类proof、跨项目/错Round/缺失/角色拒绝和零写通过，后端2917/3、wheel1093项通过。
   无Schema/API/依赖/Secret/外发或客户事实变化，进入A04 create/list/get。
+- 2026-10-07 / `SUR-04-A04`：新增Conclusion create/list/get Owner与仓储；新series为v1，后继只允许
+  精确latest并连续升版，锁序固定为series→Survey/Round→Response→HND→Evidence→AI。创建同事务保存
+  五表快照、Audit和幂等receipt；首版不接受结构化正式决定输入。Win11/PG18.6并发、回滚、v1→v2、
+  stale parent、分页/详情、隔离/撤权和零决定列通过，后端2923/3、wheel1097项通过。无Schema、公开
+  API、依赖、Secret或外发变化，进入A05 Validate。
 

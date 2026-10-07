@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/SUR-04-A04 新增SurveyConclusion create/list/get内部Owner，实施latest-only连续series/version、四类当前proof、五表不可变快照、Project授权、License、幂等、Audit及稳定摘要分页/完整详情；正式范围排除/风险接受入口继续关闭。兼容性/回滚：无Schema/Migration、公开URL、依赖、Secret或外发变化，停组合可关闭新写且历史保留。验证：定向13、后端2923/3、Win11/PG18.6并发/回滚/升版/stale-parent/读取/隔离/撤权/drift、wheel1097项/`37efc361…1adb`通过。已知问题：A05 Validate、A06 Review、HTTP/UI、Survey资格、Gate3/UAT及发行仍待。
+
 - 2026-10-07：0.1.0-dev.0/SUR-04-A03 新增SurveyConclusion四类Owner-owned、调用者事务内来源proof：VALIDATED链尾Response、受权PROJECT_RECORD Evidence、当前HND-03状态、当前Invocation绑定的SUCCEEDED SURVEY_ANALYZE非正式建议。兼容性/回滚：无Schema/Migration、公开API、依赖、Secret、外发或客户事实变化，A04装配前无外部行为，可撤内部模块。验证：单元3、后端2917/3、Win11/PG18.6 drift/四proof/隔离/负例/零写、wheel1093项/`70d6e5f9…3de8`通过。已知问题：A04～A06 Owner/Review、HTTP/UI、Survey资格、Gate3/UAT及发行仍待。
 
 - 2026-10-07：0.1.0-dev.0/SUR-04-A02 新增SurveyConclusion冻结五表ORM与Migration0109，固定series/version、CLOSED Round、VALIDATED链尾Response、SUCCEEDED Survey AI provenance、Evidence/HND-03快照、结构化决定形状、不可变历史与有历史拒降。兼容性/升级：PostgreSQL18，空历史可降0108，存在历史须向前修复/备份恢复；无公开API/依赖/Secret/外发。验证：定向11/27、后端2911/3与4230 subtests、Win11/PG18.6升降/重升/drift/负例、wheel1087项/`c2381c00…98f2`通过。首次全量inventory缺五表失败，补齐后重跑通过。已知问题：Owner/HTTP/UI/Review、Survey资格、Gate3/UAT及发行仍待。

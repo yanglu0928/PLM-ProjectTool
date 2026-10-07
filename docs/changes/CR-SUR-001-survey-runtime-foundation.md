@@ -160,3 +160,6 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
   SURVEY_ANALYZE Task四类最小proof adapters；所有跨模块事实由Owner在调用者事务内锁定并证明，Survey
   不读取私表，AI结果继续标为非正式事实。Win11/PG18.6零写/隔离/负例、后端2917/3和wheel1093项通过；
   无Schema/API/依赖/Secret/外发变化，进入A04 Conclusion Owner。
+- 2026-10-07 / `SUR-04-A04`：新增Conclusion创建/列表/详情内部Owner，固定连续series/version、完整五表
+  来源快照、幂等/Audit/License及稳定分页；不存在正式决定Owner时决定列保持空。Win11/PG18.6并发、
+  回滚、升版、隔离/撤权及drift通过，后端2923/3、wheel1097项通过；HTTP/Review仍关闭，进入A05。

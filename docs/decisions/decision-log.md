@@ -9088,3 +9088,17 @@
   A04未装配前没有外部行为；撤新模块即可回滚。
 - Verification：Win11/PG18.6四类真实proof、跨项目/错Round/缺失/角色拒绝、调用前后源表与Conclusion零写；
   后端2917/3，wheel1093项，SHA-256 `70d6e5f9c6d18b7f01d5ab4506075bd746f11e3c2a3d891c5b174a16f7643de8`。
+
+# DEC-20261007-959：Conclusion 创建按 latest successor 串行且正式决定入口保持关闭
+
+- Date/WBS：2026-10-07 / `SUR-04-A04`；依据CR-SUR-009、Schema0109及DEC-958。
+- Decision：新series由服务端分配并从v1开始；后继必须显式给出同Project/Survey/series的精确latest版本，
+  锁定series后连续分配版本号，禁止从旧祖先分叉。锁序固定为series→Survey/CLOSED Round→Response→
+  HND-03→Evidence→AI，同类按UUID排序。CREATE只接受部门/模块正文和固定来源，不暴露已预留的
+  SCOPE_EXCLUSION/RISK_ACCEPTANCE列；LIST为有界摘要，GET才返回完整固定快照。
+- Reason：允许任意祖先升版会形成无法确定的分支；不同输入顺序锁跨模块来源会增加死锁风险；在无正式
+  决定Owner时接收决定字段会把文本或裸Review ID伪装成授权放行。列表展开全部正文也会造成无界读取。
+- Impact/Rollback：内部Owner、仓储、三项冻结授权策略和验证增量；无Schema/Migration、公开API、依赖、
+  Secret或外发。停止后续组合即可关闭新写，已创建不可变历史保留。
+- Verification：Win11/PG18.6同键并发、Audit回滚、v1→v2、stale parent、三页读取、隔离/撤权、零决定列
+  与drift通过；后端2923/3，wheel1097项，SHA-256 `37efc361153d9829801b265669128b9c1c022b44532d9a88453efe990ed61adb`。
