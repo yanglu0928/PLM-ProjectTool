@@ -1,5 +1,10 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/REQ-01-A01 完成Requirement运行前置核查并登记CR-REQ-001；确认
+  REQ-01～04、六类Version owned集合和冻结22 Operation均无运行实现，旧analyze/match摘要URL不恢复，
+  AI仅生成Candidate。兼容性/回滚：纯文档，无Schema/API/程序/依赖/Secret/外发。验证：冻结DM/SC/
+  API、Trace/Review/AI/Survey当前Owner与仓库模块静态对账通过。已知问题：A02～A12、Gate3/UAT/发行待。
+
 - 2026-10-07：0.1.0-dev.0/SUR-06-A07 新增Windows 11真实Edge前两阶段组合验收；从v0经START、
   Handover两项、`HANDOVER→SURVEY`、Survey两项与`SURVEY→REQUIREMENT`到v7，逐次独立刷新并以SQL
   核对4 records、2 transitions、4 gates、6 audits和7 receipts。兼容性/回滚：仅validation资产，

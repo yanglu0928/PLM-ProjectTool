@@ -9277,3 +9277,12 @@
   以SQL精确校验历史。报告显式继承Handover既有真实性证据，不把代理称为业务复验。
 - Impact/Rollback：偏差只在隔离validation harness；无产品Schema/API/依赖/Secret/外发。删除目录即可
   回滚。Edge 22条API观察、3张截图及REQUIREMENT/v7、4 PASS、2 Transition、4 Gate、7回执全部通过。
+
+# DEC-20261007-974：Requirement 按冻结 22 Operation 分层实现而不恢复旧 analyze 快捷路径
+
+- Date/WBS：2026-10-07 / `REQ-01-A01`；依据Gate 2冻结DM/SC/API-04及CR-REQ-001。
+- Evidence/Conflict：运行仓库无Requirement模块；方案早期摘要的两个analyze/match URL与后续冻结的
+  project-scoped 22 Operation冲突。Trace/AI仅有allowlist，不能冒充Owner或正式业务事实。
+- Decision：冻结API-04优先；先实现identity/package，再实现不可变Version及来源证明、Validate、Review、
+  Relation、HTTP/UI，AI仅提供Candidate。Requirement Workflow资格留到业务正式化后单独映射。
+- Impact/Rollback：纯设计，无Schema/API/代码/依赖/外发。A02起每个Migration按空/历史库和拒降验收。
