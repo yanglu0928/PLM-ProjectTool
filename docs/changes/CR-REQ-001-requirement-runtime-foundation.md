@@ -235,3 +235,12 @@ A09拆为A02 Migration0121、A03 create/list Owner、A04 revoke/supersede Owner�
 RELATED_TO按冻结基线保留方向；DEPENDS_ON、PARENT_OF分别在同关系类型ACTIVE子图防自环/成环，不把
 Version内文本dependency推断成边。所有写先通过Project写授权并锁Project行串行化图变更；Schema只约束
 shape/不可变生命周期，递归图证明由同事务Owner完成。无公开API、Schema或运行代码变化，进入A02。
+
+## A09-A02 实施记录（2026-10-07）
+
+新增Migration0121与`RequirementRelationRow`：两端使用Version+Requirement+Project复合FK，五类关系、
+三态/lock shape、非自关系、DUPLICATES/CONFLICTS_WITH规范顺序、同项目replacement及ACTIVE唯一/
+双向邻接索引均由数据库约束。Trigger只允许初始ACTIVE和一次ACTIVE→REVOKED/SUPERSEDED，拒绝内容
+改写、删除与截断；有历史拒降。DAG递归和Project串行锁按A01边界留A03/A04 Owner，不以Schema虚报。
+Win11/PG18.6升降/drift及全部正负例、定向21、后端3020/3、wheel1149项通过；首轮全量唯一失败是既有
+RAG随机密文末字节恰为固定替换值导致的无实际篡改，独立10次与完整复跑通过，未跨WBS修改RAG。

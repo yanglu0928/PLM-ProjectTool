@@ -27,6 +27,7 @@ from plm_assistant.modules.requirement.infrastructure.orm import (
     RequirementVersionAITaskRefRow,
     RequirementVersionCreateResultRow,
     RequirementReviewStateResultRow,
+    RequirementRelationRow,
 )
 
 
@@ -327,6 +328,34 @@ class RequirementIdentitySchemaTests(unittest.TestCase):
         self.assertIn("REQUIREMENT_ALL_V1", migration._GUARDS)
         with patch.object(migration.context, "is_offline_mode", return_value=True):
             with self.assertRaisesRegex(RuntimeError, "offline Requirement Review"):
+                migration.downgrade()
+
+    def test_requirement_relation_schema_is_fixed_version_and_irreversible(self) -> None:
+        table = RequirementRelationRow.__table__
+        self.assertEqual((table.schema, table.name), ("plm", "req_relations"))
+        names = {constraint.name for constraint in table.constraints}
+        for required in (
+            "uq_req_relations__id_project",
+            "fk_req_relations__source_version",
+            "fk_req_relations__target_version",
+            "fk_req_relations__replacement",
+            "ck_req_relations__symmetric_order",
+            "ck_req_relations__state",
+        ):
+            self.assertIn(required, names)
+        self.assertEqual(
+            {index.name for index in table.indexes},
+            {"uq_req_relations__active_edge", "ix_req_relations__out",
+             "ix_req_relations__in"},
+        )
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions.20261007_0121_requirement_relations")
+        self.assertEqual(migration.down_revision, "20261007_0120")
+        self.assertIn("RequirementRelation lifecycle mutation is invalid",
+                      migration._GUARDS)
+        self.assertIn("history cannot be truncated", migration._GUARDS)
+        with patch.object(migration.context, "is_offline_mode", return_value=True):
+            with self.assertRaisesRegex(RuntimeError, "offline RequirementRelation"):
                 migration.downgrade()
 
 

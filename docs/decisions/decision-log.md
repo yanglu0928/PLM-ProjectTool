@@ -9546,3 +9546,14 @@
   不以无锁触发器伪称并发安全。
 - Impact/Rollback：A01纯文档。A02计划新增Migration0121；A03/A04分别开放create/list和终态命令，A10
   再接冻结HTTP。无Secret、客户数据或外发；Gate3不因此关闭。
+
+# DEC-20261007-996：RequirementRelation Schema 只证明边形状与不可逆生命周期
+
+- Date/WBS：2026-10-07 / `REQ-01-A09-A02`；依据DEC-995、冻结DM中的`relation_state`及SC索引意图。
+- Decision：物理列采用领域基线明确的`relation_state`，SC中的`state='ACTIVE'`视为索引谓词简写；端点
+  保存Requirement+Version+Project并用复合FK。数据库只允许ACTIVE初始态及一次REVOKED/SUPERSEDED，
+  replacement必须是同项目当前ACTIVE边；内容、终态、删除和截断不可改写。
+- Boundary：0121不在触发器内声称完成并发DAG。DEPENDS_ON/PARENT_OF递归证明和Project行锁必须由A03/
+  A04 Owner同事务执行；当前业务写入口继续关闭。
+- Impact/Rollback：Schema head升至0121，无公开API、依赖、Secret或外发；空历史可降0120，有历史向前
+  修复。Win11/PG18.6、定向21、后端3020/3及wheel1149项/`c87c9c8d…ff97`通过。

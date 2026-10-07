@@ -1119,6 +1119,118 @@ class RequirementReviewStateResultRow(Base):
     )
 
 
+class RequirementRelationRow(Base):
+    """REQ-04 fixed-version edge with an irreversible lifecycle."""
+
+    __tablename__ = "req_relations"
+    __table_args__ = (
+        UniqueConstraint(
+            "requirement_relation_id", "project_id",
+            name="uq_req_relations__id_project",
+        ),
+        ForeignKeyConstraint(
+            ["source_requirement_version_id", "source_requirement_id", "project_id"],
+            ["plm.req_requirement_versions.requirement_version_id",
+             "plm.req_requirement_versions.requirement_id",
+             "plm.req_requirement_versions.project_id"],
+            name="fk_req_relations__source_version", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["target_requirement_version_id", "target_requirement_id", "project_id"],
+            ["plm.req_requirement_versions.requirement_version_id",
+             "plm.req_requirement_versions.requirement_id",
+             "plm.req_requirement_versions.project_id"],
+            name="fk_req_relations__target_version", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["created_by"], ["plm.auth_users.user_id"],
+            name="fk_req_relations__creator", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["superseded_by_ref", "project_id"],
+            ["plm.req_relations.requirement_relation_id",
+             "plm.req_relations.project_id"],
+            name="fk_req_relations__replacement", ondelete="NO ACTION",
+        ),
+        CheckConstraint(
+            "relation_type IN ('DEPENDS_ON','PARENT_OF','RELATED_TO',"
+            "'DUPLICATES','CONFLICTS_WITH')",
+            name="ck_req_relations__type",
+        ),
+        CheckConstraint(
+            "source_requirement_version_id<>target_requirement_version_id",
+            name="ck_req_relations__not_self",
+        ),
+        CheckConstraint(
+            "relation_type NOT IN ('DUPLICATES','CONFLICTS_WITH') OR "
+            "ROW(source_requirement_id,source_requirement_version_id)<"
+            "ROW(target_requirement_id,target_requirement_version_id)",
+            name="ck_req_relations__symmetric_order",
+        ),
+        CheckConstraint(
+            "(relation_state='SUPERSEDED' AND superseded_by_ref IS NOT NULL "
+            "AND superseded_by_ref<>requirement_relation_id) OR "
+            "(relation_state IN ('ACTIVE','REVOKED') AND "
+            "superseded_by_ref IS NULL)",
+            name="ck_req_relations__state",
+        ),
+        CheckConstraint(
+            "(relation_state='ACTIVE' AND lock_version=0) OR "
+            "(relation_state IN ('SUPERSEDED','REVOKED') AND lock_version=1)",
+            name="ck_req_relations__lock",
+        ),
+        Index(
+            "uq_req_relations__active_edge", "project_id",
+            "source_requirement_version_id", "relation_type",
+            "target_requirement_version_id", unique=True,
+            postgresql_where=text("relation_state='ACTIVE'"),
+        ),
+        Index(
+            "ix_req_relations__out", "project_id",
+            "source_requirement_version_id", "relation_type",
+            "target_requirement_version_id",
+            postgresql_where=text("relation_state='ACTIVE'"),
+        ),
+        Index(
+            "ix_req_relations__in", "project_id",
+            "target_requirement_version_id", "relation_type",
+            "source_requirement_version_id",
+            postgresql_where=text("relation_state='ACTIVE'"),
+        ),
+        {"schema": "plm"},
+    )
+
+    requirement_relation_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()")
+    )
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    source_requirement_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), nullable=False
+    )
+    source_requirement_version_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), nullable=False
+    )
+    target_requirement_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), nullable=False
+    )
+    target_requirement_version_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), nullable=False
+    )
+    relation_type: Mapped[str] = mapped_column(Text, nullable=False)
+    relation_state: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'ACTIVE'")
+    )
+    lock_version: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("0")
+    )
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+    superseded_by_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+
+
 class RequirementCommandResultRow(Base):
     """Immutable first-success Requirement identity mutation projection."""
 
