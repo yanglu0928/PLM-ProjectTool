@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/SUR-04-A05 新增SurveyConclusion内部Validate Owner，在同一事务重证CLOSED
+  Round、VALIDATED链尾Response、PROJECT_RECORD、HND-03当前状态和AI provenance；冲突、阻断待办、
+  来源漂移/缺失、覆盖不足及未受权正式决定失败关闭，Audit固定幂等报告但不改Conclusion状态。兼容性/
+  回滚：无Schema/Migration、公开URL、依赖、Secret或外发变化，可撤组合而保留历史Audit/receipt。验证：
+  定向14、后端2930/3、Win11/PG18.6 OPEN→CLOSED重验、Evidence撤销、重放/回滚/零状态变更、wheel1100项/
+  `56f87223…e465`通过。已知问题：A06 Review、HTTP/UI、Survey资格、Gate3/UAT及发行仍待。
+
 - 2026-10-07：0.1.0-dev.0/SUR-04-A04 新增SurveyConclusion create/list/get内部Owner，实施latest-only连续series/version、四类当前proof、五表不可变快照、Project授权、License、幂等、Audit及稳定摘要分页/完整详情；正式范围排除/风险接受入口继续关闭。兼容性/回滚：无Schema/Migration、公开URL、依赖、Secret或外发变化，停组合可关闭新写且历史保留。验证：定向13、后端2923/3、Win11/PG18.6并发/回滚/升版/stale-parent/读取/隔离/撤权/drift、wheel1097项/`37efc361…1adb`通过。已知问题：A05 Validate、A06 Review、HTTP/UI、Survey资格、Gate3/UAT及发行仍待。
 
 - 2026-10-07：0.1.0-dev.0/SUR-04-A03 新增SurveyConclusion四类Owner-owned、调用者事务内来源proof：VALIDATED链尾Response、受权PROJECT_RECORD Evidence、当前HND-03状态、当前Invocation绑定的SUCCEEDED SURVEY_ANALYZE非正式建议。兼容性/回滚：无Schema/Migration、公开API、依赖、Secret、外发或客户事实变化，A04装配前无外部行为，可撤内部模块。验证：单元3、后端2917/3、Win11/PG18.6 drift/四proof/隔离/负例/零写、wheel1093项/`70d6e5f9…3de8`通过。已知问题：A04～A06 Owner/Review、HTTP/UI、Survey资格、Gate3/UAT及发行仍待。

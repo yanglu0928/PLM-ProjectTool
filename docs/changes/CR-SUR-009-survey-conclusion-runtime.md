@@ -110,4 +110,9 @@
   五表快照、Audit和幂等receipt；首版不接受结构化正式决定输入。Win11/PG18.6并发、回滚、v1→v2、
   stale parent、分页/详情、隔离/撤权和零决定列通过，后端2923/3、wheel1097项通过。无Schema、公开
   API、依赖、Secret或外发变化，进入A05 Validate。
+- 2026-10-07 / `SUR-04-A05`：新增Conclusion当前事实Validate Owner；调用者事务内重证Round、Response、
+  PROJECT_RECORD、HND-03和AI provenance，稳定报告冲突、阻断待办、来源漂移、覆盖缺失和未受权正式
+  决定。校验只写Audit/receipt、不改状态；同键固定原报告，新键重读当前事实。Win11/PG18.6完成OPEN
+  阻断→CLOSED通过→Evidence撤销失败、回滚和零状态变更，后端2930/3、wheel1100项通过。无Schema、
+  公开API、依赖、Secret或外发变化，进入A06 Review。
 

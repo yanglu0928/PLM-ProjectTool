@@ -9102,3 +9102,19 @@
   Secret或外发。停止后续组合即可关闭新写，已创建不可变历史保留。
 - Verification：Win11/PG18.6同键并发、Audit回滚、v1→v2、stale parent、三页读取、隔离/撤权、零决定列
   与drift通过；后端2923/3，wheel1097项，SHA-256 `37efc361153d9829801b265669128b9c1c022b44532d9a88453efe990ed61adb`。
+
+# DEC-20261007-960：Conclusion Validate 区分不可变内容完整性与当前来源演进
+
+- Date/WBS：2026-10-07 / `SUR-04-A05`；依据CR-SUR-009、DEC-958/959及冻结VALIDATE语义。
+- Decision：VALIDATE锁定不可变Conclusion和owned快照，在同一事务重新证明Round、Response、Evidence、
+  HND-03与AI provenance。根内容指纹以创建时保存的Evidence/issue快照和仍应不可变的Response/AI证明
+  重建；HND-03当前状态另行观察，关闭可解除阻断而不被误报为内容篡改。CONFLICT、未关闭阻断待办、
+  无支持来源、来源缺失/漂移或无正式Owner的决定全部失败关闭。报告写入Audit reason和幂等receipt，
+  不推进Conclusion状态；同键重放原观察，新键重新校验。
+- Reason：把当前Action推进直接参与创建指纹比较会让合法关闭永远成为“篡改”；反之只信创建快照会让
+  Evidence撤销或Response/AI失效继续放行。服务器固定报告既要保持时点可追溯，也不能替代送审时当前重证。
+- Impact/Rollback：新增内部Validator、锁定仓储、Audit replay source和一项冻结Project policy；无Schema、
+  Migration、公开API、依赖、Secret、外发或客户事实。撤组合可关闭校验，历史Audit/receipt继续保留。
+- Verification：定向14、后端2930/3；Win11/PG18.6验证OPEN阻断、关闭后新键PASS、旧键原报告、Evidence
+  撤销失败、Audit故障回滚与DRAFT不变；wheel1100项，SHA-256
+  `56f87223d2a615e9aa29421320a5d09b3c7656bda80bcf4ea73a1be72618e465`。

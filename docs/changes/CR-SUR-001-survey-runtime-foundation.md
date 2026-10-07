@@ -163,3 +163,7 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
 - 2026-10-07 / `SUR-04-A04`：新增Conclusion创建/列表/详情内部Owner，固定连续series/version、完整五表
   来源快照、幂等/Audit/License及稳定分页；不存在正式决定Owner时决定列保持空。Win11/PG18.6并发、
   回滚、升版、隔离/撤权及drift通过，后端2923/3、wheel1097项通过；HTTP/Review仍关闭，进入A05。
+- 2026-10-07 / `SUR-04-A05`：新增Conclusion内部Validate Owner，当前重证Round、Response、Evidence、
+  HND-03与AI provenance，并对冲突、阻断待办、缺失/漂移和未受权决定失败关闭；只生成Audit固定的
+  幂等报告，不改变Conclusion状态。Win11/PG18.6状态推进与Evidence撤销、后端2930/3、wheel1100项
+  通过；HTTP/Review仍关闭，进入A06。
