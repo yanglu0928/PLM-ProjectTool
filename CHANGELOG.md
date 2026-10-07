@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/REQ-01-A02 新增Requirement三表ORM与Migration0111，固定项目内规范化
+  requirement code、同项目Package membership、初态Owner关闭、正式指针A04前强制为空及历史拒降。
+  兼容性/升级：PostgreSQL 18；空历史可降0110，存在历史向前修复/备份恢复；无公开API、依赖、Secret
+  或外发。验证：定向11、后端2961项/3跳过、Win11/PG18.6升降重升/drift/约束负例、wheel1113项/
+  `d9ad6fce…f8ea`通过。已知问题：A03 Owner、A04 Version/组合外键、HTTP/UI/Workflow、Gate3/UAT/发行待。
+
 - 2026-10-07：0.1.0-dev.0/REQ-01-A01 完成Requirement运行前置核查并登记CR-REQ-001；确认
   REQ-01～04、六类Version owned集合和冻结22 Operation均无运行实现，旧analyze/match摘要URL不恢复，
   AI仅生成Candidate。兼容性/回滚：纯文档，无Schema/API/程序/依赖/Secret/外发。验证：冻结DM/SC/

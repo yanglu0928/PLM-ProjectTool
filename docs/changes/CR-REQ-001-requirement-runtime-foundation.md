@@ -52,3 +52,16 @@ Assumption、Exclusion、Dependency；API-04 固定 22 个 project-scoped Operat
 - 应用回滚可移除 Requirement Router/页面/Workflow注册，但不得删除版本、Review、Evidence、Trace、Audit。
 - 无新增依赖、Secret、客户数据外发、License 或环境目标变化；Windows Server 2025 与 Debian 13 仍按
   当前发布策略处理，不能由 Windows 11 结果自动宣称实机通过。
+
+## A02 实施记录（2026-10-07）
+
+- 新增 `req_packages`、`req_requirements`、`req_package_memberships` 及 Migration0111；所有关系均显式
+  带 `project_id`，membership 以两个组合外键阻止跨项目组织，移除 membership 不采用级联删除。
+- 冻结资料只命名 `PackageState` 而未给出枚举。依据项目业务容器既有状态语义，采用
+  `ACTIVE / ARCHIVED / RESTRICTED`，初始仅允许 ACTIVE；该选择记入 DEC-975，后续 Owner 不得静默扩值。
+- `Requirement.current_approved_version_ref` 在身份表先保留为 nullable UUID，但 A04 Version 表建立前
+  由数据库守卫强制为 NULL；A04 再增加同 Requirement、同 Project 的组合外键。此分步不把悬空 UUID
+  或 latest 推断成正式版本。
+- A03 Owner 安装前只允许 ACTIVE 初始 INSERT；UPDATE、DELETE、TRUNCATE 全部失败关闭。空历史可降至
+  0110，任一新表存在历史即拒绝物理降级。Windows 11 / PostgreSQL 18.6、Alembic drift、后端全量与
+  wheel 验证均通过；未开放 HTTP、正式业务 Owner 或 RequirementVersion。

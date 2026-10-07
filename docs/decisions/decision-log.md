@@ -9286,3 +9286,17 @@
 - Decision：冻结API-04优先；先实现identity/package，再实现不可变Version及来源证明、Validate、Review、
   Relation、HTTP/UI，AI仅提供Candidate。Requirement Workflow资格留到业务正式化后单独映射。
 - Impact/Rollback：纯设计，无Schema/API/代码/依赖/外发。A02起每个Migration按空/历史库和拒降验收。
+
+# DEC-20261007-975：身份层先封闭正式指针并固定 Package 状态最小集
+
+- Date/WBS：2026-10-07 / `REQ-01-A02`；依据CR-REQ-001、冻结REQ-01/02和既有项目业务容器状态。
+- Evidence/Gap：冻结模型明确 Requirement 四状态和 PackageState 字段，但未枚举 PackageState；
+  `current_approved_version_ref` 属于身份形状，而它引用的 RequirementVersion 按计划到A04才建表。
+- Decision：Package 状态固定为 `ACTIVE/ARCHIVED/RESTRICTED`，初始仅 ACTIVE；Requirement code 保存
+  原值和项目内唯一的大写规范值。身份层立即保留 nullable正式指针列，但Migration守卫在A04前强制
+  NULL；A04建立Version表时再增加同Requirement、同Project组合外键。membership用双组合外键拒绝
+  跨项目，不以级联删除模拟移除。
+- Reason：省略正式指针会使身份形状二次改列，提前允许UUID则会产生无法证明的正式事实；最小状态集
+  支持归档/安全限制且不发明Package审批流程。规范code避免大小写重复业务身份。
+- Impact/Rollback：新增三表/ORM/Migration0111，无公开API、依赖、Secret或外发。空历史可降0110；
+  有历史拒降并向前修复。Win11/PG18.6、后端2961/3和wheel1113项验证通过；A03前写Owner保持关闭。
