@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/REQ-01-A05-A02 新增SurveyConclusion与Handover的Requirement固定来源
+  proof adapters，将业务APPROVED/当前指针与精确Review、Round、Snapshot和内容指纹共同锁定；只返回
+  最小类型化身份且零写。兼容性/回滚：内部增量，无Schema、API、依赖、Secret或外发；可移除adapter。
+  验证：定向16、后端2986项/3跳过、Win11/PG18.6跨项目/错版本/指纹漂移/受限Root/零写/drift、
+  wheel1131项/`e79903ef…7cd7`通过。已知问题：A05-A03/A04、A06～A12、Gate3/UAT/发行待。
+
 - 2026-10-07：0.1.0-dev.0/REQ-01-A05-A01 完成五类固定来源权威身份、当前资格和事务锁边界对账；
   Survey/Handover要求业务状态与统一Review双重证明，PROJECT Evidence/Capability使用所属Owner，
   HUMAN_DECISION首版仅接受既有不可变DEFER/REJECT决定，不虚构范围排除/风险接受Owner。兼容性/回滚：

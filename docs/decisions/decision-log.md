@@ -9408,3 +9408,14 @@
   伪装成正式来源。限定已验证载体保持可追溯，也允许后续以独立CR扩充新的正式决定Owner。
 - Impact/Rollback：纯设计，无Schema/API/程序/依赖/Secret/外发；A02～A04逐类实现并真库验收，删除增量
   即可回滚。本项不开放Version写Owner。
+
+# DEC-20261007-985：上游正式来源必须绑定业务终态与精确 Review Snapshot
+
+- Date/WBS：2026-10-07 / `REQ-01-A05-A02`；依据DEC-984与既有SRV-05/HND-02终态Owner。
+- Decision：Survey proof同时锁定APPROVED Conclusion、APPROVED Review/Round及同subject/version/指纹的
+  Review Snapshot；Handover proof另要求ACTIVE Analysis当前批准指针精确指向该APPROVED Version。proof
+  只输出固定身份、审批引用、版本号和隐藏指纹，在调用方事务内共享锁读取且零写。
+- Reason：单一业务状态列无法排除错配审批，单一Review APPROVED也不是当前业务事实；Snapshot把实际送审
+  内容与终态连接，Handover当前指针则阻止旧批准Version被当作当前交接结论。
+- Impact/Rollback：新增四个内部模块文件、测试和validation资产，无Schema/API/依赖/Secret/外发；删除
+  adapters即可回滚。Win11/PG18.6、定向16、后端2986/3、wheel1131项通过。
