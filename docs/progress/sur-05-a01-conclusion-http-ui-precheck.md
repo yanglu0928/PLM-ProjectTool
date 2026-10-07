@@ -13,7 +13,7 @@
   Survey cursor key以固定标签派生，不新增部署Secret。列表只返版本摘要，GET 才展开部门/模块结论及
   固定 Evidence/open issue refs，不复制外部正文、路径或私表身份。
 - CREATE 请求严格包含 survey、round、部门/模块结论、Evidence角色、open issue、AI task和可空
-  supersedes；未知字段拒绝，正式排除/风险接受字段继续不开放。VALIDATE 请求体必须为空对象并使用持久
+  supersedes；未知字段拒绝，正式排除/风险接受字段继续不开放。VALIDATE 请求体必须为空并使用持久
   幂等Key。SUBMIT_REVIEW沿用ReviewSubmissionRequest四字段，其中V1要求`due_at/submission_note=null`。
 - ValidationReport公开valid、blocking issues、warnings、coverage summary、checked_at及固定Conclusion身份；
   报告不改变状态。所有返回都使用`no-store`，业务错误只映射冻结错误目录，不暴露数据库或内部异常。

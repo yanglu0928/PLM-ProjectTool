@@ -1,7 +1,13 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/SUR-05-A02 新增默认关闭的SurveyConclusion五Operation严格HTTP、会话/
+  项目/页长绑定cursor、摘要/详情投影、空请求体Validate及业务送审适配；不接受客户端series、不返回
+  owned child row ID，补注册冻结来源错误。兼容性/回滚：无Schema/Migration、依赖、Secret数量或外发，
+  撤Router恢复404。验证：定向10、后端2941/3、compileall、wheel1105项/`67d67ec2…d70`通过。已知问题：
+  A03 Windows真实组合、A04/A05前端/Edge、SUR-06、Server2025、Gate3/UAT及发行仍待。
+
 - 2026-10-07：0.1.0-dev.0/SUR-05-A01 完成SurveyConclusion HTTP/UI前置核查，固定五个冻结Operation、
-  摘要/详情投影、用途派生cursor、空体Validate、通用送审DTO及Evidence/HND待办点击定位；拆分A02～A05。
+  摘要/详情投影、用途派生cursor、空请求体Validate、通用送审DTO及Evidence/HND待办点击定位；拆分A02～A05。
   兼容性/回滚：纯文档，无代码、Schema/Migration、API路径、依赖、Secret或外发变化。验证：冻结API、
   A04～A06 Owner、Windows Survey组合和现有前端定位能力静态对账PASS。已知问题：HTTP/组合/UI/Edge、
   SUR-06资格、Gate3/UAT及发行仍待。

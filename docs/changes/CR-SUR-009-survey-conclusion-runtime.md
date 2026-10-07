@@ -123,4 +123,7 @@
 - 2026-10-07 / `SUR-05-A01`：完成HTTP/UI前置核查，保持冻结五Operation与既有路径；固定列表摘要/
   详情展开、用途派生cursor、空体Validate、通用ReviewSubmission四字段及Evidence/HND点击定位边界。
   拆分A02 HTTP、A03 Windows真实组合、A04前端、A05真实Edge；本项无运行变化。
+- 2026-10-07 / `SUR-05-A02`：新增默认关闭的五Operation严格HTTP、独立family cursor和冻结错误映射；
+  列表/详情不泄漏child row ID，送审series由服务端受权读取不可变映射后交A06 Owner重锁。定向10、
+  后端2941/3、wheel1105项通过；无Schema/依赖/Secret/外发，进入A03 Windows真实组合。
 

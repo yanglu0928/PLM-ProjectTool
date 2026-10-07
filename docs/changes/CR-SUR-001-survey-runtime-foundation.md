@@ -172,3 +172,5 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
   状态机并保持载荷不可变。Win11/PG18.6和后端2938/3通过；进入SUR-05 HTTP/Windows组合/UI。
 - 2026-10-07 / `SUR-05-A01`：对账冻结五个Conclusion Operation与当前Owner，固定严格HTTP投影、用途
   派生cursor、Windows显式装配、写后重读及Evidence/open issue点击定位拆分；纯文档PASS，进入A02。
+- 2026-10-07 / `SUR-05-A02`：完成五个Conclusion Operation严格HTTP与会话绑定cursor；不接收series、
+  不泄漏child row ID或复制外部正文。定向10、后端2941/3和wheel1105项通过；进入A03 Windows组合。

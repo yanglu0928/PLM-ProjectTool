@@ -6,8 +6,8 @@ from datetime import datetime, timezone
 
 from plm_assistant.modules.platform.application.errors import ApplicationError
 from plm_assistant.modules.survey.api.read_cursor import (
-    SurveyAssignmentCursorCodec, SurveyCursorCodec, SurveyRoundCursorCodec,
-    SurveyVersionCursorCodec,
+    SurveyAssignmentCursorCodec, SurveyConclusionCursorCodec,
+    SurveyCursorCodec, SurveyRoundCursorCodec, SurveyVersionCursorCodec,
 )
 
 
@@ -19,6 +19,7 @@ class SurveyReadCursorTests(unittest.TestCase):
         self.versions = SurveyVersionCursorCodec(b"v" * 32)
         self.rounds = SurveyRoundCursorCodec(b"r" * 32)
         self.assignments = SurveyAssignmentCursorCodec(b"q" * 32)
+        self.conclusions = SurveyConclusionCursorCodec(b"c" * 32)
 
     def test_survey_cursor_binds_full_position_and_context(self):
         instant = datetime(2026, 10, 6, 1, 2, 3, 456789, tzinfo=timezone.utc)
@@ -95,6 +96,30 @@ class SurveyReadCursorTests(unittest.TestCase):
                     token, project_id=self.project,
                     survey_round_id=selected_round,
                     session_token=self.session, page_size=30,
+                )
+
+    def test_conclusion_cursor_has_an_independent_family_and_context(self):
+        instant = datetime(2026, 10, 7, 1, 2, 3, 123456, tzinfo=timezone.utc)
+        conclusion_id = uuid.uuid4()
+        token = self.conclusions.encode(
+            project_id=self.project, session_token=self.session, page_size=40,
+            created_at=instant, conclusion_id=conclusion_id,
+        )
+        self.assertEqual((instant, conclusion_id), self.conclusions.decode(
+            token, project_id=self.project, session_token=self.session,
+            page_size=40,
+        ))
+        for codec, project, session, size in (
+            (self.conclusions, uuid.uuid4(), self.session, 40),
+            (self.conclusions, self.project, b"x" * 32, 40),
+            (self.conclusions, self.project, self.session, 41),
+            (SurveyConclusionCursorCodec(b"x" * 32), self.project,
+             self.session, 40),
+        ):
+            with self.assertRaises(ApplicationError):
+                codec.decode(
+                    token, project_id=project, session_token=session,
+                    page_size=size,
                 )
 
 

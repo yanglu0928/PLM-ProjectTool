@@ -9138,9 +9138,21 @@
 
 - Date/WBS：2026-10-07 / `SUR-05-A01`；依据冻结API-04、CR-SUR-009及用户确认的待办/文档定位交互。
 - Decision：只实现LIST/CREATE/GET/VALIDATE/SUBMIT_REVIEW；列表为摘要，详情返回固定最小refs，Evidence
-  与HND待办由前端点击进入受权定位。cursor从现有Survey key用途派生；Validate空体且幂等；送审保留
+  与HND待办由前端点击进入受权定位。cursor从现有Survey key用途派生；Validate空请求体且幂等；送审保留
   通用四字段并在V1要求未持久字段为null。页面写后重读且不把模板/AI建议称为客户事实。
 - Reason：复制正文到表格既不利于确认也会扩大敏感数据面；新增latest/修改/删除路径或额外Secret均无
   冻结基线依据。内部Owner已完整，不需要在HTTP层复制业务规则。
 - Impact/Rollback：纯设计核查，无代码、Schema/API路径、依赖、Secret或外发变化；后续按A02～A05分别
   验证HTTP、Windows组合、前端和Edge，任一证据不足不提前标记SUR-05完成。
+
+# DEC-20261007-963：Conclusion 送审 series 由服务端解析且 HTTP 不暴露 owned row identity
+
+- Date/WBS：2026-10-07 / `SUR-05-A02`；依据冻结路径、CR-SUR-009与A06不可变series/version实现。
+- Decision：SUBMIT_REVIEW请求只从路径接收conclusion_id；HTTP先经受权GET解析不可变series，写Owner仍在
+  自己事务内重锁并验证Project/series/version/latest/current sources。详情省略四类owned child row ID，
+  只返业务定位所需部门/模块key、Response、Evidence/DocumentVersion和HND-03 action ID。
+- Reason：让客户端提交series会扩大冻结ReviewSubmissionRequest并形成可篡改重复身份；内部row ID对定位
+  无帮助且会耦合物理Schema。series字段受数据库不可变trigger保护，因此预读不形成身份漂移窗口。
+- Impact/Rollback：新增默认关闭Router、cursor family及冻结错误注册；无Schema/Migration、依赖、Secret
+  数量或外发。撤Router恢复404，内部Owner和历史不受影响。
+- Verification：定向10、后端2941/3、compileall及wheel1105项通过；真实组合留A03。

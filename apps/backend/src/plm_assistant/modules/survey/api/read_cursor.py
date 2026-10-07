@@ -252,3 +252,60 @@ class SurveyAssignmentCursorCodec(_Codec):
             raise
         except (KeyError, TypeError, ValueError, OverflowError):
             raise ApplicationError("REQUEST_MALFORMED") from None
+
+
+class SurveyConclusionCursorCodec(_Codec):
+    _FIELDS = {
+        "v", "family", "project", "session", "query", "created_at",
+        "conclusion_id",
+    }
+
+    def encode(
+        self, *, project_id: uuid.UUID, session_token: bytes,
+        page_size: int, created_at: datetime, conclusion_id: uuid.UUID,
+    ) -> str:
+        payload = _base(project_id, session_token, page_size)
+        if (type(created_at) is not datetime or created_at.tzinfo is None
+                or created_at.utcoffset() is None
+                or type(conclusion_id) is not uuid.UUID
+                or conclusion_id.int == 0):
+            raise ValueError("invalid SurveyConclusion cursor position")
+        payload.update({
+            "family": "survey-conclusions",
+            "created_at": created_at.astimezone(timezone.utc).isoformat(
+                timespec="microseconds").replace("+00:00", "Z"),
+            "conclusion_id": str(conclusion_id),
+        })
+        return self._encode(payload)
+
+    def decode(
+        self, token: str, *, project_id: uuid.UUID,
+        session_token: bytes, page_size: int,
+    ) -> tuple[datetime, uuid.UUID]:
+        try:
+            value = self._decode(token)
+            expected = _base(project_id, session_token, page_size)
+            if (set(value) != self._FIELDS
+                    or value["family"] != "survey-conclusions"
+                    or any(value[key] != expected[key]
+                           for key in ("v", "project", "session", "query"))
+                    or type(value["created_at"]) is not str
+                    or type(value["conclusion_id"]) is not str):
+                raise ValueError()
+            instant = datetime.fromisoformat(
+                value["created_at"].replace("Z", "+00:00"))
+            identity = uuid.UUID(value["conclusion_id"])
+            if (str(identity) != value["conclusion_id"] or identity.int == 0
+                    or self.encode(
+                        project_id=project_id,
+                        session_token=session_token,
+                        page_size=page_size,
+                        created_at=instant,
+                        conclusion_id=identity,
+                    ) != token):
+                raise ValueError()
+            return instant, identity
+        except ApplicationError:
+            raise
+        except (KeyError, TypeError, ValueError, OverflowError):
+            raise ApplicationError("REQUEST_MALFORMED") from None
