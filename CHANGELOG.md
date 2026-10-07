@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/REQ-01-A10-A04-P02 新增Requirement独立签cursor与opt-in
+  Router，实现LIST/CREATE/GET/PATCH/DEFER/REJECT/ARCHIVE七个冻结HTTP；落实最小投影、
+  ETag/If-Match、决定Evidence、状态命令幂等、PATCH零receipt、安全错误和默认404。
+  兼容性/回滚：无Schema、依赖、Secret或外发，停止注入可关闭流量。验证：定向7、后端
+  3047/3、Win11/PG18.6七HTTP/cursor/决定Evidence/重放/拒绝/Audit/drift及wheel1158项/
+  `b2f8e19c…fc1`PASS。已知问题：A10-A05～A08、A11～A12、正式cursor密钥、Gate3/UAT/发行待。
+
 - 2026-10-08：0.1.0-dev.0/REQ-01-A10-A04-P01 登记`CR-REQ-003`并将Requirement PATCH
   对齐冻结`S,L,C,M,A`：移除内部幂等key/receipt，保留强ETag、不可变command result和
   同事务Audit；DEFER/REJECT/ARCHIVE幂等不变。兼容性/回滚：无Schema、公开HTTP、依赖、

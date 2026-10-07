@@ -9630,3 +9630,12 @@
 - Reason：服务器自生key不能提供客户端重放语义，且会把内部错配伪装成冻结合同实现。
 - Impact/Rollback：无Schema/公开HTTP/依赖变化；历史不删除。Win11/PG18.6、定向5、后端3040/3
   及wheel1156项通过；回滚内部代码时必须同时关闭未来公开PATCH。
+
+# DEC-20261008-1004：Requirement cursor 与 Package cursor 分离
+
+- Date/WBS：2026-10-08 / `REQ-01-A10-A04-P02`；依据API-01 keyset和DEC-999/1002。
+- Decision：Requirement列表使用独立32字节密钥和`requirements`用途，签名绑定Project、
+  Session摘要、page size和`(updated_at,requirement_id)`；Router只通过显式注入开放。
+- Reason：Package与Requirement即使位置形状相同也属于不同资源族，不得允许cursor交叉重放。
+- Impact/Rollback：无Schema/依赖变化；移除Router注入即回滚流量。Win11/PG18.6真实HTTP、定向7、
+  后端3047/3与wheel1158项通过。正式密钥供给留A08。

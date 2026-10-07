@@ -302,3 +302,12 @@ A04公开边界检查发现内部Requirement PATCH强制幂等key，与冻结API
 冲突。已先登记`CR-REQ-003`并将A04拆为P01合同对齐和P02七个HTTP。P01移除PATCH
 key/receipt，保留If-Match、不可变command result和同事务Audit；DEFER/REJECT/ARCHIVE
 持久幂等不变。Win11/PG18.6、定向5、后端3040/3及wheel1156项/`4c1c4cd4…d5`通过。
+
+## A10-A04-P02 实施记录（2026-10-08）
+
+新增Requirement独立HMAC cursor和opt-in Router，按冻结路径开放LIST/CREATE/GET/PATCH/
+DEFER/REJECT/ARCHIVE。Cursor绑定family/Project/Session/page size/成对位置；写端严格Origin/
+CSRF/JSON，CREATE及三个状态命令幂等，PATCH仅强If-Match；决定必须携带Evidence引用。
+默认应用不注入仍404，Windows生产组合留A08。Win11/PG18.6真实七Operation/cursor/角色/
+License/Audit/drift，定向7、后端3047/3及wheel1158项/`b2f8e19c…fc1`通过。
+无Schema、依赖、Secret或外发变化；A04完成进入A05。
