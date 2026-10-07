@@ -191,3 +191,9 @@ Win11/PG18.6 v1→v2、后端3132/3/4671 subtests、compileall及wheel1203项/
 Template、当前Approved Requirement与Document可用性并写Audit。首轮PG夹具JSON冒号被SQLAlchemy当绑定参数，
 改为显式JSONB参数后重跑，不涉及产品缺陷。Win11/PG18.6、后端3136/3/4684 subtests、compileall及
 wheel1205项/`b8ea3055…346ed1c`通过；无Schema/公开API变化，A06完成并进入A07 Review/Formalize。
+
+## A07-A01 前置核查（2026-10-08）
+
+固定`PRT-03 + PROTOTYPE_ALL_V1`复用PROJECT Review Kernel；仅ACTIVE Prototype最新DRAFT可送审，送审及
+APPROVE当下重证A06全部当前事实。A07拆为Migration0132窄门、Subject Owner/终态消费、批准Trace Owner和
+原子SUBMIT_REVIEW。批准推进正式指针并SUPERSEDE旧批准版；退回/撤回保留旧指针。纯文档PASS，无代码/API。

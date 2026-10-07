@@ -1,5 +1,10 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A07-A01 完成PrototypeVersion Review/Formalize前置核查：固定
+  `PRT-03 + PROTOTYPE_ALL_V1`、最新DRAFT/当前事实、批准指针/旧版SUPERSEDE、退回保留旧指针及批准Trace
+  边界，并拆分Migration/Subject/Trace/Submit四项。兼容性/回滚：纯文档，无Schema/API/代码/依赖/外发。
+  已知问题：A02～A04、A08～A11、Server2025、Gate3/UAT/发行待；Debian13按指令跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A06-A04 新增PrototypeVersion倒序List、固定历史Get及非状态迁移
   ValidationReport；重建完整owned集合并重证Template/Requirement/Document当前事实，报告问题并写Audit但不
   修改Version/正式指针。兼容性/回滚：无Schema/公开API/依赖/外发，停止装配即可。验证：Win11/PG18.6、

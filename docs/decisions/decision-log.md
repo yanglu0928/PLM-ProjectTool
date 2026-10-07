@@ -10050,3 +10050,13 @@
 - Reason：固定Version内容不可改，但外部Artifact可用性和Requirement当前批准事实会变化；把Validate变成状态推进
   会绕过冻结Review Operation并把瞬时检查伪造成批准。
 - Impact/Rollback：只新增内部只读/报告Service和授权策略，无Schema/API/依赖/外发；停止装配即可回滚。
+
+# DEC-20261008-1040：Prototype正式指针只消费PROTOTYPE_ALL_V1批准终态
+
+- Date/WBS：2026-10-08 / `PRT-01-A07-A01`；依据冻结PRT-03、Review Kernel与DEC-1039。
+- Decision：只允许ACTIVE Prototype最新DRAFT进入`PRT-03 + PROTOTYPE_ALL_V1`；送审/批准重证当前事实。
+  APPROVED终态原子推进Root正式指针、SUPERSEDE旧批准版并形成批准Trace；RETURNED/WITHDRAWN保留旧指针。
+  IN_REVIEW期间禁止创建后续Version。
+- Reason：历史Validate会陈旧；允许评审中建新版会让Subject不再是最新；DRAFT或Trace单独推进指针会绕过人工
+  Review；退回时清空旧指针会破坏已批准业务事实。
+- Impact/Rollback：A01纯文档；后续0132只开放窄状态迁移。可停止送审入口，但Review/Version/Trace历史保留。
