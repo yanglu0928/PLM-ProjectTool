@@ -114,3 +114,10 @@ A04按单一问题拆为A02 Schema0127、A03 PROJECT/GLOBAL Create、A04 Revise�
 建立Root与不可变首版，Revise仅追加并原子推进当前指针；版本正文只保存非可执行布局/组件合同、适用终端及
 固定ArtifactRef。GLOBAL不得引用PROJECT Artifact或反写项目事实；OutputArtifact Owner未就绪时对应引用
 失败关闭，不接受裸UUID替代。冻结六个Template Operation、路径和角色不变，HTTP仍在A09统一开放。
+
+## A04-A02 实施记录（2026-10-08）
+
+Migration0127新增GLOBAL/PROJECT Template Root、不可变PUBLISHED Version、有序ArtifactRef及命令结果四表；
+布局/组件合同为JSON对象，适用终端有界，Root当前指针以同Template复合延迟FK固定。A03前四表Owner全部
+关闭且拒绝TRUNCATE；空历史可降，存在历史拒降。Win11/PG18.6真实升级/升降/drift/约束、后端3114/3及
+wheel1185项/`b39bc65e…ae693c84`通过；未开放业务Owner或HTTP。

@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A04-A02 新增PrototypeTemplate Schema0127：GLOBAL/PROJECT Root、
+  不可变PUBLISHED Version、非可执行布局/组件JSON合同、适用终端、有序ArtifactRef及CREATE/REVISE结果；
+  Root指针使用同Template复合延迟FK，A03前Owner关闭。兼容性/升级：已有库前向升级；空Template历史可降
+  0126，存在历史拒降；无公开API/依赖/外发。验证：Win11/PG18.6升级/升降/drift/约束、定向17、后端
+  3114项/3跳过、compileall、wheel1185项/`b39bc65e…ae693c84`PASS。已知问题：Create/Revise/Read Owner、
+  PRT后续、Server2025、Gate3/UAT/发行待。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A04-A01 完成PrototypeTemplate前置核查：固定Create同事务建立
   GLOBAL/PROJECT Root与不可变首版、Revise仅追加，布局/组件合同不可执行，ArtifactRef必须由目标Owner
   证明且GLOBAL不得反写项目事实；A04拆为Schema/Create/Revise/Read四个原子子项。兼容性/回滚：纯文档，

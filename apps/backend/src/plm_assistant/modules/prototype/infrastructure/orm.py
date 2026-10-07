@@ -15,7 +15,7 @@ from sqlalchemy import (
     UniqueConstraint,
     text,
 )
-from sqlalchemy.dialects.postgresql import ARRAY, TIMESTAMP, UUID
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, TIMESTAMP, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from plm_assistant.modules.platform.infrastructure.orm import Base
@@ -513,6 +513,280 @@ class PrototypeScopeDecisionResultRow(Base):
     decided_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True, precision=6), nullable=False
     )
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+
+
+class PrototypeTemplateRow(Base):
+    """GLOBAL/PROJECT template identity; writes stay closed until A04-A03."""
+
+    __tablename__ = "prt_templates"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["project_id"], ["plm.prj_projects.project_id"],
+            name="fk_prt_templates__project", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["created_by"], ["plm.auth_users.user_id"],
+            name="fk_prt_templates__creator", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["updated_by"], ["plm.auth_users.user_id"],
+            name="fk_prt_templates__updater", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["current_template_version_ref", "prototype_template_id"],
+            ["plm.prt_template_versions.prototype_template_version_id",
+             "plm.prt_template_versions.prototype_template_id"],
+            name="fk_prt_templates__current_version", ondelete="NO ACTION",
+            deferrable=True, initially="DEFERRED", use_alter=True,
+        ),
+        CheckConstraint(
+            "(scope='GLOBAL' AND project_id IS NULL) OR "
+            "(scope='PROJECT' AND project_id IS NOT NULL)",
+            name="ck_prt_templates__scope",
+        ),
+        CheckConstraint(
+            "char_length(name) BETWEEN 1 AND 255 AND name=btrim(name)",
+            name="ck_prt_templates__name",
+        ),
+        CheckConstraint(
+            "template_state IN ('ACTIVE','ARCHIVED','RESTRICTED')",
+            name="ck_prt_templates__state",
+        ),
+        CheckConstraint("lock_version>=0", name="ck_prt_templates__lock"),
+        Index(
+            "ix_prt_templates__scope_project_state", "scope", "project_id",
+            "template_state", "prototype_template_id",
+        ),
+        {"schema": "plm"},
+    )
+
+    prototype_template_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()")
+    )
+    scope: Mapped[str] = mapped_column(Text, nullable=False)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    template_state: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'ACTIVE'")
+    )
+    current_template_version_ref: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True)
+    )
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+    updated_by: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    updated_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+    lock_version: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("0")
+    )
+
+
+class PrototypeTemplateVersionRow(Base):
+    """Immutable, non-executable layout/component contract."""
+
+    __tablename__ = "prt_template_versions"
+    __table_args__ = (
+        UniqueConstraint(
+            "prototype_template_id", "version_no",
+            name="uq_prt_template_versions__template_no",
+        ),
+        UniqueConstraint(
+            "prototype_template_version_id", "prototype_template_id",
+            name="uq_prt_template_versions__id_template",
+        ),
+        ForeignKeyConstraint(
+            ["prototype_template_id"], ["plm.prt_templates.prototype_template_id"],
+            name="fk_prt_template_versions__template", ondelete="NO ACTION",
+            deferrable=True, initially="DEFERRED",
+        ),
+        ForeignKeyConstraint(
+            ["supersedes_version_id", "prototype_template_id"],
+            ["plm.prt_template_versions.prototype_template_version_id",
+             "plm.prt_template_versions.prototype_template_id"],
+            name="fk_prt_template_versions__supersedes", ondelete="NO ACTION",
+            deferrable=True, initially="DEFERRED",
+        ),
+        ForeignKeyConstraint(
+            ["project_id"], ["plm.prj_projects.project_id"],
+            name="fk_prt_template_versions__project", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["created_by"], ["plm.auth_users.user_id"],
+            name="fk_prt_template_versions__creator", ondelete="NO ACTION",
+        ),
+        CheckConstraint(
+            "(scope='GLOBAL' AND project_id IS NULL) OR "
+            "(scope='PROJECT' AND project_id IS NOT NULL)",
+            name="ck_prt_template_versions__scope",
+        ),
+        CheckConstraint("version_no>0", name="ck_prt_template_versions__number"),
+        CheckConstraint(
+            "version_state='PUBLISHED'", name="ck_prt_template_versions__state"
+        ),
+        CheckConstraint(
+            "octet_length(content_fingerprint)=32",
+            name="ck_prt_template_versions__fingerprint",
+        ),
+        CheckConstraint(
+            "jsonb_typeof(layout_contract)='object'",
+            name="ck_prt_template_versions__layout",
+        ),
+        CheckConstraint(
+            "jsonb_typeof(component_contract)='object'",
+            name="ck_prt_template_versions__components",
+        ),
+        CheckConstraint(
+            "cardinality(applicable_terminals) BETWEEN 1 AND 16",
+            name="ck_prt_template_versions__terminals",
+        ),
+        Index(
+            "ix_prt_template_versions__scope_project", "scope", "project_id",
+            "prototype_template_id", "version_no",
+        ),
+        {"schema": "plm"},
+    )
+
+    prototype_template_version_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()")
+    )
+    prototype_template_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), nullable=False
+    )
+    scope: Mapped[str] = mapped_column(Text, nullable=False)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    version_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    version_state: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'PUBLISHED'")
+    )
+    content_fingerprint: Mapped[bytes] = mapped_column(nullable=False)
+    supersedes_version_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    layout_contract: Mapped[dict[str, object]] = mapped_column(JSONB, nullable=False)
+    component_contract: Mapped[dict[str, object]] = mapped_column(JSONB, nullable=False)
+    applicable_terminals: Mapped[list[str]] = mapped_column(ARRAY(Text), nullable=False)
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+
+
+class PrototypeTemplateArtifactRefRow(Base):
+    """Ordered fixed ArtifactRef owned by one immutable template version."""
+
+    __tablename__ = "prt_template_artifact_refs"
+    __table_args__ = (
+        UniqueConstraint(
+            "prototype_template_version_id", "ordinal",
+            name="uq_prt_template_artifact_refs__version_ordinal",
+        ),
+        UniqueConstraint(
+            "prototype_template_version_id", "artifact_kind", "target_id",
+            name="uq_prt_template_artifact_refs__version_target",
+        ),
+        ForeignKeyConstraint(
+            ["prototype_template_version_id", "prototype_template_id"],
+            ["plm.prt_template_versions.prototype_template_version_id",
+             "plm.prt_template_versions.prototype_template_id"],
+            name="fk_prt_template_artifact_refs__version", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["project_id"], ["plm.prj_projects.project_id"],
+            name="fk_prt_template_artifact_refs__project", ondelete="NO ACTION",
+        ),
+        CheckConstraint(
+            "(scope='GLOBAL' AND project_id IS NULL) OR "
+            "(scope='PROJECT' AND project_id IS NOT NULL)",
+            name="ck_prt_template_artifact_refs__scope",
+        ),
+        CheckConstraint(
+            "artifact_kind IN ('DOCUMENT_VERSION','OUTPUT_ARTIFACT')",
+            name="ck_prt_template_artifact_refs__kind",
+        ),
+        CheckConstraint("ordinal>0", name="ck_prt_template_artifact_refs__ordinal"),
+        Index(
+            "ix_prt_template_artifact_refs__target", "artifact_kind", "target_id",
+            "prototype_template_version_id",
+        ),
+        {"schema": "plm"},
+    )
+
+    prototype_template_artifact_ref_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()")
+    )
+    prototype_template_version_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), nullable=False
+    )
+    prototype_template_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), nullable=False
+    )
+    scope: Mapped[str] = mapped_column(Text, nullable=False)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    artifact_kind: Mapped[str] = mapped_column(Text, nullable=False)
+    target_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class PrototypeTemplateCommandResultRow(Base):
+    """Immutable result identity for future CREATE/REVISE replay."""
+
+    __tablename__ = "prt_template_command_results"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["prototype_template_id"], ["plm.prt_templates.prototype_template_id"],
+            name="fk_prt_template_command_results__template", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["prototype_template_version_id", "prototype_template_id"],
+            ["plm.prt_template_versions.prototype_template_version_id",
+             "plm.prt_template_versions.prototype_template_id"],
+            name="fk_prt_template_command_results__version", ondelete="NO ACTION",
+        ),
+        CheckConstraint(
+            "(scope='GLOBAL' AND project_id IS NULL) OR "
+            "(scope='PROJECT' AND project_id IS NOT NULL)",
+            name="ck_prt_template_command_results__scope",
+        ),
+        CheckConstraint(
+            "operation IN ('CREATE','REVISE')",
+            name="ck_prt_template_command_results__operation",
+        ),
+        CheckConstraint(
+            "char_length(name) BETWEEN 1 AND 255 AND name=btrim(name)",
+            name="ck_prt_template_command_results__name",
+        ),
+        CheckConstraint("version_no>0", name="ck_prt_template_command_results__number"),
+        CheckConstraint(
+            "octet_length(content_fingerprint)=32",
+            name="ck_prt_template_command_results__fingerprint",
+        ),
+        CheckConstraint("lock_version>=0", name="ck_prt_template_command_results__lock"),
+        {"schema": "plm"},
+    )
+
+    result_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    prototype_template_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), nullable=False
+    )
+    prototype_template_version_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), nullable=False
+    )
+    scope: Mapped[str] = mapped_column(Text, nullable=False)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    operation: Mapped[str] = mapped_column(Text, nullable=False)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    version_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    content_fingerprint: Mapped[bytes] = mapped_column(nullable=False)
+    lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True, precision=6), nullable=False,
         server_default=text("statement_timestamp()"),

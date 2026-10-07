@@ -9935,3 +9935,15 @@
   会产生孤立或跨项目引用；把模板做成代码入口会越过锁定Scope并形成未授权执行沙箱。
 - Impact/Rollback：A01仅文档和实现拆分，无Schema/API/代码/依赖/外发；A02～A05可分别停止装配。已产生的
   TemplateVersion、ArtifactRef、Audit历史必须保留，冻结六个Operation与HTTP路径不变。
+
+# DEC-20261008-1030：Template Root指针与不可变版本使用同Template复合延迟约束
+
+- Date/WBS：2026-10-08 / `PRT-01-A04-A02`；依据冻结M-SCP/V-SCP、Schema V1 current pointer一致性和
+  DEC-1029。
+- Decision：Template Root当前指针以`(version_ref, template_id)`复合延迟FK指向不可变Version，Version
+  同时以延迟FK归属Root；ORM对Root指针设置`use_alter`消除依赖排序循环。A03前四表行级写全部关闭，
+  Artifact多态目标不使用跨Owner共享写FK，必须由后续Owner Port证明。
+- Reason：单列版本FK允许Root误指向其他Template；非延迟双向FK无法同事务建立Root和首版；裸Artifact
+  UUID不能保护Scope/状态；让Schema阶段开放半套写入会形成无Audit/无receipt历史。
+- Impact/Rollback：Migration0127新增四表，无公开API/依赖/外发。空历史可降0126，任何Template历史拒降；
+  首次drift出现循环排序警告后已按既有版本聚合模式修正并复跑，冻结模型和Operation未改变。

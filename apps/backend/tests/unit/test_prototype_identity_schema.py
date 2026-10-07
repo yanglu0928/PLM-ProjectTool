@@ -16,6 +16,10 @@ from plm_assistant.modules.prototype.infrastructure.orm import (
     PrototypeScopeDecisionRequirementRefRow,
     PrototypeScopeDecisionResultRow,
     PrototypeScopeDecisionRow,
+    PrototypeTemplateArtifactRefRow,
+    PrototypeTemplateCommandResultRow,
+    PrototypeTemplateRow,
+    PrototypeTemplateVersionRow,
 )
 
 
@@ -200,6 +204,46 @@ class PrototypeIdentitySchemaTests(unittest.TestCase):
             self.assertIn(required, migration._GUARDS)
         with patch.object(migration.context, "is_offline_mode", return_value=True):
             with self.assertRaisesRegex(RuntimeError, "offline Prototype scope-decision"):
+                migration.downgrade()
+
+    def test_template_foundation_is_scoped_versioned_and_owner_closed(self) -> None:
+        tables = (
+            PrototypeTemplateRow.__table__,
+            PrototypeTemplateVersionRow.__table__,
+            PrototypeTemplateArtifactRefRow.__table__,
+            PrototypeTemplateCommandResultRow.__table__,
+        )
+        self.assertEqual(
+            [table.name for table in tables],
+            ["prt_templates", "prt_template_versions",
+             "prt_template_artifact_refs", "prt_template_command_results"],
+        )
+        for table in tables:
+            self.assertEqual(table.schema, "plm")
+            self.assertIn("scope", table.c)
+            self.assertIn("project_id", table.c)
+        names = {
+            constraint.name for table in tables for constraint in table.constraints
+        }
+        for required in (
+            "fk_prt_templates__current_version",
+            "uq_prt_template_versions__template_no",
+            "fk_prt_template_versions__supersedes",
+            "uq_prt_template_artifact_refs__version_ordinal",
+            "uq_prt_template_artifact_refs__version_target",
+            "fk_prt_template_artifact_refs__version",
+            "fk_prt_template_command_results__version",
+        ):
+            self.assertIn(required, names)
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions."
+            "20261008_0127_prototype_template_foundation"
+        )
+        self.assertEqual(migration.down_revision, "20261008_0126")
+        self.assertIn("PrototypeTemplate Owner is not installed", migration._GUARDS)
+        self.assertIn("PrototypeTemplate history cannot be truncated", migration._GUARDS)
+        with patch.object(migration.context, "is_offline_mode", return_value=True):
+            with self.assertRaisesRegex(RuntimeError, "offline PrototypeTemplate"):
                 migration.downgrade()
 
 
