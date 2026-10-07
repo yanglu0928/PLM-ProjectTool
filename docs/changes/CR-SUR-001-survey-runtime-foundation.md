@@ -180,3 +180,7 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
 - 2026-10-07 / `SUR-06-A01`：静态核清Survey事实/Review Owner已具备，但Workflow record、preview、
   transition、Windows组合及前端仍硬编码Handover。登记CR-SUR-012，选择显式资格注册表、保持Handover
   响应不变并为Survey增加严格变体；现有Evidence+ReviewRound basis足够，无Schema变化。进入A02。
+- 2026-10-07 / `SUR-06-A02～A07`：通用资格registry、Survey current-fact Owner、生产HTTP/Windows
+  组合、PG18.6写链、双阶段前端和Edge顺序组合全部完成。最终Edge到REQUIREMENT/v7并验证精确历史；
+  A07的Handover资格组合代理边界记DEC-973，真实Handover Owner继续由既有独立证据承担。SUR-06完成，
+  不代表Requirement后续实现、Gate 3、UAT、Server2025或发行通过。

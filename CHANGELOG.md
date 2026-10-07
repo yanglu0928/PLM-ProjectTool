@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/SUR-06-A07 新增Windows 11真实Edge前两阶段组合验收；从v0经START、
+  Handover两项、`HANDOVER→SURVEY`、Survey两项与`SURVEY→REQUIREMENT`到v7，逐次独立刷新并以SQL
+  核对4 records、2 transitions、4 gates、6 audits和7 receipts。兼容性/回滚：仅validation资产，
+  A07 Handover组合代理偏差已记DEC-973且不冒充业务复验；删除目录即可。验证：22条浏览器API观察、
+  3截图视觉QA、数据库精确核验和全部清理通过。已知问题：Requirement后续阶段、主JS大分块、
+  Gate3质量/信任/性能、Server2025、UAT及发行仍待。
+
 - 2026-10-07：0.1.0-dev.0/SUR-06-A06 前端新增Handover/Survey严格双阶段Checklist资格、记录与
   相邻推进支持；Survey资格使用独立`survey_conclusion_id`判别变体，target由当前阶段派生，页面只
   对当前阶段两项开放操作并保留不确定结果原Key恢复。兼容性/回滚：无Schema/API path/依赖/Secret/

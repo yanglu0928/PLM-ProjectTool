@@ -114,3 +114,7 @@ Checklist PASS，或把模板/AI 建议当实际来源都会破坏模块边界�
   qualification采用Handover `handover_analysis_version_id`与Survey `survey_conclusion_id`严格
   判别联合，页面只对当前阶段两项开放写入，保留原Key恢复和二次确认。无Schema/API path/依赖/
   Secret/外发变化；定向225、前端全量1482、typecheck、Vite184 modules build通过，进入A07 Edge。
+- 2026-10-07 / `SUR-06-A07`：真实Edge从NOT_STARTED/v0顺序完成START、四次PASS与两次推进，
+  独立刷新至REQUIREMENT/v7；真实Survey Owner与生产写链精确产生4 records、2 transitions、4 gates、
+  6 audits和7 receipts并清理。因Survey夹具无完整HND-02 Review，本轮Handover资格使用明确登记的
+  合成组合代理，其业务真实性沿用既有HND/WFL真实PG+Edge证据，不冒充本轮复验。SUR-06按此边界收口。

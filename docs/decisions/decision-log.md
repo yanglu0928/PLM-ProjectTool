@@ -9265,3 +9265,15 @@
   allowlist。显式派生保留服务端权威复验，也不让浏览器提交业务Conclusion/Review identity。
 - Impact/Rollback：无Schema/Migration/API path/依赖/Secret/外发；Handover行为与原Key恢复保持兼容。
   可移除Survey分支恢复Handover-only。前端1482项、typecheck及Vite生产构建通过。
+
+# DEC-20261007-973：A07 以既有 Handover 证据加真实 Survey Owner 完成浏览器组合验收
+
+- Date/WBS：2026-10-07 / `SUR-06-A07`；依据CR-SUR-012、HND-03-A04、WFL两项既有Edge及A05真实Survey链。
+- Evidence/Conflict：Survey批准结论夹具没有完整HND-02正式Review，无法在不复制大型业务构造或直写
+  伪造Review的前提下同时重建真实Handover Owner；但Handover Owner、两项记录和首个Transition已经
+  分别通过真实PG与Edge，A07剩余目标是同一浏览器会话中的顺序组合。
+- Decision：本轮Handover两项使用固定合成qualification代理，仅驱动生产Workflow写服务；Survey两项
+  使用真实APPROVED Conclusion/Review current-fact Owner。验收从v0实际提交7次写、逐次独立读取，最终
+  以SQL精确校验历史。报告显式继承Handover既有真实性证据，不把代理称为业务复验。
+- Impact/Rollback：偏差只在隔离validation harness；无产品Schema/API/依赖/Secret/外发。删除目录即可
+  回滚。Edge 22条API观察、3张截图及REQUIREMENT/v7、4 PASS、2 Transition、4 Gate、7回执全部通过。
