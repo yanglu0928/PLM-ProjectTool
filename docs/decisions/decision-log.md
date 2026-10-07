@@ -9579,3 +9579,17 @@
   操作终态。物理新建replacement才写CREATED Audit，旧边总写REVOKED/SUPERSEDED Audit。
 - Evidence：Win11/PG18.6反向替代、既有replacement复用、终态拒写、Audit/receipt/drift，定向14、
   后端3027/3及wheel1151项/`3ecf0f2e…4aa1`通过。无Schema、公开API、Secret或外发变化。
+
+# DEC-20261007-999：Requirement HTTP 按资源族分层开放并补齐五个业务入口缺口
+
+- Date/WBS：2026-10-07 / `REQ-01-A10-A01`；依据冻结API-01/API-02/API-04及A02～A09实装证据。
+- Gap：22个冻结Operation均无Router；已有17个内部行为，但Package/Requirement四读与业务原子送审缺失。
+  Relation终态Owner也尚未显式接收冻结API-01要求的If-Match。Requirement Subject未注册进Windows通用
+  Review决定组合，不能只新增submit-review入口后就声称Review闭环。
+- Decision：A10按identity读取、Package HTTP、Requirement HTTP、Version普通HTTP、原子送审、Relation
+  HTTP和Windows组合七项依赖顺序实施。四类列表各用独立用途/密钥cursor。送审固定
+  `REQUIREMENT_ALL_V1`并复用同UOW Review create/start；当前Review Schema不持久化due/note，V1要求
+  两字段显式null而非丢弃。Relation revoke/supersede必须传入`expected_version=0`并校验强If-Match。
+- Impact/Rollback：A01纯文档，不改变冻结Operation/Schema/依赖。后续Router保持显式注入和默认404；
+  可停止注入回滚流量，但不删除合法Requirement/Review历史。每项分别做合同/权限/异常测试，A08以
+  Windows 11/PostgreSQL 18真实22 Operation和通用Review终态闭环验收。

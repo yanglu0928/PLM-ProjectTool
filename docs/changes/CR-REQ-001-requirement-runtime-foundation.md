@@ -262,3 +262,12 @@ Project行锁、receipt和Audit。Supersede共享锁旧ACTIVE边，从递归DAG�
 receipt回放固定终态，新Key对终态失败关闭。Win11/PG18.6验证反向替代、既有replacement复用、终态拒写、
 Audit/receipt/drift，定向14、后端3027/3及wheel1151项通过；首轮仅验收脚本把重放误计为新receipt，
 修正6条后新库复跑。A09完成，进入A10 HTTP/Windows组合。
+
+## A10 拆分与 A01 编码前核查（2026-10-07）
+
+冻结22个Requirement Operation当前均未挂HTTP。17个普通内部行为可复用；缺Package/Requirement四个
+读取Owner及`REQ_VERSION_SUBMIT_REVIEW`原子业务外层。A10拆为A02 identity读取、A03 Package HTTP、
+A04 Requirement identity HTTP、A05 Version普通HTTP、A06原子送审、A07 Relation HTTP、A08 Windows
+显式组合与真实PG。四类列表使用相互独立且用途绑定的cursor；Relation revoke/supersede在A07补齐冻结
+API-01强If-Match承接。A08同时把Requirement Subject注册到通用PROJECT Review决定组合，否则业务送审
+后不能安全完成批准/退回/撤回。A01仅静态核查，无Schema、公开API、依赖、Secret或外发变化。
