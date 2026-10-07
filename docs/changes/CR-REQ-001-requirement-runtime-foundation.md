@@ -271,3 +271,12 @@ A04 Requirement identity HTTP、A05 Version普通HTTP、A06原子送审、A07 Re
 显式组合与真实PG。四类列表使用相互独立且用途绑定的cursor；Relation revoke/supersede在A07补齐冻结
 API-01强If-Match承接。A08同时把Requirement Subject注册到通用PROJECT Review决定组合，否则业务送审
 后不能安全完成批准/退回/撤回。A01仅静态核查，无Schema、公开API、依赖、Secret或外发变化。
+
+## A10-A02 实施记录（2026-10-08）
+
+新增Package/Requirement identity授权读取Owner与PostgreSQL Repository，落实四个冻结
+Operation的当前Project Member读取策略。两类列表均按`(updated_at,id)`倒序成对keyset；
+Package详情对成员ID按UUID字节序稳定排序，Requirement投影仅含当前状态、正式版指针与
+ETag。读取不写Audit/receipt或业务表，异常仓储shape失败关闭。Windows 11/PG18.6真实
+库的成员读取、双页keyset、成员顺序、隔离、拒绝、零写/drift通过；定向13、后端
+3033/3和wheel1153项/`6736871a…a7621`通过。无Schema、公开HTTP、依赖、Secret或外发变化。

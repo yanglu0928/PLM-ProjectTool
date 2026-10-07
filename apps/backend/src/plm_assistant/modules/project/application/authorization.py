@@ -174,6 +174,8 @@ POLICIES: dict[str, _Policy] = {
     "SURVEY_CONCLUSION_SUBMIT_REVIEW": _Policy(MANAGERS, True),
     "REQ_PACKAGE_CREATE": _Policy(
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
+    "REQ_PACKAGE_LIST": _Policy(ALL_MEMBERS, False, lock_reads=True),
+    "REQ_PACKAGE_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "REQ_PACKAGE_PATCH": _Policy(
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
     "REQ_PACKAGE_ADD": _Policy(
@@ -182,6 +184,8 @@ POLICIES: dict[str, _Policy] = {
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
     "REQ_CREATE": _Policy(
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
+    "REQ_LIST": _Policy(ALL_MEMBERS, False, lock_reads=True),
+    "REQ_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "REQ_VERSION_CREATE": _Policy(
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
     "REQ_VERSION_LIST": _Policy(ALL_MEMBERS, False, lock_reads=True),

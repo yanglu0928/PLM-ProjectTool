@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/REQ-01-A10-A02 新增Package/Requirement identity四个授权读取
+  Owner，实现`(updated_at,id)`稳定keyset、最小安全投影、强ETag与Package成员稳定顺序。
+  兼容性/回滚：内部增量，无Schema、公开HTTP、依赖、Secret或外发；可移除Owner/策略且不动
+  历史数据。验证：定向13、后端3033项/3跳过、Win11/PG18.6真实双页/隔离/拒绝/零写/
+  drift、wheel1153项/`6736871a…a7621`通过。已知问题：A10-A03～A08、A11～A12、Gate3/UAT/发行待。
+
 - 2026-10-07：0.1.0-dev.0/REQ-01-A10-A01 完成冻结Requirement HTTP/Windows组合前置核查：确认22个
   Operation均未挂Router、17个内部行为可复用、四个identity读取与业务原子送审仍缺失，并登记四类
   独立cursor、Relation强If-Match、Requirement Review Subject组合及A02～A08实施顺序。兼容性/回滚：

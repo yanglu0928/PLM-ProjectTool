@@ -9593,3 +9593,13 @@
 - Impact/Rollback：A01纯文档，不改变冻结Operation/Schema/依赖。后续Router保持显式注入和默认404；
   可停止注入回滚流量，但不删除合法Requirement/Review历史。每项分别做合同/权限/异常测试，A08以
   Windows 11/PostgreSQL 18真实22 Operation和通用Review终态闭环验收。
+
+# DEC-20261008-1000：identity 列表用完整 `(updated_at,id)` 位置
+
+- Date/WBS：2026-10-08 / `REQ-01-A10-A02`；依据冻结REQ_PACKAGE_LIST/GET、REQ_LIST/GET。
+- Decision：Package与Requirement独立列表都用`updated_at DESC, UUID DESC`排序，cursor内必须
+  同时携带时间与ID；不接受半个位置。Package成员返回按UUID字节序排序的ID集。
+- Reason：多行可共享同一更新时间；仅用timestamp会丢行或重复。稳定成员顺序避免详情响应
+  在无业务变化时漂移。
+- Impact/Rollback：新增内部读取Owner和四项授权策略；无Schema、公开HTTP、依赖、Secret
+  或外发。停用Owner即可回滚。Win11/PG18.6、定向13、后端3033/3和wheel1153项通过。
