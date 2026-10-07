@@ -9707,3 +9707,15 @@
   让用户把不完整快照误认为正式需求。
 - Impact/Rollback：仅新增前端只读客户端，无后端/Schema/依赖变化。定向26、前端全量1508及
   typecheck/build通过；尚未挂页面。
+
+# DEC-20261008-1011：Requirement 原文定位必须由显式点击触发
+
+- Date/WBS：2026-10-08 / `REQ-01-A11-A03`；依据DEC-1009、A11-A02和既有Evidence Viewer。
+- Decision：Requirement列表/详情不复制来源正文；详情仅显示固定来源元数据和安全业务导航。
+  Evidence引用必须由用户明确点击后调用PROJECT Evidence Viewer，按当前Session重新鉴权；换路由、
+  换Version或新点击均清除旧结果，并以请求代次丢弃迟到响应。HUMAN_DECISION无独立安全读API时
+  不猜内部URL；短预览明确标识不是权威正文。
+- Reason：自动加载会在用户未表达意图时扩大敏感正文暴露；将正文复制进表格会失去固定Locator、权限
+  和版本语义；由内部ID拼URL会绕过受控解析边界。
+- Impact/Rollback：只新增前端页面/路由/入口，无Schema、后端API、依赖或外发变化；撤入口与页面即可
+  回滚。8个新页面场景、前端全量1516、typecheck/build通过；真实Edge/PG留A05。

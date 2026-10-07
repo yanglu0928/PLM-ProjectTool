@@ -42,6 +42,8 @@ import ProjectSurveyDetailView from "@/modules/survey/views/ProjectSurveyDetailV
 import ProjectSurveyRoundView from "@/modules/survey/views/ProjectSurveyRoundView.vue";
 import ProjectSurveyAssignmentView from "@/modules/survey/views/ProjectSurveyAssignmentView.vue";
 import ProjectSurveyConclusionView from "@/modules/survey/views/ProjectSurveyConclusionView.vue";
+import ProjectRequirementListView from "@/modules/requirement/views/ProjectRequirementListView.vue";
+import ProjectRequirementDetailView from "@/modules/requirement/views/ProjectRequirementDetailView.vue";
 
 export function createAppRouter(
   history: RouterHistory = createWebHistory(),
@@ -158,6 +160,16 @@ export function createAppRouter(
         path: "/projects/:projectId/surveys/:surveyId",
         name: "project-survey-detail",
         component: ProjectSurveyDetailView,
+      },
+      {
+        path: "/projects/:projectId/requirements",
+        name: "project-requirements",
+        component: ProjectRequirementListView,
+      },
+      {
+        path: "/projects/:projectId/requirements/:requirementId",
+        name: "project-requirement-detail",
+        component: ProjectRequirementDetailView,
       },
       {
         path: "/projects/:projectId/workflow",

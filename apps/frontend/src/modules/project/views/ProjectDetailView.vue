@@ -214,6 +214,7 @@ onUnmounted(() => { mounted = false; generation += 1; pending.value = null; });
       <p v-if="project"><RouterLink :to="{ name: 'project-surveys', params: { projectId: project.project_id } }">查看项目调研定义与问题卡片</RouterLink></p>
       <p v-if="project"><RouterLink :to="{ name: 'project-survey-rounds', params: { projectId: project.project_id } }">管理项目调研轮次</RouterLink></p>
       <p v-if="project"><RouterLink :to="{ name: 'project-survey-conclusions', params: { projectId: project.project_id } }">生成与评审调研结论</RouterLink></p>
+      <p v-if="project"><RouterLink :to="{ name: 'project-requirements', params: { projectId: project.project_id } }">查看项目需求、待维护内容与原文入口</RouterLink></p>
       <p v-if="project"><RouterLink :to="{ name: 'project-retrieval-new', params: { projectId: project.project_id } }">新建项目知识检索</RouterLink></p>
       <p v-if="project"><RouterLink :to="{ name: 'project-workflow', params: { projectId: project.project_id } }">查看项目六阶段流程</RouterLink></p>
       <button v-if="project?.state === 'ACTIVE' && canArchive() && !requireFreshRead && !receipt && !pending && !blocked && !nameEditor && !nameReceipt"
