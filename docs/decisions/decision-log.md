@@ -9825,3 +9825,15 @@
   未知未来Stage穿过持久重试边界。
 - Impact/Rollback：无Schema/后端API/依赖/权限/外发；前端1532项、typecheck/build通过。撤新增variant/
   allowlist/映射即可回滚，真实Edge留A07。
+
+# DEC-20261008-1021：Edge控制器不可用时保留真实浏览器替代证据边界
+
+- Date/WBS：2026-10-08 / `REQ-01-A12-A07`；依据持续自主执行授权、computer-use恢复规则及既有Edge
+  验收驱动。
+- Decision：Computer Use初始化与重置重试均因kernel assets本地路径错误失败后，不伪造UI控制结果；改用
+  隔离profile的真实Microsoft Edge/CDP驱动完成相同页面动作。A07的Requirement资格为双Subject固定代理，
+  只证明前端/生产Workflow顺序组合，必须与A05真实Owner/PG证据合并，不得当作业务批准。
+- Reason：控制层故障不影响产品浏览器能力；完全跳过Edge会丢失真实构建/网络/UI证据，而将代理描述成
+  真实Owner会违反证据边界。
+- Impact/Rollback：只改验收夹具，无产品代码/Schema/API/依赖/外发。Edge 30项网络观察、PG六PASS/
+  三Transition/六Gate/十receipt及全量清理通过；撤可选Requirement模式和A07目录即可回滚。

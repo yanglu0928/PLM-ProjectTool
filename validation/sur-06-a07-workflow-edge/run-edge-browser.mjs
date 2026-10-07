@@ -4,8 +4,9 @@ import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
-const [origin, outputRoot] = process.argv.slice(2);
+const [origin, outputRoot, mode = "survey"] = process.argv.slice(2);
 if (!origin?.startsWith("http://127.0.0.1:") || !outputRoot) throw new Error("owned browser arguments required");
+const includeRequirement = mode === "requirement";
 await mkdir(outputRoot, { recursive: true });
 const profile = await mkdtemp(join(tmpdir(), "plm-sur06-a07-edge-"));
 const port = 10000 + (process.pid % 40000);
@@ -59,7 +60,8 @@ async function refreshVersion(stage, version) {
   await waitFor(`document.body.innerText.includes('当前阶段：${stage}')&&document.body.innerText.includes('版本："v${version}"')`, `${stage}/v${version}`);
 }
 async function recordPass(item, version) {
-  const index = item.endsWith("ISSUES") || item.endsWith("CONCLUSION") ? 1 : 0;
+  const index = item.endsWith("ISSUES") || item.endsWith("CONCLUSION")
+    || item.endsWith("ACCEPTANCE") ? 1 : 0;
   await clickText("核验并记录通过", index);
   await waitFor(`document.body.innerText.includes('确认记录 ${item} 为 PASS')`, `${item} preview`);
   const safe = await evaluate(`(() => { const f=document.querySelector('form[aria-label="检查项记录确认"]');return {uuid:/[0-9a-f]{8}-[0-9a-f-]{27}/i.test(f?.innerText??''),text:f?.innerText??''};})()`);
@@ -68,7 +70,9 @@ async function recordPass(item, version) {
   await waitFor("!document.querySelector('form[aria-label=\"检查项记录确认\"] button[type=submit]').disabled", `${item} submit enabled`);
   await evaluate(`document.querySelector('form[aria-label="检查项记录确认"] button[type=submit]').click()`);
   await waitFor(`document.body.innerText.includes('首次检查项回执：${item} · PASS · "v${version}"')`, `${item} receipt`);
-  await refreshVersion(item.startsWith("HANDOVER") ? "HANDOVER" : "SURVEY", version);
+  const stage = item.startsWith("HANDOVER") ? "HANDOVER"
+    : item.startsWith("SURVEY") ? "SURVEY" : "REQUIREMENT";
+  await refreshVersion(stage, version);
 }
 async function transition(from, to, version, reason) {
   await clickText(`准备推进至 ${to}`);
@@ -118,14 +122,29 @@ try {
   await recordPass("SURVEY_CONCLUSION", 6);
   const survey = await screenshot("02-survey-two-pass-v6.png");
   await transition("SURVEY", "REQUIREMENT", 7, "调研事实已核对");
-  const final = await screenshot("03-requirement-v7.png");
+  const requirement = await screenshot("03-requirement-v7.png");
+  const screenshots = [handover, survey, requirement];
+  if (includeRequirement) {
+    await recordPass("REQUIREMENT_FORMAL_VERSIONS", 8);
+    await recordPass("REQUIREMENT_ACCEPTANCE", 9);
+    screenshots.push(await screenshot("04-requirement-two-pass-v9.png"));
+    await transition("REQUIREMENT", "PROTOTYPE", 10, "需求事实已核对");
+    screenshots.push(await screenshot("05-prototype-v10.png"));
+  }
   const alerts = await evaluate("[...document.querySelectorAll('[role=alert]')].filter(x=>x.offsetParent!==null).map(x=>x.innerText)");
   const required = ["/workflow:start", "HANDOVER_BASELINE:record", "HANDOVER_ISSUES:record",
     "SURVEY_ACTUAL_SOURCES:record", "SURVEY_CONCLUSION:record", "/workflow:transition"];
+  if (includeRequirement) required.push(
+    "REQUIREMENT_FORMAL_VERSIONS:record", "REQUIREMENT_ACCEPTANCE:record",
+  );
   const missing = required.filter(part => !observations.some(item => item.url?.includes(part) && item.status >= 200 && item.status < 300));
-  if (alerts.length || missing.length || observations.some(item => item.exception)) throw new Error(`browser proof mismatch ${JSON.stringify({ alerts, missing, observations })}`);
-  console.log("SUR_06_A07_EDGE_BROWSER_PASS");
-  console.log(JSON.stringify({ status: "PASS", screenshots: [handover, survey, final], observations: observations.length }));
+  const transitionCount = observations.filter(item => item.url?.includes("/workflow:transition")
+    && item.status >= 200 && item.status < 300).length;
+  if (alerts.length || missing.length || observations.some(item => item.exception)
+    || transitionCount !== (includeRequirement ? 3 : 2)) throw new Error(`browser proof mismatch ${JSON.stringify({ alerts, missing, transitionCount, observations })}`);
+  console.log(includeRequirement
+    ? "REQ_01_A12_A07_EDGE_BROWSER_PASS" : "SUR_06_A07_EDGE_BROWSER_PASS");
+  console.log(JSON.stringify({ status: "PASS", screenshots, observations: observations.length }));
   socket.close();
 } catch (error) {
   console.error(JSON.stringify({ observations }, null, 2)); throw error;

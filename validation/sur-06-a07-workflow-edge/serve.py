@@ -50,6 +50,14 @@ from plm_assistant.modules.workflow.application.checklist_qualification import (
 
 
 ROOT = Path(__file__).resolve().parents[2]
+FINAL_STAGE = "REQUIREMENT"
+FINAL_VERSION = 7
+FINAL_PASS_COUNT = 4
+FINAL_TRANSITION_COUNT = 2
+FINAL_GATE_COUNT = 4
+FINAL_RECEIPT_COUNT = 7
+READY_PREFIX = "SUR06_A07_BROWSER_READY"
+PASS_PREFIX = "SUR_06_A07_WORKFLOW_EDGE_PASS"
 
 
 def load(path: Path, name: str):
@@ -176,7 +184,8 @@ def verify_browser(context: dict[str, object]) -> None:
             ))
             keys = base.Keys()
             for module in ("windows_capability", "windows_handover",
-                           "windows_handover_action_read", "windows_survey"):
+                           "windows_handover_action_read", "windows_survey",
+                           "windows_requirement"):
                 stack.enter_context(patch(
                     f"plm_assistant.entrypoints.{module}.WindowsSecretKeyProvider",
                     return_value=keys,
@@ -243,7 +252,7 @@ def verify_browser(context: dict[str, object]) -> None:
             Thread(target=lambda: ready.put(proxy.stdout.readline().strip()), daemon=True).start()
             if ready.get(timeout=20) != "OWNED_RAG_PREVIEW_READY":
                 raise RuntimeError("owned frontend startup failed: " + proxy.stderr.read())
-            print(f"SUR06_A07_BROWSER_READY {origin} PROJECT={project} WORKFLOW={workflow_id} "
+            print(f"{READY_PREFIX} {origin} PROJECT={project} WORKFLOW={workflow_id} "
                   f"USERNAME='{base.browser.USERNAME}' PASSWORD='{base.browser.PASSWORD}'", flush=True)
             if sys.stdin.readline().strip() != "VERIFY":
                 raise RuntimeError("browser validation stopped before VERIFY")
@@ -251,36 +260,37 @@ def verify_browser(context: dict[str, object]) -> None:
                 assert db.execute(
                     "SELECT current_stage_key,lock_version FROM plm.wfl_project_workflows "
                     "WHERE workflow_id=%s", (workflow_id,),
-                ).fetchone() == ("REQUIREMENT", 7)
+                ).fetchone() == (FINAL_STAGE, FINAL_VERSION)
                 assert db.execute(
                     "SELECT count(*) FROM plm.wfl_checklist_records WHERE project_id=%s "
                     "AND result='PASS'", (project,),
-                ).fetchone()[0] == 4
+                ).fetchone()[0] == FINAL_PASS_COUNT
                 assert db.execute(
                     "SELECT count(*) FROM plm.wfl_stage_transitions WHERE project_id=%s",
                     (project,),
-                ).fetchone()[0] == 2
+                ).fetchone()[0] == FINAL_TRANSITION_COUNT
                 assert db.execute(
                     "SELECT count(*) FROM plm.wfl_transition_gate_items WHERE project_id=%s",
                     (project,),
-                ).fetchone()[0] == 4
+                ).fetchone()[0] == FINAL_GATE_COUNT
                 assert db.execute(
                     "SELECT count(*) FROM plm.aud_events WHERE target_project_id=%s "
                     "AND action='WORKFLOW_CHECKLIST_RECORDED'", (project,),
-                ).fetchone()[0] == 4
+                ).fetchone()[0] == FINAL_PASS_COUNT
                 assert db.execute(
                     "SELECT count(*) FROM plm.aud_events WHERE target_project_id=%s "
                     "AND action='WORKFLOW_STAGE_TRANSITIONED'", (project,),
-                ).fetchone()[0] == 2
+                ).fetchone()[0] == FINAL_TRANSITION_COUNT
                 assert db.execute(
                     "SELECT count(*) FROM plm.plt_idempotency_receipts WHERE project_id=%s "
                     "AND state='COMPLETED' AND operation IN "
                     "('V1_WORKFLOW_START','V1_WORKFLOW_CHECKLIST_RECORD','V1_WORKFLOW_TRANSITION')",
                     (project,),
-                ).fetchone()[0] == 7
-            print("SUR_06_A07_WORKFLOW_EDGE_PASS: Edge -> built Vue -> production FastAPI -> "
-                  "PostgreSQL 18.6 reached REQUIREMENT/v7 with 4 PASS, 2 transitions, "
-                  "4 gates, exact Audit and idempotency history", flush=True)
+                ).fetchone()[0] == FINAL_RECEIPT_COUNT
+            print(f"{PASS_PREFIX}: Edge -> built Vue -> production FastAPI -> "
+                  f"PostgreSQL 18.6 reached {FINAL_STAGE}/v{FINAL_VERSION} with "
+                  f"{FINAL_PASS_COUNT} PASS, {FINAL_TRANSITION_COUNT} transitions, "
+                  f"{FINAL_GATE_COUNT} gates, exact Audit and idempotency history", flush=True)
     finally:
         if proxy is not None:
             if proxy.poll() is None:

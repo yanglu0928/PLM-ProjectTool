@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/REQ-01-A12-A07 在隔离Windows 11真实Edge、构建后Vue、生产FastAPI与
+  PostgreSQL 18.6完成START、六项PASS、三次推进并到达PROTOTYPE/v10；30项网络观察无页面错误，
+  PG端六Gate、Audit/receipt和清理一致。Computer Use控制器因本机kernel assets路径错误，按已记录替代
+  使用既有独立Edge/CDP驱动；Requirement交互代理与A05真实Owner证据合并解读。兼容性/回滚：无产品
+  代码/Schema/API/依赖/外发；撤验收夹具即可。已知问题：Server 2025、Gate3/UAT/发行及PRT后续待。
+
 - 2026-10-08：0.1.0-dev.0/REQ-01-A12-A06 前端Workflow加入Requirement聚合资格、两个Checklist
   item及`REQUIREMENT -> PROTOTYPE`；严格区分单/复数响应variant，只展示Version/Review/Evidence数量，
   不暴露内部UUID，未确定操作仍保留原Key/ETag并失败关闭。兼容性/回滚：无Schema/后端路径/依赖/权限/
