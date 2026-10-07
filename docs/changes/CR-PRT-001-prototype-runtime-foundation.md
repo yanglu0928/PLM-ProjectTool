@@ -91,3 +91,10 @@ A03拆为A02身份创建、A03 Package修改、A04 Prototype修改、A05 NOT_REQ
 无receipt；SET是允许空集合的全量替换，成员同项目、存在且非ARCHIVED，只删membership不删Prototype。
 Root版本、实际集合和结果在提交时延迟闭合。Win11/PG18.6真实闭环、后端3100/3及wheel1178项/
 `31875e15…d5f4c5`通过；Router仍关闭。
+
+## A03-A04 实施记录（2026-10-08）
+
+新增Prototype PATCH/ARCHIVE Service、Repository、授权策略及Migration0125不可变结果。PATCH仅在ACTIVE
+状态改name且无receipt；ARCHIVE仅PM、单向进入终态并在持久重放前重证权限，不删除Package membership、
+Version、Decision、Link或正式指针。Root状态/指针/版本与结果在提交时延迟闭合。Win11/PG18.6真实闭环、
+后端3106/3及wheel1181项/`dfb5fe0b…e4108`通过；Router仍关闭，进入NOT_REQUIRED原子决定Owner。

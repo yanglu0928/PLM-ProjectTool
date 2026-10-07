@@ -275,6 +275,53 @@ class PrototypePackageCommandResultRow(Base):
     )
 
 
+class PrototypeCommandResultRow(Base):
+    """Immutable result for Prototype identity PATCH and ARCHIVE."""
+
+    __tablename__ = "prt_prototype_command_results"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["prototype_id", "project_id"],
+            ["plm.prt_prototypes.prototype_id", "plm.prt_prototypes.project_id"],
+            name="fk_prt_prototype_command_results__prototype", ondelete="NO ACTION",
+        ),
+        CheckConstraint(
+            "operation IN ('PATCH','ARCHIVE')",
+            name="ck_prt_prototype_command_results__operation",
+        ),
+        CheckConstraint(
+            "char_length(name) BETWEEN 1 AND 255 AND name=btrim(name)",
+            name="ck_prt_prototype_command_results__name",
+        ),
+        CheckConstraint(
+            "prototype_state IN ('ACTIVE','ARCHIVED')",
+            name="ck_prt_prototype_command_results__state",
+        ),
+        CheckConstraint(
+            "(operation='PATCH' AND prototype_state='ACTIVE') OR "
+            "(operation='ARCHIVE' AND prototype_state='ARCHIVED')",
+            name="ck_prt_prototype_command_results__shape",
+        ),
+        CheckConstraint("lock_version>0", name="ck_prt_prototype_command_results__version"),
+        {"schema": "plm"},
+    )
+
+    result_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    prototype_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    operation: Mapped[str] = mapped_column(Text, nullable=False)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    prototype_state: Mapped[str] = mapped_column(Text, nullable=False)
+    current_approved_version_ref: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True)
+    )
+    lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+
+
 class PrototypeScopeDecisionRow(Base):
     """Immutable NOT_REQUIRED scope decision; its write Owner is installed in A03."""
 

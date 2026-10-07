@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A03-A04 新增Prototype PATCH/ARCHIVE Owner及Migration0125；
+  PATCH仅ACTIVE强ETag改名且不产receipt，ARCHIVE仅PM、持久重放并单向终态，保留Package membership、
+  Version/Decision/Link及正式指针，Root/不可变结果在提交时闭合。兼容性/升级：空mutation历史可降0124，
+  产生结果拒降，无公开API/依赖/外发。验证：Win11/PG18.6真实闭环、定向27、后端3106项/3跳过、
+  compileall、wheel1181项/`dfb5fe0b…e4108`PASS。已知问题：A03-A05及PRT后续、Server2025、
+  Gate3/UAT/发行待。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A03-A03 新增PrototypePackage PATCH/SET_MEMBERS Owner及
   Migration0124；PATCH仅强ETag改名且不产receipt，SET为允许空集合的同项目非归档Prototype全量替换，
   不删除业务对象，Root/成员/不可变结果在提交时闭合。兼容性/升级：空mutation历史可降0123，产生结果

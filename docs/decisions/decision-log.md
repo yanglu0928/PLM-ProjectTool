@@ -9897,3 +9897,15 @@
   状态塞入普通PATCH缺少权威来源；为无`I`的PATCH派生key会破坏冻结合同。
 - Impact/Rollback：新增Schema0124结果表、两项授权和内部Owner，无公开API/依赖/外发。空mutation历史可
   降0123，存在结果拒降；移除后续Router可停止流量，历史集合结果保留。
+
+# DEC-20261008-1027：Prototype归档是保留全部关联历史的单向终态
+
+- Date/WBS：2026-10-08 / `PRT-01-A03-A04`；依据冻结`PRT_PATCH/PRT_ARCHIVE`、API-01控制位、
+  PRT-02身份模型和CR-PRT-001回滚约束。
+- Decision：PATCH只允许ACTIVE Root改name，使用强ETag且无幂等receipt；ARCHIVE仅ProjectManager，允许
+  非ARCHIVED Root单向进入ARCHIVED，持久重放每次重证当前权限。归档不删除Package membership、
+  PrototypeVersion、范围决定、Requirement Link、Trace或正式指针。
+- Reason：普通PATCH改变范围/安全状态缺少冻结Operation与权威来源；删除关联历史会破坏反向追溯；把归档
+  限制为仅ACTIVE会阻止未来NOT_REQUIRED/RESTRICTED身份的合规退场；无`I` PATCH不能派生key。
+- Impact/Rollback：新增Schema0125结果表、两项授权和内部Owner，无公开API/依赖/外发。空mutation历史可
+  降0124，存在结果拒降；停止后续Router可关闭流量，已归档Root和全部历史不可物理删除。
