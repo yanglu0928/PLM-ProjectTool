@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/REQ-01-A12-A05 新增Windows 11/PostgreSQL 18.6 Requirement聚合
+  Workflow真实闭环证据：正式Requirement/Review服务形成批准事实，生产路由完成复数Preview、Evidence
+  漂移409、两项PASS、`REQUIREMENT -> PROTOTYPE`、Review Basis、Audit/receipt/replay及Alembic无漂移。
+  兼容性/回滚：只新增合成数据隔离验证，无产品代码/Schema/API/依赖/外发，删除验证目录即可回滚。
+  已知问题：A06前端、A07 Edge、Server 2025本轮闭环及Gate3/UAT/发行待；Debian 13按用户指令跳过。
+
 - 2026-10-08：0.1.0-dev.0/REQ-01-A12-A04-A02 将Requirement聚合资格显式注册到Windows Workflow
   Preview/Record/Transition生产对象图；两个item共用同一Owner及Decision/Evidence证明依赖，既有
   Handover/Survey注册不变。兼容性/回滚：无Schema/路径/依赖/权限/外发；移除两项Registration即可
