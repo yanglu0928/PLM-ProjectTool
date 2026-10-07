@@ -126,6 +126,11 @@ class RequirementRelationTests(unittest.TestCase):
         with self.assertRaises(RequirementRelationError) as caught:
             self.service.create(command)
         self.assertEqual(caught.exception.code, "VALIDATION_FAILED")
+        with self.assertRaises(RequirementRelationError) as caught:
+            self.service.revoke(RevokeRequirementRelation(
+                b"s" * 32, b"c" * 32, uuid.uuid4(), self.project,
+                self.relation, 1, str(uuid.uuid4())))
+        self.assertEqual(caught.exception.code, "VALIDATION_FAILED")
         rendered = repr(self.command())
         self.assertNotIn("s" * 32, rendered)
         self.assertNotIn("c" * 32, rendered)
@@ -138,7 +143,7 @@ class RequirementRelationTests(unittest.TestCase):
         self.repo.get.return_value = revoked
         result = self.service.revoke(RevokeRequirementRelation(
             b"s" * 32, b"c" * 32, uuid.uuid4(), self.project,
-            self.relation, str(uuid.uuid4())))
+            self.relation, 0, str(uuid.uuid4())))
         self.assertEqual(result, revoked)
         self.repo.revoke_active.assert_called_once_with(
             self.tx, project_id=self.project, relation_id=self.relation)
@@ -162,7 +167,7 @@ class RequirementRelationTests(unittest.TestCase):
         result = self.service.supersede(SupersedeRequirementRelation(
             b"s" * 32, b"c" * 32, uuid.uuid4(), self.project,
             self.relation, replacement.source, replacement.target,
-            replacement.relation_type, str(uuid.uuid4())))
+            replacement.relation_type, 0, str(uuid.uuid4())))
         self.assertEqual(result, replacement)
         cycle = self.repo.assert_acyclic.call_args.kwargs
         self.assertEqual(cycle["exclude_relation_id"], self.relation)

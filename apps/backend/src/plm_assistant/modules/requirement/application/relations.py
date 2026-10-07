@@ -69,6 +69,7 @@ class RevokeRequirementRelation:
     trace_id: uuid.UUID
     project_id: uuid.UUID
     requirement_relation_id: uuid.UUID
+    expected_version: int
     idempotency_key: str = field(repr=False)
 
 
@@ -82,6 +83,7 @@ class SupersedeRequirementRelation:
     source: RequirementVersionRef
     target: RequirementVersionRef
     relation_type: str
+    expected_version: int
     idempotency_key: str = field(repr=False)
 
 
@@ -244,6 +246,7 @@ class RequirementRelationService:
         fingerprint = canonical_payload_fingerprint({
             "project_id": str(command.project_id),
             "requirement_relation_id": str(command.requirement_relation_id),
+            "expected_version": command.expected_version,
         })
         return self._state_command(
             command, operation=_REVOKE_OPERATION,
@@ -276,6 +279,7 @@ class RequirementRelationService:
             "source": self._ref_payload(source),
             "target": self._ref_payload(target),
             "relation_type": command.relation_type,
+            "expected_version": command.expected_version,
         })
         return self._state_command(
             command, operation=_SUPERSEDE_OPERATION,
@@ -498,7 +502,9 @@ class RequirementRelationService:
                 or len(command.csrf_token) != 32
                 or not cls._id(command.trace_id)
                 or not cls._id(command.project_id)
-                or not cls._id(command.requirement_relation_id)):
+                or not cls._id(command.requirement_relation_id)
+                or type(command.expected_version) is not int
+                or command.expected_version != 0):
             raise RequirementRelationError("VALIDATION_FAILED")
 
     @staticmethod

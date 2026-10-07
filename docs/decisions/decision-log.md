@@ -9662,3 +9662,14 @@
   丢弃调度/备注会制造虚假合同。
 - Impact/Rollback：增加既有冻结Operation和Project授权映射，无Schema/依赖变化；停用Router注入可
   关闭新流量，已生成Review历史保留。Win11/PG18.6、定向13、后端3060/3及wheel1162项通过。
+
+# DEC-20261008-1007：Relation 终态并发控制必须进入业务命令
+
+- Date/WBS：2026-10-08 / `REQ-01-A10-A07`；依据API-01强ETag、冻结REQ_RELATION_REVOKE/
+  SUPERSEDE和DEC-995～998。
+- Decision：Revoke/Supersede命令显式携带expected_version，V1只接受0并纳入幂等请求指纹；HTTP
+  必须提供强`If-Match: "v0"`。数据库ACTIVE/lock_version守卫仍是最终防线，但不替代公开并发合同。
+- Reason：仅因当前实现只锁ACTIVE v0而宣称满足If-Match，会让客户端前置条件丢失，且未来状态扩展时
+  无法区分旧意图与新资源版本。
+- Impact/Rollback：内部DTO及既有本地验证调用同步升级，无Schema/依赖变化；停止Router注入可关闭
+  新流量。Win11/PG18.6、定向13、后端3066/3及wheel1164项通过。

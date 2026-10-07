@@ -86,14 +86,14 @@ def main() -> None:
         supersede_command = SupersedeRequirementRelation(
             token, CSRF, uuid.uuid4(), ids["project"],
             old.requirement_relation_id, refs[1], refs[0], "DEPENDS_ON",
-            supersede_key)
+            0, supersede_key)
         replacement = service.supersede(supersede_command)
         assert (replacement.source, replacement.target) == (refs[1], refs[0])
         assert service.supersede(supersede_command) == replacement
         try:
             service.revoke(RevokeRequirementRelation(
                 token, CSRF, uuid.uuid4(), ids["project"],
-                old.requirement_relation_id, str(uuid.uuid4())))
+                old.requirement_relation_id, 0, str(uuid.uuid4())))
         except RequirementRelationError as error:
             assert error.code == "RESOURCE_NOT_FOUND", error.code
         else:
@@ -101,7 +101,7 @@ def main() -> None:
 
         revoke_command = RevokeRequirementRelation(
             token, CSRF, uuid.uuid4(), ids["project"],
-            replacement.requirement_relation_id, str(uuid.uuid4()))
+            replacement.requirement_relation_id, 0, str(uuid.uuid4()))
         revoked = service.revoke(revoke_command)
         assert revoked.relation_state == "REVOKED" and revoked.lock_version == 1
         assert service.revoke(revoke_command) == revoked
@@ -109,7 +109,7 @@ def main() -> None:
             service.supersede(SupersedeRequirementRelation(
                 token, CSRF, uuid.uuid4(), ids["project"],
                 replacement.requirement_relation_id, refs[1], refs[2],
-                "DEPENDS_ON", str(uuid.uuid4())))
+                "DEPENDS_ON", 0, str(uuid.uuid4())))
         except RequirementRelationError as error:
             assert error.code == "RESOURCE_NOT_FOUND", error.code
         else:
@@ -119,7 +119,7 @@ def main() -> None:
         old2 = create(refs[0], refs[3], "RELATED_TO")
         reused = service.supersede(SupersedeRequirementRelation(
             token, CSRF, uuid.uuid4(), ids["project"], old2.requirement_relation_id,
-            refs[2], refs[3], "RELATED_TO", str(uuid.uuid4())))
+            refs[2], refs[3], "RELATED_TO", 0, str(uuid.uuid4())))
         assert reused.requirement_relation_id == existing.requirement_relation_id
 
         with connect(database) as db:

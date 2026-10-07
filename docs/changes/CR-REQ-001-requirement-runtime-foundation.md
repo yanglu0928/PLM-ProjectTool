@@ -331,3 +331,12 @@ Audit和receipt在单一UOW中执行；持久回放恢复首次Round并重验Sub
 V1的due_at/submission_note必须显式为null。Win11/PG18.6真实来源漂移拒绝/恢复送审、原子链、
 回放/冲突/角色/License/Audit/drift，定向13、后端3060/3及wheel1162项/`4fab22cf…a64f`
 通过。无Schema、依赖、Secret或外发变化；A06完成进入A07 Relation HTTP。
+
+## A10-A07 实施记录（2026-10-08）
+
+新增RequirementRelation独立HMAC cursor和opt-in Router，按冻结路径开放LIST/CREATE/REVOKE/
+SUPERSEDE。Cursor绑定family/Project/Session/page size/relation UUIDv7位置；固定Version端点、分类型
+DAG和对称规范化保持。终态内部命令新增expected_version并只接受0，HTTP强制强`If-Match: "v0"`，
+同时纳入幂等指纹；SUPERSEDE 201返回ACTIVE replacement。Win11/PG18.6真实四HTTP/cursor/
+回放/DAG/If-Match/角色/License/Audit/drift，定向13、后端3066/3及wheel1164项/
+`3ec77a59…66c9`通过。无Schema、依赖、Secret或外发变化；A07完成进入A08 Windows组合。

@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/REQ-01-A10-A07 新增RequirementRelation独立签cursor与opt-in
+  Router，实现LIST/CREATE/REVOKE/SUPERSEDE四个冻结HTTP；终态命令显式承接并指纹绑定强
+  `If-Match: "v0"`，保留固定Version端点、DAG、对称规范化、单向终态和持久回放。兼容性/
+  回滚：无Schema、依赖、Secret或外发，停止注入可关闭流量。验证：定向13、后端3066/3、
+  Win11/PG18.6四HTTP/cursor/DAG/回放/拒绝/Audit/drift及wheel1164项/`3ec77a59…66c9`PASS。
+  已知问题：A10-A08、A11～A12、Gate3/UAT/发行待。
+
 - 2026-10-08：0.1.0-dev.0/REQ-01-A10-A06 新增RequirementVersion原子送审Service与opt-in
   HTTP，固定`REQ-03 + REQUIREMENT_ALL_V1`，将ProjectManager授权、Reviewer资格、当前事实重验、
   Review create/start、Version绑定、Snapshot、Audit和receipt纳入同一UOW；持久回放重验Subject，
