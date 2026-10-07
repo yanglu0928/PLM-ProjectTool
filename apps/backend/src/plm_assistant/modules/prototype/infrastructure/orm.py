@@ -1047,3 +1047,44 @@ class PrototypeInteractionSpecRow(Base):
     schema_version: Mapped[int] = mapped_column(Integer, nullable=False)
     specification: Mapped[dict[str, object]] = mapped_column(JSONB, nullable=False)
     content_fingerprint: Mapped[bytes] = mapped_column(nullable=False)
+
+
+class PrototypeVersionCreateResultRow(Base):
+    """Immutable first-success result for idempotent DRAFT Version creation."""
+
+    __tablename__ = "prt_version_create_results"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["prototype_version_id", "prototype_id", "project_id"],
+            ["plm.prt_prototype_versions.prototype_version_id",
+             "plm.prt_prototype_versions.prototype_id",
+             "plm.prt_prototype_versions.project_id"],
+            name="fk_prt_version_create_results__version", ondelete="NO ACTION",
+        ),
+        CheckConstraint("version_no>0", name="ck_prt_version_create_results__number"),
+        CheckConstraint(
+            "octet_length(content_fingerprint)=32",
+            name="ck_prt_version_create_results__fingerprint",
+        ),
+        CheckConstraint(
+            "declared_artifact_count BETWEEN 1 AND 100 AND "
+            "declared_requirement_count BETWEEN 1 AND 200 AND "
+            "declared_interaction_count=1",
+            name="ck_prt_version_create_results__counts",
+        ),
+        {"schema": "plm"},
+    )
+
+    result_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    prototype_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    prototype_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    version_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    content_fingerprint: Mapped[bytes] = mapped_column(nullable=False)
+    declared_artifact_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    declared_requirement_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    declared_interaction_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )

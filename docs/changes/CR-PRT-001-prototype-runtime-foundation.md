@@ -176,3 +176,11 @@ DocumentVersion的事务内共享锁证明Port/SQL Adapter；Document沿用Owner
 不滥用Template scope参数。跨项目、非当前批准和非ACTIVE/AVAILABLE状态失败关闭，OutputArtifact仍无Adapter。
 Win11/PG18.6隔离证明、Prototype定向47/99 subtests、后端3128/3/4666 subtests、compileall及wheel1200项/
 `5b724bb5…60bb09e`通过；无Schema/公开API/依赖/外发，进入DRAFT Create Owner与Schema0131。
+
+## A06-A03 实施记录（2026-10-08）
+
+Migration0131新增不可变Create结果并开放DRAFT Version Owner；Root行锁串行版本链，Artifact/Requirement/
+Interaction/Result延迟闭包。Service同事务消费A02证明并写Audit/receipt，OutputArtifact继续失败关闭，正式
+批准指针不推进。复用Template安全JSON时首次异常类型不兼容，已转换为Version稳定错误且未放宽规则。
+Win11/PG18.6 v1→v2、后端3132/3/4671 subtests、compileall及wheel1203项/
+`4ecd8f05…16df41d`通过；进入Read/Validate。

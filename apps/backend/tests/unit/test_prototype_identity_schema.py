@@ -23,6 +23,7 @@ from plm_assistant.modules.prototype.infrastructure.orm import (
     PrototypeInteractionSpecRow,
     PrototypeVersionArtifactRefRow,
     PrototypeVersionRequirementRefRow,
+    PrototypeVersionCreateResultRow,
     PrototypeVersionRow,
 )
 
@@ -338,6 +339,31 @@ class PrototypeIdentitySchemaTests(unittest.TestCase):
         self.assertIn("PrototypeVersion history cannot be truncated", migration._GUARDS)
         with patch.object(migration.context, "is_offline_mode", return_value=True):
             with self.assertRaisesRegex(RuntimeError, "offline PrototypeVersion"):
+                migration.downgrade()
+
+    def test_prototype_version_create_owner_closes_chain_sets_and_result(self) -> None:
+        self.assertEqual(
+            PrototypeVersionCreateResultRow.__table__.name,
+            "prt_version_create_results",
+        )
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions."
+            "20261008_0131_prototype_version_create"
+        )
+        self.assertEqual(migration.down_revision, "20261008_0130")
+        source = migration._OPEN_GUARDS + inspect.getsource(migration.upgrade)
+        for required in (
+            "PrototypeVersion chain is invalid",
+            "PrototypeVersion create set is incomplete",
+            "guard_prototype_version_create_result",
+            "prt_version_create_results",
+            "pre-existing PrototypeVersion requires audited migration",
+        ):
+            self.assertIn(required, source)
+        with patch.object(migration.context, "is_offline_mode", return_value=True):
+            with self.assertRaisesRegex(
+                RuntimeError, "offline PrototypeVersion create-owner"
+            ):
                 migration.downgrade()
 
 

@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A06-A03 新增PrototypeVersion DRAFT Create Owner与Schema0131；Root锁
+  串行版本链，同事务固定输入证明、owned集合、结果、Audit/receipt，延迟闭包防半成品，OutputArtifact失败
+  关闭且正式指针不推进。兼容性/升级：前向加结果表，不改公开API/依赖/外发；空历史可降0130，有历史拒降。
+  验证：Win11/PG18.6 v1→v2、定向31/642 subtests、后端3132/3/4671 subtests、compileall、wheel1203项/
+  `4ecd8f05…16df41d`PASS。已知问题：Read/Validate、A07～A11、Server2025、Gate3/UAT/发行待。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A06-A02 新增PrototypeVersion固定输入证明Ports：Requirement当前
   Approved复合身份、GLOBAL/同项目PUBLISHED TemplateVersion及GLOBAL/同项目AVAILABLE DocumentVersion；
   事务内共享锁重证作用域/状态/内容指纹，OutputArtifact无Owner时保持失败关闭。兼容性/回滚：只读新增，

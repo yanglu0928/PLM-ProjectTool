@@ -10032,3 +10032,12 @@
   若强制Root当前版会让合法历史输入随模板修订失效；Document当前可访问性决定Create/Validate能否继续。
 - Impact/Rollback：只新增只读Port/Adapter，无Schema/API/依赖/外发。可停止依赖注入回滚；不存在新增业务历史。
   A03仍须在同一写事务重新消费证明并形成完整Owner闭包。
+
+# DEC-20261008-1038：DRAFT Version以Root锁串行链并由提交闭包一次成形
+
+- Date/WBS：2026-10-08 / `PRT-01-A06-A03`；依据冻结PRT-03与DEC-1034～1037。
+- Decision：Create锁Prototype Root，以最新Version计算严格`version_no/supersedes`；Version、两类有序引用、
+  一条Interaction、不可变结果、Audit与receipt同事务提交，延迟闭包验证声明计数和连续ordinal。DRAFT不更新
+  正式指针；OutputArtifact无Owner时失败关闭。
+- Reason：只查最大版本而不锁Root会产生并发分叉；分事务写集合会留下半成品；DRAFT推进正式指针会绕过A07。
+- Impact/Rollback：0131前向加结果表并开放CREATE Owner；空历史可降0130，有历史拒降。公开API仍未装配。
