@@ -6,7 +6,9 @@ import unittest
 from unittest.mock import patch
 
 from plm_assistant.modules.prototype.infrastructure.orm import (
+    PrototypeCreateResultRow,
     PrototypePackageMembershipRow,
+    PrototypePackageCreateResultRow,
     PrototypePackageRow,
     PrototypeRow,
     PrototypeScopeDecisionRequirementRefRow,
@@ -107,6 +109,28 @@ class PrototypeIdentitySchemaTests(unittest.TestCase):
             "Prototype identity or scope history prevents downgrade",
             inspect.getsource(migration.downgrade),
         )
+
+    def test_create_results_close_identity_and_are_history_safe(self) -> None:
+        self.assertEqual(
+            [PrototypePackageCreateResultRow.__table__.name,
+             PrototypeCreateResultRow.__table__.name],
+            ["prt_package_create_results", "prt_prototype_create_results"],
+        )
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions."
+            "20261008_0123_prototype_create_results"
+        )
+        self.assertEqual(migration.down_revision, "20261008_0122")
+        for required in (
+            "Prototype create result history is immutable",
+            "PrototypePackage has no immutable create result",
+            "Prototype has no immutable create result",
+            "pre-existing Prototype identity requires audited migration",
+        ):
+            self.assertIn(required, migration._GUARDS + inspect.getsource(migration.upgrade))
+        with patch.object(migration.context, "is_offline_mode", return_value=True):
+            with self.assertRaisesRegex(RuntimeError, "offline Prototype create-result"):
+                migration.downgrade()
 
 
 if __name__ == "__main__":

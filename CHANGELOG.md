@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A03-A02 新增Prototype Package/identity创建Owner、PM/实施成员授权、
+  持久幂等与Migration0123不可变首结果/延迟提交闭包；Root、结果、Audit、receipt同事务，历史重放重证
+  权限。兼容性/升级：0123只接受空Prototype身份历史，既有手工Root须审计迁移；空历史可降，产生结果
+  拒降，无公开API/依赖/外发。验证：Win11/PG18.6真实闭环、定向24、后端3094项/3跳过、compileall、
+  wheel1175项/`36935bcf…25ffb9`PASS。已知问题：A03-A03～A05及PRT后续、Server2025、Gate3/UAT/发行待。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A03-A01 完成Prototype identity/scope Owner前置核查：拆分创建、
   Package修改、Prototype修改和NOT_REQUIRED原子决定；PATCH保持冻结的非幂等强ETag，范围决定以真实受权
   命令记录且PM动作不冒充客户确认，可选Review仅作附加证明。兼容性/回滚：纯文档，无Schema/API/代码/

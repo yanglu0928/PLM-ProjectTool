@@ -9874,3 +9874,15 @@
   推断NOT_REQUIRED会静默删Scope。
 - Impact/Rollback：A01仅文档；A02～A05分别实现创建、Package、Prototype和范围决定Owner。停止注册即可
   回滚运行入口，历史决定不得删除；A05前Schema决定写口保持关闭。
+
+# DEC-20261008-1025：Prototype身份与不可变首结果必须在提交时闭合
+
+- Date/WBS：2026-10-08 / `PRT-01-A03-A02`；依据API-01持久幂等、Schema0122 Owner关闭及既有
+  Requirement创建模式。
+- Decision：每个新Package/Prototype Root必须在同一事务存在匹配的不可变首结果；Audit和receipt失败则
+  全部回滚，重放只读首结果。Migration0123遇到Owner关闭期间已有Root时失败并要求审计迁移，不从可变
+  Root自动伪造授权/Audit历史。
+- Reason：只约束result→Root不能阻止直接Root提交；自动回填可形成从未发生的受权创建证明；重放读取
+  current Root会改变首次响应。
+- Impact/Rollback：新增两表、延迟闭包和两个内部Owner授权Operation，无公开API/依赖/外发。空历史可降
+  0122，存在首结果拒绝物理降级；停止后续Router装配可关闭运行流量。

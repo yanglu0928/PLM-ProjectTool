@@ -77,3 +77,10 @@ Windows 11/PostgreSQL 18.6真实升降、drift、跨项目负例、后端3089/3�
 A03拆为A02身份创建、A03 Package修改、A04 Prototype修改、A05 NOT_REQUIRED原子决定。PATCH按冻结控制
 仅用强If-Match，不强制幂等key；SET_MEMBERS不级联删除Prototype。PM/CustomerManager实际受权命令本身
 构成不可变人工决定，PM动作不称客户确认，可选Review只作附加证明。A05前决定表继续拒写。
+
+## A03-A02 实施记录（2026-10-08）
+
+新增Package/Prototype创建Service、Repository、两个授权Operation及Migration0123不可变首结果。Root、
+首结果、Audit和receipt同事务闭合，持久重放只恢复首次View并重证权限。0123拒绝自动接纳Owner关闭期间
+可能存在的手工Root，必须另走审计迁移；空历史可降，产生结果后拒降。Win11/PG18.6真实闭环、后端
+3094/3及wheel1175项/`36935bcf…25ffb9`通过；Router仍关闭。

@@ -181,6 +181,60 @@ class PrototypePackageMembershipRow(Base):
     )
 
 
+class PrototypePackageCreateResultRow(Base):
+    """Immutable first-success Package view for idempotent replay."""
+
+    __tablename__ = "prt_package_create_results"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["prototype_package_id", "project_id"],
+            ["plm.prt_packages.prototype_package_id", "plm.prt_packages.project_id"],
+            name="fk_prt_package_create_results__package", ondelete="NO ACTION",
+        ),
+        CheckConstraint(
+            "char_length(name) BETWEEN 1 AND 255 AND name=btrim(name)",
+            name="ck_prt_package_create_results__name",
+        ),
+        {"schema": "plm"},
+    )
+
+    prototype_package_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True
+    )
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False
+    )
+
+
+class PrototypeCreateResultRow(Base):
+    """Immutable first-success Prototype view for idempotent replay."""
+
+    __tablename__ = "prt_prototype_create_results"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["prototype_id", "project_id"],
+            ["plm.prt_prototypes.prototype_id", "plm.prt_prototypes.project_id"],
+            name="fk_prt_prototype_create_results__prototype", ondelete="NO ACTION",
+        ),
+        CheckConstraint(
+            "char_length(name) BETWEEN 1 AND 255 AND name=btrim(name)",
+            name="ck_prt_prototype_create_results__name",
+        ),
+        {"schema": "plm"},
+    )
+
+    prototype_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True
+    )
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False
+    )
+
+
 class PrototypeScopeDecisionRow(Base):
     """Immutable NOT_REQUIRED scope decision; its write Owner is installed in A03."""
 
