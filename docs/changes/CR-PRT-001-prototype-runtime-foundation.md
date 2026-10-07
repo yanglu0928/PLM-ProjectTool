@@ -98,3 +98,12 @@ Root版本、实际集合和结果在提交时延迟闭合。Win11/PG18.6真实�
 状态改name且无receipt；ARCHIVE仅PM、单向进入终态并在持久重放前重证权限，不删除Package membership、
 Version、Decision、Link或正式指针。Root状态/指针/版本与结果在提交时延迟闭合。Win11/PG18.6真实闭环、
 后端3106/3及wheel1181项/`dfb5fe0b…e4108`通过；Router仍关闭，进入NOT_REQUIRED原子决定Owner。
+
+## A03-A05 实施记录（2026-10-08）
+
+新增NOT_REQUIRED原子范围决定Service、Repository、授权策略及Migration0126。决定固定非空当前Approved
+RequirementVersion集合；PM/CustomerManager实际受权动作记录confirmed_by但不冒充客户确认。为使可选
+Review能证明精确内容，兼容增加32字节decision_fingerprint，并仅接受同项目Approved
+`PRT_SCOPE_DECISION` Snapshot精确匹配；Review仍可空，不新增公开请求必填字段。Root、决定、有序引用、
+不可变首结果、Audit和receipt同事务闭合。Win11/PG18.6真实闭环、后端3113/3及wheel1184项/
+`b88fd092…6c9a6c`通过；Router仍关闭，`PRT-01-A03`完成。

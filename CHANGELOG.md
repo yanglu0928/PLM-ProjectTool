@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A03-A05 新增NOT_REQUIRED原子范围决定Owner及Migration0126；
+  固定1～200个当前Approved RequirementVersion，PM/CustomerManager实际受权动作记录confirmed_by而不
+  冒充客户确认，可选Review必须以精确决定指纹Approved。Root/决定/有序引用/首结果/Audit/receipt同事务。
+  兼容性/升级：增加内部32字节决定指纹与结果闭包，无公开API/依赖/外发；空决定历史可降0125，产生历史
+  拒降。验证：Win11/PG18.6真实闭环、定向29、后端3113项/3跳过、compileall、wheel1184项/
+  `b88fd092…6c9a6c`PASS。已知问题：PRT-01-A04～A11、Server2025、Gate3/UAT/发行待。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A03-A04 新增Prototype PATCH/ARCHIVE Owner及Migration0125；
   PATCH仅ACTIVE强ETag改名且不产receipt，ARCHIVE仅PM、持久重放并单向终态，保留Package membership、
   Version/Decision/Link及正式指针，Root/不可变结果在提交时闭合。兼容性/升级：空mutation历史可降0124，

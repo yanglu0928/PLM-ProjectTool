@@ -173,6 +173,7 @@ class OrmMetadataTests(unittest.TestCase):
             'plm.prt_package_create_results', 'plm.prt_prototype_create_results',
             'plm.prt_package_command_results',
             'plm.prt_prototype_command_results',
+            'plm.prt_scope_decision_results',
         }
         for table in prototype_tables:
             self.assertIn(table, Base.metadata.tables)

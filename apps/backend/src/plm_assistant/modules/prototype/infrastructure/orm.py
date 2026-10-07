@@ -371,6 +371,10 @@ class PrototypeScopeDecisionRow(Base):
             "before_version>=0 AND after_version=before_version+1",
             name="ck_prt_scope_decisions__version",
         ),
+        CheckConstraint(
+            "octet_length(decision_fingerprint)=32",
+            name="ck_prt_scope_decisions__fingerprint",
+        ),
         {"schema": "plm"},
     )
 
@@ -382,6 +386,7 @@ class PrototypeScopeDecisionRow(Base):
     decision_type: Mapped[str] = mapped_column(Text, nullable=False)
     reason: Mapped[str] = mapped_column(Text, nullable=False)
     impact: Mapped[str] = mapped_column(Text, nullable=False)
+    decision_fingerprint: Mapped[bytes] = mapped_column(nullable=False)
     confirmed_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     review_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     review_round_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
@@ -445,3 +450,70 @@ class PrototypeScopeDecisionRequirementRefRow(Base):
         UUID(as_uuid=True), nullable=False
     )
     ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class PrototypeScopeDecisionResultRow(Base):
+    """Immutable first-success NOT_REQUIRED decision view."""
+
+    __tablename__ = "prt_scope_decision_results"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["scope_decision_id", "prototype_id", "project_id"],
+            [
+                "plm.prt_scope_decisions.scope_decision_id",
+                "plm.prt_scope_decisions.prototype_id",
+                "plm.prt_scope_decisions.project_id",
+            ],
+            name="fk_prt_scope_decision_results__decision", ondelete="NO ACTION",
+        ),
+        CheckConstraint(
+            "char_length(name) BETWEEN 1 AND 255 AND name=btrim(name)",
+            name="ck_prt_scope_decision_results__name",
+        ),
+        CheckConstraint(
+            "char_length(reason) BETWEEN 1 AND 2000 AND reason=btrim(reason)",
+            name="ck_prt_scope_decision_results__reason",
+        ),
+        CheckConstraint(
+            "char_length(impact) BETWEEN 1 AND 2000 AND impact=btrim(impact)",
+            name="ck_prt_scope_decision_results__impact",
+        ),
+        CheckConstraint(
+            "octet_length(decision_fingerprint)=32",
+            name="ck_prt_scope_decision_results__fingerprint",
+        ),
+        CheckConstraint(
+            "cardinality(requirement_version_refs)>0",
+            name="ck_prt_scope_decision_results__requirements",
+        ),
+        CheckConstraint(
+            "(review_id IS NULL AND review_round_id IS NULL) OR "
+            "(review_id IS NOT NULL AND review_round_id IS NOT NULL)",
+            name="ck_prt_scope_decision_results__review_pair",
+        ),
+        CheckConstraint("lock_version>0", name="ck_prt_scope_decision_results__version"),
+        {"schema": "plm"},
+    )
+
+    result_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    scope_decision_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    prototype_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    impact: Mapped[str] = mapped_column(Text, nullable=False)
+    decision_fingerprint: Mapped[bytes] = mapped_column(nullable=False)
+    confirmed_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    review_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    review_round_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    requirement_version_refs: Mapped[list[uuid.UUID]] = mapped_column(
+        ARRAY(UUID(as_uuid=True)), nullable=False
+    )
+    lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    decided_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )

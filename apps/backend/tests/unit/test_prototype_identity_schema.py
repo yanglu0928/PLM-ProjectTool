@@ -14,6 +14,7 @@ from plm_assistant.modules.prototype.infrastructure.orm import (
     PrototypePackageRow,
     PrototypeRow,
     PrototypeScopeDecisionRequirementRefRow,
+    PrototypeScopeDecisionResultRow,
     PrototypeScopeDecisionRow,
 )
 
@@ -174,6 +175,31 @@ class PrototypeIdentitySchemaTests(unittest.TestCase):
             self.assertIn(required, migration._GUARDS)
         with patch.object(migration.context, "is_offline_mode", return_value=True):
             with self.assertRaisesRegex(RuntimeError, "offline Prototype mutation"):
+                migration.downgrade()
+
+    def test_scope_decision_result_closes_not_required_transition(self) -> None:
+        self.assertEqual(
+            PrototypeScopeDecisionResultRow.__table__.name,
+            "prt_scope_decision_results",
+        )
+        self.assertIn(
+            "decision_fingerprint", PrototypeScopeDecisionRow.__table__.c,
+        )
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions."
+            "20261008_0126_prototype_scope_decisions"
+        )
+        self.assertEqual(migration.down_revision, "20261008_0125")
+        for required in (
+            "Prototype scope decision history is immutable",
+            "Prototype scope decision RequirementVersion is not current Approved",
+            "Prototype scope decision has no complete immutable result",
+            "Prototype mutation has no immutable result",
+            "PRT_SCOPE_DECISION",
+        ):
+            self.assertIn(required, migration._GUARDS)
+        with patch.object(migration.context, "is_offline_mode", return_value=True):
+            with self.assertRaisesRegex(RuntimeError, "offline Prototype scope-decision"):
                 migration.downgrade()
 
 

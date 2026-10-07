@@ -9909,3 +9909,16 @@
   限制为仅ACTIVE会阻止未来NOT_REQUIRED/RESTRICTED身份的合规退场；无`I` PATCH不能派生key。
 - Impact/Rollback：新增Schema0125结果表、两项授权和内部Owner，无公开API/依赖/外发。空mutation历史可
   降0124，存在结果拒降；停止后续Router可关闭流量，已归档Root和全部历史不可物理删除。
+
+# DEC-20261008-1028：NOT_REQUIRED决定固定当前批准需求且Review只证明精确内容
+
+- Date/WBS：2026-10-08 / `PRT-01-A03-A05`；依据冻结`PRT_MARK_NOT_REQUIRED`、SourceDecisionRef、
+  A03-A01边界和CR-PRT-001。
+- Decision：命令固定非空、规范排序的当前Approved RequirementVersion集合；PM或CustomerManager的实际
+  受权动作即人工决定并记录confirmed_by，不生成customer_confirmed语义。Review可空；若提供，只接受同项目
+  Approved `PRT_SCOPE_DECISION` Review/Round且Snapshot的32字节指纹精确匹配project、prototype、Root
+  version、reason、impact和全部需求版本。
+- Reason：只验证版本存在会把Draft/已替代版本固化；只保存Review ID不能证明其审的是本次内容；强制Review
+  会制造冻结Operation不存在的前置流程；把PM动作称客户确认会伪造业务事实。
+- Impact/Rollback：Migration0126兼容增加决定指纹与不可变结果表，无公开API/依赖/外发；空历史可降0125，
+  存在决定拒降。Windows实库用隔离合成Review验证证明合同，不构成客户确认或正式项目事实。
