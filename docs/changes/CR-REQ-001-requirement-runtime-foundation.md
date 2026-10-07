@@ -280,3 +280,10 @@ Package详情对成员ID按UUID字节序稳定排序，Requirement投影仅含�
 ETag。读取不写Audit/receipt或业务表，异常仓储shape失败关闭。Windows 11/PG18.6真实
 库的成员读取、双页keyset、成员顺序、隔离、拒绝、零写/drift通过；定向13、后端
 3033/3和wheel1153项/`6736871a…a7621`通过。无Schema、公开HTTP、依赖、Secret或外发变化。
+
+## A10-A03 子项拆分（2026-10-08）
+
+A03公开边界检查发现内部Package PATCH强制幂等key，与冻结API-04的`S,L,C,M,A`
+冲突。已先登记`CR-REQ-002`，将A03拆为P01 PATCH内部合同对齐和P02六个HTTP。
+P01移除PATCH key/receipt，保留If-Match、不可变command result和同事务Audit；ADD/REMOVE持久
+幂等不变。Win11/PG18.6、定向6、后端3033/3及wheel1153项/`c52ddd2b…e324`通过。

@@ -43,7 +43,6 @@ class PatchRequirementPackage:
     project_id: uuid.UUID
     requirement_package_id: uuid.UUID
     expected_version: int
-    idempotency_key: str = field(repr=False)
     name: str | None = None
     package_state: str | None = None
 
@@ -135,7 +134,7 @@ class RequirementPackageMutationService:
         state = command.package_state
         if state is not None and (type(state) is not str or state not in _STATES):
             raise RequirementPackageMutationError("VALIDATION_FAILED")
-        return self._execute(command, "PATCH", name, state, ())
+        return self._execute_patch(command, name, state)
 
     def add_members(self, command: ChangeRequirementPackageMembers) -> RequirementPackageView:
         return self._execute(command, "ADD", None, None, self._members(command))
@@ -143,11 +142,46 @@ class RequirementPackageMutationService:
     def remove_members(self, command: ChangeRequirementPackageMembers) -> RequirementPackageView:
         return self._execute(command, "REMOVE", None, None, self._members(command))
 
-    def _execute(self, command: PatchRequirementPackage | ChangeRequirementPackageMembers,
+    def _execute_patch(
+        self, command: PatchRequirementPackage, name: str | None,
+        state: str | None,
+    ) -> RequirementPackageView:
+        try:
+            self._guard.require_valid(trace_id=command.trace_id)
+            result_id = uuid.UUID(new_uuid7())
+            with self._uow() as tx:
+                actor = self._actor(tx, command)
+                authorized = self._authorization.require_in_transaction(
+                    tx, user_id=actor, project_id=command.project_id,
+                    operation="REQ_PACKAGE_PATCH",
+                )
+                if (authorized.user_id != actor
+                        or authorized.project_id != command.project_id):
+                    raise RequirementPackageMutationError("RESOURCE_NOT_FOUND")
+                result = self._repository.mutate(
+                    tx, result_id=result_id, operation="PATCH",
+                    project_id=command.project_id,
+                    requirement_package_id=command.requirement_package_id,
+                    expected_version=command.expected_version, actor_id=actor,
+                    name=name, package_state=state, requirement_ids=(),
+                )
+                self._append_audit(tx, command, actor, result, "PATCH")
+                tx.commit()
+                return result
+        except RequirementPackageMutationError:
+            raise
+        except ProjectAuthorizationError as error:
+            raise RequirementPackageMutationError(error.code) from None
+        except RuntimeLicenseError:
+            raise RequirementPackageMutationError("LICENSE_OPERATION_DENIED") from None
+        except Exception:
+            raise RequirementPackageMutationError("REQUIREMENT_UNAVAILABLE") from None
+
+    def _execute(self, command: ChangeRequirementPackageMembers,
                  operation: str, name: str | None, state: str | None,
                  members: tuple[uuid.UUID, ...]) -> RequirementPackageView:
         self._validate_common(command, type(command))
-        receipt_operation, auth_operation, action = _OPERATIONS[operation]
+        receipt_operation, auth_operation, _ = _OPERATIONS[operation]
         try:
             validate_idempotency_key(command.idempotency_key)
             fingerprint = canonical_payload_fingerprint({
@@ -192,15 +226,7 @@ class RequirementPackageMutationService:
                     expected_version=command.expected_version, actor_id=actor,
                     name=name, package_state=state, requirement_ids=members,
                 )
-                self._audit.append(tx, AuditEventDraft(
-                    trace_id=command.trace_id, event_scope="PROJECT",
-                    target_project_id=command.project_id, actor_type="USER", actor_id=actor,
-                    original_actor_id=None, actor_hint_digest=None, action=action,
-                    outcome="SUCCESS", target_owner_module="requirement",
-                    target_object_type="REQ-01",
-                    target_object_id=command.requirement_package_id,
-                    before_state=None, after_state=result.package_state,
-                ))
+                self._append_audit(tx, command, actor, result, operation)
                 self._receipts.complete(
                     tx, scope=scope,
                     result=IdempotencyResult(receipt_operation, result_id, 200),
@@ -217,6 +243,22 @@ class RequirementPackageMutationService:
             raise RequirementPackageMutationError(error.code) from None
         except Exception:
             raise RequirementPackageMutationError("REQUIREMENT_UNAVAILABLE") from None
+
+    def _append_audit(
+        self, tx: object,
+        command: PatchRequirementPackage | ChangeRequirementPackageMembers,
+        actor: uuid.UUID, result: RequirementPackageView, operation: str,
+    ) -> None:
+        action = _OPERATIONS[operation][2]
+        self._audit.append(tx, AuditEventDraft(
+            trace_id=command.trace_id, event_scope="PROJECT",
+            target_project_id=command.project_id, actor_type="USER",
+            actor_id=actor, original_actor_id=None, actor_hint_digest=None,
+            action=action, outcome="SUCCESS", target_owner_module="requirement",
+            target_object_type="REQ-01",
+            target_object_id=command.requirement_package_id,
+            before_state=None, after_state=result.package_state,
+        ))
 
     @staticmethod
     def _validate_common(command: object, expected_type: type) -> None:

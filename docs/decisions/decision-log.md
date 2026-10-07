@@ -9603,3 +9603,12 @@
   在无业务变化时漂移。
 - Impact/Rollback：新增内部读取Owner和四项授权策略；无Schema、公开HTTP、依赖、Secret
   或外发。停用Owner即可回滚。Win11/PG18.6、定向13、后端3033/3和wheel1153项通过。
+
+# DEC-20261008-1001：PATCH 不伪造幂等语义
+
+- Date/WBS：2026-10-08 / `REQ-01-A10-A03-P01`；依据API-04控制标记和`CR-REQ-002`。
+- Decision：Package PATCH只接受强If-Match，不接收幂等key、不保留receipt；每次成功调用仍
+  在同事务生成Package command result、更新Root并追加Audit。ADD/REMOVE幂等语义不变。
+- Reason：服务器自生key不会让客户端重放变得幂等，反而隐藏内部与冻结API的冲突。
+- Impact/Rollback：无Schema/公开HTTP/依赖变化；历史不删除。Win11/PG18.6、定向6、后端3033/3及
+  wheel1153项通过。回滚内部代码时必须同时关闭未来公开PATCH。

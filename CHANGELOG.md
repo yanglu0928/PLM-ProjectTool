@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/REQ-01-A10-A03-P01 依`CR-REQ-002`将Package PATCH与冻结
+  `S,L,C,M,A`对齐：移除内部幂等key/receipt，保留强ETag、不可变结果证明和同事务Audit；
+  ADD/REMOVE幂等不变。兼容性/回滚：无Schema、公开HTTP、依赖、Secret或外发；回滚时未来PATCH
+  HTTP必须关闭。验证：定向6、后端3033/3、Win11/PG18.6 PATCH零receipt/Audit回滚/重放/
+  drift及wheel1153项/`c52ddd2b…e324` PASS。已知问题：A10-A03-P02～A08、A11～A12、Gate3/UAT/发行待。
+
 - 2026-10-08：0.1.0-dev.0/REQ-01-A10-A02 新增Package/Requirement identity四个授权读取
   Owner，实现`(updated_at,id)`稳定keyset、最小安全投影、强ETag与Package成员稳定顺序。
   兼容性/回滚：内部增量，无Schema、公开HTTP、依赖、Secret或外发；可移除Owner/策略且不动

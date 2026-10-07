@@ -124,11 +124,11 @@ def main() -> None:
                 other_pm_token, CSRF, uuid.uuid4(), other_project, "REQ-FOREIGN", str(uuid.uuid4())
             ))
 
-            def patch(*, version=0, key=None, token=pm_token, csrf=CSRF,
+            def patch(*, version=0, token=pm_token, csrf=CSRF,
                       name="Delivery scope", state=None, target=mutation):
                 return target.patch(PatchRequirementPackage(
                     token, csrf, uuid.uuid4(), project, package.requirement_package_id,
-                    version, key or str(uuid.uuid4()), name=name, package_state=state,
+                    version, name=name, package_state=state,
                 ))
 
             def change(method, *, ids, version, key=None, token=pm_token, target=mutation):
@@ -143,11 +143,16 @@ def main() -> None:
             expect("LICENSE_OPERATION_DENIED", patch)
             guard.enabled = True
 
-            patch_key = str(uuid.uuid4())
-            patched = patch(key=patch_key)
+            with connect(database) as db:
+                receipts_before_patch = db.execute(
+                    "SELECT count(*) FROM plm.plt_idempotency_receipts"
+                ).fetchone()[0]
+            patched = patch()
             assert patched.etag == '"v1"'
-            assert patch(key=patch_key) == patched
-            expect("CONFLICT_IDEMPOTENCY", lambda: patch(key=patch_key, name="Different"))
+            with connect(database) as db:
+                assert db.execute(
+                    "SELECT count(*) FROM plm.plt_idempotency_receipts"
+                ).fetchone()[0] == receipts_before_patch
 
             add_key = str(uuid.uuid4())
             added = change(mutation.add_members, ids=[requirements[1].requirement_id,
@@ -189,11 +194,10 @@ def main() -> None:
                 **base, repository=SqlAlchemyRequirementPackageMutationRepository(),
                 audit=FailedAudit(),
             )
-            failed_key = str(uuid.uuid4())
             expect("REQUIREMENT_UNAVAILABLE", lambda: patch(
-                version=current_version, key=failed_key, name="Rollback", target=failed
+                version=current_version, name="Rollback", target=failed
             ))
-            recovered = patch(version=current_version, key=failed_key, name="Recovered")
+            recovered = patch(version=current_version, name="Recovered")
             assert recovered.name == "Recovered"
 
             with connect(database) as db:
@@ -216,14 +220,14 @@ def main() -> None:
                 else:
                     raise AssertionError("forged command snapshot accepted")
                 db.execute("UPDATE plm.auth_users SET state='DISABLED' WHERE user_id=%s", (pm,))
-            expect("AUTH_ACCESS_DENIED", lambda: patch(key=patch_key))
+            expect("AUTH_ACCESS_DENIED", patch)
             try:
                 command.downgrade(cfg, PREVIOUS)
             except Exception as error:
                 assert "mutation history prevents downgrade" in str(error), str(error)
             else:
                 raise AssertionError("Schema0113 accepted mutation history")
-            print("REQ_01_A03_P02_PACKAGE_MUTATION_PASS: authorization, License, patch, "
+            print("REQ_01_A03_P02_PACKAGE_MUTATION_PASS: authorization, License, non-idempotent patch, "
                   "membership add/remove without Requirement deletion, canonical replay, "
                   "optimistic concurrency, Audit rollback, forged snapshot rejection and "
                   "history refusal verified on PostgreSQL 18")

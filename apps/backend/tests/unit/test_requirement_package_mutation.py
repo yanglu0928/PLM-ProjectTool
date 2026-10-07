@@ -23,7 +23,7 @@ class RequirementPackageMutationTests(unittest.TestCase):
         self.package = uuid.uuid4()
         self.patch = PatchRequirementPackage(
             b"s" * 32, b"c" * 32, uuid.uuid4(), self.project, self.package,
-            0, str(uuid.uuid4()), name="Delivery scope",
+            0, name="Delivery scope",
         )
         self.members = ChangeRequirementPackageMembers(
             b"s" * 32, b"c" * 32, uuid.uuid4(), self.project, self.package,
@@ -73,12 +73,13 @@ class RequirementPackageMutationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             replace(view, etag="v1")
 
-    def test_secrets_and_idempotency_keys_are_redacted(self) -> None:
+    def test_secrets_are_redacted_and_only_retryable_commands_have_keys(self) -> None:
         for command in (self.patch, self.members):
             rendered = repr(command)
             self.assertNotIn("s" * 32, rendered)
             self.assertNotIn("c" * 32, rendered)
-            self.assertNotIn(command.idempotency_key, rendered)
+        self.assertFalse(hasattr(self.patch, "idempotency_key"))
+        self.assertNotIn(self.members.idempotency_key, repr(self.members))
 
     def test_repository_contract_never_deletes_requirement_rows(self) -> None:
         source = inspect.getsource(SqlAlchemyRequirementPackageMutationRepository.mutate)
