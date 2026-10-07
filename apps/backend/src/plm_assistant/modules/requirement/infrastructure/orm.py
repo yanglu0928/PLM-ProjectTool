@@ -1028,6 +1028,97 @@ class RequirementVersionCreateResultRow(Base):
     )
 
 
+class RequirementReviewStateResultRow(Base):
+    """Immutable closure for one Review-driven Requirement root transition."""
+
+    __tablename__ = "req_requirement_review_state_results"
+    __table_args__ = (
+        UniqueConstraint(
+            "requirement_id", "lock_version",
+            name="uq_req_review_results__requirement_lock",
+        ),
+        UniqueConstraint(
+            "requirement_version_id", "event_type",
+            name="uq_req_review_results__version_event",
+        ),
+        ForeignKeyConstraint(
+            ["requirement_version_id", "requirement_id", "project_id"],
+            ["plm.req_requirement_versions.requirement_version_id",
+             "plm.req_requirement_versions.requirement_id",
+             "plm.req_requirement_versions.project_id"],
+            name="fk_req_review_results__version", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["previous_approved_version_ref", "requirement_id", "project_id"],
+            ["plm.req_requirement_versions.requirement_version_id",
+             "plm.req_requirement_versions.requirement_id",
+             "plm.req_requirement_versions.project_id"],
+            name="fk_req_review_results__previous", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["current_approved_version_ref", "requirement_id", "project_id"],
+            ["plm.req_requirement_versions.requirement_version_id",
+             "plm.req_requirement_versions.requirement_id",
+             "plm.req_requirement_versions.project_id"],
+            name="fk_req_review_results__current", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["review_id"], ["plm.rvw_reviews.review_id"],
+            name="fk_req_review_results__review", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["review_round_id"], ["plm.rvw_review_rounds.review_round_id"],
+            name="fk_req_review_results__round", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["actor_id"], ["plm.auth_users.user_id"],
+            name="fk_req_review_results__actor", ondelete="NO ACTION",
+        ),
+        CheckConstraint(
+            "event_type IN ('START','APPROVED','RETURNED','WITHDRAWN')",
+            name="ck_req_review_results__event",
+        ),
+        CheckConstraint(
+            "expected_lock_version>=0 AND lock_version=expected_lock_version+1",
+            name="ck_req_review_results__lock",
+        ),
+        CheckConstraint(
+            "(event_type='APPROVED' AND current_approved_version_ref="
+            "requirement_version_id) OR (event_type<>'APPROVED' AND "
+            "current_approved_version_ref IS NOT DISTINCT FROM "
+            "previous_approved_version_ref)",
+            name="ck_req_review_results__pointer",
+        ),
+        Index("ix_req_review_results__review_round", "review_id", "review_round_id"),
+        {"schema": "plm"},
+    )
+
+    review_state_result_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()")
+    )
+    requirement_version_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), nullable=False
+    )
+    requirement_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    review_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    review_round_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    event_type: Mapped[str] = mapped_column(Text, nullable=False)
+    previous_approved_version_ref: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True)
+    )
+    current_approved_version_ref: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True)
+    )
+    actor_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    expected_lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+
+
 class RequirementCommandResultRow(Base):
     """Immutable first-success Requirement identity mutation projection."""
 

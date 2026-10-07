@@ -9510,3 +9510,15 @@
   当前事实阻止已撤销来源、PENDING或过期能力判断在历史报告掩护下被批准。
 - Impact/Rollback：A01纯文档；A02增量实施Migration与Subject Owner。无API/依赖/Secret/外发；产生
   Review历史后不得物理降级，采用向前修复。Gate 3不因此关闭。
+
+# DEC-20261007-993：Review 状态以不可变结果保持 Requirement Root 强闭包
+
+- Date/WBS：2026-10-07 / `REQ-01-A08-A02-P01`；依据Migration0115/0119 Root与Version闭包及DEC-992。
+- Gap：Survey只需状态/指针延迟检查；Requirement还要求每次Root ETag变化精确映射一个不可变Owner结果。
+  若直接复制Survey守卫，就必须降低既有Root保护，且无法证明一次Review只消费一次精确版本状态转换。
+- Decision：新增内部`req_requirement_review_state_results`，不可变记录START/APPROVED/RETURNED/
+  WITHDRAWN、Version/Review/Round、前后正式指针、Actor及期望/结果lock version；Root与Version延迟触发器
+  反向要求精确结果，APPROVED还要求旧正式版同步SUPERSEDED。只开放Review所需最小状态转换。
+- Impact/Rollback：Schema head升至0120；无公开API、依赖、Secret或外发。有Review历史拒绝降级并应向前
+  修复。Win11/PG18.6升降、drift、START/RETURNED/APPROVED、直写/截断拒绝，定向20、后端3014/3及
+  wheel1146项/`ed08fa48…7d38`通过；业务Subject Owner仍由P02开放。

@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/REQ-01-A08-A02-P01 新增Migration0120 Requirement Review生命周期窄门与
+  不可变状态结果，绑定Review/Round/Version、前后正式指针、Actor和Root lock version，并以延迟闭包
+  阻止无结果直写、孤立终态及一次Root bump挂接多个状态结果。兼容性/升级：内部Schema增量，无公开API、
+  依赖、Secret或外发；空历史可降0119，有Review历史向前修复。验证：定向20、后端3014项/3跳过、
+  Win11/PG18.6升降/drift/START/RETURNED/APPROVED/直写和截断拒绝、wheel1146项/
+  `ed08fa48…7d38`通过。已知问题：P02 Subject Owner、A09～A12、Gate3/UAT/发行待。
+
 - 2026-10-07：0.1.0-dev.0/REQ-01-A08-A01 完成Requirement Review正式化前置核查，固定复用
   `REQ-03 + REQUIREMENT_ALL_V1` PROJECT Review、最新DRAFT锁、送审/批准当前事实重验及终态原子消费；
   A08拆为Migration0120和Subject Owner。兼容性/回滚：纯文档，无Schema、API、程序、依赖、Secret或

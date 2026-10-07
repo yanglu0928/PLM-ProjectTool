@@ -26,6 +26,7 @@ from plm_assistant.modules.requirement.infrastructure.orm import (
     RequirementVersionRow,
     RequirementVersionAITaskRefRow,
     RequirementVersionCreateResultRow,
+    RequirementReviewStateResultRow,
 )
 
 
@@ -308,6 +309,24 @@ class RequirementIdentitySchemaTests(unittest.TestCase):
                       migration._OWNER_GUARDS)
         with patch.object(migration.context, "is_offline_mode", return_value=True):
             with self.assertRaisesRegex(RuntimeError, "offline RequirementVersion owner"):
+                migration.downgrade()
+
+    def test_requirement_review_lifecycle_has_immutable_root_closure(self) -> None:
+        table = RequirementReviewStateResultRow.__table__
+        self.assertEqual(table.schema, "plm")
+        self.assertEqual(table.name, "req_requirement_review_state_results")
+        names = {constraint.name for constraint in table.constraints}
+        self.assertIn("fk_req_review_results__version", names)
+        self.assertIn("uq_req_review_results__requirement_lock", names)
+        self.assertIn("ck_req_review_results__pointer", names)
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions.20261007_0120_requirement_review_lifecycle")
+        self.assertEqual(migration.down_revision, "20261007_0119")
+        self.assertIn("RequirementVersion Review transition has no immutable result",
+                      migration._GUARDS)
+        self.assertIn("REQUIREMENT_ALL_V1", migration._GUARDS)
+        with patch.object(migration.context, "is_offline_mode", return_value=True):
+            with self.assertRaisesRegex(RuntimeError, "offline Requirement Review"):
                 migration.downgrade()
 
 

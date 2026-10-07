@@ -207,3 +207,12 @@ Review，固定`REQ-03 + REQUIREMENT_ALL_V1`，不新增第二套Review表。只
 送审；送审和APPROVE均在调用方事务重跑A07 CurrentValidator，历史Validate Audit不能替代当前证明，
 PENDING或任一来源/能力/Evidence漂移均拒绝。APPROVED原子更新Root正式指针并SUPERSEDE旧正式版；
 RETURNED/WITHDRAWN映射Version RETURNED且保留旧指针。HTTP/生产组合留A10，前端留A11。
+
+## A08-A02-P01 实施记录（2026-10-07）
+
+Migration0120开放Requirement Review最小状态窄门和延迟完整性，绑定`REQ-03 + REQUIREMENT_ALL_V1`、
+PROJECT、同项目Subject/Version、活动Round、终态及唯一正式指针。实施时确认Requirement Root在0115/
+0119已有每次ETag变更必须绑定不可变结果的强闭包；直接仿照Survey会被迫放宽保护。按持续授权新增内部
+`req_requirement_review_state_results`，固定Review事件、前后正式指针、Actor和lock version，并反向闭合
+Root与Version状态转换。无结果直写、改删/截断失败关闭；有Review历史拒降。Win11/PG18.6升降/drift、
+START/RETURNED/APPROVED，定向20、后端3014/3及wheel1146项通过；P02前Owner仍关闭。
