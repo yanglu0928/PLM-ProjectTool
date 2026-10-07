@@ -7,6 +7,9 @@ from fastapi import APIRouter
 from plm_assistant.modules.ai.infrastructure.task_read_repository import (
     SqlAlchemyAITaskReadRepository,
 )
+from plm_assistant.modules.ai.infrastructure.survey_conclusion_task import (
+    SqlAlchemySurveyConclusionAITaskProof,
+)
 from plm_assistant.modules.auth.infrastructure.project_read_access import (
     SqlAlchemyProjectReadAccess,
 )
@@ -37,6 +40,9 @@ from plm_assistant.modules.handover.application.source_validation import (
 from plm_assistant.modules.handover.application.workflow_qualification_owner import (
     HandoverWorkflowQualificationOwner,
 )
+from plm_assistant.modules.handover.infrastructure.survey_conclusion_issue import (
+    SqlAlchemySurveyConclusionIssueProof,
+)
 from plm_assistant.modules.handover.infrastructure.workflow_qualification_repository import (
     SqlAlchemyHandoverWorkflowQualificationRepository,
 )
@@ -51,6 +57,21 @@ from plm_assistant.modules.project.infrastructure.authorization_repository impor
 )
 from plm_assistant.modules.review.infrastructure.read_repository import (
     SqlAlchemyReviewSnapshotReadRepository,
+)
+from plm_assistant.modules.survey.application.conclusion_sources import (
+    SurveyConclusionProjectRecordProofService,
+)
+from plm_assistant.modules.survey.application.validate_conclusion import (
+    SurveyConclusionCurrentValidator,
+)
+from plm_assistant.modules.survey.application.workflow_qualification import (
+    SurveyWorkflowQualificationOwner,
+)
+from plm_assistant.modules.survey.infrastructure.conclusion_response_source import (
+    SqlAlchemyConclusionResponseProof,
+)
+from plm_assistant.modules.survey.infrastructure.workflow_qualification_repository import (
+    SqlAlchemySurveyWorkflowQualificationRepository,
 )
 from plm_assistant.modules.trace.application.resolution_proof import (
     TraceResolutionProofService,
@@ -70,6 +91,13 @@ from plm_assistant.modules.workflow.api.transition_stage import (
 )
 from plm_assistant.modules.workflow.application.preview_checklist_qualification import (
     WorkflowChecklistQualificationPreviewService,
+)
+from plm_assistant.modules.workflow.application.checklist_qualification import (
+    ChecklistQualificationRegistration,
+    ChecklistQualificationRegistry,
+)
+from plm_assistant.modules.workflow.application.handover_qualification_adapter import (
+    HandoverChecklistQualificationAdapter,
 )
 from plm_assistant.modules.workflow.application.record_checklist import (
     WorkflowChecklistRecordService,
@@ -130,6 +158,67 @@ def _create_handover_qualification(
     )
 
 
+def _create_qualification_registry(
+    *, documents, downloads, parse_results,
+    project_repository=None, target_proofs=None,
+) -> ChecklistQualificationRegistry:
+    """Compose the explicit Handover and Survey fact-owner allowlist."""
+
+    if project_repository is None:
+        project_repository = SqlAlchemyProjectAuthorizationRepository()
+    document_proofs = DocumentFixedSourceProofService(
+        documents=documents,
+        downloads=downloads,
+        parse_metadata=SqlAlchemyParseResultReadRepository(),
+        parse_results=parse_results,
+    )
+    survey_project_records = SurveyConclusionProjectRecordProofService(
+        evidence=EvidenceFixedProjectSourceService(
+            sessions=SqlAlchemyProjectReadAccess(),
+            projects=project_repository,
+            evidence=SqlAlchemyEvidenceFixedSourceRepository(),
+            documents=document_proofs,
+            allowed_project_roles=frozenset({"PROJECT_MANAGER"}),
+            required_document_category="PROJECT_RECORD",
+        ),
+        allowed_verified_roles=frozenset({"PROJECT_MANAGER"}),
+    )
+    survey = SurveyWorkflowQualificationOwner(
+        repository=SqlAlchemySurveyWorkflowQualificationRepository(),
+        current=SurveyConclusionCurrentValidator(
+            response_owner=SqlAlchemyConclusionResponseProof(),
+            evidence_owner=survey_project_records,
+            issue_owner=SqlAlchemySurveyConclusionIssueProof(),
+            ai_owner=SqlAlchemySurveyConclusionAITaskProof(),
+        ),
+        responses=SqlAlchemyConclusionResponseProof(),
+        evidence=EvidenceFixedProjectSourceService(
+            sessions=SqlAlchemyProjectReadAccess(),
+            projects=project_repository,
+            evidence=SqlAlchemyEvidenceFixedSourceRepository(),
+            documents=document_proofs,
+            allowed_project_roles=frozenset({"PROJECT_MANAGER"}),
+        ),
+        reviews=SqlAlchemyReviewSnapshotReadRepository(),
+    )
+    handover = HandoverChecklistQualificationAdapter(
+        _create_handover_qualification(
+            documents=documents, downloads=downloads,
+            parse_results=parse_results,
+            project_repository=project_repository,
+            target_proofs=target_proofs,
+        ),
+    )
+    return ChecklistQualificationRegistry((
+        ChecklistQualificationRegistration((
+            "HANDOVER_BASELINE", "HANDOVER_ISSUES",
+        ), handover),
+        ChecklistQualificationRegistration((
+            "SURVEY_ACTUAL_SOURCES", "SURVEY_CONCLUSION",
+        ), survey),
+    ))
+
+
 def create_windows_workflow_checklist_record_router(
     runtime, *, sessions, origins, license_guard, audit,
     documents, downloads, parse_results,
@@ -143,7 +232,7 @@ def create_windows_workflow_checklist_record_router(
         raise ProductionWorkflowChecklistStartupError()
     try:
         project_repository = SqlAlchemyProjectAuthorizationRepository()
-        qualification = _create_handover_qualification(
+        qualification = _create_qualification_registry(
             documents=documents, downloads=downloads,
             parse_results=parse_results, project_repository=project_repository,
             target_proofs=target_proofs,
@@ -189,7 +278,7 @@ def create_windows_workflow_checklist_qualification_router(
             ),
             license_guard=license_guard,
             workflows=SqlAlchemyWorkflowReadRepository(),
-            qualification=_create_handover_qualification(
+            qualification=_create_qualification_registry(
                 documents=documents, downloads=downloads,
                 parse_results=parse_results,
             ),
@@ -221,7 +310,7 @@ def create_windows_workflow_stage_transition_router(
                 repository=project_repository,
             ),
             license_guard=license_guard,
-            qualification=_create_handover_qualification(
+            qualification=_create_qualification_registry(
                 documents=documents, downloads=downloads,
                 parse_results=parse_results,
                 project_repository=project_repository,

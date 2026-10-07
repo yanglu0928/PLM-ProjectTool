@@ -9231,3 +9231,15 @@
   发现Answer Evidence已撤销或内容漂移。唯一候选加当前Owner重证可以在不扩WFL Schema下固定事实。
 - Impact/Rollback：内部Proof增加兼容Evidence快照并新增Owner/Repository；无Schema/API/依赖/Secret/
   外发，A04前无生产接线。新增5、后端2953/3、wheel1109项通过；真实PG锁与写链留A05。
+
+# DEC-20261007-970：以 target 映射显式限定两条已有相邻阶段推进
+
+- Date/WBS：2026-10-07 / `SUR-06-A04`；依据CR-SUR-012、Workflow V1 catalog和已验证Handover合同。
+- Decision：Transition service以显式target映射限定`SURVEY=(HANDOVER, Handover两项)`与
+  `REQUIREMENT=(SURVEY, Survey两项)`，其他target全部失败关闭。两项通过业务中立
+  coherence key校验同一subject/version/ReviewRound；实际当前阶段与顺序仍由原子
+  Repository校验。Handover响应继续独立序列化，避免新字段污染旧响应。
+- Reason：从catalog动态开放全部后续阶段会超过已实现Owner范围；在Workflow比较私有DTO则
+  重新引入业务耦合。显式映射与registry一致，且便于后续每个阶段按证据逐项开放。
+- Impact/Rollback：无Schema/Migration、新URL、依赖、Secret或外发；移除Survey注册和
+  `REQUIREMENT`映射即恢复Handover-only，历史不改写。后端2957/3与wheel通过；真实PG留A05。

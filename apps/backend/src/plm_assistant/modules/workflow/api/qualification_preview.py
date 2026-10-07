@@ -31,6 +31,23 @@ def checklist_qualification_preview_data(
         if type(preview) is not WorkflowChecklistQualificationPreview:
             raise ValueError("Checklist qualification preview required")
         preview.__post_init__()
+        if preview.stage_key == "HANDOVER":
+            return {
+                "workflow_id": str(preview.workflow_id),
+                "project_id": str(preview.project_id),
+                "definition_version": preview.definition_version,
+                "stage_key": preview.stage_key,
+                "item_key": preview.item_key,
+                "current_item_state": preview.current_item_state,
+                "workflow_etag": preview.workflow_etag,
+                "handover_analysis_version_id": str(
+                    preview.handover_analysis_version_id,
+                ),
+                "review_round_ref": str(preview.review_round_ref),
+                "evidence_refs": [
+                    str(value) for value in preview.evidence_refs
+                ],
+            }
         return {
             "workflow_id": str(preview.workflow_id),
             "project_id": str(preview.project_id),
@@ -39,9 +56,7 @@ def checklist_qualification_preview_data(
             "item_key": preview.item_key,
             "current_item_state": preview.current_item_state,
             "workflow_etag": preview.workflow_etag,
-            "handover_analysis_version_id": str(
-                preview.handover_analysis_version_id,
-            ),
+            "survey_conclusion_id": str(preview.survey_conclusion_id),
             "review_round_ref": str(preview.review_round_ref),
             "evidence_refs": [str(value) for value in preview.evidence_refs],
         }
@@ -89,7 +104,10 @@ def create_workflow_checklist_qualification_router(
         if (canonical_project_id.int == 0
                 or str(canonical_project_id) != project_id):
             raise ApplicationError("VALIDATION_FAILED")
-        if item_key not in {"HANDOVER_BASELINE", "HANDOVER_ISSUES"}:
+        if item_key not in {
+            "HANDOVER_BASELINE", "HANDOVER_ISSUES",
+            "SURVEY_ACTUAL_SOURCES", "SURVEY_CONCLUSION",
+        }:
             raise ApplicationError("VALIDATION_FAILED")
         try:
             preview = await run_in_threadpool(

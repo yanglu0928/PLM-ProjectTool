@@ -6,11 +6,6 @@ from datetime import datetime, timezone
 from unittest.mock import Mock
 from uuid import uuid4
 
-from plm_assistant.modules.handover.application.workflow_qualification import (
-    HandoverChecklistQualification,
-    HandoverWorkflowEvidenceObservation,
-    HandoverWorkflowReviewObservation,
-)
 from plm_assistant.modules.license.application.runtime_guard import (
     RuntimeLicenseError,
 )
@@ -25,6 +20,10 @@ from plm_assistant.modules.workflow.application.append_stage_transition import (
 )
 from plm_assistant.modules.workflow.application.current_checklist_record import (
     ChecklistBasisObservation,
+)
+from plm_assistant.modules.workflow.application.checklist_qualification import (
+    ChecklistQualificationEvidence, ChecklistQualificationReview,
+    CurrentChecklistQualification,
 )
 from plm_assistant.modules.workflow.application.transition_stage import (
     TransitionWorkflowStage, WorkflowStageTransitionError,
@@ -100,18 +99,20 @@ class WorkflowStageTransitionServiceTests(unittest.TestCase):
 
     def _qualification(
         self, item_key: str, index: int,
-    ) -> HandoverChecklistQualification:
-        evidence = HandoverWorkflowEvidenceObservation(
+    ) -> CurrentChecklistQualification:
+        evidence = ChecklistQualificationEvidence(
             uuid4(), self.project, index + 2,
             bytes([index + 1]) * 32, self.now,
         )
-        review = HandoverWorkflowReviewObservation(
+        review = ChecklistQualificationReview(
             self.review, self.round, self.project, self.analysis,
             self.version, 3, b"v" * 32, self.now,
+            "HND-05", "HANDOVER_APPROVAL_V1",
         )
-        return HandoverChecklistQualification(
-            item_key, self.project, self.version,
-            bytes([index + 10]) * 32, (evidence,), review,
+        return CurrentChecklistQualification(
+            self.project, "HANDOVER", item_key, "HND-05",
+            self.analysis, self.version, bytes([index + 10]) * 32,
+            (evidence,), review,
         )
 
     def _result(self) -> PersistedStageTransition:
@@ -192,6 +193,77 @@ class WorkflowStageTransitionServiceTests(unittest.TestCase):
         ))
         self.assertTrue(self.uow.values[-1].committed)
 
+    def test_survey_to_requirement_uses_survey_gate_pair(self):
+        conclusion_series, conclusion_version = uuid4(), uuid4()
+        survey_values = []
+        for index, item_key in enumerate((
+                "SURVEY_ACTUAL_SOURCES", "SURVEY_CONCLUSION")):
+            evidence = ChecklistQualificationEvidence(
+                uuid4(), self.project, index + 4,
+                bytes([index + 4]) * 32, self.now,
+            )
+            review = ChecklistQualificationReview(
+                self.review, self.round, self.project, conclusion_series,
+                conclusion_version, 5, b"s" * 32, self.now,
+                "SRV-05", "SURVEY_CONCLUSION_ALL_V1",
+            )
+            survey_values.append(CurrentChecklistQualification(
+                self.project, "SURVEY", item_key, "SRV-05",
+                conclusion_series, conclusion_version,
+                bytes([index + 20]) * 32, (evidence,), review,
+            ))
+        self.qualification.qualify_only_current_in_transaction.side_effect = (
+            tuple(survey_values)
+        )
+        snapshots = tuple(GateItemSnapshot(
+            value.item_key, ChecklistState.PASS,
+            (value.evidence[0].evidence_id,), (self.round,),
+        ) for value in survey_values)
+        gates = []
+        for index, (snapshot, value) in enumerate(zip(
+                snapshots, survey_values, strict=True)):
+            basis = tuple(sorted((
+                ChecklistBasisObservation(
+                    "EVIDENCE", value.evidence[0].evidence_id,
+                    "PROJECT", self.project, "ELIGIBLE",
+                    value.evidence[0].observed_lock_version,
+                    value.evidence[0].content_fingerprint, self.now, 1,
+                ),
+                ChecklistBasisObservation(
+                    "REVIEW_ROUND", self.round, "PROJECT", self.project,
+                    "APPROVED", 5, value.content_fingerprint, self.now, 1,
+                ),
+            ), key=lambda item: (item.ref_kind, str(item.ref_id))))
+            gates.append(PersistedTransitionGate(
+                uuid4(), uuid4(), 1, bytes([index + 25]) * 32,
+                snapshot, basis,
+            ))
+        snapshot = ForwardTransitionSnapshot(
+            self.workflow, self.project, self.actor, self.trace, 1,
+            "SURVEY", "REQUIREMENT", 3, 4,
+            "Survey conclusion approved", self.now, snapshots,
+        )
+        self.transitions.append.return_value = PersistedStageTransition(
+            uuid4(), snapshot, tuple(gates), b"u" * 32, 4,
+        )
+
+        result = self.service.transition(
+            self._command(
+                target_stage_key="REQUIREMENT",
+                reason="Survey conclusion approved",
+            ),
+            idempotency_key="workflow-transition-survey-001",
+        )
+
+        queries = [call.args[1] for call in
+                   self.qualification.qualify_only_current_in_transaction.call_args_list]
+        self.assertEqual(
+            ("SURVEY_ACTUAL_SOURCES", "SURVEY_CONCLUSION"),
+            tuple(value.item_key for value in queries),
+        )
+        self.assertEqual("SURVEY", result.snapshot.from_stage)
+        self.assertEqual("REQUIREMENT", result.snapshot.to_stage)
+
     def test_replay_rechecks_access_and_returns_original_without_owner_write(self):
         self.receipts.reserve.return_value = IdempotencyResult(
             "V1_WORKFLOW_TRANSITION", self.result.stage_transition_id, 200,
@@ -209,28 +281,31 @@ class WorkflowStageTransitionServiceTests(unittest.TestCase):
         self.assertFalse(self.uow.values[-1].committed)
 
     def test_two_gate_proofs_must_share_version_and_review(self):
-        changed_version = uuid4()
-        changed_review = replace(
-            self.qualifications[1].review,
-            review_round_id=uuid4(), subject_id=uuid4(),
-            subject_version_id=changed_version,
+        changed_reviews = (
+            replace(self.qualifications[1].review,
+                    review_round_id=uuid4()),
+            replace(self.qualifications[1].review,
+                    review_id=uuid4()),
+            replace(self.qualifications[1].review,
+                    subject_fingerprint=b"x" * 32),
         )
-        changed = replace(
-            self.qualifications[1],
-            handover_analysis_version_id=changed_version,
-            review=changed_review,
-        )
-        self.qualification.qualify_only_current_in_transaction.side_effect = (
-            self.qualifications[0], changed,
-        )
-        with self.assertRaisesRegex(
-                WorkflowStageTransitionError,
-                "WORKFLOW_GATE_NOT_SATISFIED"):
-            self.service.transition(
-                self._command(), idempotency_key="workflow-transition-drift",
-            )
-        self.transitions.append.assert_not_called()
-        self.assertFalse(self.uow.values[-1].committed)
+        for index, changed_review in enumerate(changed_reviews):
+            with self.subTest(index=index):
+                changed = replace(
+                    self.qualifications[1], review=changed_review,
+                )
+                self.qualification.qualify_only_current_in_transaction.side_effect = (
+                    self.qualifications[0], changed,
+                )
+                with self.assertRaisesRegex(
+                        WorkflowStageTransitionError,
+                        "WORKFLOW_GATE_NOT_SATISFIED"):
+                    self.service.transition(
+                        self._command(),
+                        idempotency_key=f"workflow-transition-drift-{index}",
+                    )
+                self.transitions.append.assert_not_called()
+                self.assertFalse(self.uow.values[-1].committed)
 
     def test_non_manager_license_and_audit_failure_close_without_commit(self):
         self.projects.require_in_transaction.return_value = (
@@ -267,7 +342,7 @@ class WorkflowStageTransitionServiceTests(unittest.TestCase):
 
     def test_invalid_command_and_repository_error_are_safe(self):
         for command in (
-            self._command(target_stage_key="REQUIREMENT"),
+            self._command(target_stage_key="PROTOTYPE"),
             self._command(reason=" "),
             self._command(expected_workflow_version=-1),
         ):

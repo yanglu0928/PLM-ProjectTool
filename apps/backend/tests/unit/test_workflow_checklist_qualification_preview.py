@@ -5,14 +5,6 @@ from datetime import datetime, timezone
 from unittest.mock import Mock
 from uuid import uuid4
 
-from plm_assistant.modules.handover.application.workflow_qualification import (
-    HandoverChecklistQualification,
-    HandoverWorkflowEvidenceObservation,
-    HandoverWorkflowReviewObservation,
-)
-from plm_assistant.modules.handover.application.workflow_qualification_owner import (
-    HandoverWorkflowQualificationOwnerError,
-)
 from plm_assistant.modules.license.application.runtime_guard import (
     RuntimeLicenseError,
 )
@@ -24,6 +16,10 @@ from plm_assistant.modules.workflow.application.preview_checklist_qualification 
     WorkflowChecklistQualificationPreviewError,
     WorkflowChecklistQualificationPreviewQuery,
     WorkflowChecklistQualificationPreviewService,
+)
+from plm_assistant.modules.workflow.application.checklist_qualification import (
+    ChecklistQualificationError, ChecklistQualificationEvidence,
+    ChecklistQualificationReview, CurrentChecklistQualification,
 )
 from plm_assistant.modules.workflow.application.read_workflow import (
     ChecklistView, StageView, WorkflowView,
@@ -73,19 +69,21 @@ class WorkflowChecklistQualificationPreviewTests(unittest.TestCase):
         )
         self.view = self._view()
         self.workflows.get.return_value = self.view
-        observations = tuple(HandoverWorkflowEvidenceObservation(
+        observations = tuple(ChecklistQualificationEvidence(
             value, self.project, index + 1, bytes([index + 1]) * 32,
             self.now,
         ) for index, value in enumerate(self.evidence))
-        review = HandoverWorkflowReviewObservation(
-            self.review, self.round, self.project, uuid4(),
+        subject_id = uuid4()
+        review = ChecklistQualificationReview(
+            self.review, self.round, self.project, subject_id,
             self.analysis_version, 3, b"r" * 32, self.now,
+            "HND-05", "HANDOVER_APPROVAL_V1",
         )
         self.qualification.get = None
         self.qualification.qualify_only_current_in_transaction.return_value = (
-            HandoverChecklistQualification(
-                "HANDOVER_BASELINE", self.project,
-                self.analysis_version, b"q" * 32,
+            CurrentChecklistQualification(
+                self.project, "HANDOVER", "HANDOVER_BASELINE", "HND-05",
+                subject_id, self.analysis_version, b"q" * 32,
                 observations, review,
             )
         )
@@ -98,13 +96,23 @@ class WorkflowChecklistQualificationPreviewTests(unittest.TestCase):
 
     def _view(self, *, state="ACTIVE", current="HANDOVER", lock=4):
         definition = six_stage_definition()
+        current_index = next((
+            index for index, stage in enumerate(definition.stages)
+            if stage.stage_key == current
+        ), None)
         stages = tuple(StageView(
             stage.stage_key, stage.order,
-            "ACTIVE" if stage.stage_key == current and state == "ACTIVE"
-            else "NOT_STARTED",
-            tuple(ChecklistView(item.item_key, item.required, "PENDING")
+            ("COMPLETED" if state == "ACTIVE" and current_index is not None
+             and index < current_index else
+             "ACTIVE" if stage.stage_key == current and state == "ACTIVE"
+             else "NOT_STARTED"),
+            tuple(ChecklistView(
+                item.item_key, item.required,
+                "PASS" if state == "ACTIVE" and current_index is not None
+                and index < current_index else "PENDING",
+            )
                   for item in stage.checklist_items),
-        ) for stage in definition.stages)
+        ) for index, stage in enumerate(definition.stages))
         return WorkflowView(
             self.workflow, self.project, 1, state, current, stages, lock,
         )
@@ -140,10 +148,37 @@ class WorkflowChecklistQualificationPreviewTests(unittest.TestCase):
             operation="WORKFLOW_CHECKLIST_RECORD",
         )
 
+    def test_survey_current_stage_returns_strict_subject_variant(self):
+        conclusion_series, conclusion_version = uuid4(), uuid4()
+        observations = tuple(ChecklistQualificationEvidence(
+            value, self.project, index + 1, bytes([index + 1]) * 32,
+            self.now,
+        ) for index, value in enumerate(self.evidence))
+        review = ChecklistQualificationReview(
+            self.review, self.round, self.project, conclusion_series,
+            conclusion_version, 3, b"r" * 32, self.now,
+            "SRV-05", "SURVEY_CONCLUSION_ALL_V1",
+        )
+        self.workflows.get.return_value = self._view(current="SURVEY", lock=5)
+        self.qualification.qualify_only_current_in_transaction.return_value = (
+            CurrentChecklistQualification(
+                self.project, "SURVEY", "SURVEY_CONCLUSION", "SRV-05",
+                conclusion_series, conclusion_version, b"q" * 32,
+                observations, review,
+            )
+        )
+
+        result = self.service.get(self._query(item_key="SURVEY_CONCLUSION"))
+
+        self.assertEqual("SURVEY", result.stage_key)
+        self.assertIsNone(result.handover_analysis_version_id)
+        self.assertEqual(conclusion_version, result.survey_conclusion_id)
+        self.assertEqual(self.evidence, result.evidence_refs)
+
     def test_invalid_query_and_non_current_stage_fail_before_owner(self):
         for query in (
             self._query(session_token=b"short"),
-            self._query(item_key="SURVEY_CONCLUSION"),
+            self._query(item_key="REQUIREMENT_ACCEPTANCE"),
         ):
             with self.subTest(query=query), self.assertRaisesRegex(
                     WorkflowChecklistQualificationPreviewError,
@@ -173,7 +208,7 @@ class WorkflowChecklistQualificationPreviewTests(unittest.TestCase):
     def test_owner_license_session_and_project_failures_are_safe(self):
         cases = (
             (self.qualification.qualify_only_current_in_transaction,
-             HandoverWorkflowQualificationOwnerError(),
+             ChecklistQualificationError(),
              "WORKFLOW_GATE_NOT_SATISFIED"),
             (self.guard.require_valid, RuntimeLicenseError("invalid"),
              "LICENSE_OPERATION_DENIED"),

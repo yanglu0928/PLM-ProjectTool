@@ -10,14 +10,6 @@ from typing import Protocol
 
 from plm_assistant.modules.audit.application.audit_service import AuditService
 from plm_assistant.modules.audit.domain.audit_event import AuditEventDraft
-from plm_assistant.modules.handover.application.workflow_qualification import (
-    HandoverChecklistQualification,
-    HandoverWorkflowQualificationError,
-)
-from plm_assistant.modules.handover.application.workflow_qualification_owner import (
-    HandoverWorkflowCurrentQualificationQuery,
-    HandoverWorkflowQualificationOwnerError,
-)
 from plm_assistant.modules.license.application.runtime_guard import (
     RuntimeLicenseError,
 )
@@ -33,6 +25,11 @@ from .append_checklist_record import (
     AppendChecklistRecord, ChecklistRecordAppendError,
     ChecklistRecordWriteLock,
 )
+from .checklist_qualification import (
+    ChecklistQualificationError,
+    CurrentChecklistQualification,
+    CurrentChecklistQualificationQuery,
+)
 from .current_checklist_record import (
     ChecklistBasisObservation, ChecklistRecordReadError,
     CurrentChecklistRecord,
@@ -41,7 +38,10 @@ from ..domain.transition import ChecklistState
 
 
 _OPERATION = "V1_WORKFLOW_CHECKLIST_RECORD"
-_REGISTERED = frozenset({"HANDOVER_BASELINE", "HANDOVER_ISSUES"})
+_REGISTERED = frozenset({
+    "HANDOVER_BASELINE", "HANDOVER_ISSUES",
+    "SURVEY_ACTUAL_SOURCES", "SURVEY_CONCLUSION",
+})
 
 
 class WorkflowChecklistRecordError(RuntimeError):
@@ -86,8 +86,8 @@ class ChecklistLicensePort(Protocol):
 class ChecklistQualificationPort(Protocol):
     def qualify_only_current_in_transaction(
         self, transaction: object,
-        query: HandoverWorkflowCurrentQualificationQuery,
-    ) -> HandoverChecklistQualification: ...
+        query: CurrentChecklistQualificationQuery,
+    ) -> CurrentChecklistQualification: ...
 
 
 class ChecklistAppendPort(Protocol):
@@ -227,8 +227,7 @@ class WorkflowChecklistRecordService:
             raise
         except ChecklistRecordAppendError as error:
             raise WorkflowChecklistRecordError(error.code) from None
-        except (ChecklistRecordReadError, HandoverWorkflowQualificationError,
-                HandoverWorkflowQualificationOwnerError):
+        except (ChecklistRecordReadError, ChecklistQualificationError):
             raise WorkflowChecklistRecordError(
                 "WORKFLOW_GATE_NOT_SATISFIED",
             ) from None
@@ -253,14 +252,14 @@ class WorkflowChecklistRecordService:
                 "WORKFLOW_GATE_NOT_SATISFIED",
             )
         result = self._qualification.qualify_only_current_in_transaction(
-            tx, HandoverWorkflowCurrentQualificationQuery(
+            tx, CurrentChecklistQualificationQuery(
                 command.session_token, command.trace_id,
                 command.project_id, command.item_key,
             ),
         )
-        if type(result) is HandoverChecklistQualification:
+        if type(result) is CurrentChecklistQualification:
             result.__post_init__()
-        if (type(result) is not HandoverChecklistQualification
+        if (type(result) is not CurrentChecklistQualification
                 or result.project_id != command.project_id
                 or result.item_key != command.item_key
                 or set(command.evidence_refs)

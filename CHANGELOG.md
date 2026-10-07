@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/SUR-06-A04 将Checklist preview/record、Stage Transition和Windows生产
+  组合接入Handover+Survey显式资格registry，新增严格`SURVEY→REQUIREMENT`与Survey
+  qualification独立投影；原Handover字段/路径/请求保持不变。兼容性/回滚：无
+  Schema/Migration、新URL、依赖、Secret或外发，可移除Survey注册恢复Handover-only，
+  历史保留。验证：定向39、后端2957项/3跳过、compileall、wheel1109项/
+  `81c9e929…fa4f`通过。已知问题：A05真实PG、A06前端、A07 Edge、Gate3/UAT/发行仍待。
+
 - 2026-10-07：0.1.0-dev.0/SUR-06-A03 新增Survey Workflow两项current-fact policy、Owner与唯一
   当前批准Conclusion Repository；复用Conclusion Validator并重证Response Answer/PROJECT_RECORD
   Evidence当前DocumentVersion、锁、指纹和非TEMPLATE类别，精确匹配SRV-05批准Review。兼容性/回滚：

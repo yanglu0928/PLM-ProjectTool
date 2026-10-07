@@ -1,18 +1,11 @@
 from __future__ import annotations
 
 import unittest
+from dataclasses import replace
 from datetime import datetime, timezone
 from unittest.mock import Mock
 from uuid import uuid4
 
-from plm_assistant.modules.handover.application.workflow_qualification import (
-    HandoverChecklistQualification,
-    HandoverWorkflowEvidenceObservation,
-    HandoverWorkflowReviewObservation,
-)
-from plm_assistant.modules.handover.application.workflow_qualification_owner import (
-    HandoverWorkflowQualificationOwnerError,
-)
 from plm_assistant.modules.platform.application.idempotency import (
     IdempotencyResult,
 )
@@ -24,6 +17,10 @@ from plm_assistant.modules.workflow.application.append_checklist_record import (
 )
 from plm_assistant.modules.workflow.application.current_checklist_record import (
     ChecklistBasisObservation, CurrentChecklistRecord,
+)
+from plm_assistant.modules.workflow.application.checklist_qualification import (
+    ChecklistQualificationError, ChecklistQualificationEvidence,
+    ChecklistQualificationReview, CurrentChecklistQualification,
 )
 from plm_assistant.modules.workflow.application.record_checklist import (
     RecordWorkflowChecklist, WorkflowChecklistRecordError,
@@ -80,16 +77,18 @@ class WorkflowChecklistRecordServiceTests(unittest.TestCase):
                 "WORKFLOW_CHECKLIST_RECORD", "PROJECT_MANAGER",
             )
         )
-        evidence = HandoverWorkflowEvidenceObservation(
+        evidence = ChecklistQualificationEvidence(
             self.evidence_id, self.project, 2, b"e" * 32, self.now,
         )
-        review = HandoverWorkflowReviewObservation(
-            self.review_id, self.round_id, self.project, uuid4(),
+        subject_id = uuid4()
+        review = ChecklistQualificationReview(
+            self.review_id, self.round_id, self.project, subject_id,
             self.version_id, 3, b"v" * 32, self.now,
+            "HND-05", "HANDOVER_APPROVAL_V1",
         )
-        self.qualification_result = HandoverChecklistQualification(
-            "HANDOVER_BASELINE", self.project, self.version_id,
-            b"q" * 32, (evidence,), review,
+        self.qualification_result = CurrentChecklistQualification(
+            self.project, "HANDOVER", "HANDOVER_BASELINE", "HND-05",
+            subject_id, self.version_id, b"q" * 32, (evidence,), review,
         )
         self.qualification.qualify_only_current_in_transaction.return_value = (
             self.qualification_result
@@ -182,6 +181,41 @@ class WorkflowChecklistRecordServiceTests(unittest.TestCase):
         )
         self.guard.require_valid.assert_called_once()
 
+    def test_survey_pass_uses_registered_current_fact_owner(self):
+        conclusion_series, conclusion_version = uuid4(), uuid4()
+        review = ChecklistQualificationReview(
+            self.review_id, self.round_id, self.project, conclusion_series,
+            conclusion_version, 4, b"s" * 32, self.now,
+            "SRV-05", "SURVEY_CONCLUSION_ALL_V1",
+        )
+        self.qualification.qualify_only_current_in_transaction.return_value = (
+            CurrentChecklistQualification(
+                self.project, "SURVEY", "SURVEY_CONCLUSION", "SRV-05",
+                conclusion_series, conclusion_version, b"q" * 32,
+                self.qualification_result.evidence, review,
+            )
+        )
+        survey_record = replace(
+            self.current.record,
+            stage_key="SURVEY", item_key="SURVEY_CONCLUSION",
+        )
+        survey_current = CurrentChecklistRecord(
+            survey_record, self.current.basis,
+            self.current.content_fingerprint,
+            self.current.observed_stage_state,
+            self.current.current_workflow_version,
+        )
+        self.appender.append.return_value = survey_current
+
+        result = self.service.record(
+            self._command(item_key="SURVEY_CONCLUSION"),
+            idempotency_key="checklist-survey-pass-001",
+        )
+
+        self.assertIs(result, survey_current)
+        query = self.qualification.qualify_only_current_in_transaction.call_args.args[1]
+        self.assertEqual("SURVEY_CONCLUSION", query.item_key)
+
     def test_replay_returns_original_record_without_new_business_write(self):
         self.receipts.reserve.return_value = IdempotencyResult(
             "V1_WORKFLOW_CHECKLIST_RECORD", self.record_id, 200,
@@ -205,7 +239,7 @@ class WorkflowChecklistRecordServiceTests(unittest.TestCase):
             with self.subTest(index=index):
                 if index:
                     self.qualification.qualify_only_current_in_transaction.side_effect = (
-                        HandoverWorkflowQualificationOwnerError()
+                        ChecklistQualificationError()
                     )
                 with self.assertRaisesRegex(
                     WorkflowChecklistRecordError,
@@ -221,7 +255,7 @@ class WorkflowChecklistRecordServiceTests(unittest.TestCase):
             self._command(ChecklistState.WAIVED,
                           exception_refs=(uuid4(),),
                           reason="Approved exception", impact="Bounded"),
-            self._command(item_key="SURVEY_CONCLUSION"),
+            self._command(item_key="REQUIREMENT_ACCEPTANCE"),
             self._command(ChecklistState.FAIL,
                           evidence_refs=(self.evidence_id,)),
         )

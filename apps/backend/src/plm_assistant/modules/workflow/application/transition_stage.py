@@ -1,4 +1,4 @@
-"""Authorized, audited and idempotent Handover Stage Transition command."""
+"""Authorized, audited and idempotent registered Stage Transition command."""
 
 from __future__ import annotations
 
@@ -10,14 +10,6 @@ from typing import Protocol
 
 from plm_assistant.modules.audit.application.audit_service import AuditService
 from plm_assistant.modules.audit.domain.audit_event import AuditEventDraft
-from plm_assistant.modules.handover.application.workflow_qualification import (
-    HandoverChecklistQualification,
-    HandoverWorkflowQualificationError,
-)
-from plm_assistant.modules.handover.application.workflow_qualification_owner import (
-    HandoverWorkflowCurrentQualificationQuery,
-    HandoverWorkflowQualificationOwnerError,
-)
 from plm_assistant.modules.license.application.runtime_guard import (
     RuntimeLicenseError,
 )
@@ -34,10 +26,22 @@ from .append_stage_transition import (
     StageTransitionAppendError, TransitionGateProof,
 )
 from .current_checklist_record import ChecklistBasisObservation
+from .checklist_qualification import (
+    ChecklistQualificationError,
+    CurrentChecklistQualification,
+    CurrentChecklistQualificationQuery,
+)
 
 
 _OPERATION = "V1_WORKFLOW_TRANSITION"
-_ITEMS = ("HANDOVER_BASELINE", "HANDOVER_ISSUES")
+_TRANSITIONS = {
+    "SURVEY": (
+        "HANDOVER", ("HANDOVER_BASELINE", "HANDOVER_ISSUES"),
+    ),
+    "REQUIREMENT": (
+        "SURVEY", ("SURVEY_ACTUAL_SOURCES", "SURVEY_CONCLUSION"),
+    ),
+}
 
 
 class WorkflowStageTransitionError(RuntimeError):
@@ -78,8 +82,8 @@ class TransitionLicensePort(Protocol):
 class TransitionQualificationPort(Protocol):
     def qualify_only_current_in_transaction(
         self, transaction: object,
-        query: HandoverWorkflowCurrentQualificationQuery,
-    ) -> HandoverChecklistQualification: ...
+        query: CurrentChecklistQualificationQuery,
+    ) -> CurrentChecklistQualification: ...
 
 
 class TransitionRepositoryPort(Protocol):
@@ -106,7 +110,7 @@ class TransitionReceiptPort(Protocol):
 
 
 class WorkflowStageTransitionService:
-    """Only HANDOVER -> SURVEY is registered until later Owners exist."""
+    """Run only explicitly registered adjacent transitions and fact Owners."""
 
     def __init__(
         self, *, unit_of_work: Callable[[], object],
@@ -171,11 +175,16 @@ class WorkflowStageTransitionService:
                 if replay is not None:
                     return self._recover(tx, command, replay)
 
+                from_stage, item_keys = _TRANSITIONS[
+                    command.target_stage_key
+                ]
                 qualifications = tuple(
                     self._qualify(tx, command, item_key)
-                    for item_key in _ITEMS
+                    for item_key in item_keys
                 )
-                self._same_handover(qualifications, command.project_id)
+                self._same_subject(
+                    qualifications, command.project_id, from_stage, item_keys,
+                )
                 gates = tuple(self._gate(value) for value in qualifications)
                 occurred_at = self._now()
                 result = self._transitions.append(
@@ -189,7 +198,7 @@ class WorkflowStageTransitionService:
                         or result.snapshot.project_id != command.project_id
                         or result.snapshot.actor_id != actor
                         or result.snapshot.trace_id != command.trace_id
-                        or result.snapshot.from_stage != "HANDOVER"
+                        or result.snapshot.from_stage != from_stage
                         or result.snapshot.to_stage
                            != command.target_stage_key
                         or result.snapshot.before_lock_version
@@ -221,8 +230,7 @@ class WorkflowStageTransitionService:
             raise
         except StageTransitionAppendError as error:
             raise WorkflowStageTransitionError(error.code) from None
-        except (HandoverWorkflowQualificationError,
-                HandoverWorkflowQualificationOwnerError):
+        except ChecklistQualificationError:
             raise WorkflowStageTransitionError(
                 "WORKFLOW_GATE_NOT_SATISFIED",
             ) from None
@@ -241,16 +249,16 @@ class WorkflowStageTransitionService:
 
     def _qualify(
         self, tx: object, command: TransitionWorkflowStage, item_key: str,
-    ) -> HandoverChecklistQualification:
+    ) -> CurrentChecklistQualification:
         result = self._qualification.qualify_only_current_in_transaction(
-            tx, HandoverWorkflowCurrentQualificationQuery(
+            tx, CurrentChecklistQualificationQuery(
                 command.session_token, command.trace_id,
                 command.project_id, item_key,
             ),
         )
-        if type(result) is HandoverChecklistQualification:
+        if type(result) is CurrentChecklistQualification:
             result.__post_init__()
-        if (type(result) is not HandoverChecklistQualification
+        if (type(result) is not CurrentChecklistQualification
                 or result.project_id != command.project_id
                 or result.item_key != item_key):
             raise WorkflowStageTransitionError(
@@ -259,18 +267,17 @@ class WorkflowStageTransitionService:
         return result
 
     @staticmethod
-    def _same_handover(
-        values: tuple[HandoverChecklistQualification, ...],
-        project_id: uuid.UUID,
+    def _same_subject(
+        values: tuple[CurrentChecklistQualification, ...],
+        project_id: uuid.UUID, stage_key: str, item_keys: tuple[str, ...],
     ) -> None:
-        if (len(values) != len(_ITEMS)
-                or tuple(value.item_key for value in values) != _ITEMS
+        if (len(values) != len(item_keys)
+                or tuple(value.item_key for value in values) != item_keys
                 or any(value.project_id != project_id for value in values)
-                or len({value.handover_analysis_version_id
-                        for value in values}) != 1
+                or any(value.stage_key != stage_key for value in values)
+                or len({value.coherence_key for value in values}) != 1
                 or len({value.review.review_id for value in values}) != 1
-                or len({value.review.review_round_id for value in values}) != 1
-                or len({value.review.subject_id for value in values}) != 1
+                or len({value.review.policy_code for value in values}) != 1
                 or len({value.review.subject_fingerprint
                         for value in values}) != 1):
             raise WorkflowStageTransitionError(
@@ -279,7 +286,7 @@ class WorkflowStageTransitionService:
 
     @staticmethod
     def _gate(
-        value: HandoverChecklistQualification,
+        value: CurrentChecklistQualification,
     ) -> TransitionGateProof:
         basis = [ChecklistBasisObservation(
             "EVIDENCE", observation.evidence_id, "PROJECT",
@@ -329,7 +336,7 @@ class WorkflowStageTransitionService:
                 or len(command.csrf_token) != 32
                 or any(type(value) is not uuid.UUID or value.int == 0
                        for value in (command.trace_id, command.project_id))
-                or command.target_stage_key != "SURVEY"
+                or command.target_stage_key not in _TRANSITIONS
                 or type(command.expected_workflow_version) is not int
                 or not 0 <= command.expected_workflow_version < 2**63 - 1
                 or type(command.reason) is not str

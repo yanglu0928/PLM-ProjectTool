@@ -8,13 +8,6 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Protocol
 
-from plm_assistant.modules.handover.application.workflow_qualification import (
-    HandoverChecklistQualification,
-)
-from plm_assistant.modules.handover.application.workflow_qualification_owner import (
-    HandoverWorkflowCurrentQualificationQuery,
-    HandoverWorkflowQualificationOwnerError,
-)
 from plm_assistant.modules.license.application.runtime_guard import (
     RuntimeLicenseError,
 )
@@ -24,9 +17,19 @@ from plm_assistant.modules.project.application.authorization import (
 )
 
 from .read_workflow import WorkflowView
+from .checklist_qualification import (
+    ChecklistQualificationError,
+    CurrentChecklistQualification,
+    CurrentChecklistQualificationQuery,
+)
 
 
-_ITEMS = frozenset({"HANDOVER_BASELINE", "HANDOVER_ISSUES"})
+_ITEM_STAGES = {
+    "HANDOVER_BASELINE": "HANDOVER",
+    "HANDOVER_ISSUES": "HANDOVER",
+    "SURVEY_ACTUAL_SOURCES": "SURVEY",
+    "SURVEY_CONCLUSION": "SURVEY",
+}
 
 
 class WorkflowChecklistQualificationPreviewError(RuntimeError):
@@ -52,24 +55,30 @@ class WorkflowChecklistQualificationPreview:
     item_key: str
     current_item_state: str
     workflow_lock_version: int
-    handover_analysis_version_id: uuid.UUID
+    handover_analysis_version_id: uuid.UUID | None
     review_round_ref: uuid.UUID
     evidence_refs: tuple[uuid.UUID, ...]
+    survey_conclusion_id: uuid.UUID | None = None
 
     @property
     def workflow_etag(self) -> str:
         return f'"v{self.workflow_lock_version}"'
 
     def __post_init__(self) -> None:
-        identities = (
-            self.workflow_id, self.project_id,
-            self.handover_analysis_version_id, self.review_round_ref,
-        )
+        identities = (self.workflow_id, self.project_id, self.review_round_ref)
+        subject_id = (self.handover_analysis_version_id
+                      if self.stage_key == "HANDOVER"
+                      else self.survey_conclusion_id)
         if (any(type(value) is not uuid.UUID or value.int == 0
                 for value in identities)
+                or type(subject_id) is not uuid.UUID or subject_id.int == 0
                 or self.definition_version != 1
-                or self.stage_key != "HANDOVER"
-                or self.item_key not in _ITEMS
+                or self.item_key not in _ITEM_STAGES
+                or self.stage_key != _ITEM_STAGES.get(self.item_key)
+                or (self.stage_key == "HANDOVER"
+                    and self.survey_conclusion_id is not None)
+                or (self.stage_key == "SURVEY"
+                    and self.handover_analysis_version_id is not None)
                 or self.current_item_state not in {
                     "PENDING", "PASS", "FAIL", "WAIVED",
                 }
@@ -111,8 +120,8 @@ class PreviewWorkflowPort(Protocol):
 class PreviewQualificationPort(Protocol):
     def qualify_only_current_in_transaction(
         self, transaction: object,
-        query: HandoverWorkflowCurrentQualificationQuery,
-    ) -> HandoverChecklistQualification: ...
+        query: CurrentChecklistQualificationQuery,
+    ) -> CurrentChecklistQualification: ...
 
 
 class WorkflowChecklistQualificationPreviewService:
@@ -159,7 +168,7 @@ class WorkflowChecklistQualificationPreviewService:
                 before = self._workflows.get(tx, query.project_id)
                 item_state = self._item_state(before, query)
                 result = self._qualification.qualify_only_current_in_transaction(
-                    tx, HandoverWorkflowCurrentQualificationQuery(
+                    tx, CurrentChecklistQualificationQuery(
                         query.session_token, query.trace_id,
                         query.project_id, query.item_key,
                     ),
@@ -169,7 +178,7 @@ class WorkflowChecklistQualificationPreviewService:
                     raise WorkflowChecklistQualificationPreviewError(
                         "CONFLICT_VERSION",
                     )
-                if (type(result) is not HandoverChecklistQualification
+                if (type(result) is not CurrentChecklistQualification
                         or result.project_id != query.project_id
                         or result.item_key != query.item_key):
                     raise WorkflowChecklistQualificationPreviewError(
@@ -178,17 +187,20 @@ class WorkflowChecklistQualificationPreviewService:
                 result.__post_init__()
                 preview = WorkflowChecklistQualificationPreview(
                     before.workflow_id, before.project_id, before.version,
-                    "HANDOVER", query.item_key, item_state,
+                    result.stage_key, query.item_key, item_state,
                     before.lock_version,
-                    result.handover_analysis_version_id,
+                    (result.subject_version_id
+                     if result.stage_key == "HANDOVER" else None),
                     result.review.review_round_id,
                     tuple(value.evidence_id for value in result.evidence),
+                    (result.subject_version_id
+                     if result.stage_key == "SURVEY" else None),
                 )
                 preview.__post_init__()
                 return preview
         except WorkflowChecklistQualificationPreviewError:
             raise
-        except HandoverWorkflowQualificationOwnerError:
+        except ChecklistQualificationError:
             raise WorkflowChecklistQualificationPreviewError(
                 "WORKFLOW_GATE_NOT_SATISFIED",
             ) from None
@@ -214,7 +226,7 @@ class WorkflowChecklistQualificationPreviewService:
                 or len(query.session_token) != 32
                 or any(type(value) is not uuid.UUID or value.int == 0
                        for value in (query.trace_id, query.project_id))
-                or query.item_key not in _ITEMS):
+                or query.item_key not in _ITEM_STAGES):
             raise WorkflowChecklistQualificationPreviewError(
                 "VALIDATION_FAILED",
             )
@@ -255,7 +267,7 @@ class WorkflowChecklistQualificationPreviewService:
         workflow.__post_init__()
         if (workflow.project_id != query.project_id
                 or workflow.state != "ACTIVE"
-                or workflow.current_stage != "HANDOVER"):
+                or workflow.current_stage != _ITEM_STAGES[query.item_key]):
             raise WorkflowChecklistQualificationPreviewError(
                 "CONFLICT_STATE",
             )
@@ -264,7 +276,7 @@ class WorkflowChecklistQualificationPreviewService:
              if value.stage_key == workflow.current_stage),
             None,
         )
-        if (stage is None or stage.stage_key != "HANDOVER"
+        if (stage is None or stage.stage_key != workflow.current_stage
                 or stage.state not in {"ACTIVE", "BLOCKED"}):
             raise WorkflowChecklistQualificationPreviewError(
                 "CONFLICT_STATE",

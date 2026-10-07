@@ -98,13 +98,26 @@ class WorkflowChecklistQualificationApiTests(unittest.TestCase):
             (self.headers, self.path + "?extra=1", 400),
             (self.headers, self.path.replace(str(PROJECT), str(PROJECT).upper()), 422),
             (self.headers, self.path.replace(
-                "HANDOVER_BASELINE", "SURVEY_CONCLUSION"), 422),
+                "HANDOVER_BASELINE", "REQUIREMENT_ACCEPTANCE"), 422),
         )
         for headers, path, status in variants:
             with self.subTest(status=status, path=path):
                 response = self.client.get(path, headers=headers)
                 self.assertEqual(status, response.status_code, response.text)
         self.assertEqual([], self.previews.calls)
+
+    def test_survey_projection_uses_strict_subject_variant(self):
+        self.previews.result = WorkflowChecklistQualificationPreview(
+            WORKFLOW, PROJECT, 1, "SURVEY", "SURVEY_CONCLUSION",
+            "PENDING", 5, None, ROUND, EVIDENCE, VERSION,
+        )
+        path = self.path.replace("HANDOVER_BASELINE", "SURVEY_CONCLUSION")
+        response = self.client.get(path, headers=self.headers)
+        self.assertEqual(200, response.status_code, response.text)
+        data = response.json()["data"]
+        self.assertEqual("SURVEY", data["stage_key"])
+        self.assertEqual(str(VERSION), data["survey_conclusion_id"])
+        self.assertNotIn("handover_analysis_version_id", data)
 
     def test_safe_service_errors_have_stable_statuses(self):
         for code, status, public in (

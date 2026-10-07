@@ -101,3 +101,8 @@ Checklist PASS，或把模板/AI 建议当实际来源都会破坏模块边界�
   Repository；复用Conclusion Validator并额外重证Answer/PROJECT_RECORD Evidence当前固定来源，精确
   匹配SRV-05批准Review与subject fingerprint。两项共享coherence、资格指纹独立；未接生产Workflow。
   新增5、相关回归34、后端2953/3、wheel1109项通过，进入A04接线。
+- 2026-10-07 / `SUR-06-A04`：Checklist preview/record 和 Stage Transition 统一改用显式
+  qualification registry，Windows同时装配Handover adapter与Survey Owner；新增
+  `SURVEY→REQUIREMENT`且两项必须共享coherence。Handover HTTP投影保持不变，Survey返回
+  独立`survey_conclusion_id`变体。无Schema/API path/依赖/Secret/外发变化；后端
+  2957/3、compileall、wheel1109项/`81c9e929…fa4f`通过，进入A05真实PG验证。
