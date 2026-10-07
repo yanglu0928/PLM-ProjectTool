@@ -10,7 +10,7 @@ from plm_assistant.modules.platform.application.idempotency import (
     canonical_payload_fingerprint,
 )
 from plm_assistant.modules.survey.application.conclusion_sources import (
-    ConclusionResponseProof,
+    ConclusionResponseEvidenceProof, ConclusionResponseProof,
 )
 
 from .orm import (
@@ -96,4 +96,9 @@ class SqlAlchemyConclusionResponseProof:
             assignment.department_id, response.question_row_id,
             response.response_source, fingerprint,
             tuple(item.evidence_id for item in evidence),
+            tuple(ConclusionResponseEvidenceProof(
+                item.evidence_id, item.document_id, item.document_version_id,
+                item.observed_evidence_lock_version,
+                bytes(item.content_fingerprint),
+            ) for item in evidence),
         )

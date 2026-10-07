@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/SUR-06-A03 新增Survey Workflow两项current-fact policy、Owner与唯一
+  当前批准Conclusion Repository；复用Conclusion Validator并重证Response Answer/PROJECT_RECORD
+  Evidence当前DocumentVersion、锁、指纹和非TEMPLATE类别，精确匹配SRV-05批准Review。兼容性/回滚：
+  无Schema/API/依赖/Secret/外发，A04前未接生产；删除内部增量即可。验证：新增5、相关回归34、后端
+  2953项/3跳过、wheel1109项/`1fd65b1f…08be`通过。已知问题：A04接线、PG/前端/Edge、Gate3/UAT/发行仍待。
+
 - 2026-10-07：0.1.0-dev.0/SUR-06-A02 新增业务中立Checklist qualification合同、显式不可变
   item-key registry与Handover compatibility adapter；拒绝重复/未知注册、错身份、空Evidence、非批准
   Review及Owner异常泄漏。本项未接生产service，Handover行为不变。兼容性/回滚：无Schema/API/依赖/

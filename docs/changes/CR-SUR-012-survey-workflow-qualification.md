@@ -97,3 +97,7 @@ Checklist PASS，或把模板/AI 建议当实际来源都会破坏模块边界�
   observation、显式只读item-key registry及Handover compatibility adapter；重复/未知注册、错身份、
   空Evidence、非批准Review与Owner异常全部失败关闭。未接生产service/HTTP，原Handover运行行为不变。
   新增6、既有Handover/Workflow定向37、后端2948/3及wheel1107项通过，进入A03 Survey Owner。
+- 2026-10-07 / `SUR-06-A03`：新增Survey-owned policy、current-fact Owner与唯一当前批准Conclusion
+  Repository；复用Conclusion Validator并额外重证Answer/PROJECT_RECORD Evidence当前固定来源，精确
+  匹配SRV-05批准Review与subject fingerprint。两项共享coherence、资格指纹独立；未接生产Workflow。
+  新增5、相关回归34、后端2953/3、wheel1109项通过，进入A04接线。

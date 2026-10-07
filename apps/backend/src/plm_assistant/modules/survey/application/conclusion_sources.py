@@ -19,6 +19,15 @@ class SurveyConclusionSourceError(RuntimeError):
 
 
 @dataclass(frozen=True, slots=True)
+class ConclusionResponseEvidenceProof:
+    evidence_id: uuid.UUID
+    document_id: uuid.UUID
+    document_version_id: uuid.UUID
+    observed_evidence_lock_version: int
+    content_fingerprint: bytes = field(repr=False)
+
+
+@dataclass(frozen=True, slots=True)
 class ConclusionResponseProof:
     response_id: uuid.UUID
     answer_id: uuid.UUID
@@ -32,6 +41,7 @@ class ConclusionResponseProof:
     response_source: str
     answer_fingerprint: bytes = field(repr=False)
     evidence_ids: tuple[uuid.UUID, ...] = ()
+    evidence: tuple[ConclusionResponseEvidenceProof, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)

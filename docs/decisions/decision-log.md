@@ -9220,3 +9220,14 @@
   耦合固化。独立合同可先证明形状与错误收敛，同时以全量回归确认零行为变化。
 - Impact/Rollback：新增两个内部模块与六项测试，无Schema/API/依赖/Secret/外发；删除增量即可。
   后端2948/3、Handover/Workflow定向37、wheel1107项通过。
+
+# DEC-20261007-969：Survey Workflow 以唯一当前批准结论聚合两项资格
+
+- Date/WBS：2026-10-07 / `SUR-06-A03`；依据CR-SUR-012及SRV-03/04/05当前事实Owner。
+- Decision：项目内必须恰有一个ACTIVE Survey的APPROVED Conclusion候选；两个Checklist item均绑定其
+  series/version与同一APPROVED ReviewRound。先复用Conclusion当前校验，再逐个重证Response Answer
+  Evidence和SUPPORT PROJECT_RECORD的当前DocumentVersion/锁/指纹，TEMPLATE与漂移失败关闭。
+- Reason：按“最新时间”猜Conclusion会在多Survey/多series时静默选错；只信Conclusion历史指纹又无法
+  发现Answer Evidence已撤销或内容漂移。唯一候选加当前Owner重证可以在不扩WFL Schema下固定事实。
+- Impact/Rollback：内部Proof增加兼容Evidence快照并新增Owner/Repository；无Schema/API/依赖/Secret/
+  外发，A04前无生产接线。新增5、后端2953/3、wheel1109项通过；真实PG锁与写链留A05。
