@@ -9731,3 +9731,15 @@
   Workflow；让用户手填Reviewer UUID会重复此前不友好的确认模式。
 - Impact/Rollback：仅新增前端专用transport/client/page/route，无Schema、后端API、依赖或外发变化。
   8个新场景、前端全量1524、typecheck/build通过；实际网络和撤权边界留A05。
+
+# DEC-20261008-1013：Capability 人工评估必须闭合标准与项目双证据
+
+- Date/WBS：2026-10-08 / `REQ-01-A11-A05`；依据冻结RequirementVersion输入、Capability正式化证明和
+  Windows 11真实Edge反馈。
+- Decision：每条Capability评估必须正好包含两个不同Evidence，角色集合固定为`STANDARD/PROJECT`；
+  页面分别提示并维护标准能力证据与项目事实证据，客户端在传输前失败关闭。浏览器原生fetch必须脱离
+  客户端对象接收者调用；Session撤销验收须使用真实页面持有的CSRF和幂等Key，再直达受保护页验证。
+- Reason：单Evidence无法证明标准能力事实与客户项目事实的比对；仅给Version写APPROVED状态而无
+  Review/Round/Snapshot会把测试夹具伪装成正式事实；硬编码CSRF不能证明真实浏览器会话链。
+- Impact/Rollback：无Schema/API/依赖/权限或外发变化；可撤前端约束和验收夹具而不改后端历史。
+  Windows 11 Edge/PG18.6闭环、断网恢复、Evidence定位、登出直达门禁、前端1526项及build通过。

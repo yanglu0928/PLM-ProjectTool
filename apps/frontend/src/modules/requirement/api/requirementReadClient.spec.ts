@@ -47,6 +47,12 @@ function client(...values: Response[]) {
 }
 
 describe("RequirementReadClient", () => {
+  it("invokes a supplied browser fetch without a RequirementReadClient receiver", async () => {
+    let receiver: unknown = "unset";
+    const fetcher = function(this: unknown) { receiver = this; return Promise.resolve(response({ items: [root], next_cursor: null, has_more: false })); } as typeof fetch;
+    await new RequirementReadClient(fetcher).listRequirements(project);
+    expect(receiver).toBeUndefined();
+  });
   afterEach(() => { vi.restoreAllMocks(); vi.useRealTimers(); });
 
   it("reads Requirement page/detail with no-store, opaque cursor and strong ETag", async () => {

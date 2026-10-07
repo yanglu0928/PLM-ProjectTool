@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/REQ-01-A11-A05 完成Windows 11真实Edge、构建后Vue、生产FastAPI与
+  PostgreSQL 18.6的Requirement闭环：读取、结构化创建、校验、送审、Evidence定位、断网清旧/恢复及
+  登出直达门禁；修复原生fetch接收者并将Capability评估加严为不同的STANDARD/PROJECT双Evidence。
+  兼容性/回滚：无Schema、后端API、依赖、权限或外发变化；可撤前端约束与验收夹具。验证：Edge
+  46个API观察点、隔离资源清理、前端全量1526项、typecheck/build PASS。已知问题：既有大chunk警告；
+  Windows Server 2025、正式信任/性能、A12、Gate3/UAT/发行待；Debian 13依用户指令跳过。
+
 - 2026-10-08：0.1.0-dev.0/REQ-01-A11-A04 新增Requirement Version结构化草稿、校验与送审页面，
   强根ETag/原幂等Key、严格三类回执、逐字段人工维护提示、有效成员评审人选择及PENDING送审门禁。
   兼容性/回滚：无Schema、后端API、依赖或外发；撤专用transport/client/page/route即可回滚。
