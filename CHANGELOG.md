@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A06-A02 新增PrototypeVersion固定输入证明Ports：Requirement当前
+  Approved复合身份、GLOBAL/同项目PUBLISHED TemplateVersion及GLOBAL/同项目AVAILABLE DocumentVersion；
+  事务内共享锁重证作用域/状态/内容指纹，OutputArtifact无Owner时保持失败关闭。兼容性/回滚：只读新增，
+  无Schema/公开API/依赖/外发，可停止注入。验证：Win11/PG18.6正负闭环、Prototype定向47项/99 subtests、
+  后端3128项/3跳过/4666 subtests、compileall、wheel1200项/`5b724bb5…60bb09e`PASS。已知问题：A03/A04、
+  A07～A11、Server2025、Gate3/UAT/发行待；Debian13按指令跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A06-A01 完成PrototypeVersion Owner前置核查：冻结Create/List/Get/
   Validate不变，固定Requirement/Template/Document事务内证明，OutputArtifact无Owner时失败关闭；Create、
   Read/Validate拆为三个原子子项，DRAFT不推进正式指针，Validate不改状态。兼容性/回滚：纯文档，无Schema/

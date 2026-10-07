@@ -168,3 +168,11 @@ event后改为事务局部合成基线并完整重跑；首次全量回归补齐
 同一事务重证当前Approved Requirement、固定PUBLISHED Template和AVAILABLE DocumentVersion，OutputArtifact
 在正式Owner建立前失败关闭。DRAFT不更新正式指针，Validate只生成报告/Audit不改变状态。AI Task只可提供
 建议态输入/来源，不替代Artifact或人工批准。本项纯文档PASS，无Schema/API/代码/依赖/外发。
+
+## A06-A02 实施记录（2026-10-08）
+
+新增Requirement当前Approved Version、GLOBAL/同项目PUBLISHED TemplateVersion和GLOBAL/同项目AVAILABLE
+DocumentVersion的事务内共享锁证明Port/SQL Adapter；Document沿用Owner Adapter但使用独立Version语义方法，
+不滥用Template scope参数。跨项目、非当前批准和非ACTIVE/AVAILABLE状态失败关闭，OutputArtifact仍无Adapter。
+Win11/PG18.6隔离证明、Prototype定向47/99 subtests、后端3128/3/4666 subtests、compileall及wheel1200项/
+`5b724bb5…60bb09e`通过；无Schema/公开API/依赖/外发，进入DRAFT Create Owner与Schema0131。

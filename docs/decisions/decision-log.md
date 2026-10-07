@@ -10020,3 +10020,15 @@
   内容固定；Validate若推进状态会绕过A07 Review/Formalize窄门。
 - Impact/Rollback：A01纯文档；A02可新增只读证明Port且不改变Schema/API。A03才通过Migration前向开放写Owner，
   A04只增加内部读取/验证。可停止后续装配，既有0130结构和历史不删除。
+
+# DEC-20261008-1037：固定输入证明锁当前事实但不把Template历史强制为当前版
+
+- Date/WBS：2026-10-08 / `PRT-01-A06-A02`；依据冻结PRT-03、DEC-1034～1036。
+- Decision：Requirement证明同时锁ACTIVE Root和当前APPROVED Version，必须匹配Root正式指针及批准Review；
+  Template证明锁ACTIVE Root和指定PUBLISHED Version，允许GLOBAL或同项目PROJECT，也允许已非当前但仍不可变的
+  历史PUBLISHED Version；Document证明锁GLOBAL/同项目AVAILABLE Version、ACTIVE Root和AVAILABLE File。
+  每个Port返回目标Owner的复合身份和内容指纹，OutputArtifact不提供猜测性Adapter。
+- Reason：Requirement当前批准是Prototype覆盖的当前业务事实；TemplateVersion一旦被固定就必须保持可重现，
+  若强制Root当前版会让合法历史输入随模板修订失效；Document当前可访问性决定Create/Validate能否继续。
+- Impact/Rollback：只新增只读Port/Adapter，无Schema/API/依赖/外发。可停止依赖注入回滚；不存在新增业务历史。
+  A03仍须在同一写事务重新消费证明并形成完整Owner闭包。
