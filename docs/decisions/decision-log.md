@@ -9673,3 +9673,15 @@
   无法区分旧意图与新资源版本。
 - Impact/Rollback：内部DTO及既有本地验证调用同步升级，无Schema/依赖变化；停止Router注入可关闭
   新流量。Win11/PG18.6、定向13、后端3066/3及wheel1164项通过。
+
+# DEC-20261008-1008：Requirement 四资源族独立密钥并按模式裁剪同一组 Router
+
+- Date/WBS：2026-10-08 / `REQ-01-A10-A08`；依据DEC-999～1007和冻结22个Operation。
+- Decision：Windows生产组合分别解析Package、Requirement、Version、Relation四个cursor密钥；
+  先构造同一组冻结Router，再在只读模式仅保留GET路由，写模式发布全部22个Operation。统一PROJECT
+  Review Registry无条件注册`REQ-03` Owner，生产写模式的通用终态命令不再遗漏Requirement。
+- Reason：为只读模式另写一套API会产生合同漂移；共用签名密钥会允许资源族间重放；仅挂送审Router而
+  不注册Subject会形成无法批准/退回/撤回的半闭环。
+- Impact/Rollback：无Schema/依赖变化；目标服务账户需供给四个新密钥，缺失时失败关闭。可停止五个
+  Requirement Router注入回滚新流量，既有历史不删除。定向38、后端3066/3、Windows11/PG18.6
+  生产组合及wheel1165项/`5d17adad…f426`通过。

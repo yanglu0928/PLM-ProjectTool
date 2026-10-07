@@ -35,6 +35,7 @@ from plm_assistant.entrypoints.windows_ai_read_cursor import WindowsAIReadCursor
 from plm_assistant.entrypoints.windows_capability import WindowsCapabilityRouters
 from plm_assistant.entrypoints.windows_handover import WindowsHandoverRouters
 from plm_assistant.entrypoints.windows_survey import WindowsSurveyRouters
+from plm_assistant.entrypoints.windows_requirement import WindowsRequirementRouters
 from plm_assistant.entrypoints.windows_handover_action import (
     WindowsHandoverActionWriteRouters,
 )
@@ -208,6 +209,16 @@ class ProductionLoginTests(unittest.TestCase):
             side_effect=lambda *args, include_write, **kwargs: WindowsSurveyRouters(
                 APIRouter(), APIRouter() if include_write else None,
                 APIRouter() if include_write else None,
+            ),
+        ))
+        self.requirement_factory = self.enterContext(patch(
+            "plm_assistant.entrypoints.production_login."
+            "create_windows_requirement_routers",
+            side_effect=lambda *args, include_write, **kwargs: (
+                WindowsRequirementRouters(
+                    APIRouter(), APIRouter(), APIRouter(), APIRouter(),
+                    APIRouter() if include_write else None,
+                )
             ),
         ))
         self.handover_action_factory = self.enterContext(patch(
@@ -622,6 +633,10 @@ class ProductionLoginTests(unittest.TestCase):
         egress_factory.assert_not_called()
         self.handover_action_factory.assert_called_once()
         self.survey_factory.assert_called_once()
+        self.requirement_factory.assert_called_once()
+        self.assertFalse(
+            self.requirement_factory.call_args.kwargs["include_write"]
+        )
         self.handover_action_write_factory.assert_not_called()
         self.project_review_factory.assert_not_called()
         self.workflow_checklist_factory.assert_not_called()
@@ -911,6 +926,10 @@ class ProductionLoginTests(unittest.TestCase):
         retrieval_factory.assert_called_once()
         self.handover_action_factory.assert_called_once()
         self.handover_action_write_factory.assert_called_once()
+        self.requirement_factory.assert_called_once()
+        self.assertTrue(
+            self.requirement_factory.call_args.kwargs["include_write"]
+        )
         self.project_review_factory.assert_called_once()
         self.workflow_checklist_factory.assert_called_once()
         self.workflow_checklist_qualification_factory.assert_called_once()

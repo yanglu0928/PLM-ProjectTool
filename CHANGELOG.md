@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/REQ-01-A10-A08 新增Requirement Windows生产组合，platform/read
+  精确发布七个GET，platform/write发布完整22个冻结Operation；四类cursor密钥独立且失败关闭，
+  `REQ-03`已注册到统一PROJECT Review终态链。兼容性/升级：无Schema、依赖或外发变化；目标服务
+  账户需供给四个新cursor密钥，停止Router注入可回滚流量。验证：定向38、后端3066/3、Win11/
+  PG18.6实际生产组合/Package六HTTP/Alembic drift及wheel1165项/`5d17adad…f426` PASS。
+  已知问题：REQ-01-A11前端/Edge、A12收口、正式密钥、Gate3/UAT/发行待。
+
 - 2026-10-08：0.1.0-dev.0/REQ-01-A10-A07 新增RequirementRelation独立签cursor与opt-in
   Router，实现LIST/CREATE/REVOKE/SUPERSEDE四个冻结HTTP；终态命令显式承接并指纹绑定强
   `If-Match: "v0"`，保留固定Version端点、DAG、对称规范化、单向终态和持久回放。兼容性/

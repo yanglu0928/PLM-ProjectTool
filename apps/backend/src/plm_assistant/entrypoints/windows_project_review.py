@@ -73,6 +73,18 @@ from plm_assistant.modules.project.infrastructure.authorization_repository impor
 from plm_assistant.modules.project.infrastructure.survey_source_proof import (
     SqlAlchemySurveyTargetDepartmentProof,
 )
+from plm_assistant.modules.requirement.application.review_subject import (
+    RequirementReviewSubjectOwner,
+)
+from plm_assistant.modules.requirement.application.validate_version import (
+    RequirementVersionCurrentValidator,
+)
+from plm_assistant.modules.requirement.infrastructure.human_decision_source_proof import (
+    SqlAlchemyRequirementHumanDecisionSourceProof,
+)
+from plm_assistant.modules.requirement.infrastructure.review_subject_repository import (
+    SqlAlchemyRequirementReviewSubjectRepository,
+)
 from plm_assistant.modules.review.api.commands import create_review_command_router
 from plm_assistant.modules.review.application.create_review import ReviewCreateService
 from plm_assistant.modules.review.application.start_round import ReviewStartService
@@ -114,6 +126,18 @@ from plm_assistant.modules.survey.infrastructure.conclusion_review_repository im
 )
 from plm_assistant.modules.survey.infrastructure.review_subject_repository import (
     SqlAlchemySurveyReviewSubjectRepository,
+)
+from plm_assistant.modules.survey.infrastructure.requirement_source_proof import (
+    SqlAlchemySurveyConclusionRequirementSourceProof,
+)
+from plm_assistant.modules.handover.infrastructure.requirement_source_proof import (
+    SqlAlchemyHandoverRequirementSourceProof,
+)
+from plm_assistant.modules.evidence.infrastructure.requirement_source_proof import (
+    SqlAlchemyEvidenceRequirementSourceProof,
+)
+from plm_assistant.modules.capability.infrastructure.requirement_source_proof import (
+    SqlAlchemyCapabilityRequirementSourceProof,
 )
 
 
@@ -163,7 +187,20 @@ def create_windows_project_review_router(
             ),
             audit=audit,
         )
-        subject_owners = [handover, survey]
+        requirement = RequirementReviewSubjectOwner(
+            repository=SqlAlchemyRequirementReviewSubjectRepository(),
+            reviewers=reviewers,
+            current=RequirementVersionCurrentValidator(
+                survey_sources=SqlAlchemySurveyConclusionRequirementSourceProof(),
+                handover_sources=SqlAlchemyHandoverRequirementSourceProof(),
+                human_decisions=SqlAlchemyRequirementHumanDecisionSourceProof(),
+                project_evidence=SqlAlchemyEvidenceRequirementSourceProof(),
+                capability_sources=SqlAlchemyCapabilityRequirementSourceProof(),
+                fixed_evidence=SqlAlchemyEvidenceFixedSourceRepository(),
+            ),
+            audit=audit,
+        )
+        subject_owners = [handover, survey, requirement]
         if all(dependency_shape):
             document_proofs = DocumentFixedSourceProofService(
                 documents=documents, downloads=downloads,

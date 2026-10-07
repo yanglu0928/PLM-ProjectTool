@@ -45,6 +45,9 @@ from plm_assistant.entrypoints.windows_survey import (
 from plm_assistant.entrypoints.windows_project_review import (
     create_windows_project_review_router,
 )
+from plm_assistant.entrypoints.windows_requirement import (
+    create_windows_requirement_routers,
+)
 from plm_assistant.entrypoints.windows_audit_list_cursor import create_windows_audit_cursor_codec
 from plm_assistant.modules.audit.api.read_events import create_audit_read_router
 from plm_assistant.modules.audit.application.authorized_read import AuthorizedAuditReadService
@@ -543,6 +546,11 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         survey_command_router = None
         survey_review_submission_router = None
         survey_read_router = None
+        requirement_package_router = None
+        requirement_router = None
+        requirement_version_router = None
+        requirement_review_submission_router = None
+        requirement_relation_router = None
         review_command_router = None
         if include_secret_read:
             from plm_assistant.entrypoints.windows_license_runtime import (
@@ -699,6 +707,18 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             survey_read_router = survey_routers.reads
             survey_command_router = survey_routers.commands
             survey_review_submission_router = survey_routers.review_submission
+            requirement_routers = create_windows_requirement_routers(
+                runtime, sessions=sessions, origins=origins,
+                license_guard=licenses.guard, audit=audit,
+                include_write=include_secret_write,
+            )
+            requirement_package_router = requirement_routers.packages
+            requirement_router = requirement_routers.requirements
+            requirement_version_router = requirement_routers.versions
+            requirement_review_submission_router = (
+                requirement_routers.review_submission
+            )
+            requirement_relation_router = requirement_routers.relations
             if include_secret_write:
                 review_command_router = create_windows_project_review_router(
                     runtime, sessions=sessions, origins=origins,
@@ -1488,6 +1508,13 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             survey_command_router=survey_command_router,
             survey_review_submission_router=survey_review_submission_router,
             survey_read_router=survey_read_router,
+            requirement_package_router=requirement_package_router,
+            requirement_router=requirement_router,
+            requirement_version_router=requirement_version_router,
+            requirement_review_submission_router=(
+                requirement_review_submission_router
+            ),
+            requirement_relation_router=requirement_relation_router,
             review_command_router=review_command_router,
             maintenance_admission=maintenance_admission,
             shutdown_callback=shutdown,
