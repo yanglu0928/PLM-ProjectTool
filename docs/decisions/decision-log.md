@@ -9337,3 +9337,14 @@
   ELIGIBLE且至少一条。P01先关闭全部写Owner，P02再与Root状态转换、结果快照、Audit原子开放。
 - Impact/Rollback：Migration0114新增两表，无公开API、依赖或外发。空历史可降0113；有历史向前修复。
   Win11/PG18.6、后端2974/3及wheel1121项通过。
+
+# DEC-20261007-979：Requirement Root、决策、Evidence 与首结果采用提交时闭包
+
+- Date/WBS：2026-10-07 / `REQ-01-A03-P03-P02`；依据DEC-978、冻结REQ-02状态和API-04角色。
+- Decision：PATCH仅ACTIVE改码；DEFER/REJECT仅ACTIVE并要求1～100条当前同项目PROJECT/ELIGIBLE
+  Evidence；ARCHIVE由PM将任一非归档状态置终态。Root版本、决策、Evidence引用和不可变结果用延迟
+  constraint trigger在提交时闭合。Evidence后续撤销不追写历史；重放返回首快照并重证当前权限。
+- Implementation correction：SQLAlchemy执行Root UPDATE会同步内存对象的lock_version；决策before_version
+  必须在UPDATE前冻结，不能更新后从对象回读。真库首轮命中该约束并修正，复验通过。
+- Impact/Rollback：Migration0115新增结果表并开放四类内部Owner，无公开API、依赖或外发。有历史拒降并
+  向前修复。Win11/PG18.6、后端2980/3及wheel1124项通过。

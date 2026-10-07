@@ -182,6 +182,13 @@ POLICIES: dict[str, _Policy] = {
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
     "REQ_CREATE": _Policy(
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
+    "REQ_PATCH": _Policy(
+        frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
+    "REQ_DEFER": _Policy(
+        frozenset({"PROJECT_MANAGER", "CUSTOMER_MANAGER"}), True),
+    "REQ_REJECT": _Policy(
+        frozenset({"PROJECT_MANAGER", "CUSTOMER_MANAGER"}), True),
+    "REQ_ARCHIVE": _Policy(MANAGERS, True),
     "PROJECT_PATCH": _Policy(MANAGERS, True),
     "PROJECT_ARCHIVE": _Policy(MANAGERS, True),
     "PROJECT_MEMBER_LIST": _Policy(MEMBER_READERS, False),

@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/REQ-01-A03-P03-P02 新增Requirement PATCH/DEFER/REJECT/ARCHIVE内部
+  Owner、当前同项目ELIGIBLE Evidence证明、提交时闭包、持久幂等/Audit及Migration0115不可变首结果。
+  兼容性/升级：有命令/决策历史须向前修复；无公开API、依赖、Secret或外发。验证：定向27、后端
+  2980项/3跳过、Win11/PG18.6角色/Evidence/并发/回滚/伪造/闭包/升降/drift、wheel1124项/
+  `5e53f679…75f4`通过。已知问题：A04 Version、HTTP/UI/Workflow、Gate3/UAT/发行待。
+
 - 2026-10-07：0.1.0-dev.0/REQ-01-A03-P03-P01 新增Requirement DEFER/REJECT不可变决策与Evidence引用
   Schema/Migration0114，固定reason、impact、actor和前后版本；Owner在P02前失败关闭。兼容性/升级：
   空历史可降0113，有历史须向前修复；无公开API、依赖、Secret或外发。验证：定向14、后端2974项/

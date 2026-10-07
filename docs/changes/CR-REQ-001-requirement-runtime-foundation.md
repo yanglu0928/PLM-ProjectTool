@@ -92,3 +92,11 @@ Migration0114新增不可变状态决策及Evidence引用表，固定reason、im
 并以决策+Requirement+Project组合外键和Requirement/after_version唯一约束防归属及版本漂移。
 DEFER/REJECT至少一个同项目ELIGIBLE PROJECT Evidence的现时证明、Root转换、不可变首结果与幂等/Audit
 留在P02同事务实现；P01写Owner保持关闭，不把空决策或未验证Evidence写成正式事实。
+
+## A03-P03-P02 实施记录（2026-10-07）
+
+P02开放Requirement PATCH/DEFER/REJECT/ARCHIVE内部Owner并新增Migration0115不可变首结果。PATCH仅
+ACTIVE改code；DEFER/REJECT仅ACTIVE且必须固定reason、impact及1～100条当前同项目PROJECT/ELIGIBLE
+Evidence；ARCHIVE允许任一非归档状态进入终态，不增加未冻结的恢复命令。Root、决策、Evidence引用、
+结果、Audit和receipt同事务完成；数据库延迟闭包禁止提交“Root已变但无结果”或“决策无Evidence”的
+半套结构。幂等重放返回首成功快照并重证当前权限。A03身份Owner至此完成，仍未开放Router。

@@ -415,3 +415,66 @@ class RequirementDecisionEvidenceRefRow(Base):
     requirement_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     evidence_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+
+
+class RequirementCommandResultRow(Base):
+    """Immutable first-success Requirement identity mutation projection."""
+
+    __tablename__ = "req_requirement_command_results"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["requirement_id", "project_id"],
+            ["plm.req_requirements.requirement_id", "plm.req_requirements.project_id"],
+            name="fk_req_command_results__requirement", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["decision_id", "requirement_id", "project_id"],
+            ["plm.req_requirement_state_decisions.decision_id",
+             "plm.req_requirement_state_decisions.requirement_id",
+             "plm.req_requirement_state_decisions.project_id"],
+            name="fk_req_command_results__decision", ondelete="NO ACTION",
+        ),
+        CheckConstraint(
+            "operation IN ('PATCH','DEFER','REJECT','ARCHIVE')",
+            name="ck_req_command_results__operation",
+        ),
+        CheckConstraint(
+            "requirement_code ~ '^[A-Za-z][A-Za-z0-9_.-]{0,63}$'",
+            name="ck_req_command_results__code",
+        ),
+        CheckConstraint(
+            "requirement_state IN ('ACTIVE','DEFERRED','REJECTED','ARCHIVED')",
+            name="ck_req_command_results__state",
+        ),
+        CheckConstraint(
+            "(operation='PATCH' AND requirement_state='ACTIVE' AND decision_id IS NULL "
+            "AND reason IS NULL AND impact IS NULL AND cardinality(evidence_refs)=0) OR "
+            "(operation='ARCHIVE' AND requirement_state='ARCHIVED' AND decision_id IS NULL "
+            "AND reason IS NULL AND impact IS NULL AND cardinality(evidence_refs)=0) OR "
+            "(operation='DEFER' AND requirement_state='DEFERRED' AND decision_id IS NOT NULL "
+            "AND reason IS NOT NULL AND impact IS NOT NULL AND cardinality(evidence_refs)>0) OR "
+            "(operation='REJECT' AND requirement_state='REJECTED' AND decision_id IS NOT NULL "
+            "AND reason IS NOT NULL AND impact IS NOT NULL AND cardinality(evidence_refs)>0)",
+            name="ck_req_command_results__shape",
+        ),
+        CheckConstraint("lock_version > 0", name="ck_req_command_results__version"),
+        {"schema": "plm"},
+    )
+
+    result_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    requirement_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    operation: Mapped[str] = mapped_column(Text, nullable=False)
+    requirement_code: Mapped[str] = mapped_column(Text, nullable=False)
+    requirement_state: Mapped[str] = mapped_column(Text, nullable=False)
+    decision_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    reason: Mapped[str | None] = mapped_column(Text)
+    impact: Mapped[str | None] = mapped_column(Text)
+    evidence_refs: Mapped[list[uuid.UUID]] = mapped_column(
+        ARRAY(UUID(as_uuid=True)), nullable=False
+    )
+    lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )

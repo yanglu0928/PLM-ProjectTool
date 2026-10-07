@@ -10,6 +10,7 @@ from plm_assistant.modules.requirement.infrastructure.orm import (
     RequirementPackageMembershipRow,
     RequirementPackageCommandResultRow,
     RequirementDecisionEvidenceRefRow,
+    RequirementCommandResultRow,
     RequirementPackageCreateResultRow,
     RequirementPackageRow,
     RequirementRow,
@@ -159,6 +160,27 @@ class RequirementIdentitySchemaTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "offline Requirement state-decision"):
                 migration.downgrade()
         self.assertIn("history prevents downgrade", inspect.getsource(migration.downgrade))
+
+    def test_requirement_mutation_owner_has_deferred_database_closure(self) -> None:
+        self.assertEqual(RequirementCommandResultRow.__table__.name,
+                         "req_requirement_command_results")
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions.20261007_0115_requirement_identity_mutations"
+        )
+        self.assertEqual(migration.down_revision, "20261007_0114")
+        for required in (
+            "Requirement identity mutation is invalid",
+            "Requirement decision Evidence is not eligible",
+            "Requirement mutation has no immutable result",
+            "Requirement decision requires Evidence",
+            "Requirement command result history is immutable",
+        ):
+            self.assertIn(required, migration._GUARDS)
+        with patch.object(migration.context, "is_offline_mode", return_value=True):
+            with self.assertRaisesRegex(RuntimeError, "offline Requirement mutation"):
+                migration.downgrade()
+        self.assertIn("Requirement mutation history prevents downgrade",
+                      inspect.getsource(migration.downgrade))
 
 
 if __name__ == "__main__":
