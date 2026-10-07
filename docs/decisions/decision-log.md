@@ -9972,3 +9972,14 @@
   结果仍为当前版会破坏合法历史重放；不绑定期望锁则无法把冻结控制`M`落成可审计并发前置。
 - Impact/Rollback：Migration0129不加业务列，只升级Owner guard/延迟触发器；无修订历史可降0128，有历史
   拒降。停止Revise Service可回滚入口，所有不可变版本和审计历史保留。
+
+# DEC-20261008-1033：项目模板读取合并GLOBAL但GLOBAL管理读取隔离PROJECT
+
+- Date/WBS：2026-10-08 / `PRT-01-A04-A05`；依据冻结两个Template List Operation及PRT-04 Scope语义。
+- Decision：项目成员的项目列表返回同项目PROJECT与GLOBAL ACTIVE模板；GLOBAL管理列表只返回GLOBAL。
+  当前列表固定Root当前Version并用`updated_at + template_id`稳定分页；内部固定版本读取允许当前/历史，必须
+  显式`is_current`并携带Root ETag，不增加公开GET Operation。
+- Reason：项目设计必须能选GLOBAL模板，但GLOBAL管理入口若返回PROJECT会跨租户泄露；历史Version是后续
+  PrototypeVersion固定输入，不能因Root推进而不可读；把内部证明端点公开会突破冻结API。
+- Impact/Rollback：无Schema/Migration/公开API/依赖/外发；停止Read Service装配即可回滚。读取不改变任何
+  历史事实，HTTP和cursor签名留A09实现。

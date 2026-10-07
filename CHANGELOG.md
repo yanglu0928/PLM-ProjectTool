@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A04-A05 新增Template只读Owner；项目成员稳定分页读取同项目
+  PROJECT+GLOBAL当前模板，DeploymentAdmin GLOBAL入口隔离PROJECT，内部固定版本读取区分当前/历史并
+  校验有序ArtifactRef。兼容性/回滚：无Schema/公开API/依赖/外发，停止装配即可。验证：Win11/PG18.6
+  隔离/分页/撤权闭环、定向13、后端3125项/3跳过、compileall、wheel1195项/
+  `a82554fb…bd00b8`PASS。已知问题：PrototypeVersion及后续、Server2025、Gate3/UAT/发行待。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A04-A04 新增PROJECT/GLOBAL Template Revise Owner及
   Migration0129；Root行锁+强版本串行修订，只追加PUBLISHED版本并固定前版，原子推进当前指针/lock，
   Artifact证明、结果、Audit与receipt闭合。兼容性/升级：无公开API/依赖/外发；无REVISE历史可降0128，

@@ -136,3 +136,10 @@ Owner未实现时失败关闭。Win11/PG18.6真实闭环、后端3119/3及wheel1
 只追加PUBLISHED Version并固定supersedes，当前指针/lock/Actor/ArtifactRef/不可变结果延迟闭合；持久重放仍
 重证权限/License。复用Create合同和Artifact证明，OutputArtifact继续失败关闭。Win11/PG18.6真实v1→v3、
 后端3123/3及wheel1193项/`7282e72b…4e2ef06`通过；冻结HTTP仍关闭，进入A05 Read Owner。
+
+## A04-A05 实施记录（2026-10-08）
+
+新增Template Read Service/Repository及项目全成员只读策略。项目列表合并同项目PROJECT与GLOBAL，GLOBAL
+管理入口只读GLOBAL；keyset分页返回当前固定Version，内部get可读取当前/历史不可变Version并区分
+`is_current`、Root ETag及有序ArtifactRef。Win11/PG18.6隔离/分页/撤权闭环、后端3125/3及wheel1195项/
+`a82554fb…bd00b8`通过；无Schema/公开HTTP变化，`PRT-01-A04`完成，进入A05 PrototypeVersion基础。
