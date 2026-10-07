@@ -9960,3 +9960,15 @@
   笼统规则误伤`one`等普通合同字段。
 - Impact/Rollback：Migration0128前向开放CREATE并增加声明计数，无公开API/依赖/外发变化；空历史可降0127，
   有历史拒降。可停止Service装配回滚流量，已形成的不可变历史不得删除。
+
+# DEC-20261008-1032：Template修订采用Root锁与强版本推进不可变链
+
+- Date/WBS：2026-10-08 / `PRT-01-A04-A04`；依据冻结两个Template Revise Operation、DEC-1029～1031。
+- Decision：命令必须携带强期望lock version，PROJECT/GLOBAL继续分入口；Repository锁Root，追加且仅追加
+  PUBLISHED Version，`supersedes_version_id`必须精确指向原当前版，然后原子推进Root指针和lock。提交闭包
+  同时证明前版序号、Actor、Artifact集合及不可变REVISE结果；重放不要求当前指针仍停留在该版，但必须重证
+  当前权限/License并匹配首次完整请求。
+- Reason：只按最大version_no计算会产生并发分叉；覆盖旧Version会改变既有PrototypeVersion含义；要求重放
+  结果仍为当前版会破坏合法历史重放；不绑定期望锁则无法把冻结控制`M`落成可审计并发前置。
+- Impact/Rollback：Migration0129不加业务列，只升级Owner guard/延迟触发器；无修订历史可降0128，有历史
+  拒降。停止Revise Service可回滚入口，所有不可变版本和审计历史保留。

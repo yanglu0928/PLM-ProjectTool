@@ -129,3 +129,10 @@ wheel1185项/`b39bc65e…ae693c84`通过；未开放业务Owner或HTTP。
 持久重放重证权限/License。合同拒绝主动内容但允许`one`等普通字段；GLOBAL不得引用项目文档，OutputArtifact
 Owner未实现时失败关闭。Win11/PG18.6真实闭环、后端3119/3及wheel1190项/
 `9ffbb496…84630d`通过；冻结HTTP仍关闭，进入A04 Revise Owner。
+
+## A04-A04 实施记录（2026-10-08）
+
+新增PROJECT/GLOBAL Template Revise Service、锁定Repository及Migration0129。强版本与Root行锁串行修订，
+只追加PUBLISHED Version并固定supersedes，当前指针/lock/Actor/ArtifactRef/不可变结果延迟闭合；持久重放仍
+重证权限/License。复用Create合同和Artifact证明，OutputArtifact继续失败关闭。Win11/PG18.6真实v1→v3、
+后端3123/3及wheel1193项/`7282e72b…4e2ef06`通过；冻结HTTP仍关闭，进入A05 Read Owner。

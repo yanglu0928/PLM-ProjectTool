@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A04-A04 新增PROJECT/GLOBAL Template Revise Owner及
+  Migration0129；Root行锁+强版本串行修订，只追加PUBLISHED版本并固定前版，原子推进当前指针/lock，
+  Artifact证明、结果、Audit与receipt闭合。兼容性/升级：无公开API/依赖/外发；无REVISE历史可降0128，
+  有历史拒降。验证：Win11/PG18.6真实v1→v3、定向26、后端3123项/3跳过、compileall、wheel1193项/
+  `7282e72b…4e2ef06`PASS。已知问题：Read/HTTP/前端、Server2025、Gate3/UAT/发行待。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A04-A03 新增PROJECT/GLOBAL Template Create Owner、
   DocumentVersion固定Artifact证明及Migration0128；分Scope授权，Root/v1/引用/结果/Audit/receipt同事务，
   重放重证权限与License，OutputArtifact未实现时失败关闭。兼容性/升级：前向开放CREATE，无公开API/依赖/

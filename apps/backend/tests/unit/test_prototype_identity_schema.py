@@ -272,6 +272,30 @@ class PrototypeIdentitySchemaTests(unittest.TestCase):
             ):
                 migration.downgrade()
 
+    def test_template_revise_owner_closes_chain_pointer_artifacts_and_result(self) -> None:
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions."
+            "20261008_0129_prototype_template_revise"
+        )
+        self.assertEqual(migration.down_revision, "20261008_0128")
+        for required in (
+            "PrototypeTemplate revision update is invalid",
+            "PrototypeTemplate revision version is invalid",
+            "PrototypeTemplate prior version is inconsistent",
+            "PrototypeTemplate revision ArtifactRef set is incomplete",
+            "PrototypeTemplate has no immutable revise result",
+            "WHERE operation='REVISE'",
+        ):
+            self.assertIn(
+                required,
+                migration._GUARDS + inspect.getsource(migration.downgrade),
+            )
+        with patch.object(migration.context, "is_offline_mode", return_value=True):
+            with self.assertRaisesRegex(
+                RuntimeError, "offline PrototypeTemplate revise-owner"
+            ):
+                migration.downgrade()
+
 
 if __name__ == "__main__":
     unittest.main()
