@@ -151,3 +151,13 @@ PUBLISHED TemplateVersion、每版一条不可执行InteractionSpec及结构化c
 DRAFT创建不更新正式指针；Review成对引用与状态窄门留A07。OutputArtifact Owner仍缺失，后续Owner对该
 类型失败关闭，DocumentVersion可经目标Owner证明。A05拆为A01核查/A02 Schema0130，随后进入A06证明、
 Create、Read/Validate；本项纯文档PASS，无Schema/API/外发。
+
+## A05-A02 实施记录（2026-10-08）
+
+Migration0130新增PrototypeVersion、ArtifactRef、RequirementRef和InteractionSpec四表，并以Prototype/
+Project、Template/TemplateVersion及Requirement/RequirementVersion复合FK固定归属。Root正式指针只可
+指向同Prototype/Project Version；声明计数固定1～100 Artifact、1～200 Requirement、恰一条Interaction。
+A06前四表Owner关闭并拒绝TRUNCATE，空历史可降0129，存在历史拒降。首次实库夹具遇到deferred FK pending
+event后改为事务局部合成基线并完整重跑；首次全量回归补齐ORM表清单，均未放宽产品约束。Win11/PG18.6、
+定向20/21 subtests、后端3123/3/4666 subtests、compileall及wheel1196项/
+`f7ec21d7…25b656`通过；无公开API/依赖/外发，进入A06 Owner前置核查。

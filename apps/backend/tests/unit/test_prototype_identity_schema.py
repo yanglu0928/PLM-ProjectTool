@@ -20,6 +20,10 @@ from plm_assistant.modules.prototype.infrastructure.orm import (
     PrototypeTemplateCommandResultRow,
     PrototypeTemplateRow,
     PrototypeTemplateVersionRow,
+    PrototypeInteractionSpecRow,
+    PrototypeVersionArtifactRefRow,
+    PrototypeVersionRequirementRefRow,
+    PrototypeVersionRow,
 )
 
 
@@ -294,6 +298,46 @@ class PrototypeIdentitySchemaTests(unittest.TestCase):
             with self.assertRaisesRegex(
                 RuntimeError, "offline PrototypeTemplate revise-owner"
             ):
+                migration.downgrade()
+
+    def test_prototype_version_foundation_is_closed_and_project_scoped(self) -> None:
+        tables = (
+            PrototypeVersionRow.__table__,
+            PrototypeVersionArtifactRefRow.__table__,
+            PrototypeVersionRequirementRefRow.__table__,
+            PrototypeInteractionSpecRow.__table__,
+        )
+        self.assertEqual(
+            tuple(table.name for table in tables),
+            ("prt_prototype_versions", "prt_version_artifact_refs",
+             "prt_version_requirement_refs", "prt_interaction_specs"),
+        )
+        self.assertTrue(all(table.schema == "plm" for table in tables))
+        names = {
+            constraint.name for table in tables for constraint in table.constraints
+        }
+        for required in (
+            "uq_prt_versions__id_prototype_project",
+            "fk_prt_versions__supersedes",
+            "fk_prt_versions__template_version",
+            "fk_prt_version_artifacts__version",
+            "fk_prt_version_requirements__requirement",
+            "uq_prt_interactions__version",
+        ):
+            self.assertIn(required, names)
+        root_names = {
+            constraint.name for constraint in PrototypeRow.__table__.constraints
+        }
+        self.assertIn("fk_prt_prototypes__approved_version", root_names)
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions."
+            "20261008_0130_prototype_version_foundation"
+        )
+        self.assertEqual(migration.down_revision, "20261008_0129")
+        self.assertIn("PrototypeVersion Owner is not installed", migration._GUARDS)
+        self.assertIn("PrototypeVersion history cannot be truncated", migration._GUARDS)
+        with patch.object(migration.context, "is_offline_mode", return_value=True):
+            with self.assertRaisesRegex(RuntimeError, "offline PrototypeVersion"):
                 migration.downgrade()
 
 

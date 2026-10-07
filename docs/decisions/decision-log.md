@@ -9995,3 +9995,16 @@
   Root会让历史PrototypeVersion随模板升版改变；AI建议不能成为正式业务事实。
 - Impact/Rollback：A01纯文档；A02将前向新增冻结表并保持Owner关闭。DRAFT不更新正式指针，Review和正式化
   仍由A07负责；不改变冻结API、依赖、外发或License。
+
+# DEC-20261008-1035：PrototypeVersion复合身份先关闭写入再由Owner原子开放
+
+- Date/WBS：2026-10-08 / `PRT-01-A05-A02`；依据冻结PRT-03、DEC-1034和Schema V1项目隔离原则。
+- Decision：Version以`(version_id, prototype_id, project_id)`复合身份归属Root，Root正式指针、版本链和三个
+  owned集合均复合引用该身份；Template与Requirement同样固定Root+Version复合身份。Schema阶段只建立结构、
+  数量上限、顺序唯一和不可变历史边界，四表写入与TRUNCATE全部关闭；A06必须在同一Owner事务中形成完整集合、
+  声明计数、指纹、Audit和幂等结果后才可前向开放。
+- Reason：单列UUID会允许跨Prototype/Project误引用；在Create Owner和提交闭包前开放表会留下不完整版本；
+  用数据库通用触发器提前实现业务指纹/Owner证明会跨越模块边界并重复A06规则。
+- Impact/Rollback：Migration0130前向加四表和Root延迟FK，无公开API/依赖/外发。空历史可降0129，存在历史
+  拒降；DRAFT不更新正式指针，Review/Formalize仍由A07负责。Win11/PG18.6、后端3123/3和wheel验证通过；
+  Server2025未外推，Debian13按指令跳过。

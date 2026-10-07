@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A05-A02 新增PrototypeVersion Schema0130与ORM：不可变Version、
+  有序Artifact/Requirement固定引用及每版InteractionSpec；Root正式指针、Version链、TemplateVersion和
+  RequirementVersion使用复合FK防止跨Root/项目误引用，A06前四表Owner关闭并拒绝TRUNCATE。兼容性/升级：
+  前向加表，不改公开API/依赖/外发；空历史可降0129，存在历史拒降。验证：Win11/PG18.6升级/升降/drift/
+  约束，定向20项/21 subtests，后端3123项/3跳过/4666 subtests，compileall，wheel1196项/
+  `f7ec21d7…25b656`PASS。已知问题：A06～A11、Server2025、Gate3/UAT/发行待；Debian13按指令跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A05-A01 完成PrototypeVersion前置核查：固定非空Artifact/Approved
   Requirement集合、PUBLISHED TemplateVersion、每版一个不可执行InteractionSpec、coverage summary与
   内容指纹，DRAFT不更新正式指针；OutputArtifact Owner缺失时继续失败关闭。兼容性/回滚：纯文档，无

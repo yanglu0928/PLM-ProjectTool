@@ -96,6 +96,14 @@ class PrototypeRow(Base):
             ["updated_by"], ["plm.auth_users.user_id"],
             name="fk_prt_prototypes__updater", ondelete="NO ACTION",
         ),
+        ForeignKeyConstraint(
+            ["current_approved_version_ref", "prototype_id", "project_id"],
+            ["plm.prt_prototype_versions.prototype_version_id",
+             "plm.prt_prototype_versions.prototype_id",
+             "plm.prt_prototype_versions.project_id"],
+            name="fk_prt_prototypes__approved_version", ondelete="NO ACTION",
+            deferrable=True, initially="DEFERRED", use_alter=True,
+        ),
         CheckConstraint(
             "char_length(name) BETWEEN 1 AND 255 AND name=btrim(name)",
             name="ck_prt_prototypes__name",
@@ -805,3 +813,237 @@ class PrototypeTemplateCommandResultRow(Base):
         TIMESTAMP(timezone=True, precision=6), nullable=False,
         server_default=text("statement_timestamp()"),
     )
+
+
+class PrototypeVersionRow(Base):
+    """PRT-03 immutable project PrototypeVersion foundation."""
+
+    __tablename__ = "prt_prototype_versions"
+    __table_args__ = (
+        UniqueConstraint(
+            "prototype_version_id", "prototype_id", "project_id",
+            name="uq_prt_versions__id_prototype_project",
+        ),
+        UniqueConstraint(
+            "prototype_id", "version_no", name="uq_prt_versions__prototype_no",
+        ),
+        ForeignKeyConstraint(
+            ["prototype_id", "project_id"],
+            ["plm.prt_prototypes.prototype_id", "plm.prt_prototypes.project_id"],
+            name="fk_prt_versions__prototype", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["supersedes_version_ref", "prototype_id", "project_id"],
+            ["plm.prt_prototype_versions.prototype_version_id",
+             "plm.prt_prototype_versions.prototype_id",
+             "plm.prt_prototype_versions.project_id"],
+            name="fk_prt_versions__supersedes", ondelete="NO ACTION",
+            deferrable=True, initially="DEFERRED",
+        ),
+        ForeignKeyConstraint(
+            ["template_version_ref", "template_ref"],
+            ["plm.prt_template_versions.prototype_template_version_id",
+             "plm.prt_template_versions.prototype_template_id"],
+            name="fk_prt_versions__template_version", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["review_ref"], ["plm.rvw_reviews.review_id"],
+            name="fk_prt_versions__review", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["review_round_ref"], ["plm.rvw_review_rounds.review_round_id"],
+            name="fk_prt_versions__round", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["created_by"], ["plm.auth_users.user_id"],
+            name="fk_prt_versions__creator", ondelete="NO ACTION",
+        ),
+        CheckConstraint("version_no>0", name="ck_prt_versions__number"),
+        CheckConstraint(
+            "version_state IN ('DRAFT','IN_REVIEW','APPROVED','RETURNED',"
+            "'SUPERSEDED','RESTRICTED')", name="ck_prt_versions__state",
+        ),
+        CheckConstraint(
+            "octet_length(content_fingerprint)=32",
+            name="ck_prt_versions__fingerprint",
+        ),
+        CheckConstraint(
+            "jsonb_typeof(coverage_summary)='object'",
+            name="ck_prt_versions__coverage",
+        ),
+        CheckConstraint(
+            "declared_artifact_count BETWEEN 1 AND 100 AND "
+            "declared_requirement_count BETWEEN 1 AND 200 AND "
+            "declared_interaction_count=1", name="ck_prt_versions__counts",
+        ),
+        CheckConstraint(
+            "(review_ref IS NULL AND review_round_ref IS NULL) OR "
+            "(review_ref IS NOT NULL AND review_round_ref IS NOT NULL)",
+            name="ck_prt_versions__review_shape",
+        ),
+        CheckConstraint(
+            "supersedes_version_ref IS NULL OR "
+            "supersedes_version_ref<>prototype_version_id",
+            name="ck_prt_versions__supersedes_not_self",
+        ),
+        Index(
+            "ix_prt_versions__prototype_created", "prototype_id", "created_at",
+        ),
+        Index(
+            "uq_prt_versions__prototype_in_review", "prototype_id", unique=True,
+            postgresql_where=text("version_state='IN_REVIEW'"),
+        ),
+        Index(
+            "uq_prt_versions__prototype_approved", "prototype_id", unique=True,
+            postgresql_where=text("version_state='APPROVED'"),
+        ),
+        {"schema": "plm"},
+    )
+
+    prototype_version_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()")
+    )
+    prototype_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    version_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    version_state: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'DRAFT'")
+    )
+    template_ref: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    template_version_ref: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), nullable=False
+    )
+    coverage_summary: Mapped[dict[str, object]] = mapped_column(JSONB, nullable=False)
+    content_fingerprint: Mapped[bytes] = mapped_column(nullable=False)
+    declared_artifact_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    declared_requirement_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    declared_interaction_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    supersedes_version_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    review_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    review_round_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+
+
+class PrototypeVersionArtifactRefRow(Base):
+    __tablename__ = "prt_version_artifact_refs"
+    __table_args__ = (
+        UniqueConstraint(
+            "prototype_version_id", "ordinal",
+            name="uq_prt_version_artifacts__version_ordinal",
+        ),
+        UniqueConstraint(
+            "prototype_version_id", "artifact_kind", "target_id",
+            name="uq_prt_version_artifacts__version_target",
+        ),
+        ForeignKeyConstraint(
+            ["prototype_version_id", "prototype_id", "project_id"],
+            ["plm.prt_prototype_versions.prototype_version_id",
+             "plm.prt_prototype_versions.prototype_id",
+             "plm.prt_prototype_versions.project_id"],
+            name="fk_prt_version_artifacts__version", ondelete="NO ACTION",
+        ),
+        CheckConstraint(
+            "artifact_kind IN ('DOCUMENT_VERSION','OUTPUT_ARTIFACT')",
+            name="ck_prt_version_artifacts__kind",
+        ),
+        CheckConstraint("ordinal>0", name="ck_prt_version_artifacts__ordinal"),
+        Index(
+            "ix_prt_version_artifacts__target", "artifact_kind", "target_id",
+            "prototype_version_id",
+        ),
+        {"schema": "plm"},
+    )
+
+    prototype_version_artifact_ref_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()")
+    )
+    prototype_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    prototype_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    artifact_kind: Mapped[str] = mapped_column(Text, nullable=False)
+    target_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class PrototypeVersionRequirementRefRow(Base):
+    __tablename__ = "prt_version_requirement_refs"
+    __table_args__ = (
+        UniqueConstraint(
+            "prototype_version_id", "ordinal",
+            name="uq_prt_version_requirements__version_ordinal",
+        ),
+        UniqueConstraint(
+            "prototype_version_id", "requirement_version_id",
+            name="uq_prt_version_requirements__version_target",
+        ),
+        ForeignKeyConstraint(
+            ["prototype_version_id", "prototype_id", "project_id"],
+            ["plm.prt_prototype_versions.prototype_version_id",
+             "plm.prt_prototype_versions.prototype_id",
+             "plm.prt_prototype_versions.project_id"],
+            name="fk_prt_version_requirements__version", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["requirement_version_id", "requirement_id", "project_id"],
+            ["plm.req_requirement_versions.requirement_version_id",
+             "plm.req_requirement_versions.requirement_id",
+             "plm.req_requirement_versions.project_id"],
+            name="fk_prt_version_requirements__requirement", ondelete="NO ACTION",
+        ),
+        CheckConstraint("ordinal>0", name="ck_prt_version_requirements__ordinal"),
+        Index(
+            "ix_prt_version_requirements__target", "requirement_version_id",
+            "prototype_version_id",
+        ),
+        {"schema": "plm"},
+    )
+
+    prototype_version_requirement_ref_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()")
+    )
+    prototype_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    prototype_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    requirement_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    requirement_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class PrototypeInteractionSpecRow(Base):
+    __tablename__ = "prt_interaction_specs"
+    __table_args__ = (
+        UniqueConstraint(
+            "prototype_version_id", name="uq_prt_interactions__version",
+        ),
+        ForeignKeyConstraint(
+            ["prototype_version_id", "prototype_id", "project_id"],
+            ["plm.prt_prototype_versions.prototype_version_id",
+             "plm.prt_prototype_versions.prototype_id",
+             "plm.prt_prototype_versions.project_id"],
+            name="fk_prt_interactions__version", ondelete="NO ACTION",
+        ),
+        CheckConstraint("schema_version=1", name="ck_prt_interactions__schema"),
+        CheckConstraint(
+            "jsonb_typeof(specification)='object'",
+            name="ck_prt_interactions__specification",
+        ),
+        CheckConstraint(
+            "octet_length(content_fingerprint)=32",
+            name="ck_prt_interactions__fingerprint",
+        ),
+        {"schema": "plm"},
+    )
+
+    prototype_interaction_spec_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()")
+    )
+    prototype_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    prototype_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    schema_version: Mapped[int] = mapped_column(Integer, nullable=False)
+    specification: Mapped[dict[str, object]] = mapped_column(JSONB, nullable=False)
+    content_fingerprint: Mapped[bytes] = mapped_column(nullable=False)
