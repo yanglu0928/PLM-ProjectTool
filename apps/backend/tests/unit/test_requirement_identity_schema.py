@@ -9,9 +9,11 @@ from plm_assistant.modules.requirement.infrastructure.orm import (
     RequirementCreateResultRow,
     RequirementPackageMembershipRow,
     RequirementPackageCommandResultRow,
+    RequirementDecisionEvidenceRefRow,
     RequirementPackageCreateResultRow,
     RequirementPackageRow,
     RequirementRow,
+    RequirementStateDecisionRow,
 )
 
 
@@ -132,6 +134,31 @@ class RequirementIdentitySchemaTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "offline Requirement Package"):
                 migration.downgrade()
         self.assertIn("mutation history prevents downgrade", inspect.getsource(migration.downgrade))
+
+    def test_state_decision_foundation_is_evidence_backed_and_owner_closed(self) -> None:
+        self.assertEqual(RequirementStateDecisionRow.__table__.schema, "plm")
+        self.assertEqual(RequirementDecisionEvidenceRefRow.__table__.schema, "plm")
+        names = {constraint.name for table in (
+            RequirementStateDecisionRow.__table__,
+            RequirementDecisionEvidenceRefRow.__table__,
+        ) for constraint in table.constraints}
+        for required in (
+            "uq_req_state_decisions__requirement_version",
+            "fk_req_state_decisions__requirement",
+            "fk_req_decision_evidence_refs__decision",
+            "fk_req_decision_evidence_refs__evidence",
+        ):
+            self.assertIn(required, names)
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions.20261007_0114_requirement_state_decisions"
+        )
+        self.assertEqual(migration.down_revision, "20261007_0113")
+        self.assertIn("Owner is not installed", migration._GUARDS)
+        self.assertIn("history cannot be truncated", migration._GUARDS)
+        with patch.object(migration.context, "is_offline_mode", return_value=True):
+            with self.assertRaisesRegex(RuntimeError, "offline Requirement state-decision"):
+                migration.downgrade()
+        self.assertIn("history prevents downgrade", inspect.getsource(migration.downgrade))
 
 
 if __name__ == "__main__":

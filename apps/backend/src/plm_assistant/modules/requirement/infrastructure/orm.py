@@ -323,3 +323,95 @@ class RequirementPackageCommandResultRow(Base):
         TIMESTAMP(timezone=True, precision=6), nullable=False,
         server_default=text("statement_timestamp()"),
     )
+
+
+class RequirementStateDecisionRow(Base):
+    """Immutable evidence-backed DEFER/REJECT decision fact."""
+
+    __tablename__ = "req_requirement_state_decisions"
+    __table_args__ = (
+        UniqueConstraint(
+            "decision_id", "requirement_id", "project_id",
+            name="uq_req_state_decisions__id_requirement_project",
+        ),
+        UniqueConstraint(
+            "requirement_id", "after_version",
+            name="uq_req_state_decisions__requirement_version",
+        ),
+        ForeignKeyConstraint(
+            ["requirement_id", "project_id"],
+            ["plm.req_requirements.requirement_id", "plm.req_requirements.project_id"],
+            name="fk_req_state_decisions__requirement", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["decided_by"], ["plm.auth_users.user_id"],
+            name="fk_req_state_decisions__actor", ondelete="NO ACTION",
+        ),
+        CheckConstraint(
+            "decision_type IN ('DEFER','REJECT')",
+            name="ck_req_state_decisions__type",
+        ),
+        CheckConstraint(
+            "char_length(reason) BETWEEN 1 AND 2000 AND reason=btrim(reason)",
+            name="ck_req_state_decisions__reason",
+        ),
+        CheckConstraint(
+            "char_length(impact) BETWEEN 1 AND 2000 AND impact=btrim(impact)",
+            name="ck_req_state_decisions__impact",
+        ),
+        CheckConstraint(
+            "before_version>=0 AND after_version=before_version+1",
+            name="ck_req_state_decisions__version",
+        ),
+        {"schema": "plm"},
+    )
+
+    decision_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    requirement_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    decision_type: Mapped[str] = mapped_column(Text, nullable=False)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    impact: Mapped[str] = mapped_column(Text, nullable=False)
+    decided_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    decided_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+    before_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    after_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+
+
+class RequirementDecisionEvidenceRefRow(Base):
+    """Immutable project-bound Evidence reference owned by a state decision."""
+
+    __tablename__ = "req_requirement_decision_evidence_refs"
+    __table_args__ = (
+        UniqueConstraint(
+            "decision_id", "evidence_id",
+            name="uq_req_decision_evidence_refs__decision_evidence",
+        ),
+        ForeignKeyConstraint(
+            ["decision_id", "requirement_id", "project_id"],
+            ["plm.req_requirement_state_decisions.decision_id",
+             "plm.req_requirement_state_decisions.requirement_id",
+             "plm.req_requirement_state_decisions.project_id"],
+            name="fk_req_decision_evidence_refs__decision", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["evidence_id"], ["plm.evd_evidence_records.evidence_id"],
+            name="fk_req_decision_evidence_refs__evidence", ondelete="NO ACTION",
+        ),
+        Index(
+            "ix_req_decision_evidence_refs__evidence",
+            "evidence_id", "decision_id",
+        ),
+        {"schema": "plm"},
+    )
+
+    decision_evidence_ref_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()")
+    )
+    decision_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    requirement_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    evidence_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)

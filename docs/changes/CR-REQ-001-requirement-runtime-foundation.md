@@ -84,3 +84,11 @@ REMOVE只删除关联，不删除Requirement。状态转换固定ACTIVE与RESTRI
 ARCHIVED终态。每个成功命令保存完整且规范排序的不可变成员集合快照；幂等重放先重证当前权限，再返回
 首次结果，不读取已变化的Root。数据库触发器继续关闭Requirement更新，并重证结果快照与同事务当前
 Package/成员集合一致；有命令历史拒降。未开放Router，也未开放P03 Requirement决定。
+
+## A03-P03 拆分与 P01 实施记录（2026-10-07）
+
+P03 拆为P01决策/Evidence历史Schema与P02 Requirement PATCH/DEFER/REJECT/ARCHIVE Owner。P01以
+Migration0114新增不可变状态决策及Evidence引用表，固定reason、impact、actor、before/after version，
+并以决策+Requirement+Project组合外键和Requirement/after_version唯一约束防归属及版本漂移。
+DEFER/REJECT至少一个同项目ELIGIBLE PROJECT Evidence的现时证明、Root转换、不可变首结果与幂等/Audit
+留在P02同事务实现；P01写Owner保持关闭，不把空决策或未验证Evidence写成正式事实。

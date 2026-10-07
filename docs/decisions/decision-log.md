@@ -9326,3 +9326,14 @@
 - Impact/Rollback：Migration0113新增命令结果表并开放受约束Package/membership Owner，不开放Requirement
   Root更新、公开API、依赖或外发。空历史可降0112；有历史向前修复。Win11/PG18.6、后端2973/3及
   wheel1120项通过。
+
+# DEC-20261007-978：Requirement 延期/拒绝采用独立不可变决策与 Evidence 引用
+
+- Date/WBS：2026-10-07 / `REQ-01-A03-P03-P01`；依据冻结Requirement状态和SourceDecisionRef。
+- Evidence/Gap：冻结模型要求DEFERRED/REJECTED保留决策、Evidence和影响，API仅写“decision refs”，未给出
+  物理实体；把reason/impact覆盖在Root会丢失历史，把UUID数组直接放Root不能约束项目归属。
+- Decision：建立不可变状态决策Root和Evidence引用子表；决策固定类型、reason、impact、actor、时间及
+  前后Root版本，每个Requirement/after_version唯一。Evidence以子表引用，P02必须验证同项目、PROJECT、
+  ELIGIBLE且至少一条。P01先关闭全部写Owner，P02再与Root状态转换、结果快照、Audit原子开放。
+- Impact/Rollback：Migration0114新增两表，无公开API、依赖或外发。空历史可降0113；有历史向前修复。
+  Win11/PG18.6、后端2974/3及wheel1121项通过。

@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/REQ-01-A03-P03-P01 新增Requirement DEFER/REJECT不可变决策与Evidence引用
+  Schema/Migration0114，固定reason、impact、actor和前后版本；Owner在P02前失败关闭。兼容性/升级：
+  空历史可降0113，有历史须向前修复；无公开API、依赖、Secret或外发。验证：定向14、后端2974项/
+  3跳过、Win11/PG18.6升降/drift/约束/关闭守卫/历史拒降、wheel1121项/`2dd0b4db…839c`通过。
+  已知问题：P03-P02 Owner、A04 Version、HTTP/UI/Workflow、Gate3/UAT/发行待。
+
 - 2026-10-07：0.1.0-dev.0/REQ-01-A03-P02 新增Package PATCH与Requirement membership ADD/REMOVE
   内部Owner、共享ETag版本栅栏、持久幂等/Audit及Migration0113不可变完整成员快照；REMOVE不删除
   Requirement。兼容性/升级：空命令历史可降0112，有历史须向前修复；无公开API、依赖、Secret或外发。
