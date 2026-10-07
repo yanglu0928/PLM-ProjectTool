@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/REQ-01-A12-A04-A02 将Requirement聚合资格显式注册到Windows Workflow
+  Preview/Record/Transition生产对象图；两个item共用同一Owner及Decision/Evidence证明依赖，既有
+  Handover/Survey注册不变。兼容性/回滚：无Schema/路径/依赖/权限/外发；移除两项Registration即可
+  回滚。验证：定向35、后端3084项/3跳过、compileall、wheel1167项/`eec3d8b3…77f24`PASS。已知问题：
+  A05真实PG/HTTP闭环、A06～A07、Gate3/UAT/发行待。
+
 - 2026-10-08：0.1.0-dev.0/REQ-01-A12-A04-A01 扩展Workflow通用写链以承载Requirement聚合资格：
   Preview返回复数Version/Review，Checklist与Transition保存全部真实ReviewRound和去重Evidence，新增
   `REQUIREMENT -> PROTOTYPE`并以scope/coherence双项一致性失败关闭。兼容性/回滚：无Schema/依赖/

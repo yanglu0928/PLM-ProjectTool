@@ -5,14 +5,37 @@ from unittest.mock import Mock
 
 from plm_assistant.entrypoints.windows_workflow_checklist import (
     ProductionWorkflowChecklistStartupError,
+    _create_qualification_registry,
     create_windows_workflow_checklist_qualification_router,
     create_windows_workflow_checklist_record_router,
     create_windows_workflow_stage_transition_router,
+)
+from plm_assistant.modules.requirement.application.workflow_qualification import (
+    RequirementWorkflowQualificationOwner,
 )
 from plm_assistant.modules.trace.application.target_proof import TraceTargetProofService
 
 
 class WindowsWorkflowChecklistCompositionTests(unittest.TestCase):
+    def test_registry_includes_requirement_aggregate_owner(self):
+        registry = _create_qualification_registry(
+            documents=Mock(), downloads=Mock(), parse_results=Mock(),
+        )
+
+        self.assertEqual((
+            "HANDOVER_BASELINE", "HANDOVER_ISSUES",
+            "REQUIREMENT_ACCEPTANCE", "REQUIREMENT_FORMAL_VERSIONS",
+            "SURVEY_ACTUAL_SOURCES", "SURVEY_CONCLUSION",
+        ), registry.item_keys)
+        self.assertIsInstance(
+            registry._owners["REQUIREMENT_FORMAL_VERSIONS"],
+            RequirementWorkflowQualificationOwner,
+        )
+        self.assertIs(
+            registry._owners["REQUIREMENT_FORMAL_VERSIONS"],
+            registry._owners["REQUIREMENT_ACCEPTANCE"],
+        )
+
     def test_composes_frozen_record_route_with_explicit_owner_registry(self):
         runtime = Mock()
         runtime.unit_of_work = Mock()

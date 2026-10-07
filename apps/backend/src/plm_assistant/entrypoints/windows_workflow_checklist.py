@@ -19,6 +19,9 @@ from plm_assistant.modules.auth.infrastructure.project_write_access import (
 from plm_assistant.modules.capability.infrastructure.read_repository import (
     SqlAlchemyCapabilityReadRepository,
 )
+from plm_assistant.modules.capability.infrastructure.requirement_source_proof import (
+    SqlAlchemyCapabilityRequirementSourceProof,
+)
 from plm_assistant.modules.document.application.prove_fixed_source import (
     DocumentFixedSourceProofService,
 )
@@ -34,6 +37,9 @@ from plm_assistant.modules.evidence.application.fixed_project_source import (
 from plm_assistant.modules.evidence.infrastructure.fixed_source_repository import (
     SqlAlchemyEvidenceFixedSourceRepository,
 )
+from plm_assistant.modules.evidence.infrastructure.requirement_source_proof import (
+    SqlAlchemyEvidenceRequirementSourceProof,
+)
 from plm_assistant.modules.handover.application.source_validation import (
     HandoverSourceValidator,
 )
@@ -42,6 +48,9 @@ from plm_assistant.modules.handover.application.workflow_qualification_owner imp
 )
 from plm_assistant.modules.handover.infrastructure.survey_conclusion_issue import (
     SqlAlchemySurveyConclusionIssueProof,
+)
+from plm_assistant.modules.handover.infrastructure.requirement_source_proof import (
+    SqlAlchemyHandoverRequirementSourceProof,
 )
 from plm_assistant.modules.handover.infrastructure.workflow_qualification_repository import (
     SqlAlchemyHandoverWorkflowQualificationRepository,
@@ -54,6 +63,18 @@ from plm_assistant.modules.project.application.authorization import (
 )
 from plm_assistant.modules.project.infrastructure.authorization_repository import (
     SqlAlchemyProjectAuthorizationRepository,
+)
+from plm_assistant.modules.requirement.application.validate_version import (
+    RequirementVersionCurrentValidator,
+)
+from plm_assistant.modules.requirement.application.workflow_qualification import (
+    RequirementWorkflowQualificationOwner,
+)
+from plm_assistant.modules.requirement.infrastructure.human_decision_source_proof import (
+    SqlAlchemyRequirementHumanDecisionSourceProof,
+)
+from plm_assistant.modules.requirement.infrastructure.workflow_qualification_repository import (
+    SqlAlchemyRequirementWorkflowQualificationRepository,
 )
 from plm_assistant.modules.review.infrastructure.read_repository import (
     SqlAlchemyReviewSnapshotReadRepository,
@@ -69,6 +90,9 @@ from plm_assistant.modules.survey.application.workflow_qualification import (
 )
 from plm_assistant.modules.survey.infrastructure.conclusion_response_source import (
     SqlAlchemyConclusionResponseProof,
+)
+from plm_assistant.modules.survey.infrastructure.requirement_source_proof import (
+    SqlAlchemySurveyConclusionRequirementSourceProof,
 )
 from plm_assistant.modules.survey.infrastructure.workflow_qualification_repository import (
     SqlAlchemySurveyWorkflowQualificationRepository,
@@ -162,7 +186,7 @@ def _create_qualification_registry(
     *, documents, downloads, parse_results,
     project_repository=None, target_proofs=None,
 ) -> ChecklistQualificationRegistry:
-    """Compose the explicit Handover and Survey fact-owner allowlist."""
+    """Compose the explicit Handover, Survey and Requirement owner allowlist."""
 
     if project_repository is None:
         project_repository = SqlAlchemyProjectAuthorizationRepository()
@@ -209,6 +233,25 @@ def _create_qualification_registry(
             target_proofs=target_proofs,
         ),
     )
+    fixed_evidence = SqlAlchemyEvidenceFixedSourceRepository()
+    requirement_evidence = SqlAlchemyEvidenceRequirementSourceProof(
+        fixed_evidence,
+    )
+    requirement_decisions = SqlAlchemyRequirementHumanDecisionSourceProof()
+    requirement = RequirementWorkflowQualificationOwner(
+        repository=SqlAlchemyRequirementWorkflowQualificationRepository(),
+        current=RequirementVersionCurrentValidator(
+            survey_sources=SqlAlchemySurveyConclusionRequirementSourceProof(),
+            handover_sources=SqlAlchemyHandoverRequirementSourceProof(),
+            human_decisions=requirement_decisions,
+            project_evidence=requirement_evidence,
+            capability_sources=SqlAlchemyCapabilityRequirementSourceProof(),
+            fixed_evidence=fixed_evidence,
+        ),
+        evidence=requirement_evidence,
+        decisions=requirement_decisions,
+        reviews=SqlAlchemyReviewSnapshotReadRepository(),
+    )
     return ChecklistQualificationRegistry((
         ChecklistQualificationRegistration((
             "HANDOVER_BASELINE", "HANDOVER_ISSUES",
@@ -216,6 +259,9 @@ def _create_qualification_registry(
         ChecklistQualificationRegistration((
             "SURVEY_ACTUAL_SOURCES", "SURVEY_CONCLUSION",
         ), survey),
+        ChecklistQualificationRegistration((
+            "REQUIREMENT_FORMAL_VERSIONS", "REQUIREMENT_ACCEPTANCE",
+        ), requirement),
     ))
 
 

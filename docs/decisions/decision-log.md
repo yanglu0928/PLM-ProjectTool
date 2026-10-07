@@ -9802,3 +9802,15 @@
   或Review集合漂移；复用既有Basis类型可保持历史校验与下游读取兼容。
 - Impact/Rollback：通用写链支持已完成但A04-A02前未生产注册；无Schema/依赖/权限/外发。定向28、后端
   3083/3、wheel1167项/`a32865d9…b1347`通过；撤Requirement variant可回滚且不改既有历史。
+
+# DEC-20261008-1019：三个Workflow入口复用同一显式Requirement Owner组合
+
+- Date/WBS：2026-10-08 / `REQ-01-A12-A04-A02`；依据CR-REQ-004、DEC-1016～1018及Windows
+  Workflow现有显式注册表。
+- Decision：Preview、Record、Transition都通过同一注册表工厂获得Requirement Owner；两个Requirement
+  item绑定同一Owner，Owner与Version Validator共享Decision/Evidence证明实例，其他来源采用同类型
+  SQLAlchemy当前事实适配器；不允许动态发现或入口级降级。
+- Reason：三个入口独立组装会造成预览可过而写入/推进失败；重复但不共享的Decision/Evidence适配器会
+  增加同事务证明口径漂移风险；显式allowlist便于审计和一键停用。
+- Impact/Rollback：无Schema/API路径/依赖/权限/外发；定向35、后端3084/3、wheel1167项/
+  `eec3d8b3…77f24`通过。移除两项Registration即可关闭Requirement生产可达性。
