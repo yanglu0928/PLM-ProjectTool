@@ -155,3 +155,12 @@ Evidence专用proof复用当前PROJECT/ELIGIBLE共享锁仓储，只输出固定
 指纹；Capability proof锁定ACTIVE GLOBAL Baseline当前APPROVED Version及AVAILABLE Item，并绑定精确
 GLOBAL Review/Round/Snapshot。Win11/PG18.6跨项目/错Item、Evidence撤销、Snapshot漂移和零写验证，
 后端2990/3及wheel1135项通过；无Schema、公开API、依赖、Secret或外发变化。
+
+## A05-A04 实施记录（2026-10-07）
+
+Requirement模块新增Human Decision专用proof，在调用方事务内共享锁定同项目不可变DEFER/REJECT决定、
+首成功命令结果及精确Evidence集合，并重证operation、reason、impact、前后版本和最终状态一致。五类来源
+随后在同一事务完成真库闭环；当前PROJECT Evidence撤销会阻止新的当前来源证明，但不追写既有人工决定
+历史。错配负例保持数据库合法shape并替换错误Evidence UUID，证明失败来自adapter集合核验而非数据库
+非空约束。Win11/PG18.6跨项目、错配、撤销、零写与drift，定向24、后端2992/3及wheel1137项通过；
+无Schema、公开API、依赖、Secret或外发变化。A05至此完成，进入A06。

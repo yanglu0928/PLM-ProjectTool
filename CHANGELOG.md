@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/REQ-01-A05-A04 新增Human Decision proof，绑定不可变DEFER/REJECT决定、
+  首成功结果和精确Evidence集合，并完成五类固定来源同事务闭环；区分当前Evidence撤销与历史决定不变。
+  兼容性/回滚：内部增量，无Schema、API、依赖、Secret或外发；可移除adapter。验证：定向24、后端
+  2992项/3跳过、Win11/PG18.6跨项目/结果错配/撤销/零写/drift、wheel1137项/
+  `b50f8a68…ecd3`通过。已知问题：A06～A12、Gate3/UAT/发行待。
+
 - 2026-10-07：0.1.0-dev.0/REQ-01-A05-A03 新增PROJECT Evidence与GLOBAL Capability的Requirement
   proof adapters；Evidence复用当前ELIGIBLE共享锁且不复制locator，Capability绑定ACTIVE当前APPROVED
   Version、AVAILABLE Item与精确GLOBAL Review Snapshot。兼容性/回滚：内部增量，无Schema、API、依赖、

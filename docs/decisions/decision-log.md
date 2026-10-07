@@ -9430,3 +9430,16 @@
   Snapshot可将稳定Item所在Version与正式审批锁在一起。
 - Impact/Rollback：新增四个内部模块文件、测试和validation资产，无Schema/API/依赖/Secret/外发；删除
   adapters即可回滚。Win11/PG18.6、定向16、后端2990/3、wheel1135项通过。
+
+# DEC-20261007-987：Human Decision 绑定不可变决定、首结果与精确 Evidence 集合
+
+- Date/WBS：2026-10-07 / `REQ-01-A05-A04`；依据DEC-984及A03-P03提交闭包。
+- Decision：Human Decision proof只接受同项目既有DEFER/REJECT决定，并在调用方事务内共享锁定决定、
+  首成功结果和全部Evidence引用；operation、reason、impact、前后版本、最终状态及规范排序Evidence集合
+  必须完全一致。Evidence后续撤销不追写决定历史，但该Evidence作为新的PROJECT_EVIDENCE当前来源时失败。
+- Reason：单独读取决定行无法排除管理员绕过或结果漂移；把当前Evidence资格反向套到历史决定会篡改当时
+  已完成事实。双重语义同时保留命令闭包和当前来源资格，不把自由文本或通用Review伪装成人工决定。
+- Implementation correction：错配验证不能把结果Evidence数组设为空，因为数据库shape约束会先拒绝；
+  改为保留合法非空shape并替换错误UUID，以客观命中proof的精确集合核验。
+- Impact/Rollback：新增两个内部模块文件、测试和validation资产，无Schema/API/依赖/Secret/外发；删除
+  adapter即可回滚。Win11/PG18.6五类同事务闭环、定向24、后端2992/3及wheel1137项通过。
