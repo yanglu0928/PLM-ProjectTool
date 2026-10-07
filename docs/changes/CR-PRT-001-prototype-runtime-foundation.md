@@ -161,3 +161,10 @@ A06前四表Owner关闭并拒绝TRUNCATE，空历史可降0129，存在历史拒
 event后改为事务局部合成基线并完整重跑；首次全量回归补齐ORM表清单，均未放宽产品约束。Win11/PG18.6、
 定向20/21 subtests、后端3123/3/4666 subtests、compileall及wheel1196项/
 `f7ec21d7…25b656`通过；无公开API/依赖/外发，进入A06 Owner前置核查。
+
+## A06-A01 前置核查（2026-10-08）
+
+冻结四个Version Operation不变。A06拆为A02固定输入证明、A03 DRAFT Create和A04 Read/Validate；Create在
+同一事务重证当前Approved Requirement、固定PUBLISHED Template和AVAILABLE DocumentVersion，OutputArtifact
+在正式Owner建立前失败关闭。DRAFT不更新正式指针，Validate只生成报告/Audit不改变状态。AI Task只可提供
+建议态输入/来源，不替代Artifact或人工批准。本项纯文档PASS，无Schema/API/代码/依赖/外发。

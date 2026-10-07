@@ -10008,3 +10008,15 @@
 - Impact/Rollback：Migration0130前向加四表和Root延迟FK，无公开API/依赖/外发。空历史可降0129，存在历史
   拒降；DRAFT不更新正式指针，Review/Formalize仍由A07负责。Win11/PG18.6、后端3123/3和wheel验证通过；
   Server2025未外推，Debian13按指令跳过。
+
+# DEC-20261008-1036：PrototypeVersion只消费目标Owner的事务内固定证明
+
+- Date/WBS：2026-10-08 / `PRT-01-A06-A01`；依据冻结PRT-03、四个Version Operation、DEC-1034/1035。
+- Decision：Create在同一事务消费Requirement Owner的当前Approved固定Version证明、Template Owner的
+  PUBLISHED固定Version证明和Document Owner的AVAILABLE固定内容证明；GLOBAL Template/Document允许用于
+  项目，PROJECT对象必须同项目。OutputArtifact无Owner时失败关闭，AITask仅能提供建议态输入/来源。Validate
+  重验这些当前事实并返回报告，不改变Version状态或Root正式指针。
+- Reason：跨Owner直接查表会复制状态语义并绕过项目隔离；裸UUID/AITask不能证明目标存在、批准、可访问或
+  内容固定；Validate若推进状态会绕过A07 Review/Formalize窄门。
+- Impact/Rollback：A01纯文档；A02可新增只读证明Port且不改变Schema/API。A03才通过Migration前向开放写Owner，
+  A04只增加内部读取/验证。可停止后续装配，既有0130结构和历史不删除。
