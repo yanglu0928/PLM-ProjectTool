@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/REQ-01-A05-A03 新增PROJECT Evidence与GLOBAL Capability的Requirement
+  proof adapters；Evidence复用当前ELIGIBLE共享锁且不复制locator，Capability绑定ACTIVE当前APPROVED
+  Version、AVAILABLE Item与精确GLOBAL Review Snapshot。兼容性/回滚：内部增量，无Schema、API、依赖、
+  Secret或外发；可移除adapter。验证：定向16、后端2990项/3跳过、Win11/PG18.6跨项目/错Item/
+  Evidence撤销/Snapshot漂移/零写/drift、wheel1135项/`e305a87d…08a4`通过。已知问题：A05-A04、
+  A06～A12、Gate3/UAT/发行待。
+
 - 2026-10-07：0.1.0-dev.0/REQ-01-A05-A02 新增SurveyConclusion与Handover的Requirement固定来源
   proof adapters，将业务APPROVED/当前指针与精确Review、Round、Snapshot和内容指纹共同锁定；只返回
   最小类型化身份且零写。兼容性/回滚：内部增量，无Schema、API、依赖、Secret或外发；可移除adapter。

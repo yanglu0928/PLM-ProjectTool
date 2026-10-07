@@ -148,3 +148,10 @@ Survey与Handover所属模块新增Requirement专用只读proof adapters；除�
 所有事实在调用方事务内共享锁定，输出仅含固定身份、审批引用、版本号和隐藏指纹，不复制正文或位置。
 Win11/PG18.6跨项目、错版本、指纹漂移、受限Root和零写验证，后端2986/3及wheel1131项通过；无Schema、
 公开API、依赖、Secret或外发变化。
+
+## A05-A03 实施记录（2026-10-07）
+
+Evidence专用proof复用当前PROJECT/ELIGIBLE共享锁仓储，只输出固定Document/Version、lock version与隐藏
+指纹；Capability proof锁定ACTIVE GLOBAL Baseline当前APPROVED Version及AVAILABLE Item，并绑定精确
+GLOBAL Review/Round/Snapshot。Win11/PG18.6跨项目/错Item、Evidence撤销、Snapshot漂移和零写验证，
+后端2990/3及wheel1135项通过；无Schema、公开API、依赖、Secret或外发变化。
