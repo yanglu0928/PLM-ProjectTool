@@ -164,3 +164,11 @@ Requirement模块新增Human Decision专用proof，在调用方事务内共享�
 历史。错配负例保持数据库合法shape并替换错误Evidence UUID，证明失败来自adapter集合核验而非数据库
 非空约束。Win11/PG18.6跨项目、错配、撤销、零写与drift，定向24、后端2992/3及wheel1137项通过；
 无Schema、公开API、依赖、Secret或外发变化。A05至此完成，进入A06。
+
+## A06 拆分与 A01 编码前核查（2026-10-07）
+
+A06拆为A02原子创建和A03授权list/get。创建必须显式initial且无历史，或以固定base_version_ref精确指向
+当前最高版本；同事务锁定ACTIVE Requirement、递增Root ETag、重证A05来源及Evidence/Capability并一次
+写完Version、owned/support集合、Audit、receipt。内容指纹只覆盖规范化业务快照和固定引用。0118要求AI
+Task已接纳到最终Version ID，但冻结create未提供客户端Version ID或跨Owner预接纳协议；首版只接受空AI
+Task集合，后续扩展须独立CR，不绕过闭包。A03列表使用version_no稳定keyset，get返回完整有序固定快照。

@@ -9443,3 +9443,16 @@
   改为保留合法非空shape并替换错误UUID，以客观命中proof的精确集合核验。
 - Impact/Rollback：新增两个内部模块文件、测试和validation资产，无Schema/API/依赖/Secret/外发；删除
   adapter即可回滚。Win11/PG18.6五类同事务闭环、定向24、后端2992/3及wheel1137项通过。
+
+# DEC-20261007-988：RequirementVersion 创建一次闭合并以显式 base 防止分叉
+
+- Date/WBS：2026-10-07 / `REQ-01-A06-A01`；依据冻结VersionCreateRequest、DEC-983/984和Migration0118。
+- Decision：首版创建必须`initial=true`且无历史，或`base_version_ref`精确等于当前最高版本；锁定ACTIVE
+  Requirement并将Root ETag递增一次。Version、六类owned集合、支持引用、Audit、receipt在同一事务闭合，
+  指纹覆盖规范化业务快照和固定引用。list按version_no keyset，get返回完整有序固定快照。
+- AI boundary：当前Schema要求AI Task预先接纳到最终Version ID，但冻结create无客户端Version ID或跨Owner
+  原子预接纳协议。A06首版只接受空AI Task集合；非空失败关闭，后续通过独立CR定义协议，不能绕过闭包。
+- Reason：自动选latest会把并发修订静默串到错误基线；分步写会产生半套Version。为覆盖功能而伪造AI
+  接纳关系比暂时关闭非空AI provenance风险更高。
+- Impact/Rollback：A01纯设计，无Schema/API/程序/依赖/Secret/外发；A02/A03分别实现写/读Owner并真库
+  验证，A02前数据库写守卫保持关闭。

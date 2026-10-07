@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/REQ-01-A06-A01 完成RequirementVersion create/list/get编码前核查，固定
+  initial/base防分叉、完整快照单事务闭合、Root ETag和version_no keyset边界；当前未定义跨Owner AI
+  预接纳协议，非空AI provenance首版失败关闭并留独立CR。兼容性/回滚：纯文档，无Schema、API、程序、
+  依赖、Secret或外发。验证：冻结API/DM/SC、Migration0116～0118及A05 proof静态对账。已知问题：
+  A06-A02/A03、A07～A12、Gate3/UAT/发行待。
+
 - 2026-10-07：0.1.0-dev.0/REQ-01-A05-A04 新增Human Decision proof，绑定不可变DEFER/REJECT决定、
   首成功结果和精确Evidence集合，并完成五类固定来源同事务闭环；区分当前Evidence撤销与历史决定不变。
   兼容性/回滚：内部增量，无Schema、API、依赖、Secret或外发；可移除adapter。验证：定向24、后端
