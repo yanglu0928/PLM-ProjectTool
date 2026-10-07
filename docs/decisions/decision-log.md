@@ -9862,3 +9862,15 @@
   会产生Root未变、子项不全或Review错配的半套事实。
 - Impact/Rollback：新增Schema0122五表和metadata注册，无公开API/依赖/外发；空历史可降，存在历史拒绝
   物理降级。真实角色、Approved需求、Review和连续ordinal由A03同事务重验。
+
+# DEC-20261008-1024：范围决定以实际受权命令为事实而不制造合成批准
+
+- Date/WBS：2026-10-08 / `PRT-01-A03-A01`；依据冻结`PRT_MARK_NOT_REQUIRED`角色/控制、Schema0122
+  和Workflow Prototype范围规则。
+- Decision：PM或CustomerManager的受权命令本身形成不可变NOT_REQUIRED人工决定并记录confirmed_by；
+  PM决定不得显示成客户确认。可选Approved Review/Round只作为同项目内容匹配的附加证明，不要求或生成
+  不存在的项目级合成Review。决定必须非空固定全部受影响的当前Approved RequirementVersion。
+- Reason：强制不存在的合成Review会堵塞冻结Operation；把PM动作称客户确认会伪造事实；以无Link或空范围
+  推断NOT_REQUIRED会静默删Scope。
+- Impact/Rollback：A01仅文档；A02～A05分别实现创建、Package、Prototype和范围决定Owner。停止注册即可
+  回滚运行入口，历史决定不得删除；A05前Schema决定写口保持关闭。

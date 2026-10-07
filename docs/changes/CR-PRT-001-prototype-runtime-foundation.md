@@ -71,3 +71,9 @@ RequirementVersion引用五表。Prototype正式指针先保留nullable，A05 Ve
 为空；范围决定与子引用在A03原子Owner前全部拒写。空历史可降0121，任何新表历史拒绝物理降级。
 Windows 11/PostgreSQL 18.6真实升降、drift、跨项目负例、后端3089/3及wheel1171项/
 `ec80a596…57c1d`通过；未开放业务Owner、HTTP或正式Prototype事实。
+
+## A03 拆分与A01前置核查（2026-10-08）
+
+A03拆为A02身份创建、A03 Package修改、A04 Prototype修改、A05 NOT_REQUIRED原子决定。PATCH按冻结控制
+仅用强If-Match，不强制幂等key；SET_MEMBERS不级联删除Prototype。PM/CustomerManager实际受权命令本身
+构成不可变人工决定，PM动作不称客户确认，可选Review只作附加证明。A05前决定表继续拒写。

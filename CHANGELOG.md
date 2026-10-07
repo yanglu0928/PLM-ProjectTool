@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A03-A01 完成Prototype identity/scope Owner前置核查：拆分创建、
+  Package修改、Prototype修改和NOT_REQUIRED原子决定；PATCH保持冻结的非幂等强ETag，范围决定以真实受权
+  命令记录且PM动作不冒充客户确认，可选Review仅作附加证明。兼容性/回滚：纯文档，无Schema/API/代码/
+  依赖/外发；停止后续Owner注册即可。验证：冻结Operation/API-01控制、Schema0122与既有授权/幂等/Audit
+  组件静态对账PASS。已知问题：A02～A05及PRT后续、Gate3/UAT/发行待。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A02 新增Schema0122，物理化PrototypePackage、Prototype、同项目
   membership及NOT_REQUIRED不可变决定/固定RequirementVersion范围；A03前只允许ACTIVE/v0身份初态，
   决定写入和正式指针均关闭。兼容性/升级：已有库可向前升级，空历史可降至0121；任何Prototype历史
