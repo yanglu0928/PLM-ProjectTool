@@ -9041,3 +9041,20 @@
 - Reason：只返回Assignment Root不满足冻结合同；另建Response公开读取路径会扩大V1 API。让写链在缺Document Owner时以空证明继续，会绕过Evidence漂移与facilitated PROJECT_RECORD重证；把读写放同一Router又会在生产组合中重复注册GET。
 - Impact/Rollback：无Schema/Migration、Breaking URL、角色、依赖、Secret数量或外发变化；撤两个Router注入恢复404，历史事实保留。缺Evidence组合依赖的部署保持五写404而非降级。
 - Verification：合同/组合/Owner定向7项与2子测试；Win11/PG18.6真实七Operation、两Assignment/八Response、分页/详情、14 Audit/receipt及drift；后端2907/3、4203子断言；wheel1086项，SHA-256 `6c9d208d5cbb505bc342d87794b88ddf3e2694ed8ee622616761f503f4333b4f`。
+
+# DEC-20261007-954：Assignment工作台复用Evidence列表时收紧原生fetch调用边界
+
+- Date/WBS：2026-10-07 / `SUR-03-A09`；依据CR-SUR-008、DEC-938/952及Windows 11真实Edge首轮验收失败证据。
+- Evidence/Conflict：Assignment页面登录、Project、Round、Version、Department与Member请求均成功，但首轮Evidence请求未发出即进入`EVIDENCE_LIST_UNAVAILABLE`；`EvidenceListClient` 仍以 `this.fetcher(...)` 调用浏览器原生`fetch`，与已在DEC-938确认的Edge receiver语义冲突，而Vitest替身未覆盖该差异。修正后请求已发出，又客观发现旧来源定位fixture未提供Evidence cursor key，生产组合因而按设计不挂载列表路由并返405；A09必须将该依赖显式补入一次性隔离验收组合，不能绕过选择器。
+- Options：A在页面绕过Evidence选择器（会降低功能与证据完整性，拒绝）；B修改后端或冻结API（无必要，拒绝）；C将注入transport复制到局部变量后以普通函数调用，并增加接收者回归（选择）。
+- Decision：采用C；仅收紧Evidence列表transport的浏览器调用方式，不改列表URL、响应投影、权限、完整性或错误合同。
+- Impact/Migration/Rollback：纯前端兼容修正，无Schema/Migration、API、依赖、Secret、客户数据或外发变化；移除局部transport及回归即可回滚，但会恢复已观测的Edge故障。
+- Verification：新增“原生fetch接收者必须为`undefined`”回归；定向15项、前端全量86文件1466项、typecheck、Vite180模块build通过。Windows 11 Edge最终Evidence LIST 200且友好选择器可用；全链、SQL终检及清理结果见`docs/progress/sur-03-a09-assignment-frontend-browser.md`。
+
+# DEC-20261007-955：Assignment Review回执按服务端规范形状严格解析
+
+- Date/WBS：2026-10-07 / `SUR-03-A09`；依据A08已实现的`_receipt`投影、Review receipt类型及Windows 11真实Edge证据。
+- Evidence/Conflict：VALIDATE HTTP已返200并且数据库Assignment已进入VALIDATED，但前端在重读前将结果标为未知；原因是后端对VALIDATE与RETURN统一返回Review receipt，前者含规范`return_comment:null`，而新客户端错误期望该字段缺失。
+- Decision：SUBMIT继续只接受五字段回执；VALIDATE与RETURN都严格要求`return_comment`，VALIDATE必须为`null`，RETURN必须与当次规范意见精确一致。不放宽多余字段或状态/ETag/父资源校验。
+- Impact/Rollback：仅前端响应解析与回归fixture；无Schema/Migration、后端API、角色、依赖、Secret或外发变化。回滚会恢复“服务端已成功但前端误报未知”的故障，不影响已提交事实。
+- Verification：严格客户端定向12项、前端全量86文件1466项、typecheck/build通过；全新Windows 11 Edge/PG18.6链中VALIDATE后页面重读VALIDATED，随后CLOSE成功。SQL证明1 VALIDATED Assignment、4 Response/Answer与对应Audit/receipt，隔离资源清理通过。

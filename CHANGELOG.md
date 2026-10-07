@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/SUR-03-A09 新增Assignment/Response严格客户端与工作台，以受权Department/Member/Question/Evidence选择取代手填ID，支持六类答案、自助/代录、更正、SUBMIT/VALIDATE/RETURN、写后重读与未知结果恢复。兼容性/回滚：无Schema/Migration、冻结API、角色、依赖、Secret或外发变化，撤前端路由/客户端即可，已提交业务历史保留。验证：前端86文件1466项、typecheck、Vite180模块build；Win11/Edge/PG18.6完成OPEN→四Response→SUBMIT→VALIDATE→CLOSE，SQL为1 CLOSED/1 VALIDATED/4 Response/4 Answer/10 Audit/10 receipt，清理PASS。偏差：按DEC-954/955修正原生fetch receiver、验收Evidence cursor依赖、动态合成文案与VALIDATE `return_comment:null`解析。已知问题：主JS687.36 kB分块警告；定义写UI、Conclusion、Survey资格/全UAT、Gate3及发行仍待。
+
 - 2026-10-06：0.1.0-dev.0/SUR-03-A08 新增冻结七个Assignment/Response HTTP、动态可见详情投影、Round绑定cursor及Windows生产组合；完整Document证明依赖缺失时五写保持404。兼容性/回滚：无Schema/Migration、Breaking URL、角色、依赖、Secret数量或外发变化，撤Router注入恢复404并保留历史。验证：Win11/PG18.6完成两Assignment、八Response、两SUBMIT、VALIDATE、RETURN、分页/详情、14 Audit/receipt及drift；后端2907/3、4203子断言；开发wheel1086项，SHA-256 `6c9d208d5cbb505bc342d87794b88ddf3e2694ed8ee622616761f503f4333b4f`。已知问题：Assignment/Response前端/浏览器、Conclusion、Gate3/UAT及发行仍待。
 
 - 2026-10-06：0.1.0-dev.0/SUR-02-A06-P02 新增Round严格前端客户端、角色收窄工作台、写后重读与未知结果恢复；Win11真实Edge经构建Vue/生产FastAPI/PG18.6完成LIST/GET、两次CREATE、PATCH、OPEN、CLOSE 422失败关闭和CANCEL。兼容性/回滚：无Schema/API/角色/依赖/Secret/外发变化，撤前端增量即可，历史Round/Audit/receipt保留。验证：定向14、前端84文件1455项、typecheck、Vite176模块build、Edge 40条网络证据PASS。偏差：修复原生fetch接收者、接受新建Round `updated_by=null`，验收wrapper明确批准合成Version。已知问题：主JS658.73 kB分块提示、Assignment/Response HTTP/UI、Conclusion、Gate3/UAT及发行仍待。

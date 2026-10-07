@@ -44,6 +44,16 @@ describe("EvidenceListClient", () => {
     expect(JSON.stringify(page)).not.toContain("content_fingerprint");
   });
 
+  it("invokes an injected native fetch transport without a receiver", async () => {
+    let receiver: unknown = "not-called";
+    const fetcher = function (this: unknown): Promise<Response> {
+      receiver = this;
+      return Promise.resolve(response({ items: [entry], has_more: false, next_cursor: null }));
+    } as typeof fetch;
+    expect((await new EvidenceListClient(fetcher).list(scope)).items).toEqual([entry]);
+    expect(receiver).toBeUndefined();
+  });
+
   it("binds signed pagination and rejects malformed or duplicate items", async () => {
     const { api, fetcher } = client(response({ items: [entry], has_more: true, next_cursor: cursor }),
       response({ items: [], has_more: false, next_cursor: null }));
