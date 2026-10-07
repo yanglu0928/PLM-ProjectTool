@@ -982,6 +982,52 @@ class RequirementVersionAITaskRefRow(Base):
     ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
 
 
+class RequirementVersionCreateResultRow(Base):
+    """Immutable first-success projection for one Version/root-lock transition."""
+
+    __tablename__ = "req_requirement_version_create_results"
+    __table_args__ = (
+        UniqueConstraint(
+            "requirement_id", "lock_version",
+            name="uq_req_version_create_results__requirement_lock",
+        ),
+        ForeignKeyConstraint(
+            ["requirement_version_id", "requirement_id", "project_id"],
+            ["plm.req_requirement_versions.requirement_version_id",
+             "plm.req_requirement_versions.requirement_id",
+             "plm.req_requirement_versions.project_id"],
+            name="fk_req_version_create_results__version", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["actor_id"], ["plm.auth_users.user_id"],
+            name="fk_req_version_create_results__actor", ondelete="NO ACTION",
+        ),
+        CheckConstraint(
+            "expected_lock_version>=0 AND lock_version=expected_lock_version+1",
+            name="ck_req_version_create_results__lock",
+        ),
+        CheckConstraint(
+            "octet_length(content_fingerprint)=32",
+            name="ck_req_version_create_results__fingerprint",
+        ),
+        {"schema": "plm"},
+    )
+
+    requirement_version_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True
+    )
+    requirement_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    actor_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    expected_lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    content_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+
+
 class RequirementCommandResultRow(Base):
     """Immutable first-success Requirement identity mutation projection."""
 

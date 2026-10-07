@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/REQ-01-A06-A02 新增RequirementVersion完整DRAFT原子创建Owner与
+  Migration0119不可变首结果，显式initial/base、Root ETag、A05来源/Evidence proof和提交时双闭包防止
+  并发分叉/半套快照；非空AI provenance及无provenance AI_CANDIDATE失败关闭。兼容性/升级：内部Schema
+  增量，无公开API/依赖/Secret/外发；空历史可降0118，有历史向前修复。验证：定向33、后端3000项/
+  3跳过、Win11/PG18.6升降/drift/权限/幂等/并发/回滚/直写拒绝、wheel1140项/`474937eb…5d78`
+  通过。已知问题：A06-A03、A07～A12、Gate3/UAT/发行待。
+
 - 2026-10-07：0.1.0-dev.0/REQ-01-A06-A01 完成RequirementVersion create/list/get编码前核查，固定
   initial/base防分叉、完整快照单事务闭合、Root ETag和version_no keyset边界；当前未定义跨Owner AI
   预接纳协议，非空AI provenance首版失败关闭并留独立CR。兼容性/回滚：纯文档，无Schema、API、程序、

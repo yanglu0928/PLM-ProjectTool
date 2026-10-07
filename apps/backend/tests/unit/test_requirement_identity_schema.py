@@ -25,6 +25,7 @@ from plm_assistant.modules.requirement.infrastructure.orm import (
     RequirementStateDecisionRow,
     RequirementVersionRow,
     RequirementVersionAITaskRefRow,
+    RequirementVersionCreateResultRow,
 )
 
 
@@ -289,6 +290,24 @@ class RequirementIdentitySchemaTests(unittest.TestCase):
         self.assertIn("pre-existing RequirementVersion", inspect.getsource(migration.upgrade))
         with patch.object(migration.context, "is_offline_mode", return_value=True):
             with self.assertRaisesRegex(RuntimeError, "offline RequirementVersion support"):
+                migration.downgrade()
+
+    def test_requirement_version_create_owner_has_immutable_result_closure(self) -> None:
+        table = RequirementVersionCreateResultRow.__table__
+        self.assertEqual(table.schema, "plm")
+        self.assertEqual(table.name, "req_requirement_version_create_results")
+        names = {constraint.name for constraint in table.constraints}
+        self.assertIn("fk_req_version_create_results__version", names)
+        self.assertIn("uq_req_version_create_results__requirement_lock", names)
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions.20261007_0119_requirement_version_create_owner")
+        self.assertEqual(migration.down_revision, "20261007_0118")
+        self.assertIn("RequirementVersion has no immutable create result",
+                      migration._OWNER_GUARDS)
+        self.assertIn("Requirement mutation has no immutable result",
+                      migration._OWNER_GUARDS)
+        with patch.object(migration.context, "is_offline_mode", return_value=True):
+            with self.assertRaisesRegex(RuntimeError, "offline RequirementVersion owner"):
                 migration.downgrade()
 
 

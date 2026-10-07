@@ -172,3 +172,12 @@ A06拆为A02原子创建和A03授权list/get。创建必须显式initial且无�
 写完Version、owned/support集合、Audit、receipt。内容指纹只覆盖规范化业务快照和固定引用。0118要求AI
 Task已接纳到最终Version ID，但冻结create未提供客户端Version ID或跨Owner预接纳协议；首版只接受空AI
 Task集合，后续扩展须独立CR，不绕过闭包。A03列表使用version_no稳定keyset，get返回完整有序固定快照。
+
+## A06-A02 实施记录（2026-10-07）
+
+新增原子DRAFT创建Service/Repository与Migration0119：显式initial或精确当前最高base、ACTIVE Root行锁及
+ETag共同防分叉；Version、六类owned、支持引用、不可变首结果、Audit和receipt同事务闭合。0119以创建
+结果分别闭合Root bump和每个Version，全部版本内容仍不可改删/截断。内容指纹排除initial/base/ETag/
+client reason等命令元数据；请求幂等指纹保留这些字段。由于跨Owner AI预接纳协议尚不存在，非空AI Task
+及AI_CANDIDATE assessment均失败关闭，只接受HUMAN assessment。Win11/PG18.6升降、drift、真实权限、
+Evidence、幂等、并发、回滚、直写拒绝和历史拒降通过；定向33、后端3000/3及wheel1140项通过。

@@ -9456,3 +9456,18 @@
   接纳关系比暂时关闭非空AI provenance风险更高。
 - Impact/Rollback：A01纯设计，无Schema/API/程序/依赖/Secret/外发；A02/A03分别实现写/读Owner并真库
   验证，A02前数据库写守卫保持关闭。
+
+# DEC-20261007-989：Version 创建以不可变结果同时闭合 Root ETag 和完整快照
+
+- Date/WBS：2026-10-07 / `REQ-01-A06-A02`；依据DEC-988、Migration0118完整性和既有命令闭包模式。
+- Decision：Migration0119新增每Version唯一且每Requirement/lock version唯一的不可变创建结果；Root无字段
+  变化的ACTIVE ETag bump和Version INSERT分别以延迟触发器要求该结果，Version/owned/support只准INSERT。
+  Owner在同一事务完成来源proof、完整快照、结果、Audit和receipt。
+- Fingerprint：内容指纹只覆盖业务内容与固定引用；initial/base、expected ETag和client reason只进入请求
+  幂等指纹。首版同时拒绝非空AI Task和AI_CANDIDATE assessment，直至独立CR建立跨Owner原子接纳协议。
+- Reason：仅放开INSERT守卫无法证明Root更新与某一个完整Version一一对应，也允许一次Root bump挂多个
+  Version；双闭包与唯一结果消除该旁路。无AI provenance的AI_CANDIDATE不能因字段合法就进入业务快照。
+- Implementation correction：首轮全量回归发现统一ORM metadata归属清单漏记新增结果表；补齐Requirement
+  显式归属断言后复验通过，不改变Schema或运行语义。
+- Impact/Rollback：Schema head 0119，新增内部Owner/策略/测试/validation，无公开API/依赖/Secret/外发。
+  空历史可降0118；有创建历史向前修复。Win11/PG18.6、定向33、后端3000/3及wheel1140项通过。
