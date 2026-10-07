@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 from plm_assistant.modules.requirement.infrastructure.orm import (
     RequirementAcceptanceCriterionRow,
+    RequirementAssessmentEvidenceRefRow,
     RequirementAssumptionRow,
     RequirementCapabilityAssessmentRow,
     RequirementCreateResultRow,
@@ -20,8 +21,10 @@ from plm_assistant.modules.requirement.infrastructure.orm import (
     RequirementPackageRow,
     RequirementRow,
     RequirementSourceRow,
+    RequirementSourceEvidenceRefRow,
     RequirementStateDecisionRow,
     RequirementVersionRow,
+    RequirementVersionAITaskRefRow,
 )
 
 
@@ -254,6 +257,39 @@ class RequirementIdentitySchemaTests(unittest.TestCase):
                 migration.downgrade()
         self.assertIn("RequirementVersion owned history prevents downgrade",
                       inspect.getsource(migration.downgrade))
+
+    def test_requirement_version_support_refs_close_complete_snapshot(self) -> None:
+        tables = (
+            RequirementSourceEvidenceRefRow.__table__,
+            RequirementAssessmentEvidenceRefRow.__table__,
+            RequirementVersionAITaskRefRow.__table__,
+        )
+        self.assertEqual(
+            {table.name for table in tables},
+            {"req_source_evidence_refs", "req_assessment_evidence_refs",
+             "req_version_ai_task_refs"},
+        )
+        for table in tables:
+            self.assertEqual(table.schema, "plm")
+            self.assertIn("requirement_version_id", table.c)
+        assessment_names = {
+            constraint.name
+            for constraint in RequirementAssessmentEvidenceRefRow.__table__.constraints
+        }
+        self.assertIn("ck_req_assessment_evidence__role", assessment_names)
+        ai_names = {
+            constraint.name for constraint in RequirementVersionAITaskRefRow.__table__.constraints
+        }
+        self.assertIn("fk_req_version_ai_refs__task", ai_names)
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions.20261007_0118_requirement_version_support")
+        self.assertEqual(migration.down_revision, "20261007_0117")
+        self.assertIn("declared counts do not match", migration._GUARDS)
+        self.assertIn("accepted to this draft", migration._GUARDS)
+        self.assertIn("pre-existing RequirementVersion", inspect.getsource(migration.upgrade))
+        with patch.object(migration.context, "is_offline_mode", return_value=True):
+            with self.assertRaisesRegex(RuntimeError, "offline RequirementVersion support"):
+                migration.downgrade()
 
 
 if __name__ == "__main__":

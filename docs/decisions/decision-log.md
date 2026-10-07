@@ -9382,3 +9382,15 @@
   人工正式判断；Source标签本身不证明上游状态，A05仍须专用adapter重验。
 - Impact/Rollback：Migration0117/ORM增量，无公开API、依赖或外发。所有owned写保持关闭；空历史可降
   0116，有历史向前修复。Win11/PG18.6、定向17、后端2982/3及wheel1126项通过。
+
+# DEC-20261007-983：RequirementVersion 以提交时闭包绑定支持证据和 AI Draft provenance
+
+- Date/WBS：2026-10-07 / `REQ-01-A04-A04`；依据冻结REQ-03、AI建议人工确认规则和SC-02完整性原则。
+- Decision：Source/Assessment Evidence及Version AI Task使用规范化表。延迟约束在提交时核对七类声明
+  计数与连续ordinal；Assessment必须有GLOBAL STANDARD和同Project PROJECT Evidence；PROJECT_EVIDENCE
+  Source必须映射同一Evidence；AI Task仅接纳SUCCEEDED且ACCEPTED_TO_DRAFT到当前Version的Requirement
+  Normalize/Match。0118对关闭Owner期间已存在的Version拒绝自动迁移，要求审计后专门方案。
+- Reason：避免半套Version、错Scope Evidence、重复/缺口顺序、AI成功但未被人工接受的建议进入正式
+  Draft；旧Schema从未开放Version Owner，静默补默认支持引用会伪造来源与确认。
+- Impact/Rollback：Migration0118/ORM增量，无公开API、依赖或外发；support写保持关闭。空support历史可
+  降0117，有历史向前修复。Win11/PG18.6、定向18、后端2983/3及wheel1127项通过。

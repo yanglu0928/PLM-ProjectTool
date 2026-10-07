@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/REQ-01-A04-A04 新增Source/Assessment Evidence与Version AI Task规范化引用、
+  Migration0118及提交时完整闭包；固定七类声明计数/连续ordinal、能力双侧Evidence、PROJECT Evidence
+  同一映射及AI Accepted-to-Draft。兼容性/升级：既有身份历史可升级，关闭Owner期间的未审计Version拒绝
+  自动迁移；无公开API/依赖/Secret/外发，空support历史可降0117，有历史向前修复。验证：定向18、后端
+  2983项/3跳过、Win11/PG18.6升级/回滚/drift/完整提交及六类提交负例、wheel1127项/`2d8771dc…0d5f`
+  通过。已知问题：A05～A12、Gate3/UAT/发行待。
+
 - 2026-10-07：0.1.0-dev.0/REQ-01-A04-A03 新增RequirementVersion六类有序owned语义表与
   Migration0117，固定三列项目归属、来源闭合类型、验收五要素、精确Capability引用和AI Candidate边界；
   六表Owner继续关闭。兼容性/升级：内部增量，无公开API/依赖/Secret/外发；空历史可降0116，有owned

@@ -850,6 +850,138 @@ class RequirementDependencyRow(Base):
     dependency_text: Mapped[str] = mapped_column(Text, nullable=False)
 
 
+class RequirementSourceEvidenceRefRow(Base):
+    """Project Evidence supporting one declared Requirement source."""
+
+    __tablename__ = "req_source_evidence_refs"
+    __table_args__ = (
+        UniqueConstraint(
+            "requirement_source_id", "evidence_id",
+            name="uq_req_source_evidence__source_evidence",
+        ),
+        UniqueConstraint(
+            "requirement_source_id", "ordinal",
+            name="uq_req_source_evidence__source_ordinal",
+        ),
+        ForeignKeyConstraint(
+            ["requirement_source_id", "requirement_version_id", "requirement_id",
+             "project_id"],
+            ["plm.req_sources.requirement_source_id",
+             "plm.req_sources.requirement_version_id",
+             "plm.req_sources.requirement_id", "plm.req_sources.project_id"],
+            name="fk_req_source_evidence__source", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["evidence_id"], ["plm.evd_evidence_records.evidence_id"],
+            name="fk_req_source_evidence__evidence", ondelete="NO ACTION",
+        ),
+        CheckConstraint("ordinal>=0", name="ck_req_source_evidence__ordinal"),
+        Index("ix_req_source_evidence__evidence", "evidence_id"),
+        {"schema": "plm"},
+    )
+
+    source_evidence_ref_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()")
+    )
+    requirement_source_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    requirement_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    requirement_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    evidence_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class RequirementAssessmentEvidenceRefRow(Base):
+    """GLOBAL standard or PROJECT fact proof for a capability assessment."""
+
+    __tablename__ = "req_assessment_evidence_refs"
+    __table_args__ = (
+        UniqueConstraint(
+            "capability_assessment_id", "evidence_id",
+            name="uq_req_assessment_evidence__assessment_evidence",
+        ),
+        UniqueConstraint(
+            "capability_assessment_id", "ordinal",
+            name="uq_req_assessment_evidence__assessment_ordinal",
+        ),
+        ForeignKeyConstraint(
+            ["capability_assessment_id", "requirement_version_id", "requirement_id",
+             "project_id"],
+            ["plm.req_capability_assessments.capability_assessment_id",
+             "plm.req_capability_assessments.requirement_version_id",
+             "plm.req_capability_assessments.requirement_id",
+             "plm.req_capability_assessments.project_id"],
+            name="fk_req_assessment_evidence__assessment", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["evidence_id"], ["plm.evd_evidence_records.evidence_id"],
+            name="fk_req_assessment_evidence__evidence", ondelete="NO ACTION",
+        ),
+        CheckConstraint(
+            "evidence_role IN ('STANDARD','PROJECT')",
+            name="ck_req_assessment_evidence__role",
+        ),
+        CheckConstraint("ordinal>=0", name="ck_req_assessment_evidence__ordinal"),
+        Index("ix_req_assessment_evidence__evidence", "evidence_id"),
+        {"schema": "plm"},
+    )
+
+    assessment_evidence_ref_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()")
+    )
+    capability_assessment_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    requirement_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    requirement_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    evidence_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    evidence_role: Mapped[str] = mapped_column(Text, nullable=False)
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class RequirementVersionAITaskRefRow(Base):
+    """Accepted-to-draft AI provenance for one RequirementVersion."""
+
+    __tablename__ = "req_version_ai_task_refs"
+    __table_args__ = (
+        UniqueConstraint(
+            "requirement_version_id", "ai_task_id",
+            name="uq_req_version_ai_refs__version_task",
+        ),
+        UniqueConstraint(
+            "requirement_version_id", "ordinal",
+            name="uq_req_version_ai_refs__version_ordinal",
+        ),
+        ForeignKeyConstraint(
+            ["requirement_version_id", "requirement_id", "project_id"],
+            ["plm.req_requirement_versions.requirement_version_id",
+             "plm.req_requirement_versions.requirement_id",
+             "plm.req_requirement_versions.project_id"],
+            name="fk_req_version_ai_refs__version", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["ai_task_id", "task_scope", "project_id"],
+            ["plm.ai_tasks.ai_task_id", "plm.ai_tasks.scope", "plm.ai_tasks.project_id"],
+            name="fk_req_version_ai_refs__task", ondelete="NO ACTION",
+        ),
+        CheckConstraint("task_scope='PROJECT'", name="ck_req_version_ai_refs__scope"),
+        CheckConstraint("ordinal>=0", name="ck_req_version_ai_refs__ordinal"),
+        Index("ix_req_version_ai_refs__task", "ai_task_id"),
+        {"schema": "plm"},
+    )
+
+    ai_task_ref_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()")
+    )
+    requirement_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    requirement_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    ai_task_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    task_scope: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'PROJECT'")
+    )
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
 class RequirementCommandResultRow(Base):
     """Immutable first-success Requirement identity mutation projection."""
 

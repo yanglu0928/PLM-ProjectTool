@@ -169,6 +169,10 @@ def main() -> None:
                 "ALTER TABLE plm.req_requirement_versions DISABLE TRIGGER "
                 "trg_req_requirement_versions__owner"
             )
+            db.execute(
+                "ALTER TABLE plm.req_requirement_versions DISABLE TRIGGER "
+                "trg_req_requirement_versions__completeness"
+            )
             try:
                 self_ref = uuid.uuid4()
                 try:
@@ -203,6 +207,10 @@ def main() -> None:
                     (requirement, project, b"b" * 32, creator),
                 ).fetchone()[0]
             finally:
+                db.execute(
+                    "ALTER TABLE plm.req_requirement_versions ENABLE TRIGGER "
+                    "trg_req_requirement_versions__completeness"
+                )
                 db.execute(
                     "ALTER TABLE plm.req_requirement_versions ENABLE TRIGGER "
                     "trg_req_requirement_versions__owner"

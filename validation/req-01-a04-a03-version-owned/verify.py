@@ -169,6 +169,12 @@ def main() -> None:
                         sql.Identifier(table), sql.Identifier(f"trg_{table}__owner")
                     )
                 )
+                db.execute(
+                    sql.SQL("ALTER TABLE plm.{} DISABLE TRIGGER {}").format(
+                        sql.Identifier(table),
+                        sql.Identifier(f"trg_{table}__completeness"),
+                    )
+                )
             try:
                 survey = uuid.uuid4()
                 source = db.execute(
@@ -274,6 +280,12 @@ def main() -> None:
                 )
             finally:
                 for table in TABLES:
+                    db.execute(
+                        sql.SQL("ALTER TABLE plm.{} ENABLE TRIGGER {}").format(
+                            sql.Identifier(table),
+                            sql.Identifier(f"trg_{table}__completeness"),
+                        )
+                    )
                     db.execute(
                         sql.SQL("ALTER TABLE plm.{} ENABLE TRIGGER {}").format(
                             sql.Identifier(table), sql.Identifier(f"trg_{table}__owner")

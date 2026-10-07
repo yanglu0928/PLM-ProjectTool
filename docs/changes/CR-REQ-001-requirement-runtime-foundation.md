@@ -124,3 +124,11 @@ AcceptanceCriterion物理要求可观察结果、验证方法、数据、环境�
 FK固定GLOBAL CapabilityVersion/Item，AI Candidate只能保留CANDIDATE状态，不能伪装人工确认。
 Dependency仅为版本声明而非A09关系图。Evidence/AI支持引用与声明计数提交闭包留A04；六表业务Owner
 继续关闭。空历史可降0116，有owned历史拒降；Win11/PG18.6真实升降、drift及负例通过。
+
+## A04-A04 实施记录（2026-10-07）
+
+Migration0118新增Source/Assessment Evidence和Version AI Task三类规范化支持引用，并以延迟constraint
+trigger在提交时核对七类声明计数、连续ordinal、CapabilityAssessment的GLOBAL STANDARD+同Project
+PROJECT双证据、PROJECT_EVIDENCE Source同一映射，以及AI Task已接受到当前requirement Draft。三类
+support Owner继续关闭。0118允许既有身份历史升级，但拒绝自动接纳此前关闭Owner期间由管理员绕过产生
+的Version行，必须另走审计迁移。A04 Schema至此完成；来源对象资格与当前状态由A05 adapter证明。
