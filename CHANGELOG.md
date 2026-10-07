@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/REQ-01-A09-A01 完成RequirementRelation编码前核查，固定独立REQ-04表、
+  同项目组合FK、两类对称边规范顺序、DEPENDS_ON/PARENT_OF分类型DAG及Project行锁串行图写；明确不以
+  TraceLink或Version dependency文本代替正式关系。兼容性/回滚：纯文档，无Schema、API、程序、依赖、
+  Secret或外发。验证：冻结DM/SC/API、TraceLink与Project授权锁静态对账。已知问题：A09-A02～A04、
+  A10～A12、Gate3/UAT/发行待。
+
 - 2026-10-07：0.1.0-dev.0/REQ-01-A08-A02-P02 新增Requirement Review Subject Owner/Repository，固定
   `REQ-03 + REQUIREMENT_ALL_V1`、ACTIVE最新DRAFT、Reviewer当前资格、送审/批准当前事实重验及终态
   原子正式化；退回/撤回不因来源漂移被永久锁死。兼容性/回滚：内部增量，无Schema、公开API、依赖、

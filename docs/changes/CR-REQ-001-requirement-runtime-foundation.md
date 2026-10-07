@@ -226,3 +226,12 @@ Repository写Version、Root及0120不可变结果后主动flush，终态断言�
 和lock version；每个终态另写Requirement Audit。Win11/PG18.6验证来源漂移拒绝、两次批准、旧正式版
 SUPERSEDED及RETURNED保留指针，定向14、后端3019/3及wheel1148项通过。无Schema、公开API、依赖、
 Secret或外发变化；A08完成，进入A09 RequirementRelation。
+
+## A09 拆分与 A01 编码前核查（2026-10-07）
+
+A09拆为A02 Migration0121、A03 create/list Owner、A04 revoke/supersede Owner。REQ-04继续使用独立
+`req_relations`而非拿通用TraceLink代替；物理端点保存source/target Requirement与Version组合键，以同项目
+复合FK证明固定版本。DUPLICATES/CONFLICTS_WITH按`(requirement_id,version_id)`UUID字节序规范化，
+RELATED_TO按冻结基线保留方向；DEPENDS_ON、PARENT_OF分别在同关系类型ACTIVE子图防自环/成环，不把
+Version内文本dependency推断成边。所有写先通过Project写授权并锁Project行串行化图变更；Schema只约束
+shape/不可变生命周期，递归图证明由同事务Owner完成。无公开API、Schema或运行代码变化，进入A02。

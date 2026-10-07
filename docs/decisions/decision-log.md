@@ -9534,3 +9534,15 @@
 - Impact/Rollback：新增Requirement内部Subject Owner/Repository和验证，无Schema、公开API、依赖、Secret
   或外发；停止注册即可关闭新入口，既有Review/结果保留。Win11/PG18.6、定向14、后端3019/3及
   wheel1148项/`5bd3164b…99a1`通过；A08完成。
+
+# DEC-20261007-995：REQ-04 独立建模，图方向与规范端点不从文本依赖推断
+
+- Date/WBS：2026-10-07 / `REQ-01-A09-A01`；依据冻结REQ-04、SC-01～03和API-04。
+- Decision：RequirementRelation落独立`req_relations`，端点以Requirement+Version+Project复合外键固定；
+  不用TraceLink替代，也不把Version的dependency文本自动转边。DUPLICATES/CONFLICTS_WITH按完整端点UUID
+  字节序规范化；RELATED_TO保留调用方向。DEPENDS_ON与PARENT_OF分别在各自ACTIVE子图内防环。
+- Concurrency：所有create/revoke/supersede在项目写授权时锁Project行，以项目为粒度串行图变更；Owner在
+  同事务递归检查并限制Project/关系类型。数据库守卫负责初始shape、端点顺序和ACTIVE→终态唯一转换，
+  不以无锁触发器伪称并发安全。
+- Impact/Rollback：A01纯文档。A02计划新增Migration0121；A03/A04分别开放create/list和终态命令，A10
+  再接冻结HTTP。无Secret、客户数据或外发；Gate3不因此关闭。
