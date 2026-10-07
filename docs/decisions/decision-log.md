@@ -9743,3 +9743,15 @@
   Review/Round/Snapshot会把测试夹具伪装成正式事实；硬编码CSRF不能证明真实浏览器会话链。
 - Impact/Rollback：无Schema/API/依赖/权限或外发变化；可撤前端约束和验收夹具而不改后端历史。
   Windows 11 Edge/PG18.6闭环、断网恢复、Evidence定位、登出直达门禁、前端1526项及build通过。
+
+# DEC-20261008-1014：Requirement Workflow 采用真实多Subject集合而非合成批准
+
+- Date/WBS：2026-10-08 / `REQ-01-A12-A01`；依据六阶段Definition V1、REQ-01多身份模型和
+  Handover/Survey现有单Subject资格合同；差异记录`CR-REQ-004`。
+- Decision：新增Workflow内部多Subject资格集合，逐项保留`REQ-03`正式Version/ReviewRound并对全集
+  生成稳定指纹；既有单Subject合同和响应保持兼容。项目全部非归档Requirement纳入范围，Package不作为
+  排除Owner；直接ACTIVE→ARCHIVED且无DEFER/REJECT决定不能满足范围缺口检查。
+- Reason：任取一个Version会漏验范围，合成Project Review没有业务Owner，Package只组织不批准Scope；
+  只有复数真实批准与明确决定才能满足两个Requirement Checklist item。
+- Impact/Rollback：A01仅文档；后续停注册Requirement Owner和PROTOTYPE推进即可回滚运行流量，历史不
+  改写。A02～A07分别验证合同、Owner、生产接线、PG、前端与Edge，未完成前不宣称资格或Gate通过。

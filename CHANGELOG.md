@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/REQ-01-A12-A01 完成Requirement Workflow资格前置核查并登记
+  `CR-REQ-004`：现有单Subject合同不能覆盖项目多Approved RequirementVersion，采用真实多Subject
+  集合、逐Version ReviewRound和稳定范围指纹；禁止单需求代替全集、合成批准或用Package静默排除。
+  兼容性/回滚：纯文档，无Schema/API/代码/依赖/外发；后续注册可独立停用。验证：静态对账六阶段、
+  Requirement A02～A11、Workflow合同/接线及前端。已知问题：A02～A07、Gate3/UAT/发行待。
+
 - 2026-10-08：0.1.0-dev.0/REQ-01-A11-A05 完成Windows 11真实Edge、构建后Vue、生产FastAPI与
   PostgreSQL 18.6的Requirement闭环：读取、结构化创建、校验、送审、Evidence定位、断网清旧/恢复及
   登出直达门禁；修复原生fetch接收者并将Capability评估加严为不同的STANDARD/PROJECT双Evidence。
