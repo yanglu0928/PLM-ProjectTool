@@ -9348,3 +9348,13 @@
   必须在UPDATE前冻结，不能更新后从对象回读。真库首轮命中该约束并修正，复验通过。
 - Impact/Rollback：Migration0115新增结果表并开放四类内部Owner，无公开API、依赖或外发。有历史拒降并
   向前修复。Win11/PG18.6、后端2980/3及wheel1124项通过。
+
+# DEC-20261007-980：RequirementVersion 物理化保持冻结API兼容并分离声明依赖与关系图
+
+- Date/WBS：2026-10-07 / `REQ-01-A04-A01`；依据冻结REQ-03、SC-01/02和API-04。
+- Evidence/Gap：Domain列出title但冻结RequirementVersionInput未列；priority/risk未枚举；六类owned集合中的
+  dependencies与REQ-04 Relation都表达“依赖”但生命周期和图约束不同。
+- Decision：primary保留nullable title而V1不新增必填请求字段；priority沿用LOW/MEDIUM/HIGH/URGENT，risk
+  固定LOW/MEDIUM/HIGH/CRITICAL。owned dependencies仅保存版本快照声明，跨RequirementVersion图只由A09
+  RequirementRelation表达。Evidence/AI provenance使用规范化支持引用，不塞入JSON或无FK UUID数组。
+- Impact/Rollback：纯设计；A04分三步物理化，正式指针到A08前保持关闭。无API/Schema/依赖/外发变化。

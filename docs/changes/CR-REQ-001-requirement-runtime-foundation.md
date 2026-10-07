@@ -100,3 +100,10 @@ ACTIVE改code；DEFER/REJECT仅ACTIVE且必须固定reason、impact及1～100条
 Evidence；ARCHIVE允许任一非归档状态进入终态，不增加未冻结的恢复命令。Root、决策、Evidence引用、
 结果、Audit和receipt同事务完成；数据库延迟闭包禁止提交“Root已变但无结果”或“决策无Evidence”的
 半套结构。幂等重放返回首成功快照并重证当前权限。A03身份Owner至此完成，仍未开放Router。
+
+## A04 拆分与 A01 编码前核查（2026-10-07）
+
+A04拆为A02 Version primary/正式指针组合FK、A03六类语义owned表、A04 Evidence/AI支持引用与提交完整性。
+冻结Domain含title而冻结API最小输入未含title，选择保留nullable物理列但V1不新增必填请求字段；priority
+固定LOW/MEDIUM/HIGH/URGENT，risk固定LOW/MEDIUM/HIGH/CRITICAL。版本内dependencies是声明，不替代
+A09 RequirementRelation DAG。正式指针在A08前继续关闭；A04不开放业务写或制造Approved事实。
