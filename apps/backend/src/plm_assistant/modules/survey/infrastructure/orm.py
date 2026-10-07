@@ -9,7 +9,7 @@ from sqlalchemy import (
     BigInteger, Boolean, CheckConstraint, ForeignKeyConstraint, Index, Integer,
     LargeBinary, Text, UniqueConstraint, text,
 )
-from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP, UUID
+from sqlalchemy.dialects.postgresql import ARRAY, JSONB, TIMESTAMP, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from plm_assistant.modules.platform.infrastructure.orm import Base
@@ -826,6 +826,348 @@ class SurveyAnswerEvidenceRefRow(Base):
     content_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
     recorded_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     recorded_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False)
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+
+
+class SurveyConclusionRow(Base):
+    __tablename__ = "srv_conclusions"
+    __table_args__ = (
+        UniqueConstraint(
+            "survey_conclusion_id", "conclusion_series_id", "project_id",
+            name="uq_srv_conclusions__identity",
+        ),
+        UniqueConstraint("conclusion_series_id", "version_no",
+                         name="uq_srv_conclusions__series_no"),
+        ForeignKeyConstraint(
+            ["survey_id", "project_id"],
+            ["plm.srv_surveys.survey_id", "plm.srv_surveys.project_id"],
+            name="fk_srv_conclusions__survey", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["supersedes_ref", "conclusion_series_id", "project_id"],
+            ["plm.srv_conclusions.survey_conclusion_id",
+             "plm.srv_conclusions.conclusion_series_id",
+             "plm.srv_conclusions.project_id"],
+            name="fk_srv_conclusions__supersedes", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(["review_ref"], ["plm.rvw_reviews.review_id"],
+                             name="fk_srv_conclusions__review", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["review_round_ref"],
+                             ["plm.rvw_review_rounds.review_round_id"],
+                             name="fk_srv_conclusions__review_round",
+                             ondelete="NO ACTION"),
+        ForeignKeyConstraint(["created_by"], ["plm.auth_users.user_id"],
+                             name="fk_srv_conclusions__creator", ondelete="NO ACTION"),
+        CheckConstraint("version_no>0", name="ck_srv_conclusions__number"),
+        CheckConstraint(
+            "conclusion_state IN ('DRAFT','IN_REVIEW','APPROVED','RETURNED',"
+            "'SUPERSEDED','RESTRICTED')", name="ck_srv_conclusions__state",
+        ),
+        CheckConstraint("octet_length(content_fingerprint)=32",
+                        name="ck_srv_conclusions__fingerprint"),
+        CheckConstraint(
+            "cardinality(round_refs)>0 AND array_position(round_refs,NULL) IS NULL "
+            "AND array_position(ai_task_refs,NULL) IS NULL",
+            name="ck_srv_conclusions__refs",
+        ),
+        CheckConstraint(
+            "declared_department_count>=0 AND declared_module_count>=0 "
+            "AND declared_department_count+declared_module_count>0 "
+            "AND declared_evidence_count>0 AND declared_open_issue_count>=0",
+            name="ck_srv_conclusions__counts",
+        ),
+        CheckConstraint(
+            "(review_ref IS NULL AND review_round_ref IS NULL) OR "
+            "(review_ref IS NOT NULL AND review_round_ref IS NOT NULL)",
+            name="ck_srv_conclusions__review_shape",
+        ),
+        Index("ix_srv_conclusions__project_created", "project_id", "created_at",
+              "survey_conclusion_id"),
+        Index("ix_srv_conclusions__series_version", "project_id",
+              "conclusion_series_id", "version_no"),
+        Index("uq_srv_conclusions__series_in_review", "conclusion_series_id",
+              unique=True, postgresql_where=text("conclusion_state='IN_REVIEW'")),
+        Index("uq_srv_conclusions__series_approved", "conclusion_series_id",
+              unique=True, postgresql_where=text("conclusion_state='APPROVED'")),
+        {"schema": "plm"},
+    )
+
+    survey_conclusion_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"),
+    )
+    conclusion_series_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    survey_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    round_refs: Mapped[list[uuid.UUID]] = mapped_column(ARRAY(UUID(as_uuid=True)), nullable=False)
+    ai_task_refs: Mapped[list[uuid.UUID]] = mapped_column(
+        ARRAY(UUID(as_uuid=True)), nullable=False, server_default=text("'{}'::uuid[]"),
+    )
+    version_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    conclusion_state: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'DRAFT'"),
+    )
+    content_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    declared_department_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    declared_module_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    declared_evidence_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    declared_open_issue_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    supersedes_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    review_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    review_round_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+
+
+class SurveyDepartmentConclusionRow(Base):
+    __tablename__ = "srv_department_conclusions"
+    __table_args__ = (
+        UniqueConstraint("survey_conclusion_id", "ordinal",
+                         name="uq_srv_department_conclusions__ordinal"),
+        UniqueConstraint("survey_conclusion_id", "department_id",
+                         name="uq_srv_department_conclusions__department"),
+        ForeignKeyConstraint(
+            ["survey_conclusion_id", "conclusion_series_id", "project_id"],
+            ["plm.srv_conclusions.survey_conclusion_id",
+             "plm.srv_conclusions.conclusion_series_id",
+             "plm.srv_conclusions.project_id"],
+            name="fk_srv_department_conclusions__version", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["department_id", "project_id"],
+            ["plm.prj_departments.department_id", "plm.prj_departments.project_id"],
+            name="fk_srv_department_conclusions__department", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(["decision_evidence_id"],
+                             ["plm.evd_evidence_records.evidence_id"],
+                             name="fk_srv_department_conclusions__decision_evidence",
+                             ondelete="NO ACTION"),
+        ForeignKeyConstraint(["decision_review_ref"], ["plm.rvw_reviews.review_id"],
+                             name="fk_srv_department_conclusions__decision_review",
+                             ondelete="NO ACTION"),
+        CheckConstraint("ordinal>=0", name="ck_srv_department_conclusions__ordinal"),
+        CheckConstraint("char_length(title) BETWEEN 1 AND 255 AND title=btrim(title)",
+                        name="ck_srv_department_conclusions__title"),
+        CheckConstraint("char_length(statement) BETWEEN 1 AND 20000 "
+                        "AND statement=btrim(statement)",
+                        name="ck_srv_department_conclusions__statement"),
+        CheckConstraint("array_position(response_refs,NULL) IS NULL",
+                        name="ck_srv_department_conclusions__responses"),
+        CheckConstraint(
+            "(decision_type IS NULL AND decision_reason IS NULL "
+            "AND decision_impact IS NULL AND decision_evidence_id IS NULL "
+            "AND decision_review_ref IS NULL) OR "
+            "(decision_type IN ('SCOPE_EXCLUSION','RISK_ACCEPTANCE') "
+            "AND char_length(decision_reason) BETWEEN 1 AND 2000 "
+            "AND decision_reason=btrim(decision_reason) "
+            "AND char_length(decision_impact) BETWEEN 1 AND 2000 "
+            "AND decision_impact=btrim(decision_impact) "
+            "AND decision_evidence_id IS NOT NULL AND decision_review_ref IS NOT NULL)",
+            name="ck_srv_department_conclusions__decision",
+        ),
+        {"schema": "plm"},
+    )
+
+    department_conclusion_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"),
+    )
+    survey_conclusion_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    conclusion_series_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    department_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    statement: Mapped[str] = mapped_column(Text, nullable=False)
+    response_refs: Mapped[list[uuid.UUID]] = mapped_column(
+        ARRAY(UUID(as_uuid=True)), nullable=False, server_default=text("'{}'::uuid[]"),
+    )
+    decision_type: Mapped[str | None] = mapped_column(Text)
+    decision_reason: Mapped[str | None] = mapped_column(Text)
+    decision_impact: Mapped[str | None] = mapped_column(Text)
+    decision_evidence_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    decision_review_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+
+
+class SurveyModuleConclusionRow(Base):
+    __tablename__ = "srv_module_conclusions"
+    __table_args__ = (
+        UniqueConstraint("survey_conclusion_id", "ordinal",
+                         name="uq_srv_module_conclusions__ordinal"),
+        UniqueConstraint("survey_conclusion_id", "module_key",
+                         name="uq_srv_module_conclusions__key"),
+        ForeignKeyConstraint(
+            ["survey_conclusion_id", "conclusion_series_id", "project_id"],
+            ["plm.srv_conclusions.survey_conclusion_id",
+             "plm.srv_conclusions.conclusion_series_id",
+             "plm.srv_conclusions.project_id"],
+            name="fk_srv_module_conclusions__version", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(["decision_evidence_id"],
+                             ["plm.evd_evidence_records.evidence_id"],
+                             name="fk_srv_module_conclusions__decision_evidence",
+                             ondelete="NO ACTION"),
+        ForeignKeyConstraint(["decision_review_ref"], ["plm.rvw_reviews.review_id"],
+                             name="fk_srv_module_conclusions__decision_review",
+                             ondelete="NO ACTION"),
+        CheckConstraint("ordinal>=0", name="ck_srv_module_conclusions__ordinal"),
+        CheckConstraint("module_key ~ '^[A-Z][A-Z0-9_.-]{0,63}$'",
+                        name="ck_srv_module_conclusions__key"),
+        CheckConstraint("char_length(title) BETWEEN 1 AND 255 AND title=btrim(title)",
+                        name="ck_srv_module_conclusions__title"),
+        CheckConstraint("char_length(statement) BETWEEN 1 AND 20000 "
+                        "AND statement=btrim(statement)",
+                        name="ck_srv_module_conclusions__statement"),
+        CheckConstraint("array_position(response_refs,NULL) IS NULL",
+                        name="ck_srv_module_conclusions__responses"),
+        CheckConstraint(
+            "(decision_type IS NULL AND decision_reason IS NULL "
+            "AND decision_impact IS NULL AND decision_evidence_id IS NULL "
+            "AND decision_review_ref IS NULL) OR "
+            "(decision_type IN ('SCOPE_EXCLUSION','RISK_ACCEPTANCE') "
+            "AND char_length(decision_reason) BETWEEN 1 AND 2000 "
+            "AND decision_reason=btrim(decision_reason) "
+            "AND char_length(decision_impact) BETWEEN 1 AND 2000 "
+            "AND decision_impact=btrim(decision_impact) "
+            "AND decision_evidence_id IS NOT NULL AND decision_review_ref IS NOT NULL)",
+            name="ck_srv_module_conclusions__decision",
+        ),
+        {"schema": "plm"},
+    )
+
+    module_conclusion_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"),
+    )
+    survey_conclusion_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    conclusion_series_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    module_key: Mapped[str] = mapped_column(Text, nullable=False)
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    statement: Mapped[str] = mapped_column(Text, nullable=False)
+    response_refs: Mapped[list[uuid.UUID]] = mapped_column(
+        ARRAY(UUID(as_uuid=True)), nullable=False, server_default=text("'{}'::uuid[]"),
+    )
+    decision_type: Mapped[str | None] = mapped_column(Text)
+    decision_reason: Mapped[str | None] = mapped_column(Text)
+    decision_impact: Mapped[str | None] = mapped_column(Text)
+    decision_evidence_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    decision_review_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+
+
+class SurveyConclusionEvidenceRefRow(Base):
+    __tablename__ = "srv_conclusion_evidence_refs"
+    __table_args__ = (
+        UniqueConstraint("survey_conclusion_id", "ordinal",
+                         name="uq_srv_conclusion_evidence__ordinal"),
+        UniqueConstraint("survey_conclusion_id", "evidence_id", "reference_role",
+                         name="uq_srv_conclusion_evidence__role"),
+        ForeignKeyConstraint(
+            ["survey_conclusion_id", "conclusion_series_id", "project_id"],
+            ["plm.srv_conclusions.survey_conclusion_id",
+             "plm.srv_conclusions.conclusion_series_id",
+             "plm.srv_conclusions.project_id"],
+            name="fk_srv_conclusion_evidence__version", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["document_version_id", "document_id"],
+            ["plm.doc_document_versions.document_version_id",
+             "plm.doc_document_versions.document_id"],
+            name="fk_srv_conclusion_evidence__document", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(["evidence_id"], ["plm.evd_evidence_records.evidence_id"],
+                             name="fk_srv_conclusion_evidence__evidence",
+                             ondelete="NO ACTION"),
+        CheckConstraint("reference_role IN ('SUPPORT','CONFLICT')",
+                        name="ck_srv_conclusion_evidence__role"),
+        CheckConstraint("observed_evidence_lock_version>=0",
+                        name="ck_srv_conclusion_evidence__lock"),
+        CheckConstraint("octet_length(content_fingerprint)=32",
+                        name="ck_srv_conclusion_evidence__fingerprint"),
+        CheckConstraint("ordinal>=0", name="ck_srv_conclusion_evidence__ordinal"),
+        Index("ix_srv_conclusion_evidence__evidence", "evidence_id",
+              "survey_conclusion_id"),
+        {"schema": "plm"},
+    )
+
+    conclusion_evidence_ref_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"),
+    )
+    survey_conclusion_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    conclusion_series_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    reference_role: Mapped[str] = mapped_column(Text, nullable=False)
+    document_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    document_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    evidence_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    observed_evidence_lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    content_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+
+
+class SurveyConclusionOpenIssueRow(Base):
+    __tablename__ = "srv_conclusion_open_issues"
+    __table_args__ = (
+        UniqueConstraint("survey_conclusion_id", "ordinal",
+                         name="uq_srv_conclusion_issues__ordinal"),
+        UniqueConstraint("survey_conclusion_id", "issue_owner_module",
+                         "issue_object_type", "issue_id",
+                         name="uq_srv_conclusion_issues__issue"),
+        ForeignKeyConstraint(
+            ["survey_conclusion_id", "conclusion_series_id", "project_id"],
+            ["plm.srv_conclusions.survey_conclusion_id",
+             "plm.srv_conclusions.conclusion_series_id",
+             "plm.srv_conclusions.project_id"],
+            name="fk_srv_conclusion_issues__version", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["issue_id", "project_id"],
+            ["plm.hnd_action_items.action_item_id", "plm.hnd_action_items.project_id"],
+            name="fk_srv_conclusion_issues__handover_action", ondelete="NO ACTION",
+        ),
+        CheckConstraint("issue_owner_module='handover' AND issue_object_type='HND-03'",
+                        name="ck_srv_conclusion_issues__type"),
+        CheckConstraint(
+            "observed_issue_state IN ('OPEN','IN_PROGRESS','SUBMITTED','VERIFIED',"
+            "'CLOSED','CANCELLED')", name="ck_srv_conclusion_issues__state",
+        ),
+        CheckConstraint("observed_lock_version>=0",
+                        name="ck_srv_conclusion_issues__lock"),
+        CheckConstraint("ordinal>=0", name="ck_srv_conclusion_issues__ordinal"),
+        Index("ix_srv_conclusion_issues__issue", "issue_id",
+              "survey_conclusion_id"),
+        {"schema": "plm"},
+    )
+
+    conclusion_open_issue_ref_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"),
+    )
+    survey_conclusion_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    conclusion_series_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    issue_owner_module: Mapped[str] = mapped_column(Text, nullable=False)
+    issue_object_type: Mapped[str] = mapped_column(Text, nullable=False)
+    issue_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    observed_issue_state: Mapped[str] = mapped_column(Text, nullable=False)
+    observed_lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    is_blocking: Mapped[bool] = mapped_column(Boolean, nullable=False)
     ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True, precision=6), nullable=False,

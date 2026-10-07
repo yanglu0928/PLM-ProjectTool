@@ -9066,3 +9066,11 @@
 - Decision：登记CR-SUR-009。`survey_conclusion_id`为不可变版本，`conclusion_series_id`为稳定Review subject；新series从v1开始，后继只接受同Project/Survey/series精确supersedes。Evidence按SUPPORT/CONFLICT固定版本，open issue首版只接受有真实Owner的HND-03；Review使用`SRV-05 + SURVEY_CONCLUSION_ALL_V1`。历史Validate、AI、模板、客户端PASS及文本风险接受均不能正式化。
 - Impact/Rollback：纯文档前置，无Schema、Migration、API、依赖、Secret、客户数据或外发变化。若A02实现不满足该边界，停止该增量而不改冻结基线。
 - Verification：静态确认SC-01唯一五表、API-04唯一五Operation、Root manifest含SRV-05、Migration head 0108且无Conclusion运行实现；A02限定为五表ORM/Migration0109和数据库验证。
+
+# DEC-20261007-957：Schema0109 以数组固定低基数输入并用命令时重证补足FK边界
+
+- Date/WBS：2026-10-07 / `SUR-04-A02`；依据CR-SUR-009及冻结五表边界。
+- Decision：不新增第六张bridge表；Root以规范UUID数组保存Round/AI Task，部门/模块行以数组保存Response。数据库插入时按cardinality逐项验证CLOSED Round、SUCCEEDED SURVEY_ANALYZE、VALIDATED链尾Response；Evidence与HND-03使用复合FK/快照列。显式排除/风险接受使用结构化五字段并强制Evidence+Review，但在正式Owner出现前应用层不得用其放行。
+- Reason：冻结SC-01只允许五张owned table；裸UUID/动态latest不可追溯，而增表会改冻结物理边界。数组不提供逐项FK，因此创建、Validate、送审和批准仍必须由公共Owner逐项锁定重证。
+- Impact/Migration/Rollback：新增Migration0109和五表，无公开API、依赖、Secret、外发或客户事实。空历史可降0108，任意Conclusion历史拒降；应用尚未装配Owner。
+- Verification：Win11/PG18.6非空/空升级、空降级重升、drift、约束/快照/不可变及历史拒降PASS；后端最终2911/3、4230 subtests；wheel1087项/Hash见A02进度。首次全量inventory失败已补清单并重跑。

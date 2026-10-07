@@ -93,3 +93,11 @@
   未关闭关键待办、并发版本号、Audit/Review 故障回滚。
 - HTTP/UI：严格 DTO、cursor/ETag/幂等、安全头、Evidence Viewer 定位及 Windows 11 真实 Edge/PG 闭环。
 
+## 实施记录
+
+- 2026-10-07 / `SUR-04-A02`：完成五表ORM与Migration0109。数据库固定CLOSED Round、同Project
+  SUCCEEDED SURVEY_ANALYZE、VALIDATED链尾Response、Evidence和HND-03快照，DRAFT初态、不可变历史、
+  集合声明计数及有历史拒降；显式决定字段要求Evidence+Review完整形状但不在本项授予放行能力。
+  Windows 11/PostgreSQL18.6升降/重升/drift/负例、后端2911/3和wheel1087项通过。首次全量仅历史ORM
+  inventory缺五表，补齐后重跑通过。无公开API、依赖、Secret、外发或客户事实变化。
+

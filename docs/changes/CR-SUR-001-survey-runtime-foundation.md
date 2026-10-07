@@ -153,3 +153,6 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
   固定无独立identity Root的series/version、类型化Evidence/open issue、当前来源重证及独立
   `SRV-05 + SURVEY_CONCLUSION_ALL_V1` Review边界；当前不存在正式风险接受Owner，故首版保持失败关闭。
   本项无运行变化，进入Migration0109。
+- 2026-10-07 / `SUR-04-A02`：新增冻结五表ORM/Migration0109及数据库失败关闭边界；Win11/PG18.6
+  验证升降/重升/drift、CLOSED Round、VALIDATED链尾Response、Evidence/HND-03快照、连续series和
+  有历史拒降，后端2911/3及wheel1087项通过。Owner/HTTP/Review仍未开放，进入A03来源proof adapters。

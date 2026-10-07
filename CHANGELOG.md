@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/SUR-04-A02 新增SurveyConclusion冻结五表ORM与Migration0109，固定series/version、CLOSED Round、VALIDATED链尾Response、SUCCEEDED Survey AI provenance、Evidence/HND-03快照、结构化决定形状、不可变历史与有历史拒降。兼容性/升级：PostgreSQL18，空历史可降0108，存在历史须向前修复/备份恢复；无公开API/依赖/Secret/外发。验证：定向11/27、后端2911/3与4230 subtests、Win11/PG18.6升降/重升/drift/负例、wheel1087项/`c2381c00…98f2`通过。首次全量inventory缺五表失败，补齐后重跑通过。已知问题：Owner/HTTP/UI/Review、Survey资格、Gate3/UAT及发行仍待。
+
 - 2026-10-07：0.1.0-dev.0/SUR-04-A01 完成SurveyConclusion运行前置核查并登记CR-SUR-009，固定series/version、五表typed refs、VALIDATED Response/PROJECT_RECORD来源重证、独立`SRV-05 + SURVEY_CONCLUSION_ALL_V1` Review及无风险接受Owner时失败关闭。兼容性/回滚：纯文档，无Schema/Migration/API/依赖/Secret/外发变化。验证：冻结五表/五Operation/Root manifest、Migration head0108和运行实现零差距静态对账PASS。已知问题：A02以后Schema/Owner/HTTP/UI、Survey资格、Gate3/UAT及发行仍待。
 
 - 2026-10-07：0.1.0-dev.0/SUR-03-A09 新增Assignment/Response严格客户端与工作台，以受权Department/Member/Question/Evidence选择取代手填ID，支持六类答案、自助/代录、更正、SUBMIT/VALIDATE/RETURN、写后重读与未知结果恢复。兼容性/回滚：无Schema/Migration、冻结API、角色、依赖、Secret或外发变化，撤前端路由/客户端即可，已提交业务历史保留。验证：前端86文件1466项、typecheck、Vite180模块build；Win11/Edge/PG18.6完成OPEN→四Response→SUBMIT→VALIDATE→CLOSE，SQL为1 CLOSED/1 VALIDATED/4 Response/4 Answer/10 Audit/10 receipt，清理PASS。偏差：按DEC-954/955修正原生fetch receiver、验收Evidence cursor依赖、动态合成文案与VALIDATE `return_comment:null`解析。已知问题：主JS687.36 kB分块警告；定义写UI、Conclusion、Survey资格/全UAT、Gate3及发行仍待。
