@@ -9197,3 +9197,15 @@
   外发或客户数据变化。删除验收目录即可回滚；完整刷新不恢复身份登记为发行体验已知限制。
 - Verification：真实Edge经production Vue/FastAPI/PG18.6完成CREATE/GET/VALIDATE/SUBMIT_REVIEW、
   Evidence Viewer和HND深链，166条观察、四截图视觉QA、定义零写与隔离清理全部通过。
+
+# DEC-20261007-967：Workflow 以显式资格注册表扩展 Survey 且不改 WFL basis Schema
+
+- Date/WBS：2026-10-07 / `SUR-06-A01`；依据CR-SUR-001/009/012、Workflow V1和已验收Handover链。
+- Evidence/Conflict：Survey业务事实与Review已齐，但record/preview/transition/Windows组合/前端均硬编码
+  Handover；现有basis只允许Evidence、ReviewRound和ApprovedException。复制Handover DTO、让客户端
+  传业务identity或伪装ref kind都会破坏兼容与Owner边界。
+- Decision：增加显式item-key qualification registry和通用内部结果；Survey两项同事务绑定同一当前
+  APPROVED Conclusion/Review并重证实际来源。持久basis继续只存ELIGIBLE Evidence与APPROVED ReviewRound，
+  业务版本由Review指纹和Owner当前证明绑定；Handover HTTP字段不变，Survey用独立严格响应变体。
+- Impact/Rollback：无Schema/Migration、冻结请求/path、依赖、Secret或外发；应用可移除Survey注册恢复
+  Handover-only，历史不改写。A02～A07逐步验证，任一失败不提前放行SURVEY→REQUIREMENT。

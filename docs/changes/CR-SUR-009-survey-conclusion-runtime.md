@@ -130,4 +130,7 @@
   派生；完整Document证明依赖下，通用Review Registry注册SRV-05并在生产入口延后装配。部分依赖失败
   关闭，默认应用仍404、只读模式不开放写。Win11/PG18.6真实五Operation及通用APPROVE、后端2942/3、
   wheel1105项通过；无Schema/依赖/Secret/外发，进入A04前端。
+- 2026-10-07 / `SUR-06-A01`：依据本CR第7项核查Workflow接线，业务Conclusion Owner完整但Workflow
+  五处Handover硬编码仍阻断Survey资格。另立CR-SUR-012固定通用注册表、同一批准Conclusion/Review
+  coherence、原Handover响应兼容及A02～A07验证拆分；本项纯文档，进入A02。
 

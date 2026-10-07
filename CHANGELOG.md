@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/SUR-06-A01 完成Survey Workflow资格前置核查并登记CR-SUR-012；确认
+  Survey实际来源/Conclusion/Review业务Owner已具备，但Workflow record、preview、transition、Windows
+  组合和前端五处仍硬编码Handover。选择显式资格注册表、原Handover响应不变、Survey独立严格变体，
+  basis继续使用Evidence+ReviewRound。兼容性/回滚：纯文档，无Schema/API path/依赖/Secret/外发；
+  可撤设计记录但不得伪造运行通过。验证：Catalog、Owner、服务、组合和前端静态对账PASS。已知问题：
+  A02～A07实现/PG/Edge、六阶段完整项目、Server2025、Gate3/UAT及发行仍待。
+
 - 2026-10-07：0.1.0-dev.0/SUR-05-A05 新增可重复的Windows 11真实Edge结论验收；经production
   Vue/FastAPI/PostgreSQL 18.6完成HND非阻断待办、CLOSED Round、VALIDATED Response、结论创建、
   Evidence/HND点击定位、当前来源验证及正式送审，最终`IN_REVIEW`，166条观察及四截图视觉QA通过，

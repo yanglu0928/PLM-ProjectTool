@@ -177,3 +177,6 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
 - 2026-10-07 / `SUR-05-A03`：完成Windows显式Conclusion组合与SRV-05通用Review注册；完整证明依赖
   才开放写，cursor不新增Secret。Win11/PG18.6真实五Operation与批准、后端2942/3、wheel1105项通过；
   进入A04前端。
+- 2026-10-07 / `SUR-06-A01`：静态核清Survey事实/Review Owner已具备，但Workflow record、preview、
+  transition、Windows组合及前端仍硬编码Handover。登记CR-SUR-012，选择显式资格注册表、保持Handover
+  响应不变并为Survey增加严格变体；现有Evidence+ReviewRound basis足够，无Schema变化。进入A02。
