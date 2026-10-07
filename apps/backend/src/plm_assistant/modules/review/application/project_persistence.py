@@ -83,6 +83,7 @@ class ProjectReviewPersistenceService:
     def submit_in_transaction(
         self, tx, *, actor_id, project_id, subject_type, subject_id,
         subject_version_id, reviewer_ids, policy_code, trace_id,
+        proof_context=None,
     ) -> SubmittedProjectReviewRef:
         if (not all(_uuid(value) for value in (
                 actor_id, project_id, subject_id, subject_version_id, trace_id))
@@ -125,6 +126,7 @@ class ProjectReviewPersistenceService:
             tx, actor_id=actor_id, project_id=project_id,
             review_id=created.review_id, subject_version_id=subject_version_id,
             reviewer_ids=reviewer_ids, expected_version=0, trace_id=trace_id,
+            proof_context=proof_context,
         )
         if (type(started) is not StartedReviewRoundRef
                 or started.review_id != created.review_id

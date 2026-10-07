@@ -117,6 +117,27 @@ class SurveyConclusionProjectRecordProofTests(unittest.TestCase):
             )
         self.assertEqual(len(self.owner.calls), 0)
 
+    def test_review_policy_can_explicitly_admit_customer_role(self) -> None:
+        self.owner.proof = replace(
+            self.proof, verified_project_role="CUSTOMER_MANAGER",
+        )
+        review_service = SurveyConclusionProjectRecordProofService(
+            evidence=self.owner,
+            allowed_verified_roles=frozenset({
+                "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER",
+                "CUSTOMER_MANAGER", "CUSTOMER_MEMBER",
+            }),
+        )
+        self.assertEqual(
+            self.actor,
+            review_service.prove(self.transaction, self.query).verified_by,
+        )
+        with self.assertRaises(ValueError):
+            SurveyConclusionProjectRecordProofService(
+                evidence=self.owner,
+                allowed_verified_roles=frozenset({"SYSTEM_ADMIN"}),
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

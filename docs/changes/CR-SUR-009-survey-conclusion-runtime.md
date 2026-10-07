@@ -115,4 +115,9 @@
   决定。校验只写Audit/receipt、不改状态；同键固定原报告，新键重读当前事实。Win11/PG18.6完成OPEN
   阻断→CLOSED通过→Evidence撤销失败、回滚和零状态变更，后端2930/3、wheel1100项通过。无Schema、
   公开API、依赖、Secret或外发变化，进入A06 Review。
+- 2026-10-07 / `SUR-04-A06`：完成`SRV-05 + SURVEY_CONCLUSION_ALL_V1` Subject Owner、原子送审和
+  终态消费。送审/批准均重证当前来源，RETURN/WITHDRAW投影RETURNED；新版本批准原子替换旧批准版。
+  依CR-SUR-010只在调用栈传递脱敏临时proof context，依CR-SUR-011新增Migration0110放行白名单状态
+  迁移同时逐字段保护业务载荷。Win11/PG18.6回滚/重放/失效阻断/替换/升降重升、后端2938/3及
+  wheel1104项通过；公开HTTP/UI仍关闭，进入SUR-05。
 

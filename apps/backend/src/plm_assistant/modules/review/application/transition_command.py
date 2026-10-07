@@ -11,6 +11,7 @@ from .persist_transition import ReviewTransitionPersistenceService, AppliedRevie
 from .persist_round import ReviewRoundPersistError
 from .read_snapshot import FixedReviewRoundSnapshot
 from .subject_start import ReviewSubjectAccessDenied
+from .subject_start import ReviewSubjectProofContext
 from ..domain.round_progress import ReviewDecisionKind, _uuid, _utc
 
 
@@ -132,8 +133,9 @@ class ReviewTransitionCommandService:
                         raise ReviewTransitionCommandError("RESOURCE_NOT_FOUND")
                     return result
                 args=dict(actor_id=actor,project_id=c.project_id,review_id=c.review_id,round_id=c.round_id,trace_id=c.trace_id)
-                result=self._persist.withdraw_in_transaction(tx,**args,expected_version=c.expected_version,reason=body) if withdrawing else self._persist.decide_in_transaction(
-                    tx,**args,decision=c.decision,comment=body)
+                context=ReviewSubjectProofContext(c.session_token,c.trace_id)
+                result=self._persist.withdraw_in_transaction(tx,**args,expected_version=c.expected_version,reason=body,proof_context=context) if withdrawing else self._persist.decide_in_transaction(
+                    tx,**args,decision=c.decision,comment=body,proof_context=context)
                 self._receipts.complete(tx,scope=scope,result=IdempotencyResult("V1_REVIEW_TRANSITION",result.event_id,200))
                 tx.commit()
                 return result

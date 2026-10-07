@@ -65,10 +65,18 @@ class ProjectEvidenceOwner(Protocol):
 
 
 class SurveyConclusionProjectRecordProofService:
-    def __init__(self, *, evidence: ProjectEvidenceOwner) -> None:
-        if evidence is None:
+    def __init__(self, *, evidence: ProjectEvidenceOwner,
+                 allowed_verified_roles: frozenset[str] | None = None) -> None:
+        roles = (frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"})
+                 if allowed_verified_roles is None else allowed_verified_roles)
+        if (evidence is None or type(roles) is not frozenset or not roles
+                or not roles.issubset({
+                    "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER",
+                    "CUSTOMER_MANAGER", "CUSTOMER_MEMBER",
+                })):
             raise ValueError("PROJECT_RECORD Evidence Owner required")
         self._evidence = evidence
+        self._allowed_verified_roles = roles
 
     def prove(self, transaction: object,
               query: ConclusionProjectRecordQuery) -> ConclusionProjectRecordProof:
@@ -91,9 +99,8 @@ class SurveyConclusionProjectRecordProofService:
                     or proof.project_id != query.project_id
                     or proof.scope != "PROJECT" or proof.observed_state != "ELIGIBLE"
                     or proof.document_category != "PROJECT_RECORD"
-                    or proof.verified_project_role not in {
-                        "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER",
-                    }
+                    or proof.verified_project_role
+                    not in self._allowed_verified_roles
                     or type(proof.verified_by) is not uuid.UUID
                     or proof.verified_by.int == 0
                     or type(proof.observed_lock_version) is not int

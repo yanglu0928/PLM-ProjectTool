@@ -72,7 +72,7 @@ class ReviewTransitionPersistenceService:
             raise ReviewRoundPersistError()
         return now
 
-    def decide_in_transaction(self, tx, *, actor_id, project_id, review_id, round_id, trace_id, decision, comment=None):
+    def decide_in_transaction(self, tx, *, actor_id, project_id, review_id, round_id, trace_id, decision, comment=None, proof_context=None):
         fixed = self._before(tx,actor_id,project_id,review_id,round_id,trace_id)
         if actor_id not in fixed.progress.reviewer_ids:
             raise ReviewRoundPersistError("RESOURCE_NOT_FOUND")
@@ -86,9 +86,9 @@ class ReviewTransitionPersistenceService:
             raise ReviewRoundPersistError("REVIEW_COMMENT_REQUIRED")
         now = self._now(fixed)
         entry = ReviewDecisionSnapshot(self._repository.new_decision_id(tx),round_id,actor_id,decision,now,comment)
-        return self._apply(tx,ReviewSubjectTransition(actor_id,trace_id,fixed,fixed.progress.record_decision(entry),now))
+        return self._apply(tx,ReviewSubjectTransition(actor_id,trace_id,fixed,fixed.progress.record_decision(entry),now,proof_context))
 
-    def withdraw_in_transaction(self, tx, *, actor_id, project_id, review_id, round_id, trace_id, expected_version, reason=None):
+    def withdraw_in_transaction(self, tx, *, actor_id, project_id, review_id, round_id, trace_id, expected_version, reason=None, proof_context=None):
         if type(expected_version) is not int or not 0 <= expected_version < 2**63-1:
             raise ReviewRoundPersistError("VALIDATION_FAILED")
         fixed = self._before(tx,actor_id,project_id,review_id,round_id,trace_id)
@@ -98,7 +98,7 @@ class ReviewTransitionPersistenceService:
             raise ReviewRoundPersistError("REVIEW_ROUND_STATE_INVALID")
         now = self._now(fixed)
         withdrawal = ReviewWithdrawalSnapshot(actor_id,now,reason)
-        return self._apply(tx,ReviewSubjectTransition(actor_id,trace_id,fixed,fixed.progress.withdraw(withdrawal),now))
+        return self._apply(tx,ReviewSubjectTransition(actor_id,trace_id,fixed,fixed.progress.withdraw(withdrawal),now,proof_context))
 
     def _apply(self, tx, intent):
         if self._subjects.require_transition_access_in_transaction(tx,intent) is not None:

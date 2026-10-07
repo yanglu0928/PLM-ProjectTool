@@ -43,7 +43,8 @@ class ReviewRoundPersistenceService:
         self._clock = clock or (lambda: datetime.now(timezone.utc))
 
     def start_in_transaction(self, tx, *, actor_id, project_id, review_id, subject_version_id,
-                             reviewer_ids, expected_version, trace_id):
+                             reviewer_ids, expected_version, trace_id,
+                             proof_context=None):
         if (not all(_uuid(v) for v in (actor_id,project_id,review_id,subject_version_id,trace_id))
                 or type(expected_version) is not int or not 0 <= expected_version < 2**63-1):
             raise ReviewRoundPersistError("VALIDATION_FAILED")
@@ -59,7 +60,10 @@ class ReviewRoundPersistenceService:
             raise ReviewRoundPersistError("CONFLICT_VERSION")
         if identity.state == "IN_REVIEW":
             raise ReviewRoundPersistError("REVIEW_SUBJECT_LOCKED")
-        request = ReviewSubjectStartRequest(actor_id, identity, round_id, subject_version_id, reviewer_ids)
+        request = ReviewSubjectStartRequest(
+            actor_id, identity, round_id, subject_version_id, reviewer_ids,
+            proof_context,
+        )
         prepared = self._subjects.prepare_start_in_transaction(tx, request)
         if type(prepared) is not PreparedReviewSubject:
             raise ReviewRoundPersistError()

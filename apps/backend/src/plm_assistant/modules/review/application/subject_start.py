@@ -1,5 +1,5 @@
 """Bound internal Subject Owner contract; DTO construction is never approval/lock proof."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Protocol
 from uuid import UUID
@@ -18,19 +18,39 @@ class ReviewSubjectAccessDenied(RuntimeError):
 
 
 @dataclass(frozen=True, slots=True)
+class ReviewSubjectProofContext:
+    """Request-bound proof material; never persisted, rendered or audited."""
+
+    session_token: bytes = field(repr=False)
+    trace_id: UUID
+
+    def __post_init__(self):
+        if (type(self.session_token) is not bytes or len(self.session_token) != 32
+                or not _uuid(self.trace_id)):
+            raise ReviewSubjectStartError()
+
+
+@dataclass(frozen=True, slots=True)
 class ReviewSubjectStartRequest:
     actor_id: UUID
     review: ReviewIdentitySnapshot  # current trusted root, not a client snapshot
     round_id: UUID
     subject_version_id: UUID
     reviewer_ids: tuple[UUID, ...]
+    proof_context: ReviewSubjectProofContext | None = field(
+        default=None, repr=False, compare=False,
+    )
 
     def __post_init__(self):
         if (type(self.review) is not ReviewIdentitySnapshot
                 or not all(_uuid(v) for v in (self.actor_id, self.round_id, self.subject_version_id))
                 or type(self.reviewer_ids) is not tuple or not self.reviewer_ids
-                or not all(_uuid(v) for v in self.reviewer_ids) or len(set(self.reviewer_ids)) != len(self.reviewer_ids)):
+                or not all(_uuid(v) for v in self.reviewer_ids) or len(set(self.reviewer_ids)) != len(self.reviewer_ids)
+                or self.proof_context is not None
+                and type(self.proof_context) is not ReviewSubjectProofContext):
             raise ReviewSubjectStartError()
+        if self.proof_context is not None:
+            self.proof_context.__post_init__()
         try:
             self.review.__post_init__()
         except ValueError:

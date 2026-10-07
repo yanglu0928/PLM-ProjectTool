@@ -1,10 +1,11 @@
 """Single owned transition intent, never an authorization or Owner lock proof."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Protocol
 from uuid import UUID
 
 from .read_snapshot import FixedReviewRoundSnapshot
+from .subject_start import ReviewSubjectProofContext
 from ..domain.round_progress import ReviewRoundProgress, ReviewRoundState, _utc, _uuid
 
 
@@ -20,12 +21,22 @@ class ReviewSubjectTransition:
     before: FixedReviewRoundSnapshot
     after_progress: ReviewRoundProgress
     occurred_at: datetime
+    proof_context: ReviewSubjectProofContext | None = field(
+        default=None, repr=False, compare=False,
+    )
 
     def __post_init__(self):
         if (not _uuid(self.actor_id) or not _uuid(self.trace_id) or not _utc(self.occurred_at)
                 or type(self.before) is not FixedReviewRoundSnapshot
-                or type(self.after_progress) is not ReviewRoundProgress):
+                or type(self.after_progress) is not ReviewRoundProgress
+                or self.proof_context is not None
+                and type(self.proof_context) is not ReviewSubjectProofContext):
             raise ReviewSubjectTransitionError()
+        if self.proof_context is not None:
+            try:
+                self.proof_context.__post_init__()
+            except ValueError:
+                raise ReviewSubjectTransitionError() from None
         try:
             self.before.__post_init__()
             self.after_progress.__post_init__()

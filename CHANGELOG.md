@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/SUR-04-A06 新增SurveyConclusion真实Review Subject、原子送审及终态消费；
+  送审/批准重证当前来源，退回/撤回投影RETURNED，新批准版原子替换旧批准版。兼容性/升级：按
+  CR-SUR-010传递不持久化的脱敏proof context；按CR-SUR-011新增Migration0110，仅放行白名单状态迁移并
+  保持业务载荷不可变；无公开URL、依赖、Secret存储或外发。验证：定向35、后端2938/3、Win11/PG18.6
+  回滚/重放/失效阻断/退回/替换、升降重升/drift，wheel1104项/`f65b9bed…e336`通过。已知问题：SUR-05
+  HTTP/UI、SUR-06资格/模拟项目、Server2025、Gate3/UAT及发行仍待。
+
 - 2026-10-07：0.1.0-dev.0/SUR-04-A05 新增SurveyConclusion内部Validate Owner，在同一事务重证CLOSED
   Round、VALIDATED链尾Response、PROJECT_RECORD、HND-03当前状态和AI provenance；冲突、阻断待办、
   来源漂移/缺失、覆盖不足及未受权正式决定失败关闭，Audit固定幂等报告但不改Conclusion状态。兼容性/

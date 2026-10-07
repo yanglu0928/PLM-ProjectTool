@@ -9118,3 +9118,18 @@
 - Verification：定向14、后端2930/3；Win11/PG18.6验证OPEN阻断、关闭后新键PASS、旧键原报告、Evidence
   撤销失败、Audit故障回滚与DRAFT不变；wheel1100项，SHA-256
   `56f87223d2a615e9aa29421320a5d09b3c7656bda80bcf4ea73a1be72618e465`。
+
+# DEC-20261007-961：Review 临时证明上下文与 Conclusion 白名单生命周期
+
+- Date/WBS：2026-10-07 / `SUR-04-A06`；依据CR-SUR-009/010/011、DEC-960及真实PG18验证。
+- Evidence/Conflict：SRV-05在送审/批准时必须通过Evidence/Document Owner重证当前PROJECT_RECORD，
+  通用Review内核原来只传actor；保存Session token会泄露Secret，绕过Owner则降低证明。Migration0109
+  又禁止Root全部UPDATE，与同表DRAFT/IN_REVIEW/APPROVED/RETURNED/SUPERSEDED状态机直接冲突。
+- Decision：Review调用栈增加默认None、不可持久且repr/比较排除的proof context；SRV-05强制使用它，
+  其他Subject保持兼容。Migration0110只允许三类白名单迁移并逐字段证明业务载荷未变，明细继续只追加。
+  创建proof默认角色不变，Review实例显式允许全部合格Project Reviewer重证当前证据。
+- Impact/Migration/Rollback：无公开API、依赖、Secret存储或外发；Schema head升至0110，仅替换trigger
+  function且不重写数据。降0109恢复旧只插入保护但审批写入停止；应用可撤SRV-05注册并保留历史。
+- Verification：定向35、后端2938/3；Win11/PG18.6验证回滚/重放/来源漂移、退回、替换批准、锁释放、
+  token零泄漏、非法载荷/状态拒绝、有数据降级/重升及drift；wheel1104项，SHA-256
+  `f65b9beddab1f9879de23f2f5abea716bb4c89286eafad95c9357baa588be336`。
