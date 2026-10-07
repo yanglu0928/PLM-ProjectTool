@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A05-A01 完成PrototypeVersion前置核查：固定非空Artifact/Approved
+  Requirement集合、PUBLISHED TemplateVersion、每版一个不可执行InteractionSpec、coverage summary与
+  内容指纹，DRAFT不更新正式指针；OutputArtifact Owner缺失时继续失败关闭。兼容性/回滚：纯文档，无
+  Schema/API/代码/依赖/外发。验证：冻结Data Model/Schema/API、现有Requirement/Template/Artifact边界
+  静态对账PASS。已知问题：A02 Schema0130、A06～A11、Server2025、Gate3/UAT/发行待。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A04-A05 新增Template只读Owner；项目成员稳定分页读取同项目
   PROJECT+GLOBAL当前模板，DeploymentAdmin GLOBAL入口隔离PROJECT，内部固定版本读取区分当前/历史并
   校验有序ArtifactRef。兼容性/回滚：无Schema/公开API/依赖/外发，停止装配即可。验证：Win11/PG18.6

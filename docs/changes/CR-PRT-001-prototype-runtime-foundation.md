@@ -143,3 +143,11 @@ Owner未实现时失败关闭。Win11/PG18.6真实闭环、后端3119/3及wheel1
 管理入口只读GLOBAL；keyset分页返回当前固定Version，内部get可读取当前/历史不可变Version并区分
 `is_current`、Root ETag及有序ArtifactRef。Win11/PG18.6隔离/分页/撤权闭环、后端3125/3及wheel1195项/
 `a82554fb…bd00b8`通过；无Schema/公开HTTP变化，`PRT-01-A04`完成，进入A05 PrototypeVersion基础。
+
+## A05-A01 前置核查（2026-10-08）
+
+固定PRT-03为PROJECT不可变版本：1～100 ArtifactRef、1～200 Approved RequirementVersionRef、固定
+PUBLISHED TemplateVersion、每版一条不可执行InteractionSpec及结构化coverage summary全部进入内容指纹。
+DRAFT创建不更新正式指针；Review成对引用与状态窄门留A07。OutputArtifact Owner仍缺失，后续Owner对该
+类型失败关闭，DocumentVersion可经目标Owner证明。A05拆为A01核查/A02 Schema0130，随后进入A06证明、
+Create、Read/Validate；本项纯文档PASS，无Schema/API/外发。

@@ -9983,3 +9983,15 @@
   PrototypeVersion固定输入，不能因Root推进而不可读；把内部证明端点公开会突破冻结API。
 - Impact/Rollback：无Schema/Migration/公开API/依赖/外发；停止Read Service装配即可回滚。读取不改变任何
   历史事实，HTTP和cursor签名留A09实现。
+
+# DEC-20261008-1034：PrototypeVersion固定完整输入且InteractionSpec不可执行
+
+- Date/WBS：2026-10-08 / `PRT-01-A05-A01`；依据冻结PRT-03、PrototypeVersionInput、CR-PRT-001。
+- Decision：每个DRAFT Version固定非空Artifact、Approved RequirementVersion、一个PUBLISHED
+  TemplateVersion、一个有界不可执行InteractionSpec和coverage summary；全部进入内容指纹并由声明计数/
+  提交闭包保护。GLOBAL模板允许项目使用，PROJECT模板必须同项目；固定历史TemplateVersion不因Root升版
+  被改写。OutputArtifact Owner缺失时失败关闭，不能以AITask或裸UUID替代。
+- Reason：空制品或空需求映射不能证明原型覆盖；可执行交互合同会引入已明确排除的原型沙箱；只引用模板
+  Root会让历史PrototypeVersion随模板升版改变；AI建议不能成为正式业务事实。
+- Impact/Rollback：A01纯文档；A02将前向新增冻结表并保持Owner关闭。DRAFT不更新正式指针，Review和正式化
+  仍由A07负责；不改变冻结API、依赖、外发或License。
