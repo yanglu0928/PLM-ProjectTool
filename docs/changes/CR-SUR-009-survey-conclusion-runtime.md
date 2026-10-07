@@ -100,4 +100,9 @@
   集合声明计数及有历史拒降；显式决定字段要求Evidence+Review完整形状但不在本项授予放行能力。
   Windows 11/PostgreSQL18.6升降/重升/drift/负例、后端2911/3和wheel1087项通过。首次全量仅历史ORM
   inventory缺五表，补齐后重跑通过。无公开API、依赖、Secret、外发或客户事实变化。
+- 2026-10-07 / `SUR-04-A03`：新增四类调用者事务内、Owner-owned只读proof。Response固定CLOSED Round、
+  VALIDATED Assignment与更正链尾；Evidence限定PROJECT_RECORD与受权实施角色；HND-03固定当前state
+  event；AI只接受当前Invocation绑定的SUCCEEDED SURVEY_ANALYZE Suggestion且保持NOT_FORMAL_FACT。
+  Win11/PG18.6四类proof、跨项目/错Round/缺失/角色拒绝和零写通过，后端2917/3、wheel1093项通过。
+  无Schema/API/依赖/Secret/外发或客户事实变化，进入A04 create/list/get。
 

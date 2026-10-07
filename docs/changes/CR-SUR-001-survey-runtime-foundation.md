@@ -156,3 +156,7 @@ Survey Router/Owner 注入，但不删除历史、Evidence、Review、Trace 或 
 - 2026-10-07 / `SUR-04-A02`：新增冻结五表ORM/Migration0109及数据库失败关闭边界；Win11/PG18.6
   验证升降/重升/drift、CLOSED Round、VALIDATED链尾Response、Evidence/HND-03快照、连续series和
   有历史拒降，后端2911/3及wheel1087项通过。Owner/HTTP/Review仍未开放，进入A03来源proof adapters。
+- 2026-10-07 / `SUR-04-A03`：新增Response、PROJECT_RECORD Evidence、HND-03 Action与
+  SURVEY_ANALYZE Task四类最小proof adapters；所有跨模块事实由Owner在调用者事务内锁定并证明，Survey
+  不读取私表，AI结果继续标为非正式事实。Win11/PG18.6零写/隔离/负例、后端2917/3和wheel1093项通过；
+  无Schema/API/依赖/Secret/外发变化，进入A04 Conclusion Owner。

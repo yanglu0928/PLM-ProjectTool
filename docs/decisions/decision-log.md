@@ -9074,3 +9074,17 @@
 - Reason：冻结SC-01只允许五张owned table；裸UUID/动态latest不可追溯，而增表会改冻结物理边界。数组不提供逐项FK，因此创建、Validate、送审和批准仍必须由公共Owner逐项锁定重证。
 - Impact/Migration/Rollback：新增Migration0109和五表，无公开API、依赖、Secret、外发或客户事实。空历史可降0108，任意Conclusion历史拒降；应用尚未装配Owner。
 - Verification：Win11/PG18.6非空/空升级、空降级重升、drift、约束/快照/不可变及历史拒降PASS；后端最终2911/3、4230 subtests；wheel1087项/Hash见A02进度。首次全量inventory失败已补清单并重跑。
+
+# DEC-20261007-958：Conclusion 跨模块来源必须由事实 Owner 在调用者事务内出具最小 proof
+
+- Date/WBS：2026-10-07 / `SUR-04-A03`；依据CR-SUR-009、DEC-957及现有Evidence、Handover、AI、Survey边界。
+- Decision：Response由Survey自身证明CLOSED Round下VALIDATED链尾；PROJECT_RECORD复用Evidence/Document
+  Owner；HND-03由Handover将Action和当前state event锁定；AI由AI Owner证明当前Invocation绑定的
+  SUCCEEDED SURVEY_ANALYZE Suggestion。所有proof共享未来Conclusion命令事务、只返回固定身份/状态/指纹，
+  不返回正文、路径或私表模型；AI始终是`NOT_FORMAL_FACT`。
+- Reason：Survey跨表查询其他模块私有ORM会绕过Owner授权与未来兼容边界；跨事务证明会留下来源撤销、
+  更正链变化或Action状态推进的竞态；复制正文和客户端状态会制造不可追溯事实。
+- Impact/Rollback：新增内部Port/adapter及验证，无Schema/Migration、公开API、依赖、Secret、外发或客户事实。
+  A04未装配前没有外部行为；撤新模块即可回滚。
+- Verification：Win11/PG18.6四类真实proof、跨项目/错Round/缺失/角色拒绝、调用前后源表与Conclusion零写；
+  后端2917/3，wheel1093项，SHA-256 `70d6e5f9c6d18b7f01d5ab4506075bd746f11e3c2a3d891c5b174a16f7643de8`。
