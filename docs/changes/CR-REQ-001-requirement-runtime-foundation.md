@@ -107,3 +107,11 @@ A04拆为A02 Version primary/正式指针组合FK、A03六类语义owned表、A0
 冻结Domain含title而冻结API最小输入未含title，选择保留nullable物理列但V1不新增必填请求字段；priority
 固定LOW/MEDIUM/HIGH/URGENT，risk固定LOW/MEDIUM/HIGH/CRITICAL。版本内dependencies是声明，不替代
 A09 RequirementRelation DAG。正式指针在A08前继续关闭；A04不开放业务写或制造Approved事实。
+
+## A04-A02 实施记录（2026-10-07）
+
+Migration0116新增RequirementVersion primary，版本号在同Requirement内唯一，替代链以Version、
+Requirement、Project复合外键固定同父同项目并禁止自替代；partial unique index分别限制最多一个
+IN_REVIEW和APPROVED。Requirement当前批准指针增加同样三列复合外键，但既有Root守卫继续禁止其变化，
+直至A08正式化Owner原子更新。全部Version写在A03/A04/A06完成前失败关闭。空历史可降0115，有Version
+历史拒绝降级；Windows 11/PostgreSQL 18.6真实升降、drift、负例、关闭守卫和历史保护通过。

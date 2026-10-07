@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/REQ-01-A04-A02 新增RequirementVersion primary与Migration0116，固定同父
+  同项目替代链、自替代拒绝、单IN_REVIEW/APPROVED及Root批准指针复合外键；业务写与指针推进继续关闭。
+  兼容性/升级：内部增量，无公开API/依赖/Secret/外发；空历史可降0115，有Version历史须向前修复。
+  验证：定向16、后端2981项/3跳过、Win11/PG18.6升降/drift/约束/关闭守卫/截断与历史拒降、wheel1125项/
+  `2817b651…f54c2`通过。已知问题：A04-A03/A04、A05～A12、Gate3/UAT/发行待。
+
 - 2026-10-07：0.1.0-dev.0/REQ-01-A04-A01 完成RequirementVersion Schema编码前核查，固定primary、
   六类owned集合、正式指针关闭、title兼容、priority/risk枚举及声明依赖与Relation DAG分离。兼容性/
   回滚：纯文档，无Schema、API、程序、依赖、Secret或外发。验证：冻结DM/SC/API与既有Version实现静态

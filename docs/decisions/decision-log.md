@@ -9358,3 +9358,15 @@
   固定LOW/MEDIUM/HIGH/CRITICAL。owned dependencies仅保存版本快照声明，跨RequirementVersion图只由A09
   RequirementRelation表达。Evidence/AI provenance使用规范化支持引用，不塞入JSON或无FK UUID数组。
 - Impact/Rollback：纯设计；A04分三步物理化，正式指针到A08前保持关闭。无API/Schema/依赖/外发变化。
+
+# DEC-20261007-981：Version primary 先建立关系完整性但保持业务 Owner 关闭
+
+- Date/WBS：2026-10-07 / `REQ-01-A04-A02`；依据DEC-980、冻结REQ-03及A08正式化边界。
+- Decision：Version primary物理化固定同父同项目替代链并禁止自替代；每个Requirement用partial unique
+  index限制一个IN_REVIEW和一个APPROVED。Root批准指针立即增加三列复合外键，但Root守卫继续禁止变化；
+  只有A08经`REQ-03 + REQUIREMENT_ALL_V1`终态证明后才能开放原子更新。A02不提供管理SQL或临时应用
+  Owner绕过关闭状态。
+- Reason：先用数据库约束消除跨项目、跨Requirement和多批准版本结构，同时避免Schema存在被误解为
+  DRAFT/APPROVED已可创建或正式指针已可推进。
+- Impact/Rollback：Migration0116/ORM增量，无公开API、依赖、外发或现有行改写。空Version历史可降0115；
+  有历史拒降并向前修复。Win11/PG18.6、定向16、后端2981/3及wheel1125项通过。

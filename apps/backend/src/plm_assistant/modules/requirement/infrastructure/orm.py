@@ -10,6 +10,8 @@ from sqlalchemy import (
     CheckConstraint,
     ForeignKeyConstraint,
     Index,
+    Integer,
+    LargeBinary,
     Text,
     UniqueConstraint,
     text,
@@ -119,6 +121,17 @@ class RequirementRow(Base):
             ["plm.auth_users.user_id"],
             name="fk_req_requirements__updater",
             ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["current_approved_version_ref", "requirement_id", "project_id"],
+            [
+                "plm.req_requirement_versions.requirement_version_id",
+                "plm.req_requirement_versions.requirement_id",
+                "plm.req_requirement_versions.project_id",
+            ],
+            name="fk_req_requirements__approved_version",
+            ondelete="NO ACTION",
+            use_alter=True,
         ),
         CheckConstraint(
             "char_length(requirement_code) BETWEEN 1 AND 64 "
@@ -415,6 +428,134 @@ class RequirementDecisionEvidenceRefRow(Base):
     requirement_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     evidence_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+
+
+class RequirementVersionRow(Base):
+    """REQ-03 project-scoped immutable version primary."""
+
+    __tablename__ = "req_requirement_versions"
+    __table_args__ = (
+        UniqueConstraint(
+            "requirement_version_id", "requirement_id", "project_id",
+            name="uq_req_versions__id_requirement_project",
+        ),
+        UniqueConstraint(
+            "requirement_id", "version_no", name="uq_req_versions__requirement_no",
+        ),
+        ForeignKeyConstraint(
+            ["requirement_id", "project_id"],
+            ["plm.req_requirements.requirement_id", "plm.req_requirements.project_id"],
+            name="fk_req_versions__requirement", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["supersedes_version_ref", "requirement_id", "project_id"],
+            ["plm.req_requirement_versions.requirement_version_id",
+             "plm.req_requirement_versions.requirement_id",
+             "plm.req_requirement_versions.project_id"],
+            name="fk_req_versions__supersedes", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["review_ref"], ["plm.rvw_reviews.review_id"],
+            name="fk_req_versions__review", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["review_round_ref"], ["plm.rvw_review_rounds.review_round_id"],
+            name="fk_req_versions__round", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["created_by"], ["plm.auth_users.user_id"],
+            name="fk_req_versions__creator", ondelete="NO ACTION",
+        ),
+        CheckConstraint("version_no>0", name="ck_req_versions__number"),
+        CheckConstraint(
+            "version_state IN ('DRAFT','IN_REVIEW','APPROVED','RETURNED',"
+            "'SUPERSEDED','RESTRICTED')", name="ck_req_versions__state",
+        ),
+        CheckConstraint(
+            "title IS NULL OR (char_length(title) BETWEEN 1 AND 500 AND title=btrim(title))",
+            name="ck_req_versions__title",
+        ),
+        CheckConstraint(
+            "char_length(statement)>0 AND statement=btrim(statement)",
+            name="ck_req_versions__statement",
+        ),
+        CheckConstraint(
+            "char_length(rationale)>0 AND rationale=btrim(rationale)",
+            name="ck_req_versions__rationale",
+        ),
+        CheckConstraint(
+            "char_length(domain_name) BETWEEN 1 AND 255 AND domain_name=btrim(domain_name)",
+            name="ck_req_versions__domain",
+        ),
+        CheckConstraint(
+            "priority IN ('LOW','MEDIUM','HIGH','URGENT')",
+            name="ck_req_versions__priority",
+        ),
+        CheckConstraint(
+            "risk IN ('LOW','MEDIUM','HIGH','CRITICAL')",
+            name="ck_req_versions__risk",
+        ),
+        CheckConstraint(
+            "requirement_classification IN ('STANDARD_FUNCTION','NONSTANDARD_FUNCTION',"
+            "'DIFFERENCE','PENDING_CONFIRMATION')",
+            name="ck_req_versions__classification",
+        ),
+        CheckConstraint("octet_length(content_fingerprint)=32",
+                        name="ck_req_versions__fingerprint"),
+        CheckConstraint(
+            "declared_source_count>0 AND declared_acceptance_count>=0 "
+            "AND declared_capability_count>=0 AND declared_assumption_count>=0 "
+            "AND declared_exclusion_count>=0 AND declared_dependency_count>=0 "
+            "AND declared_ai_task_count>=0", name="ck_req_versions__counts",
+        ),
+        CheckConstraint(
+            "(review_ref IS NULL AND review_round_ref IS NULL) OR "
+            "(review_ref IS NOT NULL AND review_round_ref IS NOT NULL)",
+            name="ck_req_versions__review_shape",
+        ),
+        CheckConstraint(
+            "supersedes_version_ref IS NULL OR "
+            "supersedes_version_ref<>requirement_version_id",
+            name="ck_req_versions__supersedes_not_self",
+        ),
+        Index("ix_req_versions__requirement_created", "requirement_id", "created_at"),
+        Index("uq_req_versions__requirement_in_review", "requirement_id", unique=True,
+              postgresql_where=text("version_state='IN_REVIEW'")),
+        Index("uq_req_versions__requirement_approved", "requirement_id", unique=True,
+              postgresql_where=text("version_state='APPROVED'")),
+        {"schema": "plm"},
+    )
+
+    requirement_version_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()")
+    )
+    requirement_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    version_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    version_state: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'DRAFT'"))
+    title: Mapped[str | None] = mapped_column(Text)
+    statement: Mapped[str] = mapped_column(Text, nullable=False)
+    rationale: Mapped[str] = mapped_column(Text, nullable=False)
+    domain_name: Mapped[str] = mapped_column(Text, nullable=False)
+    priority: Mapped[str] = mapped_column(Text, nullable=False)
+    risk: Mapped[str] = mapped_column(Text, nullable=False)
+    requirement_classification: Mapped[str] = mapped_column(Text, nullable=False)
+    content_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    declared_source_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    declared_acceptance_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    declared_capability_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    declared_assumption_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    declared_exclusion_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    declared_dependency_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    declared_ai_task_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    supersedes_version_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    review_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    review_round_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
 
 
 class RequirementCommandResultRow(Base):

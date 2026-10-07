@@ -15,6 +15,7 @@ from plm_assistant.modules.requirement.infrastructure.orm import (
     RequirementPackageRow,
     RequirementRow,
     RequirementStateDecisionRow,
+    RequirementVersionRow,
 )
 
 
@@ -180,6 +181,31 @@ class RequirementIdentitySchemaTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "offline Requirement mutation"):
                 migration.downgrade()
         self.assertIn("Requirement mutation history prevents downgrade",
+                      inspect.getsource(migration.downgrade))
+
+    def test_requirement_version_primary_is_project_scoped_and_owner_closed(self) -> None:
+        table = RequirementVersionRow.__table__
+        self.assertEqual((table.schema, table.name), ("plm", "req_requirement_versions"))
+        names = {constraint.name for constraint in table.constraints}
+        for required in (
+            "uq_req_versions__id_requirement_project",
+            "uq_req_versions__requirement_no",
+            "fk_req_versions__requirement", "fk_req_versions__supersedes",
+            "ck_req_versions__classification", "ck_req_versions__counts",
+            "ck_req_versions__supersedes_not_self",
+        ):
+            self.assertIn(required, names)
+        root_names = {constraint.name for constraint in RequirementRow.__table__.constraints}
+        self.assertIn("fk_req_requirements__approved_version", root_names)
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions.20261007_0116_requirement_version_primary")
+        self.assertEqual(migration.down_revision, "20261007_0115")
+        self.assertIn("RequirementVersion Owner is not installed", migration._GUARDS)
+        self.assertIn("history cannot be truncated", migration._GUARDS)
+        with patch.object(migration.context, "is_offline_mode", return_value=True):
+            with self.assertRaisesRegex(RuntimeError, "offline RequirementVersion"):
+                migration.downgrade()
+        self.assertIn("RequirementVersion history prevents downgrade",
                       inspect.getsource(migration.downgrade))
 
 
