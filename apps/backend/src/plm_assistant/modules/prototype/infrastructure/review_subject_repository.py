@@ -6,6 +6,7 @@ import uuid
 
 from sqlalchemy import func, select, text, update
 
+from plm_assistant.modules.platform.application.trace_context import new_uuid7
 from plm_assistant.modules.prototype.application.review_subject import (
     PrototypeReviewLock,
 )
@@ -144,7 +145,7 @@ class SqlAlchemyPrototypeReviewSubjectRepository:
     def consume_terminal(
         self, transaction: object, *, before: PrototypeReviewLock,
         transition: ReviewSubjectTransition, version_state: str,
-    ) -> None:
+    ) -> uuid.UUID:
         if (type(before) is not PrototypeReviewLock
                 or type(transition) is not ReviewSubjectTransition
                 or version_state not in {"APPROVED", "RETURNED"}):
@@ -203,7 +204,9 @@ class SqlAlchemyPrototypeReviewSubjectRepository:
         ).values(**values))
         if changed.rowcount != 1:
             raise ReviewSubjectAccessDenied()
+        result_id = uuid.UUID(new_uuid7())
         session.add(PrototypeVersionReviewStateResultRow(
+            review_state_result_id=result_id,
             prototype_version_id=snapshot.prototype_version_id,
             prototype_id=snapshot.prototype_id,
             project_id=snapshot.project_id,
@@ -220,11 +223,12 @@ class SqlAlchemyPrototypeReviewSubjectRepository:
             session.flush()
         except Exception:
             raise ReviewSubjectAccessDenied() from None
+        return result_id
 
     def assert_terminal_consumed(
         self, transaction: object, *, transition: ReviewSubjectTransition,
         version_state: str,
-    ) -> None:
+    ) -> uuid.UUID:
         if (type(transition) is not ReviewSubjectTransition
                 or version_state not in {"APPROVED", "RETURNED"}):
             raise ReviewSubjectAccessDenied()
@@ -296,6 +300,34 @@ class SqlAlchemyPrototypeReviewSubjectRepository:
                          else 1))
         if not valid:
             raise ReviewSubjectAccessDenied()
+        return result.review_state_result_id
+
+    def approval_result_id(
+        self, transaction: object, *, prototype_version_id: uuid.UUID,
+        prototype_id: uuid.UUID, project_id: uuid.UUID,
+        review_id: uuid.UUID, review_round_id: uuid.UUID,
+        approved_by: uuid.UUID,
+    ) -> uuid.UUID:
+        if not _ids(
+                prototype_version_id, prototype_id, project_id, review_id,
+                review_round_id, approved_by):
+            raise ReviewSubjectAccessDenied()
+        result_id = self._snapshots._session(transaction).execute(select(
+            PrototypeVersionReviewStateResultRow.review_state_result_id,
+        ).where(
+            PrototypeVersionReviewStateResultRow.prototype_version_id
+            == prototype_version_id,
+            PrototypeVersionReviewStateResultRow.prototype_id == prototype_id,
+            PrototypeVersionReviewStateResultRow.project_id == project_id,
+            PrototypeVersionReviewStateResultRow.review_id == review_id,
+            PrototypeVersionReviewStateResultRow.review_round_id
+            == review_round_id,
+            PrototypeVersionReviewStateResultRow.event_type == "APPROVED",
+            PrototypeVersionReviewStateResultRow.actor_id == approved_by,
+        ).with_for_update(read=True)).scalar_one_or_none()
+        if not _ids(result_id):
+            raise ReviewSubjectAccessDenied()
+        return result_id
 
 
 def _ids(*values: object) -> bool:

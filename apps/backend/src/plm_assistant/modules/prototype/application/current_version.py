@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hmac
 import re
+from dataclasses import dataclass
 
 from plm_assistant.modules.document.application.prototype_artifact_proof import (
     PrototypeVersionDocumentArtifactProof,
@@ -32,6 +33,25 @@ _ORDER = (
 )
 
 
+@dataclass(frozen=True, slots=True)
+class PrototypeVersionCurrentFacts:
+    """Exact external version facts re-proved in the caller transaction."""
+
+    template: PrototypeVersionTemplateProof
+    documents: tuple[PrototypeVersionDocumentArtifactProof, ...]
+    requirements: tuple[PrototypeApprovedRequirementVersionProof, ...]
+
+    def __post_init__(self) -> None:
+        if (type(self.template) is not PrototypeVersionTemplateProof
+                or type(self.documents) is not tuple
+                or type(self.requirements) is not tuple
+                or any(type(item) is not PrototypeVersionDocumentArtifactProof
+                       for item in self.documents)
+                or any(type(item) is not PrototypeApprovedRequirementVersionProof
+                       for item in self.requirements)):
+            raise ValueError("invalid PrototypeVersion current facts")
+
+
 class PrototypeVersionCurrentValidator:
     """Reprove every external input and the aggregate digest in the caller tx."""
 
@@ -46,6 +66,19 @@ class PrototypeVersionCurrentValidator:
     def current_issues(
         self, transaction: object, snapshot: PrototypeVersionInitialView,
     ) -> tuple[str, ...]:
+        return self._evaluate(transaction, snapshot)[0]
+
+    def current_facts(
+        self, transaction: object, snapshot: PrototypeVersionInitialView,
+    ) -> PrototypeVersionCurrentFacts | None:
+        """Return exact ordered facts only when every current check passes."""
+
+        issues, facts = self._evaluate(transaction, snapshot)
+        return facts if not issues else None
+
+    def _evaluate(
+        self, transaction: object, snapshot: PrototypeVersionInitialView,
+    ) -> tuple[tuple[str, ...], PrototypeVersionCurrentFacts | None]:
         found: set[str] = set()
         try:
             self._require_snapshot(snapshot)
@@ -66,7 +99,7 @@ class PrototypeVersionCurrentValidator:
                 raise ValueError("non-canonical owned set")
         except (AttributeError, TypeError, ValueError,
                 PrototypeVersionCreateError):
-            return ("STRUCTURE_INVALID",)
+            return ("STRUCTURE_INVALID",), None
 
         template = self._templates.prove(
             transaction, project_id=snapshot.project_id,
@@ -76,6 +109,7 @@ class PrototypeVersionCurrentValidator:
         if not self._valid_template(snapshot, template):
             found.add("TEMPLATE_UNAVAILABLE")
 
+        documents: list[PrototypeVersionDocumentArtifactProof] = []
         artifact_proofs: list[tuple[str, str, str]] = []
         for item in artifacts:
             proof = None
@@ -90,7 +124,9 @@ class PrototypeVersionCurrentValidator:
             artifact_proofs.append((
                 item.artifact_kind, str(item.target_id), proof.content_sha256,
             ))
+            documents.append(proof)
 
+        requirement_facts: list[PrototypeApprovedRequirementVersionProof] = []
         requirement_proofs: list[tuple[str, str, str]] = []
         for item in requirements:
             proof = self._requirements.prove(
@@ -105,6 +141,7 @@ class PrototypeVersionCurrentValidator:
                 str(item.requirement_id), str(item.requirement_version_id),
                 proof.content_fingerprint,
             ))
+            requirement_facts.append(proof)
 
         if not found:
             payload = {
@@ -130,7 +167,16 @@ class PrototypeVersionCurrentValidator:
             expected = canonical_payload_fingerprint(payload)
             if not hmac.compare_digest(actual, expected):
                 found.add("CONTENT_FINGERPRINT_MISMATCH")
-        return tuple(code for code in _ORDER if code in found)
+        issues = tuple(code for code in _ORDER if code in found)
+        if issues:
+            return issues, None
+        try:
+            facts = PrototypeVersionCurrentFacts(
+                template, tuple(documents), tuple(requirement_facts),
+            )
+        except ValueError:
+            return ("STRUCTURE_INVALID",), None
+        return (), facts
 
     @staticmethod
     def _require_snapshot(snapshot: object) -> None:

@@ -219,3 +219,18 @@ Migration0132新增不可变Review状态结果并开放`PRT-03 + PROTOTYPE_ALL_V
 Review终态嵌套调用。选择新增Prototype-owned Approval Trace Manifest固定Review/Round/内容指纹和全部来源，
 并在同一调用方事务通过Trace低层仓储投影Template/Document DERIVED_FROM及Requirement IMPLEMENTS边。
 A03拆为P02 Schema0133、P03 Owner/终态接入；纯文档，不改变冻结API/关系枚举/业务Scope。
+
+## A07-A03-P02 实施记录（2026-10-08）
+
+Migration0133新增不可变Approval Trace Manifest及有序来源表，并以延迟约束要求每个升级后新写APPROVED
+状态结果同事务拥有Template/Document/Requirement完整ACTIVE TraceLink集合；错边、缺边、额外边、非批准绑定
+和历史改写均失败关闭。旧批准不伪造回填，空Manifest历史可降，有历史拒降。Win11/PG18.6、后端3148/3及
+wheel1210项/`10ba4ab5…7f784f`通过；无公开API/依赖/外发，进入应用Owner接入。
+
+## A07-A03-P03 实施记录（2026-10-08）
+
+新增Approval Trace Owner/Repository，并把APPROVED结果、当前事实重证、Template/Document/Requirement三类
+业务Version边、0133 Manifest、Prototype正式化、Audit和幂等收据置于统一Review调用事务。非批准终态不投影；
+后验重读Manifest及ACTIVE边，重放不重复创建。故障注入证明Trace首写失败时Review决策、Version/Root、结果、
+边、Manifest、Audit和收据整体回滚；批准幂等重放再次核验Manifest/ACTIVE边。Win11/PG18.6、后端3153/3、
+compileall及wheel1212项/`343e2067…e77992c`通过；无新Schema/公开API/依赖/外发，A03完成，进入原子Submit业务编排。

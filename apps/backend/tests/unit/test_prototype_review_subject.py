@@ -4,6 +4,7 @@ import unittest
 import uuid
 from dataclasses import replace
 from datetime import datetime, timezone
+from types import SimpleNamespace
 from unittest.mock import Mock
 
 from plm_assistant.modules.document.application.prototype_artifact_proof import (
@@ -20,6 +21,9 @@ from plm_assistant.modules.prototype.application.create_version import (
     PrototypeVersionInitialView,
     VersionArtifactRef,
     VersionRequirementRef,
+)
+from plm_assistant.modules.prototype.application.approval_trace import (
+    PrototypeApprovalTraceError,
 )
 from plm_assistant.modules.prototype.application.current_version import (
     PrototypeVersionCurrentValidator,
@@ -50,6 +54,7 @@ from plm_assistant.modules.review.domain.round_progress import (
     ReviewDecisionKind,
     ReviewDecisionSnapshot,
     ReviewRoundProgress,
+    ReviewRoundState,
     ReviewWithdrawalSnapshot,
 )
 
@@ -85,11 +90,17 @@ class PrototypeReviewSubjectTests(unittest.TestCase):
             self.actor, self.identity, self.round, self.version,
             (self.reviewer,),
         )
-        self.repository, self.reviewers, self.current, self.audit = (
-            Mock() for _ in range(4))
+        self.repository, self.reviewers, self.current, self.audit, self.trace = (
+            Mock() for _ in range(5))
         self.repository.lock_subject.return_value = self.lock
         self.repository.active_prototype_exists.return_value = True
         self.repository.assert_terminal_consumed = Mock()
+        self.trace.assert_recorded_in_transaction = Mock()
+        self.terminal_result = uuid.uuid4()
+        self.repository.consume_terminal.return_value = self.terminal_result
+        self.repository.assert_terminal_consumed.return_value = (
+            self.terminal_result)
+        self.repository.approval_result_id.return_value = self.terminal_result
         self.reviewers.qualify_in_transaction.return_value = (
             ProjectReviewerFacts(
                 self.reviewer, self.project, "CUSTOMER_MANAGER"),
@@ -97,7 +108,8 @@ class PrototypeReviewSubjectTests(unittest.TestCase):
         self.current.current_issues.return_value = ()
         self.owner = PrototypeReviewSubjectOwner(
             repository=self.repository, reviewers=self.reviewers,
-            current=self.current, audit=self.audit, clock=lambda: NOW,
+            current=self.current, audit=self.audit,
+            approval_trace=self.trace, clock=lambda: NOW,
         )
         self.tx = object()
 
@@ -166,15 +178,71 @@ class PrototypeReviewSubjectTests(unittest.TestCase):
             self.tx, before=active, transition=transition,
             version_state="APPROVED",
         )
+        self.trace.record_in_transaction.assert_called_once_with(
+            self.tx, snapshot=active.snapshot,
+            review_state_result_id=self.terminal_result,
+            review_id=self.review, review_round_id=self.round,
+            actor_id=self.reviewer,
+            trace_id=transition.trace_id,
+        )
         self.owner.assert_terminal_consumed_in_transaction(
             self.tx, transition,
         )
         self.repository.assert_terminal_consumed.assert_called_once_with(
             self.tx, transition=transition, version_state="APPROVED",
         )
+        self.trace.assert_recorded_in_transaction.assert_called_once_with(
+            self.tx, prototype_version_id=self.version,
+            prototype_id=self.prototype, project_id=self.project,
+            review_state_result_id=self.terminal_result,
+            review_id=self.review, review_round_id=self.round,
+            actor_id=self.reviewer,
+        )
         event = self.audit.append.call_args.args[1]
         self.assertEqual(event.action, "PROTOTYPE_VERSION_APPROVED")
         self.assertEqual(event.after_state, "APPROVED")
+
+    def test_terminal_approval_trace_failure_fails_before_audit(self):
+        transition, _ = self._terminal("APPROVE")
+        self.trace.record_in_transaction.side_effect = (
+            PrototypeApprovalTraceError())
+
+        with self.assertRaises(ReviewSubjectAccessDenied):
+            self.owner.consume_terminal_in_transaction(self.tx, transition)
+
+        self.repository.consume_terminal.assert_called_once()
+        self.audit.append.assert_not_called()
+
+    def test_approved_transition_replay_rechecks_trace_manifest(self):
+        approved = replace(self.lock, snapshot=replace(
+            self.snapshot, version_state="APPROVED"),
+            prototype_lock_version=2, current_approved_version_ref=self.version,
+            review_ref=self.review, review_round_ref=self.round,
+        )
+        self.repository.lock_subject.return_value = approved
+        result = SimpleNamespace(
+            subject_version_id=self.version, review_id=self.review,
+            round_id=self.round, state=ReviewRoundState.APPROVED,
+        )
+
+        self.owner.require_transition_replay_access_in_transaction(
+            self.tx, actor_id=self.reviewer, review=self.identity,
+            result=result,
+        )
+
+        self.repository.approval_result_id.assert_called_once_with(
+            self.tx, prototype_version_id=self.version,
+            prototype_id=self.prototype, project_id=self.project,
+            review_id=self.review, review_round_id=self.round,
+            approved_by=self.reviewer,
+        )
+        self.trace.assert_recorded_in_transaction.assert_called_once_with(
+            self.tx, prototype_version_id=self.version,
+            prototype_id=self.prototype, project_id=self.project,
+            review_state_result_id=self.terminal_result,
+            review_id=self.review, review_round_id=self.round,
+            actor_id=self.reviewer,
+        )
 
     def test_withdrawal_does_not_require_stale_inputs(self):
         active = replace(
@@ -203,6 +271,7 @@ class PrototypeReviewSubjectTests(unittest.TestCase):
             version_state="RETURNED",
         )
         self.current.current_issues.assert_not_called()
+        self.trace.record_in_transaction.assert_not_called()
 
     def _terminal(self, decision_name):
         active = replace(

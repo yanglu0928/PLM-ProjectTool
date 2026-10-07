@@ -31,6 +31,10 @@ from plm_assistant.modules.review.application.subject_transition import (
 from plm_assistant.modules.review.domain.round_progress import ReviewRoundState
 
 from .create_version import PrototypeVersionInitialView
+from .approval_trace import (
+    PrototypeApprovalTraceError,
+    PrototypeApprovalTraceOwner,
+)
 from .current_version import PrototypeVersionCurrentValidator
 
 
@@ -81,12 +85,19 @@ class PrototypeReviewRepositoryPort(Protocol):
     def consume_terminal(
         self, transaction: object, *, before: PrototypeReviewLock,
         transition: ReviewSubjectTransition, version_state: str,
-    ) -> None: ...
+    ) -> uuid.UUID: ...
 
     def assert_terminal_consumed(
         self, transaction: object, *, transition: ReviewSubjectTransition,
         version_state: str,
-    ) -> None: ...
+    ) -> uuid.UUID: ...
+
+    def approval_result_id(
+        self, transaction: object, *, prototype_version_id: uuid.UUID,
+        prototype_id: uuid.UUID, project_id: uuid.UUID,
+        review_id: uuid.UUID, review_round_id: uuid.UUID,
+        approved_by: uuid.UUID,
+    ) -> uuid.UUID: ...
 
 
 class PrototypeReviewSubjectOwner:
@@ -98,12 +109,14 @@ class PrototypeReviewSubjectOwner:
     def __init__(self, *, repository: PrototypeReviewRepositoryPort,
                  reviewers: ProjectReviewerQualificationService,
                  current: PrototypeVersionCurrentValidator, audit: object,
+                 approval_trace: PrototypeApprovalTraceOwner,
                  clock=None) -> None:
         if any(value is None for value in (
-                repository, reviewers, current, audit)):
+                repository, reviewers, current, audit, approval_trace)):
             raise ValueError("Prototype Review Subject dependencies required")
         self._repo, self._reviewers = repository, reviewers
         self._current, self._audit = current, audit
+        self._approval_trace = approval_trace
         self._clock = clock or (lambda: datetime.now(timezone.utc))
 
     def authorize_create(
@@ -241,9 +254,23 @@ class PrototypeReviewSubjectOwner:
             raise ReviewSubjectTransitionError()
         before = self._transition_lock(tx, transition)
         state = self._terminal_version_state(transition)
-        self._repo.consume_terminal(
+        result_id = self._repo.consume_terminal(
             tx, before=before, transition=transition, version_state=state,
         )
+        if not _uuid(result_id):
+            raise ReviewSubjectAccessDenied()
+        if state == "APPROVED":
+            try:
+                self._approval_trace.record_in_transaction(
+                    tx, snapshot=before.snapshot,
+                    review_state_result_id=result_id,
+                    review_id=transition.before.review.review_id,
+                    review_round_id=transition.before.progress.round_id,
+                    actor_id=transition.actor_id,
+                    trace_id=transition.trace_id,
+                )
+            except PrototypeApprovalTraceError:
+                raise ReviewSubjectAccessDenied() from None
         self._audit.append(tx, AuditEventDraft(
             trace_id=transition.trace_id, event_scope="PROJECT",
             target_project_id=before.snapshot.project_id,
@@ -264,10 +291,26 @@ class PrototypeReviewSubjectOwner:
         self._require_transition(transition)
         if not transition.terminal:
             raise ReviewSubjectTransitionError()
-        self._repo.assert_terminal_consumed(
+        result_id = self._repo.assert_terminal_consumed(
             tx, transition=transition,
             version_state=self._terminal_version_state(transition),
         )
+        if not _uuid(result_id):
+            raise ReviewSubjectAccessDenied()
+        if transition.after_progress.state is ReviewRoundState.APPROVED:
+            try:
+                self._approval_trace.assert_recorded_in_transaction(
+                    tx,
+                    prototype_version_id=transition.before.subject_version_id,
+                    prototype_id=transition.before.review.subject_id,
+                    project_id=transition.before.review.project_id,
+                    review_state_result_id=result_id,
+                    review_id=transition.before.review.review_id,
+                    review_round_id=transition.before.progress.round_id,
+                    actor_id=transition.actor_id,
+                )
+            except PrototypeApprovalTraceError:
+                raise ReviewSubjectAccessDenied() from None
 
     def require_transition_replay_access_in_transaction(
         self, tx: object, *, actor_id: uuid.UUID, review, result,
@@ -287,6 +330,28 @@ class PrototypeReviewSubjectOwner:
                 or locked.prototype_state != "ACTIVE"
                 or locked.review_ref != review.review_id):
             raise ReviewSubjectAccessDenied()
+        if getattr(result, "state", None) is ReviewRoundState.APPROVED:
+            round_id = getattr(result, "round_id", None)
+            if not _uuid(round_id):
+                raise ReviewSubjectAccessDenied()
+            try:
+                self._approval_trace.assert_recorded_in_transaction(
+                    tx, prototype_version_id=version_id,
+                    prototype_id=review.subject_id,
+                    project_id=review.project_id,
+                    review_state_result_id=self._repo.approval_result_id(
+                        tx, prototype_version_id=version_id,
+                        prototype_id=review.subject_id,
+                        project_id=review.project_id,
+                        review_id=review.review_id,
+                        review_round_id=round_id,
+                        approved_by=actor_id,
+                    ),
+                    review_id=review.review_id,
+                    review_round_id=round_id, actor_id=actor_id,
+                )
+            except PrototypeApprovalTraceError:
+                raise ReviewSubjectAccessDenied() from None
 
     def _require_lock(self, tx, request):
         locked = self._repo.lock_subject(

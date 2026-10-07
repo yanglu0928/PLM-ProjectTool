@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A07-A03-P03 新增Prototype Approval Trace Owner与Repository，并把
+  APPROVED状态结果、当前事实重证、三类业务Version边、0133 Manifest、正式化、Audit和幂等收据纳入同一
+  Review事务；非批准终态不投影，幂等重放不重复建边。兼容性/回滚：无新Migration、公开API、关系枚举、依赖
+  或外发；历史Manifest/Trace不可删除，停止Owner注册可关闭新批准。验证：Win11/PG18.6真实两次批准/重放/
+  漂移/撤回、批准重放再核验Manifest及Trace故障全回滚，定向12、后端3153/3、compileall、drift、wheel
+  1212项/`343e2067…e77992c`PASS。已知问题：原子Submit、HTTP/前端、Server2025、Gate3/UAT/发行待；Debian13跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A07-A03-P02 新增Prototype Approval Trace Manifest ORM与
   Migration0133；新APPROVED Review结果必须同事务绑定当前Approved PrototypeVersion、批准依据及
   Template/Document/Requirement完整ACTIVE TraceLink集合，两表不可变，缺边/错边/非批准绑定失败关闭。

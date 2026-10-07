@@ -1,5 +1,17 @@
 # 自主决策记录
 
+## DEC-20261008-1044：批准Trace由业务终态同事务投影并以后验闭包拒绝半提交
+
+- Date/WBS：2026-10-08 / `PRT-01-A07-A03-P03`；依据DEC-1043、Migration0133与统一Review事务合同。
+- Decision：Prototype Subject Owner在APPROVED状态结果写入后调用内部Approval Trace Owner；后者重新取得完整
+  当前事实，经Trace低层仓储建立Template/Document DERIVED_FROM和Requirement IMPLEMENTS边，再写不可变
+  Manifest。终态返回显式结果ID，后验同时核验Prototype状态闭包与Manifest/ACTIVE边；非批准终态不投影。
+- Reason：公开Trace Service自带UOW，嵌套调用会产生独立提交窗口；只依赖0133延迟约束能拒绝缺失Manifest，
+  但不能替代应用Owner生成合法全集和幂等重放断言。
+- Impact/Rollback：无新Schema/公开API/关系枚举/依赖/外发。停止Owner注册可关闭新批准，历史Manifest、边和结果
+  必须保留。Win11/PG18.6真实链、批准重放再核验Manifest、Trace故障全事务回滚、3153/3回归及wheel通过；
+  Server2025未外推。
+
 ## DEC-20261008-1043：批准依据使用Manifest绑定，业务版本使用通用Trace边投影
 
 - Date/WBS：2026-10-08 / `PRT-01-A07-A03-P01`；依据PrototypeVersionApproved事件、冻结TRC-01与DEC-1042。

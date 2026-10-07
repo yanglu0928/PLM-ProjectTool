@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import runpy
 import uuid
 from datetime import datetime, timezone
@@ -52,11 +53,17 @@ from plm_assistant.modules.prototype.application.create_version import (
 from plm_assistant.modules.prototype.application.current_version import (
     PrototypeVersionCurrentValidator,
 )
+from plm_assistant.modules.prototype.application.approval_trace import (
+    PrototypeApprovalTraceOwner,
+)
 from plm_assistant.modules.prototype.application.review_subject import (
     PrototypeReviewSubjectOwner,
 )
 from plm_assistant.modules.prototype.infrastructure.review_subject_repository import (
     SqlAlchemyPrototypeReviewSubjectRepository,
+)
+from plm_assistant.modules.prototype.infrastructure.approval_trace_repository import (
+    SqlAlchemyPrototypeApprovalTraceRepository,
 )
 from plm_assistant.modules.prototype.infrastructure.version_create_repository import (
     SqlAlchemyPrototypeVersionCreateRepository,
@@ -90,6 +97,9 @@ from plm_assistant.modules.review.infrastructure.start_repository import (
 )
 from plm_assistant.modules.review.infrastructure.transition_repository import (
     SqlAlchemyReviewTransitionRepository,
+)
+from plm_assistant.modules.trace.infrastructure.create_repository import (
+    SqlAlchemyTraceCreateRepository,
 )
 
 
@@ -302,9 +312,14 @@ def main() -> None:
         reviewers = ProjectReviewerQualificationService(
             users=SqlAlchemyReviewUserAccess(), projects=project_repository,
         )
+        approval_trace = PrototypeApprovalTraceOwner(
+            current=current, trace_links=SqlAlchemyTraceCreateRepository(),
+            manifests=SqlAlchemyPrototypeApprovalTraceRepository(),
+        )
         owner = PrototypeReviewSubjectOwner(
             repository=SqlAlchemyPrototypeReviewSubjectRepository(),
             reviewers=reviewers, current=current, audit=audit,
+            approval_trace=approval_trace,
             clock=lambda: now,
         )
         guard = Guard()
@@ -343,11 +358,17 @@ def main() -> None:
 
         first = create_version()
         review_one, round_one = create_start(first.prototype_version_id)
-        approved = transition.decide_idempotent(DecideReviewRound(
+        first_approval = DecideReviewRound(
             reviewer_token, CSRF, project, review_one, round_one,
             uuid.uuid4(), ReviewDecisionKind.APPROVE, "Approved",
-        ), idempotency_key=str(uuid.uuid4()))
+        )
+        first_approval_key = str(uuid.uuid4())
+        approved = transition.decide_idempotent(
+            first_approval, idempotency_key=first_approval_key)
         assert approved.state.value == "APPROVED"
+        replayed = transition.decide_idempotent(
+            first_approval, idempotency_key=first_approval_key)
+        assert replayed == approved
 
         second = create_version()
         review_two, round_two = create_start(second.prototype_version_id)
@@ -409,12 +430,122 @@ def main() -> None:
                 "('PROTOTYPE_VERSION_APPROVED',"
                 "'PROTOTYPE_VERSION_WITHDRAWN')",
             ).fetchone()[0] == 3
+            assert db.execute(
+                "SELECT count(*) FROM "
+                "plm.prt_version_approval_trace_manifests WHERE "
+                "prototype_id=%s", (ids["prototype"],),
+            ).fetchone()[0] == 2
+            assert db.execute(
+                "SELECT count(*) FROM plm.prt_version_approval_trace_sources s "
+                "JOIN plm.prt_version_approval_trace_manifests m ON "
+                "m.approval_trace_manifest_id=s.approval_trace_manifest_id "
+                "WHERE m.prototype_id=%s", (ids["prototype"],),
+            ).fetchone()[0] == 6
+            assert db.execute(
+                "SELECT s.source_kind,s.source_owner_module,s.source_object_type,"
+                "s.relation_type,count(*) FROM "
+                "plm.prt_version_approval_trace_sources s JOIN "
+                "plm.prt_version_approval_trace_manifests m ON "
+                "m.approval_trace_manifest_id=s.approval_trace_manifest_id "
+                "WHERE m.prototype_id=%s GROUP BY 1,2,3,4 ORDER BY 1",
+                (ids["prototype"],),
+            ).fetchall() == [
+                ("DOCUMENT_VERSION", "document", "DOC-02", "DERIVED_FROM", 2),
+                ("REQUIREMENT_VERSION", "requirement", "REQ-03", "IMPLEMENTS", 2),
+                ("TEMPLATE_VERSION", "prototype", "PRT-04", "DERIVED_FROM", 2),
+            ]
+            assert db.execute(
+                "SELECT count(*) FROM "
+                "plm.prt_version_approval_trace_manifests m JOIN "
+                "plm.prt_version_review_state_results r ON "
+                "r.review_state_result_id=m.review_state_result_id "
+                "WHERE r.event_type<>'APPROVED'",
+            ).fetchone()[0] == 0
+            assert db.execute(
+                "SELECT count(*) FROM plm.trc_links WHERE link_state='ACTIVE' "
+                "AND target_owner_module='prototype' "
+                "AND target_object_type='PRT-03' AND target_object_id=%s",
+                (ids["prototype"],),
+            ).fetchone()[0] == 6
+
+        class FailingTraceLinks:
+            def create_active(self, transaction, *, edge, actor_id, trace_id):
+                raise RuntimeError("synthetic Trace persistence failure")
+
+        failing_trace = PrototypeApprovalTraceOwner(
+            current=current, trace_links=FailingTraceLinks(),
+            manifests=SqlAlchemyPrototypeApprovalTraceRepository(),
+        )
+        failing_owner = PrototypeReviewSubjectOwner(
+            repository=SqlAlchemyPrototypeReviewSubjectRepository(),
+            reviewers=reviewers, current=current, audit=audit,
+            approval_trace=failing_trace, clock=lambda: now,
+        )
+        failing_transition = ReviewTransitionCommandService(
+            unit_of_work=runtime.unit_of_work, access=access,
+            projects=authorization, license_guard=guard,
+            repository=SqlAlchemyReviewTransitionRepository(),
+            receipts=receipts, audit=audit, subjects=failing_owner,
+            clock=lambda: now,
+        )
+        fourth = create_version()
+        review_four, round_four = create_start(fourth.prototype_version_id)
+        failed_key = str(uuid.uuid4())
+        try:
+            failing_transition.decide_idempotent(DecideReviewRound(
+                reviewer_token, CSRF, project, review_four, round_four,
+                uuid.uuid4(), ReviewDecisionKind.APPROVE,
+                "Trace failure must roll back",
+            ), idempotency_key=failed_key)
+        except ReviewTransitionCommandError as error:
+            assert error.code == "REVIEW_UNAVAILABLE", error.code
+        else:
+            raise AssertionError("Trace persistence failure must reject approval")
+        with connect(database) as db:
+            assert db.execute(
+                "SELECT current_approved_version_ref,lock_version FROM "
+                "plm.prt_prototypes WHERE prototype_id=%s",
+                (ids["prototype"],),
+            ).fetchone() == (second.prototype_version_id, 7)
+            assert db.execute(
+                "SELECT version_state,review_ref,review_round_ref FROM "
+                "plm.prt_prototype_versions WHERE prototype_version_id=%s",
+                (fourth.prototype_version_id,),
+            ).fetchone() == ("IN_REVIEW", review_four, round_four)
+            assert db.execute(
+                "SELECT review_state,active_round_id,lock_version FROM "
+                "plm.rvw_reviews WHERE review_id=%s", (review_four,),
+            ).fetchone() == ("IN_REVIEW", round_four, 1)
+            assert db.execute(
+                "SELECT round_state,lock_version FROM plm.rvw_review_rounds "
+                "WHERE review_round_id=%s", (round_four,),
+            ).fetchone() == ("IN_REVIEW", 0)
+            assert db.execute(
+                "SELECT count(*) FROM plm.prt_version_review_state_results "
+                "WHERE prototype_version_id=%s AND event_type='APPROVED'",
+                (fourth.prototype_version_id,),
+            ).fetchone()[0] == 0
+            assert db.execute(
+                "SELECT count(*) FROM "
+                "plm.prt_version_approval_trace_manifests WHERE "
+                "prototype_version_id=%s", (fourth.prototype_version_id,),
+            ).fetchone()[0] == 0
+            assert db.execute(
+                "SELECT count(*) FROM plm.trc_links WHERE link_state='ACTIVE' "
+                "AND target_version_id=%s", (fourth.prototype_version_id,),
+            ).fetchone()[0] == 0
+            assert db.execute(
+                "SELECT count(*) FROM plm.plt_idempotency_receipts WHERE "
+                "operation='V1_REVIEW_DECIDE' AND key_digest=%s",
+                (hashlib.sha256(failed_key.encode("ascii")).digest(),),
+            ).fetchone()[0] == 0
         command.check(cfg)
         print(
             "PRT_01_A07_A02_P02_REVIEW_OWNER_PASS: real PROJECT Review "
             "create/start/approve/withdraw, current input drift fence, "
-            "supersede, pointer preservation, immutable results and audit "
-            "verified on PostgreSQL 18"
+            "approval Trace failure rollback, supersede, pointer "
+            "preservation, immutable results and audit verified on "
+            "PostgreSQL 18"
         )
     finally:
         if runtime is not None:
