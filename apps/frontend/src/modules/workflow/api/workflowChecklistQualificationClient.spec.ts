@@ -10,6 +10,7 @@ const analysis = "21234567-89ab-4cde-8123-456789abcdef";
 const round = "31234567-89ab-4cde-8123-456789abcdef";
 const evidence = "41234567-89ab-4cde-8123-456789abcdef";
 const conclusion = "51234567-89ab-4cde-8123-456789abcdef";
+const requirementVersion = "61234567-89ab-4cde-8123-456789abcdef";
 function data() {
   return { workflow_id: workflow, project_id: project, definition_version: 1,
     stage_key: "HANDOVER", item_key: "HANDOVER_BASELINE", current_item_state: "PENDING",
@@ -21,6 +22,13 @@ function surveyData() {
     stage_key: "SURVEY", item_key: "SURVEY_CONCLUSION", current_item_state: "PENDING",
     workflow_etag: '"v6"', survey_conclusion_id: conclusion,
     review_round_ref: round, evidence_refs: [evidence] };
+}
+function requirementData() {
+  return { workflow_id: workflow, project_id: project, definition_version: 1,
+    stage_key: "REQUIREMENT", item_key: "REQUIREMENT_ACCEPTANCE",
+    current_item_state: "PENDING", workflow_etag: '"v9"',
+    requirement_version_refs: [requirementVersion], review_round_refs: [round],
+    evidence_refs: [evidence] };
 }
 function response(value: unknown, status = 200, tag = '"v4"', cache = "no-store") {
   return new Response(JSON.stringify(status === 200
@@ -59,6 +67,28 @@ describe("WorkflowChecklistQualificationClient", () => {
       vi.fn().mockResolvedValue(crossField) as typeof fetch,
     ).get(project, "SURVEY_CONCLUSION"))
       .rejects.toMatchObject({ code: "WORKFLOW_QUALIFICATION_UNAVAILABLE" });
+  });
+
+  it("reads and freezes the strict aggregate Requirement projection", async () => {
+    const fetcher = vi.fn().mockResolvedValue(response(requirementData(), 200, '"v9"'));
+    const result = await new WorkflowChecklistQualificationClient(fetcher as typeof fetch)
+      .get(project, "REQUIREMENT_ACCEPTANCE");
+    expect(result).toMatchObject({ stage_key: "REQUIREMENT",
+      item_key: "REQUIREMENT_ACCEPTANCE", requirement_version_refs: [requirementVersion],
+      review_round_refs: [round] });
+    if (result.stage_key !== "REQUIREMENT") throw new Error("wrong qualification variant");
+    expect(Object.isFrozen(result.requirement_version_refs)).toBe(true);
+    expect(Object.isFrozen(result.review_round_refs)).toBe(true);
+    for (const invalid of [
+      { ...requirementData(), review_round_refs: [] },
+      { ...requirementData(), requirement_version_refs: [requirementVersion, requirementVersion] },
+      { ...requirementData(), review_round_ref: round },
+    ]) {
+      await expect(new WorkflowChecklistQualificationClient(
+        vi.fn().mockResolvedValue(response(invalid, 200, '"v9"')) as typeof fetch,
+      ).get(project, "REQUIREMENT_ACCEPTANCE"))
+        .rejects.toMatchObject({ code: "WORKFLOW_QUALIFICATION_UNAVAILABLE" });
+    }
   });
 
   it("rejects invalid input without a request", async () => {

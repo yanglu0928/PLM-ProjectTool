@@ -9814,3 +9814,14 @@
   增加同事务证明口径漂移风险；显式allowlist便于审计和一键停用。
 - Impact/Rollback：无Schema/API路径/依赖/权限/外发；定向35、后端3084/3、wheel1167项/
   `eec3d8b3…77f24`通过。移除两项Registration即可关闭Requirement生产可达性。
+
+# DEC-20261008-1020：Requirement资格在浏览器保持聚合且只展示数量
+
+- Date/WBS：2026-10-08 / `REQ-01-A12-A06`；依据CR-REQ-004、DEC-1018及既有Workflow最小投影UX。
+- Decision：前端以独立Requirement variant保留复数Version/ReviewRound并严格校验一一数量关系；确认页只
+  展示Version、批准轮次和Evidence数量，不显示内部UUID。Checklist及Transition仅扩展显式allowlist和
+  `REQUIREMENT -> PROTOTYPE`映射，服务端仍在提交事务内重验全部事实。
+- Reason：降为单值会丢失项目范围；直接展示UUID不帮助业务确认且鼓励手工复制；仅放宽字符串类型会让
+  未知未来Stage穿过持久重试边界。
+- Impact/Rollback：无Schema/后端API/依赖/权限/外发；前端1532项、typecheck/build通过。撤新增variant/
+  allowlist/映射即可回滚，真实Edge留A07。

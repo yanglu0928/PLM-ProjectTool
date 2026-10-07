@@ -40,6 +40,15 @@ function surveyWorkflow(etag = '"v6"') {
         required: true, state: index === 0 ? "PASS" : "PENDING" })),
     })), etag });
 }
+function requirementWorkflow(etag = '"v9"') {
+  return parseWorkflow({ workflow_id: workflowId, version: 1, state: "ACTIVE",
+    current_stage: "REQUIREMENT", stages: stages.map(([stageKey, first, second], index) => ({
+      stage_key: stageKey, order: index + 1,
+      state: index < 2 ? "COMPLETED" : index === 2 ? "ACTIVE" : "NOT_STARTED",
+      checklist_items: [first, second].map((itemKey) => ({ item_key: itemKey,
+        required: true, state: index < 2 ? "PASS" : "PENDING" })),
+    })), etag });
+}
 function record(result: "PASS" | "FAIL" = "PASS", extra: Record<string, unknown> = {}) {
   return { record_id: recordId, workflow_id: workflowId, project_id: projectId,
     definition_version: 1, stage_key: "HANDOVER", item_key: "HANDOVER_BASELINE", result,
@@ -72,6 +81,11 @@ function surveyInput(): WorkflowChecklistRecordInput {
   return { before: surveyWorkflow(), item_key: "SURVEY_CONCLUSION", result: "PASS",
     evidence_refs: [evidenceId], reason: null, impact: null,
     idempotency_key: "synthetic-survey-record-0001" };
+}
+function requirementInput(): WorkflowChecklistRecordInput {
+  return { before: requirementWorkflow(), item_key: "REQUIREMENT_ACCEPTANCE",
+    result: "PASS", evidence_refs: [evidenceId], reason: null, impact: null,
+    idempotency_key: "synthetic-requirement-record-0001" };
 }
 function client(server: Response | Error) {
   const session = new SessionClient(vi.fn() as typeof fetch);
@@ -121,6 +135,21 @@ describe("WorkflowChecklistRecordClient", () => {
       JSON.stringify({ result: "PASS", reason: null, impact: null,
         evidence_refs: [evidenceId], exception_refs: [] }),
       '"v6"', "synthetic-survey-record-0001");
+  });
+
+  it("records Requirement PASS only against the matching current Requirement stage", async () => {
+    const requirementRecord = record("PASS", { stage_key: "REQUIREMENT",
+      item_key: "REQUIREMENT_ACCEPTANCE", recorded_workflow_version: 10,
+      current_workflow_version: 10, evidence_refs: [evidenceId], reason: null,
+      impact: null, etag: '"v10"' });
+    const { records, post } = client(response(requirementRecord, 200, '"v10"'));
+    const receipt = await records.record(projectId, requirementInput());
+    expect(receipt.first_record).toMatchObject({ stage_key: "REQUIREMENT",
+      item_key: "REQUIREMENT_ACCEPTANCE", recorded_workflow_version: 10 });
+    expect(post).toHaveBeenCalledWith(projectId, "REQUIREMENT_ACCEPTANCE",
+      JSON.stringify({ result: "PASS", reason: null, impact: null,
+        evidence_refs: [evidenceId], exception_refs: [] }),
+      '"v9"', "synthetic-requirement-record-0001");
   });
 
   it("rejects a cross-stage Checklist item before transport", async () => {

@@ -16,11 +16,12 @@ export interface WorkflowTransitionView {
   readonly etag: string;
 }
 
-export type SupportedTransitionFromStage = "HANDOVER" | "SURVEY";
-export type SupportedTransitionToStage = "SURVEY" | "REQUIREMENT";
+export type SupportedTransitionFromStage = "HANDOVER" | "SURVEY" | "REQUIREMENT";
+export type SupportedTransitionToStage = "SURVEY" | "REQUIREMENT" | "PROTOTYPE";
 const transitionTargets = Object.freeze({
   HANDOVER: "SURVEY",
   SURVEY: "REQUIREMENT",
+  REQUIREMENT: "PROTOTYPE",
 } as const satisfies Record<SupportedTransitionFromStage, SupportedTransitionToStage>);
 
 export function transitionTargetForStage(stage: string | null): SupportedTransitionToStage | null {

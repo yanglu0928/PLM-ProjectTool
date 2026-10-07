@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/REQ-01-A12-A06 前端Workflow加入Requirement聚合资格、两个Checklist
+  item及`REQUIREMENT -> PROTOTYPE`；严格区分单/复数响应variant，只展示Version/Review/Evidence数量，
+  不暴露内部UUID，未确定操作仍保留原Key/ETag并失败关闭。兼容性/回滚：无Schema/后端路径/依赖/权限/
+  外发；撤新增allowlist和variant即可回滚。验证：前端93文件/1532项、typecheck、生产build PASS。已知
+  问题：既有大chunk警告；A07 Edge、Gate3/UAT/发行待。
+
 - 2026-10-08：0.1.0-dev.0/REQ-01-A12-A05 新增Windows 11/PostgreSQL 18.6 Requirement聚合
   Workflow真实闭环证据：正式Requirement/Review服务形成批准事实，生产路由完成复数Preview、Evidence
   漂移409、两项PASS、`REQUIREMENT -> PROTOTYPE`、Review Basis、Audit/receipt/replay及Alembic无漂移。

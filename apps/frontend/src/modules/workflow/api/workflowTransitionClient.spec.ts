@@ -34,6 +34,15 @@ function surveyWorkflow(etag = '"v7"') {
         required: true, state: index <= 1 ? "PASS" : "PENDING" })),
     })), etag });
 }
+function requirementWorkflow(etag = '"v9"') {
+  return parseWorkflow({ workflow_id: workflowId, version: 1, state: "ACTIVE",
+    current_stage: "REQUIREMENT", stages: stages.map(([stageKey, first, second], index) => ({
+      stage_key: stageKey, order: index + 1,
+      state: index < 2 ? "COMPLETED" : index === 2 ? "ACTIVE" : "NOT_STARTED",
+      checklist_items: [first, second].map((itemKey) => ({ item_key: itemKey,
+        required: true, state: index <= 2 ? "PASS" : "PENDING" })),
+    })), etag });
+}
 function transition(extra: Record<string, unknown> = {}) {
   return { stage_transition_id: transitionId, workflow_id: workflowId, project_id: projectId,
     definition_version: 1, from_stage: "HANDOVER", to_stage: "SURVEY",
@@ -58,6 +67,10 @@ function input(): WorkflowTransitionInput {
 function surveyInput(): WorkflowTransitionInput {
   return { before: surveyWorkflow(), reason: "  Survey facts accepted  ",
     idempotency_key: "synthetic-survey-transition-0001" };
+}
+function requirementInput(): WorkflowTransitionInput {
+  return { before: requirementWorkflow(), reason: "  Requirement facts accepted  ",
+    idempotency_key: "synthetic-requirement-transition-0001" };
 }
 function client(server: Response | Error) {
   const session = new SessionClient(vi.fn() as typeof fetch);
@@ -94,6 +107,19 @@ describe("WorkflowTransitionClient", () => {
     expect(post).toHaveBeenCalledWith(projectId,
       JSON.stringify({ target_stage_key: "REQUIREMENT", reason: "Survey facts accepted",
         gate_snapshot_refs: [] }), '"v7"', "synthetic-survey-transition-0001");
+  });
+
+  it("derives PROTOTYPE from current Requirement and verifies the exact response pair", async () => {
+    const result = transition({ from_stage: "REQUIREMENT", to_stage: "PROTOTYPE",
+      before_workflow_version: 9, transitioned_workflow_version: 10,
+      current_workflow_version: 10, reason: "Requirement facts accepted", etag: '"v10"' });
+    const { transitions, post } = client(response(result, 200, '"v10"'));
+    const receipt = await transitions.transition(projectId, requirementInput());
+    expect(receipt.first_transition).toMatchObject({ from_stage: "REQUIREMENT",
+      to_stage: "PROTOTYPE", etag: '"v10"' });
+    expect(post).toHaveBeenCalledWith(projectId,
+      JSON.stringify({ target_stage_key: "PROTOTYPE", reason: "Requirement facts accepted",
+        gate_snapshot_refs: [] }), '"v9"', "synthetic-requirement-transition-0001");
   });
 
   it("rejects an invalid transition response pair as uncertain", async () => {

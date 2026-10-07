@@ -134,7 +134,7 @@ function validTransitionPending(value: unknown): value is PendingTransition {
     && typeof entry.reason === "string" && entry.reason.length > 0
     && entry.reason.length <= 2000 && entry.reason.trim() === entry.reason
     && !entry.reason.includes("\u0000")
-    && ["SURVEY", "REQUIREMENT"].includes(entry.target as string);
+    && ["SURVEY", "REQUIREMENT", "PROTOTYPE"].includes(entry.target as string);
 }
 function readTransitionPending(): PendingTransition | null {
   if (!transitionStorageKey) return null;
@@ -224,7 +224,7 @@ function supportedItem(value: string): value is SupportedChecklistItemKey {
 }
 function mayRecord() {
   return mayStart() && workflow.value?.state === "ACTIVE"
-    && ["HANDOVER", "SURVEY"].includes(workflow.value.current_stage ?? "");
+    && ["HANDOVER", "SURVEY", "REQUIREMENT"].includes(workflow.value.current_stage ?? "");
 }
 function mayTransition() {
   const currentKey = workflow.value?.current_stage ?? null;
@@ -595,6 +595,9 @@ onUnmounted(() => { mounted = false; generation += 1; });
         <template v-if="checklistTarget.result === 'PASS' && checklistTarget.qualification">
           <p>服务器已按当前版本 {{ checklistTarget.qualification.workflow_etag }} 复验
             {{ checklistTarget.qualification.evidence_refs.length }} 项固定依据。页面不会要求手填或展示内部UUID；提交时服务端仍会再次完整复验。</p>
+          <p v-if="checklistTarget.qualification.stage_key === 'REQUIREMENT'">
+            本次覆盖 {{ checklistTarget.qualification.requirement_version_refs.length }} 个正式需求版本及
+            {{ checklistTarget.qualification.review_round_refs.length }} 个真实批准轮次；仅显示数量，具体标识不在页面暴露。</p>
         </template>
         <template v-else>
           <label>未满足原因（必填）
