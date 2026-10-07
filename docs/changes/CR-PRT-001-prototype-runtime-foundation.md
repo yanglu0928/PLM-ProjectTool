@@ -184,3 +184,10 @@ Interaction/Result延迟闭包。Service同事务消费A02证明并写Audit/rece
 批准指针不推进。复用Template安全JSON时首次异常类型不兼容，已转换为Version稳定错误且未放宽规则。
 Win11/PG18.6 v1→v2、后端3132/3/4671 subtests、compileall及wheel1203项/
 `4ecd8f05…16df41d`通过；进入Read/Validate。
+
+## A06-A04 实施记录（2026-10-08）
+
+新增项目内Version倒序分页/历史Get及不变更状态的ValidationReport；每次重证成员权限/License，Validate重证
+Template、当前Approved Requirement与Document可用性并写Audit。首轮PG夹具JSON冒号被SQLAlchemy当绑定参数，
+改为显式JSONB参数后重跑，不涉及产品缺陷。Win11/PG18.6、后端3136/3/4684 subtests、compileall及
+wheel1205项/`b8ea3055…346ed1c`通过；无Schema/公开API变化，A06完成并进入A07 Review/Formalize。

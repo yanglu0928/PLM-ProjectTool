@@ -10041,3 +10041,12 @@
   正式指针；OutputArtifact无Owner时失败关闭。
 - Reason：只查最大版本而不锁Root会产生并发分叉；分事务写集合会留下半成品；DRAFT推进正式指针会绕过A07。
 - Impact/Rollback：0131前向加结果表并开放CREATE Owner；空历史可降0130，有历史拒降。公开API仍未装配。
+
+# DEC-20261008-1039：Version验证是当前事实报告而不是隐藏状态迁移
+
+- Date/WBS：2026-10-08 / `PRT-01-A06-A04`；依据冻结`PRT_VERSION_LIST/GET/VALIDATE`及A07 Review窄门。
+- Decision：List/Get返回固定不可变版本及完整owned集合；Validate重证当前Template、Requirement和Artifact事实，
+  只返回问题码与原状态并追加Audit，不更新Version状态、正式指针或固定引用。
+- Reason：固定Version内容不可改，但外部Artifact可用性和Requirement当前批准事实会变化；把Validate变成状态推进
+  会绕过冻结Review Operation并把瞬时检查伪造成批准。
+- Impact/Rollback：只新增内部只读/报告Service和授权策略，无Schema/API/依赖/外发；停止装配即可回滚。

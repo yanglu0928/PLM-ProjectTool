@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A06-A04 新增PrototypeVersion倒序List、固定历史Get及非状态迁移
+  ValidationReport；重建完整owned集合并重证Template/Requirement/Document当前事实，报告问题并写Audit但不
+  修改Version/正式指针。兼容性/回滚：无Schema/公开API/依赖/外发，停止装配即可。验证：Win11/PG18.6、
+  定向14/634 subtests、后端3136/3/4684 subtests、compileall、wheel1205项/`b8ea3055…346ed1c`PASS。
+  已知问题：A07～A11、Server2025、Gate3/UAT/发行待；Debian13按指令跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A06-A03 新增PrototypeVersion DRAFT Create Owner与Schema0131；Root锁
   串行版本链，同事务固定输入证明、owned集合、结果、Audit/receipt，延迟闭包防半成品，OutputArtifact失败
   关闭且正式指针不推进。兼容性/升级：前向加结果表，不改公开API/依赖/外发；空历史可降0130，有历史拒降。
