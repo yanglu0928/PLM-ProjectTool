@@ -24,6 +24,7 @@ from plm_assistant.modules.prototype.infrastructure.orm import (
     PrototypeVersionArtifactRefRow,
     PrototypeVersionRequirementRefRow,
     PrototypeVersionCreateResultRow,
+    PrototypeVersionReviewStateResultRow,
     PrototypeVersionRow,
 )
 
@@ -364,6 +365,34 @@ class PrototypeIdentitySchemaTests(unittest.TestCase):
             with self.assertRaisesRegex(
                 RuntimeError, "offline PrototypeVersion create-owner"
             ):
+                migration.downgrade()
+
+    def test_prototype_review_lifecycle_schema_is_a_narrow_owner(self) -> None:
+        table = PrototypeVersionReviewStateResultRow.__table__
+        self.assertEqual(table.name, "prt_version_review_state_results")
+        names = {constraint.name for constraint in table.constraints}
+        for required in (
+            "uq_prt_review_results__prototype_lock",
+            "uq_prt_review_results__version_event",
+            "fk_prt_review_results__version",
+            "ck_prt_review_results__pointer",
+        ):
+            self.assertIn(required, names)
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions."
+            "20261008_0132_prototype_review_lifecycle"
+        )
+        self.assertEqual(migration.down_revision, "20261008_0131")
+        source = migration._VERSION_GUARD + migration._ROOT_GUARD + migration._REVIEW_GUARDS
+        for required in (
+            "PrototypeVersion cannot be created during Review",
+            "PROTOTYPE_ALL_V1", "Prototype previous approval was not superseded",
+            "PrototypeVersion Review transition has no immutable result",
+            "Prototype approval pointer has no immutable result",
+        ):
+            self.assertIn(required, source)
+        with patch.object(migration.context, "is_offline_mode", return_value=True):
+            with self.assertRaisesRegex(RuntimeError, "offline Prototype Review"):
                 migration.downgrade()
 
 

@@ -1,5 +1,16 @@
 # 自主决策记录
 
+## DEC-20261008-1041：Review状态以结果行和延迟联合闭包推进
+
+- Date/WBS：2026-10-08 / `PRT-01-A07-A02-P01`；依据DEC-1040、冻结PRT-03与Review Kernel。
+- Decision：Migration0132用不可变状态结果固定每次Review事件、Review/Round、Actor、Root强版本及正式指针
+  前后值；延迟闭包同时验证Version、Prototype Root、`PRT-03 + PROTOTYPE_ALL_V1` Subject、Scope Decision
+  指纹和Review终态。START/RETURNED允许同名同指针Root锁推进，但必须有匹配结果，裸锁推进仍拒绝。
+- Reason：仅靠Version状态或Root指针触发器无法证明由哪个Review终态授权；同时完全禁止同指针Root更新又会让
+  送审/退回缺少可串行化版本。结果行提供不可变提交证明，联合闭包封闭半成品与绕过路径。
+- Impact/Rollback：前向新增表并调整数据库窄门，无公开API/依赖/外发。无Review历史可降0131，有历史拒绝
+  破坏性降级并要求前向修复。Win11/PG18.6完整流、全量回归及wheel通过；Server2025未外推，Debian13跳过。
+
 ## DEC-20261002-673 — 模型安全状态只挂 Windows 显式写平台
 
 - Date/WBS：2026-10-02 / `AI-02-A08-P04`；依据 P03 可选路由与现有 `--platform-write` 信任组合。

@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A07-A02-P01 新增PrototypeVersion Review生命周期Migration0132与
+  不可变状态结果；`PRT-03 + PROTOTYPE_ALL_V1`联合闭包只允许START/APPROVED/RETURNED/WITHDRAWN窄迁移，
+  评审中禁止创建，批准推进正式指针并允许旧版SUPERSEDE，退回/撤回保留旧指针。兼容性/升级：前向加表，
+  无公开API/依赖/外发；无Review历史可降0131，有历史拒降。验证：Win11/PG18.6完整状态流、定向22/21
+  subtests、后端3137/3/4684 subtests、compileall、wheel1206项/`0464c7e0…d802952`PASS。已知问题：P02
+  Subject Owner、Trace/Submit/HTTP/前端、Server2025、Gate3/UAT/发行待；Debian13按指令跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A07-A01 完成PrototypeVersion Review/Formalize前置核查：固定
   `PRT-03 + PROTOTYPE_ALL_V1`、最新DRAFT/当前事实、批准指针/旧版SUPERSEDE、退回保留旧指针及批准Trace
   边界，并拆分Migration/Subject/Trace/Submit四项。兼容性/回滚：纯文档，无Schema/API/代码/依赖/外发。

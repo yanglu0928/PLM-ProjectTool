@@ -197,3 +197,11 @@ wheel1205项/`b8ea3055…346ed1c`通过；无Schema/公开API变化，A06完成�
 固定`PRT-03 + PROTOTYPE_ALL_V1`复用PROJECT Review Kernel；仅ACTIVE Prototype最新DRAFT可送审，送审及
 APPROVE当下重证A06全部当前事实。A07拆为Migration0132窄门、Subject Owner/终态消费、批准Trace Owner和
 原子SUBMIT_REVIEW。批准推进正式指针并SUPERSEDE旧批准版；退回/撤回保留旧指针。纯文档PASS，无代码/API。
+
+## A07-A02-P01 实施记录（2026-10-08）
+
+Migration0132新增不可变Review状态结果并开放`PRT-03 + PROTOTYPE_ALL_V1`联合提交窄门。START把最新DRAFT
+置为IN_REVIEW并禁止新建后续版；APPROVED推进正式指针且允许旧批准版SUPERSEDE；RETURNED/WITHDRAWN保留
+原批准指针。Version、Root、Review/Round、Scope Decision指纹和状态结果由延迟闭包一次核验，裸更新失败。
+实现复核补齐同指针Root锁推进与Scope Decision指纹检查，均在正式实库验收前完成。Win11/PG18.6完整状态流、
+后端3137/3/4684 subtests及wheel1206项/`0464c7e0…d802952`通过；无公开API/依赖/外发。P02前业务Owner仍关闭。
