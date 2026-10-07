@@ -48,6 +48,19 @@ def checklist_qualification_preview_data(
                     str(value) for value in preview.evidence_refs
                 ],
             }
+        if preview.stage_key == "SURVEY":
+            return {
+                "workflow_id": str(preview.workflow_id),
+                "project_id": str(preview.project_id),
+                "definition_version": preview.definition_version,
+                "stage_key": preview.stage_key,
+                "item_key": preview.item_key,
+                "current_item_state": preview.current_item_state,
+                "workflow_etag": preview.workflow_etag,
+                "survey_conclusion_id": str(preview.survey_conclusion_id),
+                "review_round_ref": str(preview.review_round_ref),
+                "evidence_refs": [str(value) for value in preview.evidence_refs],
+            }
         return {
             "workflow_id": str(preview.workflow_id),
             "project_id": str(preview.project_id),
@@ -56,8 +69,12 @@ def checklist_qualification_preview_data(
             "item_key": preview.item_key,
             "current_item_state": preview.current_item_state,
             "workflow_etag": preview.workflow_etag,
-            "survey_conclusion_id": str(preview.survey_conclusion_id),
-            "review_round_ref": str(preview.review_round_ref),
+            "requirement_version_refs": [
+                str(value) for value in preview.requirement_version_refs
+            ],
+            "review_round_refs": [
+                str(value) for value in preview.review_round_refs
+            ],
             "evidence_refs": [str(value) for value in preview.evidence_refs],
         }
     except Exception:
@@ -107,6 +124,7 @@ def create_workflow_checklist_qualification_router(
         if item_key not in {
             "HANDOVER_BASELINE", "HANDOVER_ISSUES",
             "SURVEY_ACTUAL_SOURCES", "SURVEY_CONCLUSION",
+            "REQUIREMENT_FORMAL_VERSIONS", "REQUIREMENT_ACCEPTANCE",
         }:
             raise ApplicationError("VALIDATION_FAILED")
         try:

@@ -9790,3 +9790,15 @@
   只看ARCHIVED状态会把无依据的范围删除误判为已解释。
 - Impact/Rollback：新增只读Repository，无Schema/API/依赖/外发；Windows 11/PG18.6锁与负例、后端
   3079/3、wheel1167项/`e229c332…fc7c77`通过。停止A04注册并删除Repository可回滚。
+
+# DEC-20261008-1018：Workflow写链完整保留聚合资格的全部真实证明
+
+- Date/WBS：2026-10-08 / `REQ-01-A12-A04-A01`；依据CR-REQ-004、DEC-1014～1017及既有
+  Checklist Basis/Transition Gate合同。
+- Decision：Requirement Preview使用复数Version/Review响应variant；Checklist和Transition为聚合集合
+  保存全部真实ReviewRound与去重Evidence，不选择“主Review”。两个Requirement item只有类型、Project、
+  Stage及聚合coherence key一致时才能推进`REQUIREMENT -> PROTOTYPE`；重复Evidence观察不一致即拒绝。
+- Reason：只保存一个Review会丢失项目完整需求范围的批准证明；仅比较Evidence集合不能发现Root、Version
+  或Review集合漂移；复用既有Basis类型可保持历史校验与下游读取兼容。
+- Impact/Rollback：通用写链支持已完成但A04-A02前未生产注册；无Schema/依赖/权限/外发。定向28、后端
+  3083/3、wheel1167项/`a32865d9…b1347`通过；撤Requirement variant可回滚且不改既有历史。

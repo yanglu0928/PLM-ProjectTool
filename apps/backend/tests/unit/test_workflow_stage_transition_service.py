@@ -22,7 +22,8 @@ from plm_assistant.modules.workflow.application.current_checklist_record import 
     ChecklistBasisObservation,
 )
 from plm_assistant.modules.workflow.application.checklist_qualification import (
-    ChecklistQualificationEvidence, ChecklistQualificationReview,
+    AggregateChecklistQualification, ChecklistQualificationEvidence,
+    ChecklistQualificationReview, ChecklistQualificationSubject,
     CurrentChecklistQualification,
 )
 from plm_assistant.modules.workflow.application.transition_stage import (
@@ -264,6 +265,71 @@ class WorkflowStageTransitionServiceTests(unittest.TestCase):
         self.assertEqual("SURVEY", result.snapshot.from_stage)
         self.assertEqual("REQUIREMENT", result.snapshot.to_stage)
 
+    def test_requirement_to_prototype_preserves_all_real_reviews(self):
+        subjects = []
+        for index in range(2):
+            subject_id, version_id = uuid4(), uuid4()
+            evidence = ChecklistQualificationEvidence(
+                uuid4(), self.project, index + 7,
+                bytes([index + 7]) * 32, self.now,
+            )
+            review = ChecklistQualificationReview(
+                uuid4(), uuid4(), self.project, subject_id, version_id,
+                index + 8, bytes([index + 12]) * 32, self.now,
+                "REQ-03", "REQUIREMENT_ALL_V1",
+            )
+            subjects.append(ChecklistQualificationSubject(
+                "REQ-03", subject_id, version_id,
+                bytes([index + 12]) * 32, (evidence,), review,
+            ))
+        subjects.sort(key=lambda value: value.subject_id.int)
+        values = tuple(AggregateChecklistQualification(
+            self.project, "REQUIREMENT", item_key, tuple(subjects), (),
+            b"s" * 32, bytes([index + 20]) * 32,
+        ) for index, item_key in enumerate((
+            "REQUIREMENT_FORMAL_VERSIONS", "REQUIREMENT_ACCEPTANCE",
+        )))
+        self.qualification.qualify_only_current_in_transaction.side_effect = values
+        gates = tuple(
+            WorkflowStageTransitionService._gate(value) for value in values
+        )
+        snapshots = tuple(GateItemSnapshot(
+            value.item_key, ChecklistState.PASS,
+            tuple(item.ref_id for item in gate.basis
+                  if item.ref_kind == "EVIDENCE"),
+            tuple(item.ref_id for item in gate.basis
+                  if item.ref_kind == "REVIEW_ROUND"),
+        ) for value, gate in zip(values, gates, strict=True))
+        persisted_gates = tuple(PersistedTransitionGate(
+            uuid4(), uuid4(), 1, bytes([index + 30]) * 32,
+            snapshot, gate.basis,
+        ) for index, (snapshot, gate) in enumerate(zip(
+            snapshots, gates, strict=True,
+        )))
+        transition = ForwardTransitionSnapshot(
+            self.workflow, self.project, self.actor, self.trace, 1,
+            "REQUIREMENT", "PROTOTYPE", 3, 4,
+            "Requirements accepted", self.now, snapshots,
+        )
+        self.transitions.append.return_value = PersistedStageTransition(
+            uuid4(), transition, persisted_gates, b"p" * 32, 4,
+        )
+
+        result = self.service.transition(self._command(
+            target_stage_key="PROTOTYPE", reason="Requirements accepted",
+        ), idempotency_key="workflow-transition-requirement-001")
+
+        self.assertEqual("PROTOTYPE", result.snapshot.to_stage)
+        appended = self.transitions.append.call_args.kwargs["command"]
+        self.assertEqual(
+            ("REQUIREMENT_FORMAL_VERSIONS", "REQUIREMENT_ACCEPTANCE"),
+            tuple(value.item_key for value in appended.gates),
+        )
+        self.assertTrue(all(
+            sum(item.ref_kind == "REVIEW_ROUND" for item in gate.basis) == 2
+            for gate in appended.gates
+        ))
+
     def test_replay_rechecks_access_and_returns_original_without_owner_write(self):
         self.receipts.reserve.return_value = IdempotencyResult(
             "V1_WORKFLOW_TRANSITION", self.result.stage_transition_id, 200,
@@ -342,7 +408,7 @@ class WorkflowStageTransitionServiceTests(unittest.TestCase):
 
     def test_invalid_command_and_repository_error_are_safe(self):
         for command in (
-            self._command(target_stage_key="PROTOTYPE"),
+            self._command(target_stage_key="DESIGN"),
             self._command(reason=" "),
             self._command(expected_workflow_version=-1),
         ):

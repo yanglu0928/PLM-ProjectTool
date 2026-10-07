@@ -98,7 +98,7 @@ class WorkflowChecklistQualificationApiTests(unittest.TestCase):
             (self.headers, self.path + "?extra=1", 400),
             (self.headers, self.path.replace(str(PROJECT), str(PROJECT).upper()), 422),
             (self.headers, self.path.replace(
-                "HANDOVER_BASELINE", "REQUIREMENT_ACCEPTANCE"), 422),
+                "HANDOVER_BASELINE", "PROTOTYPE_GATE"), 422),
         )
         for headers, path, status in variants:
             with self.subTest(status=status, path=path):
@@ -118,6 +118,27 @@ class WorkflowChecklistQualificationApiTests(unittest.TestCase):
         self.assertEqual("SURVEY", data["stage_key"])
         self.assertEqual(str(VERSION), data["survey_conclusion_id"])
         self.assertNotIn("handover_analysis_version_id", data)
+
+    def test_requirement_projection_uses_plural_version_and_review_refs(self):
+        versions, rounds = (uuid.uuid4(), uuid.uuid4()), (
+            uuid.uuid4(), uuid.uuid4(),
+        )
+        self.previews.result = WorkflowChecklistQualificationPreview(
+            WORKFLOW, PROJECT, 1, "REQUIREMENT", "REQUIREMENT_ACCEPTANCE",
+            "PENDING", 6, None, None, EVIDENCE, None, versions, rounds,
+        )
+        path = self.path.replace(
+            "HANDOVER_BASELINE", "REQUIREMENT_ACCEPTANCE",
+        )
+        response = self.client.get(path, headers=self.headers)
+        self.assertEqual(200, response.status_code, response.text)
+        data = response.json()["data"]
+        self.assertEqual([str(value) for value in versions],
+                         data["requirement_version_refs"])
+        self.assertEqual([str(value) for value in rounds],
+                         data["review_round_refs"])
+        self.assertNotIn("review_round_ref", data)
+        self.assertNotIn("survey_conclusion_id", data)
 
     def test_safe_service_errors_have_stable_statuses(self):
         for code, status, public in (

@@ -19,8 +19,9 @@ from plm_assistant.modules.workflow.application.current_checklist_record import 
     ChecklistBasisObservation, CurrentChecklistRecord,
 )
 from plm_assistant.modules.workflow.application.checklist_qualification import (
-    ChecklistQualificationError, ChecklistQualificationEvidence,
-    ChecklistQualificationReview, CurrentChecklistQualification,
+    AggregateChecklistQualification, ChecklistQualificationError,
+    ChecklistQualificationEvidence, ChecklistQualificationReview,
+    ChecklistQualificationSubject, CurrentChecklistQualification,
 )
 from plm_assistant.modules.workflow.application.record_checklist import (
     RecordWorkflowChecklist, WorkflowChecklistRecordError,
@@ -216,6 +217,51 @@ class WorkflowChecklistRecordServiceTests(unittest.TestCase):
         query = self.qualification.qualify_only_current_in_transaction.call_args.args[1]
         self.assertEqual("SURVEY_CONCLUSION", query.item_key)
 
+    def test_requirement_pass_persists_all_subject_reviews_and_evidence(self):
+        subjects = []
+        for index in range(2):
+            subject_id, version_id = uuid4(), uuid4()
+            evidence = ChecklistQualificationEvidence(
+                uuid4(), self.project, index + 4,
+                bytes([index + 4]) * 32, self.now,
+            )
+            review = ChecklistQualificationReview(
+                uuid4(), uuid4(), self.project, subject_id, version_id,
+                index + 6, bytes([index + 10]) * 32, self.now,
+                "REQ-03", "REQUIREMENT_ALL_V1",
+            )
+            subjects.append(ChecklistQualificationSubject(
+                "REQ-03", subject_id, version_id,
+                bytes([index + 10]) * 32, (evidence,), review,
+            ))
+        subjects.sort(key=lambda value: value.subject_id.int)
+        decision_evidence = ChecklistQualificationEvidence(
+            uuid4(), self.project, 8, b"d" * 32, self.now,
+        )
+        aggregate = AggregateChecklistQualification(
+            self.project, "REQUIREMENT", "REQUIREMENT_ACCEPTANCE",
+            tuple(subjects), (decision_evidence,), b"s" * 32, b"q" * 32,
+        )
+        self.qualification.qualify_only_current_in_transaction.return_value = aggregate
+
+        self.service.record(self._command(
+            item_key="REQUIREMENT_ACCEPTANCE",
+            evidence_refs=aggregate.evidence_refs,
+        ), idempotency_key="checklist-requirement-pass-001")
+
+        basis = self.appender.append.call_args.kwargs["command"].basis
+        self.assertEqual(3, sum(
+            value.ref_kind == "EVIDENCE" for value in basis
+        ))
+        self.assertEqual(2, sum(
+            value.ref_kind == "REVIEW_ROUND" for value in basis
+        ))
+        self.assertEqual(
+            set(aggregate.review_round_refs),
+            {value.ref_id for value in basis
+             if value.ref_kind == "REVIEW_ROUND"},
+        )
+
     def test_replay_returns_original_record_without_new_business_write(self):
         self.receipts.reserve.return_value = IdempotencyResult(
             "V1_WORKFLOW_CHECKLIST_RECORD", self.record_id, 200,
@@ -255,7 +301,7 @@ class WorkflowChecklistRecordServiceTests(unittest.TestCase):
             self._command(ChecklistState.WAIVED,
                           exception_refs=(uuid4(),),
                           reason="Approved exception", impact="Bounded"),
-            self._command(item_key="REQUIREMENT_ACCEPTANCE"),
+            self._command(item_key="PROTOTYPE_GATE"),
             self._command(ChecklistState.FAIL,
                           evidence_refs=(self.evidence_id,)),
         )

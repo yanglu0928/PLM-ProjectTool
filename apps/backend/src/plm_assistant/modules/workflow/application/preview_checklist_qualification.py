@@ -18,6 +18,7 @@ from plm_assistant.modules.project.application.authorization import (
 
 from .read_workflow import WorkflowView
 from .checklist_qualification import (
+    AggregateChecklistQualification,
     ChecklistQualificationError,
     CurrentChecklistQualification,
     CurrentChecklistQualificationQuery,
@@ -29,6 +30,8 @@ _ITEM_STAGES = {
     "HANDOVER_ISSUES": "HANDOVER",
     "SURVEY_ACTUAL_SOURCES": "SURVEY",
     "SURVEY_CONCLUSION": "SURVEY",
+    "REQUIREMENT_FORMAL_VERSIONS": "REQUIREMENT",
+    "REQUIREMENT_ACCEPTANCE": "REQUIREMENT",
 }
 
 
@@ -56,29 +59,23 @@ class WorkflowChecklistQualificationPreview:
     current_item_state: str
     workflow_lock_version: int
     handover_analysis_version_id: uuid.UUID | None
-    review_round_ref: uuid.UUID
+    review_round_ref: uuid.UUID | None
     evidence_refs: tuple[uuid.UUID, ...]
     survey_conclusion_id: uuid.UUID | None = None
+    requirement_version_refs: tuple[uuid.UUID, ...] = ()
+    review_round_refs: tuple[uuid.UUID, ...] = ()
 
     @property
     def workflow_etag(self) -> str:
         return f'"v{self.workflow_lock_version}"'
 
     def __post_init__(self) -> None:
-        identities = (self.workflow_id, self.project_id, self.review_round_ref)
-        subject_id = (self.handover_analysis_version_id
-                      if self.stage_key == "HANDOVER"
-                      else self.survey_conclusion_id)
+        identities = (self.workflow_id, self.project_id)
         if (any(type(value) is not uuid.UUID or value.int == 0
                 for value in identities)
-                or type(subject_id) is not uuid.UUID or subject_id.int == 0
                 or self.definition_version != 1
                 or self.item_key not in _ITEM_STAGES
                 or self.stage_key != _ITEM_STAGES.get(self.item_key)
-                or (self.stage_key == "HANDOVER"
-                    and self.survey_conclusion_id is not None)
-                or (self.stage_key == "SURVEY"
-                    and self.handover_analysis_version_id is not None)
                 or self.current_item_state not in {
                     "PENDING", "PASS", "FAIL", "WAIVED",
                 }
@@ -88,10 +85,43 @@ class WorkflowChecklistQualificationPreview:
                 or not self.evidence_refs
                 or any(type(value) is not uuid.UUID or value.int == 0
                        for value in self.evidence_refs)
-                or len(set(self.evidence_refs)) != len(self.evidence_refs)):
+                or len(set(self.evidence_refs)) != len(self.evidence_refs)
+                or not self._valid_subject_variant()):
             raise WorkflowChecklistQualificationPreviewError(
                 "WORKFLOW_UNAVAILABLE",
             )
+
+    def _valid_subject_variant(self) -> bool:
+        single_round = (type(self.review_round_ref) is uuid.UUID
+                        and self.review_round_ref.int != 0)
+        aggregate = (
+            type(self.requirement_version_refs) is tuple
+            and bool(self.requirement_version_refs)
+            and type(self.review_round_refs) is tuple
+            and len(self.review_round_refs) == len(self.requirement_version_refs)
+            and all(type(value) is uuid.UUID and value.int != 0
+                    for value in (*self.requirement_version_refs,
+                                  *self.review_round_refs))
+            and len(set(self.requirement_version_refs))
+               == len(self.requirement_version_refs)
+            and len(set(self.review_round_refs)) == len(self.review_round_refs)
+        )
+        if self.stage_key == "HANDOVER":
+            return (type(self.handover_analysis_version_id) is uuid.UUID
+                    and self.handover_analysis_version_id.int != 0
+                    and self.survey_conclusion_id is None and single_round
+                    and not self.requirement_version_refs
+                    and not self.review_round_refs)
+        if self.stage_key == "SURVEY":
+            return (type(self.survey_conclusion_id) is uuid.UUID
+                    and self.survey_conclusion_id.int != 0
+                    and self.handover_analysis_version_id is None
+                    and single_round and not self.requirement_version_refs
+                    and not self.review_round_refs)
+        return (self.stage_key == "REQUIREMENT"
+                and self.handover_analysis_version_id is None
+                and self.survey_conclusion_id is None
+                and self.review_round_ref is None and aggregate)
 
 
 class PreviewSessionPort(Protocol):
@@ -121,7 +151,7 @@ class PreviewQualificationPort(Protocol):
     def qualify_only_current_in_transaction(
         self, transaction: object,
         query: CurrentChecklistQualificationQuery,
-    ) -> CurrentChecklistQualification: ...
+    ) -> CurrentChecklistQualification | AggregateChecklistQualification: ...
 
 
 class WorkflowChecklistQualificationPreviewService:
@@ -178,24 +208,36 @@ class WorkflowChecklistQualificationPreviewService:
                     raise WorkflowChecklistQualificationPreviewError(
                         "CONFLICT_VERSION",
                     )
-                if (type(result) is not CurrentChecklistQualification
+                if (type(result) not in {
+                        CurrentChecklistQualification,
+                        AggregateChecklistQualification}
                         or result.project_id != query.project_id
                         or result.item_key != query.item_key):
                     raise WorkflowChecklistQualificationPreviewError(
                         "WORKFLOW_UNAVAILABLE",
                     )
                 result.__post_init__()
-                preview = WorkflowChecklistQualificationPreview(
-                    before.workflow_id, before.project_id, before.version,
-                    result.stage_key, query.item_key, item_state,
-                    before.lock_version,
-                    (result.subject_version_id
-                     if result.stage_key == "HANDOVER" else None),
-                    result.review.review_round_id,
-                    tuple(value.evidence_id for value in result.evidence),
-                    (result.subject_version_id
-                     if result.stage_key == "SURVEY" else None),
-                )
+                if type(result) is AggregateChecklistQualification:
+                    preview = WorkflowChecklistQualificationPreview(
+                        before.workflow_id, before.project_id, before.version,
+                        result.stage_key, query.item_key, item_state,
+                        before.lock_version, None, None,
+                        result.evidence_refs, None,
+                        result.subject_version_refs,
+                        result.review_round_refs,
+                    )
+                else:
+                    preview = WorkflowChecklistQualificationPreview(
+                        before.workflow_id, before.project_id, before.version,
+                        result.stage_key, query.item_key, item_state,
+                        before.lock_version,
+                        (result.subject_version_id
+                         if result.stage_key == "HANDOVER" else None),
+                        result.review.review_round_id,
+                        tuple(value.evidence_id for value in result.evidence),
+                        (result.subject_version_id
+                         if result.stage_key == "SURVEY" else None),
+                    )
                 preview.__post_init__()
                 return preview
         except WorkflowChecklistQualificationPreviewError:

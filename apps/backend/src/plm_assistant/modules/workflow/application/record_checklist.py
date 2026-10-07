@@ -26,6 +26,7 @@ from .append_checklist_record import (
     ChecklistRecordWriteLock,
 )
 from .checklist_qualification import (
+    AggregateChecklistQualification,
     ChecklistQualificationError,
     CurrentChecklistQualification,
     CurrentChecklistQualificationQuery,
@@ -41,6 +42,7 @@ _OPERATION = "V1_WORKFLOW_CHECKLIST_RECORD"
 _REGISTERED = frozenset({
     "HANDOVER_BASELINE", "HANDOVER_ISSUES",
     "SURVEY_ACTUAL_SOURCES", "SURVEY_CONCLUSION",
+    "REQUIREMENT_FORMAL_VERSIONS", "REQUIREMENT_ACCEPTANCE",
 })
 
 
@@ -87,7 +89,7 @@ class ChecklistQualificationPort(Protocol):
     def qualify_only_current_in_transaction(
         self, transaction: object,
         query: CurrentChecklistQualificationQuery,
-    ) -> CurrentChecklistQualification: ...
+    ) -> CurrentChecklistQualification | AggregateChecklistQualification: ...
 
 
 class ChecklistAppendPort(Protocol):
@@ -257,13 +259,26 @@ class WorkflowChecklistRecordService:
                 command.project_id, command.item_key,
             ),
         )
-        if type(result) is CurrentChecklistQualification:
+        if type(result) in {
+                CurrentChecklistQualification,
+                AggregateChecklistQualification}:
             result.__post_init__()
-        if (type(result) is not CurrentChecklistQualification
+        if (type(result) not in {
+                CurrentChecklistQualification,
+                AggregateChecklistQualification}
                 or result.project_id != command.project_id
-                or result.item_key != command.item_key
-                or set(command.evidence_refs)
-                   != {value.evidence_id for value in result.evidence}):
+                or result.item_key != command.item_key):
+            raise WorkflowChecklistRecordError(
+                "WORKFLOW_GATE_NOT_SATISFIED",
+            )
+        if type(result) is AggregateChecklistQualification:
+            if set(command.evidence_refs) != set(result.evidence_refs):
+                raise WorkflowChecklistRecordError(
+                    "WORKFLOW_GATE_NOT_SATISFIED",
+                )
+            return self._aggregate_basis(result)
+        if set(command.evidence_refs) != {
+                value.evidence_id for value in result.evidence}:
             raise WorkflowChecklistRecordError(
                 "WORKFLOW_GATE_NOT_SATISFIED",
             )
@@ -278,6 +293,37 @@ class WorkflowChecklistRecordService:
             result.review.observed_lock_version,
             result.content_fingerprint, result.review.verified_at, 1,
         ))
+        return tuple(sorted(
+            values, key=lambda value: (value.ref_kind, str(value.ref_id)),
+        ))
+
+    @staticmethod
+    def _aggregate_basis(
+        result: AggregateChecklistQualification,
+    ) -> tuple[ChecklistBasisObservation, ...]:
+        evidence = {}
+        for observation in (
+                *(value for subject in result.subjects
+                  for value in subject.evidence),
+                *result.scope_evidence):
+            previous = evidence.setdefault(
+                observation.evidence_id, observation,
+            )
+            if previous != observation:
+                raise WorkflowChecklistRecordError(
+                    "WORKFLOW_GATE_NOT_SATISFIED",
+                )
+        values = [ChecklistBasisObservation(
+            "EVIDENCE", value.evidence_id, "PROJECT", value.project_id,
+            "ELIGIBLE", value.observed_lock_version,
+            value.content_fingerprint, value.verified_at, 1,
+        ) for value in evidence.values()]
+        values.extend(ChecklistBasisObservation(
+            "REVIEW_ROUND", subject.review.review_round_id, "PROJECT",
+            subject.review.project_id, "APPROVED",
+            subject.review.observed_lock_version,
+            subject.content_fingerprint, subject.review.verified_at, 1,
+        ) for subject in result.subjects)
         return tuple(sorted(
             values, key=lambda value: (value.ref_kind, str(value.ref_id)),
         ))

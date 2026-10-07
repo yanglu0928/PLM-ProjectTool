@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/REQ-01-A12-A04-A01 扩展Workflow通用写链以承载Requirement聚合资格：
+  Preview返回复数Version/Review，Checklist与Transition保存全部真实ReviewRound和去重Evidence，新增
+  `REQUIREMENT -> PROTOTYPE`并以scope/coherence双项一致性失败关闭。兼容性/回滚：无Schema/依赖/
+  权限/外发，尚未Windows生产注册；撤Requirement variant即可回滚且不影响单Subject历史。验证：定向
+  28、后端3083项/3跳过、compileall、wheel1167项/`a32865d9…b1347`PASS。已知问题：A04-A02及
+  A05～A07、Gate3/UAT/发行待。
+
 - 2026-10-08：0.1.0-dev.0/REQ-01-A12-A03-A02 新增Requirement Workflow PostgreSQL完整范围
   Repository：Project共享锁防phantom，规范锁定全部Root/Version/Decision，ACTIVE只接受最高当前
   Approved，DEFER/REJECT/ARCHIVED必须闭合正式决定。兼容性/回滚：无Schema/API/依赖/权限/外发，

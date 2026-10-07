@@ -27,6 +27,7 @@ from .append_stage_transition import (
 )
 from .current_checklist_record import ChecklistBasisObservation
 from .checklist_qualification import (
+    AggregateChecklistQualification,
     ChecklistQualificationError,
     CurrentChecklistQualification,
     CurrentChecklistQualificationQuery,
@@ -40,6 +41,11 @@ _TRANSITIONS = {
     ),
     "REQUIREMENT": (
         "SURVEY", ("SURVEY_ACTUAL_SOURCES", "SURVEY_CONCLUSION"),
+    ),
+    "PROTOTYPE": (
+        "REQUIREMENT", (
+            "REQUIREMENT_FORMAL_VERSIONS", "REQUIREMENT_ACCEPTANCE",
+        ),
     ),
 }
 
@@ -83,7 +89,7 @@ class TransitionQualificationPort(Protocol):
     def qualify_only_current_in_transaction(
         self, transaction: object,
         query: CurrentChecklistQualificationQuery,
-    ) -> CurrentChecklistQualification: ...
+    ) -> CurrentChecklistQualification | AggregateChecklistQualification: ...
 
 
 class TransitionRepositoryPort(Protocol):
@@ -249,16 +255,20 @@ class WorkflowStageTransitionService:
 
     def _qualify(
         self, tx: object, command: TransitionWorkflowStage, item_key: str,
-    ) -> CurrentChecklistQualification:
+    ) -> CurrentChecklistQualification | AggregateChecklistQualification:
         result = self._qualification.qualify_only_current_in_transaction(
             tx, CurrentChecklistQualificationQuery(
                 command.session_token, command.trace_id,
                 command.project_id, item_key,
             ),
         )
-        if type(result) is CurrentChecklistQualification:
+        if type(result) in {
+                CurrentChecklistQualification,
+                AggregateChecklistQualification}:
             result.__post_init__()
-        if (type(result) is not CurrentChecklistQualification
+        if (type(result) not in {
+                CurrentChecklistQualification,
+                AggregateChecklistQualification}
                 or result.project_id != command.project_id
                 or result.item_key != item_key):
             raise WorkflowStageTransitionError(
@@ -268,15 +278,23 @@ class WorkflowStageTransitionService:
 
     @staticmethod
     def _same_subject(
-        values: tuple[CurrentChecklistQualification, ...],
+        values: tuple[
+            CurrentChecklistQualification | AggregateChecklistQualification,
+            ...,
+        ],
         project_id: uuid.UUID, stage_key: str, item_keys: tuple[str, ...],
     ) -> None:
         if (len(values) != len(item_keys)
                 or tuple(value.item_key for value in values) != item_keys
                 or any(value.project_id != project_id for value in values)
                 or any(value.stage_key != stage_key for value in values)
-                or len({value.coherence_key for value in values}) != 1
-                or len({value.review.review_id for value in values}) != 1
+                or len({type(value) for value in values}) != 1
+                or len({value.coherence_key for value in values}) != 1):
+            raise WorkflowStageTransitionError(
+                "WORKFLOW_GATE_NOT_SATISFIED",
+            )
+        if type(values[0]) is CurrentChecklistQualification and (
+                len({value.review.review_id for value in values}) != 1
                 or len({value.review.policy_code for value in values}) != 1
                 or len({value.review.subject_fingerprint
                         for value in values}) != 1):
@@ -286,8 +304,10 @@ class WorkflowStageTransitionService:
 
     @staticmethod
     def _gate(
-        value: CurrentChecklistQualification,
+        value: CurrentChecklistQualification | AggregateChecklistQualification,
     ) -> TransitionGateProof:
+        if type(value) is AggregateChecklistQualification:
+            return WorkflowStageTransitionService._aggregate_gate(value)
         basis = [ChecklistBasisObservation(
             "EVIDENCE", observation.evidence_id, "PROJECT",
             observation.project_id, "ELIGIBLE",
@@ -301,6 +321,41 @@ class WorkflowStageTransitionService:
             value.review.observed_lock_version,
             value.content_fingerprint, value.review.verified_at, 1,
         ))
+        return TransitionGateProof(value.item_key, tuple(sorted(
+            basis, key=lambda observation: (
+                observation.ref_kind, str(observation.ref_id),
+            ),
+        )))
+
+    @staticmethod
+    def _aggregate_gate(
+        value: AggregateChecklistQualification,
+    ) -> TransitionGateProof:
+        evidence = {}
+        for observation in (
+                *(item for subject in value.subjects
+                  for item in subject.evidence),
+                *value.scope_evidence):
+            previous = evidence.setdefault(
+                observation.evidence_id, observation,
+            )
+            if previous != observation:
+                raise WorkflowStageTransitionError(
+                    "WORKFLOW_GATE_NOT_SATISFIED",
+                )
+        basis = [ChecklistBasisObservation(
+            "EVIDENCE", observation.evidence_id, "PROJECT",
+            observation.project_id, "ELIGIBLE",
+            observation.observed_lock_version,
+            observation.content_fingerprint,
+            observation.verified_at, 1,
+        ) for observation in evidence.values()]
+        basis.extend(ChecklistBasisObservation(
+            "REVIEW_ROUND", subject.review.review_round_id, "PROJECT",
+            subject.review.project_id, "APPROVED",
+            subject.review.observed_lock_version,
+            subject.content_fingerprint, subject.review.verified_at, 1,
+        ) for subject in value.subjects)
         return TransitionGateProof(value.item_key, tuple(sorted(
             basis, key=lambda observation: (
                 observation.ref_kind, str(observation.ref_id),

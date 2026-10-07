@@ -18,8 +18,9 @@ from plm_assistant.modules.workflow.application.preview_checklist_qualification 
     WorkflowChecklistQualificationPreviewService,
 )
 from plm_assistant.modules.workflow.application.checklist_qualification import (
-    ChecklistQualificationError, ChecklistQualificationEvidence,
-    ChecklistQualificationReview, CurrentChecklistQualification,
+    AggregateChecklistQualification, ChecklistQualificationError,
+    ChecklistQualificationEvidence, ChecklistQualificationReview,
+    ChecklistQualificationSubject, CurrentChecklistQualification,
 )
 from plm_assistant.modules.workflow.application.read_workflow import (
     ChecklistView, StageView, WorkflowView,
@@ -175,10 +176,49 @@ class WorkflowChecklistQualificationPreviewTests(unittest.TestCase):
         self.assertEqual(conclusion_version, result.survey_conclusion_id)
         self.assertEqual(self.evidence, result.evidence_refs)
 
+    def test_requirement_current_stage_returns_aggregate_refs(self):
+        subjects = []
+        for index in range(2):
+            subject_id, version_id = uuid4(), uuid4()
+            evidence = ChecklistQualificationEvidence(
+                uuid4(), self.project, index + 3,
+                bytes([index + 3]) * 32, self.now,
+            )
+            review = ChecklistQualificationReview(
+                uuid4(), uuid4(), self.project, subject_id, version_id,
+                index + 4, bytes([index + 10]) * 32, self.now,
+                "REQ-03", "REQUIREMENT_ALL_V1",
+            )
+            subjects.append(ChecklistQualificationSubject(
+                "REQ-03", subject_id, version_id,
+                bytes([index + 10]) * 32, (evidence,), review,
+            ))
+        subjects.sort(key=lambda value: value.subject_id.int)
+        aggregate = AggregateChecklistQualification(
+            self.project, "REQUIREMENT", "REQUIREMENT_ACCEPTANCE",
+            tuple(subjects), (), b"s" * 32, b"q" * 32,
+        )
+        self.workflows.get.return_value = self._view(
+            current="REQUIREMENT", lock=6,
+        )
+        self.qualification.qualify_only_current_in_transaction.return_value = aggregate
+
+        result = self.service.get(self._query(
+            item_key="REQUIREMENT_ACCEPTANCE",
+        ))
+
+        self.assertEqual("REQUIREMENT", result.stage_key)
+        self.assertIsNone(result.review_round_ref)
+        self.assertEqual(aggregate.subject_version_refs,
+                         result.requirement_version_refs)
+        self.assertEqual(aggregate.review_round_refs,
+                         result.review_round_refs)
+        self.assertEqual(aggregate.evidence_refs, result.evidence_refs)
+
     def test_invalid_query_and_non_current_stage_fail_before_owner(self):
         for query in (
             self._query(session_token=b"short"),
-            self._query(item_key="REQUIREMENT_ACCEPTANCE"),
+            self._query(item_key="PROTOTYPE_GATE"),
         ):
             with self.subTest(query=query), self.assertRaisesRegex(
                     WorkflowChecklistQualificationPreviewError,
