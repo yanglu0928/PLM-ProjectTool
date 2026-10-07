@@ -31,6 +31,15 @@ function workflow(etag = '"v4"') {
     })), etag,
   });
 }
+function surveyWorkflow(etag = '"v6"') {
+  return parseWorkflow({ workflow_id: workflowId, version: 1, state: "ACTIVE",
+    current_stage: "SURVEY", stages: stages.map(([stageKey, first, second], index) => ({
+      stage_key: stageKey, order: index + 1,
+      state: index === 0 ? "COMPLETED" : index === 1 ? "ACTIVE" : "NOT_STARTED",
+      checklist_items: [first, second].map((itemKey) => ({ item_key: itemKey,
+        required: true, state: index === 0 ? "PASS" : "PENDING" })),
+    })), etag });
+}
 function record(result: "PASS" | "FAIL" = "PASS", extra: Record<string, unknown> = {}) {
   return { record_id: recordId, workflow_id: workflowId, project_id: projectId,
     definition_version: 1, stage_key: "HANDOVER", item_key: "HANDOVER_BASELINE", result,
@@ -58,6 +67,11 @@ function input(result: "PASS" | "FAIL" = "PASS"): WorkflowChecklistRecordInput {
     reason: result === "PASS" ? "  Approved baseline  " : "Missing approval",
     impact: result === "PASS" ? "Handover may proceed" : null,
     idempotency_key: "synthetic-checklist-record-0001" };
+}
+function surveyInput(): WorkflowChecklistRecordInput {
+  return { before: surveyWorkflow(), item_key: "SURVEY_CONCLUSION", result: "PASS",
+    evidence_refs: [evidenceId], reason: null, impact: null,
+    idempotency_key: "synthetic-survey-record-0001" };
 }
 function client(server: Response | Error) {
   const session = new SessionClient(vi.fn() as typeof fetch);
@@ -92,6 +106,28 @@ describe("WorkflowChecklistRecordClient", () => {
     expect(receipt.first_record.review_round_refs).toEqual([]);
     expect(post.mock.calls[0][2]).toBe(JSON.stringify({ result: "FAIL", reason: "Missing approval",
       impact: null, evidence_refs: [], exception_refs: [] }));
+  });
+
+  it("records Survey PASS only against the matching current Survey stage", async () => {
+    const surveyRecord = record("PASS", { stage_key: "SURVEY",
+      item_key: "SURVEY_CONCLUSION", recorded_workflow_version: 7,
+      current_workflow_version: 7, evidence_refs: [evidenceId], reason: null,
+      impact: null, etag: '"v7"' });
+    const { records, post } = client(response(surveyRecord, 200, '"v7"'));
+    const receipt = await records.record(projectId, surveyInput());
+    expect(receipt.first_record).toMatchObject({ stage_key: "SURVEY",
+      item_key: "SURVEY_CONCLUSION", recorded_workflow_version: 7 });
+    expect(post).toHaveBeenCalledWith(projectId, "SURVEY_CONCLUSION",
+      JSON.stringify({ result: "PASS", reason: null, impact: null,
+        evidence_refs: [evidenceId], exception_refs: [] }),
+      '"v6"', "synthetic-survey-record-0001");
+  });
+
+  it("rejects a cross-stage Checklist item before transport", async () => {
+    const { records, post } = client(response(record()));
+    await expect(records.record(projectId, { ...input(), item_key: "SURVEY_CONCLUSION" }))
+      .rejects.toMatchObject({ code: "WORKFLOW_CHECKLIST_INVALID_INPUT" });
+    expect(post).not.toHaveBeenCalled();
   });
 
   it("rejects unsafe scope, state, result inputs and unavailable WAIVED before transport", async () => {

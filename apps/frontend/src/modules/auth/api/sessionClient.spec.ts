@@ -788,6 +788,20 @@ describe("SessionClient", () => {
     expect(api.canSubmit).toBe(true);
   });
 
+  it("accepts Survey Checklist items on the same bounded write boundary", async () => {
+    const receipt = response({ record_id: id, result: "PASS", etag: '"v7"' });
+    const { api, fetcher } = client(response(session()), receipt);
+    await api.login("manager", "synthetic-only");
+    const body = JSON.stringify({ result: "PASS", reason: null, impact: null,
+      evidence_refs: [id], exception_refs: [] });
+    await expect(api.postProjectWorkflowChecklistRecord(projectId,
+      "SURVEY_CONCLUSION", body, '"v6"', "synthetic-survey-record-0001"))
+      .resolves.toBe(receipt);
+    expect(fetcher.mock.calls[1]?.[0]).toBe(
+      `/api/v1/projects/${projectId}/workflow/checklist-items/SURVEY_CONCLUSION:record`,
+    );
+  });
+
   it("rejects unsafe Checklist path, body, version and Key before network", async () => {
     const { api, fetcher } = client(response(session()));
     await api.login("manager", "synthetic-only");
@@ -795,7 +809,7 @@ describe("SessionClient", () => {
     for (const [project, item, body, etag, operation] of [
       ["../other", "HANDOVER_BASELINE", "{}", '"v4"', key],
       [projectId.toUpperCase(), "HANDOVER_BASELINE", "{}", '"v4"', key],
-      [projectId, "SURVEY_CONCLUSION", "{}", '"v4"', key],
+      [projectId, "REQUIREMENT_ACCEPTANCE", "{}", '"v4"', key],
       [projectId, "HANDOVER_BASELINE", "", '"v4"', key],
       [projectId, "HANDOVER_BASELINE", "x".repeat(2 * 1024 * 1024 + 1), '"v4"', key],
       [projectId, "HANDOVER_BASELINE", "{}", '"v0"', key],

@@ -2,15 +2,30 @@ import { SessionClient, SessionClientError } from "@/modules/auth/api/sessionCli
 import { parseWorkflow, type WorkflowView } from "./workflowReadClient";
 
 export type HandoverChecklistItemKey = "HANDOVER_BASELINE" | "HANDOVER_ISSUES";
+export type SurveyChecklistItemKey = "SURVEY_ACTUAL_SOURCES" | "SURVEY_CONCLUSION";
+export type SupportedChecklistItemKey = HandoverChecklistItemKey | SurveyChecklistItemKey;
+export type SupportedChecklistStage = "HANDOVER" | "SURVEY";
 export type SupportedChecklistResult = "PASS" | "FAIL";
+
+const itemStages = Object.freeze({
+  HANDOVER_BASELINE: "HANDOVER",
+  HANDOVER_ISSUES: "HANDOVER",
+  SURVEY_ACTUAL_SOURCES: "SURVEY",
+  SURVEY_CONCLUSION: "SURVEY",
+} as const satisfies Record<SupportedChecklistItemKey, SupportedChecklistStage>);
+
+export function checklistStageForItem(itemKey: string): SupportedChecklistStage | null {
+  return Object.hasOwn(itemStages, itemKey)
+    ? itemStages[itemKey as SupportedChecklistItemKey] : null;
+}
 
 export interface WorkflowChecklistRecordView {
   readonly record_id: string;
   readonly workflow_id: string;
   readonly project_id: string;
   readonly definition_version: 1;
-  readonly stage_key: "HANDOVER";
-  readonly item_key: HandoverChecklistItemKey;
+  readonly stage_key: SupportedChecklistStage;
+  readonly item_key: SupportedChecklistItemKey;
   readonly result: SupportedChecklistResult;
   readonly item_version: number;
   readonly recorded_workflow_version: number;
@@ -33,7 +48,7 @@ export interface WorkflowChecklistFirstReceipt {
 
 export interface WorkflowChecklistRecordInput {
   readonly before: WorkflowView;
-  readonly item_key: HandoverChecklistItemKey;
+  readonly item_key: SupportedChecklistItemKey;
   readonly result: SupportedChecklistResult;
   readonly evidence_refs: readonly string[];
   readonly reason?: string | null;
@@ -127,8 +142,9 @@ function utcInstant(value: unknown): value is string {
 function parseResponse(value: unknown): WorkflowChecklistRecordView {
   if (!record(value) || !exactFields(value) || !identifier(value.record_id)
     || !identifier(value.workflow_id) || !identifier(value.project_id)
-    || value.definition_version !== 1 || value.stage_key !== "HANDOVER"
-    || !["HANDOVER_BASELINE", "HANDOVER_ISSUES"].includes(value.item_key as string)
+    || value.definition_version !== 1
+    || typeof value.item_key !== "string"
+    || checklistStageForItem(value.item_key) !== value.stage_key
     || !["PASS", "FAIL"].includes(value.result as string)
     || !positiveVersion(value.item_version) || !positiveVersion(value.recorded_workflow_version)
     || !positiveVersion(value.current_workflow_version)
@@ -150,8 +166,8 @@ function parseResponse(value: unknown): WorkflowChecklistRecordView {
   }
   return Object.freeze({
     record_id: value.record_id, workflow_id: value.workflow_id, project_id: value.project_id,
-    definition_version: 1, stage_key: "HANDOVER",
-    item_key: value.item_key as HandoverChecklistItemKey, result,
+    definition_version: 1, stage_key: value.stage_key as SupportedChecklistStage,
+    item_key: value.item_key as SupportedChecklistItemKey, result,
     item_version: value.item_version, recorded_workflow_version: value.recorded_workflow_version,
     current_workflow_version: value.current_workflow_version,
     supersedes_record_id: value.supersedes_record_id as string | null,
@@ -170,7 +186,7 @@ export class WorkflowChecklistRecordClient {
 
   async record(projectId: string, input: WorkflowChecklistRecordInput): Promise<WorkflowChecklistFirstReceipt> {
     if (!identifier(projectId) || !record(input)
-      || !["HANDOVER_BASELINE", "HANDOVER_ISSUES"].includes(input.item_key)
+      || checklistStageForItem(input.item_key) === null
       || !["PASS", "FAIL"].includes(input.result)
       || typeof input.idempotency_key !== "string"
       || !/^[\x20-\x7e]{16,128}$/.test(input.idempotency_key)) {
@@ -180,13 +196,15 @@ export class WorkflowChecklistRecordClient {
     try { before = parseWorkflow(input.before); }
     catch { throw new WorkflowChecklistRecordError("WORKFLOW_CHECKLIST_INVALID_INPUT"); }
     const workflowVersion = versionFromEtag(before.etag);
-    const handover = before.stages[0];
+    const expectedStage = checklistStageForItem(input.item_key);
+    const currentStage = before.stages.find((stage) => stage.stage_key === expectedStage);
     const evidence = identifiers(input.evidence_refs, input.result === "PASS");
     const reason = optionalText(input.reason);
     const impact = optionalText(input.impact);
-    if (before.state !== "ACTIVE" || before.current_stage !== "HANDOVER"
-      || !["ACTIVE", "BLOCKED"].includes(handover.state)
-      || handover.checklist_items.every((item) => item.item_key !== input.item_key)
+    if (before.state !== "ACTIVE" || expectedStage === null
+      || before.current_stage !== expectedStage || currentStage === undefined
+      || !["ACTIVE", "BLOCKED"].includes(currentStage.state)
+      || currentStage.checklist_items.every((item) => item.item_key !== input.item_key)
       || workflowVersion === null || evidence === null
       || input.result === "FAIL" && evidence.length !== 0
       || reason === undefined || impact === undefined) {
@@ -234,7 +252,8 @@ export class WorkflowChecklistRecordClient {
       }
       const first = parseResponse(payload.data);
       if (first.project_id !== projectId || first.workflow_id !== before.workflow_id
-        || first.item_key !== input.item_key || first.result !== input.result
+        || first.stage_key !== expectedStage || first.item_key !== input.item_key
+        || first.result !== input.result
         || first.recorded_workflow_version !== workflowVersion + 1
         || response.headers.get("etag") !== first.etag
         || !sameSet(first.evidence_refs, evidence)

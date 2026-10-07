@@ -6,14 +6,26 @@ export interface WorkflowTransitionView {
   readonly workflow_id: string;
   readonly project_id: string;
   readonly definition_version: 1;
-  readonly from_stage: "HANDOVER";
-  readonly to_stage: "SURVEY";
+  readonly from_stage: SupportedTransitionFromStage;
+  readonly to_stage: SupportedTransitionToStage;
   readonly before_workflow_version: number;
   readonly transitioned_workflow_version: number;
   readonly current_workflow_version: number;
   readonly reason: string;
   readonly occurred_at: string;
   readonly etag: string;
+}
+
+export type SupportedTransitionFromStage = "HANDOVER" | "SURVEY";
+export type SupportedTransitionToStage = "SURVEY" | "REQUIREMENT";
+const transitionTargets = Object.freeze({
+  HANDOVER: "SURVEY",
+  SURVEY: "REQUIREMENT",
+} as const satisfies Record<SupportedTransitionFromStage, SupportedTransitionToStage>);
+
+export function transitionTargetForStage(stage: string | null): SupportedTransitionToStage | null {
+  return stage !== null && Object.hasOwn(transitionTargets, stage)
+    ? transitionTargets[stage as SupportedTransitionFromStage] : null;
 }
 
 export interface WorkflowTransitionFirstReceipt {
@@ -103,7 +115,8 @@ function parseTransition(value: unknown): WorkflowTransitionView {
     || !Object.keys(value).every((key) => responseFields.has(key))
     || !identifier(value.stage_transition_id) || !identifier(value.workflow_id)
     || !identifier(value.project_id) || value.definition_version !== 1
-    || value.from_stage !== "HANDOVER" || value.to_stage !== "SURVEY"
+    || typeof value.from_stage !== "string"
+    || transitionTargetForStage(value.from_stage) !== value.to_stage
     || !version(value.before_workflow_version)
     || !version(value.transitioned_workflow_version)
     || !version(value.current_workflow_version)
@@ -117,7 +130,9 @@ function parseTransition(value: unknown): WorkflowTransitionView {
   return Object.freeze({
     stage_transition_id: value.stage_transition_id,
     workflow_id: value.workflow_id, project_id: value.project_id,
-    definition_version: 1, from_stage: "HANDOVER", to_stage: "SURVEY",
+    definition_version: 1,
+    from_stage: value.from_stage as SupportedTransitionFromStage,
+    to_stage: value.to_stage as SupportedTransitionToStage,
     before_workflow_version: value.before_workflow_version,
     transitioned_workflow_version: value.transitioned_workflow_version,
     current_workflow_version: value.current_workflow_version,
@@ -144,15 +159,16 @@ export class WorkflowTransitionClient {
     try { before = parseWorkflow(input.before); }
     catch { throw new WorkflowTransitionError("WORKFLOW_TRANSITION_INVALID_INPUT"); }
     const beforeVersion = versionFromEtag(before.etag);
-    const handover = before.stages[0];
+    const targetStage = transitionTargetForStage(before.current_stage);
+    const sourceStage = before.stages.find((stage) => stage.stage_key === before.current_stage);
     const reason = text(input.reason);
-    if (before.state !== "ACTIVE" || before.current_stage !== "HANDOVER"
-      || handover.state !== "ACTIVE"
-      || handover.checklist_items.some((item) => item.state !== "PASS")
+    if (before.state !== "ACTIVE" || targetStage === null || sourceStage === undefined
+      || sourceStage.state !== "ACTIVE"
+      || sourceStage.checklist_items.some((item) => item.state !== "PASS")
       || beforeVersion === null || reason === null) {
       throw new WorkflowTransitionError("WORKFLOW_TRANSITION_INVALID_INPUT");
     }
-    const body = JSON.stringify({ target_stage_key: "SURVEY", reason,
+    const body = JSON.stringify({ target_stage_key: targetStage, reason,
       gate_snapshot_refs: [] });
     let response: Response;
     try {
@@ -199,6 +215,7 @@ export class WorkflowTransitionClient {
       }
       const first = parseTransition(payload.data);
       if (first.project_id !== projectId || first.workflow_id !== before.workflow_id
+        || first.from_stage !== before.current_stage || first.to_stage !== targetStage
         || first.before_workflow_version !== beforeVersion
         || first.transitioned_workflow_version !== beforeVersion + 1
         || first.current_workflow_version !== beforeVersion + 1

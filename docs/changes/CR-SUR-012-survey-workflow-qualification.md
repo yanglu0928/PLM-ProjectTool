@@ -110,3 +110,7 @@ Checklist PASS，或把模板/AI 建议当实际来源都会破坏模块边界�
   Survey两项preview/record、Conclusion/Evidence/Review事务锁、写时与推进时漂移重证、
   并发版本栅栏、两项PASS、`SURVEY→REQUIREMENT`、Audit、receipt和重放；两次执行均
   PASS并清理临时库。后端2957/3、wheel1109项/`47597ce4…2fe0`通过，进入A06前端。
+- 2026-10-07 / `SUR-06-A06`：前端以显式item→stage和stage→target映射支持Handover/Survey；
+  qualification采用Handover `handover_analysis_version_id`与Survey `survey_conclusion_id`严格
+  判别联合，页面只对当前阶段两项开放写入，保留原Key恢复和二次确认。无Schema/API path/依赖/
+  Secret/外发变化；定向225、前端全量1482、typecheck、Vite184 modules build通过，进入A07 Edge。

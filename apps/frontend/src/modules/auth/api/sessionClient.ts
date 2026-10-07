@@ -451,14 +451,16 @@ export class SessionClient {
 
   /** Checklist writes are single attempts; callers retain the original body, Key and ETag after uncertainty. */
   async postProjectWorkflowChecklistRecord(projectId: string,
-    itemKey: "HANDOVER_BASELINE" | "HANDOVER_ISSUES", body: string,
+    itemKey: "HANDOVER_BASELINE" | "HANDOVER_ISSUES"
+      | "SURVEY_ACTUAL_SOURCES" | "SURVEY_CONCLUSION", body: string,
     etag: string, idempotencyKey: string): Promise<Response> {
     if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
     if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
     const version = typeof etag === "string" && /^"v[1-9]\d*"$/.test(etag)
       ? Number(etag.slice(2, -1)) : null;
     if (!identifier(projectId)
-      || !["HANDOVER_BASELINE", "HANDOVER_ISSUES"].includes(itemKey)
+      || !["HANDOVER_BASELINE", "HANDOVER_ISSUES",
+        "SURVEY_ACTUAL_SOURCES", "SURVEY_CONCLUSION"].includes(itemKey)
       || typeof body !== "string" || body.length === 0
       || new TextEncoder().encode(body).length > 2 * 1024 * 1024
       || !Number.isSafeInteger(version) || version === null || version >= Number.MAX_SAFE_INTEGER

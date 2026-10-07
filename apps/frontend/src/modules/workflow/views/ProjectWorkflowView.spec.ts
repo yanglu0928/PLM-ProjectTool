@@ -82,10 +82,27 @@ function transitionSnapshot(etag = '"v3"') {
       : stage),
   });
 }
+function surveySnapshot(passed = false, etag = passed ? '"v8"' : '"v6"') {
+  const current = snapshot(true);
+  return parseWorkflow({ ...current, current_stage: "SURVEY", etag,
+    stages: current.stages.map((stage, index) => ({ ...stage,
+      state: index === 0 ? "COMPLETED" : index === 1 ? "ACTIVE" : "NOT_STARTED",
+      checklist_items: stage.checklist_items.map((item) => ({ ...item,
+        state: index === 0 || index === 1 && passed ? "PASS" : "PENDING" })),
+    })),
+  });
+}
 function qualification(item: "HANDOVER_BASELINE" | "HANDOVER_ISSUES" = "HANDOVER_BASELINE") {
   return Object.freeze({ workflow_id: workflowId, project_id: id, definition_version: 1 as const,
     stage_key: "HANDOVER" as const, item_key: item, current_item_state: "PENDING" as const,
     workflow_etag: '"v1"', handover_analysis_version_id: analysisId,
+    review_round_ref: reviewRoundId, evidence_refs: Object.freeze([evidenceId]) });
+}
+function surveyQualification(item: "SURVEY_ACTUAL_SOURCES" | "SURVEY_CONCLUSION"
+  = "SURVEY_ACTUAL_SOURCES") {
+  return Object.freeze({ workflow_id: workflowId, project_id: id, definition_version: 1 as const,
+    stage_key: "SURVEY" as const, item_key: item, current_item_state: "PENDING" as const,
+    workflow_etag: '"v6"', survey_conclusion_id: analysisId,
     review_round_ref: reviewRoundId, evidence_refs: Object.freeze([evidenceId]) });
 }
 function checklistReceipt(result: "PASS" | "FAIL" = "PASS"): WorkflowChecklistFirstReceipt {
@@ -109,6 +126,27 @@ function transitionReceipt(): WorkflowTransitionFirstReceipt {
       to_stage: "SURVEY" as const, before_workflow_version: 3,
       transitioned_workflow_version: 4, current_workflow_version: 4,
       reason: "交接事实已核对", occurred_at: "2026-10-06T02:00:00Z", etag: '"v4"',
+    }) });
+}
+function surveyChecklistReceipt(): WorkflowChecklistFirstReceipt {
+  return Object.freeze({ is_current_state_proof: false as const, first_record: Object.freeze({
+    record_id: checklistRecordId, workflow_id: workflowId, project_id: id,
+    definition_version: 1 as const, stage_key: "SURVEY" as const,
+    item_key: "SURVEY_ACTUAL_SOURCES" as const, result: "PASS" as const, item_version: 1,
+    recorded_workflow_version: 7, current_workflow_version: 7,
+    supersedes_record_id: null, evidence_refs: [evidenceId],
+    review_round_refs: [reviewRoundId], exception_refs: [], reason: null, impact: null,
+    occurred_at: "2026-10-07T02:00:00Z", etag: '"v7"',
+  }) });
+}
+function surveyTransitionReceipt(): WorkflowTransitionFirstReceipt {
+  return Object.freeze({ is_current_state_proof: false as const,
+    first_transition: Object.freeze({
+      stage_transition_id: otherId, workflow_id: workflowId, project_id: id,
+      definition_version: 1 as const, from_stage: "SURVEY" as const,
+      to_stage: "REQUIREMENT" as const, before_workflow_version: 8,
+      transitioned_workflow_version: 9, current_workflow_version: 9,
+      reason: "调研事实已核对", occurred_at: "2026-10-07T02:00:00Z", etag: '"v9"',
     }) });
 }
 
@@ -279,6 +317,34 @@ describe("ProjectWorkflowView", () => {
     wrapper.unmount();
   });
 
+  it("offers writes only for the two current Survey items and records Survey PASS", async () => {
+    const auth = await session(true);
+    const reader = new WorkflowReadClient(
+      vi.fn().mockResolvedValue(response(surveySnapshot(), '"v6"')) as typeof fetch,
+    );
+    const qualifications = new WorkflowChecklistQualificationClient();
+    const get = vi.spyOn(qualifications, "get").mockResolvedValue(surveyQualification());
+    const records = new WorkflowChecklistRecordClient(auth);
+    const record = vi.spyOn(records, "record").mockResolvedValue(surveyChecklistReceipt());
+    const { wrapper } = await page(auth, reader, undefined, qualifications, records);
+    const passButtons = wrapper.findAll("button")
+      .filter((button) => button.text() === "核验并记录通过");
+    const failButtons = wrapper.findAll("button")
+      .filter((button) => button.text() === "记录未通过");
+    expect(passButtons).toHaveLength(2);
+    expect(failButtons).toHaveLength(2);
+    await passButtons[0]!.trigger("click"); await flushPromises();
+    expect(get).toHaveBeenCalledWith(id, "SURVEY_ACTUAL_SOURCES");
+    expect(wrapper.text()).toContain("确认记录 SURVEY_ACTUAL_SOURCES 为 PASS");
+    const form = wrapper.get('form[aria-label="检查项记录确认"]');
+    await form.get('input[type="checkbox"]').setValue(true);
+    await form.trigger("submit"); await flushPromises();
+    expect(record.mock.calls[0]?.[1]).toMatchObject({
+      item_key: "SURVEY_ACTUAL_SOURCES", evidence_refs: [evidenceId],
+    });
+    wrapper.unmount();
+  });
+
   it("rejects a stale qualification instead of presenting a confirmation", async () => {
     const auth = await session(true);
     const reader = new WorkflowReadClient(
@@ -371,6 +437,29 @@ describe("ProjectWorkflowView", () => {
     const { wrapper } = await page(auth, reader);
     expect(wrapper.findAll("button").some((button) => button.text() === "准备推进至 SURVEY"))
       .toBe(false);
+    wrapper.unmount();
+  });
+
+  it("offers the exact Survey to Requirement transition after both Survey items PASS", async () => {
+    const auth = await session(true);
+    const reader = new WorkflowReadClient(
+      vi.fn().mockResolvedValue(response(surveySnapshot(true), '"v8"')) as typeof fetch,
+    );
+    const transitions = new WorkflowTransitionClient(auth);
+    const transition = vi.spyOn(transitions, "transition")
+      .mockResolvedValue(surveyTransitionReceipt());
+    const { wrapper } = await page(auth, reader, undefined, undefined, undefined, transitions);
+    const prepare = wrapper.findAll("button")
+      .find((button) => button.text() === "准备推进至 REQUIREMENT");
+    expect(prepare).toBeDefined();
+    await prepare!.trigger("click");
+    expect(wrapper.text()).toContain("确认从 SURVEY 推进至 REQUIREMENT");
+    const form = wrapper.get('form[aria-label="阶段推进确认"]');
+    await form.get("textarea").setValue("调研事实已核对");
+    await form.get('input[type="checkbox"]').setValue(true);
+    await form.trigger("submit"); await flushPromises();
+    expect(transition.mock.calls[0]?.[1]).toMatchObject({ reason: "调研事实已核对" });
+    expect(wrapper.text()).toContain("SURVEY → REQUIREMENT");
     wrapper.unmount();
   });
 

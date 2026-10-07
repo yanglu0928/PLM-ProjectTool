@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-07：0.1.0-dev.0/SUR-06-A06 前端新增Handover/Survey严格双阶段Checklist资格、记录与
+  相邻推进支持；Survey资格使用独立`survey_conclusion_id`判别变体，target由当前阶段派生，页面只
+  对当前阶段两项开放操作并保留不确定结果原Key恢复。兼容性/回滚：无Schema/API path/依赖/Secret/
+  外发，原Handover合同不变，可撤Survey前端分支恢复Handover-only。验证：定向225、前端88文件
+  1482项、typecheck、Vite184 modules build通过。已知问题：A07真实Edge、主JS大分块、Gate3/UAT/
+  发行仍待。
+
 - 2026-10-07：0.1.0-dev.0/SUR-06-A05 新增Windows 11/PostgreSQL 18.6真实Survey Workflow
   验证：生产组合完成两项资格预览、事务锁、写时/推进时漂移拒绝、并发版本栅栏、
   2 PASS、`SURVEY→REQUIREMENT`、Audit/receipt/重放和清理。兼容性/回滚：仅新增验证

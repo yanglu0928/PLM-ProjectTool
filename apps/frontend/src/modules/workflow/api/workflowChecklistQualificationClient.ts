@@ -1,17 +1,31 @@
-import type { HandoverChecklistItemKey } from "./workflowChecklistRecordClient";
+import { checklistStageForItem, type HandoverChecklistItemKey,
+  type SupportedChecklistItemKey, type SurveyChecklistItemKey,
+} from "./workflowChecklistRecordClient";
 
-export interface WorkflowChecklistQualificationView {
+interface WorkflowChecklistQualificationBase {
   readonly workflow_id: string;
   readonly project_id: string;
   readonly definition_version: 1;
-  readonly stage_key: "HANDOVER";
-  readonly item_key: HandoverChecklistItemKey;
   readonly current_item_state: "PENDING" | "PASS" | "FAIL" | "WAIVED";
   readonly workflow_etag: string;
-  readonly handover_analysis_version_id: string;
   readonly review_round_ref: string;
   readonly evidence_refs: readonly string[];
 }
+
+export interface HandoverChecklistQualificationView extends WorkflowChecklistQualificationBase {
+  readonly stage_key: "HANDOVER";
+  readonly item_key: HandoverChecklistItemKey;
+  readonly handover_analysis_version_id: string;
+}
+
+export interface SurveyChecklistQualificationView extends WorkflowChecklistQualificationBase {
+  readonly stage_key: "SURVEY";
+  readonly item_key: SurveyChecklistItemKey;
+  readonly survey_conclusion_id: string;
+}
+
+export type WorkflowChecklistQualificationView =
+  HandoverChecklistQualificationView | SurveyChecklistQualificationView;
 
 const messages = {
   WORKFLOW_QUALIFICATION_INVALID_INPUT: "请重新读取当前项目流程。",
@@ -36,11 +50,12 @@ export class WorkflowChecklistQualificationError extends Error {
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const etag = /^"v[1-9][0-9]{0,18}"$/;
-const fields = new Set([
+const commonFields = [
   "workflow_id", "project_id", "definition_version", "stage_key", "item_key",
-  "current_item_state", "workflow_etag", "handover_analysis_version_id",
-  "review_round_ref", "evidence_refs",
-]);
+  "current_item_state", "workflow_etag", "review_round_ref", "evidence_refs",
+] as const;
+const handoverFields = new Set([...commonFields, "handover_analysis_version_id"]);
+const surveyFields = new Set([...commonFields, "survey_conclusion_id"]);
 
 function record(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -50,15 +65,22 @@ function identifier(value: unknown): value is string {
     && value !== "00000000-0000-0000-0000-000000000000";
 }
 function parse(value: unknown): WorkflowChecklistQualificationView {
-  if (!record(value) || Object.keys(value).length !== fields.size
+  if (!record(value) || typeof value.item_key !== "string"
+    || checklistStageForItem(value.item_key) !== value.stage_key) {
+    throw new WorkflowChecklistQualificationError("WORKFLOW_QUALIFICATION_UNAVAILABLE");
+  }
+  const stage = value.stage_key as "HANDOVER" | "SURVEY";
+  const fields = stage === "HANDOVER" ? handoverFields : surveyFields;
+  const subject = stage === "HANDOVER"
+    ? value.handover_analysis_version_id : value.survey_conclusion_id;
+  if (Object.keys(value).length !== fields.size
     || Object.keys(value).some((key) => !fields.has(key))
     || !identifier(value.workflow_id) || !identifier(value.project_id)
-    || value.definition_version !== 1 || value.stage_key !== "HANDOVER"
-    || !["HANDOVER_BASELINE", "HANDOVER_ISSUES"].includes(value.item_key as string)
+    || value.definition_version !== 1
     || !["PENDING", "PASS", "FAIL", "WAIVED"].includes(value.current_item_state as string)
     || typeof value.workflow_etag !== "string" || !etag.test(value.workflow_etag)
     || !Number.isSafeInteger(Number(value.workflow_etag.slice(2, -1)))
-    || !identifier(value.handover_analysis_version_id)
+    || !identifier(subject)
     || !identifier(value.review_round_ref)
     || !Array.isArray(value.evidence_refs) || value.evidence_refs.length === 0
     || value.evidence_refs.length > 500
@@ -66,18 +88,22 @@ function parse(value: unknown): WorkflowChecklistQualificationView {
     || new Set(value.evidence_refs).size !== value.evidence_refs.length) {
     throw new WorkflowChecklistQualificationError("WORKFLOW_QUALIFICATION_UNAVAILABLE");
   }
-  return Object.freeze({
+  const common = {
     workflow_id: value.workflow_id,
     project_id: value.project_id,
     definition_version: 1,
-    stage_key: "HANDOVER",
-    item_key: value.item_key as HandoverChecklistItemKey,
     current_item_state: value.current_item_state as WorkflowChecklistQualificationView["current_item_state"],
     workflow_etag: value.workflow_etag,
-    handover_analysis_version_id: value.handover_analysis_version_id,
     review_round_ref: value.review_round_ref,
     evidence_refs: Object.freeze([...(value.evidence_refs as string[])]),
-  });
+  } as const;
+  return stage === "HANDOVER"
+    ? Object.freeze({ ...common, stage_key: "HANDOVER" as const,
+      item_key: value.item_key as HandoverChecklistItemKey,
+      handover_analysis_version_id: value.handover_analysis_version_id as string })
+    : Object.freeze({ ...common, stage_key: "SURVEY" as const,
+      item_key: value.item_key as SurveyChecklistItemKey,
+      survey_conclusion_id: value.survey_conclusion_id as string });
 }
 
 export class WorkflowChecklistQualificationClient {
@@ -88,9 +114,8 @@ export class WorkflowChecklistQualificationClient {
     }
   }
 
-  async get(projectId: string, itemKey: HandoverChecklistItemKey): Promise<WorkflowChecklistQualificationView> {
-    if (!identifier(projectId)
-      || !["HANDOVER_BASELINE", "HANDOVER_ISSUES"].includes(itemKey)) {
+  async get(projectId: string, itemKey: SupportedChecklistItemKey): Promise<WorkflowChecklistQualificationView> {
+    if (!identifier(projectId) || checklistStageForItem(itemKey) === null) {
       throw new WorkflowChecklistQualificationError("WORKFLOW_QUALIFICATION_INVALID_INPUT");
     }
     const controller = new AbortController();
@@ -128,6 +153,7 @@ export class WorkflowChecklistQualificationClient {
       }
       const result = parse(payload.data);
       if (result.project_id !== projectId || result.item_key !== itemKey
+        || result.stage_key !== checklistStageForItem(itemKey)
         || response.headers.get("etag") !== result.workflow_etag
         || response.headers.get("cache-control")?.toLowerCase() !== "no-store") {
         throw new WorkflowChecklistQualificationError("WORKFLOW_QUALIFICATION_UNAVAILABLE");

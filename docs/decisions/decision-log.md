@@ -9254,3 +9254,14 @@
   APPROVED Conclusion/Review又无法证明当前Owner兼容真审批结果。可选callback保持旧验证默认行为。
 - Impact/Rollback：仅validation资产变化，无产品Schema/API/依赖/Secret/外发；删除A05脚本与
   callback即可回滚。脚本两次PASS，后端2957/3，临时库全部清理。
+
+# DEC-20261007-972：前端从可信当前阶段派生 item 与相邻 target
+
+- Date/WBS：2026-10-07 / `SUR-06-A06`；依据CR-SUR-012、现有Handover前端安全恢复合同及A05真实写链。
+- Decision：以显式item→stage映射只开放Handover/Survey四项；qualification按stage解析两个严格互斥
+  响应变体。Transition target仅从已严格解析的当前Workflow快照派生，限两条已验收相邻映射；页面、
+  sessionStorage恢复记录和回执还必须再次匹配当前stage/target。
+- Reason：宽松可选subject字段会接受交叉响应；由表单或保存数据自由指定target会绕过客户端最小
+  allowlist。显式派生保留服务端权威复验，也不让浏览器提交业务Conclusion/Review identity。
+- Impact/Rollback：无Schema/Migration/API path/依赖/Secret/外发；Handover行为与原Key恢复保持兼容。
+  可移除Survey分支恢复Handover-only。前端1482项、typecheck及Vite生产构建通过。

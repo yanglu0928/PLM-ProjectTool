@@ -10,9 +10,10 @@ import { WorkflowStartClient, WorkflowStartError,
 import { WorkflowChecklistQualificationClient, WorkflowChecklistQualificationError,
   type WorkflowChecklistQualificationView } from "@/modules/workflow/api/workflowChecklistQualificationClient";
 import { WorkflowChecklistRecordClient, WorkflowChecklistRecordError,
-  type HandoverChecklistItemKey, type SupportedChecklistResult,
+  checklistStageForItem, type SupportedChecklistItemKey, type SupportedChecklistResult,
   type WorkflowChecklistFirstReceipt } from "@/modules/workflow/api/workflowChecklistRecordClient";
 import { WorkflowTransitionClient, WorkflowTransitionError,
+  transitionTargetForStage, type SupportedTransitionToStage,
   type WorkflowTransitionFirstReceipt } from "@/modules/workflow/api/workflowTransitionClient";
 
 const props = defineProps<{ session?: SessionClient; workflows?: WorkflowReadClient;
@@ -38,7 +39,7 @@ const receipt = ref<WorkflowStartFirstReceipt | null>(null);
 const requireFreshRead = ref(false);
 const storageError = ref(false);
 const qualificationBusy = ref(false);
-const checklistTarget = shallowRef<{ before: WorkflowView; item: HandoverChecklistItemKey;
+const checklistTarget = shallowRef<{ before: WorkflowView; item: SupportedChecklistItemKey;
   result: SupportedChecklistResult; qualification: WorkflowChecklistQualificationView | null } | null>(null);
 const checklistConfirmed = ref(false);
 const checklistRetryConfirmed = ref(false);
@@ -54,10 +55,10 @@ const transitionReason = ref("");
 const transitionReceipt = ref<WorkflowTransitionFirstReceipt | null>(null);
 type PendingStart = { actor: string; project: string; workflow: string; key: string; etag: '"v0"' };
 type PendingChecklist = { actor: string; project: string; workflow: string;
-  item: HandoverChecklistItemKey; result: SupportedChecklistResult; key: string;
+  item: SupportedChecklistItemKey; result: SupportedChecklistResult; key: string;
   etag: string; evidence: readonly string[]; reason: string | null; impact: string | null };
 type PendingTransition = { actor: string; project: string; workflow: string;
-  key: string; etag: string; reason: string; target: "SURVEY" };
+  key: string; etag: string; reason: string; target: SupportedTransitionToStage };
 const storageKey = identity ? `plm.workflow.start.pending.${identity.user.user_id}` : "";
 const checklistStorageKey = identity ? `plm.workflow.checklist.pending.${identity.user.user_id}` : "";
 const transitionStorageKey = identity ? `plm.workflow.transition.pending.${identity.user.user_id}` : "";
@@ -95,7 +96,7 @@ function validChecklistPending(value: unknown): value is PendingChecklist {
     ? Number(entry.etag.slice(2, -1)) : null;
   return Object.keys(entry).length === 10 && entry.actor === identity?.user.user_id
     && identifier(entry.actor) && identifier(entry.project) && identifier(entry.workflow)
-    && ["HANDOVER_BASELINE", "HANDOVER_ISSUES"].includes(entry.item as string)
+    && typeof entry.item === "string" && checklistStageForItem(entry.item) !== null
     && ["PASS", "FAIL"].includes(entry.result as string)
     && typeof entry.key === "string" && /^[\x20-\x7e]{16,128}$/.test(entry.key)
     && Number.isSafeInteger(version) && version !== null && version < Number.MAX_SAFE_INTEGER
@@ -132,7 +133,8 @@ function validTransitionPending(value: unknown): value is PendingTransition {
     && Number.isSafeInteger(version) && version !== null && version < Number.MAX_SAFE_INTEGER
     && typeof entry.reason === "string" && entry.reason.length > 0
     && entry.reason.length <= 2000 && entry.reason.trim() === entry.reason
-    && !entry.reason.includes("\u0000") && entry.target === "SURVEY";
+    && !entry.reason.includes("\u0000")
+    && ["SURVEY", "REQUIREMENT"].includes(entry.target as string);
 }
 function readTransitionPending(): PendingTransition | null {
   if (!transitionStorageKey) return null;
@@ -217,18 +219,22 @@ function mayStart() {
     && !!session.view?.authorized_projects.some((item) =>
       item.project_id === route.params.projectId && item.role === "PROJECT_MANAGER");
 }
-function supportedItem(value: string): value is HandoverChecklistItemKey {
-  return value === "HANDOVER_BASELINE" || value === "HANDOVER_ISSUES";
+function supportedItem(value: string): value is SupportedChecklistItemKey {
+  return checklistStageForItem(value) !== null;
 }
 function mayRecord() {
   return mayStart() && workflow.value?.state === "ACTIVE"
-    && workflow.value.current_stage === "HANDOVER";
+    && ["HANDOVER", "SURVEY"].includes(workflow.value.current_stage ?? "");
 }
 function mayTransition() {
-  const handover = workflow.value?.stages[0];
+  const currentKey = workflow.value?.current_stage ?? null;
+  const current = workflow.value?.stages.find((stage) => stage.stage_key === currentKey);
   return mayStart() && workflow.value?.state === "ACTIVE"
-    && workflow.value.current_stage === "HANDOVER" && handover?.state === "ACTIVE"
-    && handover.checklist_items.every((item) => item.state === "PASS");
+    && transitionTargetForStage(currentKey) !== null && current?.state === "ACTIVE"
+    && current.checklist_items.every((item) => item.state === "PASS");
+}
+function nextStage(view: WorkflowView | null): SupportedTransitionToStage | null {
+  return transitionTargetForStage(view?.current_stage ?? null);
 }
 async function load() {
   if (!mayRead() || busy.value || writeBusy.value || qualificationBusy.value) return;
@@ -259,6 +265,7 @@ async function load() {
 }
 async function beginChecklistPass(item: string) {
   if (!supportedItem(item) || !mayRecord() || busy.value || writeBusy.value
+    || checklistStageForItem(item) !== workflow.value?.current_stage
     || qualificationBusy.value || pending.value || checklistPending.value || transitionPending.value
     || requireFreshRead.value || receipt.value || checklistReceipt.value) return;
   const before = workflow.value!;
@@ -268,12 +275,14 @@ async function beginChecklistPass(item: string) {
   checklistConfirmed.value = false; checklistReason.value = ""; checklistImpact.value = "";
   try {
     const proof = await qualifications.get(projectId, item);
-    const latestItem = before.stages.find((stage) => stage.stage_key === "HANDOVER")
+    const expectedStage = checklistStageForItem(item);
+    const latestItem = before.stages.find((stage) => stage.stage_key === expectedStage)
       ?.checklist_items.find((value) => value.item_key === item);
     if (!mounted || current !== generation || route.params.projectId !== projectId
       || workflow.value !== before || !mayRecord()) return;
     if (proof.project_id !== projectId || proof.workflow_id !== before.workflow_id
-      || proof.workflow_etag !== before.etag || proof.current_item_state !== latestItem?.state) {
+      || proof.stage_key !== expectedStage || proof.workflow_etag !== before.etag
+      || proof.current_item_state !== latestItem?.state) {
       requireFreshRead.value = true; workflow.value = null;
       error.value = "资格依据与当前流程快照不一致，请重新读取。";
       return;
@@ -288,6 +297,7 @@ async function beginChecklistPass(item: string) {
 }
 function beginChecklistFail(item: string) {
   if (!supportedItem(item) || !mayRecord() || busy.value || writeBusy.value
+    || checklistStageForItem(item) !== workflow.value?.current_stage
     || qualificationBusy.value || pending.value || checklistPending.value || transitionPending.value
     || requireFreshRead.value || receipt.value || checklistReceipt.value) return;
   checklistTarget.value = Object.freeze({ before: workflow.value!, item,
@@ -302,7 +312,8 @@ function canRetryChecklist(): boolean {
     && !qualificationBusy.value && !requireFreshRead.value
     && operation.project === route.params.projectId
     && operation.workflow === latest.workflow_id && operation.etag === latest.etag
-    && latest.stages.find((stage) => stage.stage_key === "HANDOVER")
+    && checklistStageForItem(operation.item) === latest.current_stage
+    && latest.stages.find((stage) => stage.stage_key === checklistStageForItem(operation.item))
       ?.checklist_items.some((item) => item.item_key === operation.item) === true;
 }
 async function submitChecklist() {
@@ -386,7 +397,8 @@ function canRetryTransition(): boolean {
   return !!operation && !!latest && mayTransition() && !busy.value && !writeBusy.value
     && !qualificationBusy.value && !requireFreshRead.value
     && operation.project === route.params.projectId
-    && operation.workflow === latest.workflow_id && operation.etag === latest.etag;
+    && operation.workflow === latest.workflow_id && operation.etag === latest.etag
+    && operation.target === nextStage(latest);
 }
 async function submitTransition() {
   if (!mayTransition() || busy.value || writeBusy.value || qualificationBusy.value
@@ -401,10 +413,12 @@ async function submitTransition() {
     return;
   }
   const before = workflow.value!;
+  const targetStage = nextStage(before);
+  if (targetStage === null) return;
   const attempt: PendingTransition = recovery ?? Object.freeze({
     actor: identity!.user.user_id, project: route.params.projectId as string,
     workflow: before.workflow_id, key: crypto.randomUUID(), etag: before.etag,
-    reason, target: "SURVEY" as const,
+    reason, target: targetStage,
   });
   if (!recovery && !saveTransitionPending(attempt)) {
     storageError.value = true;
@@ -561,7 +575,7 @@ onUnmounted(() => { mounted = false; generation += 1; });
             <h2>{{ stage.stage_key }} · {{ stage.state }}</h2>
             <ul><li v-for="item in stage.checklist_items" :key="item.item_key">
               {{ item.item_key }} · {{ item.state }}
-              <span v-if="stage.stage_key === 'HANDOVER' && stage.state !== 'COMPLETED'
+              <span v-if="stage.stage_key === workflow.current_stage && stage.state !== 'COMPLETED'
                 && supportedItem(item.item_key) && mayRecord() && !pending && !checklistPending
                 && !transitionPending && !requireFreshRead && !receipt && !checklistReceipt
                 && !transitionReceipt && !checklistTarget">
@@ -615,11 +629,11 @@ onUnmounted(() => { mounted = false; generation += 1; });
       <button v-if="mayTransition() && !pending && !checklistPending && !transitionPending
         && !transitionTarget && !requireFreshRead && !receipt && !checklistReceipt
         && !transitionReceipt" type="button" :disabled="busy || writeBusy || qualificationBusy"
-        @click="beginTransition">准备推进至 SURVEY</button>
+        @click="beginTransition">准备推进至 {{ nextStage(workflow) }}</button>
       <form v-if="transitionTarget && !transitionPending && mayTransition() && !requireFreshRead"
         aria-label="阶段推进确认" @submit.prevent="submitTransition">
-        <h2>确认从 HANDOVER 推进至 SURVEY</h2>
-        <p>服务器会在提交事务中重新验证两项当前 PASS、固定来源、评审与处理项。页面不会接收、展示或生成 Gate UUID。</p>
+        <h2>确认从 {{ transitionTarget.current_stage }} 推进至 {{ nextStage(transitionTarget) }}</h2>
+        <p>服务器会在提交事务中重新验证当前阶段两项 PASS 及其固定来源、评审与处理项。页面不会接收、展示或生成 Gate UUID。</p>
         <label>推进理由（必填）
           <textarea v-model="transitionReason" maxlength="2000" :disabled="writeBusy" required></textarea>
         </label>
