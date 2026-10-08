@@ -10774,3 +10774,10 @@
 - Decision：先记录 CR-SOL-009，为 GLOBAL Reference 新增 Preview/Confirm/Revoke 白名单；冻结 CREATE/GET/List 路径不改，默认应用不启用。确认只能由实际 DeploymentAdmin 主动操作，写时重验来源，AI/脚本合成声明不算用户确认。
 - Reason：内部 Owner 已有但无运行 HTTP/UI；若直接开放 GLOBAL 创建会缺真实人工核查链。预览与确认分离、撤回保留历史；在新入口完成客观验收前维持 GLOBAL 创建关闭。
 - Impact/Rollback：无 Schema/迁移，后续新增 API/组合/页面按 P02～P06 独立验证。关闭新增路由/UI 可回滚入口，已产生确认/Audit/收据不得删除；正式 License/账户、Gate3/发行仍待。
+
+# DEC-20261009-1119：GLOBAL 创建界面不把历史确认当当前资格
+
+- Date/WBS：2026-10-09 / `SOL-01-A04-P08-P06-P05-P01`；依据冻结 API-04、P06-P02～P04 和现有人工确认 UI。
+- Decision：创建前重取固定 Viewer/Eligibility 与 Preview 并核对有序身份/来源指纹；界面只标记历史确认，不推断现时有效。Create 只提交冻结六字段，最终资格由服务端写事务重证。GLOBAL Create 无原 Key 回查时，结果不确定必须保留 Key/请求摘要并锁定再次创建，不自动换号/重试。
+- Reason：确认 ID/到期时间是历史观察，来源、撤回、License 或权限可在提交前变化；确认回查仅覆盖 Confirm/Revoke，不能证明 Create 首结果。扩展新查询 API 需要独立 Change Request，不能在前端悄然假设。
+- Impact/Rollback：本决策仅界面设计，无生产变更/数据迁移；后续 P05-P02～P04 逐项验收。回滚隐藏界面入口，保留服务端历史；脚本勾选不算真人确认。

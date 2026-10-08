@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A04-P08-P06-P05-P01 对账 GLOBAL Reference 创建前端合同，确定“历史确认不等于现时有效”、重取 Viewer/资格/Preview、六字段提交及响应不确定保留原 Key 的分项验收。兼容性/升级：仅设计追溯，无代码/API/Schema/依赖变化或数据升级。验证：冻结 API、现有 Session/核查页面与 P06-P02～P04 证据静态对账；前端程序/Edge 未运行。已知问题：GLOBAL Create 尚无原 Key 回查，需锁定不确定请求；正式真人确认/License/账户、Server2025、20并发、Gate3/UAT/发行未验，Debian13依指令跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P08-P06-P04 将 GLOBAL Reference Create 接入 Windows 显式平台写模式，必要 Session/License/来源/确认/Audit 端口缺失时启动失败；登录/只读模式维持404。兼容性/升级：增量启用原冻结 POST，无 Schema/依赖/数据迁移，PROJECT 入口不变；回滚关闭路由，历史 Reference/确认/Audit/收据保留。验证：Windows 11 隔离 PG18.6/ASGI/真实 Session/私有文件与来源回归脚本退出0；生产入口定向合同38通过/35子例；后端全量3341通过/3跳过/4947子例。已知问题：脚本确认非真人业务确认，正式 License/账户、Server2025、20并发、Gate3/UAT/发行未验；Debian13依指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P08-P06-P03 新增 GLOBAL Reference Create 的 Windows 11 隔离 PG18.6/ASGI/真实 Session 与合成私有文件验收，覆盖成功、原 Key 重放、缺失/过期/撤回确认、文件漂移、CSRF/Origin/License 拒绝和原子行数。兼容性/升级：仅验证脚本及追溯，无生产代码、Schema、API、依赖或数据迁移；既有确认/Reference/Audit 历史不删除。验证：独立脚本退出 0，现有来源夹具回归退出 0。已知问题：合成确认不是真人业务确认；Windows 生产组合、正式 License/账户、Server 2025、20 并发、Gate 3/UAT/发行未验；Debian 13 依指令跳过。
