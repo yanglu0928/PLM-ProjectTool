@@ -1,4 +1,4 @@
-"""Opt-in PROJECT ReferenceSolution create HTTP contract."""
+"""Opt-in PROJECT/GLOBAL ReferenceSolution create HTTP contracts."""
 
 from __future__ import annotations
 
@@ -121,6 +121,34 @@ def _response(view: ReferenceInitialView, project: uuid.UUID) -> dict[str, objec
     }
 
 
+def _global_response(view: ReferenceInitialView) -> dict[str, object]:
+    if (type(view) is not ReferenceInitialView or view.scope != "GLOBAL"
+            or view.project_id is not None
+            or type(view.deidentification_confirmation_id) is not uuid.UUID
+            or view.deidentification_confirmation_id.int == 0
+            or type(view.source_fingerprint) is not bytes
+            or len(view.source_fingerprint) != 32
+            or any(type(item) is not uuid.UUID or item.int == 0 for item in (
+                view.reference_solution_id, view.reference_version_id, view.created_by))
+            or type(view.name) is not str or not view.name
+            or type(view.created_at) is not datetime or view.created_at.tzinfo is None
+            or view.created_at.utcoffset() is None
+            or view.eligibility_state != "REFERENCE_ONLY"
+            or view.version_state != "DRAFT" or view.etag != '"v0"'):
+        raise ApplicationError("SYSTEM_UNAVAILABLE")
+    return {
+        "reference_solution_id": str(view.reference_solution_id),
+        "reference_version_id": str(view.reference_version_id),
+        "scope": "GLOBAL", "project_id": None, "name": view.name,
+        "eligibility_state": view.eligibility_state,
+        "version_state": view.version_state,
+        "created_by": str(view.created_by),
+        "created_at": view.created_at.astimezone(timezone.utc).isoformat().replace(
+            "+00:00", "Z"),
+        "etag": view.etag,
+    }
+
+
 def create_project_reference_create_router(
     *, sessions: SessionService, origins: LoginOriginPolicy,
     creates: ReferenceCreateService,
@@ -171,6 +199,64 @@ def create_project_reference_create_router(
             raise ApplicationError("SYSTEM_UNAVAILABLE") from None
         data = _response(view, project)
         location = (f"/api/v1/projects/{project}/reference-solutions/"
+                    f"{view.reference_solution_id}")
+        return JSONResponse({"data": data, "trace_id": str(trace)},
+            status_code=201, headers={"Cache-Control": "no-store",
+                                      "ETag": view.etag, "Location": location})
+
+    return router
+
+
+def create_global_reference_create_router(
+    *, sessions: SessionService, origins: LoginOriginPolicy,
+    creates: ReferenceCreateService,
+) -> APIRouter:
+    if any(value is None for value in (sessions, origins, creates)):
+        raise ValueError("GLOBAL Reference HTTP dependencies are required")
+    router = APIRouter()
+
+    @router.post("/api/v1/global/reference-solutions")
+    async def create(request: Request) -> JSONResponse:
+        headers = tuple(request.scope.get("headers", ()))
+        try:
+            origins.require_trusted(headers)
+        except LoginOriginError:
+            raise ApplicationError("AUTH_CSRF_INVALID") from None
+        token, csrf = _session_cookie(headers), _csrf_header(headers)
+        try:
+            await run_in_threadpool(
+                sessions.validate, token, csrf_token=csrf, require_csrf=True)
+        except SessionError as error:
+            raise _session_failure(error) from None
+        except Exception:
+            raise ApplicationError("SYSTEM_UNAVAILABLE") from None
+        if request.url.query:
+            raise ApplicationError("REQUEST_MALFORMED")
+        key = _idempotency_header(headers)
+        body = await _read_body(request, headers)
+        if type(body) is not dict or set(body) != _FIELDS:
+            raise ApplicationError("REQUEST_MALFORMED")
+        if (type(body["name"]) is not str
+                or type(body["source_project_class"]) is not str
+                or type(body["deidentification_class"]) is not str
+                or type(body["applicability"]) is not dict):
+            raise ApplicationError("VALIDATION_FAILED")
+        trace = uuid.UUID(request.state.trace_id)
+        sources = ReferenceSourceRequest(
+            token, trace, "GLOBAL", None,
+            _ids(body["document_version_ids"]), _ids(body["evidence_ids"]),
+            body["source_project_class"], body["deidentification_class"],
+            body["applicability"],
+        )
+        try:
+            view = await run_in_threadpool(creates.create,
+                CreateReferenceSolution(sources, csrf, body["name"], key))
+        except ReferenceCreateError as error:
+            raise _failure(error) from None
+        except Exception:
+            raise ApplicationError("SYSTEM_UNAVAILABLE") from None
+        data = _global_response(view)
+        location = ("/api/v1/global/reference-solutions/"
                     f"{view.reference_solution_id}")
         return JSONResponse({"data": data, "trace_id": str(trace)},
             status_code=201, headers={"Cache-Control": "no-store",

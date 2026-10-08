@@ -129,6 +129,7 @@ def create_app(
     prototype_review_submission_router: APIRouter | None = None,
     requirement_prototype_link_router: APIRouter | None = None,
     project_reference_create_router: APIRouter | None = None,
+    global_reference_create_router: APIRouter | None = None,
     project_reference_read_router: APIRouter | None = None,
     project_reference_list_router: APIRouter | None = None,
     reference_deidentification_router: APIRouter | None = None,
@@ -364,6 +365,8 @@ def create_app(
         app.include_router(prototype_router)
     if project_reference_create_router is not None:
         app.include_router(project_reference_create_router)
+    if global_reference_create_router is not None:
+        app.include_router(global_reference_create_router)
     if project_reference_read_router is not None:
         app.include_router(project_reference_read_router)
     if project_reference_list_router is not None:
