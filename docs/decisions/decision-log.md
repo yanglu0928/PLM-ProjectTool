@@ -10685,3 +10685,10 @@
 - Decision：Solution 读取侧按来源指纹选最新确认行，再检查当前管理员、指纹/类别/适用性/声明、时间和撤回；不在 SQL 中先筛未撤回/未过期，以免较早确认复活。
 - Reason：同一来源可有多条历史确认；撤回最新决定必须失败关闭。定向5/4子例、隔离PG最新已撤回行负例及后端3295/3/4824通过。
 - Impact/Rollback：仅内部 Application/仓储/测试，无 Schema、Migration、API、依赖或外发；可撤新 Proof 回滚，0141 历史保留。正式撤回命令/真实 Auth+Document+Evidence 组合和运行入口仍待。
+
+# DEC-20261008-1107：GLOBAL 人工确认只允许一次性受控撤回
+
+- Date/WBS：2026-10-08 / `SOL-01-A04-P02-P03-P03-P02`；依据 CR-SOL-006、Schema0141、现有管理员/License/Audit/收据能力及隔离 PG18.6。
+- Decision：0142 只开放 `revoked_at` 空→非空且不得改其余列；新行禁止预填撤回。命令仅面向来源最新确认，要求当前管理员 Session/CSRF/License、固定原因码，记录与 Audit/幂等同事务。历史 0141 可回退但不清除撤回标记。
+- Reason：读 Proof 已拒绝最新撤回行；仅靠应用条件无法抵挡旁路更新，删除记录会破坏历史。定向单元及隔离 PG 迁移/回滚/重放/Audit 回滚通过，后端全量 3298/3/4824 通过。
+- Impact/Rollback：修改 Solution 内部 Owner、0142 触发器与历史验证脚本，无公开 API、依赖或客户数据外发。降至0141只关闭新撤回，不恢复已撤回确认；正式 HTTP/真实 Auth+Document+Evidence 组合与用户人工确认仍待，Gate3维持阻塞。

@@ -100,6 +100,9 @@ def verify(port: int) -> None:
     url = URL.create("postgresql+psycopg", username="poc_admin",
                      host="127.0.0.1", port=port, database="postgres")
     cfg = create_migration_config(url)
+    # This verifier proves the historical 0141 INSERT-only Owner even when a
+    # later migration opens controlled revocation at head.
+    command.downgrade(cfg, "20261008_0141")
     with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
                          dbname="postgres", autocommit=True) as db:
         actor = db.execute(
@@ -222,11 +225,16 @@ def verify(port: int) -> None:
             db.execute(
                 f"INSERT INTO plm.{TABLE}(source_fingerprint,source_project_class,"
                 "deidentification_class,applicability,attestation_statement,confirmed_by,"
-                "confirmed_at,expires_at,revoked_at,trace_id) VALUES "
+                "confirmed_at,expires_at,trace_id) VALUES "
                 "(%s,'PLM','DEIDENTIFIED',%s::jsonb,'I_VERIFIED_DEIDENTIFICATION',%s,"
                 "'2026-10-08 10:00:01+00','2026-10-09 10:00:00+00',"
-                "'2026-10-08 10:00:01+00',%s)",
+                "%s)",
                 (first.source_fingerprint, '{"industry":"synthetic"}', actor, uuid.uuid4()),
+            )
+            db.execute(
+                f"UPDATE plm.{TABLE} SET revoked_at='2026-10-08 10:00:01+00' "
+                "WHERE source_fingerprint=%s AND confirmed_at='2026-10-08 10:00:01+00'",
+                (first.source_fingerprint,),
             )
         stopped = ReferenceDeidentificationProofService(
             admins=read_admin,

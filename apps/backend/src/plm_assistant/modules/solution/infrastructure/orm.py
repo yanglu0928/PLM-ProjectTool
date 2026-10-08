@@ -477,7 +477,7 @@ class ReferenceSolutionEvidenceRefRow(Base):
 
 
 class ReferenceDeidentificationConfirmationRow(Base):
-    """Closed GLOBAL human-attestation ledger; presence alone is not admission."""
+    """GLOBAL attestation ledger; only one-time revocation may update history."""
 
     __tablename__ = "sol_reference_deidentification_confirmations"
     __table_args__ = (
