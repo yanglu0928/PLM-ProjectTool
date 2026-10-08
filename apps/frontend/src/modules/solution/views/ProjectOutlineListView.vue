@@ -51,6 +51,10 @@ onUnmounted(() => { mounted = false; generation += 1; });
     <p class="section-kicker">项目方案</p><h1 id="outline-list-title">方案目录</h1>
     <p class="warning">目录只是方案的逻辑身份。新建目录或显示在列表中，不代表方案内容、评审或客户确认已完成。</p>
     <p><RouterLink :to="{ name: 'project-detail', params: { projectId: route.params.projectId } }">返回项目详情</RouterLink></p>
+    <p v-if="session.canSubmit && session.view?.authorized_projects.some(item => item.project_id === projectId()
+      && (item.role === 'PROJECT_MANAGER' || item.role === 'IMPLEMENTATION_MEMBER'))">
+      <RouterLink :to="{ name: 'project-outline-create', params: { projectId: route.params.projectId } }">创建方案目录</RouterLink>
+    </p>
     <p v-if="!session.view" role="status">尚未读取当前身份，请先登录。</p>
     <p v-else-if="session.view.password_change_required" role="status">当前账户须先修改密码。</p>
     <template v-else>

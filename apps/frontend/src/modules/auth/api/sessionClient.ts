@@ -216,7 +216,8 @@ export class SessionClient {
     | `/api/v1/projects/${string}/document-uploads`
     | `/api/v1/projects/${string}/egress-previews`
     | `/api/v1/projects/${string}/ai-tasks`
-    | `/api/v1/projects/${string}/retrieval-runs`, body: string,
+    | `/api/v1/projects/${string}/retrieval-runs`
+    | `/api/v1/projects/${string}/solution-outlines`, body: string,
     idempotencyKey: string, maxBodyBytes: number): Promise<Response> {
     if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
     if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
@@ -247,6 +248,11 @@ export class SessionClient {
 
   postProjectCreate(body: string, idempotencyKey: string): Promise<Response> {
     return this.#postCommand("/api/v1/projects", body, idempotencyKey, 8192);
+  }
+
+  postProjectOutlineCreate(projectId: string, body: string, idempotencyKey: string): Promise<Response> {
+    if (!identifier(projectId)) return Promise.reject(new SessionClientError("AUTH_CLIENT_UNAVAILABLE"));
+    return this.#postCommand(`/api/v1/projects/${projectId}/solution-outlines`, body, idempotencyKey, 8192);
   }
 
   /** Project UploadIntent only; content and finalize require separate guarded transports. */
