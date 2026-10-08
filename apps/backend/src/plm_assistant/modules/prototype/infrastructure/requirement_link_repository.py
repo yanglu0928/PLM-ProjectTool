@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from plm_assistant.modules.prototype.application.requirement_links import (
@@ -160,6 +160,86 @@ class SqlAlchemyRequirementPrototypeLinkRepository:
             RequirementPrototypeLinkRow.requirement_prototype_link_id.desc(),
         ).limit(limit)).scalars()
         return tuple(self._view(row) for row in rows)
+
+    def lock_active(self, transaction: object, *, project_id: uuid.UUID,
+                    link_id: uuid.UUID) -> RequirementPrototypeLinkView | None:
+        row = _session(transaction).execute(select(
+            RequirementPrototypeLinkRow,
+        ).where(
+            RequirementPrototypeLinkRow.project_id == project_id,
+            RequirementPrototypeLinkRow.requirement_prototype_link_id == link_id,
+            RequirementPrototypeLinkRow.link_state == "ACTIVE",
+        ).with_for_update().execution_options(
+            populate_existing=True,
+        )).scalar_one_or_none()
+        return None if row is None else self._view(row)
+
+    def revoke_active(self, transaction: object, *, project_id: uuid.UUID,
+                      link_id: uuid.UUID) -> None:
+        changed = _session(transaction).execute(update(
+            RequirementPrototypeLinkRow,
+        ).where(
+            RequirementPrototypeLinkRow.project_id == project_id,
+            RequirementPrototypeLinkRow.requirement_prototype_link_id == link_id,
+            RequirementPrototypeLinkRow.link_state == "ACTIVE",
+            RequirementPrototypeLinkRow.lock_version == 0,
+        ).values(link_state="REVOKED", lock_version=1))
+        if changed.rowcount != 1:
+            raise RequirementPrototypeLinkError("RESOURCE_NOT_FOUND")
+
+    def supersede_active(self, transaction: object, *, project_id: uuid.UUID,
+                         link_id: uuid.UUID,
+                         replacement_id: uuid.UUID) -> None:
+        changed = _session(transaction).execute(update(
+            RequirementPrototypeLinkRow,
+        ).where(
+            RequirementPrototypeLinkRow.project_id == project_id,
+            RequirementPrototypeLinkRow.requirement_prototype_link_id == link_id,
+            RequirementPrototypeLinkRow.link_state == "ACTIVE",
+            RequirementPrototypeLinkRow.lock_version == 0,
+        ).values(
+            link_state="SUPERSEDED", lock_version=1,
+            superseded_by_ref=replacement_id,
+        ))
+        if changed.rowcount != 1:
+            raise RequirementPrototypeLinkError("RESOURCE_NOT_FOUND")
+
+    def create_replacement(
+        self, transaction: object, *, link_id: uuid.UUID,
+        project_id: uuid.UUID, requirement_id: uuid.UUID,
+        requirement_version_id: uuid.UUID, prototype_id: uuid.UUID,
+        prototype_version_id: uuid.UUID, purpose: str,
+        coverage: RequirementPrototypeCoverage, actor_id: uuid.UUID,
+    ) -> None:
+        inserted = _session(transaction).execute(pg_insert(
+            RequirementPrototypeLinkRow,
+        ).values(
+            requirement_prototype_link_id=link_id, project_id=project_id,
+            requirement_id=requirement_id,
+            requirement_version_id=requirement_version_id,
+            prototype_id=prototype_id,
+            prototype_version_id=prototype_version_id, purpose=purpose,
+            coverage_schema_version=1,
+            coverage=self._coverage_payload(coverage), created_by=actor_id,
+        ).returning(
+            RequirementPrototypeLinkRow.requirement_prototype_link_id,
+        )).scalar_one_or_none()
+        if inserted != link_id:
+            raise RequirementPrototypeLinkError()
+
+    def replacement_matches(self, transaction: object, *, project_id: uuid.UUID,
+                            link_id: uuid.UUID,
+                            replacement_id: uuid.UUID) -> bool:
+        found = _session(transaction).execute(select(
+            RequirementPrototypeLinkRow.requirement_prototype_link_id,
+        ).where(
+            RequirementPrototypeLinkRow.project_id == project_id,
+            RequirementPrototypeLinkRow.requirement_prototype_link_id == link_id,
+            RequirementPrototypeLinkRow.link_state == "SUPERSEDED",
+            RequirementPrototypeLinkRow.lock_version == 1,
+            RequirementPrototypeLinkRow.superseded_by_ref == replacement_id,
+        )).scalar_one_or_none()
+        return found == link_id
 
     @classmethod
     def _view(cls, row):

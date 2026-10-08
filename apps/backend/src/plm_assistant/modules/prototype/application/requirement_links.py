@@ -16,6 +16,7 @@ from plm_assistant.modules.platform.application.idempotency import (
     IdempotencyError, IdempotencyResult, IdempotencyScope,
     canonical_payload_fingerprint, validate_idempotency_key,
 )
+from plm_assistant.modules.platform.application.trace_context import new_uuid7
 from plm_assistant.modules.project.application.authorization import (
     ProjectAuthorizationError, ProjectAuthorizationService,
 )
@@ -26,6 +27,10 @@ LINK_PURPOSES = frozenset({
 })
 _OPERATION = "V1_PRT_REQUIREMENT_LINK_CREATE"
 _RESULT_TYPE = "V1_PRT_REQUIREMENT_LINK"
+_REVOKE_OPERATION = "V1_PRT_REQUIREMENT_LINK_REVOKE"
+_REVOKE_RESULT_TYPE = "V1_PRT_REQUIREMENT_LINK_REVOKED"
+_SUPERSEDE_OPERATION = "V1_PRT_REQUIREMENT_LINK_SUPERSEDE"
+_SUPERSEDE_RESULT_TYPE = "V1_PRT_REQUIREMENT_LINK_REPLACEMENT"
 
 
 class RequirementPrototypeLinkError(RuntimeError):
@@ -58,6 +63,34 @@ class CreateRequirementPrototypeLink:
     prototype_version_id: uuid.UUID
     purpose: str
     coverage: RequirementPrototypeCoverage
+    idempotency_key: str = field(repr=False)
+
+
+@dataclass(frozen=True, slots=True)
+class RevokeRequirementPrototypeLink:
+    session_token: bytes = field(repr=False)
+    csrf_token: bytes = field(repr=False)
+    trace_id: uuid.UUID
+    project_id: uuid.UUID
+    requirement_prototype_link_id: uuid.UUID
+    expected_version: int
+    idempotency_key: str = field(repr=False)
+
+
+@dataclass(frozen=True, slots=True)
+class SupersedeRequirementPrototypeLink:
+    session_token: bytes = field(repr=False)
+    csrf_token: bytes = field(repr=False)
+    trace_id: uuid.UUID
+    project_id: uuid.UUID
+    requirement_prototype_link_id: uuid.UUID
+    requirement_id: uuid.UUID
+    requirement_version_id: uuid.UUID
+    prototype_id: uuid.UUID
+    prototype_version_id: uuid.UUID
+    purpose: str
+    coverage: RequirementPrototypeCoverage
+    expected_version: int
     idempotency_key: str = field(repr=False)
 
 
@@ -116,6 +149,23 @@ class RequirementPrototypeLinkRepositoryPort(Protocol):
     def list_links(self, transaction: object, *, project_id: uuid.UUID,
                    after_link_id: uuid.UUID | None,
                    limit: int) -> tuple[RequirementPrototypeLinkView, ...]: ...
+    def lock_active(self, transaction: object, *, project_id: uuid.UUID,
+                    link_id: uuid.UUID) -> RequirementPrototypeLinkView | None: ...
+    def revoke_active(self, transaction: object, *, project_id: uuid.UUID,
+                      link_id: uuid.UUID) -> None: ...
+    def supersede_active(self, transaction: object, *, project_id: uuid.UUID,
+                         link_id: uuid.UUID,
+                         replacement_id: uuid.UUID) -> None: ...
+    def create_replacement(
+        self, transaction: object, *, link_id: uuid.UUID,
+        project_id: uuid.UUID, requirement_id: uuid.UUID,
+        requirement_version_id: uuid.UUID, prototype_id: uuid.UUID,
+        prototype_version_id: uuid.UUID, purpose: str,
+        coverage: RequirementPrototypeCoverage, actor_id: uuid.UUID,
+    ) -> None: ...
+    def replacement_matches(self, transaction: object, *, project_id: uuid.UUID,
+                            link_id: uuid.UUID,
+                            replacement_id: uuid.UUID) -> bool: ...
 
 
 class RequirementPrototypeLinkService:
@@ -224,6 +274,185 @@ class RequirementPrototypeLinkService:
         except Exception:
             raise RequirementPrototypeLinkError() from None
 
+    def revoke(
+        self, command: RevokeRequirementPrototypeLink,
+    ) -> RequirementPrototypeLinkView:
+        self._validate_state_command(command, RevokeRequirementPrototypeLink)
+        fingerprint = canonical_payload_fingerprint({
+            "project_id": str(command.project_id),
+            "requirement_prototype_link_id": str(
+                command.requirement_prototype_link_id),
+            "expected_version": command.expected_version,
+        })
+        return self._state_command(
+            command, operation=_REVOKE_OPERATION,
+            result_type=_REVOKE_RESULT_TYPE,
+            authorization_operation="PRT_LINK_REVOKE",
+            request_fingerprint=fingerprint, status_code=200,
+        )
+
+    def supersede(
+        self, command: SupersedeRequirementPrototypeLink,
+    ) -> RequirementPrototypeLinkView:
+        self._validate_state_command(command, SupersedeRequirementPrototypeLink)
+        if (any(not self._id(value) for value in (
+                    command.requirement_id, command.requirement_version_id,
+                    command.prototype_id, command.prototype_version_id))
+                or command.purpose not in LINK_PURPOSES):
+            raise RequirementPrototypeLinkError("VALIDATION_FAILED")
+        coverage = self._coverage(command.coverage)
+        fingerprint = canonical_payload_fingerprint({
+            "project_id": str(command.project_id),
+            "requirement_prototype_link_id": str(
+                command.requirement_prototype_link_id),
+            "requirement_id": str(command.requirement_id),
+            "requirement_version_id": str(command.requirement_version_id),
+            "prototype_id": str(command.prototype_id),
+            "prototype_version_id": str(command.prototype_version_id),
+            "purpose": command.purpose,
+            "coverage": self._coverage_payload(coverage),
+            "expected_version": command.expected_version,
+        })
+        return self._state_command(
+            command, operation=_SUPERSEDE_OPERATION,
+            result_type=_SUPERSEDE_RESULT_TYPE,
+            authorization_operation="PRT_LINK_SUPERSEDE",
+            request_fingerprint=fingerprint, status_code=201,
+            replacement=coverage,
+        )
+
+    def _state_command(
+        self, command, *, operation, result_type, authorization_operation,
+        request_fingerprint, status_code, replacement=None,
+    ):
+        try:
+            validate_idempotency_key(command.idempotency_key)
+            self._guard.require_valid(trace_id=command.trace_id)
+            with self._uow() as tx:
+                actor = self._actor(
+                    self._write_access, tx, command.session_token,
+                    command.csrf_token,
+                )
+                self._authorize(
+                    tx, actor, command.project_id, authorization_operation,
+                )
+                scope = IdempotencyScope.from_key(
+                    actor_id=actor, project_id=command.project_id,
+                    operation=operation, key=command.idempotency_key,
+                )
+                replay = self._receipts.reserve(
+                    tx, scope=scope, request_fingerprint=request_fingerprint,
+                )
+                if replay is not None:
+                    if (replay.ref_type != result_type
+                            or replay.status_code != status_code):
+                        raise RequirementPrototypeLinkError()
+                    view = self._get(tx, command.project_id, replay.ref_id)
+                    if replacement is None:
+                        if (view.requirement_prototype_link_id
+                                != command.requirement_prototype_link_id
+                                or view.link_state != "REVOKED"
+                                or view.lock_version != 1):
+                            raise RequirementPrototypeLinkError()
+                    else:
+                        self._prove(tx, command, replacement)
+                        if (not self._matches(view, command, replacement)
+                                or not self._repo.replacement_matches(
+                                    tx, project_id=command.project_id,
+                                    link_id=command.requirement_prototype_link_id,
+                                    replacement_id=view.requirement_prototype_link_id,
+                                )):
+                            raise RequirementPrototypeLinkError()
+                    return view
+                before = self._repo.lock_active(
+                    tx, project_id=command.project_id,
+                    link_id=command.requirement_prototype_link_id,
+                )
+                if type(before) is not RequirementPrototypeLinkView:
+                    raise RequirementPrototypeLinkError("RESOURCE_NOT_FOUND")
+                if replacement is None:
+                    self._repo.revoke_active(
+                        tx, project_id=command.project_id,
+                        link_id=command.requirement_prototype_link_id,
+                    )
+                    result_id = command.requirement_prototype_link_id
+                    result = self._get(tx, command.project_id, result_id)
+                    if result.link_state != "REVOKED" or result.lock_version != 1:
+                        raise RequirementPrototypeLinkError()
+                    events = (("REQUIREMENT_PROTOTYPE_LINK_REVOKED", result_id,
+                               "ACTIVE", "REVOKED"),)
+                else:
+                    if (before.requirement_id != command.requirement_id
+                            or before.prototype_id != command.prototype_id
+                            or before.purpose != command.purpose):
+                        raise RequirementPrototypeLinkError("VALIDATION_FAILED")
+                    if (before.requirement_version_id
+                            == command.requirement_version_id
+                            and before.prototype_version_id
+                            == command.prototype_version_id
+                            and before.coverage == replacement):
+                        raise RequirementPrototypeLinkError("VALIDATION_FAILED")
+                    self._prove(tx, command, replacement)
+                    result_id = uuid.UUID(new_uuid7())
+                    self._repo.supersede_active(
+                        tx, project_id=command.project_id,
+                        link_id=command.requirement_prototype_link_id,
+                        replacement_id=result_id,
+                    )
+                    self._repo.create_replacement(
+                        tx, link_id=result_id, project_id=command.project_id,
+                        requirement_id=command.requirement_id,
+                        requirement_version_id=command.requirement_version_id,
+                        prototype_id=command.prototype_id,
+                        prototype_version_id=command.prototype_version_id,
+                        purpose=command.purpose, coverage=replacement,
+                        actor_id=actor,
+                    )
+                    result = self._get(tx, command.project_id, result_id)
+                    if (not self._matches(result, command, replacement)
+                            or not self._repo.replacement_matches(
+                                tx, project_id=command.project_id,
+                                link_id=command.requirement_prototype_link_id,
+                                replacement_id=result_id,
+                            )):
+                        raise RequirementPrototypeLinkError()
+                    events = (
+                        ("REQUIREMENT_PROTOTYPE_LINK_CREATED", result_id,
+                         None, "ACTIVE"),
+                        ("REQUIREMENT_PROTOTYPE_LINK_SUPERSEDED",
+                         command.requirement_prototype_link_id,
+                         "ACTIVE", "SUPERSEDED"),
+                    )
+                for action, target, before_state, after_state in events:
+                    self._audit.append(tx, AuditEventDraft(
+                        trace_id=command.trace_id, event_scope="PROJECT",
+                        target_project_id=command.project_id,
+                        actor_type="USER", actor_id=actor,
+                        original_actor_id=None, actor_hint_digest=None,
+                        action=action, outcome="SUCCESS",
+                        target_owner_module="prototype",
+                        target_object_type="PRT-05", target_object_id=target,
+                        before_state=before_state, after_state=after_state,
+                    ))
+                self._receipts.complete(
+                    tx, scope=scope, result=IdempotencyResult(
+                        result_type, result_id, status_code,
+                    ),
+                )
+                tx.commit()
+                return result
+        except RequirementPrototypeLinkError:
+            raise
+        except IdempotencyError as error:
+            raise RequirementPrototypeLinkError(error.code) from None
+        except ProjectAuthorizationError as error:
+            raise RequirementPrototypeLinkError(error.code) from None
+        except RuntimeLicenseError:
+            raise RequirementPrototypeLinkError(
+                "LICENSE_OPERATION_DENIED") from None
+        except Exception:
+            raise RequirementPrototypeLinkError() from None
+
     def list(
         self, query: RequirementPrototypeLinkQuery, *, page_size: int,
         after_link_id: uuid.UUID | None = None,
@@ -326,6 +555,20 @@ class RequirementPrototypeLinkService:
                     command.prototype_id, command.prototype_version_id,
                 ))
                 or command.purpose not in LINK_PURPOSES):
+            raise RequirementPrototypeLinkError("VALIDATION_FAILED")
+
+    @classmethod
+    def _validate_state_command(cls, command, expected_type):
+        if (type(command) is not expected_type
+                or type(command.session_token) is not bytes
+                or len(command.session_token) != 32
+                or type(command.csrf_token) is not bytes
+                or len(command.csrf_token) != 32
+                or not cls._id(command.trace_id)
+                or not cls._id(command.project_id)
+                or not cls._id(command.requirement_prototype_link_id)
+                or type(command.expected_version) is not int
+                or command.expected_version != 0):
             raise RequirementPrototypeLinkError("VALIDATION_FAILED")
 
     @classmethod

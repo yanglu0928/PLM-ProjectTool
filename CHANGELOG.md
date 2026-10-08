@@ -1,5 +1,13 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A08-A04 新增RequirementPrototypeLink内部REVOKE/SUPERSEDE Owner；
+  REVOKE允许受权人员终止已漂移Link，SUPERSEDE仅同逻辑身份/同purpose且新端点/Coverage重证，在同一事务
+  先终结旧ACTIVE唯一键、再插预生成replacement，并由0134延迟闭包、Audit和receipt原子保护。兼容性/回滚：
+  无Migration、公开API、依赖或外发，Schema head保持0134；入口可撤，历史保留。验证：Win11/PG18.6重放、
+  漂移/同载荷拒绝、插入故障回滚，定向20、后端3170/3、compileall/drift、wheel1216项/
+  `2de46ebe…e8245026`PASS。已知问题：A09 HTTP/Windows组合、A10前端、A11 Workflow、Server2025、
+  Gate3/UAT/发行待；Debian13跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A08-A03 新增RequirementPrototypeLink内部CREATE/LIST Owner与PostgreSQL
   Repository；事务内证明当前Approved双端、批准Manifest、owned RequirementRef、A07当前事实及
   AcceptanceCriterion全集，Coverage V1精确分区，并将Link/Audit/receipt原子提交；项目内历史列表保持

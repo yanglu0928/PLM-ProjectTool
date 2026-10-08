@@ -264,3 +264,11 @@ Win11/PG18.6、后端3157/3及wheel1214项/`1ebf51a5…588d94`通过。无公开
 Coverage规范化后精确分区；Link/Audit/receipt原子提交，重放仍重证当前事实，LIST按项目隔离保留历史。首轮
 负权限验收预期与既有防枚举合同不符，仅将脚本期望修正为`RESOURCE_NOT_FOUND`后完整重跑。Win11/PG18.6、
 定向39、后端3165/3及wheel1216项/`5d5ba5ed…7c7d6a0a`通过；无Migration/公开API/依赖/外发，进入A04生命周期。
+
+## A08-A04 实施记录（2026-10-08）
+
+新增REVOKE/SUPERSEDE内部命令与Repository生命周期操作。REVOKE允许受权人员在业务端点漂移后仍终止ACTIVE
+Link；SUPERSEDE只接受同逻辑身份/同purpose和变化后的固定端点/Coverage，重证A03全部当前事实。为兼容
+0134 partial唯一键，单一事务先终结旧行并绑定预生成UUIDv7、再插replacement，由延迟闭包在提交时核验；
+插入故障证明旧行、Audit和receipt整体回滚。Win11/PG18.6、定向20、后端3170/3及wheel1216项/
+`2de46ebe…e8245026`通过；无Migration/公开API/依赖/外发，A08完成，进入A09 HTTP与Windows组合。

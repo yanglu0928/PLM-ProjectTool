@@ -1,5 +1,16 @@
 # 自主决策记录
 
+## DEC-20261008-1049：Link替换先终结旧唯一键并在提交时证明replacement闭包
+
+- Date/WBS：2026-10-08 / `PRT-01-A08-A04`；依据DEC-1046～1048与Migration0134。
+- Decision：SUPERSEDE在同一事务锁定旧ACTIVE行，确认同逻辑身份/同purpose和载荷变化，重证新当前事实，
+  预生成UUIDv7后先终结旧行释放partial唯一键，再插replacement；延迟FK/闭包在提交时最终证明。REVOKE不
+  依赖已漂移端点恢复，仍要求当前授权、License、强版本和持久幂等。
+- Reason：先插replacement必然撞ACTIVE逻辑唯一键；取消唯一性会暴露双当前Link；要求失效端点恢复后才能
+  撤销则会留下无法治理的陈旧ACTIVE关系。
+- Impact/Rollback：仅扩展内部Service/Repository，无Schema/公开API/依赖/外发；历史不可删除。Win11/PG18.6
+  故障回滚、重放、权限、后端3170/3及wheel1216项通过；A08完成，进入A09 HTTP前置核查。
+
 ## DEC-20261008-1048：Link创建重证当前事实且未授权项目保持防枚举语义
 
 - Date/WBS：2026-10-08 / `PRT-01-A08-A03`；依据DEC-1046/1047、冻结PRT-05与Project授权核心。
