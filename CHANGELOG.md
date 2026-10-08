@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A04-P04-P05 新增 PROJECT Reference List 可注入 HTTP 与独立 HMAC-SHA256 游标，绑定 Session/项目/页大小，摘要不含正文或固定来源明细；默认/Windows/GLOBAL 仍关闭。兼容性/升级：无 Schema、依赖、冻结 API 破坏或升级动作。验证：合同3通过/13子例，Win11隔离PG18.6/私有文件真实 Session/ASGI 双页及游标/权限/License负例，后端全量3318通过/3跳过/4896子例。已知问题：Windows正式独立游标密钥/组合、UI、正式License/目标账户、20并发/Gate3/发行未验；Debian13按用户指令跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P04-P04 新增 PROJECT Reference List 内部受权 Owner，以根 UUID 稳定 keyset 分页并校验每条当前版本归属；仅返回摘要，不开放 HTTP 或原始游标。兼容性/升级：无 Schema、公开 API、新依赖或升级动作。验证：Win11隔离PG18.6/私有文件双页/角色/隔离/撤权及来源/创建/drift回归、后端全量3315通过/3跳过/4883子例。已知问题：List HTTP签名游标/Windows/UI、正式License/目标账户、20并发/Gate3/发行未验；Debian13按用户指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P04-P03 将 PROJECT Reference GET 装入 Windows 显式只读/写模式；默认登录与 GLOBAL 仍关闭，缺依赖拒启动。兼容性/升级：无 Schema、依赖或既有 API 破坏，无升级动作。验证：Win11隔离PG18.6/私有文件真实 Session/ASGI GET、跨项目/License拒绝，生产模式合同及后端全量3313通过/3跳过/4871子例。已知问题：正式License/目标账户、List/UI、20并发/Gate3/发行未验；Debian13按用户指令跳过。
