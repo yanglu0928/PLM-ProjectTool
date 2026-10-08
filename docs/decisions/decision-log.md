@@ -1,5 +1,18 @@
 # 自主决策记录
 
+## DEC-20261008-1069：GLOBAL Template管理不复用项目成员身份或项目路由
+
+- Date/WBS：2026-10-08 / `PRT-01-A10-A05-P02-P02`；依据冻结GLOBAL Template Operation和Scope隔离。
+- Decision：GLOBAL管理使用独立DeploymentAdmin页面和GLOBAL Document候选，所有客户端调用不携带
+  ProjectId；普通用户不预取GLOBAL元数据。页面可直接构造same-origin固定文档content URL，但服务端必须
+  重新核验Session、Admin、License和文件完整性。项目模板页继续只读GLOBAL。
+- Reason：把GLOBAL写入口放进项目页面会把项目成员资格误当部署权限；复制文档正文或磁盘路径又会绕过
+  Document Owner。独立管理面可清晰隔离跨项目结构资产和客户业务事实。
+- Impact/Rollback：新增前端页面、测试及共享结构化表单模块，无Schema/API/依赖/权限/Secret或外发变化。
+  删除页面并恢复项目页内联表单可回滚；后端、历史版本和项目固定引用不变。路由留A06。
+- Verification：定向5项覆盖Admin/非Admin、GLOBAL Document定位、创建恢复及强ETag修订；前端98文件/
+  1583项、typecheck及Vite 195 modules构建通过，既有主chunk警告保留。
+
 ## DEC-20261008-1068：项目模板列表按冻结语义安全接纳获准GLOBAL项
 
 - Date/WBS：2026-10-08 / `PRT-01-A10-A05-P02-P01`；依据API-04、DEC-1033及真实Template Repository查询。

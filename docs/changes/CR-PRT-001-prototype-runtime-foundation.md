@@ -108,6 +108,14 @@ Key、ETag恢复，名称PATCH只GET对账。编码前发现项目Template列表
 GLOBAL在项目页只读，其独立DeploymentAdmin管理面拆至P02-P02。无Schema/API/依赖/Secret/外发变化。
 定向33项、前端97文件/1580项、typecheck及Vite 195 modules构建通过；既有主chunk警告保留。
 
+## A10-A05-P02-P02 实施记录（2026-10-08）
+
+新增独立DeploymentAdmin GLOBAL Template页面，不消费ProjectId或项目角色。页面与项目模板共用结构化布局、
+组件、终端和固定DocumentVersion合同；GLOBAL文档只从受权元数据选择，固定原文使用same-origin content
+URL并由服务端重证，不暴露磁盘路径。非管理员不触发读取，CREATE/REVISE未知结果按原Body/Key/ETag恢复，
+历史非结构化合同只读。路由留A06统一注册；无Schema/API/依赖/Secret/外发变化，进入A05-P03 Version页面。
+定向5项、前端98文件/1583项、typecheck及Vite 195 modules构建通过；既有主chunk警告保留。
+
 ## A02 实施记录（2026-10-08）
 
 Migration0122新增Package、Prototype、同项目membership、NOT_REQUIRED范围决定及固定受影响

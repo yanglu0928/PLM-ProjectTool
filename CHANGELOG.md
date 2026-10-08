@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A10-A05-P02-P02 新增DeploymentAdmin GLOBAL Prototype Template
+  结构化管理页；不依赖ProjectId，使用受权GLOBAL Document固定版本及same-origin原文入口，非管理员不读取。
+  CREATE/REVISE按原Body/Key/ETag恢复，修订只追加不可变版本；与项目页共享受限表单且无任意JSON/脚本。
+  兼容性/升级/回滚：无Schema/API/依赖/权限/Secret或外发，删除页面和共享表单模块可回滚，后端历史不变。
+  验证：定向5项、前端98文件/1583项、typecheck、Vite 195 modules构建PASS；既有主chunk警告保留。
+  已知问题：A05-P03～P04、A06～A07、A11、Server2025、Gate3/UAT/发行待；Debian13跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A10-A05-P02-P01 新增Prototype Package与PROJECT Template结构化页面：
   Package成员按受权业务候选全量替换；Template使用布局/组件/终端/固定DocumentVersion，不提供UUID或任意
   JSON维护。修复项目Template合法混合GLOBAL时的前端误拒绝，同时保持外项目失败关闭；GLOBAL在项目页只读。

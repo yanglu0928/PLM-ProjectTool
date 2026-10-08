@@ -8,6 +8,8 @@ import { DocumentReadClient, DocumentReadError, type DocumentView } from "@/modu
 import { PrototypeReadError, PrototypeTemplateReadClient, type PrototypeTemplateCursor,
   type PrototypeTemplateView } from "@/modules/prototype/api/prototypeReadClient";
 import { PrototypeWriteClient, PrototypeWriteError, type PrototypeTemplateContentInput } from "@/modules/prototype/api/prototypeWriteClient";
+import { canonicalPrototypeTemplate, prototypeTemplateComponents, prototypeTemplateContent,
+  prototypeTemplateLayouts, prototypeTemplateTerminals } from "./prototypeTemplateForm";
 
 type Pending = Readonly<{ kind: "create"; name: string; content: PrototypeTemplateContentInput; key: string }>
   | Readonly<{ kind: "revise"; templateId: string; etag: string; content: PrototypeTemplateContentInput; key: string }>;
@@ -24,10 +26,8 @@ const busy = ref(false); const loaded = ref(false); const error = ref(""); const
 const form = reactive({ name: "", layout: "SINGLE_COLUMN", components: ["FORM"] as string[],
   terminals: ["DESKTOP"] as string[], artifactVersions: [] as string[], confirmed: false });
 let generation = 0; let mounted = true;
-const layouts = Object.freeze([{ value: "SINGLE_COLUMN", label: "单列" }, { value: "TWO_COLUMN", label: "双列" },
-  { value: "MASTER_DETAIL", label: "主从" }, { value: "DASHBOARD", label: "看板" }]);
-const componentOptions = Object.freeze(["FORM", "TABLE", "NAVIGATION", "PREVIEW", "SUMMARY"]);
-const terminalOptions = Object.freeze(["DESKTOP", "TABLET", "WEB"]);
+const layouts = prototypeTemplateLayouts; const componentOptions = prototypeTemplateComponents;
+const terminalOptions = prototypeTemplateTerminals;
 const projectId = () => typeof route.params.projectId === "string" ? route.params.projectId : "";
 const role = computed(() => identity?.authorized_projects.find(item => item.project_id === projectId())?.role ?? null);
 const canWrite = computed(() => !!identity && !identity.password_change_required && session.canSubmit
@@ -62,18 +62,8 @@ async function load() {
 }
 function reset() { form.name = ""; form.layout = "SINGLE_COLUMN"; form.components = ["FORM"]; form.terminals = ["DESKTOP"];
   form.artifactVersions = []; form.confirmed = false; }
-function canonical(item: PrototypeTemplateView): { layout: string; components: string[] } | null {
-  const layout = item.layout_contract.layout; const values = new Set(layouts.map(option => option.value));
-  const raw = item.component_contract.components;
-  if (typeof layout !== "string" || !values.has(layout) || !Array.isArray(raw)) return null;
-  const components = raw.map(value => typeof value === "object" && value !== null && !Array.isArray(value)
-    && Object.keys(value).length === 1 && typeof (value as { kind?: unknown }).kind === "string"
-    ? (value as { kind: string }).kind : "");
-  if (!components.length || components.some(value => !componentOptions.includes(value))) return null;
-  return { layout, components };
-}
 function beginRevise(item: PrototypeTemplateView) {
-  if (!canWrite.value || item.scope !== "PROJECT") return; const parsed = canonical(item);
+  if (!canWrite.value || item.scope !== "PROJECT") return; const parsed = canonicalPrototypeTemplate(item);
   if (!parsed) { error.value = "该历史模板不符合当前结构化表单合同，只能查看；不会降级为任意JSON编辑。"; return; }
   if (item.artifact_refs.some(ref => ref.artifact_kind !== "DOCUMENT_VERSION" || ref.document_id === null)) {
     error.value = "该模板包含当前页面无法安全定位的制品，只能查看；请先完成服务端受权定位。"; return;
@@ -82,20 +72,13 @@ function beginRevise(item: PrototypeTemplateView) {
   form.terminals = [...item.applicable_terminals]; form.artifactVersions = item.artifact_refs.map(ref => ref.target_id);
   form.confirmed = false; error.value = ""; notice.value = "";
 }
-function content(): PrototypeTemplateContentInput {
-  const components = [...new Set(form.components)].sort(); const terminals = [...new Set(form.terminals)].sort();
-  const artifacts = [...new Set(form.artifactVersions)].sort().map(target_id => ({ artifact_kind: "DOCUMENT_VERSION" as const, target_id }));
-  return Object.freeze({ layout_contract: Object.freeze({ layout: form.layout }),
-    component_contract: Object.freeze({ components: Object.freeze(components.map(kind => Object.freeze({ kind }))) }),
-    applicable_terminals: Object.freeze(terminals), artifact_refs: Object.freeze(artifacts) });
-}
 async function submit(attempt: Pending | null = null) {
   if (!canWrite.value || busy.value || (!form.confirmed && attempt === null)) return;
   if (attempt === null && (!form.components.length || !form.terminals.length)) { error.value = "至少选择一个组件和一个适用终端。"; return; }
   const value = attempt ?? (selected.value ? Object.freeze({ kind: "revise" as const,
-    templateId: selected.value.prototype_template_id, etag: selected.value.etag, content: content(),
+    templateId: selected.value.prototype_template_id, etag: selected.value.etag, content: prototypeTemplateContent(form),
     key: `prototype-template-revise-${crypto.randomUUID()}` }) : Object.freeze({ kind: "create" as const,
-    name: form.name.trim(), content: content(), key: `prototype-template-create-${crypto.randomUUID()}` }));
+    name: form.name.trim(), content: prototypeTemplateContent(form), key: `prototype-template-create-${crypto.randomUUID()}` }));
   const project = projectId(), run = ++generation; let completion = ""; busy.value = true; error.value = ""; notice.value = ""; pending.value = value;
   try { if (value.kind === "create") await writer.createProjectTemplate(project, value.name, value.content, value.key);
     else await writer.reviseProjectTemplate(project, value.templateId, value.etag, value.content, value.key);
