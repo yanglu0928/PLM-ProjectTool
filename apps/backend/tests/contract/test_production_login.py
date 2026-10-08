@@ -23,6 +23,7 @@ from plm_assistant.modules.platform.infrastructure.bootstrap_config import Boots
 from plm_assistant.modules.project.api.member_list_cursor import MemberListCursorCodec
 from plm_assistant.modules.project.api.department_list_cursor import DepartmentListCursorCodec
 from plm_assistant.modules.document.api.document_list_cursor import DocumentListCursorCodec
+from plm_assistant.modules.solution.api.reference_list_cursor import ReferenceListCursorCodec
 from plm_assistant.modules.document.api.version_list_cursor import VersionListCursorCodec
 from plm_assistant.modules.document.api.parse_list_cursor import ParseListCursorCodec
 from plm_assistant.modules.jobs.api.list_cursor import JobListCursorCodec
@@ -51,6 +52,25 @@ class _ContractMaintenanceAdmission:
 
 
 class ProductionLoginTests(unittest.TestCase):
+    def test_missing_reference_list_cursor_key_disposes_platform_runtime(self):
+        runtime = Mock()
+        runtime.is_ready.return_value = True
+        with patch("plm_assistant.entrypoints.production_login.read_database_url",
+                   return_value="postgresql+psycopg://localhost/test"), patch(
+                   "plm_assistant.entrypoints.production_login.create_database_runtime",
+                   return_value=runtime), patch(
+                   "plm_assistant.entrypoints.production_login._schema_current",
+                   return_value=True), patch(
+                   "plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services",
+                   return_value=Mock(guard=Mock())), patch(
+                   "plm_assistant.entrypoints.production_login."
+                   "create_windows_project_reference_list_cursor_codec",
+                   side_effect=RuntimeError("private missing Reference cursor key")):
+            with self.assertRaises(ProductionLoginStartupError) as caught:
+                create_production_platform_app(self.settings(("http://localhost",)))
+        self.assertNotIn("private", str(caught.exception))
+        runtime.dispose.assert_called_once()
+
     def test_user_write_constructors_fail_closed_dispose_write_only(self):
         from contextlib import ExitStack
         from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
@@ -264,6 +284,11 @@ class ProductionLoginTests(unittest.TestCase):
         self.enterContext(patch(
             "plm_assistant.entrypoints.production_login.create_windows_document_list_cursor_codec",
             return_value=DocumentListCursorCodec(b"x" * 32),
+        ))
+        self.enterContext(patch(
+            "plm_assistant.entrypoints.production_login."
+            "create_windows_project_reference_list_cursor_codec",
+            return_value=ReferenceListCursorCodec(b"r" * 32),
         ))
         self.enterContext(patch(
             "plm_assistant.entrypoints.production_login.create_windows_document_version_cursor_codec",

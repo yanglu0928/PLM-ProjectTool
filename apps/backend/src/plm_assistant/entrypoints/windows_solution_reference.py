@@ -18,6 +18,8 @@ from plm_assistant.modules.platform.infrastructure.idempotency_receipts import S
 from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
 from plm_assistant.modules.project.infrastructure.authorization_repository import SqlAlchemyProjectAuthorizationRepository
 from plm_assistant.modules.solution.api.reference_create import create_project_reference_create_router
+from plm_assistant.modules.solution.api.reference_list import create_project_reference_list_router
+from plm_assistant.modules.solution.api.reference_list_cursor import ReferenceListCursorCodec
 from plm_assistant.modules.solution.api.reference_read import create_project_reference_read_router
 from plm_assistant.modules.solution.application.create_reference_solution import ReferenceCreateService
 from plm_assistant.modules.solution.application.read_reference import ReferenceReadService
@@ -35,6 +37,18 @@ class ProductionSolutionReferenceStartupError(RuntimeError):
         super().__init__("Solution Reference production composition unavailable")
 
 
+def _read_service(runtime, license_guard) -> ReferenceReadService:
+    return ReferenceReadService(
+        unit_of_work=runtime.unit_of_work,
+        access=SqlAlchemyProjectReadAccess(),
+        license_guard=license_guard,
+        authorization=ProjectAuthorizationService(
+            unit_of_work=runtime.unit_of_work,
+            repository=SqlAlchemyProjectAuthorizationRepository()),
+        repository=SqlAlchemyReferenceReadRepository(),
+    )
+
+
 def create_windows_project_reference_read_router(
     *, runtime, sessions, origins, license_guard,
 ) -> APIRouter:
@@ -43,17 +57,27 @@ def create_windows_project_reference_read_router(
             runtime, sessions, origins, license_guard)):
         raise ProductionSolutionReferenceStartupError()
     try:
-        service = ReferenceReadService(
-            unit_of_work=runtime.unit_of_work,
-            access=SqlAlchemyProjectReadAccess(),
-            license_guard=license_guard,
-            authorization=ProjectAuthorizationService(
-                unit_of_work=runtime.unit_of_work,
-                repository=SqlAlchemyProjectAuthorizationRepository()),
-            repository=SqlAlchemyReferenceReadRepository(),
-        )
         return create_project_reference_read_router(
-            sessions=sessions, origins=origins, reads=service)
+            sessions=sessions, origins=origins,
+            reads=_read_service(runtime, license_guard))
+    except Exception:
+        raise ProductionSolutionReferenceStartupError() from None
+
+
+def create_windows_project_reference_list_router(
+    *, runtime, sessions, origins, license_guard,
+    cursors: ReferenceListCursorCodec,
+) -> APIRouter:
+    """Compose PROJECT List only after its dedicated cursor key was resolved."""
+    if any(value is None for value in (
+            runtime, sessions, origins, license_guard, cursors)):
+        raise ProductionSolutionReferenceStartupError()
+    try:
+        if type(cursors) is not ReferenceListCursorCodec:
+            raise ValueError("Reference cursor codec required")
+        return create_project_reference_list_router(
+            sessions=sessions, origins=origins,
+            reads=_read_service(runtime, license_guard), cursors=cursors)
     except Exception:
         raise ProductionSolutionReferenceStartupError() from None
 

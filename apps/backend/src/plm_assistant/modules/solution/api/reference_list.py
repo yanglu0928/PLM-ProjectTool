@@ -48,6 +48,13 @@ def create_project_reference_list_router(
         raise ValueError("PROJECT Reference List HTTP dependencies required")
     router = APIRouter()
 
+    # A read-only composition must keep the existing create route at 404.
+    # In write mode the separately mounted create router precedes this sentinel.
+    @router.post("/api/v1/projects/{project_id}/reference-solutions",
+                 include_in_schema=False)
+    async def create_closed(project_id: str) -> None:
+        raise ApplicationError("RESOURCE_NOT_FOUND")
+
     @router.get("/api/v1/projects/{project_id}/reference-solutions")
     async def list_project(project_id: str, request: Request) -> JSONResponse:
         headers = tuple(request.scope.get("headers", ()))

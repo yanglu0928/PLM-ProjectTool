@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261009-1116：Reference List 使用独立 Windows KeyRef 并保留只读 POST 404
+
+- Date/WBS：2026-10-09 / `SOL-01-A04-P04-P06`；依据冻结 API-04、P05 签名游标与既有 Windows 当前账户 Vault 模式。
+- Decision：以独立 `project-reference-list-cursor-v1` 从当前账户只读解析32字节游标密钥，缺失即显式平台应用拒启动；不借用其他游标密钥。只读组合新增同路径隐藏 POST 哨兵返回标准404，以保持创建操作未开放的既有行为；写模式独立创建 Router 先于 List Router，因此真实创建路径仍由受权 POST 处理。
+- Reason：共享密钥削弱用途隔离；GET 装配后 FastAPI 默认将未开放 POST 由404改为405，改变既有模式合同并透露路径存在。显式404和路由优先级保留既有关闭边界。
+- Impact/Rollback：新增当前账户 KeyRef 供给前置与组合依赖，部署人员须离线备份并在目标账户验证恢复；无 Schema、冻结 API Breaking Change、角色或外发变化。可撤 List装配回滚，历史不变；不能使用本轮合成测试密钥作为正式来源。
+- Verification：Win11临时Vault丢失/备份恢复、缺钥启动拒绝、只读POST404/写模式创建合同、隔离PG18.6真实Session/ASGI双页及后端全量 `3322 passed, 3 skipped, 4904 subtests passed`。正式账户/Server2025/性能/UAT仍待。
+
 ## DEC-20261009-1115：Reference 列表以根身份 keyset 分页并显式校验当前版本
 
 - Date/WBS：2026-10-09 / `SOL-01-A04-P04-P04`；依据冻结 API-04 的 `SOL_REFERENCE_LIST`、P04-P01～P03 当前版本读取。
