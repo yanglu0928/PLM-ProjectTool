@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A04-P10 对账 Solution 下一业务链，确定先核查 SOL-02 目录身份 CREATE；SOL-01 Revise/Eligibility 仍开放，Reference 历史读取不构成现时资格。兼容性/升级：仅文档与施工顺序，无代码/API/Schema/依赖或数据迁移；停止此排序可回退。验证：冻结 API-04/DM-05、0136～0138 Schema 与源码静态对账，未运行新测试。已知问题：目录真实 Owner、Reference 剩余操作、真人确认、正式信任源、性能、Server2025、Gate3/UAT/发行未验；Debian13 当前实机依指令跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P09-P06 补 GLOBAL Reference 真实 PG 双条/双页 keyset 与 PROJECT 家族游标隔离，两个对象均经正式 Create Owner 和合成确认写入。兼容性/升级：仅验证脚本/可选夹具回调扩展，无生产代码/API/Schema/依赖或数据迁移。验证：Win11隔离PG18.6 双页/拒绝路径与原来源夹具回归均退出0。已知问题：合成确认非真人、正式License/目标账户密钥、Server2025、20并发、Gate3/UAT/发行未验；Debian13依指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P09-P05-P04 新增 GLOBAL Reference Windows11 Edge/隔离PG Create→GET/List→固定文档下载与 Evidence Viewer 验证，移除 Session 后401；原多/单来源确认撤回脚本回归。兼容性/升级：仅验证夹具，无生产代码/API/Schema/依赖/数据迁移；默认脚本模式不变。验证：新旧浏览器链均退出0。已知问题：脚本核查非真人确认，浏览器内精确高亮、真实PG双页、正式License/账户、Server2025、20并发、Gate3/UAT/发行未验；Debian13依指令跳过。
