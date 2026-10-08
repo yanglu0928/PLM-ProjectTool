@@ -67,6 +67,8 @@ describe("PROJECT Outline read pages", () => {
     expect(wrapper.text()).toContain("尚无已审批版本");
     expect(wrapper.text()).toContain("不得据此判断方案已交付");
     expect(wrapper.get(`a[href="/projects/${project}/solution-outlines"]`).text()).toContain("返回方案目录");
+    expect(wrapper.get(`a[href="/projects/${project}/solution-sections"]`).text())
+      .toContain("整个项目的方案章节");
     wrapper.unmount();
   });
 

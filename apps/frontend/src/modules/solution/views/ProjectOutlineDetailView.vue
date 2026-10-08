@@ -48,6 +48,7 @@ onUnmounted(() => { mounted = false; generation += 1; });
       <button type="button" :disabled="busy" @click="load()">{{ busy ? "正在读取…" : "重新读取目录" }}</button>
       <p v-if="error" role="alert">{{ error }}</p>
       <template v-if="current"><h2>{{ current.name }}</h2>
+        <p><RouterLink :to="{ name: 'project-sections', params: { projectId: current.project_id } }">查看整个项目的方案章节</RouterLink></p>
         <dl><dt>目录状态</dt><dd>{{ current.outline_state === "ARCHIVED" ? "已归档" : "活动中" }}</dd>
           <dt>批准版引用</dt><dd>{{ current.current_approved_version_ref ? "已记录；版本正文与评审需另行核查" : "尚无已审批版本" }}</dd>
           <dt>创建时间</dt><dd><time :datetime="current.created_at">{{ new Date(current.created_at).toLocaleString("zh-CN") }}</time></dd>

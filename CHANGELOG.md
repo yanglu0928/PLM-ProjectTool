@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-04-A18 新增 Section 项目级只读列表/详情、Outline 详情入口和安全状态提示；明确列表不按单目录筛选。兼容性/升级：无 Schema/Migration、依赖、冻结 API 或写权限变化；移除路由/入口可回滚。验证：页面/Outline定向7、前端全量115文件/1671项、typecheck/build通过。已知问题：真实浏览器/创建链/正式目标账户/20并发/Server2025、Gate3/UAT/发行未验；Debian13 实机依指令暂跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-04-A17 新增独立 Section GET/LIST 安全只读客户端与严格响应/分页/错误合同；未挂页面。兼容性/升级：无 Schema/Migration、依赖或冻结 API 变化；移除客户端可回滚。验证：定向6通过、前端全量114文件/1667通过、typecheck/build通过。已知问题：Section UI/真实浏览器/正式目标账户/20并发/Server2025、Gate3/UAT/发行未验；Debian13 实机依指令暂跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-04-A16 静态核查 Section 前端只读/创建链，拆 A17～A21 安全客户端、页面和 Win11 浏览器/PG 验收；当前 UI 未实现。兼容性/升级：仅进度文档，无程序、Schema/Migration、依赖或冻结 API 变化；可调整施工顺序。验证：合同/路由/客户端静态对账，未运行新测试。已知问题：Section UI/正式目标账户/20并发/Server2025、Gate3/UAT/发行未验；Debian13 实机依指令暂跳过。

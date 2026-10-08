@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261009-1126：Section 首版列表采用全项目视图
+
+- Date/WBS：2026-10-09 / `SOL-04-A18`，依据冻结 API-04 `SOL_SECTION_LIST` 与 A17 客户端。
+- Decision：新增项目级 Section 列表/详情路由；Outline 详情入口明确写“整个项目的方案章节”，列表每项回链所属 Outline，不在客户端把分页结果伪装为单目录完整列表。
+- Reason：冻结 LIST 仅按 ProjectId 分页，无 OutlineId 服务端筛选；客户端过滤单页会造成不完整/误导性结果。
+- Impact/Rollback：只影响 Solution 前端导航，无 API/Schema/权限变更；撤下入口/路由可回滚，历史 Section 不变。
+- Verification：页面/路由合同、前端全量 1671 项与 typecheck/build 通过；真实浏览器/PG 待 A21。
+
 ## DEC-20261009-1125：目录版本写入先补章节身份与可信来源
 
 - Date/WBS：2026-10-09 / `SOL-03-A01`，依据冻结 API-04、DM-05、CR-SOL-002 及现有 0136～0138 Guard。
