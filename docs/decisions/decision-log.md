@@ -1,5 +1,16 @@
 # 自主决策记录
 
+## DEC-20261008-1055：Template PROJECT/GLOBAL共用投影但不共用授权与游标上下文
+
+- Date/WBS：2026-10-08 / `PRT-01-A09-A06`；依据冻结 API-04、DEC-1050～1054 及 A04 Template Owner。
+- Decision：六个 Template 路径使用单一可选 Router 和共用输出投影，但 PROJECT/GLOBAL 分别调用
+  既有 Owner 授权；PROJECT LIST 可返回获准 GLOBAL 当前版，GLOBAL 入口仍为 DeploymentAdmin 管理面。
+  Cursor 显式签名 scope 与 Project，创建/修订从路径选择命令类，客户端不能提交 scope。
+- Reason：投影形状一致不代表权限一致；若用自由 scope 字段或共用无 scope cursor，会使项目成员
+  触达 GLOBAL 写入或将管理面游标重放到项目面。
+- Impact/Rollback：新增可选 Router 与应用注入点，无 Migration/依赖/Secret/外发；不注入即恢复 404。
+  合同 4、定向 20、后端 3196/3 及 wheel 1224 项通过，真实 PG 组合留 A09-A09。
+
 ## DEC-20261008-1054：Identity HTTP保留范围决定原子性且不把决定伪装成客户确认
 
 - Date/WBS：2026-10-08 / `PRT-01-A09-A05`；依据冻结 API-04、DEC-1050～1053 及 A03-A05 Owner。

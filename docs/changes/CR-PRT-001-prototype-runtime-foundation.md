@@ -313,3 +313,12 @@ Prototype 专用 cursor，CREATE/MARK/ARCHIVE 要求幂等，PATCH/MARK/ARCHIVE 
 默认应用继续 404，Windows 真实组合留 A09-A09。合同 2、相关定向 30、后端 3192/3、compileall 及
 wheel 1223 项/`d811197d…f19e9fbd`通过；无 Migration/依赖/Secret/外发，Schema head 保持 0134，
 进入 A06 Template HTTP。
+
+## A09-A06 实施记录（2026-10-08）
+
+新增冻结 PROJECT/GLOBAL Template 各 LIST/CREATE/REVISE 六操作可选 Router。PROJECT LIST 保留同项目
+PROJECT 及获准 GLOBAL 当前版，GLOBAL 入口仍调用 DeploymentAdmin Owner；cursor 强绑 scope/Project，
+客户端不能提交自由 scope。CREATE 要求幂等，REVISE 另要求强 ETag，输出重验规范合同/制品/指纹。
+默认应用继续 404，Windows 真实组合留 A09-A09。合同 4、相关定向 20、后端 3196/3、compileall 及
+wheel 1224 项/`bfb931cd…972f452d`通过；无 Migration/依赖/Secret/外发，Schema head 保持 0134，
+进入 A07 Version/Review HTTP。

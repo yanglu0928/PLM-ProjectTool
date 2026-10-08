@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A09-A06 新增冻结 PROJECT/GLOBAL PrototypeTemplate 各 LIST/CREATE/
+  REVISE 可选 HTTP Router；PROJECT 列表保留获准 GLOBAL 可见性，GLOBAL 管理面仍调用管理员 Owner，
+  cursor 强绑 scope/Project，写入按路径固定 scope 且要求幂等/强 ETag。兼容性/回滚：无 Migration、
+  依赖、Secret 或外发，默认应用仍 404，撤注入即关闭。验证：合同 4、相关定向 20、后端
+  3196/3、compileall，wheel 1224 项/`bfb931cd…972f452d` PASS。已知问题：A07～A09 其余 HTTP/
+  Windows 真实组合、A10 前端、A11 Workflow、Server 2025、Gate 3/UAT/发行待；Debian 13 跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A09-A05 新增冻结 Prototype Identity 六操作可选 HTTP Router；LIST/GET
   使用当前授权 Owner 和 Prototype 专用 cursor，三类写操作按冻结控制位要求幂等/强 ETag，
   MARK_NOT_REQUIRED 保留固定需求范围及可选 Review 事实，不伪造客户确认。兼容性/回滚：无
