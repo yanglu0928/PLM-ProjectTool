@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-04-A11 新增 Section 内部项目成员 LIST Owner、UUID keyset/每页指针复验和严格页面不变量；未暴露公开游标或 HTTP。兼容性/升级：无 Schema/Migration/依赖/前端/冻结 API 变化；撤下内部 Owner/策略可回滚，历史保留。验证：Win11隔离PG18.6真实Session/三页/成员/跨项目/暂停/License/损坏指针负例与原夹具通过；后端3386通过/3跳过/5108子例。已知问题：独立签名cursor/Vault/HTTP/Windows、项目全量索引与20并发、正式目标账户/Server2025、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-04-A10 静态核查 Section LIST：缺独立成员策略、Owner/keyset、专用签名 cursor/Vault key、HTTP/平台组合；记录项目全量分页的索引/性能风险及 A11～A15 顺序。兼容性/升级：仅文档，无程序、Schema/Migration、API 或依赖变化；施工顺序可按证据调整。验证：冻结合同/ORM/Outline LIST 模式静态对账，未运行新测试。已知问题：LIST/SectionVersion/Review/UI、正式目标账户/Server2025/性能、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-04-A09 将 Section 详情 GET 接入 Windows 显式只读/写平台组合，缺依赖 fail closed；默认/登录专用仍404，读应用POST仍404。兼容性/升级：无 Schema/Migration/依赖/前端或冻结 API 变化；撤下读模式注入可回滚，历史保留。验证：Win11隔离PG18.6真实ASGI/Session/项目成员/跨项目/暂停/License、缺依赖拒启动及 PROJECT Reference 夹具通过；后端3386通过/3跳过/5104子例。已知问题：正式目标账户/公钥/Vault/HTTPS完整生产启动、LIST/UI、Server2025/性能、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
