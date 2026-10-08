@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A11-A05-P02 新增Windows11隔离PG18.6/HTTP全NOT_REQUIRED分支验收；修复合法PostgreSQL本地时区Audit时间误拒绝，保持同项目/操作者/动作、唯一性和五分钟窗口。偏差及回滚见`CR-PRT-005`。兼容性/升级：无Schema、冻结API、权限、依赖或迁移；部署同步代码即可，生产Prototype开关继续关闭，回滚前不得跳过Audit且需保持该开关关闭。验证：真实Requirement→PROTOTYPE→SOLUTION、两项Checklist、Audit/幂等及Alembic drift通过；后端3244 passed、3 skipped、4791 subtests passed。已知问题：仅全NOT_REQUIRED分支，Approved PrototypeVersion/Link/真实制品混合分支、20并发、Server2025、Gate3/UAT/发行待；Debian13依指令跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A11-A05-P01 新增Windows11隔离PostgreSQL18.6/pgvector与真实磁盘制品验证脚本：迁移当前Schema并检查drift，验证Prototype Document固定字节匹配通过、跨项目/篡改/缺失拒绝，退出前停机与限定临时目录清理。兼容性/升级：只新增验证资产，无生产程序/Schema/API/依赖变化；无升级步骤，撤脚本可回滚。验证：脚本两次退出0，单次合成证明约195–216ms，既有Evidence隔离PG预检退出0。已知问题：Alembic仍发出既有表达式/计算默认值比较警告；完整Prototype Owner/HTTP/20并发性能、生产开关、Server2025、Gate3/UAT/发行待；Debian13依指令跳过。
 
 - 2026-10-08：0.1.0-dev.0/PRT-01-A11-A04-A03-P04 项目流程页增加显式开关控制的Prototype两项资格与PROTOTYPE→SOLUTION操作，预览只显示需求/原型主体数量，保留原操作号/强ETag/二次确认；正常路由开关默认关闭。兼容性/升级：无Schema、服务端API、权限、依赖或迁移；重建前端即可，保持关闭可回滚且旧阶段不变。验证：页面定向21项、前端101文件/1605项、typecheck及220模块构建通过。已知问题：主包786.94kB既有警告；A05真实PG/HTTP/文件/性能、生产开关、Server2025、Gate3/UAT/发行待；Debian13依指令跳过。

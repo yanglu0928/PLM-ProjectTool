@@ -37,3 +37,7 @@ P01/P02 后发现通用 `ChecklistQualificationSubject` 要求每个受审主体
 ## 2026-10-08 A03 兼容修订：Document 制品物理完整性
 
 P02 复核发现既有 `PrototypeVersionCurrentValidator` 的 Document Proof 只锁数据库中的 AVAILABLE/Hash/固定Version元数据，不能单独证明本地文件仍在或实际字节匹配。若直接把该元数据当作“制品当前可访问且Hash正确”的 Workflow PASS，会高估资格。A03 新增 Document 所有者公开物理校验 Port：在同一项目事务重读固定Version/FileObject当前状态与元数据，并用既有本地存储安全校验逐字节验证 SHA-256、长度、文件身份/重解析点；仅返回不含路径的证明。Prototype Owner 必须逐个消费；缺失、篡改、超限失败关闭。无 Schema/API/生产依赖；可能增加预览/Checklist 的磁盘读取成本，A05 需测延迟与并发，不得以缓存元数据替代实际校验。回滚仍须保持 Prototype Registry 关闭，不可静默绕过物理证明。
+
+## 2026-10-08 A05 兼容修订：PostgreSQL 时区化 Audit 证明
+
+A05 隔离 Windows11/PG18.6 实测发现：`timestamptz` 的 `decided_at` 由驱动以本机会话时区 `Asia/Shanghai` 返回，而 Audit 证明适配器要求输入对象 `utcoffset()==0`，导致已存在且有效的同项目/用户/动作 Audit 被误判缺失，Prototype资格返回409。旧单元测试仅使用UTC夹具，未覆盖真实PG返回形态。拒绝通过跳过Audit检查或修改数据库全局时区解决：前者削弱事实证明，后者改变部署环境。选择在Audit所有者公开适配器边界只接受有时区的时间戳，将输入和读回Audit时间规范化为UTC后按相同绝对时刻、唯一事件及五分钟窗口验证；无时区、缺失、重复、过迟仍拒绝。差异仅为内部时间表示，不修改冻结API、Schema、权限或业务规则。风险是时区转换边界误差；增加UTC+8真实形态、naive拒绝、唯一/过迟负例及隔离PG/HTTP回归。回滚须保持Prototype生产注册关闭；不能回滚为跳过Audit。原冻结提交与既有业务历史不改。

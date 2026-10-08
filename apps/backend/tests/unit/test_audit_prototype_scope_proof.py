@@ -56,3 +56,22 @@ def test_missing_ambiguous_or_late_action_fails_closed(monkeypatch):
     late = Row(audit_event_id=uuid.uuid4(),
                occurred_at=when + timedelta(minutes=6))
     assert _prove(monkeypatch, (late,), decided_at=when) is None
+
+
+def test_pg_local_timezone_is_normalized_without_skipping_audit(monkeypatch):
+    local = timezone(timedelta(hours=8))
+    decided = datetime(2026, 10, 8, 17, 42, tzinfo=local)
+    row = Row(audit_event_id=uuid.uuid4(),
+              occurred_at=decided + timedelta(seconds=1))
+    proof = _prove(monkeypatch, (row,), decided_at=decided)
+    assert type(proof) is PrototypeScopeDecisionAuditProof
+    assert proof.occurred_at.utcoffset() == timedelta(0)
+    assert proof.occurred_at == datetime(2026, 10, 8, 9, 42, 1,
+                                        tzinfo=timezone.utc)
+    assert _prove(monkeypatch, (row,), decided_at=decided.replace(tzinfo=None)) is None
+    early = Row(audit_event_id=uuid.uuid4(),
+                occurred_at=decided - timedelta(seconds=1))
+    assert _prove(monkeypatch, (early,), decided_at=decided) is None
+    naive = Row(audit_event_id=uuid.uuid4(),
+                occurred_at=decided.replace(tzinfo=None))
+    assert _prove(monkeypatch, (naive,), decided_at=decided) is None

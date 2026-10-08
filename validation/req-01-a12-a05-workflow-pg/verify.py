@@ -138,7 +138,7 @@ class UnusedDependency:
         raise AssertionError(f"Requirement qualification used {name}")
 
 
-def main() -> None:
+def main(*, after_prototype=None) -> None:
     database = "req01a12a05_" + uuid.uuid4().hex[:8]
     pm_token, impl_token, reviewer_token = b"p" * 32, b"i" * 32, b"r" * 32
     with connect("postgres") as admin:
@@ -487,6 +487,16 @@ def main() -> None:
                 "AND action='WORKFLOW_STAGE_TRANSITIONED'",
                 (ids["project"],),
             ).fetchone()[0] == 1
+        if after_prototype is not None:
+            after_prototype(
+                runtime=runtime, database=database, ids=ids,
+                pm=pm, pm_token=pm_token, requirement=root,
+                requirement_version=created.requirement_version_id,
+                requirement_review_round=submission.round_id,
+                workflow_id=workflow_id, guard=guard, audit=audit,
+                sessions=sessions, origins=origins, csrf=CSRF,
+                project_evidence=project_evidence,
+            )
         command.check(cfg)
     finally:
         if runtime is not None:
