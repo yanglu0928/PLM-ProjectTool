@@ -272,3 +272,11 @@ Link；SUPERSEDE只接受同逻辑身份/同purpose和变化后的固定端点/C
 0134 partial唯一键，单一事务先终结旧行并绑定预生成UUIDv7、再插replacement，由延迟闭包在提交时核验；
 插入故障证明旧行、Audit和receipt整体回滚。Win11/PG18.6、定向20、后端3170/3及wheel1216项/
 `2de46ebe…e8245026`通过；无Migration/公开API/依赖/外发，A08完成，进入A09 HTTP与Windows组合。
+
+## A09-A01 前置核查（2026-10-08）
+
+API-04固定26项Prototype Operation不变。审计确认当前22项已有业务Owner，但Package/Prototype各自LIST/GET
+缺授权策略、读Service及Repository，不能用写命令首次结果代替当前受权读取。A09拆为A02补四项Identity
+Read、A03五类独立签名cursor、A04 Package HTTP、A05 Identity HTTP、A06 Template HTTP、A07 Version/Review
+HTTP、A08 Link HTTP及A09 Windows只读/写组合与真实PG18验收。默认/login-only继续404，Windows平台读写模式
+分离；本项纯文档，无Schema/API/代码/依赖/外发，进入A02。

@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A09-A01 完成冻结Prototype HTTP前置核查：对账26项Operation，确认
+  Package/Prototype四项LIST/GET尚缺读Owner，禁止直接开放；固定五个独立cursor家族、默认/login-only关闭、
+  Windows `--platform`只读及`--platform-write`全量写模式，并按Owner/资源族拆为A02～A09。兼容性/回滚：
+  纯文档，无Schema/API/代码/依赖/外发；冻结路径/角色不变。已知问题：A02～A09实现、A10前端、A11
+  Workflow、Server2025、Gate3/UAT/发行待；Debian13跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A08-A04 新增RequirementPrototypeLink内部REVOKE/SUPERSEDE Owner；
   REVOKE允许受权人员终止已漂移Link，SUPERSEDE仅同逻辑身份/同purpose且新端点/Coverage重证，在同一事务
   先终结旧ACTIVE唯一键、再插预生成replacement，并由0134延迟闭包、Audit和receipt原子保护。兼容性/回滚：

@@ -1,5 +1,16 @@
 # 自主决策记录
 
+## DEC-20261008-1050：Prototype 26项HTTP按Owner与资源族分批开放
+
+- Date/WBS：2026-10-08 / `PRT-01-A09-A01`；依据冻结API-04、CR-PRT-001及A03～A08证据。
+- Decision：保持26个Operation/路径/角色不变；先补缺失的Package/Prototype四项读Owner，再按五个独立
+  cursor家族、Package、Identity、Template、Version/Review、Link和Windows组合分八项实施。默认/login-only
+  保持404，`--platform`仅GET，`--platform-write`开放完整受控写链。
+- Reason：当前仅22项具备Owner，直接造Router会让四项读取绕过当前授权事实；一次提交26项也无法按单一问题
+  隔离cursor、GLOBAL管理、Review编排和Link生命周期的失败证据。
+- Impact/Rollback：纯文档拆分，无Schema/API/代码/依赖/外发。各Router可撤装配，历史保留；A02前公开
+  Prototype路由继续关闭，Gate3不变。
+
 ## DEC-20261008-1049：Link替换先终结旧唯一键并在提交时证明replacement闭包
 
 - Date/WBS：2026-10-08 / `PRT-01-A08-A04`；依据DEC-1046～1048与Migration0134。
