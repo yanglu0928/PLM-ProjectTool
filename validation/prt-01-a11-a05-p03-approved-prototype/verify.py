@@ -1103,17 +1103,37 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
                   f"default={p95} pool20={expanded_p95}")
             if external_pool_comparison:
                 query_durations: list[float] = []
+                query_templates: dict[str, list[object]] = {}
+                checkout_path_durations: list[float] = []
                 query_lock = threading.Lock()
+                pool = expanded_runtime._engine.pool
+                original_connect = pool.connect
+
+                def timed_connect():
+                    started = time.perf_counter()
+                    try:
+                        return original_connect()
+                    finally:
+                        elapsed = (time.perf_counter() - started) * 1000
+                        with query_lock:
+                            checkout_path_durations.append(elapsed)
 
                 def before_query(conn, cursor, statement, parameters, context, executemany):
                     context._prt_p14_query_started = time.perf_counter()
 
                 def after_query(conn, cursor, statement, parameters, context, executemany):
                     elapsed = (time.perf_counter() - context._prt_p14_query_started) * 1000
+                    fingerprint = hashlib.sha256(statement.encode("utf-8")).hexdigest()[:12]
+                    match = re.search(r"\bFROM\s+plm\.([a-z0-9_]+)", statement, re.I)
+                    owner = match.group(1).split("_", 1)[0] if match else "other"
                     with query_lock:
                         query_durations.append(elapsed)
+                        template = query_templates.setdefault(fingerprint, [0, 0.0, owner])
+                        template[0] += 1
+                        template[1] += elapsed
 
                 file_proof_since = len(storage.proof_ms)
+                pool.connect = timed_connect
                 event.listen(expanded_runtime._engine, "before_cursor_execute", before_query)
                 event.listen(expanded_runtime._engine, "after_cursor_execute", after_query)
                 try:
@@ -1127,12 +1147,26 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
                 finally:
                     event.remove(expanded_runtime._engine, "before_cursor_execute", before_query)
                     event.remove(expanded_runtime._engine, "after_cursor_execute", after_query)
+                    pool.connect = original_connect
                 assert set(expanded_network) == set(ITEMS)
                 ordered_queries = sorted(query_durations)
                 assert ordered_queries
                 print("PRT_A05_P04_P14_POOL20_SQL "
                       f"count={len(ordered_queries)} total_ms={sum(ordered_queries):.2f} "
                       f"p95_ms={ordered_queries[math.ceil(.95 * len(ordered_queries)) - 1]:.2f}")
+                ordered_checkout = sorted(checkout_path_durations)
+                assert ordered_checkout
+                print("PRT_A05_P04_P16_CHECKOUT_PATH "
+                      f"count={len(ordered_checkout)} total_ms={sum(ordered_checkout):.2f} "
+                      f"p50_ms={statistics.median(ordered_checkout):.2f} "
+                      f"p95_ms={ordered_checkout[math.ceil(.95 * len(ordered_checkout)) - 1]:.2f} "
+                      f"max_ms={ordered_checkout[-1]:.2f}")
+                for fingerprint, entry in sorted(
+                    query_templates.items(), key=lambda item: item[1][1], reverse=True,
+                )[:8]:
+                    print("PRT_A05_P04_P16_SQL_TEMPLATE "
+                          f"fingerprint={fingerprint} owner={entry[2]} count={int(entry[0])} "
+                          f"total_ms={entry[1]:.2f}")
                 _print_file_proof_timing(storage, file_proof_since, "network-pool20")
                 print(f"PRT_A05_P04_POOL20_EXTERNAL p95={expanded_network}")
         finally:
