@@ -10587,3 +10587,10 @@
 - Decision：共享Review JSONB读取在GLOBAL nullable项目范围下保持；生产池默认5+10暂不改。P20先核算PG连接预算、Worker/服务进程并设计显式可回滚配置，再决定是否实施。
 - Reason：GLOBAL批准双评审/撤回轮次、Audit/PROJECT链通过；默认池连接取得路径P95约133–144ms而临时20池约10ms，但含预检/新建。临时池三轮业务P95两轮达标、第三轮Scope Decisions约511ms，未稳定≤500ms。
 - Impact/Rollback：本项仅隔离工具与文档，无生产程序、Schema、API、权限、依赖、配置或迁移；撤探针可回滚。性能FAIL、Prototype入口关闭、Gate3阻塞不变。
+
+# DEC-20261008-1093：本机连接额度可容候选池，目标内存与PG预算未证
+
+- Date/WBS：2026-10-08 / `PRT-01-A11-A05-P04-P20`；依据隔离PG设置、现有API/维护/三Worker连接池及Server VM配置。
+- Decision：不直接把API生产业务池由5+10改为20+0。P21仅增加显式、有界、可回滚的部署选择及预算校验，默认保持原值；目标Server实际连接/内存与重复业务P95验收前不作发行放行。
+- Reason：本机临时PG非保留连接97，候选静态服务上限55，但其他连接和每连接动态内存未知；Server VM配置16GiB/16vCPU但关闭，宿主当时可用内存低于其标称，无法以VMX替代实机验收。
+- Impact/Rollback：本项仅验证工具/文档，无生产代码/Schema/API/权限/依赖/配置/迁移；撤记录可回滚。性能FAIL、Prototype入口与Gate3仍关闭。

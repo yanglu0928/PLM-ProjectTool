@@ -1492,6 +1492,7 @@ def main(*, mixed_not_required: bool = False,
          pipeline_probe: bool = False,
          bundle_probe: bool = False,
          global_review_probe: bool = False,
+         pool_budget_probe: bool = False,
          phase_diagnostic: bool = False,
          timeline_diagnostic: bool = False,
          external_client: bool = False,
@@ -1521,6 +1522,16 @@ def main(*, mixed_not_required: bool = False,
               "-A", "trust", "--no-locale", "-E", "UTF8"])
         _run([str(binaries / "pg_ctl.exe"), "-D", str(data), "-l", str(log),
               "-o", f"-h 127.0.0.1 -p {PORT}", "-w", "start"], detached=True)
+        if pool_budget_probe:
+            with psycopg.connect(host="127.0.0.1", port=PORT,
+                                 user="poc_admin", dbname="postgres") as db:
+                limits = dict(db.execute(
+                    "SELECT name,setting FROM pg_settings WHERE name IN "
+                    "('max_connections','superuser_reserved_connections',"
+                    "'reserved_connections','shared_buffers','work_mem')"
+                ).fetchall())
+                assert "max_connections" in limits
+                print(f"PRT_A05_P04_P20_PG_BUDGET {limits}")
         req = runpy.run_path(str(ROOT / "validation/req-01-a12-a05-workflow-pg/verify.py"))
         req["main"](
             include_second=mixed_not_required,
@@ -1550,6 +1561,9 @@ def main(*, mixed_not_required: bool = False,
             global_review["main"](read_snapshot_probe=True)
             print("PRT_01_A11_A05_P04_P19_GLOBAL_REVIEW_PG_PASS: "
                   "GLOBAL nullable scope read on disposable PostgreSQL")
+        if pool_budget_probe:
+            print("PRT_01_A11_A05_P04_P20_POOL_BUDGET_PROBE_PASS: "
+                  "isolated PG settings captured; production budget not asserted")
         if read_load:
             print("PRT_01_A11_A05_P04_P01_READ_LOAD_MEASURED: "
                   "twenty concurrent GETs per Prototype item, real PG and file")
