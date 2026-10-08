@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A04-P07-P04 新增 Windows 11 Edge/隔离PG18.6 PROJECT Reference 页面组合验收：真实Session、候选→详情→固定文档版本→Evidence Viewer；移除Cookie后重读401并隐藏来源链接。兼容性/升级：仅验证夹具/记录，无生产代码、Schema或依赖变化，无升级动作。验证：最终Edge/PG脚本exit0，前序来源/创建PG回归；P03前端103文件/1614项及build通过。已知问题：正式License/目标账户、真实人工确认、Server2025、20并发性能/Gate3/发行未验；Debian13依指令跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P07-P03 新增项目 Reference 候选/详情页面及项目入口；固定 DocumentVersionId 经受权详情 GET 后才显示原文下载，Evidence 经既有 Viewer 核验后呈现页/章节/段落等定位提示。兼容性/升级：无 Schema、公开 API 或依赖变化，无数据升级；客户端原生 fetch 调用修正。验证：页面/固定版本定向14、前端全量103文件/1614项、typecheck/build通过；定位文案补测2/typecheck。已知问题：浏览器/PG端到端、精确高亮、正式License/账户、Server2025、20并发/Gate3/发行未验；主包>500kB既有警告，Debian13依指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P07-P02 新增 PROJECT Reference 前端 List/详情严格只读客户端，核对同项目、有序游标、固定文档根/版本及 ETag；尚未挂载页面。兼容性/升级：无服务端 API/Schema/依赖变化，无数据升级。验证：定向3、前端全量102文件/1608项、typecheck/build通过。已知问题：既有主包大于500kB警告；界面/浏览器、正式License/目标账户、Server2025、20并发/Gate3/发行未验；Debian13依指令跳过。
