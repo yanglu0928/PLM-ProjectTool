@@ -64,7 +64,10 @@ from plm_assistant.entrypoints.windows_solution_reference_cursor import (
     create_windows_global_reference_list_cursor_codec,
     create_windows_project_reference_list_cursor_codec,
 )
-from plm_assistant.entrypoints.windows_solution_outline import create_windows_outline_create_router
+from plm_assistant.entrypoints.windows_solution_outline import (
+    create_windows_outline_create_router,
+    create_windows_outline_read_router,
+)
 from plm_assistant.entrypoints.windows_audit_list_cursor import create_windows_audit_cursor_codec
 from plm_assistant.modules.audit.api.read_events import create_audit_read_router
 from plm_assistant.modules.audit.application.authorized_read import AuthorizedAuditReadService
@@ -616,6 +619,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         requirement_prototype_link_router = None
         project_reference_create_router = None
         solution_outline_create_router = None
+        solution_outline_read_router = None
         global_reference_create_router = None
         global_reference_read_router = None
         global_reference_list_router = None
@@ -628,6 +632,10 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 create_windows_license_services,
             )
             licenses = create_windows_license_services(runtime, settings)
+            solution_outline_read_router = create_windows_outline_read_router(
+                runtime=runtime, sessions=sessions, origins=origins,
+                license_guard=licenses.guard,
+            )
             global_reference_read_router = (
                 create_windows_global_reference_read_router(
                     runtime=runtime, sessions=sessions, origins=origins,
@@ -1665,6 +1673,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             ),
             project_reference_create_router=project_reference_create_router,
             solution_outline_create_router=solution_outline_create_router,
+            solution_outline_read_router=solution_outline_read_router,
             global_reference_create_router=global_reference_create_router,
             global_reference_read_router=global_reference_read_router,
             global_reference_list_router=global_reference_list_router,

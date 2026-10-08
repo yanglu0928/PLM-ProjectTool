@@ -31,7 +31,7 @@ SPEC.loader.exec_module(prior)
 
 
 def on_created(*, port, runtime, audit, license_guard, project, other_project,
-               token, member_token, **kwargs):
+               token, member_token, create_router_factory=None, **kwargs):
     prior.on_created(port=port, runtime=runtime, audit=audit,
                      license_guard=license_guard, project=project,
                      other_project=other_project, token=token,
@@ -51,9 +51,12 @@ def on_created(*, port, runtime, audit, license_guard, project, other_project,
             unit_of_work=runtime.unit_of_work,
             repository=SqlAlchemyProjectAuthorizationRepository()),
         repository=SqlAlchemyOutlineReadRepository())
-    router = create_outline_read_router(
-        sessions=sessions, origins=LoginOriginPolicy(["https://plm.example.test"]),
-        reads=reader)
+    origins = LoginOriginPolicy(["https://plm.example.test"])
+    router = (create_outline_read_router(
+        sessions=sessions, origins=origins, reads=reader)
+        if create_router_factory is None else create_router_factory(
+            runtime=runtime, sessions=sessions, origins=origins,
+            license_guard=license_guard))
     path = f"/api/v1/projects/{project}/solution-outlines/{outline_id}"
     headers = {"cookie": "plm_session=" + token.hex(),
                "origin": "https://plm.example.test"}
