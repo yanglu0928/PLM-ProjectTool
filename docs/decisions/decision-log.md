@@ -10763,3 +10763,10 @@
 - Decision：在既有 PROJECT Reference GET 的受权响应中增有序根 DocumentId/VersionId 对，保留旧 VersionId 数组；同事务校验根/版本/Scope/ProjectId，详情端点继续独立鉴权，不新增全局反查。
 - Reason：只有 VersionId 无法构造现有固定版本详情链接；前端扫描或猜测可能错配。隔离 PG Owner/HTTP/Windows 组合与后端全量 3322/3/4906 通过。
 - Impact/Rollback：无 Schema/新依赖/破坏性 API；前端入口尚未接线。回滚可关闭新投影，历史数据和旧数组不变；历史固定来源不等于当前可访问或有效。
+
+# DEC-20261009-1118：GLOBAL Reference 人工确认需独立受权入口
+
+- Date/WBS：2026-10-09 / `SOL-01-A04-P08-P01`；依据 CR-SOL-006/007、冻结 API-04 与当前内部确认/Proof/撤回证据。
+- Decision：先记录 CR-SOL-009，为 GLOBAL Reference 新增 Preview/Confirm/Revoke 白名单；冻结 CREATE/GET/List 路径不改，默认应用不启用。确认只能由实际 DeploymentAdmin 主动操作，写时重验来源，AI/脚本合成声明不算用户确认。
+- Reason：内部 Owner 已有但无运行 HTTP/UI；若直接开放 GLOBAL 创建会缺真实人工核查链。预览与确认分离、撤回保留历史；在新入口完成客观验收前维持 GLOBAL 创建关闭。
+- Impact/Rollback：无 Schema/迁移，后续新增 API/组合/页面按 P02～P06 独立验证。关闭新增路由/UI 可回滚入口，已产生确认/Audit/收据不得删除；正式 License/账户、Gate3/发行仍待。
