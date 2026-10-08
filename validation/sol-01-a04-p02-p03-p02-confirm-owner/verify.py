@@ -27,8 +27,14 @@ from plm_assistant.modules.solution.application.confirm_reference_deidentificati
 from plm_assistant.modules.solution.application.reference_source_qualification import (
     ProvenReferenceSources, ReferenceSourceRequest, VerifiedReferenceDocument,
 )
+from plm_assistant.modules.solution.application.prove_reference_deidentification import (
+    ReferenceDeidentificationProofService,
+)
 from plm_assistant.modules.solution.infrastructure.reference_deidentification_repository import (
     SqlAlchemyReferenceDeidentificationRepository,
+)
+from plm_assistant.modules.solution.infrastructure.reference_deidentification_proof_repository import (
+    SqlAlchemyReferenceDeidentificationProofRepository,
 )
 
 
@@ -61,6 +67,14 @@ class _Access:
 class _License:
     def require_valid(self, *, trace_id):
         return object()
+
+
+class _ReadAdmin:
+    def __init__(self, actor):
+        self.actor = actor
+
+    def authorized_admin(self, tx, **kwargs):
+        return self.actor
 
 
 class _Sources:
@@ -153,6 +167,26 @@ def verify(port: int) -> None:
         first = service.confirm(cmd)
         second = service.confirm(cmd)
         assert first.confirmation_id == second.confirmation_id
+        read_admin = _ReadAdmin(actor)
+        proof_service = ReferenceDeidentificationProofService(
+            admins=read_admin,
+            confirmations=SqlAlchemyReferenceDeidentificationProofRepository(),
+            clock=lambda: datetime(2026, 10, 8, 10, tzinfo=timezone.utc),
+        )
+        proof_args = dict(
+            session_token=b"s" * 32, trace_id=request.trace_id,
+            source_fingerprint=first.source_fingerprint,
+            source_project_class="PLM", deidentification_class="DEIDENTIFIED",
+            applicability={"industry": "synthetic"},
+        )
+        with runtime.unit_of_work() as tx:
+            attested = proof_service.prove(tx, **proof_args)
+            assert attested is not None and attested.confirmation_id == first.confirmation_id
+            assert proof_service.prove(tx, **(proof_args | {"source_project_class": "OTHER"})) is None
+            assert proof_service.prove(tx, **(proof_args | {"source_fingerprint": b"x" * 32})) is None
+            read_admin.actor = None
+            assert proof_service.prove(tx, **proof_args) is None
+            read_admin.actor = actor
         with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
                              dbname="postgres") as db:
             count = db.execute(f"SELECT count(*) FROM plm.{TABLE}").fetchone()[0]
@@ -181,10 +215,32 @@ def verify(port: int) -> None:
             assert db.execute(f"SELECT count(*) FROM plm.{TABLE}").fetchone()[0] == 1
             assert db.execute("SELECT count(*) FROM plm.plt_idempotency_receipts WHERE "
                               "operation='V1_SOL_REFERENCE_DEIDENTIFICATION_CONFIRM'").fetchone()[0] == 1
+        # A newer revoked record must not cause the older still-live attestation
+        # to be resurrected by the read query.
+        with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
+                             dbname="postgres") as db:
+            db.execute(
+                f"INSERT INTO plm.{TABLE}(source_fingerprint,source_project_class,"
+                "deidentification_class,applicability,attestation_statement,confirmed_by,"
+                "confirmed_at,expires_at,revoked_at,trace_id) VALUES "
+                "(%s,'PLM','DEIDENTIFIED',%s::jsonb,'I_VERIFIED_DEIDENTIFICATION',%s,"
+                "'2026-10-08 10:00:01+00','2026-10-09 10:00:00+00',"
+                "'2026-10-08 10:00:01+00',%s)",
+                (first.source_fingerprint, '{"industry":"synthetic"}', actor, uuid.uuid4()),
+            )
+        stopped = ReferenceDeidentificationProofService(
+            admins=read_admin,
+            confirmations=SqlAlchemyReferenceDeidentificationProofRepository(),
+            clock=lambda: datetime(2026, 10, 8, 10, 0, 2, tzinfo=timezone.utc),
+        )
+        with runtime.unit_of_work() as tx:
+            assert stopped.prove(tx, **proof_args) is None
     finally:
         engine.dispose()
     print("SOL_01_A04_P02_P03_P02_CONFIRM_OWNER_PG_PASS: migration 0141, immutable "
           "history, synthetic command/audit/receipt atomicity and rollback")
+    print("SOL_01_A04_P02_P03_P03_P01_DEIDENTIFICATION_PROOF_PG_PASS: real row read, "
+          "synthetic admin denial, source mismatch, and revoked-latest no-fallback")
 
 
 def main() -> None:
