@@ -8,6 +8,7 @@ import type { EvidenceListClient } from "@/modules/evidence/api/evidenceListClie
 import type { EvidenceViewerClient } from "@/modules/evidence/api/evidenceViewerClient";
 import type { EvidenceEligibilityClient } from "@/modules/evidence/api/evidenceEligibilityClient";
 import type { ReferenceDeidentificationClient } from "@/modules/solution/api/referenceDeidentificationClient";
+import type { GlobalReferenceCreateClient } from "@/modules/solution/api/globalReferenceCreateClient";
 import GlobalReferenceSourcePickerView from "./GlobalReferenceSourcePickerView.vue";
 
 const actor = "01234567-89ab-4cde-8123-456789abcdef";
@@ -49,7 +50,7 @@ async function session(admin = true): Promise<SessionClient> {
   return api;
 }
 async function view(admin: boolean, pages: unknown[], currentState = "ELIGIBLE",
-  attestation?: object) {
+  attestation?: object, createClient?: object) {
   const list = vi.fn(); for (const page of pages) list.mockResolvedValueOnce(page);
   const get = vi.fn().mockImplementation(async (_scope, evidenceId) =>
     descriptor([first, second, third].find((entry) => entry.evidence_id === evidenceId)!));
@@ -65,6 +66,7 @@ async function view(admin: boolean, pages: unknown[], currentState = "ELIGIBLE",
     viewerClient: { get } as unknown as EvidenceViewerClient,
     eligibilityClient: { currentGlobal } as unknown as EvidenceEligibilityClient,
     attestationClient: attestation as ReferenceDeidentificationClient | undefined,
+    createClient: createClient as GlobalReferenceCreateClient | undefined,
   }, global: { plugins: [router] } });
   await flushPromises();
   return { wrapper, list, get, currentGlobal };
@@ -227,5 +229,85 @@ describe("GlobalReferenceSourcePickerView", () => {
     await result.wrapper.get('section[aria-label="待核对集合操作"] input[type="checkbox"]').setValue(true);
     await button(result.wrapper, "清除本地待核对提醒").trigger("click");
     expect(window.sessionStorage.getItem(pendingKey)).toBeNull();
+  });
+
+  it("rechecks ordered sources after historical confirmation before explicit Create", async () => {
+    const fingerprint = "f".repeat(64);
+    const preview = vi.fn().mockResolvedValue({ source_fingerprint: fingerprint,
+      document_refs: [{ document_id: documentA, document_version_id: versionA }],
+      evidence_ids: [evidenceA, evidenceB], previewed_at: "2026-10-09T00:00:00Z" });
+    const confirm = vi.fn().mockResolvedValue({ confirmation_id: trace,
+      source_fingerprint: fingerprint, confirmed_by: actor,
+      confirmed_at: "2026-10-09T00:00:00Z", expires_at: "2030-10-16T00:00:00Z",
+      trace_id: trace });
+    const create = vi.fn().mockResolvedValue({ reference_solution_id: trace,
+      reference_version_id: documentA, scope: "GLOBAL", project_id: null,
+      name: "合成参考", eligibility_state: "REFERENCE_ONLY", version_state: "DRAFT",
+      created_by: actor, created_at: "2026-10-09T00:00:00Z", etag: '"v0"' });
+    const result = await view(true, [{ items: [first, second], next_cursor: null,
+      has_more: false }], "ELIGIBLE", { preview, confirm }, { create });
+    for (const action of result.wrapper.findAll("button").filter((entry) =>
+      entry.text() === "加入核查候选")) {
+      await action.trigger("click"); await flushPromises();
+    }
+    await result.wrapper.find('input[placeholder="PLM"]').setValue("PLM");
+    await result.wrapper.find('input[placeholder="DEIDENTIFIED"]').setValue("DEIDENTIFIED");
+    await button(result.wrapper, "预览所选来源集合").trigger("click"); await flushPromises();
+    const section = result.wrapper.get('section[aria-label="集合预览与逐项原文核查"]');
+    for (const link of section.findAll("a")) await link.trigger("click");
+    for (const checkbox of section.findAll('input[type="checkbox"]')) await checkbox.setValue(true);
+    await button(result.wrapper, "提交集合人工脱敏确认（有效期 7 天）").trigger("click");
+    await flushPromises();
+    expect(result.wrapper.text()).toContain("本会话历史确认");
+    await result.wrapper.find('input[placeholder="填写便于识别的参考名称"]').setValue("合成参考");
+    await button(result.wrapper, "重新核验并创建全局参考方案").trigger("click");
+    await flushPromises();
+    expect(preview).toHaveBeenCalledTimes(2);
+    expect(result.get).toHaveBeenCalledTimes(6);
+    expect(result.currentGlobal).toHaveBeenCalledTimes(6);
+    expect(create).toHaveBeenCalledOnce();
+    expect(create.mock.calls[0]?.[0]).toEqual({ name: "合成参考",
+      document_version_ids: [versionA], evidence_ids: [evidenceA, evidenceB],
+      source_project_class: "PLM", deidentification_class: "DEIDENTIFIED", applicability: {} });
+    expect(create.mock.calls[0]?.[1]).toMatch(/^[\x20-\x7e]{16,128}$/);
+    expect(result.wrapper.text()).toContain("不是正式方案批准");
+    expect(window.sessionStorage.getItem(`plm.sol.global.create.pending.${actor}`)).toBeNull();
+  });
+
+  it("keeps an unknown Create locked under the original key", async () => {
+    const fingerprint = "f".repeat(64);
+    const preview = vi.fn().mockResolvedValue({ source_fingerprint: fingerprint,
+      document_refs: [{ document_id: documentA, document_version_id: versionA }],
+      evidence_ids: [evidenceA, evidenceB], previewed_at: "2026-10-09T00:00:00Z" });
+    const confirm = vi.fn().mockResolvedValue({ confirmation_id: trace,
+      source_fingerprint: fingerprint, confirmed_by: actor,
+      confirmed_at: "2026-10-09T00:00:00Z", expires_at: "2030-10-16T00:00:00Z",
+      trace_id: trace });
+    const create = vi.fn().mockRejectedValue(new TypeError("response unknown"));
+    const result = await view(true, [{ items: [first, second], next_cursor: null,
+      has_more: false }], "ELIGIBLE", { preview, confirm }, { create });
+    for (const action of result.wrapper.findAll("button").filter((entry) =>
+      entry.text() === "加入核查候选")) {
+      await action.trigger("click"); await flushPromises();
+    }
+    await result.wrapper.find('input[placeholder="PLM"]').setValue("PLM");
+    await result.wrapper.find('input[placeholder="DEIDENTIFIED"]').setValue("DEIDENTIFIED");
+    await button(result.wrapper, "预览所选来源集合").trigger("click"); await flushPromises();
+    const section = result.wrapper.get('section[aria-label="集合预览与逐项原文核查"]');
+    for (const link of section.findAll("a")) await link.trigger("click");
+    for (const checkbox of section.findAll('input[type="checkbox"]')) await checkbox.setValue(true);
+    await button(result.wrapper, "提交集合人工脱敏确认（有效期 7 天）").trigger("click");
+    await flushPromises();
+    await result.wrapper.find('input[placeholder="填写便于识别的参考名称"]').setValue("合成参考");
+    await button(result.wrapper, "重新核验并创建全局参考方案").trigger("click");
+    await flushPromises();
+    const saved = JSON.parse(window.sessionStorage.getItem(
+      `plm.sol.global.create.pending.${actor}`)!) as { key: string; request: string };
+    expect(saved.key).toMatch(/^[\x20-\x7e]{16,128}$/);
+    expect(JSON.parse(saved.request)).toHaveProperty("name", "合成参考");
+    expect(result.wrapper.text()).toContain("创建结果尚待核对");
+    expect(button(result.wrapper, "重新核验并创建全局参考方案").attributes("disabled"))
+      .toBeDefined();
+    expect(create).toHaveBeenCalledOnce();
   });
 });

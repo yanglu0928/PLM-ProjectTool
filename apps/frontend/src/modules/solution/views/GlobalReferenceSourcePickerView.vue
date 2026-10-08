@@ -10,15 +10,19 @@ import { EvidenceEligibilityClient } from "@/modules/evidence/api/evidenceEligib
 import { ReferenceDeidentificationClient, ReferenceDeidentificationError,
   type DeidentificationSources, type DeidentificationPreview,
   type DeidentificationConfirmation, type DeidentificationOperationStatus } from "@/modules/solution/api/referenceDeidentificationClient";
+import { GlobalReferenceCreateClient, GlobalReferenceCreateError,
+  type GlobalReferenceCreated } from "@/modules/solution/api/globalReferenceCreateClient";
 
 const props = defineProps<{ session?: SessionClient; listClient?: EvidenceListClient;
   viewerClient?: EvidenceViewerClient; eligibilityClient?: EvidenceEligibilityClient;
-  attestationClient?: ReferenceDeidentificationClient }>();
+  attestationClient?: ReferenceDeidentificationClient;
+  createClient?: GlobalReferenceCreateClient }>();
 const session = toRaw(props.session ?? inject(sessionClientKey, null) ?? new SessionClient());
 const lists = toRaw(props.listClient ?? new EvidenceListClient());
 const viewers = toRaw(props.viewerClient ?? new EvidenceViewerClient());
 const eligibility = toRaw(props.eligibilityClient ?? new EvidenceEligibilityClient(session));
 const attestations = toRaw(props.attestationClient ?? new ReferenceDeidentificationClient(session));
+const creates = toRaw(props.createClient ?? new GlobalReferenceCreateClient(session));
 type Selected = Readonly<{ evidence: EvidenceSummary; viewer: EvidenceViewerDescriptor }>;
 const items = ref<readonly EvidenceSummary[]>([]);
 const selected = ref<readonly Selected[]>([]);
@@ -36,6 +40,8 @@ const pendingKind = ref<"confirm" | "revoke" | null>(null); const pendingKey = r
 const lookupResult = ref<DeidentificationOperationStatus | null>(null);
 const reviewedRecovery = ref(false);
 const revokeReason = ref<"SOURCE_EXPOSED" | "SCOPE_CHANGED" | "ADMIN_REVIEW">("ADMIN_REVIEW");
+const referenceName = ref(""); const createdReference = ref<GlobalReferenceCreated | null>(null);
+const createPendingKey = ref("");
 let generation = 0; let sourceRevision = 0; let mounted = true;
 const mayRead = () => mounted && session.view?.deployment_role === "DEPLOYMENT_ADMIN"
   && !session.view.password_change_required;
@@ -44,6 +50,29 @@ const documentVersionIds = () => [...new Set(selected.value.map((entry) => entry
 const documents = () => selected.value.filter((entry, index, all) =>
   all.findIndex((candidate) => candidate.viewer.document_version_id === entry.viewer.document_version_id) === index);
 const storageKey = () => `plm.sol.global.deidentification.multi.pending.${session.view?.user.user_id ?? "none"}`;
+const createStorageKey = () => `plm.sol.global.create.pending.${session.view?.user.user_id ?? "none"}`;
+function restoreCreatePending() {
+  createPendingKey.value = "";
+  try {
+    const raw = window.sessionStorage.getItem(createStorageKey());
+    if (!raw) return;
+    const value: unknown = JSON.parse(raw);
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      const item = value as Record<string, unknown>;
+      if (item.actor === session.view?.user.user_id && typeof item.key === "string"
+        && /^[\x20-\x7e]{16,128}$/.test(item.key)
+        && typeof item.request === "string" && item.request.length > 0) {
+        createPendingKey.value = item.key; return;
+      }
+    }
+  } catch { /* Corrupt storage remains locked. */ }
+  createPendingKey.value = "无法读取";
+}
+function clearCreatePending(): boolean {
+  try { window.sessionStorage.removeItem(createStorageKey()); }
+  catch { error.value = "无法清除创建操作号，请停止提交。"; return false; }
+  createPendingKey.value = ""; return true;
+}
 function clearPreview() {
   preview.value = null; confirmation.value = null; success.value = "";
   openedDocuments.value = []; checkedDocuments.value = [];
@@ -205,6 +234,66 @@ async function confirm() {
     error.value = failure instanceof Error ? failure.message : "提交结果不确定，请保留原操作号。";
   } finally { if (mounted) busy.value = false; }
 }
+async function createReference() {
+  const input = sources(), shown = preview.value, proof = confirmation.value;
+  const name = referenceName.value.trim();
+  if (!mayRead() || !session.canSubmit || busy.value || pendingKind.value
+    || createPendingKey.value || createdReference.value || !input || !shown || !proof
+    || proof.source_fingerprint !== shown.source_fingerprint
+    || Date.parse(proof.expires_at) <= Date.now() || !name || name.length > 255) return;
+  const run = generation, revision = sourceRevision;
+  busy.value = true; error.value = "";
+  try {
+    for (const entry of selected.value) {
+      const viewer = await viewers.get({ kind: "GLOBAL" }, entry.evidence.evidence_id);
+      const state = await eligibility.currentGlobal(entry.evidence.evidence_id);
+      if (viewer.evidence_id !== entry.evidence.evidence_id
+        || viewer.document_id !== entry.viewer.document_id
+        || viewer.document_version_id !== entry.viewer.document_version_id
+        || viewer.content_url !== entry.viewer.content_url
+        || state.evidence_id !== entry.evidence.evidence_id
+        || state.document_id !== viewer.document_id
+        || state.document_version_id !== viewer.document_version_id
+        || state.eligibility_state !== "ELIGIBLE") throw new Error("source changed");
+    }
+    const refreshed = await attestations.preview(input);
+    if (!mounted || run !== generation || revision !== sourceRevision) return;
+    if (refreshed.source_fingerprint !== shown.source_fingerprint
+      || refreshed.document_refs.length !== input.document_version_ids.length
+      || refreshed.document_refs.some((item, index) =>
+        item.document_version_id !== input.document_version_ids[index]
+        || item.document_id !== documents()[index]?.viewer.document_id)
+      || refreshed.evidence_ids.length !== input.evidence_ids.length
+      || refreshed.evidence_ids.some((id, index) => id !== input.evidence_ids[index])) {
+      throw new Error("source changed");
+    }
+    const request = { name, ...input }, key = crypto.randomUUID();
+    try {
+      window.sessionStorage.setItem(createStorageKey(), JSON.stringify({
+        actor: session.view?.user.user_id, key, request: JSON.stringify(request),
+      }));
+      createPendingKey.value = key;
+    } catch { error.value = "无法保存创建操作号，本次不提交。"; return; }
+    try {
+      const result = await creates.create(request, key);
+      if (!mounted || run !== generation || revision !== sourceRevision) return;
+      createdReference.value = result;
+      if (clearCreatePending()) success.value = "全局参考方案已创建为仅供参考的草稿；并非正式批准方案。";
+    } catch (failure) {
+      if (!mounted || run !== generation || revision !== sourceRevision) return;
+      if (failure instanceof GlobalReferenceCreateError
+        && ["RESOURCE_NOT_FOUND", "AUTH_CSRF_INVALID", "AUTH_SESSION_EXPIRED",
+          "LICENSE_OPERATION_DENIED", "VALIDATION_FAILED"].includes(failure.code)) {
+        clearCreatePending(); clearPreview();
+      }
+      error.value = failure instanceof Error ? failure.message : "创建结果不确定，保留原操作号。";
+    }
+  } catch {
+    if (mounted && run === generation) {
+      clearPreview(); error.value = "来源或预览已变化，请重新读取并核查。";
+    }
+  } finally { if (mounted) busy.value = false; }
+}
 async function revoke() {
   const target = confirmation.value?.confirmation_id;
   if (!mayRead() || !target || !session.canSubmit || busy.value || pendingKind.value) return;
@@ -232,7 +321,7 @@ function clearCompletedPending() {
   clearPending(); success.value = `已核对历史操作 ${result.confirmation_id}；当前状态 ${result.current_state}。`;
 }
 watch([sourceClass, deidentificationClass, industry], invalidateSources);
-onMounted(() => { restorePending(); void load(true); });
+onMounted(() => { restorePending(); restoreCreatePending(); void load(true); });
 onUnmounted(() => { mounted = false; generation += 1; selected.value = []; });
 </script>
 
@@ -259,6 +348,10 @@ onUnmounted(() => { mounted = false; generation += 1; selected.value = []; });
           <label><input v-model="reviewedRecovery" type="checkbox"> 我已核对首次结果与当前状态</label>
           <button type="button" :disabled="busy || !reviewedRecovery" @click="clearCompletedPending()">清除本地待核对提醒</button>
         </template>
+      </section>
+      <section v-if="createPendingKey" aria-label="待核对创建操作">
+        <strong>全局参考方案创建结果尚待核对</strong>
+        <p>原操作号：<code>{{ createPendingKey }}</code>。当前合同无创建回查入口；不要换号、刷新重试或再次创建，须核对服务端审计后处理。</p>
       </section>
       <p v-if="busy" role="status">正在核验来源…</p>
       <p v-if="error" role="alert">{{ error }}</p>
@@ -317,6 +410,14 @@ onUnmounted(() => { mounted = false; generation += 1; selected.value = []; });
       </section>
       <section v-if="confirmation" aria-label="集合历史确认">
         <p>历史确认号：<code>{{ confirmation.confirmation_id }}</code>；到期：{{ confirmation.expires_at }}</p>
+        <p>这只是本会话历史确认，不代表当前未撤回或来源仍合格；创建时服务端会重新证明。</p>
+        <section v-if="!createdReference" aria-label="创建全局参考方案">
+          <label>参考方案名称<input v-model="referenceName" :disabled="busy || !!createPendingKey" maxlength="255" placeholder="填写便于识别的参考名称"></label>
+          <button type="button" :disabled="busy || !!pendingKind || !!createPendingKey || !session.canSubmit
+            || !referenceName.trim() || Date.parse(confirmation.expires_at) <= Date.now()"
+            @click="createReference()">重新核验并创建全局参考方案</button>
+        </section>
+        <p v-if="createdReference" role="status">已创建参考方案 {{ createdReference.reference_solution_id }}，状态仅供参考 / 草稿；不是正式方案批准。</p>
         <label>撤回原因<select v-model="revokeReason"><option value="ADMIN_REVIEW">管理员复核</option>
           <option value="SOURCE_EXPOSED">来源暴露</option><option value="SCOPE_CHANGED">范围变化</option></select></label>
         <button type="button" :disabled="busy || !!pendingKind || !session.canSubmit" @click="revoke()">撤回此集合确认</button>
