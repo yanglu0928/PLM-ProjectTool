@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-04-A13 新增 Windows 当前账户 Section LIST 独立 Vault key ref/只读 fail-closed 工厂；不自动生成正式密钥。兼容性/升级：无 Schema/Migration/依赖/前端/冻结 API 变化；撤下工厂可回滚。验证：Win11随机临时凭据删除/加密备份恢复后旧 cursor 解码、缺/错长 key 拒启动；定向2通过/3子例，后端3391通过/3跳过/5111子例。已知问题：目标服务账户正式key/ACL/备份保管、LIST HTTP/Windows、20并发/Server2025、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-04-A12 新增 Section LIST 独立 HMAC-SHA256 cursor，绑定家族/ProjectId/Session摘要/page size/SectionId并拒绝 Outline 串用；不暴露公开 HTTP。兼容性/升级：无 Schema/Migration/依赖/前端/冻结 API 变化；撤下 codec 可回滚。验证：单元3通过、Win11隔离PG18.6真实Session第一页→签名游标→第二页通过；后端3389通过/3跳过/5108子例。已知问题：正式Vault key/备份恢复、LIST HTTP/Windows、20并发/正式目标账户/Server2025、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-04-A11 新增 Section 内部项目成员 LIST Owner、UUID keyset/每页指针复验和严格页面不变量；未暴露公开游标或 HTTP。兼容性/升级：无 Schema/Migration/依赖/前端/冻结 API 变化；撤下内部 Owner/策略可回滚，历史保留。验证：Win11隔离PG18.6真实Session/三页/成员/跨项目/暂停/License/损坏指针负例与原夹具通过；后端3386通过/3跳过/5108子例。已知问题：独立签名cursor/Vault/HTTP/Windows、项目全量索引与20并发、正式目标账户/Server2025、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
