@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from typing import Literal
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -22,7 +23,8 @@ def _session(transaction: object) -> Session:
 
 class SqlAlchemyProjectAuthorizationRepository:
     def actor_facts(self, transaction: object, *, user_id: uuid.UUID,
-                    project_id: uuid.UUID, lock: bool = False) -> ProjectActorFacts | None:
+                    project_id: uuid.UUID,
+                    lock: bool | Literal["SHARE"] = False) -> ProjectActorFacts | None:
         statement = select(
             ProjectRow.state, ProjectMemberRow.project_role,
         ).join(
@@ -39,8 +41,14 @@ class SqlAlchemyProjectAuthorizationRepository:
             ProjectMemberRow.ended_at.is_(None),
             DepartmentRow.state == "ACTIVE",
         )
-        if lock:
+        if lock is True:
             statement = statement.with_for_update(of=(ProjectRow, ProjectMemberRow, DepartmentRow))
+        elif lock == "SHARE":
+            statement = statement.with_for_update(
+                read=True, of=(ProjectRow, ProjectMemberRow, DepartmentRow),
+            )
+        elif lock is not False:
+            raise ValueError("unsupported Project authorization lock mode")
         row = _session(transaction).execute(statement).one_or_none()
         return None if row is None else ProjectActorFacts(row.state, row.project_role)
 

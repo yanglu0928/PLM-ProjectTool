@@ -47,7 +47,7 @@ class ProjectAuthorizationTests(unittest.TestCase):
                                     operation=operation, resource_id=resource_id)
 
     def test_matrix_exact_for_four_roles(self):
-        self.assertEqual(len(POLICIES), 145)
+        self.assertEqual(len(POLICIES), 146)
         for operation in (
             "REQ_PACKAGE_LIST", "REQ_PACKAGE_GET", "REQ_LIST", "REQ_GET",
         ):
@@ -352,6 +352,11 @@ class ProjectAuthorizationTests(unittest.TestCase):
         self.assertEqual(POLICIES["WORKFLOW_CHECKLIST_RECORD"].roles,
                          {"PROJECT_MANAGER"})
         self.assertTrue(POLICIES["WORKFLOW_CHECKLIST_RECORD"].write)
+        self.assertEqual(POLICIES["WORKFLOW_CHECKLIST_PREVIEW"].roles,
+                         {"PROJECT_MANAGER"})
+        self.assertFalse(POLICIES["WORKFLOW_CHECKLIST_PREVIEW"].write)
+        self.assertTrue(POLICIES["WORKFLOW_CHECKLIST_PREVIEW"].shared_reads)
+        self.assertTrue(POLICIES["WORKFLOW_CHECKLIST_PREVIEW"].deny_archived)
         self.assertEqual(POLICIES["WORKFLOW_TRANSITION"].roles,
                          {"PROJECT_MANAGER"})
         self.assertTrue(POLICIES["WORKFLOW_TRANSITION"].write)
@@ -387,6 +392,20 @@ class ProjectAuthorizationTests(unittest.TestCase):
         self.repo.state = "ARCHIVED"
         self.assertEqual(self.check("WORKFLOW_GET").operation, "WORKFLOW_GET")
         self.assertTrue(self.repo.last_lock)
+
+    def test_checklist_preview_shares_lock_without_widening_write_scope(self):
+        proof = self.check("WORKFLOW_CHECKLIST_PREVIEW")
+        self.assertEqual("WORKFLOW_CHECKLIST_PREVIEW", proof.operation)
+        self.assertEqual("SHARE", self.repo.last_lock)
+        self.check("WORKFLOW_CHECKLIST_RECORD")
+        self.assertIs(self.repo.last_lock, True)
+        self.repo.role = "CUSTOMER_MANAGER"
+        with self.assertRaises(ProjectAuthorizationError):
+            self.check("WORKFLOW_CHECKLIST_PREVIEW")
+        self.repo.role = "PROJECT_MANAGER"
+        self.repo.state = "ARCHIVED"
+        with self.assertRaises(ProjectAuthorizationError):
+            self.check("WORKFLOW_CHECKLIST_PREVIEW")
 
     def test_missing_member_and_cross_project_target_are_hidden(self):
         self.repo.role = None

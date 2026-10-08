@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Literal, Protocol
 
 
 ALL_MEMBERS = frozenset({
@@ -21,12 +21,17 @@ class _Policy:
     write: bool
     target: str | None = None
     lock_reads: bool = False
+    shared_reads: bool = False
+    deny_archived: bool = False
 
 
 POLICIES: dict[str, _Policy] = {
     "PROJECT_GET": _Policy(ALL_MEMBERS, False),
     "WORKFLOW_START": _Policy(MANAGERS, True),
     "WORKFLOW_CHECKLIST_RECORD": _Policy(MANAGERS, True),
+    "WORKFLOW_CHECKLIST_PREVIEW": _Policy(
+        MANAGERS, False, shared_reads=True, deny_archived=True,
+    ),
     "WORKFLOW_TRANSITION": _Policy(MANAGERS, True),
     "WORKFLOW_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "REVIEW_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
@@ -280,7 +285,8 @@ class AuthorizedProjectAction:
 
 class ProjectAuthorizationRepositoryPort(Protocol):
     def actor_facts(self, transaction: object, *, user_id: uuid.UUID,
-                    project_id: uuid.UUID, lock: bool = False) -> ProjectActorFacts | None: ...
+                    project_id: uuid.UUID,
+                    lock: bool | Literal["SHARE"] = False) -> ProjectActorFacts | None: ...
     def owner_project_id(self, transaction: object, *, target: str,
                          resource_id: uuid.UUID) -> uuid.UUID | None: ...
 
@@ -311,7 +317,9 @@ class ProjectAuthorizationService:
                     (type(resource_id) is not uuid.UUID or resource_id.int == 0))):
             raise ProjectAuthorizationError("RESOURCE_NOT_FOUND")
         facts = self._repository.actor_facts(
-            transaction, user_id=user_id, project_id=project_id, lock=policy.write or policy.lock_reads,
+            transaction, user_id=user_id, project_id=project_id,
+            lock=("SHARE" if policy.shared_reads else
+                  policy.write or policy.lock_reads),
         )
         if (type(facts) is not ProjectActorFacts
                 or facts.project_role not in policy.roles
@@ -325,7 +333,9 @@ class ProjectAuthorizationService:
                 raise ProjectAuthorizationError("RESOURCE_NOT_FOUND")
         # Frozen DM-02 permits authorized audit export as maintenance, not a
         # general archived write or ordinary Job bypass. All other writes deny.
-        if policy.write and facts.project_state == "ARCHIVED" and operation != "AUDIT_PROJECT_EXPORT":
+        if ((policy.write or policy.deny_archived)
+                and facts.project_state == "ARCHIVED"
+                and operation != "AUDIT_PROJECT_EXPORT"):
             raise ProjectAuthorizationError("PROJECT_ARCHIVED")
         return AuthorizedProjectAction(user_id, project_id, operation, facts.project_role)
 

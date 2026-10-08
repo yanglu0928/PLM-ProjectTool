@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import concurrent.futures
 import hashlib
 import math
 import runpy
@@ -11,6 +12,7 @@ import socket
 import statistics
 import subprocess
 import tempfile
+import threading
 import time
 import uuid
 from datetime import datetime, timezone
@@ -20,6 +22,7 @@ import httpx
 import psycopg
 from fastapi.testclient import TestClient
 from psycopg.types.json import Jsonb
+from sqlalchemy import event
 
 from plm_assistant.entrypoints.api import create_app
 from plm_assistant.entrypoints.windows_workflow_checklist import (
@@ -30,9 +33,13 @@ from plm_assistant.entrypoints.windows_workflow_checklist import (
 from plm_assistant.modules.audit.application.audit_service import AuditService
 from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
 from plm_assistant.modules.auth.infrastructure.project_read_access import SqlAlchemyProjectReadAccess
+from plm_assistant.modules.auth.application.session_service import SessionService
+from plm_assistant.modules.auth.infrastructure.password_issue_access import SqlAlchemyPasswordIssueAccess
 from plm_assistant.modules.auth.infrastructure.project_write_access import SqlAlchemyProjectWriteAccess
 from plm_assistant.modules.auth.infrastructure.review_start_access import SqlAlchemyReviewStartAccess
 from plm_assistant.modules.auth.infrastructure.review_user_access import SqlAlchemyReviewUserAccess
+from plm_assistant.modules.auth.infrastructure.scrypt_password import ScryptPasswordHasher
+from plm_assistant.modules.auth.infrastructure.session_repository import SqlAlchemySessionRepository
 from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage
 from plm_assistant.modules.document.infrastructure.prototype_artifact_proof import SqlAlchemyPrototypeDocumentArtifactProof
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
@@ -98,9 +105,29 @@ class UnusedDependency:
         raise AssertionError(f"approved Prototype fixture used {name}")
 
 
-def _measure_read_load(app, prefix: str, headers: dict[str, str]
+def _measure_read_load(app, prefix: str, headers: dict[str, str], runtime,
+                       *, sql_diagnostic: bool = False,
                        ) -> dict[str, float]:
     """Repeat twenty simultaneous ASGI GETs; not a network-service SLA."""
+    query_durations: list[float] = []
+    query_templates: dict[str, list[object]] = {}
+    query_lock = threading.Lock()
+
+    def before_query(conn, cursor, statement, parameters, context, executemany):
+        context._prt_load_query_started = time.perf_counter()
+
+    def after_query(conn, cursor, statement, parameters, context, executemany):
+        elapsed = (time.perf_counter() - context._prt_load_query_started) * 1000
+        fingerprint = hashlib.sha256(statement.encode("utf-8")).hexdigest()[:12]
+        with query_lock:
+            query_durations.append(elapsed)
+            entry = query_templates.setdefault(
+                fingerprint, [0, 0.0, 0.0, " ".join(statement.split())],
+            )
+            entry[0] += 1
+            entry[1] += elapsed
+            entry[2] = max(entry[2], elapsed)
+
     async def exercise() -> dict[str, float]:
         metrics = {}
         async with httpx.AsyncClient(
@@ -157,7 +184,37 @@ def _measure_read_load(app, prefix: str, headers: dict[str, str]
                       f"median_round_p95_ms={metrics[item]:.2f}")
         return metrics
 
-    return asyncio.run(exercise())
+    if sql_diagnostic:
+        event.listen(runtime._engine, "before_cursor_execute", before_query)
+        event.listen(runtime._engine, "after_cursor_execute", after_query)
+    try:
+        result = asyncio.run(exercise())
+        if not sql_diagnostic:
+            return result
+        samples = sorted(query_durations)
+        assert samples
+        print("PRT_A05_P04_SQL_DIAGNOSTIC "
+              f"count={len(samples)} total_ms={sum(samples):.2f} "
+              f"p95_statement_ms={samples[math.ceil(.95 * len(samples)) - 1]:.2f} "
+              f"max_statement_ms={samples[-1]:.2f}")
+        for fingerprint, entry in sorted(
+            query_templates.items(), key=lambda item: item[1][1], reverse=True,
+        )[:8]:
+            print("PRT_A05_P04_SQL_TEMPLATE "
+                  f"hash={fingerprint} count={entry[0]} "
+                  f"total_ms={entry[1]:.2f} max_ms={entry[2]:.2f} "
+                  f"statement={entry[3][:150]}")
+        for fingerprint, entry in query_templates.items():
+            if "prj_project_members.project_role" in entry[3]:
+                print("PRT_A05_P04_AUTH_SQL "
+                      f"hash={fingerprint} count={entry[0]} "
+                      f"total_ms={entry[1]:.2f} max_ms={entry[2]:.2f} "
+                      f"statement={entry[3]}")
+        return result
+    finally:
+        if sql_diagnostic:
+            event.remove(runtime._engine, "before_cursor_execute", before_query)
+            event.remove(runtime._engine, "after_cursor_execute", after_query)
 
 
 def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
@@ -170,7 +227,8 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
                        coverage_mode: str | None = None,
                        isolation_checks: bool = False,
                        multi_prototype: bool = False,
-                       read_load: bool = False) -> None:
+                       read_load: bool = False,
+                       read_load_sql_diagnostic: bool = False) -> None:
     project = ids["project"]
     second = additional_requirement if mixed_not_required else None
     if mixed_not_required:
@@ -577,18 +635,18 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
             ))
             assert additional.link_state == "ACTIVE"
 
-    def build_app(db_runtime):
+    def build_app(db_runtime, route_sessions=sessions):
         return create_app(
             workflow_checklist_qualification_router=(
                 create_windows_workflow_checklist_qualification_router(
-                    db_runtime, sessions=sessions, origins=origins,
+                    db_runtime, sessions=route_sessions, origins=origins,
                     license_guard=guard, documents=unused, downloads=unused,
                     parse_results=unused, artifact_storage=storage,
                 )
             ),
             workflow_checklist_record_router=(
                 create_windows_workflow_checklist_record_router(
-                    db_runtime, sessions=sessions, origins=origins,
+                    db_runtime, sessions=route_sessions, origins=origins,
                     license_guard=guard, audit=audit, documents=unused,
                     downloads=unused, parse_results=unused,
                     artifact_storage=storage,
@@ -596,7 +654,7 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
             ),
             workflow_transition_router=(
                 create_windows_workflow_stage_transition_router(
-                    db_runtime, sessions=sessions, origins=origins,
+                    db_runtime, sessions=route_sessions, origins=origins,
                     license_guard=guard, audit=audit, documents=unused,
                     downloads=unused, parse_results=unused,
                     artifact_storage=storage,
@@ -606,15 +664,59 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
     app = build_app(runtime)
     write_headers = {**read_headers, "x-csrf-token": csrf.hex(), "origin": ORIGIN}
     if read_load:
-        p95 = _measure_read_load(app, prefix, read_headers)
+        preview_auth = ProjectAuthorizationService(
+            unit_of_work=runtime.unit_of_work,
+            repository=SqlAlchemyProjectAuthorizationRepository(),
+        )
+        with runtime.unit_of_work() as holding_tx:
+            proof = preview_auth.require_in_transaction(
+                holding_tx, user_id=pm, project_id=project,
+                operation="WORKFLOW_CHECKLIST_PREVIEW",
+            )
+            assert proof.project_role == "PROJECT_MANAGER"
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                parallel_reader = pool.submit(
+                    preview_auth.require, user_id=pm, project_id=project,
+                    operation="WORKFLOW_CHECKLIST_PREVIEW",
+                )
+                assert parallel_reader.result(timeout=5).project_role == "PROJECT_MANAGER"
+            try:
+                with psycopg.connect(
+                    host="127.0.0.1", port=PORT, user="poc_admin",
+                    dbname=database, autocommit=True,
+                ) as db, db.transaction():
+                    db.execute("SET LOCAL lock_timeout='200ms'")
+                    db.execute(
+                        "UPDATE plm.prj_project_members SET state='SUSPENDED' "
+                        "WHERE project_id=%s AND user_id=%s AND state='ACTIVE'",
+                        (project, pm),
+                    )
+            except psycopg.errors.LockNotAvailable:
+                pass
+            else:
+                raise AssertionError("preview shared lock failed to fence revocation")
+        print("PRT_A05_P04_SHARED_LOCK_PROOF: two readers coexist; "
+              "concurrent member revocation waits")
+        p95 = _measure_read_load(
+            app, prefix, read_headers, runtime,
+            sql_diagnostic=read_load_sql_diagnostic,
+        )
         assert set(p95) == set(ITEMS)
         expanded_runtime = create_database_runtime(
             runtime._engine.url,
             options=DatabaseEngineOptions(pool_size=20, max_overflow=0),
         )
         try:
+            expanded_sessions = SessionService(
+                unit_of_work=expanded_runtime.unit_of_work,
+                repository=SqlAlchemySessionRepository(),
+                issue_access=SqlAlchemyPasswordIssueAccess(ScryptPasswordHasher()),
+                audit=audit, idempotency=SqlAlchemyIdempotencyReceipts(),
+            )
             expanded_p95 = _measure_read_load(
-                build_app(expanded_runtime), prefix, read_headers,
+                build_app(expanded_runtime, expanded_sessions),
+                prefix, read_headers, expanded_runtime,
+                sql_diagnostic=read_load_sql_diagnostic,
             )
             print("PRT_A05_P04_POOL_DIAGNOSTIC "
                   f"default={p95} pool20={expanded_p95}")
@@ -752,7 +854,8 @@ def main(*, mixed_not_required: bool = False,
          coverage_mode: str | None = None,
          isolation_checks: bool = False,
          multi_prototype: bool = False,
-         read_load: bool = False) -> None:
+         read_load: bool = False,
+         read_load_sql_diagnostic: bool = False) -> None:
     if conflicting_decision and not mixed_not_required:
         raise ValueError("conflict mode requires mixed scope")
     if coverage_mode not in {None, "partial", "illustrates"}:
@@ -788,7 +891,9 @@ def main(*, mixed_not_required: bool = False,
                 coverage_mode=coverage_mode,
                 isolation_checks=isolation_checks,
                 multi_prototype=multi_prototype,
-                read_load=read_load, **context,
+                read_load=read_load,
+                read_load_sql_diagnostic=read_load_sql_diagnostic,
+                **context,
             ),
         )
         if read_load:

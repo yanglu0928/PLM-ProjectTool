@@ -71,7 +71,7 @@ class WorkflowChecklistQualificationPreviewTests(unittest.TestCase):
         self.sessions.authenticated_user.return_value = self.actor
         self.projects.require_in_transaction.return_value = AuthorizedProjectAction(
             self.actor, self.project,
-            "WORKFLOW_CHECKLIST_RECORD", "PROJECT_MANAGER",
+            "WORKFLOW_CHECKLIST_PREVIEW", "PROJECT_MANAGER",
         )
         self.view = self._view()
         self.workflows.get.return_value = self.view
@@ -151,7 +151,7 @@ class WorkflowChecklistQualificationPreviewTests(unittest.TestCase):
         self.projects.require_in_transaction.assert_called_once_with(
             self.uow.transactions[0], user_id=self.actor,
             project_id=self.project,
-            operation="WORKFLOW_CHECKLIST_RECORD",
+            operation="WORKFLOW_CHECKLIST_PREVIEW",
         )
 
     def test_survey_current_stage_returns_strict_subject_variant(self):
@@ -346,11 +346,11 @@ class WorkflowChecklistQualificationPreviewTests(unittest.TestCase):
         for proof in (
             AuthorizedProjectAction(
                 self.actor, self.project,
-                "WORKFLOW_CHECKLIST_RECORD", "CUSTOMER_MANAGER",
+                "WORKFLOW_CHECKLIST_PREVIEW", "CUSTOMER_MANAGER",
             ),
             AuthorizedProjectAction(
                 uuid4(), self.project,
-                "WORKFLOW_CHECKLIST_RECORD", "PROJECT_MANAGER",
+                "WORKFLOW_CHECKLIST_PREVIEW", "PROJECT_MANAGER",
             ),
         ):
             self.projects.require_in_transaction.return_value = proof

@@ -49,3 +49,11 @@ Windows11隔离PG18.6/pgvector、真实Approved Prototype/Review/Trace/Link和�
 候选原因包括默认连接池5+10的排队/建连、共享ProjectRow与各Owner只读锁、跨模块多轮SQL、线程调度及文件完整性重算。拒绝直接提高SLA、关闭磁盘字节校验或跳过Review/Audit/项目隔离。先加入只读计时/连接池诊断，重复本机样本并与真实Uvicorn loopback区分；若定位为生产实现瓶颈，另记录所选最小优化、兼容/安全影响、回滚与单/20并发回归后实施。暂不改生产连接池或资格规则。生产Prototype入口继续关闭，A05/Gate3不得标PASS。
 
 同日复测在每项预热后做三轮20并发：默认池`PROTOTYPE_SCOPE_DECISIONS`三轮P95中位1618.71ms、`PROTOTYPE_COVERAGE`1557.25ms；另一轮分别1538.68/1555.31ms。20并发`/health/live`对照P95中位0.70ms，排除ASGI测试链路本身为主要瓶颈。同一测试库仅将诊断运行时池临时改为20+0（不改生产默认）后，默认池1531.58/1560.53ms对比扩大池958.93/1001.37ms，说明连接池容量是部分原因但不足以达500ms。仍需定位查询/锁/物理校验成本及真实网络服务表现；不得将该诊断当作生产参数建议或性能通过。诊断运行时结束即dispose，原功能路径和正式配置未变。
+
+## 2026-10-08 A05-P04-P02 性能修订候选：资格预览项目授权共享锁
+
+复核发现上轮20+0实验仍让外层Session校验走默认池；把Session与资格事务都指向同一20+0诊断池后，两项P95仍约933/889ms。SQL事件计时在每池各122次资格请求（含预热）观察到9394条语句；其中同一Project/Member/Department授权SELECT执行122次，默认池累计等待约96秒中的约88秒，单次最长约1.4秒。静态核对确认资格预览错误复用了写命令`WORKFLOW_CHECKLIST_RECORD`策略；该策略必需`FOR UPDATE`锁，预览的长事务持有同项目排他行锁，20个只读预览互相串行。会话/Review/Artifact/Trace证明不可为了加速跳过。
+
+所选最小修订：新增只用于资格预览的`WORKFLOW_CHECKLIST_PREVIEW`项目授权策略，角色仍仅PROJECT_MANAGER，仍在同一个资格事务中锁Project/Member/Department三行，但使用PostgreSQL `FOR SHARE`，从而允许同项目只读预览共享锁，同时与撤权/归档/成员更新的`FOR UPDATE`保持冲突。Checklist写命令继续使用原`WORKFLOW_CHECKLIST_RECORD`及排他锁；不改其他读策略、公开API、Scope或授权范围。风险是共享锁与写锁转换、撤权等待及事务漂移边界，须以隔离PG并发预览/撤权、权限拒绝、写时重新证明、全量授权/Workflow回归验证；不得只凭P95改善放行。无Schema、数据或配置迁移；如验证失败，生产Prototype入口继续关闭，回滚新预览策略并恢复旧排他锁，历史数据不变。若目标仍不达500ms，再独立定位SQL数量/连接池/物理证明，不降低验收阈值。
+
+实施与复验：新预览策略还显式拒绝ARCHIVED，保持旧写策略的归档边界；真实SQL为`FOR SHARE OF prj_projects, prj_project_members, prj_departments`。隔离PG两笔并行预览事务可共存，同一成员撤权UPDATE在持锁期间触发预期lock_timeout；原写策略仍`FOR UPDATE`。仪表化预检中该授权语句122次合计约1.1秒（旧排他锁约88秒），说明主要串行点被移除。关闭SQL事件计时后的三轮20并发P95中位：默认池约752.69/748.22ms，全链路诊断20+0池约696.74/683.13ms；均仍高于500ms，因此性能状态仍FAIL，生产入口继续关闭。后端3245通过/3跳过/4795子例、旧全NOT_REQUIRED隔离PG/HTTP回归通过；后续仍须补Uvicorn loopback、跨线程撤权后的资格拒绝和剩余SQL/文件成本分析。不能以本机共享锁改善替代发行验收。

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import runpy
+import sys
 from pathlib import Path
 
 
@@ -13,4 +14,9 @@ approved = runpy.run_path(str(
 
 
 if __name__ == "__main__":
-    approved["main"](read_load=True)
+    if sys.argv[1:] not in ([], ["--sql-diagnostic"]):
+        raise SystemExit("usage: verify.py [--sql-diagnostic]")
+    approved["main"](
+        read_load=True,
+        read_load_sql_diagnostic=(sys.argv[1:] == ["--sql-diagnostic"]),
+    )

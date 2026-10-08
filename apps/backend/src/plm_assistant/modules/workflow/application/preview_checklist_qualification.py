@@ -223,12 +223,12 @@ class WorkflowChecklistQualificationPreviewService:
                 actor = self._actor(tx, query)
                 proof = self._projects.require_in_transaction(
                     tx, user_id=actor, project_id=query.project_id,
-                    operation="WORKFLOW_CHECKLIST_RECORD",
+                    operation="WORKFLOW_CHECKLIST_PREVIEW",
                 )
                 if (type(proof) is not AuthorizedProjectAction
                         or proof.user_id != actor
                         or proof.project_id != query.project_id
-                        or proof.operation != "WORKFLOW_CHECKLIST_RECORD"
+                        or proof.operation != "WORKFLOW_CHECKLIST_PREVIEW"
                         or proof.project_role != "PROJECT_MANAGER"):
                     raise WorkflowChecklistQualificationPreviewError(
                         "RESOURCE_NOT_FOUND",
