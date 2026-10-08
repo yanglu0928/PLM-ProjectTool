@@ -14,6 +14,6 @@
 
 ## 迁移、回滚与验证计划
 
-A02 新线性 Alembic 迁移与 ORM 同构：改 Guard 和新增快照表；空库/有 Project/User 数据库升级、drift、无历史时降级重升、存在 Outline/快照时拒降。不能删除客户历史以强行回滚；若 A02 之后 A03 失败，保留历史并关闭应用 Owner/路由，后续迁移修复。A03 验证 PM/IM 创建、其他角色/跨项目/失效/License 拒绝、同 Key 并发精确重放、不同载荷冲突、Audit 与 Receipt 原子回滚、直接 SQL 写闭锁、名称边界及元数据更新后快照不变。A04/A05 分别验证 HTTP 合同和 Windows 隔离 PG 组合；正式生产信任源、Server2025/20 并发、Gate3/UAT/发行单独验收。
+A02 新线性 Alembic 迁移与 ORM 同构：新增快照表并预备 Guard 分支，但单独交付时仍保持 Outline INSERT 关闭；A03 内部 Owner 与 Guard 解锁须同一个完成并验证的交付单元，避免出现无 Owner 的可写窗口。验证空库/有 Project/User 数据库升级、drift、无历史时降级重升、存在 Outline/快照时拒降。不能删除客户历史以强行回滚；若 A03 失败，保持或恢复原 Guard、关闭应用 Owner/路由，后续迁移修复。A03 验证 PM/IM 创建、其他角色/跨项目/失效/License 拒绝、同 Key 并发精确重放、不同载荷冲突、Audit 与 Receipt 原子回滚、直接 SQL 未授权操作闭锁、名称边界及元数据更新后快照不变。A04/A05 分别验证 HTTP 合同和 Windows 隔离 PG 组合；正式生产信任源、Server2025/20 并发、Gate3/UAT/发行单独验收。
 
 剩余风险：应用数据库凭据被盗用时，INSERT-only Guard 不能替代数据库角色隔离/凭据保护；正式目标服务账户和权限收敛必须在发行门禁验收，不能把本地合成 PG 结果称为生产安全 PASS。任何测试只用一次性隔离库，不对生产数据做不可恢复操作。
