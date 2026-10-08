@@ -12,6 +12,8 @@
 - 不选修改冻结 `SOL_REFERENCE_CREATE` 的路径/请求或取消 GLOBAL 确认；会破坏冻结合同或安全不变量。
 - 选择在 `/api/v1/global` 兼容新增三项独立白名单操作：`SOL_REFERENCE_DEIDENTIFICATION_PREVIEW`（受权只读预览，不写账本）、`SOL_REFERENCE_DEIDENTIFICATION_CONFIRM`（明确人工勾选/短有效期、当前 Session+CSRF+License+DeploymentAdmin+幂等与写时来源重验）、`SOL_REFERENCE_DEIDENTIFICATION_REVOKE`（当前管理员、原因码、幂等与 Audit）。UI 先展示固定 Document/Evidence 身份和既有原文定位入口，提示来源/内容可能变化；只有人主动确认才能 POST。服务端自行计算来源指纹，客户端不能指定确认人、来源 Hash 或 Audit。新操作不由业务 AI/Job 调用，默认应用不装配，Windows 仅在所有真实依赖可用时显式启用；GLOBAL Reference 创建另在此链通过后接线。
 
+P08-P02 增量合同补充：Preview 的服务端指纹仅供 Confirm 作预览过期栅栏；Confirm 必须带回预期指纹，服务端仍从当前物理来源重新计算并比对，绝不把客户端指纹当成来源证明。新增操作和错误边界见 `docs/api-contract/solution-reference-deidentification-v1-increment.md`。
+
 ## 差异、风险、迁移/回滚与验证
 
 相对冻结 API-04 是新增操作，不改已有 `/api/v1` 方法、字段、错误、权限或既有 PROJECT Reference；按正式 API Change Request 追溯。无新实体/Schema/依赖或历史数据自动迁移。风险为前端把预览视为当前确认、来源预览与提交之间漂移、失密/撤权重放、错误地在 UI 自动勾选；确认 Owner 必须写时独立复验，预览不生成确认，UI 每次要求显式人工动作，确认回执也不代表 GLOBAL Reference 已创建。撤回账本只追加受控状态，不删除历史。

@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A04-P08-P02 依据CR-SOL-009定义GLOBAL人工脱敏Preview/Confirm/Revoke增量API合同，Confirm要求预览指纹与写时现时来源一致，默认/GLOBAL创建仍关闭。兼容性/升级：仅合同/追溯文档，无运行API/Schema/依赖变化，无升级动作。验证：冻结API-04与内部Owner/CR对账；未运行新路由。已知问题：HTTP、Windows组合、前端/真实人工、正式License/账户、Server2025、20并发/Gate3/发行未验；Debian13依指令跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P08-P01 核查发现冻结 API-04 缺 GLOBAL Reference 实际人工脱敏确认入口，登记 CR-SOL-009 和分项验收顺序，维持 GLOBAL 创建关闭。兼容性/升级：仅追溯与设计文档，无程序/API/Schema/依赖变更，无升级动作。验证：冻结合同、现有内部确认/撤回/Proof、Windows组合与浏览器现状对账；未运行新接口。已知问题：真实人工确认、正式License/账户、Server2025、20并发/Gate3/发行未验；Debian13依指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P07-P04 新增 Windows 11 Edge/隔离PG18.6 PROJECT Reference 页面组合验收：真实Session、候选→详情→固定文档版本→Evidence Viewer；移除Cookie后重读401并隐藏来源链接。兼容性/升级：仅验证夹具/记录，无生产代码、Schema或依赖变化，无升级动作。验证：最终Edge/PG脚本exit0，前序来源/创建PG回归；P03前端103文件/1614项及build通过。已知问题：正式License/目标账户、真实人工确认、Server2025、20并发性能/Gate3/发行未验；Debian13依指令跳过。
