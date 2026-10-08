@@ -10552,3 +10552,10 @@
 - Decision：生产连接池继续保持默认5+10；不以临时池单轮收益宣称≤500ms。P15只先核对同事务Owner/Review的重复查询及锁语义，有可证等价方案才实施并复验。
 - Reason：临时池两轮两项P95约584/568及651/557ms，首项收益不稳定；SQL/文件/阶段计时仍不能直接归因端到端延迟，且临时池计时器与默认前段不对称。
 - Impact/Rollback：仅隔离工具与文档，无生产程序、Schema、API、权限、依赖或迁移；撤探针可回滚。性能FAIL、Prototype入口关闭、Gate3阻塞不变。
+
+# DEC-20261008-1088：Review锁和全轮次校验不可凭重复外观删除
+
+- Date/WBS：2026-10-08 / `PRT-01-A11-A05-P04-P15`；依据P14每资格58条SQL及Owner/Review静态调用链。
+- Decision：本项不改生产查询。P16先量化连接Checkout等待和SQL模板，只有形成可证明等价、可回归的方案才实施。
+- Reason：Review全轮次读取校验根状态/序号，目标Round另需共享锁，六类子表各有独立一致性验证；已知重复范围、验收引用和Evidence由P04/P08/P09处理。直接删除会降低锁或证明强度。
+- Impact/Rollback：仅文档，无Schema/API/权限/依赖/配置或数据迁移；撤记录不影响程序。性能FAIL、Prototype入口与Gate3不放行。
