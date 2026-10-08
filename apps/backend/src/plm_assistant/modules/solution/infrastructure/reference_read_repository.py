@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import and_, select
 
 from plm_assistant.modules.document.infrastructure.orm import DocumentVersionRow
 from plm_assistant.modules.evidence.infrastructure.orm import EvidenceRow
-from plm_assistant.modules.solution.application.read_reference import ReferenceCurrentView
+from plm_assistant.modules.solution.application.read_reference import (
+    ReferenceCurrentView, ReferenceListPage, ReferenceSummaryView,
+)
 
 from .orm import (
     ReferenceSolutionDocumentRefRow as DocumentRef,
@@ -20,6 +22,51 @@ from .reference_deidentification_repository import _session
 
 
 class SqlAlchemyReferenceReadRepository:
+    def list_current(self, transaction: object, *, project_id: uuid.UUID,
+                     after_reference_solution_id: uuid.UUID | None,
+                     limit: int) -> ReferenceListPage:
+        if (type(project_id) is not uuid.UUID or project_id.int == 0
+                or (after_reference_solution_id is not None and (
+                    type(after_reference_solution_id) is not uuid.UUID
+                    or after_reference_solution_id.int == 0))
+                or type(limit) is not int or not 1 <= limit <= 100):
+            raise ValueError("invalid Reference list query")
+        session = _session(transaction)
+        statement = select(Root, Version).outerjoin(Version, and_(
+            Version.reference_version_id == Root.current_version_ref,
+            Version.reference_solution_id == Root.reference_solution_id,
+            Version.scope == "PROJECT", Version.project_id == project_id,
+        )).where(
+            Root.scope == "PROJECT", Root.project_id == project_id,
+        )
+        if after_reference_solution_id is not None:
+            statement = statement.where(
+                Root.reference_solution_id > after_reference_solution_id)
+        rows = tuple(session.execute(statement.order_by(
+            Root.reference_solution_id).limit(limit + 1).with_for_update(
+                read=True, of=Root)).all())
+        items = []
+        for root, version in rows[:limit]:
+            if (version is None
+                    or root.current_version_ref != version.reference_version_id
+                    or version.reference_solution_id != root.reference_solution_id
+                    or version.scope != "PROJECT" or version.project_id != project_id
+                    or version.deidentification_confirmation_id is not None):
+                raise RuntimeError("Reference current version is inconsistent")
+            items.append(ReferenceSummaryView(
+                reference_solution_id=root.reference_solution_id,
+                reference_version_id=version.reference_version_id,
+                project_id=project_id, name=root.name,
+                eligibility_state=root.eligibility_state,
+                version_no=version.version_no, version_state=version.version_state,
+                created_at=root.created_at,
+                etag=f'"v{root.lock_version}"',
+            ))
+        has_more = len(rows) > limit
+        return ReferenceListPage(
+            tuple(items), items[-1].reference_solution_id if has_more else None,
+            has_more)
+
     def get_current(self, transaction: object, *, project_id: uuid.UUID,
                     reference_solution_id: uuid.UUID) -> ReferenceCurrentView | None:
         if (type(project_id) is not uuid.UUID or project_id.int == 0

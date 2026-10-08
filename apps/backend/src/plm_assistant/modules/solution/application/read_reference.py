@@ -53,6 +53,27 @@ class ReferenceCurrentView:
     scope: str = "PROJECT"
 
 
+@dataclass(frozen=True, slots=True)
+class ReferenceSummaryView:
+    reference_solution_id: uuid.UUID
+    reference_version_id: uuid.UUID
+    project_id: uuid.UUID
+    name: str
+    eligibility_state: str
+    version_no: int
+    version_state: str
+    created_at: datetime
+    etag: str
+    scope: str = "PROJECT"
+
+
+@dataclass(frozen=True, slots=True)
+class ReferenceListPage:
+    items: tuple[ReferenceSummaryView, ...]
+    next_after_reference_solution_id: uuid.UUID | None
+    has_more: bool
+
+
 class AccessPort(Protocol):
     def authenticated_user(self, transaction: object, *, session_token: bytes,
                            now: datetime) -> uuid.UUID | None: ...
@@ -65,6 +86,9 @@ class LicensePort(Protocol):
 class RepositoryPort(Protocol):
     def get_current(self, transaction: object, *, project_id: uuid.UUID,
                     reference_solution_id: uuid.UUID) -> ReferenceCurrentView | None: ...
+    def list_current(self, transaction: object, *, project_id: uuid.UUID,
+                     after_reference_solution_id: uuid.UUID | None,
+                     limit: int) -> ReferenceListPage: ...
 
 
 class ReferenceReadService:
@@ -124,6 +148,85 @@ class ReferenceReadService:
             raise ReferenceReadError("LICENSE_OPERATION_DENIED") from None
         except Exception:
             raise ReferenceReadError() from None
+
+    def list_current(self, query: ReferenceReadQuery, *,
+                     after_reference_solution_id: uuid.UUID | None = None,
+                     limit: int = 50) -> ReferenceListPage:
+        if (type(query) is not ReferenceReadQuery
+                or type(query.session_token) is not bytes
+                or len(query.session_token) != 32
+                or not self._id(query.trace_id)
+                or not self._id(query.project_id)
+                or (after_reference_solution_id is not None
+                    and not self._id(after_reference_solution_id))
+                or type(limit) is not int or not 1 <= limit <= 100):
+            raise ReferenceReadError("VALIDATION_FAILED")
+        try:
+            self._guard.require_valid(trace_id=query.trace_id)
+            with self._uow() as tx:
+                now = self._clock()
+                if (type(now) is not datetime or now.tzinfo is None
+                        or now.utcoffset() is None):
+                    raise ReferenceReadError()
+                actor = self._access.authenticated_user(
+                    tx, session_token=query.session_token,
+                    now=now.astimezone(timezone.utc))
+                if not self._id(actor):
+                    raise ReferenceReadError("AUTH_ACCESS_DENIED")
+                authorized = self._authorization.require_in_transaction(
+                    tx, user_id=actor, project_id=query.project_id,
+                    operation="SOL_REFERENCE_LIST")
+                if (authorized.user_id != actor
+                        or authorized.project_id != query.project_id
+                        or authorized.operation != "SOL_REFERENCE_LIST"):
+                    raise ReferenceReadError("RESOURCE_NOT_FOUND")
+                page = self._repository.list_current(
+                    tx, project_id=query.project_id,
+                    after_reference_solution_id=after_reference_solution_id,
+                    limit=limit)
+                self._validate_page(page, query.project_id,
+                                    after_reference_solution_id, limit)
+                return page
+        except ReferenceReadError:
+            raise
+        except ProjectAuthorizationError as error:
+            raise ReferenceReadError(error.code) from None
+        except RuntimeLicenseError:
+            raise ReferenceReadError("LICENSE_OPERATION_DENIED") from None
+        except Exception:
+            raise ReferenceReadError() from None
+
+    @classmethod
+    def _validate_page(cls, page: ReferenceListPage, project_id: uuid.UUID,
+                       after: uuid.UUID | None, limit: int) -> None:
+        if (type(page) is not ReferenceListPage
+                or type(page.items) is not tuple
+                or len(page.items) > limit
+                or type(page.has_more) is not bool
+                or (page.has_more and (not page.items
+                    or page.next_after_reference_solution_id
+                    != page.items[-1].reference_solution_id))
+                or (not page.has_more and page.next_after_reference_solution_id is not None)):
+            raise ReferenceReadError()
+        previous = after
+        for item in page.items:
+            if (type(item) is not ReferenceSummaryView
+                    or not cls._id(item.reference_solution_id)
+                    or (previous is not None
+                        and item.reference_solution_id.int <= previous.int)
+                    or not cls._id(item.reference_version_id)
+                    or item.project_id != project_id or item.scope != "PROJECT"
+                    or type(item.name) is not str or not item.name
+                    or item.eligibility_state not in (
+                        "REFERENCE_ONLY", "ELIGIBLE", "RESTRICTED", "REVOKED")
+                    or type(item.version_no) is not int or item.version_no < 1
+                    or item.version_state != "DRAFT"
+                    or not cls._time(item.created_at)
+                    or type(item.etag) is not str
+                    or re.fullmatch(r'"v(0|[1-9][0-9]*)"', item.etag,
+                                    flags=re.ASCII) is None):
+                raise ReferenceReadError()
+            previous = item.reference_solution_id
 
     @classmethod
     def _validate_view(cls, view: ReferenceCurrentView | None,

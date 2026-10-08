@@ -10,8 +10,8 @@ from plm_assistant.modules.project.application.authorization import (
     ProjectActorFacts, ProjectAuthorizationService,
 )
 from plm_assistant.modules.solution.application.read_reference import (
-    ReferenceCurrentView, ReferenceReadError, ReferenceReadQuery,
-    ReferenceReadService,
+    ReferenceCurrentView, ReferenceListPage, ReferenceReadError,
+    ReferenceReadQuery, ReferenceReadService, ReferenceSummaryView,
 )
 
 
@@ -23,6 +23,10 @@ VIEW = ReferenceCurrentView(
     1, "DRAFT", "PLM", "PROJECT_INTERNAL", {"industry": "synthetic"},
     (DOCUMENT,), (EVIDENCE,), b"s" * 32, b"c" * 32, ACTOR, NOW, ACTOR, NOW,
     '"v0"',
+)
+SUMMARY = ReferenceSummaryView(
+    REFERENCE, VERSION, PROJECT, "Project Reference", "REFERENCE_ONLY",
+    1, "DRAFT", NOW, '"v0"',
 )
 
 
@@ -65,12 +69,19 @@ class Facts:
 
 class Repo:
     view = VIEW
+    page = ReferenceListPage((SUMMARY,), None, False)
     calls = 0
 
     def get_current(self, tx, *, project_id, reference_solution_id):
         self.calls += 1
         assert project_id == PROJECT and reference_solution_id == REFERENCE
         return self.view
+
+    def list_current(self, tx, *, project_id, after_reference_solution_id, limit):
+        self.calls += 1
+        assert project_id == PROJECT and limit == 50
+        assert after_reference_solution_id is None
+        return self.page
 
 
 class ReferenceReadTests(unittest.TestCase):
@@ -123,6 +134,42 @@ class ReferenceReadTests(unittest.TestCase):
             with self.subTest(bad=bad):
                 self.repo.view = bad
                 self.rejects("SOLUTION_UNAVAILABLE")
+
+    def test_list_current_and_fail_closed_page_contract(self):
+        self.assertEqual((SUMMARY,), self.service.list_current(self.query).items)
+        self.assertEqual(1, self.repo.calls)
+        self.facts.role = "CUSTOMER_MEMBER"
+        self.assertEqual((SUMMARY,), self.service.list_current(self.query).items)
+        self.facts.role = None
+        with self.assertRaises(ReferenceReadError) as denied:
+            self.service.list_current(self.query)
+        self.assertEqual("RESOURCE_NOT_FOUND", denied.exception.code)
+        self.facts.role = "PROJECT_MANAGER"
+        for bad in (
+            ReferenceListPage((replace(SUMMARY, project_id=uuid.uuid4()),), None, False),
+            ReferenceListPage((SUMMARY,), REFERENCE, False),
+            ReferenceListPage((), REFERENCE, True),
+            ReferenceListPage((SUMMARY,), uuid.uuid4(), True),
+            ReferenceListPage((SUMMARY, SUMMARY), None, False),
+        ):
+            with self.subTest(bad=bad):
+                self.repo.page = bad
+                with self.assertRaises(ReferenceReadError) as caught:
+                    self.service.list_current(self.query)
+                self.assertEqual("SOLUTION_UNAVAILABLE", caught.exception.code)
+        self.repo.page = ReferenceListPage((SUMMARY,), None, False)
+        self.guard.denied = True
+        with self.assertRaises(ReferenceReadError) as license_denied:
+            self.service.list_current(self.query)
+        self.assertEqual("LICENSE_OPERATION_DENIED", license_denied.exception.code)
+
+    def test_list_invalid_limit_and_after(self):
+        for kwargs in ({"limit": 0}, {"limit": 101},
+                       {"after_reference_solution_id": uuid.UUID(int=0)}):
+            with self.subTest(kwargs=kwargs), self.assertRaises(
+                    ReferenceReadError) as caught:
+                self.service.list_current(self.query, **kwargs)
+            self.assertEqual("VALIDATION_FAILED", caught.exception.code)
 
 
 if __name__ == "__main__":

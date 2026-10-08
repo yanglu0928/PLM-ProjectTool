@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261009-1115：Reference 列表以根身份 keyset 分页并显式校验当前版本
+
+- Date/WBS：2026-10-09 / `SOL-01-A04-P04-P04`；依据冻结 API-04 的 `SOL_REFERENCE_LIST`、P04-P01～P03 当前版本读取。
+- Decision：PROJECT 列表按 Reference 根 UUID 升序、内部 keyset 分页（单页最多100）；先筛选根的项目范围再左连接当前版本，逐项校验当前版本身份/Scope/ProjectId。若根存在而当前版本缺失或越界则失败关闭，不通过内连接静默丢失。List 只返回摘要，固定来源由已授权 GET 返回；公开 HTTP cursor 后续须签名并绑定 Session/Project/查询。
+- Reason：根 UUID 提供稳定、唯一的跨页顺序；只按当前版本内连接会把异常根行藏起来，列表看似完整却丢历史。摘要不表示 Document/Evidence 的当前可用性。
+- Impact/Rollback：新增内部列表 Owner 和独立项目读策略，无 Schema、冻结 API、依赖或数据外发；可撤 Owner/策略，历史不变。后续 HTTP/Windows/UI 不得将原始 after ID 暴露为无签名游标。
+- Verification：Win11 隔离PG18.6双条/双页、角色/隔离/撤权与来源/创建/drift回归通过；后端全量 `3315 passed, 3 skipped, 4883 subtests passed`。
+
 ## DEC-20261009-1114：Reference 历史固定来源读取不替代当前资格重验
 
 - Date/WBS：2026-10-09 / `SOL-01-A04-P04-P01`；依据 Gate 2 API-04、CR-SOL-007、Reference 当前版本与固定来源 Schema。
