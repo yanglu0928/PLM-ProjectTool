@@ -33,3 +33,7 @@ Prototype 26 项 `/api/v1` Operation、请求/响应和 NOT_REQUIRED 既有历�
 P01/P02 后发现通用 `ChecklistQualificationSubject` 要求每个受审主体至少一个 EvidenceRef，但 `PRT-03` Approved PrototypeVersion 的正式依据是固定 DocumentVersion 制品、Review 和 Trace，而不是其自身 EvidenceRef。把 Requirement 来源 Evidence 复制到 PRT-03 主体会错误陈述证据归属；虚构 Evidence 更不可接受。选择允许聚合中的单个主体 Evidence 集为空，但聚合整体仍必须至少包含一个经证明的 Evidence；本阶段 Requirement 主体须继续提供其真实来源 Evidence，PRT-03 主体以真实 Review 与受权制品/Trace 由 Owner 另行证明。现有 Handover/Survey/Requirement Owner 输出不变，单主体 `CurrentChecklistQualification` 的非空 Evidence 约束不改。空 Evidence 的 PRT-03 不会凭此获得 PASS，A03 Owner、A04写时复验与A05实例测试仍是必需前置。
 
 差异/风险：通用聚合 Subject 构造约束小幅放宽，若错误 Owner 输出全部无 Evidence 可能削弱登记依据；在 Aggregate 根约束新增总 Evidence 非空，并保持受权 Registry、聚合写时原样匹配和 Review Basis 持久化。无 Schema、API、权限或数据迁移。验证计划：零 Evidence 聚合拒绝、混合主体的 Evidence/Review 身份和排序、既有 Workflow 全量回归，后续真实 PG/HTTP。回滚：A04 尚未开放 Prototype 注册前可撤销该内部 DTO 兼容扩展；开放并形成 Checklist 历史后不得删除记录，应先停止新注册并制定保留历史的迁移方案。
+
+## 2026-10-08 A03 兼容修订：Document 制品物理完整性
+
+P02 复核发现既有 `PrototypeVersionCurrentValidator` 的 Document Proof 只锁数据库中的 AVAILABLE/Hash/固定Version元数据，不能单独证明本地文件仍在或实际字节匹配。若直接把该元数据当作“制品当前可访问且Hash正确”的 Workflow PASS，会高估资格。A03 新增 Document 所有者公开物理校验 Port：在同一项目事务重读固定Version/FileObject当前状态与元数据，并用既有本地存储安全校验逐字节验证 SHA-256、长度、文件身份/重解析点；仅返回不含路径的证明。Prototype Owner 必须逐个消费；缺失、篡改、超限失败关闭。无 Schema/API/生产依赖；可能增加预览/Checklist 的磁盘读取成本，A05 需测延迟与并发，不得以缓存元数据替代实际校验。回滚仍须保持 Prototype Registry 关闭，不可静默绕过物理证明。

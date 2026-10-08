@@ -9,6 +9,7 @@ from __future__ import annotations
 import hmac
 import uuid
 from dataclasses import dataclass
+from datetime import datetime
 
 from plm_assistant.modules.platform.application.idempotency import (
     canonical_payload_fingerprint,
@@ -24,6 +25,8 @@ class PrototypeDecisionLock:
     impact: str
     review_id: uuid.UUID | None
     review_round_id: uuid.UUID | None
+    decision_fingerprint: bytes
+    decided_at: datetime
 
 
 @dataclass(frozen=True, slots=True)
@@ -62,6 +65,7 @@ def prove_not_required_decision(root: object, decision: object,
                 or root.name != result.name
                 or decision.review_id != result.review_id
                 or decision.review_round_id != result.review_round_id
+                or decision.decided_at != result.decided_at
                 or (decision.review_id is None) != (decision.review_round_id is None)
                 or not isinstance(decision.decision_fingerprint, bytes)
                 or not isinstance(result.decision_fingerprint, bytes)
@@ -103,6 +107,7 @@ def prove_not_required_decision(root: object, decision: object,
             decision.scope_decision_id, values, decision.confirmed_by,
             decision.reason, decision.impact,
             decision.review_id, decision.review_round_id,
+            decision.decision_fingerprint, decision.decided_at,
         )
     except (AttributeError, TypeError, ValueError):
         return None

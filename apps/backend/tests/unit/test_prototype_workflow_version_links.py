@@ -114,7 +114,8 @@ def test_all_not_required_rejects_unexplained_active_link(monkeypatch):
         PrototypeDecisionLock,
     )
     decision = PrototypeDecisionLock(uuid.uuid4(), (uuid.uuid4(),), uuid.uuid4(),
-                                     "No prototype", "No impact", None, None)
+                                     "No prototype", "No impact", None, None,
+                                     b"d" * 32, datetime.now(timezone.utc))
     root = PrototypeRootLock(project, prototype, "NOT_REQUIRED", None, 1, decision)
     repository = module.SqlAlchemyPrototypeWorkflowVersionLinksRepository()
     stale = Row(prototype_id=prototype, prototype_version_id=uuid.uuid4(),

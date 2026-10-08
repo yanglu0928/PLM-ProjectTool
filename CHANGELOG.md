@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A11-A03-P03-A03 新增Prototype Workflow真实聚合资格Owner及Audit/Document公开证明：完整当前Requirement二分、NOT_REQUIRED人工动作、批准Prototype Review/Trace、固定制品物理SHA-256与Link验收标准覆盖均失败关闭；尚未注册Workflow。CR-PRT-005记录“数据库元数据不足证明磁盘文件”的偏差与磁盘读取开销。兼容性/升级：无Schema、冻结API、权限、生产依赖或迁移；部署同步代码，停止装配即可回滚且历史不变。验证：Owner/Audit/Document定向及后端3237项/3跳过通过；真实PG/HTTP/性能未验。已知问题：A04注册、A05实例验证、Server2025、Gate3/UAT/发行待；Debian13依用户指令跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A11-A03-P03-A02 在 Requirement 模块新增当前批准验收标准稳定引用公开证明，拒绝缺失/重复/过期/序号断裂；不导出 ORM 或正文，也不独立产生 Prototype Workflow PASS。兼容性/升级：无 Schema、API、生产依赖或迁移，部署同步代码即可；停止装配可回滚，历史不变。验证：定向6项、后端3230项/3跳过通过。已知问题：A03聚合Owner、A04/A05、Server2025、Gate3/UAT/发行待；Debian13依指令跳过。
 
 - 2026-10-08：0.1.0-dev.0/PRT-01-A11-A03-P03-A01 按CR-PRT-005修订内部Workflow聚合Evidence归属：允许单个Prototype主体无自有Evidence，但聚合整体仍必须有真实Evidence；不把Requirement来源证据虚构为Prototype制品证据。兼容性/升级：既有单主体资格、Handover/Survey/Requirement输出、Schema/API/依赖均不变；部署同步代码即可，A04开放前可撤内部DTO扩展。验证：定向6项/7子例、后端3224项/3跳过通过。已知问题：Prototype真实聚合Owner、A04/A05、Server2025、Gate3/UAT/发行待；Debian13依指令跳过。

@@ -10461,3 +10461,10 @@
 - Decision：允许通用 AggregateChecklistQualification 中个别受审主体 Evidence 集为空，但聚合整体仍必须有真实 Evidence；`PRT-03` 由真实 Review/固定 DocumentVersion/Trace 证明，Requirement 来源 Evidence 属于 `REQ-03` 或范围级证据。既有单主体资格非空约束不变。
 - Reason：PrototypeVersion 并无自身 EvidenceRef，强行复制或伪造会错误陈述证据归属；放开整个聚合的空 Evidence 则削弱 Checklist Basis。
 - Impact/Rollback：内部 DTO 兼容扩展，无 Schema/API/依赖/权限变更；A04开放前可撤扩展，开放并形成历史后必须保留 Checklist 历史，先停止注册再制定迁移。
+
+# DEC-20261008-1075：Prototype Workflow 制品资格必须验证磁盘本体
+
+- Date/WBS：2026-10-08 / `PRT-01-A11-A03-P03-A03`；依据 `CR-PRT-005` 物理完整性修订。
+- Decision：数据库 AVAILABLE/Hash/固定版本元数据只作为候选，Document 所有者在同一业务事务内用安全存储逐字节证明实际文件 SHA-256、长度与身份，Prototype Owner 逐件消费，否则资格失败关闭。
+- Reason：仅锁行无法证明文件未被外部删除或篡改，不能把元数据当作当前可用事实。
+- Impact/Rollback：不改 Schema/API/依赖/权限，但每次预览和Checklist写时会增加文件读取；A05必须验证延迟与并发。未开放 Registry 前可停用 Owner；开放后停止新注册并保留既有Checklist历史。

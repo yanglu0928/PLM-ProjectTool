@@ -1,6 +1,7 @@
 """NOT_REQUIRED witnesses must not become Workflow facts when stale/tampered."""
 
 import uuid
+from datetime import datetime, timezone
 from types import SimpleNamespace as Row
 
 from plm_assistant.modules.platform.application.idempotency import (
@@ -21,6 +22,7 @@ def _rows():
         "reason": reason, "impact": impact,
         "affected_requirement_version_refs": [str(version)],
     })
+    decided_at = datetime.now(timezone.utc)
     root = Row(project_id=project, prototype_id=prototype, name="Scope",
                prototype_state="NOT_REQUIRED", current_approved_version_ref=None,
                lock_version=1, updated_by=confirmer)
@@ -29,6 +31,7 @@ def _rows():
                    before_version=0, after_version=1, confirmed_by=confirmer,
                    reason=reason, impact=impact, review_id=None,
                    review_round_id=None, decision_fingerprint=fingerprint)
+    decision.decided_at = decided_at
     ref = Row(project_id=project, prototype_id=prototype,
               scope_decision_id=decision_id, requirement_id=requirement,
               requirement_version_id=version, ordinal=1)
@@ -37,7 +40,7 @@ def _rows():
                  confirmed_by=confirmer, name="Scope", reason=reason,
                  impact=impact, review_id=None, review_round_id=None,
                  decision_fingerprint=fingerprint,
-                 requirement_version_refs=[version])
+                 requirement_version_refs=[version], decided_at=decided_at)
     return root, decision, (ref,), result
 
 
