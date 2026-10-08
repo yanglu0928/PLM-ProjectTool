@@ -86,7 +86,7 @@ def rejects(action) -> None:
     raise AssertionError("unproven GLOBAL source was accepted")
 
 
-def verify(port: int, scratch: Path) -> None:
+def verify(port: int, scratch: Path, on_qualified=None) -> None:
     url = URL.create("postgresql+psycopg", username="poc_admin",
                      host="127.0.0.1", port=port, database="postgres")
     cfg = create_migration_config(url)
@@ -303,6 +303,10 @@ def verify(port: int, scratch: Path) -> None:
         with runtime.unit_of_work() as tx:
             qualified = sources.qualify(tx, request)
             assert qualified.deidentification_confirmation_id == confirmed.confirmation_id
+        if on_qualified is not None:
+            on_qualified(runtime=runtime, request=request, sources=sources,
+                         audit=audit, license_guard=license_guard,
+                         qualified=qualified, confirmed=confirmed)
         (root / locator).write_bytes(b"X" * len(content))
         with runtime.unit_of_work() as tx:
             rejects(lambda: sources.qualify(tx, request))

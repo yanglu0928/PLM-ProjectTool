@@ -19,3 +19,5 @@ Schema0139 的 `sol_reference_versions.content_fingerprint` 是版本内容摘�
 验证：ORM/Alembic drift、空库及其他业务有数据升级、有 ReferenceVersion 历史拒升、空表降级重升；正确 GLOBAL/PROJECT、错指纹/错确认/NULL/跨 Scope/不可变历史负例；后端全量回归。未完成 Owner/HTTP/UI/真实人工确认前不得标记 ReferenceSolution 可用或 Gate3 PASS。
 
 2026-10-08 P03-P01：0143 增 ORM/列、确认 `(ID, source_fingerprint)` 唯一键与版本复合 FK；隔离 PG18.6 正确 GLOBAL/PROJECT 和错来源/缺确认/错误 Scope/长度拒绝、已有 ReferenceVersion 拒升且行保留、空表降级重升与 drift PASS。离线 SQL 另发出数据库执行时历史保护 DO 守卫，避免跳过该安全约束；全量后端3298通过/3跳过/4824子例。0139 Reference 四表 Owner 仍拒写；验证脚本为合成测试行，不构成正式业务版本。
+
+2026-10-08 P03-P02-P01：0144 将四张 Reference 表开放 INSERT-only，UPDATE/DELETE/TRUNCATE 仍拒绝；内部新建命令在当前 Session/CSRF/License 与来源资格后原子写根/首版/有序来源、Audit/幂等收据，GLOBAL 确认以0143复合 FK绑定，初态仅 `REFERENCE_ONLY`/`DRAFT`，不自动成为正式方案。GLOBAL 隔离 PG/私有文件和项目角色单元验证通过；PROJECT 真实 PG 文件组合、版本修订/Eligibility/HTTP/UI 仍待。初版内容指纹为服务端规范化的名称、来源指纹、有序引用及分类元数据摘要，不冒充客户正文或脱敏事实。

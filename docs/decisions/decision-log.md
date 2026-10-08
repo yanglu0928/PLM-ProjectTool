@@ -10713,3 +10713,10 @@
 - Decision：版本内容摘要与来源集合摘要分列；GLOBAL 版本需确认 ID 并以 `(ID, 来源指纹)` 复合 FK 指向确认账本，PROJECT 版本确认 ID 必为空。旧 ReferenceVersion 不能可信补指纹，迁移遇已有行明确拒绝；空表降级，非空拒降；离线 SQL 保留数据库执行时历史守卫。
 - Reason：裸确认 UUID 或复用正文摘要均不能证明固定来源集合相同。PG 正/负例、旧行拒升/新行拒降、降级重升/drift通过，后端3298/3/4824通过。
 - Impact/Rollback：新增0143与ORM静态绑定，不修改冻结提交、API、权限、依赖或客户数据；既有其他业务数据原样保留。0139 Reference Owner 仍关闭，动态来源/确认当前性、正式版本写入、HTTP/UI/实际人工核查及 Gate3 待后续。
+
+# DEC-20261008-1111：Reference 首版只作 REFERENCE_ONLY/DRAFT 原子来源快照
+
+- Date/WBS：2026-10-08 / `SOL-01-A04-P03-P02-P01`；依据 CR-SOL-004～007、冻结 API-04 与隔离 PG18.6/私有文件。
+- Decision：0144 开 Reference 四表 INSERT-only，根可在同事务指向预分配首版 ID；服务端用名称、固定来源、顺序和分类元数据计算版本内容指纹，与独立来源指纹分列。GLOBAL 当前管理员+人工确认，PROJECT PM/IM；来源/Audit/幂等同事务，初态 REFERENCE_ONLY/DRAFT。重放读取版本1固定初始结果，不依赖未来当前指针或 Eligibility。
+- Reason：裸 UUID/客户端哈希无法证明当前来源或同事务审计，参考身份不等于正式项目承诺。GLOBAL PG 真实文件/确认组合、回滚/重放/历史门禁通过；PROJECT权限单元通过，后端3301/3/4831通过。
+- Impact/Rollback：内部服务/仓储、Project新增一条SOL授权策略、0144触发器，无公开API/依赖；空Reference表可降0143，非空拒降保留历史。PROJECT真实PG、正式License/实际用户确认、HTTP/UI/后续Eligibility与Gate3仍待。
