@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-02-A01/CR-SOL-011 核查目录身份 CREATE 的整表 DML Guard、授权缺口及幂等首次结果快照，先登记最小安全解锁变更和验证/回滚计划。兼容性/升级：仅文档，无程序/API/Schema/依赖或数据迁移；保持旧写保护。验证：0136/0137、ORM、Project 策略及 Prototype 先例静态对账，未运行新测试。已知问题：自定义事务信号可能被同库连接设置，须在 A02 研究更强隔离；目录 Owner、正式信任源/确认、性能、Server2025、Gate3/UAT/发行未验；Debian13 当前实机依指令跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P10 对账 Solution 下一业务链，确定先核查 SOL-02 目录身份 CREATE；SOL-01 Revise/Eligibility 仍开放，Reference 历史读取不构成现时资格。兼容性/升级：仅文档与施工顺序，无代码/API/Schema/依赖或数据迁移；停止此排序可回退。验证：冻结 API-04/DM-05、0136～0138 Schema 与源码静态对账，未运行新测试。已知问题：目录真实 Owner、Reference 剩余操作、真人确认、正式信任源、性能、Server2025、Gate3/UAT/发行未验；Debian13 当前实机依指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P09-P06 补 GLOBAL Reference 真实 PG 双条/双页 keyset 与 PROJECT 家族游标隔离，两个对象均经正式 Create Owner 和合成确认写入。兼容性/升级：仅验证脚本/可选夹具回调扩展，无生产代码/API/Schema/依赖或数据迁移。验证：Win11隔离PG18.6 双页/拒绝路径与原来源夹具回归均退出0。已知问题：合成确认非真人、正式License/目标账户密钥、Server2025、20并发、Gate3/UAT/发行未验；Debian13依指令跳过。
