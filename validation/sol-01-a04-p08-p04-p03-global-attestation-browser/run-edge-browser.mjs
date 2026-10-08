@@ -4,11 +4,12 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve, sep } from "node:path";
 
-const [origin, documentId, versionId, evidenceId, password] = process.argv.slice(2);
+const [origin, documentId, versionId, evidenceId, password, mode] = process.argv.slice(2);
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 if (!/^http:\/\/127\.0\.0\.1:\d{2,5}$/.test(origin ?? "")
   || ![documentId, versionId, evidenceId].every(value => uuid.test(value ?? ""))
-  || password !== "Synthetic-Reference-Browser-Only-2026") throw new Error("synthetic owned arguments required");
+  || password !== "Synthetic-Reference-Browser-Only-2026"
+  || (mode !== undefined && mode !== "create")) throw new Error("synthetic owned arguments required");
 const profile = await mkdtemp(join(tmpdir(), "plm-attestation-edge-"));
 const cdpPort = 10000 + process.pid % 40000;
 const edge = spawn("C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
@@ -27,7 +28,7 @@ async function findPage() {
   }
   throw new Error("Owned Edge target unavailable");
 }
-let socket; let serial = 0; let confirmKey;
+let socket; let serial = 0; let confirmKey; let createKey; let createBody;
 const pending = new Map(); const responses = []; const browserErrors = [];
 function send(method, params = {}) {
   const id = ++serial;
@@ -75,6 +76,10 @@ try {
       if (item.method === "POST" && item.url.endsWith("/api/v1/global/reference-deidentification-confirmations")) {
         confirmKey = item.headers["Idempotency-Key"] ?? item.headers["idempotency-key"];
       }
+      if (item.method === "POST" && item.url.endsWith("/api/v1/global/reference-solutions")) {
+        createKey = item.headers["Idempotency-Key"] ?? item.headers["idempotency-key"];
+        createBody = JSON.parse(item.postData);
+      }
     }
     if (!event.id || !pending.has(event.id)) return;
     const task = pending.get(event.id); pending.delete(event.id);
@@ -119,6 +124,23 @@ try {
   await clickText("提交人工脱敏确认（有效期 7 天）");
   await waitFor("document.body?.innerText?.includes('确认号')", "confirmed attestation");
   if (!/^[\x20-\x7e]{16,128}$/.test(confirmKey ?? "")) throw new Error("Original confirm operation key not captured");
+  if (mode === "create") {
+    if (!await evaluate(`(()=>{const item=document.querySelector('input[placeholder="填写便于识别的参考名称"]');
+      if(!item)return false;item.value='Synthetic single-source reference';
+      item.dispatchEvent(new Event('input',{bubbles:true}));return true})()`)) {
+      throw new Error("Reference name input unavailable");
+    }
+    await waitFor("[...document.querySelectorAll('button')].some(x=>x.textContent.trim()==='重新核验并创建全局参考方案'&&!x.disabled)", "GLOBAL Create ready");
+    await clickText("重新核验并创建全局参考方案");
+    await waitFor("document.body?.innerText?.includes('全局参考方案已创建为仅供参考的草稿')", "GLOBAL Reference created");
+    if (!/^[\x20-\x7e]{16,128}$/.test(createKey ?? "")
+      || createBody.name !== "Synthetic single-source reference"
+      || JSON.stringify(createBody.document_version_ids) !== JSON.stringify([versionId])
+      || JSON.stringify(createBody.evidence_ids) !== JSON.stringify([evidenceId])
+      || Object.keys(createBody).length !== 6
+      || !responses.some(item => item.url.endsWith("/api/v1/global/reference-solutions")
+        && item.status === 201)) throw new Error("GLOBAL Create source/body/201 failed");
+  }
   await clickText("撤回此确认");
   await waitFor("document.body?.innerText?.includes('确认已撤回')", "revoked attestation");
   const actor = await evaluate("document.querySelector('body')?.dataset?.actor ?? ''");

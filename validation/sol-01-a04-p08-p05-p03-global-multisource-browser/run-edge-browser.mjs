@@ -5,13 +5,14 @@ import { tmpdir } from "node:os";
 import { join, resolve, sep } from "node:path";
 
 const [origin, documentA, versionA, evidenceA, password,
-  documentB, versionB, evidenceB] = process.argv.slice(2);
+  documentB, versionB, evidenceB, mode] = process.argv.slice(2);
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 if (!/^http:\/\/127\.0\.0\.1:\d{2,5}$/.test(origin ?? "")
   || ![documentA, versionA, evidenceA, documentB, versionB, evidenceB]
     .every(value => uuid.test(value ?? ""))
   || documentA === documentB || versionA === versionB || evidenceA === evidenceB
-  || password !== "Synthetic-Reference-Browser-Only-2026") {
+  || password !== "Synthetic-Reference-Browser-Only-2026"
+  || (mode !== undefined && mode !== "create")) {
   throw new Error("two distinct owned synthetic sources required");
 }
 const profile = await mkdtemp(join(tmpdir(), "plm-multisource-edge-"));
@@ -33,7 +34,7 @@ async function findPage() {
   }
   throw new Error("Owned Edge target unavailable");
 }
-let socket; let serial = 0; let confirmKey; let confirmBody;
+let socket; let serial = 0; let confirmKey; let confirmBody; let createKey; let createBody;
 const pending = new Map(); const responses = []; const browserErrors = [];
 function send(method, params = {}) {
   const id = ++serial;
@@ -88,6 +89,10 @@ try {
       if (item.method === "POST" && item.url.endsWith("/api/v1/global/reference-deidentification-confirmations")) {
         confirmKey = item.headers["Idempotency-Key"] ?? item.headers["idempotency-key"];
         confirmBody = JSON.parse(item.postData);
+      }
+      if (item.method === "POST" && item.url.endsWith("/api/v1/global/reference-solutions")) {
+        createKey = item.headers["Idempotency-Key"] ?? item.headers["idempotency-key"];
+        createBody = JSON.parse(item.postData);
       }
     }
     if (!event.id || !pending.has(event.id)) return;
@@ -144,6 +149,23 @@ try {
     || JSON.stringify(confirmBody.document_version_ids) !== JSON.stringify([versionB, versionA])
     || JSON.stringify(confirmBody.evidence_ids) !== JSON.stringify([evidenceB, evidenceA])) {
     throw new Error("Confirm did not preserve original Key and two-source order");
+  }
+  if (mode === "create") {
+    if (!await evaluate(`(()=>{const item=document.querySelector('input[placeholder="填写便于识别的参考名称"]');
+      if(!item)return false;item.value='Synthetic multi-source reference';
+      item.dispatchEvent(new Event('input',{bubbles:true}));return true})()`)) {
+      throw new Error("Reference name input unavailable");
+    }
+    await waitFor("[...document.querySelectorAll('button')].some(x=>x.textContent.trim()==='重新核验并创建全局参考方案'&&!x.disabled)", "GLOBAL Create ready");
+    await clickText("重新核验并创建全局参考方案");
+    await waitFor("document.body?.innerText?.includes('全局参考方案已创建为仅供参考的草稿')", "GLOBAL Reference created");
+    if (!/^[\x20-\x7e]{16,128}$/.test(createKey ?? "")
+      || createBody.name !== "Synthetic multi-source reference"
+      || JSON.stringify(createBody.document_version_ids) !== JSON.stringify([versionB, versionA])
+      || JSON.stringify(createBody.evidence_ids) !== JSON.stringify([evidenceB, evidenceA])
+      || Object.keys(createBody).length !== 6
+      || !responses.some(item => item.url.endsWith("/api/v1/global/reference-solutions")
+        && item.status === 201)) throw new Error("GLOBAL Create order/body/201 failed");
   }
   await clickText("撤回此集合确认");
   await waitFor("document.body?.innerText?.includes('集合确认已撤回')", "multi-source revoke");
