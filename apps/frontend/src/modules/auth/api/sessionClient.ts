@@ -482,7 +482,8 @@ export class SessionClient {
   async postProjectWorkflowChecklistRecord(projectId: string,
     itemKey: "HANDOVER_BASELINE" | "HANDOVER_ISSUES"
       | "SURVEY_ACTUAL_SOURCES" | "SURVEY_CONCLUSION"
-      | "REQUIREMENT_FORMAL_VERSIONS" | "REQUIREMENT_ACCEPTANCE", body: string,
+      | "REQUIREMENT_FORMAL_VERSIONS" | "REQUIREMENT_ACCEPTANCE"
+      | "PROTOTYPE_SCOPE_DECISIONS" | "PROTOTYPE_COVERAGE", body: string,
     etag: string, idempotencyKey: string): Promise<Response> {
     if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
     if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
@@ -491,7 +492,8 @@ export class SessionClient {
     if (!identifier(projectId)
       || !["HANDOVER_BASELINE", "HANDOVER_ISSUES",
         "SURVEY_ACTUAL_SOURCES", "SURVEY_CONCLUSION",
-        "REQUIREMENT_FORMAL_VERSIONS", "REQUIREMENT_ACCEPTANCE"].includes(itemKey)
+        "REQUIREMENT_FORMAL_VERSIONS", "REQUIREMENT_ACCEPTANCE",
+        "PROTOTYPE_SCOPE_DECISIONS", "PROTOTYPE_COVERAGE"].includes(itemKey)
       || typeof body !== "string" || body.length === 0
       || new TextEncoder().encode(body).length > 2 * 1024 * 1024
       || !Number.isSafeInteger(version) || version === null || version >= Number.MAX_SAFE_INTEGER

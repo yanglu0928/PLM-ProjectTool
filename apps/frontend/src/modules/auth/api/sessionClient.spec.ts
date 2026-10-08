@@ -833,6 +833,20 @@ describe("SessionClient", () => {
     );
   });
 
+  it("accepts Prototype Checklist items only on the fixed bounded path", async () => {
+    const receipt = response({ record_id: id, result: "PASS", etag: '"v12"' });
+    const { api, fetcher } = client(response(session()), receipt);
+    await api.login("manager", "synthetic-only");
+    const body = JSON.stringify({ result: "PASS", reason: null, impact: null,
+      evidence_refs: [id], exception_refs: [] });
+    await expect(api.postProjectWorkflowChecklistRecord(projectId,
+      "PROTOTYPE_COVERAGE", body, '"v11"', "synthetic-prototype-record-0001"))
+      .resolves.toBe(receipt);
+    expect(fetcher.mock.calls[1]?.[0]).toBe(
+      `/api/v1/projects/${projectId}/workflow/checklist-items/PROTOTYPE_COVERAGE:record`,
+    );
+  });
+
   it("rejects unsafe Checklist path, body, version and Key before network", async () => {
     const { api, fetcher } = client(response(session()));
     await api.login("manager", "synthetic-only");
@@ -840,7 +854,7 @@ describe("SessionClient", () => {
     for (const [project, item, body, etag, operation] of [
       ["../other", "HANDOVER_BASELINE", "{}", '"v4"', key],
       [projectId.toUpperCase(), "HANDOVER_BASELINE", "{}", '"v4"', key],
-      [projectId, "PROTOTYPE_COVERAGE", "{}", '"v4"', key],
+      [projectId, "SOLUTION_COVERAGE", "{}", '"v4"', key],
       [projectId, "HANDOVER_BASELINE", "", '"v4"', key],
       [projectId, "HANDOVER_BASELINE", "x".repeat(2 * 1024 * 1024 + 1), '"v4"', key],
       [projectId, "HANDOVER_BASELINE", "{}", '"v0"', key],

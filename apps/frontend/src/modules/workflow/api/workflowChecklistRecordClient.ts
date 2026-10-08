@@ -4,9 +4,10 @@ import { parseWorkflow, type WorkflowView } from "./workflowReadClient";
 export type HandoverChecklistItemKey = "HANDOVER_BASELINE" | "HANDOVER_ISSUES";
 export type SurveyChecklistItemKey = "SURVEY_ACTUAL_SOURCES" | "SURVEY_CONCLUSION";
 export type RequirementChecklistItemKey = "REQUIREMENT_FORMAL_VERSIONS" | "REQUIREMENT_ACCEPTANCE";
+export type PrototypeChecklistItemKey = "PROTOTYPE_SCOPE_DECISIONS" | "PROTOTYPE_COVERAGE";
 export type SupportedChecklistItemKey = HandoverChecklistItemKey | SurveyChecklistItemKey
-  | RequirementChecklistItemKey;
-export type SupportedChecklistStage = "HANDOVER" | "SURVEY" | "REQUIREMENT";
+  | RequirementChecklistItemKey | PrototypeChecklistItemKey;
+export type SupportedChecklistStage = "HANDOVER" | "SURVEY" | "REQUIREMENT" | "PROTOTYPE";
 export type SupportedChecklistResult = "PASS" | "FAIL";
 
 const itemStages = Object.freeze({
@@ -16,6 +17,8 @@ const itemStages = Object.freeze({
   SURVEY_CONCLUSION: "SURVEY",
   REQUIREMENT_FORMAL_VERSIONS: "REQUIREMENT",
   REQUIREMENT_ACCEPTANCE: "REQUIREMENT",
+  PROTOTYPE_SCOPE_DECISIONS: "PROTOTYPE",
+  PROTOTYPE_COVERAGE: "PROTOTYPE",
 } as const satisfies Record<SupportedChecklistItemKey, SupportedChecklistStage>);
 
 export function checklistStageForItem(itemKey: string): SupportedChecklistStage | null {

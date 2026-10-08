@@ -49,6 +49,15 @@ function requirementWorkflow(etag = '"v9"') {
         required: true, state: index < 2 ? "PASS" : "PENDING" })),
     })), etag });
 }
+function prototypeWorkflow(etag = '"v11"') {
+  return parseWorkflow({ workflow_id: workflowId, version: 1, state: "ACTIVE",
+    current_stage: "PROTOTYPE", stages: stages.map(([stageKey, first, second], index) => ({
+      stage_key: stageKey, order: index + 1,
+      state: index < 3 ? "COMPLETED" : index === 3 ? "ACTIVE" : "NOT_STARTED",
+      checklist_items: [first, second].map((itemKey) => ({ item_key: itemKey,
+        required: true, state: index < 3 ? "PASS" : "PENDING" })),
+    })), etag });
+}
 function record(result: "PASS" | "FAIL" = "PASS", extra: Record<string, unknown> = {}) {
   return { record_id: recordId, workflow_id: workflowId, project_id: projectId,
     definition_version: 1, stage_key: "HANDOVER", item_key: "HANDOVER_BASELINE", result,
@@ -150,6 +159,26 @@ describe("WorkflowChecklistRecordClient", () => {
       JSON.stringify({ result: "PASS", reason: null, impact: null,
         evidence_refs: [evidenceId], exception_refs: [] }),
       '"v9"', "synthetic-requirement-record-0001");
+  });
+
+  it("records Prototype PASS using only current fixed Evidence and the first receipt", async () => {
+    const prototypeRecord = record("PASS", { stage_key: "PROTOTYPE",
+      item_key: "PROTOTYPE_COVERAGE", recorded_workflow_version: 12,
+      current_workflow_version: 12, evidence_refs: [evidenceId],
+      review_round_refs: [reviewId, evidenceId2], reason: null,
+      impact: null, etag: '"v12"' });
+    const { records, post } = client(response(prototypeRecord, 200, '"v12"'));
+    const receipt = await records.record(projectId, {
+      before: prototypeWorkflow(), item_key: "PROTOTYPE_COVERAGE", result: "PASS",
+      evidence_refs: [evidenceId], reason: null, impact: null,
+      idempotency_key: "synthetic-prototype-record-0001",
+    });
+    expect(receipt.is_current_state_proof).toBe(false);
+    expect(receipt.first_record.review_round_refs).toEqual([reviewId, evidenceId2]);
+    expect(post).toHaveBeenCalledWith(projectId, "PROTOTYPE_COVERAGE",
+      JSON.stringify({ result: "PASS", reason: null, impact: null,
+        evidence_refs: [evidenceId], exception_refs: [] }),
+      '"v11"', "synthetic-prototype-record-0001");
   });
 
   it("rejects a cross-stage Checklist item before transport", async () => {
