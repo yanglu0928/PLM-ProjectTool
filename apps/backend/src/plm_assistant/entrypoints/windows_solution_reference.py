@@ -25,6 +25,7 @@ from plm_assistant.modules.solution.api.reference_read import create_project_ref
 from plm_assistant.modules.solution.application.create_reference_solution import ReferenceCreateService
 from plm_assistant.modules.solution.application.confirm_reference_deidentification import ReferenceDeidentificationConfirmService
 from plm_assistant.modules.solution.application.preview_reference_deidentification import ReferenceDeidentificationPreviewService
+from plm_assistant.modules.solution.application.lookup_reference_deidentification_operation import ReferenceDeidentificationOperationLookupService
 from plm_assistant.modules.solution.application.read_reference import ReferenceReadService
 from plm_assistant.modules.solution.application.revoke_reference_deidentification import ReferenceDeidentificationRevokeService
 from plm_assistant.modules.solution.application.prove_reference_deidentification import ReferenceDeidentificationProofService
@@ -34,6 +35,7 @@ from plm_assistant.modules.solution.infrastructure.reference_read_repository imp
 from plm_assistant.modules.solution.infrastructure.reference_deidentification_proof_repository import SqlAlchemyReferenceDeidentificationProofRepository
 from plm_assistant.modules.solution.infrastructure.reference_deidentification_repository import SqlAlchemyReferenceDeidentificationRepository
 from plm_assistant.modules.solution.infrastructure.reference_deidentification_revocation_repository import SqlAlchemyReferenceDeidentificationRevocationRepository
+from plm_assistant.modules.solution.infrastructure.reference_deidentification_operation_state import SqlAlchemyReferenceDeidentificationOperationState
 from plm_assistant.modules.solution.infrastructure.reference_document_proof import ReferenceDocumentProofAdapter
 from plm_assistant.modules.solution.infrastructure.reference_evidence_proof import ReferenceEvidenceProofAdapter
 
@@ -177,8 +179,13 @@ def create_windows_reference_deidentification_router(
             license_guard=license_guard,
             repository=SqlAlchemyReferenceDeidentificationRevocationRepository(),
             receipts=receipts, audit=audit)
+        lookups = ReferenceDeidentificationOperationLookupService(
+            unit_of_work=runtime.unit_of_work, access=access,
+            license_guard=license_guard, receipts=receipts,
+            confirmations=SqlAlchemyReferenceDeidentificationOperationState())
         return create_reference_deidentification_router(
             sessions=sessions, origins=origins, previews=previews,
-            confirmations=confirmations, revocations=revocations)
+            confirmations=confirmations, revocations=revocations,
+            lookups=lookups)
     except Exception:
         raise ProductionSolutionReferenceStartupError() from None

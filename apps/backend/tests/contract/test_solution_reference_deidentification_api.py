@@ -15,6 +15,9 @@ from plm_assistant.modules.solution.api.reference_deidentification import create
 from plm_assistant.modules.solution.application.confirm_reference_deidentification import (
     ReferenceDeidentificationConfirmError, ReferenceDeidentificationConfirmationView,
 )
+from plm_assistant.modules.solution.application.lookup_reference_deidentification_operation import (
+    ReferenceDeidentificationLookupError, ReferenceDeidentificationOperationStatus,
+)
 from plm_assistant.modules.solution.application.preview_reference_deidentification import (
     PreviewDocumentRef, ReferenceDeidentificationPreviewError,
     ReferenceDeidentificationPreviewView,
@@ -63,6 +66,13 @@ class Services:
             raise ReferenceDeidentificationRevokeError(self.error)
         return RevocationView(CONFIRMATION, NOW)
 
+    def lookup(self, command):
+        self.commands.append(("lookup", command))
+        if self.error:
+            raise ReferenceDeidentificationLookupError(self.error)
+        return ReferenceDeidentificationOperationStatus(
+            "COMPLETED", CONFIRMATION, 201, "CONFIRMED")
+
 
 class ReferenceDeidentificationApiTests(unittest.TestCase):
     def setUp(self):
@@ -83,7 +93,8 @@ class ReferenceDeidentificationApiTests(unittest.TestCase):
         }
         router = create_reference_deidentification_router(
             sessions=Sessions(), origins=LoginOriginPolicy(["https://plm.example.test"]),
-            previews=self.service, confirmations=self.service, revocations=self.service)
+            previews=self.service, confirmations=self.service, revocations=self.service,
+            lookups=self.service)
         self.client = TestClient(create_app(reference_deidentification_router=router),
                                  base_url="https://plm.example.test")
         self.addCleanup(self.client.close)
@@ -167,6 +178,36 @@ class ReferenceDeidentificationApiTests(unittest.TestCase):
         self.assertEqual(409, self.client.post(self.path + f"/{CONFIRMATION}:revoke",
                                                headers=self.headers,
                                                json={"reason_code": "ADMIN_REVIEW"}).status_code)
+
+    def test_operation_lookup_is_read_only_and_strict(self):
+        path = self.path + ":lookup-operation"
+        with TestClient(create_app(), base_url="https://plm.example.test") as bare:
+            self.assertEqual(404, bare.post(path, headers=self.headers,
+                                            json={"operation_kind": "CONFIRM",
+                                                  "operation_key": "k" * 16}).status_code)
+        result = self.client.post(path, headers=self.headers,
+                                  json={"operation_kind": "CONFIRM",
+                                        "operation_key": "k" * 16})
+        self.assertEqual(200, result.status_code)
+        self.assertEqual("no-store", result.headers["cache-control"])
+        self.assertEqual({"status": "COMPLETED", "confirmation_id": str(CONFIRMATION),
+                          "first_status_code": 201, "current_state": "CONFIRMED"},
+                         result.json()["data"])
+        self.assertEqual("lookup", self.service.commands[-1][0])
+        self.assertEqual(200, self.client.post(path, headers=self.headers,
+                         json={"operation_kind": "REVOKE", "operation_key": "r" * 16}
+                         ).status_code)
+        self.assertEqual("REVOKE", self.service.commands[-1][1].operation_kind)
+        for body, status in [({"operation_kind": "DELETE", "operation_key": "k" * 16}, 422),
+                             ({"operation_kind": "CONFIRM"}, 400),
+                             ({"operation_kind": "CONFIRM", "operation_key": "k" * 16,
+                               "actor_id": str(ACTOR)}, 400)]:
+            with self.subTest(body=body):
+                self.assertEqual(status, self.client.post(path, headers=self.headers,
+                                                          json=body).status_code)
+        self.service.error = "AUTH_ACCESS_DENIED"
+        self.assertEqual(404, self.client.post(path, headers=self.headers,
+            json={"operation_kind": "CONFIRM", "operation_key": "k" * 16}).status_code)
 
 
 if __name__ == "__main__":

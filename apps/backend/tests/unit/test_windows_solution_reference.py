@@ -75,6 +75,7 @@ class WindowsSolutionReferenceTests(unittest.TestCase):
         self.assertEqual(
             {("POST", "/api/v1/global/reference-deidentification-confirmations:preview"),
              ("POST", "/api/v1/global/reference-deidentification-confirmations"),
+             ("POST", "/api/v1/global/reference-deidentification-confirmations:lookup-operation"),
              ("POST", "/api/v1/global/reference-deidentification-confirmations/"
                       "{confirmation_id}:revoke")},
             {(method, route.path) for route in router.routes for method in route.methods})

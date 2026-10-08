@@ -21,6 +21,11 @@ from plm_assistant.modules.solution.application.confirm_reference_deidentificati
     ConfirmReferenceDeidentification, ReferenceDeidentificationConfirmError,
     ReferenceDeidentificationConfirmService, ReferenceDeidentificationConfirmationView,
 )
+from plm_assistant.modules.solution.application.lookup_reference_deidentification_operation import (
+    LookupReferenceDeidentificationOperation, ReferenceDeidentificationLookupError,
+    ReferenceDeidentificationOperationLookupService,
+    ReferenceDeidentificationOperationStatus,
+)
 from plm_assistant.modules.solution.application.preview_reference_deidentification import (
     PreviewReferenceDeidentification, ReferenceDeidentificationPreviewError,
     ReferenceDeidentificationPreviewService, ReferenceDeidentificationPreviewView,
@@ -131,6 +136,7 @@ def create_reference_deidentification_router(
     previews: ReferenceDeidentificationPreviewService,
     confirmations: ReferenceDeidentificationConfirmService,
     revocations: ReferenceDeidentificationRevokeService,
+    lookups: ReferenceDeidentificationOperationLookupService | None = None,
 ) -> APIRouter:
     if any(item is None for item in (sessions, origins, previews, confirmations, revocations)):
         raise ValueError("GLOBAL Reference attestation HTTP dependencies required")
@@ -226,5 +232,44 @@ def create_reference_deidentification_router(
                                        "trace_id": str(trace)},
                              "trace_id": str(trace)},
                             headers={"Cache-Control": "no-store"})
+
+    if lookups is not None:
+        @router.post("/api/v1/global/reference-deidentification-confirmations:lookup-operation")
+        async def lookup(request: Request) -> JSONResponse:
+            headers, token, csrf, trace = await admission(request)
+            body = await _read_body(request, headers)
+            if type(body) is not dict or set(body) != {"operation_kind", "operation_key"}:
+                raise ApplicationError("REQUEST_MALFORMED")
+            if (type(body["operation_kind"]) is not str
+                    or body["operation_kind"] not in ("CONFIRM", "REVOKE")
+                    or type(body["operation_key"]) is not str):
+                raise ApplicationError("VALIDATION_FAILED")
+            try:
+                result = await run_in_threadpool(lookups.lookup,
+                    LookupReferenceDeidentificationOperation(
+                        token, csrf, trace, body["operation_kind"], body["operation_key"]))
+            except ReferenceDeidentificationLookupError as error:
+                raise _failure(error.code) from None
+            except Exception:
+                raise ApplicationError("SYSTEM_UNAVAILABLE") from None
+            if type(result) is not ReferenceDeidentificationOperationStatus:
+                raise ApplicationError("SYSTEM_UNAVAILABLE")
+            if (result.status == "UNCONFIRMED" and result.confirmation_id is None
+                    and result.first_status_code is None and result.current_state is None):
+                data = {"status": "UNCONFIRMED"}
+            elif (result.status == "COMPLETED"
+                    and type(result.confirmation_id) is uuid.UUID
+                    and result.confirmation_id.int != 0
+                    and result.first_status_code in (200, 201)
+                    and result.current_state in (
+                        "CONFIRMED", "REVOKED", "EXPIRED", "SUPERSEDED")):
+                data = {"status": "COMPLETED",
+                        "confirmation_id": str(result.confirmation_id),
+                        "first_status_code": result.first_status_code,
+                        "current_state": result.current_state}
+            else:
+                raise ApplicationError("SYSTEM_UNAVAILABLE")
+            return JSONResponse({"data": data, "trace_id": str(trace)},
+                                headers={"Cache-Control": "no-store"})
 
     return router

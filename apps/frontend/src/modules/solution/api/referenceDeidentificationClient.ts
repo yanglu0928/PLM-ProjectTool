@@ -22,6 +22,11 @@ export interface DeidentificationConfirmation {
 export interface DeidentificationRevocation {
   readonly confirmation_id: string; readonly revoked_at: string; readonly trace_id: string;
 }
+export type DeidentificationOperationStatus =
+  | Readonly<{ status: "UNCONFIRMED" }>
+  | Readonly<{ status: "COMPLETED"; confirmation_id: string;
+      first_status_code: 200 | 201;
+      current_state: "CONFIRMED" | "REVOKED" | "EXPIRED" | "SUPERSEDED" }>;
 
 const messages = {
   DEIDENTIFICATION_INVALID: "来源或确认内容无效，请重新填写。",
@@ -136,6 +141,25 @@ export class ReferenceDeidentificationClient {
     const response = await this.transport(() =>
       this.session.postGlobalReferenceDeidentificationRevoke(target, JSON.stringify({ reason_code: reason }), key));
     return revocationData(await this.read(response, 200), target);
+  }
+  async lookup(kind: "CONFIRM" | "REVOKE", key: string): Promise<DeidentificationOperationStatus> {
+    if (!["CONFIRM", "REVOKE"].includes(kind) || typeof key !== "string"
+      || !/^[\x20-\x7e]{16,128}$/.test(key)) invalid();
+    const response = await this.transport(() =>
+      this.session.postGlobalReferenceDeidentificationOperationLookup(
+        JSON.stringify({ operation_kind: kind, operation_key: key })));
+    const data = await this.read(response, 200);
+    if (!record(data)) uncertain();
+    if (data.status === "UNCONFIRMED" && exact(data, ["status"])) {
+      return Object.freeze({ status: "UNCONFIRMED" });
+    }
+    if (data.status !== "COMPLETED" || !exact(data, ["status", "confirmation_id",
+      "first_status_code", "current_state"]) || !id(data.confirmation_id)
+      || data.first_status_code !== (kind === "CONFIRM" ? 201 : 200)
+      || !["CONFIRMED", "REVOKED", "EXPIRED", "SUPERSEDED"].includes(String(data.current_state))) uncertain();
+    return Object.freeze({ status: "COMPLETED", confirmation_id: data.confirmation_id as string,
+      first_status_code: data.first_status_code as 200 | 201,
+      current_state: data.current_state as "CONFIRMED" | "REVOKED" | "EXPIRED" | "SUPERSEDED" });
   }
   private body(value: object): string {
     try {

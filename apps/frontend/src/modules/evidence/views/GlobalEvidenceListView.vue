@@ -288,6 +288,8 @@ onUnmounted(() => { mounted = false; generation += 1; clearSelection(); });
           : current.eligibility_state === 'REVOKED' ? '已撤销' : '待核定' }}（{{ current.etag }}）。</p>
         <p>来源精度：{{ selected.precision === 'DOCUMENT' ? '整文档' : '解析节点' }}；此页不提供精确高亮。</p>
         <p><a :href="selected.content_url">下载受权固定版本原文</a></p>
+        <p><RouterLink :to="{ name: 'global-reference-deidentification',
+          params: { evidenceId: selected.evidence_id } }">对这条固定来源进行人工脱敏核查</RouterLink></p>
         <section v-if="mayDecide()" aria-label="GLOBAL 人工资格确认">
           <h3>人工核定全局证据资格</h3>
           <p>先核对固定版本原文。模板与 AI 建议不能自动成为正式业务事实；请写明实际核对依据。</p>

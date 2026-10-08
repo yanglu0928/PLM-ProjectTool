@@ -1356,19 +1356,24 @@ export class SessionClient {
     return this.#postGlobalReferenceDeidentification("revoke", body, idempotencyKey, confirmationId);
   }
 
-  async #postGlobalReferenceDeidentification(action: "preview" | "confirm" | "revoke",
+  async postGlobalReferenceDeidentificationOperationLookup(body: string): Promise<Response> {
+    return this.#postGlobalReferenceDeidentification("lookup", body);
+  }
+
+  async #postGlobalReferenceDeidentification(action: "preview" | "confirm" | "revoke" | "lookup",
     body: string, idempotencyKey?: string, confirmationId?: string): Promise<Response> {
     if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
     if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
     if (typeof body !== "string" || body.length === 0 || new TextEncoder().encode(body).length > 128 * 1024
-      || (action === "preview" && idempotencyKey !== undefined)
-      || (action !== "preview" && (typeof idempotencyKey !== "string"
+      || ((action === "preview" || action === "lookup") && idempotencyKey !== undefined)
+      || ((action === "confirm" || action === "revoke") && (typeof idempotencyKey !== "string"
         || !/^[\x20-\x7e]{16,128}$/.test(idempotencyKey)))) {
       throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
     }
     const base = "/api/v1/global/reference-deidentification-confirmations";
-    const path = action === "preview" ? `${base}:preview` : action === "confirm" ? base
-      : `${base}/${confirmationId}:revoke`;
+    const path = action === "preview" ? `${base}:preview` : action === "lookup"
+      ? `${base}:lookup-operation` : action === "confirm" ? base
+        : `${base}/${confirmationId}:revoke`;
     this.#busy = true;
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);

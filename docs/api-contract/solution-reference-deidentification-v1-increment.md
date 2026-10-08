@@ -1,14 +1,17 @@
 # SOL-01-A04-P08-P02：GLOBAL Reference 人工脱敏确认 API 增量合同
 
-日期：2026-10-09；依据冻结 API-01/API-04、CR-SOL-006/007/009。以下为新增白名单操作，不修改冻结 `SOL_REFERENCE_CREATE`/GET/List。P03-P03/P04/P05 已完成可注入 HTTP、隔离 PG 与 Windows 显式写模式组合；默认应用、只读模式仍关闭，正式信任账户和实际人工确认未验，不能据此声称业务入口可用。
+日期：2026-10-09；依据冻结 API-01/API-04、CR-SOL-006/007/009/010。以下为新增白名单操作，不修改冻结 `SOL_REFERENCE_CREATE`/GET/List。P03-P03/P04/P05 已完成可注入 HTTP、隔离 PG 与 Windows 显式写模式组合；默认应用、只读模式仍关闭，正式信任账户和实际人工确认未验，不能据此声称业务入口可用。
 
 |Operation ID|Method/Path|语义|
 |---|---|---|
 |`SOL_REFERENCE_DEIDENTIFICATION_PREVIEW`|`POST /api/v1/global/reference-deidentification-confirmations:preview`|读取当前 GLOBAL 固定来源证明和定位身份，不创建确认/Audit/收据|
 |`SOL_REFERENCE_DEIDENTIFICATION_CONFIRM`|`POST /api/v1/global/reference-deidentification-confirmations`|实际管理员明确声明，当前来源指纹匹配后原子创建确认/Audit/收据|
 |`SOL_REFERENCE_DEIDENTIFICATION_REVOKE`|`POST /api/v1/global/reference-deidentification-confirmations/{confirmation_id}:revoke`|实际管理员受控撤回最新有效确认，保留历史/Audit/收据|
+|`SOL_REFERENCE_DEIDENTIFICATION_OPERATION_LOOKUP`|`POST /api/v1/global/reference-deidentification-confirmations:lookup-operation`|按当前管理员与原操作号只读回查 Confirm/Revoke 首次收据和当前确认状态，供超时恢复|
 
-三项均要求可信 Host/Origin、当前 `plm_session`、`X-CSRF-Token`、有效 License 与 DeploymentAdmin。Preview 虽只读但以 POST 承载固定来源集合，也须 CSRF，不写账本。Confirm/Revoke 另要求 `Idempotency-Key`；重放仅返回相同操作首次结果，冲突 `409`。不接受 query、客户端 actor/scope/project、绝对路径、文件正文、AI 自动声明、未知/重复 JSON 键；请求上限 128 KiB，响应 `Cache-Control: no-store`、一致 Trace ID。
+四项均要求可信 Host/Origin、当前 `plm_session`、`X-CSRF-Token`、有效 License 与 DeploymentAdmin。Preview 虽只读但以 POST 承载固定来源集合，也须 CSRF，不写账本。Confirm/Revoke 另要求 `Idempotency-Key`；重放仅返回相同操作首次结果，冲突 `409`。不接受 query、客户端 actor/scope/project、绝对路径、文件正文、AI 自动声明、未知/重复 JSON 键；请求上限 128 KiB，响应 `Cache-Control: no-store`、一致 Trace ID。
+
+CR-SOL-010 回查同样要求可信 Host/Origin、当前 Session/CSRF、有效 License 与 DeploymentAdmin；请求体恰为 `operation_kind: CONFIRM|REVOKE` 和 `operation_key`（原 Idempotency-Key，放在 JSON 请求体而非新操作 Header），不接收 actor/确认 ID。仅从当前管理员及指定操作种类的收据命名空间读取；未见已完成收据返回 `200 {status:"UNCONFIRMED"}`，意为结果尚不能确认，不能作为安全重新提交证明；已完成返回 `200 {status:"COMPLETED",confirmation_id,first_status_code,current_state}`，其中首次状态码为 Confirm 201/Revoke 200，当前状态为 `CONFIRMED|REVOKED|EXPIRED|SUPERSEDED`。回查不写确认、Audit 或幂等记录，不返回来源明细/正文。前端只有在服务端回查 `COMPLETED` 且展示当前状态后，才能解除本地待核对锁；`UNCONFIRMED`、错误或网络超时均保持锁定。
 
 Preview/Confirm 共用精确来源字段：`document_version_ids` 为创建顺序的 1～100 个规范 UUID；`evidence_ids` 为 0～500 个规范 UUID；`source_project_class`、`deidentification_class` 为已归一化非空字符串（≤128）；`applicability` 为受限 JSON 对象。均只允许 GLOBAL 当前受权、完整且合格的固定来源，不接收来源 SHA 作为证明。Preview 成功 `200` 只投影 `source_fingerprint`（服务端现时来源集合 SHA-256）、有序 `document_refs: [{document_id,document_version_id}]`、有序 `evidence_ids` 和 `previewed_at`；客户端可用现有受权 Document 详情/Evidence Viewer 打开原文，不把预览当批准或持久确认。
 

@@ -96,4 +96,20 @@ describe("ReferenceDeidentificationClient", () => {
       .rejects.toMatchObject({ code: "DEIDENTIFICATION_INVALID" });
     expect(projectFetcher).toHaveBeenCalledTimes(1);
   });
+
+  it("recovers only a same-kind completed operation and treats missing receipt as inconclusive", async () => {
+    const { client, fetcher } = await setup(envelope({ status: "UNCONFIRMED" }),
+      envelope({ status: "COMPLETED", confirmation_id: confirmation,
+        first_status_code: 201, current_state: "REVOKED" }));
+    expect(await client.lookup("CONFIRM", "k".repeat(16))).toEqual({ status: "UNCONFIRMED" });
+    expect(await client.lookup("CONFIRM", "k".repeat(16))).toEqual({ status: "COMPLETED",
+      confirmation_id: confirmation, first_status_code: 201, current_state: "REVOKED" });
+    expect(fetcher.mock.calls[1]![0]).toBe(
+      "/api/v1/global/reference-deidentification-confirmations:lookup-operation");
+    expect((fetcher.mock.calls[1]![1] as RequestInit).headers).not.toHaveProperty("Idempotency-Key");
+    const wrong = await setup(envelope({ status: "COMPLETED", confirmation_id: confirmation,
+      first_status_code: 200, current_state: "REVOKED" }));
+    await expect(wrong.client.lookup("CONFIRM", "k".repeat(16)))
+      .rejects.toMatchObject({ code: "DEIDENTIFICATION_UNCERTAIN" });
+  });
 });

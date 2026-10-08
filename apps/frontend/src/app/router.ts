@@ -55,6 +55,7 @@ const ProjectPrototypeTemplateView = () => import("@/modules/prototype/views/Pro
 const ProjectPrototypeVersionView = () => import("@/modules/prototype/views/ProjectPrototypeVersionView.vue");
 const ProjectReferenceListView = () => import("@/modules/solution/views/ProjectReferenceListView.vue");
 const ProjectReferenceDetailView = () => import("@/modules/solution/views/ProjectReferenceDetailView.vue");
+const GlobalReferenceDeidentificationView = () => import("@/modules/solution/views/GlobalReferenceDeidentificationView.vue");
 
 export function createAppRouter(
   history: RouterHistory = createWebHistory(),
@@ -211,6 +212,11 @@ export function createAppRouter(
         path: "/admin/evidence",
         name: "global-evidence",
         component: GlobalEvidenceListView,
+      },
+      {
+        path: "/admin/reference-deidentification/:evidenceId",
+        name: "global-reference-deidentification",
+        component: GlobalReferenceDeidentificationView,
       },
       {
         path: "/admin/jobs/:jobId",

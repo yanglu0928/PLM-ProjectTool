@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A04-P08-P04-P02/CR-SOL-010 新增从受权 GLOBAL Evidence 进入的单来源人工脱敏核查页：固定文档/证据逐项打开、显式声明、预览漂移清空、确认/撤回；为超时恢复兼容新增按当前管理员/操作种类/原 Key 的只读回查，未确认不解锁。兼容性/升级：新增可选 API、无 Schema/依赖变化，无数据迁移；历史确认/Audit/收据保留。验证：Win11隔离PG/ASGI回查跨管理员/错操作种类、后端全量3337通过/3跳过/4930子例；前端105文件/1622项、typecheck/build通过。已知问题：仅单来源，真实Edge/真人确认、正式License/账户、Server2025、20并发/Gate3/发行未验；既有主包>500kB警告，Debian13依指令跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P08-P04-P01 新增 GLOBAL 脱敏确认前端 Preview/Confirm/Revoke 严格客户端及私有 CSRF 同源传输，校验来源有序身份、预览指纹、Trace/时间/最小收据，结果不确定不自动重试。兼容性/升级：未挂页面，无后端 API/Schema/依赖变化，无数据升级。验证：定向4、前端全量104文件/1618项、typecheck/build通过。已知问题：人工核查页面/Edge/真人确认、正式License/账户、Server2025、20并发/Gate3/发行未验；现有主包>500kB警告，Debian13依指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P08-P03-P05 将 GLOBAL 脱敏 Preview/Confirm/Revoke 接入 Windows 显式写模式，复用 Document/Evidence 当前固定来源与管理员/License/Session/幂等/Audit 端口；默认/只读模式及 GLOBAL Reference 创建仍关闭。兼容性/升级：仅增量受控路由，无 Schema/依赖/冻结 API 破坏；需目标账户与正式 License 安全装配后才能生产启用，无数据迁移。验证：Windows组合合同41/40子例、Win11隔离PG18.6/ASGI脚本退出0、后端全量3331通过/3跳过/4927子例。已知问题：前端/真人确认、正式License/账户/代理、Server2025、20并发/Gate3/发行未验；Debian13依指令跳过。
