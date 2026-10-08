@@ -579,6 +579,89 @@ def _probe_review_pipeline(database: str, review_id: uuid.UUID,
                   f"round_p95_ms={[round(value, 3) for value in rounds]}")
 
 
+def _probe_review_bundle(database: str, review_id: uuid.UUID,
+                         round_id: uuid.UUID) -> None:
+    """Compare read-only JSONB bundle with six child queries; no production change."""
+    children = tuple((index, table) for index, table in enumerate(REVIEW_TABLES)
+                     if 2 <= index < 8)
+    params = (review_id, round_id)
+    statements = tuple(
+        f"SELECT to_jsonb(t) FROM plm.{table.name} AS t "
+        "WHERE t.review_id=%s AND t.review_round_id=%s ORDER BY "
+        + ("t.reviewer_id" if index in (2, 3)
+           else f"t.{list(table.primary_key.columns)[0].name}")
+        for index, table in children
+    )
+    branches = tuple(
+        f"SELECT {index} AS bucket, "
+        + ("t.reviewer_id::text" if index in (2, 3)
+           else f"t.{list(table.primary_key.columns)[0].name}::text")
+        + f" AS sort_key, to_jsonb(t) AS payload FROM plm.{table.name} AS t "
+        "WHERE t.review_id=%s AND t.review_round_id=%s"
+        for index, table in children
+    )
+    bundled_statement = (
+        "SELECT bucket,payload FROM (" + " UNION ALL ".join(branches)
+        + ") AS child_rows ORDER BY bucket,sort_key"
+    )
+
+    def sequential(connection):
+        return tuple(tuple(row[0] for row in connection.execute(
+            statement, params).fetchall()) for statement in statements)
+
+    def bundled(connection):
+        buckets = {index: [] for index, _ in children}
+        for bucket, payload in connection.execute(
+                bundled_statement, params * len(children)).fetchall():
+            assert bucket in buckets and type(payload) is dict
+            buckets[bucket].append(payload)
+        return tuple(tuple(buckets[index]) for index, _ in children)
+
+    with psycopg.connect(host="127.0.0.1", port=PORT, user="poc_admin",
+                         dbname=database) as db:
+        expected = sequential(db)
+        assert expected == bundled(db)
+        timings: dict[str, list[float]] = {"sequential": [], "bundle": []}
+        for _ in range(5):
+            assert sequential(db) == bundled(db) == expected
+        for index in range(60):
+            methods = (("sequential", sequential), ("bundle", bundled))
+            if index % 2:
+                methods = tuple(reversed(methods))
+            for name, method in methods:
+                started = time.perf_counter()
+                assert method(db) == expected
+                timings[name].append((time.perf_counter() - started) * 1000)
+        for name, samples in timings.items():
+            ordered = sorted(samples)
+            print(f"PRT_A05_P04_P17_REVIEW_BUNDLE mode={name} "
+                  f"rounds={len(ordered)} p50_ms={statistics.median(ordered):.3f} "
+                  f"p95_ms={ordered[math.ceil(.95 * len(ordered)) - 1]:.3f}")
+
+        def concurrent_round(method) -> float:
+            barrier = threading.Barrier(20)
+
+            def worker() -> float:
+                with psycopg.connect(host="127.0.0.1", port=PORT,
+                                     user="poc_admin", dbname=database) as connection:
+                    assert method(connection) == expected
+                    barrier.wait(timeout=15)
+                    started = time.perf_counter()
+                    assert method(connection) == expected
+                    return (time.perf_counter() - started) * 1000
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=20) as pool:
+                futures = [pool.submit(worker) for _ in range(20)]
+                samples = sorted(future.result(timeout=30) for future in futures)
+            return samples[18]
+
+        for name, method in (("sequential", sequential), ("bundle", bundled)):
+            rounds = [concurrent_round(method) for _ in range(3)]
+            print(f"PRT_A05_P04_P17_REVIEW_BUNDLE_CONCURRENT mode={name} "
+                  f"concurrency=20 median_round_p95_ms={statistics.median(rounds):.3f} "
+                  f"round_p95_ms={[round(value, 3) for value in rounds]}")
+
+
 def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
                        reviewer, reviewer_token, requirement,
                        requirement_version, requirement_review_round,
@@ -593,6 +676,7 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
                        read_load_sql_diagnostic: bool = False,
                        network_load: bool = False,
                        pipeline_probe: bool = False,
+                       bundle_probe: bool = False,
                        phase_diagnostic: bool = False,
                        timeline_diagnostic: bool = False,
                        external_client: bool = False,
@@ -744,6 +828,9 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
     if pipeline_probe:
         _probe_review_pipeline(database, submission.review_id,
                                submission.round_id)
+    if bundle_probe:
+        _probe_review_bundle(database, submission.review_id,
+                             submission.round_id)
     second_prototype = second_prototype_version = second_prototype_round = None
     if multi_prototype:
         second_prototype = PrototypeIdentityCreateService(
@@ -1328,6 +1415,7 @@ def main(*, mixed_not_required: bool = False,
          read_load_sql_diagnostic: bool = False,
          network_load: bool = False,
          pipeline_probe: bool = False,
+         bundle_probe: bool = False,
          phase_diagnostic: bool = False,
          timeline_diagnostic: bool = False,
          external_client: bool = False,
@@ -1371,6 +1459,7 @@ def main(*, mixed_not_required: bool = False,
                 read_load_sql_diagnostic=read_load_sql_diagnostic,
                 network_load=network_load,
                 pipeline_probe=pipeline_probe,
+                bundle_probe=bundle_probe,
                 phase_diagnostic=phase_diagnostic,
                 timeline_diagnostic=timeline_diagnostic,
                 external_client=external_client,
@@ -1384,6 +1473,9 @@ def main(*, mixed_not_required: bool = False,
         elif pipeline_probe:
             print("PRT_01_A11_A05_P04_P07_REVIEW_PIPELINE_PROBE_MEASURED: "
                   "same six child-row queries, real PG and full Workflow")
+        elif bundle_probe:
+            print("PRT_01_A11_A05_P04_P17_REVIEW_BUNDLE_PROBE_MEASURED: "
+                  "six child-row JSONB bundle, real PG and full Workflow")
         elif multi_prototype:
             print("PRT_01_A11_A05_P03_A03_MULTI_PROTOTYPE_HTTP_PG_PASS: "
                   "overlapping Links left one criterion uncovered and failed; "
