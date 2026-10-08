@@ -25,15 +25,25 @@ fixture = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(fixture)
 
 
-def on_preview(*, runtime, audit, preview, confirm, revoke, request,
+def on_preview(*, runtime, audit, license_guard, preview, confirm, revoke, request,
                document, version, evidence, node_evidence, fingerprint, port,
+               router_factory=None, documents=None, downloads=None,
+               parse_results=None,
                **_unused) -> None:
     sessions = SessionService(
         unit_of_work=runtime.unit_of_work,
         repository=SqlAlchemySessionRepository(), issue_access=object(), audit=audit)
-    router = create_reference_deidentification_router(
-        sessions=sessions, origins=LoginOriginPolicy(["https://plm.example.test"]),
-        previews=preview, confirmations=confirm, revocations=revoke)
+    origins = LoginOriginPolicy(["https://plm.example.test"])
+    if router_factory is None:
+        router = create_reference_deidentification_router(
+            sessions=sessions, origins=origins,
+            previews=preview, confirmations=confirm, revocations=revoke)
+    else:
+        router = router_factory(
+            runtime=runtime, sessions=sessions, origins=origins,
+            license_guard=license_guard, audit=audit,
+            documents=documents, downloads=downloads,
+            parse_results=parse_results)
     base = "/api/v1/global/reference-deidentification-confirmations"
     headers = {
         "cookie": "plm_session=" + fixture.TOKEN.hex(),

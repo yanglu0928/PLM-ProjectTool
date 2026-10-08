@@ -55,6 +55,7 @@ from plm_assistant.entrypoints.windows_solution_reference import (
     create_windows_project_reference_create_router,
     create_windows_project_reference_list_router,
     create_windows_project_reference_read_router,
+    create_windows_reference_deidentification_router,
 )
 from plm_assistant.entrypoints.windows_solution_reference_cursor import (
     create_windows_project_reference_list_cursor_codec,
@@ -611,6 +612,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         project_reference_create_router = None
         project_reference_read_router = None
         project_reference_list_router = None
+        reference_deidentification_router = None
         review_command_router = None
         if include_secret_read:
             from plm_assistant.entrypoints.windows_license_runtime import (
@@ -808,6 +810,14 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             if include_secret_write:
                 project_reference_create_router = (
                     create_windows_project_reference_create_router(
+                        runtime=runtime, sessions=sessions, origins=origins,
+                        license_guard=licenses.guard, audit=audit,
+                        documents=document_reads, downloads=document_downloads,
+                        parse_results=evidence_results_for_viewer,
+                    )
+                )
+                reference_deidentification_router = (
+                    create_windows_reference_deidentification_router(
                         runtime=runtime, sessions=sessions, origins=origins,
                         license_guard=licenses.guard, audit=audit,
                         documents=document_reads, downloads=document_downloads,
@@ -1622,6 +1632,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             project_reference_create_router=project_reference_create_router,
             project_reference_read_router=project_reference_read_router,
             project_reference_list_router=project_reference_list_router,
+            reference_deidentification_router=reference_deidentification_router,
             review_command_router=review_command_router,
             maintenance_admission=maintenance_admission,
             shutdown_callback=shutdown,

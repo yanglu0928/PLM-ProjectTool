@@ -18,16 +18,22 @@ from plm_assistant.modules.platform.infrastructure.idempotency_receipts import S
 from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
 from plm_assistant.modules.project.infrastructure.authorization_repository import SqlAlchemyProjectAuthorizationRepository
 from plm_assistant.modules.solution.api.reference_create import create_project_reference_create_router
+from plm_assistant.modules.solution.api.reference_deidentification import create_reference_deidentification_router
 from plm_assistant.modules.solution.api.reference_list import create_project_reference_list_router
 from plm_assistant.modules.solution.api.reference_list_cursor import ReferenceListCursorCodec
 from plm_assistant.modules.solution.api.reference_read import create_project_reference_read_router
 from plm_assistant.modules.solution.application.create_reference_solution import ReferenceCreateService
+from plm_assistant.modules.solution.application.confirm_reference_deidentification import ReferenceDeidentificationConfirmService
+from plm_assistant.modules.solution.application.preview_reference_deidentification import ReferenceDeidentificationPreviewService
 from plm_assistant.modules.solution.application.read_reference import ReferenceReadService
+from plm_assistant.modules.solution.application.revoke_reference_deidentification import ReferenceDeidentificationRevokeService
 from plm_assistant.modules.solution.application.prove_reference_deidentification import ReferenceDeidentificationProofService
 from plm_assistant.modules.solution.application.reference_source_qualification import ReferenceSourceQualificationService
 from plm_assistant.modules.solution.infrastructure.reference_create_repository import SqlAlchemyReferenceCreateRepository
 from plm_assistant.modules.solution.infrastructure.reference_read_repository import SqlAlchemyReferenceReadRepository
 from plm_assistant.modules.solution.infrastructure.reference_deidentification_proof_repository import SqlAlchemyReferenceDeidentificationProofRepository
+from plm_assistant.modules.solution.infrastructure.reference_deidentification_repository import SqlAlchemyReferenceDeidentificationRepository
+from plm_assistant.modules.solution.infrastructure.reference_deidentification_revocation_repository import SqlAlchemyReferenceDeidentificationRevocationRepository
 from plm_assistant.modules.solution.infrastructure.reference_document_proof import ReferenceDocumentProofAdapter
 from plm_assistant.modules.solution.infrastructure.reference_evidence_proof import ReferenceEvidenceProofAdapter
 
@@ -95,32 +101,9 @@ def create_windows_project_reference_create_router(
         project_repository = SqlAlchemyProjectAuthorizationRepository()
         authorization = ProjectAuthorizationService(
             unit_of_work=runtime.unit_of_work, repository=project_repository)
-        admin = SqlAlchemyDeploymentReadAccess()
-        fixed = DocumentFixedSourceProofService(
-            documents=documents, downloads=downloads,
-            parse_metadata=SqlAlchemyParseResultReadRepository(),
-            parse_results=parse_results,
-        )
-        evidence_rows = SqlAlchemyEvidenceFixedSourceRepository()
-        sources = ReferenceSourceQualificationService(
-            documents=ReferenceDocumentProofAdapter(
-                identities=SqlAlchemyReferenceVersionIdentity(), fixed_sources=fixed),
-            evidence=ReferenceEvidenceProofAdapter(
-                project=EvidenceFixedProjectSourceService(
-                    sessions=SqlAlchemyProjectReadAccess(),
-                    projects=project_repository, evidence=evidence_rows,
-                    documents=fixed, allowed_project_roles=frozenset({
-                        "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}),
-                ),
-                global_reference=EvidenceFixedGlobalReferenceService(
-                    sessions=SqlAlchemyProjectReadAccess(), admins=admin,
-                    evidence=evidence_rows, documents=fixed),
-            ),
-            deidentification=ReferenceDeidentificationProofService(
-                admins=admin,
-                confirmations=SqlAlchemyReferenceDeidentificationProofRepository(),
-            ),
-        )
+        sources = _source_service(
+            documents=documents, downloads=downloads, parse_results=parse_results,
+            project_repository=project_repository)
         service = ReferenceCreateService(
             unit_of_work=runtime.unit_of_work,
             global_access=SqlAlchemyLicenseImportAccess(),
@@ -132,5 +115,70 @@ def create_windows_project_reference_create_router(
         )
         return create_project_reference_create_router(
             sessions=sessions, origins=origins, creates=service)
+    except Exception:
+        raise ProductionSolutionReferenceStartupError() from None
+
+
+def _source_service(*, documents, downloads, parse_results,
+                    project_repository) -> ReferenceSourceQualificationService:
+    admin = SqlAlchemyDeploymentReadAccess()
+    fixed = DocumentFixedSourceProofService(
+        documents=documents, downloads=downloads,
+        parse_metadata=SqlAlchemyParseResultReadRepository(),
+        parse_results=parse_results,
+    )
+    evidence_rows = SqlAlchemyEvidenceFixedSourceRepository()
+    return ReferenceSourceQualificationService(
+        documents=ReferenceDocumentProofAdapter(
+            identities=SqlAlchemyReferenceVersionIdentity(), fixed_sources=fixed),
+        evidence=ReferenceEvidenceProofAdapter(
+            project=EvidenceFixedProjectSourceService(
+                sessions=SqlAlchemyProjectReadAccess(),
+                projects=project_repository, evidence=evidence_rows,
+                documents=fixed, allowed_project_roles=frozenset({
+                    "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}),
+            ),
+            global_reference=EvidenceFixedGlobalReferenceService(
+                sessions=SqlAlchemyProjectReadAccess(), admins=admin,
+                evidence=evidence_rows, documents=fixed),
+        ),
+        deidentification=ReferenceDeidentificationProofService(
+            admins=admin,
+            confirmations=SqlAlchemyReferenceDeidentificationProofRepository(),
+        ),
+    )
+
+
+def create_windows_reference_deidentification_router(
+    *, runtime, sessions, origins, license_guard, audit,
+    documents, downloads, parse_results,
+) -> APIRouter:
+    """Compose GLOBAL attestation only for explicit write-mode admission."""
+    if any(value is None for value in (
+            runtime, sessions, origins, license_guard, audit,
+            documents, downloads, parse_results)):
+        raise ProductionSolutionReferenceStartupError()
+    try:
+        sources = _source_service(
+            documents=documents, downloads=downloads, parse_results=parse_results,
+            project_repository=SqlAlchemyProjectAuthorizationRepository())
+        access = SqlAlchemyLicenseImportAccess()
+        receipts = SqlAlchemyIdempotencyReceipts()
+        previews = ReferenceDeidentificationPreviewService(
+            unit_of_work=runtime.unit_of_work, access=access,
+            license_guard=license_guard, sources=sources)
+        confirmations = ReferenceDeidentificationConfirmService(
+            unit_of_work=runtime.unit_of_work, access=access,
+            license_guard=license_guard, sources=sources,
+            repository=SqlAlchemyReferenceDeidentificationRepository(),
+            receipts=receipts, audit=audit)
+        revocations = ReferenceDeidentificationRevokeService(
+            unit_of_work=runtime.unit_of_work, access=access,
+            license_guard=license_guard,
+            repository=SqlAlchemyReferenceDeidentificationRevocationRepository(),
+            receipts=receipts, audit=audit)
+        return create_reference_deidentification_router(
+            sessions=sessions, origins=origins, previews=previews,
+            confirmations=confirmations, revocations=revocations)
     except Exception:
         raise ProductionSolutionReferenceStartupError() from None

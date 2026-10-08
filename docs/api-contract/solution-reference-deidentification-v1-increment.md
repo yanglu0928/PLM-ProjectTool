@@ -1,6 +1,6 @@
 # SOL-01-A04-P08-P02：GLOBAL Reference 人工脱敏确认 API 增量合同
 
-日期：2026-10-09；依据冻结 API-01/API-04、CR-SOL-006/007/009。以下为新增白名单操作，不修改冻结 `SOL_REFERENCE_CREATE`/GET/List。P03-P03 已实现可注入 HTTP Router 与合同测试；默认应用和 Windows 生产组合尚未启用，不能据此声称业务入口可用。
+日期：2026-10-09；依据冻结 API-01/API-04、CR-SOL-006/007/009。以下为新增白名单操作，不修改冻结 `SOL_REFERENCE_CREATE`/GET/List。P03-P03/P04/P05 已完成可注入 HTTP、隔离 PG 与 Windows 显式写模式组合；默认应用、只读模式仍关闭，正式信任账户和实际人工确认未验，不能据此声称业务入口可用。
 
 |Operation ID|Method/Path|语义|
 |---|---|---|

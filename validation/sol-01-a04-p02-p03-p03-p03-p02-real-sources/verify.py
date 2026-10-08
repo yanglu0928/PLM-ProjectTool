@@ -317,7 +317,9 @@ def verify(port: int, scratch: Path, on_qualified=None, on_preview=None) -> None
                        preview=preview, confirm=confirm, revoke=revoke,
                        request=request, document=document, version=version,
                        evidence=evidence, node_evidence=node_evidence,
-                       fingerprint=baseline.content_fingerprint, port=port)
+                       fingerprint=baseline.content_fingerprint, port=port,
+                       documents=reader, downloads=download,
+                       parse_results=parse_results)
         rejects(lambda: confirm.confirm(ConfirmReferenceDeidentification(
             request, CSRF, datetime.now(timezone.utc) + timedelta(days=1),
             "I_VERIFIED_DEIDENTIFICATION", "F" * 16,

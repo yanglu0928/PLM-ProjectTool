@@ -694,6 +694,12 @@ class ProductionLoginTests(unittest.TestCase):
                 "reference-solutions/00000000-0000-0000-0000-000000000002").status_code, 401)
             self.assertEqual(client.post(
                 "/api/v1/global/reference-solutions").status_code, 404)
+            self.assertEqual(client.post(
+                "/api/v1/global/reference-deidentification-confirmations:preview"
+            ).status_code, 404)
+            self.assertEqual(client.post(
+                "/api/v1/global/reference-deidentification-confirmations"
+            ).status_code, 404)
             self.assertEqual(client.get("/api/v1/admin/secrets").status_code, 401)
             self.assertEqual(client.get("/api/v1/admin/ai/models").status_code, 401)
             self.assertEqual(client.post("/api/v1/admin/ai/models").status_code, 405)
@@ -1021,6 +1027,12 @@ class ProductionLoginTests(unittest.TestCase):
                 "reference-solutions/00000000-0000-0000-0000-000000000002").status_code, 401)
             self.assertEqual(client.post(
                 "/api/v1/global/reference-solutions").status_code, 404)
+            self.assertEqual(client.post(
+                "/api/v1/global/reference-deidentification-confirmations:preview"
+            ).status_code, 403)
+            self.assertEqual(client.post(
+                "/api/v1/global/reference-deidentification-confirmations"
+            ).status_code, 403)
             self.assertEqual(client.post("/api/v1/admin/secrets").status_code, 403)
             self.assertEqual(client.post("/api/v1/admin/ai/models").status_code, 403)
             self.assertEqual(client.post("/api/v1/admin/ai/models/00000000-0000-0000-0000-000000000001:set-state").status_code, 403)
