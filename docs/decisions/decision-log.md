@@ -1,5 +1,16 @@
 # 自主决策记录
 
+## DEC-20261008-1054：Identity HTTP保留范围决定原子性且不把决定伪装成客户确认
+
+- Date/WBS：2026-10-08 / `PRT-01-A09-A05`；依据冻结 API-04、DEC-1050～1053 及 A03-A05 Owner。
+- Decision：六个 Identity 路径使用单一可选 Router；PATCH 只消费强 `If-Match`，
+  MARK_NOT_REQUIRED 必须同时消费幂等键、强 `If-Match`、受影响的固定 RequirementVersion 集合及
+  理由/影响，可选 Review/Round 成对出现；仅回显真实 Owner 记录的 Actor/Review，不合成客户确认。
+- Reason：空 Link 不能代表不需原型，而将 PM 操作或 AI 推断记为客户确认会破坏事实边界；
+  必须保留 A05 Owner 的不可变范围决定。
+- Impact/Rollback：新增可选 Router 和应用注入点，无 Migration/依赖/Secret/外发；不注入即恢复 404
+  且不删除历史。合同 2、定向 30、后端 3192/3 及 wheel 1223 项通过，真实 PG 组合留 A09-A09。
+
 ## DEC-20261008-1053：Package HTTP按冻结控制位区分PATCH与SET_MEMBERS
 
 - Date/WBS：2026-10-08 / `PRT-01-A09-A04`；依据冻结API-04、DEC-1050～1052及既有A02/A03 Owner。

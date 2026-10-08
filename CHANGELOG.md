@@ -1,5 +1,13 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A09-A05 新增冻结 Prototype Identity 六操作可选 HTTP Router；LIST/GET
+  使用当前授权 Owner 和 Prototype 专用 cursor，三类写操作按冻结控制位要求幂等/强 ETag，
+  MARK_NOT_REQUIRED 保留固定需求范围及可选 Review 事实，不伪造客户确认。兼容性/回滚：无
+  Migration、依赖、Secret 或外发，默认应用仍 404，撤注入即关闭且历史保留。验证：合同 2、
+  相关定向 30、后端 3192/3、compileall，wheel 1223 项/`d811197d…f19e9fbd` PASS。已知问题：
+  A06～A09 其余 HTTP/Windows 真实组合、A10 前端、A11 Workflow、Server 2025、Gate 3/UAT/发行待；
+  Debian 13 跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A09-A04 新增冻结PrototypePackage五操作可选HTTP Router；LIST/GET使用
   当前授权读Owner和Package专用cursor，CREATE/SET_MEMBERS要求幂等，PATCH/SET_MEMBERS要求强ETag，严格
   JSON/CSRF/Origin/身份投影失败关闭。兼容性/回滚：无Migration、依赖、Secret或外发，默认应用仍404，撤

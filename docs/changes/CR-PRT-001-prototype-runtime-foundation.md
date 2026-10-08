@@ -304,3 +304,12 @@ Package HTTP。
 当前授权，CREATE/SET要求幂等键，PATCH/SET要求强ETag，严格JSON/正文/UUID及返回身份投影失败关闭。默认应用
 继续404，Windows真实组合留A09-A09。合同4、相关定向30、后端3190/3、compileall及wheel1222项/
 `c37b0dc9…87f618`通过；无Migration/依赖/Secret/外发，Schema head保持0134，进入A05 Identity HTTP。
+
+## A09-A05 实施记录（2026-10-08）
+
+新增冻结 Prototype LIST/CREATE/GET/PATCH/MARK_NOT_REQUIRED/ARCHIVE 六操作可选 Router；LIST 使用
+Prototype 专用 cursor，CREATE/MARK/ARCHIVE 要求幂等，PATCH/MARK/ARCHIVE 要求强 ETag。范围决定
+必须提供固定 RequirementVersion 集合、理由与影响，可选 Review/Round 成对出现；不合成客户确认。
+默认应用继续 404，Windows 真实组合留 A09-A09。合同 2、相关定向 30、后端 3192/3、compileall 及
+wheel 1223 项/`d811197d…f19e9fbd`通过；无 Migration/依赖/Secret/外发，Schema head 保持 0134，
+进入 A06 Template HTTP。
