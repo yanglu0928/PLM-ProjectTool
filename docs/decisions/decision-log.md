@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261009-1125：目录版本写入先补章节身份与可信来源
+
+- Date/WBS：2026-10-09 / `SOL-03-A01`，依据冻结 API-04、DM-05、CR-SOL-002 及现有 0136～0138 Guard。
+- Decision：不以空 DRAFT/裸 UUID 引用解锁 `SOL_OUTLINE_VERSION_CREATE`。先推进 `SOL-04-A01` 章节身份受控创建，再补 SOL-01 Reference Revise/Eligibility 与 Requirement Approved 当前性证明，之后分切片开放 OutlineVersion 固定引用、Owner、Validate、Review/Trace。
+- Reason：0137 版本/章节/需求关联全写保护，0136 章节身份无 Owner，参考版本当前只允许 DRAFT，`sol_outline_reference_refs` 不存在；直接开放会违反冻结的稳定章节及可信来源合同。
+- Impact/Rollback：仅调整同 Phase 的施工顺序并记录依赖，不改冻结 API、Schema、程序或既有数据。若上游完成可重新排期，但不豁免客观验收；任何后续 DML 解锁另立 Change Request 并保留原迁移。
+- Verification：API-04/DM-05、CR-SOL-002、0136～0138/0146、Solution ORM 与 Project 策略静态对账；未运行 Version 新测试，Version CREATE 仍阻塞。
+
 ## DEC-20261009-1124：目录根创建以延迟约束闭合首次结果
 
 - Date/WBS：2026-10-09 / `SOL-02-A03`，依据 CR-SOL-011 和 0145 快照表。
