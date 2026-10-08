@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A10-A05-P01 新增Prototype列表与详情结构化页面：创建仅形成身份，
+  范围决定从当前Approved Requirement候选勾选并强制原因、影响和人工确认；不提供隐藏UUID维护，明确
+  模板/AI/校验/回执均非批准事实。幂等写按原Key/ETag恢复，名称PATCH未知结果只GET对账。兼容性/升级/
+  回滚：无Schema/API/依赖/权限/Secret或外发变化，页面尚未注册路由，可删除新增页面回滚。验证：页面定向
+  2项、前端96文件/1577项、typecheck、Vite 195 modules构建PASS；既有主chunk警告保留。已知问题：
+  A05-P02～P04、A06～A07、A11、Server2025、Gate3/UAT/发行待；Debian13跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A10-A04 完成Prototype冻结17项写操作白名单与严格客户端：15项
   幂等命令保留原Body/Key/所需ETag供显式恢复，2项名称PATCH无Key且未知结果必须GET对账；输入、响应、
   Location/ETag、Review/Link状态失败关闭，只读定位字段不得回写。兼容性/升级/回滚：无Schema/API/依赖/

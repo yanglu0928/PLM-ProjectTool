@@ -90,6 +90,15 @@ Package、Prototype、Template、Version和Requirement Link五族只读客户端
 其余命令保留原Body/Key及所需ETag供显式恢复且不自动重试。只读定位字段禁止回写，成功/错误响应失败关闭。
 定向208项、前端全量1575项、typecheck和构建通过；无服务端基线变化，进入A05结构化页面。
 
+## A10-A05-P01 实施记录（2026-10-08）
+
+新增 Prototype 列表与详情结构化页面：创建只形成身份；固定版本、正式范围决定及人工维护项分区显示；
+`NOT_REQUIRED` 从当前已批准 RequirementVersion 候选勾选并强制原因、影响和人工确认，不提供隐藏 UUID 文本
+维护。幂等 CREATE/MARK/ARCHIVE 未知结果只按原输入、Key、ETag 显式恢复，名称 PATCH 未知结果仅独立 GET
+对账。页面提示模板、AI 建议、校验与创建回执均非批准事实。本子任务不注册生产路由；Package、Template、
+Version、Link 页面及统一路由留后续 P02～P04/A06。无 Schema/API/依赖/Secret/外发变化。
+页面定向2项、前端96文件/1577项、typecheck和Vite 195 modules构建通过；既有主chunk警告保留。
+
 ## A02 实施记录（2026-10-08）
 
 Migration0122新增Package、Prototype、同项目membership、NOT_REQUIRED范围决定及固定受影响

@@ -1,5 +1,18 @@
 # 自主决策记录
 
+## DEC-20261008-1067：Prototype范围决定只接受受权业务候选而不接受隐藏UUID
+
+- Date/WBS：2026-10-08 / `PRT-01-A10-A05-P01`；依据冻结范围决定合同、CR-PRT-002及用户既定人工维护体验。
+- Decision：列表页不把缺 Prototype 推断为“不需要”；详情页的 `NOT_REQUIRED` 只允许从当前项目读取到的
+  Approved Requirement 当前版本中勾选，并强制维护原因、影响和人工确认。页面不提供 UUID 自由文本框，
+  不把模板、AI 建议、校验或创建回执显示为批准事实。未知写结果沿用 DEC-1066 的两类恢复语义。
+- Reason：要求用户复制内部 ID 既无法证明资源当前获准，也容易跨项目或引用过期版本；空列表和 AI 建议
+  不能替代有权人员对范围、影响及固定需求集合的明确决定。
+- Impact/Rollback：只新增未注册路由的两个 Vue 页面和测试，无 Schema/API/依赖/权限/Secret或外发变化。
+  删除页面即可回滚；后端与业务历史不变，Package/Template/Version/Link 页面继续分子任务实施。
+- Verification：页面定向2项覆盖原Key恢复、PATCH GET对账、批准需求选择和事实提示；前端96文件/1577项、
+  typecheck和Vite 195 modules生产构建通过，既有主chunk警告保留。
+
 ## DEC-20261008-1066：Prototype未知写结果区分可重放命令与非幂等PATCH
 
 - Date/WBS：2026-10-08 / `PRT-01-A10-A04`；依据冻结17项写Operation、幂等Key和强ETag控制标记。
