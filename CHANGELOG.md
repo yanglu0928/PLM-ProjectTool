@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-02-A06-P04 新增 SolutionOutline 内部列表 Owner/UUID keyset 与独立项目成员读策略，摘要复验批准指针、不披露未批准正文。兼容性/升级：无公开 API、Schema、Migration 或依赖变更；移除内部 Owner/权限可回滚，历史保留。验证：定向14通过/721子例、Win11隔离PG18.6真实Session/三对象三页/空尾页及拒绝路径通过；后端全量3376通过/3跳过/5060子例。已知问题：签名游标/公开HTTP/Windows组合、非空审批链、正式信任源、Server2025、20并发、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-02-A06-P03 将 SolutionOutline 详情 GET 接入 Windows 显式只读/写平台组合，登录专用模式仍404，缺信任依赖拒启动并释放 runtime。兼容性/升级：无新 Schema、Migration、依赖或冻结 API 变化；移除显式组合注入可回滚，历史保留。验证：定向37通过/13子例、Win11隔离PG18.6真实Session/ASGI读取与拒绝路径通过；后端全量3374通过/3跳过/5046子例。已知问题：正式公钥/目标账户、列表分页、非空审批链、Server2025、20并发、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-02-A06-P02 新增可选 SolutionOutline 详情 GET，固定目录投影、Session/Origin/License/项目权限、ETag 与 no-store，默认应用仍404。兼容性/升级：冻结 API-04 内实现，无新 Schema、依赖或数据迁移；停止注入路由可回滚。验证：合同3通过/8子例、Win11隔离PG18.6真实ASGI/Session/跨项目/暂停成员/异常通过；后端全量3372通过/3跳过/5040子例。已知问题：Windows正式组合、列表分页、非空批准链、正式信任源、Server2025、20并发、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。

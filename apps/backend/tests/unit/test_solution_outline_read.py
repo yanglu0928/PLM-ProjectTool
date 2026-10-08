@@ -12,7 +12,8 @@ from plm_assistant.modules.project.application.authorization import (
     ProjectActorFacts, ProjectAuthorizationService,
 )
 from plm_assistant.modules.solution.application.read_outline import (
-    OutlineCurrentView, OutlineReadError, OutlineReadQuery, OutlineReadService,
+    OutlineCurrentView, OutlineListPage, OutlineReadError, OutlineReadQuery,
+    OutlineReadService, OutlineSummaryView,
 )
 from plm_assistant.modules.solution.infrastructure.outline_read_repository import (
     SqlAlchemyOutlineReadRepository,
@@ -23,6 +24,8 @@ PROJECT, OUTLINE, ACTOR, VERSION = (uuid.uuid4() for _ in range(4))
 NOW = datetime(2026, 10, 9, tzinfo=timezone.utc)
 VIEW = OutlineCurrentView(OUTLINE, PROJECT, "Outline", "ACTIVE", None,
                           ACTOR, NOW, '"v0"')
+SUMMARY = OutlineSummaryView(OUTLINE, PROJECT, "Outline", "ACTIVE", None,
+                             NOW, '"v0"')
 
 
 class Tx:
@@ -63,12 +66,18 @@ class Facts:
 
 class Repo:
     view = VIEW
+    page = OutlineListPage((SUMMARY,), None, False)
     calls = 0
 
     def get_current(self, tx, *, project_id, outline_id):
         self.calls += 1
         assert project_id == PROJECT and outline_id == OUTLINE
         return self.view
+
+    def list_current(self, tx, *, project_id, after_outline_id, limit):
+        self.calls += 1
+        assert project_id == PROJECT and after_outline_id is None and limit == 50
+        return self.page
 
 
 class OutlineReadTests(unittest.TestCase):
@@ -162,6 +171,42 @@ class OutlineReadTests(unittest.TestCase):
                 object(), project_id=PROJECT, outline_id=OUTLINE)
         self.assertEqual(approved.current_approved_version_ref, VERSION)
         self.assertEqual(approved.etag, '"v1"')
+
+    def test_list_member_license_and_page_contract(self):
+        self.assertEqual(self.service.list_current(self.query).items, (SUMMARY,))
+        self.facts.role = "CUSTOMER_MEMBER"
+        self.assertEqual(self.service.list_current(self.query).items, (SUMMARY,))
+        self.facts.role = None
+        with self.assertRaises(OutlineReadError) as denied:
+            self.service.list_current(self.query)
+        self.assertEqual(denied.exception.code, "RESOURCE_NOT_FOUND")
+        self.facts.role = "PROJECT_MANAGER"
+        for bad in (
+            OutlineListPage((replace(SUMMARY, project_id=uuid.uuid4()),), None, False),
+            OutlineListPage((SUMMARY,), OUTLINE, False),
+            OutlineListPage((), OUTLINE, True),
+            OutlineListPage((SUMMARY,), uuid.uuid4(), True),
+            OutlineListPage((SUMMARY, SUMMARY), None, False),
+            OutlineListPage((replace(SUMMARY, etag='"v01"'),), None, False),
+        ):
+            with self.subTest(bad=bad):
+                self.repo.page = bad
+                with self.assertRaises(OutlineReadError) as caught:
+                    self.service.list_current(self.query)
+                self.assertEqual(caught.exception.code, "SOLUTION_UNAVAILABLE")
+        self.repo.page = OutlineListPage((SUMMARY,), None, False)
+        self.guard.denied = True
+        with self.assertRaises(OutlineReadError) as denied:
+            self.service.list_current(self.query)
+        self.assertEqual(denied.exception.code, "LICENSE_OPERATION_DENIED")
+
+    def test_list_invalid_limits_and_after(self):
+        for kwargs in ({"limit": 0}, {"limit": 101}, {"limit": True},
+                       {"after_outline_id": uuid.UUID(int=0)}):
+            with self.subTest(kwargs=kwargs), self.assertRaises(
+                    OutlineReadError) as caught:
+                self.service.list_current(self.query, **kwargs)
+            self.assertEqual(caught.exception.code, "VALIDATION_FAILED")
 
 
 if __name__ == "__main__":
