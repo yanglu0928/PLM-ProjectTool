@@ -4,7 +4,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createAppRouter } from "@/app/router";
 import { SessionClient } from "@/modules/auth/api/sessionClient";
 import { EvidenceViewerClient } from "@/modules/evidence/api/evidenceViewerClient";
+import type { EvidenceEligibilityClient } from "@/modules/evidence/api/evidenceEligibilityClient";
 import { ReferenceDeidentificationClient, ReferenceDeidentificationError } from "@/modules/solution/api/referenceDeidentificationClient";
+import type { GlobalReferenceCreateClient } from "@/modules/solution/api/globalReferenceCreateClient";
 import GlobalReferenceDeidentificationView from "./GlobalReferenceDeidentificationView.vue";
 
 const actor = "01234567-89ab-4cde-8123-456789abcdef";
@@ -33,7 +35,8 @@ async function session(role: "NONE" | "DEPLOYMENT_ADMIN" = "DEPLOYMENT_ADMIN"): 
   })) as typeof fetch);
   await api.login("admin", "synthetic-only"); return api;
 }
-async function page(role: "NONE" | "DEPLOYMENT_ADMIN" = "DEPLOYMENT_ADMIN") {
+async function page(role: "NONE" | "DEPLOYMENT_ADMIN" = "DEPLOYMENT_ADMIN",
+  createClient?: object) {
   const router = createAppRouter(createMemoryHistory());
   await router.push(`/admin/reference-deidentification/${evidence}`); await router.isReady();
   const viewer = { get: vi.fn().mockResolvedValue(descriptor) };
@@ -44,11 +47,15 @@ async function page(role: "NONE" | "DEPLOYMENT_ADMIN" = "DEPLOYMENT_ADMIN") {
     revoke: vi.fn().mockResolvedValue({ confirmation_id: confirmation,
       revoked_at: "2026-10-09T00:01:00Z", trace_id: actor }),
     lookup: vi.fn().mockResolvedValue({ status: "UNCONFIRMED" }) };
+  const eligibility = { currentGlobal: vi.fn().mockResolvedValue({ evidence_id: evidence,
+    document_id: document, document_version_id: version, eligibility_state: "ELIGIBLE", etag: '"v1"' }) };
   const wrapper = mount(GlobalReferenceDeidentificationView, { props: {
     session: await session(role), viewer: viewer as unknown as EvidenceViewerClient,
-    attestations: attestations as unknown as ReferenceDeidentificationClient },
+    attestations: attestations as unknown as ReferenceDeidentificationClient,
+    eligibilityClient: eligibility as unknown as EvidenceEligibilityClient,
+    createClient: createClient as GlobalReferenceCreateClient | undefined },
   global: { plugins: [router] } });
-  await flushPromises(); return { wrapper, viewer, attestations };
+  await flushPromises(); return { wrapper, viewer, attestations, eligibility };
 }
 function button(wrapper: Awaited<ReturnType<typeof page>>["wrapper"], text: string) {
   return wrapper.findAll("button").find(item => item.text().includes(text))!;
@@ -130,6 +137,31 @@ describe("GLOBAL human deidentification view", () => {
     expect(wrapper.text()).toContain("上次确认结果尚待核对");
     expect(window.sessionStorage.length).toBe(1);
     expect(button(wrapper, "预览当前固定来源").attributes("disabled")).toBeDefined();
+    wrapper.unmount();
+  });
+
+  it("rechecks single source and locks an uncertain global Create", async () => {
+    const create = vi.fn().mockRejectedValue(new TypeError("unknown result"));
+    const { wrapper, viewer, attestations, eligibility } = await page("DEPLOYMENT_ADMIN", { create });
+    const inputs = wrapper.findAll('input:not([type="checkbox"])');
+    await inputs[0]!.setValue("PLM"); await inputs[1]!.setValue("DEIDENTIFIED");
+    await button(wrapper, "预览当前固定来源").trigger("click"); await flushPromises();
+    for (const link of wrapper.findAll(`a[href="${url}"]`)) await link.trigger("click");
+    for (const check of wrapper.findAll('input[type="checkbox"]')) await check.setValue(true);
+    await button(wrapper, "提交人工脱敏确认").trigger("click"); await flushPromises();
+    expect(wrapper.text()).toContain("本会话历史确认");
+    await wrapper.find('input[placeholder="填写便于识别的参考名称"]').setValue("单来源参考");
+    await button(wrapper, "重新核验并创建全局参考方案").trigger("click"); await flushPromises();
+    expect(viewer.get).toHaveBeenCalledTimes(2);
+    expect(eligibility.currentGlobal).toHaveBeenCalledWith(evidence);
+    expect(attestations.preview).toHaveBeenCalledTimes(2);
+    expect(create.mock.calls[0]?.[0]).toEqual({ name: "单来源参考",
+      document_version_ids: [version], evidence_ids: [evidence],
+      source_project_class: "PLM", deidentification_class: "DEIDENTIFIED", applicability: {} });
+    expect(wrapper.text()).toContain("创建结果尚待核对");
+    expect(button(wrapper, "重新核验并创建全局参考方案").attributes("disabled"))
+      .toBeDefined();
+    expect(window.sessionStorage.getItem(`plm.sol.global.create.pending.${actor}`)).not.toBeNull();
     wrapper.unmount();
   });
 });

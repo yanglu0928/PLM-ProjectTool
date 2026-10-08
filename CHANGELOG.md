@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A04-P08-P06-P05-P03-P02 单来源人工确认页新增 GLOBAL Reference 显式创建区，当前 Viewer/Eligibility/Preview 与历史来源指纹重验，不确定原 Key 跨刷新锁定。兼容性/升级：纯前端增量，无后端/API/Schema/依赖或数据迁移；历史确认/Reference/Audit保留。验证：新增1项，前端全量107文件/1639项、typecheck/build通过。已知问题：Edge/真人确认、正式License/账户、Server2025、20并发、Gate3/UAT/发行未验；Debian13依指令跳过，既有大包提示。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P08-P06-P05-P03-P01 多来源人工确认页新增显式 GLOBAL Reference 创建区，先重新核对固定 Viewer/Eligibility/Preview 与确认来源指纹，结果仅参考草稿，不确定请求保留原 Key 并锁定。兼容性/升级：纯前端页面增量，无后端/API/Schema/依赖或数据迁移；历史确认/Reference/Audit保留。验证：新增2项，前端全量107文件/1638项、typecheck/build通过。已知问题：单来源/Edge/真人确认、正式License/账户、Server2025、20并发、Gate3/UAT/发行未验，Debian13依指令跳过，既有大包提示。
 
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P08-P06-P05-P02 增 GLOBAL Reference Create 私有 Session 写传输及严格客户端，冻结六字段、当前管理员、CSRF/原 Key、201 安全投影和不确定结果失败关闭；未接页面。兼容性/升级：纯前端增量，无后端/API/Schema/依赖变化或数据迁移。验证：定向4、前端全量107文件/1636项、typecheck/build通过。已知问题：页面/真实Edge/真人确认、正式License/账户、Server2025、20并发、Gate3/UAT/发行未验；Debian13依指令跳过，既有大包提示。
