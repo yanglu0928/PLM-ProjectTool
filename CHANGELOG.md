@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-02-A06-P09-A01 新增 SolutionOutline 前端只读客户端，严格固定列表/详情投影、项目/ID/ETag/游标与错误合同，不把空审批指针误报为正式方案。兼容性/升级：纯前端内部增量，无 Schema、Migration、公开 API 或依赖变化；移除客户端可回滚。验证：定向4、前端全量110文件/1651项、typecheck/build通过。已知问题：页面/创建后定位/真实浏览器、目标服务账户 key、正式License、非空审批链、Server2025、20并发、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-02-A06-P08 将 SolutionOutline LIST 接入 Windows 显式只读/写平台组合，使用独立 Vault 游标 key；缺 key 启动失败并释放 runtime，登录专用模式404、写模式 CREATE 不受只读哨兵影响。兼容性/升级：无新 Schema、Migration、依赖或冻结 API 变化；撤下显式注入可回滚，正式部署需独立 key/备份。验证：定向39通过/20子例、Win11隔离PG18.6真实Session/ASGI三页与拒绝路径通过；后端全量3386通过/3跳过/5095子例。已知问题：目标服务账户 key/正式License、前端/浏览器、非空审批链、Server2025、20并发、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-02-A06-P07 新增可选 SolutionOutline 列表 GET，严格 Session/Origin/License/项目授权、独立签名 cursor 和最小目录摘要；默认应用/读模式 POST保持404。兼容性/升级：冻结 API-04 内实现，无新 Schema、Migration/依赖；撤下可选路由可回滚。验证：合同3通过/13子例、Win11隔离PG18.6真实ASGI/Session三页与拒绝路径通过；后端全量3384通过/3跳过/5088子例。已知问题：Windows平台组合/目标账户密钥、前端/浏览器、非空审批链、正式License、Server2025、20并发、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
