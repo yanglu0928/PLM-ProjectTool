@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-04-A08 新增可选 Section 详情 GET、固定最小投影、强ETag/Trace/no-store和失败关闭；默认应用仍404。兼容性/升级：冻结 API-04 内实现，无 Schema/Migration/依赖/前端变化；撤下可选 Router 可回滚，历史保留。验证：Win11隔离PG18.6真实ASGI/Session/项目成员/跨项目/暂停/License与默认关闭通过；后端3386通过/3跳过/5104子例。已知问题：Windows显式组合/LIST/UI、正式目标账户/Server2025/性能、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-04-A07 新增 Section 当前详情内部受权读取、项目全成员读策略及批准指针复验；不暴露正文或公开 GET。兼容性/升级：无 Schema/Migration/依赖/前端/冻结 API 变化；撤下内部 Owner/策略可回滚，历史保留。验证：Win11隔离PG18.6真实Session/角色/跨项目/暂停/License/归档与损坏指针负例及 PROJECT Reference 夹具通过；后端3386通过/3跳过/5104子例。已知问题：GET HTTP/Windows组合/UI、正式目标账户/Server2025/性能、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-04-A06 静态核查 Section GET/LIST 前置：已有身份表/同项目约束，但缺独立读策略、Owner/仓储、HTTP 与列表游标；登记 GET 内部→可选HTTP→Windows 注入及 LIST 独立序列。兼容性/升级：仅进度与 CR 状态文档，无程序、Schema、Migration、API 或依赖变化；施工顺序可调整，冻结合同不改。验证：静态对账，未运行新测试。已知问题：GET/LIST/UI、正式目标账户/Server2025/性能、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
