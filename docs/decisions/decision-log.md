@@ -1,5 +1,15 @@
 # 自主决策记录
 
+## DEC-20261008-1056：Version CREATE必须真正消费If-Match并推进Prototype Root
+
+- Date/WBS：2026-10-08 / `PRT-01-A09-A07-P01`；依据冻结 API-04 的 `PRT_VERSION_CREATE S,L,C,I,M,A`。
+- Decision：暂不公开五项 Router；先将 `expected_lock_version` 加入 Version Create 命令、幂等指纹和
+  Repository 原子条件，首次创建同事务推进 Root ETag。重放恢复首次结果，不重复推进。
+- Reason：只在 HTTP 检查头而不让 Owner/Repository 原子消费 expected 会允许旧 ETag 创建多个版本，
+  与冻结的 M 控制位、幂等载荷身份和强并发语义冲突。
+- Impact/Rollback：登记内部符合性偏差，无 Schema/公开 API/依赖/外发；P02 实施与验证前 Router 仍 404。
+  已有新 Version 后不回退 Root 版本，必须前向修复。
+
 ## DEC-20261008-1055：Template PROJECT/GLOBAL共用投影但不共用授权与游标上下文
 
 - Date/WBS：2026-10-08 / `PRT-01-A09-A06`；依据冻结 API-04、DEC-1050～1054 及 A04 Template Owner。

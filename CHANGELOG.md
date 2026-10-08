@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A09-A07-P01 发现并登记 Version CREATE 并发符合性偏差：冻结合同
+  要求强 `If-Match`，现有 Owner 尚未原子消费 expected/推进 Root ETag。已拆 P02 先修 Owner 后造
+  Router，禁止伪并发保护。兼容性/回滚：纯文档，无 Schema/公开 API/依赖/Secret/外发；入口
+  仍 404。已知问题：P02 修复与五项 HTTP、A08～A09、A10 前端、A11 Workflow、Server 2025、
+  Gate 3/UAT/发行待；Debian 13 跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A09-A06 新增冻结 PROJECT/GLOBAL PrototypeTemplate 各 LIST/CREATE/
   REVISE 可选 HTTP Router；PROJECT 列表保留获准 GLOBAL 可见性，GLOBAL 管理面仍调用管理员 Owner，
   cursor 强绑 scope/Project，写入按路径固定 scope 且要求幂等/强 ETag。兼容性/回滚：无 Migration、
