@@ -75,6 +75,7 @@ describe("PROJECT Reference pages", () => {
     await flushPromises();
     expect(viewer.get).toHaveBeenCalledWith({ kind: "PROJECT", projectId: project }, evidence);
     expect(wrapper.text()).toContain("第三页");
+    expect(wrapper.text()).toContain("第 3 页");
     expect(wrapper.get(`a[href="/api/v1/projects/${project}/evidence/${evidence}/content"]`).text())
       .toContain("下载固定证据原文");
     wrapper.unmount();

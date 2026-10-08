@@ -20,6 +20,25 @@ function mayRead() {
   return mounted && !!session.view && !session.view.password_change_required
     && session.view.authorized_projects.some(item => item.project_id === projectId());
 }
+function locationText(locator: Readonly<Record<string, unknown>>): string {
+  const source = locator.locator_type === "STRUCTURED_NODE" && typeof locator.source_locator === "object"
+    && locator.source_locator !== null && !Array.isArray(locator.source_locator)
+    ? locator.source_locator as Record<string, unknown> : locator;
+  const kind = source.locator_type;
+  if (kind === "PAGE" && typeof source.page_no === "number") return `第 ${source.page_no} 页`;
+  if (kind === "TEXT_RANGE") {
+    const place = typeof source.page_no === "number" ? `第 ${source.page_no} 页`
+      : typeof source.section_path === "string" ? `章节 ${source.section_path}` : "文本";
+    return `${place} · 字符 ${source.start_offset}–${source.end_offset}`;
+  }
+  if (kind === "SECTION" && typeof source.section_path === "string") return `章节 ${source.section_path}`;
+  if (kind === "PARAGRAPH") return typeof source.paragraph_index === "number"
+    ? `段落 ${source.paragraph_index}` : `段落锚点 ${source.stable_anchor}`;
+  if (kind === "TABLE_CELL") return `表格 ${source.table_anchor} · 行 ${source.row_no} 列 ${source.column_no}`;
+  if (kind === "SHEET_RANGE") return `工作表 ${source.sheet_name} · ${source.start_cell}–${source.end_cell}`;
+  if (kind === "SLIDE_SHAPE") return `第 ${source.slide_no} 张幻灯片 · 形状 ${source.shape_id}`;
+  return "整份文档";
+}
 async function load() {
   if (!mayRead() || busy.value) return;
   const project = projectId(), reference = referenceId(), run = ++generation;
@@ -85,7 +104,7 @@ onUnmounted(() => { mounted = false; generation += 1; viewerGeneration += 1; });
           </li></ol>
           <p v-if="viewerBusy" role="status">正在重新核验固定证据…</p><p v-if="viewerError" role="alert">{{ viewerError }}</p>
           <div v-if="selected" aria-label="受权固定证据定位"><strong>{{ selected.display_label }}</strong>
-            <p>定位精度：{{ selected.precision === "PARSED_NODE" ? "解析节点" : "文档" }}；位置类型：{{ selected.locator.locator_type }}</p>
+            <p>定位精度：{{ selected.precision === "PARSED_NODE" ? "解析节点" : "文档" }}；位置：{{ locationText(selected.locator) }}</p>
             <p v-if="selected.short_preview">短提示：{{ selected.short_preview }}</p>
             <p>短提示不是权威正文；当前尚未提供浏览器内精确高亮。</p>
             <RouterLink :to="{ name: 'project-document-detail', params: { projectId: current.project_id,
