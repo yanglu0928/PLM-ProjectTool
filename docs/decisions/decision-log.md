@@ -10657,3 +10657,10 @@
 - Decision：Document 内部只返回版本与文档身份，同一事务由 DocumentFixedSourceProofService 独立证明授权/当前文件；Solution 适配核返回范围和摘要。GLOBAL 人工脱敏确认必须处于 `confirmed_at <= now < expires_at`，不能只凭带时区时间戳。0139 写入口保持关闭。
 - Reason：Reference 输入只持版本 ID，不能把未经受权的身份查询当来源证明；现有标准能力 GLOBAL Proof 不能扩展成通用参考授权。定向12、PG 身份负例与后端3275/3/4815通过。
 - Impact/Rollback：内部 Document/Solution Port 与适配、合同有效期修复，无公开 API、Schema、迁移、配置或客户数据外发；撤适配可回滚，但过期确认拒绝为安全修复。Evidence/人工确认/Owner 仍待。
+
+# DEC-20261008-1103：GLOBAL Reference Evidence 专用管理员证明，不放宽标准能力路径
+
+- Date/WBS：2026-10-08 / `SOL-01-A04-P02-P02`；依据 CR-SOL-005、冻结 API-04、Evidence/Document 固定来源服务和本轮回归。
+- Decision：新增 Evidence 专用 GLOBAL Reference Proof，先核管理员和锁定 ELIGIBLE 来源，再用 Document 原有固定证明和节点指纹复核；PROJECT 沿用项目 Evidence Proof，Solution 只接纳 PM/ImplementationMember 的受权结果。原 GLOBAL 标准能力服务不改。
+- Reason：Reference 的 GLOBAL 写入归 DeploymentAdmin，允许 REFERENCE_MATERIAL；旧服务要求目标项目 PM 且仅标准能力，不可直接放宽。定向 20/3 子例、全量 3282/3/4815 通过。
+- Impact/Rollback：仅内部服务、适配与测试，无 Schema/API/迁移/依赖/外发；撤新组件可回滚。真实 Reference PG/磁盘组合、人工确认和 Owner 未验，Gate 3 不变。

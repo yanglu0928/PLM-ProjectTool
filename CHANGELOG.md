@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/SOL-01-A04-P02-P02 增加 Reference 专用 GLOBAL Evidence 管理员固定来源证明及 PROJECT/GLOBAL Solution 内部适配；锁定 ELIGIBLE 来源、复核 Document 文件/节点指纹，旧 GLOBAL 标准能力权限不放宽。兼容性/升级：无公开 API、角色、Schema、Migration、依赖或配置变化；0139 写入口继续关闭，可移除新内部组件回滚。验证：定向 20 passed/3 subtests、后端 3282 passed/3 skipped/4815 subtests。已知问题：本项未做真实 Reference PG/磁盘/HTTP 组合，GLOBAL 人工脱敏确认 Port、原子 Owner/Review/Trace/Workflow、Gate3、性能与发行待；Debian13 依指令跳过。
+
 - 2026-10-08：0.1.0-dev.0/SOL-01-A04-P02-P01 增加 Document 内部 ReferenceVersion 身份查询与 Solution 固定来源适配，版本身份只作定位，授权/文件摘要由既有 Document Proof 负责；修复 GLOBAL 人工脱敏确认有效期遗漏，未来或过期确认拒绝。兼容性/升级：无公开 API、角色、数据库、Migration、依赖或配置变化；0139 写入继续关闭；可撤适配/合同修正回滚。验证：定向 12 项、Win11 一次性 PG18.6 同项目/跨项目/Scope/事务负例及旧迁移回归 PASS；后端 3275 passed/3 skipped/4815 subtests。已知问题：Document 真实字节与 Reference 组合尚未端到端复验，Evidence/人工确认 Port、原子 Owner/HTTP/Review/Trace/Workflow、Gate3、Prototype 性能/入口、Server2025/正式信任/UAT/发行待；Debian13 依指令跳过。
 
 - 2026-10-08：0.1.0-dev.0/SOL-01-A04-P01 依据 CR-SOL-005 增加 ReferenceSolution 内部来源资格合同：PROJECT 固定来源同范围证明、GLOBAL 额外人工脱敏确认与 SHA-256 来源集合绑定，跨项目、错误摘要、缺失/重复/异常失败关闭。兼容性/升级：无公开 API、权限路由、数据库、迁移、依赖或配置变化；部署仍不开放 0139 写入，撤内部模块可回滚。验证：定向 7 项、后端全量 3270 passed/3 skipped/4815 subtests。已知问题：实际 Document/Evidence/人工确认 Port 与原子 Owner 未装配，正式 Reference/Outline/Review/Trace/Workflow、Gate3、Prototype 性能/入口、Server2025/正式信任/UAT/发行待；Debian13 依指令跳过。
