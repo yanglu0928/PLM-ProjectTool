@@ -190,6 +190,64 @@ class QualificationPhaseProbe:
                   f"peak_active={peak}")
 
 
+class NetworkTimelineProbe:
+    """Correlate synthetic client and ASGI milestones without user data."""
+
+    def __init__(self, app) -> None:
+        self.app = app
+        self.lock = threading.Lock()
+        self.times: dict[str, dict[str, float]] = {}
+
+    def mark(self, key: str, milestone: str) -> None:
+        with self.lock:
+            self.times.setdefault(key, {})[milestone] = time.perf_counter()
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+        probe_id = next((value.decode("ascii") for name, value in
+                         scope.get("headers", ()) if name == b"x-prt-probe-id"),
+                        None)
+        if probe_id is None:
+            return await self.app(scope, receive, send)
+        self.mark(probe_id, "asgi_start")
+
+        async def observed_send(message):
+            await send(message)
+            if (message["type"] == "http.response.body"
+                    and not message.get("more_body", False)):
+                self.mark(probe_id, "asgi_end")
+
+        return await self.app(scope, receive, observed_send)
+
+    def report(self) -> None:
+        by_item: dict[str, dict[str, list[float]]] = {}
+        for probe_id, record in self.times.items():
+            assert set(record) == {
+                "client_start", "asgi_start", "asgi_end", "client_end",
+            }, (probe_id, record)
+            item = probe_id.split(":", 1)[0]
+            metrics = by_item.setdefault(item, {
+                "pre_asgi": [], "inside_asgi": [], "post_asgi": [],
+            })
+            metrics["pre_asgi"].append(
+                (record["asgi_start"] - record["client_start"]) * 1000,
+            )
+            metrics["inside_asgi"].append(
+                (record["asgi_end"] - record["asgi_start"]) * 1000,
+            )
+            metrics["post_asgi"].append(
+                (record["client_end"] - record["asgi_end"]) * 1000,
+            )
+        for item, phases in sorted(by_item.items()):
+            for phase, values in phases.items():
+                ordered = sorted(values)
+                print(f"PRT_A05_P04_NETWORK_TIMELINE item={item} phase={phase} "
+                      f"count={len(ordered)} "
+                      f"p50_ms={statistics.median(ordered):.2f} "
+                      f"p95_ms={ordered[math.ceil(.95 * len(ordered)) - 1]:.2f}")
+
+
 class TimedLocalFileStorage(LocalFileStorage):
     """Validation-only timing wrapper; always executes the real byte proof."""
 
@@ -225,6 +283,7 @@ def _print_file_proof_timing(storage: TimedLocalFileStorage,
 def _measure_read_load(app, prefix: str, headers: dict[str, str], runtime,
                        *, sql_diagnostic: bool = False,
                        network_url: str | None = None,
+                       timeline: NetworkTimelineProbe | None = None,
                        ) -> dict[str, float]:
     """Repeat twenty simultaneous GETs; not a release-service SLA."""
     query_durations: list[float] = []
@@ -255,18 +314,29 @@ def _measure_read_load(app, prefix: str, headers: dict[str, str], runtime,
             trust_env=False,
         ) as client:
             health_samples = []
-            for _ in range(3):
+            for health_round in range(3):
                 ready = asyncio.Event()
 
-                async def health_one() -> float:
+                async def health_one(index: int) -> float:
                     await ready.wait()
+                    probe_id = f"HEALTH:{health_round}:{index}"
+                    request_headers = ({} if timeline is None else {
+                        "x-prt-probe-id": probe_id,
+                    })
                     started = time.perf_counter()
-                    response = await client.get("/health/live")
+                    if timeline is not None:
+                        timeline.mark(probe_id, "client_start")
+                    response = await client.get(
+                        "/health/live", headers=request_headers,
+                    )
                     elapsed = (time.perf_counter() - started) * 1000
+                    if timeline is not None:
+                        timeline.mark(probe_id, "client_end")
                     assert response.status_code == 200, response.text
                     return elapsed
 
-                tasks = [asyncio.create_task(health_one()) for _ in range(20)]
+                tasks = [asyncio.create_task(health_one(index))
+                         for index in range(20)]
                 ready.set()
                 samples = sorted(await asyncio.gather(*tasks))
                 health_samples.append(samples[18])
@@ -282,17 +352,25 @@ def _measure_read_load(app, prefix: str, headers: dict[str, str], runtime,
                 for round_no in range(1, 4):
                     ready = asyncio.Event()
 
-                    async def one() -> float:
+                    async def one(index: int) -> float:
                         await ready.wait()
+                        probe_id = f"{item}:{round_no}:{index}"
+                        request_headers = (headers if timeline is None else {
+                            **headers, "x-prt-probe-id": probe_id,
+                        })
                         started = time.perf_counter()
-                        response = await client.get(url, headers=headers)
+                        if timeline is not None:
+                            timeline.mark(probe_id, "client_start")
+                        response = await client.get(url, headers=request_headers)
                         elapsed = (time.perf_counter() - started) * 1000
+                        if timeline is not None:
+                            timeline.mark(probe_id, "client_end")
                         assert response.status_code == 200, response.text
                         assert response.headers["etag"] == '"v10"'
                         assert response.json()["data"]["stage_key"] == "PROTOTYPE"
                         return elapsed
 
-                    tasks = [asyncio.create_task(one()) for _ in range(20)]
+                    tasks = [asyncio.create_task(one(index)) for index in range(20)]
                     ready.set()
                     samples = sorted(await asyncio.gather(*tasks))
                     p95 = samples[math.ceil(0.95 * len(samples)) - 1]
@@ -352,15 +430,18 @@ def _measure_read_load(app, prefix: str, headers: dict[str, str], runtime,
 
 
 def _measure_network_read_load(app, prefix: str,
-                               headers: dict[str, str], runtime
+                               headers: dict[str, str], runtime,
+                               *, timeline_diagnostic: bool = False,
                                ) -> dict[str, float]:
     """Use a real Uvicorn loopback socket without changing trust policy."""
+    timeline = NetworkTimelineProbe(app) if timeline_diagnostic else None
+    measured_app = timeline if timeline is not None else app
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
         listener.bind(("127.0.0.1", 0))
         listener.listen(128)
         port = listener.getsockname()[1]
         server = uvicorn.Server(uvicorn.Config(
-            app, host="127.0.0.1", port=port, lifespan="off",
+            measured_app, host="127.0.0.1", port=port, lifespan="off",
             access_log=False, log_level="error",
         ))
         worker = threading.Thread(
@@ -376,7 +457,10 @@ def _measure_network_read_load(app, prefix: str,
             result = _measure_read_load(
                 app, prefix, headers, runtime,
                 network_url=f"http://127.0.0.1:{port}",
+                timeline=timeline,
             )
+            if timeline is not None:
+                timeline.report()
             print(f"PRT_A05_P04_NETWORK_DIAGNOSTIC port={port} p95={result}")
             return result
         finally:
@@ -480,7 +564,8 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
                        read_load_sql_diagnostic: bool = False,
                        network_load: bool = False,
                        pipeline_probe: bool = False,
-                       phase_diagnostic: bool = False) -> None:
+                       phase_diagnostic: bool = False,
+                       timeline_diagnostic: bool = False) -> None:
     project = ids["project"]
     second = additional_requirement if mixed_not_required else None
     if mixed_not_required:
@@ -992,6 +1077,7 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
             else:
                 network_p95 = _measure_network_read_load(
                     app, prefix, read_headers, runtime,
+                    timeline_diagnostic=timeline_diagnostic,
                 )
             assert set(network_p95) == set(ITEMS)
             _print_file_proof_timing(storage, file_proof_since, "network")
@@ -1131,7 +1217,8 @@ def main(*, mixed_not_required: bool = False,
          read_load_sql_diagnostic: bool = False,
          network_load: bool = False,
          pipeline_probe: bool = False,
-         phase_diagnostic: bool = False) -> None:
+         phase_diagnostic: bool = False,
+         timeline_diagnostic: bool = False) -> None:
     if conflicting_decision and not mixed_not_required:
         raise ValueError("conflict mode requires mixed scope")
     if coverage_mode not in {None, "partial", "illustrates"}:
@@ -1172,6 +1259,7 @@ def main(*, mixed_not_required: bool = False,
                 network_load=network_load,
                 pipeline_probe=pipeline_probe,
                 phase_diagnostic=phase_diagnostic,
+                timeline_diagnostic=timeline_diagnostic,
                 **context,
             ),
         )
