@@ -1075,6 +1075,12 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
         )
         _print_file_proof_timing(storage, file_proof_since, "asgi-default")
         assert set(p95) == set(ITEMS)
+        if external_pool_comparison:
+            default_before = _measure_network_read_load(
+                app, prefix, read_headers, runtime, external_client=True,
+            )
+            assert set(default_before) == set(ITEMS)
+            print(f"PRT_A05_P04_P14_DEFAULT_BEFORE p95={default_before}")
         expanded_runtime = create_database_runtime(
             runtime._engine.url,
             options=DatabaseEngineOptions(pool_size=20, max_overflow=0),
@@ -1096,11 +1102,38 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
             print("PRT_A05_P04_POOL_DIAGNOSTIC "
                   f"default={p95} pool20={expanded_p95}")
             if external_pool_comparison:
-                expanded_network = _measure_network_read_load(
-                    build_app(expanded_runtime, expanded_sessions),
-                    prefix, read_headers, expanded_runtime,
-                    external_client=True,
-                )
+                query_durations: list[float] = []
+                query_lock = threading.Lock()
+
+                def before_query(conn, cursor, statement, parameters, context, executemany):
+                    context._prt_p14_query_started = time.perf_counter()
+
+                def after_query(conn, cursor, statement, parameters, context, executemany):
+                    elapsed = (time.perf_counter() - context._prt_p14_query_started) * 1000
+                    with query_lock:
+                        query_durations.append(elapsed)
+
+                file_proof_since = len(storage.proof_ms)
+                event.listen(expanded_runtime._engine, "before_cursor_execute", before_query)
+                event.listen(expanded_runtime._engine, "after_cursor_execute", after_query)
+                try:
+                    with QualificationPhaseProbe() as timer:
+                        expanded_network = _measure_network_read_load(
+                            build_app(expanded_runtime, expanded_sessions),
+                            prefix, read_headers, expanded_runtime,
+                            external_client=True,
+                        )
+                    timer.report()
+                finally:
+                    event.remove(expanded_runtime._engine, "before_cursor_execute", before_query)
+                    event.remove(expanded_runtime._engine, "after_cursor_execute", after_query)
+                assert set(expanded_network) == set(ITEMS)
+                ordered_queries = sorted(query_durations)
+                assert ordered_queries
+                print("PRT_A05_P04_P14_POOL20_SQL "
+                      f"count={len(ordered_queries)} total_ms={sum(ordered_queries):.2f} "
+                      f"p95_ms={ordered_queries[math.ceil(.95 * len(ordered_queries)) - 1]:.2f}")
+                _print_file_proof_timing(storage, file_proof_since, "network-pool20")
                 print(f"PRT_A05_P04_POOL20_EXTERNAL p95={expanded_network}")
         finally:
             expanded_runtime.dispose()
@@ -1121,8 +1154,9 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
                 )
             assert set(network_p95) == set(ITEMS)
             if external_pool_comparison:
-                print("PRT_A05_P04_EXTERNAL_POOL_COMPARISON "
-                      f"default={network_p95} pool20={expanded_network}")
+                print("PRT_A05_P04_P14_INTERLEAVED "
+                      f"default_before={default_before} pool20={expanded_network} "
+                      f"default_after={network_p95}")
             _print_file_proof_timing(storage, file_proof_since, "network")
     with TestClient(app, base_url=ORIGIN) as client:
         if isolation_checks:
