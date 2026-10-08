@@ -85,6 +85,7 @@ from plm_assistant.modules.review.application.transition_command import DecideRe
 from plm_assistant.modules.review.domain.round_progress import ReviewDecisionKind
 from plm_assistant.modules.review.infrastructure.create_repository import SqlAlchemyReviewCreationRepository
 from plm_assistant.modules.review.infrastructure.project_submission_repository import SqlAlchemyProjectReviewSubmissionRepository
+from plm_assistant.modules.review.infrastructure.orm import _tables as REVIEW_TABLES
 from plm_assistant.modules.review.infrastructure.start_repository import SqlAlchemyReviewStartRepository
 from plm_assistant.modules.review.infrastructure.transition_repository import SqlAlchemyReviewTransitionRepository
 from plm_assistant.modules.trace.infrastructure.create_repository import SqlAlchemyTraceCreateRepository
@@ -303,6 +304,86 @@ def _measure_network_read_load(app, prefix: str,
                 raise RuntimeError("isolated Uvicorn loopback did not stop")
 
 
+def _probe_review_pipeline(database: str, review_id: uuid.UUID,
+                           round_id: uuid.UUID) -> None:
+    """Compare the same six read-only Review queries within one PG transaction."""
+    statements = tuple(
+        "SELECT * FROM plm." + table.name
+        + " WHERE review_id=%s AND review_round_id=%s ORDER BY "
+        + (table.c.reviewer_id.name if index in (2, 3)
+           else list(table.primary_key.columns)[0].name)
+        for index, table in enumerate(REVIEW_TABLES) if 2 <= index < 8
+    )
+    params = (review_id, round_id)
+    assert psycopg.Pipeline.is_supported()
+    with psycopg.connect(host="127.0.0.1", port=PORT, user="poc_admin",
+                         dbname=database) as db:
+        def sequential(connection):
+            return tuple(connection.execute(statement, params).fetchall()
+                         for statement in statements)
+
+        def pipelined(connection):
+            cursors = []
+            try:
+                with connection.pipeline() as pipeline:
+                    for statement in statements:
+                        cursor = connection.cursor()
+                        cursor.execute(statement, params)
+                        cursors.append(cursor)
+                    pipeline.sync()
+                    return tuple(cursor.fetchall() for cursor in cursors)
+            finally:
+                for cursor in cursors:
+                    cursor.close()
+
+        expected = sequential(db)
+        assert expected == pipelined(db)
+        timings: dict[str, list[float]] = {"sequential": [], "pipeline": []}
+        for _ in range(5):
+            sequential(db)
+            pipelined(db)
+        for index in range(60):
+            for name, method in (("sequential", sequential),
+                                 ("pipeline", pipelined)) if index % 2 == 0 else (
+                                     ("pipeline", pipelined),
+                                     ("sequential", sequential),
+                                 ):
+                started = time.perf_counter()
+                assert method(db) == expected
+                timings[name].append((time.perf_counter() - started) * 1000)
+        for name, samples in timings.items():
+            ordered = sorted(samples)
+            print(f"PRT_A05_P04_REVIEW_PIPELINE_PROBE mode={name} "
+                  f"rounds={len(ordered)} p50_ms={statistics.median(ordered):.3f} "
+                  f"p95_ms={ordered[math.ceil(.95 * len(ordered)) - 1]:.3f}")
+
+        def concurrent_round(method) -> float:
+            barrier = threading.Barrier(20)
+
+            def worker() -> float:
+                with psycopg.connect(
+                    host="127.0.0.1", port=PORT, user="poc_admin",
+                    dbname=database,
+                ) as connection:
+                    assert method(connection) == expected
+                    barrier.wait(timeout=15)
+                    started = time.perf_counter()
+                    assert method(connection) == expected
+                    return (time.perf_counter() - started) * 1000
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=20) as pool:
+                futures = [pool.submit(worker) for _ in range(20)]
+                samples = sorted(future.result(timeout=30) for future in futures)
+            return samples[18]
+
+        for name, method in (("sequential", sequential),
+                             ("pipeline", pipelined)):
+            rounds = [concurrent_round(method) for _ in range(3)]
+            print(f"PRT_A05_P04_REVIEW_PIPELINE_CONCURRENT mode={name} "
+                  f"concurrency=20 median_round_p95_ms={statistics.median(rounds):.3f} "
+                  f"round_p95_ms={[round(value, 3) for value in rounds]}")
+
+
 def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
                        reviewer, reviewer_token, requirement,
                        requirement_version, requirement_review_round,
@@ -315,7 +396,8 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
                        multi_prototype: bool = False,
                        read_load: bool = False,
                        read_load_sql_diagnostic: bool = False,
-                       network_load: bool = False) -> None:
+                       network_load: bool = False,
+                       pipeline_probe: bool = False) -> None:
     project = ids["project"]
     second = additional_requirement if mixed_not_required else None
     if mixed_not_required:
@@ -460,6 +542,9 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
         submission.round_id, uuid.uuid4(), ReviewDecisionKind.APPROVE,
     ), idempotency_key=str(uuid.uuid4()))
     assert approved.state.value == "APPROVED"
+    if pipeline_probe:
+        _probe_review_pipeline(database, submission.review_id,
+                               submission.round_id)
     second_prototype = second_prototype_version = second_prototype_round = None
     if multi_prototype:
         second_prototype = PrototypeIdentityCreateService(
@@ -954,7 +1039,8 @@ def main(*, mixed_not_required: bool = False,
          multi_prototype: bool = False,
          read_load: bool = False,
          read_load_sql_diagnostic: bool = False,
-         network_load: bool = False) -> None:
+         network_load: bool = False,
+         pipeline_probe: bool = False) -> None:
     if conflicting_decision and not mixed_not_required:
         raise ValueError("conflict mode requires mixed scope")
     if coverage_mode not in {None, "partial", "illustrates"}:
@@ -993,12 +1079,16 @@ def main(*, mixed_not_required: bool = False,
                 read_load=read_load,
                 read_load_sql_diagnostic=read_load_sql_diagnostic,
                 network_load=network_load,
+                pipeline_probe=pipeline_probe,
                 **context,
             ),
         )
         if read_load:
             print("PRT_01_A11_A05_P04_P01_READ_LOAD_MEASURED: "
                   "twenty concurrent GETs per Prototype item, real PG and file")
+        elif pipeline_probe:
+            print("PRT_01_A11_A05_P04_P07_REVIEW_PIPELINE_PROBE_MEASURED: "
+                  "same six child-row queries, real PG and full Workflow")
         elif multi_prototype:
             print("PRT_01_A11_A05_P03_A03_MULTI_PROTOTYPE_HTTP_PG_PASS: "
                   "overlapping Links left one criterion uncovered and failed; "

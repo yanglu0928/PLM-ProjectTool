@@ -10496,3 +10496,10 @@
 - Decision：将首个FROM表前缀的查询计数只作为定位证据，优先单独审查Review同事务批量读取的完整性/锁序边界；在正式方案和篡改负例验证前不改共享Review仓储。不得跨请求缓存已批准事实、跳过Review事件/快照/锁检查、移除文件Hash或放宽500ms目标。
 - Reason：122次资格请求中Review表2196条（18/请求），较小合成文件网络证明P95约10.5ms；Review每轮的多表读取有真实安全语义，贸然合并会把无效客户确认误判为有效。
 - Impact/Rollback：本项仅验证工具、CR、进度/决策记录；无生产代码、API、Schema、权限或数据迁移。撤诊断扩展可回滚，性能保持FAIL，Prototype生产入口关闭。P07若提出实现须先在CR补明确方案及安全回归，再单项实施。
+
+# DEC-20261008-1080：Review 六子表 pipeline 不进入生产仓储
+
+- Date/WBS：2026-10-08 / `PRT-01-A11-A05-P04-P07`；依据 CR-PRT-005 与 Windows 11 隔离 PostgreSQL 18.6 探针。
+- Decision：保持共享 Review 仓储原有 SQLAlchemy 根/轮共享锁、六类子表读取、完整性校验及篡改拒绝。psycopg pipeline 只留在隔离验证工具，不接入生产事务或改变查询顺序。下一独立项定位 Requirement/Prototype 其余可安全减少的重复查询；性能状态继续 FAIL。
+- Reason：六查询同事务返回结果相等，但60轮单连接收益仅约0.074ms P50；20连接三轮 P95 中位反而由约13.0ms至16.1ms。探针未覆盖共享仓储的锁序/篡改负例，不足以承担生产更改风险，也不足以弥合真实 Uvicorn P95>500ms 缺口。
+- Impact/Rollback：仅验证脚本与进度/CR/版本说明；无生产代码、Schema、API、权限、依赖或数据迁移。可撤探针而不影响历史，Prototype 入口保持关闭，Gate3 不通过。
