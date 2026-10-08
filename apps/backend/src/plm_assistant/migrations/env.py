@@ -47,6 +47,7 @@ from plm_assistant.modules.handover.infrastructure import orm as handover_orm  #
 from plm_assistant.modules.survey.infrastructure import orm as survey_orm  # noqa: F401 - register SRV-01/02 tables
 from plm_assistant.modules.requirement.infrastructure import orm as requirement_orm  # noqa: F401 - register REQ-01/02 tables
 from plm_assistant.modules.prototype.infrastructure import orm as prototype_orm  # noqa: F401 - register PRT-01/02 tables
+from plm_assistant.modules.solution.infrastructure import orm as solution_orm  # noqa: F401 - register SOL-02/04 tables
 
 
 config = context.config

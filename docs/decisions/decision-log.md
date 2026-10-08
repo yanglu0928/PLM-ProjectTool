@@ -10615,3 +10615,10 @@
 - Decision：按 CR-SEQ-001 在 Phase 2 保持进行中时前置 Solution 最小真实 Owner；A02 先建立可独立验收的身份/版本持久层切片，后续分别接 Reference、Section/Spec、固定输入、Review/Trace 和 Workflow。任何冻结差异先记专门 CR。不得以参考方案、AI 草案、目录单独批准或合成 Subject 宣称正式资格。
 - Reason：冻结六种 SOL 资源/两项 Checklist 均有合同，但当前没有 `solution` 运行模块或 `sol_*` 业务表；Trace/Audit 类型白名单和 Workflow 配置不能代替真实 Owner。
 - Impact/Rollback：本项仅前置核查/排序记录，无程序、Schema、API、权限、依赖或客户数据迁移；停止提前任务可恢复排期，历史记录保留。Gate 3、Prototype 生产入口及目标环境/性能限制不变。
+
+# DEC-20261008-1097：先闭锁 Solution 逻辑身份，再建立不可变版本与受权 Owner
+
+- Date/WBS：2026-10-08 / `SOL-01-A02`；依据 CR-SOL-001、冻结 DM-05/SC-01/02、隔离 PG18.6 和全量后端回归。
+- Decision：0136 仅建立项目 Outline/Section 身份和复合项目 FK/章节键唯一约束；Owner 未安装前 DML 全拒绝、批准指针仅 NULL。不可变版本/指针 FK、身份命令、Reference、Spec、Review/Trace/Workflow 分别实施，不将 Schema PASS 冒充正式方案。
+- Reason：冻结有逻辑资源但运行零表/零 Owner；先验证身份边界可阻止跨项目挂载和重复章节 key。隔离 PG 空/有数据升降、drift 和负例通过，后端 3261/3/4815 通过。
+- Impact/Rollback：新增两表和 ORM/迁移注册，无公开 API、权限、配置、新依赖或外发；两表为空可降级，未来有记录不得丢失历史。Gate 3、Prototype 入口/性能与发行限制不变。

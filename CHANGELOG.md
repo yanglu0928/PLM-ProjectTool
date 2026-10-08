@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/SOL-01-A02 依据 CR-SOL-001 新增 Outline/Section 项目范围逻辑身份 ORM 与 Alembic `20261008_0136`，复合项目 FK、Outline 内唯一章节键及未装配 Owner 的 DML/TRUNCATE 拒绝；未新增版本、业务写服务或公开 API。兼容性/升级：旧接口不变，按线性 Migration 升级；两表为空可降级，已有记录拒降且不得丢历史。验证：Win11 一次性 PG18.6 空/既有数据升级、降级重升、drift/负例 PASS；后端 3261 passed/3 skipped/4815 subtests。已知问题：Solution 不可变版本/受权 Owner/Review/Trace/Workflow 尚无，Gate3、Prototype 性能与入口、Server2025/正式信任/UAT/发行待；Debian13 依指令跳过。
+
 - 2026-10-08：0.1.0-dev.0/SOL-01-A01 按 CR-SEQ-001 对账冻结 Solution 六类资源、SC 映射、API-04 与两项 Workflow Checklist；确认当前无 Solution 运行模块和 `sol_*` 业务表，决定先实施可独立验收的固定版本基础，再逐项接 Review/Trace/Workflow。兼容性/升级：仅文档与任务排序，无程序、Schema、API、权限、依赖、配置或迁移；停止前置任务可恢复排期。验证：静态基线/源码/迁移核查，未运行新测试。已知问题：Solution 真实 Owner/Gate3、Prototype 性能与生产入口、Server2025/正式信任/UAT/发行待验；Debian13 依指令跳过。
 
 - 2026-10-08：0.1.0-dev.0/PRT-01-A11-A05-P04-P22 只读核对Server2025 VM运行状态与资源：VM配置16GiB/16vCPU且关闭，宿主可用内存约12.68GiB，本轮未强启；按DEC-1095转不依赖VM的Solution Owner前置。兼容性/升级：仅进展/决策/状态，无程序、Schema、API、权限、依赖、配置或迁移；无需回滚操作。验证：`vmrun list`、VMX硬件项与Win11系统内存只读核对；未验证Server实际OS/PG/SCM/性能。已知问题：≤500ms未稳定、Server2025/正式信任/入口/Gate3/UAT/发行待；Debian13依指令跳过。
