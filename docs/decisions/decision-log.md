@@ -10475,3 +10475,10 @@
 - Decision：在Requirement阶段通过正式创建、版本、送审和客户角色合成审批服务建立第二条需求；复用已验证的隔离PG/HTTP、Prototype正式Review/Trace/Document/Link夹具，以两次独立随机库运行正向混合范围与同一需求被双重认领的冲突负例。模板和文件仅是合成输入，不用数据库直写伪造业务批准。
 - Reason：只在Prototype阶段临时插入第二条已批准需求会弱化顺序链证据；单靠手写APPROVED行不能证明Review终态和Trace。独立冲突库避免污染不可变范围决定的正向历史。
 - Impact/Rollback：仅调整验证脚本和文档，不改正式代码、Schema/API/权限/依赖；撤脚本扩展即可回滚，既有业务历史不变。该测试不等于客户真实确认或20并发/生产入口验收。
+
+# DEC-20261008-1077：覆盖与隔离验收使用正式Link变更及独立合成身份
+
+- Date/WBS：2026-10-08 / `PRT-01-A11-A05-P03-A03-P01～P02`；依据冻结PRT-05、`CR-PRT-005`、数据库成员唯一约束。
+- Decision：部分Coverage先以有效Link明确未覆盖项，再由正式Supersede形成完整Link；ILLUSTRATES目的即使填写全部覆盖也不计数，必须再建立VALIDATES Link。跨项目测试使用独立第二项目及第二合成PM，使其在目标项目合法授权、但首项目端点仍不属于目标项目；撤权测试只在随机隔离库临时暂停并恢复首项目PM成员身份，观察HTTP写前复验和无Checklist副作用。
+- Reason：手工UPDATE Link状态会绕过正式历史与Audit；同一用户同时加入两个未移除项目违反`uq_prj_members__user_active`，也会把授权失败误当端点隔离证明。独立用户使跨项目拒绝真正来自端点归属检查。
+- Impact/Rollback：仅验证脚本/文档，无生产Schema、API、权限或依赖变化。可移除脚本扩展回滚；隔离库退出时删除，业务历史不受影响。剩余多原型并集、20并发与生产入口单独验收。

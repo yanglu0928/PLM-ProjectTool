@@ -138,7 +138,8 @@ class UnusedDependency:
         raise AssertionError(f"Requirement qualification used {name}")
 
 
-def main(*, after_prototype=None, include_second: bool = False) -> None:
+def main(*, after_prototype=None, include_second: bool = False,
+         include_extra_criterion: bool = False) -> None:
     database = "req01a12a05_" + uuid.uuid4().hex[:8]
     pm_token, impl_token, reviewer_token = b"p" * 32, b"i" * 32, b"r" * 32
     with connect("postgres") as admin:
@@ -252,9 +253,16 @@ def main(*, after_prototype=None, include_second: bool = False) -> None:
             (RequirementSourceDraft(
                 "PROJECT_EVIDENCE", project_evidence, None,
                 (project_evidence,)),),
-            (RequirementAcceptanceDraft(
+            ((RequirementAcceptanceDraft(
                 "Observable result", "Execute acceptance test", "Project data",
-                "Windows 11", "Signed acceptance report"),),
+                "Windows 11", "Signed acceptance report"),
+              RequirementAcceptanceDraft(
+                "Second observable result", "Execute second acceptance test",
+                "Project data", "Windows 11", "Second acceptance report"))
+             if include_extra_criterion else
+             (RequirementAcceptanceDraft(
+                "Observable result", "Execute acceptance test", "Project data",
+                "Windows 11", "Signed acceptance report"),)),
             (RequirementCapabilityAssessmentDraft(
                 ids["baseline_version"], ids["capability_item"], "DIRECT",
                 "Covered", "Use standard configuration", "HUMAN", "CONFIRMED",

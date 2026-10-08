@@ -46,7 +46,9 @@ from plm_assistant.modules.prototype.application.mark_not_required import (
 )
 from plm_assistant.modules.prototype.application.requirement_links import (
     CreateRequirementPrototypeLink, RequirementPrototypeCoverage,
-    RequirementPrototypeLinkService,
+    RequirementPrototypeLinkError, RequirementPrototypeLinkService,
+    SupersedeRequirementPrototypeLink,
+    UncoveredAcceptanceCriterion,
 )
 from plm_assistant.modules.prototype.application.review_subject import PrototypeReviewSubjectOwner
 from plm_assistant.modules.prototype.application.submit_review import (
@@ -75,6 +77,9 @@ ROOT = Path(__file__).resolve().parents[2]
 physical = runpy.run_path(str(ROOT / "validation/prt-01-a11-a05-p01-physical-pg/verify.py"))
 _run = physical["_run"]
 PG_SOURCE, VECTOR_SOURCE = physical["PG_SOURCE"], physical["VECTOR_SOURCE"]
+seed_user = runpy.run_path(str(
+    ROOT / "validation/ai-02-a02-model-create/verify.py"
+))["seed_user"]
 PORT = 55434  # Required by the existing Requirement verifier.
 ORIGIN = "http://localhost"
 ITEMS = ("PROTOTYPE_SCOPE_DECISIONS", "PROTOTYPE_COVERAGE")
@@ -91,7 +96,9 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
                        workflow_id, guard, audit, sessions, origins, csrf,
                        project_evidence, additional_requirement,
                        mixed_not_required: bool = False,
-                       conflicting_decision: bool = False) -> None:
+                       conflicting_decision: bool = False,
+                       coverage_mode: str | None = None,
+                       isolation_checks: bool = False) -> None:
     project = ids["project"]
     second = additional_requirement if mixed_not_required else None
     if mixed_not_required:
@@ -157,10 +164,12 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
             "effective_version_ref=%s WHERE document_id=%s",
             (document_version, document_version, document_id),
         )
-        criterion = db.execute(
+        criteria = tuple(row[0] for row in db.execute(
             "SELECT acceptance_criterion_id FROM plm.req_acceptance_criteria "
-            "WHERE requirement_version_id=%s", (requirement_version,),
-        ).fetchone()[0]
+            "WHERE requirement_version_id=%s ORDER BY ordinal",
+            (requirement_version,),
+        ).fetchall())
+        assert len(criteria) == (2 if coverage_mode == "partial" else 1)
 
     project_repository = SqlAlchemyProjectAuthorizationRepository()
     authorization = ProjectAuthorizationService(
@@ -257,7 +266,7 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
             headers=read_headers,
         )
         assert missing_link.status_code == 409, missing_link.text
-    link = RequirementPrototypeLinkService(
+    link_service = RequirementPrototypeLinkService(
         unit_of_work=runtime.unit_of_work,
         write_access=SqlAlchemyProjectWriteAccess(),
         read_access=SqlAlchemyProjectReadAccess(),
@@ -265,11 +274,62 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
         repository=SqlAlchemyRequirementPrototypeLinkRepository(),
         version_reader=SqlAlchemyPrototypeVersionReadRepository(),
         current_validator=current, receipts=receipts, audit=audit,
-    ).create(CreateRequirementPrototypeLink(
+    )
+    if isolation_checks:
+        with psycopg.connect(host="127.0.0.1", port=PORT, user="poc_admin",
+                             dbname=database, autocommit=True) as db:
+            other_token = b"x" * 32
+            other_pm = seed_user(
+                db, "A05 Other Synthetic PM " + uuid.uuid4().hex[:8],
+                "NONE", other_token,
+            )
+            other_code = "PRTX" + uuid.uuid4().hex[:12].upper()
+            other = db.execute(
+                "INSERT INTO plm.prj_projects(project_code,project_code_normalized,"
+                "name,created_by) VALUES (%s,%s,'Other synthetic project',%s) "
+                "RETURNING project_id",
+                (other_code, other_code.lower(), other_pm),
+            ).fetchone()[0]
+            department = db.execute(
+                "INSERT INTO plm.prj_departments(project_id,department_code,"
+                "department_code_normalized,name) VALUES "
+                "(%s,'PRTX','prtx','Other synthetic department') "
+                "RETURNING department_id", (other,),
+            ).fetchone()[0]
+            db.execute(
+                "INSERT INTO plm.prj_project_members(project_id,user_id,"
+                "department_id,project_role) VALUES "
+                "(%s,%s,%s,'PROJECT_MANAGER')", (other, other_pm, department),
+            )
+        try:
+            link_service.create(CreateRequirementPrototypeLink(
+                other_token, csrf, uuid.uuid4(), other,
+                requirement.requirement_id, requirement_version,
+                prototype.prototype_id, version.prototype_version_id,
+                "VALIDATES", RequirementPrototypeCoverage(criteria, ()),
+                str(uuid.uuid4()),
+            ))
+        except RequirementPrototypeLinkError as error:
+            assert error.code == "RESOURCE_NOT_FOUND", error.code
+        else:
+            raise AssertionError("cross-project Link must not be created")
+        with psycopg.connect(host="127.0.0.1", port=PORT, user="poc_admin",
+                             dbname=database, autocommit=True) as db:
+            assert db.execute(
+                "SELECT count(*) FROM plm.prt_requirement_links WHERE project_id=%s",
+                (other,),
+            ).fetchone()[0] == 0
+    initial_coverage = (RequirementPrototypeCoverage(
+        (criteria[0],),
+        (UncoveredAcceptanceCriterion(criteria[1], "Needs another check"),),
+    ) if coverage_mode == "partial" else
+        RequirementPrototypeCoverage(criteria, ()))
+    initial_purpose = "ILLUSTRATES" if coverage_mode == "illustrates" else "VALIDATES"
+    link = link_service.create(CreateRequirementPrototypeLink(
         pm_token, csrf, uuid.uuid4(), project,
         requirement.requirement_id, requirement_version,
         prototype.prototype_id, version.prototype_version_id,
-        "VALIDATES", RequirementPrototypeCoverage((criterion,), ()),
+        initial_purpose, initial_coverage,
         str(uuid.uuid4()),
     ))
     assert link.link_state == "ACTIVE"
@@ -321,6 +381,42 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
                 ).fetchone()[0] == 0
             return
 
+    if coverage_mode in {"partial", "illustrates"}:
+        with TestClient(preview_only, base_url=ORIGIN) as client:
+            scope = client.get(
+                f"{prefix}/checklist-items/{ITEMS[0]}/qualification",
+                headers=read_headers,
+            )
+            assert scope.status_code == 200, scope.text
+            incomplete_coverage = client.get(
+                f"{prefix}/checklist-items/{ITEMS[1]}/qualification",
+                headers=read_headers,
+            )
+            assert incomplete_coverage.status_code == 409, incomplete_coverage.text
+        if coverage_mode == "partial":
+            replacement = link_service.supersede(SupersedeRequirementPrototypeLink(
+                session_token=pm_token, csrf_token=csrf,
+                trace_id=uuid.uuid4(), project_id=project,
+                requirement_prototype_link_id=link.requirement_prototype_link_id,
+                requirement_id=requirement.requirement_id,
+                requirement_version_id=requirement_version,
+                prototype_id=prototype.prototype_id,
+                prototype_version_id=version.prototype_version_id,
+                purpose="VALIDATES",
+                coverage=RequirementPrototypeCoverage(criteria, ()),
+                expected_version=0, idempotency_key=str(uuid.uuid4()),
+            ))
+            assert replacement.link_state == "ACTIVE"
+        else:
+            additional = link_service.create(CreateRequirementPrototypeLink(
+                pm_token, csrf, uuid.uuid4(), project,
+                requirement.requirement_id, requirement_version,
+                prototype.prototype_id, version.prototype_version_id,
+                "VALIDATES", RequirementPrototypeCoverage(criteria, ()),
+                str(uuid.uuid4()),
+            ))
+            assert additional.link_state == "ACTIVE"
+
     app = create_app(
         workflow_checklist_qualification_router=(
             create_windows_workflow_checklist_qualification_router(
@@ -348,6 +444,45 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
     )
     write_headers = {**read_headers, "x-csrf-token": csrf.hex(), "origin": ORIGIN}
     with TestClient(app, base_url=ORIGIN) as client:
+        if isolation_checks:
+            with psycopg.connect(host="127.0.0.1", port=PORT,
+                                 user="poc_admin", dbname=database,
+                                 autocommit=True) as db:
+                db.execute(
+                    "UPDATE plm.prj_project_members SET state='SUSPENDED' "
+                    "WHERE project_id=%s AND user_id=%s AND state='ACTIVE'",
+                    (project, pm),
+                )
+            denied_read = client.get(
+                f"{prefix}/checklist-items/{ITEMS[0]}/qualification",
+                headers=read_headers,
+            )
+            assert denied_read.status_code == 404, denied_read.text
+            assert denied_read.json()["error"]["code"] == "RESOURCE_NOT_FOUND"
+            denied_write = client.post(
+                f"{prefix}/checklist-items/{ITEMS[0]}:record",
+                json={"result": "PASS", "reason": "Revoked member",
+                      "impact": "Validation only",
+                      "evidence_refs": [str(project_evidence)],
+                      "exception_refs": []},
+                headers={**write_headers, "if-match": '"v10"',
+                         "idempotency-key": str(uuid.uuid4())},
+            )
+            assert denied_write.status_code == 404, denied_write.text
+            assert denied_write.json()["error"]["code"] == "RESOURCE_NOT_FOUND"
+            with psycopg.connect(host="127.0.0.1", port=PORT,
+                                 user="poc_admin", dbname=database,
+                                 autocommit=True) as db:
+                db.execute(
+                    "UPDATE plm.prj_project_members SET state='ACTIVE' "
+                    "WHERE project_id=%s AND user_id=%s AND state='SUSPENDED'",
+                    (project, pm),
+                )
+                assert db.execute(
+                    "SELECT count(*) FROM plm.wfl_checklist_records "
+                    "WHERE project_id=%s AND stage_key='PROTOTYPE'",
+                    (project,),
+                ).fetchone()[0] == 0
         artifact_path = storage_root / locator
         artifact_path.write_bytes(payload[:-1] + b"!")
         for item in ITEMS:
@@ -429,9 +564,13 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
 
 
 def main(*, mixed_not_required: bool = False,
-         conflicting_decision: bool = False) -> None:
+         conflicting_decision: bool = False,
+         coverage_mode: str | None = None,
+         isolation_checks: bool = False) -> None:
     if conflicting_decision and not mixed_not_required:
         raise ValueError("conflict mode requires mixed scope")
+    if coverage_mode not in {None, "partial", "illustrates"}:
+        raise ValueError("unknown coverage mode")
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
         if probe.connect_ex(("127.0.0.1", PORT)) == 0:
             raise RuntimeError("port 55434 is occupied; existing PostgreSQL untouched")
@@ -456,12 +595,23 @@ def main(*, mixed_not_required: bool = False,
         req = runpy.run_path(str(ROOT / "validation/req-01-a12-a05-workflow-pg/verify.py"))
         req["main"](
             include_second=mixed_not_required,
+            include_extra_criterion=coverage_mode == "partial",
             after_prototype=lambda **context: _after_requirement(
                 scratch=scratch, mixed_not_required=mixed_not_required,
-                conflicting_decision=conflicting_decision, **context,
+                conflicting_decision=conflicting_decision,
+                coverage_mode=coverage_mode,
+                isolation_checks=isolation_checks, **context,
             ),
         )
-        if conflicting_decision:
+        if isolation_checks:
+            print("PRT_01_A11_A05_P03_A03_ISOLATION_HTTP_PG_PASS: "
+                  "cross-project Link rejected; suspended PM read/write "
+                  "denied without Checklist history; restored scope advances")
+        elif coverage_mode is not None:
+            print("PRT_01_A11_A05_P03_A03_" + coverage_mode.upper()
+                  + "_COVERAGE_HTTP_PG_PASS: incomplete coverage rejected; "
+                  "corrected via formal Link service; two PASS and SOLUTION")
+        elif conflicting_decision:
             print("PRT_01_A11_A05_P03_A02_CONFLICT_HTTP_PG_PASS: same "
                   "Requirement claimed by Approved Prototype and NOT_REQUIRED "
                   "was rejected without Prototype checklist history")
