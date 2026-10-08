@@ -24,6 +24,8 @@ from plm_assistant.modules.solution.api.reference_create import (
 from plm_assistant.modules.solution.api.reference_deidentification import create_reference_deidentification_router
 from plm_assistant.modules.solution.api.reference_list import create_project_reference_list_router
 from plm_assistant.modules.solution.api.global_reference_read import create_global_reference_read_router
+from plm_assistant.modules.solution.api.global_reference_list import create_global_reference_list_router
+from plm_assistant.modules.solution.api.global_reference_list_cursor import GlobalReferenceListCursorCodec
 from plm_assistant.modules.solution.api.reference_list_cursor import ReferenceListCursorCodec
 from plm_assistant.modules.solution.api.reference_read import create_project_reference_read_router
 from plm_assistant.modules.solution.application.create_reference_solution import ReferenceCreateService
@@ -93,6 +95,28 @@ def create_windows_global_reference_read_router(
         )
         return create_global_reference_read_router(
             sessions=sessions, origins=origins, reads=service)
+    except Exception:
+        raise ProductionSolutionReferenceStartupError() from None
+
+
+def create_windows_global_reference_list_router(
+    *, runtime, sessions, origins, license_guard,
+    cursors: GlobalReferenceListCursorCodec,
+) -> APIRouter:
+    if any(value is None for value in (
+            runtime, sessions, origins, license_guard, cursors)):
+        raise ProductionSolutionReferenceStartupError()
+    try:
+        if type(cursors) is not GlobalReferenceListCursorCodec:
+            raise ValueError("GLOBAL Reference cursor codec required")
+        service = GlobalReferenceReadService(
+            unit_of_work=runtime.unit_of_work,
+            admins=SqlAlchemyDeploymentReadAccess(),
+            license_guard=license_guard,
+            repository=SqlAlchemyGlobalReferenceReadRepository(),
+        )
+        return create_global_reference_list_router(
+            sessions=sessions, origins=origins, reads=service, cursors=cursors)
     except Exception:
         raise ProductionSolutionReferenceStartupError() from None
 

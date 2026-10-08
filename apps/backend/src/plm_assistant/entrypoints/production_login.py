@@ -54,12 +54,14 @@ from plm_assistant.entrypoints.windows_prototype import (
 from plm_assistant.entrypoints.windows_solution_reference import (
     create_windows_global_reference_create_router,
     create_windows_global_reference_read_router,
+    create_windows_global_reference_list_router,
     create_windows_project_reference_create_router,
     create_windows_project_reference_list_router,
     create_windows_project_reference_read_router,
     create_windows_reference_deidentification_router,
 )
 from plm_assistant.entrypoints.windows_solution_reference_cursor import (
+    create_windows_global_reference_list_cursor_codec,
     create_windows_project_reference_list_cursor_codec,
 )
 from plm_assistant.entrypoints.windows_audit_list_cursor import create_windows_audit_cursor_codec
@@ -614,6 +616,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         project_reference_create_router = None
         global_reference_create_router = None
         global_reference_read_router = None
+        global_reference_list_router = None
         project_reference_read_router = None
         project_reference_list_router = None
         reference_deidentification_router = None
@@ -627,6 +630,13 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 create_windows_global_reference_read_router(
                     runtime=runtime, sessions=sessions, origins=origins,
                     license_guard=licenses.guard,
+                )
+            )
+            global_reference_list_router = (
+                create_windows_global_reference_list_router(
+                    runtime=runtime, sessions=sessions, origins=origins,
+                    license_guard=licenses.guard,
+                    cursors=create_windows_global_reference_list_cursor_codec(),
                 )
             )
             project_reference_read_router = (
@@ -1650,6 +1660,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             project_reference_create_router=project_reference_create_router,
             global_reference_create_router=global_reference_create_router,
             global_reference_read_router=global_reference_read_router,
+            global_reference_list_router=global_reference_list_router,
             project_reference_read_router=project_reference_read_router,
             project_reference_list_router=project_reference_list_router,
             reference_deidentification_router=reference_deidentification_router,

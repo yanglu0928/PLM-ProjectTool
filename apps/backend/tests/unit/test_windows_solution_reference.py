@@ -7,15 +7,33 @@ from plm_assistant.entrypoints.windows_solution_reference import (
     ProductionSolutionReferenceStartupError,
     create_windows_global_reference_create_router,
     create_windows_global_reference_read_router,
+    create_windows_global_reference_list_router,
     create_windows_project_reference_create_router,
     create_windows_project_reference_list_router,
     create_windows_project_reference_read_router,
     create_windows_reference_deidentification_router,
 )
 from plm_assistant.modules.solution.api.reference_list_cursor import ReferenceListCursorCodec
+from plm_assistant.modules.solution.api.global_reference_list_cursor import GlobalReferenceListCursorCodec
 
 
 class WindowsSolutionReferenceTests(unittest.TestCase):
+    def test_global_list_and_missing_dependency_fails_closed(self):
+        dependencies = dict(runtime=Mock(unit_of_work=Mock()), sessions=Mock(),
+                            origins=Mock(), license_guard=Mock(),
+                            cursors=GlobalReferenceListCursorCodec(b"g" * 32))
+        router = create_windows_global_reference_list_router(**dependencies)
+        self.assertEqual(
+            [("POST", "/api/v1/global/reference-solutions"),
+             ("GET", "/api/v1/global/reference-solutions")],
+            [(method, route.path) for route in router.routes for method in route.methods],
+        )
+        for key in dependencies:
+            with self.subTest(key=key), self.assertRaises(
+                    ProductionSolutionReferenceStartupError):
+                create_windows_global_reference_list_router(
+                    **{**dependencies, key: None})
+
     def test_global_get_and_missing_dependency_fails_closed(self):
         dependencies = dict(runtime=Mock(unit_of_work=Mock()), sessions=Mock(),
                             origins=Mock(), license_guard=Mock())
