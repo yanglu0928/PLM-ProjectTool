@@ -1,5 +1,18 @@
 # 自主决策记录
 
+## DEC-20261008-1066：Prototype未知写结果区分可重放命令与非幂等PATCH
+
+- Date/WBS：2026-10-08 / `PRT-01-A10-A04`；依据冻结17项写Operation、幂等Key和强ETag控制标记。
+- Decision：Session层只接受17项判别式白名单路由。带Idempotency-Key的15项命令在未知结果后保留相同
+  Body/Key/ETag供用户显式恢复，但客户端不自动重试；Package/Prototype名称PATCH不带Key，未知结果必须
+  先GET并比较名称/ETag，不能把PATCH包装成伪幂等。所有成功结果交叉验证Header/body身份与ETag。
+- Reason：网络失败可能发生在提交之后，自动生成新Key会重复写，隐式重试PATCH也可能覆盖并发修改；让任意
+  路径进入Session桥接会绕过前端操作白名单。判别式路由和两类恢复策略对应服务端真实语义。
+- Impact/Rollback：仅新增前端Session白名单与写客户端，无Schema/API/依赖/权限/Secret或外发。删除新增
+  方法即可回滚，后端及历史不变；页面待A05接入后才对用户开放。
+- Verification：Session/Read/Write定向208项，前端95文件1575项、typecheck和Vite 195 modules构建通过；
+  17路径、无Key PATCH、空Body、相同Key恢复与错配响应均有负例。
+
 ## DEC-20261008-1065：Prototype五族客户端共享安全传输但保持cursor与父级隔离
 
 - Date/WBS：2026-10-08 / `PRT-01-A10-A03`；依据冻结9项GET、CR-PRT-002及既有浏览器客户端边界。

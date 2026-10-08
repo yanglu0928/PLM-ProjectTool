@@ -154,6 +154,10 @@ function safeJsonObject(value: unknown): Readonly<Record<string, unknown>> {
   return visit(value, 0) as Readonly<Record<string, unknown>>;
 }
 
+export function parsePrototypeContract(value: unknown): Readonly<Record<string, unknown>> {
+  return safeJsonObject(value);
+}
+
 function parseArtifact(value: unknown): PrototypeArtifactRef {
   const legacy = ["artifact_kind", "target_id"] as const;
   const projected = ["artifact_kind", "target_id", "document_id"] as const;

@@ -84,6 +84,12 @@ Package、Prototype、Template、Version和Requirement Link五族只读客户端
 排序、身份、五类cursor、ETag、内容合同和错误投影严格失败关闭。旧Artifact响应缺Document根时只读降级，
 不产生猜测链接。前端全量、typecheck和构建通过，无服务端基线变化，进入A04受控写传输。
 
+## A10-A04 实施记录（2026-10-08）
+
+冻结17项写操作已由Session白名单和五族严格客户端覆盖：非幂等PATCH只带强ETag并要求未知结果GET对账，
+其余命令保留原Body/Key及所需ETag供显式恢复且不自动重试。只读定位字段禁止回写，成功/错误响应失败关闭。
+定向208项、前端全量1575项、typecheck和构建通过；无服务端基线变化，进入A05结构化页面。
+
 ## A02 实施记录（2026-10-08）
 
 Migration0122新增Package、Prototype、同项目membership、NOT_REQUIRED范围决定及固定受影响

@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A10-A04 完成Prototype冻结17项写操作白名单与严格客户端：15项
+  幂等命令保留原Body/Key/所需ETag供显式恢复，2项名称PATCH无Key且未知结果必须GET对账；输入、响应、
+  Location/ETag、Review/Link状态失败关闭，只读定位字段不得回写。兼容性/升级/回滚：无Schema/API/依赖/
+  权限/Secret或外发变化，删除新增前端模块即可回滚。验证：定向208、前端95文件1575项、typecheck/build
+  PASS；既有主chunk>500kB警告保留。已知问题：A05～A07页面/导航/Edge、A11、Server2025、Gate3/UAT/发行待。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A10-A03 新增Prototype Package、Identity、Template、Version和Link五族
   严格只读客户端，覆盖冻结9项GET；隔离五类cursor，校验父级/scope/排序/身份/ETag/安全JSON及错误映射，
   旧Artifact缺Document根时只读降级且不猜测链接。兼容性/升级/回滚：无Schema/API/依赖/权限/Secret或

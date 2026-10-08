@@ -8,6 +8,22 @@ export interface SessionView {
   readonly idle_expires_at: string;
 }
 
+export type PrototypeWriteRoute =
+  | { readonly operation: "package-create"; readonly projectId: string }
+  | { readonly operation: "package-patch" | "package-set-members"; readonly projectId: string; readonly packageId: string }
+  | { readonly operation: "prototype-create"; readonly projectId: string }
+  | { readonly operation: "prototype-patch" | "prototype-mark-not-required" | "prototype-archive";
+      readonly projectId: string; readonly prototypeId: string }
+  | { readonly operation: "version-create"; readonly projectId: string; readonly prototypeId: string }
+  | { readonly operation: "version-validate" | "version-submit-review"; readonly projectId: string;
+      readonly prototypeId: string; readonly versionId: string }
+  | { readonly operation: "template-project-create"; readonly projectId: string }
+  | { readonly operation: "template-project-revise"; readonly projectId: string; readonly templateId: string }
+  | { readonly operation: "template-global-create" }
+  | { readonly operation: "template-global-revise"; readonly templateId: string }
+  | { readonly operation: "link-create"; readonly projectId: string }
+  | { readonly operation: "link-revoke" | "link-supersede"; readonly projectId: string; readonly linkId: string };
+
 const messages = {
   AUTH_INVALID_CREDENTIALS: "用户名或密码不正确。",
   AUTH_SESSION_EXPIRED: "会话已失效，请重新登录。",
@@ -776,6 +792,95 @@ export class SessionClient {
       return response;
     } catch { throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE"); }
     finally { window.clearTimeout(timer); this.#busy = false; }
+  }
+
+  /** Frozen Prototype writes never retry implicitly; callers retain the exact body, Key and ETag after uncertainty. */
+  async writePrototype(route: PrototypeWriteRoute, body: string | null,
+    etag: string | null, idempotencyKey: string | null): Promise<Response> {
+    if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
+    if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
+    let path = "", method: "POST" | "PATCH" = "POST";
+    let needsBody = true, needsEtag = false, needsKey = true;
+    const project = "projectId" in route ? route.projectId : null;
+    if (project !== null && !identifier(project)) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    switch (route.operation) {
+      case "package-create": path = `/api/v1/projects/${route.projectId}/prototype-packages`; break;
+      case "package-patch":
+        if (!identifier(route.packageId)) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+        path = `/api/v1/projects/${route.projectId}/prototype-packages/${route.packageId}`;
+        method = "PATCH"; needsEtag = true; needsKey = false; break;
+      case "package-set-members":
+        if (!identifier(route.packageId)) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+        path = `/api/v1/projects/${route.projectId}/prototype-packages/${route.packageId}:set-members`;
+        needsEtag = true; break;
+      case "prototype-create": path = `/api/v1/projects/${route.projectId}/prototypes`; break;
+      case "prototype-patch":
+        if (!identifier(route.prototypeId)) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+        path = `/api/v1/projects/${route.projectId}/prototypes/${route.prototypeId}`;
+        method = "PATCH"; needsEtag = true; needsKey = false; break;
+      case "prototype-mark-not-required":
+        if (!identifier(route.prototypeId)) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+        path = `/api/v1/projects/${route.projectId}/prototypes/${route.prototypeId}:mark-not-required`;
+        needsEtag = true; break;
+      case "prototype-archive":
+        if (!identifier(route.prototypeId)) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+        path = `/api/v1/projects/${route.projectId}/prototypes/${route.prototypeId}:archive`;
+        needsBody = false; needsEtag = true; break;
+      case "version-create":
+        if (!identifier(route.prototypeId)) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+        path = `/api/v1/projects/${route.projectId}/prototypes/${route.prototypeId}/versions`;
+        needsEtag = true; break;
+      case "version-validate":
+      case "version-submit-review":
+        if (!identifier(route.prototypeId) || !identifier(route.versionId)) {
+          throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+        }
+        path = `/api/v1/projects/${route.projectId}/prototypes/${route.prototypeId}/versions/${route.versionId}`
+          + (route.operation === "version-validate" ? ":validate" : ":submit-review");
+        needsBody = route.operation === "version-submit-review"; break;
+      case "template-project-create":
+        path = `/api/v1/projects/${route.projectId}/prototype-templates`; break;
+      case "template-project-revise":
+        if (!identifier(route.templateId)) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+        path = `/api/v1/projects/${route.projectId}/prototype-templates/${route.templateId}:revise`;
+        needsEtag = true; break;
+      case "template-global-create": path = "/api/v1/global/prototype-templates"; break;
+      case "template-global-revise":
+        if (!identifier(route.templateId)) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+        path = `/api/v1/global/prototype-templates/${route.templateId}:revise`; needsEtag = true; break;
+      case "link-create": path = `/api/v1/projects/${route.projectId}/prototype-requirement-links`; break;
+      case "link-revoke":
+      case "link-supersede":
+        if (!identifier(route.linkId)) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+        path = `/api/v1/projects/${route.projectId}/prototype-requirement-links/${route.linkId}`
+          + (route.operation === "link-revoke" ? ":revoke" : ":supersede");
+        needsBody = route.operation === "link-supersede"; break;
+    }
+    const parsedVersion = etag === null ? null : /^"v(?:0|[1-9]\d*)"$/.test(etag) ? Number(etag.slice(2, -1)) : null;
+    if ((body !== null) !== needsBody || body !== null && (body.length === 0
+        || new TextEncoder().encode(body).length > 2 * 1024 * 1024)
+      || (etag !== null) !== needsEtag || etag !== null && (parsedVersion === null
+        || !Number.isSafeInteger(parsedVersion) || parsedVersion >= Number.MAX_SAFE_INTEGER)
+      || (idempotencyKey !== null) !== needsKey || idempotencyKey !== null
+        && !/^[\x20-\x7e]{16,128}$/.test(idempotencyKey)) {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    }
+    const headers: Record<string, string> = { Accept: "application/json", "X-CSRF-Token": this.#csrf };
+    if (body !== null) headers["Content-Type"] = "application/json";
+    if (etag !== null) headers["If-Match"] = etag;
+    if (idempotencyKey !== null) headers["Idempotency-Key"] = idempotencyKey;
+    this.#busy = true; const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      const fetcher = this.fetcher;
+      const response = await fetcher(path, { method, credentials: "same-origin", cache: "no-store", redirect: "error",
+        headers, ...(body === null ? {} : { body }), signal: controller.signal });
+      if (controller.signal.aborted) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+      if (response.status === 401) { this.#csrf = null; this.#view = null; }
+      return response;
+    } catch {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    } finally { window.clearTimeout(timer); this.#busy = false; }
   }
 
   /** Retrieval alias cancellation uses its Run version and never retries implicitly. */

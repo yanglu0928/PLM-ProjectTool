@@ -53,3 +53,9 @@ PostgreSQL 18.6真实三库、后端3211/3、前端1533、typecheck/build及whee
 五族严格只读客户端已覆盖冻结9项GET，兼容旧Artifact响应并把缺失`document_id`归一为不可操作状态；严格
 校验父级、scope、顺序、身份唯一、五类cursor、强ETag、安全JSON合同及公开错误映射，不扫描或猜测定位。
 定向30项、前端全量1563项、typecheck和production build通过；无后端API、Schema、依赖或权限变化，进入A04。
+
+## A04 实施记录（2026-10-08）
+
+Link写客户端只接受A02投影得到的稳定AcceptanceCriterion引用；Artifact写入仍严格只接受冻结的kind/version ID，
+拒绝`document_id`回写。17项写操作保持原路径/请求/权限；未知结果不猜测、不自动重试，按原Key或GET对账。
+前端全量1575项、typecheck/build通过，进入A05页面接入。
