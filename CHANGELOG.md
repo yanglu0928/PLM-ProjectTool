@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A04-P07-P03 新增项目 Reference 候选/详情页面及项目入口；固定 DocumentVersionId 经受权详情 GET 后才显示原文下载，Evidence 经既有 Viewer 核验后呈现定位提示。兼容性/升级：无 Schema、公开 API 或依赖变化，无数据升级；客户端原生 fetch 调用修正。验证：页面/固定版本定向14、前端全量103文件/1614项、typecheck/build通过。已知问题：浏览器/PG端到端、精确高亮、正式License/账户、Server2025、20并发/Gate3/发行未验；主包>500kB既有警告，Debian13依指令跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P07-P02 新增 PROJECT Reference 前端 List/详情严格只读客户端，核对同项目、有序游标、固定文档根/版本及 ETag；尚未挂载页面。兼容性/升级：无服务端 API/Schema/依赖变化，无数据升级。验证：定向3、前端全量102文件/1608项、typecheck/build通过。已知问题：既有主包大于500kB警告；界面/浏览器、正式License/目标账户、Server2025、20并发/Gate3/发行未验；Debian13依指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P07-P01 按 CR-SOL-008 为受权 PROJECT Reference GET 增加固定文档根/版本有序定位身份，保留旧 ID 数组，跨项目或错配来源失败关闭。兼容性/升级：仅响应增量，无 URL/权限/Schema/依赖变化，无数据升级。验证：单元/合同8通过/26子例，三条隔离PG18.6 Owner/HTTP/Windows组合通过，后端全量3322通过/3跳过/4906子例。已知问题：前端入口、浏览器UAT、正式License/目标账户、Server2025、20并发/Gate3/发行未验；Debian13依用户指令跳过。

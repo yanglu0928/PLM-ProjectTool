@@ -164,7 +164,8 @@ export class ReferenceReadClient {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
     try {
-      const response = await this.fetcher(path, { method: "GET", credentials: "same-origin", cache: "no-store",
+      const fetcher = this.fetcher;
+      const response = await fetcher(path, { method: "GET", credentials: "same-origin", cache: "no-store",
         redirect: "error", headers: { Accept: "application/json" }, signal: controller.signal });
       if (controller.signal.aborted || response.headers.get("content-type")?.split(";")[0].trim().toLowerCase() !== "application/json") fail();
       const payload: unknown = await response.json();

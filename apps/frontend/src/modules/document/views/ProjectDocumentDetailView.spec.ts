@@ -57,6 +57,26 @@ function versionButton(wrapper: Awaited<ReturnType<typeof view>>["wrapper"]) {
 describe("ProjectDocumentDetailView", () => {
   afterEach(() => vi.restoreAllMocks());
 
+  it("independently verifies an explicitly linked fixed version before offering its download", async () => {
+    const fetcher = vi.fn().mockResolvedValueOnce(response(entry)).mockResolvedValueOnce(response(version));
+    const { wrapper } = await view(await session(), fetcher as typeof fetch,
+      `/projects/${projectId}/documents/${documentId}?versionId=${versionId}`);
+    expect(fetcher.mock.calls.map(call => call[0])).toEqual([
+      `/api/v1/projects/${projectId}/documents/${documentId}`,
+      `/api/v1/projects/${projectId}/documents/${documentId}/versions/${versionId}`,
+    ]);
+    expect(wrapper.text()).toContain("指定固定版本");
+    expect(wrapper.text()).toContain("下载已核验固定版本原文");
+    wrapper.unmount();
+    const denied = vi.fn().mockResolvedValueOnce(response(entry))
+      .mockResolvedValueOnce(failure(404, "RESOURCE_NOT_FOUND"));
+    const missing = await view(await session(), denied as typeof fetch,
+      `/projects/${projectId}/documents/${documentId}?versionId=${versionId}`);
+    expect(missing.wrapper.text()).not.toContain("下载已核验固定版本原文");
+    expect(missing.wrapper.find('[role="alert"]').exists()).toBe(true);
+    missing.wrapper.unmount();
+  });
+
   it("does not fetch without identity or while password change is required", async () => {
     const fetcher = vi.fn();
     const absent = await view(new SessionClient(fetcher as typeof fetch), fetcher as typeof fetch);

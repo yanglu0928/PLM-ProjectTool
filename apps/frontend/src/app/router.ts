@@ -53,6 +53,8 @@ const ProjectPrototypeListView = () => import("@/modules/prototype/views/Project
 const ProjectPrototypePackageView = () => import("@/modules/prototype/views/ProjectPrototypePackageView.vue");
 const ProjectPrototypeTemplateView = () => import("@/modules/prototype/views/ProjectPrototypeTemplateView.vue");
 const ProjectPrototypeVersionView = () => import("@/modules/prototype/views/ProjectPrototypeVersionView.vue");
+const ProjectReferenceListView = () => import("@/modules/solution/views/ProjectReferenceListView.vue");
+const ProjectReferenceDetailView = () => import("@/modules/solution/views/ProjectReferenceDetailView.vue");
 
 export function createAppRouter(
   history: RouterHistory = createWebHistory(),
@@ -299,6 +301,16 @@ export function createAppRouter(
         path: "/projects/:projectId/prototypes",
         name: "project-prototypes",
         component: ProjectPrototypeListView,
+      },
+      {
+        path: "/projects/:projectId/reference-solutions/:referenceId",
+        name: "project-reference-detail",
+        component: ProjectReferenceDetailView,
+      },
+      {
+        path: "/projects/:projectId/reference-solutions",
+        name: "project-references",
+        component: ProjectReferenceListView,
       },
       {
         path: "/projects/:projectId",

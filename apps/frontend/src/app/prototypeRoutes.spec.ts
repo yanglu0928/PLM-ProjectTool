@@ -17,6 +17,9 @@ describe("Prototype application routes", () => {
     ["project-prototype-packages", `/projects/${projectId}/prototype-packages`, { projectId }],
     ["project-prototype-templates", `/projects/${projectId}/prototype-templates`, { projectId }],
     ["project-prototype-links", `/projects/${projectId}/prototype-links`, { projectId }],
+    ["project-references", `/projects/${projectId}/reference-solutions`, { projectId }],
+    ["project-reference-detail", `/projects/${projectId}/reference-solutions/${prototypeId}`,
+      { projectId, referenceId: prototypeId }],
     ["global-prototype-templates", "/admin/prototype-templates", {}],
   ] as const)("resolves %s without falling through to 404", (name, path, params) => {
     const router = createAppRouter(createMemoryHistory()); const byName = router.resolve({ name, params });

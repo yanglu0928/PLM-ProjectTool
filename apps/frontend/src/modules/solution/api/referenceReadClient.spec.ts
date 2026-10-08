@@ -50,6 +50,14 @@ describe("ReferenceReadClient", () => {
       .toThrow(ReferenceReadError);
   });
 
+  it("invokes browser fetch without binding the client as receiver", async () => {
+    const fetcher = vi.fn(function (this: unknown) {
+      expect(this).toBeUndefined();
+      return Promise.resolve(success({ items: [], next_cursor: null, has_more: false }));
+    });
+    await expect(new ReferenceReadClient(fetcher as typeof fetch).list(project)).resolves.toMatchObject({ items: [] });
+  });
+
   it("requires fixed root/version matching and detail ETag", async () => {
     const { api, fetcher } = client(success(detail, '"v0"'));
     const current = await api.current(project, reference);

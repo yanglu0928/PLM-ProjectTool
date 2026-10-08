@@ -21,6 +21,9 @@ function mayUpload() {
 const document = ref<DocumentView | null>(null);
 const busy = ref(false);
 const error = ref("");
+const fixedVersion = ref<DocumentVersionView | null>(null);
+const fixedBusy = ref(false);
+const fixedError = ref("");
 const versions = ref<readonly DocumentVersionView[]>([]);
 const versionsLoaded = ref(false);
 const versionsBusy = ref(false);
@@ -34,6 +37,7 @@ const parsesError = ref("");
 const parseCursor = ref<string | null>(null);
 let generation = 0;
 let versionGeneration = 0;
+let fixedGeneration = 0;
 let parseGeneration = 0;
 let mounted = true;
 
@@ -57,6 +61,26 @@ function clearVersions() {
   versionCursor.value = null;
 }
 
+async function loadFixedVersion() {
+  const requested = route.query.versionId;
+  const run = ++fixedGeneration;
+  fixedVersion.value = null; fixedError.value = ""; fixedBusy.value = false;
+  if (requested === undefined || !mayRead() || !document.value) return;
+  if (typeof requested !== "string") { fixedError.value = "固定版本参数无效。"; return; }
+  const projectId = typeof route.params.projectId === "string" ? route.params.projectId : "";
+  const documentId = document.value.document_id;
+  fixedBusy.value = true;
+  try {
+    const version = await documents.getVersion({ kind: "PROJECT", projectId }, documentId, requested);
+    if (!mounted || run !== fixedGeneration || route.params.projectId !== projectId
+      || route.params.documentId !== documentId || route.query.versionId !== requested || !mayRead()) return;
+    fixedVersion.value = version;
+  } catch (failure) {
+    if (mounted && run === fixedGeneration) fixedError.value = failure instanceof DocumentReadError
+      ? failure.message : "暂时无法读取固定版本。";
+  } finally { if (mounted && run === fixedGeneration) fixedBusy.value = false; }
+}
+
 function mayRead() {
   return mounted && !!identity && !identity.password_change_required
     && session.view?.user.user_id === identity.user.user_id;
@@ -67,6 +91,7 @@ async function load() {
   const projectId = typeof route.params.projectId === "string" ? route.params.projectId : "";
   const documentId = typeof route.params.documentId === "string" ? route.params.documentId : "";
   clearVersions();
+  fixedGeneration += 1; fixedVersion.value = null; fixedError.value = ""; fixedBusy.value = false;
   document.value = null;
   busy.value = true;
   error.value = "";
@@ -75,6 +100,7 @@ async function load() {
     if (!mounted || current !== generation || route.params.projectId !== projectId
       || route.params.documentId !== documentId || !mayRead()) return;
     document.value = result;
+    void loadFixedVersion();
   } catch (failure) {
     if (!mounted || current !== generation || route.params.projectId !== projectId
       || route.params.documentId !== documentId) return;
@@ -161,7 +187,8 @@ watch([() => route.params.projectId, () => route.params.documentId], () => {
   document.value = null; busy.value = false; error.value = "";
   void load();
 }, { immediate: true });
-onUnmounted(() => { mounted = false; generation += 1; clearVersions(); });
+watch(() => route.query.versionId, () => { void loadFixedVersion(); });
+onUnmounted(() => { mounted = false; generation += 1; fixedGeneration += 1; clearVersions(); });
 </script>
 
 <template>
@@ -193,6 +220,15 @@ onUnmounted(() => { mounted = false; generation += 1; clearVersions(); });
         <dt>创建时间</dt><dd><time :datetime="document.created_at">{{ new Date(document.created_at).toLocaleString('zh-CN') }}</time></dd>
         <dt>元数据版本</dt><dd>{{ document.etag }}</dd>
       </dl>
+      <section v-if="document && route.query.versionId !== undefined" aria-label="指定固定版本">
+        <h2>指定固定版本</h2>
+        <p>此入口来自历史引用，版本由服务端单独重新鉴权；不能据此认定来源仍有效。</p>
+        <p v-if="fixedBusy" role="status">正在核验指定版本…</p>
+        <p v-if="fixedError" role="alert">{{ fixedError }}</p>
+        <template v-if="fixedVersion"><p>版本 {{ fixedVersion.version_no }} · {{ fixedVersion.detected_mime }} · {{ fixedVersion.size_bytes }} 字节</p>
+          <p><a :href="documents.contentUrl({ kind: 'PROJECT', projectId: String(route.params.projectId) },
+            document.document_id, fixedVersion.document_version_id)">下载已核验固定版本原文</a></p></template>
+      </section>
       <p v-if="document?.state === 'ACTIVE' && mayUpload()"><RouterLink :to="{ name: 'project-document-version-upload',
         params: { projectId: route.params.projectId, documentId: document.document_id } }">上传此文档的新版本</RouterLink></p>
       <section v-if="document" aria-labelledby="document-versions-title">
