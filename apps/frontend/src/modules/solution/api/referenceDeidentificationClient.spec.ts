@@ -39,6 +39,18 @@ const preview = { source_fingerprint: fingerprint,
   evidence_ids: [evidence], previewed_at: "2026-10-09T00:00:00Z" };
 
 describe("ReferenceDeidentificationClient", () => {
+  it("uses the browser fetch with no class receiver for preview", async () => {
+    let calls = 0;
+    const nativeLike = function (this: unknown): Promise<Response> {
+      expect(this).toBeUndefined();
+      calls += 1;
+      return Promise.resolve(calls === 1 ? sessionResponse() : envelope(preview));
+    } as typeof fetch;
+    const authenticated = new SessionClient(nativeLike);
+    await authenticated.login("admin", "synthetic-only");
+    expect(await new ReferenceDeidentificationClient(authenticated).preview(source)).toEqual(preview);
+    expect(calls).toBe(2);
+  });
   it("previews fixed identities via CSRF but no idempotency key", async () => {
     const { client, fetcher } = await setup(envelope(preview));
     expect(await client.preview(source)).toEqual(preview);
@@ -68,6 +80,16 @@ describe("ReferenceDeidentificationClient", () => {
       confirmation_id: confirmation, revoked_at: "2026-10-09T00:01:00Z", trace_id: trace });
     expect(fetcher.mock.calls[2]![0]).toBe(
       `/api/v1/global/reference-deidentification-confirmations/${confirmation}:revoke`);
+  });
+
+  it("accepts the same expiry instant serialized at PostgreSQL microsecond precision", async () => {
+    const microsecondExpiry = expiry.replace(/\.(\d{3})Z$/, ".$1000Z");
+    const receipt = { confirmation_id: confirmation, source_fingerprint: fingerprint,
+      confirmed_by: actor, confirmed_at: "2026-10-09T00:00:00.123456Z",
+      expires_at: microsecondExpiry, trace_id: trace };
+    const { client } = await setup(envelope(receipt, 201));
+    expect(await client.confirm(source, fingerprint, expiry, "k".repeat(16)))
+      .toEqual(receipt);
   });
 
   it("rejects mismatched preview, drift and ambiguous write without retry", async () => {

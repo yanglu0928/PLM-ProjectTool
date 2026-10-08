@@ -101,7 +101,9 @@ export class EvidenceEligibilityClient {
     const controller = new AbortController();
     const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
     try {
-      const response = await this.fetcher(path, {
+      // Native browser fetch rejects a class-instance receiver in Edge.
+      const fetcher = this.fetcher;
+      const response = await fetcher(path, {
         method: "GET", credentials: "same-origin", cache: "no-store", redirect: "error",
         headers: { Accept: "application/json" }, signal: controller.signal,
       });

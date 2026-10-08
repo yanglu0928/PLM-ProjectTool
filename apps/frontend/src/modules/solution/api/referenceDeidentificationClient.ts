@@ -104,7 +104,7 @@ function confirmationData(value: unknown, fingerprint: string,
     "confirmed_at", "expires_at", "trace_id"])
     || !id(value.confirmation_id) || value.source_fingerprint !== fingerprint
     || !id(value.confirmed_by) || !instant(value.confirmed_at)
-    || value.expires_at !== expiry || !instant(value.expires_at)
+    || !instant(value.expires_at) || Date.parse(value.expires_at) !== Date.parse(expiry)
     || !id(value.trace_id)) uncertain();
   return Object.freeze(value) as unknown as DeidentificationConfirmation;
 }

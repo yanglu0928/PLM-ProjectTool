@@ -89,7 +89,8 @@ def rejects(action) -> None:
     raise AssertionError("unproven GLOBAL source was accepted")
 
 
-def verify(port: int, scratch: Path, on_qualified=None, on_preview=None) -> None:
+def verify(port: int, scratch: Path, on_qualified=None, on_preview=None,
+           login_credential=None) -> None:
     url = URL.create("postgresql+psycopg", username="poc_admin",
                      host="127.0.0.1", port=port, database="postgres")
     cfg = create_migration_config(url)
@@ -119,8 +120,11 @@ def verify(port: int, scratch: Path, on_qualified=None, on_preview=None) -> None
         credential = db.execute(
             "INSERT INTO plm.auth_password_credentials(user_id,credential_version,"
             "password_hash,algorithm_id,parameter_set) VALUES "
-            "(%s,1,'$synthetic$not-for-login','TEST_ONLY','{}'::jsonb) "
-            "RETURNING password_credential_id", (actor,),
+            "(%s,1,%s,%s,%s) RETURNING password_credential_id",
+            (actor,
+             login_credential.password_hash if login_credential else "$synthetic$not-for-login",
+             login_credential.algorithm_id if login_credential else "TEST_ONLY",
+             Jsonb(login_credential.parameter_set if login_credential else {})),
         ).fetchone()[0]
         db.execute("UPDATE plm.auth_users SET credential_version=1,"
                    "active_password_credential_id=%s,state='ENABLED',"
@@ -380,7 +384,7 @@ def verify(port: int, scratch: Path, on_qualified=None, on_preview=None) -> None
           "and confirmation revocation denied")
 
 
-def main(on_preview=None) -> None:
+def main(on_preview=None, login_credential=None) -> None:
     scratch = Path(tempfile.mkdtemp(prefix="plm-sol-real-sources-pg-"))
     if not str(scratch).isascii():
         raise RuntimeError("ASCII temporary PostgreSQL path required")
@@ -401,7 +405,8 @@ def main(on_preview=None) -> None:
                    "-l", str(scratch / "postgres.log"),
                    "-o", f"-h 127.0.0.1 -p {port}", "-w", "start", detached=True)
         started = True
-        verify(port, scratch, on_preview=on_preview)
+        verify(port, scratch, on_preview=on_preview,
+               login_credential=login_credential)
     finally:
         if started:
             helper.run(str(binary / "pg_ctl.exe"), "-D", str(data), "-m", "fast", "-w", "stop")

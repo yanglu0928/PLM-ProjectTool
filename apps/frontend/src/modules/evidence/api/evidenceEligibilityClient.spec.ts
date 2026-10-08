@@ -104,6 +104,17 @@ describe("EvidenceEligibilityClient", () => {
       method: "GET", credentials: "same-origin", cache: "no-store", redirect: "error" }));
   });
 
+  it("calls browser-native current Evidence fetch without an instance receiver", async () => {
+    const loginFetcher = vi.fn().mockResolvedValue(globalSessionView());
+    const session = await auth(loginFetcher as typeof fetch);
+    const nativeLike = function (this: unknown): Promise<Response> {
+      expect(this).toBeUndefined();
+      return Promise.resolve(response(current, '"v0"'));
+    } as typeof fetch;
+    expect(await new EvidenceEligibilityClient(session, nativeLike).currentGlobal(evidenceId))
+      .toEqual(current);
+  });
+
   it("refuses the global path for a project-only identity and mismatched ETag", async () => {
     const projectFetcher = vi.fn().mockResolvedValueOnce(sessionView());
     const projectClient = new EvidenceEligibilityClient(await auth(projectFetcher as typeof fetch),
