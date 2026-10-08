@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-02-A06-P07 新增可选 SolutionOutline 列表 GET，严格 Session/Origin/License/项目授权、独立签名 cursor 和最小目录摘要；默认应用/读模式 POST保持404。兼容性/升级：冻结 API-04 内实现，无新 Schema、Migration/依赖；撤下可选路由可回滚。验证：合同3通过/13子例、Win11隔离PG18.6真实ASGI/Session三页与拒绝路径通过；后端全量3384通过/3跳过/5088子例。已知问题：Windows平台组合/目标账户密钥、前端/浏览器、非空审批链、正式License、Server2025、20并发、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-02-A06-P06 新增 Windows 当前账户 Outline 列表游标独立 Vault key ref 与 fail-closed 工厂；不自动生成/提交密钥。兼容性/升级：无新公开 API、Schema、Migration 或依赖；移除工厂可回滚，正式部署需单独供给32字节 key及离线备份。验证：定向2通过/3子例，Win11随机临时 Credential Manager 凭据删除/加密备份恢复后旧游标解码通过；后端全量3381通过/3跳过/5075子例。已知问题：目标服务账户 Vault/ACL/备份保管、列表HTTP/平台组合、正式License、非空审批链、Server2025、20并发、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-02-A06-P05 新增 SolutionOutline 列表独立 HMAC 签名游标，绑定当前 Session/项目/page size，拒绝篡改和 Reference 家族串用。兼容性/升级：无公开 API、Schema、Migration 或依赖变更；删除 codec 可回滚。验证：单元3通过/12子例、Win11隔离PG18.6真实 keyset 第一/二页串接及跨尺寸拒绝通过；后端全量3379通过/3跳过/5072子例。已知问题：正式游标密钥来源/备份恢复、列表HTTP/Windows组合、正式License、非空审批链、Server2025、20并发、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
