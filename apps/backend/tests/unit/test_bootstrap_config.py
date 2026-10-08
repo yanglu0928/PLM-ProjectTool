@@ -15,6 +15,33 @@ from plm_assistant.modules.platform.infrastructure.bootstrap_config import (
 
 
 class BootstrapConfigTests(unittest.TestCase):
+    def test_api_database_pool_profile_is_fixed_and_default_preserving(self):
+        with patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(
+                load_bootstrap_settings(self.yaml_file).api_database_pool_profile,
+                "DEFAULT",
+            )
+        self.yaml_file.write_text(
+            f'data_root: "{self.root.as_posix()}"\n'
+            'api_database_pool_profile: "TWENTY_FIXED"\n',
+            encoding="utf-8",
+        )
+        with patch.dict(os.environ, {}, clear=True):
+            self.assertEqual(
+                load_bootstrap_settings(self.yaml_file).api_database_pool_profile,
+                "TWENTY_FIXED",
+            )
+        with patch.dict(os.environ, {"PLM_API_DATABASE_POOL_PROFILE": "DEFAULT"}, clear=True):
+            self.assertEqual(
+                load_bootstrap_settings(self.yaml_file).api_database_pool_profile,
+                "DEFAULT",
+            )
+        for value in ("twenty_fixed", "TWENTY", "20", "", " TWENTY_FIXED "):
+            with self.subTest(value=value), patch.dict(
+                    os.environ, {"PLM_API_DATABASE_POOL_PROFILE": value}, clear=True):
+                with self.assertRaises(BootstrapConfigurationError):
+                    load_bootstrap_settings(self.yaml_file)
+
     def test_retrieval_policy_is_exact_nonsecret_opt_in(self):
         policy = {
             "reference": "fts.project.v1", "scope": "PROJECT",

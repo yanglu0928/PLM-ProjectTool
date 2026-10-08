@@ -220,7 +220,9 @@ from plm_assistant.modules.platform.infrastructure.secret_metadata_repository im
     SqlAlchemySecretMetadataRepository,
 )
 from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
-from plm_assistant.modules.platform.infrastructure.database import DatabaseRuntime, create_database_runtime
+from plm_assistant.modules.platform.infrastructure.database import (
+    DatabaseEngineOptions, DatabaseRuntime, create_database_runtime,
+)
 from plm_assistant.modules.platform.infrastructure.maintenance_admission import PostgresMaintenanceAdmission
 from plm_assistant.modules.platform.infrastructure.migration import MIGRATION_PACKAGE
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
@@ -390,6 +392,35 @@ def _schema_current(runtime: DatabaseRuntime) -> bool:
     return versions == [expected]
 
 
+def _require_twenty_fixed_pool_budget(runtime: DatabaseRuntime) -> None:
+    """Fail closed unless configured PostgreSQL capacity covers all known pools."""
+    try:
+        with runtime.unit_of_work() as transaction:
+            rows = transaction.session.execute(text(
+                "SELECT name,setting FROM pg_settings WHERE name IN "
+                "('max_connections','superuser_reserved_connections',"
+                "'reserved_connections','server_version_num')"
+            )).all()
+        settings = dict(rows)
+        if set(settings) != {
+                "max_connections", "superuser_reserved_connections",
+                "reserved_connections", "server_version_num"}:
+            raise ValueError()
+        version = int(settings["server_version_num"])
+        maximum, superuser, reserved = (
+            int(settings[name]) for name in (
+                "max_connections", "superuser_reserved_connections",
+                "reserved_connections",
+            )
+        )
+        if (not 180000 <= version < 190000
+                or maximum <= 0 or superuser < 0 or reserved < 0
+                or maximum - superuser - reserved < 80):
+            raise ValueError()
+    except Exception:
+        raise ProductionLoginStartupError() from None
+
+
 def create_production_login_app(
     settings: BootstrapSettings, *, credential_target: str = DEFAULT_TARGET,
 ) -> FastAPI:
@@ -426,13 +457,22 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
     try:
         origins = LoginOriginPolicy(settings.trusted_origins)
         database_url = read_database_url(target=credential_target)
-        runtime = create_database_runtime(database_url)
+        runtime = (
+            create_database_runtime(database_url)
+            if settings.api_database_pool_profile == "DEFAULT"
+            else create_database_runtime(
+                database_url,
+                options=DatabaseEngineOptions(pool_size=20, max_overflow=0),
+            )
+        )
     except Exception:
         raise ProductionLoginStartupError() from None
     maintenance_engine = None
     try:
         if not runtime.is_ready() or not _schema_current(runtime):
             raise ProductionLoginStartupError()
+        if settings.api_database_pool_profile == "TWENTY_FIXED":
+            _require_twenty_fixed_pool_budget(runtime)
         maintenance_engine = create_engine(
             database_url, pool_pre_ping=True, pool_size=20, max_overflow=0,
             pool_timeout=2, pool_recycle=1800,

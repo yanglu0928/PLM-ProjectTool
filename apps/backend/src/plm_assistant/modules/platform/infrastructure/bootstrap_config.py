@@ -4,7 +4,7 @@ import ipaddress
 import os
 from enum import StrEnum
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 import yaml
 from pydantic import Field, ValidationError, field_validator
@@ -47,6 +47,7 @@ class BootstrapSettings(BaseSettings):
     trusted_origins: tuple[str, ...] = ()
     selected_mac: str | None = None
     password_kdf_slots: int = Field(default=4, ge=1, le=16)
+    api_database_pool_profile: Literal["DEFAULT", "TWENTY_FIXED"] = "DEFAULT"
     parser_ocr_detection_model_dir: Path | None = None
     parser_ocr_recognition_model_dir: Path | None = None
     parser_ocr_model_fingerprint: str | None = None

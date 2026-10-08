@@ -1532,6 +1532,18 @@ def main(*, mixed_not_required: bool = False,
                 ).fetchall())
                 assert "max_connections" in limits
                 print(f"PRT_A05_P04_P20_PG_BUDGET {limits}")
+            from plm_assistant.entrypoints.production_login import (
+                _require_twenty_fixed_pool_budget,
+            )
+            budget_runtime = create_database_runtime(
+                f"postgresql+psycopg://poc_admin@127.0.0.1:{PORT}/postgres",
+            )
+            try:
+                _require_twenty_fixed_pool_budget(budget_runtime)
+            finally:
+                budget_runtime.dispose()
+            print("PRT_A05_P04_P21_OPTIONAL_POOL_BUDGET_PASS: "
+                  "isolated PostgreSQL capacity gate accepted")
         req = runpy.run_path(str(ROOT / "validation/req-01-a12-a05-workflow-pg/verify.py"))
         req["main"](
             include_second=mixed_not_required,

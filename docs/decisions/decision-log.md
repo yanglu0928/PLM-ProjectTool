@@ -10594,3 +10594,10 @@
 - Decision：不直接把API生产业务池由5+10改为20+0。P21仅增加显式、有界、可回滚的部署选择及预算校验，默认保持原值；目标Server实际连接/内存与重复业务P95验收前不作发行放行。
 - Reason：本机临时PG非保留连接97，候选静态服务上限55，但其他连接和每连接动态内存未知；Server VM配置16GiB/16vCPU但关闭，宿主当时可用内存低于其标称，无法以VMX替代实机验收。
 - Impact/Rollback：本项仅验证工具/文档，无生产代码/Schema/API/权限/依赖/配置/迁移；撤记录可回滚。性能FAIL、Prototype入口与Gate3仍关闭。
+
+# DEC-20261008-1094：API池只作显式有界部署选择，不改默认或Gate
+
+- Date/WBS：2026-10-08 / `PRT-01-A11-A05-P04-P21`；依据CR-PRT-005实施前方案、P20静态预算及定向/真实PG/全量回归。
+- Decision：保留缺省5+10，新增仅`TWENTY_FIXED`可选20+0业务池；实际PG普通连接额度不足80或不可读时拒绝启动。目标Server内存和重复P95未证前不作为发行参数、不开放Prototype。
+- Reason：配置正反例、固定错误/清理和本机临时PG正向预算通过，后端3259通过/3跳过；P19虽有两轮低于500ms但第三轮失败，且Server2025未运行验证。
+- Impact/Rollback：非Secret Bootstrap与API装配增量，无Schema、公开API、权限、新依赖或数据迁移；删除/设DEFAULT并重启回到5+10。性能FAIL、Prototype入口关闭、Gate3阻塞不变。
