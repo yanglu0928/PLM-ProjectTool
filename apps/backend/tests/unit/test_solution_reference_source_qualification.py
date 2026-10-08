@@ -118,6 +118,21 @@ class ReferenceSourceQualificationTests(unittest.TestCase):
             self.documents.proof, document_category="PROJECT_RECORD")
         self._reject(request)
 
+    def test_global_source_proof_is_not_a_confirmation(self) -> None:
+        self.documents.proof = dataclasses.replace(
+            self.documents.proof, scope="GLOBAL", project_id=None)
+        self.evidence.proof = dataclasses.replace(
+            self.evidence.proof, scope="GLOBAL", project_id=None)
+        request = dataclasses.replace(
+            self.request, scope="GLOBAL", project_id=None,
+            deidentification_class="DEIDENTIFIED")
+        proven = self.service.prove_sources(self.transaction, request)
+        self.assertEqual(proven.scope, "GLOBAL")
+        self.assertEqual(len(proven.content_fingerprint), 32)
+        self.assertEqual(self.attestations.calls, [])
+        self.attestations.confirm = False
+        self._reject(request)
+
     def test_scope_category_and_cross_project_mismatch_fail_closed(self) -> None:
         self.documents.proof = dataclasses.replace(self.documents.proof, project_id=uuid.uuid4())
         self._reject(self.request)

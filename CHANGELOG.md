@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/SOL-01-A04-P02-P03-P02 新增 GLOBAL Reference 人工脱敏确认内部命令、持久化与 Audit/幂等同事务；服务端重验固定来源，当前管理员 Session/CSRF/License 和固定声明必需，最长30天有效。迁移0141只开放确认表INSERT，历史仍不可改/删/截断。兼容性/升级：无公开 API/依赖/配置变化，空表可降0140，非空拒降；未挂载运行入口。验证：Win11隔离PG18.6升降、约束、合成命令重放/Audit回滚及全量后端3290通过/3跳过/4820子例。已知问题：真实登录/文件组合、Proof读取/撤回、人工页面和实际用户确认、Gate3/发行待；Debian13依指令跳过。
+
 - 2026-10-08：0.1.0-dev.0/SOL-01-A04-P02-P03-P01 依据 CR-SOL-006 新增闭锁的 GLOBAL Reference 人工脱敏确认账本 ORM/Alembic0140，固定来源指纹、管理员、声明、时间/撤回与 Trace，不能自动形成确认事实。兼容性/升级：从0139线性迁移，无公开 API、角色、依赖或配置变化；空表可降级，非空拒降且需保留历史。验证：Win11隔离PG18.6空/有数据、升降重升、drift、约束/闭锁/历史负例及前序回归通过；后端3284通过/3跳过/4815子例。已知问题：人工确认命令/Audit/Proof/ReferenceVersion绑定未实现，GLOBAL Reference写入及Gate3仍关闭；Server2025/UAT/发行未验，Debian13依指令跳过。
 
 - 2026-10-08：0.1.0-dev.0/SOL-01-A04-P02-P02 增加 Reference 专用 GLOBAL Evidence 管理员固定来源证明及 PROJECT/GLOBAL Solution 内部适配；锁定 ELIGIBLE 来源、复核 Document 文件/节点指纹，旧 GLOBAL 标准能力权限不放宽。兼容性/升级：无公开 API、角色、Schema、Migration、依赖或配置变化；0139 写入口继续关闭，可移除新内部组件回滚。验证：定向 20 passed/3 subtests、后端 3282 passed/3 skipped/4815 subtests。已知问题：本项未做真实 Reference PG/磁盘/HTTP 组合，GLOBAL 人工脱敏确认 Port、原子 Owner/Review/Trace/Workflow、Gate3、性能与发行待；Debian13 依指令跳过。

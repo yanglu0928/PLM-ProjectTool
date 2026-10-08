@@ -41,6 +41,8 @@ def verify(port: int) -> None:
     url = URL.create("postgresql+psycopg", username="poc_admin",
                      host="127.0.0.1", port=port, database="postgres")
     cfg = create_migration_config(url)
+    # Later Owner migrations may open INSERT; verify the 0140 closed state itself.
+    command.downgrade(cfg, "20261008_0140")
     with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
                          dbname="postgres", autocommit=True) as db:
         actor = db.execute(

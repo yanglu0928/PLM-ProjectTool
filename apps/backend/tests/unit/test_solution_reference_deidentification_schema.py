@@ -38,6 +38,16 @@ class ReferenceDeidentificationSchemaTests(unittest.TestCase):
         self.assertIn("Reference deidentification history prevents downgrade",
                       inspect.getsource(migration.downgrade))
 
+        owner = importlib.import_module(
+            "plm_assistant.migrations.versions.20261008_0141_reference_deidentification_create_owner")
+        self.assertEqual(owner.down_revision, "20261008_0140")
+        self.assertIn("IF TG_OP = 'INSERT'", owner._INSERT_OWNER)
+        self.assertIn("Reference deidentification history is immutable", owner._INSERT_OWNER)
+        self.assertIn("Reference deidentification Owner is not installed", owner._CLOSED_OWNER)
+        with patch.object(owner.context, "is_offline_mode", return_value=True):
+            with self.assertRaisesRegex(RuntimeError, "offline Reference confirmation Owner downgrade"):
+                owner.downgrade()
+
 
 if __name__ == "__main__":
     unittest.main()

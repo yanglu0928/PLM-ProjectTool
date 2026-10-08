@@ -71,6 +71,17 @@ class QualifiedReferenceSources:
     deidentification_confirmation_id: uuid.UUID | None = None
 
 
+@dataclass(frozen=True, slots=True)
+class ProvenReferenceSources:
+    """Current Document/Evidence proof, not yet a GLOBAL admission decision."""
+
+    scope: str
+    project_id: uuid.UUID | None
+    document_versions: tuple[VerifiedReferenceDocument, ...]
+    evidence: tuple[VerifiedReferenceEvidence, ...]
+    content_fingerprint: bytes = field(repr=False)
+
+
 class DocumentSourcePort(Protocol):
     def prove(self, transaction: object, *, session_token: bytes,
               trace_id: uuid.UUID, scope: str, project_id: uuid.UUID | None,
@@ -118,8 +129,8 @@ class ReferenceSourceQualificationService:
         self._deidentification = deidentification
         self._clock = clock or (lambda: datetime.now(timezone.utc))
 
-    def qualify(self, transaction: object,
-                request: ReferenceSourceRequest) -> QualifiedReferenceSources:
+    def prove_sources(self, transaction: object,
+                      request: ReferenceSourceRequest) -> ProvenReferenceSources:
         if (transaction is None or type(request) is not ReferenceSourceRequest
                 or type(request.session_token) is not bytes
                 or len(request.session_token) != 32
@@ -196,15 +207,29 @@ class ReferenceSourceQualificationService:
             }, ensure_ascii=False, sort_keys=True, separators=(",", ":"),
                allow_nan=False).encode("utf-8")
             fingerprint = hashlib.sha256(canonical).digest()
-            confirmation_id = None
-            if request.scope == "GLOBAL":
+            return ProvenReferenceSources(
+                request.scope, request.project_id, tuple(documents), tuple(evidence),
+                fingerprint,
+            )
+        except ReferenceSourceError:
+            raise
+        except Exception:
+            raise ReferenceSourceError("SOURCE_UNAVAILABLE") from None
+
+    def qualify(self, transaction: object,
+                request: ReferenceSourceRequest) -> QualifiedReferenceSources:
+        proven = self.prove_sources(transaction, request)
+        confirmation_id = None
+        if request.scope == "GLOBAL":
+            try:
                 now = self._clock()
                 if (type(now) is not datetime or now.tzinfo is None
                         or now.utcoffset() is None):
                     raise ReferenceSourceError("SOURCE_UNAVAILABLE")
                 confirmation = self._deidentification.prove(
                     transaction, session_token=request.session_token,
-                    trace_id=request.trace_id, source_fingerprint=fingerprint,
+                    trace_id=request.trace_id,
+                    source_fingerprint=proven.content_fingerprint,
                     source_project_class=request.source_project_class,
                     deidentification_class=request.deidentification_class,
                     applicability=request.applicability,
@@ -213,7 +238,7 @@ class ReferenceSourceQualificationService:
                         or not _identity(confirmation.confirmation_id)
                         or not _identity(confirmation.authorized_admin_id)
                         or type(confirmation.source_fingerprint) is not bytes
-                        or confirmation.source_fingerprint != fingerprint
+                        or confirmation.source_fingerprint != proven.content_fingerprint
                         or type(confirmation.confirmed_at) is not datetime
                         or confirmation.confirmed_at.tzinfo is None
                         or confirmation.confirmed_at.utcoffset() is None
@@ -223,11 +248,11 @@ class ReferenceSourceQualificationService:
                         or not confirmation.confirmed_at <= now < confirmation.expires_at):
                     raise ReferenceSourceError()
                 confirmation_id = confirmation.confirmation_id
-            return QualifiedReferenceSources(
-                request.scope, request.project_id, tuple(documents), tuple(evidence),
-                fingerprint, confirmation_id,
-            )
-        except ReferenceSourceError:
-            raise
-        except Exception:
-            raise ReferenceSourceError("SOURCE_UNAVAILABLE") from None
+            except ReferenceSourceError:
+                raise
+            except Exception:
+                raise ReferenceSourceError("SOURCE_UNAVAILABLE") from None
+        return QualifiedReferenceSources(
+            proven.scope, proven.project_id, proven.document_versions,
+            proven.evidence, proven.content_fingerprint, confirmation_id,
+        )
