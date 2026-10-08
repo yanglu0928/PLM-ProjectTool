@@ -595,7 +595,8 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
                        pipeline_probe: bool = False,
                        phase_diagnostic: bool = False,
                        timeline_diagnostic: bool = False,
-                       external_client: bool = False) -> None:
+                       external_client: bool = False,
+                       external_pool_comparison: bool = False) -> None:
     project = ids["project"]
     second = additional_requirement if mixed_not_required else None
     if mixed_not_required:
@@ -1094,6 +1095,13 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
             _print_file_proof_timing(storage, file_proof_since, "asgi-pool20")
             print("PRT_A05_P04_POOL_DIAGNOSTIC "
                   f"default={p95} pool20={expanded_p95}")
+            if external_pool_comparison:
+                expanded_network = _measure_network_read_load(
+                    build_app(expanded_runtime, expanded_sessions),
+                    prefix, read_headers, expanded_runtime,
+                    external_client=True,
+                )
+                print(f"PRT_A05_P04_POOL20_EXTERNAL p95={expanded_network}")
         finally:
             expanded_runtime.dispose()
         if network_load:
@@ -1112,6 +1120,9 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
                     external_client=external_client,
                 )
             assert set(network_p95) == set(ITEMS)
+            if external_pool_comparison:
+                print("PRT_A05_P04_EXTERNAL_POOL_COMPARISON "
+                      f"default={network_p95} pool20={expanded_network}")
             _print_file_proof_timing(storage, file_proof_since, "network")
     with TestClient(app, base_url=ORIGIN) as client:
         if isolation_checks:
@@ -1251,7 +1262,8 @@ def main(*, mixed_not_required: bool = False,
          pipeline_probe: bool = False,
          phase_diagnostic: bool = False,
          timeline_diagnostic: bool = False,
-         external_client: bool = False) -> None:
+         external_client: bool = False,
+         external_pool_comparison: bool = False) -> None:
     if conflicting_decision and not mixed_not_required:
         raise ValueError("conflict mode requires mixed scope")
     if coverage_mode not in {None, "partial", "illustrates"}:
@@ -1294,6 +1306,7 @@ def main(*, mixed_not_required: bool = False,
                 phase_diagnostic=phase_diagnostic,
                 timeline_diagnostic=timeline_diagnostic,
                 external_client=external_client,
+                external_pool_comparison=external_pool_comparison,
                 **context,
             ),
         )
