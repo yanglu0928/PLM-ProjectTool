@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261009-1121：GLOBAL Reference 前端只读客户端与 PROJECT 分离
+
+- Date/WBS：2026-10-09 / `SOL-01-A04-P09-P05-P01`；依据冻结 API-04、P09-P02～P04 与现有 PROJECT 前端 Scope 边界。
+- Decision：GLOBAL List/GET 使用独立严格解析客户端，页面仅当前 DeploymentAdmin 可见；PROJECT `ReferenceReadClient` 的 ProjectId/成员条件保持不变。候选/详情、Create 成功导航及 Edge 实测分项验收。
+- Reason：共享 PROJECT DTO/路径若通过空 ProjectId 特判扩展，会弱化既有隔离；用户需要创建后快速定位历史对象，但历史读取不可冒充确认现时有效。
+- Impact/Rollback：无 Schema、冻结 API Breaking Change、新依赖或数据迁移；新增前端只读客户端和页面路由可单独移除，Reference/确认/Audit 不变。
+- Verification：本项仅静态对账；HTTP/PG 服务端已在 P09-P03/P04 验证，前端客户端/页面/Edge 尚未实现。
+
 ## DEC-20261009-1119：GLOBAL 人工核查浏览器兼容修复不放宽确认语义
 
 2026-10-09，SOL-01-A04-P08-P04-P03。Edge/PG 组合发现原生 `fetch` receiver 错误与 UTC 毫秒/微秒文本精度误判；按现有 API 语义修复客户端调用和同一时刻比较，不更改确认/撤回合同、冻结基线或服务端来源重验。夹具采用真实登录取得私有 CSRF；GET 会话仅只读，不绕过安全边界。模拟待核对记录只检验原 Key 回查，不能替代真实网络中断或真人脱敏确认。回滚/迁移/风险/验证见本项进展记录；无数据迁移。此为 L2 缺陷决策，未触发冻结基线 Change Request。

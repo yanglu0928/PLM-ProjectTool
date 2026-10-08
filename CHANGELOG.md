@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A04-P09-P05-P01 核查 GLOBAL Reference 前端候选/详情导航边界，记录独立客户端与页面/Edge 分项顺序。兼容性/升级：仅设计记录，无代码/API/Schema/依赖或数据迁移。验证：现有 PROJECT 客户端、GLOBAL Create 页、冻结 API-04 与后端 GET/List 合同静态对账；前端/Edge 未运行。已知问题：GLOBAL 列表与详情页面尚不可用，真人确认/正式信任源/Server2025/20并发/Gate3/UAT/发行未验；Debian13依指令跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P09-P04 新增 GLOBAL Reference 安全摘要列表、独立签名游标及 Windows 显式模式组合；缺游标密钥拒启动，PROJECT 游标不可复用。兼容性/升级：无 Breaking Change、Schema/依赖/数据迁移；关闭列表路由恢复404，历史不删除。验证：合同/密钥/生产组合定向48通过/59子例、后端全量3356通过/3跳过/4990子例、Win11隔离PG18.6 单对象列表/空后继页及拒绝路径通过。已知问题：真实PG双页、前端/真人确认、正式目标账户密钥与License、Server2025、20并发、Gate3/UAT/发行未验；Debian13依指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P09-P03 将冻结的 GLOBAL Reference GET 接入可选 HTTP 及 Windows 显式只读组合，Create201 Location 可读取当前版本与固定来源身份，不暴露确认ID或当前有效断言。兼容性/升级：无 Breaking Change、Schema/依赖/数据迁移；关闭可选路由恢复404，历史数据保留。验证：合同定向8通过/44子例、后端全量3349通过/3跳过/4973子例、Win11隔离PG18.6 Create→GET/撤回后GET/拒绝路径通过。已知问题：GLOBAL List/前端、真人确认、正式License/账户、Server2025、20并发、Gate3/UAT/发行未验；Debian13依指令跳过。
