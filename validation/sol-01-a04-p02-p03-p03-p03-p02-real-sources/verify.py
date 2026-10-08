@@ -89,7 +89,7 @@ def rejects(action) -> None:
     raise AssertionError("unproven GLOBAL source was accepted")
 
 
-def verify(port: int, scratch: Path, on_qualified=None) -> None:
+def verify(port: int, scratch: Path, on_qualified=None, on_preview=None) -> None:
     url = URL.create("postgresql+psycopg", username="poc_admin",
                      host="127.0.0.1", port=port, database="postgres")
     cfg = create_migration_config(url)
@@ -312,6 +312,12 @@ def verify(port: int, scratch: Path, on_qualified=None) -> None:
         with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
                              dbname="postgres", autocommit=True) as db:
             assert db.execute("SELECT count(*) FROM plm.sol_reference_deidentification_confirmations").fetchone()[0] == before
+        if on_preview is not None:
+            on_preview(runtime=runtime, audit=audit, license_guard=license_guard,
+                       preview=preview, confirm=confirm, revoke=revoke,
+                       request=request, document=document, version=version,
+                       evidence=evidence, node_evidence=node_evidence,
+                       fingerprint=baseline.content_fingerprint, port=port)
         rejects(lambda: confirm.confirm(ConfirmReferenceDeidentification(
             request, CSRF, datetime.now(timezone.utc) + timedelta(days=1),
             "I_VERIFIED_DEIDENTIFICATION", "F" * 16,
@@ -372,7 +378,7 @@ def verify(port: int, scratch: Path, on_qualified=None) -> None:
           "and confirmation revocation denied")
 
 
-def main() -> None:
+def main(on_preview=None) -> None:
     scratch = Path(tempfile.mkdtemp(prefix="plm-sol-real-sources-pg-"))
     if not str(scratch).isascii():
         raise RuntimeError("ASCII temporary PostgreSQL path required")
@@ -393,7 +399,7 @@ def main() -> None:
                    "-l", str(scratch / "postgres.log"),
                    "-o", f"-h 127.0.0.1 -p {port}", "-w", "start", detached=True)
         started = True
-        verify(port, scratch)
+        verify(port, scratch, on_preview=on_preview)
     finally:
         if started:
             helper.run(str(binary / "pg_ctl.exe"), "-D", str(data), "-m", "fast", "-w", "stop")

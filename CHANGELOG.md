@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A04-P08-P03-P04 新增 GLOBAL 脱敏确认隔离 PG18.6/真实 Session/ASGI 验证夹具，覆盖 Preview 无写入、错误指纹409、Confirm/Revoke 幂等与 Audit 单次效果、CSRF/Origin拒绝及原有来源篡改回归。兼容性/升级：仅验证代码，无生产程序/Schema/API/依赖变化，无升级动作。验证：Windows11隔离脚本退出0；此前后端全量3330通过/3跳过/4919子例。已知问题：Windows正式组合、前端/真人确认、正式License/账户、Server2025、20并发/Gate3/发行未验；Debian13依指令跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P08-P03-P03 新增 GLOBAL 人工脱敏确认 Preview/Confirm/Revoke 可注入 HTTP，强制当前 Session/CSRF、可信 Origin、严格 JSON、预览指纹与显式声明，新增漂移错误 409；默认/GLOBAL Create 仍关闭。兼容性/升级：增量可选 API、无 Schema/依赖变化，无数据升级；生产须后续显式组合。验证：合同3/10子例、后端全量3330通过/3跳过/4919子例。已知问题：真实PG/HTTP、Windows组合、前端/真人确认、正式License/账户、Server2025、20并发/Gate3/发行未验；Debian13依指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P08-P03-P02 新增 GLOBAL 脱敏确认内部只读 Preview Owner，管理员/License/当前来源证明后只返回固定定位身份、来源指纹和UTC时刻；不写确认/Audit/收据。兼容性/升级：无 Schema、公开 API 或依赖变化，无数据升级。验证：单元4/3子例、Win11真实Auth/Document/Evidence/文件隔离PG及确认表无写入、后端全量3327通过/3跳过/4909子例。已知问题：公开HTTP、Windows/UI/真人确认、正式License/账户、Server2025、20并发/Gate3/发行未验；Debian13依指令跳过。
