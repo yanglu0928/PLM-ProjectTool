@@ -38,7 +38,7 @@ class DeniedLicense:
 
 def on_created(*, port, runtime, audit, license_guard, project, other_project,
                manager, member, token, csrf, member_token, member_csrf,
-               **_unused) -> int:
+               create_router_factory=None, **_unused) -> int:
     origins = LoginOriginPolicy(["https://plm.example.test"])
     sessions = SessionService(
         unit_of_work=runtime.unit_of_work,
@@ -55,7 +55,11 @@ def on_created(*, port, runtime, audit, license_guard, project, other_project,
         receipts=SqlAlchemyIdempotencyReceipts(), audit=audit,
     )
     service = OutlineCreateService(**dependencies, license_guard=license_guard)
-    router = create_outline_create_router(sessions=sessions, origins=origins, creates=service)
+    router = (create_outline_create_router(
+        sessions=sessions, origins=origins, creates=service)
+        if create_router_factory is None else create_router_factory(
+            runtime=runtime, sessions=sessions, origins=origins,
+            license_guard=license_guard, audit=audit))
     path = f"/api/v1/projects/{project}/solution-outlines"
     headers = {
         "cookie": "plm_session=" + token.hex(),
@@ -104,8 +108,11 @@ def on_created(*, port, runtime, audit, license_guard, project, other_project,
                        "lock_version=lock_version+1 WHERE user_id=%s AND project_id=%s",
                        (manager, project))
     denied = OutlineCreateService(**dependencies, license_guard=DeniedLicense())
-    denied_router = create_outline_create_router(
+    denied_router = (create_outline_create_router(
         sessions=sessions, origins=origins, creates=denied)
+        if create_router_factory is None else create_router_factory(
+            runtime=runtime, sessions=sessions, origins=origins,
+            license_guard=DeniedLicense(), audit=audit))
     with TestClient(create_app(solution_outline_create_router=denied_router),
                     base_url="https://plm.example.test") as client:
         refused = client.post(path, headers={**headers, "idempotency-key": "l" * 16},

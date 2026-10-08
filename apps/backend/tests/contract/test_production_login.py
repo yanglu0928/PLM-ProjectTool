@@ -601,6 +601,9 @@ class ProductionLoginTests(unittest.TestCase):
                 self.assertEqual(bare.post("/api/v1/projects/00000000-0000-0000-0000-000000000001/members/00000000-0000-0000-0000-000000000002:" + action).status_code, 404)
         with TestClient(app, base_url="http://localhost") as client:
             self.assertEqual(client.get("/health/ready").status_code, 200)
+            self.assertEqual(client.post(
+                "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
+                "solution-outlines").status_code, 404)
             self.assertEqual(client.get(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
                 "reference-solutions/00000000-0000-0000-0000-000000000002").status_code, 404)
@@ -714,6 +717,9 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(client.post(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
                 "reference-solutions").status_code, 404)
+            self.assertEqual(client.post(
+                "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
+                "solution-outlines").status_code, 404)
             self.assertEqual(client.get(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
                 "reference-solutions/00000000-0000-0000-0000-000000000002").status_code, 401)
@@ -1050,6 +1056,9 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(client.post(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
                 "reference-solutions").status_code, 403)
+            self.assertEqual(client.post(
+                "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
+                "solution-outlines").status_code, 403)
             self.assertEqual(client.get(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
                 "reference-solutions/00000000-0000-0000-0000-000000000002").status_code, 401)
