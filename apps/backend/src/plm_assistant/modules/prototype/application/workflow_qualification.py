@@ -221,11 +221,13 @@ class PrototypeWorkflowQualificationOwner:
                     or subject.review.review_id != approved.review_id
                     or subject.review.review_round_id != approved.review_round_id):
                 raise ValueError("Requirement subject drift")
-            refs = self._acceptance.prove_current_acceptance_refs(
-                tx, project_id=project_id,
-                requirement_id=snapshot.requirement_id,
-                requirement_version_id=snapshot.requirement_version_id,
-            )
+            refs = approved.acceptance_refs
+            if refs is None:
+                refs = self._acceptance.prove_current_acceptance_refs(
+                    tx, project_id=project_id,
+                    requirement_id=snapshot.requirement_id,
+                    requirement_version_id=snapshot.requirement_version_id,
+                )
             if (type(refs) is not RequirementAcceptanceRefsProof
                     or refs.project_id != project_id
                     or refs.requirement_id != snapshot.requirement_id

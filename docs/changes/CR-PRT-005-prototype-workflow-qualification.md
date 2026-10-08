@@ -73,3 +73,13 @@ P04-P06仅扩展隔离SQL诊断，按语句首个`FROM plm.<table>`表前缀粗�
 P04-P07按前述方案仅做隔离探针，保持根/轮行锁及正式仓储不变：同一已批准Review轮次的六类子表顺序查询和psycopg pipeline在同一PG事务中逐表返回相等，完整Workflow链通过。60轮单连接P50顺序0.336ms/pipeline0.262ms；20独立连接三轮近秩P95中位顺序13.029ms/pipeline16.095ms。无稳定并发收益，且探针不包含SQLAlchemy共享事务/锁序/篡改拒绝的生产等价证明。按DEC-1080不实施Review生产更改，避免高风险低收益；无兼容或迁移影响，可撤探针回滚。剩余Requirement/Prototype查询另起单一任务分析，不将探针退出0解释为P95目标达标。生产入口关闭、Gate3阻塞状态不变。
 
 P04-P08前置核查找到唯一候选：Requirement快照仓储已取回并共享锁定验收标准行，但快照DTO仅保留文字，Prototype又经Requirement公开证明Port对每个当前批准版本重读根/版本和验收行以取得稳定ID。不能删第二次读取，因为它额外证明根ACTIVE、指针当前、版本APPROVED、Review引用及行数/序号/ID；不能从文字生成ID。候选方案是由Requirement Owner在同事务内提供经过上述相同校验的稳定ID，同时沿用共享项目/版本/验收行锁及原Port合同。风险为混淆快照与当前指针、改变共享DTO或篡改拒绝。实施前需明确内部结构差异和回滚，随后做正反例、SQL计数、全量后端和真实PG/HTTP 20并发；现阶段仅记录候选，没有生产改动或性能结论，不开放Prototype入口。
+
+## 2026-10-08 P04-P08-P02 所选内部优化：已锁定快照附带稳定引用证明
+
+来源/冲突：P04-P08发现每个当前批准Requirement的验收标准行已由`lock_snapshot`共享锁定并校验连续序号，但`RequirementVersionValidationSnapshot`只有文字草稿；Prototype为获取稳定ID再走Requirement `prove_current_acceptance_refs`的根/版本JOIN和行读取。方案A直接删除第二次证明不接受，会丢失ID及当前批准条件；方案B把ID加到公开/共享ValidationSnapshot不接受，会扩大通用快照DTO及序列化/测试范围；选择方案C在Requirement快照仓储新增内部“快照+ID”同源返回，Requirement Workflow锁携带仅本链消费的可选`RequirementAcceptanceRefsProof`。原`lock_snapshot`与原独立Proof Port均保持可用；未携带时Prototype保留旧证明路径。
+
+等价性：项目共享锁先防新增/改根；所有Requirement根和版本仍按原次序共享锁定并要求根ACTIVE、当前指针等于最新APPROVED版本、Review双引用有效；同一快照仓储对验收标准行仍`FOR SHARE`，其连续序号、数量、ID有效性/唯一性在构造Proof时检查。Requirement Owner先用原`current_issues`与Review/Evidence证明该快照有效，再交给Prototype；Prototype再次校验Proof的Project/Requirement/Version和ID数量。正式API/Schema/权限/业务规则/Hash不变。风险为Proof与快照错配、可选旧路径造成分支差异、事务边界变化；用单元负例、真实PG篡改/撤权/跨项目和SQL计数验，原锁序不变。
+
+迁移/回滚：无数据迁移或配置升级；只部署同步代码。若任一等价性或回归失败，保持Prototype生产开关关闭并恢复Prototype始终调用独立Proof Port，丢弃内部侧带Proof；历史和冻结提交不改。即使查询数下降，也必须重新跑真实Uvicorn 20并发P95≤500ms才可宣称性能通过；Server2025/正式信任/发行仍独立验收。本节为实施前计划，以下验证结果待执行后补。
+
+实施后复验：旧`lock_snapshot`和独立Proof Port均保留；新同源内部返回只从已共享锁定的验收行构造ID，内部Workflow锁校验Proof的项目/需求/版本/数量，缺Proof时Prototype仍读旧Port。Windows11隔离PG18.6的122次资格读取，Requirement首FROM由1952减至1708（每请求16→14），总查询7686→7442（63→61/请求）。新增正反例及全量后端pytest3250通过/3跳过/4795子测试通过；跨项目/撤权、混合范围/文件损坏/双重认领的真实PG/HTTP回归退出0。真实Uvicorn20并发P95约593.788/596.738ms，仍超500ms；本改动仅证明查询减少和既定负例保持，不是性能PASS、生产入口或Gate3放行。无迁移，原回滚路径保持。

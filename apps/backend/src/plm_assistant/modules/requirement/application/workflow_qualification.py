@@ -28,6 +28,7 @@ from plm_assistant.modules.workflow.application.checklist_qualification import (
 )
 
 from .human_decision_source_proof import RequirementHumanDecisionSourceProof
+from .prototype_workflow_proof import RequirementAcceptanceRefsProof
 from .validate_version import (
     RequirementVersionCurrentValidator,
     RequirementVersionValidationSnapshot,
@@ -63,6 +64,7 @@ class RequirementWorkflowApprovedLock:
     latest_version_id: uuid.UUID
     review_id: uuid.UUID
     review_round_id: uuid.UUID
+    acceptance_refs: RequirementAcceptanceRefsProof | None = None
 
     def __post_init__(self) -> None:
         if (type(self.snapshot) is not RequirementVersionValidationSnapshot
@@ -73,6 +75,16 @@ class RequirementWorkflowApprovedLock:
                 or self.snapshot.version_state != "APPROVED"
                 or self.latest_version_id != self.snapshot.requirement_version_id):
             raise RequirementWorkflowQualificationError()
+        if self.acceptance_refs is not None:
+            if (type(self.acceptance_refs) is not RequirementAcceptanceRefsProof
+                    or self.acceptance_refs.project_id != self.snapshot.project_id
+                    or self.acceptance_refs.requirement_id != self.snapshot.requirement_id
+                    or self.acceptance_refs.requirement_version_id
+                       != self.snapshot.requirement_version_id
+                    or len(self.acceptance_refs.criterion_refs)
+                       != self.snapshot.declared_acceptance_count):
+                raise RequirementWorkflowQualificationError()
+            self.acceptance_refs.__post_init__()
 
 
 @dataclass(frozen=True, slots=True)

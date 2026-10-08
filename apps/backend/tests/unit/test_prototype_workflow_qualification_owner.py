@@ -1,6 +1,7 @@
 """Prototype Owner must prove full Requirement scope, decisions and artifacts."""
 
 import uuid
+from dataclasses import replace
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -220,6 +221,48 @@ def test_all_not_required_needs_user_action_and_requirement_evidence():
                audit=audit).qualify_only_current_in_transaction(
                    object(), _query(project, "PROTOTYPE_COVERAGE"),
                )
+
+
+def test_locked_requirement_acceptance_refs_avoid_independent_proof_read():
+    base = _base()
+    project, req, req_version, _criterion, lock, qualified, refs = base
+    locked = replace(lock, approved=(replace(
+        lock.approved[0], acceptance_refs=refs,
+    ),))
+    root = PrototypeRootLock(
+        project, uuid.uuid4(), "NOT_REQUIRED", None, 1,
+        PrototypeDecisionLock(
+            uuid.uuid4(), (req_version,), uuid.uuid4(),
+            "Not required", "No impact", None, None, b"d" * 32, NOW,
+        ),
+    )
+    audit = PrototypeScopeDecisionAuditProof(
+        uuid.uuid4(), project, root.prototype_id,
+        root.decision.confirmed_by, NOW + timedelta(seconds=1),
+    )
+    optimized = (project, req, req_version, refs.criterion_refs[0],
+                 locked, qualified, refs)
+    # A False return would fail qualification if the redundant port is used.
+    result = _owner(
+        optimized, (root,), PrototypeWorkflowVersionLinksLock((), ()),
+        audit=audit, acceptance=False,
+    ).qualify_only_current_in_transaction(
+        object(), _query(project, "PROTOTYPE_COVERAGE"),
+    )
+    assert result.item_key == "PROTOTYPE_COVERAGE"
+
+
+def test_locked_requirement_acceptance_refs_reject_identity_or_count_drift():
+    base = _base()
+    project, req, req_version, _criterion, lock, _qualified, refs = base
+    for bad in (
+        replace(refs, project_id=uuid.uuid4()),
+        replace(refs, requirement_id=uuid.uuid4()),
+        replace(refs, requirement_version_id=uuid.uuid4()),
+        replace(refs, criterion_refs=(refs.criterion_refs[0], uuid.uuid4())),
+    ):
+        with pytest.raises(Exception):
+            replace(lock.approved[0], acceptance_refs=bad).__post_init__()
 
 
 def test_approved_prototype_requires_real_artifact_review_and_coverage():

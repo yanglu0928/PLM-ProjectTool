@@ -10503,3 +10503,10 @@
 - Decision：保持共享 Review 仓储原有 SQLAlchemy 根/轮共享锁、六类子表读取、完整性校验及篡改拒绝。psycopg pipeline 只留在隔离验证工具，不接入生产事务或改变查询顺序。下一独立项定位 Requirement/Prototype 其余可安全减少的重复查询；性能状态继续 FAIL。
 - Reason：六查询同事务返回结果相等，但60轮单连接收益仅约0.074ms P50；20连接三轮 P95 中位反而由约13.0ms至16.1ms。探针未覆盖共享仓储的锁序/篡改负例，不足以承担生产更改风险，也不足以弥合真实 Uvicorn P95>500ms 缺口。
 - Impact/Rollback：仅验证脚本与进度/CR/版本说明；无生产代码、Schema、API、权限、依赖或数据迁移。可撤探针而不影响历史，Prototype 入口保持关闭，Gate3 不通过。
+
+# DEC-20261008-1081：Requirement验收稳定ID随同源锁定快照交付
+
+- Date/WBS：2026-10-08 / `PRT-01-A11-A05-P04-P08-P02`；依据CR-PRT-005及P08静态核查。
+- Decision：由Requirement快照仓储在原一次共享锁定查询中同时构造文字快照与内部稳定ID证明，Requirement Workflow锁可附带该证明；Prototype仅在证明与已验证快照身份、数量一致时消费，否则沿用独立Requirement Proof Port。原公开快照/Proof Port、锁序和失败关闭保留。
+- Reason：直接删除第二次读取会丢失ID及当前性约束；扩展共享ValidationSnapshot影响面过大。同源侧带证明可在Requirement Owner边界内复用已锁定行而不把ORM/正文交给Prototype，减少每个批准需求的两次往返。
+- Impact/Rollback：内部DTO与仓储组合新增，无Schema/API/权限/数据迁移；保持Prototype生产入口关闭，回滚时恢复独立Proof读取并丢弃内部侧带字段。须以正反例、SQL计数、全量后端及真实PG/HTTP/20并发验收，不能单凭静态推断标PASS。

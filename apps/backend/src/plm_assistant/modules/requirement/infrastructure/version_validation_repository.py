@@ -11,6 +11,9 @@ from plm_assistant.modules.requirement.application.create_version import (
     RequirementAcceptanceDraft, RequirementAssessmentEvidenceDraft,
     RequirementCapabilityAssessmentDraft, RequirementSourceDraft,
 )
+from plm_assistant.modules.requirement.application.prototype_workflow_proof import (
+    RequirementAcceptanceRefsProof,
+)
 from plm_assistant.modules.requirement.application.validate_version import (
     RequirementVersionValidationSnapshot,
 )
@@ -30,6 +33,44 @@ class SqlAlchemyRequirementVersionValidationRepository:
         self, transaction: object, *, project_id: uuid.UUID,
         requirement_id: uuid.UUID, requirement_version_id: uuid.UUID,
     ) -> RequirementVersionValidationSnapshot | None:
+        result = self._lock_snapshot_and_rows(
+            transaction, project_id=project_id,
+            requirement_id=requirement_id,
+            requirement_version_id=requirement_version_id,
+        )
+        return None if result is None else result[0]
+
+    def lock_snapshot_and_acceptance_refs(
+        self, transaction: object, *, project_id: uuid.UUID,
+        requirement_id: uuid.UUID, requirement_version_id: uuid.UUID,
+    ) -> tuple[RequirementVersionValidationSnapshot,
+               RequirementAcceptanceRefsProof] | None:
+        """Expose stable IDs from the same shared-locked rows as the snapshot."""
+        result = self._lock_snapshot_and_rows(
+            transaction, project_id=project_id,
+            requirement_id=requirement_id,
+            requirement_version_id=requirement_version_id,
+        )
+        if result is None:
+            return None
+        snapshot, rows = result
+        if (snapshot.declared_acceptance_count <= 0
+                or len(rows) != snapshot.declared_acceptance_count
+                or not self._contiguous(rows)):
+            return None
+        try:
+            refs = RequirementAcceptanceRefsProof(
+                project_id, requirement_id, requirement_version_id,
+                tuple(row.acceptance_criterion_id for row in rows),
+            )
+        except ValueError:
+            return None
+        return snapshot, refs
+
+    def _lock_snapshot_and_rows(
+        self, transaction: object, *, project_id: uuid.UUID,
+        requirement_id: uuid.UUID, requirement_version_id: uuid.UUID,
+    ) -> tuple[RequirementVersionValidationSnapshot, tuple] | None:
         identities = (project_id, requirement_id, requirement_version_id)
         if any(type(value) is not uuid.UUID or value.int == 0
                for value in identities):
@@ -121,7 +162,7 @@ class SqlAlchemyRequirementVersionValidationRepository:
             self._contiguous(assumption_rows), self._contiguous(exclusion_rows),
             self._contiguous(dependency_rows), self._contiguous(task_rows),
         ))
-        return RequirementVersionValidationSnapshot(
+        snapshot = RequirementVersionValidationSnapshot(
             version.requirement_version_id, version.requirement_id,
             version.project_id, version.version_no, version.version_state,
             version.title, version.statement, version.rationale,
@@ -138,6 +179,7 @@ class SqlAlchemyRequirementVersionValidationRepository:
             tuple(row.dependency_text for row in dependency_rows),
             tuple(row.ai_task_id for row in task_rows), contiguous,
         )
+        return snapshot, tuple(acceptance_rows)
 
     @staticmethod
     def _rows(session, model, project_id: uuid.UUID,

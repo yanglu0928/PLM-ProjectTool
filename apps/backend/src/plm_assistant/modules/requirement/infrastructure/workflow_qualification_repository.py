@@ -132,16 +132,17 @@ class SqlAlchemyRequirementWorkflowQualificationRepository:
                 or type(latest.review_round_ref) is not uuid.UUID
                 or latest.review_round_ref.int == 0):
             return None
-        snapshot = self._snapshots.lock_snapshot(
+        locked_snapshot = self._snapshots.lock_snapshot_and_acceptance_refs(
             transaction, project_id=project_id,
             requirement_id=root.requirement_id,
             requirement_version_id=latest.requirement_version_id,
         )
-        if snapshot is None:
+        if locked_snapshot is None:
             return None
+        snapshot, acceptance_refs = locked_snapshot
         return RequirementWorkflowApprovedLock(
             snapshot, latest.requirement_version_id,
-            latest.review_ref, latest.review_round_ref,
+            latest.review_ref, latest.review_round_ref, acceptance_refs,
         )
 
     @staticmethod
