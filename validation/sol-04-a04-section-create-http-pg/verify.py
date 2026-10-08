@@ -40,7 +40,8 @@ class DeniedLicense:
 
 
 def on_created(*, port, runtime, audit, license_guard, project, other_project,
-               manager, member, token, csrf, member_token, member_csrf, **_unused) -> int:
+               manager, member, token, csrf, member_token, member_csrf,
+               create_router_factory=None, **_unused) -> int:
     origins = LoginOriginPolicy(["https://plm.example.test"])
     sessions = SessionService(
         unit_of_work=runtime.unit_of_work,
@@ -63,9 +64,12 @@ def on_created(*, port, runtime, audit, license_guard, project, other_project,
     headers = {"cookie": "plm_session=" + token.hex(),
                "origin": "https://plm.example.test", "x-csrf-token": csrf.hex(),
                "idempotency-key": "section-http-0001"}
-    router = create_section_create_router(
+    router = (create_section_create_router(
         sessions=sessions, origins=origins,
         creates=SectionCreateService(**dependencies))
+        if create_router_factory is None else create_router_factory(
+            runtime=runtime, sessions=sessions, origins=origins,
+            license_guard=license_guard, audit=audit))
     with TestClient(create_app(solution_section_create_router=router),
                     base_url="https://plm.example.test") as client:
         first = client.post(path, headers=headers, json=payload)
@@ -115,8 +119,12 @@ def on_created(*, port, runtime, audit, license_guard, project, other_project,
                        "lock_version=lock_version+1 WHERE user_id=%s AND project_id=%s",
                        (manager, project))
     denied = SectionCreateService(**{**dependencies, "license_guard": DeniedLicense()})
-    with TestClient(create_app(solution_section_create_router=create_section_create_router(
-            sessions=sessions, origins=origins, creates=denied)),
+    denied_router = (create_section_create_router(
+        sessions=sessions, origins=origins, creates=denied)
+        if create_router_factory is None else create_router_factory(
+            runtime=runtime, sessions=sessions, origins=origins,
+            license_guard=DeniedLicense(), audit=audit))
+    with TestClient(create_app(solution_section_create_router=denied_router),
             base_url="https://plm.example.test") as client:
         refused = client.post(path, headers={**headers, "idempotency-key": "section-lic-http-0001"},
                               json={**payload, "section_key": "License"})

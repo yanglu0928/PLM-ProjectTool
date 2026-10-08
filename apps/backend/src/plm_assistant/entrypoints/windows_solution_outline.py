@@ -10,12 +10,15 @@ from plm_assistant.modules.platform.infrastructure.idempotency_receipts import S
 from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
 from plm_assistant.modules.project.infrastructure.authorization_repository import SqlAlchemyProjectAuthorizationRepository
 from plm_assistant.modules.solution.api.outline_create import create_outline_create_router
+from plm_assistant.modules.solution.api.section_create import create_section_create_router
 from plm_assistant.modules.solution.api.outline_list import create_outline_list_router
 from plm_assistant.modules.solution.api.outline_read import create_outline_read_router
 from plm_assistant.modules.solution.api.outline_list_cursor import OutlineListCursorCodec
 from plm_assistant.modules.solution.application.create_outline import OutlineCreateService
+from plm_assistant.modules.solution.application.create_section import SectionCreateService
 from plm_assistant.modules.solution.application.read_outline import OutlineReadService
 from plm_assistant.modules.solution.infrastructure.outline_create_repository import SqlAlchemyOutlineCreateRepository
+from plm_assistant.modules.solution.infrastructure.section_create_repository import SqlAlchemySectionCreateRepository
 from plm_assistant.modules.solution.infrastructure.outline_read_repository import SqlAlchemyOutlineReadRepository
 
 
@@ -93,6 +96,30 @@ def create_windows_outline_create_router(
             receipts=SqlAlchemyIdempotencyReceipts(), audit=audit,
         )
         return create_outline_create_router(
+            sessions=sessions, origins=origins, creates=service)
+    except Exception:
+        raise ProductionSolutionOutlineStartupError() from None
+
+
+def create_windows_section_create_router(
+    *, runtime, sessions, origins, license_guard, audit,
+) -> APIRouter:
+    """Mount Section CREATE only with explicit write-mode dependencies."""
+    if any(value is None for value in (
+            runtime, sessions, origins, license_guard, audit)):
+        raise ProductionSolutionOutlineStartupError()
+    try:
+        service = SectionCreateService(
+            unit_of_work=runtime.unit_of_work,
+            access=SqlAlchemyProjectWriteAccess(),
+            license_guard=license_guard,
+            authorization=ProjectAuthorizationService(
+                unit_of_work=runtime.unit_of_work,
+                repository=SqlAlchemyProjectAuthorizationRepository()),
+            repository=SqlAlchemySectionCreateRepository(),
+            receipts=SqlAlchemyIdempotencyReceipts(), audit=audit,
+        )
+        return create_section_create_router(
             sessions=sessions, origins=origins, creates=service)
     except Exception:
         raise ProductionSolutionOutlineStartupError() from None

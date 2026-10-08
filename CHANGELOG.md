@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-04-A05 将 Section CREATE 接入 Windows 显式写平台组合，缺依赖 fail closed；默认/登录专用/只读不注入。兼容性/升级：无 Schema/Migration/依赖/前端或冻结 API 变化；撤下写模式注入可回滚，历史保留。验证：Win11隔离PG18.6真实ASGI/Session/角色/重放/License、缺依赖拒启动及 PROJECT Reference 夹具通过；后端3386通过/3跳过/5100子例。已知问题：正式目标账户/公钥/Vault/HTTPS生产启动、Section只读/UI、Server2025/性能、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-04-A04 新增可选 Section CREATE HTTP，严格 Session/Origin/CSRF/幂等与初态 201/ETag/Location，默认应用仍404。兼容性/升级：冻结 API-04 内实现，无 Schema/Migration/依赖/前端变化；撤下可选 Router 可回滚，历史保留。验证：Win11隔离PG18.6真实ASGI/Session/角色/重放/跨项目/License/默认关闭及 PROJECT Reference 夹具通过；后端3386通过/3跳过/5100子例。已知问题：Windows显式组合/只读/UI、正式目标账户/Server2025/性能、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-04-A03/CR-SOL-012 新增 Section 内部受权创建、项目角色/活动目录锁、同事务 Receipt/Audit/不可变首次结果及 0148 INSERT-only/延迟闭合 Guard；SectionVersion 与更新删除保持关闭。兼容性/升级：无公开 API/前端/依赖或冻结合同变化，0147→0148 线性升级；空历史可降，有章节历史拒降，失败须向前修复。验证：Win11隔离PG18.6真实Session/角色/并发/回滚/直接SQL负例及后端3386通过/3跳过/5100子例。已知问题：公开HTTP/Windows组合/UI、正式目标账户/Server2025/性能、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
