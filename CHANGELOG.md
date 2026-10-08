@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A11-A02 新增 Prototype Workflow 纯范围/覆盖策略，按当前 Approved Requirement 完整集合核对 NOT_REQUIRED 与 Approved PrototypeVersion 两侧，拒绝空范围、遗漏、冲突、陈旧指针、跨项目及无效Link；只有精确ACTIVE的VALIDATES/ACCEPTANCE_REFERENCE Link覆盖全部验收标准才满足必要条件。CR-PRT-005/DEC-1073记录后续只读资格预览兼容增量及真实Owner边界。兼容性/升级/回滚：无Schema、运行API、依赖或迁移；删除新纯策略即可回滚，历史不变。验证：定向7、后端3218项/3跳过PASS。已知问题：当前仅纯策略，A03真实Owner、A04 Workflow接线、A05 Win11/PG/HTTP、Server2025、Gate3/UAT/发行待；Debian13跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A11-A01 完成 Prototype Workflow资格前置核查与A02～A05拆分：确认六阶段/Schema支持PROTOTYPE→SOLUTION，而运行Registry、预览、Checklist和推进尚未开放两项Prototype检查；完整范围必须来自当前批准Requirement，不以空集合、单独Link或送审回执推定通过。兼容性/升级/回滚：仅新增进度文档，无程序/Schema/API变化，无升级步骤，回滚可移除该文档且不影响历史。验证：冻结定义与运行代码对账；Owner/HTTP/PG资格尚未验，Gate3仍BLOCKED。已知问题：A02～A05、Server2025、UAT/发行待；Debian13跳过。
 
 - 2026-10-08：0.1.0-dev.0/PRT-01-A10-A07 Windows 11真实Edge→构建Vue→生产FastAPI→PostgreSQL 18.6闭环通过：Package成员、PROJECT Template、DRAFT Version创建/校验/正式送审、IN_REVIEW不进入批准Link候选、登出后无业务数据。CR-PRT-003修复根对象递延闭包遗漏Version CREATE结果、并以不可变锁版本重建内容指纹；CR-PRT-004修复VALIDATE误用只读Auth适配器。兼容性：`/api/v1`、角色、License及固定载荷不变；Schema0135新增内部可空锁版本，旧行保持NULL且缺证明时失败关闭。升级：迁移0134→0135后部署同步代码，不能只更新其一；有新格式结果时拒绝回滚Schema，需保留历史并另行迁移。验证：真实Edge闭环、0135有数据升降重升及拒绝不安全降级、后端3211项/3跳过PASS；前端A06的1599项/typecheck/build保持通过。已知问题：九个先前遗留隔离测试库未确认归属故未删除；A11、Windows Server 2025、Gate3/UAT/发行待，Debian13依指令跳过。

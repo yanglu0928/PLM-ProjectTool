@@ -10447,3 +10447,10 @@
 - Reason：历史Validate会陈旧；允许评审中建新版会让Subject不再是最新；DRAFT或Trace单独推进指针会绕过人工
   Review；退回时清空旧指针会破坏已批准业务事实。
 - Impact/Rollback：A01纯文档；后续0132只开放窄状态迁移。可停止送审入口，但Review/Version/Trace历史保留。
+
+# DEC-20261008-1073：Prototype Workflow 以完整当前需求集合做二分范围与覆盖
+
+- Date/WBS：2026-10-08 / `PRT-01-A11-A02`；依据六阶段定义、冻结 PRT-01～05、CR-PRT-005。
+- Decision：当前 Approved RequirementVersion 完整集合必须逐条归入经证明的 NOT_REQUIRED 决定或当前 Approved PrototypeVersion 固定 RequirementRef；空范围、遗漏、交叉、旧版本和跨项目失败关闭。Coverage 仅把 ACTIVE、精确双端、`VALIDATES/ACCEPTANCE_REFERENCE` Link 的已覆盖验收标准计入并集；原因本身不等于处理完成。全 NOT_REQUIRED 仍需逐条决定、Requirement Review/Evidence 与人工确认，不因无 Link 跳过。
+- Reason：以 Prototype 或 Link 集合做左表会静默遗漏需求；把 ILLUSTRATES/未覆盖原因当完成会高估覆盖；生成合成 Review/Evidence 会伪造客户事实。
+- Impact/Rollback：A02 仅纯算法、单元测试和待启用的预览兼容合同，无 Schema/API 运行行为/依赖/外发。A03/A04 需真实 Owner、写时复验及显式注册后才可开放；撤注册可回滚运行入口，历史决定、Review、Checklist 不删除。
