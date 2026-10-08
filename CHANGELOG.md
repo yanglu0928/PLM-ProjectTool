@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A04-P08-P03-P01 为GLOBAL人工确认内部命令加入可选预览指纹栅栏，现时来源重算不匹配先于记录/Audit/收据拒绝；公开HTTP尚未启用。兼容性/升级：旧内部调用保持兼容，无Schema/依赖/冻结API变化，无数据升级。验证：单元6/5子例、确认Owner与真实来源隔离PG回归、后端全量3323通过/3跳过/4906子例。已知问题：Preview/Confirm/Revoke HTTP、Windows/UI/真人确认、正式License/账户、Server2025、20并发/Gate3/发行未验；Debian13依指令跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P08-P02 依据CR-SOL-009定义GLOBAL人工脱敏Preview/Confirm/Revoke增量API合同，Confirm要求预览指纹与写时现时来源一致，默认/GLOBAL创建仍关闭。兼容性/升级：仅合同/追溯文档，无运行API/Schema/依赖变化，无升级动作。验证：冻结API-04与内部Owner/CR对账；未运行新路由。已知问题：HTTP、Windows组合、前端/真实人工、正式License/账户、Server2025、20并发/Gate3/发行未验；Debian13依指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P08-P01 核查发现冻结 API-04 缺 GLOBAL Reference 实际人工脱敏确认入口，登记 CR-SOL-009 和分项验收顺序，维持 GLOBAL 创建关闭。兼容性/升级：仅追溯与设计文档，无程序/API/Schema/依赖变更，无升级动作。验证：冻结合同、现有内部确认/撤回/Proof、Windows组合与浏览器现状对账；未运行新接口。已知问题：真实人工确认、正式License/账户、Server2025、20并发/Gate3/发行未验；Debian13依指令跳过。

@@ -196,6 +196,21 @@ class ReferenceDeidentificationConfirmTests(unittest.TestCase):
             self.service.confirm(self.command)
         self.assertEqual(self.repo.calls, [])
 
+    def test_preview_fingerprint_fence_rejects_stale_source_without_writes(self):
+        fenced = replace(self.command, expected_source_fingerprint=b"f" * 32)
+        self.assertEqual(self.service.confirm(fenced).source_fingerprint, b"f" * 32)
+        stale = replace(self.command, idempotency_key="j" * 16,
+                        expected_source_fingerprint=b"x" * 32)
+        with self.assertRaisesRegex(ReferenceDeidentificationConfirmError,
+                                    "SOURCE_SNAPSHOT_CHANGED"):
+            self.service.confirm(stale)
+        self.assertEqual(len(self.repo.calls), 1)
+        self.assertEqual(len(self.audit.calls), 1)
+        with self.assertRaisesRegex(ReferenceDeidentificationConfirmError,
+                                    "VALIDATION_FAILED"):
+            self.service.confirm(replace(self.command,
+                expected_source_fingerprint=b"short"))
+
     def test_audit_failure_does_not_commit(self):
         self.audit.fail = True
         with self.assertRaisesRegex(ReferenceDeidentificationConfirmError, "SOLUTION_UNAVAILABLE"):

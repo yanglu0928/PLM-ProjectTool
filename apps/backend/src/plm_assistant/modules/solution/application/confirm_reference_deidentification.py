@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hmac
 import uuid
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -41,6 +42,7 @@ class ConfirmReferenceDeidentification:
     expires_at: datetime
     attestation_statement: str
     idempotency_key: str = field(repr=False)
+    expected_source_fingerprint: bytes | None = field(default=None, repr=False)
 
 
 @dataclass(frozen=True, slots=True)
@@ -119,6 +121,11 @@ class ReferenceDeidentificationConfirmService:
                         or type(proven.content_fingerprint) is not bytes
                         or len(proven.content_fingerprint) != 32):
                     raise ReferenceDeidentificationConfirmError()
+                if (command.expected_source_fingerprint is not None
+                        and not hmac.compare_digest(
+                            proven.content_fingerprint,
+                            command.expected_source_fingerprint)):
+                    raise ReferenceDeidentificationConfirmError("SOURCE_SNAPSHOT_CHANGED")
                 fingerprint = canonical_payload_fingerprint({
                     "source_fingerprint": proven.content_fingerprint.hex(),
                     "source_project_class": request.source_project_class,
@@ -186,7 +193,10 @@ class ReferenceDeidentificationConfirmService:
                 or type(command.expires_at) is not datetime
                 or command.expires_at.tzinfo is None
                 or command.expires_at.utcoffset() is None
-                or command.attestation_statement != _STATEMENT):
+                or command.attestation_statement != _STATEMENT
+                or (command.expected_source_fingerprint is not None
+                    and (type(command.expected_source_fingerprint) is not bytes
+                         or len(command.expected_source_fingerprint) != 32))):
             raise ReferenceDeidentificationConfirmError("VALIDATION_FAILED")
 
     def _require_admin(self, tx: object, command: ConfirmReferenceDeidentification,

@@ -295,9 +295,15 @@ def verify(port: int, scratch: Path, on_qualified=None) -> None:
                 TOKEN, request.trace_id, "PROJECT", uuid.uuid4(),
                 (version,), (evidence, node_evidence), "PLM", "DEIDENTIFIED",
                 {"industry": "synthetic"})))
+        rejects(lambda: confirm.confirm(ConfirmReferenceDeidentification(
+            request, CSRF, datetime.now(timezone.utc) + timedelta(days=1),
+            "I_VERIFIED_DEIDENTIFICATION", "F" * 16,
+            expected_source_fingerprint=b"x" * 32,
+        )))
         confirmed = confirm.confirm(ConfirmReferenceDeidentification(
             request, CSRF, datetime.now(timezone.utc) + timedelta(days=1),
             "I_VERIFIED_DEIDENTIFICATION", "C" * 16,
+            expected_source_fingerprint=baseline.content_fingerprint,
         ))
         assert confirmed.source_fingerprint == baseline.content_fingerprint
         with runtime.unit_of_work() as tx:

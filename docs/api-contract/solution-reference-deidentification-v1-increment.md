@@ -16,4 +16,4 @@ Confirm 另强制 `expected_source_fingerprint` 为 Preview 返回的 64 位小�
 
 Revoke 路径 ID 为非零规范 UUID，请求体恰含 `reason_code`，取 `SOURCE_EXPOSED`、`SCOPE_CHANGED`、`ADMIN_REVIEW`；成功 `200` 仅返回 `confirmation_id`、`revoked_at`、`trace_id`。撤回不可删除历史，不允许旧确认在最新确认撤回后复活。
 
-错误采用 API-01 信封：Session 失效 401、Host/Origin/CSRF 或 License 403、身份/来源越权或缺失 404、畸形请求 400、字段/已漂移预览 422 或业务冲突 409、来源/内部不可用 503。具体已漂移代码由 P03 在不破坏既有错误码约束下锁定；前端一律清除旧预览并要求重新核查。公开错误不得含客户正文、文件路径、Secret、内部栈或可用于枚举跨项目/全局资料的信息。默认应用和 GLOBAL Create 仍关闭；Windows 显式组合、真实 PG/HTTP、前端/Edge 在 P03～P06 验证后分别开放。
+错误采用 API-01 信封：Session 失效 401、Host/Origin/CSRF 或 License 403、身份/来源越权或缺失 404、畸形请求 400、字段不合法 422、已漂移预览 `409 SOURCE_SNAPSHOT_CHANGED` 或幂等冲突 409、来源/内部不可用 503。前端遇已漂移预览一律清除旧预览并要求重新核查。公开错误不得含客户正文、文件路径、Secret、内部栈或可用于枚举跨项目/全局资料的信息。默认应用和 GLOBAL Create 仍关闭；Windows 显式组合、真实 PG/HTTP、前端/Edge 在 P03～P06 验证后分别开放。
