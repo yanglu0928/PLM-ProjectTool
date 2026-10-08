@@ -114,6 +114,32 @@ class SolutionSectionRow(Base):
     lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
 
 
+class SolutionSectionCreateResultRow(Base):
+    """Closed first-response storage; A02 does not install Section write Owner."""
+
+    __tablename__ = "sol_section_create_results"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["solution_section_id", "solution_outline_id", "project_id"],
+            ["plm.sol_sections.solution_section_id",
+             "plm.sol_sections.solution_outline_id", "plm.sol_sections.project_id"],
+            name="fk_sol_section_create_results__section", ondelete="NO ACTION",
+        ),
+        CheckConstraint("char_length(section_key) BETWEEN 1 AND 128 AND "
+                        "section_key=btrim(section_key)",
+                        name="ck_sol_section_create_results__key"),
+        CheckConstraint("isfinite(created_at)",
+                        name="ck_sol_section_create_results__created_at"),
+        {"schema": "plm"},
+    )
+
+    solution_section_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    solution_outline_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    section_key: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False)
+
+
 class SolutionOutlineVersionRow(Base):
     __tablename__ = "sol_outline_versions"
     __table_args__ = (

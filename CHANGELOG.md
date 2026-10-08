@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-04-A02 新增 `20261009_0147` 章节创建首次结果快照表及 ORM，同 Section/Outline/Project 复合 FK、key/时间约束和未装 Owner 写保护；无公开 API/权限/依赖变化。兼容性/升级：0146→0147 线性迁移；空表可降，有快照拒降，不能删除历史强退；Owner 尚未开放。验证：Win11隔离PG18.6空/有数据升降级、drift、写保护/FK/重复/历史负例通过；后端3386通过/3跳过/5095子例。已知问题：开发 wheel 构建工具不可用，wheel 未验；Section Owner/HTTP/UI、正式目标账户/Server2025/性能、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-04-A01/CR-SOL-012 核查章节身份 CREATE 的 0136 写保护、同项目/唯一 key 约束、缺 Owner/策略/不可变首次 201 快照，登记最小 INSERT-only/延迟闭合迁移和验证/回滚计划。兼容性/升级：仅文档，无程序、Schema、Migration、API 或依赖变化；可回退施工排序，不豁免验收。验证：冻结合同、迁移、ORM 与授权策略静态对账，未运行新测试。已知问题：章节 CREATE/Version/Review/Trace、正式目标账户/Server2025/性能、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-03-A01 对账目录版本正式写入：0137 全写保护、0136 章节身份未开放、参考版本仅 DRAFT、缺版本授权/Review/Trace，决定先推进章节身份及可信来源。兼容性/升级：仅进度与决策文档，无程序、Schema、Migration、API 或依赖变化；可回退施工顺序，不豁免验收。验证：冻结合同/迁移/ORM/策略静态核对，未运行新测试。已知问题：`SOL_OUTLINE_VERSION_CREATE` 仍前置阻塞；正式License/目标账户、Server2025、20并发、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。

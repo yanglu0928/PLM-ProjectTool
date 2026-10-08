@@ -191,7 +191,7 @@ class OrmMetadataTests(unittest.TestCase):
         for table in prototype_tables:
             self.assertIn(table, Base.metadata.tables)
         for table in ('plm.sol_outlines', 'plm.sol_outline_create_results',
-                      'plm.sol_sections',
+                      'plm.sol_sections', 'plm.sol_section_create_results',
                       'plm.sol_outline_versions', 'plm.sol_outline_sections',
                       'plm.sol_outline_requirement_refs', 'plm.sol_section_versions',
                       'plm.sol_section_requirement_refs', 'plm.sol_section_evidence_refs',
