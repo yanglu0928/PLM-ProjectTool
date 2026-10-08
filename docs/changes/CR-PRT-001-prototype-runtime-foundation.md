@@ -363,3 +363,15 @@ Interaction/Coverage完整传给Owner，返回Owner原子推进后的Root ETag�
 外发，Schema head保持0134；撤注入即可回滚，已提交业务历史保留。合同6、后端3205项通过/3项环境跳过、
 compileall、diff check及wheel1227项/`8760faebb6ed13e0432e3d20f816e1f4a29e8b09741aa49f0aad5815ca2f23ed`
 通过；进入A09-A08 Link HTTP。
+
+## A09-A08 RequirementPrototypeLink HTTP（2026-10-08）
+
+新增冻结LIST/CREATE/REVOKE/SUPERSEDE四项可选Router。LIST使用Link专属cursor并绑定Session/Project/页长；
+CREATE/SUPERSEDE只接受完整固定双端、purpose和Coverage V1；REVOKE要求空正文。三项写入均要求可信
+Origin、Session/CSRF和幂等键，业务证明、状态、Audit及receipt继续由A08 Owner原子处理。
+
+按DEC-1060，冻结两项生命周期Operation没有M控制，HTTP不新增If-Match；Owner仍固定expected v0并由
+ACTIVE行锁/CAS和请求指纹防并发。默认应用保持四路径404；无Migration、依赖、Secret或外发，Schema head
+保持0134，撤注入即可回滚且历史保留。合同3、后端3208项通过/3项环境跳过、compileall、diff check及
+wheel1228项/`f3ce39a4148fe6c2e76c568f282d489fbf77b1a271264ba9736fa4085fef9c9c`通过；进入A09-A09
+Windows只读/写组合和真实PG验收。

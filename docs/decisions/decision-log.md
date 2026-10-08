@@ -1,5 +1,17 @@
 # 自主决策记录
 
+## DEC-20261008-1060：Link生命周期HTTP不新增未冻结If-Match前置
+
+- Date/WBS：2026-10-08 / `PRT-01-A09-A08`；依据冻结四项Link Operation及A08 Owner/Schema0134。
+- Decision：LIST/CREATE/REVOKE/SUPERSEDE共用一个显式注入Router；四项按冻结控制位均不要求M，因此
+  REVOKE/SUPERSEDE HTTP不擅自增加If-Match。Owner命令仍固定`expected_version=0`，并由ACTIVE行锁、
+  `lock_version=0`条件更新和幂等请求指纹保护唯一首态；响应可返回资源当前强ETag作为只读事实。
+- Reason：Link的ACTIVE版本只存在v0且生命周期单向终结；把内部CAS实现暴露为必填If-Match会破坏冻结
+  API合同，而移除Owner固定版本/数据库条件又会削弱并发安全。两层边界可同时保持合同和原子性。
+- Impact/Rollback：新增可选Router和应用槽位，无Schema/Migration、依赖、Secret或外发；默认应用仍404，
+  撤注入即可关闭且历史保留。合同3、后端3208/3、compileall及wheel1228项/
+  `f3ce39a4…ef9c9c`通过，真实Windows/PG组合留A09-A09。
+
 ## DEC-20261008-1059：Version/Review HTTP仅投影Owner事实并保持默认关闭
 
 - Date/WBS：2026-10-08 / `PRT-01-A09-A07-P03`；依据冻结五项PrototypeVersion/Review Operation、

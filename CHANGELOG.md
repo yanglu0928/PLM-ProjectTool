@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A09-A08 新增冻结RequirementPrototypeLink LIST/CREATE/REVOKE/
+  SUPERSEDE可选HTTP；专属cursor绑定Session/Project/页长，严格Coverage V1、双端复合身份、空撤销正文、
+  幂等及安全错误投影。按DEC-1060不新增未冻结If-Match，生命周期Owner仍固定v0并由行锁/CAS保护。
+  兼容性/回滚：无Migration、依赖、Secret或外发，默认应用仍404，撤Router注入即可关闭且历史保留。
+  验证：合同3、后端3208/3、compileall，wheel1228项/`f3ce39a4…ef9c9c`PASS。已知问题：A09
+  Windows真实组合、A10前端、A11 Workflow、Server2025、Gate3/UAT/发行待；Debian13跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A09-A07-P03 新增冻结PrototypeVersion LIST/CREATE/GET/VALIDATE和
   SUBMIT_REVIEW五项可选HTTP；Version cursor强绑Session/Project/Prototype/页长且上限100，CREATE落实
   幂等与强If-Match并返回推进后Root ETag，VALIDATE恢复首次Audit proof，送审仅接受
