@@ -10720,3 +10720,9 @@
 - Decision：0144 开 Reference 四表 INSERT-only，根可在同事务指向预分配首版 ID；服务端用名称、固定来源、顺序和分类元数据计算版本内容指纹，与独立来源指纹分列。GLOBAL 当前管理员+人工确认，PROJECT PM/IM；来源/Audit/幂等同事务，初态 REFERENCE_ONLY/DRAFT。重放读取版本1固定初始结果，不依赖未来当前指针或 Eligibility。
 - Reason：裸 UUID/客户端哈希无法证明当前来源或同事务审计，参考身份不等于正式项目承诺。GLOBAL PG 真实文件/确认组合、回滚/重放/历史门禁通过；PROJECT权限单元通过，后端3301/3/4831通过。
 - Impact/Rollback：内部服务/仓储、Project新增一条SOL授权策略、0144触发器，无公开API/依赖；空Reference表可降0143，非空拒降保留历史。PROJECT真实PG、正式License/实际用户确认、HTTP/UI/后续Eligibility与Gate3仍待。
+# DEC-20261009-1112：先装配 PROJECT Reference 创建 HTTP，GLOBAL 保持关闭
+
+- Date/WBS：2026-10-09 / `SOL-01-A04-P03-P02-P03`；输入为冻结 API-01/API-04、CR-SOL-007 和当前内部 Owner。
+- Decision：按冻结 `SOL_REFERENCE_CREATE` 先提供 PROJECT 可选 POST Router 与 `create_app` 注入插槽，不在默认应用/Windows 正式组合启用；GLOBAL 创建暂不对用户开放，待真实人工脱敏确认入口可用后单独接线。
+- Reason：PROJECT 当前来源可由真实 Session/成员/私有文件验证，GLOBAL 当前仅有合成确认和内部记录，直接公开会误导或诱使伪造人工确认。分阶段装配不改变冻结 Operation/Scope 或安全规则。
+- Impact/Rollback：无 Schema/依赖变更；移除 opt-in Router 注入即可关闭新路径。真实 ASGI/PG、正式 License、GET/List、GLOBAL 确认、UI/发行仍待；不得把合同 PASS 写成可用包。

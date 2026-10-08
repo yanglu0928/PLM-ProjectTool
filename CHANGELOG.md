@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A04-P03-P02-P03 新增 PROJECT ReferenceSolution 创建可选 HTTP Router 与冻结 API 增量合同：Session/CSRF/Origin/幂等、路径归属、严格 JSON、201/ETag/Location/Trace 安全响应；默认及 GLOBAL 路由仍关闭。兼容性/升级：无 Schema/依赖或既有 API 变更，无升级步骤。验证：合同4通过/8子例，后端全量3305通过/3跳过/4839子例。已知问题：真实 ASGI/PG/文件端到端、GET/List、GLOBAL 人工确认、UI/正式 License/Gate3/发行未验；Debian13按用户指令跳过。
+
 - 2026-10-08：0.1.0-dev.0/SOL-01-A04-P03-P02-P02 增 PROJECT Reference 首版隔离 PG18.6/私有文件组合验收脚本与追溯记录：经理 Document+Evidence、实施成员 Document 创建，客户角色、跨项目/混 GLOBAL 来源、撤权重放、CSRF 和文件篡改拒绝；GLOBAL 回归和 drift 通过。兼容性/升级：仅验证代码和文档，无生产代码/API/Schema/依赖变化，无升级动作。验证：Win11 合成真实 PG/文件脚本退出0；后端全量本项未重跑（前项3301通过/3跳过/4831子例）。已知问题：HTTP/UI、真实用户确认、正式 License、后续 Reference 功能、Gate3/发行未通过；Debian13按用户指令跳过。
 
 - 2026-10-08：0.1.0-dev.0/SOL-01-A04-P03-P02-P01 新增Reference首版内部受控Owner：当前权限/License/来源资格后原子写根、首版、有序Document/Evidence、Audit/幂等，GLOBAL确认绑定；初态仅REFERENCE_ONLY/DRAFT。0144只开放INSERT，历史仍拒改删截断。兼容性/升级：无公开API/新依赖；从0143线性升级，空Reference表可降0143，非空拒降；确认历史不删除。验证：Win11隔离PG18.6 GLOBAL真实Auth/文件/解析节点组合、重放/审计回滚/历史负例、Project角色单元及全量3301通过/3跳过/4831子例。已知问题：PROJECT真实PG文件组合、正式License/实际人工确认、HTTP/UI/版本修订/Eligibility/Review/Trace/Workflow及Gate3/发行未验；Debian13依指令跳过。
