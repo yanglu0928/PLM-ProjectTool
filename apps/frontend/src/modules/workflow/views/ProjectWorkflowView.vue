@@ -18,7 +18,8 @@ import { WorkflowTransitionClient, WorkflowTransitionError,
 
 const props = defineProps<{ session?: SessionClient; workflows?: WorkflowReadClient;
   starter?: WorkflowStartClient; qualifications?: WorkflowChecklistQualificationClient;
-  checklistRecords?: WorkflowChecklistRecordClient; transitions?: WorkflowTransitionClient }>();
+  checklistRecords?: WorkflowChecklistRecordClient; transitions?: WorkflowTransitionClient;
+  prototypeWorkflowEnabled?: boolean }>();
 const session = toRaw(props.session ?? inject(sessionClientKey, null) ?? new SessionClient());
 const workflows = toRaw(props.workflows ?? new WorkflowReadClient());
 const starter = toRaw(props.starter ?? new WorkflowStartClient(session));
@@ -134,7 +135,7 @@ function validTransitionPending(value: unknown): value is PendingTransition {
     && typeof entry.reason === "string" && entry.reason.length > 0
     && entry.reason.length <= 2000 && entry.reason.trim() === entry.reason
     && !entry.reason.includes("\u0000")
-    && ["SURVEY", "REQUIREMENT", "PROTOTYPE"].includes(entry.target as string);
+    && ["SURVEY", "REQUIREMENT", "PROTOTYPE", "SOLUTION"].includes(entry.target as string);
 }
 function readTransitionPending(): PendingTransition | null {
   if (!transitionStorageKey) return null;
@@ -224,13 +225,15 @@ function supportedItem(value: string): value is SupportedChecklistItemKey {
 }
 function mayRecord() {
   return mayStart() && workflow.value?.state === "ACTIVE"
-    && ["HANDOVER", "SURVEY", "REQUIREMENT"].includes(workflow.value.current_stage ?? "");
+    && (["HANDOVER", "SURVEY", "REQUIREMENT"].includes(workflow.value.current_stage ?? "")
+      || props.prototypeWorkflowEnabled === true && workflow.value.current_stage === "PROTOTYPE");
 }
 function mayTransition() {
   const currentKey = workflow.value?.current_stage ?? null;
   const current = workflow.value?.stages.find((stage) => stage.stage_key === currentKey);
   return mayStart() && workflow.value?.state === "ACTIVE"
-    && ["HANDOVER", "SURVEY", "REQUIREMENT"].includes(currentKey ?? "")
+    && (["HANDOVER", "SURVEY", "REQUIREMENT"].includes(currentKey ?? "")
+      || props.prototypeWorkflowEnabled === true && currentKey === "PROTOTYPE")
     && transitionTargetForStage(currentKey) !== null && current?.state === "ACTIVE"
     && current.checklist_items.every((item) => item.state === "PASS");
 }
@@ -599,6 +602,10 @@ onUnmounted(() => { mounted = false; generation += 1; });
           <p v-if="checklistTarget.qualification.stage_key === 'REQUIREMENT'">
             本次覆盖 {{ checklistTarget.qualification.requirement_version_refs.length }} 个正式需求版本及
             {{ checklistTarget.qualification.review_round_refs.length }} 个真实批准轮次；仅显示数量，具体标识不在页面暴露。</p>
+          <p v-if="checklistTarget.qualification.stage_key === 'PROTOTYPE'">
+            本次包含 {{ checklistTarget.qualification.qualified_subjects.filter((subject) => subject.subject_type === 'REQ-03').length }} 个正式需求主体、
+            {{ checklistTarget.qualification.qualified_subjects.filter((subject) => subject.subject_type === 'PRT-03').length }} 个已批准原型主体；
+            资格预览不是正式通过，提交时服务器会再次核对范围决定、评审、制品完整性和覆盖关系。</p>
         </template>
         <template v-else>
           <label>未满足原因（必填）

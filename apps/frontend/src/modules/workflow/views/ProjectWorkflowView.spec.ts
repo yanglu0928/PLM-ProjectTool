@@ -65,11 +65,11 @@ async function page(auth: SessionClient, reader: WorkflowReadClient, starter?: W
   qualifications?: WorkflowChecklistQualificationClient,
   checklistRecords?: WorkflowChecklistRecordClient,
   transitions?: WorkflowTransitionClient,
-  path = `/projects/${id}/workflow`) {
+  path = `/projects/${id}/workflow`, prototypeWorkflowEnabled = false) {
   const router = createAppRouter(createMemoryHistory());
   await router.push(path); await router.isReady();
   const wrapper = mount(ProjectWorkflowView, { props: { session: auth, workflows: reader, starter,
-    qualifications, checklistRecords, transitions },
+    qualifications, checklistRecords, transitions, prototypeWorkflowEnabled },
     global: { plugins: [router] } });
   await flushPromises();
   return { wrapper, router };
@@ -102,6 +102,16 @@ function requirementSnapshot(passed = false, etag = passed ? '"v11"' : '"v9"') {
     })),
   });
 }
+function prototypeSnapshot(passed = false, etag = passed ? '"v15"' : '"v13"') {
+  const current = snapshot(true);
+  return parseWorkflow({ ...current, current_stage: "PROTOTYPE", etag,
+    stages: current.stages.map((stage, index) => ({ ...stage,
+      state: index < 3 ? "COMPLETED" : index === 3 ? "ACTIVE" : "NOT_STARTED",
+      checklist_items: stage.checklist_items.map((item) => ({ ...item,
+        state: index < 3 || index === 3 && passed ? "PASS" : "PENDING" })),
+    })),
+  });
+}
 function qualification(item: "HANDOVER_BASELINE" | "HANDOVER_ISSUES" = "HANDOVER_BASELINE") {
   return Object.freeze({ workflow_id: workflowId, project_id: id, definition_version: 1 as const,
     stage_key: "HANDOVER" as const, item_key: item, current_item_state: "PENDING" as const,
@@ -123,6 +133,17 @@ function requirementQualification(item: "REQUIREMENT_FORMAL_VERSIONS" | "REQUIRE
     requirement_version_refs: Object.freeze([analysisId]),
     review_round_refs: Object.freeze([reviewRoundId]),
     evidence_refs: Object.freeze([evidenceId]) });
+}
+function prototypeQualification() {
+  return Object.freeze({ workflow_id: workflowId, project_id: id, definition_version: 1 as const,
+    stage_key: "PROTOTYPE" as const, item_key: "PROTOTYPE_SCOPE_DECISIONS" as const,
+    current_item_state: "PENDING" as const, workflow_etag: '"v13"',
+    qualified_subjects: Object.freeze([
+      Object.freeze({ subject_type: "PRT-03" as const, subject_id: otherId,
+        subject_version_id: checklistRecordId, review_round_ref: id }),
+      Object.freeze({ subject_type: "REQ-03" as const, subject_id: analysisId,
+        subject_version_id: reviewRoundId, review_round_ref: evidenceId }),
+    ]), evidence_refs: Object.freeze([evidenceId]) });
 }
 function checklistReceipt(result: "PASS" | "FAIL" = "PASS"): WorkflowChecklistFirstReceipt {
   return Object.freeze({ is_current_state_proof: false as const, first_record: Object.freeze({
@@ -391,6 +412,48 @@ describe("ProjectWorkflowView", () => {
     expect(wrapper.text()).not.toContain(analysisId);
     expect(wrapper.text()).not.toContain(reviewRoundId);
     wrapper.unmount();
+  });
+
+  it("keeps Prototype controls closed by default and shows only counts when explicitly enabled", async () => {
+    const auth = await session(true);
+    const reader = new WorkflowReadClient(
+      vi.fn().mockImplementation(() => Promise.resolve(
+        response(prototypeSnapshot(), '"v13"'))) as typeof fetch,
+    );
+    const closed = await page(auth, reader);
+    expect(closed.wrapper.findAll("button").some((button) =>
+      button.text() === "核验并记录通过")).toBe(false);
+    closed.wrapper.unmount();
+
+    const qualifications = new WorkflowChecklistQualificationClient();
+    const get = vi.spyOn(qualifications, "get").mockResolvedValue(prototypeQualification());
+    const enabled = await page(auth, reader, undefined, qualifications, undefined, undefined,
+      `/projects/${id}/workflow`, true);
+    const pass = enabled.wrapper.findAll("button").find((button) =>
+      button.text() === "核验并记录通过");
+    expect(pass).toBeDefined();
+    await pass!.trigger("click"); await flushPromises();
+    expect(get).toHaveBeenCalledWith(id, "PROTOTYPE_SCOPE_DECISIONS");
+    expect(enabled.wrapper.text()).toContain("1 个正式需求主体");
+    expect(enabled.wrapper.text()).toContain("1 个已批准原型主体");
+    expect(enabled.wrapper.text()).not.toContain(otherId);
+    expect(enabled.wrapper.text()).not.toContain(analysisId);
+    enabled.wrapper.unmount();
+  });
+
+  it("keeps Prototype to Solution hidden by default and requires two PASS when enabled", async () => {
+    const auth = await session(true);
+    const reader = new WorkflowReadClient(
+      vi.fn().mockImplementation(() => Promise.resolve(
+        response(prototypeSnapshot(true), '"v15"'))) as typeof fetch,
+    );
+    const closed = await page(auth, reader);
+    expect(closed.wrapper.text()).not.toContain("准备推进至 SOLUTION");
+    closed.wrapper.unmount();
+    const enabled = await page(auth, reader, undefined, undefined, undefined, undefined,
+      `/projects/${id}/workflow`, true);
+    expect(enabled.wrapper.text()).toContain("准备推进至 SOLUTION");
+    enabled.wrapper.unmount();
   });
 
   it("rejects a stale qualification instead of presenting a confirmation", async () => {
