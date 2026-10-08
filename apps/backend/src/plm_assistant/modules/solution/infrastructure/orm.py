@@ -385,12 +385,21 @@ class ReferenceSolutionVersionRow(Base):
                              deferrable=True, initially="DEFERRED"),
         ForeignKeyConstraint(["created_by"], ["plm.auth_users.user_id"],
                              name="fk_sol_reference_versions__creator", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["deidentification_confirmation_id", "source_fingerprint"],
+                             ["plm.sol_reference_deidentification_confirmations.confirmation_id",
+                              "plm.sol_reference_deidentification_confirmations.source_fingerprint"],
+                             name="fk_sol_reference_versions__confirmation_source", ondelete="NO ACTION"),
         CheckConstraint("(scope='GLOBAL' AND project_id IS NULL) OR "
                         "(scope='PROJECT' AND project_id IS NOT NULL)",
                         name="ck_sol_reference_versions__scope"),
         CheckConstraint("version_no>0", name="ck_sol_reference_versions__number"),
         CheckConstraint("version_state='DRAFT'", name="ck_sol_reference_versions__state"),
         CheckConstraint("octet_length(content_fingerprint)=32", name="ck_sol_reference_versions__fingerprint"),
+        CheckConstraint("octet_length(source_fingerprint)=32",
+                        name="ck_sol_reference_versions__source_fingerprint"),
+        CheckConstraint("(scope='GLOBAL' AND deidentification_confirmation_id IS NOT NULL) OR "
+                        "(scope='PROJECT' AND deidentification_confirmation_id IS NULL)",
+                        name="ck_sol_reference_versions__confirmation_scope"),
         CheckConstraint("jsonb_typeof(applicability)='object'", name="ck_sol_reference_versions__applicability"),
         CheckConstraint("char_length(source_project_class) BETWEEN 1 AND 128 AND "
                         "source_project_class=btrim(source_project_class)",
@@ -417,6 +426,8 @@ class ReferenceSolutionVersionRow(Base):
     source_project_class: Mapped[str] = mapped_column(Text, nullable=False)
     deidentification_class: Mapped[str] = mapped_column(Text, nullable=False)
     content_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    source_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    deidentification_confirmation_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     declared_document_count: Mapped[int] = mapped_column(Integer, nullable=False)
     declared_evidence_count: Mapped[int] = mapped_column(Integer, nullable=False)
     supersedes_version_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
@@ -481,6 +492,8 @@ class ReferenceDeidentificationConfirmationRow(Base):
 
     __tablename__ = "sol_reference_deidentification_confirmations"
     __table_args__ = (
+        UniqueConstraint("confirmation_id", "source_fingerprint",
+                         name="uq_sol_reference_deidentification__id_source"),
         ForeignKeyConstraint(["confirmed_by"], ["plm.auth_users.user_id"],
                              name="fk_sol_reference_deidentification__actor", ondelete="NO ACTION"),
         CheckConstraint("octet_length(source_fingerprint)=32",

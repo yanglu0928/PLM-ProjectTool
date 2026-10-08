@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/SOL-01-A04-P03-P01 依据CR-SOL-007为ReferenceVersion增独立32字节来源指纹与GLOBAL人工确认ID复合FK，PROJECT确认ID必须为空；0139写入仍关闭。兼容性/升级：0143线性迁移；旧ReferenceVersion若已有行拒升且保留，其他历史数据可升级；空表可降0142，非空拒降，离线SQL含执行时保护。验证：Win11隔离PG18.6空/已有业务数据、旧版本拒升、正负Scope/指纹/FK、降级重升/drift通过；后端3298通过/3跳过/4824子例。已知问题：静态Schema不替代动态来源与确认重验，正式Owner、实际人工确认、HTTP/UI、Gate3/发行待；Debian13依指令跳过。
+
 - 2026-10-08：0.1.0-dev.0/SOL-01-A04-P02-P03-P03-P03-P02 增加隔离 PG18.6/私有文件真实 Auth、DocumentVersion/FileObject、GLOBAL Document 级和解析 TEXT_RANGE 节点 Evidence 与内部确认/资格/撤销组合脚本；正常链通过，错误范围、源文件/解析结果字节篡改、Evidence 和确认撤销拒绝。兼容性/升级：仅验证/追溯文档，无生产代码/API/Schema/依赖变化，不需升级。验证：Win11独立 PG/文件脚本退出0、Alembic drift 无新增操作；后端全量本项未重跑（前次3298通过/3跳过）。已知问题：License/身份/文件为测试材料，真实登录/用户人工核查、HTTP/UI/ReferenceVersion绑定、Gate3/发行未验；Debian13依指令跳过。
 
 - 2026-10-08：0.1.0-dev.0/SOL-01-A04-P02-P03-P03-P03-P01 增加隔离 PG18.6 真实 Auth Session/CSRF/管理员仓储与 GLOBAL 人工确认、读取、撤销内部组合验证；正确权限链通过，错误 CSRF 和撤销 Session 拒绝。兼容性/升级：仅验证脚本与追溯文档，无程序接口、Schema、迁移、依赖或配置变化，不需升级。验证：Windows11临时PG脚本退出0，前序迁移/撤销回归再运行；后端全量本项未重跑（上一任务3298通过/3跳过）。已知问题：合成凭据未走登录，License/Document/Evidence 来源仍为合成，真实文件/用户确认/HTTP/Gate3/发行未验；Debian13依指令跳过。

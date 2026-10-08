@@ -10706,3 +10706,10 @@
 - Decision：确认与资格测试接真实 Auth/DocumentVersion/FileObject/Evidence 仓储、物理源文件和解析结果 SHA-256，覆盖整文与 `TEXT_RANGE` 节点；License 仍为合成 Port。Evidence `REVOKED` 后不得复原，因此分别验证 Evidence 来源失败与确认 Proof 撤销失败，不更改该历史规则。
 - Reason：之前各 Port 单测及合成来源不能证明实际文件/PG 交互。独立脚本确认正常来源成功、错误范围/源文件或解析结果篡改/Evidence 撤销/确认撤销拒绝；脚本退出0，Alembic drift 无增量。
 - Impact/Rollback：只增加隔离验证脚本和追溯文档，无 Schema/API/依赖/生产业务变更，不需迁移。真实登录/License、用户人工核查与 HTTP/UI 未验；Gate3不变。
+
+# DEC-20261008-1110：ReferenceVersion 单独固定来源指纹并复合绑定人工确认
+
+- Date/WBS：2026-10-08 / `SOL-01-A04-P03-P01`；依据 CR-SOL-007、冻结 DM-05、Schema0139/0142 与隔离 PG18.6。
+- Decision：版本内容摘要与来源集合摘要分列；GLOBAL 版本需确认 ID 并以 `(ID, 来源指纹)` 复合 FK 指向确认账本，PROJECT 版本确认 ID 必为空。旧 ReferenceVersion 不能可信补指纹，迁移遇已有行明确拒绝；空表降级，非空拒降；离线 SQL 保留数据库执行时历史守卫。
+- Reason：裸确认 UUID 或复用正文摘要均不能证明固定来源集合相同。PG 正/负例、旧行拒升/新行拒降、降级重升/drift通过，后端3298/3/4824通过。
+- Impact/Rollback：新增0143与ORM静态绑定，不修改冻结提交、API、权限、依赖或客户数据；既有其他业务数据原样保留。0139 Reference Owner 仍关闭，动态来源/确认当前性、正式版本写入、HTTP/UI/实际人工核查及 Gate3 待后续。

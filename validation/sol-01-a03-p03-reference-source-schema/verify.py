@@ -43,6 +43,8 @@ def verify(port: int) -> None:
     url = URL.create("postgresql+psycopg", username="poc_admin",
                      host="127.0.0.1", port=port, database="postgres")
     cfg = create_migration_config(url)
+    # Exercise the original 0139 schema before later binding columns are added.
+    command.downgrade(cfg, "20261008_0139")
     with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
                          dbname="postgres", autocommit=True) as db:
         actor = db.execute(
