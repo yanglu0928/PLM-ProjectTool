@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-04-A06 静态核查 Section GET/LIST 前置：已有身份表/同项目约束，但缺独立读策略、Owner/仓储、HTTP 与列表游标；登记 GET 内部→可选HTTP→Windows 注入及 LIST 独立序列。兼容性/升级：仅进度与 CR 状态文档，无程序、Schema、Migration、API 或依赖变化；施工顺序可调整，冻结合同不改。验证：静态对账，未运行新测试。已知问题：GET/LIST/UI、正式目标账户/Server2025/性能、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-04-A05 将 Section CREATE 接入 Windows 显式写平台组合，缺依赖 fail closed；默认/登录专用/只读不注入。兼容性/升级：无 Schema/Migration/依赖/前端或冻结 API 变化；撤下写模式注入可回滚，历史保留。验证：Win11隔离PG18.6真实ASGI/Session/角色/重放/License、缺依赖拒启动及 PROJECT Reference 夹具通过；后端3386通过/3跳过/5100子例。已知问题：正式目标账户/公钥/Vault/HTTPS生产启动、Section只读/UI、Server2025/性能、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-04-A04 新增可选 Section CREATE HTTP，严格 Session/Origin/CSRF/幂等与初态 201/ETag/Location，默认应用仍404。兼容性/升级：冻结 API-04 内实现，无 Schema/Migration/依赖/前端变化；撤下可选 Router 可回滚，历史保留。验证：Win11隔离PG18.6真实ASGI/Session/角色/重放/跨项目/License/默认关闭及 PROJECT Reference 夹具通过；后端3386通过/3跳过/5100子例。已知问题：Windows显式组合/只读/UI、正式目标账户/Server2025/性能、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。

@@ -1,6 +1,6 @@
 # CR-SOL-012：SolutionSection 身份 CREATE Owner 安全解锁
 
-日期：2026-10-09；状态：`INTERNAL_OWNER_VERIFIED_HTTP_PENDING`。依据 CR-EXEC-001 持续授权自主实施；Gate 2 冻结提交 `64cdf09` 保留不追写。TraceLink：API-04/DM-05/SC-01 → CR-SOL-001/002、SOL-03-A01 → SOL-04-A01 → 本 CR → SOL-04-A02/A03。0147 闭锁存储与 0148 内部 Owner/Guard 已按本 CR 实施并在 Win11 隔离 PG 验证；公开 HTTP/Windows 生产组合/前端/发行仍未验。
+日期：2026-10-09；状态：`CREATE_OWNER_HTTP_WINDOWS_SYNTHETIC_VERIFIED`。依据 CR-EXEC-001 持续授权自主实施；Gate 2 冻结提交 `64cdf09` 保留不追写。TraceLink：API-04/DM-05/SC-01 → CR-SOL-001/002、SOL-03-A01 → SOL-04-A01 → 本 CR → SOL-04-A02～A06。0147 闭锁存储与 0148 内部 Owner/Guard、可选 HTTP 和 Windows 显式写模式已在 Win11 隔离 PG/合成信任源验证；正式目标账户/生产启动、只读、前端、Server2025、性能与发行仍未验。
 
 ## 冲突与选择
 
