@@ -45,8 +45,12 @@ NOW = datetime(2026, 10, 8, tzinfo=timezone.utc)
 
 
 class Repo:
-    def __init__(self, lock): self.lock = lock
-    def lock_complete_scope(self, transaction, *, project_id): return self.lock
+    def __init__(self, lock):
+        self.lock, self.calls = lock, 0
+
+    def lock_complete_scope(self, transaction, *, project_id):
+        self.calls += 1
+        return self.lock
 
 
 class Current:
@@ -194,6 +198,15 @@ class RequirementWorkflowQualificationTests(unittest.TestCase):
             formal.qualification_fingerprint,
             acceptance.qualification_fingerprint,
         )
+
+    def test_combined_owner_result_uses_one_locked_scope_scan(self):
+        owner = self._owner()
+        lock, result = owner.qualify_with_scope_in_transaction(
+            object(), self._query("REQUIREMENT_ACCEPTANCE"),
+        )
+        self.assertIs(lock, self.lock)
+        self.assertEqual("REQUIREMENT_ACCEPTANCE", result.item_key)
+        self.assertEqual(1, owner._repo.calls)
 
     def test_rejects_current_issue_missing_scope_and_wrong_item(self):
         self.current.issues = ("PENDING_CONFIRMATION",)

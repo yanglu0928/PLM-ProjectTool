@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A11-A05-P04-P04 按CR-PRT-005消除Prototype资格事务中Requirement完整范围的重复扫描，Requirement Owner仍独立完成当前版本/Evidence/Review证明；SQL由约77降至63条/请求，Uvicorn loopback20并发P95约594/632ms，改善但未达500ms，性能FAIL。兼容性/升级：仅内部Owner Port/装配，无公开API、Schema、依赖或数据迁移；恢复旧两次扫描可回滚，历史不变。验证：混合/漂移/冲突/覆盖/隔离/多原型PG/HTTP回归退出0，后端3246通过/3跳过/4795子例。已知问题：剩余SQL/文件成本、Server2025、生产信任源/入口、Gate3/UAT/发行待；Debian13依指令跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A11-A05-P04-P03 增加Windows11隔离PG18.6真实Uvicorn loopback 20并发Prototype资格网络预检及撤权后PG/HTTP回归；网络两项P95中位约710/714ms，功能/ETag正确但仍不达500ms，性能FAIL。兼容性/升级：仅验证工具/CR/进度/状态，无生产代码、Schema、API、依赖或迁移；撤验证扩展即可回滚。验证：Uvicorn随机loopback、代理绕行后脚本退出0，撤权隔离链退出0；后端全量沿用上轮3245/3/4795。已知问题：约77条SQL/请求与文件成本、Server2025、生产信任源/入口、Gate3/UAT/发行待；Debian13依指令跳过。
 
 - 2026-10-08：0.1.0-dev.0/PRT-01-A11-A05-P04-P02 按CR-PRT-005为只读资格预览新增仅活动项目PROJECT_MANAGER可用的共享授权锁，写命令继续排他锁；真实PG两笔预览共存、成员撤权更新等待，旧全NOT_REQUIRED链与后端3245通过/3跳过/4795子例。兼容性/升级：不改公开API、Schema、依赖或数据，无迁移；可撤预览新策略/共享锁并保留历史。验证：非仪表化20并发P95默认池约753/748ms、诊断20+0池约697/683ms，仍未达到500ms，性能保持FAIL。已知问题：剩余SQL/文件成本、Uvicorn网络、Server2025、生产信任源/入口、Gate3/UAT/发行待；Debian13依指令跳过。

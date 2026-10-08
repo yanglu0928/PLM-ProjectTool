@@ -298,7 +298,6 @@ def _create_qualification_registry(
         if not callable(getattr(artifact_storage, "verify_content", None)):
             raise ProductionWorkflowChecklistStartupError()
         prototype = PrototypeWorkflowQualificationOwner(
-            requirement_scope=requirement_repository,
             requirement_owner=requirement,
             acceptance_refs=SqlAlchemyRequirementAcceptanceRefsProof(),
             roots=SqlAlchemyPrototypeWorkflowScopeRepository(),

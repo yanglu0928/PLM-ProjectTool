@@ -58,15 +58,10 @@ from .workflow_version_links import PrototypeWorkflowVersionLinksLock
 _ITEMS = frozenset({"PROTOTYPE_SCOPE_DECISIONS", "PROTOTYPE_COVERAGE"})
 
 
-class RequirementScopePort(Protocol):
-    def lock_complete_scope(self, transaction: object, *, project_id: uuid.UUID
-                            ) -> RequirementWorkflowScopeLock | None: ...
-
-
 class RequirementQualificationPort(Protocol):
-    def qualify_only_current_in_transaction(
+    def qualify_with_scope_in_transaction(
         self, transaction: object, query: CurrentChecklistQualificationQuery,
-    ) -> AggregateChecklistQualification: ...
+    ) -> tuple[RequirementWorkflowScopeLock, AggregateChecklistQualification]: ...
 
 
 class PrototypeRootsPort(Protocol):
@@ -89,8 +84,7 @@ class ReviewRoundPort(Protocol):
 
 class PrototypeWorkflowQualificationOwner:
     def __init__(
-        self, *, requirement_scope: RequirementScopePort,
-        requirement_owner: RequirementQualificationPort,
+        self, *, requirement_owner: RequirementQualificationPort,
         acceptance_refs: RequirementAcceptanceRefsProofPort,
         roots: PrototypeRootsPort, versions: PrototypeVersionsPort,
         current: PrototypeVersionCurrentValidator,
@@ -99,11 +93,10 @@ class PrototypeWorkflowQualificationOwner:
         reviews: ReviewRoundPort, clock=None,
     ) -> None:
         if any(value is None for value in (
-                requirement_scope, requirement_owner, acceptance_refs,
+                requirement_owner, acceptance_refs,
                 roots, versions, current, artifact_integrity,
                 decision_audit, reviews)):
             raise ValueError("Prototype Workflow proof dependencies required")
-        self._req_scope = requirement_scope
         self._req_owner = requirement_owner
         self._acceptance = acceptance_refs
         self._roots = roots
@@ -128,23 +121,21 @@ class PrototypeWorkflowQualificationOwner:
             if type(root_locks) is not tuple or any(
                     type(root) is not PrototypeRootLock for root in root_locks):
                 raise ValueError("Prototype root scope unavailable")
-            requirement_lock = self._req_scope.lock_complete_scope(
-                transaction, project_id=query.project_id)
-            if type(requirement_lock) is not RequirementWorkflowScopeLock:
-                raise ValueError("Requirement scope unavailable")
-            requirement_lock.__post_init__()
-            requirement_qualification = (
-                self._req_owner.qualify_only_current_in_transaction(
+            requirement_lock, requirement_qualification = (
+                self._req_owner.qualify_with_scope_in_transaction(
                     transaction, CurrentChecklistQualificationQuery(
                         query.session_token, query.trace_id,
                         query.project_id, "REQUIREMENT_ACCEPTANCE",
                     ),
                 )
             )
-            if (type(requirement_qualification) is not AggregateChecklistQualification
+            if (type(requirement_lock) is not RequirementWorkflowScopeLock
+                    or requirement_lock.project_id != query.project_id
+                    or type(requirement_qualification) is not AggregateChecklistQualification
                     or requirement_qualification.project_id != query.project_id
                     or requirement_qualification.item_key != "REQUIREMENT_ACCEPTANCE"):
                 raise ValueError("Requirement qualification unavailable")
+            requirement_lock.__post_init__()
             requirement_qualification.__post_init__()
             requirements = self._requirements(
                 transaction, query.project_id, requirement_lock,

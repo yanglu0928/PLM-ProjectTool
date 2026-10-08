@@ -66,14 +66,12 @@ from plm_assistant.modules.workflow.application.checklist_qualification import (
 NOW = datetime(2026, 10, 8, tzinfo=timezone.utc)
 
 
-class _RequirementScope:
-    def __init__(self, lock): self.lock = lock
-    def lock_complete_scope(self, *_a, **_k): return self.lock
-
-
 class _RequirementOwner:
-    def __init__(self, qualification): self.qualification = qualification
-    def qualify_only_current_in_transaction(self, *_a): return self.qualification
+    def __init__(self, lock, qualification):
+        self.lock, self.qualification = lock, qualification
+
+    def qualify_with_scope_in_transaction(self, *_a):
+        return self.lock, self.qualification
 
 
 class _Acceptance:
@@ -169,8 +167,7 @@ def _owner(base, roots, versions, *, current=None, integrity=None,
            audit=None, review=None, acceptance=None):
     project, _req, _version, _criterion, lock, qualified, refs = base
     return PrototypeWorkflowQualificationOwner(
-        requirement_scope=_RequirementScope(lock),
-        requirement_owner=_RequirementOwner(qualified),
+        requirement_owner=_RequirementOwner(lock, qualified),
         acceptance_refs=_Acceptance(refs if acceptance is None else acceptance),
         roots=_Roots(roots), versions=_Versions(versions),
         current=_Current(current), artifact_integrity=_Integrity(integrity),

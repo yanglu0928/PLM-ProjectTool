@@ -59,3 +59,9 @@ Windows11隔离PG18.6/pgvector、真实Approved Prototype/Review/Trace/Link和�
 实施与复验：新预览策略还显式拒绝ARCHIVED，保持旧写策略的归档边界；真实SQL为`FOR SHARE OF prj_projects, prj_project_members, prj_departments`。隔离PG两笔并行预览事务可共存，同一成员撤权UPDATE在持锁期间触发预期lock_timeout；原写策略仍`FOR UPDATE`。仪表化预检中该授权语句122次合计约1.1秒（旧排他锁约88秒），说明主要串行点被移除。关闭SQL事件计时后的三轮20并发P95中位：默认池约752.69/748.22ms，全链路诊断20+0池约696.74/683.13ms；均仍高于500ms，因此性能状态仍FAIL，生产入口继续关闭。后端3245通过/3跳过/4795子例、旧全NOT_REQUIRED隔离PG/HTTP回归通过；后续仍须补Uvicorn loopback、跨线程撤权后的资格拒绝和剩余SQL/文件成本分析。不能以本机共享锁改善替代发行验收。
 
 P04-P03已补真实Uvicorn loopback：同一隔离Windows11/PG18.6实例、同一授权及20并发/三轮，在不读取系统代理的测试客户端下，`PROTOTYPE_SCOPE_DECISIONS` P95中位710.31ms、`PROTOTYPE_COVERAGE`714.07ms，全部返回200/强ETag/阶段正确；健康端点对照约83.28ms。首次客户端使用默认环境代理导致空502，非应用响应，隔离工具改`trust_env=False`后复验通过；不改生产代理配置。撤权后资格与写命令404、无Checklist历史的既有PG/HTTP隔离用例重跑通过。网络链仍未达500ms，不开放生产Prototype入口；每请求约77条SQL和文件证明成本仍需独立优化，不能把Uvicorn实测描述为正式发行SLA。
+
+## 2026-10-08 A05-P04-P04 候选优化：消除Requirement完整范围重复扫描
+
+同一Prototype资格事务中，Prototype Owner先调用Requirement仓储`lock_complete_scope`，随后Requirement Owner的`qualify_only_current_in_transaction`又调用相同仓储重扫一次；SQL诊断中多个Requirement子表查询每请求出现两次。拒绝跨请求缓存或跳过当前版本、证据、Review证明。选择由Requirement Owner新增内部组合方法，在自身同一事务内**一次**获取完整锁定范围并完成原资格证明，同时返回`(locked_scope, qualification)`给Prototype Owner；原Requirement独立资格接口仍调用此方法但仅返回证明，保持外部行为与失败关闭不变。Prototype Owner不再持有单独的Requirement仓储依赖，不能接受调用方提供的未验证范围。风险为返回范围与证明身份错配、异常映射或锁生命周期变化；验证须包括单元正反例、SQL计数减少、隔离PG真实Owner/HTTP的缺Link/文件漂移/跨项目/撤权/多原型及20并发、后端全量回归。无Schema/API/权限/数据迁移；回滚恢复原两次扫描，历史不变，生产入口在性能和安全证据齐全前继续关闭。
+
+实施复验：Requirement Owner内部新增一次扫描的组合返回，独立Requirement调用行为不变，Prototype Owner仅消费该Owner返回的锁和资格且仍核对Project/Item/Subject/Version。SQL诊断相同122次请求由9394降至7686条（每请求约77→63）；Windows11隔离PG18.6真实Uvicorn loopback、三轮20并发、无SQL计时器的两项P95中位约594.00/632.23ms，均仍高于500ms，不能标性能PASS。混合范围缺决定/文件漂移/双重认领、部分Coverage、ILLUSTRATES、跨项目、撤权与多原型并集的隔离PG/HTTP负例顺序回归退出0；后端3246通过/3跳过/4795子例。生产入口继续关闭。下一步可分析仍存在的约63条SQL/请求及文件证明时间，不以降低强证明或放宽阈值代替优化。

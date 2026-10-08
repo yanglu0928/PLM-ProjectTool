@@ -253,6 +253,13 @@ class RequirementWorkflowQualificationOwner:
         self, transaction: object,
         query: CurrentChecklistQualificationQuery,
     ) -> AggregateChecklistQualification:
+        return self.qualify_with_scope_in_transaction(transaction, query)[1]
+
+    def qualify_with_scope_in_transaction(
+        self, transaction: object,
+        query: CurrentChecklistQualificationQuery,
+    ) -> tuple[RequirementWorkflowScopeLock, AggregateChecklistQualification]:
+        """Return Owner-locked complete scope and qualification in one scan."""
         if (transaction is None
                 or type(query) is not CurrentChecklistQualificationQuery
                 or query.item_key not in _ITEMS):
@@ -280,7 +287,7 @@ class RequirementWorkflowQualificationOwner:
                 scope_evidence=scope_evidence, decisions=decision_proofs,
             )
             result.__post_init__()
-            return result
+            return lock, result
         except ChecklistQualificationError:
             raise
         except Exception:
