@@ -43,6 +43,16 @@ function requirementWorkflow(etag = '"v9"') {
         required: true, state: index <= 2 ? "PASS" : "PENDING" })),
     })), etag });
 }
+function prototypeWorkflow(etag = '"v13"', secondState: "PASS" | "PENDING" = "PASS") {
+  return parseWorkflow({ workflow_id: workflowId, version: 1, state: "ACTIVE",
+    current_stage: "PROTOTYPE", stages: stages.map(([stageKey, first, second], index) => ({
+      stage_key: stageKey, order: index + 1,
+      state: index < 3 ? "COMPLETED" : index === 3 ? "ACTIVE" : "NOT_STARTED",
+      checklist_items: [first, second].map((itemKey, itemIndex) => ({ item_key: itemKey,
+        required: true, state: index < 3 || index === 3 && (itemIndex === 0 || secondState === "PASS")
+          ? "PASS" : "PENDING" })),
+    })), etag });
+}
 function transition(extra: Record<string, unknown> = {}) {
   return { stage_transition_id: transitionId, workflow_id: workflowId, project_id: projectId,
     definition_version: 1, from_stage: "HANDOVER", to_stage: "SURVEY",
@@ -120,6 +130,26 @@ describe("WorkflowTransitionClient", () => {
     expect(post).toHaveBeenCalledWith(projectId,
       JSON.stringify({ target_stage_key: "PROTOTYPE", reason: "Requirement facts accepted",
         gate_snapshot_refs: [] }), '"v9"', "synthetic-requirement-transition-0001");
+  });
+
+  it("derives SOLUTION only from two current Prototype PASS items", async () => {
+    const result = transition({ from_stage: "PROTOTYPE", to_stage: "SOLUTION",
+      before_workflow_version: 13, transitioned_workflow_version: 14,
+      current_workflow_version: 14, reason: "Prototype facts accepted", etag: '"v14"' });
+    const { transitions, post } = client(response(result, 200, '"v14"'));
+    const receipt = await transitions.transition(projectId, { before: prototypeWorkflow(),
+      reason: "  Prototype facts accepted  ",
+      idempotency_key: "synthetic-prototype-transition-0001" });
+    expect(receipt.first_transition.to_stage).toBe("SOLUTION");
+    expect(receipt.is_current_state_proof).toBe(false);
+    expect(post).toHaveBeenCalledWith(projectId,
+      JSON.stringify({ target_stage_key: "SOLUTION", reason: "Prototype facts accepted",
+        gate_snapshot_refs: [] }), '"v13"', "synthetic-prototype-transition-0001");
+    await expect(transitions.transition(projectId, {
+      before: prototypeWorkflow('"v13"', "PENDING"), reason: "not ready",
+      idempotency_key: "synthetic-prototype-transition-0002",
+    })).rejects.toMatchObject({ code: "WORKFLOW_TRANSITION_INVALID_INPUT" });
+    expect(post).toHaveBeenCalledTimes(1);
   });
 
   it("rejects an invalid transition response pair as uncertain", async () => {

@@ -230,6 +230,7 @@ function mayTransition() {
   const currentKey = workflow.value?.current_stage ?? null;
   const current = workflow.value?.stages.find((stage) => stage.stage_key === currentKey);
   return mayStart() && workflow.value?.state === "ACTIVE"
+    && ["HANDOVER", "SURVEY", "REQUIREMENT"].includes(currentKey ?? "")
     && transitionTargetForStage(currentKey) !== null && current?.state === "ACTIVE"
     && current.checklist_items.every((item) => item.state === "PASS");
 }
