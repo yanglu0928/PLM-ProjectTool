@@ -14,6 +14,8 @@ from plm_assistant.modules.solution.api.section_create import create_section_cre
 from plm_assistant.modules.solution.api.outline_list import create_outline_list_router
 from plm_assistant.modules.solution.api.outline_read import create_outline_read_router
 from plm_assistant.modules.solution.api.section_read import create_section_read_router
+from plm_assistant.modules.solution.api.section_list import create_section_list_router
+from plm_assistant.modules.solution.api.section_list_cursor import SectionListCursorCodec
 from plm_assistant.modules.solution.api.outline_list_cursor import OutlineListCursorCodec
 from plm_assistant.modules.solution.application.create_outline import OutlineCreateService
 from plm_assistant.modules.solution.application.create_section import SectionCreateService
@@ -95,6 +97,33 @@ def create_windows_outline_list_router(
             repository=SqlAlchemyOutlineReadRepository(),
         )
         return create_outline_list_router(
+            sessions=sessions, origins=origins, reads=service,
+            cursors=cursors)
+    except Exception:
+        raise ProductionSolutionOutlineStartupError() from None
+
+
+def create_windows_section_list_router(
+    *, runtime, sessions, origins, license_guard,
+    cursors: SectionListCursorCodec,
+) -> APIRouter:
+    """Mount Section LIST only with dedicated signed cursor and read trust."""
+    if any(value is None for value in (
+            runtime, sessions, origins, license_guard, cursors)):
+        raise ProductionSolutionOutlineStartupError()
+    if type(cursors) is not SectionListCursorCodec:
+        raise ProductionSolutionOutlineStartupError()
+    try:
+        service = SectionReadService(
+            unit_of_work=runtime.unit_of_work,
+            access=SqlAlchemyProjectReadAccess(),
+            license_guard=license_guard,
+            authorization=ProjectAuthorizationService(
+                unit_of_work=runtime.unit_of_work,
+                repository=SqlAlchemyProjectAuthorizationRepository()),
+            repository=SqlAlchemySectionReadRepository(),
+        )
+        return create_section_list_router(
             sessions=sessions, origins=origins, reads=service,
             cursors=cursors)
     except Exception:
