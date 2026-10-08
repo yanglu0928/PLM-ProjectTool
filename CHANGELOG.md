@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A11-A03-P02 新增当前批准 PrototypeVersion、批准终态/Trace 清单及 ACTIVE Link 的只读锁定输入，陈旧指针/旧版 Link/不规范 Coverage 失败关闭；仍不开放 Workflow 资格。兼容性/升级：无 Schema、API、生产依赖或迁移，部署同步代码即可；停止装配可回滚，历史不变。验证：定向4项、后端3222项/3跳过通过。已知问题：A03真实 Requirement/Review/Evidence/Artifact/Trace/Audit 聚合Owner、A04接线、A05 PG/HTTP、Server2025、Gate3/UAT/发行待；Debian13依指令跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A11-A03-P01 新增 Prototype Workflow 事务范围锁与 NOT_REQUIRED 决定四方一致性证明，拒绝陈旧/篡改/不完整/未定义范围；该适配器尚未接入 Workflow，不构成资格通过。兼容性/升级：无 Schema、API、生产依赖或迁移变化，部署同步代码即可；停止装配可回滚且历史不变。验证：定向10项、后端3218项/3跳过通过；真实PG组合留后续。已知问题：A03其余证据Owner、A04 Workflow接线、A05 PG/HTTP、Server2025、Gate3/UAT/发行待；Debian13依用户指令跳过。
 
 - 2026-10-08：0.1.0-dev.0/PRT-01-A11-A02 新增 Prototype Workflow 纯范围/覆盖策略，按当前 Approved Requirement 完整集合核对 NOT_REQUIRED 与 Approved PrototypeVersion 两侧，拒绝空范围、遗漏、冲突、陈旧指针、跨项目及无效Link；只有精确ACTIVE的VALIDATES/ACCEPTANCE_REFERENCE Link覆盖全部验收标准才满足必要条件。CR-PRT-005/DEC-1073记录后续只读资格预览兼容增量及真实Owner边界。兼容性/升级/回滚：无Schema、运行API、依赖或迁移；删除新纯策略即可回滚，历史不变。验证：定向7、后端3218项/3跳过PASS。已知问题：当前仅纯策略，A03真实Owner、A04 Workflow接线、A05 Win11/PG/HTTP、Server2025、Gate3/UAT/发行待；Debian13跳过。
