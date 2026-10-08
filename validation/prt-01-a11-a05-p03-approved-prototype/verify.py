@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import concurrent.futures
 import hashlib
+import json
 import math
 import re
 import runpy
@@ -12,6 +13,7 @@ import shutil
 import socket
 import statistics
 import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -201,6 +203,11 @@ class NetworkTimelineProbe:
     def mark(self, key: str, milestone: str) -> None:
         with self.lock:
             self.times.setdefault(key, {})[milestone] = time.perf_counter()
+
+    def merge_client(self, records: dict[str, dict[str, float]]) -> None:
+        with self.lock:
+            for key, marks in records.items():
+                self.times.setdefault(key, {}).update(marks)
 
     async def __call__(self, scope, receive, send):
         if scope["type"] != "http":
@@ -432,9 +439,11 @@ def _measure_read_load(app, prefix: str, headers: dict[str, str], runtime,
 def _measure_network_read_load(app, prefix: str,
                                headers: dict[str, str], runtime,
                                *, timeline_diagnostic: bool = False,
+                               external_client: bool = False,
                                ) -> dict[str, float]:
     """Use a real Uvicorn loopback socket without changing trust policy."""
-    timeline = NetworkTimelineProbe(app) if timeline_diagnostic else None
+    timeline = NetworkTimelineProbe(app) if (
+        timeline_diagnostic or external_client) else None
     measured_app = timeline if timeline is not None else app
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
         listener.bind(("127.0.0.1", 0))
@@ -454,11 +463,31 @@ def _measure_network_read_load(app, prefix: str,
                 time.sleep(.05)
             if not server.started:
                 raise RuntimeError("isolated Uvicorn loopback failed to start")
-            result = _measure_read_load(
-                app, prefix, headers, runtime,
-                network_url=f"http://127.0.0.1:{port}",
-                timeline=timeline,
-            )
+            if external_client:
+                payload = json.dumps({
+                    "base_url": f"http://127.0.0.1:{port}",
+                    "prefix": prefix, "headers": headers,
+                })
+                parent_started = time.perf_counter()
+                child = subprocess.run(
+                    [sys.executable, str(ROOT / "validation/prt-01-a11-a05-p04-read-load/network_client.py")],
+                    input=payload, text=True, capture_output=True, timeout=90,
+                    check=True,
+                )
+                parent_finished = time.perf_counter()
+                observed = json.loads(child.stdout)
+                assert parent_started <= observed["clock_probe"] <= parent_finished
+                assert timeline is not None
+                timeline.merge_client(observed["times"])
+                result = observed["metrics"]
+                print("PRT_A05_P04_EXTERNAL_CLIENT "
+                      f"health_p95_ms={observed['health']:.2f} p95={result}")
+            else:
+                result = _measure_read_load(
+                    app, prefix, headers, runtime,
+                    network_url=f"http://127.0.0.1:{port}",
+                    timeline=timeline,
+                )
             if timeline is not None:
                 timeline.report()
             print(f"PRT_A05_P04_NETWORK_DIAGNOSTIC port={port} p95={result}")
@@ -565,7 +594,8 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
                        network_load: bool = False,
                        pipeline_probe: bool = False,
                        phase_diagnostic: bool = False,
-                       timeline_diagnostic: bool = False) -> None:
+                       timeline_diagnostic: bool = False,
+                       external_client: bool = False) -> None:
     project = ids["project"]
     second = additional_requirement if mixed_not_required else None
     if mixed_not_required:
@@ -1068,16 +1098,18 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
             expanded_runtime.dispose()
         if network_load:
             file_proof_since = len(storage.proof_ms)
-            if phase_diagnostic:
+            if phase_diagnostic or external_client:
                 with QualificationPhaseProbe() as timer:
                     network_p95 = _measure_network_read_load(
                         app, prefix, read_headers, runtime,
+                        external_client=external_client,
                     )
                 timer.report()
             else:
                 network_p95 = _measure_network_read_load(
                     app, prefix, read_headers, runtime,
                     timeline_diagnostic=timeline_diagnostic,
+                    external_client=external_client,
                 )
             assert set(network_p95) == set(ITEMS)
             _print_file_proof_timing(storage, file_proof_since, "network")
@@ -1218,7 +1250,8 @@ def main(*, mixed_not_required: bool = False,
          network_load: bool = False,
          pipeline_probe: bool = False,
          phase_diagnostic: bool = False,
-         timeline_diagnostic: bool = False) -> None:
+         timeline_diagnostic: bool = False,
+         external_client: bool = False) -> None:
     if conflicting_decision and not mixed_not_required:
         raise ValueError("conflict mode requires mixed scope")
     if coverage_mode not in {None, "partial", "illustrates"}:
@@ -1260,6 +1293,7 @@ def main(*, mixed_not_required: bool = False,
                 pipeline_probe=pipeline_probe,
                 phase_diagnostic=phase_diagnostic,
                 timeline_diagnostic=timeline_diagnostic,
+                external_client=external_client,
                 **context,
             ),
         )
