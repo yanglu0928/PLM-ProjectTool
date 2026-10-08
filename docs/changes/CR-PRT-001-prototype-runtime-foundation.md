@@ -256,3 +256,11 @@ Migration0134新增RequirementPrototypeLink表/ORM，以Requirement/Prototype逻
 复合FK关闭错端点；purpose/Coverage V1基础形状、ACTIVE逻辑对唯一性、不可逆终态及同身份同purpose且载荷
 变化的延迟replacement闭包由数据库保护。首轮不受支持的JSONB函数表达已改为原生减键判空并从新库重跑；
 Win11/PG18.6、后端3157/3及wheel1214项/`1ebf51a5…588d94`通过。无公开API/依赖/外发，进入A03 Owner。
+
+## A08-A03 实施记录（2026-10-08）
+
+新增RequirementPrototypeLink内部CREATE/LIST Service与PostgreSQL Repository，补齐四项Link授权策略。CREATE
+在同一事务证明当前Approved双端、批准Manifest、owned RequirementRef、A07当前事实及固定需求全部验收条件，
+Coverage规范化后精确分区；Link/Audit/receipt原子提交，重放仍重证当前事实，LIST按项目隔离保留历史。首轮
+负权限验收预期与既有防枚举合同不符，仅将脚本期望修正为`RESOURCE_NOT_FOUND`后完整重跑。Win11/PG18.6、
+定向39、后端3165/3及wheel1216项/`5d5ba5ed…7c7d6a0a`通过；无Migration/公开API/依赖/外发，进入A04生命周期。

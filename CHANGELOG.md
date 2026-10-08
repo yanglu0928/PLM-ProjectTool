@@ -1,5 +1,13 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A08-A03 新增RequirementPrototypeLink内部CREATE/LIST Owner与PostgreSQL
+  Repository；事务内证明当前Approved双端、批准Manifest、owned RequirementRef、A07当前事实及
+  AcceptanceCriterion全集，Coverage V1精确分区，并将Link/Audit/receipt原子提交；项目内历史列表保持
+  防枚举隔离。兼容性/回滚：无Migration、公开API、依赖或外发，Schema head保持0134；停止装配可关闭新入口，
+  历史保留。验证：Win11/PG18.6真实授权/幂等/冲突/隔离/漂移，定向39、后端3165/3、compileall、wheel
+  1216项/`5d5ba5ed…7c7d6a0a`PASS。已知问题：A04生命周期、A09 HTTP/Windows组合、前端、Workflow、
+  Server2025、Gate3/UAT/发行待；Debian13跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A08-A02 新增RequirementPrototypeLink ORM与Migration0134；固定同项目
   Requirement/Prototype身份及Version复合引用、三类purpose、Coverage V1基础形状、ACTIVE逻辑对唯一性和
   不可逆撤销/同语义替换闭包。兼容性/升级：前向加表，不改公开API/依赖/外发；空Link历史可降0133，有历史

@@ -1,5 +1,16 @@
 # 自主决策记录
 
+## DEC-20261008-1048：Link创建重证当前事实且未授权项目保持防枚举语义
+
+- Date/WBS：2026-10-08 / `PRT-01-A08-A03`；依据DEC-1046/1047、冻结PRT-05与Project授权核心。
+- Decision：CREATE在同一事务重证当前Approved双端、Prototype批准Manifest、owned RequirementRef、完整
+  AcceptanceCriterion集合及A07当前输入Validator；Coverage规范化后精确分区。Link/Audit/receipt原子提交，
+  LIST保留项目内全历史。非成员沿用授权核心的`RESOURCE_NOT_FOUND`防枚举语义，不新增可探测错误。
+- Reason：Schema基础JSON约束不能证明Coverage业务完整性；只在首次创建验证会让幂等重放绕过已漂移事实；
+  单独返回“权限不足”会泄露项目存在性。
+- Impact/Rollback：新增内部Application/Repository及四项冻结授权策略，无Migration/公开API/依赖/外发；
+  停止装配关闭新入口，历史保留。Win11/PG18.6、后端3165/3及wheel1216项通过；A04生命周期仍待。
+
 ## DEC-20261008-1047：Link替换用ACTIVE唯一键释放加延迟同语义闭包
 
 - Date/WBS：2026-10-08 / `PRT-01-A08-A02`；依据DEC-1046与PRT-05 A-PRJ生命周期。
