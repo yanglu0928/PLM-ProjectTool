@@ -241,3 +241,11 @@ compileall及wheel1212项/`343e2067…e77992c`通过；无新Schema/公开API/�
 Review create/start、PrototypeVersion IN_REVIEW绑定、SubjectSnapshot、Audit及持久收据在同一UOW提交。
 当前事实漂移零落地，同Key从持久事实重放并重证Owner访问，异载荷冲突。Win11/PG18.6、定向10、后端
 3156/3、compileall及wheel1213项/`fe215815…45e557`通过；无Schema/公开HTTP/依赖/外发。A07完成，进入A08 Link。
+
+## A08-A01 前置核查（2026-10-08）
+
+RequirementPrototypeLink固定为独立PROJECT append-only/supersede Aggregate，不以Trace或Version owned ref
+替代。CREATE必须同时证明两端当前Approved、PrototypeVersion已有相同RequirementVersionRef、批准Review及
+Artifact当前有效；Coverage V1把固定RequirementVersion的AcceptanceCriterion全集精确分为covered与带理由
+uncovered且至少一项covered。替换只允许同Requirement/Prototype身份和同purpose，A08拆为Schema0134、
+Create/List Owner及Revoke/Supersede Owner；本项纯文档，无Schema/API/外发。

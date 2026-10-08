@@ -1,5 +1,17 @@
 # 自主决策记录
 
+## DEC-20261008-1046：Link Coverage按验收条件全集分区并与批准Version双重闭合
+
+- Date/WBS：2026-10-08 / `PRT-01-A08-A01`；依据冻结PRT-05/API-04、CR-PRT-001及DEC-1040～1045。
+- Decision：RequirementPrototypeLink独立于TraceLink和Version owned RequirementRef；CREATE只接受两端当前
+  Approved固定Version，并要求PrototypeVersion已拥有该RequirementVersion。Coverage V1把固定需求的全部
+  AcceptanceCriterion精确分为covered和带理由uncovered两组，至少一项covered；当前有效性还重证批准Review
+  与Artifact。SUPERSEDE仅允许同Requirement/Prototype身份及同purpose，状态历史不可恢复。
+- Reason：冻结基线给出“覆盖范围和未覆盖项”但没有JSON字段；自由文本、计数或单表存在性均无法证明完整覆盖，
+  也会允许向不可变PrototypeVersion事后补入新需求或借替换偷换语义。
+- Impact/Rollback：A08拆为Schema0134、CREATE/LIST Owner、REVOKE/SUPERSEDE Owner三项，A09才接公开HTTP。
+  本项纯文档；后续空Link历史可降，有历史只前向修复。Server2025不从Win11外推，Debian13按指令跳过。
+
 ## DEC-20261008-1045：Prototype业务送审复用统一Review持久层并隐藏中间DRAFT
 
 - Date/WBS：2026-10-08 / `PRT-01-A07-A04`；依据冻结`PRT_VERSION_SUBMIT_REVIEW`、DEC-1042～1044。

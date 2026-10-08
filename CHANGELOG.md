@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A08-A01 完成RequirementPrototypeLink前置核查：Link与Trace/Version
+  RequirementRef职责分离，CREATE固定两端当前Approved事实和owned ref双重一致；Coverage V1按固定需求的
+  AcceptanceCriterion全集划分covered/带理由uncovered，至少一项covered；替换仅限同逻辑身份及同purpose。
+  兼容性/回滚：纯文档，无Schema/API/代码/依赖/外发；后续分Schema0134、Create/List与生命周期Owner实施。
+  已知问题：A02～A04、HTTP/Windows组合、前端、Workflow、Server2025、Gate3/UAT/发行待；Debian13跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A07-A04 新增原子PrototypeVersion送审Service，固定
   `PRT-03 + PROTOTYPE_ALL_V1`及ProjectManager权限，把Reviewer锁定、Review create/start、Version绑定、
   Audit和持久收据纳入同一UOW；同Key持久重放重证Owner访问，异载荷冲突。兼容性/回滚：无Migration、公开
