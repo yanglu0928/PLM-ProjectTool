@@ -73,7 +73,7 @@ def user(db, name: str, token: bytes, csrf: bytes) -> uuid.UUID:
     return actor
 
 
-def verify(port: int, scratch: Path) -> None:
+def verify(port: int, scratch: Path, on_created=None) -> None:
     token, csrf = b"p" * 32, b"q" * 32
     member_token, member_csrf = b"m" * 32, b"n" * 32
 
@@ -198,14 +198,22 @@ def verify(port: int, scratch: Path) -> None:
             member_request, member_csrf, "Member Reference", "m" * 16)
         member_created = service.create(member_cmd)
         assert member_created.created_by == member
+        if on_created is not None:
+            on_created(port=port, scratch=scratch, locator=locator, content=content,
+                       runtime=runtime, service=service, sources=sources,
+                       audit=audit, license_guard=license_guard, project=project,
+                       other_project=other_project, manager=manager, member=member,
+                       document_version=version, evidence=evidence,
+                       token=token, csrf=csrf)
         with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
                              dbname="postgres", autocommit=True) as db:
+            expected_count = 2 + (1 if on_created is not None else 0)
             assert db.execute("SELECT count(*) FROM plm.sol_reference_solutions "
                               "WHERE scope='PROJECT' AND project_id=%s",
-                              (project,)).fetchone()[0] == 2
+                              (project,)).fetchone()[0] == expected_count
             assert db.execute("SELECT count(*) FROM plm.aud_events WHERE "
                               "action='SOL_REFERENCE_CREATED' AND target_project_id=%s",
-                              (project,)).fetchone()[0] == 2
+                              (project,)).fetchone()[0] == expected_count
             db.execute("UPDATE plm.prj_project_members SET state='SUSPENDED',"
                        "lock_version=lock_version+1 WHERE user_id=%s AND project_id=%s",
                        (manager, project))
@@ -227,7 +235,7 @@ def verify(port: int, scratch: Path) -> None:
           "cross-project, revoke, tamper and replay")
 
 
-def main() -> None:
+def main(on_created=None) -> None:
     scratch = Path(tempfile.mkdtemp(prefix="plm-sol-project-ref-pg-"))
     if not str(scratch).isascii():
         raise RuntimeError("ASCII temporary PostgreSQL path required")
@@ -247,7 +255,7 @@ def main() -> None:
                    "-l", str(scratch / "postgres.log"),
                    "-o", f"-h 127.0.0.1 -p {port}", "-w", "start", detached=True)
         started = True
-        verify(port, scratch)
+        verify(port, scratch, on_created=on_created)
     finally:
         if started:
             helper.run(str(binary / "pg_ctl.exe"), "-D", str(data), "-m", "fast", "-w", "stop")
