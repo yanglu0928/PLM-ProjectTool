@@ -61,6 +61,23 @@ def checklist_qualification_preview_data(
                 "review_round_ref": str(preview.review_round_ref),
                 "evidence_refs": [str(value) for value in preview.evidence_refs],
             }
+        if preview.stage_key == "PROTOTYPE":
+            return {
+                "workflow_id": str(preview.workflow_id),
+                "project_id": str(preview.project_id),
+                "definition_version": preview.definition_version,
+                "stage_key": preview.stage_key,
+                "item_key": preview.item_key,
+                "current_item_state": preview.current_item_state,
+                "workflow_etag": preview.workflow_etag,
+                "qualified_subjects": [{
+                    "subject_type": value.subject_type,
+                    "subject_id": str(value.subject_id),
+                    "subject_version_id": str(value.subject_version_id),
+                    "review_round_ref": str(value.review_round_ref),
+                } for value in preview.qualified_subjects],
+                "evidence_refs": [str(value) for value in preview.evidence_refs],
+            }
         return {
             "workflow_id": str(preview.workflow_id),
             "project_id": str(preview.project_id),

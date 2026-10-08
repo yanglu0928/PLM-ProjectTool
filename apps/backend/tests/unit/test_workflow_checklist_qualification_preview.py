@@ -13,9 +13,14 @@ from plm_assistant.modules.project.application.authorization import (
     ProjectAuthorizationError,
 )
 from plm_assistant.modules.workflow.application.preview_checklist_qualification import (
+    QualifiedChecklistSubject,
+    WorkflowChecklistQualificationPreview,
     WorkflowChecklistQualificationPreviewError,
     WorkflowChecklistQualificationPreviewQuery,
     WorkflowChecklistQualificationPreviewService,
+)
+from plm_assistant.modules.workflow.api.qualification_preview import (
+    checklist_qualification_preview_data,
 )
 from plm_assistant.modules.workflow.application.checklist_qualification import (
     AggregateChecklistQualification, ChecklistQualificationError,
@@ -214,6 +219,74 @@ class WorkflowChecklistQualificationPreviewTests(unittest.TestCase):
         self.assertEqual(aggregate.review_round_refs,
                          result.review_round_refs)
         self.assertEqual(aggregate.evidence_refs, result.evidence_refs)
+
+    def test_prototype_preview_projects_mixed_subjects_without_changing_old_shapes(self):
+        requirement, requirement_version = uuid4(), uuid4()
+        prototype, prototype_version = uuid4(), uuid4()
+        evidence = ChecklistQualificationEvidence(
+            uuid4(), self.project, 1, b"e" * 32, self.now,
+        )
+        req_review = ChecklistQualificationReview(
+            uuid4(), uuid4(), self.project, requirement,
+            requirement_version, 1, b"r" * 32, self.now,
+            "REQ-03", "REQUIREMENT_ALL_V1",
+        )
+        prt_review = ChecklistQualificationReview(
+            uuid4(), uuid4(), self.project, prototype,
+            prototype_version, 1, b"p" * 32, self.now,
+            "PRT-03", "PROTOTYPE_ALL_V1",
+        )
+        aggregate = AggregateChecklistQualification(
+            self.project, "PROTOTYPE", "PROTOTYPE_COVERAGE", (
+                ChecklistQualificationSubject(
+                    "PRT-03", prototype, prototype_version,
+                    b"p" * 32, (), prt_review,
+                ),
+                ChecklistQualificationSubject(
+                    "REQ-03", requirement, requirement_version,
+                    b"r" * 32, (evidence,), req_review,
+                ),
+            ), (), b"s" * 32, b"q" * 32,
+        )
+        self.workflows.get.return_value = self._view(
+            current="PROTOTYPE", lock=7,
+        )
+        self.qualification.qualify_only_current_in_transaction.return_value = aggregate
+        preview = self.service.get(self._query(item_key="PROTOTYPE_COVERAGE"))
+        payload = checklist_qualification_preview_data(preview)
+        self.assertEqual("PROTOTYPE", preview.stage_key)
+        self.assertEqual((), preview.requirement_version_refs)
+        self.assertEqual((), preview.review_round_refs)
+        self.assertEqual(2, len(preview.qualified_subjects))
+        self.assertEqual({"workflow_id", "project_id", "definition_version",
+                          "stage_key", "item_key", "current_item_state",
+                          "workflow_etag", "qualified_subjects", "evidence_refs"},
+                         set(payload))
+        self.assertEqual(["PRT-03", "REQ-03"],
+                         [item["subject_type"] for item in payload["qualified_subjects"]])
+        self.assertEqual([str(evidence.evidence_id)], payload["evidence_refs"])
+
+    def test_prototype_preview_rejects_empty_or_misaligned_subjects(self):
+        subject = QualifiedChecklistSubject("REQ-03", uuid4(), uuid4(), uuid4())
+        baseline = WorkflowChecklistQualificationPreview(
+            self.workflow, self.project, 1, "PROTOTYPE", "PROTOTYPE_COVERAGE",
+            "PENDING", 7, None, None, self.evidence,
+            qualified_subjects=(subject,),
+        )
+        self.assertEqual((subject,), baseline.qualified_subjects)
+        with self.assertRaises(WorkflowChecklistQualificationPreviewError):
+            WorkflowChecklistQualificationPreview(
+                self.workflow, self.project, 1, "PROTOTYPE", "PROTOTYPE_COVERAGE",
+                "PENDING", 7, None, None, self.evidence,
+            )
+        with self.assertRaises(WorkflowChecklistQualificationPreviewError):
+            WorkflowChecklistQualificationPreview(
+                self.workflow, self.project, 1, "PROTOTYPE", "PROTOTYPE_COVERAGE",
+                "PENDING", 7, None, None, self.evidence,
+                requirement_version_refs=(subject.subject_version_id,),
+                review_round_refs=(subject.review_round_ref,),
+                qualified_subjects=(subject,),
+            )
 
     def test_invalid_query_and_non_current_stage_fail_before_owner(self):
         for query in (

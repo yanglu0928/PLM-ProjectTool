@@ -32,6 +32,8 @@ _ITEM_STAGES = {
     "SURVEY_CONCLUSION": "SURVEY",
     "REQUIREMENT_FORMAL_VERSIONS": "REQUIREMENT",
     "REQUIREMENT_ACCEPTANCE": "REQUIREMENT",
+    "PROTOTYPE_SCOPE_DECISIONS": "PROTOTYPE",
+    "PROTOTYPE_COVERAGE": "PROTOTYPE",
 }
 
 
@@ -50,6 +52,21 @@ class WorkflowChecklistQualificationPreviewQuery:
 
 
 @dataclass(frozen=True, slots=True)
+class QualifiedChecklistSubject:
+    subject_type: str
+    subject_id: uuid.UUID
+    subject_version_id: uuid.UUID
+    review_round_ref: uuid.UUID
+
+    def __post_init__(self) -> None:
+        if (self.subject_type not in {"REQ-03", "PRT-03"}
+                or any(type(value) is not uuid.UUID or value.int == 0 for value in (
+                    self.subject_id, self.subject_version_id,
+                    self.review_round_ref))):
+            raise WorkflowChecklistQualificationPreviewError("WORKFLOW_UNAVAILABLE")
+
+
+@dataclass(frozen=True, slots=True)
 class WorkflowChecklistQualificationPreview:
     workflow_id: uuid.UUID
     project_id: uuid.UUID
@@ -64,6 +81,7 @@ class WorkflowChecklistQualificationPreview:
     survey_conclusion_id: uuid.UUID | None = None
     requirement_version_refs: tuple[uuid.UUID, ...] = ()
     review_round_refs: tuple[uuid.UUID, ...] = ()
+    qualified_subjects: tuple[QualifiedChecklistSubject, ...] = ()
 
     @property
     def workflow_etag(self) -> str:
@@ -111,17 +129,37 @@ class WorkflowChecklistQualificationPreview:
                     and self.handover_analysis_version_id.int != 0
                     and self.survey_conclusion_id is None and single_round
                     and not self.requirement_version_refs
-                    and not self.review_round_refs)
+                    and not self.review_round_refs
+                    and not self.qualified_subjects)
         if self.stage_key == "SURVEY":
             return (type(self.survey_conclusion_id) is uuid.UUID
                     and self.survey_conclusion_id.int != 0
                     and self.handover_analysis_version_id is None
                     and single_round and not self.requirement_version_refs
-                    and not self.review_round_refs)
-        return (self.stage_key == "REQUIREMENT"
-                and self.handover_analysis_version_id is None
+                    and not self.review_round_refs and not self.qualified_subjects)
+        if self.stage_key == "REQUIREMENT":
+            return (self.handover_analysis_version_id is None
+                    and self.survey_conclusion_id is None
+                    and self.review_round_ref is None and aggregate
+                    and not self.qualified_subjects)
+        if self.stage_key != "PROTOTYPE":
+            return False
+        subjects = self.qualified_subjects
+        if (type(subjects) is not tuple or not subjects
+                or any(type(value) is not QualifiedChecklistSubject
+                       for value in subjects)):
+            return False
+        order = tuple((value.subject_type, value.subject_id.int,
+                       value.subject_version_id.int) for value in subjects)
+        return (self.handover_analysis_version_id is None
                 and self.survey_conclusion_id is None
-                and self.review_round_ref is None and aggregate)
+                and self.review_round_ref is None
+                and not self.requirement_version_refs
+                and not self.review_round_refs
+                and order == tuple(sorted(order))
+                and len({value.subject_id for value in subjects}) == len(subjects)
+                and len({value.subject_version_id for value in subjects}) == len(subjects)
+                and len({value.review_round_ref for value in subjects}) == len(subjects))
 
 
 class PreviewSessionPort(Protocol):
@@ -218,14 +256,27 @@ class WorkflowChecklistQualificationPreviewService:
                     )
                 result.__post_init__()
                 if type(result) is AggregateChecklistQualification:
-                    preview = WorkflowChecklistQualificationPreview(
-                        before.workflow_id, before.project_id, before.version,
-                        result.stage_key, query.item_key, item_state,
-                        before.lock_version, None, None,
-                        result.evidence_refs, None,
-                        result.subject_version_refs,
-                        result.review_round_refs,
-                    )
+                    if result.stage_key == "PROTOTYPE":
+                        preview = WorkflowChecklistQualificationPreview(
+                            before.workflow_id, before.project_id, before.version,
+                            result.stage_key, query.item_key, item_state,
+                            before.lock_version, None, None,
+                            result.evidence_refs, None,
+                            qualified_subjects=tuple(QualifiedChecklistSubject(
+                                subject.subject_type, subject.subject_id,
+                                subject.subject_version_id,
+                                subject.review.review_round_id,
+                            ) for subject in result.subjects),
+                        )
+                    else:
+                        preview = WorkflowChecklistQualificationPreview(
+                            before.workflow_id, before.project_id, before.version,
+                            result.stage_key, query.item_key, item_state,
+                            before.lock_version, None, None,
+                            result.evidence_refs, None,
+                            result.subject_version_refs,
+                            result.review_round_refs,
+                        )
                 else:
                     preview = WorkflowChecklistQualificationPreview(
                         before.workflow_id, before.project_id, before.version,
