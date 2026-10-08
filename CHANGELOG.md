@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-02-A04 新增 SolutionOutline 项目 CREATE 可选 HTTP，严格 Session/CSRF/Origin、路径 ProjectId、Idempotency-Key 与仅名称正文，返回201/ETag/Location；默认应用保持404。兼容性/升级：冻结 API-04 内实现细化，无新 Schema/依赖/数据迁移；停止注入路由可回滚，历史保留。验证：合同4/13子例、Win11隔离PG18.6真实 Session/ASGI 角色/重放/异常及后端3364通过/3跳过/5016子例。已知问题：Windows正式组合、Location详情GET、UI、正式信任源、Server2025、20并发、Gate3/UAT/发行未验；Debian13当前实机依指令暂跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-02-A03 新增 SolutionOutline 受权内部创建、同事务 Audit/持久幂等与不可变首次 201 快照；迁移0146仅开放合规目录/快照 INSERT，以延迟约束拒绝无快照根，Section/UPDATE/DELETE/TRUNCATE仍关闭。兼容性/升级：无公开 API/新依赖，0145→0146 线性升级，空历史可回退、有目录拒降。验证：Win11隔离PG18.6真实Session/角色/并发同Key/拒绝/回滚、A02回归及后端3360通过/3跳过/5003子例。已知问题：公开HTTP/UI、正式License/目标账户、Server2025、20并发、Gate3/UAT/发行未验；Debian13当前实机依指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-02-A02 新增目录 CREATE 首次结果快照 Schema/ORM（0145），为后续原 Key 不可变 201 重放预备持久层；目录根与快照仍拒绝写入。兼容性/升级：无公开 API/权限/依赖变更，0144→0145 线性升级，空表可降级，有快照拒降。验证：Win11隔离PG18.6空/有数据升级、降级重升、drift/FK/名称/重复/写保护/历史拒降通过；后端3356通过/3跳过/4990子例。已知问题：内部 Owner/有界 INSERT、HTTP/UI、正式信任源、Server2025、20并发、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
