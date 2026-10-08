@@ -234,3 +234,10 @@ wheel1210项/`10ba4ab5…7f784f`通过；无公开API/依赖/外发，进入应�
 后验重读Manifest及ACTIVE边，重放不重复创建。故障注入证明Trace首写失败时Review决策、Version/Root、结果、
 边、Manifest、Audit和收据整体回滚；批准幂等重放再次核验Manifest/ACTIVE边。Win11/PG18.6、后端3153/3、
 compileall及wheel1212项/`343e2067…e77992c`通过；无新Schema/公开API/依赖/外发，A03完成，进入原子Submit业务编排。
+
+## A07-A04 实施记录（2026-10-08）
+
+新增固定`PRT-03 + PROTOTYPE_ALL_V1`的Prototype业务送审Service与ProjectManager授权策略；Reviewer锁定、
+Review create/start、PrototypeVersion IN_REVIEW绑定、SubjectSnapshot、Audit及持久收据在同一UOW提交。
+当前事实漂移零落地，同Key从持久事实重放并重证Owner访问，异载荷冲突。Win11/PG18.6、定向10、后端
+3156/3、compileall及wheel1213项/`fe215815…45e557`通过；无Schema/公开HTTP/依赖/外发。A07完成，进入A08 Link。

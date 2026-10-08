@@ -1,5 +1,16 @@
 # 自主决策记录
 
+## DEC-20261008-1045：Prototype业务送审复用统一Review持久层并隐藏中间DRAFT
+
+- Date/WBS：2026-10-08 / `PRT-01-A07-A04`；依据冻结`PRT_VERSION_SUBMIT_REVIEW`、DEC-1042～1044。
+- Decision：固定`PRT-03 + PROTOTYPE_ALL_V1`，由Prototype业务外层在单一UOW内完成ProjectManager授权、
+  Reviewer锁定、Review create/start、Version绑定、Audit和收据；不让客户端串行调用两个通用Review端点。
+  重放从持久Review事实恢复首次结果并重证当前Subject访问，不从请求重建或重复创建。
+- Reason：两次客户端调用会暴露无Round的DRAFT Review并留下中间提交；业务外层还必须在Review创建前重验
+  Prototype完整当前事实，通用端点不能代表冻结业务命令的原子语义。
+- Impact/Rollback：新增内部Application Service和ProjectManager策略，无Schema/公开Router/依赖/外发；停止
+  装配可关闭新送审，历史保留。Win11/PG18.6漂移零落地、持久重放/冲突/权限/License及3156/3回归通过。
+
 ## DEC-20261008-1044：批准Trace由业务终态同事务投影并以后验闭包拒绝半提交
 
 - Date/WBS：2026-10-08 / `PRT-01-A07-A03-P03`；依据DEC-1043、Migration0133与统一Review事务合同。

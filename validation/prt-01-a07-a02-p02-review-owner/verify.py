@@ -59,6 +59,11 @@ from plm_assistant.modules.prototype.application.approval_trace import (
 from plm_assistant.modules.prototype.application.review_subject import (
     PrototypeReviewSubjectOwner,
 )
+from plm_assistant.modules.prototype.application.submit_review import (
+    PrototypeReviewSubmissionError,
+    PrototypeReviewSubmissionService,
+    SubmitPrototypeVersionReview,
+)
 from plm_assistant.modules.prototype.infrastructure.review_subject_repository import (
     SqlAlchemyPrototypeReviewSubjectRepository,
 )
@@ -82,6 +87,9 @@ from plm_assistant.modules.review.application.start_round import (
     ReviewStartService,
     StartReviewRound,
 )
+from plm_assistant.modules.review.application.project_persistence import (
+    ProjectReviewPersistenceService,
+)
 from plm_assistant.modules.review.application.transition_command import (
     DecideReviewRound,
     ReviewTransitionCommandError,
@@ -91,6 +99,9 @@ from plm_assistant.modules.review.application.transition_command import (
 from plm_assistant.modules.review.domain.round_progress import ReviewDecisionKind
 from plm_assistant.modules.review.infrastructure.create_repository import (
     SqlAlchemyReviewCreationRepository,
+)
+from plm_assistant.modules.review.infrastructure.project_submission_repository import (
+    SqlAlchemyProjectReviewSubmissionRepository,
 )
 from plm_assistant.modules.review.infrastructure.start_repository import (
     SqlAlchemyReviewStartRepository,
@@ -112,7 +123,7 @@ Guard = fixture["Guard"]
 CSRF = b"c" * 32
 
 
-def main() -> None:
+def main(*, verify_submission: bool = False) -> None:
     database = "prt01a07p02_" + uuid.uuid4().hex[:8]
     with connect("postgres") as admin:
         admin.execute(sql.SQL("CREATE DATABASE {}").format(
@@ -539,6 +550,131 @@ def main() -> None:
                 "operation='V1_REVIEW_DECIDE' AND key_digest=%s",
                 (hashlib.sha256(failed_key.encode("ascii")).digest(),),
             ).fetchone()[0] == 0
+        if verify_submission:
+            recovered = transition.decide_idempotent(DecideReviewRound(
+                reviewer_token, CSRF, project, review_four, round_four,
+                uuid.uuid4(), ReviewDecisionKind.APPROVE,
+                "Approve after rollback proof",
+            ), idempotency_key=str(uuid.uuid4()))
+            assert recovered.state.value == "APPROVED"
+
+            fifth = create_version()
+            submission = PrototypeReviewSubmissionService(
+                unit_of_work=runtime.unit_of_work, access=access,
+                license_guard=guard, authorization=authorization,
+                reviewers=reviewers, receipts=receipts,
+                replay_repository=(
+                    SqlAlchemyProjectReviewSubmissionRepository()),
+                reviews=ProjectReviewPersistenceService(
+                    creation_repository=SqlAlchemyReviewCreationRepository(),
+                    round_repository=SqlAlchemyReviewStartRepository(),
+                    audit=audit, subjects=owner, clock=lambda: now,
+                ),
+                subjects=owner, clock=lambda: now,
+            )
+            submission_key = str(uuid.uuid4())
+            submit_command = SubmitPrototypeVersionReview(
+                manager_token, CSRF, uuid.uuid4(), project,
+                ids["prototype"], fifth.prototype_version_id,
+                (reviewer,), "PROTOTYPE_ALL_V1", submission_key,
+            )
+            with connect(database) as db, db.transaction():
+                db.execute("SET LOCAL session_replication_role='replica'")
+                db.execute(
+                    "UPDATE plm.doc_file_objects SET file_state='RESTRICTED' "
+                    "WHERE file_object_id=%s", (ids["file"],),
+                )
+            try:
+                submission.submit(submit_command)
+            except PrototypeReviewSubmissionError as error:
+                assert error.code == "BUSINESS_REVIEW_NOT_ELIGIBLE", error.code
+            else:
+                raise AssertionError("current input drift must block submission")
+            with connect(database) as db:
+                assert db.execute(
+                    "SELECT count(*) FROM plm.rvw_reviews WHERE "
+                    "subject_type='PRT-03' AND subject_id=%s AND "
+                    "review_state='IN_REVIEW'", (ids["prototype"],),
+                ).fetchone()[0] == 0
+                assert db.execute(
+                    "SELECT count(*) FROM plm.plt_idempotency_receipts WHERE "
+                    "operation='V1_PRT_VERSION_SUBMIT_REVIEW' AND "
+                    "key_digest=%s", (hashlib.sha256(
+                        submission_key.encode("ascii")).digest(),),
+                ).fetchone()[0] == 0
+            with connect(database) as db, db.transaction():
+                db.execute("SET LOCAL session_replication_role='replica'")
+                db.execute(
+                    "UPDATE plm.doc_file_objects SET file_state='AVAILABLE' "
+                    "WHERE file_object_id=%s", (ids["file"],),
+                )
+            submitted = submission.submit(submit_command)
+            replayed_submission = submission.submit(submit_command)
+            assert replayed_submission == submitted
+            try:
+                submission.submit(SubmitPrototypeVersionReview(
+                    manager_token, CSRF, uuid.uuid4(), project,
+                    ids["prototype"], fifth.prototype_version_id,
+                    (manager, reviewer), "PROTOTYPE_ALL_V1", submission_key,
+                ))
+            except PrototypeReviewSubmissionError as error:
+                assert error.code == "CONFLICT_IDEMPOTENCY", error.code
+            else:
+                raise AssertionError("changed payload must conflict")
+            try:
+                submission.submit(SubmitPrototypeVersionReview(
+                    reviewer_token, CSRF, uuid.uuid4(), project,
+                    ids["prototype"], fifth.prototype_version_id,
+                    (reviewer,), "PROTOTYPE_ALL_V1", str(uuid.uuid4()),
+                ))
+            except PrototypeReviewSubmissionError as error:
+                assert error.code == "RESOURCE_NOT_FOUND", error.code
+            else:
+                raise AssertionError("CustomerManager must not submit Review")
+            guard.enabled = False
+            try:
+                submission.submit(SubmitPrototypeVersionReview(
+                    manager_token, CSRF, uuid.uuid4(), project,
+                    ids["prototype"], fifth.prototype_version_id,
+                    (reviewer,), "PROTOTYPE_ALL_V1", str(uuid.uuid4()),
+                ))
+            except PrototypeReviewSubmissionError as error:
+                assert error.code == "LICENSE_OPERATION_DENIED", error.code
+            else:
+                raise AssertionError("invalid License must block submission")
+            finally:
+                guard.enabled = True
+            with connect(database) as db:
+                assert db.execute(
+                    "SELECT version_state,review_ref,review_round_ref FROM "
+                    "plm.prt_prototype_versions WHERE "
+                    "prototype_version_id=%s", (fifth.prototype_version_id,),
+                ).fetchone() == (
+                    "IN_REVIEW", submitted.review_id, submitted.round_id)
+                assert db.execute(
+                    "SELECT count(*) FROM plm.rvw_reviews WHERE review_id=%s "
+                    "AND review_state='IN_REVIEW' AND active_round_id=%s",
+                    (submitted.review_id, submitted.round_id),
+                ).fetchone()[0] == 1
+                assert db.execute(
+                    "SELECT count(*) FROM plm.rvw_review_rounds WHERE "
+                    "review_round_id=%s AND round_state='IN_REVIEW'",
+                    (submitted.round_id,),
+                ).fetchone()[0] == 1
+                assert db.execute(
+                    "SELECT count(*) FROM plm.plt_idempotency_receipts WHERE "
+                    "operation='V1_PRT_VERSION_SUBMIT_REVIEW' AND "
+                    "key_digest=%s AND result_ref_type="
+                    "'V1_PRT_VERSION_REVIEW_SUBMISSION'",
+                    (hashlib.sha256(
+                        submission_key.encode("ascii")).digest(),),
+                ).fetchone()[0] == 1
+                assert db.execute(
+                    "SELECT count(*) FROM plm.aud_events WHERE "
+                    "target_object_id IN (%s,%s) AND action IN "
+                    "('REVIEW_CREATED','REVIEW_STARTED')",
+                    (submitted.review_id, submitted.round_id),
+                ).fetchone()[0] == 2
         command.check(cfg)
         print(
             "PRT_01_A07_A02_P02_REVIEW_OWNER_PASS: real PROJECT Review "

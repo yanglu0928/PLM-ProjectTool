@@ -47,7 +47,7 @@ class ProjectAuthorizationTests(unittest.TestCase):
                                     operation=operation, resource_id=resource_id)
 
     def test_matrix_exact_for_four_roles(self):
-        self.assertEqual(len(POLICIES), 136)
+        self.assertEqual(len(POLICIES), 137)
         for operation in (
             "REQ_PACKAGE_LIST", "REQ_PACKAGE_GET", "REQ_LIST", "REQ_GET",
         ):
@@ -82,6 +82,9 @@ class ProjectAuthorizationTests(unittest.TestCase):
             "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER",
         }))
         self.assertTrue(POLICIES["PRT_VERSION_VALIDATE"].write)
+        self.assertEqual(POLICIES["PRT_VERSION_SUBMIT_REVIEW"].roles,
+                         frozenset({"PROJECT_MANAGER"}))
+        self.assertTrue(POLICIES["PRT_VERSION_SUBMIT_REVIEW"].write)
         for operation, roles in (
             ("REQ_PATCH", {"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}),
             ("REQ_DEFER", {"PROJECT_MANAGER", "CUSTOMER_MANAGER"}),

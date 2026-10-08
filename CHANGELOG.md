@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A07-A04 新增原子PrototypeVersion送审Service，固定
+  `PRT-03 + PROTOTYPE_ALL_V1`及ProjectManager权限，把Reviewer锁定、Review create/start、Version绑定、
+  Audit和持久收据纳入同一UOW；同Key持久重放重证Owner访问，异载荷冲突。兼容性/回滚：无Migration、公开
+  API、依赖或外发；停止装配关闭新入口，历史保留。验证：Win11/PG18.6当前事实漂移零落地、重放/冲突/角色/
+  License、定向10、后端3156/3、compileall、drift、wheel1213项/`fe215815…45e557`PASS。已知问题：Link、
+  HTTP/Windows组合、前端、Workflow、Server2025、Gate3/UAT/发行待；Debian13跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A07-A03-P03 新增Prototype Approval Trace Owner与Repository，并把
   APPROVED状态结果、当前事实重证、三类业务Version边、0133 Manifest、正式化、Audit和幂等收据纳入同一
   Review事务；非批准终态不投影，幂等重放不重复建边。兼容性/回滚：无新Migration、公开API、关系枚举、依赖

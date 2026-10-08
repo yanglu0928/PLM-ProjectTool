@@ -231,6 +231,7 @@ POLICIES: dict[str, _Policy] = {
     "PRT_VERSION_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "PRT_VERSION_VALIDATE": _Policy(
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
+    "PRT_VERSION_SUBMIT_REVIEW": _Policy(MANAGERS, True),
     "PROJECT_PATCH": _Policy(MANAGERS, True),
     "PROJECT_ARCHIVE": _Policy(MANAGERS, True),
     "PROJECT_MEMBER_LIST": _Policy(MEMBER_READERS, False),
