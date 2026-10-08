@@ -138,7 +138,7 @@ class UnusedDependency:
         raise AssertionError(f"Requirement qualification used {name}")
 
 
-def main(*, after_prototype=None) -> None:
+def main(*, after_prototype=None, include_second: bool = False) -> None:
     database = "req01a12a05_" + uuid.uuid4().hex[:8]
     pm_token, impl_token, reviewer_token = b"p" * 32, b"i" * 32, b"r" * 32
     with connect("postgres") as admin:
@@ -306,6 +306,76 @@ def main(*, after_prototype=None) -> None:
         ), idempotency_key=str(uuid.uuid4()))
         assert approved.state.value == "APPROVED"
 
+        def create_additional_requirement():
+            """Add a second formally approved synthetic Requirement for scope tests."""
+            second_root = RequirementIdentityCreateService(
+                **common, repository=SqlAlchemyRequirementIdentityCreateRepository(),
+            ).create_requirement(CreateRequirementIdentity(
+                pm_token, CSRF, uuid.uuid4(), ids["project"],
+                "REQ-WORKFLOW-002", str(uuid.uuid4()),
+            ))
+            second_version = RequirementVersionCreateService(
+                **common, repository=SqlAlchemyRequirementVersionCreateRepository(),
+                survey_sources=object(), handover_sources=object(),
+                human_decisions=object(), project_evidence=project_sources,
+                capability_sources=capability_sources, fixed_evidence=fixed_evidence,
+            ).create(CreateRequirementVersion(
+                impl_token, CSRF, uuid.uuid4(), ids["project"],
+                second_root.requirement_id, 0, True, None,
+                "Second synthetic requirement", "Second observable statement",
+                "Business rationale", "PLM", "HIGH", "MEDIUM",
+                "STANDARD_FUNCTION",
+                (RequirementSourceDraft(
+                    "PROJECT_EVIDENCE", project_evidence, None,
+                    (project_evidence,)),),
+                (RequirementAcceptanceDraft(
+                    "Second observable result", "Execute acceptance test",
+                    "Project data", "Windows 11", "Signed acceptance report"),),
+                (RequirementCapabilityAssessmentDraft(
+                    ids["baseline_version"], ids["capability_item"], "DIRECT",
+                    "Covered", "Use standard configuration", "HUMAN", "CONFIRMED",
+                    (RequirementAssessmentEvidenceDraft(
+                        standard_evidence, "STANDARD"),
+                     RequirementAssessmentEvidenceDraft(
+                        project_evidence, "PROJECT")),
+                ),), (), (), (), (), "Create second A05 fixture",
+                str(uuid.uuid4()),
+            ))
+            second_submission = RequirementReviewSubmissionService(
+                unit_of_work=runtime.unit_of_work,
+                access=SqlAlchemyProjectWriteAccess(), license_guard=guard,
+                authorization=authorization, reviewers=reviewers, receipts=receipts,
+                replay_repository=SqlAlchemyProjectReviewSubmissionRepository(),
+                reviews=ProjectReviewPersistenceService(
+                    creation_repository=SqlAlchemyReviewCreationRepository(),
+                    round_repository=SqlAlchemyReviewStartRepository(),
+                    audit=audit, subjects=owner, clock=lambda: now,
+                ), subjects=owner, clock=lambda: now,
+            ).submit(SubmitRequirementVersionReview(
+                pm_token, CSRF, uuid.uuid4(), ids["project"],
+                second_root.requirement_id,
+                second_version.requirement_version_id, (reviewer,),
+                "REQUIREMENT_ALL_V1", str(uuid.uuid4()),
+            ))
+            second_approval = ReviewTransitionCommandService(
+                unit_of_work=runtime.unit_of_work,
+                access=SqlAlchemyReviewStartAccess(), projects=authorization,
+                license_guard=guard, repository=SqlAlchemyReviewTransitionRepository(),
+                receipts=receipts, audit=audit, subjects=review_subjects,
+                clock=lambda: now,
+            ).decide_idempotent(DecideReviewRound(
+                reviewer_token, CSRF, ids["project"],
+                second_submission.review_id, second_submission.round_id,
+                uuid.uuid4(), ReviewDecisionKind.APPROVE,
+            ), idempotency_key=str(uuid.uuid4()))
+            assert second_approval.state.value == "APPROVED"
+            return (second_root, second_version.requirement_version_id,
+                    second_submission.round_id)
+
+        additional_requirement = (
+            create_additional_requirement() if include_second else None
+        )
+
         with connect(database) as db, db.transaction():
             workflow_id = workflow_fixture["initialize"](
                 db, ids["project"], pm,
@@ -363,6 +433,16 @@ def main(*, after_prototype=None) -> None:
         }
         with TestClient(app, base_url=ORIGIN) as client:
             previews = {}
+            expected_subjects = [
+                (root.requirement_id, created.requirement_version_id,
+                 submission.round_id),
+            ]
+            if additional_requirement is not None:
+                expected_subjects.append((
+                    additional_requirement[0].requirement_id,
+                    additional_requirement[1], additional_requirement[2],
+                ))
+            expected_subjects.sort(key=lambda value: value[0].int)
             for item in ITEMS:
                 response = client.get(
                     f"/api/v1/projects/{ids['project']}/workflow/checklist-items/"
@@ -372,9 +452,11 @@ def main(*, after_prototype=None) -> None:
                 value = response.json()["data"]
                 assert value["stage_key"] == "REQUIREMENT"
                 assert value["requirement_version_refs"] == [
-                    str(created.requirement_version_id),
+                    str(subject[1]) for subject in expected_subjects
                 ]
-                assert value["review_round_refs"] == [str(submission.round_id)]
+                assert value["review_round_refs"] == [
+                    str(subject[2]) for subject in expected_subjects
+                ]
                 assert value["evidence_refs"] == [str(project_evidence)]
                 assert "survey_conclusion_id" not in value
                 assert "review_round_ref" not in value
@@ -472,6 +554,14 @@ def main(*, after_prototype=None) -> None:
                 "b.ref_kind='REVIEW_ROUND' AND b.ref_id=%s",
                 (ids["project"], submission.round_id),
             ).fetchone()[0] == 2
+            if additional_requirement is not None:
+                assert db.execute(
+                    "SELECT count(*) FROM plm.wfl_checklist_record_refs b JOIN "
+                    "plm.wfl_checklist_records r ON r.record_id=b.record_id "
+                    "WHERE r.project_id=%s AND "
+                    "b.ref_kind='REVIEW_ROUND' AND b.ref_id=%s",
+                    (ids["project"], additional_requirement[2]),
+                ).fetchone()[0] == 2
             assert db.execute(
                 "SELECT count(*) FROM plm.wfl_stage_transitions WHERE project_id=%s "
                 "AND from_stage='REQUIREMENT' AND to_stage='PROTOTYPE'",
@@ -497,6 +587,7 @@ def main(*, after_prototype=None) -> None:
                 workflow_id=workflow_id, guard=guard, audit=audit,
                 sessions=sessions, origins=origins, csrf=CSRF,
                 project_evidence=project_evidence,
+                additional_requirement=additional_requirement,
             )
         command.check(cfg)
     finally:

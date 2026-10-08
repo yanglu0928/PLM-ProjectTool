@@ -10468,3 +10468,10 @@
 - Decision：数据库 AVAILABLE/Hash/固定版本元数据只作为候选，Document 所有者在同一业务事务内用安全存储逐字节证明实际文件 SHA-256、长度与身份，Prototype Owner 逐件消费，否则资格失败关闭。
 - Reason：仅锁行无法证明文件未被外部删除或篡改，不能把元数据当作当前可用事实。
 - Impact/Rollback：不改 Schema/API/依赖/权限，但每次预览和Checklist写时会增加文件读取；A05必须验证延迟与并发。未开放 Registry 前可停用 Owner；开放后停止新注册并保留既有Checklist历史。
+
+# DEC-20261008-1076：A05 混合范围沿用真实 Requirement 与原型审批夹具
+
+- Date/WBS：2026-10-08 / `PRT-01-A11-A05-P03-A02`；依据 `CR-PRT-005` 与A05-P02/P03-A01隔离验收。
+- Decision：在Requirement阶段通过正式创建、版本、送审和客户角色合成审批服务建立第二条需求；复用已验证的隔离PG/HTTP、Prototype正式Review/Trace/Document/Link夹具，以两次独立随机库运行正向混合范围与同一需求被双重认领的冲突负例。模板和文件仅是合成输入，不用数据库直写伪造业务批准。
+- Reason：只在Prototype阶段临时插入第二条已批准需求会弱化顺序链证据；单靠手写APPROVED行不能证明Review终态和Trace。独立冲突库避免污染不可变范围决定的正向历史。
+- Impact/Rollback：仅调整验证脚本和文档，不改正式代码、Schema/API/权限/依赖；撤脚本扩展即可回滚，既有业务历史不变。该测试不等于客户真实确认或20并发/生产入口验收。

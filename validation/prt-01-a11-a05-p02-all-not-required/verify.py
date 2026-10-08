@@ -67,7 +67,8 @@ def _after_prototype(*, scratch: Path, runtime, database, ids, pm, pm_token,
                      reviewer, reviewer_token,
                      requirement, requirement_version, requirement_review_round,
                      workflow_id, guard,
-                     audit, sessions, origins, csrf, project_evidence) -> None:
+                     audit, sessions, origins, csrf, project_evidence,
+                     additional_requirement) -> None:
     storage_root = scratch / "private-documents"
     storage_root.mkdir()
     storage = LocalFileStorage(storage_root)

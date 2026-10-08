@@ -41,6 +41,9 @@ from plm_assistant.modules.prototype.application.create_version import (
     VersionRequirementRef,
 )
 from plm_assistant.modules.prototype.application.current_version import PrototypeVersionCurrentValidator
+from plm_assistant.modules.prototype.application.mark_not_required import (
+    MarkPrototypeNotRequired, PrototypeScopeDecisionService,
+)
 from plm_assistant.modules.prototype.application.requirement_links import (
     CreateRequirementPrototypeLink, RequirementPrototypeCoverage,
     RequirementPrototypeLinkService,
@@ -53,6 +56,7 @@ from plm_assistant.modules.prototype.infrastructure.approval_trace_repository im
 from plm_assistant.modules.prototype.infrastructure.identity_create_repository import SqlAlchemyPrototypeIdentityCreateRepository
 from plm_assistant.modules.prototype.infrastructure.requirement_link_repository import SqlAlchemyRequirementPrototypeLinkRepository
 from plm_assistant.modules.prototype.infrastructure.review_subject_repository import SqlAlchemyPrototypeReviewSubjectRepository
+from plm_assistant.modules.prototype.infrastructure.scope_decision_repository import SqlAlchemyPrototypeScopeDecisionRepository
 from plm_assistant.modules.prototype.infrastructure.version_create_repository import SqlAlchemyPrototypeVersionCreateRepository
 from plm_assistant.modules.prototype.infrastructure.version_input_proofs import SqlAlchemyPrototypeVersionTemplateProof
 from plm_assistant.modules.prototype.infrastructure.version_read_repository import SqlAlchemyPrototypeVersionReadRepository
@@ -85,8 +89,13 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
                        reviewer, reviewer_token, requirement,
                        requirement_version, requirement_review_round,
                        workflow_id, guard, audit, sessions, origins, csrf,
-                       project_evidence) -> None:
+                       project_evidence, additional_requirement,
+                       mixed_not_required: bool = False,
+                       conflicting_decision: bool = False) -> None:
     project = ids["project"]
+    second = additional_requirement if mixed_not_required else None
+    if mixed_not_required:
+        assert second is not None
     storage_root = scratch / "private-documents"
     storage_root.mkdir()
     storage = LocalFileStorage(storage_root)
@@ -238,10 +247,11 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
         ),
     )
     with TestClient(preview_only, base_url=ORIGIN) as client:
-        assert client.get(
+        incomplete_scope = client.get(
             f"{prefix}/checklist-items/{ITEMS[0]}/qualification",
             headers=read_headers,
-        ).status_code == 200
+        )
+        assert incomplete_scope.status_code == (409 if mixed_not_required else 200)
         missing_link = client.get(
             f"{prefix}/checklist-items/{ITEMS[1]}/qualification",
             headers=read_headers,
@@ -263,6 +273,53 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
         str(uuid.uuid4()),
     ))
     assert link.link_state == "ACTIVE"
+
+    if second is not None:
+        with TestClient(preview_only, base_url=ORIGIN) as client:
+            for item in ITEMS:
+                missing_decision = client.get(
+                    f"{prefix}/checklist-items/{item}/qualification",
+                    headers=read_headers,
+                )
+                assert missing_decision.status_code == 409, missing_decision.text
+        second_root, second_version, second_round = second
+        not_required = PrototypeIdentityCreateService(
+            **common, access=SqlAlchemyProjectWriteAccess(),
+            repository=SqlAlchemyPrototypeIdentityCreateRepository(),
+        ).create_prototype(CreatePrototypeIdentity(
+            pm_token, csrf, uuid.uuid4(), project,
+            "Synthetic no-prototype scope", str(uuid.uuid4()),
+        ))
+        decision_refs = ((second_version,) if not conflicting_decision else
+                         tuple(sorted((second_version, requirement_version),
+                                      key=lambda value: value.int)))
+        decision = PrototypeScopeDecisionService(
+            **common, access=SqlAlchemyProjectWriteAccess(),
+            repository=SqlAlchemyPrototypeScopeDecisionRepository(),
+        ).mark_not_required(MarkPrototypeNotRequired(
+            pm_token, csrf, uuid.uuid4(), project,
+            not_required.prototype_id, 0, decision_refs,
+            "Second synthetic requirement needs no interactive prototype",
+            "Use standard configuration", None, None, str(uuid.uuid4()),
+        ))
+        assert decision.prototype_state == "NOT_REQUIRED"
+        assert decision.confirmed_by == pm
+        if conflicting_decision:
+            with TestClient(preview_only, base_url=ORIGIN) as client:
+                for item in ITEMS:
+                    conflict = client.get(
+                        f"{prefix}/checklist-items/{item}/qualification",
+                        headers=read_headers,
+                    )
+                    assert conflict.status_code == 409, conflict.text
+            with psycopg.connect(host="127.0.0.1", port=PORT, user="poc_admin",
+                                 dbname=database, autocommit=True) as db:
+                assert db.execute(
+                    "SELECT count(*) FROM plm.wfl_checklist_records "
+                    "WHERE project_id=%s AND stage_key='PROTOTYPE'",
+                    (project,),
+                ).fetchone()[0] == 0
+            return
 
     app = create_app(
         workflow_checklist_qualification_router=(
@@ -308,6 +365,16 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
              "subject_version_id": str(requirement_version),
              "review_round_ref": str(requirement_review_round)},
         ]
+        if second is not None:
+            expected_subjects.append({
+                "subject_type": "REQ-03", "subject_id": str(second_root.requirement_id),
+                "subject_version_id": str(second_version),
+                "review_round_ref": str(second_round),
+            })
+        expected_subjects.sort(key=lambda value: (
+            value["subject_type"], uuid.UUID(value["subject_id"]).int,
+            uuid.UUID(value["subject_version_id"]).int,
+        ))
         etag = '"v10"'
         for item in ITEMS:
             preview = client.get(
@@ -319,6 +386,18 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
             assert preview.json()["data"]["qualified_subjects"] == expected_subjects
             evidence = preview.json()["data"]["evidence_refs"]
             assert evidence == [str(project_evidence)]
+            if item == ITEMS[0]:
+                artifact_path.write_bytes(payload[:-1] + b"!")
+                stale_write = client.post(
+                    f"{prefix}/checklist-items/{item}:record",
+                    json={"result": "PASS", "reason": "Stale preview",
+                          "impact": "Validation only", "evidence_refs": evidence,
+                          "exception_refs": []},
+                    headers={**write_headers, "if-match": etag,
+                             "idempotency-key": str(uuid.uuid4())},
+                )
+                assert stale_write.status_code == 409, stale_write.text
+                artifact_path.write_bytes(payload)
             result = client.post(
                 f"{prefix}/checklist-items/{item}:record",
                 json={"result": "PASS", "reason": "Approved synthetic scope",
@@ -349,7 +428,10 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
         ).fetchone() == ("SOLUTION", 13)
 
 
-def main() -> None:
+def main(*, mixed_not_required: bool = False,
+         conflicting_decision: bool = False) -> None:
+    if conflicting_decision and not mixed_not_required:
+        raise ValueError("conflict mode requires mixed scope")
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
         if probe.connect_ex(("127.0.0.1", PORT)) == 0:
             raise RuntimeError("port 55434 is occupied; existing PostgreSQL untouched")
@@ -372,12 +454,26 @@ def main() -> None:
         _run([str(binaries / "pg_ctl.exe"), "-D", str(data), "-l", str(log),
               "-o", f"-h 127.0.0.1 -p {PORT}", "-w", "start"], detached=True)
         req = runpy.run_path(str(ROOT / "validation/req-01-a12-a05-workflow-pg/verify.py"))
-        req["main"](after_prototype=lambda **context: _after_requirement(
-            scratch=scratch, **context,
-        ))
-        print("PRT_01_A11_A05_P03_A01_APPROVED_HTTP_PG_PASS: approved "
-              "Prototype, missing Link/damaged bytes rejected, complete Link, "
-              "two PASS and SOLUTION transition")
+        req["main"](
+            include_second=mixed_not_required,
+            after_prototype=lambda **context: _after_requirement(
+                scratch=scratch, mixed_not_required=mixed_not_required,
+                conflicting_decision=conflicting_decision, **context,
+            ),
+        )
+        if conflicting_decision:
+            print("PRT_01_A11_A05_P03_A02_CONFLICT_HTTP_PG_PASS: same "
+                  "Requirement claimed by Approved Prototype and NOT_REQUIRED "
+                  "was rejected without Prototype checklist history")
+        elif mixed_not_required:
+            print("PRT_01_A11_A05_P03_A02_MIXED_HTTP_PG_PASS: two approved "
+                  "Requirements partitioned between Approved Prototype and "
+                  "NOT_REQUIRED, missing decision/damaged bytes rejected, "
+                  "two PASS and SOLUTION transition")
+        else:
+            print("PRT_01_A11_A05_P03_A01_APPROVED_HTTP_PG_PASS: approved "
+                  "Prototype, missing Link/damaged bytes rejected, complete Link, "
+                  "two PASS and SOLUTION transition")
     finally:
         control, data = install / "bin/pg_ctl.exe", scratch / "data"
         if control.is_file() and data.is_dir():

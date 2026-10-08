@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A11-A05-P03-A02 增加Windows11隔离PG18.6混合范围及冲突两次独立验收：两条Requirement在正式阶段审批，一条由Approved Prototype/真实文件/ACTIVE Link覆盖，另一条由有Audit的PM NOT_REQUIRED决定覆盖；缺决定、Checklist写时文件漂移、同一需求双重认领均拒绝，正向两项PASS并进入SOLUTION。`DEC-20261008-1076`记录验证夹具决策。兼容性/升级：仅测试与文档，无生产程序、Schema、API、权限、依赖或数据迁移，撤验证扩展可回滚。验证：两次混合脚本、A01和P02隔离回归退出0，迁移head/drift通过；后端全量沿用上轮3244/3/4791，未在本次重复运行。已知问题：部分Coverage、多原型重复/跨项目/撤权、20并发、Server2025、生产信任源/入口、Gate3/UAT/发行待；Debian13依指令跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A11-A05-P03-A01 增加Windows11隔离PG18.6/HTTP批准原型单需求分支验收：正式Version创建、Review送审/合成客户角色审批、Trace、实际Document字节、唯一验收标准ACTIVE Link、两项Checklist与SOLUTION推进；缺Link/篡改文件拒绝。兼容性/升级：仅验证资产及Requirement脚本测试回调上下文增加，无生产程序/Schema/冻结API/权限/依赖变化，亦无升级操作；移除脚本即可回滚。验证：P03-A01与P02隔离脚本退出0、迁移head/drift通过。已知问题：多需求混合范围、20并发、Server2025、正式信任源/生产入口、Gate3/UAT/发行待；Debian13依指令跳过。
 
 - 2026-10-08：0.1.0-dev.0/PRT-01-A11-A05-P02 新增Windows11隔离PG18.6/HTTP全NOT_REQUIRED分支验收；修复合法PostgreSQL本地时区Audit时间误拒绝，保持同项目/操作者/动作、唯一性和五分钟窗口。偏差及回滚见`CR-PRT-005`。兼容性/升级：无Schema、冻结API、权限、依赖或迁移；部署同步代码即可，生产Prototype开关继续关闭，回滚前不得跳过Audit且需保持该开关关闭。验证：真实Requirement→PROTOTYPE→SOLUTION、两项Checklist、Audit/幂等及Alembic drift通过；后端3244 passed、3 skipped、4791 subtests passed。已知问题：仅全NOT_REQUIRED分支，Approved PrototypeVersion/Link/真实制品混合分支、20并发、Server2025、Gate3/UAT/发行待；Debian13依指令跳过。
