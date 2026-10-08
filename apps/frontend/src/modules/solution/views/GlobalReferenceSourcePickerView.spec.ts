@@ -271,6 +271,8 @@ describe("GlobalReferenceSourcePickerView", () => {
       source_project_class: "PLM", deidentification_class: "DEIDENTIFIED", applicability: {} });
     expect(create.mock.calls[0]?.[1]).toMatch(/^[\x20-\x7e]{16,128}$/);
     expect(result.wrapper.text()).toContain("不是正式方案批准");
+    expect(result.wrapper.get(`a[href="/admin/reference-solutions/${trace}"]`).text())
+      .toContain("打开刚创建的参考方案详情");
     expect(window.sessionStorage.getItem(`plm.sol.global.create.pending.${actor}`)).toBeNull();
   });
 

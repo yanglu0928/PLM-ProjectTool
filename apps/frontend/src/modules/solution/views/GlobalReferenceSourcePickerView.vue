@@ -329,6 +329,7 @@ onUnmounted(() => { mounted = false; generation += 1; selected.value = []; });
   <section class="global-source-picker" aria-labelledby="picker-title" :aria-busy="busy">
     <p class="section-kicker">全局参考方案</p>
     <h1 id="picker-title">多来源核查候选</h1>
+    <p><RouterLink :to="{ name: 'global-references' }">查看全局参考方案候选与历史详情</RouterLink></p>
     <p>仅部署管理员可选择。候选集合本身不是脱敏确认；预览后仍须逐项打开原文并由本人判断，AI 和脚本不能代替业务确认。</p>
     <p><RouterLink to="/admin/evidence">返回全局证据</RouterLink></p>
     <template v-if="!mayRead()">
@@ -417,7 +418,9 @@ onUnmounted(() => { mounted = false; generation += 1; selected.value = []; });
             || !referenceName.trim() || Date.parse(confirmation.expires_at) <= Date.now()"
             @click="createReference()">重新核验并创建全局参考方案</button>
         </section>
-        <p v-if="createdReference" role="status">已创建参考方案 {{ createdReference.reference_solution_id }}，状态仅供参考 / 草稿；不是正式方案批准。</p>
+        <p v-if="createdReference" role="status">已创建参考方案 {{ createdReference.reference_solution_id }}，状态仅供参考 / 草稿；不是正式方案批准。
+          <RouterLink :to="{ name: 'global-reference-detail', params: { referenceId: createdReference.reference_solution_id } }">打开刚创建的参考方案详情</RouterLink>
+        </p>
         <label>撤回原因<select v-model="revokeReason"><option value="ADMIN_REVIEW">管理员复核</option>
           <option value="SOURCE_EXPOSED">来源暴露</option><option value="SCOPE_CHANGED">范围变化</option></select></label>
         <button type="button" :disabled="busy || !!pendingKind || !session.canSubmit" @click="revoke()">撤回此集合确认</button>

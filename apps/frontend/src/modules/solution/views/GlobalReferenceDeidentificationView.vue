@@ -317,7 +317,9 @@ onUnmounted(() => { mounted = false; generation += 1; });
             || !referenceName.trim() || Date.parse(confirmation.expires_at) <= Date.now()"
             @click="createReference()">重新核验并创建全局参考方案</button>
         </section>
-        <p v-if="createdReference" role="status">已创建参考方案 {{ createdReference.reference_solution_id }}，状态仅供参考 / 草稿；不是正式方案批准。</p>
+        <p v-if="createdReference" role="status">已创建参考方案 {{ createdReference.reference_solution_id }}，状态仅供参考 / 草稿；不是正式方案批准。
+          <RouterLink :to="{ name: 'global-reference-detail', params: { referenceId: createdReference.reference_solution_id } }">打开刚创建的参考方案详情</RouterLink>
+        </p>
         <label>撤回原因<select v-model="revokeReason"><option value="ADMIN_REVIEW">管理员复核</option>
           <option value="SOURCE_EXPOSED">来源暴露</option><option value="SCOPE_CHANGED">范围变化</option></select></label>
         <button type="button" :disabled="busy || !!pendingKind || !session.canSubmit" @click="revoke()">撤回此确认</button>
