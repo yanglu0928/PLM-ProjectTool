@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A04-P04-P03 将 PROJECT Reference GET 装入 Windows 显式只读/写模式；默认登录与 GLOBAL 仍关闭，缺依赖拒启动。兼容性/升级：无 Schema、依赖或既有 API 破坏，无升级动作。验证：Win11隔离PG18.6/私有文件真实 Session/ASGI GET、跨项目/License拒绝，生产模式合同及后端全量3313通过/3跳过/4871子例。已知问题：正式License/目标账户、List/UI、20并发/Gate3/发行未验；Debian13按用户指令跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P04-P02 新增可注入 PROJECT Reference 当前版本 GET HTTP、严格安全投影与冻结 API-04 增量合同；默认/GLOBAL 仍关闭。兼容性/升级：无 Schema、依赖、既有 API 破坏或升级动作。验证：合同3通过/9子例，Windows11隔离PG18.6/私有文件真实 Session/ASGI、成员/跨项目/暂停/License/混源负例通过，后端全量3312通过/3跳过/4867子例。已知问题：Windows正式组合、List/UI、正式License/目标账户、20并发/Gate3/发行未验；Debian13按用户指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/CR-EXEC-001 用户再次确认方案 A 的持续执行纪律：既定范围内偏差先记录、再自主实施验证并同步 GitHub，直至可使用程序包。兼容性/升级：仅执行约束与追溯文档更新，无程序、Schema/API、依赖或安装变化。验证：约束、V1.1 规则、CR 与 STATUS 对账；既有 Gate/UAT/发行缺项仍未通过。已知问题：正式信任源、20 并发、目标环境与交付包仍需客观验收。

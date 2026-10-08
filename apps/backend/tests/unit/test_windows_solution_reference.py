@@ -6,10 +6,28 @@ from unittest.mock import Mock
 from plm_assistant.entrypoints.windows_solution_reference import (
     ProductionSolutionReferenceStartupError,
     create_windows_project_reference_create_router,
+    create_windows_project_reference_read_router,
 )
 
 
 class WindowsSolutionReferenceTests(unittest.TestCase):
+    def test_project_get_and_missing_dependency_fails_closed(self):
+        dependencies = dict(
+            runtime=Mock(unit_of_work=Mock()), sessions=Mock(), origins=Mock(),
+            license_guard=Mock(),
+        )
+        router = create_windows_project_reference_read_router(**dependencies)
+        self.assertEqual(
+            [("GET", "/api/v1/projects/{project_id}/reference-solutions/"
+              "{reference_solution_id}")],
+            [(method, route.path) for route in router.routes for method in route.methods],
+        )
+        for key in dependencies:
+            with self.subTest(key=key), self.assertRaises(
+                    ProductionSolutionReferenceStartupError):
+                create_windows_project_reference_read_router(
+                    **{**dependencies, key: None})
+
     def test_only_project_post_and_missing_dependency_fails_closed(self):
         dependencies = dict(
             runtime=Mock(unit_of_work=Mock()), sessions=Mock(), origins=Mock(),

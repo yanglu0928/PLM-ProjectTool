@@ -18,10 +18,13 @@ from plm_assistant.modules.platform.infrastructure.idempotency_receipts import S
 from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
 from plm_assistant.modules.project.infrastructure.authorization_repository import SqlAlchemyProjectAuthorizationRepository
 from plm_assistant.modules.solution.api.reference_create import create_project_reference_create_router
+from plm_assistant.modules.solution.api.reference_read import create_project_reference_read_router
 from plm_assistant.modules.solution.application.create_reference_solution import ReferenceCreateService
+from plm_assistant.modules.solution.application.read_reference import ReferenceReadService
 from plm_assistant.modules.solution.application.prove_reference_deidentification import ReferenceDeidentificationProofService
 from plm_assistant.modules.solution.application.reference_source_qualification import ReferenceSourceQualificationService
 from plm_assistant.modules.solution.infrastructure.reference_create_repository import SqlAlchemyReferenceCreateRepository
+from plm_assistant.modules.solution.infrastructure.reference_read_repository import SqlAlchemyReferenceReadRepository
 from plm_assistant.modules.solution.infrastructure.reference_deidentification_proof_repository import SqlAlchemyReferenceDeidentificationProofRepository
 from plm_assistant.modules.solution.infrastructure.reference_document_proof import ReferenceDocumentProofAdapter
 from plm_assistant.modules.solution.infrastructure.reference_evidence_proof import ReferenceEvidenceProofAdapter
@@ -30,6 +33,29 @@ from plm_assistant.modules.solution.infrastructure.reference_evidence_proof impo
 class ProductionSolutionReferenceStartupError(RuntimeError):
     def __init__(self) -> None:
         super().__init__("Solution Reference production composition unavailable")
+
+
+def create_windows_project_reference_read_router(
+    *, runtime, sessions, origins, license_guard,
+) -> APIRouter:
+    """Compose the PROJECT GET from current Session/License/project ports."""
+    if any(value is None for value in (
+            runtime, sessions, origins, license_guard)):
+        raise ProductionSolutionReferenceStartupError()
+    try:
+        service = ReferenceReadService(
+            unit_of_work=runtime.unit_of_work,
+            access=SqlAlchemyProjectReadAccess(),
+            license_guard=license_guard,
+            authorization=ProjectAuthorizationService(
+                unit_of_work=runtime.unit_of_work,
+                repository=SqlAlchemyProjectAuthorizationRepository()),
+            repository=SqlAlchemyReferenceReadRepository(),
+        )
+        return create_project_reference_read_router(
+            sessions=sessions, origins=origins, reads=service)
+    except Exception:
+        raise ProductionSolutionReferenceStartupError() from None
 
 
 def create_windows_project_reference_create_router(
