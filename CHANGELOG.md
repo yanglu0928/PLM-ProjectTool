@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A04-P08-P05-P02-P02 多来源候选页接入有序集合 Preview/Confirm/Revoke、逐文档/逐证据打开勾选、预览身份/现时资格核验、变化清空与原 Key 回查锁定。兼容性/升级：复用既有 GLOBAL API/私有 CSRF，无后端/Schema/依赖变化或数据迁移；历史确认/Audit/收据保留。验证：定向7、前端全量106文件/1632项、typecheck/build通过；多来源真实Edge/PG未运行。已知问题：脚本勾选非真人确认、正式License/账户、Server2025、20并发/Gate3/发行未验；Debian13依指令跳过，既有主包>500kB警告。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P08-P05-P02-P01 新增 GLOBAL 多来源只读候选页：受权列表分页、现时 Viewer/资格复核、有序 Evidence 与固定文档版本去重计数、原文链接和刷新清空，页面不提供确认提交。兼容性/升级：仅前端增量路由/入口，无 API/Schema/依赖变化，无数据迁移。验证：定向3、前端全量106文件/1628项、typecheck/build通过；多来源 Edge/PG 未运行。已知问题：集合预览/确认、真人核查、正式 License/账户、Server2025、20并发/Gate3/发行未验；Debian13依指令跳过，既有主包>500kB警告。
 
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P08-P05-P01 对账多来源 GLOBAL 人工核查合同与单来源界面，确定有序 Evidence 选择、DocumentVersion 首见去重、逐项受权原文核查、集合指纹和原 Key 恢复的验收边界。兼容性/升级：仅设计与追溯记录，无代码/API/Schema/依赖变化，无数据迁移。验证：合同、Owner、前端入口和前序 Edge 证据静态对账；新多来源程序测试未运行。已知问题：多来源 UI/Edge、实际人工确认、GLOBAL Create、正式 License/账户、Server2025、20并发/Gate3/发行未验；Debian13依指令跳过。
