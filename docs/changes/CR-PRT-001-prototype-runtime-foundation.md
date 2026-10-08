@@ -280,3 +280,11 @@ API-04固定26项Prototype Operation不变。审计确认当前22项已有业务
 Read、A03五类独立签名cursor、A04 Package HTTP、A05 Identity HTTP、A06 Template HTTP、A07 Version/Review
 HTTP、A08 Link HTTP及A09 Windows只读/写组合与真实PG18验收。默认/login-only继续404，Windows平台读写模式
 分离；本项纯文档，无Schema/API/代码/依赖/外发，进入A02。
+
+## A09-A02 实施记录（2026-10-08）
+
+新增PrototypePackage/Prototype内部LIST/GET Service与Repository，并补四项全成员只读策略；当前Root按
+`updated_at + UUID`稳定分页，Package GET读当前membership，Prototype投影当前批准指针，每次重证
+Session/License/Project成员。首轮合成夹具被0123创建闭包正确拒绝，改用事务局部replica仅构造已有历史后
+重跑，生产保护未放宽。Win11/PG18.6即时撤权/隔离、定向13、后端3176/3及wheel1218项/
+`d091973a…4712b67b`通过；无Migration/公开API/依赖/外发，进入A03 cursor合同。

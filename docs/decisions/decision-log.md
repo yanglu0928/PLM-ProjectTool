@@ -1,5 +1,15 @@
 # 自主决策记录
 
+## DEC-20261008-1051：Prototype身份读取只投影当前Root并即时重证成员事实
+
+- Date/WBS：2026-10-08 / `PRT-01-A09-A02`；依据DEC-1050及冻结四项LIST/GET。
+- Decision：Package/Prototype LIST/GET使用独立当前读Owner，按`updated_at + UUID`稳定分页；Package成员从当前
+  membership读取，Prototype投影当前批准指针；每次调用重证Session/License/Project成员状态并保持跨项目404。
+- Reason：Create/Mutation不可变结果是首次响应或命令历史，不能代表随后成员、名称、状态或正式指针；若HTTP
+  直接读表则会绕过统一授权与撤权语义。
+- Impact/Rollback：新增内部Service/Repository及四项策略，无Migration/公开API/依赖/外发；停用后公开路由
+  仍不存在。Win11/PG18.6撤权/隔离、后端3176/3及wheel1218项通过，进入cursor合同。
+
 ## DEC-20261008-1050：Prototype 26项HTTP按Owner与资源族分批开放
 
 - Date/WBS：2026-10-08 / `PRT-01-A09-A01`；依据冻结API-04、CR-PRT-001及A03～A08证据。

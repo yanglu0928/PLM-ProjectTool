@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A09-A02 新增PrototypePackage/Prototype内部LIST/GET Owner与四项全成员
+  只读策略；按`updated_at + UUID`稳定分页，Package GET返回规范当前成员集合，Prototype投影当前批准指针，
+  每次重证Session/License/Project成员并保持跨项目404。兼容性/回滚：无Migration、公开API、依赖或外发；
+  停止装配即可关闭，Schema head保持0134。验证：Win11/PG18.6分页/ETag/隔离/即时撤权，定向13、后端
+  3176/3、compileall/drift、wheel1218项/`d091973a…4712b67b`PASS。已知问题：A03 cursor、A04～A09 HTTP/
+  组合、A10前端、A11 Workflow、Server2025、Gate3/UAT/发行待；Debian13跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A09-A01 完成冻结Prototype HTTP前置核查：对账26项Operation，确认
   Package/Prototype四项LIST/GET尚缺读Owner，禁止直接开放；固定五个独立cursor家族、默认/login-only关闭、
   Windows `--platform`只读及`--platform-write`全量写模式，并按Owner/资源族拆为A02～A09。兼容性/回滚：

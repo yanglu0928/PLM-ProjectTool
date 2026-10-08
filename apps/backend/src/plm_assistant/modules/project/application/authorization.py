@@ -209,12 +209,16 @@ POLICIES: dict[str, _Policy] = {
     "REQ_ARCHIVE": _Policy(MANAGERS, True),
     "PRT_PACKAGE_CREATE": _Policy(
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
+    "PRT_PACKAGE_LIST": _Policy(ALL_MEMBERS, False, lock_reads=True),
+    "PRT_PACKAGE_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "PRT_PACKAGE_PATCH": _Policy(
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
     "PRT_PACKAGE_SET_MEMBERS": _Policy(
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
     "PRT_CREATE": _Policy(
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
+    "PRT_LIST": _Policy(ALL_MEMBERS, False, lock_reads=True),
+    "PRT_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "PRT_PATCH": _Policy(
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True),
     "PRT_ARCHIVE": _Policy(MANAGERS, True),
