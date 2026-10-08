@@ -31,6 +31,9 @@ from plm_assistant.modules.review.domain.round_progress import ReviewDecisionKin
 from plm_assistant.modules.review.infrastructure.global_repository import (
     SqlAlchemyGlobalReviewRepository,
 )
+from plm_assistant.modules.review.infrastructure.read_repository import (
+    SqlAlchemyReviewSnapshotReadRepository,
+)
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -83,7 +86,7 @@ class BoundSyntheticOwner:
         return None
 
 
-def main() -> None:
+def main(*, read_snapshot_probe: bool = False) -> None:
     name = "cap01a04a02_" + uuid.uuid4().hex[:10]
     with connect("postgres") as admin:
         admin.execute(sql.SQL("CREATE DATABASE {}").format(sql.Identifier(name)))
@@ -170,6 +173,29 @@ def main() -> None:
                     )
                     assert result.state.value == "WITHDRAWN"
                     tx.commit()
+
+                if read_snapshot_probe:
+                    reader = SqlAlchemyReviewSnapshotReadRepository()
+                    with runtime.unit_of_work() as tx:
+                        approved_snapshot = reader.get_round(
+                            tx, "GLOBAL", None, submitted.review_id,
+                            submitted.round_id,
+                        )
+                        withdrawn_snapshot = reader.get_round(
+                            tx, "GLOBAL", None, withdrawn.review_id,
+                            withdrawn.round_id,
+                        )
+                    assert approved_snapshot is not None
+                    assert approved_snapshot.review.project_id is None
+                    assert approved_snapshot.review.scope == "GLOBAL"
+                    assert approved_snapshot.progress.state.value == "APPROVED"
+                    assert len(approved_snapshot.progress.decisions) == 2
+                    assert withdrawn_snapshot is not None
+                    assert withdrawn_snapshot.review.project_id is None
+                    assert withdrawn_snapshot.review.scope == "GLOBAL"
+                    assert withdrawn_snapshot.progress.state.value == "WITHDRAWN"
+                    print("PRT_A05_P04_P19_GLOBAL_REVIEW_READ_PASS: "
+                          "approved multi-reviewer and withdrawn round decoded")
 
                 with connect(name) as db:
                     rows = db.execute("""

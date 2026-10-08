@@ -1308,21 +1308,48 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
             expanded_runtime.dispose()
         if network_load:
             file_proof_since = len(storage.proof_ms)
-            if phase_diagnostic or external_client:
-                with QualificationPhaseProbe() as timer:
+            default_checkout: list[float] = []
+            default_pool = runtime._engine.pool
+            original_default_connect = default_pool.connect
+            default_checkout_lock = threading.Lock()
+
+            def timed_default_connect():
+                started = time.perf_counter()
+                try:
+                    return original_default_connect()
+                finally:
+                    elapsed = (time.perf_counter() - started) * 1000
+                    with default_checkout_lock:
+                        default_checkout.append(elapsed)
+
+            if external_pool_comparison:
+                default_pool.connect = timed_default_connect
+            try:
+                if phase_diagnostic or external_client:
+                    with QualificationPhaseProbe() as timer:
+                        network_p95 = _measure_network_read_load(
+                            app, prefix, read_headers, runtime,
+                            external_client=external_client,
+                        )
+                    timer.report()
+                else:
                     network_p95 = _measure_network_read_load(
                         app, prefix, read_headers, runtime,
+                        timeline_diagnostic=timeline_diagnostic,
                         external_client=external_client,
                     )
-                timer.report()
-            else:
-                network_p95 = _measure_network_read_load(
-                    app, prefix, read_headers, runtime,
-                    timeline_diagnostic=timeline_diagnostic,
-                    external_client=external_client,
-                )
+            finally:
+                if external_pool_comparison:
+                    default_pool.connect = original_default_connect
             assert set(network_p95) == set(ITEMS)
             if external_pool_comparison:
+                ordered_checkout = sorted(default_checkout)
+                assert ordered_checkout
+                print("PRT_A05_P04_P19_DEFAULT_CHECKOUT_PATH "
+                      f"count={len(ordered_checkout)} "
+                      f"p50_ms={statistics.median(ordered_checkout):.2f} "
+                      f"p95_ms={ordered_checkout[math.ceil(.95 * len(ordered_checkout)) - 1]:.2f} "
+                      f"max_ms={ordered_checkout[-1]:.2f}")
                 print("PRT_A05_P04_P14_INTERLEAVED "
                       f"default_before={default_before} pool20={expanded_network} "
                       f"default_after={network_p95}")
@@ -1464,6 +1491,7 @@ def main(*, mixed_not_required: bool = False,
          network_load: bool = False,
          pipeline_probe: bool = False,
          bundle_probe: bool = False,
+         global_review_probe: bool = False,
          phase_diagnostic: bool = False,
          timeline_diagnostic: bool = False,
          external_client: bool = False,
@@ -1515,6 +1543,13 @@ def main(*, mixed_not_required: bool = False,
                 **context,
             ),
         )
+        if global_review_probe:
+            global_review = runpy.run_path(str(
+                ROOT / "validation/cap-01-a04-a02-global-review/verify.py"
+            ))
+            global_review["main"](read_snapshot_probe=True)
+            print("PRT_01_A11_A05_P04_P19_GLOBAL_REVIEW_PG_PASS: "
+                  "GLOBAL nullable scope read on disposable PostgreSQL")
         if read_load:
             print("PRT_01_A11_A05_P04_P01_READ_LOAD_MEASURED: "
                   "twenty concurrent GETs per Prototype item, real PG and file")

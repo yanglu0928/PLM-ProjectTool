@@ -10580,3 +10580,10 @@
 - Decision：保留已验证的目标轮后六类子表单查询实现，原锁与完整性校验不变；默认生产池和Prototype入口继续不变。P19定位剩余端到端成本，不以SQL减少或临时池接近阈值替代≤500ms验收。
 - Reason：SQL约58→48条/资格、后端3256通过/3跳过及篡改/混合/隔离/多原型负例通过；临时20池两轮两项P95约533/533及540/512ms，仍超阈值。JSONB GLOBAL与大规模Review场景尚未实证。
 - Impact/Rollback：仅内部Review仓储及测试，无公开API/Schema/权限/依赖/配置/迁移；恢复六子查询可回滚且历史不变。性能FAIL、Prototype入口关闭、Gate3阻塞。
+
+# DEC-20261008-1092：GLOBAL读取补证通过，默认池容量先做资源预算再调
+
+- Date/WBS：2026-10-08 / `PRT-01-A11-A05-P04-P19`；依据GLOBAL真实PG合成批准/撤回读取及三轮交错独立客户端诊断。
+- Decision：共享Review JSONB读取在GLOBAL nullable项目范围下保持；生产池默认5+10暂不改。P20先核算PG连接预算、Worker/服务进程并设计显式可回滚配置，再决定是否实施。
+- Reason：GLOBAL批准双评审/撤回轮次、Audit/PROJECT链通过；默认池连接取得路径P95约133–144ms而临时20池约10ms，但含预检/新建。临时池三轮业务P95两轮达标、第三轮Scope Decisions约511ms，未稳定≤500ms。
+- Impact/Rollback：本项仅隔离工具与文档，无生产程序、Schema、API、权限、依赖、配置或迁移；撤探针可回滚。性能FAIL、Prototype入口关闭、Gate3阻塞不变。
