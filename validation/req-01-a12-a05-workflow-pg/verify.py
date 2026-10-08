@@ -490,7 +490,8 @@ def main(*, after_prototype=None) -> None:
         if after_prototype is not None:
             after_prototype(
                 runtime=runtime, database=database, ids=ids,
-                pm=pm, pm_token=pm_token, requirement=root,
+                pm=pm, pm_token=pm_token, reviewer=reviewer,
+                reviewer_token=reviewer_token, requirement=root,
                 requirement_version=created.requirement_version_id,
                 requirement_review_round=submission.round_id,
                 workflow_id=workflow_id, guard=guard, audit=audit,

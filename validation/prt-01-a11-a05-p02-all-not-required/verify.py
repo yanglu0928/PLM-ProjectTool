@@ -64,6 +64,7 @@ class UnusedDependency:
 
 
 def _after_prototype(*, scratch: Path, runtime, database, ids, pm, pm_token,
+                     reviewer, reviewer_token,
                      requirement, requirement_version, requirement_review_round,
                      workflow_id, guard,
                      audit, sessions, origins, csrf, project_evidence) -> None:
