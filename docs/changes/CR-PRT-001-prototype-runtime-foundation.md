@@ -288,3 +288,12 @@ HTTP、A08 Link HTTP及A09 Windows只读/写组合与真实PG18验收。默认/l
 Session/License/Project成员。首轮合成夹具被0123创建闭包正确拒绝，改用事务局部replica仅构造已有历史后
 重跑，生产保护未放宽。Win11/PG18.6即时撤权/隔离、定向13、后端3176/3及wheel1218项/
 `d091973a…4712b67b`通过；无Migration/公开API/依赖/外发，进入A03 cursor合同。
+
+## A09-A03 实施记录（2026-10-08）
+
+新增Package、Prototype、Version、Template、Link五类Session/Scope/查询绑定的HMAC游标；Windows从五个固定
+独立KeyRef取32字节密钥并拒绝缺失、错误、重复或Provider异常，不自动生成/回退。Template合同显式隔离
+GLOBAL无Project与PROJECT有Project，Version页上限保持100，其余保持200。Win11当前账户Vault五个临时引用
+完成删钥失败关闭和原钥恢复旧游标验证，清理后零残留；单元10、Prototype定向102、后端3186/3、compileall、
+wheel1221项/`383100e9…e930870`通过。无Migration/公开Router/依赖/外发，Schema head保持0134，进入A04
+Package HTTP。

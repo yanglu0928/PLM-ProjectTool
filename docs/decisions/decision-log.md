@@ -1,5 +1,17 @@
 # 自主决策记录
 
+## DEC-20261008-1052：Prototype五类游标使用独立KeyRef并拒绝重复密钥
+
+- Date/WBS：2026-10-08 / `PRT-01-A09-A03`；依据DEC-1050、五类Owner分页语义及Windows Secret边界。
+- Decision：Package、Prototype、Version、Template、Link各使用固定独立KeyRef和带family的签名合同；启动时
+  一次读取五把不同的32字节密钥，任一缺失、错误或重复均失败关闭。游标绑定Session、Project/Prototype、
+  Template scope、页大小和完整位置，GLOBAL/PROJECT Template同一合同内仍严格隔离。
+- Reason：共用密钥会扩大泄露/轮换影响域；只靠family不能证明部署供给确实独立；不绑定Session与查询可让
+  合法游标跨用户、跨项目或改页长重放。Template若不签scope会把GLOBAL与PROJECT分页上下文混用。
+- Impact/Rollback：新增内部cursor合同、Windows组合与五个KeyRef要求，无Migration/公开Router/依赖/外发；
+  A04前外部行为仍404。Win11临时Vault删钥失败关闭/恢复旧游标、后端3186/3及wheel1221项通过；正式服务账户
+  供给保留为Release约束。
+
 ## DEC-20261008-1051：Prototype身份读取只投影当前Root并即时重证成员事实
 
 - Date/WBS：2026-10-08 / `PRT-01-A09-A02`；依据DEC-1050及冻结四项LIST/GET。

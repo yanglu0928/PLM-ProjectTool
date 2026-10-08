@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A09-A03 新增Prototype五类独立签名游标及Windows失败关闭KeyRef组合；绑定
+  Session、Project/Prototype、Template GLOBAL/PROJECT scope、页大小和完整位置，拒绝篡改、跨family、重复
+  密钥及缺失/错误Provider结果。兼容性/回滚：无Migration、公开API、依赖或外发，撤内部组合后A04前仍404，
+  Schema head保持0134。验证：Win11当前账户Vault五个临时引用删钥/恢复旧游标、单元10、Prototype定向102、
+  后端3186/3、compileall，wheel1221项/`383100e9…e930870`PASS。已知问题：A04～A09 HTTP/组合、A10前端、
+  A11 Workflow、正式服务账户KeyRef仪式、Server2025、Gate3/UAT/发行待；Debian13跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A09-A02 新增PrototypePackage/Prototype内部LIST/GET Owner与四项全成员
   只读策略；按`updated_at + UUID`稳定分页，Package GET返回规范当前成员集合，Prototype投影当前批准指针，
   每次重证Session/License/Project成员并保持跨项目404。兼容性/回滚：无Migration、公开API、依赖或外发；
