@@ -10643,3 +10643,10 @@
 - Decision：0139 建 GLOBAL/PROJECT ReferenceSolution、固定版本和有序 DocumentVersion/Evidence 引用；Root `REFERENCE_ONLY`、Version DRAFT，所有写入口保持闭锁。后续 Owner 证明父子 Project 一致、来源当前/脱敏与文件本体，再给 Outline 增真实 ReferenceVersion FK；不把参考内容当项目承诺。
 - Reason：有真实 Document/Evidence 目标可建固定 FK，但数据库单列目标 FK 不足以证明当前资格，直接开放写入或自由 UUID 均不安全。PG 迁移/负例与后端 3263/3/4815 通过。
 - Impact/Rollback：四张空表及 Root 当前版本 FK；无公开 API、权限、配置、新依赖或外发。四表为空可降至 0138，非空拒降；Gate 3/正式 Solution 仍开放。
+
+# DEC-20261008-1101：Reference 专用来源资格，不扩大 GLOBAL 标准能力 Proof
+
+- Date/WBS：2026-10-08 / `SOL-01-A04-P01`；依据 CR-SOL-005、冻结 DM-05/API-04、现有 Document/Evidence GLOBAL/PROJECT Proof 与后端回归。
+- Decision：Solution 内部建立固定来源资格 Port 合同，GLOBAL 必须有独立管理员人工脱敏确认且绑定完整来源指纹；现有 `STANDARD_CAPABILITY` 专用 GLOBAL Proof 原样保留，0139 写入继续闭锁。PROJECT 与 GLOBAL 均须由真实上游 Port 返回同 Scope/Project/摘要的受权 Proof，客户端自填分类不足以入库。
+- Reason：标准能力 Proof 的类别与目标 PM 限制和一般 ReferenceSolution GLOBAL Admin 写边界不同；直接放宽会扩大既有调用方权限。定向 7 项、后端 3270/3/4815 通过。
+- Impact/Rollback：仅 Solution Application 合同和单测，不改 API、Schema、迁移或已部署服务；可撤内部合同，历史表不变。真实 Port/人工确认持久化与 Owner 仍待，Gate 不变。
