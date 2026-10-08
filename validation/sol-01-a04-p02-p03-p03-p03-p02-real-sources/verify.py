@@ -50,6 +50,9 @@ from plm_assistant.modules.solution.application.confirm_reference_deidentificati
     ConfirmReferenceDeidentification, ReferenceDeidentificationConfirmError,
     ReferenceDeidentificationConfirmService,
 )
+from plm_assistant.modules.solution.application.preview_reference_deidentification import (
+    PreviewReferenceDeidentification, ReferenceDeidentificationPreviewService,
+)
 from plm_assistant.modules.solution.application.prove_reference_deidentification import ReferenceDeidentificationProofService
 from plm_assistant.modules.solution.application.reference_source_qualification import (
     ReferenceSourceError, ReferenceSourceQualificationService, ReferenceSourceRequest,
@@ -295,6 +298,20 @@ def verify(port: int, scratch: Path, on_qualified=None) -> None:
                 TOKEN, request.trace_id, "PROJECT", uuid.uuid4(),
                 (version,), (evidence, node_evidence), "PLM", "DEIDENTIFIED",
                 {"industry": "synthetic"})))
+        preview = ReferenceDeidentificationPreviewService(
+            unit_of_work=runtime.unit_of_work, access=SqlAlchemyLicenseImportAccess(),
+            license_guard=license_guard, sources=sources,
+        )
+        with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
+                             dbname="postgres", autocommit=True) as db:
+            before = db.execute("SELECT count(*) FROM plm.sol_reference_deidentification_confirmations").fetchone()[0]
+        shown = preview.preview(PreviewReferenceDeidentification(request, CSRF))
+        assert shown.source_fingerprint == baseline.content_fingerprint
+        assert tuple(item.document_version_id for item in shown.document_refs) == (version,)
+        assert shown.evidence_ids == (evidence, node_evidence)
+        with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
+                             dbname="postgres", autocommit=True) as db:
+            assert db.execute("SELECT count(*) FROM plm.sol_reference_deidentification_confirmations").fetchone()[0] == before
         rejects(lambda: confirm.confirm(ConfirmReferenceDeidentification(
             request, CSRF, datetime.now(timezone.utc) + timedelta(days=1),
             "I_VERIFIED_DEIDENTIFICATION", "F" * 16,
