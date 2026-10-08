@@ -204,10 +204,14 @@ def verify(port: int, scratch: Path, on_created=None) -> None:
                        audit=audit, license_guard=license_guard, project=project,
                        other_project=other_project, manager=manager, member=member,
                        document_version=version, evidence=evidence,
-                       token=token, csrf=csrf)
+                       token=token, csrf=csrf,
+                       member_token=member_token, member_csrf=member_csrf,
+                       documents=_unused["documents"],
+                       downloads=_unused["downloads"],
+                       parse_results=_unused["parse_results"])
         with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
                              dbname="postgres", autocommit=True) as db:
-            expected_count = 2 + (1 if on_created is not None else 0)
+            expected_count = 2 + (2 if on_created is not None else 0)
             assert db.execute("SELECT count(*) FROM plm.sol_reference_solutions "
                               "WHERE scope='PROJECT' AND project_id=%s",
                               (project,)).fetchone()[0] == expected_count

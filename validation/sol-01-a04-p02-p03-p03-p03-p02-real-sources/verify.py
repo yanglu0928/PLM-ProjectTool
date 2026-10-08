@@ -306,7 +306,9 @@ def verify(port: int, scratch: Path, on_qualified=None) -> None:
         if on_qualified is not None:
             on_qualified(runtime=runtime, request=request, sources=sources,
                          audit=audit, license_guard=license_guard,
-                         qualified=qualified, confirmed=confirmed)
+                         qualified=qualified, confirmed=confirmed,
+                         documents=reader, downloads=download,
+                         parse_results=parse_results)
         (root / locator).write_bytes(b"X" * len(content))
         with runtime.unit_of_work() as tx:
             rejects(lambda: sources.qualify(tx, request))

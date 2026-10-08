@@ -9,6 +9,7 @@ import psycopg
 from fastapi.testclient import TestClient
 
 from plm_assistant.entrypoints.api import create_app
+from plm_assistant.entrypoints.windows_solution_reference import create_windows_project_reference_create_router
 from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
 from plm_assistant.modules.auth.application.session_service import SessionService
 from plm_assistant.modules.auth.infrastructure.session_repository import SqlAlchemySessionRepository
@@ -39,6 +40,8 @@ class DeniedLicense:
 
 def on_created(*, port, scratch, locator, content, runtime, service, sources, audit, project,
                other_project, document_version, evidence, token, csrf,
+               member_token, member_csrf,
+               documents, downloads, parse_results,
                **_unused) -> None:
     origins = LoginOriginPolicy(["https://plm.example.test"])
     sessions = SessionService(
@@ -46,8 +49,11 @@ def on_created(*, port, scratch, locator, content, runtime, service, sources, au
         repository=SqlAlchemySessionRepository(),
         issue_access=object(), audit=audit,
     )
-    router = create_project_reference_create_router(
-        sessions=sessions, origins=origins, creates=service)
+    router = create_windows_project_reference_create_router(
+        runtime=runtime, sessions=sessions, origins=origins,
+        license_guard=_unused["license_guard"], audit=audit,
+        documents=documents, downloads=downloads,
+        parse_results=parse_results)
     path = f"/api/v1/projects/{project}/reference-solutions"
     body = {
         "name": "HTTP Project Reference",
@@ -74,6 +80,15 @@ def on_created(*, port, scratch, locator, content, runtime, service, sources, au
         assert created.headers["etag"] == '"v0"'
         assert created.headers["location"].endswith(result["reference_solution_id"])
         assert created.headers["x-trace-id"] == created.json()["trace_id"]
+        member_headers = {**headers,
+            "cookie": "plm_session=" + member_token.hex(),
+            "x-csrf-token": member_csrf.hex(),
+            "idempotency-key": "i" * 16,
+        }
+        member_created = client.post(path, headers=member_headers,
+                                     json={**body, "name": "Member HTTP Reference"})
+        assert member_created.status_code == 201, member_created.text
+        assert member_created.json()["data"]["created_by"] == str(_unused["member"])
         replay = client.post(path, headers=headers, json=body)
         assert replay.status_code == 201 and replay.json()["data"] == result
         assert client.post(path, headers=headers,

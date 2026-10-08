@@ -10726,3 +10726,10 @@
 - Decision：按冻结 `SOL_REFERENCE_CREATE` 先提供 PROJECT 可选 POST Router 与 `create_app` 注入插槽，不在默认应用/Windows 正式组合启用；GLOBAL 创建暂不对用户开放，待真实人工脱敏确认入口可用后单独接线。
 - Reason：PROJECT 当前来源可由真实 Session/成员/私有文件验证，GLOBAL 当前仅有合成确认和内部记录，直接公开会误导或诱使伪造人工确认。分阶段装配不改变冻结 Operation/Scope 或安全规则。
 - Impact/Rollback：无 Schema/依赖变更；移除 opt-in Router 注入即可关闭新路径。真实 ASGI/PG、正式 License、GET/List、GLOBAL 确认、UI/发行仍待；不得把合同 PASS 写成可用包。
+
+# DEC-20261009-1113：Windows 写模式复用真实文件证明端口组合 Reference 创建
+
+- Date/WBS：2026-10-09 / `SOL-01-A04-P03-P02-P05`；依据 API-04、CR-SOL-005/007 与 P03-P02-P04 隔离 ASGI/PG。
+- Decision：在独立 Windows Solution 组合函数中复用当前 DocumentRead/Download/ParseResult 与 License Guard；PROJECT Evidence 证明允许 PM/IM。仅显式 `--platform-write` 注入 PROJECT POST，默认/只读/GLOBAL 保持关闭。
+- Reason：此前项目角色策略允许 IM，但 Evidence 固定来源服务默认仅 PM；未显式对齐会出现“IM 有创建权限但引用 Evidence 被拒”的组合偏差。独立组合函数使端口与失败关闭可单独验证，不把合成确认接成 GLOBAL 用户入口。
+- Impact/Rollback：无 Schema/冻结 API/新依赖；移除注入可恢复关闭。隔离PG来源/ASGI、模式合同及后端全量通过；正式 License/目标账户信任源、用户确认、GET/List/UI/发行仍待。

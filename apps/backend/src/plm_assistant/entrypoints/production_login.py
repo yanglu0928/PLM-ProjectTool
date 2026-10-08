@@ -51,6 +51,9 @@ from plm_assistant.entrypoints.windows_requirement import (
 from plm_assistant.entrypoints.windows_prototype import (
     create_windows_prototype_routers,
 )
+from plm_assistant.entrypoints.windows_solution_reference import (
+    create_windows_project_reference_create_router,
+)
 from plm_assistant.entrypoints.windows_audit_list_cursor import create_windows_audit_cursor_codec
 from plm_assistant.modules.audit.api.read_events import create_audit_read_router
 from plm_assistant.modules.audit.application.authorized_read import AuthorizedAuditReadService
@@ -600,6 +603,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         prototype_version_router = None
         prototype_review_submission_router = None
         requirement_prototype_link_router = None
+        project_reference_create_router = None
         review_command_router = None
         if include_secret_read:
             from plm_assistant.entrypoints.windows_license_runtime import (
@@ -782,6 +786,14 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             )
             requirement_prototype_link_router = prototype_routers.links
             if include_secret_write:
+                project_reference_create_router = (
+                    create_windows_project_reference_create_router(
+                        runtime=runtime, sessions=sessions, origins=origins,
+                        license_guard=licenses.guard, audit=audit,
+                        documents=document_reads, downloads=document_downloads,
+                        parse_results=evidence_results_for_viewer,
+                    )
+                )
                 review_command_router = create_windows_project_review_router(
                     runtime, sessions=sessions, origins=origins,
                     license_guard=licenses.guard, audit=audit,
@@ -1587,6 +1599,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             requirement_prototype_link_router=(
                 requirement_prototype_link_router
             ),
+            project_reference_create_router=project_reference_create_router,
             review_command_router=review_command_router,
             maintenance_admission=maintenance_admission,
             shutdown_callback=shutdown,
