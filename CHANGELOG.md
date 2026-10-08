@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A04-P09-P02 新增独立 GLOBAL Reference 只读 Owner/仓储，当前 DeploymentAdmin/License、GLOBAL Scope、固定有序来源与有界摘要分页失败关闭；撤回后的确认仅保留历史读取，不宣称现时有效。兼容性/升级：仅内部增量，无 Schema/公开 API/依赖/数据迁移，PROJECT 读取不变。验证：单元5/15子例、后端全量3346通过/3跳过/4962子例、Win11隔离PG18.6 GLOBAL/PROJECT两库实测退出0。已知问题：GLOBAL GET/List HTTP、Windows/UI、正式License/账户、Server2025、20并发、Gate3/UAT/发行未验；Debian13依指令跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P09-P01 对账冻结 GLOBAL Reference GET/List 与已实测 Create201 Location，确定独立管理员只读 Owner、专用分页游标及创建原 Key 查询需另立变更边界。兼容性/升级：仅前置设计与 DEC-1120，无代码/API/Schema/依赖或数据升级。验证：冻结 API-04、现有 PROJECT Read/Repository/HTTP/Windows 与 GLOBAL Create Edge/PG 证据静态对账；GLOBAL GET/List 未运行。已知问题：创建后对象尚无 GLOBAL 详情/列表，正式License/账户、真人确认、Server2025、20并发、Gate3/UAT/发行未验；Debian13依指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P08-P06-P05-P04 新增 GLOBAL Reference Create 的 Windows11 Edge/一次性PG18.6合成单、多来源端到端验收：真实登录、逐项固定原文/合成确认、Create201、有序来源及确认绑定、单次Audit、撤回/回查与来源回归。兼容性/升级：仅验证脚本，无生产代码/API/Schema/依赖变化或数据迁移；旧脚本默认模式不变。验证：两轮隔离PG/Edge及夹具回归退出0。已知问题：脚本确认非真人业务事实，正式License/账户、Server2025、20并发、Gate3/UAT/发行未验；Debian13依指令跳过。

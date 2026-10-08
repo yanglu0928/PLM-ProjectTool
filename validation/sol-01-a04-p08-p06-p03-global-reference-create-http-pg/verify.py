@@ -44,7 +44,8 @@ class DeniedLicense:
 def on_preview(*, runtime, audit, license_guard, preview, confirm, revoke,
                document, version, evidence, node_evidence, port, scratch,
                documents, downloads, parse_results,
-               create_router_factory=None, **_unused) -> None:
+               create_router_factory=None, on_created=None, on_revoked=None,
+               **_unused) -> None:
     sessions = SessionService(
         unit_of_work=runtime.unit_of_work,
         repository=SqlAlchemySessionRepository(), issue_access=object(), audit=audit)
@@ -138,6 +139,12 @@ def on_preview(*, runtime, audit, license_guard, preview, confirm, revoke,
         assert created.headers["x-trace-id"] == created.json()["trace_id"]
         assert "confirmation_id" not in created.text and "synthetic.txt" not in created.text
         assert counts() == (1, 1, 1, 2)
+        if on_created is not None:
+            on_created(runtime=runtime, license_guard=license_guard, port=port,
+                       actor=_unused["actor"], result=result, document=document,
+                       version=version, evidence=evidence,
+                       node_evidence=node_evidence,
+                       confirmation_id=confirmation_id)
         replay = posted(client, headers["idempotency-key"])
         assert replay.status_code == 201 and replay.json()["data"] == result
         assert posted(client, headers["idempotency-key"],
@@ -190,6 +197,12 @@ def on_preview(*, runtime, audit, license_guard, preview, confirm, revoke,
         assert revoked.status_code == 200, revoked.text
         assert posted(client, "global-create-revoked-01").status_code == 404
         assert counts() == (1, 1, 1, 2)
+        if on_revoked is not None:
+            on_revoked(runtime=runtime, license_guard=license_guard, port=port,
+                       actor=_unused["actor"], result=result, document=document,
+                       version=version, evidence=evidence,
+                       node_evidence=node_evidence,
+                       confirmation_id=confirmation_id)
 
     denied = create_global_reference_create_router(
         sessions=sessions, origins=origins, creates=create_service(DeniedLicense()))
