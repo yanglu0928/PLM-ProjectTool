@@ -38,6 +38,23 @@ describe("SessionClient", () => {
     expect(JSON.stringify(api)).not.toContain(token);
   });
 
+  it("notifies session-bound UI when identity is invalidated or replaced and supports unsubscribe", async () => {
+    const { api } = client(response(session()), response(session({ csrf_token: "b".repeat(64) })), response({ revoked: true }));
+    const observed: Array<string | null> = []; const revisions: number[] = [];
+    const unsubscribe = api.subscribe(() => { observed.push(api.view?.user.user_id ?? null); revisions.push(api.revision); });
+    await api.login("user", "synthetic-input"); await api.renew();
+    expect(observed).toEqual([null, id, null, id]); expect(revisions).toEqual([1, 2, 3, 4]);
+    unsubscribe(); await api.logout("synthetic-key-0001"); expect(observed).toHaveLength(4);
+  });
+
+  it("notifies the application boundary when a Prototype write receives session expiry", async () => {
+    const expired = new Response("", { status: 401 }); const { api } = client(response(session()), expired);
+    await api.login("user", "synthetic-input"); const listener = vi.fn(); api.subscribe(listener);
+    await expect(api.writePrototype({ operation: "package-create", projectId }, JSON.stringify({ name: "原型包" }),
+      null, "prototype-create-0001")).resolves.toBe(expired);
+    expect(api.view).toBeNull(); expect(api.canSubmit).toBe(false); expect(listener).toHaveBeenCalledTimes(1);
+  });
+
   it("does not persist inputs or tokens in browser storage", async () => {
     const local = vi.spyOn(Storage.prototype, "setItem");
     const cookies = vi.spyOn(Document.prototype, "cookie", "set");

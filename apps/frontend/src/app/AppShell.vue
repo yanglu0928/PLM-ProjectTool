@@ -1,13 +1,19 @@
 <script setup lang="ts">
-import { provide } from "vue";
-import { RouterLink, RouterView } from "vue-router";
+import { onUnmounted, provide, toRaw } from "vue";
+import { RouterLink, RouterView, useRouter } from "vue-router";
 
 import AppErrorBoundary from "@/app/components/AppErrorBoundary.vue";
 import { SessionClient } from "@/modules/auth/api/sessionClient";
 import { sessionClientKey } from "@/modules/auth/api/sessionContext";
 import ConnectionStatus from "@/shared/components/ConnectionStatus.vue";
 
-provide(sessionClientKey, new SessionClient());
+const props = defineProps<{ session?: SessionClient }>();
+const session = toRaw(props.session ?? new SessionClient()); const router = useRouter();
+provide(sessionClientKey, session);
+const unsubscribe = session.subscribe(() => {
+  if (session.view === null && router.currentRoute.value.name !== "login") void router.replace({ name: "login" });
+});
+onUnmounted(unsubscribe);
 </script>
 
 <template>
@@ -28,6 +34,7 @@ provide(sessionClientKey, new SessionClient());
           <RouterLink to="/admin/users">用户管理</RouterLink>
           <RouterLink to="/admin/evidence">全局证据</RouterLink>
           <RouterLink to="/admin/jobs">部署任务</RouterLink>
+          <RouterLink to="/admin/prototype-templates">全局原型模板</RouterLink>
         </nav>
         <ConnectionStatus />
       </div>

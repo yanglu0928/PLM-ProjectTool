@@ -99,6 +99,8 @@ export class SessionClient {
   #csrf: string | null = null;
   #view: SessionView | null = null;
   #busy = false;
+  #revision = 0;
+  readonly #listeners = new Set<() => void>();
   constructor(private readonly fetcher: typeof fetch = fetch, private readonly timeoutMs = 10_000) {
     if (!Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 30_000) {
       throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
@@ -106,6 +108,15 @@ export class SessionClient {
   }
   get view(): SessionView | null { return this.#view; }
   get canSubmit(): boolean { return this.#csrf !== null && !this.#busy; }
+  get revision(): number { return this.#revision; }
+  subscribe(listener: () => void): () => void {
+    if (typeof listener !== "function") throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    this.#listeners.add(listener); return () => { this.#listeners.delete(listener); };
+  }
+  #changed() {
+    this.#revision += 1;
+    for (const listener of [...this.#listeners]) { try { listener(); } catch { /* UI observers cannot alter auth state. */ } }
+  }
 
   async #exclusive<T>(action: (token: string | null) => Promise<T>): Promise<T> {
     if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
@@ -113,6 +124,7 @@ export class SessionClient {
     const token = this.#csrf;
     this.#csrf = null;
     this.#view = null;
+    this.#changed();
     try { return await action(token); }
     catch (error) {
       this.#csrf = null;
@@ -161,6 +173,7 @@ export class SessionClient {
       this.#csrf = data.csrf_token;
     }
     this.#view = view;
+    this.#changed();
     return view;
   }
 
@@ -876,7 +889,7 @@ export class SessionClient {
       const response = await fetcher(path, { method, credentials: "same-origin", cache: "no-store", redirect: "error",
         headers, ...(body === null ? {} : { body }), signal: controller.signal });
       if (controller.signal.aborted) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
-      if (response.status === 401) { this.#csrf = null; this.#view = null; }
+      if (response.status === 401) { this.#csrf = null; this.#view = null; this.#changed(); }
       return response;
     } catch {
       throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");

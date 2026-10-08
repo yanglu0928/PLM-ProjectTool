@@ -460,3 +460,13 @@ receipt及Alembic drift。验收脚本首轮导入路径、次轮成员表名为
 CREATE/REVOKE/SUPERSEDE未知结果仅按原Body/Key显式恢复，沿用DEC-1060不增加If-Match。无Migration、
 公开API、依赖、Secret或外发变化；删除页面即可回滚且Link历史保留。定向3项、前端100文件/1588项、
 typecheck及Vite 195 modules构建通过；路由和浏览器验收留A06，既有主chunk警告保留。
+
+## A10-A06 Router、导航与共享会话边界（2026-10-08）
+
+注册七类Prototype页面的八个命名路由，并接通ProjectDetail与AppShell部署管理入口。页面使用动态导入，
+避免静态注册将主chunk推高到892.25 kB；最终主chunk 784.90 kB，既有大chunk警告不冒充已解决。
+
+SessionClient增加不含凭据的进程内revision/subscribe；身份失效/替换及Prototype写401通知AppShell立即回到
+Login，利用页面卸载和generation守卫清除pending、拒绝迟到响应。业务403/404继续由服务端当前权限重证，
+不伪装为全局Session失效。无Schema/Migration、服务端API、依赖、Secret或外发变化。定向4文件/200项、
+前端101文件/1599项、typecheck和Vite 220 modules拆分构建通过；进入A07 Windows真实浏览器闭环。

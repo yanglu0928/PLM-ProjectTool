@@ -46,6 +46,14 @@ import ProjectRequirementListView from "@/modules/requirement/views/ProjectRequi
 import ProjectRequirementDetailView from "@/modules/requirement/views/ProjectRequirementDetailView.vue";
 import ProjectRequirementDraftView from "@/modules/requirement/views/ProjectRequirementDraftView.vue";
 
+const GlobalPrototypeTemplateView = () => import("@/modules/prototype/views/GlobalPrototypeTemplateView.vue");
+const ProjectPrototypeDetailView = () => import("@/modules/prototype/views/ProjectPrototypeDetailView.vue");
+const ProjectPrototypeLinkView = () => import("@/modules/prototype/views/ProjectPrototypeLinkView.vue");
+const ProjectPrototypeListView = () => import("@/modules/prototype/views/ProjectPrototypeListView.vue");
+const ProjectPrototypePackageView = () => import("@/modules/prototype/views/ProjectPrototypePackageView.vue");
+const ProjectPrototypeTemplateView = () => import("@/modules/prototype/views/ProjectPrototypeTemplateView.vue");
+const ProjectPrototypeVersionView = () => import("@/modules/prototype/views/ProjectPrototypeVersionView.vue");
+
 export function createAppRouter(
   history: RouterHistory = createWebHistory(),
 ): Router {
@@ -213,6 +221,11 @@ export function createAppRouter(
         component: AdminJobListView,
       },
       {
+        path: "/admin/prototype-templates",
+        name: "global-prototype-templates",
+        component: GlobalPrototypeTemplateView,
+      },
+      {
         path: "/projects/:projectId/documents/new",
         name: "project-document-upload",
         component: ProjectDocumentUploadView,
@@ -251,6 +264,41 @@ export function createAppRouter(
         path: "/projects/:projectId/members",
         name: "project-members",
         component: ProjectMemberListView,
+      },
+      {
+        path: "/projects/:projectId/prototype-packages",
+        name: "project-prototype-packages",
+        component: ProjectPrototypePackageView,
+      },
+      {
+        path: "/projects/:projectId/prototype-templates",
+        name: "project-prototype-templates",
+        component: ProjectPrototypeTemplateView,
+      },
+      {
+        path: "/projects/:projectId/prototype-links",
+        name: "project-prototype-links",
+        component: ProjectPrototypeLinkView,
+      },
+      {
+        path: "/projects/:projectId/prototypes/:prototypeId/versions/:versionId",
+        name: "project-prototype-version-detail",
+        component: ProjectPrototypeVersionView,
+      },
+      {
+        path: "/projects/:projectId/prototypes/:prototypeId/versions",
+        name: "project-prototype-versions",
+        component: ProjectPrototypeVersionView,
+      },
+      {
+        path: "/projects/:projectId/prototypes/:prototypeId",
+        name: "project-prototype-detail",
+        component: ProjectPrototypeDetailView,
+      },
+      {
+        path: "/projects/:projectId/prototypes",
+        name: "project-prototypes",
+        component: ProjectPrototypeListView,
       },
       {
         path: "/projects/:projectId",

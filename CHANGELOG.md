@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A10-A06 注册Prototype八个命名路由，接通项目/部署管理导航并对七类页面
+  动态拆包；SessionClient新增无凭据进程内变化通知，身份失效/替换或Prototype写401时AppShell立即退出业务页，
+  由卸载/generation守卫清除pending并拒绝迟到响应。兼容性/升级/回滚：无Schema/服务端API/依赖/权限/
+  Secret或外发，重建前端即可升级，撤路由/订阅可回滚且业务历史不变。验证：定向4文件/200项、前端101文件/
+  1599项、typecheck、Vite 220 modules拆分构建PASS；主chunk 784.90 kB的既有警告保留。已知问题：A07
+  Edge/PG真实闭环、A11、Server2025、Gate3/UAT/发行待；Debian13跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A10-A05-P04 新增RequirementPrototypeLink列表、创建、撤销和替换页面；
   双端必须是当前批准Version且Prototype已固定精确Requirement。验收标准按稳定引用逐条形成完整覆盖分区，
   缺引用失败关闭，替换锁定逻辑身份，三类写操作按原Body/Key恢复；关联与Coverage均明确不是评审批准。

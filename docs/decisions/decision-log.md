@@ -1,5 +1,19 @@
 # 自主决策记录
 
+## DEC-20261008-1072：Prototype路由按需加载且共享会话失效立即卸载业务页
+
+- Date/WBS：2026-10-08 / `PRT-01-A10-A06`；依据A01会话变化清理要求、A05页面边界及既有AppShell共享
+  SessionClient设计。
+- Decision：八个Prototype命名路由统一接入主Router，七类页面按需动态导入。SessionClient以不含凭据的
+  单调revision/订阅通知身份清空或替换；AppShell发现共享身份为空时立即替换到Login，从而卸载业务页、清除
+  pending并让generation守卫拒绝迟到响应。Prototype写401触发同一通知；403/404仍保留业务级失败语义。
+- Reason：只隐藏按钮不能处理登出/续期竞态，页面继续挂载会保留待恢复输入；把所有页面静态导入又会使本轮
+  主包由约780 kB增长到892.25 kB。401表示会话失效，业务403不等同整个会话失效。
+- Impact/Rollback：前端SessionClient新增进程内观察接口并增量接线Router/导航，无Schema、服务端API、依赖、
+  权限、Secret或外发。可撤订阅与路由回滚，业务历史不变；服务端仍逐请求授权。
+- Verification：定向4文件/200项、前端101文件/1599项、typecheck及Vite 220 modules拆分构建通过；主chunk
+  784.90 kB且既有大chunk警告仍保留。
+
 ## DEC-20261008-1071：Link覆盖必须精确分区且替换保持逻辑身份
 
 - Date/WBS：2026-10-08 / `PRT-01-A10-A05-P04`；依据冻结Coverage V1、DEC-1046/1048/1060及
