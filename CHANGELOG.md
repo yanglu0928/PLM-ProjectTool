@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-04-A04 新增可选 Section CREATE HTTP，严格 Session/Origin/CSRF/幂等与初态 201/ETag/Location，默认应用仍404。兼容性/升级：冻结 API-04 内实现，无 Schema/Migration/依赖/前端变化；撤下可选 Router 可回滚，历史保留。验证：Win11隔离PG18.6真实ASGI/Session/角色/重放/跨项目/License/默认关闭及 PROJECT Reference 夹具通过；后端3386通过/3跳过/5100子例。已知问题：Windows显式组合/只读/UI、正式目标账户/Server2025/性能、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-04-A03/CR-SOL-012 新增 Section 内部受权创建、项目角色/活动目录锁、同事务 Receipt/Audit/不可变首次结果及 0148 INSERT-only/延迟闭合 Guard；SectionVersion 与更新删除保持关闭。兼容性/升级：无公开 API/前端/依赖或冻结合同变化，0147→0148 线性升级；空历史可降，有章节历史拒降，失败须向前修复。验证：Win11隔离PG18.6真实Session/角色/并发/回滚/直接SQL负例及后端3386通过/3跳过/5100子例。已知问题：公开HTTP/Windows组合/UI、正式目标账户/Server2025/性能、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-04-A02 新增 `20261009_0147` 章节创建首次结果快照表及 ORM，同 Section/Outline/Project 复合 FK、key/时间约束和未装 Owner 写保护；无公开 API/权限/依赖变化。兼容性/升级：0146→0147 线性迁移；空表可降，有快照拒降，不能删除历史强退；Owner 尚未开放。验证：Win11隔离PG18.6空/有数据升降级、drift、写保护/FK/重复/历史负例通过；后端3386通过/3跳过/5095子例。已知问题：开发 wheel 构建工具不可用，wheel 未验；Section Owner/HTTP/UI、正式目标账户/Server2025/性能、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
