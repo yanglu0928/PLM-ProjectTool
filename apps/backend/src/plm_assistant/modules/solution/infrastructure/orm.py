@@ -48,6 +48,31 @@ class SolutionOutlineRow(Base):
     lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
 
 
+class SolutionOutlineCreateResultRow(Base):
+    """Closed storage for the immutable first CREATE response."""
+
+    __tablename__ = "sol_outline_create_results"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["solution_outline_id", "project_id"],
+            ["plm.sol_outlines.solution_outline_id", "plm.sol_outlines.project_id"],
+            name="fk_sol_outline_create_results__outline", ondelete="NO ACTION",
+        ),
+        CheckConstraint("char_length(name) BETWEEN 1 AND 500 AND name=btrim(name)",
+                        name="ck_sol_outline_create_results__name"),
+        CheckConstraint("isfinite(created_at)",
+                        name="ck_sol_outline_create_results__created_at"),
+        {"schema": "plm"},
+    )
+
+    solution_outline_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False)
+
+
 class SolutionSectionRow(Base):
     __tablename__ = "sol_sections"
     __table_args__ = (
