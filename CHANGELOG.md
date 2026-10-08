@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A04-P08-P03-P03 新增 GLOBAL 人工脱敏确认 Preview/Confirm/Revoke 可注入 HTTP，强制当前 Session/CSRF、可信 Origin、严格 JSON、预览指纹与显式声明，新增漂移错误 409；默认/GLOBAL Create 仍关闭。兼容性/升级：增量可选 API、无 Schema/依赖变化，无数据升级；生产须后续显式组合。验证：合同3/10子例、后端全量3330通过/3跳过/4919子例。已知问题：真实PG/HTTP、Windows组合、前端/真人确认、正式License/账户、Server2025、20并发/Gate3/发行未验；Debian13依指令跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P08-P03-P02 新增 GLOBAL 脱敏确认内部只读 Preview Owner，管理员/License/当前来源证明后只返回固定定位身份、来源指纹和UTC时刻；不写确认/Audit/收据。兼容性/升级：无 Schema、公开 API 或依赖变化，无数据升级。验证：单元4/3子例、Win11真实Auth/Document/Evidence/文件隔离PG及确认表无写入、后端全量3327通过/3跳过/4909子例。已知问题：公开HTTP、Windows/UI/真人确认、正式License/账户、Server2025、20并发/Gate3/发行未验；Debian13依指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P08-P03-P01 为GLOBAL人工确认内部命令加入可选预览指纹栅栏，现时来源重算不匹配先于记录/Audit/收据拒绝；公开HTTP尚未启用。兼容性/升级：旧内部调用保持兼容，无Schema/依赖/冻结API变化，无数据升级。验证：单元6/5子例、确认Owner与真实来源隔离PG回归、后端全量3323通过/3跳过/4906子例。已知问题：Preview/Confirm/Revoke HTTP、Windows/UI/真人确认、正式License/账户、Server2025、20并发/Gate3/发行未验；Debian13依指令跳过。

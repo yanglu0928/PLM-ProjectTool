@@ -30,6 +30,9 @@ COMMON_ERRORS: dict[str, ErrorSpec] = {
     "RESOURCE_NOT_FOUND": ErrorSpec("RESOURCE_NOT_FOUND", 404, "资源不存在。"),
     "CONFLICT_VERSION": ErrorSpec("CONFLICT_VERSION", 409, "资源已更新，请刷新后重试。"),
     "CONFLICT_STATE": ErrorSpec("CONFLICT_STATE", 409, "当前状态不允许此操作。"),
+    "SOURCE_SNAPSHOT_CHANGED": ErrorSpec(
+        "SOURCE_SNAPSHOT_CHANGED", 409, "来源内容已变化，请重新预览并核查。"
+    ),
     "CONFLICT_DUPLICATE": ErrorSpec("CONFLICT_DUPLICATE", 409, "资源已存在。"),
     "CONFLICT_IDEMPOTENCY": ErrorSpec(
         "CONFLICT_IDEMPOTENCY", 409, "请求与已受理的操作不一致。"

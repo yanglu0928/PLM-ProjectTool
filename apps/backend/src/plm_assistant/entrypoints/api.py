@@ -131,6 +131,7 @@ def create_app(
     project_reference_create_router: APIRouter | None = None,
     project_reference_read_router: APIRouter | None = None,
     project_reference_list_router: APIRouter | None = None,
+    reference_deidentification_router: APIRouter | None = None,
     review_command_router: APIRouter | None = None,
     maintenance_admission: MaintenanceAdmissionPort | None = None,
     shutdown_callback: Callable[[], None] | None = None,
@@ -367,6 +368,8 @@ def create_app(
         app.include_router(project_reference_read_router)
     if project_reference_list_router is not None:
         app.include_router(project_reference_list_router)
+    if reference_deidentification_router is not None:
+        app.include_router(reference_deidentification_router)
     if prototype_template_router is not None:
         app.include_router(prototype_template_router)
     if prototype_version_router is not None:
