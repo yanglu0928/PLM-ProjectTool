@@ -342,7 +342,7 @@ def verify(port: int, scratch: Path, on_qualified=None, on_preview=None,
         if on_qualified is not None:
             on_qualified(runtime=runtime, request=request, sources=sources,
                          audit=audit, license_guard=license_guard,
-                         qualified=qualified, confirmed=confirmed,
+                         qualified=qualified, confirmed=confirmed, port=port,
                          documents=reader, downloads=download,
                          parse_results=parse_results)
         (root / locator).write_bytes(b"X" * len(content))
@@ -385,7 +385,7 @@ def verify(port: int, scratch: Path, on_qualified=None, on_preview=None,
           "and confirmation revocation denied")
 
 
-def main(on_preview=None, login_credential=None) -> None:
+def main(on_preview=None, login_credential=None, on_qualified=None) -> None:
     scratch = Path(tempfile.mkdtemp(prefix="plm-sol-real-sources-pg-"))
     if not str(scratch).isascii():
         raise RuntimeError("ASCII temporary PostgreSQL path required")
@@ -406,7 +406,7 @@ def main(on_preview=None, login_credential=None) -> None:
                    "-l", str(scratch / "postgres.log"),
                    "-o", f"-h 127.0.0.1 -p {port}", "-w", "start", detached=True)
         started = True
-        verify(port, scratch, on_preview=on_preview,
+        verify(port, scratch, on_preview=on_preview, on_qualified=on_qualified,
                login_credential=login_credential)
     finally:
         if started:
