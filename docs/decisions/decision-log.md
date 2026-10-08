@@ -10489,3 +10489,10 @@
 - Decision：同一已批准RequirementVersion可由两个不同的当前Approved PrototypeVersion固定；这不是NOT_REQUIRED/需原型二分冲突。每个Link自身必须将全部验收标准明确划分为已覆盖与未覆盖，且只有当前ACTIVE的VALIDATES/ACCEPTANCE_REFERENCE已覆盖项参与跨Link并集。两Link重复覆盖同一项而遗漏另一项应拒绝；正式Supersede后互补并集完整才PASS。
 - Reason：直接把多个原型认领视为冲突会错误收窄已冻结的“至少一个Approved PrototypeVersion”规则；只检查Link数量或字段中的未覆盖原因会误报完成。
 - Impact/Rollback：只新增真实PG/HTTP验收脚本与文档，不改生产算法、Schema/API/权限/依赖；撤脚本可回滚，原批准Version/Link历史在真实产品中必须保留。
+
+# DEC-20261008-1079：P04-P06按表前缀定位剩余查询并先审查Review批量证明
+
+- Date/WBS：2026-10-08 / `PRT-01-A11-A05-P04-P06`；依据CR-PRT-005、隔离PG/20并发SQL诊断。
+- Decision：将首个FROM表前缀的查询计数只作为定位证据，优先单独审查Review同事务批量读取的完整性/锁序边界；在正式方案和篡改负例验证前不改共享Review仓储。不得跨请求缓存已批准事实、跳过Review事件/快照/锁检查、移除文件Hash或放宽500ms目标。
+- Reason：122次资格请求中Review表2196条（18/请求），较小合成文件网络证明P95约10.5ms；Review每轮的多表读取有真实安全语义，贸然合并会把无效客户确认误判为有效。
+- Impact/Rollback：本项仅验证工具、CR、进度/决策记录；无生产代码、API、Schema、权限或数据迁移。撤诊断扩展可回滚，性能保持FAIL，Prototype生产入口关闭。P07若提出实现须先在CR补明确方案及安全回归，再单项实施。

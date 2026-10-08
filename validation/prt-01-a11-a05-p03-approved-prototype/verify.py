@@ -6,6 +6,7 @@ import asyncio
 import concurrent.futures
 import hashlib
 import math
+import re
 import runpy
 import shutil
 import socket
@@ -248,6 +249,18 @@ def _measure_read_load(app, prefix: str, headers: dict[str, str], runtime,
                       f"hash={fingerprint} count={entry[0]} "
                       f"total_ms={entry[1]:.2f} max_ms={entry[2]:.2f} "
                       f"statement={entry[3]}")
+        by_owner: dict[str, list[float]] = {}
+        for entry in query_templates.values():
+            match = re.search(r"\bFROM\s+plm\.([a-z0-9_]+)", entry[3], re.I)
+            owner = match.group(1).split("_", 1)[0] if match else "other"
+            bucket = by_owner.setdefault(owner, [0, 0.0])
+            bucket[0] += entry[0]
+            bucket[1] += entry[1]
+        for owner, (count, total_ms) in sorted(
+            by_owner.items(), key=lambda item: item[1][0], reverse=True,
+        ):
+            print("PRT_A05_P04_SQL_OWNER "
+                  f"owner={owner} count={int(count)} total_ms={total_ms:.2f}")
         return result
     finally:
         if sql_diagnostic:
