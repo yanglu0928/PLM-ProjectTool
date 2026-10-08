@@ -375,3 +375,17 @@ ACTIVE行锁/CAS和请求指纹防并发。默认应用保持四路径404；无M
 保持0134，撤注入即可回滚且历史保留。合同3、后端3208项通过/3项环境跳过、compileall、diff check及
 wheel1228项/`f3ce39a4148fe6c2e76c568f282d489fbf77b1a271264ba9736fa4085fef9c9c`通过；进入A09-A09
 Windows只读/写组合和真实PG验收。
+
+## A09-A09 Windows生产组合与真实PG验收（2026-10-08）
+
+新增失败关闭的Windows Prototype组合：默认/login-only不注入，显式只读模式只保留九项GET，显式写模式
+装配冻结全部26项Operation；Package、Prototype、Template、Version、Link继续使用五把固定独立游标密钥。
+统一Review命令Registry新增真实`PRT-03` Subject Owner，使业务SUBMIT_REVIEW可由同一规则完成APPROVE/
+RETURN/WITHDRAW，不形成半闭环。生产入口只传递现有Router槽位，没有新增路径或更改冻结DTO。
+
+Windows 11/PG18.6随机隔离库验证默认404、只读POST 405、写模式真实Session/CSRF/License/Project授权、
+Package/Prototype创建与读取、成员设置、强ETag修改、PROJECT/GLOBAL Template、Version与Link读取、Audit/
+receipt及Alembic drift。验收脚本首轮导入路径、次轮成员表名为脚本笔误，均在全新库修正后从头重跑；产品
+保护未放宽。无Migration、依赖、角色、Secret内容或外发，Schema head保持0134；撤生产注入和Registry登记
+即可关闭，历史保留。后端3210项通过/3项环境跳过、compileall、diff check及wheel1229项/
+`6e4fa209cf57994b86e79069782307506d2da9e34e309a9171c4c3a319ffe725`通过；A09完成，进入A10前端。

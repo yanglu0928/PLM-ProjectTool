@@ -1,5 +1,21 @@
 # 自主决策记录
 
+## DEC-20261008-1061：Prototype只在Windows显式平台模式开放并注册统一Review Owner
+
+- Date/WBS：2026-10-08 / `PRT-01-A09-A09`；依据冻结26项Prototype Operation、DEC-1050～1060及
+  既有Windows生产入口边界。
+- Decision：默认与login-only继续不注入Prototype；`--platform`只装配九项GET，`--platform-write`装配
+  全部26项Operation。五类游标继续分别从固定Windows Secret KeyRef解析且缺失/重复均拒绝启动。
+  `PRT-03`真实Subject Owner同时用于业务送审和统一Review命令Registry，批准终态仍由A07当前事实与
+  Approval Trace Owner处理，不允许形成“可送审但无法审批”的半闭环。
+- Reason：只挂业务Router会遗漏通用Review终态入口；在只读模式构造写Router再依赖前端隐藏会扩大攻击面；
+  默认开放则绕过显式平台信任源门禁。Submission与Review命令复用同一Owner规则但各自构造无状态仓储适配器，
+  不共享跨请求内存事实。
+- Impact/Rollback：仅新增生产组合和验证入口，无Schema/Migration、依赖、公开路径、角色、Secret内容或外发；
+  回滚为撤除Prototype Router注入及Registry登记，既有业务/Audit/receipt历史保留。Windows 11/PG18.6随机
+  隔离库完成默认404、只读9 GET、写26 Operation和代表性真实读写；后端3210/3、wheel1229项/
+  `6e4fa209…ffe725`通过。正式服务账户五Key供给、Server2025和A10/A11仍独立验收。
+
 ## DEC-20261008-1060：Link生命周期HTTP不新增未冻结If-Match前置
 
 - Date/WBS：2026-10-08 / `PRT-01-A09-A08`；依据冻结四项Link Operation及A08 Owner/Schema0134。

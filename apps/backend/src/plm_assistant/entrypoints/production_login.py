@@ -48,6 +48,9 @@ from plm_assistant.entrypoints.windows_project_review import (
 from plm_assistant.entrypoints.windows_requirement import (
     create_windows_requirement_routers,
 )
+from plm_assistant.entrypoints.windows_prototype import (
+    create_windows_prototype_routers,
+)
 from plm_assistant.entrypoints.windows_audit_list_cursor import create_windows_audit_cursor_codec
 from plm_assistant.modules.audit.api.read_events import create_audit_read_router
 from plm_assistant.modules.audit.application.authorized_read import AuthorizedAuditReadService
@@ -551,6 +554,12 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         requirement_version_router = None
         requirement_review_submission_router = None
         requirement_relation_router = None
+        prototype_package_router = None
+        prototype_router = None
+        prototype_template_router = None
+        prototype_version_router = None
+        prototype_review_submission_router = None
+        requirement_prototype_link_router = None
         review_command_router = None
         if include_secret_read:
             from plm_assistant.entrypoints.windows_license_runtime import (
@@ -719,6 +728,19 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 requirement_routers.review_submission
             )
             requirement_relation_router = requirement_routers.relations
+            prototype_routers = create_windows_prototype_routers(
+                runtime, sessions=sessions, origins=origins,
+                license_guard=licenses.guard, audit=audit,
+                include_write=include_secret_write,
+            )
+            prototype_package_router = prototype_routers.packages
+            prototype_router = prototype_routers.prototypes
+            prototype_template_router = prototype_routers.templates
+            prototype_version_router = prototype_routers.versions
+            prototype_review_submission_router = (
+                prototype_routers.review_submission
+            )
+            requirement_prototype_link_router = prototype_routers.links
             if include_secret_write:
                 review_command_router = create_windows_project_review_router(
                     runtime, sessions=sessions, origins=origins,
@@ -1515,6 +1537,16 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 requirement_review_submission_router
             ),
             requirement_relation_router=requirement_relation_router,
+            prototype_package_router=prototype_package_router,
+            prototype_router=prototype_router,
+            prototype_template_router=prototype_template_router,
+            prototype_version_router=prototype_version_router,
+            prototype_review_submission_router=(
+                prototype_review_submission_router
+            ),
+            requirement_prototype_link_router=(
+                requirement_prototype_link_router
+            ),
             review_command_router=review_command_router,
             maintenance_admission=maintenance_admission,
             shutdown_callback=shutdown,

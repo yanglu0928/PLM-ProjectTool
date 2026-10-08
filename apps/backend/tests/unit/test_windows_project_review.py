@@ -26,7 +26,7 @@ class WindowsProjectReviewCompositionTests(unittest.TestCase):
             "{review_round_id}:withdraw",
         ], [route.path for route in router.routes])
 
-    def test_registers_requirement_subject_with_unified_project_review(self):
+    def test_registers_requirement_and_prototype_with_unified_project_review(self):
         runtime = Mock()
         runtime.unit_of_work = Mock()
         with patch(
@@ -44,7 +44,7 @@ class WindowsProjectReviewCompositionTests(unittest.TestCase):
             )
         owners = registry.call_args.args[0]
         self.assertEqual(
-            ("HND-02", "SRV-02", "REQ-03"),
+            ("HND-02", "SRV-02", "REQ-03", "PRT-03"),
             tuple(owner.SUBJECT_TYPE for owner in owners),
         )
 

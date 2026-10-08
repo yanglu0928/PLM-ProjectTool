@@ -1,5 +1,13 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A09-A09 新增Windows Prototype失败关闭生产组合：默认/login-only
+  保持404，`--platform`仅九项GET，`--platform-write`开放冻结26项Operation；五类独立cursor KeyRef保持
+  强制供给，并把真实`PRT-03` Subject Owner注册到统一Review命令。兼容性/升级/回滚：无Migration、依赖、
+  权限、公开路径、Secret内容或外发，Schema head 0134；撤Router注入与Registry登记即可关闭且历史保留。
+  验证：Windows 11/PG18.6随机隔离库真实Session/CSRF/License/授权读写闭环、组合合同38、后端3210/3、
+  compileall、diff check，wheel1229项/`6e4fa209…ffe725`PASS。已知问题：正式服务账户五Key、A10前端、
+  A11 Workflow、Server2025、Gate3/UAT/发行待；Debian13跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A09-A08 新增冻结RequirementPrototypeLink LIST/CREATE/REVOKE/
   SUPERSEDE可选HTTP；专属cursor绑定Session/Project/页长，严格Coverage V1、双端复合身份、空撤销正文、
   幂等及安全错误投影。按DEC-1060不新增未冻结If-Match，生命周期Owner仍固定v0并由行锁/CAS保护。

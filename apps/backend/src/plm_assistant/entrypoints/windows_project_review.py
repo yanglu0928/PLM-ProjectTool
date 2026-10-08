@@ -4,6 +4,10 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
+from plm_assistant.entrypoints.windows_prototype import (
+    create_windows_prototype_review_subject,
+)
+
 from plm_assistant.modules.ai.infrastructure.task_read_repository import (
     SqlAlchemyAITaskReadRepository,
 )
@@ -200,7 +204,10 @@ def create_windows_project_review_router(
             ),
             audit=audit,
         )
-        subject_owners = [handover, survey, requirement]
+        prototype = create_windows_prototype_review_subject(
+            reviewers=reviewers, audit=audit,
+        )
+        subject_owners = [handover, survey, requirement, prototype]
         if all(dependency_shape):
             document_proofs = DocumentFixedSourceProofService(
                 documents=documents, downloads=downloads,
