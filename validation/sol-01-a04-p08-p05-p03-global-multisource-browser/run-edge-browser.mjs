@@ -12,7 +12,7 @@ if (!/^http:\/\/127\.0\.0\.1:\d{2,5}$/.test(origin ?? "")
     .every(value => uuid.test(value ?? ""))
   || documentA === documentB || versionA === versionB || evidenceA === evidenceB
   || password !== "Synthetic-Reference-Browser-Only-2026"
-  || (mode !== undefined && mode !== "create")) {
+  || (mode !== undefined && mode !== "create" && mode !== "create-read")) {
   throw new Error("two distinct owned synthetic sources required");
 }
 const profile = await mkdtemp(join(tmpdir(), "plm-multisource-edge-"));
@@ -150,7 +150,7 @@ try {
     || JSON.stringify(confirmBody.evidence_ids) !== JSON.stringify([evidenceB, evidenceA])) {
     throw new Error("Confirm did not preserve original Key and two-source order");
   }
-  if (mode === "create") {
+  if (mode === "create" || mode === "create-read") {
     if (!await evaluate(`(()=>{const item=document.querySelector('input[placeholder="填写便于识别的参考名称"]');
       if(!item)return false;item.value='Synthetic multi-source reference';
       item.dispatchEvent(new Event('input',{bubbles:true}));return true})()`)) {
@@ -166,7 +166,60 @@ try {
       || Object.keys(createBody).length !== 6
       || !responses.some(item => item.url.endsWith("/api/v1/global/reference-solutions")
         && item.status === 201)) throw new Error("GLOBAL Create order/body/201 failed");
+    if (mode === "create-read") {
+      await clickText("打开刚创建的参考方案详情");
+      await waitFor("document.body?.innerText?.includes('全局参考方案详情与固定来源')", "created reference detail");
+      await waitFor("document.body?.innerText?.includes('Synthetic multi-source reference')", "read created GLOBAL Reference");
+      const identity = await evaluate("location.pathname.split('/').at(-1)");
+      if (!uuid.test(identity)) throw new Error("Created Reference identity is not canonical");
+      const fixed = await evaluate(`(()=>{const doc=[...document.querySelectorAll('a')]
+        .filter(x=>x.textContent.includes('打开固定文档版本原文'));
+        return doc.map(x=>x.getAttribute('href'))})()`);
+      if (JSON.stringify(fixed) !== JSON.stringify([
+        `/api/v1/global/documents/${documentB}/versions/${versionB}/content`,
+        `/api/v1/global/documents/${documentA}/versions/${versionA}/content`])) {
+        throw new Error(`Created Reference lost ordered document links: ${JSON.stringify(fixed)}`);
+      }
+      const fixedDownload = await evaluate(`(async()=>{const link=[...document.querySelectorAll('a')]
+        .find(x=>x.textContent.includes('打开固定文档版本原文'));
+        const response=await fetch(link.getAttribute('href'),{credentials:'same-origin'});
+        return {status:response.status,bytes:(await response.arrayBuffer()).byteLength}})()`);
+      if (fixedDownload.status !== 200 || fixedDownload.bytes < 1) {
+        throw new Error(`Authorized fixed document download failed: ${JSON.stringify(fixedDownload)}`);
+      }
+      await clickText("核验并定位原文");
+      await waitFor("Boolean(document.querySelector('[aria-label=\"受权固定证据定位\"]'))", "GLOBAL Evidence viewer");
+      const evidenceLink = await evaluate(`document.querySelector('[aria-label="受权固定证据定位"] a')?.getAttribute('href')`);
+      if (!evidenceLink?.startsWith('/api/v1/global/documents/') || !evidenceLink.includes('/content')) {
+        throw new Error(`Authorized GLOBAL Evidence content link missing: ${evidenceLink}`);
+      }
+      await clickText("返回全局参考方案候选");
+      await waitFor("location.pathname==='/admin/reference-solutions' && [...document.querySelectorAll('button')].some(x=>x.textContent.trim()==='读取候选')", "GLOBAL candidate page");
+      await clickText("读取候选");
+      await waitFor("document.body?.innerText?.includes('Synthetic multi-source reference')", "GLOBAL candidate list");
+      const candidate = await evaluate(`document.querySelector('a[href="/admin/reference-solutions/${identity}"]')?.textContent`);
+      if (!candidate?.includes('固定来源')) throw new Error("Created GLOBAL candidate navigation missing");
+      for (const [path, status] of [
+        [`/api/v1/global/reference-solutions/${identity}`, 200],
+        ['/api/v1/global/reference-solutions?page_size=50', 200],
+        [`/api/v1/global/documents/${documentB}/versions/${versionB}/content`, 200],
+        [`/api/v1/global/evidence/${evidenceB}/viewer`, 200],
+      ]) if (!responses.some(item => item.url.includes(path) && item.status === status)) {
+        throw new Error(`Expected real GLOBAL read missing: ${path} ${status}`);
+      }
+      await clickText("查看固定来源与待核对信息");
+      await waitFor(`location.pathname==='/admin/reference-solutions/${identity}'`, "candidate detail return");
+      await send("Network.deleteCookies", { name: "plm_session", url: origin });
+      await clickText("重新读取详情");
+      await waitFor("document.body?.innerText?.includes('会话已失效')", "GLOBAL read after Session removal");
+      if (await evaluate(`Boolean(document.querySelector('a[href*="/versions/"][href*="/content"]'))`)) {
+        throw new Error("Historical content link remained after Session removal");
+      }
+      if (!responses.some(item => item.url.includes(`/api/v1/global/reference-solutions/${identity}`)
+        && item.status === 401)) throw new Error("GLOBAL detail 401 after Session removal missing");
+    }
   }
+  if (mode !== "create-read") {
   await clickText("撤回此集合确认");
   await waitFor("document.body?.innerText?.includes('集合确认已撤回')", "multi-source revoke");
   const principal = await evaluate(`(async()=>{const response=await fetch('/api/v1/auth/session',{credentials:'same-origin'});
@@ -197,6 +250,9 @@ try {
     }
   }
   console.log("GLOBAL_MULTISOURCE_EDGE_PASS: ordered two Document/Evidence sources, review, confirm/revoke, original-key recovery");
+  } else {
+    console.log("GLOBAL_REFERENCE_READ_EDGE_PASS: Create→GET/List, fixed document download, Evidence Viewer, Session removal");
+  }
 } finally {
   socket?.close(); edge.kill();
   const tempRoot = resolve(tmpdir()) + sep;

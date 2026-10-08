@@ -16,8 +16,11 @@ from fastapi.staticfiles import StaticFiles
 from plm_assistant.entrypoints.api import create_app
 from plm_assistant.entrypoints.windows_solution_reference import (
     create_windows_global_reference_create_router,
+    create_windows_global_reference_read_router,
+    create_windows_global_reference_list_router,
     create_windows_reference_deidentification_router,
 )
+from plm_assistant.modules.solution.api.global_reference_list_cursor import GlobalReferenceListCursorCodec
 from plm_assistant.modules.auth.api.login import create_login_router
 from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
 from plm_assistant.modules.auth.api.session import create_session_read_router
@@ -59,7 +62,8 @@ DIST = ROOT / "apps/frontend/dist"
 
 def on_preview(*, runtime, audit, license_guard, document, version, evidence,
                documents, downloads, parse_results, browser_script=None,
-               browser_extra=(), include_reference_create=False, **_unused) -> None:
+               browser_extra=(), include_reference_create=False,
+               include_reference_read=False, **_unused) -> None:
     if not (DIST / "index.html").is_file():
         raise RuntimeError("Build apps/frontend before browser verification")
     with socket.socket() as reservation:
@@ -113,6 +117,16 @@ def on_preview(*, runtime, audit, license_guard, document, version, evidence,
                     license_guard=license_guard, audit=audit,
                     documents=documents, downloads=downloads,
                     parse_results=parse_results) if include_reference_create else None),
+            global_reference_read_router=(
+                create_windows_global_reference_read_router(
+                    runtime=runtime, sessions=sessions, origins=origins,
+                    license_guard=license_guard) if include_reference_read else None),
+            global_reference_list_router=(
+                create_windows_global_reference_list_router(
+                    runtime=runtime, sessions=sessions, origins=origins,
+                    license_guard=license_guard,
+                    cursors=GlobalReferenceListCursorCodec(b"g" * 32))
+                if include_reference_read else None),
             evidence_viewer_router=create_evidence_viewer_router(
                 sessions=sessions, origins=origins, viewer=viewer),
             document_download_router=create_document_download_router(

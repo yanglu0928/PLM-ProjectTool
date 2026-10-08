@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A04-P09-P05-P04 新增 GLOBAL Reference Windows11 Edge/隔离PG Create→GET/List→固定文档下载与 Evidence Viewer 验证，移除 Session 后401；原多/单来源确认撤回脚本回归。兼容性/升级：仅验证夹具，无生产代码/API/Schema/依赖/数据迁移；默认脚本模式不变。验证：新旧浏览器链均退出0。已知问题：脚本核查非真人确认，浏览器内精确高亮、真实PG双页、正式License/账户、Server2025、20并发、Gate3/UAT/发行未验；Debian13依指令跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P09-P05-P03 新增 GLOBAL Reference 后台候选/详情和 Create 成功后的详情导航；固定文档版本经受权下载入口、证据经 GLOBAL Viewer 重验，历史引用不宣称现时有效。兼容性/升级：纯前端增量，无 API/Schema/依赖/数据迁移；移除新路由可回滚。验证：前端全量109文件/1647项、typecheck/build通过。已知问题：真实Edge/PG点击链、浏览器内精确高亮、PG双页、正式客户确认/信任源、Server2025、20并发、Gate3/UAT/发行未验；Debian13依指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P09-P05-P02 新增与 PROJECT 分离的 GLOBAL Reference 只读前端客户端，严格校验固定 Scope、null ProjectId、有序来源、ETag 与游标，不把历史读取当现时资格。兼容性/升级：无 API/Schema/依赖/数据迁移；未接页面，删除客户端可回滚。验证：定向4、前端全量108文件/1643项、typecheck/build通过。已知问题：页面/Edge、真实PG双页、正式客户确认/信任源、Server2025、20并发、Gate3/UAT/发行未验；Debian13依指令跳过。
