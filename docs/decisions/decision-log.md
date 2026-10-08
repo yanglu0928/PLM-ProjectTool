@@ -10622,3 +10622,10 @@
 - Decision：0136 仅建立项目 Outline/Section 身份和复合项目 FK/章节键唯一约束；Owner 未安装前 DML 全拒绝、批准指针仅 NULL。不可变版本/指针 FK、身份命令、Reference、Spec、Review/Trace/Workflow 分别实施，不将 Schema PASS 冒充正式方案。
 - Reason：冻结有逻辑资源但运行零表/零 Owner；先验证身份边界可阻止跨项目挂载和重复章节 key。隔离 PG 空/有数据升降、drift 和负例通过，后端 3261/3/4815 通过。
 - Impact/Rollback：新增两表和 ORM/迁移注册，无公开 API、权限、配置、新依赖或外发；两表为空可降级，未来有记录不得丢失历史。Gate 3、Prototype 入口/性能与发行限制不变。
+
+# DEC-20261008-1098：目录版本先固定章节与需求，参考来源待真实 Owner 后加外键
+
+- Date/WBS：2026-10-08 / `SOL-01-A03-P01`；依据 CR-SOL-002、冻结 DM-05/SC-01/02 与隔离 PG18.6/全量回归。
+- Decision：0137 建立 OutlineVersion、章节顺序和 RequirementVersion 固定引用，全部同 Project/Outline 复合 FK，Owner 未安装时拒写；不在 ReferenceSolutionVersion 尚不存在时引入可写裸引用。批准指针只补身份 FK，不自动推断 Review APPROVED；A03-P02 再建 SectionVersion，参考来源后续单独补齐。
+- Reason：现有 Section/Requirement 可提供真实 FK，ReferenceSolution 尚无目标表；先实现可证明的结构，保留冻结功能与后续来源闭包。PG 迁移/负例及后端 3263/3/4815 通过。
+- Impact/Rollback：三张空表与一项 Section 唯一、一项 Outline 指针 FK；无公开 API、权限、配置、依赖或外发。三表为空可降至 0136，非空拒降；Gate 3/正式方案仍开放。

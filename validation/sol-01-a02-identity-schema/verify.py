@@ -87,7 +87,7 @@ def verify() -> None:
                 "INSERT INTO plm.sol_outlines(solution_outline_id,project_id,name,created_by) "
                 "VALUES (%s,%s,'Closed',%s)", (outline_id, project_one, actor)))
             rejects("Solution identity history cannot be truncated",
-                    lambda: db.execute("TRUNCATE plm.sol_sections"))
+                    lambda: db.execute("TRUNCATE plm.sol_sections CASCADE"))
             db.execute("ALTER TABLE plm.sol_outlines DISABLE TRIGGER trg_sol_outlines__owner")
             db.execute("ALTER TABLE plm.sol_sections DISABLE TRIGGER trg_sol_sections__owner")
             try:

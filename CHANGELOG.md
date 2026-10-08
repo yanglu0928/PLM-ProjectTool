@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/SOL-01-A03-P01 依据 CR-SOL-002 增加目录版本、有序 Section 身份与固定 RequirementVersion 引用 ORM/Alembic `20261008_0137`，补跨 Outline/Project 复合 FK 和目录批准指针归属 FK；未装配 Owner 时仍拒绝业务写入，参考方案版本/章节正文版本尚未接入。兼容性/升级：旧 API/权限不变，线性迁移；三新表为空可降到 0136，非空拒降，A02 身份历史保留。验证：Win11 一次性 PG18.6 空/已有数据升降级、drift、跨范围/顺序/声明/历史负例和 A02 旧脚本复跑 PASS；后端 3263 passed/3 skipped/4815 subtests。已知问题：完整 Solution Owner/Review/Trace/Workflow、Gate3、Prototype 性能与入口、Server2025/正式信任/UAT/发行待；Debian13 依指令跳过。
+
 - 2026-10-08：0.1.0-dev.0/SOL-01-A02 依据 CR-SOL-001 新增 Outline/Section 项目范围逻辑身份 ORM 与 Alembic `20261008_0136`，复合项目 FK、Outline 内唯一章节键及未装配 Owner 的 DML/TRUNCATE 拒绝；未新增版本、业务写服务或公开 API。兼容性/升级：旧接口不变，按线性 Migration 升级；两表为空可降级，已有记录拒降且不得丢历史。验证：Win11 一次性 PG18.6 空/既有数据升级、降级重升、drift/负例 PASS；后端 3261 passed/3 skipped/4815 subtests。已知问题：Solution 不可变版本/受权 Owner/Review/Trace/Workflow 尚无，Gate3、Prototype 性能与入口、Server2025/正式信任/UAT/发行待；Debian13 依指令跳过。
 
 - 2026-10-08：0.1.0-dev.0/SOL-01-A01 按 CR-SEQ-001 对账冻结 Solution 六类资源、SC 映射、API-04 与两项 Workflow Checklist；确认当前无 Solution 运行模块和 `sol_*` 业务表，决定先实施可独立验收的固定版本基础，再逐项接 Review/Trace/Workflow。兼容性/升级：仅文档与任务排序，无程序、Schema、API、权限、依赖、配置或迁移；停止前置任务可恢复排期。验证：静态基线/源码/迁移核查，未运行新测试。已知问题：Solution 真实 Owner/Gate3、Prototype 性能与生产入口、Server2025/正式信任/UAT/发行待验；Debian13 依指令跳过。
