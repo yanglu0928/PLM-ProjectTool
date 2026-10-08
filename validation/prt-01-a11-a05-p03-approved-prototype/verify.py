@@ -20,6 +20,7 @@ from pathlib import Path
 
 import httpx
 import psycopg
+import uvicorn
 from fastapi.testclient import TestClient
 from psycopg.types.json import Jsonb
 from sqlalchemy import event
@@ -107,11 +108,13 @@ class UnusedDependency:
 
 def _measure_read_load(app, prefix: str, headers: dict[str, str], runtime,
                        *, sql_diagnostic: bool = False,
+                       network_url: str | None = None,
                        ) -> dict[str, float]:
-    """Repeat twenty simultaneous ASGI GETs; not a network-service SLA."""
+    """Repeat twenty simultaneous GETs; not a release-service SLA."""
     query_durations: list[float] = []
     query_templates: dict[str, list[object]] = {}
     query_lock = threading.Lock()
+    mode = "network" if network_url else "asgi"
 
     def before_query(conn, cursor, statement, parameters, context, executemany):
         context._prt_load_query_started = time.perf_counter()
@@ -131,8 +134,9 @@ def _measure_read_load(app, prefix: str, headers: dict[str, str], runtime,
     async def exercise() -> dict[str, float]:
         metrics = {}
         async with httpx.AsyncClient(
-            transport=httpx.ASGITransport(app=app),
-            base_url=ORIGIN, timeout=30.0,
+            transport=(None if network_url else httpx.ASGITransport(app=app)),
+            base_url=network_url or ORIGIN, timeout=30.0,
+            trust_env=False,
         ) as client:
             health_samples = []
             for _ in range(3):
@@ -150,12 +154,14 @@ def _measure_read_load(app, prefix: str, headers: dict[str, str], runtime,
                 ready.set()
                 samples = sorted(await asyncio.gather(*tasks))
                 health_samples.append(samples[18])
-            print("PRT_A05_P04_CONTROL_HEALTH_LIVE "
+            print(f"PRT_A05_P04_CONTROL_HEALTH_LIVE mode={mode} "
                   f"median_round_p95_ms={statistics.median(health_samples):.2f}")
             for item in ITEMS:
                 url = f"{prefix}/checklist-items/{item}/qualification"
                 warm = await client.get(url, headers=headers)
-                assert warm.status_code == 200, warm.text
+                assert warm.status_code == 200, (
+                    warm.status_code, warm.text[:500], str(warm.url),
+                )
                 p95_rounds = []
                 for round_no in range(1, 4):
                     ready = asyncio.Event()
@@ -175,12 +181,12 @@ def _measure_read_load(app, prefix: str, headers: dict[str, str], runtime,
                     samples = sorted(await asyncio.gather(*tasks))
                     p95 = samples[math.ceil(0.95 * len(samples)) - 1]
                     p95_rounds.append(p95)
-                    print(f"PRT_A05_P04_READ_LOAD {item} round={round_no} "
+                    print(f"PRT_A05_P04_READ_LOAD mode={mode} {item} round={round_no} "
                           f"concurrency=20 min_ms={samples[0]:.2f} "
                           f"p50_ms={statistics.median(samples):.2f} "
                           f"p95_ms={p95:.2f} max_ms={samples[-1]:.2f}")
                 metrics[item] = statistics.median(p95_rounds)
-                print(f"PRT_A05_P04_READ_LOAD_SUMMARY {item} "
+                print(f"PRT_A05_P04_READ_LOAD_SUMMARY mode={mode} {item} "
                       f"median_round_p95_ms={metrics[item]:.2f}")
         return metrics
 
@@ -217,6 +223,41 @@ def _measure_read_load(app, prefix: str, headers: dict[str, str], runtime,
             event.remove(runtime._engine, "after_cursor_execute", after_query)
 
 
+def _measure_network_read_load(app, prefix: str,
+                               headers: dict[str, str], runtime
+                               ) -> dict[str, float]:
+    """Use a real Uvicorn loopback socket without changing trust policy."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as listener:
+        listener.bind(("127.0.0.1", 0))
+        listener.listen(128)
+        port = listener.getsockname()[1]
+        server = uvicorn.Server(uvicorn.Config(
+            app, host="127.0.0.1", port=port, lifespan="off",
+            access_log=False, log_level="error",
+        ))
+        worker = threading.Thread(
+            target=server.run, kwargs={"sockets": [listener]}, daemon=True,
+        )
+        worker.start()
+        try:
+            deadline = time.monotonic() + 10
+            while not server.started and worker.is_alive() and time.monotonic() < deadline:
+                time.sleep(.05)
+            if not server.started:
+                raise RuntimeError("isolated Uvicorn loopback failed to start")
+            result = _measure_read_load(
+                app, prefix, headers, runtime,
+                network_url=f"http://127.0.0.1:{port}",
+            )
+            print(f"PRT_A05_P04_NETWORK_DIAGNOSTIC port={port} p95={result}")
+            return result
+        finally:
+            server.should_exit = True
+            worker.join(timeout=10)
+            if worker.is_alive():
+                raise RuntimeError("isolated Uvicorn loopback did not stop")
+
+
 def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
                        reviewer, reviewer_token, requirement,
                        requirement_version, requirement_review_round,
@@ -228,7 +269,8 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
                        isolation_checks: bool = False,
                        multi_prototype: bool = False,
                        read_load: bool = False,
-                       read_load_sql_diagnostic: bool = False) -> None:
+                       read_load_sql_diagnostic: bool = False,
+                       network_load: bool = False) -> None:
     project = ids["project"]
     second = additional_requirement if mixed_not_required else None
     if mixed_not_required:
@@ -722,6 +764,11 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
                   f"default={p95} pool20={expanded_p95}")
         finally:
             expanded_runtime.dispose()
+        if network_load:
+            network_p95 = _measure_network_read_load(
+                app, prefix, read_headers, runtime,
+            )
+            assert set(network_p95) == set(ITEMS)
     with TestClient(app, base_url=ORIGIN) as client:
         if isolation_checks:
             with psycopg.connect(host="127.0.0.1", port=PORT,
@@ -855,7 +902,8 @@ def main(*, mixed_not_required: bool = False,
          isolation_checks: bool = False,
          multi_prototype: bool = False,
          read_load: bool = False,
-         read_load_sql_diagnostic: bool = False) -> None:
+         read_load_sql_diagnostic: bool = False,
+         network_load: bool = False) -> None:
     if conflicting_decision and not mixed_not_required:
         raise ValueError("conflict mode requires mixed scope")
     if coverage_mode not in {None, "partial", "illustrates"}:
@@ -893,6 +941,7 @@ def main(*, mixed_not_required: bool = False,
                 multi_prototype=multi_prototype,
                 read_load=read_load,
                 read_load_sql_diagnostic=read_load_sql_diagnostic,
+                network_load=network_load,
                 **context,
             ),
         )
