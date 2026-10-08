@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261009-1123：Solution 目录 INSERT 解锁不采用可伪造事务信号
+
+- Date/WBS：2026-10-09 / `SOL-02-A02` 设计核对；实施前修订 CR-SOL-011。
+- Decision：不用自定义 PostgreSQL GUC 作为受权证明。按仓库现有 0144/Prototype 施工模式，仅允许符合固定初态的 Outline INSERT，UPDATE/DELETE、Section DML 与 TRUNCATE 继续拒绝；真实 Session/License/项目角色/Receipt/Audit 由 Owner 同事务保证。数据库凭据持有者仍可能直接 INSERT，不能把 Guard 宣称为恶意 SQL 防线；正式账户最小权限另由 Release 验收。
+- Reason：自定义 GUC 可由同数据库角色设置，事务局部属性不等于不可伪造授权；保留该检查会制造虚假安全感。最小操作 Guard 可阻止未安装的其他变更，且与既有仓库实现方式一致。
+- Impact/Rollback：实施前的 CR 方案纠偏，无运行代码/Schema/API/数据变更；A02 仍须独立迁移、空/有数据升降级与历史拒降，A03 验证角色、跨项目及原子回滚。
+- Verification：0136/0144/Prototype 迁移与当前数据库角色模式静态对账；未运行新 PG 测试，不宣称 Guard 已解锁。
+
 ## DEC-20261009-1122：GLOBAL Reference 浏览器读取与原确认撤回链分模式验收
 
 - Date/WBS：2026-10-09 / `SOL-01-A04-P09-P05-P04`。
