@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A05 静态核查 Reference Revise/Eligibility 写保护与当前来源缺口，登记 CR-SOL-013/014 及分步迁移/回滚/验证计划；实际操作仍关闭。兼容性/升级：仅文档，无程序、Schema/Migration、依赖或冻结 API 变化；可调整施工顺序。验证：冻结 DM/API、0139/0144、ORM/Owner 静态对账，未运行新测试。已知问题：Reference 修订/资格、Requirement Approved 当前证明、SOL-03 Version、正式目标账户/Server2025/20并发、Gate3/UAT/发行未验；Debian13 实机依指令暂跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-04-A21 新增 Win11 隔离PG18.6/真实Edge Section 身份读写验收夹具，含首次201丢失同键恢复、客户只读/拒写、单身份/审计；合成口令改为每次临时生成。兼容性/升级：仅验证夹具，无正式程序、Schema/Migration、依赖或冻结 API 变化；可移除夹具回滚。验证：完整夹具退出0。已知问题：正式目标账户/公钥/Vault/HTTPS、20并发/Server2025、SectionVersion/Review、Gate3/UAT/发行未验；Debian13 实机依指令暂跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-04-A20 新增 Section 创建页/活动父目录写角色入口，直接访问仍复验父项、浏览器保存原幂等操作号且仅显式同键重试；修复跳转瞬间旧页面路由参数丢失。兼容性/升级：无 Schema/Migration、依赖或冻结 API 变化；撤下页面/入口可回滚，历史保留。验证：定向7、前端全量117文件/1681项、typecheck/build通过。已知问题：真实浏览器/PG、正式目标账户/20并发/Server2025、Gate3/UAT/发行未验；Debian13 实机依指令暂跳过。
