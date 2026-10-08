@@ -10781,3 +10781,10 @@
 - Decision：创建前重取固定 Viewer/Eligibility 与 Preview 并核对有序身份/来源指纹；界面只标记历史确认，不推断现时有效。Create 只提交冻结六字段，最终资格由服务端写事务重证。GLOBAL Create 无原 Key 回查时，结果不确定必须保留 Key/请求摘要并锁定再次创建，不自动换号/重试。
 - Reason：确认 ID/到期时间是历史观察，来源、撤回、License 或权限可在提交前变化；确认回查仅覆盖 Confirm/Revoke，不能证明 Create 首结果。扩展新查询 API 需要独立 Change Request，不能在前端悄然假设。
 - Impact/Rollback：本决策仅界面设计，无生产变更/数据迁移；后续 P05-P02～P04 逐项验收。回滚隐藏界面入口，保留服务端历史；脚本勾选不算真人确认。
+
+# DEC-20261009-1120：GLOBAL Reference 读取首版仅管理员，原 Key 恢复另立边界
+
+- Date/WBS：2026-10-09 / `SOL-01-A04-P09-P01`；依据冻结 API-04、P06-P05-P04 GLOBAL Create Edge/PG 和 PROJECT GET/List 当前实现。
+- Decision：按冻结 GLOBAL GET/List 路径实现独立只读 Owner 与 Windows 显式组合，首版只允许当前 DeploymentAdmin/License；不在无 ProjectId 的 GLOBAL 路径推断项目成员权限，不复用 PROJECT 签名游标或把历史来源声明为现时资格。Create 原 Key 精确回查与 GET/List 分开，确需新增操作时先记 Change Request。
+- Reason：当前 Create201 的 Location 未有 GLOBAL GET，影响对象定位；PROJECT Owner/仓储/游标把 ProjectId 作为身份和隔离边界，直接放宽会出现跨项目泄露。List/GET 也不能按名称安全确认超时 Create 的首次结果。
+- Impact/Rollback：本项纯设计，无公开/数据变更；后续逐项验证 PG/HTTP/Windows/UI。关闭新读路由可回滚入口，已创建 GLOBAL Reference 与审计历史保留；正式 License/账户、性能、真人确认和 Gate3 仍待。
