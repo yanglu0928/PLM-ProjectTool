@@ -10,7 +10,10 @@ from plm_assistant.modules.review.application.read_snapshot import (
     FixedReviewRoundSnapshot, ReviewBasisObservation, ReviewIdentitySnapshot, ReviewSnapshotReadError,
 )
 from plm_assistant.modules.review.domain.round_progress import ReviewDecisionSnapshot, ReviewDecisionKind, ReviewRoundProgress
-from plm_assistant.modules.review.infrastructure.read_repository import SqlAlchemyReviewSnapshotReadRepository
+from plm_assistant.modules.review.infrastructure.read_repository import (
+    SqlAlchemyReviewSnapshotReadRepository, _decode_child_row,
+)
+from plm_assistant.modules.review.infrastructure.orm import _tables
 
 
 class ReviewReadSnapshotTests(unittest.TestCase):
@@ -84,7 +87,7 @@ class ReviewReadSnapshotTests(unittest.TestCase):
             result = MagicMock()
             result.mappings.return_value.one_or_none.return_value = {"review_round_id": self.round}
             with patch.object(repository, "get_review", return_value=self.identity), \
-                    patch.object(repository, "_rows", return_value=[]), \
+                    patch.object(repository, "_child_rows_bundle", return_value={i: [] for i in range(2, 8)}), \
                     patch.object(session, "execute", return_value=result):
                 with self.assertRaisesRegex(ReviewSnapshotReadError, "Review snapshot unavailable"):
                     repository.get_round(tx, "PROJECT", self.project, self.identity.review_id, self.round)
@@ -98,3 +101,81 @@ class ReviewReadSnapshotTests(unittest.TestCase):
                     patch.object(session, "execute", return_value=result):
                 with self.assertRaises(ReviewSnapshotReadError):
                     repository.get_review(SimpleNamespace(session=session), "PROJECT", self.project, self.identity.review_id)
+
+    def test_bundled_child_decoder_preserves_native_types_and_rejects_malformed_rows(self):
+        for index in range(2, 8):
+            table = _tables[index]
+            payload = {}
+            for column in table.columns:
+                kind = str(column.type)
+                payload[column.name] = (
+                    str(uuid4()) if kind == "UUID" else
+                    "\\x" + "ab" * 32 if kind == "BLOB" else
+                    self.time.isoformat() if kind == "TIMESTAMP" else
+                    1 if kind in ("INTEGER", "BIGINT") else "VALUE"
+                )
+            with self.subTest(table=table.name):
+                decoded = _decode_child_row(index, payload)
+                self.assertEqual(set(decoded), set(payload))
+                for column in table.columns:
+                    if str(column.type) == "UUID":
+                        self.assertIsInstance(decoded[column.name], UUID)
+                    if str(column.type) == "BLOB":
+                        self.assertEqual(decoded[column.name], b"\xab" * 32)
+                    if str(column.type) == "TIMESTAMP":
+                        self.assertEqual(decoded[column.name], self.time)
+                for changed in (
+                    {key: value for key, value in payload.items() if key != next(iter(payload))},
+                    {**payload, "unexpected": "VALUE"},
+                ):
+                    with self.assertRaises(ReviewSnapshotReadError):
+                        _decode_child_row(index, changed)
+                nullable = next((column for column in table.columns if column.nullable), None)
+                if nullable is not None:
+                    self.assertIsNone(_decode_child_row(
+                        index, {**payload, nullable.name: None},
+                    )[nullable.name])
+                first = next(iter(table.columns))
+                with self.assertRaises(ReviewSnapshotReadError):
+                    _decode_child_row(index, {**payload, first.name: None})
+        for index, field, bad in (
+            (2, "review_id", "invalid"),
+            (3, "round_after_version", True),
+            (4, "content_fingerprint", "not-bytea"),
+            (4, "verified_at", "not-a-time"),
+            (5, "ref_kind", 7),
+        ):
+            payload = {}
+            for column in _tables[index].columns:
+                kind = str(column.type)
+                payload[column.name] = (
+                    str(uuid4()) if kind == "UUID" else
+                    "\\x" + "ab" * 32 if kind == "BLOB" else
+                    self.time.isoformat() if kind == "TIMESTAMP" else
+                    1 if kind in ("INTEGER", "BIGINT") else "VALUE"
+                )
+            with self.subTest(index=index, field=field), self.assertRaises(ReviewSnapshotReadError):
+                _decode_child_row(index, {**payload, field: bad})
+
+    def test_bundled_children_reject_unknown_bucket_before_review_assembly(self):
+        repository = SqlAlchemyReviewSnapshotReadRepository()
+        session = MagicMock()
+        session.execute.return_value = [(9, {})]
+        with self.assertRaises(ReviewSnapshotReadError):
+            repository._child_rows_bundle(session, self.identity.review_id, self.round)
+
+    def test_bundled_children_reject_wrong_round_and_duplicate_primary_key(self):
+        payload = {}
+        for column in _tables[2].columns:
+            kind = str(column.type)
+            payload[column.name] = str(uuid4()) if kind == "UUID" else "VALUE"
+        payload["review_id"] = str(self.identity.review_id)
+        payload["review_round_id"] = str(self.round)
+        repository = SqlAlchemyReviewSnapshotReadRepository()
+        session = MagicMock()
+        session.execute.return_value = [(2, {**payload, "review_round_id": str(uuid4())})]
+        with self.assertRaises(ReviewSnapshotReadError):
+            repository._child_rows_bundle(session, self.identity.review_id, self.round)
+        session.execute.return_value = [(2, payload), (2, payload)]
+        with self.assertRaises(ReviewSnapshotReadError):
+            repository._child_rows_bundle(session, self.identity.review_id, self.round)

@@ -1,7 +1,7 @@
 """Trusted caller transaction, Core mappings and shared current-fact locks."""
 from datetime import datetime, timezone
 from uuid import UUID
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from ..application.read_snapshot import (
@@ -10,6 +10,72 @@ from ..application.read_snapshot import (
 )
 from ..domain.round_progress import ReviewDecisionKind, ReviewDecisionSnapshot, ReviewRoundProgress, ReviewWithdrawalSnapshot
 from .orm import _tables
+
+
+def _child_bundle_sql():
+    branches = []
+    for index in range(2, 8):
+        table = _tables[index]
+        order = ("reviewer_id" if index in (2, 3)
+                 else list(table.primary_key.columns)[0].name)
+        branches.append(
+            f"SELECT {index} AS bucket, t.{order}::text AS sort_key, "
+            f"to_jsonb(t) AS payload FROM plm.{table.name} AS t "
+            "WHERE t.review_id=:review_id AND t.review_round_id=:round_id"
+        )
+    return text("SELECT bucket,payload FROM (" + " UNION ALL ".join(branches)
+                + ") AS child_rows ORDER BY bucket,sort_key")
+
+
+_CHILD_BUNDLE_SQL = _child_bundle_sql()
+
+
+def _decode_child_row(index, payload):
+    table = _tables[index]
+    if type(payload) is not dict or set(payload) != {column.name for column in table.columns}:
+        raise ReviewSnapshotReadError()
+    row = {}
+    for column in table.columns:
+        value = payload[column.name]
+        if value is None:
+            if not column.nullable:
+                raise ReviewSnapshotReadError()
+        else:
+            kind = str(column.type)
+            if kind == "UUID":
+                if type(value) is not str:
+                    raise ReviewSnapshotReadError()
+                try:
+                    value = UUID(value)
+                except ValueError:
+                    raise ReviewSnapshotReadError() from None
+            elif kind == "BLOB":
+                if (type(value) is not str or not value.startswith("\\x")
+                        or len(value) % 2 != 0):
+                    raise ReviewSnapshotReadError()
+                try:
+                    value = bytes.fromhex(value[2:])
+                except ValueError:
+                    raise ReviewSnapshotReadError() from None
+            elif kind == "TIMESTAMP":
+                if type(value) is not str:
+                    raise ReviewSnapshotReadError()
+                try:
+                    value = datetime.fromisoformat(value)
+                except ValueError:
+                    raise ReviewSnapshotReadError() from None
+                if value.tzinfo is None or value.utcoffset() is None:
+                    raise ReviewSnapshotReadError()
+            elif kind in ("INTEGER", "BIGINT"):
+                if type(value) is not int:
+                    raise ReviewSnapshotReadError()
+            elif kind == "TEXT":
+                if type(value) is not str:
+                    raise ReviewSnapshotReadError()
+            else:
+                raise ReviewSnapshotReadError()
+        row[column.name] = value
+    return row
 
 
 def _utc(value):
@@ -54,6 +120,23 @@ class SqlAlchemyReviewSnapshotReadRepository:
         order = table.c.round_no if index == 1 else table.c.reviewer_id if index in (2, 3) else list(table.primary_key.columns)[0]
         return session.execute(query.order_by(order)).mappings().all()
 
+    def _child_rows_bundle(self, session, review_id, round_id):
+        parts = {index: [] for index in range(2, 8)}
+        seen = {index: set() for index in parts}
+        for bucket, payload in session.execute(
+                _CHILD_BUNDLE_SQL, {"review_id": review_id, "round_id": round_id}):
+            if type(bucket) is not int or bucket not in parts:
+                raise ReviewSnapshotReadError()
+            row = _decode_child_row(bucket, payload)
+            if row["review_id"] != review_id or row["review_round_id"] != round_id:
+                raise ReviewSnapshotReadError()
+            key = row[list(_tables[bucket].primary_key.columns)[0].name]
+            if key in seen[bucket]:
+                raise ReviewSnapshotReadError()
+            seen[bucket].add(key)
+            parts[bucket].append(row)
+        return parts
+
     def get_round_subject_version(self, transaction, scope, project_id, review_id, round_id):
         """Locate immutable version under root lock, before acquiring Owner/round locks."""
         session = self._session(transaction, scope, project_id, review_id, round_id)
@@ -80,7 +163,7 @@ class SqlAlchemyReviewSnapshotReadRepository:
         ).with_for_update(read=True)).mappings().one_or_none()
         if row is None:
             return None
-        parts = {i: self._rows(session, i, review_id, round_id) for i in range(2, 8)}
+        parts = self._child_rows_bundle(session, review_id, round_id)
         if len(parts[4]) != 1 or len(parts[6]) != 1:
             raise ReviewSnapshotReadError()
         for rows in parts.values():

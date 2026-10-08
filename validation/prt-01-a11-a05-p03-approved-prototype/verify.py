@@ -94,6 +94,10 @@ from plm_assistant.modules.review.domain.round_progress import ReviewDecisionKin
 from plm_assistant.modules.review.infrastructure.create_repository import SqlAlchemyReviewCreationRepository
 from plm_assistant.modules.review.infrastructure.project_submission_repository import SqlAlchemyProjectReviewSubmissionRepository
 from plm_assistant.modules.review.infrastructure.orm import _tables as REVIEW_TABLES
+from plm_assistant.modules.review.infrastructure.read_repository import (
+    SqlAlchemyReviewSnapshotReadRepository,
+)
+from plm_assistant.modules.review.application.read_snapshot import ReviewSnapshotReadError
 from plm_assistant.modules.review.infrastructure.start_repository import SqlAlchemyReviewStartRepository
 from plm_assistant.modules.review.infrastructure.transition_repository import SqlAlchemyReviewTransitionRepository
 from plm_assistant.modules.trace.infrastructure.create_repository import SqlAlchemyTraceCreateRepository
@@ -579,7 +583,8 @@ def _probe_review_pipeline(database: str, review_id: uuid.UUID,
                   f"round_p95_ms={[round(value, 3) for value in rounds]}")
 
 
-def _probe_review_bundle(database: str, review_id: uuid.UUID,
+def _probe_review_bundle(database: str, runtime, project_id: uuid.UUID,
+                         other_actor_id: uuid.UUID, review_id: uuid.UUID,
                          round_id: uuid.UUID) -> None:
     """Compare read-only JSONB bundle with six child queries; no production change."""
     children = tuple((index, table) for index, table in enumerate(REVIEW_TABLES)
@@ -660,6 +665,49 @@ def _probe_review_bundle(database: str, review_id: uuid.UUID,
             print(f"PRT_A05_P04_P17_REVIEW_BUNDLE_CONCURRENT mode={name} "
                   f"concurrency=20 median_round_p95_ms={statistics.median(rounds):.3f} "
                   f"round_p95_ms={[round(value, 3) for value in rounds]}")
+
+    review_reader = SqlAlchemyReviewSnapshotReadRepository()
+    with runtime.unit_of_work() as tx:
+        assert review_reader.get_round(
+            tx, "PROJECT", project_id, review_id, round_id,
+        ) is not None
+    with psycopg.connect(host="127.0.0.1", port=PORT, user="poc_admin",
+                         dbname=database, autocommit=True) as db:
+        decision_event = db.execute(
+            "SELECT round_event_id,actor_id FROM plm.rvw_round_events "
+            "WHERE review_id=%s AND review_round_id=%s "
+            "AND event_type='DECISION_RECORDED'",
+            params,
+        ).fetchone()
+        assert decision_event is not None and decision_event[1] != other_actor_id
+
+        def replace_actor(actor_id):
+            with db.transaction():
+                db.execute("SET LOCAL session_replication_role='replica'")
+                db.execute(
+                    "UPDATE plm.rvw_round_events SET actor_id=%s "
+                    "WHERE round_event_id=%s",
+                    (actor_id, decision_event[0]),
+                )
+
+        try:
+            replace_actor(other_actor_id)
+            try:
+                with runtime.unit_of_work() as tx:
+                    review_reader.get_round(
+                        tx, "PROJECT", project_id, review_id, round_id,
+                    )
+            except ReviewSnapshotReadError:
+                pass
+            else:
+                raise AssertionError("tampered Review decision event was accepted")
+        finally:
+            replace_actor(decision_event[1])
+    with runtime.unit_of_work() as tx:
+        assert review_reader.get_round(
+            tx, "PROJECT", project_id, review_id, round_id,
+        ) is not None
+    print("PRT_A05_P04_P18_REVIEW_EVENT_TAMPER_REJECTED: restored approved round")
 
 
 def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
@@ -829,8 +877,8 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
         _probe_review_pipeline(database, submission.review_id,
                                submission.round_id)
     if bundle_probe:
-        _probe_review_bundle(database, submission.review_id,
-                             submission.round_id)
+        _probe_review_bundle(database, runtime, project, pm,
+                             submission.review_id, submission.round_id)
     second_prototype = second_prototype_version = second_prototype_round = None
     if multi_prototype:
         second_prototype = PrototypeIdentityCreateService(
