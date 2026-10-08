@@ -10629,3 +10629,10 @@
 - Decision：0137 建立 OutlineVersion、章节顺序和 RequirementVersion 固定引用，全部同 Project/Outline 复合 FK，Owner 未安装时拒写；不在 ReferenceSolutionVersion 尚不存在时引入可写裸引用。批准指针只补身份 FK，不自动推断 Review APPROVED；A03-P02 再建 SectionVersion，参考来源后续单独补齐。
 - Reason：现有 Section/Requirement 可提供真实 FK，ReferenceSolution 尚无目标表；先实现可证明的结构，保留冻结功能与后续来源闭包。PG 迁移/负例及后端 3263/3/4815 通过。
 - Impact/Rollback：三张空表与一项 Section 唯一、一项 Outline 指针 FK；无公开 API、权限、配置、依赖或外发。三表为空可降至 0136，非空拒降；Gate 3/正式方案仍开放。
+
+# DEC-20261008-1099：章节版本先固定受控 Document 与需求/Evidence，Artifact/Spec 待 Owner
+
+- Date/WBS：2026-10-08 / `SOL-01-A03-P02`；依据 CR-SOL-003、冻结 DM-05/SC-01/02 与隔离 PG18.6/全量回归。
+- Decision：0138 建章节版本根及需求/Evidence 固定引用；正文 DocumentVersion/Artifact XOR，现有 DocumentVersion 有 FK，Artifact/Spec 分支待真实 Owner；所有新表闭锁，批准指针仅补同 Section/Project FK，不视为实际 Review APPROVED。
+- Reason：现有 Document/Requirement/Evidence 可提供存在性和项目结构 FK，但 Evidence 当前资格、文件本体、Artifact/Spec 与 Requirement/Trace 闭包需后续 Owner 同事务证明。隔离 PG 迁移/负例及后端 3263/3/4815 通过。
+- Impact/Rollback：三张空表及 Section 指针 FK；无公开 API、权限、配置、新依赖或外发。三表为空可降至 0137，非空拒降；Gate 3/正式方案仍开放。

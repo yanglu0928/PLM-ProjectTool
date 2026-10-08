@@ -60,6 +60,13 @@ class SolutionSectionRow(Base):
                              name="fk_sol_sections__outline_project", ondelete="NO ACTION"),
         ForeignKeyConstraint(["created_by"], ["plm.auth_users.user_id"],
                              name="fk_sol_sections__creator", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["current_approved_version_ref", "solution_section_id", "project_id"],
+            ["plm.sol_section_versions.solution_section_version_id",
+             "plm.sol_section_versions.solution_section_id", "plm.sol_section_versions.project_id"],
+            name="fk_sol_sections__approved_version", ondelete="NO ACTION",
+            deferrable=True, initially="DEFERRED", use_alter=True,
+        ),
         CheckConstraint("char_length(section_key) BETWEEN 1 AND 128 AND section_key=btrim(section_key)",
                         name="ck_sol_sections__key"),
         CheckConstraint("section_state IN ('ACTIVE','ARCHIVED')", name="ck_sol_sections__state"),
@@ -193,4 +200,123 @@ class SolutionOutlineRequirementRefRow(Base):
     project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     requirement_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     requirement_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class SolutionSectionVersionRow(Base):
+    __tablename__ = "sol_section_versions"
+    __table_args__ = (
+        UniqueConstraint("solution_section_version_id", "solution_section_id", "project_id",
+                         name="uq_sol_section_versions__id_section_project"),
+        UniqueConstraint("solution_section_id", "version_no", name="uq_sol_section_versions__section_no"),
+        ForeignKeyConstraint(["solution_section_id", "project_id"],
+                             ["plm.sol_sections.solution_section_id", "plm.sol_sections.project_id"],
+                             name="fk_sol_section_versions__section", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["content_document_version_ref"],
+                             ["plm.doc_document_versions.document_version_id"],
+                             name="fk_sol_section_versions__document", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["supersedes_version_ref", "solution_section_id", "project_id"],
+                             ["plm.sol_section_versions.solution_section_version_id",
+                              "plm.sol_section_versions.solution_section_id",
+                              "plm.sol_section_versions.project_id"],
+                             name="fk_sol_section_versions__supersedes", ondelete="NO ACTION",
+                             deferrable=True, initially="DEFERRED"),
+        ForeignKeyConstraint(["review_ref"], ["plm.rvw_reviews.review_id"],
+                             name="fk_sol_section_versions__review", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["review_round_ref"], ["plm.rvw_review_rounds.review_round_id"],
+                             name="fk_sol_section_versions__round", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["created_by"], ["plm.auth_users.user_id"],
+                             name="fk_sol_section_versions__creator", ondelete="NO ACTION"),
+        CheckConstraint("version_no>0", name="ck_sol_section_versions__number"),
+        CheckConstraint("version_state IN ('DRAFT','IN_REVIEW','APPROVED','RETURNED','SUPERSEDED','RESTRICTED')",
+                        name="ck_sol_section_versions__state"),
+        CheckConstraint("char_length(title) BETWEEN 1 AND 500 AND title=btrim(title)",
+                        name="ck_sol_section_versions__title"),
+        CheckConstraint("(content_document_version_ref IS NULL) <> (content_artifact_ref IS NULL)",
+                        name="ck_sol_section_versions__content_xor"),
+        CheckConstraint("octet_length(content_fingerprint)=32", name="ck_sol_section_versions__fingerprint"),
+        CheckConstraint("jsonb_typeof(assumptions)='array' AND jsonb_typeof(exclusions)='array'",
+                        name="ck_sol_section_versions__declarations"),
+        CheckConstraint("declared_requirement_count BETWEEN 0 AND 500 AND declared_evidence_count BETWEEN 0 AND 500",
+                        name="ck_sol_section_versions__counts"),
+        CheckConstraint("supersedes_version_ref IS NULL OR supersedes_version_ref<>solution_section_version_id",
+                        name="ck_sol_section_versions__supersedes_not_self"),
+        CheckConstraint("(review_ref IS NULL AND review_round_ref IS NULL) OR "
+                        "(review_ref IS NOT NULL AND review_round_ref IS NOT NULL)",
+                        name="ck_sol_section_versions__review_pair"),
+        Index("ix_sol_section_versions__section_created", "solution_section_id", "created_at"),
+        {"schema": "plm"},
+    )
+
+    solution_section_version_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    solution_section_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    version_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    version_state: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'DRAFT'"))
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    content_document_version_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    content_artifact_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    content_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    assumptions: Mapped[list[object]] = mapped_column(JSONB, nullable=False)
+    exclusions: Mapped[list[object]] = mapped_column(JSONB, nullable=False)
+    declared_requirement_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    declared_evidence_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    supersedes_version_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    review_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    review_round_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6),
+                                                 nullable=False, server_default=text("statement_timestamp()"))
+
+
+class SolutionSectionRequirementRefRow(Base):
+    __tablename__ = "sol_section_requirement_refs"
+    __table_args__ = (
+        UniqueConstraint("solution_section_version_id", "ordinal", name="uq_sol_section_requirements__version_ordinal"),
+        UniqueConstraint("solution_section_version_id", "requirement_version_id",
+                         name="uq_sol_section_requirements__version_requirement"),
+        ForeignKeyConstraint(["solution_section_version_id", "solution_section_id", "project_id"],
+                             ["plm.sol_section_versions.solution_section_version_id",
+                              "plm.sol_section_versions.solution_section_id", "plm.sol_section_versions.project_id"],
+                             name="fk_sol_section_requirements__version", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["requirement_version_id", "requirement_id", "project_id"],
+                             ["plm.req_requirement_versions.requirement_version_id",
+                              "plm.req_requirement_versions.requirement_id", "plm.req_requirement_versions.project_id"],
+                             name="fk_sol_section_requirements__requirement", ondelete="NO ACTION"),
+        CheckConstraint("ordinal>0", name="ck_sol_section_requirements__ordinal"),
+        Index("ix_sol_section_requirements__target", "requirement_version_id", "solution_section_version_id"),
+        {"schema": "plm"},
+    )
+    solution_section_requirement_ref_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    solution_section_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    solution_section_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    requirement_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    requirement_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class SolutionSectionEvidenceRefRow(Base):
+    __tablename__ = "sol_section_evidence_refs"
+    __table_args__ = (
+        UniqueConstraint("solution_section_version_id", "ordinal", name="uq_sol_section_evidence__version_ordinal"),
+        UniqueConstraint("solution_section_version_id", "evidence_id", name="uq_sol_section_evidence__version_evidence"),
+        ForeignKeyConstraint(["solution_section_version_id", "solution_section_id", "project_id"],
+                             ["plm.sol_section_versions.solution_section_version_id",
+                              "plm.sol_section_versions.solution_section_id", "plm.sol_section_versions.project_id"],
+                             name="fk_sol_section_evidence__version", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["evidence_id"], ["plm.evd_evidence_records.evidence_id"],
+                             name="fk_sol_section_evidence__evidence", ondelete="NO ACTION"),
+        CheckConstraint("ordinal>0", name="ck_sol_section_evidence__ordinal"),
+        Index("ix_sol_section_evidence__target", "evidence_id", "solution_section_version_id"),
+        {"schema": "plm"},
+    )
+    solution_section_evidence_ref_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    solution_section_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    solution_section_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    evidence_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     ordinal: Mapped[int] = mapped_column(Integer, nullable=False)

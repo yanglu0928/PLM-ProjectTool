@@ -39,6 +39,7 @@ from plm_assistant.modules.handover.infrastructure import orm as handover_orm  #
 from plm_assistant.modules.survey.infrastructure import orm as survey_orm  # noqa: F401
 from plm_assistant.modules.requirement.infrastructure import orm as requirement_orm  # noqa: F401
 from plm_assistant.modules.prototype.infrastructure import orm as prototype_orm  # noqa: F401
+from plm_assistant.modules.solution.infrastructure import orm as solution_orm  # noqa: F401
 
 
 class OrmMetadataTests(unittest.TestCase):
@@ -191,7 +192,8 @@ class OrmMetadataTests(unittest.TestCase):
             self.assertIn(table, Base.metadata.tables)
         for table in ('plm.sol_outlines', 'plm.sol_sections',
                       'plm.sol_outline_versions', 'plm.sol_outline_sections',
-                      'plm.sol_outline_requirement_refs'):
+                      'plm.sol_outline_requirement_refs', 'plm.sol_section_versions',
+                      'plm.sol_section_requirement_refs', 'plm.sol_section_evidence_refs'):
             self.assertIn(table, Base.metadata.tables)
             historical_metadata.discard(table)
         self.assertIn('plm.job_parse_cancel_versions', Base.metadata.tables)
