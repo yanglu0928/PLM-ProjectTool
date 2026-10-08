@@ -67,6 +67,7 @@ from plm_assistant.entrypoints.windows_solution_reference_cursor import (
 from plm_assistant.entrypoints.windows_solution_outline import (
     create_windows_outline_create_router,
     create_windows_section_create_router,
+    create_windows_section_read_router,
     create_windows_outline_list_router,
     create_windows_outline_read_router,
 )
@@ -626,6 +627,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         solution_outline_create_router = None
         solution_section_create_router = None
         solution_outline_read_router = None
+        solution_section_read_router = None
         solution_outline_list_router = None
         global_reference_create_router = None
         global_reference_read_router = None
@@ -640,6 +642,10 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             )
             licenses = create_windows_license_services(runtime, settings)
             solution_outline_read_router = create_windows_outline_read_router(
+                runtime=runtime, sessions=sessions, origins=origins,
+                license_guard=licenses.guard,
+            )
+            solution_section_read_router = create_windows_section_read_router(
                 runtime=runtime, sessions=sessions, origins=origins,
                 license_guard=licenses.guard,
             )
@@ -1690,6 +1696,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             project_reference_create_router=project_reference_create_router,
             solution_outline_create_router=solution_outline_create_router,
             solution_section_create_router=solution_section_create_router,
+            solution_section_read_router=solution_section_read_router,
             solution_outline_read_router=solution_outline_read_router,
             solution_outline_list_router=solution_outline_list_router,
             global_reference_create_router=global_reference_create_router,

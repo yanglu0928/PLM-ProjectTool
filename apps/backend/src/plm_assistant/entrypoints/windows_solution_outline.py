@@ -13,13 +13,16 @@ from plm_assistant.modules.solution.api.outline_create import create_outline_cre
 from plm_assistant.modules.solution.api.section_create import create_section_create_router
 from plm_assistant.modules.solution.api.outline_list import create_outline_list_router
 from plm_assistant.modules.solution.api.outline_read import create_outline_read_router
+from plm_assistant.modules.solution.api.section_read import create_section_read_router
 from plm_assistant.modules.solution.api.outline_list_cursor import OutlineListCursorCodec
 from plm_assistant.modules.solution.application.create_outline import OutlineCreateService
 from plm_assistant.modules.solution.application.create_section import SectionCreateService
 from plm_assistant.modules.solution.application.read_outline import OutlineReadService
+from plm_assistant.modules.solution.application.read_section import SectionReadService
 from plm_assistant.modules.solution.infrastructure.outline_create_repository import SqlAlchemyOutlineCreateRepository
 from plm_assistant.modules.solution.infrastructure.section_create_repository import SqlAlchemySectionCreateRepository
 from plm_assistant.modules.solution.infrastructure.outline_read_repository import SqlAlchemyOutlineReadRepository
+from plm_assistant.modules.solution.infrastructure.section_read_repository import SqlAlchemySectionReadRepository
 
 
 class ProductionSolutionOutlineStartupError(RuntimeError):
@@ -44,6 +47,28 @@ def create_windows_outline_read_router(
             repository=SqlAlchemyOutlineReadRepository(),
         )
         return create_outline_read_router(
+            sessions=sessions, origins=origins, reads=service)
+    except Exception:
+        raise ProductionSolutionOutlineStartupError() from None
+
+
+def create_windows_section_read_router(
+    *, runtime, sessions, origins, license_guard,
+) -> APIRouter:
+    """Mount Section GET only with explicit read-mode trust dependencies."""
+    if any(value is None for value in (runtime, sessions, origins, license_guard)):
+        raise ProductionSolutionOutlineStartupError()
+    try:
+        service = SectionReadService(
+            unit_of_work=runtime.unit_of_work,
+            access=SqlAlchemyProjectReadAccess(),
+            license_guard=license_guard,
+            authorization=ProjectAuthorizationService(
+                unit_of_work=runtime.unit_of_work,
+                repository=SqlAlchemyProjectAuthorizationRepository()),
+            repository=SqlAlchemySectionReadRepository(),
+        )
+        return create_section_read_router(
             sessions=sessions, origins=origins, reads=service)
     except Exception:
         raise ProductionSolutionOutlineStartupError() from None

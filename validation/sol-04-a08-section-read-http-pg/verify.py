@@ -71,6 +71,8 @@ def on_created(*, port, runtime, audit, license_guard, project, other_project,
         assert bare.get(path, headers=headers).status_code == 404
     with TestClient(create_app(solution_section_read_router=router),
                     base_url="https://plm.example.test") as client:
+        assert client.post(f"/api/v1/projects/{project}/solution-sections",
+                           headers=headers, json={}).status_code == 404
         good = client.get(path, headers=headers)
         assert good.status_code == 200, good.text
         data = good.json()["data"]
