@@ -31,6 +31,9 @@ POLICIES: dict[str, _Policy] = {
     "SOL_REFERENCE_CREATE": _Policy(
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True,
     ),
+    "SOL_OUTLINE_CREATE": _Policy(
+        frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True,
+    ),
     "PROJECT_GET": _Policy(ALL_MEMBERS, False),
     "WORKFLOW_START": _Policy(MANAGERS, True),
     "WORKFLOW_CHECKLIST_RECORD": _Policy(MANAGERS, True),

@@ -42,6 +42,14 @@ def verify(port: int) -> None:
     url = URL.create("postgresql+psycopg", username="poc_admin",
                      host="127.0.0.1", port=port, database="postgres")
     cfg = create_migration_config(url)
+    def check_current_head() -> None:
+        # Alembic refuses autogenerate checks below the current head. Briefly
+        # advance the empty snapshot schema, check drift, then restore A02's
+        # closed-write revision for its original negative assertions.
+        command.upgrade(cfg, "head")
+        command.check(cfg)
+        command.downgrade(cfg, "20261009_0145")
+
     command.upgrade(cfg, PREVIOUS)
     with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
                          dbname="postgres", autocommit=True) as db:
@@ -54,11 +62,11 @@ def verify(port: int) -> None:
             "VALUES ('SOL02','sol02','Solution outline',%s) RETURNING project_id",
             (actor,),
         ).fetchone()[0]
-    command.upgrade(cfg, "head")
-    command.check(cfg)
+    command.upgrade(cfg, "20261009_0145")
+    check_current_head()
     command.downgrade(cfg, PREVIOUS)
-    command.upgrade(cfg, "head")
-    command.check(cfg)
+    command.upgrade(cfg, "20261009_0145")
+    check_current_head()
 
     root = uuid.uuid4()
     with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
@@ -109,8 +117,8 @@ def verify(port: int) -> None:
                        "ENABLE TRIGGER trg_sol_outline_create_results__owner")
             db.execute("ALTER TABLE plm.sol_outlines ENABLE TRIGGER trg_sol_outlines__owner")
     command.downgrade(cfg, PREVIOUS)
-    command.upgrade(cfg, "head")
-    command.check(cfg)
+    command.upgrade(cfg, "20261009_0145")
+    check_current_head()
     print("SOL_02_A02_OUTLINE_CREATE_RESULT_SCHEMA_PASS: existing/empty upgrade, "
           "downgrade, drift, closed root/result, FK/check/duplicate/history guards")
 

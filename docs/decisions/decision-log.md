@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261009-1124：目录根创建以延迟约束闭合首次结果
+
+- Date/WBS：2026-10-09 / `SOL-02-A03`，依据 CR-SOL-011 和 0145 快照表。
+- Decision：在 0146 中仅开放根与结果的有效初态 INSERT；根 INSERT 的可延迟约束触发器在事务结束时要求完全匹配的快照，快照 INSERT 校验根项目/名称/首次时间。UPDATE/DELETE、Section DML 和 TRUNCATE 仍拒绝。应用 Owner 在同事务完成会话、许可、项目角色、Receipt 和 Audit 后提交。
+- Reason：仅开放两张表 INSERT 会允许直写生成无快照根，使原 Key 首次响应无法安全恢复；立即检查又无法在根 INSERT 后再插快照。延迟闭合保证每个已提交目录根有对应不可变首次结果。
+- Impact/Rollback：新增 Guard 函数分支与约束触发器，不改变冻结 API/Scope 或已存在版本；空历史可降回 0145，已有目录历史拒降。持有应用 DB 凭据者仍可能直接构造双行，不将此机制宣称为数据库级身份授权。
+- Verification：Win11 一次性 PG18.6 无快照根提交失败、非法初态、Section/UPDATE/DELETE/TRUNCATE 拒绝、真实 Owner/Receipt/Audit 原子回滚与并发同 Key 重放通过；正式目标账户权限另验。
+
 ## DEC-20261009-1123：Solution 目录 INSERT 解锁不采用可伪造事务信号
 
 - Date/WBS：2026-10-09 / `SOL-02-A02` 设计核对；实施前修订 CR-SOL-011。
