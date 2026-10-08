@@ -1,4 +1,4 @@
-"""Frozen SOL-02/SOL-04 project-scoped identity tables."""
+"""Solution fixed-reference persistence foundations; writes stay closed."""
 
 from __future__ import annotations
 
@@ -318,5 +318,159 @@ class SolutionSectionEvidenceRefRow(Base):
     solution_section_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     solution_section_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    evidence_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class ReferenceSolutionRow(Base):
+    __tablename__ = "sol_reference_solutions"
+    __table_args__ = (
+        UniqueConstraint("reference_solution_id", "scope", name="uq_sol_references__id_scope"),
+        ForeignKeyConstraint(["project_id"], ["plm.prj_projects.project_id"],
+                             name="fk_sol_references__project", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["created_by"], ["plm.auth_users.user_id"],
+                             name="fk_sol_references__creator", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["current_version_ref", "reference_solution_id", "scope"],
+                             ["plm.sol_reference_versions.reference_version_id",
+                              "plm.sol_reference_versions.reference_solution_id",
+                              "plm.sol_reference_versions.scope"],
+                             name="fk_sol_references__current_version", ondelete="NO ACTION",
+                             deferrable=True, initially="DEFERRED", use_alter=True),
+        CheckConstraint("(scope='GLOBAL' AND project_id IS NULL) OR "
+                        "(scope='PROJECT' AND project_id IS NOT NULL)",
+                        name="ck_sol_references__scope"),
+        CheckConstraint("char_length(name) BETWEEN 1 AND 255 AND name=btrim(name)",
+                        name="ck_sol_references__name"),
+        CheckConstraint("eligibility_state IN ('REFERENCE_ONLY','ELIGIBLE','RESTRICTED','REVOKED')",
+                        name="ck_sol_references__eligibility"),
+        CheckConstraint("eligibility_reason IS NULL OR "
+                        "(char_length(eligibility_reason) BETWEEN 1 AND 2000 AND eligibility_reason=btrim(eligibility_reason))",
+                        name="ck_sol_references__reason"),
+        CheckConstraint("lock_version>=0", name="ck_sol_references__lock"),
+        Index("ix_sol_references__scope_project", "scope", "project_id", "eligibility_state"),
+        {"schema": "plm"},
+    )
+    reference_solution_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    scope: Mapped[str] = mapped_column(Text, nullable=False)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    eligibility_state: Mapped[str] = mapped_column(Text, nullable=False,
+                                                   server_default=text("'REFERENCE_ONLY'"))
+    eligibility_reason: Mapped[str | None] = mapped_column(Text)
+    current_version_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6),
+                                                 nullable=False, server_default=text("statement_timestamp()"))
+    lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+
+
+class ReferenceSolutionVersionRow(Base):
+    __tablename__ = "sol_reference_versions"
+    __table_args__ = (
+        UniqueConstraint("reference_version_id", "reference_solution_id", "scope",
+                         name="uq_sol_reference_versions__id_parent_scope"),
+        UniqueConstraint("reference_solution_id", "version_no", name="uq_sol_reference_versions__parent_no"),
+        ForeignKeyConstraint(["reference_solution_id", "scope"],
+                             ["plm.sol_reference_solutions.reference_solution_id",
+                              "plm.sol_reference_solutions.scope"],
+                             name="fk_sol_reference_versions__parent", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["project_id"], ["plm.prj_projects.project_id"],
+                             name="fk_sol_reference_versions__project", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["supersedes_version_ref", "reference_solution_id", "scope"],
+                             ["plm.sol_reference_versions.reference_version_id",
+                              "plm.sol_reference_versions.reference_solution_id",
+                              "plm.sol_reference_versions.scope"],
+                             name="fk_sol_reference_versions__supersedes", ondelete="NO ACTION",
+                             deferrable=True, initially="DEFERRED"),
+        ForeignKeyConstraint(["created_by"], ["plm.auth_users.user_id"],
+                             name="fk_sol_reference_versions__creator", ondelete="NO ACTION"),
+        CheckConstraint("(scope='GLOBAL' AND project_id IS NULL) OR "
+                        "(scope='PROJECT' AND project_id IS NOT NULL)",
+                        name="ck_sol_reference_versions__scope"),
+        CheckConstraint("version_no>0", name="ck_sol_reference_versions__number"),
+        CheckConstraint("version_state='DRAFT'", name="ck_sol_reference_versions__state"),
+        CheckConstraint("octet_length(content_fingerprint)=32", name="ck_sol_reference_versions__fingerprint"),
+        CheckConstraint("jsonb_typeof(applicability)='object'", name="ck_sol_reference_versions__applicability"),
+        CheckConstraint("char_length(source_project_class) BETWEEN 1 AND 128 AND "
+                        "source_project_class=btrim(source_project_class)",
+                        name="ck_sol_reference_versions__source_class"),
+        CheckConstraint("char_length(deidentification_class) BETWEEN 1 AND 128 AND "
+                        "deidentification_class=btrim(deidentification_class)",
+                        name="ck_sol_reference_versions__deidentification"),
+        CheckConstraint("declared_document_count BETWEEN 1 AND 100 AND "
+                        "declared_evidence_count BETWEEN 0 AND 500",
+                        name="ck_sol_reference_versions__counts"),
+        CheckConstraint("supersedes_version_ref IS NULL OR supersedes_version_ref<>reference_version_id",
+                        name="ck_sol_reference_versions__supersedes_not_self"),
+        Index("ix_sol_reference_versions__parent_created", "reference_solution_id", "created_at"),
+        {"schema": "plm"},
+    )
+    reference_version_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    reference_solution_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    scope: Mapped[str] = mapped_column(Text, nullable=False)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    version_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    version_state: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'DRAFT'"))
+    applicability: Mapped[dict[str, object]] = mapped_column(JSONB, nullable=False)
+    source_project_class: Mapped[str] = mapped_column(Text, nullable=False)
+    deidentification_class: Mapped[str] = mapped_column(Text, nullable=False)
+    content_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    declared_document_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    declared_evidence_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    supersedes_version_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6),
+                                                 nullable=False, server_default=text("statement_timestamp()"))
+
+
+class ReferenceSolutionDocumentRefRow(Base):
+    __tablename__ = "sol_reference_document_refs"
+    __table_args__ = (
+        UniqueConstraint("reference_version_id", "ordinal", name="uq_sol_reference_documents__version_ordinal"),
+        UniqueConstraint("reference_version_id", "document_version_id",
+                         name="uq_sol_reference_documents__version_document"),
+        ForeignKeyConstraint(["reference_version_id", "reference_solution_id", "scope"],
+                             ["plm.sol_reference_versions.reference_version_id",
+                              "plm.sol_reference_versions.reference_solution_id",
+                              "plm.sol_reference_versions.scope"],
+                             name="fk_sol_reference_documents__version", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["document_version_id"], ["plm.doc_document_versions.document_version_id"],
+                             name="fk_sol_reference_documents__document", ondelete="NO ACTION"),
+        CheckConstraint("ordinal>0", name="ck_sol_reference_documents__ordinal"),
+        Index("ix_sol_reference_documents__target", "document_version_id", "reference_version_id"),
+        {"schema": "plm"},
+    )
+    reference_document_ref_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    reference_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    reference_solution_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    scope: Mapped[str] = mapped_column(Text, nullable=False)
+    document_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class ReferenceSolutionEvidenceRefRow(Base):
+    __tablename__ = "sol_reference_evidence_refs"
+    __table_args__ = (
+        UniqueConstraint("reference_version_id", "ordinal", name="uq_sol_reference_evidence__version_ordinal"),
+        UniqueConstraint("reference_version_id", "evidence_id", name="uq_sol_reference_evidence__version_evidence"),
+        ForeignKeyConstraint(["reference_version_id", "reference_solution_id", "scope"],
+                             ["plm.sol_reference_versions.reference_version_id",
+                              "plm.sol_reference_versions.reference_solution_id",
+                              "plm.sol_reference_versions.scope"],
+                             name="fk_sol_reference_evidence__version", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["evidence_id"], ["plm.evd_evidence_records.evidence_id"],
+                             name="fk_sol_reference_evidence__evidence", ondelete="NO ACTION"),
+        CheckConstraint("ordinal>0", name="ck_sol_reference_evidence__ordinal"),
+        Index("ix_sol_reference_evidence__target", "evidence_id", "reference_version_id"),
+        {"schema": "plm"},
+    )
+    reference_evidence_ref_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    reference_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    reference_solution_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    scope: Mapped[str] = mapped_column(Text, nullable=False)
     evidence_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     ordinal: Mapped[int] = mapped_column(Integer, nullable=False)

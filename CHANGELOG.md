@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/SOL-01-A03-P03 依据 CR-SOL-004 增加 ReferenceSolution 身份/版本及固定 DocumentVersion/Evidence 引用 ORM/Alembic `20261008_0139`；GLOBAL/PROJECT Scope、版本归属、顺序/重复约束已建，Owner 未装配仍拒写。兼容性/升级：旧 API/权限/依赖不变，线性迁移；四新表为空可降至 0138，非空拒降，旧历史保留。验证：Win11 一次性 PG18.6 空/已有数据升级、降级重升、drift、Scope/FK/闭锁负例和 0138 旧脚本复跑 PASS；后端 3263 passed/3 skipped/4815 subtests。已知问题：真实 Reference Owner/Eligibility/脱敏与当前性、Outline 引用、Solution Review/Trace/Workflow、Gate3、Prototype 性能/入口、Server2025/正式信任/UAT/发行待；Debian13 依指令跳过。
+
 - 2026-10-08：0.1.0-dev.0/SOL-01-A03-P02 依据 CR-SOL-003 增加章节版本、固定 RequirementVersion/Evidence 引用 ORM/Alembic `20261008_0138`，受控 DocumentVersion 或待接入 Artifact 正文二选一、章节批准指针同 Section/Project FK；Owner 未装配仍拒绝业务写入。兼容性/升级：旧 API/权限/依赖不变，线性迁移；三新表为空可降至 0137，非空拒降，旧历史保留。验证：Win11 一次性 PG18.6 空/有数据升级、降级重升、drift、正文/FK/闭锁负例 PASS，0137 旧脚本复跑 PASS；后端 3263 passed/3 skipped/4815 subtests。已知问题：Artifact/Spec Owner、Evidence 当前性、真实业务 Owner/Review/Trace/Workflow、Gate3、Prototype 性能/入口、Server2025/正式信任/UAT/发行待；Debian13 依指令跳过。
 
 - 2026-10-08：0.1.0-dev.0/SOL-01-A03-P01 依据 CR-SOL-002 增加目录版本、有序 Section 身份与固定 RequirementVersion 引用 ORM/Alembic `20261008_0137`，补跨 Outline/Project 复合 FK 和目录批准指针归属 FK；未装配 Owner 时仍拒绝业务写入，参考方案版本/章节正文版本尚未接入。兼容性/升级：旧 API/权限不变，线性迁移；三新表为空可降到 0136，非空拒降，A02 身份历史保留。验证：Win11 一次性 PG18.6 空/已有数据升降级、drift、跨范围/顺序/声明/历史负例和 A02 旧脚本复跑 PASS；后端 3263 passed/3 skipped/4815 subtests。已知问题：完整 Solution Owner/Review/Trace/Workflow、Gate3、Prototype 性能与入口、Server2025/正式信任/UAT/发行待；Debian13 依指令跳过。
