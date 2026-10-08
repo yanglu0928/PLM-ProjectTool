@@ -20,11 +20,11 @@ function success(data: unknown): Response {
   return new Response(JSON.stringify({ data, trace_id: project }), { status: 200,
     headers: { "Content-Type": "application/json" } });
 }
-async function session(): Promise<SessionClient> {
+async function session(role = "CUSTOMER_MEMBER"): Promise<SessionClient> {
   const api = new SessionClient(vi.fn().mockResolvedValue(success({
     user: { user_id: project, username_display: "合成用户" }, deployment_role: "NONE",
     password_change_required: false,
-    authorized_projects: [{ project_id: project, name: "项目", role: "CUSTOMER_MEMBER" }],
+    authorized_projects: [{ project_id: project, name: "项目", role }],
     absolute_expires_at: "2030-01-01T12:00:00Z", idle_expires_at: "2030-01-01T11:00:00Z",
     csrf_token: "a".repeat(64),
   })) as typeof fetch);
@@ -69,6 +69,20 @@ describe("PROJECT Outline read pages", () => {
     expect(wrapper.get(`a[href="/projects/${project}/solution-outlines"]`).text()).toContain("返回方案目录");
     expect(wrapper.get(`a[href="/projects/${project}/solution-sections"]`).text())
       .toContain("整个项目的方案章节");
+    expect(wrapper.find(`a[href="/projects/${project}/solution-outlines/${outline}/sections/new"]`).exists())
+      .toBe(false);
+    wrapper.unmount();
+  });
+
+  it("shows Section create entry only for a current writer and active parent", async () => {
+    const router = createAppRouter(createMemoryHistory());
+    await router.push(`/projects/${project}/solution-outlines/${outline}`); await router.isReady();
+    const reader = { current: vi.fn().mockResolvedValue({ ...item, created_by: project }) };
+    const wrapper = mount(ProjectOutlineDetailView, { props: { session: await session("PROJECT_MANAGER"),
+      reader: reader as unknown as OutlineReadClient }, global: { plugins: [router] } });
+    await flushPromises();
+    expect(wrapper.get(`a[href="/projects/${project}/solution-outlines/${outline}/sections/new"]`).text())
+      .toContain("创建章节");
     wrapper.unmount();
   });
 
