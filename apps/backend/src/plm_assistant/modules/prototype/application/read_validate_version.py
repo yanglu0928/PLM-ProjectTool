@@ -87,17 +87,19 @@ class PrototypeValidationAuditPort(Protocol):
 
 class PrototypeVersionReadValidationService:
     def __init__(self, *, unit_of_work: Callable[[], object], project_access: object,
+                 write_access: object,
                  license_guard: object, authorization: ProjectAuthorizationService,
                  repository: ReadRepositoryPort, templates: object,
                  requirements: object, documents: object,
                  audit_source: PrototypeValidationAuditPort,
                  receipts: object, audit: AuditService,
                  clock: Callable[[], datetime] | None = None):
-        values = (unit_of_work, project_access, license_guard, authorization,
+        values = (unit_of_work, project_access, write_access, license_guard, authorization,
                   repository, templates, requirements, documents,
                   audit_source, receipts, audit)
         if any(value is None for value in values): raise ValueError("dependencies required")
-        self._uow, self._access, self._guard = unit_of_work, project_access, license_guard
+        self._uow, self._access, self._write_access, self._guard = (
+            unit_of_work, project_access, write_access, license_guard)
         self._authorization, self._repository = authorization, repository
         self._templates, self._requirements, self._documents = templates, requirements, documents
         self._audit_source, self._receipts = audit_source, receipts
@@ -260,7 +262,8 @@ class PrototypeVersionReadValidationService:
     def _actor(self, tx, query, operation, *, csrf, csrf_token=None):
         kwargs = {"session_token": query.session_token, "now": self._now()}
         if csrf: kwargs["csrf_token"] = csrf_token
-        actor = self._access.authenticated_user(tx, **kwargs)
+        access = self._write_access if csrf else self._access
+        actor = access.authenticated_user(tx, **kwargs)
         if type(actor) is not uuid.UUID or actor.int == 0:
             raise PrototypeVersionReadError("AUTH_ACCESS_DENIED")
         action = self._authorization.require_in_transaction(

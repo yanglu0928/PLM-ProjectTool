@@ -82,6 +82,7 @@ class PrototypeVersionInitialView:
     content_fingerprint: str
     created_at: datetime
     version_state: str = "DRAFT"
+    expected_lock_version: int | None = None
 
 
 class RepositoryPort(Protocol):

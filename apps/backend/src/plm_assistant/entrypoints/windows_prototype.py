@@ -284,7 +284,8 @@ def create_windows_prototype_routers(
         )
         version_reader = SqlAlchemyPrototypeVersionReadRepository()
         version_reads = PrototypeVersionReadValidationService(
-            **common, project_access=read_access, repository=version_reader,
+            **common, project_access=read_access, write_access=write_access,
+            repository=version_reader,
             templates=templates, requirements=requirements, documents=documents,
             audit_source=SqlAlchemyPrototypeValidationAuditSource(),
             receipts=receipts, audit=audit,

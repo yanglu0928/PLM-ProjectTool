@@ -26,7 +26,13 @@ class Tx:
 
 class Access:
     actor = uuid.uuid4()
-    def authenticated_user(self, *_args, **_kwargs): return self.actor
+    def authenticated_user(self, *_args, session_token, now): return self.actor
+
+
+class WriteAccess:
+    actor = Access.actor
+    def authenticated_user(self, *_args, session_token, csrf_token, now):
+        return self.actor
 
 
 class Guard:
@@ -106,7 +112,8 @@ class PrototypeVersionReadValidateTests(unittest.TestCase):
         self.audit_source, self.receipts = AuditSource(), Receipts()
         self.audit = Audit(self.audit_source)
         self.service = PrototypeVersionReadValidationService(
-            unit_of_work=Tx, project_access=Access(), license_guard=Guard(),
+            unit_of_work=Tx, project_access=Access(), write_access=WriteAccess(),
+            license_guard=Guard(),
             authorization=Authorization(), repository=Repo(self.views),
             templates=self.templates, requirements=self.requirements,
             documents=self.documents, audit_source=self.audit_source,

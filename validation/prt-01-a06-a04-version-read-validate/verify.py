@@ -87,6 +87,14 @@ def main():
                     "CAST(:spec AS jsonb),:f)"),
                     {"v": version_id, "root": prototype, "p": project,
                      "spec": '{"interactions":[]}', "f": b"i" * 32})
+                session.execute(text(
+                    "INSERT INTO plm.prt_version_create_results(result_id,prototype_version_id,"
+                    "prototype_id,project_id,version_no,prototype_lock_version,content_fingerprint,"
+                    "declared_artifact_count,declared_requirement_count,declared_interaction_count) "
+                    "VALUES (:id,:v,:root,:p,:n,:lock,:f,1,1,1)"),
+                    {"id": uuid.uuid4(), "v": version_id, "root": prototype,
+                     "p": project, "n": number, "lock": number,
+                     "f": bytes([number]) * 32})
         repo = SqlAlchemyPrototypeVersionReadRepository()
         with Session(engine) as session, session.begin():
             tx = SimpleNamespace(session=session)
@@ -101,7 +109,7 @@ def main():
             assert repo.get(tx, project_id=uuid.uuid4(), prototype_id=prototype,
                             version_id=versions[0]) is None
             locator = PrototypeVersionReadValidationService(
-                unit_of_work=object(), project_access=object(),
+                unit_of_work=object(), project_access=object(), write_access=object(),
                 license_guard=object(), authorization=object(), repository=repo,
                 templates=object(), requirements=object(),
                 documents=SqlAlchemyPrototypeDocumentArtifactProof(),

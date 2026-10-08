@@ -341,6 +341,7 @@ class PrototypeVersionCurrentValidatorTests(unittest.TestCase):
         payload = {
             "project_id": str(self.project),
             "prototype_id": str(self.prototype),
+            "expected_lock_version": 0,
             "template_id": str(self.template),
             "template_version_id": str(self.template_version),
             "artifact_refs": [("DOCUMENT_VERSION", str(self.document))],
@@ -360,6 +361,7 @@ class PrototypeVersionCurrentValidatorTests(unittest.TestCase):
             self.template, self.template_version, artifacts, requirements,
             {"interactions": []}, {"covered": 1},
             canonical_payload_fingerprint(payload).hex(), NOW,
+            expected_lock_version=0,
         )
 
     def test_reproves_inputs_and_content_fingerprint(self):

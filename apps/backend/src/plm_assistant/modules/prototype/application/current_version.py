@@ -147,6 +147,7 @@ class PrototypeVersionCurrentValidator:
             payload = {
                 "project_id": str(snapshot.project_id),
                 "prototype_id": str(snapshot.prototype_id),
+                "expected_lock_version": snapshot.expected_lock_version,
                 "template_id": str(snapshot.template_id),
                 "template_version_id": str(snapshot.template_version_id),
                 "artifact_refs": [
@@ -187,6 +188,8 @@ class PrototypeVersionCurrentValidator:
                 }
                 or type(snapshot.version_no) is not int
                 or snapshot.version_no < 1
+                or type(snapshot.expected_lock_version) is not int
+                or snapshot.expected_lock_version < 0
                 or re.fullmatch(
                     r"[0-9a-f]{64}", snapshot.content_fingerprint,
                 ) is None):

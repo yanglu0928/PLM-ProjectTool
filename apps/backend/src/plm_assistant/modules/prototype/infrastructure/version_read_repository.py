@@ -11,7 +11,8 @@ from plm_assistant.modules.prototype.application.create_version import (
 )
 from .orm import (
     PrototypeInteractionSpecRow, PrototypeVersionArtifactRefRow,
-    PrototypeVersionRequirementRefRow, PrototypeVersionRow,
+    PrototypeVersionCreateResultRow, PrototypeVersionRequirementRefRow,
+    PrototypeVersionRow,
 )
 
 
@@ -46,9 +47,14 @@ class SqlAlchemyPrototypeVersionReadRepository:
         session = self._session(transaction)
         row = session.execute(select(
             PrototypeVersionRow, PrototypeInteractionSpecRow,
+            PrototypeVersionCreateResultRow,
         ).join(
             PrototypeInteractionSpecRow,
             PrototypeInteractionSpecRow.prototype_version_id
+            == PrototypeVersionRow.prototype_version_id,
+        ).join(
+            PrototypeVersionCreateResultRow,
+            PrototypeVersionCreateResultRow.prototype_version_id
             == PrototypeVersionRow.prototype_version_id,
         ).where(
             PrototypeVersionRow.project_id == project_id,
@@ -58,7 +64,7 @@ class SqlAlchemyPrototypeVersionReadRepository:
             PrototypeInteractionSpecRow.prototype_id == prototype_id,
         ).execution_options(populate_existing=True)).one_or_none()
         if row is None: return None
-        version, spec = row
+        version, spec, result = row
         artifacts = tuple(VersionArtifactRef(x.artifact_kind, x.target_id) for x in
             session.execute(select(PrototypeVersionArtifactRefRow).where(
                 PrototypeVersionArtifactRefRow.prototype_version_id == version_id,
@@ -81,4 +87,6 @@ class SqlAlchemyPrototypeVersionReadRepository:
             version.template_version_ref, artifacts, requirements,
             dict(spec.specification), dict(version.coverage_summary),
             bytes(version.content_fingerprint).hex(), version.created_at,
-            version_state=version.version_state)
+            version_state=version.version_state,
+            expected_lock_version=(None if result.prototype_lock_version is None
+                                   else result.prototype_lock_version - 1))

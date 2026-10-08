@@ -1054,6 +1054,8 @@ class PrototypeVersionCreateResultRow(Base):
 
     __tablename__ = "prt_version_create_results"
     __table_args__ = (
+        UniqueConstraint("prototype_id", "project_id", "prototype_lock_version",
+                         name="uq_prt_version_create_results__root_lock"),
         ForeignKeyConstraint(
             ["prototype_version_id", "prototype_id", "project_id"],
             ["plm.prt_prototype_versions.prototype_version_id",
@@ -1062,6 +1064,8 @@ class PrototypeVersionCreateResultRow(Base):
             name="fk_prt_version_create_results__version", ondelete="NO ACTION",
         ),
         CheckConstraint("version_no>0", name="ck_prt_version_create_results__number"),
+        CheckConstraint("prototype_lock_version IS NULL OR prototype_lock_version>=1",
+                        name="ck_prt_version_create_results__root_lock"),
         CheckConstraint(
             "octet_length(content_fingerprint)=32",
             name="ck_prt_version_create_results__fingerprint",
@@ -1080,6 +1084,7 @@ class PrototypeVersionCreateResultRow(Base):
     prototype_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     version_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    prototype_lock_version: Mapped[int | None] = mapped_column(BigInteger)
     content_fingerprint: Mapped[bytes] = mapped_column(nullable=False)
     declared_artifact_count: Mapped[int] = mapped_column(Integer, nullable=False)
     declared_requirement_count: Mapped[int] = mapped_column(Integer, nullable=False)

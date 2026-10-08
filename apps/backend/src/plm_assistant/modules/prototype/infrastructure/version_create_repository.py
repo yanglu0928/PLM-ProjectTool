@@ -94,7 +94,8 @@ class SqlAlchemyPrototypeVersionCreateRepository:
         session.execute(insert(PrototypeVersionCreateResultRow).values(
             result_id=result_id, prototype_version_id=version_id,
             prototype_id=prototype_id, project_id=project_id,
-            version_no=number, content_fingerprint=content_fingerprint,
+            version_no=number, prototype_lock_version=expected_lock_version + 1,
+            content_fingerprint=content_fingerprint,
             declared_artifact_count=len(artifacts),
             declared_requirement_count=len(requirements),
             declared_interaction_count=1))
@@ -151,4 +152,6 @@ class SqlAlchemyPrototypeVersionCreateRepository:
             version.template_version_ref, artifacts, requirements,
             dict(spec.specification), dict(version.coverage_summary),
             bytes(version.content_fingerprint).hex(), result.created_at,
-            version_state=version.version_state)
+            version_state=version.version_state,
+            expected_lock_version=(None if result.prototype_lock_version is None
+                                   else result.prototype_lock_version - 1))
