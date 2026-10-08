@@ -155,7 +155,7 @@ class CurrentChecklistQualification:
 
 @dataclass(frozen=True, slots=True)
 class ChecklistQualificationSubject:
-    """One independently approved subject inside an aggregate stage scope."""
+    """One approved aggregate subject; source Evidence may belong to scope."""
 
     subject_type: str
     subject_id: uuid.UUID
@@ -170,7 +170,7 @@ class ChecklistQualificationSubject:
                 or not _id(self.subject_version_id)
                 or type(self.content_fingerprint) is not bytes
                 or len(self.content_fingerprint) != 32
-                or type(self.evidence) is not tuple or not self.evidence
+                or type(self.evidence) is not tuple
                 or any(type(value) is not ChecklistQualificationEvidence
                        for value in self.evidence)
                 or len({value.evidence_id for value in self.evidence})
@@ -219,6 +219,8 @@ class AggregateChecklistQualification:
                 or type(self.scope_evidence) is not tuple
                 or any(type(value) is not ChecklistQualificationEvidence
                        for value in self.scope_evidence)
+                or not (self.scope_evidence or any(
+                    value.evidence for value in self.subjects))
                 or len({value.evidence_id for value in self.scope_evidence})
                    != len(self.scope_evidence)
                 or type(self.scope_fingerprint) is not bytes

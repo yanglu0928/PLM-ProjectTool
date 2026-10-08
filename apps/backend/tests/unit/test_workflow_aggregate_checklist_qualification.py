@@ -59,6 +59,29 @@ def qualification(
 
 
 class AggregateChecklistQualificationTests(unittest.TestCase):
+    def test_scope_evidence_supports_subject_without_own_evidence(self):
+        original = qualification()
+        prototype = replace(
+            original.subjects[1],
+            subject_type="PRT-03",
+            evidence=(),
+            review=replace(original.subjects[1].review,
+                           subject_type="PRT-03", policy_code="PROTOTYPE_ALL_V1"),
+        )
+        mixed = AggregateChecklistQualification(
+            original.project_id, "PROTOTYPE", "PROTOTYPE_COVERAGE",
+            (prototype, original.subjects[0]),
+            original.scope_evidence, b"p" * 32, b"q" * 32,
+        )
+        self.assertEqual((), mixed.subjects[0].evidence)
+        self.assertIn(original.scope_evidence[0].evidence_id, mixed.evidence_refs)
+
+    def test_aggregate_cannot_have_no_real_evidence_anywhere(self):
+        original = qualification()
+        empty = tuple(replace(value, evidence=()) for value in original.subjects)
+        with self.assertRaises(ChecklistQualificationError):
+            replace(original, subjects=empty, scope_evidence=())
+
     def test_keeps_real_subjects_and_exposes_deduplicated_stable_refs(self):
         result = qualification()
 

@@ -27,3 +27,9 @@ Prototype 26 项 `/api/v1` Operation、请求/响应和 NOT_REQUIRED 既有历�
 4. A05 做 Windows 11/PG18.6 真正的包含/遗漏/冲突/漂移/全 NOT_REQUIRED/部分覆盖/跨项目/撤权与顺序推进验证，完整后端/前端回归、开发 wheel 和 Secret 扫描；Server 2025 单独实机验证，Debian 13 按用户指令跳过。
 
 当前选择不增加 Schema、依赖或数据迁移；若 A03 证明既有不可变数据无法承载完整规则，须先补充本 CR 的数据差异和 up/down/历史迁移方案，不能在代码里伪造或补写旧决定。应用回滚可停止新增 Registry/Router 注册，现有 Requirement/Prototype/Workflow/Audit 历史保留；一旦已有 PROTOTYPE Checklist/Transition 历史，不得删除记录或把 Workflow 实例自动降回旧定义。Gate 3、UAT 和可用包结论仍只按客观证据关闭。
+
+## 2026-10-08 A03 兼容修订：受审主体的 Evidence 归属
+
+P01/P02 后发现通用 `ChecklistQualificationSubject` 要求每个受审主体至少一个 EvidenceRef，但 `PRT-03` Approved PrototypeVersion 的正式依据是固定 DocumentVersion 制品、Review 和 Trace，而不是其自身 EvidenceRef。把 Requirement 来源 Evidence 复制到 PRT-03 主体会错误陈述证据归属；虚构 Evidence 更不可接受。选择允许聚合中的单个主体 Evidence 集为空，但聚合整体仍必须至少包含一个经证明的 Evidence；本阶段 Requirement 主体须继续提供其真实来源 Evidence，PRT-03 主体以真实 Review 与受权制品/Trace 由 Owner 另行证明。现有 Handover/Survey/Requirement Owner 输出不变，单主体 `CurrentChecklistQualification` 的非空 Evidence 约束不改。空 Evidence 的 PRT-03 不会凭此获得 PASS，A03 Owner、A04写时复验与A05实例测试仍是必需前置。
+
+差异/风险：通用聚合 Subject 构造约束小幅放宽，若错误 Owner 输出全部无 Evidence 可能削弱登记依据；在 Aggregate 根约束新增总 Evidence 非空，并保持受权 Registry、聚合写时原样匹配和 Review Basis 持久化。无 Schema、API、权限或数据迁移。验证计划：零 Evidence 聚合拒绝、混合主体的 Evidence/Review 身份和排序、既有 Workflow 全量回归，后续真实 PG/HTTP。回滚：A04 尚未开放 Prototype 注册前可撤销该内部 DTO 兼容扩展；开放并形成 Checklist 历史后不得删除记录，应先停止新注册并制定保留历史的迁移方案。

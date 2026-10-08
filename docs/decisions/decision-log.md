@@ -10454,3 +10454,10 @@
 - Decision：当前 Approved RequirementVersion 完整集合必须逐条归入经证明的 NOT_REQUIRED 决定或当前 Approved PrototypeVersion 固定 RequirementRef；空范围、遗漏、交叉、旧版本和跨项目失败关闭。Coverage 仅把 ACTIVE、精确双端、`VALIDATES/ACCEPTANCE_REFERENCE` Link 的已覆盖验收标准计入并集；原因本身不等于处理完成。全 NOT_REQUIRED 仍需逐条决定、Requirement Review/Evidence 与人工确认，不因无 Link 跳过。
 - Reason：以 Prototype 或 Link 集合做左表会静默遗漏需求；把 ILLUSTRATES/未覆盖原因当完成会高估覆盖；生成合成 Review/Evidence 会伪造客户事实。
 - Impact/Rollback：A02 仅纯算法、单元测试和待启用的预览兼容合同，无 Schema/API 运行行为/依赖/外发。A03/A04 需真实 Owner、写时复验及显式注册后才可开放；撤注册可回滚运行入口，历史决定、Review、Checklist 不删除。
+
+# DEC-20261008-1074：Prototype 聚合主体不冒领 Requirement 来源 Evidence
+
+- Date/WBS：2026-10-08 / `PRT-01-A11-A03-P03-A01`；依据 `CR-PRT-005` A03 兼容修订。
+- Decision：允许通用 AggregateChecklistQualification 中个别受审主体 Evidence 集为空，但聚合整体仍必须有真实 Evidence；`PRT-03` 由真实 Review/固定 DocumentVersion/Trace 证明，Requirement 来源 Evidence 属于 `REQ-03` 或范围级证据。既有单主体资格非空约束不变。
+- Reason：PrototypeVersion 并无自身 EvidenceRef，强行复制或伪造会错误陈述证据归属；放开整个聚合的空 Evidence 则削弱 Checklist Basis。
+- Impact/Rollback：内部 DTO 兼容扩展，无 Schema/API/依赖/权限变更；A04开放前可撤扩展，开放并形成历史后必须保留 Checklist 历史，先停止注册再制定迁移。
