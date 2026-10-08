@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A04-P07-P02 新增 PROJECT Reference 前端 List/详情严格只读客户端，核对同项目、有序游标、固定文档根/版本及 ETag；尚未挂载页面。兼容性/升级：无服务端 API/Schema/依赖变化，无数据升级。验证：定向3、前端全量102文件/1608项、typecheck/build通过。已知问题：既有主包大于500kB警告；界面/浏览器、正式License/目标账户、Server2025、20并发/Gate3/发行未验；Debian13依指令跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P07-P01 按 CR-SOL-008 为受权 PROJECT Reference GET 增加固定文档根/版本有序定位身份，保留旧 ID 数组，跨项目或错配来源失败关闭。兼容性/升级：仅响应增量，无 URL/权限/Schema/依赖变化，无数据升级。验证：单元/合同8通过/26子例，三条隔离PG18.6 Owner/HTTP/Windows组合通过，后端全量3322通过/3跳过/4906子例。已知问题：前端入口、浏览器UAT、正式License/目标账户、Server2025、20并发/Gate3/发行未验；Debian13依用户指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P04-P06 为 PROJECT Reference List 新增 Windows 当前账户独立 KeyRef 与显式只读/写模式组合；缺钥拒启动，默认/GLOBAL关闭，只读POST仍404。兼容性/升级：无 Schema/依赖/冻结 API 破坏；部署前须在目标运行账户交互式供给 `project-reference-list-cursor-v1` 并离线备份/恢复验证，本轮未执行正式供给。验证：Win11临时Vault丢失/备份恢复、隔离PG18.6/私有文件真实Session/ASGI双页及模式合同，后端全量3322通过/3跳过/4904子例。已知问题：正式服务账户/License、Server2025、UI、20并发/Gate3/发行未验；Debian13依用户指令跳过。
