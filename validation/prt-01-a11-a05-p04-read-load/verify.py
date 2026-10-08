@@ -14,10 +14,12 @@ approved = runpy.run_path(str(
 
 
 if __name__ == "__main__":
-    if sys.argv[1:] not in ([], ["--sql-diagnostic"], ["--network"]):
-        raise SystemExit("usage: verify.py [--sql-diagnostic|--network]")
+    if sys.argv[1:] not in ([], ["--sql-diagnostic"], ["--network"],
+                            ["--phase-diagnostic"]):
+        raise SystemExit("usage: verify.py [--sql-diagnostic|--network|--phase-diagnostic]")
     approved["main"](
         read_load=True,
         read_load_sql_diagnostic=(sys.argv[1:] == ["--sql-diagnostic"]),
-        network_load=(sys.argv[1:] == ["--network"]),
+        network_load=(sys.argv[1:] in (["--network"], ["--phase-diagnostic"])),
+        phase_diagnostic=(sys.argv[1:] == ["--phase-diagnostic"]),
     )

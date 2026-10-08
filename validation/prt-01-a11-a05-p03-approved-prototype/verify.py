@@ -68,6 +68,7 @@ from plm_assistant.modules.prototype.application.requirement_links import (
     UncoveredAcceptanceCriterion,
 )
 from plm_assistant.modules.prototype.application.review_subject import PrototypeReviewSubjectOwner
+from plm_assistant.modules.prototype.application.workflow_qualification import PrototypeWorkflowQualificationOwner
 from plm_assistant.modules.prototype.application.submit_review import (
     PrototypeReviewSubmissionService, SubmitPrototypeVersionReview,
 )
@@ -79,6 +80,11 @@ from plm_assistant.modules.prototype.infrastructure.scope_decision_repository im
 from plm_assistant.modules.prototype.infrastructure.version_create_repository import SqlAlchemyPrototypeVersionCreateRepository
 from plm_assistant.modules.prototype.infrastructure.version_input_proofs import SqlAlchemyPrototypeVersionTemplateProof
 from plm_assistant.modules.prototype.infrastructure.version_read_repository import SqlAlchemyPrototypeVersionReadRepository
+from plm_assistant.modules.prototype.infrastructure.workflow_scope_repository import SqlAlchemyPrototypeWorkflowScopeRepository
+from plm_assistant.modules.prototype.infrastructure.workflow_version_links_repository import SqlAlchemyPrototypeWorkflowVersionLinksRepository
+from plm_assistant.modules.requirement.application.workflow_qualification import RequirementWorkflowQualificationOwner
+from plm_assistant.modules.workflow.application.preview_checklist_qualification import WorkflowChecklistQualificationPreviewService
+from plm_assistant.modules.workflow.infrastructure.read_repository import SqlAlchemyWorkflowReadRepository
 from plm_assistant.modules.requirement.infrastructure.prototype_version_proof import SqlAlchemyPrototypeApprovedRequirementVersionProof
 from plm_assistant.modules.review.application.project_persistence import ProjectReviewPersistenceService
 from plm_assistant.modules.review.application.transition_command import DecideReviewRound, ReviewTransitionCommandService
@@ -106,6 +112,82 @@ ITEMS = ("PROTOTYPE_SCOPE_DECISIONS", "PROTOTYPE_COVERAGE")
 class UnusedDependency:
     def __getattr__(self, name):
         raise AssertionError(f"approved Prototype fixture used {name}")
+
+
+class QualificationPhaseProbe:
+    """Temporary network-load wall timers; never installed in product code."""
+
+    _METHODS = (
+        ("session_validate", SessionService, "validate"),
+        ("preview_service", WorkflowChecklistQualificationPreviewService,
+         "get"),
+        ("preview_actor", WorkflowChecklistQualificationPreviewService,
+         "_actor"),
+        ("project_authorization", ProjectAuthorizationService,
+         "require_in_transaction"),
+        ("workflow_read", SqlAlchemyWorkflowReadRepository, "get"),
+        ("prototype_owner", PrototypeWorkflowQualificationOwner,
+         "qualify_only_current_in_transaction"),
+        ("prototype_scope", SqlAlchemyPrototypeWorkflowScopeRepository,
+         "lock_current_roots"),
+        ("requirement_owner", RequirementWorkflowQualificationOwner,
+         "qualify_with_scope_in_transaction"),
+        ("requirement_refs", PrototypeWorkflowQualificationOwner,
+         "_requirements"),
+        ("prototype_versions", SqlAlchemyPrototypeWorkflowVersionLinksRepository,
+         "lock_current_versions_and_links"),
+        ("prototype_artifacts_review", PrototypeWorkflowQualificationOwner,
+         "_prototypes"),
+    )
+
+    def __init__(self) -> None:
+        self.samples: dict[str, list[float]] = {}
+        self.intervals: dict[str, list[tuple[float, float]]] = {}
+        self.originals: list[tuple[type, str, object]] = []
+        self.lock = threading.Lock()
+
+    def __enter__(self):
+        for label, cls, name in self._METHODS:
+            original = getattr(cls, name)
+            self.originals.append((cls, name, original))
+
+            def timed(instance, *args, _label=label, _original=original,
+                      **kwargs):
+                started = time.perf_counter()
+                try:
+                    return _original(instance, *args, **kwargs)
+                finally:
+                    finished = time.perf_counter()
+                    elapsed = (finished - started) * 1000
+                    with self.lock:
+                        self.samples.setdefault(_label, []).append(elapsed)
+                        self.intervals.setdefault(_label, []).append(
+                            (started, finished),
+                        )
+
+            setattr(cls, name, timed)
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        for cls, name, original in reversed(self.originals):
+            setattr(cls, name, original)
+        self.originals.clear()
+
+    def report(self) -> None:
+        for label, samples in sorted(self.samples.items()):
+            ordered = sorted(samples)
+            intervals = self.intervals[label]
+            events = sorted(
+                ((started, 1) for started, _ in intervals),
+            ) + sorted(((finished, -1) for _, finished in intervals))
+            active = peak = 0
+            for _, change in sorted(events, key=lambda value: (value[0], value[1])):
+                active += change
+                peak = max(peak, active)
+            print(f"PRT_A05_P04_PHASE_TIMER phase={label} count={len(ordered)} "
+                  f"p50_ms={statistics.median(ordered):.2f} "
+                  f"p95_ms={ordered[math.ceil(.95 * len(ordered)) - 1]:.2f} "
+                  f"peak_active={peak}")
 
 
 class TimedLocalFileStorage(LocalFileStorage):
@@ -397,7 +479,8 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
                        read_load: bool = False,
                        read_load_sql_diagnostic: bool = False,
                        network_load: bool = False,
-                       pipeline_probe: bool = False) -> None:
+                       pipeline_probe: bool = False,
+                       phase_diagnostic: bool = False) -> None:
     project = ids["project"]
     second = additional_requirement if mixed_not_required else None
     if mixed_not_required:
@@ -900,9 +983,16 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
             expanded_runtime.dispose()
         if network_load:
             file_proof_since = len(storage.proof_ms)
-            network_p95 = _measure_network_read_load(
-                app, prefix, read_headers, runtime,
-            )
+            if phase_diagnostic:
+                with QualificationPhaseProbe() as timer:
+                    network_p95 = _measure_network_read_load(
+                        app, prefix, read_headers, runtime,
+                    )
+                timer.report()
+            else:
+                network_p95 = _measure_network_read_load(
+                    app, prefix, read_headers, runtime,
+                )
             assert set(network_p95) == set(ITEMS)
             _print_file_proof_timing(storage, file_proof_since, "network")
     with TestClient(app, base_url=ORIGIN) as client:
@@ -1040,7 +1130,8 @@ def main(*, mixed_not_required: bool = False,
          read_load: bool = False,
          read_load_sql_diagnostic: bool = False,
          network_load: bool = False,
-         pipeline_probe: bool = False) -> None:
+         pipeline_probe: bool = False,
+         phase_diagnostic: bool = False) -> None:
     if conflicting_decision and not mixed_not_required:
         raise ValueError("conflict mode requires mixed scope")
     if coverage_mode not in {None, "partial", "illustrates"}:
@@ -1080,6 +1171,7 @@ def main(*, mixed_not_required: bool = False,
                 read_load_sql_diagnostic=read_load_sql_diagnostic,
                 network_load=network_load,
                 pipeline_probe=pipeline_probe,
+                phase_diagnostic=phase_diagnostic,
                 **context,
             ),
         )

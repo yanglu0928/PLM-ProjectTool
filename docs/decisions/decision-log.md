@@ -10517,3 +10517,10 @@
 - Decision：Validator一次调用内按项目EvidenceId复用Evidence Owner已共享锁定的Proof，完成原当前性/来源/能力规则后把有效Proof交给Requirement Workflow Owner；Owner继续逐字段严格验证，未包含的Decision Evidence仍走原Port。绝不跨事务或跨请求缓存。
 - Reason：同一ELIGIBLE Evidence行在当前性和Checklist生成中重复读取，SQL计数显示每资格有4次此表查询；删除验证会削弱文件身份/版本/锁/指纹证明，事务内复用可保留事实边界。
 - Impact/Rollback：内部算法变化，无Schema/API/权限/数据迁移。若任一负例不等价，恢复旧Validator每处调用和Workflow Owner再读；Prototype生产入口不开放，性能仍按真实网络门槛判断。
+
+# DEC-20261008-1083：阶段计时不足以支持生产连接池或安全证明调整
+
+- Date/WBS：2026-10-08 / `PRT-01-A11-A05-P04-P10`；依据CR-PRT-005、隔离ASGI池对照和真实Uvicorn分段诊断。
+- Decision：保留生产连接池与资格安全证明原样。下一独立验证以每轮客户端/ASGI/线程/响应时间线隔离外部排队；在具体瓶颈与稳定网络收益被证明前，不再做高风险共享仓储微优化，也不放宽P95≤500ms。
+- Reason：20连接诊断池仍约550ms>500ms；真实网络业务P95约565–598ms，而Qualification预览方法P95仅约87ms且峰值重叠5。嵌套阶段计时及健康对照不能独立证明某一生产参数为根因。
+- Impact/Rollback：P10仅验证工具与记录，无生产代码、API、Schema、权限或迁移；撤`--phase-diagnostic`即可回滚。Prototype入口/Gate3保持关闭/阻塞。
