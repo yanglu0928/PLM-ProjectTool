@@ -25,6 +25,7 @@ from plm_assistant.modules.project.api.department_list_cursor import DepartmentL
 from plm_assistant.modules.document.api.document_list_cursor import DocumentListCursorCodec
 from plm_assistant.modules.solution.api.reference_list_cursor import ReferenceListCursorCodec
 from plm_assistant.modules.solution.api.global_reference_list_cursor import GlobalReferenceListCursorCodec
+from plm_assistant.modules.solution.api.outline_list_cursor import OutlineListCursorCodec
 from plm_assistant.modules.document.api.version_list_cursor import VersionListCursorCodec
 from plm_assistant.modules.document.api.parse_list_cursor import ParseListCursorCodec
 from plm_assistant.modules.jobs.api.list_cursor import JobListCursorCodec
@@ -53,6 +54,36 @@ class _ContractMaintenanceAdmission:
 
 
 class ProductionLoginTests(unittest.TestCase):
+    def test_missing_outline_cursor_key_disposes_both_platform_modes(self):
+        for factory in (create_production_platform_app,
+                        create_production_platform_write_app):
+            with self.subTest(factory=factory.__name__):
+                runtime = Mock()
+                runtime.is_ready.return_value = True
+                with patch(
+                    "plm_assistant.entrypoints.production_login.read_database_url",
+                    return_value="postgresql+psycopg://localhost/test",
+                ), patch(
+                    "plm_assistant.entrypoints.production_login.create_database_runtime",
+                    return_value=runtime,
+                ), patch(
+                    "plm_assistant.entrypoints.production_login._schema_current",
+                    return_value=True,
+                ), patch(
+                    "plm_assistant.entrypoints.windows_license_runtime."
+                    "create_windows_license_services",
+                    return_value=Mock(guard=Mock()),
+                ), patch(
+                    "plm_assistant.entrypoints.production_login."
+                    "create_windows_outline_list_cursor_codec",
+                    side_effect=RuntimeError("private Outline cursor key missing"),
+                ) as failed:
+                    with self.assertRaises(ProductionLoginStartupError) as caught:
+                        factory(self.settings(("http://localhost",)))
+                failed.assert_called_once()
+                self.assertNotIn("private", str(caught.exception))
+                runtime.dispose.assert_called_once()
+
     def test_outline_read_composition_failure_disposes_both_platform_modes(self):
         for factory in (create_production_platform_app,
                         create_production_platform_write_app):
@@ -346,6 +377,11 @@ class ProductionLoginTests(unittest.TestCase):
             return_value=GlobalReferenceListCursorCodec(b"g" * 32),
         ))
         self.enterContext(patch(
+            "plm_assistant.entrypoints.production_login."
+            "create_windows_outline_list_cursor_codec",
+            return_value=OutlineListCursorCodec(b"o" * 32),
+        ))
+        self.enterContext(patch(
             "plm_assistant.entrypoints.production_login.create_windows_document_version_cursor_codec",
             return_value=VersionListCursorCodec(b"z" * 32),
         ))
@@ -636,6 +672,9 @@ class ProductionLoginTests(unittest.TestCase):
                 "solution-outlines").status_code, 404)
             self.assertEqual(client.get(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
+                "solution-outlines").status_code, 404)
+            self.assertEqual(client.get(
+                "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
                 "solution-outlines/00000000-0000-0000-0000-000000000002").status_code, 404)
             self.assertEqual(client.get(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
@@ -753,6 +792,9 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(client.post(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
                 "solution-outlines").status_code, 404)
+            self.assertEqual(client.get(
+                "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
+                "solution-outlines").status_code, 401)
             self.assertEqual(client.get(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
                 "solution-outlines/00000000-0000-0000-0000-000000000002").status_code, 401)
@@ -1095,6 +1137,9 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(client.post(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
                 "solution-outlines").status_code, 403)
+            self.assertEqual(client.get(
+                "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
+                "solution-outlines").status_code, 401)
             self.assertEqual(client.get(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
                 "solution-outlines/00000000-0000-0000-0000-000000000002").status_code, 401)

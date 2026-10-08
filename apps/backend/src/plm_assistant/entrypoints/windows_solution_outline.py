@@ -10,7 +10,9 @@ from plm_assistant.modules.platform.infrastructure.idempotency_receipts import S
 from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
 from plm_assistant.modules.project.infrastructure.authorization_repository import SqlAlchemyProjectAuthorizationRepository
 from plm_assistant.modules.solution.api.outline_create import create_outline_create_router
+from plm_assistant.modules.solution.api.outline_list import create_outline_list_router
 from plm_assistant.modules.solution.api.outline_read import create_outline_read_router
+from plm_assistant.modules.solution.api.outline_list_cursor import OutlineListCursorCodec
 from plm_assistant.modules.solution.application.create_outline import OutlineCreateService
 from plm_assistant.modules.solution.application.read_outline import OutlineReadService
 from plm_assistant.modules.solution.infrastructure.outline_create_repository import SqlAlchemyOutlineCreateRepository
@@ -40,6 +42,33 @@ def create_windows_outline_read_router(
         )
         return create_outline_read_router(
             sessions=sessions, origins=origins, reads=service)
+    except Exception:
+        raise ProductionSolutionOutlineStartupError() from None
+
+
+def create_windows_outline_list_router(
+    *, runtime, sessions, origins, license_guard,
+    cursors: OutlineListCursorCodec,
+) -> APIRouter:
+    """Mount LIST only with the dedicated signed cursor and read trust."""
+    if any(value is None for value in (
+            runtime, sessions, origins, license_guard, cursors)):
+        raise ProductionSolutionOutlineStartupError()
+    if type(cursors) is not OutlineListCursorCodec:
+        raise ProductionSolutionOutlineStartupError()
+    try:
+        service = OutlineReadService(
+            unit_of_work=runtime.unit_of_work,
+            access=SqlAlchemyProjectReadAccess(),
+            license_guard=license_guard,
+            authorization=ProjectAuthorizationService(
+                unit_of_work=runtime.unit_of_work,
+                repository=SqlAlchemyProjectAuthorizationRepository()),
+            repository=SqlAlchemyOutlineReadRepository(),
+        )
+        return create_outline_list_router(
+            sessions=sessions, origins=origins, reads=service,
+            cursors=cursors)
     except Exception:
         raise ProductionSolutionOutlineStartupError() from None
 
