@@ -198,20 +198,24 @@ def verify(port: int, scratch: Path, on_created=None) -> None:
             member_request, member_csrf, "Member Reference", "m" * 16)
         member_created = service.create(member_cmd)
         assert member_created.created_by == member
+        extra_count = 0
         if on_created is not None:
-            on_created(port=port, scratch=scratch, locator=locator, content=content,
-                       runtime=runtime, service=service, sources=sources,
-                       audit=audit, license_guard=license_guard, project=project,
-                       other_project=other_project, manager=manager, member=member,
-                       document_version=version, evidence=evidence,
-                       token=token, csrf=csrf,
-                       member_token=member_token, member_csrf=member_csrf,
-                       documents=_unused["documents"],
-                       downloads=_unused["downloads"],
-                       parse_results=_unused["parse_results"])
+            extra_count = on_created(
+                port=port, scratch=scratch, locator=locator, content=content,
+                runtime=runtime, service=service, sources=sources,
+                audit=audit, license_guard=license_guard, project=project,
+                other_project=other_project, manager=manager, member=member,
+                created=created, member_created=member_created,
+                global_version=global_version,
+                document_version=version, evidence=evidence,
+                token=token, csrf=csrf,
+                member_token=member_token, member_csrf=member_csrf,
+                documents=_unused["documents"],
+                downloads=_unused["downloads"],
+                parse_results=_unused["parse_results"]) or 0
         with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
                              dbname="postgres", autocommit=True) as db:
-            expected_count = 2 + (2 if on_created is not None else 0)
+            expected_count = 2 + extra_count
             assert db.execute("SELECT count(*) FROM plm.sol_reference_solutions "
                               "WHERE scope='PROJECT' AND project_id=%s",
                               (project,)).fetchone()[0] == expected_count

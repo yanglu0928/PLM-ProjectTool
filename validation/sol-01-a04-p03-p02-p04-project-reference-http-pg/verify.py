@@ -133,6 +133,7 @@ def on_created(*, port, scratch, locator, content, runtime, service, sources, au
         refused = client.post(path, headers={**headers, "idempotency-key": "l" * 16},
                               json=body)
         assert refused.status_code == 403 and refused.json()["error"]["code"] == "LICENSE_OPERATION_DENIED"
+    return 2
 
 
 def main() -> None:

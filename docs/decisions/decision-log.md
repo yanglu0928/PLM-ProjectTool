@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261009-1114：Reference 历史固定来源读取不替代当前资格重验
+
+- Date/WBS：2026-10-09 / `SOL-01-A04-P04-P01`；依据 Gate 2 API-04、CR-SOL-007、Reference 当前版本与固定来源 Schema。
+- Decision：PROJECT Reference 当前版本内部读取允许当前同项目有效成员查看固定 DocumentVersion/Evidence 身份、版本状态和创建时指纹；创建权限继续仅 PM/IM。读取仓储必须枚举并核对全部引用的数量、序号、Scope/ProjectId，异常失败关闭，不通过筛选隐藏越界来源。历史读取不声明来源文件现在仍有效，也不自动形成 Eligibility、Review 或人工确认。
+- Reason：客户成员需要查看项目方案历史，但读取权限不等于可创建或可用性批准；固定来源若被静默过滤，会把不完整版本误呈现为可信。实时资格应由独立的资格/使用命令重验。
+- Impact/Rollback：仅内部服务/仓储和项目操作策略，无 Schema、公开 API、冻结合同、依赖或新增数据外发；撤回内部接线可关闭读取。后续 GET/List 必须复用同一授权与失败关闭语义。
+- Verification：Windows 11 隔离 PG18.6/私有文件 PM/IM/客户、跨项目、撤权、混入 GLOBAL 引用负例通过；前序创建 HTTP/PG 复验及后端全量 `3309 passed, 3 skipped, 4858 subtests passed`。
+
 ## DEC-20261008-1072：Prototype路由按需加载且共享会话失效立即卸载业务页
 
 - Date/WBS：2026-10-08 / `PRT-01-A10-A06`；依据A01会话变化清理要求、A05页面边界及既有AppShell共享

@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A04-P04-P01 新增 PROJECT Reference 当前版本内部读取 Owner 与固定来源安全投影，同项目当前成员可读，混入 GLOBAL/外项目来源失败关闭；历史读取不代表实时来源资格。兼容性/升级：无 Schema、公开 API、新依赖或升级动作。验证：Windows 11 隔离 PG18.6/私有文件权限与混源负例、前序创建 HTTP/PG 回归、后端全量3309通过/3跳过/4858子例。已知问题：GET/List HTTP、UI、正式 License/服务账户信任、来源实时资格、20并发、Gate3/发行未验；Debian13按用户指令跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P03-P02-P05 Windows 显式写模式接入 PROJECT Reference 创建的受控来源组合；PROJECT Evidence PM/IM 角色与创建策略对齐，默认/只读/GLOBAL 路由仍关闭，缺依赖启动拒绝。兼容性/升级：无 Schema/依赖/既有 API 破坏，无升级步骤。验证：隔离PG18.6/文件/ASGI组合复验、Windows模式合同与缺依赖单元通过；后端全量3306通过/3跳过/4847子例。已知问题：正式License/服务账户信任源、GET/List/UI、GLOBAL人工确认、20并发/Gate3/发行未验；Debian13按用户指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P03-P02-P04 新增 PROJECT Reference 创建真实 SessionService/ASGI/隔离 PG18.6/私有文件组合脚本；验证 201/重放、异载荷409、跨项目/撤权404、CSRF/License403、源文件篡改503和既有 GLOBAL 回归。兼容性/升级：仅验证脚本和记录，无生产代码/API/Schema/依赖变化，无升级步骤。验证：Win11 隔离脚本退出0；后端全量本项未重跑（前项3305通过/3跳过/4839子例）。已知问题：正式信任源、Windows显式组合、GET/List/UI、GLOBAL真实人工确认、20并发/Gate3/发行未验；Debian13按用户指令跳过。
