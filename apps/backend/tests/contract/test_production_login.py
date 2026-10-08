@@ -1029,7 +1029,7 @@ class ProductionLoginTests(unittest.TestCase):
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
                 "reference-solutions/00000000-0000-0000-0000-000000000002").status_code, 401)
             self.assertEqual(client.post(
-                "/api/v1/global/reference-solutions").status_code, 404)
+                "/api/v1/global/reference-solutions").status_code, 403)
             self.assertEqual(client.post(
                 "/api/v1/global/reference-deidentification-confirmations:preview"
             ).status_code, 403)

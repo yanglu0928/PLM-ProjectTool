@@ -17,7 +17,10 @@ from plm_assistant.modules.evidence.infrastructure.fixed_source_repository impor
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
 from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
 from plm_assistant.modules.project.infrastructure.authorization_repository import SqlAlchemyProjectAuthorizationRepository
-from plm_assistant.modules.solution.api.reference_create import create_project_reference_create_router
+from plm_assistant.modules.solution.api.reference_create import (
+    create_global_reference_create_router,
+    create_project_reference_create_router,
+)
 from plm_assistant.modules.solution.api.reference_deidentification import create_reference_deidentification_router
 from plm_assistant.modules.solution.api.reference_list import create_project_reference_list_router
 from plm_assistant.modules.solution.api.reference_list_cursor import ReferenceListCursorCodec
@@ -116,6 +119,36 @@ def create_windows_project_reference_create_router(
             receipts=SqlAlchemyIdempotencyReceipts(), audit=audit,
         )
         return create_project_reference_create_router(
+            sessions=sessions, origins=origins, creates=service)
+    except Exception:
+        raise ProductionSolutionReferenceStartupError() from None
+
+
+def create_windows_global_reference_create_router(
+    *, runtime, sessions, origins, license_guard, audit,
+    documents, downloads, parse_results,
+) -> APIRouter:
+    """Compose GLOBAL create only for the explicit Windows write entrypoint."""
+    if any(value is None for value in (
+            runtime, sessions, origins, license_guard, audit,
+            documents, downloads, parse_results)):
+        raise ProductionSolutionReferenceStartupError()
+    try:
+        project_repository = SqlAlchemyProjectAuthorizationRepository()
+        sources = _source_service(
+            documents=documents, downloads=downloads, parse_results=parse_results,
+            project_repository=project_repository)
+        service = ReferenceCreateService(
+            unit_of_work=runtime.unit_of_work,
+            global_access=SqlAlchemyLicenseImportAccess(),
+            project_access=SqlAlchemyProjectWriteAccess(),
+            project_authorization=ProjectAuthorizationService(
+                unit_of_work=runtime.unit_of_work, repository=project_repository),
+            license_guard=license_guard, sources=sources,
+            repository=SqlAlchemyReferenceCreateRepository(),
+            receipts=SqlAlchemyIdempotencyReceipts(), audit=audit,
+        )
+        return create_global_reference_create_router(
             sessions=sessions, origins=origins, creates=service)
     except Exception:
         raise ProductionSolutionReferenceStartupError() from None

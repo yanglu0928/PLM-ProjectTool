@@ -43,7 +43,8 @@ class DeniedLicense:
 
 def on_preview(*, runtime, audit, license_guard, preview, confirm, revoke,
                document, version, evidence, node_evidence, port, scratch,
-               documents, downloads, parse_results, **_unused) -> None:
+               documents, downloads, parse_results,
+               create_router_factory=None, **_unused) -> None:
     sessions = SessionService(
         unit_of_work=runtime.unit_of_work,
         repository=SqlAlchemySessionRepository(), issue_access=object(), audit=audit)
@@ -64,8 +65,14 @@ def on_preview(*, runtime, audit, license_guard, preview, confirm, revoke,
             repository=SqlAlchemyReferenceCreateRepository(),
             receipts=SqlAlchemyIdempotencyReceipts(), audit=audit)
 
-    create_router = create_global_reference_create_router(
-        sessions=sessions, origins=origins, creates=create_service(license_guard))
+    if create_router_factory is None:
+        create_router = create_global_reference_create_router(
+            sessions=sessions, origins=origins, creates=create_service(license_guard))
+    else:
+        create_router = create_router_factory(
+            runtime=runtime, sessions=sessions, origins=origins,
+            license_guard=license_guard, audit=audit,
+            documents=documents, downloads=downloads, parse_results=parse_results)
     attestation_router = create_reference_deidentification_router(
         sessions=sessions, origins=origins, previews=preview,
         confirmations=confirm, revocations=revoke)
