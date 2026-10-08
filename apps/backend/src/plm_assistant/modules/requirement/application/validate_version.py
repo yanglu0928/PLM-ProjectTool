@@ -163,18 +163,32 @@ class RequirementVersionCurrentValidator:
     def current_issues(
         self, tx: object, snapshot: RequirementVersionValidationSnapshot,
     ) -> tuple[str, ...]:
+        return self.current_issues_and_project_evidence(tx, snapshot)[0]
+
+    def current_issues_and_project_evidence(
+        self, tx: object, snapshot: RequirementVersionValidationSnapshot,
+    ) -> tuple[tuple[str, ...], tuple[EvidenceRequirementSourceProof, ...]]:
+        """Return only proofs checked within this same locked validation call."""
         if type(snapshot) is not RequirementVersionValidationSnapshot:
             raise RequirementVersionValidationError()
         found: set[str] = set()
+        project_evidence: dict[uuid.UUID, EvidenceRequirementSourceProof | None] = {}
         payload = self._content_payload(snapshot, found)
         if payload is not None and not hmac.compare_digest(
                 canonical_payload_fingerprint(payload), snapshot.content_fingerprint):
             found.add("CONTENT_FINGERPRINT_MISMATCH")
         self._counts(snapshot, found)
         self._business_rules(snapshot, found)
-        self._source_issues(tx, snapshot, found)
-        self._capability_issues(tx, snapshot, found)
-        return tuple(issue for issue in _ORDER if issue in found)
+        self._source_issues(tx, snapshot, found, project_evidence)
+        self._capability_issues(tx, snapshot, found, project_evidence)
+        issues = tuple(issue for issue in _ORDER if issue in found)
+        if issues:
+            return issues, ()
+        return issues, tuple(
+            project_evidence[evidence_id]
+            for evidence_id in sorted(project_evidence, key=lambda value: value.int)
+            if type(project_evidence[evidence_id]) is EvidenceRequirementSourceProof
+        )
 
     @staticmethod
     def _content_payload(
@@ -283,18 +297,21 @@ class RequirementVersionCurrentValidator:
 
     def _source_issues(self, tx: object,
                        snapshot: RequirementVersionValidationSnapshot,
-                       found: set[str]) -> None:
+                       found: set[str],
+                       project_evidence: dict[uuid.UUID, EvidenceRequirementSourceProof | None]) -> None:
         for source in snapshot.sources:
-            if not self._source_current(tx, snapshot, source):
+            if not self._source_current(tx, snapshot, source, project_evidence):
                 found.add("SOURCE_UNAVAILABLE")
             for evidence_id in source.evidence_refs:
                 if not self._project_evidence_current(
-                        tx, snapshot.project_id, evidence_id):
+                        tx, snapshot.project_id, evidence_id,
+                        project_evidence):
                     found.add("EVIDENCE_UNAVAILABLE")
 
     def _source_current(self, tx: object,
                         snapshot: RequirementVersionValidationSnapshot,
-                        source: RequirementSourceDraft) -> bool:
+                        source: RequirementSourceDraft,
+                        project_evidence: dict[uuid.UUID, EvidenceRequirementSourceProof | None]) -> bool:
         if source.source_type == "APPROVED_SURVEY_CONCLUSION":
             proof = self._survey.prove(
                 tx, project_id=snapshot.project_id,
@@ -324,9 +341,9 @@ class RequirementVersionCurrentValidator:
                     and proof.project_id == snapshot.project_id
                     and proof.evidence_refs == tuple(sorted(source.evidence_refs)))
         if source.source_type == "PROJECT_EVIDENCE":
-            proof = self._project_evidence.prove(
-                tx, project_id=snapshot.project_id,
-                evidence_id=source.source_object_id,
+            proof = self._project_evidence_proof(
+                tx, snapshot.project_id, source.source_object_id,
+                project_evidence,
             )
             return (type(proof) is EvidenceRequirementSourceProof
                     and proof.evidence_id == source.source_object_id
@@ -336,7 +353,8 @@ class RequirementVersionCurrentValidator:
 
     def _capability_issues(self, tx: object,
                            snapshot: RequirementVersionValidationSnapshot,
-                           found: set[str]) -> None:
+                           found: set[str],
+                           project_evidence: dict[uuid.UUID, EvidenceRequirementSourceProof | None]) -> None:
         for assessment in snapshot.capability_assessments:
             proof = self._capability.prove(
                 tx, baseline_version_id=assessment.baseline_version_id,
@@ -349,7 +367,8 @@ class RequirementVersionCurrentValidator:
             for ref in assessment.evidence_refs:
                 if ref.evidence_role == "PROJECT":
                     current = self._project_evidence_current(
-                        tx, snapshot.project_id, ref.evidence_id)
+                        tx, snapshot.project_id, ref.evidence_id,
+                        project_evidence)
                 elif ref.evidence_role == "STANDARD":
                     evidence = self._fixed_evidence.get_for_trace(
                         tx, scope="GLOBAL", project_id=None,
@@ -364,13 +383,24 @@ class RequirementVersionCurrentValidator:
                     found.add("EVIDENCE_UNAVAILABLE")
 
     def _project_evidence_current(self, tx: object, project_id: uuid.UUID,
-                                  evidence_id: uuid.UUID) -> bool:
-        proof = self._project_evidence.prove(
-            tx, project_id=project_id, evidence_id=evidence_id,
+                                  evidence_id: uuid.UUID,
+                                  project_evidence: dict[uuid.UUID, EvidenceRequirementSourceProof | None]) -> bool:
+        proof = self._project_evidence_proof(
+            tx, project_id, evidence_id, project_evidence,
         )
         return (type(proof) is EvidenceRequirementSourceProof
                 and proof.evidence_id == evidence_id
                 and proof.project_id == project_id)
+
+    def _project_evidence_proof(self, tx: object, project_id: uuid.UUID,
+                                evidence_id: uuid.UUID,
+                                project_evidence: dict[uuid.UUID, EvidenceRequirementSourceProof | None]
+                                ) -> EvidenceRequirementSourceProof | None:
+        if evidence_id not in project_evidence:
+            project_evidence[evidence_id] = self._project_evidence.prove(
+                tx, project_id=project_id, evidence_id=evidence_id,
+            )
+        return project_evidence[evidence_id]
 
 
 class RequirementVersionValidationService:

@@ -10510,3 +10510,10 @@
 - Decision：由Requirement快照仓储在原一次共享锁定查询中同时构造文字快照与内部稳定ID证明，Requirement Workflow锁可附带该证明；Prototype仅在证明与已验证快照身份、数量一致时消费，否则沿用独立Requirement Proof Port。原公开快照/Proof Port、锁序和失败关闭保留。
 - Reason：直接删除第二次读取会丢失ID及当前性约束；扩展共享ValidationSnapshot影响面过大。同源侧带证明可在Requirement Owner边界内复用已锁定行而不把ORM/正文交给Prototype，减少每个批准需求的两次往返。
 - Impact/Rollback：内部DTO与仓储组合新增，无Schema/API/权限/数据迁移；保持Prototype生产入口关闭，回滚时恢复独立Proof读取并丢弃内部侧带字段。须以正反例、SQL计数、全量后端及真实PG/HTTP/20并发验收，不能单凭静态推断标PASS。
+
+# DEC-20261008-1082：Requirement当前性与Checklist证据共用同事务Evidence Proof
+
+- Date/WBS：2026-10-08 / `PRT-01-A11-A05-P04-P09`；依据CR-PRT-005和Windows11隔离SQL诊断。
+- Decision：Validator一次调用内按项目EvidenceId复用Evidence Owner已共享锁定的Proof，完成原当前性/来源/能力规则后把有效Proof交给Requirement Workflow Owner；Owner继续逐字段严格验证，未包含的Decision Evidence仍走原Port。绝不跨事务或跨请求缓存。
+- Reason：同一ELIGIBLE Evidence行在当前性和Checklist生成中重复读取，SQL计数显示每资格有4次此表查询；删除验证会削弱文件身份/版本/锁/指纹证明，事务内复用可保留事实边界。
+- Impact/Rollback：内部算法变化，无Schema/API/权限/数据迁移。若任一负例不等价，恢复旧Validator每处调用和Workflow Owner再读；Prototype生产入口不开放，性能仍按真实网络门槛判断。

@@ -83,3 +83,13 @@ P04-P08前置核查找到唯一候选：Requirement快照仓储已取回并共�
 迁移/回滚：无数据迁移或配置升级；只部署同步代码。若任一等价性或回归失败，保持Prototype生产开关关闭并恢复Prototype始终调用独立Proof Port，丢弃内部侧带Proof；历史和冻结提交不改。即使查询数下降，也必须重新跑真实Uvicorn 20并发P95≤500ms才可宣称性能通过；Server2025/正式信任/发行仍独立验收。本节为实施前计划，以下验证结果待执行后补。
 
 实施后复验：旧`lock_snapshot`和独立Proof Port均保留；新同源内部返回只从已共享锁定的验收行构造ID，内部Workflow锁校验Proof的项目/需求/版本/数量，缺Proof时Prototype仍读旧Port。Windows11隔离PG18.6的122次资格读取，Requirement首FROM由1952减至1708（每请求16→14），总查询7686→7442（63→61/请求）。新增正反例及全量后端pytest3250通过/3跳过/4795子测试通过；跨项目/撤权、混合范围/文件损坏/双重认领的真实PG/HTTP回归退出0。真实Uvicorn20并发P95约593.788/596.738ms，仍超500ms；本改动仅证明查询减少和既定负例保持，不是性能PASS、生产入口或Gate3放行。无迁移，原回滚路径保持。
+
+## 2026-10-08 P04-P09 候选修订：Requirement同事务Evidence证明复用
+
+来源/证据：P08后隔离SQL诊断122次资格读取仍有7442条，其中`evd_evidence_records`一类语句488次（4/请求），单连接池累计约2.6秒（SQL事件计时环境，不可除成网络P95）。静态核对发现Requirement当前性验证对来源Evidence/能力评估Evidence分别调用Owner Proof，随后Workflow Owner又为Checklist证据调用相同Evidence Proof；本夹具可重复读取同一项目Evidence。所有Proof由Evidence Owner在同一资格事务中读取ELIGIBLE行并`FOR SHARE`，没有授权跨请求复用的依据。
+
+方案比较：A 跨请求缓存拒绝，会让撤权/失效及文件状态漂移漏检；B 删除Checklist再证明而不传Proof拒绝，会失去DocumentId/VersionId、锁版本、指纹完整检查；C 选择在Requirement Validator**单次当前性检查内部**按EvidenceId收集并复用已锁定的原始Evidence Owner Proof，仅在该次调用完成且无Issue后交给Workflow Owner；Owner仍用原严格字段/项目/ID检查构造Checklist证据，未出现在该集合的Decision Evidence仍走原Proof Port。源证明和能力证明各自原有规则不变，整个集合不进入跨请求/事务缓存。
+
+差异/风险：新增内部Validator组合返回和事务内缓存；通用`current_issues`对外返回及业务规则不变，内部同EvidenceId多次读取缩为一次。若被篡改Proof字段、缺失、错误项目、重用旧Snapshot或未验证集合会被错误接受，则必须失败关闭；单元覆盖这些负例并以跨项目/撤权/损坏文件真实PG/HTTP回归、SQL计数和全量后端验证。无Schema/API/权限/依赖/数据迁移；保持Prototype生产入口关闭。可恢复旧每次Proof调用与旧Workflow Owner再读，历史不动。只有真实Uvicorn20并发P95≤500ms且相关Gate证据齐备，才可考虑放行。本节为实施前计划。
+
+实施后复验：Validator按单次调用内EvidenceId复用，存在Issue时不给Workflow Owner Proof；Owner继续严格检查项目、ID、DocumentId/VersionId、锁版本和指纹，未包含的Decision Evidence从原Port读取。122次资格GET，SQL总数7442→7076（61→58/请求），`evd`首FROM610→244，`evd_evidence_records`模板488→122。全量后端pytest3253通过/3跳过/4795子测试通过；跨项目/撤权、混合范围/文件损坏/双重认领隔离PG/HTTP回归退出0。真实Uvicorn20并发P95约584.504/575.858ms，仍大于500ms；单轮差异不可归因或称性能PASS。无迁移，既定回滚路径及关闭入口保持。

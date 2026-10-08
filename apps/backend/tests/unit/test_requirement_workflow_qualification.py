@@ -208,6 +208,38 @@ class RequirementWorkflowQualificationTests(unittest.TestCase):
         self.assertEqual("REQUIREMENT_ACCEPTANCE", result.item_key)
         self.assertEqual(1, owner._repo.calls)
 
+    def test_checked_project_evidence_is_strictly_reused_and_decision_still_read(self):
+        proofs = self.evidence_proofs
+
+        class Checked:
+            def current_issues_and_project_evidence(self, _tx, snapshot):
+                evidence_id = snapshot.sources[0].evidence_refs[0]
+                return (), (proofs[evidence_id],)
+
+        self.current = Checked()
+        only_decision = Evidence({
+            self.decision_evidence: proofs[self.decision_evidence],
+        })
+        result = self._owner(evidence=only_decision).qualify_only_current_in_transaction(
+            object(), self._query(),
+        )
+        self.assertEqual(len(result.subjects), 2)
+        self.assertIn(self.decision_evidence, result.evidence_refs)
+
+        first = self.approved[0].snapshot.sources[0].evidence_refs[0]
+        bad = replace(proofs[first], project_id=uuid.uuid4())
+
+        class Tampered:
+            def current_issues_and_project_evidence(self, _tx, snapshot):
+                evidence_id = snapshot.sources[0].evidence_refs[0]
+                return (), (bad if evidence_id == first else proofs[evidence_id],)
+
+        self.current = Tampered()
+        with self.assertRaises(ChecklistQualificationError):
+            self._owner(evidence=only_decision).qualify_only_current_in_transaction(
+                object(), self._query(),
+            )
+
     def test_rejects_current_issue_missing_scope_and_wrong_item(self):
         self.current.issues = ("PENDING_CONFIRMATION",)
         with self.assertRaises(ChecklistQualificationError):

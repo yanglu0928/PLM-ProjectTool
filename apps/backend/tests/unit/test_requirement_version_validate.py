@@ -91,6 +91,32 @@ class RequirementVersionValidateTests(unittest.TestCase):
     def test_valid_standard_version(self):
         self.assertEqual(self.validator.current_issues(object(), self.snapshot), ())
 
+    def test_project_evidence_is_reused_only_within_one_current_check(self):
+        calls = []
+        original = self.project_source.prove
+        self.project_source.prove = lambda *args, **kwargs: (
+            calls.append(kwargs["evidence_id"]) or original(*args, **kwargs)
+        )
+        issues, proofs = self.validator.current_issues_and_project_evidence(
+            object(), self.snapshot,
+        )
+        self.assertEqual(issues, ())
+        self.assertEqual(len(proofs), 1)
+        self.assertEqual(proofs[0].evidence_id, self.project_evidence)
+        self.assertEqual(calls, [self.project_evidence])
+        self.validator.current_issues_and_project_evidence(
+            object(), self.snapshot,
+        )
+        self.assertEqual(calls, [self.project_evidence] * 2)
+
+    def test_invalid_current_evidence_is_never_returned_to_workflow(self):
+        self.project_source.prove = lambda *_a, **_k: None
+        issues, proofs = self.validator.current_issues_and_project_evidence(
+            object(), self.snapshot,
+        )
+        self.assertIn("EVIDENCE_UNAVAILABLE", issues)
+        self.assertEqual(proofs, ())
+
     def test_pending_confirmation_is_not_valid(self):
         pending = replace(self.snapshot, classification="PENDING_CONFIRMATION")
         self.assertIn(

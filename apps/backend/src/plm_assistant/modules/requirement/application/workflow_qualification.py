@@ -307,7 +307,14 @@ class RequirementWorkflowQualificationOwner:
 
     def _subject(self, tx, query, approved, now):
         snapshot = approved.snapshot
-        issues = self._current.current_issues(tx, snapshot)
+        with_evidence = getattr(
+            self._current, "current_issues_and_project_evidence", None,
+        )
+        if callable(with_evidence):
+            issues, checked_evidence = with_evidence(tx, snapshot)
+        else:
+            issues = self._current.current_issues(tx, snapshot)
+            checked_evidence = ()
         if type(issues) is not tuple or issues:
             raise RequirementWorkflowQualificationError()
         if (query.item_key == "REQUIREMENT_ACCEPTANCE"
@@ -335,7 +342,10 @@ class RequirementWorkflowQualificationOwner:
             for ref in assessment.evidence_refs
             if ref.evidence_role == "PROJECT"
         }
-        evidence = self._prove_evidence(tx, query.project_id, evidence_ids, now)
+        evidence = self._prove_evidence(
+            tx, query.project_id, evidence_ids, now,
+            checked=checked_evidence,
+        )
         review = self._prove_review(tx, approved, now)
         return ChecklistQualificationSubject(
             "REQ-03", snapshot.requirement_id,
@@ -380,14 +390,23 @@ class RequirementWorkflowQualificationOwner:
             if evidence_ids else (),
         )
 
-    def _prove_evidence(self, tx, project_id, evidence_ids, now):
+    def _prove_evidence(self, tx, project_id, evidence_ids, now, *, checked=()):
         if not evidence_ids:
+            raise RequirementWorkflowQualificationError()
+        if (type(checked) is not tuple
+                or any(type(proof) is not EvidenceRequirementSourceProof
+                       for proof in checked)):
+            raise RequirementWorkflowQualificationError()
+        by_id = {proof.evidence_id: proof for proof in checked}
+        if len(by_id) != len(checked):
             raise RequirementWorkflowQualificationError()
         values = []
         for evidence_id in sorted(evidence_ids, key=lambda value: value.int):
-            proof = self._evidence.prove(
-                tx, project_id=project_id, evidence_id=evidence_id,
-            )
+            proof = by_id.get(evidence_id)
+            if proof is None:
+                proof = self._evidence.prove(
+                    tx, project_id=project_id, evidence_id=evidence_id,
+                )
             if (type(proof) is not EvidenceRequirementSourceProof
                     or proof.evidence_id != evidence_id
                     or proof.project_id != project_id
