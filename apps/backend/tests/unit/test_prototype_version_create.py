@@ -78,8 +78,12 @@ class Audit:
 
 
 class Repository:
-    def __init__(self): self.view = None
+    def __init__(self): self.view = None; self.root_version = 0
     def create(self, _tx, **values):
+        self.values = values
+        if values["expected_lock_version"] != self.root_version:
+            raise PrototypeVersionCreateError("CONFLICT_VERSION")
+        self.root_version += 1
         self.view = PrototypeVersionInitialView(
             values["version_id"], values["prototype_id"], values["project_id"],
             1, None, values["template_id"], values["template_version_id"],
@@ -96,19 +100,21 @@ class PrototypeVersionCreateTests(unittest.TestCase):
         self.document = uuid.uuid4()
         self.requirement, self.requirement_version = uuid.uuid4(), uuid.uuid4()
         self.repository, self.receipts = Repository(), Receipts()
+        self.receipts.previous = None
         self.service = PrototypeVersionCreateService(
             unit_of_work=Tx, project_access=Access(), license_guard=Guard(),
             authorization=Authorization(), requirements=Requirements(),
             templates=Templates(), documents=Documents(), repository=self.repository,
             receipts=self.receipts, audit=Audit(), clock=lambda: NOW)
 
-    def command(self, *, kind="DOCUMENT_VERSION"):
+    def command(self, *, kind="DOCUMENT_VERSION", expected=0,
+                key="version-key-123456"):
         return CreatePrototypeVersion(
             b"s" * 32, b"c" * 32, uuid.uuid4(), self.project, self.prototype,
-            self.template, self.template_version,
+            expected, self.template, self.template_version,
             (VersionArtifactRef(kind, self.document),),
             (VersionRequirementRef(self.requirement, self.requirement_version),),
-            {"interactions": []}, {"covered": 1}, "version-key-123456")
+            {"interactions": []}, {"covered": 1}, key)
 
     def test_create_and_persistent_replay_return_same_draft(self):
         first = self.service.create(self.command())
@@ -116,6 +122,24 @@ class PrototypeVersionCreateTests(unittest.TestCase):
         self.assertEqual(first, second)
         self.assertEqual(first.version_state, "DRAFT")
         self.assertIsNone(first.supersedes_version_id)
+        self.assertEqual(0, self.repository.values["expected_lock_version"])
+        self.assertEqual(1, self.repository.root_version)
+
+    def test_stale_root_version_conflicts_and_fresh_version_advances(self):
+        self.service.create(self.command())
+        self.receipts.previous = None
+        with self.assertRaisesRegex(PrototypeVersionCreateError,
+                                    "CONFLICT_VERSION"):
+            self.service.create(self.command(key="another-version-key"))
+        self.receipts.previous = None
+        self.service.create(self.command(
+            expected=1, key="fresh-version-key-123"))
+        self.assertEqual(2, self.repository.root_version)
+
+    def test_invalid_expected_version_is_rejected(self):
+        with self.assertRaisesRegex(PrototypeVersionCreateError,
+                                    "VALIDATION_FAILED"):
+            self.service.create(self.command(expected=-1))
 
     def test_output_artifact_fails_closed_without_owner(self):
         with self.assertRaisesRegex(PrototypeVersionCreateError,
@@ -127,14 +151,16 @@ class PrototypeVersionCreateTests(unittest.TestCase):
         with self.assertRaisesRegex(PrototypeVersionCreateError, "VALIDATION_FAILED"):
             self.service.create(CreatePrototypeVersion(
                 command.session_token, command.csrf_token, command.trace_id,
-                command.project_id, command.prototype_id, command.template_id,
+                command.project_id, command.prototype_id,
+                command.expected_lock_version, command.template_id,
                 command.template_version_id, (), command.requirement_refs,
                 command.interaction_spec, command.coverage_summary,
                 command.idempotency_key))
         with self.assertRaisesRegex(PrototypeVersionCreateError, "VALIDATION_FAILED"):
             self.service.create(CreatePrototypeVersion(
                 command.session_token, command.csrf_token, command.trace_id,
-                command.project_id, command.prototype_id, command.template_id,
+                command.project_id, command.prototype_id,
+                command.expected_lock_version, command.template_id,
                 command.template_version_id, command.artifact_refs,
                 command.requirement_refs, {"script": "powershell"},
                 command.coverage_summary, command.idempotency_key))

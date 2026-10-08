@@ -330,3 +330,11 @@ wheel 1224 项/`bfb931cd…972f452d`通过；无 Migration/依赖/Secret/外发�
 自主拆分 P01/P02：P02 先将 expected 纳入命令/幂等指纹/Root 行锁比较，首次成功同事务令
 Root `lock_version + 1`，再公开 Version/Review 五项 Router。冻结路径与控制位不变；无 Migration/
 依赖/Secret/外发，P02 前公开入口仍 404。
+
+## A09-A07-P02-A01 CREATE并发修复及VALIDATE幂等偏差（2026-10-08）
+
+Version Create 命令已增 `expected_lock_version`并纳入幂等指纹；Repository 在 ACTIVE Root 行锁内
+精确比对，首次成功同事务令 Root 版本+1，旧 expected 冲突，重放不重复推进。定向 12、
+后端 3198/3、compileall 及 wheel 1224 项/`ade0a64b…b3d8dacc`通过；真实 PG 组合留 A09-A09。
+同时对账发现冻结 VALIDATE 含 I，但现 Owner 无收据/持久报告；新拆 A02 Schema0135+幂等
+ValidationResult，A03 再开放五项 HTTP。冻结 API 不变。

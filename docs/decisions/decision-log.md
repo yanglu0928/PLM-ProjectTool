@@ -1,5 +1,15 @@
 # 自主决策记录
 
+## DEC-20261008-1057：Version VALIDATE需持久首次报告而非只校验幂等头
+
+- Date/WBS：2026-10-08 / `PRT-01-A09-A07-P02-A01`；依据冻结 API-04 的 `PRT_VERSION_VALIDATE S,L,C,I,A`。
+- Decision：A07 扩展为 A02 持久 ValidationResult/receipt 与 A03 HTTP。A02 保存首次 issues、valid、
+  checked_at、version_state 和对象身份；同键同载荷恢复首次报告且不重复 Audit，异载荷冲突。
+- Reason：现有 Validate Owner 每次重验当前外部事实并写 Audit；只在 HTTP 要求键却不持久结果，
+  将在输入漂移后对同键返回不同报告，不满足冻结 I 语义。
+- Impact/Rollback：A02 需要前向 Schema0135，新增不可变结果而不修改公开路径；无客户数据/外发/
+  依赖。空结果历史可降 0134，有历史时拒绝破坏性降级并只前向修复。
+
 ## DEC-20261008-1056：Version CREATE必须真正消费If-Match并推进Prototype Root
 
 - Date/WBS：2026-10-08 / `PRT-01-A09-A07-P01`；依据冻结 API-04 的 `PRT_VERSION_CREATE S,L,C,I,M,A`。

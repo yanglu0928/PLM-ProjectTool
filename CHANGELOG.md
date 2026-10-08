@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A09-A07-P02-A01 修复 Version CREATE 强并发：expected 进入命令/
+  幂等指纹，Root 行锁内比对并与 DRAFT/owned set/result/Audit/receipt 同事务推进 ETag，重放不
+  重复推进。兼容性/回滚：内部合同符合性修复，无 Migration/公开 API/依赖/Secret/外发；
+  已创建 Version 后只前向修复。验证：定向 12、后端 3198/3、compileall，wheel 1224 项/
+  `ade0a64b…b3d8dacc` PASS。新发现 VALIDATE 幂等结果尚未持久，已拆 A02 Schema0135；A03 HTTP、
+  A08～A09、A10 前端、A11 Workflow、Server 2025、Gate 3/UAT/发行待；Debian 13 跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A09-A07-P01 发现并登记 Version CREATE 并发符合性偏差：冻结合同
   要求强 `If-Match`，现有 Owner 尚未原子消费 expected/推进 Root ETag。已拆 P02 先修 Owner 后造
   Router，禁止伪并发保护。兼容性/回滚：纯文档，无 Schema/公开 API/依赖/Secret/外发；入口

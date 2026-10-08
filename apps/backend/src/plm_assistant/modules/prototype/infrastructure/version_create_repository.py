@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import insert, select
+from sqlalchemy import insert, select, text, update
 from sqlalchemy.orm import Session
 
 from plm_assistant.modules.prototype.application.create_version import (
-    PrototypeVersionInitialView, VersionArtifactRef, VersionRequirementRef,
+    PrototypeVersionCreateError, PrototypeVersionInitialView,
+    VersionArtifactRef, VersionRequirementRef,
 )
 
 from .orm import (
@@ -33,6 +34,7 @@ class SqlAlchemyPrototypeVersionCreateRepository:
                version_id: uuid.UUID, project_id: uuid.UUID,
                prototype_id: uuid.UUID, template_id: uuid.UUID,
                template_version_id: uuid.UUID,
+               expected_lock_version: int,
                artifacts: tuple[VersionArtifactRef, ...],
                requirements: tuple[VersionRequirementRef, ...],
                interaction: dict[str, object], interaction_fingerprint: bytes,
@@ -46,12 +48,26 @@ class SqlAlchemyPrototypeVersionCreateRepository:
         ).with_for_update(of=PrototypeRow)).scalar_one_or_none()
         if root is None:
             raise RuntimeError("Prototype is unavailable")
+        if root.lock_version != expected_lock_version:
+            raise PrototypeVersionCreateError("CONFLICT_VERSION")
         prior = session.execute(select(PrototypeVersionRow).where(
             PrototypeVersionRow.project_id == project_id,
             PrototypeVersionRow.prototype_id == prototype_id,
         ).order_by(PrototypeVersionRow.version_no.desc()).limit(1)).scalar_one_or_none()
         number = 1 if prior is None else prior.version_no + 1
         supersedes = None if prior is None else prior.prototype_version_id
+        changed = session.execute(update(PrototypeRow).where(
+            PrototypeRow.prototype_id == prototype_id,
+            PrototypeRow.project_id == project_id,
+            PrototypeRow.prototype_state == "ACTIVE",
+            PrototypeRow.lock_version == expected_lock_version,
+        ).values(
+            updated_by=actor_id,
+            updated_at=text("statement_timestamp()"),
+            lock_version=expected_lock_version + 1,
+        ))
+        if changed.rowcount != 1:
+            raise PrototypeVersionCreateError("CONFLICT_VERSION")
         session.execute(insert(PrototypeVersionRow).values(
             prototype_version_id=version_id, prototype_id=prototype_id,
             project_id=project_id, version_no=number, version_state="DRAFT",

@@ -55,6 +55,7 @@ class CreatePrototypeVersion:
     trace_id: uuid.UUID
     project_id: uuid.UUID
     prototype_id: uuid.UUID
+    expected_lock_version: int
     template_id: uuid.UUID
     template_version_id: uuid.UUID
     artifact_refs: tuple[VersionArtifactRef, ...]
@@ -87,6 +88,7 @@ class RepositoryPort(Protocol):
                version_id: uuid.UUID, project_id: uuid.UUID,
                prototype_id: uuid.UUID, template_id: uuid.UUID,
                template_version_id: uuid.UUID,
+               expected_lock_version: int,
                artifacts: tuple[VersionArtifactRef, ...],
                requirements: tuple[VersionRequirementRef, ...],
                interaction: dict[str, object], interaction_fingerprint: bytes,
@@ -124,6 +126,7 @@ class PrototypeVersionCreateService:
         coverage = self._object(command.coverage_summary)
         payload = {
             "project_id": str(command.project_id), "prototype_id": str(command.prototype_id),
+            "expected_lock_version": command.expected_lock_version,
             "template_id": str(command.template_id),
             "template_version_id": str(command.template_version_id),
             "artifact_refs": [(x.artifact_kind, str(x.target_id)) for x in artifacts],
@@ -192,6 +195,7 @@ class PrototypeVersionCreateService:
                 view = self._repository.create(
                     tx, result_id=result_id, version_id=version_id,
                     project_id=command.project_id, prototype_id=command.prototype_id,
+                    expected_lock_version=command.expected_lock_version,
                     template_id=command.template_id,
                     template_version_id=command.template_version_id,
                     artifacts=artifacts, requirements=requirements,
@@ -243,7 +247,9 @@ class PrototypeVersionCreateService:
             or type(command.csrf_token) is not bytes or len(command.csrf_token) != 32
             or any(type(x) is not uuid.UUID or x.int == 0 for x in (
                 command.trace_id, command.project_id, command.prototype_id,
-                command.template_id, command.template_version_id))):
+                command.template_id, command.template_version_id))
+            or type(command.expected_lock_version) is not int
+            or not 0 <= command.expected_lock_version <= 9223372036854775806):
             raise PrototypeVersionCreateError("VALIDATION_FAILED")
 
     @staticmethod
