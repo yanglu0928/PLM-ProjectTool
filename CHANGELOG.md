@@ -1,5 +1,10 @@
 # 版本说明
 
+- 2026-10-08：执行纪律/CR-EXEC-001 再次登记方案 A 持续授权：按实际依赖自主推进至可使用程序包，
+  不兼容方案先记录差异、风险、迁移/回滚与验证计划，再直接实施并同步 GitHub。兼容性/升级/回滚：无产品
+  代码、Schema/API、依赖、权限、Secret或外发变化；可恢复逐项确认节奏但保留历史。已知边界：默认接受
+  不替代Gate/UAT/三平台/发行证据，也不授权客户数据外发、付款/额度重置或不可恢复生产操作。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A10-A02 完成CR-PRT-002只读响应增量：Requirement验收条件返回稳定
   `acceptance_criterion_ref`，Prototype Template/Version的DOCUMENT_VERSION在Document Owner当前证明成功时
   返回`document_id`，与既有`target_id`组成固定文档定位；旧响应安全归一，写请求仍拒绝只读字段。
