@@ -297,3 +297,10 @@ GLOBAL无Project与PROJECT有Project，Version页上限保持100，其余保持2
 完成删钥失败关闭和原钥恢复旧游标验证，清理后零残留；单元10、Prototype定向102、后端3186/3、compileall、
 wheel1221项/`383100e9…e930870`通过。无Migration/公开Router/依赖/外发，Schema head保持0134，进入A04
 Package HTTP。
+
+## A09-A04 实施记录（2026-10-08）
+
+新增冻结Package LIST/CREATE/GET/PATCH/SET_MEMBERS五操作可选Router；LIST使用Package专用cursor，读取重证
+当前授权，CREATE/SET要求幂等键，PATCH/SET要求强ETag，严格JSON/正文/UUID及返回身份投影失败关闭。默认应用
+继续404，Windows真实组合留A09-A09。合同4、相关定向30、后端3190/3、compileall及wheel1222项/
+`c37b0dc9…87f618`通过；无Migration/依赖/Secret/外发，Schema head保持0134，进入A05 Identity HTTP。

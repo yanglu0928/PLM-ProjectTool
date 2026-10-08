@@ -1,5 +1,16 @@
 # 自主决策记录
 
+## DEC-20261008-1053：Package HTTP按冻结控制位区分PATCH与SET_MEMBERS
+
+- Date/WBS：2026-10-08 / `PRT-01-A09-A04`；依据冻结API-04、DEC-1050～1052及既有A02/A03 Owner。
+- Decision：五个Package路径用单一可选Router开放；PATCH只消费强`If-Match`且不创建服务器端幂等键，
+  SET_MEMBERS同时消费强`If-Match`和客户端幂等键。读链使用Package专用cursor，所有响应核验Owner返回身份与
+  Project一致；默认应用继续404，Windows生产组合留A09-A09。
+- Reason：冻结控制位明确PATCH为M而SET_MEMBERS为I/M；给PATCH补隐式幂等会改变合同，忽略SET的任一控制又会
+  放宽并发或重放边界。先隔离Router可在不扩大生产入口的情况下验证HTTP适配。
+- Impact/Rollback：新增可选Router和应用注入点，无Migration/依赖/Secret/外发；不注入即可恢复404且不删除
+  历史。合同4、后端3190/3及wheel1222项通过，真实PG组合留A09-A09。
+
 ## DEC-20261008-1052：Prototype五类游标使用独立KeyRef并拒绝重复密钥
 
 - Date/WBS：2026-10-08 / `PRT-01-A09-A03`；依据DEC-1050、五类Owner分页语义及Windows Secret边界。
