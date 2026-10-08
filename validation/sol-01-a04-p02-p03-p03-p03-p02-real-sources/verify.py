@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import json
 import shutil
 import subprocess
 import tempfile
@@ -41,6 +42,9 @@ from plm_assistant.modules.evidence.infrastructure.fixed_source_repository impor
 from plm_assistant.modules.platform.infrastructure.database import create_database_runtime
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
 from plm_assistant.modules.platform.infrastructure.migration import create_migration_config
+from plm_assistant.modules.parser.application.structured_result import (
+    ParsedNode, ParsedResult, TextRangePosition,
+)
 from plm_assistant.modules.project.infrastructure.authorization_repository import SqlAlchemyProjectAuthorizationRepository
 from plm_assistant.modules.solution.application.confirm_reference_deidentification import (
     ConfirmReferenceDeidentification, ReferenceDeidentificationConfirmError,
@@ -93,6 +97,9 @@ def verify(port: int, scratch: Path) -> None:
     root = scratch / "private-documents"
     root.mkdir()
     storage = LocalFileStorage(root)
+    parse_root = scratch / "private-results"
+    parse_root.mkdir()
+    parse_storage = LocalParseResultStorage(parse_root)
     file_id = uuid.uuid4()
     stage, locator = LocalFileStorage.locators(
         scope="GLOBAL", project_id=None, file_object_id=file_id)
@@ -161,6 +168,61 @@ def verify(port: int, scratch: Path) -> None:
             "lock_version=lock_version+1 WHERE evidence_id=%s",
             (actor, evidence),
         )
+        job = db.execute(
+            "INSERT INTO plm.job_jobs(owner_module,job_type,scope,actor_ref,trace_id,"
+            "payload_refs,idempotency_key,max_attempts) VALUES "
+            "('document','DOCUMENT_PARSE','GLOBAL',%s,%s,%s,'reference-parse-job',3) "
+            "RETURNING job_id",
+            (actor, str(uuid.uuid4()), Jsonb({
+                "document_id": str(document), "document_version_id": str(version),
+            })),
+        ).fetchone()[0]
+        record = db.execute(
+            "INSERT INTO plm.doc_parse_records(document_version_id,scope,"
+            "parser_profile,parser_version,job_ref,attempt_no) VALUES "
+            "(%s,'GLOBAL','PLAIN_TEXT','1',%s,1) RETURNING parse_record_id",
+            (version, job),
+        ).fetchone()[0]
+        db.execute("UPDATE plm.doc_parse_records SET parse_state='RUNNING',"
+                   "started_at=statement_timestamp(),lock_version=1 WHERE parse_record_id=%s",
+                   (record,))
+        payload = ParsedResult(
+            document_version_id=version, source_sha256=digest,
+            parser_profile="PLAIN_TEXT", parser_version="1",
+            nodes=(ParsedNode(
+                "reference-line", "TEXT_LINE", "Synthetic",
+                TextRangePosition(0, 9, hashlib.sha256(b"Synthetic").hexdigest()),
+            ),),
+        ).canonical_bytes()
+        result_id = uuid.uuid4()
+        stored = parse_storage.write_once(
+            scope="GLOBAL", project_id=None, result_ref_id=result_id, content=payload)
+        db.execute(
+            "INSERT INTO plm.doc_parse_result_refs(parse_result_ref_id,parse_record_id,"
+            "storage_locator,result_schema_version,sha256,size_bytes) VALUES "
+            "(%s,%s,%s,1,%s,%s)",
+            (result_id, record, stored.storage_locator, stored.sha256, stored.size_bytes),
+        )
+        db.execute("UPDATE plm.doc_parse_records SET parse_state='SUCCEEDED',"
+                   "completed_at=statement_timestamp(),result_ref=%s,result_sha256=%s,"
+                   "retryable=false,lock_version=2 WHERE parse_record_id=%s",
+                   (result_id, stored.sha256, record))
+        node_locator = json.loads(payload)["nodes"][0]["source_locator"]
+        node_evidence = db.execute(
+            "INSERT INTO plm.evd_evidence_records(scope,document_id,"
+            "document_version_id,source_parse_record_id,locator_type,locator_payload,"
+            "content_fingerprint,display_label,created_by) VALUES "
+            "('GLOBAL',%s,%s,%s,'TEXT_RANGE',%s,%s,'Synthetic node',%s) "
+            "RETURNING evidence_id",
+            (document, version, record, Jsonb(node_locator),
+             hashlib.sha256(b"Synthetic").digest(), actor),
+        ).fetchone()[0]
+        db.execute(
+            "UPDATE plm.evd_evidence_records SET eligibility_state='ELIGIBLE',"
+            "eligibility_reason='Synthetic node review',updated_by=%s,"
+            "lock_version=lock_version+1 WHERE evidence_id=%s",
+            (actor, node_evidence),
+        )
     runtime = create_database_runtime(url)
     try:
         admin = SqlAlchemyDeploymentReadAccess()
@@ -177,10 +239,9 @@ def verify(port: int, scratch: Path) -> None:
             audit=audit,
         )
         parse_metadata = SqlAlchemyParseResultReadRepository()
-        (scratch / "private-results").mkdir()
         parse_results = DocumentParseResultReadService(
             documents=download, metadata=parse_metadata,
-            storage=LocalParseResultStorage(scratch / "private-results"),
+            storage=parse_storage,
             unit_of_work=runtime.unit_of_work,
         )
         fixed = DocumentFixedSourceProofService(
@@ -222,16 +283,17 @@ def verify(port: int, scratch: Path) -> None:
             receipts=receipts, audit=audit,
         )
         request = ReferenceSourceRequest(
-            TOKEN, uuid.uuid4(), "GLOBAL", None, (version,), (evidence,),
+            TOKEN, uuid.uuid4(), "GLOBAL", None, (version,), (evidence, node_evidence),
             "PLM", "DEIDENTIFIED", {"industry": "synthetic"},
         )
         with runtime.unit_of_work() as tx:
             baseline = sources.prove_sources(tx, request)
             assert baseline.document_versions[0].content_sha256 == digest
             assert baseline.evidence[0].content_fingerprint == digest
+            assert baseline.evidence[1].content_fingerprint == hashlib.sha256(b"Synthetic").digest()
             rejects(lambda: sources.prove_sources(tx, ReferenceSourceRequest(
                 TOKEN, request.trace_id, "PROJECT", uuid.uuid4(),
-                (version,), (evidence,), "PLM", "DEIDENTIFIED",
+                (version,), (evidence, node_evidence), "PLM", "DEIDENTIFIED",
                 {"industry": "synthetic"})))
         confirmed = confirm.confirm(ConfirmReferenceDeidentification(
             request, CSRF, datetime.now(timezone.utc) + timedelta(days=1),
@@ -245,13 +307,19 @@ def verify(port: int, scratch: Path) -> None:
         with runtime.unit_of_work() as tx:
             rejects(lambda: sources.qualify(tx, request))
         (root / locator).write_bytes(content)
+        (parse_root / stored.storage_locator).write_bytes(payload[:-1] + b"!")
+        with runtime.unit_of_work() as tx:
+            rejects(lambda: sources.qualify(tx, request))
+        (parse_root / stored.storage_locator).write_bytes(payload)
+        with runtime.unit_of_work() as tx:
+            assert sources.qualify(tx, request).deidentification_confirmation_id == confirmed.confirmation_id
         with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
                              dbname="postgres", autocommit=True) as db:
             db.execute(
                 "UPDATE plm.evd_evidence_records SET eligibility_state='REVOKED',"
                 "eligibility_reason='Synthetic withdrawal',updated_by=%s,"
                 "lock_version=lock_version+1 WHERE evidence_id=%s",
-                (actor, evidence),
+                (actor, node_evidence),
             )
         with runtime.unit_of_work() as tx:
             rejects(lambda: sources.prove_sources(tx, request))
@@ -270,8 +338,9 @@ def verify(port: int, scratch: Path) -> None:
     finally:
         runtime.dispose()
     print("SOL_01_A04_P02_P03_P03_P03_P02_REAL_SOURCES_PG_PASS: real Auth, "
-          "Document/Evidence rows and private file proof; scope, tamper, "
-          "Evidence withdrawal and confirmation revocation denied")
+          "Document/Evidence rows and private source/result files; document "
+          "and parsed-node locator proof, scope, byte tamper, Evidence withdrawal "
+          "and confirmation revocation denied")
 
 
 def main() -> None:

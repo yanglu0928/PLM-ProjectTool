@@ -24,4 +24,4 @@
 
 2026-10-08 P03-P03-P03-P01：隔离 PG 使用真实 Auth Session/CSRF/角色仓储组合内部确认、读取与撤销；正确管理员路径及错误 CSRF、撤销 Session 拒绝通过。身份行、License、Document/Evidence 来源仍为合成，未宣称真实登录、文件/Evidence/人工核查可用。此项只补权限组合证据，P03-P03-P03 继续。
 
-2026-10-08 P03-P03-P03-P02：隔离 PG/私有目录将真实 Auth、DocumentVersion/FileObject/文件 SHA-256 和 GLOBAL Document 级 Evidence 来源接至 Solution 确认与资格。正常确认/资格、错误范围、物理字节篡改、Evidence 撤销及确认撤销负例通过；被撤销 Evidence 按既有数据库规则不可恢复，本轮没有放宽。License/用户/资料仍为合成，解析节点与公开人工入口/ReferenceVersion 绑定未验；P03-P03 仍不整体关闭。
+2026-10-08 P03-P03-P03-P02：隔离 PG/私有目录将真实 Auth、DocumentVersion/FileObject/文件 SHA-256 和 GLOBAL Document 级及解析节点 Evidence 来源接至 Solution 确认与资格。正常确认/资格、错误范围、源文件或解析结果物理字节篡改、Evidence 撤销及确认撤销负例通过；被撤销 Evidence 按既有数据库规则不可恢复，本轮没有放宽。License/用户/资料仍为合成，公开人工入口/ReferenceVersion 绑定未验；P03-P03 仍不整体关闭。
