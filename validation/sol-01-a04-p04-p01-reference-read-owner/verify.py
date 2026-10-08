@@ -50,6 +50,14 @@ def on_created(*, port, runtime, license_guard, project, other_project,
     current = reader.get_current(query, created.reference_solution_id)
     assert current.reference_version_id == created.reference_version_id
     assert current.document_version_ids == (document_version,)
+    assert len(current.document_refs) == 1
+    assert current.document_refs[0].document_version_id == document_version
+    with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
+                         dbname="postgres", autocommit=True) as db:
+        (expected_document_id,) = db.execute(
+            "SELECT document_id FROM plm.doc_document_versions "
+            "WHERE document_version_id=%s", (document_version,)).fetchone()
+    assert current.document_refs[0].document_id == expected_document_id
     assert current.evidence_ids == (evidence,)
     assert current.eligibility_state == "REFERENCE_ONLY"
     assert current.version_state == "DRAFT" and current.version_no == 1

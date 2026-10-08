@@ -10757,3 +10757,9 @@
 - Decision：在独立 Windows Solution 组合函数中复用当前 DocumentRead/Download/ParseResult 与 License Guard；PROJECT Evidence 证明允许 PM/IM。仅显式 `--platform-write` 注入 PROJECT POST，默认/只读/GLOBAL 保持关闭。
 - Reason：此前项目角色策略允许 IM，但 Evidence 固定来源服务默认仅 PM；未显式对齐会出现“IM 有创建权限但引用 Evidence 被拒”的组合偏差。独立组合函数使端口与失败关闭可单独验证，不把合成确认接成 GLOBAL 用户入口。
 - Impact/Rollback：无 Schema/冻结 API/新依赖；移除注入可恢复关闭。隔离PG来源/ASGI、模式合同及后端全量通过；正式 License/目标账户信任源、用户确认、GET/List/UI/发行仍待。
+# DEC-20261009-1117：Reference 固定文档定位只增受权身份投影
+
+- Date/WBS：2026-10-09 / `SOL-01-A04-P07-P01`；依据 CR-SOL-008、冻结 API-04 与既有 Document 详情鉴权。
+- Decision：在既有 PROJECT Reference GET 的受权响应中增有序根 DocumentId/VersionId 对，保留旧 VersionId 数组；同事务校验根/版本/Scope/ProjectId，详情端点继续独立鉴权，不新增全局反查。
+- Reason：只有 VersionId 无法构造现有固定版本详情链接；前端扫描或猜测可能错配。隔离 PG Owner/HTTP/Windows 组合与后端全量 3322/3/4906 通过。
+- Impact/Rollback：无 Schema/新依赖/破坏性 API；前端入口尚未接线。回滚可关闭新投影，历史数据和旧数组不变；历史固定来源不等于当前可访问或有效。

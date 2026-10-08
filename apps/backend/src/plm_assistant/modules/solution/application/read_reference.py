@@ -29,6 +29,12 @@ class ReferenceReadQuery:
 
 
 @dataclass(frozen=True, slots=True)
+class ReferenceDocumentRefView:
+    document_id: uuid.UUID
+    document_version_id: uuid.UUID
+
+
+@dataclass(frozen=True, slots=True)
 class ReferenceCurrentView:
     reference_solution_id: uuid.UUID
     reference_version_id: uuid.UUID
@@ -51,6 +57,7 @@ class ReferenceCurrentView:
     version_created_at: datetime
     etag: str
     scope: str = "PROJECT"
+    document_refs: tuple[ReferenceDocumentRefView, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -248,6 +255,13 @@ class ReferenceReadService:
                 or type(view.applicability) is not dict
                 or type(view.document_version_ids) is not tuple
                 or not 1 <= len(view.document_version_ids) <= 100
+                or type(view.document_refs) is not tuple
+                or len(view.document_refs) != len(view.document_version_ids)
+                or any(type(ref) is not ReferenceDocumentRefView
+                       or not cls._id(ref.document_id)
+                       or ref.document_version_id != version_id
+                       for ref, version_id in zip(
+                           view.document_refs, view.document_version_ids))
                 or type(view.evidence_ids) is not tuple
                 or len(view.evidence_ids) > 500
                 or any(not cls._id(value) for value in (

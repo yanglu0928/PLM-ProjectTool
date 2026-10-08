@@ -6,10 +6,11 @@ import uuid
 
 from sqlalchemy import and_, select
 
-from plm_assistant.modules.document.infrastructure.orm import DocumentVersionRow
+from plm_assistant.modules.document.infrastructure.orm import DocumentRow, DocumentVersionRow
 from plm_assistant.modules.evidence.infrastructure.orm import EvidenceRow
 from plm_assistant.modules.solution.application.read_reference import (
-    ReferenceCurrentView, ReferenceListPage, ReferenceSummaryView,
+    ReferenceCurrentView, ReferenceDocumentRefView, ReferenceListPage,
+    ReferenceSummaryView,
 )
 
 from .orm import (
@@ -88,10 +89,13 @@ class SqlAlchemyReferenceReadRepository:
         documents = tuple(session.execute(select(
             DocumentRef.ordinal, DocumentRef.document_version_id,
             DocumentRef.scope, DocumentVersionRow.scope,
-            DocumentVersionRow.project_id,
+            DocumentVersionRow.project_id, DocumentVersionRow.document_id,
+            DocumentRow.scope, DocumentRow.project_id,
         ).join(
             DocumentVersionRow,
             DocumentVersionRow.document_version_id == DocumentRef.document_version_id,
+        ).join(
+            DocumentRow, DocumentRow.document_id == DocumentVersionRow.document_id,
         ).where(
             DocumentRef.reference_version_id == version.reference_version_id,
             DocumentRef.reference_solution_id == reference_solution_id,
@@ -112,7 +116,10 @@ class SqlAlchemyReferenceReadRepository:
                 or tuple(item.ordinal for item in evidence)
                 != tuple(range(1, len(evidence) + 1))
                 or any(item[2] != "PROJECT" or item[3] != "PROJECT"
-                       or item[4] != project_id for item in (*documents, *evidence))):
+                       or item[4] != project_id or item[6] != "PROJECT"
+                       or item[7] != project_id for item in documents)
+                or any(item[2] != "PROJECT" or item[3] != "PROJECT"
+                       or item[4] != project_id for item in evidence)):
             raise RuntimeError("Reference source projection is inconsistent")
         return ReferenceCurrentView(
             reference_solution_id=root.reference_solution_id,
@@ -125,6 +132,8 @@ class SqlAlchemyReferenceReadRepository:
             deidentification_class=version.deidentification_class,
             applicability=dict(version.applicability),
             document_version_ids=tuple(item[1] for item in documents),
+            document_refs=tuple(ReferenceDocumentRefView(item[5], item[1])
+                                for item in documents),
             evidence_ids=tuple(item[1] for item in evidence),
             source_fingerprint=bytes(version.source_fingerprint),
             content_fingerprint=bytes(version.content_fingerprint),

@@ -14,18 +14,19 @@ from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
 from plm_assistant.modules.auth.application.session_service import SessionError
 from plm_assistant.modules.solution.api.reference_read import create_project_reference_read_router
 from plm_assistant.modules.solution.application.read_reference import (
-    ReferenceCurrentView, ReferenceReadError,
+    ReferenceCurrentView, ReferenceDocumentRefView, ReferenceReadError,
 )
 
 
-PROJECT, REFERENCE, VERSION, ACTOR, DOCUMENT, EVIDENCE = (
-    uuid.uuid4() for _ in range(6))
+PROJECT, REFERENCE, VERSION, ACTOR, DOCUMENT, EVIDENCE, DOC_ROOT = (
+    uuid.uuid4() for _ in range(7))
 NOW = datetime(2026, 10, 9, tzinfo=timezone.utc)
 VIEW = ReferenceCurrentView(
     REFERENCE, VERSION, PROJECT, "Project Reference", "REFERENCE_ONLY", None,
     1, "DRAFT", "PLM", "PROJECT_INTERNAL", {"industry": "synthetic"},
     (DOCUMENT,), (EVIDENCE,), b"s" * 32, b"c" * 32, ACTOR, NOW, ACTOR, NOW,
     '"v0"',
+    document_refs=(ReferenceDocumentRefView(DOC_ROOT, DOCUMENT),),
 )
 
 
@@ -82,6 +83,8 @@ class ReferenceReadApiTests(unittest.TestCase):
             "deidentification_class": "PROJECT_INTERNAL",
             "applicability": {"industry": "synthetic"},
             "document_version_ids": [str(DOCUMENT)],
+            "document_refs": [{"document_id": str(DOC_ROOT),
+                               "document_version_id": str(DOCUMENT)}],
             "evidence_ids": [str(EVIDENCE)],
             "source_fingerprint": (b"s" * 32).hex(),
             "content_fingerprint": (b"c" * 32).hex(),

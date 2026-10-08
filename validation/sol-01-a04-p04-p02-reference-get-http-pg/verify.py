@@ -70,6 +70,14 @@ def on_created(*, port, runtime, audit, license_guard, project, other_project,
         assert data["reference_solution_id"] == str(created.reference_solution_id)
         assert data["reference_version_id"] == str(created.reference_version_id)
         assert data["document_version_ids"] == [str(document_version)]
+        with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
+                             dbname="postgres", autocommit=True) as db:
+            (expected_document_id,) = db.execute(
+                "SELECT document_id FROM plm.doc_document_versions "
+                "WHERE document_version_id=%s", (document_version,)).fetchone()
+        assert data["document_refs"] == [{
+            "document_id": str(expected_document_id),
+            "document_version_id": str(document_version)}]
         assert data["evidence_ids"] == [str(evidence)]
         assert data["source_fingerprint"] == created.source_fingerprint.hex()
         assert data["eligibility_state"] == "REFERENCE_ONLY"

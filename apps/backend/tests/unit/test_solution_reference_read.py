@@ -10,19 +10,20 @@ from plm_assistant.modules.project.application.authorization import (
     ProjectActorFacts, ProjectAuthorizationService,
 )
 from plm_assistant.modules.solution.application.read_reference import (
-    ReferenceCurrentView, ReferenceListPage, ReferenceReadError,
+    ReferenceCurrentView, ReferenceDocumentRefView, ReferenceListPage, ReferenceReadError,
     ReferenceReadQuery, ReferenceReadService, ReferenceSummaryView,
 )
 
 
-PROJECT, REFERENCE, VERSION, ACTOR, DOCUMENT, EVIDENCE = (
-    uuid.uuid4() for _ in range(6))
+PROJECT, REFERENCE, VERSION, ACTOR, DOCUMENT, EVIDENCE, DOC_ROOT = (
+    uuid.uuid4() for _ in range(7))
 NOW = datetime(2026, 10, 9, tzinfo=timezone.utc)
 VIEW = ReferenceCurrentView(
     REFERENCE, VERSION, PROJECT, "Project Reference", "REFERENCE_ONLY", None,
     1, "DRAFT", "PLM", "PROJECT_INTERNAL", {"industry": "synthetic"},
     (DOCUMENT,), (EVIDENCE,), b"s" * 32, b"c" * 32, ACTOR, NOW, ACTOR, NOW,
     '"v0"',
+    document_refs=(ReferenceDocumentRefView(DOC_ROOT, DOCUMENT),),
 )
 SUMMARY = ReferenceSummaryView(
     REFERENCE, VERSION, PROJECT, "Project Reference", "REFERENCE_ONLY",
@@ -127,6 +128,9 @@ class ReferenceReadTests(unittest.TestCase):
             replace(VIEW, scope="GLOBAL"),
             replace(VIEW, document_version_ids=()),
             replace(VIEW, document_version_ids=(DOCUMENT, DOCUMENT)),
+            replace(VIEW, document_refs=()),
+            replace(VIEW, document_refs=(ReferenceDocumentRefView(
+                DOC_ROOT, uuid.uuid4()),)),
             replace(VIEW, evidence_ids=(EVIDENCE, EVIDENCE)),
             replace(VIEW, source_fingerprint=b"short"),
             replace(VIEW, etag='"v01"'),
