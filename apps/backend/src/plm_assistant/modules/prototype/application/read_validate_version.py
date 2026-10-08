@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import uuid
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from typing import Protocol
 
@@ -18,7 +18,7 @@ from plm_assistant.modules.platform.application.idempotency import (
 from plm_assistant.modules.project.application.authorization import (
     ProjectAuthorizationError, ProjectAuthorizationService,
 )
-from .create_version import PrototypeVersionInitialView
+from .create_version import PrototypeVersionInitialView, VersionArtifactRef
 
 
 _ISSUE_ORDER = (
@@ -115,7 +115,9 @@ class PrototypeVersionReadValidationService:
             rows = self._repository.list(tx, project_id=query.project_id,
                 prototype_id=query.prototype_id, before_version_no=before_version_no,
                 limit=page_size + 1)
-            items, more = rows[:page_size], len(rows) > page_size
+            items = tuple(self._located(tx, query.project_id, item)
+                          for item in rows[:page_size])
+            more = len(rows) > page_size
             return PrototypeVersionPage(items, items[-1].version_no if more else None, more)
         return self._run(query.trace_id, read)
 
@@ -123,7 +125,8 @@ class PrototypeVersionReadValidationService:
         self._query(query)
         if type(version_id) is not uuid.UUID or version_id.int == 0:
             raise PrototypeVersionReadError("VALIDATION_FAILED")
-        return self._run(query.trace_id, lambda tx: self._required(
+        return self._run(query.trace_id, lambda tx: self._located_required(
+            tx, query.project_id,
             self._actor(tx, query, "PRT_VERSION_GET", csrf=False),
             self._repository.get(tx, project_id=query.project_id,
                 prototype_id=query.prototype_id, version_id=version_id)))
@@ -294,7 +297,31 @@ class PrototypeVersionReadValidationService:
                    (query.trace_id, query.project_id, query.prototype_id))):
             raise PrototypeVersionReadError("VALIDATION_FAILED")
 
-    @staticmethod
-    def _required(_actor, view):
+    def _located_required(self, tx, project_id, _actor, view):
         if view is None: raise PrototypeVersionReadError("RESOURCE_NOT_FOUND")
-        return view
+        return self._located(tx, project_id, view)
+
+    def _located(self, tx, project_id, view):
+        if type(view) is not PrototypeVersionInitialView:
+            raise PrototypeVersionReadError("PROTOTYPE_UNAVAILABLE")
+        artifacts: list[VersionArtifactRef] = []
+        for item in view.artifact_refs:
+            if type(item) is not VersionArtifactRef:
+                raise PrototypeVersionReadError("PROTOTYPE_UNAVAILABLE")
+            if item.artifact_kind != "DOCUMENT_VERSION":
+                artifacts.append(item)
+                continue
+            proof = self._documents.prove_for_prototype_version(
+                tx, project_id=project_id, document_version_id=item.target_id,
+            )
+            if proof is None:
+                artifacts.append(item)
+                continue
+            if (getattr(proof, "document_version_id", None) != item.target_id
+                    or type(getattr(proof, "document_id", None)) is not uuid.UUID
+                    or proof.document_id.int == 0
+                    or getattr(proof, "scope", None) != "PROJECT"
+                    or getattr(proof, "project_id", None) != project_id):
+                raise PrototypeVersionReadError("PROTOTYPE_UNAVAILABLE")
+            artifacts.append(replace(item, document_id=proof.document_id))
+        return replace(view, artifact_refs=tuple(artifacts))

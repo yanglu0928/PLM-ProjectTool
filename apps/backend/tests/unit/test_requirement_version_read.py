@@ -25,6 +25,7 @@ class RequirementVersionReadTests(unittest.TestCase):
         self.project, self.requirement, self.version = (
             uuid.uuid4(), uuid.uuid4(), uuid.uuid4())
         self.actor, self.now = uuid.uuid4(), datetime.now(timezone.utc)
+        self.acceptance = uuid.uuid4()
         self.summary = RequirementVersionSummary(
             self.version, self.requirement, self.project, 2, "DRAFT", None,
             "PLM", "HIGH", "MEDIUM",
@@ -37,7 +38,8 @@ class RequirementVersionReadTests(unittest.TestCase):
                 0, "PROJECT_EVIDENCE", uuid.uuid4(), None,
                 (RequirementSourceEvidenceView(uuid.uuid4(), 0),)),),
             (RequirementAcceptanceView(
-                0, "Outcome", "Method", "Data", "Environment", "Evidence"),),
+                0, "Outcome", "Method", "Data", "Environment", "Evidence",
+                self.acceptance),),
             (), (), (), (), (),
         )
         self.repo = SimpleNamespace(
@@ -69,6 +71,8 @@ class RequirementVersionReadTests(unittest.TestCase):
             requirement_version_id=self.version,
         )
         self.assertEqual(result, self.view)
+        self.assertEqual(result.acceptance_criteria[0].acceptance_criterion_ref,
+                         self.acceptance)
 
     def test_incomplete_repository_projection_fails_closed(self):
         self.repo.get_version = lambda *_a, **_k: replace(self.view, sources=())

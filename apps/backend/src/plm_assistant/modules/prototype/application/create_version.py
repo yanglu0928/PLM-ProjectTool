@@ -40,6 +40,7 @@ class PrototypeVersionCreateError(RuntimeError):
 class VersionArtifactRef:
     artifact_kind: str
     target_id: uuid.UUID
+    document_id: uuid.UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -264,7 +265,7 @@ class PrototypeVersionCreateService:
         if type(value) is not tuple or not 1 <= len(value) <= 100 or any(
             type(x) is not VersionArtifactRef or x.artifact_kind not in
             {"DOCUMENT_VERSION", "OUTPUT_ARTIFACT"} or type(x.target_id) is not uuid.UUID
-            or x.target_id.int == 0 for x in value):
+            or x.target_id.int == 0 or x.document_id is not None for x in value):
             raise PrototypeVersionCreateError("VALIDATION_FAILED")
         result = tuple(sorted(value, key=lambda x: (x.artifact_kind, str(x.target_id))))
         if len(set(result)) != len(result):

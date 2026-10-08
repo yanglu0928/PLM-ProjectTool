@@ -58,6 +58,7 @@ class PrototypeTemplateCreateError(RuntimeError):
 class TemplateArtifactRef:
     artifact_kind: str
     target_id: uuid.UUID
+    document_id: uuid.UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -416,13 +417,24 @@ class PrototypeTemplateCreateService:
         return tuple(sorted(value))
 
     @staticmethod
-    def _artifacts(value: object) -> tuple[TemplateArtifactRef, ...]:
+    def _artifacts(
+        value: object, *, allow_read_locations: bool = False,
+    ) -> tuple[TemplateArtifactRef, ...]:
         if (
             type(value) is not tuple or len(value) > 100
             or any(
                 type(item) is not TemplateArtifactRef
                 or item.artifact_kind not in {"DOCUMENT_VERSION", "OUTPUT_ARTIFACT"}
                 or type(item.target_id) is not uuid.UUID or item.target_id.int == 0
+                or (
+                    item.document_id is not None
+                    and (
+                        not allow_read_locations
+                        or item.artifact_kind != "DOCUMENT_VERSION"
+                        or type(item.document_id) is not uuid.UUID
+                        or item.document_id.int == 0
+                    )
+                )
                 for item in value
             )
         ):

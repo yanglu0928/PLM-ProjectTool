@@ -1,5 +1,17 @@
 # 自主决策记录
 
+## DEC-20261008-1063：Document定位信息由读取时Owner证明产生且不进入Prototype内容身份
+
+- Date/WBS：2026-10-08 / `PRT-01-A10-A02`；依据CR-PRT-002、DOC-02固定版本和Prototype不可变内容指纹。
+- Decision：AcceptanceCriterion引用直接投影既有稳定身份；Template/PrototypeVersion的`document_id`在完成
+  原资源授权后调用Document Owner按当前scope/project重新证明，只作为可选只读定位。证明缺失时保留历史
+  `target_id`但不猜测链接；非空畸形/错scope证明失败关闭。新增字段不写回Prototype表、不进入请求/内容指纹，
+  写请求仍按冻结字段严格拒绝。
+- Reason：复制Document根ID到Prototype表会形成漂移的跨模块事实并需要迁移；仅返回Version ID无法构造现有
+  受权文档路由；扫描全库会扩大读取面。读取时证明同时满足固定版本定位与撤权后的即时收敛。
+- Impact/Rollback：无Schema/Migration、依赖、Secret或外发；旧客户端忽略字段，新客户端兼容缺失并禁用操作。
+  撤除投影/前端归一可回滚，历史不变。Windows 11/PG18.6、后端3211/3、前端1533及构建通过。
+
 ## DEC-20261008-1062：Prototype前端不以隐藏UUID或全库扫描弥补读取投影缺口
 
 - Date/WBS：2026-10-08 / `PRT-01-A10-A01`；依据冻结API-04、用户既定待办/原文定位体验要求及

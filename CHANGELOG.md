@@ -1,5 +1,13 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A10-A02 完成CR-PRT-002只读响应增量：Requirement验收条件返回稳定
+  `acceptance_criterion_ref`，Prototype Template/Version的DOCUMENT_VERSION在Document Owner当前证明成功时
+  返回`document_id`，与既有`target_id`组成固定文档定位；旧响应安全归一，写请求仍拒绝只读字段。
+  兼容性/升级/回滚：无Migration、依赖、权限、路径、Secret或外发；旧客户端可忽略、新客户端缺字段禁用
+  对应操作，撤投影即可回滚且历史不变。验证：Win11/PG18.6真实三库、合同/Owner定向、后端3211/3、
+  前端1533/typecheck/build、compileall，wheel1229项/`794c7dc4…273152`PASS。已知问题：A03～A07前端/
+  Edge、A11 Workflow、Server2025、Gate3/UAT/发行待；Debian13跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A10-A01 完成Prototype前端安全交互前置核查，固定范围决定、模板选择、
   Version/Link、逐字段人工维护提示、AI建议隔离、强ETag/幂等未知结果恢复和固定原文定位边界。发现并登记
   `CR-PRT-002`：Requirement读取缺AcceptanceCriterion稳定引用、ArtifactRef读取缺Document ID；按冻结

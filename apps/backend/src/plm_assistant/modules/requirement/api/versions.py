@@ -371,15 +371,22 @@ def _criterion(view: RequirementAcceptanceView) -> dict[str, object]:
             or any(type(value) is not str or not value for value in (
                 view.observable_result, view.verification_method,
                 view.required_data, view.required_environment,
-                view.evidence_requirement))):
+                view.evidence_requirement))
+            or view.acceptance_criterion_ref is not None and (
+                type(view.acceptance_criterion_ref) is not uuid.UUID
+                or view.acceptance_criterion_ref.int == 0
+            )):
         raise ApplicationError("SYSTEM_UNAVAILABLE")
-    return {
+    result: dict[str, object] = {
         "ordinal": view.ordinal, "observable_result": view.observable_result,
         "verification_method": view.verification_method,
         "required_data": view.required_data,
         "required_environment": view.required_environment,
         "evidence_requirement": view.evidence_requirement,
     }
+    if view.acceptance_criterion_ref is not None:
+        result["acceptance_criterion_ref"] = str(view.acceptance_criterion_ref)
+    return result
 
 
 def _assessment(view: RequirementCapabilityAssessmentView) -> dict[str, object]:

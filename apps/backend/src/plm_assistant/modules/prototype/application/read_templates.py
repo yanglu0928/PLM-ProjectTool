@@ -5,7 +5,7 @@ from __future__ import annotations
 import re
 import uuid
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from typing import Protocol
 
@@ -123,16 +123,18 @@ class PrototypeTemplateReadService:
         self, *, unit_of_work: Callable[[], object], project_access: object,
         admin_access: object, license_guard: object,
         authorization: ProjectAuthorizationService, repository: RepositoryPort,
+        documents: object,
         clock: Callable[[], datetime] | None = None,
     ) -> None:
         if any(value is None for value in (
             unit_of_work, project_access, admin_access, license_guard,
-            authorization, repository,
+            authorization, repository, documents,
         )):
             raise ValueError("PrototypeTemplate read dependencies are required")
         self._uow, self._project_access = unit_of_work, project_access
         self._admin_access, self._guard = admin_access, license_guard
         self._authorization, self._repository = authorization, repository
+        self._documents = documents
         self._clock = clock or (lambda: datetime.now(timezone.utc))
 
     def list_project(
@@ -147,7 +149,7 @@ class PrototypeTemplateReadService:
                 tx, project_id=query.project_id, global_only=False,
                 after_updated_at=after_updated_at,
                 after_template_id=after_template_id, limit=page_size + 1,
-            ), page_size,
+            ), page_size, tx,
         ))
 
     def list_global(
@@ -162,7 +164,7 @@ class PrototypeTemplateReadService:
                 tx, project_id=None, global_only=True,
                 after_updated_at=after_updated_at,
                 after_template_id=after_template_id, limit=page_size + 1,
-            ), page_size,
+            ), page_size, tx,
         ))
 
     def get_project_version(
@@ -171,7 +173,7 @@ class PrototypeTemplateReadService:
     ) -> PrototypeTemplateVersionView:
         self._project_query(query)
         self._identity(template_id); self._identity(version_id)
-        return self._project_run(query, lambda tx: self._required(
+        return self._project_run(query, lambda tx: self._located_required(tx,
             self._repository.get_version(
                 tx, project_id=query.project_id, global_only=False,
                 template_id=template_id, version_id=version_id,
@@ -184,7 +186,7 @@ class PrototypeTemplateReadService:
     ) -> PrototypeTemplateVersionView:
         self._global_query(query)
         self._identity(template_id); self._identity(version_id)
-        return self._global_run(query, lambda tx: self._required(
+        return self._global_run(query, lambda tx: self._located_required(tx,
             self._repository.get_version(
                 tx, project_id=None, global_only=True,
                 template_id=template_id, version_id=version_id,
@@ -240,24 +242,47 @@ class PrototypeTemplateReadService:
             raise PrototypeTemplateReadError()
         return now.astimezone(timezone.utc)
 
-    @staticmethod
-    def _required(view):
+    def _located_required(self, tx, view):
         if type(view) is not PrototypeTemplateVersionView:
             raise PrototypeTemplateReadError("RESOURCE_NOT_FOUND")
-        return view
+        return self._located(tx, view)
 
-    @staticmethod
-    def _page(rows, size):
+    def _page(self, rows, size, tx):
         if type(rows) is not tuple or len(rows) > size + 1 or any(
             type(row) is not PrototypeTemplateVersionView for row in rows
         ):
             raise PrototypeTemplateReadError()
-        items, more = rows[:size], len(rows) > size
+        items = tuple(self._located(tx, row) for row in rows[:size])
+        more = len(rows) > size
         tail = items[-1] if more else None
         return PrototypeTemplatePage(
             items, tail.root_updated_at if tail else None,
             tail.prototype_template_id if tail else None, more,
         )
+
+    def _located(self, tx, view):
+        artifacts: list[TemplateArtifactRef] = []
+        for item in view.artifact_refs:
+            if type(item) is not TemplateArtifactRef:
+                raise PrototypeTemplateReadError()
+            if item.artifact_kind != "DOCUMENT_VERSION":
+                artifacts.append(item)
+                continue
+            proof = self._documents.prove(
+                tx, template_scope=view.scope, project_id=view.project_id,
+                document_version_id=item.target_id,
+            )
+            if proof is None:
+                artifacts.append(item)
+                continue
+            if (getattr(proof, "document_version_id", None) != item.target_id
+                    or type(getattr(proof, "document_id", None)) is not uuid.UUID
+                    or proof.document_id.int == 0
+                    or getattr(proof, "scope", None) != view.scope
+                    or getattr(proof, "project_id", None) != view.project_id):
+                raise PrototypeTemplateReadError()
+            artifacts.append(replace(item, document_id=proof.document_id))
+        return replace(view, artifact_refs=tuple(artifacts))
 
     @staticmethod
     def _project_query(query):

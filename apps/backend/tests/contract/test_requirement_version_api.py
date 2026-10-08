@@ -25,8 +25,9 @@ from plm_assistant.modules.requirement.application.validate_version import (
 
 
 NOW = datetime(2026, 10, 8, tzinfo=timezone.utc)
-PROJECT, REQUIREMENT, VERSION, ACTOR, EVIDENCE = (
-    uuid.uuid4(), uuid.uuid4(), uuid.uuid4(), uuid.uuid4(), uuid.uuid4())
+PROJECT, REQUIREMENT, VERSION, ACTOR, EVIDENCE, ACCEPTANCE = (
+    uuid.uuid4(), uuid.uuid4(), uuid.uuid4(), uuid.uuid4(), uuid.uuid4(),
+    uuid.uuid4())
 SUMMARY = RequirementVersionSummary(
     VERSION, REQUIREMENT, PROJECT, 2, "DRAFT", "Export package", "OUTPUT",
     "HIGH", "MEDIUM", "PENDING_CONFIRMATION", "ab" * 32,
@@ -38,7 +39,7 @@ DETAIL = RequirementVersionView(
         (RequirementSourceEvidenceView(EVIDENCE, 0),)),),
     (RequirementAcceptanceView(
         0, "Package exists", "Run validation", "Project data",
-        "Windows 11", "Signed report"),),
+        "Windows 11", "Signed report", ACCEPTANCE),),
     (), (), (), (), ())
 
 
@@ -170,6 +171,8 @@ class RequirementVersionApiTests(unittest.TestCase):
                          detail.json()["data"]["sources"][0]["source_type"])
         self.assertEqual("Package exists", detail.json()["data"]
                          ["acceptance_criteria"][0]["observable_result"])
+        self.assertEqual(str(ACCEPTANCE), detail.json()["data"]
+                         ["acceptance_criteria"][0]["acceptance_criterion_ref"])
 
         validate_headers = {key: value for key, value in self.write_headers.items()
                             if key != "if-match"}
@@ -207,6 +210,16 @@ class RequirementVersionApiTests(unittest.TestCase):
         malformed["sources"] = [{"source_type": "PROJECT_EVIDENCE"}]
         self.assertEqual(400, self.client.post(
             self.root, headers=self.write_headers, json=malformed).status_code)
+        readonly = {**self.body, "acceptance_criteria": [{
+            "observable_result": "Package exists",
+            "verification_method": "Run validation",
+            "required_data": "Project data",
+            "required_environment": "Windows 11",
+            "evidence_requirement": "Signed report",
+            "acceptance_criterion_ref": str(ACCEPTANCE),
+        }]}
+        self.assertEqual(400, self.client.post(
+            self.root, headers=self.write_headers, json=readonly).status_code)
         self.assertEqual(400, self.client.get(
             self.root + "?page_size=1&page_size=1",
             headers=self.read_headers).status_code)

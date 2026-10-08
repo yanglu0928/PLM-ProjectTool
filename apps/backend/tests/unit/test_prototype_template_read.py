@@ -3,6 +3,11 @@ from __future__ import annotations
 import unittest
 import uuid
 from datetime import datetime, timezone
+from types import SimpleNamespace
+
+from plm_assistant.modules.prototype.application.create_template import (
+    TemplateArtifactRef,
+)
 
 from plm_assistant.modules.prototype.application.read_templates import (
     GlobalPrototypeTemplateReadQuery, ProjectPrototypeTemplateReadQuery,
@@ -16,7 +21,7 @@ class PrototypeTemplateReadTests(unittest.TestCase):
         self.service = PrototypeTemplateReadService(
             unit_of_work=lambda: None, project_access=object(),
             admin_access=object(), license_guard=object(), authorization=object(),
-            repository=object(),
+            repository=object(), documents=object(),
         )
 
     def test_query_cursor_and_identity_validation_fail_closed(self) -> None:
@@ -58,6 +63,25 @@ class PrototypeTemplateReadTests(unittest.TestCase):
                 view.content_fingerprint, view.root_lock_version, view.is_current,
                 view.root_updated_at, view.version_created_at,
             )
+
+    def test_document_artifact_gets_safe_business_locator(self) -> None:
+        project, document, version = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
+        self.service._documents = SimpleNamespace(prove=lambda *_a, **kwargs:
+            SimpleNamespace(
+                document_version_id=kwargs["document_version_id"],
+                document_id=document, scope=kwargs["template_scope"],
+                project_id=kwargs["project_id"],
+            ))
+        view = PrototypeTemplateVersionView(
+            uuid.uuid4(), uuid.uuid4(), "PROJECT", project, "Template", "ACTIVE",
+            1, "PUBLISHED", None, {"schema": 1}, {"schema": 1},
+            ("DESKTOP_WEB",), (TemplateArtifactRef("DOCUMENT_VERSION", version),),
+            "0" * 64, 0, True, datetime.now(timezone.utc),
+            datetime.now(timezone.utc),
+        )
+        located = self.service._located(object(), view)
+        self.assertEqual(document, located.artifact_refs[0].document_id)
+        self.assertEqual(version, located.artifact_refs[0].target_id)
 
 
 if __name__ == "__main__":

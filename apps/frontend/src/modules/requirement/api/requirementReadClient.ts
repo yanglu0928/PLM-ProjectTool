@@ -30,7 +30,8 @@ export interface RequirementSourceView {
   readonly evidence_refs: readonly { readonly evidence_id: string; readonly ordinal: number }[];
 }
 export interface RequirementAcceptanceView {
-  readonly ordinal: number; readonly observable_result: string; readonly verification_method: string;
+  readonly ordinal: number; readonly acceptance_criterion_ref: string | null;
+  readonly observable_result: string; readonly verification_method: string;
   readonly required_data: string; readonly required_environment: string; readonly evidence_requirement: string;
 }
 export interface RequirementCapabilityAssessmentView {
@@ -160,11 +161,16 @@ function parseSource(value: unknown, ordinal: number): RequirementSourceView {
     evidence_refs: Object.freeze(evidence) });
 }
 function parseAcceptance(value: unknown, ordinal: number): RequirementAcceptanceView {
-  const fields = ["ordinal", "observable_result", "verification_method", "required_data", "required_environment", "evidence_requirement"] as const;
-  if (!record(value) || !exact(value, fields) || value.ordinal !== ordinal || fields.slice(1).some(field => !text(value[field], 4000))) {
+  const legacyFields = ["ordinal", "observable_result", "verification_method", "required_data", "required_environment", "evidence_requirement"] as const;
+  const fields = [...legacyFields, "acceptance_criterion_ref"] as const;
+  if (!record(value) || !(exact(value, legacyFields) || exact(value, fields))
+    || value.ordinal !== ordinal || legacyFields.slice(1).some(field => !text(value[field], 4000))
+    || Object.hasOwn(value, "acceptance_criterion_ref") && !id(value.acceptance_criterion_ref)) {
     throw new RequirementReadError("REQUIREMENT_READ_UNAVAILABLE");
   }
-  return frozen(value as unknown as RequirementAcceptanceView);
+  return frozen({ ...value, acceptance_criterion_ref:
+    Object.hasOwn(value, "acceptance_criterion_ref") ? value.acceptance_criterion_ref as string : null
+  } as unknown as RequirementAcceptanceView);
 }
 function parseAssessment(value: unknown, ordinal: number): RequirementCapabilityAssessmentView {
   const fields = ["ordinal", "baseline_version_id", "capability_item_id", "match_type", "fit_gap", "constraints_text",

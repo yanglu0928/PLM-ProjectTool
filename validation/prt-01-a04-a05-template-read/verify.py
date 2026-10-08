@@ -25,7 +25,7 @@ from plm_assistant.modules.project.application.authorization import ProjectAutho
 from plm_assistant.modules.project.infrastructure.authorization_repository import SqlAlchemyProjectAuthorizationRepository
 from plm_assistant.modules.prototype.application.create_template import (
     CreateGlobalPrototypeTemplate, CreateProjectPrototypeTemplate,
-    PrototypeTemplateCreateService,
+    PrototypeTemplateCreateService, TemplateArtifactRef,
 )
 from plm_assistant.modules.prototype.application.read_templates import (
     GlobalPrototypeTemplateReadQuery, ProjectPrototypeTemplateReadQuery,
@@ -43,6 +43,9 @@ ROOT = Path(__file__).resolve().parents[2]
 helpers = runpy.run_path(str(ROOT / "validation" / "ai-02-a02-model-create" / "verify.py"))
 connect, seed_user = helpers["connect"], helpers["seed_user"]
 Guard, CSRF = helpers["Guard"], helpers["CSRF"]
+seed_document = runpy.run_path(str(
+    ROOT / "validation" / "prt-01-a04-a03-template-create" / "verify.py"
+))["seed_document"]
 
 
 def expect(code, action):
@@ -97,6 +100,14 @@ def main() -> None:
                 "INSERT INTO plm.prj_project_members(project_id,user_id,department_id,project_role) "
                 "VALUES (%s,%s,%s,'PROJECT_MANAGER')", (other, other_pm, other_department),
             )
+            document_version = seed_document(
+                db, actor=pm, scope="PROJECT", project_id=project,
+                name="Read project layout",
+            )
+            document = db.execute(
+                "SELECT document_id FROM plm.doc_document_versions "
+                "WHERE document_version_id=%s", (document_version,),
+            ).fetchone()[0]
 
         guard = Guard()
         authorization = ProjectAuthorizationService(
@@ -118,7 +129,9 @@ def main() -> None:
         )
         project_one = create.create_project(CreateProjectPrototypeTemplate(
             pm_token, CSRF, uuid.uuid4(), project, "Project one", {"schema": 1},
-            {"schema": 1}, ("DESKTOP_WEB",), (), str(uuid.uuid4()),
+            {"schema": 1}, ("DESKTOP_WEB",),
+            (TemplateArtifactRef("DOCUMENT_VERSION", document_version),),
+            str(uuid.uuid4()),
         ))
         project_two = create.create_project(CreateProjectPrototypeTemplate(
             pm_token, CSRF, uuid.uuid4(), project, "Project two", {"schema": 1},
@@ -146,6 +159,7 @@ def main() -> None:
             admin_access=SqlAlchemyDeploymentReadAccess(), license_guard=guard,
             authorization=authorization,
             repository=SqlAlchemyPrototypeTemplateReadRepository(),
+            documents=SqlAlchemyPrototypeDocumentArtifactProof(),
             clock=lambda: datetime.now(timezone.utc),
         )
         project_query = ProjectPrototypeTemplateReadQuery(member_token, uuid.uuid4(), project)
@@ -175,6 +189,8 @@ def main() -> None:
         )
         assert current.is_current and current.version_no == 2 and current.etag == '"v1"'
         assert not historical.is_current and historical.version_no == 1
+        assert historical.artifact_refs[0].target_id == document_version
+        assert historical.artifact_refs[0].document_id == document
         allowed_global = reads.get_project_version(
             project_query, template_id=global_template.prototype_template_id,
             version_id=global_template.prototype_template_version_id,

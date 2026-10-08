@@ -165,6 +165,11 @@ def _view(value: PrototypeVersionInitialView) -> dict[str, object]:
     if (artifacts != value.artifact_refs or len(set(artifacts)) != len(artifacts)
             or any(item.artifact_kind not in {"DOCUMENT_VERSION", "OUTPUT_ARTIFACT"}
                    or type(item.target_id) is not uuid.UUID or item.target_id.int == 0
+                   or item.document_id is not None and (
+                       item.artifact_kind != "DOCUMENT_VERSION"
+                       or type(item.document_id) is not uuid.UUID
+                       or item.document_id.int == 0
+                   )
                    for item in artifacts)
             or requirements != value.requirement_refs
             or len({item.requirement_version_id for item in requirements})
@@ -186,10 +191,12 @@ def _view(value: PrototypeVersionInitialView) -> dict[str, object]:
         "supersedes_version_id": _uuid_or_none(value.supersedes_version_id),
         "template_id": str(value.template_id),
         "template_version_id": str(value.template_version_id),
-        "artifact_refs": [
-            {"artifact_kind": item.artifact_kind, "target_id": str(item.target_id)}
-            for item in artifacts
-        ],
+        "artifact_refs": [{
+            "artifact_kind": item.artifact_kind,
+            "target_id": str(item.target_id),
+            **({"document_id": str(item.document_id)}
+               if item.document_id is not None else {}),
+        } for item in artifacts],
         "requirement_refs": [
             {"requirement_id": str(item.requirement_id),
              "requirement_version_id": str(item.requirement_version_id)}

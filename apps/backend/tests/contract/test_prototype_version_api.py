@@ -31,13 +31,14 @@ PROJECT, PROTOTYPE, VERSION, TEMPLATE, TEMPLATE_VERSION = (
 DOCUMENT, REQUIREMENT, REQUIREMENT_VERSION, AUDIT = (
     uuid.uuid4() for _ in range(4)
 )
+DOCUMENT_ROOT = uuid.uuid4()
 
 
 def version_view(*, number: int = 2, identity: uuid.UUID = VERSION) -> PrototypeVersionInitialView:
     return PrototypeVersionInitialView(
         identity, PROTOTYPE, PROJECT, number, None,
         TEMPLATE, TEMPLATE_VERSION,
-        (VersionArtifactRef("DOCUMENT_VERSION", DOCUMENT),),
+        (VersionArtifactRef("DOCUMENT_VERSION", DOCUMENT, DOCUMENT_ROOT),),
         (VersionRequirementRef(REQUIREMENT, REQUIREMENT_VERSION),),
         {"screens": [{"id": "home"}]},
         {"covered": [str(REQUIREMENT_VERSION)]},
@@ -168,6 +169,8 @@ class PrototypeVersionApiTests(unittest.TestCase):
         self.assertEqual(200, detail.status_code)
         self.assertEqual(str(REQUIREMENT_VERSION), detail.json()["data"]
                          ["requirement_refs"][0]["requirement_version_id"])
+        self.assertEqual(str(DOCUMENT_ROOT), detail.json()["data"]
+                         ["artifact_refs"][0]["document_id"])
 
         headers = {key: value for key, value in self.write_headers.items()
                    if key != "if-match"}
@@ -202,6 +205,12 @@ class PrototypeVersionApiTests(unittest.TestCase):
         malformed["artifact_refs"] = [{"artifact_kind": "DOCUMENT_VERSION"}]
         self.assertEqual(400, self.client.post(
             self.root, headers=self.write_headers, json=malformed,
+        ).status_code)
+        readonly = {**self.body, "artifact_refs": [{
+            **self.body["artifact_refs"][0], "document_id": str(DOCUMENT_ROOT),
+        }]}
+        self.assertEqual(400, self.client.post(
+            self.root, headers=self.write_headers, json=readonly,
         ).status_code)
         self.assertEqual(422, self.client.get(
             self.root + "?page_size=101", headers=self.read_headers,

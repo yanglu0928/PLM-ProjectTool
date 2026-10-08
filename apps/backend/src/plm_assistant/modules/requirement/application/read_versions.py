@@ -77,6 +77,7 @@ class RequirementAcceptanceView:
     required_data: str
     required_environment: str
     evidence_requirement: str
+    acceptance_criterion_ref: uuid.UUID | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -246,7 +247,11 @@ class RequirementVersionReadService:
                        for source in view.sources)
                 or any(tuple(item.ordinal for item in assessment.evidence_refs)
                        != tuple(range(len(assessment.evidence_refs)))
-                       for assessment in view.capability_assessments)):
+                       for assessment in view.capability_assessments)
+                or any(item.acceptance_criterion_ref is not None and (
+                    type(item.acceptance_criterion_ref) is not uuid.UUID
+                    or item.acceptance_criterion_ref.int == 0
+                ) for item in view.acceptance_criteria)):
             raise RequirementVersionReadError()
 
     @staticmethod

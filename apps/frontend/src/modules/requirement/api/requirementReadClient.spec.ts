@@ -12,6 +12,7 @@ const evidence = "51234567-89ab-4cde-8123-456789abcdef";
 const baseline = "61234567-89ab-4cde-8123-456789abcdef";
 const capability = "71234567-89ab-4cde-8123-456789abcdef";
 const trace = "81234567-89ab-4cde-8123-456789abcdef";
+const acceptance = "91234567-89ab-4cde-8123-456789abcdef";
 const now = "2026-10-08T08:00:00.000000Z";
 const token = `${"A".repeat(24)}.${"B".repeat(43)}`;
 const root = { requirement_id: requirement, project_id: project, requirement_code: "REQ-001", state: "ACTIVE",
@@ -81,6 +82,18 @@ describe("RequirementReadClient", () => {
     expect(value.sources[0]).toMatchObject({ source_type: "PROJECT_EVIDENCE", source_object_id: evidence });
     expect(Object.isFrozen(value.sources[0]!.evidence_refs)).toBe(true);
     expect(value.acceptance_criteria[0]!.required_environment).toContain("Windows 11");
+    expect(value.acceptance_criteria[0]!.acceptance_criterion_ref).toBeNull();
+  });
+
+  it("accepts the additive stable acceptance reference and rejects a malformed one", () => {
+    const projected = { ...detail, acceptance_criteria: [{
+      ...detail.acceptance_criteria[0], acceptance_criterion_ref: acceptance,
+    }] };
+    expect(parseRequirementVersion(projected, project, requirement, version)
+      .acceptance_criteria[0]!.acceptance_criterion_ref).toBe(acceptance);
+    expect(() => parseRequirementVersion({ ...projected, acceptance_criteria: [{
+      ...projected.acceptance_criteria[0], acceptance_criterion_ref: "hidden-row-1",
+    }] }, project, requirement, version)).toThrowError(RequirementReadError);
   });
 
   it.each([

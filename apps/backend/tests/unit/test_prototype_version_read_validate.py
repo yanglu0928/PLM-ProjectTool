@@ -76,7 +76,13 @@ class Proof:
     def __init__(self): self.available = True
     def prove(self, *_args, **_kwargs): return object() if self.available else None
     def prove_for_prototype_version(self, *_args, **_kwargs):
-        return object() if self.available else None
+        if not self.available:
+            return None
+        return SimpleNamespace(
+            document_version_id=_kwargs["document_version_id"],
+            document_id=uuid.uuid5(uuid.NAMESPACE_URL, "prototype-document-root"),
+            scope="PROJECT", project_id=_kwargs["project_id"],
+        )
 
 
 class Repo:
@@ -119,6 +125,10 @@ class PrototypeVersionReadValidateTests(unittest.TestCase):
     def test_list_uses_descending_version_cursor(self):
         page = self.service.list(self.query, page_size=2)
         self.assertEqual([x.version_no for x in page.items], [3, 2])
+        self.assertEqual(
+            page.items[0].artifact_refs[0].document_id,
+            uuid.uuid5(uuid.NAMESPACE_URL, "prototype-document-root"),
+        )
         self.assertTrue(page.has_more)
         self.assertEqual(page.next_version_no, 2)
         second = self.service.list(
@@ -126,8 +136,12 @@ class PrototypeVersionReadValidateTests(unittest.TestCase):
         self.assertEqual([x.version_no for x in second.items], [1])
 
     def test_get_is_scoped_and_missing_is_not_found(self):
-        self.assertEqual(self.service.get(
-            self.query, version_id=self.views[0].prototype_version_id), self.views[0])
+        result = self.service.get(
+            self.query, version_id=self.views[0].prototype_version_id)
+        self.assertEqual(result.prototype_version_id,
+                         self.views[0].prototype_version_id)
+        self.assertEqual(result.artifact_refs[0].target_id, self.document)
+        self.assertIsNotNone(result.artifact_refs[0].document_id)
         with self.assertRaisesRegex(PrototypeVersionReadError, "RESOURCE_NOT_FOUND"):
             self.service.get(self.query, version_id=uuid.uuid4())
 

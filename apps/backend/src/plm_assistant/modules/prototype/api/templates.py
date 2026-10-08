@@ -117,10 +117,18 @@ def _artifact_data(values: tuple[TemplateArtifactRef, ...]) -> list[dict[str, st
     if (type(values) is not tuple
             or any(type(item) is not TemplateArtifactRef for item in values)):
         raise ApplicationError("SYSTEM_UNAVAILABLE")
-    return [
-        {"artifact_kind": item.artifact_kind, "target_id": str(item.target_id)}
-        for item in values
-    ]
+    result: list[dict[str, str]] = []
+    for item in values:
+        entry = {"artifact_kind": item.artifact_kind,
+                 "target_id": str(item.target_id)}
+        if item.document_id is not None:
+            if (item.artifact_kind != "DOCUMENT_VERSION"
+                    or type(item.document_id) is not uuid.UUID
+                    or item.document_id.int == 0):
+                raise ApplicationError("SYSTEM_UNAVAILABLE")
+            entry["document_id"] = str(item.document_id)
+        result.append(entry)
+    return result
 
 
 def _common(
@@ -135,7 +143,9 @@ def _common(
         normalized_layout = PrototypeTemplateCreateService._contract(layout)
         normalized_components = PrototypeTemplateCreateService._contract(components)
         normalized_terminals = PrototypeTemplateCreateService._terminals(terminals)
-        normalized_artifacts = PrototypeTemplateCreateService._artifacts(artifacts)
+        normalized_artifacts = PrototypeTemplateCreateService._artifacts(
+            artifacts, allow_read_locations=True,
+        )
     except PrototypeTemplateCreateError:
         raise ApplicationError("SYSTEM_UNAVAILABLE") from None
     valid_scope = (

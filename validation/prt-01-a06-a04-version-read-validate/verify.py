@@ -13,10 +13,19 @@ from plm_assistant.modules.platform.infrastructure.migration import create_migra
 from plm_assistant.modules.prototype.infrastructure.version_read_repository import (
     SqlAlchemyPrototypeVersionReadRepository,
 )
+from plm_assistant.modules.prototype.application.read_validate_version import (
+    PrototypeVersionReadValidationService,
+)
+from plm_assistant.modules.document.infrastructure.prototype_artifact_proof import (
+    SqlAlchemyPrototypeDocumentArtifactProof,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 helpers = runpy.run_path(str(ROOT / "validation" / "ai-02-a02-model-create" / "verify.py"))
 connect, seed_user = helpers["connect"], helpers["seed_user"]
+seed_document = runpy.run_path(str(
+    ROOT / "validation" / "prt-01-a04-a03-template-create" / "verify.py"
+))["seed_document"]
 
 
 def main():
@@ -34,8 +43,16 @@ def main():
                 "INSERT INTO plm.prj_projects(project_code,project_code_normalized,name,created_by) "
                 "VALUES ('PRTVREAD','prtvread','Version read project',%s) RETURNING project_id",
                 (actor,)).fetchone()[0]
+            document_version = seed_document(
+                db, actor=actor, scope="PROJECT", project_id=project,
+                name="Prototype version artifact",
+            )
+            document = db.execute(
+                "SELECT document_id FROM plm.doc_document_versions "
+                "WHERE document_version_id=%s", (document_version,),
+            ).fetchone()[0]
         prototype, template, template_version = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
-        requirement, requirement_version, document_version = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
+        requirement, requirement_version = uuid.uuid4(), uuid.uuid4()
         versions = [uuid.uuid4(), uuid.uuid4()]
         engine = create_engine(url)
         with Session(engine) as session, session.begin():
@@ -83,6 +100,16 @@ def main():
                              before_version_no=2, limit=10)[0].version_no == 1
             assert repo.get(tx, project_id=uuid.uuid4(), prototype_id=prototype,
                             version_id=versions[0]) is None
+            locator = PrototypeVersionReadValidationService(
+                unit_of_work=object(), project_access=object(),
+                license_guard=object(), authorization=object(), repository=repo,
+                templates=object(), requirements=object(),
+                documents=SqlAlchemyPrototypeDocumentArtifactProof(),
+                audit_source=object(), receipts=object(), audit=object(),
+            )
+            located = locator._located(tx, project, page[0])
+            assert located.artifact_refs[0].target_id == document_version
+            assert located.artifact_refs[0].document_id == document
         print("PRT_01_A06_A04_VERSION_READ_VALIDATE_PASS: immutable descending page, fixed owned-set reconstruction, historical read and project isolation verified on PostgreSQL 18")
     finally:
         if engine is not None: engine.dispose()

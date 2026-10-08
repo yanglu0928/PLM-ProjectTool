@@ -40,3 +40,10 @@ PrototypeTemplate/PrototypeVersion 的 ArtifactRef 当前只返回 `artifact_kin
 既有 Prototype、Requirement、Document、Review、Link、Trace、Audit 历史不修改。验证至少覆盖投影身份一致、
 跨项目不可见、写入仍拒绝只读字段、严格解析兼容、完整后端/前端回归和 Windows 11/PostgreSQL 18.6。
 Windows Server 2025 另行实机验证，Debian 13 依用户指令跳过。
+
+## A02 实施记录（2026-10-08）
+
+已在既有GET投影增加可选`acceptance_criterion_ref/document_id`，写请求仍严格拒绝只读字段；Document ID由
+当前Document Owner按scope/project重新证明，证明缺失时不猜测定位。无Schema/Migration。Windows 11/
+PostgreSQL 18.6真实三库、后端3211/3、前端1533、typecheck/build及wheel1229项/
+`794c7dc4…273152`通过；进入A03严格只读客户端。

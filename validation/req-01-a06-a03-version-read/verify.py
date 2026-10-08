@@ -83,6 +83,13 @@ def main() -> None:
             assert not page2.has_more and page2.items[0].requirement_version_id == first.requirement_version_id
             detail = reads.get_version(query("impl"), requirement_id=root.requirement_id, requirement_version_id=second.requirement_version_id)
             assert detail.statement == "Second statement"
+            assert detail.acceptance_criteria[0].acceptance_criterion_ref is not None
+            with connect(database) as db:
+                expected_acceptance = db.execute(
+                    "SELECT acceptance_criterion_id FROM plm.req_acceptance_criteria "
+                    "WHERE requirement_version_id=%s", (second.requirement_version_id,),
+                ).fetchone()[0]
+            assert detail.acceptance_criteria[0].acceptance_criterion_ref == expected_acceptance
             assert [x.ordinal for x in detail.sources] == [0]
             assert [(x.evidence_id, x.ordinal) for x in detail.sources[0].evidence_refs] == [(evidence2, 0)]
             assert [x.text for x in detail.assumptions] == ["Assumption"]

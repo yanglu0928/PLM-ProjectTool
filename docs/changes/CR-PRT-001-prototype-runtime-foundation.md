@@ -72,6 +72,12 @@ Document ID尚未进入读取投影；已建立`CR-PRT-002`，按API-04允许的
 路径、请求、权限或冻结提交。A10拆为A02响应投影、A03只读客户端、A04受控写、A05页面、A06导航回归和
 A07真实Edge闭环。
 
+## A10-A02 实施记录（2026-10-08）
+
+CR-PRT-002响应投影已落实：Requirement验收条件返回稳定业务引用，Template/PrototypeVersion的
+DOCUMENT_VERSION在Document Owner当前证明成功时返回Document根ID。请求字段、26项Operation、权限、Schema
+和内容指纹不变；旧响应由前端归一为不可操作状态。真实Windows/PG、全量后端/前端和构建通过，进入A03。
+
 ## A02 实施记录（2026-10-08）
 
 Migration0122新增Package、Prototype、同项目membership、NOT_REQUIRED范围决定及固定受影响

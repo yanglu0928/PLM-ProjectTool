@@ -266,6 +266,7 @@ def create_windows_prototype_routers(
             **common, project_access=read_access,
             admin_access=SqlAlchemyDeploymentReadAccess(),
             repository=SqlAlchemyPrototypeTemplateReadRepository(),
+            documents=documents,
         )
         template_creates = PrototypeTemplateCreateService(
             **common, project_access=write_access,

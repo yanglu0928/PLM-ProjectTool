@@ -26,7 +26,7 @@ const detail: RequirementVersionView = { requirement_version_id: versionId, requ
   sources: [{ ordinal: 0, source_type: "CONFIRMED_HANDOVER", source_object_id: sourceId, source_version_ref: sourceVersion,
     evidence_refs: [{ evidence_id: evidenceId, ordinal: 0 }] }, { ordinal: 1, source_type: "HUMAN_DECISION", source_object_id: actor,
     source_version_ref: null, evidence_refs: [{ evidence_id: evidenceId, ordinal: 0 }] }],
-  acceptance_criteria: [{ ordinal: 0, observable_result: "形成批准记录", verification_method: "审批测试", required_data: "图文档案",
+  acceptance_criteria: [{ ordinal: 0, acceptance_criterion_ref: null, observable_result: "形成批准记录", verification_method: "审批测试", required_data: "图文档案",
     required_environment: "Windows 11", evidence_requirement: "保留审计证据" }],
   capability_assessments: [{ ordinal: 0, baseline_version_id: baseline, capability_item_id: capability, match_type: "PARTIAL",
     fit_gap: "需扩展字段", constraints_text: "不破坏冻结 API", assessor_kind: "HUMAN", assessed_by: actor, assessed_at: now,

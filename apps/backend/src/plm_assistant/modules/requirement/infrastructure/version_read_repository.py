@@ -79,6 +79,7 @@ class SqlAlchemyRequirementVersionReadRepository:
         acceptance = tuple(RequirementAcceptanceView(
             row.ordinal, row.observable_result, row.verification_method,
             row.required_data, row.required_environment, row.evidence_requirement,
+            row.acceptance_criterion_id,
         ) for row in session.execute(select(RequirementAcceptanceCriterionRow).where(
             RequirementAcceptanceCriterionRow.project_id == project_id,
             RequirementAcceptanceCriterionRow.requirement_id == requirement_id,

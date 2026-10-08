@@ -34,8 +34,10 @@ PROJECT, TEMPLATE, GLOBAL_TEMPLATE = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
 VERSION, GLOBAL_VERSION, REVISION, DOCUMENT = (
     uuid.uuid4(), uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
 )
+DOCUMENT_ROOT = uuid.uuid4()
 FINGERPRINT = "a" * 64
-ARTIFACTS = (TemplateArtifactRef("DOCUMENT_VERSION", DOCUMENT),)
+ARTIFACTS = (TemplateArtifactRef(
+    "DOCUMENT_VERSION", DOCUMENT, DOCUMENT_ROOT),)
 LAYOUT = {"kind": "grid", "columns": 12}
 COMPONENTS = {"allowed": ["text", "table"]}
 TERMINALS = ("DESKTOP",)
@@ -199,6 +201,8 @@ class PrototypeTemplateApiTests(unittest.TestCase):
             )
             self.assertEqual(200, first.status_code)
             self.assertEqual(expected_scope, first.json()["data"]["items"][0]["scope"])
+            self.assertEqual(str(DOCUMENT_ROOT), first.json()["data"]["items"][0]
+                             ["artifact_refs"][0]["document_id"])
             cursor = first.json()["data"]["next_cursor"]
             second = self.client.get(
                 path + f"?page_size=1&cursor={cursor}",
@@ -257,6 +261,13 @@ class PrototypeTemplateApiTests(unittest.TestCase):
         self.assertEqual(400, self.client.post(
             self.project_root, headers=self.write_headers,
             json={**self.create_body, "scope": "GLOBAL"},
+        ).status_code)
+        readonly = {**self.create_body, "artifact_refs": [{
+            **self.create_body["artifact_refs"][0],
+            "document_id": str(DOCUMENT_ROOT),
+        }]}
+        self.assertEqual(400, self.client.post(
+            self.project_root, headers=self.write_headers, json=readonly,
         ).status_code)
         self.assertEqual(422, self.client.post(
             self.project_root, headers=self.write_headers,
