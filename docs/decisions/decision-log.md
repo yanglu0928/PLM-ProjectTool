@@ -10608,3 +10608,10 @@
 - Decision：本轮不启动16GiB的Server2025 VM；保留实际OS/PG/内存/SCM/性能为未验，按CR-SEQ-001转Solution最小真实Owner前置核查，不将整个目标标为阻塞。
 - Reason：运行VM为0，宿主可用内存约12.68GiB，低于VM配置16GiB；VMware guestOS标签不等于实机版本证明。强启可能干扰宿主其他工作。
 - Impact/Rollback：仅记录，无VM/生产程序/Schema/API/配置/迁移变化。资源恢复后可进行目标实测；Prototype入口与Gate3继续关闭。
+
+# DEC-20261008-1096：Solution 前置从真实固定版本基础开始，不以参考或草案代替审批
+
+- Date/WBS：2026-10-08 / `SOL-01-A01`；依据 V2.1 §6.10/Phase 8、冻结 DM-05/SC-01/02/API-04、六阶段定义和当前源码/迁移静态对账。
+- Decision：按 CR-SEQ-001 在 Phase 2 保持进行中时前置 Solution 最小真实 Owner；A02 先建立可独立验收的身份/版本持久层切片，后续分别接 Reference、Section/Spec、固定输入、Review/Trace 和 Workflow。任何冻结差异先记专门 CR。不得以参考方案、AI 草案、目录单独批准或合成 Subject 宣称正式资格。
+- Reason：冻结六种 SOL 资源/两项 Checklist 均有合同，但当前没有 `solution` 运行模块或 `sol_*` 业务表；Trace/Audit 类型白名单和 Workflow 配置不能代替真实 Owner。
+- Impact/Rollback：本项仅前置核查/排序记录，无程序、Schema、API、权限、依赖或客户数据迁移；停止提前任务可恢复排期，历史记录保留。Gate 3、Prototype 生产入口及目标环境/性能限制不变。

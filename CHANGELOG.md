@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/SOL-01-A01 按 CR-SEQ-001 对账冻结 Solution 六类资源、SC 映射、API-04 与两项 Workflow Checklist；确认当前无 Solution 运行模块和 `sol_*` 业务表，决定先实施可独立验收的固定版本基础，再逐项接 Review/Trace/Workflow。兼容性/升级：仅文档与任务排序，无程序、Schema、API、权限、依赖、配置或迁移；停止前置任务可恢复排期。验证：静态基线/源码/迁移核查，未运行新测试。已知问题：Solution 真实 Owner/Gate3、Prototype 性能与生产入口、Server2025/正式信任/UAT/发行待验；Debian13 依指令跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A11-A05-P04-P22 只读核对Server2025 VM运行状态与资源：VM配置16GiB/16vCPU且关闭，宿主可用内存约12.68GiB，本轮未强启；按DEC-1095转不依赖VM的Solution Owner前置。兼容性/升级：仅进展/决策/状态，无程序、Schema、API、权限、依赖、配置或迁移；无需回滚操作。验证：`vmrun list`、VMX硬件项与Win11系统内存只读核对；未验证Server实际OS/PG/SCM/性能。已知问题：≤500ms未稳定、Server2025/正式信任/入口/Gate3/UAT/发行待；Debian13依指令跳过。
 
 - 2026-10-08：0.1.0-dev.0/PRT-01-A11-A05-P04-P21 非Secret Bootstrap新增默认`DEFAULT`与显式`TWENTY_FIXED`固定API业务池档位；仅20+0档位启动时要求实际PG18版本及普通连接额度≥80并失败关闭，旧默认5+10不变。兼容性/升级：无公开API、Schema、权限、依赖或数据迁移，旧配置无需操作；回滚删除档位/设DEFAULT并重启。验证：配置/启动定向20通过/46子例，Win11隔离PG18.6预算正向及Workflow退出0，后端3259通过/3跳过/4815子例。已知问题：目标Server2025内存/PG和正式服务未验、业务20并发P95未稳定≤500ms、Prototype入口/Gate3/UAT/发行待；Debian13依指令跳过。
