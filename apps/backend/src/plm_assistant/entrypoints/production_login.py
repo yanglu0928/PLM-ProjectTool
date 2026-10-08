@@ -53,6 +53,7 @@ from plm_assistant.entrypoints.windows_prototype import (
 )
 from plm_assistant.entrypoints.windows_solution_reference import (
     create_windows_global_reference_create_router,
+    create_windows_global_reference_read_router,
     create_windows_project_reference_create_router,
     create_windows_project_reference_list_router,
     create_windows_project_reference_read_router,
@@ -612,6 +613,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         requirement_prototype_link_router = None
         project_reference_create_router = None
         global_reference_create_router = None
+        global_reference_read_router = None
         project_reference_read_router = None
         project_reference_list_router = None
         reference_deidentification_router = None
@@ -621,6 +623,12 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 create_windows_license_services,
             )
             licenses = create_windows_license_services(runtime, settings)
+            global_reference_read_router = (
+                create_windows_global_reference_read_router(
+                    runtime=runtime, sessions=sessions, origins=origins,
+                    license_guard=licenses.guard,
+                )
+            )
             project_reference_read_router = (
                 create_windows_project_reference_read_router(
                     runtime=runtime, sessions=sessions, origins=origins,
@@ -1641,6 +1649,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             ),
             project_reference_create_router=project_reference_create_router,
             global_reference_create_router=global_reference_create_router,
+            global_reference_read_router=global_reference_read_router,
             project_reference_read_router=project_reference_read_router,
             project_reference_list_router=project_reference_list_router,
             reference_deidentification_router=reference_deidentification_router,

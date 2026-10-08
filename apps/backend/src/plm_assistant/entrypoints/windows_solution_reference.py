@@ -23,6 +23,7 @@ from plm_assistant.modules.solution.api.reference_create import (
 )
 from plm_assistant.modules.solution.api.reference_deidentification import create_reference_deidentification_router
 from plm_assistant.modules.solution.api.reference_list import create_project_reference_list_router
+from plm_assistant.modules.solution.api.global_reference_read import create_global_reference_read_router
 from plm_assistant.modules.solution.api.reference_list_cursor import ReferenceListCursorCodec
 from plm_assistant.modules.solution.api.reference_read import create_project_reference_read_router
 from plm_assistant.modules.solution.application.create_reference_solution import ReferenceCreateService
@@ -30,11 +31,13 @@ from plm_assistant.modules.solution.application.confirm_reference_deidentificati
 from plm_assistant.modules.solution.application.preview_reference_deidentification import ReferenceDeidentificationPreviewService
 from plm_assistant.modules.solution.application.lookup_reference_deidentification_operation import ReferenceDeidentificationOperationLookupService
 from plm_assistant.modules.solution.application.read_reference import ReferenceReadService
+from plm_assistant.modules.solution.application.read_global_reference import GlobalReferenceReadService
 from plm_assistant.modules.solution.application.revoke_reference_deidentification import ReferenceDeidentificationRevokeService
 from plm_assistant.modules.solution.application.prove_reference_deidentification import ReferenceDeidentificationProofService
 from plm_assistant.modules.solution.application.reference_source_qualification import ReferenceSourceQualificationService
 from plm_assistant.modules.solution.infrastructure.reference_create_repository import SqlAlchemyReferenceCreateRepository
 from plm_assistant.modules.solution.infrastructure.reference_read_repository import SqlAlchemyReferenceReadRepository
+from plm_assistant.modules.solution.infrastructure.global_reference_read_repository import SqlAlchemyGlobalReferenceReadRepository
 from plm_assistant.modules.solution.infrastructure.reference_deidentification_proof_repository import SqlAlchemyReferenceDeidentificationProofRepository
 from plm_assistant.modules.solution.infrastructure.reference_deidentification_repository import SqlAlchemyReferenceDeidentificationRepository
 from plm_assistant.modules.solution.infrastructure.reference_deidentification_revocation_repository import SqlAlchemyReferenceDeidentificationRevocationRepository
@@ -71,6 +74,25 @@ def create_windows_project_reference_read_router(
         return create_project_reference_read_router(
             sessions=sessions, origins=origins,
             reads=_read_service(runtime, license_guard))
+    except Exception:
+        raise ProductionSolutionReferenceStartupError() from None
+
+
+def create_windows_global_reference_read_router(
+    *, runtime, sessions, origins, license_guard,
+) -> APIRouter:
+    """Compose an admin-only GLOBAL GET in explicit Windows read mode."""
+    if any(value is None for value in (runtime, sessions, origins, license_guard)):
+        raise ProductionSolutionReferenceStartupError()
+    try:
+        service = GlobalReferenceReadService(
+            unit_of_work=runtime.unit_of_work,
+            admins=SqlAlchemyDeploymentReadAccess(),
+            license_guard=license_guard,
+            repository=SqlAlchemyGlobalReferenceReadRepository(),
+        )
+        return create_global_reference_read_router(
+            sessions=sessions, origins=origins, reads=service)
     except Exception:
         raise ProductionSolutionReferenceStartupError() from None
 

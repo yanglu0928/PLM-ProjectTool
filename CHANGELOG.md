@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A04-P09-P03 将冻结的 GLOBAL Reference GET 接入可选 HTTP 及 Windows 显式只读组合，Create201 Location 可读取当前版本与固定来源身份，不暴露确认ID或当前有效断言。兼容性/升级：无 Breaking Change、Schema/依赖/数据迁移；关闭可选路由恢复404，历史数据保留。验证：合同定向8通过/44子例、后端全量3349通过/3跳过/4973子例、Win11隔离PG18.6 Create→GET/撤回后GET/拒绝路径通过。已知问题：GLOBAL List/前端、真人确认、正式License/账户、Server2025、20并发、Gate3/UAT/发行未验；Debian13依指令跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P09-P02 新增独立 GLOBAL Reference 只读 Owner/仓储，当前 DeploymentAdmin/License、GLOBAL Scope、固定有序来源与有界摘要分页失败关闭；撤回后的确认仅保留历史读取，不宣称现时有效。兼容性/升级：仅内部增量，无 Schema/公开 API/依赖/数据迁移，PROJECT 读取不变。验证：单元5/15子例、后端全量3346通过/3跳过/4962子例、Win11隔离PG18.6 GLOBAL/PROJECT两库实测退出0。已知问题：GLOBAL GET/List HTTP、Windows/UI、正式License/账户、Server2025、20并发、Gate3/UAT/发行未验；Debian13依指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P09-P01 对账冻结 GLOBAL Reference GET/List 与已实测 Create201 Location，确定独立管理员只读 Owner、专用分页游标及创建原 Key 查询需另立变更边界。兼容性/升级：仅前置设计与 DEC-1120，无代码/API/Schema/依赖或数据升级。验证：冻结 API-04、现有 PROJECT Read/Repository/HTTP/Windows 与 GLOBAL Create Edge/PG 证据静态对账；GLOBAL GET/List 未运行。已知问题：创建后对象尚无 GLOBAL 详情/列表，正式License/账户、真人确认、Server2025、20并发、Gate3/UAT/发行未验；Debian13依指令跳过。
