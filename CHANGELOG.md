@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A10-A05-P04 新增RequirementPrototypeLink列表、创建、撤销和替换页面；
+  双端必须是当前批准Version且Prototype已固定精确Requirement。验收标准按稳定引用逐条形成完整覆盖分区，
+  缺引用失败关闭，替换锁定逻辑身份，三类写操作按原Body/Key恢复；关联与Coverage均明确不是评审批准。
+  兼容性/升级/回滚：无Schema/API/依赖/权限/Secret或外发，删除页面即可回滚且历史不变。验证：定向3项、
+  前端100文件/1588项、typecheck、Vite 195 modules构建PASS；既有主chunk警告保留。已知问题：A06路由/浏览器、A07、A11、Server2025、
+  Gate3/UAT/发行待；Debian13跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A10-A05-P03 新增Prototype Version列表/详情/创建/校验/送审页面；
   Template、批准Requirement、固定Document和Reviewer均由业务候选选择，Interaction结构化且不可执行，
   Coverage自动计算。三类幂等操作均按原输入/Key/创建ETag恢复；旧校验报告在重验时失效，校验与送审回执

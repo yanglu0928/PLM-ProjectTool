@@ -450,3 +450,13 @@ receipt及Alembic drift。验收脚本首轮导入路径、次轮成员表名为
 保护未放宽。无Migration、依赖、角色、Secret内容或外发，Schema head保持0134；撤生产注入和Registry登记
 即可关闭，历史保留。后端3210项通过/3项环境跳过、compileall、diff check及wheel1229项/
 `6e4fa209cf57994b86e79069782307506d2da9e34e309a9171c4c3a319ffe725`通过；A09完成，进入A10前端。
+
+## A10-A05-P04 RequirementPrototypeLink结构化页面（2026-10-08）
+
+新增未注册路由的Link列表/创建/撤销/替换页面。页面以业务候选读取双端当前批准Version并核对Prototype已
+固定精确Requirement；只消费CR-PRT-002的稳定AcceptanceCriterion引用，缺失时关闭写入，不允许人工UUID
+回填。Coverage要求逐条明确覆盖或给出未覆盖原因且至少一项覆盖，SUPERSEDE锁定Root pair与purpose。
+
+CREATE/REVOKE/SUPERSEDE未知结果仅按原Body/Key显式恢复，沿用DEC-1060不增加If-Match。无Migration、
+公开API、依赖、Secret或外发变化；删除页面即可回滚且Link历史保留。定向3项、前端100文件/1588项、
+typecheck及Vite 195 modules构建通过；路由和浏览器验收留A06，既有主chunk警告保留。

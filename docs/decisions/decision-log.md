@@ -1,5 +1,20 @@
 # 自主决策记录
 
+## DEC-20261008-1071：Link覆盖必须精确分区且替换保持逻辑身份
+
+- Date/WBS：2026-10-08 / `PRT-01-A10-A05-P04`；依据冻结Coverage V1、DEC-1046/1048/1060及
+  CR-PRT-002稳定引用投影。
+- Decision：Link页面只从当前批准的Requirement/Prototype业务候选形成固定双端，并核对PrototypeVersion
+  已拥有精确RequirementVersion。Coverage必须按服务端稳定AcceptanceCriterion引用形成完整、不相交分区，
+  每项显式覆盖或给出未覆盖原因且至少一项覆盖；缺引用失败关闭。SUPERSEDE锁定Root pair和purpose，仅允许
+  版本及Coverage演进；三类生命周期命令均按原Body/Key恢复，不补冻结合同未定义的If-Match。
+- Reason：手填UUID、接受部分分区或允许替换改变逻辑身份都会把不同业务关系伪装成同一历史；浏览器对账可
+  提前纠错，但不能替代服务端当前事实和并发重证。
+- Impact/Rollback：仅新增未注册路由的前端页面、测试和验证材料，无Schema/API/依赖/权限/Secret或外发。
+  删除页面即可回滚，Link历史不变；路由、即时撤权和真实浏览器留A06。
+- Verification：定向3项覆盖完整分区、缺稳定引用关闭、双端固定关系、逻辑身份锁定和精确幂等恢复；前端
+  100文件/1588项、typecheck及Vite 195 modules构建通过，既有主chunk警告保留。
+
 ## DEC-20261008-1070：PrototypeVersion只由受权业务候选和结构化不可执行说明组成
 
 - Date/WBS：2026-10-08 / `PRT-01-A10-A05-P03`；依据冻结PrototypeVersionInput、DEC-1034/1039和用户体验要求。
