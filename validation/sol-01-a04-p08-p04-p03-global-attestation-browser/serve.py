@@ -55,7 +55,8 @@ DIST = ROOT / "apps/frontend/dist"
 
 
 def on_preview(*, runtime, audit, license_guard, document, version, evidence,
-               documents, downloads, parse_results, **_unused) -> None:
+               documents, downloads, parse_results, browser_script=None,
+               browser_extra=(), **_unused) -> None:
     if not (DIST / "index.html").is_file():
         raise RuntimeError("Build apps/frontend before browser verification")
     with socket.socket() as reservation:
@@ -127,8 +128,9 @@ def on_preview(*, runtime, audit, license_guard, document, version, evidence,
                 if not worker.is_alive() or monotonic() > deadline:
                     raise RuntimeError("Owned GLOBAL attestation preview server did not start")
                 sleep(.05)
-            command = ["node", str(Path(__file__).with_name("run-edge-browser.mjs")),
-                       origin, str(document), str(version), str(evidence), PASSWORD]
+            command = ["node", str(browser_script or Path(__file__).with_name("run-edge-browser.mjs")),
+                       origin, str(document), str(version), str(evidence), PASSWORD,
+                       *map(str, browser_extra)]
             result = subprocess.run(command, check=False, timeout=120,
                                     capture_output=True, text=True, encoding="utf-8")
             if result.returncode != 0:

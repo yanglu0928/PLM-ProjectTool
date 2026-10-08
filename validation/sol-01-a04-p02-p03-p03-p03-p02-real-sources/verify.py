@@ -322,6 +322,7 @@ def verify(port: int, scratch: Path, on_qualified=None, on_preview=None,
                        request=request, document=document, version=version,
                        evidence=evidence, node_evidence=node_evidence,
                        fingerprint=baseline.content_fingerprint, port=port,
+                       actor=actor, scratch=scratch,
                        documents=reader, downloads=download,
                        parse_results=parse_results)
         rejects(lambda: confirm.confirm(ConfirmReferenceDeidentification(
