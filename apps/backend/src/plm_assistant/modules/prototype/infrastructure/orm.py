@@ -1297,3 +1297,122 @@ class PrototypeVersionApprovalTraceSourceRow(Base):
     source_project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     relation_type: Mapped[str] = mapped_column(Text, nullable=False)
     trace_link_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+
+
+class RequirementPrototypeLinkRow(Base):
+    """PRT-05 fixed-version coverage edge with irreversible history."""
+
+    __tablename__ = "prt_requirement_links"
+    __table_args__ = (
+        UniqueConstraint(
+            "requirement_prototype_link_id", "project_id",
+            name="uq_prt_requirement_links__id_project",
+        ),
+        ForeignKeyConstraint(
+            ["requirement_version_id", "requirement_id", "project_id"],
+            ["plm.req_requirement_versions.requirement_version_id",
+             "plm.req_requirement_versions.requirement_id",
+             "plm.req_requirement_versions.project_id"],
+            name="fk_prt_requirement_links__requirement_version",
+            ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["prototype_version_id", "prototype_id", "project_id"],
+            ["plm.prt_prototype_versions.prototype_version_id",
+             "plm.prt_prototype_versions.prototype_id",
+             "plm.prt_prototype_versions.project_id"],
+            name="fk_prt_requirement_links__prototype_version",
+            ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["created_by"], ["plm.auth_users.user_id"],
+            name="fk_prt_requirement_links__creator", ondelete="NO ACTION",
+        ),
+        ForeignKeyConstraint(
+            ["superseded_by_ref", "project_id"],
+            ["plm.prt_requirement_links.requirement_prototype_link_id",
+             "plm.prt_requirement_links.project_id"],
+            name="fk_prt_requirement_links__replacement", ondelete="NO ACTION",
+            deferrable=True, initially="DEFERRED",
+        ),
+        CheckConstraint(
+            "purpose IN ('ILLUSTRATES','VALIDATES','ACCEPTANCE_REFERENCE')",
+            name="ck_prt_requirement_links__purpose",
+        ),
+        CheckConstraint(
+            "coverage_schema_version=1",
+            name="ck_prt_requirement_links__coverage_schema",
+        ),
+        CheckConstraint(
+            "jsonb_typeof(coverage)='object' AND "
+            "coverage - 'covered_acceptance_criterion_refs' - "
+            "'uncovered_acceptance_criteria'='{}'::jsonb AND "
+            "coverage ? 'covered_acceptance_criterion_refs' AND "
+            "jsonb_typeof(coverage->'covered_acceptance_criterion_refs')='array' "
+            "AND coverage ? 'uncovered_acceptance_criteria' AND "
+            "jsonb_typeof(coverage->'uncovered_acceptance_criteria')='array' "
+            "AND jsonb_array_length(coverage->"
+            "'covered_acceptance_criterion_refs') BETWEEN 1 AND 500 AND "
+            "jsonb_array_length(coverage->'uncovered_acceptance_criteria') "
+            "BETWEEN 0 AND 499 AND pg_column_size(coverage)<=65536",
+            name="ck_prt_requirement_links__coverage",
+        ),
+        CheckConstraint(
+            "(link_state='SUPERSEDED' AND superseded_by_ref IS NOT NULL "
+            "AND superseded_by_ref<>requirement_prototype_link_id) OR "
+            "(link_state IN ('ACTIVE','REVOKED') AND "
+            "superseded_by_ref IS NULL)",
+            name="ck_prt_requirement_links__state",
+        ),
+        CheckConstraint(
+            "(link_state='ACTIVE' AND lock_version=0) OR "
+            "(link_state IN ('SUPERSEDED','REVOKED') AND lock_version=1)",
+            name="ck_prt_requirement_links__lock",
+        ),
+        Index(
+            "uq_prt_requirement_links__active_identity_purpose",
+            "project_id", "requirement_id", "prototype_id", "purpose",
+            unique=True, postgresql_where=text("link_state='ACTIVE'"),
+        ),
+        Index(
+            "ix_prt_requirement_links__requirement", "project_id",
+            "requirement_version_id", "purpose", "prototype_version_id",
+            postgresql_where=text("link_state='ACTIVE'"),
+        ),
+        Index(
+            "ix_prt_requirement_links__prototype", "project_id",
+            "prototype_version_id", "purpose", "requirement_version_id",
+            postgresql_where=text("link_state='ACTIVE'"),
+        ),
+        {"schema": "plm"},
+    )
+
+    requirement_prototype_link_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()")
+    )
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    requirement_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    requirement_version_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), nullable=False
+    )
+    prototype_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    prototype_version_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), nullable=False
+    )
+    purpose: Mapped[str] = mapped_column(Text, nullable=False)
+    coverage_schema_version: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("1")
+    )
+    coverage: Mapped[dict[str, object]] = mapped_column(JSONB, nullable=False)
+    link_state: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'ACTIVE'")
+    )
+    lock_version: Mapped[int] = mapped_column(
+        BigInteger, nullable=False, server_default=text("0")
+    )
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"),
+    )
+    superseded_by_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))

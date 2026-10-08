@@ -249,3 +249,10 @@ RequirementPrototypeLink固定为独立PROJECT append-only/supersede Aggregate�
 Artifact当前有效；Coverage V1把固定RequirementVersion的AcceptanceCriterion全集精确分为covered与带理由
 uncovered且至少一项covered。替换只允许同Requirement/Prototype身份和同purpose，A08拆为Schema0134、
 Create/List Owner及Revoke/Supersede Owner；本项纯文档，无Schema/API/外发。
+
+## A08-A02 实施记录（2026-10-08）
+
+Migration0134新增RequirementPrototypeLink表/ORM，以Requirement/Prototype逻辑身份、固定Version和Project
+复合FK关闭错端点；purpose/Coverage V1基础形状、ACTIVE逻辑对唯一性、不可逆终态及同身份同purpose且载荷
+变化的延迟replacement闭包由数据库保护。首轮不受支持的JSONB函数表达已改为原生减键判空并从新库重跑；
+Win11/PG18.6、后端3157/3及wheel1214项/`1ebf51a5…588d94`通过。无公开API/依赖/外发，进入A03 Owner。

@@ -28,6 +28,7 @@ from plm_assistant.modules.prototype.infrastructure.orm import (
     PrototypeVersionApprovalTraceSourceRow,
     PrototypeVersionReviewStateResultRow,
     PrototypeVersionRow,
+    RequirementPrototypeLinkRow,
 )
 
 
@@ -432,6 +433,47 @@ class PrototypeIdentitySchemaTests(unittest.TestCase):
         with patch.object(migration.context, "is_offline_mode", return_value=True):
             with self.assertRaisesRegex(
                 RuntimeError, "offline Prototype approval Trace"
+            ):
+                migration.downgrade()
+
+    def test_requirement_prototype_link_is_fixed_scoped_and_irreversible(self) -> None:
+        table = RequirementPrototypeLinkRow.__table__
+        self.assertEqual(table.name, "prt_requirement_links")
+        self.assertEqual(table.schema, "plm")
+        names = {constraint.name for constraint in table.constraints}
+        for required in (
+            "uq_prt_requirement_links__id_project",
+            "fk_prt_requirement_links__requirement_version",
+            "fk_prt_requirement_links__prototype_version",
+            "fk_prt_requirement_links__replacement",
+            "ck_prt_requirement_links__purpose",
+            "ck_prt_requirement_links__coverage",
+            "ck_prt_requirement_links__state",
+        ):
+            self.assertIn(required, names)
+        indexes = {index.name for index in table.indexes}
+        self.assertIn(
+            "uq_prt_requirement_links__active_identity_purpose", indexes
+        )
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions."
+            "20261008_0134_requirement_prototype_links"
+        )
+        self.assertEqual(migration.down_revision, "20261008_0133")
+        for required in (
+            "RequirementPrototypeLink history is immutable",
+            "RequirementPrototypeLink lifecycle mutation is invalid",
+            "RequirementPrototypeLink replacement is invalid",
+            "RequirementPrototypeLink history cannot be truncated",
+            "DEFERRABLE INITIALLY DEFERRED",
+        ):
+            self.assertIn(
+                required,
+                migration._GUARDS + inspect.getsource(migration.upgrade),
+            )
+        with patch.object(migration.context, "is_offline_mode", return_value=True):
+            with self.assertRaisesRegex(
+                RuntimeError, "offline RequirementPrototypeLink"
             ):
                 migration.downgrade()
 

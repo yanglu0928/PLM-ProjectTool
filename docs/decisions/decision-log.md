@@ -1,5 +1,16 @@
 # 自主决策记录
 
+## DEC-20261008-1047：Link替换用ACTIVE唯一键释放加延迟同语义闭包
+
+- Date/WBS：2026-10-08 / `PRT-01-A08-A02`；依据DEC-1046与PRT-05 A-PRJ生命周期。
+- Decision：同Project/Requirement身份/Prototype身份/purpose建立partial ACTIVE唯一索引；SUPERSEDE在同一事务
+  先把旧行终结并固定预生成replacement ID，再插入新ACTIVE行。延迟复合FK和constraint trigger在提交时证明
+  replacement存在、ACTIVE、同逻辑身份/同purpose且固定Version或Coverage确有变化。
+- Reason：partial唯一索引不能延迟；先插新行会与旧ACTIVE冲突，取消唯一性又会暴露多条当前Link。只依赖自
+  引用FK也无法阻止指向无关或相同语义Link。
+- Impact/Rollback：新增Migration0134/ORM一表、三个索引和保护函数，不改冻结API/依赖/外发。空Link历史可降
+  0133，有历史只前向修复。Win11/PG18.6及3157/3回归通过；业务全集证明和Owner留A03。
+
 ## DEC-20261008-1046：Link Coverage按验收条件全集分区并与批准Version双重闭合
 
 - Date/WBS：2026-10-08 / `PRT-01-A08-A01`；依据冻结PRT-05/API-04、CR-PRT-001及DEC-1040～1045。

@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A08-A02 新增RequirementPrototypeLink ORM与Migration0134；固定同项目
+  Requirement/Prototype身份及Version复合引用、三类purpose、Coverage V1基础形状、ACTIVE逻辑对唯一性和
+  不可逆撤销/同语义替换闭包。兼容性/升级：前向加表，不改公开API/依赖/外发；空Link历史可降0133，有历史
+  拒降。验证：Win11/PG18.6升降重升/drift/正负生命周期、定向24、后端3157/3、compileall、wheel1214项/
+  `1ebf51a5…588d94`PASS。已知问题：A03/A04 Owner、HTTP/Windows组合、前端、Workflow、Server2025、
+  Gate3/UAT/发行待；Debian13跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A08-A01 完成RequirementPrototypeLink前置核查：Link与Trace/Version
   RequirementRef职责分离，CREATE固定两端当前Approved事实和owned ref双重一致；Coverage V1按固定需求的
   AcceptanceCriterion全集划分covered/带理由uncovered，至少一项covered；替换仅限同逻辑身份及同purpose。
