@@ -13,10 +13,34 @@ from plm_assistant.entrypoints.windows_workflow_checklist import (
 from plm_assistant.modules.requirement.application.workflow_qualification import (
     RequirementWorkflowQualificationOwner,
 )
+from plm_assistant.modules.prototype.application.workflow_qualification import (
+    PrototypeWorkflowQualificationOwner,
+)
 from plm_assistant.modules.trace.application.target_proof import TraceTargetProofService
 
 
 class WindowsWorkflowChecklistCompositionTests(unittest.TestCase):
+    def test_prototype_owner_requires_explicit_physical_storage_and_is_shared(self):
+        storage = Mock()
+        registry = _create_qualification_registry(
+            documents=Mock(), downloads=Mock(), parse_results=Mock(),
+            artifact_storage=storage,
+        )
+        prototype = registry._owners["PROTOTYPE_COVERAGE"]
+        self.assertIsInstance(prototype, PrototypeWorkflowQualificationOwner)
+        self.assertIs(
+            prototype, registry._owners["PROTOTYPE_SCOPE_DECISIONS"],
+        )
+        self.assertIs(
+            prototype._req_owner, registry._owners["REQUIREMENT_ACCEPTANCE"],
+        )
+        self.assertIs(prototype._integrity._storage, storage)
+        with self.assertRaises(ProductionWorkflowChecklistStartupError):
+            _create_qualification_registry(
+                documents=Mock(), downloads=Mock(), parse_results=Mock(),
+                artifact_storage=object(),
+            )
+
     def test_registry_includes_requirement_aggregate_owner(self):
         registry = _create_qualification_registry(
             documents=Mock(), downloads=Mock(), parse_results=Mock(),

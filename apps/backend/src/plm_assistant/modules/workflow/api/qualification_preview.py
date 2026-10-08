@@ -102,11 +102,14 @@ def create_workflow_checklist_qualification_router(
     *, sessions: SessionService,
     previews: WorkflowChecklistQualificationPreviewService,
     origins: LoginOriginPolicy,
+    enable_prototype: bool = False,
 ) -> APIRouter:
     """Create the explicitly injected, fail-closed preview boundary."""
 
     if sessions is None or previews is None or origins is None:
         raise ValueError("Workflow Checklist qualification HTTP dependencies required")
+    if type(enable_prototype) is not bool:
+        raise ValueError("Prototype Workflow switch must be explicit")
     router = APIRouter()
 
     @router.get(
@@ -138,11 +141,16 @@ def create_workflow_checklist_qualification_router(
         if (canonical_project_id.int == 0
                 or str(canonical_project_id) != project_id):
             raise ApplicationError("VALIDATION_FAILED")
-        if item_key not in {
+        allowed_items = {
             "HANDOVER_BASELINE", "HANDOVER_ISSUES",
             "SURVEY_ACTUAL_SOURCES", "SURVEY_CONCLUSION",
             "REQUIREMENT_FORMAL_VERSIONS", "REQUIREMENT_ACCEPTANCE",
-        }:
+        }
+        if enable_prototype:
+            allowed_items.update((
+                "PROTOTYPE_SCOPE_DECISIONS", "PROTOTYPE_COVERAGE",
+            ))
+        if item_key not in allowed_items:
             raise ApplicationError("VALIDATION_FAILED")
         try:
             preview = await run_in_threadpool(

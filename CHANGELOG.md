@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A11-A04-A02 新增Prototype资格Owner的显式可选Registry装配，以及Checklist记录、资格预览、PROTOTYPE→SOLUTION运行白名单的同开关接线；未注入物理制品校验存储时默认拒绝，生产入口保持关闭。兼容性/升级：无Schema、冻结写API、依赖或迁移；仅部署代码，旧三阶段行为不变；撤可选装配即可回滚且业务历史不变。验证：定向32项/26子例、后端3243项/3跳过/4791子例通过。已知问题：A04-A03前端、A05真实PG/HTTP/文件/性能与生产开关、Server2025、Gate3/UAT/发行待；Debian13依用户指令跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A11-A04-A01 新增Prototype Workflow资格预览内部兼容投影：混合受审主体以`qualified_subjects[]`表达，旧三阶段响应不变；运行路由/Registry仍关闭Prototype。兼容性/升级：无Schema、写API、权限、依赖或迁移；随服务端代码部署，撤新阶段注册可回滚。验证：定向9项/7子例、后端3239项/3跳过通过。已知问题：A04接线/前端、A05真实PG/HTTP、Server2025、Gate3/UAT/发行待；Debian13依用户指令跳过。
 
 - 2026-10-08：0.1.0-dev.0/PRT-01-A11-A03-P03-A03 新增Prototype Workflow真实聚合资格Owner及Audit/Document公开证明：完整当前Requirement二分、NOT_REQUIRED人工动作、批准Prototype Review/Trace、固定制品物理SHA-256与Link验收标准覆盖均失败关闭；尚未注册Workflow。CR-PRT-005记录“数据库元数据不足证明磁盘文件”的偏差与磁盘读取开销。兼容性/升级：无Schema、冻结API、权限、生产依赖或迁移；部署同步代码，停止装配即可回滚且历史不变。验证：Owner/Audit/Document定向及后端3237项/3跳过通过；真实PG/HTTP/性能未验。已知问题：A04注册、A05实例验证、Server2025、Gate3/UAT/发行待；Debian13依用户指令跳过。

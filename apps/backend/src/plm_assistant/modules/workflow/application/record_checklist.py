@@ -44,6 +44,9 @@ _REGISTERED = frozenset({
     "SURVEY_ACTUAL_SOURCES", "SURVEY_CONCLUSION",
     "REQUIREMENT_FORMAL_VERSIONS", "REQUIREMENT_ACCEPTANCE",
 })
+_PROTOTYPE_ITEMS = frozenset({
+    "PROTOTYPE_SCOPE_DECISIONS", "PROTOTYPE_COVERAGE",
+})
 
 
 class WorkflowChecklistRecordError(RuntimeError):
@@ -132,11 +135,14 @@ class WorkflowChecklistRecordService:
         appender: ChecklistAppendPort, replay: ChecklistReplayPort,
         receipts: ChecklistReceiptPort, audit: AuditService,
         clock: Callable[[], datetime] | None = None,
+        enable_prototype: bool = False,
     ) -> None:
         if any(value is None for value in (
                 unit_of_work, sessions, projects, license_guard,
                 qualification, appender, replay, receipts, audit)):
             raise ValueError("Workflow Checklist dependencies required")
+        if type(enable_prototype) is not bool:
+            raise ValueError("Prototype Workflow switch must be explicit")
         self._uow, self._sessions, self._projects = (
             unit_of_work, sessions, projects,
         )
@@ -144,6 +150,9 @@ class WorkflowChecklistRecordService:
         self._appender, self._replay = appender, replay
         self._receipts, self._audit = receipts, audit
         self._clock = clock or (lambda: datetime.now(timezone.utc))
+        self._registered_items = (
+            _REGISTERED | _PROTOTYPE_ITEMS if enable_prototype else _REGISTERED
+        )
 
     def record(
         self, command: RecordWorkflowChecklist, *, idempotency_key: str,
@@ -347,8 +356,7 @@ class WorkflowChecklistRecordService:
             raise WorkflowChecklistRecordError("WORKFLOW_UNAVAILABLE")
         return current
 
-    @staticmethod
-    def _validate(command: RecordWorkflowChecklist) -> None:
+    def _validate(self, command: RecordWorkflowChecklist) -> None:
         refs = (getattr(command, "evidence_refs", None),
                 getattr(command, "exception_refs", None))
         if (type(command) is not RecordWorkflowChecklist
@@ -358,7 +366,7 @@ class WorkflowChecklistRecordService:
                 or len(command.csrf_token) != 32
                 or any(type(value) is not uuid.UUID or value.int == 0
                        for value in (command.trace_id, command.project_id))
-                or command.item_key not in _REGISTERED
+                or command.item_key not in self._registered_items
                 or type(command.result) is not ChecklistState
                 or command.result not in {
                     ChecklistState.PASS, ChecklistState.FAIL,

@@ -12,6 +12,7 @@ from plm_assistant.modules.workflow.api.qualification_preview import (
     create_workflow_checklist_qualification_router,
 )
 from plm_assistant.modules.workflow.application.preview_checklist_qualification import (
+    QualifiedChecklistSubject,
     WorkflowChecklistQualificationPreview,
     WorkflowChecklistQualificationPreviewError,
 )
@@ -139,6 +140,46 @@ class WorkflowChecklistQualificationApiTests(unittest.TestCase):
                          data["review_round_refs"])
         self.assertNotIn("review_round_ref", data)
         self.assertNotIn("survey_conclusion_id", data)
+
+    def test_prototype_projection_exposes_only_mixed_subject_refs(self):
+        prototype, prototype_version = uuid.uuid4(), uuid.uuid4()
+        requirement, requirement_version = uuid.uuid4(), uuid.uuid4()
+        subjects = (
+            QualifiedChecklistSubject("PRT-03", prototype,
+                                      prototype_version, uuid.uuid4()),
+            QualifiedChecklistSubject("REQ-03", requirement,
+                                      requirement_version, uuid.uuid4()),
+        )
+        self.previews.result = WorkflowChecklistQualificationPreview(
+            WORKFLOW, PROJECT, 1, "PROTOTYPE", "PROTOTYPE_COVERAGE",
+            "PENDING", 7, None, None, EVIDENCE,
+            qualified_subjects=subjects,
+        )
+        path = self.path.replace("HANDOVER_BASELINE", "PROTOTYPE_COVERAGE")
+        self.assertEqual(
+            422, self.client.get(path, headers=self.headers).status_code,
+        )
+        router = create_workflow_checklist_qualification_router(
+            sessions=Sessions(), previews=self.previews,
+            origins=LoginOriginPolicy(["https://plm.example.test"]),
+            enable_prototype=True,
+        )
+        with TestClient(
+                create_app(workflow_checklist_qualification_router=router),
+                base_url="https://plm.example.test",
+        ) as prototype_client:
+            response = prototype_client.get(path, headers=self.headers)
+        self.assertEqual(200, response.status_code, response.text)
+        data = response.json()["data"]
+        self.assertEqual("PROTOTYPE", data["stage_key"])
+        self.assertEqual('"v7"', data["workflow_etag"])
+        self.assertEqual(["PRT-03", "REQ-03"],
+                         [item["subject_type"] for item in data["qualified_subjects"]])
+        self.assertEqual([str(value) for value in EVIDENCE],
+                         data["evidence_refs"])
+        self.assertNotIn("requirement_version_refs", data)
+        self.assertNotIn("review_round_refs", data)
+        self.assertNotIn("content_fingerprint", response.text)
 
     def test_safe_service_errors_have_stable_statuses(self):
         for code, status, public in (

@@ -262,6 +262,56 @@ class WorkflowChecklistRecordServiceTests(unittest.TestCase):
              if value.ref_kind == "REVIEW_ROUND"},
         )
 
+    def test_prototype_pass_reproves_mixed_subjects_without_fake_artifact_evidence(self):
+        req, req_version, prt, prt_version = (uuid4() for _ in range(4))
+        evidence = ChecklistQualificationEvidence(
+            uuid4(), self.project, 4, b"e" * 32, self.now,
+        )
+        req_review = ChecklistQualificationReview(
+            uuid4(), uuid4(), self.project, req, req_version, 3,
+            b"r" * 32, self.now, "REQ-03", "REQUIREMENT_ALL_V1",
+        )
+        prt_review = ChecklistQualificationReview(
+            uuid4(), uuid4(), self.project, prt, prt_version, 3,
+            b"p" * 32, self.now, "PRT-03", "PROTOTYPE_ALL_V1",
+        )
+        aggregate = AggregateChecklistQualification(
+            self.project, "PROTOTYPE", "PROTOTYPE_COVERAGE", (
+                ChecklistQualificationSubject(
+                    "PRT-03", prt, prt_version, b"p" * 32, (), prt_review,
+                ),
+                ChecklistQualificationSubject(
+                    "REQ-03", req, req_version, b"r" * 32,
+                    (evidence,), req_review,
+                ),
+            ), (), b"s" * 32, b"q" * 32,
+        )
+        self.qualification.qualify_only_current_in_transaction.return_value = aggregate
+        command = self._command(
+            item_key="PROTOTYPE_COVERAGE",
+            evidence_refs=aggregate.evidence_refs,
+        )
+        with self.assertRaisesRegex(
+                WorkflowChecklistRecordError, "VALIDATION_FAILED"):
+            self.service.record(
+                command, idempotency_key="checklist-prototype-closed-001",
+            )
+        prototype_service = WorkflowChecklistRecordService(
+            unit_of_work=self.uow, sessions=self.sessions,
+            projects=self.projects, license_guard=self.guard,
+            qualification=self.qualification, appender=self.appender,
+            replay=self.replay, receipts=self.receipts,
+            audit=self.audit, clock=lambda: self.now,
+            enable_prototype=True,
+        )
+        prototype_service.record(
+            command, idempotency_key="checklist-prototype-pass-001",
+        )
+        basis = self.appender.append.call_args.kwargs["command"].basis
+        self.assertEqual(1, sum(value.ref_kind == "EVIDENCE" for value in basis))
+        self.assertEqual(2, sum(value.ref_kind == "REVIEW_ROUND" for value in basis))
+        self.assertEqual((evidence.evidence_id,), aggregate.evidence_refs)
+
     def test_replay_returns_original_record_without_new_business_write(self):
         self.receipts.reserve.return_value = IdempotencyResult(
             "V1_WORKFLOW_CHECKLIST_RECORD", self.record_id, 200,

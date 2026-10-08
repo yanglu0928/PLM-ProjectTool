@@ -48,6 +48,13 @@ _TRANSITIONS = {
         ),
     ),
 }
+_PROTOTYPE_TRANSITION = {
+    "SOLUTION": (
+        "PROTOTYPE", (
+            "PROTOTYPE_SCOPE_DECISIONS", "PROTOTYPE_COVERAGE",
+        ),
+    ),
+}
 
 
 class WorkflowStageTransitionError(RuntimeError):
@@ -126,11 +133,14 @@ class WorkflowStageTransitionService:
         transitions: TransitionRepositoryPort,
         receipts: TransitionReceiptPort, audit: AuditService,
         clock: Callable[[], datetime] | None = None,
+        enable_prototype: bool = False,
     ) -> None:
         if any(value is None for value in (
                 unit_of_work, sessions, projects, license_guard,
                 qualification, transitions, receipts, audit)):
             raise ValueError("Workflow Stage Transition dependencies required")
+        if type(enable_prototype) is not bool:
+            raise ValueError("Prototype Workflow switch must be explicit")
         self._uow, self._sessions, self._projects = (
             unit_of_work, sessions, projects,
         )
@@ -138,6 +148,10 @@ class WorkflowStageTransitionService:
         self._transitions, self._receipts = transitions, receipts
         self._audit, self._clock = (
             audit, clock or (lambda: datetime.now(timezone.utc)),
+        )
+        self._allowed_transitions = (
+            _TRANSITIONS | _PROTOTYPE_TRANSITION
+            if enable_prototype else _TRANSITIONS
         )
 
     def transition(
@@ -181,7 +195,7 @@ class WorkflowStageTransitionService:
                 if replay is not None:
                     return self._recover(tx, command, replay)
 
-                from_stage, item_keys = _TRANSITIONS[
+                from_stage, item_keys = self._allowed_transitions[
                     command.target_stage_key
                 ]
                 qualifications = tuple(
@@ -382,8 +396,7 @@ class WorkflowStageTransitionService:
             raise WorkflowStageTransitionError("WORKFLOW_UNAVAILABLE")
         return result
 
-    @staticmethod
-    def _validate(command: TransitionWorkflowStage) -> None:
+    def _validate(self, command: TransitionWorkflowStage) -> None:
         if (type(command) is not TransitionWorkflowStage
                 or type(command.session_token) is not bytes
                 or len(command.session_token) != 32
@@ -391,7 +404,7 @@ class WorkflowStageTransitionService:
                 or len(command.csrf_token) != 32
                 or any(type(value) is not uuid.UUID or value.int == 0
                        for value in (command.trace_id, command.project_id))
-                or command.target_stage_key not in _TRANSITIONS
+                or command.target_stage_key not in self._allowed_transitions
                 or type(command.expected_workflow_version) is not int
                 or not 0 <= command.expected_workflow_version < 2**63 - 1
                 or type(command.reason) is not str

@@ -7,6 +7,9 @@ from fastapi import APIRouter
 from plm_assistant.modules.ai.infrastructure.task_read_repository import (
     SqlAlchemyAITaskReadRepository,
 )
+from plm_assistant.modules.audit.infrastructure.prototype_scope_proof import (
+    SqlAlchemyPrototypeScopeDecisionAuditProof,
+)
 from plm_assistant.modules.ai.infrastructure.survey_conclusion_task import (
     SqlAlchemySurveyConclusionAITaskProof,
 )
@@ -27,6 +30,12 @@ from plm_assistant.modules.document.application.prove_fixed_source import (
 )
 from plm_assistant.modules.document.infrastructure.parse_result_read_repository import (
     SqlAlchemyParseResultReadRepository,
+)
+from plm_assistant.modules.document.infrastructure.prototype_artifact_proof import (
+    SqlAlchemyPrototypeDocumentArtifactProof,
+)
+from plm_assistant.modules.document.infrastructure.prototype_workflow_integrity import (
+    SqlAlchemyPrototypeWorkflowArtifactIntegrityProof,
 )
 from plm_assistant.modules.document.infrastructure.read_repository import (
     SqlAlchemyDocumentReadRepository,
@@ -58,6 +67,21 @@ from plm_assistant.modules.handover.infrastructure.workflow_qualification_reposi
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import (
     SqlAlchemyIdempotencyReceipts,
 )
+from plm_assistant.modules.prototype.application.current_version import (
+    PrototypeVersionCurrentValidator,
+)
+from plm_assistant.modules.prototype.application.workflow_qualification import (
+    PrototypeWorkflowQualificationOwner,
+)
+from plm_assistant.modules.prototype.infrastructure.version_input_proofs import (
+    SqlAlchemyPrototypeVersionTemplateProof,
+)
+from plm_assistant.modules.prototype.infrastructure.workflow_scope_repository import (
+    SqlAlchemyPrototypeWorkflowScopeRepository,
+)
+from plm_assistant.modules.prototype.infrastructure.workflow_version_links_repository import (
+    SqlAlchemyPrototypeWorkflowVersionLinksRepository,
+)
 from plm_assistant.modules.project.application.authorization import (
     ProjectAuthorizationService,
 )
@@ -72,6 +96,12 @@ from plm_assistant.modules.requirement.application.workflow_qualification import
 )
 from plm_assistant.modules.requirement.infrastructure.human_decision_source_proof import (
     SqlAlchemyRequirementHumanDecisionSourceProof,
+)
+from plm_assistant.modules.requirement.infrastructure.prototype_version_proof import (
+    SqlAlchemyPrototypeApprovedRequirementVersionProof,
+)
+from plm_assistant.modules.requirement.infrastructure.prototype_workflow_proof import (
+    SqlAlchemyRequirementAcceptanceRefsProof,
 )
 from plm_assistant.modules.requirement.infrastructure.workflow_qualification_repository import (
     SqlAlchemyRequirementWorkflowQualificationRepository,
@@ -184,9 +214,9 @@ def _create_handover_qualification(
 
 def _create_qualification_registry(
     *, documents, downloads, parse_results,
-    project_repository=None, target_proofs=None,
+    project_repository=None, target_proofs=None, artifact_storage=None,
 ) -> ChecklistQualificationRegistry:
-    """Compose the explicit Handover, Survey and Requirement owner allowlist."""
+    """Compose the explicit fact-owner allowlist; Prototype needs real storage."""
 
     if project_repository is None:
         project_repository = SqlAlchemyProjectAuthorizationRepository()
@@ -238,8 +268,9 @@ def _create_qualification_registry(
         fixed_evidence,
     )
     requirement_decisions = SqlAlchemyRequirementHumanDecisionSourceProof()
+    requirement_repository = SqlAlchemyRequirementWorkflowQualificationRepository()
     requirement = RequirementWorkflowQualificationOwner(
-        repository=SqlAlchemyRequirementWorkflowQualificationRepository(),
+        repository=requirement_repository,
         current=RequirementVersionCurrentValidator(
             survey_sources=SqlAlchemySurveyConclusionRequirementSourceProof(),
             handover_sources=SqlAlchemyHandoverRequirementSourceProof(),
@@ -252,7 +283,7 @@ def _create_qualification_registry(
         decisions=requirement_decisions,
         reviews=SqlAlchemyReviewSnapshotReadRepository(),
     )
-    return ChecklistQualificationRegistry((
+    registrations = [
         ChecklistQualificationRegistration((
             "HANDOVER_BASELINE", "HANDOVER_ISSUES",
         ), handover),
@@ -262,13 +293,38 @@ def _create_qualification_registry(
         ChecklistQualificationRegistration((
             "REQUIREMENT_FORMAL_VERSIONS", "REQUIREMENT_ACCEPTANCE",
         ), requirement),
-    ))
+    ]
+    if artifact_storage is not None:
+        if not callable(getattr(artifact_storage, "verify_content", None)):
+            raise ProductionWorkflowChecklistStartupError()
+        prototype = PrototypeWorkflowQualificationOwner(
+            requirement_scope=requirement_repository,
+            requirement_owner=requirement,
+            acceptance_refs=SqlAlchemyRequirementAcceptanceRefsProof(),
+            roots=SqlAlchemyPrototypeWorkflowScopeRepository(),
+            versions=SqlAlchemyPrototypeWorkflowVersionLinksRepository(),
+            current=PrototypeVersionCurrentValidator(
+                templates=SqlAlchemyPrototypeVersionTemplateProof(),
+                requirements=SqlAlchemyPrototypeApprovedRequirementVersionProof(),
+                documents=SqlAlchemyPrototypeDocumentArtifactProof(),
+            ),
+            artifact_integrity=SqlAlchemyPrototypeWorkflowArtifactIntegrityProof(
+                storage=artifact_storage,
+            ),
+            decision_audit=SqlAlchemyPrototypeScopeDecisionAuditProof(),
+            reviews=SqlAlchemyReviewSnapshotReadRepository(),
+        )
+        registrations.append(ChecklistQualificationRegistration((
+            "PROTOTYPE_SCOPE_DECISIONS", "PROTOTYPE_COVERAGE",
+        ), prototype))
+    return ChecklistQualificationRegistry(tuple(registrations))
 
 
 def create_windows_workflow_checklist_record_router(
     runtime, *, sessions, origins, license_guard, audit,
     documents, downloads, parse_results,
     target_proofs: TraceTargetProofService | None = None,
+    artifact_storage=None,
 ) -> APIRouter:
     """Compose the frozen Checklist record endpoint with real fact owners."""
 
@@ -281,7 +337,7 @@ def create_windows_workflow_checklist_record_router(
         qualification = _create_qualification_registry(
             documents=documents, downloads=downloads,
             parse_results=parse_results, project_repository=project_repository,
-            target_proofs=target_proofs,
+            target_proofs=target_proofs, artifact_storage=artifact_storage,
         )
         records = WorkflowChecklistRecordService(
             unit_of_work=runtime.unit_of_work,
@@ -296,6 +352,7 @@ def create_windows_workflow_checklist_record_router(
             replay=SqlAlchemyChecklistRecordReplayRepository(),
             receipts=SqlAlchemyIdempotencyReceipts(),
             audit=audit,
+            enable_prototype=artifact_storage is not None,
         )
         return create_workflow_checklist_record_router(
             sessions=sessions, records=records, origins=origins,
@@ -306,7 +363,7 @@ def create_windows_workflow_checklist_record_router(
 
 def create_windows_workflow_checklist_qualification_router(
     runtime, *, sessions, origins, license_guard,
-    documents, downloads, parse_results,
+    documents, downloads, parse_results, artifact_storage=None,
 ) -> APIRouter:
     """Compose the opt-in Checklist qualification preview with real owners."""
 
@@ -326,11 +383,12 @@ def create_windows_workflow_checklist_qualification_router(
             workflows=SqlAlchemyWorkflowReadRepository(),
             qualification=_create_qualification_registry(
                 documents=documents, downloads=downloads,
-                parse_results=parse_results,
+                parse_results=parse_results, artifact_storage=artifact_storage,
             ),
         )
         return create_workflow_checklist_qualification_router(
             sessions=sessions, previews=previews, origins=origins,
+            enable_prototype=artifact_storage is not None,
         )
     except Exception:
         raise ProductionWorkflowChecklistStartupError() from None
@@ -338,7 +396,7 @@ def create_windows_workflow_checklist_qualification_router(
 
 def create_windows_workflow_stage_transition_router(
     runtime, *, sessions, origins, license_guard, audit,
-    documents, downloads, parse_results,
+    documents, downloads, parse_results, artifact_storage=None,
 ) -> APIRouter:
     """Compose the opt-in Stage Transition endpoint with real owners."""
 
@@ -360,10 +418,12 @@ def create_windows_workflow_stage_transition_router(
                 documents=documents, downloads=downloads,
                 parse_results=parse_results,
                 project_repository=project_repository,
+                artifact_storage=artifact_storage,
             ),
             transitions=SqlAlchemyStageTransitionRepository(),
             receipts=SqlAlchemyIdempotencyReceipts(),
             audit=audit,
+            enable_prototype=artifact_storage is not None,
         )
         return create_workflow_stage_transition_router(
             sessions=sessions, transitions=transitions, origins=origins,

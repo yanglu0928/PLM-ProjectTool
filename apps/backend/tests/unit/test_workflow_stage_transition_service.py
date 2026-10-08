@@ -330,6 +330,87 @@ class WorkflowStageTransitionServiceTests(unittest.TestCase):
             for gate in appended.gates
         ))
 
+    def test_prototype_to_solution_reproves_both_items_and_preserves_mixed_reviews(self):
+        req, req_version, prt, prt_version = (uuid4() for _ in range(4))
+        evidence = ChecklistQualificationEvidence(
+            uuid4(), self.project, 4, b"e" * 32, self.now,
+        )
+        req_review = ChecklistQualificationReview(
+            uuid4(), uuid4(), self.project, req, req_version, 3,
+            b"r" * 32, self.now, "REQ-03", "REQUIREMENT_ALL_V1",
+        )
+        prt_review = ChecklistQualificationReview(
+            uuid4(), uuid4(), self.project, prt, prt_version, 3,
+            b"p" * 32, self.now, "PRT-03", "PROTOTYPE_ALL_V1",
+        )
+        subjects = (
+            ChecklistQualificationSubject(
+                "PRT-03", prt, prt_version, b"p" * 32, (), prt_review,
+            ),
+            ChecklistQualificationSubject(
+                "REQ-03", req, req_version, b"r" * 32,
+                (evidence,), req_review,
+            ),
+        )
+        values = tuple(AggregateChecklistQualification(
+            self.project, "PROTOTYPE", item_key, subjects, (),
+            b"s" * 32, bytes([index + 20]) * 32,
+        ) for index, item_key in enumerate((
+            "PROTOTYPE_SCOPE_DECISIONS", "PROTOTYPE_COVERAGE",
+        )))
+        self.qualification.qualify_only_current_in_transaction.side_effect = values
+        gate_proofs = tuple(WorkflowStageTransitionService._gate(value)
+                            for value in values)
+        snapshots = tuple(GateItemSnapshot(
+            value.item_key, ChecklistState.PASS,
+            tuple(item.ref_id for item in proof.basis
+                  if item.ref_kind == "EVIDENCE"),
+            tuple(item.ref_id for item in proof.basis
+                  if item.ref_kind == "REVIEW_ROUND"),
+        ) for value, proof in zip(values, gate_proofs, strict=True))
+        persisted = tuple(PersistedTransitionGate(
+            uuid4(), uuid4(), 1, bytes([index + 30]) * 32,
+            snapshot, proof.basis,
+        ) for index, (snapshot, proof) in enumerate(zip(
+            snapshots, gate_proofs, strict=True,
+        )))
+        transition = ForwardTransitionSnapshot(
+            self.workflow, self.project, self.actor, self.trace, 1,
+            "PROTOTYPE", "SOLUTION", 3, 4,
+            "Prototype qualification accepted", self.now, snapshots,
+        )
+        self.transitions.append.return_value = PersistedStageTransition(
+            uuid4(), transition, persisted, b"p" * 32, 4,
+        )
+        command = self._command(
+            target_stage_key="SOLUTION",
+            reason="Prototype qualification accepted",
+        )
+        with self.assertRaisesRegex(
+                WorkflowStageTransitionError, "VALIDATION_FAILED"):
+            self.service.transition(
+                command, idempotency_key="workflow-transition-prototype-closed",
+            )
+        prototype_service = WorkflowStageTransitionService(
+            unit_of_work=self.uow, sessions=self.sessions,
+            projects=self.projects, license_guard=self.guard,
+            qualification=self.qualification,
+            transitions=self.transitions, receipts=self.receipts,
+            audit=self.audit, clock=lambda: self.now,
+            enable_prototype=True,
+        )
+        result = prototype_service.transition(
+            command, idempotency_key="workflow-transition-prototype-001",
+        )
+        self.assertEqual("SOLUTION", result.snapshot.to_stage)
+        appended = self.transitions.append.call_args.kwargs["command"]
+        self.assertEqual(("PROTOTYPE_SCOPE_DECISIONS", "PROTOTYPE_COVERAGE"),
+                         tuple(gate.item_key for gate in appended.gates))
+        self.assertTrue(all(
+            sum(item.ref_kind == "REVIEW_ROUND" for item in gate.basis) == 2
+            for gate in appended.gates
+        ))
+
     def test_replay_rechecks_access_and_returns_original_without_owner_write(self):
         self.receipts.reserve.return_value = IdempotencyResult(
             "V1_WORKFLOW_TRANSITION", self.result.stage_transition_id, 200,
