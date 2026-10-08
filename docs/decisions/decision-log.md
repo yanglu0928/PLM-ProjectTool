@@ -10482,3 +10482,10 @@
 - Decision：部分Coverage先以有效Link明确未覆盖项，再由正式Supersede形成完整Link；ILLUSTRATES目的即使填写全部覆盖也不计数，必须再建立VALIDATES Link。跨项目测试使用独立第二项目及第二合成PM，使其在目标项目合法授权、但首项目端点仍不属于目标项目；撤权测试只在随机隔离库临时暂停并恢复首项目PM成员身份，观察HTTP写前复验和无Checklist副作用。
 - Reason：手工UPDATE Link状态会绕过正式历史与Audit；同一用户同时加入两个未移除项目违反`uq_prj_members__user_active`，也会把授权失败误当端点隔离证明。独立用户使跨项目拒绝真正来自端点归属检查。
 - Impact/Rollback：仅验证脚本/文档，无生产Schema、API、权限或依赖变化。可移除脚本扩展回滚；隔离库退出时删除，业务历史不受影响。剩余多原型并集、20并发与生产入口单独验收。
+
+# DEC-20261008-1078：多批准原型允许同需求但Coverage必须按有效Link并集完整
+
+- Date/WBS：2026-10-08 / `PRT-01-A11-A05-P03-A03-P03`；依据`DEC-20261008-1073`和`CR-PRT-005`的当前完整范围规则。
+- Decision：同一已批准RequirementVersion可由两个不同的当前Approved PrototypeVersion固定；这不是NOT_REQUIRED/需原型二分冲突。每个Link自身必须将全部验收标准明确划分为已覆盖与未覆盖，且只有当前ACTIVE的VALIDATES/ACCEPTANCE_REFERENCE已覆盖项参与跨Link并集。两Link重复覆盖同一项而遗漏另一项应拒绝；正式Supersede后互补并集完整才PASS。
+- Reason：直接把多个原型认领视为冲突会错误收窄已冻结的“至少一个Approved PrototypeVersion”规则；只检查Link数量或字段中的未覆盖原因会误报完成。
+- Impact/Rollback：只新增真实PG/HTTP验收脚本与文档，不改生产算法、Schema/API/权限/依赖；撤脚本可回滚，原批准Version/Link历史在真实产品中必须保留。

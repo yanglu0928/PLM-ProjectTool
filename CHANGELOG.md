@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A11-A05-P03-A03-P03 增加Windows11隔离PG18.6两个正式批准原型对同一需求的Coverage并集验收：重复覆盖第一项但遗漏第二项时Coverage拒绝，经正式Link Supersede形成互补并集后两项Checklist和SOLUTION推进通过；`DEC-20261008-1078`记录多原型合法边界。兼容性/升级：仅验证脚本/决策/文档，无生产代码、Schema、API、权限、依赖或迁移，撤脚本即可回滚。验证：隔离实例迁移head/drift、真实Review/Trace/磁盘文件与HTTP/PG退出0；后端全量沿用上轮3244/3/4791，本次未重复运行。已知问题：20并发与P95、Server2025、生产信任源/入口、Gate3/UAT/发行待；Debian13依指令跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A11-A05-P03-A03-P01/P02 增加Windows11隔离PG18.6部分Coverage、ILLUSTRATES不计数、跨项目Link和PM撤权的真实Owner/HTTP验证；正式Supersede或VALIDATES Link修正后才可登记两项PASS并推进SOLUTION。`DEC-20261008-1077`记录夹具决策及同用户跨项目唯一约束。兼容性/升级：仅验证与文档，无生产代码、Schema、API、权限、依赖或迁移；撤脚本扩展可回滚。验证：三项独立隔离运行退出0、迁移head/drift通过、临时实例清理；后端全量沿用上轮3244/3/4791，本次未重复运行。已知问题：多原型并集/重叠、20并发、Server2025、生产信任源/入口、Gate3/UAT/发行待；Debian13依指令跳过。
 
 - 2026-10-08：0.1.0-dev.0/PRT-01-A11-A05-P03-A02 增加Windows11隔离PG18.6混合范围及冲突两次独立验收：两条Requirement在正式阶段审批，一条由Approved Prototype/真实文件/ACTIVE Link覆盖，另一条由有Audit的PM NOT_REQUIRED决定覆盖；缺决定、Checklist写时文件漂移、同一需求双重认领均拒绝，正向两项PASS并进入SOLUTION。`DEC-20261008-1076`记录验证夹具决策。兼容性/升级：仅测试与文档，无生产程序、Schema、API、权限、依赖或数据迁移，撤验证扩展可回滚。验证：两次混合脚本、A01和P02隔离回归退出0，迁移head/drift通过；后端全量沿用上轮3244/3/4791，未在本次重复运行。已知问题：部分Coverage、多原型重复/跨项目/撤权、20并发、Server2025、生产信任源/入口、Gate3/UAT/发行待；Debian13依指令跳过。

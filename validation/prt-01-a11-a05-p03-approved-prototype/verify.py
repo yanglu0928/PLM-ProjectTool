@@ -98,7 +98,8 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
                        mixed_not_required: bool = False,
                        conflicting_decision: bool = False,
                        coverage_mode: str | None = None,
-                       isolation_checks: bool = False) -> None:
+                       isolation_checks: bool = False,
+                       multi_prototype: bool = False) -> None:
     project = ids["project"]
     second = additional_requirement if mixed_not_required else None
     if mixed_not_required:
@@ -169,7 +170,7 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
             "WHERE requirement_version_id=%s ORDER BY ordinal",
             (requirement_version,),
         ).fetchall())
-        assert len(criteria) == (2 if coverage_mode == "partial" else 1)
+        assert len(criteria) == (2 if coverage_mode == "partial" or multi_prototype else 1)
 
     project_repository = SqlAlchemyProjectAuthorizationRepository()
     authorization = ProjectAuthorizationService(
@@ -243,6 +244,57 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
         submission.round_id, uuid.uuid4(), ReviewDecisionKind.APPROVE,
     ), idempotency_key=str(uuid.uuid4()))
     assert approved.state.value == "APPROVED"
+    second_prototype = second_prototype_version = second_prototype_round = None
+    if multi_prototype:
+        second_prototype = PrototypeIdentityCreateService(
+            **common, access=SqlAlchemyProjectWriteAccess(),
+            repository=SqlAlchemyPrototypeIdentityCreateRepository(),
+        ).create_prototype(CreatePrototypeIdentity(
+            pm_token, csrf, uuid.uuid4(), project,
+            "Second approved Prototype", str(uuid.uuid4()),
+        ))
+        second_prototype_version = PrototypeVersionCreateService(
+            **common, project_access=SqlAlchemyProjectWriteAccess(),
+            requirements=requirements, templates=templates, documents=documents,
+            repository=SqlAlchemyPrototypeVersionCreateRepository(),
+        ).create(CreatePrototypeVersion(
+            pm_token, csrf, uuid.uuid4(), project,
+            second_prototype.prototype_id, 0, template_id, template_version,
+            (VersionArtifactRef("DOCUMENT_VERSION", document_version),),
+            (VersionRequirementRef(requirement.requirement_id,
+                                   requirement_version),),
+            {"interactions": []}, {"covered": 1}, str(uuid.uuid4()),
+        ))
+        second_prototype_round = PrototypeReviewSubmissionService(
+            unit_of_work=runtime.unit_of_work, license_guard=guard,
+            authorization=authorization, receipts=receipts,
+            clock=lambda: datetime.now(timezone.utc),
+            access=SqlAlchemyProjectWriteAccess(), reviewers=reviewers,
+            replay_repository=SqlAlchemyProjectReviewSubmissionRepository(),
+            reviews=ProjectReviewPersistenceService(
+                creation_repository=SqlAlchemyReviewCreationRepository(),
+                round_repository=SqlAlchemyReviewStartRepository(),
+                audit=audit, subjects=subject,
+                clock=lambda: datetime.now(timezone.utc),
+            ), subjects=subject,
+        ).submit(SubmitPrototypeVersionReview(
+            pm_token, csrf, uuid.uuid4(), project,
+            second_prototype.prototype_id,
+            second_prototype_version.prototype_version_id, (reviewer,),
+            "PROTOTYPE_ALL_V1", str(uuid.uuid4()),
+        ))
+        second_approval = ReviewTransitionCommandService(
+            unit_of_work=runtime.unit_of_work,
+            access=SqlAlchemyReviewStartAccess(), projects=authorization,
+            license_guard=guard, repository=SqlAlchemyReviewTransitionRepository(),
+            receipts=receipts, audit=audit, subjects=subject,
+            clock=lambda: datetime.now(timezone.utc),
+        ).decide_idempotent(DecideReviewRound(
+            reviewer_token, csrf, project, second_prototype_round.review_id,
+            second_prototype_round.round_id, uuid.uuid4(),
+            ReviewDecisionKind.APPROVE,
+        ), idempotency_key=str(uuid.uuid4()))
+        assert second_approval.state.value == "APPROVED"
     prefix = f"/api/v1/projects/{project}/workflow"
     read_headers = {"cookie": "plm_session=" + pm_token.hex(), "host": "localhost"}
     unused = UnusedDependency()
@@ -322,7 +374,7 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
     initial_coverage = (RequirementPrototypeCoverage(
         (criteria[0],),
         (UncoveredAcceptanceCriterion(criteria[1], "Needs another check"),),
-    ) if coverage_mode == "partial" else
+    ) if coverage_mode == "partial" or multi_prototype else
         RequirementPrototypeCoverage(criteria, ()))
     initial_purpose = "ILLUSTRATES" if coverage_mode == "illustrates" else "VALIDATES"
     link = link_service.create(CreateRequirementPrototypeLink(
@@ -333,6 +385,43 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
         str(uuid.uuid4()),
     ))
     assert link.link_state == "ACTIVE"
+    if multi_prototype:
+        overlap = link_service.create(CreateRequirementPrototypeLink(
+            pm_token, csrf, uuid.uuid4(), project,
+            requirement.requirement_id, requirement_version,
+            second_prototype.prototype_id,
+            second_prototype_version.prototype_version_id,
+            "VALIDATES", initial_coverage, str(uuid.uuid4()),
+        ))
+        assert overlap.link_state == "ACTIVE"
+        with TestClient(preview_only, base_url=ORIGIN) as client:
+            scope = client.get(
+                f"{prefix}/checklist-items/{ITEMS[0]}/qualification",
+                headers=read_headers,
+            )
+            assert scope.status_code == 200, scope.text
+            missed = client.get(
+                f"{prefix}/checklist-items/{ITEMS[1]}/qualification",
+                headers=read_headers,
+            )
+            assert missed.status_code == 409, missed.text
+        complement = link_service.supersede(SupersedeRequirementPrototypeLink(
+            session_token=pm_token, csrf_token=csrf, trace_id=uuid.uuid4(),
+            project_id=project,
+            requirement_prototype_link_id=overlap.requirement_prototype_link_id,
+            requirement_id=requirement.requirement_id,
+            requirement_version_id=requirement_version,
+            prototype_id=second_prototype.prototype_id,
+            prototype_version_id=second_prototype_version.prototype_version_id,
+            purpose="VALIDATES",
+            coverage=RequirementPrototypeCoverage(
+                (criteria[1],),
+                (UncoveredAcceptanceCriterion(criteria[0],
+                                               "Covered by first Prototype"),),
+            ),
+            expected_version=0, idempotency_key=str(uuid.uuid4()),
+        ))
+        assert complement.link_state == "ACTIVE"
 
     if second is not None:
         with TestClient(preview_only, base_url=ORIGIN) as client:
@@ -500,6 +589,13 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
              "subject_version_id": str(requirement_version),
              "review_round_ref": str(requirement_review_round)},
         ]
+        if multi_prototype:
+            expected_subjects.append({
+                "subject_type": "PRT-03",
+                "subject_id": str(second_prototype.prototype_id),
+                "subject_version_id": str(second_prototype_version.prototype_version_id),
+                "review_round_ref": str(second_prototype_round.round_id),
+            })
         if second is not None:
             expected_subjects.append({
                 "subject_type": "REQ-03", "subject_id": str(second_root.requirement_id),
@@ -566,7 +662,8 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
 def main(*, mixed_not_required: bool = False,
          conflicting_decision: bool = False,
          coverage_mode: str | None = None,
-         isolation_checks: bool = False) -> None:
+         isolation_checks: bool = False,
+         multi_prototype: bool = False) -> None:
     if conflicting_decision and not mixed_not_required:
         raise ValueError("conflict mode requires mixed scope")
     if coverage_mode not in {None, "partial", "illustrates"}:
@@ -595,15 +692,20 @@ def main(*, mixed_not_required: bool = False,
         req = runpy.run_path(str(ROOT / "validation/req-01-a12-a05-workflow-pg/verify.py"))
         req["main"](
             include_second=mixed_not_required,
-            include_extra_criterion=coverage_mode == "partial",
+            include_extra_criterion=(coverage_mode == "partial" or multi_prototype),
             after_prototype=lambda **context: _after_requirement(
                 scratch=scratch, mixed_not_required=mixed_not_required,
                 conflicting_decision=conflicting_decision,
                 coverage_mode=coverage_mode,
-                isolation_checks=isolation_checks, **context,
+                isolation_checks=isolation_checks,
+                multi_prototype=multi_prototype, **context,
             ),
         )
-        if isolation_checks:
+        if multi_prototype:
+            print("PRT_01_A11_A05_P03_A03_MULTI_PROTOTYPE_HTTP_PG_PASS: "
+                  "overlapping Links left one criterion uncovered and failed; "
+                  "formal complementary Link union passed")
+        elif isolation_checks:
             print("PRT_01_A11_A05_P03_A03_ISOLATION_HTTP_PG_PASS: "
                   "cross-project Link rejected; suspended PM read/write "
                   "denied without Checklist history; restored scope advances")
