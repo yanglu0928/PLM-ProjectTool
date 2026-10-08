@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A04-P08-P04-P01 新增 GLOBAL 脱敏确认前端 Preview/Confirm/Revoke 严格客户端及私有 CSRF 同源传输，校验来源有序身份、预览指纹、Trace/时间/最小收据，结果不确定不自动重试。兼容性/升级：未挂页面，无后端 API/Schema/依赖变化，无数据升级。验证：定向4、前端全量104文件/1618项、typecheck/build通过。已知问题：人工核查页面/Edge/真人确认、正式License/账户、Server2025、20并发/Gate3/发行未验；现有主包>500kB警告，Debian13依指令跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P08-P03-P05 将 GLOBAL 脱敏 Preview/Confirm/Revoke 接入 Windows 显式写模式，复用 Document/Evidence 当前固定来源与管理员/License/Session/幂等/Audit 端口；默认/只读模式及 GLOBAL Reference 创建仍关闭。兼容性/升级：仅增量受控路由，无 Schema/依赖/冻结 API 破坏；需目标账户与正式 License 安全装配后才能生产启用，无数据迁移。验证：Windows组合合同41/40子例、Win11隔离PG18.6/ASGI脚本退出0、后端全量3331通过/3跳过/4927子例。已知问题：前端/真人确认、正式License/账户/代理、Server2025、20并发/Gate3/发行未验；Debian13依指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P08-P03-P04 新增 GLOBAL 脱敏确认隔离 PG18.6/真实 Session/ASGI 验证夹具，覆盖 Preview 无写入、错误指纹409、Confirm/Revoke 幂等与 Audit 单次效果、CSRF/Origin拒绝及原有来源篡改回归。兼容性/升级：仅验证代码，无生产程序/Schema/API/依赖变化，无升级动作。验证：Windows11隔离脚本退出0；此前后端全量3330通过/3跳过/4919子例。已知问题：Windows正式组合、前端/真人确认、正式License/账户、Server2025、20并发/Gate3/发行未验；Debian13依指令跳过。

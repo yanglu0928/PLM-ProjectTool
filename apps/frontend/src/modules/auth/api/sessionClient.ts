@@ -1340,4 +1340,51 @@ export class SessionClient {
       return data.credential_version as number;
     });
   }
+
+  /** GLOBAL human deidentification workflow; CSRF remains private to this client. */
+  async postGlobalReferenceDeidentificationPreview(body: string): Promise<Response> {
+    return this.#postGlobalReferenceDeidentification("preview", body);
+  }
+
+  async postGlobalReferenceDeidentificationConfirm(body: string, idempotencyKey: string): Promise<Response> {
+    return this.#postGlobalReferenceDeidentification("confirm", body, idempotencyKey);
+  }
+
+  async postGlobalReferenceDeidentificationRevoke(confirmationId: string, body: string,
+    idempotencyKey: string): Promise<Response> {
+    if (!identifier(confirmationId)) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    return this.#postGlobalReferenceDeidentification("revoke", body, idempotencyKey, confirmationId);
+  }
+
+  async #postGlobalReferenceDeidentification(action: "preview" | "confirm" | "revoke",
+    body: string, idempotencyKey?: string, confirmationId?: string): Promise<Response> {
+    if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
+    if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
+    if (typeof body !== "string" || body.length === 0 || new TextEncoder().encode(body).length > 128 * 1024
+      || (action === "preview" && idempotencyKey !== undefined)
+      || (action !== "preview" && (typeof idempotencyKey !== "string"
+        || !/^[\x20-\x7e]{16,128}$/.test(idempotencyKey)))) {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    }
+    const base = "/api/v1/global/reference-deidentification-confirmations";
+    const path = action === "preview" ? `${base}:preview` : action === "confirm" ? base
+      : `${base}/${confirmationId}:revoke`;
+    this.#busy = true;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      const response = await this.fetcher(path, {
+        method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error",
+        headers: { Accept: "application/json", "Content-Type": "application/json",
+          "X-CSRF-Token": this.#csrf, ...(idempotencyKey ? { "Idempotency-Key": idempotencyKey } : {}) },
+        body, signal: controller.signal,
+      });
+      if (controller.signal.aborted) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+      if (response.status === 401) { this.#csrf = null; this.#view = null; }
+      return response;
+    } catch {
+      // A timed-out write may have committed; callers must preserve its operation key.
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    } finally { window.clearTimeout(timer); this.#busy = false; }
+  }
 }
