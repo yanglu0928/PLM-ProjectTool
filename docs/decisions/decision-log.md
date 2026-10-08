@@ -10650,3 +10650,10 @@
 - Decision：Solution 内部建立固定来源资格 Port 合同，GLOBAL 必须有独立管理员人工脱敏确认且绑定完整来源指纹；现有 `STANDARD_CAPABILITY` 专用 GLOBAL Proof 原样保留，0139 写入继续闭锁。PROJECT 与 GLOBAL 均须由真实上游 Port 返回同 Scope/Project/摘要的受权 Proof，客户端自填分类不足以入库。
 - Reason：标准能力 Proof 的类别与目标 PM 限制和一般 ReferenceSolution GLOBAL Admin 写边界不同；直接放宽会扩大既有调用方权限。定向 7 项、后端 3270/3/4815 通过。
 - Impact/Rollback：仅 Solution Application 合同和单测，不改 API、Schema、迁移或已部署服务；可撤内部合同，历史表不变。真实 Port/人工确认持久化与 Owner 仍待，Gate 不变。
+
+# DEC-20261008-1102：Reference DocumentVersion 先定位、再受权证明；确认有效期失败关闭
+
+- Date/WBS：2026-10-08 / `SOL-01-A04-P02-P01`；依据 CR-SOL-005、Document 固定来源服务、隔离 PG18.6 与后端回归。
+- Decision：Document 内部只返回版本与文档身份，同一事务由 DocumentFixedSourceProofService 独立证明授权/当前文件；Solution 适配核返回范围和摘要。GLOBAL 人工脱敏确认必须处于 `confirmed_at <= now < expires_at`，不能只凭带时区时间戳。0139 写入口保持关闭。
+- Reason：Reference 输入只持版本 ID，不能把未经受权的身份查询当来源证明；现有标准能力 GLOBAL Proof 不能扩展成通用参考授权。定向12、PG 身份负例与后端3275/3/4815通过。
+- Impact/Rollback：内部 Document/Solution Port 与适配、合同有效期修复，无公开 API、Schema、迁移、配置或客户数据外发；撤适配可回滚，但过期确认拒绝为安全修复。Evidence/人工确认/Owner 仍待。

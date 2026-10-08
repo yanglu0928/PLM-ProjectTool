@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/SOL-01-A04-P02-P01 增加 Document 内部 ReferenceVersion 身份查询与 Solution 固定来源适配，版本身份只作定位，授权/文件摘要由既有 Document Proof 负责；修复 GLOBAL 人工脱敏确认有效期遗漏，未来或过期确认拒绝。兼容性/升级：无公开 API、角色、数据库、Migration、依赖或配置变化；0139 写入继续关闭；可撤适配/合同修正回滚。验证：定向 12 项、Win11 一次性 PG18.6 同项目/跨项目/Scope/事务负例及旧迁移回归 PASS；后端 3275 passed/3 skipped/4815 subtests。已知问题：Document 真实字节与 Reference 组合尚未端到端复验，Evidence/人工确认 Port、原子 Owner/HTTP/Review/Trace/Workflow、Gate3、Prototype 性能/入口、Server2025/正式信任/UAT/发行待；Debian13 依指令跳过。
+
 - 2026-10-08：0.1.0-dev.0/SOL-01-A04-P01 依据 CR-SOL-005 增加 ReferenceSolution 内部来源资格合同：PROJECT 固定来源同范围证明、GLOBAL 额外人工脱敏确认与 SHA-256 来源集合绑定，跨项目、错误摘要、缺失/重复/异常失败关闭。兼容性/升级：无公开 API、权限路由、数据库、迁移、依赖或配置变化；部署仍不开放 0139 写入，撤内部模块可回滚。验证：定向 7 项、后端全量 3270 passed/3 skipped/4815 subtests。已知问题：实际 Document/Evidence/人工确认 Port 与原子 Owner 未装配，正式 Reference/Outline/Review/Trace/Workflow、Gate3、Prototype 性能/入口、Server2025/正式信任/UAT/发行待；Debian13 依指令跳过。
 
 - 2026-10-08：0.1.0-dev.0/SOL-01-A03-P03 依据 CR-SOL-004 增加 ReferenceSolution 身份/版本及固定 DocumentVersion/Evidence 引用 ORM/Alembic `20261008_0139`；GLOBAL/PROJECT Scope、版本归属、顺序/重复约束已建，Owner 未装配仍拒写。兼容性/升级：旧 API/权限/依赖不变，线性迁移；四新表为空可降至 0138，非空拒降，旧历史保留。验证：Win11 一次性 PG18.6 空/已有数据升级、降级重升、drift、Scope/FK/闭锁负例和 0138 旧脚本复跑 PASS；后端 3263 passed/3 skipped/4815 subtests。已知问题：真实 Reference Owner/Eligibility/脱敏与当前性、Outline 引用、Solution Review/Trace/Workflow、Gate3、Prototype 性能/入口、Server2025/正式信任/UAT/发行待；Debian13 依指令跳过。

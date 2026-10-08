@@ -3,7 +3,7 @@ from __future__ import annotations
 import dataclasses
 import unittest
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from plm_assistant.modules.solution.application.reference_source_qualification import (
     ReferenceSourceError, ReferenceSourceQualificationService,
@@ -45,6 +45,8 @@ class _Attestations:
     def __init__(self) -> None:
         self.confirm = True
         self.wrong_fingerprint = False
+        self.expired = False
+        self.future = False
         self.calls = []
 
     def prove(self, transaction, **kwargs):
@@ -54,7 +56,10 @@ class _Attestations:
         return VerifiedReferenceDeidentification(
             uuid.uuid4(), uuid.uuid4(),
             b"wrong" if self.wrong_fingerprint else kwargs["source_fingerprint"],
-            datetime.now(timezone.utc),
+            datetime(2026, 10, 8, tzinfo=timezone.utc) + (
+                timedelta(days=1) if self.future else timedelta(days=-1)),
+            datetime(2026, 10, 8, tzinfo=timezone.utc) + (
+                timedelta(days=-1) if self.expired else timedelta(days=1)),
         )
 
 
@@ -64,7 +69,8 @@ class ReferenceSourceQualificationTests(unittest.TestCase):
             _Documents(), _Evidence(), _Attestations())
         self.service = ReferenceSourceQualificationService(
             documents=self.documents, evidence=self.evidence,
-            deidentification=self.attestations)
+            deidentification=self.attestations,
+            clock=lambda: datetime(2026, 10, 8, tzinfo=timezone.utc))
         self.transaction = object()
         self.request = ReferenceSourceRequest(
             SESSION, TRACE, "PROJECT", PROJECT, (VERSION,), (EVIDENCE,),
@@ -102,6 +108,12 @@ class ReferenceSourceQualificationTests(unittest.TestCase):
         self.attestations.wrong_fingerprint = True
         self._reject(request)
         self.attestations.wrong_fingerprint = False
+        self.attestations.expired = True
+        self._reject(request)
+        self.attestations.expired = False
+        self.attestations.future = True
+        self._reject(request)
+        self.attestations.future = False
         self.documents.proof = dataclasses.replace(
             self.documents.proof, document_category="PROJECT_RECORD")
         self._reject(request)

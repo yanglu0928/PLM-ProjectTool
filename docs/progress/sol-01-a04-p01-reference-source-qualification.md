@@ -17,3 +17,5 @@ API/权限：无新公开 API；PROJECT/PM、IM 与 GLOBAL/DeploymentAdmin 的�
 增加内部请求与受权证明 DTO/Port、同事务来源资格服务。`PROJECT` 必须精确绑定项目；`GLOBAL` 必须另有 DeploymentAdmin 人工脱敏确认 Proof，且确认绑定本次来源集合和分类的 SHA-256 指纹。对来源的资格只接受上游 Proof，不能由客户端提供；完整性异常与不可用均失败关闭。没有调用外部 AI 或外发客户内容。
 
 验证：定向 `7 passed`；后端全量 `3270 passed, 3 skipped, 4815 subtests passed`。无 Migration/API 变更。真实 Port 适配/人工确认记录/原子写入未验，不能将本合同当已开放功能。TraceLink：CR-SOL-004 → CR-SOL-005 → 本服务/测试 → DEC-20261008-1101 → A04-P02。
+
+后续勘误（A04-P02-P01）：原实现遗漏 GLOBAL 人工脱敏确认过期检查；已补 `confirmed_at <= now < expires_at` 及负例，后端全量更新为 `3275 passed, 3 skipped, 4815 subtests passed`。原测试记录保留，不追写成当时已覆盖。

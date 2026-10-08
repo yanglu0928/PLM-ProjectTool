@@ -10,8 +10,8 @@ import hashlib
 import json
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Protocol
+from datetime import datetime, timezone
+from typing import Callable, Protocol
 
 
 class ReferenceSourceError(RuntimeError):
@@ -58,6 +58,7 @@ class VerifiedReferenceDeidentification:
     authorized_admin_id: uuid.UUID
     source_fingerprint: bytes = field(repr=False)
     confirmed_at: datetime
+    expires_at: datetime
 
 
 @dataclass(frozen=True, slots=True)
@@ -108,12 +109,14 @@ def _ids(values: object, *, minimum: int, maximum: int) -> bool:
 class ReferenceSourceQualificationService:
     def __init__(self, *, documents: DocumentSourcePort,
                  evidence: EvidenceSourcePort,
-                 deidentification: DeidentificationPort) -> None:
+                 deidentification: DeidentificationPort,
+                 clock: Callable[[], datetime] | None = None) -> None:
         if any(port is None for port in (documents, evidence, deidentification)):
             raise ValueError("all Reference source proof ports are required")
         self._documents = documents
         self._evidence = evidence
         self._deidentification = deidentification
+        self._clock = clock or (lambda: datetime.now(timezone.utc))
 
     def qualify(self, transaction: object,
                 request: ReferenceSourceRequest) -> QualifiedReferenceSources:
@@ -195,6 +198,10 @@ class ReferenceSourceQualificationService:
             fingerprint = hashlib.sha256(canonical).digest()
             confirmation_id = None
             if request.scope == "GLOBAL":
+                now = self._clock()
+                if (type(now) is not datetime or now.tzinfo is None
+                        or now.utcoffset() is None):
+                    raise ReferenceSourceError("SOURCE_UNAVAILABLE")
                 confirmation = self._deidentification.prove(
                     transaction, session_token=request.session_token,
                     trace_id=request.trace_id, source_fingerprint=fingerprint,
@@ -209,7 +216,11 @@ class ReferenceSourceQualificationService:
                         or confirmation.source_fingerprint != fingerprint
                         or type(confirmation.confirmed_at) is not datetime
                         or confirmation.confirmed_at.tzinfo is None
-                        or confirmation.confirmed_at.utcoffset() is None):
+                        or confirmation.confirmed_at.utcoffset() is None
+                        or type(confirmation.expires_at) is not datetime
+                        or confirmation.expires_at.tzinfo is None
+                        or confirmation.expires_at.utcoffset() is None
+                        or not confirmation.confirmed_at <= now < confirmation.expires_at):
                     raise ReferenceSourceError()
                 confirmation_id = confirmation.confirmation_id
             return QualifiedReferenceSources(
