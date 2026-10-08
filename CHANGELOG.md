@@ -1,5 +1,13 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A09-A07-P02-A02 为 Version VALIDATE 增加持久幂等：首次报告以
+  不可变 AuditEvent 固定并由通用 receipt 引用；同 Key 在当前证明漂移后仍恢复首次结果，新 Key 才
+  重新验证，错Actor/Project/Version/Action或畸形reason失败关闭。兼容性/回滚：按 DEC-1058 复用已验证
+  Audit-owned模式，取消重复Schema0135，Schema head保持0134；无公开API、Migration、依赖、Secret或外发，
+  撤后续Router装配即可关闭，历史Audit/receipt保留。验证：定向13、后端3199/3、compileall，wheel1225项/
+  `ab75ed0f…86f1c5`PASS。已知问题：A07-P03五项HTTP、A08～A09、A10前端、A11 Workflow、
+  Server2025、Gate3/UAT/发行待；Debian13跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A09-A07-P02-A01 修复 Version CREATE 强并发：expected 进入命令/
   幂等指纹，Root 行锁内比对并与 DRAFT/owned set/result/Audit/receipt 同事务推进 ETag，重放不
   重复推进。兼容性/回滚：内部合同符合性修复，无 Migration/公开 API/依赖/Secret/外发；

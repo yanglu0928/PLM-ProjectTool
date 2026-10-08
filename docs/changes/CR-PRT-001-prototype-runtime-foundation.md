@@ -338,3 +338,16 @@ Version Create 命令已增 `expected_lock_version`并纳入幂等指纹；Repos
 后端 3198/3、compileall 及 wheel 1224 项/`ade0a64b…b3d8dacc`通过；真实 PG 组合留 A09-A09。
 同时对账发现冻结 VALIDATE 含 I，但现 Owner 无收据/持久报告；新拆 A02 Schema0135+幂等
 ValidationResult，A03 再开放五项 HTTP。冻结 API 不变。
+
+## A09-A07-P02-A02 VALIDATE持久重放实现调整（2026-10-08）
+
+实施前继续对账已验证的Capability、Requirement、Survey验证链，确认不可变AuditEvent已能完整固定首次
+验证的trace、时间、状态、受控issue集合和对象身份，通用receipt可直接引用AuditEventId。为避免Schema0135
+与Audit双写同一事实，按DEC-1058将DEC-1057的存储实现调整为Audit-owned proof：首次验证写Audit和receipt，
+同Key同载荷按Actor/Project/Version/Action/Owner精确恢复首次报告，外部证明漂移不改变重放；新Key才重新
+观察。畸形reason、错对象或缺Audit均失败关闭。
+
+本调整不改变冻结路径、控制位、业务状态或Schema；Schema head保持0134，无Migration、依赖、Secret或
+数据外发。回滚为停止后续Router装配，已写入的不可变Audit/receipt保留。定向13、后端3199项通过/3项
+环境跳过、compileall及wheel1225项/`ab75ed0f68f07e45dd61a04918aef0a5479cda4ab1dbccc2c990d9b07b86f1c5`
+通过；真实PostgreSQL 18 HTTP组合留A09-A09。

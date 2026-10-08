@@ -1,5 +1,19 @@
 # 自主决策记录
 
+## DEC-20261008-1058：Version VALIDATE复用不可变Audit证明而不重复建结果表
+
+- Date/WBS：2026-10-08 / `PRT-01-A09-A07-P02-A02`；修订 DEC-1057 的存储实现，不改变冻结
+  `PRT_VERSION_VALIDATE S,L,C,I,A`语义。
+- Decision：首次验证把有序issue集合编码为受控reason code，写入不可变`AuditEvent`；通用幂等receipt
+  指向该AuditEvent。重放按Actor、Project、Version、Action、Owner、状态不变及AuditId精确恢复首次报告；
+  新Key才重新观察当前外部事实。Schema head保持0134，不新增原计划的Schema0135。
+- Reason：Capability、Requirement、Survey等模块已使用并验证相同的Audit-owned validation proof；另建
+  ValidationResult会重复保存同一事实并引入双写一致性与迁移成本。AuditEvent已经固定trace、时间、状态、
+  reason和对象身份，能够满足首次响应持久化与不可变重放。
+- Impact/Rollback：内部Owner新增receipt和Audit proof依赖，无公开API、Schema/Migration、依赖、Secret或
+  外发。停止后续Router装配即可关闭新入口；已产生Audit/receipt作为不可变历史保留，不做破坏性删除。
+  定向13、后端3199/3、compileall及wheel1225项/`ab75ed0f…86f1c5`通过。
+
 ## DEC-20261008-1057：Version VALIDATE需持久首次报告而非只校验幂等头
 
 - Date/WBS：2026-10-08 / `PRT-01-A09-A07-P02-A01`；依据冻结 API-04 的 `PRT_VERSION_VALIDATE S,L,C,I,A`。
