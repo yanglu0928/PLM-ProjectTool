@@ -1,5 +1,18 @@
 # 自主决策记录
 
+## DEC-20261008-1065：Prototype五族客户端共享安全传输但保持cursor与父级隔离
+
+- Date/WBS：2026-10-08 / `PRT-01-A10-A03`；依据冻结9项GET、CR-PRT-002及既有浏览器客户端边界。
+- Decision：五个资源族共享同一失败关闭GET传输与基础解析规则，但公开五种品牌cursor并在每个方法固定
+  父路径、最大page size、稳定排序与身份字段；Package/Prototype详情交叉验证Header/body ETag。Template/
+  Version只接受受限深冻结JSON，旧Artifact缺Document根时归一为`null`而非猜测。
+- Reason：复制传输容易产生状态码、超时和浏览器receiver漂移；把所有资源合并成弱类型客户端又会允许cursor
+  串族和父级错配。共享安全内核、分族公开接口同时减少漂移并保留业务边界。
+- Impact/Rollback：仅新增前端只读代码和验证，无Schema/API/依赖/权限/Secret或外发。删除新模块即可回滚，
+  后端和历史不变；A04前不开放写操作。
+- Verification：定向30项、前端94文件1563项、typecheck和Vite 195 modules生产构建通过；主chunk既有
+  500kB警告保留，真实Edge留A07。
+
 ## DEC-20261008-1064：再次确认持续交付纪律且不替代客观验收
 
 - Date/WBS：2026-10-08 / `CR-EXEC-001`；来源为用户再次选择方案 A 并明确调整后续工作纪律。

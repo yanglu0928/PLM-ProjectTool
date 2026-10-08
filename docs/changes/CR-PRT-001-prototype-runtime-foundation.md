@@ -78,6 +78,12 @@ CR-PRT-002响应投影已落实：Requirement验收条件返回稳定业务引�
 DOCUMENT_VERSION在Document Owner当前证明成功时返回Document根ID。请求字段、26项Operation、权限、Schema
 和内容指纹不变；旧响应由前端归一为不可操作状态。真实Windows/PG、全量后端/前端和构建通过，进入A03。
 
+## A10-A03 实施记录（2026-10-08）
+
+Package、Prototype、Template、Version和Requirement Link五族只读客户端已实现冻结9项GET；父级/scope、
+排序、身份、五类cursor、ETag、内容合同和错误投影严格失败关闭。旧Artifact响应缺Document根时只读降级，
+不产生猜测链接。前端全量、typecheck和构建通过，无服务端基线变化，进入A04受控写传输。
+
 ## A02 实施记录（2026-10-08）
 
 Migration0122新增Package、Prototype、同项目membership、NOT_REQUIRED范围决定及固定受影响

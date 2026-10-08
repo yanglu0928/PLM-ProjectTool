@@ -47,3 +47,9 @@ Windows Server 2025 另行实机验证，Debian 13 依用户指令跳过。
 当前Document Owner按scope/project重新证明，证明缺失时不猜测定位。无Schema/Migration。Windows 11/
 PostgreSQL 18.6真实三库、后端3211/3、前端1533、typecheck/build及wheel1229项/
 `794c7dc4…273152`通过；进入A03严格只读客户端。
+
+## A03 实施记录（2026-10-08）
+
+五族严格只读客户端已覆盖冻结9项GET，兼容旧Artifact响应并把缺失`document_id`归一为不可操作状态；严格
+校验父级、scope、顺序、身份唯一、五类cursor、强ETag、安全JSON合同及公开错误映射，不扫描或猜测定位。
+定向30项、前端全量1563项、typecheck和production build通过；无后端API、Schema、依赖或权限变化，进入A04。

@@ -1,5 +1,11 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A10-A03 新增Prototype Package、Identity、Template、Version和Link五族
+  严格只读客户端，覆盖冻结9项GET；隔离五类cursor，校验父级/scope/排序/身份/ETag/安全JSON及错误映射，
+  旧Artifact缺Document根时只读降级且不猜测链接。兼容性/升级/回滚：无Schema/API/依赖/权限/Secret或
+  外发变化，删除新增前端模块即可回滚。验证：定向30、前端94文件1563项、typecheck/build PASS；既有
+  主chunk>500kB警告保留。已知问题：A04～A07写入/页面/Edge、A11、Server2025、Gate3/UAT/发行待。
+
 - 2026-10-08：执行纪律/CR-EXEC-001 再次登记方案 A 持续授权：按实际依赖自主推进至可使用程序包，
   不兼容方案先记录差异、风险、迁移/回滚与验证计划，再直接实施并同步 GitHub。兼容性/升级/回滚：无产品
   代码、Schema/API、依赖、权限、Secret或外发变化；可恢复逐项确认节奏但保留历史。已知边界：默认接受
