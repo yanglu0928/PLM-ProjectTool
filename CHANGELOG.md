@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A10-A01 完成Prototype前端安全交互前置核查，固定范围决定、模板选择、
+  Version/Link、逐字段人工维护提示、AI建议隔离、强ETag/幂等未知结果恢复和固定原文定位边界。发现并登记
+  `CR-PRT-002`：Requirement读取缺AcceptanceCriterion稳定引用、ArtifactRef读取缺Document ID；按冻结
+  API允许的可选响应增量在A02修复，不改26项Operation、请求或权限。兼容性/回滚：本项纯文档，无Schema、
+  依赖、Secret或外发，可删除本增量文档回滚。已知问题：A02响应投影、A03～A07前端/Edge、A11 Workflow、
+  Server2025、Gate3/UAT/发行待；Debian13跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A09-A09 新增Windows Prototype失败关闭生产组合：默认/login-only
   保持404，`--platform`仅九项GET，`--platform-write`开放冻结26项Operation；五类独立cursor KeyRef保持
   强制供给，并把真实`PRT-03` Subject Owner注册到统一Review命令。兼容性/升级/回滚：无Migration、依赖、

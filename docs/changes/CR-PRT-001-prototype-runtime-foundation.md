@@ -64,6 +64,14 @@ Operation，也不允许自动正式化。若后续需要新的建议读取/采�
 真实 HTTP/Edge、完整后端/前端回归、wheel 和 Secret 扫描。A11 之前不宣称 Prototype Workflow 合格；
 Gate 3、UAT、发行与可使用程序包仍以各自客观证据关闭。
 
+## A10-A01 前端前置核查记录（2026-10-08）
+
+已固定列表/详情/Package/Template/Version/Link页面范围、逐字段人工维护提示、AI建议边界、固定文档定位及
+ETag/幂等未知结果恢复规则。发现Link Coverage所需AcceptanceCriterion稳定引用和DocumentVersion定位所需
+Document ID尚未进入读取投影；已建立`CR-PRT-002`，按API-04允许的可选响应增量先修复，不改26项Operation、
+路径、请求、权限或冻结提交。A10拆为A02响应投影、A03只读客户端、A04受控写、A05页面、A06导航回归和
+A07真实Edge闭环。
+
 ## A02 实施记录（2026-10-08）
 
 Migration0122新增Package、Prototype、同项目membership、NOT_REQUIRED范围决定及固定受影响

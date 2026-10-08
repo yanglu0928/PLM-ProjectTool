@@ -1,5 +1,18 @@
 # 自主决策记录
 
+## DEC-20261008-1062：Prototype前端不以隐藏UUID或全库扫描弥补读取投影缺口
+
+- Date/WBS：2026-10-08 / `PRT-01-A10-A01`；依据冻结API-04、用户既定待办/原文定位体验要求及
+  Requirement/Survey既有安全交互。
+- Decision：A10使用列表选择、逐字段维护提示和固定来源定位，不提供手填隐藏UUID或任意JSON作为主流程。
+  Requirement Version响应补充`acceptance_criterion_ref`，DOCUMENT_VERSION ArtifactRef响应补充
+  `document_id`；二者均为已有业务身份的可选只读投影，写请求继续拒绝未知字段。旧服务缺字段时客户端只读
+  降级并禁用对应写入/定位，不扫描猜测。已登记`CR-PRT-002`后实施。
+- Reason：Coverage必须按验收条件全集精确分区，而现有读取不暴露稳定身份；固定DocumentVersion只有Version
+  ID也无法构造受权文档路由。序号/正文哈希会随版本变化，扫描全部文档既不完整又扩大读取面。
+- Impact/Rollback：当前仅文档，无代码、Schema、路由、依赖、Secret或外发。后续仅新增API-04明确允许的
+  可选响应字段，不改26项Operation/请求/权限；可移除投影和相关按钮回滚，历史数据不变。
+
 ## DEC-20261008-1061：Prototype只在Windows显式平台模式开放并注册统一Review Owner
 
 - Date/WBS：2026-10-08 / `PRT-01-A09-A09`；依据冻结26项Prototype Operation、DEC-1050～1060及
