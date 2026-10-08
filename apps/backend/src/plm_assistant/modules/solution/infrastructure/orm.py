@@ -474,3 +474,44 @@ class ReferenceSolutionEvidenceRefRow(Base):
     scope: Mapped[str] = mapped_column(Text, nullable=False)
     evidence_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class ReferenceDeidentificationConfirmationRow(Base):
+    """Closed GLOBAL human-attestation ledger; presence alone is not admission."""
+
+    __tablename__ = "sol_reference_deidentification_confirmations"
+    __table_args__ = (
+        ForeignKeyConstraint(["confirmed_by"], ["plm.auth_users.user_id"],
+                             name="fk_sol_reference_deidentification__actor", ondelete="NO ACTION"),
+        CheckConstraint("octet_length(source_fingerprint)=32",
+                        name="ck_sol_reference_deidentification__fingerprint"),
+        CheckConstraint("char_length(source_project_class) BETWEEN 1 AND 128 AND "
+                        "source_project_class=btrim(source_project_class)",
+                        name="ck_sol_reference_deidentification__source_class"),
+        CheckConstraint("char_length(deidentification_class) BETWEEN 1 AND 128 AND "
+                        "deidentification_class=btrim(deidentification_class)",
+                        name="ck_sol_reference_deidentification__class"),
+        CheckConstraint("jsonb_typeof(applicability)='object'",
+                        name="ck_sol_reference_deidentification__applicability"),
+        CheckConstraint("attestation_statement='I_VERIFIED_DEIDENTIFICATION'",
+                        name="ck_sol_reference_deidentification__statement"),
+        CheckConstraint("confirmed_at<expires_at AND isfinite(confirmed_at) AND "
+                        "isfinite(expires_at) AND (revoked_at IS NULL OR "
+                        "(revoked_at>=confirmed_at AND isfinite(revoked_at)))",
+                        name="ck_sol_reference_deidentification__time"),
+        Index("ix_sol_reference_deidentification__source", "source_fingerprint",
+              "expires_at", "confirmation_id"),
+        {"schema": "plm"},
+    )
+    confirmation_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    source_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    source_project_class: Mapped[str] = mapped_column(Text, nullable=False)
+    deidentification_class: Mapped[str] = mapped_column(Text, nullable=False)
+    applicability: Mapped[dict[str, object]] = mapped_column(JSONB, nullable=False)
+    attestation_statement: Mapped[str] = mapped_column(Text, nullable=False)
+    confirmed_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    confirmed_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False)
+    revoked_at: Mapped[datetime | None] = mapped_column(TIMESTAMP(timezone=True, precision=6))
+    trace_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)

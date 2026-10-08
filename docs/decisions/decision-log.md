@@ -10664,3 +10664,10 @@
 - Decision：新增 Evidence 专用 GLOBAL Reference Proof，先核管理员和锁定 ELIGIBLE 来源，再用 Document 原有固定证明和节点指纹复核；PROJECT 沿用项目 Evidence Proof，Solution 只接纳 PM/ImplementationMember 的受权结果。原 GLOBAL 标准能力服务不改。
 - Reason：Reference 的 GLOBAL 写入归 DeploymentAdmin，允许 REFERENCE_MATERIAL；旧服务要求目标项目 PM 且仅标准能力，不可直接放宽。定向 20/3 子例、全量 3282/3/4815 通过。
 - Impact/Rollback：仅内部服务、适配与测试，无 Schema/API/迁移/依赖/外发；撤新组件可回滚。真实 Reference PG/磁盘组合、人工确认和 Owner 未验，Gate 3 不变。
+
+# DEC-20261008-1104：人工脱敏确认先建闭锁账本，记录不等于已确认事实
+
+- Date/WBS：2026-10-08 / `SOL-01-A04-P02-P03-P01`；依据 CR-SOL-006、冻结 DM-05/API-04、Schema0139 和隔离 PG18.6 验证。
+- Decision：Schema0140 增 GLOBAL 专用、来源指纹绑定的人工确认账本；当前所有写入/删除/截断关闭。后续独立任务实现实际 Admin 明确确认与 Audit、受权 Proof/撤回和 ReferenceVersion 绑定；不从分类或 AI 输出推断确认。
+- Reason：0139 只有脱敏分类，缺人工确认主体、来源集合、有效期和撤回历史；用 Audit 或旧标准能力服务无法替代。PG 升降/约束/历史/漂移与后端3284/3/4815通过。
+- Impact/Rollback：仅新增空表/ORM/迁移，不变公开 API/角色/依赖；空表可降级，非空历史拒降并需正式数据迁移。Gate 3/运行入口不因账本存在而通过。

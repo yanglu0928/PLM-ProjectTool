@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/SOL-01-A04-P02-P03-P01 依据 CR-SOL-006 新增闭锁的 GLOBAL Reference 人工脱敏确认账本 ORM/Alembic0140，固定来源指纹、管理员、声明、时间/撤回与 Trace，不能自动形成确认事实。兼容性/升级：从0139线性迁移，无公开 API、角色、依赖或配置变化；空表可降级，非空拒降且需保留历史。验证：Win11隔离PG18.6空/有数据、升降重升、drift、约束/闭锁/历史负例及前序回归通过；后端3284通过/3跳过/4815子例。已知问题：人工确认命令/Audit/Proof/ReferenceVersion绑定未实现，GLOBAL Reference写入及Gate3仍关闭；Server2025/UAT/发行未验，Debian13依指令跳过。
+
 - 2026-10-08：0.1.0-dev.0/SOL-01-A04-P02-P02 增加 Reference 专用 GLOBAL Evidence 管理员固定来源证明及 PROJECT/GLOBAL Solution 内部适配；锁定 ELIGIBLE 来源、复核 Document 文件/节点指纹，旧 GLOBAL 标准能力权限不放宽。兼容性/升级：无公开 API、角色、Schema、Migration、依赖或配置变化；0139 写入口继续关闭，可移除新内部组件回滚。验证：定向 20 passed/3 subtests、后端 3282 passed/3 skipped/4815 subtests。已知问题：本项未做真实 Reference PG/磁盘/HTTP 组合，GLOBAL 人工脱敏确认 Port、原子 Owner/Review/Trace/Workflow、Gate3、性能与发行待；Debian13 依指令跳过。
 
 - 2026-10-08：0.1.0-dev.0/SOL-01-A04-P02-P01 增加 Document 内部 ReferenceVersion 身份查询与 Solution 固定来源适配，版本身份只作定位，授权/文件摘要由既有 Document Proof 负责；修复 GLOBAL 人工脱敏确认有效期遗漏，未来或过期确认拒绝。兼容性/升级：无公开 API、角色、数据库、Migration、依赖或配置变化；0139 写入继续关闭；可撤适配/合同修正回滚。验证：定向 12 项、Win11 一次性 PG18.6 同项目/跨项目/Scope/事务负例及旧迁移回归 PASS；后端 3275 passed/3 skipped/4815 subtests。已知问题：Document 真实字节与 Reference 组合尚未端到端复验，Evidence/人工确认 Port、原子 Owner/HTTP/Review/Trace/Workflow、Gate3、Prototype 性能/入口、Server2025/正式信任/UAT/发行待；Debian13 依指令跳过。
