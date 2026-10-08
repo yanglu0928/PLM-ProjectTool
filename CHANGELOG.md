@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A04-P08-P06-P03 新增 GLOBAL Reference Create 的 Windows 11 隔离 PG18.6/ASGI/真实 Session 与合成私有文件验收，覆盖成功、原 Key 重放、缺失/过期/撤回确认、文件漂移、CSRF/Origin/License 拒绝和原子行数。兼容性/升级：仅验证脚本及追溯，无生产代码、Schema、API、依赖或数据迁移；既有确认/Reference/Audit 历史不删除。验证：独立脚本退出 0，现有来源夹具回归退出 0。已知问题：合成确认不是真人业务确认；Windows 生产组合、正式 License/账户、Server 2025、20 并发、Gate 3/UAT/发行未验；Debian 13 依指令跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P08-P06-P02 实现默认关闭的 GLOBAL Reference Create 可注入 HTTP：冻结六字段、当前 Session/CSRF/Origin、现有 Owner 的人工确认来源资格与原子幂等/Audit，201 安全投影及 ETag/Location。兼容性/升级：无 Schema/依赖/数据迁移，PROJECT 路由不变；不注入即404。验证：合同7通过/17子例、后端全量3340通过/3跳过/4939子例；真实PG/Windows/真人确认未验。已知问题：正式License/账户、Server2025、20并发/Gate3/发行未验；Debian13依指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-01-A04-P08-P06-P01 对账 GLOBAL Reference 创建冻结六字段、现有原子 Owner/人工确认来源证明与未装配的公开路径，确定 HTTP→隔离PG负例→Windows显式组合→前端入口的分项验收顺序。兼容性/升级：仅前置核查/追溯文档，无程序/API/Schema/依赖变化或数据迁移。验证：冻结合同、Owner/Repository/现有组合静态对账；GLOBAL Create HTTP 未运行。已知问题：脚本确认非真人业务事实，正式License/账户、Server2025、20并发/Gate3/发行未验；Debian13依指令跳过。
