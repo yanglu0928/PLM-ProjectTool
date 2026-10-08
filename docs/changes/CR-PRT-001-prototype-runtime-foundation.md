@@ -351,3 +351,15 @@ ValidationResult，A03 再开放五项 HTTP。冻结 API 不变。
 数据外发。回滚为停止后续Router装配，已写入的不可变Audit/receipt保留。定向13、后端3199项通过/3项
 环境跳过、compileall及wheel1225项/`ab75ed0f68f07e45dd61a04918aef0a5479cda4ab1dbccc2c990d9b07b86f1c5`
 通过；真实PostgreSQL 18 HTTP组合留A09-A09。
+
+## A09-A07-P03 五项Version/Review HTTP（2026-10-08）
+
+新增LIST/CREATE/GET/VALIDATE四项Version可选Router及独立SUBMIT_REVIEW Router。LIST使用A03独立
+PrototypeVersion cursor并限制100项；CREATE把强If-Match、幂等键及固定Template/Artifact/Requirement/
+Interaction/Coverage完整传给Owner，返回Owner原子推进后的Root ETag；GET输出不可变完整快照；VALIDATE
+要求空正文并投影首次Audit证明；送审仅接受`PROTOTYPE_ALL_V1`且由A07 Owner原子进入Review Kernel。
+
+默认应用仍不注入两个Router，保持五路径404；Windows生产组合留A09-A09。无Migration、依赖、Secret或
+外发，Schema head保持0134；撤注入即可回滚，已提交业务历史保留。合同6、后端3205项通过/3项环境跳过、
+compileall、diff check及wheel1227项/`8760faebb6ed13e0432e3d20f816e1f4a29e8b09741aa49f0aad5815ca2f23ed`
+通过；进入A09-A08 Link HTTP。

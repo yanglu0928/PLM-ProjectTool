@@ -1,5 +1,19 @@
 # 自主决策记录
 
+## DEC-20261008-1059：Version/Review HTTP仅投影Owner事实并保持默认关闭
+
+- Date/WBS：2026-10-08 / `PRT-01-A09-A07-P03`；依据冻结五项PrototypeVersion/Review Operation、
+  DEC-1056～1058及A06/A07内部Owner。
+- Decision：四个Version操作共用独立可选Router，SUBMIT_REVIEW使用独立可选Router；LIST cursor绑定
+  Session/Project/Prototype/page size且页长最多100。CREATE传递强If-Match和幂等键，成功ETag为Owner原子
+  推进后的Root版本；VALIDATE空正文且把首次Audit proof安全投影为通用ValidationReport；送审只接受
+  `PROTOTYPE_ALL_V1`和空due/note，不在HTTP层复制业务状态机。
+- Reason：传输层自行计算版本、验证或Review会绕过已验证Owner事务；共用其他资源cursor会允许跨上下文重放；
+  默认装配公开路径会在真实信任源与PG组合前扩大攻击面。
+- Impact/Rollback：新增两个显式注入Router和应用槽位，无Schema/Migration、依赖、Secret或外发；默认应用
+  仍404，撤注入即可回滚且既有业务历史保留。合同6、后端3205/3、compileall及wheel1227项/
+  `8760faeb…2f23ed`通过，真实Windows/PG组合留A09-A09。
+
 ## DEC-20261008-1058：Version VALIDATE复用不可变Audit证明而不重复建结果表
 
 - Date/WBS：2026-10-08 / `PRT-01-A09-A07-P02-A02`；修订 DEC-1057 的存储实现，不改变冻结

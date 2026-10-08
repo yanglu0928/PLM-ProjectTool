@@ -125,6 +125,8 @@ def create_app(
     prototype_package_router: APIRouter | None = None,
     prototype_router: APIRouter | None = None,
     prototype_template_router: APIRouter | None = None,
+    prototype_version_router: APIRouter | None = None,
+    prototype_review_submission_router: APIRouter | None = None,
     review_command_router: APIRouter | None = None,
     maintenance_admission: MaintenanceAdmissionPort | None = None,
     shutdown_callback: Callable[[], None] | None = None,
@@ -357,6 +359,10 @@ def create_app(
         app.include_router(prototype_router)
     if prototype_template_router is not None:
         app.include_router(prototype_template_router)
+    if prototype_version_router is not None:
+        app.include_router(prototype_version_router)
+    if prototype_review_submission_router is not None:
+        app.include_router(prototype_review_submission_router)
     if review_command_router is not None:
         app.include_router(review_command_router)
     return app

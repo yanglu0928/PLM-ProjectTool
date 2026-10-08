@@ -1,5 +1,13 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A09-A07-P03 新增冻结PrototypeVersion LIST/CREATE/GET/VALIDATE和
+  SUBMIT_REVIEW五项可选HTTP；Version cursor强绑Session/Project/Prototype/页长且上限100，CREATE落实
+  幂等与强If-Match并返回推进后Root ETag，VALIDATE恢复首次Audit proof，送审仅接受
+  `PROTOTYPE_ALL_V1`并复用原子Review Owner。兼容性/回滚：无Migration、依赖、Secret或外发，默认应用
+  仍404，撤两个Router注入即可关闭且历史保留。验证：合同6、后端3205/3、compileall，wheel1227项/
+  `8760faeb…2f23ed`PASS。已知问题：A08 Link HTTP、A09 Windows真实组合、A10前端、A11 Workflow、
+  Server2025、Gate3/UAT/发行待；Debian13跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A09-A07-P02-A02 为 Version VALIDATE 增加持久幂等：首次报告以
   不可变 AuditEvent 固定并由通用 receipt 引用；同 Key 在当前证明漂移后仍恢复首次结果，新 Key 才
   重新验证，错Actor/Project/Version/Action或畸形reason失败关闭。兼容性/回滚：按 DEC-1058 复用已验证
