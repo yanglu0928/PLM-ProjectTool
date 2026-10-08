@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A11-A05-P04-P05 仅在隔离验证工具中量出真实文件逐字节证明成本：122次网络资格请求P95约10.49ms、总约632ms，同轮Uvicorn20并发资格P95约618/616ms，仍不达500ms。兼容性/升级：无生产代码、公开API、Schema、依赖或数据迁移；撤计时工具可回滚，业务历史不变。验证：Windows11隔离PG18.6/真实文件/Review/Trace/Link网络脚本退出0；后端全量沿用P04的3246/3/4795。已知问题：约63条SQL/请求、Server2025、生产信任源/入口、Gate3/UAT/发行待；Debian13依指令跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A11-A05-P04-P04 按CR-PRT-005消除Prototype资格事务中Requirement完整范围的重复扫描，Requirement Owner仍独立完成当前版本/Evidence/Review证明；SQL由约77降至63条/请求，Uvicorn loopback20并发P95约594/632ms，改善但未达500ms，性能FAIL。兼容性/升级：仅内部Owner Port/装配，无公开API、Schema、依赖或数据迁移；恢复旧两次扫描可回滚，历史不变。验证：混合/漂移/冲突/覆盖/隔离/多原型PG/HTTP回归退出0，后端3246通过/3跳过/4795子例。已知问题：剩余SQL/文件成本、Server2025、生产信任源/入口、Gate3/UAT/发行待；Debian13依指令跳过。
 
 - 2026-10-08：0.1.0-dev.0/PRT-01-A11-A05-P04-P03 增加Windows11隔离PG18.6真实Uvicorn loopback 20并发Prototype资格网络预检及撤权后PG/HTTP回归；网络两项P95中位约710/714ms，功能/ETag正确但仍不达500ms，性能FAIL。兼容性/升级：仅验证工具/CR/进度/状态，无生产代码、Schema、API、依赖或迁移；撤验证扩展即可回滚。验证：Uvicorn随机loopback、代理绕行后脚本退出0，撤权隔离链退出0；后端全量沿用上轮3245/3/4795。已知问题：约77条SQL/请求与文件成本、Server2025、生产信任源/入口、Gate3/UAT/发行待；Debian13依指令跳过。

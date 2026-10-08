@@ -106,6 +106,38 @@ class UnusedDependency:
         raise AssertionError(f"approved Prototype fixture used {name}")
 
 
+class TimedLocalFileStorage(LocalFileStorage):
+    """Validation-only timing wrapper; always executes the real byte proof."""
+
+    def __init__(self, root: Path) -> None:
+        super().__init__(root)
+        self.proof_ms: list[float] = []
+        self._proof_lock = threading.Lock()
+
+    def verify_content(self, locator: str, *, expected_sha256: bytes,
+                       expected_size: int, max_bytes: int):
+        started = time.perf_counter()
+        try:
+            return super().verify_content(
+                locator, expected_sha256=expected_sha256,
+                expected_size=expected_size, max_bytes=max_bytes,
+            )
+        finally:
+            elapsed = (time.perf_counter() - started) * 1000
+            with self._proof_lock:
+                self.proof_ms.append(elapsed)
+
+
+def _print_file_proof_timing(storage: TimedLocalFileStorage,
+                             since: int, mode: str) -> None:
+    samples = sorted(storage.proof_ms[since:])
+    assert samples
+    print(f"PRT_A05_P04_FILE_PROOF mode={mode} count={len(samples)} "
+          f"total_ms={sum(samples):.2f} "
+          f"p95_ms={samples[math.ceil(.95 * len(samples)) - 1]:.2f} "
+          f"max_ms={samples[-1]:.2f}")
+
+
 def _measure_read_load(app, prefix: str, headers: dict[str, str], runtime,
                        *, sql_diagnostic: bool = False,
                        network_url: str | None = None,
@@ -277,7 +309,7 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
         assert second is not None
     storage_root = scratch / "private-documents"
     storage_root.mkdir()
-    storage = LocalFileStorage(storage_root)
+    storage = TimedLocalFileStorage(storage_root) if read_load else LocalFileStorage(storage_root)
     payload = b"Synthetic approved Prototype artifact; no customer data."
     digest = hashlib.sha256(payload).digest()
     file_id = uuid.uuid4()
@@ -739,16 +771,19 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
                 raise AssertionError("preview shared lock failed to fence revocation")
         print("PRT_A05_P04_SHARED_LOCK_PROOF: two readers coexist; "
               "concurrent member revocation waits")
+        file_proof_since = len(storage.proof_ms)
         p95 = _measure_read_load(
             app, prefix, read_headers, runtime,
             sql_diagnostic=read_load_sql_diagnostic,
         )
+        _print_file_proof_timing(storage, file_proof_since, "asgi-default")
         assert set(p95) == set(ITEMS)
         expanded_runtime = create_database_runtime(
             runtime._engine.url,
             options=DatabaseEngineOptions(pool_size=20, max_overflow=0),
         )
         try:
+            file_proof_since = len(storage.proof_ms)
             expanded_sessions = SessionService(
                 unit_of_work=expanded_runtime.unit_of_work,
                 repository=SqlAlchemySessionRepository(),
@@ -760,15 +795,18 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
                 prefix, read_headers, expanded_runtime,
                 sql_diagnostic=read_load_sql_diagnostic,
             )
+            _print_file_proof_timing(storage, file_proof_since, "asgi-pool20")
             print("PRT_A05_P04_POOL_DIAGNOSTIC "
                   f"default={p95} pool20={expanded_p95}")
         finally:
             expanded_runtime.dispose()
         if network_load:
+            file_proof_since = len(storage.proof_ms)
             network_p95 = _measure_network_read_load(
                 app, prefix, read_headers, runtime,
             )
             assert set(network_p95) == set(ITEMS)
+            _print_file_proof_timing(storage, file_proof_since, "network")
     with TestClient(app, base_url=ORIGIN) as client:
         if isolation_checks:
             with psycopg.connect(host="127.0.0.1", port=PORT,
