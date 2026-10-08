@@ -120,6 +120,16 @@ describe("Prototype five-family read clients", () => {
       .toThrowError(PrototypeReadError);
   });
 
+  it("accepts authorized GLOBAL templates in a project list but rejects foreign PROJECT scope", async () => {
+    const global = { ...templateView, prototype_template_id: prototype, scope: "GLOBAL", project_id: null };
+    const mixed = { items: [templateView, { ...global, updated_at: "2026-10-08T07:00:00Z" }],
+      next_cursor: null, has_more: false };
+    const result = await new PrototypeTemplateReadClient(fetcher(response(mixed))).listProject(project);
+    expect(result.items.map(item => item.scope)).toEqual(["PROJECT", "GLOBAL"]);
+    await expect(new PrototypeTemplateReadClient(fetcher(response(page({ ...templateView, project_id: actor })))).listProject(project))
+      .rejects.toMatchObject({ code: "PROTOTYPE_READ_UNAVAILABLE" });
+  });
+
   it.each([
     { ...templateView, private_path: "D:/secret" },
     { ...templateView, artifact_refs: [{ artifact_kind: "OUTPUT_ARTIFACT", target_id: documentVersion, document_id: documentId }] },

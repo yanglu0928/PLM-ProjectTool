@@ -99,6 +99,15 @@ Package、Prototype、Template、Version和Requirement Link五族只读客户端
 Version、Link 页面及统一路由留后续 P02～P04/A06。无 Schema/API/依赖/Secret/外发变化。
 页面定向2项、前端96文件/1577项、typecheck和Vite 195 modules构建通过；既有主chunk警告保留。
 
+## A10-A05-P02-P01 实施记录（2026-10-08）
+
+新增Package和PROJECT Template结构化页面：Package成员从受权Prototype候选全量选择，不提供UUID文本框；
+Template使用布局、组件、终端及受权固定DocumentVersion字段，不提供任意JSON/脚本编辑。幂等写按原输入、
+Key、ETag恢复，名称PATCH只GET对账。编码前发现项目Template列表按冻结语义会混合PROJECT/GLOBAL，旧前端
+却强制全为PROJECT；已修正为PROJECT精确同项目、GLOBAL精确空Project，外项目及未知Scope继续失败关闭。
+GLOBAL在项目页只读，其独立DeploymentAdmin管理面拆至P02-P02。无Schema/API/依赖/Secret/外发变化。
+定向33项、前端97文件/1580项、typecheck及Vite 195 modules构建通过；既有主chunk警告保留。
+
 ## A02 实施记录（2026-10-08）
 
 Migration0122新增Package、Prototype、同项目membership、NOT_REQUIRED范围决定及固定受影响

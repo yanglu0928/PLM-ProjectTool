@@ -1,5 +1,13 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A10-A05-P02-P01 新增Prototype Package与PROJECT Template结构化页面：
+  Package成员按受权业务候选全量替换；Template使用布局/组件/终端/固定DocumentVersion，不提供UUID或任意
+  JSON维护。修复项目Template合法混合GLOBAL时的前端误拒绝，同时保持外项目失败关闭；GLOBAL在项目页只读。
+  兼容性/升级/回滚：无Schema/API/依赖/权限/Secret或外发，删除页面并恢复解析器可回滚，但混合列表会重新
+  不可用。验证：定向33项、前端97文件/1580项、typecheck、Vite 195 modules构建PASS；既有主chunk警告
+  保留。已知问题：GLOBAL管理P02-P02、A05-P03～P04、A06～A07、A11、Server2025、Gate3/UAT/发行待；
+  Debian13跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A10-A05-P01 新增Prototype列表与详情结构化页面：创建仅形成身份，
   范围决定从当前Approved Requirement候选勾选并强制原因、影响和人工确认；不提供隐藏UUID维护，明确
   模板/AI/校验/回执均非批准事实。幂等写按原Key/ETag恢复，名称PATCH未知结果只GET对账。兼容性/升级/

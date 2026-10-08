@@ -1,5 +1,18 @@
 # 自主决策记录
 
+## DEC-20261008-1068：项目模板列表按冻结语义安全接纳获准GLOBAL项
+
+- Date/WBS：2026-10-08 / `PRT-01-A10-A05-P02-P01`；依据API-04、DEC-1033及真实Template Repository查询。
+- Decision：项目模板客户端逐项按响应Scope解析：PROJECT必须`project_id`等于当前项目，GLOBAL必须为空；
+  其他Scope、外项目PROJECT、重复、排序错误和cursor异常仍整页失败关闭。项目页面只允许写PROJECT，GLOBAL
+  只读；DeploymentAdmin写入口不得借项目角色调用。
+- Reason：后端项目查询有意合并同项目和GLOBAL模板，旧客户端强制PROJECT会拒绝合法响应；简单放宽
+  `project_id`又会泄露其他项目。按两个精确分支解析才能兼容冻结语义且保留租户边界。
+- Impact/Rollback：仅调整前端读取解析并新增Package/Template页面，无Schema/API/依赖/权限/Secret或外发。
+  可回滚前端，但含GLOBAL项的合法项目列表将重新不可用；后端和历史不变。GLOBAL管理页留P02-P02。
+- Verification：定向33项覆盖混合Scope、外项目拒绝、结构化写入及未知结果恢复；前端97文件/1580项、
+  typecheck及Vite 195 modules构建通过，既有主chunk警告保留。
+
 ## DEC-20261008-1067：Prototype范围决定只接受受权业务候选而不接受隐藏UUID
 
 - Date/WBS：2026-10-08 / `PRT-01-A10-A05-P01`；依据冻结范围决定合同、CR-PRT-002及用户既定人工维护体验。

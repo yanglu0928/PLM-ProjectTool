@@ -249,6 +249,15 @@ export function parsePrototypeTemplate(value: unknown, scope: "PROJECT" | "GLOBA
     is_current: value.is_current, updated_at: value.updated_at, created_at: value.created_at });
 }
 
+function parseProjectVisibleTemplate(value: unknown, projectId: string): PrototypeTemplateView {
+  if (!record(value) || (value.scope !== "PROJECT" && value.scope !== "GLOBAL")) {
+    throw new PrototypeReadError("PROTOTYPE_READ_UNAVAILABLE");
+  }
+  return value.scope === "PROJECT"
+    ? parsePrototypeTemplate(value, "PROJECT", projectId)
+    : parsePrototypeTemplate(value, "GLOBAL", null);
+}
+
 const versionFields = ["prototype_version_id", "prototype_id", "project_id", "version_no", "state",
   "supersedes_version_id", "template_id", "template_version_id", "artifact_refs", "requirement_refs",
   "interaction_spec", "coverage_summary", "content_fingerprint", "created_at"] as const;
@@ -438,7 +447,7 @@ export class PrototypeTemplateReadClient {
       Promise<PrototypePage<PrototypeTemplateView, PrototypeTemplateCursor>> {
     this.#transport.listInput([projectId], pageSize, next);
     return await this.#transport.page(`/api/v1/projects/${projectId}/prototype-templates${this.#transport.query(pageSize, next)}`,
-      pageSize, next, value => parsePrototypeTemplate(value, "PROJECT", projectId), value => value.prototype_template_id,
+      pageSize, next, value => parseProjectVisibleTemplate(value, projectId), value => value.prototype_template_id,
       rootOrder(value => value.prototype_template_id));
   }
   async listGlobal(pageSize = 50, next: PrototypeTemplateCursor | null = null):
