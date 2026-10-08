@@ -41,3 +41,11 @@ P02 复核发现既有 `PrototypeVersionCurrentValidator` 的 Document Proof 只
 ## 2026-10-08 A05 兼容修订：PostgreSQL 时区化 Audit 证明
 
 A05 隔离 Windows11/PG18.6 实测发现：`timestamptz` 的 `decided_at` 由驱动以本机会话时区 `Asia/Shanghai` 返回，而 Audit 证明适配器要求输入对象 `utcoffset()==0`，导致已存在且有效的同项目/用户/动作 Audit 被误判缺失，Prototype资格返回409。旧单元测试仅使用UTC夹具，未覆盖真实PG返回形态。拒绝通过跳过Audit检查或修改数据库全局时区解决：前者削弱事实证明，后者改变部署环境。选择在Audit所有者公开适配器边界只接受有时区的时间戳，将输入和读回Audit时间规范化为UTC后按相同绝对时刻、唯一事件及五分钟窗口验证；无时区、缺失、重复、过迟仍拒绝。差异仅为内部时间表示，不修改冻结API、Schema、权限或业务规则。风险是时区转换边界误差；增加UTC+8真实形态、naive拒绝、唯一/过迟负例及隔离PG/HTTP回归。回滚须保持Prototype生产注册关闭；不能回滚为跳过Audit。原冻结提交与既有业务历史不改。
+
+## 2026-10-08 A05-P04 性能偏差：同项目20并发资格读取
+
+Windows11隔离PG18.6/pgvector、真实Approved Prototype/Review/Trace/Link和本地文件字节校验的首次ASGI内进程预检中，两项资格各同时发出20个GET，40个请求均200且ETag/阶段正确，但`PROTOTYPE_SCOPE_DECISIONS`近秩P95约1836.93ms、`PROTOTYPE_COVERAGE`约1559.01ms，均高于初始非AI GET P95≤500ms目标。样本为同一Project/一份小合成文件，含应用与数据库但无Uvicorn网络、目标服务账户或正式信任源；既不能据此断言发行环境SLA失败，也不能把功能正确描述为性能PASS。单次P95样本少且可能混有连接预热成本，需重复测量。
+
+候选原因包括默认连接池5+10的排队/建连、共享ProjectRow与各Owner只读锁、跨模块多轮SQL、线程调度及文件完整性重算。拒绝直接提高SLA、关闭磁盘字节校验或跳过Review/Audit/项目隔离。先加入只读计时/连接池诊断，重复本机样本并与真实Uvicorn loopback区分；若定位为生产实现瓶颈，另记录所选最小优化、兼容/安全影响、回滚与单/20并发回归后实施。暂不改生产连接池或资格规则。生产Prototype入口继续关闭，A05/Gate3不得标PASS。
+
+同日复测在每项预热后做三轮20并发：默认池`PROTOTYPE_SCOPE_DECISIONS`三轮P95中位1618.71ms、`PROTOTYPE_COVERAGE`1557.25ms；另一轮分别1538.68/1555.31ms。20并发`/health/live`对照P95中位0.70ms，排除ASGI测试链路本身为主要瓶颈。同一测试库仅将诊断运行时池临时改为20+0（不改生产默认）后，默认池1531.58/1560.53ms对比扩大池958.93/1001.37ms，说明连接池容量是部分原因但不足以达500ms。仍需定位查询/锁/物理校验成本及真实网络服务表现；不得将该诊断当作生产参数建议或性能通过。诊断运行时结束即dispose，原功能路径和正式配置未变。

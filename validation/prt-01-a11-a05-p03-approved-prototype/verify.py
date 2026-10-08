@@ -2,16 +2,21 @@
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
+import math
 import runpy
 import shutil
 import socket
+import statistics
 import subprocess
 import tempfile
+import time
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
+import httpx
 import psycopg
 from fastapi.testclient import TestClient
 from psycopg.types.json import Jsonb
@@ -31,6 +36,9 @@ from plm_assistant.modules.auth.infrastructure.review_user_access import SqlAlch
 from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage
 from plm_assistant.modules.document.infrastructure.prototype_artifact_proof import SqlAlchemyPrototypeDocumentArtifactProof
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
+from plm_assistant.modules.platform.infrastructure.database import (
+    DatabaseEngineOptions, create_database_runtime,
+)
 from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
 from plm_assistant.modules.project.application.reviewers import ProjectReviewerQualificationService
 from plm_assistant.modules.project.infrastructure.authorization_repository import SqlAlchemyProjectAuthorizationRepository
@@ -90,6 +98,68 @@ class UnusedDependency:
         raise AssertionError(f"approved Prototype fixture used {name}")
 
 
+def _measure_read_load(app, prefix: str, headers: dict[str, str]
+                       ) -> dict[str, float]:
+    """Repeat twenty simultaneous ASGI GETs; not a network-service SLA."""
+    async def exercise() -> dict[str, float]:
+        metrics = {}
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app),
+            base_url=ORIGIN, timeout=30.0,
+        ) as client:
+            health_samples = []
+            for _ in range(3):
+                ready = asyncio.Event()
+
+                async def health_one() -> float:
+                    await ready.wait()
+                    started = time.perf_counter()
+                    response = await client.get("/health/live")
+                    elapsed = (time.perf_counter() - started) * 1000
+                    assert response.status_code == 200, response.text
+                    return elapsed
+
+                tasks = [asyncio.create_task(health_one()) for _ in range(20)]
+                ready.set()
+                samples = sorted(await asyncio.gather(*tasks))
+                health_samples.append(samples[18])
+            print("PRT_A05_P04_CONTROL_HEALTH_LIVE "
+                  f"median_round_p95_ms={statistics.median(health_samples):.2f}")
+            for item in ITEMS:
+                url = f"{prefix}/checklist-items/{item}/qualification"
+                warm = await client.get(url, headers=headers)
+                assert warm.status_code == 200, warm.text
+                p95_rounds = []
+                for round_no in range(1, 4):
+                    ready = asyncio.Event()
+
+                    async def one() -> float:
+                        await ready.wait()
+                        started = time.perf_counter()
+                        response = await client.get(url, headers=headers)
+                        elapsed = (time.perf_counter() - started) * 1000
+                        assert response.status_code == 200, response.text
+                        assert response.headers["etag"] == '"v10"'
+                        assert response.json()["data"]["stage_key"] == "PROTOTYPE"
+                        return elapsed
+
+                    tasks = [asyncio.create_task(one()) for _ in range(20)]
+                    ready.set()
+                    samples = sorted(await asyncio.gather(*tasks))
+                    p95 = samples[math.ceil(0.95 * len(samples)) - 1]
+                    p95_rounds.append(p95)
+                    print(f"PRT_A05_P04_READ_LOAD {item} round={round_no} "
+                          f"concurrency=20 min_ms={samples[0]:.2f} "
+                          f"p50_ms={statistics.median(samples):.2f} "
+                          f"p95_ms={p95:.2f} max_ms={samples[-1]:.2f}")
+                metrics[item] = statistics.median(p95_rounds)
+                print(f"PRT_A05_P04_READ_LOAD_SUMMARY {item} "
+                      f"median_round_p95_ms={metrics[item]:.2f}")
+        return metrics
+
+    return asyncio.run(exercise())
+
+
 def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
                        reviewer, reviewer_token, requirement,
                        requirement_version, requirement_review_round,
@@ -99,7 +169,8 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
                        conflicting_decision: bool = False,
                        coverage_mode: str | None = None,
                        isolation_checks: bool = False,
-                       multi_prototype: bool = False) -> None:
+                       multi_prototype: bool = False,
+                       read_load: bool = False) -> None:
     project = ids["project"]
     second = additional_requirement if mixed_not_required else None
     if mixed_not_required:
@@ -506,32 +577,49 @@ def _after_requirement(*, scratch: Path, runtime, database, ids, pm, pm_token,
             ))
             assert additional.link_state == "ACTIVE"
 
-    app = create_app(
-        workflow_checklist_qualification_router=(
-            create_windows_workflow_checklist_qualification_router(
-                runtime, sessions=sessions, origins=origins,
-                license_guard=guard, documents=unused, downloads=unused,
-                parse_results=unused, artifact_storage=storage,
-            )
-        ),
-        workflow_checklist_record_router=(
-            create_windows_workflow_checklist_record_router(
-                runtime, sessions=sessions, origins=origins,
-                license_guard=guard, audit=audit, documents=unused,
-                downloads=unused, parse_results=unused,
-                artifact_storage=storage,
-            )
-        ),
-        workflow_transition_router=(
-            create_windows_workflow_stage_transition_router(
-                runtime, sessions=sessions, origins=origins,
-                license_guard=guard, audit=audit, documents=unused,
-                downloads=unused, parse_results=unused,
-                artifact_storage=storage,
-            )
-        ),
-    )
+    def build_app(db_runtime):
+        return create_app(
+            workflow_checklist_qualification_router=(
+                create_windows_workflow_checklist_qualification_router(
+                    db_runtime, sessions=sessions, origins=origins,
+                    license_guard=guard, documents=unused, downloads=unused,
+                    parse_results=unused, artifact_storage=storage,
+                )
+            ),
+            workflow_checklist_record_router=(
+                create_windows_workflow_checklist_record_router(
+                    db_runtime, sessions=sessions, origins=origins,
+                    license_guard=guard, audit=audit, documents=unused,
+                    downloads=unused, parse_results=unused,
+                    artifact_storage=storage,
+                )
+            ),
+            workflow_transition_router=(
+                create_windows_workflow_stage_transition_router(
+                    db_runtime, sessions=sessions, origins=origins,
+                    license_guard=guard, audit=audit, documents=unused,
+                    downloads=unused, parse_results=unused,
+                    artifact_storage=storage,
+                )
+            ),
+        )
+    app = build_app(runtime)
     write_headers = {**read_headers, "x-csrf-token": csrf.hex(), "origin": ORIGIN}
+    if read_load:
+        p95 = _measure_read_load(app, prefix, read_headers)
+        assert set(p95) == set(ITEMS)
+        expanded_runtime = create_database_runtime(
+            runtime._engine.url,
+            options=DatabaseEngineOptions(pool_size=20, max_overflow=0),
+        )
+        try:
+            expanded_p95 = _measure_read_load(
+                build_app(expanded_runtime), prefix, read_headers,
+            )
+            print("PRT_A05_P04_POOL_DIAGNOSTIC "
+                  f"default={p95} pool20={expanded_p95}")
+        finally:
+            expanded_runtime.dispose()
     with TestClient(app, base_url=ORIGIN) as client:
         if isolation_checks:
             with psycopg.connect(host="127.0.0.1", port=PORT,
@@ -663,7 +751,8 @@ def main(*, mixed_not_required: bool = False,
          conflicting_decision: bool = False,
          coverage_mode: str | None = None,
          isolation_checks: bool = False,
-         multi_prototype: bool = False) -> None:
+         multi_prototype: bool = False,
+         read_load: bool = False) -> None:
     if conflicting_decision and not mixed_not_required:
         raise ValueError("conflict mode requires mixed scope")
     if coverage_mode not in {None, "partial", "illustrates"}:
@@ -698,10 +787,14 @@ def main(*, mixed_not_required: bool = False,
                 conflicting_decision=conflicting_decision,
                 coverage_mode=coverage_mode,
                 isolation_checks=isolation_checks,
-                multi_prototype=multi_prototype, **context,
+                multi_prototype=multi_prototype,
+                read_load=read_load, **context,
             ),
         )
-        if multi_prototype:
+        if read_load:
+            print("PRT_01_A11_A05_P04_P01_READ_LOAD_MEASURED: "
+                  "twenty concurrent GETs per Prototype item, real PG and file")
+        elif multi_prototype:
             print("PRT_01_A11_A05_P03_A03_MULTI_PROTOTYPE_HTTP_PG_PASS: "
                   "overlapping Links left one criterion uncovered and failed; "
                   "formal complementary Link union passed")
