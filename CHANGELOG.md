@@ -1,5 +1,12 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/PRT-01-A10-A05-P03 新增Prototype Version列表/详情/创建/校验/送审页面；
+  Template、批准Requirement、固定Document和Reviewer均由业务候选选择，Interaction结构化且不可执行，
+  Coverage自动计算。三类幂等操作均按原输入/Key/创建ETag恢复；旧校验报告在重验时失效，校验与送审回执
+  均明确非批准。兼容性/升级/回滚：无Schema/API/依赖/权限/Secret或外发，删除页面即可回滚。验证：定向
+  2项、前端99文件/1585项、typecheck、Vite 195 modules构建PASS；既有主chunk警告保留。已知问题：
+  A05-P04、A06～A07、A11、Server2025、Gate3/UAT/发行待；Debian13跳过。
+
 - 2026-10-08：0.1.0-dev.0/PRT-01-A10-A05-P02-P02 新增DeploymentAdmin GLOBAL Prototype Template
   结构化管理页；不依赖ProjectId，使用受权GLOBAL Document固定版本及same-origin原文入口，非管理员不读取。
   CREATE/REVISE按原Body/Key/ETag恢复，修订只追加不可变版本；与项目页共享受限表单且无任意JSON/脚本。

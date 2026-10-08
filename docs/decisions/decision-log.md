@@ -1,5 +1,18 @@
 # 自主决策记录
 
+## DEC-20261008-1070：PrototypeVersion只由受权业务候选和结构化不可执行说明组成
+
+- Date/WBS：2026-10-08 / `PRT-01-A10-A05-P03`；依据冻结PrototypeVersionInput、DEC-1034/1039和用户体验要求。
+- Decision：Version页面只允许选择当前获准TemplateVersion、当前批准RequirementVersion和受权固定
+  DocumentVersion；Interaction使用模式/导航/人工说明，Coverage由选择集合自动计算。VALIDATE报告不推进
+  状态且重新执行时废弃旧报告；只有PM可在有效报告后选择当前ACTIVE成员并提交固定Review策略。
+- Reason：技术ID/任意JSON会把Owner证明转嫁给用户并引入脚本风险；手填Coverage可与实际集合不一致；
+  暂时校验成功也不是人工批准，ImplementationMember不能借前端入口越权送审。
+- Impact/Rollback：仅新增未注册路由的前端页面和测试，无Schema/API/依赖/权限/Secret或外发。删除页面即可
+  回滚，后端及历史不变；路由和即时撤权留A06。
+- Verification：定向2项覆盖三类幂等恢复、结构化内容、固定定位、直接Version读取及角色边界；前端99文件/
+  1585项、typecheck及Vite 195 modules构建通过，既有主chunk警告保留。
+
 ## DEC-20261008-1069：GLOBAL Template管理不复用项目成员身份或项目路由
 
 - Date/WBS：2026-10-08 / `PRT-01-A10-A05-P02-P02`；依据冻结GLOBAL Template Operation和Scope隔离。

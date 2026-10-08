@@ -116,6 +116,15 @@ URL并由服务端重证，不暴露磁盘路径。非管理员不触发读取�
 历史非结构化合同只读。路由留A06统一注册；无Schema/API/依赖/Secret/外发变化，进入A05-P03 Version页面。
 定向5项、前端98文件/1583项、typecheck及Vite 195 modules构建通过；既有主chunk警告保留。
 
+## A10-A05-P03 实施记录（2026-10-08）
+
+新增Prototype Version列表/详情/创建/校验/送审结构化页面。Template、批准Requirement、固定Document和
+Reviewer全部从受权业务候选选择；Interaction使用枚举与人工说明，Coverage按选择自动生成，不开放UUID、
+任意JSON或脚本。CREATE/VALIDATE/SUBMIT_REVIEW未知结果均保留原输入/Key及创建ETag显式恢复，重新校验
+先清除旧报告。校验明确非批准，送审仅PM且回执仅为IN_REVIEW；固定Document可定位版本历史。路由留A06；
+无Schema/API/依赖/Secret/外发变化，进入A05-P04 Link页面。
+定向2项、前端99文件/1585项、typecheck及Vite 195 modules构建通过；既有主chunk警告保留。
+
 ## A02 实施记录（2026-10-08）
 
 Migration0122新增Package、Prototype、同项目membership、NOT_REQUIRED范围决定及固定受影响
