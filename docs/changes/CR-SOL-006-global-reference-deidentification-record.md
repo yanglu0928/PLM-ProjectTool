@@ -23,3 +23,5 @@
 2026-10-08 P03-P03-P02：0142 在原确认表仅开放一次性 `revoked_at` 更新，拒绝生来已撤回、二次撤回、其他字段改写、删除和截断；撤回命令要求当前管理员 Session/CSRF/License、固定原因码，锁定目标并确认其仍为来源最新行，同事务写 Audit/持久幂等收据。0142 降级至 0141 不删除撤回时间，旧读 Proof 仍拒绝已撤回行；0141 以下历史降级仍受非空拒降。ORM 原字段不变，仅修订 Owner 写规则。隔离 PG18.6 空/已有数据升降重升、Audit 失败回滚、重放和撤回后 Proof 拒绝通过。管理员/来源仍为合成 Port，真实用户确认、HTTP/文件组合和 ReferenceVersion 绑定未完成；P03-P03 不整体关闭。
 
 2026-10-08 P03-P03-P03-P01：隔离 PG 使用真实 Auth Session/CSRF/角色仓储组合内部确认、读取与撤销；正确管理员路径及错误 CSRF、撤销 Session 拒绝通过。身份行、License、Document/Evidence 来源仍为合成，未宣称真实登录、文件/Evidence/人工核查可用。此项只补权限组合证据，P03-P03-P03 继续。
+
+2026-10-08 P03-P03-P03-P02：隔离 PG/私有目录将真实 Auth、DocumentVersion/FileObject/文件 SHA-256 和 GLOBAL Document 级 Evidence 来源接至 Solution 确认与资格。正常确认/资格、错误范围、物理字节篡改、Evidence 撤销及确认撤销负例通过；被撤销 Evidence 按既有数据库规则不可恢复，本轮没有放宽。License/用户/资料仍为合成，解析节点与公开人工入口/ReferenceVersion 绑定未验；P03-P03 仍不整体关闭。

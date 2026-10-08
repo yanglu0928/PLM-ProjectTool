@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-08：0.1.0-dev.0/SOL-01-A04-P02-P03-P03-P03-P02 增加隔离 PG18.6/私有文件真实 Auth、DocumentVersion/FileObject、GLOBAL Document 级 Evidence 与内部确认/资格/撤销组合脚本；正常链通过，错误范围、文件字节篡改、Evidence 和确认撤销拒绝。兼容性/升级：仅验证/追溯文档，无生产代码/API/Schema/依赖变化，不需升级。验证：Win11独立 PG/文件脚本退出0、Alembic drift 无新增操作；后端全量本项未重跑（前次3298通过/3跳过）。已知问题：License/身份/文件为测试材料，解析节点、真实登录/用户人工核查、HTTP/UI/ReferenceVersion绑定、Gate3/发行未验；Debian13依指令跳过。
+
 - 2026-10-08：0.1.0-dev.0/SOL-01-A04-P02-P03-P03-P03-P01 增加隔离 PG18.6 真实 Auth Session/CSRF/管理员仓储与 GLOBAL 人工确认、读取、撤销内部组合验证；正确权限链通过，错误 CSRF 和撤销 Session 拒绝。兼容性/升级：仅验证脚本与追溯文档，无程序接口、Schema、迁移、依赖或配置变化，不需升级。验证：Windows11临时PG脚本退出0，前序迁移/撤销回归再运行；后端全量本项未重跑（上一任务3298通过/3跳过）。已知问题：合成凭据未走登录，License/Document/Evidence 来源仍为合成，真实文件/用户确认/HTTP/Gate3/发行未验；Debian13依指令跳过。
 
 - 2026-10-08：0.1.0-dev.0/SOL-01-A04-P02-P03-P03-P02 新增 GLOBAL Reference 人工确认一次性受控撤回：管理员 Session/CSRF/License、固定原因、最新行检查与撤回/Audit/幂等同事务；0142 仅允许 `revoked_at` 空→非空，其他历史不可改。兼容性/升级：无公开 API/新依赖；既有字段不变，从0141线性升级；可降回0141并保留已撤回时间，不恢复旧确认。验证：Win11隔离PG18.6空/有数据、升降重升/drift、历史闭锁、回滚/重放/Proof拒绝；后端3298通过/3跳过/4824子例。已知问题：真实用户人工确认、Auth/Document/Evidence/文件组合、公开入口/ReferenceVersion绑定、Gate3/发行未验；Debian13依指令跳过。

@@ -10699,3 +10699,10 @@
 - Decision：先用隔离 PG 合成身份行验证真实 Auth 仓储与确认、读取、撤销的交互；Document/Evidence/License 仍为合成 Port，下一项分别接真实文件和来源实体。此 PASS 不关闭 P03-P03-P03 总项。
 - Reason：此前确认/撤销 PG 验证以假管理员绕过 Session/CSRF 数据库判断；需要独立证明权限闭环，再定位真实来源组合问题。脚本覆盖正确/错误 CSRF、Session 撤销前后确认/读取/撤销，退出0。
 - Impact/Rollback：仅增加验证脚本/文档，无生产 API/Schema/依赖/数据变更；无需迁移。真实登录、License 信任、Document/Evidence 文件及用户实际人工核查未验，Gate3不变。
+
+# DEC-20261008-1109：GLOBAL 来源以真实文件与 Evidence 当前性共同证明，撤销历史不复原
+
+- Date/WBS：2026-10-08 / `SOL-01-A04-P02-P03-P03-P03-P02`；依据 CR-SOL-006、现有 Document/Evidence 固定来源 Port、隔离 PG18.6/私有文件组合。
+- Decision：确认与资格测试接真实 Auth/DocumentVersion/FileObject/Evidence 仓储和物理 SHA-256；License 仍为合成 Port。Evidence `REVOKED` 后不得复原，因此分别验证 Evidence 来源失败与确认 Proof 撤销失败，不更改该历史规则。
+- Reason：之前各 Port 单测及合成来源不能证明实际文件/PG 交互。独立脚本确认正常来源成功、错误范围/文件篡改/Evidence 撤销/确认撤销拒绝；脚本退出0，Alembic drift 无增量。
+- Impact/Rollback：只增加隔离验证脚本和追溯文档，无 Schema/API/依赖/生产业务变更，不需迁移。解析节点 Evidence、真实登录/License、用户人工核查与 HTTP/UI 未验；Gate3不变。
