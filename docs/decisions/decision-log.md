@@ -10601,3 +10601,10 @@
 - Decision：保留缺省5+10，新增仅`TWENTY_FIXED`可选20+0业务池；实际PG普通连接额度不足80或不可读时拒绝启动。目标Server内存和重复P95未证前不作为发行参数、不开放Prototype。
 - Reason：配置正反例、固定错误/清理和本机临时PG正向预算通过，后端3259通过/3跳过；P19虽有两轮低于500ms但第三轮失败，且Server2025未运行验证。
 - Impact/Rollback：非Secret Bootstrap与API装配增量，无Schema、公开API、权限、新依赖或数据迁移；删除/设DEFAULT并重启回到5+10。性能FAIL、Prototype入口关闭、Gate3阻塞不变。
+
+# DEC-20261008-1095：宿主资源不足以安全强启目标VM，本轮转独立Owner工作
+
+- Date/WBS：2026-10-08 / `PRT-01-A11-A05-P04-P22`；依据只读VMware运行状态、目标VM内存/vCPU配置与宿主可用内存。
+- Decision：本轮不启动16GiB的Server2025 VM；保留实际OS/PG/内存/SCM/性能为未验，按CR-SEQ-001转Solution最小真实Owner前置核查，不将整个目标标为阻塞。
+- Reason：运行VM为0，宿主可用内存约12.68GiB，低于VM配置16GiB；VMware guestOS标签不等于实机版本证明。强启可能干扰宿主其他工作。
+- Impact/Rollback：仅记录，无VM/生产程序/Schema/API/配置/迁移变化。资源恢复后可进行目标实测；Prototype入口与Gate3继续关闭。
