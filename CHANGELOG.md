@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A12-P02 新增 PROJECT Reference 修订页面/角色入口，从受权文档选择固定可用版本并可选同版本 Evidence；逐项核查、提交前重核、未知结果同键恢复，历史 201 与当前详情分离。兼容性/升级：纯前端路由/视图，无 Schema/Migration、依赖或冻结 API 变化；撤下路由/入口可回滚。验证：定向7、前端全量119文件/1692项、typecheck/build通过。已知问题：Win11 Edge/隔离 PG 浏览器验收、GLOBAL 整合、正式目标账户/20并发/Server2025、Gate3/UAT/发行未验；现有主包超过500 kB提示，Debian13实机依指令暂跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A12-P01 对账 PROJECT Reference Revise 来源选择：文档版本必选、Evidence 可选；决定采用受权 Document 候选/固定版本与可选 Evidence 逐项核查、提交前重核当前根，不提供裸 UUID 表单。兼容性/升级：仅文档排期，无程序/Schema/Migration、依赖或冻结 API 变化。验证：静态对账，未运行新测试。已知问题：A12 页面/浏览器、GLOBAL 整合、正式目标账户/20 并发/Server2025、Gate3/UAT/发行未验；Debian13 实机依指令暂跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-01-A11-P02 新增 Reference Revise PROJECT/GLOBAL 单次受保护 Session 写桥及严格 201/错误客户端，不从版本号推导 ETag，未知结果不自动换号重试。兼容性/升级：纯前端内部增量，无 Schema/Migration、依赖或冻结 API 变化；移除客户端/白名单可回滚。验证：定向4、前端全量118文件/1685项、typecheck/build通过；首轮独立 typecheck Windows 异常退出无诊断，后两轮通过。已知问题：来源选择 UI/浏览器、正式目标账户/20 并发/Server2025、Gate3/UAT/发行未验；Debian13 实机依指令暂跳过。

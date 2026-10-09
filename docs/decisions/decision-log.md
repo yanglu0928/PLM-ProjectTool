@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261009-1131：PROJECT 修订按文档主来源与逐项核查组织页面
+
+- Date/WBS：2026-10-09 / `SOL-01-A12-P02`，依据冻结 API-04、A12-P01 前置核查和现有 Document/Evidence 受权读客户端。
+- Decision：从项目活动文档选择固定可用版本，Evidence 仅作为已选版本下可选补充；各选中来源分别核查，再做总确认与当前根重读。写前把原 body/If-Match/Key 存入会话存储；未知结果只能显式同键恢复，历史 201 与刷新后当前详情并列展示。无裸 UUID 输入。
+- Reason：服务端允许 1～100 文档、0～500 Evidence，沿用 GLOBAL 至少两条 Evidence 的页面会错误拒绝合法项目方案；列表元数据不能替代服务端物理文件与当前资格证明。
+- Impact/Rollback：只变更 PROJECT 前端视图/路由和详情导航，不改冻结 API/Schema/权限；撤下路由/入口可关闭页面，历史修订结果保留。
+- Verification：A12-P02 页面定向与全量前端测试、typecheck/build；真实 Edge/PG 留 A12-P03，不把本次页面合同测试标作浏览器验收。
+
 ## DEC-20261009-1130：Reference 修订 UI 不用裸 UUID 输入替代来源选择
 
 - Date/WBS：2026-10-09 / `SOL-01-A10`，依据冻结 API-04、CR-SOL-013、A07～A09 与现有详情/Global Source Picker。

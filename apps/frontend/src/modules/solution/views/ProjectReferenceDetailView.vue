@@ -85,6 +85,11 @@ onUnmounted(() => { mounted = false; generation += 1; viewerGeneration += 1; });
       <button type="button" :disabled="busy" @click="load()">{{ busy ? "正在读取…" : "重新读取详情" }}</button>
       <p v-if="error" role="alert">{{ error }}</p>
       <template v-if="current"><h2>{{ current.name }}</h2>
+        <p v-if="session.canSubmit && session.view?.authorized_projects.some(item => item.project_id === current?.project_id
+          && (item.role === 'PROJECT_MANAGER' || item.role === 'IMPLEMENTATION_MEMBER'))">
+          <RouterLink :to="{ name: 'project-reference-revise', params: { projectId: current.project_id,
+            referenceId: current.reference_solution_id } }">选择固定来源并修订草稿</RouterLink>
+        </p>
         <dl><dt>当前标记</dt><dd>{{ current.eligibility_state }}</dd>
           <dt>标记原因</dt><dd>{{ current.eligibility_reason ?? "未记录" }}</dd>
           <dt>版本</dt><dd>{{ current.version_no }} · {{ current.version_state }}</dd>

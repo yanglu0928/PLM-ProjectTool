@@ -55,6 +55,7 @@ const ProjectPrototypeTemplateView = () => import("@/modules/prototype/views/Pro
 const ProjectPrototypeVersionView = () => import("@/modules/prototype/views/ProjectPrototypeVersionView.vue");
 const ProjectReferenceListView = () => import("@/modules/solution/views/ProjectReferenceListView.vue");
 const ProjectReferenceDetailView = () => import("@/modules/solution/views/ProjectReferenceDetailView.vue");
+const ProjectReferenceReviseView = () => import("@/modules/solution/views/ProjectReferenceReviseView.vue");
 const ProjectOutlineListView = () => import("@/modules/solution/views/ProjectOutlineListView.vue");
 const ProjectOutlineDetailView = () => import("@/modules/solution/views/ProjectOutlineDetailView.vue");
 const ProjectOutlineCreateView = () => import("@/modules/solution/views/ProjectOutlineCreateView.vue");
@@ -361,6 +362,11 @@ export function createAppRouter(
         path: "/projects/:projectId/solution-outlines",
         name: "project-outlines",
         component: ProjectOutlineListView,
+      },
+      {
+        path: "/projects/:projectId/reference-solutions/:referenceId/revise",
+        name: "project-reference-revise",
+        component: ProjectReferenceReviseView,
       },
       {
         path: "/projects/:projectId/reference-solutions/:referenceId",
