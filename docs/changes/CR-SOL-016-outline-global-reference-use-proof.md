@@ -21,3 +21,7 @@
 本 CR 第一阶段只登记设计，不执行数据库迁移或开放写。后续若需要 Schema/Guard 变更，必须单独线性 Alembic 迁移、空/有数据 up/down、历史拒降并保留 0137/0154。服务级回滚为保持 OutlineVersion 写 Guard 关闭、撤掉内部证明接线；不得撤销既有 Reference 资格历史。验证至少覆盖：合法项目成员引用 GLOBAL 合格版本、项目成员不能浏览 GLOBAL 原文/调用管理员资格命令、跨项目 PROJECT 拒绝、旧版本/RESTRICTED/REVOKED/缺事件拒绝、Document/Evidence 不可用/摘要变化、GLOBAL 确认撤回或到期、并发资格变更、失败无目录版本/Audit/收据、SQL 约束和全量回归。测试须使用合成数据，不发送客户正文或 Secret 外部服务。
 
 在现时证明 Port 完成前，`SOL_OUTLINE_VERSION_CREATE` 保持关闭；Gate3 不据此通过。TraceLink：Gate2 DM-05/API-04 → CR-SOL-002/0154 → 本 CR → A04 内部证明 → A04 Owner/Guard → Gate3。
+
+## A04-P01 实施记录
+
+2026-10-09 已新增只含固定身份/摘要的内部 Query、Current snapshot、来源/确认 Port 与失败关闭校验服务；无账号提权、文档正文/定位输出、公开 API 或数据库更改。Mock Port 定向测试覆盖合法 PROJECT/GLOBAL 和旧版本、资格事件不一致、摘要变化、确认撤回/过期等拒绝。真实端口未接线，因此仅标合同 PASS，未将 Mock 结果宣称为当前来源可用；P02 仍需真实 PostgreSQL/文件/权限验证。
