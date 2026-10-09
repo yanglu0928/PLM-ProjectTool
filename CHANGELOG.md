@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-03-A04-P03-P01 Project 内部授权矩阵新增冻结合同的 `SOL_OUTLINE_VERSION_CREATE`，仅 ProjectManager/ImplementationMember 可对本项目执行写操作；尚未接 OutlineVersion Owner。兼容性/升级：无 DB/Migration、公开 API、依赖或既有策略变化，可撤未接线策略回滚。验证：定向8项/732子例，后端全量3429通过/3跳过/5234子例。已知问题：Section/Requirement 现时输入证明、Owner/HTTP/Guard、Gate3/发行未完成。
+
 - 2026-10-09：0.1.0-dev.0/SOL-03-A04-P02-P03 Solution 内部组合当前 ReferenceRoot/资格事件、固定 Document/Evidence 物理来源、创建侧共用规范指纹及 GLOBAL 最新人工确认；当前 Version 分类/适用性字段纳入受限快照。兼容性/升级：无 DB/Migration、公开 API、角色或依赖变化；未接线时维持目录写 Guard 关闭，可撤内部适配器回滚。验证：定向10项/20子例、Win11 双 Scope 临时 PG18.6 真实来源/文件篡改/跨项目/RESTRICTED/到期/行锁退出0；后端全量 3429通过/3跳过/5229子例。已知问题：OutlineVersion Owner/HTTP/UI、最终项目角色与写入拒绝链、Gate3/发行仍未完成。
 
 - 2026-10-09：0.1.0-dev.0/SOL-03-A04-P02-P02-P02-A02 Evidence 模块新增内部当前 ELIGIBLE 固定 Locator/节点指纹证明；PROJECT/GLOBAL 的 DOCUMENT、解析节点均经 Document 自有安全文件/结果接口重验，返回不含 Locator/正文的最小摘要。兼容性/升级：无 DB/Migration、公开 API、依赖或角色变化；未接线服务可撤回，历史不动。验证：定向4项、Win11 双 Scope 临时 PG18.6 文档/节点及篡改拒绝通过；后端全量 3425 通过/3 跳过/5226 子例。已知问题：完整 Reference 资格/来源/GLOBAL 确认组合、OutlineVersion Owner/HTTP/UI、Gate3/发行未完成。
