@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261009-1130：Reference 修订 UI 不用裸 UUID 输入替代来源选择
+
+- Date/WBS：2026-10-09 / `SOL-01-A10`，依据冻结 API-04、CR-SOL-013、A07～A09 与现有详情/Global Source Picker。
+- Decision：先完成受保护 Revise 传输/严格结果客户端，再分别做 PROJECT 候选选择与 GLOBAL 既有来源/脱敏确认整合；成功或历史同键恢复后重新 GET 当前根，不把旧 201/ETag 表述为当前。缺受控候选时先补候选能力，不提供裸 UUID 自由表单。
+- Reason：用户要求可定位来源且避免难填写表格；直接复用当前固定引用或自由填写 ID 既不能表达来源变更，也可能误导为已确认/当前合格。GLOBAL 新来源必须有对应人工脱敏确认。
+- Impact/Rollback：仅前端施工顺序和展示边界，冻结后端合同/Schema/权限不变；可按验证进展调整切片，未开放的 UI 不标 PASS。
+- Verification：现有前端只读详情、Global Source Picker、Auth 写桥与 A08 响应/ETag 静态对账；未运行新代码测试。
+
 ## DEC-20261009-1129：Reference Revise 仅进入 Windows 显式写组合
 
 - Date/WBS：2026-10-09 / `SOL-01-A09`，依据冻结 API-04、CR-SOL-013 与 A08 可选路由。

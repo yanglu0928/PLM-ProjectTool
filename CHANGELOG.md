@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A10 完成 Reference 修订前端合同/来源选择前置核查，拆 A11 安全客户端、A12 PROJECT 选择页、A13 GLOBAL 脱敏选择整合、A14 Edge/PG 验收。兼容性/升级：仅文档，无程序/Schema/Migration/依赖/冻结 API 变化，可调整施工顺序。验证：静态对账，未运行新测试。已知问题：UI/浏览器尚未实现，Eligibility、正式目标账户/20 并发/Server2025、Gate3/UAT/发行未验；Debian13 实机依指令暂跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A09 将 PROJECT/GLOBAL Reference Revise 仅装入 Windows 显式写模式；缺来源、审计或安全依赖拒启动并释放运行资源。兼容性/升级：无 Schema/Migration/依赖/前端或冻结 API 变化；撤下两个注入即可关闭写面，历史保留。验证：Win11 隔离 PG18.6 两路真实 Session/合成来源、工厂/生产模式合同及后端全量 3375 通过/3 跳过。已知问题：只读同形 GET 对 POST 返回 405（写路由未装载）；UI/浏览器、Eligibility、正式目标账户/20 并发/Server2025、Gate3/UAT/发行未验；Debian13 实机依指令暂跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-01-A08 新增默认关闭的 PROJECT/GLOBAL Reference Revise 可选 POST，严格 Session/Origin/CSRF/强 If-Match/幂等/JSON，首次版本摘要及固定 ETag 重放；Windows 正式组合未注入。兼容性/升级：无 Schema/Migration/依赖/前端或冻结路径变化；移除可选 Router 注入可回滚，已存历史不回退。验证：合同 3、Win11 隔离 PG18.6 真 ASGI/Session/PROJECT/GLOBAL 合成来源及后端全量 3373 通过/3 跳过。已知问题：Windows 显式组合/UI/浏览器、Eligibility、正式目标账户/20 并发/Server2025、Gate3/UAT/发行未验；Debian13 实机依指令暂跳过。
