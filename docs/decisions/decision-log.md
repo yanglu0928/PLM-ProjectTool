@@ -11198,3 +11198,10 @@
 - Decision：新增独立 0160 迁移，先审四表全空，才开放 DocumentVersion-only 的四表 INSERT；Outline→Section 活动父锁、DRAFT/无 Review/连续前驱、固定引用计数/ordinal、首响应全字段一致和延迟提交闭环共同约束。UPDATE/DELETE/TRUNCATE、Artifact 裸引用继续拒绝；真正来源资格、调用者授权和 Audit 属 P11 Owner。
 - Reason：部分版本/引用或首次响应不能在失败重试中成为正式历史，亦不能因首响应表存在就推定全字段和引用集合已绑定；空历史前提可避免无审计存量绕过新 Guard。
 - Impact/Rollback：0160 只替换 Guard 函数和增延迟触发器，无 ORM/公开 API/权限/配置/依赖及现有业务数据变化；四表空时可回 0159，任一非空拒降并保留历史。Win11 可弃 PG 验证通过但 P11/正式环境/Gate3 不自动放行。
+
+# DEC-20261009-1177：SectionVersion 首次响应重放仅依不可变结果且每次重验当前授权
+
+- Date/WBS：2026-10-09 / `SOL-05-A02-P11`；依据 Gate2 API-04/DM-05、CR-SOL-003、P06 现时来源证明、P08 权限及 P09/P10 闭环。
+- Decision：内部 Owner 先验当前 License/Session/CSRF/Project 操作授权，再预留通用持久收据；新请求同事务完成来源证明、DRAFT 版本/固定引用/首响应、单次 Audit 与收据，重放只读取不可变首次结果/固定引用且不再因后续来源失效改变原始 201 内容。Artifact 无 Owner 时继续拒写；HTTP/Windows 留 P12。
+- Reason：从当前可变版本状态重构首次响应会使重放漂移，重复运行当前来源证明可能把已提交成功误报失败；但不重验当前调用者授权会泄漏历史结果。收据、数据与 Audit 分事务会产生孤儿事实或重复事件。
+- Impact/Rollback：仅 Solution 内部 Application/Repository、测试及文档，无 Schema/Migration/公开 API/权限/配置/依赖变化；未挂入口前可撤新代码，已提交历史不得删除。正式目标账户、Server2025、性能、Gate3 仍另验。
