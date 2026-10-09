@@ -33,3 +33,7 @@
 ## A04-P02-P02-P01 实施记录
 
 2026-10-09 已按本 CR 建立 Document 自有内部固定版本证明：同事务共享锁当前元数据并通过原有安全快照逐字节校验 SHA-256，不借用全局管理员会话；只向业务调用者返回固定版本身份/摘要，不返回文件正文或定位。双 Scope 隔离 PostgreSQL/真实文件及篡改负例已通过。Evidence Locator/解析节点仍另项，未把 Document 通过推定为 Reference 全来源通过；目录版本写保持关闭。
+
+## A04-P02-P02-P02-A01 实施记录
+
+2026-10-09 已在 Document 内部增加同事务固定 ParseRecord/ResultRef 与结果文件证明，绑定已验证 DocumentVersion 的 SHA-256、解析器和 JSON schema，并在真实 GLOBAL 节点/篡改文件验证。解析字节只向后端 Evidence 校验器提供，不进入 Solution/UI；Evidence Locator/指纹仍需 A02 证明，目录版本写继续关闭。
