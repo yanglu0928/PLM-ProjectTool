@@ -30,6 +30,7 @@ from plm_assistant.modules.solution.api.reference_eligibility import (
     create_project_reference_eligibility_router,
 )
 from plm_assistant.modules.solution.api.reference_deidentification import create_reference_deidentification_router
+from plm_assistant.modules.solution.api.global_reference_publication import create_global_reference_publication_router
 from plm_assistant.modules.solution.api.reference_list import create_project_reference_list_router
 from plm_assistant.modules.solution.api.global_reference_read import create_global_reference_read_router
 from plm_assistant.modules.solution.api.global_reference_list import create_global_reference_list_router
@@ -39,6 +40,7 @@ from plm_assistant.modules.solution.api.reference_read import create_project_ref
 from plm_assistant.modules.solution.application.create_reference_solution import ReferenceCreateService
 from plm_assistant.modules.solution.application.revise_reference_solution import ReferenceReviseService
 from plm_assistant.modules.solution.application.set_reference_eligibility import ReferenceEligibilityService
+from plm_assistant.modules.solution.application.set_global_reference_publication import GlobalReferencePublicationService
 from plm_assistant.modules.solution.application.confirm_reference_deidentification import ReferenceDeidentificationConfirmService
 from plm_assistant.modules.solution.application.preview_reference_deidentification import ReferenceDeidentificationPreviewService
 from plm_assistant.modules.solution.application.lookup_reference_deidentification_operation import ReferenceDeidentificationOperationLookupService
@@ -50,6 +52,7 @@ from plm_assistant.modules.solution.application.reference_source_qualification i
 from plm_assistant.modules.solution.infrastructure.reference_create_repository import SqlAlchemyReferenceCreateRepository
 from plm_assistant.modules.solution.infrastructure.reference_revise_repository import SqlAlchemyReferenceReviseRepository
 from plm_assistant.modules.solution.infrastructure.reference_eligibility_repository import SqlAlchemyReferenceEligibilityRepository
+from plm_assistant.modules.solution.infrastructure.global_reference_publication_repository import SqlAlchemyGlobalReferencePublicationRepository
 from plm_assistant.modules.solution.infrastructure.reference_read_repository import SqlAlchemyReferenceReadRepository
 from plm_assistant.modules.solution.infrastructure.global_reference_read_repository import SqlAlchemyGlobalReferenceReadRepository
 from plm_assistant.modules.solution.infrastructure.reference_deidentification_proof_repository import SqlAlchemyReferenceDeidentificationProofRepository
@@ -320,6 +323,31 @@ def create_windows_global_reference_eligibility_router(
             eligibility=_eligibility_service(
                 runtime=runtime, license_guard=license_guard, audit=audit,
                 documents=documents, downloads=downloads, parse_results=parse_results))
+    except Exception:
+        raise ProductionSolutionReferenceStartupError() from None
+
+
+def create_windows_global_reference_publication_router(
+    *, runtime, sessions, origins, license_guard, audit,
+    documents, downloads, parse_results,
+) -> APIRouter:
+    """Compose reviewed GLOBAL candidate writes only for explicit Windows write mode."""
+    if any(value is None for value in (
+            runtime, sessions, origins, license_guard, audit,
+            documents, downloads, parse_results)):
+        raise ProductionSolutionReferenceStartupError()
+    try:
+        sources = _source_service(
+            documents=documents, downloads=downloads, parse_results=parse_results,
+            project_repository=SqlAlchemyProjectAuthorizationRepository())
+        publication = GlobalReferencePublicationService(
+            unit_of_work=runtime.unit_of_work,
+            admin=SqlAlchemyLicenseImportAccess(), license_guard=license_guard,
+            sources=sources,
+            repository=SqlAlchemyGlobalReferencePublicationRepository(),
+            receipts=SqlAlchemyIdempotencyReceipts(), audit=audit)
+        return create_global_reference_publication_router(
+            sessions=sessions, origins=origins, publication=publication)
     except Exception:
         raise ProductionSolutionReferenceStartupError() from None
 

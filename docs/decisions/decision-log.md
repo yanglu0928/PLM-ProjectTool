@@ -11016,3 +11016,10 @@
 - Decision：新增默认不挂载的 `POST /api/v1/global/reference-solutions/{reference_solution_id}:set-candidate-publication`，统一承载 PUBLISH/REVOKE。严格正文仅接受 `reference_version_id`、`expected_event_no`、`event_kind`、`display_label`、`reason`；要求可信 Origin、Session/CSRF、Idempotency-Key；200 返回不可变事件身份/版本/事件号/状态/审定标签/原因/时间及 Trace、no-store。项目候选读取将是独立最小投影，不复用此管理员响应。
 - Reason：与现有 `:set-eligibility` 命令风格一致，显式预期版本/事件号避免后台列表过期后误操作；默认关闭直到 Windows 信任源装配通过。
 - Impact/Rollback：按 CR-SOL-018 新增非 Breaking 管理路径，不修改冻结旧路径/权限。撤掉可选路由即可回滚 API，已写事件/Audit/收据不删除；真实 ASGI/PG 与权限负例单独验证。
+
+# DEC-20261009-1151：GLOBAL 候选发布仅接入 Windows 显式写模式
+
+- Date/WBS：2026-10-09 / `SOL-03-A04-P03-P03-P06-A03-P04`；依据 CR-SOL-018、DEC-1150、现有 `windows_solution_reference` 受控来源工厂与 `production_login` 三模式开关。
+- Decision：复用现有 Document/Evidence/脱敏确认现时证明组合，构建独立 GLOBAL 发布 Owner Router；仅在 `include_secret_write` 路径注入 `create_app`，默认登录及只读平台模式保持 404。缺 runtime/Session/Origin/License/Audit/Document/Download/Parse 任一端口时拒绝构造，不退化成假证明。
+- Reason：与 GLOBAL 创建/资格/确认写链共用受控端口与显式模式，避免新命令绕过实际文件和管理员证明，也不因新增可选 API 默认扩大攻击面。
+- Impact/Rollback：仅 Windows 组合根与测试；无 Schema/Migration/角色/依赖变化。撤去组合注入可回滚入口，既有发布历史保留；正式服务账户/Vault/CA、Server2025 与 Release Gate 另验。

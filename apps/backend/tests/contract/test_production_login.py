@@ -620,6 +620,7 @@ class ProductionLoginTests(unittest.TestCase):
         for name in ("create_windows_global_reference_revise_router",
                      "create_windows_project_reference_revise_router",
                      "create_windows_global_reference_eligibility_router",
+                     "create_windows_global_reference_publication_router",
                      "create_windows_project_reference_eligibility_router"):
             runtime = Mock()
             runtime.is_ready.return_value = True

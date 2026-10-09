@@ -59,7 +59,8 @@ class Sessions:
 
 
 def on_qualified(*, runtime, request, sources, audit, license_guard,
-                 port, **_unused) -> None:
+                 port, documents, downloads, parse_results,
+                 router_factory=None, **_unused) -> None:
     common = dict(
         unit_of_work=runtime.unit_of_work,
         global_access=SqlAlchemyLicenseImportAccess(),
@@ -86,10 +87,14 @@ def on_qualified(*, runtime, request, sources, audit, license_guard,
         sources=sources,
         repository=SqlAlchemyGlobalReferencePublicationRepository(),
         receipts=SqlAlchemyIdempotencyReceipts(), audit=audit)
-    router = create_global_reference_publication_router(
-        sessions=Sessions(),
-        origins=LoginOriginPolicy(["https://plm.example.test"]),
-        publication=owner)
+    sessions = Sessions()
+    origins = LoginOriginPolicy(["https://plm.example.test"])
+    router = (create_global_reference_publication_router(
+        sessions=sessions, origins=origins, publication=owner)
+        if router_factory is None else router_factory(
+            runtime=runtime, sessions=sessions, origins=origins,
+            license_guard=license_guard, audit=audit, documents=documents,
+            downloads=downloads, parse_results=parse_results))
     path = (f"/api/v1/global/reference-solutions/"
             f"{initial.reference_solution_id}:set-candidate-publication")
     headers = {

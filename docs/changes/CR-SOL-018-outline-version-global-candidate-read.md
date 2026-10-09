@@ -30,6 +30,10 @@
 
 2026-10-09 按 DEC-1150 新增默认关闭的管理员发布/撤回 HTTP 命令及增量 API 合同，真实 Win11 ASGI/PG 发布、撤回、普通用户拒绝、幂等重放和最小响应验证见 `docs/progress/sol-03-a04-p03-p03-p06-a03-p03-global-publication-http.md`。默认和当前 Windows 生产组合仍未挂载，项目成员候选读面仍未开放；本 CR 不关闭。
 
+## P06-A03-P04 实施记录
+
+2026-10-09 按 DEC-1151 将管理员发布命令仅装配至 Windows 显式写模式；缺受控来源或安全端口失败关闭，默认/只读模式保持不挂载。Win11 隔离 PG18.6 工厂/ASGI/真实合成文件与后端全量证据见 `docs/progress/sol-03-a04-p03-p03-p06-a03-p04-global-publication-windows.md`。项目成员最小读面、正式服务账户和 Gate 3 仍待验，本 CR 不关闭。
+
 ## P06-A02-P02 前置核查
 
 2026-10-09 核查 `GlobalReferenceReadService` 当前仅调用 `AdminPort.authorized_admin`；`SqlAlchemyGlobalReferenceReadRepository` 投影含 `Root.name`，而 GLOBAL 创建只验证名称格式，不证明其已被人工审定为可向项目成员展示。现有 `Reference` 当前资格/来源证明是内部最小端口，不提供可读标签；以截断 UUID 当标签虽不泄露正文，却无法让用户核对所选方案。故项目成员 GLOBAL 候选页面编码前置不满足，状态为 `PRECONDITION_BLOCKED`，不是 Gate/功能 PASS。先实施本 CR 的发布账本与管理员确认、再开放读面；这需要独立 Schema/Owner/API/Win11/页面任务。当前转做不依赖它的 OutlineVersion GET/LIST 与原操作恢复，保持 P06-PROJECT 子集可用。

@@ -55,6 +55,7 @@ from plm_assistant.entrypoints.windows_solution_reference import (
     create_windows_global_reference_create_router,
     create_windows_global_reference_revise_router,
     create_windows_global_reference_eligibility_router,
+    create_windows_global_reference_publication_router,
     create_windows_global_reference_read_router,
     create_windows_global_reference_list_router,
     create_windows_project_reference_create_router,
@@ -650,6 +651,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         global_reference_create_router = None
         global_reference_revise_router = None
         global_reference_eligibility_router = None
+        global_reference_publication_router = None
         global_reference_read_router = None
         global_reference_list_router = None
         project_reference_read_router = None
@@ -936,6 +938,14 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 )
                 global_reference_eligibility_router = (
                     create_windows_global_reference_eligibility_router(
+                        runtime=runtime, sessions=sessions, origins=origins,
+                        license_guard=licenses.guard, audit=audit,
+                        documents=document_reads, downloads=document_downloads,
+                        parse_results=evidence_results_for_viewer,
+                    )
+                )
+                global_reference_publication_router = (
+                    create_windows_global_reference_publication_router(
                         runtime=runtime, sessions=sessions, origins=origins,
                         license_guard=licenses.guard, audit=audit,
                         documents=document_reads, downloads=document_downloads,
@@ -1777,6 +1787,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             global_reference_create_router=global_reference_create_router,
             global_reference_revise_router=global_reference_revise_router,
             global_reference_eligibility_router=global_reference_eligibility_router,
+            global_reference_publication_router=global_reference_publication_router,
             global_reference_read_router=global_reference_read_router,
             global_reference_list_router=global_reference_list_router,
             project_reference_read_router=project_reference_read_router,
