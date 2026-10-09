@@ -69,7 +69,7 @@ def rejects(code: str, operation) -> None:
 def on_created(*, port, scratch, locator, content, runtime, audit, license_guard,
                project, other_project, token, csrf, member_token, member_csrf,
                manager, evidence, document_version, documents, downloads,
-               parse_results, **_unused):
+               parse_results, on_http=None, **_unused):
     outline, section = uuid.uuid4(), uuid.uuid4()
     requirement, requirement_version, review, round_id = (
         uuid.uuid4() for _ in range(4))
@@ -233,6 +233,17 @@ def on_created(*, port, scratch, locator, content, runtime, audit, license_guard
                           "WHERE operation='V1_SOL_SECTION_VERSION_CREATE'").fetchone()[0] == 5
         assert db.execute("SELECT count(*) FROM plm.aud_events "
                           "WHERE action='SOL_SECTION_VERSION_CREATED'").fetchone()[0] == 5
+    if on_http is not None:
+        on_http(port=port, scratch=scratch, locator=locator, content=content,
+                runtime=runtime, audit=audit, license_guard=license_guard,
+                project=project, other_project=other_project, token=token,
+                csrf=csrf, member_token=member_token, member_csrf=member_csrf,
+                manager=manager, evidence=evidence,
+                document_version=document_version, documents=documents,
+                downloads=downloads, parse_results=parse_results,
+                outline=outline, section=section,
+                requirement=requirement,
+                requirement_version=requirement_version)
     print("SOL_05_A02_P11_SOURCE_OWNER_PG_PASS: real Auth/Project/"
           "Document/Requirement/Evidence/PG18, source invalidation, replay, "
           "same/different parallel keys, next version, rollback, "

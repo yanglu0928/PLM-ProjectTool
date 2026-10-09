@@ -11205,3 +11205,10 @@
 - Decision：内部 Owner 先验当前 License/Session/CSRF/Project 操作授权，再预留通用持久收据；新请求同事务完成来源证明、DRAFT 版本/固定引用/首响应、单次 Audit 与收据，重放只读取不可变首次结果/固定引用且不再因后续来源失效改变原始 201 内容。Artifact 无 Owner 时继续拒写；HTTP/Windows 留 P12。
 - Reason：从当前可变版本状态重构首次响应会使重放漂移，重复运行当前来源证明可能把已提交成功误报失败；但不重验当前调用者授权会泄漏历史结果。收据、数据与 Audit 分事务会产生孤儿事实或重复事件。
 - Impact/Rollback：仅 Solution 内部 Application/Repository、测试及文档，无 Schema/Migration/公开 API/权限/配置/依赖变化；未挂入口前可撤新代码，已提交历史不得删除。正式目标账户、Server2025、性能、Gate3 仍另验。
+
+# DEC-20261009-1178：SectionVersion POST 仅显式 Windows 写模式挂载
+
+- Date/WBS：2026-10-09 / `SOL-05-A02-P12-P01`；依据冻结 API-04、CR-SOL-003/P07～P11、现有 Windows 只读/写模式信任装配。
+- Decision：将严格有界的 `SOL_SECTION_VERSION_CREATE` 可选 HTTP Router 注入 `create_app`，默认 404；Windows `--platform-write` 且全部 Auth/License/Document/Requirement/Evidence/PG/Audit 依赖存在时才装配。201 从 P11 不可变首次结果投影，错误不泄漏内部来源与堆栈；真实 Edge/网络独立列 P12-P02，不以 TestClient 推定。
+- Reason：直接装默认应用会绕过平台信任门禁；仅内部 Owner 无法验证冻结 HTTP 合同，但 ASGI/PG 验收也不足以证明浏览器和服务部署。
+- Impact/Rollback：无 Migration、冻结 API Breaking、权限、依赖或旧数据变化；移除可选 Router/显式装配可关闭入口，不删除已提交历史。P12-P02、正式目标账户/Server2025/Gate3 继续开放。
