@@ -576,6 +576,43 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertNotIn("private", str(caught.exception))
         self.assertEqual(runtime.dispose.call_count, 2)
 
+    def test_reference_revise_constructor_failure_disposes_write_only(self):
+        from contextlib import ExitStack
+        from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
+
+        prefix = "plm_assistant.entrypoints.production_login."
+        for name in ("create_windows_global_reference_revise_router",
+                     "create_windows_project_reference_revise_router"):
+            runtime = Mock()
+            runtime.is_ready.return_value = True
+            with self.subTest(name=name), ExitStack() as stack:
+                for dependency, value in (
+                    ("read_database_url", "postgresql+psycopg://localhost/test"),
+                    ("create_database_runtime", runtime),
+                    ("_schema_current", True),
+                    ("create_windows_secret_list_cursor_codec", SecretListCursorCodec(b"q" * 32)),
+                    ("create_windows_project_member_cursor_codec", MemberListCursorCodec(b"m" * 32)),
+                    ("create_windows_project_department_cursor_codec", DepartmentListCursorCodec(b"d" * 32)),
+                ):
+                    stack.enter_context(patch(prefix + dependency, return_value=value))
+                stack.enter_context(patch(
+                    "plm_assistant.entrypoints.windows_license_runtime.create_windows_license_services",
+                    return_value=Mock(guard=Mock())))
+                stack.enter_context(patch(
+                    "plm_assistant.entrypoints.windows_secret_write.create_windows_secret_write_service",
+                    return_value=Mock()))
+                failed = stack.enter_context(patch(
+                    prefix + name, side_effect=RuntimeError("private Reference revise dependency")))
+                read_app = create_production_platform_app(self.settings(("http://localhost",)))
+                with TestClient(read_app, base_url="http://localhost") as client:
+                    self.assertEqual(client.get("/health/ready").status_code, 200)
+                self.assertEqual(failed.call_count, 0)
+                with self.assertRaises(ProductionLoginStartupError) as caught:
+                    create_production_platform_write_app(self.settings(("http://localhost",)))
+                failed.assert_called_once()
+                self.assertNotIn("private", str(caught.exception))
+            self.assertEqual(runtime.dispose.call_count, 2)
+
     def test_ai_provider_patch_dependency_fails_closed_only_in_write_mode(self):
         from contextlib import ExitStack
         from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
@@ -828,6 +865,14 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(client.post(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
                 "reference-solutions").status_code, 404)
+            self.assertEqual(client.post(
+                "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
+                "reference-solutions/00000000-0000-0000-0000-000000000002:revise"
+            ).status_code, 405)
+            self.assertEqual(client.post(
+                "/api/v1/global/reference-solutions/"
+                "00000000-0000-0000-0000-000000000002:revise"
+            ).status_code, 405)
             self.assertEqual(client.post(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
                 "solution-outlines").status_code, 404)
@@ -1179,6 +1224,14 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(client.post(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
                 "reference-solutions").status_code, 403)
+            self.assertEqual(client.post(
+                "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
+                "reference-solutions/00000000-0000-0000-0000-000000000002:revise"
+            ).status_code, 403)
+            self.assertEqual(client.post(
+                "/api/v1/global/reference-solutions/"
+                "00000000-0000-0000-0000-000000000002:revise"
+            ).status_code, 403)
             self.assertEqual(client.post(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
                 "solution-outlines").status_code, 403)

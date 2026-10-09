@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261009-1129：Reference Revise 仅进入 Windows 显式写组合
+
+- Date/WBS：2026-10-09 / `SOL-01-A09`，依据冻结 API-04、CR-SOL-013 与 A08 可选路由。
+- Decision：`production_login` 只在 `include_secret_write` 下构造并注入 PROJECT/GLOBAL Revise；缺任一来源/审计/Session/License 依赖即拒启动。默认/登录专用/只读均不注入 POST。
+- Reason：写路由自动进入只读平台会违反现有显式模式边界；读模式存在详情 GET 通配路径，POST `:revise` 实际返回 405 而非 404，这仅说明方法不匹配，不等于已装载修订写路由。
+- Impact/Rollback：无 Schema、角色或冻结路径变化；撤下两个写模式注入即可关闭公开写面，历史数据保留。
+- Verification：Windows 工厂缺依赖定向、生产组合合同只读405/写模式匿名403与构造失败释放、Win11 隔离 PG PROJECT/GLOBAL 实际 Session/来源；后端全量 3375 通过/3 跳过；正式目标账户/20 并发未验。
+
 ## DEC-20261009-1128：Reference Revise 的首次 ETag 随结果快照固定
 
 - Date/WBS：2026-10-09 / `SOL-01-A08`，依据冻结 API-04 `SOL_REFERENCE_REVISE`、CR-SOL-013 与 A07 首次结果表。

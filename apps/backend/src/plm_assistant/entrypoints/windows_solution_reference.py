@@ -21,6 +21,10 @@ from plm_assistant.modules.solution.api.reference_create import (
     create_global_reference_create_router,
     create_project_reference_create_router,
 )
+from plm_assistant.modules.solution.api.reference_revise import (
+    create_global_reference_revise_router,
+    create_project_reference_revise_router,
+)
 from plm_assistant.modules.solution.api.reference_deidentification import create_reference_deidentification_router
 from plm_assistant.modules.solution.api.reference_list import create_project_reference_list_router
 from plm_assistant.modules.solution.api.global_reference_read import create_global_reference_read_router
@@ -29,6 +33,7 @@ from plm_assistant.modules.solution.api.global_reference_list_cursor import Glob
 from plm_assistant.modules.solution.api.reference_list_cursor import ReferenceListCursorCodec
 from plm_assistant.modules.solution.api.reference_read import create_project_reference_read_router
 from plm_assistant.modules.solution.application.create_reference_solution import ReferenceCreateService
+from plm_assistant.modules.solution.application.revise_reference_solution import ReferenceReviseService
 from plm_assistant.modules.solution.application.confirm_reference_deidentification import ReferenceDeidentificationConfirmService
 from plm_assistant.modules.solution.application.preview_reference_deidentification import ReferenceDeidentificationPreviewService
 from plm_assistant.modules.solution.application.lookup_reference_deidentification_operation import ReferenceDeidentificationOperationLookupService
@@ -38,6 +43,7 @@ from plm_assistant.modules.solution.application.revoke_reference_deidentificatio
 from plm_assistant.modules.solution.application.prove_reference_deidentification import ReferenceDeidentificationProofService
 from plm_assistant.modules.solution.application.reference_source_qualification import ReferenceSourceQualificationService
 from plm_assistant.modules.solution.infrastructure.reference_create_repository import SqlAlchemyReferenceCreateRepository
+from plm_assistant.modules.solution.infrastructure.reference_revise_repository import SqlAlchemyReferenceReviseRepository
 from plm_assistant.modules.solution.infrastructure.reference_read_repository import SqlAlchemyReferenceReadRepository
 from plm_assistant.modules.solution.infrastructure.global_reference_read_repository import SqlAlchemyGlobalReferenceReadRepository
 from plm_assistant.modules.solution.infrastructure.reference_deidentification_proof_repository import SqlAlchemyReferenceDeidentificationProofRepository
@@ -196,6 +202,62 @@ def create_windows_global_reference_create_router(
         )
         return create_global_reference_create_router(
             sessions=sessions, origins=origins, creates=service)
+    except Exception:
+        raise ProductionSolutionReferenceStartupError() from None
+
+
+def _revise_service(*, runtime, license_guard, audit,
+                    documents, downloads, parse_results) -> ReferenceReviseService:
+    project_repository = SqlAlchemyProjectAuthorizationRepository()
+    sources = _source_service(
+        documents=documents, downloads=downloads, parse_results=parse_results,
+        project_repository=project_repository)
+    return ReferenceReviseService(
+        unit_of_work=runtime.unit_of_work,
+        global_access=SqlAlchemyLicenseImportAccess(),
+        project_access=SqlAlchemyProjectWriteAccess(),
+        project_authorization=ProjectAuthorizationService(
+            unit_of_work=runtime.unit_of_work, repository=project_repository),
+        license_guard=license_guard, sources=sources,
+        repository=SqlAlchemyReferenceReviseRepository(),
+        receipts=SqlAlchemyIdempotencyReceipts(), audit=audit,
+    )
+
+
+def create_windows_project_reference_revise_router(
+    *, runtime, sessions, origins, license_guard, audit,
+    documents, downloads, parse_results,
+) -> APIRouter:
+    """Compose PROJECT revise only for explicit Windows write mode."""
+    if any(value is None for value in (
+            runtime, sessions, origins, license_guard, audit,
+            documents, downloads, parse_results)):
+        raise ProductionSolutionReferenceStartupError()
+    try:
+        return create_project_reference_revise_router(
+            sessions=sessions, origins=origins,
+            revises=_revise_service(
+                runtime=runtime, license_guard=license_guard, audit=audit,
+                documents=documents, downloads=downloads, parse_results=parse_results))
+    except Exception:
+        raise ProductionSolutionReferenceStartupError() from None
+
+
+def create_windows_global_reference_revise_router(
+    *, runtime, sessions, origins, license_guard, audit,
+    documents, downloads, parse_results,
+) -> APIRouter:
+    """Compose GLOBAL revise only for explicit Windows write mode."""
+    if any(value is None for value in (
+            runtime, sessions, origins, license_guard, audit,
+            documents, downloads, parse_results)):
+        raise ProductionSolutionReferenceStartupError()
+    try:
+        return create_global_reference_revise_router(
+            sessions=sessions, origins=origins,
+            revises=_revise_service(
+                runtime=runtime, license_guard=license_guard, audit=audit,
+                documents=documents, downloads=downloads, parse_results=parse_results))
     except Exception:
         raise ProductionSolutionReferenceStartupError() from None
 

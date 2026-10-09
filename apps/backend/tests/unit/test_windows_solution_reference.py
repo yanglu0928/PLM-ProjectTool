@@ -6,9 +6,11 @@ from unittest.mock import Mock
 from plm_assistant.entrypoints.windows_solution_reference import (
     ProductionSolutionReferenceStartupError,
     create_windows_global_reference_create_router,
+    create_windows_global_reference_revise_router,
     create_windows_global_reference_read_router,
     create_windows_global_reference_list_router,
     create_windows_project_reference_create_router,
+    create_windows_project_reference_revise_router,
     create_windows_project_reference_list_router,
     create_windows_project_reference_read_router,
     create_windows_reference_deidentification_router,
@@ -18,6 +20,30 @@ from plm_assistant.modules.solution.api.global_reference_list_cursor import Glob
 
 
 class WindowsSolutionReferenceTests(unittest.TestCase):
+    def test_revise_only_explicit_factories_and_missing_dependency_fails_closed(self):
+        dependencies = dict(
+            runtime=Mock(unit_of_work=Mock()), sessions=Mock(), origins=Mock(),
+            license_guard=Mock(), audit=Mock(), documents=Mock(),
+            downloads=Mock(), parse_results=Mock(),
+        )
+        for factory, expected_path in (
+            (create_windows_project_reference_revise_router,
+             "/api/v1/projects/{project_id}/reference-solutions/"
+             "{reference_solution_id}:revise"),
+            (create_windows_global_reference_revise_router,
+             "/api/v1/global/reference-solutions/{reference_solution_id}:revise"),
+        ):
+            with self.subTest(factory=factory.__name__):
+                router = factory(**dependencies)
+                self.assertEqual(
+                    [("POST", expected_path)],
+                    [(method, route.path) for route in router.routes for method in route.methods],
+                )
+                for key in dependencies:
+                    with self.subTest(key=key), self.assertRaises(
+                            ProductionSolutionReferenceStartupError):
+                        factory(**{**dependencies, key: None})
+
     def test_global_list_and_missing_dependency_fails_closed(self):
         dependencies = dict(runtime=Mock(unit_of_work=Mock()), sessions=Mock(),
                             origins=Mock(), license_guard=Mock(),

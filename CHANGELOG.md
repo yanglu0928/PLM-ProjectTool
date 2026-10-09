@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A09 将 PROJECT/GLOBAL Reference Revise 仅装入 Windows 显式写模式；缺来源、审计或安全依赖拒启动并释放运行资源。兼容性/升级：无 Schema/Migration/依赖/前端或冻结 API 变化；撤下两个注入即可关闭写面，历史保留。验证：Win11 隔离 PG18.6 两路真实 Session/合成来源、工厂/生产模式合同及后端全量 3375 通过/3 跳过。已知问题：只读同形 GET 对 POST 返回 405（写路由未装载）；UI/浏览器、Eligibility、正式目标账户/20 并发/Server2025、Gate3/UAT/发行未验；Debian13 实机依指令暂跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A08 新增默认关闭的 PROJECT/GLOBAL Reference Revise 可选 POST，严格 Session/Origin/CSRF/强 If-Match/幂等/JSON，首次版本摘要及固定 ETag 重放；Windows 正式组合未注入。兼容性/升级：无 Schema/Migration/依赖/前端或冻结路径变化；移除可选 Router 注入可回滚，已存历史不回退。验证：合同 3、Win11 隔离 PG18.6 真 ASGI/Session/PROJECT/GLOBAL 合成来源及后端全量 3373 通过/3 跳过。已知问题：Windows 显式组合/UI/浏览器、Eligibility、正式目标账户/20 并发/Server2025、Gate3/UAT/发行未验；Debian13 实机依指令暂跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-01-A07 新增 Reference 修订内部受权 Owner、PROJECT PM/实施成员策略和 `0150` 受限 Guard/延迟结果闭合；GLOBAL 沿用 DeploymentAdmin，公开 Revise API 仍关闭。兼容性/升级：0149→0150 线性迁移；空/仅 v1 可降重升，legacy v2 无原首次结果时拒升级，有修订历史拒降并需向前修复；无依赖/前端/冻结 API 变更。验证：Win11 隔离 PG18.6 PROJECT/GLOBAL 合成真实来源、同/异 Key 并发、旧版重放、Audit 回滚/SQL 负例、空/有 v1 迁移与 4 次 drift；后端全量 3370 通过/3 跳过。已知问题：HTTP/Windows/UI/Eligibility、正式目标账户/20 并发/Server2025、Gate3/UAT/发行未验；Debian13 实机依指令暂跳过。

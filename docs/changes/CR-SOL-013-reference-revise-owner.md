@@ -1,6 +1,6 @@
 # CR-SOL-013：ReferenceSolution 修订版本与当前指针受控写入
 
-日期：2026-10-09；状态：`OPTIONAL_HTTP_PG_PASS_WINDOWS_UI_PENDING`。依据 CR-EXEC-001 持续授权先记录后实施；Gate 2 原冻结提交 `64cdf09` 保留。TraceLink：API-04/DM-05 → CR-SOL-004/005/007、0139～0144 → SOL-01-A04 → SOL-01-A05 → 本 CR → SOL-01-A06/0149 → SOL-01-A07/0150 → SOL-01-A08。
+日期：2026-10-09；状态：`WINDOWS_COMPOSITION_PG_PASS_UI_PENDING`。依据 CR-EXEC-001 持续授权先记录后实施；Gate 2 原冻结提交 `64cdf09` 保留。TraceLink：API-04/DM-05 → CR-SOL-004/005/007、0139～0144 → SOL-01-A04 → SOL-01-A05 → 本 CR → SOL-01-A06/0149 → SOL-01-A07/0150 → SOL-01-A08 → SOL-01-A09。
 
 ## 来源、冲突与选择
 
@@ -19,3 +19,5 @@
 0150/A07 已将受限 Guard、延迟闭合与内部受权 Owner 同单元交付，Win11 隔离 PG PROJECT/GLOBAL、并发/重放/回滚/来源证明/SQL 负例、迁移升降级与 legacy v2 拒升级通过；后端全量 3370 通过/3 跳过。公开 HTTP、Windows 生产组合、前端/浏览器及正式目标账户尚未验证，本 CR 仍未完全关闭。已有 legacy v2 无原首次结果时禁止自动回填，需逐条审计后制定向前修复方案；已有受控修订历史禁止降级。
 
 A08 已新增默认关闭的 PROJECT/GLOBAL 可选 HTTP 并以 Win11 一次性 PG/真实 Session/合成来源验证第一次 201、后续历史重放、强 ETag/CSRF/角色/脱敏绑定；Windows 生产组合、UI/浏览器与正式账户仍待，因此本 CR 继续保持未完全关闭。
+
+A09 已把两路 POST 仅装入 Windows 显式写模式，并通过实际合成 PG/Session 与缺依赖拒启动/资源释放；只读模式同形 GET 通配路径对 POST 返回 405，不表示写入口已装载。UI/浏览器、正式目标账户/信任源、性能与发行仍待，本 CR 未完全关闭。

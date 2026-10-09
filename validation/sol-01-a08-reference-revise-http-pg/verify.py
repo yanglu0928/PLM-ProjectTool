@@ -58,8 +58,16 @@ def on_created(**facts) -> int:
         repository=SqlAlchemyReferenceReviseRepository(),
         receipts=SqlAlchemyIdempotencyReceipts(), audit=audit,
     )
-    router = create_project_reference_revise_router(
-        sessions=sessions, origins=origins, revises=service)
+    router_factory = facts.get("router_factory")
+    if router_factory is None:
+        router = create_project_reference_revise_router(
+            sessions=sessions, origins=origins, revises=service)
+    else:
+        router = router_factory(
+            runtime=runtime, sessions=sessions, origins=origins,
+            license_guard=facts["license_guard"], audit=audit,
+            documents=facts["documents"], downloads=facts["downloads"],
+            parse_results=facts["parse_results"])
     path = (f"/api/v1/projects/{facts['project']}/reference-solutions/"
             f"{created.reference_solution_id}:revise")
     headers = {
