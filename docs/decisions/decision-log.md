@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261009-1127：Reference 修订保留资格并拒绝无快照历史自动迁移
+
+- Date/WBS：2026-10-09 / `SOL-01-A07`，依据冻结 API-04/DM-05、CR-SOL-013 和 0149 结果表。
+- Decision：0150 仅开放相邻版本、当前指针加锁推进、结果快照的同事务闭合；修订不自动改变根 Eligibility，亦不把新来源的当前证明等同正式资格决定。0149 前遗留 v2 若没有原 201 快照，升级拒绝，等待逐条审计/向前修复，绝不伪造首次响应。
+- Reason：冻结 Revise 与 Set Eligibility 是两个操作；重放必须与第一次结果相同。凭当前根指针无法恢复先前首次结果，自动回填会改变历史事实。
+- Impact/Rollback：仅 Solution 修订内部 Owner、PROJECT 对应冻结权限与 0150 Guard；无公开 API/依赖变化。无修订历史可降 0149，有修订历史拒降，向前修复。数据库 Guard 不替代应用授权或目标账户权限。
+- Verification：Win11 隔离 PG 空/有 v1 升降重升、legacy v2 拒升级、PROJECT/GLOBAL 实际合成来源、同/异 Key 并发、历史重放、回滚、直接 SQL 拒绝；后端全量 3370 通过/3 跳过。正式账户/HTTP/性能/Gate3 未验。
+
 ## DEC-20261009-1126：Section 首版列表采用全项目视图
 
 - Date/WBS：2026-10-09 / `SOL-04-A18`，依据冻结 API-04 `SOL_SECTION_LIST` 与 A17 客户端。

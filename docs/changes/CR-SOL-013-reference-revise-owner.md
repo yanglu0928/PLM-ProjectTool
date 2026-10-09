@@ -1,6 +1,6 @@
 # CR-SOL-013：ReferenceSolution 修订版本与当前指针受控写入
 
-日期：2026-10-09；状态：`RESULT_SCHEMA_CLOSED_PASS_OWNER_PENDING`。依据 CR-EXEC-001 持续授权先记录后实施；Gate 2 原冻结提交 `64cdf09` 保留。TraceLink：API-04/DM-05 → CR-SOL-004/005/007、0139～0144 → SOL-01-A04 → SOL-01-A05 → 本 CR → SOL-01-A06/0149。
+日期：2026-10-09；状态：`INTERNAL_OWNER_PG_PASS_HTTP_PENDING`。依据 CR-EXEC-001 持续授权先记录后实施；Gate 2 原冻结提交 `64cdf09` 保留。TraceLink：API-04/DM-05 → CR-SOL-004/005/007、0139～0144 → SOL-01-A04 → SOL-01-A05 → 本 CR → SOL-01-A06/0149 → SOL-01-A07/0150。
 
 ## 来源、冲突与选择
 
@@ -14,4 +14,6 @@
 
 必测 PROJECT/GLOBAL 权限、同项目/跨项目、当前版本与 supersedes 链、来源当前性和撤回、GLOBAL 脱敏绑定、并发同 Key/不同 Key、原 201 重放、指针/Audit/Receipt 原子回滚、直接 SQL 非法 UPDATE/DELETE/TRUNCATE、License/Session/CSRF、默认应用关闭及 Win11 隔离 PG。HTTP/Windows/UI/浏览器分别独立验收。正式目标账户、Server2025、20 并发和 Release 另验；未取得证据前本 CR 不能标 PASS。
 
-0149/A06 已新增关闭的首次结果表并把未受控 `version_no>1` INSERT 拒绝；Win11 隔离 PG 空/历史库迁移、drift、FK/Guard/历史拒降通过，最终后端全量3392通过/3跳过。根指针 UPDATE、结果写入、受权 Owner 和公开 Revise 均仍关闭；不得将 `RESULT_SCHEMA_CLOSED_PASS` 解释为本 CR 或 Reference 修订功能完成。
+0149/A06 已新增关闭的首次结果表并把未受控 `version_no>1` INSERT 拒绝；Win11 隔离 PG 空/历史库迁移、drift、FK/Guard/历史拒降通过，最终后端全量3392通过/3跳过。A06 时根指针 UPDATE、结果写入、受权 Owner 和公开 Revise 均关闭；不得将 `RESULT_SCHEMA_CLOSED_PASS` 解释为本 CR 或 Reference 修订功能完成。
+
+0150/A07 已将受限 Guard、延迟闭合与内部受权 Owner 同单元交付，Win11 隔离 PG PROJECT/GLOBAL、并发/重放/回滚/来源证明/SQL 负例、迁移升降级与 legacy v2 拒升级通过；后端全量 3370 通过/3 跳过。公开 HTTP、Windows 生产组合、前端/浏览器及正式目标账户尚未验证，本 CR 仍未完全关闭。已有 legacy v2 无原首次结果时禁止自动回填，需逐条审计后制定向前修复方案；已有受控修订历史禁止降级。
