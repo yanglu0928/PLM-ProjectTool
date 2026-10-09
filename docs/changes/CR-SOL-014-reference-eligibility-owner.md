@@ -1,6 +1,6 @@
 # CR-SOL-014：ReferenceSolution 资格状态受控确认
 
-日期：2026-10-09；状态：`DESIGNED_NOT_IMPLEMENTED`（SOL-01-A16-P01 细化，尚未开放写入口）。依据 CR-EXEC-001 持续授权先记录后实施；Gate 2 原冻结提交 `64cdf09` 保留。TraceLink：API-04/DM-05 → CR-SOL-004/005/007、0139～0151 → SOL-01-A05/A14 → 本 CR。
+日期：2026-10-09；状态：`PARTIAL_SCHEMA_CLOSED`（A16-P02 仅 0152 事件/结果存储默认拒写，Owner/资格入口未开放）。依据 CR-EXEC-001 持续授权先记录后实施；Gate 2 原冻结提交 `64cdf09` 保留。TraceLink：API-04/DM-05 → CR-SOL-004/005/007、0139～0152 → SOL-01-A05/A14 → 本 CR。
 
 ## 来源、冲突与选择
 

@@ -525,6 +525,64 @@ class ReferenceSolutionReviseResultRow(Base):
     result_lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
 
 
+class ReferenceSolutionEligibilityEventRow(Base):
+    """Closed until the controlled eligibility Owner/Guard arrives."""
+
+    __tablename__ = "sol_reference_eligibility_events"
+    __table_args__ = (
+        UniqueConstraint("reference_solution_id", "result_lock_version",
+                         name="uq_sol_reference_eligibility__root_lock"),
+        ForeignKeyConstraint(["reference_version_id", "reference_solution_id", "scope"],
+                             ["plm.sol_reference_versions.reference_version_id",
+                              "plm.sol_reference_versions.reference_solution_id",
+                              "plm.sol_reference_versions.scope"],
+                             name="fk_sol_reference_eligibility__version", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["actor_id"], ["plm.auth_users.user_id"],
+                             name="fk_sol_reference_eligibility__actor", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["project_id"], ["plm.prj_projects.project_id"],
+                             name="fk_sol_reference_eligibility__project", ondelete="NO ACTION"),
+        CheckConstraint("(scope='GLOBAL' AND project_id IS NULL) OR "
+                        "(scope='PROJECT' AND project_id IS NOT NULL)",
+                        name="ck_sol_reference_eligibility__scope"),
+        CheckConstraint("event_kind IN ('HUMAN','SYSTEM_INVALIDATION')",
+                        name="ck_sol_reference_eligibility__kind"),
+        CheckConstraint("(event_kind='HUMAN' AND ((prior_state='REFERENCE_ONLY' "
+                        "AND result_state IN ('ELIGIBLE','RESTRICTED','REVOKED')) OR "
+                        "(prior_state='ELIGIBLE' AND result_state IN ('RESTRICTED','REVOKED')) OR "
+                        "(prior_state='RESTRICTED' AND result_state IN ('ELIGIBLE','REVOKED')))) "
+                        "OR (event_kind='SYSTEM_INVALIDATION' AND prior_state='ELIGIBLE' "
+                        "AND result_state='RESTRICTED' "
+                        "AND reason='CURRENT_VERSION_CHANGED_REQUIRES_REVIEW')",
+                        name="ck_sol_reference_eligibility__transition"),
+        CheckConstraint("char_length(reason) BETWEEN 1 AND 2000 AND reason=btrim(reason) "
+                        "AND reason !~ '[[:cntrl:]]'",
+                        name="ck_sol_reference_eligibility__reason"),
+        CheckConstraint("prior_lock_version>=1 AND "
+                        "result_lock_version=prior_lock_version+1",
+                        name="ck_sol_reference_eligibility__lock"),
+        CheckConstraint("isfinite(created_at)",
+                        name="ck_sol_reference_eligibility__created_at"),
+        Index("ix_sol_reference_eligibility__root_created", "reference_solution_id", "created_at"),
+        {"schema": "plm"},
+    )
+    eligibility_event_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    reference_solution_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    reference_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    scope: Mapped[str] = mapped_column(Text, nullable=False)
+    project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    event_kind: Mapped[str] = mapped_column(Text, nullable=False)
+    prior_state: Mapped[str] = mapped_column(Text, nullable=False)
+    result_state: Mapped[str] = mapped_column(Text, nullable=False)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    actor_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    prior_lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    result_lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"))
+
+
 class ReferenceSolutionDocumentRefRow(Base):
     __tablename__ = "sol_reference_document_refs"
     __table_args__ = (
