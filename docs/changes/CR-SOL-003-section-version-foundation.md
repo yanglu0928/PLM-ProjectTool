@@ -31,3 +31,5 @@ SOL-05-A02-P04 按 DEC-1170 增加仅限内部的 PROJECT Evidence 现时/物理
 SOL-05-A02-P05 按 DEC-1171 增加 Section/父 Outline 同事务、同项目、活动态和批准指针/版本序列基底证明，固定 Outline→Section 锁顺序；定向与 Win11 可弃 PG18.6 正反例通过。此端口不验完整历史链/正式授权，也不解除 0138 写闭锁；见 `docs/progress/sol-05-a02-p05-section-version-base.md`。本 CR 保持 OPEN，未来 Guard 解锁须独立迁移/回滚与真实写链验证。
 
 SOL-05-A02-P06 按 DEC-1172 将有界 DRAFT 与 Section、Document、Requirement、Evidence 现时证明组合为同事务内部输入指纹；Artifact 裸引用无真实 Owner 时失败关闭。定向与后端回归通过后仅标内部编排，不宣称真实 PG 组合写链；当前 head 可弃 PG 直接复核 0138 写闭锁。旧 0138 完整脚本受后续 Owner 闭环/拒降门禁影响复跑未通过，保留诊断而不弱化约束。见 `docs/progress/sol-05-a02-p06-section-version-input-proof.md`。本 CR 保持 OPEN。
+
+SOL-05-A02-P07 按 DEC-1173 先完成 CREATE/Guard 前置审查。差异：Project 授权操作、不可变首响应表和 INSERT-only Owner Guard 尚缺；Artifact/Spec 来源 Owner 尚缺，首个可写切片仅允许已有物理证明的 PROJECT DocumentVersion。选定 P08 授权 → P09 闭锁首响应 ORM/Migration → P10 空历史前提下 Guard/提交闭环迁移 → P11 同事务 CREATE Owner/收据/Audit → P12 HTTP/Windows。影响为增量 Schema/权限/数据写入；原 0138 冻结内容不改写。迁移须空库与既有 Section 数据升降重升、drift、DML 负例；非空版本/收据/子表禁止降级并保留历史，异常存量先审计；Owner 须真实 PG/ASGI 并发、重放、授权、来源失效及回滚验证。不得先解锁再补证据，Review/Trace/Artifact 后续独立验收。详见 `docs/progress/sol-05-a02-p07-section-version-create-precheck.md`。本 CR 保持 OPEN。

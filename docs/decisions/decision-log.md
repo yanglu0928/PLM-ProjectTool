@@ -11170,3 +11170,10 @@
 - Decision：同一调用者事务中按 Section/Outline 基底、PROJECT DocumentVersion、当前批准 RequirementVersion、PROJECT Evidence 顺序重证；规范指纹绑定有界请求及各固定来源的当前摘要、版本/Review/锁事实。无 OutputArtifact Owner 的 Artifact UUID 在任何端口调用之前拒绝，不以裸 UUID 落库；不在此层做授权、写入、Review 或 Trace 决策。
 - Reason：仅靠输入 UUID/FK 不能保证现时同项目物理来源或历史指纹稳定；既有上游端口已封装相应权属规则，Solution 只消费最小投影。
 - Impact/Rollback：仅新增未接线 Application 模块/测试并补当前 head 的可弃 PG 0138 写闭锁断言，无 Schema/Migration/API/权限/配置/依赖/数据变化；撤增量即可回滚。真实受权 Owner/Guard 与 PG/HTTP 验证独立推进，Gate3 不变。
+
+# DEC-20261009-1173：SectionVersion CREATE 先补授权与闭锁首响应，再开写 Guard
+
+- Date/WBS：2026-10-09 / `SOL-05-A02-P07`；依据 Gate2 DM-05/API-04、CR-SOL-003、0138 与 P01～P06 现状审查。
+- Decision：按 P08 Project 操作授权、P09 不可变首响应闭锁表、P10 空历史前提 INSERT-only Guard/延迟完整性、P11 真正同事务 Owner/收据/Audit、P12 HTTP/Windows 顺序实施；首个 CREATE 仅支持可证明的 PROJECT DocumentVersion，Artifact/Spec 分支保持关闭。每项先记录迁移/回滚与验证，历史非空不得降级或擦除。
+- Reason：当前 Project POLICIES 缺操作，0138 全拒写且无首响应表，P06 仅单元桩；先开放 CREATE 会绕过权限或让失败重试丢失原始结果。旧 0138 全量脚本不适配后续 0146/0148 的拒降约束，应使用当前 head 独立验证而非弱化约束。
+- Impact/Rollback：本决策仅设计记录，无程序/Schema/API/数据变化；后续每片独立 ORM/Migration/PG/并发证据。撤实施计划可回滚，冻结历史不变，Gate3 不自动放行。
