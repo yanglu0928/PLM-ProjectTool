@@ -1,6 +1,6 @@
 # CR-SOL-018：OutlineVersion 项目成员选择 GLOBAL 参考候选的只读边界
 
-日期：2026-10-09。状态：实施前登记，依据 CR-EXEC-001 持续授权分析与实施；不追写 Gate 2 冻结提交 `64cdf09`。TraceLink：冻结 API-04 `SOL_OUTLINE_VERSION_CREATE` → CR-SOL-016/017 → P05 双 Scope 服务端 CREATE → 本 CR → 项目角色安全候选读取 → P06 页面/浏览器。
+日期：2026-10-09。状态：`IMPLEMENTED_WIN11_SYNTHETIC_VERIFIED / FORMAL_ACCEPTANCE_OPEN`；实施前已依据 CR-EXEC-001 登记并持续实施，不追写 Gate 2 冻结提交 `64cdf09`。TraceLink：冻结 API-04 `SOL_OUTLINE_VERSION_CREATE` → CR-SOL-016/017 → P05 双 Scope 服务端 CREATE → 本 CR → 项目角色安全候选读取 → P06 页面/浏览器。
 
 ## 冲突及证据
 
@@ -81,6 +81,10 @@
 ## P06-A04-P01-P03 实施记录
 
 2026-10-09 按 DEC-1164 以真实 GLOBAL ReferenceRevise Owner 在已发布 v1 后建立同根 v2；项目候选旧标签立即隐藏，旧固定 v1 的 CREATE 503，且无草案创建副作用，修订 Audit 单条。详见 `docs/progress/sol-03-a04-p03-p03-p06-a04-p01-p03-version-revise.md`。Win11 合成语义负例已补齐，正式账户/Server2025/性能与 Gate3 仍独立未验，本 CR 暂不关闭。
+
+## P06-A04-P02 证据收口
+
+2026-10-09 重审 A03～P03 正链及 A04-P01 的来源漂移、确认撤销、精确到期和同根版本修订直接负例。项目候选和 CREATE 的 Win11 合成功能范围已具直接证据；空可见首页仅 Owner/HTTP/前端合同覆盖，未作浏览器专门验收。正式信任源/目标服务账户、Server2025、20 并发与质量/Gate3/发行仍独立未通过，故本 CR 标记 `IMPLEMENTED_WIN11_SYNTHETIC_VERIFIED / FORMAL_ACCEPTANCE_OPEN`，不关闭。逐项证据和转序见 `docs/progress/sol-03-a04-p03-p03-p06-a04-p02-global-candidate-closure-audit.md`。
 
 ## P06-A02-P02 前置核查
 
