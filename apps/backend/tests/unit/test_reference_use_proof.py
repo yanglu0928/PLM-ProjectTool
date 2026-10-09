@@ -34,7 +34,8 @@ class ReferenceUseProofTests(unittest.TestCase):
         self.snapshot = CurrentReferenceUseSnapshot(
             self.root, self.version, "GLOBAL", None, "ELIGIBLE",
             self.event, self.version, "ELIGIBLE", (self.document,),
-            (self.evidence,), self.digest, self.confirmation)
+            (self.evidence,), self.digest, self.confirmation,
+            "REFERENCE", "VERIFIED", {"products": ["PLM"]})
         self.source = CurrentReferenceSourceProof(
             "GLOBAL", None, (self.document,), (self.evidence,), self.digest)
         self.confirmed = CurrentGlobalConfirmationProof(

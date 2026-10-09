@@ -107,6 +107,28 @@ _PROJECT_CATEGORIES = frozenset({
 _GLOBAL_CATEGORIES = frozenset({"REFERENCE_MATERIAL", "STANDARD_CAPABILITY"})
 
 
+def fingerprint_reference_sources(*, scope: str, project_id: uuid.UUID | None,
+                                  documents: tuple[tuple[uuid.UUID, bytes], ...],
+                                  evidence: tuple[tuple[uuid.UUID, uuid.UUID, bytes], ...],
+                                  source_project_class: str,
+                                  deidentification_class: str,
+                                  applicability: dict[str, object]) -> bytes:
+    """The single canonical digest format for Reference creation and later use."""
+    canonical = json.dumps({
+        "scope": scope,
+        "project_id": str(project_id) if project_id else None,
+        "documents": [[str(version_id), digest.hex()]
+                      for version_id, digest in documents],
+        "evidence": [[str(evidence_id), str(version_id), digest.hex()]
+                     for evidence_id, version_id, digest in evidence],
+        "source_project_class": source_project_class,
+        "deidentification_class": deidentification_class,
+        "applicability": applicability,
+    }, ensure_ascii=False, sort_keys=True, separators=(",", ":"),
+       allow_nan=False).encode("utf-8")
+    return hashlib.sha256(canonical).digest()
+
+
 def _identity(value: object) -> bool:
     return type(value) is uuid.UUID and value.int != 0
 
@@ -194,19 +216,16 @@ class ReferenceSourceQualificationService:
                         or len(proof.content_fingerprint) != 32):
                     raise ReferenceSourceError()
                 evidence.append(proof)
-            canonical = json.dumps({
-                "scope": request.scope,
-                "project_id": str(request.project_id) if request.project_id else None,
-                "documents": [[str(item.document_version_id), item.content_sha256.hex()]
-                              for item in documents],
-                "evidence": [[str(item.evidence_id), str(item.document_version_id),
-                              item.content_fingerprint.hex()] for item in evidence],
-                "source_project_class": request.source_project_class,
-                "deidentification_class": request.deidentification_class,
-                "applicability": request.applicability,
-            }, ensure_ascii=False, sort_keys=True, separators=(",", ":"),
-               allow_nan=False).encode("utf-8")
-            fingerprint = hashlib.sha256(canonical).digest()
+            fingerprint = fingerprint_reference_sources(
+                scope=request.scope, project_id=request.project_id,
+                documents=tuple((item.document_version_id, item.content_sha256)
+                                for item in documents),
+                evidence=tuple((item.evidence_id, item.document_version_id,
+                                item.content_fingerprint) for item in evidence),
+                source_project_class=request.source_project_class,
+                deidentification_class=request.deidentification_class,
+                applicability=request.applicability,
+            )
             return ProvenReferenceSources(
                 request.scope, request.project_id, tuple(documents), tuple(evidence),
                 fingerprint,

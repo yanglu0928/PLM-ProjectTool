@@ -101,6 +101,9 @@ class SqlAlchemyCurrentReferenceUseRepository:
             tuple(item.evidence_id for item in evidence),
             bytes(version.source_fingerprint),
             version.deidentification_confirmation_id,
+            version.source_project_class,
+            version.deidentification_class,
+            version.applicability,
         )
 
 

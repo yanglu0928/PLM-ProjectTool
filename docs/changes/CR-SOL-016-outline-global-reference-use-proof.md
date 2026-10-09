@@ -41,3 +41,7 @@
 ## A04-P02-P02-P02-A02 实施记录
 
 2026-10-09 已在 Evidence 模块新增内部固定 Locator/当前 ELIGIBLE 证明：DOCUMENT 复核已验证物理文件哈希，解析节点复用 Document 内部安全结果与原节点校验器，计算指纹恒时比对 EvidenceRow；不向 Solution/UI 传 Locator 或解析字节。Win11 双 Scope 隔离 PG 真实文档/节点及篡改拒绝通过；完整 Reference 资格/来源/GLOBAL 确认组合尚未验证，目录写保持关闭。
+
+## A04-P02-P03 实施记录
+
+2026-10-09 Solution 内部组合已以创建侧同一规范函数重算来源指纹；当前 Version 的分类/适用性字段随 Root/资格共享锁读取，Document/Evidence 由自有内部接口重验，GLOBAL 确认另核 ID、来源摘要、有效期及撤回。Win11 双 Scope 临时 PostgreSQL/真实文件正例、篡改/到期/跨项目/资格失效与根锁验证通过；公开接口、OutlineVersion Owner 写入和最终项目角色链尚未接线，Guard 继续关闭。

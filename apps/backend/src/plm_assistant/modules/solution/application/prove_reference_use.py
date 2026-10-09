@@ -44,6 +44,9 @@ class CurrentReferenceUseSnapshot:
     evidence_ids: tuple[uuid.UUID, ...]
     source_fingerprint: bytes = field(repr=False)
     deidentification_confirmation_id: uuid.UUID | None = None
+    source_project_class: str = ""
+    deidentification_class: str = ""
+    applicability: dict[str, object] = field(default_factory=dict, repr=False)
 
 
 @dataclass(frozen=True, slots=True)
@@ -144,6 +147,13 @@ class ReferenceUseProofService:
                     or not _ids(current.evidence_ids, minimum=0, maximum=500)
                     or type(current.source_fingerprint) is not bytes
                     or len(current.source_fingerprint) != 32
+                    or type(current.source_project_class) is not str
+                    or not 1 <= len(current.source_project_class) <= 128
+                    or current.source_project_class != current.source_project_class.strip()
+                    or type(current.deidentification_class) is not str
+                    or not 1 <= len(current.deidentification_class) <= 128
+                    or current.deidentification_class != current.deidentification_class.strip()
+                    or type(current.applicability) is not dict
                     or (query.scope == "PROJECT"
                         and current.deidentification_confirmation_id is not None)
                     or (query.scope == "GLOBAL"
