@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-03-A05-A03-P05-P01 新增 OutlineVersion 历史 GET/LIST 前端安全读取客户端，核对元数据、固定引用/声明数量、签名分页响应及 no-store；不将历史引用作为当前资格。兼容性/升级：纯前端未接页面，无 Schema/Migration/公开 API/权限/依赖变化，可撤客户端回滚。验证：定向4项、前端全量125文件/1720项、typecheck/build通过。已知问题：页面/浏览器、正式服务账户、Gate3/发行未验；构建存在既有大 chunk 提示。
+
 - 2026-10-09：0.1.0-dev.0/SOL-03-A05-A03-P04 Windows 只读/读写平台组合 OutlineVersion 历史 GET/LIST，使用独立当前账户 Vault 32 字节签名密钥引用，缺失即拒启动；随机临时密钥加密备份恢复旧游标已验，未创建正式 key。兼容性/升级：无 Schema/Migration/冻结 API/角色/依赖变化；升级需为目标服务账户安全供给独立 `project-outline-version-list-cursor-v1` 及备份，否则平台读/写模式拒启动；可回滚移除可选组合，历史不变。验证：定向41通过/17子例、Win11双 Scope真实 Windows 工厂/PG18.6 退出0、后端全量3469通过/3跳过/5333子例。已知问题：正式服务账户密钥/ACL/恢复、Server2025、本项前端/浏览器、Gate3/发行未验；Debian13实机依指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-03-A05-A03-P03 新增真实 Windows 11 临时 PG18.6/ASGI 双 Scope 历史读取验证脚本，覆盖签名分页、固定详情、成员/跨项目/Session/Origin/License 拒绝及默认关闭。兼容性/升级：无应用程序、Migration/Schema/API/依赖变化，只增可复验脚本。验证：脚本退出0，Alembic 无新升级操作；P02 全量后端3466通过/3跳过/5328子例未重跑。已知问题：Windows 正式独立密钥来源/恢复、UI/Gate3/发行未完成；Server2025 未运行本项，Debian13 实机依指令跳过。
