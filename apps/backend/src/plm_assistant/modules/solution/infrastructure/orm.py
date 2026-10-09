@@ -557,7 +557,7 @@ class ReferenceSolutionEligibilityEventRow(Base):
         CheckConstraint("char_length(reason) BETWEEN 1 AND 2000 AND reason=btrim(reason) "
                         "AND reason !~ '[[:cntrl:]]'",
                         name="ck_sol_reference_eligibility__reason"),
-        CheckConstraint("prior_lock_version>=1 AND "
+        CheckConstraint("prior_lock_version>=0 AND "
                         "result_lock_version=prior_lock_version+1",
                         name="ck_sol_reference_eligibility__lock"),
         CheckConstraint("isfinite(created_at)",

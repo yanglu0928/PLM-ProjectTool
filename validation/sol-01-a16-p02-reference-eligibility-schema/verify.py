@@ -47,10 +47,13 @@ def verify(port: int) -> None:
         port=port, database="postgres"))
     command.upgrade(cfg, PREVIOUS)
     command.upgrade(cfg, CURRENT)
+    # Drift is only meaningful at the current ORM Head; keep exercising the
+    # historical 0152 closed schema separately after returning from 0153.
+    command.upgrade(cfg, "head")
     command.check(cfg)
+    command.downgrade(cfg, CURRENT)
     command.downgrade(cfg, PREVIOUS)
     command.upgrade(cfg, CURRENT)
-    command.check(cfg)
     command.downgrade(cfg, PREVIOUS)
 
     with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
@@ -80,7 +83,6 @@ def verify(port: int) -> None:
                 "%s,%s,1,0,%s)",
                 (version, root, project, b"c" * 32, b"s" * 32, actor))
     command.upgrade(cfg, CURRENT)
-    command.check(cfg)
 
     with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
                          dbname="postgres", autocommit=True) as db:
@@ -138,7 +140,6 @@ def verify(port: int) -> None:
             db.execute(f"ALTER TABLE {TABLE} ENABLE TRIGGER {TRIGGER}")
     command.downgrade(cfg, PREVIOUS)
     command.upgrade(cfg, CURRENT)
-    command.check(cfg)
     command.downgrade(cfg, PREVIOUS)
     with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
                          dbname="postgres", autocommit=True) as db:

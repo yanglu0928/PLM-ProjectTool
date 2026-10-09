@@ -205,8 +205,24 @@ class ReferenceReviseService:
                     actor_hint_digest=None, action="SOL_REFERENCE_REVISED",
                     outcome="SUCCESS", target_owner_module="solution",
                     target_object_type="SOL-01", target_object_id=current.reference_solution_id,
-                    after_state=current.eligibility_state,
+                    after_state=("RESTRICTED" if current.eligibility_state == "ELIGIBLE"
+                                 else current.eligibility_state),
                 ))
+                if current.eligibility_state == "ELIGIBLE":
+                    self._audit.append(tx, AuditEventDraft(
+                        trace_id=request.trace_id,
+                        event_scope="DEPLOYMENT" if request.scope == "GLOBAL" else "PROJECT",
+                        target_project_id=request.project_id,
+                        actor_type="SYSTEM", actor_id=actor,
+                        original_actor_id=actor, actor_hint_digest=None,
+                        action="SOL_REFERENCE_ELIGIBILITY_INVALIDATED",
+                        outcome="SUCCESS", target_owner_module="solution",
+                        target_object_type="SOL-01",
+                        target_object_id=current.reference_solution_id,
+                        target_version_id=version_id,
+                        reason_code="CURRENT_VERSION_CHANGED_REQUIRES_REVIEW",
+                        before_state="ELIGIBLE", after_state="RESTRICTED",
+                    ))
                 self._receipts.complete(tx, scope=key_scope, result=IdempotencyResult(
                     _OPERATION, version_id, 201))
                 tx.commit()

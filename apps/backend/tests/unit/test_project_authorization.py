@@ -47,7 +47,7 @@ class ProjectAuthorizationTests(unittest.TestCase):
                                     operation=operation, resource_id=resource_id)
 
     def test_matrix_exact_for_four_roles(self):
-        self.assertEqual(len(POLICIES), 156)
+        self.assertEqual(len(POLICIES), 157)
         for operation in (
             "REQ_PACKAGE_LIST", "REQ_PACKAGE_GET", "REQ_LIST", "REQ_GET",
             "SOL_REFERENCE_LIST", "SOL_REFERENCE_GET", "SOL_OUTLINE_GET",
@@ -72,6 +72,8 @@ class ProjectAuthorizationTests(unittest.TestCase):
             }))
             self.assertTrue(POLICIES[operation].write)
         self.assertEqual(POLICIES["PRT_ARCHIVE"].roles, MANAGERS)
+        self.assertEqual(POLICIES["SOL_REFERENCE_SET_ELIGIBILITY"].roles, MANAGERS)
+        self.assertTrue(POLICIES["SOL_REFERENCE_SET_ELIGIBILITY"].write)
         self.assertTrue(POLICIES["PRT_ARCHIVE"].write)
         self.assertEqual(POLICIES["PRT_MARK_NOT_REQUIRED"].roles, frozenset({
             "PROJECT_MANAGER", "CUSTOMER_MANAGER",

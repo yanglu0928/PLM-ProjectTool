@@ -16,6 +16,7 @@ from plm_assistant.modules.solution.application.revise_reference_solution import
 from .orm import (
     ReferenceSolutionDocumentRefRow as DocumentRef,
     ReferenceSolutionEvidenceRefRow as EvidenceRef,
+    ReferenceSolutionEligibilityEventRow as EligibilityEvent,
     ReferenceSolutionReviseResultRow as Result,
     ReferenceSolutionRow as Root,
     ReferenceSolutionVersionRow as Version,
@@ -92,14 +93,30 @@ class SqlAlchemyReferenceReviseRepository:
                 reference_solution_id=current.reference_solution_id,
                 scope=current.scope, evidence_id=item.evidence_id, ordinal=ordinal,
             ))
+        invalidated = current.eligibility_state == "ELIGIBLE"
+        if invalidated:
+            session.execute(insert(EligibilityEvent).values(
+                reference_solution_id=current.reference_solution_id,
+                reference_version_id=version_id,
+                scope=current.scope, project_id=current.project_id,
+                event_kind="SYSTEM_INVALIDATION", prior_state="ELIGIBLE",
+                result_state="RESTRICTED",
+                reason="CURRENT_VERSION_CHANGED_REQUIRES_REVIEW",
+                actor_id=actor_id, prior_lock_version=current.lock_version,
+                result_lock_version=current.lock_version+1,
+            ))
+        changes = {"current_version_ref": version_id,
+                   "lock_version": current.lock_version+1}
+        if invalidated:
+            changes.update(eligibility_state="RESTRICTED",
+                           eligibility_reason="CURRENT_VERSION_CHANGED_REQUIRES_REVIEW")
         changed = session.execute(update(Root).where(
             Root.reference_solution_id == current.reference_solution_id,
             Root.scope == current.scope,
             Root.project_id == current.project_id,
             Root.current_version_ref == current.reference_version_id,
             Root.lock_version == current.lock_version,
-        ).values(current_version_ref=version_id,
-                 lock_version=current.lock_version+1)).rowcount
+        ).values(**changes)).rowcount
         if changed != 1:
             raise RuntimeError("Reference revision concurrency conflict")
         session.execute(insert(Result).values(
