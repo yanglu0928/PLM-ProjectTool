@@ -9,6 +9,8 @@ import type { EvidenceViewerClient } from "@/modules/evidence/api/evidenceViewer
 import type { EvidenceEligibilityClient } from "@/modules/evidence/api/evidenceEligibilityClient";
 import type { ReferenceDeidentificationClient } from "@/modules/solution/api/referenceDeidentificationClient";
 import type { GlobalReferenceCreateClient } from "@/modules/solution/api/globalReferenceCreateClient";
+import type { GlobalReferenceReadClient } from "@/modules/solution/api/globalReferenceReadClient";
+import type { ReferenceReviseClient } from "@/modules/solution/api/referenceReviseClient";
 import GlobalReferenceSourcePickerView from "./GlobalReferenceSourcePickerView.vue";
 
 const actor = "01234567-89ab-4cde-8123-456789abcdef";
@@ -311,5 +313,95 @@ describe("GlobalReferenceSourcePickerView", () => {
     expect(button(result.wrapper, "重新核验并创建全局参考方案").attributes("disabled"))
       .toBeDefined();
     expect(create).toHaveBeenCalledOnce();
+  });
+
+  it("revises the selected GLOBAL root with its current ETag and retains an uncertain original request", async () => {
+    const reference = "91234567-89ab-4cde-8123-456789abcdef";
+    const root = { reference_solution_id: reference, reference_version_id: versionB,
+      name: "历史全局方案", version_no: 1, etag: '"v1"', source_project_class: "PLM",
+      deidentification_class: "DEIDENTIFIED", applicability: {} };
+    const read = vi.fn().mockResolvedValueOnce(root).mockResolvedValueOnce(root)
+      .mockResolvedValue({ ...root, reference_version_id: documentB, version_no: 2, etag: '"v2"' });
+    const fingerprint = "f".repeat(64);
+    const preview = vi.fn().mockResolvedValue({ source_fingerprint: fingerprint,
+      document_refs: [{ document_id: documentA, document_version_id: versionA }],
+      evidence_ids: [evidenceA, evidenceB], previewed_at: "2026-10-09T00:00:00Z" });
+    const confirm = vi.fn().mockResolvedValue({ confirmation_id: trace,
+      source_fingerprint: fingerprint, confirmed_by: actor,
+      confirmed_at: "2026-10-09T00:00:00Z", expires_at: "2030-10-16T00:00:00Z", trace_id: trace });
+    const revise = vi.fn().mockRejectedValueOnce(new TypeError("response unknown"))
+      .mockResolvedValueOnce({ reference_solution_id: reference, reference_version_id: documentB,
+        version_no: 2, etag: '"v2"' });
+    const list = vi.fn().mockResolvedValue({ items: [first, second], next_cursor: null, has_more: false });
+    const get = vi.fn().mockImplementation(async (_scope, id) => descriptor(id === evidenceA ? first : second));
+    const currentGlobal = vi.fn().mockImplementation(async (id) => {
+      const entry = id === evidenceA ? first : second;
+      return { evidence_id: id, document_id: entry.document_id,
+        document_version_id: entry.document_version_id, eligibility_state: "ELIGIBLE" };
+    });
+    const router = createAppRouter(createMemoryHistory());
+    await router.push(`/admin/reference-solutions/${reference}/revise`); await router.isReady();
+    expect(router.currentRoute.value.name).toBe("global-reference-revise");
+    const wrapper = mount(GlobalReferenceSourcePickerView, { props: {
+      referenceId: reference, session: await session(),
+      listClient: { list } as unknown as EvidenceListClient,
+      viewerClient: { get } as unknown as EvidenceViewerClient,
+      eligibilityClient: { currentGlobal } as unknown as EvidenceEligibilityClient,
+      attestationClient: { preview, confirm } as unknown as ReferenceDeidentificationClient,
+      reader: { current: read } as unknown as GlobalReferenceReadClient,
+      reviseClient: { revise } as unknown as ReferenceReviseClient,
+    }, global: { plugins: [router] } });
+    await flushPromises();
+    expect(wrapper.text()).toContain("当前 ETag");
+    for (const action of wrapper.findAll("button").filter(entry => entry.text() === "加入核查候选")) {
+      await action.trigger("click"); await flushPromises();
+    }
+    await wrapper.find('input[placeholder="PLM"]').setValue("PLM");
+    await wrapper.find('input[placeholder="DEIDENTIFIED"]').setValue("DEIDENTIFIED");
+    await button(wrapper, "预览所选来源集合").trigger("click"); await flushPromises();
+    const review = wrapper.get('section[aria-label="集合预览与逐项原文核查"]');
+    for (const link of review.findAll("a")) await link.trigger("click");
+    for (const checkbox of review.findAll('input[type="checkbox"]')) await checkbox.setValue(true);
+    await button(wrapper, "提交集合人工脱敏确认（有效期 7 天）").trigger("click");
+    await flushPromises();
+    expect(wrapper.find('section[aria-label="创建全局参考方案"]').exists()).toBe(false);
+    await button(wrapper, "重新核验并修订为新草稿版本").trigger("click"); await flushPromises();
+    const saved = JSON.parse(window.sessionStorage.getItem(
+      `plm.sol.global.reference.revise.pending.${actor}.${reference}`)!) as {
+      actor: string; reference: string; key: string; ifMatch: string; body: string };
+    expect(saved).toMatchObject({ actor, reference, ifMatch: '"v1"' });
+    expect(JSON.parse(saved.body)).toEqual({ document_version_ids: [versionA],
+      evidence_ids: [evidenceA, evidenceB], source_project_class: "PLM",
+      deidentification_class: "DEIDENTIFIED", applicability: {} });
+    expect(revise).toHaveBeenCalledWith("GLOBAL", reference, null, JSON.parse(saved.body), saved.ifMatch, saved.key);
+    expect(button(wrapper, "重新核验并修订为新草稿版本").attributes("disabled")).toBeDefined();
+    await button(wrapper, "原请求同号重试").trigger("click"); await flushPromises();
+    expect(revise.mock.calls[1]).toEqual(revise.mock.calls[0]);
+    expect(window.sessionStorage.getItem(`plm.sol.global.reference.revise.pending.${actor}.${reference}`)).toBeNull();
+    expect(wrapper.text()).toContain("当前详情已确认指向该版本");
+    wrapper.unmount();
+  });
+
+  it("blocks a corrupted GLOBAL revision record before any new submission", async () => {
+    const reference = "91234567-89ab-4cde-8123-456789abcdef";
+    window.sessionStorage.setItem(`plm.sol.global.reference.revise.pending.${actor}.${reference}`, "corrupt");
+    const router = createAppRouter(createMemoryHistory());
+    await router.push(`/admin/reference-solutions/${reference}/revise`); await router.isReady();
+    const revise = vi.fn();
+    const wrapper = mount(GlobalReferenceSourcePickerView, { props: {
+      referenceId: reference, session: await session(),
+      reader: { current: vi.fn().mockResolvedValue({ reference_solution_id: reference,
+        reference_version_id: versionA, name: "历史全局方案", version_no: 1,
+        etag: '"v1"', source_project_class: "PLM", deidentification_class: "DEIDENTIFIED",
+        applicability: {} }) } as unknown as GlobalReferenceReadClient,
+      listClient: { list: vi.fn().mockResolvedValue({ items: [], next_cursor: null,
+        has_more: false }) } as unknown as EvidenceListClient,
+      reviseClient: { revise } as unknown as ReferenceReviseClient,
+    }, global: { plugins: [router] } });
+    await flushPromises();
+    expect(wrapper.get('section[aria-label="待核对修订操作"]').text()).toContain("记录损坏");
+    expect(revise).not.toHaveBeenCalled();
+    expect(wrapper.find('section[aria-label="创建全局参考方案"]').exists()).toBe(false);
+    wrapper.unmount();
   });
 });

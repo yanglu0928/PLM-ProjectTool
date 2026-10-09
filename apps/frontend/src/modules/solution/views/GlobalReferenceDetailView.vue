@@ -88,6 +88,7 @@ onUnmounted(() => { mounted = false; generation += 1; viewerGeneration += 1; });
       <button type="button" :disabled="busy" @click="load()">{{ busy ? "正在读取…" : "重新读取详情" }}</button>
       <p v-if="error" role="alert">{{ error }}</p>
       <template v-if="current"><h2>{{ current.name }}</h2>
+        <p><RouterLink :to="{ name: 'global-reference-revise', params: { referenceId: current.reference_solution_id } }">修订此全局参考方案（新建草稿版本）</RouterLink></p>
         <dl><dt>当前标记</dt><dd>{{ current.eligibility_state }}</dd>
           <dt>标记原因</dt><dd>{{ current.eligibility_reason ?? "未记录" }}</dd>
           <dt>版本</dt><dd>{{ current.version_no }} · {{ current.version_state }}</dd>

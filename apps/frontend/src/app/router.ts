@@ -229,6 +229,12 @@ export function createAppRouter(
         component: GlobalReferenceSourcePickerView,
       },
       {
+        path: "/admin/reference-solutions/:referenceId/revise",
+        name: "global-reference-revise",
+        component: GlobalReferenceSourcePickerView,
+        props: true,
+      },
+      {
         path: "/admin/reference-solutions/:referenceId",
         name: "global-reference-detail",
         component: GlobalReferenceDetailView,

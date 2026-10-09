@@ -12,17 +12,30 @@ import { ReferenceDeidentificationClient, ReferenceDeidentificationError,
   type DeidentificationConfirmation, type DeidentificationOperationStatus } from "@/modules/solution/api/referenceDeidentificationClient";
 import { GlobalReferenceCreateClient, GlobalReferenceCreateError,
   type GlobalReferenceCreated } from "@/modules/solution/api/globalReferenceCreateClient";
+import { GlobalReferenceReadClient, type GlobalReferenceCurrent } from "@/modules/solution/api/globalReferenceReadClient";
+import { ReferenceReviseClient, type ReferenceRevised, type ReferenceReviseInput } from "@/modules/solution/api/referenceReviseClient";
 
-const props = defineProps<{ session?: SessionClient; listClient?: EvidenceListClient;
+const props = defineProps<{ referenceId?: string; session?: SessionClient; listClient?: EvidenceListClient;
   viewerClient?: EvidenceViewerClient; eligibilityClient?: EvidenceEligibilityClient;
   attestationClient?: ReferenceDeidentificationClient;
-  createClient?: GlobalReferenceCreateClient }>();
+  createClient?: GlobalReferenceCreateClient; reader?: GlobalReferenceReadClient;
+  reviseClient?: ReferenceReviseClient }>();
 const session = toRaw(props.session ?? inject(sessionClientKey, null) ?? new SessionClient());
 const lists = toRaw(props.listClient ?? new EvidenceListClient());
 const viewers = toRaw(props.viewerClient ?? new EvidenceViewerClient());
 const eligibility = toRaw(props.eligibilityClient ?? new EvidenceEligibilityClient(session));
 const attestations = toRaw(props.attestationClient ?? new ReferenceDeidentificationClient(session));
 const creates = toRaw(props.createClient ?? new GlobalReferenceCreateClient(session));
+const reader = toRaw(props.reader ?? new GlobalReferenceReadClient());
+const revises = toRaw(props.reviseClient ?? new ReferenceReviseClient(session));
+type RevisePending = Readonly<{ actor: string; reference: string; key: string; ifMatch: string; body: string }>;
+const revisionMode = () => typeof props.referenceId === "string" && props.referenceId.length > 0;
+const target = ref<GlobalReferenceCurrent | null>(null);
+const revised = ref<ReferenceRevised | null>(null);
+const refreshed = ref<GlobalReferenceCurrent | null>(null);
+const revisePending = ref<RevisePending | null>(null);
+const revisePendingCorrupt = ref(false);
+const reviseRecoveryReviewed = ref(false);
 type Selected = Readonly<{ evidence: EvidenceSummary; viewer: EvidenceViewerDescriptor }>;
 const items = ref<readonly EvidenceSummary[]>([]);
 const selected = ref<readonly Selected[]>([]);
@@ -51,6 +64,48 @@ const documents = () => selected.value.filter((entry, index, all) =>
   all.findIndex((candidate) => candidate.viewer.document_version_id === entry.viewer.document_version_id) === index);
 const storageKey = () => `plm.sol.global.deidentification.multi.pending.${session.view?.user.user_id ?? "none"}`;
 const createStorageKey = () => `plm.sol.global.create.pending.${session.view?.user.user_id ?? "none"}`;
+const reviseStorageKey = () => `plm.sol.global.reference.revise.pending.${session.view?.user.user_id ?? "none"}.${props.referenceId ?? "none"}`;
+function restoreRevisePending() {
+  revisePending.value = null; revisePendingCorrupt.value = false; reviseRecoveryReviewed.value = false;
+  try {
+    const raw = window.sessionStorage.getItem(reviseStorageKey());
+    if (!raw) return;
+    const item: unknown = JSON.parse(raw);
+    if (!item || typeof item !== "object" || Array.isArray(item)) throw new Error("bad pending");
+    const entry = item as Record<string, unknown>;
+    if (Object.keys(entry).length !== 5 || entry.actor !== session.view?.user.user_id
+      || entry.reference !== props.referenceId || typeof entry.key !== "string"
+      || !/^[\x20-\x7e]{16,128}$/.test(entry.key) || typeof entry.ifMatch !== "string"
+      || !/^"v(?:0|[1-9]\d*)"$/.test(entry.ifMatch) || typeof entry.body !== "string"
+      || !entry.body) throw new Error("bad pending");
+    revisePending.value = entry as RevisePending;
+  } catch { revisePendingCorrupt.value = true; }
+}
+function saveRevisePending(item: RevisePending): boolean {
+  try { window.sessionStorage.setItem(reviseStorageKey(), JSON.stringify(item)); revisePending.value = item; return true; }
+  catch { error.value = "无法保存修订操作号，本次未提交。"; return false; }
+}
+function clearRevisePending(): boolean {
+  try { window.sessionStorage.removeItem(reviseStorageKey()); revisePending.value = null;
+    revisePendingCorrupt.value = false; reviseRecoveryReviewed.value = false; return true; }
+  catch { error.value = "无法清除修订待核对记录，继续锁定新提交。"; return false; }
+}
+async function loadTarget() {
+  if (!revisionMode() || !mayRead() || busy.value) return;
+  const id = props.referenceId!, run = ++generation;
+  busy.value = true; error.value = ""; target.value = null; revised.value = null; refreshed.value = null;
+  try {
+    const result = await reader.current(id);
+    if (!mounted || run !== generation || id !== props.referenceId || !mayRead()) return;
+    target.value = result;
+    sourceClass.value = result.source_project_class;
+    deidentificationClass.value = result.deidentification_class;
+    industry.value = typeof result.applicability.industry === "string" ? result.applicability.industry : "";
+    restoreRevisePending();
+  } catch (failure) { if (mounted && run === generation) error.value = failure instanceof Error
+    ? failure.message : "无法读取当前全局参考方案。"; }
+  finally { if (mounted && run === generation) busy.value = false; }
+}
 function restoreCreatePending() {
   createPendingKey.value = "";
   try {
@@ -294,6 +349,68 @@ async function createReference() {
     }
   } finally { if (mounted) busy.value = false; }
 }
+async function recheckRevise(input: ReferenceReviseInput, shown: DeidentificationPreview,
+  snapshot: GlobalReferenceCurrent) {
+  const latest = await reader.current(snapshot.reference_solution_id);
+  if (latest.reference_version_id !== snapshot.reference_version_id || latest.etag !== snapshot.etag)
+    throw new Error("当前全局参考版本已变化；请重新读取后决定。");
+  for (const entry of selected.value) {
+    const viewer = await viewers.get({ kind: "GLOBAL" }, entry.evidence.evidence_id);
+    const state = await eligibility.currentGlobal(entry.evidence.evidence_id);
+    if (viewer.evidence_id !== entry.evidence.evidence_id
+      || viewer.document_id !== entry.viewer.document_id
+      || viewer.document_version_id !== entry.viewer.document_version_id
+      || viewer.content_url !== entry.viewer.content_url
+      || state.evidence_id !== entry.evidence.evidence_id
+      || state.document_id !== viewer.document_id
+      || state.document_version_id !== viewer.document_version_id
+      || state.eligibility_state !== "ELIGIBLE") throw new Error("固定来源已变化；请重新核查。");
+  }
+  const currentPreview = await attestations.preview(input);
+  if (currentPreview.source_fingerprint !== shown.source_fingerprint
+    || currentPreview.document_refs.length !== input.document_version_ids.length
+    || currentPreview.document_refs.some((item, index) =>
+      item.document_version_id !== input.document_version_ids[index]
+      || item.document_id !== documents()[index]?.viewer.document_id)
+    || currentPreview.evidence_ids.length !== input.evidence_ids.length
+    || currentPreview.evidence_ids.some((id, index) => id !== input.evidence_ids[index]))
+    throw new Error("来源指纹已变化；请重新预览并核查。");
+}
+async function sendRevise(item: RevisePending) {
+  if (!revisionMode() || !mayRead() || !session.canSubmit || busy.value || revisePendingCorrupt.value) return;
+  const run = generation;
+  busy.value = true; error.value = "";
+  try {
+    const input = JSON.parse(item.body) as ReferenceReviseInput;
+    const result = await revises.revise("GLOBAL", item.reference, null, input, item.ifMatch, item.key);
+    if (!mounted || run !== generation || item.reference !== props.referenceId) return;
+    revised.value = result;
+    if (!clearRevisePending()) return;
+    try { refreshed.value = await reader.current(item.reference); }
+    catch { refreshed.value = null; error.value = "修订回执已收到，但当前详情刷新失败；请重新读取。"; }
+  } catch (failure) { if (mounted && run === generation) error.value = failure instanceof Error
+    ? failure.message : "修订结果不确定，请保留原操作号。"; }
+  finally { if (mounted && run === generation) busy.value = false; }
+}
+async function submitRevise() {
+  const input = sources(), shown = preview.value, proof = confirmation.value, snapshot = target.value;
+  if (!revisionMode() || !mayRead() || !session.canSubmit || busy.value || pendingKind.value
+    || revisePending.value || revisePendingCorrupt.value || revised.value || !input || !shown || !proof || !snapshot
+    || proof.source_fingerprint !== shown.source_fingerprint || Date.parse(proof.expires_at) <= Date.now()
+    || !allChecked() || !attested.value) return;
+  const run = generation, revision = sourceRevision;
+  busy.value = true; error.value = "";
+  try {
+    await recheckRevise(input, shown, snapshot);
+    if (!mounted || run !== generation || revision !== sourceRevision || !mayRead()) return;
+    const item: RevisePending = { actor: session.view!.user.user_id, reference: snapshot.reference_solution_id,
+      key: crypto.randomUUID(), ifMatch: snapshot.etag, body: JSON.stringify(input) };
+    if (!saveRevisePending(item)) return;
+  } catch (failure) { if (mounted && run === generation) error.value = failure instanceof Error
+    ? failure.message : "修订来源无法重新核验。"; }
+  finally { if (mounted && run === generation) busy.value = false; }
+  if (revisePending.value) await sendRevise(revisePending.value);
+}
 async function revoke() {
   const target = confirmation.value?.confirmation_id;
   if (!mayRead() || !target || !session.canSubmit || busy.value || pendingKind.value) return;
@@ -321,15 +438,31 @@ function clearCompletedPending() {
   clearPending(); success.value = `已核对历史操作 ${result.confirmation_id}；当前状态 ${result.current_state}。`;
 }
 watch([sourceClass, deidentificationClass, industry], invalidateSources);
-onMounted(() => { restorePending(); restoreCreatePending(); void load(true); });
+watch(() => props.referenceId, () => {
+  generation += 1; busy.value = false; items.value = []; selected.value = []; cursor.value = null;
+  loaded.value = false; target.value = null; revised.value = null; refreshed.value = null;
+  revisePending.value = null; revisePendingCorrupt.value = false; createPendingKey.value = "";
+  clearPreview(); error.value = "";
+  if (revisionMode()) { restoreRevisePending(); void loadTarget().then(() => load(true)); }
+  else { restoreCreatePending(); void load(true); }
+});
+onMounted(() => {
+  restorePending();
+  if (revisionMode()) { restoreRevisePending(); void loadTarget().then(() => load(true)); }
+  else { restoreCreatePending(); void load(true); }
+});
 onUnmounted(() => { mounted = false; generation += 1; selected.value = []; });
 </script>
 
 <template>
   <section class="global-source-picker" aria-labelledby="picker-title" :aria-busy="busy">
     <p class="section-kicker">全局参考方案</p>
-    <h1 id="picker-title">多来源核查候选</h1>
+    <h1 id="picker-title">{{ revisionMode() ? '修订全局参考方案' : '多来源核查候选' }}</h1>
     <p><RouterLink :to="{ name: 'global-references' }">查看全局参考方案候选与历史详情</RouterLink></p>
+    <p v-if="revisionMode() && target">目标：{{ target.name }} · 当前第 {{ target.version_no }} 版 ·
+      当前 ETag <code>{{ target.etag }}</code>。修订只生成新草稿版本，原版本保留。
+      <RouterLink :to="{ name: 'global-reference-detail', params: { referenceId: target.reference_solution_id } }">返回目标详情</RouterLink>
+    </p>
     <p>仅部署管理员可选择。候选集合本身不是脱敏确认；预览后仍须逐项打开原文并由本人判断，AI 和脚本不能代替业务确认。</p>
     <p><RouterLink to="/admin/evidence">返回全局证据</RouterLink></p>
     <template v-if="!mayRead()">
@@ -353,6 +486,17 @@ onUnmounted(() => { mounted = false; generation += 1; selected.value = []; });
       <section v-if="createPendingKey" aria-label="待核对创建操作">
         <strong>全局参考方案创建结果尚待核对</strong>
         <p>原操作号：<code>{{ createPendingKey }}</code>。当前合同无创建回查入口；不要换号、刷新重试或再次创建，须核对服务端审计后处理。</p>
+      </section>
+      <section v-if="revisionMode() && (revisePending || revisePendingCorrupt)" aria-label="待核对修订操作">
+        <strong>全局参考方案修订结果待核对</strong>
+        <p v-if="revisePendingCorrupt" role="alert">本地原请求记录损坏，禁止提交；需人工核对服务端审计与当前版本。</p>
+        <template v-else-if="revisePending">
+          <p>原操作号：<code>{{ revisePending.key }}</code>；原 If-Match：<code>{{ revisePending.ifMatch }}</code>。
+            请先核对审计和当前详情；若首次请求无明确回执，只能以保存的原正文、ETag、操作号重试。</p>
+          <button type="button" :disabled="busy || !session.canSubmit" @click="sendRevise(revisePending)">原请求同号重试</button>
+          <label><input v-model="reviseRecoveryReviewed" type="checkbox">我已核对服务端审计和当前版本，确认不需再重试原请求</label>
+          <button type="button" :disabled="busy || !reviseRecoveryReviewed" @click="clearRevisePending()">清除本地待核对记录</button>
+        </template>
       </section>
       <p v-if="busy" role="status">正在核验来源…</p>
       <p v-if="error" role="alert">{{ error }}</p>
@@ -412,14 +556,23 @@ onUnmounted(() => { mounted = false; generation += 1; selected.value = []; });
       <section v-if="confirmation" aria-label="集合历史确认">
         <p>历史确认号：<code>{{ confirmation.confirmation_id }}</code>；到期：{{ confirmation.expires_at }}</p>
         <p>这只是本会话历史确认，不代表当前未撤回或来源仍合格；创建时服务端会重新证明。</p>
-        <section v-if="!createdReference" aria-label="创建全局参考方案">
+        <section v-if="!revisionMode() && !createdReference" aria-label="创建全局参考方案">
           <label>参考方案名称<input v-model="referenceName" :disabled="busy || !!createPendingKey" maxlength="255" placeholder="填写便于识别的参考名称"></label>
           <button type="button" :disabled="busy || !!pendingKind || !!createPendingKey || !session.canSubmit
             || !referenceName.trim() || Date.parse(confirmation.expires_at) <= Date.now()"
             @click="createReference()">重新核验并创建全局参考方案</button>
         </section>
-        <p v-if="createdReference" role="status">已创建参考方案 {{ createdReference.reference_solution_id }}，状态仅供参考 / 草稿；不是正式方案批准。
+        <p v-if="!revisionMode() && createdReference" role="status">已创建参考方案 {{ createdReference.reference_solution_id }}，状态仅供参考 / 草稿；不是正式方案批准。
           <RouterLink :to="{ name: 'global-reference-detail', params: { referenceId: createdReference.reference_solution_id } }">打开刚创建的参考方案详情</RouterLink>
+        </p>
+        <section v-if="revisionMode()" aria-label="修订全局参考方案">
+          <p>提交前重新读取目标当前版和全部固定来源，并重新计算脱敏指纹。人工确认只是历史记录，服务端还会证明它当前有效。</p>
+          <button type="button" :disabled="busy || !!pendingKind || !!revisePending || revisePendingCorrupt
+            || !!revised || !target || !session.canSubmit || Date.parse(confirmation.expires_at) <= Date.now()"
+            @click="submitRevise()">重新核验并修订为新草稿版本</button>
+        </section>
+        <p v-if="revised" role="status">修订回执：第 {{ revised.version_no }} 版，版本号 {{ revised.reference_version_id }}；
+          {{ refreshed?.reference_version_id === revised.reference_version_id ? '当前详情已确认指向该版本。' : '当前详情尚未确认，请单独读取。' }}
         </p>
         <label>撤回原因<select v-model="revokeReason"><option value="ADMIN_REVIEW">管理员复核</option>
           <option value="SOURCE_EXPOSED">来源暴露</option><option value="SCOPE_CHANGED">范围变化</option></select></label>
