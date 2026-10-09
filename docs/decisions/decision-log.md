@@ -11128,3 +11128,10 @@
 - Decision：第二轮同序脚本出现默认前约618/615ms、临时20池约1084/997ms、默认后约667/657ms的相反排序，仍全部超500ms。连接取得路径虽在临时池较短，却不支持“扩大池必然改善业务P95”。不作生产配置/安全查询改动，继续关闭Prototype正常入口；先转已具前置的Solution历史GET/LIST HTTP，性能工作保留独立FAIL项。
 - Reason：SQL模板耗时分散，主机/探针/PG竞争未隔离；仅凭两轮波动不能确定安全单点瓶颈或发行参数。
 - Impact/Rollback：无运行变更/迁移，诊断记录可撤但历史结果保留；后续性能复验需控制主机负载和同等安全断言，Gate3继续阻塞。
+
+# DEC-20261009-1167：SectionVersion 首切片仅规范 DRAFT 输入，不提前解锁写入
+
+- Date/WBS：2026-10-09 / `SOL-05-A02-P01`；依据冻结 DM-05/API-04、CR-SOL-003、0138 闭锁和 SOL-05-A01 前置核查。
+- Decision：新增 SectionVersion 专用输入合同，正文只表达固定 DocumentVersion 或 ArtifactRef 二选一，固定项目/章节、标题、Requirement 根/版本、Evidence ID、假设/排除声明；按有界规范 JSON 生成请求指纹并深拷贝声明。此层只验形状/重复/界限，不验项目授权、当前来源、文件字节、Review，也不写数据库；Artifact 分支在 OutputArtifact Owner 具备之前不向写路径开放。
+- Reason：Schema/FK 已存在但闭锁仍拒 DML；目录 DRAFT 只固定 Section 身份，不能借输入结构推定正文或覆盖合格。将请求结构与现时证明分开，便于后续受控 Owner 保持同事务重证。
+- Impact/Rollback：无 Schema/API/权限/配置/依赖迁移；撤未接线的输入模块可回滚，历史保留。需单元正反例与后端回归，后续 Owner/Guard 独立 CR/验证，Gate3仍 BLOCKED。
