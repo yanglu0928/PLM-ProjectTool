@@ -11142,3 +11142,10 @@
 - Decision：仅为 PROJECT SectionVersion 的 DocumentVersion 正文定义内部证明 DTO/适配器：先在调用者事务按 ProjectId 锁定固定版本与 Document 身份，再用同一事务、原 Session 走 Document-owned 权限/版本/真实字节 SHA-256 证明；只返回不含 Locator/正文的固定 ID 与 digest。GLOBAL、错项目、非 ACTIVE Document、畸形证明或异常一律失败关闭。此端口不判 SectionVersion 内容是否适合审批，也不开放 Artifact 分支或数据库写入。
 - Reason：0138 Document FK 只证明引用存在，不证明版本当前可用或本地文件字节未漂移；直接复用 Reference 专用类别规则会把参考材料语义误套到方案正文。Document 通用固定来源证明已有物理与授权边界。
 - Impact/Rollback：仅新增未接线内部模块/测试，无 Schema/API/权限/配置/依赖/数据迁移；撤适配器即可回滚。Owner 装配、真实 PG 写链及正式环境仍独立验收。
+
+# DEC-20261009-1169：SectionVersion 复用 Requirement-owned 当前批准证明
+
+- Date/WBS：2026-10-09 / `SOL-05-A02-P03`；依据 Gate2 DM-05、CR-SOL-003、现有 `OutlineRequirementUseProofService` 的 PG/锁证据。
+- Decision：不新增同义 Requirement 查询/服务；后续 SectionVersion Owner 对每条固定 Requirement 根/版本在同一写事务中调用现有 Requirement-owned 最小端口，严格核对 Project、Version、摘要及 Review 身份。此事实只证明需求当前批准，不等于章节实现覆盖、Trace 一致或客户批准。
+- Reason：底层 SQL 已共享锁验证 ACTIVE 根/当前批准指针/APPROVED 版本与 Review，并经隔离 PG 正负例复验；重复服务会增加规则漂移风险。
+- Impact/Rollback：本项无程序/Schema/API/权限/配置/依赖/数据变化；未来如端口语义变动须重新评估。SectionVersion 写表仍由0138拒绝，Gate3不变。

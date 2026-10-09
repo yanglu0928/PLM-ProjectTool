@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-05-A02-P03 复核并复用Requirement-owned同事务当前批准版本证明，Win11隔离PG合成正负例脚本退出0；无重复服务或SectionVersion写入。兼容性/升级/回滚：仅复用决定与记录，无码/Schema/Migration/API/权限/配置/依赖/数据变化。已知问题：本项未运行SectionVersion写链/新全量测试；Evidence/Review/Trace、正式Server2025/信任、性能/Gate3/发行仍待，Debian13实机依指令跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-05-A02-P02 新增 SectionVersion PROJECT DocumentVersion 内部同事务固定身份/授权与物理字节证明适配器，错项目/归档/坏摘要/异常失败关闭，输出不含正文或Locator。兼容性/升级/回滚：未接线内部模块，无Schema/Migration/公开API/权限/配置/依赖/数据变化；撤适配器可回滚。验证：定向pytest5项/16子例，后端全量3507通过/3跳过/5439子例、退出0。已知问题：本项未运行SectionVersion真实PG写入，Requirement/Evidence/Artifact/Review与正式信任、Server2025、性能/Gate3/发行仍待；Debian13实机依指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-05-A01～A02-P01 纠正已完成的OutlineVersion历史读任务重复转序，核查SectionVersion 0138闭锁后新增内部DRAFT有界输入/规范请求指纹与负例。兼容性：Win11开发环境验证，目标Server2025/Debian13未验；升级/回滚：无Migration、公开API、权限、配置、生产依赖或数据变化，撤未接线输入模块即可回滚。验证：定向pytest6项/25子例；后端全量3502通过/3跳过/5423子例、退出0，最终测试断言增强后定向再通过。已知问题：首次全量unittest因虚拟环境缺pytest导入失败，不计PASS；SectionVersion来源/Owner/Guard/Review/Trace、性能与Gate3/发行仍待，Debian13实机依指令跳过。
