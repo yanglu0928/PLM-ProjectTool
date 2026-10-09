@@ -11100,3 +11100,10 @@
 - Decision：在原管理员确认、项目成员、Reference ELIGIBLE 和 Document/Evidence 均有效时，以真实撤销服务撤销最新 GLOBAL 确认；随后通过项目候选真实 HTTP 和 OutlineVersion CREATE 验证旧固定选择不可用且无版本/Audit/收据副作用。独立夹具断言后用特定成功哨兵终止既有来源夹具后续状态变化，外层始终停止并清理临时 PG；过期情形另测。
 - Reason：既有上游夹具先撤 Evidence、后撤确认，候选隐藏可能由 Evidence 导致，无法单独证明确认撤销边界；专门在其余条件有效时撤销才能归因。
 - Impact/Rollback：仅新增验证脚本与文档，无生产代码、Schema/API/权限/依赖变化；失败保留 CR 未关闭，不用绕过正式数据库 Guard。
+
+# DEC-20261009-1163：确认到期直接负例使用服务时钟注入而不改写历史账本
+
+- Date/WBS：2026-10-09 / `SOL-03-A04-P03-P03-P06-A04-P01-P02-P02`；依据 CR-SOL-018、DEC-1160/1162 与既有 ReferenceUseProofService 时钟端口。
+- Decision：保留可弃 PG 中真实未撤销确认及全部来源，构造复用生产 Repository/Owner/API 的测试组合，将证明服务时钟分别置于 `expires_at - 1 微秒` 和 `expires_at`；前者候选可见，精确到期时 GET 隐藏、旧固定引用 CREATE 拒绝且不产生版本/Audit/收据。不改数据库时间列、不绕过 Guard，测试后让上游来源夹具正常完成。
+- Reason：确认到期至少一天，直接等待不实际；修改不可变确认历史会破坏真实工作流。现有时钟依赖注入能真实执行到期谓词与 PG/HTTP 链，同时清晰限定为受控时间验证。
+- Impact/Rollback：仅验证资产，无运行代码/Schema/API/权限/依赖变化；正式可信时间、目标账户与 Server2025 仍独立验收。
