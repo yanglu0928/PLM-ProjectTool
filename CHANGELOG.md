@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-03-A04-P03-P03-P06-A01 前端新增受控 OutlineVersion CREATE Session 请求桥和严格首响客户端，固定引用/声明/角色/操作号预检，未知提交结果保持原号语义；尚未暴露创建页。兼容性/升级：无 Migration/冻结 API/权限/依赖变化，未接 UI 时可撤客户端；既有服务端历史保留。验证：定向4项、前端全量1710项、typecheck/build 通过；构建保留既有大 chunk 告警。已知问题：候选页/Win11 浏览器、正式信任/Server2025/性能、Gate3/UAT/发行未完成。
+
 - 2026-10-09：0.1.0-dev.0/SOL-03-A04-P03-P03-P05-A03 仅 Windows 显式写模式装配 OutlineVersion CREATE，工厂以两个受控绝对存储根重建 Document/Parse/Evidence/Reference/Requirement/Section 当前证明，缺依赖/非法根失败关闭，不借 GLOBAL 管理员 Session。兼容性/升级：无 Migration/Schema/冻结 API/角色/依赖变化，关闭写模式可撤入口，已写历史保留；DEC-1143 记录装配选择。验证：工厂单元4项/21子例、Win11 两套隔离 PG18.6/真实合成文件 ASGI 双 Scope 退出0，后端全量3456通过/3跳过/5284子例；GLOBAL 首轮过期夹具注入与正式时钟不匹配，改真实合成到期后重跑通过。已知问题：正式服务账户信任源/Server2025、UI/浏览器、Gate3/发行未完成。
 
 - 2026-10-09：0.1.0-dev.0/SOL-03-A04-P03-P03-P05-A02 新增 OutlineVersion CREATE 双 Scope 真实 ASGI/PG 验收资产；项目 PM/IM 201、原键重放、固定 Requirement/Reference、首响/收据/Audit、客户/跨项目/CSRF/暂停成员/License 与物理篡改/确认到期零额外写均验。兼容性/升级：仅验证资产，无产品 Migration/API/依赖变化，可撤验收脚本，默认应用仍 404。验证：两套 Win11 临时 PG18.6、真实合成文件/Session/ASGI 与旧来源夹具退出0；前项后端全量3455通过/3跳过。已知问题：Windows 显式装配、UI/浏览器、正式信任源/Review/UAT、Gate3/发行未完成。

@@ -218,6 +218,7 @@ export class SessionClient {
     | `/api/v1/projects/${string}/ai-tasks`
     | `/api/v1/projects/${string}/retrieval-runs`
     | `/api/v1/projects/${string}/solution-outlines`
+    | `/api/v1/projects/${string}/solution-outlines/${string}/versions`
     | `/api/v1/projects/${string}/solution-sections`, body: string,
     idempotencyKey: string, maxBodyBytes: number): Promise<Response> {
     if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
@@ -254,6 +255,16 @@ export class SessionClient {
   postProjectOutlineCreate(projectId: string, body: string, idempotencyKey: string): Promise<Response> {
     if (!identifier(projectId)) return Promise.reject(new SessionClientError("AUTH_CLIENT_UNAVAILABLE"));
     return this.#postCommand(`/api/v1/projects/${projectId}/solution-outlines`, body, idempotencyKey, 8192);
+  }
+
+  postProjectOutlineVersionCreate(projectId: string, outlineId: string, body: string,
+    idempotencyKey: string): Promise<Response> {
+    if (!identifier(projectId) || !identifier(outlineId)) {
+      return Promise.reject(new SessionClientError("AUTH_CLIENT_UNAVAILABLE"));
+    }
+    return this.#postCommand(
+      `/api/v1/projects/${projectId}/solution-outlines/${outlineId}/versions`,
+      body, idempotencyKey, 512 * 1024);
   }
 
   postProjectSectionCreate(projectId: string, body: string, idempotencyKey: string): Promise<Response> {
