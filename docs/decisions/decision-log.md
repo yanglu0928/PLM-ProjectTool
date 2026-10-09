@@ -11037,3 +11037,10 @@
 - Decision：仓储按 GLOBAL 原始根 ID 有界读取并只构造最新同版 PUBLISH/ELIGIBLE 候选最小字段；服务逐项调用 ReferenceUseProof，同事务证明失败的候选不进入结果，仓储异常整体失败关闭。游标锚点取本页已扫描的最后原始根，不从可见结果推导。项目 Session/License/角色授权与签名游标在下一项 Owner 完成前不开放外部入口。
 - Reason：既有证明端口不负责公开授权，且过期确认/物理来源漂移在读取期间可能发生；独立内部层需能不泄露原名地安全隐藏失效候选，同时保留分页前进能力。
 - Impact/Rollback：仅 Solution 内部只读代码与测试，无 Schema/API/权限/依赖变化。可撤内部未挂载组件回滚，已发布事件历史不变；后续需验证真实 PG、鉴权、游标和性能。
+
+# DEC-20261009-1154：GLOBAL 候选读 Owner 使用独立 PM/IM 只读策略与游标签名族
+
+- Date/WBS：2026-10-09 / `SOL-03-A04-P03-P03-P06-A03-P05-A03`；依据 CR-SOL-018 与 DEC-1152/1153。
+- Decision：新增 `SOL_GLOBAL_REFERENCE_CANDIDATE_LIST` 项目策略，限当前 ACTIVE 项目的 PM/ImplementationMember，持锁读取但不授予写权限；Owner 先重证 Session/License/项目角色，再调用内部 Catalog。游标独立 `project-global-reference-candidate-list` 签名族与 32 字节专用密钥，绑定 Session 摘要、Project、页大小和已扫描原始根 ID；仅 Owner 输入/输出不接 HTTP。
+- Reason：候选是 CREATE 前置选择，归档项目和客户成员不应看到可提交选项；复用普通四角色 Reference 列表或管理员 Session 会扩大权限，未签名原始根可被跨范围重放。
+- Impact/Rollback：新增项目策略、Solution 内部 Owner/Codec/测试，不改旧 API/Schema/依赖。移除未挂载 Owner/策略可回滚，发布历史保留；Windows 正式专用密钥供给与 HTTP 另验。

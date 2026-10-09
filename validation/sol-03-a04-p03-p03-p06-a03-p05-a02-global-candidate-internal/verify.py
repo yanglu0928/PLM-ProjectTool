@@ -40,7 +40,7 @@ SPEC.loader.exec_module(fixture)
 
 
 def on_qualified(*, runtime, request, sources, audit, license_guard,
-                 downloads, parse_results, **_unused) -> None:
+                 downloads, parse_results, port, on_published=None, **_unused) -> None:
     common = dict(
         unit_of_work=runtime.unit_of_work,
         global_access=SqlAlchemyLicenseImportAccess(),
@@ -114,6 +114,9 @@ def on_qualified(*, runtime, request, sources, audit, license_guard,
     assert first.next_after_reference_solution_id == unpublished.reference_solution_id
     second = scan(after=first.next_after_reference_solution_id, limit=1)
     assert second.items == (item,) and not second.has_more
+    if on_published is not None:
+        on_published(runtime=runtime, catalog=catalog, initial=initial,
+                     port=port)
     ReferenceEligibilityService(
         **common, repository=SqlAlchemyReferenceEligibilityRepository()).set(
             SetReferenceEligibility(

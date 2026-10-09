@@ -32,6 +32,10 @@ POLICIES: dict[str, _Policy] = {
     "SOL_OUTLINE_LIST": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "SOL_OUTLINE_VERSION_LIST": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "SOL_OUTLINE_VERSION_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
+    "SOL_GLOBAL_REFERENCE_CANDIDATE_LIST": _Policy(
+        frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}),
+        False, lock_reads=True, deny_archived=True,
+    ),
     "SOL_SECTION_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "SOL_SECTION_LIST": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "SOL_REFERENCE_CREATE": _Policy(

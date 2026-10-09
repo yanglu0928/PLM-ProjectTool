@@ -42,6 +42,10 @@
 
 2026-10-09 按 DEC-1153 增加 GLOBAL 原始根有界扫描、同版最新发布过滤、最小标签投影及既有当前来源/确认证明复用。Win11 隔离 PG18.6 未发布→发布→撤回与空页续页证据见 `docs/progress/sol-03-a04-p03-p03-p06-a03-p05-a02-global-candidate-internal.md`。此项仅内部组件，未开放项目授权/HTTP，CR 仍未关闭。
 
+## P06-A03-P05-A03 实施记录
+
+2026-10-09 按 DEC-1154 新增项目上下文 PM/ImplementationMember 专用只读授权 Owner 与独立签名游标，当前 Session/License/成员重证后才调用 A02 Catalog。Win11 隔离 PG18.6 角色/归档/跨项目与空页续页证据见 `docs/progress/sol-03-a04-p03-p03-p06-a03-p05-a03-global-candidate-owner.md`。正式密钥、可选 HTTP/Windows 装配仍未完成，本 CR 不关闭。
+
 ## P06-A02-P02 前置核查
 
 2026-10-09 核查 `GlobalReferenceReadService` 当前仅调用 `AdminPort.authorized_admin`；`SqlAlchemyGlobalReferenceReadRepository` 投影含 `Root.name`，而 GLOBAL 创建只验证名称格式，不证明其已被人工审定为可向项目成员展示。现有 `Reference` 当前资格/来源证明是内部最小端口，不提供可读标签；以截断 UUID 当标签虽不泄露正文，却无法让用户核对所选方案。故项目成员 GLOBAL 候选页面编码前置不满足，状态为 `PRECONDITION_BLOCKED`，不是 Gate/功能 PASS。先实施本 CR 的发布账本与管理员确认、再开放读面；这需要独立 Schema/Owner/API/Win11/页面任务。当前转做不依赖它的 OutlineVersion GET/LIST 与原操作恢复，保持 P06-PROJECT 子集可用。
