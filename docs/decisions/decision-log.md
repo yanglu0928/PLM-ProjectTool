@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261009-1138：OutlineVersion 参考关联先闭结构、后开 Owner
+
+- Date/WBS：2026-10-09 / `SOL-03-A02`；依据冻结 DM-05/API-04、CR-SOL-002、0137 三表写 Guard、SOL-04 Section 身份、REQ-01 当前批准证明和 SOL-01-A16 现时资格机制。
+- Decision：下一独立迁移补固定 ReferenceVersion 关联、PROJECT 同 Project/GLOBAL 无来源 Project 的复合归属约束及 `declared_reference_count`，但保持新旧版本表写入全部关闭；Owner 再单独证明实时来源、资格、权限和计数闭合。
+- Reason：缺关联结构时不能保存冻结的参考版本输入；直接开放 0137 或使用裸 UUID 会形成跨项目/过期来源漏洞。资格状态本身是可变化的，FK 不能替代写前重证。
+- Impact/Rollback：本决策只确定后续 Schema/Owner 顺序，无本次程序/数据变化；迁移必须空/有数据升降级、历史拒降与 SQL 负例。Gate3/正式发行继续阻塞。
+
 ## DEC-20261009-1137：首版资格锁下界以新迁移前向修复
 
 - Date/WBS：2026-10-09 / `SOL-01-A16-P03`；依据 0152 事件约束、正常 Reference 首版根 `lock_version=0` 和 CR-SOL-014。

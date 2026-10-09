@@ -17,3 +17,11 @@
 - `20261008_0137` 在 0136 后新建三个空表并为 `sol_sections` 增加 `(section_id,outline_id,project_id)` 唯一键；无旧 Solution 数据转移，不修改其他模块表/正式 API/权限/依赖。版本根含 SHA-256 指纹、同 Outline 版本号唯一、同父版本替代 FK、独立 Review 引用与固定声明。未装配 Owner 的写入及 TRUNCATE 失败关闭。
 - 空库与已有 Project/User 的库升级、Schema drift、空表降级重升及已有版本历史拒降均需验证；若后续有记录，不得通过降级删除。回滚本阶段只适用于三表无记录；保留 A02 身份数据。
 - PostgreSQL 18 必测同项目 Section/Requirement FK、跨项目拒绝、顺序唯一、重复目标、无效声明/指纹、未装配写入口、批准指针跨 Outline 拒绝；后端全量回归。未形成 ReferenceSolution/SectionVersion/Review/Workflow 事实前，Gate 3 仍 OPEN。
+
+## SOL-03-A02：参考版本关联前向补齐计划（实施前）
+
+2026-10-09 复核：SOL-04 Section 身份已形成可验证真实 Owner，REQ-01 有当前 APPROVED RequirementVersion 证明端口，SOL-01-A16 双 Scope Reference 资格/修订失效及 Win11 Edge/PG 合成链已验。0137 的 `sol_outline_versions`、章节和需求引用仍由写 Guard 全拒；`sol_outline_reference_refs` 仍不存在。因此前述“等待 SOL-01 后再补参考关联”的前置已满足到可安全设计 Schema，但不等于 OutlineVersion CREATE 可直接开放。
+
+选择后续独立线性迁移先补封闭结构：新增 `sol_outline_reference_refs`，固定 OutlineVersion/Outline/Project、ReferenceVersion/ReferenceRoot/Scope、序号，版本内序号和目标唯一；PROJECT 来源须同目标 Project，GLOBAL 来源须无来源 Project。对现有 ReferenceVersion 增加用于 PROJECT 复合归属 FK 的唯一键，并同时保留 `(ReferenceVersion,Root,Scope)` 基础 FK 覆盖 GLOBAL；新表 `INSERT/UPDATE/DELETE/TRUNCATE` 默认全拒。OutlineVersion 增 `declared_reference_count >= 0`（既有版本初值 0），但不凭计数字段单独证明引用闭合。此增量不解锁旧 0137 Guard，也不新增默认 HTTP。当前版本、`ELIGIBLE` 状态、Document/Evidence/脱敏确认现时性及 Project 授权仍必须由之后独立 Owner 在同事务证明；数据库 FK 只证明固定身份/归属，不证明资格。
+
+不选裸 UUID、仅前端过滤或直接开放 0137 DML。迁移先验空库/已有 Project、Section、Reference 根与版本的升级；有新参考关联历史时拒降并保留数据，空历史 down 后重升；Drift、跨项目/伪 GLOBAL、错 Root/Version、序号重复、直接 DML/TRUNCATE 负例必须通过。回滚优先保持写入口关闭，不能静默删除业务历史。若实现中发现复合 FK 对 GLOBAL NULL 语义与此计划不闭合，先追加本 CR 的差异与可验证替代，不放宽 Scope；Gate2 原冻结提交和 0137 历史保留。此计划不变更冻结 `/api/v1` 合同或产品授权边界。
