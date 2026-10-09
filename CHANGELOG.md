@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A14 对账 PROJECT/GLOBAL Reference Revise 权限、来源、历史回执与现时资格；登记 GLOBAL 文档-only UI、`SET_ELIGIBILITY` 未完成并按 A15/A16 拆解。兼容性/升级：仅审计/决策/状态文档，无生产代码、Schema/Migration、API 或依赖变化；可回退施工顺序，不豁免缺口。验证：双 Scope 合同4测试/16子例和 PROJECT/GLOBAL Win11隔离PG显式写组合退出0。已知问题：上述两项缺口及正式目标账户/20并发/Server2025、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A13-P03 增加 GLOBAL 修订 Win11 Edge/隔离PG一次性联测，修复整页重载后同号恢复回执被内存确认区隐藏。兼容性/升级：仅验证夹具和前端展示，无 DB/后端/冻结 API/依赖变化；回滚夹具/显示修复前需核对未决操作。验证：合成创建→新来源确认→首次201丢失→原正文/ETag/Key重试→当前第2版/两版本/单Audit、非管理员直POST404，夹具退出0；前端119文件/1695项、typecheck/build及旧GLOBAL多/单来源Edge/PG回归通过。已知问题：GLOBAL文档-only UI、正式目标账户/20并发/Server2025、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-01-A13-P02 新增 GLOBAL Reference 修订入口/多来源人工脱敏确认后修订、当前 ETag/来源写前重核、独立原正文/If-Match/操作号保存和同号恢复；201 历史回执与当前 GET 分开显示，既有创建行为保持。兼容性/升级：仅前端路由/视图与合同测试，无 DB/后端/API/依赖变化；回滚可撤入口，但先核对未决操作。验证：Windows 11 前端119文件/1694项、typecheck/build通过。已知问题：真实 Edge/PG、文档-only GLOBAL UI、正式目标账户/20并发/Server2025、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。

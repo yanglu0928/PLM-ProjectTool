@@ -1,5 +1,14 @@
 # 自主决策记录
 
+## DEC-20261009-1134：补齐 GLOBAL 合法文档主来源后再开放资格命令
+
+- Date/WBS：2026-10-09 / `SOL-01-A14`；冻结 API-04 与 GLOBAL 脱敏增量允许 1～100 文档、0～500 Evidence，CR-SOL-014 已记录独立资格命令。
+- Decision：把现有 GLOBAL 至少两 Evidence 门槛视为页面覆盖缺口，后续 A15 以受权固定文档版本为主来源、Evidence 可选，继续保持预览/逐项人工确认与写前重证；A16 再按 CR-SOL-014 实现独立 Eligibility，不由修订自动升级为 ELIGIBLE。
+- Reason：双 Scope 修订安全链已验，但页面缺口会拒绝冻结合同内合法集合；资格仍无 Owner/迁移/公开链，不能因 Revision DRAFT 或来源存在而推定可用于正式方案。
+- Impact/Rollback：本项仅决策/审计，下一任务 A15 前端扩展可撤入口回滚，A16 的受限 Guard/迁移另依 CR 完整验证；不修改冻结 API 或角色。
+- Verification：双 Scope 真实 PG 写组合退出0、合同 4 测试/16 子例通过；文档-only GLOBAL UI 与 Eligibility 仍是未完成项，不标 PASS。
+
+
 ## DEC-20261009-1133：GLOBAL 修订联测复用隔离来源夹具
 
 - Date/WBS：2026-10-09 / `SOL-01-A13-P03`；依据 A13-P02、既有 GLOBAL 合成多来源 Edge/PG 夹具。
