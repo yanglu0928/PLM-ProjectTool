@@ -10974,3 +10974,10 @@
 - Decision：前端项目成员不能调用或复用管理员 GLOBAL 列表/详情。先完成本项目候选选择；GLOBAL 仅在新增最小项目上下文只读投影、权限/可见性与当前性验证后开放。服务端 CREATE 仍负责最终现时资格证明，页面候选不是正式事实。
 - Reason：避免为完成 UI 而提权或要求用户维护裸 UUID；将可用性缺口与安全边界分别验证。
 - Impact/Rollback：本决策和 CR 先于新增读面，无现有 Schema/API/角色变更；可撤尚未接线候选读面，保留原冻结合同与已写历史。项目内候选页通过不能代替 GLOBAL/真实浏览器/Gate3 验收。
+
+# DEC-20261009-1145：GLOBAL 参考项目候选必须有管理员审定的非敏感发布标签
+
+- Date/WBS：2026-10-09 / `SOL-03-A04-P03-P03-P06-A02-P02`；依据 CR-SOL-018 前置核查和 `GlobalReferenceReadService` 管理员专用字段投影。
+- Decision：不把现有 `Root.name` 或无语义的 UUID 前缀直接展示给项目成员。先实现与固定 GLOBAL 版本绑定、可撤回、留 Audit 的管理员审定发布标签；旧数据默认未发布。仅已发布且现时合格的版本进入项目上下文候选，服务端 CREATE 仍重证资格。先转向独立版本读取任务，GLOBAL 候选前置保持 BLOCKED。
+- Reason：现有名称没有脱敏可见性证明；无审定标签时用户既无法安全也无法有意义地选择 GLOBAL 参考。
+- Impact/Rollback：CR-SOL-018 已列 Schema/Owner/API/Win11/页面与历史拒降计划；本轮只登记，不改既有 API/数据，Gate3 不变。
