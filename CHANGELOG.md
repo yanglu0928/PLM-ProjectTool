@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-03-A04-P02-P01 新增 Solution 自有 Reference 当前 Root/版本/资格事件及 GLOBAL 确认账本受限只读适配器，Root/确认持锁、固定关联按声明数与连续顺序闭合。兼容性/升级：无 DB/Migration、公开 API、依赖或角色变化，未接线适配器可撤回；资格历史不变。验证：Win11 两个隔离 PG18.6 真实 PROJECT/GLOBAL 来源夹具与跨项目/旧版/受限拒绝通过，后端全量 3413 通过/3 跳过/5216 子例。已知问题：Document/Evidence 物理来源现时证明、完整权限/并发、OutlineVersion Owner/HTTP/UI 仍待；Gate3/发行未通过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-03-A04-P01 增加 PROJECT/GLOBAL 已合格 ReferenceVersion 的内部最小证明合同与失败关闭服务，不将管理员资格命令借给项目角色；返回不含正文/定位/会话。兼容性/升级：无 DB/Migration、公开 API、权限或依赖变化；未接线服务可直接撤回。验证：定向 6 项/17 子例，后端全量 3413 通过/3 跳过/5216 子例。已知问题：真实 Root/Event/Document/Evidence/GLOBAL 确认端口及 PG/权限验证未完成，OutlineVersion CREATE 仍封闭，Gate3/发行未通过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-03-A04 编码前检查发现冻结项目角色创建 OutlineVersion 与现有 GLOBAL 管理员来源复验入口不兼容，先登记 CR-SOL-016/DEC-1139，决定采用服务端受限现时证明，不提升项目用户权限也不信任历史资格。兼容性/升级：仅设计与追溯，无程序、Schema/Migration、API 或依赖变化；可撤施工顺序，保留 CR 历史。验证：静态合同/Owner/来源接口对账，未运行新测试。已知问题：A04-P01 证明、CREATE Owner/HTTP/UI/Review 仍未完成；Gate3/正式发行不通过。

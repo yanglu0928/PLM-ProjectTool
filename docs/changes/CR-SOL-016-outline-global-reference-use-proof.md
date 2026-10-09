@@ -25,3 +25,7 @@
 ## A04-P01 实施记录
 
 2026-10-09 已新增只含固定身份/摘要的内部 Query、Current snapshot、来源/确认 Port 与失败关闭校验服务；无账号提权、文档正文/定位输出、公开 API 或数据库更改。Mock Port 定向测试覆盖合法 PROJECT/GLOBAL 和旧版本、资格事件不一致、摘要变化、确认撤回/过期等拒绝。真实端口未接线，因此仅标合同 PASS，未将 Mock 结果宣称为当前来源可用；P02 仍需真实 PostgreSQL/文件/权限验证。
+
+## A04-P02-P01 实施记录
+
+2026-10-09 已接 Solution 自有当前 Root/Version/最新资格事件与 GLOBAL 最新脱敏确认的只读适配器；Root 行锁使资格/修订不能越过调用者提交，固定关联按序号/计数闭合，项目用户不因此获取 GLOBAL 原文。Windows 11 两个隔离 PostgreSQL 18.6 合成来源夹具完成双 Scope 正例及跨项目/旧版/RESTRICTED 负例。Document/Evidence 物理来源仍需 P02-P02 由其 Owner 接口重证，当前不解锁目录版本写。
