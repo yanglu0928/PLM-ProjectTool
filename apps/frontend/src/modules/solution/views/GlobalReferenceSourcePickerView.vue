@@ -571,13 +571,13 @@ onUnmounted(() => { mounted = false; generation += 1; selected.value = []; });
             || !!revised || !target || !session.canSubmit || Date.parse(confirmation.expires_at) <= Date.now()"
             @click="submitRevise()">重新核验并修订为新草稿版本</button>
         </section>
-        <p v-if="revised" role="status">修订回执：第 {{ revised.version_no }} 版，版本号 {{ revised.reference_version_id }}；
-          {{ refreshed?.reference_version_id === revised.reference_version_id ? '当前详情已确认指向该版本。' : '当前详情尚未确认，请单独读取。' }}
-        </p>
         <label>撤回原因<select v-model="revokeReason"><option value="ADMIN_REVIEW">管理员复核</option>
           <option value="SOURCE_EXPOSED">来源暴露</option><option value="SCOPE_CHANGED">范围变化</option></select></label>
         <button type="button" :disabled="busy || !!pendingKind || !session.canSubmit" @click="revoke()">撤回此集合确认</button>
       </section>
+      <p v-if="revisionMode() && revised" role="status">修订回执：第 {{ revised.version_no }} 版，版本号 {{ revised.reference_version_id }}；
+        {{ refreshed?.reference_version_id === revised.reference_version_id ? '当前详情已确认指向该版本。' : '当前详情尚未确认，请单独读取。' }}
+      </p>
     </template>
   </section>
 </template>

@@ -1,5 +1,14 @@
 # 自主决策记录
 
+## DEC-20261009-1133：GLOBAL 修订联测复用隔离来源夹具
+
+- Date/WBS：2026-10-09 / `SOL-01-A13-P03`；依据 A13-P02、既有 GLOBAL 合成多来源 Edge/PG 夹具。
+- Decision：在既有浏览器夹具增加默认关闭的 GLOBAL Revise Router 注入点，单独新建 A13-P03 浏览器脚本和合成非管理员账户；不将写路由带入其他验收模式。
+- Reason：复用已验证的真实 Document/Evidence 文件、Session、确认与临时 PG 生命周期，便于直接比较创建回归和新修订行为；联测暴露的重载后回执隐藏按展示缺陷修复。
+- Impact/Rollback：只涉及验证夹具及前端回执显示，无生产组合、Schema、API 或权限变化；移除新夹具/可选注入点可回滚。真实首次 201 丢失后仍保留操作号并以数据库核实单写。
+- Verification：Win11 Edge/隔离 PG A13-P03 退出0，旧 GLOBAL 多/单来源夹具回归退出0；前端1695项/typecheck/build通过。正式目标账户/客户确认与性能未验。
+
+
 ## DEC-20261009-1132：GLOBAL 修订复用人工脱敏流程但隔离目标与待核对操作
 
 - Date/WBS：2026-10-09 / `SOL-01-A13-P01`，依据冻结 API-04、A11 结果客户端与现有 Global Source Picker。

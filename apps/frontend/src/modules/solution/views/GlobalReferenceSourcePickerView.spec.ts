@@ -404,4 +404,34 @@ describe("GlobalReferenceSourcePickerView", () => {
     expect(wrapper.find('section[aria-label="创建全局参考方案"]').exists()).toBe(false);
     wrapper.unmount();
   });
+
+  it("shows the recovered revision receipt after a full reload without an in-memory confirmation", async () => {
+    const reference = "91234567-89ab-4cde-8123-456789abcdef";
+    const body = JSON.stringify({ document_version_ids: [versionA], evidence_ids: [],
+      source_project_class: "PLM", deidentification_class: "REDACTED", applicability: {} });
+    const key = "original-global-revise-key-0001";
+    window.sessionStorage.setItem(`plm.sol.global.reference.revise.pending.${actor}.${reference}`,
+      JSON.stringify({ actor, reference, key, ifMatch: '"v0"', body }));
+    const current = { reference_solution_id: reference, reference_version_id: versionB,
+      name: "历史全局方案", version_no: 2, etag: '"v1"', source_project_class: "PLM",
+      deidentification_class: "REDACTED", applicability: {} };
+    const router = createAppRouter(createMemoryHistory());
+    await router.push(`/admin/reference-solutions/${reference}/revise`); await router.isReady();
+    const revise = vi.fn().mockResolvedValue({ reference_solution_id: reference,
+      reference_version_id: versionB, version_no: 2, etag: '"v1"' });
+    const wrapper = mount(GlobalReferenceSourcePickerView, { props: {
+      referenceId: reference, session: await session(),
+      reader: { current: vi.fn().mockResolvedValue(current) } as unknown as GlobalReferenceReadClient,
+      listClient: { list: vi.fn().mockResolvedValue({ items: [], next_cursor: null,
+        has_more: false }) } as unknown as EvidenceListClient,
+      reviseClient: { revise } as unknown as ReferenceReviseClient,
+    }, global: { plugins: [router] } });
+    await flushPromises();
+    expect(wrapper.find('section[aria-label="集合历史确认"]').exists()).toBe(false);
+    await button(wrapper, "原请求同号重试").trigger("click"); await flushPromises();
+    expect(revise).toHaveBeenCalledWith("GLOBAL", reference, null, JSON.parse(body), '"v0"', key);
+    expect(wrapper.text()).toContain("当前详情已确认指向该版本");
+    expect(window.sessionStorage.getItem(`plm.sol.global.reference.revise.pending.${actor}.${reference}`)).toBeNull();
+    wrapper.unmount();
+  });
 });
