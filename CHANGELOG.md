@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A08 新增默认关闭的 PROJECT/GLOBAL Reference Revise 可选 POST，严格 Session/Origin/CSRF/强 If-Match/幂等/JSON，首次版本摘要及固定 ETag 重放；Windows 正式组合未注入。兼容性/升级：无 Schema/Migration/依赖/前端或冻结路径变化；移除可选 Router 注入可回滚，已存历史不回退。验证：合同 3、Win11 隔离 PG18.6 真 ASGI/Session/PROJECT/GLOBAL 合成来源及后端全量 3373 通过/3 跳过。已知问题：Windows 显式组合/UI/浏览器、Eligibility、正式目标账户/20 并发/Server2025、Gate3/UAT/发行未验；Debian13 实机依指令暂跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A07 新增 Reference 修订内部受权 Owner、PROJECT PM/实施成员策略和 `0150` 受限 Guard/延迟结果闭合；GLOBAL 沿用 DeploymentAdmin，公开 Revise API 仍关闭。兼容性/升级：0149→0150 线性迁移；空/仅 v1 可降重升，legacy v2 无原首次结果时拒升级，有修订历史拒降并需向前修复；无依赖/前端/冻结 API 变更。验证：Win11 隔离 PG18.6 PROJECT/GLOBAL 合成真实来源、同/异 Key 并发、旧版重放、Audit 回滚/SQL 负例、空/有 v1 迁移与 4 次 drift；后端全量 3370 通过/3 跳过。已知问题：HTTP/Windows/UI/Eligibility、正式目标账户/20 并发/Server2025、Gate3/UAT/发行未验；Debian13 实机依指令暂跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-01-A06 新增 `0149` Reference 修订首次结果闭锁表/ORM，拒绝未受控第2版 INSERT，根指针 UPDATE/结果写入仍关闭；不开放 Revise API。兼容性/升级：0148→0149 线性迁移，空结果可降、已有结果拒降；无依赖/前端/冻结 API 变化，历史向前修复。验证：Win11隔离PG18.6空/历史升降重升、4次drift、Guard/FK/重复/拒降通过；最终后端3392通过/3跳过/5113子例（前一轮无关 ready 超时后复跑）。已知问题：Reference Owner/HTTP/UI、Eligibility、正式目标账户/20并发/Server2025、Gate3/UAT/发行未验；Debian13 实机依指令暂跳过。

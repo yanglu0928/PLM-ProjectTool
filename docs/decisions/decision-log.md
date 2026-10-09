@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261009-1128：Reference Revise 的首次 ETag 随结果快照固定
+
+- Date/WBS：2026-10-09 / `SOL-01-A08`，依据冻结 API-04 `SOL_REFERENCE_REVISE`、CR-SOL-013 与 A07 首次结果表。
+- Decision：可选 POST 的 201 仅返回不可变新版本摘要；强 ETag 按该版本序号对应的修订后锁版本生成，后续新修订后同 Key 仍返回原 ETag。默认/Windows 组合不自动挂写路由。
+- Reason：若重放时读取根当前 ETag，第一次 201 会随未来修订漂移；若把旧 ETag 描述为当前根状态，客户端可能误用。响应数据显式含版本 ID/序号，预条件仍由真实根锁版本检查。
+- Impact/Rollback：冻结路径/角色不变，无 Schema/依赖；可撤下可选 Router 注入，历史版本与 Receipt 保留。未来消费者须通过当前 GET 获取最新根 ETag，不凭旧 201 判断当前性。
+- Verification：合同 3 项、Win11 隔离 PG PROJECT/GLOBAL 真 Session/来源/重放、全量后端 3373 通过/3 跳过；Windows 组合/浏览器/正式账户未验。
+
 ## DEC-20261009-1127：Reference 修订保留资格并拒绝无快照历史自动迁移
 
 - Date/WBS：2026-10-09 / `SOL-01-A07`，依据冻结 API-04/DM-05、CR-SOL-013 和 0149 结果表。
