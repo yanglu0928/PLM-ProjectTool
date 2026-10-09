@@ -29,3 +29,7 @@
 ## P03-P03-P04-A01 实施记录
 
 2026-10-09 线性 `0156` 已开放 INSERT-only SQL Guard，并以延迟约束触发器要求版本、声明数量/连续序号的固定关联及不可变首次结果在同事务闭合。Win11 隔离 PG18.6 空/有身份库升降重升、drift、缺件/伪空拒绝、完整集合提交、历史不可变和拒降退出 0；后端全量 3446 通过/3 跳过。相对原方案补充 DEC-1141 的最小完整性限制，未修改旧冻结提交或公开 API。尚无正式 Owner 授权/License/收据/Audit，也未把直接 SQL 能力视为业务 CREATE 验收；Gate3 继续 BLOCKED。
+
+## P03-P03-P04-A02 实施记录
+
+2026-10-09 内部 Owner 已在单事务组合项目授权/License、当前输入证明、`0156` 固定集合、`0155` 首响、幂等收据与 Audit；原键重放仅读首次结果。Win11 临时 PG18.6 真实 Auth/项目成员/Section、并发同键、客户/跨项目/License 拒绝、Audit 故障回滚及后端全量通过。PG Owner 正例目前用合成 Outline/Section + 显式缺失声明，双 Scope Reference/Requirement 与 Owner 端到端组合待下一项，公开 API/Windows/UI 未开放；不提前关闭 Gate3。

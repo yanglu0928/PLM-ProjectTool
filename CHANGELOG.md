@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-03-A04-P03-P03-P04-A02 新增内部 OutlineVersion CREATE Owner 与 SQLAlchemy 原子持久化，统一项目授权/License/现时输入证明/不可变首响/幂等收据/Audit；同键重放不重建版本。兼容性/升级：无新 Migration、公开 API/角色/依赖变化，未接线 Owner 可撤，已写历史保留。验证：单元5项/4子例、Win11 隔离 PG18.6 真实 Auth/项目/Section、并发重放、跨项目/客户/License 拒绝及 Audit 故障回滚退出0；后端全量3451通过/3跳过/5260子例。已知问题：本项未合并双 Scope Reference/Requirement 与 Owner 写链，HTTP/Windows/UI、Gate3/发行未完成。
+
 - 2026-10-09：0.1.0-dev.0/SOL-03-A04-P03-P03-P04-A01 按 CR-SOL-017 增线性 `0156` INSERT-only OutlineVersion SQL Guard，约束 DRAFT 初态、连续版本链/固定关联/不可变首响同事务闭合，历史更新/删除/截断拒绝。兼容性/升级：旧库无行回填，已有版本历史拒升；无新 API/依赖，空历史可降至0155恢复全拒，有历史拒降且只能前向修复。验证：Win11 隔离 PG18.6 空/有身份库升降重升、drift、缺件/伪空/不可变/拒降通过；后端全量3446通过/3跳过/5256子例。已知问题：Owner 授权/License/收据/Audit、双 Scope 正式写、HTTP/UI、Gate3/发行未完成。
 
 - 2026-10-09：0.1.0-dev.0/SOL-03-A04-P03-P03-P03 Solution 新增同事务 OutlineVersion 当前输入证明，锁 ACTIVE 根/最新版本链，组合 Section、Requirement、PROJECT/GLOBAL Reference 现时资格与来源，并以服务器证明计算内容指纹。兼容性/升级：无 DB/Migration、公开 API/角色/依赖变化，未接线可撤。验证：定向4项、Win11 双 Scope 隔离 PG18.6 真实来源/文件及跨项目/篡改/资格限制/确认到期/根锁退出0；后端全量3446通过/3跳过/5256子例。已知问题：Owner 写/Guard/持久首响/HTTP/UI、Gate3/发行未完成。
