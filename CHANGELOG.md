@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A15-P02 新增 GLOBAL 文档-only Win11 Edge/隔离PG一次性验收夹具，测试服务器的 GLOBAL Document 读路由仅显式启用，默认关闭。兼容性/升级：无生产程序/Schema/Migration/API/依赖变化；删夹具可回滚。验证：真实受权固定文件下载200、零Evidence两次独立人工确认机制、Create/Revise201、数据库两版均1文档/0证据且各1审计；旧GLOBAL多/单来源Edge/PG回归均退出0。已知问题：脚本确认不代表真人判断；Eligibility、正式目标账户/20并发/Server2025、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A15-P01 增加 GLOBAL 受权活动文档固定版本候选，Evidence 可选，支持冻结合同 1～100 文档/0～500 Evidence 的页面输入；创建/修订共享 Preview、逐项原文核查、人工脱敏确认及写前文档哈希重核。兼容性/升级：仅前端视图/测试，无后端/Schema/Migration/API/依赖变化；回滚会重新造成合法文档-only 集合无入口。验证：前端119文件/1697项、typecheck/build通过。已知问题：文档-only 真实 Edge/PG、Eligibility、正式目标账户/20并发/Server2025、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-01-A14 对账 PROJECT/GLOBAL Reference Revise 权限、来源、历史回执与现时资格；登记 GLOBAL 文档-only UI、`SET_ELIGIBILITY` 未完成并按 A15/A16 拆解。兼容性/升级：仅审计/决策/状态文档，无生产代码、Schema/Migration、API 或依赖变化；可回退施工顺序，不豁免缺口。验证：双 Scope 合同4测试/16子例和 PROJECT/GLOBAL Win11隔离PG显式写组合退出0。已知问题：上述两项缺口及正式目标账户/20并发/Server2025、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。

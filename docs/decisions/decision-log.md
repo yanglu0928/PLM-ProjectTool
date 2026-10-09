@@ -1,5 +1,14 @@
 # 自主决策记录
 
+## DEC-20261009-1135：文档-only 浏览器验收只在夹具注入文档读路由
+
+- Date/WBS：2026-10-09 / `SOL-01-A15-P02`；输入 A15-P01 前端、GLOBAL 合成来源/文件和既有浏览器测试服务器。
+- Decision：新增默认关闭的 `include_document_read` 夹具开关，仅 P02 装载受权 GLOBAL Document LIST/GET 与 Version LIST/GET；生产组合和旧验收模式不变。
+- Reason：文档-only 页面必须用真实文档候选和文件访问验证，旧 GLOBAL 浏览器夹具仅提供 Evidence Viewer 与下载路由；测试配置扩展不应改变生产默认模式。
+- Impact/Rollback：仅验证夹具；删新脚本和可选开关可回滚，无 Schema/API/权限/依赖或迁移变化。
+- Verification：P02 Edge/隔离 PG 退出0、数据库两版文档-only/独立确认/Audit，旧 GLOBAL 多/单来源浏览器回归退出0；正式目标账户/UAT未验。
+
+
 ## DEC-20261009-1134：补齐 GLOBAL 合法文档主来源后再开放资格命令
 
 - Date/WBS：2026-10-09 / `SOL-01-A14`；冻结 API-04 与 GLOBAL 脱敏增量允许 1～100 文档、0～500 Evidence，CR-SOL-014 已记录独立资格命令。

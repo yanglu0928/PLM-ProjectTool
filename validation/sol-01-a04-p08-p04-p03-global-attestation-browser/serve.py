@@ -37,6 +37,10 @@ from plm_assistant.modules.auth.infrastructure.session_repository import SqlAlch
 from plm_assistant.modules.auth.infrastructure.session_view import SqlAlchemySessionView
 from plm_assistant.modules.project.infrastructure.authorized_projects import SqlAlchemyAuthorizedProjects
 from plm_assistant.modules.document.api.download_version import create_document_download_router
+from plm_assistant.modules.document.api.read_documents import create_document_read_router
+from plm_assistant.modules.document.api.read_versions import create_document_version_read_router
+from plm_assistant.modules.document.api.document_list_cursor import DocumentListCursorCodec
+from plm_assistant.modules.document.api.version_list_cursor import VersionListCursorCodec
 from plm_assistant.modules.evidence.api.view_evidence import create_evidence_viewer_router
 from plm_assistant.modules.evidence.api.read_evidence import create_evidence_read_router
 from plm_assistant.modules.evidence.api.list_cursor import EvidenceListCursorCodec
@@ -65,6 +69,7 @@ def on_preview(*, runtime, audit, license_guard, document, version, evidence,
                documents, downloads, parse_results, browser_script=None,
                browser_extra=(), include_reference_create=False,
                include_reference_read=False, include_reference_revise=False,
+               include_document_read=False,
                **_unused) -> None:
     if not (DIST / "index.html").is_file():
         raise RuntimeError("Build apps/frontend before browser verification")
@@ -137,6 +142,14 @@ def on_preview(*, runtime, audit, license_guard, document, version, evidence,
                     parse_results=parse_results) if include_reference_revise else None),
             evidence_viewer_router=create_evidence_viewer_router(
                 sessions=sessions, origins=origins, viewer=viewer),
+            document_read_router=(create_document_read_router(
+                sessions=sessions, documents=documents, origins=origins,
+                cursors=DocumentListCursorCodec(b"d" * 32))
+                if include_document_read else None),
+            document_version_read_router=(create_document_version_read_router(
+                sessions=sessions, documents=documents, origins=origins,
+                cursors=VersionListCursorCodec(b"v" * 32))
+                if include_document_read else None),
             document_download_router=create_document_download_router(
                 sessions=sessions, downloads=downloads, origins=origins))
         app.mount("/assets", StaticFiles(directory=DIST / "assets"), name="frontend-assets")
