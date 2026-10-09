@@ -10960,3 +10960,10 @@
 - Decision：POST 路径固定为 `/api/v1/projects/{project_id}/solution-outlines/{outline_id}/versions`。JSON 顶层仅接受 `section_ids`、`requirement_refs`、`reference_refs`、`missing_declarations`、`conflict_declarations`；前两种引用对象分别只含固定根/版本 ID，Reference 另含 `scope`。严格 UTF-8/重复键/非标准常量拒绝，单请求上限 512 KiB，避免既有 128 KiB 通用读取上限与两类各 500 条引用及声明容量冲突。201 返回首次 DRAFT 的版本/目录/项目身份、版本号、前驱、内容摘要、三类计数、缺失/冲突声明、创建人/时间；不返回固定来源正文、Locator 或 GLOBAL 管理员凭据，后续 GET 独立提供受权固定引用读取。原键重放仍取 `0155` 首响；无已定义版本 ETag 时不推导伪 ETag。
 - Reason：严格 DTO 保持冻结路径与角色，当前来源由服务端重证；512 KiB 仅为该路由容量边界，不扩大其他上传/JSON 接口，首响投影可从不可变快照稳定重放。
 - Impact/Rollback：仅新增可选 HTTP 路由和 `create_app` 注入点，不自动挂载、无 Schema/Migration/依赖或 Breaking API 变化；未接线时可撤，已有首响历史不删。真实 ASGI/PG/Windows 装配及前端另项验证，Gate3 不据此通过。
+
+# DEC-20261009-1143：Windows OutlineVersion 写装配显式重建受控来源证明
+
+- Date/WBS：2026-10-09 / `SOL-03-A04-P03-P03-P05-A03`；依据 CR-SOL-016、已验 Document/Evidence 内部最小证明、Windows `--platform-write` 与 P05-A02 双 Scope HTTP/PG。
+- Decision：仅在 Windows 显式写模式装配 OutlineVersion CREATE。工厂显式接收受控绝对 Document 与 ParseResult 存储根（生产配置可为同一 `data_root`），自行构造两条安全读取链以及 Document/Evidence/Reference 当前证明，再组合 Requirement、Section、Outline Base、Auth/Project/License/Receipt/Audit；不从其它服务对象读取私有 `_storage`，也不借 GLOBAL 管理员会话。缺任一必需信任依赖或非法根路径立即启动失败关闭；默认/只读模式不挂载。
+- Reason：版本创建要在同事务重证固定来源实际文件与 GLOBAL 当前脱敏确认，普通 Outline/Section 写组合的纯数据库端口不足；显式路径使所有数据来源和失败边界可审计。
+- Impact/Rollback：仅 Windows 组合根与工厂装配，不改 `/api/v1` 合同、Schema、角色或 Scope；可撤路由装配而保留已写历史。Win11 隔离 PG/文件及缺依赖负例需单独验，Server2025 目标账户/正式信任源仍不据此宣称通过。

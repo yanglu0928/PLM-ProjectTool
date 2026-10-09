@@ -70,6 +70,7 @@ from plm_assistant.entrypoints.windows_solution_reference_cursor import (
 )
 from plm_assistant.entrypoints.windows_solution_outline import (
     create_windows_outline_create_router,
+    create_windows_outline_version_create_router,
     create_windows_section_create_router,
     create_windows_section_read_router,
     create_windows_section_list_router,
@@ -635,6 +636,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         project_reference_revise_router = None
         project_reference_eligibility_router = None
         solution_outline_create_router = None
+        solution_outline_version_create_router = None
         solution_section_create_router = None
         solution_outline_read_router = None
         solution_section_read_router = None
@@ -877,6 +879,14 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 solution_outline_create_router = create_windows_outline_create_router(
                     runtime=runtime, sessions=sessions, origins=origins,
                     license_guard=licenses.guard, audit=audit,
+                )
+                solution_outline_version_create_router = (
+                    create_windows_outline_version_create_router(
+                        runtime=runtime, sessions=sessions, origins=origins,
+                        license_guard=licenses.guard, audit=audit,
+                        document_storage_root=settings.data_root,
+                        parse_result_storage_root=settings.data_root,
+                    )
                 )
                 solution_section_create_router = create_windows_section_create_router(
                     runtime=runtime, sessions=sessions, origins=origins,
@@ -1747,6 +1757,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             project_reference_revise_router=project_reference_revise_router,
             project_reference_eligibility_router=project_reference_eligibility_router,
             solution_outline_create_router=solution_outline_create_router,
+            solution_outline_version_create_router=solution_outline_version_create_router,
             solution_section_create_router=solution_section_create_router,
             solution_section_read_router=solution_section_read_router,
             solution_section_list_router=solution_section_list_router,
