@@ -19,6 +19,7 @@ from fastapi.staticfiles import StaticFiles
 
 from plm_assistant.entrypoints.api import create_app
 from plm_assistant.entrypoints.windows_solution_reference import (
+    create_windows_project_reference_eligibility_router,
     create_windows_project_reference_read_router,
     create_windows_project_reference_revise_router,
 )
@@ -56,7 +57,8 @@ PASSWORD = secrets.token_urlsafe(32)  # Disposable synthetic browser fixture onl
 
 def on_created(*, port, runtime, audit, license_guard, project, created,
                document_version, documents, downloads, parse_results,
-               **_unused) -> None:
+               browser_script=None, include_eligibility=False,
+               expect_revision=True, **_unused) -> None:
     if not (DIST / "index.html").is_file():
         raise RuntimeError("Build apps/frontend before PROJECT Reference revise browser proof")
     hasher = ScryptPasswordHasher()
@@ -118,6 +120,11 @@ def on_created(*, port, runtime, audit, license_guard, project, created,
                 runtime=runtime, sessions=sessions, origins=origins,
                 license_guard=license_guard, audit=audit,
                 documents=documents, downloads=downloads, parse_results=parse_results),
+            project_reference_eligibility_router=(create_windows_project_reference_eligibility_router(
+                runtime=runtime, sessions=sessions, origins=origins,
+                license_guard=license_guard, audit=audit,
+                documents=documents, downloads=downloads,
+                parse_results=parse_results) if include_eligibility else None),
             document_read_router=create_document_read_router(
                 sessions=sessions, documents=documents, origins=origins,
                 cursors=DocumentListCursorCodec(b"d" * 32)),
@@ -146,7 +153,7 @@ def on_created(*, port, runtime, audit, license_guard, project, created,
                 if not worker.is_alive() or monotonic() > deadline:
                     raise RuntimeError("Owned frontend/API startup failed")
                 sleep(.05)
-            command = ["node", str(Path(__file__).with_name("run-edge-browser.mjs")),
+            command = ["node", str(browser_script or Path(__file__).with_name("run-edge-browser.mjs")),
                        origin, str(project), str(created.reference_solution_id),
                        str(document_version), PASSWORD]
             result = subprocess.run(command, check=False, timeout=140,
@@ -155,32 +162,33 @@ def on_created(*, port, runtime, audit, license_guard, project, created,
                 raise RuntimeError(
                     f"Edge browser proof failed: {result.stdout[-3500:]} {result.stderr[-3500:]}")
             print(result.stdout.strip())
-            with httpx.Client(base_url=origin, timeout=15) as client:
-                path = (f"/api/v1/projects/{project}/reference-solutions/"
-                        f"{created.reference_solution_id}:revise")
-                denied = client.post(path, cookies={"plm_session": (b"u" * 32).hex()},
-                                     headers={"Origin": origin, "X-CSRF-Token": (b"v" * 32).hex(),
-                                              "If-Match": '"v1"',
-                                              "Idempotency-Key": "customer-revise-denied-0001"},
-                                     json={"document_version_ids": [str(document_version)],
-                                           "evidence_ids": [], "source_project_class": "PLM",
-                                           "deidentification_class": "PROJECT_INTERNAL",
-                                           "applicability": {}})
-                assert denied.status_code in (403, 404), denied.text
-            with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
-                                 dbname="postgres", autocommit=True) as db:
-                row = db.execute(
-                    "SELECT v.version_no,r.lock_version FROM plm.sol_reference_solutions r "
-                    "JOIN plm.sol_reference_versions v "
-                    "ON v.reference_version_id=r.current_version_ref "
-                    "WHERE r.reference_solution_id=%s",
-                    (created.reference_solution_id,)).fetchone()
-                assert row == (2, 1), row
-                assert db.execute(
-                    "SELECT count(*) FROM plm.aud_events WHERE action='SOL_REFERENCE_REVISED' "
-                    "AND target_object_id=%s", (created.reference_solution_id,)
-                ).fetchone()[0] == 1
-            print("SOL_01_A12_P03_PROJECT_REVISE_EDGE_PG_PASS")
+            if expect_revision:
+                with httpx.Client(base_url=origin, timeout=15) as client:
+                    path = (f"/api/v1/projects/{project}/reference-solutions/"
+                            f"{created.reference_solution_id}:revise")
+                    denied = client.post(path, cookies={"plm_session": (b"u" * 32).hex()},
+                                         headers={"Origin": origin, "X-CSRF-Token": (b"v" * 32).hex(),
+                                                  "If-Match": '"v1"',
+                                                  "Idempotency-Key": "customer-revise-denied-0001"},
+                                         json={"document_version_ids": [str(document_version)],
+                                               "evidence_ids": [], "source_project_class": "PLM",
+                                               "deidentification_class": "PROJECT_INTERNAL",
+                                               "applicability": {}})
+                    assert denied.status_code in (403, 404), denied.text
+                with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
+                                     dbname="postgres", autocommit=True) as db:
+                    row = db.execute(
+                        "SELECT v.version_no,r.lock_version FROM plm.sol_reference_solutions r "
+                        "JOIN plm.sol_reference_versions v "
+                        "ON v.reference_version_id=r.current_version_ref "
+                        "WHERE r.reference_solution_id=%s",
+                        (created.reference_solution_id,)).fetchone()
+                    assert row == (2, 1), row
+                    assert db.execute(
+                        "SELECT count(*) FROM plm.aud_events WHERE action='SOL_REFERENCE_REVISED' "
+                        "AND target_object_id=%s", (created.reference_solution_id,)
+                    ).fetchone()[0] == 1
+                print("SOL_01_A12_P03_PROJECT_REVISE_EDGE_PG_PASS")
         finally:
             server.should_exit = True
             worker.join(timeout=15)

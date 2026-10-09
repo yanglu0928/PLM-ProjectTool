@@ -16,6 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from plm_assistant.entrypoints.api import create_app
 from plm_assistant.entrypoints.windows_solution_reference import (
     create_windows_global_reference_create_router,
+    create_windows_global_reference_eligibility_router,
     create_windows_global_reference_read_router,
     create_windows_global_reference_list_router,
     create_windows_global_reference_revise_router,
@@ -69,6 +70,7 @@ def on_preview(*, runtime, audit, license_guard, document, version, evidence,
                documents, downloads, parse_results, browser_script=None,
                browser_extra=(), include_reference_create=False,
                include_reference_read=False, include_reference_revise=False,
+               include_reference_eligibility=False,
                include_document_read=False,
                **_unused) -> None:
     if not (DIST / "index.html").is_file():
@@ -140,6 +142,13 @@ def on_preview(*, runtime, audit, license_guard, document, version, evidence,
                     license_guard=license_guard, audit=audit,
                     documents=documents, downloads=downloads,
                     parse_results=parse_results) if include_reference_revise else None),
+            global_reference_eligibility_router=(
+                create_windows_global_reference_eligibility_router(
+                    runtime=runtime, sessions=sessions, origins=origins,
+                    license_guard=license_guard, audit=audit,
+                    documents=documents, downloads=downloads,
+                    parse_results=parse_results)
+                if include_reference_eligibility else None),
             evidence_viewer_router=create_evidence_viewer_router(
                 sessions=sessions, origins=origins, viewer=viewer),
             document_read_router=(create_document_read_router(

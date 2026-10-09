@@ -4,11 +4,12 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve, sep } from "node:path";
 
-const [origin, document, version, evidence, password] = process.argv.slice(2);
+const [origin, document, version, evidence, password, mode] = process.argv.slice(2);
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 if (!/^http:\/\/127\.0\.0\.1:\d{2,5}$/.test(origin ?? "")
   || ![document, version, evidence].every(value => uuid.test(value ?? ""))
   || password !== "Synthetic-Reference-Browser-Only-2026") throw new Error("Owned fixture required");
+if (mode !== undefined && mode !== "eligibility") throw new Error("Unknown owned proof mode");
 const profile = await mkdtemp(join(tmpdir(), "plm-global-document-edge-"));
 const cdpPort = 10000 + process.pid % 40000;
 const edge = spawn("C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
@@ -29,7 +30,7 @@ async function findPage() {
   throw new Error("Owned Edge target unavailable");
 }
 let socket; let serial = 0;
-const pending = new Map(); const posts = []; const responses = [];
+const pending = new Map(); const posts = []; const decisions = []; const responses = [];
 function send(method, params = {}) {
   const id = ++serial; socket.send(JSON.stringify({ id, method, params }));
   return new Promise((resolvePromise, reject) => pending.set(id, { resolvePromise, reject }));
@@ -92,6 +93,19 @@ async function reviewAndConfirm() {
   await clickText("提交集合人工脱敏确认（有效期 7 天）");
   await waitFor("document.body?.innerText?.includes('集合人工确认已提交')", "confirmed document-only source");
 }
+async function decide(target, reason, expectedEtag) {
+  await waitFor(`Boolean(document.querySelector('section[aria-label="参考方案人工资格决定"] input[value="${target}"]'))`, "GLOBAL decision form");
+  await evaluate(`document.querySelector('section[aria-label="参考方案人工资格决定"] input[value="${target}"]').click()`);
+  await setInput('section[aria-label="参考方案人工资格决定"] textarea', reason);
+  await clickText("核对并进入确认");
+  if (decisions.length !== (expectedEtag === '"v1"' ? 0 : 1)) throw new Error("Wrote before second confirmation");
+  await waitFor("document.body?.innerText?.includes('不可变资格事件和审计')", "GLOBAL confirmation summary");
+  await clickText("确认提交资格决定");
+  await waitFor(`document.body?.innerText?.includes('首次提交回执：${target}')`, "GLOBAL first receipt");
+  await waitFor(`document.body?.innerText?.includes('当前标记') && document.body?.innerText?.includes(${JSON.stringify(reason)})`, "GLOBAL current reread");
+  if (decisions.at(-1)?.ifMatch !== expectedEtag || decisions.at(-1)?.body.eligibility_state !== target
+    || decisions.at(-1)?.body.reason !== reason) throw new Error(`Wrong GLOBAL decision: ${JSON.stringify(decisions)}`);
+}
 try {
   const page = await findPage();
   socket = new WebSocket(page.webSocketDebuggerUrl);
@@ -105,6 +119,12 @@ try {
     if (event.method === "Network.requestWillBeSent" && event.params.request.method === "POST"
       && /\/api\/v1\/global\/reference-solutions(?:\/[^/]+:revise)?$/.test(event.params.request.url)) {
       posts.push({ url: event.params.request.url, body: JSON.parse(event.params.request.postData) });
+    }
+    if (event.method === "Network.requestWillBeSent" && event.params.request.method === "POST"
+      && event.params.request.url.endsWith(":set-eligibility")) {
+      const headers = event.params.request.headers;
+      decisions.push({ key: headers["Idempotency-Key"] ?? headers["idempotency-key"],
+        ifMatch: headers["If-Match"] ?? headers["if-match"], body: JSON.parse(event.params.request.postData) });
     }
     if (!event.id || !pending.has(event.id)) return;
     const task = pending.get(event.id); pending.delete(event.id);
@@ -143,6 +163,24 @@ try {
     || JSON.stringify(item.body.evidence_ids) !== "[]")
     || !responses.some(item => item.url.endsWith(`/api/v1/global/reference-solutions/${reference}:revise`)
       && item.status === 201)) throw new Error(`Document-only writes failed: ${JSON.stringify(posts)}`);
+  if (mode === "eligibility") {
+    await send("Page.navigate", { url: `${origin}/admin/reference-solutions/${reference}` });
+    await waitFor("document.body?.innerText?.includes('全局参考方案详情与固定来源')", "GLOBAL current detail");
+    await clickText("账户与登录");
+    await waitFor("document.querySelector('#login-username')", "GLOBAL login form after navigation");
+    await setInput("#login-username", "Reference Admin");
+    await setInput("#login-password", password);
+    await clickText("登录 / 重新登录");
+    await waitFor("document.body?.innerText?.includes('登录成功')", "GLOBAL resumed admin login");
+    await evaluate("history.back()");
+    await waitFor(`location.pathname==='/admin/reference-solutions/${reference}'`, "GLOBAL detail return");
+    await decide("ELIGIBLE", "管理员核对当前固定文档与脱敏确认", '"v1"');
+    await decide("RESTRICTED", "等待新的脱敏复核", '"v2"');
+    if (decisions.length !== 2 || decisions.some(item => !item.key)
+      || !responses.some(item => item.url.endsWith(`${reference}:set-eligibility`) && item.status === 200))
+      throw new Error(`GLOBAL eligibility responses missing: ${JSON.stringify(responses.slice(-8))}`);
+    console.log("GLOBAL_REFERENCE_ELIGIBILITY_EDGE PASS: two decisions, confirmation, current GET");
+  }
   console.log("GLOBAL_DOCUMENT_ONLY_EDGE PASS: authorized fixed file, zero Evidence, two confirmations, create/revise/current GET");
 } finally {
   try { socket?.close(); } catch { /* Owned cleanup. */ }

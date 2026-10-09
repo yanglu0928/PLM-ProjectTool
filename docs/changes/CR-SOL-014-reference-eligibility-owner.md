@@ -1,6 +1,6 @@
 # CR-SOL-014：ReferenceSolution 资格状态受控确认
 
-日期：2026-10-09；状态：`WINDOWS_COMPOSITION_PG_PASS_UI_CONTRACT_PASS_BROWSER_PENDING`（A16-P05 Windows 显式写组合/真实 PG 已验，P06-P01/P02 前端合同/组件通过；默认与只读组合未挂载，Edge/真人确认待验）。依据 CR-EXEC-001 持续授权先记录后实施；Gate 2 原冻结提交 `64cdf09` 保留。TraceLink：API-04/DM-05 → CR-SOL-004/005/007、0139～0153 → SOL-01-A05/A14 → 本 CR。
+日期：2026-10-09；状态：`WIN11_SYNTHETIC_END_TO_END_PASS_REAL_CONFIRMATION_PENDING`（A16-P03～P06-P03 Schema/Owner/HTTP/Windows/前端/双 Scope Edge/隔离 PG 合成链通过；默认与只读组合未挂载，真人业务确认/正式信任和 Gate 3 未验）。依据 CR-EXEC-001 持续授权先记录后实施；Gate 2 原冻结提交 `64cdf09` 保留。TraceLink：API-04/DM-05 → CR-SOL-004/005/007、0139～0153 → SOL-01-A05/A14 → 本 CR。
 
 ## 来源、冲突与选择
 
