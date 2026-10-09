@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-03-A04-P03-P03-P05-A02 新增 OutlineVersion CREATE 双 Scope 真实 ASGI/PG 验收资产；项目 PM/IM 201、原键重放、固定 Requirement/Reference、首响/收据/Audit、客户/跨项目/CSRF/暂停成员/License 与物理篡改/确认到期零额外写均验。兼容性/升级：仅验证资产，无产品 Migration/API/依赖变化，可撤验收脚本，默认应用仍 404。验证：两套 Win11 临时 PG18.6、真实合成文件/Session/ASGI 与旧来源夹具退出0；前项后端全量3455通过/3跳过。已知问题：Windows 显式装配、UI/浏览器、正式信任源/Review/UAT、Gate3/发行未完成。
+
 - 2026-10-09：0.1.0-dev.0/SOL-03-A04-P03-P03-P05-A01 增加默认关闭的 OutlineVersion CREATE 可选 HTTP 路由与 `create_app` 注入点，严格有序引用/声明 JSON、可信 Origin/Session/CSRF/幂等 Key、首次 DRAFT 响应和安全错误投影。兼容性/升级：无 Migration/Schema/依赖或冻结路径/角色变化，未挂载路由可撤；DEC-1142 记录本路由 512 KiB 上限及首响字段。验证：合同4项/17子例、后端全量3455通过/3跳过/5277子例。已知问题：真实 ASGI/PG、Windows 显式装配、UI/浏览器、正式信任源、Gate3/发行未完成。
 
 - 2026-10-09：0.1.0-dev.0/SOL-03-A04-P03-P03-P04-A03 新增 OutlineVersion PROJECT/GLOBAL 固定 Requirement/Reference Owner 端到端隔离验收资产；项目成员使用当前合格来源创建，验证原键重放、跨项目、文件篡改、资格限制、确认到期及失败零额外写。兼容性/升级：仅验证资产，无 Migration、产品 API、依赖或权限变更，可撤资产但保留历史。验证：两套 Win11 临时 PG18.6/真实合成文件与上游来源夹具回归退出0；首轮脚本收据列名错误已修复并全新库重跑。已知问题：Requirement 上游批准身份为合成夹具，公开 HTTP/Windows/UI、正式信任源、Gate3/发行未完成。
