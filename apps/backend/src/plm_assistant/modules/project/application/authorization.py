@@ -30,6 +30,8 @@ POLICIES: dict[str, _Policy] = {
     "SOL_REFERENCE_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "SOL_OUTLINE_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "SOL_OUTLINE_LIST": _Policy(ALL_MEMBERS, False, lock_reads=True),
+    "SOL_OUTLINE_VERSION_LIST": _Policy(ALL_MEMBERS, False, lock_reads=True),
+    "SOL_OUTLINE_VERSION_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "SOL_SECTION_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "SOL_SECTION_LIST": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "SOL_REFERENCE_CREATE": _Policy(

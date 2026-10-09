@@ -47,11 +47,12 @@ class ProjectAuthorizationTests(unittest.TestCase):
                                     operation=operation, resource_id=resource_id)
 
     def test_matrix_exact_for_four_roles(self):
-        self.assertEqual(len(POLICIES), 158)
+        self.assertEqual(len(POLICIES), 160)
         for operation in (
             "REQ_PACKAGE_LIST", "REQ_PACKAGE_GET", "REQ_LIST", "REQ_GET",
             "SOL_REFERENCE_LIST", "SOL_REFERENCE_GET", "SOL_OUTLINE_GET",
             "SOL_OUTLINE_LIST",
+            "SOL_OUTLINE_VERSION_LIST", "SOL_OUTLINE_VERSION_GET",
             "SOL_SECTION_GET",
             "SOL_SECTION_LIST",
         ):
