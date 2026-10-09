@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A16-P06-P02 PROJECT/GLOBAL 参考方案详情接入人工资格决定页：理由、二次确认、原号不确定重试、历史回执与现时重新读取分离；REVOKED 终态/角色提前隐藏。兼容性/升级：无 DB/Migration/服务端 API/依赖变化，前端替换或撤页面接线可回退，后端资格历史保留。验证：组件3项、前端全量121文件/1706项、typecheck/build PASS。已知问题：Edge/PG真实浏览器、真人确认、正式信任/账户/20并发/Server2025、Gate3/UAT/发行未验；Debian13实机依指令跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A16-P06-P01 新增双 Scope Reference Eligibility 前端安全请求桥和严格首次回执客户端；修正详情读取理由 1000/2000 字兼容偏差（CR-SOL-014 已先登记）。兼容性/升级：无 DB/Migration/后端 API/依赖变化；前端替换即可，若回退读取上限将重现合法长理由读取失败。验证：定向14项，前端全量120文件/1703项、typecheck/build PASS。已知问题：页面/Edge/真人确认、正式信任/账户/20并发/Server2025、Gate3/UAT/发行未验；Debian13实机依指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-01-A16-P05 将 Reference Eligibility 双 Scope 资格写接入 Windows 显式 `--platform-write` 组合；默认/只读继续关闭，缺安全依赖启动失败关闭。兼容性/升级：无 DB/Migration/依赖/冻结 API 变化，目标库需既有 `0153`；撤组合路由并重启可回退入口，历史资格事件/Audit 保留。验证：Win11 两个 Windows 工厂真实 ASGI/Session/隔离 PG18.6 脚本退出0，生产入口合同38通过/12子例，后端全量3405通过/3跳过/5199子例。已知问题：前端/Edge/真人确认、正式信任/账户/20并发/Server2025、Gate3/UAT/发行未验；Debian13实机依指令跳过。

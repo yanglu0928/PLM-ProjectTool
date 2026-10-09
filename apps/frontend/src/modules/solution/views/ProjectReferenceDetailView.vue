@@ -5,14 +5,18 @@ import { SessionClient } from "@/modules/auth/api/sessionClient";
 import { sessionClientKey } from "@/modules/auth/api/sessionContext";
 import { EvidenceViewerClient, type EvidenceViewerDescriptor } from "@/modules/evidence/api/evidenceViewerClient";
 import { ReferenceReadClient, type ReferenceCurrent } from "@/modules/solution/api/referenceReadClient";
+import { ReferenceEligibilityClient, type ReferenceEligibilityReceipt } from "@/modules/solution/api/referenceEligibilityClient";
+import ReferenceEligibilityPanel from "./ReferenceEligibilityPanel.vue";
 
-const props = defineProps<{ session?: SessionClient; reader?: ReferenceReadClient; viewer?: EvidenceViewerClient }>();
+const props = defineProps<{ session?: SessionClient; reader?: ReferenceReadClient; viewer?: EvidenceViewerClient;
+  eligibility?: ReferenceEligibilityClient }>();
 const session = toRaw(props.session ?? inject(sessionClientKey, null) ?? new SessionClient());
 const reader = toRaw(props.reader ?? new ReferenceReadClient());
 const viewer = toRaw(props.viewer ?? new EvidenceViewerClient());
 const route = useRoute();
 const current = ref<ReferenceCurrent | null>(null); const busy = ref(false); const error = ref("");
 const selected = ref<EvidenceViewerDescriptor | null>(null); const viewerBusy = ref(false); const viewerError = ref("");
+const lastDecision = ref<ReferenceEligibilityReceipt | null>(null);
 let generation = 0; let viewerGeneration = 0; let mounted = true;
 const projectId = () => typeof route.params.projectId === "string" ? route.params.projectId : "";
 const referenceId = () => typeof route.params.referenceId === "string" ? route.params.referenceId : "";
@@ -66,8 +70,13 @@ async function locate(evidenceId: string) {
       ? failure.message : "暂时无法定位固定证据原文。";
   } finally { if (mounted && run === viewerGeneration) viewerBusy.value = false; }
 }
+function accepted(receipt: ReferenceEligibilityReceipt) {
+  lastDecision.value = receipt;
+  void load();
+}
 watch(() => [route.params.projectId, route.params.referenceId], () => {
   generation += 1; viewerGeneration += 1; current.value = null; selected.value = null;
+  lastDecision.value = null;
   busy.value = false; viewerBusy.value = false; error.value = ""; viewerError.value = "";
   void load();
 }, { immediate: true });
@@ -83,6 +92,8 @@ onUnmounted(() => { mounted = false; generation += 1; viewerGeneration += 1; });
     <p v-else-if="session.view.password_change_required" role="status">当前账户须先修改密码。</p>
     <template v-else>
       <button type="button" :disabled="busy" @click="load()">{{ busy ? "正在读取…" : "重新读取详情" }}</button>
+      <p v-if="lastDecision" role="status">首次提交回执：{{ lastDecision.eligibility_state }}（{{ lastDecision.etag }}）。
+        这是历史回执；下方当前标记以重新读取结果为准。</p>
       <p v-if="error" role="alert">{{ error }}</p>
       <template v-if="current"><h2>{{ current.name }}</h2>
         <p v-if="session.canSubmit && session.view?.authorized_projects.some(item => item.project_id === current?.project_id
@@ -96,6 +107,8 @@ onUnmounted(() => { mounted = false; generation += 1; viewerGeneration += 1; });
           <dt>来源项目分类</dt><dd>{{ current.source_project_class }}</dd>
           <dt>脱敏分类</dt><dd>{{ current.deidentification_class }}</dd>
           <dt>创建时间</dt><dd><time :datetime="current.created_at">{{ new Date(current.created_at).toLocaleString("zh-CN") }}</time></dd></dl>
+        <ReferenceEligibilityPanel :current="current" :session="session" :eligibility="props.eligibility"
+          @accepted="accepted" />
         <section aria-labelledby="reference-documents-title"><h3 id="reference-documents-title">固定文档版本</h3>
           <ol><li v-for="(item, index) in current.document_refs" :key="item.document_version_id">
             来源 {{ index + 1 }} · <RouterLink :to="{ name: 'project-document-detail',
