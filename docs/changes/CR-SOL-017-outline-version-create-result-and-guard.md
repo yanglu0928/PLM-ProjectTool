@@ -33,3 +33,7 @@
 ## P03-P03-P04-A02 实施记录
 
 2026-10-09 内部 Owner 已在单事务组合项目授权/License、当前输入证明、`0156` 固定集合、`0155` 首响、幂等收据与 Audit；原键重放仅读首次结果。Win11 临时 PG18.6 真实 Auth/项目成员/Section、并发同键、客户/跨项目/License 拒绝、Audit 故障回滚及后端全量通过。PG Owner 正例目前用合成 Outline/Section + 显式缺失声明，双 Scope Reference/Requirement 与 Owner 端到端组合待下一项，公开 API/Windows/UI 未开放；不提前关闭 Gate3。
+
+## P03-P03-P04-A03 验收记录
+
+2026-10-09 两套独立 Win11 临时 PG18.6/真实来源文件将 PROJECT/GLOBAL 当前 Reference 及合成已批准 Requirement 固定引用接入正式 OutlineVersion Owner；项目角色写入而不借 GLOBAL 管理员会话。逐表验证三类关联、Scope、首响、Audit 与收据；原键重放和跨项目、文件篡改、资格 RESTRICTED、GLOBAL 确认到期拒绝后的总行数闭合通过。仅新增验证资产，无产品代码/Schema/API 偏差；公开 HTTP/Windows/UI、正式上游 Review/UAT 仍待，Gate3 不变。

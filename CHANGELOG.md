@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-03-A04-P03-P03-P04-A03 新增 OutlineVersion PROJECT/GLOBAL 固定 Requirement/Reference Owner 端到端隔离验收资产；项目成员使用当前合格来源创建，验证原键重放、跨项目、文件篡改、资格限制、确认到期及失败零额外写。兼容性/升级：仅验证资产，无 Migration、产品 API、依赖或权限变更，可撤资产但保留历史。验证：两套 Win11 临时 PG18.6/真实合成文件与上游来源夹具回归退出0；首轮脚本收据列名错误已修复并全新库重跑。已知问题：Requirement 上游批准身份为合成夹具，公开 HTTP/Windows/UI、正式信任源、Gate3/发行未完成。
+
 - 2026-10-09：0.1.0-dev.0/SOL-03-A04-P03-P03-P04-A02 新增内部 OutlineVersion CREATE Owner 与 SQLAlchemy 原子持久化，统一项目授权/License/现时输入证明/不可变首响/幂等收据/Audit；同键重放不重建版本。兼容性/升级：无新 Migration、公开 API/角色/依赖变化，未接线 Owner 可撤，已写历史保留。验证：单元5项/4子例、Win11 隔离 PG18.6 真实 Auth/项目/Section、并发重放、跨项目/客户/License 拒绝及 Audit 故障回滚退出0；后端全量3451通过/3跳过/5260子例。已知问题：本项未合并双 Scope Reference/Requirement 与 Owner 写链，HTTP/Windows/UI、Gate3/发行未完成。
 
 - 2026-10-09：0.1.0-dev.0/SOL-03-A04-P03-P03-P04-A01 按 CR-SOL-017 增线性 `0156` INSERT-only OutlineVersion SQL Guard，约束 DRAFT 初态、连续版本链/固定关联/不可变首响同事务闭合，历史更新/删除/截断拒绝。兼容性/升级：旧库无行回填，已有版本历史拒升；无新 API/依赖，空历史可降至0155恢复全拒，有历史拒降且只能前向修复。验证：Win11 隔离 PG18.6 空/有身份库升降重升、drift、缺件/伪空/不可变/拒降通过；后端全量3446通过/3跳过/5256子例。已知问题：Owner 授权/License/收据/Audit、双 Scope 正式写、HTTP/UI、Gate3/发行未完成。
