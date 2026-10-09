@@ -60,6 +60,8 @@ const ProjectOutlineListView = () => import("@/modules/solution/views/ProjectOut
 const ProjectOutlineDetailView = () => import("@/modules/solution/views/ProjectOutlineDetailView.vue");
 const ProjectOutlineCreateView = () => import("@/modules/solution/views/ProjectOutlineCreateView.vue");
 const ProjectOutlineVersionCreateView = () => import("@/modules/solution/views/ProjectOutlineVersionCreateView.vue");
+const ProjectOutlineVersionListView = () => import("@/modules/solution/views/ProjectOutlineVersionListView.vue");
+const ProjectOutlineVersionDetailView = () => import("@/modules/solution/views/ProjectOutlineVersionDetailView.vue");
 const ProjectSectionListView = () => import("@/modules/solution/views/ProjectSectionListView.vue");
 const ProjectSectionDetailView = () => import("@/modules/solution/views/ProjectSectionDetailView.vue");
 const ProjectSectionCreateView = () => import("@/modules/solution/views/ProjectSectionCreateView.vue");
@@ -364,6 +366,16 @@ export function createAppRouter(
         path: "/projects/:projectId/solution-outlines/:outlineId/versions/new",
         name: "project-outline-version-create",
         component: ProjectOutlineVersionCreateView,
+      },
+      {
+        path: "/projects/:projectId/solution-outlines/:outlineId/versions/:versionId",
+        name: "project-outline-version-detail",
+        component: ProjectOutlineVersionDetailView,
+      },
+      {
+        path: "/projects/:projectId/solution-outlines/:outlineId/versions",
+        name: "project-outline-versions",
+        component: ProjectOutlineVersionListView,
       },
       {
         path: "/projects/:projectId/solution-outlines/:outlineId",

@@ -48,6 +48,8 @@ onUnmounted(() => { mounted = false; generation += 1; });
       <button type="button" :disabled="busy" @click="load()">{{ busy ? "正在读取…" : "重新读取目录" }}</button>
       <p v-if="error" role="alert">{{ error }}</p>
       <template v-if="current"><h2>{{ current.name }}</h2>
+        <p><RouterLink :to="{ name: 'project-outline-versions', params: { projectId: current.project_id,
+          outlineId: current.solution_outline_id } }">查看此目录的版本历史</RouterLink></p>
         <p><RouterLink :to="{ name: 'project-sections', params: { projectId: current.project_id } }">查看整个项目的方案章节</RouterLink></p>
         <p v-if="current.outline_state === 'ACTIVE' && session.canSubmit
           && session.view?.authorized_projects.some(item => item.project_id === current?.project_id

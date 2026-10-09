@@ -10988,3 +10988,10 @@
 - Decision：LIST 只投影版本身份、状态、摘要、声明数量/三类固定引用计数、前驱/Review/创建信息，不批量返回每版最多 1100 条固定引用；GET 投影完整有序 Section/Requirement/Reference 固定 ID 与声明。两者均标为历史快照而非现时来源资格，不返回正文/Locator。当前版本状态未来可变，冻结合同未定义强 ETag，故不伪造 ETag。可选路由默认不挂载，保持 404。
 - Reason：降低项目列表响应与无关来源暴露；详情满足冻结的固定关联核查；避免把首次 201 快照当成未来状态。
 - Impact/Rollback：不改冻结路径/角色/Schema、无 Migration；列表/详情作为合同未定义投影的明确补充，保留原 Gate2 内容。关闭可选路由可回滚入口，已写版本历史不删除；Windows 正式密钥来源、真实 ASGI/PG/UI/性能另验。
+
+# DEC-20261009-1147：OutlineVersion 历史页面采用目录内列表与独立详情
+
+- Date/WBS：2026-10-09 / `SOL-03-A05-A03-P05-P02`；依据 A05-A03-P01～P05-P01 已验的目录内历史 GET/LIST 与现有 ProjectOutline 页面结构。
+- Decision：在每个目录下提供独立版本列表和单版本详情路由；列表只显示元数据/计数并按版本号倒序分页，详情分别呈现创建时固定 Section/Requirement/Reference ID 和声明。使用明确的“历史快照、非现时资格/交付”提示，不把 GLOBAL 固定引用当成管理员发布候选，不展示来源正文/Locator，也不暴露编辑/确认控件。
+- Reason：与冻结只读 API 的投影及项目成员权限对齐，避免主目录详情承载过多历史内容；详情可反向核对固定引用和 Review 引用。
+- Impact/Rollback：仅前端 Solution 路由、视图、测试，沿用现有成员 Session 与读取客户端；无 Schema/API/权限/依赖变更。撤导航/视图可回滚，不影响版本历史；浏览器/正式服务账户仍独立验收。

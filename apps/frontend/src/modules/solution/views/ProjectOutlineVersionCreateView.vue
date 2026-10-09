@@ -179,7 +179,9 @@ async function submit() {
       <button type="button" :disabled="loading || busy || !!pending || locked" @click="load()">
         {{ loading ? "正在核对…" : "刷新当前候选" }}</button>
       <p v-if="error" role="alert">{{ error }}</p>
-      <p v-if="createdId" role="status">草案版本已创建：<code>{{ createdId }}</code>。版本详情读取尚未开放，请通过目录及后续版本列表核对。</p>
+      <p v-if="createdId" role="status">草案版本已创建：<code>{{ createdId }}</code>。
+        <RouterLink :to="{ name: 'project-outline-version-detail', params: { projectId: route.params.projectId,
+          outlineId: route.params.outlineId, versionId: createdId } }">查看固定版本详情</RouterLink></p>
       <p v-else-if="loading" role="status">正在读取方案目录与固定来源候选…</p>
       <p v-else-if="parent?.outline_state === 'ARCHIVED' && !pending" role="status">方案目录已归档，不可创建草案。</p>
       <form v-else-if="canCreate()" @submit.prevent="submit">
