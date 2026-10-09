@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-03-A04-P03-P02-A02 Requirement 模块新增 OutlineVersion 用途的当前 APPROVED RequirementVersion 最小内部证明，复用已有 Requirement-owned 共享锁端口，仅返回身份/摘要/Review 引用。兼容性/升级：无 DB/Migration、公开 API 或依赖变化，未接线可撤。验证：定向3项/4子例、Win11 临时 PG18.6 同项目/跨项目/旧指针/归档/根锁退出0，后端全量3435通过/3跳过/5243子例。已知问题：OutlineVersion Owner/HTTP/UI、Gate3/发行未完成。
+
 - 2026-10-09：0.1.0-dev.0/SOL-03-A04-P03-P02-A01 Solution 新增内部 OutlineVersion 固定 Section 身份现时证明，验证同项目/同 Outline/ACTIVE 并持共享锁，不要求尚未批准的 Section 正文。兼容性/升级：无 DB/Migration、公开 API 或依赖变化，未接线可撤。验证：定向3项/5子例、Win11 临时 PG18.6 正例/归档/跨项目/根锁退出0，后端全量3432通过/3跳过/5239子例。已知问题：Requirement 当前批准证明、OutlineVersion Owner/HTTP/UI、Gate3/发行未完成。
 
 - 2026-10-09：0.1.0-dev.0/SOL-03-A04-P03-P01 Project 内部授权矩阵新增冻结合同的 `SOL_OUTLINE_VERSION_CREATE`，仅 ProjectManager/ImplementationMember 可对本项目执行写操作；尚未接 OutlineVersion Owner。兼容性/升级：无 DB/Migration、公开 API、依赖或既有策略变化，可撤未接线策略回滚。验证：定向8项/732子例，后端全量3429通过/3跳过/5234子例。已知问题：Section/Requirement 现时输入证明、Owner/HTTP/Guard、Gate3/发行未完成。
