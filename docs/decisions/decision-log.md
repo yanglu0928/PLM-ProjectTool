@@ -11093,3 +11093,10 @@
 - Decision：在已发布候选并完成浏览器正例后，仅改写该可弃夹具受控文档文件的等长内容，使用真实项目 Session 对候选 GET 与新的 OutlineVersion CREATE 同时求证；预期 GET 不再投影该候选，CREATE 原固定引用失败且不新增版本/Audit/收据。finally 恢复原字节并复查读取恢复。此项只覆盖物理漂移，版本修订/确认失效另拆分。
 - Reason：底层来源证明与独立浏览器正例不能单独证明“先看候选、后来源漂移、再提交”的外部服务语义；同一运行链测试能定位 TOCTOU 边界。
 - Impact/Rollback：仅扩展可弃验证资产，无运行代码、Schema/API/权限/依赖变化；测试文件恢复及临时环境清理为前提，失败不能关闭 CR-SOL-018。
+
+# DEC-20261009-1162：确认撤销负例在原有效项目/来源状态下独立执行
+
+- Date/WBS：2026-10-09 / `SOL-03-A04-P03-P03-P06-A04-P01-P02-P01`；依据 CR-SOL-018、DEC-1160 与现有真实确认撤销 Owner/可弃 PG 夹具。
+- Decision：在原管理员确认、项目成员、Reference ELIGIBLE 和 Document/Evidence 均有效时，以真实撤销服务撤销最新 GLOBAL 确认；随后通过项目候选真实 HTTP 和 OutlineVersion CREATE 验证旧固定选择不可用且无版本/Audit/收据副作用。独立夹具断言后用特定成功哨兵终止既有来源夹具后续状态变化，外层始终停止并清理临时 PG；过期情形另测。
+- Reason：既有上游夹具先撤 Evidence、后撤确认，候选隐藏可能由 Evidence 导致，无法单独证明确认撤销边界；专门在其余条件有效时撤销才能归因。
+- Impact/Rollback：仅新增验证脚本与文档，无生产代码、Schema/API/权限/依赖变化；失败保留 CR 未关闭，不用绕过正式数据库 Guard。
