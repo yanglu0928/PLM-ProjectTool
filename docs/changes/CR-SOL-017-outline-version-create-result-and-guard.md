@@ -25,3 +25,7 @@
 ## P03-P03-P02/P03 实施记录
 
 2026-10-09 输入合同按 DEC-1141 固定有序身份与声明；内部同事务证明已锁 ACTIVE Outline/版本链，重证双 Scope Reference 的物理来源与当前资格、Section/Requirement 当前性并生成服务端内容指纹。Win11 双 Scope 临时 PG/文件与到期/篡改/限制负例退出 0。项目角色、License、原子首响/收据/Audit、INSERT-only Guard 与正式 HTTP 仍待后续 Owner，0155 保持封闭。
+
+## P03-P03-P04-A01 实施记录
+
+2026-10-09 线性 `0156` 已开放 INSERT-only SQL Guard，并以延迟约束触发器要求版本、声明数量/连续序号的固定关联及不可变首次结果在同事务闭合。Win11 隔离 PG18.6 空/有身份库升降重升、drift、缺件/伪空拒绝、完整集合提交、历史不可变和拒降退出 0；后端全量 3446 通过/3 跳过。相对原方案补充 DEC-1141 的最小完整性限制，未修改旧冻结提交或公开 API。尚无正式 Owner 授权/License/收据/Audit，也未把直接 SQL 能力视为业务 CREATE 验收；Gate3 继续 BLOCKED。
