@@ -129,3 +129,5 @@ P04-P20前置预算：本机一次性PG18.6为100个最大连接/3个超管保�
 P04-P21实施后：非Secret Bootstrap只接受`DEFAULT`（缺省5+10）/`TWENTY_FIXED`（显式20+0），旧部署不填字段行为不变；仅显式档位读取实际PG18版本号及三项连接上限并要求普通额度≥80，失败固定错误、Runtime清理。Bootstrap/启动定向20通过/46子例，Win11一次性PG18.6连接额度97被正向接受、旧PROJECT Workflow退出0，后端3259通过/3跳过/4815子例。未在Server2025或正式信任/SCM拓扑验证动态内存和20并发，P19第三轮仍>500ms；本项为可选配置内部PASS而非发行性能PASS。无Schema/API/权限/依赖/数据迁移；删配置/设DEFAULT并重启回滚，入口及Gate3关闭。详见P21进展、运行手册与DEC-1094。
 
 P04-P23当前基线复测：P20/P21/P22 已于前序完成，本次仅运行既有独立客户端20并发交错诊断，不能重复作为P20工作。Windows11临时PG18.6/真实Uvicorn loopback第二次完整输出：默认前两项P95约932/959ms、临时20+0约912/930ms、默认后约1028/982ms；强ETag/阶段/来源链保持，脚本退出0。临时池连接取得路径P95约30ms、默认后约363ms，但路径含等待/预检/新建且业务仍全面超过500ms，不足以归因或放行。生产默认池和关闭的Prototype入口保持不变，性能FAIL/Gate3 BLOCKED；详见 `docs/progress/prt-01-a11-a05-p04-p23-current-baseline-load.md` 与DEC-1165。
+
+P04-P24交错复核：同一既有脚本再次退出0，默认前业务P95约618/615ms、临时20+0约1084/997ms、默认后约667/657ms，和P23临时池略优于默认的排序相反；临时池连接取得P95仍低于默认后，但SQL耗时模板分散于Review/Workflow/Capability/Project/Prototype，无法唯一归因。未达500ms，主机/探针/PG竞争相对贡献未隔离；不改生产池或删安全证明，不开放Prototype入口。按DEC-1166转独立Solution历史读HTTP任务，CR继续开放。详见 `docs/progress/prt-01-a11-a05-p04-p24-load-variability.md`。
