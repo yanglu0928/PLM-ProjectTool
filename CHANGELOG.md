@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-03-A04-P03-P03-P03 Solution 新增同事务 OutlineVersion 当前输入证明，锁 ACTIVE 根/最新版本链，组合 Section、Requirement、PROJECT/GLOBAL Reference 现时资格与来源，并以服务器证明计算内容指纹。兼容性/升级：无 DB/Migration、公开 API/角色/依赖变化，未接线可撤。验证：定向4项、Win11 双 Scope 隔离 PG18.6 真实来源/文件及跨项目/篡改/资格限制/确认到期/根锁退出0；后端全量3446通过/3跳过/5256子例。已知问题：Owner 写/Guard/持久首响/HTTP/UI、Gate3/发行未完成。
+
 - 2026-10-09：0.1.0-dev.0/SOL-03-A04-P03-P03-P02 Solution 新增 OutlineVersion DRAFT 的有序固定输入与规范请求指纹合同，拒绝伪空草案、重复/非法引用及非规范声明；不把请求摘要当现时来源证明。兼容性/升级：无 DB/Migration、公开 API、角色或依赖变化，未接线可撤。验证：定向5项/13子例，后端全量3442通过/3跳过/5256子例。已知问题：Owner 现时组合/持久写/Guard/HTTP/UI、Gate3/发行未完成。
 
 - 2026-10-09：0.1.0-dev.0/SOL-03-A04-P03-P03-P01 按 CR-SOL-017 增线性 `0155` 封闭 OutlineVersion 不可变首次 201 结果表，固定版本/Outline/Project、声明、三类计数、前驱和创建信息；所有 DML/TRUNCATE 仍拒绝，旧版本写 Guard 不变。兼容性/升级：空表增量，无回填，空表可降至0154，有历史拒降。验证：Win11 隔离 PG18.6 空/有身份库 up/down/re-up、drift、FK/check、封闭 DML/历史拒降退出0；首轮全量因 ORM 测试清单遗漏新表 1 失败，修正后全量3437通过/3跳过/5243子例。已知问题：Owner/受限 Guard/HTTP/UI、Gate3/发行未完成。
