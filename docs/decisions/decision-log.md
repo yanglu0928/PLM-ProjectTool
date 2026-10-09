@@ -11184,3 +11184,10 @@
 - Decision：新增独立 `SOL_SECTION_VERSION_CREATE` OperationId，仅 PM/ImplementationMember，作为 Project 写操作锁定当前成员/归档事实；不复用 `SOL_SECTION_CREATE` 令牌语义，也不提前挂 Solution Owner/API。
 - Reason：独立版本创建需可审计的精确权限合同，不能因 Section 身份 CREATE 已获授权就推定版本 CREATE 授权；现有 Project 服务已有锁/隐藏/归档语义。
 - Impact/Rollback：只增内部策略和测试，无 Schema/Migration/API/配置/依赖/数据变化；撤策略可回滚。0138 Guard/正式入口不变，后续真实 PG/HTTP 验证独立完成。
+
+# DEC-20261009-1175：SectionVersion 首响应表先闭锁存储，再由后续 Guard 验证全字段一致
+
+- Date/WBS：2026-10-09 / `SOL-05-A02-P09`；依据冻结 DM-05/API-04、CR-SOL-003/P07 与 OutlineVersion 0155/0156 历史模式。
+- Decision：0159 增加 SectionVersion 首次 DRAFT 响应不可变存储形状，复合 FK 绑定固定 Version/Section/Project，字段 CHECK 限定请求/结果形状；独立 INSERT/UPDATE/DELETE/TRUNCATE Guard 全拒。版本与结果全字段一致、引用数量/ordinal 闭环以及仅 Document 正文分支由 P10 Guard 的同事务逻辑保证，本项不提前开放任何 DML。
+- Reason：持久幂等重放必须从不可变首次响应读取，不能从后续可变的 SectionVersion 状态重构；又不能在受权 Owner/闭环不足时允许孤儿或部分结果写入。
+- Impact/Rollback：仅增 ORM/0159 空表与临时 PG 验证，无 API/权限/配置/依赖/既有数据变化；空表可降回 0158，非空结果禁止降级，保留历史。P10/P11/正式环境另验，Gate3 不变。

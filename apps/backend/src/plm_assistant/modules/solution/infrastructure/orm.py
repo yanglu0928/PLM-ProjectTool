@@ -409,6 +409,58 @@ class SolutionSectionVersionRow(Base):
                                                  nullable=False, server_default=text("statement_timestamp()"))
 
 
+class SolutionSectionVersionCreateResultRow(Base):
+    """Closed immutable first 201 DRAFT response, independent of later Review."""
+
+    __tablename__ = "sol_section_version_create_results"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["solution_section_version_id", "solution_section_id", "project_id"],
+            ["plm.sol_section_versions.solution_section_version_id",
+             "plm.sol_section_versions.solution_section_id",
+             "plm.sol_section_versions.project_id"],
+            name="fk_sol_section_version_results__version", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["created_by"], ["plm.auth_users.user_id"],
+                             name="fk_sol_section_version_results__actor", ondelete="NO ACTION"),
+        CheckConstraint("version_no>0", name="ck_sol_section_version_results__number"),
+        CheckConstraint("char_length(title) BETWEEN 1 AND 500 AND title=btrim(title)",
+                        name="ck_sol_section_version_results__title"),
+        CheckConstraint("(content_document_version_ref IS NULL) <> (content_artifact_ref IS NULL)",
+                        name="ck_sol_section_version_results__content_xor"),
+        CheckConstraint("octet_length(content_fingerprint)=32",
+                        name="ck_sol_section_version_results__fingerprint"),
+        CheckConstraint("jsonb_typeof(assumptions)='array' AND jsonb_typeof(exclusions)='array'",
+                        name="ck_sol_section_version_results__declarations"),
+        CheckConstraint("declared_requirement_count BETWEEN 0 AND 500 AND "
+                        "declared_evidence_count BETWEEN 0 AND 500",
+                        name="ck_sol_section_version_results__counts"),
+        CheckConstraint("supersedes_version_ref IS NULL OR "
+                        "supersedes_version_ref<>solution_section_version_id",
+                        name="ck_sol_section_version_results__supersedes_not_self"),
+        CheckConstraint("isfinite(created_at)",
+                        name="ck_sol_section_version_results__created_at"),
+        {"schema": "plm"},
+    )
+
+    solution_section_version_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True)
+    solution_section_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    version_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    content_document_version_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    content_artifact_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    content_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    assumptions: Mapped[list[object]] = mapped_column(JSONB, nullable=False)
+    exclusions: Mapped[list[object]] = mapped_column(JSONB, nullable=False)
+    declared_requirement_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    declared_evidence_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    supersedes_version_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6),
+                                                 nullable=False)
+
+
 class SolutionSectionRequirementRefRow(Base):
     __tablename__ = "sol_section_requirement_refs"
     __table_args__ = (
