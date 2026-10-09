@@ -11219,3 +11219,10 @@
 - Decision：以一次性 PG18.6 和真实 Uvicorn loopback/Edge 验证浏览器发出的冻结 POST、重放及拒绝合同，再核对持久版本/首响应/收据/Audit；仅标合成 Windows11 网络验收，不推定正式 HTTPS/账户/公钥/Server2025 或 Gate3。
 - Reason：ASGI TestClient 未覆盖实际浏览器 Cookie、Origin、网络监听与服务器生命周期；反之合成网络测试也不足以证明发行信任链。
 - Impact/Rollback：仅添加可删的验证脚本和文档，无产品/API/DB/权限/依赖变化，历史数据不动。
+
+# DEC-20261009-1180：SectionVersion 历史读取先补项目只读操作
+
+- Date/WBS：2026-10-09 / `SOL-05-A03-P01`；依据 Gate2 API-04、CR-SOL-003 与 P12 CREATE 的不可变历史结构。
+- Decision：GET/LIST 均授予四类当前项目成员，使用 Project-owned 锁定读授权；Section/Version 同项目身份与完整性由后续内部读取 Owner 独立证明，当前只增加未接线策略。
+- Reason：冻结合同允许项目成员读历史，但 CREATE 的写授权只限 PM/实施成员且首响应不适合充当完整历史 GET/LIST；直接复用会缩窄读权限或漏掉固定引用。
+- Impact/Rollback：仅 Project policy/测试/记录，无 Migration/公开 API/依赖/旧数据变化，可撤未接线策略；旧历史与 Gate3 状态不变。

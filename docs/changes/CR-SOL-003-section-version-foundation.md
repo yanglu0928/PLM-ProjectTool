@@ -47,3 +47,5 @@ SOL-05-A02-P11 按 DEC-1177 新增内部受权 CREATE Owner/SQL 仓储，复用 
 SOL-05-A02-P12-P01 按 DEC-1178 增加冻结路径的可选 POST 边界与 Windows 显式写模式组合；完整 P12 的真实 Edge/网络尚待 P02，不以 ASGI TestClient 代替浏览器。严格请求与 201 DRAFT 首响应/错误映射，默认 404，缺 Document/来源依赖失败关闭；一次性 ASGI/PG 验证当前会话、同键重放、实施成员、来源篡改及 SQL/Audit 数量通过。无 Schema/API Breaking/依赖/权限变化，可撤可选装配，正式历史不删；详见 `docs/progress/sol-05-a02-p12-p01-section-version-http-windows.md`。本 CR 保持 OPEN。
 
 SOL-05-A02-P12-P02 按 DEC-1179 补真实 Edge→Uvicorn loopback→PG18.6 验收。合成现时来源和 Cookie 下观察 201/重放/409/404/403/422/503，SQL 证实仅一条新增版本/首响应/收据/Audit；仅测试资产、无生产变化。未验证正式 HTTPS、服务账户/公钥、Server2025 或 UI，也不解除旧 0138 完整脚本诊断和 Gate3 阻塞。详见 `docs/progress/sol-05-a02-p12-p02-section-version-edge-network.md`。本 CR 保持 OPEN。
+
+SOL-05-A03-P01 按 DEC-1180 开始独立历史读取，先补冻结 API-04 的项目成员 GET/LIST 只读授权并锁定当前事实；尚无 Owner/HTTP，不把 CREATE 首响应或历史固定引用当作现时资格。无 Schema、API Breaking、依赖/数据变化；见 `docs/progress/sol-05-a03-p01-section-version-read-authorization.md`。本 CR 保持 OPEN。

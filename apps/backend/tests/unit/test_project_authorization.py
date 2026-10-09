@@ -47,7 +47,7 @@ class ProjectAuthorizationTests(unittest.TestCase):
                                     operation=operation, resource_id=resource_id)
 
     def test_matrix_exact_for_four_roles(self):
-        self.assertEqual(len(POLICIES), 162)
+        self.assertEqual(len(POLICIES), 164)
         candidate = POLICIES["SOL_GLOBAL_REFERENCE_CANDIDATE_LIST"]
         self.assertEqual(candidate.roles, frozenset({
             "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER",
@@ -61,7 +61,8 @@ class ProjectAuthorizationTests(unittest.TestCase):
             "SOL_OUTLINE_LIST",
             "SOL_OUTLINE_VERSION_LIST", "SOL_OUTLINE_VERSION_GET",
             "SOL_SECTION_GET",
-            "SOL_SECTION_LIST",
+            "SOL_SECTION_LIST", "SOL_SECTION_VERSION_LIST",
+            "SOL_SECTION_VERSION_GET",
         ):
             self.assertEqual(POLICIES[operation].roles, ALL_MEMBERS)
             self.assertFalse(POLICIES[operation].write)
@@ -425,6 +426,26 @@ class ProjectAuthorizationTests(unittest.TestCase):
         with self.assertRaises(ProjectAuthorizationError) as archived:
             self.check(operation)
         self.assertEqual(archived.exception.code, "PROJECT_ARCHIVED")
+
+    def test_section_version_history_read_role_and_project_boundary(self):
+        for operation in ("SOL_SECTION_VERSION_LIST", "SOL_SECTION_VERSION_GET"):
+            policy = POLICIES[operation]
+            self.assertFalse(policy.write)
+            self.assertTrue(policy.lock_reads)
+            self.assertIsNone(policy.target)
+            for role in ("PROJECT_MANAGER", "IMPLEMENTATION_MEMBER",
+                         "CUSTOMER_MANAGER", "CUSTOMER_MEMBER"):
+                with self.subTest(operation=operation, role=role):
+                    self.repo.role = role
+                    authorized = self.check(operation)
+                    self.assertEqual(authorized.project_id, self.project)
+                    self.assertEqual(authorized.project_role, role)
+                    self.assertIs(self.repo.last_lock, True)
+            self.repo.role = None
+            with self.subTest(operation=operation, role=None):
+                with self.assertRaises(ProjectAuthorizationError) as denied:
+                    self.check(operation)
+                self.assertEqual(denied.exception.code, "RESOURCE_NOT_FOUND")
 
     def test_workflow_read_locks_current_facts_but_allows_archived_read(self):
         self.repo.state = "ARCHIVED"
