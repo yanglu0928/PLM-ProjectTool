@@ -25,3 +25,7 @@
 选择后续独立线性迁移先补封闭结构：新增 `sol_outline_reference_refs`，固定 OutlineVersion/Outline/Project、ReferenceVersion/ReferenceRoot/Scope、序号，版本内序号和目标唯一；PROJECT 来源须同目标 Project，GLOBAL 来源须无来源 Project。对现有 ReferenceVersion 增加用于 PROJECT 复合归属 FK 的唯一键，并同时保留 `(ReferenceVersion,Root,Scope)` 基础 FK 覆盖 GLOBAL；新表 `INSERT/UPDATE/DELETE/TRUNCATE` 默认全拒。OutlineVersion 增 `declared_reference_count >= 0`（既有版本初值 0），但不凭计数字段单独证明引用闭合。此增量不解锁旧 0137 Guard，也不新增默认 HTTP。当前版本、`ELIGIBLE` 状态、Document/Evidence/脱敏确认现时性及 Project 授权仍必须由之后独立 Owner 在同事务证明；数据库 FK 只证明固定身份/归属，不证明资格。
 
 不选裸 UUID、仅前端过滤或直接开放 0137 DML。迁移先验空库/已有 Project、Section、Reference 根与版本的升级；有新参考关联历史时拒降并保留数据，空历史 down 后重升；Drift、跨项目/伪 GLOBAL、错 Root/Version、序号重复、直接 DML/TRUNCATE 负例必须通过。回滚优先保持写入口关闭，不能静默删除业务历史。若实现中发现复合 FK 对 GLOBAL NULL 语义与此计划不闭合，先追加本 CR 的差异与可验证替代，不放宽 Scope；Gate2 原冻结提交和 0137 历史保留。此计划不变更冻结 `/api/v1` 合同或产品授权边界。
+
+## SOL-03-A03：封闭结构实施记录
+
+2026-10-09 以线性 `0154` 完成上述结构：基础三元 FK 在 GLOBAL 的 nullable Project 情况下仍验证目标版本/根/Scope，PROJECT 四元 FK 加同 Project CHECK 验证归属；新表沿用 0137 Owner/截断拒绝。空/既有版本行升降重升、Alembic drift、双 Scope 正例、跨项目和伪 GLOBAL 等负例、两类历史拒降已在 Win11 隔离 PostgreSQL 18.6 验证。此项无新偏差，不开放版本写；Owner/资格重证属于后续 SOL-03-A04。具体命令与边界见 `docs/progress/sol-03-a03-outline-reference-schema.md`。

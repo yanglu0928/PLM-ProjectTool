@@ -169,6 +169,7 @@ class SolutionOutlineVersionRow(Base):
                         name="ck_sol_outline_versions__declarations"),
         CheckConstraint("declared_section_count BETWEEN 0 AND 100 AND declared_requirement_count BETWEEN 0 AND 500",
                         name="ck_sol_outline_versions__counts"),
+        CheckConstraint("declared_reference_count>=0", name="ck_sol_outline_versions__reference_count"),
         CheckConstraint("supersedes_version_ref IS NULL OR supersedes_version_ref<>solution_outline_version_id",
                         name="ck_sol_outline_versions__supersedes_not_self"),
         CheckConstraint("(review_ref IS NULL AND review_round_ref IS NULL) OR "
@@ -189,6 +190,7 @@ class SolutionOutlineVersionRow(Base):
     conflict_declarations: Mapped[list[object]] = mapped_column(JSONB, nullable=False)
     declared_section_count: Mapped[int] = mapped_column(Integer, nullable=False)
     declared_requirement_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    declared_reference_count: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("0"))
     supersedes_version_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     review_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     review_round_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
@@ -251,6 +253,51 @@ class SolutionOutlineRequirementRefRow(Base):
     project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     requirement_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     requirement_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class SolutionOutlineReferenceRefRow(Base):
+    """Closed fixed ReferenceVersion link; eligibility is checked by a future Owner."""
+
+    __tablename__ = "sol_outline_reference_refs"
+    __table_args__ = (
+        UniqueConstraint("solution_outline_version_id", "ordinal",
+                         name="uq_sol_outline_references__version_ordinal"),
+        UniqueConstraint("solution_outline_version_id", "reference_version_id",
+                         name="uq_sol_outline_references__version_reference"),
+        ForeignKeyConstraint(
+            ["solution_outline_version_id", "solution_outline_id", "project_id"],
+            ["plm.sol_outline_versions.solution_outline_version_id",
+             "plm.sol_outline_versions.solution_outline_id", "plm.sol_outline_versions.project_id"],
+            name="fk_sol_outline_references__version", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["reference_version_id", "reference_solution_id", "reference_scope"],
+            ["plm.sol_reference_versions.reference_version_id",
+             "plm.sol_reference_versions.reference_solution_id", "plm.sol_reference_versions.scope"],
+            name="fk_sol_outline_references__reference", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["reference_version_id", "reference_solution_id", "reference_scope", "source_project_id"],
+            ["plm.sol_reference_versions.reference_version_id",
+             "plm.sol_reference_versions.reference_solution_id", "plm.sol_reference_versions.scope",
+             "plm.sol_reference_versions.project_id"],
+            name="fk_sol_outline_references__project_source", ondelete="NO ACTION"),
+        CheckConstraint("ordinal>0", name="ck_sol_outline_references__ordinal"),
+        CheckConstraint("(reference_scope='PROJECT' AND source_project_id=project_id) OR "
+                        "(reference_scope='GLOBAL' AND source_project_id IS NULL)",
+                        name="ck_sol_outline_references__scope_project"),
+        Index("ix_sol_outline_references__target", "reference_version_id", "solution_outline_version_id"),
+        {"schema": "plm"},
+    )
+
+    solution_outline_reference_ref_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    solution_outline_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    solution_outline_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    reference_solution_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    reference_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    reference_scope: Mapped[str] = mapped_column(Text, nullable=False)
+    source_project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
 
 
@@ -421,6 +468,8 @@ class ReferenceSolutionVersionRow(Base):
     __table_args__ = (
         UniqueConstraint("reference_version_id", "reference_solution_id", "scope",
                          name="uq_sol_reference_versions__id_parent_scope"),
+        UniqueConstraint("reference_version_id", "reference_solution_id", "scope", "project_id",
+                         name="uq_sol_reference_versions__id_parent_scope_project"),
         UniqueConstraint("reference_solution_id", "version_no", name="uq_sol_reference_versions__parent_no"),
         ForeignKeyConstraint(["reference_solution_id", "scope"],
                              ["plm.sol_reference_solutions.reference_solution_id",

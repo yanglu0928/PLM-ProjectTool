@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-03-A03 新增封闭的 OutlineVersion→ReferenceVersion 固定关联表/ORM、PROJECT 同项目及 GLOBAL 无来源项目约束、引用计数和线性 `0154` 迁移，旧 0137 写 Guard 保留。兼容性/升级：`0153→0154`，旧目录版本引用数默认 0；空引用且计数全 0 可降级，有历史拒降、须前向修复；无公开 API/依赖变更。验证：Win11 临时 PG18.6 空/有数据升降重升、约束/写保护/拒降及 drift；后端全量 3407 通过/3 跳过/5199 子例。已知问题：版本 CREATE/VALIDATE/Review/HTTP/UI 仍阻塞；正式信任/20 并发/Server2025、Gate3/UAT/发行未验，Debian13 实机依指令跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-03-A02 对齐冻结 OutlineVersion 固定 Section/Approved Requirement/当前 Eligible Reference 输入，登记 CR-SOL-002/DEC-1138 的封闭参考关联迁移、同项目/GLOBAL 约束、历史拒降和 Owner 分层顺序。兼容性/升级：仅设计/追溯，无程序/Schema/Migration/API/依赖变化；排序可撤但不删历史。验证：静态对账，未运行新测试；正式版本 CREATE 仍阻塞。已知问题：A03 Schema、Owner/HTTP/UI/Review/Trace/Workflow、质量/信任/性能/发行未验；Debian13实机依指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/GATE-3-A02 复核当前 Platform/业务 Owner、Solution 可信输入、AI 质量、性能、正式信任与发行差距；确认 Gate3 仍 BLOCKED，并排序下项 SOL-03-A02 目录版本冻结来源/写保护前置。兼容性/升级：仅审计与计划，无程序/Schema/Migration/API/依赖变化，可撤排序且保留历史证据。验证：静态对账，未运行新测试。已知问题：完整六阶段、质量阈值、20并发、正式信任/法律/三平台发行未通过；Debian13实机依指令跳过。
