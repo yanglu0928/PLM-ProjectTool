@@ -37,6 +37,7 @@ class Revises:
         self.commands = []
         self.error = None
         self.bad_project = False
+        self.result_lock_version = 1
 
     def revise(self, command):
         self.commands.append(command)
@@ -47,7 +48,7 @@ class Revises:
             command.reference_solution_id, VERSION, command.sources.scope,
             uuid.uuid4() if self.bad_project else project,
             2, PRIOR, b"c" * 32, b"s" * 32,
-            datetime(2026, 10, 9, tzinfo=timezone.utc),
+            datetime(2026, 10, 9, tzinfo=timezone.utc), self.result_lock_version,
         )
 
 
@@ -109,6 +110,15 @@ class ReferenceReviseApiTests(unittest.TestCase):
                 self.assertEqual(project, self.revises.commands[-1].sources.project_id)
                 self.assertEqual(0, self.revises.commands[-1].expected_lock_version)
                 self.assertEqual((DOCUMENT,), self.revises.commands[-1].sources.document_version_ids)
+
+    def test_etag_uses_persisted_lock_not_version_number(self):
+        self.revises.result_lock_version = 6
+        response = self.client.post(
+            self.project_path, headers=self.headers, json=self.body)
+        self.assertEqual(201, response.status_code, response.text)
+        self.assertEqual(2, response.json()["data"]["version_no"])
+        self.assertEqual('"v6"', response.headers["etag"])
+        self.assertEqual('"v6"', response.json()["data"]["etag"])
 
     def test_session_origin_headers_and_body_fail_closed(self):
         variants = (

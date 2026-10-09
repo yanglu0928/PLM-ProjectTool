@@ -32,10 +32,10 @@ def verify(port: int) -> None:
         "postgresql+psycopg", username="poc_admin", host="127.0.0.1",
         port=port, database="postgres"))
     command.upgrade(cfg, "20261009_0149")
-    command.upgrade(cfg, "20261009_0150")
+    command.upgrade(cfg, "20261009_0151")
     command.check(cfg)
     command.downgrade(cfg, "20261009_0149")
-    command.upgrade(cfg, "20261009_0150")
+    command.upgrade(cfg, "20261009_0151")
     command.check(cfg)
     command.downgrade(cfg, "20261009_0149")
     with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
@@ -64,10 +64,10 @@ def verify(port: int) -> None:
                 "VALUES (%s,%s,'PROJECT',%s,1,'{}'::jsonb,'PLM','INTERNAL',"
                 "%s,%s,1,0,%s)",
                 (first, root, project, b"c" * 32, b"s" * 32, actor))
-    command.upgrade(cfg, "20261009_0150")
+    command.upgrade(cfg, "20261009_0151")
     command.check(cfg)
     command.downgrade(cfg, "20261009_0149")
-    command.upgrade(cfg, "20261009_0150")
+    command.upgrade(cfg, "20261009_0151")
     command.check(cfg)
     command.downgrade(cfg, "20261009_0148")
     with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",

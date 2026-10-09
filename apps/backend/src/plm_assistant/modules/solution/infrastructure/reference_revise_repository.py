@@ -110,12 +110,14 @@ class SqlAlchemyReferenceReviseRepository:
             content_fingerprint=content_fingerprint,
             source_fingerprint=qualified.content_fingerprint,
             created_at=version.created_at,
+            result_lock_version=current.lock_version+1,
         ))
         return ReferenceRevisionView(
             current.reference_solution_id, version_id, current.scope,
             current.project_id, current.version_no+1,
             current.reference_version_id, content_fingerprint,
-            qualified.content_fingerprint, version.created_at)
+            qualified.content_fingerprint, version.created_at,
+            current.lock_version+1)
 
     def result(self, transaction: object, *, version_id: uuid.UUID, scope: str,
                project_id: uuid.UUID | None) -> ReferenceRevisionView | None:
@@ -126,6 +128,7 @@ class SqlAlchemyReferenceReviseRepository:
             Result.scope, Root.project_id, Result.version_no,
             Result.supersedes_version_ref, Result.content_fingerprint,
             Result.source_fingerprint, Result.created_at,
+            Result.result_lock_version,
         ).join(Root, Root.reference_solution_id == Result.reference_solution_id).where(
             Result.reference_version_id == version_id, Result.scope == scope,
             Root.scope == scope, Root.project_id == project_id,

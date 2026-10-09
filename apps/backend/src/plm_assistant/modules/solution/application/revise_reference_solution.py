@@ -67,6 +67,7 @@ class ReferenceRevisionView:
     content_fingerprint: bytes = field(repr=False)
     source_fingerprint: bytes = field(repr=False)
     created_at: datetime
+    result_lock_version: int
 
 
 class SourcePort(Protocol):
@@ -193,6 +194,8 @@ class ReferenceReviseService:
                         or view.supersedes_version_ref != current.reference_version_id
                         or view.content_fingerprint != content
                         or view.source_fingerprint != qualified.content_fingerprint):
+                    raise ReferenceReviseError()
+                if view.result_lock_version != current.lock_version+1:
                     raise ReferenceReviseError()
                 self._audit.append(tx, AuditEventDraft(
                     trace_id=request.trace_id, event_scope=(

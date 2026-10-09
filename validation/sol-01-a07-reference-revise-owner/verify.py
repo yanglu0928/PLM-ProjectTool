@@ -191,9 +191,9 @@ def on_created(**facts) -> None:
         "postgresql+psycopg", username="poc_admin", host="127.0.0.1",
         port=facts["port"], database="postgres"))
     try:
-        alembic_command.downgrade(cfg, "20261009_0149")
+        alembic_command.downgrade(cfg, "20261009_0150")
     except RuntimeError as error:
-        assert "Reference revision history prevents Owner downgrade" in str(error)
+        assert "Reference result lock history prevents downgrade" in str(error)
     else:
         raise AssertionError("revision history was silently downgraded")
     return None

@@ -54,6 +54,8 @@ def _response(view: ReferenceRevisionView, *, identity: uuid.UUID,
             or type(view.supersedes_version_ref) is not uuid.UUID
             or view.supersedes_version_ref.int == 0
             or type(view.version_no) is not int or view.version_no < 2
+            or type(view.result_lock_version) is not int
+            or view.result_lock_version < 1
             or type(view.content_fingerprint) is not bytes
             or len(view.content_fingerprint) != 32
             or type(view.source_fingerprint) is not bytes
@@ -61,7 +63,7 @@ def _response(view: ReferenceRevisionView, *, identity: uuid.UUID,
             or type(view.created_at) is not datetime
             or view.created_at.tzinfo is None or view.created_at.utcoffset() is None):
         raise ApplicationError("SYSTEM_UNAVAILABLE")
-    etag = f'"v{view.version_no-1}"'
+    etag = f'"v{view.result_lock_version}"'
     return ({
         "reference_solution_id": str(view.reference_solution_id),
         "reference_version_id": str(view.reference_version_id),

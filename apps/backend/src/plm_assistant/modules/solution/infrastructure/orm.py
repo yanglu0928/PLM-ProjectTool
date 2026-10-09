@@ -511,6 +511,7 @@ class ReferenceSolutionReviseResultRow(Base):
         CheckConstraint("octet_length(source_fingerprint)=32",
                         name="ck_sol_reference_revise_results__source_fingerprint"),
         CheckConstraint("isfinite(created_at)", name="ck_sol_reference_revise_results__created_at"),
+        CheckConstraint("result_lock_version>=1", name="ck_sol_reference_revise_results__lock"),
         {"schema": "plm"},
     )
     reference_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
@@ -521,6 +522,7 @@ class ReferenceSolutionReviseResultRow(Base):
     content_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
     source_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False)
+    result_lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False)
 
 
 class ReferenceSolutionDocumentRefRow(Base):

@@ -34,7 +34,8 @@ def verify(port: int) -> None:
     cfg = create_migration_config(url)
     command.upgrade(cfg, PREVIOUS)
     command.upgrade(cfg, CURRENT)
-    command.check(cfg)
+    # Head ORM has advanced beyond 0149; drift is checked at the current head
+    # by later migration proofs, not against this historical checkpoint.
     command.downgrade(cfg, PREVIOUS)
     root, first, revised = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
     with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
@@ -63,10 +64,8 @@ def verify(port: int) -> None:
                            (version_id, root, project, number, b"c" * 32, b"s" * 32,
                             supersedes, actor))
     command.upgrade(cfg, CURRENT)
-    command.check(cfg)
     command.downgrade(cfg, PREVIOUS)
     command.upgrade(cfg, CURRENT)
-    command.check(cfg)
     with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
                          dbname="postgres", autocommit=True) as db:
         statement = ("INSERT INTO plm.sol_reference_revise_results"
@@ -124,9 +123,8 @@ def verify(port: int) -> None:
                        "ENABLE TRIGGER trg_sol_reference_revise_results__owner")
     command.downgrade(cfg, PREVIOUS)
     command.upgrade(cfg, CURRENT)
-    command.check(cfg)
     print("SOL_01_A06_REFERENCE_REVISE_RESULT_SCHEMA_PASS: empty/existing upgrade, "
-          "down/re-up, drift, closed result/root pointer, FK/check/duplicate/history guards")
+          "down/re-up, closed result/root pointer, FK/check/duplicate/history guards")
 
 
 def main() -> None:
