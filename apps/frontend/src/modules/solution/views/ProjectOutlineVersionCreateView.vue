@@ -9,25 +9,34 @@ import { loadProjectOutlineVersionCandidates, type OutlineVersionProjectCandidat
 import { OutlineReadClient, type OutlineCurrent } from "@/modules/solution/api/outlineReadClient";
 import { OutlineVersionCreateClient, OutlineVersionCreateError, type OutlineVersionDraft } from
   "@/modules/solution/api/outlineVersionCreateClient";
+import { loadProjectGlobalReferenceCandidates, ProjectGlobalReferenceCandidateClient,
+  type ProjectGlobalReferenceCandidate } from
+  "@/modules/solution/api/projectGlobalReferenceCandidateClient";
 import { ReferenceReadClient } from "@/modules/solution/api/referenceReadClient";
 import { SectionReadClient } from "@/modules/solution/api/sectionReadClient";
 
 type CandidateLoader = typeof loadProjectOutlineVersionCandidates;
+type GlobalCandidateLoader = (projectId: string) => Promise<readonly ProjectGlobalReferenceCandidate[]>;
 const props = defineProps<{ session?: SessionClient; outlineReader?: OutlineReadClient;
-  creator?: OutlineVersionCreateClient; candidateLoader?: CandidateLoader }>();
+  creator?: OutlineVersionCreateClient; candidateLoader?: CandidateLoader;
+  globalCandidateLoader?: GlobalCandidateLoader }>();
 const session = toRaw(props.session ?? inject(sessionClientKey, null) ?? new SessionClient());
 const outlineReader = toRaw(props.outlineReader ?? new OutlineReadClient());
 const creator = toRaw(props.creator ?? new OutlineVersionCreateClient(session));
 const candidateLoader = props.candidateLoader ?? ((project: string, outline: string) =>
   loadProjectOutlineVersionCandidates(project, outline, new SectionReadClient(),
     new RequirementReadClient(), new ReferenceReadClient()));
+const globalCandidateLoader = props.globalCandidateLoader ?? ((project: string) =>
+  loadProjectGlobalReferenceCandidates(project, new ProjectGlobalReferenceCandidateClient()));
 const route = useRoute();
 const projectId = () => typeof route.params.projectId === "string" ? route.params.projectId : "";
 const outlineId = () => typeof route.params.outlineId === "string" ? route.params.outlineId : "";
 const parent = ref<OutlineCurrent | null>(null);
 const candidates = ref<OutlineVersionProjectCandidates | null>(null);
+const globalCandidates = ref<readonly ProjectGlobalReferenceCandidate[] | null>(null);
 const selectedSections = ref<string[]>([]); const selectedRequirements = ref<string[]>([]);
 const selectedReferences = ref<string[]>([]);
+const selectedGlobalReferences = ref<string[]>([]);
 const missingText = ref(""); const conflictText = ref("");
 const loading = ref(false); const busy = ref(false); const error = ref("");
 const pending = ref<{ project: string; outline: string; actor: string; draft: OutlineVersionDraft;
@@ -67,16 +76,25 @@ function restore() {
 async function load() {
   if (!authorized() || loading.value) return;
   const project = projectId(), outline = outlineId(), run = ++generation;
-  loading.value = true; parent.value = null; candidates.value = null;
+  if (!pending.value) {
+    selectedSections.value = []; selectedRequirements.value = []; selectedReferences.value = [];
+    selectedGlobalReferences.value = []; confirmCreate.value = false;
+  }
+  loading.value = true; parent.value = null; candidates.value = null; globalCandidates.value = null;
   if (!locked.value) error.value = "";
   try {
-    const [current, available] = await Promise.all([
+    const [current, available, globalAvailable] = await Promise.all([
       outlineReader.current(project, outline), candidateLoader(project, outline,
         new SectionReadClient(), new RequirementReadClient(), new ReferenceReadClient()),
+      globalCandidateLoader(project),
     ]);
     if (!mounted || run !== generation || project !== projectId() || outline !== outlineId()) return;
     if (current.project_id !== project || current.solution_outline_id !== outline) throw new Error("方案目录身份不匹配。");
-    parent.value = current; candidates.value = available;
+    if (globalAvailable.length > 500
+      || new Set(globalAvailable.map(item => item.reference_solution_id)).size !== globalAvailable.length) {
+      throw new Error("GLOBAL 候选无法完整核对，已停止创建。请刷新后重试。");
+    }
+    parent.value = current; candidates.value = available; globalCandidates.value = globalAvailable;
   } catch (failure) {
     if (mounted && run === generation && !locked.value) error.value = failure instanceof Error
       ? failure.message : "暂时无法核对方案来源。";
@@ -85,7 +103,9 @@ async function load() {
 watch(() => [route.params.projectId, route.params.outlineId], () => {
   if (route.name !== "project-outline-version-create") return;
   generation += 1; loading.value = false; parent.value = null; candidates.value = null;
+  globalCandidates.value = null;
   selectedSections.value = []; selectedRequirements.value = []; selectedReferences.value = [];
+  selectedGlobalReferences.value = [];
   missingText.value = ""; conflictText.value = "";
   restore(); void load();
 }, { immediate: true });
@@ -94,7 +114,7 @@ function canCreate() {
   if (pending.value) return authorized();
   return authorized() && parent.value?.outline_state === "ACTIVE"
     && parent.value.project_id === projectId() && parent.value.solution_outline_id === outlineId()
-    && !!candidates.value;
+    && !!candidates.value && globalCandidates.value !== null;
 }
 function statements(raw: string, label: string): readonly Record<string, unknown>[] {
   const lines = raw.split(/\r?\n/).map(value => value.trim()).filter(Boolean);
@@ -104,11 +124,14 @@ function statements(raw: string, label: string): readonly Record<string, unknown
   return lines.map(description => ({ description }));
 }
 function draftFromSelection(): OutlineVersionDraft {
-  const available = candidates.value;
+  const available = candidates.value, availableGlobal = globalCandidates.value;
   if (!available || selectedSections.value.length < 1 || selectedSections.value.length > 100
     || new Set(selectedSections.value).size !== selectedSections.value.length
     || new Set(selectedRequirements.value).size !== selectedRequirements.value.length
-    || new Set(selectedReferences.value).size !== selectedReferences.value.length) {
+    || new Set(selectedReferences.value).size !== selectedReferences.value.length
+    || availableGlobal === null
+    || new Set(selectedGlobalReferences.value).size !== selectedGlobalReferences.value.length
+    || selectedReferences.value.length + selectedGlobalReferences.value.length > 500) {
     throw new Error("至少选择一个当前方案章节，且不得重复选择来源。");
   }
   const sections = selectedSections.value.map(identity => {
@@ -127,12 +150,19 @@ function draftFromSelection(): OutlineVersionDraft {
     return { scope: "PROJECT" as const, reference_solution_id: item.reference_solution_id,
       reference_version_id: item.reference_version_id };
   });
+  const globalReferences = selectedGlobalReferences.value.map(identity => {
+    const item = availableGlobal.find(value => value.reference_solution_id === identity);
+    if (!item) throw new Error("GLOBAL 候选已变化，请刷新后重新核对。");
+    return { scope: "GLOBAL" as const, reference_solution_id: item.reference_solution_id,
+      reference_version_id: item.reference_version_id };
+  });
   const missing = statements(missingText.value, "缺失声明");
   const conflicts = statements(conflictText.value, "冲突声明");
-  if (!requirements.length && !references.length && !missing.length) {
+  if (!requirements.length && !references.length && !globalReferences.length && !missing.length) {
     throw new Error("未选择需求或参考方案时，必须填写至少一条缺失声明。");
   }
-  return { section_ids: sections, requirement_refs: requirements, reference_refs: references,
+  return { section_ids: sections, requirement_refs: requirements,
+    reference_refs: [...references, ...globalReferences],
     missing_declarations: missing, conflict_declarations: conflicts };
 }
 async function submit() {
@@ -187,7 +217,7 @@ async function submit() {
       <form v-else-if="canCreate()" @submit.prevent="submit">
         <template v-if="pending">
           <p class="warning" role="status">存在原创建操作。结果不确定时，不得更改来源或换操作号；请先核对记录，再按原内容与原号重试。</p>
-          <p>原记录：章节 {{ pending.draft.section_ids.length }}、需求 {{ pending.draft.requirement_refs.length }}、PROJECT 参考 {{ pending.draft.reference_refs.length }}。</p>
+          <p>原记录：章节 {{ pending.draft.section_ids.length }}、需求 {{ pending.draft.requirement_refs.length }}、参考 {{ pending.draft.reference_refs.length }}。重试保持首次固定来源与原操作号。</p>
           <label v-if="!locked"><input v-model="confirmRetry" type="checkbox" :disabled="busy" /> 我已核对原操作，确认按原内容和原操作号重试</label>
         </template>
         <template v-else>
@@ -212,12 +242,19 @@ async function submit() {
               <RouterLink :to="{ name: 'project-reference-detail', params: { projectId: item.project_id,
                 referenceId: item.reference_solution_id } }">查看参考与来源</RouterLink>
             </label>
-            <p class="warning">GLOBAL 参考候选需要独立的项目安全只读入口，当前页面暂不提供；不能通过手填 ID 绕过。</p>
           </fieldset>
-          <label for="outline-missing">4. 缺失声明（每行一条；如果需求和参考均为空则必填）</label>
+          <fieldset :disabled="busy"><legend>4. 选择已人工审定且当前合格的 GLOBAL 参考版本（可选）</legend>
+            <p class="warning">仅展示审定标签，不展示原始名称或客户来源。选择当前候选不替代提交时服务器再次核对资格与来源。</p>
+            <p v-if="!globalCandidates?.length">当前没有可用的已发布 GLOBAL 候选。</p>
+            <label v-for="item in globalCandidates" :key="item.reference_solution_id">
+              <input v-model="selectedGlobalReferences" type="checkbox" :value="item.reference_solution_id" />
+              {{ item.display_label }} · v{{ item.version_no }} · <code>{{ item.reference_solution_id }}</code>
+            </label>
+          </fieldset>
+          <label for="outline-missing">5. 缺失声明（每行一条；如果需求和参考均为空则必填）</label>
           <textarea id="outline-missing" v-model="missingText" rows="3" maxlength="64000" :disabled="busy"
             placeholder="例如：客户尚未确认接口字段清单，需在评审前补齐。" />
-          <label for="outline-conflict">5. 冲突声明（每行一条，可选）</label>
+          <label for="outline-conflict">6. 冲突声明（每行一条，可选）</label>
           <textarea id="outline-conflict" v-model="conflictText" rows="3" maxlength="64000" :disabled="busy"
             placeholder="例如：调研记录与技术协议对交付范围表述不一致，待确认。" />
           <label><input v-model="confirmCreate" type="checkbox" :disabled="busy" /> 我已逐项核对上述候选及缺失/冲突说明，确认仅创建待评审草案</label>

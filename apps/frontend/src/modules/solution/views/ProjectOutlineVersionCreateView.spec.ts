@@ -17,6 +17,11 @@ const reqVersion = "41234567-89ab-4cde-8123-456789abcdef";
 const reference = "51234567-89ab-4cde-8123-456789abcdef";
 const refVersion = "61234567-89ab-4cde-8123-456789abcdef";
 const createdVersion = "71234567-89ab-4cde-8123-456789abcdef";
+const globalReference = "81234567-89ab-4cde-8123-456789abcdef";
+const globalVersion = "91234567-89ab-4cde-8123-456789abcdef";
+const globalAvailable = [{ reference_solution_id: globalReference,
+  reference_version_id: globalVersion, display_label: "已审定通用方案", version_no: 3,
+  eligibility_state: "ELIGIBLE" as const }];
 const parent = { solution_outline_id: outline, project_id: project, name: "方案目录",
   outline_state: "ACTIVE", current_approved_version_ref: null,
   created_at: "2026-10-09T00:00:00Z", etag: '"v0"', created_by: project } as OutlineCurrent;
@@ -41,12 +46,14 @@ async function session(role = "PROJECT_MANAGER") {
   }, trace_id: project }), { status: 200, headers: { "Content-Type": "application/json" } })) as typeof fetch);
   await api.login("user", "synthetic-only"); return api;
 }
-async function page(role = "PROJECT_MANAGER", create = vi.fn().mockResolvedValue({ solution_outline_version_id: createdVersion })) {
+async function page(role = "PROJECT_MANAGER", create = vi.fn().mockResolvedValue({ solution_outline_version_id: createdVersion }),
+                    globalLoader = vi.fn().mockResolvedValue(globalAvailable)) {
   const router = createAppRouter(createMemoryHistory());
   await router.push(`/projects/${project}/solution-outlines/${outline}/versions/new`); await router.isReady();
   const wrapper = mount(View, { props: { session: await session(role),
     outlineReader: { current: vi.fn().mockResolvedValue(parent) } as unknown as OutlineReadClient,
     candidateLoader: vi.fn().mockResolvedValue(available),
+    globalCandidateLoader: globalLoader,
     creator: { create } as unknown as OutlineVersionCreateClient }, global: { plugins: [router] } });
   await flushPromises(); return { wrapper, router, create };
 }
@@ -57,8 +64,8 @@ describe("OutlineVersion PROJECT create page", () => {
     expect(denied.wrapper.find("form").exists()).toBe(false); denied.wrapper.unmount();
     const allowed = await page();
     expect(allowed.router.currentRoute.value.name).toBe("project-outline-version-create");
-    expect(allowed.wrapper.text()).toContain("GLOBAL 参考候选需要独立");
-    expect(allowed.wrapper.findAll("fieldset")).toHaveLength(3);
+    expect(allowed.wrapper.text()).toContain("已审定通用方案");
+    expect(allowed.wrapper.findAll("fieldset")).toHaveLength(4);
     expect(allowed.wrapper.text()).toContain("查看章节");
     allowed.wrapper.unmount();
   });
@@ -98,5 +105,40 @@ describe("OutlineVersion PROJECT create page", () => {
     const second = await page();
     expect(second.wrapper.get("button[type=submit]").attributes("disabled")).toBeDefined();
     expect(second.wrapper.text()).toContain("已停止提交"); second.wrapper.unmount();
+  });
+
+  it("persists fixed GLOBAL and PROJECT refs together without using the admin name", async () => {
+    const result = await page();
+    const fields = result.wrapper.findAll("fieldset");
+    await fields[0]!.get("input").setValue(true);
+    await fields[2]!.get("input").setValue(true);
+    await fields[3]!.get("input").setValue(true);
+    await result.wrapper.get("form > label input[type=checkbox]").setValue(true);
+    await result.wrapper.get("form").trigger("submit"); await flushPromises();
+    expect(result.create).toHaveBeenCalledTimes(1);
+    expect(result.create.mock.calls[0]?.[2].reference_refs).toEqual([
+      { scope: "PROJECT", reference_solution_id: reference, reference_version_id: refVersion },
+      { scope: "GLOBAL", reference_solution_id: globalReference, reference_version_id: globalVersion },
+    ]);
+    expect(result.wrapper.text()).not.toContain("历史全局参考方案");
+    result.wrapper.unmount();
+  });
+
+  it("does not show a submit form when GLOBAL candidate loading fails", async () => {
+    const result = await page("PROJECT_MANAGER", vi.fn(), vi.fn().mockRejectedValue(new Error("candidate unavailable")));
+    expect(result.wrapper.find("form").exists()).toBe(false);
+    expect(result.wrapper.text()).toContain("candidate unavailable");
+    result.wrapper.unmount();
+  });
+
+  it("clears selected GLOBAL refs and human confirmation on refresh", async () => {
+    const result = await page();
+    await result.wrapper.findAll("fieldset")[3]!.get("input").setValue(true);
+    await result.wrapper.get("form > label input[type=checkbox]").setValue(true);
+    await result.wrapper.get("button[type=button]").trigger("click"); await flushPromises();
+    expect(result.wrapper.findAll("fieldset")[3]!.get("input").element).toMatchObject({ checked: false });
+    expect(result.wrapper.get("form > label input[type=checkbox]").element)
+      .toMatchObject({ checked: false });
+    result.wrapper.unmount();
   });
 });

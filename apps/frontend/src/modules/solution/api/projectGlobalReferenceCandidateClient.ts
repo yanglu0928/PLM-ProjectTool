@@ -106,3 +106,34 @@ export class ProjectGlobalReferenceCandidateClient {
     } finally { clearTimeout(timer); }
   }
 }
+
+/** Never return a partial candidate set to a CREATE form. */
+export async function loadProjectGlobalReferenceCandidates(
+  projectId: string, reader: Pick<ProjectGlobalReferenceCandidateClient, "list">,
+): Promise<readonly ProjectGlobalReferenceCandidate[]> {
+  const values: ProjectGlobalReferenceCandidate[] = [];
+  const seenCursors = new Set<string>();
+  let cursor: string | null = null;
+  let pageCount = 0;
+  try {
+    do {
+      if (++pageCount > 1000) unavailable();
+      const page = await reader.list(projectId, 100, cursor);
+      if (!page || !Array.isArray(page.items) || typeof page.has_more !== "boolean"
+        || page.has_more && (typeof page.next_cursor !== "string"
+          || seenCursors.has(page.next_cursor))
+        || !page.has_more && page.next_cursor !== null) unavailable();
+      for (const item of page.items) {
+        if (values.length >= 500 || values.length > 0
+          && values[values.length - 1]!.reference_solution_id >= item.reference_solution_id) unavailable();
+        values.push(item);
+      }
+      if (!page.has_more) break;
+      cursor = page.next_cursor;
+      seenCursors.add(cursor!);
+    } while (true);
+    return Object.freeze(values);
+  } catch {
+    return unavailable();
+  }
+}

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { ProjectGlobalReferenceCandidateClient, ProjectGlobalReferenceCandidateError,
-  parseProjectGlobalReferenceCandidatePage } from "./projectGlobalReferenceCandidateClient";
+  loadProjectGlobalReferenceCandidates, parseProjectGlobalReferenceCandidatePage } from
+  "./projectGlobalReferenceCandidateClient";
 
 const project = "01234567-89ab-4cde-8123-456789abcdef";
 const reference = "11234567-89ab-4cde-8123-456789abcdef";
@@ -75,6 +76,21 @@ describe("ProjectGlobalReferenceCandidateClient", () => {
       .rejects.toMatchObject({ code: "CANDIDATE_UNAVAILABLE" });
     await expect(client(success({ items: [], next_cursor: null, has_more: false },
       { "Cache-Control": "public" })).api.list(project))
+      .rejects.toMatchObject({ code: "CANDIDATE_UNAVAILABLE" });
+  });
+
+  it("collects across empty filtered pages and refuses duplicate or incomplete results", async () => {
+    const reader = { list: vi.fn().mockResolvedValueOnce({ items: [], next_cursor: cursor, has_more: true })
+      .mockResolvedValueOnce({ items: [item], next_cursor: null, has_more: false }) };
+    expect(await loadProjectGlobalReferenceCandidates(project, reader)).toEqual([item]);
+    expect(reader.list).toHaveBeenCalledTimes(2);
+    const duplicate = { list: vi.fn().mockResolvedValueOnce({ items: [item], next_cursor: cursor, has_more: true })
+      .mockResolvedValueOnce({ items: [item], next_cursor: null, has_more: false }) };
+    await expect(loadProjectGlobalReferenceCandidates(project, duplicate))
+      .rejects.toMatchObject({ code: "CANDIDATE_UNAVAILABLE" });
+    const broken = { list: vi.fn().mockResolvedValueOnce({ items: [], next_cursor: cursor, has_more: true })
+      .mockRejectedValueOnce(new Error("disconnect")) };
+    await expect(loadProjectGlobalReferenceCandidates(project, broken))
       .rejects.toMatchObject({ code: "CANDIDATE_UNAVAILABLE" });
   });
 });
