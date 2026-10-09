@@ -199,6 +199,47 @@ class SolutionOutlineVersionRow(Base):
                                                  nullable=False, server_default=text("statement_timestamp()"))
 
 
+class SolutionOutlineVersionCreateResultRow(Base):
+    """Closed immutable first 201 DRAFT response, independent of later state."""
+
+    __tablename__ = "sol_outline_version_create_results"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["solution_outline_version_id", "solution_outline_id", "project_id"],
+            ["plm.sol_outline_versions.solution_outline_version_id",
+             "plm.sol_outline_versions.solution_outline_id", "plm.sol_outline_versions.project_id"],
+            name="fk_sol_outline_version_results__version", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["created_by"], ["plm.auth_users.user_id"],
+                             name="fk_sol_outline_version_results__actor", ondelete="NO ACTION"),
+        CheckConstraint("version_no>0", name="ck_sol_outline_version_results__number"),
+        CheckConstraint("octet_length(content_fingerprint)=32",
+                        name="ck_sol_outline_version_results__fingerprint"),
+        CheckConstraint("jsonb_typeof(missing_declarations)='array' AND "
+                        "jsonb_typeof(conflict_declarations)='array'",
+                        name="ck_sol_outline_version_results__declarations"),
+        CheckConstraint("declared_section_count BETWEEN 0 AND 100 AND "
+                        "declared_requirement_count BETWEEN 0 AND 500 AND "
+                        "declared_reference_count>=0",
+                        name="ck_sol_outline_version_results__counts"),
+        CheckConstraint("isfinite(created_at)", name="ck_sol_outline_version_results__created_at"),
+        {"schema": "plm"},
+    )
+
+    solution_outline_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    solution_outline_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    version_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    content_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    missing_declarations: Mapped[list[object]] = mapped_column(JSONB, nullable=False)
+    conflict_declarations: Mapped[list[object]] = mapped_column(JSONB, nullable=False)
+    declared_section_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    declared_requirement_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    declared_reference_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    supersedes_version_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False)
+
+
 class SolutionOutlineSectionRow(Base):
     __tablename__ = "sol_outline_sections"
     __table_args__ = (
