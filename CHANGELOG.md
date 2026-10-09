@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-03-A04-P03-P03-P06-A04-P01-P03 增加真实 GLOBAL ReferenceRevise/项目候选/OutlineVersion CREATE 的 Win11隔离PG18.6旧版失效直接负例：同根v2后v1旧发布候选隐藏、旧固定引用CREATE503，根指针v2且无草案创建副作用，修订Audit单条。兼容性/升级/回滚：仅验证脚本，无应用Schema/Migration/API/角色/依赖变化；删脚本可回滚，历史保留。验证：真实ASGI/PG脚本退出0，成功哨兵后上游夹具后续来源自测未运行且不计本项。已知问题：正式可信时间/服务账户、Server2025、20并发、质量/Gate3/发行未验；Debian13实机依指令跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-03-A04-P03-P03-P06-A04-P01-P02-P02 增加真实 PG/项目 HTTP 的 GLOBAL 确认到期精确边界验证：`expires_at-1µs` 可见、`expires_at` 隐藏且旧引用CREATE503，无版本/创建Audit/收据。兼容性/升级/回滚：仅验证脚本，无应用Schema/Migration/API/权限/依赖变化；删脚本可回滚，历史保留。验证：Win11隔离PG18.6时间注入脚本退出0，上游来源夹具同轮完整通过。已知问题：正式可信时间来源/目标账户、版本修订直接负例、Server2025/性能/Gate3/发行未验；Debian13实机依指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-03-A04-P03-P03-P06-A04-P01-P02-P01 增加真实管理员确认撤销与项目候选/OutlineVersion CREATE 的 Win11隔离PG18.6负例：撤销后候选隐藏、旧引用CREATE503，无版本/创建Audit/收据，撤销Audit单条。兼容性/升级/回滚：仅验证脚本，无应用Schema/Migration/API/权限/依赖变化；删除脚本可回滚，历史保留。验证：真实ASGI/PG脚本退出0，成功哨兵后上游夹具后续Evidence自测未运行且不计本项证据。已知问题：确认到期/版本修订直接负例、正式账户/Server2025/性能/Gate3/发行未验；Debian13实机依指令跳过。

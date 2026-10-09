@@ -78,6 +78,10 @@
 
 2026-10-09 按 DEC-1163 以生产证明服务时钟注入和真实 PG/项目 HTTP 验证确认到期精确边界：到期前 1µs 候选可见，`expires_at` 即隐藏且旧固定引用 CREATE 503，无版本/创建 Audit/收据；见 `docs/progress/sol-03-a04-p03-p03-p06-a04-p01-p02-p02-confirmation-expiry.md`。该证据不代表正式可信时间来源已验，版本修订及发行仍待，本 CR 不关闭。
 
+## P06-A04-P01-P03 实施记录
+
+2026-10-09 按 DEC-1164 以真实 GLOBAL ReferenceRevise Owner 在已发布 v1 后建立同根 v2；项目候选旧标签立即隐藏，旧固定 v1 的 CREATE 503，且无草案创建副作用，修订 Audit 单条。详见 `docs/progress/sol-03-a04-p03-p03-p06-a04-p01-p03-version-revise.md`。Win11 合成语义负例已补齐，正式账户/Server2025/性能与 Gate3 仍独立未验，本 CR 暂不关闭。
+
 ## P06-A02-P02 前置核查
 
 2026-10-09 核查 `GlobalReferenceReadService` 当前仅调用 `AdminPort.authorized_admin`；`SqlAlchemyGlobalReferenceReadRepository` 投影含 `Root.name`，而 GLOBAL 创建只验证名称格式，不证明其已被人工审定为可向项目成员展示。现有 `Reference` 当前资格/来源证明是内部最小端口，不提供可读标签；以截断 UUID 当标签虽不泄露正文，却无法让用户核对所选方案。故项目成员 GLOBAL 候选页面编码前置不满足，状态为 `PRECONDITION_BLOCKED`，不是 Gate/功能 PASS。先实施本 CR 的发布账本与管理员确认、再开放读面；这需要独立 Schema/Owner/API/Win11/页面任务。当前转做不依赖它的 OutlineVersion GET/LIST 与原操作恢复，保持 P06-PROJECT 子集可用。
