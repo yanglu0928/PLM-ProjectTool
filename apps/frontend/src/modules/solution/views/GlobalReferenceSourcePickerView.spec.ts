@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { createAppRouter } from "@/app/router";
 import { SessionClient } from "@/modules/auth/api/sessionClient";
+import type { DocumentReadClient } from "@/modules/document/api/documentReadClient";
 import type { EvidenceListClient } from "@/modules/evidence/api/evidenceListClient";
 import type { EvidenceViewerClient } from "@/modules/evidence/api/evidenceViewerClient";
 import type { EvidenceEligibilityClient } from "@/modules/evidence/api/evidenceEligibilityClient";
@@ -95,8 +96,109 @@ describe("GlobalReferenceSourcePickerView", () => {
     await flushPromises();
     expect(result.wrapper.text()).toContain("3 条证据、2 个固定文档版本");
     expect(result.wrapper.findAll('ol[aria-label="已选固定来源"] li a')).toHaveLength(3);
-    expect(result.wrapper.text()).toContain("至少选择两条证据");
+    expect(result.wrapper.text()).toContain("至少选择一个固定文档版本，Evidence 可选");
     expect(result.wrapper.text()).not.toContain("提交人工脱敏确认");
+  });
+
+  it("creates a GLOBAL reference from one reviewed DocumentVersion and zero Evidence", async () => {
+    const document = { document_id: documentA, scope: "GLOBAL", category: "REFERENCE_MATERIAL",
+      title: "合成固定文档", display_name: "synthetic.txt", state: "ACTIVE" };
+    const version = { document_version_id: versionA, version_no: 1,
+      content_sha256: "a".repeat(64), detected_mime: "text/plain", availability_state: "AVAILABLE" };
+    const documentClient = { list: vi.fn().mockResolvedValue({ items: [document], next_cursor: null }),
+      listVersions: vi.fn().mockResolvedValue({ items: [version], next_cursor: null }),
+      get: vi.fn().mockResolvedValue(document), getVersion: vi.fn().mockResolvedValue(version) };
+    const fingerprint = "f".repeat(64);
+    const preview = vi.fn().mockResolvedValue({ source_fingerprint: fingerprint,
+      document_refs: [{ document_id: documentA, document_version_id: versionA }],
+      evidence_ids: [], previewed_at: "2026-10-09T00:00:00Z" });
+    const confirm = vi.fn().mockResolvedValue({ confirmation_id: trace,
+      source_fingerprint: fingerprint, confirmed_by: actor,
+      confirmed_at: "2026-10-09T00:00:00Z", expires_at: "2030-10-16T00:00:00Z", trace_id: trace });
+    const create = vi.fn().mockResolvedValue({ reference_solution_id: trace,
+      reference_version_id: versionB });
+    const router = createAppRouter(createMemoryHistory());
+    await router.push("/admin/reference-deidentification"); await router.isReady();
+    const wrapper = mount(GlobalReferenceSourcePickerView, { props: {
+      session: await session(), documentClient: documentClient as unknown as DocumentReadClient,
+      listClient: { list: vi.fn().mockResolvedValue({ items: [], next_cursor: null }) } as unknown as EvidenceListClient,
+      attestationClient: { preview, confirm } as unknown as ReferenceDeidentificationClient,
+      createClient: { create } as unknown as GlobalReferenceCreateClient,
+    }, global: { plugins: [router] } });
+    await flushPromises();
+    await button(wrapper, "读取全局文档候选").trigger("click"); await flushPromises();
+    await button(wrapper, "查看可用版本").trigger("click"); await flushPromises();
+    await button(wrapper, "选择此固定版本").trigger("click"); await flushPromises();
+    expect(wrapper.text()).toContain("0 条证据、1 个固定文档版本");
+    await wrapper.find('input[placeholder="PLM"]').setValue("PLM");
+    await wrapper.find('input[placeholder="DEIDENTIFIED"]').setValue("DEIDENTIFIED");
+    await button(wrapper, "预览所选来源集合").trigger("click"); await flushPromises();
+    expect(preview).toHaveBeenCalledWith({ document_version_ids: [versionA], evidence_ids: [],
+      source_project_class: "PLM", deidentification_class: "DEIDENTIFIED", applicability: {} });
+    const review = wrapper.get('section[aria-label="集合预览与逐项原文核查"]');
+    expect(review.findAll("a")).toHaveLength(1);
+    await review.get("a").trigger("click");
+    for (const checkbox of review.findAll('input[type="checkbox"]')) await checkbox.setValue(true);
+    await button(wrapper, "提交集合人工脱敏确认（有效期 7 天）").trigger("click"); await flushPromises();
+    await wrapper.find('input[placeholder="填写便于识别的参考名称"]').setValue("文档型方案");
+    await button(wrapper, "重新核验并创建全局参考方案").trigger("click"); await flushPromises();
+    expect(create).toHaveBeenCalledWith({ name: "文档型方案",
+      document_version_ids: [versionA], evidence_ids: [], source_project_class: "PLM",
+      deidentification_class: "DEIDENTIFIED", applicability: {} }, expect.any(String));
+    expect(documentClient.get).toHaveBeenCalledTimes(3);
+    expect(documentClient.getVersion).toHaveBeenCalledTimes(3);
+    wrapper.unmount();
+  });
+
+  it("revises a GLOBAL reference using a document-only confirmed source", async () => {
+    const reference = "91234567-89ab-4cde-8123-456789abcdef";
+    const document = { document_id: documentA, scope: "GLOBAL", category: "STANDARD_CAPABILITY",
+      title: "合成能力文档", state: "ACTIVE" };
+    const version = { document_version_id: versionA, version_no: 1,
+      content_sha256: "a".repeat(64), detected_mime: "text/plain", availability_state: "AVAILABLE" };
+    const documentClient = { list: vi.fn().mockResolvedValue({ items: [document], next_cursor: null }),
+      listVersions: vi.fn().mockResolvedValue({ items: [version], next_cursor: null }),
+      get: vi.fn().mockResolvedValue(document), getVersion: vi.fn().mockResolvedValue(version) };
+    const fingerprint = "f".repeat(64);
+    const preview = vi.fn().mockResolvedValue({ source_fingerprint: fingerprint,
+      document_refs: [{ document_id: documentA, document_version_id: versionA }],
+      evidence_ids: [], previewed_at: "2026-10-09T00:00:00Z" });
+    const confirm = vi.fn().mockResolvedValue({ confirmation_id: trace,
+      source_fingerprint: fingerprint, confirmed_by: actor,
+      confirmed_at: "2026-10-09T00:00:00Z", expires_at: "2030-10-16T00:00:00Z", trace_id: trace });
+    const root = { reference_solution_id: reference, reference_version_id: versionB,
+      name: "原方案", version_no: 1, etag: '"v0"', source_project_class: "PLM",
+      deidentification_class: "DEIDENTIFIED", applicability: {} };
+    const read = vi.fn().mockResolvedValue(root);
+    const revise = vi.fn().mockResolvedValue({ reference_solution_id: reference,
+      reference_version_id: documentB, version_no: 2, etag: '"v1"' });
+    const router = createAppRouter(createMemoryHistory());
+    await router.push(`/admin/reference-solutions/${reference}/revise`); await router.isReady();
+    const wrapper = mount(GlobalReferenceSourcePickerView, { props: {
+      referenceId: reference, session: await session(),
+      documentClient: documentClient as unknown as DocumentReadClient,
+      listClient: { list: vi.fn().mockResolvedValue({ items: [], next_cursor: null }) } as unknown as EvidenceListClient,
+      attestationClient: { preview, confirm } as unknown as ReferenceDeidentificationClient,
+      reader: { current: read } as unknown as GlobalReferenceReadClient,
+      reviseClient: { revise } as unknown as ReferenceReviseClient,
+    }, global: { plugins: [router] } });
+    await flushPromises();
+    await button(wrapper, "读取全局文档候选").trigger("click"); await flushPromises();
+    await button(wrapper, "查看可用版本").trigger("click"); await flushPromises();
+    await button(wrapper, "选择此固定版本").trigger("click"); await flushPromises();
+    await button(wrapper, "预览所选来源集合").trigger("click"); await flushPromises();
+    const review = wrapper.get('section[aria-label="集合预览与逐项原文核查"]');
+    await review.get("a").trigger("click");
+    for (const checkbox of review.findAll('input[type="checkbox"]')) await checkbox.setValue(true);
+    await button(wrapper, "提交集合人工脱敏确认（有效期 7 天）").trigger("click"); await flushPromises();
+    await button(wrapper, "重新核验并修订为新草稿版本").trigger("click"); await flushPromises();
+    expect(revise).toHaveBeenCalledWith("GLOBAL", reference, null, {
+      document_version_ids: [versionA], evidence_ids: [], source_project_class: "PLM",
+      deidentification_class: "DEIDENTIFIED", applicability: {},
+    }, '"v0"', expect.any(String));
+    expect(documentClient.get).toHaveBeenCalledTimes(3);
+    expect(documentClient.getVersion).toHaveBeenCalledTimes(3);
+    wrapper.unmount();
   });
 
   it("rejects stale eligibility and clears the collection on refresh", async () => {

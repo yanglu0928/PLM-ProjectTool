@@ -4,6 +4,7 @@ import { RouterLink } from "vue-router";
 
 import { SessionClient } from "@/modules/auth/api/sessionClient";
 import { sessionClientKey } from "@/modules/auth/api/sessionContext";
+import { DocumentReadClient, type DocumentView, type DocumentVersionView } from "@/modules/document/api/documentReadClient";
 import { EvidenceListClient, type EvidenceSummary } from "@/modules/evidence/api/evidenceListClient";
 import { EvidenceViewerClient, type EvidenceViewerDescriptor } from "@/modules/evidence/api/evidenceViewerClient";
 import { EvidenceEligibilityClient } from "@/modules/evidence/api/evidenceEligibilityClient";
@@ -16,12 +17,14 @@ import { GlobalReferenceReadClient, type GlobalReferenceCurrent } from "@/module
 import { ReferenceReviseClient, type ReferenceRevised, type ReferenceReviseInput } from "@/modules/solution/api/referenceReviseClient";
 
 const props = defineProps<{ referenceId?: string; session?: SessionClient; listClient?: EvidenceListClient;
+  documentClient?: DocumentReadClient;
   viewerClient?: EvidenceViewerClient; eligibilityClient?: EvidenceEligibilityClient;
   attestationClient?: ReferenceDeidentificationClient;
   createClient?: GlobalReferenceCreateClient; reader?: GlobalReferenceReadClient;
   reviseClient?: ReferenceReviseClient }>();
 const session = toRaw(props.session ?? inject(sessionClientKey, null) ?? new SessionClient());
 const lists = toRaw(props.listClient ?? new EvidenceListClient());
+const documentReader = toRaw(props.documentClient ?? new DocumentReadClient());
 const viewers = toRaw(props.viewerClient ?? new EvidenceViewerClient());
 const eligibility = toRaw(props.eligibilityClient ?? new EvidenceEligibilityClient(session));
 const attestations = toRaw(props.attestationClient ?? new ReferenceDeidentificationClient(session));
@@ -37,8 +40,17 @@ const revisePending = ref<RevisePending | null>(null);
 const revisePendingCorrupt = ref(false);
 const reviseRecoveryReviewed = ref(false);
 type Selected = Readonly<{ evidence: EvidenceSummary; viewer: EvidenceViewerDescriptor }>;
+type SelectedDocument = Readonly<{ document: DocumentView; version: DocumentVersionView }>;
+type FixedDocument = Readonly<{ document_id: string; document_version_id: string;
+  display_label: string; version_no: number; content_url: string }>;
 const items = ref<readonly EvidenceSummary[]>([]);
 const selected = ref<readonly Selected[]>([]);
+const candidateDocuments = ref<readonly DocumentView[]>([]);
+const documentCursor = ref<string | null>(null);
+const expandedDocument = ref<DocumentView | null>(null);
+const availableVersions = ref<readonly DocumentVersionView[]>([]);
+const versionCursor = ref<string | null>(null);
+const selectedDocuments = ref<readonly SelectedDocument[]>([]);
 const cursor = ref<string | null>(null);
 const loaded = ref(false);
 const busy = ref(false);
@@ -59,9 +71,26 @@ let generation = 0; let sourceRevision = 0; let mounted = true;
 const mayRead = () => mounted && session.view?.deployment_role === "DEPLOYMENT_ADMIN"
   && !session.view.password_change_required;
 const selectedIds = () => new Set(selected.value.map((entry) => entry.evidence.evidence_id));
-const documentVersionIds = () => [...new Set(selected.value.map((entry) => entry.viewer.document_version_id))];
-const documents = () => selected.value.filter((entry, index, all) =>
-  all.findIndex((candidate) => candidate.viewer.document_version_id === entry.viewer.document_version_id) === index);
+const allowedCategory = new Set(["REFERENCE_MATERIAL", "STANDARD_CAPABILITY"]);
+const globalDocumentScope = { kind: "GLOBAL" as const };
+function documents(): readonly FixedDocument[] {
+  const manual: FixedDocument[] = selectedDocuments.value.map(entry => ({
+    document_id: entry.document.document_id, document_version_id: entry.version.document_version_id,
+    display_label: entry.document.title, version_no: entry.version.version_no,
+    content_url: `/api/v1/global/documents/${entry.document.document_id}/versions/${entry.version.document_version_id}/content`,
+  }));
+  const seen = new Set(manual.map(entry => entry.document_version_id));
+  for (const entry of selected.value) {
+    if (seen.has(entry.viewer.document_version_id)) continue;
+    seen.add(entry.viewer.document_version_id);
+    manual.push({ document_id: entry.viewer.document_id,
+      document_version_id: entry.viewer.document_version_id,
+      display_label: entry.viewer.display_label, version_no: entry.viewer.document_version_no,
+      content_url: entry.viewer.content_url });
+  }
+  return manual;
+}
+const documentVersionIds = () => documents().map(entry => entry.document_version_id);
 const storageKey = () => `plm.sol.global.deidentification.multi.pending.${session.view?.user.user_id ?? "none"}`;
 const createStorageKey = () => `plm.sol.global.create.pending.${session.view?.user.user_id ?? "none"}`;
 const reviseStorageKey = () => `plm.sol.global.reference.revise.pending.${session.view?.user.user_id ?? "none"}.${props.referenceId ?? "none"}`;
@@ -136,8 +165,10 @@ function clearPreview() {
 function invalidateSources() { sourceRevision += 1; clearPreview(); }
 function sources(): DeidentificationSources | null {
   const source = sourceClass.value.trim(), classification = deidentificationClass.value.trim();
-  if (selected.value.length < 2 || !/^[A-Z][A-Z0-9_]{1,63}$/.test(source)
-    || !/^[A-Z][A-Z0-9_]{1,63}$/.test(classification)) return null;
+  if (documentVersionIds().length < 1 || documentVersionIds().length > 100
+    || selected.value.length > 500 || !source || source.length > 128 || /\p{C}/u.test(source)
+    || !classification || classification.length > 128 || /\p{C}/u.test(classification)
+    || industry.value.trim().length > 128) return null;
   return { document_version_ids: documentVersionIds(),
     evidence_ids: selected.value.map((entry) => entry.evidence.evidence_id),
     source_project_class: source, deidentification_class: classification,
@@ -148,8 +179,8 @@ function markOpened(kind: "document" | "evidence", id: string) {
   if (!target.value.includes(id)) target.value = [...target.value, id];
 }
 function allChecked() {
-  return documents().every((entry) => openedDocuments.value.includes(entry.viewer.document_version_id)
-    && checkedDocuments.value.includes(entry.viewer.document_version_id))
+  return documents().every((entry) => openedDocuments.value.includes(entry.document_version_id)
+    && checkedDocuments.value.includes(entry.document_version_id))
     && selected.value.every((entry) => openedEvidence.value.includes(entry.evidence.evidence_id)
       && checkedEvidence.value.includes(entry.evidence.evidence_id));
 }
@@ -187,7 +218,8 @@ function clearPending() {
 async function load(refresh = false) {
   if (!mayRead() || busy.value || confirmation.value || !refresh && loaded.value && !cursor.value) return;
   if (refresh) {
-    generation += 1; items.value = []; selected.value = []; cursor.value = null; loaded.value = false;
+    generation += 1; items.value = []; selected.value = []; selectedDocuments.value = [];
+    cursor.value = null; loaded.value = false;
     invalidateSources();
   }
   const after = cursor.value, run = ++generation;
@@ -202,6 +234,72 @@ async function load(refresh = false) {
   } catch {
     if (mounted && run === generation) error.value = "无法确认全局证据列表；请重新读取。";
   } finally { if (mounted && run === generation) busy.value = false; }
+}
+
+async function loadDocuments(reset = false) {
+  if (!mayRead() || busy.value || confirmation.value || revisePending.value || revisePendingCorrupt.value) return;
+  const run = generation, after = reset ? null : documentCursor.value;
+  busy.value = true; error.value = "";
+  try {
+    const page = await documentReader.list(globalDocumentScope, after);
+    if (!mounted || run !== generation || !mayRead()) return;
+    const existing = reset ? [] : candidateDocuments.value;
+    if (page.items.some(item => existing.some(prior => prior.document_id === item.document_id)))
+      throw new Error("duplicate GLOBAL document");
+    candidateDocuments.value = [...existing, ...page.items]; documentCursor.value = page.next_cursor;
+    if (reset) { expandedDocument.value = null; availableVersions.value = []; versionCursor.value = null; }
+  } catch { if (mounted && run === generation) error.value = "无法读取全局文档候选；请重新读取。"; }
+  finally { if (mounted && run === generation) busy.value = false; }
+}
+async function loadVersions(document: DocumentView, reset = false) {
+  if (!mayRead() || busy.value || confirmation.value || document.state !== "ACTIVE"
+    || !allowedCategory.has(document.category)
+    || !candidateDocuments.value.some(item => item.document_id === document.document_id)) return;
+  const run = generation, after = reset ? null : versionCursor.value;
+  busy.value = true; error.value = "";
+  try {
+    const page = await documentReader.listVersions(globalDocumentScope, document.document_id, after);
+    if (!mounted || run !== generation || !mayRead()) return;
+    const existing = reset ? [] : availableVersions.value;
+    if (page.items.some(item => existing.some(prior => prior.document_version_id === item.document_version_id)))
+      throw new Error("duplicate GLOBAL version");
+    expandedDocument.value = document; availableVersions.value = [...existing, ...page.items];
+    versionCursor.value = page.next_cursor;
+  } catch { if (mounted && run === generation) error.value = "无法读取全局固定文档版本；请刷新候选。"; }
+  finally { if (mounted && run === generation) busy.value = false; }
+}
+async function chooseDocument(document: DocumentView, version: DocumentVersionView) {
+  if (!mayRead() || busy.value || confirmation.value || documentVersionIds().length >= 100
+    || documentVersionIds().includes(version.document_version_id)) return;
+  const run = generation;
+  busy.value = true; error.value = "";
+  try {
+    const fresh = await documentReader.get(globalDocumentScope, document.document_id);
+    const fixed = await documentReader.getVersion(globalDocumentScope,
+      document.document_id, version.document_version_id);
+    if (!mounted || run !== generation || !mayRead()) return;
+    if (fresh.state !== "ACTIVE" || !allowedCategory.has(fresh.category)
+      || fixed.document_version_id !== version.document_version_id
+      || fixed.content_sha256 !== version.content_sha256) throw new Error("document changed");
+    selectedDocuments.value = [...selectedDocuments.value, { document: fresh, version: fixed }];
+    invalidateSources();
+  } catch { if (mounted && run === generation) error.value = "文档版本已变化或不可用，请刷新并重选。"; }
+  finally { if (mounted && run === generation) busy.value = false; }
+}
+function removeDocument(versionId: string) {
+  if (busy.value || confirmation.value || revisePending.value) return;
+  selectedDocuments.value = selectedDocuments.value.filter(entry => entry.version.document_version_id !== versionId);
+  invalidateSources(); error.value = "";
+}
+async function recheckManualDocuments() {
+  for (const entry of selectedDocuments.value) {
+    const fresh = await documentReader.get(globalDocumentScope, entry.document.document_id);
+    const fixed = await documentReader.getVersion(globalDocumentScope,
+      entry.document.document_id, entry.version.document_version_id);
+    if (fresh.state !== "ACTIVE" || !allowedCategory.has(fresh.category)
+      || fixed.document_version_id !== entry.version.document_version_id
+      || fixed.content_sha256 !== entry.version.content_sha256) throw new Error("固定文档版本已变化；请重新核查。");
+  }
 }
 
 async function choose(item: EvidenceSummary) {
@@ -240,6 +338,7 @@ async function previewSources() {
   const run = generation, revision = sourceRevision;
   clearPreview(); error.value = ""; busy.value = true;
   try {
+    await recheckManualDocuments();
     for (const entry of selected.value) {
       const viewer = await viewers.get({ kind: "GLOBAL" }, entry.evidence.evidence_id);
       const state = await eligibility.currentGlobal(entry.evidence.evidence_id);
@@ -257,7 +356,7 @@ async function previewSources() {
     if (result.document_refs.length !== input.document_version_ids.length
       || result.document_refs.some((entry, index) =>
         entry.document_version_id !== input.document_version_ids[index]
-        || entry.document_id !== documents()[index]?.viewer.document_id)
+        || entry.document_id !== documents()[index]?.document_id)
       || result.evidence_ids.length !== input.evidence_ids.length
       || result.evidence_ids.some((id, index) => id !== input.evidence_ids[index])) {
       throw new Error("preview identity mismatch");
@@ -299,6 +398,7 @@ async function createReference() {
   const run = generation, revision = sourceRevision;
   busy.value = true; error.value = "";
   try {
+    await recheckManualDocuments();
     for (const entry of selected.value) {
       const viewer = await viewers.get({ kind: "GLOBAL" }, entry.evidence.evidence_id);
       const state = await eligibility.currentGlobal(entry.evidence.evidence_id);
@@ -317,7 +417,7 @@ async function createReference() {
       || refreshed.document_refs.length !== input.document_version_ids.length
       || refreshed.document_refs.some((item, index) =>
         item.document_version_id !== input.document_version_ids[index]
-        || item.document_id !== documents()[index]?.viewer.document_id)
+        || item.document_id !== documents()[index]?.document_id)
       || refreshed.evidence_ids.length !== input.evidence_ids.length
       || refreshed.evidence_ids.some((id, index) => id !== input.evidence_ids[index])) {
       throw new Error("source changed");
@@ -354,6 +454,7 @@ async function recheckRevise(input: ReferenceReviseInput, shown: Deidentificatio
   const latest = await reader.current(snapshot.reference_solution_id);
   if (latest.reference_version_id !== snapshot.reference_version_id || latest.etag !== snapshot.etag)
     throw new Error("当前全局参考版本已变化；请重新读取后决定。");
+  await recheckManualDocuments();
   for (const entry of selected.value) {
     const viewer = await viewers.get({ kind: "GLOBAL" }, entry.evidence.evidence_id);
     const state = await eligibility.currentGlobal(entry.evidence.evidence_id);
@@ -371,7 +472,7 @@ async function recheckRevise(input: ReferenceReviseInput, shown: Deidentificatio
     || currentPreview.document_refs.length !== input.document_version_ids.length
     || currentPreview.document_refs.some((item, index) =>
       item.document_version_id !== input.document_version_ids[index]
-      || item.document_id !== documents()[index]?.viewer.document_id)
+        || item.document_id !== documents()[index]?.document_id)
     || currentPreview.evidence_ids.length !== input.evidence_ids.length
     || currentPreview.evidence_ids.some((id, index) => id !== input.evidence_ids[index]))
     throw new Error("来源指纹已变化；请重新预览并核查。");
@@ -440,6 +541,8 @@ function clearCompletedPending() {
 watch([sourceClass, deidentificationClass, industry], invalidateSources);
 watch(() => props.referenceId, () => {
   generation += 1; busy.value = false; items.value = []; selected.value = []; cursor.value = null;
+  selectedDocuments.value = []; candidateDocuments.value = []; documentCursor.value = null;
+  expandedDocument.value = null; availableVersions.value = []; versionCursor.value = null;
   loaded.value = false; target.value = null; revised.value = null; refreshed.value = null;
   revisePending.value = null; revisePendingCorrupt.value = false; createPendingKey.value = "";
   clearPreview(); error.value = "";
@@ -500,7 +603,40 @@ onUnmounted(() => { mounted = false; generation += 1; selected.value = []; });
       </section>
       <p v-if="busy" role="status">正在核验来源…</p>
       <p v-if="error" role="alert">{{ error }}</p>
+      <section aria-label="全局文档版本候选">
+        <h2>选择固定全局文档版本（至少一个）</h2>
+        <p>仅当前活动的参考材料或标准能力文档可选；Evidence 可选。固定版本原文须逐项打开核查，不输入裸 UUID。</p>
+        <button type="button" :disabled="busy || !!confirmation || !!revisePending || revisePendingCorrupt"
+          @click="loadDocuments(true)">读取全局文档候选</button>
+        <ol><li v-for="document in candidateDocuments" :key="document.document_id">
+          {{ document.title }} · {{ document.category }} · {{ document.state }}
+          <button type="button" :disabled="busy || !!confirmation || document.state !== 'ACTIVE'
+            || !allowedCategory.has(document.category)" @click="loadVersions(document, true)">查看可用版本</button>
+        </li></ol>
+        <button v-if="documentCursor" type="button" :disabled="busy" @click="loadDocuments()">继续加载全局文档</button>
+        <div v-if="expandedDocument" aria-label="全局固定版本">
+          <h3>{{ expandedDocument.title }} 的固定版本</h3>
+          <ol><li v-for="version in availableVersions" :key="version.document_version_id">
+            第 {{ version.version_no }} 版 · {{ version.detected_mime }}
+            <a :href="`/api/v1/global/documents/${expandedDocument.document_id}/versions/${version.document_version_id}/content`"
+              target="_blank" rel="noopener">打开固定版本原文</a>
+            <button type="button" :disabled="busy || !!confirmation || documentVersionIds().length >= 100
+              || documentVersionIds().includes(version.document_version_id)"
+              @click="chooseDocument(expandedDocument, version)">选择此固定版本</button>
+          </li></ol>
+          <button v-if="versionCursor" type="button" :disabled="busy" @click="loadVersions(expandedDocument)">继续加载版本</button>
+        </div>
+        <h3>已选文档版本</h3>
+        <ol><li v-for="entry in selectedDocuments" :key="entry.version.document_version_id">
+          {{ entry.document.title }} · 第 {{ entry.version.version_no }} 版
+          <a :href="`/api/v1/global/documents/${entry.document.document_id}/versions/${entry.version.document_version_id}/content`"
+            target="_blank" rel="noopener">打开已选固定原文</a>
+          <button type="button" :disabled="busy || !!confirmation || !!revisePending"
+            @click="removeDocument(entry.version.document_version_id)">移出文档候选</button>
+        </li></ol>
+      </section>
       <p v-if="loaded && !items.length">暂无全局证据。</p>
+      <p>以下 Evidence 可作为补充来源；无 Evidence 时仍可对已选固定文档版本预览并人工确认。</p>
       <ol aria-label="可选全局证据">
         <li v-for="item in items" :key="item.evidence_id">
           {{ item.display_label }} · {{ item.eligibility_state === 'ELIGIBLE' ? '当前列表显示可用' : '当前列表不可选' }}
@@ -524,21 +660,21 @@ onUnmounted(() => { mounted = false; generation += 1; selected.value = []; });
       </section>
       <section aria-labelledby="multi-preview-title">
         <h2 id="multi-preview-title">集合预览与逐项核查</h2>
-        <p>至少选择两条证据。分类和集合发生变化后，旧预览及勾选全部失效；服务端会在确认时重新计算来源指纹。</p>
-        <label>来源项目分类（如 PLM）<input v-model="sourceClass" :disabled="busy || !!confirmation" maxlength="64" placeholder="PLM"></label>
-        <label>脱敏分类（按实际核查填写）<input v-model="deidentificationClass" :disabled="busy || !!confirmation" maxlength="64" placeholder="DEIDENTIFIED"></label>
+        <p>至少选择一个固定文档版本，Evidence 可选。分类和集合变化后旧预览与勾选失效；服务端确认时重算来源指纹。</p>
+        <label>来源项目分类（如 PLM）<input v-model="sourceClass" :disabled="busy || !!confirmation" maxlength="128" placeholder="PLM"></label>
+        <label>脱敏分类（按实际核查填写）<input v-model="deidentificationClass" :disabled="busy || !!confirmation" maxlength="128" placeholder="DEIDENTIFIED"></label>
         <label>适用行业（可选）<input v-model="industry" :disabled="busy || !!confirmation" maxlength="128" placeholder="例如：离散制造"></label>
         <button type="button" :disabled="busy || !!pendingKind || !!confirmation || !sources()" @click="previewSources()">预览所选来源集合</button>
       </section>
       <section v-if="preview" aria-label="集合预览与逐项原文核查">
         <p>预览时刻：{{ preview.previewed_at }}；来源指纹：<code>{{ preview.source_fingerprint }}</code></p>
         <h3>固定文档版本（{{ documents().length }} 个）</h3>
-        <ol><li v-for="entry in documents()" :key="entry.viewer.document_version_id">
-          第 {{ entry.viewer.document_version_no }} 版 · {{ entry.viewer.display_label }}
-          <a :href="entry.viewer.content_url" target="_blank" rel="noopener"
-            @click="markOpened('document', entry.viewer.document_version_id)">打开固定文档版本原文</a>
-          <label><input v-model="checkedDocuments" type="checkbox" :value="entry.viewer.document_version_id"
-            :disabled="busy || !openedDocuments.includes(entry.viewer.document_version_id)">我已打开并检查此文档版本</label>
+        <ol><li v-for="entry in documents()" :key="entry.document_version_id">
+          第 {{ entry.version_no }} 版 · {{ entry.display_label }}
+          <a :href="entry.content_url" target="_blank" rel="noopener"
+            @click="markOpened('document', entry.document_version_id)">打开固定文档版本原文</a>
+          <label><input v-model="checkedDocuments" type="checkbox" :value="entry.document_version_id"
+            :disabled="busy || !openedDocuments.includes(entry.document_version_id)">我已打开并检查此文档版本</label>
         </li></ol>
         <h3>固定证据（{{ selected.length }} 条）</h3>
         <ol><li v-for="entry in selected" :key="entry.evidence.evidence_id">
