@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-05-A02-P06 新增 SectionVersion DRAFT 输入与同事务 Section/Document/Requirement/Evidence 当前证明的内部组合指纹；未有 OutputArtifact Owner 的 Artifact 裸引用失败关闭。兼容性/升级/回滚：仅未接线 Application 模块与测试及可弃PG验证资产，无Schema/Migration/公开API/权限/配置/依赖/数据变化，撤增量可回滚。验证：定向pytest6项/29子例、后端全量3525通过/3跳过/5500子例、退出0；当前head可弃PG直接确认0138写闭锁。已知问题：新组合服务未跑真实 PG 写链；旧0138完整脚本受后续0146/0148闭环/拒降门禁阻断，复跑未计PASS；正式Server2025/信任、性能、AI质量、Gate3/发行未验，Debian13实机依指令跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-05-A02-P05 新增 SectionVersion 当前父 Outline/Section 与相邻版本前驱的内部基底证明，固定父→子锁顺序；跨项目、归档、坏指针与断档失败关闭。兼容性/升级/回滚：未接线内部端口，无Schema/Migration/公开API/权限/配置/依赖/数据变化，撤端口及验证资产可回滚。验证：定向pytest7项/16子例、Win11可弃PG18.6真实SQL正反例退出0，后端全量3519通过/3跳过/5471子例、退出0。已知问题：0138写闭锁保持，Owner/Guard/Review/Trace/Artifact、正式Server2025/信任、性能/Gate3/发行未验；Debian13实机依指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-05-A02-P04 新增SectionVersion PROJECT Evidence当前资格与Document/Parse物理来源内部最小投影，错项目/客户角色/失效/坏指纹/异常失败关闭，不泄露Locator/原文件名。兼容性/升级/回滚：未接线内部模块，无Schema/Migration/公开API/权限/配置/依赖/数据变化；撤适配器可回滚。验证：定向pytest5项/16子例、后端全量3512通过/3跳过/5455子例、上游Evidence隔离PG脚本退出0；新适配器真实章节PG写链未运行。已知问题：Section基底/Owner/Guard/Review/Trace、正式Server2025/信任、性能/Gate3/发行仍待；Debian13实机依指令跳过。

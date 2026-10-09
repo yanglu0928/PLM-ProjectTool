@@ -29,3 +29,5 @@ SOL-05-A02-P03 按 DEC-1169 复用 Requirement-owned 的当前批准版本证明
 SOL-05-A02-P04 按 DEC-1170 增加仅限内部的 PROJECT Evidence 现时/物理来源最小投影，严格限定 PM/实施成员并屏蔽 Locator/原文件名；定向、后端全量与上游 Evidence 隔离PG脚本通过。新适配器尚未接入真实SectionVersion PG写链，0138仍闭锁；见 `docs/progress/sol-05-a02-p04-section-evidence-use-proof.md`。本 CR 保持 OPEN。
 
 SOL-05-A02-P05 按 DEC-1171 增加 Section/父 Outline 同事务、同项目、活动态和批准指针/版本序列基底证明，固定 Outline→Section 锁顺序；定向与 Win11 可弃 PG18.6 正反例通过。此端口不验完整历史链/正式授权，也不解除 0138 写闭锁；见 `docs/progress/sol-05-a02-p05-section-version-base.md`。本 CR 保持 OPEN，未来 Guard 解锁须独立迁移/回滚与真实写链验证。
+
+SOL-05-A02-P06 按 DEC-1172 将有界 DRAFT 与 Section、Document、Requirement、Evidence 现时证明组合为同事务内部输入指纹；Artifact 裸引用无真实 Owner 时失败关闭。定向与后端回归通过后仅标内部编排，不宣称真实 PG 组合写链；当前 head 可弃 PG 直接复核 0138 写闭锁。旧 0138 完整脚本受后续 Owner 闭环/拒降门禁影响复跑未通过，保留诊断而不弱化约束。见 `docs/progress/sol-05-a02-p06-section-version-input-proof.md`。本 CR 保持 OPEN。

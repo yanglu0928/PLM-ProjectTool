@@ -51,6 +51,18 @@ def verify(port: int) -> None:
                 "INSERT INTO plm.prj_projects(project_id,project_code,project_code_normalized,"
                 "name,created_by) VALUES (%s,%s,%s,%s,%s)",
                 (project_id, code, code.lower(), code, actor))
+        try:
+            db.execute(
+                "INSERT INTO plm.sol_section_versions(solution_section_id,project_id,"
+                "version_no,title,content_artifact_ref,content_fingerprint,"
+                "assumptions,exclusions,declared_requirement_count,"
+                "declared_evidence_count,created_by) "
+                "VALUES (%s,%s,1,'Closed',%s,%s,'[]','[]',0,0,%s)",
+                (section, project, uuid.uuid4(), b"v" * 32, actor))
+        except psycopg.errors.RaiseException as error:
+            assert "SolutionSectionVersion Owner is not installed" in str(error), str(error)
+        else:
+            raise AssertionError("0138 SectionVersion write guard unexpectedly opened")
         # Disposable fixture rows are inserted without invoking write Owners;
         # the production guards remain unchanged after this connection closes.
         db.execute("SET session_replication_role='replica'")
@@ -122,8 +134,8 @@ def verify(port: int) -> None:
                 engine.dispose()
         finally:
             db.execute("SET session_replication_role='origin'")
-    print("SOL_05_A02_P05_SECTION_VERSION_BASE_PG_PASS: first/next, project isolation, "
-          "archival, predecessor gap rejection, guards unchanged")
+    print("SOL_05_A02_P05_SECTION_VERSION_BASE_PG_PASS: closed write guard, first/next, "
+          "project isolation, archival, predecessor gap rejection")
 
 
 def main() -> None:

@@ -11163,3 +11163,10 @@
 - Decision：先用不可变 Section 父 ID 选锁序，在调用者事务中独占锁父 Outline、再独占锁 Section 并重验项目/父子/ACTIVE/批准指针；共享锁最新 SectionVersion。首版无前驱，续版必须有同 Section/Project 且版本号相邻的前驱，才能给出下一版基底。保持为未接线端口，0138 写 Guard 不变。
 - Reason：避免 SectionVersion 写入基于跨项目/归档/过期父级或断档序列，也避免与 Section CREATE 的父子锁顺序相反。端口只证明当前基底，不宣称完整历史链、授权、Review 或真实写入。
 - Impact/Rollback：无 Schema/Migration/API/权限/配置/依赖/客户数据变化；撤未接线端口与验证资产可回滚。未来 Owner 同事务持锁、Guard 迁移与完整写链仍需独立验收；Gate3 不变。
+
+# DEC-20261009-1172：SectionVersion 输入只组合已有当前证明且 Artifact 失败关闭
+
+- Date/WBS：2026-10-09 / `SOL-05-A02-P06`；依据 Gate2 DM-05/API-04、CR-SOL-003 与 P01～P05 内部端口。
+- Decision：同一调用者事务中按 Section/Outline 基底、PROJECT DocumentVersion、当前批准 RequirementVersion、PROJECT Evidence 顺序重证；规范指纹绑定有界请求及各固定来源的当前摘要、版本/Review/锁事实。无 OutputArtifact Owner 的 Artifact UUID 在任何端口调用之前拒绝，不以裸 UUID 落库；不在此层做授权、写入、Review 或 Trace 决策。
+- Reason：仅靠输入 UUID/FK 不能保证现时同项目物理来源或历史指纹稳定；既有上游端口已封装相应权属规则，Solution 只消费最小投影。
+- Impact/Rollback：仅新增未接线 Application 模块/测试并补当前 head 的可弃 PG 0138 写闭锁断言，无 Schema/Migration/API/权限/配置/依赖/数据变化；撤增量即可回滚。真实受权 Owner/Guard 与 PG/HTTP 验证独立推进，Gate3 不变。

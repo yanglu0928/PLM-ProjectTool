@@ -15,3 +15,5 @@ Phase 2 Platform Core；WBS `SOL-05-A02-P05`。输入 Gate2 冻结 DM-05/API-04�
 兼容/升级/回滚：纯新增未接线内部端口与验证资产；无 Migration/API/权限变化，删除增量代码可回滚，既有历史保持。正式目标账户/Server2025、性能、AI 质量、Gate3、SectionVersion 写 Owner/Review/Trace/Artifact 仍未验；Debian13 实机依用户指令跳过。下一项 `SOL-05-A02-P06` 组合有界 DRAFT 输入与同事务各项来源证明，仍不开放写入。
 
 TraceLink：Gate2 DM-05/API-04 → CR-SOL-003/0138 → SOL-05-A02-P01～P04 → DEC-1171 → 本基底 → 组合输入证明 → Owner/Guard → VALIDATE/Review/Trace → Gate3。
+
+2026-10-09 P06 补充复验：当前 head 的可弃 PG 脚本新增 SectionVersion INSERT 被 0138 Owner Guard 拒绝的直接断言，完整脚本复跑退出0；未改变 P05 产品实现或将旧 0138 全量迁移脚本误计 PASS。
