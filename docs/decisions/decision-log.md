@@ -1,5 +1,13 @@
 # 自主决策记录
 
+## DEC-20261009-1132：GLOBAL 修订复用人工脱敏流程但隔离目标与待核对操作
+
+- Date/WBS：2026-10-09 / `SOL-01-A13-P01`，依据冻结 API-04、A11 结果客户端与现有 Global Source Picker。
+- Decision：保留现有逐项预览/原文核查/本人确认流程，为修订新增明确 ReferenceId/当前根 ETag 绑定及独立 pending key；不复用创建 pending 或旧 201 状态。写前重新 GET 当前根和来源预览，服务端仍重新证明确认。
+- Reason：修订允许改变来源，却不能以旧方案的人工确认或浏览器内创建记录替代新集合的确认；重放历史结果也不代表当前根。
+- Impact/Rollback：只规划 GLOBAL 前端路由/状态隔离，无后端合同/Schema/权限变化；撤下修订入口可回滚，既有创建流程保留。
+- Verification：静态对账，A13-P02 页面合同与 A13-P03 Edge/PG 尚未运行，故本项只标 PRECHECK。
+
 ## DEC-20261009-1131：PROJECT 修订按文档主来源与逐项核查组织页面
 
 - Date/WBS：2026-10-09 / `SOL-01-A12-P02`，依据冻结 API-04、A12-P01 前置核查和现有 Document/Evidence 受权读客户端。
