@@ -62,12 +62,14 @@ from plm_assistant.entrypoints.windows_solution_reference import (
     create_windows_project_reference_revise_router,
     create_windows_project_reference_eligibility_router,
     create_windows_project_reference_list_router,
+    create_windows_project_global_reference_candidate_router,
     create_windows_project_reference_read_router,
     create_windows_reference_deidentification_router,
 )
 from plm_assistant.entrypoints.windows_solution_reference_cursor import (
     create_windows_global_reference_list_cursor_codec,
     create_windows_project_reference_list_cursor_codec,
+    create_windows_project_global_reference_candidate_cursor_codec,
 )
 from plm_assistant.entrypoints.windows_solution_outline import (
     create_windows_outline_create_router,
@@ -656,6 +658,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         global_reference_list_router = None
         project_reference_read_router = None
         project_reference_list_router = None
+        project_global_reference_candidate_router = None
         reference_deidentification_router = None
         review_command_router = None
         if include_secret_read:
@@ -710,6 +713,16 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                     runtime=runtime, sessions=sessions, origins=origins,
                     license_guard=licenses.guard,
                     cursors=create_windows_project_reference_list_cursor_codec(),
+                )
+            )
+            project_global_reference_candidate_router = (
+                create_windows_project_global_reference_candidate_router(
+                    runtime=runtime, sessions=sessions, origins=origins,
+                    license_guard=licenses.guard,
+                    cursors=(
+                        create_windows_project_global_reference_candidate_cursor_codec()),
+                    document_storage_root=settings.data_root,
+                    parse_result_storage_root=settings.data_root,
                 )
             )
             capability_routers = create_windows_capability_routers(
@@ -1792,6 +1805,8 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             global_reference_list_router=global_reference_list_router,
             project_reference_read_router=project_reference_read_router,
             project_reference_list_router=project_reference_list_router,
+            project_global_reference_candidate_router=(
+                project_global_reference_candidate_router),
             reference_deidentification_router=reference_deidentification_router,
             review_command_router=review_command_router,
             maintenance_admission=maintenance_admission,

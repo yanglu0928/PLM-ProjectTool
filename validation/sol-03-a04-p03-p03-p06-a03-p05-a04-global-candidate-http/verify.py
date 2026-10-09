@@ -31,7 +31,8 @@ class Sessions:
             raise SessionError("AUTH_SESSION_EXPIRED")
 
 
-def on_http(*, reader, project, other_project, initial) -> None:
+def on_http(*, reader, project, other_project, initial,
+            router_override=None, **_unused) -> None:
     path = f"/api/v1/projects/{project}/global-reference-candidates"
     other_path = f"/api/v1/projects/{other_project}/global-reference-candidates"
     headers = {
@@ -40,7 +41,7 @@ def on_http(*, reader, project, other_project, initial) -> None:
     }
     with TestClient(create_app(), base_url="https://plm.example.test") as bare:
         assert bare.get(path, headers=headers).status_code == 404
-    router = create_project_global_reference_candidate_router(
+    router = router_override or create_project_global_reference_candidate_router(
         sessions=Sessions(), origins=LoginOriginPolicy(["https://plm.example.test"]),
         reads=reader)
     with TestClient(create_app(project_global_reference_candidate_router=router),

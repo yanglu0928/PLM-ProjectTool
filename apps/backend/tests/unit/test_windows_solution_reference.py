@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import unittest
+import tempfile
 from unittest.mock import Mock
+from pathlib import Path
 
 from plm_assistant.entrypoints.windows_solution_reference import (
     ProductionSolutionReferenceStartupError,
@@ -13,14 +15,43 @@ from plm_assistant.entrypoints.windows_solution_reference import (
     create_windows_project_reference_create_router,
     create_windows_project_reference_revise_router,
     create_windows_project_reference_list_router,
+    create_windows_project_global_reference_candidate_router,
     create_windows_project_reference_read_router,
     create_windows_reference_deidentification_router,
 )
 from plm_assistant.modules.solution.api.reference_list_cursor import ReferenceListCursorCodec
 from plm_assistant.modules.solution.api.global_reference_list_cursor import GlobalReferenceListCursorCodec
+from plm_assistant.modules.solution.application.global_reference_candidate_cursor import GlobalReferenceCandidateCursorCodec
 
 
 class WindowsSolutionReferenceTests(unittest.TestCase):
+    def test_project_global_candidate_factory_and_missing_dependencies(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            dependencies = dict(
+                runtime=Mock(unit_of_work=Mock()), sessions=Mock(), origins=Mock(),
+                license_guard=Mock(),
+                cursors=GlobalReferenceCandidateCursorCodec(b"c" * 32),
+                document_storage_root=root, parse_result_storage_root=root,
+            )
+            router = create_windows_project_global_reference_candidate_router(
+                **dependencies)
+            self.assertEqual(
+                [("POST", "/api/v1/projects/{project_id}/global-reference-candidates"),
+                 ("GET", "/api/v1/projects/{project_id}/global-reference-candidates")],
+                [(method, route.path) for route in router.routes
+                 for method in route.methods],
+            )
+            for key in dependencies:
+                with self.subTest(key=key), self.assertRaises(
+                        ProductionSolutionReferenceStartupError):
+                    create_windows_project_global_reference_candidate_router(
+                        **{**dependencies, key: None})
+            with self.assertRaises(ProductionSolutionReferenceStartupError):
+                create_windows_project_global_reference_candidate_router(
+                    **{**dependencies,
+                       "cursors": GlobalReferenceListCursorCodec(b"g" * 32)})
+
     def test_global_publication_only_explicit_factory_and_missing_dependency_fails_closed(self):
         dependencies = dict(
             runtime=Mock(unit_of_work=Mock()), sessions=Mock(), origins=Mock(),

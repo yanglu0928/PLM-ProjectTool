@@ -11051,3 +11051,10 @@
 - Decision：新增可选 `GET /api/v1/projects/{project_id}/global-reference-candidates`，查询只允许 `page_size`（1～100，默认20）和独立 `cursor` 且不能重复；可信 Host/Session 预验后 Owner 再重证。响应每项严格仅根 ID、固定版本 ID、人工审定标签、版本号及 ELIGIBLE 状态；空可见页允许 `has_more=true` 和非空下一游标，no-store。默认 `create_app` 不注入则 404。
 - Reason：与管理员 GLOBAL 列表隔离、不泄露原始名称或来源；项目页需要经审定标签，过滤空页也要保留原始根推进语义。
 - Impact/Rollback：增量非 Breaking 路径，不改旧 API/DB/依赖。移除可选路由即关闭入口，已发布/审计历史不动；Windows 正式密钥、目标账户及浏览器另验。
+
+# DEC-20261009-1156：项目 GLOBAL 候选只在 Windows 显式平台模式用独立 Vault 游标密钥装配
+
+- Date/WBS：2026-10-09 / `SOL-03-A04-P03-P03-P06-A03-P05-A05`；依据 CR-SOL-018、DEC-1155、已验 Windows 受控文件根与当前账户 SecretKeyProvider。
+- Decision：新增独立 `project-global-reference-candidate-list-cursor-v1` 密钥引用，不复用管理员/PROJECT Reference 游标；只在 `include_secret_read` 的两种显式平台模式装配项目候选路由，Document/Evidence/Parse 当前证明从受控本地根重建。缺密钥、安全端口或根路径时拒绝启动；默认登录模式保持 404。
+- Reason：项目候选 GET 依赖真实物理来源与专用游标完整性，不能以假证明、现有管理员列表或进程临时密钥上线。
+- Impact/Rollback：仅 Windows 组合与测试，无 Schema/旧 API/依赖变化。移除显式模式注入可关闭入口，发布历史保留；正式目标服务账户供钥/ACL/备份恢复及 Server2025/发行另验。

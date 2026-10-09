@@ -2,14 +2,22 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 from fastapi import APIRouter
 
 from plm_assistant.modules.auth.infrastructure.deployment_read_access import SqlAlchemyDeploymentReadAccess
 from plm_assistant.modules.auth.infrastructure.license_import_access import SqlAlchemyLicenseImportAccess
 from plm_assistant.modules.auth.infrastructure.project_read_access import SqlAlchemyProjectReadAccess
 from plm_assistant.modules.auth.infrastructure.project_write_access import SqlAlchemyProjectWriteAccess
+from plm_assistant.modules.document.application.prove_reference_use_document import ReferenceUseDocumentProofService
+from plm_assistant.modules.document.application.prove_reference_use_parse import ReferenceUseParseProofService
 from plm_assistant.modules.document.application.prove_fixed_source import DocumentFixedSourceProofService
+from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage
 from plm_assistant.modules.document.infrastructure.parse_result_read_repository import SqlAlchemyParseResultReadRepository
+from plm_assistant.modules.document.infrastructure.parse_result_storage import LocalParseResultStorage
+from plm_assistant.modules.document.infrastructure.reference_use_source import SqlAlchemyReferenceUseDocumentSource
+from plm_assistant.modules.evidence.application.prove_reference_use_evidence import ReferenceUseEvidenceProofService
 from plm_assistant.modules.document.infrastructure.reference_version_identity import SqlAlchemyReferenceVersionIdentity
 from plm_assistant.modules.evidence.application.fixed_global_reference_source import EvidenceFixedGlobalReferenceService
 from plm_assistant.modules.evidence.application.fixed_project_source import EvidenceFixedProjectSourceService
@@ -31,6 +39,7 @@ from plm_assistant.modules.solution.api.reference_eligibility import (
 )
 from plm_assistant.modules.solution.api.reference_deidentification import create_reference_deidentification_router
 from plm_assistant.modules.solution.api.global_reference_publication import create_global_reference_publication_router
+from plm_assistant.modules.solution.api.global_reference_candidates import create_project_global_reference_candidate_router
 from plm_assistant.modules.solution.api.reference_list import create_project_reference_list_router
 from plm_assistant.modules.solution.api.global_reference_read import create_global_reference_read_router
 from plm_assistant.modules.solution.api.global_reference_list import create_global_reference_list_router
@@ -41,6 +50,10 @@ from plm_assistant.modules.solution.application.create_reference_solution import
 from plm_assistant.modules.solution.application.revise_reference_solution import ReferenceReviseService
 from plm_assistant.modules.solution.application.set_reference_eligibility import ReferenceEligibilityService
 from plm_assistant.modules.solution.application.set_global_reference_publication import GlobalReferencePublicationService
+from plm_assistant.modules.solution.application.global_reference_candidate_cursor import GlobalReferenceCandidateCursorCodec
+from plm_assistant.modules.solution.application.list_global_reference_candidates import GlobalReferenceCandidateCatalog
+from plm_assistant.modules.solution.application.read_global_reference_candidates import GlobalReferenceCandidateReadService
+from plm_assistant.modules.solution.application.prove_reference_use import ReferenceUseProofService
 from plm_assistant.modules.solution.application.confirm_reference_deidentification import ReferenceDeidentificationConfirmService
 from plm_assistant.modules.solution.application.preview_reference_deidentification import ReferenceDeidentificationPreviewService
 from plm_assistant.modules.solution.application.lookup_reference_deidentification_operation import ReferenceDeidentificationOperationLookupService
@@ -53,6 +66,12 @@ from plm_assistant.modules.solution.infrastructure.reference_create_repository i
 from plm_assistant.modules.solution.infrastructure.reference_revise_repository import SqlAlchemyReferenceReviseRepository
 from plm_assistant.modules.solution.infrastructure.reference_eligibility_repository import SqlAlchemyReferenceEligibilityRepository
 from plm_assistant.modules.solution.infrastructure.global_reference_publication_repository import SqlAlchemyGlobalReferencePublicationRepository
+from plm_assistant.modules.solution.infrastructure.global_reference_candidate_repository import SqlAlchemyGlobalReferenceCandidateRepository
+from plm_assistant.modules.solution.infrastructure.reference_use_repository import (
+    SqlAlchemyCurrentGlobalConfirmationRepository,
+    SqlAlchemyCurrentReferenceUseRepository,
+)
+from plm_assistant.modules.solution.infrastructure.reference_use_source import CurrentReferenceSourceAdapter
 from plm_assistant.modules.solution.infrastructure.reference_read_repository import SqlAlchemyReferenceReadRepository
 from plm_assistant.modules.solution.infrastructure.global_reference_read_repository import SqlAlchemyGlobalReferenceReadRepository
 from plm_assistant.modules.solution.infrastructure.reference_deidentification_proof_repository import SqlAlchemyReferenceDeidentificationProofRepository
@@ -150,6 +169,51 @@ def create_windows_project_reference_list_router(
         return create_project_reference_list_router(
             sessions=sessions, origins=origins,
             reads=_read_service(runtime, license_guard), cursors=cursors)
+    except Exception:
+        raise ProductionSolutionReferenceStartupError() from None
+
+
+def create_windows_project_global_reference_candidate_router(
+    *, runtime, sessions, origins, license_guard,
+    cursors: GlobalReferenceCandidateCursorCodec,
+    document_storage_root: Path, parse_result_storage_root: Path,
+) -> APIRouter:
+    """Compose only explicit platform project discovery with real source proof."""
+    if any(value is None for value in (
+            runtime, sessions, origins, license_guard, cursors,
+            document_storage_root, parse_result_storage_root)):
+        raise ProductionSolutionReferenceStartupError()
+    try:
+        if type(cursors) is not GlobalReferenceCandidateCursorCodec:
+            raise ValueError("dedicated GLOBAL candidate cursor required")
+        documents = ReferenceUseDocumentProofService(
+            sources=SqlAlchemyReferenceUseDocumentSource(),
+            storage=LocalFileStorage(document_storage_root))
+        parses = ReferenceUseParseProofService(
+            documents=documents,
+            metadata=SqlAlchemyParseResultReadRepository(),
+            storage=LocalParseResultStorage(parse_result_storage_root))
+        evidence = ReferenceUseEvidenceProofService(
+            evidence=SqlAlchemyEvidenceFixedSourceRepository(),
+            documents=documents, parses=parses)
+        proof = ReferenceUseProofService(
+            references=SqlAlchemyCurrentReferenceUseRepository(),
+            sources=CurrentReferenceSourceAdapter(
+                documents=documents, evidence=evidence),
+            confirmations=SqlAlchemyCurrentGlobalConfirmationRepository())
+        catalog = GlobalReferenceCandidateCatalog(
+            repository=SqlAlchemyGlobalReferenceCandidateRepository(),
+            proof=proof)
+        service = GlobalReferenceCandidateReadService(
+            unit_of_work=runtime.unit_of_work,
+            access=SqlAlchemyProjectReadAccess(),
+            license_guard=license_guard,
+            authorization=ProjectAuthorizationService(
+                unit_of_work=runtime.unit_of_work,
+                repository=SqlAlchemyProjectAuthorizationRepository()),
+            catalog=catalog, cursor=cursors)
+        return create_project_global_reference_candidate_router(
+            sessions=sessions, origins=origins, reads=service)
     except Exception:
         raise ProductionSolutionReferenceStartupError() from None
 

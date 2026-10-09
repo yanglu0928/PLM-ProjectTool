@@ -116,7 +116,9 @@ def on_qualified(*, runtime, request, sources, audit, license_guard,
     assert second.items == (item,) and not second.has_more
     if on_published is not None:
         on_published(runtime=runtime, catalog=catalog, initial=initial,
-                     port=port)
+                     port=port, license_guard=license_guard,
+                     document_storage_root=downloads._storage._root,
+                     parse_result_storage_root=parse_results._storage._root)
     ReferenceEligibilityService(
         **common, repository=SqlAlchemyReferenceEligibilityRepository()).set(
             SetReferenceEligibility(
