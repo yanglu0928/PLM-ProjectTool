@@ -11156,3 +11156,10 @@
 - Decision：新增 Solution 内部 SectionEvidence 最小 DTO/适配器，调用项目固定来源服务并再次严格核对 PROJECT、同 Project、ELIGIBLE、PM/ImplementationMember、Evidence/Document固定ID、锁版本和32字节指纹。只返回版本写入需要的不可变事实，不返回Locator、原文件名、正文或客户角色内容；无授权/来源服务则失败关闭。未来装配须显式将上游服务角色限为PM/ImplementationMember，适配器仍独立拒绝过宽角色。此项不等于人工 Review/Trace，通过前不解锁0138写入。
 - Reason：单纯Evidence FK/ELIGIBLE列不证明物理文件/解析节点仍一致；Reference用途证明带不同类别语义。项目固定来源服务已将这些检查置于调用者事务，最小投影避免向Solution传播多余字段。
 - Impact/Rollback：仅未接线内部端口/测试，无Schema/API/权限配置/依赖/数据迁移；撤适配器回滚，未来Owner/实际PG链单独验证。
+
+# DEC-20261009-1171：SectionVersion 基底先锁父 Outline 再锁 Section
+
+- Date/WBS：2026-10-09 / `SOL-05-A02-P05`；依据 Gate2 DM-05/API-04、CR-SOL-003/0138 和已有 Section CREATE 锁顺序。
+- Decision：先用不可变 Section 父 ID 选锁序，在调用者事务中独占锁父 Outline、再独占锁 Section 并重验项目/父子/ACTIVE/批准指针；共享锁最新 SectionVersion。首版无前驱，续版必须有同 Section/Project 且版本号相邻的前驱，才能给出下一版基底。保持为未接线端口，0138 写 Guard 不变。
+- Reason：避免 SectionVersion 写入基于跨项目/归档/过期父级或断档序列，也避免与 Section CREATE 的父子锁顺序相反。端口只证明当前基底，不宣称完整历史链、授权、Review 或真实写入。
+- Impact/Rollback：无 Schema/Migration/API/权限/配置/依赖/客户数据变化；撤未接线端口与验证资产可回滚。未来 Owner 同事务持锁、Guard 迁移与完整写链仍需独立验收；Gate3 不变。

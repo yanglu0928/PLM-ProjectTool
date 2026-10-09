@@ -27,3 +27,5 @@ SOL-05-A02-P02 按 DEC-1168 增加仅限内部的 PROJECT DocumentVersion 正文
 SOL-05-A02-P03 按 DEC-1169 复用 Requirement-owned 的当前批准版本证明，并复跑既有 Win11 隔离PG脚本通过；不新增重复查询或把批准需求推定为章节覆盖。见 `docs/progress/sol-05-a02-p03-section-requirement-use-proof.md`。本 CR 保持 OPEN。
 
 SOL-05-A02-P04 按 DEC-1170 增加仅限内部的 PROJECT Evidence 现时/物理来源最小投影，严格限定 PM/实施成员并屏蔽 Locator/原文件名；定向、后端全量与上游 Evidence 隔离PG脚本通过。新适配器尚未接入真实SectionVersion PG写链，0138仍闭锁；见 `docs/progress/sol-05-a02-p04-section-evidence-use-proof.md`。本 CR 保持 OPEN。
+
+SOL-05-A02-P05 按 DEC-1171 增加 Section/父 Outline 同事务、同项目、活动态和批准指针/版本序列基底证明，固定 Outline→Section 锁顺序；定向与 Win11 可弃 PG18.6 正反例通过。此端口不验完整历史链/正式授权，也不解除 0138 写闭锁；见 `docs/progress/sol-05-a02-p05-section-version-base.md`。本 CR 保持 OPEN，未来 Guard 解锁须独立迁移/回滚与真实写链验证。
