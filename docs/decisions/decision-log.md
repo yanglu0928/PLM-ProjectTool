@@ -11191,3 +11191,10 @@
 - Decision：0159 增加 SectionVersion 首次 DRAFT 响应不可变存储形状，复合 FK 绑定固定 Version/Section/Project，字段 CHECK 限定请求/结果形状；独立 INSERT/UPDATE/DELETE/TRUNCATE Guard 全拒。版本与结果全字段一致、引用数量/ordinal 闭环以及仅 Document 正文分支由 P10 Guard 的同事务逻辑保证，本项不提前开放任何 DML。
 - Reason：持久幂等重放必须从不可变首次响应读取，不能从后续可变的 SectionVersion 状态重构；又不能在受权 Owner/闭环不足时允许孤儿或部分结果写入。
 - Impact/Rollback：仅增 ORM/0159 空表与临时 PG 验证，无 API/权限/配置/依赖/既有数据变化；空表可降回 0158，非空结果禁止降级，保留历史。P10/P11/正式环境另验，Gate3 不变。
+
+# DEC-20261009-1176：SectionVersion 四表空历史解锁 INSERT-only 原子闭环
+
+- Date/WBS：2026-10-09 / `SOL-05-A02-P10`；依据 Gate2 DM-05/API-04、CR-SOL-003/P07～P09、0138/0159 闭锁结构。
+- Decision：新增独立 0160 迁移，先审四表全空，才开放 DocumentVersion-only 的四表 INSERT；Outline→Section 活动父锁、DRAFT/无 Review/连续前驱、固定引用计数/ordinal、首响应全字段一致和延迟提交闭环共同约束。UPDATE/DELETE/TRUNCATE、Artifact 裸引用继续拒绝；真正来源资格、调用者授权和 Audit 属 P11 Owner。
+- Reason：部分版本/引用或首次响应不能在失败重试中成为正式历史，亦不能因首响应表存在就推定全字段和引用集合已绑定；空历史前提可避免无审计存量绕过新 Guard。
+- Impact/Rollback：0160 只替换 Guard 函数和增延迟触发器，无 ORM/公开 API/权限/配置/依赖及现有业务数据变化；四表空时可回 0159，任一非空拒降并保留历史。Win11 可弃 PG 验证通过但 P11/正式环境/Gate3 不自动放行。

@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-05-A02-P10 新增 `20261009_0160` SectionVersion 四表全空审计后 Document-only INSERT Guard、连续版本/前驱、固定引用与首次响应全字段匹配、延迟原子提交闭环；UPDATE/DELETE/TRUNCATE 仍拒绝。兼容性/升级/回滚：无公开 API/权限/配置/依赖/既有数据变化；空表可回退0159，任一历史非空拒降。验证：Win11可弃PG18.6空/有Section数据升级、异常存量拒升、空表降级重升、Document零/非零引用提交、缺引用/首响应/不匹配/Artifact/跳号回滚、历史不可变/非空拒降/drift脚本退出0；后端全量3526通过/3跳过/5510子测试。已知问题：P11真实受权Owner/现时来源/Audit/持久收据和P12 HTTP未开放；正式Server2025/信任、性能/AI质量/Gate3/发行未验，Debian13实机依指令跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-05-A02-P09 增加 `20261009_0159` SectionVersion 首次 201 DRAFT 结果闭锁表及 ORM，三元 FK/字段 CHECK 和 INSERT/UPDATE/DELETE/TRUNCATE 全拒；0138 根/子表仍闭锁。兼容性/升级/回滚：无 API/权限/配置/依赖/旧数据变化；空库与已有 Section 库均可升级，结果表空时可回退0158，非空拒降保留历史。验证：Win11可弃PG18.6空/有数据升级、空表降级重升、约束、DML Guard、非空拒降、drift脚本退出0；后端全量3526通过/3跳过/5510子测试。已知问题：字段与版本全相等/引用闭环待P10，CREATE/Review/Trace及正式Server2025/信任、性能/AI质量/Gate3/发行未验，Debian13实机依指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-05-A02-P08 新增 SectionVersion CREATE 的 Project-owned PM/实施成员独立操作策略和四角色/非成员/归档负例；未挂写入口。兼容性/升级/回滚：仅内部授权矩阵/测试，无Schema/Migration/公开API/配置/依赖/数据变化，撤策略可回滚。验证：定向pytest9项/754子例、后端全量3526通过/3跳过/5510子例、退出0。已知问题：0138仍闭锁，真实PG/HTTP CREATE、正式Server2025/信任、性能/质量/Gate3/发行未验，Debian13实机依指令跳过。
