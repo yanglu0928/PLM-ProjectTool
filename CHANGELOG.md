@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-05-A02-P12-P02 补 SectionVersion CREATE 的 Win11 Edge→Uvicorn loopback→一次性 PG18.6 网络验收资产，验证 201/重放/409/404/403/422/503 和单条版本/首响应/收据/Audit。兼容性/升级/回滚：无生产代码、Schema/API/权限/依赖/数据变化；可移除测试资产，正式历史不删。验证：真实 Edge/网络/PG 脚本退出0，P11 来源夹具及上游测试同次通过。已知问题：非 UI 页面或正式 HTTPS/账户/公钥/Server2025 验收；旧0138完整脚本未PASS，性能/AI质量/Gate3/发行未验，Debian13实机依指令跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-05-A02-P12-P01 新增 SectionVersion CREATE 严格可选 HTTP Router 与 Windows `--platform-write` 显式装配，默认应用404，201 DRAFT/Location/no-store/Trace 与错误合同保持冻结路径。兼容性/升级/回滚：无 Migration/API Breaking/权限/依赖/旧数据变化；禁用可选写装配可关入口，历史保留。验证：合同4通过/17子例、Win11可弃ASGI/PG真实Session/Document/合成Approved Requirement/Evidence、重放/角色/跨项目/CSRF/License/文件篡改/Artifact拒绝脚本退出0，后端全量3536通过/3跳过/5531子例。已知问题：真实Edge/网络尚待P12-P02；正式Server2025/信任、性能/AI质量/Gate3/发行未验，Debian13实机依指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-05-A02-P11 新增 SectionVersion 内部受权 CREATE Service/SQL Repository，当前 Session/CSRF/License/项目角色与 Document/Requirement/Evidence 证明后，同事务写 DRAFT 版本/固定引用/不可变首响应/Audit/持久收据；重放仍验当前权限，只读原结果。兼容性/升级/回滚：无 Migration/公开 API/权限/配置/依赖/旧数据变化；未挂入口可撤内部代码，已提交历史不可删。验证：Windows11可弃PG18.6真实来源/非空引用、经理/实施成员、同/异Key并发、来源失效/正文篡改、新建拒绝而原键重放、Artifact拒绝/Audit失败回滚脚本退出0；单元6/4子例，后端全量3532通过/3跳过/5514子例。已知问题：Requirement/Review批准夹具为合成事实，非客户确认；P12公开HTTP/Windows、正式Server2025/信任、性能/AI质量/Gate3/发行未验，Debian13实机依指令跳过。
