@@ -11149,3 +11149,10 @@
 - Decision：不新增同义 Requirement 查询/服务；后续 SectionVersion Owner 对每条固定 Requirement 根/版本在同一写事务中调用现有 Requirement-owned 最小端口，严格核对 Project、Version、摘要及 Review 身份。此事实只证明需求当前批准，不等于章节实现覆盖、Trace 一致或客户批准。
 - Reason：底层 SQL 已共享锁验证 ACTIVE 根/当前批准指针/APPROVED 版本与 Review，并经隔离 PG 正负例复验；重复服务会增加规则漂移风险。
 - Impact/Rollback：本项无程序/Schema/API/权限/配置/依赖/数据变化；未来如端口语义变动须重新评估。SectionVersion 写表仍由0138拒绝，Gate3不变。
+
+# DEC-20261009-1170：SectionVersion Evidence 使用项目固定来源最小投影
+
+- Date/WBS：2026-10-09 / `SOL-05-A02-P04`；依据 CR-SOL-003 与 `EvidenceFixedProjectSourceService` 已有同事务 Project/Session/Document/Parse 物理证明。
+- Decision：新增 Solution 内部 SectionEvidence 最小 DTO/适配器，调用项目固定来源服务并再次严格核对 PROJECT、同 Project、ELIGIBLE、PM/ImplementationMember、Evidence/Document固定ID、锁版本和32字节指纹。只返回版本写入需要的不可变事实，不返回Locator、原文件名、正文或客户角色内容；无授权/来源服务则失败关闭。未来装配须显式将上游服务角色限为PM/ImplementationMember，适配器仍独立拒绝过宽角色。此项不等于人工 Review/Trace，通过前不解锁0138写入。
+- Reason：单纯Evidence FK/ELIGIBLE列不证明物理文件/解析节点仍一致；Reference用途证明带不同类别语义。项目固定来源服务已将这些检查置于调用者事务，最小投影避免向Solution传播多余字段。
+- Impact/Rollback：仅未接线内部端口/测试，无Schema/API/权限配置/依赖/数据迁移；撤适配器回滚，未来Owner/实际PG链单独验证。

@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-05-A02-P04 新增SectionVersion PROJECT Evidence当前资格与Document/Parse物理来源内部最小投影，错项目/客户角色/失效/坏指纹/异常失败关闭，不泄露Locator/原文件名。兼容性/升级/回滚：未接线内部模块，无Schema/Migration/公开API/权限/配置/依赖/数据变化；撤适配器可回滚。验证：定向pytest5项/16子例、后端全量3512通过/3跳过/5455子例、上游Evidence隔离PG脚本退出0；新适配器真实章节PG写链未运行。已知问题：Section基底/Owner/Guard/Review/Trace、正式Server2025/信任、性能/Gate3/发行仍待；Debian13实机依指令跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-05-A02-P03 复核并复用Requirement-owned同事务当前批准版本证明，Win11隔离PG合成正负例脚本退出0；无重复服务或SectionVersion写入。兼容性/升级/回滚：仅复用决定与记录，无码/Schema/Migration/API/权限/配置/依赖/数据变化。已知问题：本项未运行SectionVersion写链/新全量测试；Evidence/Review/Trace、正式Server2025/信任、性能/Gate3/发行仍待，Debian13实机依指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-05-A02-P02 新增 SectionVersion PROJECT DocumentVersion 内部同事务固定身份/授权与物理字节证明适配器，错项目/归档/坏摘要/异常失败关闭，输出不含正文或Locator。兼容性/升级/回滚：未接线内部模块，无Schema/Migration/公开API/权限/配置/依赖/数据变化；撤适配器可回滚。验证：定向pytest5项/16子例，后端全量3507通过/3跳过/5439子例、退出0。已知问题：本项未运行SectionVersion真实PG写入，Requirement/Evidence/Artifact/Review与正式信任、Server2025、性能/Gate3/发行仍待；Debian13实机依指令跳过。
