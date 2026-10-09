@@ -130,6 +130,7 @@ def create_app(
     requirement_prototype_link_router: APIRouter | None = None,
     project_reference_create_router: APIRouter | None = None,
     project_reference_revise_router: APIRouter | None = None,
+    project_reference_eligibility_router: APIRouter | None = None,
     solution_outline_create_router: APIRouter | None = None,
     solution_section_create_router: APIRouter | None = None,
     solution_section_read_router: APIRouter | None = None,
@@ -138,6 +139,7 @@ def create_app(
     solution_outline_list_router: APIRouter | None = None,
     global_reference_create_router: APIRouter | None = None,
     global_reference_revise_router: APIRouter | None = None,
+    global_reference_eligibility_router: APIRouter | None = None,
     global_reference_read_router: APIRouter | None = None,
     global_reference_list_router: APIRouter | None = None,
     project_reference_read_router: APIRouter | None = None,
@@ -377,6 +379,8 @@ def create_app(
         app.include_router(project_reference_create_router)
     if project_reference_revise_router is not None:
         app.include_router(project_reference_revise_router)
+    if project_reference_eligibility_router is not None:
+        app.include_router(project_reference_eligibility_router)
     if solution_outline_create_router is not None:
         app.include_router(solution_outline_create_router)
     if solution_section_create_router is not None:
@@ -393,6 +397,8 @@ def create_app(
         app.include_router(global_reference_create_router)
     if global_reference_revise_router is not None:
         app.include_router(global_reference_revise_router)
+    if global_reference_eligibility_router is not None:
+        app.include_router(global_reference_eligibility_router)
     if global_reference_read_router is not None:
         app.include_router(global_reference_read_router)
     if global_reference_list_router is not None:

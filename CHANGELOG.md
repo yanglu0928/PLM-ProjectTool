@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A16-P04 新增默认关闭的 PROJECT/GLOBAL Reference Eligibility 冻结 `:set-eligibility` HTTP 路由，严格 Session/Origin/CSRF/强 If-Match/幂等/JSON 与首次 200 事件快照；`create_app` 仅增加两个可选注入点。兼容性/升级：无 DB/Migration/依赖/前端或冻结 API Breaking Change；不注入即 404，历史事件不可删除。验证：合同4/18子例、Win11 双 Scope 真实 ASGI/Session/临时 PG18.6 两决定/重放/权限/SQL、后端3405通过/3跳过/5197子例。已知问题：Windows 显式组合/UI/Edge、正式目标账户/20并发/Server2025、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A16-P03 按 CR-SOL-014/DEC-1137 新增 `0153` 资格受限 Guard，前向修复 0152 首笔资格锁下界；新增内部 PROJECT Manager/GLOBAL Admin 人工状态命令、当前 Document/Evidence/GLOBAL 确认同事务复验、不可变同号 200/Audit/Receipt，以及修订旧 ELIGIBLE 自动降 RESTRICTED 的事件与审计。兼容性/升级：`0152→0153`，已发 0152 不改；有资格历史拒降并前向修复，空历史可降重升；无依赖/前端/冻结 API 变化，公开入口仍默认关闭。验证：Win11 临时 PG18.6 空/有首版根迁移/闭合/拒降、PROJECT/GLOBAL 真实来源/角色/篡改/确认撤回/重放/回滚/修订失效及旧链回归，后端3401通过/3跳过/5179子例。已知问题：HTTP/Windows/UI/浏览器、正式目标账户/20并发/Server2025、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-01-A16-P02 新增 Reference 资格不可变事件/首次响应快照 ORM 与线性迁移 `0152`，默认拒绝事件 DML/直接根资格 UPDATE；拒绝无可信事件的历史 ELIGIBLE，存在事件拒降。兼容性/升级：`0151→0152`，无依赖、前端或冻结 API 变化；空历史可降重升，有历史只能前向修复；资格业务入口仍未开放。验证：Win11 临时 PG18.6 空/有首版根升级、约束/Guard/拒降、4 次 drift，后端 3398通过/3跳过/5154子例。已知问题：A16-P03 Owner/受限 Guard、HTTP/UI/浏览器、正式目标账户/20并发/Server2025、Gate3/UAT/发行未验；Debian13 实机依指令暂跳过。

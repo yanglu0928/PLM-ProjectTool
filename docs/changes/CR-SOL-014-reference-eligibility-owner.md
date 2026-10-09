@@ -1,6 +1,6 @@
 # CR-SOL-014：ReferenceSolution 资格状态受控确认
 
-日期：2026-10-09；状态：`INTERNAL_OWNER_PG_PASS_PUBLIC_API_CLOSED`（A16-P03 内部命令及 0153 Guard 已验，公开资格入口未开放）。依据 CR-EXEC-001 持续授权先记录后实施；Gate 2 原冻结提交 `64cdf09` 保留。TraceLink：API-04/DM-05 → CR-SOL-004/005/007、0139～0153 → SOL-01-A05/A14 → 本 CR。
+日期：2026-10-09；状态：`OPT_IN_HTTP_PG_PASS_WINDOWS_COMPOSITION_PENDING`（A16-P04 双 Scope 可选 HTTP/真实 PG 已验；默认与 Windows 当前组合未挂载）。依据 CR-EXEC-001 持续授权先记录后实施；Gate 2 原冻结提交 `64cdf09` 保留。TraceLink：API-04/DM-05 → CR-SOL-004/005/007、0139～0153 → SOL-01-A05/A14 → 本 CR。
 
 ## 来源、冲突与选择
 
