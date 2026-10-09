@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-03-A05-A03-P03 新增真实 Windows 11 临时 PG18.6/ASGI 双 Scope 历史读取验证脚本，覆盖签名分页、固定详情、成员/跨项目/Session/Origin/License 拒绝及默认关闭。兼容性/升级：无应用程序、Migration/Schema/API/依赖变化，只增可复验脚本。验证：脚本退出0，Alembic 无新升级操作；P02 全量后端3466通过/3跳过/5328子例未重跑。已知问题：Windows 正式独立密钥来源/恢复、UI/Gate3/发行未完成；Server2025 未运行本项，Debian13 实机依指令跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-03-A05-A03-P02 新增可选 OutlineVersion 历史 GET/LIST HTTP 合同，LIST 最小元数据、GET 固定引用/声明；Session/License/Project 成员、严格查询和独立游标验证，默认不挂载为 404，只有读路由时 POST 仍关闭。兼容性/升级：无 Migration/Schema/冻结路径/角色/依赖变化，撤可选路由即可回滚。验证：定向3项/14子例、后端全量3466通过/3跳过/5328子例。已知问题：真实 ASGI/PG、Windows 独立密钥来源/恢复、UI/Gate3/发行未完成。
 
 - 2026-10-09：0.1.0-dev.0/SOL-03-A05-A03-P01 新增 OutlineVersion 历史列表独立 HMAC-SHA256 签名游标，绑定 Session/Project/Outline/页大小/版本号，篡改及跨范围重放拒绝。兼容性/升级：无 Migration/Schema/冻结 HTTP/权限/依赖变化，未接线可撤。验证：定向2项/11子例、后端全量3463通过/3跳过/5314子例。已知问题：GET/LIST HTTP、Windows 正式独立密钥供给/恢复、UI/Gate3/发行未完成。
