@@ -10946,3 +10946,10 @@
 - Decision：按冻结 GLOBAL GET/List 路径实现独立只读 Owner 与 Windows 显式组合，首版只允许当前 DeploymentAdmin/License；不在无 ProjectId 的 GLOBAL 路径推断项目成员权限，不复用 PROJECT 签名游标或把历史来源声明为现时资格。Create 原 Key 精确回查与 GET/List 分开，确需新增操作时先记 Change Request。
 - Reason：当前 Create201 的 Location 未有 GLOBAL GET，影响对象定位；PROJECT Owner/仓储/游标把 ProjectId 作为身份和隔离边界，直接放宽会出现跨项目泄露。List/GET 也不能按名称安全确认超时 Create 的首次结果。
 - Impact/Rollback：本项纯设计，无公开/数据变更；后续逐项验证 PG/HTTP/Windows/UI。关闭新读路由可回滚入口，已创建 GLOBAL Reference 与审计历史保留；正式 License/账户、性能、真人确认和 Gate3 仍待。
+
+# DEC-20261009-1141：OutlineVersion DRAFT 输入集合的最小完整性
+
+- Date/WBS：2026-10-09 / `SOL-03-A04-P03-P03-P02`；依据冻结 API-04/DM-05、CR-SOL-002/017、现有 `0137/0154` 计数和不创建空 DRAFT 的前置决策。
+- Decision：创建输入必须有 1～100 个有序稳定 Section 身份；已批准 RequirementVersion 与 ELIGIBLE ReferenceVersion 允许各自为零，但若两者均空，必须有至少一条显式缺失声明。Requirement/Reference 上限各 500，集合保留用户顺序并拒绝重复根/版本，序号由 Owner 从 1 连续生成。缺失/冲突声明仅接受 JSON 对象数组（各最多 100，UTF-8 规范编码各不超过 64 KiB），不擅定未冻结的对象字段名；正式业务语义由后续 VALIDATE/Review 判定。项目/Outline 身份与当前资格只由服务端证明，不由客户端摘要声明。
+- Reason：允许合法的无参考来源方案和待补资料草案，但拒绝无章节/无来源亦无缺失说明的伪空版本；保留 DB 的零计数兼容及冻结的独立 VALIDATE 边界。统一规范编码供幂等请求指纹，内容指纹须在 Owner 加上现时来源证明，不能把裸 UUID 当内容证明。
+- Impact/Rollback：仅内部输入合同与测试，无数据库/API/角色变更；Owner/HTTP 尚未开放。若后续正式评审确认声明对象结构，另做兼容/迁移分析；撤回未接线合同即可回滚。Gate3 不据此通过。
