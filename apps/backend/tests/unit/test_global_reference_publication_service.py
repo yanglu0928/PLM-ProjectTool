@@ -5,6 +5,7 @@ import uuid
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, Mock
 
+from plm_assistant.modules.license.application.runtime_guard import RuntimeLicenseError
 from plm_assistant.modules.platform.application.idempotency import IdempotencyResult
 from plm_assistant.modules.solution.application.reference_source_qualification import (
     QualifiedReferenceSources, VerifiedReferenceDocument,
@@ -143,6 +144,14 @@ class GlobalReferencePublicationServiceTests(unittest.TestCase):
             with self.assertRaises(GlobalReferencePublicationError) as caught:
                 self.service.set(bad)
             self.assertEqual(caught.exception.code, "VALIDATION_FAILED")
+
+    def test_license_denial_prevents_publication(self) -> None:
+        self.guard.require_valid.side_effect = RuntimeLicenseError("LICENSE_EXPIRED")
+        with self.assertRaises(GlobalReferencePublicationError) as caught:
+            self.service.set(self.command)
+        self.assertEqual(caught.exception.code, "LICENSE_OPERATION_DENIED")
+        self.repo.current.assert_not_called()
+        self.repo.append.assert_not_called()
 
 
 if __name__ == "__main__":

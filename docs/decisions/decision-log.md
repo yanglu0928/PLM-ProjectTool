@@ -11009,3 +11009,10 @@
 - Decision：发布命令要求 DeploymentAdmin Session/CSRF、License、当前 GLOBAL Root/Version、最新 HUMAN ELIGIBLE 事件与固定来源/最新有效脱敏确认在同一写事务中重证；撤回命令要求当前版本与最新同版本 PUBLISH，但允许资格/确认已失效时仍留下明确撤回历史。Root 行锁串行事件号，客户端显式给出预期版本和事件号；同键重放只取不可变原事件，不追加 Audit。0158 Guard 只开放满足当前 Root/版本、顺序和状态图的 INSERT，UPDATE/DELETE/TRUNCATE 继续禁止。
 - Reason：资格/确认失效应即时使发布对项目候选不可用，但不妨碍管理员补记撤回；版本修订后的旧 PUBLISH 隐式不可见，新版本重审后可重新 PUBLISH。历史首次响应保持可追溯。
 - Impact/Rollback：仅 Solution 内部 Owner、Migration Guard 与测试；不接公开 API，不改旧 Reference/资格合同。0158 有发布事件时拒降；关闭后续入口并前向修复，不删除事件/Audit/收据历史。
+
+# DEC-20261009-1150：GLOBAL 候选发布使用独立管理员可选命令路由
+
+- Date/WBS：2026-10-09 / `SOL-03-A04-P03-P03-P06-A03-P03`；依据 CR-SOL-018 与已验 0158/内部 Owner。
+- Decision：新增默认不挂载的 `POST /api/v1/global/reference-solutions/{reference_solution_id}:set-candidate-publication`，统一承载 PUBLISH/REVOKE。严格正文仅接受 `reference_version_id`、`expected_event_no`、`event_kind`、`display_label`、`reason`；要求可信 Origin、Session/CSRF、Idempotency-Key；200 返回不可变事件身份/版本/事件号/状态/审定标签/原因/时间及 Trace、no-store。项目候选读取将是独立最小投影，不复用此管理员响应。
+- Reason：与现有 `:set-eligibility` 命令风格一致，显式预期版本/事件号避免后台列表过期后误操作；默认关闭直到 Windows 信任源装配通过。
+- Impact/Rollback：按 CR-SOL-018 新增非 Breaking 管理路径，不修改冻结旧路径/权限。撤掉可选路由即可回滚 API，已写事件/Audit/收据不删除；真实 ASGI/PG 与权限负例单独验证。
