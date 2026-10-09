@@ -196,6 +196,7 @@ class OrmMetadataTests(unittest.TestCase):
                       'plm.sol_outline_requirement_refs', 'plm.sol_section_versions',
                       'plm.sol_section_requirement_refs', 'plm.sol_section_evidence_refs',
                       'plm.sol_reference_solutions', 'plm.sol_reference_versions',
+                      'plm.sol_reference_revise_results',
                       'plm.sol_reference_document_refs', 'plm.sol_reference_evidence_refs',
                       'plm.sol_reference_deidentification_confirmations'):
             self.assertIn(table, Base.metadata.tables)

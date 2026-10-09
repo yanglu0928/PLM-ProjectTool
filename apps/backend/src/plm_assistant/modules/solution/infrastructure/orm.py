@@ -487,6 +487,42 @@ class ReferenceSolutionVersionRow(Base):
                                                  nullable=False, server_default=text("statement_timestamp()"))
 
 
+class ReferenceSolutionReviseResultRow(Base):
+    """Closed marker/snapshot for a revision's immutable first 201 result."""
+
+    __tablename__ = "sol_reference_revise_results"
+    __table_args__ = (
+        ForeignKeyConstraint(["reference_version_id", "reference_solution_id", "scope"],
+                             ["plm.sol_reference_versions.reference_version_id",
+                              "plm.sol_reference_versions.reference_solution_id",
+                              "plm.sol_reference_versions.scope"],
+                             name="fk_sol_reference_revise_results__version", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["supersedes_version_ref", "reference_solution_id", "scope"],
+                             ["plm.sol_reference_versions.reference_version_id",
+                              "plm.sol_reference_versions.reference_solution_id",
+                              "plm.sol_reference_versions.scope"],
+                             name="fk_sol_reference_revise_results__supersedes", ondelete="NO ACTION"),
+        CheckConstraint("scope IN ('GLOBAL','PROJECT')", name="ck_sol_reference_revise_results__scope"),
+        CheckConstraint("version_no>=2", name="ck_sol_reference_revise_results__number"),
+        CheckConstraint("supersedes_version_ref<>reference_version_id",
+                        name="ck_sol_reference_revise_results__not_self"),
+        CheckConstraint("octet_length(content_fingerprint)=32",
+                        name="ck_sol_reference_revise_results__content_fingerprint"),
+        CheckConstraint("octet_length(source_fingerprint)=32",
+                        name="ck_sol_reference_revise_results__source_fingerprint"),
+        CheckConstraint("isfinite(created_at)", name="ck_sol_reference_revise_results__created_at"),
+        {"schema": "plm"},
+    )
+    reference_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    reference_solution_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    scope: Mapped[str] = mapped_column(Text, nullable=False)
+    version_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    supersedes_version_ref: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    content_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    source_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False)
+
+
 class ReferenceSolutionDocumentRefRow(Base):
     __tablename__ = "sol_reference_document_refs"
     __table_args__ = (

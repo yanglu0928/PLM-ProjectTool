@@ -1,6 +1,6 @@
 # CR-SOL-013：ReferenceSolution 修订版本与当前指针受控写入
 
-日期：2026-10-09；状态：`PLANNED_NOT_IMPLEMENTED`。依据 CR-EXEC-001 持续授权先记录后实施；Gate 2 原冻结提交 `64cdf09` 保留。TraceLink：API-04/DM-05 → CR-SOL-004/005/007、0139～0144 → SOL-01-A04 → SOL-01-A05 → 本 CR。
+日期：2026-10-09；状态：`RESULT_SCHEMA_CLOSED_PASS_OWNER_PENDING`。依据 CR-EXEC-001 持续授权先记录后实施；Gate 2 原冻结提交 `64cdf09` 保留。TraceLink：API-04/DM-05 → CR-SOL-004/005/007、0139～0144 → SOL-01-A04 → SOL-01-A05 → 本 CR → SOL-01-A06/0149。
 
 ## 来源、冲突与选择
 
@@ -13,3 +13,5 @@
 只补冻结 Reference 修订能力，不修改 `/api/v1` 路径、角色、Scope、AI 或正式客户确认规则。与旧 0144 的差异是根的最小列 UPDATE 和可恢复的首次 201；保留所有旧版本/来源及原迁移。实施前细化 ORM、新 Alembic up/down、历史拒降与非空库升级；先在迁移中保持新能力关闭，再由 Owner/Guard 同任务解锁，避免裸露中间态。空库/有历史升级、约束/drift、空历史降级重升、已有修订历史拒降和向前修复路径必须验证。失败时撤下可选路由/关闭 Guard；不得删除已修订版本或强制回滚生产历史。
 
 必测 PROJECT/GLOBAL 权限、同项目/跨项目、当前版本与 supersedes 链、来源当前性和撤回、GLOBAL 脱敏绑定、并发同 Key/不同 Key、原 201 重放、指针/Audit/Receipt 原子回滚、直接 SQL 非法 UPDATE/DELETE/TRUNCATE、License/Session/CSRF、默认应用关闭及 Win11 隔离 PG。HTTP/Windows/UI/浏览器分别独立验收。正式目标账户、Server2025、20 并发和 Release 另验；未取得证据前本 CR 不能标 PASS。
+
+0149/A06 已新增关闭的首次结果表并把未受控 `version_no>1` INSERT 拒绝；Win11 隔离 PG 空/历史库迁移、drift、FK/Guard/历史拒降通过，最终后端全量3392通过/3跳过。根指针 UPDATE、结果写入、受权 Owner 和公开 Revise 均仍关闭；不得将 `RESULT_SCHEMA_CLOSED_PASS` 解释为本 CR 或 Reference 修订功能完成。
