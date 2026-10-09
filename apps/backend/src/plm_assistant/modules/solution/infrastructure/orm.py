@@ -673,6 +673,56 @@ class ReferenceSolutionEligibilityEventRow(Base):
         server_default=text("statement_timestamp()"))
 
 
+class GlobalReferencePublicationEventRow(Base):
+    """Closed append-only GLOBAL candidate label/revocation history."""
+
+    __tablename__ = "sol_global_reference_publication_events"
+    __table_args__ = (
+        UniqueConstraint("reference_solution_id", "event_no",
+                         name="uq_sol_global_publications__root_no"),
+        ForeignKeyConstraint(
+            ["reference_version_id", "reference_solution_id", "scope"],
+            ["plm.sol_reference_versions.reference_version_id",
+             "plm.sol_reference_versions.reference_solution_id",
+             "plm.sol_reference_versions.scope"],
+            name="fk_sol_global_publications__version", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["actor_id"], ["plm.auth_users.user_id"],
+                             name="fk_sol_global_publications__actor", ondelete="NO ACTION"),
+        CheckConstraint("scope='GLOBAL'", name="ck_sol_global_publications__scope"),
+        CheckConstraint("event_no>0", name="ck_sol_global_publications__number"),
+        CheckConstraint("event_kind IN ('PUBLISH','REVOKE')",
+                        name="ck_sol_global_publications__kind"),
+        CheckConstraint(
+            "(event_kind='PUBLISH' AND display_label IS NOT NULL AND "
+            "char_length(display_label) BETWEEN 1 AND 160 AND "
+            "display_label=btrim(display_label) AND "
+            "display_label !~ '[[:cntrl:]]') OR "
+            "(event_kind='REVOKE' AND display_label IS NULL)",
+            name="ck_sol_global_publications__label"),
+        CheckConstraint("char_length(reason) BETWEEN 1 AND 2000 AND "
+                        "reason=btrim(reason) AND reason !~ '[[:cntrl:]]'",
+                        name="ck_sol_global_publications__reason"),
+        CheckConstraint("isfinite(created_at)",
+                        name="ck_sol_global_publications__created_at"),
+        Index("ix_sol_global_publications__version", "reference_version_id", "event_no"),
+        {"schema": "plm"},
+    )
+
+    publication_event_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    reference_solution_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    reference_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    scope: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'GLOBAL'"))
+    event_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    event_kind: Mapped[str] = mapped_column(Text, nullable=False)
+    display_label: Mapped[str | None] = mapped_column(Text)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    actor_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"))
+
+
 class ReferenceSolutionDocumentRefRow(Base):
     __tablename__ = "sol_reference_document_refs"
     __table_args__ = (

@@ -10995,3 +10995,10 @@
 - Decision：在每个目录下提供独立版本列表和单版本详情路由；列表只显示元数据/计数并按版本号倒序分页，详情分别呈现创建时固定 Section/Requirement/Reference ID 和声明。使用明确的“历史快照、非现时资格/交付”提示，不把 GLOBAL 固定引用当成管理员发布候选，不展示来源正文/Locator，也不暴露编辑/确认控件。
 - Reason：与冻结只读 API 的投影及项目成员权限对齐，避免主目录详情承载过多历史内容；详情可反向核对固定引用和 Review 引用。
 - Impact/Rollback：仅前端 Solution 路由、视图、测试，沿用现有成员 Session 与读取客户端；无 Schema/API/权限/依赖变更。撤导航/视图可回滚，不影响版本历史；浏览器/正式服务账户仍独立验收。
+
+# DEC-20261009-1148：GLOBAL 参考候选标签采用固定版本发布事件账本
+
+- Date/WBS：2026-10-09 / `SOL-03-A04-P03-P03-P06-A03-P01`；依据 CR-SOL-018、冻结 ReferenceSolution/Version Scope 及现有资格事件的不可变历史模式。
+- Decision：新增只属于 Solution 的 GLOBAL 版本发布事件表，按同 Root 单调 `event_no` 记录 `PUBLISH/REVOKE`。`PUBLISH` 必须有经管理员审定的非敏感标签，`REVOKE` 不携带新标签；事件固定 GLOBAL Root/Version、审定人、原因和时间。旧库无事件即未发布。Schema 阶段所有 DML 封闭；后续 Owner 持 Root 锁核验当前版本、资格、确认、状态转换、Audit/收据，再开放受限 INSERT。项目候选只消费同 Root 最新事件且版本仍为当前的标签，不从 Root 原始名称回退。
+- Reason：版本修订或撤销后无需覆写旧标签，历史仍可审计；先封闭表可避免 Schema 可写而权限/审定流程尚未安装。
+- Impact/Rollback：新增 `0157` ORM/迁移与测试，不改旧表/旧 API。空表可降级；一旦有事件即拒降并保留历史。后续 Owner/HTTP/UI/正式服务账户独立验收，Gate3 不变。
