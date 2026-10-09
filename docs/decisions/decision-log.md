@@ -11177,3 +11177,10 @@
 - Decision：按 P08 Project 操作授权、P09 不可变首响应闭锁表、P10 空历史前提 INSERT-only Guard/延迟完整性、P11 真正同事务 Owner/收据/Audit、P12 HTTP/Windows 顺序实施；首个 CREATE 仅支持可证明的 PROJECT DocumentVersion，Artifact/Spec 分支保持关闭。每项先记录迁移/回滚与验证，历史非空不得降级或擦除。
 - Reason：当前 Project POLICIES 缺操作，0138 全拒写且无首响应表，P06 仅单元桩；先开放 CREATE 会绕过权限或让失败重试丢失原始结果。旧 0138 全量脚本不适配后续 0146/0148 的拒降约束，应使用当前 head 独立验证而非弱化约束。
 - Impact/Rollback：本决策仅设计记录，无程序/Schema/API/数据变化；后续每片独立 ORM/Migration/PG/并发证据。撤实施计划可回滚，冻结历史不变，Gate3 不自动放行。
+
+# DEC-20261009-1174：SectionVersion CREATE 复用 Project 当前成员写策略
+
+- Date/WBS：2026-10-09 / `SOL-05-A02-P08`；依据冻结 API-04 和 CR-SOL-003/P07 顺序。
+- Decision：新增独立 `SOL_SECTION_VERSION_CREATE` OperationId，仅 PM/ImplementationMember，作为 Project 写操作锁定当前成员/归档事实；不复用 `SOL_SECTION_CREATE` 令牌语义，也不提前挂 Solution Owner/API。
+- Reason：独立版本创建需可审计的精确权限合同，不能因 Section 身份 CREATE 已获授权就推定版本 CREATE 授权；现有 Project 服务已有锁/隐藏/归档语义。
+- Impact/Rollback：只增内部策略和测试，无 Schema/Migration/API/配置/依赖/数据变化；撤策略可回滚。0138 Guard/正式入口不变，后续真实 PG/HTTP 验证独立完成。
