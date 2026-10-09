@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-01-A16-P05 将 Reference Eligibility 双 Scope 资格写接入 Windows 显式 `--platform-write` 组合；默认/只读继续关闭，缺安全依赖启动失败关闭。兼容性/升级：无 DB/Migration/依赖/冻结 API 变化，目标库需既有 `0153`；撤组合路由并重启可回退入口，历史资格事件/Audit 保留。验证：Win11 两个 Windows 工厂真实 ASGI/Session/隔离 PG18.6 脚本退出0，生产入口合同38通过/12子例，后端全量3405通过/3跳过/5199子例。已知问题：前端/Edge/真人确认、正式信任/账户/20并发/Server2025、Gate3/UAT/发行未验；Debian13实机依指令跳过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-01-A16-P04 新增默认关闭的 PROJECT/GLOBAL Reference Eligibility 冻结 `:set-eligibility` HTTP 路由，严格 Session/Origin/CSRF/强 If-Match/幂等/JSON 与首次 200 事件快照；`create_app` 仅增加两个可选注入点。兼容性/升级：无 DB/Migration/依赖/前端或冻结 API Breaking Change；不注入即 404，历史事件不可删除。验证：合同4/18子例、Win11 双 Scope 真实 ASGI/Session/临时 PG18.6 两决定/重放/权限/SQL、后端3405通过/3跳过/5197子例。已知问题：Windows 显式组合/UI/Edge、正式目标账户/20并发/Server2025、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-01-A16-P03 按 CR-SOL-014/DEC-1137 新增 `0153` 资格受限 Guard，前向修复 0152 首笔资格锁下界；新增内部 PROJECT Manager/GLOBAL Admin 人工状态命令、当前 Document/Evidence/GLOBAL 确认同事务复验、不可变同号 200/Audit/Receipt，以及修订旧 ELIGIBLE 自动降 RESTRICTED 的事件与审计。兼容性/升级：`0152→0153`，已发 0152 不改；有资格历史拒降并前向修复，空历史可降重升；无依赖/前端/冻结 API 变化，公开入口仍默认关闭。验证：Win11 临时 PG18.6 空/有首版根迁移/闭合/拒降、PROJECT/GLOBAL 真实来源/角色/篡改/确认撤回/重放/回滚/修订失效及旧链回归，后端3401通过/3跳过/5179子例。已知问题：HTTP/Windows/UI/浏览器、正式目标账户/20并发/Server2025、Gate3/UAT/发行未验；Debian13实机依指令暂跳过。

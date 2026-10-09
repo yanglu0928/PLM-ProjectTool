@@ -34,7 +34,7 @@ SPEC.loader.exec_module(fixture)
 
 
 def on_qualified(*, runtime, request, sources, audit, license_guard,
-                 confirmed, port, **_unused) -> None:
+                 confirmed, port, router_factory=None, **_unused) -> None:
     auth = ProjectAuthorizationService(
         unit_of_work=runtime.unit_of_work,
         repository=SqlAlchemyProjectAuthorizationRepository())
@@ -56,9 +56,14 @@ def on_qualified(*, runtime, request, sources, audit, license_guard,
     sessions = SessionService(
         unit_of_work=runtime.unit_of_work,
         repository=SqlAlchemySessionRepository(), issue_access=object(), audit=audit)
-    router = create_global_reference_eligibility_router(
-        sessions=sessions, origins=LoginOriginPolicy(["https://plm.example.test"]),
-        eligibility=service)
+    origins = LoginOriginPolicy(["https://plm.example.test"])
+    router = (create_global_reference_eligibility_router(
+        sessions=sessions, origins=origins, eligibility=service)
+        if router_factory is None else router_factory(
+            runtime=runtime, sessions=sessions, origins=origins,
+            license_guard=license_guard, audit=audit,
+            documents=_unused["documents"], downloads=_unused["downloads"],
+            parse_results=_unused["parse_results"]))
     path = (f"/api/v1/global/reference-solutions/"
             f"{initial.reference_solution_id}:set-eligibility")
     headers = {

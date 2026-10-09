@@ -576,13 +576,15 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertNotIn("private", str(caught.exception))
         self.assertEqual(runtime.dispose.call_count, 2)
 
-    def test_reference_revise_constructor_failure_disposes_write_only(self):
+    def test_reference_write_constructor_failure_disposes_write_only(self):
         from contextlib import ExitStack
         from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
 
         prefix = "plm_assistant.entrypoints.production_login."
         for name in ("create_windows_global_reference_revise_router",
-                     "create_windows_project_reference_revise_router"):
+                     "create_windows_project_reference_revise_router",
+                     "create_windows_global_reference_eligibility_router",
+                     "create_windows_project_reference_eligibility_router"):
             runtime = Mock()
             runtime.is_ready.return_value = True
             with self.subTest(name=name), ExitStack() as stack:
@@ -602,7 +604,7 @@ class ProductionLoginTests(unittest.TestCase):
                     "plm_assistant.entrypoints.windows_secret_write.create_windows_secret_write_service",
                     return_value=Mock()))
                 failed = stack.enter_context(patch(
-                    prefix + name, side_effect=RuntimeError("private Reference revise dependency")))
+                    prefix + name, side_effect=RuntimeError("private Reference write dependency")))
                 read_app = create_production_platform_app(self.settings(("http://localhost",)))
                 with TestClient(read_app, base_url="http://localhost") as client:
                     self.assertEqual(client.get("/health/ready").status_code, 200)

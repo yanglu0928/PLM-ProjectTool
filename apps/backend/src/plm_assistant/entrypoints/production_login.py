@@ -54,10 +54,12 @@ from plm_assistant.entrypoints.windows_prototype import (
 from plm_assistant.entrypoints.windows_solution_reference import (
     create_windows_global_reference_create_router,
     create_windows_global_reference_revise_router,
+    create_windows_global_reference_eligibility_router,
     create_windows_global_reference_read_router,
     create_windows_global_reference_list_router,
     create_windows_project_reference_create_router,
     create_windows_project_reference_revise_router,
+    create_windows_project_reference_eligibility_router,
     create_windows_project_reference_list_router,
     create_windows_project_reference_read_router,
     create_windows_reference_deidentification_router,
@@ -631,6 +633,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         requirement_prototype_link_router = None
         project_reference_create_router = None
         project_reference_revise_router = None
+        project_reference_eligibility_router = None
         solution_outline_create_router = None
         solution_section_create_router = None
         solution_outline_read_router = None
@@ -639,6 +642,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         solution_outline_list_router = None
         global_reference_create_router = None
         global_reference_revise_router = None
+        global_reference_eligibility_router = None
         global_reference_read_router = None
         global_reference_list_router = None
         project_reference_read_router = None
@@ -904,6 +908,22 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 )
                 project_reference_revise_router = (
                     create_windows_project_reference_revise_router(
+                        runtime=runtime, sessions=sessions, origins=origins,
+                        license_guard=licenses.guard, audit=audit,
+                        documents=document_reads, downloads=document_downloads,
+                        parse_results=evidence_results_for_viewer,
+                    )
+                )
+                global_reference_eligibility_router = (
+                    create_windows_global_reference_eligibility_router(
+                        runtime=runtime, sessions=sessions, origins=origins,
+                        license_guard=licenses.guard, audit=audit,
+                        documents=document_reads, downloads=document_downloads,
+                        parse_results=evidence_results_for_viewer,
+                    )
+                )
+                project_reference_eligibility_router = (
+                    create_windows_project_reference_eligibility_router(
                         runtime=runtime, sessions=sessions, origins=origins,
                         license_guard=licenses.guard, audit=audit,
                         documents=document_reads, downloads=document_downloads,
@@ -1725,6 +1745,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             ),
             project_reference_create_router=project_reference_create_router,
             project_reference_revise_router=project_reference_revise_router,
+            project_reference_eligibility_router=project_reference_eligibility_router,
             solution_outline_create_router=solution_outline_create_router,
             solution_section_create_router=solution_section_create_router,
             solution_section_read_router=solution_section_read_router,
@@ -1733,6 +1754,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             solution_outline_list_router=solution_outline_list_router,
             global_reference_create_router=global_reference_create_router,
             global_reference_revise_router=global_reference_revise_router,
+            global_reference_eligibility_router=global_reference_eligibility_router,
             global_reference_read_router=global_reference_read_router,
             global_reference_list_router=global_reference_list_router,
             project_reference_read_router=project_reference_read_router,

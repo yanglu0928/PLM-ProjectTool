@@ -31,7 +31,7 @@ fixture = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(fixture)
 
 
-def on_created(**facts) -> None:
+def on_created(*, router_factory=None, **facts) -> None:
     runtime, audit = facts["runtime"], facts["audit"]
     sessions = SessionService(
         unit_of_work=runtime.unit_of_work,
@@ -47,9 +47,14 @@ def on_created(**facts) -> None:
         repository=SqlAlchemyReferenceEligibilityRepository(),
         receipts=SqlAlchemyIdempotencyReceipts(), audit=audit,
     )
-    router = create_project_reference_eligibility_router(
-        sessions=sessions, origins=LoginOriginPolicy(["https://plm.example.test"]),
-        eligibility=service)
+    origins = LoginOriginPolicy(["https://plm.example.test"])
+    router = (create_project_reference_eligibility_router(
+        sessions=sessions, origins=origins, eligibility=service)
+        if router_factory is None else router_factory(
+            runtime=runtime, sessions=sessions, origins=origins,
+            license_guard=facts["license_guard"], audit=audit,
+            documents=facts["documents"], downloads=facts["downloads"],
+            parse_results=facts["parse_results"]))
     root = facts["created"].reference_solution_id
     path = (f"/api/v1/projects/{facts['project']}/reference-solutions/"
             f"{root}:set-eligibility")
