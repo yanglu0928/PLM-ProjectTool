@@ -1398,6 +1398,37 @@ export class SessionClient {
     finally { window.clearTimeout(timer); this.#busy = false; }
   }
 
+  /** Reference revision is a single guarded write; the caller owns uncertain-result recovery. */
+  async postReferenceRevise(scope: "PROJECT" | "GLOBAL", referenceId: string,
+    projectId: string | null, body: string, etag: string, idempotencyKey: string): Promise<Response> {
+    if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
+    if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
+    if (!identifier(referenceId) || (scope === "PROJECT" ? !identifier(projectId) : projectId !== null)
+      || !["PROJECT", "GLOBAL"].includes(scope)
+      || typeof body !== "string" || !body || new TextEncoder().encode(body).length > 128 * 1024
+      || !/^"v(?:0|[1-9]\d*)"$/.test(etag) || !Number.isSafeInteger(Number(etag.slice(2, -1)))
+      || typeof idempotencyKey !== "string" || !/^[\x20-\x7e]{16,128}$/.test(idempotencyKey)) {
+      throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    }
+    const base = scope === "PROJECT" ? `/api/v1/projects/${projectId}` : "/api/v1/global";
+    this.#busy = true;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
+    try {
+      const fetcher = this.fetcher;
+      const response = await fetcher(`${base}/reference-solutions/${referenceId}:revise`, {
+        method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error",
+        headers: { Accept: "application/json", "Content-Type": "application/json",
+          "X-CSRF-Token": this.#csrf, "If-Match": etag, "Idempotency-Key": idempotencyKey },
+        body, signal: controller.signal,
+      });
+      if (controller.signal.aborted) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+      if (response.status === 401) { this.#csrf = null; this.#view = null; }
+      return response;
+    } catch { throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE"); }
+    finally { window.clearTimeout(timer); this.#busy = false; }
+  }
+
   async #postGlobalReferenceDeidentification(action: "preview" | "confirm" | "revoke" | "lookup",
     body: string, idempotencyKey?: string, confirmationId?: string): Promise<Response> {
     if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
