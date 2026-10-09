@@ -87,4 +87,14 @@ describe("OutlineVersion history read client", () => {
     await expect(client.detail(project, outline, "bad")).rejects.toBeInstanceOf(OutlineVersionReadError);
     expect(fetcher).not.toHaveBeenCalled();
   });
+
+  it("calls a browser-style fetch without binding the client as this", async () => {
+    let bound: unknown = "unobserved";
+    const fetcher = function (this: unknown) {
+      bound = this;
+      return Promise.resolve(response({ items: [], next_cursor: null, has_more: false }));
+    } as typeof fetch;
+    await new OutlineVersionReadClient(fetcher).list(project, outline);
+    expect(bound).toBeUndefined();
+  });
 });
