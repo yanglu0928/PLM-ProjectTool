@@ -11030,3 +11030,10 @@
 - Decision：不复用管理员 GLOBAL 列表/详情。项目只读 Owner 先验 Session/License 与 PM/IM 项目资格，再从最新同版 PUBLISH 事件取得人工审定标签，并对每个候选在当前事务复核 Reference/Document/Evidence/有效脱敏确认。响应只给固定身份、标签、版本号和资格状态；CREATE 自行重证。有限扫描以原始根 ID 推进，签名游标绑定 Session/Project/page size，可见项少于页大小或空页不等于结束。
 - Reason：管理员投影含原始名称与来源字段，现有 ReferenceUseProof 不负责项目授权；按过滤后结果游标分页会在撤回/过期时漏项。独立读面保住权限、敏感信息及分页稳定边界。
 - Impact/Rollback：本决策先为设计对账，无程序/API/Schema/依赖变化。后续按仓储/Owner/HTTP/Windows/浏览器分项验收；关闭可选项目路由时发布历史保留，Gate 3 不因本决策通过。
+
+# DEC-20261009-1153：GLOBAL 候选内部扫描先过滤发布/版本，再做现时证明
+
+- Date/WBS：2026-10-09 / `SOL-03-A04-P03-P03-P06-A03-P05-A02`；依据 CR-SOL-018、DEC-1152 与现有 `ReferenceUseProofService`。
+- Decision：仓储按 GLOBAL 原始根 ID 有界读取并只构造最新同版 PUBLISH/ELIGIBLE 候选最小字段；服务逐项调用 ReferenceUseProof，同事务证明失败的候选不进入结果，仓储异常整体失败关闭。游标锚点取本页已扫描的最后原始根，不从可见结果推导。项目 Session/License/角色授权与签名游标在下一项 Owner 完成前不开放外部入口。
+- Reason：既有证明端口不负责公开授权，且过期确认/物理来源漂移在读取期间可能发生；独立内部层需能不泄露原名地安全隐藏失效候选，同时保留分页前进能力。
+- Impact/Rollback：仅 Solution 内部只读代码与测试，无 Schema/API/权限/依赖变化。可撤内部未挂载组件回滚，已发布事件历史不变；后续需验证真实 PG、鉴权、游标和性能。
