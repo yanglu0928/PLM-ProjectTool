@@ -21,6 +21,8 @@ from plm_assistant.modules.project.application.authorization import ProjectAutho
 from plm_assistant.modules.project.infrastructure.authorization_repository import SqlAlchemyProjectAuthorizationRepository
 from plm_assistant.modules.solution.api.outline_create import create_outline_create_router
 from plm_assistant.modules.solution.api.outline_version_create import create_outline_version_create_router
+from plm_assistant.modules.solution.api.outline_version_read import create_outline_version_read_router
+from plm_assistant.modules.solution.api.outline_version_list_cursor import OutlineVersionListCursorCodec
 from plm_assistant.modules.solution.api.section_create import create_section_create_router
 from plm_assistant.modules.solution.api.outline_list import create_outline_list_router
 from plm_assistant.modules.solution.api.outline_read import create_outline_read_router
@@ -30,6 +32,7 @@ from plm_assistant.modules.solution.api.section_list_cursor import SectionListCu
 from plm_assistant.modules.solution.api.outline_list_cursor import OutlineListCursorCodec
 from plm_assistant.modules.solution.application.create_outline import OutlineCreateService
 from plm_assistant.modules.solution.application.create_outline_version import OutlineVersionCreateService
+from plm_assistant.modules.solution.application.read_outline_version import OutlineVersionReadService
 from plm_assistant.modules.solution.application.create_section import SectionCreateService
 from plm_assistant.modules.solution.application.prove_outline_section_use import OutlineSectionUseProofService
 from plm_assistant.modules.solution.application.prove_outline_version_input import OutlineVersionInputProofService
@@ -41,6 +44,7 @@ from plm_assistant.modules.solution.application.read_section import SectionReadS
 from plm_assistant.modules.solution.infrastructure.outline_create_repository import SqlAlchemyOutlineCreateRepository
 from plm_assistant.modules.solution.infrastructure.outline_version_base import SqlAlchemyCurrentOutlineVersionBase
 from plm_assistant.modules.solution.infrastructure.outline_version_create_repository import SqlAlchemyOutlineVersionCreateRepository
+from plm_assistant.modules.solution.infrastructure.outline_version_read_repository import SqlAlchemyOutlineVersionReadRepository
 from plm_assistant.modules.solution.infrastructure.section_create_repository import SqlAlchemySectionCreateRepository
 from plm_assistant.modules.solution.infrastructure.outline_read_repository import SqlAlchemyOutlineReadRepository
 from plm_assistant.modules.solution.infrastructure.section_read_repository import SqlAlchemySectionReadRepository
@@ -120,6 +124,34 @@ def create_windows_outline_list_router(
             repository=SqlAlchemyOutlineReadRepository(),
         )
         return create_outline_list_router(
+            sessions=sessions, origins=origins, reads=service,
+            cursors=cursors)
+    except Exception:
+        raise ProductionSolutionOutlineStartupError() from None
+
+
+def create_windows_outline_version_read_router(
+    *, runtime, sessions, origins, license_guard,
+    cursors: OutlineVersionListCursorCodec,
+) -> APIRouter:
+    """Mount historical GET/LIST only with dedicated cursor and read trust."""
+    if any(value is None for value in (
+            runtime, sessions, origins, license_guard, cursors)):
+        raise ProductionSolutionOutlineStartupError()
+    if type(cursors) is not OutlineVersionListCursorCodec:
+        raise ProductionSolutionOutlineStartupError()
+    try:
+        service = OutlineVersionReadService(
+            unit_of_work=runtime.unit_of_work,
+            access=SqlAlchemyProjectReadAccess(),
+            license_guard=license_guard,
+            authorization=ProjectAuthorizationService(
+                unit_of_work=runtime.unit_of_work,
+                repository=SqlAlchemyProjectAuthorizationRepository()),
+            outlines=SqlAlchemyOutlineReadRepository(),
+            versions=SqlAlchemyOutlineVersionReadRepository(),
+        )
+        return create_outline_version_read_router(
             sessions=sessions, origins=origins, reads=service,
             cursors=cursors)
     except Exception:
