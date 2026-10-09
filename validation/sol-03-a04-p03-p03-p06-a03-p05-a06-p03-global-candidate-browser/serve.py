@@ -9,6 +9,7 @@ from pathlib import Path
 from threading import Thread
 from time import monotonic, sleep
 
+import httpx
 import psycopg
 import uvicorn
 from fastapi import HTTPException
@@ -172,6 +173,11 @@ def on_http(*, runtime, port, project, other_project, initial,
                 raise RuntimeError("GLOBAL candidate browser proof failed: "
                                    f"{result.stdout[-3000:]} {result.stderr[-3000:]}")
             print(result.stdout.strip(), flush=True)
+            _source_drift_rejected(
+                port=port, origin=origin, project=project, outline=outline,
+                section=section, initial=initial,
+                document_storage_root=document_storage_root,
+                token=token, csrf=csrf)
         finally:
             server.should_exit = True
             worker.join(timeout=15)
@@ -192,6 +198,73 @@ def on_http(*, runtime, port, project, other_project, initial,
         assert db.execute(
             "SELECT count(*) FROM plm.aud_events WHERE action='SOL_OUTLINE_VERSION_CREATED' "
             "AND target_object_id=%s", (outline,)).fetchone()[0] == 1
+
+
+def _source_drift_rejected(*, port, origin, project, outline, section, initial,
+                           document_storage_root, token, csrf) -> None:
+    """After a browser GET, current source proof must still fence CREATE."""
+    with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
+                         dbname="postgres", autocommit=True) as db:
+        rows = db.execute(
+            "SELECT storage_locator FROM plm.doc_file_objects WHERE scope='GLOBAL' "
+            "AND file_state='AVAILABLE'").fetchall()
+        assert len(rows) == 1, "expected one disposable GLOBAL source file"
+        before_versions = db.execute(
+            "SELECT count(*) FROM plm.sol_outline_versions WHERE solution_outline_id=%s",
+            (outline,)).fetchone()[0]
+        before_audit = db.execute(
+            "SELECT count(*) FROM plm.aud_events WHERE action='SOL_OUTLINE_VERSION_CREATED' "
+            "AND target_object_id=%s", (outline,)).fetchone()[0]
+        before_receipts = db.execute(
+            "SELECT count(*) FROM plm.plt_idempotency_receipts "
+            "WHERE operation='V1_SOL_OUTLINE_VERSION_CREATE'").fetchone()[0]
+    root = Path(document_storage_root).resolve(strict=True)
+    target = (root / rows[0][0]).resolve(strict=True)
+    if not target.is_relative_to(root) or not target.is_file():
+        raise RuntimeError("Disposable source path escaped controlled root")
+    original = target.read_bytes()
+    payload = {
+        "section_ids": [str(section)], "requirement_refs": [],
+        "reference_refs": [{
+            "scope": "GLOBAL",
+            "reference_solution_id": str(initial.reference_solution_id),
+            "reference_version_id": str(initial.reference_version_id),
+        }],
+        "missing_declarations": [], "conflict_declarations": [],
+    }
+    path = f"/api/v1/projects/{project}/global-reference-candidates"
+    write = f"/api/v1/projects/{project}/solution-outlines/{outline}/versions"
+    headers = {"cookie": "plm_session=" + token.hex(), "origin": origin}
+    try:
+        target.write_bytes(b"X" * len(original))
+        with httpx.Client(base_url=origin, timeout=10) as client:
+            hidden = client.get(path, headers=headers)
+            assert hidden.status_code == 200, hidden.text
+            assert hidden.json()["data"]["items"] == []
+            refused = client.post(
+                write, headers={**headers, "x-csrf-token": csrf.hex(),
+                                "idempotency-key": "global-candidate-drift-reject-0001"},
+                json=payload)
+            assert refused.status_code == 503, refused.text
+    finally:
+        target.write_bytes(original)
+    with httpx.Client(base_url=origin, timeout=10) as client:
+        restored = client.get(path, headers=headers)
+        assert restored.status_code == 200, restored.text
+        assert any(item["reference_solution_id"] == str(initial.reference_solution_id)
+                   for item in restored.json()["data"]["items"])
+    with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
+                         dbname="postgres", autocommit=True) as db:
+        assert db.execute(
+            "SELECT count(*) FROM plm.sol_outline_versions WHERE solution_outline_id=%s",
+            (outline,)).fetchone()[0] == before_versions
+        assert db.execute(
+            "SELECT count(*) FROM plm.aud_events WHERE action='SOL_OUTLINE_VERSION_CREATED' "
+            "AND target_object_id=%s", (outline,)).fetchone()[0] == before_audit
+        assert db.execute(
+            "SELECT count(*) FROM plm.plt_idempotency_receipts "
+            "WHERE operation='V1_SOL_OUTLINE_VERSION_CREATE'").fetchone()[0] == before_receipts
+    print("GLOBAL_CANDIDATE_SOURCE_DRIFT_PASS: GET hidden, CREATE refused, source restored", flush=True)
 
 
 def on_qualified(**facts) -> None:
