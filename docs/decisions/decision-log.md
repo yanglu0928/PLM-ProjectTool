@@ -11023,3 +11023,10 @@
 - Decision：复用现有 Document/Evidence/脱敏确认现时证明组合，构建独立 GLOBAL 发布 Owner Router；仅在 `include_secret_write` 路径注入 `create_app`，默认登录及只读平台模式保持 404。缺 runtime/Session/Origin/License/Audit/Document/Download/Parse 任一端口时拒绝构造，不退化成假证明。
 - Reason：与 GLOBAL 创建/资格/确认写链共用受控端口与显式模式，避免新命令绕过实际文件和管理员证明，也不因新增可选 API 默认扩大攻击面。
 - Impact/Rollback：仅 Windows 组合根与测试；无 Schema/Migration/角色/依赖变化。撤去组合注入可回滚入口，既有发布历史保留；正式服务账户/Vault/CA、Server2025 与 Release Gate 另验。
+
+# DEC-20261009-1152：GLOBAL 项目候选使用独立受权最小读投影和原始根游标
+
+- Date/WBS：2026-10-09 / `SOL-03-A04-P03-P03-P06-A03-P05-A01`；依据 CR-SOL-018 与 0158 发布账本。
+- Decision：不复用管理员 GLOBAL 列表/详情。项目只读 Owner 先验 Session/License 与 PM/IM 项目资格，再从最新同版 PUBLISH 事件取得人工审定标签，并对每个候选在当前事务复核 Reference/Document/Evidence/有效脱敏确认。响应只给固定身份、标签、版本号和资格状态；CREATE 自行重证。有限扫描以原始根 ID 推进，签名游标绑定 Session/Project/page size，可见项少于页大小或空页不等于结束。
+- Reason：管理员投影含原始名称与来源字段，现有 ReferenceUseProof 不负责项目授权；按过滤后结果游标分页会在撤回/过期时漏项。独立读面保住权限、敏感信息及分页稳定边界。
+- Impact/Rollback：本决策先为设计对账，无程序/API/Schema/依赖变化。后续按仓储/Owner/HTTP/Windows/浏览器分项验收；关闭可选项目路由时发布历史保留，Gate 3 不因本决策通过。
