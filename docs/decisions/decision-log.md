@@ -10967,3 +10967,10 @@
 - Decision：仅在 Windows 显式写模式装配 OutlineVersion CREATE。工厂显式接收受控绝对 Document 与 ParseResult 存储根（生产配置可为同一 `data_root`），自行构造两条安全读取链以及 Document/Evidence/Reference 当前证明，再组合 Requirement、Section、Outline Base、Auth/Project/License/Receipt/Audit；不从其它服务对象读取私有 `_storage`，也不借 GLOBAL 管理员会话。缺任一必需信任依赖或非法根路径立即启动失败关闭；默认/只读模式不挂载。
 - Reason：版本创建要在同事务重证固定来源实际文件与 GLOBAL 当前脱敏确认，普通 Outline/Section 写组合的纯数据库端口不足；显式路径使所有数据来源和失败边界可审计。
 - Impact/Rollback：仅 Windows 组合根与工厂装配，不改 `/api/v1` 合同、Schema、角色或 Scope；可撤路由装配而保留已写历史。Win11 隔离 PG/文件及缺依赖负例需单独验，Server2025 目标账户/正式信任源仍不据此宣称通过。
+
+# DEC-20261009-1144：OutlineVersion GLOBAL 候选读取不借管理员权限
+
+- Date/WBS：2026-10-09 / `SOL-03-A04-P03-P03-P06-A02`；依据 CR-SOL-018、冻结双 Scope CREATE 与现有 GLOBAL 管理员专用读取。
+- Decision：前端项目成员不能调用或复用管理员 GLOBAL 列表/详情。先完成本项目候选选择；GLOBAL 仅在新增最小项目上下文只读投影、权限/可见性与当前性验证后开放。服务端 CREATE 仍负责最终现时资格证明，页面候选不是正式事实。
+- Reason：避免为完成 UI 而提权或要求用户维护裸 UUID；将可用性缺口与安全边界分别验证。
+- Impact/Rollback：本决策和 CR 先于新增读面，无现有 Schema/API/角色变更；可撤尚未接线候选读面，保留原冻结合同与已写历史。项目内候选页通过不能代替 GLOBAL/真实浏览器/Gate3 验收。

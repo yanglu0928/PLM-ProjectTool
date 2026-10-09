@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-03-A04-P03-P03-P06-A02-P01 新增 OutlineVersion PROJECT 固定候选聚合及 DRAFT 创建页：逐项可核对 Section/批准需求/合格参考、声明提示、原内容/原操作号恢复。发现 GLOBAL 管理员专用读取与项目角色选择冲突，先登记 CR-SOL-018/DEC-1144，页面不提权、不收裸 UUID。兼容性/升级：无 Migration/冻结 API/角色/依赖变化，撤页面入口可回滚，历史保留。验证：定向6项、前端全量1716项、typecheck/build 通过；构建有既有大 chunk 告警。已知问题：GLOBAL 安全候选读面、Win11 真实浏览器/PG、正式信任/Server2025/性能、Gate3/UAT/发行未完成。
+
 - 2026-10-09：0.1.0-dev.0/SOL-03-A04-P03-P03-P06-A01 前端新增受控 OutlineVersion CREATE Session 请求桥和严格首响客户端，固定引用/声明/角色/操作号预检，未知提交结果保持原号语义；尚未暴露创建页。兼容性/升级：无 Migration/冻结 API/权限/依赖变化，未接 UI 时可撤客户端；既有服务端历史保留。验证：定向4项、前端全量1710项、typecheck/build 通过；构建保留既有大 chunk 告警。已知问题：候选页/Win11 浏览器、正式信任/Server2025/性能、Gate3/UAT/发行未完成。
 
 - 2026-10-09：0.1.0-dev.0/SOL-03-A04-P03-P03-P05-A03 仅 Windows 显式写模式装配 OutlineVersion CREATE，工厂以两个受控绝对存储根重建 Document/Parse/Evidence/Reference/Requirement/Section 当前证明，缺依赖/非法根失败关闭，不借 GLOBAL 管理员 Session。兼容性/升级：无 Migration/Schema/冻结 API/角色/依赖变化，关闭写模式可撤入口，已写历史保留；DEC-1143 记录装配选择。验证：工厂单元4项/21子例、Win11 两套隔离 PG18.6/真实合成文件 ASGI 双 Scope 退出0，后端全量3456通过/3跳过/5284子例；GLOBAL 首轮过期夹具注入与正式时钟不匹配，改真实合成到期后重跑通过。已知问题：正式服务账户信任源/Server2025、UI/浏览器、Gate3/发行未完成。
