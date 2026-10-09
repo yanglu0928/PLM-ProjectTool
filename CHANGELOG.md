@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-03-A05-A02-P02 增加 OutlineVersion 固定历史 GET/LIST 内部受权 Owner，统一当前 Session/License/Project 成员及目录归属验证、版本号倒序页和失败关闭；不把历史来源当现时资格。兼容性/升级：无 Migration/Schema/公开 API/角色/依赖变化，未挂载可撤。验证：定向3项/8子例、Win11 双 Scope 隔离 PG18.6 真实 Auth/分页/拒绝链、后端全量3461通过/3跳过/5303子例。已知问题：签名游标/HTTP/Windows/UI、GLOBAL 候选发布、Gate3/发行未完成。
+
 - 2026-10-09：0.1.0-dev.0/SOL-03-A05-A02-P01 新增 OutlineVersion PROJECT/GLOBAL 固定历史只读 DTO/仓储，三类关联有序重建、计数/Scope/首响一致性失败关闭，版本号倒序分页且跨项目不可见；尚未开放 Owner/HTTP。兼容性/升级：无 Migration/Schema/冻结 API/角色/依赖变化，未接线可撤，历史保留。验证：Win11 双 Scope 隔离 PG18.6 全新库退出0；定向2项/3子例，后端全量3458通过/3跳过/5295子例。已知问题：受权 Owner/HTTP/UI、GLOBAL 候选发布、Gate3/发行未完成。
 
 - 2026-10-09：0.1.0-dev.0/SOL-03-A05-A01 增加 OutlineVersion GET/LIST 的项目成员只读授权策略，四类有效成员可读且不扩大 CREATE 写角色；尚无公开版本读取。兼容性/升级：无 Migration/Schema/冻结 API/依赖变化，撤未接线策略可回滚。验证：授权矩阵8项/740子例、后端全量3456通过/3跳过/5292子例。已知问题：读取 Owner/HTTP/Windows/UI、GLOBAL 候选发布、Gate3/发行未完成。
