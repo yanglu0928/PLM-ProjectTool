@@ -11135,3 +11135,10 @@
 - Decision：新增 SectionVersion 专用输入合同，正文只表达固定 DocumentVersion 或 ArtifactRef 二选一，固定项目/章节、标题、Requirement 根/版本、Evidence ID、假设/排除声明；按有界规范 JSON 生成请求指纹并深拷贝声明。此层只验形状/重复/界限，不验项目授权、当前来源、文件字节、Review，也不写数据库；Artifact 分支在 OutputArtifact Owner 具备之前不向写路径开放。
 - Reason：Schema/FK 已存在但闭锁仍拒 DML；目录 DRAFT 只固定 Section 身份，不能借输入结构推定正文或覆盖合格。将请求结构与现时证明分开，便于后续受控 Owner 保持同事务重证。
 - Impact/Rollback：无 Schema/API/权限/配置/依赖迁移；撤未接线的输入模块可回滚，历史保留。需单元正反例与后端回归，后续 Owner/Guard 独立 CR/验证，Gate3仍 BLOCKED。
+
+# DEC-20261009-1168：SectionVersion 正文仅复用 Document 固定版本物理证明
+
+- Date/WBS：2026-10-09 / `SOL-05-A02-P02`；依据 CR-SOL-003、Document 的固定版本身份锁和 `DocumentFixedSourceProofService`。
+- Decision：仅为 PROJECT SectionVersion 的 DocumentVersion 正文定义内部证明 DTO/适配器：先在调用者事务按 ProjectId 锁定固定版本与 Document 身份，再用同一事务、原 Session 走 Document-owned 权限/版本/真实字节 SHA-256 证明；只返回不含 Locator/正文的固定 ID 与 digest。GLOBAL、错项目、非 ACTIVE Document、畸形证明或异常一律失败关闭。此端口不判 SectionVersion 内容是否适合审批，也不开放 Artifact 分支或数据库写入。
+- Reason：0138 Document FK 只证明引用存在，不证明版本当前可用或本地文件字节未漂移；直接复用 Reference 专用类别规则会把参考材料语义误套到方案正文。Document 通用固定来源证明已有物理与授权边界。
+- Impact/Rollback：仅新增未接线内部模块/测试，无 Schema/API/权限/配置/依赖/数据迁移；撤适配器即可回滚。Owner 装配、真实 PG 写链及正式环境仍独立验收。

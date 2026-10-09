@@ -21,3 +21,5 @@
 ## 2026-10-09 后续输入切片
 
 SOL-05-A01 核查确认 0138 闭锁仍在、无 SectionVersion 写 Owner；SOL-05-A02-P01 按 DEC-1167 增加仅限内部的 DRAFT 有界输入/稳定请求指纹，DocumentVersion/Artifact 引用二选一、固定 Requirement/Evidence 与声明形状单元及后端全量回归通过。该结构校验不证明当前来源、权限或 Review，Artifact 分支无 OutputArtifact Owner 时不得进入写路径；未修改 0138、冻结 API、权限或 DML Guard。见 `docs/progress/sol-05-a01-section-version-precheck.md` 和 `docs/progress/sol-05-a02-p01-section-version-input.md`。本 CR 继续 OPEN，后续受控 Owner/Guard、迁移和回滚必须先补具体计划并独立验证。
+
+SOL-05-A02-P02 按 DEC-1168 增加仅限内部的 PROJECT DocumentVersion 正文固定身份/物理字节证明适配器，定向与全量后端回归通过；未挂 SectionVersion Owner 或解锁0138，且不把文件可用误称章节已批准。见 `docs/progress/sol-05-a02-p02-section-document-content-proof.md`。本 CR 保持 OPEN。
