@@ -107,7 +107,7 @@ function safeApplicability(value: unknown): Readonly<Record<string, unknown>> {
 
 export function parseGlobalReferenceCurrent(value: unknown, referenceId: string): GlobalReferenceCurrent {
   const base = summary(value, referenceId, true);
-  if (!record(value) || value.eligibility_reason !== null && !label(value.eligibility_reason, 1000)
+  if (!record(value) || value.eligibility_reason !== null && !label(value.eligibility_reason, 2000)
     || !label(value.source_project_class, 128) || !label(value.deidentification_class, 128)
     || !Array.isArray(value.document_version_ids) || value.document_version_ids.length < 1
     || value.document_version_ids.length > 100 || !value.document_version_ids.every(id)

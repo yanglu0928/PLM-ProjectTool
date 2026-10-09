@@ -83,6 +83,13 @@ describe("GlobalReferenceReadClient", () => {
       next_cursor: null, has_more: false }, 50)).toThrow(GlobalReferenceReadError);
   });
 
+  it("accepts the schema's 2000-character qualification reason and rejects overflow", () => {
+    expect(parseGlobalReferenceCurrent({ ...detail, eligibility_reason: "甲".repeat(2000) }, reference)
+      .eligibility_reason).toHaveLength(2000);
+    expect(() => parseGlobalReferenceCurrent({ ...detail, eligibility_reason: "甲".repeat(2001) }, reference))
+      .toThrow(GlobalReferenceReadError);
+  });
+
   it("rejects malformed inputs before network and maps only matching errors", async () => {
     const { api, fetcher } = client();
     await expect(api.current("../projects")).rejects.toMatchObject({ code: "GLOBAL_REFERENCE_INVALID_INPUT" });

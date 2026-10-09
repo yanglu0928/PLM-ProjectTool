@@ -75,6 +75,13 @@ describe("ReferenceReadClient", () => {
     ]) expect(() => parseReferenceCurrent(corrupt, project, reference)).toThrow(ReferenceReadError);
   });
 
+  it("accepts the schema's 2000-character qualification reason and rejects overflow", () => {
+    expect(parseReferenceCurrent({ ...detail, eligibility_reason: "甲".repeat(2000) }, project, reference)
+      .eligibility_reason).toHaveLength(2000);
+    expect(() => parseReferenceCurrent({ ...detail, eligibility_reason: "甲".repeat(2001) }, project, reference))
+      .toThrow(ReferenceReadError);
+  });
+
   it("rejects malformed input before network and maps only known errors", async () => {
     const { api, fetcher } = client();
     await expect(api.list("../global")).rejects.toMatchObject({ code: "REFERENCE_INVALID_INPUT" });

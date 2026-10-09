@@ -1401,6 +1401,18 @@ export class SessionClient {
   /** Reference revision is a single guarded write; the caller owns uncertain-result recovery. */
   async postReferenceRevise(scope: "PROJECT" | "GLOBAL", referenceId: string,
     projectId: string | null, body: string, etag: string, idempotencyKey: string): Promise<Response> {
+    return this.#postReferenceCommand("revise", scope, referenceId, projectId, body, etag, idempotencyKey);
+  }
+
+  /** Human eligibility decisions use the same private CSRF, lock and no-retry boundary. */
+  async postReferenceEligibility(scope: "PROJECT" | "GLOBAL", referenceId: string,
+    projectId: string | null, body: string, etag: string, idempotencyKey: string): Promise<Response> {
+    return this.#postReferenceCommand("set-eligibility", scope, referenceId, projectId, body, etag, idempotencyKey);
+  }
+
+  async #postReferenceCommand(action: "revise" | "set-eligibility", scope: "PROJECT" | "GLOBAL",
+    referenceId: string, projectId: string | null, body: string, etag: string,
+    idempotencyKey: string): Promise<Response> {
     if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
     if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
     if (!identifier(referenceId) || (scope === "PROJECT" ? !identifier(projectId) : projectId !== null)
@@ -1416,7 +1428,7 @@ export class SessionClient {
     const timer = window.setTimeout(() => controller.abort(), this.timeoutMs);
     try {
       const fetcher = this.fetcher;
-      const response = await fetcher(`${base}/reference-solutions/${referenceId}:revise`, {
+      const response = await fetcher(`${base}/reference-solutions/${referenceId}:${action}`, {
         method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error",
         headers: { Accept: "application/json", "Content-Type": "application/json",
           "X-CSRF-Token": this.#csrf, "If-Match": etag, "Idempotency-Key": idempotencyKey },
