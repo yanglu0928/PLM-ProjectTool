@@ -132,6 +132,7 @@ def create_app(
     project_reference_revise_router: APIRouter | None = None,
     project_reference_eligibility_router: APIRouter | None = None,
     solution_outline_create_router: APIRouter | None = None,
+    solution_outline_version_create_router: APIRouter | None = None,
     solution_section_create_router: APIRouter | None = None,
     solution_section_read_router: APIRouter | None = None,
     solution_section_list_router: APIRouter | None = None,
@@ -383,6 +384,8 @@ def create_app(
         app.include_router(project_reference_eligibility_router)
     if solution_outline_create_router is not None:
         app.include_router(solution_outline_create_router)
+    if solution_outline_version_create_router is not None:
+        app.include_router(solution_outline_version_create_router)
     if solution_section_create_router is not None:
         app.include_router(solution_section_create_router)
     if solution_section_read_router is not None:

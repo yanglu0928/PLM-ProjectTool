@@ -10953,3 +10953,10 @@
 - Decision：创建输入必须有 1～100 个有序稳定 Section 身份；已批准 RequirementVersion 与 ELIGIBLE ReferenceVersion 允许各自为零，但若两者均空，必须有至少一条显式缺失声明。Requirement/Reference 上限各 500，集合保留用户顺序并拒绝重复根/版本，序号由 Owner 从 1 连续生成。缺失/冲突声明仅接受 JSON 对象数组（各最多 100，UTF-8 规范编码各不超过 64 KiB），不擅定未冻结的对象字段名；正式业务语义由后续 VALIDATE/Review 判定。项目/Outline 身份与当前资格只由服务端证明，不由客户端摘要声明。
 - Reason：允许合法的无参考来源方案和待补资料草案，但拒绝无章节/无来源亦无缺失说明的伪空版本；保留 DB 的零计数兼容及冻结的独立 VALIDATE 边界。统一规范编码供幂等请求指纹，内容指纹须在 Owner 加上现时来源证明，不能把裸 UUID 当内容证明。
 - Impact/Rollback：仅内部输入合同与测试，无数据库/API/角色变更；Owner/HTTP 尚未开放。若后续正式评审确认声明对象结构，另做兼容/迁移分析；撤回未接线合同即可回滚。Gate3 不据此通过。
+
+# DEC-20261009-1142：OutlineVersion CREATE HTTP 的严格输入与首响投影
+
+- Date/WBS：2026-10-09 / `SOL-03-A04-P03-P03-P05-A01`；依据冻结 API-04 路径/角色、DEC-1141 有序集合、CR-SOL-016/017 和已验不可变首次结果。
+- Decision：POST 路径固定为 `/api/v1/projects/{project_id}/solution-outlines/{outline_id}/versions`。JSON 顶层仅接受 `section_ids`、`requirement_refs`、`reference_refs`、`missing_declarations`、`conflict_declarations`；前两种引用对象分别只含固定根/版本 ID，Reference 另含 `scope`。严格 UTF-8/重复键/非标准常量拒绝，单请求上限 512 KiB，避免既有 128 KiB 通用读取上限与两类各 500 条引用及声明容量冲突。201 返回首次 DRAFT 的版本/目录/项目身份、版本号、前驱、内容摘要、三类计数、缺失/冲突声明、创建人/时间；不返回固定来源正文、Locator 或 GLOBAL 管理员凭据，后续 GET 独立提供受权固定引用读取。原键重放仍取 `0155` 首响；无已定义版本 ETag 时不推导伪 ETag。
+- Reason：严格 DTO 保持冻结路径与角色，当前来源由服务端重证；512 KiB 仅为该路由容量边界，不扩大其他上传/JSON 接口，首响投影可从不可变快照稳定重放。
+- Impact/Rollback：仅新增可选 HTTP 路由和 `create_app` 注入点，不自动挂载、无 Schema/Migration/依赖或 Breaking API 变化；未接线时可撤，已有首响历史不删。真实 ASGI/PG/Windows 装配及前端另项验证，Gate3 不据此通过。
