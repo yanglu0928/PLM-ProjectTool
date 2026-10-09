@@ -86,6 +86,10 @@
 
 2026-10-09 重审 A03～P03 正链及 A04-P01 的来源漂移、确认撤销、精确到期和同根版本修订直接负例。项目候选和 CREATE 的 Win11 合成功能范围已具直接证据；空可见首页仅 Owner/HTTP/前端合同覆盖，未作浏览器专门验收。正式信任源/目标服务账户、Server2025、20 并发与质量/Gate3/发行仍独立未通过，故本 CR 标记 `IMPLEMENTED_WIN11_SYNTHETIC_VERIFIED / FORMAL_ACCEPTANCE_OPEN`，不关闭。逐项证据和转序见 `docs/progress/sol-03-a04-p03-p03-p06-a04-p02-global-candidate-closure-audit.md`。
 
+## P06-A04-P03 正式环境前置复核
+
+2026-10-09 只读复核指定 Server2025 VMX 存在但未运行，宿主 VMnet8 仍为链路本地地址且 CR-ENV-001 尚未实施；当前无法安全复用 Win11 合成链进行来宾实测。未启动来宾或改动网络，正式环境结论保持未验证。详见 `docs/progress/sol-03-a04-p03-p03-p06-a04-p03-server2025-precheck.md`；转不依赖 VM 的性能任务，本 CR 仍开放。
+
 ## P06-A02-P02 前置核查
 
 2026-10-09 核查 `GlobalReferenceReadService` 当前仅调用 `AdminPort.authorized_admin`；`SqlAlchemyGlobalReferenceReadRepository` 投影含 `Root.name`，而 GLOBAL 创建只验证名称格式，不证明其已被人工审定为可向项目成员展示。现有 `Reference` 当前资格/来源证明是内部最小端口，不提供可读标签；以截断 UUID 当标签虽不泄露正文，却无法让用户核对所选方案。故项目成员 GLOBAL 候选页面编码前置不满足，状态为 `PRECONDITION_BLOCKED`，不是 Gate/功能 PASS。先实施本 CR 的发布账本与管理员确认、再开放读面；这需要独立 Schema/Owner/API/Win11/页面任务。当前转做不依赖它的 OutlineVersion GET/LIST 与原操作恢复，保持 P06-PROJECT 子集可用。
