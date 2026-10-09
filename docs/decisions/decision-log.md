@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261009-1140：Document 固定来源校验只返回摘要
+
+- Date/WBS：2026-10-09 / `SOL-03-A04-P02-P02-P01`；依据 CR-SOL-016、Document 现有受权浏览/下载接口、当前 Reference 账本证明。
+- Decision：由 Document 模块新增内部服务端固定版本证明，复用同事务元数据锁与 `LocalFileStorage` 安全快照哈希，只返回 VersionId/Scope/Project/SHA-256，不将 GLOBAL 管理员会话、路径或正文交给 Solution/项目 UI；调用前的项目授权和 Reference 当前资格由未来 Owner/现有账本负责。
+- Reason：直接调用 GLOBAL `DocumentReadQuery` 要求项目用户成为管理员；仅看数据库 Hash 无法识别被篡改的物理文件。
+- Impact/Rollback：仅 Document 内部 Application/Infrastructure 和验证脚本，无 DB/Migration/公开 API/依赖/角色变化；撤接线可回滚，文件历史不动。Evidence Locator 需另项完成，目录写继续关闭。
+
 ## DEC-20261009-1139：GLOBAL 合格参考由服务端提供项目用途现时证明
 
 - Date/WBS：2026-10-09 / `SOL-03-A04`；依据冻结 API-04/DM-05、CR-SOL-016、SOL-01-A16 的管理员资格链与 0154 封闭引用。

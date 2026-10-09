@@ -29,3 +29,7 @@
 ## A04-P02-P01 实施记录
 
 2026-10-09 已接 Solution 自有当前 Root/Version/最新资格事件与 GLOBAL 最新脱敏确认的只读适配器；Root 行锁使资格/修订不能越过调用者提交，固定关联按序号/计数闭合，项目用户不因此获取 GLOBAL 原文。Windows 11 两个隔离 PostgreSQL 18.6 合成来源夹具完成双 Scope 正例及跨项目/旧版/RESTRICTED 负例。Document/Evidence 物理来源仍需 P02-P02 由其 Owner 接口重证，当前不解锁目录版本写。
+
+## A04-P02-P02-P01 实施记录
+
+2026-10-09 已按本 CR 建立 Document 自有内部固定版本证明：同事务共享锁当前元数据并通过原有安全快照逐字节校验 SHA-256，不借用全局管理员会话；只向业务调用者返回固定版本身份/摘要，不返回文件正文或定位。双 Scope 隔离 PostgreSQL/真实文件及篡改负例已通过。Evidence Locator/解析节点仍另项，未把 Document 通过推定为 Reference 全来源通过；目录版本写保持关闭。

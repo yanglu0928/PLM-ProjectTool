@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-03-A04-P02-P02-P01 Document 模块新增不依赖项目用户 GLOBAL 管理员 Session 的内部固定版本证明，锁定当前元数据并安全快照校验物理 SHA-256，仅返回版本/Scope/Project/摘要。兼容性/升级：无 DB/Migration、公开 API、依赖或角色变化；未接线服务可撤回，不删历史。验证：定向 4 项/7 子例，Win11 双 Scope 隔离 PG18.6 真实文件、跨项目及篡改拒绝通过；后端全量 3417 通过/3 跳过/5223 子例。已知问题：Evidence Locator/解析节点、全来源组合、OutlineVersion Owner/HTTP/UI 和 Gate3/发行未完成。
+
 - 2026-10-09：0.1.0-dev.0/SOL-03-A04-P02-P01 新增 Solution 自有 Reference 当前 Root/版本/资格事件及 GLOBAL 确认账本受限只读适配器，Root/确认持锁、固定关联按声明数与连续顺序闭合。兼容性/升级：无 DB/Migration、公开 API、依赖或角色变化，未接线适配器可撤回；资格历史不变。验证：Win11 两个隔离 PG18.6 真实 PROJECT/GLOBAL 来源夹具与跨项目/旧版/受限拒绝通过，后端全量 3413 通过/3 跳过/5216 子例。已知问题：Document/Evidence 物理来源现时证明、完整权限/并发、OutlineVersion Owner/HTTP/UI 仍待；Gate3/发行未通过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-03-A04-P01 增加 PROJECT/GLOBAL 已合格 ReferenceVersion 的内部最小证明合同与失败关闭服务，不将管理员资格命令借给项目角色；返回不含正文/定位/会话。兼容性/升级：无 DB/Migration、公开 API、权限或依赖变化；未接线服务可直接撤回。验证：定向 6 项/17 子例，后端全量 3413 通过/3 跳过/5216 子例。已知问题：真实 Root/Event/Document/Evidence/GLOBAL 确认端口及 PG/权限验证未完成，OutlineVersion CREATE 仍封闭，Gate3/发行未通过。
