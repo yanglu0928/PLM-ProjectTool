@@ -11002,3 +11002,10 @@
 - Decision：新增只属于 Solution 的 GLOBAL 版本发布事件表，按同 Root 单调 `event_no` 记录 `PUBLISH/REVOKE`。`PUBLISH` 必须有经管理员审定的非敏感标签，`REVOKE` 不携带新标签；事件固定 GLOBAL Root/Version、审定人、原因和时间。旧库无事件即未发布。Schema 阶段所有 DML 封闭；后续 Owner 持 Root 锁核验当前版本、资格、确认、状态转换、Audit/收据，再开放受限 INSERT。项目候选只消费同 Root 最新事件且版本仍为当前的标签，不从 Root 原始名称回退。
 - Reason：版本修订或撤销后无需覆写旧标签，历史仍可审计；先封闭表可避免 Schema 可写而权限/审定流程尚未安装。
 - Impact/Rollback：新增 `0157` ORM/迁移与测试，不改旧表/旧 API。空表可降级；一旦有事件即拒降并保留历史。后续 Owner/HTTP/UI/正式服务账户独立验收，Gate3 不变。
+
+# DEC-20261009-1149：GLOBAL 发布命令以 Root 锁串行并重证现时来源
+
+- Date/WBS：2026-10-09 / `SOL-03-A04-P03-P03-P06-A03-P02`；输入 CR-SOL-018、DEC-1148 与既有 Reference 资格/脱敏确认及持久收据合同。
+- Decision：发布命令要求 DeploymentAdmin Session/CSRF、License、当前 GLOBAL Root/Version、最新 HUMAN ELIGIBLE 事件与固定来源/最新有效脱敏确认在同一写事务中重证；撤回命令要求当前版本与最新同版本 PUBLISH，但允许资格/确认已失效时仍留下明确撤回历史。Root 行锁串行事件号，客户端显式给出预期版本和事件号；同键重放只取不可变原事件，不追加 Audit。0158 Guard 只开放满足当前 Root/版本、顺序和状态图的 INSERT，UPDATE/DELETE/TRUNCATE 继续禁止。
+- Reason：资格/确认失效应即时使发布对项目候选不可用，但不妨碍管理员补记撤回；版本修订后的旧 PUBLISH 隐式不可见，新版本重审后可重新 PUBLISH。历史首次响应保持可追溯。
+- Impact/Rollback：仅 Solution 内部 Owner、Migration Guard 与测试；不接公开 API，不改旧 Reference/资格合同。0158 有发布事件时拒降；关闭后续入口并前向修复，不删除事件/Audit/收据历史。

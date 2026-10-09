@@ -22,6 +22,10 @@
 
 2026-10-09 按 DEC-1148 增加线性 0157 GLOBAL 固定版本发布事件账本、ORM、封闭 DML Guard 与空/历史库迁移复验。旧行不回填；尚无管理员 Owner、公开 API 或项目端读面，因此本 CR 仍在实施中，P06 GLOBAL 前置仍阻塞。验证与回滚边界见 `docs/progress/sol-03-a04-p03-p03-p06-a03-p01-global-publication-schema.md`。下一项 A03-P02 先建设受权发布/撤回 Owner，再分项推进公开受控入口和项目候选读取。
 
+## P06-A03-P02 实施记录
+
+2026-10-09 按 DEC-1149 完成内部管理员发布/撤回 Owner 与线性 0158 受限 INSERT Guard；真实 Win11/PG18.6 来源、权限、重放、Audit 回滚和迁移验证见 `docs/progress/sol-03-a04-p03-p03-p06-a03-p02-global-publication-owner.md`。原 0157、Gate 2 冻结提交均保留。发布事件不自动向项目成员开放；当前 CR 仍在实施，后续管理员 HTTP、Windows 组合、项目最小读面和浏览器须分别验收。
+
 ## P06-A02-P02 前置核查
 
 2026-10-09 核查 `GlobalReferenceReadService` 当前仅调用 `AdminPort.authorized_admin`；`SqlAlchemyGlobalReferenceReadRepository` 投影含 `Root.name`，而 GLOBAL 创建只验证名称格式，不证明其已被人工审定为可向项目成员展示。现有 `Reference` 当前资格/来源证明是内部最小端口，不提供可读标签；以截断 UUID 当标签虽不泄露正文，却无法让用户核对所选方案。故项目成员 GLOBAL 候选页面编码前置不满足，状态为 `PRECONDITION_BLOCKED`，不是 Gate/功能 PASS。先实施本 CR 的发布账本与管理员确认、再开放读面；这需要独立 Schema/Owner/API/Win11/页面任务。当前转做不依赖它的 OutlineVersion GET/LIST 与原操作恢复，保持 P06-PROJECT 子集可用。

@@ -37,6 +37,19 @@ class GlobalReferencePublicationSchemaTests(unittest.TestCase):
                 migration.downgrade()
         self.assertIn("history prevents downgrade", inspect.getsource(migration.downgrade))
 
+    def test_owner_guard_requires_current_event_and_preserves_immutability(self) -> None:
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions."
+            "20261009_0158_global_reference_publication_owner")
+        self.assertEqual(migration.down_revision, "20261009_0157")
+        self.assertIn("FOR UPDATE", migration._OWNER_GUARD)
+        self.assertIn("eligibility_row.result_lock_version<>root_row.lock_version",
+                      migration._OWNER_GUARD)
+        self.assertIn("TG_OP <> 'INSERT'", migration._OWNER_GUARD)
+        with patch.object(migration.context, "is_offline_mode", return_value=True):
+            with self.assertRaisesRegex(RuntimeError, "offline GLOBAL Reference publication"):
+                migration.downgrade()
+
 
 if __name__ == "__main__":
     unittest.main()
