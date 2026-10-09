@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-03-A04-P02-P02-P02-A02 Evidence 模块新增内部当前 ELIGIBLE 固定 Locator/节点指纹证明；PROJECT/GLOBAL 的 DOCUMENT、解析节点均经 Document 自有安全文件/结果接口重验，返回不含 Locator/正文的最小摘要。兼容性/升级：无 DB/Migration、公开 API、依赖或角色变化；未接线服务可撤回，历史不动。验证：定向4项、Win11 双 Scope 临时 PG18.6 文档/节点及篡改拒绝通过；后端全量 3425 通过/3 跳过/5226 子例。已知问题：完整 Reference 资格/来源/GLOBAL 确认组合、OutlineVersion Owner/HTTP/UI、Gate3/发行未完成。
+
 - 2026-10-09：0.1.0-dev.0/SOL-03-A04-P02-P02-P02-A01 Document 模块新增固定 ParseRecord/ResultRef 的内部同事务现时证明，绑定已验 Document SHA-256、解析 JSON/schema 与结果文件哈希，只把解析字节交给后端 Evidence 校验器。兼容性/升级：无 DB/Migration、公开 API、依赖或角色变化，未接线服务可撤回。验证：定向4项/3子例、Win11 临时 PG18.6 真实 GLOBAL 节点与结果文件篡改拒绝通过，后端全量 3421 通过/3 跳过/5226 子例。已知问题：Evidence Locator/指纹、Solution 全来源组合、OutlineVersion Owner/HTTP/UI 与 Gate3/发行未完成。
 
 - 2026-10-09：0.1.0-dev.0/SOL-03-A04-P02-P02-P01 Document 模块新增不依赖项目用户 GLOBAL 管理员 Session 的内部固定版本证明，锁定当前元数据并安全快照校验物理 SHA-256，仅返回版本/Scope/Project/摘要。兼容性/升级：无 DB/Migration、公开 API、依赖或角色变化；未接线服务可撤回，不删历史。验证：定向 4 项/7 子例，Win11 双 Scope 隔离 PG18.6 真实文件、跨项目及篡改拒绝通过；后端全量 3417 通过/3 跳过/5223 子例。已知问题：Evidence Locator/解析节点、全来源组合、OutlineVersion Owner/HTTP/UI 和 Gate3/发行未完成。

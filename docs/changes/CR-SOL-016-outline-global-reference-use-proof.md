@@ -37,3 +37,7 @@
 ## A04-P02-P02-P02-A01 实施记录
 
 2026-10-09 已在 Document 内部增加同事务固定 ParseRecord/ResultRef 与结果文件证明，绑定已验证 DocumentVersion 的 SHA-256、解析器和 JSON schema，并在真实 GLOBAL 节点/篡改文件验证。解析字节只向后端 Evidence 校验器提供，不进入 Solution/UI；Evidence Locator/指纹仍需 A02 证明，目录版本写继续关闭。
+
+## A04-P02-P02-P02-A02 实施记录
+
+2026-10-09 已在 Evidence 模块新增内部固定 Locator/当前 ELIGIBLE 证明：DOCUMENT 复核已验证物理文件哈希，解析节点复用 Document 内部安全结果与原节点校验器，计算指纹恒时比对 EvidenceRow；不向 Solution/UI 传 Locator 或解析字节。Win11 双 Scope 隔离 PG 真实文档/节点及篡改拒绝通过；完整 Reference 资格/来源/GLOBAL 确认组合尚未验证，目录写保持关闭。
