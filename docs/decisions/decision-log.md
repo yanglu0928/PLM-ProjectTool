@@ -10981,3 +10981,10 @@
 - Decision：不把现有 `Root.name` 或无语义的 UUID 前缀直接展示给项目成员。先实现与固定 GLOBAL 版本绑定、可撤回、留 Audit 的管理员审定发布标签；旧数据默认未发布。仅已发布且现时合格的版本进入项目上下文候选，服务端 CREATE 仍重证资格。先转向独立版本读取任务，GLOBAL 候选前置保持 BLOCKED。
 - Reason：现有名称没有脱敏可见性证明；无审定标签时用户既无法安全也无法有意义地选择 GLOBAL 参考。
 - Impact/Rollback：CR-SOL-018 已列 Schema/Owner/API/Win11/页面与历史拒降计划；本轮只登记，不改既有 API/数据，Gate3 不变。
+
+# DEC-20261009-1146：OutlineVersion 历史 LIST 最小摘要与 GET 固定集合
+
+- Date/WBS：2026-10-09 / `SOL-03-A05-A03-P02`；依据冻结 API-04 的 `SOL_OUTLINE_VERSION_GET/LIST`、A05-A02 内部历史 Owner 与独立签名分页游标。
+- Decision：LIST 只投影版本身份、状态、摘要、声明数量/三类固定引用计数、前驱/Review/创建信息，不批量返回每版最多 1100 条固定引用；GET 投影完整有序 Section/Requirement/Reference 固定 ID 与声明。两者均标为历史快照而非现时来源资格，不返回正文/Locator。当前版本状态未来可变，冻结合同未定义强 ETag，故不伪造 ETag。可选路由默认不挂载，保持 404。
+- Reason：降低项目列表响应与无关来源暴露；详情满足冻结的固定关联核查；避免把首次 201 快照当成未来状态。
+- Impact/Rollback：不改冻结路径/角色/Schema、无 Migration；列表/详情作为合同未定义投影的明确补充，保留原 Gate2 内容。关闭可选路由可回滚入口，已写版本历史不删除；Windows 正式密钥来源、真实 ASGI/PG/UI/性能另验。
