@@ -39,7 +39,7 @@ def rejects(action, expected: str) -> None:
 
 
 def on_published(*, runtime, catalog, initial, port, on_http=None,
-                 license_guard=None, document_storage_root=None,
+                 license_guard=None, audit=None, document_storage_root=None,
                  parse_result_storage_root=None) -> None:
     with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
                          dbname="postgres", autocommit=True) as db:
@@ -83,7 +83,7 @@ def on_published(*, runtime, catalog, initial, port, on_http=None,
     if on_http is not None:
         on_http(reader=reader, project=project, other_project=other,
                 initial=initial, runtime=runtime, port=port,
-                license_guard=license_guard,
+                license_guard=license_guard, audit=audit,
                 document_storage_root=document_storage_root,
                 parse_result_storage_root=parse_result_storage_root)
     rejects(lambda: reader.list(

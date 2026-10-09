@@ -62,6 +62,10 @@
 
 2026-10-09 按 DEC-1158 将 GLOBAL 项目候选完整有界分页与 PROJECT 候选并入草案创建页，任何来源读取失败均不开放新建；固定双 Scope 引用、刷新清空旧确认和原操作重试保留首稿。前端全量/构建证据见 `docs/progress/sol-03-a04-p03-p03-p06-a03-p05-a06-p02-global-candidate-page.md`。真实浏览器/PG、正式运行与 Gate3 待验，本 CR 不关闭。
 
+## P06-A03-P05-A06-P03 实施记录
+
+2026-10-09 按 DEC-1159 完成 Win11 Edge/隔离 PG18.6 合成登录、已发布候选最小展示、GLOBAL 固定版本 DRAFT 创建与 PG 单次审计及跨项目浏览器隐藏；上游夹具同轮复核资格限制/撤回后的内部不可见。证据边界见 `docs/progress/sol-03-a04-p03-p03-p06-a03-p05-a06-p03-global-candidate-browser.md`。正式服务账户、Server2025、性能及 Gate3/发行仍待，本 CR 不关闭。
+
 ## P06-A02-P02 前置核查
 
 2026-10-09 核查 `GlobalReferenceReadService` 当前仅调用 `AdminPort.authorized_admin`；`SqlAlchemyGlobalReferenceReadRepository` 投影含 `Root.name`，而 GLOBAL 创建只验证名称格式，不证明其已被人工审定为可向项目成员展示。现有 `Reference` 当前资格/来源证明是内部最小端口，不提供可读标签；以截断 UUID 当标签虽不泄露正文，却无法让用户核对所选方案。故项目成员 GLOBAL 候选页面编码前置不满足，状态为 `PRECONDITION_BLOCKED`，不是 Gate/功能 PASS。先实施本 CR 的发布账本与管理员确认、再开放读面；这需要独立 Schema/Owner/API/Win11/页面任务。当前转做不依赖它的 OutlineVersion GET/LIST 与原操作恢复，保持 P06-PROJECT 子集可用。

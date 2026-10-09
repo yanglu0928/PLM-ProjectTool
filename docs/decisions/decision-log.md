@@ -11072,3 +11072,10 @@
 - Decision：项目创建页与现有 PROJECT/章节/需求候选并行拉取全部 GLOBAL 项目页，空可见页必须继续签名游标；任一 Scope 不完整或失败就不展示可提交表单。GLOBAL 仅显示人工审定标签、固定版本号和 UUID，独立多选并编码为 `scope=GLOBAL` 固定根/版本引用；原操作号重试保持首次 Draft 不重新拼装。切换项目或目录清空旧选择，后端 CREATE 再次重证资格与来源。
 - Reason：仅追加单页、手填 UUID、静默忽略 GLOBAL 读取失败都会形成不完整或串项目的可提交选择；当前候选不应被当作永久授权。
 - Impact/Rollback：前端页面/加载器与测试，不改后端 API/Schema/角色/依赖。可回退前端至 PROJECT-only 页面并保留服务端双 Scope 能力；浏览器/真实 PG 与正式部署另验。
+
+# DEC-20261009-1159：GLOBAL 项目候选浏览器验收复用真实隔离来源与显式组合
+
+- Date/WBS：2026-10-09 / `SOL-03-A04-P03-P03-P06-A03-P05-A06-P03`；依据 CR-SOL-018、DEC-1158、已验 A02～P02 与现有 Win11 Edge/PG 临时夹具。
+- Decision：仅在可弃 Win11 PG18.6、合成文档/证据和合成登录用户内启动真实 FastAPI/前端构建/Edge，装配正式 Windows 路由工厂而非假 GET；核查候选最小展示、页加载与 GLOBAL 固定引用 DRAFT 创建、PG 单次历史/Audit 和跨项目拒绝。密钥/License 只用隔离合成输入，不声称正式服务账户/发行 PASS；测试资源退出后清理。
+- Reason：前端单元测试不能证明当前来源、真实 Session/License、项目权限与浏览器写链共同工作；已有真实来源夹具可复用并保持客户数据不外发。
+- Impact/Rollback：只增验证资产及进度记录，无应用 Schema/API/依赖变更；删除本脚本不改变运行代码。失败则保留 P03 未通过并拆出修复任务，不伪造 Gate3。
