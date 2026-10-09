@@ -11044,3 +11044,10 @@
 - Decision：新增 `SOL_GLOBAL_REFERENCE_CANDIDATE_LIST` 项目策略，限当前 ACTIVE 项目的 PM/ImplementationMember，持锁读取但不授予写权限；Owner 先重证 Session/License/项目角色，再调用内部 Catalog。游标独立 `project-global-reference-candidate-list` 签名族与 32 字节专用密钥，绑定 Session 摘要、Project、页大小和已扫描原始根 ID；仅 Owner 输入/输出不接 HTTP。
 - Reason：候选是 CREATE 前置选择，归档项目和客户成员不应看到可提交选项；复用普通四角色 Reference 列表或管理员 Session 会扩大权限，未签名原始根可被跨范围重放。
 - Impact/Rollback：新增项目策略、Solution 内部 Owner/Codec/测试，不改旧 API/Schema/依赖。移除未挂载 Owner/策略可回滚，发布历史保留；Windows 正式专用密钥供给与 HTTP 另验。
+
+# DEC-20261009-1155：项目 GLOBAL 候选使用独立默认关闭 GET 路径
+
+- Date/WBS：2026-10-09 / `SOL-03-A04-P03-P03-P06-A03-P05-A04`；依据 CR-SOL-018 与已验受权 Owner/游标。
+- Decision：新增可选 `GET /api/v1/projects/{project_id}/global-reference-candidates`，查询只允许 `page_size`（1～100，默认20）和独立 `cursor` 且不能重复；可信 Host/Session 预验后 Owner 再重证。响应每项严格仅根 ID、固定版本 ID、人工审定标签、版本号及 ELIGIBLE 状态；空可见页允许 `has_more=true` 和非空下一游标，no-store。默认 `create_app` 不注入则 404。
+- Reason：与管理员 GLOBAL 列表隔离、不泄露原始名称或来源；项目页需要经审定标签，过滤空页也要保留原始根推进语义。
+- Impact/Rollback：增量非 Breaking 路径，不改旧 API/DB/依赖。移除可选路由即关闭入口，已发布/审计历史不动；Windows 正式密钥、目标账户及浏览器另验。

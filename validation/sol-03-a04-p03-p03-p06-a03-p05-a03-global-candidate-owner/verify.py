@@ -38,7 +38,7 @@ def rejects(action, expected: str) -> None:
     raise AssertionError(f"candidate read unexpectedly accepted {expected}")
 
 
-def on_published(*, runtime, catalog, initial, port) -> None:
+def on_published(*, runtime, catalog, initial, port, on_http=None) -> None:
     with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
                          dbname="postgres", autocommit=True) as db:
         actor = db.execute(
@@ -78,6 +78,9 @@ def on_published(*, runtime, catalog, initial, port) -> None:
     assert len(second.items) == 1 and not second.has_more
     assert second.items[0].reference_solution_id == initial.reference_solution_id
     assert second.items[0].display_label == "审定的合成标签"
+    if on_http is not None:
+        on_http(reader=reader, project=project, other_project=other,
+                initial=initial)
     rejects(lambda: reader.list(
         GlobalReferenceCandidateReadQuery(fixture.TOKEN, uuid.uuid4(), other)),
         "RESOURCE_NOT_FOUND")
