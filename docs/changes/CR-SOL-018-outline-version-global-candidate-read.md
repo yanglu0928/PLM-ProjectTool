@@ -54,6 +54,10 @@
 
 2026-10-09 按 DEC-1156 将项目 GLOBAL 候选 GET 仅装配至 Windows 两种显式平台模式，使用独立当前账户 Vault 游标密钥与受控 Document/Parse/Evidence 来源；缺安全依赖拒启动。Win11 隔离 PG18.6/ASGI、启动失败关闭、密钥备份恢复及后端全量证据见 `docs/progress/sol-03-a04-p03-p03-p06-a03-p05-a05-global-candidate-windows.md`。正式目标账户/Server2025、项目浏览器及 Gate 3 尚未通过，本 CR 不关闭。
 
+## P06-A03-P05-A06-P01 实施记录
+
+2026-10-09 按 DEC-1157 新增项目上下文专用 GLOBAL 候选前端读取客户端，严格五字段/游标/no-store 合同与空可见页续页；全量前端测试、类型检查和构建证据见 `docs/progress/sol-03-a04-p03-p03-p06-a03-p05-a06-p01-global-candidate-client.md`。客户端未挂页面，浏览器及正式环境未验；本 CR 仍不关闭。
+
 ## P06-A02-P02 前置核查
 
 2026-10-09 核查 `GlobalReferenceReadService` 当前仅调用 `AdminPort.authorized_admin`；`SqlAlchemyGlobalReferenceReadRepository` 投影含 `Root.name`，而 GLOBAL 创建只验证名称格式，不证明其已被人工审定为可向项目成员展示。现有 `Reference` 当前资格/来源证明是内部最小端口，不提供可读标签；以截断 UUID 当标签虽不泄露正文，却无法让用户核对所选方案。故项目成员 GLOBAL 候选页面编码前置不满足，状态为 `PRECONDITION_BLOCKED`，不是 Gate/功能 PASS。先实施本 CR 的发布账本与管理员确认、再开放读面；这需要独立 Schema/Owner/API/Win11/页面任务。当前转做不依赖它的 OutlineVersion GET/LIST 与原操作恢复，保持 P06-PROJECT 子集可用。
