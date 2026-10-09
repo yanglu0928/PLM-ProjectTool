@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261009-1139：GLOBAL 合格参考由服务端提供项目用途现时证明
+
+- Date/WBS：2026-10-09 / `SOL-03-A04`；依据冻结 API-04/DM-05、CR-SOL-016、SOL-01-A16 的管理员资格链与 0154 封闭引用。
+- Decision：保留项目角色 CREATE 权限及 GLOBAL 管理员原始读取边界；新增内部只读、最小投影的已合格固定 ReferenceVersion 项目用途证明，不复用需要调用者管理员身份的资格命令，不放宽到裸历史 `ELIGIBLE` 状态。
+- Reason：现有 `qualify()` 适合 GLOBAL 管理员作资格决定，不适合 ProjectManager/ImplementationMember 使用已合格来源；权限提级和忽略现时性均违背冻结合同。
+- Impact/Rollback：先设计并验证证明 Port，正式 Owner 写 Guard 保持关闭；无本决策直接迁移/API/依赖变化。失败时停用证明接线并保留旧版本历史，后续 PG/权限/撤回/到期/并发负例见 CR-SOL-016。
+
 ## DEC-20261009-1138：OutlineVersion 参考关联先闭结构、后开 Owner
 
 - Date/WBS：2026-10-09 / `SOL-03-A02`；依据冻结 DM-05/API-04、CR-SOL-002、0137 三表写 Guard、SOL-04 Section 身份、REQ-01 当前批准证明和 SOL-01-A16 现时资格机制。

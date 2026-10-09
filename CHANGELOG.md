@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-09：0.1.0-dev.0/SOL-03-A04 编码前检查发现冻结项目角色创建 OutlineVersion 与现有 GLOBAL 管理员来源复验入口不兼容，先登记 CR-SOL-016/DEC-1139，决定采用服务端受限现时证明，不提升项目用户权限也不信任历史资格。兼容性/升级：仅设计与追溯，无程序、Schema/Migration、API 或依赖变化；可撤施工顺序，保留 CR 历史。验证：静态合同/Owner/来源接口对账，未运行新测试。已知问题：A04-P01 证明、CREATE Owner/HTTP/UI/Review 仍未完成；Gate3/正式发行不通过。
+
 - 2026-10-09：0.1.0-dev.0/SOL-03-A03 新增封闭的 OutlineVersion→ReferenceVersion 固定关联表/ORM、PROJECT 同项目及 GLOBAL 无来源项目约束、引用计数和线性 `0154` 迁移，旧 0137 写 Guard 保留。兼容性/升级：`0153→0154`，旧目录版本引用数默认 0；空引用且计数全 0 可降级，有历史拒降、须前向修复；无公开 API/依赖变更。验证：Win11 临时 PG18.6 空/有数据升降重升、约束/写保护/拒降及 drift；后端全量 3407 通过/3 跳过/5199 子例。已知问题：版本 CREATE/VALIDATE/Review/HTTP/UI 仍阻塞；正式信任/20 并发/Server2025、Gate3/UAT/发行未验，Debian13 实机依指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-03-A02 对齐冻结 OutlineVersion 固定 Section/Approved Requirement/当前 Eligible Reference 输入，登记 CR-SOL-002/DEC-1138 的封闭参考关联迁移、同项目/GLOBAL 约束、历史拒降和 Owner 分层顺序。兼容性/升级：仅设计/追溯，无程序/Schema/Migration/API/依赖变化；排序可撤但不删历史。验证：静态对账，未运行新测试；正式版本 CREATE 仍阻塞。已知问题：A03 Schema、Owner/HTTP/UI/Review/Trace/Workflow、质量/信任/性能/发行未验；Debian13实机依指令跳过。
