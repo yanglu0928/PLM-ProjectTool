@@ -49,3 +49,5 @@ SOL-05-A02-P12-P01 按 DEC-1178 增加冻结路径的可选 POST 边界与 Windo
 SOL-05-A02-P12-P02 按 DEC-1179 补真实 Edge→Uvicorn loopback→PG18.6 验收。合成现时来源和 Cookie 下观察 201/重放/409/404/403/422/503，SQL 证实仅一条新增版本/首响应/收据/Audit；仅测试资产、无生产变化。未验证正式 HTTPS、服务账户/公钥、Server2025 或 UI，也不解除旧 0138 完整脚本诊断和 Gate3 阻塞。详见 `docs/progress/sol-05-a02-p12-p02-section-version-edge-network.md`。本 CR 保持 OPEN。
 
 SOL-05-A03-P01 按 DEC-1180 开始独立历史读取，先补冻结 API-04 的项目成员 GET/LIST 只读授权并锁定当前事实；尚无 Owner/HTTP，不把 CREATE 首响应或历史固定引用当作现时资格。无 Schema、API Breaking、依赖/数据变化；见 `docs/progress/sol-05-a03-p01-section-version-read-authorization.md`。本 CR 保持 OPEN。
+
+SOL-05-A03-P02 按 DEC-1182 增加内部受权历史 GET/LIST Owner 与 SQL 固定引用重构：当前 License/Session/项目权限每次重验，Version 根与不可变首次结果/有序 Requirement/Evidence 集合核对，当前 Review 状态与历史固定输入分离，来源漂移不改历史。Win11 可弃 PG18.6 五版本分页/详情、隔离/License、合成首响应损坏失败关闭已验；无 Migration/公开 API/权限/依赖变化。正式 HTTP/Windows/UI/目标信任与 Gate3 独立验收；见 `docs/progress/sol-05-a03-p02-section-version-read-owner.md`。本 CR 保持 OPEN。

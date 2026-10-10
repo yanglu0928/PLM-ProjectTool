@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-10：0.1.0-dev.0/SOL-05-A03-P02 新增 SectionVersion 历史 GET/LIST 内部受权 Owner/SQL Repository，固定引用与首响应一致性失败关闭，当前 Review 状态与旧来源资格分离；尚无公开 HTTP。兼容性/升级/回滚：无 Migration/API Breaking/权限/依赖/旧数据变化，可撤未装配内部读取代码，历史保留。验证：定向3通过/9子测试、Win11可弃PG18.6五版本分页/隔离/来源漂移/合成损坏拒读脚本退出0；后端全量3540通过/3跳过/5558子测试。已知问题：正式 HTTP/Windows/UI、Server2025/信任、性能/Gate3/Pilot/发行未验，Debian13实机依指令跳过。
+
 - 2026-10-10：0.1.0-dev.0/EXEC-02 按用户确认更新 `AGENTS.md` 加速交付纪律：优先 Windows 11 受控 Pilot 纵向链/离线安装，保留完整三平台正式 Scope 与 Gate 3～7 验收；CR-EXEC-002 记录差异、风险及回滚。兼容性/升级/回滚：仅执行顺序和文档变化，无程序、Schema、API、依赖或数据迁移；可恢复原优先级，历史保留。验证：规则与状态静态一致性检查；Pilot/正式包均尚未验收。已知问题：质量、性能、正式信任、Server2025/Debian13、安装升级/UAT 仍待。
 
 - 2026-10-09：0.1.0-dev.0/SOL-05-A03-P01 新增 SectionVersion GET/LIST 的 Project-owned 项目成员只读授权操作，锁定当前授权事实；尚不挂读取 Owner/HTTP。兼容性/升级/回滚：无 Schema/Migration/公开 API/依赖/旧数据变化，可撤未接线策略。验证：项目授权矩阵定向10通过/772子测试，后端全量3537通过/3跳过/5549子测试。已知问题：历史读取 Owner/HTTP/Windows/UI 尚待，正式信任/Server2025、Gate3/发行未验，Debian13实机依指令跳过。

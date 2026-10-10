@@ -11233,3 +11233,10 @@
 - Decision：保持原产品 Scope 和 Gate 3～7，优先打通项目至输出的纵向链及 Windows 11 真实信任/离线安装，形成受控内部试用包；独立质量、性能、Server2025/Debian13 和 UAT 缺口继续追踪，不将 Pilot 标为正式发行。
 - Reason：当前单点功能验证多而完整链和发行前置不足；早期可安装 Pilot 能提早暴露集成问题，但不能替代正式验收。
 - Impact/Rollback：仅调整任务优先级与约束文档，无程序/API/Schema/数据变化；可恢复原优先级，全部历史与正式 Gate 条件保留。
+
+# DEC-20261010-1182：SectionVersion 历史读取以首响应闭环校验固定身份
+
+- Date/WBS：2026-10-10 / `SOL-05-A03-P02`；依据 Gate2 API-04、CR-SOL-003、0160 插入闭环、A03-P01 授权与既有 OutlineVersion 读取模式。
+- Decision：内部 GET/LIST 每次验 License/Session/当前 Project 成员并锁定 Section 身份；Repo 按 Project/Section/Version 读取根与不可变首次结果，检查固定字段和有序 Requirement/Evidence 引用的声明数，当前 Review 状态仅作历史展示、不重证来源当前资格。LIST 按版本号倒序且限制 1～100，游标/公开 HTTP 留下一个独立任务。
+- Reason：仅查询 CREATE 首响应会误报后续状态，直接读根不校验首次结果/子表会把损坏历史当作可信快照；历史读若重证可变来源又会把合法旧版本隐藏。
+- Impact/Rollback：仅 Solution 内部只读 Application/Repository 和测试，无 Migration、权限矩阵/公开 API/依赖/旧数据变化；移除未挂入口的读取代码可回滚，版本历史保留。
