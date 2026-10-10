@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-10：0.1.0-dev.0/EXEC-02 按用户确认更新 `AGENTS.md` 加速交付纪律：优先 Windows 11 受控 Pilot 纵向链/离线安装，保留完整三平台正式 Scope 与 Gate 3～7 验收；CR-EXEC-002 记录差异、风险及回滚。兼容性/升级/回滚：仅执行顺序和文档变化，无程序、Schema、API、依赖或数据迁移；可恢复原优先级，历史保留。验证：规则与状态静态一致性检查；Pilot/正式包均尚未验收。已知问题：质量、性能、正式信任、Server2025/Debian13、安装升级/UAT 仍待。
+
 - 2026-10-09：0.1.0-dev.0/SOL-05-A03-P01 新增 SectionVersion GET/LIST 的 Project-owned 项目成员只读授权操作，锁定当前授权事实；尚不挂读取 Owner/HTTP。兼容性/升级/回滚：无 Schema/Migration/公开 API/依赖/旧数据变化，可撤未接线策略。验证：项目授权矩阵定向10通过/772子测试，后端全量3537通过/3跳过/5549子测试。已知问题：历史读取 Owner/HTTP/Windows/UI 尚待，正式信任/Server2025、Gate3/发行未验，Debian13实机依指令跳过。
 
 - 2026-10-09：0.1.0-dev.0/SOL-05-A02-P12-P02 补 SectionVersion CREATE 的 Win11 Edge→Uvicorn loopback→一次性 PG18.6 网络验收资产，验证 201/重放/409/404/403/422/503 和单条版本/首响应/收据/Audit。兼容性/升级/回滚：无生产代码、Schema/API/权限/依赖/数据变化；可移除测试资产，正式历史不删。验证：真实 Edge/网络/PG 脚本退出0，P11 来源夹具及上游测试同次通过。已知问题：非 UI 页面或正式 HTTPS/账户/公钥/Server2025 验收；旧0138完整脚本未PASS，性能/AI质量/Gate3/发行未验，Debian13实机依指令跳过。

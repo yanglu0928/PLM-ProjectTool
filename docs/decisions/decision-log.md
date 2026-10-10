@@ -11226,3 +11226,10 @@
 - Decision：GET/LIST 均授予四类当前项目成员，使用 Project-owned 锁定读授权；Section/Version 同项目身份与完整性由后续内部读取 Owner 独立证明，当前只增加未接线策略。
 - Reason：冻结合同允许项目成员读历史，但 CREATE 的写授权只限 PM/实施成员且首响应不适合充当完整历史 GET/LIST；直接复用会缩窄读权限或漏掉固定引用。
 - Impact/Rollback：仅 Project policy/测试/记录，无 Migration/公开 API/依赖/旧数据变化，可撤未接线策略；旧历史与 Gate3 状态不变。
+
+# DEC-20261010-1181：先形成受控 Windows 11 Pilot，再完成正式三平台 Release
+
+- Date/WBS：2026-10-10 / `EXEC-02`；依据用户明确同意与 `CR-EXEC-002`。
+- Decision：保持原产品 Scope 和 Gate 3～7，优先打通项目至输出的纵向链及 Windows 11 真实信任/离线安装，形成受控内部试用包；独立质量、性能、Server2025/Debian13 和 UAT 缺口继续追踪，不将 Pilot 标为正式发行。
+- Reason：当前单点功能验证多而完整链和发行前置不足；早期可安装 Pilot 能提早暴露集成问题，但不能替代正式验收。
+- Impact/Rollback：仅调整任务优先级与约束文档，无程序/API/Schema/数据变化；可恢复原优先级，全部历史与正式 Gate 条件保留。
