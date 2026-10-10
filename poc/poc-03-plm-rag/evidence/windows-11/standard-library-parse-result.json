@@ -1,0 +1,24 @@
+{
+  "schema_version": "poc-03.standard-library-parse-result.v1",
+  "generated_at": "2026-09-18T00:49:22.973187+00:00",
+  "status": "PASS",
+  "summary": {
+    "file_count": 20,
+    "supported_count": 20,
+    "passed_count": 20,
+    "failed_count": 0,
+    "source_unchanged_count": 20,
+    "schema_error_count": 0
+  },
+  "parser_fix": {
+    "invalid_internal_null_relationship_detected": 1,
+    "temporary_repaired_copy_used": true,
+    "original_modified": false
+  },
+  "privacy": {
+    "source_files_committed": false,
+    "source_names_committed": false,
+    "parsed_content_committed": false
+  },
+  "quality_scope": "schema_and_structure_only_no_content_accuracy_ground_truth"
+}

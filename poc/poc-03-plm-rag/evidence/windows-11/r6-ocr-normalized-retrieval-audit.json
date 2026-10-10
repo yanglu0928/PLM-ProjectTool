@@ -1,0 +1,32 @@
+{
+  "schema_version": "poc-03.ocr-normalized-retrieval-audit.v1",
+  "generated_at": "2026-09-18",
+  "status": "PASS",
+  "summary": {
+    "case_count": 120,
+    "top5_hits": 116,
+    "top5_recall": 0.9666666666666667,
+    "top20_hits": 116,
+    "top20_recall": 0.9666666666666667,
+    "top5_miss_count": 4
+  },
+  "configuration": {
+    "source_type_filter": true,
+    "cjk_ocr_spacing_normalization": true,
+    "query_label_leakage": false,
+    "expected_chunk_id_leakage": false,
+    "external_calls": 0
+  },
+  "limitations": {
+    "same_dataset_used_for_exploratory_tuning": true,
+    "independent_holdout_required_before_production_claim": true,
+    "citation_accuracy_ceiling_when_context_is_top5": 0.9666666666666667
+  },
+  "privacy": {
+    "queries_in_report": false,
+    "chunk_ids_in_report": false,
+    "document_text_in_report": false,
+    "source_names_in_report": false,
+    "case_level_report_committed": false
+  }
+}

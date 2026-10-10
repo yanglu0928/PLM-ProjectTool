@@ -1,0 +1,95 @@
+# Non-sensitive bootstrap settings only. Never add passwords, API keys or tokens.
+# Windows example; on Debian use an absolute path such as /opt/plmtool/data.
+bind_host: "127.0.0.1"
+bind_port: 8000
+data_root: "C:/PLMTool/data"
+log_level: "INFO"
+# Shared reset/change KDF slots per process; login/create are not included.
+# Strict integer 1..16. Changing requires restart; workers multiply the budget.
+# Higher capacity needs memory planning; this is not a performance guarantee.
+password_kdf_slots: 4
+# Set only after the operator selects a MAC actually present on this machine.
+# selected_mac: "02:11:22:33:44:55"
+# Parser Worker only: all three non-sensitive values are required for its
+# offline OCR startup. Copy vetted PP-OCRv5 model files into these directories;
+# record the composite SHA-256 fingerprint from the approved model manifest.
+# No automatic download or guessed fingerprint is permitted.
+# parser_ocr_detection_model_dir: "C:/PLMTool/app/models/PP-OCRv5_mobile_det"
+# parser_ocr_recognition_model_dir: "C:/PLMTool/app/models/PP-OCRv5_mobile_rec"
+# parser_ocr_model_fingerprint: "<64 lowercase hex characters>"
+# Optional AI Provider probe policies. Supply only approved non-secret endpoint
+# metadata in the protected deployment config; never put API keys here.
+# Without an explicit valid policy, Provider Test/Activate composition stays closed.
+# Changes require a controlled process restart and fresh Provider Test proof.
+# ai_probe_policies:
+#   - reference: "<approved-symbolic-reference>"
+#     kind: "OPENAI_COMPATIBLE"
+#     endpoint_url: "https://<approved-host>/v1/chat/completions"
+#     model_key: "<approved-model>"
+#     data_region: "cn-beijing"
+#     egress_class: "EXTERNAL_APPROVAL_REQUIRED"
+# Optional AI Egress Preview/Authorization policies. These contain only bounded,
+# non-secret allowlists and limits: never add endpoint URLs, API keys or content.
+# Without at least one valid policy, the four Egress routes remain unmounted.
+# Policy changes require a controlled process restart; existing approvals keep
+# their immutable historical snapshot and remain subject to runtime checks.
+# ai_egress_policies:
+#   - reference: "minimal-document-text.v1"
+#     operation_types: ["AI_TASK"]
+#     data_categories: ["DOCUMENT_TEXT"]
+#     ttl_minutes: 30
+#     max_record_count: 50
+#     max_payload_bytes: 1048576
+#     max_input_tokens: 32768
+#     max_retry_attempts: 2
+#     risk_codes: ["EXTERNAL_PROCESSING"]
+#     approval_roles: ["PROJECT_MANAGER", "CUSTOMER_MANAGER"]
+#     data_regions: ["cn-beijing"]
+# Optional AI Task submission policies. These bind a public policy reference to
+# one reviewed Prompt template, Egress purpose and strictly typed scalar fields.
+# Never put Prompt text, customer content, endpoint URLs or credentials here.
+# Removing all entries and restarting unmounts Task submission; existing Task
+# snapshots remain immutable and are still subject to execution-time checks.
+# Starting AI_PROVIDER_WORKER for business Tasks requires both this list and the
+# complete ai_execution_policies list below; an incomplete pair fails closed.
+# ai_task_policies:
+#   - reference: "gap-analysis.v1"
+#     policy_version: 1
+#     task_type: "GAP_ANALYSIS"
+#     prompt_template_id: "00000000-0000-0000-0000-000000000001"
+#     purpose_ref: "project-gap-analysis.v1"
+#     output_schema_ref: "gap-output.v1"
+#     context_policy_ref: "no-retrieval.v1"
+#     parameter_fields:
+#       - name: "language"
+#         value_type: "STRING"
+#         required: true
+#         max_length: 16
+#         minimum: null
+#         maximum: null
+#         allowed_values: ["zh-CN", "en-US"]
+# Business AI Provider execution policies are non-secret endpoint and resource
+# bounds. Provider keys remain encrypted Secret records and are never put here.
+# The symbolic reference must match the active Provider configuration; models
+# not on the allowlist cannot be sent. Changes require a controlled restart.
+# ai_execution_policies:
+#   - reference: "<approved-symbolic-reference>"
+#     kind: "OPENAI_COMPATIBLE"
+#     endpoint_url: "https://<approved-host>/v1/chat/completions"
+#     data_region: "cn-beijing"
+#     egress_class: "EXTERNAL_APPROVAL_REQUIRED"
+#     allowed_model_keys: ["<approved-model>"]
+#     max_response_bytes: 1048576
+#     connect_timeout_seconds: 5
+#     read_timeout_seconds: 30
+#     total_timeout_seconds: 40
+# Optional first-version local Retrieval strategy. This is an exact opt-in;
+# omitting it keeps the Retrieval HTTP routes and Worker queue closed. Query
+# content is encrypted with the dedicated Windows Vault key reference
+# `rag-retrieval-query-v1`, provisioned and backed up separately with the
+# existing secret_key_recovery command. Never put that key in this YAML.
+# rag_retrieval_policies:
+#   - reference: "fts.project.v1"
+#     scope: "PROJECT"
+#     rerank_policy_ref: "none.v1"
+#     context_policy_ref: "project-documents.v1"

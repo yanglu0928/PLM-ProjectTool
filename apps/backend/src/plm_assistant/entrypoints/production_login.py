@@ -1,0 +1,1830 @@
+"""Fail-closed Windows production composition for the frozen login endpoint."""
+
+from __future__ import annotations
+
+from alembic.config import Config
+from alembic.script import ScriptDirectory
+from fastapi import FastAPI
+from sqlalchemy import create_engine, text
+
+from plm_assistant.entrypoints.api import create_app
+from plm_assistant.entrypoints.ai_egress_policy import create_deployment_ai_egress_policies
+from plm_assistant.entrypoints.ai_execution_policy import create_deployment_ai_execution_registry
+from plm_assistant.entrypoints.ai_task_policy import create_deployment_ai_task_policies
+from plm_assistant.entrypoints.password_capacity import get_process_password_capacity
+from plm_assistant.entrypoints.windows_ai_egress import create_windows_ai_egress_router
+from plm_assistant.entrypoints.windows_ai_task import create_windows_ai_task_router
+from plm_assistant.entrypoints.windows_ai_task_read import create_windows_ai_task_read_router
+from plm_assistant.entrypoints.windows_ai_read import create_windows_ai_read_routers
+from plm_assistant.entrypoints.windows_ai_read_cursor import (
+    create_windows_ai_read_cursor_codecs,
+)
+from plm_assistant.entrypoints.windows_rag_retrieval import (
+    create_windows_rag_retrieval_api,
+)
+from plm_assistant.entrypoints.windows_capability import (
+    create_windows_capability_routers,
+)
+from plm_assistant.entrypoints.windows_handover_action_read import (
+    create_windows_handover_action_read_router,
+)
+from plm_assistant.entrypoints.windows_handover_action import (
+    create_windows_handover_action_write_routers,
+)
+from plm_assistant.entrypoints.windows_workflow_checklist import (
+    create_windows_workflow_checklist_qualification_router,
+    create_windows_workflow_checklist_record_router,
+    create_windows_workflow_stage_transition_router,
+)
+from plm_assistant.entrypoints.windows_handover import (
+    create_windows_handover_routers,
+)
+from plm_assistant.entrypoints.windows_survey import (
+    create_windows_survey_routers,
+)
+from plm_assistant.entrypoints.windows_project_review import (
+    create_windows_project_review_router,
+)
+from plm_assistant.entrypoints.windows_requirement import (
+    create_windows_requirement_routers,
+)
+from plm_assistant.entrypoints.windows_prototype import (
+    create_windows_prototype_routers,
+)
+from plm_assistant.entrypoints.windows_solution_reference import (
+    create_windows_global_reference_create_router,
+    create_windows_global_reference_revise_router,
+    create_windows_global_reference_eligibility_router,
+    create_windows_global_reference_publication_router,
+    create_windows_global_reference_read_router,
+    create_windows_global_reference_list_router,
+    create_windows_project_reference_create_router,
+    create_windows_project_reference_revise_router,
+    create_windows_project_reference_eligibility_router,
+    create_windows_project_reference_list_router,
+    create_windows_project_global_reference_candidate_router,
+    create_windows_project_reference_read_router,
+    create_windows_reference_deidentification_router,
+)
+from plm_assistant.entrypoints.windows_solution_reference_cursor import (
+    create_windows_global_reference_list_cursor_codec,
+    create_windows_project_reference_list_cursor_codec,
+    create_windows_project_global_reference_candidate_cursor_codec,
+)
+from plm_assistant.entrypoints.windows_solution_outline import (
+    create_windows_outline_create_router,
+    create_windows_outline_version_create_router,
+    create_windows_outline_version_read_router,
+    create_windows_section_create_router,
+    create_windows_section_version_create_router,
+    create_windows_section_read_router,
+    create_windows_section_list_router,
+    create_windows_outline_list_router,
+    create_windows_outline_read_router,
+)
+from plm_assistant.entrypoints.windows_solution_outline_cursor import (
+    create_windows_outline_list_cursor_codec,
+)
+from plm_assistant.entrypoints.windows_solution_outline_version_cursor import (
+    create_windows_outline_version_list_cursor_codec,
+)
+from plm_assistant.entrypoints.windows_solution_section_cursor import (
+    create_windows_section_list_cursor_codec,
+)
+from plm_assistant.entrypoints.windows_audit_list_cursor import create_windows_audit_cursor_codec
+from plm_assistant.modules.audit.api.read_events import create_audit_read_router
+from plm_assistant.modules.audit.application.authorized_read import AuthorizedAuditReadService
+from plm_assistant.modules.audit.infrastructure.audit_read_repository import SqlAlchemyAuditReadRepository
+from plm_assistant.modules.audit.api.read_export_result import create_audit_export_result_router
+from plm_assistant.modules.audit.api.download_export import create_audit_export_download_router
+from plm_assistant.modules.audit.application.export_content import AuditExportContentReader, PrepareAuditExportContent
+from plm_assistant.modules.audit.infrastructure.export_submit_repository import SqlAlchemyAuditExportSubmitRepository
+from plm_assistant.modules.audit.infrastructure.export_result_repository import SqlAlchemyAuditExportResults
+from plm_assistant.modules.audit.infrastructure.render_plan_repository import SqlAlchemyAuditRenderPlans
+from plm_assistant.modules.document.infrastructure.audit_export_metadata import SqlAlchemyAuditExportFileMetadata
+from plm_assistant.modules.document.infrastructure.audit_export_storage import LocalAuditExportFileStorage
+from plm_assistant.modules.jobs.application.audit_export_complete import AuditExportJobCompletion
+from plm_assistant.modules.jobs.application.audit_export_enqueue import AuditExportJobQueue
+from plm_assistant.modules.jobs.infrastructure.audit_export_enqueue_repository import SqlAlchemyAuditExportJobQueueRepository
+from plm_assistant.modules.jobs.infrastructure.lease_repository import SqlAlchemyJobLeaseRepository
+from plm_assistant.modules.jobs.api.read_detail import create_job_detail_router
+from plm_assistant.modules.auth.api.user_detail import create_user_detail_router
+from plm_assistant.modules.auth.api.user_list import create_user_list_router
+from plm_assistant.modules.auth.api.user_create import create_user_create_router
+from plm_assistant.modules.auth.api.user_name_patch import create_user_name_patch_router
+from plm_assistant.modules.auth.api.user_state import create_user_state_router
+from plm_assistant.modules.auth.api.password_change import create_password_change_router
+from plm_assistant.modules.auth.api.password_reset import create_password_reset_router
+from plm_assistant.modules.auth.application.password_reset import PasswordResetService
+from plm_assistant.modules.auth.application.password_reset_replay import PasswordResetReplayVerifier
+from plm_assistant.modules.auth.infrastructure.password_reset_access import SqlAlchemyPasswordResetAccess
+from plm_assistant.modules.auth.infrastructure.password_reset_repository import SqlAlchemyPasswordResetRepository
+from plm_assistant.modules.auth.infrastructure.password_reset_result_repository import SqlAlchemyPasswordResetResults
+from plm_assistant.modules.auth.application.password_change import PasswordChangeService
+from plm_assistant.modules.auth.application.password_change_replay import PasswordChangeReplayVerifier
+from plm_assistant.modules.auth.infrastructure.password_change_access import SqlAlchemyPasswordChangeAccess
+from plm_assistant.modules.auth.infrastructure.password_change_repository import SqlAlchemyPasswordChangeRepository
+from plm_assistant.modules.auth.infrastructure.password_change_result_repository import SqlAlchemyPasswordChangeResults
+from plm_assistant.modules.auth.application.user_state import UserStateService
+from plm_assistant.modules.auth.infrastructure.user_state_access import SqlAlchemyUserStateAccess
+from plm_assistant.modules.auth.infrastructure.user_state_repository import SqlAlchemyUserStateRepository
+from plm_assistant.modules.auth.infrastructure.user_state_result_repository import SqlAlchemyUserStateResultRepository
+from plm_assistant.modules.auth.application.user_name_patch import UserNamePatchService
+from plm_assistant.modules.auth.infrastructure.user_name_patch_repository import SqlAlchemyUserNamePatchRepository
+from plm_assistant.modules.auth.application.managed_user_create import ManagedUserCreateService
+from plm_assistant.modules.auth.application.user_create_replay import UserCreateReplayVerifier
+from plm_assistant.modules.auth.infrastructure.user_create_result_repository import SqlAlchemyUserCreateResultRepository
+from plm_assistant.modules.auth.infrastructure.user_create_access import SqlAlchemyUserCreateAccess
+from plm_assistant.modules.auth.infrastructure.user_repository import SqlAlchemyUserRepository
+from plm_assistant.modules.auth.application.user_list import AuthorizedUserListService
+from plm_assistant.entrypoints.windows_user_list_cursor import create_windows_user_list_cursor_codec
+from plm_assistant.modules.auth.application.user_read import AuthorizedUserReadService
+from plm_assistant.modules.auth.infrastructure.user_read_repository import SqlAlchemyUserReadRepository
+from plm_assistant.modules.jobs.api.cancel import create_project_job_cancel_router
+from plm_assistant.modules.jobs.api.retry import create_job_retry_router
+from plm_assistant.modules.jobs.application.retry_request import JobRetryRequests
+from plm_assistant.modules.audit.application.job_retry_adapter import AuditJobRetryOwner
+from plm_assistant.modules.audit.application.request_user_retry import AuditUserRetryService
+from plm_assistant.modules.audit.application.user_retry_source import AuditUserRetrySourceReader
+from plm_assistant.modules.audit.infrastructure.user_retry_failure_source import SqlAlchemyAuditUserRetryFailureSources
+from plm_assistant.modules.audit.infrastructure.retry_generation_repository import SqlAlchemyAuditRetryGenerations
+from plm_assistant.modules.jobs.application.audit_user_retry_source import AuditUserRetryJobSources
+from plm_assistant.modules.jobs.infrastructure.audit_user_retry_source import SqlAlchemyAuditUserRetryJobSources
+from plm_assistant.modules.jobs.application.cancel_request import ProjectJobCancellation
+from plm_assistant.modules.jobs.application.audit_export_cancel import AuditExportCancellation
+from plm_assistant.modules.jobs.infrastructure.audit_export_cancel_repository import SqlAlchemyAuditExportCancellationRepository
+from plm_assistant.modules.audit.application.job_cancel_adapter import AuditJobCancelOwner
+from plm_assistant.modules.audit.application.request_export_cancel import AuditExportCancelRequestService
+from plm_assistant.modules.audit.application.export_cancel_authorization import AuditExportCancelAuthorization
+from plm_assistant.modules.audit.infrastructure.export_cancel_sources import SqlAlchemyAuditExportCancelSources
+from plm_assistant.modules.audit.infrastructure.parse_cancel_sources import SqlAlchemyParseCancelAuditSources
+from plm_assistant.modules.document.application.request_parse_cancel import DocumentParseJobCancelOwner
+from plm_assistant.modules.jobs.infrastructure.parse_cancel_repository import SqlAlchemyParseCancellationRepository
+from plm_assistant.modules.jobs.application.authorized_read import AuthorizedJobReadService
+from plm_assistant.modules.jobs.application.authorized_list import AuthorizedJobListService
+from plm_assistant.modules.jobs.api.list_jobs import create_job_list_router
+from plm_assistant.entrypoints.windows_job_list_cursor import create_windows_job_list_cursor_codec
+from plm_assistant.modules.jobs.infrastructure.read_repository import SqlAlchemyJobReadRepository
+from plm_assistant.modules.audit.application.job_read_projection import AuditJobReadProjection
+from plm_assistant.modules.document.application.job_read_projection import DocumentParseJobReadProjection
+from plm_assistant.modules.ai.application.provider_test_job_read_projection import ProviderTestJobReadProjection
+from plm_assistant.modules.ai.infrastructure.provider_test_job_read import SqlAlchemyProviderTestJobReadRepository
+from plm_assistant.modules.ai.application.request_task_cancel import AITaskJobCancelOwner
+from plm_assistant.modules.ai.application.request_task_retry import AITaskJobRetryOwner
+from plm_assistant.modules.ai.application.task_job_read_projection import AITaskJobReadProjection
+from plm_assistant.modules.ai.application.egress_authorization_owner import EgressAuthorizationOwner
+from plm_assistant.modules.ai.infrastructure.task_cancellation_repository import (
+    SqlAlchemyAITaskCancellationRepository,
+)
+from plm_assistant.modules.ai.infrastructure.task_retry_repository import (
+    SqlAlchemyAITaskRetryRepository,
+)
+from plm_assistant.modules.ai.infrastructure.task_job_read import (
+    SqlAlchemyAITaskJobReadRepository,
+)
+from plm_assistant.modules.ai.infrastructure.egress_authorization_owner_repository import (
+    SqlAlchemyEgressAuthorizationOwnerRepository,
+)
+from plm_assistant.modules.document.application.parse_job_source import DocumentParseSourceReader
+from plm_assistant.modules.document.infrastructure.parse_job_source import SqlAlchemyDocumentParseSources
+from plm_assistant.modules.document.application.parse_job_result import DocumentParseJobResults
+from plm_assistant.modules.document.infrastructure.parse_job_result import SqlAlchemyDocumentParseJobResults
+from plm_assistant.modules.audit.application.upload_commit_source import UploadCommitAuditSources
+from plm_assistant.modules.audit.infrastructure.upload_commit_source import SqlAlchemyUploadCommitAuditSources
+from plm_assistant.modules.audit.api.submit_export import create_audit_export_submit_router
+from plm_assistant.modules.audit.application.submit_export import AuditExportSubmitService
+from plm_assistant.modules.audit.application.export_submit_authorization import AuditExportSubmitAuthorization
+from plm_assistant.entrypoints.windows_secret_list_cursor import create_windows_secret_list_cursor_codec
+from plm_assistant.entrypoints.windows_ai_provider_list_cursor import create_windows_ai_provider_list_cursor_codec
+from plm_assistant.entrypoints.windows_ai_model_list_cursor import create_windows_ai_model_list_cursor_codec
+from plm_assistant.entrypoints.windows_ai_prompt_list_cursor import create_windows_ai_prompt_list_cursor_codec
+from plm_assistant.modules.ai.api.provider_metadata import create_ai_provider_read_router
+from plm_assistant.modules.ai.application.provider_metadata import AIProviderMetadataService
+from plm_assistant.modules.ai.infrastructure.provider_metadata_repository import SqlAlchemyAIProviderMetadataRepository
+from plm_assistant.modules.ai.api.model_metadata import create_ai_model_read_router
+from plm_assistant.modules.ai.application.model_metadata import AIModelMetadataService
+from plm_assistant.modules.ai.infrastructure.model_metadata_repository import SqlAlchemyAIModelMetadataRepository
+from plm_assistant.modules.ai.api.prompt_metadata import create_ai_prompt_read_router
+from plm_assistant.modules.ai.application.prompt_metadata import PromptMetadataService
+from plm_assistant.modules.ai.infrastructure.prompt_metadata_repository import SqlAlchemyPromptMetadataRepository
+from plm_assistant.modules.ai.api.create_model import create_ai_model_create_router
+from plm_assistant.modules.ai.application.create_model import AIModelCreateService
+from plm_assistant.modules.ai.infrastructure.model_create_repository import SqlAlchemyAIModelCreateRepository
+from plm_assistant.modules.ai.api.change_model_state import create_ai_model_state_router
+from plm_assistant.modules.ai.application.change_model_state import AIModelStateService
+from plm_assistant.modules.ai.infrastructure.model_state_repository import SqlAlchemyAIModelStateRepository
+from plm_assistant.modules.ai.api.retire_prompt_template import create_ai_prompt_retire_router
+from plm_assistant.modules.ai.application.retire_prompt_template import PromptTemplateRetireService
+from plm_assistant.modules.ai.infrastructure.prompt_retire_repository import SqlAlchemyPromptRetireRepository
+from plm_assistant.modules.ai.api.create_provider import create_ai_provider_create_router
+from plm_assistant.modules.ai.application.create_provider import AIProviderCreateService
+from plm_assistant.modules.ai.infrastructure.provider_create_repository import SqlAlchemyAIProviderCreateRepository
+from plm_assistant.modules.ai.api.patch_provider import create_ai_provider_patch_router
+from plm_assistant.modules.ai.application.append_provider_config import AIProviderAppendService
+from plm_assistant.modules.ai.infrastructure.provider_append_repository import SqlAlchemyAIProviderAppendRepository
+from plm_assistant.modules.platform.infrastructure.ai_provider_secret_proof import SqlAlchemyAIProviderSecretProof
+from plm_assistant.entrypoints.windows_project_member_cursor import create_windows_project_member_cursor_codec
+from plm_assistant.entrypoints.windows_project_department_cursor import create_windows_project_department_cursor_codec
+from plm_assistant.entrypoints.windows_document_upload_token import create_windows_document_upload_token_issuer
+from plm_assistant.entrypoints.windows_document_list_cursor import create_windows_document_list_cursor_codec
+from plm_assistant.entrypoints.windows_document_version_cursor import create_windows_document_version_cursor_codec
+from plm_assistant.entrypoints.windows_document_parse_cursor import create_windows_document_parse_cursor_codec
+from plm_assistant.modules.audit.application.public import AuditService
+from plm_assistant.modules.audit.infrastructure.audit_repository import SqlAlchemyAuditRepository
+from plm_assistant.modules.auth.api.login import create_login_router
+from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
+from plm_assistant.modules.auth.api.session import (
+    create_session_read_router,
+    create_session_renew_router,
+    create_session_logout_router,
+)
+from plm_assistant.modules.auth.application.login_rate_limit import LoginRateLimiter
+from plm_assistant.modules.auth.application.login_service import LoginService
+from plm_assistant.modules.auth.application.session_service import SessionService
+from plm_assistant.modules.auth.infrastructure.login_identity import SqlAlchemyLoginIdentity
+from plm_assistant.modules.auth.infrastructure.login_rate_repository import SqlAlchemyLoginRateRepository
+from plm_assistant.modules.auth.infrastructure.missing_identity_verifier import ScryptMissingIdentityVerifier
+from plm_assistant.modules.auth.infrastructure.password_issue_access import SqlAlchemyPasswordIssueAccess
+from plm_assistant.modules.auth.infrastructure.scrypt_password import ScryptPasswordHasher
+from plm_assistant.modules.auth.infrastructure.session_repository import SqlAlchemySessionRepository
+from plm_assistant.modules.auth.infrastructure.session_view import SqlAlchemySessionView
+from plm_assistant.modules.auth.infrastructure.deployment_read_access import SqlAlchemyDeploymentReadAccess
+from plm_assistant.modules.platform.api.secret_metadata import (
+    create_secret_metadata_detail_router, create_secret_metadata_list_router,
+)
+from plm_assistant.modules.platform.api.secret_create import create_secret_create_router
+from plm_assistant.modules.platform.api.secret_rotate import create_secret_rotate_router
+from plm_assistant.modules.platform.api.secret_disable import create_secret_disable_router
+from plm_assistant.modules.platform.application.secret_metadata import SecretMetadataService
+from plm_assistant.modules.platform.infrastructure.secret_metadata_repository import (
+    SqlAlchemySecretMetadataRepository,
+)
+from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
+from plm_assistant.modules.platform.infrastructure.database import (
+    DatabaseEngineOptions, DatabaseRuntime, create_database_runtime,
+)
+from plm_assistant.modules.platform.infrastructure.maintenance_admission import PostgresMaintenanceAdmission
+from plm_assistant.modules.platform.infrastructure.migration import MIGRATION_PACKAGE
+from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
+from plm_assistant.modules.platform.infrastructure.windows_database_credential import (
+    DEFAULT_TARGET,
+    read_database_url,
+)
+from plm_assistant.modules.project.api.read_projects import create_project_read_router
+from plm_assistant.modules.project.application.read_projects import ProjectReadService
+from plm_assistant.modules.project.infrastructure.read_repository import SqlAlchemyProjectReadRepository
+from plm_assistant.modules.auth.infrastructure.project_read_access import SqlAlchemyProjectReadAccess
+from plm_assistant.modules.auth.infrastructure.project_create_access import SqlAlchemyProjectCreateAccess
+from plm_assistant.modules.project.infrastructure.authorized_projects import SqlAlchemyAuthorizedProjects
+from plm_assistant.modules.project.api.create_project import create_project_create_router
+from plm_assistant.modules.project.application.create_project import ProjectCreateService
+from plm_assistant.modules.workflow.application.initialize import WorkflowInitializationService
+from plm_assistant.modules.workflow.application.read_workflow import WorkflowReadService
+from plm_assistant.modules.workflow.application.start_workflow import WorkflowStartService
+from plm_assistant.modules.workflow.infrastructure.read_repository import SqlAlchemyWorkflowReadRepository
+from plm_assistant.modules.workflow.api.read_workflow import create_workflow_read_router
+from plm_assistant.modules.workflow.api.start_workflow import create_workflow_start_router
+from plm_assistant.modules.workflow.infrastructure.start_repository import SqlAlchemyWorkflowStartRepository
+from plm_assistant.modules.workflow.infrastructure.initialize_repository import SqlAlchemyWorkflowInitializationRepository
+from plm_assistant.modules.project.infrastructure.create_repository import SqlAlchemyProjectCreateRepository
+from plm_assistant.modules.project.api.patch_project import create_project_patch_router
+from plm_assistant.modules.project.api.archive_project import create_project_archive_router
+from plm_assistant.modules.project.api.read_members import create_project_member_read_router
+from plm_assistant.modules.project.api.create_member import create_project_member_create_router
+from plm_assistant.modules.project.api.member_candidates import create_project_member_candidate_router
+from plm_assistant.modules.project.api.patch_member import create_project_member_patch_router
+from plm_assistant.modules.project.api.change_member_state import create_project_member_state_router
+from plm_assistant.modules.project.api.read_departments import create_project_department_read_router
+from plm_assistant.modules.project.api.create_department import create_project_department_create_router
+from plm_assistant.modules.project.api.patch_department import create_project_department_patch_router
+from plm_assistant.modules.project.api.deactivate_department import create_project_department_deactivate_router
+from plm_assistant.modules.project.application.read_members import ProjectMemberReadService
+from plm_assistant.modules.project.application.create_member import ProjectMemberCreateService
+from plm_assistant.modules.project.application.member_candidates import ProjectMemberCandidateService
+from plm_assistant.modules.project.application.patch_member import ProjectMemberPatchService
+from plm_assistant.modules.project.application.change_member_state import ProjectMemberStateService
+from plm_assistant.modules.project.application.read_departments import ProjectDepartmentReadService
+from plm_assistant.modules.project.application.create_department import ProjectDepartmentCreateService
+from plm_assistant.modules.project.application.patch_department import ProjectDepartmentPatchService
+from plm_assistant.modules.project.application.deactivate_department import ProjectDepartmentDeactivateService
+from plm_assistant.modules.project.infrastructure.member_read_repository import SqlAlchemyProjectMemberReadRepository
+from plm_assistant.modules.project.infrastructure.member_create_repository import SqlAlchemyProjectMemberCreateRepository
+from plm_assistant.modules.project.infrastructure.member_patch_repository import SqlAlchemyProjectMemberPatchRepository
+from plm_assistant.modules.project.infrastructure.member_state_repository import SqlAlchemyProjectMemberStateRepository
+from plm_assistant.modules.project.infrastructure.department_read_repository import SqlAlchemyProjectDepartmentReadRepository
+from plm_assistant.modules.project.infrastructure.department_create_repository import SqlAlchemyProjectDepartmentCreateRepository
+from plm_assistant.modules.project.infrastructure.department_patch_repository import SqlAlchemyProjectDepartmentPatchRepository
+from plm_assistant.modules.project.infrastructure.department_deactivate_repository import SqlAlchemyProjectDepartmentDeactivateRepository
+from plm_assistant.modules.auth.infrastructure.project_member_names import SqlAlchemyProjectMemberNames
+from plm_assistant.modules.auth.infrastructure.project_member_create_access import SqlAlchemyProjectMemberCreateAccess
+from plm_assistant.modules.auth.infrastructure.project_member_candidate_access import SqlAlchemyProjectMemberCandidateAccess
+from plm_assistant.modules.project.infrastructure.member_candidate_repository import SqlAlchemyMemberCandidateMembership
+from plm_assistant.modules.auth.infrastructure.project_member_patch_access import SqlAlchemyProjectMemberPatchAccess
+from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
+from plm_assistant.modules.project.application.write_project import ProjectWriteService
+from plm_assistant.modules.project.infrastructure.authorization_repository import SqlAlchemyProjectAuthorizationRepository
+from plm_assistant.modules.project.infrastructure.write_repository import SqlAlchemyProjectWriteRepository
+from plm_assistant.modules.auth.infrastructure.project_write_access import SqlAlchemyProjectWriteAccess
+from plm_assistant.modules.auth.infrastructure.license_import_access import SqlAlchemyLicenseImportAccess
+from plm_assistant.modules.document.api.create_upload import create_document_upload_create_router
+from plm_assistant.modules.document.api.read_documents import create_document_read_router
+from plm_assistant.modules.document.api.read_versions import create_document_version_read_router
+from plm_assistant.modules.document.api.read_parses import create_document_parse_read_router
+from plm_assistant.modules.document.api.download_version import create_document_download_router
+from plm_assistant.modules.document.application.read_documents import DocumentReadService
+from plm_assistant.modules.document.application.prepare_download import PrepareDownloadService
+from plm_assistant.modules.document.infrastructure.read_repository import SqlAlchemyDocumentReadRepository
+from plm_assistant.modules.document.application.read_parse_result import DocumentParseResultReadService
+from plm_assistant.modules.document.infrastructure.parse_result_read_repository import SqlAlchemyParseResultReadRepository
+from plm_assistant.modules.document.infrastructure.parse_result_storage import LocalParseResultStorage
+from plm_assistant.modules.evidence.api.create_evidence import create_evidence_create_router
+from plm_assistant.modules.evidence.api.read_evidence import create_evidence_read_router
+from plm_assistant.modules.evidence.api.view_evidence import create_evidence_viewer_router
+from plm_assistant.modules.evidence.api.set_eligibility import create_evidence_eligibility_router
+from plm_assistant.modules.evidence.api.lookup_eligibility_operation import create_evidence_eligibility_operation_lookup_router
+from plm_assistant.modules.evidence.application.create_access import EvidenceCreateAccess
+from plm_assistant.modules.evidence.application.create_evidence import EvidenceCreateService
+from plm_assistant.modules.evidence.application.eligibility_access import EvidenceEligibilityAccess
+from plm_assistant.modules.evidence.application.set_eligibility import EvidenceEligibilityService
+from plm_assistant.modules.evidence.application.lookup_eligibility_operation import EvidenceEligibilityOperationLookupService
+from plm_assistant.modules.evidence.application.read_evidence import EvidenceReadService
+from plm_assistant.modules.evidence.application.view_evidence import EvidenceViewerService
+from plm_assistant.modules.evidence.application.document_source_proof import DocumentEvidenceProofService
+from plm_assistant.modules.evidence.application.parsed_node_proof import ParsedNodeEvidenceProofService
+from plm_assistant.modules.evidence.infrastructure.create_repository import SqlAlchemyEvidenceCreateRepository
+from plm_assistant.modules.evidence.infrastructure.eligibility_repository import SqlAlchemyEvidenceEligibilityRepository
+from plm_assistant.modules.evidence.infrastructure.read_repository import SqlAlchemyEvidenceReadRepository
+from plm_assistant.entrypoints.windows_evidence_list_cursor import (
+    ProductionEvidenceCursorStartupError, create_windows_evidence_list_cursor_codec,
+)
+from plm_assistant.modules.document.application.create_upload_intent import CreateUploadIntentService
+from plm_assistant.modules.document.application.upload_access import DocumentUploadAccess
+from plm_assistant.modules.document.infrastructure.upload_intent_repository import SqlAlchemyUploadIntentRepository
+from plm_assistant.modules.document.api.upload_content import create_document_upload_content_router
+from plm_assistant.modules.document.application.receive_upload_content import ReceiveUploadContentService
+from plm_assistant.modules.document.infrastructure.upload_content_repository import SqlAlchemyUploadContentRepository
+from plm_assistant.modules.document.infrastructure.content_spool import ValidatedContentSpool
+from plm_assistant.modules.document.infrastructure.local_storage import LocalFileStorage
+from plm_assistant.modules.document.infrastructure.upload_operation_gate import LocalUploadOperationGate
+from plm_assistant.modules.document.api.finalize_upload import create_document_upload_finalize_router
+from plm_assistant.modules.document.application.commit_upload import CommitUploadService
+from plm_assistant.modules.document.application.abort_upload import AbortUploadService
+from plm_assistant.modules.document.infrastructure.upload_commit_repository import SqlAlchemyUploadCommitRepository
+from plm_assistant.modules.document.infrastructure.upload_abort_repository import SqlAlchemyUploadAbortRepository
+from plm_assistant.modules.jobs.application.parse_enqueue import ParseJobQueue
+from plm_assistant.modules.jobs.infrastructure.parse_enqueue_repository import SqlAlchemyParseJobQueueRepository
+
+
+class ProductionLoginStartupError(RuntimeError):
+    def __init__(self) -> None:
+        super().__init__("production login unavailable")
+
+
+def _create_configured_ai_egress_router(
+    settings: BootstrapSettings, *, runtime: DatabaseRuntime,
+    sessions: SessionService, origins: LoginOriginPolicy, license_guard: object,
+    audit: AuditService, documents: DocumentReadService,
+):
+    """Keep Egress absent unless the explicit write composition has a policy."""
+    if not settings.ai_egress_policies:
+        return None
+    preview_policies, approval_policy = create_deployment_ai_egress_policies(settings)
+    task_policies = None
+    if settings.ai_task_policies:
+        task_policies, _ = create_deployment_ai_task_policies(settings)
+    return create_windows_ai_egress_router(
+        runtime=runtime, sessions=sessions, origins=origins,
+        license_guard=license_guard, audit=audit, documents=documents,
+        preview_policies=preview_policies, approval_policy=approval_policy,
+        task_policies=task_policies,
+        data_root=settings.data_root if task_policies is not None else None,
+    )
+
+
+def _create_configured_ai_task_router(
+    settings: BootstrapSettings, *, runtime: DatabaseRuntime,
+    sessions: SessionService, origins: LoginOriginPolicy, license_guard: object,
+    audit: AuditService, documents: DocumentReadService,
+):
+    """Keep Task submission absent unless an explicit deployment policy exists."""
+    if (not settings.ai_task_policies or not settings.ai_egress_policies
+            or not settings.ai_execution_policies):
+        return None
+    task_policies, egress_purposes = create_deployment_ai_task_policies(settings)
+    preview_policies, _ = create_deployment_ai_egress_policies(settings)
+    execution_policies = create_deployment_ai_execution_registry(settings)
+    return create_windows_ai_task_router(
+        runtime=runtime, sessions=sessions, origins=origins,
+        license_guard=license_guard, audit=audit, documents=documents,
+        task_policies=task_policies, egress_purposes=egress_purposes,
+        preview_policies=preview_policies, execution_policies=execution_policies,
+    )
+
+
+def _schema_current(runtime: DatabaseRuntime) -> bool:
+    config = Config()
+    config.set_main_option("script_location", str(MIGRATION_PACKAGE))
+    expected = ScriptDirectory.from_config(config).get_current_head()
+    if expected is None:
+        return False
+    with runtime.unit_of_work() as transaction:
+        versions = transaction.session.execute(text("SELECT version_num FROM plm.alembic_version")).scalars().all()
+    return versions == [expected]
+
+
+def _require_twenty_fixed_pool_budget(runtime: DatabaseRuntime) -> None:
+    """Fail closed unless configured PostgreSQL capacity covers all known pools."""
+    try:
+        with runtime.unit_of_work() as transaction:
+            rows = transaction.session.execute(text(
+                "SELECT name,setting FROM pg_settings WHERE name IN "
+                "('max_connections','superuser_reserved_connections',"
+                "'reserved_connections','server_version_num')"
+            )).all()
+        settings = dict(rows)
+        if set(settings) != {
+                "max_connections", "superuser_reserved_connections",
+                "reserved_connections", "server_version_num"}:
+            raise ValueError()
+        version = int(settings["server_version_num"])
+        maximum, superuser, reserved = (
+            int(settings[name]) for name in (
+                "max_connections", "superuser_reserved_connections",
+                "reserved_connections",
+            )
+        )
+        if (not 180000 <= version < 190000
+                or maximum <= 0 or superuser < 0 or reserved < 0
+                or maximum - superuser - reserved < 80):
+            raise ValueError()
+    except Exception:
+        raise ProductionLoginStartupError() from None
+
+
+def create_production_login_app(
+    settings: BootstrapSettings, *, credential_target: str = DEFAULT_TARGET,
+) -> FastAPI:
+    """Read the current account's credential and wire real PostgreSQL adapters."""
+
+    return _create_production_app(settings, credential_target=credential_target,
+                                  include_secret_read=False, include_secret_write=False)
+
+
+def create_production_platform_app(
+    settings: BootstrapSettings, *, credential_target: str = DEFAULT_TARGET,
+) -> FastAPI:
+    """Mount protected Secret reads only when every production trust source exists."""
+
+    return _create_production_app(settings, credential_target=credential_target,
+                                  include_secret_read=True, include_secret_write=False)
+
+
+def create_production_platform_write_app(
+    settings: BootstrapSettings, *, credential_target: str = DEFAULT_TARGET,
+) -> FastAPI:
+    """Explicit write mode, closed until all read and write trust sources exist."""
+
+    return _create_production_app(settings, credential_target=credential_target,
+                                  include_secret_read=True, include_secret_write=True)
+
+
+def _create_production_app(settings: BootstrapSettings, *, credential_target: str,
+                           include_secret_read: bool,
+                           include_secret_write: bool) -> FastAPI:
+
+    if not isinstance(settings, BootstrapSettings):
+        raise ProductionLoginStartupError()
+    try:
+        origins = LoginOriginPolicy(settings.trusted_origins)
+        database_url = read_database_url(target=credential_target)
+        runtime = (
+            create_database_runtime(database_url)
+            if settings.api_database_pool_profile == "DEFAULT"
+            else create_database_runtime(
+                database_url,
+                options=DatabaseEngineOptions(pool_size=20, max_overflow=0),
+            )
+        )
+    except Exception:
+        raise ProductionLoginStartupError() from None
+    maintenance_engine = None
+    try:
+        if not runtime.is_ready() or not _schema_current(runtime):
+            raise ProductionLoginStartupError()
+        if settings.api_database_pool_profile == "TWENTY_FIXED":
+            _require_twenty_fixed_pool_budget(runtime)
+        maintenance_engine = create_engine(
+            database_url, pool_pre_ping=True, pool_size=20, max_overflow=0,
+            pool_timeout=2, pool_recycle=1800,
+            pool_reset_on_return="rollback", isolation_level="READ COMMITTED",
+            connect_args={"connect_timeout": 2,
+                          "application_name": "plm-maintenance-admission"},
+            hide_parameters=True,
+        )
+        maintenance_admission = PostgresMaintenanceAdmission(maintenance_engine)
+        audit = AuditService(SqlAlchemyAuditRepository())
+        verifier = ScryptPasswordHasher()
+        sessions = SessionService(
+            unit_of_work=runtime.unit_of_work,
+            repository=SqlAlchemySessionRepository(),
+            issue_access=SqlAlchemyPasswordIssueAccess(verifier),
+            audit=audit,
+            idempotency=SqlAlchemyIdempotencyReceipts(),
+        )
+        login = LoginService(
+            unit_of_work=runtime.unit_of_work,
+            rate=LoginRateLimiter(
+                unit_of_work=runtime.unit_of_work,
+                repository=SqlAlchemyLoginRateRepository(),
+            ),
+            identity=SqlAlchemyLoginIdentity(),
+            missing_verifier=ScryptMissingIdentityVerifier(verifier),
+            sessions=sessions,
+            audit=audit,
+        )
+        views = SqlAlchemySessionView(
+            unit_of_work=runtime.unit_of_work,
+            projects=SqlAlchemyAuthorizedProjects(),
+        )
+        router = create_login_router(login=login, origins=origins, views=views)
+        session_router = create_session_read_router(sessions=sessions, origins=origins, views=views)
+        renew_router = create_session_renew_router(sessions=sessions, origins=origins, views=views)
+        logout_router = create_session_logout_router(sessions=sessions, origins=origins)
+        secret_detail_router = None
+        secret_list_router = None
+        secret_create_router = None
+        secret_rotate_router = None
+        secret_disable_router = None
+        ai_provider_read_router = None
+        ai_model_read_router = None
+        ai_prompt_read_router = None
+        ai_model_create_router = None
+        ai_model_state_router = None
+        ai_prompt_retire_router = None
+        ai_provider_create_router = None
+        ai_provider_patch_router = None
+        ai_egress_router = None
+        ai_task_create_router = None
+        ai_task_read_router = None
+        ai_task_list_router = None
+        ai_task_invocation_list_router = None
+        ai_suggestion_read_router = None
+        rag_retrieval_router = None
+        rag_retrieval_cancel_router = None
+        rag_retrieval_cancel_owner = None
+        project_read_router = None
+        workflow_read_router = None
+        workflow_start_router = None
+        workflow_checklist_record_router = None
+        workflow_checklist_qualification_router = None
+        workflow_transition_router = None
+        audit_read_router = None
+        audit_export_result_router = None
+        audit_export_download_router = None
+        audit_export_submit_router = None
+        job_detail_router = None
+        user_detail_router = None
+        user_list_router = None
+        user_create_router = None
+        user_name_patch_router = None
+        user_state_router = None
+        password_change_router = None
+        password_reset_router = None
+        job_list_router = None
+        job_cancel_router = None
+        job_retry_router = None
+        project_create_router = None
+        project_patch_router = None
+        project_archive_router = None
+        project_member_read_router = None
+        project_member_create_router = None
+        project_member_candidate_router = None
+        project_member_patch_router = None
+        project_member_state_router = None
+        project_department_read_router = None
+        project_department_create_router = None
+        project_department_patch_router = None
+        project_department_deactivate_router = None
+        document_upload_create_router = None
+        document_upload_content_router = None
+        document_upload_finalize_router = None
+        document_read_router = None
+        document_version_read_router = None
+        document_parse_read_router = None
+        document_download_router = None
+        evidence_create_router = None
+        evidence_read_router = None
+        evidence_viewer_router = None
+        evidence_eligibility_router = None
+        evidence_eligibility_operation_lookup_router = None
+        capability_command_router = None
+        capability_review_router = None
+        capability_read_router = None
+        handover_command_router = None
+        handover_review_submission_router = None
+        handover_read_router = None
+        handover_action_read_router = None
+        handover_action_command_router = None
+        handover_action_lifecycle_router = None
+        survey_command_router = None
+        survey_review_submission_router = None
+        survey_read_router = None
+        requirement_package_router = None
+        requirement_router = None
+        requirement_version_router = None
+        requirement_review_submission_router = None
+        requirement_relation_router = None
+        prototype_package_router = None
+        prototype_router = None
+        prototype_template_router = None
+        prototype_version_router = None
+        prototype_review_submission_router = None
+        requirement_prototype_link_router = None
+        project_reference_create_router = None
+        project_reference_revise_router = None
+        project_reference_eligibility_router = None
+        solution_outline_create_router = None
+        solution_outline_version_create_router = None
+        solution_outline_version_read_router = None
+        solution_section_create_router = None
+        solution_section_version_create_router = None
+        solution_outline_read_router = None
+        solution_section_read_router = None
+        solution_section_list_router = None
+        solution_outline_list_router = None
+        global_reference_create_router = None
+        global_reference_revise_router = None
+        global_reference_eligibility_router = None
+        global_reference_publication_router = None
+        global_reference_read_router = None
+        global_reference_list_router = None
+        project_reference_read_router = None
+        project_reference_list_router = None
+        project_global_reference_candidate_router = None
+        reference_deidentification_router = None
+        review_command_router = None
+        if include_secret_read:
+            from plm_assistant.entrypoints.windows_license_runtime import (
+                create_windows_license_services,
+            )
+            licenses = create_windows_license_services(runtime, settings)
+            solution_outline_read_router = create_windows_outline_read_router(
+                runtime=runtime, sessions=sessions, origins=origins,
+                license_guard=licenses.guard,
+            )
+            solution_section_read_router = create_windows_section_read_router(
+                runtime=runtime, sessions=sessions, origins=origins,
+                license_guard=licenses.guard,
+            )
+            solution_section_list_router = create_windows_section_list_router(
+                runtime=runtime, sessions=sessions, origins=origins,
+                license_guard=licenses.guard,
+                cursors=create_windows_section_list_cursor_codec(),
+            )
+            solution_outline_list_router = create_windows_outline_list_router(
+                runtime=runtime, sessions=sessions, origins=origins,
+                license_guard=licenses.guard,
+                cursors=create_windows_outline_list_cursor_codec(),
+            )
+            solution_outline_version_read_router = create_windows_outline_version_read_router(
+                runtime=runtime, sessions=sessions, origins=origins,
+                license_guard=licenses.guard,
+                cursors=create_windows_outline_version_list_cursor_codec(),
+            )
+            global_reference_read_router = (
+                create_windows_global_reference_read_router(
+                    runtime=runtime, sessions=sessions, origins=origins,
+                    license_guard=licenses.guard,
+                )
+            )
+            global_reference_list_router = (
+                create_windows_global_reference_list_router(
+                    runtime=runtime, sessions=sessions, origins=origins,
+                    license_guard=licenses.guard,
+                    cursors=create_windows_global_reference_list_cursor_codec(),
+                )
+            )
+            project_reference_read_router = (
+                create_windows_project_reference_read_router(
+                    runtime=runtime, sessions=sessions, origins=origins,
+                    license_guard=licenses.guard,
+                )
+            )
+            project_reference_list_router = (
+                create_windows_project_reference_list_router(
+                    runtime=runtime, sessions=sessions, origins=origins,
+                    license_guard=licenses.guard,
+                    cursors=create_windows_project_reference_list_cursor_codec(),
+                )
+            )
+            project_global_reference_candidate_router = (
+                create_windows_project_global_reference_candidate_router(
+                    runtime=runtime, sessions=sessions, origins=origins,
+                    license_guard=licenses.guard,
+                    cursors=(
+                        create_windows_project_global_reference_candidate_cursor_codec()),
+                    document_storage_root=settings.data_root,
+                    parse_result_storage_root=settings.data_root,
+                )
+            )
+            capability_routers = create_windows_capability_routers(
+                runtime, sessions=sessions, origins=origins,
+                license_guard=licenses.guard, audit=audit,
+                include_write=include_secret_write,
+            )
+            capability_read_router = capability_routers.reads
+            capability_command_router = capability_routers.commands
+            capability_review_router = capability_routers.review_submission
+            handover_routers = create_windows_handover_routers(
+                runtime, sessions=sessions, origins=origins,
+                license_guard=licenses.guard, audit=audit,
+                include_write=include_secret_write,
+            )
+            handover_read_router = handover_routers.reads
+            handover_command_router = handover_routers.commands
+            handover_review_submission_router = handover_routers.review_submission
+            handover_action_read_router = create_windows_handover_action_read_router(
+                runtime, sessions=sessions, origins=origins,
+                license_guard=licenses.guard,
+            )
+            if include_secret_write:
+                action_write_routers = create_windows_handover_action_write_routers(
+                    runtime, sessions=sessions, origins=origins,
+                    license_guard=licenses.guard, audit=audit,
+                )
+                handover_action_command_router = action_write_routers.commands
+                handover_action_lifecycle_router = action_write_routers.lifecycle
+            user_detail_router = create_user_detail_router(sessions=sessions,origins=origins,
+                reads=AuthorizedUserReadService(unit_of_work=runtime.unit_of_work,
+                    access=SqlAlchemyDeploymentReadAccess(),repository=SqlAlchemyUserReadRepository(),
+                    license_guard=licenses.guard))
+            user_list_router = create_user_list_router(sessions=sessions,origins=origins,
+                reads=AuthorizedUserListService(unit_of_work=runtime.unit_of_work,
+                    access=SqlAlchemyDeploymentReadAccess(),repository=SqlAlchemyUserReadRepository(),
+                    license_guard=licenses.guard),cursors=create_windows_user_list_cursor_codec())
+            retry_projects = ProjectAuthorizationService(unit_of_work=runtime.unit_of_work,
+                repository=SqlAlchemyProjectAuthorizationRepository())
+            retry_sources = AuditUserRetrySourceReader(
+                repository=SqlAlchemyAuditExportSubmitRepository(),
+                jobs=AuditUserRetryJobSources(queue=AuditExportJobQueue(SqlAlchemyAuditExportJobQueueRepository()),
+                    repository=SqlAlchemyAuditUserRetryJobSources()),
+                failures=SqlAlchemyAuditUserRetryFailureSources()) if include_secret_write else None
+            job_read_owners = {
+                ('audit','AUDIT_EXPORT'):AuditJobReadProjection(
+                    repository=SqlAlchemyAuditExportSubmitRepository(),
+                    queue=AuditExportJobQueue(SqlAlchemyAuditExportJobQueueRepository()),
+                    results=SqlAlchemyAuditExportResults(),retry_sources=retry_sources,
+                    retry_projects=retry_projects if include_secret_write else None),
+                ('document','DOCUMENT_PARSE'):DocumentParseJobReadProjection(
+                    queue=ParseJobQueue(SqlAlchemyParseJobQueueRepository()),
+                    sources=DocumentParseSourceReader(repository=SqlAlchemyDocumentParseSources(),
+                        audit_sources=UploadCommitAuditSources(repository=SqlAlchemyUploadCommitAuditSources())),
+                    results=DocumentParseJobResults(repository=SqlAlchemyDocumentParseJobResults())),
+                ('ai','AI_PROVIDER_TEST'):ProviderTestJobReadProjection(
+                    repository=SqlAlchemyProviderTestJobReadRepository()),
+                ('ai','AI_TASK_EXECUTE'):AITaskJobReadProjection(
+                    repository=SqlAlchemyAITaskJobReadRepository())}
+            job_reads = AuthorizedJobReadService(
+                    unit_of_work=runtime.unit_of_work,
+                    project_access=SqlAlchemyProjectReadAccess(),
+                    deployment_access=SqlAlchemyDeploymentReadAccess(),
+                    projects=ProjectAuthorizationService(unit_of_work=runtime.unit_of_work,
+                        repository=SqlAlchemyProjectAuthorizationRepository()),
+                    license_guard=licenses.guard,repository=SqlAlchemyJobReadRepository(),
+                    owners=job_read_owners,
+                )
+            job_detail_router = create_job_detail_router(reads=job_reads,origins=origins)
+            cursors = create_windows_secret_list_cursor_codec()
+            ai_provider_cursors = create_windows_ai_provider_list_cursor_codec()
+            ai_model_cursors = create_windows_ai_model_list_cursor_codec()
+            ai_prompt_cursors = create_windows_ai_prompt_list_cursor_codec()
+            ai_read_cursors = create_windows_ai_read_cursor_codecs()
+            member_cursors = create_windows_project_member_cursor_codec()
+            department_cursors = create_windows_project_department_cursor_codec()
+            audit_cursors = create_windows_audit_cursor_codec()
+            job_list_router = create_job_list_router(
+                reads=AuthorizedJobListService(unit_of_work=runtime.unit_of_work,
+                    project_access=SqlAlchemyProjectReadAccess(),deployment_access=SqlAlchemyDeploymentReadAccess(),
+                    projects=ProjectAuthorizationService(unit_of_work=runtime.unit_of_work,
+                        repository=SqlAlchemyProjectAuthorizationRepository()),
+                    license_guard=licenses.guard,repository=SqlAlchemyJobReadRepository(),owners=job_read_owners),
+                origins=origins,cursors=create_windows_job_list_cursor_codec())
+            audit_read_router = create_audit_read_router(
+                reads=AuthorizedAuditReadService(
+                    unit_of_work=runtime.unit_of_work,
+                    project_access=SqlAlchemyProjectReadAccess(),
+                    deployment_access=SqlAlchemyDeploymentReadAccess(),
+                    projects=ProjectAuthorizationService(
+                        unit_of_work=runtime.unit_of_work,
+                        repository=SqlAlchemyProjectAuthorizationRepository(),
+                    ), license_guard=licenses.guard, repository=SqlAlchemyAuditReadRepository(),
+                ), origins=origins, cursors=audit_cursors,
+            )
+            document_cursors = create_windows_document_list_cursor_codec()
+            version_cursors = create_windows_document_version_cursor_codec()
+            parse_cursors = create_windows_document_parse_cursor_codec()
+            document_reads = DocumentReadService(
+                unit_of_work=runtime.unit_of_work,
+                session_access=SqlAlchemyProjectReadAccess(),
+                admin_access=SqlAlchemyDeploymentReadAccess(),
+                project_facts=SqlAlchemyProjectAuthorizationRepository(),
+                license_guard=licenses.guard,
+                repository=SqlAlchemyDocumentReadRepository(),
+            )
+            ai_task_read_router = create_windows_ai_task_read_router(
+                runtime=runtime, origins=origins, license_guard=licenses.guard,
+            )
+            document_read_router = create_document_read_router(
+                sessions=sessions, documents=document_reads,
+                origins=origins, cursors=document_cursors,
+            )
+            document_version_read_router = create_document_version_read_router(
+                sessions=sessions, documents=document_reads,
+                origins=origins, cursors=version_cursors,
+            )
+            document_parse_read_router = create_document_parse_read_router(
+                sessions=sessions, documents=document_reads,
+                origins=origins, cursors=parse_cursors,
+            )
+            document_downloads = PrepareDownloadService(
+                reader=document_reads, storage=LocalFileStorage(settings.data_root),
+                unit_of_work=runtime.unit_of_work, audit=audit,
+            )
+            document_download_router = create_document_download_router(
+                sessions=sessions, downloads=document_downloads, origins=origins,
+            )
+            evidence_reads = EvidenceReadService(
+                unit_of_work=runtime.unit_of_work,
+                session_access=SqlAlchemyProjectReadAccess(),
+                admin_access=SqlAlchemyDeploymentReadAccess(),
+                project_facts=SqlAlchemyProjectAuthorizationRepository(),
+                license_guard=licenses.guard,
+                repository=SqlAlchemyEvidenceReadRepository(),
+            )
+            evidence_results_for_viewer = DocumentParseResultReadService(
+                documents=document_downloads,
+                metadata=SqlAlchemyParseResultReadRepository(),
+                storage=LocalParseResultStorage(settings.data_root),
+                unit_of_work=runtime.unit_of_work,
+            )
+            survey_routers = create_windows_survey_routers(
+                runtime, sessions=sessions, origins=origins,
+                license_guard=licenses.guard, audit=audit,
+                include_write=include_secret_write,
+                documents=document_reads, downloads=document_downloads,
+                parse_results=evidence_results_for_viewer,
+            )
+            survey_read_router = survey_routers.reads
+            survey_command_router = survey_routers.commands
+            survey_review_submission_router = survey_routers.review_submission
+            requirement_routers = create_windows_requirement_routers(
+                runtime, sessions=sessions, origins=origins,
+                license_guard=licenses.guard, audit=audit,
+                include_write=include_secret_write,
+            )
+            requirement_package_router = requirement_routers.packages
+            requirement_router = requirement_routers.requirements
+            requirement_version_router = requirement_routers.versions
+            requirement_review_submission_router = (
+                requirement_routers.review_submission
+            )
+            requirement_relation_router = requirement_routers.relations
+            prototype_routers = create_windows_prototype_routers(
+                runtime, sessions=sessions, origins=origins,
+                license_guard=licenses.guard, audit=audit,
+                include_write=include_secret_write,
+            )
+            prototype_package_router = prototype_routers.packages
+            prototype_router = prototype_routers.prototypes
+            prototype_template_router = prototype_routers.templates
+            prototype_version_router = prototype_routers.versions
+            prototype_review_submission_router = (
+                prototype_routers.review_submission
+            )
+            requirement_prototype_link_router = prototype_routers.links
+            if include_secret_write:
+                solution_outline_create_router = create_windows_outline_create_router(
+                    runtime=runtime, sessions=sessions, origins=origins,
+                    license_guard=licenses.guard, audit=audit,
+                )
+                solution_outline_version_create_router = (
+                    create_windows_outline_version_create_router(
+                        runtime=runtime, sessions=sessions, origins=origins,
+                        license_guard=licenses.guard, audit=audit,
+                        document_storage_root=settings.data_root,
+                        parse_result_storage_root=settings.data_root,
+                    )
+                )
+                solution_section_create_router = create_windows_section_create_router(
+                    runtime=runtime, sessions=sessions, origins=origins,
+                    license_guard=licenses.guard, audit=audit,
+                )
+                solution_section_version_create_router = (
+                    create_windows_section_version_create_router(
+                        runtime=runtime, sessions=sessions, origins=origins,
+                        license_guard=licenses.guard, audit=audit,
+                        documents=document_reads, downloads=document_downloads,
+                        parse_results=evidence_results_for_viewer,
+                    )
+                )
+                global_reference_create_router = (
+                    create_windows_global_reference_create_router(
+                        runtime=runtime, sessions=sessions, origins=origins,
+                        license_guard=licenses.guard, audit=audit,
+                        documents=document_reads, downloads=document_downloads,
+                        parse_results=evidence_results_for_viewer,
+                    )
+                )
+                project_reference_create_router = (
+                    create_windows_project_reference_create_router(
+                        runtime=runtime, sessions=sessions, origins=origins,
+                        license_guard=licenses.guard, audit=audit,
+                        documents=document_reads, downloads=document_downloads,
+                        parse_results=evidence_results_for_viewer,
+                    )
+                )
+                global_reference_revise_router = (
+                    create_windows_global_reference_revise_router(
+                        runtime=runtime, sessions=sessions, origins=origins,
+                        license_guard=licenses.guard, audit=audit,
+                        documents=document_reads, downloads=document_downloads,
+                        parse_results=evidence_results_for_viewer,
+                    )
+                )
+                project_reference_revise_router = (
+                    create_windows_project_reference_revise_router(
+                        runtime=runtime, sessions=sessions, origins=origins,
+                        license_guard=licenses.guard, audit=audit,
+                        documents=document_reads, downloads=document_downloads,
+                        parse_results=evidence_results_for_viewer,
+                    )
+                )
+                global_reference_eligibility_router = (
+                    create_windows_global_reference_eligibility_router(
+                        runtime=runtime, sessions=sessions, origins=origins,
+                        license_guard=licenses.guard, audit=audit,
+                        documents=document_reads, downloads=document_downloads,
+                        parse_results=evidence_results_for_viewer,
+                    )
+                )
+                global_reference_publication_router = (
+                    create_windows_global_reference_publication_router(
+                        runtime=runtime, sessions=sessions, origins=origins,
+                        license_guard=licenses.guard, audit=audit,
+                        documents=document_reads, downloads=document_downloads,
+                        parse_results=evidence_results_for_viewer,
+                    )
+                )
+                project_reference_eligibility_router = (
+                    create_windows_project_reference_eligibility_router(
+                        runtime=runtime, sessions=sessions, origins=origins,
+                        license_guard=licenses.guard, audit=audit,
+                        documents=document_reads, downloads=document_downloads,
+                        parse_results=evidence_results_for_viewer,
+                    )
+                )
+                reference_deidentification_router = (
+                    create_windows_reference_deidentification_router(
+                        runtime=runtime, sessions=sessions, origins=origins,
+                        license_guard=licenses.guard, audit=audit,
+                        documents=document_reads, downloads=document_downloads,
+                        parse_results=evidence_results_for_viewer,
+                    )
+                )
+                review_command_router = create_windows_project_review_router(
+                    runtime, sessions=sessions, origins=origins,
+                    license_guard=licenses.guard, audit=audit,
+                    documents=document_reads, downloads=document_downloads,
+                    parse_results=evidence_results_for_viewer,
+                )
+                workflow_checklist_record_router = (
+                    create_windows_workflow_checklist_record_router(
+                        runtime, sessions=sessions, origins=origins,
+                        license_guard=licenses.guard, audit=audit,
+                        documents=document_reads, downloads=document_downloads,
+                        parse_results=evidence_results_for_viewer,
+                    )
+                )
+                workflow_checklist_qualification_router = (
+                    create_windows_workflow_checklist_qualification_router(
+                        runtime, sessions=sessions, origins=origins,
+                        license_guard=licenses.guard,
+                        documents=document_reads, downloads=document_downloads,
+                        parse_results=evidence_results_for_viewer,
+                    )
+                )
+                workflow_transition_router = (
+                    create_windows_workflow_stage_transition_router(
+                        runtime, sessions=sessions, origins=origins,
+                        license_guard=licenses.guard, audit=audit,
+                        documents=document_reads, downloads=document_downloads,
+                        parse_results=evidence_results_for_viewer,
+                    )
+                )
+            ai_read_routers = create_windows_ai_read_routers(
+                runtime=runtime, origins=origins, license_guard=licenses.guard,
+                task_cursors=ai_read_cursors.task,
+                invocation_cursors=ai_read_cursors.invocation,
+                documents=document_reads,
+                parse_results=evidence_results_for_viewer,
+            )
+            ai_task_list_router = ai_read_routers.tasks
+            ai_task_invocation_list_router = ai_read_routers.invocations
+            ai_suggestion_read_router = ai_read_routers.suggestion
+            evidence_viewer_router = create_evidence_viewer_router(
+                sessions=sessions, origins=origins,
+                viewer=EvidenceViewerService(
+                    evidence=evidence_reads, versions=document_reads,
+                    document_proof=DocumentEvidenceProofService(
+                        document_snapshots=document_downloads,
+                    ),
+                    node_proof=ParsedNodeEvidenceProofService(
+                        results=evidence_results_for_viewer,
+                    ),
+                ),
+            )
+            try:
+                evidence_cursors = create_windows_evidence_list_cursor_codec()
+            except ProductionEvidenceCursorStartupError:
+                evidence_cursors = None
+            if evidence_cursors is not None:
+                evidence_read_router = create_evidence_read_router(
+                    sessions=sessions, origins=origins, cursors=evidence_cursors,
+                    evidence=evidence_reads,
+                )
+            export_reads = AuditExportContentReader(
+                unit_of_work=runtime.unit_of_work,
+                project_access=SqlAlchemyProjectReadAccess(),
+                deployment_access=SqlAlchemyDeploymentReadAccess(),
+                projects=ProjectAuthorizationService(
+                    unit_of_work=runtime.unit_of_work,
+                    repository=SqlAlchemyProjectAuthorizationRepository(),
+                ),
+                license_guard=licenses.guard,
+                repository=SqlAlchemyAuditExportSubmitRepository(),
+                results=SqlAlchemyAuditExportResults(), plans=SqlAlchemyAuditRenderPlans(),
+                files=SqlAlchemyAuditExportFileMetadata(),
+                completion=AuditExportJobCompletion(
+                    queue=AuditExportJobQueue(SqlAlchemyAuditExportJobQueueRepository()), leases=SqlAlchemyJobLeaseRepository(),
+                ),
+                audit=audit,
+            )
+            audit_export_result_router = create_audit_export_result_router(reads=export_reads, origins=origins)
+            audit_export_download_router = create_audit_export_download_router(
+                downloads=PrepareAuditExportContent(reader=export_reads,
+                    storage=LocalAuditExportFileStorage(LocalFileStorage(settings.data_root))),
+                origins=origins,
+            )
+            metadata = SecretMetadataService(
+                unit_of_work=runtime.unit_of_work,
+                access=SqlAlchemyDeploymentReadAccess(),
+                license_guard=licenses.guard,
+                repository=SqlAlchemySecretMetadataRepository(),
+            )
+            secret_detail_router = create_secret_metadata_detail_router(
+                sessions=sessions, metadata=metadata, origins=origins,
+            )
+            secret_list_router = create_secret_metadata_list_router(
+                sessions=sessions, metadata=metadata, origins=origins, cursors=cursors,
+            )
+            ai_provider_read_router = create_ai_provider_read_router(
+                sessions=sessions, origins=origins,
+                providers=AIProviderMetadataService(
+                    unit_of_work=runtime.unit_of_work,
+                    access=SqlAlchemyDeploymentReadAccess(),
+                    license_guard=licenses.guard,
+                    repository=SqlAlchemyAIProviderMetadataRepository(),
+                    cursors=ai_provider_cursors,
+                ),
+            )
+            ai_model_read_router = create_ai_model_read_router(
+                sessions=sessions, origins=origins,
+                models=AIModelMetadataService(
+                    unit_of_work=runtime.unit_of_work,
+                    access=SqlAlchemyDeploymentReadAccess(),
+                    license_guard=licenses.guard,
+                    repository=SqlAlchemyAIModelMetadataRepository(),
+                    cursors=ai_model_cursors,
+                ),
+            )
+            ai_prompt_read_router = create_ai_prompt_read_router(
+                sessions=sessions, origins=origins,
+                prompts=PromptMetadataService(
+                    unit_of_work=runtime.unit_of_work,
+                    access=SqlAlchemyDeploymentReadAccess(),
+                    license_guard=licenses.guard,
+                    repository=SqlAlchemyPromptMetadataRepository(),
+                    cursors=ai_prompt_cursors,
+                ),
+            )
+            project_reads = ProjectReadService(
+                unit_of_work=runtime.unit_of_work,
+                access=SqlAlchemyProjectReadAccess(),
+                license_guard=licenses.guard,
+                repository=SqlAlchemyProjectReadRepository(),
+            )
+            project_read_router = create_project_read_router(
+                sessions=sessions, projects=project_reads, origins=origins,
+            )
+            workflow_read_router = create_workflow_read_router(
+                sessions=sessions, origins=origins,
+                workflows=WorkflowReadService(
+                    unit_of_work=runtime.unit_of_work, sessions=SqlAlchemyProjectReadAccess(),
+                    projects=ProjectAuthorizationService(
+                        unit_of_work=runtime.unit_of_work,
+                        repository=SqlAlchemyProjectAuthorizationRepository(),
+                    ), license_guard=licenses.guard, repository=SqlAlchemyWorkflowReadRepository(),
+                ),
+            )
+            workflow_start_reader = SqlAlchemyWorkflowReadRepository()
+            workflow_start_router = create_workflow_start_router(
+                sessions=sessions, origins=origins,
+                workflows=WorkflowStartService(
+                    unit_of_work=runtime.unit_of_work,
+                    sessions=SqlAlchemyProjectWriteAccess(),
+                    projects=ProjectAuthorizationService(
+                        unit_of_work=runtime.unit_of_work,
+                        repository=SqlAlchemyProjectAuthorizationRepository(),
+                    ),
+                    license_guard=licenses.guard,
+                    starter=SqlAlchemyWorkflowStartRepository(reader=workflow_start_reader),
+                    reader=workflow_start_reader,
+                    receipts=SqlAlchemyIdempotencyReceipts(), audit=audit,
+                ),
+            )
+            project_creates = ProjectCreateService(
+                unit_of_work=runtime.unit_of_work,
+                access=SqlAlchemyProjectCreateAccess(),
+                license_guard=licenses.guard,
+                repository=SqlAlchemyProjectCreateRepository(),
+                audit=audit,
+                receipts=SqlAlchemyIdempotencyReceipts(),
+                workflow_initializer=WorkflowInitializationService(
+                    repository=SqlAlchemyWorkflowInitializationRepository(), audit=audit,
+                ),
+            )
+            project_create_router = create_project_create_router(
+                sessions=sessions, projects=project_creates, origins=origins,
+            )
+            project_writes = ProjectWriteService(
+                unit_of_work=runtime.unit_of_work,
+                access=SqlAlchemyProjectWriteAccess(),
+                license_guard=licenses.guard,
+                authorization=ProjectAuthorizationService(
+                    unit_of_work=runtime.unit_of_work,
+                    repository=SqlAlchemyProjectAuthorizationRepository(),
+                ),
+                repository=SqlAlchemyProjectWriteRepository(),
+                audit=audit,
+                receipts=SqlAlchemyIdempotencyReceipts(),
+            )
+            project_patch_router = create_project_patch_router(
+                sessions=sessions, writes=project_writes, origins=origins,
+            )
+            project_archive_router = create_project_archive_router(
+                sessions=sessions, writes=project_writes, origins=origins,
+            )
+            member_reads = ProjectMemberReadService(
+                unit_of_work=runtime.unit_of_work,
+                access=SqlAlchemyProjectMemberNames(),
+                license_guard=licenses.guard,
+                authorization=ProjectAuthorizationService(
+                    unit_of_work=runtime.unit_of_work,
+                    repository=SqlAlchemyProjectAuthorizationRepository(),
+                ),
+                repository=SqlAlchemyProjectMemberReadRepository(),
+            )
+            project_member_read_router = create_project_member_read_router(
+                sessions=sessions, members=member_reads,
+                origins=origins, cursors=member_cursors,
+            )
+            member_creates = ProjectMemberCreateService(
+                unit_of_work=runtime.unit_of_work,
+                access=SqlAlchemyProjectMemberCreateAccess(),
+                license_guard=licenses.guard,
+                authorization=ProjectAuthorizationService(
+                    unit_of_work=runtime.unit_of_work,
+                    repository=SqlAlchemyProjectAuthorizationRepository(),
+                ),
+                repository=SqlAlchemyProjectMemberCreateRepository(),
+                audit=audit,
+                receipts=SqlAlchemyIdempotencyReceipts(),
+            )
+            project_member_create_router = create_project_member_create_router(
+                sessions=sessions, members=member_creates, origins=origins,
+            )
+            member_candidates = ProjectMemberCandidateService(
+                unit_of_work=runtime.unit_of_work,
+                access=SqlAlchemyProjectMemberCandidateAccess(),
+                license_guard=licenses.guard,
+                authorization=ProjectAuthorizationService(
+                    unit_of_work=runtime.unit_of_work,
+                    repository=SqlAlchemyProjectAuthorizationRepository(),
+                ),
+                membership=SqlAlchemyMemberCandidateMembership(),
+                rate=SqlAlchemyLoginRateRepository(),
+            )
+            project_member_candidate_router = create_project_member_candidate_router(
+                sessions=sessions, candidates=member_candidates, origins=origins,
+            )
+            member_patches = ProjectMemberPatchService(
+                unit_of_work=runtime.unit_of_work,
+                access=SqlAlchemyProjectMemberPatchAccess(),
+                license_guard=licenses.guard,
+                authorization=ProjectAuthorizationService(
+                    unit_of_work=runtime.unit_of_work,
+                    repository=SqlAlchemyProjectAuthorizationRepository(),
+                ),
+                repository=SqlAlchemyProjectMemberPatchRepository(),
+                audit=audit,
+            )
+            project_member_patch_router = create_project_member_patch_router(
+                sessions=sessions, members=member_patches, origins=origins,
+            )
+            member_states = ProjectMemberStateService(
+                unit_of_work=runtime.unit_of_work,
+                access=SqlAlchemyProjectMemberPatchAccess(),
+                license_guard=licenses.guard,
+                authorization=ProjectAuthorizationService(
+                    unit_of_work=runtime.unit_of_work,
+                    repository=SqlAlchemyProjectAuthorizationRepository(),
+                ),
+                repository=SqlAlchemyProjectMemberStateRepository(),
+                audit=audit,
+                receipts=SqlAlchemyIdempotencyReceipts(),
+            )
+            project_member_state_router = create_project_member_state_router(
+                sessions=sessions, members=member_states, origins=origins,
+            )
+            department_reads = ProjectDepartmentReadService(
+                unit_of_work=runtime.unit_of_work,
+                access=SqlAlchemyProjectReadAccess(),
+                license_guard=licenses.guard,
+                authorization=ProjectAuthorizationService(
+                    unit_of_work=runtime.unit_of_work,
+                    repository=SqlAlchemyProjectAuthorizationRepository(),
+                ),
+                repository=SqlAlchemyProjectDepartmentReadRepository(),
+            )
+            project_department_read_router = create_project_department_read_router(
+                sessions=sessions, departments=department_reads,
+                origins=origins, cursors=department_cursors,
+            )
+            department_creates = ProjectDepartmentCreateService(
+                unit_of_work=runtime.unit_of_work,
+                access=SqlAlchemyProjectWriteAccess(),
+                license_guard=licenses.guard,
+                authorization=ProjectAuthorizationService(
+                    unit_of_work=runtime.unit_of_work,
+                    repository=SqlAlchemyProjectAuthorizationRepository(),
+                ),
+                repository=SqlAlchemyProjectDepartmentCreateRepository(),
+                audit=audit,
+                receipts=SqlAlchemyIdempotencyReceipts(),
+            )
+            project_department_create_router = create_project_department_create_router(
+                sessions=sessions, departments=department_creates, origins=origins,
+            )
+            department_patches = ProjectDepartmentPatchService(
+                unit_of_work=runtime.unit_of_work,
+                access=SqlAlchemyProjectWriteAccess(),
+                license_guard=licenses.guard,
+                authorization=ProjectAuthorizationService(
+                    unit_of_work=runtime.unit_of_work,
+                    repository=SqlAlchemyProjectAuthorizationRepository(),
+                ),
+                repository=SqlAlchemyProjectDepartmentPatchRepository(),
+                audit=audit,
+            )
+            project_department_patch_router = create_project_department_patch_router(
+                sessions=sessions, departments=department_patches, origins=origins,
+            )
+            department_deactivates = ProjectDepartmentDeactivateService(
+                unit_of_work=runtime.unit_of_work,
+                access=SqlAlchemyProjectWriteAccess(),
+                license_guard=licenses.guard,
+                authorization=ProjectAuthorizationService(
+                    unit_of_work=runtime.unit_of_work,
+                    repository=SqlAlchemyProjectAuthorizationRepository(),
+                ),
+                repository=SqlAlchemyProjectDepartmentDeactivateRepository(),
+                audit=audit,
+                receipts=SqlAlchemyIdempotencyReceipts(),
+            )
+            project_department_deactivate_router = create_project_department_deactivate_router(
+                sessions=sessions, departments=department_deactivates, origins=origins,
+            )
+            if include_secret_write:
+                if settings.rag_retrieval_policies:
+                    rag_api = create_windows_rag_retrieval_api(
+                        runtime, sessions=sessions, origins=origins,
+                        license_guard=licenses.guard,
+                    )
+                    rag_retrieval_router = rag_api.router
+                    rag_retrieval_cancel_router = rag_api.cancel_router
+                    rag_retrieval_cancel_owner = rag_api.cancellation_owner
+                ai_egress_router = _create_configured_ai_egress_router(
+                    settings, runtime=runtime, sessions=sessions, origins=origins,
+                    license_guard=licenses.guard, audit=audit,
+                    documents=document_reads,
+                )
+                ai_task_create_router = _create_configured_ai_task_router(
+                    settings, runtime=runtime, sessions=sessions, origins=origins,
+                    license_guard=licenses.guard, audit=audit,
+                    documents=document_reads,
+                )
+                evidence_downloads = PrepareDownloadService(
+                    reader=document_reads, storage=LocalFileStorage(settings.data_root),
+                    unit_of_work=runtime.unit_of_work, audit=audit,
+                )
+                evidence_results = DocumentParseResultReadService(
+                    documents=evidence_downloads,
+                    metadata=SqlAlchemyParseResultReadRepository(),
+                    storage=LocalParseResultStorage(settings.data_root),
+                    unit_of_work=runtime.unit_of_work,
+                )
+
+                def evidence_service(token: bytes, csrf: bytes) -> EvidenceCreateService:
+                    return EvidenceCreateService(
+                        unit_of_work=runtime.unit_of_work,
+                        access=EvidenceCreateAccess(
+                            session_token=token, csrf_token=csrf,
+                            session_access=SqlAlchemyProjectWriteAccess(),
+                            admin_access=SqlAlchemyLicenseImportAccess(),
+                            project_facts=SqlAlchemyProjectAuthorizationRepository(),
+                        ),
+                        versions=document_reads,
+                        document_proof=DocumentEvidenceProofService(
+                            document_snapshots=evidence_downloads,
+                        ),
+                        node_proof=ParsedNodeEvidenceProofService(results=evidence_results),
+                        repository=SqlAlchemyEvidenceCreateRepository(),
+                        receipts=SqlAlchemyIdempotencyReceipts(), audit=audit,
+                    )
+
+                evidence_create_router = create_evidence_create_router(
+                    sessions=sessions, origins=origins, service_factory=evidence_service,
+                )
+
+                def eligibility_service(token: bytes, csrf: bytes) -> EvidenceEligibilityService:
+                    return EvidenceEligibilityService(
+                        unit_of_work=runtime.unit_of_work,
+                        access=EvidenceEligibilityAccess(
+                            session_token=token, csrf_token=csrf,
+                            session_access=SqlAlchemyProjectWriteAccess(),
+                            admin_access=SqlAlchemyLicenseImportAccess(),
+                            project_facts=SqlAlchemyProjectAuthorizationRepository(),
+                        ),
+                        source_facts=document_reads,
+                        repository=SqlAlchemyEvidenceEligibilityRepository(),
+                        receipts=SqlAlchemyIdempotencyReceipts(),
+                        license_guard=licenses.guard, audit=audit,
+                    )
+
+                evidence_eligibility_router = create_evidence_eligibility_router(
+                    sessions=sessions, origins=origins,
+                    service_factory=eligibility_service,
+                )
+
+                def eligibility_lookup_service(token: bytes, csrf: bytes) -> EvidenceEligibilityOperationLookupService:
+                    return EvidenceEligibilityOperationLookupService(
+                        unit_of_work=runtime.unit_of_work,
+                        access=EvidenceEligibilityAccess(
+                            session_token=token, csrf_token=csrf,
+                            session_access=SqlAlchemyProjectWriteAccess(),
+                            admin_access=SqlAlchemyLicenseImportAccess(),
+                            project_facts=SqlAlchemyProjectAuthorizationRepository(),
+                        ),
+                        evidence=SqlAlchemyEvidenceEligibilityRepository(),
+                        receipts=SqlAlchemyIdempotencyReceipts(),
+                        license_guard=licenses.guard,
+                    )
+
+                evidence_eligibility_operation_lookup_router = create_evidence_eligibility_operation_lookup_router(
+                    sessions=sessions, origins=origins,
+                    service_factory=eligibility_lookup_service,
+                )
+                password_capacity = get_process_password_capacity(slots=settings.password_kdf_slots)
+                password_reset_results = SqlAlchemyPasswordResetResults(verifier=verifier)
+                password_reset_router = create_password_reset_router(sessions=sessions, origins=origins,
+                    writes=PasswordResetService(unit_of_work=runtime.unit_of_work,
+                        access=SqlAlchemyPasswordResetAccess(verifier=verifier),
+                        repository=SqlAlchemyPasswordResetRepository(), results=password_reset_results,
+                        replay_verifier=PasswordResetReplayVerifier(source=password_reset_results), hasher=verifier,
+                        audit=audit, receipts=SqlAlchemyIdempotencyReceipts(), license_guard=licenses.guard,
+                        capacity=password_capacity))
+                password_change_results = SqlAlchemyPasswordChangeResults(verifier=verifier)
+                password_change_router = create_password_change_router(sessions=sessions,origins=origins,
+                    writes=PasswordChangeService(unit_of_work=runtime.unit_of_work,
+                        access=SqlAlchemyPasswordChangeAccess(verifier=verifier),
+                        repository=SqlAlchemyPasswordChangeRepository(),results=password_change_results,
+                        replay_verifier=PasswordChangeReplayVerifier(source=password_change_results),hasher=verifier,
+                        audit=audit,receipts=SqlAlchemyIdempotencyReceipts(),capacity=password_capacity))
+                user_state_router = create_user_state_router(sessions=sessions, origins=origins,
+                    writes=UserStateService(unit_of_work=runtime.unit_of_work,
+                        access=SqlAlchemyUserStateAccess(),repository=SqlAlchemyUserStateRepository(),
+                        results=SqlAlchemyUserStateResultRepository(),audit=audit,
+                        receipts=SqlAlchemyIdempotencyReceipts(),license_guard=licenses.guard))
+                user_name_patch_router = create_user_name_patch_router(sessions=sessions, origins=origins,
+                    writes=UserNamePatchService(unit_of_work=runtime.unit_of_work,
+                        access=SqlAlchemyUserCreateAccess(), license_guard=licenses.guard,
+                        repository=SqlAlchemyUserNamePatchRepository(), audit=audit))
+                user_create_results = SqlAlchemyUserCreateResultRepository(verifier=verifier)
+                user_create_router = create_user_create_router(sessions=sessions,origins=origins,
+                    writes=ManagedUserCreateService(unit_of_work=runtime.unit_of_work,
+                        access=SqlAlchemyUserCreateAccess(),license_guard=licenses.guard,
+                        users=SqlAlchemyUserRepository(),results=user_create_results,
+                        replay_verifier=UserCreateReplayVerifier(source=user_create_results),hasher=verifier,
+                        audit=audit,receipts=SqlAlchemyIdempotencyReceipts()))
+                retry_owners = {('audit','AUDIT_EXPORT'):AuditJobRetryOwner(
+                    requests=AuditUserRetryService(
+                        unit_of_work=runtime.unit_of_work,
+                        repository=SqlAlchemyAuditExportSubmitRepository(),
+                        authorization=AuditExportSubmitAuthorization(
+                            project_access=SqlAlchemyProjectWriteAccess(),
+                            deployment_access=SqlAlchemyLicenseImportAccess(),
+                            projects=retry_projects, license_guard=licenses.guard),
+                        sources=retry_sources,
+                        generations=SqlAlchemyAuditRetryGenerations(),
+                        receipts=SqlAlchemyIdempotencyReceipts(),
+                        queue=AuditExportJobQueue(SqlAlchemyAuditExportJobQueueRepository()),
+                        audit=audit))}
+                if settings.ai_task_policies:
+                    _, retry_egress_purposes = create_deployment_ai_task_policies(settings)
+                    retry_owners[('ai','AI_TASK_EXECUTE')] = AITaskJobRetryOwner(
+                        unit_of_work=runtime.unit_of_work,
+                        repository=SqlAlchemyAITaskRetryRepository(),
+                        session_access=SqlAlchemyProjectWriteAccess(),
+                        projects=ProjectAuthorizationService(
+                            unit_of_work=runtime.unit_of_work,
+                            repository=SqlAlchemyProjectAuthorizationRepository()),
+                        license_guard=licenses.guard,
+                        egress_owner=EgressAuthorizationOwner(
+                            repository=SqlAlchemyEgressAuthorizationOwnerRepository(),
+                            purposes=retry_egress_purposes),
+                        receipts=SqlAlchemyIdempotencyReceipts(), audit=audit,
+                    )
+                job_retry_router = create_job_retry_router(
+                    sessions=sessions,origins=origins,
+                    retries=JobRetryRequests(reads=job_reads,sessions=sessions,license_guard=licenses.guard,
+                        owners=retry_owners))
+                cancel_owners = {('audit','AUDIT_EXPORT'):AuditJobCancelOwner(
+                            requests=AuditExportCancelRequestService(
+                                unit_of_work=runtime.unit_of_work,repository=SqlAlchemyAuditExportSubmitRepository(),
+                                authorization=AuditExportCancelAuthorization(
+                                    project_access=SqlAlchemyProjectWriteAccess(),deployment_access=SqlAlchemyLicenseImportAccess(),
+                                    projects=ProjectAuthorizationService(unit_of_work=runtime.unit_of_work,
+                                        repository=SqlAlchemyProjectAuthorizationRepository()),license_guard=licenses.guard),
+                                cancellations=AuditExportCancellation(repository=SqlAlchemyAuditExportCancellationRepository()),
+                                receipts=SqlAlchemyIdempotencyReceipts(),sources=SqlAlchemyAuditExportCancelSources(),audit=audit,
+                            )),
+                            ('document','DOCUMENT_PARSE'):DocumentParseJobCancelOwner(
+                                unit_of_work=runtime.unit_of_work,
+                                queue=ParseJobQueue(SqlAlchemyParseJobQueueRepository()),
+                                sources=DocumentParseSourceReader(
+                                    repository=SqlAlchemyDocumentParseSources(),
+                                    audit_sources=UploadCommitAuditSources(
+                                        repository=SqlAlchemyUploadCommitAuditSources())),
+                                project_access=SqlAlchemyProjectWriteAccess(),
+                                projects=ProjectAuthorizationService(
+                                    unit_of_work=runtime.unit_of_work,
+                                    repository=SqlAlchemyProjectAuthorizationRepository()),
+                                license_guard=licenses.guard,
+                                cancellations=SqlAlchemyParseCancellationRepository(),
+                                receipts=SqlAlchemyIdempotencyReceipts(),
+                                audit_sources=SqlAlchemyParseCancelAuditSources(), audit=audit,
+                            ),
+                            ('ai','AI_TASK_EXECUTE'):AITaskJobCancelOwner(
+                                unit_of_work=runtime.unit_of_work,
+                                store=SqlAlchemyAITaskCancellationRepository(),
+                                session_access=SqlAlchemyProjectWriteAccess(),
+                                projects=ProjectAuthorizationService(
+                                    unit_of_work=runtime.unit_of_work,
+                                    repository=SqlAlchemyProjectAuthorizationRepository()),
+                                license_guard=licenses.guard,
+                                receipts=SqlAlchemyIdempotencyReceipts(), audit=audit,
+                            )}
+                if rag_retrieval_cancel_owner is not None:
+                    cancel_owners[('rag', 'RAG_RETRIEVAL')] = (
+                        rag_retrieval_cancel_owner
+                    )
+                job_cancel_router = create_project_job_cancel_router(
+                    sessions=sessions,origins=origins,
+                    cancellations=ProjectJobCancellation(
+                        unit_of_work=runtime.unit_of_work,repository=SqlAlchemyJobReadRepository(),
+                        sessions=sessions,license_guard=licenses.guard,
+                        owners=cancel_owners,
+                    ),
+                )
+                audit_export_submit_router = create_audit_export_submit_router(
+                    sessions=sessions,origins=origins,
+                    exports=AuditExportSubmitService(
+                        unit_of_work=runtime.unit_of_work,
+                        authorization=AuditExportSubmitAuthorization(
+                            project_access=SqlAlchemyProjectWriteAccess(),deployment_access=SqlAlchemyLicenseImportAccess(),
+                            projects=ProjectAuthorizationService(unit_of_work=runtime.unit_of_work,
+                                repository=SqlAlchemyProjectAuthorizationRepository()),license_guard=licenses.guard),
+                        repository=SqlAlchemyAuditExportSubmitRepository(),receipts=SqlAlchemyIdempotencyReceipts(),
+                        queue=AuditExportJobQueue(SqlAlchemyAuditExportJobQueueRepository()),audit=audit,
+                    ),
+                )
+                from plm_assistant.entrypoints.windows_secret_write import (
+                    create_windows_secret_write_service,
+                )
+                writes = create_windows_secret_write_service(
+                    runtime, license_guard=licenses.guard,
+                )
+                ai_provider_create_router = create_ai_provider_create_router(
+                    sessions=sessions, origins=origins,
+                    providers=AIProviderCreateService(
+                        unit_of_work=runtime.unit_of_work,
+                        access=SqlAlchemyLicenseImportAccess(),
+                        license_guard=licenses.guard,
+                        secret_proof=SqlAlchemyAIProviderSecretProof(),
+                        repository=SqlAlchemyAIProviderCreateRepository(),
+                        receipts=SqlAlchemyIdempotencyReceipts(),
+                        audit=audit,
+                    ),
+                )
+                ai_model_create_router = create_ai_model_create_router(
+                    sessions=sessions, origins=origins,
+                    models=AIModelCreateService(
+                        unit_of_work=runtime.unit_of_work,
+                        access=SqlAlchemyLicenseImportAccess(),
+                        license_guard=licenses.guard,
+                        repository=SqlAlchemyAIModelCreateRepository(),
+                        receipts=SqlAlchemyIdempotencyReceipts(),
+                        audit=audit,
+                    ),
+                )
+                ai_model_state_router = create_ai_model_state_router(
+                    sessions=sessions, origins=origins,
+                    models=AIModelStateService(
+                        unit_of_work=runtime.unit_of_work,
+                        access=SqlAlchemyLicenseImportAccess(),
+                        license_guard=licenses.guard,
+                        repository=SqlAlchemyAIModelStateRepository(),
+                        receipts=SqlAlchemyIdempotencyReceipts(),
+                        audit=audit,
+                    ),
+                )
+                ai_prompt_retire_router = create_ai_prompt_retire_router(
+                    sessions=sessions, origins=origins,
+                    retirements=PromptTemplateRetireService(
+                        unit_of_work=runtime.unit_of_work,
+                        access=SqlAlchemyLicenseImportAccess(),
+                        license_guard=licenses.guard,
+                        repository=SqlAlchemyPromptRetireRepository(),
+                        receipts=SqlAlchemyIdempotencyReceipts(),
+                        audit=audit,
+                    ),
+                )
+                ai_provider_patch_router = create_ai_provider_patch_router(
+                    sessions=sessions, origins=origins,
+                    providers=AIProviderAppendService(
+                        unit_of_work=runtime.unit_of_work,
+                        access=SqlAlchemyLicenseImportAccess(),
+                        license_guard=licenses.guard,
+                        secret_proof=SqlAlchemyAIProviderSecretProof(),
+                        repository=SqlAlchemyAIProviderAppendRepository(),
+                        receipts=SqlAlchemyIdempotencyReceipts(),
+                        audit=audit,
+                    ),
+                )
+                secret_create_router = create_secret_create_router(
+                    sessions=sessions, writes=writes, origins=origins,
+                )
+                secret_rotate_router = create_secret_rotate_router(
+                    sessions=sessions, writes=writes, origins=origins,
+                )
+                secret_disable_router = create_secret_disable_router(
+                    sessions=sessions, writes=writes, origins=origins,
+                )
+                upload_issuer = create_windows_document_upload_token_issuer()
+                upload_repository = SqlAlchemyUploadIntentRepository()
+
+                def upload_service(token: bytes, csrf: bytes) -> CreateUploadIntentService:
+                    return CreateUploadIntentService(
+                        unit_of_work=runtime.unit_of_work,
+                        access=DocumentUploadAccess(
+                            session_token=token, csrf_token=csrf,
+                            session_access=SqlAlchemyProjectWriteAccess(),
+                            admin_access=SqlAlchemyLicenseImportAccess(),
+                            project_facts=SqlAlchemyProjectAuthorizationRepository(),
+                            upload_owner=upload_repository,
+                        ),
+                        repository=upload_repository,
+                        receipts=SqlAlchemyIdempotencyReceipts(), audit=audit,
+                        token_issuer=upload_issuer,
+                    )
+
+                document_upload_create_router = create_document_upload_create_router(
+                    sessions=sessions, origins=origins, license_guard=licenses.guard,
+                    service_factory=upload_service,
+                )
+                upload_storage = LocalFileStorage(settings.data_root)
+                upload_operation_gate = LocalUploadOperationGate(settings.data_root)
+                upload_spool = ValidatedContentSpool(
+                    storage=upload_storage, max_bytes=100_000_000,
+                    allowed_extensions=frozenset({
+                        ".pdf", ".docx", ".xlsx", ".pptx", ".png", ".jpg", ".jpeg",
+                        ".tif", ".tiff", ".txt", ".csv",
+                    }),
+                )
+
+                def content_service(token: bytes, csrf: bytes) -> ReceiveUploadContentService:
+                    return ReceiveUploadContentService(
+                        unit_of_work=runtime.unit_of_work,
+                        access=DocumentUploadAccess(
+                            session_token=token, csrf_token=csrf,
+                            session_access=SqlAlchemyProjectWriteAccess(),
+                            admin_access=SqlAlchemyLicenseImportAccess(),
+                            project_facts=SqlAlchemyProjectAuthorizationRepository(),
+                            upload_owner=upload_repository,
+                        ),
+                        repository=SqlAlchemyUploadContentRepository(), audit=audit,
+                        spool=upload_spool, storage=upload_storage,
+                        operation_gate=upload_operation_gate,
+                        license_guard=licenses.guard,
+                    )
+
+                document_upload_content_router = create_document_upload_content_router(
+                    sessions=sessions, origins=origins, service_factory=content_service,
+                )
+
+                def finalize_access(token: bytes, csrf: bytes) -> DocumentUploadAccess:
+                    return DocumentUploadAccess(
+                        session_token=token, csrf_token=csrf,
+                        session_access=SqlAlchemyProjectWriteAccess(),
+                        admin_access=SqlAlchemyLicenseImportAccess(),
+                        project_facts=SqlAlchemyProjectAuthorizationRepository(),
+                        upload_owner=upload_repository,
+                    )
+
+                def commit_service(token: bytes, csrf: bytes) -> CommitUploadService:
+                    return CommitUploadService(
+                        unit_of_work=runtime.unit_of_work,
+                        access=finalize_access(token, csrf),
+                        repository=SqlAlchemyUploadCommitRepository(),
+                        receipts=SqlAlchemyIdempotencyReceipts(),
+                        jobs=ParseJobQueue(SqlAlchemyParseJobQueueRepository()),
+                        audit=audit, storage=upload_storage,
+                        license_guard=licenses.guard,
+                        operation_gate=upload_operation_gate,
+                    )
+
+                def abort_service(token: bytes, csrf: bytes) -> AbortUploadService:
+                    return AbortUploadService(
+                        unit_of_work=runtime.unit_of_work,
+                        access=finalize_access(token, csrf),
+                        repository=SqlAlchemyUploadAbortRepository(),
+                        receipts=SqlAlchemyIdempotencyReceipts(),
+                        audit=audit, license_guard=licenses.guard,
+                        operation_gate=upload_operation_gate,
+                    )
+
+                document_upload_finalize_router = create_document_upload_finalize_router(
+                    sessions=sessions, origins=origins,
+                    commit_factory=commit_service, abort_factory=abort_service,
+                )
+        def shutdown() -> None:
+            try:
+                maintenance_engine.dispose()
+            finally:
+                runtime.dispose()
+
+        return create_app(
+            readiness_checks=(runtime.is_ready,),
+            login_router=router,
+            session_router=session_router,
+            session_renew_router=renew_router,
+            session_logout_router=logout_router,
+            secret_metadata_router=secret_detail_router,
+            secret_metadata_list_router=secret_list_router,
+            secret_create_router=secret_create_router,
+            secret_rotate_router=secret_rotate_router,
+            secret_disable_router=secret_disable_router,
+            ai_provider_read_router=ai_provider_read_router,
+            ai_model_read_router=ai_model_read_router,
+            ai_prompt_read_router=ai_prompt_read_router,
+            ai_model_create_router=ai_model_create_router,
+            ai_model_state_router=ai_model_state_router,
+            ai_prompt_retire_router=ai_prompt_retire_router,
+            ai_provider_create_router=ai_provider_create_router,
+            ai_provider_patch_router=ai_provider_patch_router,
+            ai_egress_router=ai_egress_router,
+            ai_task_create_router=ai_task_create_router,
+            ai_task_read_router=ai_task_read_router,
+            ai_task_list_router=ai_task_list_router,
+            ai_task_invocation_list_router=ai_task_invocation_list_router,
+            ai_suggestion_read_router=ai_suggestion_read_router,
+            rag_retrieval_router=rag_retrieval_router,
+            rag_retrieval_cancel_router=rag_retrieval_cancel_router,
+            project_read_router=project_read_router,
+            workflow_read_router=workflow_read_router,
+            workflow_start_router=workflow_start_router,
+            workflow_checklist_record_router=workflow_checklist_record_router,
+            workflow_checklist_qualification_router=(
+                workflow_checklist_qualification_router
+            ),
+            workflow_transition_router=workflow_transition_router,
+            audit_read_router=audit_read_router,
+            audit_export_result_router=audit_export_result_router,
+            audit_export_download_router=audit_export_download_router,
+            audit_export_submit_router=audit_export_submit_router,
+            job_detail_router=job_detail_router,
+            user_detail_router=user_detail_router,
+            user_list_router=user_list_router,
+            user_create_router=user_create_router,
+            user_name_patch_router=user_name_patch_router,
+            user_state_router=user_state_router,
+            password_change_router=password_change_router,
+            password_reset_router=password_reset_router,
+            job_list_router=job_list_router,
+            job_cancel_router=job_cancel_router,
+            job_retry_router=job_retry_router,
+            project_create_router=project_create_router,
+            project_patch_router=project_patch_router,
+            project_archive_router=project_archive_router,
+            project_member_read_router=project_member_read_router,
+            project_member_create_router=project_member_create_router,
+            project_member_candidate_router=project_member_candidate_router,
+            project_member_patch_router=project_member_patch_router,
+            project_member_state_router=project_member_state_router,
+            project_department_read_router=project_department_read_router,
+            project_department_create_router=project_department_create_router,
+            project_department_patch_router=project_department_patch_router,
+            project_department_deactivate_router=project_department_deactivate_router,
+            document_upload_create_router=document_upload_create_router,
+            document_upload_content_router=document_upload_content_router,
+            document_upload_finalize_router=document_upload_finalize_router,
+            document_read_router=document_read_router,
+            document_version_read_router=document_version_read_router,
+            document_parse_read_router=document_parse_read_router,
+            document_download_router=document_download_router,
+            evidence_create_router=evidence_create_router,
+            evidence_read_router=evidence_read_router,
+            evidence_viewer_router=evidence_viewer_router,
+            evidence_eligibility_router=evidence_eligibility_router,
+            evidence_eligibility_operation_lookup_router=evidence_eligibility_operation_lookup_router,
+            capability_command_router=capability_command_router,
+            capability_review_router=capability_review_router,
+            capability_read_router=capability_read_router,
+            handover_command_router=handover_command_router,
+            handover_review_submission_router=handover_review_submission_router,
+            handover_read_router=handover_read_router,
+            handover_action_read_router=handover_action_read_router,
+            handover_action_command_router=handover_action_command_router,
+            handover_action_lifecycle_router=handover_action_lifecycle_router,
+            survey_command_router=survey_command_router,
+            survey_review_submission_router=survey_review_submission_router,
+            survey_read_router=survey_read_router,
+            requirement_package_router=requirement_package_router,
+            requirement_router=requirement_router,
+            requirement_version_router=requirement_version_router,
+            requirement_review_submission_router=(
+                requirement_review_submission_router
+            ),
+            requirement_relation_router=requirement_relation_router,
+            prototype_package_router=prototype_package_router,
+            prototype_router=prototype_router,
+            prototype_template_router=prototype_template_router,
+            prototype_version_router=prototype_version_router,
+            prototype_review_submission_router=(
+                prototype_review_submission_router
+            ),
+            requirement_prototype_link_router=(
+                requirement_prototype_link_router
+            ),
+            project_reference_create_router=project_reference_create_router,
+            project_reference_revise_router=project_reference_revise_router,
+            project_reference_eligibility_router=project_reference_eligibility_router,
+            solution_outline_create_router=solution_outline_create_router,
+            solution_outline_version_create_router=solution_outline_version_create_router,
+            solution_outline_version_read_router=solution_outline_version_read_router,
+            solution_section_create_router=solution_section_create_router,
+            solution_section_version_create_router=solution_section_version_create_router,
+            solution_section_read_router=solution_section_read_router,
+            solution_section_list_router=solution_section_list_router,
+            solution_outline_read_router=solution_outline_read_router,
+            solution_outline_list_router=solution_outline_list_router,
+            global_reference_create_router=global_reference_create_router,
+            global_reference_revise_router=global_reference_revise_router,
+            global_reference_eligibility_router=global_reference_eligibility_router,
+            global_reference_publication_router=global_reference_publication_router,
+            global_reference_read_router=global_reference_read_router,
+            global_reference_list_router=global_reference_list_router,
+            project_reference_read_router=project_reference_read_router,
+            project_reference_list_router=project_reference_list_router,
+            project_global_reference_candidate_router=(
+                project_global_reference_candidate_router),
+            reference_deidentification_router=reference_deidentification_router,
+            review_command_router=review_command_router,
+            maintenance_admission=maintenance_admission,
+            shutdown_callback=shutdown,
+        )
+    except Exception:
+        if maintenance_engine is not None:
+            maintenance_engine.dispose()
+        runtime.dispose()
+        raise ProductionLoginStartupError() from None

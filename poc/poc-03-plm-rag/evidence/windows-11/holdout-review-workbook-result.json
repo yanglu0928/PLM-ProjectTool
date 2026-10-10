@@ -1,0 +1,26 @@
+{
+  "schema_version": "poc-03.holdout-review-workbook-result.v1",
+  "status": "PASS",
+  "platform": "Windows 11 x86-64",
+  "scope_count": 50,
+  "worksheet_count": 3,
+  "rendered_worksheet_count": 3,
+  "formula_error_count": 0,
+  "interaction_checks": {
+    "global_confirmation_sets_50_confirmed": true,
+    "modified_row_without_reason_stays_pending": true,
+    "modified_row_with_required_fields_confirms": true,
+    "evidence_links_created": 50
+  },
+  "tests": {
+    "poc03_passed": 146,
+    "poc04_passed": 12,
+    "failed": 0
+  },
+  "privacy": {
+    "workbook_committed": false,
+    "preview_committed": false,
+    "validation_dump_committed": false,
+    "customer_content_committed": false
+  }
+}

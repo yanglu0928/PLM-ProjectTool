@@ -1,0 +1,27 @@
+# Backend
+
+FastAPI、Worker 与客户运行模块的后端工程根目录。Python 代码使用 `src/plm_assistant` 布局；测试位于 `tests`，不得把本地数据、Secret 或生成物放入源码目录。
+
+## 当前能力
+
+WBS 1.02 已提供无全局单例的 FastAPI app factory，WBS 1.04～1.05 增加 PostgreSQL SQLAlchemy Session/UnitOfWork 与正式 Alembic 基础设施：
+
+```powershell
+uvicorn --factory plm_assistant.entrypoints.api:create_app
+```
+
+当前仅开放 `/health/live` 与 `/health/ready` 最小健康面。WBS 1.06 已装配统一错误边界：业务层使用平台注册的 `ApplicationError(code)`；API 错误返回 `error.code/message/details` 和 `trace_id`，并在 `X-Trace-Id` 中回传同一规范 UUID。未分类异常不公开内部内容；普通 403 隐藏为 404，明确分类的 CSRF/License 403 保留。健康端点按冻结约定保持最小响应，不套用业务错误 Envelope。数据库驱动固定为 `postgresql+psycopg`；Session 由 `DatabaseRuntime` 按事务创建，不使用全局 Session。UnitOfWork 必须显式 `commit()`，异常或遗漏提交会回滚并关闭 Session。
+
+WBS 1.07 提供独立的 Application/Integration JSON 日志流。`create_app(loggers=...)` 可注入平台 `StructuredLoggers`；默认 Application 写 stdout、Integration 写 stderr。只能通过受控事件与字段写入，不得将原始异常、请求/响应正文、Secret、路径或客户字段作为日志消息；Audit 不属于此日志器。未分类 API 失败会记录固定安全码与响应相同的 TraceId。
+
+WBS 1.08 在所有 HTTP 请求上绑定 TraceId：仅复用单个规范 UUID 的 `X-Trace-Id`，否则生成 UUIDv7；`request.state.trace_id` 和 `current_trace_id()` 可供当前请求的 API/Application 调用，`trace_scope()` 供后续受控 Worker 入口显式继承。每个响应头和受控完成日志使用同一值。健康端点 body 保持最小响应；正式业务成功 JSON 的 `data`/`trace_id` Envelope 仍由对应 API 层按冻结 Contract 构造，不能把 TraceId 用作授权或幂等凭据。
+
+WBS 1.09 增加非敏感启动配置加载器与 Secret 访问契约。`config/bootstrap.example.yaml` 只给出监听地址、端口、数据目录及日志级别；`load_bootstrap_settings(path)` 读取受限 YAML 与 `PLM_` 环境覆盖，只有显式传入 `development_env_file` 才读取开发用 `.env`。未知字段、重复键和密钥类配置均失败关闭，配置错误只给固定安全提示。Secret 只能以 `SecretRef` 交给受控 Adapter，在 ACTIVE、用途、消费方、版本与 Audit 检查通过后，于一次调用作用域内解密并清理可变缓冲。实际 PostgreSQL 密文仓库、加密算法及 Windows/Linux `SecretKeyProvider` 尚未实现，不能把此契约当作可投产的 Secret Store；启动引导仍需后续 Composition Root/发行任务接入。
+
+数据库 URL 只由 Composition Root 或迁移入口注入；本模块不读取 `.env` 或 Secret 文件，也不输出明文密码。正式 ORM Base 固定使用 `plm` Schema；首个 revision `20260924_0001` 只建立 PostgreSQL 18 + pgvector 0.8.6 平台基线，业务表仍为 0。
+
+Migration 文件随 backend wheel 交付。`plm` Schema、`plm.alembic_version` 和共享 pgvector 扩展在 downgrade 到 base 后保留；后续模块只能新增自己的正式 ORM/Migration，不得复制 SC-04 的验证性占位表。当前不注册业务 API；认证、业务 Router、Worker 与 Config/Secret 仍由后续 WBS 实现。
+
+## 开发依赖
+
+项目要求 Python 3.13.x，直接依赖由 `pyproject.toml` 固定。测试按 Starlette 1.7 要求使用 `httpx2`；生产运行不应安装测试依赖组。

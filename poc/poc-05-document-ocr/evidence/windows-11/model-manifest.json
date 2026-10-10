@@ -1,0 +1,168 @@
+{
+  "models": [
+    {
+      "name": "PP-OCRv5_mobile_det",
+      "source": "explicit_local_directory",
+      "file_count": 15,
+      "files": [
+        {
+          "path": ".cache/huggingface/.gitignore",
+          "size_bytes": 1,
+          "sha256": "684888c0ebb17f374298b65ee2807526c066094c701bcc7ebbe1c1095f494fc1"
+        },
+        {
+          "path": ".cache/huggingface/CACHEDIR.TAG",
+          "size_bytes": 195,
+          "sha256": "e8893e2dcb3f4545ef67a0a5b7b769113d38eef1aa61c7c7ba14659b02af955f"
+        },
+        {
+          "path": ".cache/huggingface/download/.gitattributes.metadata",
+          "size_bytes": 104,
+          "sha256": "a22eda7ce703b471f1b33a941f8c5846775a3aaafe8d399e842c0917b964fe31"
+        },
+        {
+          "path": ".cache/huggingface/download/config.json.metadata",
+          "size_bytes": 104,
+          "sha256": "55a414818b3a0a240ce52fa5375f7311cb58f7a9e93ccd48eacb9aa64b9abe34"
+        },
+        {
+          "path": ".cache/huggingface/download/inference.json.metadata",
+          "size_bytes": 104,
+          "sha256": "5f7046fb556eee78248df107c471b96690eb147ea475deac037b6b57f1e40292"
+        },
+        {
+          "path": ".cache/huggingface/download/inference.pdiparams.metadata",
+          "size_bytes": 127,
+          "sha256": "f161349a0b398406dab89444238e6635ff5e3925afee912102c16cecd0cd86f6"
+        },
+        {
+          "path": ".cache/huggingface/download/inference.yml.metadata",
+          "size_bytes": 104,
+          "sha256": "d98da27be352666f46b394a2399b2a98330a9ceb13f619b06588a37363637935"
+        },
+        {
+          "path": ".cache/huggingface/download/README.md.metadata",
+          "size_bytes": 104,
+          "sha256": "901be9a53978c57d62349f6fbae78a82cd1a9fae2bb645ea9d50495a77a68a22"
+        },
+        {
+          "path": ".cache/huggingface/trees/0d63e78e2b680928f6b1747d76a08db6e645efb7.json",
+          "size_bytes": 869,
+          "sha256": "52f183ab0177d44d00b03b1978572d9d4991b13fc7cc9854f3807acfab7d903b"
+        },
+        {
+          "path": ".gitattributes",
+          "size_bytes": 1575,
+          "sha256": "a3a43406012ee8c7b9b38dfab1b11610f33e8245cd864a9a9302d042616a859e"
+        },
+        {
+          "path": "config.json",
+          "size_bytes": 2871,
+          "sha256": "7ac1c33f377ba58561f4b89d3180b6add2b7c5c60a4edac90fa4e0ceccdc6665"
+        },
+        {
+          "path": "inference.json",
+          "size_bytes": 229777,
+          "sha256": "05feef1acb00aa4cd7362b15f7f501fc4f99d7b1fa73c1c871e0c7b1504b0f5c"
+        },
+        {
+          "path": "inference.pdiparams",
+          "size_bytes": 4692937,
+          "sha256": "afa1820cb16c1fd0dad589d0f8b389139061c1ef6d68019685fd07be997dda5b"
+        },
+        {
+          "path": "inference.yml",
+          "size_bytes": 903,
+          "sha256": "98069072e1b6b37d727fd9d9f11725faa46d6ea0de012f2ed26caea011c37699"
+        },
+        {
+          "path": "README.md",
+          "size_bytes": 16243,
+          "sha256": "4cc20ad6d41af86b3ce9885ffb0956e152574a2eb14179aeb07fd2d3956161ca"
+        }
+      ]
+    },
+    {
+      "name": "PP-OCRv5_mobile_rec",
+      "source": "explicit_local_directory",
+      "file_count": 15,
+      "files": [
+        {
+          "path": ".cache/huggingface/.gitignore",
+          "size_bytes": 1,
+          "sha256": "684888c0ebb17f374298b65ee2807526c066094c701bcc7ebbe1c1095f494fc1"
+        },
+        {
+          "path": ".cache/huggingface/CACHEDIR.TAG",
+          "size_bytes": 195,
+          "sha256": "e8893e2dcb3f4545ef67a0a5b7b769113d38eef1aa61c7c7ba14659b02af955f"
+        },
+        {
+          "path": ".cache/huggingface/download/.gitattributes.metadata",
+          "size_bytes": 104,
+          "sha256": "942b393b58d184cf712c7b7dae72012e850cc5e60125198eeb29cb7f9e062d60"
+        },
+        {
+          "path": ".cache/huggingface/download/config.json.metadata",
+          "size_bytes": 104,
+          "sha256": "bdca95913f40d3322f7097ed8519a21fac168debc8b4539f67f9135827bdd12b"
+        },
+        {
+          "path": ".cache/huggingface/download/inference.json.metadata",
+          "size_bytes": 104,
+          "sha256": "6f75e7a6954c517a98ce6db119fefd7eef56abdf6e9ee2d6997b1017e67bcb8d"
+        },
+        {
+          "path": ".cache/huggingface/download/inference.pdiparams.metadata",
+          "size_bytes": 128,
+          "sha256": "d98bfc8cb8836b622967ad713b45e5c72ec8d76d484d4e8f95bf0265ae933d8c"
+        },
+        {
+          "path": ".cache/huggingface/download/inference.yml.metadata",
+          "size_bytes": 103,
+          "sha256": "26f7f33cca0f72a8251f8a2de14c9e515edca29b6c937613e65a3dbbe1824752"
+        },
+        {
+          "path": ".cache/huggingface/download/README.md.metadata",
+          "size_bytes": 104,
+          "sha256": "a191759ec5a93bf418489582b8acfd7eb363f7eea399ffc6e99566ecb89a9d42"
+        },
+        {
+          "path": ".cache/huggingface/trees/682f20538d8c086cb2128e5cfac775e6c4904e85.json",
+          "size_bytes": 876,
+          "sha256": "c825c360ed25df063c7b771a78a1253873771ec4d7d878d84b4d1d7614a1f976"
+        },
+        {
+          "path": ".gitattributes",
+          "size_bytes": 1575,
+          "sha256": "a3a43406012ee8c7b9b38dfab1b11610f33e8245cd864a9a9302d042616a859e"
+        },
+        {
+          "path": "config.json",
+          "size_bytes": 352253,
+          "sha256": "6df1587ae056f0b987125fc894b17f62ae3a12644fa2488d108f19377da9c1a8"
+        },
+        {
+          "path": "inference.json",
+          "size_bytes": 217724,
+          "sha256": "24587345250c7332d0fc6f9a44e794d078cdaeb64c302fef906f325619de2569"
+        },
+        {
+          "path": "inference.pdiparams",
+          "size_bytes": 16458665,
+          "sha256": "2460da90875937c94db97eba74ae3d9e5d4c4c57c42f1f41531c09a26bcc771a"
+        },
+        {
+          "path": "inference.yml",
+          "size_bytes": 148345,
+          "sha256": "5dfeb2777f6d0db8177d8128a8acfcf6e6276dc4ac73ea3bf0dc06d6a5e85d8e"
+        },
+        {
+          "path": "README.md",
+          "size_bytes": 16075,
+          "sha256": "b02727443cef4904a9ee12accdfaf66fcbada7b93a1a05c40dde7582291ba28c"
+        }
+      ]
+    }
+  ]
+}

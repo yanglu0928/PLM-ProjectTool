@@ -1,0 +1,47 @@
+{
+  "schema_version": "poc-03.reranker-probe-result.v1",
+  "generated_at": "2026-09-17T23:22:56.378833+08:00",
+  "status": "PASS",
+  "configuration": {
+    "provider": "aliyun-bailian",
+    "model": "qwen3-rerank",
+    "timeout_seconds": 30.0,
+    "fail_open": true,
+    "candidate_count": 5,
+    "top_n": 3
+  },
+  "scenarios": {
+    "live_success": {
+      "provider_used": true,
+      "degraded": false,
+      "error_code": null,
+      "result_count": 3,
+      "result_ids": ["R-03", "R-01", "R-05"]
+    },
+    "simulated_http_429": {
+      "provider_used": false,
+      "degraded": true,
+      "error_code": "HTTP_429",
+      "result_ids": ["R-01", "R-02", "R-03"]
+    },
+    "simulated_timeout": {
+      "provider_used": false,
+      "degraded": true,
+      "error_code": "NETWORK_ERROR",
+      "result_ids": ["R-01", "R-02", "R-03"]
+    },
+    "simulated_invalid_response": {
+      "provider_used": false,
+      "degraded": true,
+      "error_code": "INVALID_RESPONSE",
+      "result_ids": ["R-01", "R-02", "R-03"]
+    }
+  },
+  "privacy": {
+    "customer_content_used": false,
+    "api_key_committed": false,
+    "query_text_committed": false,
+    "document_text_committed": false,
+    "provider_response_body_committed": false
+  }
+}

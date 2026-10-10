@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/poc-03/golden-dataset.schema.json",
+  "title": "POC-03 Human-approved Golden Dataset",
+  "description": "Phase 0 PoC schema. This is not the frozen product data model or API contract.",
+  "type": "object",
+  "required": ["schema_version", "dataset_id", "embedding_index", "cases"],
+  "properties": {
+    "schema_version": {"const": "poc-03.golden.v1"},
+    "dataset_id": {"type": "string", "minLength": 1},
+    "embedding_index": {
+      "type": "object",
+      "required": ["provider", "model", "dimension", "index_version"],
+      "properties": {
+        "provider": {"type": "string", "minLength": 1},
+        "model": {"type": "string", "minLength": 1},
+        "dimension": {"type": "integer", "minimum": 1},
+        "index_version": {"type": "string", "minLength": 1}
+      },
+      "additionalProperties": false
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 100,
+      "maxItems": 200,
+      "items": {
+        "type": "object",
+        "required": [
+          "case_id",
+          "query",
+          "scope",
+          "project_id",
+          "source_type",
+          "expected_classification",
+          "expected_relevant_chunk_ids",
+          "expected_answer_terms",
+          "expected_citations",
+          "review"
+        ],
+        "properties": {
+          "case_id": {"type": "string", "pattern": "^GD-[0-9]{4}$"},
+          "query": {"type": "string", "minLength": 2},
+          "scope": {"enum": ["GLOBAL", "PROJECT"]},
+          "project_id": {"type": ["string", "null"]},
+          "source_type": {"enum": ["STANDARD_CAPABILITY", "CONTRACT", "TECHNICAL_AGREEMENT", "SURVEY"]},
+          "expected_classification": {
+            "enum": ["STANDARD_SATISFIED", "PARTIALLY_SATISFIED", "NON_STANDARD", "INSUFFICIENT_INFORMATION", "NO_RELIABLE_MATCH", "HUMAN_CONFIRMATION_REQUIRED"]
+          },
+          "expected_relevant_chunk_ids": {
+            "type": "array",
+            "minItems": 1,
+            "items": {"type": "string", "minLength": 1},
+            "uniqueItems": true
+          },
+          "expected_answer_terms": {
+            "type": "array",
+            "items": {"type": "string", "minLength": 1},
+            "uniqueItems": true
+          },
+          "expected_citations": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["document_id", "chunk_id", "source_locator"],
+              "properties": {
+                "document_id": {"type": "string", "minLength": 1},
+                "chunk_id": {"type": "string", "minLength": 1},
+                "source_locator": {"type": "string", "minLength": 1}
+              },
+              "additionalProperties": false
+            }
+          },
+          "review": {
+            "type": "object",
+            "required": ["status", "reviewed_by", "reviewed_at"],
+            "properties": {
+              "status": {"const": "APPROVED"},
+              "reviewed_by": {"type": "string", "minLength": 1},
+              "reviewed_at": {"type": "string", "format": "date-time"}
+            },
+            "additionalProperties": false
+          }
+        },
+        "allOf": [
+          {
+            "if": {"properties": {"scope": {"const": "PROJECT"}}},
+            "then": {"properties": {"project_id": {"type": "string", "minLength": 1}}}
+          },
+          {
+            "if": {"properties": {"scope": {"const": "GLOBAL"}}},
+            "then": {"properties": {"project_id": {"type": "null"}}}
+          }
+        ],
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,15 @@
+{
+  "schema_version": "poc-03.embedding-probe-result.v1",
+  "generated_at": "2026-09-17T21:28:05.362132+08:00",
+  "status": "PASS",
+  "result": {
+    "provider": "aliyun-model-studio-openai-compatible",
+    "model": "qwen3.7-text-embedding",
+    "requested_dimension": 1024,
+    "returned_dimension": 1024,
+    "input_count": 1,
+    "api_key_committed": false,
+    "input_text_committed": false,
+    "embedding_values_committed": false
+  }
+}

@@ -1,0 +1,1 @@
+"""Solution business module."""

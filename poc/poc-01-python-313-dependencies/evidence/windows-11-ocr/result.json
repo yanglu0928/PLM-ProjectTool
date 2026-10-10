@@ -1,0 +1,34 @@
+{
+  "platform": {
+    "system": "Windows",
+    "release": "11",
+    "version": "10.0.26200"
+  },
+  "python_version": "3.13.15",
+  "tesseract": {
+    "path": "tesseract.exe",
+    "languages": [
+      "chi_sim",
+      "eng"
+    ]
+  },
+  "ghostscript": {
+    "path": "gswin64c.exe"
+  },
+  "output_type": "pdfa-2",
+  "deskew": true,
+  "pdfa_validated": true,
+  "ocrmypdf_exit_code": 0,
+  "input_size_bytes": 189198,
+  "output_size_bytes": 320053,
+  "expected_terms": {
+    "PLM项目实施辅助工具": true,
+    "需求调研": true,
+    "合同编号": true,
+    "PLM-2026-001": true,
+    "客户确认": true
+  },
+  "term_recall": 1.0,
+  "extracted_text": "PLM 项目实施辅助工具\n需求调研\n合同编号 : PLM-2026-001 \n客户确认",
+  "status": "PASS"
+}

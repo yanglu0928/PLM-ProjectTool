@@ -1,0 +1,20 @@
+{
+  "status": "PASS",
+  "docx": {
+    "render_source": "Microsoft Word PDF export",
+    "rendered_pages": 100,
+    "inspected_pages": 100,
+    "cropping_issues": 0,
+    "overlap_issues": 0,
+    "missing_glyph_issues": 0
+  },
+  "pptx": {
+    "office_rendered_slides": 50,
+    "artifact_tool_rendered_slides": 50,
+    "inspected_slides_each_renderer": 50,
+    "cropping_issues": 0,
+    "overlap_issues": 0,
+    "missing_glyph_issues": 0
+  },
+  "note": "The bundled DOCX renderer could not start because LibreOffice soffice.exe is not installed. The target Microsoft Word application exported the final DOCX to PDF, and all 100 pages were rendered with Poppler and visually inspected."
+}

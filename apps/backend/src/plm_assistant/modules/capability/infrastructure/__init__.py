@@ -1,0 +1,1 @@
+"""Capability persistence adapters."""

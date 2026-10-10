@@ -1,0 +1,19 @@
+﻿{
+    "status":  "PASS",
+    "platform":  {
+                     "caption":  "Microsoft Windows Server 2025 Datacenter",
+                     "version":  "10.0.26100",
+                     "build_number":  "26100",
+                     "architecture":  "x86-64",
+                     "logical_processors":  16,
+                     "memory_gb":  16
+                 },
+    "offline":  {
+                    "physical_adapter_count":  1,
+                    "connected_physical_adapter_count":  0,
+                    "bundle_sha256":  "67e87ab50af85e7547986cda0dda42b6c5816fa3415e045681bf6f41a68c2963",
+                    "local_paddle_models":  true,
+                    "pip_no_index":  true
+                },
+    "completed_at_utc":  "2026-09-17T08:59:30.9995778Z"
+}

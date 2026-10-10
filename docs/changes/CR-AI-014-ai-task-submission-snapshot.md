@@ -1,0 +1,51 @@
+# CR-AI-014：AI Task 提交策略、Prompt版本与最小参数快照
+
+日期：2026-10-03；状态：依 V1.1 持续授权登记，P02～P06已实施；关联冻结 API-03 `AI_TASK_CREATE/GET`、DM-04、Schema0063～0071、CR-AI-010～013；原 Gate 2 冻结提交 `64cdf09` 不改。WBS `AI-04-A05`。
+
+## 缺口与证据
+
+冻结创建合同允许受控 `task_type`、input version refs、prompt policy ref、output schema ref、RAG/context policy ref、EgressAuthorizationRef 和最小业务参数，并要求读取返回 policy/version refs。现有 `CreateAITask` 与 `ai_tasks` 只有三个语法受限的字符串引用，没有最小业务参数，也没有锁定 `PromptTemplate/PromptVersion`；创建服务未证明 task type、Prompt活动版本、output schema、RAG policy 与提交策略相互匹配。若直接开放HTTP，字符串可通过语法但不代表已批准策略，Worker还可能在配置变化后解析到另一Prompt版本，违反Retry变化需新授权及不可变追踪要求。AITask公开GET/Invocation/Suggestion读取也尚不存在。
+
+## 方案比较与决定
+
+- A：维持三个字符串并由Worker启动时再解析。否决；提交与执行会发生策略漂移，无法形成冻结GET要求的版本证据。
+- B：接收任意JSON业务参数并直接放入Job payload。否决；会形成未分型的数据旁路，可能把客户正文写入普通Job/日志链。
+- C：新增不可变提交快照。部署 Task Policy 将 `prompt_policy_ref + task_type` 映射到允许的PromptTemplate、purpose和严格参数Schema；创建事务锁定当前ACTIVE PromptVersion，并证明其task type、output schema、RAG/context policy与请求一致。AITask持久化精确Prompt Template/Version、受控最小参数及规范化SHA-256；Job/Outbox继续只存Task/授权/摘要引用。选择C。
+
+## 计划差异
+
+Schema0070已为AITask增加可空迁移列 `prompt_template_ref`、`prompt_version_no`、`task_parameters` 与 `task_parameters_fingerprint`，并用复合外键/触发器保护Prompt归属、活动快照形态、参数摘要和历史不可变。为分阶段兼容，0070数据库允许四列全NULL或完整；0063～0069遗留NULL仅保留审计且不猜测回填。P03接入Task Policy/Prompt Owner后，应用层新Task必须完整，NULL历史禁止Worker执行。现有 `prompt_policy_ref/output_schema_ref/context_policy_ref` 保留，原冻结历史不追写。
+
+参数只允许Task Policy声明的少量键和值类型，并设键数、深度、数组项和编码字节上限；Document/Requirement正文只能通过已授权不可变InputRef进入，不得塞入参数。策略配置非敏感、版本化、严格拒绝未知字段；参数Schema变化使用新policy reference。PromptVersion必须与提交快照精确一致，后续激活新版本不改既有Task。
+
+## 迁移、回滚与验证
+
+P02实现ORM/Migration0070，验证空库、有0069历史、up/down/re-up、Prompt复合引用、摘要、形态、不可变与非空拒降；P03实现Task Policy/Prompt Owner及内部创建接入，覆盖策略/版本/参数允许拒绝和事务回滚；P04实现可选创建HTTP；P05完成真实Win11/PG18写平台组合与安全读取前置。正式库升级前备份；0070无新Task历史可物理降级，有新历史则拒绝降级并向前修复或受控恢复。无真实Provider调用或客户数据外发。
+
+风险：Prompt激活并发、参数旁路、旧Task误执行、授权payload与最终发送载荷不一致。控制：同事务行锁/复合引用、严格Task Policy、不可变参数摘要、遗留执行失败关闭；最终Worker仍须在发送前重读Authorization状态并对实际payload fingerprint和上限做精确校验，本CR不把提交验收冒充发送验收。
+
+## P02实施结果
+
+Migration0070、AITask ORM和迁移head合同已落地。Windows 11 / PostgreSQL 18.6 空库与历史库升级/降级/重升级、漂移、Prompt/策略/参数/摘要/不可变/拒降均PASS；后端2136运行/3跳过及wheel通过。开发中发现并修正PL/pgSQL变量歧义与非对象JSON判断顺序，最终均从头重跑。无公开API、真实Provider调用或客户数据外发；P03前不把全NULL兼容路径视为可执行新Task。
+
+## P03实施结果
+
+版本化Task Policy已严格绑定task type、PromptTemplate、purpose、Output/RAG引用和有界标量参数；Prompt Owner在创建事务锁定当前ACTIVE版本并由PostgreSQL规范化JSONB与计算摘要。内部新Task通过现有原子链写入完整0070快照，purpose与当前Egress Authorization精确一致；Prompt退役后新建失败，历史重放保留。Win11/PG18.6真实链、后端2140运行/3跳过及wheel通过。首轮发现JSON文本双重编码并修正为Text→JSONB显式转换后全量重跑。公开路由、部署策略来源和Worker执行仍未开启。
+
+## P04实施结果
+
+冻结POST路径已实现为可选Router：严格七字段请求、S/L/C/I/E/A前置、安全202 TaskRef+JobRef投影和冻结AI错误码；默认及当前生产组合保持404。合同14项、后端2145运行/3跳过及wheel通过。无新Schema、依赖、生产挂载或外发；P05负责非敏感部署Task Policy、Windows真实HTTP/PG组合和读取/执行前置。
+
+## P05偏差、实施与结果
+
+实施执行前置时发现P03虽然解析了 `policy_version`，0070却只保存策略引用，无法证明历史Task使用哪一版部署策略。按持续授权新增兼容Migration0071与 `prompt_policy_version`：旧Task保持五列全NULL且执行失败关闭；新Task必须完整保存1～2147483647版本并与其他提交快照共同不可变。0071不追写冻结提交，也不猜测回填历史；只要已有版本化Task历史即拒绝物理降级，正式升级须先备份停写，回滚采用向前修复或受控备份恢复。
+
+新增严格Bootstrap `ai_task_policies` 非敏感来源，启动时生成不可变Task Policy与Task→Egress Purpose注册表；配置不接收Prompt正文、客户数据、URL、Key或Token。仅Windows显式写平台且存在有效策略时挂载Task POST，无配置保持404，配置非法使写平台启动失败。新增执行前置投影：只接受完整Prompt/策略/参数/Job/Egress快照，重新验证当前授权未撤销未过期以及当前Provider/Config/Model路由，旧NULL、非PENDING Job、摘要漂移或授权变化一律不准执行。此校验是Worker发送前的必要条件，不等同于最终payload上限/逐次Invocation验收。
+
+Windows 11 / PostgreSQL 18.6完成0071空库升降重升与有历史拒降，并通过真实Session、Project、Document Owner、Egress Preview/Authorize/Revoke与Task HTTP组合：默认404、创建202/重放、版本落库不可改、执行准入、撤销后准入及新建拒绝均PASS，无真实Provider调用。单元/合同定向50，后端2153运行/3跳过PASS；开发wheel SHA-256 `32a3d4b414b2dec7bce36ea2b307f313833c7c62d6ebc9f795ccdc75bbb1b7e0`。P06继续实现冻结Task GET安全投影；Worker仍须实现最终payload构造、逐次授权/Invocation、限额及失败发布。
+
+## P06实施结果
+
+冻结Task GET已实现为可选安全只读路径。项目经理和客户经理可读取项目内Task，其他有效项目成员仅能读取自己提交的Task；普通成员读取他人Task、跨项目引用和不存在资源统一404。Repository只投影受控元数据及引用，明确不读取或返回Task参数、Prompt/Input正文、供应商请求/响应或Secret；未知Input Owner映射失败关闭。GET挂载于显式Windows只读/写平台，登录-only组合保持404。
+
+Windows 11 / PostgreSQL 18.6真实HTTP/PG验证创建人、管理角色、普通成员与跨项目隔离以及无正文响应均PASS；定向43项，后端2157运行/3跳过，开发wheel SHA-256 `63315024faa0b1d4f5d7776579679b6af5030743257df2b4e0dd7cb2160c6c0e`。无Schema、依赖、Breaking URL、客户数据外发或真实Provider调用。回滚只需撤Router组合，历史Task不变。后续 `AI-04-A06-P01` 核查最终payload、Invocation、发送前授权/限额/摘要与失败发布边界。

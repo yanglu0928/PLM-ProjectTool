@@ -1,0 +1,1 @@
+"""AI-owned persistence adapters."""

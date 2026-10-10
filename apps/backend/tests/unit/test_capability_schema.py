@@ -1,0 +1,156 @@
+from __future__ import annotations
+
+import importlib
+import inspect
+import unittest
+from unittest.mock import patch
+
+from plm_assistant.modules.capability.infrastructure.orm import (
+    CapabilityBaselineRow,
+    CapabilityBaselineVersionRow,
+    CapabilityItemDocumentRefRow,
+    CapabilityItemEvidenceRefRow,
+    CapabilityItemRow,
+)
+
+
+class CapabilityFoundationSchemaTests(unittest.TestCase):
+    def test_two_roots_and_three_owned_tables_are_global_and_bounded(self) -> None:
+        tables = (
+            CapabilityBaselineRow.__table__, CapabilityBaselineVersionRow.__table__,
+            CapabilityItemRow.__table__, CapabilityItemDocumentRefRow.__table__,
+            CapabilityItemEvidenceRefRow.__table__,
+        )
+        self.assertEqual(
+            [table.name for table in tables],
+            ["cap_baselines", "cap_baseline_versions", "cap_items",
+             "cap_item_document_refs", "cap_item_evidence_refs"],
+        )
+        for table in tables:
+            with self.subTest(table=table.name):
+                self.assertEqual(table.schema, "plm")
+                self.assertNotIn("project_id", table.c)
+        self.assertEqual(
+            CapabilityBaselineRow.__table__.c.current_approved_version_ref.nullable,
+            True,
+        )
+        self.assertIn("ARRAY", str(CapabilityItemRow.__table__.c.prerequisites.type))
+
+    def test_frozen_identity_version_item_and_source_constraints_exist(self) -> None:
+        names = {
+            constraint.name
+            for table in (
+                CapabilityBaselineRow.__table__, CapabilityBaselineVersionRow.__table__,
+                CapabilityItemRow.__table__, CapabilityItemDocumentRefRow.__table__,
+                CapabilityItemEvidenceRefRow.__table__,
+            )
+            for constraint in table.constraints
+        }
+        for required in (
+            "uq_cap_baselines__code", "fk_cap_baselines__approved_version",
+            "uq_cap_versions__baseline_no", "fk_cap_versions__supersedes",
+            "uq_cap_items__version_stable", "uq_cap_items__version_code",
+            "fk_cap_item_docs__document_version", "fk_cap_item_evidence__evidence",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, names)
+
+    def test_migration_closes_owner_and_requires_complete_global_sources(self) -> None:
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions.20261005_0091_capability_foundation"
+        )
+        self.assertEqual(migration.down_revision, "20261004_0090")
+        sql = migration._GUARDS
+        for required in (
+            "Capability Owner is not installed",
+            "Capability BaselineVersion declared counts are incomplete",
+            "capability-source-set.v1",
+            "Capability source collection fingerprint is invalid",
+            "CapabilityItem requires document and evidence",
+            "document_category<>'STANDARD_CAPABILITY'",
+            "e.eligibility_state<>'ELIGIBLE'",
+            "Capability history cannot be truncated",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, sql)
+
+    def test_downgrade_is_offline_closed_and_preserves_history(self) -> None:
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions.20261005_0091_capability_foundation"
+        )
+        with patch.object(migration.context, "is_offline_mode", return_value=True), \
+                patch.object(migration.op, "execute") as execute:
+            with self.assertRaisesRegex(RuntimeError, "offline Capability"):
+                migration.downgrade()
+        execute.assert_not_called()
+        self.assertIn("Capability history prevents downgrade",
+                      inspect.getsource(migration.downgrade))
+
+    def test_review_start_delta_is_narrow_and_history_safe(self) -> None:
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions.20261005_0093_capability_review_start"
+        )
+        self.assertEqual(migration.down_revision, "20261005_0092")
+        for required in (
+            "OLD.version_state<>'DRAFT'",
+            "NEW.version_state<>'IN_REVIEW'",
+            "Capability Review binding is incomplete or mismatched",
+            "review_row.subject_type<>'CAP-01'",
+        ):
+            self.assertIn(required, migration._REVIEW_START_GUARD
+                          + migration._REVIEW_BINDING)
+        index = next(
+            item for item in CapabilityBaselineVersionRow.__table__.indexes
+            if item.name == "uq_cap_versions__baseline_in_review"
+        )
+        self.assertTrue(index.unique)
+        with patch.object(migration.context, "is_offline_mode", return_value=True):
+            with self.assertRaisesRegex(RuntimeError, "offline Capability Review"):
+                migration.downgrade()
+
+    def test_review_terminal_delta_formalizes_one_approved_version(self) -> None:
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions.20261005_0094_capability_review_terminal"
+        )
+        self.assertEqual(migration.down_revision, "20261005_0093")
+        sql = migration._TERMINAL_OWNER_GUARD + migration._TERMINAL_INTEGRITY
+        for required in (
+            "OLD.version_state='IN_REVIEW'",
+            "NEW.version_state IN ('APPROVED','RETURNED')",
+            "OLD.version_state='APPROVED' AND NEW.version_state='SUPERSEDED'",
+            "Capability approval formalization is incomplete",
+            "review_row.review_state NOT IN ('RETURNED','WITHDRAWN')",
+        ):
+            self.assertIn(required, sql)
+        index = next(
+            item for item in CapabilityBaselineVersionRow.__table__.indexes
+            if item.name == "uq_cap_versions__baseline_approved"
+        )
+        self.assertTrue(index.unique)
+        with patch.object(migration.context, "is_offline_mode", return_value=True):
+            with self.assertRaisesRegex(RuntimeError, "offline Capability terminal"):
+                migration.downgrade()
+
+    def test_state_owner_delta_is_narrow_and_history_safe(self) -> None:
+        migration = importlib.import_module(
+            "plm_assistant.migrations.versions.20261005_0095_capability_state_owner"
+        )
+        self.assertEqual(migration.down_revision, "20261005_0094")
+        sql = migration._STATE_OWNER_GUARD + migration._STATE_INTEGRITY
+        for required in (
+            "OLD.baseline_state='ACTIVE' AND NEW.baseline_state='ARCHIVED'",
+            "OLD.version_state IN ('DRAFT','APPROVED','RETURNED','SUPERSEDED')",
+            "AND NEW.version_state='RESTRICTED'",
+            "Capability approved pointer is invalid",
+            "Restricted Capability remains formally approved",
+        ):
+            self.assertIn(required, sql)
+        with patch.object(migration.context, "is_offline_mode", return_value=True):
+            with self.assertRaisesRegex(RuntimeError, "offline Capability state-owner"):
+                migration.downgrade()
+        self.assertIn("Capability state-owner history prevents downgrade",
+                      inspect.getsource(migration.downgrade))
+
+
+if __name__ == "__main__":
+    unittest.main()

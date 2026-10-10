@@ -1,0 +1,24 @@
+{
+  "corpus_version": "poc-05.1",
+  "shared_terms": [
+    "POC 05",
+    "PLM 项目实施辅助工具",
+    "PLM-2026-005",
+    "需求确认",
+    "客户确认"
+  ],
+  "scan_terms": [
+    "PLM项目实施辅助工具",
+    "需求确认",
+    "合同编号",
+    "PLM-2026-005",
+    "客户确认"
+  ],
+  "expected_sources": {
+    "sample.docx": ["word/paragraph/", "word/table/"],
+    "sample.pptx": ["ppt/slides/", "/table/1/row/"],
+    "sample.xlsx": ["excel/sheets/项目台账/rows/", "excel/sheets/风险记录/rows/"],
+    "sample.csv": ["csv/rows/"],
+    "sample-text.pdf": ["pdf/pages/", "/tables/"]
+  }
+}

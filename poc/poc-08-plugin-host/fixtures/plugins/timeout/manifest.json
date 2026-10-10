@@ -1,0 +1,11 @@
+{
+  "id": "com.plm.timeout",
+  "name": "POC Timeout Plugin",
+  "version": "1.0.0",
+  "plugin_api_version": "1.0",
+  "supported_os": ["windows-x86_64", "debian-x86_64"],
+  "supported_formats": ["poc/timeout"],
+  "external_dependencies": [],
+  "entry_point": "plugin.py",
+  "signature": "sha256:e308c50a2c26474dc1886d5623f733ebdebc4252ee60ef7df3e11f0b1acbc9c0"
+}

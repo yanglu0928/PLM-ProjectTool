@@ -1,0 +1,58 @@
+{
+  "schema_version": "poc-03.r6-live-quality-summary.v1",
+  "generated_at": "2026-09-18T17:00:15+08:00",
+  "status": "FAIL",
+  "summary": {
+    "case_count": 120,
+    "top_k": 5,
+    "top5_recall_hits": 72,
+    "top5_recall": 0.6,
+    "classification_correct_count": 57,
+    "classification_accuracy": 0.475,
+    "citation_correct_count": 62,
+    "citation_accuracy": 0.5166666666666667,
+    "invalid_citation_case_count": 0,
+    "missing_prediction_count": 0,
+    "reranker_live_count": 120
+  },
+  "thresholds": {
+    "top5_recall": 0.95,
+    "classification_accuracy": 0.9,
+    "citation_accuracy": 0.98
+  },
+  "checks": {
+    "top5_recall_at_least_95_percent": false,
+    "classification_accuracy_at_least_90_percent": false,
+    "citation_accuracy_at_least_98_percent": false,
+    "all_reranker_calls_live": true,
+    "gin_index_used": true,
+    "hnsw_index_used": true,
+    "all_predictions_present": true
+  },
+  "environment": {
+    "postgresql_version": "18.6",
+    "pgvector_version": "0.8.6",
+    "platform": "Windows 11 x86-64"
+  },
+  "configuration": {
+    "embedding_model": "qwen3.7-text-embedding",
+    "embedding_dimension": 1024,
+    "index_version": "v1",
+    "vector_weight": 0.6,
+    "full_text_weight": 0.4,
+    "candidate_limit_per_channel": 20,
+    "reranker_model": "qwen3-rerank",
+    "ai_model": "deepseek-flash",
+    "prompt_id": "poc03-quality",
+    "prompt_version": "v1",
+    "label_leakage": false
+  },
+  "privacy": {
+    "queries_committed": false,
+    "document_text_committed": false,
+    "vectors_committed": false,
+    "model_responses_committed": false,
+    "case_level_results_committed": false,
+    "api_keys_committed": false
+  }
+}

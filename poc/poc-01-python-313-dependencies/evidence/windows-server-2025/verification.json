@@ -1,0 +1,23 @@
+{
+  "python_version": "3.13.15",
+  "status": "PASS",
+  "checks": [
+    "python_3_13",
+    "fastapi_minimal",
+    "uvicorn_import",
+    "sqlalchemy_minimal",
+    "alembic_import",
+    "psycopg_import",
+    "pgvector_import",
+    "pdf_stack_minimal",
+    "docx_minimal",
+    "pptx_minimal",
+    "openpyxl_minimal",
+    "paddleocr_import",
+    "paddle_import",
+    "pytesseract_import",
+    "ocrmypdf_import"
+  ],
+  "passed": 15,
+  "failed": 0
+}

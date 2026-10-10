@@ -1,0 +1,61 @@
+{
+  "schema_version": "poc-03.prompt-v2-offline-audit.v1",
+  "generated_at": "2026-09-20T14:36:21.863208+08:00",
+  "status": "PASS",
+  "summary": {
+    "case_count": 120,
+    "payload_count": 120,
+    "context_count_min": 5,
+    "context_count_max": 5,
+    "exact_evidence_available_count": 114,
+    "exact_evidence_available_rate": 0.95,
+    "same_document_evidence_available_count": 118,
+    "same_document_evidence_available_rate": 0.9833333333333333,
+    "source_type_violation_count": 0,
+    "truncated_context_count": 0
+  },
+  "prompt": {
+    "prompt_id": "poc03-quality",
+    "prompt_version": "v2",
+    "system_prompt_sha256": "529ddb9ba40983c636221c60fb52b2ffbda6d448ac89f5a7920eda506e0c6093",
+    "allowed_classifications": [
+      "INSUFFICIENT_INFORMATION",
+      "NON_STANDARD",
+      "NO_RELIABLE_MATCH",
+      "PARTIALLY_SATISFIED",
+      "STANDARD_SATISFIED"
+    ],
+    "schema_sha256": "81a8b15f91361ef73081afe8e050357783da4a20a3b6f7279f006a6864538cbb"
+  },
+  "checks": {
+    "all_cases_prepared": true,
+    "five_final_labels_only": true,
+    "golden_fields_absent_from_payloads": true,
+    "source_type_isolation": true,
+    "five_contexts_per_case": true,
+    "r5_exact_evidence_available_at_least_95_percent": true
+  },
+  "classification_accuracy": {
+    "measured": false,
+    "reason": "No external model call is permitted in the offline preparation step.",
+    "threshold": 0.9
+  },
+  "external_calls": {
+    "embedding": 0,
+    "reranker": 0,
+    "deepseek": 0
+  },
+  "limitations": {
+    "same_dataset_used_for_prompt_design": true,
+    "independent_holdout_required": true,
+    "live_deepseek_validation_required_for_p03_a12": true
+  },
+  "privacy": {
+    "payload_file_committed": false,
+    "queries_committed": false,
+    "chunk_ids_committed": false,
+    "document_text_committed": false,
+    "golden_labels_in_model_payload": false,
+    "api_keys_committed": false
+  }
+}

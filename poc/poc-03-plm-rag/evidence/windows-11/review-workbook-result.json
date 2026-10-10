@@ -1,0 +1,39 @@
+{
+  "schema_version": "poc-03.review-workbook-result.v1",
+  "executed_at": "2026-09-17",
+  "environment": "Windows 11 x86-64",
+  "status": "PASS_FOR_HUMAN_REVIEW",
+  "input": {
+    "candidate_count": 120,
+    "document_coverage": 26,
+    "solution_candidate_count": 75,
+    "contract_candidate_count": 45,
+    "initial_review_status": "PENDING"
+  },
+  "workbook": {
+    "sheet_count": 2,
+    "detail_row_count": 120,
+    "validation_list_count": 3,
+    "has_filter_table": true,
+    "has_frozen_panes": true,
+    "has_conditional_status_formatting": true,
+    "local_output_ignored_by_git": true,
+    "committed_to_git": false
+  },
+  "verification": {
+    "rendered_sheet_count": 2,
+    "in_memory_formula_error_count": 0,
+    "saved_workbook_formula_error_count": 0,
+    "saved_workbook_reload": "PASS",
+    "missing_review_time_boundary": "PASS",
+    "complete_record_boundary": "PASS"
+  },
+  "privacy": {
+    "contains_local_customer_content": true,
+    "external_upload_performed": false,
+    "customer_content_committed": false,
+    "source_file_names_committed": false,
+    "workbook_hash_committed": false
+  },
+  "conclusion": "Workbook is ready for local human review. No candidate has been approved and no Golden Dataset quality metric may be claimed."
+}

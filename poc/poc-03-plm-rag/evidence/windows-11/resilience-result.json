@@ -1,0 +1,21 @@
+{
+  "schema_version": "poc-03.resilience-result.v1",
+  "generated_at": "2026-09-17T23:30:23.402188+08:00",
+  "status": "PASS",
+  "minimum_reliable_score": 0.5,
+  "scenarios": {
+    "database_unavailable": {"status": "RETRIEVAL_UNAVAILABLE", "retryable": true, "ai_called": false, "error_code": "RETRIEVAL_UNAVAILABLE"},
+    "empty_retrieval": {"status": "NO_RELIABLE_MATCH", "retryable": false, "ai_called": false, "error_code": null},
+    "below_reliability_threshold": {"status": "NO_RELIABLE_MATCH", "retryable": false, "ai_called": false, "error_code": null},
+    "reranker_unavailable": {"status": "COMPLETED", "retryable": false, "ai_called": true, "degraded_components": ["RERANKER"], "citation_ids": ["C-01", "C-02"]},
+    "ai_unavailable": {"status": "AI_UNAVAILABLE", "retryable": true, "ai_called": true, "error_code": "AI_PROVIDER_UNAVAILABLE", "citation_ids": ["C-02", "C-01"]},
+    "success": {"status": "COMPLETED", "retryable": false, "ai_called": true, "citation_ids": ["C-02", "C-01"]}
+  },
+  "privacy": {
+    "customer_content_used": false,
+    "query_text_committed": false,
+    "candidate_content_committed": false,
+    "ai_output_committed": false,
+    "exception_message_committed": false
+  }
+}

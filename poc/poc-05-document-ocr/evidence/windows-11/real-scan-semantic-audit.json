@@ -1,0 +1,42 @@
+{
+  "status": "PASS",
+  "date": "2026-09-21",
+  "scope": {
+    "document_count": 5,
+    "source_page_count": 105,
+    "sampled_page_count": 15,
+    "checkpoint_count": 75,
+    "critical_checkpoint_count": 17,
+    "exact_checkpoint_count": 12
+  },
+  "method": {
+    "sampling": "three fixed pages per anonymized document: early content, middle content, late content",
+    "ground_truth": "visual transcription from Poppler-rendered source pages before OCR comparison",
+    "semantic_threshold": 0.85,
+    "exact_threshold": 1.0,
+    "minimum_checkpoint_recall": 0.95,
+    "maximum_critical_errors": 0,
+    "privacy": "source files, rendered pages, checkpoint text, filenames, hashes and full results remain in git-ignored local artifacts"
+  },
+  "results": [
+    {
+      "engine": "tesseract-existing-output",
+      "role": "auxiliary_baseline",
+      "matched_checkpoints": 70,
+      "checkpoint_recall": 0.933333,
+      "critical_errors": 2,
+      "exact_errors": 1,
+      "status": "FAIL"
+    },
+    {
+      "engine": "PP-OCRv5-mobile-local-models-300dpi",
+      "role": "primary",
+      "matched_checkpoints": 75,
+      "checkpoint_recall": 1.0,
+      "critical_errors": 0,
+      "exact_errors": 0,
+      "status": "PASS"
+    }
+  ],
+  "decision": "Use PaddleOCR as the primary real-scan extraction path. Tesseract remains an auxiliary fallback and must not be the sole source for critical fields without confirmation."
+}
