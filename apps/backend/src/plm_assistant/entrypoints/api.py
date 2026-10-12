@@ -136,6 +136,7 @@ def create_app(
     solution_outline_version_read_router: APIRouter | None = None,
     solution_section_create_router: APIRouter | None = None,
     solution_section_version_create_router: APIRouter | None = None,
+    solution_section_version_validate_router: APIRouter | None = None,
     solution_section_version_read_router: APIRouter | None = None,
     solution_section_read_router: APIRouter | None = None,
     solution_section_list_router: APIRouter | None = None,
@@ -397,6 +398,8 @@ def create_app(
         app.include_router(solution_section_create_router)
     if solution_section_version_create_router is not None:
         app.include_router(solution_section_version_create_router)
+    if solution_section_version_validate_router is not None:
+        app.include_router(solution_section_version_validate_router)
     if solution_section_version_read_router is not None:
         app.include_router(solution_section_version_read_router)
     if solution_section_read_router is not None:

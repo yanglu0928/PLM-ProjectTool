@@ -11289,3 +11289,10 @@
 - Decision：给项目授权矩阵补冻结 PM/ImplementationMember 写操作；Owner 先核对 Session/CSRF/License/项目身份，再按固定 Project/Section/Version 锁读不可变快照。同 Key 重放只查首次 Audit 及收据，不重新采样当前来源。首次验证用既有 Document/Requirement/Evidence 真实证明端口；证明异常或资格不能区分时归 `UNAVAILABLE`，不得标 PASS；没有受信 Trace/Spec 端口时同样 `UNAVAILABLE`。固定快照损坏、审计/收据失败或身份不匹配则整事务失败，不生成肯定报告。Audit SUCCESS 仅代表命令已执行，报告 `ready_for_review` 独立判断。真实 PG 与故障回滚另验。
 - Reason：冻结 VALIDATE 需要返回证据/Trace/Spec 报告，但现有创建证明端口把来源失效和 I/O 故障均包装成不可用；此时断言 FAIL 或 PASS 都超出证据。重放若用当前事实重算，会篡改首次观察结果。
 - Impact/Rollback：只补现有冻结操作的授权映射、内部 Owner/只读 Audit 来源及测试；无 API Breaking、Schema/Migration、角色扩展或旧数据改写。撤未装配 Owner 可回滚；正式 Trace/Spec 证明与 HTTP/Windows 另验，不能把缺口标为 Gate PASS。
+
+# DEC-20261012-1190：VALIDATE HTTP 请求 Trace 与首次观察 Trace 分离
+
+- Date/WBS：2026-10-12 / `SOL-05-A04-P04`；依据冻结 API-04、A04-P02 报告合同、A04-P03 同 Key 首观察重放及统一 Trace 中间件。
+- Decision：HTTP 外层 `trace_id`/`X-Trace-Id` 始终表示本次请求；报告 `data.observation_trace_id` 明示首次成功审计的 Trace，同 Key 重放时保持首次值。严格零字节请求正文，当前请求重新验证 Session/CSRF/License/项目权限；`200` 只表示已审计报告，不表示业务 valid/ready。默认不挂 Router。
+- Reason：统一 Trace 中间件必为每次 HTTP 响应注入本次请求 Trace，若把重放的旧 Trace 写到外层，会导致 Header/Body 不一致并误导排障。独立暴露首次观察 Trace 保留审计可追溯性且不改变冻结路径/角色。
+- Impact/Rollback：只细化未开放接口的成功投影，不改原冻结 API、Schema、角色或旧数据；撤可选 Router 可关闭，既有 Audit/收据不删。以合同测试核对 Header/Body、本次/首次 Trace、错误及默认关闭。

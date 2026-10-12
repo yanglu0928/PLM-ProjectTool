@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-12：0.1.0-dev.0/SOL-05-A04-P04 增加 SectionVersion VALIDATE 可选 HTTP 报告 Router，默认不挂载；严格空正文/Session/CSRF/Key 与六维投影，首次观察 Trace 与本次请求 Trace 分离。兼容性/升级/回滚：无 Migration、冻结路径/角色/依赖/旧数据变化；不注入 Router 即关闭，原审计历史保留。验证：合同定向8通过/30子测试，后端全量3585通过/3跳过/5601子测试、开发 wheel 构建通过。已知问题：真实 ASGI/PG、Windows/浏览器、Trace/Spec、正式信任/Server2025、性能/Gate3/Pilot/发行未验，Debian13 实机按指令跳过。
+
 - 2026-10-12：0.1.0-dev.0/SOL-05-A04-P03 增加 SectionVersion VALIDATE 内部授权 Owner：现时 Document/Requirement/Evidence 证明、六维失败关闭、首次 Audit/持久收据同事务及原结果重放；Trace/Spec 无可信端口仍 `UNAVAILABLE`，不开放 HTTP。兼容性/升级/回滚：无 Migration、冻结 API Breaking/依赖/旧数据变化；撤未装配 Owner 可回滚，已生成审计历史保留。验证：Win11 可弃 PG18.6 合成真实来源/权限/失效/重放/审计回滚脚本退出0；后端全量3581通过/3跳过/5588子测试，开发 wheel 构建通过。已知问题：HTTP/Windows、Trace/Spec、正式信任/Server2025、性能/Gate3/Pilot/发行未验，Debian13 实机按指令跳过。
 
 - 2026-10-12：0.1.0-dev.0/SOL-05-A04-P02 新增 SectionVersion VALIDATE 内部命令/首结果合同，六维证明默认 UNAVAILABLE、报告结论失败关闭，固定审计原因码支持原结果恢复；未开放 HTTP 或真正来源验证。兼容性/升级/回滚：无 Migration、冻结 API/权限/旧数据变化，可撤内部未装配合同。验证：定向26项、后端全量3573通过/3跳过/5583子测试，setuptools开发wheel生成通过。已知问题：真实 Owner/幂等持久化/审计写入/HTTP/Windows/Trace/Spec/正式信任/Gate3/Pilot 未完成。
