@@ -11282,3 +11282,10 @@
 - Decision：内部命令仅绑定 Project/Section/固定 Version 与原 Idempotency-Key，不包含动态证明；请求指纹对身份稳定，同 Key 首次报告由未来 Owner 的同事务 Audit 与收据保存，重放返回首次报告而不重新采样来源。报告按完整性、正文、需求、证据、Trace、Spec 六维显式 `PASS/FAIL/UNAVAILABLE`，缺适配器、空白证明或异常一律不得算 PASS。`valid` 只表示固定内容与当前来源四维均 PASS，`ready_for_review` 还须 Trace/Spec 均 PASS 且版本为 DRAFT；报告不修改版本、不批准 Review。此项先实现合同与纯规则测试，真实证明/持久幂等/审计 Owner 另切片。
 - Reason：冻结接口只要求 evidence/trace/spec 报告，而 StructuredSpec/Trace 尚无可用的章节验证 Owner；若用默认真值或省略字段会把草案误报为可评审。将 Audit ID/观察时间与首次报告合同锁定，避免以后同号重放因现时资格漂移而改变既有审计结论。
 - Impact/Rollback：无冻结路径/角色、Schema、迁移、历史数据或依赖变更；新增内部合同可移除回滚，不开放 HTTP。后续 Owner 必须证明所注入事实的可信来源及回执一致性，不能把合同单元测试当实际 VALIDATE 验收。
+
+# DEC-20261012-1189：SectionVersion VALIDATE 内部 Owner 的来源不可用归类
+
+- Date/WBS：2026-10-12 / `SOL-05-A04-P03`；依据冻结 API-04、DEC-1188、A02 Document/Requirement/Evidence 证明与 Survey VALIDATE 同事务模式。
+- Decision：给项目授权矩阵补冻结 PM/ImplementationMember 写操作；Owner 先核对 Session/CSRF/License/项目身份，再按固定 Project/Section/Version 锁读不可变快照。同 Key 重放只查首次 Audit 及收据，不重新采样当前来源。首次验证用既有 Document/Requirement/Evidence 真实证明端口；证明异常或资格不能区分时归 `UNAVAILABLE`，不得标 PASS；没有受信 Trace/Spec 端口时同样 `UNAVAILABLE`。固定快照损坏、审计/收据失败或身份不匹配则整事务失败，不生成肯定报告。Audit SUCCESS 仅代表命令已执行，报告 `ready_for_review` 独立判断。真实 PG 与故障回滚另验。
+- Reason：冻结 VALIDATE 需要返回证据/Trace/Spec 报告，但现有创建证明端口把来源失效和 I/O 故障均包装成不可用；此时断言 FAIL 或 PASS 都超出证据。重放若用当前事实重算，会篡改首次观察结果。
+- Impact/Rollback：只补现有冻结操作的授权映射、内部 Owner/只读 Audit 来源及测试；无 API Breaking、Schema/Migration、角色扩展或旧数据改写。撤未装配 Owner 可回滚；正式 Trace/Spec 证明与 HTTP/Windows 另验，不能把缺口标为 Gate PASS。

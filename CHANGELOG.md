@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-12：0.1.0-dev.0/SOL-05-A04-P03 增加 SectionVersion VALIDATE 内部授权 Owner：现时 Document/Requirement/Evidence 证明、六维失败关闭、首次 Audit/持久收据同事务及原结果重放；Trace/Spec 无可信端口仍 `UNAVAILABLE`，不开放 HTTP。兼容性/升级/回滚：无 Migration、冻结 API Breaking/依赖/旧数据变化；撤未装配 Owner 可回滚，已生成审计历史保留。验证：Win11 可弃 PG18.6 合成真实来源/权限/失效/重放/审计回滚脚本退出0；后端全量3581通过/3跳过/5588子测试，开发 wheel 构建通过。已知问题：HTTP/Windows、Trace/Spec、正式信任/Server2025、性能/Gate3/Pilot/发行未验，Debian13 实机按指令跳过。
+
 - 2026-10-12：0.1.0-dev.0/SOL-05-A04-P02 新增 SectionVersion VALIDATE 内部命令/首结果合同，六维证明默认 UNAVAILABLE、报告结论失败关闭，固定审计原因码支持原结果恢复；未开放 HTTP 或真正来源验证。兼容性/升级/回滚：无 Migration、冻结 API/权限/旧数据变化，可撤内部未装配合同。验证：定向26项、后端全量3573通过/3跳过/5583子测试，setuptools开发wheel生成通过。已知问题：真实 Owner/幂等持久化/审计写入/HTTP/Windows/Trace/Spec/正式信任/Gate3/Pilot 未完成。
 
 - 2026-10-12：0.1.0-dev.0/SOL-05-A04-P01 完成 SectionVersion VALIDATE 前置核查：冻结 POST 路径/角色/报告类别已有，但内部 Owner、HTTP 与 Windows 装配均未实现；0160 不可变 Guard 仍禁止版本更新，StructuredSpec/Trace 真实证明缺口不能伪作通过。兼容性/升级/回滚：仅审计文档，无程序、Migration/API/数据变化；无需迁移。验证：仓库合同/代码/Schema 静态核对，未运行 VALIDATE 测试。已知问题：VALIDATE/Review/Gate3 仍未通过；下一项先定报告与幂等/审计合同。
