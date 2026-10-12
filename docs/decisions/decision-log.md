@@ -11366,3 +11366,9 @@
 - Decision：四张子表均保存 Spec version/series/Project 与 1-based ordinal，复合 FK 回 0161 Root、版本内 ordinal/目标唯一。Requirement child 保存 RequirementId+VersionId 并用同项目复合 FK；Section child 保存 SectionId+VersionId 并用同项目复合 FK；Evidence child 固定 EvidenceId FK，GLOBAL/PROJECT 现时资格留 Owner；Artifact child 固定 OutputArtifactId，但现有 OutputArtifact Root 未实现，暂不建立虚假目标 FK、所有 DML/TRUNCATE 一律闭锁。后续真实 Artifact Owner/表到位前不得开放该子集写入或标为来源有效。
 - Reason：冻结 SC-01 要求四类固定引用，现有真实 Requirement/Section 可由数据库约束，同一 Scope 的 Evidence/Artifact 当前有效性不能凭裸 UUID 证明。闭锁 Schema 可先验证隔离和历史结构，避免把未实现的 OutputArtifact 伪造成已存在。
 - Impact/Rollback：追加 0162 与 ORM，不修改冻结 API/权限/0161/既有数据；四表全空可降回 0161，任一非空拒降并保留历史。须验空/有数据升降、合法/非法 FK/ordinal/重复、DML 闭锁、drift 与回归；真实 OutputArtifact 前置仍 OPEN，不能开放 SOL-06/章节可送审。
+# DEC-20261012-1201：SOL-06 类型化 payload 持久结构
+
+- Date/WBS：2026-10-12 / `SOL-06-A04`；依据冻结 DM-05 StructuredSolutionSpec 四类最小约束、SC-01 payload 类型化表/JSONB 候选和已闭锁 0161/0162。
+- Decision：选单张 owned `sol_spec_payloads` 表保存每个 SpecVersion 唯一的 `spec_type`、`schema_version=1`、JSONB 对象载荷和 32 字节载荷指纹；复合 FK 固定 Root Version/Series/Project/Type，非空 JSON 对象、长度上限与版本唯一由数据库保证。四类语义采用明确的应用层 discriminated validator，不以自由文本代替：PROCESS_MODEL 校验节点/边、起止、角色及输入输出；INTERFACE_SPEC 校验边界/方向/数据责任/频率/错误重试/鉴权/字段映射；MIGRATION_SPEC 校验来源/范围/清洗映射/试迁移/对账/回退/验收；PERMISSION_DESIGN 校验角色/资源/动作/范围/默认拒绝/职责分离。引用仍存 0162 四张 owned 表，图/文件只存 ArtifactId，不把二进制或客户原文塞入 JSONB。
+- Reason：冻结 SC-01 允许类型化表/JSONB；一张类型化 JSONB 子表可保持单一版本快照、升级低耦合，且四类验证合同必须显式；数据库形状约束不足以证明业务完整，故 Root/子表继续闭锁，直到受权 Owner、同事务完整提交与类型/引用/指纹检验完成。不能仅凭新表存在而开放专项。
+- Impact/Rollback/Verification：本项仅选型，不改程序、旧迁移、API、权限或历史。下一项独立 ORM/迁移需空/有数据升降、非空拒降、复合 FK/类型/大小/不可变负例、drift、全量回归；后续 Owner 验四类语义、来源资格、同事务原子性和审计。若新表全空可降回 0162，非空历史保留；不追写 Gate 2 冻结版本。
