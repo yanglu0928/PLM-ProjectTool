@@ -11247,3 +11247,10 @@
 - Decision：只读 Router 仍为可选注入；LIST 仅返回版本元数据/计数及独立 HMAC-SHA256 游标，绑定 Session、Project、Section、页大小和下页版本号；GET 返回有序固定正文/Requirement/Evidence 引用与声明，不返回物理文件、来源正文或“当前合格”判断。独立游标密钥由后续 Windows 装配任务提供，缺钥不挂载；只读独立注入时 POST 显式404，应用先装 CREATE 再装只读 Router，已启用 CREATE 时不会被关闭占位遮蔽。
 - Reason：项目历史需要分页防篡改和跨会话隔离；复用 Outline 游标会混淆资源族，列表批量返回声明正文会增加泄露与响应成本；只读路由截获 POST 会破坏已验 CREATE。
 - Impact/Rollback：仅 Solution API/可选 app 接线、合同测试和文档，无 Schema、冻结路径/权限/依赖/旧数据变化；移除可选 Router 可回滚，历史不删。真实 Windows 密钥供给/PG/浏览器另验。
+
+# DEC-20261012-1184：SectionVersion 历史读取在 Windows 显式平台模式装配
+
+- Date/WBS：2026-10-12 / `SOL-05-A03-P04`；依据冻结 API-04、CR-SOL-003、A03-P02 内部 Owner、A03-P03 可选 HTTP 合同与既有 OutlineVersion Windows 信任组合。
+- Decision：在 `--platform`/`--platform-write` 使用独立 Windows 当前账户 SecretKey 引用供给 SectionVersion 游标密钥，同一运行时组合 Session、License、Project 授权、Section/Version SQL Repository；缺任一来源启动失败且释放 Runtime，默认应用不挂载。先装既有 CREATE 再装历史只读 Router。用一次性 Win11 PG/ASGI 合成业务数据验证真实 HTTP，不将合成信任源称为正式发行。
+- Reason：仅通过可选 TestClient 合同不构成实际可用的 Windows 入口；共用 Outline/Section 游标密钥会混淆资源族和恢复边界；缺钥软降级会隐藏部署故障。
+- Impact/Rollback：无 Schema/Migration、冻结路径/角色/依赖/旧数据变化；不提供独立密钥或撤除可选组合即可关闭读入口，已存历史不删除。正式目标服务账户/HTTPS/公钥、Server2025/性能/浏览器另验。

@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-12：0.1.0-dev.0/SOL-05-A03-P04 将 SectionVersion 历史 GET/LIST 接入 Windows 显式只读/读写平台，独立当前账户 Vault 游标密钥缺失时拒启动；升级前须为目标服务账户安全供给并备份 `project-section-version-list-cursor-v1`。兼容性/升级/回滚：无 Migration、冻结 API/角色/历史数据变化；需先验证密钥/恢复再升级，可撤可选组合并恢复旧程序，历史保留；CR-SOL-020 记录新增前置。验证：Win11当前账户临时密钥失密/加密备份恢复、可弃PG18.6真实 ASGI 五版本分页/详情/隔离/拒绝/无新写入退出0；后端全量3547通过/3跳过/5583子测试。已知问题：正式目标账户/HTTPS/公钥、UI/浏览器、Server2025、性能/Gate3/Pilot/发行未验；Debian13实机依指令跳过。
+
 - 2026-10-12：0.1.0-dev.0/SOL-05-A03-P03 新增 SectionVersion 历史 GET/LIST 可选 HTTP 合同、独立签名分页游标与安全投影，默认关闭且不遮蔽既有 CREATE。兼容性/升级/回滚：无 Migration、冻结路径/权限/依赖/旧数据变化；不注入 Router 即关闭，历史保留。验证：读/写 API 合同7通过/32子测试，后端全量3543通过/3跳过/5573子测试。已知问题：真实 ASGI/PG、Windows 装配/浏览器、正式信任/Server2025、性能/Gate3/Pilot/发行仍待；Debian13实机依指令跳过。
 
 - 2026-10-10：0.1.0-dev.0/SOL-05-A03-P02 新增 SectionVersion 历史 GET/LIST 内部受权 Owner/SQL Repository，固定引用与首响应一致性失败关闭，当前 Review 状态与旧来源资格分离；尚无公开 HTTP。兼容性/升级/回滚：无 Migration/API Breaking/权限/依赖/旧数据变化，可撤未装配内部读取代码，历史保留。验证：定向3通过/9子测试、Win11可弃PG18.6五版本分页/隔离/来源漂移/合成损坏拒读脚本退出0；后端全量3540通过/3跳过/5558子测试。已知问题：正式 HTTP/Windows/UI、Server2025/信任、性能/Gate3/Pilot/发行未验，Debian13实机依指令跳过。

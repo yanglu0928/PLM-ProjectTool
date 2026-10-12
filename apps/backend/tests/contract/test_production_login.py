@@ -28,6 +28,7 @@ from plm_assistant.modules.solution.api.global_reference_list_cursor import Glob
 from plm_assistant.modules.solution.application.global_reference_candidate_cursor import GlobalReferenceCandidateCursorCodec
 from plm_assistant.modules.solution.api.outline_list_cursor import OutlineListCursorCodec
 from plm_assistant.modules.solution.api.outline_version_list_cursor import OutlineVersionListCursorCodec
+from plm_assistant.modules.solution.api.section_version_list_cursor import SectionVersionListCursorCodec
 from plm_assistant.modules.solution.api.section_list_cursor import SectionListCursorCodec
 from plm_assistant.modules.document.api.version_list_cursor import VersionListCursorCodec
 from plm_assistant.modules.document.api.parse_list_cursor import ParseListCursorCodec
@@ -57,6 +58,36 @@ class _ContractMaintenanceAdmission:
 
 
 class ProductionLoginTests(unittest.TestCase):
+    def test_missing_section_version_cursor_key_disposes_both_platform_modes(self):
+        for factory in (create_production_platform_app,
+                        create_production_platform_write_app):
+            with self.subTest(factory=factory.__name__):
+                runtime = Mock()
+                runtime.is_ready.return_value = True
+                with patch(
+                    "plm_assistant.entrypoints.production_login.read_database_url",
+                    return_value="postgresql+psycopg://localhost/test",
+                ), patch(
+                    "plm_assistant.entrypoints.production_login.create_database_runtime",
+                    return_value=runtime,
+                ), patch(
+                    "plm_assistant.entrypoints.production_login._schema_current",
+                    return_value=True,
+                ), patch(
+                    "plm_assistant.entrypoints.windows_license_runtime."
+                    "create_windows_license_services",
+                    return_value=Mock(guard=Mock()),
+                ), patch(
+                    "plm_assistant.entrypoints.production_login."
+                    "create_windows_section_version_list_cursor_codec",
+                    side_effect=RuntimeError("private cursor key missing"),
+                ) as failed:
+                    with self.assertRaises(ProductionLoginStartupError) as caught:
+                        factory(self.settings(("http://localhost",)))
+                failed.assert_called_once()
+                self.assertNotIn("private", str(caught.exception))
+                runtime.dispose.assert_called_once()
+
     def test_missing_global_candidate_cursor_key_disposes_both_platform_modes(self):
         for factory in (create_production_platform_app,
                         create_production_platform_write_app):
@@ -477,6 +508,11 @@ class ProductionLoginTests(unittest.TestCase):
             "plm_assistant.entrypoints.production_login."
             "create_windows_outline_version_list_cursor_codec",
             return_value=OutlineVersionListCursorCodec(b"v" * 32),
+        ))
+        self.enterContext(patch(
+            "plm_assistant.entrypoints.production_login."
+            "create_windows_section_version_list_cursor_codec",
+            return_value=SectionVersionListCursorCodec(b"w" * 32),
         ))
         self.enterContext(patch(
             "plm_assistant.entrypoints.production_login."
@@ -962,6 +998,14 @@ class ProductionLoginTests(unittest.TestCase):
                 "solution-sections").status_code, 401)
             self.assertEqual(client.get(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
+                "solution-sections/00000000-0000-0000-0000-000000000002/versions"
+            ).status_code, 401)
+            self.assertEqual(client.get(
+                "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
+                "solution-sections/00000000-0000-0000-0000-000000000002/versions/"
+                "00000000-0000-0000-0000-000000000003").status_code, 401)
+            self.assertEqual(client.get(
+                "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
                 "reference-solutions/00000000-0000-0000-0000-000000000002").status_code, 401)
             self.assertEqual(client.get(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
@@ -1322,6 +1366,14 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(client.get(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
                 "solution-sections").status_code, 401)
+            self.assertEqual(client.get(
+                "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
+                "solution-sections/00000000-0000-0000-0000-000000000002/versions"
+            ).status_code, 401)
+            self.assertEqual(client.get(
+                "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
+                "solution-sections/00000000-0000-0000-0000-000000000002/versions/"
+                "00000000-0000-0000-0000-000000000003").status_code, 401)
             self.assertEqual(client.get(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
                 "reference-solutions/00000000-0000-0000-0000-000000000002").status_code, 401)

@@ -10,11 +10,37 @@ from plm_assistant.entrypoints.windows_solution_outline import (
     create_windows_outline_version_create_router,
     create_windows_outline_list_router,
     create_windows_outline_read_router,
+    create_windows_section_version_read_router,
 )
 from plm_assistant.modules.solution.api.outline_list_cursor import OutlineListCursorCodec
+from plm_assistant.modules.solution.api.section_version_list_cursor import SectionVersionListCursorCodec
 
 
 class WindowsSolutionOutlineTests(unittest.TestCase):
+    def test_section_version_history_requires_all_read_trust(self):
+        dependencies = dict(
+            runtime=Mock(unit_of_work=Mock()), sessions=Mock(), origins=Mock(),
+            license_guard=Mock(), cursors=SectionVersionListCursorCodec(b"v" * 32),
+        )
+        router = create_windows_section_version_read_router(**dependencies)
+        self.assertEqual(
+            {("POST", "/api/v1/projects/{project_id}/solution-sections/"
+              "{section_id}/versions"),
+             ("GET", "/api/v1/projects/{project_id}/solution-sections/"
+              "{section_id}/versions"),
+             ("GET", "/api/v1/projects/{project_id}/solution-sections/"
+              "{section_id}/versions/{section_version_id}")},
+            {(method, route.path) for route in router.routes for method in route.methods},
+        )
+        for key in dependencies:
+            with self.subTest(key=key), self.assertRaises(
+                    ProductionSolutionOutlineStartupError):
+                create_windows_section_version_read_router(
+                    **{**dependencies, key: None})
+        with self.assertRaises(ProductionSolutionOutlineStartupError):
+            create_windows_section_version_read_router(
+                **{**dependencies, "cursors": Mock()})
+
     def test_explicit_list_and_missing_dependencies_fail_closed(self):
         dependencies = dict(
             runtime=Mock(unit_of_work=Mock()), sessions=Mock(), origins=Mock(),
