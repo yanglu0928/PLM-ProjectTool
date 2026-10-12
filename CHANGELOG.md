@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-12：0.1.0-dev.0/SOL-05-A03-P06-P01 新增 SectionVersion CREATE 前端受控 Session/CSRF/幂等传输客户端，仅 DocumentVersion 正文，严格核对固定输入及 201 回执；未知提交不自动换 Key 重试。兼容性/升级/回滚：无 Migration、后端 API/权限/旧数据变化；撤未接页面的桥接/客户端可回滚。验证：客户端定向4项、前端全量130文件/1745项、typecheck/生产build通过。已知问题：创建候选/页面及真实浏览器写链留 P02/P03，正式目标账户/HTTPS/公钥、Server2025、性能/Gate3/Pilot/发行未验；Debian13实机依指令跳过。
+
 - 2026-10-12：0.1.0-dev.0/SOL-05-A03-P05 新增 SectionVersion 历史列表/详情用户入口与严格只读客户端，从章节详情可导航到版本固定引用；不伪造来源当前资格、客户确认或物理定位。兼容性/升级/回滚：无 Migration、后端 API/权限/旧数据变化；移除新增页面/路由可回滚。验证：前端全量129文件/1741项、typecheck/生产build通过，Win11 Edge/一次性PG18.6合成成员实际列表与详情双 GET 200、跨项目隐藏脚本退出0。已知问题：章节草案 CREATE UI、正式目标账户/HTTPS/公钥、Server2025、性能/Gate3/Pilot/发行未验；Debian13实机依指令跳过。
 
 - 2026-10-12：0.1.0-dev.0/SOL-05-A03-P04 将 SectionVersion 历史 GET/LIST 接入 Windows 显式只读/读写平台，独立当前账户 Vault 游标密钥缺失时拒启动；升级前须为目标服务账户安全供给并备份 `project-section-version-list-cursor-v1`。兼容性/升级/回滚：无 Migration、冻结 API/角色/历史数据变化；需先验证密钥/恢复再升级，可撤可选组合并恢复旧程序，历史保留；CR-SOL-020 记录新增前置。验证：Win11当前账户临时密钥失密/加密备份恢复、可弃PG18.6真实 ASGI 五版本分页/详情/隔离/拒绝/无新写入退出0；后端全量3547通过/3跳过/5583子测试。已知问题：正式目标账户/HTTPS/公钥、UI/浏览器、Server2025、性能/Gate3/Pilot/发行未验；Debian13实机依指令跳过。

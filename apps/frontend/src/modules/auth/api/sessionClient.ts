@@ -219,7 +219,8 @@ export class SessionClient {
     | `/api/v1/projects/${string}/retrieval-runs`
     | `/api/v1/projects/${string}/solution-outlines`
     | `/api/v1/projects/${string}/solution-outlines/${string}/versions`
-    | `/api/v1/projects/${string}/solution-sections`, body: string,
+    | `/api/v1/projects/${string}/solution-sections`
+    | `/api/v1/projects/${string}/solution-sections/${string}/versions`, body: string,
     idempotencyKey: string, maxBodyBytes: number): Promise<Response> {
     if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
     if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
@@ -270,6 +271,16 @@ export class SessionClient {
   postProjectSectionCreate(projectId: string, body: string, idempotencyKey: string): Promise<Response> {
     if (!identifier(projectId)) return Promise.reject(new SessionClientError("AUTH_CLIENT_UNAVAILABLE"));
     return this.#postCommand(`/api/v1/projects/${projectId}/solution-sections`, body, idempotencyKey, 8192);
+  }
+
+  postProjectSectionVersionCreate(projectId: string, sectionId: string, body: string,
+    idempotencyKey: string): Promise<Response> {
+    if (!identifier(projectId) || !identifier(sectionId)) {
+      return Promise.reject(new SessionClientError("AUTH_CLIENT_UNAVAILABLE"));
+    }
+    return this.#postCommand(
+      `/api/v1/projects/${projectId}/solution-sections/${sectionId}/versions`,
+      body, idempotencyKey, 512 * 1024);
   }
 
   /** Project UploadIntent only; content and finalize require separate guarded transports. */

@@ -11261,3 +11261,10 @@
 - Decision：增加独立 SectionVersion 只读客户端与项目内列表/详情路由，前端严格核对 Project/Section/Version 身份、版本顺序/计数、引用和 no-store/Trace 响应；按当前 Session 的项目成员范围决定是否发请求。详情可跳转已有 Requirement 身份页，但 DocumentVersion/Evidence 只有固定 UUID 时仅展示标识，不伪造物理 Locator 或可用下载链接；声明作为历史 JSON 展示并标注待核查。创建/VALIDATE/Review 不混入本只读 WBS。
 - Reason：历史读取若没有用户入口无法形成可操作方案链；固定引用不是当前资格，且 API 不提供精确文档位置，前端不能猜测文档/证据路由。
 - Impact/Rollback：仅 Solution 前端客户端、页面、路由和测试，无后端、Schema、权限或旧数据变化；删除新增路由/页面可回滚，历史保留。浏览器实际网络/PG 和后续可编辑章节草案单独验收。
+
+# DEC-20261012-1186：SectionVersion CREATE 前端先实现受控传输合同
+
+- Date/WBS：2026-10-12 / `SOL-05-A03-P06-P01`；依据冻结 API-04 的 CREATE 路径/角色、A02-P12 Win11 HTTP/PG 与现有 SessionClient/OutlineVersion 写桥接。
+- Decision：先新增 DocumentVersion-only 的 SectionVersion DRAFT 严格客户端与 Session 命令方法；结构拒绝 Artifact 裸引用、跨项目/非写角色、重复固定引用及过大声明。服务端 201 必须与原请求身份/固定输入/Location/Trace/计数一致，否则标为结果不确定，保留原 Key 和原内容供下一 UI 切片受控核对，绝不自动换号重试。候选选择、表单、sessionStorage 恢复与浏览器写链留 P02/P03。
+- Reason：CREATE 是可能已提交的写命令，传输失败不能被普通重试当作未写入；先把命令及回执边界独立验收，避免 UI 状态掩盖协议错误。
+- Impact/Rollback：仅前端 Auth 命令桥接、Solution 客户端和测试；无后端/API Breaking、Schema/Migration、权限或历史数据变化；撤未接 UI 的客户端即可回滚。正式来源资格仍由后端同事务证明，客户端校验不代替它。
