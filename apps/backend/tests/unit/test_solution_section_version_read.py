@@ -112,6 +112,33 @@ class SectionVersionReadTests(unittest.TestCase):
                 self.assertEqual(older.items, (FIRST,))
                 self.assertFalse(older.has_more)
 
+    def test_trace_read_uses_caller_transaction_and_rejects_restricted(self):
+        transaction = object()
+        seen = []
+        original = self.versions.get
+        self.versions.get = lambda tx, **kwargs: (
+            seen.append(tx) or original(tx, **kwargs))
+        self.assertEqual(self.service.get_for_trace(
+            transaction, self.query, VERSION1), FIRST)
+        self.assertIs(seen[0], transaction)
+        self.versions.value = replace(FIRST, version_state="RESTRICTED")
+        self.rejects("RESOURCE_NOT_FOUND", lambda: self.service.get_for_trace(
+            transaction, self.query, VERSION1))
+
+    def test_trace_read_rechecks_session_license_and_history(self):
+        transaction = object()
+        self.access.actor = None
+        self.rejects("AUTH_ACCESS_DENIED", lambda: self.service.get_for_trace(
+            transaction, self.query, VERSION1))
+        self.access.actor = ACTOR
+        self.guard.denied = True
+        self.rejects("LICENSE_OPERATION_DENIED", lambda: self.service.get_for_trace(
+            transaction, self.query, VERSION1))
+        self.guard.denied = False
+        self.versions.value = replace(FIRST, content_fingerprint=b"short")
+        self.rejects("SOLUTION_UNAVAILABLE", lambda: self.service.get_for_trace(
+            transaction, self.query, VERSION1))
+
     def test_invalid_session_membership_license_and_missing_parent(self):
         self.rejects("VALIDATION_FAILED", lambda: self.service.get(
             replace(self.query, session_token=b"short"), VERSION1))

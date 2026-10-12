@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-12：0.1.0-dev.0/TRC-01-A03-P02 增加 SectionVersion `SOL-05` 同事务 Trace 目标受权证明，复用完整历史/首结果一致性核对；仅表示固定目标当前可读，不推断批准、覆盖或可送审。兼容性/升级/回滚：Windows 11 当前验证；无 Migration、公开 API/权限/依赖/历史数据变化，未装配 Owner 可撤；Server2025/Debian13 正式兼容未验。验证：定向8项/13子例、Win11可弃 PG18.6 真实五版本授权/隔离/License/drift、后端全量3595通过/3跳过/5612子例、开发wheel通过。已知问题：真实RESTRICTED迁移未验（单元负例通过），公开 Trace 创建/`IMPLEMENTS`/SOL-06/正式信任/性能/Gate3/Pilot/发行未通过；Debian13 实机按指令跳过。
+
 - 2026-10-12：0.1.0-dev.0/TRC-01-A03-P01 增加 RequirementVersion `REQ-03` 同事务 Trace 目标受权证明与组合层 Owner；仅证明固定版本存在、当前 Session/Project/License 可读，不证明批准或覆盖。兼容性/升级/回滚：Windows 11 当前验证；无 Migration、公开 API/权限/依赖/历史数据变化，未装配 Owner 可撤回；Server2025/Debian13 正式兼容未验。验证：定向 11 项/7 子例、Win11 可弃 PG18.6 真实授权/隔离/License/drift、后端全量3590通过/3跳过/5608子例、开发wheel通过。已知问题：真实 RESTRICTED 状态迁移未验（单元负例通过），Section Owner/`IMPLEMENTS`/SOL-06/正式信任/性能/Gate3/Pilot/发行未通过；Debian13 实机按指令跳过。
 
 - 2026-10-12：0.1.0-dev.0/SOL-05-A04-P09 完成章节 Trace/Spec 可送审前置审计，确认当前缺 Requirement/Section Trace 目标 Owner、SOL-06 实体/版本和章节固定 Spec 引用；按 DEC-1194 登记依赖顺序，不把空引用或合成 200 当 PASS。兼容性/升级/回滚：仅记录，无 Migration/API/程序/数据变化；无需升级。验证：冻结 DM/SC/API 与当前 ORM/迁移/Owner 静态交叉核对，未执行新业务测试。已知问题：ready_for_review/Section Review/Gate3/Pilot/正式发行仍阻塞，三平台正式验收未通过。

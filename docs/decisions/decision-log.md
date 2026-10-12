@@ -11331,3 +11331,10 @@
 - Decision：在 Requirement 读服务增加同一调用方事务内的轻量固定版本证明，使用现有 `REQ_VERSION_GET` 项目成员权限、当前 Session 与 License；仓储只投影版本/根/项目身份和状态。组合层 Owner 将冻结三字段 `REQ-03` 映射成项目 TraceVersionRef，并分别支持公开解析与内部再次证明。此证明只表示该版本存在且当前调用者有权读取，不推断 APPROVED、当前有效、业务覆盖或 Review 结论；`RESTRICTED` 不能被当作可引用目标。
 - Reason：Trace 不得越过 Requirement Owner 直读其表；完整正文读取不适合用于受权目标身份证明，且外层 Trace 写事务不能开启嵌套读取事务。独立当前资格/批准证明仍属于后续 `IMPLEMENTS` 验证。
 - Impact/Rollback：无 Schema/API/权限矩阵或历史数据变化，可撤未装配 Owner 回滚。先做单元与真实 PG 同事务/跨项目/未授权/License/受限状态验证；未实际装配 Trace 公开路由，Gate 3/Pilot 不因此放行。
+
+# DEC-20261012-1196：SectionVersion Trace 固定目标证明
+
+- Date/WBS：2026-10-12 / `TRC-01-A03-P02`；依据 Gate 2 SOL-05/Trace 冻结合同、A03-P02 历史完整读取及 P01 同事务 Owner 模式。
+- Decision：在既有 SectionVersion 读服务增加复用完整历史重构的同事务 Trace 证明，仍按当前 License/Session/`SOL_SECTION_VERSION_GET`/父章节状态授权，并核对不可变版本及首次结果、固定引用；组合层仅映射 `SOL-05` 三字段。RESTRICTED 版本不得创建或继续证明 Trace 目标，DRAFT 只表示固定历史存在，不表示已批准/送审。
+- Reason：完整读取已含首结果和有序固定引用一致性校验，可避免轻量投影绕开章节历史完整性；在 Trace 写事务内直接复用该证明，不开嵌套 UoW，也不跨模块直读 Solution 表。
+- Impact/Rollback：无 Schema/迁移、冻结 API、权限或历史数据变更；未装配公开 Trace 路由，可撤新 Owner/方法。单元及一次性 PG 验证同事务、隔离、Session/License、历史漂移和不额外写入；后续 `IMPLEMENTS` 覆盖另验。

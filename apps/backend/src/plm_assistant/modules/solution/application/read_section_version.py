@@ -108,20 +108,42 @@ class SectionVersionReadService:
         if not self._id(version_id):
             raise SectionVersionReadError("RESOURCE_NOT_FOUND")
 
-        def read(tx: object) -> SectionVersionHistoryView:
-            self._actor(tx, query, "SOL_SECTION_VERSION_GET")
-            self._parent(tx, query)
-            view = self._versions.get(
-                tx, project_id=query.project_id,
-                section_id=query.solution_section_id, version_id=version_id)
-            if view is None:
-                raise SectionVersionReadError("RESOURCE_NOT_FOUND")
-            self._view(view, query)
-            if view.solution_section_version_id != version_id:
-                raise SectionVersionReadError()
-            return view
+        return self._run(query.trace_id, lambda tx: self._read_one(tx, query, version_id))
 
-        return self._run(query.trace_id, read)
+    def get_for_trace(self, transaction: object, query: SectionVersionReadQuery,
+                      version_id: uuid.UUID) -> SectionVersionHistoryView:
+        """Prove fixed readable history inside the caller's Trace transaction."""
+        self._query(query)
+        if transaction is None or not self._id(version_id):
+            raise SectionVersionReadError("RESOURCE_NOT_FOUND")
+        try:
+            self._guard.require_valid(trace_id=query.trace_id)
+            view = self._read_one(transaction, query, version_id)
+            if view.version_state == "RESTRICTED":
+                raise SectionVersionReadError("RESOURCE_NOT_FOUND")
+            return view
+        except SectionVersionReadError:
+            raise
+        except ProjectAuthorizationError as error:
+            raise SectionVersionReadError(error.code) from None
+        except RuntimeLicenseError:
+            raise SectionVersionReadError("LICENSE_OPERATION_DENIED") from None
+        except Exception:
+            raise SectionVersionReadError() from None
+
+    def _read_one(self, tx: object, query: SectionVersionReadQuery,
+                  version_id: uuid.UUID) -> SectionVersionHistoryView:
+        self._actor(tx, query, "SOL_SECTION_VERSION_GET")
+        self._parent(tx, query)
+        view = self._versions.get(
+            tx, project_id=query.project_id,
+            section_id=query.solution_section_id, version_id=version_id)
+        if view is None:
+            raise SectionVersionReadError("RESOURCE_NOT_FOUND")
+        self._view(view, query)
+        if view.solution_section_version_id != version_id:
+            raise SectionVersionReadError()
+        return view
 
     def list(self, query: SectionVersionReadQuery, *, page_size: int = 50,
              before_version_no: int | None = None) -> SectionVersionPage:
