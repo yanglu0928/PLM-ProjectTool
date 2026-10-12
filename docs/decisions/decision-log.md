@@ -11310,3 +11310,10 @@
 - Decision：详情页只对当前项目 PM/实施成员显示显式验证操作；以 actor/project/section/version 限定 sessionStorage 中尚未确认的原 Idempotency-Key，写入失败拒发送，断线/503/异常回执只允许人工确认后同号重试。成功结果只在当前页面会话内呈现，不把可篡改浏览器缓存当 Audit 真相。六维报告逐项显示结论/问题码/观察时间，`valid` 与 `ready_for_review` 分别说明，既不代替 Review 也不推断文档精确定位。
 - Reason：VALIDATE 虽不修改版本，却写 Audit/收据；重复新号会形成新观察。用户需要看到来源问题与可操作提示，但当前没有来源精确定位/Trace/Spec Owner，不能伪造深链或可评审状态。
 - Impact/Rollback：只改详情视图和测试，无后端/API/Schema/历史数据变动；撤前端视图入口可回滚，服务端既有 Audit 保留。测试权限、首次/重试、路由切换及六维展示，真实 Edge/PG 留后续。
+
+# DEC-20261012-1193：复用一次性 SectionVersion 浏览器夹具验证 VALIDATE
+
+- Date/WBS：2026-10-12 / `SOL-05-A04-P08`；前置 P05 Windows ASGI/PG 与 P07 UI，已有 P06-P03 Edge/合成真实来源/一次性 PG 启动链。
+- Decision：对既有 CREATE 浏览器夹具只增加可选 VALIDATE 模式，复用随机测试账户、真实 Session、Uvicorn、Edge 和一次性 PG 生命周期；新模式独立 Edge 操作脚本与 SQL 断言，默认 CREATE 模式行为和断言保持不变。浏览器真正点击详情页验证、恢复原号后同号重放，不使用直调 API 代替 UI。
+- Reason：重复搭建大型源/登录夹具易造成测试信任和清理路径分叉；可选模式保持旧验收可复跑，并把新证据与既有 CREATE 测试隔离。
+- Impact/Rollback：仅验证资产变动，无产品、Schema、冻结 API 或客户数据变化。可撤新模式与脚本回滚；需复跑原 CREATE 及新增 VALIDATE 浏览器脚本，临时 Edge Profile/PG 库必须清理。

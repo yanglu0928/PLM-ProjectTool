@@ -23,6 +23,7 @@ from plm_assistant.entrypoints.windows_solution_outline import (
     create_windows_section_read_router,
     create_windows_section_version_create_router,
     create_windows_section_version_read_router,
+    create_windows_section_version_validate_router,
 )
 from plm_assistant.modules.auth.api.login import create_login_router
 from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
@@ -109,7 +110,8 @@ def _writer(port, project):
 
 def on_browser(*, port, runtime, audit, license_guard, project, other_project,
                section, document_version, requirement, requirement_version,
-               evidence, documents, downloads, parse_results, **_unused):
+               evidence, documents, downloads, parse_results,
+               validation_mode=False, **_unused):
     if not (DIST / "index.html").is_file():
         raise RuntimeError("Build frontend before SectionVersion CREATE browser proof")
     hasher = _writer(port, project)
@@ -118,6 +120,9 @@ def on_browser(*, port, runtime, audit, license_guard, project, other_project,
         document = db.execute(
             "SELECT document_id FROM plm.doc_document_versions WHERE document_version_id=%s",
             (document_version,)).fetchone()[0]
+        fixed_version = db.execute(
+            "SELECT solution_section_version_id FROM plm.sol_section_versions "
+            "WHERE solution_section_id=%s AND version_no=1", (section,)).fetchone()[0]
     with socket.socket() as reservation:
         reservation.bind(("127.0.0.1", 0))
         reservation.listen(128)
@@ -178,6 +183,11 @@ def on_browser(*, port, runtime, audit, license_guard, project, other_project,
             solution_section_version_create_router=create_windows_section_version_create_router(
                 **common, audit=audit, documents=documents,
                 downloads=downloads, parse_results=parse_results),
+            solution_section_version_validate_router=(
+                create_windows_section_version_validate_router(
+                    **common, audit=audit, documents=documents,
+                    downloads=downloads, parse_results=parse_results)
+                if validation_mode else None),
         )
         app.mount("/assets", StaticFiles(directory=DIST / "assets"), name="frontend-assets")
 
@@ -198,16 +208,18 @@ def on_browser(*, port, runtime, audit, license_guard, project, other_project,
                 if not worker.is_alive() or monotonic() > deadline:
                     raise RuntimeError("Owned SectionVersion CREATE preview did not start")
                 sleep(.05)
+            browser_script = (ROOT / "validation/sol-05-a04-p08-section-version-browser/run-edge-browser.mjs"
+                              if validation_mode else Path(__file__).with_name("run-edge-browser.mjs"))
             result = subprocess.run(
-                ["node", str(Path(__file__).with_name("run-edge-browser.mjs")),
+                ["node", str(browser_script),
                  origin, str(project), str(other_project), str(section), str(document),
                  str(document_version), str(requirement), str(requirement_version),
-                 str(evidence)],
+                 str(evidence), *((str(fixed_version),) if validation_mode else ())],
                 check=False, timeout=120, capture_output=True, text=True,
                 encoding="utf-8", env={**os.environ,
                                         "PLM_BROWSER_SYNTHETIC_PASSWORD": PASSWORD})
             if result.returncode:
-                raise RuntimeError("SectionVersion CREATE browser proof failed: "
+                raise RuntimeError("SectionVersion browser proof failed: "
                                    f"{result.stdout[-3000:]} {result.stderr[-3000:]}")
             print(result.stdout.strip(), flush=True)
         finally:
@@ -226,9 +238,18 @@ def on_browser(*, port, runtime, audit, license_guard, project, other_project,
             args = (section,) if "%s" in predicate else ()
             assert db.execute(
                 f"SELECT count(*) FROM plm.{table} WHERE {predicate}", args
-            ).fetchone()[0] == 6, table
-    print("SOL_05_A03_P06_P03_SECTION_VERSION_BROWSER_PASS: "
-          "Win11 Edge/PG create and original-key replay, one version/receipt/audit")
+            ).fetchone()[0] == (5 if validation_mode else 6), table
+        if validation_mode:
+            assert db.execute("SELECT count(*) FROM plm.plt_idempotency_receipts "
+                              "WHERE operation='V1_SOL_SECTION_VERSION_VALIDATE'").fetchone()[0] == 1
+            assert db.execute("SELECT count(*) FROM plm.aud_events "
+                              "WHERE action='SOL_SECTION_VERSION_VALIDATED'").fetchone()[0] == 1
+    if validation_mode:
+        print("SOL_05_A04_P08_SECTION_VERSION_VALIDATE_BROWSER_PASS: "
+              "Win11 Edge/PG validated page and original-key replay, one receipt/audit")
+    else:
+        print("SOL_05_A03_P06_P03_SECTION_VERSION_BROWSER_PASS: "
+              "Win11 Edge/PG create and original-key replay, one version/receipt/audit")
 
 
 if __name__ == "__main__":
