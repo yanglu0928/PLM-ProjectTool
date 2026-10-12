@@ -158,6 +158,8 @@ function dimensionHint(field: typeof dimensions[number]["field"], status: Valida
     <p class="warning">本页仅展示历史固定引用；Document、Requirement 和 Evidence 当前可用性需另行核查，评审及客户确认也不能由本页推定。</p>
     <p><RouterLink :to="{ name: 'project-section-versions', params: { projectId: route.params.projectId,
       sectionId: route.params.sectionId } }">返回版本历史</RouterLink></p>
+    <p v-if="mayValidate()"><RouterLink :to="{ name: 'project-structured-spec-create', params: {
+      projectId: route.params.projectId } }">基于当前项目需求与章节创建结构化专项草案</RouterLink></p>
     <p v-if="!session.view" role="status">尚未读取当前身份，请先登录。</p>
     <p v-else-if="session.view.password_change_required" role="status">当前账户须先修改密码。</p>
     <template v-else>
