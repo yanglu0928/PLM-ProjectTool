@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-12：0.1.0-dev.0/SOL-06-A01 核对冻结 StructuredSolutionSpec 版本根、四类引用/类型校验与现有 ORM/0160 缺口，按 DEC-1198 确定闭锁 Schema 优先的实施顺序。兼容性/升级/回滚：仅文档审计，无程序、Migration、API 或数据变化；无需升级。验证：静态基线交叉核查，未运行新的业务测试。已知问题：SOL-06/Section 固定 Spec 引用和六维可送审仍缺；正式信任/Server2025/性能/Gate3/Pilot/发行未通过，Debian13 实机按指令跳过。
+
 - 2026-10-12：0.1.0-dev.0/TRC-01-A03-P03 增加内部当前 ACTIVE `IMPLEMENTS` 严格同集证明，逐边复验 Requirement/Section Owner，撤销或替代旧 Link 不再算覆盖。兼容性/升级/回滚：Windows 11 当前验证；无 Migration、公开 API/权限/依赖/历史数据变化，未装配证明可撤；Server2025/Debian13 正式兼容未验。验证：定向6项、Win11可弃PG18.6真实CREATE/REVOKE/新ACTIVE与drift、后端全量3601通过/3跳过/5612子例、开发wheel通过。已知问题：Section VALIDATE 与公开 Trace 写入口未接，SOL-06 与固定 Spec 引用缺失；ready_for_review、正式信任/性能/Gate3/Pilot/发行未通过；Debian13 实机按指令跳过。
 
 - 2026-10-12：0.1.0-dev.0/TRC-01-A03-P02 增加 SectionVersion `SOL-05` 同事务 Trace 目标受权证明，复用完整历史/首结果一致性核对；仅表示固定目标当前可读，不推断批准、覆盖或可送审。兼容性/升级/回滚：Windows 11 当前验证；无 Migration、公开 API/权限/依赖/历史数据变化，未装配 Owner 可撤；Server2025/Debian13 正式兼容未验。验证：定向8项/13子例、Win11可弃 PG18.6 真实五版本授权/隔离/License/drift、后端全量3595通过/3跳过/5612子例、开发wheel通过。已知问题：真实RESTRICTED迁移未验（单元负例通过），公开 Trace 创建/`IMPLEMENTS`/SOL-06/正式信任/性能/Gate3/Pilot/发行未通过；Debian13 实机按指令跳过。

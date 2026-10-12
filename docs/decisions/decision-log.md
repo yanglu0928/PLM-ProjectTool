@@ -11345,3 +11345,10 @@
 - Decision：Trace 内部现时证明接收调用方已固定的章节与有界需求版本引用；先证明章节目标，再读取指向该固定章节版本的 ACTIVE `IMPLEMENTS` 边，拒绝空集合、重复、异项目/方向/类型、额外或缺失边，要求与固定需求版本集合严格相等，并逐边重新验证两个端点。SQL 查询只取本项目/本章节/ACTIVE/IMPLEMENTS，行共享锁维持本次事务内已读边状态；不把旧链接、仅同 RequirementId 的别版链接或空集当 PASS。
 - Reason：冻结模型要求快照和 Trace 双证一致；通用 Graph 查询对读者做可见性过滤/分页，不适合作为送审资格完整性证明。Trace Owner 不读 Solution 表，固定需求集合由 Solution 受权历史 Owner 提供。证明是本事务时点事实，不保证未来链接不会变化。
 - Impact/Rollback：无 Schema/Migration、公开 API、权限矩阵、新依赖、旧数据变化；新增未装配的内部 Proof/Repository 可撤回。单元覆盖严格同集与权限/异常，Win11 一次性 PG 覆盖 ACTIVE→REVOKED/替代、跨项目及无额外写入。Section VALIDATE 接线、公开 Trace 创建与 SOL-06 独立后续验收。
+
+# DEC-20261012-1198：SOL-06 专项规格实现切片与基线定位
+
+- Date/WBS：2026-10-12 / `SOL-06-A01`；依据 Gate 2 DM-05、SC-01/02、API-04 与 CR-SOL-003。现有 Solution ORM/迁移 head 0160 无 SOL-06 Root、四类引用或 Section→Spec 固定引用。
+- Decision：SOL-06 仍按冻结 V-PRJ 版本 Root 实现，不新增可变业务 Root；`spec_series_id` 分组升版，`structured_solution_spec_id` 标识每个不可变版本，四类 Spec 引用作为受控 owned collection。首个可编码切片 A02 建立闭锁的版本根及迁移，随后独立补四类引用、类型化 payload/校验、受权 Owner、HTTP/Windows、Section 固定 Spec 引用与现时资格。SC-01 的类型化表/JSONB 物理候选在 payload 专项切片作证据化选择，不在 A01 静默定稿。任何破坏现有 Section CREATE 冻结请求/回执的做法另立 API/Schema CR。
+- Reason：冻结 API 已有 SOL_SPEC_CREATE/REVISE/GET/VALIDATE/REVIEW，不能把缺实现误当新 Scope；但不能让空壳 Root 或无类型 payload 被误用为正式专项。Root 与后续可写 Owner 分离，迁移先闭锁，可保持历史 Section 及 0160 Guard 不变。
+- Impact/Rollback：A01 仅审计/排序，无产品/Schema/API/权限/数据变化。A02 必须空/有数据升级、空历史降级重升、非空拒降、ORM drift、DML 闭锁与全量回归；正式 Spec/章节六维、Gate3/Pilot 仍 BLOCKED。
