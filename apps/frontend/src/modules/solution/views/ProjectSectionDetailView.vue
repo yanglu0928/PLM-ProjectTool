@@ -48,6 +48,8 @@ onUnmounted(() => { mounted = false; generation += 1; });
       <button type="button" :disabled="busy || !mayRead()" @click="load()">{{ busy ? "正在读取…" : "重新读取章节" }}</button>
       <p v-if="error" role="alert">{{ error }}</p>
       <template v-if="current"><h2>{{ current.section_key }}</h2>
+        <p><RouterLink :to="{ name: 'project-section-versions', params: { projectId: current.project_id,
+          sectionId: current.solution_section_id } }">查看此章节的版本历史</RouterLink></p>
         <dl><dt>所属目录</dt><dd><RouterLink :to="{ name: 'project-outline-detail', params: {
           projectId: current.project_id, outlineId: current.solution_outline_id } }">查看目录身份</RouterLink></dd>
           <dt>章节状态</dt><dd>{{ current.section_state === "ARCHIVED" ? "已归档" : "活动中" }}</dd>

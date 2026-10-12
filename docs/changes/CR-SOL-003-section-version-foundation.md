@@ -55,3 +55,5 @@ SOL-05-A03-P02 按 DEC-1182 增加内部受权历史 GET/LIST Owner 与 SQL 固�
 SOL-05-A03-P03 按 DEC-1183 细化冻结 SectionVersion GET/LIST HTTP 投影，增加独立 Session/Project/Section/页大小绑定 HMAC 游标与只读可选 Router；列表仅元数据/计数，详情固定引用/声明，CREATE 优先装配不被 POST 关闭占位遮蔽。合同回归覆盖默认404、授权/错误、跨范围/篡改游标和 CREATE 共存；不改 Schema、权限、冻结路径、依赖或旧数据。Windows 装配与真实 ASGI/PG/浏览器、正式信任仍独立验收；见 `docs/progress/sol-05-a03-p03-section-version-read-http.md`。本 CR 保持 OPEN。
 
 SOL-05-A03-P04 按 DEC-1184 将历史 GET/LIST 接入 Windows 显式平台读/写组合，以独立当前账户 Vault 游标密钥失败关闭；新增部署前置详记 CR-SOL-020。Win11 一次性 PG18.6 五版本真实 ASGI 分页/详情/隔离/拒绝与数据库无新增写入通过，生产两模式缺 key 拒启动/资源释放及临时 key 备份恢复通过。正式目标账户/HTTPS/Server2025/浏览器和 Gate3 仍独立验收；详见 `docs/progress/sol-05-a03-p04-section-version-read-windows.md`。本 CR 保持 OPEN。
+
+SOL-05-A03-P05 按 DEC-1185 增加 SectionVersion 历史只读客户端、项目内列表/详情入口和固定来源警示；不根据固定 UUID 推断当前资格或文档 Locator。前端客户端/页面定向及全量/typecheck/build、Win11 Edge→Uvicorn→一次性 PG18.6 合成成员实际列表/详情双 GET 200 和跨项目隐藏通过。CREATE UI、VALIDATE/Review、正式目标信任与 Gate3 仍待；详见 `docs/progress/sol-05-a03-p05-section-version-history-ui.md`。本 CR 保持 OPEN。

@@ -11254,3 +11254,10 @@
 - Decision：在 `--platform`/`--platform-write` 使用独立 Windows 当前账户 SecretKey 引用供给 SectionVersion 游标密钥，同一运行时组合 Session、License、Project 授权、Section/Version SQL Repository；缺任一来源启动失败且释放 Runtime，默认应用不挂载。先装既有 CREATE 再装历史只读 Router。用一次性 Win11 PG/ASGI 合成业务数据验证真实 HTTP，不将合成信任源称为正式发行。
 - Reason：仅通过可选 TestClient 合同不构成实际可用的 Windows 入口；共用 Outline/Section 游标密钥会混淆资源族和恢复边界；缺钥软降级会隐藏部署故障。
 - Impact/Rollback：无 Schema/Migration、冻结路径/角色/依赖/旧数据变化；不提供独立密钥或撤除可选组合即可关闭读入口，已存历史不删除。正式目标服务账户/HTTPS/公钥、Server2025/性能/浏览器另验。
+
+# DEC-20261012-1185：SectionVersion 历史页面仅呈现固定快照与安全引用
+
+- Date/WBS：2026-10-12 / `SOL-05-A03-P05`；依据冻结 API-04、A03-P03 投影和 A03-P04 Windows 读取证据，沿用已验 OutlineVersion 页面结构。
+- Decision：增加独立 SectionVersion 只读客户端与项目内列表/详情路由，前端严格核对 Project/Section/Version 身份、版本顺序/计数、引用和 no-store/Trace 响应；按当前 Session 的项目成员范围决定是否发请求。详情可跳转已有 Requirement 身份页，但 DocumentVersion/Evidence 只有固定 UUID 时仅展示标识，不伪造物理 Locator 或可用下载链接；声明作为历史 JSON 展示并标注待核查。创建/VALIDATE/Review 不混入本只读 WBS。
+- Reason：历史读取若没有用户入口无法形成可操作方案链；固定引用不是当前资格，且 API 不提供精确文档位置，前端不能猜测文档/证据路由。
+- Impact/Rollback：仅 Solution 前端客户端、页面、路由和测试，无后端、Schema、权限或旧数据变化；删除新增路由/页面可回滚，历史保留。浏览器实际网络/PG 和后续可编辑章节草案单独验收。
