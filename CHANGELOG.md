@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-12：0.1.0-dev.0/SOL-06-A08 新增 SOL-06 同事务内部来源组合证明，固定已批准需求、当前章节版本、真实文件与项目证据，失效/篡改/跨项目/旧草案及裸附件拒绝；不等于 SOL-06 操作授权或客户确认。兼容性/升级/回滚：无 Migration、公开 API、权限、依赖或旧数据变化；内部未装配 Service 可撤回，Windows 11 当前验证。验证：定向六项/六子例、Win11可弃PG18.6真实合成来源链、后端全量3621通过/3跳过/5677子例、开发wheel及模块入包通过。已知问题：正式写 Owner、OutputArtifact、Trace/Section VALIDATE/Review、Gate3/Pilot/正式发行未完成，Server2025/Debian13正式兼容未验。
+
 - 2026-10-12：0.1.0-dev.0/SOL-06-A07 新增 SOL-06 草案/固定引用输入合同：初版或升版身份配对、项目非零 UUID、需求/章节固定版本去重、证据/附件有序快照与稳定请求指纹；无写 Owner、来源资格或客户确认推断。兼容性/升级/回滚：无 Migration、公开 API、权限、依赖或旧数据变化；内部未装配合同可撤回。验证：定向14项/59子例、后端全量3615通过/3跳过/5671子例、开发wheel及模块入包通过。已知问题：真实来源资格、OutputArtifact 目标、正式 Owner/Trace/Section VALIDATE/Review、Gate3/Pilot/正式发行未完成，Server2025/Debian13正式兼容未验。
 
 - 2026-10-12：0.1.0-dev.0/SOL-06-A06 新增 StructuredSolutionSpec 四类类型化载荷纯校验与稳定 SHA-256 快照，流程节点/边、接口映射、迁移回滚/对账、权限默认拒绝/职责分离均有结构性负例；不把通过结构校验当成来源资格或客户确认。兼容性/升级/回滚：无 Migration、公开 API、权限、依赖或既有数据变化，Windows 11 当前开发验证；移除未装配内部合同可回滚。验证：定向9项/39子例、后端全量3610通过/3跳过/5651子例、开发wheel及模块入包通过。已知问题：固定引用输入/真实来源资格/Artifact 目标/正式 Owner、Trace/Section VALIDATE、Gate3/Pilot/正式发行未完成，Server2025/Debian13正式兼容未验。
