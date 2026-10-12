@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-12：0.1.0-dev.0/SOL-06-A07 新增 SOL-06 草案/固定引用输入合同：初版或升版身份配对、项目非零 UUID、需求/章节固定版本去重、证据/附件有序快照与稳定请求指纹；无写 Owner、来源资格或客户确认推断。兼容性/升级/回滚：无 Migration、公开 API、权限、依赖或旧数据变化；内部未装配合同可撤回。验证：定向14项/59子例、后端全量3615通过/3跳过/5671子例、开发wheel及模块入包通过。已知问题：真实来源资格、OutputArtifact 目标、正式 Owner/Trace/Section VALIDATE/Review、Gate3/Pilot/正式发行未完成，Server2025/Debian13正式兼容未验。
+
 - 2026-10-12：0.1.0-dev.0/SOL-06-A06 新增 StructuredSolutionSpec 四类类型化载荷纯校验与稳定 SHA-256 快照，流程节点/边、接口映射、迁移回滚/对账、权限默认拒绝/职责分离均有结构性负例；不把通过结构校验当成来源资格或客户确认。兼容性/升级/回滚：无 Migration、公开 API、权限、依赖或既有数据变化，Windows 11 当前开发验证；移除未装配内部合同可回滚。验证：定向9项/39子例、后端全量3610通过/3跳过/5651子例、开发wheel及模块入包通过。已知问题：固定引用输入/真实来源资格/Artifact 目标/正式 Owner、Trace/Section VALIDATE、Gate3/Pilot/正式发行未完成，Server2025/Debian13正式兼容未验。
 
 - 2026-10-12：0.1.0-dev.0/SOL-06-A05 新增 `20261012_0163` 闭锁 StructuredSolutionSpec 类型化 JSONB 载荷及 ORM；固定版本/项目/类型，非空对象/1 MiB/指纹/版本约束；写入仍全部拒绝。兼容性/升级/回滚：Windows 11 当前验证；从0162无回填升级，载荷表仅为空可降级，非空历史保留；无公开API/权限/依赖变化，Server2025/Debian13正式兼容未验。验证：Win11可弃PG18.6空/有数据升降、约束/DML负例/非空拒降/drift，0161/0162回归，定向7、后端全量3601通过/3跳过/5612子例、开发wheel通过。已知问题：四类语义validator/正式Owner、Evidence资格/Artifact目标、Trace/Section VALIDATE与Review未完成，Gate3/Pilot/正式发行未通过；Debian13实机按指令跳过。
