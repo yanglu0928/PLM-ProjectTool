@@ -581,6 +581,42 @@ class StructuredSolutionSpecRow(Base):
         server_default=text("statement_timestamp()"))
 
 
+class StructuredSpecPayloadRow(Base):
+    """Closed one-to-one typed JSONB snapshot; semantic Owner remains absent."""
+
+    __tablename__ = "sol_spec_payloads"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["structured_solution_spec_id", "spec_series_id", "project_id", "spec_type"],
+            ["plm.sol_structured_specs.structured_solution_spec_id",
+             "plm.sol_structured_specs.spec_series_id",
+             "plm.sol_structured_specs.project_id",
+             "plm.sol_structured_specs.spec_type"],
+            name="fk_sol_spec_payloads__spec", ondelete="NO ACTION"),
+        CheckConstraint("schema_version=1", name="ck_sol_spec_payloads__schema_version"),
+        CheckConstraint("jsonb_typeof(payload_json)='object' AND payload_json<>'{}'::jsonb",
+                        name="ck_sol_spec_payloads__object"),
+        CheckConstraint("octet_length(payload_json::text)<=1048576",
+                        name="ck_sol_spec_payloads__size"),
+        CheckConstraint("octet_length(payload_fingerprint)=32",
+                        name="ck_sol_spec_payloads__fingerprint"),
+        CheckConstraint("isfinite(created_at)", name="ck_sol_spec_payloads__created_at"),
+        {"schema": "plm"},
+    )
+    structured_solution_spec_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True)
+    spec_series_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    spec_type: Mapped[str] = mapped_column(Text, nullable=False)
+    schema_version: Mapped[int] = mapped_column(Integer, nullable=False,
+                                                server_default=text("1"))
+    payload_json: Mapped[dict[str, object]] = mapped_column(JSONB, nullable=False)
+    payload_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"))
+
+
 class StructuredSpecRequirementRefRow(Base):
     __tablename__ = "sol_spec_requirement_refs"
     __table_args__ = (
