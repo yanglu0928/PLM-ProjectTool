@@ -514,7 +514,7 @@ class SolutionSectionEvidenceRefRow(Base):
 
 
 class StructuredSolutionSpecRow(Base):
-    """Closed SOL-06 immutable version identity; typed payload/refs follow separately."""
+    """Immutable SOL-06 version identity; insert closure opens only complete DRAFTs."""
 
     __tablename__ = "sol_structured_specs"
     __table_args__ = (
@@ -582,7 +582,7 @@ class StructuredSolutionSpecRow(Base):
 
 
 class StructuredSpecPayloadRow(Base):
-    """Closed one-to-one typed JSONB snapshot; semantic Owner remains absent."""
+    """Immutable one-to-one typed JSONB snapshot; semantic Owner remains separate."""
 
     __tablename__ = "sol_spec_payloads"
     __table_args__ = (

@@ -27,6 +27,7 @@ TABLES = (
     "sol_spec_evidence_refs", "sol_spec_artifact_refs",
 )
 PREVIOUS = "20261012_0161"
+TARGET = "20261012_0162"
 
 
 def rejects(expected: str, action) -> None:
@@ -43,8 +44,7 @@ def verify(port: int) -> None:
         "postgresql+psycopg", username="poc_admin", host="127.0.0.1",
         port=port, database="postgres"))
     command.upgrade(cfg, PREVIOUS)
-    command.upgrade(cfg, "head")  # empty database
-    command.check(cfg)
+    command.upgrade(cfg, TARGET)  # historical closed-guard contract
     with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
                          dbname="postgres", autocommit=True) as db:
         for table in TABLES:
@@ -64,11 +64,9 @@ def verify(port: int) -> None:
             "INSERT INTO plm.prj_projects(project_code,project_code_normalized,name,created_by) "
             "VALUES ('SOL06REF','sol06ref','Existing project',%s) RETURNING project_id",
             (actor,)).fetchone()[0]
-    command.upgrade(cfg, "head")  # existing project data
-    command.check(cfg)
+    command.upgrade(cfg, TARGET)  # existing project data
     command.downgrade(cfg, PREVIOUS)  # empty child history
-    command.upgrade(cfg, "head")
-    command.check(cfg)
+    command.upgrade(cfg, TARGET)
 
     series, version, artifact = uuid.uuid4(), uuid.uuid4(), uuid.uuid4()
     with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
@@ -127,10 +125,9 @@ def verify(port: int) -> None:
                 rejects("reference Owner is not installed", lambda: db.execute(
                     f"DELETE FROM plm.{table} WHERE structured_solution_spec_id=%s", (version,)))
     rejects("reference history prevents downgrade", lambda: command.downgrade(cfg, PREVIOUS))
-    command.check(cfg)
     print("SOL_06_A03_STRUCTURED_SPEC_REFS_SCHEMA_PASS: empty/existing upgrade, "
           "empty downgrade/re-upgrade, closed DML, FK/ordinal/duplicate, "
-          "nonempty refusal, drift")
+          "nonempty refusal at historical revision 0162")
 
 
 def main() -> None:

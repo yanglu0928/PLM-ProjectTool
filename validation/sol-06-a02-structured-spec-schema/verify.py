@@ -25,6 +25,7 @@ fixture = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(fixture)
 
 PREVIOUS = "20261009_0160"
+TARGET = "20261012_0161"
 TABLE = "plm.sol_structured_specs"
 
 
@@ -42,8 +43,7 @@ def verify(port: int) -> None:
                      host="127.0.0.1", port=port, database="postgres")
     cfg = create_migration_config(url)
     command.upgrade(cfg, PREVIOUS)
-    command.upgrade(cfg, "head")  # empty business database
-    command.check(cfg)
+    command.upgrade(cfg, TARGET)  # historical closed-guard contract
     with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
                          dbname="postgres", autocommit=True) as db:
         assert db.execute(f"SELECT count(*) FROM {TABLE}").fetchone()[0] == 0
@@ -64,15 +64,13 @@ def verify(port: int) -> None:
             "name,created_by) VALUES ('SOL06PG','sol06pg','Existing project',%s) "
             "RETURNING project_id", (actor,),
         ).fetchone()[0]
-    command.upgrade(cfg, "head")  # existing project data
-    command.check(cfg)
+    command.upgrade(cfg, TARGET)  # existing project data
     with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
                          dbname="postgres", autocommit=True) as db:
         assert db.execute("SELECT name FROM plm.prj_projects WHERE project_id=%s",
                           (project,)).fetchone()[0] == "Existing project"
     command.downgrade(cfg, PREVIOUS)  # empty SOL-06 history with existing project
-    command.upgrade(cfg, "head")
-    command.check(cfg)
+    command.upgrade(cfg, TARGET)
 
     series, version = uuid.uuid4(), uuid.uuid4()
     insert = (f"INSERT INTO {TABLE}(structured_solution_spec_id,spec_series_id,"
@@ -82,10 +80,7 @@ def verify(port: int) -> None:
     with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
                          dbname="postgres", autocommit=True) as db:
         rejects("write Owner is not installed", lambda: db.execute(insert, values))
-        # At 0162, child FKs reject a bare parent TRUNCATE before its guard runs.
-        rejects("cannot truncate a table referenced", lambda: db.execute(f"TRUNCATE {TABLE}"))
-        rejects("history cannot be truncated",
-                lambda: db.execute(f"TRUNCATE {TABLE} CASCADE"))
+        rejects("history cannot be truncated", lambda: db.execute(f"TRUNCATE {TABLE}"))
         db.execute(f"ALTER TABLE {TABLE} DISABLE TRIGGER trg_sol_specs__owner")
         try:
             db.execute(insert, values)
@@ -121,9 +116,9 @@ def verify(port: int) -> None:
             f"DELETE FROM {TABLE} WHERE structured_solution_spec_id=%s", (version,)))
         assert db.execute(f"SELECT count(*) FROM {TABLE}").fetchone()[0] == 1
     rejects("history prevents downgrade", lambda: command.downgrade(cfg, PREVIOUS))
-    command.check(cfg)
     print("SOL_06_A02_STRUCTURED_SPEC_SCHEMA_PASS: empty/existing upgrade, "
-          "empty downgrade/re-upgrade, DML closure, constraints, nonempty refusal, drift")
+          "empty downgrade/re-upgrade, DML closure, constraints, nonempty refusal "
+          "at historical revision 0161")
 
 
 def main() -> None:

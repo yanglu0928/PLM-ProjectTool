@@ -24,6 +24,7 @@ assert SPEC and SPEC.loader
 fixture = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(fixture)
 PREVIOUS = "20261012_0162"
+TARGET = "20261012_0163"
 TABLE = "plm.sol_spec_payloads"
 
 
@@ -41,8 +42,7 @@ def verify(port: int) -> None:
         "postgresql+psycopg", username="poc_admin", host="127.0.0.1",
         port=port, database="postgres"))
     command.upgrade(cfg, PREVIOUS)
-    command.upgrade(cfg, "head")  # empty database
-    command.check(cfg)
+    command.upgrade(cfg, TARGET)  # historical closed-guard contract
     with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
                          dbname="postgres", autocommit=True) as db:
         assert db.execute(f"SELECT count(*) FROM {TABLE}").fetchone()[0] == 0
@@ -61,11 +61,9 @@ def verify(port: int) -> None:
             "INSERT INTO plm.prj_projects(project_code,project_code_normalized,name,created_by) "
             "VALUES ('SOL06PAY','sol06pay','Existing project',%s) RETURNING project_id",
             (actor,)).fetchone()[0]
-    command.upgrade(cfg, "head")  # existing business rows
-    command.check(cfg)
+    command.upgrade(cfg, TARGET)  # existing business rows
     command.downgrade(cfg, PREVIOUS)  # empty payload history
-    command.upgrade(cfg, "head")
-    command.check(cfg)
+    command.upgrade(cfg, TARGET)
 
     series, version = uuid.uuid4(), uuid.uuid4()
     insert = (f"INSERT INTO {TABLE}(structured_solution_spec_id,spec_series_id,"
@@ -115,10 +113,9 @@ def verify(port: int) -> None:
         rejects("payload Owner is not installed", lambda: db.execute(
             f"DELETE FROM {TABLE} WHERE structured_solution_spec_id=%s", (version,)))
     rejects("payload history prevents downgrade", lambda: command.downgrade(cfg, PREVIOUS))
-    command.check(cfg)
     print("SOL_06_A05_STRUCTURED_SPEC_PAYLOAD_SCHEMA_PASS: empty/existing upgrade, "
           "empty downgrade/re-upgrade, DML closure, composite FK/type/shape/size/unique, "
-          "nonempty refusal, drift")
+          "nonempty refusal at historical revision 0163")
 
 
 def main() -> None:
