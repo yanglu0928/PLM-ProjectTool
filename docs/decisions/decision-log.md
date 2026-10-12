@@ -11240,3 +11240,10 @@
 - Decision：内部 GET/LIST 每次验 License/Session/当前 Project 成员并锁定 Section 身份；Repo 按 Project/Section/Version 读取根与不可变首次结果，检查固定字段和有序 Requirement/Evidence 引用的声明数，当前 Review 状态仅作历史展示、不重证来源当前资格。LIST 按版本号倒序且限制 1～100，游标/公开 HTTP 留下一个独立任务。
 - Reason：仅查询 CREATE 首响应会误报后续状态，直接读根不校验首次结果/子表会把损坏历史当作可信快照；历史读若重证可变来源又会把合法旧版本隐藏。
 - Impact/Rollback：仅 Solution 内部只读 Application/Repository 和测试，无 Migration、权限矩阵/公开 API/依赖/旧数据变化；移除未挂入口的读取代码可回滚，版本历史保留。
+
+# DEC-20261012-1183：SectionVersion GET/LIST 使用独立会话绑定游标
+
+- Date/WBS：2026-10-12 / `SOL-05-A03-P03`；依据 Gate2 API-04、CR-SOL-003、A03-P02 历史 Owner 与现有 OutlineVersion 只读合同。
+- Decision：只读 Router 仍为可选注入；LIST 仅返回版本元数据/计数及独立 HMAC-SHA256 游标，绑定 Session、Project、Section、页大小和下页版本号；GET 返回有序固定正文/Requirement/Evidence 引用与声明，不返回物理文件、来源正文或“当前合格”判断。独立游标密钥由后续 Windows 装配任务提供，缺钥不挂载；只读独立注入时 POST 显式404，应用先装 CREATE 再装只读 Router，已启用 CREATE 时不会被关闭占位遮蔽。
+- Reason：项目历史需要分页防篡改和跨会话隔离；复用 Outline 游标会混淆资源族，列表批量返回声明正文会增加泄露与响应成本；只读路由截获 POST 会破坏已验 CREATE。
+- Impact/Rollback：仅 Solution API/可选 app 接线、合同测试和文档，无 Schema、冻结路径/权限/依赖/旧数据变化；移除可选 Router 可回滚，历史不删。真实 Windows 密钥供给/PG/浏览器另验。

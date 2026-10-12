@@ -51,3 +51,5 @@ SOL-05-A02-P12-P02 按 DEC-1179 补真实 Edge→Uvicorn loopback→PG18.6 验�
 SOL-05-A03-P01 按 DEC-1180 开始独立历史读取，先补冻结 API-04 的项目成员 GET/LIST 只读授权并锁定当前事实；尚无 Owner/HTTP，不把 CREATE 首响应或历史固定引用当作现时资格。无 Schema、API Breaking、依赖/数据变化；见 `docs/progress/sol-05-a03-p01-section-version-read-authorization.md`。本 CR 保持 OPEN。
 
 SOL-05-A03-P02 按 DEC-1182 增加内部受权历史 GET/LIST Owner 与 SQL 固定引用重构：当前 License/Session/项目权限每次重验，Version 根与不可变首次结果/有序 Requirement/Evidence 集合核对，当前 Review 状态与历史固定输入分离，来源漂移不改历史。Win11 可弃 PG18.6 五版本分页/详情、隔离/License、合成首响应损坏失败关闭已验；无 Migration/公开 API/权限/依赖变化。正式 HTTP/Windows/UI/目标信任与 Gate3 独立验收；见 `docs/progress/sol-05-a03-p02-section-version-read-owner.md`。本 CR 保持 OPEN。
+
+SOL-05-A03-P03 按 DEC-1183 细化冻结 SectionVersion GET/LIST HTTP 投影，增加独立 Session/Project/Section/页大小绑定 HMAC 游标与只读可选 Router；列表仅元数据/计数，详情固定引用/声明，CREATE 优先装配不被 POST 关闭占位遮蔽。合同回归覆盖默认404、授权/错误、跨范围/篡改游标和 CREATE 共存；不改 Schema、权限、冻结路径、依赖或旧数据。Windows 装配与真实 ASGI/PG/浏览器、正式信任仍独立验收；见 `docs/progress/sol-05-a03-p03-section-version-read-http.md`。本 CR 保持 OPEN。
