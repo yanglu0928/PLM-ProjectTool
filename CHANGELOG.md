@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-12：0.1.0-dev.0/SOL-06-A09-P04 新增默认关闭的冻结 `SOL_SPEC_CREATE` POST 合同与 201 DRAFT 首次结果投影；严格 Content-Type/JSON/Key/CSRF/来源字段，未知字段及无正式 Owner 的附件拒绝，错误不泄露内部细节。兼容性/升级/回滚：未在 Windows 运行时装配；无 Migration、冻结路径/角色/旧数据/依赖变化，移除可选路由即可回滚，已写历史须保留。验证：HTTP 合同4项/17子例，后端全量3630通过/3跳过/5702子例、开发wheel及路由入包通过。已知问题：真实 Windows HTTP/PG、页面、OutputArtifact、Trace/Section VALIDATE、Gate3/Pilot/正式发行未完成；正式信任与Server2025/Debian13兼容未验。
+
 - 2026-10-12：0.1.0-dev.0/SOL-06-A09-P03 新增 SOL-06 受权内部创建 Service：Session/CSRF、有效 License、项目 Manager/Implementation 角色、同事务现时来源与完整 DRAFT、Audit、持久幂等收据；同号重放仍重检授权但不将已失效来源改写为历史。兼容性/升级/回滚：Windows 11 当前验证；无 Migration、冻结公开 API、依赖或旧数据变化；新增内部项目操作策略，未装配 Service 可撤回，已写业务/Audit 历史须保留。验证：Win11可弃PG18.6真实合成受权链、跨项目/失效License/CSRF/裸附件拒绝、并发重放/升版/旧前驱/审计失败回滚，定向5项/3子例、后端全量3626通过/3跳过/5685子例、开发wheel及模块入包通过。已知问题：公开HTTP/Windows/UI、OutputArtifact、Trace/Section VALIDATE、Gate3/Pilot/正式发行未完成；正式信任及Server2025/Debian13正式兼容未验。
 
 - 2026-10-12：0.1.0-dev.0/SOL-06-A09-P02 新增 SOL-06 内部完整草案 Repository 与首次稳定结果重建；series 事务锁、v1/v2 前驱、有序固定引用、载荷校验及跨项目拒绝；无独立提交或公开入口。兼容性/升级/回滚：Windows 11 当前验证；无 Migration、API、权限、依赖或旧数据变化，未装配代码可撤回，已写历史不可清除；Server2025/Debian13正式兼容未验。验证：Win11可弃PG18.6真实合成来源与v1/v2/读回/旧前驱/项目隔离、后端全量3621通过/3跳过/5677子例、开发wheel及入包通过。已知问题：正式受权Service/Audit/幂等、OutputArtifact、Trace/Section VALIDATE、Gate3/Pilot/正式发行未完成。
