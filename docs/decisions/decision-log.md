@@ -11338,3 +11338,10 @@
 - Decision：在既有 SectionVersion 读服务增加复用完整历史重构的同事务 Trace 证明，仍按当前 License/Session/`SOL_SECTION_VERSION_GET`/父章节状态授权，并核对不可变版本及首次结果、固定引用；组合层仅映射 `SOL-05` 三字段。RESTRICTED 版本不得创建或继续证明 Trace 目标，DRAFT 只表示固定历史存在，不表示已批准/送审。
 - Reason：完整读取已含首结果和有序固定引用一致性校验，可避免轻量投影绕开章节历史完整性；在 Trace 写事务内直接复用该证明，不开嵌套 UoW，也不跨模块直读 Solution 表。
 - Impact/Rollback：无 Schema/迁移、冻结 API、权限或历史数据变更；未装配公开 Trace 路由，可撤新 Owner/方法。单元及一次性 PG 验证同事务、隔离、Session/License、历史漂移和不额外写入；后续 `IMPLEMENTS` 覆盖另验。
+
+# DEC-20261012-1197：章节固定需求与 ACTIVE IMPLEMENTS 严格同集证明
+
+- Date/WBS：2026-10-12 / `TRC-01-A03-P03`；依据冻结 DM-05/API-04 `RequirementVersion → SolutionSectionVersion`、SectionVersion 固定需求集合、Trace ACTIVE/SUPERSEDED/REVOKED 生命周期及 P01/P02 Owner。
+- Decision：Trace 内部现时证明接收调用方已固定的章节与有界需求版本引用；先证明章节目标，再读取指向该固定章节版本的 ACTIVE `IMPLEMENTS` 边，拒绝空集合、重复、异项目/方向/类型、额外或缺失边，要求与固定需求版本集合严格相等，并逐边重新验证两个端点。SQL 查询只取本项目/本章节/ACTIVE/IMPLEMENTS，行共享锁维持本次事务内已读边状态；不把旧链接、仅同 RequirementId 的别版链接或空集当 PASS。
+- Reason：冻结模型要求快照和 Trace 双证一致；通用 Graph 查询对读者做可见性过滤/分页，不适合作为送审资格完整性证明。Trace Owner 不读 Solution 表，固定需求集合由 Solution 受权历史 Owner 提供。证明是本事务时点事实，不保证未来链接不会变化。
+- Impact/Rollback：无 Schema/Migration、公开 API、权限矩阵、新依赖、旧数据变化；新增未装配的内部 Proof/Repository 可撤回。单元覆盖严格同集与权限/异常，Win11 一次性 PG 覆盖 ACTIVE→REVOKED/替代、跨项目及无额外写入。Section VALIDATE 接线、公开 Trace 创建与 SOL-06 独立后续验收。
