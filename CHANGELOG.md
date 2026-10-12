@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-12：0.1.0-dev.0/SOL-05-A04-P01 完成 SectionVersion VALIDATE 前置核查：冻结 POST 路径/角色/报告类别已有，但内部 Owner、HTTP 与 Windows 装配均未实现；0160 不可变 Guard 仍禁止版本更新，StructuredSpec/Trace 真实证明缺口不能伪作通过。兼容性/升级/回滚：仅审计文档，无程序、Migration/API/数据变化；无需迁移。验证：仓库合同/代码/Schema 静态核对，未运行 VALIDATE 测试。已知问题：VALIDATE/Review/Gate3 仍未通过；下一项先定报告与幂等/审计合同。
+
 - 2026-10-12：0.1.0-dev.0/SOL-05-A03-P06-P03 增加 Windows 11 Edge/隔离 PostgreSQL 18.6 章节草案创建页面验收夹具，真实四类候选 GET、CREATE 201、原号原正文重放 201、跨项目隐藏，PG 核对仅一份新版本/收据/审计。兼容性/升级/回滚：仅验证脚本，无 Migration、产品 API/权限/旧数据变化；移除夹具即可回滚。验证：完整脚本两轮 exit 0；临时测试口令随机生成，浏览器/库清理。已知问题：真实断线未注入，正式信任、Server2025、性能/Gate3/Pilot/Release 未验，Debian13 实机依指令跳过。
 
 - 2026-10-12：0.1.0-dev.0/SOL-05-A03-P06-P02 新增 SectionVersion 草案候选选择、创建页及章节入口；当前项目固定 DocumentVersion/已批准需求/合格证据有界读取，未知提交原请求与操作号恢复，成功只标 DRAFT。兼容性/升级/回滚：无 Migration、API/后端/权限/旧数据变化，撤新增前端入口即可回滚。验证：定向7项、前端全量132文件/1752项、typecheck/生产build通过。已知问题：实际 Edge/PG 页面写入留 P03；正式信任、Server2025、性能/Gate3/Pilot/发行未验，Debian13实机依指令跳过。

@@ -63,3 +63,5 @@ SOL-05-A03-P06-P01 按 DEC-1186 增加 SectionVersion DocumentVersion-only CREAT
 SOL-05-A03-P06-P02 按 DEC-1187 增加项目内 DocumentVersion/Requirement/Evidence 有界候选、草案创建页和章节入口；无资格/不完整分页失败关闭，未知提交保存原 Key/内容并仅显式确认重试。定向7项、前端全量132文件/1752项、typecheck/生产build通过；真实 Edge/PG 页面写入留 P03，正式信任和 Gate3 不变。详见 `docs/progress/sol-05-a03-p06-p02-section-version-create-view.md`。本 CR 保持 OPEN。
 
 SOL-05-A03-P06-P03 使用 Win11 Edge/一次性 PG18.6 从真实页面核对 Document/Version/Requirement/Evidence 候选 GET、CREATE 201、原 Key/Body 页面恢复后重放 201 并指向同一版本、跨项目隐藏；数据库版本/首次结果/收据/审计均只新增一条。两轮脚本 exit0，随机测试口令不入库；未注入真实断线，不标正式信任或 Gate3。详见 `docs/progress/sol-05-a03-p06-p03-section-version-browser.md`。本 CR 保持 OPEN。
+
+SOL-05-A04-P01 静态核查确认冻结 SectionVersion VALIDATE 有路径/角色/报告类别但无内部 Owner/HTTP/Windows 装配；0160 Guard 仍禁止不可变版本 UPDATE/DELETE/TRUNCATE。StructuredSpec/Trace 当前事实不能伪造通过，后续报告合同须显式缺项、同请求幂等/审计及固定版本绑定，不把 CREATE 当 VALIDATE。详见 `docs/progress/sol-05-a04-p01-section-version-validate-precheck.md`。本 CR 保持 OPEN。
