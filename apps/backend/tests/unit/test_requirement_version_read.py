@@ -12,6 +12,7 @@ from plm_assistant.modules.requirement.application.read_versions import (
     RequirementVersionPage, RequirementVersionReadError,
     RequirementVersionReadQuery, RequirementVersionReadService,
     RequirementVersionSummary, RequirementVersionView,
+    RequirementVersionTraceFacts,
 )
 
 
@@ -45,6 +46,8 @@ class RequirementVersionReadTests(unittest.TestCase):
         self.repo = SimpleNamespace(
             list_versions=lambda *_args, **_kwargs: (self.summary,),
             get_version=lambda *_args, **_kwargs: self.view,
+            get_trace_facts=lambda *_args, **_kwargs: RequirementVersionTraceFacts(
+                self.version, self.requirement, self.project, "DRAFT"),
         )
         self.query = RequirementVersionReadQuery(
             b"s" * 32, uuid.uuid4(), self.project)
@@ -73,6 +76,31 @@ class RequirementVersionReadTests(unittest.TestCase):
         self.assertEqual(result, self.view)
         self.assertEqual(result.acceptance_criteria[0].acceptance_criterion_ref,
                          self.acceptance)
+
+    def test_trace_facts_reuse_caller_transaction_and_do_not_require_approval(self):
+        tx = object()
+        called = []
+        self.repo.get_trace_facts = lambda transaction, **kwargs: (
+            called.append((transaction, kwargs)) or RequirementVersionTraceFacts(
+                self.version, self.requirement, self.project, "DRAFT"))
+        facts = self.service.get_version_for_trace(
+            tx, self.query, requirement_id=self.requirement,
+            requirement_version_id=self.version)
+        self.assertEqual(facts.version_state, "DRAFT")
+        self.assertIs(called[0][0], tx)
+        self.assertEqual(called[0][1]["project_id"], self.project)
+
+    def test_trace_facts_fail_closed_for_missing_restricted_or_forged(self):
+        for facts in (None, RequirementVersionTraceFacts(
+                self.version, self.requirement, self.project, "RESTRICTED"),
+                RequirementVersionTraceFacts(
+                    self.version, self.requirement, uuid.uuid4(), "APPROVED")):
+            self.repo.get_trace_facts = lambda *_a, **_k: facts
+            with self.subTest(facts=facts), self.assertRaises(RequirementVersionReadError) as caught:
+                self.service.get_version_for_trace(
+                    object(), self.query, requirement_id=self.requirement,
+                    requirement_version_id=self.version)
+            self.assertEqual(caught.exception.code, "RESOURCE_NOT_FOUND")
 
     def test_incomplete_repository_projection_fails_closed(self):
         self.repo.get_version = lambda *_a, **_k: replace(self.view, sources=())

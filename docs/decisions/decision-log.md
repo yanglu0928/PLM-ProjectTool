@@ -11324,3 +11324,10 @@
 - Decision：不把固定引用为空推断为 Trace/Spec PASS。先分别补 RequirementVersion 与 SectionVersion 的 Trace 目标受权证明，再核对/接通 `IMPLEMENTS` 当前有效关系；随后按 SOL-06 建立专项规格版本和可信类型校验，再新增 SectionVersion 固定 Spec 引用与现时核验，最后回到 VALIDATE `ready_for_review` 和 Section Review。任何为引入必填 Spec 引用而破坏现有冻结 CREATE 请求的做法，先走独立 API/Schema Change Request，保留既有 v1 与历史版本，不静默改写。
 - Reason：现有 `sol_section_versions` 只有 Requirement/Evidence 子表，SOL-06 实体/迁移不存在；TraceLink 通用服务/表已有，但可见组合层只实现 Document 目标 Owner，缺 REQ-03/SOL-05。当前 Validator 显式将 trace/spec 置 UNAVAILABLE，属于可信证明缺口而非简单 UI 缺字。
 - Impact/Rollback：本项仅前置审计与依赖排序，无程序/Schema/API/权限/数据变化，撤后续未实施顺序即可回滚；Gate3/Pilot、正式 Review 仍不通过。下一项先实现单一问题 `TRC-01-A03-P01` RequirementVersion Trace 目标 Owner，并独立验收。
+
+# DEC-20261012-1195：RequirementVersion Trace 固定目标证明
+
+- Date/WBS：2026-10-12 / `TRC-01-A03-P01`；前置为 Gate 2 Trace/REQ-03 冻结合同、RequirementVersion 受权读取及 Document Trace Owner 先例。
+- Decision：在 Requirement 读服务增加同一调用方事务内的轻量固定版本证明，使用现有 `REQ_VERSION_GET` 项目成员权限、当前 Session 与 License；仓储只投影版本/根/项目身份和状态。组合层 Owner 将冻结三字段 `REQ-03` 映射成项目 TraceVersionRef，并分别支持公开解析与内部再次证明。此证明只表示该版本存在且当前调用者有权读取，不推断 APPROVED、当前有效、业务覆盖或 Review 结论；`RESTRICTED` 不能被当作可引用目标。
+- Reason：Trace 不得越过 Requirement Owner 直读其表；完整正文读取不适合用于受权目标身份证明，且外层 Trace 写事务不能开启嵌套读取事务。独立当前资格/批准证明仍属于后续 `IMPLEMENTS` 验证。
+- Impact/Rollback：无 Schema/API/权限矩阵或历史数据变化，可撤未装配 Owner 回滚。先做单元与真实 PG 同事务/跨项目/未授权/License/受限状态验证；未实际装配 Trace 公开路由，Gate 3/Pilot 不因此放行。

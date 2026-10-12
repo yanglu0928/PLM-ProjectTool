@@ -55,6 +55,14 @@ class RequirementVersionSummary:
 
 
 @dataclass(frozen=True, slots=True)
+class RequirementVersionTraceFacts:
+    requirement_version_id: uuid.UUID
+    requirement_id: uuid.UUID
+    project_id: uuid.UUID
+    version_state: str
+
+
+@dataclass(frozen=True, slots=True)
 class RequirementSourceEvidenceView:
     evidence_id: uuid.UUID
     ordinal: int
@@ -142,6 +150,9 @@ class RequirementVersionReadRepositoryPort(Protocol):
     def get_version(self, transaction: object, *, project_id: uuid.UUID,
                     requirement_id: uuid.UUID,
                     requirement_version_id: uuid.UUID) -> RequirementVersionView | None: ...
+    def get_trace_facts(self, transaction: object, *, project_id: uuid.UUID,
+                        requirement_id: uuid.UUID,
+                        requirement_version_id: uuid.UUID) -> RequirementVersionTraceFacts | None: ...
 
 
 class RequirementVersionReadService:
@@ -195,6 +206,56 @@ class RequirementVersionReadService:
             self._complete(row)
             return row
         return self._run(query, "REQ_VERSION_GET", read)
+
+    def get_version_for_trace(self, transaction: object,
+                              query: RequirementVersionReadQuery, *,
+                              requirement_id: uuid.UUID,
+                              requirement_version_id: uuid.UUID) -> RequirementVersionTraceFacts:
+        """Prove a fixed readable version in the caller's transaction, without approval inference."""
+        self._validate_query(query)
+        self._identity(requirement_id)
+        self._identity(requirement_version_id)
+        if transaction is None:
+            raise RequirementVersionReadError("RESOURCE_NOT_FOUND")
+        try:
+            self._guard.require_valid(trace_id=query.trace_id)
+            now = self._clock()
+            if type(now) is not datetime or now.tzinfo is None or now.utcoffset() is None:
+                raise RequirementVersionReadError()
+            actor = self._access.authenticated_user(
+                transaction, session_token=query.session_token,
+                now=now.astimezone(timezone.utc),
+            )
+            if type(actor) is not uuid.UUID or actor.int == 0:
+                raise RequirementVersionReadError("AUTH_ACCESS_DENIED")
+            authorized = self._authorization.require_in_transaction(
+                transaction, user_id=actor, project_id=query.project_id,
+                operation="REQ_VERSION_GET",
+            )
+            if (authorized.user_id != actor or authorized.project_id != query.project_id
+                    or authorized.operation != "REQ_VERSION_GET"):
+                raise RequirementVersionReadError("RESOURCE_NOT_FOUND")
+            facts = self._repository.get_trace_facts(
+                transaction, project_id=query.project_id,
+                requirement_id=requirement_id,
+                requirement_version_id=requirement_version_id,
+            )
+            if (type(facts) is not RequirementVersionTraceFacts
+                    or facts.project_id != query.project_id
+                    or facts.requirement_id != requirement_id
+                    or facts.requirement_version_id != requirement_version_id
+                    or facts.version_state not in (
+                        "DRAFT", "IN_REVIEW", "APPROVED", "RETURNED", "SUPERSEDED")):
+                raise RequirementVersionReadError("RESOURCE_NOT_FOUND")
+            return facts
+        except RequirementVersionReadError:
+            raise
+        except ProjectAuthorizationError as error:
+            raise RequirementVersionReadError(error.code) from None
+        except RuntimeLicenseError:
+            raise RequirementVersionReadError("LICENSE_OPERATION_DENIED") from None
+        except Exception:
+            raise RequirementVersionReadError() from None
 
     def _run(self, query: RequirementVersionReadQuery, operation: str, read):
         try:

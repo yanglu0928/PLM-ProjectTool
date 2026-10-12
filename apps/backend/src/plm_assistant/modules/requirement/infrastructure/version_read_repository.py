@@ -12,6 +12,7 @@ from plm_assistant.modules.requirement.application.read_versions import (
     RequirementAssessmentEvidenceView, RequirementCapabilityAssessmentView,
     RequirementSourceEvidenceView, RequirementSourceView,
     RequirementTextItemView, RequirementVersionSummary, RequirementVersionView,
+    RequirementVersionTraceFacts,
 )
 
 from .identity_create_repository import _session
@@ -25,6 +26,21 @@ from .orm import (
 
 
 class SqlAlchemyRequirementVersionReadRepository:
+    def get_trace_facts(self, transaction: object, *, project_id: uuid.UUID,
+                        requirement_id: uuid.UUID,
+                        requirement_version_id: uuid.UUID) -> RequirementVersionTraceFacts | None:
+        row = _session(transaction).execute(select(
+            RequirementVersionRow.requirement_version_id,
+            RequirementVersionRow.requirement_id,
+            RequirementVersionRow.project_id,
+            RequirementVersionRow.version_state,
+        ).where(
+            RequirementVersionRow.project_id == project_id,
+            RequirementVersionRow.requirement_id == requirement_id,
+            RequirementVersionRow.requirement_version_id == requirement_version_id,
+        )).one_or_none()
+        return RequirementVersionTraceFacts(*row) if row is not None else None
+
     def list_versions(self, transaction: object, *, project_id: uuid.UUID,
                       requirement_id: uuid.UUID, after_version_no: int | None,
                       limit: int) -> tuple[RequirementVersionSummary, ...]:
