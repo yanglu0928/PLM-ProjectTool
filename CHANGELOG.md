@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-12：0.1.0-dev.0/SOL-06-A09-P02 新增 SOL-06 内部完整草案 Repository 与首次稳定结果重建；series 事务锁、v1/v2 前驱、有序固定引用、载荷校验及跨项目拒绝；无独立提交或公开入口。兼容性/升级/回滚：Windows 11 当前验证；无 Migration、API、权限、依赖或旧数据变化，未装配代码可撤回，已写历史不可清除；Server2025/Debian13正式兼容未验。验证：Win11可弃PG18.6真实合成来源与v1/v2/读回/旧前驱/项目隔离、后端全量3621通过/3跳过/5677子例、开发wheel及入包通过。已知问题：正式受权Service/Audit/幂等、OutputArtifact、Trace/Section VALIDATE、Gate3/Pilot/正式发行未完成。
+
 - 2026-10-12：0.1.0-dev.0/SOL-06-A09-P01 新增 `20261012_0164` SOL-06 完整 DRAFT INSERT-only 迁移；series 串行升版、同事务 payload/需求/章节/证据集合、提交闭合和提交后封印，Artifact 仍拒绝；旧 0161～0163 验证固定历史修订。兼容性/升级/回滚：Windows 11 当前验证；仅空 SOL-06 可降回 0163，非空历史保留；无公开 API/权限/依赖变化，Server2025/Debian13正式兼容未验。验证：Win11可弃PG18.6空/有数据升降、完整性/并发/不可变/非空拒降/drift、0161～0163历史回归、定向7、后端全量3621通过/3跳过/5677子例、开发wheel及迁移入包通过。已知问题：正式Repository/Owner、Audit/幂等、OutputArtifact、Trace/Section VALIDATE、Gate3/Pilot/正式发行未完成。
 
 - 2026-10-12：0.1.0-dev.0/SOL-06-A08 新增 SOL-06 同事务内部来源组合证明，固定已批准需求、当前章节版本、真实文件与项目证据，失效/篡改/跨项目/旧草案及裸附件拒绝；不等于 SOL-06 操作授权或客户确认。兼容性/升级/回滚：无 Migration、公开 API、权限、依赖或旧数据变化；内部未装配 Service 可撤回，Windows 11 当前验证。验证：定向六项/六子例、Win11可弃PG18.6真实合成来源链、后端全量3621通过/3跳过/5677子例、开发wheel及模块入包通过。已知问题：正式写 Owner、OutputArtifact、Trace/Section VALIDATE/Review、Gate3/Pilot/正式发行未完成，Server2025/Debian13正式兼容未验。
