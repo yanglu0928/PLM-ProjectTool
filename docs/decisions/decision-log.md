@@ -11317,3 +11317,10 @@
 - Decision：对既有 CREATE 浏览器夹具只增加可选 VALIDATE 模式，复用随机测试账户、真实 Session、Uvicorn、Edge 和一次性 PG 生命周期；新模式独立 Edge 操作脚本与 SQL 断言，默认 CREATE 模式行为和断言保持不变。浏览器真正点击详情页验证、恢复原号后同号重放，不使用直调 API 代替 UI。
 - Reason：重复搭建大型源/登录夹具易造成测试信任和清理路径分叉；可选模式保持旧验收可复跑，并把新证据与既有 CREATE 测试隔离。
 - Impact/Rollback：仅验证资产变动，无产品、Schema、冻结 API 或客户数据变化。可撤新模式与脚本回滚；需复跑原 CREATE 及新增 VALIDATE 浏览器脚本，临时 Edge Profile/PG 库必须清理。
+
+# DEC-20261012-1194：章节可送审资格的 Trace/Spec 实施顺序
+
+- Date/WBS：2026-10-12 / `SOL-05-A04-P09`；依据 Gate2 DM-05/SOL-06、SC-01、API-04、CR-SOL-003、当前 ORM/Trace Owner/VALIDATE 代码核对。
+- Decision：不把固定引用为空推断为 Trace/Spec PASS。先分别补 RequirementVersion 与 SectionVersion 的 Trace 目标受权证明，再核对/接通 `IMPLEMENTS` 当前有效关系；随后按 SOL-06 建立专项规格版本和可信类型校验，再新增 SectionVersion 固定 Spec 引用与现时核验，最后回到 VALIDATE `ready_for_review` 和 Section Review。任何为引入必填 Spec 引用而破坏现有冻结 CREATE 请求的做法，先走独立 API/Schema Change Request，保留既有 v1 与历史版本，不静默改写。
+- Reason：现有 `sol_section_versions` 只有 Requirement/Evidence 子表，SOL-06 实体/迁移不存在；TraceLink 通用服务/表已有，但可见组合层只实现 Document 目标 Owner，缺 REQ-03/SOL-05。当前 Validator 显式将 trace/spec 置 UNAVAILABLE，属于可信证明缺口而非简单 UI 缺字。
+- Impact/Rollback：本项仅前置审计与依赖排序，无程序/Schema/API/权限/数据变化，撤后续未实施顺序即可回滚；Gate3/Pilot、正式 Review 仍不通过。下一项先实现单一问题 `TRC-01-A03-P01` RequirementVersion Trace 目标 Owner，并独立验收。

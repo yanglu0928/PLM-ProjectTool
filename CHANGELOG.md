@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-12：0.1.0-dev.0/SOL-05-A04-P09 完成章节 Trace/Spec 可送审前置审计，确认当前缺 Requirement/Section Trace 目标 Owner、SOL-06 实体/版本和章节固定 Spec 引用；按 DEC-1194 登记依赖顺序，不把空引用或合成 200 当 PASS。兼容性/升级/回滚：仅记录，无 Migration/API/程序/数据变化；无需升级。验证：冻结 DM/SC/API 与当前 ORM/迁移/Owner 静态交叉核对，未执行新业务测试。已知问题：ready_for_review/Section Review/Gate3/Pilot/正式发行仍阻塞，三平台正式验收未通过。
+
 - 2026-10-12：0.1.0-dev.0/SOL-05-A04-P08 增加 Windows 11 Edge→真实登录/详情页→Uvicorn→可弃 PG18.6 的验证验收资产；页面六维报告、零正文200、原号重放和单条 Audit/收据通过，原 CREATE 浏览器夹具回归通过。兼容性/升级/回滚：仅验证脚本，无 Migration/产品 API/权限/依赖/旧数据变化；可撤测试模式。验证：VALIDATE 与原 CREATE 脚本均退出0、SQL 计数符合预期。已知问题：Trace/Spec 无可信证明不可送审，正式信任/Server2025、性能/Gate3/Pilot/正式发行未验，Debian13 实机依指令跳过。
 
 - 2026-10-12：0.1.0-dev.0/SOL-05-A04-P07 在章节固定版本详情页增加当前来源验证按钮与六维可读报告、维护提示及 Audit/观察时间；不确定结果同号确认重试，客户成员只读。兼容性/升级/回滚：无 Migration、冻结 API/后端/旧数据变化；撤页面入口可回滚，审计历史保留。验证：页面定向4项、前端全量134文件/1760项、typecheck/生产build通过。已知问题：真实 Edge/PG 点击、Trace/Spec 可信证明、正式信任/Server2025、性能/Gate3/Pilot/发行未验，Debian13 实机按指令跳过。

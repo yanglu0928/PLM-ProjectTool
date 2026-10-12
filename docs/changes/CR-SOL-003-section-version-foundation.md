@@ -73,3 +73,5 @@ SOL-05-A04-P03～P05 依次完成真实受权 VALIDATE Owner、冻结路径的�
 SOL-05-A04-P06/P07 增加前端私有 CSRF 零正文验证客户端及章节版本详情页六维报告，源失效/Trace/Spec 不伪称可评审；断线、503及不确定回执保留原 Idempotency-Key，浏览器存储原号失败拒发送，客户成员无验证按钮。页面只显示当前会话报告，不能代替服务端审计读取或原文精准定位；真实 Edge/PG 与正式信任仍待。见 `docs/progress/sol-05-a04-p06-section-version-validate-client.md`、`docs/progress/sol-05-a04-p07-section-version-validate-view.md`；本 CR 保持 OPEN。
 
 SOL-05-A04-P08 在 Win11 Edge/真实登录/可弃 PG18.6 实际点击详情页 VALIDATE，通过零正文200、六维报告、同号重放与单条 Audit/收据；原 CREATE 浏览器模式复跑也退出0。Trace/Spec 仍不可核验，正式目标信任、Server2025、性能/Gate3/Pilot 不因合成浏览器结果放行。详见 `docs/progress/sol-05-a04-p08-section-version-validate-browser.md`；本 CR 保持 OPEN。
+
+SOL-05-A04-P09 静态核查证实冻结 `sol_section_spec_refs`/SOL-06 当前尚无 ORM/Migration/Owner，Trace 通用模型虽包含 REQ-03/SOL-05/SOL-06，但当前可见目标受权证明仅有 Document；Section VALIDATE 的 trace/spec 缺可信 PASS 路径。按 DEC-1194 先补 Req/Section Trace 目标证明与现时 `IMPLEMENTS`，再建 SOL-06 专项版本及固定引用，最后重新验证/Review；任何 CREATE Breaking 另立 API/Schema CR，不静默修改 v1。详见 `docs/progress/sol-05-a04-p09-trace-spec-precheck.md`。本 CR 保持 OPEN。
