@@ -80,6 +80,20 @@ describe("StructuredSpecCreateClient", () => {
       code: "STRUCTURED_SPEC_CREATE_INVALID" });
     expect(manager.fetcher).toHaveBeenCalledTimes(1);
   });
+  it("accepts the four server-recognized type names, never aliases", async () => {
+    for (const spec_type of ["PROCESS_MODEL", "INTERFACE_SPEC", "MIGRATION_SPEC",
+      "PERMISSION_DESIGN"] as const) {
+      const changed = { ...draft, spec_type };
+      const expected = { ...item, spec_type };
+      const { api } = await setup("PROJECT_MANAGER", response(expected));
+      await expect(api.create(project, changed, key)).resolves.toMatchObject({ spec_type });
+    }
+    const { api } = await setup();
+    for (const alias of ["PROCESS_FLOW_SPEC", "PERMISSION_SPEC"]) {
+      await expect(api.create(project, { ...draft, spec_type: alias } as StructuredSpecDraft, key))
+        .rejects.toMatchObject({ code: "STRUCTURED_SPEC_CREATE_INVALID" });
+    }
+  });
   it("fails closed on mismatched original receipt and count", async () => {
     for (const bad of [response({ ...item, project_id: section }),
       response({ ...item, declared_evidence_count: 0 }), response(item, evidence),

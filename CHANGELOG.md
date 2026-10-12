@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-12：0.1.0-dev.0/SOL-06-A09-P06-P01 修正前端专项类型名与服务端四类合同不一致的问题：流程 `PROCESS_MODEL`、权限 `PERMISSION_DESIGN`，拒绝旧错误别名。兼容性/升级/回滚：仅尚未接页面的客户端枚举，无 Schema/API/数据迁移；无需用户升级操作。验证：定向 5 项通过（含四类服务端名称与错误别名负例）。已知问题：P06-P02 页面及真实浏览器、Gate3/Pilot/正式发行仍待。
+
 - 2026-10-12：0.1.0-dev.0/SOL-06-A09-P06-P01 新增前端 SOL-06 CREATE 受控命令桥接：项目写角色、固定需求/章节版本、非空类型载荷、零附件、原操作号及首次 DRAFT 回执核对；传输中断或矛盾回执保持不确定，不自动换号。兼容性/升级/回滚：无 Migration/后端/冻结 API/权限/依赖变化，未接页面客户端可撤。验证：定向4项、前端全量135文件/1764项、typecheck/build通过；P05真实Win11/PG链已通过。已知问题：页面与真实浏览器、OutputArtifact、Trace/Section VALIDATE、Gate3/Pilot/正式发行未完成；正式信任/Server2025/Debian13兼容未验。
 
 - 2026-10-12：0.1.0-dev.0/SOL-06-A09-P05 将 SOL-06 CREATE 装配到 Windows 显式写模式，复用正式设计的 Auth/License/来源/PG/Audit/Receipt 依赖；默认模式关闭、缺信任依赖拒装。兼容性/升级/回滚：无 Migration、冻结 API/权限/依赖/旧数据变化；关闭显式写模式可停用入口，已写历史保留。验证：Win11可弃PG18.6真实ASGI/PG合成来源首创、同 Key 重放、成员创建、跨项目/CSRF/裸附件拒绝及单条审计/收据退出0；后端全量3630通过/3跳过/5702子例、开发wheel通过。已知问题：前端入口、OutputArtifact、Trace/Section VALIDATE、Gate3/Pilot/正式发行未完成；正式公钥/服务账户信任与Server2025/Debian13正式兼容未验。

@@ -1,7 +1,7 @@
 /** SOL-06 fixed DRAFT command; an unknown result retains the exact key and body. */
 import { SessionClient, SessionClientError } from "@/modules/auth/api/sessionClient";
 
-export type SpecType = "PROCESS_FLOW_SPEC" | "INTERFACE_SPEC" | "MIGRATION_SPEC" | "PERMISSION_SPEC";
+export type SpecType = "PROCESS_MODEL" | "INTERFACE_SPEC" | "MIGRATION_SPEC" | "PERMISSION_DESIGN";
 export interface SpecRequirementRef { readonly requirement_id: string; readonly requirement_version_id: string }
 export interface SpecSectionRef { readonly solution_section_id: string; readonly solution_section_version_id: string }
 export interface StructuredSpecDraft {
@@ -82,7 +82,7 @@ function refs(value: unknown, fields: readonly [string, string]): value is reado
 function validDraft(value: StructuredSpecDraft): boolean {
   if (!record(value) || !exact(value, ["spec_type", "payload", "requirement_refs",
     "section_refs", "evidence_ids", "artifact_ids"])
-    || !["PROCESS_FLOW_SPEC", "INTERFACE_SPEC", "MIGRATION_SPEC", "PERMISSION_SPEC"].includes(value.spec_type)
+    || !["PROCESS_MODEL", "INTERFACE_SPEC", "MIGRATION_SPEC", "PERMISSION_DESIGN"].includes(value.spec_type)
     || !record(value.payload) || Object.keys(value.payload).length === 0
     || !refs(value.requirement_refs, ["requirement_id", "requirement_version_id"])
     || !refs(value.section_refs, ["solution_section_id", "solution_section_version_id"])
