@@ -78,6 +78,7 @@ from plm_assistant.entrypoints.windows_solution_outline import (
     create_windows_section_version_read_router,
     create_windows_section_create_router,
     create_windows_section_version_create_router,
+    create_windows_section_version_validate_router,
     create_windows_section_read_router,
     create_windows_section_list_router,
     create_windows_outline_list_router,
@@ -652,6 +653,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         solution_outline_version_read_router = None
         solution_section_create_router = None
         solution_section_version_create_router = None
+        solution_section_version_validate_router = None
         solution_section_version_read_router = None
         solution_outline_read_router = None
         solution_section_read_router = None
@@ -931,6 +933,14 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 )
                 solution_section_version_create_router = (
                     create_windows_section_version_create_router(
+                        runtime=runtime, sessions=sessions, origins=origins,
+                        license_guard=licenses.guard, audit=audit,
+                        documents=document_reads, downloads=document_downloads,
+                        parse_results=evidence_results_for_viewer,
+                    )
+                )
+                solution_section_version_validate_router = (
+                    create_windows_section_version_validate_router(
                         runtime=runtime, sessions=sessions, origins=origins,
                         license_guard=licenses.guard, audit=audit,
                         documents=document_reads, downloads=document_downloads,
@@ -1814,6 +1824,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             solution_outline_version_read_router=solution_outline_version_read_router,
             solution_section_create_router=solution_section_create_router,
             solution_section_version_create_router=solution_section_version_create_router,
+            solution_section_version_validate_router=solution_section_version_validate_router,
             solution_section_version_read_router=solution_section_version_read_router,
             solution_section_read_router=solution_section_read_router,
             solution_section_list_router=solution_section_list_router,

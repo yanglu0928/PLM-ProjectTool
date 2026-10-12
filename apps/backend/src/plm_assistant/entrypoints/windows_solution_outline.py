@@ -29,6 +29,7 @@ from plm_assistant.modules.solution.api.outline_version_list_cursor import Outli
 from plm_assistant.modules.solution.api.section_create import create_section_create_router
 from plm_assistant.modules.solution.api.section_version_create import create_section_version_create_router
 from plm_assistant.modules.solution.api.section_version_read import create_section_version_read_router
+from plm_assistant.modules.solution.api.section_version_validate import create_section_version_validate_router
 from plm_assistant.modules.solution.api.section_version_list_cursor import SectionVersionListCursorCodec
 from plm_assistant.modules.solution.api.outline_list import create_outline_list_router
 from plm_assistant.modules.solution.api.outline_read import create_outline_read_router
@@ -42,6 +43,9 @@ from plm_assistant.modules.solution.application.read_outline_version import Outl
 from plm_assistant.modules.solution.application.create_section import SectionCreateService
 from plm_assistant.modules.solution.application.create_section_version import SectionVersionCreateService
 from plm_assistant.modules.solution.application.read_section_version import SectionVersionReadService
+from plm_assistant.modules.solution.application.validate_section_version import (
+    SectionVersionCurrentValidator, SectionVersionValidationService,
+)
 from plm_assistant.modules.solution.application.prove_section_version_input import SectionVersionInputProofService
 from plm_assistant.modules.solution.application.prove_outline_section_use import OutlineSectionUseProofService
 from plm_assistant.modules.solution.application.prove_outline_version_input import OutlineVersionInputProofService
@@ -60,6 +64,9 @@ from plm_assistant.modules.solution.infrastructure.section_evidence_use_proof im
 from plm_assistant.modules.solution.infrastructure.section_version_base import SqlAlchemyCurrentSectionVersionBase
 from plm_assistant.modules.solution.infrastructure.section_version_create_repository import SqlAlchemySectionVersionCreateRepository
 from plm_assistant.modules.solution.infrastructure.section_version_read_repository import SqlAlchemySectionVersionReadRepository
+from plm_assistant.modules.solution.infrastructure.section_version_validation_audit_source import (
+    SqlAlchemySectionVersionValidationAuditSource,
+)
 from plm_assistant.modules.solution.infrastructure.outline_read_repository import SqlAlchemyOutlineReadRepository
 from plm_assistant.modules.solution.infrastructure.section_read_repository import SqlAlchemySectionReadRepository
 from plm_assistant.modules.solution.infrastructure.reference_use_repository import (
@@ -366,5 +373,52 @@ def create_windows_section_version_create_router(
         )
         return create_section_version_create_router(
             sessions=sessions, origins=origins, creates=service)
+    except Exception:
+        raise ProductionSolutionOutlineStartupError() from None
+
+
+def create_windows_section_version_validate_router(
+    *, runtime, sessions, origins, license_guard, audit,
+    documents, downloads, parse_results,
+) -> APIRouter:
+    """Mount VALIDATE only with explicit write and current-source trust."""
+    if any(value is None for value in (
+            runtime, sessions, origins, license_guard, audit,
+            documents, downloads, parse_results)):
+        raise ProductionSolutionOutlineStartupError()
+    try:
+        fixed = DocumentFixedSourceProofService(
+            documents=documents, downloads=downloads,
+            parse_metadata=SqlAlchemyParseResultReadRepository(),
+            parse_results=parse_results)
+        evidence = EvidenceFixedProjectSourceService(
+            sessions=SqlAlchemyProjectReadAccess(),
+            projects=SqlAlchemyProjectAuthorizationRepository(),
+            evidence=SqlAlchemyEvidenceFixedSourceRepository(),
+            documents=fixed,
+            allowed_project_roles=frozenset({
+                "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}),
+        )
+        current = SectionVersionCurrentValidator(
+            documents=SectionDocumentContentProofAdapter(
+                identities=SqlAlchemyReferenceVersionIdentity(),
+                fixed_sources=fixed),
+            requirements=OutlineRequirementUseProofService(
+                approved_versions=SqlAlchemyPrototypeApprovedRequirementVersionProof()),
+            evidence=SectionEvidenceUseProofAdapter(fixed_sources=evidence),
+        )
+        service = SectionVersionValidationService(
+            unit_of_work=runtime.unit_of_work,
+            access=SqlAlchemyProjectWriteAccess(), license_guard=license_guard,
+            authorization=ProjectAuthorizationService(
+                unit_of_work=runtime.unit_of_work,
+                repository=SqlAlchemyProjectAuthorizationRepository()),
+            sections=SqlAlchemySectionReadRepository(),
+            versions=SqlAlchemySectionVersionReadRepository(), current=current,
+            receipts=SqlAlchemyIdempotencyReceipts(), audit=audit,
+            audit_source=SqlAlchemySectionVersionValidationAuditSource(),
+        )
+        return create_section_version_validate_router(
+            sessions=sessions, origins=origins, validations=service)
     except Exception:
         raise ProductionSolutionOutlineStartupError() from None
