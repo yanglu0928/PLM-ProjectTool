@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-12：0.1.0-dev.0/SOL-06-A06 新增 StructuredSolutionSpec 四类类型化载荷纯校验与稳定 SHA-256 快照，流程节点/边、接口映射、迁移回滚/对账、权限默认拒绝/职责分离均有结构性负例；不把通过结构校验当成来源资格或客户确认。兼容性/升级/回滚：无 Migration、公开 API、权限、依赖或既有数据变化，Windows 11 当前开发验证；移除未装配内部合同可回滚。验证：定向9项/39子例、后端全量3610通过/3跳过/5651子例、开发wheel及模块入包通过。已知问题：固定引用输入/真实来源资格/Artifact 目标/正式 Owner、Trace/Section VALIDATE、Gate3/Pilot/正式发行未完成，Server2025/Debian13正式兼容未验。
+
 - 2026-10-12：0.1.0-dev.0/SOL-06-A05 新增 `20261012_0163` 闭锁 StructuredSolutionSpec 类型化 JSONB 载荷及 ORM；固定版本/项目/类型，非空对象/1 MiB/指纹/版本约束；写入仍全部拒绝。兼容性/升级/回滚：Windows 11 当前验证；从0162无回填升级，载荷表仅为空可降级，非空历史保留；无公开API/权限/依赖变化，Server2025/Debian13正式兼容未验。验证：Win11可弃PG18.6空/有数据升降、约束/DML负例/非空拒降/drift，0161/0162回归，定向7、后端全量3601通过/3跳过/5612子例、开发wheel通过。已知问题：四类语义validator/正式Owner、Evidence资格/Artifact目标、Trace/Section VALIDATE与Review未完成，Gate3/Pilot/正式发行未通过；Debian13实机按指令跳过。
 
 - 2026-10-12：0.1.0-dev.0/SOL-06-A04 按 DEC-1201 选定 StructuredSolutionSpec 单张类型化 JSONB owned payload 与四类显式语义校验合同；继续闭锁 Root/refs，待独立 Schema/Owner 实施。兼容性/升级/回滚：仅设计记录，无程序、Migration、API、权限或旧数据变化，无需升级。验证：冻结 DM-05/SC-01/02 与当前 0161/0162 静态交叉核对；未运行新业务测试。已知问题：payload Schema、正式 Owner/来源资格/Artifact 目标、Trace/Section VALIDATE、Gate3/Pilot/正式发行未完成，三平台正式兼容未验。
