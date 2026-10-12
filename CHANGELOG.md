@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-12：0.1.0-dev.0/SOL-05-A03-P06-P03 增加 Windows 11 Edge/隔离 PostgreSQL 18.6 章节草案创建页面验收夹具，真实四类候选 GET、CREATE 201、原号原正文重放 201、跨项目隐藏，PG 核对仅一份新版本/收据/审计。兼容性/升级/回滚：仅验证脚本，无 Migration、产品 API/权限/旧数据变化；移除夹具即可回滚。验证：完整脚本两轮 exit 0；临时测试口令随机生成，浏览器/库清理。已知问题：真实断线未注入，正式信任、Server2025、性能/Gate3/Pilot/Release 未验，Debian13 实机依指令跳过。
+
 - 2026-10-12：0.1.0-dev.0/SOL-05-A03-P06-P02 新增 SectionVersion 草案候选选择、创建页及章节入口；当前项目固定 DocumentVersion/已批准需求/合格证据有界读取，未知提交原请求与操作号恢复，成功只标 DRAFT。兼容性/升级/回滚：无 Migration、API/后端/权限/旧数据变化，撤新增前端入口即可回滚。验证：定向7项、前端全量132文件/1752项、typecheck/生产build通过。已知问题：实际 Edge/PG 页面写入留 P03；正式信任、Server2025、性能/Gate3/Pilot/发行未验，Debian13实机依指令跳过。
 
 - 2026-10-12：0.1.0-dev.0/SOL-05-A03-P06-P01 新增 SectionVersion CREATE 前端受控 Session/CSRF/幂等传输客户端，仅 DocumentVersion 正文，严格核对固定输入及 201 回执；未知提交不自动换 Key 重试。兼容性/升级/回滚：无 Migration、后端 API/权限/旧数据变化；撤未接页面的桥接/客户端可回滚。验证：客户端定向4项、前端全量130文件/1745项、typecheck/生产build通过。已知问题：创建候选/页面及真实浏览器写链留 P02/P03，正式目标账户/HTTPS/公钥、Server2025、性能/Gate3/Pilot/发行未验；Debian13实机依指令跳过。

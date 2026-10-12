@@ -61,3 +61,5 @@ SOL-05-A03-P05 按 DEC-1185 增加 SectionVersion 历史只读客户端、项目
 SOL-05-A03-P06-P01 按 DEC-1186 增加 SectionVersion DocumentVersion-only CREATE 前端受控命令桥接和严格 201 固定回执/原 Key 不确定结果合同；当前项目 PM/实施成员外拒绝，Artifact 裸引用关闭。客户端定向与前端全量/typecheck/build通过，页面候选选择及真实浏览器写入留 P02/P03；后端、Schema/API/权限不变。详见 `docs/progress/sol-05-a03-p06-p01-section-version-create-client.md`。本 CR 保持 OPEN。
 
 SOL-05-A03-P06-P02 按 DEC-1187 增加项目内 DocumentVersion/Requirement/Evidence 有界候选、草案创建页和章节入口；无资格/不完整分页失败关闭，未知提交保存原 Key/内容并仅显式确认重试。定向7项、前端全量132文件/1752项、typecheck/生产build通过；真实 Edge/PG 页面写入留 P03，正式信任和 Gate3 不变。详见 `docs/progress/sol-05-a03-p06-p02-section-version-create-view.md`。本 CR 保持 OPEN。
+
+SOL-05-A03-P06-P03 使用 Win11 Edge/一次性 PG18.6 从真实页面核对 Document/Version/Requirement/Evidence 候选 GET、CREATE 201、原 Key/Body 页面恢复后重放 201 并指向同一版本、跨项目隐藏；数据库版本/首次结果/收据/审计均只新增一条。两轮脚本 exit0，随机测试口令不入库；未注入真实断线，不标正式信任或 Gate3。详见 `docs/progress/sol-05-a03-p06-p03-section-version-browser.md`。本 CR 保持 OPEN。
