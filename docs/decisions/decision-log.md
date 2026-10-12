@@ -11275,3 +11275,10 @@
 - Decision：仅从当前项目活动 Document 的 AVAILABLE 固定版本选正文，项目内已批准 Requirement 和当前 ELIGIBLE Evidence 可多选；候选分页须完整且有界，重复游标、跨范围身份、重复项或截断均停止新建。页面使用人可读标题与查看链接，避免裸 UUID 输入；后端 CREATE Owner 在同事务重验。提交前将原 Key、请求体、项目/章节/操作者写入同会话存储；任何不确定结果保留原号和原内容，仅经显式核对重试，不自动换号。创建成功只称 DRAFT。
 - Reason：候选显示不能代替提交资格证明，且网络断开时版本可能已经创建；若换号或改正文重试会形成重复版本。用户需要可核对来源的入口，而非手工填写内部标识。
 - Impact/Rollback：仅 Solution 前端候选/页面、既有章节详情入口、路由与测试；无 Schema、Migration、冻结 API、权限或后端变更。移除页面入口即可回滚，既有版本与原冻结基线不变。实际 Edge/PG 页面写入留 P03，正式信任与客户确认仍未通过。
+
+# DEC-20261012-1188：SectionVersion VALIDATE 报告缺证明时失败关闭
+
+- Date/WBS：2026-10-12 / `SOL-05-A04-P02`；依据冻结 API-04 `SOL_SECTION_VERSION_VALIDATE`、DM-05、CR-SOL-003、A04-P01 前置核查与既有 SurveyVersion VALIDATE 首响应收据/Audit 模式。
+- Decision：内部命令仅绑定 Project/Section/固定 Version 与原 Idempotency-Key，不包含动态证明；请求指纹对身份稳定，同 Key 首次报告由未来 Owner 的同事务 Audit 与收据保存，重放返回首次报告而不重新采样来源。报告按完整性、正文、需求、证据、Trace、Spec 六维显式 `PASS/FAIL/UNAVAILABLE`，缺适配器、空白证明或异常一律不得算 PASS。`valid` 只表示固定内容与当前来源四维均 PASS，`ready_for_review` 还须 Trace/Spec 均 PASS 且版本为 DRAFT；报告不修改版本、不批准 Review。此项先实现合同与纯规则测试，真实证明/持久幂等/审计 Owner 另切片。
+- Reason：冻结接口只要求 evidence/trace/spec 报告，而 StructuredSpec/Trace 尚无可用的章节验证 Owner；若用默认真值或省略字段会把草案误报为可评审。将 Audit ID/观察时间与首次报告合同锁定，避免以后同号重放因现时资格漂移而改变既有审计结论。
+- Impact/Rollback：无冻结路径/角色、Schema、迁移、历史数据或依赖变更；新增内部合同可移除回滚，不开放 HTTP。后续 Owner 必须证明所注入事实的可信来源及回执一致性，不能把合同单元测试当实际 VALIDATE 验收。

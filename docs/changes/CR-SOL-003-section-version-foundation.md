@@ -65,3 +65,5 @@ SOL-05-A03-P06-P02 按 DEC-1187 增加项目内 DocumentVersion/Requirement/Evid
 SOL-05-A03-P06-P03 使用 Win11 Edge/一次性 PG18.6 从真实页面核对 Document/Version/Requirement/Evidence 候选 GET、CREATE 201、原 Key/Body 页面恢复后重放 201 并指向同一版本、跨项目隐藏；数据库版本/首次结果/收据/审计均只新增一条。两轮脚本 exit0，随机测试口令不入库；未注入真实断线，不标正式信任或 Gate3。详见 `docs/progress/sol-05-a03-p06-p03-section-version-browser.md`。本 CR 保持 OPEN。
 
 SOL-05-A04-P01 静态核查确认冻结 SectionVersion VALIDATE 有路径/角色/报告类别但无内部 Owner/HTTP/Windows 装配；0160 Guard 仍禁止不可变版本 UPDATE/DELETE/TRUNCATE。StructuredSpec/Trace 当前事实不能伪造通过，后续报告合同须显式缺项、同请求幂等/审计及固定版本绑定，不把 CREATE 当 VALIDATE。详见 `docs/progress/sol-05-a04-p01-section-version-validate-precheck.md`。本 CR 保持 OPEN。
+
+SOL-05-A04-P02 按 DEC-1188 建立内部命令身份/首次报告合同：固定版本与原 Key 指纹、六维显式 PASS/FAIL/UNAVAILABLE、完整性/来源 valid 与 Trace/Spec/草案 ready_for_review 分离，默认缺证明不就绪；Audit reason 严格六位编码以支持未来同号恢复。纯合同定向26、后端全量3573通过/3跳过、开发wheel生成通过；实际 Owner/持久收据/Audit/HTTP/Windows 未接线，Gate3不变；详见 `docs/progress/sol-05-a04-p02-section-version-validate-contract.md`。本 CR 保持 OPEN。
