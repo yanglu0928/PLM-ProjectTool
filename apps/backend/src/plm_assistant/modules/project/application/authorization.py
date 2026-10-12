@@ -57,6 +57,9 @@ POLICIES: dict[str, _Policy] = {
     "SOL_SECTION_VERSION_CREATE": _Policy(
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True,
     ),
+    "SOL_STRUCTURED_SPEC_CREATE": _Policy(
+        frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True,
+    ),
     "SOL_SECTION_VERSION_VALIDATE": _Policy(
         frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}), True,
     ),

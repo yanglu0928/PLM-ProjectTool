@@ -1,5 +1,11 @@
 # 自主决策记录
 
+## DEC-20261012-1203：SOL-06 受权创建沿用同事务收据与审计
+
+- Date/WBS：2026-10-12 / `SOL-06-A09-P03`；依据冻结 SOL-06、A07/A08、0164/P02 和既有 SectionVersion Owner。实施中发现仅需新增项目内部操作策略，不涉及冻结 `/api/v1`、Schema 或新 License 权益。
+- Decision：仅 ProjectManager/ImplementationMember 可创建；每次含重放均重检当前 Session/CSRF、License 和项目授权，首次请求在一个事务内完成现时来源证明、完整 DRAFT、Audit 与持久收据。历史同号重放返回原 201 快照，不用当前来源撤回去篡改历史。附件无正式 OutputArtifact Owner 前继续拒绝。
+- Risk/Migration/Rollback/Verification：无数据迁移与旧 API 变化；授权策略和未装配内部服务可撤，已写历史不可删除。以可弃 Win11 PG18.6 的跨项目、License、CSRF、并发同号、审计失败回滚及全量回归验证；合成信任不冒充正式环境，Gate3/Pilot 保持未通过。
+
 ## DEC-20261009-1140：Document 固定来源校验只返回摘要
 
 - Date/WBS：2026-10-09 / `SOL-03-A04-P02-P02-P01`；依据 CR-SOL-016、Document 现有受权浏览/下载接口、当前 Reference 账本证明。
