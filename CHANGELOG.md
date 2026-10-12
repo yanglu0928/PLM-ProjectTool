@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-12：0.1.0-dev.0/SOL-06-A03 新增 `20261012_0162` 四类闭锁 StructuredSolutionSpec 固定引用及 ORM；Requirement/Section 同项目固定版本复合 FK、Evidence 身份 FK、Artifact 仅非零身份与闭锁占位（OutputArtifact Root 尚不存在）。兼容性/升级/回滚：Windows 11 当前验证；0161 升级不改旧数据，四表全空才可降级，非空历史须保留；无公开 API/权限/依赖变化，Server2025/Debian13 正式兼容未验。验证：Win11可弃PG18.6空/有数据升降、约束/DML负例/非空拒降/drift，0161根表回归，定向7、后端全量3601通过/3跳过/5612子例、开发wheel通过。已知问题：合法业务目标、Evidence现时资格/Artifact真实目标、typed payload/正式Owner/Trace/Section VALIDATE与Review未验或未完成，Gate3/Pilot/正式发行未通过；Debian13实机按指令跳过。
+
 - 2026-10-12：0.1.0-dev.0/SOL-06-A02 新增 `20261012_0161` 闭锁 StructuredSolutionSpec 版本根及 ORM；四类专项类型、series 升版身份、Project/前驱/Review 约束已建立，但全部 DML/TRUNCATE 拒绝。兼容性/升级/回滚：Windows 11 当前验证；从0160无数据回填升级，只有SOL-06表为空才可降级，非空历史必须保留；无公开API/权限/依赖变化，Server2025/Debian13正式兼容未验。验证：Win11可弃PG18.6空/有数据升降、约束/DML负例/非空拒降/drift，迁移清单定向7、后端全量3601通过/3跳过/5612子例、开发wheel通过。已知问题：typed payload/四类引用/正式Owner/Trace/Section VALIDATE与Review未完成，Gate3/Pilot/正式发行未通过；Debian13实机按指令跳过。
 
 - 2026-10-12：0.1.0-dev.0/SOL-06-A01 核对冻结 StructuredSolutionSpec 版本根、四类引用/类型校验与现有 ORM/0160 缺口，按 DEC-1198 确定闭锁 Schema 优先的实施顺序。兼容性/升级/回滚：仅文档审计，无程序、Migration、API 或数据变化；无需升级。验证：静态基线交叉核查，未运行新的业务测试。已知问题：SOL-06/Section 固定 Spec 引用和六维可送审仍缺；正式信任/Server2025/性能/Gate3/Pilot/发行未通过，Debian13 实机按指令跳过。

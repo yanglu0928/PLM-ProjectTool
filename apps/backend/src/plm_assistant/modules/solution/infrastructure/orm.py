@@ -581,6 +581,136 @@ class StructuredSolutionSpecRow(Base):
         server_default=text("statement_timestamp()"))
 
 
+class StructuredSpecRequirementRefRow(Base):
+    __tablename__ = "sol_spec_requirement_refs"
+    __table_args__ = (
+        UniqueConstraint("structured_solution_spec_id", "ordinal",
+                         name="uq_sol_spec_requirements__version_ordinal"),
+        UniqueConstraint("structured_solution_spec_id", "requirement_id",
+                         name="uq_sol_spec_requirements__version_requirement"),
+        UniqueConstraint("structured_solution_spec_id", "requirement_version_id",
+                         name="uq_sol_spec_requirements__version_req_version"),
+        ForeignKeyConstraint(
+            ["structured_solution_spec_id", "spec_series_id", "project_id"],
+            ["plm.sol_structured_specs.structured_solution_spec_id",
+             "plm.sol_structured_specs.spec_series_id",
+             "plm.sol_structured_specs.project_id"],
+            name="fk_sol_spec_requirements__spec", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["requirement_version_id", "requirement_id", "project_id"],
+            ["plm.req_requirement_versions.requirement_version_id",
+             "plm.req_requirement_versions.requirement_id",
+             "plm.req_requirement_versions.project_id"],
+            name="fk_sol_spec_requirements__requirement", ondelete="NO ACTION"),
+        CheckConstraint("ordinal>0", name="ck_sol_spec_requirements__ordinal"),
+        Index("ix_sol_spec_requirements__target", "requirement_version_id",
+              "structured_solution_spec_id"),
+        {"schema": "plm"},
+    )
+    spec_requirement_ref_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    structured_solution_spec_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    spec_series_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    requirement_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    requirement_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class StructuredSpecSectionRefRow(Base):
+    __tablename__ = "sol_spec_section_refs"
+    __table_args__ = (
+        UniqueConstraint("structured_solution_spec_id", "ordinal",
+                         name="uq_sol_spec_sections__version_ordinal"),
+        UniqueConstraint("structured_solution_spec_id", "solution_section_id",
+                         name="uq_sol_spec_sections__version_section"),
+        UniqueConstraint("structured_solution_spec_id", "solution_section_version_id",
+                         name="uq_sol_spec_sections__version_section_version"),
+        ForeignKeyConstraint(
+            ["structured_solution_spec_id", "spec_series_id", "project_id"],
+            ["plm.sol_structured_specs.structured_solution_spec_id",
+             "plm.sol_structured_specs.spec_series_id",
+             "plm.sol_structured_specs.project_id"],
+            name="fk_sol_spec_sections__spec", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["solution_section_version_id", "solution_section_id", "project_id"],
+            ["plm.sol_section_versions.solution_section_version_id",
+             "plm.sol_section_versions.solution_section_id",
+             "plm.sol_section_versions.project_id"],
+            name="fk_sol_spec_sections__section", ondelete="NO ACTION"),
+        CheckConstraint("ordinal>0", name="ck_sol_spec_sections__ordinal"),
+        Index("ix_sol_spec_sections__target", "solution_section_version_id",
+              "structured_solution_spec_id"),
+        {"schema": "plm"},
+    )
+    spec_section_ref_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    structured_solution_spec_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    spec_series_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    solution_section_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    solution_section_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class StructuredSpecEvidenceRefRow(Base):
+    __tablename__ = "sol_spec_evidence_refs"
+    __table_args__ = (
+        UniqueConstraint("structured_solution_spec_id", "ordinal",
+                         name="uq_sol_spec_evidence__version_ordinal"),
+        UniqueConstraint("structured_solution_spec_id", "evidence_id",
+                         name="uq_sol_spec_evidence__version_evidence"),
+        ForeignKeyConstraint(
+            ["structured_solution_spec_id", "spec_series_id", "project_id"],
+            ["plm.sol_structured_specs.structured_solution_spec_id",
+             "plm.sol_structured_specs.spec_series_id",
+             "plm.sol_structured_specs.project_id"],
+            name="fk_sol_spec_evidence__spec", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["evidence_id"], ["plm.evd_evidence_records.evidence_id"],
+                             name="fk_sol_spec_evidence__evidence", ondelete="NO ACTION"),
+        CheckConstraint("ordinal>0", name="ck_sol_spec_evidence__ordinal"),
+        Index("ix_sol_spec_evidence__target", "evidence_id",
+              "structured_solution_spec_id"),
+        {"schema": "plm"},
+    )
+    spec_evidence_ref_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    structured_solution_spec_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    spec_series_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    evidence_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class StructuredSpecArtifactRefRow(Base):
+    __tablename__ = "sol_spec_artifact_refs"
+    __table_args__ = (
+        UniqueConstraint("structured_solution_spec_id", "ordinal",
+                         name="uq_sol_spec_artifacts__version_ordinal"),
+        UniqueConstraint("structured_solution_spec_id", "output_artifact_id",
+                         name="uq_sol_spec_artifacts__version_artifact"),
+        ForeignKeyConstraint(
+            ["structured_solution_spec_id", "spec_series_id", "project_id"],
+            ["plm.sol_structured_specs.structured_solution_spec_id",
+             "plm.sol_structured_specs.spec_series_id",
+             "plm.sol_structured_specs.project_id"],
+            name="fk_sol_spec_artifacts__spec", ondelete="NO ACTION"),
+        CheckConstraint("ordinal>0", name="ck_sol_spec_artifacts__ordinal"),
+        CheckConstraint("output_artifact_id<>'00000000-0000-0000-0000-000000000000'::uuid",
+                        name="ck_sol_spec_artifacts__identity"),
+        Index("ix_sol_spec_artifacts__target", "output_artifact_id",
+              "structured_solution_spec_id"),
+        {"schema": "plm"},
+    )
+    spec_artifact_ref_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    structured_solution_spec_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    spec_series_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    output_artifact_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
 class ReferenceSolutionRow(Base):
     __tablename__ = "sol_reference_solutions"
     __table_args__ = (

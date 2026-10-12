@@ -198,6 +198,8 @@ class OrmMetadataTests(unittest.TestCase):
                       'plm.sol_section_version_create_results',
                       'plm.sol_section_requirement_refs', 'plm.sol_section_evidence_refs',
                       'plm.sol_structured_specs',
+                      'plm.sol_spec_requirement_refs', 'plm.sol_spec_section_refs',
+                      'plm.sol_spec_evidence_refs', 'plm.sol_spec_artifact_refs',
                       'plm.sol_reference_solutions', 'plm.sol_reference_versions',
                       'plm.sol_reference_revise_results',
                       'plm.sol_reference_eligibility_events',

@@ -11359,3 +11359,10 @@
 - Decision：新增独立不可变版本 Root `sol_structured_specs`：`structured_solution_spec_id` 为版本 ID，`spec_series_id` 分组，Project/Type/版本号/状态/指纹/前驱/Review/创建者及时间为最小闭锁身份。Type 只允许四类正式专项；同 series 的版本号唯一，前驱复合 FK 固定 series/Project/Type，预留 child 同项目复合 FK。所有 INSERT/UPDATE/DELETE/TRUNCATE 由专用 Guard 拒绝，直到 payload、四类固定引用、授权写 Owner 和完整提交约束具备证据才由后续独立迁移开放。类型化 payload 的 JSONB/表选型不在本项定稿。
 - Reason：直接开放空壳 Root 会形成可引用但无有效 typed payload/来源的假专项；闭锁 Foundation 允许先验证冻结身份/隔离与可逆升级，同时不改变 Section 0160 Guard 或已存历史。
 - Impact/Rollback：追加 `0161`、ORM 与验证，不修改旧迁移/API/权限/依赖/客户数据。空表可降回 `0160`；任何真实或异常历史均拒绝降级并需保留审计处理，禁止生产清空回退。空/有数据升级、空历史降级重升、非空拒降、约束/DML 负例、drift、全量回归与开发 wheel 为验收；Gate3/Pilot 不因闭锁表放行。
+
+# DEC-20261012-1200：SOL-06 四类闭锁固定引用
+
+- Date/WBS：2026-10-12 / `SOL-06-A03`；依据 Gate 2 SC-01 SOL-06 四类 owned refs、SC-02 PROJECT child/复合 FK 与 0161 闭锁版本根。
+- Decision：四张子表均保存 Spec version/series/Project 与 1-based ordinal，复合 FK 回 0161 Root、版本内 ordinal/目标唯一。Requirement child 保存 RequirementId+VersionId 并用同项目复合 FK；Section child 保存 SectionId+VersionId 并用同项目复合 FK；Evidence child 固定 EvidenceId FK，GLOBAL/PROJECT 现时资格留 Owner；Artifact child 固定 OutputArtifactId，但现有 OutputArtifact Root 未实现，暂不建立虚假目标 FK、所有 DML/TRUNCATE 一律闭锁。后续真实 Artifact Owner/表到位前不得开放该子集写入或标为来源有效。
+- Reason：冻结 SC-01 要求四类固定引用，现有真实 Requirement/Section 可由数据库约束，同一 Scope 的 Evidence/Artifact 当前有效性不能凭裸 UUID 证明。闭锁 Schema 可先验证隔离和历史结构，避免把未实现的 OutputArtifact 伪造成已存在。
+- Impact/Rollback：追加 0162 与 ORM，不修改冻结 API/权限/0161/既有数据；四表全空可降回 0161，任一非空拒降并保留历史。须验空/有数据升降、合法/非法 FK/ordinal/重复、DML 闭锁、drift 与回归；真实 OutputArtifact 前置仍 OPEN，不能开放 SOL-06/章节可送审。

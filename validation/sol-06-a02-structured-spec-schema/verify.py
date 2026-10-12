@@ -82,7 +82,10 @@ def verify(port: int) -> None:
     with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
                          dbname="postgres", autocommit=True) as db:
         rejects("write Owner is not installed", lambda: db.execute(insert, values))
-        rejects("history cannot be truncated", lambda: db.execute(f"TRUNCATE {TABLE}"))
+        # At 0162, child FKs reject a bare parent TRUNCATE before its guard runs.
+        rejects("cannot truncate a table referenced", lambda: db.execute(f"TRUNCATE {TABLE}"))
+        rejects("history cannot be truncated",
+                lambda: db.execute(f"TRUNCATE {TABLE} CASCADE"))
         db.execute(f"ALTER TABLE {TABLE} DISABLE TRIGGER trg_sol_specs__owner")
         try:
             db.execute(insert, values)
