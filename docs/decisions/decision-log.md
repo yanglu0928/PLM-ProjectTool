@@ -11268,3 +11268,10 @@
 - Decision：先新增 DocumentVersion-only 的 SectionVersion DRAFT 严格客户端与 Session 命令方法；结构拒绝 Artifact 裸引用、跨项目/非写角色、重复固定引用及过大声明。服务端 201 必须与原请求身份/固定输入/Location/Trace/计数一致，否则标为结果不确定，保留原 Key 和原内容供下一 UI 切片受控核对，绝不自动换号重试。候选选择、表单、sessionStorage 恢复与浏览器写链留 P02/P03。
 - Reason：CREATE 是可能已提交的写命令，传输失败不能被普通重试当作未写入；先把命令及回执边界独立验收，避免 UI 状态掩盖协议错误。
 - Impact/Rollback：仅前端 Auth 命令桥接、Solution 客户端和测试；无后端/API Breaking、Schema/Migration、权限或历史数据变化；撤未接 UI 的客户端即可回滚。正式来源资格仍由后端同事务证明，客户端校验不代替它。
+
+# DEC-20261012-1187：SectionVersion 草案页面按项目候选和原操作恢复
+
+- Date/WBS：2026-10-12 / `SOL-05-A03-P06-P02`；依据冻结 API-04、CR-SOL-003、A02-P12 Windows/PG CREATE、P06-P01 客户端及 P05 章节历史页面。
+- Decision：仅从当前项目活动 Document 的 AVAILABLE 固定版本选正文，项目内已批准 Requirement 和当前 ELIGIBLE Evidence 可多选；候选分页须完整且有界，重复游标、跨范围身份、重复项或截断均停止新建。页面使用人可读标题与查看链接，避免裸 UUID 输入；后端 CREATE Owner 在同事务重验。提交前将原 Key、请求体、项目/章节/操作者写入同会话存储；任何不确定结果保留原号和原内容，仅经显式核对重试，不自动换号。创建成功只称 DRAFT。
+- Reason：候选显示不能代替提交资格证明，且网络断开时版本可能已经创建；若换号或改正文重试会形成重复版本。用户需要可核对来源的入口，而非手工填写内部标识。
+- Impact/Rollback：仅 Solution 前端候选/页面、既有章节详情入口、路由与测试；无 Schema、Migration、冻结 API、权限或后端变更。移除页面入口即可回滚，既有版本与原冻结基线不变。实际 Edge/PG 页面写入留 P03，正式信任与客户确认仍未通过。

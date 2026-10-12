@@ -59,3 +59,5 @@ SOL-05-A03-P04 按 DEC-1184 将历史 GET/LIST 接入 Windows 显式平台读/�
 SOL-05-A03-P05 按 DEC-1185 增加 SectionVersion 历史只读客户端、项目内列表/详情入口和固定来源警示；不根据固定 UUID 推断当前资格或文档 Locator。前端客户端/页面定向及全量/typecheck/build、Win11 Edge→Uvicorn→一次性 PG18.6 合成成员实际列表/详情双 GET 200 和跨项目隐藏通过。CREATE UI、VALIDATE/Review、正式目标信任与 Gate3 仍待；详见 `docs/progress/sol-05-a03-p05-section-version-history-ui.md`。本 CR 保持 OPEN。
 
 SOL-05-A03-P06-P01 按 DEC-1186 增加 SectionVersion DocumentVersion-only CREATE 前端受控命令桥接和严格 201 固定回执/原 Key 不确定结果合同；当前项目 PM/实施成员外拒绝，Artifact 裸引用关闭。客户端定向与前端全量/typecheck/build通过，页面候选选择及真实浏览器写入留 P02/P03；后端、Schema/API/权限不变。详见 `docs/progress/sol-05-a03-p06-p01-section-version-create-client.md`。本 CR 保持 OPEN。
+
+SOL-05-A03-P06-P02 按 DEC-1187 增加项目内 DocumentVersion/Requirement/Evidence 有界候选、草案创建页和章节入口；无资格/不完整分页失败关闭，未知提交保存原 Key/内容并仅显式确认重试。定向7项、前端全量132文件/1752项、typecheck/生产build通过；真实 Edge/PG 页面写入留 P03，正式信任和 Gate3 不变。详见 `docs/progress/sol-05-a03-p06-p02-section-version-create-view.md`。本 CR 保持 OPEN。

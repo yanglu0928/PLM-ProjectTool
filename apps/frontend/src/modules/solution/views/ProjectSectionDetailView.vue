@@ -17,6 +17,11 @@ function mayRead() {
   return mounted && !!session.view && !session.view.password_change_required
     && session.view.authorized_projects.some(item => item.project_id === projectId());
 }
+function mayCreate() {
+  return mayRead() && session.canSubmit && session.view!.authorized_projects.some(item =>
+    item.project_id === projectId()
+    && (item.role === "PROJECT_MANAGER" || item.role === "IMPLEMENTATION_MEMBER"));
+}
 async function load() {
   if (!mayRead() || busy.value) return;
   const project = projectId(), section = sectionId(), run = ++generation;
@@ -48,6 +53,8 @@ onUnmounted(() => { mounted = false; generation += 1; });
       <button type="button" :disabled="busy || !mayRead()" @click="load()">{{ busy ? "正在读取…" : "重新读取章节" }}</button>
       <p v-if="error" role="alert">{{ error }}</p>
       <template v-if="current"><h2>{{ current.section_key }}</h2>
+        <p v-if="current.section_state === 'ACTIVE' && mayCreate()"><RouterLink :to="{ name: 'project-section-version-create',
+          params: { projectId: current.project_id, sectionId: current.solution_section_id } }">创建章节草案版本</RouterLink></p>
         <p><RouterLink :to="{ name: 'project-section-versions', params: { projectId: current.project_id,
           sectionId: current.solution_section_id } }">查看此章节的版本历史</RouterLink></p>
         <dl><dt>所属目录</dt><dd><RouterLink :to="{ name: 'project-outline-detail', params: {
