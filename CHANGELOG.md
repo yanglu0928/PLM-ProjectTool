@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-12：0.1.0-dev.0/SOL-05-A04-P07 在章节固定版本详情页增加当前来源验证按钮与六维可读报告、维护提示及 Audit/观察时间；不确定结果同号确认重试，客户成员只读。兼容性/升级/回滚：无 Migration、冻结 API/后端/旧数据变化；撤页面入口可回滚，审计历史保留。验证：页面定向4项、前端全量134文件/1760项、typecheck/生产build通过。已知问题：真实 Edge/PG 点击、Trace/Spec 可信证明、正式信任/Server2025、性能/Gate3/Pilot/发行未验，Debian13 实机按指令跳过。
+
 - 2026-10-12：0.1.0-dev.0/SOL-05-A04-P06 新增 SectionVersion VALIDATE 前端私有 CSRF 零正文桥接与六维报告客户端，逻辑矛盾/未知结果失败关闭，断线或503保留原操作号；不代替服务端授权或人工确认。兼容性/升级/回滚：无 Migration、冻结 API/后端/旧数据变化；撤未接页面的前端客户端可回滚。验证：定向4项、前端全量133文件/1756项、typecheck/生产build通过；首次测试类型写法失败，修复后复核通过。已知问题：页面、真实 Edge、Trace/Spec、正式信任/Server2025、性能/Gate3/Pilot/发行未验，Debian13 实机按指令跳过。
 
 - 2026-10-12：0.1.0-dev.0/SOL-05-A04-P05 将 SectionVersion VALIDATE 装入 Windows 显式写模式，复用真实 Session/License/三类来源与 PG Audit/收据；缺依赖拒启动，默认/只读模式不开放写。兼容性/升级/回滚：无 Migration、冻结 API Breaking/依赖/旧数据变化；关闭显式组合可停新写入，历史保留。验证：Win11 可弃 PG18.6 真实 ASGI 合成链首次/重放/漂移/实施成员/拒绝及三次 Audit/收据脚本退出0；后端全量3585通过/3跳过/5601子测试、开发 wheel 构建通过。已知问题：Edge UI、Trace/Spec、正式信任/Server2025、性能/Gate3/Pilot/正式发行未验，Debian13 实机按指令跳过。

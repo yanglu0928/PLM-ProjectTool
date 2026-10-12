@@ -11303,3 +11303,10 @@
 - Decision：复用 Auth SessionClient 的私有 CSRF 传输边界，新增严格零正文的章节验证 POST；Solution 客户端只持 Project/Section/Version/原 Idempotency-Key，按当前项目 PM/实施成员视图做预检但不以其代替服务端授权。报告逐字段核对身份、审计/观察 Trace、六维状态、问题码与 valid/ready 推导，矛盾或未知回执标 `UNCERTAIN`；传输断线不自动换 Key 或重试。前端客户端不承担 UI 按钮或正式 Review 放行。
 - Reason：验证可能在断线前已审计并提交收据；另起操作号会生成不同的现时观察，若把不完整回执当成功或失败会误导用户。Session/CSRF 隔离和报告逻辑检验减少跨项目或错误结论展示。
 - Impact/Rollback：仅新增前端桥接/客户端和测试，无 Schema、冻结 API、角色、后端或旧数据变更；撤未接入页面的客户端可回滚。单元、全量前端、typecheck/build 验证；真实浏览器调用留后续 WBS。
+
+# DEC-20261012-1192：SectionVersion 验证报告放在固定版本详情页
+
+- Date/WBS：2026-10-12 / `SOL-05-A04-P07`；依据 P06 客户端、现有章节历史详情和人工确认边界。
+- Decision：详情页只对当前项目 PM/实施成员显示显式验证操作；以 actor/project/section/version 限定 sessionStorage 中尚未确认的原 Idempotency-Key，写入失败拒发送，断线/503/异常回执只允许人工确认后同号重试。成功结果只在当前页面会话内呈现，不把可篡改浏览器缓存当 Audit 真相。六维报告逐项显示结论/问题码/观察时间，`valid` 与 `ready_for_review` 分别说明，既不代替 Review 也不推断文档精确定位。
+- Reason：VALIDATE 虽不修改版本，却写 Audit/收据；重复新号会形成新观察。用户需要看到来源问题与可操作提示，但当前没有来源精确定位/Trace/Spec Owner，不能伪造深链或可评审状态。
+- Impact/Rollback：只改详情视图和测试，无后端/API/Schema/历史数据变动；撤前端视图入口可回滚，服务端既有 Audit 保留。测试权限、首次/重试、路由切换及六维展示，真实 Edge/PG 留后续。
