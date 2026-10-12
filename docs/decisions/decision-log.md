@@ -11296,3 +11296,10 @@
 - Decision：HTTP 外层 `trace_id`/`X-Trace-Id` 始终表示本次请求；报告 `data.observation_trace_id` 明示首次成功审计的 Trace，同 Key 重放时保持首次值。严格零字节请求正文，当前请求重新验证 Session/CSRF/License/项目权限；`200` 只表示已审计报告，不表示业务 valid/ready。默认不挂 Router。
 - Reason：统一 Trace 中间件必为每次 HTTP 响应注入本次请求 Trace，若把重放的旧 Trace 写到外层，会导致 Header/Body 不一致并误导排障。独立暴露首次观察 Trace 保留审计可追溯性且不改变冻结路径/角色。
 - Impact/Rollback：只细化未开放接口的成功投影，不改原冻结 API、Schema、角色或旧数据；撤可选 Router 可关闭，既有 Audit/收据不删。以合同测试核对 Header/Body、本次/首次 Trace、错误及默认关闭。
+
+# DEC-20261012-1191：SectionVersion VALIDATE 前端受控报告客户端
+
+- Date/WBS：2026-10-12 / `SOL-05-A04-P06`；依据冻结 VALIDATE 路径、A04-P04 报告合同与 A04-P05 Windows 显式写链。
+- Decision：复用 Auth SessionClient 的私有 CSRF 传输边界，新增严格零正文的章节验证 POST；Solution 客户端只持 Project/Section/Version/原 Idempotency-Key，按当前项目 PM/实施成员视图做预检但不以其代替服务端授权。报告逐字段核对身份、审计/观察 Trace、六维状态、问题码与 valid/ready 推导，矛盾或未知回执标 `UNCERTAIN`；传输断线不自动换 Key 或重试。前端客户端不承担 UI 按钮或正式 Review 放行。
+- Reason：验证可能在断线前已审计并提交收据；另起操作号会生成不同的现时观察，若把不完整回执当成功或失败会误导用户。Session/CSRF 隔离和报告逻辑检验减少跨项目或错误结论展示。
+- Impact/Rollback：仅新增前端桥接/客户端和测试，无 Schema、冻结 API、角色、后端或旧数据变更；撤未接入页面的客户端可回滚。单元、全量前端、typecheck/build 验证；真实浏览器调用留后续 WBS。
