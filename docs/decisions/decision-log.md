@@ -11352,3 +11352,10 @@
 - Decision：SOL-06 仍按冻结 V-PRJ 版本 Root 实现，不新增可变业务 Root；`spec_series_id` 分组升版，`structured_solution_spec_id` 标识每个不可变版本，四类 Spec 引用作为受控 owned collection。首个可编码切片 A02 建立闭锁的版本根及迁移，随后独立补四类引用、类型化 payload/校验、受权 Owner、HTTP/Windows、Section 固定 Spec 引用与现时资格。SC-01 的类型化表/JSONB 物理候选在 payload 专项切片作证据化选择，不在 A01 静默定稿。任何破坏现有 Section CREATE 冻结请求/回执的做法另立 API/Schema CR。
 - Reason：冻结 API 已有 SOL_SPEC_CREATE/REVISE/GET/VALIDATE/REVIEW，不能把缺实现误当新 Scope；但不能让空壳 Root 或无类型 payload 被误用为正式专项。Root 与后续可写 Owner 分离，迁移先闭锁，可保持历史 Section 及 0160 Guard 不变。
 - Impact/Rollback：A01 仅审计/排序，无产品/Schema/API/权限/数据变化。A02 必须空/有数据升级、空历史降级重升、非空拒降、ORM drift、DML 闭锁与全量回归；正式 Spec/章节六维、Gate3/Pilot 仍 BLOCKED。
+
+# DEC-20261012-1199：SOL-06 闭锁版本根约束
+
+- Date/WBS：2026-10-12 / `SOL-06-A02`；依据 Gate 2 DM-05 的 SOL-06、SC-01 `sol_structured_specs`、SC-02 V-PRJ 与 DEC-1198。
+- Decision：新增独立不可变版本 Root `sol_structured_specs`：`structured_solution_spec_id` 为版本 ID，`spec_series_id` 分组，Project/Type/版本号/状态/指纹/前驱/Review/创建者及时间为最小闭锁身份。Type 只允许四类正式专项；同 series 的版本号唯一，前驱复合 FK 固定 series/Project/Type，预留 child 同项目复合 FK。所有 INSERT/UPDATE/DELETE/TRUNCATE 由专用 Guard 拒绝，直到 payload、四类固定引用、授权写 Owner 和完整提交约束具备证据才由后续独立迁移开放。类型化 payload 的 JSONB/表选型不在本项定稿。
+- Reason：直接开放空壳 Root 会形成可引用但无有效 typed payload/来源的假专项；闭锁 Foundation 允许先验证冻结身份/隔离与可逆升级，同时不改变 Section 0160 Guard 或已存历史。
+- Impact/Rollback：追加 `0161`、ORM 与验证，不修改旧迁移/API/权限/依赖/客户数据。空表可降回 `0160`；任何真实或异常历史均拒绝降级并需保留审计处理，禁止生产清空回退。空/有数据升级、空历史降级重升、非空拒降、约束/DML 负例、drift、全量回归与开发 wheel 为验收；Gate3/Pilot 不因闭锁表放行。

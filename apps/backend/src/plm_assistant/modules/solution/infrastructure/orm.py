@@ -513,6 +513,74 @@ class SolutionSectionEvidenceRefRow(Base):
     ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
 
 
+class StructuredSolutionSpecRow(Base):
+    """Closed SOL-06 immutable version identity; typed payload/refs follow separately."""
+
+    __tablename__ = "sol_structured_specs"
+    __table_args__ = (
+        UniqueConstraint("structured_solution_spec_id", "spec_series_id", "project_id",
+                         name="uq_sol_specs__id_series_project"),
+        UniqueConstraint("structured_solution_spec_id", "spec_series_id", "project_id",
+                         "spec_type", name="uq_sol_specs__id_series_project_type"),
+        UniqueConstraint("spec_series_id", "version_no", name="uq_sol_specs__series_no"),
+        ForeignKeyConstraint(["project_id"], ["plm.prj_projects.project_id"],
+                             name="fk_sol_specs__project", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["created_by"], ["plm.auth_users.user_id"],
+                             name="fk_sol_specs__creator", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["supersedes_version_ref", "spec_series_id", "project_id", "spec_type"],
+            ["plm.sol_structured_specs.structured_solution_spec_id",
+             "plm.sol_structured_specs.spec_series_id",
+             "plm.sol_structured_specs.project_id",
+             "plm.sol_structured_specs.spec_type"],
+            name="fk_sol_specs__supersedes", ondelete="NO ACTION",
+            deferrable=True, initially="DEFERRED",
+        ),
+        ForeignKeyConstraint(["review_ref"], ["plm.rvw_reviews.review_id"],
+                             name="fk_sol_specs__review", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["review_round_ref"], ["plm.rvw_review_rounds.review_round_id"],
+                             name="fk_sol_specs__round", ondelete="NO ACTION"),
+        CheckConstraint("spec_series_id<>'00000000-0000-0000-0000-000000000000'::uuid",
+                        name="ck_sol_specs__series"),
+        CheckConstraint("version_no>0", name="ck_sol_specs__number"),
+        CheckConstraint("spec_type IN ('PROCESS_MODEL','INTERFACE_SPEC',"
+                        "'MIGRATION_SPEC','PERMISSION_DESIGN')",
+                        name="ck_sol_specs__type"),
+        CheckConstraint("version_state IN ('DRAFT','IN_REVIEW','APPROVED',"
+                        "'RETURNED','SUPERSEDED','RESTRICTED')",
+                        name="ck_sol_specs__state"),
+        CheckConstraint("octet_length(content_fingerprint)=32",
+                        name="ck_sol_specs__fingerprint"),
+        CheckConstraint("supersedes_version_ref IS NULL OR "
+                        "supersedes_version_ref<>structured_solution_spec_id",
+                        name="ck_sol_specs__supersedes_not_self"),
+        CheckConstraint("(review_ref IS NULL AND review_round_ref IS NULL) OR "
+                        "(review_ref IS NOT NULL AND review_round_ref IS NOT NULL)",
+                        name="ck_sol_specs__review_pair"),
+        CheckConstraint("isfinite(created_at)", name="ck_sol_specs__created_at"),
+        Index("ix_sol_specs__series_created", "spec_series_id", "created_at"),
+        Index("ix_sol_specs__project_type", "project_id", "spec_type", "version_state"),
+        {"schema": "plm"},
+    )
+
+    structured_solution_spec_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    spec_series_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    spec_type: Mapped[str] = mapped_column(Text, nullable=False)
+    version_no: Mapped[int] = mapped_column(Integer, nullable=False)
+    version_state: Mapped[str] = mapped_column(Text, nullable=False,
+                                               server_default=text("'DRAFT'"))
+    content_fingerprint: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
+    supersedes_version_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    review_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    review_round_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"))
+
+
 class ReferenceSolutionRow(Base):
     __tablename__ = "sol_reference_solutions"
     __table_args__ = (
