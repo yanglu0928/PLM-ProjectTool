@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-16：0.1.0-dev.0/SOL-06-A11-P05 将专项版本列表接入 Windows 显式只读/读写平台，以当前服务账户专用 Credential Manager 密钥签名分页；缺密钥或读取异常拒绝启动并释放数据库运行时，默认模式继续关闭。兼容性/升级/回滚：无 Migration、冻结 API Breaking、依赖或旧数据变化；升级前必须为实际服务账户供给、备份并验证 `project-structured-spec-version-list-cursor-v1`，回滚旧程序可保留密钥和历史。验证：定向50项/55子例、后端全量3648通过/3跳过/5745子例；Win11可弃PG18.6真实HTTP创建后两页/成员/隔离/Session/License/查询边界、密钥失密恢复和原创建链通过；wheel 1399条目。首次全量17失败为测试公共装配缺口，修正后全绿且未放宽fail-closed。已知问题：正式服务账户/公钥/License信任、UI/Edge、Server2025/Debian13、专项修订/验证/送审、OutputArtifact、章节六维、Gate 3/Pilot/正式发行仍待。
+
 - 2026-10-16：0.1.0-dev.0/SOL-06-A11-P04 新增默认关闭的冻结专项列表 GET：严格 page_size/cursor、受信 Host/Session、签名分页、最小版本摘要、统一 trace/no-store；默认应用和只读组合中的 POST 均保持 404。兼容性/升级/回滚：可选 Router，无 Migration、依赖、现有 GET/CREATE 或旧数据变化，不装配即回滚。验证：联合定向11项/25子例、后端全量3644项通过/3跳过/5735子例、wheel 1398条目含路由。已知问题：Windows独立密钥与真实HTTP/PG、UI/Edge、专项修订/验证/送审、OutputArtifact、章节六维、Gate 3/Pilot/正式发行仍待。
 
 - 2026-10-16：0.1.0-dev.0/SOL-06-A11-P03 新增结构化专项版本列表的独立 HMAC 游标，绑定 family、Session 摘要、ProjectId、page_size 和 `before_spec_id`；篡改、跨密钥/family/会话/项目/查询均统一拒绝。兼容性/升级/回滚：未装配 codec，无 Migration、公开 API 行为、依赖或旧数据变化，可直接撤回。验证：定向3项/12子例通过。已知问题：正式密钥来源/备份恢复、HTTP/Windows/UI/Edge、专项修订/验证/送审、OutputArtifact、章节六维、Gate 3/Pilot/正式发行仍待。

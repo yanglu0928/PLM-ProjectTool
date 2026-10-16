@@ -29,6 +29,8 @@ from plm_assistant.modules.solution.api.outline_version_list_cursor import Outli
 from plm_assistant.modules.solution.api.section_create import create_section_create_router
 from plm_assistant.modules.solution.api.section_version_create import create_section_version_create_router
 from plm_assistant.modules.solution.api.structured_spec_create import create_structured_spec_create_router
+from plm_assistant.modules.solution.api.structured_spec_list import create_structured_spec_list_router
+from plm_assistant.modules.solution.api.structured_spec_list_cursor import StructuredSpecListCursorCodec
 from plm_assistant.modules.solution.api.structured_spec_read import create_structured_spec_read_router
 from plm_assistant.modules.solution.api.section_version_read import create_section_version_read_router
 from plm_assistant.modules.solution.api.section_version_validate import create_section_version_validate_router
@@ -233,6 +235,33 @@ def create_windows_structured_spec_read_router(
         )
         return create_structured_spec_read_router(
             sessions=sessions, origins=origins, reads=service)
+    except Exception:
+        raise ProductionSolutionOutlineStartupError() from None
+
+
+def create_windows_structured_spec_list_router(
+    *, runtime, sessions, origins, license_guard,
+    cursors: StructuredSpecListCursorCodec,
+) -> APIRouter:
+    """Mount SOL_SPEC_LIST only with dedicated cursor and read trust."""
+    if any(value is None for value in (
+            runtime, sessions, origins, license_guard, cursors)):
+        raise ProductionSolutionOutlineStartupError()
+    if type(cursors) is not StructuredSpecListCursorCodec:
+        raise ProductionSolutionOutlineStartupError()
+    try:
+        service = StructuredSpecReadService(
+            unit_of_work=runtime.unit_of_work,
+            access=SqlAlchemyProjectReadAccess(),
+            license_guard=license_guard,
+            authorization=ProjectAuthorizationService(
+                unit_of_work=runtime.unit_of_work,
+                repository=SqlAlchemyProjectAuthorizationRepository()),
+            specs=SqlAlchemyStructuredSpecReadRepository(),
+        )
+        return create_structured_spec_list_router(
+            sessions=sessions, origins=origins, reads=service,
+            cursors=cursors)
     except Exception:
         raise ProductionSolutionOutlineStartupError() from None
 

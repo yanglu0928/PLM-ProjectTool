@@ -11,12 +11,34 @@ from plm_assistant.entrypoints.windows_solution_outline import (
     create_windows_outline_list_router,
     create_windows_outline_read_router,
     create_windows_section_version_read_router,
+    create_windows_structured_spec_list_router,
 )
 from plm_assistant.modules.solution.api.outline_list_cursor import OutlineListCursorCodec
 from plm_assistant.modules.solution.api.section_version_list_cursor import SectionVersionListCursorCodec
+from plm_assistant.modules.solution.api.structured_spec_list_cursor import StructuredSpecListCursorCodec
 
 
 class WindowsSolutionOutlineTests(unittest.TestCase):
+    def test_structured_spec_list_requires_dedicated_cursor_and_read_trust(self):
+        dependencies = dict(
+            runtime=Mock(unit_of_work=Mock()), sessions=Mock(), origins=Mock(),
+            license_guard=Mock(), cursors=StructuredSpecListCursorCodec(b"x" * 32),
+        )
+        router = create_windows_structured_spec_list_router(**dependencies)
+        self.assertEqual(
+            {("GET", "/api/v1/projects/{project_id}/structured-solution-specs"),
+             ("POST", "/api/v1/projects/{project_id}/structured-solution-specs")},
+            {(method, route.path) for route in router.routes for method in route.methods},
+        )
+        for key in dependencies:
+            with self.subTest(key=key), self.assertRaises(
+                    ProductionSolutionOutlineStartupError):
+                create_windows_structured_spec_list_router(
+                    **{**dependencies, key: None})
+        with self.assertRaises(ProductionSolutionOutlineStartupError):
+            create_windows_structured_spec_list_router(
+                **{**dependencies, "cursors": Mock()})
+
     def test_section_version_history_requires_all_read_trust(self):
         dependencies = dict(
             runtime=Mock(unit_of_work=Mock()), sessions=Mock(), origins=Mock(),

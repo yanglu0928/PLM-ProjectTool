@@ -79,6 +79,7 @@ from plm_assistant.entrypoints.windows_solution_outline import (
     create_windows_section_create_router,
     create_windows_section_version_create_router,
     create_windows_structured_spec_create_router,
+    create_windows_structured_spec_list_router,
     create_windows_structured_spec_read_router,
     create_windows_section_version_validate_router,
     create_windows_section_read_router,
@@ -97,6 +98,9 @@ from plm_assistant.entrypoints.windows_solution_section_version_cursor import (
 )
 from plm_assistant.entrypoints.windows_solution_section_cursor import (
     create_windows_section_list_cursor_codec,
+)
+from plm_assistant.entrypoints.windows_solution_structured_spec_cursor import (
+    create_windows_structured_spec_list_cursor_codec,
 )
 from plm_assistant.entrypoints.windows_audit_list_cursor import create_windows_audit_cursor_codec
 from plm_assistant.modules.audit.api.read_events import create_audit_read_router
@@ -656,6 +660,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         solution_section_create_router = None
         solution_section_version_create_router = None
         solution_structured_spec_create_router = None
+        solution_structured_spec_list_router = None
         solution_structured_spec_read_router = None
         solution_section_version_validate_router = None
         solution_section_version_read_router = None
@@ -710,6 +715,11 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             solution_structured_spec_read_router = create_windows_structured_spec_read_router(
                 runtime=runtime, sessions=sessions, origins=origins,
                 license_guard=licenses.guard,
+            )
+            solution_structured_spec_list_router = create_windows_structured_spec_list_router(
+                runtime=runtime, sessions=sessions, origins=origins,
+                license_guard=licenses.guard,
+                cursors=create_windows_structured_spec_list_cursor_codec(),
             )
             global_reference_read_router = (
                 create_windows_global_reference_read_router(
@@ -1841,6 +1851,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             solution_section_create_router=solution_section_create_router,
             solution_section_version_create_router=solution_section_version_create_router,
             solution_structured_spec_create_router=solution_structured_spec_create_router,
+            solution_structured_spec_list_router=solution_structured_spec_list_router,
             solution_structured_spec_read_router=solution_structured_spec_read_router,
             solution_section_version_validate_router=solution_section_version_validate_router,
             solution_section_version_read_router=solution_section_version_read_router,

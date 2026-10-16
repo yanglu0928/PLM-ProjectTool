@@ -40,7 +40,8 @@ def headers(token: bytes, csrf: bytes, key: str) -> dict[str, str]:
 def on_http(*, port, runtime, audit, license_guard, project, other_project,
             token, csrf, member_token, member_csrf, section, requirement,
             requirement_version, evidence, documents, downloads, parse_results,
-            read_router_factory=None, on_read=None, **_unused):
+            read_router_factory=None, list_router_factory=None,
+            list_cursors=None, on_read=None, **_unused):
     sessions = SessionService(
         unit_of_work=runtime.unit_of_work,
         repository=SqlAlchemySessionRepository(),
@@ -62,6 +63,10 @@ def on_http(*, port, runtime, audit, license_guard, project, other_project,
         runtime=runtime, sessions=sessions, origins=origins,
         license_guard=license_guard)
         if read_router_factory is not None else None)
+    list_router = (list_router_factory(
+        runtime=runtime, sessions=sessions, origins=origins,
+        license_guard=license_guard, cursors=list_cursors)
+        if list_router_factory is not None else None)
     with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
                          dbname="postgres", autocommit=True) as db:
         version = db.execute(
@@ -88,6 +93,7 @@ def on_http(*, port, runtime, audit, license_guard, project, other_project,
         assert closed.post(path, headers=headers(token, csrf, "closed-key-000001"),
                            json=body).status_code == 404
     with TestClient(create_app(solution_structured_spec_create_router=router,
+                               solution_structured_spec_list_router=list_router,
                                solution_structured_spec_read_router=read_router),
                     base_url="https://plm.example.test") as app:
         first = app.post(path, headers=headers(token, csrf, "first-key-0000001"),
