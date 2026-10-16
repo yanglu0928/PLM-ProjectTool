@@ -17,7 +17,7 @@ from plm_assistant.modules.solution.application.structured_spec_payload import (
     StructuredSpecPayloadError, validate_structured_spec_payload,
 )
 from plm_assistant.modules.solution.application.structured_spec_result import (
-    StructuredSpecInitialView,
+    StructuredSpecInitialView, StructuredSpecRevisionBase,
 )
 
 from .orm import (
@@ -41,6 +41,94 @@ def _ordered(rows: tuple[object, ...]) -> None:
 
 
 class SqlAlchemyStructuredSpecCreateRepository:
+    def revision_base(self, transaction: object, *, project_id: uuid.UUID,
+                      spec_id: uuid.UUID) -> StructuredSpecRevisionBase | None:
+        if not _id(project_id) or not _id(spec_id):
+            return None
+        session = _session(transaction)
+        identity = session.execute(select(
+            Root.spec_series_id,
+        ).where(
+            Root.structured_solution_spec_id == spec_id,
+            Root.project_id == project_id,
+        )).one_or_none()
+        if identity is None:
+            return None
+        series_id = identity.spec_series_id
+        if not _id(series_id):
+            raise RuntimeError("StructuredSolutionSpec revision base is inconsistent")
+        session.execute(text(
+            "SELECT pg_advisory_xact_lock(hashtextextended("
+            "'plm.sol_structured_specs:' || CAST(:series_id AS text),0))"),
+            {"series_id": series_id})
+        requested = session.execute(select(Root).where(
+            Root.structured_solution_spec_id == spec_id,
+            Root.project_id == project_id,
+            Root.spec_series_id == series_id,
+        ).with_for_update(read=True, of=Root)).scalar_one_or_none()
+        latest = session.execute(select(Root).where(
+            Root.project_id == project_id,
+            Root.spec_series_id == series_id,
+        ).order_by(Root.version_no.desc()).limit(1)
+            .with_for_update(read=True, of=Root)).scalar_one_or_none()
+        states = {
+            "DRAFT", "IN_REVIEW", "APPROVED", "RETURNED",
+            "SUPERSEDED", "RESTRICTED",
+        }
+        if (requested is None or latest is None
+                or requested.project_id != project_id
+                or latest.project_id != project_id
+                or requested.spec_series_id != series_id
+                or latest.spec_series_id != series_id
+                or requested.spec_type != latest.spec_type
+                or requested.version_no < 1
+                or latest.version_no < requested.version_no
+                or requested.version_state not in states
+                or latest.version_state not in states
+                or (requested.supersedes_version_ref is None)
+                != (requested.version_no == 1)
+                or (latest.supersedes_version_ref is None)
+                != (latest.version_no == 1)
+                or (latest.structured_solution_spec_id == spec_id)
+                != (latest.version_no == requested.version_no)):
+            raise RuntimeError("StructuredSolutionSpec revision base is inconsistent")
+        return StructuredSpecRevisionBase(
+            requested.structured_solution_spec_id,
+            latest.structured_solution_spec_id,
+            series_id, project_id, requested.spec_type,
+            requested.version_no, latest.version_no,
+            requested.version_state,
+        )
+
+    def revise(self, transaction: object, *, base: StructuredSpecRevisionBase,
+               version_id: uuid.UUID, actor_id: uuid.UUID,
+               proof: ProvenStructuredSpecSources) -> StructuredSpecInitialView:
+        if (type(base) is not StructuredSpecRevisionBase
+                or not _id(version_id) or not _id(actor_id)
+                or type(proof) is not ProvenStructuredSpecSources):
+            raise ValueError("invalid StructuredSolutionSpec revise input")
+        draft = proof.draft
+        if (base.latest_version_ref != base.structured_solution_spec_id
+                or base.version_state not in {"DRAFT", "RETURNED", "APPROVED"}):
+            raise RuntimeError("StructuredSolutionSpec revision conflict")
+        if (draft.project_id != base.project_id
+                or draft.spec_series_id != base.spec_series_id
+                or draft.supersedes_version_ref
+                != base.structured_solution_spec_id
+                or draft.spec_type != base.spec_type):
+            raise ValueError("StructuredSolutionSpec revision binding changed")
+        result = self.create(
+            transaction, version_id=version_id,
+            actor_id=actor_id, proof=proof)
+        if (result.project_id != base.project_id
+                or result.spec_series_id != base.spec_series_id
+                or result.spec_type != base.spec_type
+                or result.version_no != base.version_no + 1
+                or result.supersedes_version_ref
+                != base.structured_solution_spec_id):
+            raise RuntimeError("StructuredSolutionSpec revision result changed")
+        return result
+
     def create(self, transaction: object, *, version_id: uuid.UUID,
                actor_id: uuid.UUID,
                proof: ProvenStructuredSpecSources) -> StructuredSpecInitialView:

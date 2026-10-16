@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-16：0.1.0-dev.0/SOL-06-A12-P02 新增同事务受锁的专项修订 base 与替代版本 Repository：按项目隐藏跨项目对象，系列 advisory lock 下固定请求/最新版本，完整快照必须绑定同项目/系列/类型/前驱，仅当前 DRAFT/RETURNED/APPROVED 可创建下一不可变版本。兼容性/升级/回滚：无 Migration、冻结 API、License、角色、依赖或旧数据升级；可撤未公开装配的内部方法，已写历史必须保留。验证：定向13项/11子例、后端全量3651通过/3跳过/5753子例、Win11可弃PG18.6两个并发修订仅一个生成完整v3、wheel 1399条目/SHA-256 `3b7915143ad9cf243dd99f7a8723489b6695e26d59be934e0f3e630a94971406`。已知问题：独立Service/权限/回执/Audit、HTTP/Windows/UI未实现；正式信任、Server2025/Debian13、专项验证/送审、OutputArtifact、章节六维、Gate 3/Pilot/正式发行仍待。
+
 - 2026-10-16：0.1.0-dev.0/SOL-06-A12-P01 完成冻结专项修订前置设计：正文沿用完整六字段快照，series/版本/前驱由服务端锁定；允许当前DRAFT/RETURNED/APPROVED产生替代DRAFT，拒绝评审中/受限/陈旧版本；独立权限、幂等收据与Audit，重放在重新鉴权后保持原201。兼容性/升级/回滚：仅决策与进度文档，无Schema/API字段/License/依赖/程序或数据变化；后续可选入口可撤，已写历史须保留。验证：冻结API/DM/0164与当前CREATE/Read/权限/Reference revise先例静态核对。已知问题：修订程序/HTTP/Windows/UI尚未实现；正式信任、Server2025/Debian13、专项验证/送审、OutputArtifact、章节六维、Gate 3/Pilot/正式发行仍待。
 
 - 2026-10-16：0.1.0-dev.0/SOL-06-A11-P07 新增可选 Win11 Edge/一次性PG专项列表验收：浏览器从项目详情进入历史，真实加载50+1签名双页、进入本轮创建的固定详情，跨项目HTTP404并清除旧页面；50条仅由正式Repository预置以触发分页，浏览器创建项保持唯一收据/Audit。兼容性/升级/回滚：仅验收脚本与共享夹具可选list模式，无产品Schema/API/权限/License/依赖/旧数据变化；撤P07模式即可回滚。验证：P07完整链、最终夹具下A10创建→详情回归、Python/Node语法检查通过。已知问题：合成账户/License/密钥不代表正式信任；Server2025/Debian13、专项修订/验证/送审、OutputArtifact、章节六维、Gate 3/Pilot/正式发行仍待。

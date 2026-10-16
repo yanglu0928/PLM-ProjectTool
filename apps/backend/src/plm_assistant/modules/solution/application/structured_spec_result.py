@@ -11,6 +11,18 @@ from .structured_spec_input import SpecRequirementRef, SpecSectionRef
 
 
 @dataclass(frozen=True, slots=True)
+class StructuredSpecRevisionBase:
+    structured_solution_spec_id: uuid.UUID
+    latest_version_ref: uuid.UUID
+    spec_series_id: uuid.UUID
+    project_id: uuid.UUID
+    spec_type: str
+    version_no: int
+    latest_version_no: int
+    version_state: str
+
+
+@dataclass(frozen=True, slots=True)
 class StructuredSpecInitialView:
     structured_solution_spec_id: uuid.UUID
     spec_series_id: uuid.UUID

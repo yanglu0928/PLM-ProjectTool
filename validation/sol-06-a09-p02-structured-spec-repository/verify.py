@@ -136,7 +136,8 @@ def on_created(*, port, runtime, project, other_project, manager, token,
         on_http(port=port, runtime=runtime, project=project,
                 other_project=other_project, manager=manager, token=token,
                 member_token=member_token,
-                first=first, second=second)
+                first=first, second=second, repository=repository,
+                sources=sources, draft=draft)
 
 
 if __name__ == "__main__":
