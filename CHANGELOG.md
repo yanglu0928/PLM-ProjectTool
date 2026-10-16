@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-16：0.1.0-dev.0/SOL-06-A11-P03 新增结构化专项版本列表的独立 HMAC 游标，绑定 family、Session 摘要、ProjectId、page_size 和 `before_spec_id`；篡改、跨密钥/family/会话/项目/查询均统一拒绝。兼容性/升级/回滚：未装配 codec，无 Migration、公开 API 行为、依赖或旧数据变化，可直接撤回。验证：定向3项/12子例通过。已知问题：正式密钥来源/备份恢复、HTTP/Windows/UI/Edge、专项修订/验证/送审、OutputArtifact、章节六维、Gate 3/Pilot/正式发行仍待。
+
 - 2026-10-16：0.1.0-dev.0/SOL-06-A11-P02 新增项目内全部不可变结构化专项版本的受权摘要读取与 UUID 降序 keyset Repository；独立 `SOL_STRUCTURED_SPEC_LIST` 允许当前项目成员锁定读，跨项目、失效会话、畸形页和不完整 payload 失败关闭。兼容性/升级/回滚：内部能力尚未装配 HTTP，无 Migration、外部 API、依赖或旧数据变化，可撤内部方法/策略。验证：定向15项/790子例、Win11可弃PG18.6两版本两页/成员/隔离、后端全量3638项通过/3跳过/5710子例、开发wheel 1396条目通过。已知问题：签名游标、HTTP/Windows/UI/Edge、专项修订/验证/送审、OutputArtifact、章节六维、Gate 3/Pilot/正式发行仍待。
 
 - 2026-10-16：0.1.0-dev.0/SOL-06-A11-P01 完成冻结 `SOL_SPEC_LIST` 前置核查：确定返回项目内全部不可变专项版本摘要，UUIDv7 降序 keyset、独立签名游标绑定会话/项目/查询，详情载荷仍由 `SOL_SPEC_GET` 获取；后续按内部读取→游标→HTTP/Windows→页面/Edge 分项实现。兼容性/升级/回滚：仅设计/决策记录，无程序、Migration、API 行为、权限或依赖变化，无升级动作。验证：冻结 API/DM/SC 与当前 ORM/权限/列表先例静态交叉核对；未运行新程序测试。已知问题：列表尚未实现，专项修订/验证/送审、OutputArtifact、章节六维、Gate 3/Pilot/正式发行仍待。
