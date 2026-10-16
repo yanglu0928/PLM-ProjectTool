@@ -9,6 +9,9 @@ const [origin, project, otherProject, section, _document, _documentVersion,
 const password = process.env.PLM_BROWSER_SYNTHETIC_PASSWORD;
 const detailMode = process.env.PLM_SPEC_DETAIL_ACCEPTANCE === "1";
 const listMode = process.env.PLM_SPEC_LIST_ACCEPTANCE === "1";
+const reviseMode = process.env.PLM_SPEC_REVISE_ACCEPTANCE === "1";
+const staleSpecId = process.env.PLM_STALE_SPEC_ID;
+const currentRequirementVersion = process.env.PLM_CURRENT_REQUIREMENT_VERSION;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 if (!/^http:\/\/127\.0\.0\.1:\d{2,5}$/.test(origin ?? "")
   || ![project, otherProject, section, requirement, requirementVersion,
@@ -17,6 +20,11 @@ if (!/^http:\/\/127\.0\.0\.1:\d{2,5}$/.test(origin ?? "")
   throw new Error("owned synthetic inputs required");
 }
 if (listMode && !detailMode) throw new Error("List acceptance requires detail acceptance");
+if (reviseMode && (!detailMode || !uuid.test(staleSpecId ?? "")
+  || !uuid.test(currentRequirementVersion ?? ""))) {
+  throw new Error("Revise acceptance requires detail, stale spec and current requirement version");
+}
+const activeRequirementVersion = reviseMode ? currentRequirementVersion : requirementVersion;
 const profile = await mkdtemp(join(tmpdir(), "plm-structured-spec-edge-"));
 const cdpPort = 10000 + process.pid % 40000;
 const edge = spawn("C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
@@ -37,7 +45,8 @@ async function findPage() {
   throw new Error("Owned Edge target unavailable");
 }
 let socket; let serial = 0;
-const pending = new Map(); const responses = []; const requests = []; const errors = [];
+const pending = new Map(); const responses = []; const requests = []; const reviseRequests = [];
+const errors = [];
 function send(method, params = {}) {
   const id = ++serial;
   socket.send(JSON.stringify({ id, method, params }));
@@ -90,6 +99,13 @@ try {
       && event.params.request.url === `${origin}${createPath}`) {
       requests.push({ headers: event.params.request.headers, body: event.params.request.postData });
     }
+    if (event.method === "Network.requestWillBeSent"
+      && event.params.request.url.startsWith(
+        `${origin}/api/v1/projects/${project}/structured-solution-specs/`)
+      && event.params.request.url.endsWith(":revise")) {
+      reviseRequests.push({ url: event.params.request.url,
+        headers: event.params.request.headers, body: event.params.request.postData });
+    }
     if (event.method === "Network.responseReceived" && event.params.response.url.includes("/api/")) {
       responses.push({ url: event.params.response.url, status: event.params.response.status });
     }
@@ -136,7 +152,7 @@ try {
   const key = Object.entries(original.headers).find(([name]) => name.toLowerCase() === "idempotency-key")?.[1];
   const body = JSON.parse(original.body);
   if (typeof key !== "string" || body.spec_type !== "MIGRATION_SPEC"
-    || body.requirement_refs?.[0]?.requirement_version_id !== requirementVersion
+    || body.requirement_refs?.[0]?.requirement_version_id !== activeRequirementVersion
     || body.section_refs?.[0]?.solution_section_id !== section
     || body.evidence_ids?.[0] !== evidence || body.artifact_ids?.length !== 0
     || body.payload?.scope !== "Parts") throw new Error("Browser original request mismatch");
@@ -169,7 +185,7 @@ try {
     if (!uuid.test(specId)) throw new Error("Created detail link has no version identity");
     createdSpecId = specId;
     const detailPath = `/api/v1/projects/${project}/structured-solution-specs/${specId}`;
-    await waitFor(`document.body?.innerText?.includes(${JSON.stringify(requirementVersion)}) &&
+    await waitFor(`document.body?.innerText?.includes(${JSON.stringify(activeRequirementVersion)}) &&
       document.body?.innerText?.includes('Old PLM')`, "fixed detail content");
     if (!responses.some(item => item.url === `${origin}${detailPath}` && item.status === 200)) {
       throw new Error("Real detail GET 200 missing");
@@ -183,6 +199,101 @@ try {
       || !detail.requirement?.includes(`/projects/${project}/requirements/${requirement}`)
       || !detail.section?.includes(`/projects/${project}/solution-sections/${section}/versions/`)
       || detail.raw) throw new Error(`Detail projection or fixed links invalid: ${JSON.stringify(detail)}`);
+    if (reviseMode) {
+      await clickText("基于此版本创建修订草案");
+      await waitFor("document.querySelector('#spec-revise-title') && document.querySelector('#revise-source')",
+        "revision form");
+      const prefill = await evaluate(`(()=>({source:document.querySelector('#revise-source')?.value,
+        scope:document.querySelector('#revise-scope')?.value,
+        requirement:document.querySelector(${JSON.stringify(`input[value="${requirement}"]`)})?.checked,
+        section:document.querySelector(${JSON.stringify(`input[value="${section}"]`)})?.checked,
+        evidence:document.querySelector(${JSON.stringify(`input[value="${evidence}"]`)})?.checked}))()`);
+      if (prefill.source !== "Old PLM" || prefill.scope !== "Parts"
+        || !prefill.requirement || !prefill.section || !prefill.evidence) {
+        throw new Error(`Fixed revision prefill mismatch: ${JSON.stringify(prefill)}`);
+      }
+      await setValue("#revise-scope", "Parts and BOM");
+      await evaluate("[...document.querySelectorAll('form input[type=checkbox]')].at(-1)?.click()");
+      await clickText("创建修订 DRAFT");
+      await waitFor("document.body?.innerText?.includes('修订草案。当前仅为 DRAFT')",
+        "created revision DRAFT");
+      const revisePath = `/api/v1/projects/${project}/structured-solution-specs/${specId}:revise`;
+      if (reviseRequests.length !== 1 || reviseRequests[0].url !== `${origin}${revisePath}`
+        || responses.filter(item => item.url === `${origin}${revisePath}`
+          && item.status === 201).length !== 1) {
+        throw new Error("First real REVISE 201 missing");
+      }
+      const originalRevise = reviseRequests[0];
+      const reviseKey = Object.entries(originalRevise.headers)
+        .find(([name]) => name.toLowerCase() === "idempotency-key")?.[1];
+      const csrf = Object.entries(originalRevise.headers)
+        .find(([name]) => name.toLowerCase() === "x-csrf-token")?.[1];
+      const reviseBody = JSON.parse(originalRevise.body);
+      if (typeof reviseKey !== "string" || typeof csrf !== "string"
+        || reviseBody.payload?.scope !== "Parts and BOM"
+        || reviseBody.requirement_refs?.[0]?.requirement_version_id !== activeRequirementVersion
+        || reviseBody.section_refs?.[0]?.solution_section_id !== section
+        || reviseBody.evidence_ids?.[0] !== evidence || reviseBody.artifact_ids?.length !== 0) {
+        throw new Error("Browser revision request mismatch");
+      }
+      const revisedSpecId = await evaluate(`(()=>{const link=[...document.querySelectorAll('a')]
+        .find(node=>node.textContent.trim()==='查看新版本');return link?.pathname.split('/').at(-1)})()`);
+      if (!uuid.test(revisedSpecId)) throw new Error("Revised detail link has no version identity");
+      await evaluate(`(()=>sessionStorage.setItem(${JSON.stringify(
+        `plm.sol.spec.revise.pending.${actor}.${project}.${specId}`)},JSON.stringify(${JSON.stringify({
+        project, predecessor: specId, actor, draft: reviseBody, key: reviseKey,
+      })})))()`);
+      await route(`/projects/${project}/structured-solution-specs/${specId}`);
+      await waitFor("document.querySelector('#spec-detail-title')", "leave revision page");
+      await route(`/projects/${project}/structured-solution-specs/${specId}/revise`);
+      await waitFor("document.body?.innerText?.includes('存在原修订操作')", "revision pending restore");
+      if (await evaluate("document.querySelector('#revise-source')!==null")) {
+        throw new Error("Pending revision allowed changed body");
+      }
+      await evaluate("document.querySelector('form input[type=checkbox]').click()");
+      await clickText("按原操作号重试");
+      await waitFor("document.body?.innerText?.includes('修订草案。当前仅为 DRAFT')",
+        "replayed revision receipt");
+      if (reviseRequests.length !== 2 || reviseRequests[1].body !== originalRevise.body
+        || Object.entries(reviseRequests[1].headers)
+          .find(([name]) => name.toLowerCase() === "idempotency-key")?.[1] !== reviseKey
+        || responses.filter(item => item.url === `${origin}${revisePath}`
+          && item.status === 201).length !== 2) {
+        throw new Error("Original revision key replay changed request or did not return 201");
+      }
+      await clickText("查看新版本");
+      await waitFor("document.querySelector('#spec-detail-title') && document.body.innerText.includes('Parts and BOM')",
+        "revised fixed detail");
+      const revisedReceipt = await evaluate(`(async()=>{const response=await fetch(
+        ${JSON.stringify(`/api/v1/projects/${project}/structured-solution-specs/${revisedSpecId}`)},
+        {credentials:'same-origin',cache:'no-store'});return {status:response.status,body:await response.json()}})()`);
+      if (revisedReceipt.status !== 200 || revisedReceipt.body?.data?.version_no !== 2
+        || revisedReceipt.body?.data?.version_state !== "DRAFT"
+        || revisedReceipt.body?.data?.supersedes_version_ref !== specId
+        || revisedReceipt.body?.data?.payload?.scope !== "Parts and BOM") {
+        throw new Error(`Revised fixed detail mismatch: ${JSON.stringify(revisedReceipt)}`);
+      }
+      const crossReviseStatus = await evaluate(`(async()=>{const response=await fetch(
+        ${JSON.stringify(`/api/v1/projects/${otherProject}/structured-solution-specs/${specId}:revise`)},
+        {method:'POST',credentials:'same-origin',headers:{'Accept':'application/json',
+          'Content-Type':'application/json','Idempotency-Key':${JSON.stringify(reviseKey)},
+          'X-CSRF-Token':${JSON.stringify(csrf)}},body:${JSON.stringify(originalRevise.body)}});
+        return response.status})()`);
+      if (crossReviseStatus !== 404) throw new Error(`Cross-project revise returned ${crossReviseStatus}`);
+      await route(`/projects/${project}/structured-solution-specs/${staleSpecId}/revise`);
+      await waitFor("document.body?.innerText?.includes('系统没有自动替换')",
+        "historical source drift warning");
+      if (await evaluate(`document.querySelector(${JSON.stringify(
+        `input[value="${requirement}"]`)})?.checked!==false`)) {
+        throw new Error("Stale requirement source was silently replaced");
+      }
+      await route(`/projects/${otherProject}/structured-solution-specs/${specId}/revise`);
+      await waitFor("document.body?.innerText?.includes('仅当前项目负责人或实施成员可修订')",
+        "cross-project revision page denied");
+      if (await evaluate("document.querySelector('form')!==null || document.body.innerText.includes('Parts and BOM')")) {
+        throw new Error("Cross-project revision page leaked editable or prior content");
+      }
+    }
     const crossPath = `/api/v1/projects/${otherProject}/structured-solution-specs/${specId}`;
     const directCrossStatus = await evaluate(`(async()=>{
       const response=await fetch(${JSON.stringify(crossPath)},
@@ -258,7 +369,9 @@ try {
   await waitFor("document.body?.innerText?.includes('创建结构化专项草案')", "cross-project route");
   if (await evaluate("document.querySelector('form')!==null")) throw new Error("Cross-project create leaked");
   if (errors.length) throw new Error(`Browser errors: ${JSON.stringify(errors)}`);
-  console.log(listMode
+  console.log(reviseMode
+    ? "STRUCTURED_SPEC_REVISE_EDGE PASS: fixed prefill, real v2 DRAFT, original-key replay, source drift, cross-project hidden"
+    : listMode
     ? "STRUCTURED_SPEC_LIST_EDGE PASS: project entry, signed two-page history, fixed detail, cross-project 404/clear"
     : detailMode
     ? "STRUCTURED_SPEC_DETAIL_EDGE PASS: create/replay, real detail GET, fixed links, cross-project 404/hidden"
