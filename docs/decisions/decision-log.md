@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261016-1207：SOL_SPEC_REVISE 采用服务端绑定前驱的完整快照
+
+- Date/WBS：2026-10-16 / `SOL-06-A12-P01`。依据冻结 `SOL_SPEC_REVISE`、DM-05 不可变版本、0164 与现有同 series Repository。
+- Decision：修订请求沿用 CREATE 的完整 typed payload/ref 六字段，路径 spec_id 作为期望当前前驱；series、版本号和 `supersedes_version_ref` 只由服务端在事务锁内绑定。首次修订要求路径仍为系列最新、类型不变并重证全部来源；允许当前 DRAFT/RETURNED/APPROVED，拒绝 IN_REVIEW/RESTRICTED/SUPERSEDED。前驱不被静默改写，新版本固定为 DRAFT。
+- Idempotency/Audit：使用独立 `SOL_STRUCTURED_SPEC_REVISE`、`V1_SOL_STRUCTURED_SPEC_REVISE`、`SOL_STRUCTURED_SPEC_REVISED`。指纹绑定路径与完整正文；同号重放在重新鉴权后返回原 201，即使后来已有更高版本。首次并发依赖 series advisory/latest row lock，陈旧前驱冲突。
+- Impact/Rollback：不改 Schema、冻结请求字段、License 权益或依赖；后续新增内部锁定读取、Service 和可选 Router。可停用新入口回滚，已写版本/收据/Audit 保留；验证覆盖并发、跨项目、来源漂移、状态、重放和损坏历史。
+
 ## DEC-20261016-1206：SOL_SPEC_LIST 返回全部不可变专项版本
 
 - Date/WBS：2026-10-16 / `SOL-06-A11-P01`。依据冻结 API-04 的 `Spec version page`、DM-05 不可变版本与当前无独立 series/version 子路径。
