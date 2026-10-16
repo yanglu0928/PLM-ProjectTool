@@ -7,6 +7,7 @@ import { join, resolve, sep } from "node:path";
 const [origin, project, otherProject, section, _document, _documentVersion,
   requirement, requirementVersion, evidence] = process.argv.slice(2);
 const password = process.env.PLM_BROWSER_SYNTHETIC_PASSWORD;
+const detailMode = process.env.PLM_SPEC_DETAIL_ACCEPTANCE === "1";
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 if (!/^http:\/\/127\.0\.0\.1:\d{2,5}$/.test(origin ?? "")
   || ![project, otherProject, section, requirement, requirementVersion,
@@ -158,11 +159,48 @@ try {
     || responses.filter(item => item.url === `${origin}${createPath}` && item.status === 201).length !== 2) {
     throw new Error("Original-key replay changed request or did not return 201");
   }
+  if (detailMode) {
+    await clickText("查看专项详情");
+    await waitFor("document.querySelector('#spec-detail-title')", "detail route");
+    const specId = await evaluate("location.pathname.split('/').at(-1)");
+    if (!uuid.test(specId)) throw new Error("Created detail link has no version identity");
+    const detailPath = `/api/v1/projects/${project}/structured-solution-specs/${specId}`;
+    await waitFor(`document.body?.innerText?.includes(${JSON.stringify(requirementVersion)}) &&
+      document.body?.innerText?.includes('Old PLM')`, "fixed detail content");
+    if (!responses.some(item => item.url === `${origin}${detailPath}` && item.status === 200)) {
+      throw new Error("Real detail GET 200 missing");
+    }
+    const detail = await evaluate(`(()=>({text:document.body.innerText,
+      requirement:document.querySelector('a[href*="/requirements/"]')?.getAttribute('href'),
+      section:document.querySelector('a[href*="/solution-sections/"][href*="/versions/"]')?.getAttribute('href'),
+      raw:document.querySelector('.spec-detail pre')!==null}))()`);
+    if (!["数据迁移", "Parts", "old_id", "part_id", "固定来源引用", evidence,
+      "尚无评审记录"].every(part => detail.text.includes(part))
+      || !detail.requirement?.includes(`/projects/${project}/requirements/${requirement}`)
+      || !detail.section?.includes(`/projects/${project}/solution-sections/${section}/versions/`)
+      || detail.raw) throw new Error(`Detail projection or fixed links invalid: ${JSON.stringify(detail)}`);
+    const crossPath = `/api/v1/projects/${otherProject}/structured-solution-specs/${specId}`;
+    const directCrossStatus = await evaluate(`(async()=>{
+      const response=await fetch(${JSON.stringify(crossPath)},
+        {credentials:'same-origin',cache:'no-store'});return response.status})()`);
+    if (directCrossStatus !== 404) throw new Error(`Cross-project detail returned ${directCrossStatus}`);
+    await route(`/projects/${otherProject}/structured-solution-specs/${specId}`);
+    await waitFor("document.body?.innerText?.includes('当前会话没有此项目的读取权限')",
+      "cross-project detail denied");
+    if (await evaluate("document.body.innerText.includes('Old PLM')")) {
+      throw new Error("Cross-project detail retained previous content");
+    }
+    if (responses.some(item => item.url === `${origin}${crossPath}` && item.status === 200)) {
+      throw new Error("Cross-project detail leaked HTTP 200");
+    }
+  }
   await route(`/projects/${otherProject}/structured-solution-specs/new`);
   await waitFor("document.body?.innerText?.includes('创建结构化专项草案')", "cross-project route");
   if (await evaluate("document.querySelector('form')!==null")) throw new Error("Cross-project create leaked");
   if (errors.length) throw new Error(`Browser errors: ${JSON.stringify(errors)}`);
-  console.log("STRUCTURED_SPEC_CREATE_EDGE PASS: current candidates, real DRAFT 201, original-key replay, cross-project hidden");
+  console.log(detailMode
+    ? "STRUCTURED_SPEC_DETAIL_EDGE PASS: create/replay, real detail GET, fixed links, cross-project 404/hidden"
+    : "STRUCTURED_SPEC_CREATE_EDGE PASS: current candidates, real DRAFT 201, original-key replay, cross-project hidden");
 } finally {
   try { socket?.close(); } catch { /* already closed */ }
   edge.kill();

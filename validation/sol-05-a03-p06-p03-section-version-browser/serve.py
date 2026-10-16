@@ -26,6 +26,7 @@ from plm_assistant.entrypoints.windows_solution_outline import (
     create_windows_section_version_read_router,
     create_windows_section_version_validate_router,
     create_windows_structured_spec_create_router,
+    create_windows_structured_spec_read_router,
 )
 from plm_assistant.modules.auth.api.login import create_login_router
 from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
@@ -114,7 +115,9 @@ def _writer(port, project):
 def on_browser(*, port, runtime, audit, license_guard, project, other_project,
                section, document_version, requirement, requirement_version,
                evidence, documents, downloads, parse_results,
-               validation_mode=False, spec_mode=False, **_unused):
+               validation_mode=False, spec_mode=False, detail_mode=False, **_unused):
+    if detail_mode and not spec_mode:
+        raise ValueError("Structured spec detail proof requires spec mode")
     if not (DIST / "index.html").is_file():
         raise RuntimeError("Build frontend before SectionVersion CREATE browser proof")
     hasher = _writer(port, project)
@@ -193,6 +196,9 @@ def on_browser(*, port, runtime, audit, license_guard, project, other_project,
                     **common, audit=audit, documents=documents,
                     downloads=downloads, parse_results=parse_results)
                 if spec_mode else None),
+            solution_structured_spec_read_router=(
+                create_windows_structured_spec_read_router(**common)
+                if detail_mode else None),
             solution_section_version_validate_router=(
                 create_windows_section_version_validate_router(
                     **common, audit=audit, documents=documents,
@@ -229,7 +235,8 @@ def on_browser(*, port, runtime, audit, license_guard, project, other_project,
                  str(evidence), *((str(fixed_version),) if validation_mode else ())],
                 check=False, timeout=120, capture_output=True, text=True,
                 encoding="utf-8", env={**os.environ,
-                                        "PLM_BROWSER_SYNTHETIC_PASSWORD": PASSWORD})
+                                        "PLM_BROWSER_SYNTHETIC_PASSWORD": PASSWORD,
+                                        "PLM_SPEC_DETAIL_ACCEPTANCE": "1" if detail_mode else "0"})
             if result.returncode:
                 raise RuntimeError("SectionVersion browser proof failed: "
                                    f"{result.stdout[-3000:]} {result.stderr[-3000:]}")
@@ -262,7 +269,10 @@ def on_browser(*, port, runtime, audit, license_guard, project, other_project,
                               "WHERE operation='V1_SOL_STRUCTURED_SPEC_CREATE'").fetchone()[0] == 1
             assert db.execute("SELECT count(*) FROM plm.aud_events "
                               "WHERE action='SOL_STRUCTURED_SPEC_CREATED'").fetchone()[0] == 1
-    if spec_mode:
+    if detail_mode:
+        print("SOL_06_A10_P05_STRUCTURED_SPEC_DETAIL_BROWSER_PASS: "
+              "Win11 Edge/PG CREATE-to-GET and cross-project isolation, one DRAFT/receipt/audit")
+    elif spec_mode:
         print("SOL_06_A09_P06_P03_STRUCTURED_SPEC_BROWSER_PASS: "
               "Win11 Edge/PG CREATE and original-key replay, one DRAFT/receipt/audit")
     elif validation_mode:

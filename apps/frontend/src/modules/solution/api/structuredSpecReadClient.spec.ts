@@ -30,6 +30,16 @@ function response(data: unknown, status = 200, extra: Record<string, string> = {
 }
 
 describe("StructuredSpecReadClient", () => {
+  it("uses the browser fetch entry point when no test fetcher is injected", async () => {
+    const browserFetch = vi.fn().mockResolvedValue(response(detail));
+    vi.stubGlobal("fetch", browserFetch);
+    try {
+      const item = await new StructuredSpecReadClient().detail(project, spec);
+      expect(item.structured_solution_spec_id).toBe(spec);
+      expect(browserFetch).toHaveBeenCalledOnce();
+    } finally { vi.unstubAllGlobals(); }
+  });
+
   it("requests same-origin fixed GET and validates the complete detail", async () => {
     const fetcher = vi.fn().mockResolvedValue(response(detail));
     const item = await new StructuredSpecReadClient(fetcher).detail(project, spec);

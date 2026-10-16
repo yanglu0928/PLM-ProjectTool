@@ -111,7 +111,7 @@ export function parseStructuredSpecDetail(value: unknown, project: string,
 }
 
 export class StructuredSpecReadClient {
-  constructor(private readonly fetcher: typeof fetch = fetch,
+  constructor(private readonly fetcher: typeof fetch = (input, init) => fetch(input, init),
               private readonly timeoutMs = 10_000) {}
 
   async detail(project: string, spec: string): Promise<StructuredSpecDetail> {
