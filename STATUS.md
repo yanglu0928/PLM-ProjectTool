@@ -32,6 +32,8 @@
 
 ## 最近检查点
 
+- REG-20261016-01 修复 GLOBAL 人工脱敏测试中固定到 2026-10-16 00:00 的确认有效期夹具；生产页面正确拒绝过期确认，未改运行代码。隔离回归4项通过，全量前端待与 P04 一并复跑；见 `docs/progress/reg-20261016-01-reference-confirmation-fixture.md`。
+
 - SOL-06-A10-P03 将专项 GET 挂入 Windows 显式只读/读写平台模式，并用真实创建→GET HTTP/PG 验收项目成员、跨项目/Session/查询边界；后端全量及 wheel 通过，见 `docs/progress/sol-06-a10-p03-structured-spec-get-windows.md`。默认模式仍关闭，正式信任未验。
 
 - SOL-06-A10-P02 增加默认关闭的冻结 SOL_SPEC_GET HTTP 详情投影，严格 Session/Host/无查询、统一错误/trace/no-store；合同3项、后端全量及 wheel 通过，见 `docs/progress/sol-06-a10-p02-structured-spec-get-http.md`。Windows 装配另项。
