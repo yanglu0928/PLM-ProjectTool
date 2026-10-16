@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-16：0.1.0-dev.0/SOL-06-A10-P02 新增默认关闭的冻结 `SOL_SPEC_GET` HTTP 详情合同，输出类型化载荷、固定引用和当前版本/Review 状态，保持项目成员只读授权、Session/受信 Host、统一错误与 no-store。兼容性/升级/回滚：无 Migration、破坏性 API/权限/依赖或旧数据变更；未装配可选路由可撤。验证：合同3项、后端全量3636通过/3跳过/5706子例及 wheel 通过。已知问题：Windows 实际 HTTP/PG、前端详情、OutputArtifact/Review/章节六维、Gate 3/Pilot/正式发行未完成，正式信任和三平台兼容未验。
+
 - 2026-10-16：0.1.0-dev.0/SOL-06-A10-P01 新增受权的结构化专项内部历史详情读取，按项目重建固定类型化载荷和需求/章节/证据引用，保留现时版本/Review 状态，不以首次创建回执代替详情。兼容性/升级/回滚：无 Migration、公开 API、依赖或旧历史变更；未装配的读服务与策略可撤。验证：定向3项、Win11可弃 PG18.6 两版本/项目成员/跨项目/无效会话，后端全量3633通过/3跳过/5706子例及开发wheel通过。已知问题：HTTP/Windows/前端详情尚未接线，OutputArtifact、Review/章节六维、Gate 3/Pilot/正式发行及三平台正式兼容未完成；测试信任不可作为生产证据。
 
 - 2026-10-12：0.1.0-dev.0/SOL-06-A09-P06-P03 修复同项目离开/重进时待决专项创建操作未恢复，并新增 Windows 11 Edge→真实 HTTP/PG18.6 的 DRAFT 创建、原正文/原操作号重放、跨项目隐藏及单条收据/Audit 浏览器验收。兼容性/升级/回滚：仅前端监听与合成验收夹具变化，无 Schema/冻结 API/后端权限/依赖/旧数据迁移；可撤前端监听，已写历史必须保留。验证：专项 Edge/PG 验收、原章节 Edge/PG 回归、前端全量 138 文件/1776 项、typecheck/build 通过。已知问题：合成 License/账户不证明正式信任；专项详情/Review、OutputArtifact、Trace/Section VALIDATE、Gate 3/Pilot/正式发行未完成，Server 2025/Debian 13 未验。
