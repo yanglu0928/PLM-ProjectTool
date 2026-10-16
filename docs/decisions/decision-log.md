@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261016-1206：SOL_SPEC_LIST 返回全部不可变专项版本
+
+- Date/WBS：2026-10-16 / `SOL-06-A11-P01`。依据冻结 API-04 的 `Spec version page`、DM-05 不可变版本与当前无独立 series/version 子路径。
+- Decision：列表按项目返回全部 StructuredSolutionSpec 版本的最小摘要，按服务器 UUIDv7 版本 ID 降序 keyset；不只返回每个 series 最新版本。游标独立签名并绑定 Session、ProjectId、page_size 和查询；完整载荷/固定引用继续由详情接口读取，前端负责按 series 分组和明确 DRAFT/历史状态。
+- Reason：只返回最新版本会让既有历史无法通过冻结 API 发现，也会妨碍修订、Review 和审计；传完整 payload 会放大列表响应并重复详情合同。UUIDv7 是冻结的服务器主键规则，适合稳定、不可变位置。
+- Impact/Rollback：后续新增只读列表 Owner/游标/HTTP/UI，不改 Schema、现有 GET/CREATE、写权限或历史；未装配列表可整体撤回。需验证跨项目、失效 Session、游标篡改/串用、并发新增与多 series/版本。
+
 ## DEC-20261016-1205：SOL-06 专项详情采用中文类型化只读展示
 
 - Date/WBS：2026-10-16 / `SOL-06-A10-P04`。依据冻结 SOL_SPEC_GET、A10-P03 Windows 实测及用户此前关于待办/确认界面不应要求填写或阅读原始 JSON 的反馈。
