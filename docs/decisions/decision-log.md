@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261016-1208：SOL_SPEC_VALIDATE 分离结构有效与可送审
+
+- Date/WBS：2026-10-16 / `SOL-06-A13-P01`。依据冻结 `SOL_SPEC_VALIDATE`、DM-05 四类专项约束、0161～0164、A06/A08 及 SectionVersion 验证先例。
+- Decision：VALIDATE 对任一固定版本形成已审计的八维现时报告，成功 200 不等于通过；`valid` 只表示不可变完整性、payload 结构与当前 Requirement/Section/Evidence 来源通过，`ready_for_review` 还要求系列最新 DRAFT、全部必需类型检查、Artifact 和 `IMPLEMENTS` Trace 通过。缺真实职责/端点/试迁移/恢复/权限冲突、SOL-06 Trace 或 Artifact Owner 时显式 `UNAVAILABLE`，不得默认为 PASS。
+- Idempotency/Audit：请求无正文，使用独立策略、`V1_SOL_STRUCTURED_SPEC_VALIDATE` 收据和 `SOL_STRUCTURED_SPEC_VALIDATED` Audit；同 Key 重新鉴权后返回首次观察，不重新采样。VALIDATE 不改不可变 Spec、不创建 Review、不批准版本。
+- Impact/Rollback：P01 仅记录，无 Schema/API 路径/角色/依赖/数据变化；P02 先实现纯报告合同。若后续需要新持久表或冻结合同变化，另走 Change Request。正式信任、Gate 3、Pilot/Release 不因此改变。
+
 ## DEC-20261016-1207：SOL_SPEC_REVISE 采用服务端绑定前驱的完整快照
 
 - Date/WBS：2026-10-16 / `SOL-06-A12-P01`。依据冻结 `SOL_SPEC_REVISE`、DM-05 不可变版本、0164 与现有同 series Repository。

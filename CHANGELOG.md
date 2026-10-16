@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-16：0.1.0-dev.0/SOL-06-A13-P01 完成冻结 `SOL_SPEC_VALIDATE` 前置核查：选定无正文、固定版本、八维现时事实和类型有序检查；`valid` 仅表示完整性/payload/当前Requirement/Section/Evidence，`ready_for_review` 另要求系列最新DRAFT、全部类型检查、Artifact与Trace通过；缺真实Owner显式UNAVAILABLE。独立策略/收据/Audit同Key返回首次观察，VALIDATE不改历史或创建Review。兼容性/升级/回滚：仅设计/决策记录，无程序、Migration、API路径/角色、依赖或数据变化，无升级动作。验证：冻结API/DM、0161～0164、A06/A08及Section验证先例静态交叉核对。已知问题：报告合同/Owner/HTTP/Windows/UI尚未实现；SOL-06 Trace、Artifact及多类真实业务证明缺Owner，正式信任、Server2025/Debian13、性能、Gate3/Pilot/发行仍待。
+
 - 2026-10-16：0.1.0-dev.0/SOL-06-A12-P07 完成 Windows 11 Edge→构建Vue→生产FastAPI/Uvicorn→可弃PG18.6结构化专项修订闭环：固定v1无损回填后创建同系列v2 DRAFT，以原正文/原Key重放201且仅一条修订收据/Audit；旧RequirementVersion转SUPERSEDED并切换新当前批准版本后，页面提示来源漂移且不自动替换；跨项目POST 404、页面无表单/旧正文。兼容性/升级/回滚：仅合成验收夹具显式`revise_mode`，无产品Schema/API/License/权限/依赖/数据变化；撤测试模式即可。验证：P07完整链、无新Alembic操作及A11 51项列表浏览器回归通过；首轮夹具违反单批准版本唯一约束后修正并全量重跑。已知问题：合成信任非正式信任，Server2025/Debian13、专项验证/送审、OutputArtifact、性能、Gate3/Pilot/正式发行仍待。
 
 - 2026-10-16：0.1.0-dev.0/SOL-06-A12-P06 新增结构化专项修订安全客户端和页面：仅项目负责人/实施成员从固定详情进入；四类正文须无损回填，复杂分支或页面不能表达的结构失败关闭；历史来源只有根与版本仍精确匹配时才预选，失效来源不自动替换；原正文/原操作号按用户、项目、前驱隔离保存，未知结果只允许同内容同号重试，成功只标新 DRAFT。兼容性/升级/回滚：仅前端路由/静态资源和 SessionClient 增量，无 Migration、后端/冻结API、License、角色、依赖或旧数据变化；重建前端即可升级，可撤页面/入口但已写历史必须保留。验证：定向4文件17项、前端全量145文件1805项、typecheck和production build通过。已知问题：真实Edge/PG留P07；构建既有主chunk体积警告；正式信任、Server2025/Debian13、专项验证/送审、OutputArtifact、性能、Gate3/Pilot/正式发行仍待。
