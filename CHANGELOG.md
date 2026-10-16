@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-16：0.1.0-dev.0/SOL-06-A11-P04 新增默认关闭的冻结专项列表 GET：严格 page_size/cursor、受信 Host/Session、签名分页、最小版本摘要、统一 trace/no-store；默认应用和只读组合中的 POST 均保持 404。兼容性/升级/回滚：可选 Router，无 Migration、依赖、现有 GET/CREATE 或旧数据变化，不装配即回滚。验证：联合定向11项/25子例、后端全量3644项通过/3跳过/5735子例、wheel 1398条目含路由。已知问题：Windows独立密钥与真实HTTP/PG、UI/Edge、专项修订/验证/送审、OutputArtifact、章节六维、Gate 3/Pilot/正式发行仍待。
+
 - 2026-10-16：0.1.0-dev.0/SOL-06-A11-P03 新增结构化专项版本列表的独立 HMAC 游标，绑定 family、Session 摘要、ProjectId、page_size 和 `before_spec_id`；篡改、跨密钥/family/会话/项目/查询均统一拒绝。兼容性/升级/回滚：未装配 codec，无 Migration、公开 API 行为、依赖或旧数据变化，可直接撤回。验证：定向3项/12子例通过。已知问题：正式密钥来源/备份恢复、HTTP/Windows/UI/Edge、专项修订/验证/送审、OutputArtifact、章节六维、Gate 3/Pilot/正式发行仍待。
 
 - 2026-10-16：0.1.0-dev.0/SOL-06-A11-P02 新增项目内全部不可变结构化专项版本的受权摘要读取与 UUID 降序 keyset Repository；独立 `SOL_STRUCTURED_SPEC_LIST` 允许当前项目成员锁定读，跨项目、失效会话、畸形页和不完整 payload 失败关闭。兼容性/升级/回滚：内部能力尚未装配 HTTP，无 Migration、外部 API、依赖或旧数据变化，可撤内部方法/策略。验证：定向15项/790子例、Win11可弃PG18.6两版本两页/成员/隔离、后端全量3638项通过/3跳过/5710子例、开发wheel 1396条目通过。已知问题：签名游标、HTTP/Windows/UI/Edge、专项修订/验证/送审、OutputArtifact、章节六维、Gate 3/Pilot/正式发行仍待。
