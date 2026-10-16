@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import and_, select
 
 from plm_assistant.modules.solution.application.read_structured_spec import (
-    StructuredSpecHistoryView,
+    StructuredSpecHistoryView, StructuredSpecListPage,
+    StructuredSpecSummaryView,
 )
 from plm_assistant.modules.solution.application.structured_spec_input import (
     SpecRequirementRef, SpecSectionRef,
@@ -37,6 +38,35 @@ def _ordered(rows: tuple[object, ...]) -> None:
 
 
 class SqlAlchemyStructuredSpecReadRepository:
+    def list_versions(self, transaction: object, *, project_id: uuid.UUID,
+                      before_spec_id: uuid.UUID | None,
+                      limit: int) -> StructuredSpecListPage:
+        if (not _id(project_id)
+                or (before_spec_id is not None and not _id(before_spec_id))
+                or type(limit) is not int or not 1 <= limit <= 100):
+            raise ValueError("invalid StructuredSolutionSpec list query")
+        statement = select(Root, Payload).outerjoin(Payload, and_(
+            Payload.structured_solution_spec_id
+            == Root.structured_solution_spec_id,
+            Payload.spec_series_id == Root.spec_series_id,
+            Payload.project_id == Root.project_id,
+            Payload.spec_type == Root.spec_type,
+        )).where(Root.project_id == project_id)
+        if before_spec_id is not None:
+            statement = statement.where(
+                Root.structured_solution_spec_id < before_spec_id)
+        rows = tuple(_session(transaction).execute(statement.order_by(
+            Root.structured_solution_spec_id.desc()).limit(limit + 1)
+            .with_for_update(read=True, of=Root)).all())
+        summaries = tuple(self._summary(root, payload, project_id)
+                          for root, payload in rows)
+        items = summaries[:limit]
+        has_more = len(summaries) > limit
+        return StructuredSpecListPage(
+            items,
+            items[-1].structured_solution_spec_id if has_more else None,
+            has_more)
+
     def get(self, transaction: object, *, project_id: uuid.UUID,
             spec_id: uuid.UUID) -> StructuredSpecHistoryView | None:
         if not _id(project_id) or not _id(spec_id):
@@ -120,3 +150,29 @@ class SqlAlchemyStructuredSpecReadRepository:
             root.supersedes_version_ref, root.review_ref,
             root.review_round_ref, root.created_by, root.created_at,
         )
+
+    @staticmethod
+    def _summary(root: Root, payload: Payload | None,
+                 project_id: uuid.UUID) -> StructuredSpecSummaryView:
+        if (payload is None or root.project_id != project_id
+                or payload.project_id != project_id
+                or payload.spec_series_id != root.spec_series_id
+                or payload.spec_type != root.spec_type
+                or payload.schema_version != 1
+                or root.version_no < 1
+                or root.version_state not in (
+                    "DRAFT", "IN_REVIEW", "APPROVED", "RETURNED",
+                    "SUPERSEDED", "RESTRICTED")
+                or (root.supersedes_version_ref is None)
+                != (root.version_no == 1)
+                or (root.review_ref is None) != (root.review_round_ref is None)
+                or not _id(root.created_by)
+                or len(root.content_fingerprint) != 32
+                or len(payload.payload_fingerprint) != 32):
+            raise RuntimeError("StructuredSolutionSpec summary is inconsistent")
+        return StructuredSpecSummaryView(
+            root.structured_solution_spec_id, root.spec_series_id,
+            project_id, root.spec_type, root.version_no, root.version_state,
+            bytes(root.content_fingerprint), bytes(payload.payload_fingerprint),
+            root.supersedes_version_ref, root.review_ref,
+            root.review_round_ref, root.created_by, root.created_at)
