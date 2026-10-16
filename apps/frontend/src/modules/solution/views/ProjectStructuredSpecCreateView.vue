@@ -166,7 +166,7 @@ async function submit() {
     <template v-else>
       <button type="button" :disabled="loading || busy || !!pending || locked" @click="load()">{{ loading ? "正在核对…" : "刷新当前候选" }}</button>
       <p v-if="error" role="alert">{{ error }}</p>
-      <p v-if="createdId" role="status">专项草案已创建（版本编号 {{ createdId }}，系列编号 {{ createdSeries }}）。当前仅为 DRAFT，详情及送审将在后续功能中开放。</p>
+      <p v-if="createdId" role="status">专项草案已创建（版本编号 {{ createdId }}，系列编号 {{ createdSeries }}）。当前仅为 DRAFT；<RouterLink :to="{ name: 'project-structured-spec-detail', params: { projectId: route.params.projectId, specId: createdId } }">查看专项详情</RouterLink>。送审尚未开放。</p>
       <p v-else-if="loading" role="status">正在读取已批准需求、当前章节和项目证据…</p>
       <form v-else-if="canCreate()" @submit.prevent="submit">
         <template v-if="pending">

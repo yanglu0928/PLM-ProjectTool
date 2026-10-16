@@ -66,6 +66,7 @@ const ProjectSectionVersionListView = () => import("@/modules/solution/views/Pro
 const ProjectSectionVersionDetailView = () => import("@/modules/solution/views/ProjectSectionVersionDetailView.vue");
 const ProjectSectionVersionCreateView = () => import("@/modules/solution/views/ProjectSectionVersionCreateView.vue");
 const ProjectStructuredSpecCreateView = () => import("@/modules/solution/views/ProjectStructuredSpecCreateView.vue");
+const ProjectStructuredSpecDetailView = () => import("@/modules/solution/views/ProjectStructuredSpecDetailView.vue");
 const ProjectSectionListView = () => import("@/modules/solution/views/ProjectSectionListView.vue");
 const ProjectSectionDetailView = () => import("@/modules/solution/views/ProjectSectionDetailView.vue");
 const ProjectSectionCreateView = () => import("@/modules/solution/views/ProjectSectionCreateView.vue");
@@ -355,6 +356,11 @@ export function createAppRouter(
         path: "/projects/:projectId/structured-solution-specs/new",
         name: "project-structured-spec-create",
         component: ProjectStructuredSpecCreateView,
+      },
+      {
+        path: "/projects/:projectId/structured-solution-specs/:specId",
+        name: "project-structured-spec-detail",
+        component: ProjectStructuredSpecDetailView,
       },
       {
         path: "/projects/:projectId/solution-sections/:sectionId/versions/new",

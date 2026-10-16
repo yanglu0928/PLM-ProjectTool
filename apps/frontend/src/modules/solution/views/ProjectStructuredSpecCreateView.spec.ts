@@ -91,6 +91,8 @@ describe("ProjectStructuredSpecCreateView", () => {
       evidence_ids: [evidence], artifact_ids: [],
     }, expect.any(String));
     expect(view.wrapper.text()).toContain("仅为 DRAFT");
+    expect(view.wrapper.get(`a[href="/projects/${project}/structured-solution-specs/${created}"]`)
+      .text()).toContain("查看专项详情");
     expect(window.sessionStorage.length).toBe(0); view.wrapper.unmount();
   });
   it("keeps exact original body and key across uncertain reload", async () => {
