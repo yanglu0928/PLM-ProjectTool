@@ -40,7 +40,7 @@ def headers(token: bytes, csrf: bytes, key: str) -> dict[str, str]:
 def on_http(*, port, runtime, audit, license_guard, project, other_project,
             token, csrf, member_token, member_csrf, section, requirement,
             requirement_version, evidence, documents, downloads, parse_results,
-            **_unused):
+            read_router_factory=None, on_read=None, **_unused):
     sessions = SessionService(
         unit_of_work=runtime.unit_of_work,
         repository=SqlAlchemySessionRepository(),
@@ -58,6 +58,10 @@ def on_http(*, port, runtime, audit, license_guard, project, other_project,
     else:
         raise AssertionError("missing document source mounted SOL-06 CREATE")
     router = create_windows_structured_spec_create_router(**args)
+    read_router = (read_router_factory(
+        runtime=runtime, sessions=sessions, origins=origins,
+        license_guard=license_guard)
+        if read_router_factory is not None else None)
     with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
                          dbname="postgres", autocommit=True) as db:
         version = db.execute(
@@ -83,7 +87,8 @@ def on_http(*, port, runtime, audit, license_guard, project, other_project,
     with TestClient(create_app(), base_url="https://plm.example.test") as closed:
         assert closed.post(path, headers=headers(token, csrf, "closed-key-000001"),
                            json=body).status_code == 404
-    with TestClient(create_app(solution_structured_spec_create_router=router),
+    with TestClient(create_app(solution_structured_spec_create_router=router,
+                               solution_structured_spec_read_router=read_router),
                     base_url="https://plm.example.test") as app:
         first = app.post(path, headers=headers(token, csrf, "first-key-0000001"),
                          json=body)
@@ -115,6 +120,10 @@ def on_http(*, port, runtime, audit, license_guard, project, other_project,
                               "WHERE operation='V1_SOL_STRUCTURED_SPEC_CREATE'").fetchone()[0] == 2
             assert db.execute("SELECT count(*) FROM plm.aud_events "
                               "WHERE action='SOL_STRUCTURED_SPEC_CREATED'").fetchone()[0] == 2
+        if on_read is not None:
+            on_read(app=app, project=project, other_project=other_project,
+                    token=token, member_token=member_token,
+                    first=data, member=member.json()["data"])
     print("SOL_06_A09_P05_WINDOWS_HTTP_PG_PASS: closed default, real Auth/Source/"
           "PG CREATE/replay/member, one receipt and audit per draft")
 

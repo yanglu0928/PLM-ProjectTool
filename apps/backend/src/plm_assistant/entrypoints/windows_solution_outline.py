@@ -29,6 +29,7 @@ from plm_assistant.modules.solution.api.outline_version_list_cursor import Outli
 from plm_assistant.modules.solution.api.section_create import create_section_create_router
 from plm_assistant.modules.solution.api.section_version_create import create_section_version_create_router
 from plm_assistant.modules.solution.api.structured_spec_create import create_structured_spec_create_router
+from plm_assistant.modules.solution.api.structured_spec_read import create_structured_spec_read_router
 from plm_assistant.modules.solution.api.section_version_read import create_section_version_read_router
 from plm_assistant.modules.solution.api.section_version_validate import create_section_version_validate_router
 from plm_assistant.modules.solution.api.section_version_list_cursor import SectionVersionListCursorCodec
@@ -44,6 +45,7 @@ from plm_assistant.modules.solution.application.read_outline_version import Outl
 from plm_assistant.modules.solution.application.create_section import SectionCreateService
 from plm_assistant.modules.solution.application.create_section_version import SectionVersionCreateService
 from plm_assistant.modules.solution.application.create_structured_spec import StructuredSpecCreateService
+from plm_assistant.modules.solution.application.read_structured_spec import StructuredSpecReadService
 from plm_assistant.modules.solution.application.prove_structured_spec_sources import StructuredSpecSourceProofService
 from plm_assistant.modules.solution.application.read_section_version import SectionVersionReadService
 from plm_assistant.modules.solution.application.validate_section_version import (
@@ -68,6 +70,7 @@ from plm_assistant.modules.solution.infrastructure.section_version_base import S
 from plm_assistant.modules.solution.infrastructure.section_version_create_repository import SqlAlchemySectionVersionCreateRepository
 from plm_assistant.modules.solution.infrastructure.section_version_read_repository import SqlAlchemySectionVersionReadRepository
 from plm_assistant.modules.solution.infrastructure.structured_spec_create_repository import SqlAlchemyStructuredSpecCreateRepository
+from plm_assistant.modules.solution.infrastructure.structured_spec_read_repository import SqlAlchemyStructuredSpecReadRepository
 from plm_assistant.modules.solution.infrastructure.section_version_validation_audit_source import (
     SqlAlchemySectionVersionValidationAuditSource,
 )
@@ -207,6 +210,29 @@ def create_windows_section_version_read_router(
         return create_section_version_read_router(
             sessions=sessions, origins=origins, reads=service,
             cursors=cursors)
+    except Exception:
+        raise ProductionSolutionOutlineStartupError() from None
+
+
+def create_windows_structured_spec_read_router(
+    *, runtime, sessions, origins, license_guard,
+) -> APIRouter:
+    """Mount SOL_SPEC_GET only with explicit read-mode trust dependencies."""
+    if any(value is None for value in (
+            runtime, sessions, origins, license_guard)):
+        raise ProductionSolutionOutlineStartupError()
+    try:
+        service = StructuredSpecReadService(
+            unit_of_work=runtime.unit_of_work,
+            access=SqlAlchemyProjectReadAccess(),
+            license_guard=license_guard,
+            authorization=ProjectAuthorizationService(
+                unit_of_work=runtime.unit_of_work,
+                repository=SqlAlchemyProjectAuthorizationRepository()),
+            specs=SqlAlchemyStructuredSpecReadRepository(),
+        )
+        return create_structured_spec_read_router(
+            sessions=sessions, origins=origins, reads=service)
     except Exception:
         raise ProductionSolutionOutlineStartupError() from None
 
