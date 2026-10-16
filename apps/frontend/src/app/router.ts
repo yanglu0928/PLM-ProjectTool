@@ -68,6 +68,7 @@ const ProjectSectionVersionCreateView = () => import("@/modules/solution/views/P
 const ProjectStructuredSpecCreateView = () => import("@/modules/solution/views/ProjectStructuredSpecCreateView.vue");
 const ProjectStructuredSpecListView = () => import("@/modules/solution/views/ProjectStructuredSpecListView.vue");
 const ProjectStructuredSpecDetailView = () => import("@/modules/solution/views/ProjectStructuredSpecDetailView.vue");
+const ProjectStructuredSpecReviseView = () => import("@/modules/solution/views/ProjectStructuredSpecReviseView.vue");
 const ProjectSectionListView = () => import("@/modules/solution/views/ProjectSectionListView.vue");
 const ProjectSectionDetailView = () => import("@/modules/solution/views/ProjectSectionDetailView.vue");
 const ProjectSectionCreateView = () => import("@/modules/solution/views/ProjectSectionCreateView.vue");
@@ -362,6 +363,11 @@ export function createAppRouter(
         path: "/projects/:projectId/structured-solution-specs",
         name: "project-structured-specs",
         component: ProjectStructuredSpecListView,
+      },
+      {
+        path: "/projects/:projectId/structured-solution-specs/:specId/revise",
+        name: "project-structured-spec-revise",
+        component: ProjectStructuredSpecReviseView,
       },
       {
         path: "/projects/:projectId/structured-solution-specs/:specId",

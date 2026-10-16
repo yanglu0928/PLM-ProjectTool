@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-16：0.1.0-dev.0/SOL-06-A12-P06 新增结构化专项修订安全客户端和页面：仅项目负责人/实施成员从固定详情进入；四类正文须无损回填，复杂分支或页面不能表达的结构失败关闭；历史来源只有根与版本仍精确匹配时才预选，失效来源不自动替换；原正文/原操作号按用户、项目、前驱隔离保存，未知结果只允许同内容同号重试，成功只标新 DRAFT。兼容性/升级/回滚：仅前端路由/静态资源和 SessionClient 增量，无 Migration、后端/冻结API、License、角色、依赖或旧数据变化；重建前端即可升级，可撤页面/入口但已写历史必须保留。验证：定向4文件17项、前端全量145文件1805项、typecheck和production build通过。已知问题：真实Edge/PG留P07；构建既有主chunk体积警告；正式信任、Server2025/Debian13、专项验证/送审、OutputArtifact、性能、Gate3/Pilot/正式发行仍待。
+
 - 2026-10-16：0.1.0-dev.0/SOL-06-A12-P05 将专项 revise Router 仅装入 Windows 显式读写模式：runtime/session/origin/license/audit/document/download/parse 任一依赖缺失即拒绝启动，默认、登录专用和只读组合继续关闭。兼容性/升级/回滚：无 Migration、冻结API、License、角色、Secret、依赖或旧数据变化；撤Windows工厂/生产组合接线即可关闭入口，历史不可删除。验证：Windows/生产组合定向53项/81子例、后端全量3661通过/3跳过/5791子例；Win11可弃PG18.6真实HTTP完成v1→v3、经理/实施成员、重放/正文冲突/陈旧/跨项目/CSRF/查询/附件拒绝及2收据/2Audit；wheel 1401条目/SHA-256 `a49a2c9a17c7bf5e473d01fa0a712fa2a5e7f00032aa9f30efcb548a881c0183`。已知问题：合成信任非正式信任，前端/Edge、Server2025/Debian13、专项验证/送审、OutputArtifact、章节六维、Gate 3/Pilot/正式发行仍待。
 
 - 2026-10-16：0.1.0-dev.0/SOL-06-A12-P04 新增默认关闭的冻结专项 revise HTTP：同源、Session/CSRF、幂等键、无查询参数、严格六字段正文与路径UUID校验，201返回完整 replacement DRAFT、固定版本Location/no-store/Trace，并校验前驱精确等于路径且版本号至少2；默认应用仍404。兼容性/升级/回滚：无 Migration、冻结API字段、License、角色、依赖或旧数据升级；`create_app` 仅新增空的可选Router参数，可撤入口且保留历史。验证：相关定向13项/42子例、后端全量3660通过/3跳过/5783子例、wheel 1401条目/SHA-256 `93fd429c82f0bd9805c4a2501846d3f2b3cbcf839e67568dfcdd4320ee66812e`。已知问题：Windows真实HTTP/PG、UI/Edge未完成；正式信任、Server2025/Debian13、专项验证/送审、OutputArtifact、章节六维、Gate 3/Pilot/正式发行仍待。

@@ -66,7 +66,7 @@ function id(value: unknown): value is string {
     && value !== "00000000-0000-0000-0000-000000000000";
 }
 function unique(values: readonly string[]): boolean { return new Set(values).size === values.length; }
-function stable(value: unknown): string {
+export function stableStructuredSpecValue(value: unknown): string {
   return JSON.stringify(value, (_key, item: unknown) => {
     if (record(item)) return Object.fromEntries(Object.entries(item).sort(([a], [b]) => a.localeCompare(b)));
     return item;
@@ -79,10 +79,11 @@ function refs(value: unknown, fields: readonly [string, string]): value is reado
     && value.every(item => record(item) && exact(item, fields) && id(item[fields[0]]) && id(item[fields[1]]))
     && unique(value.map(item => item[fields[0]])) && unique(value.map(item => item[fields[1]]));
 }
-function validDraft(value: StructuredSpecDraft): boolean {
+export function isStructuredSpecDraft(value: unknown): value is StructuredSpecDraft {
   if (!record(value) || !exact(value, ["spec_type", "payload", "requirement_refs",
     "section_refs", "evidence_ids", "artifact_ids"])
-    || !["PROCESS_MODEL", "INTERFACE_SPEC", "MIGRATION_SPEC", "PERMISSION_DESIGN"].includes(value.spec_type)
+    || !["PROCESS_MODEL", "INTERFACE_SPEC", "MIGRATION_SPEC", "PERMISSION_DESIGN"]
+      .includes(value.spec_type as string)
     || !record(value.payload) || Object.keys(value.payload).length === 0
     || !refs(value.requirement_refs, ["requirement_id", "requirement_version_id"])
     || !refs(value.section_refs, ["solution_section_id", "solution_section_version_id"])
@@ -106,10 +107,10 @@ function created(value: unknown, project: string, response: Response,
     || value.version_state !== "DRAFT"
     || typeof value.content_fingerprint !== "string" || !digest.test(value.content_fingerprint)
     || typeof value.payload_fingerprint !== "string" || !digest.test(value.payload_fingerprint)
-    || !record(value.payload) || stable(value.payload) !== stable(draft.payload)
-    || stable(value.requirement_refs) !== stable(draft.requirement_refs)
-    || stable(value.section_refs) !== stable(draft.section_refs)
-    || stable(value.evidence_ids) !== stable(draft.evidence_ids)
+    || !record(value.payload) || stableStructuredSpecValue(value.payload) !== stableStructuredSpecValue(draft.payload)
+    || stableStructuredSpecValue(value.requirement_refs) !== stableStructuredSpecValue(draft.requirement_refs)
+    || stableStructuredSpecValue(value.section_refs) !== stableStructuredSpecValue(draft.section_refs)
+    || stableStructuredSpecValue(value.evidence_ids) !== stableStructuredSpecValue(draft.evidence_ids)
     || !Array.isArray(value.artifact_ids) || value.artifact_ids.length !== 0
     || value.declared_requirement_count !== draft.requirement_refs.length
     || value.declared_section_count !== draft.section_refs.length
@@ -130,7 +131,7 @@ export class StructuredSpecCreateClient {
   }
   async create(project: string, draft: StructuredSpecDraft,
                key: string): Promise<StructuredSpecCreated> {
-    if (!id(project) || !validDraft(draft)
+    if (!id(project) || !isStructuredSpecDraft(draft)
       || typeof key !== "string" || !/^[\x20-\x7e]{16,128}$/.test(key)) invalid();
     const view = this.session.view;
     if (!view || view.password_change_required || !this.session.canSubmit

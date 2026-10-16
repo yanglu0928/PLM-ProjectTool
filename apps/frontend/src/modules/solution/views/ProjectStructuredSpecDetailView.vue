@@ -21,6 +21,12 @@ function mayRead() {
   return mounted && !!session.view && !session.view.password_change_required
     && session.view.authorized_projects.some(item => item.project_id === projectId());
 }
+function mayRevise() {
+  return !!current.value && ["DRAFT", "RETURNED", "APPROVED"].includes(current.value.version_state)
+    && !!session.view && !session.view.password_change_required && session.canSubmit
+    && session.view.authorized_projects.some(item => item.project_id === projectId()
+      && (item.role === "PROJECT_MANAGER" || item.role === "IMPLEMENTATION_MEMBER"));
+}
 function stateLabel(value: string) {
   const labels: Record<string, string> = { DRAFT: "待评审草案", IN_REVIEW: "评审中",
     APPROVED: "已批准", RETURNED: "已退回", SUPERSEDED: "已被后续版本替代",
@@ -61,6 +67,8 @@ onUnmounted(() => { mounted = false; generation += 1; });
       <p v-else-if="busy" role="status">正在读取固定专项版本…</p>
       <template v-else-if="current && presentation">
         <p class="warning" role="status">{{ stateLabel(current.version_state) }}。固定历史引用不证明需求、章节或证据目前仍合格；只有实际完成评审的版本才可作为正式结论。</p>
+        <p v-if="mayRevise()"><RouterLink :to="{ name: 'project-structured-spec-revise', params: {
+          projectId: current.project_id, specId: current.structured_solution_spec_id } }">基于此版本创建修订草案</RouterLink></p>
         <h2>{{ presentation.title }} · 版本 {{ current.version_no }}</h2>
         <dl class="facts"><dt>系列编号</dt><dd>{{ current.spec_series_id }}</dd>
           <dt>版本编号</dt><dd>{{ current.structured_solution_spec_id }}</dd>

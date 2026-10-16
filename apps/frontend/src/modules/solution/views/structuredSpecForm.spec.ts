@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildStructuredSpecPayload, emptyStructuredSpecForm } from "./structuredSpecForm";
+import { buildStructuredSpecPayload, emptyStructuredSpecForm,
+  structuredSpecFormFromPayload } from "./structuredSpecForm";
 
 describe("structured spec human form", () => {
   it("builds migration and interface payloads without secret or raw JSON fields", () => {
@@ -39,5 +40,38 @@ describe("structured spec human form", () => {
     const permission = { ...emptyStructuredSpecForm(), roles: "申请人", resources: "方案",
       grants: "审批人 | 方案 | 批准 | 当前项目", separationPolicy: "默认拒绝" };
     expect(() => buildStructuredSpecPayload("PERMISSION_DESIGN", permission)).toThrow("角色和资源");
+  });
+  it("round-trips every form-supported payload without changing its meaning", () => {
+    const forms = {
+      MIGRATION_SPEC: { ...emptyStructuredSpecForm(), assumptions: "已冻结", exclusions: "附件",
+        sourceSystem: "旧 PLM", targetSystem: "新 PLM", scope: "零件与 BOM",
+        cleansingRules: "去重\n补齐分类", fieldMappings: "old_id → part_id",
+        trialPlan: "先试点", reconciliationPlan: "逐项核对", rollbackPlan: "恢复快照",
+        acceptanceCriteria: "关键字段差异为零" },
+      INTERFACE_SPEC: { ...emptyStructuredSpecForm(), sourceSystem: "ERP", targetSystem: "PLM",
+        direction: "BIDIRECTIONAL" as const, dataOwner: "信息部", frequency: "每小时",
+        errorHandling: "告警并转人工", retryPolicy: "三次", authentication: "受控令牌",
+        fieldMappings: "material → part" },
+      PROCESS_MODEL: { ...emptyStructuredSpecForm(), startRole: "申请人", endRole: "申请人",
+        processSteps: "review | 审核人 | 申请单，附件 | 审核结果\npublish | 发布人 | 审核结果 | 发布记录" },
+      PERMISSION_DESIGN: { ...emptyStructuredSpecForm(), roles: "申请人\n审批人",
+        resources: "项目方案", grants: "审批人 | 项目方案 | 批准 | 当前项目",
+        separationPolicy: "默认拒绝且申请审批分离", separationOfDuties: "申请人 | 审批人" },
+    } as const;
+    for (const kind of Object.keys(forms) as (keyof typeof forms)[]) {
+      const payload = buildStructuredSpecPayload(kind, forms[kind]);
+      expect(buildStructuredSpecPayload(kind,
+        structuredSpecFormFromPayload(kind, payload))).toEqual(payload);
+    }
+  });
+  it("refuses a branched process instead of silently flattening its history", () => {
+    const payload = { assumptions: [], exclusions: [], nodes: [
+      { id: "start", kind: "START", role: "申请人", inputs: [], outputs: [] },
+      { id: "a", kind: "STEP", role: "审核人", inputs: [], outputs: [] },
+      { id: "b", kind: "STEP", role: "复核人", inputs: [], outputs: [] },
+      { id: "end", kind: "END", role: "申请人", inputs: [], outputs: [] },
+    ], edges: [{ from: "start", to: "a" }, { from: "start", to: "b" },
+      { from: "a", to: "end" }, { from: "b", to: "end" }] };
+    expect(() => structuredSpecFormFromPayload("PROCESS_MODEL", payload)).toThrow("分支");
   });
 });

@@ -62,6 +62,20 @@ describe("ProjectStructuredSpecDetailView", () => {
       .toContain("返回专项版本历史");
     expect(wrapper.find(`a[href="/projects/${project}/solution-sections/${section}/versions/${section}"]`).exists()).toBe(true);
     expect(wrapper.find("pre").exists()).toBe(false);
+    expect(wrapper.find(`a[href="/projects/${project}/structured-solution-specs/${spec}/revise"]`).exists()).toBe(false);
+    wrapper.unmount();
+  });
+
+  it("offers revision only to a writer on a state that the server can revise", async () => {
+    const router = createAppRouter(createMemoryHistory());
+    await router.push(`/projects/${project}/structured-solution-specs/${spec}`); await router.isReady();
+    const wrapper = mount(ProjectStructuredSpecDetailView, { props: {
+      session: await session("PROJECT_MANAGER"), reader: {
+        detail: vi.fn().mockResolvedValue(detail),
+      } as unknown as StructuredSpecReadClient }, global: { plugins: [router] } });
+    await flushPromises();
+    expect(wrapper.get(`a[href="/projects/${project}/structured-solution-specs/${spec}/revise"]`)
+      .text()).toContain("创建修订草案");
     wrapper.unmount();
   });
 

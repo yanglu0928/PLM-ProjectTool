@@ -221,7 +221,8 @@ export class SessionClient {
     | `/api/v1/projects/${string}/solution-outlines/${string}/versions`
     | `/api/v1/projects/${string}/solution-sections`
     | `/api/v1/projects/${string}/solution-sections/${string}/versions`
-    | `/api/v1/projects/${string}/structured-solution-specs`, body: string,
+    | `/api/v1/projects/${string}/structured-solution-specs`
+    | `/api/v1/projects/${string}/structured-solution-specs/${string}:revise`, body: string,
     idempotencyKey: string, maxBodyBytes: number): Promise<Response> {
     if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
     if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
@@ -289,6 +290,16 @@ export class SessionClient {
     if (!identifier(projectId)) return Promise.reject(new SessionClientError("AUTH_CLIENT_UNAVAILABLE"));
     return this.#postCommand(
       `/api/v1/projects/${projectId}/structured-solution-specs`,
+      body, idempotencyKey, 512 * 1024);
+  }
+
+  postProjectStructuredSpecRevise(projectId: string, specId: string, body: string,
+    idempotencyKey: string): Promise<Response> {
+    if (!identifier(projectId) || !identifier(specId)) {
+      return Promise.reject(new SessionClientError("AUTH_CLIENT_UNAVAILABLE"));
+    }
+    return this.#postCommand(
+      `/api/v1/projects/${projectId}/structured-solution-specs/${specId}:revise`,
       body, idempotencyKey, 512 * 1024);
   }
 

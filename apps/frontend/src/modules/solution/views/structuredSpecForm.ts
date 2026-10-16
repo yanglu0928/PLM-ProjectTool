@@ -1,5 +1,5 @@
 /** Human-readable SOL-06 form fields; the server remains the schema authority. */
-import type { SpecType } from "../api/structuredSpecCreateClient";
+import { stableStructuredSpecValue, type SpecType } from "../api/structuredSpecCreateClient";
 
 export interface StructuredSpecForm {
   assumptions: string; exclusions: string;
@@ -26,6 +26,26 @@ export function emptyStructuredSpecForm(): StructuredSpecForm {
 }
 export class StructuredSpecFormError extends Error {
   constructor(message: string) { super(message); this.name = "StructuredSpecFormError"; }
+}
+function record(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function stringValue(value: unknown): string {
+  if (typeof value !== "string") throw new StructuredSpecFormError("固定专项正文结构无效，已停止修订。");
+  return value;
+}
+function stringList(value: unknown): string[] {
+  if (!Array.isArray(value) || !value.every(item => typeof item === "string")) {
+    throw new StructuredSpecFormError("固定专项正文结构无效，已停止修订。");
+  }
+  return value;
+}
+function objectRows(value: unknown, keys: readonly string[]): Record<string, unknown>[] {
+  if (!Array.isArray(value) || !value.every(item => record(item)
+    && Object.keys(item).length === keys.length && keys.every(key => Object.hasOwn(item, key)))) {
+    throw new StructuredSpecFormError("固定专项正文结构无效，已停止修订。");
+  }
+  return value as Record<string, unknown>[];
 }
 function text(value: string, label: string, maximum = 500): string {
   const item = value.trim().normalize("NFC");
@@ -137,4 +157,84 @@ export function buildStructuredSpecPayload(
       separation_of_duties: separation };
   }
   throw new StructuredSpecFormError("专项类型无效。");
+}
+
+/** Convert only payloads that this human form can reproduce byte-for-byte semantically. */
+export function structuredSpecFormFromPayload(
+  kind: SpecType, payload: Readonly<Record<string, unknown>>,
+): StructuredSpecForm {
+  if (!record(payload)) throw new StructuredSpecFormError("固定专项正文结构无效，已停止修订。");
+  const form = emptyStructuredSpecForm();
+  form.assumptions = stringList(payload.assumptions).join("\n");
+  form.exclusions = stringList(payload.exclusions).join("\n");
+  if (kind === "MIGRATION_SPEC") {
+    form.sourceSystem = stringValue(payload.source_system);
+    form.targetSystem = stringValue(payload.target_system);
+    form.scope = stringValue(payload.scope);
+    form.cleansingRules = stringList(payload.cleansing_rules).join("\n");
+    form.fieldMappings = objectRows(payload.field_mappings, ["source", "target"])
+      .map(item => `${stringValue(item.source)} → ${stringValue(item.target)}`).join("\n");
+    form.trialPlan = stringValue(payload.trial_plan);
+    form.reconciliationPlan = stringValue(payload.reconciliation_plan);
+    form.rollbackPlan = stringValue(payload.rollback_plan);
+    form.acceptanceCriteria = stringValue(payload.acceptance_criteria);
+  } else if (kind === "INTERFACE_SPEC") {
+    form.sourceSystem = stringValue(payload.source_system);
+    form.targetSystem = stringValue(payload.target_system);
+    if (!["INBOUND", "OUTBOUND", "BIDIRECTIONAL"].includes(payload.direction as string)) {
+      throw new StructuredSpecFormError("固定专项正文结构无效，已停止修订。");
+    }
+    form.direction = payload.direction as StructuredSpecForm["direction"];
+    form.dataOwner = stringValue(payload.data_owner);
+    form.frequency = stringValue(payload.frequency);
+    form.errorHandling = stringValue(payload.error_handling);
+    form.retryPolicy = stringValue(payload.retry_policy);
+    form.authentication = stringValue(payload.authentication);
+    form.fieldMappings = objectRows(payload.field_mappings, ["source", "target"])
+      .map(item => `${stringValue(item.source)} → ${stringValue(item.target)}`).join("\n");
+  } else if (kind === "PROCESS_MODEL") {
+    const nodes = objectRows(payload.nodes, ["id", "kind", "role", "inputs", "outputs"]);
+    const edges = objectRows(payload.edges, ["from", "to"]);
+    if (nodes.length < 3 || stringValue(nodes[0]!.id) !== "start"
+      || stringValue(nodes[0]!.kind) !== "START"
+      || stringValue(nodes.at(-1)!.id) !== "end"
+      || stringValue(nodes.at(-1)!.kind) !== "END"
+      || stringList(nodes[0]!.inputs).length || stringList(nodes[0]!.outputs).length
+      || stringList(nodes.at(-1)!.inputs).length || stringList(nodes.at(-1)!.outputs).length
+      || nodes.slice(1, -1).some(node => stringValue(node.kind) !== "STEP")
+      || edges.length !== nodes.length - 1
+      || edges.some((edge, index) => stringValue(edge.from) !== stringValue(nodes[index]!.id)
+        || stringValue(edge.to) !== stringValue(nodes[index + 1]!.id))) {
+      throw new StructuredSpecFormError("该流程包含分支或当前页面不能安全编辑的结构，已停止修订；原历史未被修改。");
+    }
+    form.startRole = stringValue(nodes[0]!.role);
+    form.endRole = stringValue(nodes.at(-1)!.role);
+    form.processSteps = nodes.slice(1, -1).map(node => [stringValue(node.id), stringValue(node.role),
+      stringList(node.inputs).join("，"), stringList(node.outputs).join("，")].join(" | ")).join("\n");
+  } else if (kind === "PERMISSION_DESIGN") {
+    if (payload.default_deny !== true) {
+      throw new StructuredSpecFormError("固定权限设计不是默认拒绝，已停止修订；原历史未被修改。");
+    }
+    form.roles = stringList(payload.roles).join("\n");
+    form.resources = stringList(payload.resources).join("\n");
+    form.grants = objectRows(payload.grants, ["role", "resource", "action", "scope"])
+      .map(item => ["role", "resource", "action", "scope"]
+        .map(key => stringValue(item[key])).join(" | ")).join("\n");
+    form.separationPolicy = stringValue(payload.separation_policy);
+    form.separationOfDuties = objectRows(payload.separation_of_duties,
+      ["left_role", "right_role"]).map(item =>
+      `${stringValue(item.left_role)} | ${stringValue(item.right_role)}`).join("\n");
+  } else {
+    throw new StructuredSpecFormError("专项类型无效。");
+  }
+  try {
+    if (stableStructuredSpecValue(buildStructuredSpecPayload(kind, form))
+      !== stableStructuredSpecValue(payload)) {
+      throw new Error("lossy");
+    }
+  } catch (failure) {
+    if (failure instanceof StructuredSpecFormError) throw failure;
+    throw new StructuredSpecFormError("该固定专项包含当前页面不能安全编辑的结构，已停止修订；原历史未被修改。");
+  }
+  return form;
 }
