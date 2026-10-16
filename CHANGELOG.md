@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-16：0.1.0-dev.0/SOL-06-A12-P03 新增结构化专项独立修订 Service 与 `SOL_STRUCTURED_SPEC_REVISE` 项目写策略：客户端不得指定 series/前驱，服务端把路径版本与完整正文纳入独立幂等指纹，在受锁当前版本上重新证明来源并原子写 replacement DRAFT、`SOL_STRUCTURED_SPEC_REVISED` Audit 和首次201收据；重放重新鉴权且在后续版本存在时仍返回原结果。兼容性/升级/回滚：无 Migration、冻结API字段、License权益、依赖或旧数据升级；可撤未公开装配的Service/策略，已写不可变历史必须保留。验证：定向18项/807子例、后端全量3656通过/3跳过/5762子例、Win11可弃PG18.6同/异Key并发、成员角色、后续版本后重放和Audit故障回滚，wheel 1400条目/SHA-256 `f8aae5b1ed141af10eef8be7e872ceb20c370cdc12bcba42e78350e97416eaff`。已知问题：HTTP/Windows/UI未实现；正式信任、Server2025/Debian13、专项验证/送审、OutputArtifact、章节六维、Gate 3/Pilot/正式发行仍待。
+
 - 2026-10-16：0.1.0-dev.0/SOL-06-A12-P02 新增同事务受锁的专项修订 base 与替代版本 Repository：按项目隐藏跨项目对象，系列 advisory lock 下固定请求/最新版本，完整快照必须绑定同项目/系列/类型/前驱，仅当前 DRAFT/RETURNED/APPROVED 可创建下一不可变版本。兼容性/升级/回滚：无 Migration、冻结 API、License、角色、依赖或旧数据升级；可撤未公开装配的内部方法，已写历史必须保留。验证：定向13项/11子例、后端全量3651通过/3跳过/5753子例、Win11可弃PG18.6两个并发修订仅一个生成完整v3、wheel 1399条目/SHA-256 `3b7915143ad9cf243dd99f7a8723489b6695e26d59be934e0f3e630a94971406`。已知问题：独立Service/权限/回执/Audit、HTTP/Windows/UI未实现；正式信任、Server2025/Debian13、专项验证/送审、OutputArtifact、章节六维、Gate 3/Pilot/正式发行仍待。
 
 - 2026-10-16：0.1.0-dev.0/SOL-06-A12-P01 完成冻结专项修订前置设计：正文沿用完整六字段快照，series/版本/前驱由服务端锁定；允许当前DRAFT/RETURNED/APPROVED产生替代DRAFT，拒绝评审中/受限/陈旧版本；独立权限、幂等收据与Audit，重放在重新鉴权后保持原201。兼容性/升级/回滚：仅决策与进度文档，无Schema/API字段/License/依赖/程序或数据变化；后续可选入口可撤，已写历史须保留。验证：冻结API/DM/0164与当前CREATE/Read/权限/Reference revise先例静态核对。已知问题：修订程序/HTTP/Windows/UI尚未实现；正式信任、Server2025/Debian13、专项验证/送审、OutputArtifact、章节六维、Gate 3/Pilot/正式发行仍待。

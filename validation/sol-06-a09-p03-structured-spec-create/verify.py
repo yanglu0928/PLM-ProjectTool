@@ -57,7 +57,7 @@ def rejects(code, operation):
 def on_created(*, port, runtime, audit, license_guard, project, other_project,
                manager, token, csrf, member_token, member_csrf, requirement,
                requirement_version, section, evidence, documents, downloads,
-               parse_results, **_unused):
+               parse_results, on_http=None, **_unused):
     fixed = DocumentFixedSourceProofService(
         documents=documents, downloads=downloads,
         parse_metadata=SqlAlchemyParseResultReadRepository(),
@@ -142,6 +142,15 @@ def on_created(*, port, runtime, audit, license_guard, project, other_project,
                           "WHERE operation='V1_SOL_STRUCTURED_SPEC_CREATE'").fetchone()[0] == 4
         assert db.execute("SELECT count(*) FROM plm.aud_events "
                           "WHERE action='SOL_STRUCTURED_SPEC_CREATED'").fetchone()[0] == 4
+    if on_http is not None:
+        on_http(
+            port=port, runtime=runtime, audit=audit,
+            license_guard=license_guard, project=project,
+            other_project=other_project, manager=manager,
+            token=token, csrf=csrf, member_token=member_token,
+            member_csrf=member_csrf, sources=sources,
+            dependencies=dependencies, draft=draft,
+            first=first, second=second)
     print("SOL_06_A09_P03_CREATE_PG_PASS: real auth, project roles, current sources, "
           "license, exact/concurrent replay, revision, audit rollback")
 
