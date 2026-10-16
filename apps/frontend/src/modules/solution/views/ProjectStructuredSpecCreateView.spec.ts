@@ -108,6 +108,16 @@ describe("ProjectStructuredSpecCreateView", () => {
     expect(create.mock.calls[1]).toEqual(original);
     expect(window.sessionStorage.length).toBe(0); second.wrapper.unmount();
   });
+  it("restores pending operation when returning to the same project route", async () => {
+    const create = vi.fn().mockRejectedValueOnce(new StructuredSpecCreateError("STRUCTURED_SPEC_CREATE_UNCERTAIN"));
+    const view = await page("PROJECT_MANAGER", create); await fill(view.wrapper);
+    await view.wrapper.get("form").trigger("submit"); await flushPromises();
+    await view.router.push(`/projects/${project}/solution-sections`); await flushPromises();
+    await view.router.push(`/projects/${project}/structured-solution-specs/new`); await flushPromises();
+    expect(view.wrapper.text()).toContain("存在原创建操作");
+    expect(view.wrapper.find("#spec-source").exists()).toBe(false);
+    view.wrapper.unmount();
+  });
   it("stops when original operation cannot be stored or parsed", async () => {
     const create = vi.fn(); const view = await page("PROJECT_MANAGER", create); await fill(view.wrapper);
     const storage = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("blocked"); });

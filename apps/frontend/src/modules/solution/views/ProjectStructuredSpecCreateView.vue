@@ -82,7 +82,7 @@ async function load() {
       ? failure.message : "暂时无法核对来源候选。";
   } finally { if (mounted && run === generation) loading.value = false; }
 }
-watch(() => route.params.projectId, () => {
+watch(() => [route.name, route.params.projectId], () => {
   if (route.name !== "project-structured-spec-create") return;
   generation += 1; loading.value = false; candidates.value = null;
   selectedRequirements.value = []; selectedSections.value = []; selectedEvidence.value = [];

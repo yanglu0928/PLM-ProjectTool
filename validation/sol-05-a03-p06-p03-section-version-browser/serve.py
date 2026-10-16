@@ -21,9 +21,11 @@ from plm_assistant.entrypoints.api import create_app
 from plm_assistant.entrypoints.windows_requirement import create_windows_requirement_routers
 from plm_assistant.entrypoints.windows_solution_outline import (
     create_windows_section_read_router,
+    create_windows_section_list_router,
     create_windows_section_version_create_router,
     create_windows_section_version_read_router,
     create_windows_section_version_validate_router,
+    create_windows_structured_spec_create_router,
 )
 from plm_assistant.modules.auth.api.login import create_login_router
 from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
@@ -54,6 +56,7 @@ from plm_assistant.modules.project.infrastructure.authorization_repository impor
 from plm_assistant.modules.auth.infrastructure.project_read_access import SqlAlchemyProjectReadAccess
 from plm_assistant.modules.auth.infrastructure.deployment_read_access import SqlAlchemyDeploymentReadAccess
 from plm_assistant.modules.solution.api.section_version_list_cursor import SectionVersionListCursorCodec
+from plm_assistant.modules.solution.api.section_list_cursor import SectionListCursorCodec
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -111,7 +114,7 @@ def _writer(port, project):
 def on_browser(*, port, runtime, audit, license_guard, project, other_project,
                section, document_version, requirement, requirement_version,
                evidence, documents, downloads, parse_results,
-               validation_mode=False, **_unused):
+               validation_mode=False, spec_mode=False, **_unused):
     if not (DIST / "index.html").is_file():
         raise RuntimeError("Build frontend before SectionVersion CREATE browser proof")
     hasher = _writer(port, project)
@@ -178,11 +181,18 @@ def on_browser(*, port, runtime, audit, license_guard, project, other_project,
                 cursors=EvidenceListCursorCodec(b"e" * 32)),
             requirement_router=requirements.requirements,
             solution_section_read_router=create_windows_section_read_router(**common),
+            solution_section_list_router=(create_windows_section_list_router(
+                **common, cursors=SectionListCursorCodec(b"s" * 32)) if spec_mode else None),
             solution_section_version_read_router=create_windows_section_version_read_router(
                 **common, cursors=SectionVersionListCursorCodec(b"h" * 32)),
             solution_section_version_create_router=create_windows_section_version_create_router(
                 **common, audit=audit, documents=documents,
                 downloads=downloads, parse_results=parse_results),
+            solution_structured_spec_create_router=(
+                create_windows_structured_spec_create_router(
+                    **common, audit=audit, documents=documents,
+                    downloads=downloads, parse_results=parse_results)
+                if spec_mode else None),
             solution_section_version_validate_router=(
                 create_windows_section_version_validate_router(
                     **common, audit=audit, documents=documents,
@@ -209,7 +219,9 @@ def on_browser(*, port, runtime, audit, license_guard, project, other_project,
                     raise RuntimeError("Owned SectionVersion CREATE preview did not start")
                 sleep(.05)
             browser_script = (ROOT / "validation/sol-05-a04-p08-section-version-browser/run-edge-browser.mjs"
-                              if validation_mode else Path(__file__).with_name("run-edge-browser.mjs"))
+                              if validation_mode else
+                              ROOT / "validation/sol-06-a09-p06-p03-structured-spec-browser/run-edge-browser.mjs"
+                              if spec_mode else Path(__file__).with_name("run-edge-browser.mjs"))
             result = subprocess.run(
                 ["node", str(browser_script),
                  origin, str(project), str(other_project), str(section), str(document),
@@ -238,13 +250,22 @@ def on_browser(*, port, runtime, audit, license_guard, project, other_project,
             args = (section,) if "%s" in predicate else ()
             assert db.execute(
                 f"SELECT count(*) FROM plm.{table} WHERE {predicate}", args
-            ).fetchone()[0] == (5 if validation_mode else 6), table
+            ).fetchone()[0] == (5 if validation_mode or spec_mode else 6), table
         if validation_mode:
             assert db.execute("SELECT count(*) FROM plm.plt_idempotency_receipts "
                               "WHERE operation='V1_SOL_SECTION_VERSION_VALIDATE'").fetchone()[0] == 1
             assert db.execute("SELECT count(*) FROM plm.aud_events "
                               "WHERE action='SOL_SECTION_VERSION_VALIDATED'").fetchone()[0] == 1
-    if validation_mode:
+        if spec_mode:
+            assert db.execute("SELECT count(*) FROM plm.sol_structured_specs").fetchone()[0] == 1
+            assert db.execute("SELECT count(*) FROM plm.plt_idempotency_receipts "
+                              "WHERE operation='V1_SOL_STRUCTURED_SPEC_CREATE'").fetchone()[0] == 1
+            assert db.execute("SELECT count(*) FROM plm.aud_events "
+                              "WHERE action='SOL_STRUCTURED_SPEC_CREATED'").fetchone()[0] == 1
+    if spec_mode:
+        print("SOL_06_A09_P06_P03_STRUCTURED_SPEC_BROWSER_PASS: "
+              "Win11 Edge/PG CREATE and original-key replay, one DRAFT/receipt/audit")
+    elif validation_mode:
         print("SOL_05_A04_P08_SECTION_VERSION_VALIDATE_BROWSER_PASS: "
               "Win11 Edge/PG validated page and original-key replay, one receipt/audit")
     else:
