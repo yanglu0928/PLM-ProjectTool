@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-16：0.1.0-dev.0/SOL-06-A11-P07 新增可选 Win11 Edge/一次性PG专项列表验收：浏览器从项目详情进入历史，真实加载50+1签名双页、进入本轮创建的固定详情，跨项目HTTP404并清除旧页面；50条仅由正式Repository预置以触发分页，浏览器创建项保持唯一收据/Audit。兼容性/升级/回滚：仅验收脚本与共享夹具可选list模式，无产品Schema/API/权限/License/依赖/旧数据变化；撤P07模式即可回滚。验证：P07完整链、最终夹具下A10创建→详情回归、Python/Node语法检查通过。已知问题：合成账户/License/密钥不代表正式信任；Server2025/Debian13、专项修订/验证/送审、OutputArtifact、章节六维、Gate 3/Pilot/正式发行仍待。
+
 - 2026-10-16：0.1.0-dev.0/SOL-06-A11-P06 新增项目级结构化专项版本历史页、严格最小摘要分页客户端及项目/创建/详情导航；四类专项和状态用中文呈现，明确DRAFT、历史引用或列表存在不等于批准/仍合格/客户确认，切项目或分页失败清除旧内容。兼容性/升级/回滚：仅前端静态资源，无Migration、后端/冻结API、角色、License、依赖或旧数据变化；撤新增客户端/路由/导航即可回滚。验证：联合定向5文件/34项、前端全量143文件/1794项、typecheck和生产build通过；首次SFC类型断言语法及测试路由复用问题修正后全绿。已知问题：Windows11 Edge真实HTTP/PG、正式服务账户/公钥/License/密钥信任、Server2025/Debian13、专项修订/验证/送审、OutputArtifact、章节六维、Gate 3/Pilot/正式发行仍待。
 
 - 2026-10-16：0.1.0-dev.0/SOL-06-A11-P05 将专项版本列表接入 Windows 显式只读/读写平台，以当前服务账户专用 Credential Manager 密钥签名分页；缺密钥或读取异常拒绝启动并释放数据库运行时，默认模式继续关闭。兼容性/升级/回滚：无 Migration、冻结 API Breaking、依赖或旧数据变化；升级前必须为实际服务账户供给、备份并验证 `project-structured-spec-version-list-cursor-v1`，回滚旧程序可保留密钥和历史。验证：定向50项/55子例、后端全量3648通过/3跳过/5745子例；Win11可弃PG18.6真实HTTP创建后两页/成员/隔离/Session/License/查询边界、密钥失密恢复和原创建链通过；wheel 1399条目。首次全量17失败为测试公共装配缺口，修正后全绿且未放宽fail-closed。已知问题：正式服务账户/公钥/License信任、UI/Edge、Server2025/Debian13、专项修订/验证/送审、OutputArtifact、章节六维、Gate 3/Pilot/正式发行仍待。

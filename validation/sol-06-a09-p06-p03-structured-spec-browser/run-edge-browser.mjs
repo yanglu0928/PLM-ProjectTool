@@ -8,6 +8,7 @@ const [origin, project, otherProject, section, _document, _documentVersion,
   requirement, requirementVersion, evidence] = process.argv.slice(2);
 const password = process.env.PLM_BROWSER_SYNTHETIC_PASSWORD;
 const detailMode = process.env.PLM_SPEC_DETAIL_ACCEPTANCE === "1";
+const listMode = process.env.PLM_SPEC_LIST_ACCEPTANCE === "1";
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 if (!/^http:\/\/127\.0\.0\.1:\d{2,5}$/.test(origin ?? "")
   || ![project, otherProject, section, requirement, requirementVersion,
@@ -15,6 +16,7 @@ if (!/^http:\/\/127\.0\.0\.1:\d{2,5}$/.test(origin ?? "")
   || project === otherProject || typeof password !== "string" || password.length < 24) {
   throw new Error("owned synthetic inputs required");
 }
+if (listMode && !detailMode) throw new Error("List acceptance requires detail acceptance");
 const profile = await mkdtemp(join(tmpdir(), "plm-structured-spec-edge-"));
 const cdpPort = 10000 + process.pid % 40000;
 const edge = spawn("C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe",
@@ -73,6 +75,7 @@ async function setValue(selector, value) {
 }
 const createPath = `/api/v1/projects/${project}/structured-solution-specs`;
 const pagePath = `/projects/${project}/structured-solution-specs/new`;
+let createdSpecId = null;
 try {
   const page = await findPage();
   socket = new WebSocket(page.webSocketDebuggerUrl);
@@ -164,6 +167,7 @@ try {
     await waitFor("document.querySelector('#spec-detail-title')", "detail route");
     const specId = await evaluate("location.pathname.split('/').at(-1)");
     if (!uuid.test(specId)) throw new Error("Created detail link has no version identity");
+    createdSpecId = specId;
     const detailPath = `/api/v1/projects/${project}/structured-solution-specs/${specId}`;
     await waitFor(`document.body?.innerText?.includes(${JSON.stringify(requirementVersion)}) &&
       document.body?.innerText?.includes('Old PLM')`, "fixed detail content");
@@ -194,11 +198,69 @@ try {
       throw new Error("Cross-project detail leaked HTTP 200");
     }
   }
+  if (listMode) {
+    await route(`/projects/${project}`);
+    await waitFor("document.body?.innerText?.includes('查看结构化专项版本')",
+      "project detail structured spec entry");
+    if (!responses.some(item => item.url === `${origin}/api/v1/projects/${project}`
+      && item.status === 200)) throw new Error("Real project detail GET 200 missing");
+    await clickText("查看结构化专项版本");
+    await waitFor("document.querySelector('#spec-list-title') && document.querySelectorAll('.spec-list ol>li').length===50",
+      "first structured spec history page");
+    const firstPage = await evaluate(`(()=>({text:document.body.innerText,
+      count:document.querySelectorAll('.spec-list ol>li').length,
+      detailLinks:[...document.querySelectorAll('.spec-list ol a')].map(x=>x.getAttribute('href')),
+      load:[...document.querySelectorAll('button')].some(x=>x.textContent.trim()==='加载更早版本')}))()`);
+    if (firstPage.count !== 50 || !firstPage.load
+      || !firstPage.text.includes("不可变版本摘要")
+      || !firstPage.text.includes("待评审草案")
+      || firstPage.text.includes("field_mappings")) {
+      throw new Error(`First list projection invalid: ${JSON.stringify(firstPage)}`);
+    }
+    const listPrefix = `${origin}/api/v1/projects/${project}/structured-solution-specs?`;
+    if (!responses.some(item => item.url.startsWith(listPrefix)
+      && item.url.includes("page_size=50") && item.status === 200)) {
+      throw new Error("Real first list GET 200 missing");
+    }
+    await clickText("加载更早版本");
+    await waitFor("document.querySelectorAll('.spec-list ol>li').length===51",
+      "second structured spec history page");
+    if (await evaluate("[...document.querySelectorAll('button')].some(x=>x.textContent.trim()==='加载更早版本')")) {
+      throw new Error("Final list page retained next action");
+    }
+    if (responses.filter(item => item.url.startsWith(listPrefix) && item.status === 200).length < 2
+      || !responses.some(item => item.url.startsWith(listPrefix) && item.url.includes("cursor="))) {
+      throw new Error("Real signed second list GET 200 missing");
+    }
+    if (!createdSpecId || !await evaluate(`Boolean(document.querySelector(
+      ${JSON.stringify(`a[href="/projects/${project}/structured-solution-specs/${createdSpecId}"]`)}))`)) {
+      throw new Error("Created fixed detail absent from complete history");
+    }
+    await evaluate(`document.querySelector(${JSON.stringify(
+      `a[href="/projects/${project}/structured-solution-specs/${createdSpecId}"]`)}).click()`);
+    await waitFor("document.querySelector('#spec-detail-title') && document.body.innerText.includes('Old PLM')",
+      "history to fixed detail navigation");
+    const crossListPath = `/api/v1/projects/${otherProject}/structured-solution-specs?page_size=50`;
+    const directCrossListStatus = await evaluate(`(async()=>{
+      const response=await fetch(${JSON.stringify(crossListPath)},
+        {credentials:'same-origin',cache:'no-store'});return response.status})()`);
+    if (directCrossListStatus !== 404) {
+      throw new Error(`Cross-project list returned ${directCrossListStatus}`);
+    }
+    await route(`/projects/${otherProject}/structured-solution-specs`);
+    await waitFor("document.body?.innerText?.includes('当前会话没有此项目的读取权限')",
+      "cross-project list denied");
+    if (await evaluate("document.querySelectorAll('.spec-list ol>li').length!==0 || document.body.innerText.includes('Old PLM')")) {
+      throw new Error("Cross-project list retained prior history");
+    }
+  }
   await route(`/projects/${otherProject}/structured-solution-specs/new`);
   await waitFor("document.body?.innerText?.includes('创建结构化专项草案')", "cross-project route");
   if (await evaluate("document.querySelector('form')!==null")) throw new Error("Cross-project create leaked");
   if (errors.length) throw new Error(`Browser errors: ${JSON.stringify(errors)}`);
-  console.log(detailMode
+  console.log(listMode
+    ? "STRUCTURED_SPEC_LIST_EDGE PASS: project entry, signed two-page history, fixed detail, cross-project 404/clear"
+    : detailMode
     ? "STRUCTURED_SPEC_DETAIL_EDGE PASS: create/replay, real detail GET, fixed links, cross-project 404/hidden"
     : "STRUCTURED_SPEC_CREATE_EDGE PASS: current candidates, real DRAFT 201, original-key replay, cross-project hidden");
 } finally {

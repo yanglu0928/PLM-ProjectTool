@@ -26,6 +26,7 @@ from plm_assistant.entrypoints.windows_solution_outline import (
     create_windows_section_version_read_router,
     create_windows_section_version_validate_router,
     create_windows_structured_spec_create_router,
+    create_windows_structured_spec_list_router,
     create_windows_structured_spec_read_router,
 )
 from plm_assistant.modules.auth.api.login import create_login_router
@@ -53,11 +54,15 @@ from plm_assistant.modules.evidence.application.read_evidence import EvidenceRea
 from plm_assistant.modules.evidence.infrastructure.read_repository import SqlAlchemyEvidenceReadRepository
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
 from plm_assistant.modules.project.infrastructure.authorized_projects import SqlAlchemyAuthorizedProjects
+from plm_assistant.modules.project.api.read_projects import create_project_read_router
+from plm_assistant.modules.project.application.read_projects import ProjectReadService
 from plm_assistant.modules.project.infrastructure.authorization_repository import SqlAlchemyProjectAuthorizationRepository
+from plm_assistant.modules.project.infrastructure.read_repository import SqlAlchemyProjectReadRepository
 from plm_assistant.modules.auth.infrastructure.project_read_access import SqlAlchemyProjectReadAccess
 from plm_assistant.modules.auth.infrastructure.deployment_read_access import SqlAlchemyDeploymentReadAccess
 from plm_assistant.modules.solution.api.section_version_list_cursor import SectionVersionListCursorCodec
 from plm_assistant.modules.solution.api.section_list_cursor import SectionListCursorCodec
+from plm_assistant.modules.solution.api.structured_spec_list_cursor import StructuredSpecListCursorCodec
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -115,9 +120,12 @@ def _writer(port, project):
 def on_browser(*, port, runtime, audit, license_guard, project, other_project,
                section, document_version, requirement, requirement_version,
                evidence, documents, downloads, parse_results,
-               validation_mode=False, spec_mode=False, detail_mode=False, **_unused):
+               validation_mode=False, spec_mode=False, detail_mode=False,
+               list_mode=False, **_unused):
     if detail_mode and not spec_mode:
         raise ValueError("Structured spec detail proof requires spec mode")
+    if list_mode and not (spec_mode and detail_mode):
+        raise ValueError("Structured spec list proof requires spec detail mode")
     if not (DIST / "index.html").is_file():
         raise RuntimeError("Build frontend before SectionVersion CREATE browser proof")
     hasher = _writer(port, project)
@@ -173,6 +181,12 @@ def on_browser(*, port, runtime, audit, license_guard, project, other_project,
             login_router=create_login_router(login=login, origins=origins, views=views),
             session_router=create_session_read_router(
                 sessions=sessions, origins=origins, views=views),
+            project_read_router=create_project_read_router(
+                sessions=sessions, origins=origins, projects=ProjectReadService(
+                    unit_of_work=runtime.unit_of_work,
+                    access=SqlAlchemyProjectReadAccess(),
+                    license_guard=license_guard,
+                    repository=SqlAlchemyProjectReadRepository())),
             document_read_router=create_document_read_router(
                 sessions=sessions, documents=doc_reads, origins=origins,
                 cursors=DocumentListCursorCodec(b"d" * 32)),
@@ -199,6 +213,10 @@ def on_browser(*, port, runtime, audit, license_guard, project, other_project,
             solution_structured_spec_read_router=(
                 create_windows_structured_spec_read_router(**common)
                 if detail_mode else None),
+            solution_structured_spec_list_router=(
+                create_windows_structured_spec_list_router(
+                    **common, cursors=StructuredSpecListCursorCodec(b"l" * 32))
+                if list_mode else None),
             solution_section_version_validate_router=(
                 create_windows_section_version_validate_router(
                     **common, audit=audit, documents=documents,
@@ -236,7 +254,8 @@ def on_browser(*, port, runtime, audit, license_guard, project, other_project,
                 check=False, timeout=120, capture_output=True, text=True,
                 encoding="utf-8", env={**os.environ,
                                         "PLM_BROWSER_SYNTHETIC_PASSWORD": PASSWORD,
-                                        "PLM_SPEC_DETAIL_ACCEPTANCE": "1" if detail_mode else "0"})
+                                        "PLM_SPEC_DETAIL_ACCEPTANCE": "1" if detail_mode else "0",
+                                        "PLM_SPEC_LIST_ACCEPTANCE": "1" if list_mode else "0"})
             if result.returncode:
                 raise RuntimeError("SectionVersion browser proof failed: "
                                    f"{result.stdout[-3000:]} {result.stderr[-3000:]}")
@@ -264,12 +283,17 @@ def on_browser(*, port, runtime, audit, license_guard, project, other_project,
             assert db.execute("SELECT count(*) FROM plm.aud_events "
                               "WHERE action='SOL_SECTION_VERSION_VALIDATED'").fetchone()[0] == 1
         if spec_mode:
-            assert db.execute("SELECT count(*) FROM plm.sol_structured_specs").fetchone()[0] == 1
+            assert db.execute("SELECT count(*) FROM plm.sol_structured_specs").fetchone()[0] == (
+                51 if list_mode else 1)
             assert db.execute("SELECT count(*) FROM plm.plt_idempotency_receipts "
                               "WHERE operation='V1_SOL_STRUCTURED_SPEC_CREATE'").fetchone()[0] == 1
             assert db.execute("SELECT count(*) FROM plm.aud_events "
                               "WHERE action='SOL_STRUCTURED_SPEC_CREATED'").fetchone()[0] == 1
-    if detail_mode:
+    if list_mode:
+        print("SOL_06_A11_P07_STRUCTURED_SPEC_LIST_BROWSER_PASS: "
+              "Win11 Edge/PG project entry, 51-item two-page history, detail, "
+              "cross-project clear, one browser DRAFT/receipt/audit")
+    elif detail_mode:
         print("SOL_06_A10_P05_STRUCTURED_SPEC_DETAIL_BROWSER_PASS: "
               "Win11 Edge/PG CREATE-to-GET and cross-project isolation, one DRAFT/receipt/audit")
     elif spec_mode:
