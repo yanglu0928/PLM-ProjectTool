@@ -53,7 +53,7 @@ onUnmounted(() => { mounted = false; generation += 1; });
   <section class="spec-detail" aria-labelledby="spec-detail-title" :aria-busy="busy">
     <p class="section-kicker">项目方案 · 固定历史</p>
     <h1 id="spec-detail-title">结构化专项详情</h1>
-    <p><RouterLink :to="{ name: 'project-sections', params: { projectId: route.params.projectId } }">返回项目章节</RouterLink></p>
+    <p><RouterLink :to="{ name: 'project-structured-specs', params: { projectId: route.params.projectId } }">返回专项版本历史</RouterLink></p>
     <p v-if="!mayRead()" role="status">当前会话没有此项目的读取权限。</p>
     <template v-else>
       <button type="button" :disabled="busy" @click="load()">{{ busy ? "正在读取…" : "刷新详情" }}</button>

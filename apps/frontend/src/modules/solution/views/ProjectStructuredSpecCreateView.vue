@@ -161,7 +161,7 @@ async function submit() {
   <section class="spec-create" aria-labelledby="spec-create-title" :aria-busy="loading || busy">
     <p class="section-kicker">项目方案</p><h1 id="spec-create-title">创建结构化专项草案</h1>
     <p class="warning">此处只建立待评审 DRAFT，不代表已批准或已交付。提交时服务器会重新核对固定需求、章节、文档和证据。</p>
-    <p><RouterLink :to="{ name: 'project-sections', params: { projectId: route.params.projectId } }">返回项目章节</RouterLink></p>
+    <p><RouterLink :to="{ name: 'project-structured-specs', params: { projectId: route.params.projectId } }">查看专项版本历史</RouterLink></p>
     <p v-if="!authorized()" role="status">仅当前项目负责人或实施成员可创建；请确认会话与项目权限。</p>
     <template v-else>
       <button type="button" :disabled="loading || busy || !!pending || locked" @click="load()">{{ loading ? "正在核对…" : "刷新当前候选" }}</button>

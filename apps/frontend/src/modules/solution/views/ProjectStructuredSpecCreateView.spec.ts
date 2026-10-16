@@ -76,6 +76,8 @@ describe("ProjectStructuredSpecCreateView", () => {
   it("submits human fields as fixed source DRAFT without auto-approval", async () => {
     const view = await page();
     expect(view.router.currentRoute.value.name).toBe("project-structured-spec-create");
+    expect(view.wrapper.get(`a[href="/projects/${project}/structured-solution-specs"]`).text())
+      .toContain("查看专项版本历史");
     await fill(view.wrapper);
     await view.wrapper.get("form").trigger("submit"); await flushPromises();
     expect(view.create).toHaveBeenCalledExactlyOnceWith(project, {

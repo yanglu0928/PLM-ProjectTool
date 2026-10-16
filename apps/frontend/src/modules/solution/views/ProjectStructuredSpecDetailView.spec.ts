@@ -58,6 +58,8 @@ describe("ProjectStructuredSpecDetailView", () => {
     expect(wrapper.text()).toContain("old_id");
     expect(wrapper.text()).toContain("客户尚未确认");
     expect(wrapper.text()).toContain("不证明需求、章节或证据目前仍合格");
+    expect(wrapper.get(`a[href="/projects/${project}/structured-solution-specs"]`).text())
+      .toContain("返回专项版本历史");
     expect(wrapper.find(`a[href="/projects/${project}/solution-sections/${section}/versions/${section}"]`).exists()).toBe(true);
     expect(wrapper.find("pre").exists()).toBe(false);
     wrapper.unmount();
