@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261016-1204：SOL-06 详情读取独立于首次创建回执
+
+- Date/WBS：2026-10-16 / `SOL-06-A10-P01`；冻结 `SOL_SPEC_GET` 要求读取固定 typed payload/ref set，现有 `first_result` 仅用于幂等首次 DRAFT 回执。
+- Decision：新增受权的历史详情只读视图与 Repository；按 ProjectId 过滤并重建固定载荷/引用，保留当前 version_state/Review 字段。首次回执逻辑不复用为历史详情；项目成员读权限遵循既有 SectionVersion GET 的策略。
+- Reason：创建后状态将变化，拿固定首次 DRAFT 回执当详情会误报现时状态；直接返回 ORM/JSONB 也会绕过完整性与项目隔离检查。
+- Impact/Rollback：仅内部读取和项目读策略，无 Schema/冻结 API/数据迁移或旧历史重写；未公开装配前可移除新读服务及策略。验证包括授权、跨项目、License/Session 失败和损坏快照失败关闭，HTTP 与前端留后续独立任务。
+
 ## DEC-20261012-1203：SOL-06 受权创建沿用同事务收据与审计
 
 - Date/WBS：2026-10-12 / `SOL-06-A09-P03`；依据冻结 SOL-06、A07/A08、0164/P02 和既有 SectionVersion Owner。实施中发现仅需新增项目内部操作策略，不涉及冻结 `/api/v1`、Schema 或新 License 权益。

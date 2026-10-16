@@ -38,8 +38,9 @@ SPEC.loader.exec_module(prior)
 
 
 def on_created(*, port, runtime, project, other_project, manager, token,
+               member_token,
                requirement, requirement_version, section, evidence,
-               documents, downloads, parse_results, **_unused) -> None:
+               documents, downloads, parse_results, on_http=None, **_unused) -> None:
     fixed = DocumentFixedSourceProofService(
         documents=documents, downloads=downloads,
         parse_metadata=SqlAlchemyParseResultReadRepository(),
@@ -131,6 +132,11 @@ def on_created(*, port, runtime, project, other_project, manager, token,
     print("SOL_06_A09_P02_REPOSITORY_PG_PASS: real sources, first DRAFT, immutable "
           "reconstruction, same-series revision, stale predecessor/cross-project "
           "rejection, complete child rows; no public Owner/Audit/receipt")
+    if on_http is not None:
+        on_http(port=port, runtime=runtime, project=project,
+                other_project=other_project, manager=manager, token=token,
+                member_token=member_token,
+                first=first, second=second)
 
 
 if __name__ == "__main__":
