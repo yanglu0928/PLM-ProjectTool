@@ -1,0 +1,92 @@
+{
+  "schema_version": "sc-04.validation.v1",
+  "validation_only": true,
+  "status": "PASS",
+  "generated_at": "2026-09-23T05:52:34.159844+00:00",
+  "python_version": "3.13.15",
+  "external_network_calls": 0,
+  "manifest": {
+    "status": "PASS",
+    "root_count": 65,
+    "query_id_count": 20,
+    "metadata_table_count": 70,
+    "identifier_count": 217,
+    "secret_like_value_hits": 0
+  },
+  "empty_migration": {
+    "status": "PASS",
+    "head_revision": "0002",
+    "root_table_count": 65,
+    "representative_index_count": 81,
+    "pgvector_version": "0.8.6",
+    "downgrade_root_table_count": 0
+  },
+  "data_migration": {
+    "status": "PASS",
+    "retained_after_upgrade": true,
+    "negative_constraints": {
+      "status": "PASS",
+      "rejected_case_count": 10,
+      "sqlstates": {
+        "scope_project_pair": "23514",
+        "cross_project_version": "23503",
+        "review_single_active_round": "23505",
+        "embedding_dimension": "23514",
+        "append_only_audit": "55000",
+        "wbs_cross_project": "23503",
+        "username_unique": "23505",
+        "job_idempotency": "23505",
+        "single_active_lease": "23505",
+        "embedding_available_unique": "23505"
+      }
+    },
+    "query_plans": {
+      "status": "PASS",
+      "observed_indexes": {
+        "Q-JOB-01": [
+          "ix_job_jobs__claim"
+        ],
+        "Q-AUD-01": [
+          "ix_aud_events__project_time"
+        ],
+        "Q-RAG-01-FTS": [
+          "ix_rag_chunks__search_gin"
+        ],
+        "Q-RAG-01-HNSW": [
+          "uq_rag_embeddings__index_chunk_available"
+        ],
+        "HNSW-PHYSICAL-PROBE": [
+          "ix_rag_embed__v32_hnsw"
+        ]
+      },
+      "authorized_vector_route": "EXACT_FILTERED_FALLBACK",
+      "representative_hnsw_vector_count": 1001,
+      "representative_hnsw_top5_recall": 1.0,
+      "performance_claim": "NOT_MADE"
+    },
+    "concurrency": {
+      "status": "PASS",
+      "worker_count": 20,
+      "unique_claim_count": 20
+    },
+    "retention_and_file_recovery": {
+      "status": "PASS",
+      "cleanup_candidate_count": 1,
+      "active_hold_blocked_count": 1
+    },
+    "sensitive_schema": {
+      "status": "PASS",
+      "forbidden_column_hits": 0
+    },
+    "backup_restore": {
+      "status": "PASS",
+      "restored_root_table_count": 65,
+      "restored_document_count": 1,
+      "dump_bytes": 807325
+    },
+    "retained_after_downgrade": true,
+    "secondary_indexes_removed_on_down": true,
+    "root_tables_after_base": 0
+  },
+  "elapsed_seconds": 5.338
+}

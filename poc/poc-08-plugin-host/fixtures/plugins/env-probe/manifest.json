@@ -1,0 +1,11 @@
+{
+  "id": "com.plm.env-probe",
+  "name": "POC Environment Probe Plugin",
+  "version": "1.0.0",
+  "plugin_api_version": "1.0",
+  "supported_os": ["windows-x86_64", "debian-x86_64"],
+  "supported_formats": ["poc/env"],
+  "external_dependencies": [],
+  "entry_point": "plugin.py",
+  "signature": "sha256:57a6cad5922b090059e6d6bbd7aab8fd8f3acda953b2e2ee3f3e8d783b56d8a3"
+}

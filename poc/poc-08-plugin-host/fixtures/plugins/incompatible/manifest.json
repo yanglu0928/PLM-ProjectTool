@@ -1,0 +1,11 @@
+{
+  "id": "com.plm.incompatible",
+  "name": "POC Incompatible Plugin",
+  "version": "1.0.0",
+  "plugin_api_version": "2.0",
+  "supported_os": ["windows-x86_64", "debian-x86_64"],
+  "supported_formats": ["poc/incompatible"],
+  "external_dependencies": [],
+  "entry_point": "plugin.py",
+  "signature": "sha256:ee47271d44a8cf90ee4d5c24c5385b9618570ecc2708868d20ccaf90c5904d8e"
+}

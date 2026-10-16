@@ -1,0 +1,1 @@
+"""License persistence adapters."""

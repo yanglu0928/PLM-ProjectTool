@@ -1,0 +1,1 @@
+"""Capability domain rules."""

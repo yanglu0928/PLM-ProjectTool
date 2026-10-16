@@ -1,0 +1,1 @@
+"""Prototype HTTP boundary contracts."""

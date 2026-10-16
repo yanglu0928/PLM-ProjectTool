@@ -1,0 +1,66 @@
+{
+  "schema_version": "poc-03.r6-layered-retrieval-diagnostic.v1",
+  "generated_at": "2026-09-18T17:02:19+08:00",
+  "status": "DIAGNOSED",
+  "summary": {
+    "case_count": 120,
+    "classification_correct_count": 57,
+    "classification_accuracy": 0.475,
+    "bottleneck_counts": {
+      "CHANNEL_RECALL_MISS": 25,
+      "FUSION_DROPPED": 15,
+      "RERANKER_DROPPED": 8,
+      "RERANKER_RECOVERED": 9,
+      "RETRIEVAL_TOP5_OK": 63
+    }
+  },
+  "stages": {
+    "vector": {
+      "exact_top5_hits": 47,
+      "exact_top5_recall": 0.39166666666666666,
+      "exact_top20_hits": 69,
+      "exact_top20_recall": 0.575,
+      "same_document_top5_hits": 76,
+      "same_document_top20_hits": 101
+    },
+    "full_text": {
+      "exact_top5_hits": 60,
+      "exact_top5_recall": 0.5,
+      "exact_top20_hits": 78,
+      "exact_top20_recall": 0.65,
+      "same_document_top5_hits": 75,
+      "same_document_top20_hits": 94
+    },
+    "fusion": {
+      "exact_top5_hits": 65,
+      "exact_top5_recall": 0.5416666666666666,
+      "exact_top20_hits": 80,
+      "exact_top20_recall": 0.6666666666666666,
+      "same_document_top5_hits": 87,
+      "same_document_top20_hits": 102
+    },
+    "reranker": {
+      "exact_top5_hits": 72,
+      "exact_top5_recall": 0.6,
+      "same_document_top5_hits": 88,
+      "same_document_top5_recall": 0.7333333333333333
+    }
+  },
+  "configuration": {
+    "vector_weight": 0.6,
+    "full_text_weight": 0.4,
+    "channel_limit": 20,
+    "reranker_top_k": 5,
+    "external_calls": 0,
+    "embedding_cache_reused": true,
+    "reranker_cache_reused": true,
+    "prediction_cache_reused": true
+  },
+  "privacy": {
+    "queries_in_report": false,
+    "chunk_text_in_report": false,
+    "vectors_in_report": false,
+    "model_responses_in_report": false,
+    "case_level_results_committed": false
+  }
+}

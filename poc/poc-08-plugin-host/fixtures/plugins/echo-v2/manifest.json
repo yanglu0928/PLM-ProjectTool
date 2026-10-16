@@ -1,0 +1,11 @@
+{
+  "id": "com.plm.echo",
+  "name": "POC Echo Plugin",
+  "version": "1.1.0",
+  "plugin_api_version": "1.0",
+  "supported_os": ["windows-x86_64", "debian-x86_64"],
+  "supported_formats": ["poc/echo"],
+  "external_dependencies": [],
+  "entry_point": "plugin.py",
+  "signature": "sha256:2621762e12acf3e622a38e7d1c2104c91678c41488e4019e68c93fee7d4d1114"
+}

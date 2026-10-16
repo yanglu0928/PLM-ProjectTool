@@ -1,0 +1,17 @@
+{
+  "schema_version": "poc-03.r5-label-review-package.v1",
+  "status": "AWAITING_HUMAN_CONFIRMATION",
+  "total_case_count": 120,
+  "r4_explicit_conclusion_count": 62,
+  "conflict_review_count": 58,
+  "conflict_group_count": 7,
+  "formula_error_count": 0,
+  "rendered_sheet_count": 4,
+  "privacy": {
+    "document_text_committed": false,
+    "queries_committed": false,
+    "vectors_committed": false,
+    "model_responses_committed": false,
+    "api_keys_committed": false
+  }
+}

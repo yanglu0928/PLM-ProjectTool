@@ -1,0 +1,510 @@
+from __future__ import annotations
+
+import unittest
+from dataclasses import replace
+from datetime import datetime, timezone
+from unittest.mock import Mock
+from uuid import uuid4
+
+from plm_assistant.modules.license.application.runtime_guard import (
+    RuntimeLicenseError,
+)
+from plm_assistant.modules.platform.application.idempotency import (
+    IdempotencyResult,
+)
+from plm_assistant.modules.project.application.authorization import (
+    AuthorizedProjectAction,
+)
+from plm_assistant.modules.workflow.application.append_stage_transition import (
+    PersistedStageTransition, PersistedTransitionGate,
+)
+from plm_assistant.modules.workflow.application.current_checklist_record import (
+    ChecklistBasisObservation,
+)
+from plm_assistant.modules.workflow.application.checklist_qualification import (
+    AggregateChecklistQualification, ChecklistQualificationEvidence,
+    ChecklistQualificationReview, ChecklistQualificationSubject,
+    CurrentChecklistQualification,
+)
+from plm_assistant.modules.workflow.application.transition_stage import (
+    TransitionWorkflowStage, WorkflowStageTransitionError,
+    WorkflowStageTransitionService,
+)
+from plm_assistant.modules.workflow.domain.history import (
+    ForwardTransitionSnapshot, GateItemSnapshot,
+)
+from plm_assistant.modules.workflow.domain.transition import ChecklistState
+
+
+class _Transaction:
+    def __init__(self) -> None:
+        self.committed = False
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_args):
+        return False
+
+    def commit(self) -> None:
+        self.committed = True
+
+
+class _UnitOfWork:
+    def __init__(self) -> None:
+        self.values: list[_Transaction] = []
+
+    def __call__(self) -> _Transaction:
+        value = _Transaction()
+        self.values.append(value)
+        return value
+
+
+class WorkflowStageTransitionServiceTests(unittest.TestCase):
+    def setUp(self):
+        self.now = datetime.now(timezone.utc)
+        self.actor, self.project, self.workflow = uuid4(), uuid4(), uuid4()
+        self.trace, self.analysis, self.version = uuid4(), uuid4(), uuid4()
+        self.review, self.round = uuid4(), uuid4()
+        self.uow = _UnitOfWork()
+        self.sessions, self.projects, self.guard = Mock(), Mock(), Mock()
+        self.qualification, self.transitions = Mock(), Mock()
+        self.receipts, self.audit = Mock(), Mock()
+        self.sessions.authenticated_user.return_value = self.actor
+        self.projects.require_in_transaction.return_value = (
+            AuthorizedProjectAction(
+                self.actor, self.project,
+                "WORKFLOW_TRANSITION", "PROJECT_MANAGER",
+            )
+        )
+        self.receipts.reserve.return_value = None
+        self.qualifications = tuple(
+            self._qualification(item_key, index)
+            for index, item_key in enumerate((
+                "HANDOVER_BASELINE", "HANDOVER_ISSUES",
+            ))
+        )
+        self.qualification.qualify_only_current_in_transaction.side_effect = (
+            self.qualifications
+        )
+        self.result = self._result()
+        self.transitions.append.return_value = self.result
+        self.transitions.get_transition.return_value = self.result
+        self.service = WorkflowStageTransitionService(
+            unit_of_work=self.uow, sessions=self.sessions,
+            projects=self.projects, license_guard=self.guard,
+            qualification=self.qualification,
+            transitions=self.transitions, receipts=self.receipts,
+            audit=self.audit, clock=lambda: self.now,
+        )
+
+    def _qualification(
+        self, item_key: str, index: int,
+    ) -> CurrentChecklistQualification:
+        evidence = ChecklistQualificationEvidence(
+            uuid4(), self.project, index + 2,
+            bytes([index + 1]) * 32, self.now,
+        )
+        review = ChecklistQualificationReview(
+            self.review, self.round, self.project, self.analysis,
+            self.version, 3, b"v" * 32, self.now,
+            "HND-05", "HANDOVER_APPROVAL_V1",
+        )
+        return CurrentChecklistQualification(
+            self.project, "HANDOVER", item_key, "HND-05",
+            self.analysis, self.version, bytes([index + 10]) * 32,
+            (evidence,), review,
+        )
+
+    def _result(self) -> PersistedStageTransition:
+        gates = []
+        snapshots = []
+        for index, value in enumerate(self.qualifications):
+            basis = (
+                ChecklistBasisObservation(
+                    "EVIDENCE", value.evidence[0].evidence_id,
+                    "PROJECT", self.project, "ELIGIBLE",
+                    value.evidence[0].observed_lock_version,
+                    value.evidence[0].content_fingerprint, self.now, 1,
+                ),
+                ChecklistBasisObservation(
+                    "REVIEW_ROUND", self.round, "PROJECT", self.project,
+                    "APPROVED", 3, value.content_fingerprint, self.now, 1,
+                ),
+            )
+            basis = tuple(sorted(
+                basis, key=lambda item: (item.ref_kind, str(item.ref_id)),
+            ))
+            snapshot = GateItemSnapshot(
+                value.item_key, ChecklistState.PASS,
+                tuple(item.ref_id for item in basis
+                      if item.ref_kind == "EVIDENCE"),
+                tuple(item.ref_id for item in basis
+                      if item.ref_kind == "REVIEW_ROUND"),
+            )
+            snapshots.append(snapshot)
+            gates.append(PersistedTransitionGate(
+                uuid4(), uuid4(), 1, bytes([index + 20]) * 32,
+                snapshot, basis,
+            ))
+        root = ForwardTransitionSnapshot(
+            self.workflow, self.project, self.actor, self.trace, 1,
+            "HANDOVER", "SURVEY", 3, 4,
+            "Handover accepted", self.now, tuple(snapshots),
+        )
+        return PersistedStageTransition(
+            uuid4(), root, tuple(gates), b"t" * 32, 4,
+        )
+
+    def _command(self, **changes) -> TransitionWorkflowStage:
+        values = dict(
+            session_token=b"s" * 32, csrf_token=b"c" * 32,
+            trace_id=self.trace, project_id=self.project,
+            target_stage_key="SURVEY", expected_workflow_version=3,
+            reason="Handover accepted",
+        )
+        values.update(changes)
+        return TransitionWorkflowStage(**values)
+
+    def test_success_reproves_both_gates_then_audits_and_commits(self):
+        result = self.service.transition(
+            self._command(), idempotency_key="workflow-transition-001",
+        )
+        self.assertIs(result, self.result)
+        queries = [call.args[1] for call in
+                   self.qualification.qualify_only_current_in_transaction.call_args_list]
+        self.assertEqual(
+            tuple(query.item_key for query in queries),
+            ("HANDOVER_BASELINE", "HANDOVER_ISSUES"),
+        )
+        appended = self.transitions.append.call_args.kwargs["command"]
+        self.assertEqual(
+            tuple(gate.item_key for gate in appended.gates),
+            ("HANDOVER_BASELINE", "HANDOVER_ISSUES"),
+        )
+        self.assertEqual(appended.occurred_at, self.now)
+        event = self.audit.append.call_args.args[1]
+        self.assertEqual(event.action, "WORKFLOW_STAGE_TRANSITIONED")
+        self.assertEqual(event.before_state, "HANDOVER")
+        self.assertEqual(event.after_state, "SURVEY")
+        completed = self.receipts.complete.call_args.kwargs["result"]
+        self.assertEqual(completed, IdempotencyResult(
+            "V1_WORKFLOW_TRANSITION",
+            self.result.stage_transition_id, 200,
+        ))
+        self.assertTrue(self.uow.values[-1].committed)
+
+    def test_survey_to_requirement_uses_survey_gate_pair(self):
+        conclusion_series, conclusion_version = uuid4(), uuid4()
+        survey_values = []
+        for index, item_key in enumerate((
+                "SURVEY_ACTUAL_SOURCES", "SURVEY_CONCLUSION")):
+            evidence = ChecklistQualificationEvidence(
+                uuid4(), self.project, index + 4,
+                bytes([index + 4]) * 32, self.now,
+            )
+            review = ChecklistQualificationReview(
+                self.review, self.round, self.project, conclusion_series,
+                conclusion_version, 5, b"s" * 32, self.now,
+                "SRV-05", "SURVEY_CONCLUSION_ALL_V1",
+            )
+            survey_values.append(CurrentChecklistQualification(
+                self.project, "SURVEY", item_key, "SRV-05",
+                conclusion_series, conclusion_version,
+                bytes([index + 20]) * 32, (evidence,), review,
+            ))
+        self.qualification.qualify_only_current_in_transaction.side_effect = (
+            tuple(survey_values)
+        )
+        snapshots = tuple(GateItemSnapshot(
+            value.item_key, ChecklistState.PASS,
+            (value.evidence[0].evidence_id,), (self.round,),
+        ) for value in survey_values)
+        gates = []
+        for index, (snapshot, value) in enumerate(zip(
+                snapshots, survey_values, strict=True)):
+            basis = tuple(sorted((
+                ChecklistBasisObservation(
+                    "EVIDENCE", value.evidence[0].evidence_id,
+                    "PROJECT", self.project, "ELIGIBLE",
+                    value.evidence[0].observed_lock_version,
+                    value.evidence[0].content_fingerprint, self.now, 1,
+                ),
+                ChecklistBasisObservation(
+                    "REVIEW_ROUND", self.round, "PROJECT", self.project,
+                    "APPROVED", 5, value.content_fingerprint, self.now, 1,
+                ),
+            ), key=lambda item: (item.ref_kind, str(item.ref_id))))
+            gates.append(PersistedTransitionGate(
+                uuid4(), uuid4(), 1, bytes([index + 25]) * 32,
+                snapshot, basis,
+            ))
+        snapshot = ForwardTransitionSnapshot(
+            self.workflow, self.project, self.actor, self.trace, 1,
+            "SURVEY", "REQUIREMENT", 3, 4,
+            "Survey conclusion approved", self.now, snapshots,
+        )
+        self.transitions.append.return_value = PersistedStageTransition(
+            uuid4(), snapshot, tuple(gates), b"u" * 32, 4,
+        )
+
+        result = self.service.transition(
+            self._command(
+                target_stage_key="REQUIREMENT",
+                reason="Survey conclusion approved",
+            ),
+            idempotency_key="workflow-transition-survey-001",
+        )
+
+        queries = [call.args[1] for call in
+                   self.qualification.qualify_only_current_in_transaction.call_args_list]
+        self.assertEqual(
+            ("SURVEY_ACTUAL_SOURCES", "SURVEY_CONCLUSION"),
+            tuple(value.item_key for value in queries),
+        )
+        self.assertEqual("SURVEY", result.snapshot.from_stage)
+        self.assertEqual("REQUIREMENT", result.snapshot.to_stage)
+
+    def test_requirement_to_prototype_preserves_all_real_reviews(self):
+        subjects = []
+        for index in range(2):
+            subject_id, version_id = uuid4(), uuid4()
+            evidence = ChecklistQualificationEvidence(
+                uuid4(), self.project, index + 7,
+                bytes([index + 7]) * 32, self.now,
+            )
+            review = ChecklistQualificationReview(
+                uuid4(), uuid4(), self.project, subject_id, version_id,
+                index + 8, bytes([index + 12]) * 32, self.now,
+                "REQ-03", "REQUIREMENT_ALL_V1",
+            )
+            subjects.append(ChecklistQualificationSubject(
+                "REQ-03", subject_id, version_id,
+                bytes([index + 12]) * 32, (evidence,), review,
+            ))
+        subjects.sort(key=lambda value: value.subject_id.int)
+        values = tuple(AggregateChecklistQualification(
+            self.project, "REQUIREMENT", item_key, tuple(subjects), (),
+            b"s" * 32, bytes([index + 20]) * 32,
+        ) for index, item_key in enumerate((
+            "REQUIREMENT_FORMAL_VERSIONS", "REQUIREMENT_ACCEPTANCE",
+        )))
+        self.qualification.qualify_only_current_in_transaction.side_effect = values
+        gates = tuple(
+            WorkflowStageTransitionService._gate(value) for value in values
+        )
+        snapshots = tuple(GateItemSnapshot(
+            value.item_key, ChecklistState.PASS,
+            tuple(item.ref_id for item in gate.basis
+                  if item.ref_kind == "EVIDENCE"),
+            tuple(item.ref_id for item in gate.basis
+                  if item.ref_kind == "REVIEW_ROUND"),
+        ) for value, gate in zip(values, gates, strict=True))
+        persisted_gates = tuple(PersistedTransitionGate(
+            uuid4(), uuid4(), 1, bytes([index + 30]) * 32,
+            snapshot, gate.basis,
+        ) for index, (snapshot, gate) in enumerate(zip(
+            snapshots, gates, strict=True,
+        )))
+        transition = ForwardTransitionSnapshot(
+            self.workflow, self.project, self.actor, self.trace, 1,
+            "REQUIREMENT", "PROTOTYPE", 3, 4,
+            "Requirements accepted", self.now, snapshots,
+        )
+        self.transitions.append.return_value = PersistedStageTransition(
+            uuid4(), transition, persisted_gates, b"p" * 32, 4,
+        )
+
+        result = self.service.transition(self._command(
+            target_stage_key="PROTOTYPE", reason="Requirements accepted",
+        ), idempotency_key="workflow-transition-requirement-001")
+
+        self.assertEqual("PROTOTYPE", result.snapshot.to_stage)
+        appended = self.transitions.append.call_args.kwargs["command"]
+        self.assertEqual(
+            ("REQUIREMENT_FORMAL_VERSIONS", "REQUIREMENT_ACCEPTANCE"),
+            tuple(value.item_key for value in appended.gates),
+        )
+        self.assertTrue(all(
+            sum(item.ref_kind == "REVIEW_ROUND" for item in gate.basis) == 2
+            for gate in appended.gates
+        ))
+
+    def test_prototype_to_solution_reproves_both_items_and_preserves_mixed_reviews(self):
+        req, req_version, prt, prt_version = (uuid4() for _ in range(4))
+        evidence = ChecklistQualificationEvidence(
+            uuid4(), self.project, 4, b"e" * 32, self.now,
+        )
+        req_review = ChecklistQualificationReview(
+            uuid4(), uuid4(), self.project, req, req_version, 3,
+            b"r" * 32, self.now, "REQ-03", "REQUIREMENT_ALL_V1",
+        )
+        prt_review = ChecklistQualificationReview(
+            uuid4(), uuid4(), self.project, prt, prt_version, 3,
+            b"p" * 32, self.now, "PRT-03", "PROTOTYPE_ALL_V1",
+        )
+        subjects = (
+            ChecklistQualificationSubject(
+                "PRT-03", prt, prt_version, b"p" * 32, (), prt_review,
+            ),
+            ChecklistQualificationSubject(
+                "REQ-03", req, req_version, b"r" * 32,
+                (evidence,), req_review,
+            ),
+        )
+        values = tuple(AggregateChecklistQualification(
+            self.project, "PROTOTYPE", item_key, subjects, (),
+            b"s" * 32, bytes([index + 20]) * 32,
+        ) for index, item_key in enumerate((
+            "PROTOTYPE_SCOPE_DECISIONS", "PROTOTYPE_COVERAGE",
+        )))
+        self.qualification.qualify_only_current_in_transaction.side_effect = values
+        gate_proofs = tuple(WorkflowStageTransitionService._gate(value)
+                            for value in values)
+        snapshots = tuple(GateItemSnapshot(
+            value.item_key, ChecklistState.PASS,
+            tuple(item.ref_id for item in proof.basis
+                  if item.ref_kind == "EVIDENCE"),
+            tuple(item.ref_id for item in proof.basis
+                  if item.ref_kind == "REVIEW_ROUND"),
+        ) for value, proof in zip(values, gate_proofs, strict=True))
+        persisted = tuple(PersistedTransitionGate(
+            uuid4(), uuid4(), 1, bytes([index + 30]) * 32,
+            snapshot, proof.basis,
+        ) for index, (snapshot, proof) in enumerate(zip(
+            snapshots, gate_proofs, strict=True,
+        )))
+        transition = ForwardTransitionSnapshot(
+            self.workflow, self.project, self.actor, self.trace, 1,
+            "PROTOTYPE", "SOLUTION", 3, 4,
+            "Prototype qualification accepted", self.now, snapshots,
+        )
+        self.transitions.append.return_value = PersistedStageTransition(
+            uuid4(), transition, persisted, b"p" * 32, 4,
+        )
+        command = self._command(
+            target_stage_key="SOLUTION",
+            reason="Prototype qualification accepted",
+        )
+        with self.assertRaisesRegex(
+                WorkflowStageTransitionError, "VALIDATION_FAILED"):
+            self.service.transition(
+                command, idempotency_key="workflow-transition-prototype-closed",
+            )
+        prototype_service = WorkflowStageTransitionService(
+            unit_of_work=self.uow, sessions=self.sessions,
+            projects=self.projects, license_guard=self.guard,
+            qualification=self.qualification,
+            transitions=self.transitions, receipts=self.receipts,
+            audit=self.audit, clock=lambda: self.now,
+            enable_prototype=True,
+        )
+        result = prototype_service.transition(
+            command, idempotency_key="workflow-transition-prototype-001",
+        )
+        self.assertEqual("SOLUTION", result.snapshot.to_stage)
+        appended = self.transitions.append.call_args.kwargs["command"]
+        self.assertEqual(("PROTOTYPE_SCOPE_DECISIONS", "PROTOTYPE_COVERAGE"),
+                         tuple(gate.item_key for gate in appended.gates))
+        self.assertTrue(all(
+            sum(item.ref_kind == "REVIEW_ROUND" for item in gate.basis) == 2
+            for gate in appended.gates
+        ))
+
+    def test_replay_rechecks_access_and_returns_original_without_owner_write(self):
+        self.receipts.reserve.return_value = IdempotencyResult(
+            "V1_WORKFLOW_TRANSITION", self.result.stage_transition_id, 200,
+        )
+        result = self.service.transition(
+            self._command(), idempotency_key="workflow-transition-replay",
+        )
+        self.assertIs(result, self.result)
+        self.projects.require_in_transaction.assert_called_once()
+        self.transitions.get_transition.assert_called_once()
+        self.qualification.qualify_only_current_in_transaction.assert_not_called()
+        self.transitions.append.assert_not_called()
+        self.audit.append.assert_not_called()
+        self.receipts.complete.assert_not_called()
+        self.assertFalse(self.uow.values[-1].committed)
+
+    def test_two_gate_proofs_must_share_version_and_review(self):
+        changed_reviews = (
+            replace(self.qualifications[1].review,
+                    review_round_id=uuid4()),
+            replace(self.qualifications[1].review,
+                    review_id=uuid4()),
+            replace(self.qualifications[1].review,
+                    subject_fingerprint=b"x" * 32),
+        )
+        for index, changed_review in enumerate(changed_reviews):
+            with self.subTest(index=index):
+                changed = replace(
+                    self.qualifications[1], review=changed_review,
+                )
+                self.qualification.qualify_only_current_in_transaction.side_effect = (
+                    self.qualifications[0], changed,
+                )
+                with self.assertRaisesRegex(
+                        WorkflowStageTransitionError,
+                        "WORKFLOW_GATE_NOT_SATISFIED"):
+                    self.service.transition(
+                        self._command(),
+                        idempotency_key=f"workflow-transition-drift-{index}",
+                    )
+                self.transitions.append.assert_not_called()
+                self.assertFalse(self.uow.values[-1].committed)
+
+    def test_non_manager_license_and_audit_failure_close_without_commit(self):
+        self.projects.require_in_transaction.return_value = (
+            AuthorizedProjectAction(
+                self.actor, self.project,
+                "WORKFLOW_TRANSITION", "CUSTOMER_MANAGER",
+            )
+        )
+        with self.assertRaisesRegex(
+                WorkflowStageTransitionError, "RESOURCE_NOT_FOUND"):
+            self.service.transition(
+                self._command(), idempotency_key="workflow-transition-role",
+            )
+        self.projects.require_in_transaction.return_value = (
+            AuthorizedProjectAction(
+                self.actor, self.project,
+                "WORKFLOW_TRANSITION", "PROJECT_MANAGER",
+            )
+        )
+        self.guard.require_valid.side_effect = RuntimeLicenseError("EXPIRED")
+        with self.assertRaisesRegex(
+                WorkflowStageTransitionError, "LICENSE_OPERATION_DENIED"):
+            self.service.transition(
+                self._command(), idempotency_key="workflow-transition-license",
+            )
+        self.guard.require_valid.side_effect = None
+        self.audit.append.side_effect = RuntimeError("synthetic audit failure")
+        with self.assertRaisesRegex(
+                WorkflowStageTransitionError, "WORKFLOW_UNAVAILABLE"):
+            self.service.transition(
+                self._command(), idempotency_key="workflow-transition-audit",
+            )
+        self.assertFalse(self.uow.values[-1].committed)
+
+    def test_invalid_command_and_repository_error_are_safe(self):
+        for command in (
+            self._command(target_stage_key="DESIGN"),
+            self._command(reason=" "),
+            self._command(expected_workflow_version=-1),
+        ):
+            with self.subTest(command=command), self.assertRaisesRegex(
+                    WorkflowStageTransitionError, "VALIDATION_FAILED"):
+                self.service.transition(
+                    command, idempotency_key="workflow-transition-invalid",
+                )
+        self.transitions.append.side_effect = Exception("database detail")
+        with self.assertRaisesRegex(
+                WorkflowStageTransitionError, "WORKFLOW_UNAVAILABLE"):
+            self.service.transition(
+                self._command(), idempotency_key="workflow-transition-db",
+            )
+
+
+if __name__ == "__main__":
+    unittest.main()

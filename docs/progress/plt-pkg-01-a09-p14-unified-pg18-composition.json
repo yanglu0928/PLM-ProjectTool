@@ -1,0 +1,24 @@
+{
+  "case_insensitive_path_conflicts": 0,
+  "combined_payload_count": 21103,
+  "combined_zip_built": false,
+  "installation_authorized": false,
+  "open_gates": [
+    "all-source and third-party legal clearance",
+    "product License and public-key provisioning",
+    "formal installer/service-account/ACL/HTTPS",
+    "Windows Server 2025 product acceptance",
+    "Debian 13 acceptance deferred by user",
+    "Gate 3 through release/UAT"
+  ],
+  "pg_kind": "WINDOWS_PG18_PGVECTOR_RUNTIME_NON_RELEASE",
+  "pg_payload_count": 1629,
+  "pg_sidecar_sha256": "d0e038b43240369f7cd66396c34cd8e56d5a7a5a51ae3bc6f5fc41783baa7fd9",
+  "proposed_layout": "single payload tree; PostgreSQL under payload/pgsql, licenses under payload/third-party-licenses",
+  "release_eligible": false,
+  "schema_version": "plm.windows-unified-pg18-composition-plan.v1",
+  "status": "NON_RELEASE_INPUTS_DISJOINT_AND_VERIFIED",
+  "unified_kind": "WINDOWS11_UNIFIED_NOTICED_DEVELOPMENT_CANDIDATE",
+  "unified_payload_count": 19474,
+  "unified_sha256": "e4fdbcb601f526fd147b73b3e510e82653d85841503b5589dbf5c5d7c2f2eb50"
+}

@@ -1,0 +1,22 @@
+{
+  "schema_version": "poc-03.golden-coverage-result.v2",
+  "generated_at": "2026-09-18",
+  "status": "PASS",
+  "summary": {
+    "case_count": 120,
+    "unique_query_count": 120,
+    "duplicate_query_count": 0,
+    "unique_document_count": 29,
+    "unique_chunk_count": 120,
+    "source_type_count": 4,
+    "final_classification_count": 5,
+    "workflow_only_classification_count": 0
+  },
+  "privacy": {
+    "queries_committed": false,
+    "answer_terms_committed": false,
+    "reviewer_names_committed": false,
+    "dataset_committed": false
+  },
+  "conclusion": "R6 Golden Dataset quality coverage passed."
+}

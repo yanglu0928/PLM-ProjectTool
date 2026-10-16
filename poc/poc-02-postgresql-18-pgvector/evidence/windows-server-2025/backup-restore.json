@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "postgresql_version": "18.6",
+  "pgvector_version": "0.8.6",
+  "source_row_count": 100000,
+  "restored_row_count": 100000,
+  "source_id_sum": 5000050000,
+  "restored_id_sum": 5000050000,
+  "restored_index_method": "hnsw",
+  "dump_size_bytes": 15687652,
+  "dump_sha256": "ca3d7d47eb28354c5f8ffabcdabe6ceaff4f5c4cd00ed6da2a331f3ed3954c1f",
+  "restart_health_check": "PASS",
+  "completed_at_utc": "2026-09-17T07:47:00.1918007Z"
+}

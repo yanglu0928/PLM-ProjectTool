@@ -1,0 +1,11 @@
+Parsing 1 pages with HocrParser
+Postprocessing...
+Image optimization ratio: 1.00 savings: 0.0%
+Total file size ratio: 0.59 savings: -69.1%
+Output file is a PDF/A-2b (as expected)
+The output file size is 1.69× larger than the input file.
+Possible reasons for this include:
+--oversample was issued, causing transcoding.
+--deskew was issued, causing transcoding.
+Optimization was disabled.
+PDF/A conversion was enabled. (Try `--output-type pdf`.)
