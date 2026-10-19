@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261019-1222：Review List HTTP 在专用密钥装配前默认关闭
+
+- Date/WBS：2026-10-19 / `SOL-06-A16-P05`；依据冻结 REVIEW_LIST、P02 AES-GCM与P04授权Service，Windows专用Vault key工厂尚属P06。
+- Decision：新增独立可选Router和应用工厂插槽，不复用REVIEW_GET Router或其他模块cursor key；默认`create_app()`保持列表404。边界严格解析唯一`view/page_size/cursor`，解密绑定Session/Project/view/page_size，Page/Project/DTO再校验后才生成最小响应；解码ApplicationError保留400，内部畸形统一503。
+- Reason：提前复用临时key或把Router随GET自动挂载会破坏密钥隔离与默认关闭承诺；独立HTTP切片可先冻结网络语义，同时让P06对Windows Vault缺件执行启动失败关闭和真实PG/HTTP验收。
+- Impact/Rollback：无Schema、角色、License、依赖或历史变化；新增冻结路径的可选运行实现。默认未开放，撤Router/插槽即可回滚；合同、全量及wheel通过，真实Windows组合仍未验，不能据此称Inbox可用。
+
 ## DEC-20261019-1221：Review List 按原始候选消费位置续页
 
 - Date/WBS：2026-10-19 / `SOL-06-A16-P04`；依据 CR-RVW-004 的逐项 Subject Owner 隐藏、P02 加密位置与 P03 稳定索引。
