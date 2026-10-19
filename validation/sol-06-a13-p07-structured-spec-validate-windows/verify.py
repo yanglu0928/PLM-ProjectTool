@@ -93,7 +93,7 @@ def on_http(
             "integrity": "PASS", "payload": "PASS",
             "requirements": "PASS", "sections": "PASS",
             "evidence": "PASS", "artifacts": "PASS",
-            "trace": "UNAVAILABLE", "current_version": "PASS"}
+            "trace": "FAIL", "current_version": "PASS"}
         assert first_data["type_checks"][0] == {
             "code": "SCOPE_MAPPING", "status": "PASS"}
         assert first_data["valid"] and not first_data["ready_for_review"]

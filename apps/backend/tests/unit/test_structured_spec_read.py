@@ -102,6 +102,28 @@ class StructuredSpecReadTests(unittest.TestCase):
             self.service.get(replace(self.query, project_id=uuid.uuid4()), self.spec)
         self.assertEqual(failure.exception.code, "RESOURCE_NOT_FOUND")
 
+    def test_trace_read_uses_caller_transaction_and_exact_series_version(self):
+        transaction = object()
+        self.assertEqual(self.service.get_for_trace(
+            transaction, self.query, series_id=self.view.spec_series_id,
+            spec_id=self.spec), self.view)
+        for series_id, view in (
+                (uuid.uuid4(), self.view),
+                (self.view.spec_series_id,
+                 replace(self.view, version_state="RESTRICTED"))):
+            self.specs.view = view
+            with self.subTest(series_id=series_id), self.assertRaises(
+                    StructuredSpecReadError) as failure:
+                self.service.get_for_trace(
+                    transaction, self.query, series_id=series_id,
+                    spec_id=self.spec)
+            self.assertEqual(failure.exception.code, "RESOURCE_NOT_FOUND")
+        self.specs.view = self.view
+        with self.assertRaises(StructuredSpecReadError):
+            self.service.get_for_trace(
+                None, self.query, series_id=self.view.spec_series_id,
+                spec_id=self.spec)
+
     def test_denied_or_missing_session_or_license_fails_closed(self):
         self.authorization.denied = True
         with self.assertRaises(StructuredSpecReadError) as failure:

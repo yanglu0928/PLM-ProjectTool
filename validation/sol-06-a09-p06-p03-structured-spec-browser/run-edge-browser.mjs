@@ -229,17 +229,20 @@ try {
         .find(([name]) => name.toLowerCase() === "x-csrf-token")?.[1];
       const validationView = await evaluate(`(()=>({text:document.body.innerText,
         audit:[...document.querySelectorAll('.validation-report code')][0]?.textContent}))()`);
+      const requiredValidationText = ["尚不具备送审条件；不得视为已批准。", "固定版本完整性：通过",
+        "类型化内容结构：通过", "需求来源：通过", "章节来源：通过",
+        "证据来源：通过", "输出附件：通过", "追溯覆盖：未通过",
+        "当前缺少专项到需求/章节的可信追溯覆盖。", "系列当前版本：通过",
+        "类型检查仅确认已保存的设计声明完整，不代表已实施、已试运行或已获客户验收。",
+        "SCOPE_MAPPING：通过", "TRIAL_PLAN：通过", "RECONCILIATION_PLAN：通过",
+        "ROLLBACK_PLAN：通过", "ACCEPTANCE_CRITERIA：通过"];
+      const missingValidationText = requiredValidationText.filter(
+        part => !validationView.text.includes(part));
       if (typeof validateKey !== "string" || typeof validateCsrf !== "string"
         || !uuid.test(validationView.audit ?? "")
-        || !["尚不具备送审条件；不得视为已批准。", "固定版本完整性：通过",
-          "类型化内容结构：通过", "需求来源：通过", "章节来源：通过",
-          "证据来源：通过", "输出附件：通过", "追溯覆盖：暂无法核验",
-          "当前缺少专项到需求/章节的可信追溯覆盖。", "系列当前版本：通过",
-          "类型检查仅确认已保存的设计声明完整，不代表已实施、已试运行或已获客户验收。",
-          "SCOPE_MAPPING：通过", "TRIAL_PLAN：通过", "RECONCILIATION_PLAN：通过",
-          "ROLLBACK_PLAN：通过", "ACCEPTANCE_CRITERIA：通过"].every(
-            part => validationView.text.includes(part))) {
-        throw new Error(`Validation report or maintenance guidance invalid: ${JSON.stringify(validationView)}`);
+        || missingValidationText.length) {
+        throw new Error(`Validation report or maintenance guidance invalid: ${JSON.stringify({
+          ...validationView, missingValidationText})}`);
       }
       const validationStorageKey = `plm.sol.structured-spec.validate.pending.${actor}.${project}.${specId}`;
       const validationPending = JSON.stringify({ actor, project, spec: specId, key: validateKey });

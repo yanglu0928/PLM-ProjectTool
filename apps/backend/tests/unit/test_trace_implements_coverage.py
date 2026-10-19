@@ -20,7 +20,7 @@ class Repository:
         self.calls = []
         self.fail = False
 
-    def active_for_section(self, transaction, **kwargs):
+    def active_for_target(self, transaction, **kwargs):
         self.calls.append((transaction, kwargs))
         if self.fail:
             raise RuntimeError("database unavailable")
@@ -31,11 +31,14 @@ class Owner:
     def __init__(self):
         self.calls = []
         self.deny = None
+        self.fail_code = None
 
     def prove(self, transaction, query, ref):
         self.calls.append(ref)
         if self.deny == ref:
             raise TraceTargetProofError("RESOURCE_NOT_FOUND")
+        if self.fail_code is not None:
+            raise TraceTargetProofError(self.fail_code)
         return TraceTargetProof(ref)
 
 
@@ -44,6 +47,8 @@ class TraceImplementsCoverageTests(unittest.TestCase):
         self.project = uuid.uuid4()
         self.section = TraceVersionRef("solution", "SOL-05", uuid.uuid4(),
                                        uuid.uuid4(), "PROJECT", self.project)
+        self.spec = TraceVersionRef("solution", "SOL-06", uuid.uuid4(),
+                                    uuid.uuid4(), "PROJECT", self.project)
         self.req1 = TraceVersionRef("requirement", "REQ-03", uuid.uuid4(),
                                     uuid.uuid4(), "PROJECT", self.project)
         self.req2 = TraceVersionRef("requirement", "REQ-03", uuid.uuid4(),
@@ -54,6 +59,7 @@ class TraceImplementsCoverageTests(unittest.TestCase):
             owners=TraceTargetProofService({
                 ("requirement", "REQ-03"): self.owner,
                 ("solution", "SOL-05"): self.owner,
+                ("solution", "SOL-06"): self.owner,
             }),
         )
         self.query = TraceProofQuery(b"s" * 32, uuid.uuid4())
@@ -63,9 +69,9 @@ class TraceImplementsCoverageTests(unittest.TestCase):
         return TraceAdjacency(uuid.uuid4(), TraceEdgeShape(
             source or self.req1, target or self.section, relation))
 
-    def prove(self, expected=None):
+    def prove(self, expected=None, target=None):
         return self.service.prove(
-            self.transaction, query=self.query, section=self.section,
+            self.transaction, query=self.query, target=target or self.section,
             requirement_refs=(self.req1, self.req2) if expected is None else expected,
         )
 
@@ -78,7 +84,7 @@ class TraceImplementsCoverageTests(unittest.TestCase):
         rows = (self.row(self.req2), self.row(self.req1))
         self.repository.rows = rows
         proof = self.prove()
-        self.assertEqual(proof.section, self.section)
+        self.assertEqual(proof.target, self.section)
         self.assertEqual(proof.trace_link_ids,
                          tuple(row.trace_link_id for row in rows))
         self.assertEqual(self.repository.calls[0][1]["limit"], 501)
@@ -86,6 +92,14 @@ class TraceImplementsCoverageTests(unittest.TestCase):
         self.assertEqual(self.owner.calls.count(self.section), 3)
         self.assertEqual(self.owner.calls.count(self.req1), 1)
         self.assertEqual(self.owner.calls.count(self.req2), 1)
+
+    def test_structured_spec_target_uses_the_same_exact_contract(self):
+        rows = (self.row(self.req2, self.spec), self.row(self.req1, self.spec))
+        self.repository.rows = rows
+        proof = self.prove(target=self.spec)
+        self.assertEqual(proof.target, self.spec)
+        self.assertEqual(proof.requirement_refs, (self.req1, self.req2))
+        self.assertEqual(self.repository.calls[0][1]["target"], self.spec)
 
     def test_missing_extra_or_old_version_fails(self):
         self.repository.rows = (self.row(self.req1),)
@@ -130,6 +144,9 @@ class TraceImplementsCoverageTests(unittest.TestCase):
         self.owner.deny = self.req2
         self.denied()
         self.owner.deny = None
+        self.owner.fail_code = "TRACE_UNAVAILABLE"
+        self.denied(code="TRACE_UNAVAILABLE")
+        self.owner.fail_code = None
         self.repository.fail = True
         self.denied(code="TRACE_UNAVAILABLE")
 

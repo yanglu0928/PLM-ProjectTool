@@ -126,7 +126,8 @@ def on_validation_service(
         evidence=SectionEvidenceUseProofAdapter(fixed_sources=evidence_sources),
         documents=SectionDocumentContentProofAdapter(
             identities=SqlAlchemyReferenceVersionIdentity(),
-            fixed_sources=fixed))
+            fixed_sources=fixed),
+        trace=prior.UnavailableTraceCoverage())
     dependencies = dict(
         unit_of_work=runtime.unit_of_work,
         access=SqlAlchemyProjectWriteAccess(), license_guard=license_guard,

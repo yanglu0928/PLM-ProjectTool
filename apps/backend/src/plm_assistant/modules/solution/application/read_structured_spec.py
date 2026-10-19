@@ -112,59 +112,11 @@ class StructuredSpecReadService:
 
     def get(self, query: StructuredSpecReadQuery,
             spec_id: uuid.UUID) -> StructuredSpecHistoryView:
-        if (type(query) is not StructuredSpecReadQuery
-                or type(query.session_token) is not bytes
-                or len(query.session_token) != 32
-                or not all(_id(value) for value in (
-                    query.trace_id, query.project_id, spec_id))):
-            raise StructuredSpecReadError("VALIDATION_FAILED")
+        self._query(query, spec_id)
         try:
             self._guard.require_valid(trace_id=query.trace_id)
             with self._uow() as tx:
-                now = self._clock()
-                if (type(now) is not datetime or now.tzinfo is None
-                        or now.utcoffset() is None):
-                    raise StructuredSpecReadError()
-                actor = self._access.authenticated_user(
-                    tx, session_token=query.session_token,
-                    now=now.astimezone(timezone.utc))
-                if not _id(actor):
-                    raise StructuredSpecReadError("AUTH_ACCESS_DENIED")
-                authorized = self._authorization.require_in_transaction(
-                    tx, user_id=actor, project_id=query.project_id,
-                    operation="SOL_STRUCTURED_SPEC_GET")
-                if (authorized.user_id != actor
-                        or authorized.project_id != query.project_id
-                        or authorized.operation != "SOL_STRUCTURED_SPEC_GET"):
-                    raise StructuredSpecReadError("RESOURCE_NOT_FOUND")
-                view = self._specs.get(
-                    tx, project_id=query.project_id, spec_id=spec_id)
-                if view is None:
-                    raise StructuredSpecReadError("RESOURCE_NOT_FOUND")
-                if (type(view) is not StructuredSpecHistoryView
-                        or view.project_id != query.project_id
-                        or view.structured_solution_spec_id != spec_id
-                        or not _id(view.spec_series_id)
-                        or view.spec_type not in (
-                            "PROCESS_MODEL", "INTERFACE_SPEC", "MIGRATION_SPEC",
-                            "PERMISSION_DESIGN")
-                        or type(view.version_no) is not int or view.version_no < 1
-                        or view.version_state not in (
-                            "DRAFT", "IN_REVIEW", "APPROVED", "RETURNED",
-                            "SUPERSEDED", "RESTRICTED")
-                        or (view.review_ref is None) != (view.review_round_ref is None)
-                        or (view.supersedes_version_ref is None)
-                        != (view.version_no == 1)
-                        or not _id(view.created_by)
-                        or type(view.created_at) is not datetime
-                        or view.created_at.tzinfo is None
-                        or view.created_at.utcoffset() is None
-                        or any(type(digest) is not bytes or len(digest) != 32
-                               for digest in (view.content_fingerprint,
-                                              view.payload_fingerprint))
-                        or view.artifact_ids):
-                    raise StructuredSpecReadError()
-                return view
+                return self._read_one(tx, query, spec_id)
         except StructuredSpecReadError:
             raise
         except ProjectAuthorizationError as error:
@@ -173,6 +125,93 @@ class StructuredSpecReadService:
             raise StructuredSpecReadError("LICENSE_OPERATION_DENIED") from None
         except Exception:
             raise StructuredSpecReadError() from None
+
+    def get_for_trace(
+        self, transaction: object, query: StructuredSpecReadQuery, *,
+        series_id: uuid.UUID, spec_id: uuid.UUID,
+    ) -> StructuredSpecHistoryView:
+        """Prove one fixed series/version inside the caller's Trace transaction."""
+        self._query(query, spec_id)
+        if transaction is None or not _id(series_id):
+            raise StructuredSpecReadError("RESOURCE_NOT_FOUND")
+        try:
+            self._guard.require_valid(trace_id=query.trace_id)
+            view = self._read_one(transaction, query, spec_id)
+            if (view.spec_series_id != series_id
+                    or view.version_state == "RESTRICTED"):
+                raise StructuredSpecReadError("RESOURCE_NOT_FOUND")
+            return view
+        except StructuredSpecReadError:
+            raise
+        except ProjectAuthorizationError as error:
+            raise StructuredSpecReadError(error.code) from None
+        except RuntimeLicenseError:
+            raise StructuredSpecReadError("LICENSE_OPERATION_DENIED") from None
+        except Exception:
+            raise StructuredSpecReadError() from None
+
+    def _read_one(
+        self, transaction: object, query: StructuredSpecReadQuery,
+        spec_id: uuid.UUID,
+    ) -> StructuredSpecHistoryView:
+        now = self._clock()
+        if (type(now) is not datetime or now.tzinfo is None
+                or now.utcoffset() is None):
+            raise StructuredSpecReadError()
+        actor = self._access.authenticated_user(
+            transaction, session_token=query.session_token,
+            now=now.astimezone(timezone.utc))
+        if not _id(actor):
+            raise StructuredSpecReadError("AUTH_ACCESS_DENIED")
+        authorized = self._authorization.require_in_transaction(
+            transaction, user_id=actor, project_id=query.project_id,
+            operation="SOL_STRUCTURED_SPEC_GET")
+        if (authorized.user_id != actor
+                or authorized.project_id != query.project_id
+                or authorized.operation != "SOL_STRUCTURED_SPEC_GET"):
+            raise StructuredSpecReadError("RESOURCE_NOT_FOUND")
+        view = self._specs.get(
+            transaction, project_id=query.project_id, spec_id=spec_id)
+        if view is None:
+            raise StructuredSpecReadError("RESOURCE_NOT_FOUND")
+        self._view(view, query.project_id, spec_id)
+        return view
+
+    @staticmethod
+    def _view(value: object, project_id: uuid.UUID,
+              spec_id: uuid.UUID) -> None:
+        if (type(value) is not StructuredSpecHistoryView
+                or value.project_id != project_id
+                or value.structured_solution_spec_id != spec_id
+                or not _id(value.spec_series_id)
+                or value.spec_type not in (
+                    "PROCESS_MODEL", "INTERFACE_SPEC", "MIGRATION_SPEC",
+                    "PERMISSION_DESIGN")
+                or type(value.version_no) is not int or value.version_no < 1
+                or value.version_state not in (
+                    "DRAFT", "IN_REVIEW", "APPROVED", "RETURNED",
+                    "SUPERSEDED", "RESTRICTED")
+                or (value.review_ref is None) != (value.review_round_ref is None)
+                or (value.supersedes_version_ref is None)
+                != (value.version_no == 1)
+                or not _id(value.created_by)
+                or type(value.created_at) is not datetime
+                or value.created_at.tzinfo is None
+                or value.created_at.utcoffset() is None
+                or any(type(digest) is not bytes or len(digest) != 32
+                       for digest in (value.content_fingerprint,
+                                      value.payload_fingerprint))
+                or value.artifact_ids):
+            raise StructuredSpecReadError()
+
+    @staticmethod
+    def _query(query: StructuredSpecReadQuery, spec_id: uuid.UUID) -> None:
+        if (type(query) is not StructuredSpecReadQuery
+                or type(query.session_token) is not bytes
+                or len(query.session_token) != 32
+                or not all(_id(value) for value in (
+                    query.trace_id, query.project_id, spec_id))):
+            raise StructuredSpecReadError("VALIDATION_FAILED")
 
     def list_versions(self, query: StructuredSpecReadQuery, *,
                       before_spec_id: uuid.UUID | None = None,

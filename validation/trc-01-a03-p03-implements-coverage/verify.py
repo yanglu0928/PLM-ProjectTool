@@ -106,7 +106,7 @@ def on_coverage(*, port, runtime, license_guard, audit, project, other_project,
 
     def prove(expected=(requirement_ref,)):
         with runtime.unit_of_work() as tx:
-            return coverage.prove(tx, query=query, section=section_ref,
+            return coverage.prove(tx, query=query, target=section_ref,
                                   requirement_refs=expected)
 
     denied(prove)
@@ -121,7 +121,7 @@ def on_coverage(*, port, runtime, license_guard, audit, project, other_project,
         "PROJECT", project),)))
     with runtime.unit_of_work() as tx:
         denied(lambda: coverage.prove(
-            tx, query=query, section=section_ref,
+            tx, query=query, target=section_ref,
             requirement_refs=(TraceVersionRef(
                 "requirement", "REQ-03", requirement, requirement_version,
                 "PROJECT", other_project),)))

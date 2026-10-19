@@ -39,6 +39,9 @@ from plm_assistant.modules.solution.application.structured_spec_validation_contr
 from plm_assistant.modules.solution.application.structured_spec_validation_source import (
     StructuredSpecValidationSource,
 )
+from plm_assistant.modules.trace.application.implements_coverage import (
+    TraceImplementsCoverageError, TraceImplementsCoverageProof,
+)
 
 
 PROJECT, SPEC, SERIES, ACTOR, TRACE = (uuid.uuid4() for _ in range(5))
@@ -141,17 +144,21 @@ def facts():
         EVIDENCE, PROJECT, uuid.uuid4(), uuid.uuid4(), 1, b"e" * 32)
     document = SectionDocumentContentProof(
         PROJECT, uuid.uuid4(), DOCUMENT_VERSION, b"d" * 32)
-    ports = tuple(Mock() for _ in range(5))
-    requirements, sections, versions, evidence_port, documents = ports
+    ports = tuple(Mock() for _ in range(6))
+    requirements, sections, versions, evidence_port, documents, trace = ports
     requirements.prove.return_value = requirement
     sections.get_current.return_value = root
     versions.get.return_value = version
     versions.list.return_value = (version,)
     evidence_port.prove.return_value = evidence
     documents.prove.return_value = document
+    trace.prove.side_effect = lambda _transaction, *, query, target, requirement_refs: (
+        TraceImplementsCoverageProof(
+            target, requirement_refs, tuple(uuid.uuid4()
+                                            for _ in requirement_refs)))
     evaluator = StructuredSpecCurrentFactEvaluator(
         requirements=requirements, sections=sections, versions=versions,
-        evidence=evidence_port, documents=documents)
+        evidence=evidence_port, documents=documents, trace=trace)
     return evaluator, ports, (requirement, version, document, evidence)
 
 
@@ -180,7 +187,7 @@ def _with_current_fingerprint(source, proofs):
         source.snapshot, content_fingerprint=fingerprint))
 
 
-def test_proven_common_sources_stay_valid_but_missing_trace_blocks_ready(facts):
+def test_proven_common_sources_and_exact_trace_pass_independently(facts):
     evaluator, _ports, proofs = facts
     source = _with_current_fingerprint(_source(), proofs)
     observed = evaluator.evaluate(object(), command=_command(), source=source)
@@ -188,7 +195,7 @@ def test_proven_common_sources_stay_valid_but_missing_trace_blocks_ready(facts):
             observed.facts.requirements, observed.facts.sections,
             observed.facts.evidence) == ("PASS",) * 5
     assert observed.facts.artifacts == "PASS"
-    assert observed.facts.trace == "UNAVAILABLE"
+    assert observed.facts.trace == "PASS"
     assert observed.facts.current_version == "PASS"
     assert tuple(item.code for item in observed.type_checks.checks) == (
         DESIGN_CHECKS["MIGRATION_SPEC"])
@@ -206,7 +213,7 @@ def test_changed_source_digest_fails_integrity_without_hiding_owner_facts(facts)
 
 def test_owner_failures_are_independent_and_do_not_invent_fail(facts):
     evaluator, ports, _proofs = facts
-    requirements, sections, versions, evidence, documents = ports
+    requirements, sections, versions, evidence, documents, _trace = ports
     requirements.prove.side_effect = RuntimeError("opaque")
     evidence.prove.return_value = replace(
         evidence.prove.return_value, project_id=uuid.uuid4())
@@ -231,7 +238,22 @@ def test_stale_section_historical_spec_and_nonempty_artifact_are_explicit(facts)
     assert observed.facts.sections == "UNAVAILABLE"
     assert observed.facts.current_version == "FAIL"
     assert observed.facts.artifacts == "UNAVAILABLE"
-    assert observed.facts.trace == "UNAVAILABLE"
+    assert observed.facts.trace == "PASS"
+
+
+def test_trace_mismatch_unavailable_and_malformed_proof_fail_closed(facts):
+    evaluator, ports, _proofs = facts
+    trace = ports[-1]
+    for code, expected in (
+            ("TRACE_COVERAGE_REQUIRED", "FAIL"),
+            ("TRACE_UNAVAILABLE", "UNAVAILABLE")):
+        trace.prove.side_effect = TraceImplementsCoverageError(code)
+        assert evaluator.evaluate(
+            object(), command=_command(), source=_source()).facts.trace == expected
+    trace.prove.side_effect = None
+    trace.prove.return_value = object()
+    assert evaluator.evaluate(
+        object(), command=_command(), source=_source()).facts.trace == "UNAVAILABLE"
 
 
 @pytest.mark.parametrize("spec_type", tuple(PAYLOADS))
@@ -258,4 +280,4 @@ def test_all_ports_are_required():
     with pytest.raises(ValueError):
         StructuredSpecCurrentFactEvaluator(
             requirements=None, sections=Mock(), versions=Mock(),
-            evidence=Mock(), documents=Mock())
+            evidence=Mock(), documents=Mock(), trace=Mock())

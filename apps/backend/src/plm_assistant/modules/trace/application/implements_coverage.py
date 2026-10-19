@@ -1,4 +1,4 @@
-"""Current, exact IMPLEMENTS coverage for one fixed SectionVersion."""
+"""Current exact Requirement IMPLEMENTS coverage for one fixed Solution version."""
 
 from __future__ import annotations
 
@@ -21,16 +21,16 @@ class TraceImplementsCoverageError(RuntimeError):
 
 @dataclass(frozen=True, slots=True)
 class TraceImplementsCoverageProof:
-    section: TraceVersionRef
+    target: TraceVersionRef
     requirement_refs: tuple[TraceVersionRef, ...]
     trace_link_ids: tuple[uuid.UUID, ...]
 
 
 class TraceImplementsRepositoryPort(Protocol):
-    def active_for_section(self, transaction: object, *,
-                           project_id: uuid.UUID,
-                           section: TraceVersionRef,
-                           limit: int) -> tuple[TraceAdjacency, ...]: ...
+    def active_for_target(self, transaction: object, *,
+                          project_id: uuid.UUID,
+                          target: TraceVersionRef,
+                          limit: int) -> tuple[TraceAdjacency, ...]: ...
 
 
 class TraceImplementsCoverageService:
@@ -41,20 +41,21 @@ class TraceImplementsCoverageService:
         self._repository, self._owners = repository, owners
 
     def prove(self, transaction: object, *, query: TraceProofQuery,
-              section: TraceVersionRef,
+              target: TraceVersionRef,
               requirement_refs: tuple[TraceVersionRef, ...]) -> TraceImplementsCoverageProof:
         if (transaction is None or type(query) is not TraceProofQuery
                 or type(query.session_token) is not bytes or len(query.session_token) != 32
                 or type(query.trace_id) is not uuid.UUID or query.trace_id.int == 0
-                or type(section) is not TraceVersionRef
-                or (section.owner_module, section.object_type, section.scope)
-                != ("solution", "SOL-05", "PROJECT")
+                or type(target) is not TraceVersionRef
+                or target.owner_module != "solution"
+                or target.object_type not in ("SOL-05", "SOL-06")
+                or target.scope != "PROJECT"
                 or type(requirement_refs) is not tuple
                 or not 1 <= len(requirement_refs) <= 500
                 or any(type(ref) is not TraceVersionRef
                        or (ref.owner_module, ref.object_type, ref.scope,
                            ref.project_id) != (
-                               "requirement", "REQ-03", "PROJECT", section.project_id)
+                               "requirement", "REQ-03", "PROJECT", target.project_id)
                        for ref in requirement_refs)
                 or len({ref.object_id for ref in requirement_refs})
                 != len(requirement_refs)
@@ -62,10 +63,10 @@ class TraceImplementsCoverageService:
                 != len(requirement_refs)):
             raise TraceImplementsCoverageError()
         try:
-            self._owners.prove_ref(transaction, query, section)
-            rows = self._repository.active_for_section(
-                transaction, project_id=section.project_id,
-                section=section, limit=501,
+            self._owners.prove_ref(transaction, query, target)
+            rows = self._repository.active_for_target(
+                transaction, project_id=target.project_id,
+                target=target, limit=501,
             )
             if (type(rows) is not tuple or len(rows) != len(requirement_refs)
                     or len(rows) > 500):
@@ -80,9 +81,9 @@ class TraceImplementsCoverageService:
                         or item.trace_link_id in link_ids
                         or type(item.edge) is not TraceEdgeShape
                         or item.edge.scope != "PROJECT"
-                        or item.edge.project_id != section.project_id
+                        or item.edge.project_id != target.project_id
                         or item.edge.relation_type != "IMPLEMENTS"
-                        or item.edge.target != section
+                        or item.edge.target != target
                         or item.edge.source not in expected
                         or item.edge.source in seen):
                     raise TraceImplementsCoverageError()
@@ -92,7 +93,7 @@ class TraceImplementsCoverageService:
             if seen != expected:
                 raise TraceImplementsCoverageError()
             return TraceImplementsCoverageProof(
-                section, requirement_refs,
+                target, requirement_refs,
                 tuple(item.trace_link_id for item in rows),
             )
         except TraceImplementsCoverageError:
@@ -100,6 +101,8 @@ class TraceImplementsCoverageService:
         except TraceTargetProofError as exc:
             if exc.code == "LICENSE_OPERATION_DENIED":
                 raise TraceImplementsCoverageError("LICENSE_OPERATION_DENIED") from None
-            raise TraceImplementsCoverageError() from None
+            if exc.code == "RESOURCE_NOT_FOUND":
+                raise TraceImplementsCoverageError() from None
+            raise TraceImplementsCoverageError("TRACE_UNAVAILABLE") from None
         except Exception:
             raise TraceImplementsCoverageError("TRACE_UNAVAILABLE") from None

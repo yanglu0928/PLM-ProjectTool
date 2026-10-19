@@ -55,6 +55,9 @@ from plm_assistant.modules.solution.infrastructure.section_version_read_reposito
 from plm_assistant.modules.solution.infrastructure.structured_spec_validation_repository import (
     SqlAlchemyStructuredSpecValidationRepository,
 )
+from plm_assistant.modules.trace.application.implements_coverage import (
+    TraceImplementsCoverageError,
+)
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -64,6 +67,13 @@ SPEC = importlib.util.spec_from_file_location(
 assert SPEC and SPEC.loader
 prior = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(prior)
+
+
+class UnavailableTraceCoverage:
+    """Historical P04 fixture before the SOL-06 Trace Owner was installed."""
+
+    def prove(self, *_args, **_kwargs):
+        raise TraceImplementsCoverageError("TRACE_UNAVAILABLE")
 
 
 def on_current_facts(*, runtime, project, token, first, second,
@@ -86,7 +96,8 @@ def on_current_facts(*, runtime, project, token, first, second,
         versions=SqlAlchemySectionVersionReadRepository(),
         evidence=SectionEvidenceUseProofAdapter(fixed_sources=evidence_sources),
         documents=SectionDocumentContentProofAdapter(
-            identities=SqlAlchemyReferenceVersionIdentity(), fixed_sources=fixed))
+            identities=SqlAlchemyReferenceVersionIdentity(), fixed_sources=fixed),
+        trace=UnavailableTraceCoverage())
     repository = SqlAlchemyStructuredSpecValidationRepository()
 
     with runtime.unit_of_work() as transaction:

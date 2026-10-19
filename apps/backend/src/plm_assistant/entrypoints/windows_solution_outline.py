@@ -6,6 +6,8 @@ from pathlib import Path
 
 from fastapi import APIRouter
 
+from plm_assistant.entrypoints.trace_requirement_owner import RequirementVersionTraceOwner
+from plm_assistant.entrypoints.trace_structured_spec_owner import StructuredSpecTraceOwner
 from plm_assistant.modules.auth.infrastructure.project_read_access import SqlAlchemyProjectReadAccess
 from plm_assistant.modules.auth.infrastructure.project_write_access import SqlAlchemyProjectWriteAccess
 from plm_assistant.modules.document.application.prove_reference_use_document import ReferenceUseDocumentProofService
@@ -63,7 +65,9 @@ from plm_assistant.modules.solution.application.prove_outline_section_use import
 from plm_assistant.modules.solution.application.prove_outline_version_input import OutlineVersionInputProofService
 from plm_assistant.modules.solution.application.prove_reference_use import ReferenceUseProofService
 from plm_assistant.modules.requirement.application.outline_version_proof import OutlineRequirementUseProofService
+from plm_assistant.modules.requirement.application.read_versions import RequirementVersionReadService
 from plm_assistant.modules.requirement.infrastructure.prototype_version_proof import SqlAlchemyPrototypeApprovedRequirementVersionProof
+from plm_assistant.modules.requirement.infrastructure.version_read_repository import SqlAlchemyRequirementVersionReadRepository
 from plm_assistant.modules.solution.application.read_outline import OutlineReadService
 from plm_assistant.modules.solution.application.read_section import SectionReadService
 from plm_assistant.modules.solution.infrastructure.outline_create_repository import SqlAlchemyOutlineCreateRepository
@@ -93,6 +97,9 @@ from plm_assistant.modules.solution.infrastructure.reference_use_repository impo
     SqlAlchemyCurrentGlobalConfirmationRepository, SqlAlchemyCurrentReferenceUseRepository,
 )
 from plm_assistant.modules.solution.infrastructure.reference_use_source import CurrentReferenceSourceAdapter
+from plm_assistant.modules.trace.application.implements_coverage import TraceImplementsCoverageService
+from plm_assistant.modules.trace.application.target_proof import TraceTargetProofService
+from plm_assistant.modules.trace.infrastructure.implements_repository import SqlAlchemyTraceImplementsRepository
 
 
 class ProductionSolutionOutlineStartupError(RuntimeError):
@@ -551,18 +558,37 @@ def create_windows_structured_spec_validate_router(
             documents, downloads, parse_results)):
         raise ProductionSolutionOutlineStartupError()
     try:
+        authorization = ProjectAuthorizationService(
+            unit_of_work=runtime.unit_of_work,
+            repository=SqlAlchemyProjectAuthorizationRepository())
+        read_access = SqlAlchemyProjectReadAccess()
         fixed = DocumentFixedSourceProofService(
             documents=documents, downloads=downloads,
             parse_metadata=SqlAlchemyParseResultReadRepository(),
             parse_results=parse_results)
         evidence = EvidenceFixedProjectSourceService(
-            sessions=SqlAlchemyProjectReadAccess(),
+            sessions=read_access,
             projects=SqlAlchemyProjectAuthorizationRepository(),
             evidence=SqlAlchemyEvidenceFixedSourceRepository(),
             documents=fixed,
             allowed_project_roles=frozenset({
                 "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}),
         )
+        requirement_trace_owner = RequirementVersionTraceOwner(
+            RequirementVersionReadService(
+                unit_of_work=runtime.unit_of_work, access=read_access,
+                license_guard=license_guard, authorization=authorization,
+                repository=SqlAlchemyRequirementVersionReadRepository()))
+        spec_trace_owner = StructuredSpecTraceOwner(StructuredSpecReadService(
+            unit_of_work=runtime.unit_of_work, access=read_access,
+            license_guard=license_guard, authorization=authorization,
+            specs=SqlAlchemyStructuredSpecReadRepository()))
+        trace = TraceImplementsCoverageService(
+            repository=SqlAlchemyTraceImplementsRepository(),
+            owners=TraceTargetProofService({
+                ("requirement", "REQ-03"): requirement_trace_owner,
+                ("solution", "SOL-06"): spec_trace_owner,
+            }))
         evaluator = StructuredSpecCurrentFactEvaluator(
             requirements=OutlineRequirementUseProofService(
                 approved_versions=(
@@ -573,13 +599,12 @@ def create_windows_structured_spec_validate_router(
             documents=SectionDocumentContentProofAdapter(
                 identities=SqlAlchemyReferenceVersionIdentity(),
                 fixed_sources=fixed),
+            trace=trace,
         )
         service = StructuredSpecValidationService(
             unit_of_work=runtime.unit_of_work,
             access=SqlAlchemyProjectWriteAccess(), license_guard=license_guard,
-            authorization=ProjectAuthorizationService(
-                unit_of_work=runtime.unit_of_work,
-                repository=SqlAlchemyProjectAuthorizationRepository()),
+            authorization=authorization,
             repository=SqlAlchemyStructuredSpecValidationRepository(),
             evaluator=evaluator, receipts=SqlAlchemyIdempotencyReceipts(),
             audit=audit,

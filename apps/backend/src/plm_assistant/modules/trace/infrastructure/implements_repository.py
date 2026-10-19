@@ -1,4 +1,4 @@
-"""Read-lock current project IMPLEMENTS edges for a fixed SectionVersion."""
+"""Read-lock current project IMPLEMENTS edges for a fixed Solution version."""
 
 from __future__ import annotations
 
@@ -14,26 +14,26 @@ from .orm import TraceLinkRow
 
 
 class SqlAlchemyTraceImplementsRepository:
-    def active_for_section(self, transaction: object, *,
-                           project_id: uuid.UUID,
-                           section: TraceVersionRef,
-                           limit: int) -> tuple[TraceAdjacency, ...]:
+    def active_for_target(self, transaction: object, *,
+                          project_id: uuid.UUID,
+                          target: TraceVersionRef,
+                          limit: int) -> tuple[TraceAdjacency, ...]:
         if (type(project_id) is not uuid.UUID or project_id.int == 0
-                or type(section) is not TraceVersionRef
-                or (section.owner_module, section.object_type, section.scope,
-                    section.project_id) != (
-                        "solution", "SOL-05", "PROJECT", project_id)
+                or type(target) is not TraceVersionRef
+                or target.owner_module != "solution"
+                or target.object_type not in ("SOL-05", "SOL-06")
+                or (target.scope, target.project_id) != ("PROJECT", project_id)
                 or type(limit) is not int or limit != 501):
-            raise ValueError("bounded fixed SectionVersion query required")
+            raise ValueError("bounded fixed Solution version query required")
         rows = _session(transaction).execute(select(TraceLinkRow).where(
             TraceLinkRow.scope == "PROJECT",
             TraceLinkRow.project_id == project_id,
             TraceLinkRow.link_state == "ACTIVE",
             TraceLinkRow.relation_type == "IMPLEMENTS",
             TraceLinkRow.target_owner_module == "solution",
-            TraceLinkRow.target_object_type == "SOL-05",
-            TraceLinkRow.target_object_id == section.object_id,
-            TraceLinkRow.target_version_id == section.version_id,
+            TraceLinkRow.target_object_type == target.object_type,
+            TraceLinkRow.target_object_id == target.object_id,
+            TraceLinkRow.target_version_id == target.version_id,
             TraceLinkRow.target_project_id == project_id,
         ).order_by(TraceLinkRow.trace_link_id).limit(limit).with_for_update(
             read=True, of=TraceLinkRow,

@@ -11,6 +11,11 @@ from plm_assistant.modules.requirement.application.outline_version_proof import 
 from plm_assistant.modules.platform.application.idempotency import (
     IdempotencyError, canonical_payload_fingerprint,
 )
+from plm_assistant.modules.trace.application.implements_coverage import (
+    TraceImplementsCoverageError, TraceImplementsCoverageProof,
+)
+from plm_assistant.modules.trace.application.target_proof import TraceProofQuery
+from plm_assistant.modules.trace.domain.link_shape import TraceVersionRef
 
 from .prove_section_document_content import SectionDocumentContentProof
 from .prove_section_evidence_use import SectionEvidenceUseProof
@@ -62,6 +67,14 @@ class DocumentPort(Protocol):
               document_version_id: uuid.UUID) -> SectionDocumentContentProof: ...
 
 
+class TraceCoveragePort(Protocol):
+    def prove(
+        self, transaction: object, *, query: TraceProofQuery,
+        target: TraceVersionRef,
+        requirement_refs: tuple[TraceVersionRef, ...],
+    ) -> TraceImplementsCoverageProof: ...
+
+
 def _id(value: object) -> bool:
     return type(value) is uuid.UUID and value.int != 0
 
@@ -75,15 +88,16 @@ class StructuredSpecCurrentFactEvaluator:
 
     def __init__(self, *, requirements: RequirementPort, sections: SectionPort,
                  versions: SectionVersionPort, evidence: EvidencePort,
-                 documents: DocumentPort) -> None:
+                 documents: DocumentPort, trace: TraceCoveragePort) -> None:
         if any(port is None for port in (
-                requirements, sections, versions, evidence, documents)):
+                requirements, sections, versions, evidence, documents, trace)):
             raise ValueError("all SOL-06 current fact ports required")
         self._requirements = requirements
         self._sections = sections
         self._versions = versions
         self._evidence = evidence
         self._documents = documents
+        self._trace = trace
 
     def evaluate(
         self, transaction: object, *, command: ValidateStructuredSpec,
@@ -102,6 +116,7 @@ class StructuredSpecCurrentFactEvaluator:
             transaction, command, source)
         evidence, evidence_facts = self._evidence_status(
             transaction, command, source)
+        trace = self._trace_status(transaction, command, source)
         integrity = "UNAVAILABLE"
         if (requirements, sections, evidence) == ("PASS", "PASS", "PASS"):
             try:
@@ -122,7 +137,7 @@ class StructuredSpecCurrentFactEvaluator:
             requirements=requirements, sections=sections, evidence=evidence,
             artifacts=("PASS" if not source.draft.artifact_ids
                        else "UNAVAILABLE"),
-            trace="UNAVAILABLE",
+            trace=trace,
             current_version=("PASS" if source.is_current_version else "FAIL"),
         )
         # The reconstructed draft has already passed the strict payload
@@ -133,6 +148,38 @@ class StructuredSpecCurrentFactEvaluator:
         return StructuredSpecValidationObservation(
             facts, build_structured_spec_type_checks(
                 source.snapshot.spec_type, statuses))
+
+    def _trace_status(
+        self, transaction: object, command: ValidateStructuredSpec,
+        source: StructuredSpecValidationSource,
+    ) -> str:
+        target = TraceVersionRef(
+            "solution", "SOL-06", source.snapshot.spec_series_id,
+            source.snapshot.structured_solution_spec_id, "PROJECT",
+            source.snapshot.project_id)
+        requirements = tuple(TraceVersionRef(
+            "requirement", "REQ-03", ref.requirement_id,
+            ref.requirement_version_id, "PROJECT", source.snapshot.project_id)
+            for ref in source.draft.requirement_refs)
+        try:
+            proof = self._trace.prove(
+                transaction,
+                query=TraceProofQuery(command.session_token, command.trace_id),
+                target=target, requirement_refs=requirements)
+            if (type(proof) is not TraceImplementsCoverageProof
+                    or proof.target != target
+                    or proof.requirement_refs != requirements
+                    or type(proof.trace_link_ids) is not tuple
+                    or len(proof.trace_link_ids) != len(requirements)
+                    or len(set(proof.trace_link_ids)) != len(requirements)
+                    or any(not _id(item) for item in proof.trace_link_ids)):
+                return "UNAVAILABLE"
+            return "PASS"
+        except TraceImplementsCoverageError as exc:
+            return ("FAIL" if exc.code == "TRACE_COVERAGE_REQUIRED"
+                    else "UNAVAILABLE")
+        except Exception:
+            return "UNAVAILABLE"
 
     def _requirement_status(
         self, transaction: object, source: StructuredSpecValidationSource,
