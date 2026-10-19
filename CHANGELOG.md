@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-19：0.1.0-dev.0/PLAN-01-A03-P03 增加 Plan 身份当前授权内部详情/列表读取，真实身份行而非首次结果作为状态来源，当前成员/License 重验、稳定有界分页、项目隔离/撤权和零读 Audit。兼容性/升级/回滚：无 Migration、公开 API、依赖、License 或旧数据变化，可撤内部读取，Plan 历史保留。验证：Win11/PG18.6真实 Session/Project/License、双页/隔离/撤权/零写入；定向15项/822子例、后端全量3794通过/3跳过/5945子例；开发wheel1434项、SHA-256 `88c7293cfe2f66669f84f97d64681122f14207e108e352804de50ffa452789fc`。已知问题：HTTP/Windows/UI、PlanVersion/WBS/Output、正式信任/安装与Gate3/Pilot/发行仍待。
+
 - 2026-10-19：0.1.0-dev.0/PLAN-01-A03-P02 增加 Plan 身份原子创建 Owner/Migration0169与`PLAN_CREATE` Project 策略；真实 Session/License/项目授权、首次快照/通用收据/Audit 同事务，同 Key 重放在名称变化后仍返回首次201。兼容性/升级/回滚：从0168只开放受约束 INSERT，尚无 HTTP/Windows/UI；有历史拒降，需向前修复或人工备份恢复；冻结 URL/DTO、角色集合与旧数据不变。验证：Win11/PG18.6真实 Auth/Project、经理/成员、隔离/License、并发重放、Audit 回滚、DB 闭锁与拒降；定向18项/822子例，后端全量3789通过/3跳过/5937子例；开发wheel1432项、SHA-256 `cc0e05bf7750d30b18c65247b915bb8de24d846359fbc702f3fb11936638788a`。已知问题：读取/HTTP/Windows/UI、PlanVersion/WBS/Output、正式信任/安装与Gate3/Pilot/发行仍待。
 
 - 2026-10-19：0.1.0-dev.0/PLAN-01-A03-P01 增加关闭式 `pln_plan_create_results` ORM/Migration 0168，保存首次 CREATE 名称/时间并锁定同项目引用，避免后续改名导致幂等重放漂移；未开放创建 API/Owner。兼容性/升级/回滚：从0167增表，空表可降，有历史拒降并需向前修复/人工备份恢复；旧数据和冻结 API/权限/License/依赖不变。验证：Win11/PG18.6有数据升降重升、跨项目/名称/时间/重复/历史及首次响应不漂移，drift通过；定向11项、后端全量3785通过/3跳过/5924子例；开发wheel1428项、SHA-256 `d1f7a43294a166f4978f9eb3bf5c6a10478c91cf4df9d607576fa5ed96b3ad19`。已知问题：Plan创建/读取Owner、版本/WBS/Output、正式信任/安装与Gate3/Pilot/发行仍待。
