@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261019-1223：Review List 采用独立 Windows 游标密钥及显式平台装配
+
+- Date/WBS：2026-10-19 / `SOL-06-A16-P06`；依据 CR-RVW-004、P02 AES-GCM、P04 逐项授权及 P05 默认关闭 Router。
+- Decision：固定 `review-list-cursor-v1` 为运行账户 Vault/Credential Manager 独立 32 字节来源；缺失或错误则平台读/写模式启动失败并清理数据库运行时。Review List Windows 工厂重新组合真实 SOL-06 Subject Owner、授权 Service 与 SQL Repository，只在显式读/写平台装配；默认/登录专用应用保持关闭。
+- Reason：游标可能包含隐藏候选位置，需独立加密边界；现有 REVIEW_GET 身份不能直接替代分页逐项授权。生产入口显式依赖保证缺密钥或 Owner 不完整时不输出退化列表。
+- Impact/Rollback：无 Schema、冻结 API、角色、License、依赖或历史数据变化。升级前供给并备份实际服务账户密钥；关闭新路由可回滚，轮换密钥需重新分页。Win11 实际 Vault 临时凭据、合成信任的 PG18.6/ASGI 与全量/wheel通过；正式信任和 UI/Edge 仍待。
+
 ## DEC-20261019-1222：Review List HTTP 在专用密钥装配前默认关闭
 
 - Date/WBS：2026-10-19 / `SOL-06-A16-P05`；依据冻结 REVIEW_LIST、P02 AES-GCM与P04授权Service，Windows专用Vault key工厂尚属P06。

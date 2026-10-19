@@ -93,8 +93,10 @@ from plm_assistant.modules.requirement.infrastructure.review_subject_repository 
     SqlAlchemyRequirementReviewSubjectRepository,
 )
 from plm_assistant.modules.review.api.commands import create_review_command_router
+from plm_assistant.modules.review.api.list_reviews import create_review_list_router
 from plm_assistant.modules.review.api.read import create_review_read_router
 from plm_assistant.modules.review.application.create_review import ReviewCreateService
+from plm_assistant.modules.review.application.list_service import ReviewListService
 from plm_assistant.modules.review.application.read_service import ReviewReadService
 from plm_assistant.modules.review.application.start_round import ReviewStartService
 from plm_assistant.modules.review.application.subject_registry import (
@@ -105,6 +107,9 @@ from plm_assistant.modules.review.application.transition_command import (
 )
 from plm_assistant.modules.review.infrastructure.create_repository import (
     SqlAlchemyReviewCreationRepository,
+)
+from plm_assistant.modules.review.infrastructure.list_repository import (
+    SqlAlchemyReviewListRepository,
 )
 from plm_assistant.modules.review.infrastructure.read_repository import (
     SqlAlchemyReviewSnapshotReadRepository,
@@ -189,6 +194,45 @@ def create_windows_project_review_read_router(
             subjects=ProjectReviewSubjectReadRegistry((owner,)),
         )
         return create_review_read_router(origins=origins, reads=reads)
+    except Exception:
+        raise ProductionProjectReviewStartupError() from None
+
+
+def create_windows_project_review_list_router(
+    runtime, *, origins, license_guard, audit,
+    documents, downloads, parse_results, cursors,
+) -> APIRouter:
+    """Mount frozen REVIEW_LIST with SOL-06 Owner and a dedicated cursor key."""
+    if any(value is None for value in (
+            runtime, origins, license_guard, audit, documents, downloads,
+            parse_results, cursors)):
+        raise ProductionProjectReviewStartupError()
+    try:
+        project_repository = SqlAlchemyProjectAuthorizationRepository()
+        authorization = ProjectAuthorizationService(
+            unit_of_work=runtime.unit_of_work,
+            repository=project_repository,
+        )
+        reviewers = ProjectReviewerQualificationService(
+            users=SqlAlchemyReviewUserAccess(), projects=project_repository,
+        )
+        owner = create_windows_structured_spec_review_subject(
+            runtime=runtime, license_guard=license_guard, audit=audit,
+            documents=documents, downloads=downloads,
+            parse_results=parse_results,
+            authorization_repository=project_repository,
+            authorization=authorization, reviewers=reviewers,
+        )
+        lists = ReviewListService(
+            unit_of_work=runtime.unit_of_work,
+            sessions=SqlAlchemyProjectReadAccess(), projects=authorization,
+            license_guard=license_guard,
+            repository=SqlAlchemyReviewListRepository(),
+            subjects=ProjectReviewSubjectReadRegistry((owner,)),
+        )
+        return create_review_list_router(
+            origins=origins, lists=lists, cursors=cursors,
+        )
     except Exception:
         raise ProductionProjectReviewStartupError() from None
 

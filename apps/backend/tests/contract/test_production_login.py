@@ -41,6 +41,7 @@ from plm_assistant.modules.ai.application.model_list_cursor import ModelListCurs
 from plm_assistant.modules.ai.application.prompt_list_cursor import PromptListCursorCodec
 from plm_assistant.modules.ai.api.task_list_cursor import AITaskListCursorCodec
 from plm_assistant.modules.ai.api.invocation_list_cursor import AIInvocationListCursorCodec
+from plm_assistant.modules.review.api.list_cursor import ReviewListCursorCodec
 from plm_assistant.entrypoints.windows_ai_read_cursor import WindowsAIReadCursorCodecs
 from plm_assistant.entrypoints.windows_capability import WindowsCapabilityRouters
 from plm_assistant.entrypoints.windows_handover import WindowsHandoverRouters
@@ -61,6 +62,46 @@ class _ContractMaintenanceAdmission:
 
 
 class ProductionLoginTests(unittest.TestCase):
+    def test_missing_review_list_cursor_key_disposes_both_platform_modes(self):
+        from contextlib import ExitStack
+        from plm_assistant.modules.platform.api.secret_list_cursor import (
+            SecretListCursorCodec,
+        )
+
+        for factory in (create_production_platform_app,
+                        create_production_platform_write_app):
+            with self.subTest(factory=factory.__name__):
+                runtime = Mock()
+                runtime.is_ready.return_value = True
+                with ExitStack() as stack:
+                    prefix = "plm_assistant.entrypoints.production_login."
+                    for name, value in (
+                        ("read_database_url", "postgresql+psycopg://localhost/test"),
+                        ("create_database_runtime", runtime),
+                        ("_schema_current", True),
+                        ("create_windows_secret_list_cursor_codec",
+                         SecretListCursorCodec(b"q" * 32)),
+                        ("create_windows_project_member_cursor_codec",
+                         MemberListCursorCodec(b"m" * 32)),
+                        ("create_windows_project_department_cursor_codec",
+                         DepartmentListCursorCodec(b"d" * 32)),
+                    ):
+                        stack.enter_context(patch(prefix + name, return_value=value))
+                    stack.enter_context(patch(
+                        "plm_assistant.entrypoints.windows_license_runtime."
+                        "create_windows_license_services",
+                        return_value=Mock(guard=Mock()),
+                    ))
+                    failed = stack.enter_context(patch(
+                        prefix + "create_windows_review_list_cursor_codec",
+                        side_effect=RuntimeError("private Review cursor key missing"),
+                    ))
+                    with self.assertRaises(ProductionLoginStartupError) as caught:
+                        factory(self.settings(("http://localhost",)))
+                failed.assert_called_once()
+                self.assertNotIn("private", str(caught.exception))
+                runtime.dispose.assert_called_once()
+
     def test_missing_structured_spec_cursor_key_disposes_both_platform_modes(self):
         for factory in (create_production_platform_app,
                         create_production_platform_write_app):
@@ -501,6 +542,11 @@ class ProductionLoginTests(unittest.TestCase):
             "create_windows_project_review_read_router",
             return_value=APIRouter(),
         ))
+        self.project_review_list_factory = self.enterContext(patch(
+            "plm_assistant.entrypoints.production_login."
+            "create_windows_project_review_list_router",
+            return_value=APIRouter(),
+        ))
         self.workflow_checklist_factory = self.enterContext(patch(
             "plm_assistant.entrypoints.production_login."
             "create_windows_workflow_checklist_record_router",
@@ -561,6 +607,11 @@ class ProductionLoginTests(unittest.TestCase):
             "plm_assistant.entrypoints.production_login."
             "create_windows_structured_spec_list_cursor_codec",
             return_value=StructuredSpecListCursorCodec(b"t" * 32),
+        ))
+        self.enterContext(patch(
+            "plm_assistant.entrypoints.production_login."
+            "create_windows_review_list_cursor_codec",
+            return_value=ReviewListCursorCodec(b"r" * 32),
         ))
         self.enterContext(patch(
             "plm_assistant.entrypoints.production_login.create_windows_document_version_cursor_codec",
@@ -1010,6 +1061,7 @@ class ProductionLoginTests(unittest.TestCase):
         self.handover_action_write_factory.assert_not_called()
         self.project_review_factory.assert_not_called()
         self.project_review_read_factory.assert_called_once()
+        self.project_review_list_factory.assert_called_once()
         self.workflow_checklist_factory.assert_not_called()
         self.workflow_checklist_qualification_factory.assert_not_called()
         self.workflow_transition_factory.assert_not_called()
@@ -1358,6 +1410,7 @@ class ProductionLoginTests(unittest.TestCase):
         )
         self.project_review_factory.assert_called_once()
         self.project_review_read_factory.assert_called_once()
+        self.project_review_list_factory.assert_called_once()
         self.workflow_checklist_factory.assert_called_once()
         self.workflow_checklist_qualification_factory.assert_called_once()
         self.workflow_transition_factory.assert_called_once()

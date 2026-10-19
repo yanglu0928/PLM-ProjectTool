@@ -54,6 +54,8 @@ Gate 2 已冻结 `GET /api/v1/projects/{project_id}/reviews`、Project member �
 
 ## 实施进度
 
+- 2026-10-19 / `SOL-06-A16-P06`：已增加独立 Windows `review-list-cursor-v1` Vault 工厂，缺失/错误失败关闭；在显式平台读/写模式装配真实 SQL、Project 与 SOL-06 Owner。临时 Windows Vault 凭据丢失恢复、生产启动合同、Win11/PG18.6 真实 HTTP 权限/分页/终态及全量/wheel通过；合成信任不代表正式发行。下一项 P07 前端 Inbox。
+
 - 2026-10-19 / `SOL-06-A16-P05`：已实现默认关闭的冻结 REVIEW_LIST Router；严格 `view/page_size/cursor`、canonical Project、AES-GCM 续页、最小 actor-only 响应与安全错误映射通过合同、全量和 wheel。尚未接Windows专用key/生产组合或UI；下一项P06。
 - 2026-10-19 / `SOL-06-A16-P04`：已实现只读候选 Repository、四角色 `REVIEW_LIST` Project 策略及逐项 Subject Owner 授权服务；隐藏短/空页按原始消费位置继续，assigned reviewer 不构成授权。定向、Win11/PG18.6 真实 Session/Project/SQL 合成链、全量与 wheel 通过；尚未挂 HTTP/Windows/UI。下一项 P05。
 - 2026-10-19 / `SOL-06-A16-P03`：已增加 Migration 0166 与 ORM 两个最小索引；Win11/PostgreSQL 18.6 空库和 24 条有效 Review 历史的升降重升、行数保持、索引定义/计划及 drift 通过，后端全量与 wheel 入包通过。尚未增加授权策略、Repository/Application 或挂载 Router；下一项 P04。

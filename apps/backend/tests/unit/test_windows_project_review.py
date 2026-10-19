@@ -5,6 +5,7 @@ from unittest.mock import Mock, patch
 
 from plm_assistant.entrypoints.windows_project_review import (
     ProductionProjectReviewStartupError,
+    create_windows_project_review_list_router,
     create_windows_project_review_read_router,
     create_windows_project_review_router,
 )
@@ -14,6 +15,31 @@ from plm_assistant.modules.review.application.subject_registry import (
 
 
 class WindowsProjectReviewCompositionTests(unittest.TestCase):
+    def test_composes_sol06_list_router_with_separate_registry_and_cursor(self):
+        runtime = Mock()
+        runtime.unit_of_work = Mock()
+        owner = Mock(SUBJECT_TYPE="SOL-06")
+        owner.authorize_read = Mock()
+        cursor = Mock()
+        with patch(
+            "plm_assistant.entrypoints.windows_project_review."
+            "create_windows_structured_spec_review_subject",
+            return_value=owner,
+        ), patch(
+            "plm_assistant.entrypoints.windows_project_review."
+            "ProjectReviewSubjectReadRegistry",
+            wraps=ProjectReviewSubjectReadRegistry,
+        ) as registry:
+            router = create_windows_project_review_list_router(
+                runtime, origins=Mock(), license_guard=Mock(), audit=Mock(),
+                documents=Mock(), downloads=Mock(), parse_results=Mock(),
+                cursors=cursor,
+            )
+        self.assertEqual([
+            "/api/v1/projects/{project_id}/reviews",
+        ], [route.path for route in router.routes])
+        self.assertEqual((owner,), registry.call_args.args[0])
+
     def test_composes_sol06_read_router_with_separate_registry(self):
         runtime = Mock()
         runtime.unit_of_work = Mock()
@@ -85,6 +111,12 @@ class WindowsProjectReviewCompositionTests(unittest.TestCase):
             create_windows_project_review_read_router(
                 Mock(), origins=Mock(), license_guard=Mock(), audit=Mock(),
                 documents=Mock(), downloads=None, parse_results=Mock())
+        with self.assertRaises(ProductionProjectReviewStartupError):
+            create_windows_project_review_list_router(
+                Mock(), origins=Mock(), license_guard=Mock(), audit=Mock(),
+                documents=Mock(), downloads=Mock(), parse_results=Mock(),
+                cursors=None,
+            )
 
     def test_conclusion_owner_requires_complete_evidence_dependencies(self):
         runtime = Mock()
