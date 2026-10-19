@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261019-1238：WBS Trace 证明复用冻结的Plan版本成员读权限
+
+- Date/WBS：2026-10-19 / `PLAN-02-A04-P04-A04-P02-A01`；依据API-04 `PLAN_VERSION_WBS_LIST`、CR-PLAN-001和Plan现有同项目Schema。
+- Decision：Plan模块新增同事务只读WBS固定身份证明，使用`PLAN_VERSION_WBS_LIST`的当前Project成员授权、License和Session，仓库仅在Plan模块查询Plan/WBS版本身份；Trace桥下一片通过应用Port调用。
+- Reason：现有`PLAN_GET`只读逻辑Plan身份，不能证明WBS/版本；Trace模块不应直读Plan内部表。冻结API已为WBS读取定义成员权限，无需自造新角色语义。
+- Impact/Rollback：仅新增Plan应用/仓库Port和项目授权操作，无Migration或公开API；撤新Port/策略即可回滚。未验证Plan Owner/Trace桥/正式业务事实，不能提前开放Trace WBS类型写链。
+
 ## DEC-20261019-1237：WBS Task 使用统一Trace的新增受控目标类型
 
 - Date/WBS：2026-10-19 / `PLAN-02-A04-P04-A04`；对应 `CR-PLAN-001`。
