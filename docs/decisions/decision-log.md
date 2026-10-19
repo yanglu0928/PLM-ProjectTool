@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261019-1234：WBS 来源引用分类型固定，Trace 不双写
+
+- Date/WBS：2026-10-19 / `PLAN-02-A04-P04`；依据冻结DM-05/SC-01/API-04及现有上游版本键。
+- Decision：Requirement使用同项目复合FK；Solution Outline/Section/StructuredSpec按三种显式类型和各自复合键分别固定；Evidence固定ID/Scope/Project，资格和授权由Owner重验。WBS正式追溯由统一TraceLink建立，不另造plan内部Trace副本。
+- Reason：不同Solution来源无共同版本主表，单UUID弱引用不能保证来源存在和项目隔离；Evidence资格会变化，静态FK不能证明当前可用；平行Trace会产生双写漂移。
+- Impact/Rollback：P04分片只追加关闭式引用Schema/证明合同，不改冻结API/上游数据/角色/License；空表可降，有历史拒降并需向前修复或人工备份恢复。Owner必须逐节点证明Approved状态、Evidence资格及正式TraceLink。
+
 ## DEC-20261019-1233：Milestone GateRef 保留逻辑引用并固定同版本 WBS
 
 - Date/WBS：2026-10-19 / `PLAN-02-A04-P03`；依据冻结 DM-05/SC-01/API-04 及0172已关闭的PlanVersion/WBS。
