@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-19：0.1.0-dev.0/PLAN-01-A03-P01 增加关闭式 `pln_plan_create_results` ORM/Migration 0168，保存首次 CREATE 名称/时间并锁定同项目引用，避免后续改名导致幂等重放漂移；未开放创建 API/Owner。兼容性/升级/回滚：从0167增表，空表可降，有历史拒降并需向前修复/人工备份恢复；旧数据和冻结 API/权限/License/依赖不变。验证：Win11/PG18.6有数据升降重升、跨项目/名称/时间/重复/历史及首次响应不漂移，drift通过；定向11项、后端全量3785通过/3跳过/5924子例；开发wheel1428项、SHA-256 `d1f7a43294a166f4978f9eb3bf5c6a10478c91cf4df9d607576fa5ed96b3ad19`。已知问题：Plan创建/读取Owner、版本/WBS/Output、正式信任/安装与Gate3/Pilot/发行仍待。
+
 - 2026-10-19：0.1.0-dev.0/PLAN-01-A03 前置核查发现通用幂等收据只有引用/状态而 Plan 日后可 PATCH/ARCHIVE，直接以当前行重建 CREATE 重放会漂移；分为 P01 首次响应快照 Schema、P02 创建 Owner、P03 当前授权读取 Owner。兼容性/升级/回滚：仅文档与顺序细化，无产品/Migration/API/数据变化。验证：冻结 PLAN 合同、通用收据与既有 SolutionOutline 模式静态交叉核对，未运行功能测试。已知问题：Plan 身份仍关闭写，Gate3/Pilot/发行未通过。
 
 - 2026-10-19：0.1.0-dev.0/PLAN-01-A02 增加关闭式 `pln_plans` 身份 ORM/Migration 0167，含项目/创建人 FK、批准指针暂时必须为空、名称/状态/锁约束与历史保护；未开放业务 API。兼容性/升级/回滚：先备份并从0166升级；空 Plan 表可降级，有历史则拒绝并须向前修复或人工备份恢复；冻结 API/权限/License/依赖不变。验证：Win11/PG18.6 既有数据升降重升、负例和 Alembic drift 通过；定向9项，首次全量仅旧 migration-head 断言失败，修正后全量3783通过/3跳过/5924子例；开发wheel1427项、SHA-256 `be4b6859827316bc4aef301e7328c61e4c731c7fe28be949f6b99eda6485e1bd`。已知问题：Owner/版本/WBS/UI/Output、正式信任/安装、Gate3/Pilot/发行仍待。

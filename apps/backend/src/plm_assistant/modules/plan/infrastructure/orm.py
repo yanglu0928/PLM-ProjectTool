@@ -41,3 +41,24 @@ class PlanRow(Base):
         TIMESTAMP(timezone=True, precision=6), nullable=False,
         server_default=text("statement_timestamp()"))
     lock_version: Mapped[int] = mapped_column(BigInteger, nullable=False, server_default=text("0"))
+
+
+class PlanCreateResultRow(Base):
+    """Immutable initial PLAN_CREATE response, separate from mutable Plan metadata."""
+
+    __tablename__ = "pln_plan_create_results"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["plan_id", "project_id"], ["plm.pln_plans.plan_id", "plm.pln_plans.project_id"],
+            name="fk_pln_plan_create_results__plan", ondelete="NO ACTION",
+        ),
+        CheckConstraint("char_length(name) BETWEEN 1 AND 500 AND name=btrim(name)",
+                        name="ck_pln_plan_create_results__name"),
+        CheckConstraint("isfinite(created_at)", name="ck_pln_plan_create_results__created_at"),
+        {"schema": "plm"},
+    )
+
+    plan_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6), nullable=False)
