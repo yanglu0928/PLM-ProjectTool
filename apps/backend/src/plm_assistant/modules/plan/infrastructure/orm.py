@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
-from sqlalchemy import BigInteger, CheckConstraint, ForeignKeyConstraint, Index, SmallInteger, Text, UniqueConstraint, text
+from sqlalchemy import BigInteger, CheckConstraint, Date, ForeignKeyConstraint, Index, SmallInteger, Text, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import TIMESTAMP, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -229,3 +229,81 @@ class PlanWbsDependencyRow(Base):
     lag: Mapped[int] = mapped_column(nullable=False, server_default=text("0"))
     lag_unit: Mapped[str | None] = mapped_column(Text)
     lag_reason: Mapped[str | None] = mapped_column(Text)
+
+
+class PlanMilestoneRow(Base):
+    """Closed immutable-version milestone; Gate resolution follows in the Owner."""
+
+    __tablename__ = "pln_milestones"
+    __table_args__ = (
+        UniqueConstraint("milestone_id", "plan_version_id", "plan_id", "project_id",
+                         name="uq_pln_milestones__id_version_plan_project"),
+        UniqueConstraint("plan_version_id", "name", name="uq_pln_milestones__version_name"),
+        ForeignKeyConstraint(
+            ["plan_version_id", "plan_id", "project_id"],
+            ["plm.pln_plan_versions.plan_version_id", "plm.pln_plan_versions.plan_id",
+             "plm.pln_plan_versions.project_id"],
+            name="fk_pln_milestones__version", ondelete="NO ACTION"),
+        CheckConstraint("char_length(name) BETWEEN 1 AND 500 AND name=btrim(name)",
+                        name="ck_pln_milestones__name"),
+        CheckConstraint("isfinite(target_date)", name="ck_pln_milestones__target_date"),
+        CheckConstraint("duration_days>=0", name="ck_pln_milestones__duration"),
+        CheckConstraint("char_length(acceptance_rule) BETWEEN 1 AND 2000 "
+                        "AND acceptance_rule=btrim(acceptance_rule)",
+                        name="ck_pln_milestones__acceptance"),
+        CheckConstraint("gate_ref IS NULL OR (char_length(gate_ref) BETWEEN 1 AND 128 "
+                        "AND gate_ref=btrim(gate_ref))", name="ck_pln_milestones__gate_ref"),
+        CheckConstraint("milestone_state IN ('PLANNED','ACHIEVED','CANCELLED')",
+                        name="ck_pln_milestones__state"),
+        Index("ix_pln_milestones__version_target", "plan_version_id", "target_date",
+              "milestone_id"),
+        {"schema": "plm"},
+    )
+
+    milestone_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    plan_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    plan_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    target_date: Mapped[date] = mapped_column(Date, nullable=False)
+    duration_days: Mapped[int] = mapped_column(nullable=False, server_default=text("0"))
+    acceptance_rule: Mapped[str] = mapped_column(Text, nullable=False)
+    gate_ref: Mapped[str | None] = mapped_column(Text)
+    milestone_state: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'PLANNED'"))
+
+
+class PlanMilestoneItemRefRow(Base):
+    """Closed same-version WBS membership of a milestone."""
+
+    __tablename__ = "pln_milestone_item_refs"
+    __table_args__ = (
+        UniqueConstraint("milestone_id", "wbs_item_id",
+                         name="uq_pln_milestone_items__milestone_item"),
+        UniqueConstraint("milestone_id", "ordinal",
+                         name="uq_pln_milestone_items__milestone_ordinal"),
+        ForeignKeyConstraint(
+            ["milestone_id", "plan_version_id", "plan_id", "project_id"],
+            ["plm.pln_milestones.milestone_id", "plm.pln_milestones.plan_version_id",
+             "plm.pln_milestones.plan_id", "plm.pln_milestones.project_id"],
+            name="fk_pln_milestone_items__milestone", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["wbs_item_id", "plan_version_id", "plan_id", "project_id"],
+            ["plm.pln_wbs_items.wbs_item_id", "plm.pln_wbs_items.plan_version_id",
+             "plm.pln_wbs_items.plan_id", "plm.pln_wbs_items.project_id"],
+            name="fk_pln_milestone_items__wbs", ondelete="NO ACTION"),
+        CheckConstraint("ordinal>0", name="ck_pln_milestone_items__ordinal"),
+        Index("ix_pln_milestone_items__wbs", "plan_version_id", "wbs_item_id",
+              "milestone_id"),
+        {"schema": "plm"},
+    )
+
+    milestone_item_ref_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    milestone_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    plan_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    plan_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    wbs_item_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    ordinal: Mapped[int] = mapped_column(nullable=False)

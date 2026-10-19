@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261019-1233：Milestone GateRef 保留逻辑引用并固定同版本 WBS
+
+- Date/WBS：2026-10-19 / `PLAN-02-A04-P03`；依据冻结 DM-05/SC-01/API-04 及0172已关闭的PlanVersion/WBS。
+- Decision：Milestone根记录固定目标日期、非负日工期、验收规则和受控候选状态；GateRef存有界可空逻辑引用，链接WBS以独立同Plan/Project/Version复合FK表保存及排序。两表闭锁，不在Schema把GateRef直接映射为某一个Workflow内部表。
+- Reason：冻结模型要求GateRef，但尚未指定它与某一内部Gate主键同义；跨模块事实必须由对应Owner/Review授权核查。先以逻辑引用保留精确信息，避免强连错误目标；同版本链接可由数据库独立保证。
+- Impact/Rollback：仅增闭锁表/ORM/迁移0173，不改冻结API、已有数据、角色/License或批准指针；空表可降，有历史拒降并向前修复或人工备份恢复。后续Owner需给出GateRef解析、日期/工期/链接覆盖的完整验证。
+
 ## DEC-20261019-1232：FS 依赖固定双端版本并显式非零 lag
 
 - Date/WBS：2026-10-19 / `PLAN-02-A04-P02`；依据冻结 DM-05、SC-03、API-04 与0171 WbsItem。
