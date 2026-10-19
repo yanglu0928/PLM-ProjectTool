@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-19：0.1.0-dev.0/PLAN-02-A04-P04-A04-P02-A03-P01 增加冻结Trace图上游/下游GET的可选HTTP合同、三字段固定根解析、现时逐页重证与安全图投影；默认及Windows未挂载。兼容性/升级/回滚：无Migration/旧数据/已启用API变更，撤可选路由与服务即可回滚；客户端过时游标返回现有409冲突。验证：定向28项/28子例、后端全量3841通过/3跳过/6019子例。已知问题：Windows真实HTTP/PG与目标Owner完整注册、开发wheel、正式信任及Gate3/Pilot/发行待。
+
 - 2026-10-19：0.1.0-dev.0/PLAN-02-A04-P04-A04-P02-A02 增加公开三字段WBS固定引用至Plan受权读取的Trace桥合同，resourceId=WbsItemId、versionId=PlanVersionId，限定PROJECT；未注册Windows/Trace写链。兼容性/升级/回滚：无Migration、公开API或旧数据变更，移除桥类即可回滚，旧Trace不变。验证：定向15项/18子例、后端全量3833通过/3跳过/6005子例；真实PG Plan读取已在P02-A01验收。已知问题：开发wheel、统一反向查询/Windows组合、来源/Trace一致性Owner、正式信任及Gate3/Pilot/发行待。
 
 - 2026-10-19：0.1.0-dev.0/PLAN-02-A04-P04-A04-P02-A01 增加Plan模块内部固定WBS版本只读证明，复用冻结`PLAN_VERSION_WBS_LIST`当前成员权限，在同一调用事务核查Session、License、WBS/版本/项目及RESTRICTED；Trace尚未装桥，继续失败关闭。兼容性/升级/回滚：无Migration、公开API或旧数据变化；移除新增Port/策略可回滚。验证：定向19项/832子例、Win11可弃PG18.6精确与跨项目/错版本查询、后端全量3830通过/3跳过/6001子例。已知问题：开发wheel未验；Trace桥/反向查询、Plan正式来源/Owner/HTTP/UI/Output及正式信任、Gate3/Pilot/发行待。

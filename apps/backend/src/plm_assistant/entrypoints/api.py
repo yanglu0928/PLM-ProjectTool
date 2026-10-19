@@ -73,6 +73,7 @@ def create_app(
     workflow_transition_router: APIRouter | None = None,
     trace_revoke_router: APIRouter | None = None,
     trace_supersede_router: APIRouter | None = None,
+    trace_graph_router: APIRouter | None = None,
     audit_read_router: APIRouter | None = None,
     audit_export_result_router: APIRouter | None = None,
     audit_export_download_router: APIRouter | None = None,
@@ -291,6 +292,8 @@ def create_app(
         app.include_router(trace_revoke_router)
     if trace_supersede_router is not None:
         app.include_router(trace_supersede_router)
+    if trace_graph_router is not None:
+        app.include_router(trace_graph_router)
     if audit_read_router is not None:
         app.include_router(audit_read_router)
     if audit_export_result_router is not None:

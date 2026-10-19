@@ -59,6 +59,36 @@ class TracePublicEdgeResolver:
             raise ValueError("Trace public owners must be explicitly registered")
         self._owners = dict(owners)
 
+    def resolve_ref(self, transaction: object, query: TraceProofQuery,
+                    project_id: uuid.UUID,
+                    ref: TraceResourceVersionRef) -> TraceVersionRef:
+        if (transaction is None or type(query) is not TraceProofQuery
+                or type(query.session_token) is not bytes
+                or len(query.session_token) != 32
+                or type(query.trace_id) is not uuid.UUID or query.trace_id.int == 0
+                or type(project_id) is not uuid.UUID or project_id.int == 0
+                or type(ref) is not TraceResourceVersionRef
+                or type(ref.resource_type) is not str or not ref.resource_type
+                or type(ref.resource_id) is not uuid.UUID or ref.resource_id.int == 0
+                or type(ref.version_id) is not uuid.UUID or ref.version_id.int == 0):
+            raise TraceTargetProofError("VALIDATION_FAILED")
+        owner = self._owners.get(ref.resource_type)
+        if owner is None:
+            raise TraceTargetProofError("RESOURCE_NOT_FOUND")
+        try:
+            resolved = owner.resolve(transaction, query, project_id, ref)
+        except TraceTargetProofError:
+            raise
+        except Exception:
+            raise TraceTargetProofError("TRACE_UNAVAILABLE") from None
+        if (type(resolved) is not TraceVersionRef
+                or resolved.object_type != ref.resource_type
+                or resolved.object_id != ref.resource_id
+                or resolved.version_id != ref.version_id
+                or resolved.scope == "PROJECT" and resolved.project_id != project_id):
+            raise TraceTargetProofError("TRACE_UNAVAILABLE")
+        return resolved
+
     def resolve_edge(self, transaction: object, query: TraceProofQuery,
                      project_id: uuid.UUID, source: TraceResourceVersionRef,
                      target: TraceResourceVersionRef,
@@ -73,23 +103,8 @@ class TracePublicEdgeResolver:
                        or ref.version_id.int == 0 for ref in (source, target))
                 or type(relation_type) is not str):
             raise TraceTargetProofError("VALIDATION_FAILED")
-        refs = []
-        for public_ref in (source, target):
-            owner = self._owners.get(public_ref.resource_type)
-            if owner is None:
-                raise TraceTargetProofError("RESOURCE_NOT_FOUND")
-            try:
-                resolved = owner.resolve(transaction, query, project_id, public_ref)
-            except TraceTargetProofError:
-                raise
-            except Exception:
-                raise TraceTargetProofError("TRACE_UNAVAILABLE") from None
-            if (type(resolved) is not TraceVersionRef
-                    or resolved.object_type != public_ref.resource_type
-                    or resolved.object_id != public_ref.resource_id
-                    or resolved.version_id != public_ref.version_id):
-                raise TraceTargetProofError("TRACE_UNAVAILABLE")
-            refs.append(resolved)
+        refs = [self.resolve_ref(transaction, query, project_id, public_ref)
+                for public_ref in (source, target)]
         try:
             edge = TraceEdgeShape(refs[0], refs[1], relation_type)
         except TraceShapeError:

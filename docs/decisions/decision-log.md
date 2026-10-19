@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261019-1239：Trace 图查询公开参数与双次现时证明
+
+- Date/WBS：2026-10-19 / `PLAN-02-A04-P04-A04-P02-A03-P01`；输入为冻结API-02图路径/三字段固定引用及既有受权限深图/加密游标服务。
+- Decision：GET查询根节点使用`resource_type/resource_id/version_id`三字段，另有关系、`max_depth/max_nodes/page_size/cursor`白名单参数；不新增Scope参数。根节点先由注册Owner在短事务解析，再由图服务在每一页的新事务重新证明Session、License、Project、根与逐边端点。HTTP只暴露安全投影和`truncated`，保持默认不挂载。
+- Reason：冻结路径未细化query名称；沿用Trace写接口三字段资源引用，避免客户端指定Owner/Scope造成绕权。再次证明消除解析到读取间权限变化与旧游标可见性风险。
+- Impact/Rollback：不修改冻结URL/操作ID/Schema/角色/License或历史；撤可选路由/解析接口即可回滚。Windows正式密钥和真实图组合另验，未注册Owner仍失败关闭。
+
 ## DEC-20261019-1238：WBS Trace 证明复用冻结的Plan版本成员读权限
 
 - Date/WBS：2026-10-19 / `PLAN-02-A04-P04-A04-P02-A01`；依据API-04 `PLAN_VERSION_WBS_LIST`、CR-PLAN-001和Plan现有同项目Schema。
