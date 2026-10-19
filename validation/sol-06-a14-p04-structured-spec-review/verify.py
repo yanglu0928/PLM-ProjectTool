@@ -138,8 +138,9 @@ def on_review(
         repository=authorization_repository)
     reviewers = ProjectReviewerQualificationService(
         users=SqlAlchemyReviewUserAccess(), projects=authorization_repository)
+    subject_repository = SqlAlchemyStructuredSpecReviewSubjectRepository()
     owner = StructuredSpecReviewSubjectOwner(
-        repository=SqlAlchemyStructuredSpecReviewSubjectRepository(),
+        repository=subject_repository,
         reviewers=reviewers,
         readiness=StructuredSpecReviewReadinessService(
             repository=validation_repository, evaluator=evaluator),
@@ -316,6 +317,16 @@ def on_review(
         "SOL_06_A14_P04_REVIEW_PG_PASS: current-fact start/approval, exact "
         "Review binding, supersede, return, immutable receipts, direct-write "
         "closure, downgrade refusal and ORM drift check")
+    on_submit = _unused.get("on_submit")
+    if on_submit is not None:
+        on_submit(
+            port=port, runtime=runtime, project=project, manager=manager,
+            token=token, csrf=csrf, draft=draft_after_return, audit=audit,
+            license_guard=license_guard, access=access,
+            authorization=authorization, reviewers=reviewers, owner=owner,
+            identity=subject_repository,
+            approved_version=approved.structured_solution_spec_id,
+        )
 
 
 def after_specs(*, created: dict[str, object], **specs) -> None:

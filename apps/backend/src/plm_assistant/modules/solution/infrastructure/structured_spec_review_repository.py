@@ -44,6 +44,21 @@ class SqlAlchemyStructuredSpecReviewSubjectRepository:
         ).limit(1).with_for_update(read=True)).scalar_one_or_none()
         return found == series_id
 
+    def series_for_version(
+        self, transaction: object, *, project_id: uuid.UUID,
+        spec_id: uuid.UUID,
+    ) -> uuid.UUID | None:
+        """Resolve immutable identity only; the Owner takes the real series lock."""
+        if not _ids(project_id, spec_id):
+            return None
+        value = _session(transaction).execute(select(
+            StructuredSolutionSpecRow.spec_series_id,
+        ).where(
+            StructuredSolutionSpecRow.project_id == project_id,
+            StructuredSolutionSpecRow.structured_solution_spec_id == spec_id,
+        )).scalar_one_or_none()
+        return value if _ids(value) else None
+
     def lock_subject(
         self, transaction: object, *, project_id: uuid.UUID,
         series_id: uuid.UUID, spec_id: uuid.UUID,
