@@ -26,6 +26,7 @@ class ReviewReadQuery:
     review_id: UUID
     trace_id: UUID
     round_id: UUID | None = None
+    include_active_round: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -96,7 +97,9 @@ class ReviewReadService:
     def get(self, query: ReviewReadQuery) -> AuthorizedReviewRead:
         if (type(query) is not ReviewReadQuery or type(query.session_token) is not bytes or len(query.session_token) != 32
                 or not all(_uuid(v) for v in (query.project_id, query.review_id, query.trace_id))
-                or query.round_id is not None and not _uuid(query.round_id)):
+                or query.round_id is not None and not _uuid(query.round_id)
+                or type(query.include_active_round) is not bool
+                or query.include_active_round and query.round_id is not None):
             raise ReviewReadError("VALIDATION_FAILED")
         try:
             self._guard.require_valid(trace_id=query.trace_id)
@@ -121,16 +124,18 @@ class ReviewReadService:
                 identity.__post_init__()
                 self._authorize_subject(tx, actor, identity, None)
                 fixed = None
-                if query.round_id is not None:
-                    version = self._repository.get_round_subject_version(tx, "PROJECT", query.project_id, query.review_id, query.round_id)
+                round_id = (identity.active_round_id
+                            if query.include_active_round else query.round_id)
+                if round_id is not None:
+                    version = self._repository.get_round_subject_version(tx, "PROJECT", query.project_id, query.review_id, round_id)
                     if version is None:
                         raise ReviewReadError("RESOURCE_NOT_FOUND")
                     if not _uuid(version):
                         raise ReviewReadError("REVIEW_UNAVAILABLE")
                     self._authorize_subject(tx, actor, identity, version)
-                    fixed = self._repository.get_round(tx, "PROJECT", query.project_id, query.review_id, query.round_id)
+                    fixed = self._repository.get_round(tx, "PROJECT", query.project_id, query.review_id, round_id)
                     if (type(fixed) is not FixedReviewRoundSnapshot or fixed.review != identity
-                            or fixed.progress.round_id != query.round_id or fixed.subject_version_id != version):
+                            or fixed.progress.round_id != round_id or fixed.subject_version_id != version):
                         raise ReviewReadError("REVIEW_UNAVAILABLE")
                     fixed.__post_init__()
                 return AuthorizedReviewRead(identity, fixed)

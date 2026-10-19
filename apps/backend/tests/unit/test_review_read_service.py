@@ -72,6 +72,25 @@ class ReviewReadServiceTests(unittest.TestCase):
         self.repository.get_round.assert_not_called()
         self.repository.get_round_subject_version.assert_not_called()
 
+    def test_active_round_projection_loads_only_current_pointer(self):
+        query = replace(self.query, round_id=None, include_active_round=True)
+        result = self.service().get(query)
+        self.assertIs(result.fixed_round, self.fixed)
+        self.repository.get_round_subject_version.assert_called_once_with(
+            self.tx, "PROJECT", self.project, self.review, self.round)
+        self.repository.get_round.assert_called_once_with(
+            self.tx, "PROJECT", self.project, self.review, self.round)
+
+    def test_terminal_active_round_projection_is_identity_only(self):
+        self.identity = replace(
+            self.identity, state="APPROVED", active_round_id=None,
+            lock_version=2)
+        self.repository.get_review.return_value = self.identity
+        result = self.service().get(replace(
+            self.query, round_id=None, include_active_round=True))
+        self.assertIsNone(result.fixed_round)
+        self.repository.get_round.assert_not_called()
+
     def test_missing_owner_or_denied_identity_never_loads_round(self):
         self.denied("RESOURCE_NOT_FOUND", subjects=None)
         self.subjects.authorize_read.return_value = None
@@ -140,7 +159,9 @@ class ReviewReadServiceTests(unittest.TestCase):
 
     def test_request_validation_before_dependencies_and_token_repr_safe(self):
         for changes in (dict(session_token=b"x"), dict(project_id=None), dict(review_id=UUID(int=0)),
-                        dict(trace_id=True), dict(round_id="id")):
+                        dict(trace_id=True), dict(round_id="id"),
+                        dict(include_active_round=1),
+                        dict(include_active_round=True, round_id=self.round)):
             with self.assertRaises(ReviewReadError) as exc:
                 self.service().get(replace(self.query, **changes))
             self.assertEqual(exc.exception.code, "VALIDATION_FAILED")

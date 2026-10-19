@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-19：0.1.0-dev.0/SOL-06-A15-P03 新增独立 Review Subject read registry、SOL-06 当前成员/系列/固定版本授权、活动轮内部读取与默认关闭的冻结 REVIEW_GET 投影；只返回 Review/Subject identity、活动轮、Assignment/Decision 和双层ETag，不开放LIST/query或主题正文。兼容性/升级/回滚：无Migration、冻结URL/角色、License、依赖或旧数据变化；未显式注入仍404，可撤Router/读注册。验证：定向41项/38子例、后端全量3757通过/3跳过/5859子例；开发wheel 1416项/SHA-256 `c75c9d923cafc3c3e255721cfb9a5ca9870d97acd37e881d00a246f9c1f7e87d`。已知问题：Windows真实HTTP/PG、终态历史轮/LIST、Reviewer前端/Edge、正式信任、Gate3/Pilot/发行仍待。
+
 - 2026-10-19：0.1.0-dev.0/SOL-06-A15-P02 抽取送审/终态共享的正式 SOL-06 Owner 工厂，并在来源依赖完整时把 SOL-06 注册到 Windows 通用 Review 决定组合；不新增专项批准端点。Windows 11/PG18.6 两套真实 HTTP 链验证 assigned reviewer APPROVE/RETURN、批准前当前事实漂移拒绝后同Key恢复、RETURN实质意见、默认/角色/隔离/License拒绝、精确重放/碰撞，以及 Review/SOL-06/Audit/收据原子一致；定向60项/82子例、后端全量3748通过/3跳过/5854子例，开发wheel 1415项/SHA-256 `4bf3510734becb1a35d64376ce99925eeaa57d24f9286a812ecf62a64f85ebe4`。兼容性/升级/回滚：无Migration、冻结API/角色、License、依赖或旧数据变化；可移除Owner注册，但历史必须保留。已知问题：Review GET/LIST、Reviewer前端/Edge、正式信任、Gate3/Pilot/发行仍待。
 
 - 2026-10-19：0.1.0-dev.0/SOL-06-A15-P01 完成结构化专项 Reviewer 终态闭环前置核查：确认 SOL-06 终态 Owner 已存在但尚未注册到 Windows 通用 Review 决定组合，当前实际决定安全返回404；内部 Review 读服务无生产 Subject read owner/HTTP，前端无 Reviewer 页面。选定按决定接线与真实PG/HTTP→GET Owner/API→Windows读取→前端→Edge 分片实施，不新增专项批准端点，不以手工UUID冒充任务发现。兼容性/升级/回滚：仅文档和决策，无产品、Migration、冻结 API/角色、License、依赖或数据变化。已知问题：批准/退回生产链、Review GET/LIST、前端/Edge、正式信任、Gate3/Pilot/发行仍待。

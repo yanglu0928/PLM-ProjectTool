@@ -5,7 +5,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock
 
 from plm_assistant.modules.review.application.subject_registry import (
-    ProjectReviewSubjectRegistry,
+    ProjectReviewSubjectReadRegistry, ProjectReviewSubjectRegistry,
 )
 from plm_assistant.modules.review.application.subject_start import (
     ReviewSubjectAccessDenied,
@@ -27,6 +27,12 @@ class Owner:
             "require_transition_replay_access_in_transaction",
         ):
             setattr(self, method, Mock(name=f"{subject_type}.{method}"))
+
+
+class ReadOwner:
+    def __init__(self, subject_type: str) -> None:
+        self.SUBJECT_TYPE = subject_type
+        self.authorize_read = Mock(name=f"{subject_type}.authorize_read")
 
 
 class ProjectReviewSubjectRegistryTests(unittest.TestCase):
@@ -116,6 +122,36 @@ class ProjectReviewSubjectRegistryTests(unittest.TestCase):
             ProjectReviewSubjectRegistry((Owner("bad"),))
         with self.assertRaises(ValueError):
             ProjectReviewSubjectRegistry((SimpleNamespace(SUBJECT_TYPE="BAD"),))
+
+    def test_read_registry_is_separate_dispatch_and_fails_closed(self):
+        handover, solution = ReadOwner("HND-02"), ReadOwner("SOL-06")
+        registry = ProjectReviewSubjectReadRegistry((handover, solution))
+        solution.authorize_read.return_value = "proof"
+        self.assertEqual("proof", registry.authorize_read(
+            "tx", user_id="user", project_id="project",
+            subject_type="SOL-06", subject_id="series",
+            subject_version_id="version",
+        ))
+        solution.authorize_read.assert_called_once_with(
+            "tx", user_id="user", project_id="project",
+            subject_type="SOL-06", subject_id="series",
+            subject_version_id="version",
+        )
+        self.assertIsNone(registry.authorize_read(
+            "tx", user_id="user", project_id="project",
+            subject_type="UNKNOWN", subject_id="series",
+            subject_version_id=None,
+        ))
+
+    def test_read_registry_rejects_empty_duplicate_or_incomplete_owners(self):
+        with self.assertRaises(ValueError):
+            ProjectReviewSubjectReadRegistry(())
+        with self.assertRaises(ValueError):
+            ProjectReviewSubjectReadRegistry((ReadOwner("SOL-06"), ReadOwner("SOL-06")))
+        with self.assertRaises(ValueError):
+            ProjectReviewSubjectReadRegistry((ReadOwner("bad"),))
+        with self.assertRaises(ValueError):
+            ProjectReviewSubjectReadRegistry((SimpleNamespace(SUBJECT_TYPE="SOL-06"),))
 
 
 if __name__ == "__main__":

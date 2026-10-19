@@ -96,6 +96,49 @@ def test_create_owner_binds_latest_draft_and_policy(setup):
         subject_version_id=s["version"]) is None
 
 
+def test_read_owner_rechecks_member_series_and_exact_historical_version(setup):
+    s = setup
+    s["repository"].version_exists.return_value = True
+    s["reviewers"].qualify_in_transaction.return_value = (
+        ProjectReviewerFacts(s["actor"], s["project"], "CUSTOMER_MEMBER"),)
+    current = s["owner"].authorize_read(
+        s["request"], user_id=s["actor"], project_id=s["project"],
+        subject_type="SOL-06", subject_id=s["series"],
+        subject_version_id=None)
+    assert current.subject_version_id is None
+    historical = s["owner"].authorize_read(
+        s["request"], user_id=s["actor"], project_id=s["project"],
+        subject_type="SOL-06", subject_id=s["series"],
+        subject_version_id=s["version"])
+    assert historical.subject_version_id == s["version"]
+    s["repository"].version_exists.assert_called_once_with(
+        s["request"], project_id=s["project"], series_id=s["series"],
+        spec_id=s["version"])
+    assert all(call.kwargs["reviewer_ids"] == (s["actor"],)
+               for call in s["reviewers"].qualify_in_transaction.call_args_list)
+
+
+def test_read_owner_hides_unknown_or_ineligible_subject_facts(setup):
+    s = setup
+    s["reviewers"].qualify_in_transaction.return_value = (
+        ProjectReviewerFacts(s["actor"], s["project"], "PROJECT_MANAGER"),)
+    s["repository"].series_exists.return_value = False
+    assert s["owner"].authorize_read(
+        s["request"], user_id=s["actor"], project_id=s["project"],
+        subject_type="SOL-06", subject_id=s["series"],
+        subject_version_id=None) is None
+    s["reviewers"].qualify_in_transaction.side_effect = (
+        ReviewReviewerEligibilityError())
+    assert s["owner"].authorize_read(
+        s["request"], user_id=s["actor"], project_id=s["project"],
+        subject_type="SOL-06", subject_id=s["series"],
+        subject_version_id=s["version"]) is None
+    assert s["owner"].authorize_read(
+        s["request"], user_id=s["actor"], project_id=s["project"],
+        subject_type="REQ-03", subject_id=s["series"],
+        subject_version_id=None) is None
+
+
 def test_prepare_recomputes_current_facts_and_finalizes_binding(setup):
     s = setup
     prepared = s["owner"].prepare_start_in_transaction(

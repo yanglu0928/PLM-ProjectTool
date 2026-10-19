@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261019-1214：Review 读取能力与写生命周期 Owner 分离
+
+- Date/WBS：2026-10-19 / `SOL-06-A15-P03`。依据冻结 REVIEW_GET、RVW-01-A04/A05 与 A15-P01。
+- Decision：新增只要求 `authorize_read` 的独立 Subject read registry，不扩张现有写 Owner 注册合同；SOL-06 read owner 在同一事务中重证当前 ACTIVE Project member，系列身份与固定历史版本分别共享锁证明。GET 只投影冻结的 `active_round`，终态保持 null，不以 query 偷渡 latest round 或 LIST。
+- Reason：已具备写生命周期的主题不应自动获得读取暴露；旧 Review/Decision 不是当前访问权。冻结 ReviewView 只有 active round，强行返回最新终态轮会扩大合同并混淆“活动”语义。
+- Impact/Rollback：无 Schema、角色、License、依赖或旧数据变化；Router 默认关闭，可撤可选入口与 SOL-06 读注册。Windows 组合、真实 PG/HTTP、任务发现、前端/Edge 另验。
+
 ## DEC-20261019-1213：送审与终态共享同一 SOL-06 生产 Owner 工厂
 
 - Date/WBS：2026-10-19 / `SOL-06-A15-P02`。依据 A15-P01、A14-P04 Owner 与冻结通用 REVIEW_DECIDE。

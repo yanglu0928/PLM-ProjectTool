@@ -158,6 +158,7 @@ def create_app(
     project_reference_read_router: APIRouter | None = None,
     project_reference_list_router: APIRouter | None = None,
     reference_deidentification_router: APIRouter | None = None,
+    review_read_router: APIRouter | None = None,
     review_command_router: APIRouter | None = None,
     maintenance_admission: MaintenanceAdmissionPort | None = None,
     shutdown_callback: Callable[[], None] | None = None,
@@ -456,6 +457,8 @@ def create_app(
         app.include_router(prototype_review_submission_router)
     if requirement_prototype_link_router is not None:
         app.include_router(requirement_prototype_link_router)
+    if review_read_router is not None:
+        app.include_router(review_read_router)
     if review_command_router is not None:
         app.include_router(review_command_router)
     return app

@@ -17,6 +17,9 @@ from plm_assistant.modules.review.application.create_review import (
     AuthorizedReviewCreation,
     CreatedReviewRef,
 )
+from plm_assistant.modules.review.application.read_service import (
+    AuthorizedReviewSubjectRead,
+)
 from plm_assistant.modules.review.application.subject_start import (
     PreparedReviewSubject,
     ReviewSubjectAccessDenied,
@@ -68,6 +71,11 @@ class StructuredSpecReviewRepositoryPort(Protocol):
     def series_exists(
         self, transaction: object, *, project_id: uuid.UUID,
         series_id: uuid.UUID,
+    ) -> bool: ...
+
+    def version_exists(
+        self, transaction: object, *, project_id: uuid.UUID,
+        series_id: uuid.UUID, spec_id: uuid.UUID,
     ) -> bool: ...
 
     def bind_start(
@@ -138,6 +146,36 @@ class StructuredSpecReviewSubjectOwner:
         return self._repo.series_exists(
             tx, project_id=review.project_id,
             series_id=review.subject_id) is True
+
+    def authorize_read(
+        self, tx: object, *, user_id: uuid.UUID, project_id: uuid.UUID,
+        subject_type: str, subject_id: uuid.UUID,
+        subject_version_id: uuid.UUID | None,
+    ) -> AuthorizedReviewSubjectRead | None:
+        """Prove current membership and the exact SOL-06 identity/version."""
+        if (not _ids(user_id, project_id, subject_id)
+                or subject_type != self.SUBJECT_TYPE
+                or subject_version_id is not None
+                and not _uuid(subject_version_id)):
+            return None
+        try:
+            self._qualify_reviewer_ids(
+                tx, project_id=project_id, reviewer_ids=(user_id,))
+        except ReviewSubjectAccessDenied:
+            return None
+        exists = (
+            self._repo.series_exists(
+                tx, project_id=project_id, series_id=subject_id)
+            if subject_version_id is None else
+            self._repo.version_exists(
+                tx, project_id=project_id, series_id=subject_id,
+                spec_id=subject_version_id)
+        )
+        if exists is not True:
+            return None
+        return AuthorizedReviewSubjectRead(
+            user_id, project_id, subject_type, subject_id,
+            subject_version_id)
 
     def prepare_start_in_transaction(
         self, tx: object, request: ReviewSubjectStartRequest,

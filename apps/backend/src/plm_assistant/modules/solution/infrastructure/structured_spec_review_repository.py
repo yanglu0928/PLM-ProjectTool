@@ -59,6 +59,22 @@ class SqlAlchemyStructuredSpecReviewSubjectRepository:
         )).scalar_one_or_none()
         return value if _ids(value) else None
 
+    def version_exists(
+        self, transaction: object, *, project_id: uuid.UUID,
+        series_id: uuid.UUID, spec_id: uuid.UUID,
+    ) -> bool:
+        """Read-lock one immutable historical version without lifecycle locks."""
+        if not _ids(project_id, series_id, spec_id):
+            return False
+        found = _session(transaction).execute(select(
+            StructuredSolutionSpecRow.structured_solution_spec_id,
+        ).where(
+            StructuredSolutionSpecRow.project_id == project_id,
+            StructuredSolutionSpecRow.spec_series_id == series_id,
+            StructuredSolutionSpecRow.structured_solution_spec_id == spec_id,
+        ).with_for_update(read=True)).scalar_one_or_none()
+        return found == spec_id
+
     def lock_subject(
         self, transaction: object, *, project_id: uuid.UUID,
         series_id: uuid.UUID, spec_id: uuid.UUID,

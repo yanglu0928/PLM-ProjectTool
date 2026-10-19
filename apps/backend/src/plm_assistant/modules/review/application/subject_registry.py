@@ -116,3 +116,37 @@ class ProjectReviewSubjectRegistry:
         if owner is None:
             raise ReviewSubjectAccessDenied()
         return owner
+
+
+class ProjectReviewSubjectReadRegistry:
+    """Narrow, fail-closed dispatch for Review identity/version reads.
+
+    Read capability is registered separately from lifecycle ownership so adding
+    a read endpoint cannot silently broaden every existing Subject Owner.
+    """
+
+    def __init__(self, owners: Iterable[object]) -> None:
+        if type(owners) not in (tuple, list):
+            raise ValueError("Review Subject read owners must be a bounded sequence")
+        registered: dict[str, object] = {}
+        for owner in owners:
+            subject_type = getattr(owner, "SUBJECT_TYPE", None)
+            if (not _code(subject_type, subject=True)
+                    or subject_type in registered
+                    or not callable(getattr(owner, "authorize_read", None))):
+                raise ValueError("Review Subject read owner registration invalid")
+            registered[subject_type] = owner
+        if not registered:
+            raise ValueError("At least one Review Subject read owner is required")
+        self._owners = registered
+
+    def authorize_read(self, tx, *, user_id, project_id, subject_type,
+                       subject_id, subject_version_id):
+        owner = self._owners.get(subject_type)
+        if owner is None:
+            return None
+        return owner.authorize_read(
+            tx, user_id=user_id, project_id=project_id,
+            subject_type=subject_type, subject_id=subject_id,
+            subject_version_id=subject_version_id,
+        )
