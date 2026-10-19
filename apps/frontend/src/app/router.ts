@@ -59,6 +59,9 @@ const ProjectReferenceReviseView = () => import("@/modules/solution/views/Projec
 const ProjectOutlineListView = () => import("@/modules/solution/views/ProjectOutlineListView.vue");
 const ProjectOutlineDetailView = () => import("@/modules/solution/views/ProjectOutlineDetailView.vue");
 const ProjectOutlineCreateView = () => import("@/modules/solution/views/ProjectOutlineCreateView.vue");
+const ProjectPlanListView = () => import("@/modules/plan/views/ProjectPlanListView.vue");
+const ProjectPlanCreateView = () => import("@/modules/plan/views/ProjectPlanCreateView.vue");
+const ProjectPlanDetailView = () => import("@/modules/plan/views/ProjectPlanDetailView.vue");
 const ProjectOutlineVersionCreateView = () => import("@/modules/solution/views/ProjectOutlineVersionCreateView.vue");
 const ProjectOutlineVersionListView = () => import("@/modules/solution/views/ProjectOutlineVersionListView.vue");
 const ProjectOutlineVersionDetailView = () => import("@/modules/solution/views/ProjectOutlineVersionDetailView.vue");
@@ -410,6 +413,21 @@ export function createAppRouter(
         path: "/projects/:projectId/solution-sections",
         name: "project-sections",
         component: ProjectSectionListView,
+      },
+      {
+        path: "/projects/:projectId/plans/new",
+        name: "project-plan-create",
+        component: ProjectPlanCreateView,
+      },
+      {
+        path: "/projects/:projectId/plans/:planId",
+        name: "project-plan-detail",
+        component: ProjectPlanDetailView,
+      },
+      {
+        path: "/projects/:projectId/plans",
+        name: "project-plans",
+        component: ProjectPlanListView,
       },
       {
         path: "/projects/:projectId/solution-outlines/new",

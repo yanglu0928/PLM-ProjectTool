@@ -49,6 +49,11 @@ function label(value: unknown): value is string {
 function orderKey(value: string): string {
   return value.slice(0, 19) + (value.length > 20 ? value.slice(20, -1).padEnd(6, "0") : "000000");
 }
+export function planFollows(previous: PlanSummary, next: PlanSummary): boolean {
+  const earlier = orderKey(previous.created_at);
+  const later = orderKey(next.created_at);
+  return earlier > later || earlier === later && previous.plan_id > next.plan_id;
+}
 function fail(): never { throw new PlanReadError("PLAN_UNAVAILABLE"); }
 const summaryFields = ["plan_id", "project_id", "name", "plan_state",
   "current_approved_version_ref", "created_at", "etag"] as const;
@@ -86,10 +91,7 @@ export function parsePlanPage(value: unknown, projectId: string, pageSize: numbe
       || !cursor.test(value.next_cursor) || value.next_cursor === previousCursor)
     || !value.has_more && value.next_cursor !== null) fail();
   const items = value.items.map(item => summary(item, projectId));
-  if (items.some((item, index) => index > 0 && (
-    orderKey(items[index - 1]!.created_at) < orderKey(item.created_at)
-    || orderKey(items[index - 1]!.created_at) === orderKey(item.created_at)
-      && items[index - 1]!.plan_id <= item.plan_id))) fail();
+  if (items.some((item, index) => index > 0 && !planFollows(items[index - 1]!, item))) fail();
   return Object.freeze({ items: Object.freeze(items), next_cursor: value.next_cursor as string | null,
     has_more: value.has_more });
 }
