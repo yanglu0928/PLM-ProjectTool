@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-19：0.1.0-dev.0/PLAN-01-A02 增加关闭式 `pln_plans` 身份 ORM/Migration 0167，含项目/创建人 FK、批准指针暂时必须为空、名称/状态/锁约束与历史保护；未开放业务 API。兼容性/升级/回滚：先备份并从0166升级；空 Plan 表可降级，有历史则拒绝并须向前修复或人工备份恢复；冻结 API/权限/License/依赖不变。验证：Win11/PG18.6 既有数据升降重升、负例和 Alembic drift 通过；定向9项，首次全量仅旧 migration-head 断言失败，修正后全量3783通过/3跳过/5924子例；开发wheel1427项、SHA-256 `be4b6859827316bc4aef301e7328c61e4c731c7fe28be949f6b99eda6485e1bd`。已知问题：Owner/版本/WBS/UI/Output、正式信任/安装、Gate3/Pilot/发行仍待。
+
 - 2026-10-19：0.1.0-dev.0/PLAN-01-A01 核查冻结 Plan/PlanVersion/WBS/FS/Review/Trace 与仓库空缺，划分先 Plan 身份 Schema、再身份 Owner、后版本/WBS/输出链的独立 WBS；SOL-06 专项批准不自动满足完整 Plan 输入。兼容性/升级/回滚：仅前置文档，无程序、Migration、API 或数据变化；可调整实施顺序。验证：DM-05/SC-01/02/API-04 与代码目录/Migration 静态交叉核对，未运行功能测试。已知问题：Plan 模块未实现、完整批准 Solution 输入/Output/正式信任/安装及 Gate3/Pilot/发行未完成。
 
 - 2026-10-19：0.1.0-dev.0/PILOT-CHAIN-A01 静态核查 Windows 11 Pilot 关键路径：SOL-06 Reviewer Inbox 是专项闭环，Plan/Output 正式模块及核心表尚未实现，安装与正式信任仍受阻；选定 PLAN-01-A01 做冻结输入/分片前置核查。兼容性/升级/回滚：仅文档与工作顺序，无产品/Migration/API/数据变化，可调整优先级。验证：冻结合同、目录/Migration 和安装 P38/P41 证据交叉核对，未运行功能测试。已知问题：完整纵向 UAT、正式信任、离线安装升级、Gate3/Pilot/发行未通过。

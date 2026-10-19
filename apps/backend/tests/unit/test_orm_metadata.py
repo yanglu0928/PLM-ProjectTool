@@ -40,6 +40,7 @@ from plm_assistant.modules.survey.infrastructure import orm as survey_orm  # noq
 from plm_assistant.modules.requirement.infrastructure import orm as requirement_orm  # noqa: F401
 from plm_assistant.modules.prototype.infrastructure import orm as prototype_orm  # noqa: F401
 from plm_assistant.modules.solution.infrastructure import orm as solution_orm  # noqa: F401
+from plm_assistant.modules.plan.infrastructure import orm as plan_orm  # noqa: F401
 
 
 class OrmMetadataTests(unittest.TestCase):
@@ -210,6 +211,8 @@ class OrmMetadataTests(unittest.TestCase):
                       'plm.sol_reference_deidentification_confirmations'):
             self.assertIn(table, Base.metadata.tables)
             historical_metadata.discard(table)
+        self.assertIn('plm.pln_plans', Base.metadata.tables)
+        historical_metadata.discard('plm.pln_plans')
         self.assertIn('plm.job_parse_cancel_versions', Base.metadata.tables)
         self.assertIn('plm.plt_maintenance_state', Base.metadata.tables)
         for table in (export_orm.exports, export_orm.members, export_orm.captures, export_orm.acceptances):
