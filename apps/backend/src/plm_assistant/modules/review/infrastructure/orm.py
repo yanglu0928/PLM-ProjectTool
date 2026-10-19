@@ -44,7 +44,9 @@ def _make_tables(create):
         check("ck_rvw_reviews__codes", "subject_type ~ '^[A-Z][A-Z0-9_-]{0,63}$' AND policy_code ~ '^[A-Z][A-Z0-9_]{0,63}$'"),
         check("ck_rvw_reviews__state", "review_state IN ('DRAFT','IN_REVIEW','APPROVED','RETURNED','WITHDRAWN') AND lock_version>=0 AND ((review_state='IN_REVIEW' AND active_round_id IS NOT NULL) OR (review_state<>'IN_REVIEW' AND active_round_id IS NULL))"),
         nonzero("rvw_reviews","review_id","subject_id","created_by"),
-        sa.Index("ix_rvw_reviews__subject", "scope","scope_project_key","subject_type","subject_id"), schema="plm")
+        sa.Index("ix_rvw_reviews__subject", "scope","scope_project_key","subject_type","subject_id"),
+        sa.Index("ix_rvw_reviews__scope_created", "scope","scope_project_key",
+                 sa.desc("created_at"),sa.desc("review_id")), schema="plm")
     rounds = create("rvw_review_rounds", pk("review_round_id"), col("review_id", ident), *scope("rvw_rounds"),
         col("round_no", sa.Integer()), col("subject_version_id", ident), col("round_state"), lock(),
         col("started_by", ident), col("started_at", time), stamp(),
@@ -64,7 +66,10 @@ def _make_tables(create):
         uq("uq_rvw_assignments__round_reviewer","review_round_id","reviewer_id"),
         uq("uq_rvw_assignments__decision_parent","assignment_id","review_round_id","reviewer_id","scope","scope_project_key"),
         check("ck_rvw_assignments__state","assignment_state IN ('PENDING','DECIDED')"),
-        nonzero("rvw_assignments","assignment_id","reviewer_id"), schema="plm")
+        nonzero("rvw_assignments","assignment_id","reviewer_id"),
+        sa.Index("ix_rvw_assignments__reviewer_pending", "scope","scope_project_key",
+                 "reviewer_id","review_round_id",
+                 postgresql_where=sa.text("assignment_state='PENDING'")), schema="plm")
     decisions = create("rvw_review_decisions", pk("decision_id"), col("review_id", ident), col("review_round_id", ident),
         *scope("rvw_decisions"), col("assignment_id", ident), col("reviewer_id", ident), col("decision"),
         col("comment", nullable=True), col("decided_at", time), col("trace_id", ident),

@@ -30,6 +30,16 @@ class ReviewPersistenceSchemaTests(unittest.TestCase):
         self.assertEqual(delta.down_revision, module.revision)
         tables[-1].append_column(sa.Column("withdrawal_reason", sa.Text(), nullable=True))
         tables[-1].append_constraint(sa.CheckConstraint(delta._SHAPE, name=delta._CHECK))
+        index_delta = importlib.import_module(
+            "plm_assistant.migrations.versions.20261019_0166_review_list_indexes")
+        self.assertEqual(index_delta.down_revision, "20261019_0165")
+        sa.Index(index_delta.REVIEW_LIST_INDEX, tables[0].c.scope,
+                 tables[0].c.scope_project_key,
+                 tables[0].c.created_at.desc(), tables[0].c.review_id.desc())
+        sa.Index(index_delta.REVIEWER_PENDING_INDEX, tables[2].c.scope,
+                 tables[2].c.scope_project_key, tables[2].c.reviewer_id,
+                 tables[2].c.review_round_id,
+                 postgresql_where=sa.text("assignment_state='PENDING'"))
         for old, runtime in zip(tables, orm._tables):
             self.assertEqual(set(old.c.keys()), set(runtime.c.keys()))
             self.assertEqual({c.name for c in old.constraints}, {c.name for c in runtime.constraints})
@@ -52,3 +62,24 @@ class ReviewPersistenceSchemaTests(unittest.TestCase):
         index = next(i for i in orm.ReviewSubjectLockRow.__table__.indexes if i.name == "uq_rvw_locks__active_subject")
         self.assertTrue(index.unique)
         self.assertEqual(tuple(c.name for c in index.columns), ("scope", "scope_project_key", "subject_type", "subject_id"))
+
+    def test_review_list_indexes_are_explicit_and_minimal(self):
+        review_index = next(
+            i for i in orm.ReviewRow.__table__.indexes
+            if i.name == "ix_rvw_reviews__scope_created")
+        self.assertEqual(
+            tuple(str(expression) for expression in review_index.expressions),
+            ("rvw_reviews.scope", "rvw_reviews.scope_project_key",
+             "created_at DESC", "review_id DESC"),
+        )
+        assignment_index = next(
+            i for i in orm.ReviewAssignmentRow.__table__.indexes
+            if i.name == "ix_rvw_assignments__reviewer_pending")
+        self.assertEqual(
+            tuple(column.name for column in assignment_index.columns),
+            ("scope", "scope_project_key", "reviewer_id", "review_round_id"),
+        )
+        self.assertEqual(
+            str(assignment_index.dialect_options["postgresql"]["where"]),
+            "assignment_state='PENDING'",
+        )

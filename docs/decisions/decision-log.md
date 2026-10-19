@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261019-1220：Reviewer Inbox 索引只覆盖稳定顺序与待处理候选
+
+- Date/WBS：2026-10-19 / `SOL-06-A16-P03`；依据冻结 REVIEW_LIST、CR-RVW-004 与 P02 的 `created_at DESC, review_id DESC` / `my_pending` 合同。
+- Decision：0166 只追加 Project/GLOBAL scope 前缀的 Review 稳定排序索引，以及按 reviewer 的 PENDING partial Assignment 索引；ORM 同名声明。既不为其他 Assignment 历史建全量索引，也不增业务列或回填。该索引只生成候选，应用层仍须执行 License、Session、Project 与逐项 Subject Owner 授权。0166 降级允许在保留历史时删索引，前提是先关闭依赖 LIST 的应用版本。
+- Reason：冻结列表需要可重复的 keyset 顺序，现有 Assignment 唯一索引以 Round 开头，不能直接支撑 reviewer 待处理候选。最小 partial index 减少历史索引体积；数据无变化使应用回滚和迁移回滚可分离，同时不把物理路径变成授权事实。
+- Impact/Rollback：DB Schema head 前进至 0166；无 API、角色、License、依赖或业务事实变化。Win11/PG18.6 空库与24条有效历史升降重升、行数、索引定义/计划和 drift 通过；正式规模建索引窗口仍需性能验证。回滚先关闭 LIST，再降级删除索引并保留全部 Review 历史。
+
 ## DEC-20261019-1219：Review List 隐藏候选位置必须加密
 
 - Date/WBS：2026-10-19 / `SOL-06-A16-P02`。依据 API-01 游标边界、CR-RVW-004 的短页/隐藏候选语义与现有 Job list 先例。

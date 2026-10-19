@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-19：0.1.0-dev.0/SOL-06-A16-P03 新增Migration 0166及ORM列表索引：Review按scope/project/created_at DESC/review_id DESC稳定排序，Assignment仅索引当前PENDING reviewer候选；不增列、不回填，降级只删索引并保留历史。兼容性/升级/回滚：数据库head前进至0166，升级前按既有流程备份；回滚先关闭后续LIST入口再降至0165，冻结API/角色/License/依赖不变。验证：定向9项；Win11/PG18.6空库和24条有效Review历史升降重升、行数不变、定义/查询计划/drift通过；后端全量3765通过/3跳过/5870子例；开发wheel1419项、SHA-256 `9774c762df07e8e4ce8ca31560d0a9432b091ab21c0405d6fa0e0dbd0cb2f6d3`。已知问题：大量历史建索引窗口未压测，Repository/授权/HTTP/Windows/前端/Edge及Gate3/Pilot/发行仍待。
+
 - 2026-10-19：0.1.0-dev.0/SOL-06-A16-P02 新增 Review List 纯 DTO 与专用 AES-256-GCM 游标合同：`all/my_pending`、1～200页、actor-only Assignment、短/空页继续；AAD 绑定Session摘要/Project/view/page_size，随机nonce密文隐藏created_at/review_id，篡改和跨范围统一拒绝。提交前发现HMAC可解码隐藏候选位置并改为加密后完整复验。兼容性/升级/回滚：无Migration/Router/权限/Windows key/旧数据变化，复用既有cryptography，可删除未装配模块。验证：定向6项/11子例，后端全量3764通过/3跳过/5870子例；开发wheel1418项、SHA-256 `28515074cbb0af6af6a5ed4d2eaf56a013abca9e650f4eddd346ab122d405d44`。已知问题：0166索引、Repository/授权、HTTP/Windows/前端/Edge及Gate3/Pilot/发行仍待。
 
 - 2026-10-19：0.1.0-dev.0/SOL-06-A16-P01 完成 Review List/Reviewer Inbox 编码前核查并登记 `CR-RVW-004`：确认冻结 `REVIEW_LIST` 路径/Project member/Page 已存在，但当前缺授权策略、Repository/Application/HTTP、稳定索引、专用 cursor Vault 来源和前端入口；选择兼容细化 `view=all|my_pending`，assigned reviewer 只筛候选且每项仍经 Subject Owner 现时授权。兼容性/升级/回滚：本项仅文档和决策，无运行代码/Schema/API行为/权限/依赖变化；后续 0166 仅加索引且可关闭入口/删索引回滚，历史保留。验证：冻结 manifest/合同、Review ORM/读链、Project policy、Windows/前端静态交叉核查；功能测试未运行。已知问题：LIST/Inbox 尚未实现，正式信任、Gate3/Pilot/发行仍待。
