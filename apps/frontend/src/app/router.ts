@@ -70,6 +70,7 @@ const ProjectStructuredSpecListView = () => import("@/modules/solution/views/Pro
 const ProjectStructuredSpecDetailView = () => import("@/modules/solution/views/ProjectStructuredSpecDetailView.vue");
 const ProjectStructuredSpecReviseView = () => import("@/modules/solution/views/ProjectStructuredSpecReviseView.vue");
 const ProjectReviewView = () => import("@/modules/review/views/ProjectReviewView.vue");
+const ProjectReviewListView = () => import("@/modules/review/views/ProjectReviewListView.vue");
 const ProjectSectionListView = () => import("@/modules/solution/views/ProjectSectionListView.vue");
 const ProjectSectionDetailView = () => import("@/modules/solution/views/ProjectSectionDetailView.vue");
 const ProjectSectionCreateView = () => import("@/modules/solution/views/ProjectSectionCreateView.vue");
@@ -359,6 +360,11 @@ export function createAppRouter(
         path: "/projects/:projectId/reviews/:reviewId",
         name: "project-review-detail",
         component: ProjectReviewView,
+      },
+      {
+        path: "/projects/:projectId/reviews",
+        name: "project-reviews",
+        component: ProjectReviewListView,
       },
       {
         path: "/projects/:projectId/structured-solution-specs/new",

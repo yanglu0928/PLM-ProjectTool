@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-19：0.1.0-dev.0/SOL-06-A16-P07 增加项目级 Reviewer Inbox：从服务端 `my_pending` 自动发现待办，切换 `all` 历史，隐藏空页继续翻页，精确进入评审详情；会话撤销、切项目和后页错误清除旧结果。兼容性/升级/回滚：仅前端静态资源/路由，无 Migration、后端 API、角色、License、密钥或历史变化；重建前端即可升级，可撤入口但保留服务器历史。验证：定向29项、前端全量151文件1831项、typecheck及生产build通过；既有主chunk体积提示。已知问题：真实 Windows 11 Edge/PG 页面闭环留P08；正式信任/性能、Gate3/Pilot/三平台发行仍待。
+
 - 2026-10-19：0.1.0-dev.0/SOL-06-A16-P06 将冻结 REVIEW_LIST 接入 Windows 显式平台读/写模式：运行账户专用 `review-list-cursor-v1` Vault 密钥缺失即拒启动，真实 SOL-06 Owner/Project/Session/License/SQL 逐项授权，默认及登录专用应用保持关闭。兼容性/升级/回滚：无 Migration、冻结 API/角色/License/依赖或历史变化，数据库需0166；启用前为实际服务账户供给并备份32字节密钥，回滚可关闭入口并保留历史，密钥轮换需重起分页。验证：定向63项/71子例、Win11实际 Vault 临时凭据与可弃PG18.6真实HTTP双页/隔离/终态、后端全量3781通过/3跳过/5924子例；开发wheel1423项，SHA-256 `628b576f15b15f519f51141a404c74cd8aeeda155b4c934774a74dbf1982188c`。已知问题：Inbox UI/Edge、正式信任/性能、Gate3/Pilot/三平台发行仍待。
 
 - 2026-10-19：0.1.0-dev.0/SOL-06-A16-P05 新增默认关闭的冻结REVIEW_LIST Router与应用工厂插槽；严格唯一`view/page_size/cursor`、canonical Project、AES-GCM范围绑定，最小actor-only响应及401/404/403/422/400/503安全映射，默认应用仍404。兼容性/升级/回滚：无Migration/角色/License/依赖/历史变化，运行需0166；未注入不改变旧行为，可撤Router/插槽。验证：合同4项/19子例，P02/P04/GET关联17项/54子例；后端全量3777通过/3跳过/5918子例；开发wheel1422项、SHA-256 `dfc7f450e4d3a9d9ac5453f8cf6909a93f977534d97e5ef7a4446b768a1af56b`。已知问题：Windows专用key/真实HTTP-PG组合、前端/Edge、正式性能与Gate3/Pilot/发行仍待。

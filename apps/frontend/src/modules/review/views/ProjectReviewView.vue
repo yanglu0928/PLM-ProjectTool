@@ -31,7 +31,7 @@ function stateLabel(v:string){return({DRAFT:"待开始",IN_REVIEW:"评审中",AP
 
 <template><section class="review" aria-labelledby="review-title" :aria-busy="busy">
   <p class="section-kicker">项目治理 · 已知评审</p><h1 id="review-title">结构化专项评审</h1>
-  <p><RouterLink :to="{name:'project-structured-specs',params:{projectId:route.params.projectId}}">返回专项版本历史</RouterLink></p>
+  <p><RouterLink :to="{name:'project-reviews',params:{projectId:route.params.projectId}}">返回评审待办与历史</RouterLink></p>
   <p class="warning">此页只读取已知评审编号，不是评审收件箱。决定只代表本轮评审，不代表实施完成、客户确认或 UAT 通过。</p>
   <p v-if="!mayRead()" role="status">当前会话没有此项目的读取权限。</p>
   <template v-else><button type="button" :disabled="busy||deciding" @click="load">{{busy?'正在读取…':'刷新评审'}}</button>
