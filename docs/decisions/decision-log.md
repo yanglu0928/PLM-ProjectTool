@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261019-1217：真实 Reviewer 验收按本次固定事实计数
+
+- Date/WBS：2026-10-19 / `SOL-06-A15-P06`。依据 A14-P09、A15-P04/P05、Windows 11 实际 Edge 与可弃 PostgreSQL 18.6。
+- Decision：先复用实际送审链产生 Review/Round，再由独立 assigned reviewer 在真实 Edge 页面决定；用网络离线制造结果未知并验证原 Actor/Project/Review/Round/Decision/Comment/Key 精确重试。数据库验收必须按本次 Review/Round/Version 限定，不使用全库同 operation 或同系列累计 Audit 数量。
+- Reason：同一夹具会先回放多轮 Review 历史；全库计数会把合法历史回执和同系列旧批准误判为本次重复。真正需要证明的是本次固定轮只有一个决定、一个对应回执及精确状态/Audit。
+- Impact/Rollback：仅验收脚本与记录，无产品/Schema/API/权限/License/依赖变化；可删除夹具回滚。使用 loopback 合成数据和临时 Edge profile；正式信任、REVIEW_LIST、Gate/Pilot/Release 不因此通过。
+
 ## DEC-20261019-1216：无 REVIEW_LIST 时 Reviewer UI 只接受已知 Review 回执
 
 - Date/WBS：2026-10-19 / `SOL-06-A15-P05`。依据冻结 REVIEW_GET/DECIDE、A15-P04 真实读链与 A14-P08 送审回执。
