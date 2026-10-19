@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261019-1211：Edge 验收使用本机真实引擎并隔离浏览器身份
+
+- Date/WBS：2026-10-19 / `SOL-06-A14-P09`。输入为 A14-P07/P08、生产 Vue 构建、Windows 11 本机 Edge 和可弃 PostgreSQL 18.6。
+- Decision：Computer Use 当前只暴露内置浏览器而未暴露 Edge，故以本机已安装 Microsoft Edge 的 DevTools 协议执行真实浏览器链，不将内置浏览器证据标为 Edge。成员与负责人使用各自一次性账号；负责人另建同项目一次性 ProjectManager，不轮换或回退上游合成负责人凭据。
+- Reason：目标是证明实际 Edge 引擎与生产 Vue/FastAPI/PG 链，控制表面不是验收主体。独立身份避免浏览器登录改变上游回放资格；数据库禁止凭据版本回退是正确安全约束，不能为夹具绕过。
+- Impact/Rollback：仅验收脚本，无产品/Schema/API/权限/License/依赖变化；全部流量和数据在 loopback/可弃资源内。可删除夹具回滚；失败尝试不作证据，正式信任、Gate/Pilot/Release 不变。
+
 ## DEC-20261019-1210：SOL-06 版本路径由服务端绑定系列并保持四字段送审合同
 
 - Date/WBS：2026-10-19 / `SOL-06-A14-P05～P06`。依据冻结 `SOL_SPEC_SUBMIT_REVIEW`、ReviewSubmissionRequest、CR-SOL-021、A14-P04 状态 Owner 与现有 Requirement/Prototype PROJECT Review HTTP 先例。

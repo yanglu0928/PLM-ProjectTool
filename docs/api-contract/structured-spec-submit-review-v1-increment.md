@@ -1,6 +1,6 @@
 # SOL_SPEC_SUBMIT_REVIEW V1 增量合同
 
-日期：2026-10-19。状态：`SOL-06-A14-P06` 合同实现；Windows 生产组合尚未装配。
+日期：2026-10-19。状态：`SOL-06-A14-P09` 已完成合同、Windows 显式写组合、前端与 Windows 11 Edge/PostgreSQL 18.6 真实闭环；正式信任、其他目标平台、Gate 3、Pilot 与发行仍未通过。
 
 ## 路径与权限
 

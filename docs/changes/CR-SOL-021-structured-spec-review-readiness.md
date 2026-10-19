@@ -1,7 +1,7 @@
 # CR-SOL-021：StructuredSolutionSpec 送审前设计就绪与执行证明分离
 
 - 日期：2026-10-19
-- 状态：IN_IMPLEMENTATION（依据用户持续授权；A14-P02 类型合同、A14-P03 精确 Trace、A14-P04 Review 状态/Owner、A14-P05 原子内部送审、A14-P06 HTTP、A14-P07 Windows 组合及 A14-P08 前端安全动作已验证，浏览器链仍在实施）
+- 状态：IMPLEMENTED（依据用户持续授权；A14-P02～P09 的类型合同、Trace、Review 状态/Owner、原子送审、HTTP、Windows 组合、前端和真实 Edge/PG 闭环均已验证；不表示专项批准、Gate 3、Pilot 或正式发行通过）
 - 影响 WBS：`SOL-06-A14-P01` 起
 - 原基线：Gate 2 冻结 `SOL_SPEC_VALIDATE` / `SOL_SPEC_SUBMIT_REVIEW`、DM-05 StructuredSolutionSpec、A13 `DEC-20261016-1208`
 
@@ -59,3 +59,4 @@
 - 2026-10-19 / `SOL-06-A14-P06`：新增默认关闭的冻结送审 Router 与应用工厂插槽；严格四字段请求、null 元数据、canonical UUID、路径/响应身份、Trace/ETag/no-store 和公共错误映射，响应系列仅来自服务端派生事实。合同、全量回归和 wheel 入包通过；尚未装入 Windows 生产组合。详见 `docs/progress/sol-06-a14-p06-structured-spec-submit-review-http.md`。
 - 2026-10-19 / `SOL-06-A14-P07`：送审 Router 只在 Windows `include_secret_write` 显式写模式装配；真实 Auth/License/Project/Reviewer/Document/Evidence/Trace/Review/状态/Audit/收据链全部接入。Windows 11 PostgreSQL 18.6 已证明默认关闭、跨项目/角色/License 拒绝、当前事实失败后同 Key 成功、精确重放、漂移冲突和唯一数据库事实。前端/浏览器尚未实施。详见 `docs/progress/sol-06-a14-p07-structured-spec-submit-review-windows.md`。
 - 2026-10-19 / `SOL-06-A14-P08`：新增冻结送审前端 Client、Auth 写桥与固定版本详情动作；只允许 ProjectManager 在与当前 DRAFT 严格一致的现时就绪报告后选择 ACTIVE 成员，断连/503 保留原 Key 和评审人并要求显式重试，201 明确不代表批准。前端全量、类型检查和生产构建通过；Windows Edge 真实链尚未执行。详见 `docs/progress/sol-06-a14-p08-structured-spec-submit-review-frontend.md`。
+- 2026-10-19 / `SOL-06-A14-P09`：Windows 11 实际 Edge 155 经生产 Vue、FastAPI/Uvicorn 和可弃 PostgreSQL 18.6 完成成员隐藏、负责人现时验证、ACTIVE 评审人、结果未知原 Key/正文重试、201 精确重放、跨项目清屏及唯一数据库事实；上游回放同时通过。Computer Use 未暴露 Edge 表面，改用本机 Edge DevTools 协议，不把内置浏览器冒充 Edge；无产品代码、Schema、API、依赖或客户数据变化。详见 `docs/progress/sol-06-a14-p09-structured-spec-submit-review-browser.md`。
