@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261019-1212：SOL-06 终态必须复用通用 Review 决定并分离读取接线
+
+- Date/WBS：2026-10-19 / `SOL-06-A15-P01`。依据冻结 REVIEW_GET/DECIDE/WITHDRAW、A14-P04 Owner 与 A14-P09 IN_REVIEW 真实链。
+- Decision：不新增 SOL-06 专用批准端点；把正式 `StructuredSpecReviewSubjectOwner` 接入现有 Windows 通用 Review 决定注册表。生产决定接线先独立验收，随后以真实 Subject read owner 实现默认关闭的通用 REVIEW_GET，再做 Windows 读取、前端和 Edge；REVIEW_LIST/任务中心不由精确 GET 冒充。
+- Reason：通用决定已具备 assigned reviewer、幂等、当前事实重证和原子终态语义，但生产注册表缺 SOL-06；内部读服务则尚无实际 Owner/HTTP。把读取和决定同时扩张会跨多个安全边界，也会诱导前端在未读固定轮时盲写。
+- Impact/Rollback：不改冻结 URL/角色/License/Schema；P01 仅记录。后续可关闭 Router 回滚新入口，已写 Review/Decision/Subject 状态/Audit/收据必须保留；批准不等于实施、客户确认或 UAT。
+
 ## DEC-20261019-1211：Edge 验收使用本机真实引擎并隔离浏览器身份
 
 - Date/WBS：2026-10-19 / `SOL-06-A14-P09`。输入为 A14-P07/P08、生产 Vue 构建、Windows 11 本机 Edge 和可弃 PostgreSQL 18.6。
