@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261019-1216：无 REVIEW_LIST 时 Reviewer UI 只接受已知 Review 回执
+
+- Date/WBS：2026-10-19 / `SOL-06-A15-P05`。依据冻结 REVIEW_GET/DECIDE、A15-P04 真实读链与 A14-P08 送审回执。
+- Decision：新增 known-ID Reviewer 页面，并只从专项现存 `review_ref` 或本次送审回执进入；不把精确 GET、浏览器存储或手工 UUID 输入冒充收件箱。决定前必须读取当前活动轮和 PENDING Assignment；不确定结果持久保存 Actor/Project/Review/Round/Decision/Comment/Key，成功后以状态和 ETag 回读一致性收口。
+- Reason：当前没有 REVIEW_LIST/任务发现合同；让用户手工维护 Review ID 会复制此前不友好的表格式流程并产生越权/错轮风险。已知回执提供可追溯入口，服务端 Assignment 仍是唯一决定资格。
+- Impact/Rollback：仅前端与 Auth transport 方法，无后端/Schema/API/角色/License/依赖变化；可撤 UI，历史不变。完整收件箱、Edge 和 Gate/Pilot 另验。
+
 ## DEC-20261019-1215：REVIEW_GET 属于 Windows 显式读取面且不开放写能力
 
 - Date/WBS：2026-10-19 / `SOL-06-A15-P04`。依据 A15-P03、生产 `include_secret_read/include_secret_write` 分层与冻结 REVIEW_GET。

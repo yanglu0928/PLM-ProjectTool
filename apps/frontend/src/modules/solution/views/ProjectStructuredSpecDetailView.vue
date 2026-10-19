@@ -340,7 +340,7 @@ function factHint(field: typeof dimensions[number]["field"]) { return ({integrit
         </section>
         <section aria-labelledby="spec-review-title">
           <h3 id="spec-review-title">正式评审</h3>
-          <p v-if="current.review_ref">评审编号：{{ current.review_ref }}；轮次编号：{{ current.review_round_ref }}</p>
+          <p v-if="current.review_ref">评审编号：{{ current.review_ref }}；轮次编号：{{ current.review_round_ref }}。<RouterLink :to="{ name: 'project-review-detail', params: { projectId: current.project_id, reviewId: current.review_ref } }">打开评审</RouterLink></p>
           <template v-else-if="!isProjectManager()"><p role="status">尚无评审记录；仅当前项目负责人可送审。</p></template>
           <template v-else>
             <p class="warning">送审会创建正式评审并把当前固定版本转为“评审中”；送审回执不代表批准、实施完成或客户确认。服务端会在同一事务重新核验当前事实和评审人资格。</p>
@@ -362,7 +362,7 @@ function factHint(field: typeof dimensions[number]["field"]) { return ({integrit
             <button v-if="submitPending || maySubmitNew()" type="button"
               :disabled="submitting || submitLocked || (submitPending ? !submitConfirmRetry : !selectedReviewers.length)"
               @click="submitCurrent()">{{ submitting ? "正在提交…" : submitPending ? "按原操作号重试送审" : "提交正式评审" }}</button>
-            <p v-if="submitted" role="status">已创建评审 {{ submitted.review_id }}，首轮 {{ submitted.review_round_id }}，状态为评审中；这不是批准结论。</p>
+            <p v-if="submitted" role="status">已创建评审 {{ submitted.review_id }}，首轮 {{ submitted.review_round_id }}，状态为评审中；这不是批准结论。<RouterLink :to="{ name: 'project-review-detail', params: { projectId: submitted.project_id, reviewId: submitted.review_id } }">打开评审</RouterLink></p>
           </template>
         </section>
       </template>

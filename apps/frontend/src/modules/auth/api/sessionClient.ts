@@ -223,7 +223,8 @@ export class SessionClient {
     | `/api/v1/projects/${string}/solution-sections/${string}/versions`
     | `/api/v1/projects/${string}/structured-solution-specs`
     | `/api/v1/projects/${string}/structured-solution-specs/${string}:revise`
-    | `/api/v1/projects/${string}/structured-solution-specs/${string}:submit-review`, body: string,
+    | `/api/v1/projects/${string}/structured-solution-specs/${string}:submit-review`
+    | `/api/v1/projects/${string}/reviews/${string}/rounds/${string}:decide`, body: string,
     idempotencyKey: string, maxBodyBytes: number): Promise<Response> {
     if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
     if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
@@ -312,6 +313,17 @@ export class SessionClient {
     }
     return this.#postCommand(
       `/api/v1/projects/${projectId}/structured-solution-specs/${specId}:submit-review`,
+      body, idempotencyKey, 8192);
+  }
+
+  /** Frozen REVIEW_DECIDE; callers retain the exact decision, comment and Key. */
+  postProjectReviewDecision(projectId: string, reviewId: string, roundId: string,
+    body: string, idempotencyKey: string): Promise<Response> {
+    if (!identifier(projectId) || !identifier(reviewId) || !identifier(roundId)) {
+      return Promise.reject(new SessionClientError("AUTH_CLIENT_UNAVAILABLE"));
+    }
+    return this.#postCommand(
+      `/api/v1/projects/${projectId}/reviews/${reviewId}/rounds/${roundId}:decide`,
       body, idempotencyKey, 8192);
   }
 
