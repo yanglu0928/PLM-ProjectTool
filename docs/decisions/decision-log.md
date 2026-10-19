@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261019-1210：SOL-06 版本路径由服务端绑定系列并保持四字段送审合同
+
+- Date/WBS：2026-10-19 / `SOL-06-A14-P05～P06`。依据冻结 `SOL_SPEC_SUBMIT_REVIEW`、ReviewSubmissionRequest、CR-SOL-021、A14-P04 状态 Owner 与现有 Requirement/Prototype PROJECT Review HTTP 先例。
+- Decision：冻结路径只接收 `structured_solution_spec_id`，内部服务在同一事务解析不可变 `spec_series_id`，随后由 Subject Owner 取得系列锁并重证；不允许客户端声明系列。HTTP 请求必须精确包含 `reviewer_ids/policy_ref/due_at/submission_note`，策略固定 `STRUCTURED_SPEC_ALL_V1`，后二者 V1 显式为 null，非空 422。成功响应返回服务端派生的系列、固定版本、Review/Round、Reviewer、提交者/时间和 `v1` ETag，默认不挂载。
+- Reason：Review Subject 根是系列，而冻结 URL 只有版本；若新增客户端系列字段会破坏冻结请求并允许错绑。当前 Review Schema 未持久化期限/备注，接受非空值会静默丢失业务事实。默认关闭可把纯合同与 Windows 生产组合证据分开。
+- Impact/Rollback：无 Migration、冻结 URL/请求、License、依赖或旧数据变化；响应中的系列是已存在服务端事实，不作为客户端授权输入。P05/P06 未装 Windows 组合，可撤可选 Router/内部 Service；一旦产生 Review/状态/Audit/收据只能停入口并保留历史。
+
 ## DEC-20261019-1209：SOL-06 送审采用系列 Subject 与设计就绪门禁
 
 - Date/WBS：2026-10-19 / `SOL-06-A14-P01`。依据冻结 `SOL_SPEC_SUBMIT_REVIEW`、DM-05、统一 PROJECT Review、0164 和 A13 验证边界；变更细节见 `CR-SOL-021`。
