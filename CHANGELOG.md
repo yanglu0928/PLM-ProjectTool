@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-19：0.1.0-dev.0/PLAN-01-A04-P05-A03 修复真实 Edge 发现的 Plan GET/LIST 原生 fetch receiver 错误，增加防回归测试和一次性浏览器/数据库验收夹具。兼容性/升级/回滚：仅前端读取调用方式和验证资料变化，无 Migration、冻结 API、权限、License、依赖或历史变化；重建前端升级，可撤修正但会恢复浏览器读取故障。验证：首轮失败后修复并完整重跑，Windows 11 Edge/Vue/Uvicorn/PG18.6 201丢失同号恢复、详情、51条分页、客户只读/服务端拒创建、跨项目清屏及唯一Plan/审计退出0；前端全量155文件1847项、typecheck及build337模块通过。已知问题：合成信任不等于正式服务账户/公钥/安装，PlanVersion/WBS/Output、Gate3/Pilot/三平台发行仍待。
+
 - 2026-10-19：0.1.0-dev.0/PLAN-01-A04-P05-A02 增加项目级Plan列表/创建/详情页面和项目入口；列表按时间-ID降序续页/切项目清屏，创建结果不确定保留原操作号并要求确认后重试；明确当前只有身份，未生成版本/WBS/交付。兼容性/升级/回滚：无Migration/冻结API/权限/License/依赖/历史变更，重建前端上线，可撤导航/页面且保留服务器历史。验证：定向3文件11项，前端全量155文件1846项、typecheck和生产build337模块通过。已知问题：主包体积警告、Windows 11 Edge/PG实际页面留A03，正式信任/安装、PlanVersion/WBS/Output及Gate3/Pilot/发行仍待。
 
 - 2026-10-19：0.1.0-dev.0/PLAN-01-A04-P05-A01 增加Plan当前身份前端安全读/创建客户端和Session POST桥，严格投影项目/身份/空批准指针、时间及ID降序、签名游标与201首次结果/trace/ETag/Location；未知提交不自动更换原Key。兼容性/升级/回滚：无Migration/后端API/权限/依赖/历史变化，当前不显示新页面；可撤客户端，后续页面上线需重建前端。验证：定向2文件8项、前端全量153文件1839项、typecheck及生产build326模块通过；既有主chunk体积警告。已知问题：项目入口/页面与Edge实测、正式服务账户/License信任、PlanVersion/WBS/Output、Gate3/Pilot/发行仍待。

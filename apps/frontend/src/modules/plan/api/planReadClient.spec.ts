@@ -39,6 +39,15 @@ describe("PlanReadClient", () => {
     expect(Object.isFrozen(page.items[0])).toBe(true);
   });
 
+  it("calls browser fetch without binding the client as receiver", async () => {
+    const fetcher = vi.fn(function (this: unknown) {
+      expect(this).toBeUndefined();
+      return Promise.resolve(success({ items: [], next_cursor: null, has_more: false }));
+    });
+    await expect(new PlanReadClient(fetcher as typeof fetch).list(project))
+      .resolves.toMatchObject({ items: [] });
+  });
+
   it("enforces created-time DESC and Plan ID DESC including microseconds", () => {
     expect(parsePlanPage({ items: [
       { ...item, created_at: "2026-10-19T00:00:00.000001Z" },
