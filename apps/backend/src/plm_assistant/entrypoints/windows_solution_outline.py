@@ -33,6 +33,7 @@ from plm_assistant.modules.solution.api.structured_spec_revise import create_str
 from plm_assistant.modules.solution.api.structured_spec_list import create_structured_spec_list_router
 from plm_assistant.modules.solution.api.structured_spec_list_cursor import StructuredSpecListCursorCodec
 from plm_assistant.modules.solution.api.structured_spec_read import create_structured_spec_read_router
+from plm_assistant.modules.solution.api.structured_spec_validate import create_structured_spec_validate_router
 from plm_assistant.modules.solution.api.section_version_read import create_section_version_read_router
 from plm_assistant.modules.solution.api.section_version_validate import create_section_version_validate_router
 from plm_assistant.modules.solution.api.section_version_list_cursor import SectionVersionListCursorCodec
@@ -50,6 +51,8 @@ from plm_assistant.modules.solution.application.create_section_version import Se
 from plm_assistant.modules.solution.application.create_structured_spec import StructuredSpecCreateService
 from plm_assistant.modules.solution.application.revise_structured_spec import StructuredSpecReviseService
 from plm_assistant.modules.solution.application.read_structured_spec import StructuredSpecReadService
+from plm_assistant.modules.solution.application.evaluate_structured_spec_validation import StructuredSpecCurrentFactEvaluator
+from plm_assistant.modules.solution.application.validate_structured_spec import StructuredSpecValidationService
 from plm_assistant.modules.solution.application.prove_structured_spec_sources import StructuredSpecSourceProofService
 from plm_assistant.modules.solution.application.read_section_version import SectionVersionReadService
 from plm_assistant.modules.solution.application.validate_section_version import (
@@ -75,6 +78,12 @@ from plm_assistant.modules.solution.infrastructure.section_version_create_reposi
 from plm_assistant.modules.solution.infrastructure.section_version_read_repository import SqlAlchemySectionVersionReadRepository
 from plm_assistant.modules.solution.infrastructure.structured_spec_create_repository import SqlAlchemyStructuredSpecCreateRepository
 from plm_assistant.modules.solution.infrastructure.structured_spec_read_repository import SqlAlchemyStructuredSpecReadRepository
+from plm_assistant.modules.solution.infrastructure.structured_spec_validation_audit_source import (
+    SqlAlchemyStructuredSpecValidationAuditSource,
+)
+from plm_assistant.modules.solution.infrastructure.structured_spec_validation_repository import (
+    SqlAlchemyStructuredSpecValidationRepository,
+)
 from plm_assistant.modules.solution.infrastructure.section_version_validation_audit_source import (
     SqlAlchemySectionVersionValidationAuditSource,
 )
@@ -528,6 +537,56 @@ def create_windows_structured_spec_revise_router(
         )
         return create_structured_spec_revise_router(
             sessions=sessions, origins=origins, revises=service)
+    except Exception:
+        raise ProductionSolutionOutlineStartupError() from None
+
+
+def create_windows_structured_spec_validate_router(
+    *, runtime, sessions, origins, license_guard, audit,
+    documents, downloads, parse_results,
+) -> APIRouter:
+    """Mount SOL-06 VALIDATE only in explicit write/current-source mode."""
+    if any(value is None for value in (
+            runtime, sessions, origins, license_guard, audit,
+            documents, downloads, parse_results)):
+        raise ProductionSolutionOutlineStartupError()
+    try:
+        fixed = DocumentFixedSourceProofService(
+            documents=documents, downloads=downloads,
+            parse_metadata=SqlAlchemyParseResultReadRepository(),
+            parse_results=parse_results)
+        evidence = EvidenceFixedProjectSourceService(
+            sessions=SqlAlchemyProjectReadAccess(),
+            projects=SqlAlchemyProjectAuthorizationRepository(),
+            evidence=SqlAlchemyEvidenceFixedSourceRepository(),
+            documents=fixed,
+            allowed_project_roles=frozenset({
+                "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}),
+        )
+        evaluator = StructuredSpecCurrentFactEvaluator(
+            requirements=OutlineRequirementUseProofService(
+                approved_versions=(
+                    SqlAlchemyPrototypeApprovedRequirementVersionProof())),
+            sections=SqlAlchemySectionReadRepository(),
+            versions=SqlAlchemySectionVersionReadRepository(),
+            evidence=SectionEvidenceUseProofAdapter(fixed_sources=evidence),
+            documents=SectionDocumentContentProofAdapter(
+                identities=SqlAlchemyReferenceVersionIdentity(),
+                fixed_sources=fixed),
+        )
+        service = StructuredSpecValidationService(
+            unit_of_work=runtime.unit_of_work,
+            access=SqlAlchemyProjectWriteAccess(), license_guard=license_guard,
+            authorization=ProjectAuthorizationService(
+                unit_of_work=runtime.unit_of_work,
+                repository=SqlAlchemyProjectAuthorizationRepository()),
+            repository=SqlAlchemyStructuredSpecValidationRepository(),
+            evaluator=evaluator, receipts=SqlAlchemyIdempotencyReceipts(),
+            audit=audit,
+            audit_source=SqlAlchemyStructuredSpecValidationAuditSource(),
+        )
+        return create_structured_spec_validate_router(
+            sessions=sessions, origins=origins, validations=service)
     except Exception:
         raise ProductionSolutionOutlineStartupError() from None
 
