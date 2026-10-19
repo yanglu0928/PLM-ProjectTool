@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261019-1237：WBS Task 使用统一Trace的新增受控目标类型
+
+- Date/WBS：2026-10-19 / `PLAN-02-A04-P04-A04`；对应 `CR-PLAN-001`。
+- Decision：保留既有`PLN-02` PlanVersion语义，新增`PLN-02-WBS`表示固定版本内的WbsItem；统一Trace Owner逐节点证明，不另造Plan Trace副本。
+- Reason：现有Trace白名单和CHECK没有可定位单个WBS任务的类型，仅引用PlanVersion不足以满足反向追溯。
+- Impact/Rollback：属冻结Trace类型白名单的追加修订；先留存CR、迁移/回滚/验收计划后实施。无新类型历史可降，有历史拒降；原冻结提交不追写。
+
 ## DEC-20261019-1236：Evidence 引用以两条复合FK证明 Scope 与 Project
 
 - Date/WBS：2026-10-19 / `PLAN-02-A04-P04-A03`；依据冻结SC-01、Evidence现有身份/Scope/Project约束及WBS项目隔离要求。
