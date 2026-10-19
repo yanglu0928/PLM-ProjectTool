@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-19：0.1.0-dev.0/PLAN-01-A04-P04 新增Windows当前账户专用`project-plan-list-cursor-v1` Vault只读密钥、缺钥拒启动和Plan当前身份读写模式装配；只读GET/LIST、写模式追加CREATE，普通/登录专用模式维持404。兼容性/升级/回滚：无Migration/冻结API/角色/License/依赖/历史变更；目标服务账户须单独供给并离线备份32字节密钥，关闭可选路由即回滚且保留历史，换钥使旧游标失效。验证：Win11临时Vault丢失/备份恢复、可弃PG18.6真实Session/ASGI CREATE→GET→LIST五页/重放/撤权/隔离/License；后端全量3809通过/3跳过/5991子例、最终路由断言定向44通过/25子例；开发wheel1442项/SHA-256 `512cdbbb80be48f4d2630699edf1fc577668607d8ca799cccf078968fea884ae`。已知问题：本次License为合成信任，正式服务账户/公钥/HTTPS与安装、前端、PlanVersion/WBS/Output、Gate3/Pilot/发行仍待。
+
 - 2026-10-19：0.1.0-dev.0/PLAN-01-A04-P03 增加专用HMAC签名、Session/Project/page_size绑定的PLAN_LIST游标和默认关闭HTTP；当前Plan列表在公开前改为冻结默认`created_at DESC,plan_id DESC`，同时间戳按ID稳定续页。兼容性/升级/回滚：无Migration、冻结URL/DTO/角色/License/依赖/历史变化；未注入仍404，可关闭可选Router，未公开内部排序无旧客户端破坏。验证：Win11/PG18.6真实授权/撤权/License/零读Audit及同时间戳双页、定向LIST合同5项/19子例，后端全量3806通过/3跳过/5986子例；开发wheel1440项/SHA-256 `dc66e61c5b3b44e221f5bca8c5a89280b9856a851cc3d9a6ad7564bdbf45a71e`。已知问题：Windows专用Vault key/真实HTTP-PG装配、前端、PlanVersion/WBS/Output、规模性能、正式信任/安装和Gate3/Pilot/发行仍待。
 
 - 2026-10-19：0.1.0-dev.0/PLAN-01-A04-P02 增加默认关闭的冻结 PLAN_GET HTTP：当前授权身份行安全投影、Session/Host/UUID/query 边界、200/trace/ETag/no-store及安全错误映射；LIST 等独立游标。兼容性/升级/回滚：无Migration/冻结路径/角色/License/依赖/历史变化，可撤可选Router，默认与Windows当前模式仍404。验证：定向8项/9子例、后端全量3801通过/3跳过/5967子例；开发wheel1438项、SHA-256 `fa31862e4bcf8d449f21c7e9e113a9d1b76fab4a1d2a3b99fc3681fd91ccd1ba`。已知问题：专用LIST游标/Windows真实HTTP-PG、前端、PlanVersion/WBS/Output、正式信任/安装与Gate3/Pilot/发行仍待。

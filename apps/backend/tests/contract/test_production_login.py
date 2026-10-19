@@ -27,6 +27,7 @@ from plm_assistant.modules.solution.api.reference_list_cursor import ReferenceLi
 from plm_assistant.modules.solution.api.global_reference_list_cursor import GlobalReferenceListCursorCodec
 from plm_assistant.modules.solution.application.global_reference_candidate_cursor import GlobalReferenceCandidateCursorCodec
 from plm_assistant.modules.solution.api.outline_list_cursor import OutlineListCursorCodec
+from plm_assistant.modules.plan.api.list_cursor import PlanListCursorCodec
 from plm_assistant.modules.solution.api.outline_version_list_cursor import OutlineVersionListCursorCodec
 from plm_assistant.modules.solution.api.section_version_list_cursor import SectionVersionListCursorCodec
 from plm_assistant.modules.solution.api.section_list_cursor import SectionListCursorCodec
@@ -62,6 +63,36 @@ class _ContractMaintenanceAdmission:
 
 
 class ProductionLoginTests(unittest.TestCase):
+    def test_missing_plan_cursor_key_disposes_both_platform_modes(self):
+        for factory in (create_production_platform_app,
+                        create_production_platform_write_app):
+            with self.subTest(factory=factory.__name__):
+                runtime = Mock()
+                runtime.is_ready.return_value = True
+                with patch(
+                    "plm_assistant.entrypoints.production_login.read_database_url",
+                    return_value="postgresql+psycopg://localhost/test",
+                ), patch(
+                    "plm_assistant.entrypoints.production_login.create_database_runtime",
+                    return_value=runtime,
+                ), patch(
+                    "plm_assistant.entrypoints.production_login._schema_current",
+                    return_value=True,
+                ), patch(
+                    "plm_assistant.entrypoints.windows_license_runtime."
+                    "create_windows_license_services",
+                    return_value=Mock(guard=Mock()),
+                ), patch(
+                    "plm_assistant.entrypoints.production_login."
+                    "create_windows_plan_list_cursor_codec",
+                    side_effect=RuntimeError("private Plan cursor key missing"),
+                ) as failed:
+                    with self.assertRaises(ProductionLoginStartupError) as caught:
+                        factory(self.settings(("http://localhost",)))
+                failed.assert_called_once()
+                self.assertNotIn("private", str(caught.exception))
+                runtime.dispose.assert_called_once()
+
     def test_missing_review_list_cursor_key_disposes_both_platform_modes(self):
         from contextlib import ExitStack
         from plm_assistant.modules.platform.api.secret_list_cursor import (
@@ -590,6 +621,11 @@ class ProductionLoginTests(unittest.TestCase):
         ))
         self.enterContext(patch(
             "plm_assistant.entrypoints.production_login."
+            "create_windows_plan_list_cursor_codec",
+            return_value=PlanListCursorCodec(b"p" * 32),
+        ))
+        self.enterContext(patch(
+            "plm_assistant.entrypoints.production_login."
             "create_windows_outline_version_list_cursor_codec",
             return_value=OutlineVersionListCursorCodec(b"v" * 32),
         ))
@@ -1066,6 +1102,15 @@ class ProductionLoginTests(unittest.TestCase):
         self.workflow_checklist_qualification_factory.assert_not_called()
         self.workflow_transition_factory.assert_not_called()
         with TestClient(app, base_url="http://localhost") as client:
+            self.assertEqual(client.get(
+                "/api/v1/projects/00000000-0000-0000-0000-000000000001/plans"
+            ).status_code, 401)
+            self.assertEqual(client.get(
+                "/api/v1/projects/00000000-0000-0000-0000-000000000001/plans/"
+                "00000000-0000-0000-0000-000000000002").status_code, 401)
+            self.assertEqual(client.post(
+                "/api/v1/projects/00000000-0000-0000-0000-000000000001/plans"
+            ).status_code, 404)
             self.assertEqual(client.post(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
                 "reference-solutions").status_code, 404)
@@ -1438,6 +1483,12 @@ class ProductionLoginTests(unittest.TestCase):
             retrieval_cancel_owner,
         )
         with TestClient(app, base_url="http://localhost") as client:
+            self.assertEqual(client.get(
+                "/api/v1/projects/00000000-0000-0000-0000-000000000001/plans"
+            ).status_code, 401)
+            self.assertEqual(client.post(
+                "/api/v1/projects/00000000-0000-0000-0000-000000000001/plans"
+            ).status_code, 403)
             self.assertEqual(client.post(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/"
                 "reference-solutions").status_code, 403)

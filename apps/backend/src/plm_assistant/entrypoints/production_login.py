@@ -98,6 +98,12 @@ from plm_assistant.entrypoints.windows_solution_outline import (
 from plm_assistant.entrypoints.windows_solution_outline_cursor import (
     create_windows_outline_list_cursor_codec,
 )
+from plm_assistant.entrypoints.windows_plan import (
+    create_windows_plan_create_router, create_windows_plan_read_routers,
+)
+from plm_assistant.entrypoints.windows_plan_cursor import (
+    create_windows_plan_list_cursor_codec,
+)
 from plm_assistant.entrypoints.windows_solution_outline_version_cursor import (
     create_windows_outline_version_list_cursor_codec,
 )
@@ -663,6 +669,9 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         project_reference_revise_router = None
         project_reference_eligibility_router = None
         solution_outline_create_router = None
+        plan_create_router = None
+        plan_read_router = None
+        plan_list_router = None
         solution_outline_version_create_router = None
         solution_outline_version_read_router = None
         solution_section_create_router = None
@@ -697,6 +706,11 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 create_windows_license_services,
             )
             licenses = create_windows_license_services(runtime, settings)
+            plan_read_router, plan_list_router = create_windows_plan_read_routers(
+                runtime=runtime, sessions=sessions, origins=origins,
+                license_guard=licenses.guard,
+                cursors=create_windows_plan_list_cursor_codec(),
+            )
             solution_outline_read_router = create_windows_outline_read_router(
                 runtime=runtime, sessions=sessions, origins=origins,
                 license_guard=licenses.guard,
@@ -959,6 +973,10 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 cursors=create_windows_review_list_cursor_codec(),
             )
             if include_secret_write:
+                plan_create_router = create_windows_plan_create_router(
+                    runtime=runtime, sessions=sessions, origins=origins,
+                    license_guard=licenses.guard, audit=audit,
+                )
                 solution_outline_create_router = create_windows_outline_create_router(
                     runtime=runtime, sessions=sessions, origins=origins,
                     license_guard=licenses.guard, audit=audit,
@@ -1896,6 +1914,9 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             project_reference_revise_router=project_reference_revise_router,
             project_reference_eligibility_router=project_reference_eligibility_router,
             solution_outline_create_router=solution_outline_create_router,
+            plan_create_router=plan_create_router,
+            plan_read_router=plan_read_router,
+            plan_list_router=plan_list_router,
             solution_outline_version_create_router=solution_outline_version_create_router,
             solution_outline_version_read_router=solution_outline_version_read_router,
             solution_section_create_router=solution_section_create_router,
