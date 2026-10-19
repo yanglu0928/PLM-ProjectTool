@@ -416,3 +416,48 @@ class PlanWbsSolutionRefRow(Base):
     spec_series_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     spec_type: Mapped[str | None] = mapped_column(Text)
     ordinal: Mapped[int] = mapped_column(nullable=False)
+
+
+class PlanWbsEvidenceRefRow(Base):
+    """Closed fixed Evidence reference with database-proved Scope and Project."""
+
+    __tablename__ = "pln_item_evidence_refs"
+    __table_args__ = (
+        UniqueConstraint("wbs_item_id", "evidence_id",
+                         name="uq_pln_item_evidence__item_evidence"),
+        UniqueConstraint("wbs_item_id", "ordinal",
+                         name="uq_pln_item_evidence__item_ordinal"),
+        ForeignKeyConstraint(
+            ["wbs_item_id", "plan_version_id", "plan_id", "project_id"],
+            ["plm.pln_wbs_items.wbs_item_id", "plm.pln_wbs_items.plan_version_id",
+             "plm.pln_wbs_items.plan_id", "plm.pln_wbs_items.project_id"],
+            name="fk_pln_item_evidence__wbs", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["evidence_id", "source_scope"],
+            ["plm.evd_evidence_records.evidence_id", "plm.evd_evidence_records.scope"],
+            name="fk_pln_item_evidence__scope", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["evidence_id", "source_project_id"],
+            ["plm.evd_evidence_records.evidence_id", "plm.evd_evidence_records.project_id"],
+            name="fk_pln_item_evidence__project", ondelete="NO ACTION"),
+        CheckConstraint(
+            "(source_scope='GLOBAL' AND source_project_id IS NULL) OR "
+            "(source_scope='PROJECT' AND source_project_id IS NOT NULL "
+            "AND source_project_id=project_id)",
+            name="ck_pln_item_evidence__scope_project"),
+        CheckConstraint("ordinal>0", name="ck_pln_item_evidence__ordinal"),
+        Index("ix_pln_item_evidence__target", "evidence_id", "project_id",
+              "plan_version_id"),
+        {"schema": "plm"},
+    )
+
+    item_evidence_ref_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    wbs_item_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    plan_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    plan_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    evidence_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    source_scope: Mapped[str] = mapped_column(Text, nullable=False)
+    source_project_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    ordinal: Mapped[int] = mapped_column(nullable=False)

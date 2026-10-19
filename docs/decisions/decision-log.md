@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261019-1236：Evidence 引用以两条复合FK证明 Scope 与 Project
+
+- Date/WBS：2026-10-19 / `PLAN-02-A04-P04-A03`；依据冻结SC-01、Evidence现有身份/Scope/Project约束及WBS项目隔离要求。
+- Decision：Evidence原表增加 `(evidence_id,scope)` 和 `(evidence_id,project_id)` 复合唯一键；WBS引用表以两条复合FK分别验证实际Scope和PROJECT实际归属，CHECK限制GLOBAL无来源项目、PROJECT来源项目等于WBS项目。
+- Reason：仅`evidence_id`外键加引用表自报Scope无法防止伪Scope/跨项目。目标唯一键因Evidence主键而不改变合法行集合，只为复合FK提供DB证明。
+- Impact/Rollback：新增Evidence约束及关闭式Plan引用表，不改Evidence Owner/历史、冻结API、权限或License；升级可能扫描/锁定Evidence表，应安排维护窗口，先备份。引用空表可降并删除新增约束；有历史拒降，需向前修复或人工备份恢复。资格/撤销/授权及Trace留待Owner。
+
 ## DEC-20261019-1235：三类 Solution 版本在单一物理引用表中分支强约束
 
 - Date/WBS：2026-10-19 / `PLAN-02-A04-P04-A02`；依据冻结SC-01的`pln_item_solution_refs`和已有三种Solution版本复合唯一键。

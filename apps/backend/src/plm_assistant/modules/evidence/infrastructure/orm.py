@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import BigInteger, CheckConstraint, ForeignKeyConstraint, Index, Integer, LargeBinary, Text, text
+from sqlalchemy import BigInteger, CheckConstraint, ForeignKeyConstraint, Index, Integer, LargeBinary, Text, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import JSONB, TIMESTAMP, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -19,6 +19,8 @@ _ELIGIBILITY_STATES = "'CANDIDATE','ELIGIBLE','INELIGIBLE','REVOKED'"
 class EvidenceRow(Base):
     __tablename__ = "evd_evidence_records"
     __table_args__ = (
+        UniqueConstraint("evidence_id", "scope", name="uq_evd_evidence__id_scope"),
+        UniqueConstraint("evidence_id", "project_id", name="uq_evd_evidence__id_project"),
         ForeignKeyConstraint(["project_id"], ["plm.prj_projects.project_id"],
                              name="fk_evd_evidence__project", ondelete="NO ACTION"),
         ForeignKeyConstraint(["document_version_id", "document_id"],
