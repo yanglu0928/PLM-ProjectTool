@@ -122,8 +122,9 @@ SPEC.loader.exec_module(prior)
 
 
 def on_trace(
-    *, port, runtime, project, other_project, token, csrf, first, second,
-    draft, audit, license_guard, documents, downloads, parse_results,
+    *, port, runtime, project, other_project, manager, token, member_token,
+    csrf, first, second, repository, sources, draft, audit, license_guard,
+    documents, downloads, parse_results, on_review=None,
     **_unused,
 ) -> None:
     authorization = ProjectAuthorizationService(
@@ -182,14 +183,14 @@ def on_trace(
             identities=SqlAlchemyReferenceVersionIdentity(),
             fixed_sources=fixed),
         trace=coverage)
-    repository = SqlAlchemyStructuredSpecValidationRepository()
+    validation_repository = SqlAlchemyStructuredSpecValidationRepository()
     command = ValidateStructuredSpec(
         token, b"c" * 32, uuid.uuid4(), project,
         second.structured_solution_spec_id, "structured-spec-trace-0001")
 
     def observe():
         with runtime.unit_of_work() as transaction:
-            source = repository.lock_source(
+            source = validation_repository.lock_source(
                 transaction, project_id=project,
                 spec_id=second.structured_solution_spec_id)
             assert source is not None
@@ -276,6 +277,18 @@ def on_trace(
         "IMPLEMENTS"), idempotency_key="sol06-trace-current-0002")
     assert replacement.trace_link_id != current.trace_link_id
     assert observe().ready_for_review
+
+    if on_review is not None:
+        on_review(
+            port=port, runtime=runtime, project=project,
+            other_project=other_project, manager=manager, token=token,
+            member_token=member_token, csrf=csrf, first=first, second=second,
+            repository=repository, sources=sources, draft=draft, audit=audit,
+            license_guard=license_guard, documents=documents,
+            downloads=downloads, parse_results=parse_results,
+            evaluator=evaluator, validation_repository=validation_repository,
+            trace_creator=creator,
+        )
 
     print("SOL_06_A14_P03_TRACE_PG_PASS: fixed SOL-06 owner, exact current "
           "Requirement IMPLEMENTS set, old target/cross-project/revoke denial, "

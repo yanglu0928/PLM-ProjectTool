@@ -1,7 +1,7 @@
 # CR-SOL-021：StructuredSolutionSpec 送审前设计就绪与执行证明分离
 
 - 日期：2026-10-19
-- 状态：IN_IMPLEMENTATION（依据用户持续授权；A14-P02 类型合同及 A14-P03 精确 Trace 已验证，Review 后续仍在实施）
+- 状态：IN_IMPLEMENTATION（依据用户持续授权；A14-P02 类型合同、A14-P03 精确 Trace 及 A14-P04 Review 状态/Owner 已验证，原子送审与公开链仍在实施）
 - 影响 WBS：`SOL-06-A14-P01` 起
 - 原基线：Gate 2 冻结 `SOL_SPEC_VALIDATE` / `SOL_SPEC_SUBMIT_REVIEW`、DM-05 StructuredSolutionSpec、A13 `DEC-20261016-1208`
 
@@ -54,3 +54,4 @@
 
 - 2026-10-19 / `SOL-06-A14-P02`：V2 设计声明代码、`SPEC_VALIDATION_V2_*`、V1/V2 严格反读、当前评估器和前端兼容解析已完成；Windows 11 PostgreSQL 18.6 与 Edge 独立验收通过。Trace 仍为 `UNAVAILABLE`，因此未提前形成送审资格。详见 `docs/progress/sol-06-a14-p02-structured-spec-design-readiness.md`。
 - 2026-10-19 / `SOL-06-A14-P03`：新增 SOL-06 固定目标 Owner，将精确 ACTIVE `IMPLEMENTS` 覆盖受控扩展至 SOL-05/SOL-06，并接入当前事实评估器与 Windows 显式组合；Windows 11 PostgreSQL 18.6 已证明旧目标、跨项目、撤销拒绝、精确当前集合、替代恢复和共享锁，Edge 已证明缺链明确失败。未创建 Review 或改变 DRAFT。详见 `docs/progress/sol-06-a14-p03-structured-spec-trace.md`。
+- 2026-10-19 / `SOL-06-A14-P04`：新增 0165 状态窄门、不可变 Review 状态回执及 SOL-06 Subject Repository/Owner；开始与批准在同一事务重算当前事实，批准替代旧版，退回/撤回保留旧批准版。Windows 11 PostgreSQL 18.6 已证明既有 DRAFT 升降重升、真实 Review 生命周期、直接写/缺回执/篡改/有历史降级拒绝和 ORM drift 为零。尚未开放冻结送审 HTTP。详见 `docs/progress/sol-06-a14-p04-structured-spec-review-owner.md`。

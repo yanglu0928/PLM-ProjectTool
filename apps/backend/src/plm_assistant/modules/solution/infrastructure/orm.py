@@ -514,7 +514,7 @@ class SolutionSectionEvidenceRefRow(Base):
 
 
 class StructuredSolutionSpecRow(Base):
-    """Immutable SOL-06 version identity; insert closure opens only complete DRAFTs."""
+    """Immutable SOL-06 content; Review Owner alone may advance lifecycle state."""
 
     __tablename__ = "sol_structured_specs"
     __table_args__ = (
@@ -558,6 +558,8 @@ class StructuredSolutionSpecRow(Base):
                         "(review_ref IS NOT NULL AND review_round_ref IS NOT NULL)",
                         name="ck_sol_specs__review_pair"),
         CheckConstraint("isfinite(created_at)", name="ck_sol_specs__created_at"),
+        Index("uq_sol_specs__series_approved", "spec_series_id", unique=True,
+              postgresql_where=text("version_state='APPROVED'")),
         Index("ix_sol_specs__series_created", "spec_series_id", "created_at"),
         Index("ix_sol_specs__project_type", "project_id", "spec_type", "version_state"),
         {"schema": "plm"},
@@ -745,6 +747,77 @@ class StructuredSpecArtifactRefRow(Base):
     project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     output_artifact_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class StructuredSpecReviewStateResultRow(Base):
+    """Immutable receipt closing one SOL-06 Review lifecycle transition."""
+
+    __tablename__ = "sol_spec_review_state_results"
+    __table_args__ = (
+        UniqueConstraint("structured_solution_spec_id", "event_type",
+                         name="uq_sol_spec_review_results__version_event"),
+        UniqueConstraint("review_id", "review_round_id", "event_type",
+                         name="uq_sol_spec_review_results__round_event"),
+        ForeignKeyConstraint(
+            ["structured_solution_spec_id", "spec_series_id", "project_id"],
+            ["plm.sol_structured_specs.structured_solution_spec_id",
+             "plm.sol_structured_specs.spec_series_id",
+             "plm.sol_structured_specs.project_id"],
+            name="fk_sol_spec_review_results__version", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["previous_approved_version_ref", "spec_series_id", "project_id"],
+            ["plm.sol_structured_specs.structured_solution_spec_id",
+             "plm.sol_structured_specs.spec_series_id",
+             "plm.sol_structured_specs.project_id"],
+            name="fk_sol_spec_review_results__previous", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["current_approved_version_ref", "spec_series_id", "project_id"],
+            ["plm.sol_structured_specs.structured_solution_spec_id",
+             "plm.sol_structured_specs.spec_series_id",
+             "plm.sol_structured_specs.project_id"],
+            name="fk_sol_spec_review_results__current", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["review_id"], ["plm.rvw_reviews.review_id"],
+                             name="fk_sol_spec_review_results__review",
+                             ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["review_round_id"], ["plm.rvw_review_rounds.review_round_id"],
+            name="fk_sol_spec_review_results__round", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["actor_id"], ["plm.auth_users.user_id"],
+                             name="fk_sol_spec_review_results__actor",
+                             ondelete="NO ACTION"),
+        CheckConstraint(
+            "event_type IN ('START','APPROVED','RETURNED','WITHDRAWN')",
+            name="ck_sol_spec_review_results__event"),
+        CheckConstraint(
+            "(event_type='APPROVED' AND "
+            "current_approved_version_ref=structured_solution_spec_id) OR "
+            "(event_type<>'APPROVED' AND current_approved_version_ref "
+            "IS NOT DISTINCT FROM previous_approved_version_ref)",
+            name="ck_sol_spec_review_results__pointer"),
+        CheckConstraint("isfinite(created_at)",
+                        name="ck_sol_spec_review_results__created_at"),
+        Index("ix_sol_spec_review_results__review_round", "review_id",
+              "review_round_id"),
+        {"schema": "plm"},
+    )
+    review_state_result_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    structured_solution_spec_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), nullable=False)
+    spec_series_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    review_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    review_round_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    event_type: Mapped[str] = mapped_column(Text, nullable=False)
+    previous_approved_version_ref: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True))
+    current_approved_version_ref: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True))
+    actor_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"))
 
 
 class ReferenceSolutionRow(Base):

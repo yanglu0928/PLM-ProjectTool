@@ -11,7 +11,7 @@ from plm_assistant.modules.license.application.runtime_guard import RuntimeLicen
 from .create_review import _code
 from .persist_round import ReviewRoundPersistenceService, ReviewRoundPersistError, StartedReviewRoundRef
 from .read_snapshot import ReviewIdentitySnapshot
-from .subject_start import ReviewSubjectAccessDenied
+from .subject_start import ReviewSubjectAccessDenied, ReviewSubjectProofContext
 from ..domain.round_progress import _uuid,_utc
 
 
@@ -105,7 +105,8 @@ class ReviewStartService:
                         or f.user_id!=user or f.project_id!=command.project_id or f.project_role not in ALL_MEMBERS for f,user in zip(facts,ordered))):
                     raise ReviewStartError("REVIEW_REVIEWER_INELIGIBLE")
                 result=self._persist.start_in_transaction(tx,actor_id=actor,project_id=command.project_id,review_id=command.review_id,
-                    subject_version_id=command.subject_version_id,reviewer_ids=ordered,expected_version=command.expected_version,trace_id=command.trace_id)
+                    subject_version_id=command.subject_version_id,reviewer_ids=ordered,expected_version=command.expected_version,trace_id=command.trace_id,
+                    proof_context=ReviewSubjectProofContext(command.session_token,command.trace_id))
                 self._receipts.complete(tx,scope=scope,result=IdempotencyResult("V1_REVIEW_ROUND",result.round_id,201))
                 tx.commit()
                 return result

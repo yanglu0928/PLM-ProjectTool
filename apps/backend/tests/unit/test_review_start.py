@@ -61,6 +61,10 @@ class ReviewStartTests(unittest.TestCase):
     def test_same_transaction_start_complete_commit(self):
         self.assertEqual(self.call(),self.result)
         self.assertTrue(self.txs[0].committed)
+        request = self.owner.prepare_start_in_transaction.call_args.args[1]
+        self.assertEqual(request.proof_context.session_token,
+                         self.cmd.session_token)
+        self.assertEqual(request.proof_context.trace_id, self.cmd.trace_id)
         for method in (self.users.lock_enabled_users,self.projects.require_in_transaction,self.projectfacts.actor_facts,self.repo.insert_round,self.receipts.complete,self.audit.append):
             self.assertTrue(all(c.args[0] is self.txs[0] for c in method.call_args_list))
 

@@ -14,7 +14,8 @@ from plm_assistant.modules.platform.application.idempotency import (
     canonical_payload_fingerprint,
 )
 from plm_assistant.modules.solution.application.evaluate_structured_spec_validation import (
-    StructuredSpecCurrentFactEvaluator, StructuredSpecCurrentFactsError,
+    StructuredSpecCurrentFactEvaluator, StructuredSpecCurrentFactQuery,
+    StructuredSpecCurrentFactsError,
 )
 from plm_assistant.modules.solution.application.prove_section_document_content import (
     SectionDocumentContentProof,
@@ -38,6 +39,10 @@ from plm_assistant.modules.solution.application.structured_spec_validation_contr
 )
 from plm_assistant.modules.solution.application.structured_spec_validation_source import (
     StructuredSpecValidationSource,
+)
+from plm_assistant.modules.solution.application.structured_spec_review_readiness import (
+    StructuredSpecReviewReadinessError,
+    StructuredSpecReviewReadinessService,
 )
 from plm_assistant.modules.trace.application.implements_coverage import (
     TraceImplementsCoverageError, TraceImplementsCoverageProof,
@@ -274,6 +279,40 @@ def test_identity_and_missing_context_fail_before_owner_calls(facts):
             evaluator.evaluate(transaction, command=command, source=_source())
         assert failure.value.code == "VALIDATION_FAILED"
     assert all(not port.mock_calls for port in ports)
+
+
+def test_review_readiness_reuses_current_evaluation_for_draft_and_active_round(
+        facts):
+    evaluator, ports, proofs = facts
+    source = _with_current_fingerprint(_source(), proofs)
+    repository = Mock()
+    repository.lock_source.return_value = source
+    service = StructuredSpecReviewReadinessService(
+        repository=repository, evaluator=evaluator, clock=lambda: NOW)
+    query = StructuredSpecCurrentFactQuery(b"s" * 32, TRACE, PROJECT, SPEC)
+
+    draft = service.prove(
+        object(), query=query, series_id=SERIES, required_state="DRAFT")
+    assert draft.snapshot == source.snapshot
+    assert draft.verified_at == NOW
+
+    active = replace(source, snapshot=replace(
+        source.snapshot, version_state="IN_REVIEW"))
+    repository.lock_source.return_value = active
+    assert service.prove(
+        object(), query=query, series_id=SERIES,
+        required_state="IN_REVIEW").snapshot == active.snapshot
+
+    repository.lock_source.return_value = source
+    with pytest.raises(StructuredSpecReviewReadinessError):
+        service.prove(
+            object(), query=query, series_id=SERIES,
+            required_state="IN_REVIEW")
+    ports[-1].prove.side_effect = TraceImplementsCoverageError(
+        "TRACE_COVERAGE_REQUIRED")
+    with pytest.raises(StructuredSpecReviewReadinessError):
+        service.prove(
+            object(), query=query, series_id=SERIES, required_state="DRAFT")
 
 
 def test_all_ports_are_required():

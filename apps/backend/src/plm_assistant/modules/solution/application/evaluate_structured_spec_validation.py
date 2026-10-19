@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+from dataclasses import dataclass, field
 from typing import Protocol
 
 from plm_assistant.modules.requirement.application.outline_version_proof import (
@@ -75,6 +76,24 @@ class TraceCoveragePort(Protocol):
     ) -> TraceImplementsCoverageProof: ...
 
 
+@dataclass(frozen=True, slots=True)
+class StructuredSpecCurrentFactQuery:
+    """Minimum current-Owner context, reusable by validation and Review."""
+
+    session_token: bytes = field(repr=False)
+    trace_id: uuid.UUID
+    project_id: uuid.UUID
+    structured_solution_spec_id: uuid.UUID
+
+    def __post_init__(self) -> None:
+        if (type(self.session_token) is not bytes
+                or len(self.session_token) != 32
+                or not all(_id(value) for value in (
+                    self.trace_id, self.project_id,
+                    self.structured_solution_spec_id))):
+            raise StructuredSpecCurrentFactsError("VALIDATION_FAILED")
+
+
 def _id(value: object) -> bool:
     return type(value) is uuid.UUID and value.int != 0
 
@@ -103,20 +122,35 @@ class StructuredSpecCurrentFactEvaluator:
         self, transaction: object, *, command: ValidateStructuredSpec,
         source: StructuredSpecValidationSource,
     ) -> StructuredSpecValidationObservation:
-        if (transaction is None or type(command) is not ValidateStructuredSpec
+        if type(command) is not ValidateStructuredSpec:
+            raise StructuredSpecCurrentFactsError("VALIDATION_FAILED")
+        return self.evaluate_for_review(
+            transaction,
+            query=StructuredSpecCurrentFactQuery(
+                command.session_token, command.trace_id, command.project_id,
+                command.structured_solution_spec_id),
+            source=source)
+
+    def evaluate_for_review(
+        self, transaction: object, *, query: StructuredSpecCurrentFactQuery,
+        source: StructuredSpecValidationSource,
+    ) -> StructuredSpecValidationObservation:
+        if (transaction is None
+                or type(query) is not StructuredSpecCurrentFactQuery
                 or type(source) is not StructuredSpecValidationSource
-                or (command.project_id,
-                    command.structured_solution_spec_id) != (
+                or (query.project_id,
+                    query.structured_solution_spec_id) != (
                         source.snapshot.project_id,
                         source.snapshot.structured_solution_spec_id)):
             raise StructuredSpecCurrentFactsError("VALIDATION_FAILED")
+        query.__post_init__()
         requirements, requirement_facts = self._requirement_status(
             transaction, source)
         sections, section_facts = self._section_status(
-            transaction, command, source)
+            transaction, query, source)
         evidence, evidence_facts = self._evidence_status(
-            transaction, command, source)
-        trace = self._trace_status(transaction, command, source)
+            transaction, query, source)
+        trace = self._trace_status(transaction, query, source)
         integrity = "UNAVAILABLE"
         if (requirements, sections, evidence) == ("PASS", "PASS", "PASS"):
             try:
@@ -150,7 +184,7 @@ class StructuredSpecCurrentFactEvaluator:
                 source.snapshot.spec_type, statuses))
 
     def _trace_status(
-        self, transaction: object, command: ValidateStructuredSpec,
+        self, transaction: object, query: StructuredSpecCurrentFactQuery,
         source: StructuredSpecValidationSource,
     ) -> str:
         target = TraceVersionRef(
@@ -164,7 +198,7 @@ class StructuredSpecCurrentFactEvaluator:
         try:
             proof = self._trace.prove(
                 transaction,
-                query=TraceProofQuery(command.session_token, command.trace_id),
+                query=TraceProofQuery(query.session_token, query.trace_id),
                 target=target, requirement_refs=requirements)
             if (type(proof) is not TraceImplementsCoverageProof
                     or proof.target != target
@@ -209,7 +243,7 @@ class StructuredSpecCurrentFactEvaluator:
         return "PASS", facts
 
     def _section_status(
-        self, transaction: object, command: ValidateStructuredSpec,
+        self, transaction: object, query: StructuredSpecCurrentFactQuery,
         source: StructuredSpecValidationSource,
     ) -> tuple[str, list[list[object]]]:
         facts: list[list[object]] = []
@@ -264,8 +298,8 @@ class StructuredSpecCurrentFactEvaluator:
                             != ref.solution_section_version_id):
                         return "UNAVAILABLE", []
                 document = self._documents.prove(
-                    transaction, session_token=command.session_token,
-                    trace_id=command.trace_id,
+                    transaction, session_token=query.session_token,
+                    trace_id=query.trace_id,
                     project_id=source.snapshot.project_id,
                     document_version_id=version.content_document_version_ref)
                 if (type(document) is not SectionDocumentContentProof
@@ -290,15 +324,15 @@ class StructuredSpecCurrentFactEvaluator:
         return "PASS", facts
 
     def _evidence_status(
-        self, transaction: object, command: ValidateStructuredSpec,
+        self, transaction: object, query: StructuredSpecCurrentFactQuery,
         source: StructuredSpecValidationSource,
     ) -> tuple[str, list[list[object]]]:
         facts: list[list[object]] = []
         for evidence_id in source.draft.evidence_ids:
             try:
                 proof = self._evidence.prove(
-                    transaction, session_token=command.session_token,
-                    trace_id=command.trace_id,
+                    transaction, session_token=query.session_token,
+                    trace_id=query.trace_id,
                     project_id=source.snapshot.project_id,
                     evidence_id=evidence_id)
             except Exception:
