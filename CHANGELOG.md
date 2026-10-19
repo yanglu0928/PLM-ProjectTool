@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-19：0.1.0-dev.0/PLAN-02-A04-P04-A02 增加关闭式WBS固定三类Solution版本引用ORM/迁移0175；单表显式互斥类型、各自同项目复合FK、类型内去重/跨类型顺序及历史写/截断保护，不把存在性当Approved。兼容性/升级/回滚：从0174只增表/索引/触发器，不改冻结API/权限/License/旧数据；先备份，空表可降，有历史拒降并须向前修复或人工备份恢复。验证：Win11/PG18.6空/已有库升降重升、三类型/跨项目/错根/历史/drift通过；定向9项、后端全量3821通过/3跳过/5991子例。已知问题：开发wheel未验；Evidence引用、Approved资格/整体Solution/Trace、完整Owner/HTTP/UI/Output、正式信任/安装及Gate3/Pilot/发行待。
+
 - 2026-10-19：0.1.0-dev.0/PLAN-02-A04-P04-A01 增加关闭式WBS固定RequirementVersion引用ORM/迁移0174，双端同项目复合FK、唯一版本与顺序、正序号、检索索引及历史写/截断保护；不把待确认版本冒充Approved。兼容性/升级/回滚：从0173只增表/索引/触发器，不改冻结API/权限/License/旧数据；先备份，空表可降，有历史拒降并须向前修复或人工备份恢复。验证：Win11/PG18.6空库及已有Plan/WBS/Requirement版本升降重升、跨项目/版本/历史/drift通过；定向9项、后端全量3819通过/3跳过/5991子例。已知问题：开发wheel未验；Solution/Evidence固定引用、Approved资格/Trace、完整Owner/HTTP/UI/Output、正式信任/安装及Gate3/Pilot/发行待。
 
 - 2026-10-19：0.1.0-dev.0/PLAN-02-A04-P04 核查Requirement/Solution/Evidence现有版本键与Scope，确定WBS固定引用按Requirement、三类型Solution、Evidence、Trace证明四片实现；不以动态latest/单UUID弱引用或平行Trace替代正式来源。兼容性/升级/回滚：仅前置文档与顺序，无程序、Migration、冻结API、权限/License或历史变化；可修订顺序。验证：冻结DM/SC/API与现有上游ORM静态交叉核对，未运行功能测试。已知问题：整体Approved Solution来源、PlanVersion Owner/HTTP/UI/Output、正式信任/安装及Gate3/Pilot/发行待。

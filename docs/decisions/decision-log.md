@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261019-1235：三类 Solution 版本在单一物理引用表中分支强约束
+
+- Date/WBS：2026-10-19 / `PLAN-02-A04-P04-A02`；依据冻结SC-01的`pln_item_solution_refs`和已有三种Solution版本复合唯一键。
+- Decision：单表保存`source_kind`及互斥的Outline/Section/StructuredSpec目标字段组，每组独立复合FK；CHECK要求恰一组与类型匹配，部分唯一索引分别约束同WBS同版本重复。
+- Reason：保持冻结物理表名且避免无FK的多态UUID；三张独立表会偏离SC-01并使跨类型全局顺序难以强约束。
+- Impact/Rollback：仅新增关闭式Plan引用表/约束，不改上游、冻结API或权限；空表可降，有历史拒降并向前修复或人工备份恢复。Approved/整体Solution资格与Trace留给后续Owner。
+
 ## DEC-20261019-1234：WBS 来源引用分类型固定，Trace 不双写
 
 - Date/WBS：2026-10-19 / `PLAN-02-A04-P04`；依据冻结DM-05/SC-01/API-04及现有上游版本键。

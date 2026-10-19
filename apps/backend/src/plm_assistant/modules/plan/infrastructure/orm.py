@@ -344,3 +344,75 @@ class PlanWbsRequirementRefRow(Base):
     requirement_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     requirement_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     ordinal: Mapped[int] = mapped_column(nullable=False)
+
+
+class PlanWbsSolutionRefRow(Base):
+    """Closed, strongly typed fixed Solution-version coverage of a WBS item."""
+
+    __tablename__ = "pln_item_solution_refs"
+    __table_args__ = (
+        UniqueConstraint("wbs_item_id", "ordinal", name="uq_pln_item_solutions__item_ordinal"),
+        ForeignKeyConstraint(
+            ["wbs_item_id", "plan_version_id", "plan_id", "project_id"],
+            ["plm.pln_wbs_items.wbs_item_id", "plm.pln_wbs_items.plan_version_id",
+             "plm.pln_wbs_items.plan_id", "plm.pln_wbs_items.project_id"],
+            name="fk_pln_item_solutions__wbs", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["solution_outline_version_id", "solution_outline_id", "project_id"],
+            ["plm.sol_outline_versions.solution_outline_version_id",
+             "plm.sol_outline_versions.solution_outline_id",
+             "plm.sol_outline_versions.project_id"],
+            name="fk_pln_item_solutions__outline", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["solution_section_version_id", "solution_section_id", "project_id"],
+            ["plm.sol_section_versions.solution_section_version_id",
+             "plm.sol_section_versions.solution_section_id",
+             "plm.sol_section_versions.project_id"],
+            name="fk_pln_item_solutions__section", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["structured_solution_spec_id", "spec_series_id", "project_id", "spec_type"],
+            ["plm.sol_structured_specs.structured_solution_spec_id",
+             "plm.sol_structured_specs.spec_series_id",
+             "plm.sol_structured_specs.project_id", "plm.sol_structured_specs.spec_type"],
+            name="fk_pln_item_solutions__spec", ondelete="NO ACTION"),
+        CheckConstraint("ordinal>0", name="ck_pln_item_solutions__ordinal"),
+        CheckConstraint(
+            "(source_kind='OUTLINE' AND solution_outline_version_id IS NOT NULL "
+            "AND solution_outline_id IS NOT NULL AND solution_section_version_id IS NULL "
+            "AND solution_section_id IS NULL AND structured_solution_spec_id IS NULL "
+            "AND spec_series_id IS NULL AND spec_type IS NULL) OR "
+            "(source_kind='SECTION' AND solution_outline_version_id IS NULL "
+            "AND solution_outline_id IS NULL AND solution_section_version_id IS NOT NULL "
+            "AND solution_section_id IS NOT NULL AND structured_solution_spec_id IS NULL "
+            "AND spec_series_id IS NULL AND spec_type IS NULL) OR "
+            "(source_kind='STRUCTURED_SPEC' AND solution_outline_version_id IS NULL "
+            "AND solution_outline_id IS NULL AND solution_section_version_id IS NULL "
+            "AND solution_section_id IS NULL AND structured_solution_spec_id IS NOT NULL "
+            "AND spec_series_id IS NOT NULL AND spec_type IS NOT NULL)",
+            name="ck_pln_item_solutions__typed_target"),
+        Index("uq_pln_item_solutions__outline", "wbs_item_id", "solution_outline_version_id",
+              unique=True, postgresql_where=text("source_kind='OUTLINE'")),
+        Index("uq_pln_item_solutions__section", "wbs_item_id", "solution_section_version_id",
+              unique=True, postgresql_where=text("source_kind='SECTION'")),
+        Index("uq_pln_item_solutions__spec", "wbs_item_id", "structured_solution_spec_id",
+              unique=True, postgresql_where=text("source_kind='STRUCTURED_SPEC'")),
+        Index("ix_pln_item_solutions__project_kind", "project_id", "source_kind",
+              "plan_version_id"),
+        {"schema": "plm"},
+    )
+
+    item_solution_ref_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    wbs_item_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    plan_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    plan_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    source_kind: Mapped[str] = mapped_column(Text, nullable=False)
+    solution_outline_version_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    solution_outline_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    solution_section_version_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    solution_section_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    structured_solution_spec_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    spec_series_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    spec_type: Mapped[str | None] = mapped_column(Text)
+    ordinal: Mapped[int] = mapped_column(nullable=False)
