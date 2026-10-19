@@ -326,6 +326,7 @@ def on_review(
             authorization=authorization, reviewers=reviewers, owner=owner,
             identity=subject_repository,
             approved_version=approved.structured_solution_spec_id,
+            **_unused,
         )
 
 

@@ -287,7 +287,7 @@ def on_trace(
             license_guard=license_guard, documents=documents,
             downloads=downloads, parse_results=parse_results,
             evaluator=evaluator, validation_repository=validation_repository,
-            trace_creator=creator,
+            trace_creator=creator, **_unused,
         )
 
     print("SOL_06_A14_P03_TRACE_PG_PASS: fixed SOL-06 owner, exact current "

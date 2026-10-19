@@ -47,7 +47,7 @@ class FailingAudit:
 def on_submit(
     *, port, runtime, project, manager, token, csrf, draft, audit,
     license_guard, access, authorization, reviewers, owner, identity,
-    approved_version,
+    approved_version, **_unused,
 ) -> None:
     receipts = SqlAlchemyIdempotencyReceipts()
     replays = SqlAlchemyProjectReviewSubmissionRepository()

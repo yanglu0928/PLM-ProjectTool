@@ -10,6 +10,7 @@ from plm_assistant.entrypoints.trace_requirement_owner import RequirementVersion
 from plm_assistant.entrypoints.trace_structured_spec_owner import StructuredSpecTraceOwner
 from plm_assistant.modules.auth.infrastructure.project_read_access import SqlAlchemyProjectReadAccess
 from plm_assistant.modules.auth.infrastructure.project_write_access import SqlAlchemyProjectWriteAccess
+from plm_assistant.modules.auth.infrastructure.review_user_access import SqlAlchemyReviewUserAccess
 from plm_assistant.modules.document.application.prove_reference_use_document import ReferenceUseDocumentProofService
 from plm_assistant.modules.document.application.prove_reference_use_parse import ReferenceUseParseProofService
 from plm_assistant.modules.document.application.prove_fixed_source import DocumentFixedSourceProofService
@@ -23,7 +24,12 @@ from plm_assistant.modules.evidence.application.fixed_project_source import Evid
 from plm_assistant.modules.evidence.infrastructure.fixed_source_repository import SqlAlchemyEvidenceFixedSourceRepository
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
 from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
+from plm_assistant.modules.project.application.reviewers import ProjectReviewerQualificationService
 from plm_assistant.modules.project.infrastructure.authorization_repository import SqlAlchemyProjectAuthorizationRepository
+from plm_assistant.modules.review.application.project_persistence import ProjectReviewPersistenceService
+from plm_assistant.modules.review.infrastructure.create_repository import SqlAlchemyReviewCreationRepository
+from plm_assistant.modules.review.infrastructure.project_submission_repository import SqlAlchemyProjectReviewSubmissionRepository
+from plm_assistant.modules.review.infrastructure.start_repository import SqlAlchemyReviewStartRepository
 from plm_assistant.modules.solution.api.outline_create import create_outline_create_router
 from plm_assistant.modules.solution.api.outline_version_create import create_outline_version_create_router
 from plm_assistant.modules.solution.api.outline_version_read import create_outline_version_read_router
@@ -36,6 +42,7 @@ from plm_assistant.modules.solution.api.structured_spec_list import create_struc
 from plm_assistant.modules.solution.api.structured_spec_list_cursor import StructuredSpecListCursorCodec
 from plm_assistant.modules.solution.api.structured_spec_read import create_structured_spec_read_router
 from plm_assistant.modules.solution.api.structured_spec_validate import create_structured_spec_validate_router
+from plm_assistant.modules.solution.api.structured_spec_submit_review import create_structured_spec_review_submission_router
 from plm_assistant.modules.solution.api.section_version_read import create_section_version_read_router
 from plm_assistant.modules.solution.api.section_version_validate import create_section_version_validate_router
 from plm_assistant.modules.solution.api.section_version_list_cursor import SectionVersionListCursorCodec
@@ -55,6 +62,9 @@ from plm_assistant.modules.solution.application.revise_structured_spec import St
 from plm_assistant.modules.solution.application.read_structured_spec import StructuredSpecReadService
 from plm_assistant.modules.solution.application.evaluate_structured_spec_validation import StructuredSpecCurrentFactEvaluator
 from plm_assistant.modules.solution.application.validate_structured_spec import StructuredSpecValidationService
+from plm_assistant.modules.solution.application.structured_spec_review_readiness import StructuredSpecReviewReadinessService
+from plm_assistant.modules.solution.application.structured_spec_review_subject import StructuredSpecReviewSubjectOwner
+from plm_assistant.modules.solution.application.structured_spec_submit_review import StructuredSpecReviewSubmissionService
 from plm_assistant.modules.solution.application.prove_structured_spec_sources import StructuredSpecSourceProofService
 from plm_assistant.modules.solution.application.read_section_version import SectionVersionReadService
 from plm_assistant.modules.solution.application.validate_section_version import (
@@ -88,6 +98,7 @@ from plm_assistant.modules.solution.infrastructure.structured_spec_validation_au
 from plm_assistant.modules.solution.infrastructure.structured_spec_validation_repository import (
     SqlAlchemyStructuredSpecValidationRepository,
 )
+from plm_assistant.modules.solution.infrastructure.structured_spec_review_repository import SqlAlchemyStructuredSpecReviewSubjectRepository
 from plm_assistant.modules.solution.infrastructure.section_version_validation_audit_source import (
     SqlAlchemySectionVersionValidationAuditSource,
 )
@@ -612,6 +623,88 @@ def create_windows_structured_spec_validate_router(
         )
         return create_structured_spec_validate_router(
             sessions=sessions, origins=origins, validations=service)
+    except Exception:
+        raise ProductionSolutionOutlineStartupError() from None
+
+
+def create_windows_structured_spec_review_submission_router(
+    *, runtime, sessions, origins, license_guard, audit,
+    documents, downloads, parse_results,
+) -> APIRouter:
+    """Mount SOL-06 submit-review only in explicit write/source mode."""
+    if any(value is None for value in (
+            runtime, sessions, origins, license_guard, audit,
+            documents, downloads, parse_results)):
+        raise ProductionSolutionOutlineStartupError()
+    try:
+        authorization_repository = SqlAlchemyProjectAuthorizationRepository()
+        authorization = ProjectAuthorizationService(
+            unit_of_work=runtime.unit_of_work,
+            repository=authorization_repository)
+        reviewers = ProjectReviewerQualificationService(
+            users=SqlAlchemyReviewUserAccess(),
+            projects=authorization_repository)
+        read_access = SqlAlchemyProjectReadAccess()
+        fixed = DocumentFixedSourceProofService(
+            documents=documents, downloads=downloads,
+            parse_metadata=SqlAlchemyParseResultReadRepository(),
+            parse_results=parse_results)
+        evidence = EvidenceFixedProjectSourceService(
+            sessions=read_access,
+            projects=authorization_repository,
+            evidence=SqlAlchemyEvidenceFixedSourceRepository(),
+            documents=fixed,
+            allowed_project_roles=frozenset({
+                "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}),
+        )
+        requirement_trace_owner = RequirementVersionTraceOwner(
+            RequirementVersionReadService(
+                unit_of_work=runtime.unit_of_work, access=read_access,
+                license_guard=license_guard, authorization=authorization,
+                repository=SqlAlchemyRequirementVersionReadRepository()))
+        spec_trace_owner = StructuredSpecTraceOwner(StructuredSpecReadService(
+            unit_of_work=runtime.unit_of_work, access=read_access,
+            license_guard=license_guard, authorization=authorization,
+            specs=SqlAlchemyStructuredSpecReadRepository()))
+        trace = TraceImplementsCoverageService(
+            repository=SqlAlchemyTraceImplementsRepository(),
+            owners=TraceTargetProofService({
+                ("requirement", "REQ-03"): requirement_trace_owner,
+                ("solution", "SOL-06"): spec_trace_owner,
+            }))
+        evaluator = StructuredSpecCurrentFactEvaluator(
+            requirements=OutlineRequirementUseProofService(
+                approved_versions=(
+                    SqlAlchemyPrototypeApprovedRequirementVersionProof())),
+            sections=SqlAlchemySectionReadRepository(),
+            versions=SqlAlchemySectionVersionReadRepository(),
+            evidence=SectionEvidenceUseProofAdapter(fixed_sources=evidence),
+            documents=SectionDocumentContentProofAdapter(
+                identities=SqlAlchemyReferenceVersionIdentity(),
+                fixed_sources=fixed),
+            trace=trace,
+        )
+        validation_repository = SqlAlchemyStructuredSpecValidationRepository()
+        subject_repository = SqlAlchemyStructuredSpecReviewSubjectRepository()
+        owner = StructuredSpecReviewSubjectOwner(
+            repository=subject_repository, reviewers=reviewers,
+            readiness=StructuredSpecReviewReadinessService(
+                repository=validation_repository, evaluator=evaluator),
+            audit=audit)
+        service = StructuredSpecReviewSubmissionService(
+            unit_of_work=runtime.unit_of_work,
+            access=SqlAlchemyProjectWriteAccess(),
+            license_guard=license_guard, authorization=authorization,
+            reviewers=reviewers, receipts=SqlAlchemyIdempotencyReceipts(),
+            replay_repository=SqlAlchemyProjectReviewSubmissionRepository(),
+            identity=subject_repository,
+            reviews=ProjectReviewPersistenceService(
+                creation_repository=SqlAlchemyReviewCreationRepository(),
+                round_repository=SqlAlchemyReviewStartRepository(),
+                audit=audit, subjects=owner),
+            subjects=owner)
+        return create_structured_spec_review_submission_router(
+            sessions=sessions, origins=origins, submissions=service)
     except Exception:
         raise ProductionSolutionOutlineStartupError() from None
 
