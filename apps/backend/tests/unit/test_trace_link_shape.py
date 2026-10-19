@@ -72,6 +72,17 @@ class TraceLinkShapeTests(unittest.TestCase):
         with self.assertRaises(TraceShapeError):
             TraceEdgeShape(self.source, self.target, "REFINES", "PROJECT", uuid.uuid4())
 
+    def test_wbs_item_is_distinct_project_trace_target(self) -> None:
+        wbs = TraceVersionRef("plan", "PLN-02-WBS", uuid.uuid4(),
+                              uuid.uuid4(), "PROJECT", self.project)
+        edge = TraceEdgeShape(self.target, wbs, "IMPLEMENTS")
+        self.assertEqual((edge.scope, edge.project_id), ("PROJECT", self.project))
+        with self.assertRaises(TraceShapeError):
+            replace(wbs, scope="GLOBAL", project_id=None)
+        with self.assertRaises(TraceShapeError):
+            TraceEdgeShape(self.target, replace(wbs, project_id=uuid.uuid4()),
+                           "IMPLEMENTS")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-19：0.1.0-dev.0/PLAN-02-A04-P04-A04-P01 按CR-PLAN-001在统一TraceLink追加受控`PLN-02-WBS`固定任务类型与迁移0177，原`PLN-02`PlanVersion语义不变；新类型仅PROJECT，未注册Plan Owner仍失败关闭。兼容性/升级/回滚：替换源/目标类型CHECK并增Scope CHECK，不改旧Trace行/冻结路径/Envelope；先备份，无新类型历史可降，有历史拒降并向前修复或人工备份恢复。验证：Win11/PG18.6空/已有旧Trace升降重升、非法/Global/历史/drift通过；定向22项/23子例、后端全量3826通过/3跳过/5991子例。已知问题：wheel未验；Plan目标Owner/反向查询及正式权限/License、完整Plan Owner/HTTP/UI/Output、Gate3/Pilot/发行待。
+
 - 2026-10-19：0.1.0-dev.0/PLAN-02-A04-P04-A04 前置核查发现统一Trace仅有`PLN-02` PlanVersion类型，无法单独表示WBS Item；建立`CR-PLAN-001`，选择追加`PLN-02-WBS`受控类型并保留原历史/语义，拆分类型迁移与Plan目标Owner。兼容性/升级/回滚：本次仅文档，无程序/Schema/API变更；后续迁移无新类型历史可降，有历史拒降。验证：冻结DM/API、TraceLink域/ORM、Plan WBS Schema静态交叉核查，未运行本项功能测试。已知问题：P01～P03与真实Trace/Plan业务Owner待验，Gate3/Pilot/正式发行未通过。
 
 - 2026-10-19：0.1.0-dev.0/PLAN-02-A04-P04-A03 增加关闭式WBS Evidence引用ORM/迁移0176；Evidence复合唯一键支持双复合FK证明实际Scope/Project，GLOBAL无来源项目、PROJECT同WBS项目并显式非空，重复/顺序及历史写/截断保护。兼容性/升级/回滚：从0175追加约束/表/索引/触发器，升级扫描/锁定Evidence表，需先备份与维护窗口；空引用表可降，有历史拒降并向前修复或人工备份恢复。验证：Win11/PG18.6空/已有库升降重升、Scope/跨项目/NULL/历史/drift通过；定向9项、后端全量3823通过/3跳过/5991子例。已知问题：开发wheel未验（虚拟环境无pip且本地build目录遮蔽入口）；Evidence资格/授权/Trace、Plan Owner/HTTP/UI/Output、正式信任/安装及Gate3/Pilot/发行待。

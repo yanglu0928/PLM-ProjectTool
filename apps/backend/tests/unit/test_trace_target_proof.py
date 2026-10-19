@@ -72,6 +72,14 @@ class TraceTargetProofTests(unittest.TestCase):
         self.assertEqual(caught.exception.code, "RESOURCE_NOT_FOUND")
         self.assertEqual(document.calls, 1)
 
+    def test_new_wbs_type_without_plan_owner_fails_closed(self) -> None:
+        wbs = TraceVersionRef("plan", "PLN-02-WBS", uuid.uuid4(),
+                              uuid.uuid4(), "PROJECT", self.target.project_id)
+        service = TraceTargetProofService({})
+        with self.assertRaises(TraceTargetProofError) as caught:
+            service.prove_ref(self.transaction, self.query, wbs)
+        self.assertEqual(caught.exception.code, "RESOURCE_NOT_FOUND")
+
     def test_both_exact_proofs_required(self) -> None:
         document, requirement = _Owner(), _Owner()
         service = TraceTargetProofService({

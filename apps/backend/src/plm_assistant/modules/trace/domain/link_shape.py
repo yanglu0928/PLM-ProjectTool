@@ -17,7 +17,7 @@ _TYPES: dict[str, frozenset[str]] = {
     "requirement": frozenset({"REQ-03"}),
     "prototype": frozenset({"PRT-03", "PRT-04"}),
     "solution": frozenset({"SOL-01", "SOL-03", "SOL-05", "SOL-06"}),
-    "plan": frozenset({"PLN-02", "PLN-03"}),
+    "plan": frozenset({"PLN-02", "PLN-02-WBS", "PLN-03"}),
     "output": frozenset({"OUT-02"}),
 }
 _RELATIONS = frozenset({
@@ -56,7 +56,10 @@ class TraceVersionRef:
                 or not (self.scope == "GLOBAL" and self.project_id is None
                         or self.scope == "PROJECT"
                         and type(self.project_id) is uuid.UUID
-                        and self.project_id.int != 0)):
+                        and self.project_id.int != 0)
+                or self.owner_module == "plan"
+                and self.object_type == "PLN-02-WBS"
+                and self.scope != "PROJECT"):
             raise TraceShapeError()
 
 

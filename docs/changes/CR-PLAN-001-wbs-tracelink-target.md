@@ -1,6 +1,6 @@
 # CR-PLAN-001：统一 TraceLink 增加固定 WBS Item 目标类型
 
-日期：2026-10-19。状态：`APPROVED_BY_CONTINUOUS_AUTHORIZATION`；实施/验收尚未完成。来源：`PLAN-02-A04-P04-A04` 编码前核查。
+日期：2026-10-19。状态：`PARTIALLY_IMPLEMENTED`；P01类型/迁移已验，P02/P03目标证明与Owner未完成。来源：`PLAN-02-A04-P04-A04` 编码前核查。
 
 ## 原基线及冲突证据
 
@@ -21,3 +21,5 @@ Gate 2 冻结架构要求合同→调研→需求→原型→方案→WBS 的正
 迁移只替换Trace源/目标类型CHECK以允许新类型，不改已有行；升级前备份，Windows 11/PG18.6空库及已有Trace数据升级、旧类型回归、非法类型拒绝、降级/重升与drift验证。新增类型尚无历史行时可降；一旦存在该类型历史，降级必须拒绝并向前修复或按受控备份恢复。类型Owner还须独立测跨项目、错版本、撤权、License及反向查询；完整业务链在Gate/UAT另验。
 
 剩余风险：WBS Item 是版本内实体，跨PlanVersion的任务延续不由同一object_id推断；需独立Trace边或比较合同明确。正式Approved Solution、Evidence资格、Trace Owner、Plan业务Owner/HTTP/UI/Output及Pilot/发行仍待。此CR不预先判定Gate通过。
+
+P01证据：提交前Windows 11/PG18.6空/已有旧Trace行升降重升、非法类型/新类型GLOBAL/历史拒降/drift通过；定向22项/23子例、后端全量3826通过/3跳过/5991子例。`PLN-02-WBS`仅变得可表达，未注册Plan目标证明Port时统一Trace仍失败关闭；后续P02/P03不得以本条替代验收。

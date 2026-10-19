@@ -20,7 +20,7 @@ _PAIR = (
     "({role}_owner_module='requirement' AND {role}_object_type='REQ-03') OR "
     "({role}_owner_module='prototype' AND {role}_object_type IN ('PRT-03','PRT-04')) OR "
     "({role}_owner_module='solution' AND {role}_object_type IN ('SOL-01','SOL-03','SOL-05','SOL-06')) OR "
-    "({role}_owner_module='plan' AND {role}_object_type IN ('PLN-02','PLN-03')) OR "
+    "({role}_owner_module='plan' AND {role}_object_type IN ('PLN-02','PLN-02-WBS','PLN-03')) OR "
     "({role}_owner_module='output' AND {role}_object_type='OUT-02')"
 )
 _EDGE_SCOPE = (
@@ -56,6 +56,10 @@ class TraceLinkRow(Base):
                         name="ck_trc_links__source_type"),
         CheckConstraint(f"({_PAIR.format(role='target')})",
                         name="ck_trc_links__target_type"),
+        CheckConstraint(
+            "NOT ((source_owner_module='plan' AND source_object_type='PLN-02-WBS') "
+            "OR (target_owner_module='plan' AND target_object_type='PLN-02-WBS')) "
+            "OR scope='PROJECT'", name="ck_trc_links__wbs_project_scope"),
         CheckConstraint(_EDGE_SCOPE, name="ck_trc_links__scope"),
         CheckConstraint("NOT (source_owner_module=target_owner_module AND "
                         "source_object_type=target_object_type AND "
