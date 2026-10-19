@@ -218,6 +218,7 @@ export class SessionClient {
     | `/api/v1/projects/${string}/ai-tasks`
     | `/api/v1/projects/${string}/retrieval-runs`
     | `/api/v1/projects/${string}/solution-outlines`
+    | `/api/v1/projects/${string}/plans`
     | `/api/v1/projects/${string}/solution-outlines/${string}/versions`
     | `/api/v1/projects/${string}/solution-sections`
     | `/api/v1/projects/${string}/solution-sections/${string}/versions`
@@ -260,6 +261,11 @@ export class SessionClient {
   postProjectOutlineCreate(projectId: string, body: string, idempotencyKey: string): Promise<Response> {
     if (!identifier(projectId)) return Promise.reject(new SessionClientError("AUTH_CLIENT_UNAVAILABLE"));
     return this.#postCommand(`/api/v1/projects/${projectId}/solution-outlines`, body, idempotencyKey, 8192);
+  }
+
+  postProjectPlanCreate(projectId: string, body: string, idempotencyKey: string): Promise<Response> {
+    if (!identifier(projectId)) return Promise.reject(new SessionClientError("AUTH_CLIENT_UNAVAILABLE"));
+    return this.#postCommand(`/api/v1/projects/${projectId}/plans`, body, idempotencyKey, 8192);
   }
 
   postProjectOutlineVersionCreate(projectId: string, outlineId: string, body: string,
