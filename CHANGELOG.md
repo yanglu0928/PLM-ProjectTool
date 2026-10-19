@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-19：0.1.0-dev.0/SOL-06-A14-P08 新增结构化专项冻结送审前端 Client、Auth 写桥与固定版本详情动作；仅 ProjectManager 在身份完全匹配的当前 DRAFT 就绪报告后可选择 ACTIVE 项目成员送审，断连/503 保存原 Key/原评审人并需显式确认精准重试，201 只显示评审中且不宣称批准。兼容性/升级/回滚：无 Migration、后端 API/角色/License/依赖或旧数据变化；前后端同版升级，可撤 UI，但后端既有 Review/Audit/收据必须保留。验证：定向11项，前端全量147文件/1817项、typecheck和Vite生产构建通过。已知问题：Edge真实送审链和非空Artifact尚未验证；既有主包大于500kB提示、正式信任、Server2025/Debian13、性能、Gate3/Pilot/发行仍待。
+
 - 2026-10-19：0.1.0-dev.0/SOL-06-A14-P07 将结构化专项送审装入 Windows `include_secret_write` 显式写模式，组合真实 Session/Origin/License/Project/Reviewer/Document/Evidence/Trace/Review/状态/Audit/收据链；默认/只读保持关闭，缺受信依赖启动失败。兼容性/升级/回滚：无 Migration、冻结 API/角色、License、依赖或旧数据变化；后端同版升级，需回滚时关闭写模式 Router，已产生历史必须保留。验证：Win11/PG18.6 真实 HTTP 覆盖当前事实拒绝后同 Key 成功/重放、跨项目/角色/License 拒绝、漂移冲突及唯一数据库事实；定向15项/73子例，后端全量3748通过/3跳过/5854子例；开发wheel 1415项/SHA-256 `b533d75c1afa9b0beb50b4b536ffea3b6bcf8ad883b64de44d53eb06f830f84e`。已知问题：前端/Edge及非空Artifact尚未实现；正式信任、Server2025/Debian13、性能、Gate3/Pilot/发行仍待。
 
 - 2026-10-19：0.1.0-dev.0/SOL-06-A14-P06 新增默认关闭的冻结结构化专项送审 Router 与应用工厂插槽；严格四字段请求、`due_at/submission_note=null`、canonical UUID、服务端系列投影、201 Review/Round、Trace/`"v1"` ETag/no-store及安全错误映射，默认应用保持404。兼容性/升级/回滚：无Migration、冻结路径/请求/角色、License、依赖或旧数据变化；尚未装入Windows组合，可撤可选Router，后续产生历史后只能关闭入口并保留。验证：合同及关联回归12项/44子例，后端全量3747通过/3跳过/5846子例；开发wheel 1415项且Router入包，SHA-256 `bfe1afd2d5ea63e69d5a3573127b9dac7214bb143df2c0bc32db06567242e709`。已知问题：Windows真实HTTP/PG、前端/Edge及非空Artifact尚未实现；正式信任、Server2025/Debian13、性能、Gate3/Pilot/发行仍待。

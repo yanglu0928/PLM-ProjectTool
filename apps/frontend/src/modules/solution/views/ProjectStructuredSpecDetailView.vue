@@ -3,18 +3,26 @@ import { inject, onUnmounted, ref, toRaw, watch } from "vue";
 import { RouterLink, useRoute } from "vue-router";
 import { SessionClient } from "@/modules/auth/api/sessionClient";
 import { sessionClientKey } from "@/modules/auth/api/sessionContext";
+import { ProjectMemberReadClient, type ProjectMemberView } from
+  "@/modules/project/api/projectMemberReadClient";
 import { StructuredSpecReadClient, type StructuredSpecDetail } from
   "@/modules/solution/api/structuredSpecReadClient";
+import { StructuredSpecSubmitReviewClient, StructuredSpecSubmitReviewError,
+  type StructuredSpecReviewSubmission } from
+  "@/modules/solution/api/structuredSpecSubmitReviewClient";
 import { StructuredSpecValidateClient, StructuredSpecValidateError,
   type StructuredSpecValidationReport, type StructuredSpecValidationStatus } from
   "@/modules/solution/api/structuredSpecValidateClient";
 import { describeStructuredSpec, type SpecPresentation } from "./structuredSpecPresentation";
 
 const props = defineProps<{ session?: SessionClient; reader?: StructuredSpecReadClient;
-  validator?: StructuredSpecValidateClient }>();
+  validator?: StructuredSpecValidateClient; members?: ProjectMemberReadClient;
+  submitter?: StructuredSpecSubmitReviewClient }>();
 const session = toRaw(props.session ?? inject(sessionClientKey, null) ?? new SessionClient());
 const reader = toRaw(props.reader ?? new StructuredSpecReadClient());
 const validator = toRaw(props.validator ?? new StructuredSpecValidateClient(session));
+const members = toRaw(props.members ?? new ProjectMemberReadClient());
+const submitter = toRaw(props.submitter ?? new StructuredSpecSubmitReviewClient(session));
 const route = useRoute();
 const current = ref<StructuredSpecDetail | null>(null);
 const presentation = ref<SpecPresentation | null>(null);
@@ -23,6 +31,13 @@ const validating = ref(false); const validationError = ref("");
 const validationReport = ref<StructuredSpecValidationReport | null>(null);
 const confirmRetry = ref(false); const validationLocked = ref(false);
 const pending = ref<{ actor: string; project: string; spec: string; key: string } | null>(null);
+const reviewers = ref<readonly ProjectMemberView[]>([]); const selectedReviewers = ref<string[]>([]);
+const reviewerLoadError = ref(""); const submitting = ref(false); const submitError = ref("");
+const submitted = ref<StructuredSpecReviewSubmission | null>(null);
+const submitConfirmRetry = ref(false); const submitLocked = ref(false);
+type SubmitAttempt = { actor: string; project: string; spec: string; series: string;
+  reviewer_ids: readonly string[]; key: string };
+const submitPending = ref<SubmitAttempt | null>(null);
 let mounted = true; let generation = 0;
 const projectId = () => typeof route.params.projectId === "string" ? route.params.projectId : "";
 const specId = () => typeof route.params.specId === "string" ? route.params.specId : "";
@@ -37,14 +52,33 @@ function mayRevise() {
       && (item.role === "PROJECT_MANAGER" || item.role === "IMPLEMENTATION_MEMBER"));
 }
 function mayValidate() {
-  return !!current.value && mayRead() && session.canSubmit
+  return !!current.value && !submitPending.value && !submitted.value && mayRead() && session.canSubmit
     && current.value.project_id === projectId()
     && current.value.structured_solution_spec_id === specId()
     && session.view!.authorized_projects.some(item => item.project_id === projectId()
       && (item.role === "PROJECT_MANAGER" || item.role === "IMPLEMENTATION_MEMBER"));
 }
+function isProjectManager() {
+  return !!session.view && !session.view.password_change_required && session.canSubmit
+    && session.view.authorized_projects.some(item => item.project_id === projectId()
+      && item.role === "PROJECT_MANAGER");
+}
+function maySubmitNew() {
+  const detail = current.value, report = validationReport.value;
+  return isProjectManager() && !!detail && !!report && !submitted.value
+    && detail.project_id === projectId() && detail.structured_solution_spec_id === specId()
+    && detail.version_state === "DRAFT" && detail.review_ref === null
+    && report.project_id === detail.project_id
+    && report.structured_solution_spec_id === detail.structured_solution_spec_id
+    && report.spec_series_id === detail.spec_series_id && report.version_state === "DRAFT"
+    && report.ready_for_review;
+}
 function storageKey() {
   return `plm.sol.structured-spec.validate.pending.${session.view?.user.user_id ?? "none"}`
+    + `.${projectId()}.${specId()}`;
+}
+function submitStorageKey() {
+  return `plm.sol.structured-spec.submit.pending.${session.view?.user.user_id ?? "none"}`
     + `.${projectId()}.${specId()}`;
 }
 function restorePending() {
@@ -69,6 +103,31 @@ function restorePending() {
     validationError.value = "原验证操作记录无法读取，已停止再次提交；请核对审计记录。";
   }
 }
+function restoreSubmitPending() {
+  submitPending.value = null; submitConfirmRetry.value = false; submitLocked.value = false;
+  submitError.value = ""; submitted.value = null; selectedReviewers.value = [];
+  if (!mayRead() || !isProjectManager()) return;
+  try {
+    const raw = window.sessionStorage.getItem(submitStorageKey()); if (!raw) return;
+    const value: unknown = JSON.parse(raw);
+    if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("invalid");
+    const item = value as Record<string, unknown>;
+    const ids = item.reviewer_ids;
+    const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+    if (item.actor !== session.view!.user.user_id || item.project !== projectId()
+      || item.spec !== specId() || typeof item.series !== "string" || !uuid.test(item.series)
+      || !Array.isArray(ids) || ids.length < 1 || ids.length > 32
+      || ids.some(value => typeof value !== "string" || !uuid.test(value))
+      || new Set(ids).size !== ids.length || typeof item.key !== "string"
+      || !/^[\x20-\x7e]{16,128}$/.test(item.key)) throw new Error("invalid");
+    submitPending.value = { actor: item.actor as string, project: item.project as string,
+      spec: item.spec as string, series: item.series as string,
+      reviewer_ids: Object.freeze([...(ids as string[])]), key: item.key as string };
+  } catch {
+    submitLocked.value = true;
+    submitError.value = "原送审操作记录无法读取，已停止再次提交；请核对评审与审计记录。";
+  }
+}
 function stateLabel(value: string) {
   const labels: Record<string, string> = { DRAFT: "待评审草案", IN_REVIEW: "评审中",
     APPROVED: "已批准", RETURNED: "已退回", SUPERSEDED: "已被后续版本替代",
@@ -79,12 +138,35 @@ async function load() {
   if (!mayRead() || busy.value) return;
   const project = projectId(), spec = specId(), run = ++generation;
   busy.value = true; error.value = ""; current.value = null; presentation.value = null;
-  validationReport.value = null;
+  validationReport.value = null; reviewers.value = []; reviewerLoadError.value = "";
+  selectedReviewers.value = []; submitted.value = null;
   try {
     const result = await reader.detail(project, spec);
     if (!mounted || run !== generation || project !== projectId() || spec !== specId()) return;
     const readable = describeStructuredSpec(result);
     current.value = result; presentation.value = readable;
+    if (isProjectManager()) {
+      try {
+        const all: ProjectMemberView[] = []; const cursors = new Set<string>();
+        let cursor: string | null = null;
+        for (let pageNo = 0; pageNo < 20; pageNo += 1) {
+          const page = await members.list(project, cursor);
+          if (!mounted || run !== generation) return;
+          all.push(...page.items);
+          if (!page.has_more) { cursor = null; break; }
+          if (page.next_cursor === null || cursors.has(page.next_cursor)) throw new Error("invalid cursor");
+          cursors.add(page.next_cursor); cursor = page.next_cursor;
+        }
+        if (cursor !== null || new Set(all.map(item => item.member_id)).size !== all.length) {
+          throw new Error("member list incomplete");
+        }
+        reviewers.value = Object.freeze(all.filter(item => item.state === "ACTIVE")
+          .sort((left, right) => left.user.display_name.localeCompare(right.user.display_name, "zh-CN")));
+      } catch (failure) {
+        reviewers.value = [];
+        reviewerLoadError.value = failure instanceof Error ? failure.message : "暂时无法读取评审人。";
+      }
+    }
   } catch (failure) {
     if (mounted && run === generation) error.value = failure instanceof Error
       ? failure.message : "暂时无法读取专项版本。";
@@ -92,7 +174,8 @@ async function load() {
 }
 watch(() => [route.name, route.params.projectId, route.params.specId], () => {
   generation += 1; current.value = null; presentation.value = null;
-  busy.value = false; validating.value = false; error.value = ""; restorePending();
+  busy.value = false; validating.value = false; submitting.value = false; error.value = "";
+  restorePending(); restoreSubmitPending();
   if (route.name === "project-structured-spec-detail") void load();
 }, { immediate: true });
 onUnmounted(() => { mounted = false; generation += 1; });
@@ -137,6 +220,49 @@ async function validateCurrent() {
     if (failure instanceof StructuredSpecValidateError && failure.code === "CONFLICT_IDEMPOTENCY") validationLocked.value = true;
     validationError.value = failure instanceof Error ? failure.message : "验证结果无法确认，请保留原操作号。";
   } finally { if (mounted && run === generation) validating.value = false; }
+}
+async function submitCurrent() {
+  if (!isProjectManager() || busy.value || validating.value || submitting.value || submitLocked.value) return;
+  const detail = current.value, actor = session.view!.user.user_id;
+  if (!detail) return;
+  let attempt = submitPending.value;
+  if (attempt) {
+    if (!submitConfirmRetry.value || attempt.actor !== actor || attempt.project !== projectId()
+      || attempt.spec !== specId() || attempt.series !== detail.spec_series_id) {
+      submitLocked.value = attempt.series !== detail.spec_series_id; return;
+    }
+  } else {
+    if (!maySubmitNew() || selectedReviewers.value.length < 1) return;
+    const selected = [...selectedReviewers.value].sort();
+    attempt = { actor, project: projectId(), spec: specId(), series: detail.spec_series_id,
+      reviewer_ids: Object.freeze(selected), key: `structured-spec-review-${crypto.randomUUID()}` };
+    try { window.sessionStorage.setItem(submitStorageKey(), JSON.stringify(attempt)); }
+    catch { submitError.value = "无法保存原送审操作号，本次未发送。"; return; }
+    submitPending.value = attempt;
+  }
+  const run = generation; submitting.value = true; submitConfirmRetry.value = false;
+  submitError.value = "";
+  try {
+    const result = await submitter.submit(attempt.project, attempt.spec, attempt.series,
+      attempt.reviewer_ids, attempt.key);
+    if (!mounted || run !== generation || actor !== session.view?.user.user_id) return;
+    submitted.value = result;
+    try { window.sessionStorage.removeItem(submitStorageKey()); submitPending.value = null; }
+    catch {
+      submitLocked.value = true;
+      submitError.value = "送审回执已收到，但原操作号清理失败；请勿再次提交。";
+    }
+  } catch (failure) {
+    if (!mounted || run !== generation) return;
+    const known = failure instanceof StructuredSpecSubmitReviewError ? failure : null;
+    submitError.value = known?.message ?? "送审结果无法确认；请保留原操作号。";
+    if (known?.code === "CONFLICT_IDEMPOTENCY") submitLocked.value = true;
+    else if (!known?.uncertain) {
+      try { window.sessionStorage.removeItem(submitStorageKey()); submitPending.value = null; }
+      catch { submitLocked.value = true; }
+      validationReport.value = null;
+    }
+  } finally { if (mounted && run === generation) submitting.value = false; }
 }
 const dimensions = [{field:"integrity",label:"固定版本完整性"},{field:"payload",label:"类型化内容结构"},
   {field:"requirements",label:"需求来源"},{field:"sections",label:"章节来源"},{field:"evidence",label:"证据来源"},
@@ -212,8 +338,33 @@ function factHint(field: typeof dimensions[number]["field"]) { return ({integrit
             <p v-if="validationReport.issue_codes.length">问题代码：{{ validationReport.issue_codes.join("、") }}</p>
           </div>
         </section>
-        <p v-if="current.review_ref">评审编号：{{ current.review_ref }}；轮次编号：{{ current.review_round_ref }}</p>
-        <p v-else>尚无评审记录；本页不提供提交评审操作。</p>
+        <section aria-labelledby="spec-review-title">
+          <h3 id="spec-review-title">正式评审</h3>
+          <p v-if="current.review_ref">评审编号：{{ current.review_ref }}；轮次编号：{{ current.review_round_ref }}</p>
+          <template v-else-if="!isProjectManager()"><p role="status">尚无评审记录；仅当前项目负责人可送审。</p></template>
+          <template v-else>
+            <p class="warning">送审会创建正式评审并把当前固定版本转为“评审中”；送审回执不代表批准、实施完成或客户确认。服务端会在同一事务重新核验当前事实和评审人资格。</p>
+            <p v-if="reviewerLoadError" role="alert">评审人读取失败：{{ reviewerLoadError }}</p>
+            <p v-else-if="!reviewers.length" role="status">当前没有可选择的有效项目成员。</p>
+            <template v-if="submitPending">
+              <p role="status">存在结果未知的原送审操作；评审人：{{ submitPending.reviewer_ids.join("、") }}。请先核对评审记录，并保持原操作号和原评审人。</p>
+              <label><input v-model="submitConfirmRetry" type="checkbox" :disabled="submitting || submitLocked"> 我已核对并确认按原操作号、原评审人重试</label>
+            </template>
+            <fieldset v-else-if="validationReport?.ready_for_review && !submitted" class="reviewers">
+              <legend>选择评审人（最多 32 人）</legend>
+              <label v-for="member in reviewers" :key="member.member_id"><input
+                v-model="selectedReviewers" type="checkbox" :value="member.user.user_id"
+                :disabled="submitting || selectedReviewers.length >= 32 && !selectedReviewers.includes(member.user.user_id)">
+                {{ member.user.display_name }}（{{ member.role }}）</label>
+            </fieldset>
+            <p v-else-if="!submitted" role="status">请先在本页生成与当前固定版本一致且满足送审前置的验证报告。</p>
+            <p v-if="submitError" role="alert">{{ submitError }}</p>
+            <button v-if="submitPending || maySubmitNew()" type="button"
+              :disabled="submitting || submitLocked || (submitPending ? !submitConfirmRetry : !selectedReviewers.length)"
+              @click="submitCurrent()">{{ submitting ? "正在提交…" : submitPending ? "按原操作号重试送审" : "提交正式评审" }}</button>
+            <p v-if="submitted" role="status">已创建评审 {{ submitted.review_id }}，首轮 {{ submitted.review_round_id }}，状态为评审中；这不是批准结论。</p>
+          </template>
+        </section>
       </template>
     </template>
   </section>
@@ -227,5 +378,6 @@ function factHint(field: typeof dimensions[number]["field"]) { return ({integrit
 .spec-detail .table-scroll{overflow-x:auto}.spec-detail table{border-collapse:collapse;width:100%}
 .spec-detail th,.spec-detail td{border:1px solid #aaa;padding:.5rem;text-align:left;vertical-align:top}
 .validation-report{margin-top:1rem;padding:1rem;border:1px solid #94a3b8;border-radius:.5rem;overflow-wrap:anywhere}
+.reviewers{display:grid;gap:.6rem;margin-block:1rem}.reviewers label{display:flex;gap:.5rem;align-items:flex-start}
 .spec-detail [role=alert]{color:#a21d25}
 </style>

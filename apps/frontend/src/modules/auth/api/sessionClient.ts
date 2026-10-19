@@ -222,7 +222,8 @@ export class SessionClient {
     | `/api/v1/projects/${string}/solution-sections`
     | `/api/v1/projects/${string}/solution-sections/${string}/versions`
     | `/api/v1/projects/${string}/structured-solution-specs`
-    | `/api/v1/projects/${string}/structured-solution-specs/${string}:revise`, body: string,
+    | `/api/v1/projects/${string}/structured-solution-specs/${string}:revise`
+    | `/api/v1/projects/${string}/structured-solution-specs/${string}:submit-review`, body: string,
     idempotencyKey: string, maxBodyBytes: number): Promise<Response> {
     if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
     if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
@@ -301,6 +302,17 @@ export class SessionClient {
     return this.#postCommand(
       `/api/v1/projects/${projectId}/structured-solution-specs/${specId}:revise`,
       body, idempotencyKey, 512 * 1024);
+  }
+
+  /** Frozen SOL-06 submission; callers retain the exact body and Key on uncertainty. */
+  postProjectStructuredSpecSubmitReview(projectId: string, specId: string, body: string,
+    idempotencyKey: string): Promise<Response> {
+    if (!identifier(projectId) || !identifier(specId)) {
+      return Promise.reject(new SessionClientError("AUTH_CLIENT_UNAVAILABLE"));
+    }
+    return this.#postCommand(
+      `/api/v1/projects/${projectId}/structured-solution-specs/${specId}:submit-review`,
+      body, idempotencyKey, 8192);
   }
 
   /** Frozen bodyless StructuredSpec VALIDATE; callers retain the key on uncertainty. */

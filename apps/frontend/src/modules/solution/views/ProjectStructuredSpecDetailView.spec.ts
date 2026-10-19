@@ -3,7 +3,10 @@ import { createMemoryHistory } from "vue-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createAppRouter } from "@/app/router";
 import { SessionClient } from "@/modules/auth/api/sessionClient";
+import { ProjectMemberReadClient } from "@/modules/project/api/projectMemberReadClient";
 import { StructuredSpecReadClient } from "@/modules/solution/api/structuredSpecReadClient";
+import { StructuredSpecSubmitReviewClient, StructuredSpecSubmitReviewError } from
+  "@/modules/solution/api/structuredSpecSubmitReviewClient";
 import { StructuredSpecValidateClient } from "@/modules/solution/api/structuredSpecValidateClient";
 import ProjectStructuredSpecDetailView from "./ProjectStructuredSpecDetailView.vue";
 
@@ -12,6 +15,9 @@ const other = "02234567-89ab-4cde-8123-456789abcdef";
 const spec = "11234567-89ab-4cde-8123-456789abcdef";
 const requirement = "21234567-89ab-4cde-8123-456789abcdef";
 const section = "31234567-89ab-4cde-8123-456789abcdef";
+const reviewer = "41234567-89ab-4cde-8123-456789abcdef";
+const review = "51234567-89ab-4cde-8123-456789abcdef";
+const round = "61234567-89ab-4cde-8123-456789abcdef";
 const detail = {
   structured_solution_spec_id: spec, spec_series_id: spec, project_id: project,
   spec_type: "MIGRATION_SPEC", version_no: 1, version_state: "DRAFT",
@@ -39,6 +45,27 @@ async function session(role = "CUSTOMER_MEMBER") {
     headers: { "Content-Type": "application/json" } })) as typeof fetch);
   await api.login("user", "synthetic-only"); return api;
 }
+const readyReport = { audit_event_id: requirement, observation_trace_id: section,
+  project_id: project, structured_solution_spec_id: spec, spec_series_id: spec,
+  spec_type: "MIGRATION_SPEC", version_no: 1, version_state: "DRAFT",
+  content_fingerprint: "a".repeat(64), payload_fingerprint: "b".repeat(64),
+  requirement_count: 1, section_count: 1, evidence_count: 0, artifact_count: 0,
+  facts: { integrity: "PASS", payload: "PASS", requirements: "PASS", sections: "PASS",
+    evidence: "PASS", artifacts: "PASS", trace: "PASS", current_version: "PASS" },
+  type_checks: [{ code: "SCOPE_MAPPING", status: "PASS" }, { code: "TRIAL_PLAN", status: "PASS" },
+    { code: "RECONCILIATION_PLAN", status: "PASS" }, { code: "ROLLBACK_PLAN", status: "PASS" },
+    { code: "ACCEPTANCE_CRITERIA", status: "PASS" }], valid: true, ready_for_review: true,
+  issue_codes: [], observed_at: "2026-10-19T04:00:00Z" } as const;
+const memberPage = { items: [{ member_id: requirement,
+  user: { user_id: reviewer, display_name: "评审人" }, role: "IMPLEMENTATION_MEMBER",
+  department: { department_id: section, name: "实施部" }, state: "ACTIVE",
+  effective_at: "2026-10-01T00:00:00Z", ended_at: null, etag: '"v0"' }],
+next_cursor: null, has_more: false } as const;
+const submission = { review_id: review, review_round_id: round, subject_type: "SOL-06",
+  project_id: project, spec_series_id: spec, structured_solution_spec_id: spec,
+  policy_ref: "STRUCTURED_SPEC_ALL_V1", reviewer_ids: [reviewer], state: "IN_REVIEW",
+  round_no: 1, review_etag: '"v1"', submitted_by: project,
+  submitted_at: "2026-10-19T04:01:00Z" } as const;
 
 describe("ProjectStructuredSpecDetailView", () => {
   afterEach(() => { vi.restoreAllMocks(); window.sessionStorage.clear(); });
@@ -113,7 +140,66 @@ describe("ProjectStructuredSpecDetailView", () => {
     expect(wrapper.text()).toContain("当前缺少专项到需求/章节的可信追溯覆盖");
     expect(wrapper.text()).toContain("TRIAL_PLAN");
     expect(wrapper.text()).toContain("不代表已实施、已试运行或已获客户验收");
+    expect(wrapper.text()).toContain("仅当前项目负责人可送审");
+    expect(wrapper.findAll("button").some(button => button.text() === "提交正式评审")).toBe(false);
     expect(window.sessionStorage.length).toBe(0);
+    wrapper.unmount();
+  });
+
+  it("lets only a project manager submit a ready fixed version with an active reviewer", async () => {
+    const router = createAppRouter(createMemoryHistory());
+    await router.push(`/projects/${project}/structured-solution-specs/${spec}`); await router.isReady();
+    const validator = { validate: vi.fn().mockResolvedValue(readyReport) };
+    const submitter = { submit: vi.fn().mockResolvedValue(submission) };
+    const wrapper = mount(ProjectStructuredSpecDetailView, { props: {
+      session: await session("PROJECT_MANAGER"),
+      reader: { detail: vi.fn().mockResolvedValue(detail) } as unknown as StructuredSpecReadClient,
+      validator: validator as unknown as StructuredSpecValidateClient,
+      members: { list: vi.fn().mockResolvedValue(memberPage) } as unknown as ProjectMemberReadClient,
+      submitter: submitter as unknown as StructuredSpecSubmitReviewClient,
+    }, global: { plugins: [router] } });
+    await flushPromises();
+    await wrapper.findAll("button").find(button => button.text() === "验证当前事实")!.trigger("click");
+    await flushPromises();
+    await wrapper.get('.reviewers input[type="checkbox"]').setValue(true);
+    await wrapper.findAll("button").find(button => button.text() === "提交正式评审")!.trigger("click");
+    await flushPromises();
+    expect(submitter.submit).toHaveBeenCalledWith(project, spec, spec, [reviewer],
+      expect.stringMatching(/^structured-spec-review-/));
+    expect(wrapper.text()).toContain(`已创建评审 ${review}`);
+    expect(wrapper.text()).toContain("这不是批准结论");
+    expect(window.sessionStorage.length).toBe(0);
+    wrapper.unmount();
+  });
+
+  it("retains the exact uncertain submission and retries it only after confirmation", async () => {
+    const router = createAppRouter(createMemoryHistory());
+    await router.push(`/projects/${project}/structured-solution-specs/${spec}`); await router.isReady();
+    const submit = vi.fn()
+      .mockRejectedValueOnce(new StructuredSpecSubmitReviewError("SYSTEM_UNAVAILABLE"))
+      .mockResolvedValueOnce(submission);
+    const wrapper = mount(ProjectStructuredSpecDetailView, { props: {
+      session: await session("PROJECT_MANAGER"),
+      reader: { detail: vi.fn().mockResolvedValue(detail) } as unknown as StructuredSpecReadClient,
+      validator: { validate: vi.fn().mockResolvedValue(readyReport) } as unknown as StructuredSpecValidateClient,
+      members: { list: vi.fn().mockResolvedValue(memberPage) } as unknown as ProjectMemberReadClient,
+      submitter: { submit } as unknown as StructuredSpecSubmitReviewClient,
+    }, global: { plugins: [router] } });
+    await flushPromises();
+    await wrapper.findAll("button").find(button => button.text() === "验证当前事实")!.trigger("click");
+    await flushPromises(); await wrapper.get('.reviewers input[type="checkbox"]').setValue(true);
+    await wrapper.findAll("button").find(button => button.text() === "提交正式评审")!.trigger("click");
+    await flushPromises();
+    expect(window.sessionStorage.length).toBe(1);
+    expect(wrapper.text()).toContain("保持原操作号和原评审人");
+    const first = submit.mock.calls[0];
+    await wrapper.findAll('input[type="checkbox"]').find(input =>
+      input.element.parentElement?.textContent?.includes("按原操作号、原评审人重试"))!.setValue(true);
+    await wrapper.findAll("button").find(button => button.text() === "按原操作号重试送审")!.trigger("click");
+    await flushPromises();
+    expect(submit.mock.calls[1]).toEqual(first);
+    expect(window.sessionStorage.length).toBe(0);
+    expect(wrapper.text()).toContain(`已创建评审 ${review}`);
     wrapper.unmount();
   });
 
