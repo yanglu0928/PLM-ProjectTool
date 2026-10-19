@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-19：0.1.0-dev.0/PLAN-02-A02 增加关闭式 PlanVersion 根表/ORM与0170顺序迁移，Plan 当前批准指针建立同Plan/Project复合FK但继续强制为空；版本根表禁止未装Owner写入和历史清除。兼容性/升级/回滚：从0169仅增表/FK，不改既有Plan/冻结API/权限/License；升级前备份，空版本表可降，有历史拒降并须向前修复或人工备份恢复。验证：Win11/PG18.6已有Plan升降重升、约束/Owner/指针/历史及drift通过；定向8项，首次全量仅固定ORM清单遗漏失败，修正后3811通过/3跳过/5991子例。已知问题：开发wheel因终端安全策略未验；WBS/FS/Milestone、整体Approved Solution输入、PlanVersion业务/API/UI/Review/Output、正式信任/安装、Gate3/Pilot/发行仍待。
+
 - 2026-10-19：0.1.0-dev.0/PLAN-02-A01 完成 PlanVersion 冻结输入、六级WBS/FS DAG、同项目关系、审批指针及仓库实际能力前置核查；确认整体 Approved Solution 来源未就绪，决定先建关闭式版本根表，不提前开放创建/送审。兼容性/升级/回滚：仅进度与实施顺序文档，无程序、Migration、冻结API、权限或旧数据变化；可修订顺序。验证：冻结 DM/SC/API 与 Plan/Solution 实际代码静态交叉核对，未运行功能测试。已知问题：PlanVersion/WBS/Output、整体批准输入、正式信任/安装、Gate3/Pilot/发行仍待。
 
 - 2026-10-19：0.1.0-dev.0/PLAN-01-A04-P05-A03 修复真实 Edge 发现的 Plan GET/LIST 原生 fetch receiver 错误，增加防回归测试和一次性浏览器/数据库验收夹具。兼容性/升级/回滚：仅前端读取调用方式和验证资料变化，无 Migration、冻结 API、权限、License、依赖或历史变化；重建前端升级，可撤修正但会恢复浏览器读取故障。验证：首轮失败后修复并完整重跑，Windows 11 Edge/Vue/Uvicorn/PG18.6 201丢失同号恢复、详情、51条分页、客户只读/服务端拒创建、跨项目清屏及唯一Plan/审计退出0；前端全量155文件1847项、typecheck及build337模块通过。已知问题：合成信任不等于正式服务账户/公钥/安装，PlanVersion/WBS/Output、Gate3/Pilot/三平台发行仍待。
