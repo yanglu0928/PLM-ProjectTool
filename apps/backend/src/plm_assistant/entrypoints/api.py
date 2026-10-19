@@ -134,6 +134,7 @@ def create_app(
     solution_outline_create_router: APIRouter | None = None,
     plan_create_router: APIRouter | None = None,
     plan_read_router: APIRouter | None = None,
+    plan_list_router: APIRouter | None = None,
     solution_outline_version_create_router: APIRouter | None = None,
     solution_outline_version_read_router: APIRouter | None = None,
     solution_section_create_router: APIRouter | None = None,
@@ -404,6 +405,8 @@ def create_app(
         app.include_router(plan_create_router)
     if plan_read_router is not None:
         app.include_router(plan_read_router)
+    if plan_list_router is not None:
+        app.include_router(plan_list_router)
     if solution_outline_version_create_router is not None:
         app.include_router(solution_outline_version_create_router)
     if solution_outline_version_read_router is not None:

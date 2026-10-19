@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261019-1228：Plan 列表公开前采用冻结默认时间降序
+
+- Date/WBS：2026-10-19 / `PLAN-01-A04-P03`；依据冻结 API-01 列表排序/游标、当前未公开的 Plan 内部 `plan_id ASC`。
+- Decision：公开 PLAN_LIST 前将内部 keyset 统一改为 `created_at DESC, plan_id DESC`，专用 HMAC 游标绑定 Session/Project/page_size 与完整位置；默认应用不装配列表，Windows 专用 Vault key 另行供给。
+- Reason：API-01 对追加记录默认创建时间降序，单独 ID 排序不满足默认；同一 statement timestamp 需要 ID tie-breaker 才不丢项。Plan 当前所有本项目成员可读，没有隐藏候选位置，签名 token 满足完整性边界。
+- Impact/Rollback：未公开的内部排序和列表代码调整，无旧客户端/Schema/历史迁移；关闭可选 Router 即回滚，已有业务事实保留。真实 PG 与跨范围负例必须通过后才称合同 PASS。
+
 ## DEC-20261019-1227：Plan 详情先行，列表等待专用游标
 
 - Date/WBS：2026-10-19 / `PLAN-01-A04-P02`；依据冻结 PLAN_GET/LIST、API-01 不透明完整性游标与现有内部 `after_plan_id`。

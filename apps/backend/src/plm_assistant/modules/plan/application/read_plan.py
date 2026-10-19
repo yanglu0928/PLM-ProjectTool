@@ -54,6 +54,7 @@ class PlanSummaryView:
 @dataclass(frozen=True, slots=True)
 class PlanListPage:
     items: tuple[PlanSummaryView, ...]
+    next_after_created_at: datetime | None
     next_after_plan_id: uuid.UUID | None
     has_more: bool
 
@@ -72,6 +73,7 @@ class RepositoryPort(Protocol):
                     plan_id: uuid.UUID) -> PlanCurrentView | None: ...
 
     def list_current(self, transaction: object, *, project_id: uuid.UUID,
+                     after_created_at: datetime | None,
                      after_plan_id: uuid.UUID | None, limit: int) -> PlanListPage: ...
 
 
@@ -116,11 +118,17 @@ class PlanReadService:
             raise PlanReadError() from None
 
     def list_current(self, query: PlanReadQuery, *,
+                     after_created_at: datetime | None = None,
                      after_plan_id: uuid.UUID | None = None,
                      limit: int = 50) -> PlanListPage:
         self._validate_query(query)
-        if ((after_plan_id is not None and not self._id(after_plan_id))
-                or type(limit) is not int or not 1 <= limit <= 100):
+        if ((after_created_at is None) != (after_plan_id is None)
+                or (after_created_at is not None and (
+                    type(after_created_at) is not datetime
+                    or after_created_at.tzinfo is None
+                    or after_created_at.utcoffset() is None))
+                or (after_plan_id is not None and not self._id(after_plan_id))
+                or type(limit) is not int or not 1 <= limit <= 200):
             raise PlanReadError("VALIDATION_FAILED")
         try:
             self._guard.require_valid(trace_id=query.trace_id)
@@ -129,8 +137,10 @@ class PlanReadService:
                 self._authorize(tx, actor, query.project_id, "PLAN_LIST")
                 page = self._repository.list_current(
                     tx, project_id=query.project_id,
+                    after_created_at=after_created_at,
                     after_plan_id=after_plan_id, limit=limit)
-                self._validate_page(page, query.project_id, after_plan_id, limit)
+                self._validate_page(page, query.project_id,
+                                    after_created_at, after_plan_id, limit)
                 return page
         except PlanReadError:
             raise
@@ -169,20 +179,27 @@ class PlanReadService:
 
     @classmethod
     def _validate_page(cls, page: PlanListPage, project_id: uuid.UUID,
-                       after: uuid.UUID | None, limit: int) -> None:
+                       after_created_at: datetime | None,
+                       after_plan_id: uuid.UUID | None, limit: int) -> None:
         if (type(page) is not PlanListPage or type(page.items) is not tuple
                 or len(page.items) > limit or type(page.has_more) is not bool
                 or (page.has_more and (not page.items
+                    or page.next_after_created_at != page.items[-1].created_at
                     or page.next_after_plan_id != page.items[-1].plan_id))
-                or (not page.has_more and page.next_after_plan_id is not None)):
+                or (not page.has_more and (
+                    page.next_after_created_at is not None
+                    or page.next_after_plan_id is not None))):
             raise PlanReadError()
-        previous = after
+        previous = (after_created_at, after_plan_id) if after_created_at is not None else None
         for item in page.items:
             if (type(item) is not PlanSummaryView or not cls._id(item.plan_id)
-                    or (previous is not None and item.plan_id.int <= previous.int)
+                    or (previous is not None and (
+                        item.created_at > previous[0]
+                        or (item.created_at == previous[0]
+                            and item.plan_id.int >= previous[1].int)))
                     or item.project_id != project_id or not cls._valid_fields(item)):
                 raise PlanReadError()
-            previous = item.plan_id
+            previous = (item.created_at, item.plan_id)
 
     @classmethod
     def _valid_fields(cls, view: PlanCurrentView | PlanSummaryView) -> bool:

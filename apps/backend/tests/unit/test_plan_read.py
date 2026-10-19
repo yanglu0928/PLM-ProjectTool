@@ -59,7 +59,7 @@ class Facts:
 
 class Repo:
     view = VIEW
-    page = PlanListPage((SUMMARY,), None, False)
+    page = PlanListPage((SUMMARY,), None, None, False)
     calls = 0
 
     def get_current(self, tx, *, project_id, plan_id):
@@ -67,9 +67,10 @@ class Repo:
         assert project_id == PROJECT and plan_id == PLAN
         return self.view
 
-    def list_current(self, tx, *, project_id, after_plan_id, limit):
+    def list_current(self, tx, *, project_id, after_created_at, after_plan_id, limit):
         self.calls += 1
-        assert project_id == PROJECT and after_plan_id is None and limit == 50
+        assert (project_id == PROJECT and after_created_at is None
+                and after_plan_id is None and limit == 50)
         return self.page
 
 
@@ -99,7 +100,7 @@ class PlanReadTests(unittest.TestCase):
         self.rejects("RESOURCE_NOT_FOUND", lambda: self.service.get_current(
             self.query, uuid.UUID(int=0)))
         self.rejects("VALIDATION_FAILED", lambda: self.service.list_current(
-            self.query, limit=101))
+            self.query, limit=201))
         self.assertEqual(self.repo.calls, 0)
 
     def test_current_authorization_and_license(self):
@@ -114,17 +115,17 @@ class PlanReadTests(unittest.TestCase):
     def test_bad_repository_output_fails_closed(self):
         self.repo.view = replace(VIEW, current_approved_version_ref=uuid.uuid4())
         self.rejects("PLAN_UNAVAILABLE", lambda: self.service.get_current(self.query, PLAN))
-        self.repo.page = PlanListPage((replace(SUMMARY, etag='W/"v0"'),), None, False)
+        self.repo.page = PlanListPage((replace(SUMMARY, etag='W/"v0"'),), None, None, False)
         self.rejects("PLAN_UNAVAILABLE", lambda: self.service.list_current(self.query))
 
     def test_page_bounds_and_order(self):
         earlier, later = sorted((uuid.uuid4(), uuid.uuid4()), key=lambda value: value.int)
-        good = PlanListPage((replace(SUMMARY, plan_id=earlier),), earlier, True)
-        self.service._validate_page(good, PROJECT, None, 1)
+        good = PlanListPage((replace(SUMMARY, plan_id=later),), NOW, later, True)
+        self.service._validate_page(good, PROJECT, None, None, 1)
         self.rejects("PLAN_UNAVAILABLE", lambda: self.service._validate_page(
-            PlanListPage((replace(SUMMARY, plan_id=later),
-                          replace(SUMMARY, plan_id=earlier)), None, False),
-            PROJECT, None, 2))
+            PlanListPage((replace(SUMMARY, plan_id=earlier),
+                          replace(SUMMARY, plan_id=later)), None, None, False),
+            PROJECT, None, None, 2))
 
 
 if __name__ == "__main__":

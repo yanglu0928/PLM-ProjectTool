@@ -5,6 +5,7 @@ from __future__ import annotations
 import importlib.util
 import secrets
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 
 import psycopg
@@ -17,6 +18,7 @@ from plm_assistant.modules.project.application.authorization import ProjectAutho
 from plm_assistant.modules.project.infrastructure.authorization_repository import SqlAlchemyProjectAuthorizationRepository
 from plm_assistant.modules.plan.application.create_plan import CreatePlan, PlanCreateService
 from plm_assistant.modules.plan.application.read_plan import PlanReadError, PlanReadQuery, PlanReadService
+from plm_assistant.modules.plan.api.list_cursor import PlanListCursorCodec
 from plm_assistant.modules.plan.infrastructure.create_repository import SqlAlchemyPlanCreateRepository
 from plm_assistant.modules.plan.infrastructure.read_repository import SqlAlchemyPlanReadRepository
 
@@ -71,7 +73,9 @@ def on_created(*, port, runtime, audit, license_guard, project,
     member_query = PlanReadQuery(member_token, uuid.uuid4(), project)
     assert reader.get_current(member_query, created.plan_id) == view
     page1 = reader.list_current(query, limit=1)
-    page2 = reader.list_current(query, limit=1, after_plan_id=page1.next_after_plan_id)
+    page2 = reader.list_current(query, limit=1,
+                                after_created_at=page1.next_after_created_at,
+                                after_plan_id=page1.next_after_plan_id)
     assert len(page1.items) == len(page2.items) == 1
     assert page1.has_more and not page2.has_more
     assert {page1.items[0].plan_id, page2.items[0].plan_id} == {
@@ -105,10 +109,39 @@ def on_created(*, port, runtime, audit, license_guard, project,
                          dbname="postgres", autocommit=True) as db:
         assert db.execute("SELECT count(*) FROM plm.aud_events WHERE "
                           "target_owner_module='plan'").fetchone()[0] == before
+    # Fixture rows share one timestamp to exercise the database's UUID tie-breaker.
+    tie_ids = sorted((uuid.uuid4(), uuid.uuid4()), key=lambda value: value.int,
+                     reverse=True)
+    tie_at = datetime(2030, 1, 1, tzinfo=timezone.utc)
+    with psycopg.connect(host="127.0.0.1", port=port, user="poc_admin",
+                         dbname="postgres") as db:
+        for index, identity in enumerate(tie_ids):
+            db.execute(
+                "INSERT INTO plm.pln_plans "
+                "(plan_id,project_id,name,created_by,created_at) "
+                "VALUES (%s,%s,%s,%s,%s)",
+                (identity, project, f"Tie {index}", manager, tie_at))
+            db.execute(
+                "INSERT INTO plm.pln_plan_create_results "
+                "(plan_id,project_id,name,created_at) VALUES (%s,%s,%s,%s)",
+                (identity, project, f"Tie {index}", tie_at))
+    codec = PlanListCursorCodec(b"p" * 32)
+    first_tie = reader.list_current(query, limit=1)
+    assert first_tie.items[0].plan_id == tie_ids[0] and first_tie.has_more
+    cursor = codec.encode(
+        session_token=token, project_id=project, page_size=1,
+        created_at=first_tie.next_after_created_at,
+        plan_id=first_tie.next_after_plan_id)
+    after_at, after_id = codec.decode(
+        cursor, session_token=token, project_id=project, page_size=1)
+    second_tie = reader.list_current(
+        query, limit=1, after_created_at=after_at, after_plan_id=after_id)
+    assert second_tie.items[0].plan_id == tie_ids[1]
+    assert {first_tie.items[0].plan_id, second_tie.items[0].plan_id} == set(tie_ids)
     return 0
 
 
 if __name__ == "__main__":
     prior.main(on_created=on_created)
     print("PLAN_01_A03_P03_READ_OWNER_PG_PASS: real PG/Session, current member, "
-          "bounded pages, isolation, revocation, License and zero read Audit")
+          "bounded pages, tied-time keyset, isolation, revocation, License and zero read Audit")
