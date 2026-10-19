@@ -54,5 +54,6 @@ Gate 2 已冻结 `GET /api/v1/projects/{project_id}/reviews`、Project member �
 
 ## 实施进度
 
+- 2026-10-19 / `SOL-06-A16-P04`：已实现只读候选 Repository、四角色 `REVIEW_LIST` Project 策略及逐项 Subject Owner 授权服务；隐藏短/空页按原始消费位置继续，assigned reviewer 不构成授权。定向、Win11/PG18.6 真实 Session/Project/SQL 合成链、全量与 wheel 通过；尚未挂 HTTP/Windows/UI。下一项 P05。
 - 2026-10-19 / `SOL-06-A16-P03`：已增加 Migration 0166 与 ORM 两个最小索引；Win11/PostgreSQL 18.6 空库和 24 条有效 Review 历史的升降重升、行数保持、索引定义/计划及 drift 通过，后端全量与 wheel 入包通过。尚未增加授权策略、Repository/Application 或挂载 Router；下一项 P04。
 - 2026-10-19 / `SOL-06-A16-P02`：已固化 `all/my_pending`、最小 actor-only Assignment 投影和短页继续语义；专用游标使用 AES-256-GCM 隐藏候选位置并绑定 Session/Project/view/page_size。定向、后端全量与 wheel 入包通过；尚未修改 Schema、授权策略或挂载 Router。下一项 P03 索引迁移。

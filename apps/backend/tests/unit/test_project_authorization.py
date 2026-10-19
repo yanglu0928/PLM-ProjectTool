@@ -47,7 +47,7 @@ class ProjectAuthorizationTests(unittest.TestCase):
                                     operation=operation, resource_id=resource_id)
 
     def test_matrix_exact_for_four_roles(self):
-        self.assertEqual(len(POLICIES), 171)
+        self.assertEqual(len(POLICIES), 172)
         candidate = POLICIES["SOL_GLOBAL_REFERENCE_CANDIDATE_LIST"]
         self.assertEqual(candidate.roles, frozenset({
             "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER",
@@ -364,9 +364,10 @@ class ProjectAuthorizationTests(unittest.TestCase):
         self.assertTrue(POLICIES["REVIEW_START_ROUND"].write)
         self.assertEqual(POLICIES["REVIEW_CREATE"].roles, {"PROJECT_MANAGER"})
         self.assertTrue(POLICIES["REVIEW_CREATE"].write)
-        self.assertEqual(POLICIES["REVIEW_GET"].roles, ALL_MEMBERS)
-        self.assertFalse(POLICIES["REVIEW_GET"].write)
-        self.assertTrue(POLICIES["REVIEW_GET"].lock_reads)
+        for operation in ("REVIEW_LIST", "REVIEW_GET"):
+            self.assertEqual(POLICIES[operation].roles, ALL_MEMBERS)
+            self.assertFalse(POLICIES[operation].write)
+            self.assertTrue(POLICIES[operation].lock_reads)
         self.assertEqual(POLICIES["WORKFLOW_GET"].roles, ALL_MEMBERS)
         self.assertFalse(POLICIES["WORKFLOW_GET"].write)
         self.assertTrue(POLICIES["WORKFLOW_GET"].lock_reads)

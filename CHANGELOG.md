@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-19：0.1.0-dev.0/SOL-06-A16-P04 新增Review候选Repository与授权列表Service，并登记四类当前Project成员只读`REVIEW_LIST`；`all/my_pending`只投影当前actor Assignment，按原始候选消费位置续页，Subject明确无权隐藏而Owner异常失败关闭，返回前二次验License且零Audit。兼容性/升级/回滚：无新Migration/API装配/角色集合/License/依赖/历史变化，运行前需0166；关闭后续Router并撤内部模块可回滚。验证：定向24项/845子例；Win11/PG18.6真实Session/Project/SQL完成隐藏空页续取、终态历史、决定后待办消失、隔离/撤权/故障与零写入，Subject/License为合成夹具；后端全量3773通过/3跳过/5899子例；开发wheel1421项、SHA-256 `12ed65acae76390aa158e1cb86f600252e32d584dbf57758a2d2ec55466e94fa`。已知问题：HTTP/Windows key与组合/前端/Edge、正式性能与Gate3/Pilot/发行仍待。
+
 - 2026-10-19：0.1.0-dev.0/SOL-06-A16-P03 新增Migration 0166及ORM列表索引：Review按scope/project/created_at DESC/review_id DESC稳定排序，Assignment仅索引当前PENDING reviewer候选；不增列、不回填，降级只删索引并保留历史。兼容性/升级/回滚：数据库head前进至0166，升级前按既有流程备份；回滚先关闭后续LIST入口再降至0165，冻结API/角色/License/依赖不变。验证：定向9项；Win11/PG18.6空库和24条有效Review历史升降重升、行数不变、定义/查询计划/drift通过；后端全量3765通过/3跳过/5870子例；开发wheel1419项、SHA-256 `9774c762df07e8e4ce8ca31560d0a9432b091ab21c0405d6fa0e0dbd0cb2f6d3`。已知问题：大量历史建索引窗口未压测，Repository/授权/HTTP/Windows/前端/Edge及Gate3/Pilot/发行仍待。
 
 - 2026-10-19：0.1.0-dev.0/SOL-06-A16-P02 新增 Review List 纯 DTO 与专用 AES-256-GCM 游标合同：`all/my_pending`、1～200页、actor-only Assignment、短/空页继续；AAD 绑定Session摘要/Project/view/page_size，随机nonce密文隐藏created_at/review_id，篡改和跨范围统一拒绝。提交前发现HMAC可解码隐藏候选位置并改为加密后完整复验。兼容性/升级/回滚：无Migration/Router/权限/Windows key/旧数据变化，复用既有cryptography，可删除未装配模块。验证：定向6项/11子例，后端全量3764通过/3跳过/5870子例；开发wheel1418项、SHA-256 `28515074cbb0af6af6a5ed4d2eaf56a013abca9e650f4eddd346ab122d405d44`。已知问题：0166索引、Repository/授权、HTTP/Windows/前端/Edge及Gate3/Pilot/发行仍待。

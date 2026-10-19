@@ -82,6 +82,7 @@ POLICIES: dict[str, _Policy] = {
     ),
     "WORKFLOW_TRANSITION": _Policy(MANAGERS, True),
     "WORKFLOW_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
+    "REVIEW_LIST": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "REVIEW_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "REVIEW_CREATE": _Policy(MANAGERS, True),
     "REVIEW_START_ROUND": _Policy(MANAGERS, True),

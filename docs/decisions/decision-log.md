@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261019-1221：Review List 按原始候选消费位置续页
+
+- Date/WBS：2026-10-19 / `SOL-06-A16-P04`；依据 CR-RVW-004 的逐项 Subject Owner 隐藏、P02 加密位置与 P03 稳定索引。
+- Decision：Repository 每次最多取 `page_size+1` 个严格降序候选；Application 只消费前 `page_size` 个并逐项授权，额外一项只判定 `has_more`。续页位置取最后一个已消费的原始候选，即使它被隐藏；可见项可以为空但仍返回位置。`my_pending` 的当前 PENDING Assignment 只筛候选，Project 与 Subject Owner identity/活动固定版本检查仍是权限来源。Subject 明确无权隐藏，Owner/Repository 异常失败为服务不可用，不伪装空列表。
+- Reason：若位置取最后一个可见项，整页隐藏时无法前进并会反复扫描；若先过滤再任意补满，会导致无界查询或泄露隐藏候选数量。固定原始窗口同时保持有界成本、顺序和不泄露正文，P02 AES-GCM 负责让客户端看不到隐藏位置身份。
+- Impact/Rollback：新增内部 Repository/Service 与四成员只读 `REVIEW_LIST` 策略，无 Schema、HTTP 装配、角色集合、License、依赖或历史变化。Win11/PG18.6 真实 Session/Project/SQL 和合成 Subject/License 验证；关闭未挂载 Router并撤内部模块可回滚，Review 历史保留。
+
 ## DEC-20261019-1220：Reviewer Inbox 索引只覆盖稳定顺序与待处理候选
 
 - Date/WBS：2026-10-19 / `SOL-06-A16-P03`；依据冻结 REVIEW_LIST、CR-RVW-004 与 P02 的 `created_at DESC, review_id DESC` / `my_pending` 合同。
