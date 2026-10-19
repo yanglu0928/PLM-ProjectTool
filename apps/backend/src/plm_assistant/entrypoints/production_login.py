@@ -43,6 +43,7 @@ from plm_assistant.entrypoints.windows_survey import (
     create_windows_survey_routers,
 )
 from plm_assistant.entrypoints.windows_project_review import (
+    create_windows_project_review_read_router,
     create_windows_project_review_router,
 )
 from plm_assistant.entrypoints.windows_requirement import (
@@ -685,6 +686,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         project_global_reference_candidate_router = None
         reference_deidentification_router = None
         review_command_router = None
+        review_read_router = None
         if include_secret_read:
             from plm_assistant.entrypoints.windows_license_runtime import (
                 create_windows_license_services,
@@ -938,6 +940,12 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 prototype_routers.review_submission
             )
             requirement_prototype_link_router = prototype_routers.links
+            review_read_router = create_windows_project_review_read_router(
+                runtime, origins=origins, license_guard=licenses.guard,
+                audit=audit, documents=document_reads,
+                downloads=document_downloads,
+                parse_results=evidence_results_for_viewer,
+            )
             if include_secret_write:
                 solution_outline_create_router = create_windows_outline_create_router(
                     runtime=runtime, sessions=sessions, origins=origins,
@@ -1905,6 +1913,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             project_global_reference_candidate_router=(
                 project_global_reference_candidate_router),
             reference_deidentification_router=reference_deidentification_router,
+            review_read_router=review_read_router,
             review_command_router=review_command_router,
             maintenance_admission=maintenance_admission,
             shutdown_callback=shutdown,

@@ -5,11 +5,37 @@ from unittest.mock import Mock, patch
 
 from plm_assistant.entrypoints.windows_project_review import (
     ProductionProjectReviewStartupError,
+    create_windows_project_review_read_router,
     create_windows_project_review_router,
+)
+from plm_assistant.modules.review.application.subject_registry import (
+    ProjectReviewSubjectReadRegistry,
 )
 
 
 class WindowsProjectReviewCompositionTests(unittest.TestCase):
+    def test_composes_sol06_read_router_with_separate_registry(self):
+        runtime = Mock()
+        runtime.unit_of_work = Mock()
+        owner = Mock(SUBJECT_TYPE="SOL-06")
+        owner.authorize_read = Mock()
+        with patch(
+            "plm_assistant.entrypoints.windows_project_review."
+            "create_windows_structured_spec_review_subject",
+            return_value=owner,
+        ), patch(
+            "plm_assistant.entrypoints.windows_project_review."
+            "ProjectReviewSubjectReadRegistry",
+            wraps=ProjectReviewSubjectReadRegistry,
+        ) as registry:
+            router = create_windows_project_review_read_router(
+                runtime, origins=Mock(), license_guard=Mock(), audit=Mock(),
+                documents=Mock(), downloads=Mock(), parse_results=Mock())
+        self.assertEqual([
+            "/api/v1/projects/{project_id}/reviews/{review_id}",
+        ], [route.path for route in router.routes])
+        self.assertEqual((owner,), registry.call_args.args[0])
+
     def test_composes_one_set_of_four_review_write_routes(self):
         runtime = Mock()
         runtime.unit_of_work = Mock()
@@ -55,6 +81,10 @@ class WindowsProjectReviewCompositionTests(unittest.TestCase):
                 audit=Mock(),
             )
         self.assertNotIn("None", str(caught.exception))
+        with self.assertRaises(ProductionProjectReviewStartupError):
+            create_windows_project_review_read_router(
+                Mock(), origins=Mock(), license_guard=Mock(), audit=Mock(),
+                documents=Mock(), downloads=None, parse_results=Mock())
 
     def test_conclusion_owner_requires_complete_evidence_dependencies(self):
         runtime = Mock()

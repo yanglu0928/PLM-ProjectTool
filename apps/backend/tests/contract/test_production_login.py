@@ -496,6 +496,11 @@ class ProductionLoginTests(unittest.TestCase):
             "plm_assistant.entrypoints.production_login.create_windows_project_review_router",
             return_value=APIRouter(),
         ))
+        self.project_review_read_factory = self.enterContext(patch(
+            "plm_assistant.entrypoints.production_login."
+            "create_windows_project_review_read_router",
+            return_value=APIRouter(),
+        ))
         self.workflow_checklist_factory = self.enterContext(patch(
             "plm_assistant.entrypoints.production_login."
             "create_windows_workflow_checklist_record_router",
@@ -1004,6 +1009,7 @@ class ProductionLoginTests(unittest.TestCase):
         )
         self.handover_action_write_factory.assert_not_called()
         self.project_review_factory.assert_not_called()
+        self.project_review_read_factory.assert_called_once()
         self.workflow_checklist_factory.assert_not_called()
         self.workflow_checklist_qualification_factory.assert_not_called()
         self.workflow_transition_factory.assert_not_called()
@@ -1351,6 +1357,7 @@ class ProductionLoginTests(unittest.TestCase):
             self.prototype_factory.call_args.kwargs["include_write"]
         )
         self.project_review_factory.assert_called_once()
+        self.project_review_read_factory.assert_called_once()
         self.workflow_checklist_factory.assert_called_once()
         self.workflow_checklist_qualification_factory.assert_called_once()
         self.workflow_transition_factory.assert_called_once()

@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261019-1215：REVIEW_GET 属于 Windows 显式读取面且不开放写能力
+
+- Date/WBS：2026-10-19 / `SOL-06-A15-P04`。依据 A15-P03、生产 `include_secret_read/include_secret_write` 分层与冻结 REVIEW_GET。
+- Decision：在 Windows 显式读取模式创建独立 Review read router，只注册 SOL-06 read owner；只读和写平台均可 GET，Review 写命令仍只在显式写模式。生产构造复用同一 SOL-06 Owner 工厂以避免系列/成员规则漂移，但 read registry 只调 `authorize_read`，不触发就绪或生命周期写回调。
+- Reason：Reviewer 读取是只读能力，不应被错误绑在写开关；同时不能因写 Owner 已注册就自动开放读取。复用正式工厂保证同一 Repository/Reviewer 资格实现，独立 Registry 维持最小能力面。
+- Impact/Rollback：无 Schema/API 字段/角色/License/依赖变化；可移除生产 read router 停止新 GET，历史不受影响。Reviewer UI/Edge 与 REVIEW_LIST 仍后续独立工作。
+
 ## DEC-20261019-1214：Review 读取能力与写生命周期 Owner 分离
 
 - Date/WBS：2026-10-19 / `SOL-06-A15-P03`。依据冻结 REVIEW_GET、RVW-01-A04/A05 与 A15-P01。
