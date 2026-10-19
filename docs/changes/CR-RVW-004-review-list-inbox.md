@@ -54,6 +54,8 @@ Gate 2 已冻结 `GET /api/v1/projects/{project_id}/reviews`、Project member �
 
 ## 实施进度
 
+- 2026-10-19 / `SOL-06-A16-P08`：Windows 11 Edge 155、生产 Vue、真实 FastAPI/Uvicorn 与可弃 PG18.6 完成项目入口→服务端待办发现→Reviewer 决定→待办消失/历史保留→跨项目清屏；PG 核对唯一 APPROVE Decision，退出 0。仅合成信任验收，正式信任/Gate 3/Pilot/发行未通过，见 `docs/progress/sol-06-a16-p08-review-inbox-browser.md`。
+
 - 2026-10-19 / `SOL-06-A16-P07`：已加入 Reviewer Inbox 客户端/页面、项目入口和已知详情返回链接。默认 `my_pending`，可切 `all`；严格最小响应、隐藏空页自动续取、跨项目/会话及错误清屏。定向29项、前端全量1831项、typecheck/build通过；实际 Edge/PG 页面留 P08。
 
 - 2026-10-19 / `SOL-06-A16-P06`：已增加独立 Windows `review-list-cursor-v1` Vault 工厂，缺失/错误失败关闭；在显式平台读/写模式装配真实 SQL、Project 与 SOL-06 Owner。临时 Windows Vault 凭据丢失恢复、生产启动合同、Win11/PG18.6 真实 HTTP 权限/分页/终态及全量/wheel通过；合成信任不代表正式发行。下一项 P07 前端 Inbox。
