@@ -24,6 +24,15 @@ from plm_assistant.modules.solution.application.structured_spec_validation_contr
 PROJECT, SPEC, SERIES, ACTOR, TRACE, AUDIT = (uuid.uuid4() for _ in range(6))
 NOW = datetime(2026, 10, 16, tzinfo=timezone.utc)
 CHECKS = {
+    "PROCESS_MODEL": ("GRAPH_STRUCTURE", "ROLE_DECLARATION", "INPUT_OUTPUT_DECLARATION"),
+    "INTERFACE_SPEC": ("BOUNDARY_MAPPING", "OWNERSHIP_RUNTIME_DECLARATION",
+                       "AUTHENTICATION_DECLARATION"),
+    "MIGRATION_SPEC": ("SCOPE_MAPPING", "TRIAL_PLAN", "RECONCILIATION_PLAN",
+                       "ROLLBACK_PLAN", "ACCEPTANCE_CRITERIA"),
+    "PERMISSION_DESIGN": ("MATRIX_DEFAULT_DENY", "SCOPE_DECLARATION",
+                          "DUTY_CONFLICT_DECLARATION"),
+}
+LEGACY_CHECKS = {
     "PROCESS_MODEL": ("GRAPH_STRUCTURE", "ROLE_TRACEABILITY", "INPUT_OUTPUT_TRACEABILITY"),
     "INTERFACE_SPEC": ("BOUNDARY_MAPPING", "OWNERSHIP_RUNTIME", "AUTHENTICATION_CONTROL"),
     "MIGRATION_SPEC": ("SCOPE_MAPPING", "TRIAL_EXECUTION", "RECONCILIATION_PROOF",
@@ -107,8 +116,21 @@ def test_each_type_requires_its_exact_ordered_check_set_and_audit_round_trips(sp
         replace(proven_facts(), trace="UNAVAILABLE"),
         build_structured_spec_type_checks(spec_type, statuses))
     reason = audit_reason_for_observation(value)
+    assert reason.startswith("SPEC_VALIDATION_V2_")
     assert len(reason) <= 64 and observation_from_audit_reason(reason) == value
     assert tuple(item.code for item in value.type_checks.checks) == CHECKS[spec_type]
+
+
+@pytest.mark.parametrize("spec_type", LEGACY_CHECKS)
+def test_legacy_v1_audit_observation_remains_strictly_decodable(spec_type):
+    value = StructuredSpecValidationObservation(
+        proven_facts(), build_structured_spec_type_checks(
+            spec_type, {code: "PASS" for code in LEGACY_CHECKS[spec_type]},
+            schema_version=1))
+    reason = audit_reason_for_observation(value)
+    assert reason.startswith("SPEC_VALIDATION_V1_")
+    assert observation_from_audit_reason(reason) == value
+    assert value.type_checks.schema_version == 1
 
 
 def test_missing_proofs_never_become_valid_or_ready():
@@ -145,7 +167,7 @@ def test_type_owner_gap_preserves_structural_valid_but_blocks_review():
         *checks.checks[2:]))
     value = report(proven_facts(), changed)
     assert value.valid and not value.ready_for_review
-    assert value.issue_codes == ("TRIAL_EXECUTION_UNAVAILABLE",)
+    assert value.issue_codes == ("TRIAL_PLAN_UNAVAILABLE",)
 
 
 def test_all_proven_latest_draft_is_ready_but_never_approved_by_report():
@@ -171,6 +193,8 @@ def test_malformed_snapshot_checks_audit_and_forged_report_fail_closed():
             "SCOPE_MAPPING": "PASS"})
     with pytest.raises(StructuredSpecValidationContractError):
         build_structured_spec_type_checks("UNKNOWN")
+    with pytest.raises(StructuredSpecValidationContractError):
+        build_structured_spec_type_checks("MIGRATION_SPEC", schema_version=3)
     with pytest.raises(StructuredSpecValidationContractError):
         observation_from_audit_reason("SPEC_VALIDATION_V1_MG_PPP")
     value = report(proven_facts(), type_checks())

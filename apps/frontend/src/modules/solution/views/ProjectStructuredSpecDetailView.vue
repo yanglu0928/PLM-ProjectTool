@@ -206,7 +206,9 @@ function factHint(field: typeof dimensions[number]["field"]) { return ({integrit
             <p>{{ validationReport.ready_for_review ? "当前检查满足送审前置；仍需正式评审与客户确认。" : "尚不具备送审条件；不得视为已批准。" }}</p>
             <p>观察时间：{{ validationReport.observed_at }} · 审计：<code>{{ validationReport.audit_event_id }}</code></p>
             <ul><li v-for="item in dimensions" :key="item.field">{{ item.label }}：{{ statusLabel(validationReport.facts[item.field]) }}<span v-if="validationReport.facts[item.field] !== 'PASS'"> — {{ factHint(item.field) }}</span></li></ul>
-            <h4>专项类型检查</h4><ul><li v-for="check in validationReport.type_checks" :key="check.code"><code>{{ check.code }}</code>：{{ statusLabel(check.status) }}<span v-if="check.status !== 'PASS'"> — 请补充该项业务证明或维护信息。</span></li></ul>
+            <h4>专项类型检查</h4>
+            <p>类型检查仅确认已保存的设计声明完整，不代表已实施、已试运行或已获客户验收。</p>
+            <ul><li v-for="check in validationReport.type_checks" :key="check.code"><code>{{ check.code }}</code>：{{ statusLabel(check.status) }}<span v-if="check.status !== 'PASS'"> — 请补充该项业务证明或维护信息。</span></li></ul>
             <p v-if="validationReport.issue_codes.length">问题代码：{{ validationReport.issue_codes.join("、") }}</p>
           </div>
         </section>

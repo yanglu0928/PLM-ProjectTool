@@ -118,19 +118,24 @@ def on_current_facts(*, runtime, project, token, first, second,
             "integrity", "payload", "requirements", "sections", "evidence",
             "artifacts"))
         statuses = {item.code: item.status for item in current.type_checks.checks}
-        assert statuses.pop("SCOPE_MAPPING") == "PASS"
-        assert set(statuses.values()) == {"UNAVAILABLE"}
+        assert statuses == {
+            "SCOPE_MAPPING": "PASS",
+            "TRIAL_PLAN": "PASS",
+            "RECONCILIATION_PLAN": "PASS",
+            "ROLLBACK_PLAN": "PASS",
+            "ACCEPTANCE_CRITERIA": "PASS",
+        }
         report = build_structured_spec_validation_report(
             current_command, current_source.snapshot, current,
             audit_event_id=uuid.uuid4(),
             observed_at=datetime.now(timezone.utc))
         assert report.valid and not report.ready_for_review
         assert "TRACE_COVERAGE_UNAVAILABLE" in report.issue_codes
-        assert "TRIAL_EXECUTION_UNAVAILABLE" in report.issue_codes
+        assert report.issue_codes == ("TRACE_COVERAGE_UNAVAILABLE",)
 
     print("SOL_06_A13_P04_CURRENT_FACTS_PG_PASS: current Owner facts, historical "
-          "identity FAIL, structural migration check PASS, missing Trace/type "
-          "Owners UNAVAILABLE, valid does not become ready")
+          "identity FAIL, V2 design declarations PASS, missing Trace "
+          "UNAVAILABLE, valid does not become ready")
 
 
 if __name__ == "__main__":

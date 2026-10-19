@@ -88,11 +88,18 @@ PAYLOADS = {
             {"left_role": "maker", "right_role": "checker"}],
     },
 }
-STRUCTURAL = {
-    "PROCESS_MODEL": "GRAPH_STRUCTURE",
-    "INTERFACE_SPEC": "BOUNDARY_MAPPING",
-    "MIGRATION_SPEC": "SCOPE_MAPPING",
-    "PERMISSION_DESIGN": "MATRIX_DEFAULT_DENY",
+DESIGN_CHECKS = {
+    "PROCESS_MODEL": (
+        "GRAPH_STRUCTURE", "ROLE_DECLARATION", "INPUT_OUTPUT_DECLARATION"),
+    "INTERFACE_SPEC": (
+        "BOUNDARY_MAPPING", "OWNERSHIP_RUNTIME_DECLARATION",
+        "AUTHENTICATION_DECLARATION"),
+    "MIGRATION_SPEC": (
+        "SCOPE_MAPPING", "TRIAL_PLAN", "RECONCILIATION_PLAN",
+        "ROLLBACK_PLAN", "ACCEPTANCE_CRITERIA"),
+    "PERMISSION_DESIGN": (
+        "MATRIX_DEFAULT_DENY", "SCOPE_DECLARATION",
+        "DUTY_CONFLICT_DECLARATION"),
 }
 
 
@@ -183,9 +190,9 @@ def test_proven_common_sources_stay_valid_but_missing_trace_blocks_ready(facts):
     assert observed.facts.artifacts == "PASS"
     assert observed.facts.trace == "UNAVAILABLE"
     assert observed.facts.current_version == "PASS"
-    assert observed.type_checks.checks[0].status == "PASS"
-    assert all(item.status == "UNAVAILABLE"
-               for item in observed.type_checks.checks[1:])
+    assert tuple(item.code for item in observed.type_checks.checks) == (
+        DESIGN_CHECKS["MIGRATION_SPEC"])
+    assert all(item.status == "PASS" for item in observed.type_checks.checks)
 
 
 def test_changed_source_digest_fails_integrity_without_hiding_owner_facts(facts):
@@ -228,14 +235,12 @@ def test_stale_section_historical_spec_and_nonempty_artifact_are_explicit(facts)
 
 
 @pytest.mark.parametrize("spec_type", tuple(PAYLOADS))
-def test_each_type_only_claims_strict_payload_structure(spec_type, facts):
+def test_each_type_claims_only_strict_design_declarations(spec_type, facts):
     evaluator, _ports, _proofs = facts
     checks = evaluator.evaluate(
         object(), command=_command(), source=_source(spec_type)).type_checks
-    values = {item.code: item.status for item in checks.checks}
-    assert values[STRUCTURAL[spec_type]] == "PASS"
-    assert all(status == "UNAVAILABLE" for code, status in values.items()
-               if code != STRUCTURAL[spec_type])
+    assert tuple(item.code for item in checks.checks) == DESIGN_CHECKS[spec_type]
+    assert all(item.status == "PASS" for item in checks.checks)
 
 
 def test_identity_and_missing_context_fail_before_owner_calls(facts):

@@ -1,7 +1,7 @@
-"""Pure first-observation contract for SOL_SPEC_VALIDATE.
+"""Versioned first-observation contract for SOL_SPEC_VALIDATE.
 
-This module derives no live facts. Authorized Owners must populate every
-dimension and type check; absent proof remains UNAVAILABLE, never PASS.
+Common facts remain Owner-derived. Type-check V2 records strict design
+declarations; V1 Audit reasons remain decodable without reinterpretation.
 """
 
 from __future__ import annotations
@@ -38,7 +38,7 @@ _ISSUE_NAMES = {
     "trace": "TRACE_COVERAGE",
     "current_version": "CURRENT_VERSION",
 }
-_TYPE_CHECKS = {
+_TYPE_CHECKS_V1 = {
     "PROCESS_MODEL": (
         "GRAPH_STRUCTURE", "ROLE_TRACEABILITY", "INPUT_OUTPUT_TRACEABILITY"),
     "INTERFACE_SPEC": (
@@ -49,12 +49,28 @@ _TYPE_CHECKS = {
     "PERMISSION_DESIGN": (
         "MATRIX_DEFAULT_DENY", "SCOPE_CONTROL", "DUTY_CONFLICT_REVIEW"),
 }
+_TYPE_CHECKS = {
+    "PROCESS_MODEL": (
+        "GRAPH_STRUCTURE", "ROLE_DECLARATION", "INPUT_OUTPUT_DECLARATION"),
+    "INTERFACE_SPEC": (
+        "BOUNDARY_MAPPING", "OWNERSHIP_RUNTIME_DECLARATION",
+        "AUTHENTICATION_DECLARATION"),
+    "MIGRATION_SPEC": (
+        "SCOPE_MAPPING", "TRIAL_PLAN", "RECONCILIATION_PLAN",
+        "ROLLBACK_PLAN", "ACCEPTANCE_CRITERIA"),
+    "PERMISSION_DESIGN": (
+        "MATRIX_DEFAULT_DENY", "SCOPE_DECLARATION",
+        "DUTY_CONFLICT_DECLARATION"),
+}
+_TYPE_CHECKS_BY_VERSION = {1: _TYPE_CHECKS_V1, 2: _TYPE_CHECKS}
 _TYPE_CODES = {
     "PROCESS_MODEL": "PM", "INTERFACE_SPEC": "IF",
     "MIGRATION_SPEC": "MG", "PERMISSION_DESIGN": "PD",
 }
 _CODE_TYPES = {code: spec_type for spec_type, code in _TYPE_CODES.items()}
-_AUDIT_REASON_PREFIX = "SPEC_VALIDATION_V1_"
+_AUDIT_REASON_PREFIXES = {
+    1: "SPEC_VALIDATION_V1_", 2: "SPEC_VALIDATION_V2_",
+}
 _STATUS_TO_LETTER = {"PASS": "P", "FAIL": "F", "UNAVAILABLE": "U"}
 _LETTER_TO_STATUS = {letter: status for status, letter in _STATUS_TO_LETTER.items()}
 
@@ -179,18 +195,30 @@ class StructuredSpecTypeChecks:
     checks: tuple[StructuredSpecTypeCheck, ...]
 
     def __post_init__(self) -> None:
-        expected = _TYPE_CHECKS.get(self.spec_type)
-        if (expected is None or type(self.checks) is not tuple
-                or tuple(item.code for item in self.checks
-                         if type(item) is StructuredSpecTypeCheck) != expected
-                or len(self.checks) != len(expected)):
+        if type(self.checks) is not tuple:
             raise StructuredSpecValidationContractError("invalid type checks")
+        actual = tuple(item.code for item in self.checks
+                       if type(item) is StructuredSpecTypeCheck)
+        if (len(actual) != len(self.checks)
+                or not any(actual == checks.get(self.spec_type)
+                           for checks in _TYPE_CHECKS_BY_VERSION.values())):
+            raise StructuredSpecValidationContractError("invalid type checks")
+
+    @property
+    def schema_version(self) -> int:
+        actual = tuple(item.code for item in self.checks)
+        for version, checks in _TYPE_CHECKS_BY_VERSION.items():
+            if actual == checks.get(self.spec_type):
+                return version
+        raise StructuredSpecValidationContractError("invalid type checks")
 
 
 def build_structured_spec_type_checks(
     spec_type: str, statuses: Mapping[str, ValidationStatus] | None = None,
+    *, schema_version: int = 2,
 ) -> StructuredSpecTypeChecks:
-    expected = _TYPE_CHECKS.get(spec_type)
+    checks = _TYPE_CHECKS_BY_VERSION.get(schema_version)
+    expected = checks.get(spec_type) if checks is not None else None
     if expected is None or statuses is not None and (
             not isinstance(statuses, Mapping) or set(statuses) != set(expected)):
         raise StructuredSpecValidationContractError("invalid type check set")
@@ -220,29 +248,36 @@ def audit_reason_for_observation(
         for name in _DIMENSIONS)
     letters += "".join(_STATUS_TO_LETTER[item.status]
                        for item in observation.type_checks.checks)
-    return (_AUDIT_REASON_PREFIX
+    return (_AUDIT_REASON_PREFIXES[observation.type_checks.schema_version]
             + _TYPE_CODES[observation.type_checks.spec_type] + "_" + letters)
 
 
 def observation_from_audit_reason(
     reason: str,
 ) -> StructuredSpecValidationObservation:
-    if type(reason) is not str or not reason.startswith(_AUDIT_REASON_PREFIX):
+    if type(reason) is not str:
         raise StructuredSpecValidationContractError("invalid validation audit reason")
-    suffix = reason[len(_AUDIT_REASON_PREFIX):]
+    version = next((item for item, prefix in _AUDIT_REASON_PREFIXES.items()
+                    if reason.startswith(prefix)), None)
+    if version is None:
+        raise StructuredSpecValidationContractError("invalid validation audit reason")
+    suffix = reason[len(_AUDIT_REASON_PREFIXES[version]):]
     if len(suffix) < 4 or suffix[2] != "_" or suffix[:2] not in _CODE_TYPES:
         raise StructuredSpecValidationContractError("invalid validation audit reason")
     spec_type = _CODE_TYPES[suffix[:2]]
     letters = suffix[3:]
-    expected = len(_DIMENSIONS) + len(_TYPE_CHECKS[spec_type])
+    expected_checks = _TYPE_CHECKS_BY_VERSION[version][spec_type]
+    expected = len(_DIMENSIONS) + len(expected_checks)
     if len(letters) != expected:
         raise StructuredSpecValidationContractError("invalid validation audit reason")
     try:
         statuses = tuple(_LETTER_TO_STATUS[letter] for letter in letters)
         facts = StructuredSpecValidationFacts(**dict(zip(
             _DIMENSIONS, statuses[:len(_DIMENSIONS)], strict=True)))
-        checks = build_structured_spec_type_checks(spec_type, dict(zip(
-            _TYPE_CHECKS[spec_type], statuses[len(_DIMENSIONS):], strict=True)))
+        checks = build_structured_spec_type_checks(
+            spec_type, dict(zip(
+                expected_checks, statuses[len(_DIMENSIONS):], strict=True)),
+            schema_version=version)
         return StructuredSpecValidationObservation(facts, checks)
     except (KeyError, TypeError, ValueError):
         raise StructuredSpecValidationContractError(

@@ -63,6 +63,12 @@ const dimensions = ["integrity", "payload", "requirements", "sections", "evidenc
 const issueNames = ["FIXED_VERSION", "PAYLOAD_STRUCTURE", "REQUIREMENT_SOURCE", "SECTION_SOURCE",
   "EVIDENCE_SOURCE", "ARTIFACT_SOURCE", "TRACE_COVERAGE", "CURRENT_VERSION"] as const;
 const checks: Readonly<Record<SpecType, readonly string[]>> = {
+  PROCESS_MODEL: ["GRAPH_STRUCTURE", "ROLE_DECLARATION", "INPUT_OUTPUT_DECLARATION"],
+  INTERFACE_SPEC: ["BOUNDARY_MAPPING", "OWNERSHIP_RUNTIME_DECLARATION", "AUTHENTICATION_DECLARATION"],
+  MIGRATION_SPEC: ["SCOPE_MAPPING", "TRIAL_PLAN", "RECONCILIATION_PLAN", "ROLLBACK_PLAN", "ACCEPTANCE_CRITERIA"],
+  PERMISSION_DESIGN: ["MATRIX_DEFAULT_DENY", "SCOPE_DECLARATION", "DUTY_CONFLICT_DECLARATION"],
+};
+const legacyChecks: Readonly<Record<SpecType, readonly string[]>> = {
   PROCESS_MODEL: ["GRAPH_STRUCTURE", "ROLE_TRACEABILITY", "INPUT_OUTPUT_TRACEABILITY"],
   INTERFACE_SPEC: ["BOUNDARY_MAPPING", "OWNERSHIP_RUNTIME", "AUTHENTICATION_CONTROL"],
   MIGRATION_SPEC: ["SCOPE_MAPPING", "TRIAL_EXECUTION", "RECONCILIATION_PROOF", "ROLLBACK_PROOF", "ACCEPTANCE_PROOF"],
@@ -98,21 +104,24 @@ export function parseStructuredSpecValidationReport(value: unknown, project: str
     || typeof value.ready_for_review !== "boolean" || !Array.isArray(value.issue_codes)
     || !date(value.observed_at)) uncertain();
   const facts = value.facts;
+  const typeChecks: unknown[] = value.type_checks;
   if (!dimensions.every(name => statuses.includes(facts[name] as typeof statuses[number]))) uncertain();
-  const specType = value.spec_type as SpecType; const expectedChecks = checks[specType];
-  if (value.type_checks.length !== expectedChecks.length || value.type_checks.some((item, index) =>
-    !record(item) || !exact(item, ["code", "status"]) || item.code !== expectedChecks[index]
-      || !statuses.includes(item.status as typeof statuses[number]))) uncertain();
+  const specType = value.spec_type as SpecType;
+  const expectedChecks = [checks[specType], legacyChecks[specType]].find(candidate =>
+    typeChecks.length === candidate.length && typeChecks.every((item, index) =>
+      record(item) && exact(item, ["code", "status"]) && item.code === candidate[index]
+        && statuses.includes(item.status as typeof statuses[number])));
+  if (!expectedChecks) uncertain();
   const expectedIssues = dimensions.flatMap((name, index) => facts[name] === "PASS" ? [] : [`${issueNames[index]}_${facts[name]}`]);
   if (value.version_state !== "DRAFT") expectedIssues.unshift("VERSION_NOT_DRAFT");
-  for (const item of value.type_checks as Record<string, unknown>[]) if (item.status !== "PASS") expectedIssues.push(`${item.code}_${item.status}`);
+  for (const item of typeChecks as Record<string, unknown>[]) if (item.status !== "PASS") expectedIssues.push(`${item.code}_${item.status}`);
   if (value.issue_codes.length !== expectedIssues.length || value.issue_codes.some((item, index) => item !== expectedIssues[index])) uncertain();
   const valid = dimensions.slice(0, 5).every(name => facts[name] === "PASS");
   const ready = valid && value.version_state === "DRAFT" && ["artifacts", "trace", "current_version"].every(name => facts[name] === "PASS")
-    && (value.type_checks as Record<string, unknown>[]).every(item => item.status === "PASS");
+    && (typeChecks as Record<string, unknown>[]).every(item => item.status === "PASS");
   if (value.valid !== valid || value.ready_for_review !== ready) uncertain();
   return Object.freeze({ ...value, facts: Object.freeze({ ...facts }),
-    type_checks: Object.freeze(value.type_checks.map(item => Object.freeze({ ...item }))),
+    type_checks: Object.freeze((typeChecks as Record<string, unknown>[]).map(item => Object.freeze({ ...item }))),
     issue_codes: Object.freeze([...value.issue_codes]) }) as unknown as StructuredSpecValidationReport;
 }
 

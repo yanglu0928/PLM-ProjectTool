@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-19：0.1.0-dev.0/SOL-06-A14-P02 实施 CR-SOL-021 的版本化设计就绪合同：新观察使用 V2 四类设计声明检查与`SPEC_VALIDATION_V2_*`，V1 Audit 按原代码/原状态严格反读；当前评估器只证明严格payload内声明完整，前端兼容V1/V2并明确不代表实施、试运行或客户验收。兼容性/升级/回滚：无Migration、冻结顶层API/角色、License、依赖或旧数据变化；服务端/前端须同版升级，新前端兼容旧报告；产生V2 Audit后不得回退兼容解码器，可关闭入口但历史保留。验证：后端定向60项/13子例、全量3729通过/3跳过/5817子例；前端定向10、全量146文件1811项/typecheck/build；Win11 PG18.6与Edge真实链通过；开发wheel 1408项/SHA-256 `b52067f26c7f6fc142ce0e4a642744230ab06c68a99cb072e14d5e62438e5b1e`。已知问题：Trace仍UNAVAILABLE且不可送审，Review状态/Owner/送审未实现；正式信任、Server2025/Debian13、性能、Gate3/Pilot/发行仍待。
+
 - 2026-10-19：0.1.0-dev.0/SOL-06-A14-P01 完成结构化专项送审前置核查并登记 CR-SOL-021：复用统一 PROJECT Review，固定 `SOL-06 / spec_series_id / version_id` Subject 与 `STRUCTURED_SPEC_ALL_V1` 策略；识别 0164 状态写闭锁、SOL-06 Trace Owner 和 Review Subject Owner 缺口。为解除“方案评审前必须已有实施结果”的时序死锁，选定设计就绪与执行验收分离，类型检查版本化且旧 Audit 不回写。兼容性/升级/回滚：本项仅文档/决策，无程序、Migration、冻结URL/角色、依赖或数据变化；后续按类型合同→Trace→状态/Owner→原子送审分项实施。已知问题：送审尚未实现，Trace/非空Artifact/正式信任/Server2025/Debian13/性能/Gate3/Pilot/发行仍待。
 
 - 2026-10-19：0.1.0-dev.0/SOL-06-A13-P09 扩展一次性浏览器夹具并完成 Windows 11 Edge→构建 Vue→生产 FastAPI/Uvicorn→真实 Session/CSRF/License/PostgreSQL 18.6 的专项验证闭环：首次现时观察、原 Idempotency-Key 重放、Trace 缺口与维护提示、不可送审声明、跨项目 404/清屏均通过，数据库保持唯一验证收据/Audit；旧详情 Edge/PG 回归通过。兼容性/升级/回滚：仅验收脚本，无 Migration、产品 API/权限/License/依赖/静态资源或旧数据变化，无升级动作，可撤显式验收模式。已知问题：Trace、非空 Artifact 与非结构类型业务证明仍缺，正式信任、Server2025/Debian13、性能、Gate3/Pilot/发行仍待。

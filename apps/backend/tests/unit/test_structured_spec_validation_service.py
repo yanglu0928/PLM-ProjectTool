@@ -58,10 +58,9 @@ OBSERVATION = StructuredSpecValidationObservation(
         sections="PASS", evidence="PASS", artifacts="PASS",
         trace="UNAVAILABLE", current_version="PASS"),
     build_structured_spec_type_checks("MIGRATION_SPEC", {
-        "SCOPE_MAPPING": "PASS", "TRIAL_EXECUTION": "UNAVAILABLE",
-        "RECONCILIATION_PROOF": "UNAVAILABLE",
-        "ROLLBACK_PROOF": "UNAVAILABLE",
-        "ACCEPTANCE_PROOF": "UNAVAILABLE",
+        "SCOPE_MAPPING": "PASS", "TRIAL_PLAN": "PASS",
+        "RECONCILIATION_PLAN": "PASS", "ROLLBACK_PLAN": "PASS",
+        "ACCEPTANCE_CRITERIA": "PASS",
     }))
 
 

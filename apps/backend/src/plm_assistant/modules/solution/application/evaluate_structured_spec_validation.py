@@ -70,14 +70,6 @@ def _digest(value: object) -> bool:
     return type(value) is bytes and len(value) == 32
 
 
-_STRUCTURAL_CHECK = {
-    "PROCESS_MODEL": "GRAPH_STRUCTURE",
-    "INTERFACE_SPEC": "BOUNDARY_MAPPING",
-    "MIGRATION_SPEC": "SCOPE_MAPPING",
-    "PERMISSION_DESIGN": "MATRIX_DEFAULT_DENY",
-}
-
-
 class StructuredSpecCurrentFactEvaluator:
     """Evaluate only installed Owners; absence stays UNAVAILABLE."""
 
@@ -133,11 +125,11 @@ class StructuredSpecCurrentFactEvaluator:
             trace="UNAVAILABLE",
             current_version=("PASS" if source.is_current_version else "FAIL"),
         )
+        # The reconstructed draft has already passed the strict payload
+        # validator. V2 checks describe reviewable design declarations only;
+        # they do not claim implementation, trial or customer acceptance.
         checks = build_structured_spec_type_checks(source.snapshot.spec_type)
-        structural = _STRUCTURAL_CHECK[source.snapshot.spec_type]
-        statuses = {item.code: ("PASS" if item.code == structural
-                                else "UNAVAILABLE")
-                    for item in checks.checks}
+        statuses = {item.code: "PASS" for item in checks.checks}
         return StructuredSpecValidationObservation(
             facts, build_structured_spec_type_checks(
                 source.snapshot.spec_type, statuses))

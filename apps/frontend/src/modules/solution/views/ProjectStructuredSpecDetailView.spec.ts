@@ -92,14 +92,12 @@ describe("ProjectStructuredSpecDetailView", () => {
       facts: { integrity: "PASS", payload: "PASS", requirements: "PASS", sections: "PASS",
         evidence: "PASS", artifacts: "PASS", trace: "UNAVAILABLE", current_version: "PASS" },
       type_checks: [{ code: "SCOPE_MAPPING", status: "PASS" },
-        { code: "TRIAL_EXECUTION", status: "UNAVAILABLE" },
-        { code: "RECONCILIATION_PROOF", status: "UNAVAILABLE" },
-        { code: "ROLLBACK_PROOF", status: "UNAVAILABLE" },
-        { code: "ACCEPTANCE_PROOF", status: "UNAVAILABLE" }],
+        { code: "TRIAL_PLAN", status: "PASS" },
+        { code: "RECONCILIATION_PLAN", status: "PASS" },
+        { code: "ROLLBACK_PLAN", status: "PASS" },
+        { code: "ACCEPTANCE_CRITERIA", status: "PASS" }],
       valid: true, ready_for_review: false,
-      issue_codes: ["TRACE_COVERAGE_UNAVAILABLE", "TRIAL_EXECUTION_UNAVAILABLE",
-        "RECONCILIATION_PROOF_UNAVAILABLE", "ROLLBACK_PROOF_UNAVAILABLE",
-        "ACCEPTANCE_PROOF_UNAVAILABLE"], observed_at: "2026-10-19T00:00:00Z",
+      issue_codes: ["TRACE_COVERAGE_UNAVAILABLE"], observed_at: "2026-10-19T00:00:00Z",
     }) };
     const wrapper = mount(ProjectStructuredSpecDetailView, { props: {
       session: await session("IMPLEMENTATION_MEMBER"),
@@ -113,8 +111,8 @@ describe("ProjectStructuredSpecDetailView", () => {
     expect(wrapper.text()).toContain("固定内容与主要来源核验通过");
     expect(wrapper.text()).toContain("尚不具备送审条件");
     expect(wrapper.text()).toContain("当前缺少专项到需求/章节的可信追溯覆盖");
-    expect(wrapper.text()).toContain("TRIAL_EXECUTION");
-    expect(wrapper.text()).toContain("请补充该项业务证明或维护信息");
+    expect(wrapper.text()).toContain("TRIAL_PLAN");
+    expect(wrapper.text()).toContain("不代表已实施、已试运行或已获客户验收");
     expect(window.sessionStorage.length).toBe(0);
     wrapper.unmount();
   });

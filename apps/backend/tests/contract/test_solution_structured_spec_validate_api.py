@@ -60,10 +60,10 @@ class Validations:
                 "UNAVAILABLE", "PASS"),
             build_structured_spec_type_checks("MIGRATION_SPEC", {
                 "SCOPE_MAPPING": "PASS",
-                "TRIAL_EXECUTION": "UNAVAILABLE",
-                "RECONCILIATION_PROOF": "UNAVAILABLE",
-                "ROLLBACK_PROOF": "UNAVAILABLE",
-                "ACCEPTANCE_PROOF": "UNAVAILABLE",
+                "TRIAL_PLAN": "PASS",
+                "RECONCILIATION_PLAN": "PASS",
+                "ROLLBACK_PLAN": "PASS",
+                "ACCEPTANCE_CRITERIA": "PASS",
             }))
         return build_structured_spec_validation_report(
             replay, StructuredSpecValidationSnapshot(
