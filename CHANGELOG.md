@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-19：0.1.0-dev.0/SOL-06-A13-P02 新增冻结 `SOL_SPEC_VALIDATE` 的纯应用报告合同：固定版本命令/幂等指纹、不可变快照、八维 PASS/FAIL/UNAVAILABLE 事实、四类精确有序检查、确定性 issue 与 valid/ready 派生；版本化 Audit reason 可无损重建首次观察，报告伪造失败关闭且不创建 Review/推进状态。兼容性/升级/回滚：未装配模块，无 Migration、API 路径/字段/角色、License、依赖或旧数据变化；可直接撤未公开模块，开发 wheel 非发行包。验证：定向33项、后端全量3694通过/3跳过/5791子例、compileall；Python3.13.15 开发wheel 1402条目且模块入包，SHA-256 `b274b3f6e58af2abe74a1b50ee6fb46f1314c5067eb3981e1d9c4a5b9b210db2`。已知问题：Repository/Owner/收据/Audit读回/HTTP/Windows/UI尚未实现；缺SOL-06 Trace/Artifact与真实业务Owner时必须UNAVAILABLE，正式信任、Server2025/Debian13、性能、Gate3/Pilot/发行仍待。
+
 - 2026-10-16：0.1.0-dev.0/SOL-06-A13-P01 完成冻结 `SOL_SPEC_VALIDATE` 前置核查：选定无正文、固定版本、八维现时事实和类型有序检查；`valid` 仅表示完整性/payload/当前Requirement/Section/Evidence，`ready_for_review` 另要求系列最新DRAFT、全部类型检查、Artifact与Trace通过；缺真实Owner显式UNAVAILABLE。独立策略/收据/Audit同Key返回首次观察，VALIDATE不改历史或创建Review。兼容性/升级/回滚：仅设计/决策记录，无程序、Migration、API路径/角色、依赖或数据变化，无升级动作。验证：冻结API/DM、0161～0164、A06/A08及Section验证先例静态交叉核对。已知问题：报告合同/Owner/HTTP/Windows/UI尚未实现；SOL-06 Trace、Artifact及多类真实业务证明缺Owner，正式信任、Server2025/Debian13、性能、Gate3/Pilot/发行仍待。
 
 - 2026-10-16：0.1.0-dev.0/SOL-06-A12-P07 完成 Windows 11 Edge→构建Vue→生产FastAPI/Uvicorn→可弃PG18.6结构化专项修订闭环：固定v1无损回填后创建同系列v2 DRAFT，以原正文/原Key重放201且仅一条修订收据/Audit；旧RequirementVersion转SUPERSEDED并切换新当前批准版本后，页面提示来源漂移且不自动替换；跨项目POST 404、页面无表单/旧正文。兼容性/升级/回滚：仅合成验收夹具显式`revise_mode`，无产品Schema/API/License/权限/依赖/数据变化；撤测试模式即可。验证：P07完整链、无新Alembic操作及A11 51项列表浏览器回归通过；首轮夹具违反单批准版本唯一约束后修正并全量重跑。已知问题：合成信任非正式信任，Server2025/Debian13、专项验证/送审、OutputArtifact、性能、Gate3/Pilot/正式发行仍待。
