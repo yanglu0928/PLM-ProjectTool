@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-19：0.1.0-dev.0/SOL-06-A16-P01 完成 Review List/Reviewer Inbox 编码前核查并登记 `CR-RVW-004`：确认冻结 `REVIEW_LIST` 路径/Project member/Page 已存在，但当前缺授权策略、Repository/Application/HTTP、稳定索引、专用 cursor Vault 来源和前端入口；选择兼容细化 `view=all|my_pending`，assigned reviewer 只筛候选且每项仍经 Subject Owner 现时授权。兼容性/升级/回滚：本项仅文档和决策，无运行代码/Schema/API行为/权限/依赖变化；后续 0166 仅加索引且可关闭入口/删索引回滚，历史保留。验证：冻结 manifest/合同、Review ORM/读链、Project policy、Windows/前端静态交叉核查；功能测试未运行。已知问题：LIST/Inbox 尚未实现，正式信任、Gate3/Pilot/发行仍待。
+
 - 2026-10-19：0.1.0-dev.0/SOL-06-A15-P06 新增一次性 Windows 11 Reviewer 验收夹具；实际 Edge 155 经 production Vue、FastAPI/Uvicorn 和 PostgreSQL 18.6 完成真实送审回执进入、assigned reviewer 读取、断网保留原决定/意见/Key、恢复后精准重试、APPROVED 终态回读及跨项目清屏；数据库按本次 Review/Round/Version 确认唯一 Decision/回执/状态/Audit。首轮仅因验收 SQL 使用全库累计口径失败，修正为固定事实后完整重跑退出0。兼容性/升级/回滚：仅验收脚本和文档，无产品/Migration/冻结合同/角色/License/依赖/旧数据变化，可撤夹具且临时资源清理。已知问题：REVIEW_LIST、正式信任、Gate3/Pilot/发行仍待；评审批准不代表客户确认或UAT。
 
 - 2026-10-19：0.1.0-dev.0/SOL-06-A15-P05 新增 known-ID Reviewer 前端：结构化专项现存评审/送审回执可进入严格 Review GET 页面；仅当前 PENDING assignee 可批准或填写意见退回，未知结果保留原Actor/Project/Review/Round/决定/意见/Key并确认后精准重试，成功回执必须与状态/ETag回读一致。页面明确不是REVIEW_LIST，不把决定称为客户确认/UAT。兼容性/升级/回滚：仅前端与Auth安全写桥，无后端/Migration/冻结合同/角色/License/依赖/旧数据变化；可撤UI且历史保留。验证：定向3文件13项，前端全量149文件1823项、typecheck、322模块生产构建通过；既有主包804.17kB警告保留。已知问题：REVIEW_LIST、Windows Edge真实链、正式信任、Gate3/Pilot/发行仍待。

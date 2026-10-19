@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261019-1218：Reviewer Inbox 实现冻结 REVIEW_LIST 而非保存已知 ID
+
+- Date/WBS：2026-10-19 / `SOL-06-A16-P01`。依据冻结 API-01/02、Q-RVW-01、A15 真实 known-ID 闭环与当前代码核查。
+- Decision：按 `CR-RVW-004` 实现冻结 LIST；兼容细化 `view=all|my_pending` 和专用 Session/Project/query 绑定游标。assigned reviewer 仅筛候选，每项仍由当前 Project 与 Subject Owner 授权；列表不返回主题正文或其他 reviewer 意见。
+- Reason：浏览器存储/手工 UUID 无法形成跨设备、现时授权的任务发现；现有表缺所需查询索引和专用 cursor key，直接开放会有越权、泄露和无界扫描风险。
+- Impact/Rollback：P01 仅记录；后续新增 0166 索引、授权策略、可选 Router、专用 Vault key 与 UI，逐项验收。可关闭 Router/删除纯索引回滚，Review 历史保留；Gate/Pilot/Release 不自动通过。
+
 ## DEC-20261019-1217：真实 Reviewer 验收按本次固定事实计数
 
 - Date/WBS：2026-10-19 / `SOL-06-A15-P06`。依据 A14-P09、A15-P04/P05、Windows 11 实际 Edge 与可弃 PostgreSQL 18.6。
