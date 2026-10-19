@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-19：0.1.0-dev.0/PLAN-02-A04-P04-A04-P02-A02 增加公开三字段WBS固定引用至Plan受权读取的Trace桥合同，resourceId=WbsItemId、versionId=PlanVersionId，限定PROJECT；未注册Windows/Trace写链。兼容性/升级/回滚：无Migration、公开API或旧数据变更，移除桥类即可回滚，旧Trace不变。验证：定向15项/18子例、后端全量3833通过/3跳过/6005子例；真实PG Plan读取已在P02-A01验收。已知问题：开发wheel、统一反向查询/Windows组合、来源/Trace一致性Owner、正式信任及Gate3/Pilot/发行待。
+
 - 2026-10-19：0.1.0-dev.0/PLAN-02-A04-P04-A04-P02-A01 增加Plan模块内部固定WBS版本只读证明，复用冻结`PLAN_VERSION_WBS_LIST`当前成员权限，在同一调用事务核查Session、License、WBS/版本/项目及RESTRICTED；Trace尚未装桥，继续失败关闭。兼容性/升级/回滚：无Migration、公开API或旧数据变化；移除新增Port/策略可回滚。验证：定向19项/832子例、Win11可弃PG18.6精确与跨项目/错版本查询、后端全量3830通过/3跳过/6001子例。已知问题：开发wheel未验；Trace桥/反向查询、Plan正式来源/Owner/HTTP/UI/Output及正式信任、Gate3/Pilot/发行待。
 
 - 2026-10-19：0.1.0-dev.0/PLAN-02-A04-P04-A04-P01 按CR-PLAN-001在统一TraceLink追加受控`PLN-02-WBS`固定任务类型与迁移0177，原`PLN-02`PlanVersion语义不变；新类型仅PROJECT，未注册Plan Owner仍失败关闭。兼容性/升级/回滚：替换源/目标类型CHECK并增Scope CHECK，不改旧Trace行/冻结路径/Envelope；先备份，无新类型历史可降，有历史拒降并向前修复或人工备份恢复。验证：Win11/PG18.6空/已有旧Trace升降重升、非法/Global/历史/drift通过；定向22项/23子例、后端全量3826通过/3跳过/5991子例。已知问题：wheel未验；Plan目标Owner/反向查询及正式权限/License、完整Plan Owner/HTTP/UI/Output、Gate3/Pilot/发行待。
