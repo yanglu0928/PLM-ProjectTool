@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261019-1219：Review List 隐藏候选位置必须加密
+
+- Date/WBS：2026-10-19 / `SOL-06-A16-P02`。依据 API-01 游标边界、CR-RVW-004 的短页/隐藏候选语义与现有 Job list 先例。
+- Decision：Review list cursor 使用专用 AES-256-GCM key；AAD 绑定 family/version、Session 摘要、Project、view、page_size，密文保存 created_at/review_id 并使用随机 96-bit nonce。放弃仅 HMAC 的可解码 JSON 位置。
+- Reason：逐项 Subject Owner 授权可能隐藏候选，下一 cursor 位置可能不是可见 item；HMAC 只能防篡改，不能阻止客户端解码未授权 Review ID。认证加密同时满足位置保密和完整性。
+- Impact/Rollback：复用既有正式 `cryptography`，无新依赖/Schema/API 路径/角色变化；P02 尚未装配。删除 codec/合同可回滚；后续 key 缺失必须启动失败关闭，不能复用其他列表 key 或生成 fallback。
+
 ## DEC-20261019-1218：Reviewer Inbox 实现冻结 REVIEW_LIST 而非保存已知 ID
 
 - Date/WBS：2026-10-19 / `SOL-06-A16-P01`。依据冻结 API-01/02、Q-RVW-01、A15 真实 known-ID 闭环与当前代码核查。

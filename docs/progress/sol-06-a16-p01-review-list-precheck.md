@@ -31,4 +31,4 @@
 
 P01 未修改代码、Schema、API 运行行为、权限或依赖，未运行功能测试；依据为冻结文档、manifest、Review/Project/Windows/前端代码静态交叉核查。
 
-Next：`SOL-06-A16-P02` 固化 Review List 增量 API 文档、列表 DTO 与专用 Session/Project/view/page_size 绑定的 HMAC 游标纯合同，并先以单元测试验证篡改和跨范围拒绝。
+Next：`SOL-06-A16-P02` 固化 Review List 增量 API 文档、列表 DTO 与专用 Session/Project/view/page_size 绑定的保密完整性游标纯合同，并先以单元测试验证密文、篡改和跨范围拒绝。

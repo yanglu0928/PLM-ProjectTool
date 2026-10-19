@@ -18,7 +18,7 @@ Gate 2 已冻结 `GET /api/v1/projects/{project_id}/reviews`、Project member �
 ## V1 列表合同边界
 
 - 路径保持 `GET /api/v1/projects/{project_id}/reviews`；query 只允许 `page_size`、`cursor`、`view`，默认 `view=all`，`my_pending` 为 Reviewer Inbox。
-- 排序固定 `created_at DESC, review_id DESC`；专用不透明游标绑定 family/version、Session 摘要、Project、view、page_size 与最后位置。游标不返回 SQL、物理索引或未授权 ID。
+- 排序固定 `created_at DESC, review_id DESC`；专用 AES-256-GCM 不透明游标绑定 family/version、Session 摘要、Project、view、page_size 与最后位置。位置密文不返回 SQL、物理索引或未授权 ID。
 - `data={items,next_cursor,has_more}`；列表项只含 Review/Subject 身份、policy/state/created_at/etag，活动轮最小摘要和当前 actor 的 `my_assignment`。不返回主题正文、来源、指纹、内部锁或其他人的意见。
 - 候选逐项经过 Subject Owner 当前授权；被隐藏候选仍消耗游标位置，因此允许短页或空页但 `has_more=true`，客户端继续取下一页。GET 不写 Audit。
 - `all` 是受权 Review 历史页；`my_pending` 才是精确待办，不在客户端对单页结果二次猜测完整收件箱。
@@ -51,3 +51,7 @@ Gate 2 已冻结 `GET /api/v1/projects/{project_id}/reviews`、Project member �
 ## 风险与边界
 
 分页不承诺固定快照；并发新建/终态可能改变后续页，客户端以刷新为准。Subject Owner 异常是 503，不伪装为空列表；正常无权候选可隐藏。Reviewer Inbox 只解决任务发现，不增加提醒、邮件、SSE 推送或第三方消息组件。不得由 Review state 推断客户已确认、实施完成或 UAT 通过。
+
+## 实施进度
+
+- 2026-10-19 / `SOL-06-A16-P02`：已固化 `all/my_pending`、最小 actor-only Assignment 投影和短页继续语义；专用游标使用 AES-256-GCM 隐藏候选位置并绑定 Session/Project/view/page_size。定向、后端全量与 wheel 入包通过；尚未修改 Schema、授权策略或挂载 Router。下一项 P03 索引迁移。
