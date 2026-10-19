@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261019-1225：Pilot 下一业务链缺口优先推进 Plan 前置
+
+- Date/WBS：2026-10-19 / `PILOT-CHAIN-A01`；依据用户批准的 CR-EXEC-002、冻结 DM-05/API-03/04 与 `STATUS.md`。
+- Decision：完成 SOL-06 Reviewer Inbox 浏览器闭环后，下一独立 WBS 为 `PLAN-01-A01` 编码前核查；Plan 按正式固定已批准 Solution 输入与 Review/Trace 规则实现，不用临时表格或浏览器缓存冒充正式 WBS。Output 和安装/信任维持并行独立缺口。
+- Reason：仓库不存在 Plan/Output 业务模块及其核心 Migration，冻结合同已存在；SOL-06 专项批准不足以自动证明完整 Solution 可供 Plan 正式化。先核清依赖与分片，避免跨模块一次实现和错误声明 Pilot 可用。
+- Impact/Rollback：本决策仅实施顺序与记录，无 Schema、API、Scope、权限或数据变化；可恢复原优先级。核查为静态证据，未运行功能测试；Gate 3/Pilot/发行保持未通过。
+
 ## DEC-20261019-1224：Reviewer Inbox 以服务端待办为唯一发现源
 
 - Date/WBS：2026-10-19 / `SOL-06-A16-P07`；依据 CR-RVW-004 与 P06 已装配的冻结 Review List。

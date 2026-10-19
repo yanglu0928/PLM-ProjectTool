@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-19：0.1.0-dev.0/PILOT-CHAIN-A01 静态核查 Windows 11 Pilot 关键路径：SOL-06 Reviewer Inbox 是专项闭环，Plan/Output 正式模块及核心表尚未实现，安装与正式信任仍受阻；选定 PLAN-01-A01 做冻结输入/分片前置核查。兼容性/升级/回滚：仅文档与工作顺序，无产品/Migration/API/数据变化，可调整优先级。验证：冻结合同、目录/Migration 和安装 P38/P41 证据交叉核对，未运行功能测试。已知问题：完整纵向 UAT、正式信任、离线安装升级、Gate3/Pilot/发行未通过。
+
 - 2026-10-19：0.1.0-dev.0/SOL-06-A16-P08 增加 Windows 11 Reviewer Inbox 一次性浏览器/数据库验收夹具；实际 Edge 155 经生产 Vue、FastAPI/Uvicorn、PG18.6 验证项目入口服务端待办发现、已分配 Reviewer 决定后待办消失、终态历史保留、跨项目清屏及唯一数据库决定。兼容性/升级/回滚：仅测试脚本和文档，无产品代码、Migration、API、权限、License、依赖或历史变化，可撤夹具。验证：`STRUCTURED_SPEC_SUBMIT_EDGE PASS`、`REVIEW_INBOX_EDGE PASS`、整链退出 0；P07 前端与 P06 后端全量已前序通过，本项未重复。已知问题：合成信任不代表正式公钥/服务账户/安装；Gate3、Pilot、性能和多平台发行仍待。
 
 - 2026-10-19：0.1.0-dev.0/SOL-06-A16-P07 增加项目级 Reviewer Inbox：从服务端 `my_pending` 自动发现待办，切换 `all` 历史，隐藏空页继续翻页，精确进入评审详情；会话撤销、切项目和后页错误清除旧结果。兼容性/升级/回滚：仅前端静态资源/路由，无 Migration、后端 API、角色、License、密钥或历史变化；重建前端即可升级，可撤入口但保留服务器历史。验证：定向29项、前端全量151文件1831项、typecheck及生产build通过；既有主chunk体积提示。已知问题：真实 Windows 11 Edge/PG 页面闭环留P08；正式信任/性能、Gate3/Pilot/三平台发行仍待。
