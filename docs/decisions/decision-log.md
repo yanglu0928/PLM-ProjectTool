@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261019-1209：SOL-06 送审采用系列 Subject 与设计就绪门禁
+
+- Date/WBS：2026-10-19 / `SOL-06-A14-P01`。依据冻结 `SOL_SPEC_SUBMIT_REVIEW`、DM-05、统一 PROJECT Review、0164 和 A13 验证边界；变更细节见 `CR-SOL-021`。
+- Decision：Review 身份固定为 `SOL-06 / spec_series_id / structured_solution_spec_id`，策略 `STRUCTURED_SPEC_ALL_V1`；只允许 ProjectManager 将同系列最新且当下 `ready_for_review=true` 的 DRAFT 原子送审。旧 VALIDATE Audit 只作历史观察，Subject Owner 在同一事务重证当前事实、Trace、Artifact 与类型设计就绪。
+- Lifecycle：开轮绑定 Review/Round 并转 IN_REVIEW；批准转 APPROVED 且同系列旧 APPROVED 转 SUPERSEDED，退回/撤回转 RETURNED。Review、状态、Snapshot/Lock、收据和 Audit 同事务，payload/ref 永久不可变。
+- Compatibility/Rollback：不改冻结 URL/角色；CR-SOL-021 将执行结果从送审前置中分离，类型检查 reason/code 版本化并保留旧历史反读。可关闭后续可选路由回滚，已写 Review/状态/Audit/收据不删除；正式执行/UAT 不因设计就绪通过。
+
 ## DEC-20261016-1208：SOL_SPEC_VALIDATE 分离结构有效与可送审
 
 - Date/WBS：2026-10-16 / `SOL-06-A13-P01`。依据冻结 `SOL_SPEC_VALIDATE`、DM-05 四类专项约束、0161～0164、A06/A08 及 SectionVersion 验证先例。
