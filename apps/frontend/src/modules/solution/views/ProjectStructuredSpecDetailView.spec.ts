@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createAppRouter } from "@/app/router";
 import { SessionClient } from "@/modules/auth/api/sessionClient";
 import { StructuredSpecReadClient } from "@/modules/solution/api/structuredSpecReadClient";
+import { StructuredSpecValidateClient } from "@/modules/solution/api/structuredSpecValidateClient";
 import ProjectStructuredSpecDetailView from "./ProjectStructuredSpecDetailView.vue";
 
 const project = "01234567-89ab-4cde-8123-456789abcdef";
@@ -40,7 +41,7 @@ async function session(role = "CUSTOMER_MEMBER") {
 }
 
 describe("ProjectStructuredSpecDetailView", () => {
-  afterEach(() => vi.restoreAllMocks());
+  afterEach(() => { vi.restoreAllMocks(); window.sessionStorage.clear(); });
   it("shows readable DRAFT and fixed-source links for a project member", async () => {
     const router = createAppRouter(createMemoryHistory());
     expect(router.resolve(`/projects/${project}/structured-solution-specs/${spec}`).name)
@@ -76,6 +77,45 @@ describe("ProjectStructuredSpecDetailView", () => {
     await flushPromises();
     expect(wrapper.get(`a[href="/projects/${project}/structured-solution-specs/${spec}/revise"]`)
       .text()).toContain("创建修订草案");
+    wrapper.unmount();
+  });
+
+  it("validates as a writer and explains every unavailable fact and type check", async () => {
+    const router = createAppRouter(createMemoryHistory());
+    await router.push(`/projects/${project}/structured-solution-specs/${spec}`); await router.isReady();
+    const validator = { validate: vi.fn().mockResolvedValue({
+      audit_event_id: requirement, observation_trace_id: section, project_id: project,
+      structured_solution_spec_id: spec, spec_series_id: spec, spec_type: "MIGRATION_SPEC",
+      version_no: 1, version_state: "DRAFT", content_fingerprint: "a".repeat(64),
+      payload_fingerprint: "b".repeat(64), requirement_count: 1, section_count: 1,
+      evidence_count: 0, artifact_count: 0,
+      facts: { integrity: "PASS", payload: "PASS", requirements: "PASS", sections: "PASS",
+        evidence: "PASS", artifacts: "PASS", trace: "UNAVAILABLE", current_version: "PASS" },
+      type_checks: [{ code: "SCOPE_MAPPING", status: "PASS" },
+        { code: "TRIAL_EXECUTION", status: "UNAVAILABLE" },
+        { code: "RECONCILIATION_PROOF", status: "UNAVAILABLE" },
+        { code: "ROLLBACK_PROOF", status: "UNAVAILABLE" },
+        { code: "ACCEPTANCE_PROOF", status: "UNAVAILABLE" }],
+      valid: true, ready_for_review: false,
+      issue_codes: ["TRACE_COVERAGE_UNAVAILABLE", "TRIAL_EXECUTION_UNAVAILABLE",
+        "RECONCILIATION_PROOF_UNAVAILABLE", "ROLLBACK_PROOF_UNAVAILABLE",
+        "ACCEPTANCE_PROOF_UNAVAILABLE"], observed_at: "2026-10-19T00:00:00Z",
+    }) };
+    const wrapper = mount(ProjectStructuredSpecDetailView, { props: {
+      session: await session("IMPLEMENTATION_MEMBER"),
+      reader: { detail: vi.fn().mockResolvedValue(detail) } as unknown as StructuredSpecReadClient,
+      validator: validator as unknown as StructuredSpecValidateClient,
+    }, global: { plugins: [router] } });
+    await flushPromises();
+    await wrapper.findAll("button").find(button => button.text() === "验证当前事实")!.trigger("click");
+    await flushPromises();
+    expect(validator.validate).toHaveBeenCalledWith(project, spec, expect.stringMatching(/^structured-spec-validate-/));
+    expect(wrapper.text()).toContain("固定内容与主要来源核验通过");
+    expect(wrapper.text()).toContain("尚不具备送审条件");
+    expect(wrapper.text()).toContain("当前缺少专项到需求/章节的可信追溯覆盖");
+    expect(wrapper.text()).toContain("TRIAL_EXECUTION");
+    expect(wrapper.text()).toContain("请补充该项业务证明或维护信息");
+    expect(window.sessionStorage.length).toBe(0);
     wrapper.unmount();
   });
 
