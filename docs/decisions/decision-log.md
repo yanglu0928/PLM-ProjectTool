@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261019-1213：送审与终态共享同一 SOL-06 生产 Owner 工厂
+
+- Date/WBS：2026-10-19 / `SOL-06-A15-P02`。依据 A15-P01、A14-P04 Owner 与冻结通用 REVIEW_DECIDE。
+- Decision：抽取单一 Windows SOL-06 Owner 工厂，送审与通用终态组合共同使用；通用 Project Review 只在完整 Document 下载/解析依赖存在时追加 SOL-06，与同样需要来源证据的 SRV-05 一起失败关闭。决定仍走通用 Router，不新增专项端点。
+- Reason：终态 APPROVE 必须与送审使用完全相同的来源、Trace、Reviewer 和当前事实规则。复制组合会产生安全漂移；在缺来源依赖时注册半功能 Owner 会把真实 404 变成不稳定错误。
+- Impact/Rollback：无 Schema/API/角色/License/依赖变化；可移除注册停止新终态操作，已写 Review/Decision/专项状态/Audit/收据必须保留。读取/UI/Edge 仍后续独立验收。
+
 ## DEC-20261019-1212：SOL-06 终态必须复用通用 Review 决定并分离读取接线
 
 - Date/WBS：2026-10-19 / `SOL-06-A15-P01`。依据冻结 REVIEW_GET/DECIDE/WITHDRAW、A14-P04 Owner 与 A14-P09 IN_REVIEW 真实链。

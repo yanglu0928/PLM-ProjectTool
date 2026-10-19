@@ -7,6 +7,9 @@ from fastapi import APIRouter
 from plm_assistant.entrypoints.windows_prototype import (
     create_windows_prototype_review_subject,
 )
+from plm_assistant.entrypoints.windows_solution_outline import (
+    create_windows_structured_spec_review_subject,
+)
 
 from plm_assistant.modules.ai.infrastructure.task_read_repository import (
     SqlAlchemyAITaskReadRepository,
@@ -236,6 +239,13 @@ def create_windows_project_review_router(
                 audit=audit,
             )
             subject_owners.append(conclusion)
+            subject_owners.append(create_windows_structured_spec_review_subject(
+                runtime=runtime, license_guard=license_guard, audit=audit,
+                documents=documents, downloads=downloads,
+                parse_results=parse_results,
+                authorization_repository=project_repository,
+                authorization=authorization, reviewers=reviewers,
+            ))
         subjects = ProjectReviewSubjectRegistry(tuple(subject_owners))
         receipts = SqlAlchemyIdempotencyReceipts()
         creates = ReviewCreateService(

@@ -64,12 +64,25 @@ class WindowsProjectReviewCompositionTests(unittest.TestCase):
                 runtime, sessions=Mock(), origins=Mock(), license_guard=Mock(),
                 audit=Mock(), documents=Mock(),
             )
-        router = create_windows_project_review_router(
-            runtime, sessions=Mock(), origins=Mock(), license_guard=Mock(),
-            audit=Mock(), documents=Mock(), downloads=Mock(),
-            parse_results=Mock(),
-        )
+        with patch(
+            "plm_assistant.entrypoints.windows_project_review."
+            "ProjectReviewSubjectRegistry",
+            side_effect=lambda owners: Mock(
+                registered_subject_types=tuple(
+                    owner.SUBJECT_TYPE for owner in owners
+                )
+            ),
+        ) as registry:
+            router = create_windows_project_review_router(
+                runtime, sessions=Mock(), origins=Mock(), license_guard=Mock(),
+                audit=Mock(), documents=Mock(), downloads=Mock(),
+                parse_results=Mock(),
+            )
         self.assertEqual(4, len(router.routes))
+        self.assertEqual(
+            ("HND-02", "SRV-02", "REQ-03", "PRT-03", "SRV-05", "SOL-06"),
+            tuple(owner.SUBJECT_TYPE for owner in registry.call_args.args[0]),
+        )
 
 
 if __name__ == "__main__":

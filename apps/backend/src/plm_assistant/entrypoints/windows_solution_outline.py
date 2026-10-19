@@ -644,14 +644,60 @@ def create_windows_structured_spec_review_submission_router(
         reviewers = ProjectReviewerQualificationService(
             users=SqlAlchemyReviewUserAccess(),
             projects=authorization_repository)
+        subject_repository = SqlAlchemyStructuredSpecReviewSubjectRepository()
+        owner = create_windows_structured_spec_review_subject(
+            runtime=runtime, license_guard=license_guard, audit=audit,
+            documents=documents, downloads=downloads,
+            parse_results=parse_results,
+            authorization_repository=authorization_repository,
+            authorization=authorization, reviewers=reviewers,
+            repository=subject_repository)
+        service = StructuredSpecReviewSubmissionService(
+            unit_of_work=runtime.unit_of_work,
+            access=SqlAlchemyProjectWriteAccess(),
+            license_guard=license_guard, authorization=authorization,
+            reviewers=reviewers, receipts=SqlAlchemyIdempotencyReceipts(),
+            replay_repository=SqlAlchemyProjectReviewSubmissionRepository(),
+            identity=subject_repository,
+            reviews=ProjectReviewPersistenceService(
+                creation_repository=SqlAlchemyReviewCreationRepository(),
+                round_repository=SqlAlchemyReviewStartRepository(),
+                audit=audit, subjects=owner),
+            subjects=owner)
+        return create_structured_spec_review_submission_router(
+            sessions=sessions, origins=origins, submissions=service)
+    except Exception:
+        raise ProductionSolutionOutlineStartupError() from None
+
+
+def create_windows_structured_spec_review_subject(
+    *, runtime, license_guard, audit, documents, downloads, parse_results,
+    authorization_repository=None, authorization=None, reviewers=None,
+    repository=None,
+) -> StructuredSpecReviewSubjectOwner:
+    """Compose the one production SOL-06 Owner shared by submit and terminal Review."""
+    if any(value is None for value in (
+            runtime, license_guard, audit, documents, downloads,
+            parse_results)):
+        raise ProductionSolutionOutlineStartupError()
+    try:
+        project_repository = (
+            authorization_repository
+            or SqlAlchemyProjectAuthorizationRepository())
+        project_authorization = authorization or ProjectAuthorizationService(
+            unit_of_work=runtime.unit_of_work,
+            repository=project_repository)
+        reviewer_service = reviewers or ProjectReviewerQualificationService(
+            users=SqlAlchemyReviewUserAccess(), projects=project_repository)
+        subject_repository = (
+            repository or SqlAlchemyStructuredSpecReviewSubjectRepository())
         read_access = SqlAlchemyProjectReadAccess()
         fixed = DocumentFixedSourceProofService(
             documents=documents, downloads=downloads,
             parse_metadata=SqlAlchemyParseResultReadRepository(),
             parse_results=parse_results)
         evidence = EvidenceFixedProjectSourceService(
-            sessions=read_access,
-            projects=authorization_repository,
+            sessions=read_access, projects=project_repository,
             evidence=SqlAlchemyEvidenceFixedSourceRepository(),
             documents=fixed,
             allowed_project_roles=frozenset({
@@ -660,11 +706,13 @@ def create_windows_structured_spec_review_submission_router(
         requirement_trace_owner = RequirementVersionTraceOwner(
             RequirementVersionReadService(
                 unit_of_work=runtime.unit_of_work, access=read_access,
-                license_guard=license_guard, authorization=authorization,
+                license_guard=license_guard,
+                authorization=project_authorization,
                 repository=SqlAlchemyRequirementVersionReadRepository()))
         spec_trace_owner = StructuredSpecTraceOwner(StructuredSpecReadService(
             unit_of_work=runtime.unit_of_work, access=read_access,
-            license_guard=license_guard, authorization=authorization,
+            license_guard=license_guard,
+            authorization=project_authorization,
             specs=SqlAlchemyStructuredSpecReadRepository()))
         trace = TraceImplementsCoverageService(
             repository=SqlAlchemyTraceImplementsRepository(),
@@ -684,27 +732,14 @@ def create_windows_structured_spec_review_submission_router(
                 fixed_sources=fixed),
             trace=trace,
         )
-        validation_repository = SqlAlchemyStructuredSpecValidationRepository()
-        subject_repository = SqlAlchemyStructuredSpecReviewSubjectRepository()
-        owner = StructuredSpecReviewSubjectOwner(
-            repository=subject_repository, reviewers=reviewers,
+        return StructuredSpecReviewSubjectOwner(
+            repository=subject_repository, reviewers=reviewer_service,
             readiness=StructuredSpecReviewReadinessService(
-                repository=validation_repository, evaluator=evaluator),
+                repository=SqlAlchemyStructuredSpecValidationRepository(),
+                evaluator=evaluator),
             audit=audit)
-        service = StructuredSpecReviewSubmissionService(
-            unit_of_work=runtime.unit_of_work,
-            access=SqlAlchemyProjectWriteAccess(),
-            license_guard=license_guard, authorization=authorization,
-            reviewers=reviewers, receipts=SqlAlchemyIdempotencyReceipts(),
-            replay_repository=SqlAlchemyProjectReviewSubmissionRepository(),
-            identity=subject_repository,
-            reviews=ProjectReviewPersistenceService(
-                creation_repository=SqlAlchemyReviewCreationRepository(),
-                round_repository=SqlAlchemyReviewStartRepository(),
-                audit=audit, subjects=owner),
-            subjects=owner)
-        return create_structured_spec_review_submission_router(
-            sessions=sessions, origins=origins, submissions=service)
+    except ProductionSolutionOutlineStartupError:
+        raise
     except Exception:
         raise ProductionSolutionOutlineStartupError() from None
 
