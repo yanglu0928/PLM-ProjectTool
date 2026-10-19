@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-19：0.1.0-dev.0/PLAN-02-A04-P04-A01 增加关闭式WBS固定RequirementVersion引用ORM/迁移0174，双端同项目复合FK、唯一版本与顺序、正序号、检索索引及历史写/截断保护；不把待确认版本冒充Approved。兼容性/升级/回滚：从0173只增表/索引/触发器，不改冻结API/权限/License/旧数据；先备份，空表可降，有历史拒降并须向前修复或人工备份恢复。验证：Win11/PG18.6空库及已有Plan/WBS/Requirement版本升降重升、跨项目/版本/历史/drift通过；定向9项、后端全量3819通过/3跳过/5991子例。已知问题：开发wheel未验；Solution/Evidence固定引用、Approved资格/Trace、完整Owner/HTTP/UI/Output、正式信任/安装及Gate3/Pilot/发行待。
+
 - 2026-10-19：0.1.0-dev.0/PLAN-02-A04-P04 核查Requirement/Solution/Evidence现有版本键与Scope，确定WBS固定引用按Requirement、三类型Solution、Evidence、Trace证明四片实现；不以动态latest/单UUID弱引用或平行Trace替代正式来源。兼容性/升级/回滚：仅前置文档与顺序，无程序、Migration、冻结API、权限/License或历史变化；可修订顺序。验证：冻结DM/SC/API与现有上游ORM静态交叉核对，未运行功能测试。已知问题：整体Approved Solution来源、PlanVersion Owner/HTTP/UI/Output、正式信任/安装及Gate3/Pilot/发行待。
 
 - 2026-10-19：0.1.0-dev.0/PLAN-02-A04-P03 增加关闭式Milestone及同版本WBS关联ORM/迁移0173，固定目标日期/非负工期/验收规则、逻辑GateRef与有序链接，保留历史写/截断保护；不开放正式里程碑。兼容性/升级/回滚：从0172只增表/索引/触发器，不改旧历史、冻结API、角色/License；升级前备份，空表可降，有历史拒降并须向前修复或人工备份恢复。验证：Win11/PG18.6空库与已有Plan/WBS升降重升、跨版本/项目/日期/工期/验收/历史/drift通过；定向9项、最终后端全量3817通过/3跳过/5991子例。已知问题：开发wheel未验；GateRef真实性、固定引用、完整Approved输入/Owner/HTTP/UI/Output、正式信任/安装及Gate3/Pilot/发行待。

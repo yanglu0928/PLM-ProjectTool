@@ -224,6 +224,8 @@ class OrmMetadataTests(unittest.TestCase):
         for table in ('plm.pln_milestones', 'plm.pln_milestone_item_refs'):
             self.assertIn(table, Base.metadata.tables)
             historical_metadata.discard(table)
+        self.assertIn('plm.pln_item_requirement_refs', Base.metadata.tables)
+        historical_metadata.discard('plm.pln_item_requirement_refs')
         self.assertIn('plm.job_parse_cancel_versions', Base.metadata.tables)
         self.assertIn('plm.plt_maintenance_state', Base.metadata.tables)
         for table in (export_orm.exports, export_orm.members, export_orm.captures, export_orm.acceptances):

@@ -307,3 +307,40 @@ class PlanMilestoneItemRefRow(Base):
     project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     wbs_item_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     ordinal: Mapped[int] = mapped_column(nullable=False)
+
+
+class PlanWbsRequirementRefRow(Base):
+    """Closed WBS coverage of one fixed project RequirementVersion."""
+
+    __tablename__ = "pln_item_requirement_refs"
+    __table_args__ = (
+        UniqueConstraint("wbs_item_id", "requirement_version_id",
+                         name="uq_pln_item_requirements__item_version"),
+        UniqueConstraint("wbs_item_id", "ordinal",
+                         name="uq_pln_item_requirements__item_ordinal"),
+        ForeignKeyConstraint(
+            ["wbs_item_id", "plan_version_id", "plan_id", "project_id"],
+            ["plm.pln_wbs_items.wbs_item_id", "plm.pln_wbs_items.plan_version_id",
+             "plm.pln_wbs_items.plan_id", "plm.pln_wbs_items.project_id"],
+            name="fk_pln_item_requirements__wbs", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["requirement_version_id", "requirement_id", "project_id"],
+            ["plm.req_requirement_versions.requirement_version_id",
+             "plm.req_requirement_versions.requirement_id",
+             "plm.req_requirement_versions.project_id"],
+            name="fk_pln_item_requirements__requirement", ondelete="NO ACTION"),
+        CheckConstraint("ordinal>0", name="ck_pln_item_requirements__ordinal"),
+        Index("ix_pln_item_requirements__target", "project_id", "requirement_version_id",
+              "plan_version_id"),
+        {"schema": "plm"},
+    )
+
+    item_requirement_ref_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    wbs_item_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    plan_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    plan_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    requirement_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    requirement_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    ordinal: Mapped[int] = mapped_column(nullable=False)
