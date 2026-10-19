@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261019-1226：Plan 创建先保存不可变首次响应
+
+- Date/WBS：2026-10-19 / `PLAN-01-A03` 前置核查；依据冻结 PLAN_CREATE/PATCH/ARCHIVE、平台通用幂等收据与现有 SolutionOutline 模式。
+- Decision：先以 `PLAN-01-A03-P01` 追加 Plan 首次创建结果快照，再分 P02 创建 Owner 和 P03 读取 Owner；不让通用收据只凭可变 `pln_plans` 重建重放响应。
+- Reason：收据只保存 ref/status；计划后续可改名/归档，重放必须保持第一次 201 的 name/created_at/ETag。没有快照会产生历史响应漂移。
+- Impact/Rollback：仅实施顺序细化，冻结 API/角色/Scope 不变。P01 先关闭写，后续 Migration/Owner 分开验证；本项无产品或数据修改，Gate/Pilot不变。
+
 ## DEC-20261019-1225：Pilot 下一业务链缺口优先推进 Plan 前置
 
 - Date/WBS：2026-10-19 / `PILOT-CHAIN-A01`；依据用户批准的 CR-EXEC-002、冻结 DM-05/API-03/04 与 `STATUS.md`。
