@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-19：0.1.0-dev.0/PLAN-02-A04-P04-A04-P02-A03-P02-A01 增加Windows Trace图受控组合工厂，注册Document/Requirement/Section/StructuredSpec/WBS固定版本Owner并复用受权限深图与独立游标；现有启动模式未挂载。兼容性/升级/回滚：无Migration、冻结API、权限、License或旧数据变更，撤工厂即可回滚。验证：Win11/PG18.6隔离真实ASGI WBS反向两页、撤权旧游标/跨项目/License/零读Audit；定向9项/17子例，首轮并行全量既有启动器单项失败、隔离复跑通过，最终全量3843通过/3跳过/6021子例。已知问题：开发wheel、正式服务账户游标Key/License信任、启动模式接线、剩余Owner类型及Gate3/Pilot/发行待。
+
 - 2026-10-19：0.1.0-dev.0/PLAN-02-A04-P04-A04-P02-A03-P01 增加冻结Trace图上游/下游GET的可选HTTP合同、三字段固定根解析、现时逐页重证与安全图投影；默认及Windows未挂载。兼容性/升级/回滚：无Migration/旧数据/已启用API变更，撤可选路由与服务即可回滚；客户端过时游标返回现有409冲突。验证：定向28项/28子例、后端全量3841通过/3跳过/6019子例。已知问题：Windows真实HTTP/PG与目标Owner完整注册、开发wheel、正式信任及Gate3/Pilot/发行待。
 
 - 2026-10-19：0.1.0-dev.0/PLAN-02-A04-P04-A04-P02-A02 增加公开三字段WBS固定引用至Plan受权读取的Trace桥合同，resourceId=WbsItemId、versionId=PlanVersionId，限定PROJECT；未注册Windows/Trace写链。兼容性/升级/回滚：无Migration、公开API或旧数据变更，移除桥类即可回滚，旧Trace不变。验证：定向15项/18子例、后端全量3833通过/3跳过/6005子例；真实PG Plan读取已在P02-A01验收。已知问题：开发wheel、统一反向查询/Windows组合、来源/Trace一致性Owner、正式信任及Gate3/Pilot/发行待。

@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261019-1240：Windows Trace 图先组合后独立启用
+
+- Date/WBS：2026-10-19 / `PLAN-02-A04-P04-A04-P02-A03-P02-A01`；依据P02-A03-P01可选双向GET、专用`trace-graph-cursor-v1`当前账户Key及现有Windows平台模式。
+- Decision：先提供显式注入的Windows图路由工厂，注册已有受权固定版本Owner（Document、Requirement、Section、StructuredSpec、WBS）；隔离Win11/PG/HTTP验收后，再在独立片新增受控启动模式读取专用Key。未注册目标失败关闭/图truncated，现有平台模式不因新Key变成强制依赖。
+- Reason：当前账户正式图游标Key尚未供给；直接把图挂到既有模式会使无Key的已验功能无法启动。组合和启动开关分别验收，保证回滚与可追溯。
+- Impact/Rollback：无Schema/冻结API/权限/License机制变更；撤工厂或不启用新模式即可回滚。真实测试用隔离合成版本/边，不推定客户事实或正式信任。
+
 ## DEC-20261019-1239：Trace 图查询公开参数与双次现时证明
 
 - Date/WBS：2026-10-19 / `PLAN-02-A04-P04-A04-P02-A03-P01`；输入为冻结API-02图路径/三字段固定引用及既有受权限深图/加密游标服务。
