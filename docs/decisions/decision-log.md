@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261019-1227：Plan 详情先行，列表等待专用游标
+
+- Date/WBS：2026-10-19 / `PLAN-01-A04-P02`；依据冻结 PLAN_GET/LIST、API-01 不透明完整性游标与现有内部 `after_plan_id`。
+- Decision：P02 只实现默认关闭的 PLAN_GET；P03 单独实现专用 Plan 列表 cursor 与 LIST HTTP，随后 Windows 实际运行账户 key/组合。
+- Reason：GET 没有游标前置；直接把内部位置参数暴露为公开 LIST 会违背 API-01，也无法绑定 Session/Project/page_size。分片保持冻结 URL/权限不变。
+- Impact/Rollback：仅实施顺序和独立组件划分，无 API Breaking Change/Schema/Scope 变化；可撤可选 GET，Plan 历史不删除。Gate/Pilot不变。
+
 ## DEC-20261019-1226：Plan 创建先保存不可变首次响应
 
 - Date/WBS：2026-10-19 / `PLAN-01-A03` 前置核查；依据冻结 PLAN_CREATE/PATCH/ARCHIVE、平台通用幂等收据与现有 SolutionOutline 模式。

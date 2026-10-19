@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-19：0.1.0-dev.0/PLAN-01-A04-P02 增加默认关闭的冻结 PLAN_GET HTTP：当前授权身份行安全投影、Session/Host/UUID/query 边界、200/trace/ETag/no-store及安全错误映射；LIST 等独立游标。兼容性/升级/回滚：无Migration/冻结路径/角色/License/依赖/历史变化，可撤可选Router，默认与Windows当前模式仍404。验证：定向8项/9子例、后端全量3801通过/3跳过/5967子例；开发wheel1438项、SHA-256 `fa31862e4bcf8d449f21c7e9e113a9d1b76fab4a1d2a3b99fc3681fd91ccd1ba`。已知问题：专用LIST游标/Windows真实HTTP-PG、前端、PlanVersion/WBS/Output、正式信任/安装与Gate3/Pilot/发行仍待。
+
 - 2026-10-19：0.1.0-dev.0/PLAN-01-A04-P01 增加默认关闭的冻结 PLAN_CREATE HTTP；严格会话/CSRF/Origin/幂等头、JSON/UUID/query，返回201/trace/ETag/Location/no-store并安全映射错误；Plan API 自有严格解析，不跨调用 Solution 内部模块。兼容性/升级/回滚：无Migration、冻结URL/DTO/角色/License/依赖/历史变化，未注入仍404，可撤可选Router/槽。验证：定向7项/21子例，最终代码后端全量3798通过/3跳过/5958子例；开发wheel1437项、SHA-256 `0a39a45cada6a084f9b2e3e053354cef148a5f5f19986d3d58ab0305012a99e4`。已知问题：Windows真实HTTP/PG、PLAN_GET/LIST、前端、PlanVersion/WBS/Output、正式信任/安装与Gate3/Pilot/发行仍待。
 
 - 2026-10-19：0.1.0-dev.0/PLAN-01-A03-P03 增加 Plan 身份当前授权内部详情/列表读取，真实身份行而非首次结果作为状态来源，当前成员/License 重验、稳定有界分页、项目隔离/撤权和零读 Audit。兼容性/升级/回滚：无 Migration、公开 API、依赖、License 或旧数据变化，可撤内部读取，Plan 历史保留。验证：Win11/PG18.6真实 Session/Project/License、双页/隔离/撤权/零写入；定向15项/822子例、后端全量3794通过/3跳过/5945子例；开发wheel1434项、SHA-256 `88c7293cfe2f66669f84f97d64681122f14207e108e352804de50ffa452789fc`。已知问题：HTTP/Windows/UI、PlanVersion/WBS/Output、正式信任/安装与Gate3/Pilot/发行仍待。
