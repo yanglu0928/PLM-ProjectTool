@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import BigInteger, CheckConstraint, ForeignKeyConstraint, Index, Text, UniqueConstraint, text
+from sqlalchemy import BigInteger, CheckConstraint, ForeignKeyConstraint, Index, SmallInteger, Text, UniqueConstraint, text
 from sqlalchemy.dialects.postgresql import TIMESTAMP, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -122,3 +122,58 @@ class PlanVersionRow(Base):
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True, precision=6), nullable=False,
         server_default=text("statement_timestamp()"))
+
+
+class PlanWbsItemRow(Base):
+    """Closed WBS identity scoped to one immutable PlanVersion."""
+
+    __tablename__ = "pln_wbs_items"
+    __table_args__ = (
+        UniqueConstraint("wbs_item_id", "plan_version_id", "plan_id", "project_id",
+                         name="uq_pln_wbs_items__id_version_plan_project"),
+        UniqueConstraint("plan_version_id", "wbs_code",
+                         name="uq_pln_wbs_items__version_code"),
+        UniqueConstraint("plan_version_id", "parent_item_id", "ordinal",
+                         name="uq_pln_wbs_items__parent_ordinal",
+                         postgresql_nulls_not_distinct=True),
+        ForeignKeyConstraint(
+            ["plan_version_id", "plan_id", "project_id"],
+            ["plm.pln_plan_versions.plan_version_id", "plm.pln_plan_versions.plan_id",
+             "plm.pln_plan_versions.project_id"],
+            name="fk_pln_wbs_items__version", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["parent_item_id", "plan_version_id", "plan_id", "project_id"],
+            ["plm.pln_wbs_items.wbs_item_id", "plm.pln_wbs_items.plan_version_id",
+             "plm.pln_wbs_items.plan_id", "plm.pln_wbs_items.project_id"],
+            name="fk_pln_wbs_items__parent", ondelete="NO ACTION",
+            deferrable=True, initially="DEFERRED"),
+        CheckConstraint("char_length(wbs_code) BETWEEN 1 AND 64 AND wbs_code=btrim(wbs_code)",
+                        name="ck_pln_wbs_items__code"),
+        CheckConstraint("char_length(name) BETWEEN 1 AND 500 AND name=btrim(name)",
+                        name="ck_pln_wbs_items__name"),
+        CheckConstraint("(parent_item_id IS NULL AND level=1) OR "
+                        "(parent_item_id IS NOT NULL AND level BETWEEN 2 AND 6)",
+                        name="ck_pln_wbs_items__level_root"),
+        CheckConstraint("parent_item_id IS NULL OR parent_item_id<>wbs_item_id",
+                        name="ck_pln_wbs_items__not_self"),
+        CheckConstraint("ordinal>0", name="ck_pln_wbs_items__ordinal"),
+        CheckConstraint("item_state IN "
+                        "('NOT_STARTED','IN_PROGRESS','BLOCKED','COMPLETED','CANCELLED')",
+                        name="ck_pln_wbs_items__state"),
+        Index("ix_pln_wbs_items__parent_order", "plan_version_id", "parent_item_id",
+              "ordinal", "wbs_item_id"),
+        {"schema": "plm"},
+    )
+
+    wbs_item_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    plan_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    plan_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    parent_item_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    wbs_code: Mapped[str] = mapped_column(Text, nullable=False)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    level: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    ordinal: Mapped[int] = mapped_column(nullable=False)
+    item_state: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'NOT_STARTED'"))

@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261019-1231：WBS 身份先用复合关系闭锁落库
+
+- Date/WBS：2026-10-19 / `PLAN-02-A04-P01`；依据冻结 DM-05、SC-01/02/03 与0170 PlanVersion 根表。
+- Decision：先建关闭式 `pln_wbs_items`，固定 Project/Plan/Version 复合归属、同版本父节点、版本内编码及同父排序；根为level1、子为level2..6。任务分类、负责人、日期、验收和固定引用随后独立加入，在完整快照 Owner 接线前不开放写入。
+- Reason：这些局部不变量可由数据库在历史与并发下保证；父子level连续、全图DAG/覆盖及跨模块授权不能靠单行CHECK伪装。当前整体已批准Solution输入不存在，提前开放WBS写入会产生伪正式事实。
+- Impact/Rollback：仅新增关闭式表/ORM/Migration0171，不改冻结API、现有PlanVersion/批准指针/角色/License；空表可降，有历史拒降并向前修复或人工备份恢复。需在可弃PG做空库/有Plan版本升级、跨版本/重复/层级负例和drift。
+
 ## DEC-20261019-1230：Plan 身份 UI 只暴露真实可用操作
 
 - Date/WBS：2026-10-19 / `PLAN-01-A04-P05-A02`；依据冻结 Plan 身份 API、项目导航与前端安全客户端。

@@ -217,6 +217,8 @@ class OrmMetadataTests(unittest.TestCase):
         historical_metadata.discard('plm.pln_plan_create_results')
         self.assertIn('plm.pln_plan_versions', Base.metadata.tables)
         historical_metadata.discard('plm.pln_plan_versions')
+        self.assertIn('plm.pln_wbs_items', Base.metadata.tables)
+        historical_metadata.discard('plm.pln_wbs_items')
         self.assertIn('plm.job_parse_cancel_versions', Base.metadata.tables)
         self.assertIn('plm.plt_maintenance_state', Base.metadata.tables)
         for table in (export_orm.exports, export_orm.members, export_orm.captures, export_orm.acceptances):

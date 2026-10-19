@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-19：0.1.0-dev.0/PLAN-02-A04-P01 增加关闭式WbsItem身份/层级ORM与迁移0171，固定同Project/Plan/Version父子关系、WBS编码、NULL根顺序、根level1/子level2..6及历史写/截断保护；未开放PlanVersion业务写。兼容性/升级/回滚：从0170只增表/索引/触发器，不改既有历史、冻结API、角色/License；升级前备份，空WBS表可降，有历史拒降并须向前修复或人工备份恢复。验证：Win11/PG18.6空库与已有PlanVersion升降重升、跨项目/版本/层级/重复/历史/drift通过；定向9项、后端全量3813通过/3跳过/5991子例。已知问题：开发wheel未验；FS依赖、Milestone、固定引用、完整图/批准输入/Owner/UI/Output、正式信任/安装及Gate3/Pilot/发行待。
+
 - 2026-10-19：0.1.0-dev.0/PLAN-02-A03 完成 WBS/FS/Milestone/固定引用与0170版本根表前置核查，将独立 Schema 分为 WbsItem、FS Dependency、Milestone、固定引用四片，完整图/范围/跨模块授权仍由后续 Owner 验证，整体 Approved Solution 输入未就绪前不开放写口。兼容性/升级/回滚：仅文档与实施顺序，无代码、Migration、冻结API、角色/License或数据变化；可修订顺序。验证：冻结 DM/SC/API 与现有 ORM/Migration 静态交叉核对，未运行功能测试。已知问题：WBS/FS/Milestone/固定引用与版本业务链、正式信任/安装、Gate3/Pilot/发行待。
 
 - 2026-10-19：0.1.0-dev.0/PLAN-02-A02 增加关闭式 PlanVersion 根表/ORM与0170顺序迁移，Plan 当前批准指针建立同Plan/Project复合FK但继续强制为空；版本根表禁止未装Owner写入和历史清除。兼容性/升级/回滚：从0169仅增表/FK，不改既有Plan/冻结API/权限/License；升级前备份，空版本表可降，有历史拒降并须向前修复或人工备份恢复。验证：Win11/PG18.6已有Plan升降重升、约束/Owner/指针/历史及drift通过；定向8项，首次全量仅固定ORM清单遗漏失败，修正后3811通过/3跳过/5991子例。已知问题：开发wheel因终端安全策略未验；WBS/FS/Milestone、整体Approved Solution输入、PlanVersion业务/API/UI/Review/Output、正式信任/安装、Gate3/Pilot/发行仍待。
