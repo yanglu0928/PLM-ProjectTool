@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-19：0.1.0-dev.0/SOL-06-A13-P09 扩展一次性浏览器夹具并完成 Windows 11 Edge→构建 Vue→生产 FastAPI/Uvicorn→真实 Session/CSRF/License/PostgreSQL 18.6 的专项验证闭环：首次现时观察、原 Idempotency-Key 重放、Trace 缺口与维护提示、不可送审声明、跨项目 404/清屏均通过，数据库保持唯一验证收据/Audit；旧详情 Edge/PG 回归通过。兼容性/升级/回滚：仅验收脚本，无 Migration、产品 API/权限/License/依赖/静态资源或旧数据变化，无升级动作，可撤显式验收模式。已知问题：Trace、非空 Artifact 与非结构类型业务证明仍缺，正式信任、Server2025/Debian13、性能、Gate3/Pilot/发行仍待。
+
 - 2026-10-19：0.1.0-dev.0/SOL-06-A13-P08 新增专项验证前端安全客户端与固定详情入口：零正文Session/CSRF/幂等传输，严格核对20字段、八维事实、四类型有序检查、issue和valid/ready派生；未知结果按主体/项目/版本保留原Key，报告须与详情身份/摘要/计数完全一致。页面逐项提示维护方向，并明确200/valid/DRAFT均不等于批准、评审或客户确认。兼容性/升级/回滚：仅前端静态资源，无Migration、后端API/角色、License、依赖或旧数据变化；重建前端即可升级，可撤入口但服务端历史保留。验证：定向2文件9项，前端全量146文件1810项、TypeScript/Vue typecheck和production build通过；既有主chunk大小警告保留。已知问题：真实Edge/PG页面验收未完成；Trace、Artifact及非结构类型Owner仍缺，正式信任、Server2025/Debian13、性能、Gate3/Pilot/发行仍待。
 
 - 2026-10-19：0.1.0-dev.0/SOL-06-A13-P07 将`SOL_SPEC_VALIDATE`仅装入Windows显式读写模式，组合真实Session/License/项目策略、Requirement/Section/Document/Evidence Owner、共享锁Repository、收据与Audit；依赖缺失拒启动，默认/登录专用/只读模式保持关闭。兼容性/升级/回滚：无Migration、冻结API/角色、License权益、依赖或旧数据变化；关闭显式写模式可停新入口，历史Audit/收据保留。验证：Windows factory/生产组合/合同定向58项/94子例；Win11可弃PG18.6真实HTTP首报/重放、来源撤回与恢复后摘要漂移、经理/实施成员、历史、隔离、License和严格空请求；后端全量3725通过/3跳过/5817子例；开发wheel 1408条目，SHA-256 `20720690b589155da4ab3ad6e1acbb14bc0c29315490c32104a3bfc4029852dd`。已知问题：前端/Edge未实现；Trace、Artifact及非结构类型Owner仍缺，正式信任、Server2025/Debian13、性能、Gate3/Pilot/发行仍待。

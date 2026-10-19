@@ -29,6 +29,7 @@ from plm_assistant.entrypoints.windows_solution_outline import (
     create_windows_structured_spec_list_router,
     create_windows_structured_spec_read_router,
     create_windows_structured_spec_revise_router,
+    create_windows_structured_spec_validate_router,
 )
 from plm_assistant.modules.auth.api.login import create_login_router
 from plm_assistant.modules.auth.api.login_origin_policy import LoginOriginPolicy
@@ -123,13 +124,16 @@ def on_browser(*, port, runtime, audit, license_guard, project, other_project,
                evidence, documents, downloads, parse_results,
                validation_mode=False, spec_mode=False, detail_mode=False,
                list_mode=False, revise_mode=False, stale_spec=None,
-               current_requirement_version=None, **_unused):
+               current_requirement_version=None,
+               spec_validation_mode=False, **_unused):
     if detail_mode and not spec_mode:
         raise ValueError("Structured spec detail proof requires spec mode")
     if list_mode and not (spec_mode and detail_mode):
         raise ValueError("Structured spec list proof requires spec detail mode")
     if revise_mode and not (spec_mode and detail_mode):
         raise ValueError("Structured spec revise proof requires spec detail mode")
+    if spec_validation_mode and not (spec_mode and detail_mode):
+        raise ValueError("Structured spec validation proof requires spec detail mode")
     if not (DIST / "index.html").is_file():
         raise RuntimeError("Build frontend before SectionVersion CREATE browser proof")
     hasher = _writer(port, project)
@@ -226,6 +230,11 @@ def on_browser(*, port, runtime, audit, license_guard, project, other_project,
                     **common, audit=audit, documents=documents,
                     downloads=downloads, parse_results=parse_results)
                 if revise_mode else None),
+            solution_structured_spec_validate_router=(
+                create_windows_structured_spec_validate_router(
+                    **common, audit=audit, documents=documents,
+                    downloads=downloads, parse_results=parse_results)
+                if spec_validation_mode else None),
             solution_section_version_validate_router=(
                 create_windows_section_version_validate_router(
                     **common, audit=audit, documents=documents,
@@ -266,6 +275,8 @@ def on_browser(*, port, runtime, audit, license_guard, project, other_project,
                                         "PLM_SPEC_DETAIL_ACCEPTANCE": "1" if detail_mode else "0",
                                         "PLM_SPEC_LIST_ACCEPTANCE": "1" if list_mode else "0",
                                         "PLM_SPEC_REVISE_ACCEPTANCE": "1" if revise_mode else "0",
+                                        "PLM_SPEC_VALIDATE_ACCEPTANCE": (
+                                            "1" if spec_validation_mode else "0"),
                                         "PLM_STALE_SPEC_ID": str(stale_spec or ""),
                                         "PLM_CURRENT_REQUIREMENT_VERSION": str(
                                             current_requirement_version or "")})
@@ -307,7 +318,16 @@ def on_browser(*, port, runtime, audit, license_guard, project, other_project,
                                   "WHERE operation='V1_SOL_STRUCTURED_SPEC_REVISE'").fetchone()[0] == 1
                 assert db.execute("SELECT count(*) FROM plm.aud_events "
                                   "WHERE action='SOL_STRUCTURED_SPEC_REVISED'").fetchone()[0] == 1
-    if revise_mode:
+            if spec_validation_mode:
+                assert db.execute("SELECT count(*) FROM plm.plt_idempotency_receipts "
+                                  "WHERE operation='V1_SOL_STRUCTURED_SPEC_VALIDATE'").fetchone()[0] == 1
+                assert db.execute("SELECT count(*) FROM plm.aud_events "
+                                  "WHERE action='SOL_STRUCTURED_SPEC_VALIDATED'").fetchone()[0] == 1
+    if spec_validation_mode:
+        print("SOL_06_A13_P09_STRUCTURED_SPEC_VALIDATE_BROWSER_PASS: "
+              "Win11 Edge/PG detail validation, original-key replay, maintenance "
+              "guidance, cross-project clear, one validation receipt and audit")
+    elif revise_mode:
         print("SOL_06_A12_P07_STRUCTURED_SPEC_REVISE_BROWSER_PASS: "
               "Win11 Edge/PG detail-to-revise, original-key replay, source drift, "
               "cross-project hidden, one create/revise receipt and audit")

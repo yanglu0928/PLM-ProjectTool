@@ -10,6 +10,7 @@ const password = process.env.PLM_BROWSER_SYNTHETIC_PASSWORD;
 const detailMode = process.env.PLM_SPEC_DETAIL_ACCEPTANCE === "1";
 const listMode = process.env.PLM_SPEC_LIST_ACCEPTANCE === "1";
 const reviseMode = process.env.PLM_SPEC_REVISE_ACCEPTANCE === "1";
+const validateMode = process.env.PLM_SPEC_VALIDATE_ACCEPTANCE === "1";
 const staleSpecId = process.env.PLM_STALE_SPEC_ID;
 const currentRequirementVersion = process.env.PLM_CURRENT_REQUIREMENT_VERSION;
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -23,6 +24,9 @@ if (listMode && !detailMode) throw new Error("List acceptance requires detail ac
 if (reviseMode && (!detailMode || !uuid.test(staleSpecId ?? "")
   || !uuid.test(currentRequirementVersion ?? ""))) {
   throw new Error("Revise acceptance requires detail, stale spec and current requirement version");
+}
+if (validateMode && !detailMode) {
+  throw new Error("Structured spec validation acceptance requires detail acceptance");
 }
 const activeRequirementVersion = reviseMode ? currentRequirementVersion : requirementVersion;
 const profile = await mkdtemp(join(tmpdir(), "plm-structured-spec-edge-"));
@@ -46,6 +50,7 @@ async function findPage() {
 }
 let socket; let serial = 0;
 const pending = new Map(); const responses = []; const requests = []; const reviseRequests = [];
+const validateRequests = [];
 const errors = [];
 function send(method, params = {}) {
   const id = ++serial;
@@ -104,6 +109,13 @@ try {
         `${origin}/api/v1/projects/${project}/structured-solution-specs/`)
       && event.params.request.url.endsWith(":revise")) {
       reviseRequests.push({ url: event.params.request.url,
+        headers: event.params.request.headers, body: event.params.request.postData });
+    }
+    if (event.method === "Network.requestWillBeSent"
+      && event.params.request.url.startsWith(
+        `${origin}/api/v1/projects/${project}/structured-solution-specs/`)
+      && event.params.request.url.endsWith(":validate")) {
+      validateRequests.push({ url: event.params.request.url,
         headers: event.params.request.headers, body: event.params.request.postData });
     }
     if (event.method === "Network.responseReceived" && event.params.response.url.includes("/api/")) {
@@ -199,6 +211,67 @@ try {
       || !detail.requirement?.includes(`/projects/${project}/requirements/${requirement}`)
       || !detail.section?.includes(`/projects/${project}/solution-sections/${section}/versions/`)
       || detail.raw) throw new Error(`Detail projection or fixed links invalid: ${JSON.stringify(detail)}`);
+    if (validateMode) {
+      await clickText("验证当前事实");
+      await waitFor("document.body?.innerText?.includes('固定内容与主要来源核验通过')",
+        "structured spec validation report");
+      const validatePath = `/api/v1/projects/${project}/structured-solution-specs/${specId}:validate`;
+      if (validateRequests.length !== 1 || validateRequests[0].url !== `${origin}${validatePath}`
+        || validateRequests[0].body !== undefined
+        || responses.filter(item => item.url === `${origin}${validatePath}`
+          && item.status === 200).length !== 1) {
+        throw new Error(`First real VALIDATE 200 missing: ${JSON.stringify(validateRequests)}`);
+      }
+      const originalValidate = validateRequests[0];
+      const validateKey = Object.entries(originalValidate.headers)
+        .find(([name]) => name.toLowerCase() === "idempotency-key")?.[1];
+      const validateCsrf = Object.entries(originalValidate.headers)
+        .find(([name]) => name.toLowerCase() === "x-csrf-token")?.[1];
+      const validationView = await evaluate(`(()=>({text:document.body.innerText,
+        audit:[...document.querySelectorAll('.validation-report code')][0]?.textContent}))()`);
+      if (typeof validateKey !== "string" || typeof validateCsrf !== "string"
+        || !uuid.test(validationView.audit ?? "")
+        || !["尚不具备送审条件；不得视为已批准。", "固定版本完整性：通过",
+          "类型化内容结构：通过", "需求来源：通过", "章节来源：通过",
+          "证据来源：通过", "输出附件：通过", "追溯覆盖：暂无法核验",
+          "当前缺少专项到需求/章节的可信追溯覆盖。", "系列当前版本：通过",
+          "SCOPE_MAPPING：通过"].every(part => validationView.text.includes(part))) {
+        throw new Error(`Validation report or maintenance guidance invalid: ${JSON.stringify(validationView)}`);
+      }
+      const validationStorageKey = `plm.sol.structured-spec.validate.pending.${actor}.${project}.${specId}`;
+      const validationPending = JSON.stringify({ actor, project, spec: specId, key: validateKey });
+      await evaluate(`sessionStorage.setItem(${JSON.stringify(validationStorageKey)},
+        ${JSON.stringify(validationPending)})`);
+      await route(`/projects/${project}/solution-sections`);
+      await waitFor("document.body?.innerText?.includes('方案章节')", "leave validated detail");
+      await route(`/projects/${project}/structured-solution-specs/${specId}`);
+      await waitFor("document.body?.innerText?.includes('存在结果未知的原验证操作')",
+        "validation pending restored");
+      if (await evaluate("document.querySelector('.validation-report')!==null")) {
+        throw new Error("Old validation report survived detail reload");
+      }
+      await evaluate("[...document.querySelectorAll('input[type=checkbox]')].at(-1)?.click()");
+      await clickText("按原操作号重试验证");
+      await waitFor("document.body?.innerText?.includes('固定内容与主要来源核验通过')",
+        "validation receipt replayed");
+      if (validateRequests.length !== 2
+        || Object.entries(validateRequests[1].headers)
+          .find(([name]) => name.toLowerCase() === "idempotency-key")?.[1] !== validateKey
+        || validateRequests[1].body !== undefined
+        || responses.filter(item => item.url === `${origin}${validatePath}`
+          && item.status === 200).length !== 2
+        || await evaluate(`Boolean(sessionStorage.getItem(${JSON.stringify(validationStorageKey)}))`)) {
+        throw new Error("Original validation key was not replayed exactly or pending survived");
+      }
+      const crossValidateStatus = await evaluate(`(async()=>{const response=await fetch(
+        ${JSON.stringify(`/api/v1/projects/${otherProject}/structured-solution-specs/${specId}:validate`)},
+        {method:'POST',credentials:'same-origin',headers:{'Accept':'application/json',
+          'Idempotency-Key':'structured-spec-cross-validate-0001',
+          'X-CSRF-Token':${JSON.stringify(validateCsrf)}}});return response.status})()`);
+      if (crossValidateStatus !== 404) {
+        throw new Error(`Cross-project validation returned ${crossValidateStatus}`);
+      }
+    }
     if (reviseMode) {
       await clickText("基于此版本创建修订草案");
       await waitFor("document.querySelector('#spec-revise-title') && document.querySelector('#revise-source')",
@@ -305,6 +378,9 @@ try {
     if (await evaluate("document.body.innerText.includes('Old PLM')")) {
       throw new Error("Cross-project detail retained previous content");
     }
+    if (validateMode && await evaluate("document.querySelector('.validation-report')!==null")) {
+      throw new Error("Cross-project detail retained prior validation report");
+    }
     if (responses.some(item => item.url === `${origin}${crossPath}` && item.status === 200)) {
       throw new Error("Cross-project detail leaked HTTP 200");
     }
@@ -369,7 +445,9 @@ try {
   await waitFor("document.body?.innerText?.includes('创建结构化专项草案')", "cross-project route");
   if (await evaluate("document.querySelector('form')!==null")) throw new Error("Cross-project create leaked");
   if (errors.length) throw new Error(`Browser errors: ${JSON.stringify(errors)}`);
-  console.log(reviseMode
+  console.log(validateMode
+    ? "STRUCTURED_SPEC_VALIDATE_EDGE PASS: first observation, original-key replay, maintenance guidance, cross-project clear"
+    : reviseMode
     ? "STRUCTURED_SPEC_REVISE_EDGE PASS: fixed prefill, real v2 DRAFT, original-key replay, source drift, cross-project hidden"
     : listMode
     ? "STRUCTURED_SPEC_LIST_EDGE PASS: project entry, signed two-page history, fixed detail, cross-project 404/clear"
