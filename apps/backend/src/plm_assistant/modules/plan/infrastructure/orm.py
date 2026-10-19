@@ -177,3 +177,55 @@ class PlanWbsItemRow(Base):
     ordinal: Mapped[int] = mapped_column(nullable=False)
     item_state: Mapped[str] = mapped_column(
         Text, nullable=False, server_default=text("'NOT_STARTED'"))
+
+
+class PlanWbsDependencyRow(Base):
+    """Closed same-version FS edge; DAG validation belongs to the Owner."""
+
+    __tablename__ = "pln_wbs_dependencies"
+    __table_args__ = (
+        UniqueConstraint("plan_version_id", "predecessor_item_id", "successor_item_id",
+                         name="uq_pln_wbs_deps__version_edge"),
+        ForeignKeyConstraint(
+            ["plan_version_id", "plan_id", "project_id"],
+            ["plm.pln_plan_versions.plan_version_id", "plm.pln_plan_versions.plan_id",
+             "plm.pln_plan_versions.project_id"],
+            name="fk_pln_wbs_deps__version", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["predecessor_item_id", "plan_version_id", "plan_id", "project_id"],
+            ["plm.pln_wbs_items.wbs_item_id", "plm.pln_wbs_items.plan_version_id",
+             "plm.pln_wbs_items.plan_id", "plm.pln_wbs_items.project_id"],
+            name="fk_pln_wbs_deps__predecessor", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["successor_item_id", "plan_version_id", "plan_id", "project_id"],
+            ["plm.pln_wbs_items.wbs_item_id", "plm.pln_wbs_items.plan_version_id",
+             "plm.pln_wbs_items.plan_id", "plm.pln_wbs_items.project_id"],
+            name="fk_pln_wbs_deps__successor", ondelete="NO ACTION"),
+        CheckConstraint("dependency_type='FS'", name="ck_pln_wbs_deps__type"),
+        CheckConstraint("predecessor_item_id<>successor_item_id",
+                        name="ck_pln_wbs_deps__not_self"),
+        CheckConstraint("lag_unit IS NULL OR (char_length(lag_unit) BETWEEN 1 AND 32 "
+                        "AND lag_unit=btrim(lag_unit))", name="ck_pln_wbs_deps__lag_unit"),
+        CheckConstraint("lag_reason IS NULL OR (char_length(lag_reason) BETWEEN 1 AND 1000 "
+                        "AND lag_reason=btrim(lag_reason))", name="ck_pln_wbs_deps__lag_reason"),
+        CheckConstraint("lag=0 OR (lag_unit IS NOT NULL AND lag_reason IS NOT NULL)",
+                        name="ck_pln_wbs_deps__lag_explicit"),
+        Index("ix_pln_wbs_deps__out", "plan_version_id", "predecessor_item_id",
+              "successor_item_id"),
+        Index("ix_pln_wbs_deps__in", "plan_version_id", "successor_item_id",
+              "predecessor_item_id"),
+        {"schema": "plm"},
+    )
+
+    dependency_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    plan_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    plan_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    predecessor_item_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    successor_item_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    dependency_type: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'FS'"))
+    lag: Mapped[int] = mapped_column(nullable=False, server_default=text("0"))
+    lag_unit: Mapped[str | None] = mapped_column(Text)
+    lag_reason: Mapped[str | None] = mapped_column(Text)
