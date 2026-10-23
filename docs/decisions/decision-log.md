@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261023-1243：固定历史版本重证复用创建时来源证明
+
+- Date/WBS：2026-10-23 / `SOL-03-A06-P03-A01`；依据 A06-P02 三维合同和现有 OutlineVersion DRAFT 来源 Proof Service。
+- Decision：以历史版本号/前驱构造固定 Base，使用同一事务的 Section、Requirement、Reference Application Port 重算完整内容摘要；顺序结构单独判断。端口失败为 UNAVAILABLE，完整摘要漂移为 FAIL；coverage 在正式 SectionVersion/Trace Owner 出现前维持 UNAVAILABLE。
+- Reason：复用已验的跨模块证明与摘要规则，避免用动态 next-version 校验旧版或重复实现一套逐源资格；不会将未实现的覆盖校验误报 PASS。
+- Impact/Rollback：新增未装配内部评估器与单元测试，不改数据库/API/权限/License；移除该评估器即可回滚。
+
 ## DEC-20261023-1242：Outline 验证合同先于现时证明 Owner
 
 - Date/WBS：2026-10-23 / `SOL-03-A06-P02`；依据冻结 API-04 order/source/coverage 和 SOL-03-A06-P01 缺口核查。

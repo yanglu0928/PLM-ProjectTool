@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-23：0.1.0-dev.0/SOL-03-A06-P03-A01 新增OutlineVersion固定历史顺序与当前来源重证，按固定版本号/前驱重算Section/Requirement/Reference完整指纹；资格失效失败关闭，coverage仍不可用且不能送审。兼容性/升级/回滚：未挂载HTTP，无Schema、冻结API、权限、License、依赖或数据变化；移除未装配内部评估器即可回滚。验证：定向42项、Win11/PG18.6真实DRAFT创建/反读及Reference撤销重证、后端全量3885通过/3跳过/6023子例。已知问题：SectionVersion/Trace覆盖、VALIDATE/Review/界面、正式信任/安装、Plan和Gate3/Pilot/发行待。
+
 - 2026-10-23：0.1.0-dev.0/SOL-03-A06-P02 新增OutlineVersion现时验证的纯合同：order/source/coverage 三维默认不可用，固定身份/幂等摘要、严格快照、内容无关Audit原因和不可伪造报告结论；不读取历史报告作为送审资格。兼容性/升级/回滚：未挂载HTTP，无Schema、冻结API、权限、License或旧数据变化，撤未装配纯合同即可回滚。验证：定向54项、后端完整回归3875通过/3跳过/6023子例。已知问题：现时证明Owner/HTTP/Review、Section批准、PlanVersion完整链、正式信任/安装及Gate3/Pilot/发行待。
 
 - 2026-10-23：0.1.0-dev.0/SOL-03-A06-P01 完成OutlineVersion正式Review上游前置核查，明确现时验证、统一Review状态窄门、原子送审和Section单独批准缺口，避免草稿来源提前进入Plan。兼容性/升级/回滚：仅进度与实施顺序文档，无程序、Schema、API或数据变更；可按后续验收修订顺序。验证：冻结DM/API与当前ORM/迁移/应用静态交叉核查，未运行功能测试。已知问题：Outline/Section Review、PlanVersion完整链、正式信任/安装及Gate3/Pilot/发行待。
