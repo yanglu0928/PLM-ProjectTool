@@ -498,6 +498,10 @@ class SolutionSectionSpecRefRow(Base):
              "plm.sol_structured_specs.project_id"],
             name="fk_sol_section_specs__spec", ondelete="NO ACTION"),
         CheckConstraint("ordinal>0", name="ck_sol_section_specs__ordinal"),
+        CheckConstraint(
+            "fit_rationale IS NULL OR (char_length(fit_rationale) BETWEEN 1 AND 1000 "
+            "AND fit_rationale=btrim(fit_rationale))",
+            name="ck_sol_section_specs__fit_rationale"),
         Index("ix_sol_section_specs__target", "structured_solution_spec_id",
               "solution_section_version_id"),
         {"schema": "plm"},
@@ -511,6 +515,7 @@ class SolutionSectionSpecRefRow(Base):
     spec_series_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     structured_solution_spec_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
+    fit_rationale: Mapped[str | None] = mapped_column(Text)
 
 
 class SolutionSectionRequirementRefRow(Base):

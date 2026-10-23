@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-23：0.1.0-dev.0/SOL-05-A04-P12-P03 按CR-SOL-023新增0181/ORM可空、有界的Section固定SpecRef作者适配依据，旧行NULL，Guard保持新依据写入闭锁及历史不可变。兼容性/升级/回滚：旧请求/201/API/权限不变；Win11空库升降重升、真实旧引用升级和无新依据回降重升通过，非NULL历史拒降，应关入口前滚修复。验证：PG闭锁/空白超长约束/head drift、迁移合同4项、后端全量3901通过/3跳过/6061子例。已知问题：输入/Owner/现时Spec维/客户Review、正式信任/Gate3/Pilot/发行未完成。
+
 - 2026-10-23：0.1.0-dev.0/SOL-05-A04-P12-P02 登记CR-SOL-023/DEC-1206，确定每条固定SpecRef需作者适配依据并在VALIDATE时重证现时资格，`spec=PASS`仅代表送审准备，不是语义自动正确或客户批准；旧引用不回填。兼容性/升级/回滚：本片仅设计，无程序/Schema/API/数据变化，可在实施前修订。验证：冻结六维合同、当前Section/Spec/Document/Review代码与方案静态对照；未运行功能测试。已知问题：0181、输入/Owner/现时验证/UI、正式信任/Gate3/Pilot/发行仍待。
 
 - 2026-10-23：0.1.0-dev.0/SOL-05-A04-P12-P01 完成Section VALIDATE Spec维前置核查：固定Spec当前批准/Review/章节祖先资格只证明候选来源，尚不能证明新章节正文与专项内容适配；`spec`继续UNAVAILABLE，不自动送审或作客户确认。兼容性/升级/回滚：仅进度与实施顺序文档，无程序/Schema/API/数据变化，可依后续证据修订。验证：Gate 2合同、CR-SOL-022、当前六维Validator及SOL-06/0180代码静态交叉核查，未运行本项功能测试。已知问题：可审计适配证据、Section/Outline Review、正式信任/Gate3/Pilot/发行未完成。
