@@ -26,6 +26,12 @@ class SectionRequirementRef:
 
 
 @dataclass(frozen=True, slots=True)
+class SectionStructuredSpecRef:
+    spec_series_id: uuid.UUID
+    structured_solution_spec_id: uuid.UUID
+
+
+@dataclass(frozen=True, slots=True)
 class SectionVersionDraftInput:
     project_id: uuid.UUID
     solution_section_id: uuid.UUID
@@ -36,6 +42,9 @@ class SectionVersionDraftInput:
     evidence_ids: tuple[uuid.UUID, ...]
     assumptions: tuple[dict[str, object], ...] = field(repr=False)
     exclusions: tuple[dict[str, object], ...] = field(repr=False)
+    spec_binding_state: str = "UNDECLARED"
+    spec_not_required_reason: str | None = field(default=None, repr=False)
+    structured_spec_refs: tuple[SectionStructuredSpecRef, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,6 +59,9 @@ class ValidatedSectionVersionDraft:
     assumptions_json: bytes = field(repr=False)
     exclusions_json: bytes = field(repr=False)
     request_fingerprint: bytes = field(repr=False)
+    spec_binding_state: str = "UNDECLARED"
+    spec_not_required_reason: str | None = field(default=None, repr=False)
+    structured_spec_refs: tuple[SectionStructuredSpecRef, ...] = ()
 
     def assumptions(self) -> list[dict[str, object]]:
         return json.loads(self.assumptions_json)
@@ -105,7 +117,35 @@ def validate_section_version_draft(value: object) -> ValidatedSectionVersionDraf
             or type(value.requirement_refs) is not tuple
             or len(value.requirement_refs) > 500
             or type(value.evidence_ids) is not tuple
-            or len(value.evidence_ids) > 500):
+            or len(value.evidence_ids) > 500
+            or type(value.spec_binding_state) is not str
+            or value.spec_binding_state not in (
+                "UNDECLARED", "NONE_REQUIRED", "FIXED_REFS")
+            or type(value.structured_spec_refs) is not tuple
+            or len(value.structured_spec_refs) > 500):
+        raise SectionVersionInputError()
+    if value.spec_binding_state == "UNDECLARED":
+        if value.spec_not_required_reason is not None or value.structured_spec_refs:
+            raise SectionVersionInputError()
+    elif value.spec_binding_state == "NONE_REQUIRED":
+        reason = value.spec_not_required_reason
+        if (type(reason) is not str or not 1 <= len(reason) <= 1000
+                or reason != reason.strip()
+                or reason != unicodedata.normalize("NFC", reason)
+                or any(unicodedata.category(char) in ("Cc", "Cs") for char in reason)
+                or value.structured_spec_refs):
+            raise SectionVersionInputError()
+    elif value.spec_not_required_reason is not None or not value.structured_spec_refs:
+        raise SectionVersionInputError()
+    for item in value.structured_spec_refs:
+        if (type(item) is not SectionStructuredSpecRef
+                or not _id(item.spec_series_id)
+                or not _id(item.structured_solution_spec_id)):
+            raise SectionVersionInputError()
+    if (len({item.spec_series_id for item in value.structured_spec_refs})
+            != len(value.structured_spec_refs)
+            or len({item.structured_solution_spec_id for item in value.structured_spec_refs})
+            != len(value.structured_spec_refs)):
         raise SectionVersionInputError()
     for item in value.requirement_refs:
         if (type(item) is not SectionRequirementRef
@@ -122,7 +162,7 @@ def validate_section_version_draft(value: object) -> ValidatedSectionVersionDraf
     assumptions_json, assumptions = _declarations(value.assumptions)
     exclusions_json, exclusions = _declarations(value.exclusions)
     try:
-        fingerprint = canonical_payload_fingerprint({
+        payload = {
             "project_id": str(value.project_id),
             "solution_section_id": str(value.solution_section_id),
             "title": value.title,
@@ -138,11 +178,22 @@ def validate_section_version_draft(value: object) -> ValidatedSectionVersionDraf
             "evidence_ids": [str(item) for item in value.evidence_ids],
             "assumptions": assumptions,
             "exclusions": exclusions,
-        })
+        }
+        if value.spec_binding_state != "UNDECLARED":
+            payload.update({
+                "spec_binding_state": value.spec_binding_state,
+                "spec_not_required_reason": value.spec_not_required_reason,
+                "structured_spec_refs": [
+                    [str(item.spec_series_id), str(item.structured_solution_spec_id)]
+                    for item in value.structured_spec_refs],
+            })
+        fingerprint = canonical_payload_fingerprint(payload)
     except IdempotencyError:
         raise SectionVersionInputError() from None
     return ValidatedSectionVersionDraft(
         value.project_id, value.solution_section_id, value.title,
         value.content_document_version_ref, value.content_artifact_ref,
         value.requirement_refs, value.evidence_ids,
-        assumptions_json, exclusions_json, fingerprint)
+        assumptions_json, exclusions_json, fingerprint,
+        value.spec_binding_state, value.spec_not_required_reason,
+        value.structured_spec_refs)

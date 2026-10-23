@@ -15,7 +15,8 @@ from plm_assistant.modules.project.application.authorization import (
 
 from .read_section import SectionCurrentView
 from .section_version_input import (
-    SectionRequirementRef, SectionVersionDraftInput, SectionVersionInputError,
+    SectionRequirementRef, SectionStructuredSpecRef,
+    SectionVersionDraftInput, SectionVersionInputError,
     validate_section_version_draft,
 )
 
@@ -54,6 +55,9 @@ class SectionVersionHistoryView:
     review_round_ref: uuid.UUID | None
     created_by: uuid.UUID
     created_at: datetime
+    spec_binding_state: str = "UNDECLARED"
+    spec_not_required_reason: str | None = field(default=None, repr=False)
+    structured_spec_refs: tuple[SectionStructuredSpecRef, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -262,6 +266,8 @@ class SectionVersionReadService:
                 query.project_id, query.solution_section_id,
                 value.title, value.content_document_version_ref,
                 value.content_artifact_ref, value.requirement_refs,
-                value.evidence_ids, value.assumptions, value.exclusions))
+                value.evidence_ids, value.assumptions, value.exclusions,
+                value.spec_binding_state, value.spec_not_required_reason,
+                value.structured_spec_refs))
         except SectionVersionInputError:
             raise SectionVersionReadError() from None

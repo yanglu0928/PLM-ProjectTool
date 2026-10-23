@@ -10,12 +10,13 @@ from plm_assistant.modules.solution.application.read_section_version import (
     SectionVersionHistoryView,
 )
 from plm_assistant.modules.solution.application.section_version_input import (
-    SectionRequirementRef,
+    SectionRequirementRef, SectionStructuredSpecRef,
 )
 
 from .orm import (
     SolutionSectionEvidenceRefRow as EvidenceRef,
     SolutionSectionRequirementRefRow as RequirementRef,
+    SolutionSectionSpecRefRow as SpecRef,
     SolutionSectionVersionCreateResultRow as FirstResult,
     SolutionSectionVersionRow as Version,
 )
@@ -99,8 +100,14 @@ class SqlAlchemySectionVersionReadRepository:
             EvidenceRef.solution_section_id == section_id,
             EvidenceRef.project_id == project_id,
         ).order_by(EvidenceRef.ordinal)).scalars())
+        specs = tuple(session.execute(select(SpecRef).where(
+            SpecRef.solution_section_version_id == version_id,
+            SpecRef.solution_section_id == section_id,
+            SpecRef.project_id == project_id,
+        ).order_by(SpecRef.ordinal)).scalars())
         _ordered(requirements, version.declared_requirement_count)
         _ordered(evidence, version.declared_evidence_count)
+        _ordered(specs, version.declared_spec_count)
         if (version.version_no < 1
                 or version.version_state not in (
                     "DRAFT", "IN_REVIEW", "APPROVED", "RETURNED", "SUPERSEDED", "RESTRICTED")
@@ -116,6 +123,19 @@ class SqlAlchemySectionVersionReadRepository:
                 or len({item.requirement_id for item in requirements}) != len(requirements)
                 or len({item.requirement_version_id for item in requirements}) != len(requirements)
                 or len({item.evidence_id for item in evidence}) != len(evidence)
+                or len({item.spec_series_id for item in specs}) != len(specs)
+                or len({item.structured_solution_spec_id for item in specs}) != len(specs)
+                or (version.spec_binding_state == "UNDECLARED"
+                    and (version.declared_spec_count != 0
+                         or version.spec_not_required_reason is not None))
+                or (version.spec_binding_state == "NONE_REQUIRED"
+                    and (version.declared_spec_count != 0
+                         or not version.spec_not_required_reason))
+                or (version.spec_binding_state == "FIXED_REFS"
+                    and (version.declared_spec_count < 1
+                         or version.spec_not_required_reason is not None))
+                or version.spec_binding_state not in (
+                    "UNDECLARED", "NONE_REQUIRED", "FIXED_REFS")
                 or any(getattr(version, field) != getattr(first, field) for field in (
                     "solution_section_version_id", "solution_section_id", "project_id",
                     "version_no", "title", "content_document_version_ref",
@@ -142,4 +162,8 @@ class SqlAlchemySectionVersionReadRepository:
             tuple(dict(item) for item in version.exclusions),
             version.supersedes_version_ref, version.review_ref,
             version.review_round_ref, version.created_by, version.created_at,
+            version.spec_binding_state, version.spec_not_required_reason,
+            tuple(SectionStructuredSpecRef(item.spec_series_id,
+                                           item.structured_solution_spec_id)
+                  for item in specs),
         )

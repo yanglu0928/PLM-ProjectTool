@@ -4,8 +4,10 @@ import uuid
 import unittest
 from dataclasses import replace
 
+from plm_assistant.modules.platform.application.idempotency import canonical_payload_fingerprint
 from plm_assistant.modules.solution.application.section_version_input import (
     SectionRequirementRef,
+    SectionStructuredSpecRef,
     SectionVersionDraftInput,
     SectionVersionInputError,
     validate_section_version_draft,
@@ -123,6 +125,52 @@ class SectionVersionInputTests(unittest.TestCase):
             assumptions=(), exclusions=()))
         self.assertEqual(result.requirement_refs, ())
         self.assertEqual(result.evidence_ids, ())
+
+    def test_spec_declaration_is_explicit_bounded_and_legacy_digest_stable(self) -> None:
+        legacy = validate_section_version_draft(self.value)
+        self.assertEqual(legacy.spec_binding_state, "UNDECLARED")
+        self.assertEqual(legacy.structured_spec_refs, ())
+        self.assertEqual(legacy.request_fingerprint, canonical_payload_fingerprint({
+            "project_id": str(self.value.project_id),
+            "solution_section_id": str(self.value.solution_section_id),
+            "title": self.value.title,
+            "content_document_version_ref": str(self.value.content_document_version_ref),
+            "content_artifact_ref": None,
+            "requirement_refs": [[str(self.requirement.requirement_id),
+                                  str(self.requirement.requirement_version_id)]],
+            "evidence_ids": [str(self.evidence)],
+            "assumptions": list(self.value.assumptions),
+            "exclusions": list(self.value.exclusions),
+        }))
+        declared = validate_section_version_draft(replace(
+            self.value, spec_binding_state="NONE_REQUIRED",
+            spec_not_required_reason="No specialist design for this section"))
+        self.assertNotEqual(declared.request_fingerprint, legacy.request_fingerprint)
+        self.assertNotIn("No specialist design", repr(declared))
+        ref = SectionStructuredSpecRef(uuid.uuid4(), uuid.uuid4())
+        fixed = validate_section_version_draft(replace(
+            self.value, spec_binding_state="FIXED_REFS",
+            structured_spec_refs=(ref,)))
+        self.assertEqual(fixed.structured_spec_refs, (ref,))
+        self.assertNotEqual(fixed.request_fingerprint, declared.request_fingerprint)
+        for altered in (
+            replace(self.value, spec_binding_state="NONE_REQUIRED"),
+            replace(self.value, spec_binding_state="NONE_REQUIRED",
+                    spec_not_required_reason=" padded"),
+            replace(self.value, spec_binding_state="NONE_REQUIRED",
+                    spec_not_required_reason="e\u0301"),
+            replace(self.value, spec_binding_state="FIXED_REFS"),
+            replace(self.value, spec_binding_state="FIXED_REFS",
+                    structured_spec_refs=(ref, ref)),
+            replace(self.value, spec_binding_state="FIXED_REFS",
+                    structured_spec_refs=(SectionStructuredSpecRef(
+                        ref.spec_series_id, uuid.uuid4()), ref)),
+            replace(self.value, spec_binding_state="UNDECLARED",
+                    structured_spec_refs=(ref,)),
+            replace(self.value, spec_binding_state="UNKNOWN"),
+        ):
+            with self.subTest(altered=altered.spec_binding_state):
+                self.denied(altered)
 
 
 if __name__ == "__main__":

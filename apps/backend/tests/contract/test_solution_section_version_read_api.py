@@ -90,6 +90,8 @@ class SectionVersionReadApiTests(unittest.TestCase):
         self.assertTrue(page["has_more"])
         self.assertEqual(str(SECOND_ID), page["items"][0]["solution_section_version_id"])
         self.assertEqual(1, page["items"][0]["declared_evidence_count"])
+        self.assertEqual("UNDECLARED", page["items"][0]["spec_binding_state"])
+        self.assertEqual(0, page["items"][0]["declared_spec_count"])
         self.assertNotIn("evidence_ids", page["items"][0])
         self.assertNotIn("requirement_refs", page["items"][0])
         self.assertNotIn("assumptions", page["items"][0])
@@ -109,6 +111,8 @@ class SectionVersionReadApiTests(unittest.TestCase):
                            "requirement_version_id": str(REQ_VERSION)}],
                          detail.json()["data"]["requirement_refs"])
         self.assertEqual([{"note": "资料待补"}], detail.json()["data"]["assumptions"])
+        self.assertIsNone(detail.json()["data"]["spec_not_required_reason"])
+        self.assertEqual([], detail.json()["data"]["structured_spec_refs"])
         self.assertNotIn("etag", detail.headers)
 
     def test_cursor_request_and_cross_scope_rejections(self):

@@ -22,7 +22,8 @@ from plm_assistant.modules.solution.application.create_section_version import (
     SectionVersionCreateService, SectionVersionInitialView,
 )
 from plm_assistant.modules.solution.application.section_version_input import (
-    SectionRequirementRef, SectionVersionDraftInput, SectionVersionInputError,
+    SectionRequirementRef, SectionStructuredSpecRef,
+    SectionVersionDraftInput, SectionVersionInputError,
     validate_section_version_draft,
 )
 
@@ -31,11 +32,17 @@ _FIELDS = frozenset({
     "title", "content_document_version_ref", "content_artifact_ref",
     "requirement_refs", "evidence_ids", "assumptions", "exclusions",
 })
+_SPEC_FIELDS = frozenset({
+    "spec_binding_state", "spec_not_required_reason", "structured_spec_refs",
+})
 
 
 def _draft(body: object, project: uuid.UUID,
            section: uuid.UUID) -> SectionVersionDraftInput:
-    if type(body) is not dict or set(body) != _FIELDS:
+    if (type(body) is not dict or not _FIELDS.issubset(body)
+            or set(body) - _FIELDS - _SPEC_FIELDS
+            or ((set(body) & _SPEC_FIELDS)
+                and "spec_binding_state" not in body)):
         raise ApplicationError("REQUEST_MALFORMED")
     if (type(body["title"]) is not str
             or type(body["requirement_refs"]) is not list
@@ -58,11 +65,24 @@ def _draft(body: object, project: uuid.UUID,
             raise ApplicationError("VALIDATION_FAILED")
         requirements.append(SectionRequirementRef(
             _uuid(item["requirement_id"]), _uuid(item["requirement_version_id"])))
+    raw_specs = body.get("structured_spec_refs", [])
+    if type(raw_specs) is not list:
+        raise ApplicationError("VALIDATION_FAILED")
+    specs = []
+    for item in raw_specs:
+        if (type(item) is not dict
+                or set(item) != {"spec_series_id", "structured_solution_spec_id"}):
+            raise ApplicationError("VALIDATION_FAILED")
+        specs.append(SectionStructuredSpecRef(
+            _uuid(item["spec_series_id"]),
+            _uuid(item["structured_solution_spec_id"])))
     draft = SectionVersionDraftInput(
         project, section, body["title"], document, artifact,
         tuple(requirements),
         tuple(_uuid(item) for item in body["evidence_ids"]),
         tuple(body["assumptions"]), tuple(body["exclusions"]),
+        body.get("spec_binding_state", "UNDECLARED"),
+        body.get("spec_not_required_reason"), tuple(specs),
     )
     try:
         validate_section_version_draft(draft)

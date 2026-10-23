@@ -137,6 +137,16 @@ class SectionVersionCreateTests(unittest.TestCase):
             self.assertEqual(caught.exception.code, "VALIDATION_FAILED")
             self.assertEqual(self.proof_calls, [])
 
+    def test_explicit_spec_declaration_fails_closed_until_owner_installed(self) -> None:
+        declared = replace(self.draft, spec_binding_state="NONE_REQUIRED",
+                           spec_not_required_reason="No specialist design")
+        with self.assertRaises(SectionVersionCreateError) as caught:
+            self.service.create(replace(self.command, draft=declared))
+        self.assertEqual(caught.exception.code, "SOURCE_UNAVAILABLE")
+        self.assertEqual(self.proof_calls, [])
+        self.assertEqual(self.receipts.fingerprints, [])
+        self.assertFalse(self.tx.committed)
+
     def test_first_create_commits_result_receipt_and_one_audit(self) -> None:
         view = self.service.create(self.command)
         self.assertTrue(self.tx.committed)

@@ -170,6 +170,9 @@ class SectionVersionReadTests(unittest.TestCase):
             replace(FIRST, content_fingerprint=b"short"),
             replace(FIRST, content_document_version_ref=None),
             replace(FIRST, version_state="UNKNOWN"),
+            replace(FIRST, spec_binding_state="NONE_REQUIRED"),
+            replace(FIRST, spec_binding_state="FIXED_REFS"),
+            replace(FIRST, spec_not_required_reason="Not declared"),
         ):
             with self.subTest(bad=bad):
                 self.versions.value = bad

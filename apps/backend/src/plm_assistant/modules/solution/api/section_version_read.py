@@ -57,6 +57,8 @@ def _summary(view: SectionVersionHistoryView, project: uuid.UUID,
         "content_fingerprint": view.content_fingerprint.hex(),
         "declared_requirement_count": len(view.requirement_refs),
         "declared_evidence_count": len(view.evidence_ids),
+        "spec_binding_state": view.spec_binding_state,
+        "declared_spec_count": len(view.structured_spec_refs),
         "assumption_count": len(view.assumptions),
         "exclusion_count": len(view.exclusions),
         "supersedes_version_ref": (
@@ -89,6 +91,11 @@ def _detail(view: SectionVersionHistoryView, project: uuid.UUID,
         "evidence_ids": [str(item) for item in view.evidence_ids],
         "assumptions": list(view.assumptions),
         "exclusions": list(view.exclusions),
+        "spec_not_required_reason": view.spec_not_required_reason,
+        "structured_spec_refs": [{
+            "spec_series_id": str(item.spec_series_id),
+            "structured_solution_spec_id": str(item.structured_solution_spec_id),
+        } for item in view.structured_spec_refs],
     }
 
 

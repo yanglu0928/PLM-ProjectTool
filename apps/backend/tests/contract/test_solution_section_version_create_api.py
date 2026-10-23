@@ -44,6 +44,8 @@ class Creates:
         if self.error:
             raise SectionVersionCreateError(self.error)
         draft = command.draft
+        if draft.spec_binding_state != "UNDECLARED":
+            raise SectionVersionCreateError("SOURCE_UNAVAILABLE")
         return SectionVersionInitialView(
             VERSION, draft.solution_section_id, self.project, 1,
             draft.title, draft.content_document_version_ref, b"f" * 32,
@@ -148,6 +150,38 @@ class SectionVersionCreateApiTests(unittest.TestCase):
         self.creates.project = uuid.uuid4()
         self.assertEqual(503, self.client.post(
             self.path, headers=self.headers, json=self.body).status_code)
+
+    def test_optional_spec_contract_parses_but_does_not_open_write_owner(self):
+        none = {**self.body, "spec_binding_state": "NONE_REQUIRED",
+                "spec_not_required_reason": "No specialist design"}
+        response = self.client.post(self.path, headers=self.headers, json=none)
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(self.creates.commands[-1].draft.spec_binding_state,
+                         "NONE_REQUIRED")
+        self.assertEqual(self.creates.commands[-1].draft.spec_not_required_reason,
+                         "No specialist design")
+        spec = uuid.uuid4()
+        series = uuid.uuid4()
+        fixed = {**self.body, "spec_binding_state": "FIXED_REFS",
+                 "structured_spec_refs": [{"spec_series_id": str(series),
+                                           "structured_solution_spec_id": str(spec)}]}
+        self.assertEqual(self.client.post(
+            self.path, headers=self.headers, json=fixed).status_code, 503)
+        self.assertEqual(self.creates.commands[-1].draft.structured_spec_refs[0]
+                         .structured_solution_spec_id, spec)
+        for invalid, expected in (
+            ({**self.body, "spec_not_required_reason": "No specialist design"}, 400),
+            ({**self.body, "spec_binding_state": "NONE_REQUIRED"}, 422),
+            ({**self.body, "spec_binding_state": "FIXED_REFS",
+              "structured_spec_refs": []}, 422),
+            ({**self.body, "spec_binding_state": "FIXED_REFS",
+              "structured_spec_refs": [{"spec_series_id": str(series),
+                                        "structured_solution_spec_id": "bad"}]}, 422),
+        ):
+            with self.subTest(invalid=invalid):
+                self.assertEqual(self.client.post(
+                    self.path, headers=self.headers, json=invalid).status_code,
+                    expected)
 
 
 if __name__ == "__main__":
