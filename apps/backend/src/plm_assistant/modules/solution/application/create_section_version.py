@@ -156,6 +156,9 @@ class SectionVersionCreateService:
             raise SectionVersionCreateError("VALIDATION_FAILED")
         try:
             draft = validate_section_version_draft(command.draft)
+            if any(item.fit_rationale is not None
+                   for item in draft.structured_spec_refs):
+                raise SectionVersionCreateError("SOURCE_UNAVAILABLE")
             validate_idempotency_key(command.idempotency_key)
             self._guard.require_valid(trace_id=command.trace_id)
             with self._uow() as tx:

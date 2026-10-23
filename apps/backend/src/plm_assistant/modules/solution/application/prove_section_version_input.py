@@ -101,6 +101,9 @@ class SectionVersionInputProofService:
             raise SectionVersionInputProofError("VALIDATION_FAILED") from None
         if value.spec_binding_state == "FIXED_REFS" and self._specs is None:
             raise SectionVersionInputProofError()
+        if any(item.fit_rationale is not None
+               for item in value.structured_spec_refs):
+            raise SectionVersionInputProofError()
         # OutputArtifact has no Owner proof yet. Never treat its UUID as content.
         if value.content_artifact_ref is not None:
             raise SectionVersionInputProofError()

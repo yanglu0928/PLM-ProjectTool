@@ -71,11 +71,14 @@ def _draft(body: object, project: uuid.UUID,
     specs = []
     for item in raw_specs:
         if (type(item) is not dict
-                or set(item) != {"spec_series_id", "structured_solution_spec_id"}):
+                or not {"spec_series_id", "structured_solution_spec_id"}.issubset(item)
+                or set(item) - {"spec_series_id", "structured_solution_spec_id",
+                                "fit_rationale"}):
             raise ApplicationError("VALIDATION_FAILED")
         specs.append(SectionStructuredSpecRef(
             _uuid(item["spec_series_id"]),
-            _uuid(item["structured_solution_spec_id"])))
+            _uuid(item["structured_solution_spec_id"]),
+            item.get("fit_rationale")))
     draft = SectionVersionDraftInput(
         project, section, body["title"], document, artifact,
         tuple(requirements),

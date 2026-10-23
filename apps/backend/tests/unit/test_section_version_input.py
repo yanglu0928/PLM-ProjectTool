@@ -153,6 +153,14 @@ class SectionVersionInputTests(unittest.TestCase):
             structured_spec_refs=(ref,)))
         self.assertEqual(fixed.structured_spec_refs, (ref,))
         self.assertNotEqual(fixed.request_fingerprint, declared.request_fingerprint)
+        fit_ref = replace(ref, fit_rationale="Matches reviewed interface scope")
+        fitted = validate_section_version_draft(replace(
+            self.value, spec_binding_state="FIXED_REFS",
+            structured_spec_refs=(fit_ref,)))
+        self.assertNotEqual(fitted.request_fingerprint, fixed.request_fingerprint)
+        self.assertEqual(fitted.structured_spec_refs[0].fit_rationale,
+                         "Matches reviewed interface scope")
+        self.assertNotIn("Matches reviewed interface scope", repr(fitted))
         for altered in (
             replace(self.value, spec_binding_state="NONE_REQUIRED"),
             replace(self.value, spec_binding_state="NONE_REQUIRED",
@@ -168,6 +176,10 @@ class SectionVersionInputTests(unittest.TestCase):
             replace(self.value, spec_binding_state="UNDECLARED",
                     structured_spec_refs=(ref,)),
             replace(self.value, spec_binding_state="UNKNOWN"),
+            *(replace(self.value, spec_binding_state="FIXED_REFS",
+                      structured_spec_refs=(replace(ref, fit_rationale=bad),))
+              for bad in ("", " padded", "trailing ", "e\u0301", "a\x00b",
+                          "x" * 1001, 12)),
         ):
             with self.subTest(altered=altered.spec_binding_state):
                 self.denied(altered)

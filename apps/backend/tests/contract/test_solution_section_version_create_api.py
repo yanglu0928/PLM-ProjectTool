@@ -169,6 +169,13 @@ class SectionVersionCreateApiTests(unittest.TestCase):
             self.path, headers=self.headers, json=fixed).status_code, 503)
         self.assertEqual(self.creates.commands[-1].draft.structured_spec_refs[0]
                          .structured_solution_spec_id, spec)
+        fit = {**fixed, "structured_spec_refs": [{
+            **fixed["structured_spec_refs"][0],
+            "fit_rationale": "Applicable to this section"}]}
+        self.assertEqual(self.client.post(
+            self.path, headers=self.headers, json=fit).status_code, 503)
+        self.assertEqual(self.creates.commands[-1].draft.structured_spec_refs[0]
+                         .fit_rationale, "Applicable to this section")
         for invalid, expected in (
             ({**self.body, "spec_not_required_reason": "No specialist design"}, 400),
             ({**self.body, "spec_binding_state": "NONE_REQUIRED"}, 422),
@@ -177,6 +184,10 @@ class SectionVersionCreateApiTests(unittest.TestCase):
             ({**self.body, "spec_binding_state": "FIXED_REFS",
               "structured_spec_refs": [{"spec_series_id": str(series),
                                         "structured_solution_spec_id": "bad"}]}, 422),
+            ({**fit, "structured_spec_refs": [{
+                **fit["structured_spec_refs"][0], "unexpected": True}]}, 422),
+            ({**fit, "structured_spec_refs": [{
+                **fit["structured_spec_refs"][0], "fit_rationale": " "}]}, 422),
         ):
             with self.subTest(invalid=invalid):
                 self.assertEqual(self.client.post(

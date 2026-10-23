@@ -164,6 +164,7 @@ class SqlAlchemySectionVersionReadRepository:
             version.review_round_ref, version.created_by, version.created_at,
             version.spec_binding_state, version.spec_not_required_reason,
             tuple(SectionStructuredSpecRef(item.spec_series_id,
-                                           item.structured_solution_spec_id)
+                                           item.structured_solution_spec_id,
+                                           item.fit_rationale)
                   for item in specs),
         )

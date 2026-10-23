@@ -95,6 +95,8 @@ def _detail(view: SectionVersionHistoryView, project: uuid.UUID,
         "structured_spec_refs": [{
             "spec_series_id": str(item.spec_series_id),
             "structured_solution_spec_id": str(item.structured_solution_spec_id),
+            **({"fit_rationale": item.fit_rationale}
+               if item.fit_rationale is not None else {}),
         } for item in view.structured_spec_refs],
     }
 

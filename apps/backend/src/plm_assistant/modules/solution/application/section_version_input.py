@@ -29,6 +29,7 @@ class SectionRequirementRef:
 class SectionStructuredSpecRef:
     spec_series_id: uuid.UUID
     structured_solution_spec_id: uuid.UUID
+    fit_rationale: str | None = field(default=None, repr=False)
 
 
 @dataclass(frozen=True, slots=True)
@@ -140,7 +141,15 @@ def validate_section_version_draft(value: object) -> ValidatedSectionVersionDraf
     for item in value.structured_spec_refs:
         if (type(item) is not SectionStructuredSpecRef
                 or not _id(item.spec_series_id)
-                or not _id(item.structured_solution_spec_id)):
+                or not _id(item.structured_solution_spec_id)
+                or (item.fit_rationale is not None and (
+                    type(item.fit_rationale) is not str
+                    or not 1 <= len(item.fit_rationale) <= 1000
+                    or item.fit_rationale != item.fit_rationale.strip()
+                    or item.fit_rationale != unicodedata.normalize(
+                        "NFC", item.fit_rationale)
+                    or any(unicodedata.category(char) in ("Cc", "Cs")
+                           for char in item.fit_rationale)))):
             raise SectionVersionInputError()
     if (len({item.spec_series_id for item in value.structured_spec_refs})
             != len(value.structured_spec_refs)
@@ -185,6 +194,8 @@ def validate_section_version_draft(value: object) -> ValidatedSectionVersionDraf
                 "spec_not_required_reason": value.spec_not_required_reason,
                 "structured_spec_refs": [
                     [str(item.spec_series_id), str(item.structured_solution_spec_id)]
+                    + ([item.fit_rationale]
+                       if item.fit_rationale is not None else [])
                     for item in value.structured_spec_refs],
             })
         fingerprint = canonical_payload_fingerprint(payload)

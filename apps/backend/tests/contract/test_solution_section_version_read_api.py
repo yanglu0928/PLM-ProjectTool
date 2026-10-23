@@ -23,7 +23,9 @@ from plm_assistant.modules.solution.api.section_version_read import (
 from plm_assistant.modules.solution.application.read_section_version import (
     SectionVersionHistoryView, SectionVersionPage, SectionVersionReadError,
 )
-from plm_assistant.modules.solution.application.section_version_input import SectionRequirementRef
+from plm_assistant.modules.solution.application.section_version_input import (
+    SectionRequirementRef, SectionStructuredSpecRef,
+)
 
 
 PROJECT, SECTION, DOCUMENT, REQUIREMENT, REQ_VERSION, EVIDENCE, FIRST_ID, SECOND_ID, ACTOR = (
@@ -114,6 +116,29 @@ class SectionVersionReadApiTests(unittest.TestCase):
         self.assertIsNone(detail.json()["data"]["spec_not_required_reason"])
         self.assertEqual([], detail.json()["data"]["structured_spec_refs"])
         self.assertNotIn("etag", detail.headers)
+
+    def test_spec_fit_history_is_opt_in_without_changing_legacy_ref_shape(self):
+        series, spec = uuid.uuid4(), uuid.uuid4()
+        self.reads.get = lambda _query, _version_id: replace(
+            FIRST, spec_binding_state="FIXED_REFS",
+            structured_spec_refs=(SectionStructuredSpecRef(series, spec),))
+        old = self.client.get(self.path + "/" + str(FIRST_ID),
+                              headers=self.headers)
+        self.assertEqual(old.status_code, 200)
+        self.assertEqual(old.json()["data"]["structured_spec_refs"], [{
+            "spec_series_id": str(series),
+            "structured_solution_spec_id": str(spec)}])
+        self.reads.get = lambda _query, _version_id: replace(
+            FIRST, spec_binding_state="FIXED_REFS",
+            structured_spec_refs=(SectionStructuredSpecRef(
+                series, spec, "Applicable to this section"),))
+        fitted = self.client.get(self.path + "/" + str(FIRST_ID),
+                                 headers=self.headers)
+        self.assertEqual(fitted.status_code, 200)
+        self.assertEqual(fitted.json()["data"]["structured_spec_refs"], [{
+            "spec_series_id": str(series),
+            "structured_solution_spec_id": str(spec),
+            "fit_rationale": "Applicable to this section"}])
 
     def test_cursor_request_and_cross_scope_rejections(self):
         cursor = self.codec.encode(session_token=b"s" * 32,
