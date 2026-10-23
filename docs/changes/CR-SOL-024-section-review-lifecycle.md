@@ -18,6 +18,8 @@
 
 实施顺序：P13-P02 现时送审准备只读 Owner；P13-P03 Review Subject/受控状态Schema；P13-P04 Subject+提交服务；P13-P05 可选HTTP/Windows真实PG与终态客户模拟流程；P13-P06 前端/浏览器；然后 Outline Review/Plan。每片维护原权限：ProjectManager 发起、指定 1～N 当前合格客户确认人、统一 Review Engine 记录客户决定。`ready_for_review`不是批准，合成账户/决定只作内部验收。
 
+P13-P03按DEC-20261023-1208再拆为P01“封闭、不可变结果历史表”与P02“受结果闭合约束的状态/指针Guard”；P01不允许任何新Review写入，也不把Schema存在当正式评审能力。原冻结版不追写。
+
 ## 验证与剩余风险
 
 送审前同事务重采样六维事实，不复用旧 VALIDATE 收据；终态批准前重证现时资料/权限/固定版本与 Review 快照；退回意见必填、任一退回则轮次退回、历史永久保留。Win11/PG18 真实 Session/角色/跨项目/License/Trace撤销/Spec替代/Document失效/重放/并发/Audit/回滚、全量后端和前端/浏览器分层验收。正式客户签署、正式信任、Gate 3、Pilot/Release 均不因代码实现预先通过。

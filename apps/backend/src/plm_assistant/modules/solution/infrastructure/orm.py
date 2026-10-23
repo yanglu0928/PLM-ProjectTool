@@ -640,6 +640,73 @@ class StructuredSolutionSpecRow(Base):
         server_default=text("statement_timestamp()"))
 
 
+class SectionReviewStateResultRow(Base):
+    """Closed Section Review transition result; P13-P03-P01 installs no writer."""
+
+    __tablename__ = "sol_section_review_state_results"
+    __table_args__ = (
+        UniqueConstraint("solution_section_version_id", "event_type",
+                         name="uq_sol_section_review_results__version_event"),
+        UniqueConstraint("review_id", "review_round_id", "event_type",
+                         name="uq_sol_section_review_results__round_event"),
+        ForeignKeyConstraint(
+            ["solution_section_version_id", "solution_section_id", "project_id"],
+            ["plm.sol_section_versions.solution_section_version_id",
+             "plm.sol_section_versions.solution_section_id",
+             "plm.sol_section_versions.project_id"],
+            name="fk_sol_section_review_results__version", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["previous_approved_version_ref", "solution_section_id", "project_id"],
+            ["plm.sol_section_versions.solution_section_version_id",
+             "plm.sol_section_versions.solution_section_id",
+             "plm.sol_section_versions.project_id"],
+            name="fk_sol_section_review_results__previous", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["current_approved_version_ref", "solution_section_id", "project_id"],
+            ["plm.sol_section_versions.solution_section_version_id",
+             "plm.sol_section_versions.solution_section_id",
+             "plm.sol_section_versions.project_id"],
+            name="fk_sol_section_review_results__current", ondelete="NO ACTION"),
+        ForeignKeyConstraint(["review_id"], ["plm.rvw_reviews.review_id"],
+                             name="fk_sol_section_review_results__review",
+                             ondelete="NO ACTION"),
+        ForeignKeyConstraint(["review_round_id"], ["plm.rvw_review_rounds.review_round_id"],
+                             name="fk_sol_section_review_results__round",
+                             ondelete="NO ACTION"),
+        ForeignKeyConstraint(["actor_id"], ["plm.auth_users.user_id"],
+                             name="fk_sol_section_review_results__actor",
+                             ondelete="NO ACTION"),
+        CheckConstraint("event_type IN ('START','APPROVED','RETURNED','WITHDRAWN')",
+                        name="ck_sol_section_review_results__event"),
+        CheckConstraint(
+            "(event_type='APPROVED' AND "
+            "current_approved_version_ref=solution_section_version_id) OR "
+            "(event_type<>'APPROVED' AND current_approved_version_ref "
+            "IS NOT DISTINCT FROM previous_approved_version_ref)",
+            name="ck_sol_section_review_results__pointer"),
+        CheckConstraint("isfinite(created_at)",
+                        name="ck_sol_section_review_results__created_at"),
+        Index("ix_sol_section_review_results__review_round", "review_id",
+              "review_round_id"),
+        {"schema": "plm"},
+    )
+    review_state_result_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    solution_section_version_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), nullable=False)
+    solution_section_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    review_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    review_round_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    event_type: Mapped[str] = mapped_column(Text, nullable=False)
+    previous_approved_version_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    current_approved_version_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    actor_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        TIMESTAMP(timezone=True, precision=6), nullable=False,
+        server_default=text("statement_timestamp()"))
+
+
 class StructuredSpecPayloadRow(Base):
     """Immutable one-to-one typed JSONB snapshot; semantic Owner remains separate."""
 

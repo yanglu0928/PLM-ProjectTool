@@ -11714,3 +11714,10 @@
 - Decision：为SOL-05独立建立PROJECT Review Subject。送审和终态在调用者事务内按固定SectionVersion重新证明六维现时ready及精确Review快照，不把旧VALIDATE Audit/收据或Outline/Spec批准当章节批准；项目负责人发起，指定客户确认人由统一Review处理。政策标识采用`SOLUTION_SECTION_ALL_V1`（内部稳定代码，不改变冻结API），全员处理/任一退回规则沿统一Kernel。先只读Owner，后独立迁移受控开放状态与批准指针，再接提交/终态/HTTP/UI。
 - Reason：0160/0148数据库Guard仍全拒相关UPDATE，直接写入会绕过Review；旧验证时点与Review提交/批准时点不同，来源可失效。Section/Outline/Spec在冻结合同中分别评审。
 - Impact/Rollback/Verification：CR-SOL-024先记录方案、风险、Guard迁移与有史拒降；不改原冻结提交。只读片可撤不动历史；后续状态迁移须ORM、空/有史升降、drift、非法转移/并发、真实Win11/PG/HTTP和全量回归。客户签署不能由AI模拟为生产事实。
+
+# DEC-20261023-1208：Section Review Schema 先封闭结果历史再开放状态
+
+- Date/WBS：2026-10-23 / `SOL-05-A04-P13-P03-P01`；依据 CR-SOL-024、0160 SectionVersion/0148 Section身份Guard、0165 SOL-06 Review历史封印模式。
+- Decision：P13-P03拆成两项独立验收。P01先建 `sol_section_review_state_results` 的ORM/迁移，固定Project/Section/Version、Review/Round、事件、批准指针前后值及Actor，复合FK与唯一约束齐全，但DML触发器全拒且原Section状态/指针Guard不动。P02再以独立迁移受控开放版本状态、Section批准指针和不可变结果封闭检查；只有同事务完整Review结果才允许提交。不得将P01表存在视为Review已可用。
+- Reason：直接同时解锁两张业务表而结果闭合尚未验证，会留下无客户Review也能改APPROVED或挪指针的窗口；先封闭记录表可独立检验Schema、旧史升级及回滚。
+- Impact/Rollback/Verification：无冻结API、Scope/权限/License变更。P01表为空可降级；有行必须拒降并保留历史，不能清表强退。先做Win11/PG18空库及旧Section史升降重升、非法INSERT/UPDATE/DELETE/TRUNCATE和ORM drift，再实施P02；Gate/Pilot不提前通过。
