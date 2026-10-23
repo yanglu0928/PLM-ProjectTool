@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-23：0.1.0-dev.0/SOL-05-A04-P11-P04 前置核查记录 DEC-20261023-1203：先开放有理由的NONE_REQUIRED同事务Owner，待Spec适用/现时Review资格证明后再开放FIXED_REFS；旧首响不暗改。兼容性/升级/回滚：本片仅设计/顺序，无程序、Schema/API、数据变化；下一片0179应拒有新历史降级。验证：现有0178/0160 Guard、Spec Review/来源代码与CR-SOL-022静态交叉核查，未运行功能测试。已知问题：两类Owner/正式Review、Gate3/Pilot/发行均待。
+
 - 2026-10-23：0.1.0-dev.0/SOL-05-A04-P11-P03 新增SectionVersion固定Spec可选声明的严格输入合同及历史只读反读；旧请求仍UNDECLARED且旧幂等摘要/首次201形状不变，明确声明在Owner安装前503闭锁，不能被静默忽略。兼容性/升级/回滚：冻结路径、权限、License和Schema不变；GET/LIST仅加字段，删除新合同即可回退本片且不得删除0178/业务历史。验证：定向27通过/82子例，Win11隔离PG18.6真实ORM旧史反读及伪造不完整引用拒绝，后端全量3893通过/3跳过/6035子例。已知问题：声明同事务Owner/资格/指纹/首响、Section/Outline Review、正式信任/Gate3/Pilot/发行未完成。
 
 - 2026-10-23：0.1.0-dev.0/SOL-05-A04-P11-P02 按CR-SOL-022新增SectionVersion显式Spec声明与固定SpecVersion引用的闭锁Schema/ORM（Alembic 0178）；旧行保持UNDECLARED、零引用及原内容/首响，Owner/API未开放。兼容性/升级/回滚：冻结API/权限/License不变；空库及有数据可升级，任何新声明或引用历史存在时拒绝降级，禁止删除历史，应关闭入口并前滚修复。验证：Win11隔离PG18.6空/旧数据升降再升、跨项目FK、重复/非法状态、闭锁及ORM drift通过；后端3890通过/3跳过/6023子例。已知问题：声明写Owner、可选输入/反读、Spec现时资格、Section/Outline Review与正式信任/Gate3/Pilot/发行未完成。

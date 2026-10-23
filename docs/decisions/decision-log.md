@@ -11679,3 +11679,10 @@
 - Decision：在新迁移中只开放 Root/Payload/RequirementRef/SectionRef/EvidenceRef 的 INSERT，UPDATE/DELETE/TRUNCATE 仍拒绝；Root 只可 DRAFT 且无 Review，按 spec_series_id 事务级 advisory lock 串行确定 `version_no` 和同 series/project/type 前驱；子行只可在其 Root 创建的同一数据库事务插入（核对 Root `xmin` 与当前事务 ID），提交后集合封印；延迟约束触发器检查每个 Root 提交时恰有一个同类型 payload、至少一条需求与章节固定引用、各集合 ordinal 从 1 连续且无 ArtifactRef。OutputArtifact 目标不存在，ArtifactRef DML 继续闭锁。仅在所有 SOL-06 表为空时允许迁移降级重新闭锁；非空历史禁止清空回滚。
 - Reason：单独允许 Root 会产生无载荷/无来源空壳，单独开放 Artifact UUID 会伪造目标。数据库完整性是受权 Owner 的必要而非充分条件；API/用户入口仍不开放，未来写 Owner 必须在同事务提供 Session/CSRF/License/Project、来源现时证明、Audit 和持久幂等。
 - Impact/Verification：不修改冻结字段或 `/api/v1`，保留 0161～0163 原迁移；新增 0164 仅触发器/函数行为，ORM Schema 不变。需 Win11 可弃 PG18.6 空/有数据升级、完整/缺集合与顺序/类型/升版/并发/Artifact/不可变负例、空降级重升、非空拒降、drift 和全量回归。Gate3/Pilot 不因 INSERT-only Schema 放行。
+
+# DEC-20261023-1203：Section Spec 声明写入分片与旧首响保持
+
+- Date/WBS：2026-10-23 / `SOL-05-A04-P11-P04`；依据 CR-SOL-022、0178 闭锁 Schema、P11-P03 兼容合同和现有 0160 SectionVersion 同事务闭合。
+- Decision：先做 `P04-P01`，仅开放显式 `NONE_REQUIRED`（人工有界理由）根写入并绑定已有请求/内容指纹、Audit/持久幂等；旧 UNDECLARED 和首次 201 形状不变。非空 `FIXED_REFS` 保持闭锁，待独立 SpecVersion 同项目/适用性/当前 Review 资格证明后做 `P04-P02` 的子集合 Owner/Guard。P04-P01 不把“无需专项”当客户 Review 或自动 PASS。
+- Reason：0178 子表虽有复合 FK，但 FK 仅证明版本存在和同项目，不证明 Spec 适用于本章节或当前批准；提前放行会固化错误事实。当前首次结果表没有 Spec 声明字段，但冻结 201 形状没有这些字段，故本片不改旧回放；新声明可由受权 GET/DETAIL 读取。
+- Impact/Rollback/Verification：分片不改变 CR-SOL-022 目标或冻结 API/权限。下一片需 0179 有历史拒降的受控根 INSERT Guard、真实 Session/Project/License/来源/PG/HTTP、旧 Key 回放、负例和全量回归；新历史不删除，失败关闭入口并前滚。Gate3/Pilot 不预先通过。
