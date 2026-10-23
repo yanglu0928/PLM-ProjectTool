@@ -7,6 +7,7 @@ import uuid
 from plm_assistant.modules.evidence.application.fixed_project_source import (
     VerifiedProjectEvidence,
 )
+from plm_assistant.modules.project.application.authorization import ALL_MEMBERS
 from plm_assistant.modules.solution.application.prove_section_evidence_use import (
     SectionEvidenceUseError,
 )
@@ -73,6 +74,16 @@ class SectionEvidenceUseProofTests(unittest.TestCase):
         self.fixed.result = dataclasses.replace(
             self.fixed.result, verified_project_role="IMPLEMENTATION_MEMBER")
         self.assertEqual(self.prove().evidence_id, EVIDENCE)
+
+    def test_customer_role_only_in_explicit_internal_terminal_adapter(self) -> None:
+        self.fixed.result = dataclasses.replace(
+            self.fixed.result, verified_project_role="CUSTOMER_MEMBER")
+        self.denied()
+        self.adapter = SectionEvidenceUseProofAdapter(
+            fixed_sources=self.fixed, allowed_project_roles=ALL_MEMBERS)
+        result = self.prove()
+        self.assertEqual(result.evidence_id, EVIDENCE)
+        self.assertFalse(hasattr(result, "original_display_name"))
 
     def test_invalid_input_does_not_call_evidence(self) -> None:
         for overrides in (

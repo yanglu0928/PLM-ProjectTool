@@ -20,11 +20,16 @@ class WindowsProjectReviewCompositionTests(unittest.TestCase):
         runtime.unit_of_work = Mock()
         owner = Mock(SUBJECT_TYPE="SOL-06")
         owner.authorize_read = Mock()
+        section = Mock(SUBJECT_TYPE="SOL-05")
+        section.authorize_read = Mock()
         cursor = Mock()
         with patch(
             "plm_assistant.entrypoints.windows_project_review."
             "create_windows_structured_spec_review_subject",
             return_value=owner,
+        ), patch(
+            "plm_assistant.entrypoints.windows_project_review."
+            "create_windows_section_review_subject", return_value=section,
         ), patch(
             "plm_assistant.entrypoints.windows_project_review."
             "ProjectReviewSubjectReadRegistry",
@@ -38,17 +43,22 @@ class WindowsProjectReviewCompositionTests(unittest.TestCase):
         self.assertEqual([
             "/api/v1/projects/{project_id}/reviews",
         ], [route.path for route in router.routes])
-        self.assertEqual((owner,), registry.call_args.args[0])
+        self.assertEqual((owner, section), registry.call_args.args[0])
 
     def test_composes_sol06_read_router_with_separate_registry(self):
         runtime = Mock()
         runtime.unit_of_work = Mock()
         owner = Mock(SUBJECT_TYPE="SOL-06")
         owner.authorize_read = Mock()
+        section = Mock(SUBJECT_TYPE="SOL-05")
+        section.authorize_read = Mock()
         with patch(
             "plm_assistant.entrypoints.windows_project_review."
             "create_windows_structured_spec_review_subject",
             return_value=owner,
+        ), patch(
+            "plm_assistant.entrypoints.windows_project_review."
+            "create_windows_section_review_subject", return_value=section,
         ), patch(
             "plm_assistant.entrypoints.windows_project_review."
             "ProjectReviewSubjectReadRegistry",
@@ -60,7 +70,7 @@ class WindowsProjectReviewCompositionTests(unittest.TestCase):
         self.assertEqual([
             "/api/v1/projects/{project_id}/reviews/{review_id}",
         ], [route.path for route in router.routes])
-        self.assertEqual((owner,), registry.call_args.args[0])
+        self.assertEqual((owner, section), registry.call_args.args[0])
 
     def test_composes_one_set_of_four_review_write_routes(self):
         runtime = Mock()
@@ -142,7 +152,7 @@ class WindowsProjectReviewCompositionTests(unittest.TestCase):
             )
         self.assertEqual(4, len(router.routes))
         self.assertEqual(
-            ("HND-02", "SRV-02", "REQ-03", "PRT-03", "SRV-05", "SOL-06"),
+            ("HND-02", "SRV-02", "REQ-03", "PRT-03", "SRV-05", "SOL-06", "SOL-05"),
             tuple(owner.SUBJECT_TYPE for owner in registry.call_args.args[0]),
         )
 

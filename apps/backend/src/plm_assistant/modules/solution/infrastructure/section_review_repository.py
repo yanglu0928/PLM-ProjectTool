@@ -1,13 +1,17 @@
-"""Same-transaction Section Review lock and START persistence."""
+"""Same-transaction Section Review lock and lifecycle persistence."""
 
 from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 
+from plm_assistant.modules.platform.application.trace_context import new_uuid7
 from plm_assistant.modules.review.application.subject_start import (
     ReviewSubjectAccessDenied,
+)
+from plm_assistant.modules.review.application.subject_transition import (
+    ReviewSubjectTransition,
 )
 from plm_assistant.modules.solution.application.section_review_subject import (
     SectionReviewLock,
@@ -160,3 +164,136 @@ class SqlAlchemySectionReviewSubjectRepository:
             session.flush()
         except Exception:
             raise ReviewSubjectAccessDenied() from None
+
+    def consume_terminal(self, transaction: object, *, before: SectionReviewLock,
+                         transition: ReviewSubjectTransition,
+                         version_state: str) -> uuid.UUID:
+        if (type(before) is not SectionReviewLock
+                or type(transition) is not ReviewSubjectTransition
+                or version_state not in ("APPROVED", "RETURNED")):
+            raise ReviewSubjectAccessDenied()
+        before.__post_init__()
+        transition.__post_init__()
+        version = before.version
+        if (version.version_state != "IN_REVIEW"
+                or before.latest_version_id
+                != version.solution_section_version_id
+                or transition.before.subject_version_id
+                != version.solution_section_version_id
+                or transition.before.review.project_id != version.project_id
+                or transition.before.review.subject_id
+                != version.solution_section_id
+                or transition.before.subject_fingerprint
+                != version.content_fingerprint
+                or version.review_ref != transition.before.review.review_id
+                or version.review_round_ref
+                != transition.before.progress.round_id):
+            raise ReviewSubjectAccessDenied()
+        session = _session(transaction)
+        previous = before.current_approved_version_ref
+        if version_state == "APPROVED" and previous is not None:
+            changed = session.execute(update(Version).where(
+                Version.solution_section_version_id == previous,
+                Version.solution_section_id == version.solution_section_id,
+                Version.project_id == version.project_id,
+                Version.version_state == "APPROVED",
+            ).values(version_state="SUPERSEDED"))
+            if changed.rowcount != 1:
+                raise ReviewSubjectAccessDenied()
+        changed = session.execute(update(Version).where(
+            Version.solution_section_version_id
+            == version.solution_section_version_id,
+            Version.solution_section_id == version.solution_section_id,
+            Version.project_id == version.project_id,
+            Version.version_state == "IN_REVIEW",
+            Version.review_ref == version.review_ref,
+            Version.review_round_ref == version.review_round_ref,
+        ).values(version_state=version_state))
+        if changed.rowcount != 1:
+            raise ReviewSubjectAccessDenied()
+        current = previous
+        if version_state == "APPROVED":
+            current = version.solution_section_version_id
+            changed = session.execute(update(Section).where(
+                Section.solution_section_id == version.solution_section_id,
+                Section.project_id == version.project_id,
+                Section.section_state == "ACTIVE",
+                Section.current_approved_version_ref.is_not_distinct_from(
+                    previous),
+            ).values(current_approved_version_ref=current,
+                     lock_version=Section.lock_version + 1))
+            if changed.rowcount != 1:
+                raise ReviewSubjectAccessDenied()
+        result_id = uuid.UUID(new_uuid7())
+        session.add(Result(
+            review_state_result_id=result_id,
+            solution_section_version_id=version.solution_section_version_id,
+            solution_section_id=version.solution_section_id,
+            project_id=version.project_id,
+            review_id=version.review_ref,
+            review_round_id=version.review_round_ref,
+            event_type=transition.after_progress.state.value,
+            previous_approved_version_ref=previous,
+            current_approved_version_ref=current,
+            actor_id=transition.actor_id,
+        ))
+        try:
+            session.flush()
+        except Exception:
+            raise ReviewSubjectAccessDenied() from None
+        return result_id
+
+    def assert_terminal_consumed(self, transaction: object, *,
+                                 transition: ReviewSubjectTransition,
+                                 version_state: str) -> uuid.UUID:
+        if (type(transition) is not ReviewSubjectTransition
+                or version_state not in ("APPROVED", "RETURNED")):
+            raise ReviewSubjectAccessDenied()
+        transition.__post_init__()
+        review = transition.before.review
+        version_id = transition.before.subject_version_id
+        locked = self.lock_subject(
+            transaction, project_id=review.project_id,
+            section_id=review.subject_id, version_id=version_id)
+        if (type(locked) is not SectionReviewLock
+                or locked.version.version_state != version_state
+                or locked.version.content_fingerprint
+                != transition.before.subject_fingerprint
+                or locked.version.review_ref != review.review_id
+                or locked.version.review_round_ref
+                != transition.before.progress.round_id):
+            raise ReviewSubjectAccessDenied()
+        session = _session(transaction)
+        result = session.execute(select(Result).where(
+            Result.solution_section_version_id == version_id,
+            Result.solution_section_id == review.subject_id,
+            Result.project_id == review.project_id,
+            Result.review_id == review.review_id,
+            Result.review_round_id == transition.before.progress.round_id,
+            Result.event_type == transition.after_progress.state.value,
+            Result.actor_id == transition.actor_id,
+        ).with_for_update(read=True).execution_options(
+            populate_existing=True)).scalar_one_or_none()
+        approved_count = session.execute(select(func.count()).select_from(
+            Version).where(
+                Version.solution_section_id == review.subject_id,
+                Version.project_id == review.project_id,
+                Version.version_state == "APPROVED",
+        )).scalar_one()
+        if result is None:
+            raise ReviewSubjectAccessDenied()
+        if version_state == "APPROVED":
+            valid = (locked.current_approved_version_ref == version_id
+                     and result.current_approved_version_ref == version_id
+                     and result.previous_approved_version_ref != version_id
+                     and approved_count == 1)
+        else:
+            valid = (locked.current_approved_version_ref
+                     == result.previous_approved_version_ref
+                     == result.current_approved_version_ref
+                     and locked.current_approved_version_ref != version_id
+                     and approved_count == (
+                         0 if locked.current_approved_version_ref is None else 1))
+        if not valid:
+            raise ReviewSubjectAccessDenied()
+        return result.review_state_result_id

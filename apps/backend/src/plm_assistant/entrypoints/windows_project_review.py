@@ -8,6 +8,7 @@ from plm_assistant.entrypoints.windows_prototype import (
     create_windows_prototype_review_subject,
 )
 from plm_assistant.entrypoints.windows_solution_outline import (
+    create_windows_section_review_subject,
     create_windows_structured_spec_review_subject,
 )
 
@@ -186,12 +187,17 @@ def create_windows_project_review_read_router(
             authorization_repository=project_repository,
             authorization=authorization, reviewers=reviewers,
         )
+        section = create_windows_section_review_subject(
+            runtime=runtime, license_guard=license_guard, audit=audit,
+            documents=documents, downloads=downloads,
+            parse_results=parse_results, authorization=authorization,
+            reviewers=reviewers, terminal_context=True)
         reads = ReviewReadService(
             unit_of_work=runtime.unit_of_work,
             sessions=SqlAlchemyProjectReadAccess(), projects=authorization,
             license_guard=license_guard,
             repository=SqlAlchemyReviewSnapshotReadRepository(),
-            subjects=ProjectReviewSubjectReadRegistry((owner,)),
+            subjects=ProjectReviewSubjectReadRegistry((owner, section)),
         )
         return create_review_read_router(origins=origins, reads=reads)
     except Exception:
@@ -223,12 +229,17 @@ def create_windows_project_review_list_router(
             authorization_repository=project_repository,
             authorization=authorization, reviewers=reviewers,
         )
+        section = create_windows_section_review_subject(
+            runtime=runtime, license_guard=license_guard, audit=audit,
+            documents=documents, downloads=downloads,
+            parse_results=parse_results, authorization=authorization,
+            reviewers=reviewers, terminal_context=True)
         lists = ReviewListService(
             unit_of_work=runtime.unit_of_work,
             sessions=SqlAlchemyProjectReadAccess(), projects=authorization,
             license_guard=license_guard,
             repository=SqlAlchemyReviewListRepository(),
-            subjects=ProjectReviewSubjectReadRegistry((owner,)),
+            subjects=ProjectReviewSubjectReadRegistry((owner, section)),
         )
         return create_review_list_router(
             origins=origins, lists=lists, cursors=cursors,
@@ -329,6 +340,13 @@ def create_windows_project_review_router(
                 parse_results=parse_results,
                 authorization_repository=project_repository,
                 authorization=authorization, reviewers=reviewers,
+            ))
+            subject_owners.append(create_windows_section_review_subject(
+                runtime=runtime, license_guard=license_guard, audit=audit,
+                documents=documents, downloads=downloads,
+                parse_results=parse_results,
+                authorization=authorization, reviewers=reviewers,
+                terminal_context=True,
             ))
         subjects = ProjectReviewSubjectRegistry(tuple(subject_owners))
         receipts = SqlAlchemyIdempotencyReceipts()

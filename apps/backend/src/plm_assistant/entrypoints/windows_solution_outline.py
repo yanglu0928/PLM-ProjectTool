@@ -24,7 +24,9 @@ from plm_assistant.modules.evidence.application.prove_reference_use_evidence imp
 from plm_assistant.modules.evidence.application.fixed_project_source import EvidenceFixedProjectSourceService
 from plm_assistant.modules.evidence.infrastructure.fixed_source_repository import SqlAlchemyEvidenceFixedSourceRepository
 from plm_assistant.modules.platform.infrastructure.idempotency_receipts import SqlAlchemyIdempotencyReceipts
-from plm_assistant.modules.project.application.authorization import ProjectAuthorizationService
+from plm_assistant.modules.project.application.authorization import (
+    ALL_MEMBERS, ProjectAuthorizationService,
+)
 from plm_assistant.modules.project.application.reviewers import ProjectReviewerQualificationService
 from plm_assistant.modules.project.infrastructure.authorization_repository import SqlAlchemyProjectAuthorizationRepository
 from plm_assistant.modules.review.application.project_persistence import ProjectReviewPersistenceService
@@ -797,7 +799,7 @@ def create_windows_section_version_validate_router(
 
 def _windows_section_current_validator(
     *, runtime, license_guard, authorization, documents, downloads,
-    parse_results,
+    parse_results, evidence_roles=None,
 ) -> SectionVersionCurrentValidator:
     """One source graph for Section VALIDATE and Review START."""
     read_access = SqlAlchemyProjectReadAccess()
@@ -827,8 +829,9 @@ def _windows_section_current_validator(
         projects=SqlAlchemyProjectAuthorizationRepository(),
         evidence=SqlAlchemyEvidenceFixedSourceRepository(),
         documents=fixed,
-        allowed_project_roles=frozenset({
-            "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}),
+            allowed_project_roles=(
+                frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"})
+                if evidence_roles is None else evidence_roles),
     )
     return SectionVersionCurrentValidator(
         documents=SectionDocumentContentProofAdapter(
@@ -836,7 +839,11 @@ def _windows_section_current_validator(
             fixed_sources=fixed),
         requirements=OutlineRequirementUseProofService(
             approved_versions=SqlAlchemyPrototypeApprovedRequirementVersionProof()),
-        evidence=SectionEvidenceUseProofAdapter(fixed_sources=evidence),
+        evidence=SectionEvidenceUseProofAdapter(
+            fixed_sources=evidence,
+            allowed_project_roles=(
+                frozenset({"PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"})
+                if evidence_roles is None else evidence_roles)),
         trace=trace,
         specs=SectionCurrentSpecQualificationService(
             SectionStructuredSpecQualificationService(
@@ -862,15 +869,11 @@ def create_windows_section_review_submission_router(
             repository=project_repository)
         reviewers = ProjectReviewerQualificationService(
             users=SqlAlchemyReviewUserAccess(), projects=project_repository)
-        owner = SectionReviewSubjectOwner(
-            repository=SqlAlchemySectionReviewSubjectRepository(),
-            reviewers=reviewers,
-            readiness=SectionReviewReadinessService(
-                repository=SqlAlchemySectionReviewReadinessRepository(),
-                current=_windows_section_current_validator(
-                    runtime=runtime, license_guard=license_guard,
-                    authorization=authorization, documents=documents,
-                    downloads=downloads, parse_results=parse_results)))
+        owner = create_windows_section_review_subject(
+            runtime=runtime, license_guard=license_guard, audit=audit,
+            documents=documents, downloads=downloads,
+            parse_results=parse_results, authorization=authorization,
+            reviewers=reviewers)
         service = SectionReviewSubmissionService(
             unit_of_work=runtime.unit_of_work,
             access=SqlAlchemyProjectWriteAccess(),
@@ -883,5 +886,35 @@ def create_windows_section_review_submission_router(
                 audit=audit, subjects=owner), subjects=owner)
         return create_section_review_submission_router(
             sessions=sessions, origins=origins, submissions=service)
+    except Exception:
+        raise ProductionSolutionOutlineStartupError() from None
+
+
+def create_windows_section_review_subject(
+    *, runtime, license_guard, audit, documents, downloads, parse_results,
+    authorization=None, reviewers=None, terminal_context=False,
+) -> SectionReviewSubjectOwner:
+    """One SOL-05 Owner graph shared by submit and terminal Review."""
+    if (type(terminal_context) is not bool or any(value is None for value in (
+            runtime, license_guard, audit, documents, downloads,
+            parse_results))):
+        raise ProductionSolutionOutlineStartupError()
+    try:
+        project_repository = SqlAlchemyProjectAuthorizationRepository()
+        authorization = authorization or ProjectAuthorizationService(
+            unit_of_work=runtime.unit_of_work,
+            repository=project_repository)
+        reviewers = reviewers or ProjectReviewerQualificationService(
+            users=SqlAlchemyReviewUserAccess(), projects=project_repository)
+        return SectionReviewSubjectOwner(
+            repository=SqlAlchemySectionReviewSubjectRepository(),
+            reviewers=reviewers, audit=audit,
+            readiness=SectionReviewReadinessService(
+                repository=SqlAlchemySectionReviewReadinessRepository(),
+                current=_windows_section_current_validator(
+                    runtime=runtime, license_guard=license_guard,
+                    authorization=authorization, documents=documents,
+                    downloads=downloads, parse_results=parse_results,
+                    evidence_roles=(ALL_MEMBERS if terminal_context else None))))
     except Exception:
         raise ProductionSolutionOutlineStartupError() from None

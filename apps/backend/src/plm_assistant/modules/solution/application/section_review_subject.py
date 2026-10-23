@@ -1,4 +1,4 @@
-"""SOL-05 SectionVersion PROJECT Review start Owner; terminal remains closed."""
+"""SOL-05 SectionVersion PROJECT Review lifecycle Owner."""
 
 from __future__ import annotations
 
@@ -6,6 +6,7 @@ import uuid
 from dataclasses import dataclass
 from typing import Protocol
 
+from plm_assistant.modules.audit.application.public import AuditEventDraft
 from plm_assistant.modules.project.application.authorization import ALL_MEMBERS
 from plm_assistant.modules.project.application.reviewers import (
     ProjectReviewerFacts, ProjectReviewerQualificationService,
@@ -22,8 +23,9 @@ from plm_assistant.modules.review.application.subject_start import (
     ReviewSubjectProofContext, ReviewSubjectStartError, ReviewSubjectStartRequest,
 )
 from plm_assistant.modules.review.application.subject_transition import (
-    ReviewSubjectTransitionError,
+    ReviewSubjectTransition, ReviewSubjectTransitionError,
 )
+from plm_assistant.modules.review.domain.round_progress import ReviewRoundState
 
 from .read_section_version import SectionVersionHistoryView
 from .section_review_readiness import (
@@ -64,21 +66,28 @@ class SectionReviewRepositoryPort(Protocol):
     def bind_start(self, transaction: object, *, before: SectionReviewLock,
                    review_id: uuid.UUID, round_id: uuid.UUID,
                    actor_id: uuid.UUID) -> None: ...
+    def consume_terminal(self, transaction: object, *, before: SectionReviewLock,
+                         transition: ReviewSubjectTransition,
+                         version_state: str) -> uuid.UUID: ...
+    def assert_terminal_consumed(self, transaction: object, *,
+                                 transition: ReviewSubjectTransition,
+                                 version_state: str) -> uuid.UUID: ...
 
 
 class SectionReviewSubjectOwner:
-    """Owns exact Section Review start; no terminal decision is implied."""
+    """Owns exact Section Review start and current-fact terminal binding."""
 
     SUBJECT_TYPE = "SOL-05"
     POLICY_CODE = "SOLUTION_SECTION_ALL_V1"
 
     def __init__(self, *, repository: SectionReviewRepositoryPort,
                  reviewers: ProjectReviewerQualificationService,
-                 readiness: SectionReviewReadinessService) -> None:
-        if any(value is None for value in (repository, reviewers, readiness)):
+                 readiness: SectionReviewReadinessService,
+                 audit: object) -> None:
+        if any(value is None for value in (repository, reviewers, readiness, audit)):
             raise ValueError("Section Review dependencies required")
-        self._repo, self._reviewers, self._readiness = (
-            repository, reviewers, readiness)
+        self._repo, self._reviewers, self._readiness, self._audit = (
+            repository, reviewers, readiness, audit)
 
     def authorize_create(self, tx: object, *, user_id: uuid.UUID,
                          project_id: uuid.UUID, subject_type: str,
@@ -204,22 +213,118 @@ class SectionReviewSubjectOwner:
                 != getattr(round_ref, "round_id", None)):
             raise ReviewSubjectAccessDenied()
 
-    # Registry requires the complete protocol. Terminal callbacks fail closed
-    # until the separately tested customer-decision Owner is installed.
     def require_transition_access_in_transaction(self, tx, transition):
-        raise ReviewSubjectTransitionError()
+        self._require_transition(transition)
+        locked = self._transition_lock(tx, transition)
+        if transition.after_progress.state is ReviewRoundState.APPROVED:
+            self._qualify(
+                tx, project_id=transition.before.review.project_id,
+                reviewer_ids=transition.after_progress.reviewer_ids)
+            context = transition.proof_context
+            if type(context) is not ReviewSubjectProofContext:
+                raise ReviewSubjectAccessDenied()
+            try:
+                proof = self._readiness.prove(
+                    tx, query=SectionCurrentFactQuery(
+                        context.session_token, context.trace_id,
+                        locked.version.project_id,
+                        locked.version.solution_section_id,
+                        locked.version.solution_section_version_id),
+                    required_state="IN_REVIEW")
+            except SectionReviewReadinessError:
+                raise ReviewSubjectAccessDenied() from None
+            if (type(proof) is not SectionReviewReadinessProof
+                    or proof.version != locked.version
+                    or proof.required_state != "IN_REVIEW"
+                    or proof.content_fingerprint
+                    != transition.before.subject_fingerprint):
+                raise ReviewSubjectAccessDenied()
 
     def assert_transition_lock_in_transaction(self, tx, transition):
-        raise ReviewSubjectTransitionError()
+        self._require_transition(transition)
+        self._transition_lock(tx, transition)
 
     def consume_terminal_in_transaction(self, tx, transition):
-        raise ReviewSubjectTransitionError()
+        self._require_transition(transition)
+        if not transition.terminal:
+            raise ReviewSubjectTransitionError()
+        before = self._transition_lock(tx, transition)
+        state = self._terminal_version_state(transition)
+        result_id = self._repo.consume_terminal(
+            tx, before=before, transition=transition, version_state=state)
+        if not _id(result_id):
+            raise ReviewSubjectAccessDenied()
+        self._audit.append(tx, AuditEventDraft(
+            trace_id=transition.trace_id, event_scope="PROJECT",
+            target_project_id=before.version.project_id,
+            actor_type="USER", actor_id=transition.actor_id,
+            original_actor_id=None, actor_hint_digest=None,
+            action="SOLUTION_SECTION_VERSION_"
+                   + transition.after_progress.state.value,
+            outcome="SUCCESS", target_owner_module="solution",
+            target_object_type=self.SUBJECT_TYPE,
+            target_object_id=before.version.solution_section_id,
+            target_version_id=before.version.solution_section_version_id,
+            before_state="IN_REVIEW", after_state=state))
 
     def assert_terminal_consumed_in_transaction(self, tx, transition):
-        raise ReviewSubjectTransitionError()
+        self._require_transition(transition)
+        if not transition.terminal:
+            raise ReviewSubjectTransitionError()
+        result_id = self._repo.assert_terminal_consumed(
+            tx, transition=transition,
+            version_state=self._terminal_version_state(transition))
+        if not _id(result_id):
+            raise ReviewSubjectAccessDenied()
 
     def require_transition_replay_access_in_transaction(
             self, tx, *, actor_id, review, result):
+        version_id = getattr(result, "subject_version_id", None)
+        if (not _id(actor_id) or not self._valid_review(review)
+                or not _id(version_id)
+                or getattr(result, "review_id", None) != review.review_id):
+            raise ReviewSubjectAccessDenied()
+        locked = self._repo.lock_subject(
+            tx, project_id=review.project_id, section_id=review.subject_id,
+            version_id=version_id)
+        if (type(locked) is not SectionReviewLock
+                or locked.version.review_ref != review.review_id
+                or locked.version.review_round_ref
+                != getattr(result, "round_id", None)):
+            raise ReviewSubjectAccessDenied()
+
+    def _transition_lock(self, tx, transition) -> SectionReviewLock:
+        review = transition.before.review
+        locked = self._repo.lock_subject(
+            tx, project_id=review.project_id, section_id=review.subject_id,
+            version_id=transition.before.subject_version_id)
+        if (type(locked) is not SectionReviewLock
+                or locked.version.version_state != "IN_REVIEW"
+                or locked.latest_version_id
+                != transition.before.subject_version_id
+                or locked.version.review_ref != review.review_id
+                or locked.version.review_round_ref
+                != transition.before.progress.round_id
+                or locked.version.content_fingerprint
+                != transition.before.subject_fingerprint):
+            raise ReviewSubjectAccessDenied()
+        return locked
+
+    @classmethod
+    def _require_transition(cls, transition: object) -> None:
+        if type(transition) is not ReviewSubjectTransition:
+            raise ReviewSubjectTransitionError()
+        transition.__post_init__()
+        if not cls._valid_review(transition.before.review):
+            raise ReviewSubjectAccessDenied()
+
+    @staticmethod
+    def _terminal_version_state(transition: ReviewSubjectTransition) -> str:
+        state = transition.after_progress.state
+        if state is ReviewRoundState.APPROVED:
+            return "APPROVED"
+        if state in (ReviewRoundState.RETURNED, ReviewRoundState.WITHDRAWN):
+            return "RETURNED"
         raise ReviewSubjectTransitionError()
 
     def _draft_lock(self, tx, request) -> SectionReviewLock:

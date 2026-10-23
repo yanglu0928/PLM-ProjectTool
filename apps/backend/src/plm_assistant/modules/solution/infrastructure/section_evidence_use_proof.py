@@ -8,6 +8,7 @@ from typing import Protocol
 from plm_assistant.modules.evidence.application.fixed_project_source import (
     EvidenceFixedProjectQuery, VerifiedProjectEvidence,
 )
+from plm_assistant.modules.project.application.authorization import ALL_MEMBERS
 from plm_assistant.modules.solution.application.prove_section_evidence_use import (
     SectionEvidenceUseError, SectionEvidenceUseProof,
 )
@@ -26,10 +27,14 @@ def _id(value: object) -> bool:
 
 
 class SectionEvidenceUseProofAdapter:
-    def __init__(self, *, fixed_sources: FixedEvidencePort) -> None:
-        if fixed_sources is None:
+    def __init__(self, *, fixed_sources: FixedEvidencePort,
+                 allowed_project_roles: frozenset[str] = _WRITE_ROLES) -> None:
+        if (fixed_sources is None or type(allowed_project_roles) is not frozenset
+                or not allowed_project_roles
+                or not allowed_project_roles <= ALL_MEMBERS):
             raise ValueError("fixed PROJECT Evidence source required")
         self._fixed_sources = fixed_sources
+        self._allowed_project_roles = allowed_project_roles
 
     def prove(self, transaction: object, *, session_token: bytes,
               trace_id: uuid.UUID, project_id: uuid.UUID,
@@ -49,7 +54,7 @@ class SectionEvidenceUseProofAdapter:
                     or verified.scope != "PROJECT"
                     or verified.observed_state != "ELIGIBLE"
                     or not _id(verified.verified_by)
-                    or verified.verified_project_role not in _WRITE_ROLES
+                    or verified.verified_project_role not in self._allowed_project_roles
                     or not _id(verified.document_id)
                     or not _id(verified.document_version_id)
                     or type(verified.observed_lock_version) is not int
