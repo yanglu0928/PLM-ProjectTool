@@ -222,6 +222,7 @@ export class SessionClient {
     | `/api/v1/projects/${string}/solution-outlines/${string}/versions`
     | `/api/v1/projects/${string}/solution-sections`
     | `/api/v1/projects/${string}/solution-sections/${string}/versions`
+    | `/api/v1/projects/${string}/solution-sections/${string}/versions/${string}:submit-review`
     | `/api/v1/projects/${string}/structured-solution-specs`
     | `/api/v1/projects/${string}/structured-solution-specs/${string}:revise`
     | `/api/v1/projects/${string}/structured-solution-specs/${string}:submit-review`
@@ -319,6 +320,17 @@ export class SessionClient {
     }
     return this.#postCommand(
       `/api/v1/projects/${projectId}/structured-solution-specs/${specId}:submit-review`,
+      body, idempotencyKey, 8192);
+  }
+
+  /** Frozen SOL-05 submission; retain exact reviewer set and Key on uncertainty. */
+  postProjectSectionVersionSubmitReview(projectId: string, sectionId: string,
+    versionId: string, body: string, idempotencyKey: string): Promise<Response> {
+    if (!identifier(projectId) || !identifier(sectionId) || !identifier(versionId)) {
+      return Promise.reject(new SessionClientError("AUTH_CLIENT_UNAVAILABLE"));
+    }
+    return this.#postCommand(
+      `/api/v1/projects/${projectId}/solution-sections/${sectionId}/versions/${versionId}:submit-review`,
       body, idempotencyKey, 8192);
   }
 

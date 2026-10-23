@@ -8,6 +8,7 @@ import { SectionVersionReadClient, type SectionVersionDetail } from
 import { SectionVersionValidateClient, SectionVersionValidateError,
   type SectionVersionValidationReport, type ValidationStatus } from
   "@/modules/solution/api/sectionVersionValidateClient";
+import SectionReviewSubmitPanel from "./SectionReviewSubmitPanel.vue";
 
 const props = defineProps<{ session?: SessionClient; reader?: SectionVersionReadClient;
   validator?: SectionVersionValidateClient }>();
@@ -212,6 +213,8 @@ function dimensionHint(field: typeof dimensions[number]["field"], status: Valida
             <p>当前接口尚不能给出来源文档的精确位置；请从固定正文与项目证据/需求记录核查，不得凭 UUID 猜测原文位置。</p>
           </div>
         </section>
+        <SectionReviewSubmitPanel :key="current.solution_section_version_id"
+          :session="session" :detail="current" :report="validationReport" />
       </template>
     </template>
   </section>
