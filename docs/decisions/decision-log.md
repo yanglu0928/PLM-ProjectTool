@@ -11700,3 +11700,10 @@
 - Decision：追加 0180，仅允许 `FIXED_REFS` 根声明含 1～500 条固定引用；子行仅在其根创建的同一 PostgreSQL 事务中 INSERT，提交后不可补写/改写/删除/TRUNCATE；原 SectionVersion 延迟闭合追加 Spec 数量和 1-based 顺序，保持 Requirement/Evidence/首次结果旧约束。正式 CREATE 于同一事务调用 A01 现时资格证明，将 Spec/Review/来源固定指纹纳入内容指纹并写入子行；冻结首次 201 投影与旧请求/Key 不变，受权历史读取暴露引用。原 0178 闭锁测试固定测试 0178，不以当前 head 替代其历史行为；head 漂移由 0180 验证单独覆盖。
 - Reason：数据库 FK 只证明同项目版本存在，不能代替 Review/适用性；应用证明又不能代替数据库原子完整集合。历史重放必须返回第一次结果，不因未来 Spec 被替代而重写既存业务历史。
 - Impact/Rollback/Verification：无新路由、角色、License 权益、依赖或客户自动确认；有 `FIXED_REFS` 历史拒降回 0179，不清空历史，异常时关闭新入口并前滚修复。空库升降重升、旧数据 0179→0180、真实 Win11/PG/HTTP、晚插入/错源/跨项目/重放/收据Audit及全量回归是独立验收；语义适配与客户 Review 仍后续证明。
+
+# DEC-20261023-1206：Spec 维 PASS 解释为有证据的送审准备
+
+- Date/WBS：2026-10-23 / `SOL-05-A04-P12-P02`；依据冻结 API-04 六维报告、CR-SOL-022/023、DEC-1204/1205。
+- Decision：`UNDECLARED` 始终 UNAVAILABLE；`NONE_REQUIRED` 只在受权操作者显式提供规范化理由且无固定引用时具备送审准备资格；`FIXED_REFS` 须每条固定引用都具有创建者提交、与新章节正文固定版本/指纹及引用绑定的有界适配依据，并在 VALIDATE 新观察中重证当前 Spec/Review/Section 来源/共有需求与正文资格。满足条件的 `spec=PASS` 仅代表“可交客户评审的依据齐备”，不代表自动语义正确或客户批准。旧引用 NULL 不回填，需新建后继 SectionVersion。
+- Reason：直接使用已批准 Spec 会混淆来源资格和新正文适配；通用自动语义等价在四类专项与自然语言正文之间不可重复证明。不可变作者依据加现时资格/客户 Review 形成最短可审计链。
+- Impact/Rollback：先按 CR-SOL-023 分 Schema、输入/持久化、现时验证、UI/Windows 片验收；冻结路径/旧首响/旧历史保留。0181 若产生新依据历史则拒降，不改写历史；各片失败时维持 `spec=UNAVAILABLE` 并继续其他工作。
