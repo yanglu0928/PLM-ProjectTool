@@ -15,12 +15,14 @@ const other = "31234567-89ab-4cde-8123-456789abcdef";
 const item = { solution_section_version_id: version, solution_section_id: section,
   project_id: project, version_no: 1, version_state: "DRAFT", title: "方案草案",
   content_fingerprint: "a".repeat(64), declared_requirement_count: 1,
-  declared_evidence_count: 1, assumption_count: 0, exclusion_count: 0,
+  declared_evidence_count: 1, spec_binding_state: "UNDECLARED", declared_spec_count: 0,
+  assumption_count: 0, exclusion_count: 0,
   supersedes_version_ref: null, review_ref: null, review_round_ref: null,
   created_by: project, created_at: "2026-10-12T00:00:00Z",
   content_document_version_ref: other, content_artifact_ref: null,
   requirement_refs: [{ requirement_id: other, requirement_version_id: other }],
-  evidence_ids: [other], assumptions: [], exclusions: [] };
+  evidence_ids: [other], assumptions: [], exclusions: [],
+  spec_not_required_reason: null, structured_spec_refs: [] };
 const report = { audit_event_id: other, observation_trace_id: version,
   project_id: project, solution_section_id: section, solution_section_version_id: version,
   version_no: 1, version_state: "DRAFT", content_fingerprint: "a".repeat(64),

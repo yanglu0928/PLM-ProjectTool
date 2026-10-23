@@ -17,12 +17,14 @@ const evidence = "51234567-89ab-4cde-8123-456789abcdef";
 const item = { solution_section_version_id: version, solution_section_id: section,
   project_id: project, version_no: 2, version_state: "DRAFT", title: "方案章节草案",
   content_fingerprint: "a".repeat(64), declared_requirement_count: 1,
-  declared_evidence_count: 1, assumption_count: 1, exclusion_count: 0,
+  declared_evidence_count: 1, spec_binding_state: "UNDECLARED", declared_spec_count: 0,
+  assumption_count: 1, exclusion_count: 0,
   supersedes_version_ref: older, review_ref: null, review_round_ref: null,
   created_by: project, created_at: "2026-10-12T00:00:00Z" };
 const detail = { ...item, content_document_version_ref: older, content_artifact_ref: null,
   requirement_refs: [{ requirement_id: requirement, requirement_version_id: older }],
-  evidence_ids: [evidence], assumptions: [{ note: "资料待补" }], exclusions: [] };
+  evidence_ids: [evidence], assumptions: [{ note: "资料待补" }], exclusions: [],
+  spec_not_required_reason: null, structured_spec_refs: [] };
 function success(data: unknown): Response {
   return new Response(JSON.stringify({ data, trace_id: project }), { status: 200,
     headers: { "Content-Type": "application/json" } });

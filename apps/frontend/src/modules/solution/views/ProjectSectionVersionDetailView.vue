@@ -185,6 +185,15 @@ function dimensionHint(field: typeof dimensions[number]["field"], status: Valida
         <h3>固定 Evidence（{{ current.evidence_ids.length }}）</h3>
         <p v-if="!current.evidence_ids.length">无</p>
         <ol v-else><li v-for="evidence in current.evidence_ids" :key="evidence"><code>{{ evidence }}</code></li></ol>
+        <h3>固定结构化规格（{{ current.structured_spec_refs.length }}）</h3>
+        <p v-if="current.spec_binding_state === 'UNDECLARED'">创建时未声明结构化规格绑定；这不代表当前已满足评审条件。</p>
+        <p v-else-if="current.spec_binding_state === 'NONE_REQUIRED'">声明无需结构化规格；依据：{{ current.spec_not_required_reason }}</p>
+        <ol v-else><li v-for="item in current.structured_spec_refs" :key="item.structured_solution_spec_id">
+          <RouterLink :to="{ name: 'project-structured-spec-detail', params: {
+            projectId: current.project_id, specId: item.structured_solution_spec_id } }">固定专项版本 {{ item.structured_solution_spec_id }}</RouterLink>
+          <span> · 系列 {{ item.spec_series_id }}</span>
+          <span v-if="item.fit_rationale"> · 适配依据：{{ item.fit_rationale }}</span>
+          <span v-else> · 未声明适配依据</span></li></ol>
         <h3>假设声明（{{ current.assumptions.length }}）</h3>
         <p v-if="!current.assumptions.length">无</p>
         <ol v-else><li v-for="(item, index) in current.assumptions" :key="index"><pre>{{ JSON.stringify(item, null, 2) }}</pre></li></ol>

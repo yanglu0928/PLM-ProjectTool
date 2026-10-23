@@ -4,6 +4,11 @@ export interface SectionRequirementRef {
   readonly requirement_id: string;
   readonly requirement_version_id: string;
 }
+export interface SectionStructuredSpecRef {
+  readonly spec_series_id: string;
+  readonly structured_solution_spec_id: string;
+  readonly fit_rationale?: string;
+}
 export interface SectionVersionSummary {
   readonly solution_section_version_id: string;
   readonly solution_section_id: string;
@@ -14,6 +19,8 @@ export interface SectionVersionSummary {
   readonly content_fingerprint: string;
   readonly declared_requirement_count: number;
   readonly declared_evidence_count: number;
+  readonly spec_binding_state: "UNDECLARED" | "NONE_REQUIRED" | "FIXED_REFS";
+  readonly declared_spec_count: number;
   readonly assumption_count: number;
   readonly exclusion_count: number;
   readonly supersedes_version_ref: string | null;
@@ -27,6 +34,8 @@ export interface SectionVersionDetail extends SectionVersionSummary {
   readonly content_artifact_ref: string | null;
   readonly requirement_refs: readonly SectionRequirementRef[];
   readonly evidence_ids: readonly string[];
+  readonly spec_not_required_reason: string | null;
+  readonly structured_spec_refs: readonly SectionStructuredSpecRef[];
   readonly assumptions: readonly Record<string, unknown>[];
   readonly exclusions: readonly Record<string, unknown>[];
 }
@@ -55,12 +64,15 @@ const digest = /^[0-9a-f]{64}$/;
 const cursor = /^[A-Za-z0-9_-]{1,4096}\.[A-Za-z0-9_-]{43}$/;
 const stamp = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z$/;
 const states = ["DRAFT", "IN_REVIEW", "APPROVED", "RETURNED", "SUPERSEDED", "RESTRICTED"];
+const specStates = ["UNDECLARED", "NONE_REQUIRED", "FIXED_REFS"];
 const summaryFields = ["solution_section_version_id", "solution_section_id", "project_id",
   "version_no", "version_state", "title", "content_fingerprint", "declared_requirement_count",
-  "declared_evidence_count", "assumption_count", "exclusion_count", "supersedes_version_ref",
+  "declared_evidence_count", "spec_binding_state", "declared_spec_count", "assumption_count",
+  "exclusion_count", "supersedes_version_ref",
   "review_ref", "review_round_ref", "created_by", "created_at"] as const;
 const detailFields = [...summaryFields, "content_document_version_ref", "content_artifact_ref",
-  "requirement_refs", "evidence_ids", "assumptions", "exclusions"] as const;
+  "requirement_refs", "evidence_ids", "assumptions", "exclusions",
+  "spec_not_required_reason", "structured_spec_refs"] as const;
 function record(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -79,6 +91,11 @@ function instant(value: unknown): value is string {
   return typeof value === "string" && stamp.test(value) && Number.isFinite(Date.parse(value))
     && new Date(value).toISOString().slice(0, 19) === value.slice(0, 19);
 }
+function basis(value: unknown): value is string {
+  return typeof value === "string" && value.length >= 1 && value.length <= 1000
+    && value === value.trim() && value === value.normalize("NFC")
+    && !/[\p{Cc}\p{Cs}]/u.test(value);
+}
 function fail(): never { throw new SectionVersionReadError("SECTION_VERSION_UNAVAILABLE"); }
 
 function summary(value: unknown, project: string, section: string,
@@ -93,6 +110,10 @@ function summary(value: unknown, project: string, section: string,
     || typeof value.content_fingerprint !== "string" || !digest.test(value.content_fingerprint)
     || !count(value.declared_requirement_count, 500)
     || !count(value.declared_evidence_count, 500)
+    || !specStates.includes(value.spec_binding_state as string)
+    || !count(value.declared_spec_count, 500)
+    || value.spec_binding_state === "FIXED_REFS" && value.declared_spec_count === 0
+    || value.spec_binding_state !== "FIXED_REFS" && value.declared_spec_count !== 0
     || !count(value.assumption_count, 100) || !count(value.exclusion_count, 100)
     || !optionalId(value.supersedes_version_ref) || !optionalId(value.review_ref)
     || !optionalId(value.review_round_ref)
@@ -134,12 +155,27 @@ export function parseSectionVersionDetail(value: unknown, project: string, secti
     || !Array.isArray(value.assumptions) || value.assumptions.length !== base.assumption_count
     || !value.assumptions.every(record)
     || !Array.isArray(value.exclusions) || value.exclusions.length !== base.exclusion_count
-    || !value.exclusions.every(record)) fail();
+    || !value.exclusions.every(record)
+    || !Array.isArray(value.structured_spec_refs)
+    || value.structured_spec_refs.length !== base.declared_spec_count
+    || !value.structured_spec_refs.every(item => record(item)
+      && (exact(item, ["spec_series_id", "structured_solution_spec_id"])
+        || exact(item, ["spec_series_id", "structured_solution_spec_id", "fit_rationale"]))
+      && id(item.spec_series_id) && id(item.structured_solution_spec_id)
+      && (!Object.hasOwn(item, "fit_rationale") || basis(item.fit_rationale)))
+    || new Set(value.structured_spec_refs.map(item => item.spec_series_id)).size
+      !== value.structured_spec_refs.length
+    || new Set(value.structured_spec_refs.map(item => item.structured_solution_spec_id)).size
+      !== value.structured_spec_refs.length
+    || base.spec_binding_state === "NONE_REQUIRED" && !basis(value.spec_not_required_reason)
+    || base.spec_binding_state !== "NONE_REQUIRED" && value.spec_not_required_reason !== null) fail();
   return Object.freeze({ ...base,
     content_document_version_ref: value.content_document_version_ref as string | null,
     content_artifact_ref: value.content_artifact_ref as string | null,
     requirement_refs: Object.freeze(value.requirement_refs.map(item => Object.freeze({ ...item }))) as readonly SectionRequirementRef[],
     evidence_ids: Object.freeze([...value.evidence_ids]) as readonly string[],
+    spec_not_required_reason: value.spec_not_required_reason as string | null,
+    structured_spec_refs: Object.freeze(value.structured_spec_refs.map(item => Object.freeze({ ...item }))) as readonly SectionStructuredSpecRef[],
     assumptions: Object.freeze(value.assumptions.map(item => Object.freeze({ ...item }))) as readonly Record<string, unknown>[],
     exclusions: Object.freeze(value.exclusions.map(item => Object.freeze({ ...item }))) as readonly Record<string, unknown>[],
   });
