@@ -156,10 +156,6 @@ class SectionVersionCreateService:
             raise SectionVersionCreateError("VALIDATION_FAILED")
         try:
             draft = validate_section_version_draft(command.draft)
-            # The 0178 schema is deliberately closed until the Spec binding Owner
-            # can prove and persist declaration, refs, fingerprint and first reply.
-            if draft.spec_binding_state == "FIXED_REFS":
-                raise SectionVersionCreateError("SOURCE_UNAVAILABLE")
             validate_idempotency_key(command.idempotency_key)
             self._guard.require_valid(trace_id=command.trace_id)
             with self._uow() as tx:
@@ -199,6 +195,12 @@ class SectionVersionCreateService:
                         or type(proof.content_fingerprint) is not bytes
                         or len(proof.content_fingerprint) != 32):
                     raise SectionVersionCreateError()
+                if (draft.spec_binding_state == "FIXED_REFS" and (
+                        len(proof.qualified_specs)
+                        != len(draft.structured_spec_refs)
+                        or tuple(item.ref for item in proof.qualified_specs)
+                        != draft.structured_spec_refs)):
+                    raise SectionVersionCreateError("SOURCE_UNAVAILABLE")
                 version_id = uuid.UUID(new_uuid7())
                 result = self._repository.create(
                     tx, version_id=version_id, actor_id=actor, proof=proof)

@@ -20,6 +20,7 @@ assert SPEC and SPEC.loader
 fixture = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(fixture)
 PREVIOUS = "20261019_0177"
+TARGET = "20261023_0178"  # historical closed-guard contract
 TABLE = "plm.sol_section_spec_refs"
 
 
@@ -29,13 +30,11 @@ def verify(port: int) -> None:
         port=port, database="postgres"))
     connection = dict(host="127.0.0.1", port=port, user="poc_admin",
                       dbname="postgres", autocommit=True)
-    command.upgrade(cfg, "head")
-    command.check(cfg)
+    command.upgrade(cfg, TARGET)
     command.downgrade(cfg, PREVIOUS)
     with psycopg.connect(**connection) as db:
         assert db.execute("SELECT to_regclass(%s)", (TABLE,)).fetchone()[0] is None
-    command.upgrade(cfg, "head")
-    command.check(cfg)
+    command.upgrade(cfg, TARGET)
     command.downgrade(cfg, PREVIOUS)
 
     actor = uuid.uuid4()
@@ -92,8 +91,7 @@ def verify(port: int) -> None:
                     "created_by) VALUES (%s,%s,%s,'PROCESS_MODEL',1,%s,%s)",
                     (specs[index], series[index], projects[index],
                      bytes([index + 5]) * 32, actor))
-    command.upgrade(cfg, "head")
-    command.check(cfg)
+    command.upgrade(cfg, TARGET)
     with psycopg.connect(**connection) as db:
         old = db.execute(
             "SELECT spec_binding_state,declared_spec_count,spec_not_required_reason,"
@@ -193,11 +191,11 @@ def verify(port: int) -> None:
         assert db.execute(
             "SELECT content_fingerprint FROM plm.sol_section_version_create_results "
             "WHERE solution_section_version_id=%s", (versions[0],)).fetchone()[0] == fingerprints[0]
-    command.upgrade(cfg, "head")
-    command.check(cfg)
-    print("SOL_05_A04_P11_P02_SECTION_SPEC_SCHEMA_PASS: empty/existing upgrade, "
-          "legacy UNDECLARED, closed writes, cross-project FK, duplicate/order checks, "
-          "history-safe down/re-up and ORM drift")
+    command.upgrade(cfg, TARGET)
+    print("SOL_05_A04_P11_P02_SECTION_SPEC_SCHEMA_PASS: revision 0178 "
+          "empty/existing upgrade, legacy UNDECLARED, closed writes, "
+          "cross-project FK, duplicate/order checks and history-safe down/re-up; "
+          "head ORM drift is checked by current Owner validation")
 
 
 if __name__ == "__main__":

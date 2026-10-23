@@ -19,6 +19,10 @@ from plm_assistant.modules.requirement.application.outline_version_proof import 
 from .prove_section_document_content import SectionDocumentContentProof
 from .prove_section_evidence_use import SectionEvidenceUseProof
 from .section_version_base import CurrentSectionVersionBase, CurrentSectionVersionBasePort
+from .qualify_section_structured_spec import (
+    QualifiedSectionStructuredSpec, SectionStructuredSpecQualificationError,
+    SectionStructuredSpecQualificationService,
+)
 from .section_version_input import (
     SectionVersionDraftInput,
     SectionVersionInputError,
@@ -41,6 +45,8 @@ class ProvenSectionVersionInput:
     requirements: tuple[OutlineApprovedRequirementProof, ...] = field(repr=False)
     evidence: tuple[SectionEvidenceUseProof, ...] = field(repr=False)
     content_fingerprint: bytes = field(repr=False)
+    qualified_specs: tuple[QualifiedSectionStructuredSpec, ...] = field(
+        default=(), repr=False)
 
 
 class SectionDocumentPort(Protocol):
@@ -73,13 +79,15 @@ class SectionVersionInputProofService:
     def __init__(self, *, bases: CurrentSectionVersionBasePort,
                  documents: SectionDocumentPort,
                  requirements: SectionRequirementPort,
-                 evidence: SectionEvidencePort) -> None:
+                 evidence: SectionEvidencePort,
+                 specs: SectionStructuredSpecQualificationService | None = None) -> None:
         if any(port is None for port in (bases, documents, requirements, evidence)):
             raise ValueError("all current SectionVersion proof ports required")
         self._bases = bases
         self._documents = documents
         self._requirements = requirements
         self._evidence = evidence
+        self._specs = specs
 
     def prove(self, transaction: object, *, session_token: bytes,
               trace_id: uuid.UUID,
@@ -91,7 +99,7 @@ class SectionVersionInputProofService:
             value = validate_section_version_draft(draft)
         except SectionVersionInputError:
             raise SectionVersionInputProofError("VALIDATION_FAILED") from None
-        if value.spec_binding_state == "FIXED_REFS":
+        if value.spec_binding_state == "FIXED_REFS" and self._specs is None:
             raise SectionVersionInputProofError()
         # OutputArtifact has no Owner proof yet. Never treat its UUID as content.
         if value.content_artifact_ref is not None:
@@ -175,7 +183,8 @@ class SectionVersionInputProofService:
                     proven_evidence.observed_lock_version,
                     proven_evidence.content_fingerprint.hex()])
 
-            content_fingerprint = canonical_payload_fingerprint({
+            qualified_specs: tuple[QualifiedSectionStructuredSpec, ...] = ()
+            payload = {
                 "kind": "SOLUTION_SECTION_VERSION_PROVEN_INPUT_V1",
                 "request_fingerprint": value.request_fingerprint.hex(),
                 "project_id": str(value.project_id),
@@ -190,11 +199,38 @@ class SectionVersionInputProofService:
                              document.content_sha256.hex()],
                 "requirements": requirement_facts,
                 "evidence": evidence_facts,
-            })
+            }
+            if value.spec_binding_state == "FIXED_REFS":
+                if self._specs is None:
+                    raise SectionVersionInputProofError()
+                qualified_specs = self._specs.prove(
+                    transaction, base=base, project_id=value.project_id,
+                    section_id=value.solution_section_id,
+                    requirement_refs=value.requirement_refs,
+                    spec_refs=value.structured_spec_refs)
+                if (len(qualified_specs) != len(value.structured_spec_refs)
+                        or any(type(item) is not QualifiedSectionStructuredSpec
+                               or item.ref != ref
+                               for item, ref in zip(
+                                   qualified_specs, value.structured_spec_refs))):
+                    raise SectionVersionInputProofError()
+                payload["qualified_specs"] = [
+                    [str(item.ref.spec_series_id),
+                     str(item.ref.structured_solution_spec_id),
+                     item.spec_type, item.content_fingerprint.hex(),
+                     str(item.review_id), str(item.review_round_id),
+                     str(item.source_section_version_id),
+                     item.source_content_fingerprint.hex(),
+                     [str(identifier) for identifier in
+                      item.shared_requirement_version_ids]]
+                    for item in qualified_specs]
+            content_fingerprint = canonical_payload_fingerprint(payload)
             return ProvenSectionVersionInput(
                 value, base, document, tuple(requirements), tuple(evidence),
-                content_fingerprint)
+                content_fingerprint, qualified_specs)
         except SectionVersionInputProofError:
             raise
+        except SectionStructuredSpecQualificationError:
+            raise SectionVersionInputProofError() from None
         except Exception:
             raise SectionVersionInputProofError() from None

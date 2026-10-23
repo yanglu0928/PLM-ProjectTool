@@ -19,6 +19,7 @@ from plm_assistant.modules.solution.application.section_version_input import (
 from .orm import (
     SolutionSectionEvidenceRefRow,
     SolutionSectionRequirementRefRow,
+    SolutionSectionSpecRefRow,
     SolutionSectionVersionCreateResultRow,
     SolutionSectionVersionRow,
 )
@@ -36,7 +37,7 @@ class SqlAlchemySectionVersionCreateRepository:
         counts = dict(
             declared_requirement_count=len(draft.requirement_refs),
             declared_evidence_count=len(draft.evidence_ids),
-            declared_spec_count=0,
+            declared_spec_count=len(draft.structured_spec_refs),
         )
         created_at = session.execute(insert(SolutionSectionVersionRow).values(
             solution_section_version_id=version_id,
@@ -71,6 +72,19 @@ class SqlAlchemySectionVersionCreateRepository:
                 solution_section_id=draft.solution_section_id,
                 project_id=draft.project_id,
                 evidence_id=evidence_id,
+                ordinal=ordinal,
+            ))
+        if (draft.spec_binding_state == "FIXED_REFS"
+                and tuple(item.ref for item in proof.qualified_specs)
+                != draft.structured_spec_refs):
+            raise RuntimeError("SectionVersion Spec qualification is incomplete")
+        for ordinal, item in enumerate(draft.structured_spec_refs, 1):
+            session.execute(insert(SolutionSectionSpecRefRow).values(
+                solution_section_version_id=version_id,
+                solution_section_id=draft.solution_section_id,
+                project_id=draft.project_id,
+                spec_series_id=item.spec_series_id,
+                structured_solution_spec_id=item.structured_solution_spec_id,
                 ordinal=ordinal,
             ))
         session.execute(insert(SolutionSectionVersionCreateResultRow).values(
@@ -116,12 +130,30 @@ class SqlAlchemySectionVersionCreateRepository:
             SolutionSectionEvidenceRefRow.solution_section_id == row.solution_section_id,
             SolutionSectionEvidenceRefRow.project_id == project_id,
         ).order_by(SolutionSectionEvidenceRefRow.ordinal)).scalars().all()
+        root = session.execute(select(SolutionSectionVersionRow).where(
+            SolutionSectionVersionRow.solution_section_version_id == version_id,
+            SolutionSectionVersionRow.solution_section_id == row.solution_section_id,
+            SolutionSectionVersionRow.project_id == project_id,
+        )).scalar_one_or_none()
+        specs = session.execute(select(SolutionSectionSpecRefRow).where(
+            SolutionSectionSpecRefRow.solution_section_version_id == version_id,
+            SolutionSectionSpecRefRow.solution_section_id == row.solution_section_id,
+            SolutionSectionSpecRefRow.project_id == project_id,
+        ).order_by(SolutionSectionSpecRefRow.ordinal)).scalars().all()
         if (len(requirements) != row.declared_requirement_count
                 or len(evidence) != row.declared_evidence_count
+                or root is None
+                or len(specs) != root.declared_spec_count
+                or (root.spec_binding_state == "FIXED_REFS"
+                    and not specs)
+                or (root.spec_binding_state != "FIXED_REFS"
+                    and specs)
                 or any(item.ordinal != ordinal
                        for ordinal, item in enumerate(requirements, 1))
                 or any(item.ordinal != ordinal
-                       for ordinal, item in enumerate(evidence, 1))):
+                       for ordinal, item in enumerate(evidence, 1))
+                or any(item.ordinal != ordinal
+                       for ordinal, item in enumerate(specs, 1))):
             raise RuntimeError("SectionVersion first result references are incomplete")
         return SectionVersionInitialView(
             row.solution_section_version_id, row.solution_section_id,

@@ -31,6 +31,7 @@ from plm_assistant.modules.review.application.project_persistence import Project
 from plm_assistant.modules.review.infrastructure.create_repository import SqlAlchemyReviewCreationRepository
 from plm_assistant.modules.review.infrastructure.project_submission_repository import SqlAlchemyProjectReviewSubmissionRepository
 from plm_assistant.modules.review.infrastructure.start_repository import SqlAlchemyReviewStartRepository
+from plm_assistant.modules.review.infrastructure.read_repository import SqlAlchemyReviewSnapshotReadRepository
 from plm_assistant.modules.solution.api.outline_create import create_outline_create_router
 from plm_assistant.modules.solution.api.outline_version_create import create_outline_version_create_router
 from plm_assistant.modules.solution.api.outline_version_read import create_outline_version_read_router
@@ -72,6 +73,7 @@ from plm_assistant.modules.solution.application.validate_section_version import 
     SectionVersionCurrentValidator, SectionVersionValidationService,
 )
 from plm_assistant.modules.solution.application.prove_section_version_input import SectionVersionInputProofService
+from plm_assistant.modules.solution.application.qualify_section_structured_spec import SectionStructuredSpecQualificationService
 from plm_assistant.modules.solution.application.prove_outline_section_use import OutlineSectionUseProofService
 from plm_assistant.modules.solution.application.prove_outline_version_input import OutlineVersionInputProofService
 from plm_assistant.modules.solution.application.prove_reference_use import ReferenceUseProofService
@@ -90,6 +92,9 @@ from plm_assistant.modules.solution.infrastructure.section_document_content_proo
 from plm_assistant.modules.solution.infrastructure.section_evidence_use_proof import SectionEvidenceUseProofAdapter
 from plm_assistant.modules.solution.infrastructure.section_version_base import SqlAlchemyCurrentSectionVersionBase
 from plm_assistant.modules.solution.infrastructure.section_version_create_repository import SqlAlchemySectionVersionCreateRepository
+from plm_assistant.modules.solution.infrastructure.section_structured_spec_qualification_repository import (
+    SqlAlchemySectionSpecCandidateRepository, SqlAlchemySectionSpecSourceRepository,
+)
 from plm_assistant.modules.solution.infrastructure.section_version_read_repository import SqlAlchemySectionVersionReadRepository
 from plm_assistant.modules.solution.infrastructure.structured_spec_create_repository import SqlAlchemyStructuredSpecCreateRepository
 from plm_assistant.modules.solution.infrastructure.structured_spec_read_repository import SqlAlchemyStructuredSpecReadRepository
@@ -450,6 +455,10 @@ def create_windows_section_version_create_router(
             requirements=OutlineRequirementUseProofService(
                 approved_versions=SqlAlchemyPrototypeApprovedRequirementVersionProof()),
             evidence=SectionEvidenceUseProofAdapter(fixed_sources=evidence),
+            specs=SectionStructuredSpecQualificationService(
+                specs=SqlAlchemySectionSpecCandidateRepository(),
+                sections=SqlAlchemySectionSpecSourceRepository(),
+                reviews=SqlAlchemyReviewSnapshotReadRepository()),
         )
         service = SectionVersionCreateService(
             unit_of_work=runtime.unit_of_work,

@@ -11693,3 +11693,10 @@
 - Decision：候选 Spec 必须为同项目同 Series 当前唯一 APPROVED 版本，Review Identity/轮次 APPROVED 且 Subject/政策/版本/内容指纹精确一致；固定 Section 来源至少包含目标 Section 的既存祖先版本，祖先不可退回/受限，版本链须完整；Spec、来源章节和拟创建章节须至少共享一个固定 RequirementVersion，允许一份 Spec 涉及多个章节及其他需求。来源不要求是立即前驱，以免每次章节升版都被迫复制已批准专项设计。资格只是可引用证明；新正文与 Spec 的业务适配仍需后续现时 VALIDATE 与客户 Review，不自动 PASS。
 - Reason：仅凭同项目 FK 或 Spec 自身历史批准状态不足以排除被替代/Review 失配/错章节/需求漂移；要求同一未来 SectionVersion 回指会使两个独立不可变 POST 形成循环。既存线性版本链和人工显式选用提供可审计候选边界。
 - Impact/Rollback/Verification：无新 Scope、Schema、冻结 API 或权限变化；证明先独立单元/隔离 PG 验收，写入口保持关闭。撤证明不动历史；后续 Owner 写入前再次在同一事务重证并将事实纳入内容指纹、收据/Audit。若祖先被限制、Review 撤销或 Spec 被替代则新请求失败关闭，已存在历史不原地改写。
+
+# DEC-20261023-1205：Section 固定 SpecRef 以创建事务封印集合
+
+- Date/WBS：2026-10-23 / `SOL-05-A04-P11-P04-P02-A02`；依据 CR-SOL-022、DEC-1203/1204 与已验 0178/0179 SectionVersion 旧首响和 0160 延迟闭合。
+- Decision：追加 0180，仅允许 `FIXED_REFS` 根声明含 1～500 条固定引用；子行仅在其根创建的同一 PostgreSQL 事务中 INSERT，提交后不可补写/改写/删除/TRUNCATE；原 SectionVersion 延迟闭合追加 Spec 数量和 1-based 顺序，保持 Requirement/Evidence/首次结果旧约束。正式 CREATE 于同一事务调用 A01 现时资格证明，将 Spec/Review/来源固定指纹纳入内容指纹并写入子行；冻结首次 201 投影与旧请求/Key 不变，受权历史读取暴露引用。原 0178 闭锁测试固定测试 0178，不以当前 head 替代其历史行为；head 漂移由 0180 验证单独覆盖。
+- Reason：数据库 FK 只证明同项目版本存在，不能代替 Review/适用性；应用证明又不能代替数据库原子完整集合。历史重放必须返回第一次结果，不因未来 Spec 被替代而重写既存业务历史。
+- Impact/Rollback/Verification：无新路由、角色、License 权益、依赖或客户自动确认；有 `FIXED_REFS` 历史拒降回 0179，不清空历史，异常时关闭新入口并前滚修复。空库升降重升、旧数据 0179→0180、真实 Win11/PG/HTTP、晚插入/错源/跨项目/重放/收据Audit及全量回归是独立验收；语义适配与客户 Review 仍后续证明。

@@ -477,7 +477,7 @@ class SolutionSectionVersionCreateResultRow(Base):
 
 
 class SolutionSectionSpecRefRow(Base):
-    """Fixed SpecVersion reference; the write Owner is not installed yet."""
+    """Immutable fixed SpecVersion reference, sealed in the root create transaction."""
 
     __tablename__ = "sol_section_spec_refs"
     __table_args__ = (

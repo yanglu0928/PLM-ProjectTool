@@ -137,18 +137,21 @@ class SectionVersionCreateTests(unittest.TestCase):
             self.assertEqual(caught.exception.code, "VALIDATION_FAILED")
             self.assertEqual(self.proof_calls, [])
 
-    def test_fixed_spec_refs_fail_closed_until_qualification_owner_installed(self) -> None:
+    def test_fixed_spec_refs_fail_closed_without_qualification(self) -> None:
         from plm_assistant.modules.solution.application.section_version_input import (
             SectionStructuredSpecRef,
         )
         declared = replace(self.draft, spec_binding_state="FIXED_REFS",
                            structured_spec_refs=(SectionStructuredSpecRef(
                                uuid.uuid4(), uuid.uuid4()),))
+        self.proof = replace(self.proof,
+                             draft=validate_section_version_draft(declared))
         with self.assertRaises(SectionVersionCreateError) as caught:
             self.service.create(replace(self.command, draft=declared))
         self.assertEqual(caught.exception.code, "SOURCE_UNAVAILABLE")
-        self.assertEqual(self.proof_calls, [])
-        self.assertEqual(self.receipts.fingerprints, [])
+        self.assertEqual(self.proof_calls, [True])
+        self.assertEqual(self.receipts.fingerprints,
+                         [self.proof.draft.request_fingerprint])
         self.assertFalse(self.tx.committed)
 
     def test_explicit_none_required_preserves_legacy_first_result_shape(self) -> None:

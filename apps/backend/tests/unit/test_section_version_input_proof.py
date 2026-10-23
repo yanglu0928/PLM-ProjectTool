@@ -17,6 +17,9 @@ from plm_assistant.modules.solution.application.prove_section_version_input impo
     SectionVersionInputProofError,
     SectionVersionInputProofService,
 )
+from plm_assistant.modules.solution.application.qualify_section_structured_spec import (
+    QualifiedSectionStructuredSpec,
+)
 from plm_assistant.modules.solution.application.section_version_base import (
     CurrentSectionVersionBase,
 )
@@ -126,6 +129,35 @@ class SectionVersionInputProofTests(unittest.TestCase):
             structured_spec_refs=(SectionStructuredSpecRef(
                 uuid.uuid4(), uuid.uuid4()),)))
         self.assertEqual(self.calls, [])
+
+    def test_fixed_ref_qualification_binds_review_and_source_to_fingerprint(self):
+        ref = SectionStructuredSpecRef(uuid.uuid4(), uuid.uuid4())
+        predecessor = uuid.uuid4()
+        self.bases.result = dataclasses.replace(
+            self.base, next_version_no=2, supersedes_version_id=predecessor)
+        candidate = QualifiedSectionStructuredSpec(
+            ref, "PROCESS_MODEL", b"s" * 32, uuid.uuid4(), uuid.uuid4(),
+            predecessor, b"c" * 32, (REQUIREMENT_VERSION,))
+        qualifier = _Port((candidate,), "spec", self.calls)
+        self.service = SectionVersionInputProofService(
+            bases=self.bases, documents=self.documents,
+            requirements=self.requirements, evidence=self.evidences,
+            specs=qualifier)
+        value = draft(spec_binding_state="FIXED_REFS",
+                      structured_spec_refs=(ref,))
+        first = self.prove(value)
+        self.assertEqual(first.qualified_specs, (candidate,))
+        self.assertEqual([name for name, _, _ in self.calls],
+                         ["base", "document", "requirement", "evidence", "spec"])
+        self.assertIs(self.calls[-1][1], self.transaction)
+        self.assertEqual(self.calls[-1][2]["base"], self.bases.result)
+        self.calls.clear()
+        qualifier.result = (dataclasses.replace(
+            candidate, review_round_id=uuid.uuid4()),)
+        self.assertNotEqual(self.prove(value).content_fingerprint,
+                            first.content_fingerprint)
+        qualifier.result = ()
+        self.denied(value=value)
 
     def test_fingerprint_binds_input_version_and_current_source_facts(self):
         first = self.prove().content_fingerprint
