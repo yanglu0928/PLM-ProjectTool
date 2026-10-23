@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-23：0.1.0-dev.0/SOL-03-A06-P03-A03 静态复核Outline当前覆盖证明：Section正式批准/现时Trace与Spec前置已解除，但项目当前批准RequirementVersion全集及正式排除/延期决定Owner仍缺，`coverage`保持UNAVAILABLE。兼容性/升级/回滚：仅进展/路线文档，无程序、Schema、API或数据变化，撤路线记录不修改历史。验证：冻结DM-05/API-04与当前Outline/Section/Trace应用及仓储交叉核查；未运行新功能测试。已知问题：批准需求全集Port、Outline覆盖/VALIDATE/Review、Plan、正式信任、Gate3/Pilot/发行未完成。
+
 - 2026-10-23：0.1.0-dev.0/SOL-05-A04-P13-P06-P02-P03-A02 新增Win11合成负责人章节VALIDATE→选择客户→真实Edge送审/同Key回放/PG唯一事实验收，与A01独立客户链互补。兼容性/升级/回滚：仅新增隔离验证脚本，无程序、Schema、API或权限变化，无数据升级；撤脚本不删除服务器评审历史。验证：Edge 155/生产Vue/ASGI/一次性PG18.6脚本exit0、单Review/Round/START/收据/Audit；前片前端1857测试/typecheck/构建通过，本片未重跑。已知问题：非同一浏览器会话的组合证明、真实客户确认、正式信任、Outline/Plan、Gate3/Pilot/发行未完成。
 
 - 2026-10-23：0.1.0-dev.0/SOL-05-A04-P13-P06-P02-P03-A01 修复CR-SOL-022固定结构化规格字段与章节前端严格读取不一致，详情显示固定规格及作者适配依据；新增合成客户Section评审Edge/PG验收。兼容性/升级/回滚：无Schema/API/角色/License改动或数据升级；重新构建前端即可升级，撤前端适配会恢复读失败，不影响不可删除的评审史。验证：Windows 11 Edge/生产Vue/ASGI/一次性PG18.6客户待办→固定章节→批准/历史/跨项目拒绝exit0，前端全量1857测试/typecheck/构建通过。已知问题：负责人浏览器点击送审、真实客户确认、正式信任、Gate3/Pilot/发行未完成。
