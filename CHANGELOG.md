@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-23：0.1.0-dev.0/PLAN-02-A04-P04-A04-P03-P01 完成PlanVersion来源/Trace一致性前置核查：PlanVersion业务写Owner及Outline/Section整体Approved来源未就绪，转上游正式Review链，不提前开放计划版本。兼容性/升级/回滚：仅进度与实施顺序文档，无程序、Schema、API、数据或权限变化；可按验收结果修订顺序。验证：冻结合同与当前代码/迁移静态交叉核查，未运行功能测试。已知问题：Outline/Section审批、PlanVersion完整业务链、正式信任/安装及Gate3/Pilot/发行待。
+
 - 2026-10-23：0.1.0-dev.0/PLAN-02-A04-P04-A04-P02-A03-P02-A02 增加Windows显式`--platform-trace`与`--platform-write-trace`启动模式，分别在原只读/读写平台组合上挂载受权Trace图，专用当前账户Key缺失时拒绝新模式启动并释放数据库运行时；旧模式不受新Key影响。兼容性/升级/回滚：无Schema、冻结API、权限或License改动，部署需在目标服务账户提供并备份独立`trace-graph-cursor-v1`密钥；不使用新模式即可回滚，既有模式维持原行为。验证：定向合同4项/2子例、后端完整回归3847通过/3跳过/6023子例。已知问题：正式服务账户Key/公钥/安装恢复、来源/Trace一致性Owner、完整Plan链、Gate3/Pilot/正式发行未验。
 
 - 2026-10-19：0.1.0-dev.0/PLAN-02-A04-P04-A04-P02-A03-P02-A01 增加Windows Trace图受控组合工厂，注册Document/Requirement/Section/StructuredSpec/WBS固定版本Owner并复用受权限深图与独立游标；现有启动模式未挂载。兼容性/升级/回滚：无Migration、冻结API、权限、License或旧数据变更，撤工厂即可回滚。验证：Win11/PG18.6隔离真实ASGI WBS反向两页、撤权旧游标/跨项目/License/零读Audit；定向9项/17子例，首轮并行全量既有启动器单项失败、隔离复跑通过，最终全量3843通过/3跳过/6021子例。已知问题：开发wheel、正式服务账户游标Key/License信任、启动模式接线、剩余Owner类型及Gate3/Pilot/发行待。
