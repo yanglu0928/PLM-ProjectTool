@@ -37,7 +37,7 @@ from .section_version_input import (
 from .section_version_validation_contract import (
     AUDIT_ACTION, OPERATION, SectionVersionValidationFacts,
     SectionVersionValidationReport, SectionVersionValidationSnapshot,
-    ValidateSectionVersion, audit_reason_for_facts,
+    ValidateSectionVersion, SectionCurrentFactQuery, audit_reason_for_facts,
     build_section_version_validation_report, facts_from_audit_reason,
 )
 
@@ -144,9 +144,10 @@ class SectionVersionCurrentValidator:
         self._trace = trace
         self._specs = specs
 
-    def facts(self, transaction: object, *, command: ValidateSectionVersion,
+    def facts(self, transaction: object, *, command: ValidateSectionVersion | SectionCurrentFactQuery,
               version: SectionVersionHistoryView) -> SectionVersionValidationFacts:
-        if (transaction is None or type(command) is not ValidateSectionVersion
+        if (transaction is None or type(command) not in (
+                    ValidateSectionVersion, SectionCurrentFactQuery)
                 or type(version) is not SectionVersionHistoryView
                 or (version.project_id, version.solution_section_id,
                     version.solution_section_version_id) != (
@@ -261,7 +262,8 @@ class SectionVersionCurrentValidator:
         except Exception:
             return "UNAVAILABLE"
 
-    def _trace_status(self, transaction: object, command: ValidateSectionVersion,
+    def _trace_status(self, transaction: object,
+                      command: ValidateSectionVersion | SectionCurrentFactQuery,
                       version: SectionVersionHistoryView) -> str:
         if self._trace is None:
             return "UNAVAILABLE"

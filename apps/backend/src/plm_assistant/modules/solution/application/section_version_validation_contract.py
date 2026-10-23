@@ -88,6 +88,24 @@ class ValidateSectionVersion:
 
 
 @dataclass(frozen=True, slots=True)
+class SectionCurrentFactQuery:
+    """Internal current-fact identity; carries no VALIDATE receipt or audit key."""
+
+    session_token: bytes = field(repr=False)
+    trace_id: uuid.UUID
+    project_id: uuid.UUID
+    solution_section_id: uuid.UUID
+    solution_section_version_id: uuid.UUID
+
+    def __post_init__(self) -> None:
+        if (type(self.session_token) is not bytes or len(self.session_token) != 32
+                or not all(_id(value) for value in (
+                    self.trace_id, self.project_id, self.solution_section_id,
+                    self.solution_section_version_id))):
+            raise SectionVersionValidationContractError("invalid current fact query")
+
+
+@dataclass(frozen=True, slots=True)
 class SectionVersionValidationSnapshot:
     project_id: uuid.UUID
     solution_section_id: uuid.UUID

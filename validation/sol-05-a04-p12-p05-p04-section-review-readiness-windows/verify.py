@@ -45,6 +45,7 @@ prior = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(prior)
 fixture = prior.fixture
 _fit_owner = prior._after_submit
+_observation_hook = None  # Optional later read-only verification; original run unchanged.
 
 
 def _after_submit(*, port, runtime, project, draft, token, csrf, audit,
@@ -132,6 +133,12 @@ def _after_submit(*, port, runtime, project, draft, token, csrf, audit,
         first = ready.json()["data"]
         assert set(first["facts"].values()) == {"PASS"}, first
         assert first["valid"] and first["ready_for_review"]
+        if _observation_hook is not None:
+            _observation_hook(
+                phase="ready", runtime=runtime, project=project,
+                section=section, version=version, token=token,
+                documents=documents, downloads=downloads,
+                parse_results=parse_results, license_guard=license_guard)
         revoker.revoke(RevokeTraceLink(
             token, csrf, uuid.uuid4(), project, edge.trace_link_id, 0),
             idempotency_key="section-readiness-revoke-0001")
@@ -140,6 +147,12 @@ def _after_submit(*, port, runtime, project, draft, token, csrf, audit,
         assert revoked.json()["data"]["facts"]["trace"] == "FAIL"
         assert revoked.json()["data"]["facts"]["spec"] == "PASS"
         assert not revoked.json()["data"]["ready_for_review"]
+        if _observation_hook is not None:
+            _observation_hook(
+                phase="revoked", runtime=runtime, project=project,
+                section=section, version=version, token=token,
+                documents=documents, downloads=downloads,
+                parse_results=parse_results, license_guard=license_guard)
         replay = app.post(path, headers=headers("section-readiness-ready-0001"))
         assert replay.status_code == 200 and replay.json()["data"] == first
     with psycopg.connect(**connection) as db:

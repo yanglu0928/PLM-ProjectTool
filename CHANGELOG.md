@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-23：0.1.0-dev.0/SOL-05-A04-P13-P02 按CR-SOL-024新增Section独立Review现时六维只读准备Owner：精确最新DRAFT、ACTIVE父子根、固定版本指纹及同事务当前来源全PASS才返回证明，不消费旧VALIDATE Audit/收据。兼容性/升级/回滚：无Schema/API/权限/License变化，内部未接提交入口，可撤本片代码而不改历史。验证：Windows 11/临时PG18.6真实Trace+Spec PASS/撤销拒绝exit0；定向服务/锁序测试及后端全量3941通过/3跳过/6074子例。已知问题：Section正式Review状态Schema/Subject/提交/终态、真实客户确认及Gate3/Pilot/发行未完成。
+
 - 2026-10-23：0.1.0-dev.0/SOL-05-A04-P13-P01 登记CR-SOL-024/DEC-1207，确定Section独立PROJECT Review须在送审/终态重证现时六维与精确评审快照，不能从旧ready报告或Outline/Spec批准推定客户批准；0160/0148 Guard受控开放留独立迁移。兼容性/升级/回滚：本片仅设计/决策，无程序、Schema/API/数据变化，可在实施前修订，原冻结版本保留。验证：冻结DM/API/V2.1与当前SOL-06 Review/Section Guard静态核查，未运行本片功能测试。已知问题：只读Owner、受控迁移、正式Review/客户确认、Gate3/Pilot/发行待。
 
 - 2026-10-23：0.1.0-dev.0/SOL-05-A04-P12-P05-P04 新增可重复Win11/PG18.6验收，证明同一SectionVersion的当前批准Spec与作者逐引用依据、精确ACTIVE Requirement→Section Trace同时满足时六维ready=true；撤边后新Key阻断、旧Key保留首次结果。兼容性/升级/回滚：仅验证脚本和记录，无程序/Schema/API/数据变化，移除脚本不影响应用。验证：一次性PG真实HTTP/Session/授权/审计与状态DRAFT检查exit0；前项后端全量3920通过/3跳过，本片未重跑。已知问题：Section正式Review/客户确认、Outline/Plan衔接、正式信任/Gate3/Pilot/发行待。
