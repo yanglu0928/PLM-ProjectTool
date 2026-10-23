@@ -27,6 +27,9 @@ function stateLabel(value: string) {
   return ({ DRAFT: "待开始", IN_REVIEW: "评审中", APPROVED: "已批准",
     RETURNED: "已退回", WITHDRAWN: "已撤回" } as Record<string, string>)[value] ?? "未知";
 }
+function subjectLabel(value: string) {
+  return value === "SOL-05" ? "方案章节" : value === "SOL-06" ? "结构化专项" : value;
+}
 async function load(replace = false) {
   if (!mayRead() || busy.value) return;
   const project = projectId(), view = mode.value, actor = session.view!.user.user_id;
@@ -100,7 +103,7 @@ onUnmounted(() => { mounted = false; generation += 1; unsubscribe(); clear(); })
       <p v-else-if="busy" role="status">正在从服务器读取并自动翻页…</p>
       <p v-if="loaded && !items.length" role="status">{{ mode==='my_pending' ? '当前没有待处理评审。' : '当前没有可见评审历史。' }}</p>
       <ol v-if="items.length" aria-label="评审结果"><li v-for="entry in items" :key="entry.review_id">
-        <strong>{{ stateLabel(entry.state) }} · {{ entry.subject_ref.resource_type }}</strong>
+        <strong>{{ stateLabel(entry.state) }} · {{ subjectLabel(entry.subject_ref.resource_type) }}</strong>
         <span>评审编号 {{ entry.review_id }}</span>
         <span>主题编号 {{ entry.subject_ref.resource_id }}</span>
         <span v-if="entry.active_round">轮次 {{ entry.active_round.round_no }} · {{ entry.active_round.my_assignment?.state==='PENDING' ? '我的待决定' : '无我的待决定' }}</span>

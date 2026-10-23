@@ -59,6 +59,18 @@ describe("ProjectReviewListView", () => {
     wrapper.unmount();
   });
 
+  it("labels a Section customer decision as a solution chapter", async () => {
+    const section = { ...pending,
+      subject_ref: { resource_type: "SOL-05", resource_id: other },
+      policy_code: "SOLUTION_SECTION_ALL_V1" };
+    const { wrapper } = await page({ list: vi.fn().mockResolvedValue({
+      items: [section], next_cursor: null, has_more: false,
+    }) });
+    expect(wrapper.text()).toContain("评审中 · 方案章节");
+    expect(wrapper.get(`a[href="/projects/${project}/reviews/${review}"]`).text()).toContain("打开评审");
+    wrapper.unmount();
+  });
+
   it("refreshes the pending view after a decision and keeps terminal history separate", async () => {
     const list = vi.fn().mockResolvedValueOnce({ items: [pending], next_cursor: null, has_more: false })
       .mockResolvedValueOnce({ items: [], next_cursor: null, has_more: false })

@@ -18,6 +18,8 @@ const projectId=()=>typeof route.params.projectId==="string"?route.params.projec
 const reviewId=()=>typeof route.params.reviewId==="string"?route.params.reviewId:"";
 const mayRead=()=>mounted&&!!session.view&&!session.view.password_change_required&&session.view.authorized_projects.some(p=>p.project_id===projectId());
 const assignment=computed(()=>current.value?.active_round?.assignments.find(a=>a.reviewer_id===session.view?.user.user_id)??null);
+const isSection=computed(()=>current.value?.subject_ref.resource_type==="SOL-05");
+const subjectLabel=computed(()=>isSection.value?"方案章节":"结构化专项");
 const mayDecide=computed(()=>!!current.value&&current.value.state==="IN_REVIEW"&&assignment.value?.state==="PENDING"&&session.canSubmit&&!locked.value);
 function storageKey(){return `plm.review.decide.pending.${session.view?.user.user_id??"none"}.${projectId()}.${reviewId()}`}
 function validPending(v:unknown):v is Pending{if(!v||typeof v!=="object"||Array.isArray(v))return false;const i=v as Record<string,unknown>;const id=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;return i.actor===session.view?.user.user_id&&i.project===projectId()&&i.review===reviewId()&&typeof i.round==="string"&&id.test(i.round)&&["APPROVE","RETURN"].includes(String(i.decision))&&(i.comment===null||typeof i.comment==="string")&&typeof i.key==="string"&&/^[\x20-\x7e]{16,128}$/.test(i.key as string)&&((i.decision==="APPROVE"&&i.comment===null)||(i.decision==="RETURN"&&!!(i.comment as string).trim()))}
@@ -30,28 +32,29 @@ function stateLabel(v:string){return({DRAFT:"待开始",IN_REVIEW:"评审中",AP
 </script>
 
 <template><section class="review" aria-labelledby="review-title" :aria-busy="busy">
-  <p class="section-kicker">项目治理 · 已知评审</p><h1 id="review-title">结构化专项评审</h1>
+  <p class="section-kicker">项目治理 · 已知评审</p><h1 id="review-title">{{subjectLabel}}评审</h1>
   <p><RouterLink :to="{name:'project-reviews',params:{projectId:route.params.projectId}}">返回评审待办与历史</RouterLink></p>
-  <p class="warning">此页只读取已知评审编号，不是评审收件箱。决定只代表本轮评审，不代表实施完成、客户确认或 UAT 通过。</p>
+  <p class="warning">请从评审待办核对当前分配与固定版本。决定只代表本轮评审，不等于合同意义上的客户签署、实施完成或 UAT 通过。</p>
   <p v-if="!mayRead()" role="status">当前会话没有此项目的读取权限。</p>
   <template v-else><button type="button" :disabled="busy||deciding" @click="load">{{busy?'正在读取…':'刷新评审'}}</button>
     <p v-if="error" role="alert">{{error}}</p><p v-else-if="busy" role="status">正在读取评审…</p>
     <template v-else-if="current"><h2>状态：{{stateLabel(current.state)}}</h2>
-      <dl><dt>评审编号</dt><dd>{{current.review_id}}</dd><dt>专项系列</dt><dd>{{current.subject_ref.resource_id}}</dd><dt>策略</dt><dd>{{current.policy_code}}</dd><dt>版本</dt><dd>{{current.etag}}</dd></dl>
+      <dl><dt>评审编号</dt><dd>{{current.review_id}}</dd><dt>{{isSection?'章节':'专项系列'}}</dt><dd>{{current.subject_ref.resource_id}}</dd><dt>策略</dt><dd>{{current.policy_code}}</dd><dt>版本</dt><dd>{{current.etag}}</dd></dl>
       <section v-if="current.active_round" aria-labelledby="round-title"><h3 id="round-title">当前活动轮次 {{current.active_round.round_no}}</h3>
-        <p><RouterLink :to="{name:'project-structured-spec-detail',params:{projectId:current.project_id,specId:current.active_round.subject_version_ref}}">查看本轮固定专项版本</RouterLink></p>
+        <p v-if="isSection"><RouterLink :to="{name:'project-section-version-detail',params:{projectId:current.project_id,sectionId:current.subject_ref.resource_id,versionId:current.active_round.subject_version_ref}}">查看本轮固定章节版本</RouterLink></p>
+        <p v-else><RouterLink :to="{name:'project-structured-spec-detail',params:{projectId:current.project_id,specId:current.active_round.subject_version_ref}}">查看本轮固定专项版本</RouterLink></p>
         <ul><li v-for="item in current.active_round.assignments" :key="item.assignment_id">评审人 {{item.reviewer_id}}：{{item.state==='PENDING'?'待决定':`已${item.decision?.decision==='APPROVE'?'批准':'退回'}`}}<span v-if="item.decision?.comment">；意见：{{item.decision.comment}}</span></li></ul>
         <p v-if="!assignment" role="status">你不是本轮评审人，可查看状态但不能提交决定。</p><p v-else-if="assignment.state==='DECIDED'" role="status">你已完成本轮决定。</p>
         <template v-else-if="mayDecide"><div v-if="pending" class="pending" role="status">存在结果未知的原决定：{{pending.decision==='APPROVE'?'批准':'退回'}}<span v-if="pending.comment">，意见“{{pending.comment}}”</span>。请核对当前状态并保持原操作号。</div>
           <label v-if="pending"><input v-model="confirmRetry" type="checkbox" :disabled="deciding||locked"> 我已核对并确认按原决定、原意见和原操作号重试</label>
-          <template v-else><label><input v-model="confirmApprove" type="checkbox" :disabled="deciding"> 我已核对固定专项与当前评审范围</label>
+          <template v-else><label><input v-model="confirmApprove" type="checkbox" :disabled="deciding"> 我已核对固定{{subjectLabel}}版本与当前评审范围</label>
             <button type="button" :disabled="deciding||!confirmApprove" @click="decide('APPROVE')">批准本轮</button>
             <label>退回意见（必填）<textarea v-model="returnComment" :disabled="deciding" maxlength="4000" /></label>
             <button type="button" :disabled="deciding||!returnComment.trim()" @click="decide('RETURN')">退回修改</button></template>
           <button v-if="pending" type="button" :disabled="deciding||locked||!confirmRetry" @click="decide(pending.decision)">按原操作号重试决定</button>
         </template>
       </section><p v-else role="status">当前没有活动轮次；历史决定仍保留在服务端，本页不把历史轮伪装成待办。</p>
-      <p v-if="decisionError" role="alert">{{decisionError}}</p><p v-if="receipt" role="status">决定已记录：{{receipt.decision==='APPROVE'?'批准':'退回'}}；当前聚合状态 {{stateLabel(receipt.state)}}。这不是客户确认。</p>
+      <p v-if="decisionError" role="alert">{{decisionError}}</p><p v-if="receipt" role="status">决定已记录：{{receipt.decision==='APPROVE'?'批准':'退回'}}；当前聚合状态 {{stateLabel(receipt.state)}}。请以服务端评审记录核对，不等于合同签署或 UAT 通过。</p>
     </template>
   </template>
 </section></template>
