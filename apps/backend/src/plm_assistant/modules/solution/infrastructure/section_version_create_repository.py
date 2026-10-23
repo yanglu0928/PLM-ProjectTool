@@ -32,9 +32,6 @@ class SqlAlchemySectionVersionCreateRepository:
                proof: ProvenSectionVersionInput) -> SectionVersionInitialView:
         session = _session(transaction)
         draft = proof.draft
-        if any(item.fit_rationale is not None
-               for item in draft.structured_spec_refs):
-            raise RuntimeError("SectionVersion Spec fit Owner is not installed")
         assumptions = draft.assumptions()
         exclusions = draft.exclusions()
         counts = dict(
@@ -88,6 +85,7 @@ class SqlAlchemySectionVersionCreateRepository:
                 project_id=draft.project_id,
                 spec_series_id=item.spec_series_id,
                 structured_solution_spec_id=item.structured_solution_spec_id,
+                fit_rationale=item.fit_rationale,
                 ordinal=ordinal,
             ))
         session.execute(insert(SolutionSectionVersionCreateResultRow).values(
