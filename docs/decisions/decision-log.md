@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261023-1242：Outline 验证合同先于现时证明 Owner
+
+- Date/WBS：2026-10-23 / `SOL-03-A06-P02`；依据冻结 API-04 order/source/coverage 和 SOL-03-A06-P01 缺口核查。
+- Decision：先用独立三维 `PASS/FAIL/UNAVAILABLE` 事实及严格报告定义固定版本验证；缺事实默认 UNAVAILABLE，只有三维均 PASS 且版本为 DRAFT 才可显示 ready。报告是历史观察，送审/批准必须在同一事务重新证明当前事实。
+- Reason：当前无 Outline VALIDATE/Review Owner；合同先钉住失败关闭与审计回放语义，使后续来源证明不能以缺失端口或旧报告冒充通过。
+- Impact/Rollback：只增纯应用合同与测试，不改冻结 API、Schema、角色、License；移除未装配合同即可回滚。
+
 ## DEC-20261019-1241：Trace图使用独立显式Windows服务模式
 
 - Date/WBS：2026-10-19 / `PLAN-02-A04-P04-A04-P02-A03-P02-A02`；依据DEC-20261019-1240、P02-A01受控工厂及已有`trace-graph-cursor-v1`当前账户Key读取器。

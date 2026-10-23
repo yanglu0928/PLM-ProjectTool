@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-23：0.1.0-dev.0/SOL-03-A06-P02 新增OutlineVersion现时验证的纯合同：order/source/coverage 三维默认不可用，固定身份/幂等摘要、严格快照、内容无关Audit原因和不可伪造报告结论；不读取历史报告作为送审资格。兼容性/升级/回滚：未挂载HTTP，无Schema、冻结API、权限、License或旧数据变化，撤未装配纯合同即可回滚。验证：定向54项、后端完整回归3875通过/3跳过/6023子例。已知问题：现时证明Owner/HTTP/Review、Section批准、PlanVersion完整链、正式信任/安装及Gate3/Pilot/发行待。
+
 - 2026-10-23：0.1.0-dev.0/SOL-03-A06-P01 完成OutlineVersion正式Review上游前置核查，明确现时验证、统一Review状态窄门、原子送审和Section单独批准缺口，避免草稿来源提前进入Plan。兼容性/升级/回滚：仅进度与实施顺序文档，无程序、Schema、API或数据变更；可按后续验收修订顺序。验证：冻结DM/API与当前ORM/迁移/应用静态交叉核查，未运行功能测试。已知问题：Outline/Section Review、PlanVersion完整链、正式信任/安装及Gate3/Pilot/发行待。
 
 - 2026-10-23：0.1.0-dev.0/PLAN-02-A04-P04-A04-P03-P01 完成PlanVersion来源/Trace一致性前置核查：PlanVersion业务写Owner及Outline/Section整体Approved来源未就绪，转上游正式Review链，不提前开放计划版本。兼容性/升级/回滚：仅进度与实施顺序文档，无程序、Schema、API、数据或权限变化；可按验收结果修订顺序。验证：冻结合同与当前代码/迁移静态交叉核查，未运行功能测试。已知问题：Outline/Section审批、PlanVersion完整业务链、正式信任/安装及Gate3/Pilot/发行待。
