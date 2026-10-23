@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261023-1245：Windows Section VALIDATE 注入统一 Trace Owner
+
+- Date/WBS：2026-10-23 / `SOL-05-A04-P10-P02`；依据 P10-P01 内部接口和 TRC-01-A03-P03 当前精确覆盖服务。
+- Decision：显式 Windows Section VALIDATE 组合注册 RequirementVersion 与 SectionVersion 两个受权 Trace Target Owner，复用同事务 Trace Repository；旧 Audit/幂等首次观察语义不改，新 Key 在当前边状态下重证。
+- Reason：使用户可见的既有验证入口反映真实 ACTIVE `IMPLEMENTS`，而不是永久 UNAVAILABLE；保持统一权限与 Trace 表唯一事实。
+- Impact/Rollback：不改路径/DTO/Schema/角色/License/密钥；撤新注入可回滚至 Trace UNAVAILABLE，历史回执不重写。
+
 ## DEC-20261023-1244：Section 当前验证复用统一 Trace 精确覆盖
 
 - Date/WBS：2026-10-23 / `SOL-05-A04-P10-P01`；依据 TRC-01-A03-P03 已验精确 ACTIVE `IMPLEMENTS` 和 Section 六维 VALIDATE 合同。

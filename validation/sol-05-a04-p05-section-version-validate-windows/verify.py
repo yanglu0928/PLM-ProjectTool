@@ -75,7 +75,7 @@ def on_http(*, port, runtime, audit, license_guard, project, other_project,
         data = first.json()["data"]
         assert data["facts"] == {
             "integrity": "PASS", "content": "PASS", "requirements": "PASS",
-            "evidence": "PASS", "trace": "UNAVAILABLE", "spec": "UNAVAILABLE"}
+            "evidence": "PASS", "trace": "FAIL", "spec": "UNAVAILABLE"}
         assert data["valid"] and not data["ready_for_review"]
         replay = app.post(path, headers=headers(token, csrf, "validation-first-0001"))
         assert replay.status_code == 200 and replay.json()["data"] == data

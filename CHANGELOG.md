@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-23：0.1.0-dev.0/SOL-05-A04-P10-P02 Windows显式Section VALIDATE接入统一Requirement/Section Trace Owner与ACTIVE IMPLEMENTS Repository，现时报告反映无边/有效边/撤销，旧幂等Key保留首次观察。兼容性/升级/回滚：冻结路由/DTO、Schema、权限、License、游标Key不变；撤新注入可回滚为Trace不可用，历史Audit/收据不删。验证：Win11/PG18.6实际HTTP无边FAIL→ACTIVE PASS→撤销FAIL/旧Key回放、旧Windows验收脚本回归、后端全量3890通过/3跳过/6023子例。已知问题：Spec维/Section Review、Outline coverage/Review、正式信任/安装及Gate3/Pilot/发行待。
+
 - 2026-10-23：0.1.0-dev.0/SOL-05-A04-P10-P01 SectionVersion现时VALIDATE可注入统一Trace精确ACTIVE IMPLEMENTS证明，严格核对固定目标、需求全集与边唯一性；缺/多边失败，端口不可用不放行，Spec维仍不可用。兼容性/升级/回滚：内部可选注入，无Schema、冻结API、权限、License、旧数据变化；不注入即可维持旧行为。验证：定向20项、后端完整回归3890通过/3跳过/6023子例；本片未新跑实际PG/浏览器。已知问题：Windows实际注入、Section Spec/Review、Outline coverage、正式信任/安装和Gate3/Pilot/发行待。
 
 - 2026-10-23：0.1.0-dev.0/SOL-03-A06-P03-A02 核查Outline当前覆盖证明：没有Approved SectionVersion、固定Spec引用和完整Section Trace现时验收，coverage继续不可用，转上游Section验证。兼容性/升级/回滚：仅进度与实施顺序文档，无程序、Schema、API、权限或数据变化；可依后续证据修订顺序。验证：冻结合同与现有Trace/Section/Windows/ORM静态交叉核查，未运行功能测试。已知问题：Section Trace/Spec/Review、Outline coverage/Review、Plan和Gate3/Pilot/发行待。

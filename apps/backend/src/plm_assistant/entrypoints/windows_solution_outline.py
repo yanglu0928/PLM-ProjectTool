@@ -7,6 +7,7 @@ from pathlib import Path
 from fastapi import APIRouter
 
 from plm_assistant.entrypoints.trace_requirement_owner import RequirementVersionTraceOwner
+from plm_assistant.entrypoints.trace_section_owner import SectionVersionTraceOwner
 from plm_assistant.entrypoints.trace_structured_spec_owner import StructuredSpecTraceOwner
 from plm_assistant.modules.auth.infrastructure.project_read_access import SqlAlchemyProjectReadAccess
 from plm_assistant.modules.auth.infrastructure.project_write_access import SqlAlchemyProjectWriteAccess
@@ -754,6 +755,27 @@ def create_windows_section_version_validate_router(
             documents, downloads, parse_results)):
         raise ProductionSolutionOutlineStartupError()
     try:
+        authorization = ProjectAuthorizationService(
+            unit_of_work=runtime.unit_of_work,
+            repository=SqlAlchemyProjectAuthorizationRepository())
+        read_access = SqlAlchemyProjectReadAccess()
+        requirement_trace_owner = RequirementVersionTraceOwner(
+            RequirementVersionReadService(
+                unit_of_work=runtime.unit_of_work, access=read_access,
+                license_guard=license_guard, authorization=authorization,
+                repository=SqlAlchemyRequirementVersionReadRepository()))
+        section_trace_owner = SectionVersionTraceOwner(
+            SectionVersionReadService(
+                unit_of_work=runtime.unit_of_work, access=read_access,
+                license_guard=license_guard, authorization=authorization,
+                sections=SqlAlchemySectionReadRepository(),
+                versions=SqlAlchemySectionVersionReadRepository()))
+        trace = TraceImplementsCoverageService(
+            repository=SqlAlchemyTraceImplementsRepository(),
+            owners=TraceTargetProofService({
+                ("requirement", "REQ-03"): requirement_trace_owner,
+                ("solution", "SOL-05"): section_trace_owner,
+            }))
         fixed = DocumentFixedSourceProofService(
             documents=documents, downloads=downloads,
             parse_metadata=SqlAlchemyParseResultReadRepository(),
@@ -773,13 +795,12 @@ def create_windows_section_version_validate_router(
             requirements=OutlineRequirementUseProofService(
                 approved_versions=SqlAlchemyPrototypeApprovedRequirementVersionProof()),
             evidence=SectionEvidenceUseProofAdapter(fixed_sources=evidence),
+            trace=trace,
         )
         service = SectionVersionValidationService(
             unit_of_work=runtime.unit_of_work,
             access=SqlAlchemyProjectWriteAccess(), license_guard=license_guard,
-            authorization=ProjectAuthorizationService(
-                unit_of_work=runtime.unit_of_work,
-                repository=SqlAlchemyProjectAuthorizationRepository()),
+            authorization=authorization,
             sections=SqlAlchemySectionReadRepository(),
             versions=SqlAlchemySectionVersionReadRepository(), current=current,
             receipts=SqlAlchemyIdempotencyReceipts(), audit=audit,
