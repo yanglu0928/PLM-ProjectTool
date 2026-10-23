@@ -73,7 +73,10 @@ from plm_assistant.modules.solution.application.validate_section_version import 
     SectionVersionCurrentValidator, SectionVersionValidationService,
 )
 from plm_assistant.modules.solution.application.prove_section_version_input import SectionVersionInputProofService
-from plm_assistant.modules.solution.application.qualify_section_structured_spec import SectionStructuredSpecQualificationService
+from plm_assistant.modules.solution.application.qualify_section_structured_spec import (
+    SectionCurrentSpecQualificationService,
+    SectionStructuredSpecQualificationService,
+)
 from plm_assistant.modules.solution.application.prove_outline_section_use import OutlineSectionUseProofService
 from plm_assistant.modules.solution.application.prove_outline_version_input import OutlineVersionInputProofService
 from plm_assistant.modules.solution.application.prove_reference_use import ReferenceUseProofService
@@ -805,6 +808,11 @@ def create_windows_section_version_validate_router(
                 approved_versions=SqlAlchemyPrototypeApprovedRequirementVersionProof()),
             evidence=SectionEvidenceUseProofAdapter(fixed_sources=evidence),
             trace=trace,
+            specs=SectionCurrentSpecQualificationService(
+                SectionStructuredSpecQualificationService(
+                    specs=SqlAlchemySectionSpecCandidateRepository(),
+                    sections=SqlAlchemySectionSpecSourceRepository(),
+                    reviews=SqlAlchemyReviewSnapshotReadRepository())),
         )
         service = SectionVersionValidationService(
             unit_of_work=runtime.unit_of_work,

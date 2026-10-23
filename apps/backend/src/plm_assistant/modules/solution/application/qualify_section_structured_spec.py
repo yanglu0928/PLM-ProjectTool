@@ -20,6 +20,7 @@ from .read_structured_spec import StructuredSpecHistoryView
 from .section_version_base import CurrentSectionVersionBase
 from .section_version_input import (
     SectionRequirementRef, SectionStructuredSpecRef,
+    is_normalized_spec_basis,
 )
 
 
@@ -105,10 +106,67 @@ class SectionStructuredSpecQualificationService:
                         for item in requirement_refs}
         if len(requirements) != len(requirement_refs):
             raise SectionStructuredSpecQualificationError()
+        return self._prove_refs(
+            transaction, project_id=project_id, section_id=section_id,
+            target_version_no=base.next_version_no,
+            predecessor_version_id=base.supersedes_version_id,
+            requirements=requirements, spec_refs=spec_refs)
+
+    def prove_current(self, transaction: object, *,
+                      version: SectionVersionHistoryView,
+                      ) -> tuple[QualifiedSectionStructuredSpec, ...]:
+        """Re-qualify fixed history against today's approved Spec/Review facts."""
+        if (transaction is None or type(version) is not SectionVersionHistoryView
+                or not _id(version.project_id)
+                or not _id(version.solution_section_id)
+                or not _id(version.solution_section_version_id)
+                or version.version_state != "DRAFT"
+                or version.spec_binding_state != "FIXED_REFS"
+                or type(version.version_no) is not int or version.version_no < 2
+                or not _id(version.supersedes_version_ref)
+                or type(version.requirement_refs) is not tuple
+                or type(version.structured_spec_refs) is not tuple
+                or not 1 <= len(version.structured_spec_refs) <= 500
+                or any(type(item) is not SectionRequirementRef
+                       or not _id(item.requirement_id)
+                       or not _id(item.requirement_version_id)
+                       for item in version.requirement_refs)
+                or any(type(item) is not SectionStructuredSpecRef
+                       or not _id(item.spec_series_id)
+                       or not _id(item.structured_solution_spec_id)
+                       or not is_normalized_spec_basis(item.fit_rationale)
+                       for item in version.structured_spec_refs)
+                or len({item.spec_series_id for item in version.structured_spec_refs})
+                != len(version.structured_spec_refs)
+                or len({item.structured_solution_spec_id
+                        for item in version.structured_spec_refs})
+                != len(version.structured_spec_refs)):
+            raise SectionStructuredSpecQualificationError()
+        requirements = {(item.requirement_id, item.requirement_version_id)
+                        for item in version.requirement_refs}
+        if len(requirements) != len(version.requirement_refs):
+            raise SectionStructuredSpecQualificationError()
+        return self._prove_refs(
+            transaction, project_id=version.project_id,
+            section_id=version.solution_section_id,
+            target_version_no=version.version_no,
+            predecessor_version_id=version.supersedes_version_ref,
+            requirements=requirements,
+            spec_refs=version.structured_spec_refs)
+
+    def _prove_refs(
+        self, transaction: object, *, project_id: uuid.UUID,
+        section_id: uuid.UUID, target_version_no: int,
+        predecessor_version_id: uuid.UUID,
+        requirements: set[tuple[uuid.UUID, uuid.UUID]],
+        spec_refs: tuple[SectionStructuredSpecRef, ...],
+    ) -> tuple[QualifiedSectionStructuredSpec, ...]:
         try:
             return tuple(self._one(
-                transaction, base=base, project_id=project_id,
-                section_id=section_id, requirements=requirements, ref=ref)
+                transaction, target_version_no=target_version_no,
+                predecessor_version_id=predecessor_version_id,
+                project_id=project_id, section_id=section_id,
+                requirements=requirements, ref=ref)
                 for ref in spec_refs)
         except SectionStructuredSpecQualificationError:
             raise
@@ -116,7 +174,8 @@ class SectionStructuredSpecQualificationService:
             raise SectionStructuredSpecQualificationError() from None
 
     def _one(
-        self, transaction: object, *, base: CurrentSectionVersionBase,
+        self, transaction: object, *, target_version_no: int,
+        predecessor_version_id: uuid.UUID,
         project_id: uuid.UUID, section_id: uuid.UUID,
         requirements: set[tuple[uuid.UUID, uuid.UUID]],
         ref: SectionStructuredSpecRef,
@@ -180,12 +239,12 @@ class SectionStructuredSpecQualificationService:
                 or source.version_state not in (
                     "DRAFT", "IN_REVIEW", "APPROVED", "SUPERSEDED")
                 or type(source.version_no) is not int
-                or not 1 <= source.version_no < base.next_version_no
+                or not 1 <= source.version_no < target_version_no
                 or not _digest(source.content_fingerprint)
                 or not self._sections.is_ancestor(
                     transaction, project_id=project_id,
                     section_id=section_id,
-                    latest_version_id=base.supersedes_version_id,
+                    latest_version_id=predecessor_version_id,
                     ancestor_version_id=source_ref.solution_section_version_id)):
             raise SectionStructuredSpecQualificationError()
         source_requirements = {
@@ -203,3 +262,17 @@ class SectionStructuredSpecQualificationService:
             source.solution_section_version_id, source.content_fingerprint,
             tuple(sorted((version_id for _, version_id in shared), key=lambda value: value.int)),
         )
+
+
+class SectionCurrentSpecQualificationService:
+    """Narrow VALIDATE port; never accepts a CREATE next-version base."""
+
+    def __init__(self, qualification: SectionStructuredSpecQualificationService) -> None:
+        if type(qualification) is not SectionStructuredSpecQualificationService:
+            raise ValueError("current Section Spec qualification required")
+        self._qualification = qualification
+
+    def prove(self, transaction: object, *,
+              version: SectionVersionHistoryView,
+              ) -> tuple[QualifiedSectionStructuredSpec, ...]:
+        return self._qualification.prove_current(transaction, version=version)

@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-23：0.1.0-dev.0/SOL-05-A04-P12-P05-P03 按CR-SOL-023在Windows显式Section VALIDATE组合接入现时Spec资格重证，复用CREATE的同项目当前批准、Review精确快照、章节祖先与共同需求规则，但以固定目标版本和前驱为参照。兼容性/升级/回滚：无Schema、冻结路径/响应/角色/License变化；可撤可选端口而保持Spec维UNAVAILABLE，既有历史不改。验证：Win11/一次性PG18.6真实批准Spec旧/新Section HTTP UNAVAILABLE/PASS、模拟批准失效后的新Key重证/旧Key回放；资格定向37通过/30子例、后端全量3920通过/3跳过/6074子例。已知问题：Trace+Spec完整就绪链、Section正式Review/客户确认、正式信任/Gate3/Pilot/发行待。
+
 - 2026-10-23：0.1.0-dev.0/SOL-05-A04-P12-P05-P02 按CR-SOL-023为Section六维VALIDATE增加可选Spec现时只读证明合同及作者依据规范复用；未声明、缺依据、错/缺证明或异常不放行，显式无需专项理由与完整固定引用仅提供送审准备判定。兼容性/升级/回滚：无Schema、路径、角色、状态枚举或响应形状变化；撤可选端口即可回到固定引用UNAVAILABLE，旧请求和历史不变。验证：定向35通过/40子例、后端全量3918通过/3跳过/6070子例。已知问题：真实Windows/PG Spec端口接线、客户Review、Gate3/Pilot/发行待。
 
 - 2026-10-23：0.1.0-dev.0/SOL-05-A04-P12-P05-P01 核对Section六维Spec现时证明边界：`UNDECLARED`永不PASS，`NONE_REQUIRED`需有理由且零引用，`FIXED_REFS`需逐条作者依据和验证时重证批准/Review/祖先/共同需求；PASS仅为送审准备。兼容性/升级/回滚：仅进度设计文档，无程序/Schema/API/数据变化，可依后续合同验收修订。验证：当前Validator、创建资格与CR-SOL-023静态核查，未运行本片功能测试。已知问题：现时证明合同/Win11组合/客户Review、Gate3/Pilot/正式发行待。

@@ -12,6 +12,7 @@ from plm_assistant.modules.review.domain.round_progress import (
     ReviewDecisionKind, ReviewDecisionSnapshot, ReviewRoundProgress,
 )
 from plm_assistant.modules.solution.application.qualify_section_structured_spec import (
+    SectionCurrentSpecQualificationService,
     SectionStructuredSpecQualificationError,
     SectionStructuredSpecQualificationService,
 )
@@ -221,6 +222,46 @@ class SectionStructuredSpecQualificationTests(unittest.TestCase):
             with self.subTest(change=change):
                 self.denied(**change)
         self.assertEqual(self.specs.calls, [])
+
+    def test_current_draft_rechecks_approved_spec_at_fixed_predecessor(self):
+        ref = replace(self.ref, fit_rationale="Author fit for current section")
+        target = replace(
+            self.source, solution_section_version_id=uuid.uuid4(),
+            version_no=2, version_state="DRAFT",
+            supersedes_version_ref=self.latest_id,
+            spec_binding_state="FIXED_REFS", structured_spec_refs=(ref,))
+        current = SectionCurrentSpecQualificationService(self.service)
+        (proof,) = current.prove(self.tx, version=target)
+        self.assertEqual(proof.ref, ref)
+        self.assertEqual(proof.shared_requirement_version_ids,
+                         (self.requirement_version,))
+        self.assertIn((self.tx, self.project, self.section,
+                       self.latest_id, self.source_id), self.sections.calls)
+        self.specs.approved = uuid.uuid4()
+        with self.assertRaises(SectionStructuredSpecQualificationError):
+            current.prove(self.tx, version=target)
+
+    def test_current_draft_missing_basis_or_non_draft_denied_before_ports(self):
+        ref = replace(self.ref, fit_rationale="Author fit")
+        target = replace(
+            self.source, solution_section_version_id=uuid.uuid4(),
+            version_no=2, version_state="DRAFT",
+            supersedes_version_ref=self.latest_id,
+            spec_binding_state="FIXED_REFS", structured_spec_refs=(ref,))
+        current = SectionCurrentSpecQualificationService(self.service)
+        for wrong in (
+            replace(target, structured_spec_refs=(self.ref,)),
+            replace(target, structured_spec_refs=(replace(ref,
+                    fit_rationale=" padded"),)),
+            replace(target, version_state="APPROVED"),
+            replace(target, supersedes_version_ref=None),
+        ):
+            with self.subTest(wrong=wrong):
+                with self.assertRaises(SectionStructuredSpecQualificationError):
+                    current.prove(self.tx, version=wrong)
+        self.assertEqual(self.specs.calls, [])
+        with self.assertRaises(SectionStructuredSpecQualificationError):
+            current.prove(self.tx, version=replace(target, requirement_refs=()))
 
 
 if __name__ == "__main__":
