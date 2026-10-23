@@ -17,6 +17,8 @@ from plm_assistant.entrypoints.production_login import (
     ProductionLoginStartupError,
     create_production_login_app, create_production_platform_app,
     create_production_platform_write_app,
+    create_production_platform_trace_app,
+    create_production_platform_write_trace_app,
 )
 from plm_assistant.entrypoints.serve_windows import main as serve_windows_main
 from plm_assistant.modules.platform.infrastructure.bootstrap_config import BootstrapSettings
@@ -28,6 +30,7 @@ from plm_assistant.modules.solution.api.global_reference_list_cursor import Glob
 from plm_assistant.modules.solution.application.global_reference_candidate_cursor import GlobalReferenceCandidateCursorCodec
 from plm_assistant.modules.solution.api.outline_list_cursor import OutlineListCursorCodec
 from plm_assistant.modules.plan.api.list_cursor import PlanListCursorCodec
+from plm_assistant.modules.trace.application.page_graph import TraceGraphCursorCodec
 from plm_assistant.modules.solution.api.outline_version_list_cursor import OutlineVersionListCursorCodec
 from plm_assistant.modules.solution.api.section_version_list_cursor import SectionVersionListCursorCodec
 from plm_assistant.modules.solution.api.section_list_cursor import SectionListCursorCodec
@@ -1623,6 +1626,114 @@ class ProductionLoginTests(unittest.TestCase):
             self.assertEqual(serve_windows_main(), 0)
             self.assertEqual(run.call_args.args[0](), "synthetic-write-platform")
             factory.assert_called_once_with(settings)
+
+    def test_windows_launcher_trace_modes_are_explicit(self) -> None:
+        settings = self.settings(("http://localhost",))
+        bootstrap = Path(self.temp_dir.name) / "bootstrap.yaml"
+        bootstrap.write_text("data_root: ignored\n", encoding="utf-8")
+        for mode, name in (
+            ("--platform-trace", "create_production_platform_trace_app"),
+            ("--platform-write-trace", "create_production_platform_write_trace_app"),
+        ):
+            with self.subTest(mode=mode), patch(
+                "plm_assistant.entrypoints.serve_windows.sys.platform", "win32",
+            ), patch(
+                "plm_assistant.entrypoints.serve_windows.sys.argv",
+                ["serve_windows", str(bootstrap), mode],
+            ), patch(
+                "plm_assistant.entrypoints.serve_windows.load_bootstrap_settings",
+                return_value=settings,
+            ), patch(
+                "plm_assistant.entrypoints.serve_windows.uvicorn.run",
+            ) as run, patch(
+                "plm_assistant.entrypoints.serve_windows." + name,
+                return_value="synthetic-trace-app",
+            ) as factory:
+                self.assertEqual(serve_windows_main(), 0)
+                self.assertEqual(run.call_args.args[0](), "synthetic-trace-app")
+                factory.assert_called_once_with(settings)
+
+    def test_trace_mode_requires_dedicated_cursor_and_disposes_runtime(self) -> None:
+        runtime = Mock()
+        runtime.is_ready.return_value = True
+        with patch(
+            "plm_assistant.entrypoints.production_login.read_database_url",
+            return_value="postgresql+psycopg://localhost/test",
+        ), patch(
+            "plm_assistant.entrypoints.production_login.create_database_runtime",
+            return_value=runtime,
+        ), patch(
+            "plm_assistant.entrypoints.production_login._schema_current",
+            return_value=True,
+        ), patch(
+            "plm_assistant.entrypoints.windows_license_runtime."
+            "create_windows_license_services",
+            return_value=Mock(guard=Mock()),
+        ), patch(
+            "plm_assistant.entrypoints.production_login."
+            "create_windows_trace_graph_cursor_codec",
+            side_effect=RuntimeError("private graph key missing"),
+        ) as failed:
+            with self.assertRaises(ProductionLoginStartupError) as caught:
+                create_production_platform_trace_app(self.settings(("http://localhost",)))
+        failed.assert_called_once()
+        self.assertNotIn("private", str(caught.exception))
+        runtime.dispose.assert_called_once()
+
+    def test_trace_read_mode_mounts_graph_without_changing_legacy_mode(self) -> None:
+        from plm_assistant.modules.platform.api.secret_list_cursor import SecretListCursorCodec
+
+        settings = self.settings(("http://localhost",))
+        path = "/api/v1/projects/00000000-0000-0000-0000-000000000001/trace-graph:upstream"
+        with patch(
+            "plm_assistant.entrypoints.production_login.read_database_url",
+            return_value="postgresql+psycopg://localhost/test",
+        ), patch(
+            "plm_assistant.entrypoints.production_login._schema_current",
+            return_value=True,
+        ), patch(
+            "plm_assistant.entrypoints.windows_license_runtime."
+            "create_windows_license_services",
+            return_value=Mock(guard=Mock()),
+        ), patch(
+            "plm_assistant.entrypoints.production_login."
+            "create_windows_secret_list_cursor_codec",
+            return_value=SecretListCursorCodec(b"q" * 32),
+        ), patch(
+            "plm_assistant.entrypoints.production_login."
+            "create_windows_project_member_cursor_codec",
+            return_value=MemberListCursorCodec(b"m" * 32),
+        ), patch(
+            "plm_assistant.entrypoints.production_login."
+            "create_windows_project_department_cursor_codec",
+            return_value=DepartmentListCursorCodec(b"d" * 32),
+        ), patch(
+            "plm_assistant.entrypoints.production_login."
+            "create_windows_trace_graph_cursor_codec",
+            return_value=TraceGraphCursorCodec(b"t" * 32),
+        ) as cursor_source, patch(
+            "plm_assistant.entrypoints.production_login.create_database_runtime",
+        ) as runtime_factory:
+            runtime_factory.return_value.is_ready.return_value = True
+            legacy = create_production_platform_app(settings)
+            self.assertEqual(cursor_source.call_count, 0)
+            trace = create_production_platform_trace_app(settings)
+            cursor_source.assert_called_once_with()
+            with TestClient(legacy, base_url="http://localhost") as old_client:
+                self.assertEqual(old_client.get(path).status_code, 404)
+            with TestClient(trace, base_url="http://localhost") as trace_client:
+                self.assertEqual(trace_client.get(path).status_code, 401)
+
+    def test_write_trace_mode_requests_write_and_graph_composition(self) -> None:
+        settings = self.settings(("http://localhost",))
+        with patch("plm_assistant.entrypoints.production_login._create_production_app",
+                   return_value="synthetic-write-trace") as composition:
+            self.assertEqual(create_production_platform_write_trace_app(settings),
+                             "synthetic-write-trace")
+        composition.assert_called_once_with(
+            settings, credential_target="PLMProjectTool/Database",
+            include_secret_read=True, include_secret_write=True,
+            include_trace_graph=True)
 
 
 if __name__ == "__main__":

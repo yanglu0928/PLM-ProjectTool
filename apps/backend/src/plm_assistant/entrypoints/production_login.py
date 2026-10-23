@@ -104,6 +104,12 @@ from plm_assistant.entrypoints.windows_plan import (
 from plm_assistant.entrypoints.windows_plan_cursor import (
     create_windows_plan_list_cursor_codec,
 )
+from plm_assistant.entrypoints.windows_trace_graph import (
+    create_windows_trace_graph_router,
+)
+from plm_assistant.entrypoints.windows_trace_graph_cursor import (
+    create_windows_trace_graph_cursor_codec,
+)
 from plm_assistant.entrypoints.windows_solution_outline_version_cursor import (
     create_windows_outline_version_list_cursor_codec,
 )
@@ -513,11 +519,33 @@ def create_production_platform_write_app(
                                   include_secret_read=True, include_secret_write=True)
 
 
+def create_production_platform_trace_app(
+    settings: BootstrapSettings, *, credential_target: str = DEFAULT_TARGET,
+) -> FastAPI:
+    """Explicit read platform plus graph, requiring its current-account key."""
+    return _create_production_app(
+        settings, credential_target=credential_target,
+        include_secret_read=True, include_secret_write=False,
+        include_trace_graph=True)
+
+
+def create_production_platform_write_trace_app(
+    settings: BootstrapSettings, *, credential_target: str = DEFAULT_TARGET,
+) -> FastAPI:
+    """Explicit write platform plus graph, requiring its current-account key."""
+    return _create_production_app(
+        settings, credential_target=credential_target,
+        include_secret_read=True, include_secret_write=True,
+        include_trace_graph=True)
+
+
 def _create_production_app(settings: BootstrapSettings, *, credential_target: str,
                            include_secret_read: bool,
-                           include_secret_write: bool) -> FastAPI:
+                           include_secret_write: bool,
+                           include_trace_graph: bool = False) -> FastAPI:
 
-    if not isinstance(settings, BootstrapSettings):
+    if (not isinstance(settings, BootstrapSettings)
+            or include_trace_graph and not include_secret_read):
         raise ProductionLoginStartupError()
     try:
         origins = LoginOriginPolicy(settings.trusted_origins)
@@ -672,6 +700,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         plan_create_router = None
         plan_read_router = None
         plan_list_router = None
+        trace_graph_router = None
         solution_outline_version_create_router = None
         solution_outline_version_read_router = None
         solution_section_create_router = None
@@ -706,6 +735,11 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
                 create_windows_license_services,
             )
             licenses = create_windows_license_services(runtime, settings)
+            if include_trace_graph:
+                trace_graph_router = create_windows_trace_graph_router(
+                    runtime=runtime, sessions=sessions, origins=origins,
+                    license_guard=licenses.guard,
+                    cursors=create_windows_trace_graph_cursor_codec())
             plan_read_router, plan_list_router = create_windows_plan_read_routers(
                 runtime=runtime, sessions=sessions, origins=origins,
                 license_guard=licenses.guard,
@@ -1917,6 +1951,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             plan_create_router=plan_create_router,
             plan_read_router=plan_read_router,
             plan_list_router=plan_list_router,
+            trace_graph_router=trace_graph_router,
             solution_outline_version_create_router=solution_outline_version_create_router,
             solution_outline_version_read_router=solution_outline_version_read_router,
             solution_section_create_router=solution_section_create_router,

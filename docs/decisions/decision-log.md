@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261019-1241：Trace图使用独立显式Windows服务模式
+
+- Date/WBS：2026-10-19 / `PLAN-02-A04-P04-A04-P02-A03-P02-A02`；依据DEC-20261019-1240、P02-A01受控工厂及已有`trace-graph-cursor-v1`当前账户Key读取器。
+- Decision：追加`--platform-trace`与`--platform-write-trace`，分别继承既有只读/读写平台组合并额外挂载图GET；仅这两模式读取独立游标Key。旧`--platform`/`--platform-write`及登录模式保持不变，缺Key/装配异常拒绝新模式启动并释放资源。
+- Reason：可在不改变现有受控部署行为的前提下验收图功能，同时确保正式Key供给前不静默回退到合成/通用Key。
+- Impact/Rollback：仅增服务启动选项/可选路由，不改冻结API、Schema、角色或License；停用新模式即可回滚，旧模式保持原有能力。目标账户真实Key及发行信任仍待。
+
 ## DEC-20261019-1240：Windows Trace 图先组合后独立启用
 
 - Date/WBS：2026-10-19 / `PLAN-02-A04-P04-A04-P02-A03-P02-A01`；依据P02-A03-P01可选双向GET、专用`trace-graph-cursor-v1`当前账户Key及现有Windows平台模式。

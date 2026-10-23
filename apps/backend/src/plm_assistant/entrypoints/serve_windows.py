@@ -11,6 +11,8 @@ import uvicorn
 from plm_assistant.entrypoints.production_login import (
     create_production_login_app, create_production_platform_app,
     create_production_platform_write_app,
+    create_production_platform_trace_app,
+    create_production_platform_write_trace_app,
 )
 from plm_assistant.modules.platform.infrastructure.bootstrap_config import load_bootstrap_settings
 from plm_assistant.modules.platform.infrastructure.runtime_process_identity import register_runtime_process
@@ -18,19 +20,23 @@ from plm_assistant.modules.platform.infrastructure.runtime_process_identity impo
 
 def main() -> int:
     if (sys.platform != "win32" or len(sys.argv) not in (2, 3)
-            or (len(sys.argv) == 3 and sys.argv[2] not in ("--platform", "--platform-write"))):
-        print("Usage: python -m plm_assistant.entrypoints.serve_windows <bootstrap.yaml> [--platform|--platform-write]", file=sys.stderr)
+            or (len(sys.argv) == 3 and sys.argv[2] not in (
+                "--platform", "--platform-write", "--platform-trace",
+                "--platform-write-trace"))):
+        print("Usage: python -m plm_assistant.entrypoints.serve_windows <bootstrap.yaml> [--platform|--platform-write|--platform-trace|--platform-write-trace]", file=sys.stderr)
         return 2
     try:
         settings = load_bootstrap_settings(Path(sys.argv[1]).resolve(strict=True))
         if not ipaddress.ip_address(settings.bind_host).is_loopback:
             raise ValueError("non-loopback HTTP bind is unavailable")
         # Uvicorn calls the selected factory; no database URL or Secret enters argv/env.
-        app_factory = (
-            create_production_platform_write_app if len(sys.argv) == 3 and sys.argv[2] == "--platform-write"
-            else create_production_platform_app if len(sys.argv) == 3
-            else create_production_login_app
-        )
+        modes = {
+            "--platform": create_production_platform_app,
+            "--platform-write": create_production_platform_write_app,
+            "--platform-trace": create_production_platform_trace_app,
+            "--platform-write-trace": create_production_platform_write_trace_app,
+        }
+        app_factory = modes[sys.argv[2]] if len(sys.argv) == 3 else create_production_login_app
         with register_runtime_process("API", settings.data_root):
             uvicorn.run(
                 lambda: app_factory(settings),
