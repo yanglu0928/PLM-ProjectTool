@@ -20,6 +20,11 @@ from plm_assistant.modules.project.application.authorization import (
 from plm_assistant.modules.requirement.application.outline_version_proof import (
     OutlineApprovedRequirementProof,
 )
+from plm_assistant.modules.trace.application.implements_coverage import (
+    TraceImplementsCoverageError, TraceImplementsCoverageProof,
+)
+from plm_assistant.modules.trace.application.target_proof import TraceProofQuery
+from plm_assistant.modules.trace.domain.link_shape import TraceVersionRef
 
 from .prove_section_document_content import SectionDocumentContentProof
 from .prove_section_evidence_use import SectionEvidenceUseProof
@@ -86,6 +91,13 @@ class EvidencePort(Protocol):
               evidence_id: uuid.UUID) -> SectionEvidenceUseProof: ...
 
 
+class TracePort(Protocol):
+    def prove(self, transaction: object, *, query: TraceProofQuery,
+              target: TraceVersionRef,
+              requirement_refs: tuple[TraceVersionRef, ...],
+              ) -> TraceImplementsCoverageProof: ...
+
+
 class ReceiptPort(Protocol):
     def reserve(self, transaction: object, *, scope: IdempotencyScope,
                 request_fingerprint: bytes) -> IdempotencyResult | None: ...
@@ -110,11 +122,13 @@ class SectionVersionCurrentValidator:
 
     def __init__(self, *, documents: DocumentPort,
                  requirements: RequirementPort,
-                 evidence: EvidencePort) -> None:
+                 evidence: EvidencePort,
+                 trace: TracePort | None = None) -> None:
         if any(port is None for port in (documents, requirements, evidence)):
             raise ValueError("SectionVersion current source ports required")
         self._documents, self._requirements, self._evidence = (
             documents, requirements, evidence)
+        self._trace = trace
 
     def facts(self, transaction: object, *, command: ValidateSectionVersion,
               version: SectionVersionHistoryView) -> SectionVersionValidationFacts:
@@ -181,7 +195,40 @@ class SectionVersionCurrentValidator:
                 evidence = "UNAVAILABLE"
         return SectionVersionValidationFacts(
             integrity="PASS", content=content, requirements=requirements,
-            evidence=evidence, trace="UNAVAILABLE", spec="UNAVAILABLE")
+            evidence=evidence,
+            trace=self._trace_status(transaction, command, version),
+            spec="UNAVAILABLE")
+
+    def _trace_status(self, transaction: object, command: ValidateSectionVersion,
+                      version: SectionVersionHistoryView) -> str:
+        if self._trace is None:
+            return "UNAVAILABLE"
+        try:
+            target = TraceVersionRef(
+                "solution", "SOL-05", version.solution_section_id,
+                version.solution_section_version_id, "PROJECT", version.project_id)
+            requirements = tuple(TraceVersionRef(
+                "requirement", "REQ-03", ref.requirement_id,
+                ref.requirement_version_id, "PROJECT", version.project_id)
+                for ref in version.requirement_refs)
+            proof = self._trace.prove(
+                transaction,
+                query=TraceProofQuery(command.session_token, command.trace_id),
+                target=target, requirement_refs=requirements)
+            if (type(proof) is not TraceImplementsCoverageProof
+                    or proof.target != target
+                    or proof.requirement_refs != requirements
+                    or type(proof.trace_link_ids) is not tuple
+                    or len(proof.trace_link_ids) != len(requirements)
+                    or len(set(proof.trace_link_ids)) != len(requirements)
+                    or any(not _id(link_id) for link_id in proof.trace_link_ids)):
+                return "UNAVAILABLE"
+            return "PASS"
+        except TraceImplementsCoverageError as exc:
+            return ("FAIL" if exc.code == "TRACE_COVERAGE_REQUIRED"
+                    else "UNAVAILABLE")
+        except Exception:
+            return "UNAVAILABLE"
 
 
 class SectionVersionValidationService:

@@ -27,6 +27,11 @@ from plm_assistant.modules.solution.application.validate_section_version import 
     SectionVersionCurrentValidator, SectionVersionValidationAudit,
     SectionVersionValidationError, SectionVersionValidationService,
 )
+from plm_assistant.modules.trace.application.implements_coverage import (
+    TraceImplementsCoverageError, TraceImplementsCoverageProof,
+)
+from plm_assistant.modules.trace.application.target_proof import TraceProofQuery
+from plm_assistant.modules.trace.domain.link_shape import TraceVersionRef
 
 
 PROJECT, SECTION, OUTLINE, VERSION, DOCUMENT, DOC_VERSION, REQUIREMENT, REQ_VERSION, EVIDENCE, ACTOR = (
@@ -200,6 +205,53 @@ def test_source_failures_are_unavailable_not_a_false_pass():
     assert report.facts.requirements == "UNAVAILABLE"
     assert report.facts.evidence == "UNAVAILABLE"
     assert report.issue_codes[0] == "CONTENT_SOURCE_UNAVAILABLE"
+
+
+def test_exact_current_trace_proof_is_audited_but_spec_still_blocks_review():
+    subject = Harness()
+    link_id = uuid.uuid4()
+    seen = []
+    def prove(tx, *, query, target, requirement_refs):
+        seen.append((tx, query, target, requirement_refs))
+        return TraceImplementsCoverageProof(target, requirement_refs, (link_id,))
+    subject.current._trace = SimpleNamespace(prove=prove)
+    cmd = command()
+    report = subject.service.validate(cmd)
+    assert report.facts.trace == "PASS"
+    assert report.facts.spec == "UNAVAILABLE"
+    assert report.valid and not report.ready_for_review
+    assert report.issue_codes == ("STRUCTURED_SPEC_UNAVAILABLE",)
+    assert len(seen) == 1 and seen[0][0] is subject.txs[-1]
+    assert seen[0][1] == TraceProofQuery(cmd.session_token, cmd.trace_id)
+    assert seen[0][2] == TraceVersionRef(
+        "solution", "SOL-05", SECTION, VERSION, "PROJECT", PROJECT)
+    assert seen[0][3] == (TraceVersionRef(
+        "requirement", "REQ-03", REQUIREMENT, REQ_VERSION,
+        "PROJECT", PROJECT),)
+
+
+@pytest.mark.parametrize("failure,expected", [
+    ("missing", "FAIL"), ("unavailable", "UNAVAILABLE"),
+    ("wrong_target", "UNAVAILABLE"), ("wrong_count", "UNAVAILABLE"),
+])
+def test_trace_missing_or_malformed_never_becomes_pass(failure, expected):
+    subject = Harness()
+    def prove(_tx, *, query, target, requirement_refs):
+        if failure == "missing":
+            raise TraceImplementsCoverageError()
+        if failure == "unavailable":
+            raise TraceImplementsCoverageError("TRACE_UNAVAILABLE")
+        if failure == "wrong_target":
+            return TraceImplementsCoverageProof(
+                replace(target, version_id=uuid.uuid4()),
+                requirement_refs, (uuid.uuid4(),))
+        return TraceImplementsCoverageProof(
+            target, requirement_refs, (uuid.uuid4(), uuid.uuid4()))
+    subject.current._trace = SimpleNamespace(prove=prove)
+    report = subject.service.validate(command())
+    assert report.facts.trace == expected
+    assert not report.ready_for_review
+    assert f"TRACE_COVERAGE_{expected}" in report.issue_codes
 
 
 def test_missing_audit_proof_or_receipt_conflict_does_not_commit():

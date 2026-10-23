@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261023-1244：Section 当前验证复用统一 Trace 精确覆盖
+
+- Date/WBS：2026-10-23 / `SOL-05-A04-P10-P01`；依据 TRC-01-A03-P03 已验精确 ACTIVE `IMPLEMENTS` 和 Section 六维 VALIDATE 合同。
+- Decision：Section 当前评估器接收可选 Trace Proof Port；无端口保持 UNAVAILABLE，有端口时用固定 SOL-05 目标与全部 REQ-03 版本调用统一覆盖服务，严格反查返回的目标、全集和不重复边。缺/多/错/失效的覆盖报 FAIL，权限/服务不可用报 UNAVAILABLE；Spec 维不随此变更放行。
+- Reason：复用统一 Trace Owner 的当前 Session/Project/License/逐边证明，避免 Section 私有查询复制并减少 Outline 正式覆盖前置缺口。
+- Impact/Rollback：内部应用接口增加可选依赖，不改冻结 API、Schema、角色或数据；不注入即可恢复旧行为。
+
 ## DEC-20261023-1243：固定历史版本重证复用创建时来源证明
 
 - Date/WBS：2026-10-23 / `SOL-03-A06-P03-A01`；依据 A06-P02 三维合同和现有 OutlineVersion DRAFT 来源 Proof Service。
