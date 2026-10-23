@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-23：0.1.0-dev.0/SOL-05-A04-P11-P02 按CR-SOL-022新增SectionVersion显式Spec声明与固定SpecVersion引用的闭锁Schema/ORM（Alembic 0178）；旧行保持UNDECLARED、零引用及原内容/首响，Owner/API未开放。兼容性/升级/回滚：冻结API/权限/License不变；空库及有数据可升级，任何新声明或引用历史存在时拒绝降级，禁止删除历史，应关闭入口并前滚修复。验证：Win11隔离PG18.6空/旧数据升降再升、跨项目FK、重复/非法状态、闭锁及ORM drift通过；后端3890通过/3跳过/6023子例。已知问题：声明写Owner、可选输入/反读、Spec现时资格、Section/Outline Review与正式信任/Gate3/Pilot/发行未完成。
+
 - 2026-10-23：0.1.0-dev.0/SOL-05-A04-P11-P01 完成SectionVersion固定StructuredSpec关联前置核查并建立CR-SOL-022：区分历史未声明、显式无需专项及固定既存Spec集合，避免两个不可变版本循环创建；尚未改运行代码。兼容性/升级/回滚：本项仅设计/进度，后续可选加法请求与闭锁迁移须保留旧请求/历史；本项可修订方案，无数据回滚。验证：冻结DM/API与当前Section/Spec CREATE/VALIDATE/Review/ORM静态交叉核查，未运行功能测试。已知问题：Schema/Owner/资格/Review、Outline coverage/Review、Plan和正式信任/Gate3/Pilot/发行待。
 
 - 2026-10-23：0.1.0-dev.0/SOL-05-A04-P10-P02 Windows显式Section VALIDATE接入统一Requirement/Section Trace Owner与ACTIVE IMPLEMENTS Repository，现时报告反映无边/有效边/撤销，旧幂等Key保留首次观察。兼容性/升级/回滚：冻结路由/DTO、Schema、权限、License、游标Key不变；撤新注入可回滚为Trace不可用，历史Audit/收据不删。验证：Win11/PG18.6实际HTTP无边FAIL→ACTIVE PASS→撤销FAIL/旧Key回放、旧Windows验收脚本回归、后端全量3890通过/3跳过/6023子例。已知问题：Spec维/Section Review、Outline coverage/Review、正式信任/安装及Gate3/Pilot/发行待。

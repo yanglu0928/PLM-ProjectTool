@@ -378,6 +378,16 @@ class SolutionSectionVersionRow(Base):
                         name="ck_sol_section_versions__declarations"),
         CheckConstraint("declared_requirement_count BETWEEN 0 AND 500 AND declared_evidence_count BETWEEN 0 AND 500",
                         name="ck_sol_section_versions__counts"),
+        CheckConstraint(
+            "(spec_binding_state='UNDECLARED' AND declared_spec_count=0 "
+            "AND spec_not_required_reason IS NULL) OR "
+            "(spec_binding_state='NONE_REQUIRED' AND declared_spec_count=0 "
+            "AND spec_not_required_reason IS NOT NULL "
+            "AND char_length(spec_not_required_reason) BETWEEN 1 AND 1000 "
+            "AND spec_not_required_reason=btrim(spec_not_required_reason)) OR "
+            "(spec_binding_state='FIXED_REFS' AND declared_spec_count BETWEEN 1 AND 500 "
+            "AND spec_not_required_reason IS NULL)",
+            name="ck_sol_section_versions__spec_binding"),
         CheckConstraint("supersedes_version_ref IS NULL OR supersedes_version_ref<>solution_section_version_id",
                         name="ck_sol_section_versions__supersedes_not_self"),
         CheckConstraint("(review_ref IS NULL AND review_round_ref IS NULL) OR "
@@ -401,6 +411,11 @@ class SolutionSectionVersionRow(Base):
     exclusions: Mapped[list[object]] = mapped_column(JSONB, nullable=False)
     declared_requirement_count: Mapped[int] = mapped_column(Integer, nullable=False)
     declared_evidence_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    spec_binding_state: Mapped[str] = mapped_column(
+        Text, nullable=False, server_default=text("'UNDECLARED'"))
+    spec_not_required_reason: Mapped[str | None] = mapped_column(Text)
+    declared_spec_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, server_default=text("0"))
     supersedes_version_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     review_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     review_round_ref: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
@@ -459,6 +474,43 @@ class SolutionSectionVersionCreateResultRow(Base):
     created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
     created_at: Mapped[datetime] = mapped_column(TIMESTAMP(timezone=True, precision=6),
                                                  nullable=False)
+
+
+class SolutionSectionSpecRefRow(Base):
+    """Fixed SpecVersion reference; the write Owner is not installed yet."""
+
+    __tablename__ = "sol_section_spec_refs"
+    __table_args__ = (
+        UniqueConstraint("solution_section_version_id", "ordinal",
+                         name="uq_sol_section_specs__version_ordinal"),
+        UniqueConstraint("solution_section_version_id", "spec_series_id",
+                         name="uq_sol_section_specs__version_series"),
+        ForeignKeyConstraint(
+            ["solution_section_version_id", "solution_section_id", "project_id"],
+            ["plm.sol_section_versions.solution_section_version_id",
+             "plm.sol_section_versions.solution_section_id",
+             "plm.sol_section_versions.project_id"],
+            name="fk_sol_section_specs__version", ondelete="NO ACTION"),
+        ForeignKeyConstraint(
+            ["structured_solution_spec_id", "spec_series_id", "project_id"],
+            ["plm.sol_structured_specs.structured_solution_spec_id",
+             "plm.sol_structured_specs.spec_series_id",
+             "plm.sol_structured_specs.project_id"],
+            name="fk_sol_section_specs__spec", ondelete="NO ACTION"),
+        CheckConstraint("ordinal>0", name="ck_sol_section_specs__ordinal"),
+        Index("ix_sol_section_specs__target", "structured_solution_spec_id",
+              "solution_section_version_id"),
+        {"schema": "plm"},
+    )
+
+    solution_section_spec_ref_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, server_default=text("uuidv7()"))
+    solution_section_version_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    solution_section_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    spec_series_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    structured_solution_spec_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    ordinal: Mapped[int] = mapped_column(Integer, nullable=False)
 
 
 class SolutionSectionRequirementRefRow(Base):
