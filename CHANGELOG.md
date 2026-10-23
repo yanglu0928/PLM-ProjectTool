@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-23：0.1.0-dev.0/SOL-05-A04-P13-P04-P01 新增 Section 统一 PROJECT Review START Subject Owner 与 SQL 锁/不可变结果写入；同事务要求最新 DRAFT、六维当前事实 PASS、固定指纹和合格 Reviewer，终态失败关闭。兼容性/升级/回滚：无 API/Schema/角色/License 变化，尚未装配用户入口；可撤内部代码，不删除评审历史。验证：Win11/一次性 PG18.6 合成 Review/Round 真实 START/结果及项目隔离；定向33通过、后端全量3946通过/3跳过/6074子例。已知问题：ProjectManager 提交服务、HTTP/Windows、终态客户决定、Gate3/Pilot/发行未完成。
+
 - 2026-10-23：0.1.0-dev.0/SOL-05-A04-P13-P03-P02 新增0184 Section Review结果闭合状态/批准指针Guard，保留固定内容及原创建/删除闭锁，核对精确PROJECT Review/Round/指纹快照/终态事件，批准版同Section唯一。兼容性/升级/回滚：无公开API、角色或License变化；结果/非DRAFT/指针有史拒降，异常关闭入口并前滚修复，不删除评审历史。验证：Win11/PG18.6空/旧史升降、合成Review四状态与指针、直接更新/错指纹/结果改写拒绝、ORM drift exit0；后端全量3941通过/3跳过/6074子例。已知问题：正常Review Subject/提交/终态Owner、真实客户确认、Gate3/Pilot/发行未完成。
 
 - 2026-10-23：0.1.0-dev.0/SOL-05-A04-P13-P03-P01 按CR-SOL-024/DEC-1208新增0183 Section Review结果历史ORM/Schema，仅封闭存储：复合身份/Review FK、事件与指针约束，DML/TRUNCATE全拒，原Section状态/指针Guard不变。兼容性/升级/回滚：无API/权限/License变更；空表可降0182，结果有史拒降，应关闭入口并前滚修复，不删历史。验证：Win11/PG18.6空库和已有Section史升降重升、全DML拒绝、有史拒降及ORM drift exit0；迁移链头断言修复后端全量3941通过/3跳过/6074子例。已知问题：P02状态/指针Guard、Section正式Review/客户确认、Gate3/Pilot/发行未完成。

@@ -1,0 +1,152 @@
+"""SOL-05 Review starts only from the exact current, eligible DRAFT."""
+
+from __future__ import annotations
+
+from dataclasses import replace
+from datetime import datetime, timezone
+from types import SimpleNamespace
+from unittest.mock import Mock
+from uuid import uuid4
+
+import pytest
+
+from plm_assistant.modules.project.application.reviewers import (
+    ProjectReviewerFacts, ReviewReviewerEligibilityError,
+)
+from plm_assistant.modules.review.application.create_review import CreatedReviewRef
+from plm_assistant.modules.review.application.read_snapshot import ReviewIdentitySnapshot
+from plm_assistant.modules.review.application.subject_start import (
+    ReviewSubjectAccessDenied, ReviewSubjectProofContext,
+    ReviewSubjectStartRequest,
+)
+from plm_assistant.modules.review.application.subject_transition import (
+    ReviewSubjectTransitionError,
+)
+from plm_assistant.modules.solution.application.read_section_version import (
+    SectionVersionHistoryView,
+)
+from plm_assistant.modules.solution.application.section_review_readiness import (
+    SectionReviewReadinessError, SectionReviewReadinessProof,
+)
+from plm_assistant.modules.solution.application.section_review_subject import (
+    SectionReviewLock, SectionReviewSubjectOwner,
+)
+from plm_assistant.modules.solution.application.section_version_validation_contract import (
+    SectionVersionValidationFacts,
+)
+
+
+NOW = datetime(2026, 10, 23, tzinfo=timezone.utc)
+
+
+@pytest.fixture
+def setup():
+    project, section, version, actor, reviewer, trace = (uuid4() for _ in range(6))
+    review_id, round_id = uuid4(), uuid4()
+    fixed = SectionVersionHistoryView(
+        version, section, project, 1, "DRAFT", "Section", uuid4(), None,
+        b"x" * 32, (), (), (), (), None, None, None, actor, NOW,
+        "NONE_REQUIRED", "No structured spec", ())
+    lock = SectionReviewLock(fixed, version, None)
+    identity = ReviewIdentitySnapshot(
+        review_id, "PROJECT", project, "SOL-05", section,
+        "SOLUTION_SECTION_ALL_V1", "DRAFT", None, 0)
+    request = ReviewSubjectStartRequest(
+        actor, identity, round_id, version, (reviewer,),
+        ReviewSubjectProofContext(b"s" * 32, trace))
+    repo, reviewers, readiness = Mock(), Mock(), Mock()
+    repo.lock_subject.return_value = lock
+    repo.section_exists.return_value = True
+    repo.version_exists.return_value = True
+    reviewers.qualify_in_transaction.return_value = (
+        ProjectReviewerFacts(reviewer, project, "CUSTOMER_MANAGER"),)
+    readiness.prove.return_value = SectionReviewReadinessProof(
+        fixed, SectionVersionValidationFacts(*(["PASS"] * 6)),
+        NOW, fixed.content_fingerprint)
+    owner = SectionReviewSubjectOwner(
+        repository=repo, reviewers=reviewers, readiness=readiness)
+    return SimpleNamespace(**locals())
+
+
+def test_create_is_exact_latest_draft_and_replay_is_history_safe(setup):
+    s = setup
+    result = s.owner.authorize_create(
+        object(), user_id=s.actor, project_id=s.project,
+        subject_type="SOL-05", subject_id=s.section,
+        subject_version_id=s.version)
+    assert result.policy_code == "SOLUTION_SECTION_ALL_V1"
+    created = CreatedReviewRef(
+        s.review_id, s.project, "SOL-05", s.section,
+        "SOLUTION_SECTION_ALL_V1", s.actor, NOW)
+    assert s.owner.authorize_replay(object(), user_id=s.actor, review=created)
+    s.repo.lock_subject.return_value = replace(
+        s.lock, latest_version_id=uuid4())
+    assert s.owner.authorize_create(
+        object(), user_id=s.actor, project_id=s.project,
+        subject_type="SOL-05", subject_id=s.section,
+        subject_version_id=s.version) is None
+
+
+def test_prepare_rechecks_current_six_dimensions_and_exact_snapshot(setup):
+    s = setup
+    prepared = s.owner.prepare_start_in_transaction(object(), s.request)
+    assert prepared.content_fingerprint == s.fixed.content_fingerprint
+    assert prepared.qualified_reviewer_ids == (s.reviewer,)
+    query = s.readiness.prove.call_args.kwargs["query"]
+    assert (query.project_id, query.solution_section_id,
+            query.solution_section_version_id) == (
+                s.project, s.section, s.version)
+    s.owner.finalize_start_in_transaction(object(), s.request)
+    assert s.repo.bind_start.call_args.kwargs["before"] == s.lock
+    s.owner.assert_active_lock_in_transaction(object(), s.request)
+    s.repo.lock_subject.return_value = replace(s.lock, version=replace(
+        s.fixed, version_state="IN_REVIEW", review_ref=s.review_id,
+        review_round_ref=s.round_id))
+    s.owner.assert_active_lock_in_transaction(object(), s.request)
+
+
+def test_missing_context_ineligible_reviewer_or_stale_fact_fails_closed(setup):
+    s = setup
+    with pytest.raises(ReviewSubjectAccessDenied):
+        s.owner.prepare_start_in_transaction(
+            object(), replace(s.request, proof_context=None))
+    s.reviewers.qualify_in_transaction.side_effect = (
+        ReviewReviewerEligibilityError())
+    with pytest.raises(ReviewSubjectAccessDenied):
+        s.owner.prepare_start_in_transaction(object(), s.request)
+    s.reviewers.qualify_in_transaction.side_effect = None
+    s.readiness.prove.side_effect = SectionReviewReadinessError()
+    with pytest.raises(ReviewSubjectAccessDenied):
+        s.owner.prepare_start_in_transaction(object(), s.request)
+    s.readiness.prove.side_effect = None
+    s.readiness.prove.return_value = replace(
+        s.readiness.prove.return_value,
+        version=replace(s.fixed, content_fingerprint=b"z" * 32),
+        content_fingerprint=b"z" * 32)
+    with pytest.raises(ReviewSubjectAccessDenied):
+        s.owner.prepare_start_in_transaction(object(), s.request)
+
+
+def test_read_rechecks_membership_and_exact_version(setup):
+    s = setup
+    s.reviewers.qualify_in_transaction.return_value = (
+        ProjectReviewerFacts(s.actor, s.project, "CUSTOMER_MEMBER"),)
+    assert s.owner.authorize_read(
+        object(), user_id=s.actor, project_id=s.project,
+        subject_type="SOL-05", subject_id=s.section,
+        subject_version_id=s.version).subject_version_id == s.version
+    s.repo.version_exists.return_value = False
+    assert s.owner.authorize_read(
+        object(), user_id=s.actor, project_id=s.project,
+        subject_type="SOL-05", subject_id=s.section,
+        subject_version_id=s.version) is None
+
+
+def test_terminal_callbacks_remain_closed(setup):
+    for name in (
+            "require_transition_access_in_transaction",
+            "assert_transition_lock_in_transaction",
+            "consume_terminal_in_transaction",
+            "assert_terminal_consumed_in_transaction"):
+        with pytest.raises(ReviewSubjectTransitionError):
+            getattr(setup.owner, name)(object(), object())

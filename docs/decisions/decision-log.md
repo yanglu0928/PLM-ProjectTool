@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261023-1246：Section START 与终态回调分片
+
+- Date/WBS：2026-10-23 / `SOL-05-A04-P13-P04-P01`；依据 CR-SOL-024 与统一 Review Registry 回调合同。
+- Decision：先实现精确 Section START Subject Owner/结果持久化；Registry 所需终态回调明确失败关闭，客户决定消费另片验收后开放。
+- Reason：可单独验证六维当前事实和并发锁序，避免 START 通过被误称客户批准。
+- Impact/Rollback：无 API/Schema/权限变化；未装配入口，撤本片代码即可。已有 Review 史不可删除。
+
 ## DEC-20261023-1245：Windows Section VALIDATE 注入统一 Trace Owner
 
 - Date/WBS：2026-10-23 / `SOL-05-A04-P10-P02`；依据 P10-P01 内部接口和 TRC-01-A03-P03 当前精确覆盖服务。
