@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-23：0.1.0-dev.0/SOL-05-A04-P13-P01 登记CR-SOL-024/DEC-1207，确定Section独立PROJECT Review须在送审/终态重证现时六维与精确评审快照，不能从旧ready报告或Outline/Spec批准推定客户批准；0160/0148 Guard受控开放留独立迁移。兼容性/升级/回滚：本片仅设计/决策，无程序、Schema/API/数据变化，可在实施前修订，原冻结版本保留。验证：冻结DM/API/V2.1与当前SOL-06 Review/Section Guard静态核查，未运行本片功能测试。已知问题：只读Owner、受控迁移、正式Review/客户确认、Gate3/Pilot/发行待。
+
 - 2026-10-23：0.1.0-dev.0/SOL-05-A04-P12-P05-P04 新增可重复Win11/PG18.6验收，证明同一SectionVersion的当前批准Spec与作者逐引用依据、精确ACTIVE Requirement→Section Trace同时满足时六维ready=true；撤边后新Key阻断、旧Key保留首次结果。兼容性/升级/回滚：仅验证脚本和记录，无程序/Schema/API/数据变化，移除脚本不影响应用。验证：一次性PG真实HTTP/Session/授权/审计与状态DRAFT检查exit0；前项后端全量3920通过/3跳过，本片未重跑。已知问题：Section正式Review/客户确认、Outline/Plan衔接、正式信任/Gate3/Pilot/发行待。
 
 - 2026-10-23：0.1.0-dev.0/SOL-05-A04-P12-P05-P03 按CR-SOL-023在Windows显式Section VALIDATE组合接入现时Spec资格重证，复用CREATE的同项目当前批准、Review精确快照、章节祖先与共同需求规则，但以固定目标版本和前驱为参照。兼容性/升级/回滚：无Schema、冻结路径/响应/角色/License变化；可撤可选端口而保持Spec维UNAVAILABLE，既有历史不改。验证：Win11/一次性PG18.6真实批准Spec旧/新Section HTTP UNAVAILABLE/PASS、模拟批准失效后的新Key重证/旧Key回放；资格定向37通过/30子例、后端全量3920通过/3跳过/6074子例。已知问题：Trace+Spec完整就绪链、Section正式Review/客户确认、正式信任/Gate3/Pilot/发行待。

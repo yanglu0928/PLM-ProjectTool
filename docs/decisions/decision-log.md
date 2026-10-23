@@ -11707,3 +11707,10 @@
 - Decision：`UNDECLARED` 始终 UNAVAILABLE；`NONE_REQUIRED` 只在受权操作者显式提供规范化理由且无固定引用时具备送审准备资格；`FIXED_REFS` 须每条固定引用都具有创建者提交、与新章节正文固定版本/指纹及引用绑定的有界适配依据，并在 VALIDATE 新观察中重证当前 Spec/Review/Section 来源/共有需求与正文资格。满足条件的 `spec=PASS` 仅代表“可交客户评审的依据齐备”，不代表自动语义正确或客户批准。旧引用 NULL 不回填，需新建后继 SectionVersion。
 - Reason：直接使用已批准 Spec 会混淆来源资格和新正文适配；通用自动语义等价在四类专项与自然语言正文之间不可重复证明。不可变作者依据加现时资格/客户 Review 形成最短可审计链。
 - Impact/Rollback：先按 CR-SOL-023 分 Schema、输入/持久化、现时验证、UI/Windows 片验收；冻结路径/旧首响/旧历史保留。0181 若产生新依据历史则拒降，不改写历史；各片失败时维持 `spec=UNAVAILABLE` 并继续其他工作。
+
+# DEC-20261023-1207：Section Review 不消费旧验证报告作授权事实
+
+- Date/WBS：2026-10-23 / `SOL-05-A04-P13-P01`；依据 Gate 2 DM-05/API-04、CR-SOL-024、P12-P05-P04 六维ready真实验收及 SOL-06 统一Review先例。
+- Decision：为SOL-05独立建立PROJECT Review Subject。送审和终态在调用者事务内按固定SectionVersion重新证明六维现时ready及精确Review快照，不把旧VALIDATE Audit/收据或Outline/Spec批准当章节批准；项目负责人发起，指定客户确认人由统一Review处理。政策标识采用`SOLUTION_SECTION_ALL_V1`（内部稳定代码，不改变冻结API），全员处理/任一退回规则沿统一Kernel。先只读Owner，后独立迁移受控开放状态与批准指针，再接提交/终态/HTTP/UI。
+- Reason：0160/0148数据库Guard仍全拒相关UPDATE，直接写入会绕过Review；旧验证时点与Review提交/批准时点不同，来源可失效。Section/Outline/Spec在冻结合同中分别评审。
+- Impact/Rollback/Verification：CR-SOL-024先记录方案、风险、Guard迁移与有史拒降；不改原冻结提交。只读片可撤不动历史；后续状态迁移须ORM、空/有史升降、drift、非法转移/并发、真实Win11/PG/HTTP和全量回归。客户签署不能由AI模拟为生产事实。
