@@ -28,8 +28,12 @@ from plm_assistant.modules.trace.domain.link_shape import TraceVersionRef
 
 from .prove_section_document_content import SectionDocumentContentProof
 from .prove_section_evidence_use import SectionEvidenceUseProof
+from .qualify_section_structured_spec import QualifiedSectionStructuredSpec
 from .read_section import SectionCurrentView
 from .read_section_version import SectionVersionHistoryView
+from .section_version_input import (
+    SectionStructuredSpecRef, is_normalized_spec_basis,
+)
 from .section_version_validation_contract import (
     AUDIT_ACTION, OPERATION, SectionVersionValidationFacts,
     SectionVersionValidationReport, SectionVersionValidationSnapshot,
@@ -98,6 +102,14 @@ class TracePort(Protocol):
               ) -> TraceImplementsCoverageProof: ...
 
 
+class CurrentSpecPort(Protocol):
+    """Re-observe current approved Spec and exact Review facts in this transaction."""
+
+    def prove(self, transaction: object, *,
+              version: SectionVersionHistoryView,
+              ) -> tuple[QualifiedSectionStructuredSpec, ...]: ...
+
+
 class ReceiptPort(Protocol):
     def reserve(self, transaction: object, *, scope: IdempotencyScope,
                 request_fingerprint: bytes) -> IdempotencyResult | None: ...
@@ -123,12 +135,14 @@ class SectionVersionCurrentValidator:
     def __init__(self, *, documents: DocumentPort,
                  requirements: RequirementPort,
                  evidence: EvidencePort,
-                 trace: TracePort | None = None) -> None:
+                 trace: TracePort | None = None,
+                 specs: CurrentSpecPort | None = None) -> None:
         if any(port is None for port in (documents, requirements, evidence)):
             raise ValueError("SectionVersion current source ports required")
         self._documents, self._requirements, self._evidence = (
             documents, requirements, evidence)
         self._trace = trace
+        self._specs = specs
 
     def facts(self, transaction: object, *, command: ValidateSectionVersion,
               version: SectionVersionHistoryView) -> SectionVersionValidationFacts:
@@ -197,7 +211,55 @@ class SectionVersionCurrentValidator:
             integrity="PASS", content=content, requirements=requirements,
             evidence=evidence,
             trace=self._trace_status(transaction, command, version),
-            spec="UNAVAILABLE")
+            spec=self._spec_status(transaction, version))
+
+    def _spec_status(self, transaction: object,
+                     version: SectionVersionHistoryView) -> str:
+        if version.version_state != "DRAFT":
+            return "UNAVAILABLE"
+        refs = version.structured_spec_refs
+        if version.spec_binding_state == "NONE_REQUIRED":
+            return ("PASS" if not refs and is_normalized_spec_basis(
+                version.spec_not_required_reason) else "UNAVAILABLE")
+        if version.spec_binding_state != "FIXED_REFS" or self._specs is None:
+            return "UNAVAILABLE"
+        if (version.spec_not_required_reason is not None
+                or type(refs) is not tuple or not 1 <= len(refs) <= 500
+                or type(version.version_no) is not int or version.version_no < 2
+                or not _id(version.supersedes_version_ref)
+                or any(type(item) is not SectionStructuredSpecRef
+                       or not _id(item.spec_series_id)
+                       or not _id(item.structured_solution_spec_id)
+                       or not is_normalized_spec_basis(item.fit_rationale)
+                       for item in refs)
+                or len({item.spec_series_id for item in refs}) != len(refs)
+                or len({item.structured_solution_spec_id for item in refs}) != len(refs)):
+            return "UNAVAILABLE"
+        try:
+            qualified = self._specs.prove(transaction, version=version)
+            if type(qualified) is not tuple or len(qualified) != len(refs):
+                return "UNAVAILABLE"
+            requirements = {item.requirement_version_id
+                            for item in version.requirement_refs}
+            for ref, item in zip(refs, qualified, strict=True):
+                if (type(item) is not QualifiedSectionStructuredSpec
+                        or item.ref != ref
+                        or type(item.spec_type) is not str or not item.spec_type
+                        or type(item.content_fingerprint) is not bytes
+                        or len(item.content_fingerprint) != 32
+                        or not _id(item.review_id)
+                        or not _id(item.review_round_id)
+                        or not _id(item.source_section_version_id)
+                        or type(item.source_content_fingerprint) is not bytes
+                        or len(item.source_content_fingerprint) != 32
+                        or type(item.shared_requirement_version_ids) is not tuple
+                        or not item.shared_requirement_version_ids
+                        or any(not _id(identifier) or identifier not in requirements
+                               for identifier in item.shared_requirement_version_ids)):
+                    return "UNAVAILABLE"
+            return "PASS"
+        except Exception:
+            return "UNAVAILABLE"
 
     def _trace_status(self, transaction: object, command: ValidateSectionVersion,
                       version: SectionVersionHistoryView) -> str:

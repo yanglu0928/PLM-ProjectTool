@@ -75,6 +75,15 @@ def _id(value: object) -> bool:
     return type(value) is uuid.UUID and value.int != 0
 
 
+def is_normalized_spec_basis(value: object) -> bool:
+    """One canonical author assertion grammar for CREATE and current validation."""
+    return (type(value) is str and 1 <= len(value) <= 1000
+            and value == value.strip()
+            and value == unicodedata.normalize("NFC", value)
+            and not any(unicodedata.category(char) in ("Cc", "Cs")
+                        for char in value))
+
+
 def _json_keys_are_strings(value: object) -> bool:
     if type(value) is dict:
         return all(type(key) is str and _json_keys_are_strings(item)
@@ -130,11 +139,7 @@ def validate_section_version_draft(value: object) -> ValidatedSectionVersionDraf
             raise SectionVersionInputError()
     elif value.spec_binding_state == "NONE_REQUIRED":
         reason = value.spec_not_required_reason
-        if (type(reason) is not str or not 1 <= len(reason) <= 1000
-                or reason != reason.strip()
-                or reason != unicodedata.normalize("NFC", reason)
-                or any(unicodedata.category(char) in ("Cc", "Cs") for char in reason)
-                or value.structured_spec_refs):
+        if not is_normalized_spec_basis(reason) or value.structured_spec_refs:
             raise SectionVersionInputError()
     elif value.spec_not_required_reason is not None or not value.structured_spec_refs:
         raise SectionVersionInputError()
@@ -142,14 +147,8 @@ def validate_section_version_draft(value: object) -> ValidatedSectionVersionDraf
         if (type(item) is not SectionStructuredSpecRef
                 or not _id(item.spec_series_id)
                 or not _id(item.structured_solution_spec_id)
-                or (item.fit_rationale is not None and (
-                    type(item.fit_rationale) is not str
-                    or not 1 <= len(item.fit_rationale) <= 1000
-                    or item.fit_rationale != item.fit_rationale.strip()
-                    or item.fit_rationale != unicodedata.normalize(
-                        "NFC", item.fit_rationale)
-                    or any(unicodedata.category(char) in ("Cc", "Cs")
-                           for char in item.fit_rationale)))):
+                or (item.fit_rationale is not None
+                    and not is_normalized_spec_basis(item.fit_rationale))):
             raise SectionVersionInputError()
     if (len({item.spec_series_id for item in value.structured_spec_refs})
             != len(value.structured_spec_refs)

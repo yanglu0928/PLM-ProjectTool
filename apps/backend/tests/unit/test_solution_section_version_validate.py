@@ -17,9 +17,14 @@ from plm_assistant.modules.project.application.authorization import (
 from plm_assistant.modules.requirement.application.outline_version_proof import OutlineApprovedRequirementProof
 from plm_assistant.modules.solution.application.prove_section_document_content import SectionDocumentContentProof
 from plm_assistant.modules.solution.application.prove_section_evidence_use import SectionEvidenceUseProof
+from plm_assistant.modules.solution.application.qualify_section_structured_spec import (
+    QualifiedSectionStructuredSpec,
+)
 from plm_assistant.modules.solution.application.read_section import SectionCurrentView
 from plm_assistant.modules.solution.application.read_section_version import SectionVersionHistoryView
-from plm_assistant.modules.solution.application.section_version_input import SectionRequirementRef
+from plm_assistant.modules.solution.application.section_version_input import (
+    SectionRequirementRef, SectionStructuredSpecRef,
+)
 from plm_assistant.modules.solution.application.section_version_validation_contract import (
     OPERATION, ValidateSectionVersion,
 )
@@ -228,6 +233,114 @@ def test_exact_current_trace_proof_is_audited_but_spec_still_blocks_review():
     assert seen[0][3] == (TraceVersionRef(
         "requirement", "REQ-03", REQUIREMENT, REQ_VERSION,
         "PROJECT", PROJECT),)
+
+
+def _spec_version(*, fit="Author confirms exact specialist applicability"):
+    return replace(VERSION_VIEW, version_no=2,
+                   supersedes_version_ref=uuid.uuid4(),
+                   spec_binding_state="FIXED_REFS",
+                   structured_spec_refs=(SectionStructuredSpecRef(
+                       uuid.uuid4(), uuid.uuid4(), fit),))
+
+
+def _qualified(ref):
+    return QualifiedSectionStructuredSpec(
+        ref, "INTERFACE", b"q" * 32, uuid.uuid4(), uuid.uuid4(),
+        uuid.uuid4(), b"p" * 32, (REQ_VERSION,))
+
+
+def test_none_required_is_readiness_evidence_not_customer_review():
+    subject = Harness()
+    subject.version = replace(VERSION_VIEW, spec_binding_state="NONE_REQUIRED",
+                              spec_not_required_reason="No specialist design required")
+    report = subject.service.validate(command())
+    assert report.facts.spec == "PASS"
+    assert report.valid and not report.ready_for_review
+    assert report.issue_codes == ("TRACE_COVERAGE_UNAVAILABLE",)
+    for reason in (None, " ", "padded ", "e\u0301", "bad\x00reason"):
+        broken = Harness()
+        broken.version = replace(subject.version, spec_not_required_reason=reason)
+        assert broken.service.validate(command()).facts.spec == "UNAVAILABLE"
+
+
+def test_fixed_spec_fit_current_proof_requires_exact_typed_snapshot():
+    subject = Harness()
+    subject.version = _spec_version()
+    seen = []
+    def prove(tx, *, version):
+        seen.append((tx, version))
+        return (_qualified(version.structured_spec_refs[0]),)
+    subject.current._specs = SimpleNamespace(prove=prove)
+    report = subject.service.validate(command())
+    assert report.facts.spec == "PASS"
+    assert report.valid and not report.ready_for_review
+    assert seen == [(subject.txs[-1], subject.version)]
+    assert report.issue_codes == ("TRACE_COVERAGE_UNAVAILABLE",)
+
+
+def test_spec_readiness_needs_other_dimensions_and_replay_preserves_observation():
+    subject = Harness()
+    subject.version = _spec_version()
+    subject.current._specs = SimpleNamespace(
+        prove=lambda _tx, *, version: (_qualified(version.structured_spec_refs[0]),))
+    subject.current._trace = SimpleNamespace(prove=lambda _tx, **kwargs:
+        TraceImplementsCoverageProof(
+            kwargs["target"], kwargs["requirement_refs"], (uuid.uuid4(),)))
+    first = subject.service.validate(command())
+    assert first.facts.spec == first.facts.trace == "PASS"
+    assert first.ready_for_review
+    assert subject.version.version_state == "DRAFT"
+    subject.sources.document_ok = False
+    replay = subject.service.validate(command(trace_id=uuid.uuid4()))
+    assert replay == first
+    subject.receipt = None  # Fake store retains only one key; a new key re-observes.
+    fresh = subject.service.validate(command(
+        trace_id=uuid.uuid4(), idempotency_key="section-validate-0002"))
+    assert fresh.facts.spec == "PASS" and fresh.facts.content == "UNAVAILABLE"
+    assert not fresh.ready_for_review
+
+
+@pytest.mark.parametrize("failure", [
+    "missing_port", "missing_fit", "invalid_fit", "old_version",
+    "wrong_ref", "wrong_count", "wrong_review", "wrong_source",
+    "wrong_shared", "wrong_type", "source_exception", "undeclared",
+])
+def test_fixed_spec_fit_missing_or_bad_current_proof_never_passes(failure):
+    subject = Harness()
+    subject.version = _spec_version()
+    ref = subject.version.structured_spec_refs[0]
+    if failure == "missing_fit":
+        subject.version = replace(subject.version, structured_spec_refs=(
+            replace(ref, fit_rationale=None),))
+    elif failure == "invalid_fit":
+        subject.version = replace(subject.version, structured_spec_refs=(
+            replace(ref, fit_rationale=" e\u0301"),))
+    elif failure == "old_version":
+        subject.version = replace(subject.version, version_no=1,
+                                  supersedes_version_ref=None)
+    elif failure == "undeclared":
+        subject.version = VERSION_VIEW
+    if failure != "missing_port":
+        def prove(_tx, *, version):
+            if failure == "source_exception":
+                raise RuntimeError("source down")
+            item = _qualified(version.structured_spec_refs[0])
+            if failure == "wrong_ref":
+                item = replace(item, ref=replace(item.ref,
+                               structured_solution_spec_id=uuid.uuid4()))
+            elif failure == "wrong_review":
+                item = replace(item, review_id=uuid.UUID(int=0))
+            elif failure == "wrong_source":
+                item = replace(item, source_content_fingerprint=b"short")
+            elif failure == "wrong_shared":
+                item = replace(item, shared_requirement_version_ids=(uuid.uuid4(),))
+            elif failure == "wrong_type":
+                return (object(),)
+            elif failure == "wrong_count":
+                return ()
+            return (item,)
+        subject.current._specs = SimpleNamespace(prove=prove)
+    assert subject.service.validate(command()).facts.spec == "UNAVAILABLE"
 
 
 @pytest.mark.parametrize("failure,expected", [
