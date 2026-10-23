@@ -241,6 +241,20 @@ class SectionStructuredSpecQualificationTests(unittest.TestCase):
         with self.assertRaises(SectionStructuredSpecQualificationError):
             current.prove(self.tx, version=target)
 
+    def test_current_in_review_rechecks_same_fixed_spec(self):
+        ref = replace(self.ref, fit_rationale="Author fit for current section")
+        target = replace(
+            self.source, solution_section_version_id=uuid.uuid4(),
+            version_no=2, version_state="IN_REVIEW",
+            supersedes_version_ref=self.latest_id,
+            spec_binding_state="FIXED_REFS", structured_spec_refs=(ref,))
+        current = SectionCurrentSpecQualificationService(self.service)
+        (proof,) = current.prove(self.tx, version=target)
+        self.assertEqual(proof.ref, ref)
+        self.specs.approved = uuid.uuid4()
+        with self.assertRaises(SectionStructuredSpecQualificationError):
+            current.prove(self.tx, version=target)
+
     def test_current_draft_missing_basis_or_non_draft_denied_before_ports(self):
         ref = replace(self.ref, fit_rationale="Author fit")
         target = replace(

@@ -36,7 +36,7 @@ class Session:
         return Result(next(self.values))
 
 
-def source(session):
+def source(session, *, required_state="DRAFT"):
     port = SqlAlchemySectionReviewReadinessRepository()
     marker = object()
     with (patch("plm_assistant.modules.solution.infrastructure.section_review_readiness_repository._session",
@@ -48,7 +48,8 @@ def source(session):
           patch("plm_assistant.modules.solution.infrastructure.section_review_readiness_repository.SqlAlchemySectionVersionReadRepository.get",
                 return_value=marker)):
         return port.lock_latest(object(), project_id=PROJECT,
-                                section_id=SECTION, version_id=VERSION)
+                                section_id=SECTION, version_id=VERSION,
+                                required_state=required_state)
 
 
 def test_locks_parent_section_latest_then_reconstructs_fixed_source():
@@ -62,6 +63,20 @@ def test_locks_parent_section_latest_then_reconstructs_fixed_source():
     assert "FOR SHARE OF sol_outlines" in session.statements[1]
     assert "FOR SHARE OF sol_sections" in session.statements[2]
     assert "FOR SHARE OF sol_section_versions" in session.statements[3]
+
+
+def test_in_review_terminal_lock_requires_exact_latest_state():
+    def rows(state):
+        return Session(OUTLINE, SimpleNamespace(outline_state="ACTIVE"),
+                       SimpleNamespace(solution_outline_id=OUTLINE,
+                                       section_state="ACTIVE"),
+                       SimpleNamespace(solution_section_version_id=VERSION,
+                                       version_state=state))
+
+    assert source(rows("IN_REVIEW"), required_state="IN_REVIEW") is not None
+    assert source(rows("DRAFT"), required_state="IN_REVIEW") is None
+    assert source(rows("IN_REVIEW")) is None
+    assert source(rows("IN_REVIEW"), required_state="APPROVED") is None
 
 
 def test_stale_latest_or_archived_ancestor_fails_closed():

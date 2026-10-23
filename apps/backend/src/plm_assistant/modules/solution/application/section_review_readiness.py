@@ -15,13 +15,14 @@ from .validate_section_version import SectionVersionCurrentValidator
 
 
 class SectionReviewReadinessError(RuntimeError):
-    """The exact latest DRAFT cannot be proved ready from current facts."""
+    """The exact latest version cannot be proved ready from current facts."""
 
 
 class SectionReviewSourcePort(Protocol):
     def lock_latest(self, transaction: object, *, project_id: uuid.UUID,
                     section_id: uuid.UUID,
-                    version_id: uuid.UUID) -> SectionVersionHistoryView | None: ...
+                    version_id: uuid.UUID, required_state: str,
+                    ) -> SectionVersionHistoryView | None: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,11 +31,13 @@ class SectionReviewReadinessProof:
     facts: SectionVersionValidationFacts
     verified_at: datetime
     content_fingerprint: bytes = field(repr=False)
+    required_state: str = "DRAFT"
 
     def __post_init__(self) -> None:
         if (type(self.version) is not SectionVersionHistoryView
                 or type(self.facts) is not SectionVersionValidationFacts
-                or self.version.version_state != "DRAFT"
+                or self.required_state not in ("DRAFT", "IN_REVIEW")
+                or self.version.version_state != self.required_state
                 or type(self.content_fingerprint) is not bytes
                 or self.content_fingerprint != self.version.content_fingerprint
                 or type(self.verified_at) is not datetime
@@ -57,21 +60,24 @@ class SectionReviewReadinessService:
         self._clock = clock or (lambda: datetime.now(timezone.utc))
 
     def prove(self, transaction: object, *, query: SectionCurrentFactQuery,
+              required_state: str = "DRAFT",
               ) -> SectionReviewReadinessProof:
-        if transaction is None or type(query) is not SectionCurrentFactQuery:
+        if (transaction is None or type(query) is not SectionCurrentFactQuery
+                or required_state not in ("DRAFT", "IN_REVIEW")):
             raise SectionReviewReadinessError()
         try:
             query.__post_init__()
             version = self._repository.lock_latest(
                 transaction, project_id=query.project_id,
                 section_id=query.solution_section_id,
-                version_id=query.solution_section_version_id)
+                version_id=query.solution_section_version_id,
+                required_state=required_state)
             if (type(version) is not SectionVersionHistoryView
                     or (version.project_id, version.solution_section_id,
                         version.solution_section_version_id) != (
                             query.project_id, query.solution_section_id,
                             query.solution_section_version_id)
-                    or version.version_state != "DRAFT"
+                    or version.version_state != required_state
                     or type(version.content_fingerprint) is not bytes
                     or len(version.content_fingerprint) != 32):
                 raise SectionReviewReadinessError()
@@ -84,7 +90,7 @@ class SectionReviewReadinessService:
                 raise SectionReviewReadinessError()
             return SectionReviewReadinessProof(
                 version, facts, now.astimezone(timezone.utc),
-                version.content_fingerprint)
+                version.content_fingerprint, required_state)
         except SectionReviewReadinessError:
             raise
         except Exception:

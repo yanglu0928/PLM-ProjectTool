@@ -26,7 +26,7 @@ from plm_assistant.modules.solution.application.section_version_input import (
     SectionRequirementRef, SectionStructuredSpecRef,
 )
 from plm_assistant.modules.solution.application.section_version_validation_contract import (
-    OPERATION, ValidateSectionVersion,
+    OPERATION, SectionCurrentFactQuery, ValidateSectionVersion,
 )
 from plm_assistant.modules.solution.application.validate_section_version import (
     SectionVersionCurrentValidator, SectionVersionValidationAudit,
@@ -276,6 +276,20 @@ def test_fixed_spec_fit_current_proof_requires_exact_typed_snapshot():
     assert report.valid and not report.ready_for_review
     assert seen == [(subject.txs[-1], subject.version)]
     assert report.issue_codes == ("TRACE_COVERAGE_UNAVAILABLE",)
+
+
+def test_internal_terminal_spec_rechecks_in_review_but_public_validate_remains_draft_only():
+    subject = Harness()
+    version = replace(_spec_version(), version_state="IN_REVIEW")
+    subject.current._specs = SimpleNamespace(
+        prove=lambda _tx, *, version: (_qualified(version.structured_spec_refs[0]),))
+    internal = subject.current.facts(
+        object(), command=SectionCurrentFactQuery(
+            b"s" * 32, uuid.uuid4(), PROJECT, SECTION, VERSION),
+        version=version)
+    public = subject.current.facts(object(), command=command(), version=version)
+    assert internal.spec == "PASS"
+    assert public.spec == "UNAVAILABLE"
 
 
 def test_spec_readiness_needs_other_dimensions_and_replay_preserves_observation():

@@ -22,9 +22,11 @@ class SqlAlchemySectionReviewReadinessRepository:
         self._versions = SqlAlchemySectionVersionReadRepository()
 
     def lock_latest(self, transaction: object, *, project_id: uuid.UUID,
-                    section_id: uuid.UUID, version_id: uuid.UUID):
+                    section_id: uuid.UUID, version_id: uuid.UUID,
+                    required_state: str = "DRAFT"):
         if (transaction is None or any(type(value) is not uuid.UUID or value.int == 0
-                                       for value in (project_id, section_id, version_id))):
+                                       for value in (project_id, section_id, version_id))
+                or required_state not in ("DRAFT", "IN_REVIEW")):
             return None
         session = _session(transaction)
         # Same parent-before-child order as SectionVersion CREATE. Its exclusive
@@ -60,7 +62,7 @@ class SqlAlchemySectionReviewReadinessRepository:
                 Version.version_no.desc()).limit(1).with_for_update(
                     read=True, of=Version)).scalar_one_or_none()
         if (latest is None or latest.solution_section_version_id != version_id
-                or latest.version_state != "DRAFT"):
+                or latest.version_state != required_state):
             return None
         return self._versions.get(transaction, project_id=project_id,
                                   section_id=section_id, version_id=version_id)

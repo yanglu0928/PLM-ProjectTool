@@ -57,9 +57,44 @@ def test_proves_exact_latest_draft_using_same_transaction_without_audit():
     assert result.verified_at == NOW
     assert harness.calls == [
         ("lock", transaction, dict(project_id=PROJECT, section_id=SECTION,
-                                   version_id=VERSION)),
+                                   version_id=VERSION, required_state="DRAFT")),
         ("facts", transaction, QUERY, FIXED),
     ]
+
+
+def test_terminal_approval_proves_latest_in_review_with_all_six_current_facts():
+    harness, transaction = Harness(), object()
+    harness.version = replace(FIXED, version_state="IN_REVIEW")
+    result = harness.service.prove(transaction, query=QUERY,
+                                   required_state="IN_REVIEW")
+    assert result.version is harness.version
+    assert result.required_state == "IN_REVIEW"
+    assert harness.calls[0] == (
+        "lock", transaction, dict(project_id=PROJECT, section_id=SECTION,
+                                  version_id=VERSION, required_state="IN_REVIEW"))
+    assert harness.calls[1] == ("facts", transaction, QUERY, harness.version)
+
+
+@pytest.mark.parametrize("dimension", [
+    "integrity", "content", "requirements", "evidence", "trace", "spec",
+])
+def test_terminal_approval_fails_on_any_current_dimension(dimension):
+    harness = Harness()
+    harness.version = replace(FIXED, version_state="IN_REVIEW")
+    harness.facts = replace(FACTS, **{dimension: "UNAVAILABLE"})
+    with pytest.raises(SectionReviewReadinessError):
+        harness.service.prove(object(), query=QUERY,
+                              required_state="IN_REVIEW")
+
+
+def test_terminal_proof_rejects_draft_or_unrecognized_state():
+    harness = Harness()
+    with pytest.raises(SectionReviewReadinessError):
+        harness.service.prove(object(), query=QUERY,
+                              required_state="IN_REVIEW")
+    with pytest.raises(SectionReviewReadinessError):
+        harness.service.prove(object(), query=QUERY,
+                              required_state="APPROVED")
 
 
 @pytest.mark.parametrize("version", [
