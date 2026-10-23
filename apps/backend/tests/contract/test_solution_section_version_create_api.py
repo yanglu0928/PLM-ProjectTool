@@ -44,7 +44,7 @@ class Creates:
         if self.error:
             raise SectionVersionCreateError(self.error)
         draft = command.draft
-        if draft.spec_binding_state != "UNDECLARED":
+        if draft.spec_binding_state == "FIXED_REFS":
             raise SectionVersionCreateError("SOURCE_UNAVAILABLE")
         return SectionVersionInitialView(
             VERSION, draft.solution_section_id, self.project, 1,
@@ -151,11 +151,11 @@ class SectionVersionCreateApiTests(unittest.TestCase):
         self.assertEqual(503, self.client.post(
             self.path, headers=self.headers, json=self.body).status_code)
 
-    def test_optional_spec_contract_parses_but_does_not_open_write_owner(self):
+    def test_optional_spec_contract_opens_only_none_required(self):
         none = {**self.body, "spec_binding_state": "NONE_REQUIRED",
                 "spec_not_required_reason": "No specialist design"}
         response = self.client.post(self.path, headers=self.headers, json=none)
-        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.status_code, 201)
         self.assertEqual(self.creates.commands[-1].draft.spec_binding_state,
                          "NONE_REQUIRED")
         self.assertEqual(self.creates.commands[-1].draft.spec_not_required_reason,

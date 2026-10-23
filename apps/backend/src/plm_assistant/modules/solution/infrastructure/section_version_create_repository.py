@@ -36,6 +36,7 @@ class SqlAlchemySectionVersionCreateRepository:
         counts = dict(
             declared_requirement_count=len(draft.requirement_refs),
             declared_evidence_count=len(draft.evidence_ids),
+            declared_spec_count=0,
         )
         created_at = session.execute(insert(SolutionSectionVersionRow).values(
             solution_section_version_id=version_id,
@@ -48,6 +49,8 @@ class SqlAlchemySectionVersionCreateRepository:
             content_artifact_ref=None,
             content_fingerprint=proof.content_fingerprint,
             assumptions=assumptions, exclusions=exclusions,
+            spec_binding_state=draft.spec_binding_state,
+            spec_not_required_reason=draft.spec_not_required_reason,
             supersedes_version_ref=proof.base.supersedes_version_id,
             review_ref=None, review_round_ref=None,
             created_by=actor_id,
@@ -82,7 +85,8 @@ class SqlAlchemySectionVersionCreateRepository:
             assumptions=assumptions, exclusions=exclusions,
             supersedes_version_ref=proof.base.supersedes_version_id,
             created_by=actor_id, created_at=created_at,
-            **counts,
+            declared_requirement_count=counts["declared_requirement_count"],
+            declared_evidence_count=counts["declared_evidence_count"],
         ))
         return SectionVersionInitialView(
             version_id, draft.solution_section_id, draft.project_id,

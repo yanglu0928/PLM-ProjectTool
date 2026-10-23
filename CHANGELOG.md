@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-23：0.1.0-dev.0/SOL-05-A04-P11-P04-P01 按DEC-20261023-1203新增0179受控Guard与显式NONE_REQUIRED（有界人工理由）同事务SectionVersion写入，理由绑定请求/内容指纹、持久收据/Audit；旧请求/201形状保持，FIXED_REFS仍关闭。兼容性/升级/回滚：旧客户端/历史无回填，空/旧数据升降可用；新声明历史存在时拒降，应关闭入口并前滚，禁止删史。验证：Win11隔离PG18.6真实HTTP 201/重放/理由冲突/固定引用503、ORM反读、收据Audit与拒降；P11-P02升降/drift重跑，后端3894通过/3跳过/6038子例。已知问题：固定Spec资格/子集合Owner、Section/Outline Review、正式信任/Gate3/Pilot/发行未完成。
+
 - 2026-10-23：0.1.0-dev.0/SOL-05-A04-P11-P04 前置核查记录 DEC-20261023-1203：先开放有理由的NONE_REQUIRED同事务Owner，待Spec适用/现时Review资格证明后再开放FIXED_REFS；旧首响不暗改。兼容性/升级/回滚：本片仅设计/顺序，无程序、Schema/API、数据变化；下一片0179应拒有新历史降级。验证：现有0178/0160 Guard、Spec Review/来源代码与CR-SOL-022静态交叉核查，未运行功能测试。已知问题：两类Owner/正式Review、Gate3/Pilot/发行均待。
 
 - 2026-10-23：0.1.0-dev.0/SOL-05-A04-P11-P03 新增SectionVersion固定Spec可选声明的严格输入合同及历史只读反读；旧请求仍UNDECLARED且旧幂等摘要/首次201形状不变，明确声明在Owner安装前503闭锁，不能被静默忽略。兼容性/升级/回滚：冻结路径、权限、License和Schema不变；GET/LIST仅加字段，删除新合同即可回退本片且不得删除0178/业务历史。验证：定向27通过/82子例，Win11隔离PG18.6真实ORM旧史反读及伪造不完整引用拒绝，后端全量3893通过/3跳过/6035子例。已知问题：声明同事务Owner/资格/指纹/首响、Section/Outline Review、正式信任/Gate3/Pilot/发行未完成。

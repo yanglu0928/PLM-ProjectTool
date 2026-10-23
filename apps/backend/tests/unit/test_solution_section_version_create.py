@@ -137,15 +137,30 @@ class SectionVersionCreateTests(unittest.TestCase):
             self.assertEqual(caught.exception.code, "VALIDATION_FAILED")
             self.assertEqual(self.proof_calls, [])
 
-    def test_explicit_spec_declaration_fails_closed_until_owner_installed(self) -> None:
-        declared = replace(self.draft, spec_binding_state="NONE_REQUIRED",
-                           spec_not_required_reason="No specialist design")
+    def test_fixed_spec_refs_fail_closed_until_qualification_owner_installed(self) -> None:
+        from plm_assistant.modules.solution.application.section_version_input import (
+            SectionStructuredSpecRef,
+        )
+        declared = replace(self.draft, spec_binding_state="FIXED_REFS",
+                           structured_spec_refs=(SectionStructuredSpecRef(
+                               uuid.uuid4(), uuid.uuid4()),))
         with self.assertRaises(SectionVersionCreateError) as caught:
             self.service.create(replace(self.command, draft=declared))
         self.assertEqual(caught.exception.code, "SOURCE_UNAVAILABLE")
         self.assertEqual(self.proof_calls, [])
         self.assertEqual(self.receipts.fingerprints, [])
         self.assertFalse(self.tx.committed)
+
+    def test_explicit_none_required_preserves_legacy_first_result_shape(self) -> None:
+        declared = replace(self.draft, spec_binding_state="NONE_REQUIRED",
+                           spec_not_required_reason="No specialist design")
+        validated = validate_section_version_draft(declared)
+        self.proof = replace(self.proof, draft=validated)
+        result = self.service.create(replace(self.command, draft=declared))
+        self.assertEqual(result.version_state, "DRAFT")
+        self.assertEqual(self.receipts.fingerprints, [validated.request_fingerprint])
+        self.assertEqual(len(self.events), 1)
+        self.assertTrue(self.tx.committed)
 
     def test_first_create_commits_result_receipt_and_one_audit(self) -> None:
         view = self.service.create(self.command)

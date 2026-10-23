@@ -158,7 +158,7 @@ class SectionVersionCreateService:
             draft = validate_section_version_draft(command.draft)
             # The 0178 schema is deliberately closed until the Spec binding Owner
             # can prove and persist declaration, refs, fingerprint and first reply.
-            if draft.spec_binding_state != "UNDECLARED":
+            if draft.spec_binding_state == "FIXED_REFS":
                 raise SectionVersionCreateError("SOURCE_UNAVAILABLE")
             validate_idempotency_key(command.idempotency_key)
             self._guard.require_valid(trace_id=command.trace_id)

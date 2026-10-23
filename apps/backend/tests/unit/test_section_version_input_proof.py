@@ -21,7 +21,7 @@ from plm_assistant.modules.solution.application.section_version_base import (
     CurrentSectionVersionBase,
 )
 from plm_assistant.modules.solution.application.section_version_input import (
-    SectionRequirementRef,
+    SectionRequirementRef, SectionStructuredSpecRef,
     SectionVersionDraftInput,
 )
 
@@ -110,6 +110,22 @@ class SectionVersionInputProofTests(unittest.TestCase):
         self.assertEqual(proven.evidence, (self.evidence,))
         self.assertEqual(len(proven.content_fingerprint), 32)
         self.assertNotIn("Implementation", repr(proven))
+
+    def test_none_required_is_bound_to_content_but_fixed_refs_stay_closed(self):
+        legacy = self.prove()
+        self.calls.clear()
+        declared = self.prove(draft(
+            spec_binding_state="NONE_REQUIRED",
+            spec_not_required_reason="No specialist design"))
+        self.assertNotEqual(declared.content_fingerprint, legacy.content_fingerprint)
+        self.assertEqual([name for name, _, _ in self.calls],
+                         ["base", "document", "requirement", "evidence"])
+        self.calls.clear()
+        self.denied(value=draft(
+            spec_binding_state="FIXED_REFS",
+            structured_spec_refs=(SectionStructuredSpecRef(
+                uuid.uuid4(), uuid.uuid4()),)))
+        self.assertEqual(self.calls, [])
 
     def test_fingerprint_binds_input_version_and_current_source_facts(self):
         first = self.prove().content_fingerprint

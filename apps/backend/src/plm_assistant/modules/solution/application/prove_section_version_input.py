@@ -91,7 +91,7 @@ class SectionVersionInputProofService:
             value = validate_section_version_draft(draft)
         except SectionVersionInputError:
             raise SectionVersionInputProofError("VALIDATION_FAILED") from None
-        if value.spec_binding_state != "UNDECLARED":
+        if value.spec_binding_state == "FIXED_REFS":
             raise SectionVersionInputProofError()
         # OutputArtifact has no Owner proof yet. Never treat its UUID as content.
         if value.content_artifact_ref is not None:
