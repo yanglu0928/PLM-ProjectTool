@@ -1104,6 +1104,15 @@ class ProductionLoginTests(unittest.TestCase):
         self.workflow_checklist_factory.assert_not_called()
         self.workflow_checklist_qualification_factory.assert_not_called()
         self.workflow_transition_factory.assert_not_called()
+        self.assertFalse(any(
+            getattr(route, "path", "") ==
+            "/api/v1/projects/{project_id}/solution-sections/{section_id}/"
+            "versions/{section_version_id}:submit-review"
+            and "POST" in getattr(route, "methods", ())
+            for included in app.routes
+            for route in getattr(
+                getattr(included, "original_router", None), "routes", ())
+        ))
         with TestClient(app, base_url="http://localhost") as client:
             self.assertEqual(client.get(
                 "/api/v1/projects/00000000-0000-0000-0000-000000000001/plans"
@@ -1462,6 +1471,15 @@ class ProductionLoginTests(unittest.TestCase):
         self.workflow_checklist_factory.assert_called_once()
         self.workflow_checklist_qualification_factory.assert_called_once()
         self.workflow_transition_factory.assert_called_once()
+        self.assertTrue(any(
+            getattr(route, "path", "") ==
+            "/api/v1/projects/{project_id}/solution-sections/{section_id}/"
+            "versions/{section_version_id}:submit-review"
+            and "POST" in getattr(route, "methods", ())
+            for included in app.routes
+            for route in getattr(
+                getattr(included, "original_router", None), "routes", ())
+        ))
         included_routes = (
             route
             for included in app.routes

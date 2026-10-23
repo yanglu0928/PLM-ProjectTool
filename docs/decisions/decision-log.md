@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261023-1248：Section VALIDATE 与 Review START 共用当前来源树
+
+- Date/WBS：2026-10-23 / `SOL-05-A04-P13-P05-P02`；依据 CR-SOL-024 当前六维同事务复验要求。
+- Decision：Windows 组合中提取内部 Section 当前 Validator 工厂，VALIDATE 与 Review START 各自创建实例但使用同一类来源与策略；旧收据/Audit 不被复用为送审证明。
+- Reason：防止两个入口装配分叉，且保持依赖构建与失败关闭边界可回滚。
+- Impact/Rollback：仅内部组合结构，无 API/Schema/角色变化；撤新工厂和送审路由装配可回到旧验证入口，原数据不改。
+
 ## DEC-20261023-1247：Section 客户确认人限客户角色
 
 - Date/WBS：2026-10-23 / `SOL-05-A04-P13-P04-P02`；依据冻结 Section Review 客户确认语义与 CR-SOL-024。

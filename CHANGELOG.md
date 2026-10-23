@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-23：0.1.0-dev.0/SOL-05-A04-P13-P05-P02 将 Section 送审接入 Windows 显式写入组合，VALIDATE 与送审共用当前六维来源构建，只读/默认模式不开放。兼容性/升级/回滚：无 API/Schema/角色/License 权益变化，撤可选装配可回滚，评审史不删。验证：组合48通过/27子例、关联63通过，后端全量3964通过/3跳过/6079子例。已知问题：真实Session/PG提交与撤销/回放、客户终态、正式信任、Gate3/Pilot/发行未完成。
+
 - 2026-10-23：0.1.0-dev.0/SOL-05-A04-P13-P05-P01 开放可选的冻结 SectionVersion `:submit-review` HTTP 合同，默认应用仍404；严格Session/Origin/CSRF/字段/响应、Review ETag和错误码。兼容性/升级/回滚：无Schema、角色、License或既有API行为变化，撤可选router即可回滚。验证：合同11通过，后端全量3964通过/3跳过/6079子例。已知问题：Windows显式组合/真实Session与PG、客户终态、Gate3/Pilot/发行未完成。
 
 - 2026-10-23：0.1.0-dev.0/SOL-05-A04-P13-P04-P02 新增 Section 内部统一 Review 提交服务和仅 ProjectManager 的权限映射，客户确认人限客户角色；同事务编排 License/Session/Review/固定证明/幂等收据，重放重查访问。兼容性/升级/回滚：无新 API/Schema/License 权益，未装配入口，可撤内部服务/映射；历史评审不得删除。验证：定向22通过/831子例，后端全量3953通过/3跳过/6079子例；前片Win11/PG18.6 START证据保留。本片完整提交HTTP/PG尚未执行。已知问题：公开路由/Windows装配、真实客户决定、Gate3/Pilot/发行未完成。

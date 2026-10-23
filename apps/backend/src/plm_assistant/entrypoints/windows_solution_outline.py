@@ -45,6 +45,7 @@ from plm_assistant.modules.solution.api.structured_spec_list_cursor import Struc
 from plm_assistant.modules.solution.api.structured_spec_read import create_structured_spec_read_router
 from plm_assistant.modules.solution.api.structured_spec_validate import create_structured_spec_validate_router
 from plm_assistant.modules.solution.api.structured_spec_submit_review import create_structured_spec_review_submission_router
+from plm_assistant.modules.solution.api.section_submit_review import create_section_review_submission_router
 from plm_assistant.modules.solution.api.section_version_read import create_section_version_read_router
 from plm_assistant.modules.solution.api.section_version_validate import create_section_version_validate_router
 from plm_assistant.modules.solution.api.section_version_list_cursor import SectionVersionListCursorCodec
@@ -67,6 +68,9 @@ from plm_assistant.modules.solution.application.validate_structured_spec import 
 from plm_assistant.modules.solution.application.structured_spec_review_readiness import StructuredSpecReviewReadinessService
 from plm_assistant.modules.solution.application.structured_spec_review_subject import StructuredSpecReviewSubjectOwner
 from plm_assistant.modules.solution.application.structured_spec_submit_review import StructuredSpecReviewSubmissionService
+from plm_assistant.modules.solution.application.section_review_readiness import SectionReviewReadinessService
+from plm_assistant.modules.solution.application.section_review_subject import SectionReviewSubjectOwner
+from plm_assistant.modules.solution.application.section_submit_review import SectionReviewSubmissionService
 from plm_assistant.modules.solution.application.prove_structured_spec_sources import StructuredSpecSourceProofService
 from plm_assistant.modules.solution.application.read_section_version import SectionVersionReadService
 from plm_assistant.modules.solution.application.validate_section_version import (
@@ -108,6 +112,8 @@ from plm_assistant.modules.solution.infrastructure.structured_spec_validation_re
     SqlAlchemyStructuredSpecValidationRepository,
 )
 from plm_assistant.modules.solution.infrastructure.structured_spec_review_repository import SqlAlchemyStructuredSpecReviewSubjectRepository
+from plm_assistant.modules.solution.infrastructure.section_review_readiness_repository import SqlAlchemySectionReviewReadinessRepository
+from plm_assistant.modules.solution.infrastructure.section_review_repository import SqlAlchemySectionReviewSubjectRepository
 from plm_assistant.modules.solution.infrastructure.section_version_validation_audit_source import (
     SqlAlchemySectionVersionValidationAuditSource,
 )
@@ -770,50 +776,10 @@ def create_windows_section_version_validate_router(
         authorization = ProjectAuthorizationService(
             unit_of_work=runtime.unit_of_work,
             repository=SqlAlchemyProjectAuthorizationRepository())
-        read_access = SqlAlchemyProjectReadAccess()
-        requirement_trace_owner = RequirementVersionTraceOwner(
-            RequirementVersionReadService(
-                unit_of_work=runtime.unit_of_work, access=read_access,
-                license_guard=license_guard, authorization=authorization,
-                repository=SqlAlchemyRequirementVersionReadRepository()))
-        section_trace_owner = SectionVersionTraceOwner(
-            SectionVersionReadService(
-                unit_of_work=runtime.unit_of_work, access=read_access,
-                license_guard=license_guard, authorization=authorization,
-                sections=SqlAlchemySectionReadRepository(),
-                versions=SqlAlchemySectionVersionReadRepository()))
-        trace = TraceImplementsCoverageService(
-            repository=SqlAlchemyTraceImplementsRepository(),
-            owners=TraceTargetProofService({
-                ("requirement", "REQ-03"): requirement_trace_owner,
-                ("solution", "SOL-05"): section_trace_owner,
-            }))
-        fixed = DocumentFixedSourceProofService(
-            documents=documents, downloads=downloads,
-            parse_metadata=SqlAlchemyParseResultReadRepository(),
-            parse_results=parse_results)
-        evidence = EvidenceFixedProjectSourceService(
-            sessions=SqlAlchemyProjectReadAccess(),
-            projects=SqlAlchemyProjectAuthorizationRepository(),
-            evidence=SqlAlchemyEvidenceFixedSourceRepository(),
-            documents=fixed,
-            allowed_project_roles=frozenset({
-                "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}),
-        )
-        current = SectionVersionCurrentValidator(
-            documents=SectionDocumentContentProofAdapter(
-                identities=SqlAlchemyReferenceVersionIdentity(),
-                fixed_sources=fixed),
-            requirements=OutlineRequirementUseProofService(
-                approved_versions=SqlAlchemyPrototypeApprovedRequirementVersionProof()),
-            evidence=SectionEvidenceUseProofAdapter(fixed_sources=evidence),
-            trace=trace,
-            specs=SectionCurrentSpecQualificationService(
-                SectionStructuredSpecQualificationService(
-                    specs=SqlAlchemySectionSpecCandidateRepository(),
-                    sections=SqlAlchemySectionSpecSourceRepository(),
-                    reviews=SqlAlchemyReviewSnapshotReadRepository())),
-        )
+        current = _windows_section_current_validator(
+            runtime=runtime, license_guard=license_guard,
+            authorization=authorization, documents=documents,
+            downloads=downloads, parse_results=parse_results)
         service = SectionVersionValidationService(
             unit_of_work=runtime.unit_of_work,
             access=SqlAlchemyProjectWriteAccess(), license_guard=license_guard,
@@ -825,5 +791,97 @@ def create_windows_section_version_validate_router(
         )
         return create_section_version_validate_router(
             sessions=sessions, origins=origins, validations=service)
+    except Exception:
+        raise ProductionSolutionOutlineStartupError() from None
+
+
+def _windows_section_current_validator(
+    *, runtime, license_guard, authorization, documents, downloads,
+    parse_results,
+) -> SectionVersionCurrentValidator:
+    """One source graph for Section VALIDATE and Review START."""
+    read_access = SqlAlchemyProjectReadAccess()
+    requirement_trace_owner = RequirementVersionTraceOwner(
+        RequirementVersionReadService(
+            unit_of_work=runtime.unit_of_work, access=read_access,
+            license_guard=license_guard, authorization=authorization,
+            repository=SqlAlchemyRequirementVersionReadRepository()))
+    section_trace_owner = SectionVersionTraceOwner(
+        SectionVersionReadService(
+            unit_of_work=runtime.unit_of_work, access=read_access,
+            license_guard=license_guard, authorization=authorization,
+            sections=SqlAlchemySectionReadRepository(),
+            versions=SqlAlchemySectionVersionReadRepository()))
+    trace = TraceImplementsCoverageService(
+        repository=SqlAlchemyTraceImplementsRepository(),
+        owners=TraceTargetProofService({
+            ("requirement", "REQ-03"): requirement_trace_owner,
+            ("solution", "SOL-05"): section_trace_owner,
+        }))
+    fixed = DocumentFixedSourceProofService(
+        documents=documents, downloads=downloads,
+        parse_metadata=SqlAlchemyParseResultReadRepository(),
+        parse_results=parse_results)
+    evidence = EvidenceFixedProjectSourceService(
+        sessions=SqlAlchemyProjectReadAccess(),
+        projects=SqlAlchemyProjectAuthorizationRepository(),
+        evidence=SqlAlchemyEvidenceFixedSourceRepository(),
+        documents=fixed,
+        allowed_project_roles=frozenset({
+            "PROJECT_MANAGER", "IMPLEMENTATION_MEMBER"}),
+    )
+    return SectionVersionCurrentValidator(
+        documents=SectionDocumentContentProofAdapter(
+            identities=SqlAlchemyReferenceVersionIdentity(),
+            fixed_sources=fixed),
+        requirements=OutlineRequirementUseProofService(
+            approved_versions=SqlAlchemyPrototypeApprovedRequirementVersionProof()),
+        evidence=SectionEvidenceUseProofAdapter(fixed_sources=evidence),
+        trace=trace,
+        specs=SectionCurrentSpecQualificationService(
+            SectionStructuredSpecQualificationService(
+                specs=SqlAlchemySectionSpecCandidateRepository(),
+                sections=SqlAlchemySectionSpecSourceRepository(),
+                reviews=SqlAlchemyReviewSnapshotReadRepository())),
+    )
+
+
+def create_windows_section_review_submission_router(
+    *, runtime, sessions, origins, license_guard, audit,
+    documents, downloads, parse_results,
+) -> APIRouter:
+    """Mount Section Review only with explicit Windows write/source trust."""
+    if any(value is None for value in (
+            runtime, sessions, origins, license_guard, audit,
+            documents, downloads, parse_results)):
+        raise ProductionSolutionOutlineStartupError()
+    try:
+        project_repository = SqlAlchemyProjectAuthorizationRepository()
+        authorization = ProjectAuthorizationService(
+            unit_of_work=runtime.unit_of_work,
+            repository=project_repository)
+        reviewers = ProjectReviewerQualificationService(
+            users=SqlAlchemyReviewUserAccess(), projects=project_repository)
+        owner = SectionReviewSubjectOwner(
+            repository=SqlAlchemySectionReviewSubjectRepository(),
+            reviewers=reviewers,
+            readiness=SectionReviewReadinessService(
+                repository=SqlAlchemySectionReviewReadinessRepository(),
+                current=_windows_section_current_validator(
+                    runtime=runtime, license_guard=license_guard,
+                    authorization=authorization, documents=documents,
+                    downloads=downloads, parse_results=parse_results)))
+        service = SectionReviewSubmissionService(
+            unit_of_work=runtime.unit_of_work,
+            access=SqlAlchemyProjectWriteAccess(),
+            license_guard=license_guard, authorization=authorization,
+            reviewers=reviewers, receipts=SqlAlchemyIdempotencyReceipts(),
+            replay_repository=SqlAlchemyProjectReviewSubmissionRepository(),
+            reviews=ProjectReviewPersistenceService(
+                creation_repository=SqlAlchemyReviewCreationRepository(),
+                round_repository=SqlAlchemyReviewStartRepository(),
+                audit=audit, subjects=owner), subjects=owner)
+        return create_section_review_submission_router(
+            sessions=sessions, origins=origins, submissions=service)
     except Exception:
         raise ProductionSolutionOutlineStartupError() from None
