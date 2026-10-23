@@ -11686,3 +11686,10 @@
 - Decision：先做 `P04-P01`，仅开放显式 `NONE_REQUIRED`（人工有界理由）根写入并绑定已有请求/内容指纹、Audit/持久幂等；旧 UNDECLARED 和首次 201 形状不变。非空 `FIXED_REFS` 保持闭锁，待独立 SpecVersion 同项目/适用性/当前 Review 资格证明后做 `P04-P02` 的子集合 Owner/Guard。P04-P01 不把“无需专项”当客户 Review 或自动 PASS。
 - Reason：0178 子表虽有复合 FK，但 FK 仅证明版本存在和同项目，不证明 Spec 适用于本章节或当前批准；提前放行会固化错误事实。当前首次结果表没有 Spec 声明字段，但冻结 201 形状没有这些字段，故本片不改旧回放；新声明可由受权 GET/DETAIL 读取。
 - Impact/Rollback/Verification：分片不改变 CR-SOL-022 目标或冻结 API/权限。下一片需 0179 有历史拒降的受控根 INSERT Guard、真实 Session/Project/License/来源/PG/HTTP、旧 Key 回放、负例和全量回归；新历史不删除，失败关闭入口并前滚。Gate3/Pilot 不预先通过。
+
+# DEC-20261023-1204：固定 Spec 候选资格采用已批准版与 Section 祖先谱系
+
+- Date/WBS：2026-10-23 / `SOL-05-A04-P11-P04-P02-A01`；依据 CR-SOL-022、冻结 DM-05/API-04、SOL-06 Review 终态与 SectionVersion 0160 不可变链。
+- Decision：候选 Spec 必须为同项目同 Series 当前唯一 APPROVED 版本，Review Identity/轮次 APPROVED 且 Subject/政策/版本/内容指纹精确一致；固定 Section 来源至少包含目标 Section 的既存祖先版本，祖先不可退回/受限，版本链须完整；Spec、来源章节和拟创建章节须至少共享一个固定 RequirementVersion，允许一份 Spec 涉及多个章节及其他需求。来源不要求是立即前驱，以免每次章节升版都被迫复制已批准专项设计。资格只是可引用证明；新正文与 Spec 的业务适配仍需后续现时 VALIDATE 与客户 Review，不自动 PASS。
+- Reason：仅凭同项目 FK 或 Spec 自身历史批准状态不足以排除被替代/Review 失配/错章节/需求漂移；要求同一未来 SectionVersion 回指会使两个独立不可变 POST 形成循环。既存线性版本链和人工显式选用提供可审计候选边界。
+- Impact/Rollback/Verification：无新 Scope、Schema、冻结 API 或权限变化；证明先独立单元/隔离 PG 验收，写入口保持关闭。撤证明不动历史；后续 Owner 写入前再次在同一事务重证并将事实纳入内容指纹、收据/Audit。若祖先被限制、Review 撤销或 Spec 被替代则新请求失败关闭，已存在历史不原地改写。
