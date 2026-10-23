@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261023-1247：Section 客户确认人限客户角色
+
+- Date/WBS：2026-10-23 / `SOL-05-A04-P13-P04-P02`；依据冻结 Section Review 客户确认语义与 CR-SOL-024。
+- Decision：SOL-05 START 的 Reviewer 只接受当前 `CUSTOMER_MANAGER`/`CUSTOMER_MEMBER`；评审历史读取仍允许当前有权项目成员。统一 Review Engine 与 SOL-06 策略不变。
+- Reason：防止实施人员被指定为客户确认人而把内部同意当客户确认。
+- Impact/Rollback：收紧本 Subject 的提交资格，无 Schema/API/License 变化；若正式基线修订确认人范围，须新 CR 后调整此集合并回归。
+
 ## DEC-20261023-1246：Section START 与终态回调分片
 
 - Date/WBS：2026-10-23 / `SOL-05-A04-P13-P04-P01`；依据 CR-SOL-024 与统一 Review Registry 回调合同。

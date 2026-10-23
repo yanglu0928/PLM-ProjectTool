@@ -114,6 +114,12 @@ def test_missing_context_ineligible_reviewer_or_stale_fact_fails_closed(setup):
         ReviewReviewerEligibilityError())
     with pytest.raises(ReviewSubjectAccessDenied):
         s.owner.prepare_start_in_transaction(object(), s.request)
+    s.reviewers.qualify_in_transaction.return_value = (
+        ProjectReviewerFacts(s.reviewer, s.project, "IMPLEMENTATION_MEMBER"),)
+    with pytest.raises(ReviewSubjectAccessDenied):
+        s.owner.prepare_start_in_transaction(object(), s.request)
+    s.reviewers.qualify_in_transaction.return_value = (
+        ProjectReviewerFacts(s.reviewer, s.project, "CUSTOMER_MANAGER"),)
     s.reviewers.qualify_in_transaction.side_effect = None
     s.readiness.prove.side_effect = SectionReviewReadinessError()
     with pytest.raises(ReviewSubjectAccessDenied):

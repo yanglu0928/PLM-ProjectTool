@@ -32,6 +32,8 @@ from .section_review_readiness import (
 )
 from .section_version_validation_contract import SectionCurrentFactQuery
 
+_CUSTOMER_CONFIRMERS = frozenset({"CUSTOMER_MANAGER", "CUSTOMER_MEMBER"})
+
 
 def _id(value: object) -> bool:
     return type(value) is uuid.UUID and value.int != 0
@@ -123,7 +125,8 @@ class SectionReviewSubjectOwner:
                 or subject_version_id is not None and not _id(subject_version_id)):
             return None
         try:
-            self._qualify(tx, project_id=project_id, reviewer_ids=(user_id,))
+            self._qualify(tx, project_id=project_id, reviewer_ids=(user_id,),
+                          allowed_roles=ALL_MEMBERS)
         except ReviewSubjectAccessDenied:
             return None
         exists = (self._repo.section_exists(
@@ -244,18 +247,19 @@ class SectionReviewSubjectOwner:
         return locked
 
     def _qualify(self, tx, *, project_id: uuid.UUID,
-                 reviewer_ids: tuple[uuid.UUID, ...]) -> None:
+                 reviewer_ids: tuple[uuid.UUID, ...],
+                 allowed_roles: frozenset[str] = _CUSTOMER_CONFIRMERS) -> None:
         try:
             facts = self._reviewers.qualify_in_transaction(
                 tx, project_id=project_id, reviewer_ids=reviewer_ids,
-                allowed_roles=ALL_MEMBERS)
+                allowed_roles=allowed_roles)
         except ReviewReviewerEligibilityError:
             raise ReviewSubjectAccessDenied() from None
         if (type(facts) is not tuple or len(facts) != len(reviewer_ids)
                 or any(type(fact) is not ProjectReviewerFacts
                        or fact.user_id != user_id
                        or fact.project_id != project_id
-                       or fact.project_role not in ALL_MEMBERS
+                       or fact.project_role not in allowed_roles
                        for fact, user_id in zip(facts, reviewer_ids))):
             raise ReviewSubjectAccessDenied()
 
