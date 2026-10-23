@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-23：0.1.0-dev.0/SOL-05-A04-P13-P05-P01 开放可选的冻结 SectionVersion `:submit-review` HTTP 合同，默认应用仍404；严格Session/Origin/CSRF/字段/响应、Review ETag和错误码。兼容性/升级/回滚：无Schema、角色、License或既有API行为变化，撤可选router即可回滚。验证：合同11通过，后端全量3964通过/3跳过/6079子例。已知问题：Windows显式组合/真实Session与PG、客户终态、Gate3/Pilot/发行未完成。
+
 - 2026-10-23：0.1.0-dev.0/SOL-05-A04-P13-P04-P02 新增 Section 内部统一 Review 提交服务和仅 ProjectManager 的权限映射，客户确认人限客户角色；同事务编排 License/Session/Review/固定证明/幂等收据，重放重查访问。兼容性/升级/回滚：无新 API/Schema/License 权益，未装配入口，可撤内部服务/映射；历史评审不得删除。验证：定向22通过/831子例，后端全量3953通过/3跳过/6079子例；前片Win11/PG18.6 START证据保留。本片完整提交HTTP/PG尚未执行。已知问题：公开路由/Windows装配、真实客户决定、Gate3/Pilot/发行未完成。
 
 - 2026-10-23：0.1.0-dev.0/SOL-05-A04-P13-P04-P01 新增 Section 统一 PROJECT Review START Subject Owner 与 SQL 锁/不可变结果写入；同事务要求最新 DRAFT、六维当前事实 PASS、固定指纹和合格 Reviewer，终态失败关闭。兼容性/升级/回滚：无 API/Schema/角色/License 变化，尚未装配用户入口；可撤内部代码，不删除评审历史。验证：Win11/一次性 PG18.6 合成 Review/Round 真实 START/结果及项目隔离；定向33通过、后端全量3946通过/3跳过/6074子例。已知问题：ProjectManager 提交服务、HTTP/Windows、终态客户决定、Gate3/Pilot/发行未完成。
