@@ -394,6 +394,8 @@ class SolutionSectionVersionRow(Base):
                         "(review_ref IS NOT NULL AND review_round_ref IS NOT NULL)",
                         name="ck_sol_section_versions__review_pair"),
         Index("ix_sol_section_versions__section_created", "solution_section_id", "created_at"),
+        Index("uq_sol_section_versions__section_approved", "solution_section_id",
+              unique=True, postgresql_where=text("version_state='APPROVED'")),
         {"schema": "plm"},
     )
 

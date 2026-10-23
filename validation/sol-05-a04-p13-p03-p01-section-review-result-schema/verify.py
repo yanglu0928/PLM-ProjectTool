@@ -7,6 +7,7 @@ from pathlib import Path
 import uuid
 
 from alembic import command
+from alembic.script import ScriptDirectory
 import psycopg
 from sqlalchemy.engine import URL
 
@@ -31,8 +32,10 @@ def verify(port: int) -> None:
         port=port, database="postgres"))
     connection = dict(host="127.0.0.1", port=port, user="poc_admin",
                       dbname="postgres", autocommit=True)
+    is_current_head = ScriptDirectory.from_config(cfg).get_heads() == [TARGET]
     command.upgrade(cfg, TARGET)
-    command.check(cfg)
+    if is_current_head:
+        command.check(cfg)  # Historical pin; later heads add their own ORM changes.
     command.downgrade(cfg, PREVIOUS)
     with psycopg.connect(**connection) as db:
         assert db.execute("SELECT to_regclass(%s)", (TABLE,)).fetchone()[0] is None
@@ -67,7 +70,8 @@ def verify(port: int) -> None:
                 "VALUES (%s,%s,%s,1,'Fixture Section',%s,%s,'[]','[]',0,0,%s)",
                 (version, section, project, uuid.uuid4(), b"f" * 32, actor))
     command.upgrade(cfg, TARGET)
-    command.check(cfg)
+    if is_current_head:
+        command.check(cfg)
     with psycopg.connect(**connection) as db:
         assert db.execute(
             "SELECT version_state,review_ref,review_round_ref FROM "
@@ -109,9 +113,11 @@ def verify(port: int) -> None:
         assert db.execute("SELECT version_state FROM plm.sol_section_versions "
                           "WHERE solution_section_version_id=%s", (version,)).fetchone()[0] == "DRAFT"
     command.upgrade(cfg, TARGET)
-    command.check(cfg)
+    if is_current_head:
+        command.check(cfg)
     print("SOL_05_A04_P13_P03_P01_SECTION_REVIEW_RESULT_SCHEMA_PASS: "
-          "empty/existing upgrade, closed DML, history-safe down/re-up and ORM drift")
+          "empty/existing upgrade, closed DML, history-safe down/re-up; "
+          + ("ORM drift" if is_current_head else "historical pin, current drift checked by head"))
 
 
 if __name__ == "__main__":
