@@ -47,6 +47,15 @@ function client(...responses: Response[]) {
 describe("HandoverReadClient", () => {
   afterEach(() => { vi.restoreAllMocks(); vi.useRealTimers(); });
 
+  it("calls a native-like fetch without binding the client as this", async () => {
+    const nativeLike = function (this: unknown, _path: RequestInfo | URL, _init?: RequestInit): Promise<Response> {
+      if (this !== undefined) throw new TypeError("Illegal invocation");
+      return Promise.resolve(ok({ items: [], next_cursor: null, has_more: false }));
+    } as typeof fetch;
+    await expect(new HandoverReadClient(nativeLike).listAnalyses(project))
+      .resolves.toMatchObject({ items: [], has_more: false });
+  });
+
   it("reads Analysis page/detail with no-store and strong ETag", async () => {
     const { api, fetcher } = client(ok({ items: [analysisView], next_cursor: token, has_more: true }), ok(analysisView, '"v0"'));
     const page = await api.listAnalyses(project, 25);
