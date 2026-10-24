@@ -11,6 +11,9 @@ from plm_assistant.entrypoints.windows_solution_outline import (
     create_windows_section_review_subject,
     create_windows_structured_spec_review_subject,
 )
+from plm_assistant.modules.solution.application.outline_review_subject import (
+    OutlineReviewSubjectOwner,
+)
 
 from plm_assistant.modules.ai.infrastructure.task_read_repository import (
     SqlAlchemyAITaskReadRepository,
@@ -164,11 +167,19 @@ class ProductionProjectReviewStartupError(RuntimeError):
         super().__init__("PROJECT Review composition unavailable")
 
 
+def _outline_owner(value: object | None) -> tuple[OutlineReviewSubjectOwner, ...]:
+    if value is None:
+        return ()
+    if type(value) is not OutlineReviewSubjectOwner:
+        raise ProductionProjectReviewStartupError()
+    return (value,)
+
+
 def create_windows_project_review_read_router(
     runtime, *, origins, license_guard, audit,
-    documents, downloads, parse_results,
+    documents, downloads, parse_results, outline_subject=None,
 ) -> APIRouter:
-    """Mount frozen REVIEW_GET with the explicitly registered SOL-06 read Owner."""
+    """Mount frozen REVIEW_GET with explicit eligible Subject read Owners."""
     if any(value is None for value in (
             runtime, origins, license_guard, audit,
             documents, downloads, parse_results)):
@@ -197,7 +208,8 @@ def create_windows_project_review_read_router(
             sessions=SqlAlchemyProjectReadAccess(), projects=authorization,
             license_guard=license_guard,
             repository=SqlAlchemyReviewSnapshotReadRepository(),
-            subjects=ProjectReviewSubjectReadRegistry((owner, section)),
+            subjects=ProjectReviewSubjectReadRegistry(
+                (owner, section) + _outline_owner(outline_subject)),
         )
         return create_review_read_router(origins=origins, reads=reads)
     except Exception:
@@ -207,8 +219,9 @@ def create_windows_project_review_read_router(
 def create_windows_project_review_list_router(
     runtime, *, origins, license_guard, audit,
     documents, downloads, parse_results, cursors,
+    outline_subject=None,
 ) -> APIRouter:
-    """Mount frozen REVIEW_LIST with SOL-06 Owner and a dedicated cursor key."""
+    """Mount frozen REVIEW_LIST with eligible Owners and a dedicated cursor."""
     if any(value is None for value in (
             runtime, origins, license_guard, audit, documents, downloads,
             parse_results, cursors)):
@@ -239,7 +252,8 @@ def create_windows_project_review_list_router(
             sessions=SqlAlchemyProjectReadAccess(), projects=authorization,
             license_guard=license_guard,
             repository=SqlAlchemyReviewListRepository(),
-            subjects=ProjectReviewSubjectReadRegistry((owner, section)),
+            subjects=ProjectReviewSubjectReadRegistry(
+                (owner, section) + _outline_owner(outline_subject)),
         )
         return create_review_list_router(
             origins=origins, lists=lists, cursors=cursors,
@@ -251,6 +265,7 @@ def create_windows_project_review_list_router(
 def create_windows_project_review_router(
     runtime, *, sessions, origins, license_guard, audit,
     documents=None, downloads=None, parse_results=None,
+    outline_subject=None,
 ) -> APIRouter:
     """Compose one frozen Router with all approved PROJECT Subject Owners."""
     if any(value is None for value in (
@@ -262,6 +277,8 @@ def create_windows_project_review_router(
         )
         if any(dependency_shape) and not all(dependency_shape):
             raise ValueError("complete SurveyConclusion evidence dependencies required")
+        if outline_subject is not None and not all(dependency_shape):
+            raise ValueError("Outline Review source dependencies required")
         access = SqlAlchemyReviewStartAccess()
         project_repository = SqlAlchemyProjectAuthorizationRepository()
         authorization = ProjectAuthorizationService(
@@ -348,6 +365,7 @@ def create_windows_project_review_router(
                 authorization=authorization, reviewers=reviewers,
                 terminal_context=True,
             ))
+            subject_owners.extend(_outline_owner(outline_subject))
         subjects = ProjectReviewSubjectRegistry(tuple(subject_owners))
         receipts = SqlAlchemyIdempotencyReceipts()
         creates = ReviewCreateService(

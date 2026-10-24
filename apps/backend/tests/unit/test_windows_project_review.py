@@ -12,9 +12,62 @@ from plm_assistant.entrypoints.windows_project_review import (
 from plm_assistant.modules.review.application.subject_registry import (
     ProjectReviewSubjectReadRegistry,
 )
+from plm_assistant.modules.solution.application.outline_review_subject import (
+    OutlineReviewSubjectOwner,
+)
 
 
 class WindowsProjectReviewCompositionTests(unittest.TestCase):
+    def test_explicit_outline_subject_registered_for_read_list_and_commands(self):
+        runtime = Mock()
+        runtime.unit_of_work = Mock()
+        outline = OutlineReviewSubjectOwner(
+            repository=Mock(), reviewers=Mock(), readiness=Mock(), audit=Mock())
+        owner = Mock(SUBJECT_TYPE="SOL-06")
+        owner.authorize_read = Mock()
+        section = Mock(SUBJECT_TYPE="SOL-05")
+        section.authorize_read = Mock()
+        module = "plm_assistant.entrypoints.windows_project_review."
+        with (patch(module + "create_windows_structured_spec_review_subject",
+                    return_value=owner),
+              patch(module + "create_windows_section_review_subject",
+                    return_value=section),
+              patch(module + "ProjectReviewSubjectReadRegistry",
+                    wraps=ProjectReviewSubjectReadRegistry) as reads):
+            create_windows_project_review_read_router(
+                runtime, origins=Mock(), license_guard=Mock(), audit=Mock(),
+                documents=Mock(), downloads=Mock(), parse_results=Mock(),
+                outline_subject=outline)
+            self.assertEqual((owner, section, outline), reads.call_args.args[0])
+            create_windows_project_review_list_router(
+                runtime, origins=Mock(), license_guard=Mock(), audit=Mock(),
+                documents=Mock(), downloads=Mock(), parse_results=Mock(),
+                cursors=Mock(), outline_subject=outline)
+            self.assertEqual((owner, section, outline), reads.call_args.args[0])
+        with patch(module + "ProjectReviewSubjectRegistry",
+                   side_effect=lambda owners: Mock(
+                       registered_subject_types=tuple(
+                           item.SUBJECT_TYPE for item in owners))) as writes:
+            create_windows_project_review_router(
+                runtime, sessions=Mock(), origins=Mock(), license_guard=Mock(),
+                audit=Mock(), documents=Mock(), downloads=Mock(),
+                parse_results=Mock(), outline_subject=outline)
+        self.assertIs(writes.call_args.args[0][-1], outline)
+        self.assertEqual(writes.call_args.args[0][-1].SUBJECT_TYPE, "SOL-03")
+
+    def test_outline_registration_requires_exact_owner_and_complete_sources(self):
+        runtime = Mock()
+        runtime.unit_of_work = Mock()
+        with self.assertRaises(ProductionProjectReviewStartupError):
+            create_windows_project_review_router(
+                runtime, sessions=Mock(), origins=Mock(), license_guard=Mock(),
+                audit=Mock(), outline_subject=Mock(SUBJECT_TYPE="SOL-03"))
+        with self.assertRaises(ProductionProjectReviewStartupError):
+            create_windows_project_review_read_router(
+                runtime, origins=Mock(), license_guard=Mock(), audit=Mock(),
+                documents=Mock(), downloads=Mock(), parse_results=Mock(),
+                outline_subject=Mock(SUBJECT_TYPE="SOL-03"))
+
     def test_composes_sol06_list_router_with_separate_registry_and_cursor(self):
         runtime = Mock()
         runtime.unit_of_work = Mock()

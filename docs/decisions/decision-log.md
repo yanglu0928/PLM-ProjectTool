@@ -11833,3 +11833,10 @@
 - Decision：把P04-P03拆成内部现时证明A01与Subject生命周期A02。A01新增不携带HTTP幂等/CSRF的内部固定查询类型，只允许经调用方已授权事务使用；Coverage对内部查询接受`DRAFT/IN_REVIEW`，公开VALIDATE仍仅按原DRAFT覆盖规则。A02再加入锁定最新版本、确认人资格与统一Review固定快照。
 - Reason：避免伪造CSRF或复用历史报告，并保持已冻结公开验证合同不变；客户终态必须取得同事务新鲜事实。
 - Impact/Rollback/Verification：非Breaking内部接口，无Schema/API/角色/License变化；可撤内部查询和路径，历史不变。A01须测试IN_REVIEW完整PASS/缺口及公开行为不变；A02未完成前不得把Outline送审标可用。
+
+# DEC-20261024-1222：Outline Review运行时通过显式Subject注入注册
+
+- Date/WBS：2026-10-24 / `SOL-03-A06-P04-P03-A05-P01`；Outline已完成可选HTTP送审和隔离PG真实START，但统一Review读/列表/终态路由只登记Section和StructuredSpec，客户无法通过现有Review页面完成SOL-03处理。
+- Decision：由调用方使用已验的Solution Windows工厂构造完整来源、`terminal_context=True`的`OutlineReviewSubjectOwner`，并作为可选显式参数注入统一Review读、列表和命令组合器；三者由同一SOL-03 Owner类型驱动。未传入时保持原注册集合，不默认开启SOL-03；传入不合格Owner则启动失败关闭。
+- Reason：统一Review组合器只负责主体分发，不复制Solution/Document/Requirement/Trace当前事实图；保留已冻结Review API和原路由默认行为。
+- Impact/Rollback/Verification：内部非Breaking组合参数，无Schema/公开API/数据迁移；停止显式注入即可回退路由注册，已产生评审历史不得删除。验收须覆盖默认与显式注册、错误Owner拒绝，以及隔离PG合成客户读取/批准、来源撤销后拒绝与事务状态闭合；未达到时保持WBS未通过。
