@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-25：0.1.0-dev.0/EVD-05-A03-P03 从修复后的干净提交重建 Windows 11 非发行包，SHA-256 `7d389ebf28df2f6bcc7c35842def653d691b5b8918654785fd7569a07eb9768b`；完整包内项目 Evidence 固定文档→CANDIDATE→合成 ELIGIBLE 链通过。兼容性：仅 Windows 11 合成信任已实测，Windows Server 2025/Debian 13 未实测。升级/回滚：本轮无 Schema/数据迁移；新包仅替换前端资产，旧失败候选保留；回退会恢复 Edge 资格提交故障。验证：22,196件清洁解包/哈希、Edge/HTTPS/隔离 PostgreSQL 18、固定来源/Audit/两类回执与匿名/未分配/跨项目负例退出0，临时进程与布局清理。已知问题：人工资格、正式公钥/服务账户、法律放行、离线安装升级、完整链/UAT/Gate/Pilot/三平台 Release 未通过，本包不可发行。
+
 - 2026-10-25：0.1.0-dev.0/EVD-05-A03-P03-P01 修复 PROJECT/GLOBAL Evidence 资格决定和原号回查在 Edge 原生 `fetch` receiver 下未发请求的前端缺陷；失败时原号保持，不改后端 API/Schema/权限。兼容性：Windows 11 前端回归/构建通过，Server 2025/Debian 13 未实测。升级/回滚：仅替换前端资产，无数据迁移；回退将恢复浏览器资格写不可用，旧候选保留。验证：receiver-sensitive 定向、Session/Evidence共180、前端全量1962/typecheck/build通过；旧候选两轮包内失败明确保留。已知问题：修复后新包 Edge/HTTPS/PG、人工资格、正式信任/安装/UAT/Gate/Pilot/Release 仍待，不可发行。
 
 - 2026-10-25：0.1.0-dev.0/EVD-05-A03-P02 新增项目 Evidence 整文档候选创建页及列表入口，用户可选同项目固定文档版本、填写标签；候选不自动合格。兼容性：Windows 11 前端回归与构建通过，Server 2025/Debian 13 未实测。升级/回滚：无后端 API/Schema/数据迁移；可回退前端资源，已创建 Evidence/Audit 不删除。验证：定向4、前端全量1961/typecheck/build通过。已知问题：真实浏览器/HTTPS/PG 与人工资格待新包复验；整文档不能精确页段定位，旧非发行候选不含本页，正式信任/安装/UAT/Gate/Pilot/Release 未通过。

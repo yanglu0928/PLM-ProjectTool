@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import argparse
+import httpx
 import json
 import subprocess
 import sys
+import uuid
 from importlib.util import module_from_spec, spec_from_file_location
 from pathlib import Path
 
@@ -70,7 +72,44 @@ def browser_probe(**context) -> None:
         ).fetchall()
         assert dict(receipts).get("V1_EVIDENCE_CREATE") == 1, receipts
         assert dict(receipts).get("V1_EVIDENCE_SET_ELIGIBILITY") == 1, receipts
+        foreign = db.execute(
+            "SELECT project_id FROM plm.prj_projects WHERE project_code='HNDNEG'"
+        ).fetchone()
+        assert foreign is not None
+        foreign_project = foreign[0]
+    body = {"document_id": str(document_id), "document_version_id": str(version_id),
+            "locator": {"locator_type": "DOCUMENT"},
+            "display_label": "Synthetic forbidden cross-project source"}
+    with httpx.Client(base_url=context["origin"], verify=False,
+                      trust_env=False, timeout=15) as anonymous:
+        refused = anonymous.post(f"/api/v1/projects/{project_id}/evidence",
+                                 headers={"origin": context["origin"],
+                                          "idempotency-key": str(uuid.uuid4())}, json=body)
+        assert refused.status_code in (401, 403), (refused.status_code, refused.text)
+    with httpx.Client(base_url=context["origin"], verify=False,
+                      trust_env=False, timeout=15) as outsider:
+        login = outsider.post("/api/v1/auth/login", headers={"origin": context["origin"]},
+                             json={"username": "Synthetic Foreign Source Manager",
+                                   "password": "synthetic-packaged-login-password"})
+        assert login.status_code == 200, (login.status_code, login.text)
+        headers = {"origin": context["origin"],
+                   "x-csrf-token": login.json()["data"]["csrf_token"],
+                   "idempotency-key": str(uuid.uuid4())}
+        refused = outsider.post(f"/api/v1/projects/{project_id}/evidence",
+                                headers=headers, json=body)
+        assert refused.status_code == 404, (refused.status_code, refused.text)
+        headers["idempotency-key"] = str(uuid.uuid4())
+        refused = outsider.post(f"/api/v1/projects/{foreign_project}/evidence",
+                                headers=headers, json=body)
+        assert refused.status_code in (404, 422), (refused.status_code, refused.text)
+    with context["connect_db"]() as db:
+        count = db.execute(
+            "SELECT count(*) FROM plm.evd_evidence_records WHERE scope='PROJECT' "
+            "AND project_id IN (%s,%s)", (project_id, foreign_project),
+        ).fetchone()[0]
+        assert count == 1, count
     print("EVD_05_A03_P03_PACKAGED_PG_PASS: fixed PROJECT source, ELIGIBLE, Audit, receipts", flush=True)
+    print("EVD_05_A03_P03_PACKAGED_NEGATIVE_PASS: anonymous, unassigned, foreign source", flush=True)
 
 
 def main() -> int:

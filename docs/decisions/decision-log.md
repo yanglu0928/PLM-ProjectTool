@@ -6,6 +6,7 @@
 - Decision：PROJECT/GLOBAL 资格决定与原操作号回查均在 SessionClient 中以局部函数引用调用 `fetch`，保留现有 CSRF、ETag、幂等、超时和错误合同；增加模拟原生 receiver 敏感性的回归。
 - Reason：新包 Edge 候选创建与 Viewer/资格读取成功，但资格写未发出即进入未知结果；源码中这四处 `this.fetcher(...)` 与已有 `EvidenceEligibilityClient.current()` 针对 Edge 的解绑定修复不一致。单测的无 receiver 敏感 mock 未覆盖此浏览器行为。
 - Impact/Rollback：前端内部传输修复，无 API/Schema/权限或持久数据迁移；旧候选不覆盖。可回退前端资源，但当前资格写和原号回查会恢复不可用；新包需重新定向/全量/Edge/PG 验证。
+- Verification closure：新非发行候选 SHA `7d389ebf28df2f6bcc7c35842def653d691b5b8918654785fd7569a07eb9768b` 在 Windows 11 合成 Edge/HTTPS/PG 固定文档→CANDIDATE→ELIGIBLE 及 Audit/收据、匿名/项目隔离/跨项目来源拒绝退出0；旧候选两轮失败仍保留。仅关闭此传输偏差，不改变正式信任/Gate/Pilot 结论。
 
 ## DEC-20261025-EVD-A03-P02：项目 Evidence 页面限定整文档候选
 
