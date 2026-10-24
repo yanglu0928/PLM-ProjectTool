@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-24：0.1.0-dev.0/SOL-03-A06-P03-A04 新增同事务受权的项目当前已批准需求全集内部证明，复用Requirement正式范围/Review资格Owner，最多500根且超限/空集失败关闭；更正前片“无范围Port”判断。兼容性/升级/回滚：Windows 11内部候选，无Schema或公开API变化、无需数据迁移；新调用者可关闭并恢复原`coverage=UNAVAILABLE`，不删历史；现有Workflow默认仓储行为不变。验证：定向13通过，隔离Windows11/PG18.6完整/超限/空集/项目锁与drift退出0，后端全量3986通过/3跳过/6079子例。已知问题：当前仅内部Port，Outline Section并集/覆盖、正式信任、Pilot/Gate3及三平台发行仍未完成。
+
 - 2026-10-23：0.1.0-dev.0/SOL-03-A06-P03-A03 静态复核Outline当前覆盖证明：Section正式批准/现时Trace与Spec前置已解除，但项目当前批准RequirementVersion全集及正式排除/延期决定Owner仍缺，`coverage`保持UNAVAILABLE。兼容性/升级/回滚：仅进展/路线文档，无程序、Schema、API或数据变化，撤路线记录不修改历史。验证：冻结DM-05/API-04与当前Outline/Section/Trace应用及仓储交叉核查；未运行新功能测试。已知问题：批准需求全集Port、Outline覆盖/VALIDATE/Review、Plan、正式信任、Gate3/Pilot/发行未完成。
 
 - 2026-10-23：0.1.0-dev.0/SOL-05-A04-P13-P06-P02-P03-A02 新增Win11合成负责人章节VALIDATE→选择客户→真实Edge送审/同Key回放/PG唯一事实验收，与A01独立客户链互补。兼容性/升级/回滚：仅新增隔离验证脚本，无程序、Schema、API或权限变化，无数据升级；撤脚本不删除服务器评审历史。验证：Edge 155/生产Vue/ASGI/一次性PG18.6脚本exit0、单Review/Round/START/收据/Audit；前片前端1857测试/typecheck/构建通过，本片未重跑。已知问题：非同一浏览器会话的组合证明、真实客户确认、正式信任、Outline/Plan、Gate3/Pilot/发行未完成。

@@ -11742,3 +11742,10 @@
 - Decision：P13-P03拆成两项独立验收。P01先建 `sol_section_review_state_results` 的ORM/迁移，固定Project/Section/Version、Review/Round、事件、批准指针前后值及Actor，复合FK与唯一约束齐全，但DML触发器全拒且原Section状态/指针Guard不动。P02再以独立迁移受控开放版本状态、Section批准指针和不可变结果封闭检查；只有同事务完整Review结果才允许提交。不得将P01表存在视为Review已可用。
 - Reason：直接同时解锁两张业务表而结果闭合尚未验证，会留下无客户Review也能改APPROVED或挪指针的窗口；先封闭记录表可独立检验Schema、旧史升级及回滚。
 - Impact/Rollback/Verification：无冻结API、Scope/权限/License变更。P01表为空可降级；有行必须拒降并保留历史，不能清表强退。先做Win11/PG18空库及旧Section史升降重升、非法INSERT/UPDATE/DELETE/TRUNCATE和ORM drift，再实施P02；Gate/Pilot不提前通过。
+
+# DEC-20261024-1209：复用 Requirement 完整范围 Owner 构建 Outline 覆盖前置
+
+- Date/WBS：2026-10-24 / `SOL-03-A06-P03-A04`；更正 A03 静态复核中“没有范围 Port”的表述：`RequirementWorkflowQualificationRepository.lock_complete_scope` 和现时资格 Owner 已能同事务证明全项目 Root、正式批准版、Review 及排除决定，但未提供有界、经当前 Session/Project/License 授权的 Outline 内部读入口。
+- Decision：新增内部只读库存服务，先按既有 `REQ_VERSION_GET` 政策授权，再调用现有 `REQUIREMENT_FORMAL_VERSIONS` 资格 Owner；该 Owner 的生产装配须使用 `max_roots=500` 的仓储。项目共享行锁取得后先 `LIMIT 501` 判界，再读取历史与现时资格；超过上限、空集或任一指针/Review/来源/决定不合格均失败关闭，不截断。原 Workflow 默认仓储行为不变。服务对返回的项目、固定版本、指纹和 Review 对应关系做二次校验。
+- Reason：重复写第二套批准/Review 遍历容易与正式 Workflow 语义漂移；先锁项目再限界可阻止并发新增 Root 与不受控全量历史扫描。该服务只证明需求全集，不证明 Section Trace 并集，故不能直接将 Outline `coverage` 置 PASS。
+- Impact/Rollback/Verification：无新 Schema、公开 API、角色或 License 权益；关闭新内部调用即可回退，不改历史。单元授权/拒绝/映射、Win11 临时 PG18.6 完整/超限/空集/锁与 drift、后端回归后才标记本片 PASS；下一片另验 Outline 覆盖。Gate 3/Pilot/正式发行维持未通过。

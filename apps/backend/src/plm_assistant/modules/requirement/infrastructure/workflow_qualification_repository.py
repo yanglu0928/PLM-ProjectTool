@@ -33,7 +33,10 @@ class SqlAlchemyRequirementWorkflowQualificationRepository:
     state changes from entering between the complete-scope scan and proof.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, *, max_roots: int | None = None) -> None:
+        if max_roots is not None and (type(max_roots) is not int or max_roots < 1):
+            raise ValueError("max_roots must be a positive integer")
+        self._max_roots = max_roots
         self._snapshots = SqlAlchemyRequirementVersionValidationRepository()
 
     def lock_complete_scope(
@@ -53,7 +56,7 @@ class SqlAlchemyRequirementWorkflowQualificationRepository:
         if project != project_id:
             return None
 
-        roots = tuple(session.execute(select(
+        roots_query = select(
             RequirementRow,
         ).where(
             RequirementRow.project_id == project_id,
@@ -61,8 +64,11 @@ class SqlAlchemyRequirementWorkflowQualificationRepository:
             RequirementRow.requirement_id,
         ).with_for_update(
             read=True, of=RequirementRow,
-        ).execution_options(populate_existing=True)).scalars())
-        if not roots:
+        ).execution_options(populate_existing=True)
+        if self._max_roots is not None:
+            roots_query = roots_query.limit(self._max_roots + 1)
+        roots = tuple(session.execute(roots_query).scalars())
+        if not roots or self._max_roots is not None and len(roots) > self._max_roots:
             return None
 
         version_rows = tuple(session.execute(select(

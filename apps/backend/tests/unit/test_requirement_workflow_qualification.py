@@ -4,6 +4,7 @@ import unittest
 import uuid
 from dataclasses import replace
 from datetime import datetime, timezone
+from types import SimpleNamespace
 
 from plm_assistant.modules.evidence.application.requirement_source_proof import (
     EvidenceRequirementSourceProof,
@@ -13,6 +14,13 @@ from plm_assistant.modules.requirement.application.create_version import (
     RequirementAssessmentEvidenceDraft,
     RequirementCapabilityAssessmentDraft,
     RequirementSourceDraft,
+)
+from plm_assistant.modules.requirement.application.approved_inventory import (
+    ApprovedRequirementInventoryError,
+    ApprovedRequirementInventoryService,
+)
+from plm_assistant.modules.requirement.application.read_versions import (
+    RequirementVersionReadQuery,
 )
 from plm_assistant.modules.requirement.application.human_decision_source_proof import (
     RequirementHumanDecisionSourceProof,
@@ -25,6 +33,9 @@ from plm_assistant.modules.requirement.application.workflow_qualification import
     RequirementWorkflowDecisionLock,
     RequirementWorkflowQualificationOwner,
     RequirementWorkflowScopeLock,
+)
+from plm_assistant.modules.requirement.infrastructure.workflow_qualification_repository import (
+    SqlAlchemyRequirementWorkflowQualificationRepository,
 )
 from plm_assistant.modules.review.application.read_snapshot import (
     FixedReviewRoundSnapshot,
@@ -207,6 +218,94 @@ class RequirementWorkflowQualificationTests(unittest.TestCase):
         self.assertIs(lock, self.lock)
         self.assertEqual("REQUIREMENT_ACCEPTANCE", result.item_key)
         self.assertEqual(1, owner._repo.calls)
+
+    def _inventory_service(self, *, owner=None, actor=None, granted=True):
+        user = self.actor if actor is None else actor
+        project = self.project
+
+        class Access:
+            def authenticated_user(self, _tx, *, session_token, now):
+                return user
+
+        class Guard:
+            def require_valid(self, *, trace_id):
+                return None
+
+        class Authorization:
+            def require_in_transaction(self, _tx, *, user_id, project_id,
+                                       operation):
+                return SimpleNamespace(
+                    user_id=user_id, project_id=project_id,
+                    operation=operation if granted else "OTHER",
+                )
+
+        return ApprovedRequirementInventoryService(
+            access=Access(), license_guard=Guard(),
+            authorization=Authorization(), qualification=owner or self.owner,
+            clock=lambda: NOW,
+        )
+
+    def test_authorized_current_inventory_uses_one_scope_and_formal_reviews(self):
+        service = self._inventory_service()
+        result = service.prove_in_transaction(
+            object(), RequirementVersionReadQuery(
+                b"s" * 32, self.trace, self.project,
+            ),
+        )
+        self.assertEqual(self.project, result.project_id)
+        self.assertEqual(3, result.root_count)
+        self.assertEqual(2, len(result.approved))
+        self.assertEqual((self.decision_id,), tuple(
+            item.decision_id for item in result.explained
+        ))
+        self.assertEqual(1, self.owner._repo.calls)
+
+    def test_inventory_denies_before_scope_read_without_actor_or_permission(self):
+        query = RequirementVersionReadQuery(b"s" * 32, self.trace, self.project)
+        for service, code in (
+            (self._inventory_service(actor=uuid.UUID(int=0)), "AUTH_ACCESS_DENIED"),
+            (self._inventory_service(granted=False),
+             "REQUIREMENT_INVENTORY_UNAVAILABLE"),
+        ):
+            with self.assertRaises(ApprovedRequirementInventoryError) as caught:
+                service.prove_in_transaction(object(), query)
+            self.assertEqual(code, caught.exception.code)
+        self.assertEqual(0, self.owner._repo.calls)
+
+    def test_inventory_rejects_missing_scope_and_invalid_query(self):
+        query = RequirementVersionReadQuery(b"s" * 32, self.trace, self.project)
+        class EmptyOwner:
+            def qualify_with_scope_in_transaction(self, _tx, _query):
+                return None, None
+
+        service = self._inventory_service(owner=EmptyOwner())
+        with self.assertRaises(ApprovedRequirementInventoryError):
+            service.prove_in_transaction(object(), query)
+        with self.assertRaises(ApprovedRequirementInventoryError) as caught:
+            service.prove_in_transaction(None, query)
+        self.assertEqual("VALIDATION_FAILED", caught.exception.code)
+
+    def test_inventory_rejects_mismatched_qualification_subject(self):
+        owner = self.owner
+
+        class MismatchedOwner:
+            def qualify_with_scope_in_transaction(self, tx, query):
+                scope, qualification = owner.qualify_with_scope_in_transaction(tx, query)
+                return scope, replace(
+                    qualification, subjects=tuple(reversed(qualification.subjects)),
+                )
+
+        with self.assertRaises(ApprovedRequirementInventoryError):
+            self._inventory_service(owner=MismatchedOwner()).prove_in_transaction(
+                object(), RequirementVersionReadQuery(
+                    b"s" * 32, self.trace, self.project,
+                ),
+            )
+
+    def test_bounded_repository_configuration_rejects_invalid_cap(self):
+        for value in (0, -1, True, "500"):
+            with self.assertRaises(ValueError):
+                SqlAlchemyRequirementWorkflowQualificationRepository(max_roots=value)
 
     def test_checked_project_evidence_is_strictly_reused_and_decision_still_read(self):
         proofs = self.evidence_proofs
