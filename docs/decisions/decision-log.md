@@ -11777,3 +11777,10 @@
 - Decision：参照Section VALIDATE，以 ProjectManager/ImplementationMember 的写级项目政策在同事务锁当前 Outline 和固定Version，首次计算 order/source/coverage 后将内容无关三维码写Audit，Receipt指向Audit；同Key只读回首次观察，异Key必须重证当前事实。重复校验不改变Outline业务状态，也不产生客户Review或批准指针。
 - Reason：旧报告仅能证明首次时点；来源/Trace/Review 可能变化。把Audit、收据和观察分离会产生回放漂移或未审计成功。复用已验证结构减少合同差异。
 - Impact/Rollback/Verification：仅增加内部政策/服务/Audit读端，无Schema或公开API路径变化；关闭未挂载服务即可回退，不删除历史。单元覆盖授权、同Key回放、异Key再证明和故障回滚，后续Win11/PG/HTTP独立验收。
+
+# DEC-20261024-1214：Outline VALIDATE 公开边界沿用既有安全壳
+
+- Date/WBS：2026-10-24 / `SOL-03-A06-P03-A05-P03-A03`；冻结 API-04 路径及A02内部命令已存在。
+- Decision：仅增加可选Outline版本 VALIDATE Router，沿用Section版本的可信Origin、Session、CSRF、空查询/正文、幂等键、Trace分离与错误映射；应用默认不挂载。报告包含order/source/coverage、固定版本摘要和Audit观察身份，不把ready字段解释为客户批准。
+- Reason：先独立验收公开合同，再让Windows真实三维端口显式装配，避免默认环境把UNAVAILABLE或测试事实当作正式可用。
+- Impact/Rollback/Verification：无Schema、License或冻结路径变更；撤可选Router即可回滚，不改Audit历史。HTTP合同需覆盖授权、重放、错误、无装配404和错资源响应；真实PG组合另片验证。
