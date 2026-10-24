@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-24：0.1.0-dev.0/CAP-02-A05-P04-P03-A04-P02-P05-P01 从提交 `2caf1752` 重建 Windows 11 非发行候选 SHA `f2a2385538b111a1a36e3761086e0f4e5749554a3c57bde8941c0fb11080e095`，不改产品 API/Schema。兼容性：仅 Windows 11 合成包内 PG/HTTPS/Edge，Server2025/Debian13 未实测。升级/回滚：无数据迁移；弃用新候选即回退，旧包保留。验证：22,196 载荷清洁解包/哈希、包内合成许可登录、未许可拒绝、Workflow 与 GLOBAL 来源→基线身份及 Audit 退出0，进程/Vault/布局清理。已知问题：Review 包内决定、正式信任/法律、离线安装升级/UAT/Gate/Pilot未验，不可发行；大 ZIP 仅本机忽略区保存。
+
 - 2026-10-24：0.1.0-dev.0/CAP-02-A05-P04-P03-A04-P02-A03-P02 增加可复跑的 Windows 11 Edge/Vue/FastAPI/隔离 PostgreSQL 18.6 合成固定内容评审夹具，不改产品运行代码。兼容性：仅 Windows 11 本机验证，Server 2025/Debian 13 未实测。升级/回滚：无 Schema/业务数据迁移；撤验收夹具不影响合法 Review/Audit 历史。验证：双条目展示、核对前按钮禁用、首 Reviewer 决定及唯一 Audit、第二人批准、原 HTTP/PG 回归均退出0，PG服务复位。已知问题：登录/License 合成，未做固定包/正式 HTTPS、真人核对、正文定位、安装/UAT/Gate/Pilot/Release，不可发行。
 
 - 2026-10-24：0.1.0-dev.0/CAP-02-A05-P04-P03-A04-P02-A03-P01 新增 CAP-01 GLOBAL 固定内容评审页、版本/送审回执精确链接、完整条目核对门槛及受分配者同号决定恢复；普通 Capability 目录权限不变。兼容性：Windows 11 前端构建通过，Server 2025/Debian 13 未实测。升级/回滚：无 Schema/数据迁移；撤页面不删 Review/Audit/收据历史。验证：定向11、前端全量1947、typecheck/build通过。已知问题：普通评审人需直接链接、文档正文不能一键定位，页面 Edge/包内、真人批准/正式信任/安装/UAT/Gate/Pilot未验，不可发行。
