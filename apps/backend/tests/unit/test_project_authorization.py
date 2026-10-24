@@ -47,7 +47,10 @@ class ProjectAuthorizationTests(unittest.TestCase):
                                     operation=operation, resource_id=resource_id)
 
     def test_matrix_exact_for_four_roles(self):
-        self.assertEqual(len(POLICIES), 178)
+        self.assertEqual(len(POLICIES), 179)
+        self.assertEqual(POLICIES["SOL_OUTLINE_VERSION_SUBMIT_REVIEW"].roles,
+                         MANAGERS)
+        self.assertTrue(POLICIES["SOL_OUTLINE_VERSION_SUBMIT_REVIEW"].write)
         self.assertEqual(POLICIES["SOL_SECTION_VERSION_SUBMIT_REVIEW"].roles,
                          MANAGERS)
         self.assertTrue(POLICIES["SOL_SECTION_VERSION_SUBMIT_REVIEW"].write)

@@ -77,6 +77,7 @@ POLICIES: dict[str, _Policy] = {
     ),
     "SOL_SPEC_SUBMIT_REVIEW": _Policy(MANAGERS, True),
     "SOL_SECTION_VERSION_SUBMIT_REVIEW": _Policy(MANAGERS, True),
+    "SOL_OUTLINE_VERSION_SUBMIT_REVIEW": _Policy(MANAGERS, True),
     "SOL_STRUCTURED_SPEC_GET": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "SOL_STRUCTURED_SPEC_LIST": _Policy(ALL_MEMBERS, False, lock_reads=True),
     "SOL_SECTION_VERSION_VALIDATE": _Policy(
