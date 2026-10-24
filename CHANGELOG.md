@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-24：0.1.0-dev.0/CAP-02-A05-P04-P03-A03-P01 新增默认关闭的 CAP-01 GLOBAL Review GET/DECIDE HTTP 与应用工厂可选插槽，严格当前 Scope/Session/CSRF/幂等/Trace/ETag/no-store；现有 PROJECT API 不变。兼容性：尚未 Windows 运行装配，Server 2025、Debian 13 未实测。升级/回滚：无 Schema/数据迁移，关闭可选路由恢复默认404，保留已提交合法 Review/Audit。验证：合同4项/15子例、后端全量4087通过/3跳过/6129子例。已知问题：真实 HTTP/PG、Windows/Edge/真人决定、正式信任/安装/UAT/Gate/Pilot未验，不可发行。
+
 - 2026-10-24：0.1.0-dev.0/CAP-02-A05-P04-P03-A02-P03 增加可重复的 GLOBAL Capability Review 内部 PG 验收入口，不改产品 Schema/API；合成受分配评审人读取/决定、License/非分配/停用/撤源拒绝、同号恢复、原子批准指针均通过。兼容性：仅 Windows 11 本机隔离 PostgreSQL 18；Server 2025、Debian 13 未实测。升级/回滚：无数据迁移或历史改写，撤夹具不影响产品；PoC PG 服务已恢复停止态，临时库为0。验证：脚本第二轮退出0，独立 PASS 标记及既有迁移/终态断言，Alembic 已知比较警告。已知问题：HTTP/Windows 生产装配/Edge/真人批准、正式信任/安装/UAT/Gate/Pilot均未验，不可发行。
 
 - 2026-10-24：0.1.0-dev.0/CAP-02-A05-P04-P03-A02-P02 增加未装配的 CAP-01 GLOBAL Review 内部受分配 Reviewer 决定服务、同号回放与原子终态委托，并按冻结决策纠正前端候选/内部读取角色为“当前启用且已分配”，送审者仍须部署管理员。兼容性：不改现有 PROJECT API/Schema，三平台运行链未实测。升级/回滚：无迁移，撤未装配服务/前端入口不删除 Review/Audit 历史。验证：内部定向17、后端单元全量3483通过/3跳过/4798子例，前端全量1938/typecheck/build通过。已知问题：PG原子/HTTP/Windows/Edge、真人批准、正式信任/安装/UAT/Gate/Pilot未验，不可发行。
