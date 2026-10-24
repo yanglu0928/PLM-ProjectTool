@@ -24,6 +24,7 @@ import ProjectDocumentDetailView from "@/modules/document/views/ProjectDocumentD
 import ProjectDocumentUploadView from "@/modules/document/views/ProjectDocumentUploadView.vue";
 import GlobalCapabilityDocumentUploadView from "@/modules/document/views/GlobalCapabilityDocumentUploadView.vue";
 import ProjectEvidenceListView from "@/modules/evidence/views/ProjectEvidenceListView.vue";
+import ProjectEvidenceCreateView from "@/modules/evidence/views/ProjectEvidenceCreateView.vue";
 import GlobalEvidenceListView from "@/modules/evidence/views/GlobalEvidenceListView.vue";
 import GlobalEvidenceCreateView from "@/modules/evidence/views/GlobalEvidenceCreateView.vue";
 import ProjectJobListView from "@/modules/jobs/views/ProjectJobListView.vue";
@@ -265,6 +266,11 @@ export function createAppRouter(
         path: "/projects/:projectId/evidence",
         name: "project-evidence",
         component: ProjectEvidenceListView,
+      },
+      {
+        path: "/projects/:projectId/evidence/new",
+        name: "project-evidence-create",
+        component: ProjectEvidenceCreateView,
       },
       {
         path: "/projects/:projectId/jobs/:jobId",

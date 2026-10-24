@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261025-EVD-A03-P02：项目 Evidence 页面限定整文档候选
+
+- Date/WBS：2026-10-25 / `EVD-05-A03-P02`。
+- Decision：复用项目 Document 元数据与 AVAILABLE 固定版本选择、P01 私有写客户端；仅提供 DOCUMENT locator 和 CANDIDATE 创建，不提供缺少 ParseRecord 前置证明的页段精确定位。
+- Reason：现有冻结 POST 支持更细定位但需当前解析节点证明；整文档候选可安全推进 HND 来源链，页面不得伪造原文页段或人工资格。
+- Impact/Rollback：仅前端页面/路由与入口，无 API/Schema/数据迁移；撤页面不会删除已提交 Evidence/Audit。P03 包内 Edge/PG 和人工资格独立验收。
+
 ## DEC-20261025-CAP-P03-A03：包内第二来源采用产品 HTTP 路径
 
 - Date/WBS：2026-10-25 / `CAP-02-A05-P03-P02-A03`。

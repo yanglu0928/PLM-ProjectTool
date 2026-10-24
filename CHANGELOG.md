@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-25：0.1.0-dev.0/EVD-05-A03-P02 新增项目 Evidence 整文档候选创建页及列表入口，用户可选同项目固定文档版本、填写标签；候选不自动合格。兼容性：Windows 11 前端回归与构建通过，Server 2025/Debian 13 未实测。升级/回滚：无后端 API/Schema/数据迁移；可回退前端资源，已创建 Evidence/Audit 不删除。验证：定向4、前端全量1961/typecheck/build通过。已知问题：真实浏览器/HTTPS/PG 与人工资格待新包复验；整文档不能精确页段定位，旧非发行候选不含本页，正式信任/安装/UAT/Gate/Pilot/Release 未通过。
+
 - 2026-10-25：0.1.0-dev.0/EVD-05-A03-P01 为交接分析来源前置增加 PROJECT Evidence 候选创建的安全前端客户端，私有 CSRF、项目角色预筛、严格 CANDIDATE 回执与原操作号，不改变后端 API/Schema。兼容性：Windows 11 前端源码/构建已验，Windows Server 2025/Debian 13 未实测。升级/回滚：无数据迁移，撤未接入 UI 的客户端不影响已存在 Evidence/Audit。验证：定向4、全量1957/typecheck/build通过；首次 UUID 正则失败已修。已知问题：无创建 UI、真实 HTTPS/PG/人工资格和正式信任；HND 版本、安装/UAT/Gate/Pilot/Release 未通过，不可发行。
 
 - 2026-10-25：0.1.0-dev.0/CAP-02-A05-P03-P02-A03 从已提交源码构建本机 Windows 11 非发行候选，增加可复跑包内多条目验收脚本；不改产品 API/Schema。兼容性：仅 Windows 11 合成 Edge/HTTPS/PG18 验证，Windows Server 2025/Debian 13 未实测。升级/回滚：无数据迁移；弃用新候选即可回退，旧版本需保留 DEPRECATED 读取兼容。验证：22,196 件逐件 Hash、候选 SHA `d944d77d74e42c31b16e65c87972f496434e93f14f7c2c6afa9ef5976b400925`；两独立来源/证据→两条目 DRAFT（含 DEPRECATED）→VALIDATE→双合成 Reviewer 批准→当前指针/Audit/收据，第四轮完整退出 0，临时资源清理。已知问题：前三轮夹具失败保留；合成账户/License/TLS 不构成正式信任，真人确认、正式离线安装/升级、UAT/Gate/Pilot/Release 均未通过，不可发行；大 ZIP 仅本机忽略区保存。

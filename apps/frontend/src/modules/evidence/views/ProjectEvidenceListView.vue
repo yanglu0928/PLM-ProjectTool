@@ -425,6 +425,10 @@ onUnmounted(() => { mounted = false; generation += 1; clearSelection(); clearAud
     <h1 id="evidence-list-title">项目证据</h1>
     <p>先查看证据的短提示。点击“定位原文”后，系统会重新核验权限、固定文档版本及来源指纹；短提示不是权威正文。</p>
     <p><RouterLink :to="{ name: 'project-detail', params: { projectId: route.params.projectId } }">返回项目</RouterLink></p>
+    <p v-if="identity && !identity.password_change_required && identity.authorized_projects.some(item =>
+      item.project_id === projectId() && (item.role === 'PROJECT_MANAGER' || item.role === 'IMPLEMENTATION_MEMBER'))">
+      <RouterLink :to="{ name: 'project-evidence-create', params: { projectId: route.params.projectId } }">创建项目证据候选</RouterLink>
+    </p>
     <template v-if="!identity">
       <p role="status">尚未读取当前身份。请先登录，或在账户页读取当前身份。</p>
       <RouterLink to="/login">前往账户与登录</RouterLink>
