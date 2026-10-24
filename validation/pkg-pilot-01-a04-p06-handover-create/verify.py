@@ -68,8 +68,78 @@ def browser_probe(**kwargs) -> None:
             "AND result_ref_id=%s AND state='COMPLETED'",
             (kwargs["user_id"], project_id, analysis_id),
         ).fetchone()[0] == 1
+    headers = {"origin": kwargs["origin"],
+               "x-csrf-token": kwargs["login"].json()["data"]["csrf_token"],
+               "idempotency-key": "handover-packaged-negative-key-001"}
+    original_path = f"/api/v1/projects/{project_id}/handover-analyses"
+    empty = kwargs["client"].post(original_path, headers=headers,
+        json={"analysis_purpose": "Synthetic missing source", "source_documents": []})
+    assert empty.status_code == 422 and empty.json()["error"]["code"] == "VALIDATION_FAILED", \
+        (empty.status_code, empty.text)
+    other_username = "Synthetic Foreign Source Manager"
+    with kwargs["connect_db"]() as db, db.transaction():
+        other_project = base.base.fixture.insert(db, "prj_projects", dict(
+            project_code="HNDNEG", project_code_normalized="hndneg",
+            name="Synthetic Foreign Source Project", created_by=kwargs["user_id"]), "project_id")
+        other_department = base.base.fixture.insert(db, "prj_departments", dict(
+            project_id=other_project, department_code="D", department_code_normalized="d",
+            name="Synthetic department"), "department_id")
+        other_user = db.execute(
+            "INSERT INTO plm.auth_users(username_display,username_normalized) "
+            "VALUES (%s,%s) RETURNING user_id", (other_username, other_username.lower()),
+        ).fetchone()[0]
+        credential_id = db.execute(
+            "INSERT INTO plm.auth_password_credentials"
+            "(user_id,credential_version,password_hash,algorithm_id,parameter_set) "
+            "SELECT %s,1,password_hash,algorithm_id,parameter_set FROM "
+            "plm.auth_password_credentials WHERE user_id=%s AND credential_version=1 "
+            "RETURNING password_credential_id", (other_user, kwargs["user_id"]),
+        ).fetchone()[0]
+        assert db.execute(
+            "UPDATE plm.auth_users SET credential_version=1,active_password_credential_id=%s,"
+            "state='ENABLED' WHERE user_id=%s", (credential_id, other_user),
+        ).rowcount == 1
+        base.base.fixture.insert(db, "prj_project_members", dict(
+            project_id=other_project, user_id=other_user, department_id=other_department,
+            project_role="PROJECT_MANAGER"), "project_member_id")
+    logout = kwargs["client"].post("/api/v1/auth/logout", headers=headers | {
+        "idempotency-key": "handover-packaged-negative-logout-001"})
+    assert logout.status_code == 200 and logout.json()["data"]["revoked"] is True, \
+        (logout.status_code, logout.text)
+    second_login = kwargs["client"].post("/api/v1/auth/login", headers={"origin": kwargs["origin"]},
+        json={"username": other_username, "password": "synthetic-packaged-login-password"})
+    assert second_login.status_code == 200, (second_login.status_code, second_login.text)
+    second_headers = {"origin": kwargs["origin"],
+                      "x-csrf-token": second_login.json()["data"]["csrf_token"],
+                      "idempotency-key": "handover-packaged-negative-key-002"}
+    foreign = kwargs["client"].post(
+        f"/api/v1/projects/{other_project}/handover-analyses",
+        headers=second_headers,
+        json={"analysis_purpose": "Synthetic foreign source",
+              "source_documents": [{"document_id": str(doc_id),
+                                    "document_version_id": str(version_id)}]})
+    assert foreign.status_code == 422 and foreign.json()["error"]["code"] == "HANDOVER_SOURCE_REQUIRED", \
+        (foreign.status_code, foreign.text)
+    unassigned = kwargs["client"].post(
+        original_path,
+        headers=second_headers | {"idempotency-key": "handover-packaged-negative-key-003"},
+        json={"analysis_purpose": "Synthetic unassigned project",
+              "source_documents": [{"document_id": str(doc_id),
+                                    "document_version_id": str(version_id)}]})
+    assert unassigned.status_code == 404 and unassigned.json()["error"]["code"] == "RESOURCE_NOT_FOUND", \
+        (unassigned.status_code, unassigned.text)
+    with kwargs["connect_db"]() as db:
+        assert db.execute(
+            "SELECT count(*) FROM plm.hnd_analyses WHERE project_id IN (%s,%s)",
+            (project_id, other_project),
+        ).fetchone()[0] == 1
+        assert db.execute(
+            "SELECT count(*) FROM plm.aud_events WHERE action='HND_ANALYSIS_CREATED' "
+            "AND target_project_id IN (%s,%s)",
+            (project_id, other_project),
+        ).fetchone()[0] == 1
     print(checked.stdout, flush=True)
-    print("Packaged document fixed version/Handover Analysis/Audit/receipt PG PASS", flush=True)
+    print("Packaged document fixed version/Handover Analysis/Audit/receipt and source/permission denials PG PASS", flush=True)
 
 
 def main() -> int:
