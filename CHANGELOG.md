@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-25：0.1.0-dev.0/CAP-02-A05-P03-P02-A03 从已提交源码构建本机 Windows 11 非发行候选，增加可复跑包内多条目验收脚本；不改产品 API/Schema。兼容性：仅 Windows 11 合成 Edge/HTTPS/PG18 验证，Windows Server 2025/Debian 13 未实测。升级/回滚：无数据迁移；弃用新候选即可回退，旧版本需保留 DEPRECATED 读取兼容。验证：22,196 件逐件 Hash、候选 SHA `d944d77d74e42c31b16e65c87972f496434e93f14f7c2c6afa9ef5976b400925`；两独立来源/证据→两条目 DRAFT（含 DEPRECATED）→VALIDATE→双合成 Reviewer 批准→当前指针/Audit/收据，第四轮完整退出 0，临时资源清理。已知问题：前三轮夹具失败保留；合成账户/License/TLS 不构成正式信任，真人确认、正式离线安装/升级、UAT/Gate/Pilot/Release 均未通过，不可发行；大 ZIP 仅本机忽略区保存。
+
 - 2026-10-24：0.1.0-dev.0/CAP-02-A05-P03-P02-A02 扩展 GLOBAL Capability DRAFT 多条目编辑，逐项来源/证据、整批来源并集重验、DEPRECATED、旧单条与整批原号恢复；不自动批准。兼容性：仅 Windows 11 前端源码/构建验证，Server 2025/Debian 13 未实测；后端 API/Schema 不变。升级/回滚：前端资源可回退，但已有 DEPRECATED 历史仍须保持 CR-CAP-007 新读取；不删除已写版本/Audit/收据。验证：定向10、全量1953/typecheck/build通过。已知问题：浏览器/PG/固定包未复验，页面暂存条目刷新会丢失；正式信任/安装/UAT/Gate/Pilot未验，不可发行。
 
 - 2026-10-24：0.1.0-dev.0/CAP-02-A05-P03-P02-A01 按 CR-CAP-007 将 GLOBAL Capability 合法 `DEPRECATED` 条目读取与既有写/DB 状态对齐，未知状态仍拒绝；原冻结版本保留。兼容性：严格枚举客户端须随服务端同包升级；仅 Windows 11 合成 PG/HTTP 已验，Server 2025/Debian 13 未实测。升级/回滚：无 Schema/Migration；若已有 DEPRECATED 历史，不能回退到旧读取导致不可读。验证：HTTP 合同5、Win11 PG/HTTP 管理员及固定 Reviewer 原值回读/决定链、前端1948/typecheck/build、后端完整3781/3跳过通过。已知问题：旧候选包不含本改动，多条目编辑、正式信任/安装/UAT/Gate/Pilot未验，不可发行。

@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261025-CAP-P03-A03：包内第二来源采用产品 HTTP 路径
+
+- Date/WBS：2026-10-25 / `CAP-02-A05-P03-P02-A03`。
+- Decision：第二份 GLOBAL 固定来源由包内上传意图、内容提交、Evidence 创建与合成资格 HTTP 链产生；不用旧验收夹具的直接 DB Schema 种子。
+- Reason：临时受限 PG 账户不能设置 `session_replication_role`，直接 DB 种子失败；HTTP 方式同时更贴近用户链。Edge 异步等待与最终 UUID 比较的后续两次夹具失败亦独立修复，均未改产品候选。
+- Impact/Rollback：仅验收脚本与临时合成数据，无正式 API/Schema/权限变化；保留同一候选 SHA，关闭/撤脚本即可回滚，临时库/布局按包内烟测清理。第四轮完整退出 0 不等于正式信任/Pilot/Gate。
+
 ## DEC-20261024-CAP-P05-P03：固定候选负例分片验收
 
 - Date/WBS：2026-10-24 / `CAP-02-A05-P04-P03-A04-P02-P05-P03`。
