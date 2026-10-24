@@ -1,6 +1,6 @@
 # HND-05-A04-P03：交接校验与送审 Windows 11 非发行包验收
 
-日期：2026-10-25；状态：`FRONTEND_DEFECT_FIXED / NEW_PACKAGED_EDGE_PG_PENDING / PILOT_NOT_READY`。
+日期：2026-10-25；状态：`HND_05_A04_P03_PACKAGED_EDGE_PG_PASS / PILOT_NOT_READY`。
 
 |编码前检查|结论|
 |---|---|
@@ -53,3 +53,28 @@ CSRF/Session 提交能力只约束写按钮；只读会话保留明确重新登�
 定向面板/详情合计 14 项、前端全量 188 文件 2008 项、typecheck/build 退出 0。
 原 SHA `556770f2…171fb` 的包不含此修复，不能再用来证明本轮页面通过；
 需从修复后干净已同步提交重建新非发行候选并独立清洁解包/整链复验。
+
+修复提交 `bb70cc2f36527e5775b33d0eabbb7a1a8b97c342` 的新候选 SHA-256
+`3ddb96c66c5be0b32ce55454655805fb6644ba11d28d2ce0d73a8459315e26ff`，
+751,635,904 字节、22,196 个 Payload；从固定包独立清洁解包并逐件哈希，
+来源提交/包哈希与清单一致。候选仅保留本地忽略区，`release_eligible=false`、
+`legal_clearance=false`，未执行正式安装。
+
+新包 Windows 11 一次性合成公钥/License、隔离 PostgreSQL 18、打包 Caddy/FastAPI
+与真实 Edge/HTTPS 复验退出 0。旧前置固定项目文档、合格 Evidence、当前批准
+GLOBAL Capability 与双卡片 DRAFT 均再次通过；缺同源 Action 和不合格确认人送审
+分别 422 拒绝，匿名及无项目权限拒绝；通过正式 Action API 建立同源待办后，
+页面取得当前项目客户确认人，DRAFT 校验报告可见，明确核对范围并送审至
+`IN_REVIEW`。校验与送审均以浏览器原操作号重放；PG 核对一条同源 OPEN Action、
+一个 IN_REVIEW 版本及 Review/Round 引用、唯一 `HND_VERSION_CREATED` 和
+`HND_VERSION_VALIDATED` Audit、校验/送审各一条完成收据。输出为
+`HND_05_A04_P03_PACKAGED_EDGE_PASS`、`HND_05_A04_P03_PACKAGED_PG_PASS` 与
+`SYNTHETIC_CURRENT_APP_PACKAGED_HTTPS_PASS`；临时进程、Vault 与两份运行布局均清理。
+验收夹具另修正负例送审与页面送审共用路径时的捕获点，确保原号重放指向页面请求；
+不更改候选/后端合同或放宽负例。
+
+本结论只关闭 HND 校验→送审的 Windows 11 合成包内切片，不构成真人客户决定、
+正式公钥/目标服务账户、法律放行、离线安装/升级、完整纵向链、UAT、Gate 3～7、
+Pilot 或三平台 Release 通过。下一独立任务先检查 HND Review 读取/决定用户路径：
+现有通用 Review 前端严格仅接收 SOL-03/05/06 Subject，交接送审回执链接虽可导航，
+但尚不能据此推定 HND-02 评审页面可用。

@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-25：0.1.0-dev.0/HND-05-A04-P03-R5 从修复提交重建 Windows 11 非发行候选，SHA-256 `3ddb96c66c5be0b32ce55454655805fb6644ba11d28d2ce0d73a8459315e26ff`；包内交接 DRAFT 校验报告及送审 IN_REVIEW 整链通过。兼容性：仅 Windows 11 合成信任已实测，Windows Server 2025/Debian 13 未实测。升级/回滚：无 API/Schema/License 或数据迁移；新包替代旧失败候选，回退前端会重现瞬时面板消失，既有合法 Action/Review/Audit 不删除。验证：22,196件逐件清洁解包、Edge/HTTPS/隔离 PostgreSQL 18、固定来源与双卡片、正式 Action、当前合格客户角色、校验/送审同号重放、Audit/回执及匿名/无项目权限/缺 Action/不合格 Reviewer 拒绝均退出0，临时进程/Vault/布局清理。已知问题：现有通用 Review 前端尚未接 HND-02 决定；真人客户确认、正式公钥/服务账户/法律放行、离线安装升级、完整链/UAT/Gate 3～7/Pilot/三平台 Release 未通过，本包不可发行。
+
 - 2026-10-25：0.1.0-dev.0/HND-05-A04-P03 包内合成整链发现校验/送审面板把瞬时 Session 写入繁忙误作可见性，现改为授权角色决定可见性、提交能力只禁用按钮，增加只读会话重新登录提示并修正两面板重复节点 key。兼容性：Windows 11 前端回归/构建通过，Windows Server 2025/Debian 13 未实测。升级/回滚：仅前端资产与验收脚本，无 API/Schema/License/数据迁移；回退前端不删除已形成的合法 Action/Audit。验证：旧非发行包清洁解包22,196件、旧链及 HTTP 校验到达但页面整链失败；修复后定向14、前端全量2008/typecheck/build退出0。已知问题：修复后的固定包 Edge/HTTPS/PG 仍待复验；真人客户评审、正式信任/安装/UAT/Gate/Pilot/Release 均未通过。详见 `docs/progress/hnd-05-a04-p03-validate-submit-packaged-precheck.md`。
 
 - 2026-10-25：0.1.0-dev.0/HND-05-A04-P02 交接 DRAFT 详情增加客户确认人送审面板；项目负责人显式读取当前 ACTIVE 客户角色、核对范围后送审，未知结果保留原确认人集合/操作号，201 只展示 IN_REVIEW 与评审入口，刷新后已有 Review 仍可打开。兼容性：Windows 11 前端回归/构建通过，Windows Server 2025/Debian 13 未实测。升级/回滚：仅前端资产，无 API/Schema/License/数据迁移；撤面板不删除合法 Review/Audit。验证：首轮自动成员读取遮蔽原文错误已按需加载修复；面板定向4/详情4、前端全量2006、typecheck/build退出0。已知问题：真实 Edge/HTTPS/PG/固定包、Action 覆盖组合及真人 Reviewer 决定未验；正式信任/安装/UAT/Gate/Pilot/Release 未通过。

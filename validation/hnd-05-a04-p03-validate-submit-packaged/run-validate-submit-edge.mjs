@@ -131,6 +131,8 @@ try {
   if (ineligible.status !== 422 || ineligible.code !== "BUSINESS_REVIEW_NOT_ELIGIBLE") {
     throw new Error(`unqualified reviewer not rejected: ${JSON.stringify(ineligible)}`);
   }
+  // The earlier negative probes use the same route; replay must capture the UI submission.
+  submitRequest = null;
   const route = `/projects/${project}/handover/${analysis}`;
   await evaluate(`history.pushState({},'',${JSON.stringify(route)});dispatchEvent(new PopStateEvent('popstate'))`);
   await waitFor("document.querySelector('#handover-detail-title')&&document.body.innerText.includes('版本 1')", "DRAFT detail");
