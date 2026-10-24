@@ -42,6 +42,9 @@ REVIEWER_ONE_TOKEN = b"b" * 32
 REVIEWER_TWO_TOKEN = b"c" * 32
 OUTSIDER_TOKEN = b"d" * 32
 GLOBAL_REVIEW_HTTP = os.environ.get("PLM_CAP_GLOBAL_REVIEW_HTTP_VALIDATION") == "1"
+FIXED_CONTENT_HTTP = os.environ.get("PLM_CAP_FIXED_CONTENT_HTTP_VALIDATION") == "1"
+if FIXED_CONTENT_HTTP and not GLOBAL_REVIEW_HTTP:
+    raise AssertionError("fixed content proof requires GLOBAL Review HTTP")
 
 
 class Keys:
@@ -135,6 +138,7 @@ def main() -> None:
                     capability_command_router=routers.commands,
                     capability_review_router=routers.review_submission,
                     global_capability_review_router=routers.global_review,
+                    global_capability_fixed_content_router=routers.fixed_content,
                 )
                 source = [{
                     "document_id": str(document_id),
@@ -152,22 +156,24 @@ def main() -> None:
 
                 def version(client: TestClient, baseline_id: str,
                             etag: str, code: str) -> dict:
+                    drafts = [{
+                        "stable_item_id": str(uuid.uuid4()),
+                        "capability_code": code + f".ITEM.{ordinal}",
+                        "domain_name": "PLM", "module_name": "Capability",
+                        "feature_name": "HTTP", "name": f"HTTP Item {ordinal}",
+                        "description": "Real PostgreSQL HTTP proof",
+                        "boundary": "GLOBAL only", "prerequisites": [],
+                        "interface_refs": [], "document_refs": source,
+                        "evidence_refs": [str(evidence_id)],
+                        "item_state": "AVAILABLE",
+                    } for ordinal in range(2 if FIXED_CONTENT_HTTP
+                                           and code == "PLM.HTTP.A" else 1)]
                     return _expect(client.post(
                         f"/api/v1/global/capability-baselines/{baseline_id}/versions",
                         headers=_headers(
                             key=str(uuid.uuid4()), etag=etag, json=True,
                         ),
-                        json={"items": [{
-                            "stable_item_id": str(uuid.uuid4()),
-                            "capability_code": code + ".ITEM",
-                            "domain_name": "PLM", "module_name": "Capability",
-                            "feature_name": "HTTP", "name": "HTTP Item",
-                            "description": "Real PostgreSQL HTTP proof",
-                            "boundary": "GLOBAL only", "prerequisites": [],
-                            "interface_refs": [], "document_refs": source,
-                            "evidence_refs": [str(evidence_id)],
-                            "item_state": "AVAILABLE",
-                        }]},
+                        json={"items": drafts},
                     ), 201)
 
                 with TestClient(app, base_url="https://plm.example.test") as client:
@@ -202,7 +208,7 @@ def main() -> None:
                         f"/api/v1/global/capability-baselines/{baseline_id}/versions/"
                         f"{version_id}/items", headers=_headers(),
                     ), 200)
-                    assert len(items["items"]) == 1
+                    assert len(items["items"]) == (2 if FIXED_CONTENT_HTTP else 1)
                     _expect(client.post(
                         f"/api/v1/global/capability-baselines/{baseline_id}/versions/"
                         f"{version_id}:validate",
@@ -239,6 +245,7 @@ def main() -> None:
                             include_write=False, resolver=Keys(),
                         )
                         assert read_only.global_review is None
+                        assert read_only.fixed_content is None
                         detail = _expect(client.get(path, headers=_headers()), 200)
                         assert detail["review_round_id"] == round_id
                         assert detail["baseline_version_id"] == version_id
@@ -247,8 +254,50 @@ def main() -> None:
                         ), 200)["review_id"] == review_id
                         assert client.get(path, headers=_headers(
                             token=OUTSIDER_TOKEN)).status_code == 404
+                        if FIXED_CONTENT_HTTP:
+                            fixed_path = path + "/fixed-version"
+                            item_path = path + "/fixed-items?page_size=1"
+                            with TestClient(create_app(), base_url="https://plm.example.test") as bare:
+                                assert bare.get(fixed_path, headers=_headers()).status_code == 404
+                            fixed = _expect(client.get(
+                                fixed_path, headers=_headers(token=REVIEWER_ONE_TOKEN),
+                            ), 200)
+                            assert fixed["version"]["baseline_version_id"] == version_id
+                            assert fixed["version"]["declared_item_count"] == 2
+                            assert client.get(fixed_path, headers=_headers(
+                                token=OUTSIDER_TOKEN)).status_code == 404
+                            first_page = _expect(client.get(
+                                item_path, headers=_headers(token=REVIEWER_ONE_TOKEN),
+                            ), 200)
+                            assert first_page["has_more"] and len(first_page["items"]) == 1
+                            assert first_page["items"][0]["document_version_refs"] == [
+                                str(document_version_id)]
+                            cursor = first_page["next_cursor"]
+                            next_path = item_path + "&cursor=" + cursor
+                            second_page = _expect(client.get(
+                                next_path, headers=_headers(token=REVIEWER_ONE_TOKEN),
+                            ), 200)
+                            assert not second_page["has_more"]
+                            assert second_page["items"][0]["ordinal"] == 1
+                            assert client.get(next_path, headers=_headers(
+                                token=REVIEWER_TWO_TOKEN)).status_code == 400
+                            corrupted = next_path[:-1] + ("A" if next_path[-1] != "A" else "B")
+                            assert client.get(corrupted, headers=_headers(
+                                token=REVIEWER_ONE_TOKEN)).status_code == 400
+                            assert client.get(item_path, headers=_headers(
+                                token=OUTSIDER_TOKEN)).status_code == 404
+                            with connect(name) as db:
+                                db.execute("UPDATE plm.auth_users SET state='DISABLED' "
+                                           "WHERE user_id=%s", (reviewer_two,))
+                            assert client.get(fixed_path, headers=_headers(
+                                token=REVIEWER_TWO_TOKEN)).status_code in (401, 404)
+                            with connect(name) as db:
+                                db.execute("UPDATE plm.auth_users SET state='ENABLED' "
+                                           "WHERE user_id=%s", (reviewer_two,))
                         guard.enabled = False
                         assert client.get(path, headers=_headers()).status_code == 403
+                        if FIXED_CONTENT_HTTP:
+                            assert client.get(fixed_path, headers=_headers()).status_code == 403
                         guard.enabled = True
                         body = {"decision": "APPROVE", "comment": None}
                         first_key = str(uuid.uuid4())
@@ -326,7 +375,11 @@ def main() -> None:
                     ).fetchone()[0] == 1
                 command.check(cfg)
                 print(
-                    ("CAP_02_A05_P04_P03_A03_P02_WINDOWS_HTTP_PG_PASS: "
+                    ("CAP_02_A05_P04_P03_A04_P02_A02_FIXED_HTTP_PG_PASS: "
+                     "assigned fixed version, signed page, denials and Review decision "
+                     "verified with isolated synthetic trust"
+                     if FIXED_CONTENT_HTTP else
+                     "CAP_02_A05_P04_P03_A03_P02_WINDOWS_HTTP_PG_PASS: "
                      "explicit write-mode GLOBAL Review, assigned reviewers, "
                      "replay and approved pointer verified with synthetic trust"
                      if GLOBAL_REVIEW_HTTP else

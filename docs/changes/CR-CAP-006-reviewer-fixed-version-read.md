@@ -1,7 +1,7 @@
 # CR-CAP-006：受分配评审人读取 CAP-01 GLOBAL 固定版本
 
 - 日期：2026-10-24
-- 状态：`APPROVED_FOR_IMPLEMENTATION / NOT_IMPLEMENTED`（依据用户 2026-09-24 持续授权；实施批准不等于验收）
+- 状态：`APPROVED_FOR_IMPLEMENTATION / WINDOWS_11_SYNTHETIC_HTTP_PG_PASS / UI_PENDING`（依据用户 2026-09-24 持续授权；实施批准不等于正式发行）
 - 关联：`CR-CAP-005`、`CAP-02-A05-P04-P03-A04-P02`、Gate 2 原 API-02/API-04 冻结提交 `64cdf09`
 
 ## 事实、差异与影响
@@ -29,3 +29,4 @@
 ## 实施记录
 
 - 2026-10-24 / `A04-P02-A01`：固定 Version/条目只读服务按 Review 分配资格及双向引用同事务重证，限制每页 50 条；定向13/7子例、后端全量4090/3跳过/6136子例通过。HTTP/PG/页面仍未实现，见 `docs/progress/cap-02-a05-p04-p03-a04-p02-a01-fixed-content-service.md`。
+- 2026-10-24 / `A04-P02-A02`：新增两条默认关闭 GET、会话/Review/Version/页大小绑定的签名游标和 Windows 显式写模式装配；隔离 PostgreSQL 18.6 合成双页/拒绝/决定链、后端全量4095/3跳过/6149子例通过。页面/Edge/正式信任仍未验，见 `docs/progress/cap-02-a05-p04-p03-a04-p02-a02-fixed-content-http-pg.md`。

@@ -109,6 +109,7 @@ def create_app(
     capability_command_router: APIRouter | None = None,
     capability_review_router: APIRouter | None = None,
     global_capability_review_router: APIRouter | None = None,
+    global_capability_fixed_content_router: APIRouter | None = None,
     capability_read_router: APIRouter | None = None,
     handover_command_router: APIRouter | None = None,
     handover_review_submission_router: APIRouter | None = None,
@@ -368,6 +369,8 @@ def create_app(
         app.include_router(capability_review_router)
     if global_capability_review_router is not None:
         app.include_router(global_capability_review_router)
+    if global_capability_fixed_content_router is not None:
+        app.include_router(global_capability_fixed_content_router)
     if capability_read_router is not None:
         app.include_router(capability_read_router)
     if handover_command_router is not None:

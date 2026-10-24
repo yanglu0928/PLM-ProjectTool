@@ -567,6 +567,7 @@ class ProductionLoginTests(unittest.TestCase):
                 APIRouter(), APIRouter() if include_write else None,
                 APIRouter() if include_write else None,
                 APIRouter() if include_write else None,
+                APIRouter() if include_write else None,
             ),
         ))
         self.handover_factory = self.enterContext(patch(

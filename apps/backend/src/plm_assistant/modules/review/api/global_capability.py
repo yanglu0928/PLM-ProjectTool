@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import uuid
+import re
 
 from fastapi import APIRouter, Request
 from fastapi.concurrency import run_in_threadpool
@@ -18,14 +19,19 @@ from plm_assistant.modules.auth.application.session_service import SessionServic
 from plm_assistant.modules.capability.api.commands import (
     _canonical_uuid, _instant, _read_json, _security,
 )
+from plm_assistant.modules.capability.api.read import _item, _version
 from plm_assistant.modules.platform.application.errors import ApplicationError
 from plm_assistant.modules.review.application.global_capability_decide import (
     DecideGlobalCapabilityReview, GlobalCapabilityReviewDecisionError,
     GlobalCapabilityReviewDecisionService,
 )
 from plm_assistant.modules.review.application.global_capability_read import (
-    AuthorizedGlobalCapabilityReview, GetGlobalCapabilityReview,
+    AuthorizedGlobalCapabilityReview, AuthorizedGlobalCapabilityFixedItems,
+    AuthorizedGlobalCapabilityFixedVersion, GetGlobalCapabilityReview,
     GlobalCapabilityReviewReadError, GlobalCapabilityReviewReadService,
+)
+from plm_assistant.modules.review.api.global_capability_cursor import (
+    GlobalCapabilityFixedItemsCursorCodec,
 )
 from plm_assistant.modules.review.application.global_persistence import (
     AppliedGlobalReviewTransitionRef,
@@ -34,6 +40,7 @@ from plm_assistant.modules.review.domain.round_progress import ReviewDecisionKin
 
 
 _DECIDE_FIELDS = frozenset({"decision", "comment"})
+_PAGE_SIZE = re.compile(r"[1-9][0-9]?\Z", re.ASCII)
 
 
 def _read_failure(code: str) -> ApplicationError:
@@ -190,5 +197,117 @@ def create_global_capability_review_router(
         return JSONResponse({
             "data": data, "trace_id": str(trace_id),
         }, headers={"Cache-Control": "no-store", "ETag": etag})
+
+    return router
+
+
+def create_global_capability_fixed_content_router(
+    *, origins: LoginOriginPolicy, reads: GlobalCapabilityReviewReadService,
+    cursors: GlobalCapabilityFixedItemsCursorCodec,
+) -> APIRouter:
+    if any(value is None for value in (origins, reads, cursors)):
+        raise ValueError("GLOBAL Capability fixed content dependencies required")
+    router = APIRouter()
+
+    def query(request: Request) -> tuple[bytes, uuid.UUID]:
+        headers = tuple(request.scope.get("headers", ()))
+        try:
+            origins.require_trusted_host(headers)
+        except LoginOriginError:
+            raise ApplicationError("AUTH_CSRF_INVALID") from None
+        return _session_cookie(headers), uuid.UUID(request.state.trace_id)
+
+    def fixed(result: AuthorizedGlobalCapabilityFixedVersion,
+              review_id: uuid.UUID) -> tuple[uuid.UUID, uuid.UUID]:
+        if (type(result) is not AuthorizedGlobalCapabilityFixedVersion
+                or result.review.review.review_id != review_id
+                or result.review.fixed_round.subject_version_id
+                != result.version.baseline_version_id
+                or result.review.review.subject_id != result.version.baseline_id):
+            raise ApplicationError("SYSTEM_UNAVAILABLE")
+        return result.version.baseline_id, result.version.baseline_version_id
+
+    @router.get("/api/v1/global/reviews/{review_id}/fixed-version")
+    async def get_fixed_version(review_id: str, request: Request) -> JSONResponse:
+        token, trace_id = query(request)
+        if request.url.query:
+            raise ApplicationError("REQUEST_MALFORMED")
+        identity = _canonical_uuid(review_id)
+        try:
+            result = await run_in_threadpool(
+                reads.fixed_version, GetGlobalCapabilityReview(token, trace_id, identity),
+            )
+        except GlobalCapabilityReviewReadError as exc:
+            raise _read_failure(exc.code) from None
+        except Exception:
+            raise ApplicationError("SYSTEM_UNAVAILABLE") from None
+        fixed(result, identity)
+        return JSONResponse({"data": {
+            "review_id": str(identity),
+            "review_round_id": str(result.review.fixed_round.progress.round_id),
+            "version": _version(result.version),
+            "review_etag": result.review.review_etag,
+        }, "trace_id": str(trace_id)}, headers={
+            "Cache-Control": "no-store", "ETag": result.review.review_etag,
+        })
+
+    @router.get("/api/v1/global/reviews/{review_id}/fixed-items")
+    async def get_fixed_items(review_id: str, request: Request) -> JSONResponse:
+        token, trace_id = query(request)
+        identity = _canonical_uuid(review_id)
+        entries = list(request.query_params.multi_items())
+        if (len(entries) > 2 or len({key for key, _ in entries}) != len(entries)
+                or any(key not in {"page_size", "cursor"} for key, _ in entries)):
+            raise ApplicationError("REQUEST_MALFORMED")
+        params = dict(entries)
+        raw_size = params.get("page_size", "50")
+        if _PAGE_SIZE.fullmatch(raw_size) is None or int(raw_size) > 50:
+            raise ApplicationError("VALIDATION_FAILED")
+        size = int(raw_size)
+        try:
+            bound = await run_in_threadpool(
+                reads.fixed_version, GetGlobalCapabilityReview(token, trace_id, identity),
+            )
+        except GlobalCapabilityReviewReadError as exc:
+            raise _read_failure(exc.code) from None
+        except Exception:
+            raise ApplicationError("SYSTEM_UNAVAILABLE") from None
+        _, version_id = fixed(bound, identity)
+        cursor = params.get("cursor")
+        after = (cursors.decode(
+            cursor, review_id=identity, version_id=version_id,
+            session_token=token, page_size=size,
+        ) if cursor is not None else None)
+        try:
+            page = await run_in_threadpool(
+                reads.fixed_items, GetGlobalCapabilityReview(token, trace_id, identity),
+                page_size=size, after_ordinal=after,
+            )
+        except GlobalCapabilityReviewReadError as exc:
+            raise _read_failure(exc.code) from None
+        except Exception:
+            raise ApplicationError("SYSTEM_UNAVAILABLE") from None
+        if (type(page) is not AuthorizedGlobalCapabilityFixedItems
+                or page.review.review != bound.review.review
+                or page.version != bound.version
+                or page.review.review_etag != bound.review.review_etag
+                or page.next_ordinal is not None and (
+                    not page.items or page.next_ordinal != page.items[-1].ordinal)):
+            raise ApplicationError("SYSTEM_UNAVAILABLE")
+        next_cursor = (cursors.encode(
+            review_id=identity, version_id=version_id,
+            session_token=token, page_size=size, after_ordinal=page.next_ordinal,
+        ) if page.next_ordinal is not None else None)
+        return JSONResponse({"data": {
+            "review_id": str(identity),
+            "review_round_id": str(page.review.fixed_round.progress.round_id),
+            "baseline_version_id": str(version_id),
+            "items": [_item(item) for item in page.items],
+            "next_cursor": next_cursor,
+            "has_more": next_cursor is not None,
+            "review_etag": page.review.review_etag,
+        }, "trace_id": str(trace_id)}, headers={
+            "Cache-Control": "no-store", "ETag": page.review.review_etag,
+        })
 
     return router

@@ -677,6 +677,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
         capability_command_router = None
         capability_review_router = None
         global_capability_review_router = None
+        global_capability_fixed_content_router = None
         capability_read_router = None
         handover_command_router = None
         handover_review_submission_router = None
@@ -836,6 +837,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             capability_command_router = capability_routers.commands
             capability_review_router = capability_routers.review_submission
             global_capability_review_router = capability_routers.global_review
+            global_capability_fixed_content_router = capability_routers.fixed_content
             handover_routers = create_windows_handover_routers(
                 runtime, sessions=sessions, origins=origins,
                 license_guard=licenses.guard, audit=audit,
@@ -1967,6 +1969,7 @@ def _create_production_app(settings: BootstrapSettings, *, credential_target: st
             capability_command_router=capability_command_router,
             capability_review_router=capability_review_router,
             global_capability_review_router=global_capability_review_router,
+            global_capability_fixed_content_router=global_capability_fixed_content_router,
             capability_read_router=capability_read_router,
             handover_command_router=handover_command_router,
             handover_review_submission_router=handover_review_submission_router,

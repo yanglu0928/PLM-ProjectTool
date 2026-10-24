@@ -93,7 +93,11 @@ from plm_assistant.modules.review.application.global_capability_decide import (
     GlobalCapabilityReviewDecisionService,
 )
 from plm_assistant.modules.review.api.global_capability import (
+    create_global_capability_fixed_content_router,
     create_global_capability_review_router,
+)
+from plm_assistant.modules.review.api.global_capability_cursor import (
+    GlobalCapabilityFixedItemsCursorCodec,
 )
 from plm_assistant.modules.review.infrastructure.global_repository import (
     SqlAlchemyGlobalReviewRepository,
@@ -119,6 +123,7 @@ class WindowsCapabilityRouters:
     commands: APIRouter | None
     review_submission: APIRouter | None
     global_review: APIRouter | None
+    fixed_content: APIRouter | None = None
 
 
 def create_windows_capability_routers(
@@ -132,9 +137,9 @@ def create_windows_capability_routers(
         baseline_cursors = CapabilityBaselineCursorCodec(
             keys.resolve_key(CAPABILITY_BASELINE_CURSOR_KEY_REF),
         )
-        child_cursors = CapabilityChildCursorCodec(
-            keys.resolve_key(CAPABILITY_CHILD_CURSOR_KEY_REF),
-        )
+        child_key = keys.resolve_key(CAPABILITY_CHILD_CURSOR_KEY_REF)
+        child_cursors = CapabilityChildCursorCodec(child_key)
+        fixed_cursors = GlobalCapabilityFixedItemsCursorCodec(child_key)
         source_validator = CapabilitySourceValidator(SqlAlchemyDocumentReadRepository())
         evidence = SqlAlchemyEvidenceFixedSourceRepository()
         reads = CapabilityReadService(
@@ -218,8 +223,12 @@ def create_windows_capability_routers(
             sessions=sessions, origins=origins,
             reads=global_reads, decisions=global_decisions,
         )
+        fixed_content_router = create_global_capability_fixed_content_router(
+            origins=origins, reads=global_reads, cursors=fixed_cursors,
+        )
         return WindowsCapabilityRouters(
             read_router, command_router, review_router, global_review_router,
+            fixed_content_router,
         )
     except Exception:
         raise ProductionCapabilityStartupError() from None

@@ -38,6 +38,7 @@ class WindowsCapabilityCompositionTests(unittest.TestCase):
         self.assertIsNone(read_only.commands)
         self.assertIsNone(read_only.review_submission)
         self.assertIsNone(read_only.global_review)
+        self.assertIsNone(read_only.fixed_content)
         write = create_windows_capability_routers(
             runtime, sessions=sessions, origins=origins,
             license_guard=guard, audit=audit, include_write=True,
@@ -47,11 +48,13 @@ class WindowsCapabilityCompositionTests(unittest.TestCase):
         self.assertIsNotNone(write.commands)
         self.assertIsNotNone(write.review_submission)
         self.assertIsNotNone(write.global_review)
+        self.assertIsNotNone(write.fixed_content)
         routes = [route for router in (
             write.reads, write.commands, write.review_submission, write.global_review,
+            write.fixed_content,
         ) for route in router.routes]
-        self.assertEqual(14, len(routes))
-        self.assertEqual(11, len({route.path for route in routes}))
+        self.assertEqual(16, len(routes))
+        self.assertEqual(13, len({route.path for route in routes}))
         self.assertEqual([
             CAPABILITY_BASELINE_CURSOR_KEY_REF,
             CAPABILITY_CHILD_CURSOR_KEY_REF,
