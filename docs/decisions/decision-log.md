@@ -11882,3 +11882,10 @@
 - Decision：在交接列表添加独立创建页入口；仅通过现有 DocumentReadClient 读取项目文档与版本元数据，用户逐文档选择一个固定版本组成来源集合。新增 Handover 专用创建客户端消费已冻结 POST，复用 SessionClient 的 CSRF/Origin/幂等写边界；对不确定响应在 sessionStorage 保留原项目/操作者/目的/固定来源/Key，确认后才能同号重试。
 - Reason：明确 UI→API 边界和固定来源可见性，避免将文档正文或手填 UUID 搬入表格；独立页面使列表继续保持只读现时事实，服务端最终重证项目/版本权限。
 - Impact/Rollback/Verification：非 Breaking 前端增量，无 Schema/后端 API/License 权益变化；撤新入口和客户端可停用，但已创建的分析及审计历史必须保留。定向测试覆盖正常创建、无文档/跨项目/角色、版本分页、错误响应/不确定结果、同号恢复与失效存储；前端全量/typecheck/build后才标源码 PASS，包内 Edge/PG 另验。
+
+# DEC-20261024-1229：交接版本先补能力基线与 Evidence 正式来源
+
+- Date/WBS：2026-10-24 / `HND-05-A02`；分析身份创建已在包内 Edge/PG 通过，但冻结 Version CREATE 必须有当前批准全局 Capability 版本、至少一条问题及同项目固定文档 Evidence（除真实缺源项）；现有 AI 建议位置链接不等于 Evidence 引用。
+- Decision：停止此项版本写页编码，不提供手填内部 UUID/JSON 或虚构 `source_missing` 卡片。先走 `CAP-02-A01` 能力基线受权发现/正式创建评审入口，并另核 Evidence/AI 候选到问题卡片的可追溯桥接；前置满足后回到 Handover 版本草稿创建与逐项人工确认。
+- Reason：保证最短纵向链产生可审计业务事实，而非仅能提交但无法真实通过资格的空壳；符合用户要求的待办卡片、原文一键定位和填写提示。
+- Impact/Rollback/Verification：仅执行顺序 L2 决定，无产品 Scope/API/Schema/License 变化；可在前置真实证据补齐后继续 HND-05-A02。静态核查记录在 `docs/progress/hnd-05-a02-version-entry-precheck.md`；未称版本/UAT/Gate PASS。
