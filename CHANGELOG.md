@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-25：0.1.0-dev.0/EVD-05-A03-P01 为交接分析来源前置增加 PROJECT Evidence 候选创建的安全前端客户端，私有 CSRF、项目角色预筛、严格 CANDIDATE 回执与原操作号，不改变后端 API/Schema。兼容性：Windows 11 前端源码/构建已验，Windows Server 2025/Debian 13 未实测。升级/回滚：无数据迁移，撤未接入 UI 的客户端不影响已存在 Evidence/Audit。验证：定向4、全量1957/typecheck/build通过；首次 UUID 正则失败已修。已知问题：无创建 UI、真实 HTTPS/PG/人工资格和正式信任；HND 版本、安装/UAT/Gate/Pilot/Release 未通过，不可发行。
+
 - 2026-10-25：0.1.0-dev.0/CAP-02-A05-P03-P02-A03 从已提交源码构建本机 Windows 11 非发行候选，增加可复跑包内多条目验收脚本；不改产品 API/Schema。兼容性：仅 Windows 11 合成 Edge/HTTPS/PG18 验证，Windows Server 2025/Debian 13 未实测。升级/回滚：无数据迁移；弃用新候选即可回退，旧版本需保留 DEPRECATED 读取兼容。验证：22,196 件逐件 Hash、候选 SHA `d944d77d74e42c31b16e65c87972f496434e93f14f7c2c6afa9ef5976b400925`；两独立来源/证据→两条目 DRAFT（含 DEPRECATED）→VALIDATE→双合成 Reviewer 批准→当前指针/Audit/收据，第四轮完整退出 0，临时资源清理。已知问题：前三轮夹具失败保留；合成账户/License/TLS 不构成正式信任，真人确认、正式离线安装/升级、UAT/Gate/Pilot/Release 均未通过，不可发行；大 ZIP 仅本机忽略区保存。
 
 - 2026-10-24：0.1.0-dev.0/CAP-02-A05-P03-P02-A02 扩展 GLOBAL Capability DRAFT 多条目编辑，逐项来源/证据、整批来源并集重验、DEPRECATED、旧单条与整批原号恢复；不自动批准。兼容性：仅 Windows 11 前端源码/构建验证，Server 2025/Debian 13 未实测；后端 API/Schema 不变。升级/回滚：前端资源可回退，但已有 DEPRECATED 历史仍须保持 CR-CAP-007 新读取；不删除已写版本/Audit/收据。验证：定向10、全量1953/typecheck/build通过。已知问题：浏览器/PG/固定包未复验，页面暂存条目刷新会丢失；正式信任/安装/UAT/Gate/Pilot未验，不可发行。

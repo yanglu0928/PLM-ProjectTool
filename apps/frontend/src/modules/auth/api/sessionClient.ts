@@ -218,6 +218,7 @@ export class SessionClient {
     | `/api/v1/global/reviews/${string}/rounds/${string}:decide`
     | `/api/v1/projects/${string}/members` | `/api/v1/projects/${string}/departments`
     | `/api/v1/projects/${string}/document-uploads`
+    | `/api/v1/projects/${string}/evidence`
     | `/api/v1/projects/${string}/egress-previews`
     | `/api/v1/projects/${string}/ai-tasks`
     | `/api/v1/projects/${string}/retrieval-runs`
@@ -505,6 +506,11 @@ export class SessionClient {
 
   postGlobalEvidenceCreate(body: string, idempotencyKey: string): Promise<Response> {
     return this.#postCommand("/api/v1/global/evidence", body, idempotencyKey, 8192);
+  }
+
+  postProjectEvidenceCreate(projectId: string, body: string, idempotencyKey: string): Promise<Response> {
+    if (!identifier(projectId)) return Promise.reject(new SessionClientError("AUTH_CLIENT_UNAVAILABLE"));
+    return this.#postCommand(`/api/v1/projects/${projectId}/evidence`, body, idempotencyKey, 8192);
   }
 
   postProjectAIEgressPreview(projectId: string, body: string, idempotencyKey: string): Promise<Response> {
