@@ -1,6 +1,6 @@
 # CR-PKG-010：当前后端依赖与非发行包内 Python 运行时不一致
 
-日期：2026-10-24；来源：`PKG-PILOT-01-A02` 包内迁移预检；状态：`RECORDED / IMPLEMENTATION_OPEN`。承接 CR-PKG-008/009，不覆盖父候选或 A01 ZIP。
+日期：2026-10-24；来源：`PKG-PILOT-01-A02` 包内迁移预检；状态：`NON_RELEASE_IMPLEMENTED_AND_VERIFIED / FORMAL_LEGAL_AND_INSTALL_OPEN`。承接 CR-PKG-008/009，不覆盖父候选或 A01 ZIP。
 
 ## 冲突与证据
 
@@ -21,3 +21,7 @@ A01 清洁解包完整，但用包内 Python/Alembic 升级隔离 PostgreSQL 时
 ## 验证计划
 
 先做合成正/负例与路径/哈希失败关闭；再用干净已提交源码、原父包和固定 PoC wheel 构建**新**候选，独立清洁解包、包内依赖清点与 Python 导入。仅在固定候选上运行隔离 PG18/pgvector 的 `0184→0185` 有数据/空库升级与受控降级重升；失败时记录真实错误与清理状态，正式 Pilot/Gate 不变。
+
+## 技术验证结果
+
+修复前 A01 包的迁移退出 1（缺 Python `pgvector`），一次性 PG 已停止清理。修复后从干净提交 `98d28da3498deefafbfa4396fda6fea16743d136` 派生新包 SHA `527b1d91195b0594d513dbe4f95604ca53df7c11154b4299deff4880d27e4f5d`；包含固定 PoC wheel 全部 46 件，清单新增 MIT 许可位置与 `REVIEW_REQUIRED`。打包/暂存/迁移边界定向 8/8；22,191 件独立清洁解包、包内 Python `pgvector==0.5.0` 导入、PG18/服务器 pgvector 0.8.6 的 `0184→0185→0184→0185`、空库直升与旧配置行保留均通过。见 [A02 证据](../progress/pkg-pilot-01-a02-packaged-head-migration.md)。这不代表法律放行、正式安装/升级或 Pilot 可用。
