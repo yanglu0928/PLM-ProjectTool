@@ -57,6 +57,9 @@ onUnmounted(() => { mounted = false; clear(); unsubscribe(); });
   <section class="page-panel">
     <h1>标准能力基线</h1>
     <p>仅展示当前账户有权读取的全局能力资料；能力建议不能替代正式审批。</p>
+    <p v-if="session.view?.deployment_role === 'DEPLOYMENT_ADMIN'">
+      <RouterLink :to="{ name: 'global-capability-document-upload' }">上传标准能力来源文档</RouterLink>
+    </p>
     <p v-if="!mayRead()" role="status">请先登录并取得项目成员或部署管理员权限。</p>
     <template v-else>
       <p v-if="session.view?.deployment_role === 'DEPLOYMENT_ADMIN'">管理员历史视图：可能包含未批准版本。</p>

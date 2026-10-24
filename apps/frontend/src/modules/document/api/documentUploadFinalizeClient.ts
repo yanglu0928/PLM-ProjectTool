@@ -121,14 +121,26 @@ export class DocumentUploadFinalizeClient {
 
   async commitProject(projectId: string, content: ReceivedProjectUploadContent,
     target: ProjectUploadCommitTarget, idempotencyKey: string): Promise<ProjectUploadCommitFirstReceipt> {
-    if (!identifier(projectId) || !safeContent(content) || !key(idempotencyKey)) {
+    if (!identifier(projectId)) throw new DocumentUploadFinalizeError("DOCUMENT_UPLOAD_FINALIZE_INVALID");
+    return this.#commit(`/api/v1/projects/${projectId}`, content, target, idempotencyKey, projectId);
+  }
+
+  commitGlobal(content: ReceivedProjectUploadContent,
+    idempotencyKey: string): Promise<ProjectUploadCommitFirstReceipt> {
+    return this.#commit("/api/v1/global", content, { kind: "NEW" }, idempotencyKey, null);
+  }
+
+  async #commit(base: string, content: ReceivedProjectUploadContent,
+    target: ProjectUploadCommitTarget, idempotencyKey: string, projectId: string | null): Promise<ProjectUploadCommitFirstReceipt> {
+    if (!safeContent(content) || !key(idempotencyKey)) {
       throw new DocumentUploadFinalizeError("DOCUMENT_UPLOAD_FINALIZE_INVALID");
     }
     const etag = targetEtag(target);
     let response: Response;
     try {
-      response = await this.session.postProjectDocumentUploadCommit(
-        projectId, content.uploadId, idempotencyKey, etag);
+      response = projectId === null
+        ? await this.session.postGlobalDocumentUploadCommit(content.uploadId, idempotencyKey, etag)
+        : await this.session.postProjectDocumentUploadCommit(projectId, content.uploadId, idempotencyKey, etag);
     } catch (failure) {
       if (failure instanceof SessionClientError && failure.code === "AUTH_RELOGIN_REQUIRED") {
         throw new DocumentUploadFinalizeError("AUTH_RELOGIN_REQUIRED");
@@ -143,7 +155,7 @@ export class DocumentUploadFinalizeClient {
       || !identifier(data.document_version_id) || !identifier(data.parse_job_id)
       || typeof data.version_no !== "number" || !Number.isSafeInteger(data.version_no)
       || data.version_no < 1 || (target.kind === "VERSION" && data.document_id !== target.documentId)
-      || response.headers.get("location") !== `/api/v1/projects/${projectId}/documents/${data.document_id}/versions/${data.document_version_id}`) {
+      || response.headers.get("location") !== `${base}/documents/${data.document_id}/versions/${data.document_version_id}`) {
       throw new DocumentUploadFinalizeError("DOCUMENT_UPLOAD_FINALIZE_UNCERTAIN");
     }
     return Object.freeze({ first_result: Object.freeze({ uploadId: content.uploadId,
@@ -153,12 +165,24 @@ export class DocumentUploadFinalizeClient {
 
   async abortProject(projectId: string, uploadId: string,
     idempotencyKey: string): Promise<ProjectUploadAbortFirstReceipt> {
-    if (!identifier(projectId) || !identifier(uploadId) || !key(idempotencyKey)) {
+    if (!identifier(projectId)) throw new DocumentUploadFinalizeError("DOCUMENT_UPLOAD_FINALIZE_INVALID");
+    return this.#abort(projectId, uploadId, idempotencyKey);
+  }
+
+  abortGlobal(uploadId: string, idempotencyKey: string): Promise<ProjectUploadAbortFirstReceipt> {
+    return this.#abort(null, uploadId, idempotencyKey);
+  }
+
+  async #abort(projectId: string | null, uploadId: string,
+    idempotencyKey: string): Promise<ProjectUploadAbortFirstReceipt> {
+    if (!identifier(uploadId) || !key(idempotencyKey)) {
       throw new DocumentUploadFinalizeError("DOCUMENT_UPLOAD_FINALIZE_INVALID");
     }
     let response: Response;
     try {
-      response = await this.session.postProjectDocumentUploadAbort(projectId, uploadId, idempotencyKey);
+      response = projectId === null
+        ? await this.session.postGlobalDocumentUploadAbort(uploadId, idempotencyKey)
+        : await this.session.postProjectDocumentUploadAbort(projectId, uploadId, idempotencyKey);
     } catch (failure) {
       if (failure instanceof SessionClientError && failure.code === "AUTH_RELOGIN_REQUIRED") {
         throw new DocumentUploadFinalizeError("AUTH_RELOGIN_REQUIRED");

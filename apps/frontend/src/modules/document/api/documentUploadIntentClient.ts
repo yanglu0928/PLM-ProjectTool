@@ -108,14 +108,29 @@ export class DocumentUploadIntentClient {
 
   async createProject(projectId: string, input: ProjectUploadIntentInput,
     idempotencyKey: string): Promise<CreatedProjectUploadIntent> {
-    if (!identifier(projectId) || typeof idempotencyKey !== "string"
+    if (!identifier(projectId)) throw new DocumentUploadIntentError("DOCUMENT_UPLOAD_INVALID_INPUT");
+    return this.#create(`/api/v1/projects/${projectId}`, input, idempotencyKey, projectId);
+  }
+
+  createGlobal(input: ProjectUploadIntentInput, idempotencyKey: string): Promise<CreatedProjectUploadIntent> {
+    if (input.kind !== "NEW" || input.category !== "STANDARD_CAPABILITY") {
+      throw new DocumentUploadIntentError("DOCUMENT_UPLOAD_INVALID_INPUT");
+    }
+    return this.#create("/api/v1/global", input, idempotencyKey, null);
+  }
+
+  async #create(base: string, input: ProjectUploadIntentInput, idempotencyKey: string,
+    projectId: string | null): Promise<CreatedProjectUploadIntent> {
+    if (typeof idempotencyKey !== "string"
       || !/^[\x20-\x7e]{16,128}$/.test(idempotencyKey)) {
       throw new DocumentUploadIntentError("DOCUMENT_UPLOAD_INVALID_INPUT");
     }
     const body = prepared(input);
     let response: Response;
     try {
-      response = await this.session.postProjectDocumentUploadCreate(projectId, body, idempotencyKey);
+      response = projectId === null
+        ? await this.session.postGlobalDocumentUploadCreate(body, idempotencyKey)
+        : await this.session.postProjectDocumentUploadCreate(projectId, body, idempotencyKey);
     } catch (failure) {
       if (failure instanceof SessionClientError && failure.code === "AUTH_RELOGIN_REQUIRED") {
         throw new DocumentUploadIntentError("AUTH_RELOGIN_REQUIRED");
@@ -148,7 +163,7 @@ export class DocumentUploadIntentClient {
       const data = payload.data;
       if (!record(data) || !identifier(data.upload_id) || typeof data.upload_token !== "string"
         || !token.test(data.upload_token) || !instant(data.expires_at)
-        || response.headers.get("location") !== `/api/v1/projects/${projectId}/document-uploads/${data.upload_id}`
+        || response.headers.get("location") !== `${base}/document-uploads/${data.upload_id}`
         || !/(?:^|,)\s*no-store\s*(?:,|$)/i.test(response.headers.get("cache-control") ?? "")) {
         throw new DocumentUploadIntentError("DOCUMENT_UPLOAD_CREATE_UNCERTAIN");
       }

@@ -67,7 +67,17 @@ export class DocumentUploadContentClient {
 
   async putProject(projectId: string, intent: CreatedProjectUploadIntent,
     content: Blob): Promise<ReceivedProjectUploadContent> {
-    if (!identifier(projectId) || !validIntent(intent) || !(content instanceof Blob)
+    if (!identifier(projectId)) throw new DocumentUploadContentError("DOCUMENT_UPLOAD_CONTENT_INVALID");
+    return this.#put(projectId, intent, content);
+  }
+
+  putGlobal(intent: CreatedProjectUploadIntent, content: Blob): Promise<ReceivedProjectUploadContent> {
+    return this.#put(null, intent, content);
+  }
+
+  async #put(projectId: string | null, intent: CreatedProjectUploadIntent,
+    content: Blob): Promise<ReceivedProjectUploadContent> {
+    if (!validIntent(intent) || !(content instanceof Blob)
       || !Number.isSafeInteger(content.size) || content.size < 1 || content.size > 100_000_000) {
       throw new DocumentUploadContentError("DOCUMENT_UPLOAD_CONTENT_INVALID");
     }
@@ -85,8 +95,10 @@ export class DocumentUploadContentClient {
     if (!future(intent.expiresAt)) throw new DocumentUploadContentError("FILE_UPLOAD_EXPIRED");
     let response: Response;
     try {
-      response = await this.session.putProjectDocumentUploadContent(
-        projectId, intent.uploadId, intent.uploadToken, digest, content);
+      response = projectId === null
+        ? await this.session.putGlobalDocumentUploadContent(intent.uploadId, intent.uploadToken, digest, content)
+        : await this.session.putProjectDocumentUploadContent(
+          projectId, intent.uploadId, intent.uploadToken, digest, content);
     } catch (failure) {
       if (failure instanceof SessionClientError && failure.code === "AUTH_RELOGIN_REQUIRED") {
         throw new DocumentUploadContentError("AUTH_RELOGIN_REQUIRED");

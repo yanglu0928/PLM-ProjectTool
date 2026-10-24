@@ -1,6 +1,6 @@
 # CAP-02-A03：GLOBAL 标准能力固定文档来源入口编码前检查
 
-日期：2026-10-24；状态：`PRECHECK_COMPLETE / IMPLEMENTATION_PENDING`。
+日期：2026-10-24；状态：`SOURCE_PASS / WINDOWS_BROWSER_PG_PENDING`。
 
 |检查项|结论|
 |---|---|
@@ -13,3 +13,10 @@
 |风险|真实标准能力库文件含内部资料，不自动扫描/导入或外发；现有项目上传页不能直接改成 GLOBAL 兼容而不复验既有 PROJECT 行为。完成 GLOBAL 文档入库也不等于 CapabilityBaseline 已创建或获批。|
 
 此项无 Schema/API Breaking Change，无外部模型调用。待实现后独立关闭；后续 CAP-02-A04 才能选择合格固定版本创建基线，再依正式 Review 获取当前批准版本。Pilot/Gate 仍 `NOT_READY`。
+
+## 实施与源码验收
+
+- 在现有 Document UploadIntent/Content/Finalize 客户端增加 GLOBAL 专用路径，SessionClient 私有 CSRF/上传凭证/幂等边界保持不变；原 PROJECT 调用复用固定路径底座并完整回归。
+- 新增部署管理员独立 `STANDARD_CAPABILITY` 新文档上传页。只允许 GLOBAL 新文档，不把项目文档转作全局来源；三步操作、未知结果原操作号确认重试、显式终止、会话变化清屏和提交后独立 GLOBAL Document/AVAILABLE 固定版本读取均有界面状态。
+- 新增 GLOBAL 传输 3 项、页面权限/正向/未知/终止/重放/会话变化 6 项；关联定向及前端全量 166 文件、1896 项 PASS，TypeScript 检查、Vite 构建 PASS。现有 PROJECT 上传与 Auth 客户端定向 274 项 PASS。
+- 尚未执行真实 Edge/PG 合成文件端到端；不能由回执推定已解析、已批准 CapabilityBaseline，亦不能把本地标准能力库文件自动写入系统。

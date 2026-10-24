@@ -11896,3 +11896,10 @@
 - Decision：先增加只读列表/详情/版本条目页与导航，按当前 Session 仅决定是否发起请求，服务端仍作最终权限裁决；页面明确“管理员历史 ≠ 当前批准”。不在本项暴露基线写入或 Review，空态不生成假数据。
 - Reason：为后续受控导入/创建/送审与 Handover 固定能力引用建立可审计发现路径，同时不把前端筛选当授权。
 - Impact/Rollback/Verification：非 Breaking 前端增量，可撤路由/导航停止新入口，后端/历史不变；定向权限/分页/响应合同和全量构建通过后仅标源码 PASS，包内浏览器/批准事实另验。
+
+# DEC-20261024-1231：GLOBAL 标准能力文档使用独立管理员上传入口
+
+- Date/WBS：2026-10-24 / `CAP-02-A03`；后端 GLOBAL 三段上传/终止与只读固定版本已装配，前端仅有 PROJECT 上传工作流。
+- Decision：复用现有上传客户端的校验与安全状态机，为其添加 GLOBAL 专用调用；SessionClient 保持 CSRF/凭证私有，并新增明确的 GLOBAL 路径桥接。提供仅 DeploymentAdmin 可启动的独立 `STANDARD_CAPABILITY` 上传页，不以 PROJECT 类别选择冒充 GLOBAL 来源。
+- Reason：不改冻结 API/Document 语义，不复制整套上传校验；GLOBAL 来源与项目资料在界面、请求路径和资格上分离，后续基线创建仅取 GLOBAL ACTIVE/AVAILABLE 固定版本。
+- Impact/Rollback/Verification：无 Schema/后端 API/License 权益变更；可撤 GLOBAL 入口和桥接，已上传 GLOBAL 文档须保留历史。复验原 PROJECT 上传、GLOBAL 正反向/中断与端到端合成 Edge/PG；无真实客户文件自动导入或外发。

@@ -22,6 +22,7 @@ import AdminUserNameView from "@/modules/auth/views/AdminUserNameView.vue";
 import ProjectDocumentListView from "@/modules/document/views/ProjectDocumentListView.vue";
 import ProjectDocumentDetailView from "@/modules/document/views/ProjectDocumentDetailView.vue";
 import ProjectDocumentUploadView from "@/modules/document/views/ProjectDocumentUploadView.vue";
+import GlobalCapabilityDocumentUploadView from "@/modules/document/views/GlobalCapabilityDocumentUploadView.vue";
 import ProjectEvidenceListView from "@/modules/evidence/views/ProjectEvidenceListView.vue";
 import GlobalEvidenceListView from "@/modules/evidence/views/GlobalEvidenceListView.vue";
 import ProjectJobListView from "@/modules/jobs/views/ProjectJobListView.vue";
@@ -115,6 +116,11 @@ export function createAppRouter(
         path: "/capability-baselines/:baselineId",
         name: "capability-baseline-detail",
         component: CapabilityBaselineDetailView,
+      },
+      {
+        path: "/admin/capability-documents/new",
+        name: "global-capability-document-upload",
+        component: GlobalCapabilityDocumentUploadView,
       },
       {
         path: "/projects/new",

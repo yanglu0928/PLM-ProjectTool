@@ -211,7 +211,7 @@ export class SessionClient {
   }
 
   /** Frozen create command paths; the CSRF token never leaves this client. */
-  async #postCommand(path: "/api/v1/projects" | "/api/v1/admin/users"
+  async #postCommand(path: "/api/v1/projects" | "/api/v1/admin/users" | "/api/v1/global/document-uploads"
     | `/api/v1/projects/${string}/members` | `/api/v1/projects/${string}/departments`
     | `/api/v1/projects/${string}/document-uploads`
     | `/api/v1/projects/${string}/egress-previews`
@@ -429,6 +429,10 @@ export class SessionClient {
     return this.#postCommand(`/api/v1/projects/${projectId}/document-uploads`, body, idempotencyKey, 8192);
   }
 
+  postGlobalDocumentUploadCreate(body: string, idempotencyKey: string): Promise<Response> {
+    return this.#postCommand("/api/v1/global/document-uploads", body, idempotencyKey, 8192);
+  }
+
   postProjectAIEgressPreview(projectId: string, body: string, idempotencyKey: string): Promise<Response> {
     if (!identifier(projectId)) return Promise.reject(new SessionClientError("AUTH_CLIENT_UNAVAILABLE"));
     return this.#postCommand(`/api/v1/projects/${projectId}/egress-previews`, body, idempotencyKey, 262_144);
@@ -484,9 +488,20 @@ export class SessionClient {
   /** Bounded single Content PUT. Blob gives Fetch a known length; scripts cannot set Content-Length. */
   async putProjectDocumentUploadContent(projectId: string, uploadId: string, proof: string,
     contentSha256: string, content: Blob): Promise<Response> {
+    if (!identifier(projectId)) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    return this.#putDocumentUploadContent(`/api/v1/projects/${projectId}`, uploadId, proof, contentSha256, content);
+  }
+
+  putGlobalDocumentUploadContent(uploadId: string, proof: string,
+    contentSha256: string, content: Blob): Promise<Response> {
+    return this.#putDocumentUploadContent("/api/v1/global", uploadId, proof, contentSha256, content);
+  }
+
+  async #putDocumentUploadContent(base: string, uploadId: string, proof: string,
+    contentSha256: string, content: Blob): Promise<Response> {
     if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
     if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
-    if (!identifier(projectId) || !identifier(uploadId) || typeof proof !== "string"
+    if (!identifier(uploadId) || typeof proof !== "string"
       || !uploadToken.test(proof) || typeof contentSha256 !== "string" || !sha256.test(contentSha256)
       || !(content instanceof Blob) || !Number.isSafeInteger(content.size)
       || content.size < 1 || content.size > 100_000_000) {
@@ -497,7 +512,7 @@ export class SessionClient {
     const timer = window.setTimeout(() => controller.abort(), 300_000);
     try {
       const fetcher = this.fetcher;
-      const response = await fetcher(`/api/v1/projects/${projectId}/document-uploads/${uploadId}/content`, {
+      const response = await fetcher(`${base}/document-uploads/${uploadId}/content`, {
         method: "PUT", credentials: "same-origin", cache: "no-store", redirect: "error",
         headers: { Accept: "application/json", "Content-Type": "application/octet-stream",
           "X-CSRF-Token": this.#csrf, "X-Upload-Token": proof, "X-Content-SHA256": contentSha256 },
@@ -517,9 +532,15 @@ export class SessionClient {
 
   async #postProjectUploadFinalize(projectId: string, uploadId: string, action: "commit" | "abort",
     idempotencyKey: string, etag: string | null): Promise<Response> {
+    if (!identifier(projectId)) throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
+    return this.#postDocumentUploadFinalize(`/api/v1/projects/${projectId}`, uploadId, action, idempotencyKey, etag);
+  }
+
+  async #postDocumentUploadFinalize(base: string, uploadId: string, action: "commit" | "abort",
+    idempotencyKey: string, etag: string | null): Promise<Response> {
     if (this.#busy) throw new SessionClientError("AUTH_CLIENT_BUSY");
     if (this.#csrf === null || this.#view === null) throw new SessionClientError("AUTH_RELOGIN_REQUIRED");
-    if (!identifier(projectId) || !identifier(uploadId)
+    if (!identifier(uploadId)
       || typeof idempotencyKey !== "string" || !/^[\x20-\x7e]{16,128}$/.test(idempotencyKey)
       || (etag !== null && (action !== "commit" || !/^"v(?:0|[1-9]\d*)"$/.test(etag)
         || !Number.isSafeInteger(Number(etag.slice(2, -1)))
@@ -534,7 +555,7 @@ export class SessionClient {
         "Idempotency-Key": idempotencyKey };
       if (etag !== null) headers["If-Match"] = etag;
       const fetcher = this.fetcher;
-      const response = await fetcher(`/api/v1/projects/${projectId}/document-uploads/${uploadId}:${action}`, {
+      const response = await fetcher(`${base}/document-uploads/${uploadId}:${action}`, {
         method: "POST", credentials: "same-origin", cache: "no-store", redirect: "error",
         headers, signal: controller.signal,
       });
@@ -557,6 +578,15 @@ export class SessionClient {
   postProjectDocumentUploadAbort(projectId: string, uploadId: string,
     idempotencyKey: string): Promise<Response> {
     return this.#postProjectUploadFinalize(projectId, uploadId, "abort", idempotencyKey, null);
+  }
+
+  postGlobalDocumentUploadCommit(uploadId: string, idempotencyKey: string,
+    parentEtag: string | null = null): Promise<Response> {
+    return this.#postDocumentUploadFinalize("/api/v1/global", uploadId, "commit", idempotencyKey, parentEtag);
+  }
+
+  postGlobalDocumentUploadAbort(uploadId: string, idempotencyKey: string): Promise<Response> {
+    return this.#postDocumentUploadFinalize("/api/v1/global", uploadId, "abort", idempotencyKey, null);
   }
 
   /** Project PATCH has no idempotency key; an unknown outcome requires a fresh GET. */

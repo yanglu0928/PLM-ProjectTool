@@ -91,6 +91,7 @@ describe("Capability baseline views", () => {
     const wrapper = mount(CapabilityBaselineListView,
       { props: { session: auth, client }, global: { plugins: [router] } });
     await flushPromises(); expect(wrapper.text()).toContain("STD-01 · 全局标准能力");
+    expect(wrapper.get('a[href="/admin/capability-documents/new"]').text()).toContain("上传标准能力来源文档");
     await auth.login("synthetic", "synthetic-only"); await flushPromises();
     expect(wrapper.text()).not.toContain("STD-01 · 全局标准能力");
     expect(client.listBaselines).toHaveBeenCalledTimes(2); wrapper.unmount();
