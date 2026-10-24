@@ -25,6 +25,7 @@ import ProjectDocumentUploadView from "@/modules/document/views/ProjectDocumentU
 import GlobalCapabilityDocumentUploadView from "@/modules/document/views/GlobalCapabilityDocumentUploadView.vue";
 import ProjectEvidenceListView from "@/modules/evidence/views/ProjectEvidenceListView.vue";
 import GlobalEvidenceListView from "@/modules/evidence/views/GlobalEvidenceListView.vue";
+import GlobalEvidenceCreateView from "@/modules/evidence/views/GlobalEvidenceCreateView.vue";
 import ProjectJobListView from "@/modules/jobs/views/ProjectJobListView.vue";
 import AdminJobListView from "@/modules/jobs/views/AdminJobListView.vue";
 import ProjectJobDetailView from "@/modules/jobs/views/ProjectJobDetailView.vue";
@@ -267,6 +268,11 @@ export function createAppRouter(
         path: "/admin/evidence",
         name: "global-evidence",
         component: GlobalEvidenceListView,
+      },
+      {
+        path: "/admin/evidence/new",
+        name: "global-evidence-create",
+        component: GlobalEvidenceCreateView,
       },
       {
         path: "/admin/reference-deidentification",

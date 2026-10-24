@@ -240,6 +240,7 @@ onUnmounted(() => { mounted = false; generation += 1; clearSelection(); });
   <section class="global-evidence" aria-labelledby="global-evidence-title" :aria-busy="busy">
     <p class="section-kicker">全局资料</p>
     <h1 id="global-evidence-title">全局证据</h1>
+    <p v-if="mayRead()"><RouterLink :to="{ name: 'global-evidence-create' }">从标准能力固定文档创建候选证据</RouterLink></p>
     <p><RouterLink to="/admin/reference-deidentification">选择多条来源作为核查候选</RouterLink></p>
     <p><RouterLink :to="{ name: 'global-references' }">查看全局参考方案候选</RouterLink></p>
     <p>仅部署管理员可读。短提示不是原文；定位时重新核验固定文档版本和当前资格。</p>

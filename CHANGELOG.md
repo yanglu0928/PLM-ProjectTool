@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-24：0.1.0-dev.0/EVD-05-A01 新增部署管理员从 GLOBAL ACTIVE 标准能力文档的 AVAILABLE 固定版本建立整文档 Evidence `CANDIDATE` 入口，严格首回执、原幂等号恢复及显式人工资格引导；不自动置 ELIGIBLE 或声称精确页段定位。兼容性：Windows 11 前端源码/构建；Windows Server 2025、Debian 13 未实测。升级/回滚：无 Schema/API/License 迁移，替换前端资源即可；撤入口不删除已有 Evidence 或 Audit。验证：首轮 UUID 校验缺段定向失败已修复并保留，最终定向8项、前端全量1912项及typecheck/build通过。已知问题：真实 Edge/PG 与包内权限/异常负例未验，CapabilityVersion/Review、正式信任/安装/UAT/Gate/Pilot 未完成，不可发行。
+
 - 2026-10-24：0.1.0-dev.0/CAP-02-A05-P01 核查能力基线身份之后的版本/条目/Evidence/正式评审用户路径，确认后端已装配的 GLOBAL Evidence 创建与资格、Capability Version/VALIDATE/Review 合同，但前端缺 GLOBAL Evidence 创建及版本写/送审入口；先做 `EVD-05-A01`，不伪造已批准版本。兼容性：设计证据，三平台产品行为均未改变。升级/回滚：无程序、Schema/API/数据迁移。验证：静态路由/服务/前端交叉核查，未运行新业务测试。已知问题：整文档 Evidence 不能当精确页段定位；批准版本、完整纵向链、正式信任/安装/UAT/Gate/Pilot 仍待。
 
 - 2026-10-24：0.1.0-dev.0/CAP-02-A03-P02+A04-P02 为 Win11 固定非发行候选新增 GLOBAL 标准能力来源上传→固定可用版本读取→基线身份创建包内 Edge/PG 验收夹具，不改产品 Schema/API。兼容性：仅 Windows 11 一次性 PG18/Caddy/合成 License/Edge；Windows Server 2025、Debian 13 未实测。升级/回滚：无迁移或产品数据改动，撤验收夹具不删除已有真实业务历史；候选不可发行。验证：候选 SHA `bbace47d347919ae625372e35d1d5764c4004b97cf5038458a01ac15b1d51876`，清洁解包、13 个相关浏览器 API 响应、PG 单文档/版本/基线/来源哈希及四类 Audit、临时资源清理，同包复验退出 0；首轮验收 SQL 列名误写失败已保留。已知问题：仅正向合成链，包内权限/异常负例、能力版本/条目/Evidence/正式 Review、正式信任/法律/离线安装升级/UAT/Gate 均待，不是可交付 Pilot。
