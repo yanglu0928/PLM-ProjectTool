@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-25：0.1.0-dev.0/HND-05-A05-P02 通用 PROJECT Review 客户端增加严格 HND-02/`HANDOVER_ALL_V1` 投影支持，保留当前评审人、固定轮次、Session/CSRF/原操作号及回执校验，错配主题/策略失败关闭。兼容性：Windows 11 前端合同/构建通过，Windows Server 2025/Debian 13 未实测。升级/回滚：仅前端资产，无 API/Schema/License 或数据迁移；回退后 HND-02 会重新被客户端拒绝，合法 Review/Audit 保留。验证：定向6、前端全量2009、typecheck/build退出0。已知问题：通用页面仍把 HND 误标为结构化专项并给错误固定版本入口，真实 Edge/PG/包内决定、真人客户确认、正式信任/安装/UAT/Gate/Pilot/Release 未通过。
+
 - 2026-10-25：0.1.0-dev.0/HND-05-A05-P01 既有 PROJECT `REVIEW_GET` 显式注册 HND-02 只读 Owner，当前成员与 ACTIVE 交接分析/精确固定版本再校验；不自动开放列表或决定。兼容性：Windows 11 隔离 PG18/HTTP 已实测，Windows Server 2025/Debian 13 未实测；冻结 GET 路径/DTO 不变。升级/回滚：无 Schema/Migration/License 变化；移除 HND-02 只读注册即可关闭新增读取，保留已形成 Review/Audit。验证：定向31项及5 subtest、后端全量4097通过/3跳过/6149 subtests；自启一次性 PG 空库迁移/Alembic check、负责人/当前客户成员200、匿名401、跨项目/暂停成员404、错误版本不存在，原交接评审写链回归退出0并清理。已知问题：前两轮验收环境失败保留；本轮 wheel 构建环境缺 pip/setuptools 未成功，尚未固定包/Edge 验证；前端 HND-02 决定、真人确认、正式信任/安装/UAT/Gate 3～7/Pilot/Release 未通过。
 
 - 2026-10-25：0.1.0-dev.0/HND-05-A04-P03-R5 从修复提交重建 Windows 11 非发行候选，SHA-256 `3ddb96c66c5be0b32ce55454655805fb6644ba11d28d2ce0d73a8459315e26ff`；包内交接 DRAFT 校验报告及送审 IN_REVIEW 整链通过。兼容性：仅 Windows 11 合成信任已实测，Windows Server 2025/Debian 13 未实测。升级/回滚：无 API/Schema/License 或数据迁移；新包替代旧失败候选，回退前端会重现瞬时面板消失，既有合法 Action/Review/Audit 不删除。验证：22,196件逐件清洁解包、Edge/HTTPS/隔离 PostgreSQL 18、固定来源与双卡片、正式 Action、当前合格客户角色、校验/送审同号重放、Audit/回执及匿名/无项目权限/缺 Action/不合格 Reviewer 拒绝均退出0，临时进程/Vault/布局清理。已知问题：现有通用 Review 前端尚未接 HND-02 决定；真人客户确认、正式公钥/服务账户/法律放行、离线安装升级、完整链/UAT/Gate 3～7/Pilot/三平台 Release 未通过，本包不可发行。
