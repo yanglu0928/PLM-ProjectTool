@@ -11791,3 +11791,10 @@
 - Decision：A04只完成Windows写入模式的真实端口装配及组合回归；A05单独以一次性PG覆盖完整/缺口/竞态，不能以组合构造或合成事实替代。库存严格`max_roots=500`，Section现时六维沿用既有Owner，Review/Trace/Spec不另写简化SQL。
 - Reason：装配正确与真实业务状态通过是两个独立问题，原Next WBS合写不利于客观关闭；拆分不改变Scope或Gate。
 - Impact/Rollback/Verification：无Schema/API/权限/License权益变化，撤可选Windows路由即回404；必须对依赖缺失失败关闭与全量回归留证，A05前不宣称coverage真实PG通过。
+
+# DEC-20261024-1216：真实三维验收必须使用正式Owner与可复查现时数据
+
+- Date/WBS：2026-10-24 / `SOL-03-A06-P03-A05-P03-A05`；A04已装配真实来源图，A02的PG脚本仅用了合成事实。
+- Decision：本片从既有合成客户Section批准夹具建立真实Outline DRAFT，调用Windows显式路由观察order/source/coverage；变更Trace或资格后用新Key重证，旧Key只看初始Audit。若既有夹具缺完整Requirement源资格，记录失败来源并补独立正式Owner夹具，不用伪造事实返回值或关闭Gate。
+- Reason：程序包能否给用户试用取决于现时事实链，不取决于合同形状或合成Facts的持久成功。
+- Impact/Rollback/Verification：仅测试数据在一次性PG中创建并清理，无客户材料/秘密外发；失败则停止本项并处理前置或产品缺陷，其他独立WBS可继续。
