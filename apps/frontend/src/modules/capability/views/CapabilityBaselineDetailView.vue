@@ -5,6 +5,7 @@ import { SessionClient } from "@/modules/auth/api/sessionClient";
 import { sessionClientKey } from "@/modules/auth/api/sessionContext";
 import { CapabilityReadClient, CapabilityReadError, type CapabilityBaseline,
   type CapabilityVersion, type CapabilityItem } from "@/modules/capability/api/capabilityReadClient";
+import CapabilityVersionValidatePanel from "./CapabilityVersionValidatePanel.vue";
 
 const props = defineProps<{ session?: SessionClient; client?: CapabilityReadClient }>();
 const session = toRaw(props.session ?? inject(sessionClientKey, null) ?? new SessionClient());
@@ -135,6 +136,8 @@ onUnmounted(() => { mounted = false; reset(); unsubscribe(); });
         <template v-if="selected">
           <h3>能力条目 · 第 {{ selected.version_no }} 版</h3>
           <p v-if="selected.state !== 'APPROVED'">此版本尚非正式批准版本。</p>
+          <CapabilityVersionValidatePanel v-if="session.view?.deployment_role === 'DEPLOYMENT_ADMIN' && selected.state === 'DRAFT'"
+            :key="selected.baseline_version_id" :version="selected" :session="session" />
           <p v-if="!items.length">此版本暂无可显示条目。</p>
           <ul><li v-for="item in items" :key="item.capability_item_id">
             <strong>{{ item.capability_code }} · {{ item.name }}</strong>
