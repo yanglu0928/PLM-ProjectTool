@@ -11840,3 +11840,10 @@
 - Decision：由调用方使用已验的Solution Windows工厂构造完整来源、`terminal_context=True`的`OutlineReviewSubjectOwner`，并作为可选显式参数注入统一Review读、列表和命令组合器；三者由同一SOL-03 Owner类型驱动。未传入时保持原注册集合，不默认开启SOL-03；传入不合格Owner则启动失败关闭。
 - Reason：统一Review组合器只负责主体分发，不复制Solution/Document/Requirement/Trace当前事实图；保留已冻结Review API和原路由默认行为。
 - Impact/Rollback/Verification：内部非Breaking组合参数，无Schema/公开API/数据迁移；停止显式注入即可回退路由注册，已产生评审历史不得删除。验收须覆盖默认与显式注册、错误Owner拒绝，以及隔离PG合成客户读取/批准、来源撤销后拒绝与事务状态闭合；未达到时保持WBS未通过。
+
+# DEC-20261024-1223：当前候选包保留前端哈希分块并限定来源脏检查
+
+- Date/WBS：2026-10-24 / `PKG-PILOT-01-A01`；依据 CR-PKG-009，当前 Vite `dist` 已从单文件发展为多分块，且用户自有未跟踪 `.tmp/` 与构建输入无关。
+- Decision：非发行打包器仅允许根 `index.html` 和 `assets/` 下哈希命名 JS/CSS，保持唯一入口资源及全量逐件校验；来源提交检查仍拒绝任何已跟踪修改和除 `.tmp/` 外的未跟踪文件。`.tmp/` 不读取、不删除、不打包。
+- Reason：让当前源码产物可重建，同时保留来源真实性和前端静态资源白名单。
+- Impact/Rollback/Verification：无产品 API/Schema/权限变更；停止使用新候选即可回退。定向负例、真实前端布局和独立清洁解包必须通过；正式信任、法律与 Gate 不受此决定豁免。

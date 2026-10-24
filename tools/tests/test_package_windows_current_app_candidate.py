@@ -26,10 +26,11 @@ class CurrentAppCandidateTests(unittest.TestCase):
         self.wheel = self.root / "backend.whl"
         self.dist = self.root / "dist"
         (self.dist / "assets").mkdir(parents=True)
-        (self.dist / "assets" / "index-new.js").write_text("new js", encoding="utf-8")
-        (self.dist / "assets" / "index-new.css").write_text("new css", encoding="utf-8")
+        (self.dist / "assets" / "index-a1b2c3d4.js").write_text("new js", encoding="utf-8")
+        (self.dist / "assets" / "index-e5f6g7h8.css").write_text("new css", encoding="utf-8")
         (self.dist / "index.html").write_text(
-            '<script src="/assets/index-new.js"></script><link href="/assets/index-new.css">',
+            '<script src="/assets/index-a1b2c3d4.js"></script>'
+            '<link href="/assets/index-e5f6g7h8.css">',
             encoding="utf-8")
         self.old_payload = {
             "payload/runtime/packages/plm_assistant/__init__.py": b"old app",
@@ -111,6 +112,21 @@ class CurrentAppCandidateTests(unittest.TestCase):
         self._wheel()
         (self.dist / "index.html").write_text("no assets", encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "not referenced"):
+            self._build()
+
+    def test_hashed_frontend_chunks_are_included_and_unexpected_files_rejected(self) -> None:
+        (self.dist / "assets" / "ReviewPanel-B1c2D3e4.js").write_text("chunk js", encoding="utf-8")
+        (self.dist / "assets" / "ReviewPanel-B1c2D3e4.css").write_text("chunk css", encoding="utf-8")
+        result = self._build()
+        with zipfile.ZipFile(result["archive"]) as archive:
+            names = set(archive.namelist())
+            self.assertIn("payload/frontend/dist/assets/ReviewPanel-B1c2D3e4.js", names)
+            self.assertIn("payload/frontend/dist/assets/ReviewPanel-B1c2D3e4.css", names)
+            manifest = json.loads(archive.read("manifest.json"))
+            self.assertIn("payload/frontend/dist/assets/ReviewPanel-B1c2D3e4.js",
+                          manifest["frontend_sha256"])
+        (self.dist / "assets" / "debug.js.map").write_text("source map", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "unexpected frontend dist layout"):
             self._build()
 
 

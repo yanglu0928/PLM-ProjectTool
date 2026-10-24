@@ -74,10 +74,19 @@ def _frontend_sources(root: Path) -> dict[str, Path]:
             raise ValueError("private frontend file rejected")
         result[name] = path
     names = set(result)
-    js = [name for name in names if re.fullmatch(r"payload/frontend/dist/assets/index-[\w-]+\.js", name)]
-    css = [name for name in names if re.fullmatch(r"payload/frontend/dist/assets/index-[\w-]+\.css", name)]
-    if names != {FRONTEND_PREFIX + "index.html", *js, *css} or len(js) != 1 or len(css) != 1:
+    assets = names - {FRONTEND_PREFIX + "index.html"}
+    if (FRONTEND_PREFIX + "index.html" not in names or not assets
+            or any(not re.fullmatch(
+                r"assets/[A-Za-z0-9_-]+-[A-Za-z0-9_-]{8}\.(?:js|css)",
+                name.removeprefix(FRONTEND_PREFIX)) for name in assets)
+            or len({name.casefold() for name in names}) != len(names)):
         raise ValueError("unexpected frontend dist layout")
+    js = [name for name in assets if re.fullmatch(
+        r"payload/frontend/dist/assets/index-[A-Za-z0-9_-]{8}\.js", name)]
+    css = [name for name in assets if re.fullmatch(
+        r"payload/frontend/dist/assets/index-[A-Za-z0-9_-]{8}\.css", name)]
+    if len(js) != 1 or len(css) != 1:
+        raise ValueError("frontend entry assets missing or ambiguous")
     html = result[FRONTEND_PREFIX + "index.html"].read_text(encoding="utf-8")
     if "/assets/" + js[0].split("/")[-1] not in html \
             or "/assets/" + css[0].split("/")[-1] not in html:
@@ -213,8 +222,14 @@ def main() -> int:
     parser.add_argument("--source-commit", required=True)
     args = parser.parse_args()
     head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
-    dirty = subprocess.check_output(["git", "status", "--porcelain"], text=True).strip()
-    if head != args.source_commit or dirty:
+    # User-owned local scratch data is not a packaging input; all other untracked
+    # files and every tracked change still invalidate source-commit provenance.
+    tracked_dirty = subprocess.run(["git", "diff", "--quiet", "HEAD"], check=False).returncode
+    dirty = subprocess.check_output([
+        "git", "status", "--porcelain", "--untracked-files=all", "--",
+        ".", ":(exclude).tmp/",
+    ], text=True).strip()
+    if head != args.source_commit or tracked_dirty or dirty:
         raise ValueError("source commit must be clean HEAD")
     result = build_candidate(args.parent, args.wheel, args.frontend_dist,
                              args.output_parent, args.source_commit)
