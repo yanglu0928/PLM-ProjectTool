@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-25：0.1.0-dev.0/HND-05-A04-P02 交接 DRAFT 详情增加客户确认人送审面板；项目负责人显式读取当前 ACTIVE 客户角色、核对范围后送审，未知结果保留原确认人集合/操作号，201 只展示 IN_REVIEW 与评审入口，刷新后已有 Review 仍可打开。兼容性：Windows 11 前端回归/构建通过，Windows Server 2025/Debian 13 未实测。升级/回滚：仅前端资产，无 API/Schema/License/数据迁移；撤面板不删除合法 Review/Audit。验证：首轮自动成员读取遮蔽原文错误已按需加载修复；面板定向4/详情4、前端全量2006、typecheck/build退出0。已知问题：真实 Edge/HTTPS/PG/固定包、Action 覆盖组合及真人 Reviewer 决定未验；正式信任/安装/UAT/Gate/Pilot/Release 未通过。
+
 - 2026-10-25：0.1.0-dev.0/HND-05-A04-P01 增加冻结交接 DRAFT 版本原子送审的前端安全客户端：仅当前项目负责人、固定确认人集合和原操作号，严格验 `HND-02`/`IN_REVIEW` 首轮回执，不把送审当批准。兼容性：Windows 11 前端合同/构建通过，Windows Server 2025/Debian 13 未实测。升级/回滚：无 API/Schema/License 或数据迁移，撤前端客户端不删除合法 Review/Audit。验证：定向10、前端全量2001项、typecheck/build退出0；首次私有路径类型白名单遗漏已补。已知问题：确认人页面、真实 Edge/HTTPS/PG/包内送审、Reviewer 人工决定及正式信任/安装/UAT/Gate/Pilot/Release 未通过。
 
 - 2026-10-25：0.1.0-dev.0/HND-05-A03-P02 在交接 DRAFT 详情页增加显式当前来源校验面板，显示阻断原因与 Audit 时间/引用，未知结果保留原操作号并要求核对后重试；不把校验通过视为客户确认或批准。兼容性：Windows 11 前端回归/构建通过，Windows Server 2025/Debian 13 未实测。升级/回滚：仅前端资产，无 API/Schema/License 或数据迁移；回退面板不删除既有 Audit。验证：面板定向4及既有详情3、前端全量1991项、typecheck/build退出0。已知问题：真实 Edge/HTTPS/PG/固定包校验尚未验证，送审/Reviewer 及正式信任/安装/UAT/Gate/Pilot/Release 未通过；按 DEC-20261025-HND-A03-P02 随送审页面组合包内验收。

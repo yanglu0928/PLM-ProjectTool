@@ -7,6 +7,7 @@ import { EvidenceViewerClient, EvidenceViewerClientError, type EvidenceViewerDes
 import { HandoverReadClient, HandoverReadError, type HandoverAnalysisItemView, type HandoverAnalysisView,
   type HandoverAnalysisVersionView, type HandoverItemCursor, type HandoverVersionCursor } from "@/modules/handover/api/handoverReadClient";
 import HandoverVersionValidatePanel from "./HandoverVersionValidatePanel.vue";
+import HandoverVersionSubmitReviewPanel from "./HandoverVersionSubmitReviewPanel.vue";
 
 const props = defineProps<{ session?: SessionClient; handover?: HandoverReadClient; evidence?: EvidenceViewerClient }>();
 const session = toRaw(props.session ?? inject(sessionClientKey, null) ?? new SessionClient());
@@ -109,6 +110,9 @@ onUnmounted(() => { mounted = false; generation += 1; itemGeneration += 1; evide
       </section>
       <section v-if="selectedVersion || itemBusy || itemError" aria-labelledby="handover-items-title"><h2 id="handover-items-title">问题卡片</h2>
         <p v-if="selectedVersion">固定版本 {{ selectedVersion.version_no }}；仅显示服务器授权的引用，不复制资料原文。</p>
+        <p v-if="selectedVersion?.review_ref">该版本已有评审 {{ selectedVersion.review_ref }}；
+          <RouterLink :to="{ name: 'project-review-detail', params: { projectId: route.params.projectId,
+            reviewId: selectedVersion.review_ref } }">打开评审与人工决定</RouterLink></p>
         <details v-if="selectedVersion"><summary>查看固定输入引用</summary>
           <ul><li v-for="source in selectedVersion.source_documents" :key="source.document_version_id">文档版本 {{ source.document_version_id }} ·
             <RouterLink :to="{ name: 'project-document-detail', params: { projectId: route.params.projectId,
@@ -118,6 +122,8 @@ onUnmounted(() => { mounted = false; generation += 1; itemGeneration += 1; evide
               taskId: task.ai_task_id } }">查看任务与非正式建议状态</RouterLink></li></ul>
         </details>
         <HandoverVersionValidatePanel v-if="selectedVersion?.state === 'DRAFT'"
+          :key="selectedVersion.handover_analysis_version_id" :version="selectedVersion" :session="session" />
+        <HandoverVersionSubmitReviewPanel v-if="selectedVersion?.state === 'DRAFT'"
           :key="selectedVersion.handover_analysis_version_id" :version="selectedVersion" :session="session" />
         <p v-if="itemBusy" role="status">正在读取固定版本与问题清单…</p><p v-if="itemError" role="alert">{{ itemError }}</p>
         <p v-if="selectedVersion && !items.length && !itemBusy">该版本没有可见问题。</p>

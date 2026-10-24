@@ -82,4 +82,14 @@ describe("ProjectHandoverDetailView", () => {
     await locate().trigger("click"); await flushPromises(); expect(wrapper.text()).toContain("已核验的原文位置");
     await locate().trigger("click"); await flushPromises(); expect(wrapper.text()).not.toContain("已核验的原文位置");
     expect(wrapper.get("[role=alert]").text()).toContain("无权查看"); wrapper.unmount(); });
+  it("keeps an existing Review reachable after the DRAFT panel disappears", async () => {
+    const supplied = clients(); vi.mocked(supplied.handover.getVersion).mockResolvedValueOnce({ ...detail,
+      state: "IN_REVIEW", review_ref: trace, review_round_ref: evidenceId });
+    const { wrapper } = await view(await session(), supplied);
+    await wrapper.findAll("button").find(button => button.text().includes("版本 1 的问题"))!.trigger("click");
+    await flushPromises();
+    expect(wrapper.get(`a[href="/projects/${project}/reviews/${trace}"]`).text()).toContain("打开评审");
+    expect(wrapper.findAll("button").some(button => button.text() === "提交交接版本评审")).toBe(false);
+    wrapper.unmount();
+  });
 });
