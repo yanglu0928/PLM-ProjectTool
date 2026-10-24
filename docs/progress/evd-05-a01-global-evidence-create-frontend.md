@@ -15,3 +15,5 @@
 实现：新增严格 GLOBAL Evidence Create 客户端与独立管理员页面，只提供整文档 Locator；从 DocumentReadClient 分页选择固定版本，创建成功展示 `CANDIDATE` 并引导到现有资格页面。原操作号保存在浏览器 SessionStorage，结果不明须核对后同号重试；未知/存储损坏不静默换号。SessionClient 保管 CSRF，不暴露给页面或 Evidence 客户端。没有自动资格批准、AI 调用或客户数据外发。
 
 首轮定向测试发现新客户端 UUID 正则缺少第四段，合法 DocumentId 被前端误拒，5/8 失败；修复后定向 8/8、前端全量 170 文件 1912/1912、typecheck 和 Vite build 通过。错误记录保留，不把首轮当 PASS。本片无新 Migration/API/License 依赖；真实 Windows 11 Edge/隔离 PG 正向与拒绝矩阵留 `EVD-05-A02`，完成后继续 CapabilityVersion 用户入口。Pilot/Gate 仍 `NOT_READY`。
+
+后续 `EVD-05-A02-P01` 已在 Win11 固定非发行候选中完成合成正向 Edge/PG 创建/反读，并证明 Evidence 仍为 CANDIDATE、同源指纹/Audit/收据闭合；首轮测试导航失败及同候选复验见 `docs/progress/evd-05-a02-packaged-edge.md`。上段保留源码验收时点的未测事实。包内拒绝矩阵、人工资格和 Pilot/Gate 仍待。
