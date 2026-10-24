@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-24：0.1.0-dev.0/SOL-03-A06-P04-P03-A04-P02新增Outline送审Windows显式Router组合，完整来源Win11隔离PG18.6真实HTTP201/同Key回放与数据库单Review/Round/快照/START/收据闭合；错Origin/字段/项目版本/异Key拒绝，撤Trace后终态重证拒绝。兼容性/升级/回滚：仅显式挂载既有冻结API，默认关闭，无Schema/License权益或数据迁移；停用Router可撤入口，真实历史不可删除。验证：隔离PG HTTP脚本exit0、后端全量4063通过/3跳过/6112子例。已知问题：统一Review读/终态分发尚未注册SOL-03，真实Edge/真人客户、正式信任、Pilot/Gate3及三平台发行未完成。
+
 - 2026-10-24：0.1.0-dev.0/SOL-03-A06-P04-P03-A04-P01新增冻结Outline `:submit-review` 可选HTTP合同与默认关闭注入点，严格Origin/Session/CSRF/幂等/请求字段、固定SOL-03响应、201/ETag/no-store与错误映射。兼容性/升级/回滚：原冻结 `/api/v1` 路径，不改Schema/权限/License或数据；默认404，撤未挂载Router可回滚。验证：Outline合同11、与Section合同合计22通过；后端全量4063通过/3跳过/6112子例。已知问题：Windows显式挂载与真实HTTP/PG、统一Review读/终态分发、浏览器/真实客户、正式信任、Pilot/Gate3及三平台发行未完成。
 
 - 2026-10-24：0.1.0-dev.0/SOL-03-A06-P04-P03-A03-P02共用Outline VALIDATE完整来源图并新增Windows内部Review Subject/提交组合，实测已批准需求/章节/Trace三维PASS后的统一Review START、固定快照/收据、同Key回放与撤Trace后终态重证拒绝。兼容性/升级/回滚：Win11内部候选，无Schema/公开API/License权益或数据迁移；停止未公开装配可回滚，已存历史不得删除。验证：Win11隔离PG18.6合成全源脚本exit0、原VALIDATE组合11项/65子例、后端全量4052通过/3跳过/6112子例。已知问题：未挂载公开提交/Review终态分发或浏览器，合成身份非真实客户，正式信任/Pilot/Gate3/三平台发行未完成。

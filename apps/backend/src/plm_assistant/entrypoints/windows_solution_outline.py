@@ -49,6 +49,7 @@ from plm_assistant.modules.solution.api.structured_spec_read import create_struc
 from plm_assistant.modules.solution.api.structured_spec_validate import create_structured_spec_validate_router
 from plm_assistant.modules.solution.api.structured_spec_submit_review import create_structured_spec_review_submission_router
 from plm_assistant.modules.solution.api.section_submit_review import create_section_review_submission_router
+from plm_assistant.modules.solution.api.outline_submit_review import create_outline_review_submission_router
 from plm_assistant.modules.solution.api.section_version_read import create_section_version_read_router
 from plm_assistant.modules.solution.api.section_version_validate import create_section_version_validate_router
 from plm_assistant.modules.solution.api.section_version_list_cursor import SectionVersionListCursorCodec
@@ -604,6 +605,30 @@ def create_windows_outline_review_submission_service(
                 creation_repository=SqlAlchemyReviewCreationRepository(),
                 round_repository=SqlAlchemyReviewStartRepository(),
                 audit=audit, subjects=owner), subjects=owner)
+    except Exception:
+        raise ProductionSolutionOutlineStartupError() from None
+
+
+def create_windows_outline_review_submission_router(
+    *, runtime, sessions, origins, license_guard, audit,
+    document_storage_root: Path, parse_result_storage_root: Path,
+    documents, downloads, parse_results,
+) -> APIRouter:
+    """Explicitly mount frozen SOL-03 submit only with complete source trust."""
+    if any(value is None for value in (
+            runtime, sessions, origins, license_guard, audit,
+            document_storage_root, parse_result_storage_root,
+            documents, downloads, parse_results)):
+        raise ProductionSolutionOutlineStartupError()
+    try:
+        service = create_windows_outline_review_submission_service(
+            runtime=runtime, license_guard=license_guard, audit=audit,
+            document_storage_root=document_storage_root,
+            parse_result_storage_root=parse_result_storage_root,
+            documents=documents, downloads=downloads,
+            parse_results=parse_results)
+        return create_outline_review_submission_router(
+            sessions=sessions, origins=origins, submissions=service)
     except Exception:
         raise ProductionSolutionOutlineStartupError() from None
 
