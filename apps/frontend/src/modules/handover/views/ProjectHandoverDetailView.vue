@@ -94,6 +94,11 @@ onUnmounted(() => { mounted = false; generation += 1; itemGeneration += 1; evide
       <p v-if="error" role="alert">{{ error }}</p>
       <dl v-if="analysis"><dt>分析目的</dt><dd>{{ analysis.analysis_purpose }}</dd><dt>状态</dt><dd>{{ analysis.state }}</dd>
         <dt>正式版本</dt><dd>{{ analysis.current_approved_version_ref ?? "尚未形成" }}</dd><dt>版本标记</dt><dd>{{ analysis.etag }}</dd></dl>
+      <p v-if="analysis?.state === 'ACTIVE' && identity.authorized_projects.some(item => item.project_id === ids().projectId
+        && (item.role === 'PROJECT_MANAGER' || item.role === 'IMPLEMENTATION_MEMBER'))">
+        <RouterLink :to="{ name: 'project-handover-version-create', params: { projectId: route.params.projectId,
+          analysisId: route.params.analysisId } }">创建有原文依据的问题卡片草稿版本</RouterLink>
+      </p>
       <section v-if="analysis" aria-labelledby="handover-versions-title"><h2 id="handover-versions-title">固定版本</h2>
         <p v-if="!versions.length">暂无可见版本。</p><p v-if="versionError" role="alert">{{ versionError }}</p>
         <ol><li v-for="value in versions" :key="value.handover_analysis_version_id"><strong>版本 {{ value.version_no }}</strong>
