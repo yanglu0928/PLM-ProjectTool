@@ -1,0 +1,382 @@
+from __future__ import annotations
+
+import os
+import hashlib
+import stat
+import tempfile
+import time
+import unittest
+import uuid
+from pathlib import Path
+from types import SimpleNamespace
+
+from plm_assistant.modules.document.infrastructure.local_storage import (
+    LocalFileStorage, LocalStorageError, _is_reparse,
+)
+
+
+class LocalFileStorageTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory(prefix="plm-storage-test-")
+        self.addCleanup(self.temporary.cleanup)
+        self.root = Path(self.temporary.name) / "data"
+        self.root.mkdir()
+        self.store = LocalFileStorage(self.root)
+        self.project = uuid.uuid4()
+        self.file_id = uuid.uuid4()
+
+    def test_scope_bound_locators_and_no_overwrite_publish(self):
+        stage, final = self.store.locators(
+            scope="PROJECT", project_id=self.project,
+            file_object_id=self.file_id,
+        )
+        self.assertTrue(stage.startswith(f"temp/projects/{self.project.hex}/"))
+        self.assertEqual(final, stage.removeprefix("temp/"))
+        with self.store.reserve_staging(stage) as stream:
+            stream.write(b"synthetic complete content")
+        with self.assertRaises(LocalStorageError):
+            self.store.reserve_staging(stage)
+        self.store.promote(stage, final)
+        self.assertFalse((self.root / stage).exists())
+        self.assertEqual((self.root / final).read_bytes(), b"synthetic complete content")
+        with self.store.reserve_staging(stage) as stream:
+            stream.write(b"must not overwrite")
+        with self.assertRaises(LocalStorageError):
+            self.store.promote(stage, final)
+        self.assertEqual((self.root / final).read_bytes(), b"synthetic complete content")
+        self.assertEqual((self.root / stage).read_bytes(), b"must not overwrite")
+
+    def test_stale_cleanup_requires_same_identity_age_and_no_active_writer(self):
+        stage, _ = self.store.locators(
+            scope="PROJECT", project_id=self.project, file_object_id=self.file_id,
+        )
+        path = self.root / stage
+        with self.store.reserve_staging(stage) as stream:
+            stream.write(b"synthetic orphan")
+            with self.assertRaises(LocalStorageError):
+                self.store.inspect_staging_for_cleanup(stage)
+        old_ns = time.time_ns() - 8 * 86_400 * 1_000_000_000
+        os.utime(path, ns=(old_ns, old_ns))
+        snapshot = self.store.inspect_staging_for_cleanup(stage)
+        self.assertIsNotNone(snapshot)
+        with self.assertRaises(LocalStorageError):
+            self.store.discard_stale_staging(
+                stage, snapshot=snapshot, cutoff_ns=old_ns - 1,
+            )
+        path.write_bytes(b"replacement bytes")
+        with self.assertRaises(LocalStorageError):
+            self.store.discard_stale_staging(
+                stage, snapshot=snapshot, cutoff_ns=time.time_ns(),
+            )
+        self.assertEqual(path.read_bytes(), b"replacement bytes")
+        path.unlink()
+        with self.store.reserve_staging(stage) as stream:
+            stream.write(b"synthetic orphan")
+        os.utime(path, ns=(old_ns, old_ns))
+        with self.assertRaises(LocalStorageError):
+            self.store.discard_stale_staging(
+                stage, snapshot=snapshot, cutoff_ns=time.time_ns(),
+            )
+        new_snapshot = self.store.inspect_staging_for_cleanup(stage)
+        self.store.discard_stale_staging(
+            stage, snapshot=new_snapshot, cutoff_ns=time.time_ns(),
+        )
+        self.assertFalse(path.exists())
+
+    def test_staging_scan_only_returns_canonical_bounded_candidates(self):
+        project_stage, _ = self.store.locators(
+            scope="PROJECT", project_id=self.project, file_object_id=self.file_id,
+        )
+        global_id = uuid.uuid4()
+        global_stage, _ = self.store.locators(
+            scope="GLOBAL", project_id=None, file_object_id=global_id,
+        )
+        for locator in (project_stage, global_stage):
+            with self.store.reserve_staging(locator) as stream:
+                stream.write(b"synthetic")
+        (self.root / project_stage).parent.joinpath("unknown.txt").write_bytes(b"keep")
+        scan = self.store.scan_staging_candidates()
+        self.assertEqual({item.upload_id for item in scan.candidates},
+                         {self.file_id, global_id})
+        self.assertEqual(scan.skipped, 1)
+        self.assertFalse(scan.truncated)
+        bounded = self.store.scan_staging_candidates(max_candidates=1)
+        self.assertEqual(len(bounded.candidates), 1)
+        self.assertTrue(bounded.truncated)
+        self.assertTrue((self.root / project_stage).exists())
+
+    def test_verified_publish_streams_bytes_and_hash(self):
+        stage, final = self.store.locators(
+            scope="GLOBAL", project_id=None, file_object_id=self.file_id,
+        )
+        content = b"synthetic document bytes" * 4096
+        digest = hashlib.sha256(content).digest()
+        with self.store.reserve_staging(stage) as stream:
+            stream.write(content)
+        proof = self.store.publish_verified(
+            stage, final, expected_sha256=digest,
+            expected_size=len(content), max_bytes=len(content),
+        )
+        self.assertEqual((proof.locator, proof.sha256, proof.size_bytes),
+                         (final, digest, len(content)))
+        self.assertFalse((self.root / stage).exists())
+        self.assertEqual((self.root / final).read_bytes(), content)
+
+    def test_verified_download_snapshot_is_bounded_and_independent(self):
+        stage, final = self.store.locators(
+            scope="PROJECT", project_id=self.project, file_object_id=self.file_id,
+        )
+        content = b"verified download bytes" * 100_000
+        digest = hashlib.sha256(content).digest()
+        with self.store.reserve_staging(stage) as stream:
+            stream.write(content)
+        self.store.promote(stage, final)
+        with self.store.open_verified_snapshot(
+                final, expected_sha256=digest, expected_size=len(content),
+                max_bytes=100_000_000) as snapshot:
+            (self.root / final).write_bytes(b"changed after proof")
+            self.assertEqual(snapshot.read(), content)
+        with self.assertRaises(LocalStorageError):
+            self.store.open_verified_snapshot(
+                final, expected_sha256=digest, expected_size=len(content),
+                max_bytes=100_000_000,
+            )
+
+    def test_download_snapshot_rejects_unverified_or_staged_content(self):
+        stage, final = self.store.locators(
+            scope="GLOBAL", project_id=None, file_object_id=self.file_id,
+        )
+        content = b"private content"
+        digest = hashlib.sha256(content).digest()
+        with self.store.reserve_staging(stage) as stream:
+            stream.write(content)
+        with self.assertRaises(LocalStorageError):
+            self.store.open_verified_snapshot(
+                stage, expected_sha256=digest, expected_size=len(content),
+                max_bytes=100_000_000,
+            )
+        self.store.promote(stage, final)
+        for sha, size, limit in (
+            (b"x" * 32, len(content), 100_000_000),
+            (digest, len(content) + 1, 100_000_000),
+            (digest, len(content), len(content) - 1),
+            (digest, len(content), 100_000_001),
+        ):
+            with self.subTest(size=size, limit=limit), self.assertRaises(LocalStorageError):
+                self.store.open_verified_snapshot(
+                    final, expected_sha256=sha, expected_size=size,
+                    max_bytes=limit,
+                )
+
+    def test_bad_hash_size_or_limit_never_promotes(self):
+        stage, final = self.store.locators(
+            scope="PROJECT", project_id=self.project, file_object_id=self.file_id,
+        )
+        with self.store.reserve_staging(stage) as stream:
+            stream.write(b"wrong bytes")
+        for digest, size, limit in (
+            (b"0" * 32, 11, 11),
+            (hashlib.sha256(b"wrong bytes").digest(), 10, 9),
+            (hashlib.sha256(b"wrong bytes").digest(), 10, 8),
+        ):
+            with self.subTest(size=size, limit=limit), self.assertRaises(LocalStorageError):
+                self.store.publish_verified(
+                    stage, final, expected_sha256=digest,
+                    expected_size=size, max_bytes=limit,
+                )
+            self.assertFalse((self.root / final).exists())
+
+    def test_recover_only_complete_final_file(self):
+        stage, final = self.store.locators(
+            scope="GLOBAL", project_id=None, file_object_id=self.file_id,
+        )
+        content = b"synthetic recovered content"
+        digest = hashlib.sha256(content).digest()
+        with self.store.reserve_staging(stage) as stream:
+            stream.write(content)
+        with self.assertRaises(LocalStorageError):
+            self.store.recover_verified_final(
+                stage, final, expected_sha256=digest,
+                expected_size=len(content), max_bytes=len(content),
+            )
+        self.store.promote(stage, final)
+        proof = self.store.recover_verified_final(
+            stage, final, expected_sha256=digest,
+            expected_size=len(content), max_bytes=len(content),
+        )
+        self.assertEqual((proof.locator, proof.sha256, proof.size_bytes),
+                         (final, digest, len(content)))
+        with self.store.reserve_staging(stage) as stream:
+            stream.write(b"ambiguous second staged file")
+        with self.assertRaises(LocalStorageError):
+            self.store.recover_verified_final(
+                stage, final, expected_sha256=digest,
+                expected_size=len(content), max_bytes=len(content),
+            )
+
+    def test_recover_only_exact_linked_pair(self):
+        stage, final = self.store.locators(
+            scope="GLOBAL", project_id=None, file_object_id=self.file_id,
+        )
+        content = b"synthetic linked crash window"
+        digest = hashlib.sha256(content).digest()
+        with self.store.reserve_staging(stage) as stream:
+            stream.write(content)
+        (self.root / final).parent.mkdir(parents=True)
+        os.link(self.root / stage, self.root / final)
+        proof = self.store.recover_linked_pair(
+            stage, final, expected_sha256=digest,
+            expected_size=len(content), max_bytes=len(content),
+        )
+        self.assertEqual((proof.locator, proof.sha256, proof.size_bytes),
+                         (final, digest, len(content)))
+        self.assertFalse((self.root / stage).exists())
+        self.assertEqual((self.root / final).read_bytes(), content)
+
+    def test_linked_recovery_rejects_extra_or_unrelated_links(self):
+        stage, final = self.store.locators(
+            scope="GLOBAL", project_id=None, file_object_id=self.file_id,
+        )
+        content = b"synthetic linked crash window"
+        digest = hashlib.sha256(content).digest()
+        with self.store.reserve_staging(stage) as stream:
+            stream.write(content)
+        (self.root / final).parent.mkdir(parents=True)
+        os.link(self.root / stage, self.root / final)
+        extra = Path(self.temporary.name) / "extra-link"
+        os.link(self.root / stage, extra)
+        with self.assertRaises(LocalStorageError):
+            self.store.recover_linked_pair(
+                stage, final, expected_sha256=digest,
+                expected_size=len(content), max_bytes=len(content),
+            )
+        self.assertTrue((self.root / stage).exists())
+        extra.unlink()
+        (self.root / final).unlink()
+        (self.root / final).write_bytes(content)
+        with self.assertRaises(LocalStorageError):
+            self.store.recover_linked_pair(
+                stage, final, expected_sha256=digest,
+                expected_size=len(content), max_bytes=len(content),
+            )
+        self.assertTrue((self.root / stage).exists())
+
+    def test_recovery_inspection_classifies_without_mutation(self):
+        content = b"synthetic inspected content"
+        digest = hashlib.sha256(content).digest()
+        stage, final = self.store.locators(
+            scope="GLOBAL", project_id=None, file_object_id=self.file_id,
+        )
+
+        def shape():
+            return self.store.inspect_recovery(
+                stage, final, expected_sha256=digest,
+                expected_size=len(content), max_bytes=len(content),
+            ).shape
+
+        self.assertEqual(shape(), "NONE")
+        with self.store.reserve_staging(stage) as stream:
+            stream.write(content)
+        self.assertEqual(shape(), "STAGE_ONLY")
+        (self.root / final).parent.mkdir(parents=True)
+        os.link(self.root / stage, self.root / final)
+        self.assertEqual(shape(), "LINKED_PAIR")
+        (self.root / final).unlink()
+        (self.root / final).write_bytes(content)
+        self.assertEqual(shape(), "BOTH_UNRELATED")
+        (self.root / stage).unlink()
+        self.assertEqual(shape(), "FINAL_VERIFIED")
+        (self.root / final).write_bytes(b"different bytes")
+        self.assertEqual(shape(), "FINAL_INVALID")
+
+    def test_recovery_inspection_rejects_untrusted_extra_link(self):
+        content = b"synthetic extra link"
+        digest = hashlib.sha256(content).digest()
+        stage, final = self.store.locators(
+            scope="GLOBAL", project_id=None, file_object_id=self.file_id,
+        )
+        with self.store.reserve_staging(stage) as stream:
+            stream.write(content)
+        os.link(self.root / stage, Path(self.temporary.name) / "extra-link")
+        self.assertEqual(self.store.inspect_recovery(
+            stage, final, expected_sha256=digest,
+            expected_size=len(content), max_bytes=len(content),
+        ).shape, "UNSAFE")
+
+    def test_global_scope_and_invalid_uuids_rejected(self):
+        stage, final = self.store.locators(
+            scope="GLOBAL", project_id=None, file_object_id=self.file_id,
+        )
+        self.assertTrue(stage.startswith("temp/global/objects/"))
+        self.assertTrue(final.startswith("global/objects/"))
+        for kwargs in (
+            dict(scope="GLOBAL", project_id=self.project, file_object_id=self.file_id),
+            dict(scope="PROJECT", project_id=None, file_object_id=self.file_id),
+            dict(scope="PROJECT", project_id=uuid.UUID(int=0), file_object_id=self.file_id),
+            dict(scope="GLOBAL", project_id=None, file_object_id=uuid.UUID(int=0)),
+        ):
+            with self.subTest(kwargs=kwargs), self.assertRaises(LocalStorageError):
+                self.store.locators(**kwargs)
+
+    def test_path_traversal_and_unregistered_areas_rejected(self):
+        with self.assertRaises(LocalStorageError):
+            self.store.reserve_staging(None)
+        for locator in (
+            "../outside", "/tmp/outside", "C:/outside", "temp/../outside",
+            "temp/global/objects/aa/" + "A" * 32,
+            "plugin-data/objects/aa/" + self.file_id.hex,
+            "temp/global/objects/aa/" + self.file_id.hex + "/extra",
+            "temp/global/objects/aa/" + self.file_id.hex[:1] + "\\" + self.file_id.hex[2:],
+        ):
+            with self.subTest(locator=locator), self.assertRaises(LocalStorageError):
+                self.store.reserve_staging(locator)
+
+    def test_symlink_or_reparse_component_rejected(self):
+        outside = Path(self.temporary.name) / "outside"
+        outside.mkdir()
+        try:
+            os.symlink(outside, self.root / "temp", target_is_directory=True)
+        except (OSError, NotImplementedError):
+            self.skipTest("symlink creation unavailable for this account")
+        stage, _ = self.store.locators(
+            scope="GLOBAL", project_id=None, file_object_id=self.file_id,
+        )
+        with self.assertRaises(LocalStorageError):
+            self.store.reserve_staging(stage)
+        self.assertEqual(list(outside.iterdir()), [])
+
+    def test_root_symlink_rejected(self):
+        link = Path(self.temporary.name) / "data-link"
+        try:
+            os.symlink(self.root, link, target_is_directory=True)
+        except (OSError, NotImplementedError):
+            self.skipTest("symlink creation unavailable for this account")
+        with self.assertRaises(LocalStorageError):
+            LocalFileStorage(link)
+
+    def test_reparse_flag_and_hardlink_source_rejected(self):
+        self.assertTrue(_is_reparse(SimpleNamespace(
+            st_mode=stat.S_IFDIR, st_file_attributes=0x400,
+        )))
+        stage, final = self.store.locators(
+            scope="GLOBAL", project_id=None, file_object_id=self.file_id,
+        )
+        with self.store.reserve_staging(stage) as stream:
+            stream.write(b"synthetic")
+        os.link(self.root / stage, Path(self.temporary.name) / "extra-link")
+        with self.assertRaises(LocalStorageError):
+            self.store.promote(stage, final)
+
+    @unittest.skipUnless(os.name == "nt", "case aliases are Windows-specific")
+    def test_windows_case_alias_directory_rejected(self):
+        (self.root / "temp").mkdir()
+        (self.root / "temp" / "GLOBAL").mkdir()
+        stage, _ = self.store.locators(
+            scope="GLOBAL", project_id=None, file_object_id=self.file_id,
+        )
+        with self.assertRaises(LocalStorageError):
+            self.store.reserve_staging(stage)
+
+
+if __name__ == "__main__":
+    unittest.main()

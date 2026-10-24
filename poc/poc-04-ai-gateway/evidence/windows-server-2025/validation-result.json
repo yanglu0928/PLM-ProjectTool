@@ -1,0 +1,99 @@
+{
+  "status": "PASS",
+  "environment": {
+    "platform": {
+      "system": "Windows",
+      "release": "2025Server",
+      "version": "10.0.26100",
+      "machine": "AMD64"
+    },
+    "python_version": "3.13.15",
+    "packages": {
+      "httpx": "0.28.1",
+      "jsonschema": "4.26.0"
+    },
+    "secret_values_recorded": false,
+    "validation_mode": "deterministic_mock_transport"
+  },
+  "scenario_count": 11,
+  "passed_count": 11,
+  "scenarios": [
+    {
+      "name": "text_completion",
+      "status": "PASS",
+      "duration_seconds": 0.000572,
+      "text_match": true
+    },
+    {
+      "name": "sse_stream",
+      "status": "PASS",
+      "duration_seconds": 0.000618,
+      "chunk_text_match": true
+    },
+    {
+      "name": "structured_json",
+      "status": "PASS",
+      "duration_seconds": 0.000333,
+      "schema_match": true
+    },
+    {
+      "name": "retry_503",
+      "status": "PASS",
+      "duration_seconds": 0.00034,
+      "recovered": true,
+      "attempts": 2,
+      "expected_initial_error": "AI_PROVIDER_UNAVAILABLE"
+    },
+    {
+      "name": "rate_limit_429",
+      "status": "PASS",
+      "duration_seconds": 0.000303,
+      "recovered": true,
+      "attempts": 2,
+      "expected_initial_error": "AI_RATE_LIMIT"
+    },
+    {
+      "name": "invalid_key_401",
+      "status": "PASS",
+      "duration_seconds": 0.000146,
+      "error_code_match": true,
+      "attempts": 1,
+      "non_retryable": true
+    },
+    {
+      "name": "timeout",
+      "status": "PASS",
+      "duration_seconds": 0.000219,
+      "error_code_match": true,
+      "attempts": 3
+    },
+    {
+      "name": "stream_interrupted_no_retry",
+      "status": "PASS",
+      "duration_seconds": 0.000188,
+      "error_code_match": true,
+      "single_attempt": true
+    },
+    {
+      "name": "json_retry_recovery",
+      "status": "PASS",
+      "duration_seconds": 0.00052,
+      "schema_match": true,
+      "attempts": 2
+    },
+    {
+      "name": "schema_failure",
+      "status": "PASS",
+      "duration_seconds": 0.000801,
+      "error_code_match": true
+    },
+    {
+      "name": "business_provider_boundary",
+      "status": "PASS",
+      "duration_seconds": 8e-06,
+      "gateway_has_no_vendor_url": true,
+      "gateway_has_no_vendor_sdk": true
+    }
+  ],
+  "live_deepseek": "SEE_SEPARATE_LIVE_VALIDATION_RESULT"
+}

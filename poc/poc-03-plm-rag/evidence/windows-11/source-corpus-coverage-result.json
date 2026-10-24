@@ -1,0 +1,31 @@
+{
+  "schema_version": "poc-03.source-corpus-coverage-result.v1",
+  "generated_at": "2026-09-18T00:52:31.745396+00:00",
+  "status": "PASS_FOR_HUMAN_REVIEW",
+  "summary": {
+    "parsed_document_count": 29,
+    "document_coverage_count": 29,
+    "chunk_count": 1695,
+    "candidate_count": 120,
+    "candidate_status": "PENDING_HUMAN_REVIEW",
+    "source_document_counts": {
+      "CONTRACT": 4,
+      "STANDARD_CAPABILITY": 19,
+      "SURVEY": 1,
+      "TECHNICAL_AGREEMENT": 5
+    },
+    "candidate_counts": {
+      "CONTRACT": 20,
+      "STANDARD_CAPABILITY": 76,
+      "SURVEY": 4,
+      "TECHNICAL_AGREEMENT": 20
+    }
+  },
+  "privacy": {
+    "source_files_committed": false,
+    "source_names_committed": false,
+    "parsed_content_committed": false,
+    "candidate_content_committed": false
+  },
+  "conclusion": "The four required source types are represented, but every candidate still requires human approval."
+}

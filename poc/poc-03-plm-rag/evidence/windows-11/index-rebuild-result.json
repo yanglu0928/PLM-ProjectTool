@@ -1,0 +1,25 @@
+{
+  "schema_version": "poc-03.index-rebuild-result.v1",
+  "generated_at": "2026-09-17T22:47:30.822724+08:00",
+  "status": "PASS",
+  "input_source": "SYNTHETIC_NON_CUSTOMER",
+  "result": {
+    "old_index_id": "plm-rag-poc03-qwen37-1024-v1",
+    "old_binding_fingerprint": "e193113829b7921199966abe01f45b4760fb170949ec72756571e114e955dd08",
+    "new_index_id": "plm-rag-poc03-text-embedding-v4-768-v2",
+    "new_binding_fingerprint": "1819f148e2c8d593d4297d13a01ffb60493638d90c574ba3416b6a1d82da9ca7",
+    "source_record_count": 120,
+    "rebuilt_record_count": 120,
+    "unique_source_hash_count": 120,
+    "request_count": 12,
+    "reused_vector_count": 0,
+    "returned_dimension": 768,
+    "old_index_mutation_rejected": true,
+    "new_index_created": true,
+    "full_rebuild_completed": true,
+    "customer_content_uploaded": false,
+    "input_text_committed": false,
+    "embedding_values_committed": false,
+    "api_key_committed": false
+  }
+}

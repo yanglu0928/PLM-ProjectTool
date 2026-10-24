@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "pgvector_version": "0.8.6",
+  "source_commit": "8ee86c96f0fd72390f890aa8a336fda6d3ab4c6c",
+  "postgresql_version": "18.6",
+  "architecture": "x64",
+  "vector_dll_sha256": "e070cdd11882ddc2560d0ae242aab323b49f5f876481345c3bece9fe5bba2fd4",
+  "completed_at_utc": "2026-09-17T07:06:35.4944185Z"
+}

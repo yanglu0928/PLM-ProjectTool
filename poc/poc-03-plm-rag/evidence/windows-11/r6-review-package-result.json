@@ -1,0 +1,21 @@
+{
+  "schema_version": "poc-03.r6-review-package-result.v1",
+  "generated_at": "2026-09-18",
+  "status": "AWAITING_HUMAN_CONFIRMATION",
+  "review_scope_count": 6,
+  "preserved_case_count": 114,
+  "classification_change_count": 0,
+  "evidence_candidate_count": 36,
+  "unresolved_original_count": 0,
+  "workbook_sheet_count": 3,
+  "preview_count": 3,
+  "formula_error_count": 0,
+  "privacy": {
+    "workbook_committed": false,
+    "queries_committed": false,
+    "source_names_committed": false,
+    "document_content_committed": false,
+    "reviewer_names_committed": false
+  },
+  "conclusion": "The six-case R6 package is ready for human confirmation; no R6 Golden Dataset has been exported."
+}

@@ -1,0 +1,32 @@
+{
+    admin off
+    auto_https disable_redirects
+}
+
+# Render every __PLACEHOLDER__ from validated, non-secret deployment inputs.
+# The certificate/key files are supplied on the target host; never bundle keys.
+https://__PUBLIC_HOST__ {
+    tls "__TLS_CERT_PATH__" "__TLS_KEY_PATH__"
+
+    @api path /api/v1 /api/v1/* /health /health/*
+    handle @api {
+        reverse_proxy 127.0.0.1:__API_PORT__
+    }
+
+    @unknown_api path /api /api/*
+    handle @unknown_api {
+        respond "Not Found" 404
+    }
+
+    handle {
+        root * "__FRONTEND_ROOT__"
+        try_files {path} /index.html
+        file_server
+    }
+}
+
+# Explicitly refuse unmatched Host rather than serving an empty 200.
+https://:443 {
+    tls "__TLS_CERT_PATH__" "__TLS_KEY_PATH__"
+    respond "Misdirected Request" 421
+}
