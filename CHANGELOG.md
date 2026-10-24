@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-25：0.1.0-dev.0/HND-05-A03-P01 增加冻结交接版本 `:validate` 的前端安全客户端：空正文、私有 CSRF/原幂等号、当前项目角色预筛和严格完整报告核验；`valid` 仅为当前校验结果，不代表送审或批准。兼容性：Windows 11 前端合同/构建通过，Windows Server 2025/Debian 13 未实测。升级/回滚：无 API/Schema/License 或数据迁移，撤前端客户端不删除 Audit。验证：定向13、前端全量1987项、typecheck/build退出0；首次 TypeScript 数组收窄错误已修。已知问题：无页面入口、真实 Edge/HTTPS/PG/包内校验、送审/Reviewer 和真人确认；正式信任/安装/UAT/Gate/Pilot/Release 未通过。
+
 - 2026-10-25：0.1.0-dev.0/HND-05-A02-P04 从已同步源码重建 Windows 11 非发行候选，SHA-256 `3e84a42c3c22fd5f02ec5a13a35bc86d28394f9d1cf9b846952bdfa8cf2cb209`，包内完成交接 DRAFT 双问题卡片与同号重放。兼容性：仅 Windows 11 合成信任已实测，Windows Server 2025/Debian 13 未实测。升级/回滚：无 Schema/API/License 变更或数据迁移；仅新增可重复验收脚本，原候选留存，回退前端资产会失去本页，已建版本/Audit 不删除。验证：22,196件逐件清洁解包、Edge/HTTPS/隔离 PG18 上固定来源/当前批准能力/合格项目证据、NEED_CONFIRM 提示与原文定位、单版本/单 Audit/单回执及匿名/未分配/错误来源拒绝退出0；前三轮夹具组合失败已留痕。已知问题：客户/Reviewer 尚未确认或批准，正式公钥/服务账户/法律放行、真实离线安装升级、License 自然到期/撤销、完整链/UAT/Gate 3～7/Pilot/三平台 Release 未通过；本包不可发行。
 
 - 2026-10-25：0.1.0-dev.0/HND-05-A02-P03 新增交接问题卡片 DRAFT 版本创建页面与详情入口，显式重选原固定文档、核对当前批准标准能力和同项目合格证据；支持多张问题卡片、待确认信息提示与原文定位，不把 AI 建议或编辑结果自动视为客户事实。兼容性：Windows 11 前端回归/构建通过，Server 2025/Debian 13 未实测。升级/回滚：无 API/Schema/数据迁移；可回退前端资产，已有合法版本/Audit 不删除。验证：定向5、全量1974/typecheck/build退出0。已知问题：真实 Edge/HTTPS/PG/包内版本创建未验；首版本需重选原固定文档，待确认卡片本片限一项输入字段与 A/B 两方案；正式信任/安装/UAT/Gate/Pilot/Release 未通过。
