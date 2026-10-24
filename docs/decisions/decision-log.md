@@ -11756,3 +11756,10 @@
 - Decision：只为内部 `SectionCurrentFactQuery` 允许 APPROVED SectionVersion 对固定 Spec/显式 NONE_REQUIRED 理由重新证明；Spec 当前资格 Owner 扩到 APPROVED，仍检查当前 Spec/Review/来源祖先与共享需求。公开 `ValidateSectionVersion` 的非 DRAFT 结果维持 UNAVAILABLE，不因此重开提交或客户决定。
 - Reason：历史批准与今天仍可用是两种事实；也不能因为客户端试图公开验证 APPROVED 就把它当新草稿。此调整只补内用读取，不改变 Section 正式批准指针/Review 判定，后续覆盖 Owner 仍需独立验证。
 - Impact/Rollback/Verification：无 Schema/API/角色/License/数据变更；撤内部状态分支即可恢复旧 UNAVAILABLE，不改历史。定向单元覆盖 APPROVED 固定 Spec 成功/替换失败、显式理由、公开边界；后端全量回归后再推进并集。Outline coverage/Pilot/Gate 3 保持未通过。
+
+# DEC-20261024-1211：Outline 覆盖采用批准需求全集与章节现时 Trace 并集
+
+- Date/WBS：2026-10-24 / `SOL-03-A06-P03-A05-P02`；依据 Gate 2 冻结 DM-05/API-04 与 A04/A05-P01 内部证明。
+- Decision：在单个调用者事务内先用 Requirement 库存服务完成 License/Session/Project 授权和全项目有界范围锁，再逐 Outline 固定 Section 读取当前批准指针及固定版本，核对同项目正式 Review/Round/主题指纹和六维现时事实（其中 Trace 由统一精确 IMPLEMENTS Owner 证明）。Outline 固定需求集合、当前批准全集及各章节固定需求并集必须一致；泛型 missing 声明不抵扣缺口。服务只返回完整证明或失败，不提供可被误当正式业务事实的部分列表。
+- Reason：只扫 Outline 自报需求或历史批准章节会漏掉当前项目其他需求、旧版本和失效 Trace；重复写 Trace SQL 又会与既有统一 Owner 漂移。
+- Impact/Rollback/Verification：本片只新增内部应用 Owner/单元测试，不修改 Schema、冻结 API、权限或既有持久事实；关闭未装配的内部调用即可回退。错项目/Review/版本、缺口、Trace/Spec 漂移、错误库存和同事务调用均须失败关闭。后续片独立接入 Outline VALIDATE 和 Win11/PG/HTTP 验收；Gate 3/Pilot 不预先通过。
