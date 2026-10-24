@@ -48,8 +48,8 @@ function clients() { const handover = new HandoverReadClient(vi.fn() as typeof f
     locator: Object.freeze({ locator_type: "DOCUMENT" }), precision: "DOCUMENT", display_label: "整个固定文档版本",
     short_preview: "部署范围", content_url: `/api/v1/projects/${project}/documents/${document}/versions/${documentVersion}/content` });
   return { handover, evidence }; }
-async function view(auth: SessionClient, supplied = clients()) { const router = createAppRouter(createMemoryHistory());
-  await router.push(`/projects/${project}/handover/${analysisId}`); await router.isReady();
+async function view(auth: SessionClient, supplied = clients(), path = `/projects/${project}/handover/${analysisId}`) { const router = createAppRouter(createMemoryHistory());
+  await router.push(path); await router.isReady();
   const wrapper = mount(ProjectHandoverDetailView, { props: { session: auth, ...supplied }, global: { plugins: [router] } });
   await flushPromises(); return { wrapper, router, ...supplied }; }
 
@@ -93,5 +93,27 @@ describe("ProjectHandoverDetailView", () => {
     expect(wrapper.get(`a[href="/projects/${project}/reviews/${trace}"]`).text()).toContain("打开评审");
     expect(wrapper.findAll("button").some(button => button.text() === "提交交接版本评审")).toBe(false);
     wrapper.unmount();
+  });
+  it("loads an exact fixed version even when it is absent from the current version page", async () => {
+    const supplied = clients(); vi.mocked(supplied.handover.listVersions).mockResolvedValueOnce({ items: [], next_cursor: null, has_more: false });
+    const { wrapper, router } = await view(await session(), supplied,
+      `/projects/${project}/handover/${analysisId}?fixedVersionId=${versionId}`);
+    expect(supplied.handover.getVersion).toHaveBeenCalledWith(project, analysisId, versionId);
+    expect(supplied.handover.listItems).toHaveBeenCalledWith(project, analysisId, versionId);
+    expect(wrapper.text()).toContain("实际部署范围是什么");
+    await router.push(`/projects/${project}/handover/${analysisId}?fixedVersionId=latest`); await flushPromises();
+    expect(wrapper.text()).toContain("固定版本链接无效"); expect(wrapper.text()).not.toContain("实际部署范围是什么");
+    expect(supplied.handover.getVersion).toHaveBeenCalledTimes(1); wrapper.unmount();
+  });
+  it("rejects malformed or foreign fixed version links without showing another version", async () => {
+    const malformed = clients(); const first = await view(await session(), malformed,
+      `/projects/${project}/handover/${analysisId}?fixedVersionId=latest`);
+    expect(first.wrapper.text()).toContain("固定版本链接无效"); expect(malformed.handover.getVersion).not.toHaveBeenCalled();
+    first.wrapper.unmount();
+    const foreign = clients(); vi.mocked(foreign.handover.getVersion).mockResolvedValueOnce({ ...detail, project_id: actor });
+    const second = await view(await session(), foreign,
+      `/projects/${project}/handover/${analysisId}?fixedVersionId=${versionId}`);
+    expect(second.wrapper.text()).not.toContain("实际部署范围是什么");
+    expect(second.wrapper.get("[role=alert]").text()).toContain("暂时无法读取"); second.wrapper.unmount();
   });
 });

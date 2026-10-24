@@ -24,6 +24,7 @@ const typeLabels = Object.freeze({ GAP: "差距", MISSING: "缺失", CONFLICT: "
 
 function ids() { return { projectId: typeof route.params.projectId === "string" ? route.params.projectId : "",
   analysisId: typeof route.params.analysisId === "string" ? route.params.analysisId : "" }; }
+const canonicalId = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 function mayRead() { return mounted && !!identity && !identity.password_change_required
   && session.view?.user.user_id === identity.user.user_id; }
 function clearSelection() { itemGeneration += 1; evidenceGeneration += 1; selectedVersion.value = null; items.value = [];
@@ -35,6 +36,12 @@ async function load() { if (!mayRead() || busy.value) return; const request = id
     const latest = ids(); if (!mounted || current !== generation || latest.projectId !== request.projectId
       || latest.analysisId !== request.analysisId || !mayRead()) return;
     analysis.value = root; versions.value = page.items; versionCursor.value = page.next_cursor;
+    const fixed = route.query.fixedVersionId;
+    if (fixed !== undefined) {
+      if (typeof fixed !== "string" || !canonicalId.test(fixed)
+        || fixed === "00000000-0000-0000-0000-000000000000") itemError.value = "固定版本链接无效，请核对评审中的版本编号。";
+      else await selectVersionId(fixed);
+    }
   } catch (failure) { const latest = ids(); if (!mounted || current !== generation || latest.projectId !== request.projectId
     || latest.analysisId !== request.analysisId) return; error.value = failure instanceof HandoverReadError ? failure.message : "暂时无法读取交接分析。";
   } finally { if (mounted && current === generation) busy.value = false; } }
@@ -48,17 +55,22 @@ async function loadMoreVersions() { if (!mayRead() || versionBusy.value || !vers
   } catch (failure) { if (mounted && current === generation) { versions.value = []; versionCursor.value = null; clearSelection();
     versionError.value = failure instanceof HandoverReadError ? failure.message : "暂时无法读取版本。"; }
   } finally { if (mounted && current === generation) versionBusy.value = false; } }
-async function choose(summary: HandoverAnalysisVersionView) { if (!mayRead() || itemBusy.value) return; const request = ids();
+async function selectVersionId(versionId: string) { if (!mayRead() || itemBusy.value) return; const request = ids();
   const current = ++itemGeneration; evidenceGeneration += 1; selectedVersion.value = null; items.value = []; itemCursor.value = null;
   selectedEvidence.value = null; selectedEvidenceItem.value = ""; itemError.value = ""; evidenceError.value = ""; itemBusy.value = true;
   try { const [detail, page] = await Promise.all([handover.getVersion(request.projectId, request.analysisId,
-    summary.handover_analysis_version_id), handover.listItems(request.projectId, request.analysisId,
-    summary.handover_analysis_version_id)]);
+    versionId), handover.listItems(request.projectId, request.analysisId, versionId)]);
     if (!mounted || current !== itemGeneration || ids().projectId !== request.projectId || ids().analysisId !== request.analysisId
-      || !mayRead()) return; selectedVersion.value = detail; items.value = page.items; itemCursor.value = page.next_cursor;
+      || !mayRead()) return;
+    if (detail.project_id !== request.projectId || detail.handover_analysis_id !== request.analysisId
+      || detail.handover_analysis_version_id !== versionId || page.items.some(item =>
+        item.project_id !== request.projectId || item.handover_analysis_id !== request.analysisId
+        || item.handover_analysis_version_id !== versionId)) throw new HandoverReadError("HANDOVER_READ_UNAVAILABLE");
+    selectedVersion.value = detail; items.value = page.items; itemCursor.value = page.next_cursor;
   } catch (failure) { if (mounted && current === itemGeneration) itemError.value = failure instanceof HandoverReadError
     ? failure.message : "暂时无法读取问题清单。";
   } finally { if (mounted && current === itemGeneration) itemBusy.value = false; } }
+async function choose(summary: HandoverAnalysisVersionView) { await selectVersionId(summary.handover_analysis_version_id); }
 async function loadMoreItems() { if (!selectedVersion.value || !itemCursor.value || itemBusy.value) return; const request = ids();
   const versionId = selectedVersion.value.handover_analysis_version_id; const next = itemCursor.value; const current = ++itemGeneration;
   itemBusy.value = true; itemError.value = "";
@@ -80,7 +92,7 @@ async function locate(item: HandoverAnalysisItemView, evidenceId: string) { if (
   } catch (failure) { if (mounted && current === evidenceGeneration) evidenceError.value = failure instanceof EvidenceViewerClientError
     ? failure.message : "暂时无法定位原文。";
   } finally { if (mounted && current === evidenceGeneration) evidenceBusy.value = false; } }
-watch(() => [route.params.projectId, route.params.analysisId], () => { generation += 1; clearSelection(); busy.value = false; void load(); }, { immediate: true });
+watch(() => [route.params.projectId, route.params.analysisId, route.query.fixedVersionId], () => { generation += 1; clearSelection(); busy.value = false; void load(); }, { immediate: true });
 onUnmounted(() => { mounted = false; generation += 1; itemGeneration += 1; evidenceGeneration += 1; });
 </script>
 

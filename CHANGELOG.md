@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-25：0.1.0-dev.0/HND-05-A05-P04 交接详情支持 `fixedVersionId` 精确版本深链，不依赖当前分页位置；错误 ID、跨项目/错分析版本不展示问题，切换链接清除旧选择。兼容性：Windows 11 前端合同/构建通过，Windows Server 2025/Debian 13 未实测。升级/回滚：仅前端资产，无 API/Schema/License/数据迁移；可撤深链，合法历史不删除。验证：定向6、前端全量2012、typecheck/build退出0。已知问题：评审页尚未携带固定 ID，真实 Edge/PG/包内决定、真人确认、正式信任/安装/UAT/Gate/Pilot/Release 未通过。
+
 - 2026-10-25：0.1.0-dev.0/HND-05-A05-P03 项目评审详情正确标识 HND-02 交接分析与本轮固定版本 ID，返回交接分析并提示手动按 ID 选取；不再误标结构化专项或链接到专项方案。兼容性：Windows 11 前端合同/构建通过，Server 2025/Debian 13 未实测。升级/回滚：仅前端资产，无 API/Schema/License/数据迁移；合法 Review/Audit 保留。验证：定向6、前端全量2010、typecheck/build退出0。已知问题：交接分析页精确版本深链、真实 Edge/PG/包内决定与真人客户确认未验；正式信任/安装/UAT/Gate/Pilot/Release 未通过。
 
 - 2026-10-25：0.1.0-dev.0/HND-05-A05-P02 通用 PROJECT Review 客户端增加严格 HND-02/`HANDOVER_ALL_V1` 投影支持，保留当前评审人、固定轮次、Session/CSRF/原操作号及回执校验，错配主题/策略失败关闭。兼容性：Windows 11 前端合同/构建通过，Windows Server 2025/Debian 13 未实测。升级/回滚：仅前端资产，无 API/Schema/License 或数据迁移；回退后 HND-02 会重新被客户端拒绝，合法 Review/Audit 保留。验证：定向6、前端全量2009、typecheck/build退出0。已知问题：通用页面仍把 HND 误标为结构化专项并给错误固定版本入口，真实 Edge/PG/包内决定、真人客户确认、正式信任/安装/UAT/Gate/Pilot/Release 未通过。
