@@ -19,6 +19,9 @@ from plm_assistant.modules.auth.infrastructure.license_import_access import (
 from plm_assistant.modules.auth.infrastructure.project_read_access import (
     SqlAlchemyProjectReadAccess,
 )
+from plm_assistant.modules.auth.infrastructure.review_start_access import (
+    SqlAlchemyReviewStartAccess,
+)
 from plm_assistant.modules.capability.api.commands import create_capability_command_router
 from plm_assistant.modules.capability.api.read import create_capability_read_router
 from plm_assistant.modules.capability.api.read_cursor import (
@@ -83,6 +86,15 @@ from plm_assistant.modules.project.infrastructure.capability_read_access import 
 from plm_assistant.modules.review.application.global_persistence import (
     GlobalReviewPersistenceService,
 )
+from plm_assistant.modules.review.application.global_capability_read import (
+    GlobalCapabilityReviewReadService,
+)
+from plm_assistant.modules.review.application.global_capability_decide import (
+    GlobalCapabilityReviewDecisionService,
+)
+from plm_assistant.modules.review.api.global_capability import (
+    create_global_capability_review_router,
+)
 from plm_assistant.modules.review.infrastructure.global_repository import (
     SqlAlchemyGlobalReviewRepository,
 )
@@ -106,6 +118,7 @@ class WindowsCapabilityRouters:
     reads: APIRouter
     commands: APIRouter | None
     review_submission: APIRouter | None
+    global_review: APIRouter | None
 
 
 def create_windows_capability_routers(
@@ -137,7 +150,7 @@ def create_windows_capability_routers(
             baseline_cursors=baseline_cursors, child_cursors=child_cursors,
         )
         if not include_write:
-            return WindowsCapabilityRouters(read_router, None, None)
+            return WindowsCapabilityRouters(read_router, None, None, None)
 
         access = SqlAlchemyLicenseImportAccess()
         receipts = SqlAlchemyIdempotencyReceipts()
@@ -188,6 +201,25 @@ def create_windows_capability_routers(
         review_router = create_capability_review_submission_router(
             sessions=sessions, origins=origins, submissions=submission,
         )
-        return WindowsCapabilityRouters(read_router, command_router, review_router)
+        global_reads = GlobalCapabilityReviewReadService(
+            unit_of_work=runtime.unit_of_work,
+            sessions=SqlAlchemyProjectReadAccess(),
+            users=SqlAlchemyCurrentUserAccess(), license_guard=license_guard,
+            reviews=review_repository,
+            capabilities=SqlAlchemyCapabilityReadRepository(),
+        )
+        global_decisions = GlobalCapabilityReviewDecisionService(
+            unit_of_work=runtime.unit_of_work,
+            access=SqlAlchemyReviewStartAccess(), license_guard=license_guard,
+            repository=review_repository, receipts=receipts,
+            reviews=review_kernel, subject=subject,
+        )
+        global_review_router = create_global_capability_review_router(
+            sessions=sessions, origins=origins,
+            reads=global_reads, decisions=global_decisions,
+        )
+        return WindowsCapabilityRouters(
+            read_router, command_router, review_router, global_review_router,
+        )
     except Exception:
         raise ProductionCapabilityStartupError() from None

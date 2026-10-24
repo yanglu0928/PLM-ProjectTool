@@ -566,6 +566,7 @@ class ProductionLoginTests(unittest.TestCase):
             side_effect=lambda *args, include_write, **kwargs: WindowsCapabilityRouters(
                 APIRouter(), APIRouter() if include_write else None,
                 APIRouter() if include_write else None,
+                APIRouter() if include_write else None,
             ),
         ))
         self.handover_factory = self.enterContext(patch(

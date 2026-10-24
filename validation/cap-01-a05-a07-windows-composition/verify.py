@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import runpy
+import os
 import uuid
 from pathlib import Path
 
@@ -37,6 +38,10 @@ connect, seed_user = _create["connect"], _create["seed_user"]
 Guard, CSRF = _create["Guard"], _create["CSRF"]
 seed_global_source = _schema["seed_global_source"]
 ADMIN_TOKEN = b"a" * 32
+REVIEWER_ONE_TOKEN = b"b" * 32
+REVIEWER_TWO_TOKEN = b"c" * 32
+OUTSIDER_TOKEN = b"d" * 32
+GLOBAL_REVIEW_HTTP = os.environ.get("PLM_CAP_GLOBAL_REVIEW_HTTP_VALIDATION") == "1"
 
 
 class Keys:
@@ -50,17 +55,19 @@ class Keys:
 class Sessions:
     def validate(self, token: bytes, *, csrf_token: bytes | None = None,
                  require_csrf: bool = False):
-        if (token != ADMIN_TOKEN
+        if (token not in (
+                ADMIN_TOKEN, REVIEWER_ONE_TOKEN, REVIEWER_TWO_TOKEN,
+                OUTSIDER_TOKEN)
                 or require_csrf and csrf_token != CSRF):
             raise SessionError("AUTH_SESSION_EXPIRED")
         return object()
 
 
 def _headers(*, key: str | None = None, etag: str | None = None,
-             json: bool = False) -> dict[str, str]:
+             json: bool = False, token: bytes = ADMIN_TOKEN) -> dict[str, str]:
     result = {
         "origin": "https://plm.example.test",
-        "cookie": "plm_session=" + ADMIN_TOKEN.hex(),
+        "cookie": "plm_session=" + token.hex(),
         "x-csrf-token": CSRF.hex(),
     }
     if key is not None:
@@ -95,11 +102,13 @@ def main() -> None:
                 with connect(name) as db:
                     seed_user(db, "Synthetic HTTP Admin", "DEPLOYMENT_ADMIN", ADMIN_TOKEN)
                     reviewer_one = seed_user(
-                        db, "Synthetic HTTP Reviewer One", "NONE", b"b" * 32,
+                        db, "Synthetic HTTP Reviewer One", "NONE", REVIEWER_ONE_TOKEN,
                     )
                     reviewer_two = seed_user(
-                        db, "Synthetic HTTP Reviewer Two", "NONE", b"c" * 32,
+                        db, "Synthetic HTTP Reviewer Two", "NONE", REVIEWER_TWO_TOKEN,
                     )
+                    if GLOBAL_REVIEW_HTTP:
+                        seed_user(db, "Synthetic HTTP Outsider", "NONE", OUTSIDER_TOKEN)
                     _, document_id, document_version_id, evidence_id = (
                         seed_global_source(db)
                     )
@@ -113,10 +122,11 @@ def main() -> None:
                                AND f.file_object_id=v.file_object_id
                         """, (document_version_id,))
 
+                guard = Guard()
                 routers = create_windows_capability_routers(
                     runtime, sessions=Sessions(),
                     origins=LoginOriginPolicy(["https://plm.example.test"]),
-                    license_guard=Guard(),
+                    license_guard=guard,
                     audit=AuditService(SqlAlchemyAuditRepository()),
                     include_write=True, resolver=Keys(),
                 )
@@ -124,6 +134,7 @@ def main() -> None:
                     capability_read_router=routers.reads,
                     capability_command_router=routers.commands,
                     capability_review_router=routers.review_submission,
+                    global_capability_review_router=routers.global_review,
                 )
                 source = [{
                     "document_id": str(document_id),
@@ -214,6 +225,65 @@ def main() -> None:
                         headers=_headers(key=review_key, json=True), json=review_body,
                     ), 201)
                     assert replayed["review_round_id"] == submitted["review_round_id"]
+                    if GLOBAL_REVIEW_HTTP:
+                        review_id = submitted["review_id"]
+                        round_id = submitted["review_round_id"]
+                        path = f"/api/v1/global/reviews/{review_id}"
+                        decide_path = f"{path}/rounds/{round_id}:decide"
+                        assert TestClient(create_app()).get(path).status_code == 404
+                        read_only = create_windows_capability_routers(
+                            runtime, sessions=Sessions(),
+                            origins=LoginOriginPolicy(["https://plm.example.test"]),
+                            license_guard=guard,
+                            audit=AuditService(SqlAlchemyAuditRepository()),
+                            include_write=False, resolver=Keys(),
+                        )
+                        assert read_only.global_review is None
+                        detail = _expect(client.get(path, headers=_headers()), 200)
+                        assert detail["review_round_id"] == round_id
+                        assert detail["baseline_version_id"] == version_id
+                        assert _expect(client.get(
+                            path, headers=_headers(token=REVIEWER_ONE_TOKEN),
+                        ), 200)["review_id"] == review_id
+                        assert client.get(path, headers=_headers(
+                            token=OUTSIDER_TOKEN)).status_code == 404
+                        guard.enabled = False
+                        assert client.get(path, headers=_headers()).status_code == 403
+                        guard.enabled = True
+                        body = {"decision": "APPROVE", "comment": None}
+                        first_key = str(uuid.uuid4())
+                        assert client.post(decide_path, headers=_headers(
+                            key=str(uuid.uuid4()), json=True,
+                            token=OUTSIDER_TOKEN,
+                        ), json=body).status_code == 404
+                        assert client.post(decide_path, headers={
+                            **_headers(key=str(uuid.uuid4()), json=True,
+                                       token=REVIEWER_ONE_TOKEN),
+                            "x-csrf-token": "0" * 64,
+                        }, json=body).status_code in (401, 403)
+                        first = _expect(client.post(
+                            decide_path, headers=_headers(
+                                key=first_key, json=True,
+                                token=REVIEWER_ONE_TOKEN,
+                            ), json=body,
+                        ), 200)
+                        replay = _expect(client.post(
+                            decide_path, headers=_headers(
+                                key=first_key, json=True,
+                                token=REVIEWER_ONE_TOKEN,
+                            ), json=body,
+                        ), 200)
+                        assert replay == first
+                        assert first["state"] == "IN_REVIEW"
+                        second = _expect(client.post(
+                            decide_path, headers=_headers(
+                                key=str(uuid.uuid4()), json=True,
+                                token=REVIEWER_TWO_TOKEN,
+                            ), json=body,
+                        ), 200)
+                        assert second["state"] == "APPROVED"
+                        assert _expect(client.get(path, headers=_headers()), 200)[
+                            "state"] == "APPROVED"
 
                     second = baseline(client, "PLM.HTTP.B")
                     second_id = second["baseline_id"]
@@ -248,15 +318,21 @@ def main() -> None:
                           FROM plm.cap_baseline_versions GROUP BY version_state
                     """).fetchall()
                     assert dict(states) == {"ACTIVE": 1, "ARCHIVED": 1}
-                    assert dict(versions) == {"IN_REVIEW": 1, "RESTRICTED": 1}
+                    assert dict(versions) == ({"APPROVED": 1, "RESTRICTED": 1}
+                                              if GLOBAL_REVIEW_HTTP else
+                                              {"IN_REVIEW": 1, "RESTRICTED": 1})
                     assert db.execute(
                         "SELECT count(*) FROM plm.rvw_reviews WHERE scope='GLOBAL'"
                     ).fetchone()[0] == 1
                 command.check(cfg)
                 print(
-                    "CAP_01_A05_A07_WINDOWS_COMPOSITION_PASS: twelve frozen "
-                    "operations, real PostgreSQL, HTTP, replay and state rollback "
-                    "boundaries verified with isolated synthetic cursor keys"
+                    ("CAP_02_A05_P04_P03_A03_P02_WINDOWS_HTTP_PG_PASS: "
+                     "explicit write-mode GLOBAL Review, assigned reviewers, "
+                     "replay and approved pointer verified with synthetic trust"
+                     if GLOBAL_REVIEW_HTTP else
+                     "CAP_01_A05_A07_WINDOWS_COMPOSITION_PASS: twelve frozen "
+                     "operations, real PostgreSQL, HTTP, replay and state rollback "
+                     "boundaries verified with isolated synthetic cursor keys")
                 )
             finally:
                 runtime.dispose()
