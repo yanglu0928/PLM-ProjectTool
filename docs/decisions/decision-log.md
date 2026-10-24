@@ -1,5 +1,12 @@
 # 自主决策记录
 
+## DEC-20261025-HND-A02-P01：先接冻结版本命令，来源恢复留独立前置
+
+- Date/WBS：2026-10-25 / `HND-05-A02-P01`。
+- Decision：先完成 Handover Version 冻结 POST 的私有 Session 与严格客户端合同，不在同一 WBS 顺手修改分析来源持久化或自动生成问题；首版本来源恢复另由 P02 编码前检查处理。
+- Reason：当前 GLOBAL Capability 已批准版与 PROJECT Evidence 资格链有合成包内证据，命令前端缺口独立存在；但 HandoverAnalysis 首次创建只持久化 `source_set_ref`，不能从哈希恢复固定文档列表。客户端可以安全完成而页面不能无依据声称已知原始来源。
+- Impact/Rollback：无 API/Schema/权限变化或数据迁移；移除未接入页面的客户端即可回退。P02 若需补持久化/读 API，应先记录 CR、迁移/兼容/回滚与验收；不得静默改冻结合同。验证为定向4、全量1966/typecheck/build，不宣称 Edge/PG 或业务版本已创建。
+
 ## DEC-20261025-EVD-A03-P03：修复 Evidence 资格传输的原生 fetch receiver
 
 - Date/WBS：2026-10-25 / `EVD-05-A03-P03`。
