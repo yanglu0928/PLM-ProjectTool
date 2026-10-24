@@ -19,6 +19,35 @@ from .read_repository import SqlAlchemyReviewSnapshotReadRepository
 
 
 class SqlAlchemyGlobalReviewRepository:
+    def get_review(self, tx, scope, project_id, review_id):
+        if scope != "GLOBAL" or project_id is not None:
+            raise ReviewRoundPersistError("RESOURCE_NOT_FOUND")
+        return SqlAlchemyReviewSnapshotReadRepository().get_review(
+            tx, scope, project_id, review_id,
+        )
+
+    def get_round(self, tx, scope, project_id, review_id, round_id):
+        if scope != "GLOBAL" or project_id is not None:
+            raise ReviewRoundPersistError("RESOURCE_NOT_FOUND")
+        return SqlAlchemyReviewSnapshotReadRepository().get_round(
+            tx, scope, project_id, review_id, round_id,
+        )
+
+    def get_single_global_round_id(self, tx, *, review_id):
+        if not _uuid(review_id):
+            raise ReviewRoundPersistError("VALIDATION_FAILED")
+        rounds = _tables[1]
+        rows = self._session(tx).execute(select(
+            rounds.c.review_round_id,
+        ).where(
+            rounds.c.review_id == review_id,
+            rounds.c.scope == "GLOBAL",
+            rounds.c.project_id.is_(None),
+        ).limit(2)).scalars().all()
+        if len(rows) > 1:
+            raise ReviewRoundPersistError()
+        return rows[0] if rows else None
+
     @staticmethod
     def is_retryable_deadlock(error):
         return (isinstance(error, DBAPIError)

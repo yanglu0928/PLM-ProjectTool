@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-24：0.1.0-dev.0/CAP-02-A05-P04-P03-A02-P01 增加未装配的 CAP-01 GLOBAL Review 内部受权读取服务，校验当前管理员、精确 Scope/首轮及 Capability Version 绑定；不公开 HTTP 或称已批准。兼容性：无现有 PROJECT API/Schema 变化，三平台运行链未实测。升级/回滚：无迁移或历史改写，撤未装配服务不删除 Review。验证：定向8、后端单元全量3474通过/3跳过/4798子例。已知问题：真实 PG、HTTP/Windows/前端决定路径、正式信任/安装/UAT/Gate/Pilot未通过，不可发行。
+
 - 2026-10-24：0.1.0-dev.0/CAP-02-A05-P04-P03-A01 记录 `CR-CAP-005`，选定只增 Capability GLOBAL Review 读取/决定路径，不复用 PROJECT 路径或伪造批准；增量 API 合同仍为草案，HTTP 未实现。兼容性：仅设计与追溯，Windows 11/Server 2025/Debian 13 产品行为未变。升级/回滚：无 Schema/API 运行变更或数据迁移，撤草案不影响历史；实施后仍须保留合法 Review/Audit。验证：冻结 API-02/04、GLOBAL 内核、Windows 组合静态交叉核查，未新增运行测试。已知问题：真实审批、包内 Edge/PG、正式信任/安装/UAT/Gate/Pilot均未通过，不可发行。
 
 - 2026-10-24：0.1.0-dev.0/CAP-02-A05-P04-P02 增加标准能力 DRAFT 版本正式送审入口、已启用部署管理员选择、固定策略/评审人原号恢复及严格 `IN_REVIEW` 回执核验；送审不等于批准。兼容性：Windows 11 前端源码/构建；Server 2025、Debian 13 未实测。升级/回滚：无 Schema/后端 API/License 迁移，撤前端入口不删除 Review/Audit 历史。验证：新增定向7、前端全量1938项、typecheck/build通过。已知问题：GLOBAL Review 公开决定路径、包内 Edge/PG、真人资格/批准、正式信任/安装/UAT/Gate/Pilot未验，不可发行。

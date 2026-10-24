@@ -37,3 +37,7 @@ Capability Version 现可用冻结 `CAP_VERSION_SUBMIT_REVIEW` 由 DeploymentAdm
 4. `A04` 前端从 Capability Version `review_ref` 进入正式评审详情和本人决定操作；真实 Edge/PG 全链。随后 P05 在固定非发行包清洁解包，核实来源→Evidence 人工资格→Version→VALIDATE→Review→批准指针与 Handover 前置；客户确认和正式信任另行验收。
 
 本 CR 仅采用已授权的实现方向；后续任何 Schema、身份粒度或已有冻结字段的破坏性变化须另行记录，不能借本 CR 静默扩大。
+
+## 实施记录
+
+- 2026-10-24 / `A02-P01`：仅内部 GLOBAL/CAP-01 受权读取与唯一首轮/Capability Version 绑定；8 项定向、后端单元全量通过。尚无运行 HTTP、真实 PG 或批准事实；见 `docs/progress/cap-02-a05-p04-p03-a02-p01-global-review-read.md`。
