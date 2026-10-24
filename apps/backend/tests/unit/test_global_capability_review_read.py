@@ -82,8 +82,21 @@ class GlobalCapabilityReviewReadTests(TestCase):
             baseline_version_id=self.version_id,
         )
 
-    def test_ordinary_user_cannot_probe_review(self):
+    def test_unassigned_ordinary_user_cannot_probe_review(self):
         self.users.current_enabled_user.return_value = CurrentUserFacts(self.actor, "NONE")
+        self.denied("RESOURCE_NOT_FOUND")
+        self.capabilities.get_version.assert_not_called()
+
+    def test_assigned_enabled_ordinary_reviewer_can_read(self):
+        self.users.current_enabled_user.return_value = CurrentUserFacts(self.actor, "NONE")
+        self.reviews.get_round.return_value = replace(
+            self.fixed, progress=ReviewRoundProgress(self.round_id, self.now, (self.actor,)),
+        )
+        result = self.service().get(self.query)
+        self.assertEqual(result.fixed_round.progress.reviewer_ids, (self.actor,))
+
+    def test_disabled_user_cannot_probe_review(self):
+        self.users.current_enabled_user.return_value = None
         self.denied("RESOURCE_NOT_FOUND")
         self.reviews.get_review.assert_not_called()
 

@@ -44,15 +44,15 @@ async function setup(admin = true) {
 }
 describe("CapabilityVersionSubmitReviewPanel", () => {
   afterEach(() => { vi.restoreAllMocks(); window.sessionStorage.clear(); });
-  it("shows only eligible admins and records IN_REVIEW, not approval", async () => {
+  it("shows enabled reviewers and records IN_REVIEW, not approval", async () => {
     const { wrapper, submit } = await setup();
     expect(wrapper.text()).toContain("合格管理员");
-    expect(wrapper.text()).not.toContain("普通用户");
-    await wrapper.find('input[value="'+reviewerId+'"]').setValue(true);
-    await wrapper.findAll('input[type="checkbox"]')[1]!.setValue(true);
+    expect(wrapper.text()).toContain("普通用户");
+    await wrapper.find('input[value="'+ordinaryId+'"]').setValue(true);
+    await wrapper.findAll('input[type="checkbox"]').at(-1)!.setValue(true);
     await wrapper.findAll("button").at(-1)!.trigger("click"); await flushPromises();
     expect(submit).toHaveBeenCalledOnce();
-    expect(submit.mock.calls[0]![1]).toEqual([reviewerId]);
+    expect(submit.mock.calls[0]![1]).toEqual([ordinaryId]);
     expect(wrapper.text()).toContain("已进入评审");
     expect(wrapper.text()).toContain("尚未批准");
     expect(window.sessionStorage.length).toBe(0);
@@ -62,7 +62,7 @@ describe("CapabilityVersionSubmitReviewPanel", () => {
     const { wrapper, submit } = await setup();
     submit.mockRejectedValueOnce(new CapabilityReviewSubmitError("CAP_REVIEW_UNCERTAIN"));
     await wrapper.find('input[value="'+reviewerId+'"]').setValue(true);
-    await wrapper.findAll('input[type="checkbox"]')[1]!.setValue(true);
+    await wrapper.findAll('input[type="checkbox"]').at(-1)!.setValue(true);
     await wrapper.findAll("button").at(-1)!.trigger("click"); await flushPromises();
     const original = submit.mock.calls[0]![2];
     expect(window.sessionStorage.length).toBe(1);

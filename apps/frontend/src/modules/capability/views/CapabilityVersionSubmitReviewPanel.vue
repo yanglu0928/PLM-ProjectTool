@@ -63,7 +63,7 @@ async function load(): Promise<void> {
     if (new Set([...available.value, ...page.items].map(item => item.user_id)).size
       !== available.value.length + page.items.length) throw new Error("用户分页重复，请刷新。 ");
     available.value = [...available.value, ...page.items.filter(item =>
-      item.account_state === "ENABLED" && item.deployment_role === "DEPLOYMENT_ADMIN")];
+      item.account_state === "ENABLED")];
     cursor.value = page.next_cursor ?? "";
   } catch (failure) { if (mounted && request === generation) error.value = failure instanceof Error
     ? failure.message : "暂时无法读取管理员名单。"; }
@@ -119,9 +119,9 @@ onUnmounted(() => { mounted = false; generation += 1; unsubscribe(); });
 <template>
   <section v-if="canSubmit()" aria-label="能力版本正式送审" :aria-busy="loading || sending">
     <h4>正式送审</h4>
-    <p>选择部署管理员作为评审人；服务端会重验当前版本、来源和资格。送审只进入评审，不等于批准。</p>
+    <p>选择已启用用户作为本轮评审人；服务端会重验当前版本、来源和资格。送审只进入评审，不等于批准。</p>
     <p v-if="error" role="alert">{{ error }}</p>
-    <p v-if="loading" role="status">正在读取部署管理员…</p>
+    <p v-if="loading" role="status">正在读取评审候选人…</p>
     <template v-if="submitted">
       <p role="status">已进入评审：{{ submitted.review_id }}，轮次 {{ submitted.review_round_id }}。请刷新版本详情查看状态；尚未批准。</p>
     </template>
@@ -132,15 +132,15 @@ onUnmounted(() => { mounted = false; generation += 1; unsubscribe(); });
     </template>
     <template v-else>
       <fieldset v-if="available.length" :disabled="sending || locked">
-        <legend>选择评审人（最多 32 人）</legend>
+        <legend>选择已启用评审人（最多 32 人）</legend>
         <label v-for="item in available" :key="item.user_id">
           <input v-model="selected" type="checkbox" :value="item.user_id"
             :disabled="selected.length >= 32 && !selected.includes(item.user_id)" />
           {{ item.username_display }}
         </label>
       </fieldset>
-      <p v-else-if="!loading" role="status">当前列表没有可选的已启用部署管理员。</p>
-      <button v-if="cursor && cursor !== ''" type="button" :disabled="loading || locked" @click="load">加载更多管理员</button>
+      <p v-else-if="!loading" role="status">当前列表没有可选的已启用用户。</p>
+      <button v-if="cursor && cursor !== ''" type="button" :disabled="loading || locked" @click="load">加载更多候选人</button>
       <label><input v-model="confirmScope" type="checkbox" :disabled="sending || locked" />
         我已核对当前 DRAFT 和评审人；理解服务端将重新校验，送审不是批准</label>
       <button type="button" :disabled="!ready()" @click="submit">提交正式评审</button>

@@ -17,14 +17,14 @@ Capability Version 现可用冻结 `CAP_VERSION_SUBMIT_REVIEW` 由 DeploymentAdm
 
 ## 新增合同和边界
 
-1. `GLOBAL_REVIEW_GET`：`GET /api/v1/global/reviews/{review_id}`；当前有效会话、License 和 DeploymentAdmin 可读取已绑定 `CAP-01` 的 GLOBAL 固定 Review/首轮投影，返回 `review_id/subject_type/baseline_id/baseline_version_id/policy_ref/review_round_id/reviewer_ids/decisions/state/review_etag/round_etag`。响应 `no-store`、强 ETag、Trace；不返回源文档正文、AI 建议或 License/Secret。
-2. `GLOBAL_REVIEW_DECIDE`：`POST /api/v1/global/reviews/{review_id}/rounds/{round_id}:decide`；当前有效 Session、可信 Origin/CSRF、License、受分配且仍有资格的 DeploymentAdmin 才可对 `IN_REVIEW` 轮次提交精确 `{decision,comment}`（`APPROVE` 或有实质意见的 `RETURN`），16～128 可打印 ASCII 幂等号；响应决定/汇总状态和强 ETag。Review、Capability 状态/批准指针、Audit、收据在同一事务；同 Key 回放复核访问，不自动重试不明结果。不能由提交者身份推定 Reviewer 资格。
+1. `GLOBAL_REVIEW_GET`：`GET /api/v1/global/reviews/{review_id}`；当前有效会话、License 和 DeploymentAdmin 或本轮受分配且当前仍启用的 Reviewer 可读取已绑定 `CAP-01` 的 GLOBAL 固定 Review/首轮投影，返回 `review_id/subject_type/baseline_id/baseline_version_id/policy_ref/review_round_id/reviewer_ids/decisions/state/review_etag/round_etag`。响应 `no-store`、强 ETag、Trace；不返回源文档正文、AI 建议或 License/Secret。
+2. `GLOBAL_REVIEW_DECIDE`：`POST /api/v1/global/reviews/{review_id}/rounds/{round_id}:decide`；当前有效 Session、可信 Origin/CSRF、License、受分配且当前仍启用的 Reviewer 才可对 `IN_REVIEW` 轮次提交精确 `{decision,comment}`（`APPROVE` 或有实质意见的 `RETURN`），16～128 可打印 ASCII 幂等号；响应决定/汇总状态和强 ETag。Review、Capability 状态/批准指针、Audit、收据在同一事务；同 Key 回放复核访问，不自动重试不明结果。送审者必须是 DeploymentAdmin，但不能由送审者身份推定 Reviewer 资格。
 3. 未授权或错 Scope/未知 Subject 统一 404；License 403；坏请求/缺意见 422；幂等/状态冲突 409；未知 503。不得把 API 返回 `APPROVED` 等同客户确认、Gate 或正式发行。
 4. 先按 Capability 单一 GLOBAL Subject 显式注册；不得把其他 GLOBAL Subject 静默纳入。`/api/v1/projects` 保持原行为，PROJECT 数据隔离不变；首版无需 Schema、迁移、外部网络、客户数据或新增依赖。
 
 ## 风险、兼容、迁移与回滚
 
-- 风险：未授权历史可见、错轮/重放重复决定、来源/资格撤销后错误批准、Review 与 Capability 指针不一致、把单管理员自审误称“独立客户确认”。因此读/决定都重验当前身份和精确 GLOBAL Scope；决定仍交给 Subject Owner 现时来源重证；UI 仅称部署管理员正式评审，不称客户签署。
+- 风险：未授权历史可见、错轮/重放重复决定、来源/资格撤销后错误批准、Review 与 Capability 指针不一致、把内部评审误称“独立客户确认”。因此读/决定都重验当前身份和精确 GLOBAL Scope；决定仍交给 Subject Owner 现时来源重证；UI 仅称正式内部评审，不称客户签署。
 - 兼容：仅新增路径，冻结 API-02 PROJECT Operation 和现有 Capability Version/送审响应均不变；旧客户端不受影响。新前端需与显式装配后端同版本部署，未装配时新路径 404 并保持旧行为。
 - 迁移：不改 Schema/ORM，不回填旧 Review、不改写已有批准/退回历史。现有 `GLOBAL` Review 行仅在当前服务重证后可读/决定；不可信历史失败关闭。
 - 回滚：关闭新路由和前端入口，保留合法 Review、Capability、Audit、收据，不删除业务历史；若新决定已提交，不自动撤销批准或指针，只能按既有正式流程追加新版本/限制。
@@ -41,3 +41,5 @@ Capability Version 现可用冻结 `CAP_VERSION_SUBMIT_REVIEW` 由 DeploymentAdm
 ## 实施记录
 
 - 2026-10-24 / `A02-P01`：仅内部 GLOBAL/CAP-01 受权读取与唯一首轮/Capability Version 绑定；8 项定向、后端单元全量通过。尚无运行 HTTP、真实 PG 或批准事实；见 `docs/progress/cap-02-a05-p04-p03-a02-p01-global-review-read.md`。
+- 2026-10-24 / `A02-P02` 编码前纠偏：复核已冻结 `DEC-20261005` Capability Review Subject 决策，明确送审者为 DeploymentAdmin、Reviewer 集合要求当前启用，并未限定 Reviewer 必须同为 DeploymentAdmin。P04-P02 前端候选筛选及本 CR 初稿的读取/决定角色过窄；按原冻结优先级修正为“当前已启用且受分配 Reviewer”，不扩大到任意用户，也不伪造客户身份。原初稿保留在 Git 历史中，后续回归覆盖普通已分配、普通未分配及失效用户。
+- 2026-10-24 / `A02-P02`：内部决定命令及候选/读取纠偏单元与前端全量通过；PG/公开 HTTP/实际批准均未验，见 `docs/progress/cap-02-a05-p04-p03-a02-p02-global-review-decision.md`。

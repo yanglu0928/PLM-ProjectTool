@@ -102,8 +102,7 @@ class GlobalCapabilityReviewReadService:
                 if type(actor) is not uuid.UUID or not actor.int:
                     raise GlobalCapabilityReviewReadError("AUTH_ACCESS_DENIED")
                 facts = self._users.current_enabled_user(tx, user_id=actor)
-                if (type(facts) is not CurrentUserFacts or facts.user_id != actor
-                        or facts.deployment_role != "DEPLOYMENT_ADMIN"):
+                if type(facts) is not CurrentUserFacts or facts.user_id != actor:
                     raise GlobalCapabilityReviewReadError("RESOURCE_NOT_FOUND")
                 review = self._reviews.get_review(tx, "GLOBAL", None, query.review_id)
                 if review is None:
@@ -127,6 +126,9 @@ class GlobalCapabilityReviewReadService:
                         or fixed.progress.round_id != round_id or fixed.round_no != 1):
                     raise GlobalCapabilityReviewReadError()
                 fixed.__post_init__()
+                if (facts.deployment_role != "DEPLOYMENT_ADMIN"
+                        and actor not in fixed.progress.reviewer_ids):
+                    raise GlobalCapabilityReviewReadError("RESOURCE_NOT_FOUND")
                 version = self._capabilities.get_version(
                     tx, visibility="ADMIN_HISTORY", baseline_id=review.subject_id,
                     baseline_version_id=fixed.subject_version_id,
