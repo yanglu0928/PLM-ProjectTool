@@ -21,6 +21,11 @@ function mayRead() {
   return mounted && !!identity && !identity.password_change_required
     && session.view?.user.user_id === identity.user.user_id;
 }
+function mayCreate() {
+  return mayRead() && session.canSubmit && identity?.authorized_projects.some(item =>
+    item.project_id === route.params.projectId
+    && (item.role === "PROJECT_MANAGER" || item.role === "IMPLEMENTATION_MEMBER"));
+}
 async function load(next: HandoverAnalysisCursor | null = null, replace = false) {
   if (!mayRead() || busy.value) return;
   const projectId = typeof route.params.projectId === "string" ? route.params.projectId : "";
@@ -61,6 +66,7 @@ onUnmounted(() => { mounted = false; generation += 1; });
       <RouterLink to="/login">前往账户与登录</RouterLink>
     </template>
     <template v-else>
+      <p v-if="mayCreate()"><RouterLink :to="{ name: 'project-handover-create', params: { projectId: route.params.projectId } }">创建交接分析</RouterLink></p>
       <button type="button" :disabled="busy" @click="load(null, true)">{{ busy ? "正在读取…" : "刷新交接分析" }}</button>
       <p v-if="busy" role="status">正在确认项目交接分析访问权限…</p>
       <p v-if="error" role="alert">{{ error }}</p>

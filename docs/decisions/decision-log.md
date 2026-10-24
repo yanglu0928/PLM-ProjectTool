@@ -11875,3 +11875,10 @@
 - Decision：将待验证候选SHA作为必填参数，仍验证全量暂存、ZIP manifest一致和候选前后同Hash；业务验证脚本/权限断言不变。先独立闭合Evidence资格业务片，完整纵向链与浏览器另片。
 - Reason：使同一受控非发行候选的业务片可追溯，同时避免把旧P47结果迁移成新版本的事实。
 - Impact/Rollback/Verification：仅测试入口参数，无产品API/Schema/正式数据变化；撤工具变更可回退。新固定候选实际包内Python/PG与临时清理通过才标PASS。
+
+# DEC-20261024-1228：交接分析以独立创建页选择项目文档固定版本
+
+- Date/WBS：2026-10-24 / `HND-05-A01`；项目创建和交接只读入口已在新候选真实 Edge 通过，但用户无法创建分析；后端要求 1～500 个同项目 AVAILABLE 固定文档版本，不能让用户手填内部标识或以空来源占位。
+- Decision：在交接列表添加独立创建页入口；仅通过现有 DocumentReadClient 读取项目文档与版本元数据，用户逐文档选择一个固定版本组成来源集合。新增 Handover 专用创建客户端消费已冻结 POST，复用 SessionClient 的 CSRF/Origin/幂等写边界；对不确定响应在 sessionStorage 保留原项目/操作者/目的/固定来源/Key，确认后才能同号重试。
+- Reason：明确 UI→API 边界和固定来源可见性，避免将文档正文或手填 UUID 搬入表格；独立页面使列表继续保持只读现时事实，服务端最终重证项目/版本权限。
+- Impact/Rollback/Verification：非 Breaking 前端增量，无 Schema/后端 API/License 权益变化；撤新入口和客户端可停用，但已创建的分析及审计历史必须保留。定向测试覆盖正常创建、无文档/跨项目/角色、版本分页、错误响应/不确定结果、同号恢复与失效存储；前端全量/typecheck/build后才标源码 PASS，包内 Edge/PG 另验。

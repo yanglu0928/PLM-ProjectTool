@@ -217,6 +217,7 @@ export class SessionClient {
     | `/api/v1/projects/${string}/egress-previews`
     | `/api/v1/projects/${string}/ai-tasks`
     | `/api/v1/projects/${string}/retrieval-runs`
+    | `/api/v1/projects/${string}/handover-analyses`
     | `/api/v1/projects/${string}/solution-outlines`
     | `/api/v1/projects/${string}/plans`
     | `/api/v1/projects/${string}/solution-outlines/${string}/versions`
@@ -258,6 +259,11 @@ export class SessionClient {
 
   postProjectCreate(body: string, idempotencyKey: string): Promise<Response> {
     return this.#postCommand("/api/v1/projects", body, idempotencyKey, 8192);
+  }
+
+  postProjectHandoverAnalysisCreate(projectId: string, body: string, idempotencyKey: string): Promise<Response> {
+    if (!identifier(projectId)) return Promise.reject(new SessionClientError("AUTH_CLIENT_UNAVAILABLE"));
+    return this.#postCommand(`/api/v1/projects/${projectId}/handover-analyses`, body, idempotencyKey, 131_072);
   }
 
   postProjectOutlineCreate(projectId: string, body: string, idempotencyKey: string): Promise<Response> {

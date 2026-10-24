@@ -35,6 +35,7 @@ import ProjectAISuggestionView from "@/modules/ai/views/ProjectAISuggestionView.
 import ProjectAISubmitView from "@/modules/ai/views/ProjectAISubmitView.vue";
 import ProjectRetrievalView from "@/modules/rag/views/ProjectRetrievalView.vue";
 import ProjectHandoverListView from "@/modules/handover/views/ProjectHandoverListView.vue";
+import ProjectHandoverCreateView from "@/modules/handover/views/ProjectHandoverCreateView.vue";
 import ProjectHandoverDetailView from "@/modules/handover/views/ProjectHandoverDetailView.vue";
 import ProjectHandoverActionView from "@/modules/handover/views/ProjectHandoverActionView.vue";
 import ProjectSurveyListView from "@/modules/survey/views/ProjectSurveyListView.vue";
@@ -167,6 +168,11 @@ export function createAppRouter(
         path: "/projects/:projectId/handover",
         name: "project-handover",
         component: ProjectHandoverListView,
+      },
+      {
+        path: "/projects/:projectId/handover/new",
+        name: "project-handover-create",
+        component: ProjectHandoverCreateView,
       },
       {
         path: "/projects/:projectId/handover/:analysisId",

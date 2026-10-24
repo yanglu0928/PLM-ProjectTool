@@ -38,6 +38,7 @@ describe("ProjectHandoverListView", () => {
     const { wrapper } = await view(await session(), fetcher as typeof fetch);
     expect(wrapper.text()).toContain("候选问题不等于已确认事实"); expect(wrapper.text()).toContain("系统交接差异分析");
     expect(wrapper.text()).toContain("尚未形成"); expect(wrapper.find("form").exists()).toBe(false);
+    expect(wrapper.get(`a[href="/projects/${project}/handover/new"]`).text()).toContain("创建交接分析");
     expect(wrapper.get(`a[href="/projects/${project}/handover/${analysis}"]`).text()).toContain("原文位置"); wrapper.unmount(); });
   it("appends a distinct page and refreshes from the first page", async () => { const older = { ...item,
     handover_analysis_id: actor, analysis_purpose: "旧分析", created_at: "2026-10-05T11:00:00Z",
