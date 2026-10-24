@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-24：0.1.0-dev.0/SOL-03-A06-P04-P01完成Outline统一Review数据库前置核查：现有0156 Version Guard与根身份Guard均未开放合法送审/批准，确定独立SOL-03 Subject、结果闭合与受控状态窄门顺序。兼容性/升级/回滚：仅路线/决策文档，无程序、Schema/API/数据变化或升级；撤文档不影响历史。验证：冻结DM-05/API-04、统一Review合同及0156/0183/0184静态交叉核查，未运行新功能测试。已知问题：Outline实际Review、真实客户/正式信任、Pilot/Gate3及三平台发行未完成。
+
 - 2026-10-24：0.1.0-dev.0/SOL-03-A06-P03-A05-P03-A05-P02新增同库完整来源隔离验收：正式Requirement/Section Owner合成升版与统一Review/Trace后，Outline order/source/coverage全PASS；撤Trace异Key coverage FAIL、旧Key观察不漂移；双并发同Key仅一持久观察。兼容性/升级/回滚：Windows11/PG18.6测试证据，无正式程序/Schema/API/权限/License变化或数据升级；撤脚本即可，临时库清理。验证：脚本exit0，Audit/Receipt各3；前片后端全量4014通过/3跳过/6107子例，本片无程序变更未重复全量。已知问题：仅合成客户确认及测试信任；Outline正式Review、完整纵向链、真实公钥/服务账户、Pilot/Gate3、Windows Server 2025及Debian 13正式发行未验。
 
 - 2026-10-24：0.1.0-dev.0/SOL-03-A06-P03-A05-P03-A05初验增一次性Win11/PG18.6真实来源脚本：不完整合成需求夹具下Outline order/source PASS、coverage UNAVAILABLE且不可送审；同Key回放、异Key重证、Audit/Receipt及跨项目/CSRF拒绝。兼容性/升级/回滚：仅测试脚本与记录，无程序/Schema/API/权限/License变更，撤脚本不影响数据；临时数据库清理。验证：脚本exit0；前片后端全量4014通过/3跳过/6107子例，本片无程序变更未重复全量。已知问题：正式需求资格同库夹具、三维完整PASS/缺口/竞态、客户实签/正式信任、Pilot/Gate3与三平台发行未完成。

@@ -11819,3 +11819,10 @@
 - Decision：验收夹具中的新需求归类为标准功能，新章节通过正式创建Owner明确写入`NONE_REQUIRED`及理由，不复制不匹配的旧规格固定引用；Section送审/客户合成审批、Trace与Outline覆盖仍由现时Owner重新证明。历史已批准章节及专项规格保持原状。
 - Reason：版本固定引用不得“自动跟随”新版需求；标准功能无需专项规格的显式分支由冻结设计和已实现规则允许。此决定仅选择与合成测试语义一致的输入，不调整生产资格规则。
 - Impact/Rollback/Verification：只改变一次性PG验收输入，无Schema/API/正式数据变化；脚本可撤。新Section正式Owner/Review批准及Outline三维全PASS、追溯撤销后覆盖FAIL，均须独立观测；不代表真实客户批准或Pilot通过。
+
+# DEC-20261024-1220：Outline Review采用独立Subject与受控状态闭合
+
+- Date/WBS：2026-10-24 / `SOL-03-A06-P04-P01`；冻结API-04要求Outline独立送审，现有0156 Guard拒绝Version UPDATE、根Guard拒绝批准指针UPDATE。Section的SOL-05 Review已建立可参考的闭合设计，但不能代替SOL-03资格。
+- Decision：后续单独为Outline建立`SOL-03` Subject及建议策略`SOLUTION_OUTLINE_ALL_V1`，数据库先开放仅经受控Review结果闭合的DRAFT→IN_REVIEW→APPROVED/RETURNED、旧批准版SUPERSEDED和根指针转移；Version内容/子引用继续不可变。实际policy命名与状态表列在P04-P02编码前复核，若触及冻结合同再记CR。
+- Reason：只凭历史VALIDATE结果或直接开放UPDATE会越过现时来源/客户确认边界；独立闭合可将Review/Round/SubjectSnapshot与业务指针保持一致，且不把章节批准误当目录批准。
+- Impact/Rollback/Verification：本条仅路线决策，无运行变更；后续Schema片必须ORM+Alembic up/down、空库/有数据升级和失配/竞态负例。存在Review历史时不做破坏性回滚，需前向修复。Pilot/Gate维持未通过。
