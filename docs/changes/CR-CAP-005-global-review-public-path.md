@@ -46,3 +46,4 @@ Capability Version 现可用冻结 `CAP_VERSION_SUBMIT_REVIEW` 由 DeploymentAdm
 - 2026-10-24 / `A02-P03`：Windows 11 隔离 PostgreSQL 18 合成受分配 Reviewer、拒绝矩阵、同 Key 回放、撤源回滚及终态批准指针闭合，临时库/服务清理；仍无 HTTP/浏览器或真实人工批准，见 `docs/progress/cap-02-a05-p04-p03-a02-p03-global-review-pg.md`。
 - 2026-10-24 / `A03-P01`：新增默认关闭的 GET/DECIDE HTTP 合同与应用工厂可选插槽；定向4/15子例、后端全量4087/3跳过/6129子例通过。Windows 未注入，见 `docs/progress/cap-02-a05-p04-p03-a03-p01-global-review-http.md`。
 - 2026-10-24 / `A03-P02`：Windows 显式写模式装配，默认和只读仍不挂载；隔离 PG18.6 实际 HTTP 合成读/拒绝/两人批准/回放通过，后端全量通过。首轮回归旧测试替身失败已修正并重跑；正式信任、真人决定、Edge 与包内尚未验，见 `docs/progress/cap-02-a05-p04-p03-a03-p02-global-review-windows-http-pg.md`。
+- 2026-10-24 / `A04-P01`：新增前端 GLOBAL Review 安全客户端与 Session 决定传输，不复用 PROJECT 路径；前端1941/typecheck/build通过。页面尚未接入，见 `docs/progress/cap-02-a05-p04-p03-a04-p01-global-review-client.md`。

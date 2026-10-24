@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-24：0.1.0-dev.0/CAP-02-A05-P04-P03-A04-P01 新增 CAP-01 GLOBAL Review 前端精确读取/决定客户端与会话内 CSRF/幂等传输，不改变 PROJECT 评审。兼容性：Windows 11 前端源码/构建通过；Server 2025、Debian 13 未实测。升级/回滚：无 Schema/后端合同迁移；撤未接入页面的客户端不删除 Review/Audit 历史。验证：定向3、前端全量1941、typecheck/build通过。已知问题：尚无页面入口，Edge/固定包/真人决定/正式信任/UAT/Gate/Pilot未验，不可发行。
+
 - 2026-10-24：0.1.0-dev.0/CAP-02-A05-P04-P03-A03-P02 将 CAP-01 GLOBAL Review GET/DECIDE 仅装入 Windows 显式写模式；默认/只读模式不开放，既有 PROJECT API 不变。兼容性：Windows 11 隔离 PostgreSQL 18.6 合成信任 HTTP 通过；Server 2025、Debian 13 未实测。升级/回滚：无 Schema/数据迁移；可关闭写模式回到不挂载路由，不删除合法 Review/Capability/Audit/收据历史。验证：实际 HTTP/PG 读/拒绝/双 Reviewer 批准/重放退出0，临时库0、PoC服务恢复停止；后端全量4087通过/3跳过/6129子例。已知问题：Edge/固定包、真人批准、正式信任/安装/UAT/Gate/Pilot未验，不可发行。
 
 - 2026-10-24：0.1.0-dev.0/CAP-02-A05-P04-P03-A03-P01 新增默认关闭的 CAP-01 GLOBAL Review GET/DECIDE HTTP 与应用工厂可选插槽，严格当前 Scope/Session/CSRF/幂等/Trace/ETag/no-store；现有 PROJECT API 不变。兼容性：尚未 Windows 运行装配，Server 2025、Debian 13 未实测。升级/回滚：无 Schema/数据迁移，关闭可选路由恢复默认404，保留已提交合法 Review/Audit。验证：合同4项/15子例、后端全量4087通过/3跳过/6129子例。已知问题：真实 HTTP/PG、Windows/Edge/真人决定、正式信任/安装/UAT/Gate/Pilot未验，不可发行。

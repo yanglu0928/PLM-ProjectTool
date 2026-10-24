@@ -215,6 +215,7 @@ export class SessionClient {
     | "/api/v1/global/capability-baselines" | "/api/v1/global/evidence"
     | `/api/v1/global/capability-baselines/${string}/versions`
     | `/api/v1/global/capability-baselines/${string}/versions/${string}:submit-review`
+    | `/api/v1/global/reviews/${string}/rounds/${string}:decide`
     | `/api/v1/projects/${string}/members` | `/api/v1/projects/${string}/departments`
     | `/api/v1/projects/${string}/document-uploads`
     | `/api/v1/projects/${string}/egress-previews`
@@ -488,6 +489,17 @@ export class SessionClient {
     }
     return this.#postCommand(
       `/api/v1/global/capability-baselines/${baselineId}/versions/${versionId}:submit-review`,
+      body, idempotencyKey, 8192);
+  }
+
+  /** CR-CAP-005 GLOBAL decision; retain the original Key on uncertain results. */
+  postGlobalCapabilityReviewDecision(reviewId: string, roundId: string,
+    body: string, idempotencyKey: string): Promise<Response> {
+    if (!identifier(reviewId) || !identifier(roundId)) {
+      return Promise.reject(new SessionClientError("AUTH_CLIENT_UNAVAILABLE"));
+    }
+    return this.#postCommand(
+      `/api/v1/global/reviews/${reviewId}/rounds/${roundId}:decide`,
       body, idempotencyKey, 8192);
   }
 
