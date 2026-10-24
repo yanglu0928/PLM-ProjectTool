@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-24：0.1.0-dev.0/SOL-03-A06-P04-P03-A05-P02-A02增加方案大纲固定版本负责人送审入口、当前项目ACTIVE客户确认人筛选、冻结POST/201严格收据校验与不确定结果同号重试。兼容性/升级/回滚：仅前端消费既有冻结API，无Schema/角色/License变化或迁移；停用页面入口不删除评审历史。验证：定向7、前端全量1867项/typecheck/build通过。已知问题：真实Edge/隔离PG链、Outline验证报告UI、默认Windows组合、真实客户/正式信任、Pilot/Gate3/三平台发行仍待。
+
 - 2026-10-24：0.1.0-dev.0/SOL-03-A06-P04-P03-A05-P02-A01增加方案大纲客户待办标识、统一Review详情SOL-03/策略精确配对与本轮固定OutlineVersion导航。兼容性/升级/回滚：仅前端消费既有冻结API，无Schema/权限/License变化及数据迁移；撤前端适配不删除Review历史。验证：定向16项、前端全量1860项/typecheck/build通过。已知问题：负责人送审入口、真实Edge/PG浏览器、默认Windows组合、真人客户/正式信任、Pilot/Gate3/三平台发行未完成。
 
 - 2026-10-24：0.1.0-dev.0/SOL-03-A06-P04-P03-A05-P01统一Review读/列表/命令组合器可显式注入SOL-03 Outline Owner，默认集合不变；Win11隔离PG合成客户读取、撤Trace批准拒绝、恢复后批准/回放及Version/根指针/不可变结果/Audit闭合。兼容性/升级/回滚：无Schema/冻结API/License变化，未默认挂载，撤显式注册可停用新分发，历史须保留。验证：注册单元8项、后端全量4065通过/3跳过/6112子例，隔离HTTP/PG脚本exit0。已知问题：真实Edge浏览器、默认Windows生产接线、真人客户/正式信任、Pilot/Gate3和三平台发行未完成。

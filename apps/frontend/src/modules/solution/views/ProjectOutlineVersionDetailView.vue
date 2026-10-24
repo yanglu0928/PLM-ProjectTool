@@ -5,6 +5,7 @@ import { SessionClient } from "@/modules/auth/api/sessionClient";
 import { sessionClientKey } from "@/modules/auth/api/sessionContext";
 import { OutlineVersionReadClient, type OutlineVersionDetail } from
   "@/modules/solution/api/outlineVersionReadClient";
+import OutlineReviewSubmitPanel from "./OutlineReviewSubmitPanel.vue";
 
 const props = defineProps<{ session?: SessionClient; reader?: OutlineVersionReadClient }>();
 const session = toRaw(props.session ?? inject(sessionClientKey, null) ?? new SessionClient());
@@ -81,6 +82,8 @@ onUnmounted(() => { mounted = false; generation += 1; });
         <h3>冲突声明（{{ current.conflict_declarations.length }}）</h3>
         <p v-if="!current.conflict_declarations.length">无</p>
         <ol v-else><li v-for="(item, index) in current.conflict_declarations" :key="index"><pre>{{ JSON.stringify(item, null, 2) }}</pre></li></ol>
+        <OutlineReviewSubmitPanel :key="current.solution_outline_version_id"
+          :session="session" :detail="current" />
       </template>
     </template>
   </section>
