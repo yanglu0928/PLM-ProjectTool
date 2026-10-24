@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-24：0.1.0-dev.0/SOL-03-A06-P04-P02新增Outline统一Review结果闭合表和0185状态/批准指针Guard，仅允许与SOL-03 Review/Round/固定快照匹配的受控状态转移，并禁止评审中创建新版本。兼容性/升级：增量Schema，无冻结API/角色/License变化；无Review历史的旧草稿库可升级、降级和重升，有非草稿/批准历史的未经审计升级或有Review历史的降级会失败关闭，需前向修复而非删除历史。验证：Win11一次性PG18.6空/有数据升降重升、状态/错误事实/漂移脚本exit0；定向17通过/4子例，迁移清单7通过，后端全量4014通过/3跳过/6107子例。已知问题：正式Outline Subject/送审/终态及UI、真实客户/正式信任、Pilot/Gate3和三平台发行仍未完成。
+
 - 2026-10-24：0.1.0-dev.0/SOL-03-A06-P04-P01完成Outline统一Review数据库前置核查：现有0156 Version Guard与根身份Guard均未开放合法送审/批准，确定独立SOL-03 Subject、结果闭合与受控状态窄门顺序。兼容性/升级/回滚：仅路线/决策文档，无程序、Schema/API/数据变化或升级；撤文档不影响历史。验证：冻结DM-05/API-04、统一Review合同及0156/0183/0184静态交叉核查，未运行新功能测试。已知问题：Outline实际Review、真实客户/正式信任、Pilot/Gate3及三平台发行未完成。
 
 - 2026-10-24：0.1.0-dev.0/SOL-03-A06-P03-A05-P03-A05-P02新增同库完整来源隔离验收：正式Requirement/Section Owner合成升版与统一Review/Trace后，Outline order/source/coverage全PASS；撤Trace异Key coverage FAIL、旧Key观察不漂移；双并发同Key仅一持久观察。兼容性/升级/回滚：Windows11/PG18.6测试证据，无正式程序/Schema/API/权限/License变化或数据升级；撤脚本即可，临时库清理。验证：脚本exit0，Audit/Receipt各3；前片后端全量4014通过/3跳过/6107子例，本片无程序变更未重复全量。已知问题：仅合成客户确认及测试信任；Outline正式Review、完整纵向链、真实公钥/服务账户、Pilot/Gate3、Windows Server 2025及Debian 13正式发行未验。

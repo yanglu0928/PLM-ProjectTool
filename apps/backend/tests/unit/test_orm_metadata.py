@@ -194,6 +194,7 @@ class OrmMetadataTests(unittest.TestCase):
         for table in ('plm.sol_outlines', 'plm.sol_outline_create_results',
                       'plm.sol_sections', 'plm.sol_section_create_results',
                       'plm.sol_outline_versions', 'plm.sol_outline_version_create_results',
+                      'plm.sol_outline_review_state_results',
                       'plm.sol_outline_sections',
                       'plm.sol_outline_requirement_refs', 'plm.sol_outline_reference_refs', 'plm.sol_section_versions',
                       'plm.sol_section_version_create_results',
