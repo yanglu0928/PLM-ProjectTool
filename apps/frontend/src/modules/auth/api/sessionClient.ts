@@ -224,6 +224,7 @@ export class SessionClient {
     | `/api/v1/projects/${string}/retrieval-runs`
     | `/api/v1/projects/${string}/handover-analyses`
     | `/api/v1/projects/${string}/handover-analyses/${string}/versions`
+    | `/api/v1/projects/${string}/handover-analyses/${string}/versions/${string}:submit-review`
     | `/api/v1/projects/${string}/solution-outlines`
     | `/api/v1/projects/${string}/plans`
     | `/api/v1/projects/${string}/solution-outlines/${string}/versions`
@@ -312,6 +313,17 @@ export class SessionClient {
     } catch {
       throw new SessionClientError("AUTH_CLIENT_UNAVAILABLE");
     } finally { window.clearTimeout(timer); this.#busy = false; }
+  }
+
+  /** Frozen Handover submit-review; one immutable reviewer set per original key. */
+  postProjectHandoverVersionSubmitReview(projectId: string, analysisId: string,
+    versionId: string, body: string, idempotencyKey: string): Promise<Response> {
+    if (!identifier(projectId) || !identifier(analysisId) || !identifier(versionId)) {
+      return Promise.reject(new SessionClientError("AUTH_CLIENT_UNAVAILABLE"));
+    }
+    return this.#postCommand(
+      `/api/v1/projects/${projectId}/handover-analyses/${analysisId}/versions/${versionId}:submit-review`,
+      body, idempotencyKey, 8192);
   }
 
   postProjectOutlineCreate(projectId: string, body: string, idempotencyKey: string): Promise<Response> {
