@@ -1,5 +1,7 @@
 # 版本说明
 
+- 2026-10-24：0.1.0-dev.0/SOL-03-A06-P04-P03-A04-P01新增冻结Outline `:submit-review` 可选HTTP合同与默认关闭注入点，严格Origin/Session/CSRF/幂等/请求字段、固定SOL-03响应、201/ETag/no-store与错误映射。兼容性/升级/回滚：原冻结 `/api/v1` 路径，不改Schema/权限/License或数据；默认404，撤未挂载Router可回滚。验证：Outline合同11、与Section合同合计22通过；后端全量4063通过/3跳过/6112子例。已知问题：Windows显式挂载与真实HTTP/PG、统一Review读/终态分发、浏览器/真实客户、正式信任、Pilot/Gate3及三平台发行未完成。
+
 - 2026-10-24：0.1.0-dev.0/SOL-03-A06-P04-P03-A03-P02共用Outline VALIDATE完整来源图并新增Windows内部Review Subject/提交组合，实测已批准需求/章节/Trace三维PASS后的统一Review START、固定快照/收据、同Key回放与撤Trace后终态重证拒绝。兼容性/升级/回滚：Win11内部候选，无Schema/公开API/License权益或数据迁移；停止未公开装配可回滚，已存历史不得删除。验证：Win11隔离PG18.6合成全源脚本exit0、原VALIDATE组合11项/65子例、后端全量4052通过/3跳过/6112子例。已知问题：未挂载公开提交/Review终态分发或浏览器，合成身份非真实客户，正式信任/Pilot/Gate3/三平台发行未完成。
 
 - 2026-10-24：0.1.0-dev.0/SOL-03-A06-P04-P03-A03-P01新增Outline内部统一Review提交服务与ProjectManager权限，固定项目/版本/确认人/策略、同事务提交调用和同Key历史回放复核；仅识别出的PG死锁有界重试。兼容性/升级/回滚：Win11内部服务尚未装配，无Schema/公开API/License权益变化或数据迁移；可撤服务及新增权限映射，真实历史不可删除。验证：定向17通过/841子例、后端全量4052通过/3跳过/6112子例；A02隔离PG原子状态闭合证据不等于本服务真实同库送审。已知问题：完整来源/Review核心同库装配、HTTP/浏览器、真实客户确认、正式信任、Pilot/Gate3和三平台发行未完成。
